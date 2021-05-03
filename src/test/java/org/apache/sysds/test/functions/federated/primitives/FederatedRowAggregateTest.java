@@ -149,10 +149,10 @@ public class FederatedRowAggregateTest extends AutomatedTestBase {
 			c = cols;
 		}
 
-		double[][] X1 = getRandomMatrix(r, c, 1, 3, 1, 3);
-		double[][] X2 = getRandomMatrix(r, c, 1, 3, 1, 7);
-		double[][] X3 = getRandomMatrix(r, c, 1, 3, 1, 8);
-		double[][] X4 = getRandomMatrix(r, c, 1, 3, 1, 9);
+		double[][] X1 = getRandomMatrix(r, c, 3, 3, 1, 3);
+		double[][] X2 = getRandomMatrix(r, c, 3, 3, 1, 7);
+		double[][] X3 = getRandomMatrix(r, c, 3, 3, 1, 8);
+		double[][] X4 = getRandomMatrix(r, c, 3, 3, 1, 9);
 
 		MatrixCharacteristics mc = new MatrixCharacteristics(r, c, blocksize, r * c);
 		writeInputMatrixWithMTD("X1", X1, false, mc);

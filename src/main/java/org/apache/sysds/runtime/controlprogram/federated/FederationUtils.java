@@ -197,16 +197,26 @@ public class FederationUtils {
 		}
 	}
 
-	public static MatrixBlock aggProd(Future<FederatedResponse>[] ffr) {
+	public static MatrixBlock aggProd(Future<FederatedResponse>[] ffr, FederationMap fedMap, AggregateUnaryOperator aop) {
 		try {
-			BinaryOperator bop = InstructionUtils.parseBinaryOperator("*");
+			boolean rowFed = fedMap.getType() == FederationMap.FType.ROW;
+			MatrixBlock ret = rowFed ?
+				new MatrixBlock(ffr.length, (int) fedMap.getFederatedRanges()[0].getEndDims()[1], 1.0) :
+				new MatrixBlock((int) fedMap.getFederatedRanges()[0].getEndDims()[0], ffr.length, 1.0);
+			MatrixBlock res = rowFed ?
+				new MatrixBlock(1, (int) fedMap.getFederatedRanges()[0].getEndDims()[1], 1.0) :
+				new MatrixBlock((int) fedMap.getFederatedRanges()[0].getEndDims()[0], 1, 1.0);
 
-			MatrixBlock result = (MatrixBlock) ffr[0].get().getData()[0];;
-			for(int i=1; i < ffr.length; i++) {
-				MatrixBlock ret = (MatrixBlock) ffr[i].get().getData()[0];
-				result.binaryOperationsInPlace(bop, ret);
+			for(int i = 0; i < ffr.length; i++) {
+				MatrixBlock tmp = (MatrixBlock) ffr[i].get().getData()[0];
+				if(rowFed)
+					ret.copy(i, i, 0, ret.getNumColumns()-1, tmp, true);
+				else
+					ret.copy(0, ret.getNumRows()-1, i, i, tmp, true);
 			}
-			return result;
+
+			LibMatrixAgg.aggregateUnaryMatrix(ret, res, aop);
+			return res;
 		}
 		catch (Exception ex) {
 			throw new DMLRuntimeException(ex);
@@ -421,7 +431,7 @@ public class FederationUtils {
 		else if( aop.aggOp.increOp.fn instanceof Mean )
 			return aggMean(ffr, map);
 		else if(aop.aggOp.increOp.fn instanceof Multiply) {
-			return aggProd(ffr);
+			return aggProd(ffr, map, aop);
 		} else if (aop.aggOp.increOp.fn instanceof Builtin) {
 			if ((((Builtin) aop.aggOp.increOp.fn).getBuiltinCode() == BuiltinCode.MIN ||
 				((Builtin) aop.aggOp.increOp.fn).getBuiltinCode() == BuiltinCode.MAX)) {

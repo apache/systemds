@@ -21,11 +21,9 @@ package org.apache.sysds.test.functions.federated.primitives;
 
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.HashMap;
 
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.ExecMode;
-import org.apache.sysds.runtime.matrix.data.MatrixValue;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.util.HDFSTool;
 import org.apache.sysds.test.AutomatedTestBase;
@@ -152,10 +150,10 @@ public class FederatedColAggregateTest extends AutomatedTestBase {
 			c = cols;
 		}
 
-		double[][] X1 = getRandomMatrix(r, c, 1, 3, 1, 3);
-		double[][] X2 = getRandomMatrix(r, c, 1, 3, 1, 7);
-		double[][] X3 = getRandomMatrix(r, c, 1, 3, 1, 8);
-		double[][] X4 = getRandomMatrix(r, c, 1, 3, 1, 9);
+		double[][] X1 = getRandomMatrix(r, c, 3, 3, 1, 3);
+		double[][] X2 = getRandomMatrix(r, c, 3, 3, 1, 7);
+		double[][] X3 = getRandomMatrix(r, c, 3, 3, 1, 8);
+		double[][] X4 = getRandomMatrix(r, c, 3, 3, 1, 9);
 
 		MatrixCharacteristics mc = new MatrixCharacteristics(r, c, blocksize, r * c);
 		writeInputMatrixWithMTD("X1", X1, true, mc);
@@ -199,18 +197,6 @@ public class FederatedColAggregateTest extends AutomatedTestBase {
 			"rP=" + Boolean.toString(rowPartitioned).toUpperCase(), "out_S=" + output("S")};
 
 		runTest(true, false, null, -1);
-
-//		// added R tests to check prod
-//		fullRScriptName = HOME + TEST_NAME + ".R";
-//		rCmd = "Rscript" + " " + fullRScriptName + " " + inputDir() + " " + expectedDir();
-//		runRScript(true);
-//
-//		//compare matrices
-//		HashMap<MatrixValue.CellIndex, Double> dmlfile = readDMLMatrixFromOutputDir("S");
-//		HashMap<MatrixValue.CellIndex, Double> rfile  = readRMatrixFromExpectedDir("S");
-//
-//
-//		TestUtils.compareMatrices(dmlfile, rfile,1e-9, "Stat-DML", "Stat-R");
 
 		// compare via files
 		compareResults((type == FederatedColAggregateTest.OpType.VAR) || (type == OpType.PROD) ? 1e-2 : 1e-9);

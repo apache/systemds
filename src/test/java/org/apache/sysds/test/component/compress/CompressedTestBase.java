@@ -20,7 +20,6 @@
 package org.apache.sysds.test.component.compress;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.fail;
 
 import java.util.ArrayList;
@@ -594,6 +593,13 @@ public abstract class CompressedTestBase extends TestBase {
 		try {
 			if(!(cmb instanceof CompressedMatrixBlock))
 				return; // Input was not compressed then just pass test
+			// vector-matrix compressed
+			CompressionSettings cs = new CompressionSettingsBuilder()
+				.setValidCompressions(EnumSet.of(CompressionType.DDC)).create();
+			MatrixBlock compMatrix = compressMatrix ? CompressedMatrixBlockFactory.compress(matrix, cs)
+				.getLeft() : matrix;
+			if(compressMatrix && !(compMatrix instanceof CompressedMatrixBlock))
+				return; // Early termination since the test does not test what we wanted.
 
 			// Make Operator
 			AggregateBinaryOperator abop = InstructionUtils.getMatMultOperator(_k);
@@ -602,17 +608,11 @@ public abstract class CompressedTestBase extends TestBase {
 			// vector-matrix uncompressed
 			ReorgOperator r_op = new ReorgOperator(SwapIndex.getSwapIndexFnObject(), _k);
 
+			// vector-matrix compressed
 			MatrixBlock left = transposeLeft ? matrix.reorgOperations(r_op, new MatrixBlock(), 0, 0, 0) : matrix;
 			MatrixBlock right = transposeRight ? mb.reorgOperations(r_op, new MatrixBlock(), 0, 0, 0) : mb;
 			MatrixBlock ret1 = right.aggregateBinaryOperations(left, right, new MatrixBlock(), abopSingle);
 
-			// vector-matrix compressed
-			CompressionSettings cs = new CompressionSettingsBuilder()
-				.setValidCompressions(EnumSet.of(CompressionType.DDC)).create();
-			MatrixBlock compMatrix = compressMatrix ? CompressedMatrixBlockFactory.compress(matrix, cs)
-				.getLeft() : matrix;
-			assertFalse("Failed to compress other matrix",
-				compressMatrix && !(compMatrix instanceof CompressedMatrixBlock));
 			MatrixBlock ret2 = ((CompressedMatrixBlock) cmb).aggregateBinaryOperations(compMatrix, cmb,
 				new MatrixBlock(), abop, transposeLeft, transposeRight);
 

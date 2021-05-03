@@ -26,7 +26,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
-import org.apache.commons.lang.NotImplementedException;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -207,12 +206,9 @@ public class CLALibLeftMultBy {
 		public Object call() {
 			try {
 				IPreAggregate.setupThreadLocalMemory(1024);
-				if(_left instanceof ColGroupValue) {
-					leftMultByCompressedTransposedMatrix((ColGroupValue) _left, _groups, _ret.getDenseBlockValues(),
-						_ret.getNumRows(), _ret.getNumColumns(), _start, _end);
-				}
-				else
-					throw new NotImplementedException("Not implemented uncompressed instance of left mult compressed");
+				leftMultByCompressedTransposedMatrix(_left, _groups, _ret.getDenseBlockValues(), _ret.getNumRows(),
+					_ret.getNumColumns(), _start, _end);
+
 			}
 			catch(Exception e) {
 				throw new DMLRuntimeException(e);
@@ -443,7 +439,7 @@ public class CLALibLeftMultBy {
 			}
 			try {
 				ColGroupValue.setupThreadLocalMemory(_v.getLeft() + 1);
-				for(int j = 0; j < _group.size(); j++) 
+				for(int j = 0; j < _group.size(); j++)
 					_group.get(j).leftMultByMatrix(_that, _ret, _numCols, _rl, _ru);
 			}
 			catch(Exception e) {

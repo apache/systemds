@@ -213,40 +213,41 @@ public class ColGroupDDC extends ColGroupValue {
 	// @Override
 	// public void leftMultByMatrix(double[] a, double[] c, double[] values, int numRows, int numCols, int rl, int ru) {
 
-	// 	int numVals = getNumValues();
-	// 	for(int i = rl; i < ru; i++) {
-	// 		double[] vals = preAggregate(a, i);
-	// 		postScaling(values, vals, c, numVals, i, numCols);
-	// 	}
-	// 	// if(8 * numVals < _numRows) {
-	// 	// }
-	// 	// else {
-	// 	// for(int i = rl, j = voff; i < ru; i++, j++) {
-	// 	// int offC = i * numCols;
-	// 	// numVals = numVals * _colIndexes.length;
-	// 	// for(int k = 0, aOff = j * _numRows; k < _numRows; k++, aOff++) {
-	// 	// double aval = a[aOff];
-	// 	// if(aval != 0) {
-	// 	// int valOff = getIndex(k) * _colIndexes.length;
-	// 	// if(valOff < numVals) {
-	// 	// for(int h = 0; h < _colIndexes.length; h++) {
-	// 	// int colIx = _colIndexes[h] + offC;
-	// 	// c[colIx] += aval * values[valOff + h];
-	// 	// }
-	// 	// }
-	// 	// }
-	// 	// }
+	// int numVals = getNumValues();
+	// for(int i = rl; i < ru; i++) {
+	// double[] vals = preAggregate(a, i);
+	// postScaling(values, vals, c, numVals, i, numCols);
+	// }
+	// // if(8 * numVals < _numRows) {
+	// // }
+	// // else {
+	// // for(int i = rl, j = voff; i < ru; i++, j++) {
+	// // int offC = i * numCols;
+	// // numVals = numVals * _colIndexes.length;
+	// // for(int k = 0, aOff = j * _numRows; k < _numRows; k++, aOff++) {
+	// // double aval = a[aOff];
+	// // if(aval != 0) {
+	// // int valOff = getIndex(k) * _colIndexes.length;
+	// // if(valOff < numVals) {
+	// // for(int h = 0; h < _colIndexes.length; h++) {
+	// // int colIx = _colIndexes[h] + offC;
+	// // c[colIx] += aval * values[valOff + h];
+	// // }
+	// // }
+	// // }
+	// // }
 
-	// 	// }
-	// 	// }
+	// // }
+	// // }
 	// }
 
 	// @Override
-	// public void leftMultBySparseMatrix(SparseBlock sb, double[] c, double[] values, int numRows, int numCols, int row) {
-	// 	final int numVals = getNumValues();
-	// 	double[] vals = preAggregateSparse(sb, row);
-	// 	postScaling(values, vals, c, numVals, row, numCols);
-	// 	// LOG.error(Arrays.toString(c));
+	// public void leftMultBySparseMatrix(SparseBlock sb, double[] c, double[] values, int numRows, int numCols, int
+	// row) {
+	// final int numVals = getNumValues();
+	// double[] vals = preAggregateSparse(sb, row);
+	// postScaling(values, vals, c, numVals, row, numCols);
+	// // LOG.error(Arrays.toString(c));
 	// }
 
 	@Override
@@ -265,16 +266,13 @@ public class ColGroupDDC extends ColGroupValue {
 	@Override
 	public double[] preAggregateSparse(SparseBlock sb, int row) {
 
-		// LOG.error(this);
-		// LOG.error(sb);
 		double[] vals = allocDVector(getNumValues(), true);
 		int[] indexes = sb.indexes(row);
 		double[] sparseV = sb.values(row);
 		for(int i = sb.pos(row); i < sb.size(row) + sb.pos(row); i++)
 			vals[getIndex(indexes[i])] += sparseV[i];
-
-		// LOG.error(Arrays.toString(vals));
 		return vals;
+
 	}
 
 	// @Override
@@ -595,21 +593,22 @@ public class ColGroupDDC extends ColGroupValue {
 
 	// @Override
 	// public void rightMultByVector(double[] b, double[] c, int rl, int ru, double[] dictVals) {
-	// 	final int numVals = getNumValues();
-	// 	double[] vals = preaggValues(numVals, b, dictVals);
-	// 	for(int i = rl; i < ru; i++)
-	// 		c[i] += vals[_data.getIndex(i)];
+	// final int numVals = getNumValues();
+	// double[] vals = preaggValues(numVals, b, dictVals);
+	// for(int i = rl; i < ru; i++)
+	// c[i] += vals[_data.getIndex(i)];
 
 	// }
 
 	// @Override
-	// public void rightMultByMatrix(int[] outputColumns, double[] preAggregatedB, double[] c, int thatNrColumns, int rl,
-	// 	int ru) {
-	// 	for(int j = rl, off = rl * thatNrColumns; j < ru; j++, off += thatNrColumns) {
-	// 		int rowIdx = _data.getIndex(j);
-	// 		for(int k = 0; k < outputColumns.length; k++)
-	// 			c[off + outputColumns[k]] += preAggregatedB[rowIdx * outputColumns.length + k];
-	// 	}
+	// public void rightMultByMatrix(int[] outputColumns, double[] preAggregatedB, double[] c, int thatNrColumns, int
+	// rl,
+	// int ru) {
+	// for(int j = rl, off = rl * thatNrColumns; j < ru; j++, off += thatNrColumns) {
+	// int rowIdx = _data.getIndex(j);
+	// for(int k = 0; k < outputColumns.length; k++)
+	// c[off + outputColumns[k]] += preAggregatedB[rowIdx * outputColumns.length + k];
+	// }
 	// }
 
 	@Override
@@ -651,6 +650,5 @@ public class ColGroupDDC extends ColGroupValue {
 		sb.append(_data);
 		return sb.toString();
 	}
-
 
 }

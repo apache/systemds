@@ -30,13 +30,11 @@ import org.apache.commons.lang.NotImplementedException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.hops.OptimizerUtils;
-import org.apache.sysds.runtime.DMLCompressionException;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.CompressionSettings;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupConst;
-import org.apache.sysds.runtime.compress.colgroup.ColGroupUncompressed;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupValue;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
@@ -82,9 +80,10 @@ public class CLALibBinaryCellOp {
 		MatrixBlock that, MatrixValue thatValue, MatrixValue result, BinaryAccessType atype, boolean left) {
 		if(atype == BinaryAccessType.MATRIX_COL_VECTOR)
 			return binaryMVCol(m1, that, op, left);
-		else if(atype == BinaryAccessType.MATRIX_MATRIX){
-			if(that.isEmpty()){
-				ScalarOperator sop = left ? new LeftScalarOperator(op.fn, 0, -1) :  new RightScalarOperator(op.fn, 0, -1);
+		else if(atype == BinaryAccessType.MATRIX_MATRIX) {
+			if(that.isEmpty()) {
+				ScalarOperator sop = left ? new LeftScalarOperator(op.fn, 0, -1) : new RightScalarOperator(op.fn, 0,
+					-1);
 				return CLALibScalar.scalarOperations(sop, m1, result);
 			}
 			else if(that.isInSparseFormat())
@@ -157,7 +156,7 @@ public class CLALibBinaryCellOp {
 		if(op.fn instanceof Plus || op.fn instanceof Minus)
 			binaryMVPlusStack(m1, m2, ret, op, left);
 		else
-			throw new NotImplementedException(op + " not implemented for CLA");
+			throw new NotImplementedException(op + " not implemented for Overlapping CLA");
 
 	}
 
@@ -183,13 +182,7 @@ public class CLALibBinaryCellOp {
 		ArrayList<BinaryMVRowTask> tasks = new ArrayList<>();
 		try {
 			for(AColGroup grp : oldColGroups) {
-				if(grp instanceof ColGroupUncompressed) {
-					throw new DMLCompressionException("Not supported uncompressed Col Group for Binary MV");
-				}
-				else {
-					tasks.add(new BinaryMVRowTask(grp, v, sparseSafe, op, left));
-
-				}
+				tasks.add(new BinaryMVRowTask(grp, v, sparseSafe, op, left));
 			}
 
 			for(Future<AColGroup> f : pool.invokeAll(tasks))
@@ -245,8 +238,8 @@ public class CLALibBinaryCellOp {
 		boolean foundConst = false;
 		for(AColGroup grp : m1.getColGroups()) {
 			if(!m2.isEmpty() && !foundConst && grp instanceof ColGroupConst) {
-				ADictionary newDict = ((ColGroupValue) grp)
-					.applyBinaryRowOp(op.fn, m2.getDenseBlockValues(), false, left);
+				ADictionary newDict = ((ColGroupValue) grp).applyBinaryRowOp(op.fn, m2.getDenseBlockValues(), false,
+					left);
 				newColGroups.add(new ColGroupConst(grp.getColIndices(), m1.getNumRows(), newDict));
 				foundConst = true;
 			}
@@ -300,7 +293,8 @@ public class CLALibBinaryCellOp {
 		return ret;
 	}
 
-	private static MatrixBlock binaryMMDense(CompressedMatrixBlock m1, MatrixBlock m2, BinaryOperator op, boolean left) {
+	private static MatrixBlock binaryMMDense(CompressedMatrixBlock m1, MatrixBlock m2, BinaryOperator op,
+		boolean left) {
 
 		MatrixBlock ret = new MatrixBlock(m1.getNumRows(), m1.getNumColumns(), false, -1).allocateBlock();
 
@@ -333,7 +327,8 @@ public class CLALibBinaryCellOp {
 		return ret;
 	}
 
-	private static MatrixBlock binaryMMSparse(CompressedMatrixBlock m1, MatrixBlock m2, BinaryOperator op, boolean left) {
+	private static MatrixBlock binaryMMSparse(CompressedMatrixBlock m1, MatrixBlock m2, BinaryOperator op,
+		boolean left) {
 		throw new NotImplementedException("not implemented sparse Binary MM " + op.fn);
 	}
 
@@ -499,7 +494,7 @@ public class CLALibBinaryCellOp {
 				double[] _retDense = _ret.getDenseBlockValues();
 				double[] _m2Dense = _m2.getDenseBlockValues();
 				int nnz = 0;
-				int numCols = _m1.getNumColumns(); 
+				int numCols = _m1.getNumColumns();
 				int offset = _rl * numCols;
 				for(int row = _rl; row < _ru; row++) {
 					for(int col = 0; col < numCols; col++) {

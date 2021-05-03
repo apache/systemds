@@ -41,10 +41,12 @@ import org.apache.sysds.runtime.compress.colgroup.pre.MapPreAggregate;
 import org.apache.sysds.runtime.compress.utils.ABitmap;
 import org.apache.sysds.runtime.compress.utils.Bitmap;
 import org.apache.sysds.runtime.compress.utils.BitmapLossy;
+import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.functionobjects.Builtin.BuiltinCode;
 import org.apache.sysds.runtime.functionobjects.ValueFunction;
+import org.apache.sysds.runtime.matrix.data.LibMatrixReorg;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
 
@@ -863,6 +865,13 @@ public abstract class ColGroupValue extends ColGroupCompressed implements Clonea
 			return;
 		else if(lhs instanceof ColGroupValue)
 			leftMultByColGroupValue((ColGroupValue) lhs, result, numRows, numCols);
+		else if(lhs instanceof ColGroupUncompressed){
+			LOG.warn("Inefficient transpose of uncompressed to fit to template need t((compressedColGroup) %*% Uncompressed) support");
+			MatrixBlock ucCG = ((ColGroupUncompressed) lhs).getData();
+			MatrixBlock tmp = new MatrixBlock(ucCG.getNumColumns(), ucCG.getNumRows(), ucCG.isInSparseFormat());
+			LibMatrixReorg.transpose(ucCG,tmp,InfrastructureAnalyzer.getLocalParallelism());
+			leftMultByMatrix(tmp, result, numCols);
+		}
 		else
 			throw new DMLCompressionException(
 				"Not supported left multiplication with A ColGroup of type: " + lhs.getClass().getSimpleName());
@@ -1048,9 +1057,11 @@ public abstract class ColGroupValue extends ColGroupCompressed implements Clonea
 	 */
 	public void leftMultBySparseMatrix(SparseBlock sb, double[] result, double[] values, int numRows, int numCols,
 		int row) {
-		final int numVals = getNumValues();
-		double[] vals = preAggregateSparse(sb, row);
-		postScaling(values, vals, result, numVals, row, numCols);
+		if(!sb.isEmpty(row)) {
+			final int numVals = getNumValues();
+			double[] vals = preAggregateSparse(sb, row);
+			postScaling(values, vals, result, numVals, row, numCols);
+		}
 	}
 
 	public AColGroup rightMultByMatrix(MatrixBlock right) {

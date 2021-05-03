@@ -26,6 +26,8 @@ import java.util.Arrays;
 
 import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
+import org.apache.sysds.runtime.data.DenseBlock;
+import org.apache.sysds.runtime.data.DenseBlockFP64;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.functionobjects.ReduceAll;
@@ -199,6 +201,8 @@ public class ColGroupUncompressed extends AColGroup {
 		final int tCol = target.getNumColumns();
 		if(_data.isInSparseFormat()) {
 			SparseBlock sb = _data.getSparseBlock();
+			if(sb == null)
+				return;
 			for(int row = rl; row < ru; row++, offT += tCol) {
 				if(!sb.isEmpty(row)) {
 					int apos = sb.pos(row);
@@ -229,7 +233,25 @@ public class ColGroupUncompressed extends AColGroup {
 
 	@Override
 	public void decompressColumnToBlock(MatrixBlock target, int colpos) {
-		throw new NotImplementedException("Not Implemented");
+		double[] c = target.getDenseBlockValues();
+		int nnz = 0;
+		int off = colpos;
+		if(_data.isInSparseFormat()) {
+			for(int i = 0; i < _data.getNumRows(); i++) {
+				c[i] += _data.quickGetValue(i, colpos);
+				if(c[i] != 0)
+					nnz++;
+			}
+		}
+		else {
+			double[] denseValues = _data.getDenseBlockValues();
+			for(int i = 0; i < _data.getNumRows(); i++, off += _colIndexes.length) {
+				c[i] += denseValues[off];
+				if(c[i] != 0)
+					nnz++;
+			}
+		}
+		target.setNonZeros(nnz);
 	}
 
 	@Override
@@ -303,7 +325,7 @@ public class ColGroupUncompressed extends AColGroup {
 			return;
 		if(tmpRet.isInSparseFormat()) {
 			SparseBlock sb = tmpRet.getSparseBlock();
-			for(int rowIdx = 0; rowIdx < ru-rl; rowIdx++,offT += numCols) {
+			for(int rowIdx = 0; rowIdx < ru - rl; rowIdx++, offT += numCols) {
 				if(!sb.isEmpty(rowIdx)) {
 					final int apos = sb.pos(rowIdx);
 					final int alen = sb.size(rowIdx) + apos;
@@ -316,7 +338,7 @@ public class ColGroupUncompressed extends AColGroup {
 		}
 		else {
 			double[] tmpRetV = tmpRet.getDenseBlockValues();
-			for(int j = rl, offTemp = 0; j < ru; j++, offTemp += _colIndexes.length, offT += numCols){
+			for(int j = rl, offTemp = 0; j < ru; j++, offTemp += _colIndexes.length, offT += numCols) {
 				for(int i = 0; i < _colIndexes.length; i++)
 					result[offT + _colIndexes[i]] += tmpRetV[offTemp + i];
 			}
@@ -357,7 +379,15 @@ public class ColGroupUncompressed extends AColGroup {
 
 	@Override
 	public AColGroup binaryRowOp(BinaryOperator op, double[] v, boolean sparseSafe, boolean left) {
-		throw new NotImplementedException("Should not be called use other matrix function for uncompressed columns");
+		DenseBlock b = new DenseBlockFP64(new int[] {1, v.length}, v);
+		MatrixBlock that = new MatrixBlock(1, v.length, b);
+		that.setNonZeros(v.length);
+		MatrixBlock resultBlock = new MatrixBlock();
+		if(left)
+			that.binaryOperations(op, _data, resultBlock);
+		else
+			_data.binaryOperations(op, that, resultBlock);
+		return new ColGroupUncompressed(_colIndexes, resultBlock, false);
 	}
 
 	public void unaryAggregateOperations(AggregateUnaryOperator op, double[] ret) {
@@ -479,7 +509,8 @@ public class ColGroupUncompressed extends AColGroup {
 	public double[] getValues() {
 		if(_data.isInSparseFormat()) {
 			SparseBlock sb = _data.getSparseBlock();
-			if(sb.isEmpty(0))
+
+			if(sb == null || sb.isEmpty(0))
 				return null;
 			else
 				return _data.getSparseBlock().values(0);

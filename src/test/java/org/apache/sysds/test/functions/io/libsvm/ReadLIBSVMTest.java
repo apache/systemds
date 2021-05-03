@@ -23,30 +23,34 @@ import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.conf.CompilerConfig;
 import org.apache.sysds.test.TestConfiguration;
+import org.apache.sysds.test.TestUtils;
 import org.junit.Test;
 
 public abstract class ReadLIBSVMTest extends ReadLIBSVMTestBase {
 
 	protected abstract int getId();
 
+	protected abstract LIBSVMConfig getLIBSVMConfig();
+
 	protected String getInputLIBSVMFileName() {
 		return "transfusion_" + getId() + ".libsvm";
 	}
 
-	@Test
-	public void testlibsvm1_Seq_CP() {
-		runlibsvmTest(getId(), ExecMode.SINGLE_NODE, false);
+	private final static double eps = 1e-9;
+
+	@Test public void testlibsvm1_Seq_CP() {
+		runlibsvmTest(getId(), ExecMode.SINGLE_NODE, false, getLIBSVMConfig());
 	}
 
 	@Test public void testlibsvm2_Pllel_CP() {
-		runlibsvmTest(getId(), ExecMode.SINGLE_NODE, true);
+		runlibsvmTest(getId(), ExecMode.SINGLE_NODE, true, getLIBSVMConfig());
 	}
 
 	@Test public void testlibsvm3_SP() {
-		runlibsvmTest(getId(), ExecMode.SPARK, false);
+		runlibsvmTest(getId(), ExecMode.SPARK, false, getLIBSVMConfig());
 	}
 
-	protected void runlibsvmTest(int testNumber, ExecMode platform, boolean parallel) {
+	protected void runlibsvmTest(int testNumber, ExecMode platform, boolean parallel, LIBSVMConfig libsvmConfig) {
 		ExecMode oldPlatform = rtplatform;
 		rtplatform = platform;
 
@@ -56,8 +60,7 @@ public abstract class ReadLIBSVMTest extends ReadLIBSVMTestBase {
 
 		boolean oldpar = CompilerConfig.FLAG_PARREADWRITE_TEXT;
 
-		try
-		{
+		try {
 			CompilerConfig.FLAG_PARREADWRITE_TEXT = parallel;
 
 			TestConfiguration config = getTestConfiguration(getTestName());
@@ -66,10 +69,26 @@ public abstract class ReadLIBSVMTest extends ReadLIBSVMTestBase {
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			String inputMatrix = HOME + INPUT_DIR + getInputLIBSVMFileName();
 			String dmlOutput = output("dml.scalar");
+			String rOutput = output("R.scalar");
+			String sep = libsvmConfig.getOutSep();
+			String indSep = libsvmConfig.getOutIndSep();
 
 			fullDMLScriptName = HOME + getTestName() + "_" + testNumber + ".dml";
-			programArgs = new String[]{"-explain", "hops", "-args", inputMatrix, dmlOutput};
+			programArgs = new String[] {"-explain", "hops", "-args", inputMatrix, dmlOutput};
 			runTest(true, false, null, -1);
+
+			fullRScriptName = HOME + "libsvm_verify.R";
+
+			if(sep.equals(" ")) {
+				sep = "NULL";
+			}
+			rCmd = "Rscript" + " " + fullRScriptName + " " + inputMatrix + " " + libsvmConfig
+				.getColCount() + " " + sep + " " + indSep + " " + rOutput;
+			runRScript(true);
+
+			double dmlScalar = TestUtils.readDMLScalar(dmlOutput);
+			double rScalar = TestUtils.readRScalar(rOutput);
+			TestUtils.compareScalars(dmlScalar, rScalar, eps);
 		}
 		finally {
 			rtplatform = oldPlatform;

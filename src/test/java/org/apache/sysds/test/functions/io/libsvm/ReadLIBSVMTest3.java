@@ -35,4 +35,8 @@ public class ReadLIBSVMTest3 extends ReadLIBSVMTest {
 	protected int getId() {
 		return 3;
 	}
+
+	protected LIBSVMConfig getLIBSVMConfig() {
+		return new LIBSVMConfig(" ", ":", 2, " ", ":");
+	}
 }

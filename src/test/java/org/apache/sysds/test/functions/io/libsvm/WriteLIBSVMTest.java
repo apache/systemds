@@ -95,7 +95,7 @@ public abstract class WriteLIBSVMTest extends WriteLIBSVMTestBase {
 
 			runTest(true, false, null, -1);
 
-			fullRScriptName = HOME + "writelibsvm_verify.R";
+			fullRScriptName = HOME + "libsvm_verify.R";
 
 			// the R scripts can't read HFDS file systems, so for the spark test
 			// we just read the original file stream and calc the sum of the cells.

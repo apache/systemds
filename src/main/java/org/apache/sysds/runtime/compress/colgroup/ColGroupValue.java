@@ -865,11 +865,12 @@ public abstract class ColGroupValue extends ColGroupCompressed implements Clonea
 			return;
 		else if(lhs instanceof ColGroupValue)
 			leftMultByColGroupValue((ColGroupValue) lhs, result, numRows, numCols);
-		else if(lhs instanceof ColGroupUncompressed){
-			LOG.warn("Inefficient transpose of uncompressed to fit to template need t((compressedColGroup) %*% Uncompressed) support");
+		else if(lhs instanceof ColGroupUncompressed) {
+			LOG.warn(
+				"Inefficient transpose of uncompressed to fit to template need t((compressedColGroup) %*% Uncompressed) support");
 			MatrixBlock ucCG = ((ColGroupUncompressed) lhs).getData();
 			MatrixBlock tmp = new MatrixBlock(ucCG.getNumColumns(), ucCG.getNumRows(), ucCG.isInSparseFormat());
-			LibMatrixReorg.transpose(ucCG,tmp,InfrastructureAnalyzer.getLocalParallelism());
+			LibMatrixReorg.transpose(ucCG, tmp, InfrastructureAnalyzer.getLocalParallelism());
 			leftMultByMatrix(tmp, result, numCols);
 		}
 		else
@@ -1051,6 +1052,7 @@ public abstract class ColGroupValue extends ColGroupCompressed implements Clonea
 	 * 
 	 * @param sb      The sparse block to multiply with
 	 * @param result  The linearized output matrix
+	 * @param values  The values contained in the dictionary, this parameter is here to allow materialization once.
 	 * @param numRows The number of rows in the left hand side input matrix (the sparse one)
 	 * @param numCols The number of columns in the compression.
 	 * @param row     The row index of the sparse row to multiply with.

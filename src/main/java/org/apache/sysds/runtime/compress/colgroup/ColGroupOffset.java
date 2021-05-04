@@ -24,9 +24,7 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.util.Arrays;
 
-import org.apache.sysds.runtime.compress.CompressionSettings;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
-import org.apache.sysds.runtime.compress.utils.ABitmap;
 import org.apache.sysds.runtime.compress.utils.LinearAlgebraUtils;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 
@@ -51,18 +49,6 @@ public abstract class ColGroupOffset extends ColGroupValue {
 	 */
 	protected ColGroupOffset(int numRows) {
 		super(numRows);
-	}
-
-	/**
-	 * Main constructor. Stores the headers for the individual bitmaps.
-	 * 
-	 * @param colIndices indices (within the block) of the columns included in this column
-	 * @param numRows    total number of rows in the parent block
-	 * @param ubm        Uncompressed bitmap representation of the block
-	 * @param cs         The Compression settings used for compression
-	 */
-	protected ColGroupOffset(int[] colIndices, int numRows, ABitmap ubm, CompressionSettings cs) {
-		super(colIndices, numRows, ubm, cs);
 	}
 
 	protected ColGroupOffset(int[] colIndices, int numRows, boolean zeros, ADictionary dict, int[] cachedCounts) {

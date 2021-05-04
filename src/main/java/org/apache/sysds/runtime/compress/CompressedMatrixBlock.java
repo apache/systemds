@@ -199,7 +199,11 @@ public class CompressedMatrixBlock extends MatrixBlock {
 		Timing time = new Timing(true);
 
 		// preallocation sparse rows to avoid repeated reallocations
-		MatrixBlock ret = new MatrixBlock(rlen, clen, false, -1);
+		MatrixBlock ret = getUncompressedColGroupAndRemoveFromListOfColGroups();
+		if(ret != null && getColGroups().size() == 0)
+			return ret;
+		else if(ret == null)
+			ret = new MatrixBlock(rlen, clen, false, -1);
 
 		ret.allocateDenseBlock();
 		decompress(ret);
@@ -244,7 +248,11 @@ public class CompressedMatrixBlock extends MatrixBlock {
 			return decompress();
 
 		Timing time = new Timing(true);
-		MatrixBlock ret = new MatrixBlock(rlen, clen, false, -1).allocateBlock();
+		MatrixBlock ret = getUncompressedColGroupAndRemoveFromListOfColGroups();
+		if(ret != null && getColGroups().size() == 0)
+			return ret;
+		else if(ret == null)
+			ret = new MatrixBlock(rlen, clen, false, -1);
 		ret.allocateDenseBlock();
 		decompress(ret, k);
 
@@ -258,19 +266,13 @@ public class CompressedMatrixBlock extends MatrixBlock {
 	}
 
 	public MatrixBlock decompress(MatrixBlock ret, int k) {
-
-		if(nonZeros == -1)
-			ret.setNonZeros(this.recomputeNonZeros());
-		else
-			ret.setNonZeros(nonZeros);
 		try {
 			ExecutorService pool = CommonThreadPool.get(k);
 			int rlen = getNumRows();
 			final int blkz = CompressionSettings.BITMAP_BLOCK_SZ;
-			int blklen = (int) Math.ceil((double) rlen / k);
-			blklen += (blklen % blkz != 0) ? blkz - blklen % blkz : 0;
+			int blklen = (int) Math.max(64, Math.ceil((double) (blkz) / getNumColumns()));
 			ArrayList<DecompressTask> tasks = new ArrayList<>();
-			for(int i = 0; i < k & i * blklen < getNumRows(); i++)
+			for(int i = 0; i * blklen < getNumRows(); i++)
 				tasks.add(new DecompressTask(_colGroups, ret, i * blklen, Math.min((i + 1) * blklen, rlen),
 					overlappingColGroups));
 			List<Future<Long>> rtasks = pool.invokeAll(tasks);
@@ -285,6 +287,34 @@ public class CompressedMatrixBlock extends MatrixBlock {
 			ret.recomputeNonZeros();
 			ret.examSparsity();
 		}
+		else if(nonZeros == -1)
+			ret.setNonZeros(this.recomputeNonZeros());
+		else
+			ret.setNonZeros(nonZeros);
+		return ret;
+	}
+
+	private MatrixBlock getUncompressedColGroupAndRemoveFromListOfColGroups() {
+		// If we have a uncompressed column group that covers all of the matrix,
+		// it makes sense to use as the decompression target.
+		MatrixBlock ret = null;
+		// It is only relevant if we are in overlapping state, or we only have a Uncompressed ColumnGroup left.
+		if(isOverlapping() || _colGroups.size() == 1) {
+			for(int i = 0; i < _colGroups.size(); i++) {
+				AColGroup g = _colGroups.get(i);
+				if(g instanceof ColGroupUncompressed) {
+					// Find an Uncompressed ColumnGroup
+					ColGroupUncompressed guc = (ColGroupUncompressed) g;
+					MatrixBlock gMB = guc.getData();
+					// Make sure that it is the correct dimensions
+					if(gMB.getNumColumns() == this.getNumColumns() && gMB.getNumRows() == this.getNumRows()) {
+						_colGroups.remove(i);
+						return gMB;
+					}
+				}
+			}
+		}
+
 		return ret;
 	}
 
@@ -480,21 +510,22 @@ public class CompressedMatrixBlock extends MatrixBlock {
 
 		// compute matrix mult
 
-		boolean tryOverlapOutput = v.getNumColumns() > _colGroups.size() && w != null && w.getNumRows() > 1;
-		MatrixBlock tmp = CLALibRightMultBy.rightMultByMatrix(this, v, null, k, tryOverlapOutput);
+		// boolean tryOverlapOutput = v.getNumColumns() > _colGroups.size();
+		MatrixBlock tmp = CLALibRightMultBy.rightMultByMatrix(this, v, null, k, true);
 
-		if(tmp instanceof CompressedMatrixBlock) {
-			CompressedMatrixBlock tmpC = (CompressedMatrixBlock) tmp;
-			if(ctype == ChainType.XtwXv)
-				tmpC = (CompressedMatrixBlock) CLALibBinaryCellOp.binaryOperations(bop, tmpC, w, null);
-			tmp = tmpC.decompress(k);
+		if(ctype == ChainType.XtwXv) {
+			if(tmp instanceof CompressedMatrixBlock)
+				tmp = CLALibBinaryCellOp.binaryOperations(bop, (CompressedMatrixBlock) tmp, w, null);
+			else
+				LibMatrixBincell.bincellOpInPlace(tmp, w, bop);
 		}
-		else if(ctype == ChainType.XtwXv)
-			LibMatrixBincell.bincellOpInPlace(tmp, w, bop);
 
-		CLALibLeftMultBy.leftMultByMatrixTransposed(this, tmp, out, k);
+		if(tmp instanceof CompressedMatrixBlock)
+			CLALibLeftMultBy.leftMultByMatrixTransposed(this, (CompressedMatrixBlock) tmp, out, k);
+		else
+			CLALibLeftMultBy.leftMultByMatrixTransposed(this, tmp, out, k);
+
 		out = LibMatrixReorg.transposeInPlace(out, k);
-
 		out.recomputeNonZeros();
 		return out;
 	}

@@ -164,7 +164,7 @@ public abstract class ADictionary {
 	 * 
 	 * @return the long count of bytes to store the dictionary.
 	 */
-	public long getExactSizeOnDisk(){
+	public long getExactSizeOnDisk() {
 		return 1;
 	}
 
@@ -212,13 +212,15 @@ public abstract class ADictionary {
 	 */
 	public abstract double sumRow(int k, boolean square, int nrColumns);
 
+	public abstract double[] colSum(int[] counts, int nCol);
+
 	public abstract void colSum(double[] c, int[] counts, int[] colIndexes, boolean square);
 
 	public abstract double sum(int[] counts, int ncol);
 
 	public abstract double sumsq(int[] counts, int ncol);
 
-	public abstract StringBuilder getString(StringBuilder sb, int colIndexes);
+	public abstract String getString(int colIndexes);
 
 	/**
 	 * This method adds the max and min values contained in the dictionary to corresponding cells in the ret variable.
@@ -252,6 +254,8 @@ public abstract class ADictionary {
 
 	public abstract long getNumberNonZeros(int[] counts, int nCol);
 
+	public abstract long getNumberNonZerosContained();
+
 	/**
 	 * Copies and adds the dictionary entry from this dictionary to the d dictionary
 	 * 
@@ -268,4 +272,23 @@ public abstract class ADictionary {
 		else
 			return new Dictionary(((Bitmap) ubm).getValues());
 	}
+
+	/**
+	 * Get the most common tuple element contained in the dictionary
+	 * 
+	 * returns null if that tuple is all zero values.
+	 * 
+	 * @param counts The counts of the individual tuples contained, managed by the column group.
+	 * @return a new double array containing the most common value
+	 */
+	public abstract double[] getMostCommonTuple(int[] counts, int nCol);
+
+	/**
+	 * Allocate a new dictionary where the tuple given is subtracted from all tuples in the previous dictionary.
+	 * 
+	 * @param tuple a double list representing a tuple, it is given that the tuple with is the same as this
+	 *              dictionaries.
+	 * @return a new instance of dictionary with the tuple subtracted.
+	 */
+	public abstract ADictionary subtractTuple(double[] tuple);
 }

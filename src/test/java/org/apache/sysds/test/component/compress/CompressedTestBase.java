@@ -75,29 +75,17 @@ import org.junit.runners.Parameterized.Parameters;
 public abstract class CompressedTestBase extends TestBase {
 	protected static final Log LOG = LogFactory.getLog(CompressedTestBase.class.getName());
 
-	protected static SparsityType[] usedSparsityTypes = new SparsityType[] {SparsityType.FULL,
-		// SparsityType.DENSE,
-		SparsityType.SPARSE,
-		// SparsityType.ULTRA_SPARSE,
-		// SparsityType.EMPTY
-	};
+	protected static SparsityType[] usedSparsityTypes = new SparsityType[] {SparsityType.FULL, SparsityType.SPARSE,};
 
-	protected static ValueType[] usedValueTypes = new ValueType[] {
-		// ValueType.RAND,
-		// ValueType.CONST,
-		ValueType.RAND_ROUND, ValueType.OLE_COMPRESSIBLE, ValueType.RLE_COMPRESSIBLE,};
+	protected static ValueType[] usedValueTypes = new ValueType[] {ValueType.RAND_ROUND, ValueType.OLE_COMPRESSIBLE,
+		ValueType.RLE_COMPRESSIBLE,};
 
 	protected static ValueRange[] usedValueRanges = new ValueRange[] {ValueRange.SMALL, ValueRange.NEGATIVE,
-		// ValueRange.LARGE,
-		ValueRange.BYTE,
-		// ValueRange.BOOLEAN,
-	};
+		ValueRange.BYTE};
 
 	protected static OverLapping[] overLapping = new OverLapping[] {
 		// OverLapping.COL,
-		OverLapping.PLUS,
-		OverLapping.MATRIX,
-		OverLapping.NONE,
+		OverLapping.PLUS, OverLapping.MATRIX, OverLapping.NONE,
 		// OverLapping.MATRIX_PLUS,
 		// OverLapping.SQUASH,
 		// OverLapping.MATRIX_MULT_NEGATIVE
@@ -129,14 +117,17 @@ public abstract class CompressedTestBase extends TestBase {
 			.setInvestigateEstimate(true),
 		new CompressionSettingsBuilder().setSamplingRatio(0.1).setSeed(compressionSeed).setTransposeInput("true")
 			.setColumnPartitioner(PartitionerType.BIN_PACKING).setInvestigateEstimate(true),
+		new CompressionSettingsBuilder().setSamplingRatio(0.1).setSeed(compressionSeed).setTransposeInput("true")
+			.setColumnPartitioner(PartitionerType.STATIC).setInvestigateEstimate(true),
 
+		// Forced Uncompressed tests
 		new CompressionSettingsBuilder().setValidCompressions(EnumSet.of(CompressionType.UNCOMPRESSED)),
 
 		// new CompressionSettingsBuilder().setSamplingRatio(0.1).setSeed(compressionSeed).setInvestigateEstimate(true),
 		// new CompressionSettingsBuilder().setSamplingRatio(1.0).setSeed(compressionSeed).setInvestigateEstimate(true)
 		// .setAllowSharedDictionary(false).setmaxStaticColGroupCoCode(1),
 
-		// // // // LOSSY TESTS!
+		// LOSSY TESTS!
 
 		// new CompressionSettingsBuilder().setSamplingRatio(0.1).setSeed(compressionSeed)
 		// .setValidCompressions(EnumSet.of(CompressionType.DDC)).setInvestigateEstimate(true).setLossy(true).create(),
@@ -149,7 +140,7 @@ public abstract class CompressedTestBase extends TestBase {
 		// new CompressionSettingsBuilder().setSamplingRatio(1.0).setSeed(compressionSeed).setInvestigateEstimate(true)
 		// .setAllowSharedDictionary(false).setmaxStaticColGroupCoCode(1).setLossy(true).create(),
 
-		// COCODING TESTS!!
+		// CO CODING TESTS!!
 
 		// new CompressionSettingsBuilder().setSamplingRatio(1.0).setSeed(compressionSeed).setInvestigateEstimate(true)
 		// .setAllowSharedDDCDictionary(false).setmaxStaticColGroupCoCode(20).create(),
@@ -176,8 +167,6 @@ public abstract class CompressedTestBase extends TestBase {
 	protected CompressionStatistics cmbStats;
 
 	// Decompressed Result
-	// protected MatrixBlock cmbDeCompressed;
-	// protected double[][] deCompressed;
 
 	/** number of threads used for the operation */
 	protected final int _k;
@@ -296,6 +285,12 @@ public abstract class CompressedTestBase extends TestBase {
 						for(MatrixTypology mt : usedMatrixTypology)
 							for(OverLapping ov : overLapping)
 								tests.add(new Object[] {st, vt, vr, cs, mt, ov});
+		for(CompressionSettingsBuilder cs : usedCompressionSettings)
+			for(MatrixTypology mt : usedMatrixTypology)
+				for(OverLapping ov : overLapping) {
+					tests.add(new Object[] {SparsityType.EMPTY, ValueType.RAND, ValueRange.BOOLEAN, cs, mt, ov});
+					tests.add(new Object[] {SparsityType.FULL, ValueType.CONST, ValueRange.LARGE, cs, mt, ov});
+				}
 		return tests;
 	}
 

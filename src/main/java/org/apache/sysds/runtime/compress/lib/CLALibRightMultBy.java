@@ -32,7 +32,8 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup;
-import org.apache.sysds.runtime.compress.colgroup.ColGroupValue;
+import org.apache.sysds.runtime.compress.colgroup.ColGroupCompressed;
+import org.apache.sysds.runtime.compress.colgroup.ColGroupUncompressed;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.CommonThreadPool;
 
@@ -58,34 +59,52 @@ public class CLALibRightMultBy {
 		if(m instanceof CompressedMatrixBlock)
 			if(allowOverlappingOutput(colGroups, allowOverlap))
 				return m;
-			else
-				return ((CompressedMatrixBlock) m).decompress(k);
+			else {
+				CompressedMatrixBlock outBlock = (CompressedMatrixBlock) m;
+				ColGroupUncompressed uccg = findUncompressedColGroup(outBlock.getColGroups());
+				if(uccg == null)
+					return outBlock.decompress(k);
+				else{
+					MatrixBlock outputBlock = uccg.getData();
+					outputBlock.sparseToDense();
+					return outBlock.decompress(outputBlock, k);
+				}
+			}
 		else
 			return m;
 	}
 
+	private static ColGroupUncompressed findUncompressedColGroup(List<AColGroup> colGroups){
+		for(AColGroup g: colGroups){
+			if(g instanceof ColGroupUncompressed)
+				return (ColGroupUncompressed) g;
+		}
+		return null;
+	}
+
 	private static boolean allowOverlappingOutput(List<AColGroup> colGroups, boolean allowOverlap) {
+		
 		if(!allowOverlap) {
 			LOG.debug("Not Overlapping because it is not allowed");
 			return false;
 		}
-		int distinctCount = 0;
-		for(AColGroup g : colGroups) {
-			if(g instanceof ColGroupValue) {
-				distinctCount += ((ColGroupValue) g).getNumValues();
-			}
-			else {
-				LOG.debug("Not Overlapping because there is an un-compressible column group");
-				return false;
-			}
-		}
-		final int threshold = colGroups.get(0).getNumRows() / 2;
-		boolean allow = distinctCount <= threshold;
-		if(LOG.isDebugEnabled() && !allow)
-			LOG.debug("Not Allowing Overlap because of number of distinct items in compression: " + distinctCount
-				+ " is greater than threshold: " + threshold);
-
-		return allow;
+		else
+			return true;
+		// int distinctCount = 0;
+		// for(AColGroup g : colGroups) {
+		// 	if(g instanceof ColGroupCompressed)
+		// 		distinctCount += ((ColGroupCompressed) g).getNumValues();
+		// 	else {
+		// 		LOG.debug("Not Overlapping because there is an un-compressed column group");
+		// 		return false;
+		// 	}
+		// }
+		// final int threshold = colGroups.get(0).getNumRows() / 2;
+		// boolean allow = distinctCount <= threshold;
+		// if(LOG.isDebugEnabled() && !allow)
+		// 	LOG.debug("Not Allowing Overlap because of number of distinct items in compression: " + distinctCount
+		// 		+ " is greater than threshold: " + threshold);
+		// return allow;
 
 	}
 
@@ -114,8 +133,11 @@ public class CLALibRightMultBy {
 				List<Callable<AColGroup>> tasks = new ArrayList<>(colGroups.size());
 				for(AColGroup g : colGroups)
 					tasks.add(new RightMatrixMultTask(g, that));
-				for(Future<AColGroup> fg : pool.invokeAll(tasks))
-					retCg.add(fg.get());
+				for(Future<AColGroup> fg : pool.invokeAll(tasks)){
+					AColGroup g = fg.get();
+					if(g != null)
+						retCg.add(g);
+				}
 			}
 			catch(InterruptedException | ExecutionException e) {
 				throw new DMLRuntimeException(e);

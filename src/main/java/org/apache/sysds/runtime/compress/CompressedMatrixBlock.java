@@ -257,7 +257,7 @@ public class CompressedMatrixBlock extends MatrixBlock {
 		return ret;
 	}
 
-	private MatrixBlock decompress(MatrixBlock ret, int k) {
+	public MatrixBlock decompress(MatrixBlock ret, int k) {
 
 		if(nonZeros == -1)
 			ret.setNonZeros(this.recomputeNonZeros());
@@ -279,9 +279,7 @@ public class CompressedMatrixBlock extends MatrixBlock {
 				rt.get();
 		}
 		catch(InterruptedException | ExecutionException ex) {
-			LOG.error("Parallel decompression failed defaulting to non parallel implementation " + ex.getMessage());
-			ex.printStackTrace();
-			return decompress();
+			throw new DMLCompressionException("Parallel decompression failed", ex);
 		}
 		if(this.isOverlapping()) {
 			ret.recomputeNonZeros();

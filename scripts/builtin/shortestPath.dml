@@ -1,0 +1,157 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+#
+# Computes the minimum distances (shortest-path) between a single 
+# source vertex and every other vertex in the graph.
+# 
+# Documentation; "Pregel: A System for Large-Scale Graph Processing"
+# Grzegorz Malewicz, Matthew H. Austern, Aart J. C. Bilk, 
+# James C. Dehnert, Ikkan Horn, Naty Leiser and Grzegorz Czajkowski
+#
+#
+#
+#----------------------------------
+# *******INPUT PARAMETERS*********
+#----------------------------------
+#
+#	- Adjacency matrix of the labeled graph 
+#	(also considered directed labeled graphs)
+# 	
+#----------------------------------
+# *******OUTPUT PARAMETERS*********
+#----------------------------------
+#	- Matrix of minimum distances (shortest-path) between vertices
+#	(the value of the ith row and the jth column of the output matrix is 
+#	the minimum distance shortest-path from vertex i to vertex j)
+#	- When the value of the minimum distance is -1, the two nodes are not
+#	connected.
+#
+#----------------------------------
+# *******INTERMEDIATE ELEMENTS*********
+#----------------------------------
+#
+#	- neighboursList: matrix (double) of nx3 dimensions, when the minimum 
+#	distance from the source node to a given node is updated,the following
+#	information will be contained in this matrix. Each row represents one 
+#	different update.
+#		- First column: predecesor node which information about the minimum 
+#		distance from the source node has been updated.
+#		- Second column: neighbour that will receive the information in the 
+#		current superstep.
+#		- Third column: updated minimum distance from the source node to the
+#		 node in the first column.
+#	- neighboursListTmp: matrix (double) of nx3 dimensions, during each superstep,
+#	the information about the new updates (not needed until the following superstep)
+#	will be saved in this matrix.
+#
+#
+#
+
+
+s_shortestPath = function(Matrix[Double] G) 
+  return (Matrix[Double] C) 
+{
+	
+	print("SHORTEST PATH CALCULATION");
+
+	if(min(G) < 0){
+		stop("All values in G must be positive")
+	}
+	
+	if(ncol(G) != nrow(G)){
+		stop("Not correct matrix dimensions")
+	}
+	
+	matrixSize = nrow(G)
+	infValue = sum(rowSums(G)) + 1 # value representing infinity, i.e. the nodes are not connected
+	
+	# initialize the matrix of minimum distances with "infinity" values:
+	minDistMatrix = matrix(infValue,rows=matrixSize,cols=matrixSize)
+	
+	for (sourceNode in 1:matrixSize){ 
+		
+		# update minimum distance from the sourceNode to itself to 0:
+		minDistMatrix[sourceNode,sourceNode] = 0
+		
+		# initialize the matrix neighboursList and neighboursListTmp:
+		neighboursList  = matrix(0,matrixSize,3)
+		neighboursListTmp = matrix(0,matrixSize*matrixSize,3)
+		
+		# find the neighbours of the sourceNode and fill in the neighboursList:
+		nodeIdx = 1
+		for(ineighbour in 1:matrixSize){
+			if (as.integer(as.scalar(G[sourceNode,ineighbour]))>0 & (ineighbour!=sourceNode)){ 
+				neighboursList[nodeIdx,1] = sourceNode
+				neighboursList[nodeIdx,2] = ineighbour
+				nodeIdx = nodeIdx+1
+			}
+		}
+		
+		
+		while( as.integer(as.scalar(neighboursList[1,1])) > 0 ){ # loop of supersteps (see documentation)
+			rawIdx = 1
+			nodeIdx=1		
+			
+			while( as.integer(as.scalar(neighboursList[rawIdx,1])) > 0 ){ # loop over the raws of neighboursList, i.e. updates of the previous superstep
+				
+				# define the currentNode, previousNode and cumulativeMinimumDistance from the corresponding raw of neighboursList:
+				currentNode = as.integer(as.scalar(neighboursList[rawIdx,2])) 
+				previousNode = as.integer(as.scalar(neighboursList[rawIdx,1])) 
+				cumulativeMinimumDistance = as.integer(as.scalar(neighboursList[rawIdx,3]))
+				
+				# consider if the minimum distance from the source node to the current node can be updated:
+				potentialMinimumDistance = cumulativeMinimumDistance + as.integer(as.scalar(G[previousNode,currentNode]))
+				if (potentialMinimumDistance < as.integer(as.scalar(minDistMatrix[sourceNode,currentNode]))){
+					minDistMatrix[sourceNode,currentNode] = potentialMinimumDistance
+	
+					# find the neighbours of currentNode to send them the updated information:
+					for(ineighbour in 1:matrixSize){
+						if (as.integer(as.scalar(G[currentNode,ineighbour]))>0 & (ineighbour!=sourceNode)){ 
+							neighboursListTmp[nodeIdx,1] = currentNode
+							neighboursListTmp[nodeIdx,2] = ineighbour
+							neighboursListTmp[nodeIdx,3] = potentialMinimumDistance
+							nodeIdx = nodeIdx+1
+						}
+					}
+				}
+				rawIdx=rawIdx+1
+			}
+			
+			# update neighboursList and neighboursListTmp for the next superstep:
+			neighboursList = neighboursListTmp
+			neighboursListTmp = matrix(0,matrixSize*matrixSize,3)
+		}	
+	}
+	
+	# define the distance between the not connected nodes as -1:
+	
+	for (irow in 1:matrixSize){
+		for (icol in 1:matrixSize){
+			if (as.integer(as.scalar(minDistMatrix[irow,icol]))==infValue){
+				minDistMatrix[irow,icol] = -1
+			}
+		}
+	}
+	
+	C=minDistMatrix
+	print("SHORTEST PATH CALCULATION FINISHED, CHECK OUTPUT MATRIX OF MINIMUM DISTANCES");
+}
+

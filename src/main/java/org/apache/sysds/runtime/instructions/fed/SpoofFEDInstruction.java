@@ -63,12 +63,6 @@ public class SpoofFEDInstruction extends FEDInstruction
 		_inputs = in;
 		_output = out;
 	}
-	
-	public enum SpoofType {
-		CELLWISE,
-		ROWWISE,
-		UNKNOWN
-	}
 
 	public static SpoofFEDInstruction parseInstruction(String str)
 	{
@@ -89,6 +83,20 @@ public class SpoofFEDInstruction extends FEDInstruction
 	@Override
 	public void processInstruction(ExecutionContext ec)
 	{
+		Class<?> opSupClass = _op.getClass().getSuperclass();
+		SpoofFEDType spoofType = null;
+		if(opSupClass == SpoofCellwise.class)
+			spoofType = new SpoofFEDCellwise(_op, _output);
+		else if(opSupClass == SpoofRowwise.class)
+			spoofType = new SpoofFEDRowwise(_op, _output);
+		else if(opSupClass == SpoofMultiAggregate.class)
+			spoofType = new SpoofFEDMultiAgg(_op, _output);
+		else if(opSupClass == SpoofOuterProduct.class)
+			spoofType = new SpoofFEDOuterProduct(_op, _output);
+		else
+			throw new DMLRuntimeException("Federated code generation only supported for cellwise, rowwise, and multiaggregate templates.");
+
+
 		ArrayList<CPOperand> inCpoMat = new ArrayList<>();
 		ArrayList<CPOperand> inCpoScal = new ArrayList<>();
 		ArrayList<MatrixObject> inMo = new ArrayList<>();
@@ -120,7 +128,7 @@ public class SpoofFEDInstruction extends FEDInstruction
 		int index = 0;
 		frIds[index++] = fedMap.getID(); // insert federation map id at the beginning
 		for(MatrixObject mo : inMo) {
-			if(needsBroadcastSliced(fedMap, mo.getNumRows(), mo.getNumColumns())) {
+			if(spoofType.needsBroadcastSliced(fedMap, mo.getNumRows(), mo.getNumColumns())) {
 				FederatedRequest[] tmpFr = fedMap.broadcastSliced(mo, false);
 				frIds[index++] = tmpFr[0].getID();
 				frBroadcastSliced.add(tmpFr);
@@ -159,218 +167,274 @@ public class SpoofFEDInstruction extends FEDInstruction
 		Future<FederatedResponse>[] response = fedMap.executeMultipleSlices(
 			getTID(), true, frBroadcastSliced.toArray(new FederatedRequest[0][]), frAll);
 
-		if(_op.getClass().getSuperclass() == SpoofCellwise.class)
-			setOutputCellwise(ec, response, fedMap);
-		else if(_op.getClass().getSuperclass() == SpoofRowwise.class)
-			setOutputRowwise(ec, response, fedMap);
-		else if(_op.getClass().getSuperclass() == SpoofMultiAggregate.class)
-			setOutputMultiAgg(ec, response, fedMap);
-		else if(_op.getClass().getSuperclass() == SpoofOuterProduct.class)
-			setOutputOuterProduct(ec, response, fedMap);
-		else
-			throw new DMLRuntimeException("Federated code generation only supported for cellwise, rowwise, and multiaggregate templates.");
+		// setting the output with respect to the different aggregation types of
+		//   the different spoof templates
+		spoofType.setOutput(ec, response, fedMap);
 	}
 
-	private static boolean needsBroadcastSliced(FederationMap fedMap, long rowNum, long colNum) {
-		if(rowNum == fedMap.getMaxIndexInRange(0) && colNum == fedMap.getMaxIndexInRange(1))
-			return true;
 
-		if(fedMap.getType() == FType.ROW) {
-			return (rowNum == fedMap.getMaxIndexInRange(0) && (colNum == 1 || colNum == fedMap.getSize()))
-				|| (colNum > 1 && rowNum == fedMap.getSize());
+	private static abstract class SpoofFEDType {
+		CPOperand _output;
+
+		protected SpoofFEDType(CPOperand out) {
+			_output = out;
 		}
-		else if(fedMap.getType() == FType.COL) {
-			return ((rowNum == 1 || rowNum == fedMap.getSize()) && colNum == fedMap.getMaxIndexInRange(1))
-				|| (rowNum > 1 && colNum == fedMap.getSize());
+
+		protected boolean needsBroadcastSliced(FederationMap fedMap, long rowNum, long colNum)
+		{
+			if(rowNum == fedMap.getMaxIndexInRange(0) && colNum == fedMap.getMaxIndexInRange(1)) {
+				return true;
+			}
+			else if(fedMap.getType() == FType.ROW) {
+				return (rowNum == fedMap.getMaxIndexInRange(0) && (colNum == 1 || colNum == fedMap.getSize()))
+					|| (colNum > 1 && rowNum == fedMap.getSize());
+			}
+			else if(fedMap.getType() == FType.COL) {
+				return ((rowNum == 1 || rowNum == fedMap.getSize()) && colNum == fedMap.getMaxIndexInRange(1))
+					|| (rowNum > 1 && colNum == fedMap.getSize());
+			}
+			throw new DMLRuntimeException("Only row partitioned or column partitioned federated input supported yet.");
 		}
-		throw new DMLRuntimeException("Only row partitioned or column partitioned federated input supported yet.");
+
+		protected abstract void setOutput(ExecutionContext ec, Future<FederatedResponse>[] response, FederationMap fedMap);
 	}
 
-	private void setOutputCellwise(ExecutionContext ec, Future<FederatedResponse>[] response, FederationMap fedMap)
-	{
-		FType fedType = fedMap.getType();
-		AggOp aggOp = ((SpoofCellwise)_op).getAggOp();
-		CellType cellType = ((SpoofCellwise)_op).getCellType();
-		if(cellType == CellType.FULL_AGG) { // full aggregation
-			AggregateUnaryOperator aop = null;
-			if(aggOp == AggOp.SUM || aggOp == AggOp.SUM_SQ) {
+
+	private static class SpoofFEDCellwise extends SpoofFEDType {
+		SpoofCellwise _op;
+
+		SpoofFEDCellwise(SpoofOperator op, CPOperand out) {
+			super(out);
+			_op = (SpoofCellwise)op;
+		}
+
+		protected void setOutput(ExecutionContext ec, Future<FederatedResponse>[] response, FederationMap fedMap)
+		{
+			FType fedType = fedMap.getType();
+			AggOp aggOp = ((SpoofCellwise)_op).getAggOp();
+			CellType cellType = ((SpoofCellwise)_op).getCellType();
+			if(cellType == CellType.FULL_AGG) { // full aggregation
+				AggregateUnaryOperator aop = null;
+				if(aggOp == AggOp.SUM
+					|| aggOp == AggOp.SUM_SQ) {
+					// aggregate partial results from federated responses as sum
+					aop = InstructionUtils.parseBasicAggregateUnaryOperator("uak+");
+				}
+				else if(aggOp == AggOp.MIN) {
+					// aggregate partial results from federated responses as min
+					aop = InstructionUtils.parseBasicAggregateUnaryOperator("uamin");
+				}
+				else if(aggOp == AggOp.MAX) {
+					// aggregate partial results from federated responses as max
+					aop = InstructionUtils.parseBasicAggregateUnaryOperator("uamax");
+				}
+				else {
+					throw new DMLRuntimeException("Aggregation operation not supported yet.");
+				}
+				ec.setVariable(_output.getName(), FederationUtils.aggScalar(aop, response));
+			}
+			else if(cellType == CellType.ROW_AGG) { // row aggregation
+				if(fedType == FType.ROW) {
+					// bind partial results from federated responses
+					ec.setMatrixOutput(_output.getName(), FederationUtils.bind(response, false));
+				}
+				else if(fedType == FType.COL) {
+					AggregateUnaryOperator aop = null;
+					if(aggOp == AggOp.SUM
+					|| aggOp == AggOp.SUM_SQ) {
+						aop = InstructionUtils.parseBasicAggregateUnaryOperator("uark+");
+					}
+					else if(aggOp == AggOp.MIN) {
+						aop = InstructionUtils.parseBasicAggregateUnaryOperator("uarmin");
+					}
+					else if(aggOp == AggOp.MAX) {
+						aop = InstructionUtils.parseBasicAggregateUnaryOperator("uarmax");
+					}
+					else {
+						throw new DMLRuntimeException("Aggregation operation not supported yet.");
+					}
+					ec.setMatrixOutput(_output.getName(), FederationUtils.aggMatrix(aop, response, fedMap));
+				}
+				else {
+					throw new DMLRuntimeException("Aggregation type for federated spoof instructions not supported yet.");
+				}
+			}
+			else if(cellType == CellType.COL_AGG) { // col aggregation
+				if(fedType == FType.ROW) {
+					AggregateUnaryOperator aop = null;
+					if(aggOp == AggOp.SUM
+						|| aggOp == AggOp.SUM_SQ) {
+						aop = InstructionUtils.parseBasicAggregateUnaryOperator("uack+");
+					}
+					else if(aggOp == AggOp.MIN) {
+						aop = InstructionUtils.parseBasicAggregateUnaryOperator("uacmin");
+					}
+					else if(aggOp == AggOp.MAX) {
+						aop = InstructionUtils.parseBasicAggregateUnaryOperator("uacmax");
+					}
+					else {
+						throw new DMLRuntimeException("Aggregation operation not supported yet.");
+					}
+					ec.setMatrixOutput(_output.getName(), FederationUtils.aggMatrix(aop, response, fedMap));
+				}
+				else if(fedType == FType.COL) {
+					// bind partial results from federated responses
+					ec.setMatrixOutput(_output.getName(), FederationUtils.bind(response, true));
+				}
+				else {
+					throw new DMLRuntimeException("Aggregation type for federated spoof instructions not supported yet.");
+				}
+			}
+			else if(cellType == CellType.NO_AGG) { // no aggregation
+				if(fedType == FType.ROW) {
+					// bind partial results from federated responses
+					ec.setMatrixOutput(_output.getName(), FederationUtils.bind(response, false));
+				}
+				else if(fedType == FType.COL) {
+					// bind partial results from federated responses
+					ec.setMatrixOutput(_output.getName(), FederationUtils.bind(response, true));
+				}
+				else {
+					throw new DMLRuntimeException("Only row partitioned or column partitioned federated matrices supported yet.");
+				}
+			}
+			else {
+				throw new DMLRuntimeException("Aggregation type not supported yet.");
+			}
+		}
+	}
+
+
+	private static class SpoofFEDRowwise extends SpoofFEDType {
+		SpoofRowwise _op;
+
+		SpoofFEDRowwise(SpoofOperator op, CPOperand out) {
+			super(out);
+			_op = (SpoofRowwise)op;
+		}
+
+		protected void setOutput(ExecutionContext ec, Future<FederatedResponse>[] response, FederationMap fedMap)
+		{
+			RowType rowType = ((SpoofRowwise)_op).getRowType();
+			if(rowType == RowType.FULL_AGG) { // full aggregation
 				// aggregate partial results from federated responses as sum
-				aop = InstructionUtils.parseBasicAggregateUnaryOperator("uak+");
+				AggregateUnaryOperator aop = InstructionUtils.parseBasicAggregateUnaryOperator("uak+");
+				ec.setVariable(_output.getName(), FederationUtils.aggScalar(aop, response));
 			}
-			else if(aggOp == AggOp.MIN) {
-				// aggregate partial results from federated responses as min
-				aop = InstructionUtils.parseBasicAggregateUnaryOperator("uamin");
-			}
-			else if(aggOp == AggOp.MAX) {
-				// aggregate partial results from federated responses as max
-				aop = InstructionUtils.parseBasicAggregateUnaryOperator("uamax");
-			}
-			else {
-				throw new DMLRuntimeException("Aggregation operation not supported yet.");
-			}
-			ec.setVariable(_output.getName(), FederationUtils.aggScalar(aop, response));
-		}
-		else if(cellType == CellType.ROW_AGG) { // row aggregation
-			if(fedType == FType.ROW) {
-				// bind partial results from federated responses
-				ec.setMatrixOutput(_output.getName(), FederationUtils.bind(response, false));
-			}
-			else if(fedType == FType.COL) {
-				AggregateUnaryOperator aop = null;
-				if(aggOp == AggOp.SUM || aggOp == AggOp.SUM_SQ)
-					aop = InstructionUtils.parseBasicAggregateUnaryOperator("uark+");
-				else if(aggOp == AggOp.MIN)
-					aop = InstructionUtils.parseBasicAggregateUnaryOperator("uarmin");
-				else if(aggOp == AggOp.MAX)
-					aop = InstructionUtils.parseBasicAggregateUnaryOperator("uarmax");
-				else
-					throw new DMLRuntimeException("Aggregation operation not supported yet.");
+			else if(rowType == RowType.ROW_AGG) { // row aggregation
+				// aggregate partial results from federated responses as rowSum
+				AggregateUnaryOperator aop = InstructionUtils.parseBasicAggregateUnaryOperator("uark+");
 				ec.setMatrixOutput(_output.getName(), FederationUtils.aggMatrix(aop, response, fedMap));
 			}
-			else {
-				throw new DMLRuntimeException("Aggregation type for federated spoof instructions not supported yet.");
-			}
-		}
-		else if(cellType == CellType.COL_AGG) { // col aggregation
-			if(fedType == FType.ROW) {
-				AggregateUnaryOperator aop = null;
-				if(aggOp == AggOp.SUM || aggOp == AggOp.SUM_SQ)
-					aop = InstructionUtils.parseBasicAggregateUnaryOperator("uack+");
-				else if(aggOp == AggOp.MIN)
-					aop = InstructionUtils.parseBasicAggregateUnaryOperator("uacmin");
-				else if(aggOp == AggOp.MAX)
-					aop = InstructionUtils.parseBasicAggregateUnaryOperator("uacmax");
-				else
-					throw new DMLRuntimeException("Aggregation operation not supported yet.");
+			else if(rowType == RowType.COL_AGG
+				|| rowType == RowType.COL_AGG_T
+				|| rowType == RowType.COL_AGG_B1
+				|| rowType == RowType.COL_AGG_B1_T
+				|| rowType == RowType.COL_AGG_B1R
+				|| rowType == RowType.COL_AGG_CONST) { // col aggregation
+				// aggregate partial results from federated responses as colSum
+				AggregateUnaryOperator aop = InstructionUtils.parseBasicAggregateUnaryOperator("uack+");
 				ec.setMatrixOutput(_output.getName(), FederationUtils.aggMatrix(aop, response, fedMap));
 			}
-			else if(fedType == FType.COL) {
-				// bind partial results from federated responses
-				ec.setMatrixOutput(_output.getName(), FederationUtils.bind(response, true));
+			else if(rowType == RowType.NO_AGG
+				|| rowType == RowType.NO_AGG_B1
+				|| rowType == RowType.NO_AGG_CONST) { // no aggregation
+				if(fedMap.getType() == FType.ROW) {
+					// bind partial results from federated responses
+					ec.setMatrixOutput(_output.getName(), FederationUtils.bind(response, false));
+				}
+				else {
+					throw new DMLRuntimeException("Only row partitioned federated matrices supported yet.");
+				}
 			}
 			else {
-				throw new DMLRuntimeException("Aggregation type for federated spoof instructions not supported yet.");
+				throw new DMLRuntimeException("AggregationType not supported yet.");
 			}
-		}
-		else if(cellType == CellType.NO_AGG) { // no aggregation
-			if(fedType == FType.ROW) {
-				// bind partial results from federated responses
-				ec.setMatrixOutput(_output.getName(), FederationUtils.bind(response, false));
-			}
-			else if(fedType == FType.COL) {
-				// bind partial results from federated responses
-				ec.setMatrixOutput(_output.getName(), FederationUtils.bind(response, true));
-			}
-			else {
-				throw new DMLRuntimeException("Only row partitioned or column partitioned federated matrices supported yet.");
-			}
-		}
-		else {
-			throw new DMLRuntimeException("Aggregation type not supported yet.");
 		}
 	}
 
-	private void setOutputRowwise(ExecutionContext ec, Future<FederatedResponse>[] response, FederationMap fedMap)
-	{
-		RowType rowType = ((SpoofRowwise)_op).getRowType();
-		if(rowType == RowType.FULL_AGG) { // full aggregation
-			// aggregate partial results from federated responses as sum
-			AggregateUnaryOperator aop = InstructionUtils.parseBasicAggregateUnaryOperator("uak+");
-			ec.setVariable(_output.getName(), FederationUtils.aggScalar(aop, response));
+
+	private static class SpoofFEDMultiAgg extends SpoofFEDType {
+		SpoofMultiAggregate _op;
+
+		SpoofFEDMultiAgg(SpoofOperator op, CPOperand out) {
+			super(out);
+			_op = (SpoofMultiAggregate)op;
 		}
-		else if(rowType == RowType.ROW_AGG) { // row aggregation
-			// aggregate partial results from federated responses as rowSum
-			AggregateUnaryOperator aop = InstructionUtils.parseBasicAggregateUnaryOperator("uark+");
-			ec.setMatrixOutput(_output.getName(), FederationUtils.aggMatrix(aop, response, fedMap));
-		}
-		else if(rowType == RowType.COL_AGG
-			|| rowType == RowType.COL_AGG_T
-			|| rowType == RowType.COL_AGG_B1
-			|| rowType == RowType.COL_AGG_B1_T
-			|| rowType == RowType.COL_AGG_B1R
-			|| rowType == RowType.COL_AGG_CONST) { // col aggregation
-			// aggregate partial results from federated responses as colSum
-			AggregateUnaryOperator aop = InstructionUtils.parseBasicAggregateUnaryOperator("uack+");
-			ec.setMatrixOutput(_output.getName(), FederationUtils.aggMatrix(aop, response, fedMap));
-		}
-		else if(rowType == RowType.NO_AGG
-			|| rowType == RowType.NO_AGG_B1
-			|| rowType == RowType.NO_AGG_CONST) { // no aggregation
-			if(fedMap.getType() == FType.ROW) {
-				// bind partial results from federated responses
-				ec.setMatrixOutput(_output.getName(), FederationUtils.bind(response, false));
+
+		protected void setOutput(ExecutionContext ec, Future<FederatedResponse>[] response, FederationMap fedMap)
+		{
+			MatrixBlock[] partRes = FederationUtils.getResults(response);
+			SpoofCellwise.AggOp[] aggOps = ((SpoofMultiAggregate)_op).getAggOps();
+			for(int counter = 1; counter < partRes.length; counter++) {
+				SpoofMultiAggregate.aggregatePartialResults(aggOps, partRes[0], partRes[counter]);
 			}
-			else {
-				throw new DMLRuntimeException("Only row partitioned federated matrices supported yet.");
-			}
+			ec.setMatrixOutput(_output.getName(), partRes[0]);
 		}
-		else {
-			throw new DMLRuntimeException("AggregationType not supported yet.");
-		}
-	}
-	
-	private void setOutputMultiAgg(ExecutionContext ec, Future<FederatedResponse>[] response, FederationMap fedMap)
-	{
-		MatrixBlock[] partRes = FederationUtils.getResults(response);
-		SpoofCellwise.AggOp[] aggOps = ((SpoofMultiAggregate)_op).getAggOps();
-		for(int counter = 1; counter < partRes.length; counter++) {
-			SpoofMultiAggregate.aggregatePartialResults(aggOps, partRes[0], partRes[counter]);
-		}
-		ec.setMatrixOutput(_output.getName(), partRes[0]);
 	}
 
-	private void setOutputOuterProduct(ExecutionContext ec, Future<FederatedResponse>[] response, FederationMap fedMap)
-	{
-		FType fedType = fedMap.getType();
-		OutProdType outProdType = ((SpoofOuterProduct)_op).getOuterProdType();
-		if(outProdType == OutProdType.LEFT_OUTER_PRODUCT) {
-			if(fedType == FType.ROW) {
-				// aggregate partial results from federated responses as elementwise sum
+
+	private static class SpoofFEDOuterProduct extends SpoofFEDType {
+		SpoofOuterProduct _op;
+
+		SpoofFEDOuterProduct(SpoofOperator op, CPOperand out) {
+			super(out);
+			_op = (SpoofOuterProduct)op;
+		}
+
+		protected void setOutput(ExecutionContext ec, Future<FederatedResponse>[] response, FederationMap fedMap)
+		{
+			FType fedType = fedMap.getType();
+			OutProdType outProdType = ((SpoofOuterProduct)_op).getOuterProdType();
+			if(outProdType == OutProdType.LEFT_OUTER_PRODUCT) {
+				if(fedType == FType.ROW) {
+					// aggregate partial results from federated responses as elementwise sum
+					AggregateUnaryOperator aop = InstructionUtils.parseBasicAggregateUnaryOperator("uak+");
+					ec.setMatrixOutput(_output.getName(), FederationUtils.aggMatrix(aop, response, fedMap));
+				}
+				else if(fedType == FType.COL) {
+					// bind partial results from federated responses
+					ec.setMatrixOutput(_output.getName(), FederationUtils.bind(response, false));
+				}
+				else {
+					throw new DMLRuntimeException("Only row partitioned or column partitioned federated matrices supported yet.");
+				}
+			}
+			else if(outProdType == OutProdType.RIGHT_OUTER_PRODUCT) {
+				if(fedType == FType.ROW) {
+					// bind partial results from federated responses
+					ec.setMatrixOutput(_output.getName(), FederationUtils.bind(response, false));
+				}
+				else if(fedType == FType.COL) {
+					// aggregate partial results from federated responses as elementwise sum
+					AggregateUnaryOperator aop = InstructionUtils.parseBasicAggregateUnaryOperator("uak+");
+					ec.setMatrixOutput(_output.getName(), FederationUtils.aggMatrix(aop, response, fedMap));
+				}
+				else {
+					throw new DMLRuntimeException("Only row partitioned or column partitioned federated matrices supported yet.");
+				}
+			}
+			else if(outProdType == OutProdType.CELLWISE_OUTER_PRODUCT) {
+				if(fedType == FType.ROW) {
+					// rbind partial results from federated responses
+					ec.setMatrixOutput(_output.getName(), FederationUtils.bind(response, false));
+				}
+				else if(fedType == FType.COL) {
+					// cbind partial results from federated responses
+					ec.setMatrixOutput(_output.getName(), FederationUtils.bind(response, true));
+				}
+				else {
+					throw new DMLRuntimeException("Only row partitioned or column partitioned federated matrices supported yet.");
+				}
+			}
+			else if(outProdType == OutProdType.AGG_OUTER_PRODUCT) {
+				// aggregate partial results from federated responses as sum
 				AggregateUnaryOperator aop = InstructionUtils.parseBasicAggregateUnaryOperator("uak+");
-				ec.setMatrixOutput(_output.getName(), FederationUtils.aggMatrix(aop, response, fedMap));
-			}
-			else if(fedType == FType.COL) {
-				// bind partial results from federated responses
-				ec.setMatrixOutput(_output.getName(), FederationUtils.bind(response, false));
+				ec.setVariable(_output.getName(), FederationUtils.aggScalar(aop, response));
 			}
 			else {
-				throw new DMLRuntimeException("Only row partitioned or column partitioned federated matrices supported yet.");
+				throw new DMLRuntimeException("Outer Product Type " + outProdType + " not supported yet.");
 			}
-		}
-		else if(outProdType == OutProdType.RIGHT_OUTER_PRODUCT) {
-			if(fedType == FType.ROW) {
-				// bind partial results from federated responses
-				ec.setMatrixOutput(_output.getName(), FederationUtils.bind(response, false));
-			}
-			else if(fedType == FType.COL) {
-				// aggregate partial results from federated responses as elementwise sum
-				AggregateUnaryOperator aop = InstructionUtils.parseBasicAggregateUnaryOperator("uak+");
-				ec.setMatrixOutput(_output.getName(), FederationUtils.aggMatrix(aop, response, fedMap));
-			}
-			else {
-				throw new DMLRuntimeException("Only row partitioned or column partitioned federated matrices supported yet.");
-			}
-		}
-		else if(outProdType == OutProdType.CELLWISE_OUTER_PRODUCT) {
-			if(fedType == FType.ROW) {
-				// rbind partial results from federated responses
-				ec.setMatrixOutput(_output.getName(), FederationUtils.bind(response, false));
-			}
-			else if(fedType == FType.COL) {
-				// cbind partial results from federated responses
-				ec.setMatrixOutput(_output.getName(), FederationUtils.bind(response, true));
-			}
-			else {
-				throw new DMLRuntimeException("Only row partitioned or column partitioned federated matrices supported yet.");
-			}
-		}
-		else if(outProdType == OutProdType.AGG_OUTER_PRODUCT) {
-			// aggregate partial results from federated responses as sum
-			AggregateUnaryOperator aop = InstructionUtils.parseBasicAggregateUnaryOperator("uak+");
-			ec.setVariable(_output.getName(), FederationUtils.aggScalar(aop, response));
-		}
-		else {
-			throw new DMLRuntimeException("Outer Product Type " + outProdType + " not supported yet.");
 		}
 	}
 

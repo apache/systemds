@@ -46,7 +46,6 @@ public class CleaningTestCompare extends AutomatedTestBase {
 		addTestConfiguration(TEST_NAME1,new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1,new String[]{"R"}));
 	}
 
-
 	@Test
 	public void testCP1() {
 		runFindPipelineTest(5,10, 2,
@@ -62,8 +61,8 @@ public class CleaningTestCompare extends AutomatedTestBase {
 		try {
 			loadTestConfiguration(getTestConfiguration(TEST_NAME1));
 			fullDMLScriptName = HOME + TEST_NAME1 + ".dml";
-			programArgs = new String[] {"-stats", "-exec", "singlenode", "-nvargs", "dirtyData="+DIRTY, "metaData="+META,
-				"primitives="+PRIMITIVES, "parameters="+PARAM,  "topk="+String.valueOf(topk), "rv="+String.valueOf(resources),
+			programArgs = new String[] {"-stats", "-exec", "singlenode", "-nvargs", "dirtyData="+DIRTY,
+				"metaData="+META, "primitives="+PRIMITIVES, "parameters="+PARAM,  "topk="+ topk, "rv="+ resources,
 				"output="+OUTPUT, "target="+target, "cleanData="+CLEAN, "O="+output("O")};
 
 			runTest(true, EXCEPTION_NOT_EXPECTED, null, -1);

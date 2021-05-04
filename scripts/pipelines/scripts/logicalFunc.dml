@@ -105,9 +105,9 @@ return(Frame[Unknown] transformLogical) {
   }
   transformLogical[1, 1:ncol(seed)] = seed
   transformLogical = map(transformLogical, "var -> var.replace(\"0\", \"\")")
-  transformLogical = utils::frameRemoveEmpty(target=transformLogical, margin="cols", select=as.matrix(0))
+  transformLogical = utils::frameRemoveEmpty(target=transformLogical, marginParam="cols", select=as.matrix(0))
   if(nrow(transformLogical) > 1)
-    transformLogical = utils::frameRemoveEmpty(target=transformLogical, margin="rows", select=as.matrix(0))
+    transformLogical = utils::frameRemoveEmpty(target=transformLogical, marginParam="rows", select=as.matrix(0))
 
 }
 

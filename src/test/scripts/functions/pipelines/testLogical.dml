@@ -1,0 +1,122 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+# Generate the logical pipelines for data cleaning
+
+source("scripts/pipelines/scripts/utils.dml") as utils;
+source("scripts/pipelines/scripts/logicalFunc.dml") as logical;
+source("scripts/pipelines/scripts/gridsearchMLR.dml") as gs;
+source("scripts/pipelines/scripts/enumerateLogical.dml") as lg;
+
+
+# read the inputs
+X = read($dirtyData, data_type="frame", format="csv", header=TRUE, 
+  naStrings= ["NA", "null","  ","NaN", "nan", "", "?", "99999"]);
+
+metaInfo = read($metaData, data_type="frame", format="csv", header=FALSE);
+primitives = read($primitives, data_type = "frame", format="csv", header= TRUE)
+param = read($parameters, data_type = "frame", format="csv", header= TRUE)
+weightedAccuracy = FALSE # accuracy flag
+targetApplicaton = $target # accuracy flag
+
+max_iter = $max_iter
+num_inst = $num_inst
+num_exec = $num_exec
+n_pop=$n_pop
+pipLength = $pipLength
+crossValidations = $cv
+
+
+getSchema = metaInfo[1, 2:ncol(metaInfo)]
+getMask = as.matrix(metaInfo[2, 2:ncol(metaInfo)])
+getFdMask = as.matrix(metaInfo[3, 2:ncol(metaInfo)]) # columns of interest for FD computation
+  
+
+# encode the categorical data
+if(sum(getMask) > 0)
+{
+  # always recode the label
+  index = vectorToCsv(getMask)
+  jspecR = "{ids:true, recode:["+index+"]}"
+  [eX, X_meta] = transformencode(target=X, spec=jspecR);
+  # change the schema to reflect the encoded values
+  getSchema = map(getSchema, "x->x.replace(\"STRING\", \"INT64\")")
+  getSchema = map(getSchema, "x->x.replace(\"BOOLEAN\", \"INT64\")")
+
+} 
+# if no categorical value exist then just cast the frame into matrix
+else
+  eX = as.matrix(X)
+  
+# extract the class label  
+eY = eX[, ncol(eX)]
+eX = eX[, 1:ncol(eX) - 1]
+
+getMask = getMask[, 1:ncol(getMask) - 1] # strip the mask of class label
+getFdMask = getFdMask[, 1:ncol(getFdMask) - 1] # strip the mask of class label
+getSchema = getSchema[, 1:ncol(getSchema) - 1] # strip the mask of class label
+# hyperparam for classifier
+opt = matrix("0 100", rows=1, cols=2)
+
+# get the cross validated accuracy on dirty dataset (only on training set)
+d_accuracy = 0
+d_accuracy = utils::classifyDirty(eX, eY, opt, getMask, weightedAccuracy, crossValidations)
+
+# get FD for IC operations
+FD = discoverFD(X=replace(target=eX, pattern=NaN, replacement=1), Mask=getFdMask, threshold=0.8)
+FD = (diag(matrix(1, rows=nrow(FD), cols=1)) ==0) * FD 
+FD = FD > 0
+
+metaList = list(mask=getMask, schema=getSchema, fd=FD)
+targetClassification = list(target=targetApplicaton, cv=crossValidations, wAccuracy=weightedAccuracy, 
+  dirAcc = d_accuracy, mlHp = opt, cleanData = as.matrix(0))
+
+# # initialize output variables
+pip = as.frame("NULL"); hp = matrix(0,0,0); acc = matrix(0,0,0); features = as.frame("NULL")
+
+
+logical1 =  frame(["4", "MVI", "SCALE", "DUMMY", "DIM", "0", "0", "0"], rows=1, cols=8)
+# logical2 =  frame(["2", "MVI", "DUMMY", "0", "0", "0", "0", "0"], rows=1, cols=8)
+logical3 =  frame(["3", "MVI", "SCALE", "DUMMY", "0", "0", "0", "0"], rows=1, cols=8)
+logical4 =  frame(["6", "MVI", "OTLR", "CI", "SCALE", "DUMMY", "DIM", "0"], rows=1, cols=8)
+logical5 =  frame(["7", "MVI", "OTLR", "MVI", "CI", "SCALE", "DUMMY", "DIM"], rows=1, cols=8)
+logical6 =  frame(["6", "OTLR", "MVI", "CI", "SCALE", "DUMMY", "DIM", "0"], rows=1, cols=8)
+
+# log = rbind(logical1, logical2)
+log = rbind(logical1, logical3)
+log = rbind(log, logical4)
+log = rbind(log, logical5)
+log = rbind(log, logical6)
+
+[logicalEnum, score, T] = lg::enumerateLogical(X=eX, y=eY, population=log, max_iter=max_iter, pipLength=pipLength, metaList=metaList,
+  targetList=targetClassification, primitives=primitives, param=param, num_inst=num_inst, num_exec=num_exec, n_pop=n_pop, verbose=FALSE)
+# [logicalEnum, score, T] = lg::enumerateLogical(X=eX, y=eY, population=log, max_iter=3, pipLength=10, metaList=metaList,
+  # targetList=targetClassification, primitives=primitives, param=param, num_inst=4, num_exec=2, n_pop=4, verbose=FALSE)
+
+print("score of pipeline: "+toString(score)+" in "+(T/60000)+" mins")
+print("logicalENum "+toString(logicalEnum))
+
+result = d_accuracy < score  
+print("result satisfied ------------"+result)
+
+write(result , $O)
+
+
+

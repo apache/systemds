@@ -163,7 +163,9 @@ public class ColGroupUncompressed extends AColGroup {
 		final int nCol = _colIndexes.length;
 		final int tCol = target.getNumColumns();
 		long nnz = 0;
-		if(_data.isInSparseFormat()) {
+		if(_data.isEmpty())
+			return;
+		else if(_data.isInSparseFormat()) {
 			SparseBlock sb = _data.getSparseBlock();
 			for(int row = rl; row < ru; row++, offT += tCol) {
 				if(!sb.isEmpty(row)) {
@@ -539,10 +541,17 @@ public class ColGroupUncompressed extends AColGroup {
 	public void tsmm(double[] result, int numColumns) {
 		MatrixBlock tmp = new MatrixBlock(_colIndexes.length, _colIndexes.length, true);
 		LibMatrixMult.matrixMultTransposeSelf(_data, tmp, true, false);
-		double[] tmpV = tmp.getDenseBlockValues();
-		for(int i = 0, offD = 0, offT = 0; i < numColumns; i++, offD += numColumns, offT += _colIndexes.length)
-			for(int j = i; j < numColumns; j++)
-				result[offD + _colIndexes[j]] += tmpV[offT + j];
+		if(tmp.getDenseBlock() == null && tmp.getSparseBlock() == null)
+			return;
+		else if(tmp.isInSparseFormat()) {
+			throw new NotImplementedException("not Implemented sparse output of tsmm in compressed ColGroup.");
+		}
+		else {
+			double[] tmpV = tmp.getDenseBlockValues();
+			for(int i = 0, offD = 0, offT = 0; i < numColumns; i++, offD += numColumns, offT += _colIndexes.length)
+				for(int j = i; j < numColumns; j++)
+					result[offD + _colIndexes[j]] += tmpV[offT + j];
+		}
 
 	}
 

@@ -90,7 +90,9 @@ public abstract class ColGroupCompressed extends AColGroup {
 	protected abstract boolean sameIndexStructure(ColGroupCompressed that);
 
 	public void leftMultByMatrix(MatrixBlock matrix, double[] result, int numCols, int rl, int ru) {
-		if(matrix.isInSparseFormat())
+		if(matrix.isEmpty())
+			return;
+		else if(matrix.isInSparseFormat())
 			leftMultBySparseMatrix(matrix.getSparseBlock(), result, matrix.getNumRows(), numCols, rl, ru);
 		else {
 			leftMultByMatrix(matrix.getDenseBlockValues(), result, matrix.getNumRows(), numCols, rl, ru);

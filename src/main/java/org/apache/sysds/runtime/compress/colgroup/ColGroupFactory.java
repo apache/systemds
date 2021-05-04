@@ -156,16 +156,11 @@ public class ColGroupFactory {
 	private static Collection<AColGroup> compressColGroup(MatrixBlock in, int[] colIndexes,
 		CompressionSettings compSettings) {
 		if(in.isInSparseFormat() && compSettings.transposed) {
-			
+
 			final SparseBlock sb = in.getSparseBlock();
 			for(int col : colIndexes)
 				if(sb.isEmpty(col))
 					return compressColGroupAndExtractEmptyColumns(in, colIndexes, compSettings);
-
-			// return (compRatios == null) ? compressColGroupForced(in,
-			// colIndexes,
-			// compSettings) : compressColGroupCorrecting(in, compRatios, colIndexes,
-			// compSettings);
 			return Collections.singletonList(compressColGroupForced(in, colIndexes, compSettings));
 		}
 		else
@@ -185,8 +180,13 @@ public class ColGroupFactory {
 				v.appendValue(col);
 		}
 		AColGroup empty = compressColGroupForced(in, e.extractValues(true), compSettings);
-		AColGroup colGroup = compressColGroupForced(in, v.extractValues(true), compSettings);
-		return Arrays.asList(empty, colGroup);
+		if(v.size() > 0) {
+			AColGroup colGroup = compressColGroupForced(in, v.extractValues(true), compSettings);
+			return Arrays.asList(empty, colGroup);
+		}
+		else {
+			return Collections.singletonList(empty);
+		}
 	}
 
 	private static AColGroup compressColGroupForced(MatrixBlock in, int[] colIndexes,

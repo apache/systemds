@@ -1047,7 +1047,8 @@ public abstract class CompressedTestBase extends TestBase {
 				return;
 			MatrixBlock ret2 = cmb.slice(rl, ru, cl, cu);
 			MatrixBlock ret1 = mb.slice(rl, ru, cl, cu);
-			assertEquals(ret1.getNonZeros(), ret2.getNonZeros());
+			if(!(ret2 instanceof CompressedMatrixBlock))
+				assertEquals(ret1.getNonZeros(), ret2.getNonZeros());
 			compareResultMatrices(ret1, ret2, 1);
 		}
 		catch(Exception e) {

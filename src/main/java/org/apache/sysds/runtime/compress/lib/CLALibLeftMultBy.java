@@ -95,8 +95,7 @@ public class CLALibLeftMultBy {
 		return ret;
 	}
 
-
-	public static void leftMultByTransposeSelf(CompressedMatrixBlock mb, MatrixBlock result, int k){
+	public static void leftMultByTransposeSelf(CompressedMatrixBlock mb, MatrixBlock result, int k) {
 
 	}
 
@@ -110,9 +109,10 @@ public class CLALibLeftMultBy {
 			return;
 		}
 
-		if(k <= 1 || overlapping){
+		if(k <= 1 || overlapping) {
 			if(overlapping)
-				LOG.warn("Inefficient TSMM with overlapping matrix Could be implemented multi-threaded but is not yet.");
+				LOG.warn(
+					"Inefficient TSMM with overlapping matrix Could be implemented multi-threaded but is not yet.");
 			leftMultByCompressedTransposedMatrix(groups, groups, result);
 		}
 		else {
@@ -162,8 +162,11 @@ public class CLALibLeftMultBy {
 		List<AColGroup> thatCGs = that.getColGroups();
 		Pair<Integer, int[]> thatV = that.getMaxNumValues();
 
-		if(k <= 1)
+		if(k <= 1 || overlapping || that.isOverlapping()){
+			if(overlapping || that.isOverlapping())
+				LOG.warn("Inefficient Compressed multiplication with overlapping matrix could be implemented multi-threaded but is not yet.");
 			leftMultByCompressedTransposedMatrix(colGroups, thatCGs, ret);
+		}
 		else
 			try {
 				ExecutorService pool = CommonThreadPool.get(k);

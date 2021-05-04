@@ -209,3 +209,87 @@ C_indicator = table (index_C, PCV [, 1], max (index_C), nrow (C));              
 # 5. Perform aggregation, here sum values per category
 sum_V_per_C = C_indicator %*% V
 ```
+
+### Invert lower triangular matrix
+
+In this example, we invert a lower triangular matrix using the following divide-and-conquer approach.
+Given lower triangular matrix L, we compute its inverse X which is also lower triangular by splitting
+both matrices in the middle into 4 blocks (in a 2x2 fashion), and multiplying them together to get
+the identity matrix:
+
+\begin{equation}
+L \text{ %*% } X = \left(\begin{matrix} L_1 & 0 \\ L_2 & L_3 \end{matrix}\right)
+\text{ %*% } \left(\begin{matrix} X_1 & 0 \\ X_2 & X_3 \end{matrix}\right)
+= \left(\begin{matrix} L_1 X_1 & 0 \\ L_2 X_1 + L_3 X_2 & L_3 X_3 \end{matrix}\right)
+= \left(\begin{matrix} I & 0 \\ 0 & I \end{matrix}\right)
+\nonumber
+\end{equation}
+
+If we multiply blockwise, we get three equations: 
+
+$
+\begin{equation}
+L1 \text{ %*% } X1 = 1\\ 
+L3 \text{ %*% } X3 = 1\\
+L2 \text{ %*% } X1 + L3 \text{ %*% } X2 = 0\\
+\end{equation}
+$
+
+Solving these equation gives the following formulas for X:
+
+$
+\begin{equation}
+X1 = inv(L1) \\
+X3 = inv(L3) \\
+X2 = - X3 \text{ %*% } L2 \text{ %*% } X1 \\
+\end{equation}
+$
+
+If we already recursively inverted L1 and L3, we can invert L2.  This suggests an algorithm
+that starts at the diagonal and iterates away from the diagonal, involving bigger and bigger
+blocks (of size 1, 2, 4, 8, etc.)  There is a logarithmic number of steps, and inside each
+step, the inversions can be performed in parallel using a parfor-loop.
+
+Function "invert_lower_triangular" occurs within more general inverse operations and matrix decompositions.
+The divide-and-conquer idea allows to derive more efficient algorithms for other matrix decompositions.
+
+```dml
+invert_lower_triangular = function (Matrix[double] LI)
+  return   (Matrix[double] LO)
+{
+  n = nrow (LI);
+  LO = matrix (0, rows = n, cols = n);
+  LO = LO + diag (1 / diag (LI));
+  
+  k = 1;
+  while (k < n)
+  {
+    LPF = matrix (0, rows = n, cols = n);
+    parfor (p in 0:((n - 1) / (2 * k)), check = 0)
+    {
+    i = 2 * k * p;
+    j = i + k;
+    q = min (n, j + k);
+    if (j + 1 <= q) {
+      L1 = LO [i + 1:j, i + 1:j];
+      L2 = LI [j + 1:q, i + 1:j];
+      L3 = LO [j + 1:q, j + 1:q];
+      LPF [j + 1:q, i + 1:j] = -L3 %*% L2 %*% L1;
+    }
+    }
+    LO = LO + LPF;
+    k = 2 * k;
+  }
+}
+
+# simple 10x10 test matrix
+n = 10;
+A = rand (rows = n, cols = n, min = -1, max = 1, pdf = "uniform", sparsity = 1.0)
+Mask = cumsum (diag (matrix (1, rows = n, cols = 1)))
+
+# Generate L for stability of the inverse
+L = (A %*% t(A)) * Mask
+
+X = invert_lower_triangular (L);
+```
+

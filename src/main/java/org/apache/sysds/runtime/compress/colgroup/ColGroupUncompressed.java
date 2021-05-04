@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.util.Arrays;
 
 import org.apache.commons.lang.NotImplementedException;
+import org.apache.sysds.runtime.DMLCompressionException;
 import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.DenseBlockFP64;
@@ -574,19 +575,25 @@ public class ColGroupUncompressed extends AColGroup {
 	public void leftMultByAColGroup(AColGroup lhs, double[] result, final int numRows, final int numCols) {
 		if(lhs instanceof ColGroupEmpty)
 			return;
-		LOG.warn("Inefficient transpose of uncompressed to fit to"
-			+ " t(AColGroup) %*% UncompressedColGroup mult by colGroup uncompressed column"
-			+ " Currently solved by t(t(Uncompressed) %*% AColGroup");
-		double[] tmpTransposedResult = new double[result.length];
+		if(lhs instanceof ColGroupUncompressed) {
+			throw new DMLCompressionException("Not Implemented");
+		}
+		else {
 
-		MatrixBlock ucCG = getData();
-		MatrixBlock tmp = new MatrixBlock(ucCG.getNumColumns(), ucCG.getNumRows(), ucCG.isInSparseFormat());
-		LibMatrixReorg.transpose(ucCG, tmp, InfrastructureAnalyzer.getLocalParallelism());
-		lhs.leftMultByMatrix(tmp, tmpTransposedResult, numRows);
+			LOG.warn("Inefficient transpose of uncompressed to fit to"
+				+ " t(AColGroup) %*% UncompressedColGroup mult by colGroup uncompressed column"
+				+ " Currently solved by t(t(Uncompressed) %*% AColGroup");
+			double[] tmpTransposedResult = new double[result.length];
 
-		for(int row = 0; row < numRows; row++) {
-			for(int col = 0; col < numCols; col++) {
-				result[row * numCols + col] += tmpTransposedResult[col * numRows + row];
+			MatrixBlock ucCG = getData();
+			MatrixBlock tmp = new MatrixBlock(ucCG.getNumColumns(), ucCG.getNumRows(), ucCG.isInSparseFormat());
+			LibMatrixReorg.transpose(ucCG, tmp, InfrastructureAnalyzer.getLocalParallelism());
+			lhs.leftMultByMatrix(tmp, tmpTransposedResult, numRows);
+
+			for(int row = 0; row < numRows; row++) {
+				for(int col = 0; col < numCols; col++) {
+					result[row * numCols + col] += tmpTransposedResult[col * numRows + row];
+				}
 			}
 		}
 	}

@@ -978,13 +978,8 @@ public abstract class ColGroupValue extends ColGroupCompressed implements Clonea
 
 	@Override
 	public long getNumberNonZeros() {
-		if(_dict != null) {
-			int[] counts = getCounts();
-			return _dict.getNumberNonZeros(counts, _colIndexes.length);
-		}
-		else {
-			return 0;
-		}
+		int[] counts = getCounts();
+		return _dict.getNumberNonZeros(counts, _colIndexes.length);
 	}
 
 	private static void matrixMultDictionariesAndOutputToColIndexes(double[] left, double[] right, int[] colsLeft,

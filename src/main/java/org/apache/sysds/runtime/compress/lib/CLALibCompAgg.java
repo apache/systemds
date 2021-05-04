@@ -26,6 +26,9 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.apache.sysds.runtime.DMLCompressionException;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.CompressionSettings;
@@ -53,7 +56,7 @@ import org.apache.sysds.runtime.util.CommonThreadPool;
 
 public class CLALibCompAgg {
 
-	// private static final Log LOG = LogFactory.getLog(CLALibCompAgg.class.getName());
+	private static final Log LOG = LogFactory.getLog(CLALibCompAgg.class.getName());
 
 	// private static final long MIN_PAR_AGG_THRESHOLD = 8 * 1024 * 1024;
 	private static final long MIN_PAR_AGG_THRESHOLD = 8 * 1024;
@@ -159,6 +162,7 @@ public class CLALibCompAgg {
 					f.get();
 		}
 		catch(InterruptedException | ExecutionException e) {
+			LOG.error("Aggregate In parallel failed.");
 			throw new DMLRuntimeException(e);
 		}
 	}
@@ -221,15 +225,15 @@ public class CLALibCompAgg {
 	private static void divideByNumberOfCellsForMeanRows(CompressedMatrixBlock m1, MatrixBlock ret) {
 		double[] values = ret.getDenseBlockValues();
 		for(int i = 0; i < m1.getNumRows(); i++)
-			values[i] =  values[i] / m1.getNumColumns();
-		
+			values[i] = values[i] / m1.getNumColumns();
+
 	}
 
 	private static void divideByNumberOfCellsForMeanCols(CompressedMatrixBlock m1, MatrixBlock ret) {
 		double[] values = ret.getDenseBlockValues();
 		for(int i = 0; i < m1.getNumColumns(); i++)
 			values[i] = values[i] / m1.getNumRows();
-		
+
 	}
 
 	private static void divideByNumberOfCellsForMeanAll(CompressedMatrixBlock m1, MatrixBlock ret) {
@@ -476,27 +480,6 @@ public class CLALibCompAgg {
 			_rl = rl;
 			_ru = ru;
 			_ret = ret;
-
-		}
-
-		private MatrixBlock setupOutputMatrix() {
-			MatrixBlock outputBlock;
-			if(_op.indexFn instanceof ReduceAll)
-				outputBlock = new MatrixBlock(_ret.getNumRows(), _ret.getNumColumns(), false).allocateDenseBlock();
-			else if(_op.indexFn instanceof ReduceCol)
-				outputBlock = new MatrixBlock(_ru - _rl, _ret.getNumColumns(), false).allocateDenseBlock();
-			else
-				outputBlock = new MatrixBlock(_ret.getNumRows(), _ret.getNumColumns(), false).allocateDenseBlock();
-
-			if(_op.aggOp.increOp.fn instanceof Builtin)
-				if(_op.indexFn instanceof ReduceCol)
-					System.arraycopy(_ret.getDenseBlockValues(), _rl * _ret.getNumColumns(),
-						outputBlock.getDenseBlockValues(), 0, outputBlock.getDenseBlockValues().length);
-				else
-					System.arraycopy(_ret.getDenseBlockValues(), 0, outputBlock.getDenseBlockValues(), 0,
-						_ret.getDenseBlockValues().length);
-
-			return outputBlock;
 		}
 
 		private MatrixBlock getTmp() {
@@ -522,16 +505,25 @@ public class CLALibCompAgg {
 		@Override
 		public MatrixBlock call() {
 			MatrixBlock tmp = decompressToTemp();
-
-			MatrixBlock outputBlock = setupOutputMatrix();
+			MatrixBlock outputBlock = tmp.prepareAggregateUnaryOutput(_op, null,
+				Math.max(tmp.getNumColumns(), tmp.getNumRows()));
 			LibMatrixAgg.aggregateUnaryMatrix(tmp, outputBlock, _op);
+			outputBlock.dropLastRowsOrColumns(_op.aggOp.correction);
 
 			if(_op.indexFn instanceof ReduceCol) {
-				double[] retValues = _ret.getDenseBlockValues();
-				int currentIndex = _rl * _ret.getNumColumns();
-				double[] outputBlockValues = outputBlock.getDenseBlockValues();
-				System.arraycopy(outputBlockValues, 0, retValues, currentIndex, outputBlockValues.length);
-				return null;
+				if(outputBlock.isEmpty())
+					return null;
+				else if(outputBlock.isInSparseFormat()) {
+					throw new DMLCompressionException("Not implemented sparse and "
+						+ "not something that should ever happen" + " because we dont use sparse for column matrices");
+				}
+				else {
+					double[] retValues = _ret.getDenseBlockValues();
+					int currentIndex = _rl * _ret.getNumColumns();
+					double[] outputBlockValues = outputBlock.getDenseBlockValues();
+					System.arraycopy(outputBlockValues, 0, retValues, currentIndex, outputBlockValues.length);
+					return null;
+				}
 			}
 			else
 				return outputBlock;

@@ -95,6 +95,11 @@ public class CLALibLeftMultBy {
 		return ret;
 	}
 
+
+	public static void leftMultByTransposeSelf(CompressedMatrixBlock mb, MatrixBlock result, int k){
+
+	}
+
 	public static void leftMultByTransposeSelf(List<AColGroup> groups, MatrixBlock result, int k, int numColumns,
 		Pair<Integer, int[]> v, boolean overlapping) {
 
@@ -105,7 +110,9 @@ public class CLALibLeftMultBy {
 			return;
 		}
 
-		if(k <= 1) {
+		if(k <= 1 || overlapping){
+			if(overlapping)
+				LOG.warn("Inefficient TSMM with overlapping matrix Could be implemented multi-threaded but is not yet.");
 			leftMultByCompressedTransposedMatrix(groups, groups, result);
 		}
 		else {
@@ -115,7 +122,6 @@ public class CLALibLeftMultBy {
 				for(int i = 0; i < groups.size(); i++) {
 					tasks.add(
 						new LeftMultByCompressedTransposedMatrixTask(groups, groups.get(i), result, i, groups.size()));
-
 				}
 
 				for(Future<Object> tret : pool.invokeAll(tasks))

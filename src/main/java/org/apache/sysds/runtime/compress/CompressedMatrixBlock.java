@@ -131,15 +131,6 @@ public class CompressedMatrixBlock extends MatrixBlock {
 	}
 
 	/**
-	 * Create a base Compressed matrix block with overlapping column groups.
-	 * 
-	 * @param overLapping boolean specifier of the if the groups are overlapping.
-	 */
-	public CompressedMatrixBlock(boolean overLapping) {
-		overlappingColGroups = overLapping;
-	}
-
-	/**
 	 * Main constructor for building a block from scratch.
 	 * 
 	 * Use with caution, since it constructs an empty matrix block with nothing inside.
@@ -221,7 +212,7 @@ public class CompressedMatrixBlock extends MatrixBlock {
 		return ret;
 	}
 
-	public MatrixBlock decompress(MatrixBlock ret){
+	private MatrixBlock decompress(MatrixBlock ret) {
 
 		for(AColGroup grp : _colGroups)
 			grp.decompressToBlockUnSafe(ret, 0, rlen, 0, grp.getValues());
@@ -229,7 +220,11 @@ public class CompressedMatrixBlock extends MatrixBlock {
 		if(ret.isInSparseFormat())
 			ret.sortSparseRows();
 
-		if(nonZeros == -1)
+		if(this.isOverlapping()) {
+			ret.recomputeNonZeros();
+			ret.examSparsity();
+		}
+		else if(nonZeros == -1)
 			ret.setNonZeros(this.recomputeNonZeros());
 		else
 			ret.setNonZeros(nonZeros);
@@ -262,7 +257,7 @@ public class CompressedMatrixBlock extends MatrixBlock {
 		return ret;
 	}
 
-	public MatrixBlock decompress(MatrixBlock ret, int k){
+	private MatrixBlock decompress(MatrixBlock ret, int k) {
 
 		if(nonZeros == -1)
 			ret.setNonZeros(this.recomputeNonZeros());
@@ -281,14 +276,17 @@ public class CompressedMatrixBlock extends MatrixBlock {
 			List<Future<Long>> rtasks = pool.invokeAll(tasks);
 			pool.shutdown();
 			for(Future<Long> rt : rtasks)
-				rt.get(); // error handling
+				rt.get();
 		}
 		catch(InterruptedException | ExecutionException ex) {
 			LOG.error("Parallel decompression failed defaulting to non parallel implementation " + ex.getMessage());
 			ex.printStackTrace();
 			return decompress();
 		}
-
+		if(this.isOverlapping()) {
+			ret.recomputeNonZeros();
+			ret.examSparsity();
+		}
 		return ret;
 	}
 
@@ -298,14 +296,13 @@ public class CompressedMatrixBlock extends MatrixBlock {
 
 	@Override
 	public long recomputeNonZeros() {
-		if(overlappingColGroups) {
+		if(isOverlapping())
 			nonZeros = clen * rlen;
-		}
 		else {
 			long nnz = 0;
-			for(AColGroup g : _colGroups) {
+			for(AColGroup g : _colGroups)
 				nnz += g.getNumberNonZeros();
-			}
+
 			nonZeros = nnz;
 		}
 		return nonZeros;
@@ -753,7 +750,8 @@ public class CompressedMatrixBlock extends MatrixBlock {
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
 		sb.append("\nCompressed Matrix:");
-		sb.append("\nCols:" + getNumColumns() + " Rows:" + getNumRows());
+		sb.append("\nCols:" + getNumColumns() + " Rows:" + getNumRows() + " Overlapping: " + isOverlapping() + " nnz: "
+			+ nonZeros);
 		if(_colGroups != null)
 			for(AColGroup cg : _colGroups) {
 				sb.append("\n" + cg);
@@ -820,6 +818,8 @@ public class CompressedMatrixBlock extends MatrixBlock {
 				newColGroups.add(slice);
 		}
 		ret.allocateColGroupList(newColGroups);
+		ret.recomputeNonZeros();
+		ret.overlappingColGroups = this.isOverlapping();
 		return ret;
 	}
 
@@ -915,7 +915,7 @@ public class CompressedMatrixBlock extends MatrixBlock {
 		MatrixBlock left = getUncompressed();
 		MatrixBlock correctionMatrixBlock = getUncompressed(correction);
 		MatrixBlock newWithCorrectionMatrixBlock = getUncompressed(newWithCorrection);
-			
+
 		left.incrementalAggregate(aggOp, correctionMatrixBlock, newWithCorrectionMatrixBlock, deep);
 	}
 

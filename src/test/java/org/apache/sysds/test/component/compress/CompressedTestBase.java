@@ -96,7 +96,7 @@ public abstract class CompressedTestBase extends TestBase {
 	protected static OverLapping[] overLapping = new OverLapping[] {
 		// OverLapping.COL,
 		OverLapping.PLUS,
-		// OverLapping.MATRIX,
+		OverLapping.MATRIX,
 		OverLapping.NONE,
 		// OverLapping.MATRIX_PLUS,
 		// OverLapping.SQUASH,

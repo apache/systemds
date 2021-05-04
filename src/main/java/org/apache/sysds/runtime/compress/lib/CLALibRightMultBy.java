@@ -94,9 +94,7 @@ public class CLALibRightMultBy {
 		int rl = colGroups.get(0).getNumRows();
 		int cl = that.getNumColumns();
 		// Create an overlapping compressed Matrix Block.
-		ret = new CompressedMatrixBlock(true);
-		ret.setNumColumns(cl);
-		ret.setNumRows(rl);
+		ret = new CompressedMatrixBlock(rl, cl);
 		CompressedMatrixBlock retC = (CompressedMatrixBlock) ret;
 		ret = rightMultByMatrixCompressed(colGroups, that, retC, k, v);
 		return ret;
@@ -126,8 +124,6 @@ public class CLALibRightMultBy {
 		ret.allocateColGroupList(retCg);
 		if(retCg.size() > 1)
 			ret.setOverlapping(true);
-
-		ret.setNonZeros(-1);
 		return ret;
 	}
 

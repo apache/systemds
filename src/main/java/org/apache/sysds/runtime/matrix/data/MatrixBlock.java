@@ -4341,7 +4341,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	public MatrixBlock aggregateUnaryOperations(AggregateUnaryOperator op, MatrixValue result,
 			int blen, MatrixIndexes indexesIn, boolean inCP)  {
 
-		MatrixBlock ret = prepareAggregateUnaryOutput(op,result,blen,indexesIn);
+		MatrixBlock ret = prepareAggregateUnaryOutput(op,result,blen);
 		
 		if( LibMatrixAgg.isSupportedUnaryAggregateOperator(op) ) {
 			if( op.getNumThreads() > 1 )
@@ -4361,7 +4361,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		return ret;
 	}
 
-	public MatrixBlock prepareAggregateUnaryOutput(AggregateUnaryOperator op, MatrixValue result, int blen, MatrixIndexes indexesIn){
+	public MatrixBlock prepareAggregateUnaryOutput(AggregateUnaryOperator op, MatrixValue result, int blen){
 		CellIndex tempCellIndex = new CellIndex(-1,-1);
 		op.indexFn.computeDimension(rlen, clen, tempCellIndex);
 		if(op.aggOp.existsCorrection())

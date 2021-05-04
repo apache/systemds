@@ -386,35 +386,6 @@ public class CLALibLeftMultBy {
 
 	}
 
-	// private static class LeftMatrixVectorMultTask implements Callable<Object> {
-	// private final List<AColGroup> _groups;
-	// private final MatrixBlock _vect;
-	// private final MatrixBlock _ret;
-	// private final Pair<Integer, int[]> _v;
-
-	// protected LeftMatrixVectorMultTask(List<AColGroup> groups, MatrixBlock vect, MatrixBlock ret,
-	// Pair<Integer, int[]> v) {
-	// _groups = groups;
-	// _vect = vect;
-	// _ret = ret;
-	// _v = v;
-	// }
-
-	// @Override
-	// public Object call() {
-	// try {
-	// ColGroupValue.setupThreadLocalMemory(_v.getLeft() + 1);
-	// for(int i = 0; i < _groups.size(); i++) {
-	// _groups.get(i).leftMultByRowVector(_vect.getDenseBlockValues(), _ret.getDenseBlockValues());
-	// }
-	// }
-	// catch(Exception e) {
-	// throw new DMLRuntimeException(e);
-	// }
-	// return null;
-	// }
-	// }
-
 	private static class LeftMatrixMatrixMultTask implements Callable<Object> {
 		private final List<AColGroup> _group;
 		private final MatrixBlock _that;

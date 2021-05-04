@@ -19,6 +19,8 @@
 
 package org.apache.sysds.runtime.compress.colgroup;
 
+import java.util.Arrays;
+
 import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.runtime.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
@@ -30,8 +32,6 @@ import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
-
-import edu.emory.mathcs.backport.java.util.Arrays;
 
 public class ColGroupConst extends ColGroupValue {
 
@@ -185,23 +185,6 @@ public class ColGroupConst extends ColGroupValue {
 		return _dict.getValue(Arrays.binarySearch(_colIndexes, c));
 	}
 
-	// @Override
-	// public void rightMultByVector(double[] b, double[] c, int rl, int ru, double[] dictVals) {
-	// double[] vals = preaggValues(1, b, dictVals);
-	// for (int i = 0; i < c.length; i++) {
-	// c[i] += vals[0];
-	// }
-	// }
-
-	// @Override
-	// public void rightMultByMatrix(int[] outputColumns, double[] preAggregatedB, double[] c, int thatNrColumns, int
-	// rl,
-	// int ru) {
-	// for (int i = rl * thatNrColumns; i < ru * thatNrColumns; i += thatNrColumns)
-	// for (int j = 0; j < outputColumns.length; j++)
-	// c[outputColumns[j] + i] += preAggregatedB[j];
-	// }
-
 	public double[] preAggregate(double[] a, int row) {
 		return new double[] {preAggregateSingle(a, row)};
 	}
@@ -225,15 +208,6 @@ public class ColGroupConst extends ColGroupValue {
 			vals += a[off];
 		return vals;
 	}
-
-	// @Override
-	// public void leftMultByRowVector(double[] a, double[] c, int numVals, double[] values) {
-	// double preAggVals = preAggregateSingle(a, 0);
-
-	// for (int i = 0; i < _colIndexes.length; i++) {
-	// c[_colIndexes[i]] += preAggVals * values[i];
-	// }
-	// }
 
 	@Override
 	public void leftMultByMatrix(double[] a, double[] c, double[] values, int numRows, int numCols, int rl, int ru) {

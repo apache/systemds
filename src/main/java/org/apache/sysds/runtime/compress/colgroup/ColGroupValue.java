@@ -594,34 +594,9 @@ public abstract class ColGroupValue extends ColGroupCompressed implements Clonea
 		return null;
 	}
 
-	// @Override
-	// public void leftMultByRowVector(double[] a, double[] c) {
-	// final double[] values = getValues();
-	// final int numVals = getNumValues();
-	// leftMultByRowVector(a, c, numVals, values);
-	// }
-
-	// @Override
-	// public void leftMultByRowVector(double[] a, double[] c, int offT) {
-	// final double[] values = getValues();
-	// final int numVals = getNumValues();
-	// leftMultByRowVector(a, c, numVals, values, offT);
-	// }
-
-	// @Override
-	// public void leftMultByRowVector(double[] a, double[] c, int numVals, double[] values) {
-	// final double[] vals = preAggregate(a);
-	// postScaling(values, vals, c, numVals);
-	// }
-
-	// @Override
-	// public void leftMultByRowVector(double[] a, double[] c, int numVals, double[] values, int offT) {
-	// final double[] vals = preAggregate(a);
-	// postScaling(values, vals, c, numVals, 0, 0, offT);
-	// }
 
 	@Override
-	protected AColGroup sliceSingleColumn(int col, int idx) {
+	protected AColGroup sliceSingleColumn(int idx) {
 		ColGroupValue ret = (ColGroupValue) copy();
 		ret._colIndexes = new int[] {0};
 		if(ret._dict != null)
@@ -744,35 +719,8 @@ public abstract class ColGroupValue extends ColGroupCompressed implements Clonea
 
 	public abstract int getIndexStructureHash();
 
-	// try to make a memo table.
-	// private static Map<Integer,Map<Integer,Memo>> memorizer = new HashMap<>();
-
-	// private class Memo {
-	// ColGroupValue lhs;
-	// ColGroupValue rhs;
-	// IPreAggregate agg;
-
-	// private Memo(ColGroupValue lhs, ColGroupValue rhs, IPreAggregate agg) {
-	// this.lhs = lhs;
-	// this.rhs = rhs;
-	// this.agg = agg;
-	// }
-	// }
-
 	public IPreAggregate preAggregate(ColGroupValue lhs) {
-		// int lhsH = lhs.getIndexStructureHash();
-		// int rhsH = this.getIndexStructureHash();
-		// if(memorizer.get(lhsH) == null){
-		// memorizer.put(lhsH, new HashMap<>());
-		// }
-		// Memo m = memorizer.get(lhsH).get(rhsH);
-		// if(m != null && lhs.sameIndexStructure(m.lhs) &&
-		// this.sameIndexStructure(m.rhs))
-		// return m.agg;
-
 		IPreAggregate r = preCallAggregate(lhs);
-		// Map<Integer,Memo> l = memorizer.get(lhsH);
-		// l.put(rhsH, new Memo(lhs, this, r));
 		return r;
 	}
 

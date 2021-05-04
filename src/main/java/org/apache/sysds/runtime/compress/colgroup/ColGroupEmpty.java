@@ -239,7 +239,7 @@ public class ColGroupEmpty extends ColGroupCompressed {
 	}
 
 	@Override
-	protected AColGroup sliceSingleColumn(int col, int idx) {
+	protected AColGroup sliceSingleColumn(int idx) {
 		return new ColGroupEmpty(new int[] {0}, _numRows);
 	}
 

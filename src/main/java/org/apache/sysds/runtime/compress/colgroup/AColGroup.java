@@ -58,6 +58,11 @@ public abstract class AColGroup implements Serializable {
 	protected enum ColGroupType {
 		UNCOMPRESSED, RLE, OLE, DDC, CONST, EMPTY, SDC, SDCSingle, SDCSingleZeros, SDCZeros;
 
+		/**
+		 * Get the super type of the specific ColGroup Type used.
+		 * @param c The concrete ColGroupType
+		 * @return The super CompressionType.
+		 */
 		public static CompressionType getSuperType(ColGroupType c) {
 			switch(c) {
 				case RLE:
@@ -160,6 +165,13 @@ public abstract class AColGroup implements Serializable {
 	 */
 	protected abstract ColGroupType getColGroupType();
 
+	/**
+	 * Shift all column indexes contained by an offset.
+	 *
+	 * This is used for rbind to combine compressed matrices.
+	 * 
+	 * @param offset The offset to move all columns
+	 */
 	public void shiftColIndices(int offset) {
 		for(int i = 0; i < _colIndexes.length; i++)
 			_colIndexes[i] += offset;
@@ -487,77 +499,13 @@ public abstract class AColGroup implements Serializable {
 	 */
 	public abstract MatrixBlock getValuesAsBlock();
 
-
+	/**
+	 * Right matrix multiplication with this column group.
+	 * 
+	 * @param right The matrixBlock on the right of this matrix multiplication
+	 * @return The new Column Group that is the result of the matrix multiplication.
+	 */
 	public abstract AColGroup rightMultByMatrix(MatrixBlock right);
-
-	// /**
-	// * Multiply the slice of the matrix that this column group represents by a vector on the right.
-	// *
-	// * @param vector Vector to multiply by (tall vector)
-	// * @param c Accumulator for holding the result
-	// * @param rl Row to start at
-	// * @param ru Row to stop at
-	// * @param dictVals The dictionary values materialized
-	// */
-	// public abstract void rightMultByVector(double[] vector, double[] c, int rl, int ru, double[] dictVals);
-
-	// /**
-	//  * Right multiply by matrix. for which the compressed matrix is on the left and the uncompressed is on the right.
-	//  * Note that there is no b argument, but the b is aggregated into the values needed for assignment and addition into
-	//  * output.
-	//  * 
-	//  * @param outputColumns  The Columns that are affected by the right multiplication.
-	//  * @param preAggregatedB The preAggregated values that is to be put into c
-	//  * @param c              The output matrix
-	//  * @param thatNrColumns  The number of columns in B (before aggregation)
-	//  * @param rl             The row index to start the multiplication from
-	//  * @param ru             The row index to stop the multiplication at
-	//  */
-	// public abstract void rightMultByMatrix(int[] outputColumns, double[] preAggregatedB, double[] c, int thatNrColumns,
-	// 	int rl, int ru);
-
-	// /**
-	// * Multiply the slice of the matrix that this column group represents by a row vector on the left (the original
-	// * column vector is assumed to be transposed already i.e. its size now is 1xn).
-	// *
-	// * @param vector row vector
-	// * @param result matrix block result
-	// */
-	// public abstract void leftMultByRowVector(double[] vector, double[] result);
-
-	// /**
-	// * Multiply the slice of the matrix that this column group represents by a row vector on the left (the original
-	// * column vector is assumed to be transposed already i.e. its size now is 1xn).
-	// *
-	// * @param vector row vector
-	// * @param result matrix block result
-	// * @param offT The offset into target result array to put the result values.
-	// */
-	// public abstract void leftMultByRowVector(double[] vector, double[] result, int offT);
-
-	// /**
-	// * Multiply the slice of the matrix that this column group represents by a row vector on the left (the original
-	// * column vector is assumed to be transposed already i.e. its size now is 1xn).
-	// *
-	// * @param vector Row vector
-	// * @param result Matrix block result
-	// * @param numVals The Number of values contained in the Column.
-	// * @param values The materialized list of values contained in the dictionary.
-	// */
-	// public abstract void leftMultByRowVector(double[] vector, double[] result, int numVals, double[] values);
-
-	// /**
-	// * Multiply the slice of the matrix that this column group represents by a row vector on the left (the original
-	// * column vector is assumed to be transposed already i.e. its size now is 1xn).
-	// *
-	// * @param vector Row vector
-	// * @param result Matrix block result
-	// * @param numVals The Number of values contained in the Column.
-	// * @param values The materialized list of values contained in the dictionary.
-	// * @param offT The offset into target result array to put the result values.
-	// */
-	// public abstract void leftMultByRowVector(double[] vector, double[] result, int numVals, double[] values, int
-	// offT);
 
 	/**
 	 * Do a transposed self matrix multiplication, but only with this column group.
@@ -595,7 +543,6 @@ public abstract class AColGroup implements Serializable {
 	 * @param ru      The row to end the multiplication at.
 	 */
 	public abstract void leftMultByMatrix(MatrixBlock matrix, double[] result, int numCols, int rl, int ru);
-
 
 	/**
 	 * Left side matrix multiplication with a column group that is transposed.
@@ -678,7 +625,7 @@ public abstract class AColGroup implements Serializable {
 	 * 
 	 * an example where it is true is DDC, Const and Uncompressed. examples where false is OLE and RLE.
 	 * 
-	 * @return returns if the colgroup is allocated in a dense fashion.
+	 * @return returns if the colGroup is allocated in a dense fashion.
 	 */
 	public abstract boolean isDense();
 
@@ -692,18 +639,33 @@ public abstract class AColGroup implements Serializable {
 	 *         dictionary and _columnIndexes correctly aligned with the expected sliced compressed matrix.
 	 */
 	public AColGroup sliceColumns(int cl, int cu) {
-		AColGroup ret  = (cu - cl == 1) ? sliceColumn(cl) :  sliceMultiColumns(cl, cu);
+		AColGroup ret = (cu - cl == 1) ? sliceColumn(cl) : sliceMultiColumns(cl, cu);
 		return ret;
 	}
 
+	/**
+	 * Slice out a single column from the column group.
+	 * 
+	 * @param col The column to slice, the column could potentially not be inside the column group
+	 * @return A new column group that is a single column, if the column requested is not in this column group null is
+	 *         returned.
+	 */
 	public AColGroup sliceColumn(int col) {
 		int idx = Arrays.binarySearch(_colIndexes, col);
 		if(idx >= 0)
-			return sliceSingleColumn(col, idx);
+			return sliceSingleColumn(idx);
 		else
 			return null;
 	}
 
+	/**
+	 * Slice out multiple columns within the interval between the given indexes.
+	 * 
+	 * @param cl The lower column index to slice from
+	 * @param cu The upper column index to slice to, (not included)
+	 * @return A column group of this containing the columns specified, returns null if the columns specified is not
+	 *         contained in the column group
+	 */
 	protected AColGroup sliceMultiColumns(int cl, int cu) {
 		int idStart = 0;
 		int idEnd = 0;
@@ -721,14 +683,32 @@ public abstract class AColGroup implements Serializable {
 			int idIt = idStart;
 			for(int i = 0; i < numberOfOutputColumns; i++)
 				outputCols[i] = _colIndexes[idIt++] - cl;
-			return sliceMultiColumns( idStart, idEnd, outputCols);
+			return sliceMultiColumns(idStart, idEnd, outputCols);
 		}
 		else
 			return null;
 	}
 
-	protected abstract AColGroup sliceSingleColumn(int col, int idx);
+	/**
+	 * Slice out column at specific index of this column group.
+	 * 
+	 * It is guaranteed that the column to slice is contained in this columnGroup.
+	 * 
+	 * @param idx The column index to slice out.
+	 * @return A new column group containing the columns inside. (never null)
+	 */
+	protected abstract AColGroup sliceSingleColumn(int idx);
 
+	/**
+	 * Slice range of columns inside this column group.
+	 * 
+	 * It is guaranteed that the columns to slice is contained in this columnGroup.
+	 * 
+	 * @param idStart    The column index to start at
+	 * @param idEnd      The column index to end at
+	 * @param outputCols The output columns to extract materialized for ease of implementation
+	 * @return The sliced ColGroup from this. (never null)
+	 */
 	protected abstract AColGroup sliceMultiColumns(int idStart, int idEnd, int[] outputCols);
 
 	/**

@@ -187,8 +187,6 @@ public abstract class ColGroupOffset extends ColGroupValue {
 		ret += 4 * _ptr.length;
 		ret += 4; // _data list
 		ret += 2 * _data.length;
-		// for(int i = 0; i < getNumValues(); i++)
-		// ret += 4 + 2 * len(i);
 
 		return ret;
 	}

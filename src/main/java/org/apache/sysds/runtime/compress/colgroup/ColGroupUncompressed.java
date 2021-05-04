@@ -599,7 +599,7 @@ public class ColGroupUncompressed extends AColGroup {
 	}
 
 	@Override
-	protected AColGroup sliceSingleColumn(int col, int idx) {
+	protected AColGroup sliceSingleColumn(int idx) {
 		return sliceMultiColumns(idx, idx + 1, new int[] {0});
 	}
 

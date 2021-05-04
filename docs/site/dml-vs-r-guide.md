@@ -217,6 +217,7 @@ Given lower triangular matrix L, we compute its inverse X which is also lower tr
 both matrices in the middle into 4 blocks (in a 2x2 fashion), and multiplying them together to get
 the identity matrix:
 
+$$
 \begin{equation}
 L \text{ %*% } X = \left(\begin{matrix} L_1 & 0 \\ L_2 & L_3 \end{matrix}\right)
 \text{ %*% } \left(\begin{matrix} X_1 & 0 \\ X_2 & X_3 \end{matrix}\right)
@@ -224,26 +225,27 @@ L \text{ %*% } X = \left(\begin{matrix} L_1 & 0 \\ L_2 & L_3 \end{matrix}\right)
 = \left(\begin{matrix} I & 0 \\ 0 & I \end{matrix}\right)
 \nonumber
 \end{equation}
+$$
 
 If we multiply blockwise, we get three equations: 
 
-$
+$$
 \begin{equation}
 L1 \text{ %*% } X1 = 1\\ 
 L3 \text{ %*% } X3 = 1\\
 L2 \text{ %*% } X1 + L3 \text{ %*% } X2 = 0\\
 \end{equation}
-$
+$$
 
 Solving these equation gives the following formulas for X:
 
-$
+$$
 \begin{equation}
 X1 = inv(L1) \\
 X3 = inv(L3) \\
 X2 = - X3 \text{ %*% } L2 \text{ %*% } X1 \\
 \end{equation}
-$
+$$
 
 If we already recursively inverted L1 and L3, we can invert L2.  This suggests an algorithm
 that starts at the diagonal and iterates away from the diagonal, involving bigger and bigger

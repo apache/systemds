@@ -1,0 +1,172 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+# Generate the logical pipelines using basic evolutionary algorithm, 
+# population -> logical Pipeline, chromosome -> physical pipeline, gene -> hp
+# input :
+# 1. Dataset X
+# 2. population, different logical seed pipelines format = [number of operators, op1, op2, op3 ..., opn]
+# 3. number of iterations
+# 4. pipLength, length of pipeline, number of operator in each pipeline
+# 5. meta data list i.e., schema, mask, fdmask
+# 6. target list i.e, target application, cv value etc.
+# 7. primitives, physical operator list
+# 8. param, physical operator hyperparameters
+# 9. num_inst value, number of physical instances for each logical to be executed
+# 10. num_exec, how many times each physical pipeline should be executed
+# 11. n_pop, children created in each generation
+# output: best logical pipeline and evaluation time in ms
+
+
+# idea is to get the initial set of logical pipelines, as population, then get the num_inst physical pipelines foreach
+# logical pipeline in population. Then execute these physical pipelines num_exec time were in each execution a random set of
+# hyperparameters is used to execute operators. The compute a score vector by storing the best score foreach logical pipeline in 
+# population. Sort the pipelines by score and take n_pop pipelines as parents for generating new population.
+# from the selected pipelines take a pair in each iteration as parent and generate a pair of children by doing crossover and mutation.
+# In crossover make a child by taking some operation from p1 and some operations from p2 and in mutation randomly swap the 
+# operators in children. There new children will be the population in next iteration. Repeat the process max_iter time.
+# Converge in between if the best_score of previous generation is better then best_score of new generation.
+
+source("scripts/builtin/bandit.dml") as bandit;
+source("scripts/pipelines/scripts/utils.dml") as utils;
+
+enumerateLogical = function(Matrix[Double] X, Matrix[Double] y, Frame[Unknown] population, Integer max_iter=10,
+  Integer pipLength, List[Unknown] metaList, List[Unknown] targetList, Frame[Unknown] primitives, Frame[Unknown] param,
+  Integer num_inst, Integer num_exec, Integer n_pop, Boolean verbose)
+return (Frame[Unknown] bestLg, Double pre_best, Double T)
+{ 
+
+  t1 = time()
+  bestLg = as.frame("")
+  best_score = 0
+  pre_best = 0
+  feaFrameOuter = as.frame("NULL")
+  iter = 1
+  convergedOuter = FALSE
+  while(iter <= max_iter & !convergedOuter)
+  {
+    physicalPipList = list()
+    # # # get the physical instances from logical ones
+    for(i in 1:nrow(population))
+    { 
+      lv = as.integer(as.scalar(population[i, 1])) + 1
+      lp = population[i, 2:lv]
+      physicalConf = bandit::get_physical_configurations(lp, num_inst, primitives)
+      physicalPipList = append(physicalPipList, physicalConf)
+    }
+    
+    scores = matrix(0, rows=length(physicalPipList), cols=1)
+    
+    # # # execute the physical pipelines
+    for(i in 1:length(physicalPipList))
+    {
+      physicalConf = as.frame(physicalPipList[i])
+      # # append configuration keys for extracting the pipeline later on
+      id = seq(1, nrow(physicalConf))
+      physicalConf = cbind(as.frame(id), physicalConf)
+      # # execute the physical instances and store the minimum scores, each pipeline is executed num_exec times
+      [outPip,outHp, feaFrameOuter] = bandit::run_with_hyperparam(physicalConf, num_exec, X, y, metaList,
+        targetList, param, as.frame(""), verbose)
+      # # sort the configurations groupwise
+      max_perf =  bandit::getMaxPerConf(outPip, nrow(physicalConf)) 
+      scores[i] = as.matrix(max_perf[1, 1])
+    }
+    
+    # # select parents and best score
+    selected = order(target = scores, by = 1, decreasing=TRUE, index.return=TRUE)
+    idxR = as.scalar(selected[1, 1])
+    best_score = as.scalar(scores[idxR])
+    if(verbose)
+    {
+      print("best score "+best_score)
+      print("previous score "+pre_best)
+    }
+    
+    converge = ifelse(pre_best > best_score, TRUE, FALSE)
+    if(converge) {
+      convergedOuter = TRUE
+      print("----------- converged after "+iter+" iteration-------------")
+      print("best score "+pre_best)
+      print("best pipeline "+toString(bestLg))
+    }
+    else 
+    {
+      pre_best = best_score
+      idxC = as.integer(as.scalar(population[idxR, 1])) + 1
+      bestLg = population[idxR, 2:idxC]
+    }
+    
+    # # # if new best is not better than pre_best then no need od generating new population
+    children = frame(0, rows=n_pop, cols=pipLength+1)
+    CROSS_OVER_RATE = 2
+    i = 1
+    while(i <= n_pop & !converge)
+    {
+      p1 = population[as.scalar(selected[i]), ]
+      p2 = population[as.scalar(selected[i+1]), ]
+      lengthp1 = as.integer(as.scalar(p1[1, 1]))
+      lengthp2 = as.integer(as.scalar(p2[1, 1]))
+      p1 = p1[, 2:(lengthp1+1)]
+      p2 = p2[, 2:(lengthp2+1)]
+      # # # cross over, this constrained crossover will only add first operator from each parent to child
+      
+      if(lengthp1 >= 5 & (lengthp1 + CROSS_OVER_RATE) < pipLength) #check if pipeline is less than 5 operation only crossover one 
+        c1 = cbind(p1[1,1:CROSS_OVER_RATE], p2)                    # operator so the probability of swapping pca and dummycoding is 
+      else if ((lengthp1 + 1) < pipLength)          # low and the crossover all should not exceed pipeline total length 
+        c1 = cbind(p1[1,1], p2)
+        
+      if(lengthp2 >= 5 & (lengthp2 + CROSS_OVER_RATE) < pipLength)
+        c2 = cbind(p2[1,1:CROSS_OVER_RATE], p1)
+      else if ((lengthp2 + 1) < pipLength)
+        c2 = cbind(p2[1,1], p1)
+
+      # # # mutation swap the operators at random positions if the length is greater than 5
+      if(ncol(c1) >= 5)
+      {
+        r = sample(3, 2)
+        r1 = as.scalar(r[1,1])
+        r2 = as.scalar(r[2,1])
+        temp = c1[1, r1]
+        c1[1, r1] = c1[1, r2]
+        c1[1, r2] = temp
+      }
+      if(ncol(c2) >= 5)
+      {
+        r = sample(3, 2)
+        r1 = as.scalar(r[1,1])
+        r2 = as.scalar(r[2,1])
+        temp = c2[1, r1]
+        c2[1, r1] = c2[1, r2]
+        c2[1, r2] = temp
+      }
+      # # # append length of pipeline and pipeline in frame
+      children[i, 1] = ncol(c1)
+      children[i, 2:(ncol(c1) + 1)] = c1
+      children[i+1, 1] = ncol(c2)
+      children[i+1, 2:(ncol(c2) + 1)] = c2
+
+      i = i + 2
+    }
+    population = children
+  }
+  T = floor((time() - t1) / 1e+6)
+  print("time "+T+" ms")
+}
+

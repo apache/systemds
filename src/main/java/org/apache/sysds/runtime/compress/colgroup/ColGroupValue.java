@@ -866,12 +866,13 @@ public abstract class ColGroupValue extends ColGroupCompressed implements Clonea
 		else if(lhs instanceof ColGroupValue)
 			leftMultByColGroupValue((ColGroupValue) lhs, result, numRows, numCols);
 		else if(lhs instanceof ColGroupUncompressed) {
-			LOG.warn(
-				"Inefficient transpose of uncompressed to fit to template need t((compressedColGroup) %*% Uncompressed) support");
+			LOG.warn("Inefficient transpose of uncompressed to fit to "
+				+ "template need t(UnCompressedColGroup) %*% AColGroup support");
 			MatrixBlock ucCG = ((ColGroupUncompressed) lhs).getData();
 			MatrixBlock tmp = new MatrixBlock(ucCG.getNumColumns(), ucCG.getNumRows(), ucCG.isInSparseFormat());
 			LibMatrixReorg.transpose(ucCG, tmp, InfrastructureAnalyzer.getLocalParallelism());
 			leftMultByMatrix(tmp, result, numCols);
+
 		}
 		else
 			throw new DMLCompressionException(

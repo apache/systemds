@@ -572,7 +572,23 @@ public class ColGroupUncompressed extends AColGroup {
 
 	@Override
 	public void leftMultByAColGroup(AColGroup lhs, double[] result, final int numRows, final int numCols) {
-		throw new NotImplementedException("Not implemented copy of uncompressed colGroup yet.");
+		if(lhs instanceof ColGroupEmpty)
+			return;
+		LOG.warn("Inefficient transpose of uncompressed to fit to"
+			+ " t(AColGroup) %*% UncompressedColGroup mult by colGroup uncompressed column"
+			+ " Currently solved by t(t(Uncompressed) %*% AColGroup");
+		double[] tmpTransposedResult = new double[result.length];
+
+		MatrixBlock ucCG = getData();
+		MatrixBlock tmp = new MatrixBlock(ucCG.getNumColumns(), ucCG.getNumRows(), ucCG.isInSparseFormat());
+		LibMatrixReorg.transpose(ucCG, tmp, InfrastructureAnalyzer.getLocalParallelism());
+		lhs.leftMultByMatrix(tmp, tmpTransposedResult, numRows);
+
+		for(int row = 0; row < numRows; row++) {
+			for(int col = 0; col < numCols; col++) {
+				result[row * numCols + col] += tmpTransposedResult[col * numRows + row];
+			}
+		}
 	}
 
 	@Override

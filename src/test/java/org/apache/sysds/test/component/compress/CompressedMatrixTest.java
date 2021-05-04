@@ -72,7 +72,7 @@ public class CompressedMatrixTest extends AbstractCompressedUnaryTests {
 					double claVal = cmb.getValue(i, j); // calls quickGetValue internally
 					if(compressionSettings.lossy || overlappingType == OverLapping.SQUASH)
 						TestUtils.compareCellValue(ulaVal, claVal, lossyTolerance, false);
-					else if(OverLapping.effectOnOutput(overlappingType)){
+					else if(OverLapping.effectOnOutput(overlappingType)) {
 						double percentDistance = TestUtils.getPercentDistance(ulaVal, claVal, true);
 						assertTrue(percentDistance > .99);
 					}
@@ -184,7 +184,8 @@ public class CompressedMatrixTest extends AbstractCompressedUnaryTests {
 			if(!(cmb instanceof CompressedMatrixBlock))
 				return;
 			CompressionStatistics cStat = cmbStats;
-			assertTrue("Compression ration if compressed should be larger than 1", cStat.getRatio() > 1);
+			if(cStat != null)
+				assertTrue("Compression ration if compressed should be larger than 1", cStat.getRatio() > 1);
 		}
 		catch(Exception e) {
 			e.printStackTrace();
@@ -198,32 +199,32 @@ public class CompressedMatrixTest extends AbstractCompressedUnaryTests {
 			if(!(cmb instanceof CompressedMatrixBlock))
 				return;
 			CompressionStatistics cStat = cmbStats;
-			long colsEstimate = cStat.estimatedSizeCols;
-			long actualSize = cStat.size;
-			long originalSize = cStat.originalSize;
-			int allowedTolerance = 4096;
+			if(cStat != null) {
+				long colsEstimate = cStat.estimatedSizeCols;
+				long actualSize = cStat.size;
+				long originalSize = cStat.originalSize;
+				int allowedTolerance = 4096;
 
-			if(compressionSettings.samplingRatio < 1.0) {
-				allowedTolerance = sampleTolerance;
-			}
-			if(rows > 50000){
-				allowedTolerance *= 10;
-			}
+				if(compressionSettings.samplingRatio < 1.0) {
+					allowedTolerance = sampleTolerance;
+				}
+				if(rows > 50000) {
+					allowedTolerance *= 10;
+				}
 
-			boolean res = Math.abs(colsEstimate - actualSize) <= originalSize;
-			res = res && actualSize - allowedTolerance < colsEstimate;
-			if(!res) {
-				StringBuilder builder = new StringBuilder();
-				builder.append("\n\t" + String.format("%-40s - %12d", "Actual compressed size: ", actualSize));
-				builder.append("\n\t" + String.format("%-40s - %12d with tolerance: %5d",
-					"<= estimated isolated ColGroups: ",
-					colsEstimate,
-					allowedTolerance));
-				builder.append("\n\t" + String.format("%-40s - %12d", "<= Original size: ", originalSize));
-				builder.append("\n\tcol groups types: " + cStat.getGroupsTypesString());
-				builder.append("\n\tcol groups sizes: " + cStat.getGroupsSizesString());
-				builder.append("\n\t" + this.toString());
-				assertTrue(builder.toString(), res);
+				boolean res = Math.abs(colsEstimate - actualSize) <= originalSize;
+				res = res && actualSize - allowedTolerance < colsEstimate;
+				if(!res) {
+					StringBuilder builder = new StringBuilder();
+					builder.append("\n\t" + String.format("%-40s - %12d", "Actual compressed size: ", actualSize));
+					builder.append("\n\t" + String.format("%-40s - %12d with tolerance: %5d",
+						"<= estimated isolated ColGroups: ", colsEstimate, allowedTolerance));
+					builder.append("\n\t" + String.format("%-40s - %12d", "<= Original size: ", originalSize));
+					builder.append("\n\tcol groups types: " + cStat.getGroupsTypesString());
+					builder.append("\n\tcol groups sizes: " + cStat.getGroupsSizesString());
+					builder.append("\n\t" + this.toString());
+					assertTrue(builder.toString(), res);
+				}
 			}
 		}
 		catch(Exception e) {
@@ -254,9 +255,8 @@ public class CompressedMatrixTest extends AbstractCompressedUnaryTests {
 
 			// NOTE: The Jol estimate is wrong for shared dictionaries because
 			// it treats the object hierarchy as a tree and not a graph
-			assertTrue(builder.toString(),
-				actualSize <= originalSize &&
-					(compressionSettings.allowSharedDictionary || actualSize == JolEstimatedSize));
+			assertTrue(builder.toString(), actualSize <= originalSize &&
+				(compressionSettings.allowSharedDictionary || actualSize == JolEstimatedSize));
 		}
 		catch(Exception e) {
 			e.printStackTrace();
@@ -274,18 +274,19 @@ public class CompressedMatrixTest extends AbstractCompressedUnaryTests {
 				return;
 
 			CompressionStatistics cStat = cmbStats;
+			if(cStat != null) {
+				final double compressRatio = cStat.getRatio();
 
-			final double compressRatio = cStat.getRatio();
+				StringBuilder builder = new StringBuilder();
+				builder.append("Compression Ratio sounds suspiciously good at: " + compressRatio);
+				builder.append("\n\tActual compressed size: " + cStat.size);
+				builder.append(" original size: " + cStat.originalSize);
+				builder.append("\n\tcol groups types: " + cStat.getGroupsTypesString());
+				builder.append("\n\tcol groups sizes: " + cStat.getGroupsSizesString());
+				builder.append("\n\t" + this.toString());
 
-			StringBuilder builder = new StringBuilder();
-			builder.append("Compression Ratio sounds suspiciously good at: " + compressRatio);
-			builder.append("\n\tActual compressed size: " + cStat.size);
-			builder.append(" original size: " + cStat.originalSize);
-			builder.append("\n\tcol groups types: " + cStat.getGroupsTypesString());
-			builder.append("\n\tcol groups sizes: " + cStat.getGroupsSizesString());
-			builder.append("\n\t" + this.toString());
-
-			assertTrue(builder.toString(), compressRatio < 1000.0);
+				assertTrue(builder.toString(), compressRatio < 1000.0);
+			}
 		}
 		catch(Exception e) {
 			e.printStackTrace();

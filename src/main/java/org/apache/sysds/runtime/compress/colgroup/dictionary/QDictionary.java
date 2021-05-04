@@ -314,6 +314,20 @@ public class QDictionary extends ADictionary {
 		}
 	}
 
+
+	@Override
+	public double[] colSum(int[] counts, int nCol){
+		throw new NotImplementedException("Not Implemented");
+		// final double[] res = new double[counts.length];
+		// int idx = 0;
+		// for(int k = 0; k< _values.length / counts.length; k++){
+		// 	final int cntk = counts[k];
+		// 	for(int j = 0; j< counts.length; j++){
+		// 		res[j] += _values[idx++] * cntk;
+		// 	}
+		// }
+		// return res;
+	}
 	@Override
 	public void colSum(double[] c, int[] counts, int[] colIndexes, boolean square) {
 		throw new NotImplementedException("Not Implemented");
@@ -398,12 +412,13 @@ public class QDictionary extends ADictionary {
 		}
 	}
 
-	public StringBuilder getString(StringBuilder sb, int colIndexes) {
+	public String getString( int colIndexes) {
+		StringBuilder sb = new StringBuilder();
 		for(int i = 0; i < size(); i++) {
 			sb.append(_values[i]);
 			sb.append((i) % (colIndexes) == colIndexes - 1 ? "\n" : " ");
 		}
-		return sb;
+		return sb.toString();
 	}
 
 	public Dictionary makeDoubleDictionary() {
@@ -469,5 +484,25 @@ public class QDictionary extends ADictionary {
 	@Override
 	public boolean isLossy() {
 		return false;
+	}
+
+	@Override
+	public long getNumberNonZerosContained(){
+		long count = 0;
+		for(double v : _values){
+			if(v != 0.0)
+				count++;
+		}
+		return count;
+	}
+
+	@Override
+	public double[] getMostCommonTuple(int[] counts, int nCol){
+		return null;
+	}
+
+	@Override
+	public ADictionary subtractTuple(double[] tuple){
+		throw new NotImplementedException();
 	}
 }

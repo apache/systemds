@@ -60,6 +60,7 @@ public abstract class AColGroup implements Serializable {
 
 		/**
 		 * Get the super type of the specific ColGroup Type used.
+		 * 
 		 * @param c The concrete ColGroupType
 		 * @return The super CompressionType.
 		 */
@@ -751,8 +752,8 @@ public abstract class AColGroup implements Serializable {
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
+		sb.append(" ColGroupType: ");
 		sb.append(this.getClass().getSimpleName());
-		sb.append("\n");
 		sb.append(String.format("\n%15s%5d ", "Columns:", _colIndexes.length));
 		sb.append(Arrays.toString(_colIndexes));
 

@@ -61,7 +61,7 @@ public class ColGroupSDC extends ColGroupValue {
 	 */
 	protected AMapToData _data;
 
-		/**
+	/**
 	 * Constructor for serialization
 	 * 
 	 * @param numRows Number of rows contained
@@ -405,7 +405,7 @@ public class ColGroupSDC extends ColGroupValue {
 
 		int row;
 		for(; i < this._numRows && it.hasNext(); i++) {
-			int col = lhs.getIndex(i);
+			int col = lhs._data.getIndex(i);
 			if(it.value() == i)
 				row = getIndex(it.getDataIndexAndIncrement());
 			else
@@ -414,7 +414,7 @@ public class ColGroupSDC extends ColGroupValue {
 		}
 		row = offsetToDefault;
 		for(; i < this._numRows; i++) {
-			int col = lhs.getIndex(i);
+			int col = lhs._data.getIndex(i);
 			ag.increment(col + row * nCol);
 		}
 
@@ -612,54 +612,77 @@ public class ColGroupSDC extends ColGroupValue {
 
 		for(; i < _numRows && it.hasNext(); i++) {
 			int to = (it.value() == i) ? getIndex(it.getDataIndexAndIncrement()) : offsetToDefault;
-			that._dict.addToEntry(ret, that.getIndex(i), to, nCol);
+			that._dict.addToEntry(ret, that._data.getIndex(i), to, nCol);
 		}
 
 		for(; i < _numRows; i++)
-			that._dict.addToEntry(ret, that.getIndex(i), offsetToDefault, nCol);
+			that._dict.addToEntry(ret, that._data.getIndex(i), offsetToDefault, nCol);
 
 		return ret;
 	}
 
 	@Override
-	public Dictionary preAggregateThatSDCStructure(ColGroupSDC that, Dictionary ret) {
+	public Dictionary preAggregateThatSDCStructure(ColGroupSDC that, Dictionary ret, boolean preModified) {
 		final AIterator itThat = that._indexes.getIterator();
 		final AIterator itThis = _indexes.getIterator();
+		final int nCol = that._colIndexes.length;
 		final int offsetToDefaultThat = that.getNumValues() - 1;
 		final int offsetToDefaultThis = getNumValues() - 1;
-		final int nCol = that._colIndexes.length;
 
-		int i = 0;
-
-		for(; i < _numRows && itThat.hasNext() && itThis.hasNext(); i++) {
-			int to = (itThis.value() == i) ? getIndex(itThis.getDataIndexAndIncrement()) : offsetToDefaultThis;
-			int fr = (itThat.value() == i) ? that.getIndex(itThat.getDataIndexAndIncrement()) : offsetToDefaultThat;
-			that._dict.addToEntry(ret, fr, to, nCol);
-		}
-
-		if(itThat.hasNext()) {
-			for(; i < _numRows && itThat.hasNext(); i++) {
-				int fr = (itThat.value() == i) ? that.getIndex(itThat.getDataIndexAndIncrement()) : offsetToDefaultThat;
+		if(preModified) {
+			while(itThat.hasNext() && itThis.hasNext()) {
+				if(itThat.value() == itThis.value()) {
+					final int fr = that.getIndex(itThat.getDataIndexAndIncrement());
+					final int to = getIndex(itThis.getDataIndexAndIncrement());
+					that._dict.addToEntry(ret, fr, to, nCol);
+				}
+				else if(itThat.value() < itThis.value()) {
+					final int fr = that.getIndex(itThat.getDataIndexAndIncrement());
+					that._dict.addToEntry(ret, fr, offsetToDefaultThis, nCol);
+				}
+				else
+					itThis.next();
+			}
+	
+			while(itThat.hasNext()) {
+				final int fr = that.getIndex(itThat.getDataIndexAndIncrement());
 				that._dict.addToEntry(ret, fr, offsetToDefaultThis, nCol);
 			}
 		}
+		else {
+			int i = 0;
 
-		if(itThis.hasNext()) {
-			for(; i < _numRows && itThis.hasNext(); i++) {
+			for(; i < _numRows && itThat.hasNext() && itThis.hasNext(); i++) {
 				int to = (itThis.value() == i) ? getIndex(itThis.getDataIndexAndIncrement()) : offsetToDefaultThis;
-				that._dict.addToEntry(ret, offsetToDefaultThat, to, nCol);
+				int fr = (itThat.value() == i) ? that.getIndex(itThat.getDataIndexAndIncrement()) : offsetToDefaultThat;
+				that._dict.addToEntry(ret, fr, to, nCol);
 			}
+
+			if(itThat.hasNext()) {
+				for(; i < _numRows && itThat.hasNext(); i++) {
+					int fr = (itThat.value() == i) ? that
+						.getIndex(itThat.getDataIndexAndIncrement()) : offsetToDefaultThat;
+					that._dict.addToEntry(ret, fr, offsetToDefaultThis, nCol);
+				}
+			}
+
+			if(itThis.hasNext()) {
+				for(; i < _numRows && itThis.hasNext(); i++) {
+					int to = (itThis.value() == i) ? getIndex(itThis.getDataIndexAndIncrement()) : offsetToDefaultThis;
+					that._dict.addToEntry(ret, offsetToDefaultThat, to, nCol);
+				}
+			}
+
+			for(; i < _numRows; i++)
+				that._dict.addToEntry(ret, offsetToDefaultThat, offsetToDefaultThis, nCol);
 		}
 
-		for(; i < _numRows; i++)
-			that._dict.addToEntry(ret, offsetToDefaultThat, offsetToDefaultThis, nCol);
-			
 		return ret;
 	}
 
 	@Override
 	public Dictionary preAggregateThatSDCZerosStructure(ColGroupSDCZeros that, Dictionary ret) {
-		
+
 		final AIterator itThat = that._indexes.getIterator();
 		final AIterator itThis = _indexes.getIterator();
 		final int nCol = that._colIndexes.length;
@@ -671,7 +694,7 @@ public class ColGroupSDC extends ColGroupValue {
 				final int to = getIndex(itThis.getDataIndexAndIncrement());
 				that._dict.addToEntry(ret, fr, to, nCol);
 			}
-			else if(itThat.value() < itThis.value()){
+			else if(itThat.value() < itThis.value()) {
 				final int fr = that.getIndex(itThat.getDataIndexAndIncrement());
 				that._dict.addToEntry(ret, fr, defThis, nCol);
 			}
@@ -679,7 +702,7 @@ public class ColGroupSDC extends ColGroupValue {
 				itThis.next();
 		}
 
-		while(itThat.hasNext()){
+		while(itThat.hasNext()) {
 			final int fr = that.getIndex(itThat.getDataIndexAndIncrement());
 			that._dict.addToEntry(ret, fr, defThis, nCol);
 		}
@@ -688,7 +711,12 @@ public class ColGroupSDC extends ColGroupValue {
 	}
 
 	@Override
-	public Dictionary preAggregateThatSDCSingleZerosStructure(ColGroupSDCSingleZeros that, Dictionary ret){
+	public Dictionary preAggregateThatSDCSingleZerosStructure(ColGroupSDCSingleZeros that, Dictionary ret) {
+		throw new NotImplementedException();
+	}
+
+	@Override
+	public Dictionary preAggregateThatSDCSingleStructure(ColGroupSDCSingle that, Dictionary ret, boolean preModified) {
 		throw new NotImplementedException();
 	}
 

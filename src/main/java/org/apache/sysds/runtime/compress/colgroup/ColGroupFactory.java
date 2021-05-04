@@ -289,14 +289,16 @@ public class ColGroupFactory {
 		if(LOG.isTraceEnabled())
 			LOG.trace("compressing to: " + compType);
 		try {
+			if(cs.sortValuesByLength)
+				ubm.sortValuesByFrequency();
 
 			switch(compType) {
 				case DDC:
 					return compressDDC(colIndexes, rlen, ubm, cs);
 				case RLE:
-					return new ColGroupRLE(colIndexes, rlen, ubm, cs);
+					return compressRLE(colIndexes, rlen, ubm, cs);
 				case OLE:
-					return new ColGroupOLE(colIndexes, rlen, ubm, cs);
+					return compressOLE(colIndexes, rlen, ubm, cs);
 				case SDC:
 					return compressSDC(colIndexes, rlen, ubm, cs);
 				case UNCOMPRESSED:
@@ -459,5 +461,47 @@ public class ColGroupFactory {
 
 		return new ColGroupDDC(colIndexes, rlen, dict, _data, null);
 
+	}
+
+	private static AColGroup compressOLE(int[] colIndexes, int rlen, ABitmap ubm, CompressionSettings cs) {
+
+		ADictionary dict = ADictionary.getDictionary(ubm);
+		ColGroupOLE ole = new ColGroupOLE(rlen);
+
+		final int numVals = ubm.getNumValues();
+		char[][] lbitmaps = new char[numVals][];
+		int totalLen = 0;
+		for(int i = 0; i < numVals; i++) {
+			lbitmaps[i] = ColGroupOLE.genOffsetBitmap(ubm.getOffsetsList(i).extractValues(), ubm.getNumOffsets(i));
+			totalLen += lbitmaps[i].length;
+		}
+
+		// compact bitmaps to linearized representation
+		ole.createCompressedBitmaps(numVals, totalLen, lbitmaps);
+		ole._dict = dict;
+		ole._zeros = ubm.getNumOffsets() < (long) rlen;
+		ole._colIndexes = colIndexes;
+		return ole;
+	}
+
+	private static AColGroup compressRLE(int[] colIndexes, int rlen, ABitmap ubm, CompressionSettings cs) {
+
+		ADictionary dict = ADictionary.getDictionary(ubm);
+		ColGroupRLE rle = new ColGroupRLE(rlen);
+		// compress the bitmaps
+		final int numVals = ubm.getNumValues();
+		char[][] lbitmaps = new char[numVals][];
+		int totalLen = 0;
+
+		for(int k = 0; k < numVals; k++) {
+			lbitmaps[k] = ColGroupRLE.genRLEBitmap(ubm.getOffsetsList(k).extractValues(), ubm.getNumOffsets(k));
+			totalLen += lbitmaps[k].length;
+		}
+		// compact bitmaps to linearized representation
+		rle.createCompressedBitmaps(numVals, totalLen, lbitmaps);
+		rle._dict = dict;
+		rle._zeros = ubm.getNumOffsets() < (long) rlen;
+		rle._colIndexes = colIndexes;
+		return rle;
 	}
 }

@@ -85,9 +85,8 @@ public class Dictionary extends ADictionary {
 	@Override
 	public double aggregate(double init, Builtin fn) {
 		// full aggregate can disregard tuple boundaries
-		int len = size();
 		double ret = init;
-		for(int i = 0; i < len; i++)
+		for(int i = 0; i < _values.length; i++)
 			ret = fn.execute(ret, _values[i]);
 		return ret;
 	}
@@ -249,12 +248,23 @@ public class Dictionary extends ADictionary {
 	}
 
 	@Override
+	public double[] colSum(int[] counts, int nCol) {
+		final double[] res = new double[nCol];
+		int idx = 0;
+		for(int k = 0; k < _values.length / nCol; k++) {
+			final int cntk = counts[k];
+			for(int j = 0; j < nCol; j++)
+				res[j] += _values[idx++] * cntk;
+		}
+		return res;
+	}
+
+	@Override
 	public void colSum(double[] c, int[] counts, int[] colIndexes, boolean square) {
 		if(_values == null)
 			return;
-
 		for(int k = 0; k < _values.length / colIndexes.length; k++) {
-			int cntk = counts[k];
+			final int cntk = counts[k];
 			for(int j = 0; j < colIndexes.length; j++) {
 				double v = _values[k * colIndexes.length + j];
 				if(square)
@@ -328,17 +338,22 @@ public class Dictionary extends ADictionary {
 		}
 	}
 
-	public StringBuilder getString(StringBuilder sb, int colIndexes) {
-		sb.append("[");
-		for(int i = 0; i < _values.length - 1; i++) {
-			sb.append(_values[i]);
-			sb.append((i) % (colIndexes) == colIndexes - 1 ? ", " : ": ");
+	public String getString(int colIndexes) {
+		StringBuilder sb = new StringBuilder();
+		if(colIndexes == 1)
+			sb.append(Arrays.toString(_values));
+		else {
+			sb.append("[");
+			for(int i = 0; i < _values.length - 1; i++) {
+				sb.append(_values[i]);
+				sb.append((i) % (colIndexes) == colIndexes - 1 ? "\n: " : ", ");
+			}
+			if(_values != null && _values.length > 0) {
+				sb.append(_values[_values.length - 1]);
+			}
+			sb.append("]");
 		}
-		if(_values != null && _values.length > 0) {
-			sb.append(_values[_values.length - 1]);
-		}
-		sb.append("]");
-		return sb;
+		return sb.toString();
 	}
 
 	public ADictionary sliceOutColumnRange(int idxStart, int idxEnd, int previousNumberOfColumns) {
@@ -418,5 +433,47 @@ public class Dictionary extends ADictionary {
 	@Override
 	public boolean isLossy() {
 		return false;
+	}
+
+	@Override
+	public long getNumberNonZerosContained() {
+		long count = 0;
+		for(double v : _values) {
+			if(v != 0.0)
+				count++;
+		}
+		return count;
+	}
+
+	@Override
+	public double[] getMostCommonTuple(int[] counts, int nCol) {
+		int maxIndex = 0;
+		int maxCount = 0;
+		for(int i = 0; i < counts.length; i++) {
+			if(counts[i] > maxCount) {
+				maxCount = counts[i];
+				maxIndex = i;
+			}
+		}
+		final double[] tuple = new double[nCol];
+		boolean allZero = true;
+		for(int i = maxIndex * nCol, off = 0; i < (maxIndex + 1) * nCol && i < _values.length; i++, off++) {
+			final double v = _values[i];
+			if(v != 0) {
+				tuple[off] = _values[i];
+				allZero = false;
+			}
+		}
+
+		return allZero ? null : tuple;
+	}
+
+	@Override
+	public ADictionary subtractTuple(double[] tuple) {
+		double[] newValues = new double[_values.length];
+		for(int i = 0; i < _values.length; i++) {
+			newValues[i] = _values[i] - tuple[i % tuple.length];
+		}
+		return new Dictionary(newValues);
 	}
 }

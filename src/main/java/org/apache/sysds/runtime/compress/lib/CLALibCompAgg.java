@@ -83,7 +83,6 @@ public class CLALibCompAgg {
 			else
 				aggregateUnaryNormalCompressedMatrixBlock(inputMatrix, outputMatrix, op, blen, indexesIn, inCP);
 		}
-
 		outputMatrix.recomputeNonZeros();
 
 		return outputMatrix;

@@ -67,7 +67,7 @@ public class ColGroupSDCSingleZeros extends ColGroupValue {
 		int[] cachedCounts) {
 		super(colIndices, numRows, dict, cachedCounts);
 		_indexes = OffsetFactory.create(indexes, numRows);
-		_zeros = false;
+		_zeros = true;
 	}
 
 	protected ColGroupSDCSingleZeros(int[] colIndices, int numRows, ADictionary dict, AOffset offsets,
@@ -196,25 +196,22 @@ public class ColGroupSDCSingleZeros extends ColGroupValue {
 
 	@Override
 	public int[] getCounts(int[] counts) {
-		return getCounts(0, _numRows, counts);
+		counts[0] = _indexes.getSize();
+		counts[1] = _numRows - counts[0];
+		return counts;
 	}
 
 	@Override
 	public int[] getCounts(int rl, int ru, int[] counts) {
-		int i = rl;
 		final AIterator it = _indexes.getIterator();
 		it.skipTo(rl);
 
-		int zeros = 0;
 		while(it.hasNext() && it.value() < ru) {
-			int oldI = i;
-			i = it.value();
 			it.next();
-			zeros += i - oldI - 1;
 			counts[0]++;
 		}
 
-		counts[counts.length - 1] += zeros + ru - i;
+		counts[1] = ru - rl - counts[0];
 
 		return counts;
 	}
@@ -287,8 +284,8 @@ public class ColGroupSDCSingleZeros extends ColGroupValue {
 			return new ColGroupSDCSingleZeros(_colIndexes, _numRows, applyBinaryRowOp(op.fn, v, sparseSafe, left),
 				_indexes, getCachedCounts());
 		else {
-			ADictionary aDictionary = swapEntries(applyBinaryRowOp(op.fn, v, sparseSafe, left));
-			return new ColGroupSDCSingle(_colIndexes, _numRows, aDictionary, _indexes, null);
+			ADictionary aDictionary = applyBinaryRowOp(op.fn, v, sparseSafe, left);
+			return new ColGroupSDCSingle(_colIndexes, _numRows, aDictionary, _indexes, getCachedCounts());
 		}
 	}
 
@@ -348,7 +345,7 @@ public class ColGroupSDCSingleZeros extends ColGroupValue {
 		final AIterator it = _indexes.getIterator();
 
 		while(it.hasNext()) {
-			final int col = lhs.getIndex(it.value());
+			final int col = lhs._data.getIndex(it.value());
 			ag.increment(col);
 		}
 		return ag;
@@ -427,7 +424,7 @@ public class ColGroupSDCSingleZeros extends ColGroupValue {
 	}
 
 	@Override
-	public Dictionary preAggregateThatSDCStructure(ColGroupSDC that, Dictionary ret) {
+	public Dictionary preAggregateThatSDCStructure(ColGroupSDC that, Dictionary ret, boolean preModified) {
 		throw new NotImplementedException();
 	}
 
@@ -450,5 +447,10 @@ public class ColGroupSDCSingleZeros extends ColGroupValue {
 		}
 
 		return ret;
+	}
+
+	@Override
+	public Dictionary preAggregateThatSDCSingleStructure(ColGroupSDCSingle that, Dictionary ret, boolean preModified){
+		throw new NotImplementedException();
 	}
 }

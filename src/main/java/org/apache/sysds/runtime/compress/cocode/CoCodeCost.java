@@ -48,11 +48,15 @@ public class CoCodeCost extends AColumnCoCoder {
 	 */
 	private final int largestDistinct;
 
-	private final static int toSmallForAnalysis = 64;
+	private final int toSmallForAnalysis;
+
+	private final double percentMaxCardinality = 0.08;
 
 	protected CoCodeCost(CompressedSizeEstimator sizeEstimator, CompressionSettings cs, int numRows) {
 		super(sizeEstimator, cs, numRows);
-		largestDistinct = Math.min(4096, Math.max(256, (int) (_numRows * 0.01)));
+		largestDistinct = Math.max(256, (int) (_numRows * percentMaxCardinality));
+		toSmallForAnalysis = largestDistinct / 4;
+		LOG.error("CocodeCost largest Distinct: "+ largestDistinct + " toSmallForAnalysis: " + toSmallForAnalysis);
 	}
 
 	@Override

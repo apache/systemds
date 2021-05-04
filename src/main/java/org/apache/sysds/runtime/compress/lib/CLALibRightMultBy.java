@@ -20,7 +20,9 @@
 package org.apache.sysds.runtime.compress.lib;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -32,7 +34,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup;
-import org.apache.sysds.runtime.compress.colgroup.ColGroupUncompressed;
+import org.apache.sysds.runtime.compress.colgroup.ColGroupEmpty;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.CommonThreadPool;
 
@@ -55,34 +57,18 @@ public class CLALibRightMultBy {
 		that = that instanceof CompressedMatrixBlock ? ((CompressedMatrixBlock) that).decompress(k) : that;
 
 		MatrixBlock m = rightMultByMatrixOverlapping(colGroups, that, ret, k, v);
+
 		if(m instanceof CompressedMatrixBlock)
 			if(allowOverlappingOutput(colGroups, allowOverlap))
 				return m;
-			else {
-				CompressedMatrixBlock outBlock = (CompressedMatrixBlock) m;
-				ColGroupUncompressed uccg = findUncompressedColGroup(outBlock.getColGroups());
-				if(uccg == null)
-					return outBlock.decompress(k);
-				else{
-					MatrixBlock outputBlock = uccg.getData();
-					outputBlock.sparseToDense();
-					return outBlock.decompress(outputBlock, k);
-				}
-			}
+			else
+				return ((CompressedMatrixBlock) m).decompress(k);
 		else
 			return m;
 	}
 
-	private static ColGroupUncompressed findUncompressedColGroup(List<AColGroup> colGroups){
-		for(AColGroup g: colGroups){
-			if(g instanceof ColGroupUncompressed)
-				return (ColGroupUncompressed) g;
-		}
-		return null;
-	}
-
 	private static boolean allowOverlappingOutput(List<AColGroup> colGroups, boolean allowOverlap) {
-		
+
 		if(!allowOverlap) {
 			LOG.debug("Not Overlapping because it is not allowed");
 			return false;
@@ -91,18 +77,18 @@ public class CLALibRightMultBy {
 			return true;
 		// int distinctCount = 0;
 		// for(AColGroup g : colGroups) {
-		// 	if(g instanceof ColGroupCompressed)
-		// 		distinctCount += ((ColGroupCompressed) g).getNumValues();
-		// 	else {
-		// 		LOG.debug("Not Overlapping because there is an un-compressed column group");
-		// 		return false;
-		// 	}
+		// if(g instanceof ColGroupCompressed)
+		// distinctCount += ((ColGroupCompressed) g).getNumValues();
+		// else {
+		// LOG.debug("Not Overlapping because there is an un-compressed column group");
+		// return false;
+		// }
 		// }
 		// final int threshold = colGroups.get(0).getNumRows() / 2;
 		// boolean allow = distinctCount <= threshold;
 		// if(LOG.isDebugEnabled() && !allow)
-		// 	LOG.debug("Not Allowing Overlap because of number of distinct items in compression: " + distinctCount
-		// 		+ " is greater than threshold: " + threshold);
+		// LOG.debug("Not Allowing Overlap because of number of distinct items in compression: " + distinctCount
+		// + " is greater than threshold: " + threshold);
 		// return allow;
 
 	}
@@ -122,9 +108,15 @@ public class CLALibRightMultBy {
 		CompressedMatrixBlock ret, int k, Pair<Integer, int[]> v) {
 
 		List<AColGroup> retCg = new ArrayList<>();
+		boolean containsNull = false;
 		if(k == 1) {
-			for(AColGroup g : colGroups)
-				retCg.add(g.rightMultByMatrix(that));
+			for(AColGroup g : colGroups) {
+				AColGroup retG = g.rightMultByMatrix(that);
+				if(retG != null)
+					retCg.add(retG);
+				else
+					containsNull = true;
+			}
 		}
 		else {
 			ExecutorService pool = CommonThreadPool.get(k);
@@ -132,10 +124,12 @@ public class CLALibRightMultBy {
 				List<Callable<AColGroup>> tasks = new ArrayList<>(colGroups.size());
 				for(AColGroup g : colGroups)
 					tasks.add(new RightMatrixMultTask(g, that));
-				for(Future<AColGroup> fg : pool.invokeAll(tasks)){
+				for(Future<AColGroup> fg : pool.invokeAll(tasks)) {
 					AColGroup g = fg.get();
 					if(g != null)
 						retCg.add(g);
+					else
+						containsNull = true;
 				}
 			}
 			catch(InterruptedException | ExecutionException e) {
@@ -145,7 +139,30 @@ public class CLALibRightMultBy {
 		ret.allocateColGroupList(retCg);
 		if(retCg.size() > 1)
 			ret.setOverlapping(true);
+
+		if(containsNull) {
+			ColGroupEmpty cge = findEmptyColumnsAndMakeEmptyColGroup(retCg, ret.getNumColumns());
+			if(cge != null)
+				retCg.add(cge);
+		}
 		return ret;
+	}
+
+	private static ColGroupEmpty findEmptyColumnsAndMakeEmptyColGroup(List<AColGroup> colGroups, int nCols) {
+		Set<Integer> emptyColumns = new HashSet<Integer>(nCols);
+		for(int i = 0; i < nCols; i++)
+			emptyColumns.add(i);
+
+		for(AColGroup g : colGroups)
+			for(int c : g.getColIndices())
+				emptyColumns.remove(c);
+
+		if(emptyColumns.size() != 0) {
+			int[] emptyColumnsFinal = emptyColumns.stream().mapToInt(Integer::intValue).toArray();
+			return new ColGroupEmpty(emptyColumnsFinal, colGroups.get(0).getNumRows());
+		}
+		else
+			return null;
 	}
 
 	private static class RightMatrixMultTask implements Callable<AColGroup> {
@@ -163,7 +180,6 @@ public class CLALibRightMultBy {
 				return _colGroup.rightMultByMatrix(_b);
 			}
 			catch(Exception e) {
-				LOG.error(e);
 				throw new DMLRuntimeException(e);
 			}
 		}

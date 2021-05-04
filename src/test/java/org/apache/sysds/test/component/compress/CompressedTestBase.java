@@ -85,7 +85,7 @@ public abstract class CompressedTestBase extends TestBase {
 
 	protected static OverLapping[] overLapping = new OverLapping[] {
 		// OverLapping.COL,
-		OverLapping.PLUS, OverLapping.MATRIX, OverLapping.NONE,
+		OverLapping.PLUS, OverLapping.MATRIX, OverLapping.NONE, OverLapping.APPEND_EMPTY, OverLapping.APPEND_CONST,
 		// OverLapping.MATRIX_PLUS,
 		// OverLapping.SQUASH,
 		// OverLapping.MATRIX_MULT_NEGATIVE
@@ -217,11 +217,23 @@ public abstract class CompressedTestBase extends TestBase {
 					lossyTolerance = lossyTolerance * 160;
 					cols = 2;
 					break;
+				case APPEND_EMPTY:
+					tmp = new MatrixBlock(rows, 1, 0);
+					break;
+				case APPEND_CONST:
+					tmp = new MatrixBlock(rows, 1, 0)
+						.scalarOperations(new RightScalarOperator(Plus.getPlusFnObject(), 1), new MatrixBlock());
+					break;
 				default:
 					break;
 			}
 			if(cmb instanceof CompressedMatrixBlock) {
-				if(tmp != null) {
+				if(tmp != null && ov == OverLapping.APPEND_EMPTY || ov == OverLapping.APPEND_CONST) {
+					mb = mb.append(tmp, new MatrixBlock());
+					cmb = cmb.append(tmp, new MatrixBlock());
+					cols += tmp.getNumColumns();
+				}
+				else if(tmp != null) {
 					// Make Operator
 					AggregateBinaryOperator abop = InstructionUtils.getMatMultOperator(_k);
 
@@ -337,10 +349,10 @@ public abstract class CompressedTestBase extends TestBase {
 				return; // Input was not compressed then just pass test
 
 			MatrixBlock vector1 = DataConverter
-				.convertToMatrixBlock(TestUtils.generateTestMatrix(cols, 1, 0.9, 1.1, 1.0, 3));
+				.convertToMatrixBlock(TestUtils.generateTestMatrix(cols, 1, 0.9, 1.5, 1.0, 3));
 
 			MatrixBlock vector2 = (ctype == ChainType.XtwXv) ? DataConverter
-				.convertToMatrixBlock(TestUtils.generateTestMatrix(rows, 1, 0.9, 1.1, 1.0, 3)) : null;
+				.convertToMatrixBlock(TestUtils.generateTestMatrix(rows, 1, 0.9, 1.5, 1.0, 3)) : null;
 
 			// matrix-vector uncompressed
 			MatrixBlock ret1 = mb.chainMatrixMultOperations(vector1, vector2, new MatrixBlock(), ctype, _k);
@@ -681,7 +693,6 @@ public abstract class CompressedTestBase extends TestBase {
 		try {
 			if(!(cmb instanceof CompressedMatrixBlock))
 				return; // Input was not compressed then just pass test
-			// ChainType ctype = ChainType.XtwXv;
 			for(MMTSJType mType : new MMTSJType[] {MMTSJType.LEFT,
 				// MMTSJType.RIGHT
 			}) {
@@ -691,8 +702,6 @@ public abstract class CompressedTestBase extends TestBase {
 				// matrix-vector compressed
 				MatrixBlock ret2 = cmb.transposeSelfMatrixMultOperations(new MatrixBlock(), mType, _k);
 
-				// LOG.error(ret1);
-				// LOG.error(ret2);
 				// compare result with input
 				compareResultMatrices(ret1, ret2, 100);
 			}

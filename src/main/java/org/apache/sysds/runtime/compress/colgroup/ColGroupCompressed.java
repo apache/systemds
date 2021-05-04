@@ -89,16 +89,6 @@ public abstract class ColGroupCompressed extends AColGroup {
 
 	protected abstract boolean sameIndexStructure(ColGroupCompressed that);
 
-	public void leftMultByMatrix(MatrixBlock matrix, double[] result, int numCols, int rl, int ru) {
-		if(matrix.isEmpty())
-			return;
-		else if(matrix.isInSparseFormat())
-			leftMultBySparseMatrix(matrix.getSparseBlock(), result, matrix.getNumRows(), numCols, rl, ru);
-		else {
-			leftMultByMatrix(matrix.getDenseBlockValues(), result, matrix.getNumRows(), numCols, rl, ru);
-		}
-	}
-
 	/**
 	 * Multiply with a matrix on the left.
 	 * 
@@ -125,22 +115,33 @@ public abstract class ColGroupCompressed extends AColGroup {
 		int ru);
 
 	@Override
-	public double getMin() {
+	public final void leftMultByMatrix(MatrixBlock matrix, double[] result, int numCols, int rl, int ru) {
+		if(matrix.isEmpty())
+			return;
+		else if(matrix.isInSparseFormat())
+			leftMultBySparseMatrix(matrix.getSparseBlock(), result, matrix.getNumRows(), numCols, rl, ru);
+		else {
+			leftMultByMatrix(matrix.getDenseBlockValues(), result, matrix.getNumRows(), numCols, rl, ru);
+		}
+	}
+
+	@Override
+	public final double getMin() {
 		return computeMxx(Double.POSITIVE_INFINITY, Builtin.getBuiltinFnObject(BuiltinCode.MIN));
 	}
 
 	@Override
-	public double getMax() {
+	public final double getMax() {
 		return computeMxx(Double.NEGATIVE_INFINITY, Builtin.getBuiltinFnObject(BuiltinCode.MAX));
 	}
 
 	@Override
-	public void unaryAggregateOperations(AggregateUnaryOperator op, double[] c) {
+	public final void unaryAggregateOperations(AggregateUnaryOperator op, double[] c) {
 		unaryAggregateOperations(op, c, 0, _numRows);
 	}
 
 	@Override
-	public void unaryAggregateOperations(AggregateUnaryOperator op, double[] c, int rl, int ru) {
+	public final void unaryAggregateOperations(AggregateUnaryOperator op, double[] c, int rl, int ru) {
 		// sum and sumsq (reduceall/reducerow over tuples and counts)
 		if(op.aggOp.increOp.fn instanceof Plus || op.aggOp.increOp.fn instanceof KahanPlus ||
 			op.aggOp.increOp.fn instanceof KahanPlusSq) {
@@ -174,13 +175,13 @@ public abstract class ColGroupCompressed extends AColGroup {
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
+		sb.append(" num Rows: " + getNumRows());
 		sb.append(super.toString());
-		sb.append("num Rows: " + getNumRows());
 		return sb.toString();
 	}
 
 	@Override
-	public int getNumRows() {
+	public final int getNumRows() {
 		return _numRows;
 	}
 

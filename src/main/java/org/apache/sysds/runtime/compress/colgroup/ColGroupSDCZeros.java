@@ -358,7 +358,7 @@ public class ColGroupSDCZeros extends ColGroupValue {
 		final AIterator it = _indexes.getIterator();
 
 		while(it.hasNext()) {
-			final int col = lhs.getIndex(it.value());
+			final int col = lhs._data.getIndex(it.value());
 			final int row = getIndex(it.getDataIndexAndIncrement());
 			ag.increment(col + row * nCol);
 		}
@@ -482,7 +482,7 @@ public class ColGroupSDCZeros extends ColGroupValue {
 		final int nCol = that._colIndexes.length;
 
 		while(itThis.hasNext()) {
-			final int fr = that.getIndex(itThis.value());
+			final int fr = that._data.getIndex(itThis.value());
 			final int to = getIndex(itThis.getDataIndexAndIncrement());
 			that._dict.addToEntry(ret, fr, to, nCol);
 		}
@@ -491,7 +491,7 @@ public class ColGroupSDCZeros extends ColGroupValue {
 	}
 
 	@Override
-	public Dictionary preAggregateThatSDCStructure(ColGroupSDC that, Dictionary ret) {
+	public Dictionary preAggregateThatSDCStructure(ColGroupSDC that, Dictionary ret, boolean preModified) {
 		throw new NotImplementedException();
 	}
 
@@ -533,5 +533,10 @@ public class ColGroupSDCZeros extends ColGroupValue {
 				itThis.next();
 		}
 		return ret;
+	}
+	
+	@Override
+	public Dictionary preAggregateThatSDCSingleStructure(ColGroupSDCSingle that, Dictionary re, boolean preModified){
+		throw new NotImplementedException();
 	}
 }

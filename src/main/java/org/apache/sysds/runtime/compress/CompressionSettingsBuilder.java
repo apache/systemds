@@ -39,7 +39,7 @@ public class CompressionSettingsBuilder {
 	private boolean investigateEstimate = true;
 	private boolean lossy = false;
 	private EnumSet<CompressionType> validCompressions;
-	private boolean sortValuesByLength = false;
+	private boolean sortValuesByLength = true;
 	private PartitionerType columnPartitioner;
 	private int maxStaticColGroupCoCode = 10;
 

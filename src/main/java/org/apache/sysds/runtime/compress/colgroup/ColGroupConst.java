@@ -300,7 +300,7 @@ public class ColGroupConst extends ColGroupValue {
 	}
 
 	@Override
-	public Dictionary preAggregateThatSDCStructure(ColGroupSDC that, Dictionary ret) {
+	public Dictionary preAggregateThatSDCStructure(ColGroupSDC that, Dictionary ret, boolean preModified) {
 		throw new DMLCompressionException("Does not make sense to call this");
 	}
 
@@ -311,6 +311,11 @@ public class ColGroupConst extends ColGroupValue {
 
 	@Override
 	public Dictionary preAggregateThatSDCSingleZerosStructure(ColGroupSDCSingleZeros that, Dictionary ret) {
+		throw new DMLCompressionException("Does not make sense to call this");
+	}
+
+	@Override
+	public Dictionary preAggregateThatSDCSingleStructure(ColGroupSDCSingle that, Dictionary ret, boolean preModified){
 		throw new DMLCompressionException("Does not make sense to call this");
 	}
 

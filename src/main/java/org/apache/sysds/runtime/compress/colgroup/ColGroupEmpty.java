@@ -140,7 +140,7 @@ public class ColGroupEmpty extends ColGroupCompressed {
 		if(val0 == 0)
 			return this;
 		return new ColGroupConst(_colIndexes, _numRows,
-			new Dictionary(new double[0]).applyScalarOp(op, val0, _colIndexes.length));
+			new Dictionary(new double[_colIndexes.length]).applyScalarOp(op, val0, _colIndexes.length));
 	}
 
 	@Override
@@ -148,7 +148,7 @@ public class ColGroupEmpty extends ColGroupCompressed {
 		if(sparseSafe)
 			return this;
 		return new ColGroupConst(_colIndexes, _numRows,
-			new Dictionary(new double[0]).applyBinaryRowOp(op.fn, v, sparseSafe, _colIndexes, left));
+			new Dictionary(new double[_colIndexes.length]).applyBinaryRowOp(op.fn, v, sparseSafe, _colIndexes, left));
 	}
 
 	@Override
@@ -183,7 +183,7 @@ public class ColGroupEmpty extends ColGroupCompressed {
 
 	@Override
 	protected double computeMxx(double c, Builtin builtin) {
-		return 0;
+		return builtin.execute(c, 0);
 	}
 
 	@Override

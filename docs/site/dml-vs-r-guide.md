@@ -165,3 +165,47 @@ J = matrix ("10 20 25 26 28 31 50 67 79", rows = 1, cols = 9)
 res = X + table (matrix (1, rows = 1, cols = ncol (J)), J, 10)
 ```
 
+#### Group by aggregate using Linear Algebra
+
+Given a matrix PCV as (Position, Category, Value), sort PCV by category, and within each category
+by value in descending order.
+
+- create indicator vector for category changes
+- create distinct categories, and
+- perform linear algebra operations.
+
+```dml
+# category data
+C = matrix ('50 40 20 10 30 20 40 20 30', rows = 9, cols = 1)
+# value data
+V = matrix ('20 11 49 33 94 29 48 74 57', rows = 9, cols = 1)
+
+# 1. PCV representation
+PCV = cbind (cbind (seq (1, nrow (C), 1), C), V)
+PCV = order (target = PCV, by = 3, decreasing = TRUE,  index.return = FALSE)
+PCV = order (target = PCV, by = 2, decreasing = FALSE, index.return = FALSE)
+
+# 2. Find all rows of PCV where the category has a new value, in comparison to
+# the previous row
+
+is_new_C = matrix (1, rows = 1, cols = 1);
+if (nrow (C) > 1) {
+  is_new_C = rbind (is_new_C, (PCV [1:nrow(C) - 1, 2] < PCV [2:nrow(C), 2]));
+}
+
+# 3. Associate each category with its index
+
+index_C = cumsum (is_new_C);                                                          # cumsum
+
+# 4. For each category, compute:
+#   - the list of distinct categories
+#   - the maximum value for each category
+#   - 0-1 aggregation matrix that adds records of the same category
+
+distinct_C  = removeEmpty (target = PCV [, 2], margin = "rows", select = is_new_C);
+max_V_per_C = removeEmpty (target = PCV [, 3], margin = "rows", select = is_new_C);
+C_indicator = table (index_C, PCV [, 1], max (index_C), nrow (C));                    # table
+
+# 5. Perform aggregation, here sum values per category
+sum_V_per_C = C_indicator %*% V
+```

@@ -187,16 +187,16 @@ public class NoRenameTest extends AutomatedTestBase
 		runRenameTest("mm", true, ExecMode.SPARK);
 	}
 	
-//	@Test
-//	public void testTextlibsvmDenseSpark() {
-//		runRenameTest("libsvm", false, ExecMode.SPARK);
-//	}
-//	
-//	@Test
-//	public void testTextlibsvmSparseSpark() {
-//		runRenameTest("libsvm", true, ExecMode.SPARK);
-//	}
-//	
+	@Test
+	public void testTextlibsvmDenseSpark() {
+		runRenameTest("libsvm", false, ExecMode.SPARK);
+	}
+	
+	@Test
+	public void testTextlibsvmSparseSpark() {
+		runRenameTest("libsvm", true, ExecMode.SPARK);
+	}
+	
 	@Test
 	public void testBinaryDenseSpark() {
 		runRenameTest("binary", false, ExecMode.SPARK);

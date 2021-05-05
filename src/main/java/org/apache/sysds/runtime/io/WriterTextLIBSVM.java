@@ -90,6 +90,7 @@ public class WriterTextLIBSVM extends MatrixWriter {
 		try
 		{
 			StringBuilder sb = new StringBuilder();
+			_props = _props == null ? new FileFormatPropertiesLIBSVM() : _props;
 
 			// Write data lines
 			if( sparse ) //SPARSE

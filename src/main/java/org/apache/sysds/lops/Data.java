@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
+ * 
  *   http://www.apache.org/licenses/LICENSE-2.0
- *
+ * 
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -29,8 +29,8 @@ import org.apache.sysds.lops.LopProperties.ExecType;
 import org.apache.sysds.parser.DataExpression;
 
 /**
- * Lop to represent data objects. Data objects represent matrices, vectors,
- * variables, literals. Can be for both input and output.
+ * Lop to represent data objects. Data objects represent matrices, vectors, 
+ * variables, literals. Can be for both input and output. 
  */
 public class Data extends Lop
 {
@@ -42,7 +42,7 @@ public class Data extends Lop
 
 	/**
 	 * Method to create literal LOPs.
-	 *
+	 * 
 	 * @param vt value type
 	 * @param literalValue literal value
 	 * @return literal low-level operator
@@ -56,7 +56,7 @@ public class Data extends Lop
 	 * Constructor to setup read or write LOP
 	 * In case of write: <code>input</code> must be provided. This will always be added as the first element in <code>input</code> array.
 	 * For literals: this function is invoked through the static method <code>createLiteralLop</code>.
-	 *
+	 * 
 	 * @param op operation type
 	 * @param input low-level operator
 	 * @param inputParametersLops input lops
@@ -72,7 +72,7 @@ public class Data extends Lop
 		super(Lop.Type.Data, dt, vt);
 		_op = op;
 		literal_var = (literal != null);
-
+		
 		// Either <code>name</code> or <code>literal</code> can be non-null.
 		if(literal_var){
 			if ( _op.isTransient() )
@@ -91,7 +91,7 @@ public class Data extends Lop
 		else {
 			throw new LopsException("Invalid parameter values while setting up a Data LOP -- the lop must have either literal value or a name.");
 		}
-
+		
 		// WRITE operation must have an input Lops, we always put this
 		// input Lops as the first element of WRITE input. The parameters of
 		// WRITE operation are then put as the following input elements.

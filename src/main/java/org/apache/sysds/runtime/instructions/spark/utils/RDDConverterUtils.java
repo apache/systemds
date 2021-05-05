@@ -1368,7 +1368,7 @@ public class RDDConverterUtils {
 				for(int i = 1; i < parts.length; i++) {
 					String[] pair = parts[i].split(_indexDelim);
 					long col = Integer.parseInt(pair[0]);
-					double val = UtilFunctions.parseToDouble(pair[1], UtilFunctions.defaultNaString);
+					double val = Double.parseDouble(pair[1]);
 
 					//flush buffer if necessary
 					if(rbuff.getSize() >= rbuff.getCapacity())

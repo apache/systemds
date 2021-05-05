@@ -749,10 +749,13 @@ public abstract class Hop implements ParseInfo {
 	/**
 	 * Update the execution type if input is federated and federated compilation is activated.
 	 * Federated compilation is activated in OptimizerUtils.
+	 * This method only has an effect if FEDERATED_COMPILATION is activated.
 	 */
 	protected void updateETFed(){
-		if ( inputIsFED() )
-			_etype = ExecType.FED;
+		if ( OptimizerUtils.FEDERATED_COMPILATION ){
+			if ( inputIsFED() )
+				_etype = ExecType.FED;
+		}
 	}
 
 	/**

@@ -295,3 +295,35 @@ L = (A %*% t(A)) * Mask
 X = invert_lower_triangular (L);
 ```
 
+#### Cumulative summation with Decay multiplier
+
+Given matrix X, compute:
+
+Y[i] = X[i]
+     + X[i-1] * C[i]
+     + X[i-2] * C[i] * C[i-1]
+     + X[i-3] * C[i] * C[i-1] * C[i-2]
+     + ...
+
+```dml
+cumsum_prod = function (Matrix[double] X, Matrix[double] C, double start)
+  return (Matrix[double] Y)
+{
+   Y = X;  P = C;  m = nrow(X);  k = 1;
+   Y[1,] = Y[1,] + C[1,] * start
+   while (k < m) {
+     Y[k + 1:m,] = Y[k + 1:m,] + 
+                   Y[1:m - k,] * P[k + 1:m,]
+     P[k + 1:m,] = P[1:m - k,] * P[k + 1:m,]
+     k = 2 * k
+   }
+}
+
+X = matrix ("1 2 3 4 5 6 7 8 9", rows = 9, cols = 1)
+
+# Zeros in C cause "breaks" that restart the cumulative summation from 0
+C = matrix ("0 1 1 0 1 1 1 0 1", rows = 9, cols = 1)
+
+Y = cumsum_prod(X, C, 0)
+```
+

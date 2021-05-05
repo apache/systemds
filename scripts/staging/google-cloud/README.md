@@ -56,3 +56,67 @@ gcloud dataproc jobs submit spark --cluster ${CLUSTER_NAME} \
   --class org.apache.spark.examples.SparkPi \
   --jars file:///usr/lib/spark/examples/jars/spark-examples.jar -- 1000
 ```
+
+
+### Job info and connect
+
+List all the jobs:
+
+```sh
+gcloud dataproc jobs list --cluster ${CLUSTERNAME}
+```
+
+To get output of a specific job note `jobID` and in the below command
+replace `jobID`.
+
+```sh
+gcloud dataproc jobs wait jobID
+```
+
+### Resizing the cluster
+
+For intensive computations, to add more nodes to the cluster either to speed up.
+
+Existing cluster configuration
+
+```sh
+gcloud dataproc clusters describe ${CLUSTERNAME}
+```
+
+Add preemptible nodes to increase cluster size:
+
+```sh
+gcloud dataproc clusters update ${CLUSTERNAME} --num-preemptible-workers=1
+```
+
+Note: `workerConfig` and `secondaryWorkerConfig` will be present.
+
+### SSH into the cluster
+
+SSH into the cluster (master node) would provide fine grained control of the cluster.
+
+```sh
+gcloud compute ssh ${CLUSTERNAME}-m --zone=us-central1-c
+```
+
+Note: For the first time, we run `ssh` command on Cloud Shell, it will generate SSH keys
+for your account.
+
+The `--scopes=cloud-platform` would allow us to run gcloud inside the cluster too.
+For example,
+
+```sh
+gcloud dataproc clusters list --region=us-central1
+```
+
+to exit the cluster master instance
+
+```sh
+logout
+```
+
+### Tags
+
+A `--tags` option allows us to add a tag to each node in the cluster. Firewall rules
+can be applied to each node with conditionally adding flags.
+

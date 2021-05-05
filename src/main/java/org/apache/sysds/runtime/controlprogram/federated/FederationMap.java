@@ -407,11 +407,10 @@ public class FederationMap {
 	 */
 	public FederationMap copyWithNewIDAndRange(long rowRangeEnd, long colRangeEnd, long outputID){
 		Map<FederatedRange, FederatedData> outputMap = new TreeMap<>();
-		int overlapNum = 1;
 		for(Map.Entry<FederatedRange, FederatedData> e : _fedMap.entrySet()) {
 			if(e.getKey().getSize() != 0)
 				outputMap.put(
-					new FederatedRange(new long[]{0,0}, new long[]{rowRangeEnd, colRangeEnd}, overlapNum++),
+					new FederatedRange(new long[]{0,0}, new long[]{rowRangeEnd, colRangeEnd}, true),
 					e.getValue().copyWithNewID(outputID));
 		}
 		return new FederationMap(outputID, outputMap, FType.PART);
@@ -441,6 +440,8 @@ public class FederationMap {
 			case COL:
 				_type = FType.ROW;
 				break;
+			case PART:
+				_type = FType.PART;
 			default:
 				_type = FType.OTHER;
 		}

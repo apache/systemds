@@ -43,6 +43,7 @@ limitations under the License.
     * [`imputeByFD`-Function](#imputeByFD-function)
     * [`intersect`-Function](#intersect-function)
     * [`KMeans`-Function](#KMeans-function)
+    * [`KNN`-function](#KNN-function)
     * [`lm`-Function](#lm-function)
     * [`lmDS`-Function](#lmds-function)
     * [`lmCG`-Function](#lmcg-function)
@@ -676,6 +677,55 @@ kmeans(X = X, k = 20, runs = 10, max_iter = 5000, eps = 0.000001, is_verbose = F
 X = rand (rows = 3972, cols = 972)
 kmeans(X = X, k = 20, runs = 10, max_iter = 5000, eps = 0.000001, is_verbose = FALSE, avg_sample_size_per_centroid = 50, seed = -1)
 ```
+
+## `KNN`-Function
+
+The knn() implements the KNN (K Nearest Neighbor) algorithm.
+
+### Usage
+
+```r
+[NNR, PR, FI] = knn(Train, Test, CL, k_value)
+```
+
+### Arguments
+
+| Name       | Type            | Default    | Description |
+| :--------- | :-------------- | :--------- | :---------- |
+| Train      | Matrix          | required   | The input matrix as features |
+| Test       | Matrix          | required   | Number of centroids |
+| CL         | Matrix          | Optional   | The input matrix as target |
+| CL_T       | Integer         | `0`        | The target type of matrix CL whether columns in CL are continuous ( =1 ) or categorical ( =2 ) or not specified ( =0 ) |
+| trans_continuous | Boolean | `FALSE` | Whether to transform continuous features to [-1,1] |
+| k_value     |  int |     `5`  |  k value for KNN, ignore if select_k enable |
+| select_k    | Boolean | `FALSE` | Use k selection algorithm to estimate k ( TRUE means yes ) |
+| k_min       | int   | `1`|   Min k value(  available if select_k = 1 ) |
+| k_max       | int   | `100` | Max k value(  available if select_k = 1 ) |
+| select_feature | Boolean | `FALSE` | Use feature selection algorithm to select feature ( TRUE means yes ) |
+| feature_max | int   | `10` | Max feature selection |
+| interval    | int   | `1000` | Interval value for K selecting (  available if select_k = 1 ) |
+| feature_importance | Boolean | `FALSE` | Use feature importance algorithm to estimate each feature ( TRUE means yes ) |
+| predict_con_tg | int | `0`   | Continuous  target predict function: mean(=0) or median(=1) |
+| START_SELECTED | Matrix | Optional | feature selection initial value |
+
+### Returns
+
+| Type   | Description |
+| :----- | :---------- |
+| Matrix |  NNR |
+| Matrix |  PR |
+| Matrix | Feature importance value |
+
+### Example
+
+```r
+X = rand(rows = 100, cols = 20)
+T = rand(rows= 3, cols = 20) # query rows, and columns
+CL = matrix(seq(1,100), 100, 1)
+k = 3
+[NNR, PR, FI] = knn(Train=X, Test=T, CL=CL, k_value=k, predict_con_tg=1)
+```
+
 
 ## `lm`-Function
 

@@ -36,7 +36,7 @@ public class FileFormatPropertiesLIBSVM extends FileFormatProperties implements 
 	public FileFormatPropertiesLIBSVM() {
 		// get the default values for LIBSVM properties from the language layer
 		this.delim = DataExpression.DEFAULT_DELIM_DELIMITER;
-		this.indexDelim = DataExpression.LIBSVM_INDEX_DELIM;
+		this.indexDelim = DataExpression.DEFAULT_LIBSVM_INDEX_DELIM;
 
 		if(LOG.isDebugEnabled())
 			LOG.debug("FileFormatPropertiesLIBSVM: " + this.toString());

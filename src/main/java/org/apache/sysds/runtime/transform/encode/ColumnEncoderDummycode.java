@@ -24,11 +24,15 @@ import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 
-import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+
+import static org.apache.sysds.runtime.util.UtilFunctions.getEndIndex;
 
 public class ColumnEncoderDummycode extends ColumnEncoder {
 	private static final long serialVersionUID = 5832130477659116489L;
@@ -54,6 +58,17 @@ public class ColumnEncoderDummycode extends ColumnEncoder {
 	}
 
 	@Override
+	public List<Callable<Object>> getPartialBuildTasks(FrameBlock in, int blockSize){
+		// do nothing
+		return null;
+	}
+
+	@Override
+	public void mergeBuildPartial(List<Future<Object>> futurePartials, int start, int end) {
+
+	}
+
+	@Override
 	public MatrixBlock apply(FrameBlock in, MatrixBlock out, int outputCol) {
 		return apply(in, out, outputCol, 0, -1);
 	}
@@ -69,17 +84,17 @@ public class ColumnEncoderDummycode extends ColumnEncoder {
 
 	@Override
 	public MatrixBlock apply(MatrixBlock in, MatrixBlock out, int outputCol, int rowStart, int blk) {
-		int end = (blk <= 0)? in.getNumRows(): in.getNumRows() < rowStart + blk ? in.getNumRows() : rowStart + blk;
 		// Out Matrix should already be correct size!
 		// append dummy coded or unchanged values to output
-		for(int i = rowStart; i < end; i++) {
+		for(int i = rowStart; i < getEndIndex(in.getNumRows(), rowStart, blk); i++) {
 			// Using outputCol here as index since we have a MatrixBlock as input where dummycoding could have been
 			// applied in a previous encoder
-			double val = in.quickGetValue(i, outputCol);
+			double val = in.quickGetValueThreadSafe(i, outputCol);
 			int nCol = outputCol + (int) val - 1;
-			out.getDenseBlock().set(i, nCol, 1);
+			// Setting value to 0 first in case of sparse so the row vector does not need to be resized
 			if(nCol != outputCol)
-				out.getDenseBlock().set(i, outputCol, 0);
+				out.quickSetValueThreadSafe(i, outputCol, 0);
+			out.quickSetValueThreadSafe(i, nCol, 1);
 		}
 		return out;
 	}

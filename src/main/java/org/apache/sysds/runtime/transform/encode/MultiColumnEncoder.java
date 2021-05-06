@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.concurrent.Callable;
@@ -37,6 +38,8 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.data.SparseBlock;
+import org.apache.sysds.runtime.data.SparseBlockMCSR;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.CommonThreadPool;
@@ -53,10 +56,15 @@ public class MultiColumnEncoder implements Encoder {
 	private int _colOffset = 0; // offset for federated Workers who are using subrange encoders
 	private FrameBlock _meta = null;
 
-	private int _blocksize = 0;
 
-	public void setBlockSize(int blk){
-		_blocksize = blk;
+	//TEMP CONSTANTS for testing only
+	private int APPLY_BLOCKSIZE = 0;  //temp only for testing until automatic calculation of block size
+	public static int BUILD_BLOCKSIZE = 0;
+	public void setApplyBlockSize(int blk){
+		APPLY_BLOCKSIZE = blk;
+	}
+	public void setBuildBlockSize(int blk){
+		BUILD_BLOCKSIZE = blk;
 	}
 
 	public MultiColumnEncoder(List<ColumnEncoderComposite> columnEncoders) {
@@ -87,29 +95,35 @@ public class MultiColumnEncoder implements Encoder {
 		return out;
 	}
 
-	public void build(FrameBlock in){ build(in, 1); }
+	public void build(FrameBlock in){
+		build(in, 1);
+	}
 
 	public void build(FrameBlock in, int k) {
 		if(MULTI_THREADED && k > 1){
-			try{
-				ExecutorService pool = CommonThreadPool.get(k);
-				ArrayList<ColumnBuildTask> tasks = new ArrayList<>();
-				for(ColumnEncoderComposite e : _columnEncoders) {
-					tasks.add(new ColumnBuildTask(e, in));
-				}
-				List<Future<Integer>> rtasks = pool.invokeAll(tasks);
-				pool.shutdown();
-				for(Future<Integer> t: rtasks)
-					t.get();
-			} catch (InterruptedException | ExecutionException e) {
-				LOG.error("MT Column encode failed");
-				e.printStackTrace();
-			}
-			return;
+			buildMT(in, k);
+		}else{
+			for(ColumnEncoder columnEncoder : _columnEncoders)
+				columnEncoder.build(in);
 		}
-		for(ColumnEncoder columnEncoder : _columnEncoders)
-			columnEncoder.build(in);
 		legacyBuild(in);
+	}
+
+	private void buildMT(FrameBlock in, int k){
+		try{
+			ExecutorService pool = CommonThreadPool.get(k);
+			ArrayList<ColumnBuildTask> tasks = new ArrayList<>();
+			for(ColumnEncoderComposite e : _columnEncoders) {
+				tasks.add(new ColumnBuildTask(e, in, pool));
+			}
+			List<Future<Integer>> rtasks = pool.invokeAll(tasks);
+			pool.shutdown();
+			for(Future<Integer> t: rtasks)
+				t.get();
+		} catch (InterruptedException | ExecutionException e) {
+			LOG.error("MT Column encode failed");
+			e.printStackTrace();
+		}
 	}
 
 	public void legacyBuild(FrameBlock in) {
@@ -125,8 +139,9 @@ public class MultiColumnEncoder implements Encoder {
 
 	public MatrixBlock apply(FrameBlock in, int k) {
 		int numCols = in.getNumColumns() + getNumExtraCols();
-		// TODO evaluate if sparse
-		MatrixBlock out = new MatrixBlock(in.getNumRows(), numCols, false);
+		long estNNz = (long)in.getNumColumns() * (long)in.getNumRows();
+		boolean sparse = MatrixBlock.evalSparseFormatInMemory(in.getNumRows(), numCols, estNNz);
+		MatrixBlock out = new MatrixBlock(in.getNumRows(), numCols, sparse, estNNz);
 		return apply(in, out, 0, k);
 	}
 
@@ -142,34 +157,36 @@ public class MultiColumnEncoder implements Encoder {
 			throw new DMLRuntimeException("Not every column in has a CompositeEncoder. Please make sure every column "
 				+ "has a encoder or slice the input accordingly");
 		// Denseblock allocation since access is only on the DenseBlock
-		// TODO if sparse do different stuff
-		out.allocateDenseBlock();
+		out.allocateBlock();
+		if(out.isInSparseFormat()){
+			SparseBlock block = out.getSparseBlock();
+			if(!(block instanceof SparseBlockMCSR))
+				throw new RuntimeException("Transform apply currently only supported for MCSR sparse and dense output Matrices");
+			for(int r = 0; r < out.getNumRows(); r++){
+				// allocate all sparse rows so MT sync can be done.
+				// should be rare that rows have only 0
+				block.allocate(r, in.getNumColumns());
+			}
+		}
 		// TODO smart checks
 		if(MULTI_THREADED && k > 1){
 			applyMT(in, out, outputCol, k);
-			out.recomputeNonZeros();
-			return out;
-		}
-
-		try {
+		}else{
 			int offset = outputCol;
 			for(ColumnEncoderComposite columnEncoder : _columnEncoders) {
 				columnEncoder.apply(in, out, columnEncoder._colID - 1 + offset);
 				if(columnEncoder.hasEncoder(ColumnEncoderDummycode.class))
 					offset += columnEncoder.getEncoder(ColumnEncoderDummycode.class)._domainSize - 1;
 			}
-			if(_legacyOmit != null)
-				out = _legacyOmit.apply(in, out);
-			if(_legacyMVImpute != null)
-				out = _legacyMVImpute.apply(in, out);
-		}
-		catch(Exception ex) {
-			LOG.error("Failed to transform-apply frame with \n" + this);
-			throw ex;
 		}
 		// Recomputing NNZ since we access the Dense block directly
-		// TODO set NNZ explicit since we can compute it without counting
+		// TODO set NNZ explicit count them in the encoders
 		out.recomputeNonZeros();
+		if(_legacyOmit != null)
+			out = _legacyOmit.apply(in, out);
+		if(_legacyMVImpute != null)
+			out = _legacyMVImpute.apply(in, out);
+
 		return out;
 	}
 
@@ -178,9 +195,8 @@ public class MultiColumnEncoder implements Encoder {
 			ExecutorService pool = CommonThreadPool.get(k);
 			ArrayList<ColumnApplyTask> tasks = new ArrayList<>();
 			int offset = outputCol;
-			//int blockSize = in.getNumRows() / k;
 			//todo calculate smart blocksize
-			int blockSize = _blocksize <= 0 ? in.getNumRows(): _blocksize;
+			int blockSize = APPLY_BLOCKSIZE <= 0 ? in.getNumRows(): APPLY_BLOCKSIZE;
 			for(ColumnEncoderComposite e : _columnEncoders) {
 				for(int i = 0; i < in.getNumRows(); i=i+blockSize)
 					tasks.add(new ColumnApplyTask(e, in, out, e._colID - 1 + offset, i, blockSize));
@@ -575,6 +591,7 @@ public class MultiColumnEncoder implements Encoder {
 		@Override
 		public Integer call() throws Exception {
 			_encoder.apply(_input, _out, _columnOut, _rowStart, _blk);
+			//TODO return NNZ
 			return 1;
 		}
 	}
@@ -583,15 +600,31 @@ public class MultiColumnEncoder implements Encoder {
 
 		private final ColumnEncoder _encoder;
 		private final FrameBlock _input;
+		private final ExecutorService _pool;
 
-		protected ColumnBuildTask(ColumnEncoder encoder, FrameBlock input){
+		// if a pool is passed the task may be split up into multiple smaller tasks.
+		protected ColumnBuildTask(ColumnEncoder encoder, FrameBlock input, ExecutorService pool){
 			_encoder = encoder;
 			_input = input;
+			_pool = pool;
+		}
+
+		protected ColumnBuildTask(ColumnEncoder encoder, FrameBlock input){
+			this(encoder, input, null);
 		}
 
 		@Override
 		public Integer call() throws Exception {
-			_encoder.build(_input);
+			int blockSize = BUILD_BLOCKSIZE <= 0 ? _input.getNumRows(): BUILD_BLOCKSIZE;
+			if(blockSize == _input.getNumRows() || _pool == null){
+				_encoder.build(_input);
+				return 1;
+			}
+			List<Callable<Object>> tasks = _encoder.getPartialBuildTasks(_input, blockSize);
+			if (tasks == null)
+				return 0;
+			List<Future<Object>> ret = _pool.invokeAll(tasks);
+			_encoder.mergeBuildPartial(ret, 0, ret.size());
 			return 1;
 		}
 	}

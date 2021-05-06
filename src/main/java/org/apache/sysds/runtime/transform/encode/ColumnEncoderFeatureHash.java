@@ -22,12 +22,17 @@ package org.apache.sysds.runtime.transform.encode;
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
+import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 
-import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.UtilFunctions;
+
+import static org.apache.sysds.runtime.util.UtilFunctions.getEndIndex;
 
 /**
  * Class used for feature hashing transformation of frames.
@@ -62,6 +67,17 @@ public class ColumnEncoderFeatureHash extends ColumnEncoder {
 	}
 
 	@Override
+	public List<Callable<Object>> getPartialBuildTasks(FrameBlock in, int blockSize){
+		// do nothing
+		return null;
+	}
+
+	@Override
+	public void mergeBuildPartial(List<Future<Object>> futurePartials, int start, int end) {
+
+	}
+
+	@Override
 	public MatrixBlock apply(FrameBlock in, MatrixBlock out, int outputCol) {
 		return apply(in, out, outputCol, 0, -1);
 	}
@@ -73,15 +89,14 @@ public class ColumnEncoderFeatureHash extends ColumnEncoder {
 
 	@Override
 	public MatrixBlock apply(FrameBlock in, MatrixBlock out, int outputCol, int rowStart, int blk) {
-		int end = (blk <= 0)? in.getNumRows(): in.getNumRows() < rowStart + blk ? in.getNumRows() : rowStart + blk;
 		// apply feature hashing column wise
-		for(int i = rowStart; i < end; i++) {
+		for(int i = rowStart; i < getEndIndex(in.getNumRows(), rowStart, blk); i++) {
 			Object okey = in.get(i, _colID - 1);
 			String key = (okey != null) ? okey.toString() : null;
 			if(key == null)
 				throw new DMLRuntimeException("Missing Value encountered in input Frame for FeatureHash");
 			long code = getCode(key);
-			out.getDenseBlock().set(i, outputCol, (code >= 0) ? code : Double.NaN);
+			out.quickSetValueThreadSafe(i, outputCol, (code >= 0) ? code : Double.NaN);
 		}
 		return out;
 	}
@@ -91,10 +106,10 @@ public class ColumnEncoderFeatureHash extends ColumnEncoder {
 		int end = (blk <= 0)? in.getNumRows(): in.getNumRows() < rowStart + blk ? in.getNumRows() : rowStart + blk;
 		// apply feature hashing column wise
 		for(int i = rowStart; i < end; i++) {
-			Object okey = in.quickGetValue(i, _colID - 1);
+			Object okey = in.quickGetValueThreadSafe(i, _colID - 1);
 			String key = okey.toString();
 			long code = getCode(key);
-			out.getDenseBlock().set(i, outputCol, (code >= 0) ? code : Double.NaN);
+			out.quickSetValueThreadSafe(i, outputCol, (code >= 0) ? code : Double.NaN);
 		}
 		return out;
 	}

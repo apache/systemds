@@ -39,7 +39,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 
 public class TransformFrameEncodeMultithreadedTest extends AutomatedTestBase {
-	private final static String TEST_NAME1 = "TransformFrameEncodeApply";
+	private final static String TEST_NAME1 = "TransformFrameEncodeMultithreadedTest";
 	private final static String TEST_DIR = "functions/transform/";
 	private final static String TEST_CLASS_DIR = TEST_DIR + TransformFrameEncodeMultithreadedTest.class.getSimpleName() + "/";
 	
@@ -48,6 +48,7 @@ public class TransformFrameEncodeMultithreadedTest extends AutomatedTestBase {
 	private final static String SPEC1    = "homes3/homes.tfspec_recode.json";
 	private final static String SPEC1b   = "homes3/homes.tfspec_recode2.json";
 	private final static String SPEC2    = "homes3/homes.tfspec_dummy.json";
+	private final static String SPEC2all = "homes3/homes.tfspec_dummy_all.json";
 	private final static String SPEC2b   = "homes3/homes.tfspec_dummy2.json";
 	private final static String SPEC3    = "homes3/homes.tfspec_bin.json"; //recode
 	private final static String SPEC3b   = "homes3/homes.tfspec_bin2.json"; //recode
@@ -59,14 +60,6 @@ public class TransformFrameEncodeMultithreadedTest extends AutomatedTestBase {
 	private final static String SPEC8b   = "homes3/homes.tfspec_hash2.json";
 	private final static String SPEC9    = "homes3/homes.tfspec_hash_recode.json";
 	private final static String SPEC9b   = "homes3/homes.tfspec_hash_recode2.json";
-
-	
-	//dataset and transform tasks with missing values
-	private final static String DATASET2 = "homes/homes.csv";
-	private final static String SPEC4    = "homes3/homes.tfspec_impute.json";
-	private final static String SPEC4b   = "homes3/homes.tfspec_impute2.json";
-	private final static String SPEC5    = "homes3/homes.tfspec_omit.json";
-	private final static String SPEC5b   = "homes3/homes.tfspec_omit2.json";
 	
 	private static final int[] BIN_col3 = new int[]{1,4,2,3,3,2,4};
 	private static final int[] BIN_col8 = new int[]{1,2,2,2,2,2,3};
@@ -74,11 +67,10 @@ public class TransformFrameEncodeMultithreadedTest extends AutomatedTestBase {
 	public enum TransformType {
 		RECODE,
 		DUMMY,
+		DUMMY_ALL, //to test sparse
 		RECODE_DUMMY,
 		BIN,
 		BIN_DUMMY,
-		IMPUTE,
-		OMIT,
 		HASH,
 		HASH_RECODE,
 	}
@@ -98,6 +90,12 @@ public class TransformFrameEncodeMultithreadedTest extends AutomatedTestBase {
 	public void testHomesDummyCodeIDsSingleNodeCSV() {
 		runTransformTest(ExecMode.SINGLE_NODE, "csv", TransformType.DUMMY, false);
 	}
+
+	@Test
+	public void testHomesDummyAllCodeIDsSingleNodeCSV() {
+		runTransformTest(ExecMode.SINGLE_NODE, "csv", TransformType.DUMMY_ALL, false);
+	}
+
 
 	@Test
 	public void testHomesRecodeDummyCodeIDsSingleNodeCSV() {
@@ -124,16 +122,15 @@ public class TransformFrameEncodeMultithreadedTest extends AutomatedTestBase {
 		runTransformTest(ExecMode.SINGLE_NODE, "csv", TransformType.HASH_RECODE, false);
 	}
 	
-	private void runTransformTest( ExecMode rt, String ofmt, TransformType type, boolean colnames )	{
+	private void runTransformTest( ExecMode rt, String ofmt, TransformType type, boolean colnames)	{
 
 		//set transform specification
 		String SPEC = null; String DATASET = null;
 		switch( type ) {
 			case RECODE: SPEC = colnames?SPEC1b:SPEC1; DATASET = DATASET1; break;
 			case DUMMY:  SPEC = colnames?SPEC2b:SPEC2; DATASET = DATASET1; break;
+			case DUMMY_ALL:  SPEC = SPEC2all; DATASET = DATASET1; break;
 			case BIN:    SPEC = colnames?SPEC3b:SPEC3; DATASET = DATASET1; break;
-			case IMPUTE: SPEC = colnames?SPEC4b:SPEC4; DATASET = DATASET2; break;
-			case OMIT:   SPEC = colnames?SPEC5b:SPEC5; DATASET = DATASET2; break;
 			case RECODE_DUMMY: SPEC = colnames?SPEC6b:SPEC6; DATASET = DATASET1; break;
 			case BIN_DUMMY: SPEC = colnames?SPEC7b:SPEC7; DATASET = DATASET1; break;
 			case HASH:	 SPEC = colnames?SPEC8b:SPEC8; DATASET = DATASET1; break;
@@ -192,9 +189,6 @@ public class TransformFrameEncodeMultithreadedTest extends AutomatedTestBase {
 							1:0, R1[i][10+j], 1e-8);
 					}
 				}
-			} else if (type == TransformType.IMPUTE){
-				// Column 8 had GLOBAL_MEAN applied
-				Assert.assertFalse(TestUtils.containsNan(R1, 8));
 			}
 		}
 		catch(Exception ex) {

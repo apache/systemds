@@ -23,8 +23,13 @@ import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 
 import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.runtime.DMLRuntimeException;
@@ -42,6 +47,9 @@ public class ColumnEncoderComposite extends ColumnEncoder {
 
 	private List<ColumnEncoder> _columnEncoders = null;
 	private FrameBlock _meta = null;
+
+	// map to keep track of which encoder has how many build tasks
+	private Map<ColumnEncoder, Integer> _partialBuildTaskMap;
 
 	public ColumnEncoderComposite() {
 		super(-1);
@@ -91,6 +99,32 @@ public class ColumnEncoderComposite extends ColumnEncoder {
 	public void build(FrameBlock in) {
 		for(ColumnEncoder columnEncoder : _columnEncoders)
 			columnEncoder.build(in);
+	}
+
+	@Override
+	public List<Callable<Object>> getPartialBuildTasks(FrameBlock in, int blockSize){
+		List<Callable<Object>> tasks = new ArrayList<>();
+		_partialBuildTaskMap = new HashMap<>();
+		for (ColumnEncoder columnEncoder : _columnEncoders){
+			List<Callable<Object>> _tasks = columnEncoder.getPartialBuildTasks(in, blockSize);
+			if (_tasks != null)
+				tasks.addAll(_tasks);
+			_partialBuildTaskMap.put(columnEncoder, _tasks != null ? _tasks.size() : 0);
+		}
+		return tasks.size() == 0? null: tasks;
+	}
+
+	@Override
+	public void mergeBuildPartial(List<Future<Object>> futurePartials, int start, int end) throws ExecutionException, InterruptedException {
+		int endLocal;
+		for(ColumnEncoder columnEncoder : _columnEncoders){
+			endLocal = start + _partialBuildTaskMap.get(columnEncoder);
+			columnEncoder.mergeBuildPartial(futurePartials, start, endLocal);
+			start = endLocal;
+			if(start >= end)
+				break;
+		}
+
 	}
 
 	@Override

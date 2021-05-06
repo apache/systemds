@@ -227,6 +227,33 @@ Examples:
 - [Makefile/.proto](./src/main/python/docs/Makefile#L1-L20)
 - Markdown - refer to the top of this file in raw format.
 
+## Security
+
+Confine to the apache.org or apache approved domains or user accounts on other platforms to keep our codebase robust and safe.
+This relieves the projects contributors of their liability. If any doubt arises, open Jira or contact on dev list.
+
+**CI/testing:** In testing, where applicable the downloads are done we need to create mechanism to
+check for the security for trusted origin.
+
+**GitHub Actions:** Only [`Verified Creator`](https://github.com/marketplace?type=actions&verification=verified_creator) actions
+can be used as is. For the user created actions the code needs to be first cloned to the github.com/apache account and used in
+the actions with `ssh` clone.
+
+**Downloads:** [downloads.apache.org/systemds](https://downloads.apache.org/systemds) is the interface for project artifacts. The
+General user who is not a developer to the systemds project or unaware of the underlying assumptions should not be pointed to
+the source code such as [`github releases` page](https://github.com/apache/systemds/releases), Nightly builds, or any experimental
+builds including documentation.
+
+**Docker:** Docker artifacts are to be hosted at [hub.docker.com/u/apache](https://hub.docker.com/u/apache) . Take reasonble care to test the source origin for
+third-party (other than SystemDS) docker iamges. See [docs.docker.com/engine/security/trust/](https://docs.docker.com/engine/security/trust/)
+
+**Submodules:** Submodules does have an inherent security risk. Before using the code as a submodule, try to contact the repository
+maintainer for any security risks, license, attribution information, security keys etc. If possible, request them if they would like
+to help us in integration of their software (Some people are more than happy to do. Also, start a discussion on the dev mailing list
+with `[DISCUSS]` tag.
+
+**Url shortener:** Apache Committers can use [s.apache.org](https://s.apache.org/), For gists use [paste.apache.org](https://paste.apache.org/)
+there is a committer only option too. Try not to use personal credentials (example, google account) as they will void the Apache legal protection.
 
 ___
 

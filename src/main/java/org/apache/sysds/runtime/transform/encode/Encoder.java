@@ -46,6 +46,7 @@ public interface Encoder extends Externalizable {
 	 * @return output matrix block
 	 */
 	MatrixBlock apply(FrameBlock in, MatrixBlock out, int outputCol);
+
 	/**
 	 * Construct a frame block out of the transform meta data.
 	 *

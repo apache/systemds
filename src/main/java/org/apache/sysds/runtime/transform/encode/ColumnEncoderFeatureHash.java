@@ -19,6 +19,8 @@
 
 package org.apache.sysds.runtime.transform.encode;
 
+import static org.apache.sysds.runtime.util.UtilFunctions.getEndIndex;
+
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
@@ -30,8 +32,6 @@ import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.UtilFunctions;
-
-import static org.apache.sysds.runtime.util.UtilFunctions.getEndIndex;
 
 /**
  * Class used for feature hashing transformation of frames.
@@ -66,7 +66,7 @@ public class ColumnEncoderFeatureHash extends ColumnEncoder {
 	}
 
 	@Override
-	public List<Callable<Object>> getPartialBuildTasks(FrameBlock in, int blockSize){
+	public List<Callable<Object>> getPartialBuildTasks(FrameBlock in, int blockSize) {
 		// do nothing
 		return null;
 	}
@@ -102,7 +102,7 @@ public class ColumnEncoderFeatureHash extends ColumnEncoder {
 
 	@Override
 	public MatrixBlock apply(MatrixBlock in, MatrixBlock out, int outputCol, int rowStart, int blk) {
-		int end = (blk <= 0)? in.getNumRows(): in.getNumRows() < rowStart + blk ? in.getNumRows() : rowStart + blk;
+		int end = (blk <= 0) ? in.getNumRows() : in.getNumRows() < rowStart + blk ? in.getNumRows() : rowStart + blk;
 		// apply feature hashing column wise
 		for(int i = rowStart; i < end; i++) {
 			Object okey = in.quickGetValueThreadSafe(i, _colID - 1);

@@ -19,6 +19,8 @@
 
 package org.apache.sysds.runtime.transform.encode;
 
+import static org.apache.sysds.runtime.util.UtilFunctions.getEndIndex;
+
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
@@ -39,8 +41,6 @@ import org.apache.sysds.lops.Lop;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
-
-import static org.apache.sysds.runtime.util.UtilFunctions.getEndIndex;
 
 public class ColumnEncoderRecode extends ColumnEncoder {
 	private static final long serialVersionUID = 8213163881283341874L;
@@ -115,9 +115,8 @@ public class ColumnEncoderRecode extends ColumnEncoder {
 			putCode(map, key);
 	}
 
-	private static void makeRcdMap(FrameBlock in, HashMap<String, Long> map, int colID, int startRow, int blk){
-		Iterator<String[]> iter = in.getStringRowIterator(startRow,
-				getEndIndex(in.getNumRows(), startRow, blk), colID);
+	private static void makeRcdMap(FrameBlock in, HashMap<String, Long> map, int colID, int startRow, int blk) {
+		Iterator<String[]> iter = in.getStringRowIterator(startRow, getEndIndex(in.getNumRows(), startRow, blk), colID);
 		while(iter.hasNext()) {
 			String[] row = iter.next();
 			// probe and build column map
@@ -130,6 +129,7 @@ public class ColumnEncoderRecode extends ColumnEncoder {
 			sortCPRecodeMaps(map);
 		}
 	}
+
 	private long lookupRCDMap(String key) {
 		Long tmp = _rcdMap.get(key);
 		return (tmp != null) ? tmp : -1;
@@ -139,31 +139,30 @@ public class ColumnEncoderRecode extends ColumnEncoder {
 	public void build(FrameBlock in) {
 		if(!isApplicable())
 			return;
-		makeRcdMap(in, _rcdMap, _colID,0, in.getNumRows());
+		makeRcdMap(in, _rcdMap, _colID, 0, in.getNumRows());
 	}
 
 	@Override
-	public List<Callable<Object>> getPartialBuildTasks(FrameBlock in, int blockSize){
+	public List<Callable<Object>> getPartialBuildTasks(FrameBlock in, int blockSize) {
 		List<Callable<Object>> tasks = new ArrayList<>();
-		for(int i = 0; i < in.getNumRows(); i=i+blockSize)
+		for(int i = 0; i < in.getNumRows(); i = i + blockSize)
 			tasks.add(new RecodePartialBuildTask(in, _colID, i, blockSize));
 		if(in.getNumRows() % blockSize != 0)
-			tasks.add(new RecodePartialBuildTask(in, _colID,
-					in.getNumRows()-in.getNumRows()%blockSize, -1));
+			tasks.add(new RecodePartialBuildTask(in, _colID, in.getNumRows() - in.getNumRows() % blockSize, -1));
 		return tasks;
 	}
 
 	@Override
-	public void mergeBuildPartial(List<Future<Object>> futurePartials, int start, int end) throws ExecutionException,
-			InterruptedException {
-		for(int i = start; i < end; i++){
+	public void mergeBuildPartial(List<Future<Object>> futurePartials, int start, int end)
+		throws ExecutionException, InterruptedException {
+		for(int i = start; i < end; i++) {
 			Object partial = futurePartials.get(i).get();
-			if (!(partial instanceof HashMap)){
-				throw new DMLRuntimeException("Tried to merge " + partial.getClass() + " object into RecodeEncoder. " +
-						"HashMap was expected.");
+			if(!(partial instanceof HashMap)) {
+				throw new DMLRuntimeException(
+					"Tried to merge " + partial.getClass() + " object into RecodeEncoder. " + "HashMap was expected.");
 			}
-			HashMap<?,?> partialMap = (HashMap<?,?>)partial;
-			partialMap.forEach((k,v) -> {
+			HashMap<?, ?> partialMap = (HashMap<?, ?>) partial;
+			partialMap.forEach((k, v) -> {
 				if(!_rcdMap.containsKey((String) k))
 					putCode(_rcdMap, (String) k);
 			});
@@ -207,7 +206,7 @@ public class ColumnEncoderRecode extends ColumnEncoder {
 	}
 
 	@Override
-	public MatrixBlock apply(FrameBlock in, MatrixBlock out, int outputCol, int rowStart, int blk){
+	public MatrixBlock apply(FrameBlock in, MatrixBlock out, int outputCol, int rowStart, int blk) {
 		// FrameBlock is column Major and MatrixBlock row Major this results in cache inefficiencies :(
 		for(int i = rowStart; i < getEndIndex(in.getNumRows(), rowStart, blk); i++) {
 			Object okey = in.get(i, _colID - 1);
@@ -221,7 +220,7 @@ public class ColumnEncoderRecode extends ColumnEncoder {
 	@Override
 	public MatrixBlock apply(MatrixBlock in, MatrixBlock out, int outputCol, int rowStart, int blk) {
 		throw new DMLRuntimeException(
-				"Recode called with MatrixBlock. Should not happen since Recode is the first " + "encoder in the Stack");
+			"Recode called with MatrixBlock. Should not happen since Recode is the first " + "encoder in the Stack");
 	}
 
 	@Override
@@ -269,8 +268,7 @@ public class ColumnEncoderRecode extends ColumnEncoder {
 		StringBuilder sb = new StringBuilder(); // for reuse
 		int rowID = 0;
 		for(Entry<String, Long> e : _rcdMap.entrySet()) {
-			meta.set(rowID++,
-				_colID - 1, // 1-based
+			meta.set(rowID++, _colID - 1, // 1-based
 				constructRecodeMapEntry(e.getKey(), e.getValue(), sb));
 		}
 		meta.getColumnMetadata(_colID - 1).setNumDistinct(getNumDistinctValues());
@@ -326,8 +324,7 @@ public class ColumnEncoderRecode extends ColumnEncoder {
 		return Objects.hash(_rcdMap);
 	}
 
-
-	public HashMap<String, Long> getRcdMap(){
+	public HashMap<String, Long> getRcdMap() {
 		return _rcdMap;
 	}
 
@@ -339,7 +336,7 @@ public class ColumnEncoderRecode extends ColumnEncoder {
 		private final int _colID;
 
 		// if a pool is passed the task may be split up into multiple smaller tasks.
-		protected RecodePartialBuildTask(FrameBlock input, int colID, int startRow, int blocksize){
+		protected RecodePartialBuildTask(FrameBlock input, int colID, int startRow, int blocksize) {
 			_input = input;
 			_blockSize = blocksize;
 			_colID = colID;
@@ -349,7 +346,7 @@ public class ColumnEncoderRecode extends ColumnEncoder {
 		@Override
 		public HashMap<String, Long> call() throws Exception {
 			HashMap<String, Long> partialMap = new HashMap<>();
-			makeRcdMap(_input, partialMap,_colID, _startRow, _blockSize);
+			makeRcdMap(_input, partialMap, _colID, _startRow, _blockSize);
 			return partialMap;
 		}
 	}

@@ -31,7 +31,6 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
-import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
@@ -102,22 +101,23 @@ public class ColumnEncoderComposite extends ColumnEncoder {
 	}
 
 	@Override
-	public List<Callable<Object>> getPartialBuildTasks(FrameBlock in, int blockSize){
+	public List<Callable<Object>> getPartialBuildTasks(FrameBlock in, int blockSize) {
 		List<Callable<Object>> tasks = new ArrayList<>();
 		_partialBuildTaskMap = new HashMap<>();
-		for (ColumnEncoder columnEncoder : _columnEncoders){
+		for(ColumnEncoder columnEncoder : _columnEncoders) {
 			List<Callable<Object>> _tasks = columnEncoder.getPartialBuildTasks(in, blockSize);
-			if (_tasks != null)
+			if(_tasks != null)
 				tasks.addAll(_tasks);
 			_partialBuildTaskMap.put(columnEncoder, _tasks != null ? _tasks.size() : 0);
 		}
-		return tasks.size() == 0? null: tasks;
+		return tasks.size() == 0 ? null : tasks;
 	}
 
 	@Override
-	public void mergeBuildPartial(List<Future<Object>> futurePartials, int start, int end) throws ExecutionException, InterruptedException {
+	public void mergeBuildPartial(List<Future<Object>> futurePartials, int start, int end)
+		throws ExecutionException, InterruptedException {
 		int endLocal;
-		for(ColumnEncoder columnEncoder : _columnEncoders){
+		for(ColumnEncoder columnEncoder : _columnEncoders) {
 			endLocal = start + _partialBuildTaskMap.get(columnEncoder);
 			columnEncoder.mergeBuildPartial(futurePartials, start, endLocal);
 			start = endLocal;

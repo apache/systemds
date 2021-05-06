@@ -54,6 +54,7 @@ public abstract class ColumnEncoder implements Externalizable, Encoder, Comparab
 	public abstract MatrixBlock apply(MatrixBlock in, MatrixBlock out, int outputCol, int rowStart, int blk);
 
 	public abstract MatrixBlock apply(FrameBlock in, MatrixBlock out, int outputCol, int rowStart, int blk);
+
 	/**
 	 * Indicates if this encoder is applicable, i.e, if there is a column to encode.
 	 *
@@ -163,9 +164,10 @@ public abstract class ColumnEncoder implements Externalizable, Encoder, Comparab
 		return Integer.compare(getEncoderType(this), getEncoderType(o));
 	}
 
-    public abstract  List<Callable<Object>> getPartialBuildTasks(FrameBlock in, int blockSize);
+	public abstract List<Callable<Object>> getPartialBuildTasks(FrameBlock in, int blockSize);
 
-	public abstract void mergeBuildPartial(List<Future<Object>> futurePartials, int start, int end) throws ExecutionException, InterruptedException;
+	public abstract void mergeBuildPartial(List<Future<Object>> futurePartials, int start, int end)
+		throws ExecutionException, InterruptedException;
 
 	public enum EncoderType {
 		Recode, FeatureHash, PassThrough, Bin, Dummycode, Omit, MVImpute, Composite

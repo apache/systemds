@@ -116,7 +116,7 @@ public class MultiColumnEncoder implements Encoder {
 		ExecutorService pool = CommonThreadPool.get(k);
 		try {
 			if(blockSize != in.getNumRows()) {
-				//Partial builds and merges
+				// Partial builds and merges
 				List<List<Future<Object>>> partials = new ArrayList<>();
 				for(ColumnEncoderComposite encoder : _columnEncoders) {
 					List<Callable<Object>> partialBuildTasks = encoder.getPartialBuildTasks(in, blockSize);
@@ -649,6 +649,7 @@ public class MultiColumnEncoder implements Encoder {
 			_encoder = encoder;
 			_partials = partials;
 		}
+
 		@Override
 		public Integer call() throws Exception {
 			_encoder.mergeBuildPartial(_partials, 0, _partials.size());

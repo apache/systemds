@@ -66,6 +66,7 @@ limitations under the License.
     * [`naiveBayes`-Function](#naiveBayes-function)
     * [`naiveBayesPredict`-Function](#naiveBayesPredict-function)
     * [`outlier`-Function](#outlier-function)
+    * [`tomekLink`-Function](#tomekLink-function)
     * [`toOneHot`-Function](#toOneHOt-function)
     * [`winsorize`-Function](#winsorize-function)
     * [`gmm`-Function](#gmm-function)
@@ -1528,6 +1529,43 @@ outlier(X, opposite)
 ```r
 X = rand (rows = 50, cols = 10)
 outlier(X=X, opposite=1)
+```
+
+## `tomekLink`-Function
+
+The `tomekLink`-function performs undersampling by removing Tomek's links for imbalanced
+multiclass problems
+
+Reference:
+"Two Modifications of CNN," in IEEE Transactions on Systems, Man, and Cybernetics, vol. SMC-6, no. 11, pp. 769-772, Nov. 1976, doi: 10.1109/TSMC.1976.4309452.
+
+### Usage
+
+```r
+[X_under, y_under, drop_idx] = tomeklink(X, y)
+```
+
+### Arguments
+
+| Name       | Type           | Default  | Description |
+| :--------- | :------------- | -------- | :---------- |
+| X          | Matrix[Double] | required | Data Matrix (n,m) |
+| y          | Matrix[Double] | required | Label Matrix (n,1) |
+
+### Returns
+
+| Name | Type           | Description |
+| :--- |:------------- | :---------- |
+| X_under | Matrix[Double] | Data Matrix without Tomek links |
+| y_under | Matrix[Double] | Labels corresponding to undersampled data |
+| drop_idx | Matrix[Double] | Indices of dropped rows/labels wrt. input |
+
+### Example
+
+```r
+X = round(rand(rows = 53, cols = 6, min = -1, max = 1))
+y = round(rand(rows = nrow(X), cols = 1, min = 0, max = 1))
+[X_under, y_under, drop_idx] = tomeklink(X, y)
 ```
 
 ## `toOneHot`-Function

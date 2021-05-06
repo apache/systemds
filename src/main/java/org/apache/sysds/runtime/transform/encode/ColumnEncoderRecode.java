@@ -154,12 +154,18 @@ public class ColumnEncoderRecode extends ColumnEncoder {
 	}
 
 	@Override
-	public void mergeBuildPartial(List<Future<Object>> futurePartials, int start, int end) throws ExecutionException, InterruptedException {
+	public void mergeBuildPartial(List<Future<Object>> futurePartials, int start, int end) throws ExecutionException,
+			InterruptedException {
 		for(int i = start; i < end; i++){
-			HashMap<String, Long> partialMap = (HashMap<String, Long>) futurePartials.get(i).get();
+			Object partial = futurePartials.get(i).get();
+			if (!(partial instanceof HashMap)){
+				throw new DMLRuntimeException("Tried to merge " + partial.getClass() + " object into RecodeEncoder. " +
+						"HashMap was expected.");
+			}
+			HashMap<?,?> partialMap = (HashMap<?,?>)partial;
 			partialMap.forEach((k,v) -> {
-				if(!_rcdMap.containsKey(k))
-					putCode(_rcdMap, k);
+				if(!_rcdMap.containsKey((String) k))
+					putCode(_rcdMap, (String) k);
 			});
 		}
 	}

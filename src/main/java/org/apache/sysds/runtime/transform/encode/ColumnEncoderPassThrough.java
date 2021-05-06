@@ -24,6 +24,12 @@ import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.UtilFunctions;
 
+import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.Future;
+
+import static org.apache.sysds.runtime.util.UtilFunctions.getEndIndex;
+
 public class ColumnEncoderPassThrough extends ColumnEncoder {
 	private static final long serialVersionUID = -8473768154646831882L;
 
@@ -41,26 +47,48 @@ public class ColumnEncoderPassThrough extends ColumnEncoder {
 	}
 
 	@Override
+	public List<Callable<Object>> getPartialBuildTasks(FrameBlock in, int blockSize){
+		// do nothing
+		return null;
+	}
+
+	@Override
+	public void mergeBuildPartial(List<Future<Object>> futurePartials, int start, int end) {
+
+	}
+
+
+	@Override
 	public MatrixBlock apply(FrameBlock in, MatrixBlock out, int outputCol) {
+		return apply(in, out, outputCol, 0, -1);
+	}
+
+	@Override
+	public MatrixBlock apply(MatrixBlock in, MatrixBlock out, int outputCol) {
+		return apply(in, out, outputCol, 0, -1);
+	}
+
+	@Override
+	public MatrixBlock apply(FrameBlock in, MatrixBlock out, int outputCol, int rowStart, int blk) {
 		int col = _colID - 1; // 1-based
 		ValueType vt = in.getSchema()[col];
-		for(int i = 0; i < in.getNumRows(); i++) {
+		for(int i = rowStart; i < getEndIndex(in.getNumRows(), rowStart, blk); i++) {
 			Object val = in.get(i, col);
-			out.quickSetValue(i,
-				outputCol,
-				(val == null || (vt == ValueType.STRING && val.toString().isEmpty())) ? Double.NaN : UtilFunctions
-					.objectToDouble(vt, val));
+			double v = (val == null || (vt == ValueType.STRING && val.toString().isEmpty())) ? Double.NaN :
+					UtilFunctions.objectToDouble(vt, val);
+			out.quickSetValueThreadSafe(i, outputCol, v);
 		}
 		return out;
 	}
 
 	@Override
-	public MatrixBlock apply(MatrixBlock in, MatrixBlock out, int outputCol) {
+	public MatrixBlock apply(MatrixBlock in, MatrixBlock out, int outputCol, int rowStart, int blk) {
 		// only transfer from in to out
+		int end = (blk <= 0)? in.getNumRows(): in.getNumRows() < rowStart + blk ? in.getNumRows() : rowStart + blk;
 		int col = _colID - 1; // 1-based
-		for(int i = 0; i < in.getNumRows(); i++) {
-			double val = in.quickGetValue(i, col);
-			out.quickSetValue(i, outputCol, val);
+		for(int i = rowStart; i < end; i++) {
+			double val = in.quickGetValueThreadSafe(i, col);
+			out.quickSetValueThreadSafe(i, outputCol, val);
 		}
 		return out;
 	}

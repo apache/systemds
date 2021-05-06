@@ -34,6 +34,7 @@ limitations under the License.
     * [`dist`-Function](#dist-function)
     * [`dmv`-Function](#dmv-function)
     * [`ema`-Function](#ema-function)
+    * [`gaussianClassifier`-Function](#gaussianClassifier-function)
     * [`glm`-Function](#glm-function)
     * [`gridSearch`-Function](#gridSearch-function)
     * [`hyperband`-Function](#hyperband-function)
@@ -341,7 +342,48 @@ Z = dmv(X=A, threshold=0.9)
 Z = dmv(X=A, threshold=0.9, replace="NaN")
 ```
 
+## `gaussianClassifier`-Function
 
+The `gaussianClassifier`-function computes prior probabilities, means, determinants, and inverse
+covariance matrix per class.
+
+Classification is as per $$ p(C=c | x) = p(x | c) * p(c) $$
+Where $$p(x | c)$$ is the (multivariate) Gaussian P.D.F. for class $$c$$, and $$p(c)$$ is the
+prior probability for class $$c$$.
+
+### Usage
+
+```r
+[prior, means, covs, det] = gaussianClassifier(D, C, varSmoothing)
+```
+
+### Arguments
+
+| Name | Type           | Default  | Description |
+| :--- | :------------- | :------- | :---------- |
+| D    | Matrix[Double] | required | Input matrix (training set |
+| C    | Matrix[Double] | required | Target vector |
+| varSmoothing | Double | `1e-9`   | Smoothing factor for variances |
+| verbose | Boolean     | `TRUE`   | Print accuracy of the training set |
+
+### Returns
+
+| Name | Type           | Description      |
+| :--- | :------------- | :--------------- |
+| classPriors | Matrix[Double] | Vector storing the class prior probabilities |
+| classMeans | Matrix[Double] | Matrix storing the means of the classes |
+| classInvCovariances | List[Unknown] | List of inverse covariance matrices |
+| determinants | Matrix[Double] | Vector storing the determinants of the classes |
+
+### Example
+
+```r
+
+X = rand (rows = 200, cols = 50 )
+y = X %*% rand(rows = ncol(X), cols = 1)
+
+[prior, means, covs, det] = gaussianClassifier(D=X, C=y, varSmoothing=1e-9)
+```
 
 ## `glm`-Function
 

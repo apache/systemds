@@ -145,8 +145,8 @@ public class TransformFrameEncodeMultithreadedTest extends AutomatedTestBase {
 			getAndLoadTestConfiguration(TEST_NAME1);
 			
 			String HOME = SCRIPT_DIR + TEST_DIR;
-			DATASET = HOME + "input/" + DATASET;
-			SPEC = HOME + "input/" + SPEC;
+			DATASET = DATASET_DIR + DATASET;
+			SPEC = DATASET_DIR + SPEC;
 
 			FileFormatPropertiesCSV props = new FileFormatPropertiesCSV();
 			props.setHeader(true);

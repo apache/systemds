@@ -19,63 +19,81 @@
 
 package org.apache.sysds.test.functions.io.libsvm;
 
-import org.junit.Test;
+import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.conf.CompilerConfig;
-import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
+import org.junit.Test;
 
-public class ReadLIBSVMTest extends AutomatedTestBase
-{
-	private final static String TEST_NAME = "ReadLIBSVMTest";
-	private final static String TEST_DIR = "functions/io/libsvm/";
-	private final static String TEST_CLASS_DIR = TEST_DIR + ReadLIBSVMTest.class.getSimpleName() + "/";
-	
-	@Override
-	public void setUp() 
-	{
-		TestUtils.clearAssertionInformation();
-		addTestConfiguration(TEST_NAME, 
-			new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[] { "Rout" }) );  
-	}
-	
-	@Test
-	public void testlibsvm1_Seq_CP() {
-		runlibsvmTest(1, ExecMode.SINGLE_NODE, false);
+public abstract class ReadLIBSVMTest extends ReadLIBSVMTestBase {
+
+	protected abstract int getId();
+
+	protected abstract LIBSVMConfig getLIBSVMConfig();
+
+	protected String getInputLIBSVMFileName() {
+		return "transfusion_" + getId() + ".libsvm";
 	}
 
-	@Test
-	public void testlibsvm2_Seq_CP() {
-		runlibsvmTest(2, ExecMode.SINGLE_NODE, false);
+	private final static double eps = 1e-9;
+
+	@Test public void testlibsvm1_Seq_CP() {
+		runlibsvmTest(getId(), ExecMode.SINGLE_NODE, false, getLIBSVMConfig());
 	}
 
-	@Test
-	public void testlibsvm2_Pllel_CP() {
-		runlibsvmTest(2, ExecMode.SINGLE_NODE, true);
+	@Test public void testlibsvm2_Pllel_CP() {
+		runlibsvmTest(getId(), ExecMode.SINGLE_NODE, true, getLIBSVMConfig());
 	}
-	
-	private void runlibsvmTest (int testNumber, ExecMode platform, boolean parallel)
-	{
+
+	@Test public void testlibsvm3_SP() {
+		runlibsvmTest(getId(), ExecMode.SPARK, false, getLIBSVMConfig());
+	}
+
+	protected void runlibsvmTest(int testNumber, ExecMode platform, boolean parallel, LIBSVMConfig libsvmConfig) {
 		ExecMode oldPlatform = rtplatform;
 		rtplatform = platform;
+
+		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
+		if(rtplatform == ExecMode.SPARK)
+			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
+
 		boolean oldpar = CompilerConfig.FLAG_PARREADWRITE_TEXT;
-		
-		try
-		{
+
+		try {
 			CompilerConfig.FLAG_PARREADWRITE_TEXT = parallel;
-			loadTestConfiguration(getTestConfiguration(TEST_NAME));
+
+			TestConfiguration config = getTestConfiguration(getTestName());
+			loadTestConfiguration(config);
+
 			String HOME = SCRIPT_DIR + TEST_DIR;
-			String inputMatrix = HOME + "test" + testNumber+".libsvm";
+			String inputMatrix = HOME + INPUT_DIR + getInputLIBSVMFileName();
 			String dmlOutput = output("dml.scalar");
-			
-			fullDMLScriptName = HOME + TEST_NAME + "_" + testNumber + ".dml";
-			programArgs = new String[]{"-explain", "hops", "-args", inputMatrix, dmlOutput};
+			String rOutput = output("R.scalar");
+			String sep = libsvmConfig.getOutSep();
+			String indSep = libsvmConfig.getOutIndSep();
+
+			fullDMLScriptName = HOME + getTestName() + "_" + testNumber + ".dml";
+			programArgs = new String[] {"-explain", "hops", "-args", inputMatrix, dmlOutput};
 			runTest(true, false, null, -1);
+
+			fullRScriptName = HOME + "libsvm_verify.R";
+
+			if(sep.equals(" ")) {
+				sep = "NULL";
+			}
+			rCmd = "Rscript" + " " + fullRScriptName + " " + inputMatrix + " " + libsvmConfig
+				.getColCount() + " " + sep + " " + indSep + " " + rOutput;
+			runRScript(true);
+
+			double dmlScalar = TestUtils.readDMLScalar(dmlOutput);
+			double rScalar = TestUtils.readRScalar(rOutput);
+			TestUtils.compareScalars(dmlScalar, rScalar, eps);
 		}
 		finally {
 			rtplatform = oldPlatform;
 			CompilerConfig.FLAG_PARREADWRITE_TEXT = oldpar;
+			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
 		}
 	}
 }

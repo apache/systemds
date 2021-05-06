@@ -22,7 +22,7 @@
 # DML script that tests read libsvm with .mtd file
 
 A = read($1);  
-print(toString(A));
+A = A + 1;
 x = sum(A);
 write(x, $2);
 

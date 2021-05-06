@@ -21,7 +21,8 @@
 
 # DML script that tests read libsvm
 
-A = read($1, format="libsvm", rows=1605, cols=124);
+A = read($1, format="libsvm", rows=1605, cols=124, sep=" ", indSep=":");
+A = A + 1;
 x = sum(A);
 write(x, $2);
 

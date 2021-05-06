@@ -1,0 +1,11 @@
+{
+    "data_type": "matrix",
+    "value_type": "double",
+    "rows": 6,
+    "cols": 2,
+    "sep": " ",
+    "indSep": ":",
+    "format": "libsvm",
+    "author": "Saeed Fathollahzadeh",
+    "created": "2021-04-14 17:27:25 CEST"
+}

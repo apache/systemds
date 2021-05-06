@@ -110,7 +110,8 @@ public class DataExpression extends DataIdentifier
 	//public static final String DELIM_RECODE = "recode";
 	public static final String DELIM_NA_STRINGS = "naStrings";
 	public static final String DELIM_NA_STRING_SEP = "\u00b7";
-
+	// Parameter names relevant to reading/writing delimited index/libsvmv files
+	public static final String LIBSVM_INDEX_DELIM = "indSep";
 	
 	public static final String DELIM_SPARSE = "sparse";  // applicable only for write
 	
@@ -137,6 +138,8 @@ public class DataExpression extends DataIdentifier
 			VALUETYPEPARAM, SCHEMAPARAM, DESCRIPTIONPARAM, AUTHORPARAM, CREATEDPARAM,
 			// Parameters related to delimited/csv files.
 			DELIM_FILL_VALUE, DELIM_DELIMITER, DELIM_FILL, DELIM_HAS_HEADER_ROW, DELIM_NA_STRINGS,
+			// Parameters related to delimited/libsvm files.
+			LIBSVM_INDEX_DELIM,
 			// Parameters related to privacy
 			PRIVACY, FINE_GRAINED_PRIVACY));
 
@@ -145,7 +148,9 @@ public class DataExpression extends DataIdentifier
 		Arrays.asList(IO_FILENAME, READROWPARAM, READCOLPARAM, FORMAT_TYPE, DATATYPEPARAM,
 			VALUETYPEPARAM, SCHEMAPARAM, ROWBLOCKCOUNTPARAM, COLUMNBLOCKCOUNTPARAM, READNNZPARAM,
 			// Parameters related to delimited/csv files.
-			DELIM_FILL_VALUE, DELIM_DELIMITER, DELIM_FILL, DELIM_HAS_HEADER_ROW, DELIM_NA_STRINGS));
+			DELIM_FILL_VALUE, DELIM_DELIMITER, DELIM_FILL, DELIM_HAS_HEADER_ROW, DELIM_NA_STRINGS,
+			// Parameters related to delimited/libsvm files.
+			LIBSVM_INDEX_DELIM));
 	
 	/* Default Values for delimited (CSV/LIBSVM) files */
 	public static final String  DEFAULT_DELIM_DELIMITER = ",";
@@ -155,6 +160,7 @@ public class DataExpression extends DataIdentifier
 	public static final boolean DEFAULT_DELIM_SPARSE = false;
 	public static final String  DEFAULT_NA_STRINGS = "";
 	public static final String  DEFAULT_SCHEMAPARAM = "NULL";
+	public static final String DEFAULT_LIBSVM_INDEX_DELIM = ":";
 
 	private DataOp _opcode;
 	private HashMap<String, Expression> _varParams;
@@ -921,6 +927,7 @@ public class DataExpression extends DataIdentifier
 						|| getVarParam(COLUMNBLOCKCOUNTPARAM) != null
 						|| getVarParam(FORMAT_TYPE) != null
 						|| getVarParam(DELIM_DELIMITER) != null	
+						|| getVarParam(LIBSVM_INDEX_DELIM) != null
 						|| getVarParam(DELIM_HAS_HEADER_ROW) != null
 						|| getVarParam(DELIM_FILL) != null
 						|| getVarParam(DELIM_FILL_VALUE) != null
@@ -1151,33 +1158,55 @@ public class DataExpression extends DataIdentifier
 				}
 			} 
 
-			boolean islibsvm = false;
-			islibsvm = (formatTypeString != null && formatTypeString.equalsIgnoreCase(FileFormat.LIBSVM.toString()));
-			if (islibsvm){
+			boolean isLIBSVM = false;
+			isLIBSVM = (formatTypeString != null && formatTypeString.equalsIgnoreCase(FileFormat.LIBSVM.toString()));
+			if (isLIBSVM) {
 				 // Handle libsvm file format
 				shouldReadMTD = true;
 				
 				// only allow IO_FILENAME, READROWPARAM, READCOLPARAM   
 				// as valid parameters
-				if( !inferredFormatType ){
-					for (String key : _varParams.keySet()){
-						if (!  (key.equals(IO_FILENAME) || key.equals(FORMAT_TYPE) 
+				if( !inferredFormatType ) {
+					for (String key : _varParams.keySet()) {
+						if (!(key.equals(IO_FILENAME) || key.equals(FORMAT_TYPE) 
 								|| key.equals(READROWPARAM) || key.equals(READCOLPARAM)
 								|| key.equals(READNNZPARAM) || key.equals(DATATYPEPARAM) 
-								|| key.equals(VALUETYPEPARAM) ))
+								|| key.equals(VALUETYPEPARAM) || key.equals(DELIM_DELIMITER)
+								|| key.equals(LIBSVM_INDEX_DELIM)))
 						{	
-							String msg = "Only parameters allowed are: " + IO_FILENAME     + "," 
-									   + READROWPARAM     + "," 
-									   + READCOLPARAM;
+							String msg = "Only parameters allowed are: " + IO_FILENAME + "," 
+									+ READROWPARAM + "," + READCOLPARAM
+									+ DELIM_DELIMITER + "," + LIBSVM_INDEX_DELIM;
 							
 							raiseValidateError("Invalid parameter " + key + " in read statement: " +
 									toString() + ". " + msg, conditional, LanguageErrorCodes.INVALID_PARAMETERS);
 						}
 					}
 				}
+				// DEFAULT for "sep" : ","
+				if (getVarParam(DELIM_DELIMITER) == null) {
+					addVarParam(DELIM_DELIMITER, new StringIdentifier(DEFAULT_DELIM_DELIMITER, this));
+				}
+				else {
+					if ((getVarParam(DELIM_DELIMITER) instanceof ConstIdentifier) 
+							&& (!(getVarParam( DELIM_DELIMITER) instanceof StringIdentifier))) {
+						raiseValidateError( "For delimited file " + getVarParam(DELIM_DELIMITER) + " must be a string value ", conditional);
+					}
+				}
+				// DEFAULT for "indSep": ":"
+				if(getVarParam(LIBSVM_INDEX_DELIM) == null) {
+					addVarParam(LIBSVM_INDEX_DELIM, new StringIdentifier(DEFAULT_LIBSVM_INDEX_DELIM, this));
+				}
+				else {
+					if((getVarParam(LIBSVM_INDEX_DELIM) instanceof ConstIdentifier) 
+							&& (!(getVarParam(LIBSVM_INDEX_DELIM) instanceof StringIdentifier))) {
+						raiseValidateError(
+								"For delimited file " + getVarParam(LIBSVM_INDEX_DELIM) + " must be a string value ", conditional);
+					}
+				}
 			}
 			
-	        dataTypeString = (getVarParam(DATATYPEPARAM) == null) ? null : getVarParam(DATATYPEPARAM).toString();
+			dataTypeString = (getVarParam(DATATYPEPARAM) == null) ? null : getVarParam(DATATYPEPARAM).toString();
 			
 			if ( dataTypeString == null || dataTypeString.equalsIgnoreCase(Statement.MATRIX_DATA_TYPE) 
 					|| dataTypeString.equalsIgnoreCase(Statement.FRAME_DATA_TYPE)) {
@@ -1203,8 +1232,8 @@ public class DataExpression extends DataIdentifier
 				// initialize size of target data identifier to UNKNOWN
 				getOutput().setDimensions(-1, -1);
 				
-				if ( !isCSV && ConfigurationManager.getCompilerConfig()
-						.getBool(ConfigType.REJECT_READ_WRITE_UNKNOWNS) //skip check for csv format / jmlc api
+				if (!isCSV && !isLIBSVM && ConfigurationManager.getCompilerConfig()
+						.getBool(ConfigType.REJECT_READ_WRITE_UNKNOWNS) //skip check for csv/libsvm format / jmlc api
 					&& (getVarParam(READROWPARAM) == null || getVarParam(READCOLPARAM) == null) ) {
 						raiseValidateError("Missing or incomplete dimension information in read statement: "
 								+ mtdFileName, conditional, LanguageErrorCodes.INVALID_PARAMETERS);
@@ -1227,6 +1256,15 @@ public class DataExpression extends DataIdentifier
 					} else if (!isCSV && ((dim1 != null) || (dim2 != null))) {
 						raiseValidateError("Partial dimension information in read statement", conditional, LanguageErrorCodes.INVALID_PARAMETERS);
 					}
+				}
+				
+				if(isLIBSVM) {
+					Long dim2 = (getVarParam(READCOLPARAM) == null) ? null : Long.valueOf(getVarParam(READCOLPARAM).toString());
+					if(dim2 < 0 && ConfigurationManager.getCompilerConfig()
+							.getBool(ConfigType.REJECT_READ_WRITE_UNKNOWNS)) {
+						raiseValidateError("Invalid dimension information in read statement", conditional, LanguageErrorCodes.INVALID_PARAMETERS);
+					}
+					getOutput().setDimensions(-1, dim2 + 1);
 				}
 				
 				// initialize block dimensions to UNKNOWN 
@@ -1292,7 +1330,7 @@ public class DataExpression extends DataIdentifier
 			
 		case WRITE:
 			
-			// for delimited format, if no delimiter specified THEN set default ","
+			// for CSV format, if no delimiter specified THEN set default ","
 			if (getVarParam(FORMAT_TYPE) == null || getVarParam(FORMAT_TYPE).toString().equalsIgnoreCase(FileFormat.CSV.toString())){
 				if (getVarParam(DELIM_DELIMITER) == null) {
 					addVarParam(DELIM_DELIMITER, new StringIdentifier(DEFAULT_DELIM_DELIMITER, this));
@@ -1304,13 +1342,20 @@ public class DataExpression extends DataIdentifier
 					addVarParam(DELIM_SPARSE, new BooleanIdentifier(DEFAULT_DELIM_SPARSE, this));
 				}
 			}
-
-			if (getVarParam(FORMAT_TYPE) == null || getVarParam(FORMAT_TYPE).toString().equalsIgnoreCase(FileFormat.LIBSVM.toString())){
-				if (getVarParam(DELIM_SPARSE) == null) {
-					addVarParam(DELIM_SPARSE, new BooleanIdentifier(DEFAULT_DELIM_SPARSE, this));
-				}
-			}
 			
+			// for LIBSVM format, add the default separators if not specified
+			if (getVarParam(FORMAT_TYPE) == null || getVarParam(FORMAT_TYPE).toString().equalsIgnoreCase(FileFormat.LIBSVM.toString())) {
+					if(getVarParam(DELIM_DELIMITER) == null) {
+						addVarParam(DELIM_DELIMITER, new StringIdentifier(DEFAULT_DELIM_DELIMITER, this));
+					}
+					if(getVarParam(LIBSVM_INDEX_DELIM) == null) {
+						addVarParam(LIBSVM_INDEX_DELIM, new StringIdentifier(DEFAULT_LIBSVM_INDEX_DELIM, this));
+					}
+					if(getVarParam(DELIM_SPARSE) == null) {
+						addVarParam(DELIM_SPARSE, new BooleanIdentifier(DEFAULT_DELIM_SPARSE, this));
+					}
+				}
+
 			/* NOTE MB: disabled filename concatenation because we now support dynamic rewrite
 			if (getVarParam(IO_FILENAME) instanceof BinaryExpression){
 				BinaryExpression expr = (BinaryExpression)getVarParam(IO_FILENAME);
@@ -2303,6 +2348,17 @@ public class DataExpression extends DataIdentifier
 			Expression cols = getVarParam(READCOLPARAM);
 			return (rows==null || Long.parseLong(rows.toString())<0)
 				||(cols==null || Long.parseLong(cols.toString())<0);
+		}
+		return false;
+	}
+	
+	public boolean isLIBSVMReadWithUnknownSize() {
+		Expression format = getVarParam(FORMAT_TYPE);
+		if (_opcode == DataOp.READ && format != null && format.toString().equalsIgnoreCase(FileFormat.LIBSVM.toString())) {
+			Expression rows = getVarParam(READROWPARAM);
+			Expression cols = getVarParam(READCOLPARAM);
+			return (rows == null || Long.parseLong(rows.toString()) < 0) 
+				|| (cols == null || Long.parseLong(cols.toString()) < 0);
 		}
 		return false;
 	}

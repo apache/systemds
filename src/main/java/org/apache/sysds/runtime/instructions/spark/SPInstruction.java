@@ -8,7 +8,7 @@
  * with the License.  You may obtain a copy of the License at
  * 
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -29,14 +29,14 @@ import org.apache.sysds.utils.Statistics;
 
 public abstract class SPInstruction extends Instruction {
 
-	public enum SPType { 
-		MAPMM, MAPMMCHAIN, CPMM, RMM, TSMM, TSMM2, PMM, ZIPMM, PMAPMM, //matrix multiplication instructions  
+	public enum SPType {
+		MAPMM, MAPMMCHAIN, CPMM, RMM, TSMM, TSMM2, PMM, ZIPMM, PMAPMM, //matrix multiplication instructions
 		MatrixIndexing, Reorg, Binary, Ternary,
-		AggregateUnary, AggregateTernary, Reblock, CSVReblock, 
+		AggregateUnary, AggregateTernary, Reblock, CSVReblock, LIBSVMReblock,
 		Builtin, Unary, BuiltinNary, MultiReturnBuiltin, Checkpoint, Compression, DeCompression, Cast,
-		CentralMoment, Covariance, QSort, QPick, 
-		ParameterizedBuiltin, MAppend, RAppend, GAppend, GAlignedAppend, Rand, 
-		MatrixReshape, Ctable, Quaternary, CumsumAggregate, CumsumOffset, BinUaggChain, UaggOuterChain, 
+		CentralMoment, Covariance, QSort, QPick,
+		ParameterizedBuiltin, MAppend, RAppend, GAppend, GAlignedAppend, Rand,
+		MatrixReshape, Ctable, Quaternary, CumsumAggregate, CumsumOffset, BinUaggChain, UaggOuterChain,
 		Write, SpoofFused, Dnn
 	}
 
@@ -56,7 +56,7 @@ public abstract class SPInstruction extends Instruction {
 		instOpcode = opcode;
 		_requiresLabelUpdate = super.requiresLabelUpdate();
 	}
-	
+
 	@Override
 	public IType getType() {
 		return IType.SPARK;
@@ -65,7 +65,7 @@ public abstract class SPInstruction extends Instruction {
 	public SPType getSPInstructionType() {
 		return _sptype;
 	}
-	
+
 	@Override
 	public boolean requiresLabelUpdate() {
 		return _requiresLabelUpdate;
@@ -75,12 +75,12 @@ public abstract class SPInstruction extends Instruction {
 	public String getGraphString() {
 		return getOpcode();
 	}
-	
+
 	@Override
 	public Instruction preprocessInstruction(ExecutionContext ec) {
 		//default pre-process behavior (e.g., debug state)
 		Instruction tmp = super.preprocessInstruction(ec);
-		
+
 		//instruction patching
 		if( tmp.requiresLabelUpdate() ) //update labels only if required
 		{
@@ -88,21 +88,21 @@ public abstract class SPInstruction extends Instruction {
 			String updInst = CPInstruction.updateLabels(tmp.toString(), ec.getVariables());
 			tmp = SPInstructionParser.parseSingleInstruction(updInst);
 		}
-		
+
 		//robustness federated instructions (runtime assignment)
 		tmp = FEDInstructionUtils.checkAndReplaceSP(tmp, ec);
-		
+
 		return tmp;
 	}
 
-	@Override 
+	@Override
 	public abstract void processInstruction(ExecutionContext ec);
 
 	@Override
 	public void postprocessInstruction(ExecutionContext ec) {
 		//maintain statistics
 		Statistics.incrementNoOfExecutedSPInst();
-		
+
 		//default post-process behavior
 		super.postprocessInstruction(ec);
 	}

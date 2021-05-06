@@ -32,30 +32,32 @@ import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.HDFSTool;
 
-public class WriterTextLIBSVM extends MatrixWriter
-{
-	public WriterTextLIBSVM() {
-	
+public class WriterTextLIBSVM extends MatrixWriter {
+
+	protected static FileFormatPropertiesLIBSVM _props = null;
+
+	public WriterTextLIBSVM(FileFormatPropertiesLIBSVM _props) {
+		WriterTextLIBSVM._props = _props;
 	}
 
 	@Override
-	public final void writeMatrixToHDFS(MatrixBlock src, String fname, long rlen, long clen, int blen, long nnz, boolean diag) 
-		throws IOException, DMLRuntimeException 
+	public final void writeMatrixToHDFS(MatrixBlock src, String fname, long rlen, long clen, int blen, long nnz, boolean diag)
+		throws IOException, DMLRuntimeException
 	{
 		//validity check matrix dimensions
 		if( src.getNumRows() != rlen || src.getNumColumns() != clen )
 			throw new IOException("Matrix dimensions mismatch with metadata: "+src.getNumRows()+"x"+src.getNumColumns()+" vs "+rlen+"x"+clen+".");
 		if( rlen == 0 || clen == 0 )
 			throw new IOException("Write of matrices with zero rows or columns not supported ("+rlen+"x"+clen+").");
-		
+
 		//prepare file access
 		JobConf job = new JobConf(ConfigurationManager.getCachedJobConf());
 		Path path = new Path( fname );
 		FileSystem fs = IOUtilFunctions.getFileSystem(path, job);
-		
+
 		//if the file already exists on HDFS, remove it.
 		HDFSTool.deleteFileIfExistOnHDFS( fname );
-		
+
 		//core write (sequential/parallel)
 		writeLIBSVMMatrixToHDFS(path, job, fs, src);
 
@@ -63,42 +65,43 @@ public class WriterTextLIBSVM extends MatrixWriter
 	}
 
 	@Override
-	public final void writeEmptyMatrixToHDFS(String fname, long rlen, long clen, int blen) 
-		throws IOException, DMLRuntimeException 
+	public final void writeEmptyMatrixToHDFS(String fname, long rlen, long clen, int blen)
+		throws IOException, DMLRuntimeException
 	{
-	
+
 	}
 
-	protected void writeLIBSVMMatrixToHDFS(Path path, JobConf job, FileSystem fs, MatrixBlock src) 
-		throws IOException 
+	protected void writeLIBSVMMatrixToHDFS(Path path, JobConf job, FileSystem fs, MatrixBlock src)
+		throws IOException
 	{
 		//sequential write libsvm file
 		writeLIBSVMMatrixToFile(path, job, fs, src, 0, src.getNumRows());
 	}
-	
+
 	protected static void writeLIBSVMMatrixToFile( Path path, JobConf job, FileSystem fs, MatrixBlock src, int rl, int rlen )
 		throws IOException
 	{
 		boolean sparse = src.isInSparseFormat();
 		int clen = src.getNumColumns();
-			
+
 		//create buffered writer
 		BufferedWriter br = new BufferedWriter(new OutputStreamWriter(fs.create(path,true)));
-		
+
 		try
 		{
 			StringBuilder sb = new StringBuilder();
-			
+			_props = _props == null ? new FileFormatPropertiesLIBSVM() : _props;
+
 			// Write data lines
 			if( sparse ) //SPARSE
 			{
 				SparseBlock sblock = src.getSparseBlock();
 				for(int i=rl; i < rlen; i++) {
 					// append the class label as the 1st column
-					double label = (sblock!=null) ? 
+					double label = (sblock!=null) ?
 						sblock.get(i, clen-1) : 0;
 					sb.append(label);
-					
+
 					if( sblock!=null && i<sblock.numRows() && !sblock.isEmpty(i) ) {
 						int pos = sblock.pos(i);
 						int alen = sblock.size(i);
@@ -107,7 +110,7 @@ public class WriterTextLIBSVM extends MatrixWriter
 						// append sparse row
 						for( int k=pos; k<pos+alen; k++ ) {
 							if( aix[k]!=clen-1 ) {
-								sb.append(IOUtilFunctions.LIBSVM_DELIM);
+								sb.append(_props.getDelim());
 								appendIndexValLibsvm(sb, aix[k], avals[k]);
 							}
 						}
@@ -115,7 +118,7 @@ public class WriterTextLIBSVM extends MatrixWriter
 					// write the string row
 					sb.append('\n');
 					br.write( sb.toString() );
-					sb.setLength(0); 
+					sb.setLength(0);
 				}
 			}
 			else //DENSE
@@ -124,12 +127,12 @@ public class WriterTextLIBSVM extends MatrixWriter
 					// append the class label as the 1st column
 					double label = src.getValueDenseUnsafe(i, clen-1);
 					sb.append(label);
-					
+
 					// append dense row
 					for( int j=0; j<clen-1; j++ ) {
 						double val = src.getValueDenseUnsafe(i, j);
 						if( val != 0 ) {
-							sb.append(IOUtilFunctions.LIBSVM_DELIM);
+							sb.append(_props.getDelim());
 							appendIndexValLibsvm(sb, j, val);
 						}
 					}
@@ -145,10 +148,10 @@ public class WriterTextLIBSVM extends MatrixWriter
 		}
 	}
 
-	// Return string in libsvm format (<index#>:<value#>) 
+	// Return string in libsvm format (<index#>:<value#>)
 	protected static void appendIndexValLibsvm(StringBuilder sb, int index, double value) {
 		sb.append(index+1);  // convert 0 based matrix index to 1 base libsvm index
-		sb.append(IOUtilFunctions.LIBSVM_INDEX_DELIM);
+		sb.append(_props.getIndexDelim());
 		sb.append(value);
 	}
 }

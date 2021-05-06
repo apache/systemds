@@ -124,7 +124,6 @@ public class ColumnEncoderComposite extends ColumnEncoder {
 			if(start >= end)
 				break;
 		}
-
 	}
 
 	@Override

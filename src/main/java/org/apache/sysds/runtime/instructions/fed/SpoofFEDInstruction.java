@@ -56,16 +56,14 @@ public class SpoofFEDInstruction extends FEDInstruction
 	private final CPOperand _output;
 
 	private SpoofFEDInstruction(SpoofOperator op, CPOperand[] in,
-		CPOperand out, String opcode, String instStr)
-	{
+		CPOperand out, String opcode, String instStr) {
 		super(FEDInstruction.FEDType.SpoofFused, opcode, instStr);
 		_op = op;
 		_inputs = in;
 		_output = out;
 	}
 
-	public static SpoofFEDInstruction parseInstruction(String str)
-	{
+	public static SpoofFEDInstruction parseInstruction(String str) {
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
 
 		CPOperand[] inputCpo = new CPOperand[parts.length - 3 - 2];
@@ -81,8 +79,7 @@ public class SpoofFEDInstruction extends FEDInstruction
 	}
 
 	@Override
-	public void processInstruction(ExecutionContext ec)
-	{
+	public void processInstruction(ExecutionContext ec) {
 		Class<?> opSupClass = _op.getClass().getSuperclass();
 		SpoofFEDType spoofType = null;
 		if(opSupClass == SpoofCellwise.class)
@@ -94,7 +91,8 @@ public class SpoofFEDInstruction extends FEDInstruction
 		else if(opSupClass == SpoofOuterProduct.class)
 			spoofType = new SpoofFEDOuterProduct(_op, _output);
 		else
-			throw new DMLRuntimeException("Federated code generation only supported for cellwise, rowwise, and multiaggregate templates.");
+			throw new DMLRuntimeException("Federated code generation only supported" +
+				" for cellwise, rowwise, and multiaggregate templates.");
 
 
 		ArrayList<CPOperand> inCpoMat = new ArrayList<>();
@@ -129,7 +127,7 @@ public class SpoofFEDInstruction extends FEDInstruction
 		frIds[index++] = fedMap.getID(); // insert federation map id at the beginning
 		for(MatrixObject mo : inMo) {
 			if(spoofType.needsBroadcastSliced(fedMap, mo.getNumRows(), mo.getNumColumns())) {
-				FederatedRequest[] tmpFr = fedMap.broadcastSliced(mo, false);
+				FederatedRequest[] tmpFr = spoofType.broadcastSliced(mo, fedMap);
 				frIds[index++] = tmpFr[0].getID();
 				frBroadcastSliced.add(tmpFr);
 			}
@@ -148,7 +146,8 @@ public class SpoofFEDInstruction extends FEDInstruction
 		// change the is_literal flag from true to false because when broadcasted it is not a literal anymore
 		instString = instString.replace("true", "false");
 
-		CPOperand[] inCpo = ArrayUtils.addAll(inCpoMat.toArray(new CPOperand[0]), inCpoScal.toArray(new CPOperand[0]));
+		CPOperand[] inCpo = ArrayUtils.addAll(inCpoMat.toArray(new CPOperand[0]),
+			inCpoScal.toArray(new CPOperand[0]));
 		FederatedRequest frCompute = FederationUtils.callInstruction(instString, _output, inCpo, frIds);
 
 		// get partial results from federated workers
@@ -179,24 +178,33 @@ public class SpoofFEDInstruction extends FEDInstruction
 		protected SpoofFEDType(CPOperand out) {
 			_output = out;
 		}
-
-		protected boolean needsBroadcastSliced(FederationMap fedMap, long rowNum, long colNum)
-		{
-			if(rowNum == fedMap.getMaxIndexInRange(0) && colNum == fedMap.getMaxIndexInRange(1)) {
-				return true;
-			}
-			else if(fedMap.getType() == FType.ROW) {
-				return (rowNum == fedMap.getMaxIndexInRange(0) && (colNum == 1 || colNum == fedMap.getSize()))
-					|| (colNum > 1 && rowNum == fedMap.getSize());
-			}
-			else if(fedMap.getType() == FType.COL) {
-				return ((rowNum == 1 || rowNum == fedMap.getSize()) && colNum == fedMap.getMaxIndexInRange(1))
-					|| (rowNum > 1 && colNum == fedMap.getSize());
-			}
-			throw new DMLRuntimeException("Only row partitioned or column partitioned federated input supported yet.");
+		
+		protected FederatedRequest[] broadcastSliced(MatrixObject mo, FederationMap fedMap) {
+			return fedMap.broadcastSliced(mo, false);
 		}
 
-		protected abstract void setOutput(ExecutionContext ec, Future<FederatedResponse>[] response, FederationMap fedMap);
+		protected boolean needsBroadcastSliced(FederationMap fedMap, long rowNum, long colNum) {
+			boolean retVal = false;
+
+			FType fedType = fedMap.getType();
+
+			retVal |= (rowNum == fedMap.getMaxIndexInRange(0) && colNum == fedMap.getMaxIndexInRange(1));
+			if(fedType == FType.ROW) {
+				retVal |= (rowNum == fedMap.getMaxIndexInRange(0) && (colNum == 1 || colNum == fedMap.getSize()));
+			}
+			else if(fedType == FType.COL) {
+				retVal |= ((rowNum == 1 || rowNum == fedMap.getSize()) && colNum == fedMap.getMaxIndexInRange(1));
+			}
+			else {
+				throw new DMLRuntimeException("Only row partitioned or column" +
+					" partitioned federated input supported yet.");
+			}
+
+			return retVal;
+		}
+
+		protected abstract void setOutput(ExecutionContext ec,
+			Future<FederatedResponse>[] response, FederationMap fedMap);
 	}
 
 
@@ -208,8 +216,7 @@ public class SpoofFEDInstruction extends FEDInstruction
 			_op = (SpoofCellwise)op;
 		}
 
-		protected void setOutput(ExecutionContext ec, Future<FederatedResponse>[] response, FederationMap fedMap)
-		{
+		protected void setOutput(ExecutionContext ec, Future<FederatedResponse>[] response, FederationMap fedMap) {
 			FType fedType = fedMap.getType();
 			AggOp aggOp = ((SpoofCellwise)_op).getAggOp();
 			CellType cellType = ((SpoofCellwise)_op).getCellType();
@@ -295,7 +302,8 @@ public class SpoofFEDInstruction extends FEDInstruction
 					ec.setMatrixOutput(_output.getName(), FederationUtils.bind(response, true));
 				}
 				else {
-					throw new DMLRuntimeException("Only row partitioned or column partitioned federated matrices supported yet.");
+					throw new DMLRuntimeException("Only row partitioned or column" +
+						" partitioned federated matrices supported yet.");
 				}
 			}
 			else {
@@ -313,8 +321,7 @@ public class SpoofFEDInstruction extends FEDInstruction
 			_op = (SpoofRowwise)op;
 		}
 
-		protected void setOutput(ExecutionContext ec, Future<FederatedResponse>[] response, FederationMap fedMap)
-		{
+		protected void setOutput(ExecutionContext ec, Future<FederatedResponse>[] response, FederationMap fedMap) {
 			RowType rowType = ((SpoofRowwise)_op).getRowType();
 			if(rowType == RowType.FULL_AGG) { // full aggregation
 				// aggregate partial results from federated responses as sum
@@ -362,8 +369,7 @@ public class SpoofFEDInstruction extends FEDInstruction
 			_op = (SpoofMultiAggregate)op;
 		}
 
-		protected void setOutput(ExecutionContext ec, Future<FederatedResponse>[] response, FederationMap fedMap)
-		{
+		protected void setOutput(ExecutionContext ec, Future<FederatedResponse>[] response, FederationMap fedMap) {
 			MatrixBlock[] partRes = FederationUtils.getResults(response);
 			SpoofCellwise.AggOp[] aggOps = ((SpoofMultiAggregate)_op).getAggOps();
 			for(int counter = 1; counter < partRes.length; counter++) {
@@ -382,8 +388,30 @@ public class SpoofFEDInstruction extends FEDInstruction
 			_op = (SpoofOuterProduct)op;
 		}
 
-		protected void setOutput(ExecutionContext ec, Future<FederatedResponse>[] response, FederationMap fedMap)
-		{
+		protected FederatedRequest[] broadcastSliced(MatrixObject mo, FederationMap fedMap) {
+			return fedMap.broadcastSliced(mo, (fedMap.getType() == FType.COL));
+		}
+
+		protected boolean needsBroadcastSliced(FederationMap fedMap, long rowNum, long colNum) {
+			boolean retVal = false;
+
+			FType fedType = fedMap.getType();
+			retVal |= (rowNum == fedMap.getMaxIndexInRange(0) && colNum == fedMap.getMaxIndexInRange(1));
+			if(fedType == FType.ROW) {
+				retVal |= (rowNum == fedMap.getMaxIndexInRange(0));
+			}
+			else if(fedType == FType.COL) {
+				retVal |= (rowNum == fedMap.getMaxIndexInRange(1));
+			}
+			else {
+				throw new DMLRuntimeException("Only row partitioned or column" +
+					" partitioned federated input supported yet.");
+			}
+			
+			return retVal;
+		}
+
+		protected void setOutput(ExecutionContext ec, Future<FederatedResponse>[] response, FederationMap fedMap) {
 			FType fedType = fedMap.getType();
 			OutProdType outProdType = ((SpoofOuterProduct)_op).getOuterProdType();
 			if(outProdType == OutProdType.LEFT_OUTER_PRODUCT) {
@@ -397,7 +425,8 @@ public class SpoofFEDInstruction extends FEDInstruction
 					ec.setMatrixOutput(_output.getName(), FederationUtils.bind(response, false));
 				}
 				else {
-					throw new DMLRuntimeException("Only row partitioned or column partitioned federated matrices supported yet.");
+					throw new DMLRuntimeException("Only row partitioned or column" +
+						" partitioned federated matrices supported yet.");
 				}
 			}
 			else if(outProdType == OutProdType.RIGHT_OUTER_PRODUCT) {
@@ -411,7 +440,8 @@ public class SpoofFEDInstruction extends FEDInstruction
 					ec.setMatrixOutput(_output.getName(), FederationUtils.aggMatrix(aop, response, fedMap));
 				}
 				else {
-					throw new DMLRuntimeException("Only row partitioned or column partitioned federated matrices supported yet.");
+					throw new DMLRuntimeException("Only row partitioned or column" +
+						" partitioned federated matrices supported yet.");
 				}
 			}
 			else if(outProdType == OutProdType.CELLWISE_OUTER_PRODUCT) {
@@ -424,7 +454,8 @@ public class SpoofFEDInstruction extends FEDInstruction
 					ec.setMatrixOutput(_output.getName(), FederationUtils.bind(response, true));
 				}
 				else {
-					throw new DMLRuntimeException("Only row partitioned or column partitioned federated matrices supported yet.");
+					throw new DMLRuntimeException("Only row partitioned or column" +
+						" partitioned federated matrices supported yet.");
 				}
 			}
 			else if(outProdType == OutProdType.AGG_OUTER_PRODUCT) {

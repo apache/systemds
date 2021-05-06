@@ -74,17 +74,18 @@ public class FederatedOuterProductTmplTest extends AutomatedTestBase
 			// {test_num, rows, cols, row_partitioned}
 
 			// row partitioned
-			{1, 2000, 2000, true},
-			{2, 4000, 2000, true},
-			{3, 1000, 1500, true},
-			{4, 4000, 2000, true},
-			{5, 4000, 2000, true},
-			{6, 4000, 2000, true},
-			{7, 4000, 2000, true},
-			{8, 1000, 2000, true},
+			{1, 3000, 2000, true}, // AGG_OUTER_PRODUCT
+			{2, 4000, 2000, true}, // LEFT_OUTER_PRODUCT
+			{3, 1000, 1500, true}, // CELLWISE_OUTER_PRODUCT
+			{4, 4000, 2000, true}, // RIGHT_OUTER_PRODUCT
+			{5, 4000, 2000, true}, // RIGHT_OUTER_PRODUCT
+			{6, 4000, 2000, true}, // RIGHT_OUTER_PRODUCT
+			{7, 4000, 2000, true}, // LEFT_OUTER_PRODUCT
+			{8, 1000, 2000, true}, // CELLWISE_OUTER_PRODUCT
+			{9, 1000, 2000, true}, // LEFT_OUTER_PRODUCT
 
 			// column partitioned
-			{1, 2000, 2000, false},
+			{1, 3000, 2000, false},
 			{2, 4000, 2000, false},
 			{3, 1000, 1500, false},
 			{4, 4000, 2000, false},
@@ -92,6 +93,7 @@ public class FederatedOuterProductTmplTest extends AutomatedTestBase
 			{6, 4000, 2000, false},
 			{7, 4000, 2000, false},
 			{8, 1000, 2000, false},
+			{9, 1000, 2000, false},
 		});
 	}
 

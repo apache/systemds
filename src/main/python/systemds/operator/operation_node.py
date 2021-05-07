@@ -50,9 +50,7 @@ class OperationNode(DAGNode):
                                             Iterable[VALID_INPUT_TYPES]] = None,
                  named_input_nodes: Dict[str, VALID_INPUT_TYPES] = None,
                  output_type: OutputType = OutputType.MATRIX,
-                 is_python_local_data: bool = False,
-                 number_of_outputs=1,
-                 output_types: Iterable[OutputType] = None):
+                 is_python_local_data: bool = False):
                  
         """
         Create general `OperationNode`
@@ -81,10 +79,9 @@ class OperationNode(DAGNode):
         self._result_var = None
         self._lineage_trace = None
         self._script = None
-        self._number_of_outputs = number_of_outputs
-        self._output_types = output_types
         self._source_node = None
         self._already_added = False
+        self.dml_name = ""
 
     def compute(self, verbose: bool = False, lineage: bool = False) -> \
             Union[float, np.array, Tuple[Union[float, np.array], str]]:
@@ -140,17 +137,14 @@ class OperationNode(DAGNode):
 
     def __parse_output_result_list(self, result_variables):
         result_var = []
+        named_output_nodes_types_list = [type(named_output_node).__name__ for named_output_node in list(self.named_output_nodes.values())]
         for idx, v in enumerate(self._script.out_var_name):
-            if(self._output_types == None or self._output_types[idx] == OutputType.MATRIX):
-                result_var.append(
-                    self.__parse_output_result_matrix(result_variables, v))
-            elif self._output_types[idx] == OutputType.FRAME:
-                result_var.append(
-                    self.__parse_output_result_frame(result_variables, v))
-
+            if named_output_nodes_types_list[idx] == "Matrix":
+                result_var.append(self.__parse_output_result_matrix(result_variables, v))
+            elif named_output_nodes_types_list[idx] == "Frame":
+                result_var.append(self.__parse_output_result_frame(result_variables, v))
             else:
-                result_var.append(result_variables.getDouble(
-                    self._script.out_var_name[idx]))
+                result_var.append(result_variables.getDouble(self._script.out_var_name[idx]))
         return result_var
 
     def get_lineage_trace(self) -> str:
@@ -167,6 +161,9 @@ class OperationNode(DAGNode):
 
     def code_line(self, var_name: str, unnamed_input_vars: Sequence[str],
                   named_input_vars: Dict[str, str]) -> str:
+        if self.operation is None:
+            return f'{var_name}={list(named_input_vars.values())[0]}'
+
         if self.operation in BINARY_OPERATIONS:
             assert len(
                 named_input_vars) == 0, 'Named parameters can not be used with binary operations'
@@ -174,12 +171,11 @@ class OperationNode(DAGNode):
                 unnamed_input_vars) == 2, 'Binary Operations need exactly two input variables'
             return f'{var_name}={unnamed_input_vars[0]}{self.operation}{unnamed_input_vars[1]}'
 
-        inputs_comma_sep = create_params_string(
-            unnamed_input_vars, named_input_vars)
+        inputs_comma_sep = create_params_string(unnamed_input_vars, named_input_vars)
 
         if self.output_type == OutputType.LIST:
             output = "["
-            for idx in range(self._number_of_outputs):
+            for idx, output_node in enumerate(self.named_output_nodes):
                 output += f'{var_name}_{idx},'
             output = output[:-1] + "]"
             return f'{output}={self.operation}({inputs_comma_sep});'

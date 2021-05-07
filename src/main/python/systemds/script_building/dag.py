@@ -74,12 +74,13 @@ class DAGNode(ABC):
     sds_context: 'SystemDSContext'
     _unnamed_input_nodes: Sequence[Union['DAGNode', str, int, float, bool]]
     _named_input_nodes: Dict[str, Union['DAGNode', str, int, float, bool]]
+    _named_output_nodes: Dict[str, Union['DAGNode', str, int, float, bool]]
     _source_node: Optional["DAGNode"]
     _output_type: OutputType
     _script: Optional["DMLScript"]
     _is_python_local_data: bool
-    _number_of_outputs: int
     _already_added: bool
+    _dml_name: str
 
     def compute(self, verbose: bool = False, lineage: bool = False) -> Any:
         """Get result of this operation. Builds the dml script and executes it in SystemDS, before this method is called
@@ -126,12 +127,12 @@ class DAGNode(ABC):
         return self._named_input_nodes
 
     @property
-    def is_python_local_data(self):
-        return self._is_python_local_data
+    def named_output_nodes(self):
+        return self._named_output_nodes
 
     @property
-    def number_of_outputs(self):
-        return self._number_of_outputs
+    def is_python_local_data(self):
+        return self._is_python_local_data
 
     @property
     def output_type(self):
@@ -148,3 +149,11 @@ class DAGNode(ABC):
     @property
     def script_str(self):
         return self._script.dml_script
+
+    @property
+    def dml_name(self):
+        return self._dml_name
+
+    @dml_name.setter
+    def dml_name(self, value):
+        self._dml_name = value

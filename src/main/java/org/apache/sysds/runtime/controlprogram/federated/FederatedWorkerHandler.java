@@ -21,7 +21,6 @@ package org.apache.sysds.runtime.controlprogram.federated;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
-import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
@@ -54,11 +53,10 @@ import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest.Reques
 import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse.ResponseType;
 import org.apache.sysds.runtime.instructions.Instruction;
 import org.apache.sysds.runtime.instructions.InstructionParser;
-import org.apache.sysds.runtime.instructions.cp.CPOperand;
+import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.Data;
 import org.apache.sysds.runtime.instructions.cp.ListObject;
 import org.apache.sysds.runtime.instructions.cp.ScalarObject;
-import org.apache.sysds.runtime.instructions.cp.StringObject;
 import org.apache.sysds.runtime.instructions.fed.InitFEDInstruction;
 import org.apache.sysds.runtime.io.FileFormatPropertiesCSV;
 import org.apache.sysds.runtime.io.IOUtilFunctions;
@@ -69,7 +67,6 @@ import org.apache.sysds.runtime.lineage.LineageItem;
 import org.apache.sysds.runtime.lineage.LineageItemUtils;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
-import org.apache.sysds.runtime.meta.DataCharacteristics;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.meta.MetaDataAll;
 import org.apache.sysds.runtime.meta.MetaDataFormat;
@@ -81,12 +78,18 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 	protected static Logger log = Logger.getLogger(FederatedWorkerHandler.class);
 
 	private final ExecutionContextMap _ecm;
+	private final FederatedWorker _federatedWorker;
 
 	public FederatedWorkerHandler(ExecutionContextMap ecm) {
+		this(ecm, null);
+	}
+
+	public FederatedWorkerHandler(ExecutionContextMap ecm, FederatedWorker federatedWorker) {
 		// Note: federated worker handler created for every command;
 		// and concurrent parfor threads at coordinator need separate
 		// execution contexts at the federated sites too
 		_ecm = ecm;
+		_federatedWorker = federatedWorker;
 	}
 
 	@Override
@@ -291,7 +294,7 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 	}
 
 	private FederatedResponse putFedInput(FederatedRequest request) throws UnknownHostException {
-		checkNumParams(request.getNumParams(), 3);
+		checkNumParams(request.getNumParams(), 7);
 		String varname = String.valueOf(request.getID());
 		ExecutionContext ec = _ecm.get(request.getTID());
 		if(ec.containsVariable(varname)) {
@@ -299,26 +302,31 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 		}
 
 		Types.DataType fedDataType = (DataType) request.getParam(0); // matrix or frame
-		String[] parsedValues = InitFEDInstruction.parseURL(((StringObject) request.getParam(1)).getStringValue()); // address
-		String host = parsedValues[0];
-		int port = Integer.parseInt(parsedValues[1]);
-		String filePath = parsedValues[2];
-
-		FederatedRange[] ranges = (FederatedRange[]) request.getParam(2);
+		InetSocketAddress inetSocketAddress = (InetSocketAddress) request.getParam(1); // address
+		String filePath = (String) request.getParam(2);
 
 		List<Pair<FederatedRange, FederatedData>> feds = new ArrayList<>();
 
-		for(int i = 0; i < ranges.length; i ++) {
+		int size = (int) request.getParam(3);
+		long rows =  (long) request.getParam(5);
+		long cols =  (long) request.getParam(6);
+		for(int i = 0; i < size; i ++) {
 			FederatedData federatedData;
-			if(request.getParam(3) == Types.ReplicationType.FULL) {
-				federatedData = new FederatedData(fedDataType, new InetSocketAddress(InetAddress.getByName(host), port),
+			if(request.getParam(4) == Types.ReplicationType.FULL) {
+				federatedData = new FederatedData(fedDataType, inetSocketAddress,
 					filePath, Types.ReplicationType.FULL);
-			} else {
-				federatedData = new FederatedData(fedDataType, new InetSocketAddress(InetAddress.getByName(host), port),
-					filePath, Types.ReplicationType.NONE);
-			}
+				feds.add(new ImmutablePair<>(new FederatedRange(new long[] {0, 0}, new long[] {rows, cols}), federatedData));
+			} else if (request.getParam(4) == Types.ReplicationType.NONE) {
+				// set new variable with slice
+				Data data = ExecutionContext.createCacheableData((CacheBlock) request.getParam(7));
+				String id = String.valueOf(FederationUtils.getNextFedDataID());
+				ec.setVariable(id, data);
 
-			feds.add(new ImmutablePair<>(ranges[i], federatedData));
+				//FIXME
+				federatedData = new FederatedData(fedDataType, inetSocketAddress, ec.getMatrixObject(id).getFileName(), Types.ReplicationType.NONE);
+				feds.add(new ImmutablePair<>(new FederatedRange(new long[] {(long) request.getParam(8), (long) request.getParam(9)},
+					new long[] {(long) request.getParam(10), (long) request.getParam(11)}), federatedData));
+			}
 		}
 
 		if(fedDataType == DataType.MATRIX) {
@@ -326,8 +334,7 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 			ec.setVariable(varname, data);
 
 			if(data != null)
-				data.getDataCharacteristics().setRows(ranges[ranges.length - 1].getSize(0))
-					.setCols(ranges[ranges.length - 1].getSize(1));
+				data.getDataCharacteristics().setRows(rows).setCols(cols);
 			InitFEDInstruction.federateMatrix(data, feds);
 		}
 		else if(fedDataType == DataType.FRAME) {
@@ -335,11 +342,10 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 			ec.setVariable(varname, data);
 
 			if(data != null)
-				data.getDataCharacteristics().setRows(ranges[ranges.length - 1].getSize(0))
-					.setCols(ranges[ranges.length - 1].getSize(1));
+				data.getDataCharacteristics().setRows(rows).setCols(cols);
 			InitFEDInstruction.federateFrame(data, feds);
 		}
-
+		_federatedWorker._broadcasts.add(new ImmutablePair(request.getID(), true));
 		return new FederatedResponse(ResponseType.SUCCESS_EMPTY);
 	}
 
@@ -375,6 +381,12 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 		pb.getInstructions().clear();
 		Instruction receivedInstruction = InstructionParser.parseSingleInstruction((String) request.getParam(0));
 		pb.getInstructions().add(receivedInstruction);
+
+		long id = Long.parseLong(InstructionUtils.getInstructionParts(receivedInstruction.getInstructionString())[1]);
+		if(receivedInstruction.getOpcode().equals("rmvar") && _federatedWorker._broadcasts.contains(new ImmutablePair(id, true)) ||
+			_federatedWorker._broadcasts.contains(new ImmutablePair(id, false)))
+			return new FederatedResponse(ResponseType.SUCCESS_EMPTY);
+
 
 		if (DMLScript.LINEAGE)
 			// Compiler assisted optimizations are not applicable for Fed workers.

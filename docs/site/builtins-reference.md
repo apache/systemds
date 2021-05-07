@@ -28,6 +28,9 @@ limitations under the License.
     * [`tensor`-Function](#tensor-function)
   * [DML-Bodied Built-In functions](#dml-bodied-built-in-functions)
     * [`confusionMatrix`-Function](#confusionmatrix-function)
+    * [`cspline`-Function](#cspline-function)
+    * [`csplineCG`-Function](#csplineCG-function)
+    * [`csplineDS`-Function](#csplineDS-function)
     * [`cvlm`-Function](#cvlm-function)
     * [`DBSCAN`-Function](#DBSCAN-function)
     * [`discoverFD`-Function](#discoverFD-function)
@@ -186,6 +189,122 @@ X = round(rand(rows = 5, cols = 1, min = 1, max = numClasses))
 y = toOneHot(X, numClasses)
 [ConfusionSum, ConfusionAvg] = confusionMatrix(P=z, Y=y)
 ```
+
+## `cspline`-Function
+
+This `cspline`-function solves Cubic spline interpolation. The function usages natural spline with $$ q_1''(x_0) == q_n''(x_n) == 0.0 $$.
+By default, it calculates via `csplineDS`-function.
+
+Algorithm reference: https://en.wikipedia.org/wiki/Spline_interpolation#Algorithm_to_find_the_interpolating_cubic_spline
+
+### Usage
+```r
+[result, K] = cspline(X, Y, inp_x, tol, maxi)
+```
+
+### Arguments
+
+| Name | Type           | Default | Description |
+| :--- | :------------- | :------ | :---------- |
+| X    | Matrix[Double] | ---     | 1-column matrix of x values knots. It is assumed that x values are monotonically increasing and there is no duplicate points in X |
+| Y    | Matrix[Double] | ---     | 1-column matrix of corresponding y values knots |
+| inp_x | Double        | ---     | the given input x, for which the cspline will find predicted y |
+| mode  | String        | `DS`    | Specifies that method for cspline (DS - Direct Solve, CG - Conjugate Gradient) |
+| tol   | Double        | `-1.0`  | Tolerance (epsilon); conjugate gradient procedure terminates early if L2 norm of the beta-residual is less than tolerance * its initial norm |
+| maxi  | Integer       | `-1`    | Maximum number of conjugate gradient iterations, 0 = no maximum |
+
+### Returns
+
+| Name         | Type           | Description |
+| :----------- | :------------- | :---------- |
+| pred_Y       | Matrix[Double] | Predicted values |
+| K            | Matrix[Double] | Matrix of k parameters |
+
+### Example
+
+```r
+num_rec = 100 # Num of records
+X = matrix(seq(1,num_rec), num_rec, 1)
+Y = round(rand(rows = 100, cols = 1, min = 1, max = 5))
+inp_x = 4.5
+tolerance = 0.000001
+max_iter = num_rec
+[result, K] = cspline(X=X, Y=Y, inp_x=inp_x, tol=tolerance, maxi=max_iter)
+```
+
+## `csplineCG`-Function
+
+This `csplineCG`-function solves Cubic spline interpolation with conjugate gradient method. Usage will be same as `cspline`-function.
+
+### Usage
+```r
+[result, K] = csplineCG(X, Y, inp_x, tol, maxi)
+```
+
+### Arguments
+
+| Name | Type           | Default | Description |
+| :--- | :------------- | :------ | :---------- |
+| X    | Matrix[Double] | ---     | 1-column matrix of x values knots. It is assumed that x values are monotonically increasing and there is no duplicate points in X |
+| Y    | Matrix[Double] | ---     | 1-column matrix of corresponding y values knots |
+| inp_x | Double        | ---     | the given input x, for which the cspline will find predicted y |
+| tol   | Double        | `-1.0`  | Tolerance (epsilon); conjugate gradient procedure terminates early if L2 norm of the beta-residual is less than tolerance * its initial norm |
+| maxi  | Integer       | `-1`    | Maximum number of conjugate gradient iterations, 0 = no maximum |
+
+### Returns
+
+| Name         | Type           | Description |
+| :----------- | :------------- | :---------- |
+| pred_Y       | Matrix[Double] | Predicted values |
+| K            | Matrix[Double] | Matrix of k parameters |
+
+### Example
+
+```r
+num_rec = 100 # Num of records
+X = matrix(seq(1,num_rec), num_rec, 1)
+Y = round(rand(rows = 100, cols = 1, min = 1, max = 5))
+inp_x = 4.5
+tolerance = 0.000001
+max_iter = num_rec
+[result, K] = csplineCG(X=X, Y=Y, inp_x=inp_x, tol=tolerance, maxi=max_iter)
+```
+
+## `csplineDS`-Function
+
+This `csplineDS`-function solves Cubic spline interpolation with direct solver method.
+
+### Usage
+```r
+[result, K] = csplineDS(X, Y, inp_x)
+```
+
+### Arguments
+
+| Name | Type           | Default | Description |
+| :--- | :------------- | :------ | :---------- |
+| X    | Matrix[Double] | ---     | 1-column matrix of x values knots. It is assumed that x values are monotonically increasing and there is no duplicate points in X |
+| Y    | Matrix[Double] | ---     | 1-column matrix of corresponding y values knots |
+| inp_x | Double        | ---     | the given input x, for which the cspline will find predicted y |
+
+### Returns
+
+| Name         | Type           | Description |
+| :----------- | :------------- | :---------- |
+| pred_Y       | Matrix[Double] | Predicted values |
+| K            | Matrix[Double] | Matrix of k parameters |
+
+### Example
+
+```r
+num_rec = 100 # Num of records
+X = matrix(seq(1,num_rec), num_rec, 1)
+Y = round(rand(rows = 100, cols = 1, min = 1, max = 5))
+inp_x = 4.5
+
+[result, K] = csplineDS(X=X, Y=Y, inp_x=inp_x)
+```
+
 
 ## `cvlm`-Function
 

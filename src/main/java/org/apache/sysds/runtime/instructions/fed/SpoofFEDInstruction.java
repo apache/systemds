@@ -117,9 +117,9 @@ public class SpoofFEDInstruction extends FEDInstruction
 				frBroadcastSliced.add(tmpFr);
 			}
 			else {
-				FederatedRequest tmpFr = fedMap.broadcast(mo);
-				frIds[index++] = tmpFr.getID();
-				frBroadcast.add(tmpFr);
+				FederatedRequest[] tmpFr = fedMap.broadcast(mo);
+				frIds[index++] = tmpFr[0].getID();
+				frBroadcast.add(tmpFr[0]);
 			}
 		}
 		for(ScalarObject so : inSo) {

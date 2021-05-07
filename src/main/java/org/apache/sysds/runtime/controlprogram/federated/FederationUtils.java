@@ -47,6 +47,7 @@ import org.apache.sysds.runtime.instructions.cp.DoubleObject;
 import org.apache.sysds.runtime.instructions.cp.ScalarObject;
 import org.apache.sysds.runtime.matrix.data.LibMatrixAgg;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.matrix.data.Pair;
 import org.apache.sysds.runtime.matrix.operators.AggregateOperator;
 import org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
@@ -56,6 +57,7 @@ import org.apache.sysds.runtime.matrix.operators.SimpleOperator;
 public class FederationUtils {
 	protected static Logger log = Logger.getLogger(FederationUtils.class);
 	private static final IDSequence _idSeq = new IDSequence();
+	public static Map<Pair<Long, Long>, Long> _broadcastMap = new HashMap<>();
 
 	public static void resetFedDataID() {
 		_idSeq.reset();
@@ -63,6 +65,17 @@ public class FederationUtils {
 
 	public static long getNextFedDataID() {
 		return _idSeq.getNextID();
+	}
+
+	public static long getNextFedDataID(long workerId, long broadcastId) {
+		long id;
+		if(_broadcastMap.containsKey(new Pair<>(workerId, broadcastId)))
+			id = _broadcastMap.get(new Pair<>(workerId, broadcastId));
+		else {
+			id = _idSeq.getNextID();
+			_broadcastMap.put(new Pair<>(workerId, broadcastId), id);
+		}
+		return id;
 	}
 
 	public static FederatedRequest callInstruction(String inst, CPOperand varOldOut, CPOperand[] varOldIn, long[] varNewIn, boolean federatedOutput){

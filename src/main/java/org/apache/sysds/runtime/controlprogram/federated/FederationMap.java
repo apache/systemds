@@ -34,10 +34,14 @@ import java.util.stream.Stream;
 
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
+import org.apache.sysds.common.Types;
+import org.apache.sysds.lops.Federated;
 import org.apache.sysds.runtime.controlprogram.caching.CacheBlock;
 import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
+import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest.RequestType;
 import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.ScalarObject;
 import org.apache.sysds.runtime.instructions.cp.VariableCPInstruction;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
@@ -120,11 +124,37 @@ public class FederationMap {
 		return _fedMap;
 	}
 
-	public FederatedRequest broadcast(CacheableData<?> data) {
-		// prepare single request for all federated data
-		long id = FederationUtils.getNextFedDataID();
-		CacheBlock cb = data.acquireReadAndRelease();
-		return new FederatedRequest(RequestType.PUT_VAR, id, cb);
+	public FederatedRequest[] broadcast(CacheableData<?> data) {
+		// prepare requests for all federated data
+		long id;
+		FederatedRequest[] ret = new FederatedRequest[_fedMap.size()];
+
+		if(FederationUtils._broadcastMap.containsKey(new org.apache.sysds.runtime.matrix.data.Pair<>(_ID, data.getUniqueID()))) {
+			id = FederationUtils._broadcastMap.get(new org.apache.sysds.runtime.matrix.data.Pair<>(_ID, data.getUniqueID()));
+			Arrays.parallelSetAll(ret,
+				i -> new FederatedRequest(RequestType.GET_VAR, id));
+			return ret;
+		}
+		else {
+			id = FederationUtils.getNextFedDataID();
+			FederationUtils._broadcastMap.put(new org.apache.sysds.runtime.matrix.data.Pair<>(_ID, data.getUniqueID()), id);
+		}
+
+		// TODO how to check if already exists, maybe in callInstruction
+		// TODO check also for creating, where to replace
+
+		Types.DataType type =  data instanceof MatrixObject ? Types.DataType.MATRIX : Types.DataType.FRAME;
+
+		int i = 0;
+		FederatedRange[] ranges = new FederatedRange[_fedMap.size()];
+		Arrays.fill(ranges, new FederatedRange(new long[]{0, 0}, new long[]{data.getNumRows(), data.getNumColumns()}));
+
+		for(Entry<FederatedRange, FederatedData> e : _fedMap.entrySet()) {
+			String url = e.getValue().getAddress().toString().concat(":" + data.getFileName());
+			ret[i++] = new FederatedRequest(RequestType.PUT_FED_INPUT, id, type, url, ranges, Types.ReplicationType.FULL);
+		}
+
+		return ret;
 	}
 
 	public FederatedRequest broadcast(ScalarObject scalar) {
@@ -143,7 +173,7 @@ public class FederationMap {
 	 */
 	public FederatedRequest[] broadcastSliced(CacheableData<?> data, boolean transposed) {
 		if( _type == FType.FULL )
-			return new FederatedRequest[]{broadcast(data)};
+			return broadcast(data);
 
 		// prepare broadcast id and pin input
 		long id = FederationUtils.getNextFedDataID();
@@ -175,7 +205,7 @@ public class FederationMap {
 
 	public FederatedRequest[] broadcastSliced(CacheableData<?> data, boolean isFrame, int[][] ix) {
 		if( _type == FType.FULL )
-			return new FederatedRequest[]{broadcast(data)};
+			return broadcast(data);
 
 		// prepare broadcast id and pin input
 		long id = FederationUtils.getNextFedDataID();

@@ -69,6 +69,8 @@ public class InitFEDInstruction extends FEDInstruction implements LineageTraceab
 
 	private CPOperand _type, _addresses, _ranges, _output;
 
+//	private int[] _rangesList; // replica after broadcast
+
 	public InitFEDInstruction(CPOperand type, CPOperand addresses, CPOperand ranges, CPOperand out, String opcode,
 		String instr) {
 		super(FEDType.Init, opcode, instr);
@@ -77,6 +79,16 @@ public class InitFEDInstruction extends FEDInstruction implements LineageTraceab
 		_ranges = ranges;
 		_output = out;
 	}
+
+//	public InitFEDInstruction(CPOperand type, CPOperand addresses, String ranges, CPOperand out, String opcode,
+//		String instr) {
+//		super(FEDType.Init, opcode, instr);
+//		_type = type;
+//		_addresses = addresses;
+//		_ranges = null;
+//		_rangesList = Arrays.stream(ranges.split("\\s*,\\s*")).mapToInt(Integer::parseInt).toArray();
+//		_output = out;
+//	}
 
 	public static InitFEDInstruction parseInstruction(String str) {
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
@@ -211,6 +223,71 @@ public class InitFEDInstruction extends FEDInstruction implements LineageTraceab
 				"federated address `" + input + "` does not fit required URL pattern of \"host:port/directory\"", e);
 		}
 	}
+
+//	public void createReplica(ExecutionContext ec) {
+//		//where is address
+//		String type = ec.getScalarInput(_type).getStringValue();
+//		ListObject addresses = ec.getListObject(_addresses.getName());
+//		ListObject ranges = ec.getListObject(_ranges.getName());
+//		List<Pair<FederatedRange, FederatedData>> feds = new ArrayList<>();
+//
+//		Types.DataType fedDataType;
+//		if(type.equalsIgnoreCase(FED_MATRIX_IDENTIFIER))
+//			fedDataType = Types.DataType.MATRIX;
+//		else if(type.equalsIgnoreCase(FED_FRAME_IDENTIFIER))
+//			fedDataType = Types.DataType.FRAME;
+//		else
+//			throw new DMLRuntimeException("type \"" + type + "\" non valid federated type");
+//
+//		long[] usedDims = new long[] {0, 0};
+//		for(int i = 0; i < addresses.getLength(); i++) {
+//			Data addressData = addresses.getData().get(i);
+//			if(addressData instanceof StringObject) {
+//				// We split address into url/ip, the port and file path of file to read
+//				String[] parsedValues = parseURL(((StringObject) addressData).getStringValue());
+//				String host = parsedValues[0];
+//				int port = Integer.parseInt(parsedValues[1]);
+//				String filePath = parsedValues[2];
+//
+//				// fill begin and end dims
+//				long[] beginDims = new long[_rangesList.length / 2];
+//				long[] endDims = new long[beginDims.length];
+//				for(int d = 0; d < beginDims.length; d++) {
+//					beginDims[d] = _rangesList[d];
+//					endDims[d] = _rangesList[d+1];
+//				}
+//				usedDims[0] = Math.max(usedDims[0], endDims[0]);
+//				usedDims[1] = Math.max(usedDims[1], endDims[1]);
+//				try {
+//					FederatedData federatedData = new FederatedData(fedDataType,
+//						new InetSocketAddress(InetAddress.getByName(host), port), filePath);
+//					feds.add(new ImmutablePair<>(new FederatedRange(beginDims, endDims), federatedData));
+//				}
+//				catch(UnknownHostException e) {
+//					throw new DMLRuntimeException("federated host was unknown: " + host);
+//				}
+//			}
+//			else {
+//				throw new DMLRuntimeException("federated instruction only takes strings as addresses");
+//			}
+//		}
+//		if(type.equalsIgnoreCase(FED_MATRIX_IDENTIFIER)) {
+//			CacheableData<?> output = ec.getCacheableData(_output);
+//			output.getDataCharacteristics().setRows(usedDims[0]).setCols(usedDims[1]);
+//			federateMatrix(output, feds);
+//		}
+//		else if(type.equalsIgnoreCase(FED_FRAME_IDENTIFIER)) {
+//			if(usedDims[1] > Integer.MAX_VALUE)
+//				throw new DMLRuntimeException("federated Frame can not have more than max int columns, because the "
+//					+ "schema can only be max int length");
+//			FrameObject output = ec.getFrameObject(_output);
+//			output.getDataCharacteristics().setRows(usedDims[0]).setCols(usedDims[1]);
+//			federateFrame(output, feds);
+//		}
+//		else {
+//			throw new DMLRuntimeException("type \"" + type + "\" non valid federated type");
+//		}
+//	}
 
 	public static void federateMatrix(CacheableData<?> output, List<Pair<FederatedRange, FederatedData>> workers) {
 

@@ -316,6 +316,7 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 				federatedData = new FederatedData(fedDataType, inetSocketAddress,
 					filePath, Types.ReplicationType.FULL);
 				feds.add(new ImmutablePair<>(new FederatedRange(new long[] {0, 0}, new long[] {rows, cols}), federatedData));
+				_federatedWorker._broadcasts.add(new ImmutablePair<>(request.getID(), Types.ReplicationType.FULL));
 			} else if (request.getParam(4) == Types.ReplicationType.NONE) {
 				// set new variable with slice
 				Data data = ExecutionContext.createCacheableData((CacheBlock) request.getParam(7));
@@ -326,6 +327,8 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 				federatedData = new FederatedData(fedDataType, inetSocketAddress, ec.getMatrixObject(id).getFileName(), Types.ReplicationType.NONE);
 				feds.add(new ImmutablePair<>(new FederatedRange(new long[] {(long) request.getParam(8), (long) request.getParam(9)},
 					new long[] {(long) request.getParam(10), (long) request.getParam(11)}), federatedData));
+
+				_federatedWorker._broadcasts.add(new ImmutablePair<>(request.getID(), Types.ReplicationType.NONE));
 			}
 		}
 
@@ -345,7 +348,7 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 				data.getDataCharacteristics().setRows(rows).setCols(cols);
 			InitFEDInstruction.federateFrame(data, feds);
 		}
-		_federatedWorker._broadcasts.add(new ImmutablePair(request.getID(), true));
+
 		return new FederatedResponse(ResponseType.SUCCESS_EMPTY);
 	}
 
@@ -383,8 +386,9 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 		pb.getInstructions().add(receivedInstruction);
 
 		long id = Long.parseLong(InstructionUtils.getInstructionParts(receivedInstruction.getInstructionString())[1]);
-		if(receivedInstruction.getOpcode().equals("rmvar") && _federatedWorker._broadcasts.contains(new ImmutablePair(id, true)) ||
-			_federatedWorker._broadcasts.contains(new ImmutablePair(id, false)))
+		if(receivedInstruction.getOpcode().equals("rmvar") &&
+			_federatedWorker._broadcasts.contains(new ImmutablePair<>(id, Types.ReplicationType.NONE)) ||
+			_federatedWorker._broadcasts.contains(new ImmutablePair<>(id, Types.ReplicationType.FULL)))
 			return new FederatedResponse(ResponseType.SUCCESS_EMPTY);
 
 

@@ -27,6 +27,7 @@ import javax.net.ssl.SSLException;
 
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.log4j.Logger;
+import org.apache.sysds.common.Types;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.conf.DMLConfig;
 
@@ -51,7 +52,7 @@ public class FederatedWorker {
 
 	private int _port;
 	private final ExecutionContextMap _ecm;
-	public List<ImmutablePair> _broadcasts = new ArrayList<>();
+	public List<ImmutablePair<Long, Types.ReplicationType>> _broadcasts = new ArrayList<>();
 
 	public FederatedWorker(int port) {
 		_ecm = new ExecutionContextMap();

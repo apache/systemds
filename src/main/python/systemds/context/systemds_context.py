@@ -38,7 +38,7 @@ import numpy as np
 import pandas as pd
 from py4j.java_gateway import GatewayParameters, JavaGateway
 from py4j.protocol import Py4JNetworkError
-from systemds.operator import Frame, Matrix, OperationNode, Scalar, Source
+from systemds.operator import Frame, Matrix, OperationNode, Scalar, Source, List
 from systemds.script_building import OutputType
 from systemds.utils.consts import VALID_INPUT_TYPES
 from systemds.utils.helpers import get_module_dir
@@ -458,3 +458,17 @@ class SystemDSContext(object):
         :param print_imported_methods: boolean specifying if the imported methods should be printed.
         """
         return Source(self, path, name, print_imported_methods)
+
+    def list(self, *args: Sequence[VALID_INPUT_TYPES], **kwargs: Dict[str, VALID_INPUT_TYPES]) -> 'List':
+        if len(kwargs) != 0 and len(args) != 0:
+            raise Exception("Accepts either args or kwargs")
+        elif len(kwargs) != 0:
+            out = []
+            for key, arg in kwargs.items():
+                out.append((key, OutputType.from_type(arg)))
+            return List(self, 'list', named_input_nodes=kwargs, outputs=out)
+        elif len(args) != 0:
+            out = []
+            for idx, arg in enumerate(args):
+                out.append((f"_{idx}", OutputType.from_type(arg)))
+            return List(self, 'list', unnamed_input_nodes=args, outputs=out)

@@ -158,10 +158,10 @@ class DMLScript:
         :param dag_root: the topmost operation of our DAG, result of operation will be output
         """
         baseOutVarString = self._dfs_dag_nodes(dag_root)
-        if(dag_root.output_type != OutputType.NONE):
-            if(dag_root.number_of_outputs > 1):
+        if dag_root.output_type != OutputType.NONE:
+            if dag_root.output_type == OutputType.LIST:
                 self.out_var_name = []
-                for idx in range(dag_root.number_of_outputs):
+                for idx, output_node in enumerate(dag_root.named_output_nodes):
                     self.add_code(
                         f'write({baseOutVarString}_{idx}, \'./tmp_{idx}\');')
                     self.out_var_name.append(f'{baseOutVarString}_{idx}')
@@ -179,31 +179,37 @@ class DMLScript:
             if isinstance(dag_node, bool):
                 return 'TRUE' if dag_node else 'FALSE'
             return str(dag_node)
+
+        if dag_node.dml_name != "":
+            return dag_node.dml_name
+
         if dag_node._output_type == OutputType.IMPORT:
             if not dag_node.already_added:
                 self.add_code(dag_node.code_line(None, None))
             return None
+
         if dag_node._source_node is not None:
             self._dfs_dag_nodes(dag_node._source_node)
         # for each node do the dfs operation and save the variable names in `input_var_names`
         # get variable names of unnamed parameters
 
-        unnamed_input_vars = [self._dfs_dag_nodes(
-            input_node) for input_node in dag_node.unnamed_input_nodes]
-        
-        # get variable names of named parameters
-        named_input_vars = {name: self._dfs_dag_nodes(input_node) for name, input_node in
-                            dag_node.named_input_nodes.items()}
+        unnamed_input_vars = [self._dfs_dag_nodes(input_node) for input_node in dag_node.unnamed_input_nodes]
 
-        curr_var_name = self._next_unique_var()
+        named_input_vars = {}
+        for name, input_node in dag_node.named_input_nodes.items():
+            named_input_vars[name] = self._dfs_dag_nodes(input_node)
+            if isinstance(input_node, DAGNode) and input_node._output_type == OutputType.LIST:
+                dag_node.dml_name = named_input_vars[name] + name
+                return dag_node.dml_name
+
+        dag_node.dml_name = self._next_unique_var()
 
         if dag_node.is_python_local_data:
-            self.add_input_from_python(curr_var_name, dag_node)
-        
-        code_line = dag_node.code_line(
-            curr_var_name, unnamed_input_vars, named_input_vars)
+            self.add_input_from_python(dag_node.dml_name, dag_node)
+
+        code_line = dag_node.code_line(dag_node.dml_name, unnamed_input_vars, named_input_vars)
         self.add_code(code_line)
-        return curr_var_name
+        return dag_node.dml_name
 
     def _next_unique_var(self) -> str:
         """Gets the next unique variable name

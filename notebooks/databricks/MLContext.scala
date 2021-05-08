@@ -66,7 +66,7 @@ ml.execute(uni)
 
 // COMMAND ----------
 
-// MAGIC %md #### Create a neural network layer with (R-like) DML language
+// MAGIC %md ### Create a neural network layer with (R-like) DML language
 
 // COMMAND ----------
 
@@ -82,7 +82,7 @@ val ret = ml.execute(dml(s).out("R")).getScalarObject("R").getDoubleValue();
 
 // COMMAND ----------
 
-// MAGIC %md #### Recommendation with Amazon review dataset
+// MAGIC %md ### Recommendation with Amazon review dataset
 
 // COMMAND ----------
 
@@ -120,48 +120,47 @@ display(df)
 // COMMAND ----------
 
 // MAGIC %py
-// MAGIC # https://spark.apache.org/docs/latest/sql-ref.html
-// MAGIC dataPath = "dbfs:/tmp/amazon0601.txt"
 // MAGIC 
-// MAGIC X_train = (sc.textFile(dataPath)
-// MAGIC     .filter(lambda l: not l.startswith("#"))
-// MAGIC     .map(lambda l: l.split("\t"))
-// MAGIC     .map(lambda prods: (int(prods[0]), int(prods[1]), 1.0))
-// MAGIC     .toDF(("prod_i", "prod_j", "x_ij"))
-// MAGIC     .filter("prod_i < 500 AND prod_j < 500") # Filter for memory constraints
-// MAGIC     .cache())
+// MAGIC # The scala data processing pipeline can also be
+// MAGIC # implemented in python as shown in this block
+// MAGIC 
+// MAGIC # 
+// MAGIC # import pyspark.sql.functions as F
+// MAGIC # # https://spark.apache.org/docs/latest/sql-ref.html
+// MAGIC 
+// MAGIC # dataPath = "dbfs:/tmp/amazon0601.txt"
+// MAGIC 
+// MAGIC # X_train = (sc.textFile(dataPath)
+// MAGIC #     .filter(lambda l: not l.startswith("#"))
+// MAGIC #     .map(lambda l: l.split("\t"))
+// MAGIC #     .map(lambda prods: (int(prods[0]), int(prods[1]), 1.0))
+// MAGIC #     .toDF(("prod_i", "prod_j", "x_ij"))
+// MAGIC #     .filter("prod_i < 500 AND prod_j < 500") # Filter for memory constraints
+// MAGIC #     .cache())
+// MAGIC 
+// MAGIC # max_prod_i = X_train.select(F.max("prod_i")).first()[0]
+// MAGIC # max_prod_j = X_train.select(F.max("prod_j")).first()[0]
+// MAGIC # numProducts = max(max_prod_i, max_prod_j) + 1 # 0-based indexing
+// MAGIC # print("Total number of products: {}".format(numProducts))
 
 // COMMAND ----------
 
-// val prod_i = 1
-// val prod_j = 1
-// val x_ij = 1.0
+// Reference: https://spark.apache.org/docs/latest/rdd-programming-guide.html
 val X_train = (sc.textFile("dbfs:/tmp/amazon0601.txt").filter(l => !(l.startsWith("#"))).map(l => l.split("\t"))
                   .map(prods => (prods(0).toLong, prods(1).toLong, 1.0))
                   .toDF("prod_i", "prod_j", "x_ij")
                   .filter("prod_i < 500 AND prod_j < 500") // filter for memory constraints
                   .cache())
 
-// COMMAND ----------
-
 display(X_train)
 
 // COMMAND ----------
 
-// MAGIC %py
-// MAGIC import pyspark.sql.functions as F
-// MAGIC 
-// MAGIC max_prod_i = X_train.select(F.max("prod_i")).first()[0]
-// MAGIC max_prod_j = X_train.select(F.max("prod_j")).first()[0]
-// MAGIC numProducts = max(max_prod_i, max_prod_j) + 1 # 0-based indexing
-// MAGIC print("Total number of products: {}".format(numProducts))
+// MAGIC %md #### Poisson Nonnegative Matrix Factorization
 
 // COMMAND ----------
 
-
-
-//script = dml(pnmf).input(X=X_train, max_iter=100, rank=10).output("W", "H", "losses")
-//W, H, losses = ml.execute(script).get("W", "H", "losses")
+# Poisson Nonnegative Matrix Factorization
 
 val pnmf = """
 # data & args
@@ -192,12 +191,15 @@ while(i <= max_iter) {
 }
   """
 
-//val scriptUrl = "https://raw.githubusercontent.com/apache/systemds/master/scripts/algorithms/Univar-Stats.dml"
-//val uni = dml(scriptUrl).in("A", X_train).in("max_iter", 100).in("rank", 10)
 val ret = ml.execute(dml(pnmf).in("X", X_train).in("max_iter", 100).in("rank", 10).out("W").out("H").out("losses"));
 
 // COMMAND ----------
 
-val W = ret.getMatrixObject("W")
-val H = ret.getMatrixObject("H")
-val losses = ret.getMatrixObject("losses")
+val W = ret.getMatrix("W")
+val H = ret.getMatrix("H")
+val losses = ret.getMatrix("losses")
+
+// COMMAND ----------
+
+val lossesDF = losses.toDF().sort("__INDEX")
+display(lossesDF)

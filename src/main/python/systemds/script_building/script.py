@@ -196,11 +196,10 @@ class DMLScript:
         unnamed_input_vars = [self._dfs_dag_nodes(input_node) for input_node in dag_node.unnamed_input_nodes]
 
         named_input_vars = {}
-        for idx, named_input_node in enumerate(list(dag_node.named_input_nodes.items())):
-            name, input_node = named_input_node[0], named_input_node[1]
+        for name, input_node in dag_node.named_input_nodes.items():
             named_input_vars[name] = self._dfs_dag_nodes(input_node)
             if isinstance(input_node, DAGNode) and input_node._output_type == OutputType.LIST:
-                dag_node.dml_name = named_input_vars[name] + f"_{idx}"
+                dag_node.dml_name = named_input_vars[name] + name
                 return dag_node.dml_name
 
         dag_node.dml_name = self._next_unique_var()

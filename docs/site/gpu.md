@@ -38,7 +38,7 @@ This guide helps in installing pre-requisites for running with GPU and run instr
 
 The following GPUs are supported:
 
-* NVIDIA GPU cards with CUDA architectures 3.5, 5.0, 6.0, 7.0, 7.5, 8.0 and higher than 8.0.
+* NVIDIA GPU cards with CUDA architectures 5.0, 6.0, 7.0, 7.5, 8.0 and higher than 8.0.
 For CUDA enabled gpu cards at [CUDA GPUS](https://developer.nvidia.com/cuda-gpus)
 
 * For GPUs with unsupported CUDA architectures, or to avoid JIT compilation from PTX, or to
@@ -56,6 +56,37 @@ CUDA toolkit
      [CUDA compatibility](https://docs.nvidia.com/deploy/cuda-compatibility/index.html).
   3. [CUDA 10.2](https://developer.nvidia.com/cuda-10.2-download-archive)
   4. [CUDNN 7.x](https://developer.nvidia.com/cudnn)
+
+
+## Linux
+
+One easiest way to install the NVIDIA software is with `apt` on Ubuntu. For other distributions
+refer to the [CUDA install Linux](https://docs.nvidia.com/cuda/cuda-installation-guide-linux/index.html).
+
+Note: All linux distributions may not support this. you might encounter some problems with driver
+installations.
+
+Install [CUPTI](http://docs.nvidia.com/cuda/cupti/) which ships with CUDA toolkit for profiling.
+
+```sh
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/cuda/extras/CUPTI/lib64
+```
+
+### Install CUDA with apt
+
+The following instructions are for installing CUDA 10.2 on Ubuntu 18.04. These instructions
+might work for other Debian-based distros.
+
+Note: [Secure Boot](https://wiki.ubuntu.com/UEFI/SecureBoot) tends to complication installation.
+These instructions may not address this.
+
+#### Ubuntu 18.04 (CUDA 10.2)
+
+```sh
+
+
+
+```
 
 
 ## Command-line users

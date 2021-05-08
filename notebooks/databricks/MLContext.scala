@@ -1,3 +1,4 @@
+// Databricks notebook source
 /*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -17,7 +18,9 @@
  * under the License.
  */
 
-// Databricks notebook source
+
+// COMMAND ----------
+
 // MAGIC %md # Apache SystemDS on Databricks in 5 minutes
 
 // COMMAND ----------
@@ -27,7 +30,7 @@
 // MAGIC 1. In the sidebar, right-click the **Clusters** button and open the link in a new window.
 // MAGIC 1. On the Clusters page, click **Create Cluster**.
 // MAGIC 1. Name the cluster **Quickstart**.
-// MAGIC 1. In the Databricks Runtime Version drop-down, select **6.3 (Scala 2.11, Spark 2.4.4)**.
+// MAGIC 1. In the Databricks Runtime Version drop-down, select **6.4 (Scala 2.11, Spark 2.4.5)**.
 // MAGIC 1. Click **Create Cluster**.
 // MAGIC 1. Attach `SystemDS.jar` file to the libraries
 

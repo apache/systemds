@@ -24,6 +24,8 @@ limitations under the License.
 This guide helps in installing pre-requisites for running with GPU and run instructions.
 
 - [Requirements](#requirements)
+- [Linux](#linux)
+- [Windows](#windows)
 - [Command-line users](#command-line-users)
 - [Scala Users](#scala-users)
 - [Advanced Configuration](#advanced-configuration)
@@ -39,7 +41,7 @@ This guide helps in installing pre-requisites for running with GPU and run instr
 The following GPUs are supported:
 
 * NVIDIA GPU cards with CUDA architectures 5.0, 6.0, 7.0, 7.5, 8.0 and higher than 8.0.
-For CUDA enabled gpu cards at [CUDA GPUS](https://developer.nvidia.com/cuda-gpus)
+For CUDA enabled gpu cards at [CUDA GPUs](https://developer.nvidia.com/cuda-gpus)
 
 * For GPUs with unsupported CUDA architectures, or to avoid JIT compilation from PTX, or to
 use difference versions of the NVIDIA libraries, see the Linux build from source guide.
@@ -121,6 +123,21 @@ sudo apt-get install --no-install-recommends \
  # Reboot the system. And run `nvidia-smi` for GPU check.
 ```
 
+
+## Windows
+
+Install the hardware and software requirements.
+
+Add CUDA, CUPTI, and cuDNN installation directories to `%PATH%` environmental
+variable. Neural networks won't run without cuDNN `cuDNN64_7*.dll`.
+See [Windows install from source guide](./windows-source-installation.md).
+
+```sh
+SET PATH=C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v10.2\bin;%PATH%
+SET PATH=C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v10.2\extras\CUPTI\lib64;%PATH%
+SET PATH=C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v10.2\include;%PATH%
+SET PATH=C:\tools\cuda\bin;%PATH%
+```
 
 ## Command-line users
 

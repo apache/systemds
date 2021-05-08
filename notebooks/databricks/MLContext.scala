@@ -21,7 +21,7 @@
 
 // COMMAND ----------
 
-// MAGIC %md # Apache SystemDS on Databricks in 5 minutes
+// MAGIC %md # Apache SystemDS on Databricks
 
 // COMMAND ----------
 
@@ -79,3 +79,125 @@ val s = """
   """
 
 val ret = ml.execute(dml(s).out("R")).getScalarObject("R").getDoubleValue();
+
+// COMMAND ----------
+
+// MAGIC %md #### Recommendation with Amazon review dataset
+
+// COMMAND ----------
+
+import java.net.URL
+import java.io.File
+import org.apache.commons.io.FileUtils
+
+FileUtils.copyURLToFile(new URL("http://snap.stanford.edu/data/amazon0601.txt.gz"), new File("/tmp/amazon0601.txt.gz"))
+
+// COMMAND ----------
+
+// MAGIC %sh
+// MAGIC gunzip -d /tmp/amazon0601.txt.gz
+
+// COMMAND ----------
+
+// To list the file system files. For more https://docs.databricks.com/data/filestore.html
+// File system: display(dbutils.fs.ls("file:/tmp"))
+// DBFS: display(dbutils.fs.ls("."))
+
+dbutils.fs.mv("file:/tmp/amazon0601.txt", "dbfs:/tmp/amazon0601.txt")
+
+// COMMAND ----------
+
+display(dbutils.fs.ls("/tmp"))
+// display(dbutils.fs.ls("file:/tmp"))
+
+// COMMAND ----------
+
+// move temporary files to databricks file system (DBFS)
+// dbutils.fs.mv("file:/databricks/driver/amazon0601.txt", "dbfs:/tmp/amazon0601.txt") 
+val df = spark.read.format("text").option("inferSchema", "true").option("header","true").load("dbfs:/tmp/amazon0601.txt")
+display(df)
+
+// COMMAND ----------
+
+// MAGIC %py
+// MAGIC # https://spark.apache.org/docs/latest/sql-ref.html
+// MAGIC dataPath = "dbfs:/tmp/amazon0601.txt"
+// MAGIC 
+// MAGIC X_train = (sc.textFile(dataPath)
+// MAGIC     .filter(lambda l: not l.startswith("#"))
+// MAGIC     .map(lambda l: l.split("\t"))
+// MAGIC     .map(lambda prods: (int(prods[0]), int(prods[1]), 1.0))
+// MAGIC     .toDF(("prod_i", "prod_j", "x_ij"))
+// MAGIC     .filter("prod_i < 500 AND prod_j < 500") # Filter for memory constraints
+// MAGIC     .cache())
+
+// COMMAND ----------
+
+// val prod_i = 1
+// val prod_j = 1
+// val x_ij = 1.0
+val X_train = (sc.textFile("dbfs:/tmp/amazon0601.txt").filter(l => !(l.startsWith("#"))).map(l => l.split("\t"))
+                  .map(prods => (prods(0).toLong, prods(1).toLong, 1.0))
+                  .toDF("prod_i", "prod_j", "x_ij")
+                  .filter("prod_i < 500 AND prod_j < 500") // filter for memory constraints
+                  .cache())
+
+// COMMAND ----------
+
+display(X_train)
+
+// COMMAND ----------
+
+// MAGIC %py
+// MAGIC import pyspark.sql.functions as F
+// MAGIC 
+// MAGIC max_prod_i = X_train.select(F.max("prod_i")).first()[0]
+// MAGIC max_prod_j = X_train.select(F.max("prod_j")).first()[0]
+// MAGIC numProducts = max(max_prod_i, max_prod_j) + 1 # 0-based indexing
+// MAGIC print("Total number of products: {}".format(numProducts))
+
+// COMMAND ----------
+
+
+
+//script = dml(pnmf).input(X=X_train, max_iter=100, rank=10).output("W", "H", "losses")
+//W, H, losses = ml.execute(script).get("W", "H", "losses")
+
+val pnmf = """
+# data & args
+X = X+1 # change product IDs to be 1-based, rather than 0-based
+V = table(X[,1], X[,2])
+size = ifdef($size, -1)
+if(size > -1) {
+    V = V[1:size,1:size]
+}
+
+n = nrow(V)
+m = ncol(V)
+range = 0.01
+W = Rand(rows=n, cols=rank, min=0, max=range, pdf="uniform")
+H = Rand(rows=rank, cols=m, min=0, max=range, pdf="uniform")
+losses = matrix(0, rows=max_iter, cols=1)
+
+# run PNMF
+i=1
+while(i <= max_iter) {
+  # update params
+  H = (H * (t(W) %*% (V/(W%*%H))))/t(colSums(W)) 
+  W = (W * ((V/(W%*%H)) %*% t(H)))/t(rowSums(H))
+  
+  # compute loss
+  losses[i,] = -1 * (sum(V*log(W%*%H)) - as.scalar(colSums(W)%*%rowSums(H)))
+  i = i + 1;
+}
+  """
+
+//val scriptUrl = "https://raw.githubusercontent.com/apache/systemds/master/scripts/algorithms/Univar-Stats.dml"
+//val uni = dml(scriptUrl).in("A", X_train).in("max_iter", 100).in("rank", 10)
+val ret = ml.execute(dml(pnmf).in("X", X_train).in("max_iter", 100).in("rank", 10).out("W").out("H").out("losses"));
+
+// COMMAND ----------
+
+val W = ret.getMatrixObject("W")
+val H = ret.getMatrixObject("H")
+val losses = ret.getMatrixObject("losses")

@@ -52,9 +52,10 @@ The following NVIDIA software is required to be installed in your system:
 
 CUDA toolkit
 
-  1. [NVIDIA GPU drivers](https://www.nvidia.com/drivers) - CUDA 10.2 requires 
-  2. [CUDA 10.2](https://developer.nvidia.com/cuda-10.2-download-archive)
-  3. [CUDNN 7.x](https://developer.nvidia.com/cudnn)
+  1. [NVIDIA GPU drivers](https://www.nvidia.com/drivers) - CUDA 10.2 requires >= 440.33 driver. see
+     [CUDA compatibility](https://docs.nvidia.com/deploy/cuda-compatibility/index.html).
+  3. [CUDA 10.2](https://developer.nvidia.com/cuda-10.2-download-archive)
+  4. [CUDNN 7.x](https://developer.nvidia.com/cudnn)
 
 
 ## Command-line users

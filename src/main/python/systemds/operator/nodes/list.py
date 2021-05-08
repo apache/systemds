@@ -49,6 +49,9 @@ class List(OperationNode):
         super().__init__(sds_context, operation, unnamed_input_nodes,
                          named_input_nodes, OutputType.LIST, is_python_local_data)
 
+    def __getitem__(self, key):
+        return self.named_output_nodes[key]
+
     def pass_python_data_to_prepared_script(self, sds, var_name: str, prepared_script: JavaObject) -> None:
         assert self.is_python_local_data, 'Can only pass data to prepared script if it is python local!'
         if self._is_numpy():

@@ -67,7 +67,7 @@ class TestPCA(unittest.TestCase):
         # print(features)
         node1 = List(node0.sds_context, 'pca', named_input_nodes={"X": node0, "K": 1, "scale": "FALSE", "center": "FALSE"},
                      outputs=[("res", OutputType.MATRIX), ("model", OutputType.MATRIX), ("scale", OutputType.MATRIX), ("center", OutputType.MATRIX)])
-        node2 = node1.named_output_nodes["res"].abs()
+        node2 = node1["res"].abs()
         result = node2.compute(verbose=True)
 
     def test_multiple_outputs(self):
@@ -78,7 +78,7 @@ class TestPCA(unittest.TestCase):
         params_dict = {'X': node0, 'Y': node1}
         node2 = List(self.sds, 'split', named_input_nodes=params_dict,
                      outputs=[("X_train", OutputType.MATRIX), ("X_test", OutputType.MATRIX), ("Y_train", OutputType.MATRIX), ("Y_test", OutputType.MATRIX)])
-        node3 = node2.named_output_nodes["X_train"] + node2.named_output_nodes["Y_train"]
+        node3 = node2["X_train"] + node2["Y_train"]
         res = node3.compute(verbose=True)
 
     def test_simple(self):

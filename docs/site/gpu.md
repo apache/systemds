@@ -108,15 +108,15 @@ wget http://developer.download.nvidia.com/compute/machine-learning/repos/ubuntu1
 sudo apt install ./nvidia-machine-learning-repo-ubuntu1804_1.0.0-1_amd64.deb
 sudo apt-get update
 
-wget https://developer.download.nvidia.com/compute/machine-learning/repos/ubuntu1804/x86_64/libnvinfer7_7.1.3-1+cuda11.0_amd64.deb
-sudo apt install ./libnvinfer7_7.1.3-1+cuda11.0_amd64.deb
+wget http://developer.download.nvidia.com/compute/machine-learning/repos/ubuntu1804/x86_64/libcudnn7_7.6.5.32-1+cuda10.2_amd64.deb
+sudo apt install ./libcudnn7_7.6.5.32-1+cuda10.2_amd64.deb
 sudo apt-get update
 
 # Install development and runtime libraries (~4GB)
 sudo apt-get install --no-install-recommends \
-    cuda-11-0 \
-    libcudnn8=8.0.4.30-1+cuda11.0  \
-    libcudnn8-dev=8.0.4.30-1+cuda11.0
+    cuda-10-2 \
+    libcudnn7=7_7.6.5.32-1+cuda10.2  \
+    libcudnn7-dev=7_7.6.5.32-1+cuda10.2
     
  # Reboot the system. And run `nvidia-smi` for GPU check.
 ```
@@ -157,6 +157,7 @@ in double precision.
 ### Training very deep network
 
 #### Shadow buffer
+
 To train very deep network with double precision, no additional configurations are necessary.
 But to train very deep network with single precision, the user can speed up the eviction by 
 using shadow buffer. The fraction of the driver memory to be allocated to the shadow buffer can  
@@ -166,7 +167,7 @@ and can potentially lead to OOM if the network is deep as well as wide.
 
 #### Unified memory allocator
 
-By default, SystemDS uses CUDA's memory allocator and performs on-demand eviction
-using the eviction policy set by the configuration property `sysds.gpu.eviction.policy`.
+SystemDS uses CUDA's memory allocator and performs on-demand eviction using only
+the Least Recently Used (LRU) eviction policy as per `sysds.gpu.eviction.policy`.
 To use CUDA's unified memory allocator that performs page-level eviction instead,
 please set the configuration property `sysml.gpu.memory.allocator` to `unified_memory`.

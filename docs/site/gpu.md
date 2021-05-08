@@ -34,10 +34,27 @@ This guide helps in installing pre-requisites for running with GPU and run instr
 
 ## Requirements
 
+### Hardware
+
+The following GPUs are supported:
+
+* NVIDIA GPU cards with CUDA architectures 3.5, 5.0, 6.0, 7.0, 7.5, 8.0 and higher than 8.0.
+For CUDA enabled gpu cards at [CUDA GPUS](https://developer.nvidia.com/cuda-gpus)
+
+* For GPUs with unsupported CUDA architectures, or to avoid JIT compilation from PTX, or to
+use difference versions of the NVIDIA libraries, see the Linux build from source guide.
+
+* Release artifacts contain PTX code for the latest supported CUDA architecture.
+
+### Software
+
+The following NVIDIA software is required to be installed in your system:
+
 CUDA toolkit
 
-  1. [CUDA 10.2](https://developer.nvidia.com/cuda-10.2-download-archive)
-  2. [CUDNN 7.x](https://developer.nvidia.com/cudnn)
+  1. [NVIDIA GPU drivers](https://www.nvidia.com/drivers) - CUDA 10.2 requires 
+  2. [CUDA 10.2](https://developer.nvidia.com/cuda-10.2-download-archive)
+  3. [CUDNN 7.x](https://developer.nvidia.com/cudnn)
 
 
 ## Command-line users

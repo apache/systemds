@@ -42,7 +42,7 @@ CUDA toolkit
 
 ## Command-line users
 
-To enable the GPU backend via command-line, please provide `systemds-1.*-extra.jar` in the classpath and `-gpu` flag.
+To enable the GPU backend via command-line, please provide `systemds-*-extra.jar` in the classpath and `-gpu` flag.
 
 ```
 spark-submit --jars systemds-*-extra.jar SystemDS.jar -f myDML.dml -gpu

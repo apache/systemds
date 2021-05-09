@@ -21,10 +21,9 @@ limitations under the License.
 {% endcomment %}
 -->
 
-This guide helps in installing pre-requisites for running with GPU and run instructions.
+This guide covers the GPU hardware and software setup for using SystemDS `gpu` mode.
 
 - [Requirements](#requirements)
-- [Linux](#linux)
 - [Windows](#windows)
 - [Command-line users](#command-line-users)
 - [Scala Users](#scala-users)
@@ -42,10 +41,8 @@ The following GPUs are supported:
 
 * NVIDIA GPU cards with CUDA architectures 5.0, 6.0, 7.0, 7.5, 8.0 and higher than 8.0.
 For CUDA enabled gpu cards at [CUDA GPUs](https://developer.nvidia.com/cuda-gpus)
-
 * For GPUs with unsupported CUDA architectures, or to avoid JIT compilation from PTX, or to
-use difference versions of the NVIDIA libraries, see the Linux build from source guide.
-
+use difference versions of the NVIDIA libraries, build on Linux from source code.
 * Release artifacts contain PTX code for the latest supported CUDA architecture.
 
 ### Software
@@ -58,71 +55,6 @@ CUDA toolkit
      [CUDA compatibility](https://docs.nvidia.com/deploy/cuda-compatibility/index.html).
   3. [CUDA 10.2](https://developer.nvidia.com/cuda-10.2-download-archive)
   4. [CUDNN 7.x](https://developer.nvidia.com/cudnn)
-
-
-## Linux
-
-One easiest way to install the NVIDIA software is with `apt` on Ubuntu. For other distributions
-refer to the [CUDA install Linux](https://docs.nvidia.com/cuda/cuda-installation-guide-linux/index.html).
-
-Note: All linux distributions may not support this. you might encounter some problems with driver
-installations.
-
-To check the CUDA compatible driver version:
-
-```sh
-CUDA_DRIVER_VERSION=$(apt-cache madison cuda-drivers | awk '{print $3}' | sort -r | while read line; do
-   if dpkg --compare-versions $(dpkg-query -f='${Version}\n' -W nvidia-driver-${NVIDIA_DRIVER_VERSION}) ge $line ; then
-       echo "$line"
-       break
-   fi
-done)
-```
-
-Install [CUPTI](http://docs.nvidia.com/cuda/cupti/) which ships with CUDA toolkit for profiling.
-
-```sh
-export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/cuda/extras/CUPTI/lib64
-```
-
-### Install CUDA with apt
-
-The following instructions are for installing CUDA 10.2 on Ubuntu 18.04. These instructions
-might work for other Debian-based distros.
-
-Note: [Secure Boot](https://wiki.ubuntu.com/UEFI/SecureBoot) tends to complication installation.
-These instructions may not address this.
-
-#### Ubuntu 18.04 (CUDA 10.2)
-
-```sh
-
-# Add NVIDIA package repositories
-wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/cuda-ubuntu1804.pin
-sudo mv cuda-ubuntu1804.pin /etc/apt/preferences.d/cuda-repository-pin-600
-sudo apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/7fa2af80.pub
-sudo add-apt-repository "deb https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/ /"
-sudo apt-get update
-
-# get the machine-learning repo
-wget http://developer.download.nvidia.com/compute/machine-learning/repos/ubuntu1804/x86_64/nvidia-machine-learning-repo-ubuntu1804_1.0.0-1_amd64.deb
-
-sudo apt install ./nvidia-machine-learning-repo-ubuntu1804_1.0.0-1_amd64.deb
-sudo apt-get update
-
-wget http://developer.download.nvidia.com/compute/machine-learning/repos/ubuntu1804/x86_64/libcudnn7_7.6.5.32-1+cuda10.2_amd64.deb
-sudo apt install ./libcudnn7_7.6.5.32-1+cuda10.2_amd64.deb
-sudo apt-get update
-
-# Install development and runtime libraries (~4GB)
-sudo apt-get install --no-install-recommends \
-    cuda-10-2 \
-    libcudnn7=7_7.6.5.32-1+cuda10.2  \
-    libcudnn7-dev=7_7.6.5.32-1+cuda10.2
-    
- # Reboot the system. And run `nvidia-smi` for GPU check.
-```
-
 
 ## Windows
 

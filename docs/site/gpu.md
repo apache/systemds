@@ -43,7 +43,16 @@ The following GPUs are supported:
 For CUDA enabled gpu cards at [CUDA GPUs](https://developer.nvidia.com/cuda-gpus)
 * For GPUs with unsupported CUDA architectures, or to avoid JIT compilation from PTX, or to
 use difference versions of the NVIDIA libraries, build on Linux from source code.
-* Release artifacts contain PTX code for the latest supported CUDA architecture.
+* Release artifacts contain PTX code for the latest supported CUDA architecture. In case your
+architecture specific PTX is not available enable JIT PTX with instructions compiler driver `nvcc`
+[GPU Compilation](https://docs.nvidia.com/cuda/cuda-compiler-driver-nvcc/index.html#gpu-compilation).
+  
+  > For example, with `--gpu-code` use actual gpu names, `--gpu-architecture` is the name of virtual
+  > compute architecture
+  > 
+  > ```sh
+  > nvcc SystemDS.cu --gpu-architecture=compute_50 --gpu-code=sm_50,sm_52
+  > ```
 
 ### Software
 

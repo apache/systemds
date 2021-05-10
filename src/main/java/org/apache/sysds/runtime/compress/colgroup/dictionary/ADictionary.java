@@ -22,6 +22,8 @@ package org.apache.sysds.runtime.compress.colgroup.dictionary;
 import java.io.DataOutput;
 import java.io.IOException;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.utils.ABitmap;
 import org.apache.sysds.runtime.compress.utils.Bitmap;
 import org.apache.sysds.runtime.compress.utils.BitmapLossy;
@@ -35,7 +37,7 @@ import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
  */
 public abstract class ADictionary {
 
-	// private static final Log LOG = LogFactory.getLog(ADictionary.class.getName());
+	protected static final Log LOG = LogFactory.getLog(ADictionary.class.getName());
 
 	/**
 	 * Get all the values contained in the dictionary as a linearized double array.

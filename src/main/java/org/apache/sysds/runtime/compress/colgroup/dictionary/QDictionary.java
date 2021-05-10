@@ -24,8 +24,6 @@ import java.io.IOException;
 import java.util.Arrays;
 
 import org.apache.commons.lang.NotImplementedException;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.utils.BitmapLossy;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.functionobjects.Divide;
@@ -42,7 +40,6 @@ import org.apache.sysds.utils.MemoryEstimates;
  */
 public class QDictionary extends ADictionary {
 
-	protected static final Log LOG = LogFactory.getLog(QDictionary.class.getName());
 	protected double _scale;
 	protected byte[] _values;
 
@@ -121,14 +118,13 @@ public class QDictionary extends ADictionary {
 		return ret;
 	}
 
-
 	@Override
-	public double[] aggregateTuples(Builtin fn, final int nCol){
+	public double[] aggregateTuples(Builtin fn, final int nCol) {
 		if(nCol == 1)
 			return getValues();
 		final int nRows = _values.length / nCol;
 		double[] res = new double[nRows];
-		for(int i = 0; i < nRows; i++){
+		for(int i = 0; i < nRows; i++) {
 			final int off = i * nCol;
 			res[i] = _values[off];
 			for(int j = off + 1; j < off + nCol; j++)
@@ -258,7 +254,6 @@ public class QDictionary extends ADictionary {
 		return new QDictionary(ret, _scale);
 	}
 
-
 	@Override
 	public void write(DataOutput out) throws IOException {
 		super.write(out);
@@ -314,20 +309,20 @@ public class QDictionary extends ADictionary {
 		}
 	}
 
-
 	@Override
-	public double[] colSum(int[] counts, int nCol){
+	public double[] colSum(int[] counts, int nCol) {
 		throw new NotImplementedException("Not Implemented");
 		// final double[] res = new double[counts.length];
 		// int idx = 0;
 		// for(int k = 0; k< _values.length / counts.length; k++){
-		// 	final int cntk = counts[k];
-		// 	for(int j = 0; j< counts.length; j++){
-		// 		res[j] += _values[idx++] * cntk;
-		// 	}
+		// final int cntk = counts[k];
+		// for(int j = 0; j< counts.length; j++){
+		// res[j] += _values[idx++] * cntk;
+		// }
 		// }
 		// return res;
 	}
+
 	@Override
 	public void colSum(double[] c, int[] counts, int[] colIndexes, boolean square) {
 		throw new NotImplementedException("Not Implemented");
@@ -412,7 +407,7 @@ public class QDictionary extends ADictionary {
 		}
 	}
 
-	public String getString( int colIndexes) {
+	public String getString(int colIndexes) {
 		StringBuilder sb = new StringBuilder();
 		for(int i = 0; i < size(); i++) {
 			sb.append(_values[i]);
@@ -453,32 +448,31 @@ public class QDictionary extends ADictionary {
 	}
 
 	@Override
-	public boolean containsValue(double pattern){
+	public boolean containsValue(double pattern) {
 		if(Double.isNaN(pattern) || Double.isInfinite(pattern))
 			return false;
 		throw new NotImplementedException("Not contains value on Q Dictionary");
 	}
 
 	@Override
-	public long getNumberNonZeros(int[] counts, int nCol){
-		long nnz =  0;
+	public long getNumberNonZeros(int[] counts, int nCol) {
+		long nnz = 0;
 		final int nRow = _values.length / nCol;
-		for(int i = 0; i < nRow; i++){
+		for(int i = 0; i < nRow; i++) {
 			long rowCount = 0;
-			final int off = i * nCol; 
-			for(int j = off; j < off + nCol; j++){
+			final int off = i * nCol;
+			for(int j = off; j < off + nCol; j++) {
 				if(_values[j] != 0)
-					rowCount ++;
+					rowCount++;
 			}
 			nnz += rowCount * counts[i];
 		}
 		return nnz;
 	}
 
-
 	@Override
-	public void addToEntry(Dictionary d, int fr, int to, int nCol){
-		throw new NotImplementedException("Not implemented yet");	
+	public void addToEntry(Dictionary d, int fr, int to, int nCol) {
+		throw new NotImplementedException("Not implemented yet");
 	}
 
 	@Override
@@ -487,9 +481,9 @@ public class QDictionary extends ADictionary {
 	}
 
 	@Override
-	public long getNumberNonZerosContained(){
+	public long getNumberNonZerosContained() {
 		long count = 0;
-		for(double v : _values){
+		for(double v : _values) {
 			if(v != 0.0)
 				count++;
 		}
@@ -497,12 +491,12 @@ public class QDictionary extends ADictionary {
 	}
 
 	@Override
-	public double[] getMostCommonTuple(int[] counts, int nCol){
+	public double[] getMostCommonTuple(int[] counts, int nCol) {
 		return null;
 	}
 
 	@Override
-	public ADictionary subtractTuple(double[] tuple){
+	public ADictionary subtractTuple(double[] tuple) {
 		throw new NotImplementedException();
 	}
 }

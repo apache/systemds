@@ -41,6 +41,8 @@ public class CompressedSizeEstimatorSample extends CompressedSizeEstimator {
 	private static final int FORCE_TRANSPOSE_ON_SAMPLE_THRESHOLD = 8000;
 
 	private final int[] _sampleRows;
+
+	private final MatrixBlock _sample;
 	private HashMap<Integer, Double> _solveCache = null;
 
 	/**
@@ -56,7 +58,7 @@ public class CompressedSizeEstimatorSample extends CompressedSizeEstimator {
 		super(data, compSettings, transposed);
 		_sampleRows = sampleRows;
 		_solveCache = new HashMap<>();
-		_data = sampleData(data, compSettings, sampleRows, transposed);
+		_sample = sampleData(data, compSettings, sampleRows, transposed);
 	}
 
 	protected MatrixBlock sampleData(MatrixBlock data, CompressionSettings compSettings, int[] sampleRows,
@@ -75,8 +77,6 @@ public class CompressedSizeEstimatorSample extends CompressedSizeEstimator {
 			sampledMatrixBlock = LibMatrixReorg.transposeInPlace(sampledMatrixBlock, 16);
 		}
 		else {
-
-			// Override the _data Matrix block with the sampled matrix block.
 			MatrixBlock select = (transposed) ? new MatrixBlock(data.getNumColumns(), 1,
 				true) : new MatrixBlock(data.getNumRows(), 1, true);
 			for(int i = 0; i < sampleRows.length; i++)
@@ -106,7 +106,7 @@ public class CompressedSizeEstimatorSample extends CompressedSizeEstimator {
 		// final int numCols = colIndexes.length;
 
 		// extract statistics from sample
-		final ABitmap ubm = BitmapEncoder.extractBitmap(colIndexes, _data, _transposed);
+		final ABitmap ubm = BitmapEncoder.extractBitmap(colIndexes, _sample, _transposed);
 		final EstimationFactors fact = EstimationFactors.computeSizeEstimationFactors(ubm, false, _numRows, colIndexes);
 		final int numZerosInSample = ubm.getZeroCounts();
 		final boolean lossy = ubm.getType() == BitmapType.Lossy;

@@ -30,14 +30,14 @@ public abstract class AColumnCoCoder {
 
 	protected static final Log LOG = LogFactory.getLog(AColumnCoCoder.class.getName());
 
-	protected CompressedSizeEstimator _est;
-	protected CompressionSettings _cs;
-	protected int _numRows;
+	final protected CompressedSizeEstimator _est;
+	final protected CompressionSettings _cs;
+	// final protected int _numRows;
 
 	protected AColumnCoCoder(CompressedSizeEstimator sizeEstimator, CompressionSettings cs, int numRows) {
 		_est = sizeEstimator;
 		_cs = cs;
-		_numRows = numRows;
+		// _numRows = numRows;
 	}
 
 	/**
@@ -64,7 +64,7 @@ public abstract class AColumnCoCoder {
 		CompressedSizeInfoColGroup rhs) {
 		int[] joined = Util.join(lhs.getColumns(), rhs.getColumns());
 		int numVals = lhs.getNumVals() + rhs.getNumVals();
-		return new CompressedSizeInfoColGroup(joined, numVals, _numRows);
+		return new CompressedSizeInfoColGroup(joined, numVals, _est.getNumRows());
 	}
 
 	protected CompressedSizeInfoColGroup analyze(CompressedSizeInfoColGroup g) {

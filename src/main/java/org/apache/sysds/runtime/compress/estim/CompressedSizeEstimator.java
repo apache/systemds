@@ -42,19 +42,19 @@ public abstract class CompressedSizeEstimator {
 	protected static final Log LOG = LogFactory.getLog(CompressedSizeEstimator.class.getName());
 
 	/** The Matrix Block to extract the compression estimates from */
-	protected MatrixBlock _data;
+	final protected MatrixBlock _data;
 	/** The number of rows in the matrix block, extracted to a field because the matrix could be transposed */
-	protected int _numRows;
+	final protected int _numRows;
 	/** The number of columns in the matrix block, extracted to a field because the matrix could be transposed */
-	protected int _numCols;
+	final protected int _numCols;
 	/** The compression settings to use, for estimating the size, and compress the ColGroups. */
-	protected final CompressionSettings _compSettings;
+	final protected CompressionSettings _compSettings;
 
 	/**
 	 * Boolean specifying if the _data is in transposed format. This is used to select the correct readers for the
 	 * extraction of bitmaps for the columns.
 	 */
-	protected boolean _transposed = false;
+	protected boolean _transposed;
 
 	/**
 	 * Main Constructor for Compression Estimator.
@@ -70,6 +70,15 @@ public abstract class CompressedSizeEstimator {
 		_numRows = _transposed ? _data.getNumColumns() : _data.getNumRows();
 		_numCols = _transposed ? _data.getNumRows() : _data.getNumColumns();
 		_compSettings = compSettings;
+	}
+
+
+	public int getNumRows(){
+		return _numRows;
+	}
+
+	public int getNumColumns(){
+		return _numCols;
 	}
 
 	/**

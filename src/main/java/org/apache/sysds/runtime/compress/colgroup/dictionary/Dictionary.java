@@ -24,8 +24,6 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.util.Arrays;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.DMLCompressionException;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.functionobjects.ValueFunction;
@@ -39,7 +37,6 @@ import org.apache.sysds.utils.MemoryEstimates;
  */
 public class Dictionary extends ADictionary {
 
-	protected static final Log LOG = LogFactory.getLog(Dictionary.class.getName());
 	private final double[] _values;
 
 	public Dictionary(double[] values) {

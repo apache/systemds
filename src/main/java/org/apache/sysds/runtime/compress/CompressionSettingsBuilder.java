@@ -41,7 +41,8 @@ public class CompressionSettingsBuilder {
 	private EnumSet<CompressionType> validCompressions;
 	private boolean sortValuesByLength = true;
 	private PartitionerType columnPartitioner;
-	private int maxStaticColGroupCoCode = 10;
+	private int maxStaticColGroupCoCode = 10000;
+	private double coCodePercentage = 0.01;
 
 	public CompressionSettingsBuilder() {
 
@@ -236,6 +237,20 @@ public class CompressionSettingsBuilder {
 	}
 
 	/**
+	 * Set the coCode percentage, the effect is different based on the coCoding strategy, but the general effect is that
+	 * higher values results in more coCoding while lower values result in less.
+	 * 
+	 * Note that with high coCoding the compression ratio would possibly be lower.
+	 * 
+	 * @param coCodePercentage The percentage to set.
+	 * @return The CompressionSettingsBuilder
+	 */
+	public CompressionSettingsBuilder setCoCodePercentage(double coCodePercentage) {
+		this.coCodePercentage = coCodePercentage;
+		return this;
+	}
+
+	/**
 	 * Create the CompressionSettings object to use in the compression.
 	 * 
 	 * @return The CompressionSettings
@@ -243,6 +258,6 @@ public class CompressionSettingsBuilder {
 	public CompressionSettings create() {
 		return new CompressionSettings(samplingRatio, allowSharedDictionary, transposeInput, skipList, seed,
 			investigateEstimate, lossy, validCompressions, sortValuesByLength, columnPartitioner,
-			maxStaticColGroupCoCode);
+			maxStaticColGroupCoCode, coCodePercentage);
 	}
 }

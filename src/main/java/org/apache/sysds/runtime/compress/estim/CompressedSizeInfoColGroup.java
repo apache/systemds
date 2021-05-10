@@ -144,6 +144,14 @@ public class CompressedSizeInfoColGroup {
 		return _cardinalityRatio;
 	}
 
+	public double getMostCommonFraction(){
+		return (double) _facts.largestOff / _facts.numRows;
+	}
+
+	public double getTupleSparsity(){
+		return _facts.tupleSparsity;
+	}
+
 	private static Map<CompressionType, Long> calculateCompressionSizes(EstimationFactors fact,
 		Set<CompressionType> validCompressionTypes) {
 		Map<CompressionType, Long> res = new HashMap<>();

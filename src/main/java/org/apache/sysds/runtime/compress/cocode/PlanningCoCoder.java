@@ -41,7 +41,7 @@ public class PlanningCoCoder {
 	 * The Valid coCoding techniques
 	 */
 	public enum PartitionerType {
-		BIN_PACKING, STATIC, COST;
+		BIN_PACKING, STATIC, COST, COST_MATRIX_MULT;
 	}
 
 	/**
@@ -66,10 +66,10 @@ public class PlanningCoCoder {
 			constantGroups = new ArrayList<>();
 			List<CompressedSizeInfoColGroup> newGroups = new ArrayList<>();
 			mem = new Memorizer();
-			for(CompressedSizeInfoColGroup g : colInfos.getInfo()){
+			for(CompressedSizeInfoColGroup g : colInfos.getInfo()) {
 				if(g.getBestCompressionType() == CompressionType.CONST)
 					constantGroups.add(g);
-				else{
+				else {
 					mem.put(g);
 					newGroups.add(g);
 				}
@@ -98,6 +98,8 @@ public class PlanningCoCoder {
 				return new CoCodeStatic(est, cs, numRows);
 			case COST:
 				return new CoCodeCost(est, cs, numRows);
+			case COST_MATRIX_MULT:
+				return new CoCodeCostMatrixMult(est, cs, numRows);
 			default:
 				throw new RuntimeException("Unsupported column group partitioner: " + type.toString());
 		}

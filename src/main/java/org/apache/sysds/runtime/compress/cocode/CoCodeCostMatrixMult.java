@@ -20,13 +20,12 @@
 package org.apache.sysds.runtime.compress.cocode;
 
 import java.util.ArrayList;
-import java.util.Comparator;
+import java.util.Arrays;
 import java.util.List;
 import java.util.PriorityQueue;
 import java.util.Queue;
 
 import org.apache.sysds.runtime.compress.CompressionSettings;
-import org.apache.sysds.runtime.compress.colgroup.AColGroup.CompressionType;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeEstimator;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfo;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup;
@@ -39,7 +38,7 @@ import org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup;
  * This method allows us to compress many more columns than the BinPacking
  * 
  */
-public class CoCodeCost extends AColumnCoCoder {
+public class CoCodeCostMatrixMult extends AColumnCoCoder {
 
 	/**
 	 * This value specifies the maximum distinct count allowed int a coCoded group. Note that this value is the number
@@ -48,11 +47,13 @@ public class CoCodeCost extends AColumnCoCoder {
 	 */
 	private final int largestDistinct;
 
-	private final static int toSmallForAnalysis = 64;
+	private final int toSmallForAnalysis;
 
-	protected CoCodeCost(CompressedSizeEstimator sizeEstimator, CompressionSettings cs, int numRows) {
-		super(sizeEstimator, cs, numRows);
-		largestDistinct = Math.min(4096, Math.max(256, (int) (sizeEstimator.getNumRows() * cs.coCodePercentage)));
+	protected CoCodeCostMatrixMult(CompressedSizeEstimator e, CompressionSettings cs, int numRows) {
+		super(e, cs, numRows);
+		largestDistinct = Math.max(256, (int) (_est.getNumRows() * _est.getNumColumns() * cs.coCodePercentage * 0.2));
+		toSmallForAnalysis = Math.min(Math.max(256, largestDistinct / 4), 1028);
+		LOG.debug("CocodeCost largest Distinct: " + largestDistinct + " toSmallForAnalysis: " + toSmallForAnalysis);
 	}
 
 	@Override
@@ -63,54 +64,66 @@ public class CoCodeCost extends AColumnCoCoder {
 
 	private List<CompressedSizeInfoColGroup> join(List<CompressedSizeInfoColGroup> currentGroups) {
 
-		Comparator<CompressedSizeInfoColGroup> comp = Comparator.comparing(CompressedSizeInfoColGroup::getNumVals);
-		Queue<CompressedSizeInfoColGroup> que = new PriorityQueue<>(currentGroups.size(), comp);
+		Queue<CostOfJoin> que = new PriorityQueue<>(currentGroups.size());
+
 		List<CompressedSizeInfoColGroup> ret = new ArrayList<>();
+		for(CompressedSizeInfoColGroup g : currentGroups)
+			que.add(new CostOfJoin(g));
 
-		for(CompressedSizeInfoColGroup g : currentGroups) {
-			if(g.getBestCompressionType() == CompressionType.CONST)
-				ret.add(g);
-			else
-				que.add(g);
-		}
-
-		boolean finished = false;
-		while(!finished) {
+		while(true) {
 			if(que.peek() != null) {
-				CompressedSizeInfoColGroup l = que.poll();
+				final CostOfJoin l = que.poll();
 				if(que.peek() != null) {
-					CompressedSizeInfoColGroup r = que.poll();
-					int worstCaseJoinedSize = l.getNumVals() * r.getNumVals();
-					if(worstCaseJoinedSize < toSmallForAnalysis)
-						que.add(joinWithoutAnalysis(l, r));
-					else if(worstCaseJoinedSize < largestDistinct){
-
-						CompressedSizeInfoColGroup g = joinWithAnalysis(l, r);
-						if(g.getNumVals() < largestDistinct)
-							que.add(joinWithAnalysis(l, r));
-						else{
-							finished = true;
-							que.add(l);
-							que.add(r);
-						}
-					}
+					final CostOfJoin r = que.poll();
+					final double costIndividual = (l.cost + r.cost);
+					final CostOfJoin g = new CostOfJoin(joinWithAnalysis(l.elm, r.elm));
+					if(g.cost < costIndividual)
+						que.add(g);
 					else {
-						finished = true;
-						que.add(l);
+						ret.add(l.elm);
 						que.add(r);
 					}
 				}
 				else {
-					que.add(l);
-					finished = true;
+					ret.add(l.elm);
+					break;
 				}
 			}
 			else
-				finished = true;
+				break;
 		}
-		for(CompressedSizeInfoColGroup g : que)
-			ret.add(g);
+		for(CostOfJoin g : que)
+			ret.add(g.elm);
 
 		return ret;
+	}
+
+	private class CostOfJoin implements Comparable<CostOfJoin> {
+		protected final CompressedSizeInfoColGroup elm;
+		protected final double cost;
+
+		protected CostOfJoin(CompressedSizeInfoColGroup elm) {
+			this.elm = elm;
+			final int nRows = _est.getNumRows();
+			final double commonFraction = elm.getMostCommonFraction();
+			final double rowsToProcess = commonFraction > 0.2 ? nRows * (1 - Math.min(commonFraction, 0.95)) : nRows;
+			this.cost = rowsToProcess + elm.getNumVals() * elm.getColumns().length;
+
+		}
+
+		@Override
+		public int compareTo(CostOfJoin o) {
+			return cost == o.cost ? 0 : cost > o.cost ? 1 : -1;
+		}
+
+		@Override
+		public String toString() {
+			StringBuilder sb = new StringBuilder();
+			sb.append("\n");
+			sb.append(cost);
+			sb.append(" - ");
+			sb.append(Arrays.toString(elm.getColumns()));
+			return sb.toString();
+		}
 	}
 }

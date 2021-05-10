@@ -828,13 +828,23 @@ public abstract class ColGroupValue extends ColGroupCompressed implements Clonea
 
 		if(sameIndexStructure(lhs)) {
 			int[] agI = getCounts();
-			for(int a = 0, off = 0; a < nvL; a++, off += nvL + 1)
-				leftMultDictEntry(agI[a], off, nvL, lCol, rCol, lhs, numCols, lhValues, rhValues, result);
+			for(int i = 0; i < agI.length; i++) {
+				for(int l = 0; l < lCol; l++) {
+					final int leftOff = lhs._colIndexes[l] * numCols;
+					final double lhV = lhValues[i * lCol + l] * agI[i];
+					if(lhV != 0)
+						for(int r = 0; r < rCol; r++) {
+							final double rhV = rhValues[i * rCol + r];
+							final double va = lhV * rhV;
+							result[leftOff + this._colIndexes[r]] += va;
+						}
+				}
+			}
 		}
 		else if(lhs instanceof ColGroupConst || this instanceof ColGroupConst) {
-			double[] r = this instanceof ColGroupConst ? rhValues : this._dict.colSum(getCounts(), rCol);
-			double[] l = lhs instanceof ColGroupConst ? lhValues : lhs._dict.colSum(lhs.getCounts(), lCol);
-			vectorVectorMultiply(l, lhs._colIndexes, r, this._colIndexes, result, numCols);
+			// double[] r = this instanceof ColGroupConst ? rhValues : this._dict.colSum(getCounts(), rCol);
+			// double[] l = lhs instanceof ColGroupConst ? lhValues : lhs._dict.colSum(lhs.getCounts(), lCol);
+			// vectorVectorMultiply(l, lhs._colIndexes, r, this._colIndexes, result, numCols);
 		}
 		else {
 			int[] countsRight = getCounts();
@@ -848,9 +858,9 @@ public abstract class ColGroupValue extends ColGroupCompressed implements Clonea
 
 			if(skipRight > threshold && percentageRight > percentageLeft && !(this instanceof ColGroupDDC)) {
 				double[] mct = this._dict.getMostCommonTuple(this.getCounts(), rCol);
-				double[] lhsSum = lhs._dict.colSum(lhs.getCounts(), lCol);
-				if(mct != null)
-					vectorVectorMultiply(lhsSum, lhs._colIndexes, mct, this._colIndexes, result, numCols);
+				// double[] lhsSum = lhs._dict.colSum(lhs.getCounts(), lCol);
+				// if(mct != null)
+				// 	vectorVectorMultiply(lhsSum, lhs._colIndexes, mct, this._colIndexes, result, numCols);
 
 				ColGroupValue thisM = (mct != null) ? (ColGroupValue) this
 					.copyAndSet(this._dict.subtractTuple(mct)) : this;
@@ -860,9 +870,9 @@ public abstract class ColGroupValue extends ColGroupCompressed implements Clonea
 			}
 			else if(skipLeft > threshold && !(lhs instanceof ColGroupDDC)) {
 				double[] mct = lhs._dict.getMostCommonTuple(lhs.getCounts(), lCol);
-				double[] thisColSum = this._dict.colSum(getCounts(), rCol);
-				if(mct != null)
-					vectorVectorMultiply(mct, lhs._colIndexes, thisColSum, this._colIndexes, result, numCols);
+				// double[] thisColSum = this._dict.colSum(getCounts(), rCol);
+				// if(mct != null)
+				// 	vectorVectorMultiply(mct, lhs._colIndexes, thisColSum, this._colIndexes, result, numCols);
 
 				ColGroupValue lhsM = (mct != null) ? (ColGroupValue) lhs.copyAndSet(lhs._dict.subtractTuple(mct)) : lhs;
 				Dictionary preAgg = this.preAggregateThatIndexStructure(lhsM, true);
@@ -878,41 +888,6 @@ public abstract class ColGroupValue extends ColGroupCompressed implements Clonea
 				Dictionary preAgg = this.preAggregateThatIndexStructure(lhs, false);
 				matrixMultDictionariesAndOutputToColIndexes(preAgg.getValues(), rhValues, lhs._colIndexes,
 					this._colIndexes, result, numCols);
-			}
-		}
-	}
-
-	// private void leftMultMapPreAggregate(final int nvL, final int lCol, final int rCol, final ColGroupValue lhs,
-	// final int numCols, double[] lhValues, double[] rhValues, double[] c, MapPreAggregate agM) {
-	// final int[] map = agM.getMap();
-	// final int aggSize = agM.getSize();
-	// for(int k = 0; k < aggSize; k += 2)
-	// leftMultDictEntry(map[k + 1], map[k], nvL, lCol, rCol, lhs, numCols, lhValues, rhValues, c);
-	// leftMultDictEntry(agM.getMapFreeValue(), 0, nvL, lCol, rCol, lhs, numCols, lhValues, rhValues, c);
-	// }
-
-	// private void leftMultArrayPreAggregate(final int nvL, final int nvR, final int lCol, final int rCol,
-	// final ColGroupValue lhs, final int numCols, double[] lhValues, double[] rhValues, double[] c, int[] arr) {
-	// for(int a = 0; a < nvL * nvR; a++)
-	// leftMultDictEntry(arr[a], a, nvL, lCol, rCol, lhs, numCols, lhValues, rhValues, c);
-	// }
-
-	private void leftMultDictEntry(final int m, final int a, final int nvL, final int lCol, final int rCol,
-		final ColGroupValue lhs, final int numCols, final double[] lhValues, final double[] rhValues,
-		final double[] c) {
-
-		if(m > 0) {
-			final int lhsRowOffset = (a % nvL) * lCol;
-			final int rhsRowOffset = (a / nvL) * rCol;
-
-			for(int j = 0; j < lCol; j++) {
-				final int resultOff = lhs._colIndexes[j] * numCols;
-				final double lh = lhValues[lhsRowOffset + j] * m;
-				if(lh != 0)
-					for(int i = 0; i < rCol; i++) {
-						double rh = rhValues[rhsRowOffset + i];
-						c[resultOff + _colIndexes[i]] += lh * rh;
-					}
 			}
 		}
 	}

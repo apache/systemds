@@ -565,7 +565,29 @@ public class ColGroupSDCSingle extends ColGroupValue {
 
 	@Override
 	public Dictionary preAggregateThatSDCStructure(ColGroupSDC that, Dictionary ret, boolean preModified) {
-		throw new NotImplementedException();
+		final AIterator itThat = that._indexes.getIterator();
+		final AIterator itThis = _indexes.getIterator();
+		final int nCol = that._colIndexes.length;
+		// final int defThat = that.getNumValues() * nCol - nCol;
+
+		if(preModified) {
+			while(itThat.hasNext() && itThis.hasNext()) {
+				if(itThat.value() == itThis.value()) {
+					final int fr = that.getIndex(itThat.getDataIndexAndIncrement());
+					that._dict.addToEntry(ret, fr, 1, nCol);
+				}
+				else if(itThat.value() < itThis.value())
+					itThat.next();
+				else{
+					itThis.next();
+					// that._dict.addToEntry(ret, defThat, 0, nCol);
+				}
+			}
+		}
+		else {
+			throw new NotImplementedException();
+		}
+		return ret;
 	}
 
 	@Override
@@ -600,10 +622,6 @@ public class ColGroupSDCSingle extends ColGroupValue {
 					itThis.next();
 			}
 
-			// while(itThat.hasNext()) {
-			// 	final int fr = that.getIndex(itThat.getDataIndexAndIncrement());
-			// 	that._dict.addToEntry(ret, fr, 1, nCol);
-			// }
 			return ret;
 		}
 		else {

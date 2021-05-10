@@ -643,7 +643,7 @@ public class ColGroupSDC extends ColGroupValue {
 				else
 					itThis.next();
 			}
-	
+
 			while(itThat.hasNext()) {
 				final int fr = that.getIndex(itThat.getDataIndexAndIncrement());
 				that._dict.addToEntry(ret, fr, offsetToDefaultThis, nCol);
@@ -717,7 +717,31 @@ public class ColGroupSDC extends ColGroupValue {
 
 	@Override
 	public Dictionary preAggregateThatSDCSingleStructure(ColGroupSDCSingle that, Dictionary ret, boolean preModified) {
-		throw new NotImplementedException();
+		final AIterator itThat = that._indexes.getIterator();
+		final AIterator itThis = _indexes.getIterator();
+		final int nCol = that._colIndexes.length;
+		final int defThis = this.getNumValues() * nCol - nCol;
+
+		if(preModified) {
+			while(itThat.hasNext() && itThis.hasNext()) {
+				if(itThat.value() == itThis.value()) {
+					itThat.next();
+					final int to = getIndex(itThis.getDataIndexAndIncrement());
+					that._dict.addToEntry(ret, 0, to, nCol);
+				}
+				else if(itThat.value() < itThis.value()) {
+					itThat.next();
+					that._dict.addToEntry(ret, 0, defThis, nCol);
+				}
+				else
+					itThis.next();
+			}
+		}
+		else {
+			throw new NotImplementedException();
+		}
+
+		return ret;
 	}
 
 }

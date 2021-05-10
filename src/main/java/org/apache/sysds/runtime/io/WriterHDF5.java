@@ -37,8 +37,7 @@ public class WriterHDF5 extends MatrixWriter {
 		WriterHDF5._props = _props;
 	}
 
-	public WriterHDF5() {
-	}
+	public WriterHDF5() {}
 
 	@Override public final void writeMatrixToHDFS(MatrixBlock src, String fname, long rlen, long clen, int blen,
 		long nnz, boolean diag) throws IOException, DMLRuntimeException {

@@ -23,4 +23,4 @@
 
 A = read($1);
 A = A + 1;
-write(A, $3, format="hdf5");
+write(A, "/home/sfathollahzadeh/a.h5", format="hdf5");

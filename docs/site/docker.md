@@ -79,8 +79,18 @@ Options:
 For comprehensive guide, refer [`docker run`](https://docs.docker.com/engine/reference/run/)
 
 ```sh
-docker run [-it] [--rm] [-p hostPort:containerPort] apache/systemds[:tag} [command]
 
-# Example
-# docker run -it --rm -p 8080:8080 apache/systemds:1.2.0 ls
+docker run [-it] [--rm] [-p hostPort:containerPort] apache/systemds[:tag} [command]
 ```
+
+Examples
+
+To verify the SystemDS installation,
+
+```sh
+docker run -it --rm apache/systemds \
+  /bin/bash -c "echo 'print("This is SystemDS!")' > hello.dml && systemds hello.dml"
+```
+
+The output is `"This is SystemDS!"` after successful installation.
+For SystemDS usage instructions, see [./run](Standalone instructions).

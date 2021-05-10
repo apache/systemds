@@ -93,7 +93,7 @@ docker run -it --rm apache/systemds \
 ```
 
 The output is `"This is SystemDS!"` after successful installation.
-For SystemDS usage instructions, see [./run](Standalone instructions).
+For SystemDS usage instructions, see [standalone instructions](./run).
 
 To run a DML program developed on the host machine, mount the host directory and change the
 working directory with [`-v` flag](https://docs.docker.com/engine/reference/run/#volume-shared-filesystems)
@@ -121,4 +121,21 @@ with SystemDSContext() as sds:
 EOF
 
 docker run -it --rm -v $PWD:/tmp -w /tmp apache/systemds python ./script.py
+```
+
+## Running with GPU
+
+Check for the GPU devices:
+
+```sh
+lspci | grep -i nvidia
+```
+
+And verify `nvidia-docker` installation:
+
+```sh
+docker run --gpus all --rm nvidia/cuda nvidia-smi
+
+# nvidia-docker v2
+# docker run --runtime=nvidia nvidia/cuda nvidia-smi
 ```

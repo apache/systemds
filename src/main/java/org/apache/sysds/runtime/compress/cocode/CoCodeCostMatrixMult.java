@@ -26,6 +26,7 @@ import java.util.PriorityQueue;
 import java.util.Queue;
 
 import org.apache.sysds.runtime.compress.CompressionSettings;
+import org.apache.sysds.runtime.compress.colgroup.AColGroup.CompressionType;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeEstimator;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfo;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup;
@@ -40,20 +41,8 @@ import org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup;
  */
 public class CoCodeCostMatrixMult extends AColumnCoCoder {
 
-	/**
-	 * This value specifies the maximum distinct count allowed int a coCoded group. Note that this value is the number
-	 * of distinct tuples not the total number of values. That value can be calculated by multiplying the number of
-	 * tuples with columns in the coCoded group.
-	 */
-	private final int largestDistinct;
-
-	private final int toSmallForAnalysis;
-
 	protected CoCodeCostMatrixMult(CompressedSizeEstimator e, CompressionSettings cs, int numRows) {
 		super(e, cs, numRows);
-		largestDistinct = Math.max(256, (int) (_est.getNumRows() * _est.getNumColumns() * cs.coCodePercentage * 0.2));
-		toSmallForAnalysis = Math.min(Math.max(256, largestDistinct / 4), 1028);
-		LOG.debug("CocodeCost largest Distinct: " + largestDistinct + " toSmallForAnalysis: " + toSmallForAnalysis);
 	}
 
 	@Override
@@ -104,11 +93,31 @@ public class CoCodeCostMatrixMult extends AColumnCoCoder {
 
 		protected CostOfJoin(CompressedSizeInfoColGroup elm) {
 			this.elm = elm;
-			final int nRows = _est.getNumRows();
-			final double commonFraction = elm.getMostCommonFraction();
-			final double rowsToProcess = commonFraction > 0.2 ? nRows * (1 - Math.min(commonFraction, 0.95)) : nRows;
-			this.cost = rowsToProcess + elm.getNumVals() * elm.getColumns().length;
 
+			final double constantOverheadForColGroup = 5;
+			final double nCols = elm.getColumns().length;
+			final double nRows = _est.getNumRows();
+			if(elm.getBestCompressionType() == CompressionType.UNCOMPRESSED)
+				this.cost = nRows * nCols * 2 + constantOverheadForColGroup;
+			else {
+				final int blksz = CompressionSettings.BITMAP_BLOCK_SZ;
+
+				// LOG.error(constantOverheadForColGroup);
+				final double commonFraction = elm.getMostCommonFraction();
+				final double rowsCost = commonFraction > 0.2 ? nRows * (1 - commonFraction) : nRows;
+				// this.cost = rowsToProcess + elm.getNumVals() * nCols + constantOverheadForColGroup;
+				// this.cost = rowsToProcess + elm.getNumVals() * nCols * (1 - commonFraction) +
+				// constantOverheadForColGroup;
+				// final double sparsity_tuple_effect = elm.getTupleSparsity() > 0.4 ? 1 -
+				// Math.min(elm.getTupleSparsity(), 0.9) : 1;
+				final int numberTuples = elm.getNumVals();
+				final double tuplesCost = (numberTuples < blksz) ? numberTuples : numberTuples * 2;
+
+				// this.cost = elementsCost;
+				// this.cost = rowsCost + tuplesCost * sparsity_tuple_effect + constantOverheadForColGroup;
+
+				this.cost = rowsCost + tuplesCost + constantOverheadForColGroup;
+			}
 		}
 
 		@Override

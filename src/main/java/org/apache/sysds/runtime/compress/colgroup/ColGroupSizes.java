@@ -124,7 +124,7 @@ public class ColGroupSizes {
 		// Since the Object is a col group the overhead from the Memory Size group is added
 		size += estimateInMemorySizeGroup(nrColumns);
 		size += 8; // reference to MatrixBlock.
-		size += MatrixBlock.estimateSizeInMemory(nrRows, nrColumns, sparsity);
+		size += MatrixBlock.estimateSizeInMemory(nrRows, nrColumns, (nrColumns > 1) ?  sparsity : 1);
 		return size;
 	}
 }

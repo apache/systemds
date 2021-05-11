@@ -126,8 +126,9 @@ public class CompressionSettings {
 		sb.append("\n Lossy: " + lossy);
 		sb.append("\n sortValuesByLength: " + sortValuesByLength);
 		sb.append("\n column Partitioner: " + columnPartitioner);
-		sb.append("\n max Static ColGroup CoCode " + maxColGroupCoCode);
-		sb.append("\n max cocodePercentage " + coCodePercentage);
+		sb.append("\n Max Static ColGroup CoCode: " + maxColGroupCoCode);
+		sb.append("\n Max cocodePercentage: " + coCodePercentage);
+		sb.append("\n Sample Percentage: " + samplingRatio);
 		// If needed for debugging add more fields to the printing.
 		return sb.toString();
 	}

@@ -210,23 +210,31 @@ public class ColGroupConst extends ColGroupValue {
 	}
 
 	@Override
-	public void leftMultByMatrix(double[] a, double[] c, double[] values, int numRows, int numCols, int rl, int ru) {
-		for(int i = rl; i < ru; i++) {
-			double preAggVals = preAggregateSingle(a, i);
-			int offC = i * numCols;
-			for(int j = 0; j < _colIndexes.length; j++) {
-				c[offC + _colIndexes[j]] += preAggVals * values[j];
+	public void leftMultByMatrix(MatrixBlock a, MatrixBlock c, double[] values, int rl, int ru) {
+		final double[] cV = c.getDenseBlockValues();
+		if(a.isEmpty())
+			return;
+		else if(a.isInSparseFormat()) {
+			SparseBlock sb = a.getSparseBlock();
+			for(int i = rl; i < ru; i++) {
+
+				if(!sb.isEmpty(i)) {
+					double v = preAggregateSparseSingle(sb, i);
+					int offC = i * c.getNumColumns();
+					for(int j = 0; j < _colIndexes.length; j++)
+						cV[offC + _colIndexes[j]] += v * values[j];
+
+				}
 			}
 		}
-	}
+		else {
+			double[] aV = a.getDenseBlockValues();
+			for(int i = rl; i < ru; i++) {
+				double preAggVals = preAggregateSingle(aV, i);
+				int offC = i * c.getNumColumns();
+				for(int j = 0; j < _colIndexes.length; j++)
+					cV[offC + _colIndexes[j]] += preAggVals * values[j];
 
-	@Override
-	public void leftMultBySparseMatrix(SparseBlock sb, double[] c, double[] values, int numRows, int numCols, int row) {
-		if(!sb.isEmpty(row)) {
-			double v = preAggregateSparseSingle(sb, row);
-			int offC = row * numCols;
-			for(int j = 0; j < _colIndexes.length; j++) {
-				c[offC + _colIndexes[j]] += v * values[j];
 			}
 		}
 	}
@@ -315,7 +323,7 @@ public class ColGroupConst extends ColGroupValue {
 	}
 
 	@Override
-	public Dictionary preAggregateThatSDCSingleStructure(ColGroupSDCSingle that, Dictionary ret, boolean preModified){
+	public Dictionary preAggregateThatSDCSingleStructure(ColGroupSDCSingle that, Dictionary ret, boolean preModified) {
 		throw new DMLCompressionException("Does not make sense to call this");
 	}
 
@@ -327,5 +335,10 @@ public class ColGroupConst extends ColGroupValue {
 	@Override
 	protected boolean sameIndexStructure(ColGroupCompressed that) {
 		return that instanceof ColGroupEmpty || that instanceof ColGroupConst;
+	}
+
+	@Override
+	public MatrixBlock preAggregate(MatrixBlock m, int rl, int ru) {
+		throw new NotImplementedException();
 	}
 }

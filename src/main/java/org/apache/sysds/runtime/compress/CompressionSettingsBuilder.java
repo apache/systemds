@@ -44,6 +44,8 @@ public class CompressionSettingsBuilder {
 	private int maxStaticColGroupCoCode = 10000;
 	private double coCodePercentage = 0.01;
 
+	private final static double defaultSampleRate = 0.01;
+
 	public CompressionSettingsBuilder() {
 
 		DMLConfig conf = ConfigurationManager.getDMLConfig();
@@ -54,6 +56,8 @@ public class CompressionSettingsBuilder {
 			validCompressions.add(CompressionType.valueOf(comp));
 		}
 		samplingRatio = conf.getDoubleValue(DMLConfig.COMPRESSED_SAMPLING_RATIO);
+		if(Double.isNaN(samplingRatio))
+			samplingRatio = defaultSampleRate;
 		columnPartitioner = PartitionerType.valueOf(conf.getTextValue(DMLConfig.COMPRESSED_COCODE));
 
 		transposeInput = conf.getTextValue(DMLConfig.COMPRESSED_TRANSPOSE);

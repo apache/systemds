@@ -534,9 +534,14 @@ public class ColGroupSDCZeros extends ColGroupValue {
 		}
 		return ret;
 	}
-	
+
 	@Override
-	public Dictionary preAggregateThatSDCSingleStructure(ColGroupSDCSingle that, Dictionary re, boolean preModified){
+	public Dictionary preAggregateThatSDCSingleStructure(ColGroupSDCSingle that, Dictionary re, boolean preModified) {
+		throw new NotImplementedException();
+	}
+
+	@Override
+	public MatrixBlock preAggregate(MatrixBlock m, int rl, int ru) {
 		throw new NotImplementedException();
 	}
 }

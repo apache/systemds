@@ -744,4 +744,9 @@ public class ColGroupSDC extends ColGroupValue {
 		return ret;
 	}
 
+	@Override
+	public MatrixBlock preAggregate(MatrixBlock m, int rl, int ru) {
+		throw new NotImplementedException();
+	}
+
 }

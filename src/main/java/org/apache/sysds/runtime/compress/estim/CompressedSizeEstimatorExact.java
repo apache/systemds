@@ -29,16 +29,17 @@ import org.apache.sysds.runtime.matrix.data.MatrixBlock;
  */
 public class CompressedSizeEstimatorExact extends CompressedSizeEstimator {
 
-	public CompressedSizeEstimatorExact(MatrixBlock data, CompressionSettings compSettings, boolean transposed) {
-		super(data, compSettings, transposed);
+	public CompressedSizeEstimatorExact(MatrixBlock data, CompressionSettings compSettings) {
+		super(data, compSettings);
 	}
 
 	@Override
 	public CompressedSizeInfoColGroup estimateCompressedColGroupSize(int[] colIndexes) {
 		ABitmap entireBitMap = BitmapEncoder.extractBitmap(colIndexes, _data, _transposed);
 		return new CompressedSizeInfoColGroup(estimateCompressedColGroupSize(entireBitMap, colIndexes),
-			_compSettings.validCompressions);
+			_cs.validCompressions);
 	}
+
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();

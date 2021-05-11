@@ -191,10 +191,11 @@ public class ColGroupFactory {
 
 	private static AColGroup compressColGroupForced(MatrixBlock in, int[] colIndexes,
 		CompressionSettings compSettings) {
-
-		CompressedSizeEstimator estimator = new CompressedSizeEstimatorExact(in, compSettings, compSettings.transposed);
-
+			
 		ABitmap ubm = BitmapEncoder.extractBitmap(colIndexes, in, compSettings.transposed);
+
+		CompressedSizeEstimator estimator = new CompressedSizeEstimatorExact(in, compSettings);
+
 		CompressedSizeInfoColGroup sizeInfo = new CompressedSizeInfoColGroup(
 			estimator.estimateCompressedColGroupSize(ubm, colIndexes), compSettings.validCompressions);
 

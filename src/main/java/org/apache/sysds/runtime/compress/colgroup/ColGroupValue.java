@@ -36,9 +36,12 @@ import org.apache.sysds.runtime.compress.colgroup.dictionary.DictionaryFactory;
 import org.apache.sysds.runtime.compress.colgroup.pre.ArrPreAggregate;
 import org.apache.sysds.runtime.compress.colgroup.pre.IPreAggregate;
 import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
+import org.apache.sysds.runtime.data.DenseBlock;
+import org.apache.sysds.runtime.data.DenseBlockFP64;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.functionobjects.ValueFunction;
+import org.apache.sysds.runtime.matrix.data.LibMatrixMult;
 import org.apache.sysds.runtime.matrix.data.LibMatrixReorg;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
@@ -607,8 +610,8 @@ public abstract class ColGroupValue extends ColGroupCompressed implements Clonea
 	 * @param c          The output matrix
 	 * @param numVals    The number of values contained in the dictionary.
 	 */
-	protected void postScaling(double[] dictValues, double[] vals, double[] c, int numVals) {
-		postScaling(dictValues, vals, c, numVals, 0, 0);
+	protected void postScaling(double[] dictValues, double[] vals, MatrixBlock c, int numVals) {
+		postScaling(dictValues, vals, c, numVals, 0);
 	}
 
 	/**
@@ -621,41 +624,17 @@ public abstract class ColGroupValue extends ColGroupCompressed implements Clonea
 	 * @param row        The row index in the output c to assign the result to.
 	 * @param totalCols  The total number of columns in c.
 	 */
-	protected void postScaling(double[] dictValues, double[] vals, double[] c, int numVals, int row, int totalCols) {
+	protected void postScaling(double[] dictValues, double[] vals, MatrixBlock c, int numVals, int row) {
 		final int ncol = getNumCols();
 		int valOff = 0;
+		final double[] cv = c.getDenseBlockValues();
+		final int totalCols = c.getNumColumns();
 
 		for(int k = 0; k < numVals; k++) {
 			double aval = vals[k];
 			for(int j = 0; j < ncol; j++) {
 				int colIx = _colIndexes[j] + row * totalCols;
-				c[colIx] += aval * dictValues[valOff++];
-			}
-		}
-	}
-
-	/**
-	 * Post scale for left Multiplication
-	 * 
-	 * @param dictValues The dictionary values materialized as double array.
-	 * @param vals       The values aggregated from the left side row vector.
-	 * @param c          The output matrix
-	 * @param numVals    The number of values contained in the dictionary.
-	 * @param row        The row index in the output c to assign the result to.
-	 * @param totalCols  The total number of columns in c.
-	 * @param offT       The offset into C to assign the values from usefull in case the c output is a smaller temporary
-	 *                   array.
-	 */
-	protected void postScaling(double[] dictValues, double[] vals, double[] c, int numVals, int row, int totalCols,
-		int offT) {
-		final int nCol = getNumCols();
-		int valOff = 0;
-
-		for(int k = 0; k < numVals; k++) {
-			double aval = vals[k];
-			for(int j = 0; j < nCol; j++) {
-				int colIx = _colIndexes[j] + row * totalCols;
-				c[offT + colIx] += aval * dictValues[valOff++];
+				cv[colIx] += aval * dictValues[valOff++];
 			}
 		}
 	}
@@ -669,6 +648,8 @@ public abstract class ColGroupValue extends ColGroupCompressed implements Clonea
 	public double[] preAggregate(double[] a) {
 		return preAggregate(a, 0);
 	}
+
+	public abstract MatrixBlock preAggregate(MatrixBlock m, int rl, int ru);
 
 	/**
 	 * Pre aggregates for left multiplication
@@ -686,7 +667,14 @@ public abstract class ColGroupValue extends ColGroupCompressed implements Clonea
 	 * @return The pre-aggregated values.
 	 */
 	public double[] preAggregate(SparseBlock sb) {
-		return preAggregateSparse(sb, 0);
+		return preAggregateSparseWithCheck(sb, 0);
+	}
+
+	private double[] preAggregateSparseWithCheck(SparseBlock sb, int row) {
+		if(sb != null && !sb.isEmpty(row))
+			return preAggregateSparse(sb, row);
+		else
+			return null;
 	}
 
 	/**
@@ -797,18 +785,18 @@ public abstract class ColGroupValue extends ColGroupCompressed implements Clonea
 	}
 
 	@Override
-	public void leftMultByAColGroup(AColGroup lhs, double[] result, final int numRows, final int numCols) {
+	public void leftMultByAColGroup(AColGroup lhs, MatrixBlock result) {
 		if(lhs instanceof ColGroupEmpty)
 			return;
 		else if(lhs instanceof ColGroupValue)
-			leftMultByColGroupValue((ColGroupValue) lhs, result, numRows, numCols);
+			leftMultByColGroupValue((ColGroupValue) lhs, result);
 		else if(lhs instanceof ColGroupUncompressed) {
 			LOG.warn("Inefficient transpose of uncompressed to fit to "
 				+ "template need t(UnCompressedColGroup) %*% AColGroup support");
 			MatrixBlock ucCG = ((ColGroupUncompressed) lhs).getData();
 			MatrixBlock tmp = new MatrixBlock(ucCG.getNumColumns(), ucCG.getNumRows(), ucCG.isInSparseFormat());
 			LibMatrixReorg.transpose(ucCG, tmp, InfrastructureAnalyzer.getLocalParallelism());
-			leftMultByMatrix(tmp, result, numCols);
+			leftMultByMatrix(tmp, result);
 
 		}
 		else
@@ -816,35 +804,38 @@ public abstract class ColGroupValue extends ColGroupCompressed implements Clonea
 				"Not supported left multiplication with A ColGroup of type: " + lhs.getClass().getSimpleName());
 	}
 
-	private void leftMultByColGroupValue(ColGroupValue lhs, double[] result, final int numRows, final int numCols) {
+	private void leftMultByColGroupValue(ColGroupValue lhs, MatrixBlock result) {
 		final int nvL = lhs.getNumValues();
 		final int nvR = this.getNumValues();
 		final double[] lhValues = lhs.getValues();
 		final double[] rhValues = this.getValues();
 		final int lCol = lhs._colIndexes.length;
 		final int rCol = this._colIndexes.length;
+		final double[] resV = result.getDenseBlockValues();
+		final int numCols = result.getNumColumns();
 
 		final double threshold = 0.2;
 
 		if(sameIndexStructure(lhs)) {
 			int[] agI = getCounts();
 			for(int i = 0; i < agI.length; i++) {
-				for(int l = 0; l < lCol; l++) {
-					final int leftOff = lhs._colIndexes[l] * numCols;
-					final double lhV = lhValues[i * lCol + l] * agI[i];
-					if(lhV != 0)
-						for(int r = 0; r < rCol; r++) {
-							final double rhV = rhValues[i * rCol + r];
-							final double va = lhV * rhV;
-							result[leftOff + this._colIndexes[r]] += va;
-						}
-				}
+				if(i < nvL)
+					for(int l = 0; l < lCol; l++) {
+						final int leftOff = lhs._colIndexes[l] * numCols;
+						final double lhV = lhValues[i * lCol + l] * agI[i];
+						if(lhV != 0)
+							for(int r = 0; r < rCol; r++) {
+								final double rhV = rhValues[i * rCol + r];
+								final double va = lhV * rhV;
+								resV[leftOff + this._colIndexes[r]] += va;
+							}
+					}
 			}
 		}
 		else if(lhs instanceof ColGroupConst || this instanceof ColGroupConst) {
-			// double[] r = this instanceof ColGroupConst ? rhValues : this._dict.colSum(getCounts(), rCol);
-			// double[] l = lhs instanceof ColGroupConst ? lhValues : lhs._dict.colSum(lhs.getCounts(), lCol);
-			// vectorVectorMultiply(l, lhs._colIndexes, r, this._colIndexes, result, numCols);
+			double[] r = this instanceof ColGroupConst ? rhValues : this._dict.colSum(getCounts(), rCol);
+			double[] l = lhs instanceof ColGroupConst ? lhValues : lhs._dict.colSum(lhs.getCounts(), lCol);
+			vectorVectorMultiply(l, lhs._colIndexes, r, this._colIndexes, resV, numCols);
 		}
 		else {
 			int[] countsRight = getCounts();
@@ -858,36 +849,36 @@ public abstract class ColGroupValue extends ColGroupCompressed implements Clonea
 
 			if(skipRight > threshold && percentageRight > percentageLeft && !(this instanceof ColGroupDDC)) {
 				double[] mct = this._dict.getMostCommonTuple(this.getCounts(), rCol);
-				// double[] lhsSum = lhs._dict.colSum(lhs.getCounts(), lCol);
-				// if(mct != null)
-				// 	vectorVectorMultiply(lhsSum, lhs._colIndexes, mct, this._colIndexes, result, numCols);
+				double[] lhsSum = lhs._dict.colSum(lhs.getCounts(), lCol);
+				if(mct != null)
+					vectorVectorMultiply(lhsSum, lhs._colIndexes, mct, this._colIndexes, resV, numCols);
 
 				ColGroupValue thisM = (mct != null) ? (ColGroupValue) this
 					.copyAndSet(this._dict.subtractTuple(mct)) : this;
 				Dictionary preAgg = lhs.preAggregateThatIndexStructure(thisM, true);
 				matrixMultDictionariesAndOutputToColIndexes(lhValues, preAgg.getValues(), lhs._colIndexes,
-					this._colIndexes, result, numCols);
+					this._colIndexes, resV, numCols);
 			}
 			else if(skipLeft > threshold && !(lhs instanceof ColGroupDDC)) {
 				double[] mct = lhs._dict.getMostCommonTuple(lhs.getCounts(), lCol);
-				// double[] thisColSum = this._dict.colSum(getCounts(), rCol);
-				// if(mct != null)
-				// 	vectorVectorMultiply(mct, lhs._colIndexes, thisColSum, this._colIndexes, result, numCols);
+				double[] thisColSum = this._dict.colSum(getCounts(), rCol);
+				if(mct != null)
+					vectorVectorMultiply(mct, lhs._colIndexes, thisColSum, this._colIndexes, resV, numCols);
 
 				ColGroupValue lhsM = (mct != null) ? (ColGroupValue) lhs.copyAndSet(lhs._dict.subtractTuple(mct)) : lhs;
 				Dictionary preAgg = this.preAggregateThatIndexStructure(lhsM, true);
 				matrixMultDictionariesAndOutputToColIndexes(preAgg.getValues(), rhValues, lhs._colIndexes,
-					this._colIndexes, result, numCols);
+					this._colIndexes, resV, numCols);
 			}
 			else if(nvR * rCol < nvL * lCol) {
 				Dictionary preAgg = lhs.preAggregateThatIndexStructure(this, false);
 				matrixMultDictionariesAndOutputToColIndexes(lhValues, preAgg.getValues(), lhs._colIndexes,
-					this._colIndexes, result, numCols);
+					this._colIndexes, resV, numCols);
 			}
 			else {
 				Dictionary preAgg = this.preAggregateThatIndexStructure(lhs, false);
 				matrixMultDictionariesAndOutputToColIndexes(preAgg.getValues(), rhValues, lhs._colIndexes,
-					this._colIndexes, result, numCols);
+					this._colIndexes, resV, numCols);
 			}
 		}
 	}
@@ -1014,56 +1005,62 @@ public abstract class ColGroupValue extends ColGroupCompressed implements Clonea
 		return !_zeros;
 	}
 
-	@Override
-	public void leftMultBySparseMatrix(SparseBlock sb, double[] result, int numRows, int numCols, int rl, int ru) {
-		double[] values = getValues();
-		for(int i = rl; i < ru; i++) {
-			leftMultBySparseMatrix(sb, result, values, numRows, numCols, i);
-		}
-	}
-
 	/**
 	 * Multiply with a matrix on the left.
 	 * 
-	 * @param matrix  matrix to left multiply
-	 * @param result  matrix block result
-	 * @param values  The materialized values contained in the ColGroupValue
-	 * @param numRows The number of rows in the matrix input
-	 * @param numCols The number of columns in the colGroups parent matrix.
-	 * @param rl      The row to start the matrix multiplication from
-	 * @param ru      The row to stop the matrix multiplication at.
+	 * @param matrix matrix to left multiply
+	 * @param result matrix block result
+	 * @param values The materialized values contained in the ColGroupValue
+	 * @param rl     The row to start the matrix multiplication from
+	 * @param ru     The row to stop the matrix multiplication at.
 	 */
-	public void leftMultByMatrix(double[] matrix, double[] result, double[] values, int numRows, int numCols, int rl,
-		int ru) {
-		int numVals = getNumValues();
+	public void leftMultByMatrix(MatrixBlock matrix, MatrixBlock result, double[] values, int rl, int ru) {
+		final int numVals = getNumValues();
+
+		DenseBlock dictV = new DenseBlockFP64(new int[] {numVals, _colIndexes.length}, values);
+		MatrixBlock dictM = new MatrixBlock(numVals, _colIndexes.length, dictV);
+		dictM.examSparsity();
+		MatrixBlock tmpRes = new MatrixBlock(1, _colIndexes.length, false);
 		for(int i = rl; i < ru; i++) {
-			double[] vals = preAggregate(matrix, i);
-			postScaling(values, vals, result, numVals, i, numCols);
+			double[] vals = matrix.isInSparseFormat() ? preAggregateSparseWithCheck(matrix.getSparseBlock(),
+				i) : preAggregate(matrix.getDenseBlockValues(), i);
+			if(vals != null) {
+				DenseBlock preAggV = new DenseBlockFP64(new int[] {1, numVals}, vals);
+				MatrixBlock preAgg = new MatrixBlock(1, numVals, preAggV);
+				preAgg.setNonZeros(numVals);
+				// LOG.error("PreAgg Sparsity " + preAgg.getSparsity() + " nnz " + preAgg.getNonZeros());
+				LibMatrixMult.matrixMult(preAgg, dictM, tmpRes);
+				addToResult(tmpRes, result, i);
+				tmpRes.reset();
+			}
 		}
+	}
+
+	private void addToResult(MatrixBlock tmp, MatrixBlock result, int row) {
+		if(tmp.isEmpty())
+			return;
+		else if(tmp.isInSparseFormat()) {
+			throw new NotImplementedException();
+		}
+		else {
+			final double[] tmpV = tmp.getDenseBlockValues();
+			final double[] retV = result.getDenseBlockValues();
+			final int nColRet = result.getNumColumns();
+			// final int nColTmp = tmp.getNumColumns();
+			final int offR = row * nColRet;
+			// for(int row = rl, offT = 0, offR = rl * nColRet; row < ru; row++, offT += nColTmp, offR += nColRet) {
+			for(int col = 0; col < _colIndexes.length; col++) {
+				final int colOffset = _colIndexes[col];
+				retV[offR + colOffset] += tmpV[col];
+			}
+			// }
+		}
+
 	}
 
 	@Override
-	public void leftMultByMatrix(double[] matrix, double[] result, int numRows, int numCols, int rl, int ru) {
-		leftMultByMatrix(matrix, result, getValues(), numRows, numCols, rl, ru);
-	}
-
-	/**
-	 * Multiply with a sparse matrix on the left hand side, and add the values to the output result
-	 * 
-	 * @param sb      The sparse block to multiply with
-	 * @param result  The linearized output matrix
-	 * @param values  The values contained in the dictionary, this parameter is here to allow materialization once.
-	 * @param numRows The number of rows in the left hand side input matrix (the sparse one)
-	 * @param numCols The number of columns in the compression.
-	 * @param row     The row index of the sparse row to multiply with.
-	 */
-	public void leftMultBySparseMatrix(SparseBlock sb, double[] result, double[] values, int numRows, int numCols,
-		int row) {
-		if(!sb.isEmpty(row)) {
-			final int numVals = getNumValues();
-			double[] vals = preAggregateSparse(sb, row);
-			postScaling(values, vals, result, numVals, row, numCols);
-		}
+	public void leftMultByMatrix(MatrixBlock matrix, MatrixBlock result, int rl, int ru) {
+		leftMultByMatrix(matrix, result, getValues(), rl, ru);
 	}
 
 	public AColGroup rightMultByMatrix(MatrixBlock right) {

@@ -32,6 +32,7 @@ import org.apache.sysds.runtime.compress.colgroup.AColGroup;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup.CompressionType;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupFactory;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeEstimatorFactory;
+import org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup;
 import org.apache.sysds.runtime.compress.lib.BitmapEncoder;
 import org.apache.sysds.runtime.compress.utils.ABitmap;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
@@ -101,32 +102,32 @@ public abstract class JolEstimateTest {
 
 	@Test
 	public void compressedSizeInfoEstimatorSample_90() {
-		compressedSizeInfoEstimatorSample(0.9, 0.99);
+		compressedSizeInfoEstimatorSample(0.9, 0.9);
 	}
 
 	@Test
 	public void compressedSizeInfoEstimatorSample_50() {
-		compressedSizeInfoEstimatorSample(0.5, 0.95);
+		compressedSizeInfoEstimatorSample(0.5, 0.90);
 	}
 
 	@Test
 	public void compressedSizeInfoEstimatorSample_20() {
-		compressedSizeInfoEstimatorSample(0.2, 0.90);
+		compressedSizeInfoEstimatorSample(0.2, 0.8);
 	}
 
 	@Test
 	public void compressedSizeInfoEstimatorSample_10() {
-		compressedSizeInfoEstimatorSample(0.1, 0.9);
+		compressedSizeInfoEstimatorSample(0.1, 0.75);
 	}
 
 	@Test
 	public void compressedSizeInfoEstimatorSample_5() {
-		compressedSizeInfoEstimatorSample(0.05, 0.9);
+		compressedSizeInfoEstimatorSample(0.05, 0.7);
 	}
 
 	@Test
 	public void compressedSizeInfoEstimatorSample_1() {
-		compressedSizeInfoEstimatorSample(0.01, 0.9);
+		compressedSizeInfoEstimatorSample(0.01, 0.6);
 	}
 
 	public void compressedSizeInfoEstimatorSample(double ratio, double tolerance) {
@@ -138,13 +139,16 @@ public abstract class JolEstimateTest {
 				.setValidCompressions(EnumSet.of(getCT())).setSeed(seed).create();
 			cs.transposed = true;
 
-			final long estimateCSI = CompressedSizeEstimatorFactory.getSizeEstimator(mbt, cs)
-				.estimateCompressedColGroupSize().getCompressionSize(cg.getCompType());
+			final CompressedSizeInfoColGroup cgsi = CompressedSizeEstimatorFactory.getSizeEstimator(mbt, cs)
+				.estimateCompressedColGroupSize();
+			final long estimateCSI = cgsi.getCompressionSize(cg.getCompType());
 			final double minTolerance = actualSize * tolerance;
 			final double maxTolerance = actualSize / tolerance;
 			final String rangeString = minTolerance + " < " + estimateCSI + " < " + maxTolerance;
 			boolean res = minTolerance < estimateCSI && estimateCSI < maxTolerance;
-			assertTrue("CSI Sampled estimate is not in tolerance range " + rangeString + "\n" + cg.toString(), res);
+			assertTrue(
+				"CSI Sampled estimate is not in tolerance range " + rangeString + "\n" + cgsi + "\n" + cg.toString(),
+				res);
 
 		}
 		catch(Exception e) {

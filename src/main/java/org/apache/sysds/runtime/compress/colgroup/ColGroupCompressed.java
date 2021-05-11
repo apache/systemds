@@ -20,7 +20,6 @@
 package org.apache.sysds.runtime.compress.colgroup;
 
 import org.apache.sysds.runtime.DMLScriptException;
-import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.functionobjects.Builtin.BuiltinCode;
 import org.apache.sysds.runtime.functionobjects.KahanPlus;
@@ -30,7 +29,6 @@ import org.apache.sysds.runtime.functionobjects.Plus;
 import org.apache.sysds.runtime.functionobjects.ReduceAll;
 import org.apache.sysds.runtime.functionobjects.ReduceCol;
 import org.apache.sysds.runtime.functionobjects.ReduceRow;
-import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator;
 
 /**
@@ -88,42 +86,6 @@ public abstract class ColGroupCompressed extends AColGroup {
 	protected abstract void computeRowMxx(double[] c, Builtin builtin, int rl, int ru);
 
 	protected abstract boolean sameIndexStructure(ColGroupCompressed that);
-
-	/**
-	 * Multiply with a matrix on the left.
-	 * 
-	 * @param matrix  matrix to left multiply
-	 * @param result  matrix block result
-	 * @param numRows The number of rows in the matrix input
-	 * @param numCols The number of columns in the colGroups parent matrix.
-	 * @param rl      The row to start the matrix multiplication from
-	 * @param ru      The row to stop the matrix multiplication at.
-	 */
-	public abstract void leftMultByMatrix(double[] matrix, double[] result, int numRows, int numCols, int rl, int ru);
-
-	/**
-	 * Multiply with a sparse matrix on the left hand side, and add the values to the output result
-	 * 
-	 * @param sb      The sparse block to multiply with
-	 * @param result  The linearized output matrix
-	 * @param numRows The number of rows in the left hand side input matrix (the sparse one)
-	 * @param numCols The number of columns in the compression.
-	 * @param rl      The row to start the matrix multiplication from
-	 * @param ru      The row to stop the matrix multiplication at.
-	 */
-	public abstract void leftMultBySparseMatrix(SparseBlock sb, double[] result, int numRows, int numCols, int rl,
-		int ru);
-
-	@Override
-	public final void leftMultByMatrix(MatrixBlock matrix, double[] result, int numCols, int rl, int ru) {
-		if(matrix.isEmpty())
-			return;
-		else if(matrix.isInSparseFormat())
-			leftMultBySparseMatrix(matrix.getSparseBlock(), result, matrix.getNumRows(), numCols, rl, ru);
-		else {
-			leftMultByMatrix(matrix.getDenseBlockValues(), result, matrix.getNumRows(), numCols, rl, ru);
-		}
-	}
 
 	@Override
 	public final double getMin() {

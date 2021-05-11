@@ -524,37 +524,33 @@ public abstract class AColGroup implements Serializable {
 	/**
 	 * Left multiply with this column group
 	 * 
-	 * @param matrix  The matrix to multiply with on the left
-	 * @param result  The result to output the values into, always dense for the purpose of the column groups
-	 *                parallelizing
-	 * @param numCols The number of columns contained in the CompressedMatrixBlock that this column group is inside.
+	 * @param matrix The matrix to multiply with on the left
+	 * @param result The result to output the values into, always dense for the purpose of the column groups
+	 *               parallelizing
 	 */
-	public void leftMultByMatrix(MatrixBlock matrix, double[] result, int numCols) {
-		leftMultByMatrix(matrix, result, numCols, 0, matrix.getNumRows());
+	public void leftMultByMatrix(MatrixBlock matrix, MatrixBlock result) {
+		leftMultByMatrix(matrix, result, 0, matrix.getNumRows());
 	}
 
 	/**
 	 * Left multiply with this column group.
 	 * 
-	 * @param matrix  The matrix to multiply with on the left
-	 * @param result  The result to output the values into, always dense for the purpose of the column groups
-	 *                parallelizing
-	 * @param numCols The number of columns contained in the CompressedMatrixBlock that this column group is inside.
-	 * @param rl      The row to begin the multiplication from
-	 * @param ru      The row to end the multiplication at.
+	 * @param matrix The matrix to multiply with on the left
+	 * @param result The result to output the values into, always dense for the purpose of the column groups
+	 *               parallelizing
+	 * @param rl     The row to begin the multiplication from on the lhs matrix
+	 * @param ru     The row to end the multiplication at on the lhs matrix
 	 */
-	public abstract void leftMultByMatrix(MatrixBlock matrix, double[] result, int numCols, int rl, int ru);
+	public abstract void leftMultByMatrix(MatrixBlock matrix, MatrixBlock result, int rl, int ru);
 
 	/**
 	 * Left side matrix multiplication with a column group that is transposed.
 	 * 
-	 * @param lhs     The left hand side Column group to multiply with, the left hand side should be considered
-	 *                transposed.
-	 * @param result  The result matrix to insert the result of the multiplication into
-	 * @param numRows The number of rows in the left hand side matrix
-	 * @param numCols The number of columns in the right hand side matrix
+	 * @param lhs    The left hand side Column group to multiply with, the left hand side should be considered
+	 *               transposed.
+	 * @param result The result matrix to insert the result of the multiplication into
 	 */
-	public abstract void leftMultByAColGroup(AColGroup lhs, double[] result, int numRows, int numCols);
+	public abstract void leftMultByAColGroup(AColGroup lhs, MatrixBlock result);
 
 	/**
 	 * Perform the specified scalar operation directly on the compressed column group, without decompressing individual

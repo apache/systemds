@@ -80,7 +80,8 @@ public class CompressedSizeInfoColGroup {
 
 		_bestCompressionType = bestEntry.getKey();
 		_minSize = bestEntry.getValue();
-		// LOG.error(this);
+		if(LOG.isTraceEnabled())
+			LOG.trace(this);
 	}
 
 	/**
@@ -98,7 +99,6 @@ public class CompressedSizeInfoColGroup {
 		Set<CompressionType> validCompressionTypes) {
 		EstimationFactors fact = new EstimationFactors(columns, oneSide._facts);
 		CompressedSizeInfoColGroup ret = new CompressedSizeInfoColGroup(fact, validCompressionTypes);
-		// LOG.error(ret);
 		return ret;
 	}
 
@@ -144,11 +144,11 @@ public class CompressedSizeInfoColGroup {
 		return _cardinalityRatio;
 	}
 
-	public double getMostCommonFraction(){
+	public double getMostCommonFraction() {
 		return (double) _facts.largestOff / _facts.numRows;
 	}
 
-	public double getTupleSparsity(){
+	public double getTupleSparsity() {
 		return _facts.tupleSparsity;
 	}
 
@@ -215,13 +215,13 @@ public class CompressedSizeInfoColGroup {
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
 		sb.append("Best Type: " + _bestCompressionType);
-		sb.append(" facts: " + _facts);
 		sb.append(" Cardinality: ");
 		sb.append(_cardinalityRatio);
+		sb.append(" mostCommonFraction: ");
+		sb.append(getMostCommonFraction());
 		sb.append(" Sizes: ");
 		sb.append(_sizes);
-
-		sb.append("\n");
+		sb.append(" facts: " + _facts);
 		return sb.toString();
 	}
 }

@@ -23,6 +23,7 @@ import java.util.Arrays;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.sysds.runtime.DMLCompressionException;
 import org.apache.sysds.runtime.compress.CompressionSettings;
 import org.apache.sysds.runtime.compress.utils.ABitmap;
 import org.apache.sysds.runtime.compress.utils.ABitmap.BitmapType;
@@ -102,6 +103,18 @@ public class EstimationFactors {
 		this.containNoZeroValues = numOffs == numRows;
 		this.overAllSparsity = overAllSparsity;
 		this.tupleSparsity = tupleSparsity;
+
+		if(!containNoZeroValues && overAllSparsity >= 1)
+			throw new DMLCompressionException(
+				"Invalid Sparsity, if there is zeroOffsets, then the sparsity should be below 1");
+		if(overAllSparsity > 1 || overAllSparsity < 0)
+			throw new DMLCompressionException("Invalid sparsity");
+		if(tupleSparsity > 1 || tupleSparsity < 0)
+			throw new DMLCompressionException("Invalid sparsity");
+		if(largestOff > numRows)
+			throw new DMLCompressionException(
+				"Invalid number of instance of most common element should be lower than number of rows. " + largestOff
+					+ " > numRows: " + numRows);
 	}
 
 	protected static EstimationFactors computeSizeEstimationFactors(ABitmap ubm, boolean inclRLE, int numRows,
@@ -155,8 +168,7 @@ public class EstimationFactors {
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
-		sb.append("\nrows:" + numRows);
-		sb.append(" cols:" + Arrays.toString(cols));
+		sb.append(" rows:" + numRows);
 		sb.append(" num Offsets:" + numOffs);
 		sb.append(" LargestOffset:" + largestOff);
 		sb.append(" num Singles:" + numSingle);
@@ -164,6 +176,7 @@ public class EstimationFactors {
 		sb.append(" num Unique Vals:" + numVals);
 		sb.append(" overallSparsity:" + overAllSparsity);
 		sb.append(" tupleSparsity:" + tupleSparsity);
+		sb.append(" cols:" + Arrays.toString(cols));
 		return sb.toString();
 	}
 }

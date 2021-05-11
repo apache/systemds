@@ -60,7 +60,7 @@ public final class Bitmap extends ABitmap {
 
 	public int getNumNonZerosInOffset(int idx){
 		if(_numCols == 1)
-			return  _offsetsLists[idx].size();
+			return  _values[0] != 0 ? 1 : 0;
 		int nz = 0;
 		for(int i = idx * _numCols; i < (idx+1) * _numCols; i++)
 			nz += _values[i] == 0 ? 0 : 1;

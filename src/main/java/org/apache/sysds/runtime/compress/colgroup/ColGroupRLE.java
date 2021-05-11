@@ -1163,4 +1163,9 @@ public class ColGroupRLE extends ColGroupOffset {
 	public Dictionary preAggregateThatSDCSingleStructure(ColGroupSDCSingle that, Dictionary ret, boolean preModified){
 		throw new NotImplementedException();
 	}
+
+	@Override
+	public MatrixBlock preAggregate(MatrixBlock m, int rl, int ru) {
+		throw new NotImplementedException();
+	}
 }

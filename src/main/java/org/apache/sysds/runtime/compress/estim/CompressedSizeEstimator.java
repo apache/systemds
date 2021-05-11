@@ -48,7 +48,7 @@ public abstract class CompressedSizeEstimator {
 	/** The number of columns in the matrix block, extracted to a field because the matrix could be transposed */
 	final protected int _numCols;
 	/** The compression settings to use, for estimating the size, and compress the ColGroups. */
-	final protected CompressionSettings _compSettings;
+	final protected CompressionSettings _cs;
 
 	/**
 	 * Boolean specifying if the _data is in transposed format. This is used to select the correct readers for the
@@ -61,23 +61,22 @@ public abstract class CompressedSizeEstimator {
 	 * 
 	 * protected because the factory should be used to construct the CompressedSizeEstimator
 	 * 
-	 * @param data         The matrix block to extract information from
-	 * @param compSettings The Compression settings used.
+	 * @param data The matrix block to extract information from
+	 * @param cs   The Compression settings used.
 	 */
-	protected CompressedSizeEstimator(MatrixBlock data, CompressionSettings compSettings, boolean transposed) {
+	protected CompressedSizeEstimator(MatrixBlock data, CompressionSettings cs) {
 		_data = data;
-		_transposed = transposed;
+		_transposed = cs.transposed;
 		_numRows = _transposed ? _data.getNumColumns() : _data.getNumRows();
 		_numCols = _transposed ? _data.getNumRows() : _data.getNumColumns();
-		_compSettings = compSettings;
+		_cs = cs;
 	}
 
-
-	public int getNumRows(){
+	public int getNumRows() {
 		return _numRows;
 	}
 
-	public int getNumColumns(){
+	public int getNumColumns() {
 		return _numCols;
 	}
 
@@ -124,8 +123,8 @@ public abstract class CompressedSizeEstimator {
 	 * @return The size factors estimated from the Bit Map.
 	 */
 	public EstimationFactors estimateCompressedColGroupSize(ABitmap ubm, int[] colIndexes) {
-		return EstimationFactors.computeSizeEstimationFactors(ubm,
-			_compSettings.validCompressions.contains(CompressionType.RLE), _numRows, colIndexes);
+		return EstimationFactors.computeSizeEstimationFactors(ubm, _cs.validCompressions.contains(CompressionType.RLE),
+			_numRows, colIndexes);
 	}
 
 	private CompressedSizeInfoColGroup[] CompressedSizeInfoColGroup(int clen) {

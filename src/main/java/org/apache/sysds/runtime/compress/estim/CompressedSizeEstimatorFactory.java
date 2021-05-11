@@ -29,26 +29,19 @@ public class CompressedSizeEstimatorFactory {
 
 	public static final int minimumSampleSize = 2000;
 
-	public static CompressedSizeEstimator getSizeEstimator(MatrixBlock data, CompressionSettings compSettings) {
+	public static CompressedSizeEstimator getSizeEstimator(MatrixBlock data, CompressionSettings cs) {
 
-		MatrixBlock shallowCopy = new MatrixBlock().copyShallow(data);
-		long elements = compSettings.transposed ? data.getNumColumns() : data.getNumRows();
-		elements = data.getNonZeros() / (compSettings.transposed ? data.getNumRows() : data.getNumColumns());
-		CompressedSizeEstimator est;
-
+		final long nRows = cs.transposed ? data.getNumColumns() : data.getNumRows();
+		
 		// Calculate the sample size.
 		// If the sample size is very small, set it to the minimum size
-		int sampleSize = Math.max((int) Math.ceil(elements * compSettings.samplingRatio), minimumSampleSize);
-		if(compSettings.samplingRatio >= 1.0 || elements < minimumSampleSize || sampleSize > elements) {
-			est = new CompressedSizeEstimatorExact(shallowCopy, compSettings, compSettings.transposed);
-		}
-		else {
-			int[] sampleRows = CompressedSizeEstimatorSample.getSortedUniformSample(
-				compSettings.transposed ? data.getNumColumns() : data.getNumRows(),
-				sampleSize,
-				compSettings.seed);
-			est = new CompressedSizeEstimatorSample(shallowCopy, compSettings, sampleRows, compSettings.transposed);
-		}
+		final int sampleSize = Math.max((int) Math.ceil(nRows * cs.samplingRatio), minimumSampleSize);
+
+		CompressedSizeEstimator est;
+		if(cs.samplingRatio >= 1.0 || nRows < minimumSampleSize || sampleSize > nRows)
+			est = new CompressedSizeEstimatorExact(data, cs);
+		else
+			est = new CompressedSizeEstimatorSample(data, cs, sampleSize);
 
 		LOG.debug("Estimating using: " + est);
 		return est;

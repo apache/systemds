@@ -20,7 +20,6 @@
 package org.apache.sysds.runtime.compress.colgroup;
 
 import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
-import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
@@ -125,12 +124,7 @@ public class ColGroupEmpty extends ColGroupCompressed {
 	}
 
 	@Override
-	public void leftMultByMatrix(double[] a, double[] c, int numRows, int numCols, int rl, int ru) {
-		// do nothing.
-	}
-
-	@Override
-	public void leftMultBySparseMatrix(SparseBlock sb, double[] c, int numRows, int numCols, int rl, int ru) {
+	public void leftMultByMatrix(MatrixBlock a, MatrixBlock c, int rl, int ru) {
 		// do nothing.
 	}
 
@@ -214,7 +208,7 @@ public class ColGroupEmpty extends ColGroupCompressed {
 	}
 
 	@Override
-	public void leftMultByAColGroup(AColGroup lhs, double[] result, int numRows, int numCols) {
+	public void leftMultByAColGroup(AColGroup lhs, MatrixBlock c) {
 		// do nothing
 	}
 

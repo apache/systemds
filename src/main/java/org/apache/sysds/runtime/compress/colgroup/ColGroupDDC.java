@@ -32,6 +32,8 @@ import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory;
 import org.apache.sysds.runtime.compress.colgroup.offset.AIterator;
 import org.apache.sysds.runtime.compress.colgroup.pre.IPreAggregate;
 import org.apache.sysds.runtime.compress.colgroup.pre.PreAggregateFactory;
+import org.apache.sysds.runtime.data.DenseBlock;
+import org.apache.sysds.runtime.data.DenseBlockFP64;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
@@ -229,6 +231,29 @@ public class ColGroupDDC extends ColGroupValue {
 			vals[_data.getIndex(indexes[i])] += sparseV[i];
 		return vals;
 
+	}
+
+	@Override
+	public MatrixBlock preAggregate(MatrixBlock m, int rl, int ru) {
+
+		final int retCols = getNumValues();
+		final int retRows = ru - rl;
+		final double[] vals = allocDVector(retRows * retCols, true);
+		final DenseBlock retB = new DenseBlockFP64(new int[] {retRows, retCols}, vals);
+		final MatrixBlock ret = new MatrixBlock(retRows, retCols, retB);
+
+		final double[] mV = m.getDenseBlockValues();
+
+		ret.setNonZeros(retRows * retCols);
+		for(int k = rl; k < ru; k++) {
+			final int offT = ret.getNumColumns() * k;
+			final int offM = m.getNumColumns() * k;
+			for(int i = 0; i < _numRows; i++) {
+				int index = _data.getIndex(i);
+				vals[offT + index] += mV[offM + i];
+			}
+		}
+		return ret;
 	}
 
 	/**

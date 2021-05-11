@@ -37,24 +37,23 @@ public abstract class ABitmap {
 	/** Bitmaps (as lists of offsets) for each of the values. */
 	protected IntArrayList[] _offsetsLists;
 
-	/** int specifying the number of zero value groups contained in the rows. */
+	/** int specifying the number of zero value tuples contained in the rows. */
 	protected final int _numZeros;
 
 	public ABitmap(int numCols, IntArrayList[] offsetsLists, int rows) {
 		_numCols = numCols;
 		int offsetsTotal = 0;
-		if(offsetsLists != null){
-			for(IntArrayList a: offsetsLists){
+		if(offsetsLists != null) {
+			for(IntArrayList a : offsetsLists)
 				offsetsTotal += a.size();
-			}
+
 			_numZeros = rows - offsetsTotal;
-			if(_numZeros < 0){
+			if(_numZeros < 0)
 				throw new DMLCompressionException("Error in constructing bitmap");
-			}
 		}
-		else{
+		else
 			_numZeros = rows;
-		}
+
 		_offsetsLists = offsetsLists;
 	}
 
@@ -85,6 +84,12 @@ public abstract class ABitmap {
 		return ret;
 	}
 
+	/**
+	 * Get the number of offsets for a specific unique offset.
+	 * 
+	 * @param ix The offset index.
+	 * @return The number of offsets for this unique value.
+	 */
 	public int getNumOffsets(int ix) {
 		return _offsetsLists[ix].size();
 	}

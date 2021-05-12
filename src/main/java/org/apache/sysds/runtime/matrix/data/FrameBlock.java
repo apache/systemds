@@ -651,6 +651,20 @@ public class FrameBlock implements CacheBlock, Externalizable  {
 	}
 
 	/**
+	 * Get a row iterator over the frame where all selected fields are
+	 * encoded as strings independent of their value types.
+	 *
+	 * @param rl lower row index
+	 * @param ru upper row index
+	 * @param colID columnID, 1-based
+	 * @return string array iterator
+	 */
+	public Iterator<String[]> getStringRowIterator(int rl, int ru, int colID) {
+		return new StringRowIterator(rl, ru, new int[] {colID});
+	}
+
+
+	/**
 	 * Get a row iterator over the frame where all fields are encoded
 	 * as boxed objects according to their value types.
 	 *

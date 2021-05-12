@@ -25,6 +25,10 @@ import java.io.Externalizable;
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
+import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -46,6 +50,10 @@ public abstract class ColumnEncoder implements Externalizable, Encoder, Comparab
 	}
 
 	public abstract MatrixBlock apply(MatrixBlock in, MatrixBlock out, int outputCol);
+
+	public abstract MatrixBlock apply(MatrixBlock in, MatrixBlock out, int outputCol, int rowStart, int blk);
+
+	public abstract MatrixBlock apply(FrameBlock in, MatrixBlock out, int outputCol, int rowStart, int blk);
 
 	/**
 	 * Indicates if this encoder is applicable, i.e, if there is a column to encode.
@@ -155,6 +163,11 @@ public abstract class ColumnEncoder implements Externalizable, Encoder, Comparab
 	public int compareTo(ColumnEncoder o) {
 		return Integer.compare(getEncoderType(this), getEncoderType(o));
 	}
+
+	public abstract List<Callable<Object>> getPartialBuildTasks(FrameBlock in, int blockSize);
+
+	public abstract void mergeBuildPartial(List<Future<Object>> futurePartials, int start, int end)
+		throws ExecutionException, InterruptedException;
 
 	public enum EncoderType {
 		Recode, FeatureHash, PassThrough, Bin, Dummycode, Omit, MVImpute, Composite

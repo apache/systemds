@@ -23,8 +23,13 @@ import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
@@ -41,6 +46,9 @@ public class ColumnEncoderComposite extends ColumnEncoder {
 
 	private List<ColumnEncoder> _columnEncoders = null;
 	private FrameBlock _meta = null;
+
+	// map to keep track of which encoder has how many build tasks
+	private Map<ColumnEncoder, Integer> _partialBuildTaskMap;
 
 	public ColumnEncoderComposite() {
 		super(-1);
@@ -93,6 +101,32 @@ public class ColumnEncoderComposite extends ColumnEncoder {
 	}
 
 	@Override
+	public List<Callable<Object>> getPartialBuildTasks(FrameBlock in, int blockSize) {
+		List<Callable<Object>> tasks = new ArrayList<>();
+		_partialBuildTaskMap = new HashMap<>();
+		for(ColumnEncoder columnEncoder : _columnEncoders) {
+			List<Callable<Object>> _tasks = columnEncoder.getPartialBuildTasks(in, blockSize);
+			if(_tasks != null)
+				tasks.addAll(_tasks);
+			_partialBuildTaskMap.put(columnEncoder, _tasks != null ? _tasks.size() : 0);
+		}
+		return tasks.size() == 0 ? null : tasks;
+	}
+
+	@Override
+	public void mergeBuildPartial(List<Future<Object>> futurePartials, int start, int end)
+		throws ExecutionException, InterruptedException {
+		int endLocal;
+		for(ColumnEncoder columnEncoder : _columnEncoders) {
+			endLocal = start + _partialBuildTaskMap.get(columnEncoder);
+			columnEncoder.mergeBuildPartial(futurePartials, start, endLocal);
+			start = endLocal;
+			if(start >= end)
+				break;
+		}
+	}
+
+	@Override
 	public void prepareBuildPartial() {
 		for(ColumnEncoder columnEncoder : _columnEncoders)
 			columnEncoder.prepareBuildPartial();
@@ -106,14 +140,24 @@ public class ColumnEncoderComposite extends ColumnEncoder {
 
 	@Override
 	public MatrixBlock apply(FrameBlock in, MatrixBlock out, int outputCol) {
+		return apply(in, out, outputCol, 0, -1);
+	}
+
+	@Override
+	public MatrixBlock apply(MatrixBlock in, MatrixBlock out, int outputCol) {
+		return apply(in, out, outputCol, 0, -1);
+	}
+
+	@Override
+	public MatrixBlock apply(FrameBlock in, MatrixBlock out, int outputCol, int rowStart, int blk) {
 		try {
 			for(int i = 0; i < _columnEncoders.size(); i++) {
 				if(i == 0) {
 					// 1. encoder writes data into MatrixBlock Column all others use this column for further encoding
-					_columnEncoders.get(i).apply(in, out, outputCol);
+					_columnEncoders.get(i).apply(in, out, outputCol, rowStart, blk);
 				}
 				else {
-					_columnEncoders.get(i).apply(out, out, outputCol);
+					_columnEncoders.get(i).apply(out, out, outputCol, rowStart, blk);
 				}
 			}
 		}
@@ -125,20 +169,20 @@ public class ColumnEncoderComposite extends ColumnEncoder {
 	}
 
 	@Override
-	public MatrixBlock apply(MatrixBlock in, MatrixBlock out, int outputCol) {
+	public MatrixBlock apply(MatrixBlock in, MatrixBlock out, int outputCol, int rowStart, int blk) {
 		try {
 			for(int i = 0; i < _columnEncoders.size(); i++) {
 				if(i == 0) {
 					// 1. encoder writes data into MatrixBlock Column all others use this column for further encoding
-					_columnEncoders.get(i).apply(in, out, outputCol);
+					_columnEncoders.get(i).apply(in, out, outputCol, rowStart, blk);
 				}
 				else {
-					_columnEncoders.get(i).apply(out, out, outputCol);
+					_columnEncoders.get(i).apply(out, out, outputCol, rowStart, blk);
 				}
 			}
 		}
 		catch(Exception ex) {
-			LOG.error("Failed to transform-apply frame with \n" + this);
+			LOG.error("Failed to transform-apply matrix with \n" + this);
 			throw ex;
 		}
 		return in;

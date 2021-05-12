@@ -24,7 +24,8 @@ m_xgboost = function(Matrix[Double] X, Matrix[Double] Y) return (Matrix[Double] 
    target_feature = Y[,1];
    M = matrix(1,rows=6,cols=0)
 
-   # todo select feature (gini?)
+   # select feature
+   best_feature_index = findBestFeature(X, Y)
 
 
    residual_matrix = calculateResiduals(target_feature, init_prediction)
@@ -65,6 +66,26 @@ m_xgboost = function(Matrix[Double] X, Matrix[Double] Y) return (Matrix[Double] 
 
 
    print("[DEBUG] Return xgboost")
+}
+
+
+findBestFeature = function(Matrix[Double] X, Matrix[Double] y) return (Integer best_feature_index) {
+
+    # todo iterate over all features
+
+    current_feature = X[,1]
+
+    weights = lm(X=current_feature, y=y)
+    y_residual = y - current_feature %*% weights
+    avg_res = sum (y_residual) / nrow (X);
+
+    printDebug("feature res: " + avg_res)
+
+
+    # todo each feature make init prediction - average
+
+    #
+    best_feature_index = 0
 }
 
 

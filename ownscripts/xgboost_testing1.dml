@@ -5,14 +5,14 @@ full_path = "/home/d/Desktop/TU-UNI/8.SEMESTER/AMLS/systemds/"
 
 
 print("[DEBUG] starting script calling xgboost")
-X = read(full_path + "ownscripts/small_train.csv", format="csv");
-Y = read(full_path + "ownscripts/small_test.csv", format="csv");
+X = read(full_path + "ownscripts/small_X.csv", format="csv");
+y = read(full_path + "ownscripts/small_y.csv", format="csv");
 
 
 #printMatrix(X, "training set")
 #printMatrix(Y, "testing set")
 print("[DEBUG] calling xgboost")
-M = xgboost(X = X, Y = Y);
+M = xgboost(X = X, Y = y);
 
 
 print("[DEBUG] calling xgboostPredict")

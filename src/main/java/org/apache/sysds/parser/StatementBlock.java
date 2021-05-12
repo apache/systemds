@@ -183,10 +183,10 @@ public class StatementBlock extends LiveVariableAnalysis implements ParseInfo
 	public boolean isMergeableFunctionCallBlock(DMLProgram dmlProg) {
 		// check whether targetIndex stmt block is for a mergable function call
 		Statement stmt = this.getStatement(0);
-
+		
 		// Check whether targetIndex block is: control stmt block or stmt block for un-mergable function call
 		if (   stmt instanceof WhileStatement || stmt instanceof IfStatement || stmt instanceof ForStatement
-			|| stmt instanceof FunctionStatement || isMergeablePrintStatement(stmt) /*|| stmt instanceof ELStatement*/ )
+			|| stmt instanceof FunctionStatement || isMergeablePrintStatement(stmt) )
 		{
 			return false;
 		}
@@ -232,7 +232,7 @@ public class StatementBlock extends LiveVariableAnalysis implements ParseInfo
 			}
 		}
 
-		// regular function block
+		// regular statement block
 		return true;
 	}
 
@@ -360,18 +360,17 @@ public class StatementBlock extends LiveVariableAnalysis implements ParseInfo
 		ArrayList<StatementBlock> result = new ArrayList<>();
 		StatementBlock currentBlock = null;
 
-		for (int i = 0; i < body.size(); i++){
+		for (int i = 0; i < body.size(); i++) {
 			StatementBlock current = body.get(i);
 			if (current.isMergeableFunctionCallBlock(dmlProg)){
-				if (currentBlock != null) {
+				if (currentBlock != null)
 					currentBlock.addStatementBlock(current);
-				} else {
+				else
 					currentBlock = current;
-				}
-			} else {
-				if (currentBlock != null) {
+			}
+			else {
+				if (currentBlock != null)
 					result.add(currentBlock);
-				}
 				result.add(current);
 				currentBlock = null;
 			}
@@ -465,7 +464,6 @@ public class StatementBlock extends LiveVariableAnalysis implements ParseInfo
 		}
 
 		return result;
-
 	}
 	
 	public static List<StatementBlock> rHoistFunctionCallsFromExpressions(StatementBlock current, DMLProgram prog) {
@@ -634,11 +632,17 @@ public class StatementBlock extends LiveVariableAnalysis implements ParseInfo
 		List<StatementBlock> ret = new ArrayList<>();
 		StatementBlock current = new StatementBlock(sb);
 		for(Statement stmt : stmts) {
+			//cut the statement block before and after the current function
+			//(cut before is precondition for subsequent merge steps which 
+			//assume function statements as the first statement in the block)
+			boolean cut = stmt instanceof AssignmentStatement
+				&& ((AssignmentStatement)stmt).getSource() instanceof FunctionCallIdentifier;
+			if( cut && current.getNumStatements() > 0 ) { //before
+				ret.add(current);
+				current = new StatementBlock(sb);
+			}
 			current.addStatement(stmt);
-			//cut the statement block after the current function
-			if( stmt instanceof AssignmentStatement
-				&& ((AssignmentStatement)stmt).getSource()
-				instanceof FunctionCallIdentifier ) {
+			if( cut ) { //after
 				ret.add(current);
 				current = new StatementBlock(sb);
 			}

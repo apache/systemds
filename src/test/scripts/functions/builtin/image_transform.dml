@@ -30,8 +30,9 @@ c = ifdef($c, 0)
 d = ifdef($d, 0)
 e = ifdef($e, 1)
 f = ifdef($f, 0)
+fill_value = ifdef($fill_value, 0)
 
 input = matrix(input, rows=height, cols=width)
 
-transformed = img_transform(input, out_w, out_h, a, b, c, d, e, f)
+transformed = img_transform(input, out_w, out_h, a, b, c, d, e, f, fill_value)
 write(transformed, $out_file)

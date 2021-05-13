@@ -19,7 +19,7 @@
 #
 #-------------------------------------------------------------
 
-m_img_transform = function(Matrix[Double] img_in, Integer out_w, Integer out_h, Double a, Double b, Double c, Double d, Double e, Double f) return (Matrix[Double] img_out) {
+m_img_transform = function(Matrix[Double] img_in, Integer out_w, Integer out_h, Double a, Double b, Double c, Double d, Double e, Double f, Double fill_value) return (Matrix[Double] img_out) {
   # Applies an affine transformation to the input image.
   # The parameters a-f are the first two rows of the affine transformation matrix.
   divisor = a * e - b * d
@@ -39,17 +39,17 @@ m_img_transform = function(Matrix[Double] img_in, Integer out_w, Integer out_h, 
     T_inv[2, 3] = (c * d - a * f) / divisor
     T_inv[3, 3] = 1
 
-    img_out = matrix(0, rows=out_h, cols=out_w)
+    img_out = matrix(fill_value, rows=out_h, cols=out_w)
     for (x in 1:out_w) {
       for (y in 1:out_h) {
         m = matrix(1, rows=3, cols=1)
-        m[1, 1] = x - 1
-        m[2, 1] = y - 1
-        coords = round(T_inv %*% m) + 1
+        m[1, 1] = x - 0.5
+        m[2, 1] = y - 0.5
+        coords = floor(T_inv %*% m) + 1
         src_x = as.scalar(coords[1, 1])
         src_y = as.scalar(coords[2, 1])
         if ((0 < src_x) & (src_x <= orig_w) & (0 < src_y) & (src_y <= orig_h)) {
-          img_out[x, y] = img_in[src_x, src_y]
+          img_out[y, x] = img_in[src_y, src_x]
         }
       }
     }

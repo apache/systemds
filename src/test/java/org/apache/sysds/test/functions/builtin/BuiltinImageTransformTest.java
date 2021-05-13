@@ -34,17 +34,17 @@ public class BuiltinImageTransformTest extends AutomatedTestBase {
 	private final static String TEST_CLASS_DIR = TEST_DIR + BuiltinImageTransformTest.class.getSimpleName() + "/";
 
 	private final static double eps = 1e-10;
-	private final static int rows = 512;
-	private final static int cols = 512;
+	private final static int rows = 135;
+	private final static int cols = 500;
 	private final static double spSparse = 0.1;
 	private final static double spDense = 0.9;
 	// rotate 30 degrees around the center
 	private final static double a = Math.sqrt(3) / 2;
-	private final static double b = -1 / 2;
-	private final static double c = cols / 4 * (3 - Math.sqrt(3));
-	private final static double d = 1 / 2;
+	private final static double b = -1.0 / 2.0;
+	private final static double c = cols / 4.0 * (3 - Math.sqrt(3));
+	private final static double d = 1.0 / 2.0;
 	private final static double e = Math.sqrt(3) / 2;
-	private final static double f = rows / 4 * (1 - Math.sqrt(3));
+	private final static double f = rows / 4.0 * (1 - Math.sqrt(3));
 
 	@Override public void setUp() {
 		addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[] {"B"}));
@@ -64,6 +64,25 @@ public class BuiltinImageTransformTest extends AutomatedTestBase {
 
 	@Test public void testImageTransformMatrixSparseSP() {
 		runImageTransformTest(false, ExecType.SPARK);
+	}
+
+	@Test public void testImageTranslatePillow() throws Exception {
+		loadTestConfiguration(getTestConfiguration(TEST_NAME));
+		final int w = 500, h = 135, out_w = 550, out_h = 330;
+		final double fill_value = 128.0;
+		double[][] input = TestUtils.readMatrixFromFile(this.getClass().getResource("ImageTransformInput"), h, w);
+		double[][] reference = TestUtils.readMatrixFromFile(this.getClass().getResource("ImageTransformTransformed"), out_h, out_w);
+		String HOME = SCRIPT_DIR + TEST_DIR;
+		fullDMLScriptName = HOME + TEST_NAME + ".dml";
+		programArgs = new String[] {"-nvargs", "in_file=" + input("A"), "out_file=" + output("B"), "width=" + cols,
+				"height=" + rows, "out_w=" + out_w, "out_h=" + out_h,
+				"a=" + a, "b=" + b, "c=" + c, "d=" + d, "e=" + e, "f=" + f, "fill_value=" + fill_value};
+		writeInputMatrixWithMTD("A", input, true);
+		runTest(true, false, null, -1);
+
+		HashMap<MatrixValue.CellIndex, Double> dmlfile = readDMLMatrixFromOutputDir("B");
+		double[][] dml_res = TestUtils.convertMatrix(dmlfile, out_h, out_w);
+		TestUtils.compareMatrices(reference, dml_res, eps, "Pillow vs. DML");
 	}
 
 	private void runImageTransformTest(boolean sparse, ExecType instType) {

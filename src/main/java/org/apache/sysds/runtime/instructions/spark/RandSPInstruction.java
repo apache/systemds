@@ -405,8 +405,9 @@ public class RandSPInstruction extends UnarySPInstruction {
 		JavaPairRDD<Long, FrameBlock> out = seedsRDD
 			.mapToPair(new GenerateRandomFrameBlock(lrows, lcols, brlen, vt, data));
 
-		//step 5: output handling
+		//step 5: output handling, incl meta data
 		sec.setRDDHandleForVariable(output.getName(), out);
+		sec.getDataCharacteristics(output.getName()).set(tmp);
 	}
 
 	private void generateRandData(SparkExecutionContext sec) {

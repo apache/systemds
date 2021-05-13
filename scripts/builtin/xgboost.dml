@@ -15,29 +15,27 @@
 #     If j is a leaf node 1 if j is impure and the number of samples at j > threshold, otherwise 0
 # -------------------------------------------------------------------------------------------
 
-m_xgboost = function(Matrix[Double] X, Matrix[Double] Y) return (Matrix[Double] M) {
+m_xgboost = function(Matrix[Double] X, Matrix[Double] y) return (Matrix[Double] M) {
     print("[DEBUG] inside xgboost")
 
    # test if input correct
-   assert(nrow(X) == nrow(Y))
+   assert(nrow(X) == nrow(y))
+   assert(ncol(y) == 1)
    init_prediction = 0.5 # todo init prediction wirklich immer 0.5?
-   target_feature = Y[,1];
    M = matrix(1,rows=6,cols=0)
 
    # select feature
-   best_feature_index = findBestFeature(X, Y)
+   best_feature_index = findBestFeature(X, y, FALSE)
 
 
-   residual_matrix = calculateResiduals(target_feature, init_prediction)
-
+   residual_matrix = calculateResiduals(y, init_prediction)
    printMatrix(residual_matrix, "residual matrix")
-
    first_tree_matrix = matrix(0, rows=6, cols=3)
    similarity_score = calculateSimilarityScore(residual_matrix)
    printDebug(similarity_score)
 
    # split dataset in 2 branches. try out each average value of 2 datapoints and calc sim- score for each new leaf
-   best_split = findBestSplit(target_feature, similarity_score)
+   best_split = findBestSplit(y, similarity_score)
 
    printDebug("Best split is " + toString(best_split))
 
@@ -65,27 +63,38 @@ m_xgboost = function(Matrix[Double] X, Matrix[Double] Y) return (Matrix[Double] 
 
 
 
+
    print("[DEBUG] Return xgboost")
 }
 
 
-findBestFeature = function(Matrix[Double] X, Matrix[Double] y) return (Integer best_feature_index) {
+findBestFeature = function(Matrix[Double] X, Matrix[Double] y, boolean verbose) return (Integer lowest_residuals_index) {
 
-    # todo iterate over all features
+   printDebug("Finding Best feature")
 
-    current_feature = X[,1]
+   lowest_residuals = 0
+   lowest_residuals_index = 1
 
-    weights = lm(X=current_feature, y=y)
-    y_residual = y - current_feature %*% weights
-    avg_res = sum (y_residual) / nrow (X);
+   for(i in 1: ncol(X)) {
+        current_feature = X[,i]
+        weights = lm(X=current_feature, y=y, verbose=verbose)
+        y_residual = y - current_feature %*% weights
+        avg_res = abs(sum (y_residual) / nrow (X));
 
-    printDebug("feature res: " + avg_res)
+        if(verbose) {
+            printDebug("currentFeature col " + toString(i))
+            printDebug("weights of lm " + toString(weights))
+            printDebug("feature residuals: " + avg_res)
+            print("--------------------------------------")
+        }
 
+        if(i == 1 | avg_res < lowest_residuals) {
+            lowest_residuals = avg_res
+            lowest_residuals_index = i
+        }
+   }
+   printDebug("best feature for root note is: " + toString(lowest_residuals_index) + " with residuals: " + toString(lowest_residuals))
 
-    # todo each feature make init prediction - average
-
-    #
-    best_feature_index = 0
 }
 
 

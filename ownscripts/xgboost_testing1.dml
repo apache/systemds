@@ -12,7 +12,7 @@ y = read(full_path + "ownscripts/small_y.csv", format="csv");
 #printMatrix(X, "training set")
 #printMatrix(Y, "testing set")
 print("[DEBUG] calling xgboost")
-M = xgboost(X = X, Y = y);
+M = xgboost(X = X, y = y);
 
 
 print("[DEBUG] calling xgboostPredict")

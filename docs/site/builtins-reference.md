@@ -33,7 +33,7 @@ limitations under the License.
     * [`csplineDS`-Function](#csplineDS-function)
     * [`cvlm`-Function](#cvlm-function)
     * [`DBSCAN`-Function](#DBSCAN-function)
-    * [`decisionTree`-Function](#decision-tree)
+    * [`decisionTree`-Function](#decisiontree-function)
     * [`discoverFD`-Function](#discoverFD-function)
     * [`dist`-Function](#dist-function)
     * [`dmv`-Function](#dmv-function)

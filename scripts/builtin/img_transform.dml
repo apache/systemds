@@ -52,6 +52,25 @@ m_img_transform = function(Matrix[Double] img_in, Integer out_w, Integer out_h, 
           img_out[y, x] = img_in[src_y, src_x]
         }
       }
+      m = matrix(1, rows=3, cols=out_h)
+      m[1, 1:out_h] = x - 0.5
+      m[2, 1:out_h] = seq(0.5, out_h - 0.5)
+      coords = floor(T_inv %*% m) + 1
+
+      #lower_bound = matrix(0, rows=2, cols=1)
+      #upper_bound = matrix(0, rows=2, cols=1)
+      #upper_bound[1, 1] = orig_w
+      #upper_bound[2, 1] = orig_h
+      #mask = (lower_bound < coords) & (coords <= upper_bound)
+      #mask = mask[1,] & mask[2,]
+
+      #ix = order(target=t(coords), by=seq(1, 2), index.return=TRUE)
+      #coords2 = order(target=t(coords), by=seq(1, 2))
+      #p = table(coords2[1,], coords2[2,])
+      #image2 = matrix(p * img_in, rows=1, cols=orig_w*orig_h)
+      #p2 = matrix(p, rows=1, cols=orig_w*orig_h)
+      #data = removeEmpty(target=image2, margin="cols", select=p2)
+      #img_out[1:out_h, x] = table(seq(1, orig_h), ix) %*% data
     }
   }
 }

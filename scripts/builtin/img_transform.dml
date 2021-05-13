@@ -39,38 +39,20 @@ m_img_transform = function(Matrix[Double] img_in, Integer out_w, Integer out_h, 
     T_inv[2, 3] = (c * d - a * f) / divisor
     T_inv[3, 3] = 1
 
-    img_out = matrix(fill_value, rows=out_h, cols=out_w)
-    for (x in 1:out_w) {
-      for (y in 1:out_h) {
-        m = matrix(1, rows=3, cols=1)
-        m[1, 1] = x - 0.5
-        m[2, 1] = y - 0.5
-        coords = floor(T_inv %*% m) + 1
-        src_x = as.scalar(coords[1, 1])
-        src_y = as.scalar(coords[2, 1])
-        if ((0 < src_x) & (src_x <= orig_w) & (0 < src_y) & (src_y <= orig_h)) {
-          img_out[y, x] = img_in[src_y, src_x]
-        }
+    img_out = matrix(fill_value, rows=out_w*out_h, cols=1)
+    coords = matrix(1, rows=3, cols=out_w*out_h)
+    coords[1] = t((seq(0, out_w*out_h-1) %% out_w) + 0.5)
+    coords[2] = t((seq(0, out_w*out_h-1) %/% out_w) + 0.5)
+    coords = floor(T_inv %*% coords) + 1
+
+    parfor (cell in 1:(out_w*out_h)) {
+      inx = as.scalar(coords[1, cell])
+      iny = as.scalar(coords[2, cell])
+      if ((0 < inx) & (inx <= orig_w) & (0 < iny) & (iny <= orig_h)) {
+        img_out[cell] = img_in[iny, inx]
       }
-      m = matrix(1, rows=3, cols=out_h)
-      m[1, 1:out_h] = x - 0.5
-      m[2, 1:out_h] = seq(0.5, out_h - 0.5)
-      coords = floor(T_inv %*% m) + 1
-
-      #lower_bound = matrix(0, rows=2, cols=1)
-      #upper_bound = matrix(0, rows=2, cols=1)
-      #upper_bound[1, 1] = orig_w
-      #upper_bound[2, 1] = orig_h
-      #mask = (lower_bound < coords) & (coords <= upper_bound)
-      #mask = mask[1,] & mask[2,]
-
-      #ix = order(target=t(coords), by=seq(1, 2), index.return=TRUE)
-      #coords2 = order(target=t(coords), by=seq(1, 2))
-      #p = table(coords2[1,], coords2[2,])
-      #image2 = matrix(p * img_in, rows=1, cols=orig_w*orig_h)
-      #p2 = matrix(p, rows=1, cols=orig_w*orig_h)
-      #data = removeEmpty(target=image2, margin="cols", select=p2)
-      #img_out[1:out_h, x] = table(seq(1, orig_h), ix) %*% data
     }
+
+    img_out = matrix(img_out, rows=out_h, cols=out_w)
   }
 }

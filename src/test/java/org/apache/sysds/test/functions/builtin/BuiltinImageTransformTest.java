@@ -24,6 +24,7 @@ import org.apache.sysds.runtime.matrix.data.MatrixValue;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.HashMap;
@@ -58,10 +59,12 @@ public class BuiltinImageTransformTest extends AutomatedTestBase {
 		runImageTransformTest(true, ExecType.CP);
 	}
 
+	@Ignore
 	@Test public void testImageTransformMatrixDenseSP() {
 		runImageTransformTest(false, ExecType.SPARK);
 	}
 
+	@Ignore
 	@Test public void testImageTransformMatrixSparseSP() {
 		runImageTransformTest(false, ExecType.SPARK);
 	}

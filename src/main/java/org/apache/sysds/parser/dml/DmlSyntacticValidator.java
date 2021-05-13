@@ -1116,7 +1116,9 @@ public class DmlSyntacticValidator implements DmlListener {
 		//NOTE: the use of File.separator would lead to OS-specific inconsistencies,
 		//which is problematic for second order functions such as eval or paramserv.
 		//Since this is unnecessary, we now use "/" independent of the use OS.
-		return !new File(filePath).isAbsolute() ? workingDir + "/" + filePath : filePath;
+		String prefix = workingDir + "/";
+		return new File(filePath).isAbsolute() | filePath.startsWith(prefix) ?
+			filePath : prefix + filePath;
 	}
 	
 	public String getNamespaceSafe(Token ns) {

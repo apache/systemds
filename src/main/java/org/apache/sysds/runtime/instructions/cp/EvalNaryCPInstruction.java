@@ -62,9 +62,11 @@ public class EvalNaryCPInstruction extends BuiltinNaryCPInstruction {
 		//1. get the namespace and func
 		String funcName = ec.getScalarInput(inputs[0]).getStringValue();
 		String nsName = null; //default namespace
-		if( funcName.contains(Program.KEY_DELIM) )
-			throw new DMLRuntimeException("Eval calls to '"+funcName+"', i.e., a function outside "
-				+ "the default "+ "namespace, are not supported yet. Please call the function directly.");
+		if( funcName.contains(Program.KEY_DELIM) ) {
+			String[] parts = DMLProgram.splitFunctionKey(funcName);
+			funcName = parts[1];
+			nsName = parts[0];
+		}
 		
 		// bound the inputs to avoiding being deleted after the function call
 		CPOperand[] boundInputs = Arrays.copyOfRange(inputs, 1, inputs.length);

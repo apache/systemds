@@ -33,6 +33,7 @@ limitations under the License.
     * [`csplineDS`-Function](#csplineDS-function)
     * [`cvlm`-Function](#cvlm-function)
     * [`DBSCAN`-Function](#DBSCAN-function)
+    * [`decisionTree`-Function](#decision-tree)
     * [`discoverFD`-Function](#discoverFD-function)
     * [`dist`-Function](#dist-function)
     * [`dmv`-Function](#dmv-function)
@@ -373,6 +374,52 @@ Y = dbscan(X = X, eps = 2.5, minPts = 5)
 X = rand(rows=1780, cols=180, min=1, max=20) 
 dbscan(X = X, eps = 2.5, minPts = 360)
 ```
+
+## `decisionTree`-Function
+
+The `decisionTree()` implements the classification tree with both scale and categorical
+features.
+
+### Usage
+
+```r
+M = decisionTree(X, Y, R);
+```
+
+### Arguments
+
+| Name       | Type            | Default    | Description |
+| :--------- | :-------------- | :--------- | :---------- |
+| X          | Matrix[Double]  | required   | Feature matrix X; note that X needs to be both recoded and dummy coded |
+| Y        | Matrix[Double]    | required   | Label matrix Y; note that Y needs to be both recoded and dummy coded |
+| R        | Matrix[Double]    | " "   | Matrix R which for each feature in X contains the following information <br> - R[1,]: Row Vector which indicates if feature vector is scalar or categorical. 1 indicates <br> a scalar feature vector, other positive Integers indicate the number of categories <br> If R is not provided by default all variables are assumed to be scale |
+| bins | Integer | `20` | Number of equiheight bins per scale feature to choose thresholds |
+| depth | Integer | `25` | Maximum depth of the learned tree |
+| verbose | Boolean | `FALSE` | boolean specifying if the algorithm should print information while executing |
+
+### Returns
+
+| Name | Type        | Description |
+| :--- | :-----------| :---------- |
+| M | Matrix[Double] | Each column of the matrix corresponds to a node in the learned tree |
+
+### Example
+
+```r
+X = matrix("4.5 4.0 3.0 2.8 3.5
+            1.9 2.4 1.0 3.4 2.9
+            2.0 1.1 1.0 4.9 3.4
+            2.3 5.0 2.0 1.4 1.8
+            2.1 1.1 3.0 1.0 1.9", rows=5, cols=5)
+Y = matrix("1.0
+            0.0
+            0.0
+            1.0
+            0.0", rows=5, cols=1)
+R = matrix("1.0 1.0 3.0 1.0 1.0", rows=1, cols=5)
+M = decisionTree(X = X, Y = Y, R = R)
+```
+
 
 ## `discoverFD`-Function
 

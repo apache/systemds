@@ -187,10 +187,18 @@ public class ColGroupSDCSingleZeros extends ColGroupValue {
 		final double vals = _dict.aggregateTuples(builtin, _colIndexes.length)[0];
 		final AIterator it = _indexes.getIterator();
 		it.skipTo(rl);
-		while(it.hasNext() && it.value() < ru) {
-			final int idx = it.value();
-			it.next();
-			c[idx] = builtin.execute(c[idx], vals);
+		int rix = rl;
+		for(; rix < ru && it.hasNext(); rix++) {
+			if(it.value() != rix)
+				c[rix] = builtin.execute(c[rix], 0);
+			else {
+				c[rix] = builtin.execute(c[rix], vals);
+				it.next();
+			}
+		}
+
+		for(; rix < ru; rix++) {
+			c[rix] = builtin.execute(c[rix], 0);
 		}
 	}
 
@@ -260,7 +268,7 @@ public class ColGroupSDCSingleZeros extends ColGroupValue {
 
 	@Override
 	public long estimateInMemorySize() {
-		long size = ColGroupSizes.estimateInMemorySizeGroupValue(_colIndexes.length, getNumValues(), isLossy());
+		long size = super.estimateInMemorySize();
 		size += _indexes.getInMemorySize();
 		return size;
 	}
@@ -450,7 +458,7 @@ public class ColGroupSDCSingleZeros extends ColGroupValue {
 	}
 
 	@Override
-	public Dictionary preAggregateThatSDCSingleStructure(ColGroupSDCSingle that, Dictionary ret, boolean preModified){
+	public Dictionary preAggregateThatSDCSingleStructure(ColGroupSDCSingle that, Dictionary ret, boolean preModified) {
 		throw new NotImplementedException();
 	}
 

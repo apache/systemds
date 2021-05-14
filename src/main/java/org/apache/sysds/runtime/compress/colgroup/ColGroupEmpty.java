@@ -83,10 +83,6 @@ public class ColGroupEmpty extends ColGroupCompressed {
 		return ColGroupType.EMPTY;
 	}
 
-	@Override
-	public long estimateInMemorySize() {
-		return ColGroupSizes.estimateInMemorySizeEMPTY(getNumCols());
-	}
 
 	@Override
 	public void decompressToBlockSafe(MatrixBlock target, int rl, int ru, int offT, double[] values) {

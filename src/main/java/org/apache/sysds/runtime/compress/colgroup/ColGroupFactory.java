@@ -34,9 +34,10 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.DMLCompressionException;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.CompressionSettings;
+import org.apache.sysds.runtime.compress.cocode.PlanningCoCoder.PartitionerType;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup.CompressionType;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
-import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
+import org.apache.sysds.runtime.compress.colgroup.dictionary.DictionaryFactory;
 import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory;
 import org.apache.sysds.runtime.compress.colgroup.tree.AInsertionSorter;
@@ -47,7 +48,6 @@ import org.apache.sysds.runtime.compress.estim.CompressedSizeInfo;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup;
 import org.apache.sysds.runtime.compress.lib.BitmapEncoder;
 import org.apache.sysds.runtime.compress.utils.ABitmap;
-import org.apache.sysds.runtime.compress.utils.Bitmap;
 import org.apache.sysds.runtime.compress.utils.IntArrayList;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
@@ -155,8 +155,9 @@ public class ColGroupFactory {
 
 	private static Collection<AColGroup> compressColGroup(MatrixBlock in, int[] colIndexes,
 		CompressionSettings compSettings) {
-		if(in.isInSparseFormat() && compSettings.transposed) {
-
+		if(in.isEmpty())
+			return Collections.singletonList(new ColGroupEmpty(colIndexes, compSettings.transposed ? in.getNumColumns(): in.getNumRows()));
+		else if(in.isInSparseFormat() && compSettings.transposed) {
 			final SparseBlock sb = in.getSparseBlock();
 			for(int col : colIndexes)
 				if(sb.isEmpty(col))
@@ -191,7 +192,7 @@ public class ColGroupFactory {
 
 	private static AColGroup compressColGroupForced(MatrixBlock in, int[] colIndexes,
 		CompressionSettings compSettings) {
-			
+
 		ABitmap ubm = BitmapEncoder.extractBitmap(colIndexes, in, compSettings.transposed);
 
 		CompressedSizeEstimator estimator = new CompressedSizeEstimatorExact(in, compSettings);
@@ -200,7 +201,8 @@ public class ColGroupFactory {
 			estimator.estimateCompressedColGroupSize(ubm, colIndexes), compSettings.validCompressions);
 
 		int numRows = compSettings.transposed ? in.getNumColumns() : in.getNumRows();
-		return compress(colIndexes, numRows, ubm, sizeInfo.getBestCompressionType(), compSettings, in);
+		return compress(colIndexes, numRows, ubm, sizeInfo.getBestCompressionType(compSettings), compSettings, in,
+			sizeInfo.getTupleSparsity());
 	}
 
 	// private static AColGroup compressColGroupCorrecting(MatrixBlock in,
@@ -275,17 +277,21 @@ public class ColGroupFactory {
 	 * @param compType       The CompressionType selected
 	 * @param cs             The compression Settings used for the given compression
 	 * @param rawMatrixBlock The copy of the original input (maybe transposed) MatrixBlock
+	 * @param tupleSparsity  The sparsity of the ubs entries.
 	 * @return A Compressed ColGroup
 	 */
 	public static AColGroup compress(int[] colIndexes, int rlen, ABitmap ubm, CompressionType compType,
-		CompressionSettings cs, MatrixBlock rawMatrixBlock) {
+		CompressionSettings cs, MatrixBlock rawMatrixBlock, double tupleSparsity) {
+
+		if(compType == CompressionType.UNCOMPRESSED && cs.columnPartitioner == PartitionerType.COST_MATRIX_MULT)
+			compType = CompressionType.DDC;
 
 		final IntArrayList[] of = ubm.getOffsetList();
 
 		if(of == null)
 			return new ColGroupEmpty(colIndexes, rlen);
 		else if(of.length == 1 && of[0].size() == rlen)
-			return new ColGroupConst(colIndexes, rlen, ADictionary.getDictionary(ubm));
+			return new ColGroupConst(colIndexes, rlen, DictionaryFactory.create(ubm));
 
 		if(LOG.isTraceEnabled())
 			LOG.trace("compressing to: " + compType);
@@ -295,13 +301,13 @@ public class ColGroupFactory {
 
 			switch(compType) {
 				case DDC:
-					return compressDDC(colIndexes, rlen, ubm, cs);
+					return compressDDC(colIndexes, rlen, ubm, cs, tupleSparsity);
 				case RLE:
-					return compressRLE(colIndexes, rlen, ubm, cs);
+					return compressRLE(colIndexes, rlen, ubm, cs, tupleSparsity);
 				case OLE:
-					return compressOLE(colIndexes, rlen, ubm, cs);
+					return compressOLE(colIndexes, rlen, ubm, cs, tupleSparsity);
 				case SDC:
-					return compressSDC(colIndexes, rlen, ubm, cs);
+					return compressSDC(colIndexes, rlen, ubm, cs, tupleSparsity);
 				case UNCOMPRESSED:
 					return new ColGroupUncompressed(colIndexes, rawMatrixBlock, cs.transposed);
 				default:
@@ -316,7 +322,8 @@ public class ColGroupFactory {
 		}
 	}
 
-	private static AColGroup compressSDC(int[] colIndexes, int rlen, ABitmap ubm, CompressionSettings cs) {
+	private static AColGroup compressSDC(int[] colIndexes, int rlen, ABitmap ubm, CompressionSettings cs,
+		double tupleSparsity) {
 
 		int numZeros = (int) ((long) rlen - (int) ubm.getNumOffsets());
 		int largestOffset = 0;
@@ -330,17 +337,17 @@ public class ColGroupFactory {
 			index++;
 		}
 		AColGroup cg;
-		ADictionary dict = new Dictionary(((Bitmap) ubm).getValues());
+		ADictionary dict = DictionaryFactory.create(ubm, tupleSparsity);
 		if(numZeros >= largestOffset && ubm.getOffsetList().length == 1)
 			cg = new ColGroupSDCSingleZeros(colIndexes, rlen, dict, ubm.getOffsetList()[0].extractValues(true), null);
 		else if(ubm.getOffsetList().length == 1) {// todo
-			dict = moveFrequentToLastDictionaryEntry(dict, ubm, rlen, largestIndex);
+			dict = DictionaryFactory.moveFrequentToLastDictionaryEntry(dict, ubm, rlen, largestIndex);
 			cg = setupSingleValueSDCColGroup(colIndexes, rlen, ubm, dict);
 		}
 		else if(numZeros >= largestOffset)
 			cg = setupMultiValueZeroColGroup(colIndexes, ubm, rlen, dict);
 		else {
-			dict = moveFrequentToLastDictionaryEntry(dict, ubm, rlen, largestIndex);
+			dict = DictionaryFactory.moveFrequentToLastDictionaryEntry(dict, ubm, rlen, largestIndex);
 			cg = setupMultiValueColGroup(colIndexes, numZeros, largestOffset, ubm, rlen, largestIndex, dict);
 		}
 		return cg;
@@ -397,61 +404,16 @@ public class ColGroupFactory {
 		return new ColGroupSDCSingle(colIndexes, numRows, dict, _indexes, null);
 	}
 
-	private static ADictionary moveFrequentToLastDictionaryEntry(ADictionary dict, ABitmap ubm, int numRows,
-		int largestIndex) {
-		final double[] dictValues = dict.getValues();
-		final int zeros = numRows - (int) ubm.getNumOffsets();
-		final int nCol = ubm.getNumColumns();
-		final int offsetToLargest = largestIndex * nCol;
-
-		if(zeros == 0) {
-			final double[] swap = new double[nCol];
-			System.arraycopy(dictValues, offsetToLargest, swap, 0, nCol);
-			for(int i = offsetToLargest; i < dictValues.length - nCol; i++) {
-				dictValues[i] = dictValues[i + nCol];
-			}
-			System.arraycopy(swap, 0, dictValues, dictValues.length - nCol, nCol);
-			return dict;
-		}
-
-		final int largestIndexSize = ubm.getOffsetsList(largestIndex).size();
-		final double[] newDict = new double[dictValues.length + nCol];
-
-		if(zeros > largestIndexSize)
-			System.arraycopy(dictValues, 0, newDict, 0, dictValues.length);
-		else {
-			System.arraycopy(dictValues, 0, newDict, 0, offsetToLargest);
-			System.arraycopy(dictValues, offsetToLargest + nCol, newDict, offsetToLargest,
-				dictValues.length - offsetToLargest - nCol);
-			System.arraycopy(dictValues, offsetToLargest, newDict, newDict.length - nCol, nCol);
-		}
-		return new Dictionary(newDict);
-	}
-
-	private static AColGroup compressDDC(int[] colIndexes, int rlen, ABitmap ubm, CompressionSettings cs) {
+	private static AColGroup compressDDC(int[] colIndexes, int rlen, ABitmap ubm, CompressionSettings cs,
+		double tupleSparsity) {
 
 		boolean _zeros = ubm.getNumOffsets() < (long) rlen;
-		ADictionary dict = ADictionary.getDictionary(ubm);
-		double[] values = dict.getValues();
-		if(_zeros) {
-			double[] appendedZero = new double[values.length + colIndexes.length];
-			System.arraycopy(values, 0, appendedZero, 0, values.length);
-			dict = new Dictionary(appendedZero);
-		}
-		else
-			dict = new Dictionary(values);
-
+		ADictionary dict = (_zeros) ? DictionaryFactory.createWithAppendedZeroTuple(ubm,
+			tupleSparsity) : DictionaryFactory.create(ubm, tupleSparsity);
 		int numVals = ubm.getNumValues();
 		AMapToData _data = MapToFactory.create(rlen, numVals + (_zeros ? 1 : 0));
 		if(_zeros)
 			_data.fill(numVals);
-
-		// for(int i = 0; i < numVals; i++) {
-		// int[] tmpList = ubm.getOffsetsList(i).extractValues();
-		// int tmpListSize = ubm.getNumOffsets(i);
-		// for(int k = 0; k < tmpListSize; k++)
-		// _data[tmpList[k]] = (char) i;
-		// }
 
 		for(int i = 0; i < numVals; i++) {
 			IntArrayList tmpList = ubm.getOffsetsList(i);
@@ -464,9 +426,10 @@ public class ColGroupFactory {
 
 	}
 
-	private static AColGroup compressOLE(int[] colIndexes, int rlen, ABitmap ubm, CompressionSettings cs) {
+	private static AColGroup compressOLE(int[] colIndexes, int rlen, ABitmap ubm, CompressionSettings cs,
+		double tupleSparsity) {
 
-		ADictionary dict = ADictionary.getDictionary(ubm);
+		ADictionary dict = DictionaryFactory.create(ubm, tupleSparsity);
 		ColGroupOLE ole = new ColGroupOLE(rlen);
 
 		final int numVals = ubm.getNumValues();
@@ -485,9 +448,10 @@ public class ColGroupFactory {
 		return ole;
 	}
 
-	private static AColGroup compressRLE(int[] colIndexes, int rlen, ABitmap ubm, CompressionSettings cs) {
+	private static AColGroup compressRLE(int[] colIndexes, int rlen, ABitmap ubm, CompressionSettings cs,
+		double tupleSparsity) {
 
-		ADictionary dict = ADictionary.getDictionary(ubm);
+		ADictionary dict = DictionaryFactory.create(ubm, tupleSparsity);
 		ColGroupRLE rle = new ColGroupRLE(rlen);
 		// compress the bitmaps
 		final int numVals = ubm.getNumValues();

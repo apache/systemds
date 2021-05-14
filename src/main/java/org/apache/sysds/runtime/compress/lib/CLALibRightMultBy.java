@@ -141,14 +141,14 @@ public class CLALibRightMultBy {
 			ret.setOverlapping(true);
 
 		if(containsNull) {
-			ColGroupEmpty cge = findEmptyColumnsAndMakeEmptyColGroup(retCg, ret.getNumColumns());
+			ColGroupEmpty cge = findEmptyColumnsAndMakeEmptyColGroup(retCg, ret.getNumColumns(), ret.getNumRows());
 			if(cge != null)
 				retCg.add(cge);
 		}
 		return ret;
 	}
 
-	private static ColGroupEmpty findEmptyColumnsAndMakeEmptyColGroup(List<AColGroup> colGroups, int nCols) {
+	private static ColGroupEmpty findEmptyColumnsAndMakeEmptyColGroup(List<AColGroup> colGroups, int nCols, int nRows) {
 		Set<Integer> emptyColumns = new HashSet<Integer>(nCols);
 		for(int i = 0; i < nCols; i++)
 			emptyColumns.add(i);
@@ -159,7 +159,7 @@ public class CLALibRightMultBy {
 
 		if(emptyColumns.size() != 0) {
 			int[] emptyColumnsFinal = emptyColumns.stream().mapToInt(Integer::intValue).toArray();
-			return new ColGroupEmpty(emptyColumnsFinal, colGroups.get(0).getNumRows());
+			return new ColGroupEmpty(emptyColumnsFinal, nRows);
 		}
 		else
 			return null;

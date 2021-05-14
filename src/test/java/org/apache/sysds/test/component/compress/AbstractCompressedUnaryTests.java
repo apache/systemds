@@ -228,9 +228,6 @@ public abstract class AbstractCompressedUnaryTests extends CompressedTestBase {
 			}
 
 		}
-		catch(NotImplementedException e) {
-			throw e;
-		}
 		catch(Exception e) {
 			e.printStackTrace();
 			throw new RuntimeException(this.toString() + "\n" + e.getMessage(), e);

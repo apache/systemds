@@ -113,11 +113,6 @@ public class ColGroupConst extends ColGroupValue {
 	}
 
 	@Override
-	public long estimateInMemorySize() {
-		return ColGroupSizes.estimateInMemorySizeCONST(getNumCols(), getNumValues(), isLossy());
-	}
-
-	@Override
 	public void decompressToBlockSafe(MatrixBlock target, int rl, int ru, int offT, double[] values) {
 		decompressToBlockUnSafe(target, rl, ru, offT, values);
 		target.setNonZeros(_colIndexes.length * target.getNumRows() + target.getNonZeros());

@@ -35,6 +35,7 @@ import org.apache.sysds.test.component.compress.TestConstants.ValueRange;
 import org.apache.sysds.test.component.compress.TestConstants.ValueType;
 
 public class TestBase {
+	// private static final Log LOG = LogFactory.getLog(TestBase.class.getName());
 
 	protected ValueType valType;
 	protected ValueRange valRange;
@@ -70,20 +71,23 @@ public class TestBase {
 					this.min = this.max;
 					// Do not Break, utilize the RAND afterwards.
 				case RAND:
-					this.input = TestUtils.generateTestMatrix(rows, cols, min, max, sparsity, 7);
+					this.input = TestUtils.generateTestMatrix(rows, cols, min, max, sparsity, seed);
 					break;
 				case RAND_ROUND:
-					this.input = TestUtils.round(TestUtils.generateTestMatrix(rows, cols, min, max, sparsity, 7));
+					this.input = TestUtils.round(TestUtils.generateTestMatrix(rows, cols, min, max, sparsity, seed));
 					break;
 				case OLE_COMPRESSIBLE:
 					// Note the Compressible Input generator, generates an already Transposed input
 					// normally, therefore last argument is true, to build a non transposed matrix.
 					this.input = CompressibleInputGenerator.getInputDoubleMatrix(rows, cols, CompressionType.OLE,
-						(max - min), max, min, sparsity, 7, true);
+						(max - min), max, min, sparsity, seed, true);
 					break;
 				case RLE_COMPRESSIBLE:
 					this.input = CompressibleInputGenerator.getInputDoubleMatrix(rows, cols, CompressionType.RLE,
-						(max - min), max, min, sparsity, 7, true);
+						(max - min), max, min, sparsity, seed, true);
+					break;
+				case ONE_HOT_ENCODED:
+					this.input = CompressibleInputGenerator.getInputOneHotMatrix(rows, cols, seed);
 					break;
 				default:
 					throw new NotImplementedException("Not Implemented Test Value type input generator");
@@ -94,6 +98,7 @@ public class TestBase {
 			this.compressionSettings = compressionSettings.create();
 
 			mb = DataConverter.convertToMatrixBlock(this.input);
+
 		}
 		catch(Exception e) {
 			e.printStackTrace();

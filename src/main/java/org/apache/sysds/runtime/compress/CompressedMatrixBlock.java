@@ -208,6 +208,7 @@ public class CompressedMatrixBlock extends MatrixBlock {
 		ret.allocateDenseBlock();
 		decompress(ret);
 
+		ret.examSparsity();
 		if(DMLScript.STATISTICS || LOG.isDebugEnabled()) {
 			double t = time.stop();
 			LOG.debug("decompressed block w/ k=" + 1 + " in " + t + "ms.");
@@ -256,6 +257,7 @@ public class CompressedMatrixBlock extends MatrixBlock {
 		ret.allocateDenseBlock();
 		decompress(ret, k);
 
+		ret.examSparsity();
 		if(DMLScript.STATISTICS || LOG.isDebugEnabled()) {
 			double t = time.stop();
 			LOG.debug("decompressed block w/ k=" + k + " in " + time.stop() + "ms.");

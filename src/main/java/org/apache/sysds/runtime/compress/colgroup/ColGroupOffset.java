@@ -27,6 +27,7 @@ import java.util.Arrays;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
 import org.apache.sysds.runtime.compress.utils.LinearAlgebraUtils;
 import org.apache.sysds.runtime.functionobjects.Builtin;
+import org.apache.sysds.utils.MemoryEstimates;
 
 /**
  * Base class for column groups encoded with various types of bitmap encoding.
@@ -75,11 +76,10 @@ public abstract class ColGroupOffset extends ColGroupValue {
 
 	@Override
 	public long estimateInMemorySize() {
-		// Could use a ternary operator, but it looks odd with our code formatter here.
-
-		return ColGroupSizes.estimateInMemorySizeOffset(getNumCols(), getNumValues(), _ptr.length, _data.length,
-			isLossy());
-
+		long size = super.estimateInMemorySize();
+		size += MemoryEstimates.intArrayCost(_ptr.length);
+		size += MemoryEstimates.charArrayCost(_data.length);
+		return size;
 	}
 
 	protected final void sumAllValues(double[] b, double[] c) {

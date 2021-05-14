@@ -21,7 +21,6 @@ package org.apache.sysds.runtime.compress.estim;
 
 import java.util.HashMap;
 
-import org.apache.sysds.runtime.DMLCompressionException;
 import org.apache.sysds.runtime.compress.CompressionSettings;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup.CompressionType;
 import org.apache.sysds.runtime.compress.estim.sample.HassAndStokes;
@@ -38,8 +37,8 @@ import org.apache.sysds.runtime.util.UtilFunctions;
 
 public class CompressedSizeEstimatorSample extends CompressedSizeEstimator {
 
-	private final int[] _sampleRows;
-	private final MatrixBlock _sample;
+	private int[] _sampleRows;
+	private MatrixBlock _sample;
 	private HashMap<Integer, Double> _solveCache = null;
 
 	/**
@@ -51,12 +50,16 @@ public class CompressedSizeEstimatorSample extends CompressedSizeEstimator {
 	 */
 	public CompressedSizeEstimatorSample(MatrixBlock data, CompressionSettings cs, int sampleSize) {
 		super(data, cs);
-		_sampleRows = CompressedSizeEstimatorSample.getSortedUniformSample(_numRows, sampleSize, _cs.seed);
-		_solveCache = new HashMap<>();
-		_sample = sampleData();
+		_sample = sampleData(sampleSize);
 	}
 
-	protected MatrixBlock sampleData() {
+	public MatrixBlock getSample() {
+		return _sample;
+	}
+
+	public MatrixBlock sampleData(int sampleSize) {
+		_sampleRows = CompressedSizeEstimatorSample.getSortedUniformSample(_numRows, sampleSize, _cs.seed);
+		_solveCache = new HashMap<>();
 		MatrixBlock sampledMatrixBlock;
 		if(_data.isInSparseFormat() && !_cs.transposed) {
 			sampledMatrixBlock = new MatrixBlock(_sampleRows.length, _data.getNumColumns(), true);
@@ -77,18 +80,17 @@ public class CompressedSizeEstimatorSample extends CompressedSizeEstimator {
 				select.appendValue(_sampleRows[i], 0, 1);
 
 			sampledMatrixBlock = _data.removeEmptyOperations(new MatrixBlock(), !_cs.transposed, true, select);
-
 		}
 
 		if(sampledMatrixBlock.isEmpty())
-			throw new DMLCompressionException("Empty sample block");
-
-		return sampledMatrixBlock;
+			return null;
+		else
+			return sampledMatrixBlock;
 
 	}
 
 	@Override
-	public CompressedSizeInfoColGroup estimateCompressedColGroupSize(int[] colIndexes) {
+	public CompressedSizeInfoColGroup estimateCompressedColGroupSize(int[] colIndexes, int nrUniqueUpperBound) {
 		final int sampleSize = _sampleRows.length;
 		// final int numCols = colIndexes.length;
 		final double scalingFactor = ((double) _numRows / sampleSize);
@@ -109,7 +111,7 @@ public class CompressedSizeEstimatorSample extends CompressedSizeEstimator {
 		// Estimate number of distinct values (incl fixes for anomalies w/ large sample fraction)
 		int totalCardinality = getNumDistinctValues(ubm, _numRows, sampleSize, _solveCache);
 		// Number of unique is trivially bounded by the sampled number of uniques and the number of rows.
-		totalCardinality = Math.min(Math.max(totalCardinality, fact.numVals), _numRows);
+		totalCardinality = Math.min(Math.min(Math.max(totalCardinality, fact.numVals), _numRows), nrUniqueUpperBound);
 
 		// estimate number of non-zeros (conservatively round up)
 		final double C = Math.max(1 - (double) fact.numSingle / sampleSize, (double) sampleSize / _numRows);
@@ -127,7 +129,6 @@ public class CompressedSizeEstimatorSample extends CompressedSizeEstimator {
 		for(IntArrayList a : ubm.getOffsetList())
 			if(a.size() > largestInstanceCount)
 				largestInstanceCount = a.size();
-		
 
 		final boolean zeroIsMostFrequent = largestInstanceCount == numZerosInSample;
 
@@ -307,12 +308,12 @@ public class CompressedSizeEstimatorSample extends CompressedSizeEstimator {
 	/**
 	 * Returns a sorted array of n integers, drawn uniformly from the range [0,range).
 	 * 
-	 * @param range    the range
-	 * @param smplSize sample size
+	 * @param range      the range
+	 * @param sampleSize sample size
 	 * @return sorted array of integers
 	 */
-	private static int[] getSortedUniformSample(int range, int smplSize, long seed) {
-		return UtilFunctions.getSortedSampleIndexes(range, smplSize, seed);
+	private static int[] getSortedUniformSample(int range, int sampleSize, long seed) {
+		return UtilFunctions.getSortedSampleIndexes(range, sampleSize, seed);
 	}
 
 	@Override
@@ -329,4 +330,5 @@ public class CompressedSizeEstimatorSample extends CompressedSizeEstimator {
 		sb.append(_numRows);
 		return sb.toString();
 	}
+
 }

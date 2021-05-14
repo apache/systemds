@@ -29,8 +29,8 @@ import org.apache.sysds.runtime.compress.estim.CompressedSizeInfo;
  */
 public class CoCodeStatic extends AColumnCoCoder {
 
-	protected CoCodeStatic(CompressedSizeEstimator sizeEstimator, CompressionSettings cs, int numRows) {
-		super(sizeEstimator, cs, numRows);
+	protected CoCodeStatic(CompressedSizeEstimator sizeEstimator, CompressionSettings cs) {
+		super(sizeEstimator, cs);
 	}
 
 	@Override

@@ -46,8 +46,8 @@ public class CoCodeBinPacking extends AColumnCoCoder {
 	 */
 	public static double BIN_CAPACITY = 0.000032;
 
-	protected CoCodeBinPacking(CompressedSizeEstimator sizeEstimator, CompressionSettings cs, int numRows) {
-		super(sizeEstimator, cs, numRows);
+	protected CoCodeBinPacking(CompressedSizeEstimator sizeEstimator, CompressionSettings cs) {
+		super(sizeEstimator, cs);
 	}
 
 	@Override

@@ -34,7 +34,8 @@ public class CompressedSizeEstimatorExact extends CompressedSizeEstimator {
 	}
 
 	@Override
-	public CompressedSizeInfoColGroup estimateCompressedColGroupSize(int[] colIndexes) {
+	public CompressedSizeInfoColGroup estimateCompressedColGroupSize(int[] colIndexes, int nrUniqueUpperBound) {
+		// exact estimator can ignore upper bound.
 		ABitmap entireBitMap = BitmapEncoder.extractBitmap(colIndexes, _data, _transposed);
 		return new CompressedSizeInfoColGroup(estimateCompressedColGroupSize(entireBitMap, colIndexes),
 			_cs.validCompressions);

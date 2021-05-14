@@ -198,9 +198,17 @@ public class ColGroupSDCZeros extends ColGroupValue {
 		final double[] vals = _dict.aggregateTuples(builtin, _colIndexes.length);
 		final AIterator it = _indexes.getIterator();
 		it.skipTo(rl);
-		while(it.hasNext() && it.value() < ru) {
-			final int idx = it.value();
-			c[idx] = builtin.execute(c[idx], vals[getIndex(it.getDataIndexAndIncrement())]);
+
+		int rix = rl;
+		for(; rix < ru && it.hasNext(); rix++) {
+			if(it.value() != rix)
+				c[rix] = builtin.execute(c[rix], 0);
+			else
+				c[rix] = builtin.execute(c[rix], vals[_data.getIndex(it.getDataIndexAndIncrement())]);
+		}
+
+		for(; rix < ru; rix++) {
+			c[rix] = builtin.execute(c[rix], 0);
 		}
 	}
 
@@ -277,7 +285,7 @@ public class ColGroupSDCZeros extends ColGroupValue {
 
 	@Override
 	public long estimateInMemorySize() {
-		long size = ColGroupSizes.estimateInMemorySizeGroupValue(_colIndexes.length, getNumValues(), isLossy());
+		long size = super.estimateInMemorySize();
 		size += _indexes.getInMemorySize();
 		size += _data.getInMemorySize();
 		return size;

@@ -32,12 +32,10 @@ public abstract class AColumnCoCoder {
 
 	final protected CompressedSizeEstimator _est;
 	final protected CompressionSettings _cs;
-	// final protected int _numRows;
 
-	protected AColumnCoCoder(CompressedSizeEstimator sizeEstimator, CompressionSettings cs, int numRows) {
+	protected AColumnCoCoder(CompressedSizeEstimator sizeEstimator, CompressionSettings cs) {
 		_est = sizeEstimator;
 		_cs = cs;
-		// _numRows = numRows;
 	}
 
 	/**
@@ -57,7 +55,7 @@ public abstract class AColumnCoCoder {
 	protected CompressedSizeInfoColGroup joinWithAnalysis(CompressedSizeInfoColGroup lhs,
 		CompressedSizeInfoColGroup rhs) {
 		int[] joined = Util.join(lhs.getColumns(), rhs.getColumns());
-		return _est.estimateCompressedColGroupSize(joined);
+		return _est.estimateCompressedColGroupSize(joined,( lhs.getNumVals() + 1) * (rhs.getNumVals() + 1));
 	}
 
 	protected CompressedSizeInfoColGroup joinWithoutAnalysis(CompressedSizeInfoColGroup lhs,

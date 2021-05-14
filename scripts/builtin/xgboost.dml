@@ -15,56 +15,127 @@
 #     If j is a leaf node 1 if j is impure and the number of samples at j > threshold, otherwise 0
 # -------------------------------------------------------------------------------------------
 
-m_xgboost = function(Matrix[Double] X, Matrix[Double] Y) return (Matrix[Double] M) {
+m_xgboost = function(Matrix[Double] X, Matrix[Double] y) return (Matrix[Double] M) {
     print("[DEBUG] inside xgboost")
 
    # test if input correct
-   assert(nrow(X) == nrow(Y))
-   init_prediction = 0.5 # todo init prediction wirklich immer 0.5?
-   feature_to_observe = X[,1];
+   assert(nrow(X) == nrow(y))
+   assert(ncol(y) == 1)
 
+   M = matrix(1,rows=6,cols=0)
 
-   residual_matrix = calculateResidiuals(feature_to_observe, init_prediction)
+   # select feature for root node
+   best_feature_index = findBestFeature(X, y, FALSE)
 
+   init_prediction = median(y) # todo init prediction wirklich immer 0.5? - geändert auf median
+   residual_matrix = calculateResiduals(y, init_prediction)
    printMatrix(residual_matrix, "residual matrix")
-
    first_tree_matrix = matrix(0, rows=6, cols=3)
    similarity_score = calculateSimilarityScore(residual_matrix)
    printDebug(similarity_score)
 
-   # TODO: split dataset in 2 branches. try out each average value of 2 datapoints and calc sim- score for each new leaf
-   best_split = findBestSplit(feature_to_observe)
+   # split dataset in 2 branches. try out each average value of 2 datapoints and calc sim- score for each new leaf
+   best_split = findBestSplit(y, similarity_score) # todo hier müssma glaub ich dann das selected feature nehmen !!
 
-   # todo take best split as the root node value and add it finally as first node to M
+   printDebug("Best split is " + toString(best_split))
 
-   M = matrix(1,rows=1,cols=1)
+   # take best split as the root node value and add it finally as first node to M
+   current_node = matrix(0, rows=6, cols=1)
+   current_node[1,1] = 1 # node id
+   current_node[2,1] = 1 # offset to left child
+   current_node[3,1] = 1 # features used
+   current_node[4,1] = 1 # continuous data
+   current_node[5,1] = 1 # type of data to split (1=numeric value)
+   current_node[6,1] = best_split
+
+   M = cbind(M, current_node)
+   printMatrix(M, "final tree matrix")
+
+
+   # todo add left child und right child in matrix
+
+   # todo loop in some way to do the steps for every node (maybe recursive)
+
+   # todo pruning
+
+   # todo create next tree depending on previous
+
+
+
+
+
    print("[DEBUG] Return xgboost")
+}
+
+
+findBestFeature = function(Matrix[Double] X, Matrix[Double] y, boolean verbose) return (Integer lowest_residuals_index) {
+
+   printDebug("Finding Best feature")
+
+   lowest_residuals = 0
+   lowest_residuals_index = 1
+
+   for(i in 1: ncol(X)) {
+        current_feature = X[,i]
+        weights = lm(X=current_feature, y=y, verbose=verbose)
+        y_residual = y - current_feature %*% weights
+        avg_res = abs(sum (y_residual) / nrow (X));
+
+        if(verbose) {
+            printDebug("currentFeature col " + toString(i))
+            printDebug("weights of lm " + toString(weights))
+            printDebug("feature residuals: " + avg_res)
+            print("--------------------------------------")
+        }
+
+        if(i == 1 | avg_res < lowest_residuals) {
+            lowest_residuals = avg_res
+            lowest_residuals_index = i
+        }
+   }
+   printDebug("best feature for root note is: " + toString(lowest_residuals_index) + " with residuals: " + toString(lowest_residuals))
+
 }
 
 
 #-----------------------------------------------------------------------------------------------------------------------
 # INPUT:    one_featureX: a 1xn matrix (one feature with all values)
 # OUTPUT:   best_split: the best split (highest gain indicates best splitting of datasets)
-findBestSplit = function(Matrix[Double] one_featureX) return (Double best_split) {
+findBestSplit = function(Matrix[Double] one_featureX, Double sim_score_parent) return (Double best_split) {
     assert(ncol(one_featureX) == 1)
     best_split = 0
+    best_gain = 0
     printDebug("inside find best split")
 
     # order entries by feature value
-    ordered_X = order(target=one_featureX,by=1,decreasing=FALSE,index.return=FALSE)
+    ordered_X = orderFeature(one_featureX)
     printMatrix(ordered_X, "ordered X")
 
-    first_average = (ordered_X[1,] + ordered_X[2,]) / 2
-    printDebug(toString(first_average))
-    [left, right] = splitMatrixByValue(one_featureX, as.scalar(first_average))
-    printMatrix(left, "left matrix")
-    printMatrix(right, "right matrix")
+    # iterate over all averages between 2 points
+    for(i in 1: (nrow(ordered_X)-1)) {
 
-    # todo: caluclate similarity score for that split and calculate gain
+        current_split = average(ordered_X[i,], ordered_X[i+1,])
+        printDebug("first average = " + toString(current_split))
+        [left, right] = splitMatrixByValue(one_featureX, current_split)
+        printMatrix(left, "left matrix")
+        printMatrix(right, "right matrix")
 
-    # todo do this for all possible splits and compair gain
+        # calculate similarity score for that split and calculate gain
+        sim_score_left = calculateSimilarityScore(left)
+        sim_score_right = calculateSimilarityScore(right)
+        printDebug("sim score left " + toString(sim_score_left) + "   sim score right " + toString(sim_score_right))
+        current_gain = sim_score_left + sim_score_right - sim_score_parent
+        printDebug("current gain " + toString(current_gain))
 
-    # todo: best gain is then the best split
+        if(current_gain > best_gain)
+        {
+            best_gain = current_gain
+            best_split = current_split
+            printDebug("best gain changed to  " + toString(best_gain) + " at value " + toString(best_split))
+        }
+    }
+
+    # best gain is the best split and will be returned
 }
 
 
@@ -95,30 +166,33 @@ splitMatrixByValue = function(Matrix[Double] X, Double value) return (Matrix[Dou
 }
 
 #-----------------------------------------------------------------------------------------------------------------------
-# INPUT:    one_feature_residualsX: a 1xn matrix (one feature with all residuals)
-# OUTPUT:   similarity_score: the sim score of the residuals
-calculateSimilarityScore = function(Matrix[Double] one_feature_residualsX) return(Double similarity_score) {
-    assert(ncol(one_feature_residualsX) == 1)
-    sum_of_x = sum(one_feature_residualsX)
-    similarity_score = (sum_of_x * sum_of_x) / nrow(one_feature_residualsX) # TODO: add lamda parameter here
+# INPUT:    row_vector: a 1xn matrix (one feature with all residuals)
+# OUTPUT:   similarity_score: the similarity score of the residuals
+calculateSimilarityScore = function (matrix[Double] row_vector) return (Double similarity_score) {
+  lambda = 0.0; # TODO
+  similarity_score = (sum(row_vector)^2) / (nrow(row_vector) + lambda);
+  printDebug("Calculated similarity score: " + similarity_score);
 }
 
 
 #-----------------------------------------------------------------------------------------------------------------------
-# INPUT:    a 1xn matrix (one feature with all rows)
-#           the current prediction value
-# OUTPUT:   the residuals to "current_prediction" as 1xn matrix
-calculateResidiuals = function(Matrix[Double] one_featureX, double current_prediction) return(Matrix[Double] residual_matrix) {
-    assert(ncol(one_featureX) == 1)
-    residual_matrix = matrix(0, rows=(nrow(one_featureX)), cols=1)
-    for(row in 1:nrow(one_featureX)) {
-        residual_matrix[row,1] = one_featureX[row,1] - current_prediction;
-    }
-    #printMatrix(residual_matrix, "residual matrix")
+# INPUT:    row_vector: a 1xn matrix (one feature with all rows)
+#           prediction: the current prediction value
+# OUTPUT:   the residuals from the "prediction" as 1xn matrix
+calculateResiduals = function (matrix[Double] row_vector, Double prediction) return (matrix[Double] residuals_row) {
+   assert(ncol(row_vector) == 1)
+   residuals_row = row_vector - prediction;
 }
 
+orderFeature = function (matrix[double] row_vector) return (matrix[double] row_vector_ordered) {
+    row_vector_ordered = order(target=row_vector, by=1, decreasing=FALSE, index.return=FALSE);
+}
 
-
+average = function(Matrix[Double] x, Matrix[Double] y) return (Double avg) {
+    assert(ncol(x) == 1 & nrow(x) == 1)
+    assert(ncol(y) == 1 & nrow(y) == 1)
+    avg = (as.scalar(x) + as.scalar(y)) / 2
+}
 
 printDebug = function(string variable) return() {
     print("[DEBUG] " + variable)

@@ -36,6 +36,7 @@ import org.apache.sysds.runtime.controlprogram.caching.FrameObject;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject.UpdateType;
 import org.apache.sysds.runtime.controlprogram.caching.TensorObject;
+import org.apache.sysds.runtime.controlprogram.federated.FederationMap.FType;
 import org.apache.sysds.runtime.data.TensorBlock;
 import org.apache.sysds.runtime.instructions.Instruction;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
@@ -43,6 +44,7 @@ import org.apache.sysds.runtime.instructions.cp.Data;
 import org.apache.sysds.runtime.instructions.cp.ListObject;
 import org.apache.sysds.runtime.instructions.cp.ScalarObject;
 import org.apache.sysds.runtime.instructions.cp.ScalarObjectFactory;
+import org.apache.sysds.runtime.instructions.gpu.context.CSRPointer;
 import org.apache.sysds.runtime.instructions.gpu.context.GPUContext;
 import org.apache.sysds.runtime.instructions.gpu.context.GPUObject;
 import org.apache.sysds.runtime.lineage.Lineage;
@@ -366,7 +368,7 @@ public class ExecutionContext {
 	public Pair<MatrixObject, Boolean> getSparseMatrixOutputForGPUInstruction(String varName, long numRows, long numCols, long nnz) {
 		MatrixObject mo = allocateGPUMatrixObject(varName, numRows, numCols);
 		mo.getDataCharacteristics().setNonZeros(nnz);
-				boolean allocated = mo.getGPUObject(getGPUContext(0)).acquireDeviceModifySparse();
+		boolean allocated = mo.getGPUObject(getGPUContext(0)).acquireDeviceModifySparse();
 		return new Pair<>(mo, allocated);
 	}
 
@@ -405,15 +407,21 @@ public class ExecutionContext {
 		mo.getGPUObject(getGPUContext(0)).addWriteLock();
 		return mo;
 	}
-
-	public long getGPUPointerAddress(MatrixObject obj) {
-
-			if(obj.getGPUObject(getGPUContext(0)) == null)
+	
+	public long getGPUDensePointerAddress(MatrixObject obj) {
+		if(obj.getGPUObject(getGPUContext(0)) == null)
 				return 0;
 			else
-				return obj.getGPUObject(getGPUContext(0)).getPointerAddress();
+				return obj.getGPUObject(getGPUContext(0)).getDensePointerAddress();
 	}
-
+	
+	public CSRPointer getGPUSparsePointerAddress(MatrixObject obj) {
+		if(obj.getGPUObject(getGPUContext(0)) == null)
+			throw new RuntimeException("No CSRPointer for MatrixObject " + obj.toString());
+		else
+			return obj.getGPUObject(getGPUContext(0)).getJcudaSparseMatrixPtr();
+	}
+	
 	public MatrixObject getMatrixInputForGPUInstruction(String varName, String opcode) {
 		GPUContext gCtx = getGPUContext(0);
 		MatrixObject mo = getMatrixObject(varName);
@@ -781,6 +789,20 @@ public class ExecutionContext {
 		catch(Exception ex) {
 			throw new DMLRuntimeException(ex);
 		}
+	}
+	
+	public boolean isFederated(CPOperand input) {
+		Data data = getVariable(input);
+		if(data instanceof CacheableData && ((CacheableData<?>) data).isFederated())
+			return true;
+		return false;
+	}
+	
+	public boolean isFederated(CPOperand input, FType type) {
+		Data data = getVariable(input);
+		if(data instanceof CacheableData && ((CacheableData<?>) data).isFederated(type))
+			return true;
+		return false;
 	}
 
 	public void traceLineage(Instruction inst) {

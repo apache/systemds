@@ -1,0 +1,171 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+source("scripts/builtin/bandit.dml") as bandit;
+
+
+# remove empty wrapper for frames
+frameRemoveEmpty = function(Frame[Unknown] target, String marginParam, Matrix[Double] select)
+return (Frame[Unknown] frameblock)
+{
+  idx = seq(1, ncol(target))
+  # get the indexes of columns for recode transformation
+  index = vectorToCsv(idx)
+  # recode logical pipelines for easy handling
+  jspecR = "{ids:true, recode:["+index+"]}";
+  [Xd, M] = transformencode(target=target, spec=jspecR);
+  X = replace(target=Xd, pattern = NaN, replacement=0)
+  if(nrow(select) > 1 ) {
+    # TODO fix removeEmpty Spark instruction to accept margin as a variable for now only support literal 
+    if(marginParam == "rows")
+      X = removeEmpty(target = X, margin = "rows", select = select)
+    else
+      X = removeEmpty(target = X, margin = "cols", select = select)
+  }
+  else { 
+    if(marginParam == "rows")
+      X = removeEmpty(target = X, margin = "rows")
+    else
+      X = removeEmpty(target = X, margin = "cols")
+  }
+  frameblock = transformdecode(target = Xd, spec = jspecR, meta = M)
+  frameblock = frameblock[1:nrow(X), 1:ncol(X)]
+}
+
+
+#######################################################################
+# Function for group-wise/stratified sampling from all classes in labelled dataset
+# Inputs: The input dataset X, Y  and  sampling ratio between 0 and 1
+# Output: sample X and Y
+#######################################################################
+doSample = function(Matrix[Double] eX, Matrix[Double] eY, Double ratio)
+  return (Matrix[Double] eX, Matrix[Double] eY)
+{
+  MIN_SAMPLE = 10000
+  sampled = floor(nrow(eX) * ratio)
+  sample = ifelse(sampled > MIN_SAMPLE, TRUE, FALSE)
+  if(sample)
+  {
+    XY = order(target = cbind(eY, eX),  by = 1, decreasing=FALSE, index.return=FALSE)
+    # get the class count 
+    classes = table(eY, 1)
+    print("classes")
+    print(toString(classes))
+    while(FALSE){}
+    start_class = 1
+    out_s = 1 
+    out_e = 0
+    end_class = 0
+    out = matrix(0, sampled, ncol(XY))
+    classes_ratio = floor(classes*ratio)
+    for(i in 1:nrow(classes))
+    {
+      end_class = end_class + as.scalar(classes[i])
+      class_t = XY[start_class:end_class, ]
+      out_e = out_e + as.scalar(classes_ratio[i]) 
+      out[out_s:out_e, ] = class_t[1:as.scalar(classes_ratio[i]), ] 
+      out_s = out_e + 1
+      start_class = end_class + 1
+    }
+    out = removeEmpty(target = out, margin = "rows")
+    eY = out[, 1]
+    eX = out[, 2:ncol(out)]
+  }
+}
+
+# #######################################################################
+# # Wrapper of transformencode OHE call, to call inside eval as a function
+# # Inputs: The input dataset X, and  mask of the columns
+# # Output: OHEd matrix X
+# #######################################################################
+
+dummycoding = function(Matrix[Double] X, Matrix[Double] mask)
+return (Matrix[Double] dX_train) {
+
+  idx = vectorToCsv(mask)
+  
+  # specifications for one-hot encoding of categorical features
+  jspecDC = "{ids:true, dummycode:["+idx+"]}";
+  # OHE of categorical features
+  [dX_train, dM] = transformencode(target=as.frame(X), spec=jspecDC);
+
+}
+
+
+####################################################################
+# Function for classifying the dirty dataset, makes a call to crossV()
+# Inputs: takes the input dataset X, Y and the value of k validation, mask of the 
+# dataset for OHE of categorical columns, vector of ML hyper-parameters identified 
+# via gridsearch and a boolean value of (un)weighted accuracy.
+# Output: It return a matrix having the accuracy of each fold.
+####################################################################
+classifyDirty = function(Matrix[Double] Xtrain, Matrix[Double] ytrain, Matrix[Double] opt, 
+  Matrix[Double] mask, Boolean isWeighted = TRUE, Integer cv)
+  return (Double accuracy)
+{
+  # # classify without cleaning fill with edfault values 1
+  Xtrain = replace(target = Xtrain, pattern = NaN, replacement=0)
+  dX_train = dummycoding(Xtrain, mask)
+  [accuracy, T] = bandit::crossV(Xtrain, ytrain, cv, mask, opt, isWeighted)
+  accuracy = mean(accuracy)
+  print("cross validated dirty accuracy "+accuracy)
+}
+
+# constraints over hyper parameters
+verifyHp = function(Integer index, Frame[Unknown] pip, Double minVal, Double maxVal, Integer paraNo)
+return (Double minVal, Double maxVal) {
+  op = as.scalar(pip[1,index])
+  # 1. if next op is pca then current op should not leave NaNs in data
+  # 2. if next op is mice then current op should not replace NaNs with zeros
+  
+  if((op == "outlierBySd" | op == "outlierByIQR") & index < ncol(pip) & paraNo == 2)
+  {
+    nextOp = as.scalar(pip[1, index + 1])
+    if(nextOp == "pca" | nextOp == "abstain" | nextOp == "SMOTE")
+    {
+      maxVal = 1.0
+    }
+    if(nextOp == "mice")
+    {
+      minVal = 2.0
+    }
+  }
+}
+
+
+#####################################
+# The function will check if the pipeline have zero hyper-parameters
+# then it should not use more resource iterations and should be executed once
+######################################
+isResourceOptimal = function(List[Unknown] param, Boolean verbose)
+return(Boolean validForResources) 
+{
+  validForResources = FALSE
+
+  count = 0
+  for(i in 1:length(param))
+  {
+    hp = as.matrix(param[i])
+    if(ncol(hp) > 4)
+      count += 1
+  }
+  validForResources = count > 0
+}
+

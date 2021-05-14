@@ -19,11 +19,12 @@
 #
 # -------------------------------------------------------------
 
-from enum import Enum, auto
-from typing import Any, Dict, Union, Sequence, TYPE_CHECKING
 from abc import ABC
+from enum import Enum, auto
+from typing import TYPE_CHECKING, Any, Dict, Sequence, Union, Optional
 
 from py4j.java_gateway import JavaObject, JVMView
+from systemds.utils.consts import VALID_INPUT_TYPES
 
 if TYPE_CHECKING:
     # to avoid cyclic dependencies during runtime
@@ -31,12 +32,41 @@ if TYPE_CHECKING:
 
 
 class OutputType(Enum):
-    MATRIX = auto()
+    # ASSIGN = auto()
     DOUBLE = auto()
-    SCALAR = auto()
-    ASSIGN = auto()
+    FRAME = auto()
     LIST = auto()
+    MATRIX = auto()
     NONE = auto()
+    SCALAR = auto()
+    STRING = auto()
+    IMPORT = auto()
+
+    @staticmethod
+    def from_str(label: Union[str, VALID_INPUT_TYPES]):
+
+        if label is not None:
+            if isinstance(label, str):
+                lc = label.lower()
+                if lc in ['matrix', 'matrixblock']:
+                    return OutputType.MATRIX
+                elif lc in ['frame', 'frameblock']:
+                    return OutputType.FRAME
+                elif lc in ['scalar']:
+                    return OutputType.SCALAR
+                elif lc in ['double']:
+                    return OutputType.DOUBLE
+                elif lc in ['string', 'str']:
+                    return OutputType.STRING
+                elif lc in ['list']:
+                    return OutputType.LIST
+            else:
+                if isinstance(label, DAGNode):
+                    return label._output_type
+                else:
+                    return OutputType.DOUBLE
+
+        return OutputType.NONE
 
 
 class DAGNode(ABC):
@@ -44,9 +74,12 @@ class DAGNode(ABC):
     sds_context: 'SystemDSContext'
     _unnamed_input_nodes: Sequence[Union['DAGNode', str, int, float, bool]]
     _named_input_nodes: Dict[str, Union['DAGNode', str, int, float, bool]]
+    _source_node: Optional["DAGNode"]
     _output_type: OutputType
+    _script: Optional["DMLScript"]
     _is_python_local_data: bool
     _number_of_outputs: int
+    _already_added: bool
 
     def compute(self, verbose: bool = False, lineage: bool = False) -> Any:
         """Get result of this operation. Builds the dml script and executes it in SystemDS, before this method is called
@@ -103,3 +136,15 @@ class DAGNode(ABC):
     @property
     def output_type(self):
         return self._output_type
+    
+    @property
+    def already_added(self):
+        return self._already_added
+
+    @property
+    def script(self):
+        return self._script
+
+    @property
+    def script_str(self):
+        return self._script.dml_script

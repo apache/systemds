@@ -19,9 +19,17 @@
 
 package org.apache.sysds.hops.recompile;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.wink.json4j.JSONObject;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.api.jmlc.JMLCUtils;
 import org.apache.sysds.common.Types.DataType;
@@ -79,27 +87,19 @@ import org.apache.sysds.runtime.instructions.Instruction;
 import org.apache.sysds.runtime.instructions.cp.Data;
 import org.apache.sysds.runtime.instructions.cp.FunctionCallCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.IntObject;
+import org.apache.sysds.runtime.instructions.cp.ListObject;
 import org.apache.sysds.runtime.instructions.cp.ScalarObject;
 import org.apache.sysds.runtime.io.IOUtilFunctions;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
+import org.apache.sysds.runtime.meta.MetaDataAll;
 import org.apache.sysds.runtime.meta.MetaDataFormat;
 import org.apache.sysds.runtime.util.HDFSTool;
 import org.apache.sysds.runtime.util.ProgramConverter;
 import org.apache.sysds.runtime.util.UtilFunctions;
 import org.apache.sysds.utils.Explain;
 import org.apache.sysds.utils.Explain.ExplainType;
-import org.apache.sysds.utils.JSONHelper;
-
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
 
 /**
  * Dynamic recompilation of hop dags to runtime instructions, which includes the 
@@ -1303,7 +1303,13 @@ public class Recompiler
 					FrameObject fo = (FrameObject) dat;
 					d.setDim1(fo.getNumRows());
 					d.setDim2(fo.getNumColumns());
-				} else if( dat instanceof TensorObject) {
+				}
+				else if( dat instanceof ListObject ) {
+					ListObject lo = (ListObject) dat;
+					d.setDim1(lo.getLength());
+					d.setDim2(1);
+				}
+				else if( dat instanceof TensorObject) {
 					TensorObject to = (TensorObject) dat;
 					// TODO: correct dimensions
 					d.setDim1(to.getNumRows());
@@ -1387,18 +1393,42 @@ public class Recompiler
 			}
 		}
 		//update size expression for indexing according to symbol table entries
-		else if( hop instanceof IndexingOp && hop.getDataType()!=DataType.LIST ) {
+		else if( hop instanceof IndexingOp ) {
 			hop.refreshSizeInformation(); //update, incl reset
 			if( !hop.dimsKnown() ) {
-				HashMap<Long, Double> memo = new HashMap<>();
-				double rl = Hop.computeBoundsInformation(hop.getInput().get(1), vars, memo);
-				double ru = Hop.computeBoundsInformation(hop.getInput().get(2), vars, memo);
-				double cl = Hop.computeBoundsInformation(hop.getInput().get(3), vars, memo);
-				double cu = Hop.computeBoundsInformation(hop.getInput().get(4), vars, memo);
-				if( rl!=Double.MAX_VALUE && ru!=Double.MAX_VALUE )
-					hop.setDim1( (long)(ru-rl+1) );
-				if( cl!=Double.MAX_VALUE && cu!=Double.MAX_VALUE )
-					hop.setDim2( (long)(cu-cl+1) );
+				if( hop.getDataType().isList() 
+					&& hop.getInput().get(1).getValueType() == ValueType.STRING ) {
+					hop.setDim1(1);
+					hop.setDim2(1);
+				}
+				else {
+					HashMap<Long, Double> memo = new HashMap<>();
+					double rl = Hop.computeBoundsInformation(hop.getInput().get(1), vars, memo);
+					double ru = Hop.computeBoundsInformation(hop.getInput().get(2), vars, memo);
+					double cl = Hop.computeBoundsInformation(hop.getInput().get(3), vars, memo);
+					double cu = Hop.computeBoundsInformation(hop.getInput().get(4), vars, memo);
+					if( rl!=Double.MAX_VALUE && ru!=Double.MAX_VALUE )
+						hop.setDim1( (long)(ru-rl+1) );
+					if( cl!=Double.MAX_VALUE && cu!=Double.MAX_VALUE )
+						hop.setDim2( (long)(cu-cl+1) );
+				}
+			}
+		}
+		else if(HopRewriteUtils.isUnary(hop, OpOp1.CAST_AS_MATRIX)
+			&& hop.getInput(0) instanceof IndexingOp && hop.getInput(0).getDataType().isList()
+			&& HopRewriteUtils.isData(hop.getInput(0).getInput(0), OpOpData.TRANSIENTREAD) ) {
+			Data ldat = vars.get(hop.getInput(0).getInput(0).getName()); //list, or matrix during IPA
+			Hop rix = hop.getInput(0);
+			if( ldat != null && ldat instanceof ListObject
+				&& rix.getInput(1) instanceof LiteralOp
+				&& rix.getInput(2) instanceof LiteralOp
+				&& HopRewriteUtils.isEqualValue(rix.getInput(1), rix.getInput(2))) {
+				ListObject list = (ListObject) ldat;
+				MatrixObject mo = (MatrixObject) ((rix.getInput(1).getValueType() == ValueType.STRING) ? 
+					list.getData(((LiteralOp)rix.getInput(1)).getStringValue()) :
+					list.getData((int)HopRewriteUtils.getIntValueSafe(rix.getInput(1))-1));
+				hop.setDim1(mo.getNumRows());
+				hop.setDim2(mo.getNumColumns());
 			}
 		}
 		else {
@@ -1569,13 +1599,13 @@ public class Recompiler
 			FileSystem fs = IOUtilFunctions.getFileSystem(mtdname); //no auto-close
 			if( fs.exists(path) ){
 				try(BufferedReader br = new BufferedReader(new InputStreamReader(fs.open(path)))) {
-					JSONObject mtd = JSONHelper.parse(br);
-					DataType dt = DataType.valueOf(String.valueOf(mtd.get(DataExpression.DATATYPEPARAM)).toUpperCase());
+					MetaDataAll mtd = new MetaDataAll(br);
+					DataType dt = mtd.getDataType();
 					dop.setDataType(dt);
 					if(dt != DataType.FRAME)
-						dop.setValueType(ValueType.valueOf(String.valueOf(mtd.get(DataExpression.VALUETYPEPARAM)).toUpperCase()));
-					dop.setDim1((dt==DataType.MATRIX||dt==DataType.FRAME)?Long.parseLong(mtd.get(DataExpression.READROWPARAM).toString()):0);
-					dop.setDim2((dt==DataType.MATRIX||dt==DataType.FRAME)?Long.parseLong(mtd.get(DataExpression.READCOLPARAM).toString()):0);
+						dop.setValueType(mtd.getValueType());
+					dop.setDim1((dt==DataType.MATRIX||dt==DataType.FRAME)? mtd.getDim1():0);
+					dop.setDim2((dt==DataType.MATRIX||dt==DataType.FRAME)? mtd.getDim2():0);
 				}
 			}
 		}

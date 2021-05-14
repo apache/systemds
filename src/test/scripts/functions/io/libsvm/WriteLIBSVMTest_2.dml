@@ -21,11 +21,12 @@
 
 # DML script that tests read/write libsvm
 
-A = read($1, format="libsvm", rows=1605, cols=124);
+A = read($1);
+A = A + 0;
+write(A, $3, format="libsvm", sep=$4, indSep=$5, sparse=$6);
+A = read($3, format="libsvm", sep=$4, indSep=$5);
 A = A + 1;
 x = sum(A);
 write(x, $2);
-A = A - 1;
 
-write(A, $3, format="libsvm", sparse=$4);
 

@@ -1,0 +1,14 @@
+{
+  "algo": "ngram",
+  "algo_params": {
+    "min_gram": 1,
+    "max_gram": 3
+  },
+  "out": "hash",
+  "out_params": {
+    "num_features": 128
+  },
+  "format_wide": true,
+  "id_cols": [2,1],
+  "tokenize_col": 3
+}

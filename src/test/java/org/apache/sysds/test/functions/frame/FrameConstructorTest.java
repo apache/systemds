@@ -28,6 +28,7 @@ import org.apache.sysds.test.TestConfiguration;
 import org.junit.Test;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
+import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.util.UtilFunctions;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestUtils;
@@ -52,7 +53,9 @@ public class FrameConstructorTest extends AutomatedTestBase {
 		NAMED,
 		NO_SCHEMA,
 		RANDOM_DATA,
-		SINGLE_DATA
+		SINGLE_DATA,
+		MULTI_ROW_DATA,
+		UNKNOWN_DIMS,
 	}
 
 	@Override
@@ -66,25 +69,25 @@ public class FrameConstructorTest extends AutomatedTestBase {
 	
 	@Test
 	public void testFrameNamedParam() {
-		FrameBlock exp = createExpectedFrame(schemaStrings1, false);
+		FrameBlock exp = createExpectedFrame(schemaStrings1, rows,"mixed");
 		runFrameTest(TestType.NAMED, exp, Types.ExecMode.SINGLE_NODE);
 	}
 
 	@Test
 	public void testFrameNamedParamSP() {
-		FrameBlock exp = createExpectedFrame(schemaStrings1, false);
+		FrameBlock exp = createExpectedFrame(schemaStrings1, rows,"mixed");
 		runFrameTest(TestType.NAMED, exp, Types.ExecMode.SPARK);
 	}
 
 	@Test
 	public void testNoSchema() {
-		FrameBlock exp = createExpectedFrame(schemaStrings2, false);
+		FrameBlock exp = createExpectedFrame(schemaStrings2, rows,"mixed");
 		runFrameTest(TestType.NO_SCHEMA, exp, Types.ExecMode.SINGLE_NODE);
 	}
 
 	@Test
 	public void testNoSchemaSP() {
-		FrameBlock exp = createExpectedFrame(schemaStrings2, false);
+		FrameBlock exp = createExpectedFrame(schemaStrings2, rows,"mixed");
 		runFrameTest(TestType.NO_SCHEMA, exp, Types.ExecMode.SPARK);
 	}
 
@@ -102,16 +105,40 @@ public class FrameConstructorTest extends AutomatedTestBase {
 
 	@Test
 	public void testSingleData() {
-		FrameBlock exp = createExpectedFrame(schemaStrings1, true);
+		FrameBlock exp = createExpectedFrame(schemaStrings1, rows,"constant");
 		runFrameTest(TestType.SINGLE_DATA, exp, Types.ExecMode.SINGLE_NODE);
 	}
 	
 	@Test
 	public void testSingleDataSP() {
-		FrameBlock exp = createExpectedFrame(schemaStrings1, true);
+		FrameBlock exp = createExpectedFrame(schemaStrings1, rows,"constant");
 		runFrameTest(TestType.SINGLE_DATA, exp, Types.ExecMode.SPARK);
 	}
 
+	@Test
+	public void testMultiRowData() {
+		FrameBlock exp = createExpectedFrame(schemaStrings1, 5,"multi-row");
+		runFrameTest(TestType.MULTI_ROW_DATA, exp, Types.ExecMode.SINGLE_NODE);
+	}
+
+	@Test
+	public void testMultiRowDataSP() {
+		FrameBlock exp = createExpectedFrame(schemaStrings1, 5,"multi-row");
+		runFrameTest(TestType.MULTI_ROW_DATA, exp, Types.ExecMode.SPARK);
+	}
+	
+	@Test
+	public void testUnknownDims() {
+		FrameBlock exp = createExpectedFrame(schemaStrings1, rows,"constant");
+		runFrameTest(TestType.UNKNOWN_DIMS, exp, Types.ExecMode.SINGLE_NODE);
+	}
+
+	@Test
+	public void testUnknownDimsSP() {
+		FrameBlock exp = createExpectedFrame(schemaStrings1, rows, "constant");
+		runFrameTest(TestType.UNKNOWN_DIMS, exp, Types.ExecMode.SPARK);
+	}
+	
 	private void runFrameTest(TestType type, FrameBlock expectedOutput, Types.ExecMode et) {
 		Types.ExecMode platformOld = setExecMode(et);
 		boolean oldFlag = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
@@ -131,6 +158,8 @@ public class FrameConstructorTest extends AutomatedTestBase {
 			String[][] R1 = DataConverter.convertToStringFrame(expectedOutput);
 			String[][] R2 = DataConverter.convertToStringFrame(fB);
 			TestUtils.compareFrames(R1, R2, R1.length, R1[0].length);
+			int nrow = type == TestType.MULTI_ROW_DATA ? 5 : 40;
+			checkDMLMetaDataFile("F2", new MatrixCharacteristics(nrow, cols));
 		}
 		catch(Exception ex) {
 			throw new RuntimeException(ex);
@@ -144,11 +173,20 @@ public class FrameConstructorTest extends AutomatedTestBase {
 		}
 	}
 	
-	private static FrameBlock createExpectedFrame(ValueType[] schema, boolean constant) {
+	private static FrameBlock createExpectedFrame(ValueType[] schema, int rows, String type) {
 		FrameBlock exp = new FrameBlock(schema);
-		String[] out = constant ?
-			new String[]{"1", "1", "1", "1"} :
-			new String[]{"1", "abc", "2.5", "TRUE"};
+		String[] out = null;
+		if(type.equals("mixed"))
+			out = new String[]{"1", "abc", "2.5", "TRUE"};
+		else if(type.equals("constant"))
+			out = new String[]{"1", "1", "1", "1"};
+		else if (type.equals("multi-row")) //multi-row data
+			out = new String[]{"1", "abc", "2.5", "TRUE"};
+		else {
+			System.out.println("invalid test type");
+			System.exit(1);
+		}
+
 		for(int i=0; i<rows; i++)
 			exp.appendRow(out);
 		return exp;

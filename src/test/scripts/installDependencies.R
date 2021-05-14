@@ -60,6 +60,8 @@ custom_install("dbscan");
 custom_install("imputeTS");
 custom_install("FNN");
 custom_install("class");
+custom_install("unbalanced");
+custom_install("naivebayes");
 
 print("Installation Done")
 

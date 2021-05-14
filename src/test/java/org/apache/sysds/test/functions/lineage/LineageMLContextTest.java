@@ -55,7 +55,7 @@ public class LineageMLContextTest extends MLContextTestBase {
 			).in("M", javaRDD, mm);
 		
 		ml.setLineage(ReuseCacheType.NONE);
-		String out = MLContextTestBase.executeAndCaptureStdOut(ml,script).getRight();
+		String out = MLContextTestBase.executeAndCaptureStdOut(script).getRight();
 		assertTrue(out.contains("sum: 30.0"));
 		ml.execute(script);
 	}
@@ -78,9 +78,9 @@ public class LineageMLContextTest extends MLContextTestBase {
 			).in("M", javaRDD, mm);
 		
 		ml.setLineage(ReuseCacheType.REUSE_FULL);
-		String out = MLContextTestBase.executeAndCaptureStdOut(ml,script).getRight();
+		String out = MLContextTestBase.executeAndCaptureStdOut(script).getRight();
 		assertTrue(out.contains("sum: 30.0"));
-		out = MLContextTestBase.executeAndCaptureStdOut(ml,script).getRight();
+		out = MLContextTestBase.executeAndCaptureStdOut(script).getRight();
 		assertTrue(out.contains("sum: 30.0"));
 	}
 	
@@ -103,7 +103,7 @@ public class LineageMLContextTest extends MLContextTestBase {
 		
 		ml.setLineage(ReuseCacheType.REUSE_FULL);
 		
-		String out = MLContextTestBase.executeAndCaptureStdOut(ml,script).getRight();
+		String out = MLContextTestBase.executeAndCaptureStdOut(script).getRight();
 		assertTrue(out.contains("sum: 30.0"));
 		
 		list.add("4 4 5");
@@ -111,7 +111,7 @@ public class LineageMLContextTest extends MLContextTestBase {
 		MatrixMetadata mm2 = new MatrixMetadata(MatrixFormat.IJV, 4, 4);
 		script.in("M", javaRDD2, mm2);
 		
-		out = MLContextTestBase.executeAndCaptureStdOut(ml,script).getRight();
+		out = MLContextTestBase.executeAndCaptureStdOut(script).getRight();
 		assertTrue(out.contains("sum: 40.0"));
 	}
 }

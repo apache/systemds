@@ -76,6 +76,10 @@ public class CNodeBinary extends CNode {
 			return ssComm || vsComm || vvComm;
 		}
 		
+		public boolean isElementwise() {
+			return this != DOT_PRODUCT && this != VECT_MATRIXMULT && this != VECT_OUTERMULT_ADD;
+		}
+		
 		public boolean isVectorPrimitive() {
 			return isVectorScalarPrimitive() 
 				|| isVectorVectorPrimitive()
@@ -113,6 +117,9 @@ public class CNodeBinary extends CNode {
 			String [] tmp = this.name().split("_");
 			return StringUtils.capitalize(tmp[1].toLowerCase());
 		}
+		
+		public boolean isNotSupportedBySpoofCUDA() {
+			return this == VECT_BIASADD || this == VECT_BIASMULT;}
 	}
 	
 	private final BinType _type;
@@ -156,9 +163,11 @@ public class CNodeBinary extends CNode {
 		boolean scalarInput = _inputs.get(0).getDataType().isScalar();
 		boolean scalarVector = (_inputs.get(0).getDataType().isScalar()
 			&& _inputs.get(1).getDataType().isMatrix());
+		boolean vectorVector = _inputs.get(0).getDataType().isMatrix()
+			&& _inputs.get(1).getDataType().isMatrix();
 		String var = createVarname();
-//		String tmp = _type.getTemplate(api, lang, lsparseLhs, lsparseRhs, scalarVector, scalarInput);
-		String tmp = getLanguageTemplateClass(this, api).getTemplate(_type, lsparseLhs, lsparseRhs, scalarVector, scalarInput);
+		String tmp = getLanguageTemplateClass(this, api)
+			.getTemplate(_type, lsparseLhs, lsparseRhs, scalarVector, scalarInput, vectorVector);
 
 		tmp = tmp.replace("%TMP%", var);
 		
@@ -169,24 +178,29 @@ public class CNodeBinary extends CNode {
 			//replace sparse and dense inputs
 			tmp = tmp.replace("%IN"+(j+1)+"v%", varj+"vals");
 			tmp = tmp.replace("%IN"+(j+1)+"i%", varj+"ix");
-			tmp = tmp.replace("%IN"+(j+1)+"%", 
-				varj.startsWith("b") ? varj + ".values(rix)" : varj );
+			tmp = tmp.replace("%IN"+(j+1)+"%",
+					varj.startsWith("a") ? (api == GeneratorAPI.JAVA ? varj : 
+						(_inputs.get(j).getDataType() == DataType.MATRIX ? varj + ".vals(0)" : varj)) :
+						varj.startsWith("b") ? (api == GeneratorAPI.JAVA ? varj + ".values(rix)" : 
+								(_type == BinType.VECT_MATRIXMULT ? varj : varj + ".vals(0)")) :
+							_inputs.get(j).getDataType() == DataType.MATRIX ? (api == GeneratorAPI.JAVA ? varj : varj + ".vals(0)") : varj);
 			
 			//replace start position of main input
 			tmp = tmp.replace("%POS"+(j+1)+"%", (_inputs.get(j) instanceof CNodeData 
-				&& _inputs.get(j).getDataType().isMatrix()) ? (!varj.startsWith("b")) ? varj+"i" : 
-				(TemplateUtils.isMatrix(_inputs.get(j)) && _type!=BinType.VECT_MATRIXMULT) ? 
-				varj + ".pos(rix)" : "0" : "0");
+					&& _inputs.get(j).getDataType().isMatrix()) ? (!varj.startsWith("b")) ? varj+"i" : 
+					((TemplateUtils.isMatrix(_inputs.get(j)) || (_type.isElementwise()
+						&& TemplateUtils.isColVector(_inputs.get(j)))) && _type!=BinType.VECT_MATRIXMULT) ?
+					varj + ".pos(rix)" : "0" : "0");
 		}
 		//replace length information (e.g., after matrix mult)
-		if( _type == BinType.VECT_OUTERMULT_ADD ) {
+		if( _type == BinType.VECT_OUTERMULT_ADD || (_type == BinType.VECT_CBIND && vectorVector) ) {
 			for( int j=0; j<2; j++ )
-				tmp = tmp.replace("%LEN"+(j+1)+"%", _inputs.get(j).getVectorLength());
+				tmp = tmp.replace("%LEN"+(j+1)+"%", _inputs.get(j).getVectorLength(api));
 		}
 		else { //general case 
 			CNode mInput = getIntermediateInputVector();
 			if( mInput != null )
-				tmp = tmp.replace("%LEN%", mInput.getVectorLength());
+				tmp = tmp.replace("%LEN%", mInput.getVectorLength(api));
 		}
 		
 		sb.append(tmp);
@@ -418,6 +432,11 @@ public class CNodeBinary extends CNode {
 	@Override
 	public boolean isSupported(GeneratorAPI api) {
 		boolean is_supported = (api == GeneratorAPI.CUDA || api == GeneratorAPI.JAVA);
+		
+		// ToDo: support these
+		if(api == GeneratorAPI.CUDA)
+			is_supported = !_type.isNotSupportedBySpoofCUDA();
+		
 		int i = 0;
 		while(is_supported && i < _inputs.size()) {
 			CNode in = _inputs.get(i++);

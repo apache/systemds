@@ -34,45 +34,67 @@ extern "C" {
  * Method:    initialize_cuda_context
  * Signature: (I)J
  */
-JNIEXPORT jlong JNICALL
+[[maybe_unused]] JNIEXPORT jlong JNICALL
 Java_org_apache_sysds_hops_codegen_SpoofCompiler_initialize_1cuda_1context(
-    JNIEnv *, jobject, jint, jstring);
+    JNIEnv *, [[maybe_unused]] jobject, jint, jstring);
 
 /*
  * Class:     org_apache_sysds_hops_codegen_SpoofCompiler
  * Method:    destroy_cuda_context
  * Signature: (JI)V
  */
-JNIEXPORT void JNICALL
+[[maybe_unused]] JNIEXPORT void JNICALL
 Java_org_apache_sysds_hops_codegen_SpoofCompiler_destroy_1cuda_1context(
-    JNIEnv *, jobject, jlong, jint);
+		[[maybe_unused]] JNIEnv *, [[maybe_unused]] jobject, jlong, jint);
 
 /*
- * Class:     org_apache_sysds_hops_codegen_SpoofCompiler
- * Method:    compile_cuda_kernel
- * Signature: (JLjava/lang/String;Ljava/lang/String;)Z
+ * Class:     org_apache_sysds_hops_codegen_cplan_CNodeCell
+ * Method:    compile_nvrtc
+ * Signature: (JLjava/lang/String;Ljava/lang/String;IIZ)I
  */
-JNIEXPORT jboolean JNICALL
-Java_org_apache_sysds_hops_codegen_SpoofCompiler_compile_1cuda_1kernel(
-    JNIEnv *, jobject, jlong, jstring, jstring);
+[[maybe_unused]] JNIEXPORT jint JNICALL Java_org_apache_sysds_hops_codegen_cplan_CNodeCell_compile_1nvrtc
+		(JNIEnv *, [[maybe_unused]] jobject, jlong, jstring, jstring, jint, jint, jboolean);
 
 /*
- * Class:     org_apache_sysds_runtime_instructions_gpu_SpoofCUDAInstruction
- * Method:    execute_d
- * Signature: (...)Z
+ * Class:     org_apache_sysds_hops_codegen_cplan_CNodeRow
+ * Method:    compile_nvrtc
+ * Signature: (JLjava/lang/String;Ljava/lang/String;IIIZ)I
  */
-JNIEXPORT jdouble JNICALL
-Java_org_apache_sysds_runtime_codegen_SpoofCUDA_execute_1d(
-    JNIEnv *, jobject, jlong, jstring, jlongArray, jlongArray, jlong, jdoubleArray, jlong, jlong, jlong);
+[[maybe_unused]] [[maybe_unused]] JNIEXPORT jint JNICALL Java_org_apache_sysds_hops_codegen_cplan_CNodeRow_compile_1nvrtc
+		(JNIEnv *, [[maybe_unused]] jobject, jlong, jstring, jstring, jint, jint, jint, jboolean);
 
 /*
- * Class:     org_apache_sysds_runtime_instructions_gpu_SpoofCUDAInstruction
+ * Class:     org_apache_sysds_runtime_codegen_SpoofCUDACellwiseOperator
  * Method:    execute_f
- * Signature: (...)Z
+ * Signature: (J[J[J[J[JJ)I
  */
-JNIEXPORT jfloat JNICALL
-Java_org_apache_sysds_runtime_codegen_SpoofCUDA_execute_1f(
-    JNIEnv *, jobject, jlong, jstring, jlongArray, jlongArray, jlong, jfloatArray, jlong, jlong, jlong);
+[[maybe_unused]] JNIEXPORT jint JNICALL Java_org_apache_sysds_runtime_codegen_SpoofCUDACellwise_execute_1f
+		(JNIEnv *, jclass, jlong, jlongArray, jlongArray, jlongArray, jlongArray, jlong);
+
+/*
+ * Class:     org_apache_sysds_runtime_codegen_SpoofCUDACellwiseOperator
+ * Method:    execute_d
+ * Signature: (J[J[J[J[JJ)I
+ */
+[[maybe_unused]] JNIEXPORT jint JNICALL Java_org_apache_sysds_runtime_codegen_SpoofCUDACellwise_execute_1d
+		(JNIEnv *, jclass, jlong, jlongArray, jlongArray, jlongArray, jlongArray, jlong);
+
+
+/*
+ * Class:     org_apache_sysds_runtime_codegen_SpoofCUDARowwise
+ * Method:    execute_f
+ * Signature: (J[J[J[J[JJ)I
+ */
+[[maybe_unused]] JNIEXPORT jint JNICALL Java_org_apache_sysds_runtime_codegen_SpoofCUDARowwise_execute_1f
+		(JNIEnv *, jclass, jlong, jlongArray, jlongArray, jlongArray, jlongArray, jlong);
+
+/*
+ * Class:     org_apache_sysds_runtime_codegen_SpoofCUDARowwise
+ * Method:    execute_d
+ * Signature: (J[J[J[J[JJ)I
+ */
+[[maybe_unused]] JNIEXPORT jint JNICALL Java_org_apache_sysds_runtime_codegen_SpoofCUDARowwise_execute_1d
+		(JNIEnv *, jclass, jlong, jlongArray, jlongArray, jlongArray, jlongArray, jlong);
 
 #ifdef __cplusplus
 }

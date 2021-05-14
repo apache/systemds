@@ -19,6 +19,8 @@
 
 package org.apache.sysds.runtime.compress.estim;
 
+import java.util.Arrays;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.CompressionSettings;
@@ -33,77 +35,135 @@ public class EstimationFactors {
 
 	protected static final Log LOG = LogFactory.getLog(EstimationFactors.class.getName());
 
-	protected final int numCols; // Number of columns in the compressed group
-	// TODO Make a variable called numDistinct to use for DDC.
+	protected final int[] cols;
 	/** Number of distinct value tuples in the columns, not to be confused with number of distinct values */
-	protected final int numVals; // Number of unique values in the compressed group
+	protected final int numVals;
 	/** The number of offsets, to tuples of values in the column groups */
 	protected final int numOffs;
+	/** The number of instances in the largest offset, this is used to determine if SDC is good. */
+	protected final int largestOff;
 	/** The Number of runs, of consecutive equal numbers, used primarily in RLE */
 	protected final int numRuns;
 	/** The Number of Values in the collection not Zero , Also refered to as singletons */
 	protected final int numSingle;
 	protected final int numRows;
-	protected final boolean containsZero;
 	protected final boolean lossy;
+	/** Boolean specifying if zero is the most frequent value */
+	protected final boolean zeroIsMostFrequent;
+	/** Boolean specifying if the columnGroup contain no zero tuples. */
+	protected final boolean containNoZeroValues;
+	/** The sparsity of the overall Factors including the number of each distinct tuple. */
+	protected final double overAllSparsity;
+	/** The sparsity of the tuples them selves in isolation */
+	protected final double tupleSparsity;
 
-	protected EstimationFactors(int numCols, int numVals, int numOffs, int numRuns, int numSingle, int numRows,
-		boolean containsZero, boolean lossy) {
-		this.numCols = numCols;
+	protected EstimationFactors(int[] cols, int numVals, int numRows) {
+		this.cols = cols;
+		this.numVals = numVals;
+		this.numRows = numRows;
+
+		this.numOffs = -1;
+		this.largestOff = -1;
+		this.numRuns = -1;
+		this.numSingle = -1;
+		this.lossy = false;
+		this.zeroIsMostFrequent = false;
+		this.containNoZeroValues = false;
+		this.overAllSparsity = 1;
+		this.tupleSparsity = 1;
+	}
+
+	protected EstimationFactors(int[] cols, EstimationFactors old) {
+		this.cols = cols;
+		this.numVals = old.numVals;
+		this.numRows = old.numRows;
+		this.numOffs = old.numOffs;
+		this.largestOff = old.largestOff;
+		this.numRuns = old.numRuns;
+		this.numSingle = old.numSingle;
+		this.lossy = old.lossy;
+		this.zeroIsMostFrequent = old.zeroIsMostFrequent;
+		this.containNoZeroValues = old.containNoZeroValues;
+		this.overAllSparsity = old.overAllSparsity;
+		this.tupleSparsity = old.tupleSparsity;
+	}
+
+	protected EstimationFactors(int[] cols, int numVals, int numOffs, int largestOff, int numRuns, int numSingle,
+		int numRows, boolean lossy, boolean zeroIsMostFrequent, double overAllSparsity, double tupleSparsity) {
+		this.cols = cols;
 		this.numVals = numVals;
 		this.numOffs = numOffs;
+		this.largestOff = largestOff;
 		this.numRuns = numRuns;
 		this.numSingle = numSingle;
 		this.numRows = numRows;
-		this.containsZero = containsZero;
 		this.lossy = lossy;
-		LOG.debug(this);
+		this.zeroIsMostFrequent = zeroIsMostFrequent;
+		this.containNoZeroValues = numOffs == numRows;
+		this.overAllSparsity = overAllSparsity;
+		this.tupleSparsity = tupleSparsity;
 	}
 
 	protected static EstimationFactors computeSizeEstimationFactors(ABitmap ubm, boolean inclRLE, int numRows,
-		int numCols) {
-		
-		int numVals = (ubm != null) ? ubm.getNumValues(): 0;
-		boolean containsZero = (ubm != null) ? ubm.containsZero() : true;
+		int[] cols) {
+		if(ubm == null || ubm.getOffsetList() == null)
+			return new EstimationFactors(cols, 0, 0, numRows, 1, 0, numRows, false, true, 0, 0);
+		else {
+			final int numVals = ubm.getNumValues();
+			int numRuns = 0;
+			int numOffs = 0;
+			int numSingle = 0;
+			int largestOffs = 0;
+			int tupleNonZeroCount = 0;
+			int overallNonZeroCount = 0;
+			// compute size estimation factors
+			for(int i = 0; i < numVals; i++) {
+				final int listSize = ubm.getNumOffsets(i);
+				final int numZerosInTuple = ubm.getNumNonZerosInOffset(i);
+				tupleNonZeroCount += numZerosInTuple;
+				overallNonZeroCount += numZerosInTuple * listSize;
+				numOffs += listSize;
+				if(listSize > largestOffs)
+					largestOffs = listSize;
 
-		int numRuns = 0;
-		int numOffs = 0;
-		int numSingle = 0;
-
-		LOG.debug("NumCols :" + numCols);
-
-		// compute size estimation factors
-		for(int i = 0; i < numVals; i++) {
-			int listSize = ubm.getNumOffsets(i);
-			numOffs += listSize;
-			numSingle += (listSize == 1) ? 1 : 0;
-			if(inclRLE) {
-				int[] list = ubm.getOffsetsList(i).extractValues();
-				int lastOff = -2;
-				numRuns += list[listSize - 1] / (CompressionSettings.BITMAP_BLOCK_SZ - 1);
-				for(int j = 0; j < listSize; j++) {
-					if(list[j] != lastOff + 1) {
-						numRuns++;
+				numSingle += (listSize == 1) ? 1 : 0;
+				if(inclRLE) {
+					int[] list = ubm.getOffsetsList(i).extractValues();
+					int lastOff = -2;
+					numRuns += list[listSize - 1] / (CompressionSettings.BITMAP_BLOCK_SZ);
+					for(int j = 0; j < listSize; j++) {
+						if(list[j] != lastOff + 1)
+							numRuns++;
+						lastOff = list[j];
 					}
-					lastOff = list[j];
 				}
 			}
-		}
 
-		return new EstimationFactors(numCols, numVals * numCols, numOffs + numVals, numRuns, numSingle, numRows,
-			containsZero, ubm.getType() == BitmapType.Lossy);
+			final int zerosOffs = numRows - numOffs;
+			final boolean zerosLargestOffset = zerosOffs > largestOffs;
+			if(zerosLargestOffset)
+				largestOffs = zerosOffs;
+
+			double overAllSparsity = (double) overallNonZeroCount / (numRows * cols.length);
+			double tupleSparsity = (double) tupleNonZeroCount / (numVals * cols.length);
+
+			return new EstimationFactors(cols, numVals, numOffs, largestOffs, numRuns, numSingle, numRows,
+				ubm.getType() == BitmapType.Lossy, zerosLargestOffset, overAllSparsity, tupleSparsity);
+		}
 	}
 
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
 		sb.append("\nrows:" + numRows);
-		sb.append("\tcols:" + numCols);
-		sb.append("\tnum Offsets:" + numOffs);
-		sb.append("\tnum Singles:" + numSingle);
-		sb.append("\tnum Runs:" + numRuns);
-		sb.append("\tnum Unique Vals:" + numVals);
-		sb.append("\tcontains a 0: " + containsZero);
+		sb.append(" cols:" + Arrays.toString(cols));
+		sb.append(" num Offsets:" + numOffs);
+		sb.append(" LargestOffset:" + largestOff);
+		sb.append(" num Singles:" + numSingle);
+		sb.append(" num Runs:" + numRuns);
+		sb.append(" num Unique Vals:" + numVals);
+		sb.append(" overallSparsity:" + overAllSparsity);
+		sb.append(" tupleSparsity:" + tupleSparsity);
 		return sb.toString();
 	}
 }

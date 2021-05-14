@@ -82,18 +82,19 @@ public abstract class ReadCSVTest extends CSVTestBase {
 			String dmlOutput = output("dml.scalar");
 			String rOutput = output("R.scalar");
 
+			String sep = getId() == 2 ? ";" : ",";
+			
 			fullDMLScriptName = HOME + getTestName() + "_" + testNumber + ".dml";
-			programArgs = new String[] {"-args", inputMatrixNameWithExtension, dmlOutput};
+			programArgs = new String[] {"-args", inputMatrixNameWithExtension, dmlOutput, sep};
 
 			fullRScriptName = HOME + "csv_verify2.R";
-			rCmd = "Rscript" + " " + fullRScriptName + " " + inputMatrixNameNoExtension + ".single.csv " + rOutput;
+			rCmd = "Rscript "+fullRScriptName+" "+inputMatrixNameNoExtension+".single.csv "+rOutput;
 
 			output = runTest(true, false, null, -1).toString();
 			runRScript(true);
 
 			double dmlScalar = TestUtils.readDMLScalar(dmlOutput);
 			double rScalar = TestUtils.readRScalar(rOutput);
-
 			TestUtils.compareScalars(dmlScalar, rScalar, eps);
 		}
 		finally {

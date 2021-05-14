@@ -27,7 +27,7 @@ import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.hops.AggBinaryOp.SparkAggType;
 import org.apache.sysds.hops.HopsException;
 import org.apache.sysds.lops.LopProperties.ExecType;
-
+import org.apache.sysds.runtime.instructions.InstructionUtils;
 
 /**
  * Lop to perform a partial aggregation. It was introduced to do some initial
@@ -217,33 +217,22 @@ public class PartialAggregate extends Lop
 	@Override
 	public String getInstructions(String input1, String output) 
 	{
-		StringBuilder sb = new StringBuilder();
-		sb.append( getExecType() );
-		
-		sb.append( OPERAND_DELIMITOR );
-		sb.append( getOpcode() );
-		
-		sb.append( OPERAND_DELIMITOR );
-		sb.append( getInputs().get(0).prepInputOperand(input1) );
-		
-		sb.append( OPERAND_DELIMITOR );
-		sb.append( prepOutputOperand(output) );
-		
-		//exec-type specific attributes
-		sb.append( OPERAND_DELIMITOR );
-		if( getExecType() == ExecType.SPARK )
-			sb.append( _aggtype );
-		else if( getExecType() == ExecType.CP ) {
-			sb.append(_numThreads);
+		InstructionUtils.concatBaseOperands(
+			getExecType().name(),
+			getOpcode(),
+			getInputs().get(0).prepInputOperand(input1),
+			prepOutputOperand(output));
 
-			//number of outputs, valid for fed instruction
-			if(getOpcode().equalsIgnoreCase("uarimin") || getOpcode().equalsIgnoreCase("uarimax")) {
-				sb.append(OPERAND_DELIMITOR);
-				sb.append("1");
-			}
+		if ( getExecType() == ExecType.SPARK )
+			InstructionUtils.concatAdditionalOperand(_aggtype.toString());
+		else if ( getExecType() == ExecType.CP || getExecType() == ExecType.FED ){
+			InstructionUtils.concatAdditionalOperand(Integer.toString(_numThreads));
+			if ( getOpcode().equalsIgnoreCase("uarimin") || getOpcode().equalsIgnoreCase("uarimax") )
+				InstructionUtils.concatAdditionalOperand("1");
+			if ( getExecType() == ExecType.FED && operation != AggOp.VAR )
+				InstructionUtils.concatAdditionalOperand(String.valueOf(federatedOutput));
 		}
-		
-		return sb.toString();
+		return InstructionUtils.getInstructionString();
 	}
 
 	public static String getOpcode(AggOp op, Direction dir)

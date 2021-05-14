@@ -74,7 +74,7 @@ jobs:
           ${{ runner.os }}-pip-${{ matrix.python-version }}-
   
     - name: Install pip Dependencies
-      run: pip install numpy py4j wheel
+      run: pip install numpy py4j wheel pandas
 
     - name: Build Python Package
       run: |

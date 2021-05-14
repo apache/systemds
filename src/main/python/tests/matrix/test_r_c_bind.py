@@ -19,16 +19,10 @@
 #
 # -------------------------------------------------------------
 
-import math
-import os
-import random
-import sys
 import unittest
 
 import numpy as np
-import scipy.stats as st
 from systemds.context import SystemDSContext
-from systemds.matrix import Matrix
 
 
 class TestRBind(unittest.TestCase):
@@ -44,31 +38,17 @@ class TestRBind(unittest.TestCase):
         cls.sds.close()
 
     def test_r_bind(self):
-        m1 = Matrix(self.sds, np.zeros((10, 1)))
-        m2 = Matrix(self.sds, np.ones((10, 1)))
+        m1 = self.sds.from_numpy(np.zeros((10, 1)))
+        m2 = self.sds.from_numpy(np.ones((10, 1)))
         res = m1.rbind(m2).compute()
         npres = np.vstack((np.zeros((10, 1)), np.ones((10, 1))))
         self.assertTrue(np.allclose(res, npres))
 
-    def test_r_bind_shape(self):
-        m1 = Matrix(self.sds, np.zeros((10, 3)))
-        m2 = Matrix(self.sds, np.ones((11, 3)))
-        res = m1.rbind(m2).shape
-        npres = np.vstack((np.zeros((10, 3)), np.ones((11, 3)))).shape
-        self.assertTrue(np.allclose(res, npres))
-
     def test_c_bind(self):
-        m1 = Matrix(self.sds, np.zeros((10, 6)))
-        m2 = Matrix(self.sds, np.ones((10, 7)))
+        m1 = self.sds.from_numpy(np.zeros((10, 6)))
+        m2 = self.sds.from_numpy(np.ones((10, 7)))
         res = m1.cbind(m2).compute()
         npres = np.hstack((np.zeros((10, 6)), np.ones((10, 7))))
-        self.assertTrue(np.allclose(res, npres))
-
-    def test_c_bind_shape(self):
-        m1 = Matrix(self.sds, np.zeros((10, 3)))
-        m2 = Matrix(self.sds, np.ones((10, 4)))
-        res = m1.cbind(m2).shape
-        npres = np.hstack((np.zeros((10, 3)), np.ones((10, 4)))).shape
         self.assertTrue(np.allclose(res, npres))
 
 

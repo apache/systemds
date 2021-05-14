@@ -29,15 +29,30 @@ public abstract class UnaryFEDInstruction extends ComputationFEDInstruction {
 	protected UnaryFEDInstruction(FEDType type, Operator op, CPOperand in, CPOperand out, String opcode, String instr) {
 		this(type, op, in, null, null, out, opcode, instr);
 	}
+
+	protected UnaryFEDInstruction(FEDType type, Operator op, CPOperand in, CPOperand out, String opcode, String instr,
+		boolean federatedOutput) {
+		this(type, op, in, null, null, out, opcode, instr, federatedOutput);
+	}
 	
 	protected UnaryFEDInstruction(FEDType type, Operator op, CPOperand in1, CPOperand in2, CPOperand out, String opcode,
 			String instr) {
 		this(type, op, in1, in2, null, out, opcode, instr);
 	}
+
+	protected UnaryFEDInstruction(FEDType type, Operator op, CPOperand in1, CPOperand in2, CPOperand out, String opcode,
+		String instr, boolean federatedOutput) {
+		this(type, op, in1, in2, null, out, opcode, instr, federatedOutput);
+	}
 	
 	protected UnaryFEDInstruction(FEDType type, Operator op, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out,
 			String opcode, String instr) {
-		super(type, op, in1, in2, in3, out, opcode, instr);
+		this(type, op, in1, in2, in3, out, opcode, instr, false);
+	}
+
+	protected UnaryFEDInstruction(FEDType type, Operator op, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out,
+		String opcode, String instr, boolean federatedOutput) {
+		super(type, op, in1, in2, in3, out, opcode, instr, federatedOutput);
 	}
 	
 	static String parseUnaryInstruction(String instr, CPOperand in, CPOperand out) {

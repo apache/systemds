@@ -28,7 +28,6 @@ import org.junit.Test;
 
 public class ScalarAssignmentTest extends AutomatedTestBase
 {
-	
 	private final static String TEST_NAME1 = "ForScalarAssignmentTest";
 	private final static String TEST_NAME2 = "ParForScalarAssignmentTest";
 	private final static String TEST_NAME3 = "WhileScalarAssignmentTest";
@@ -148,14 +147,7 @@ public class ScalarAssignmentTest extends AutomatedTestBase
 		runScalarAssignmentTest(ControlFlowConstruct.IFELSE, ValueType.BOOLEAN);
 	}
 
-	
-	/**
-	 * 
-	 * @param cfc
-	 * @param vt
-	 */
-	public void runScalarAssignmentTest( ControlFlowConstruct cfc, ValueType vt ) 
-	{
+	public void runScalarAssignmentTest( ControlFlowConstruct cfc, ValueType vt ) {
 		String TEST_NAME = null;
 		switch( cfc )
 		{
@@ -166,8 +158,7 @@ public class ScalarAssignmentTest extends AutomatedTestBase
 		}
 		
 		Object value = null;
-		switch( vt )
-		{
+		switch( vt ) {
 			case INT64: value = Integer.valueOf(7); break;
 			case FP64: value = Double.valueOf(7.7); break;
 			case STRING: value = "This is a test!"; break;
@@ -175,18 +166,18 @@ public class ScalarAssignmentTest extends AutomatedTestBase
 			default: //do nothing
 		}
 		
-	    TestConfiguration config = getTestConfiguration(TEST_NAME);
+		TestConfiguration config = getTestConfiguration(TEST_NAME);
 		loadTestConfiguration(config);
-	    
-        String RI_HOME = SCRIPT_DIR + TEST_DIR;
+
+		String RI_HOME = SCRIPT_DIR + TEST_DIR;
 		fullDMLScriptName = RI_HOME + TEST_NAME + ".dml";
 		programArgs = new String[]{"-args",  value.toString() };
 		
 		fullRScriptName = RI_HOME + TEST_NAME + ".R";
 		rCmd = getRCmd(inputDir(), expectedDir());
 		
-        boolean exceptionExpected = (cfc==ControlFlowConstruct.PARFOR)? true : false; //dependency analysis
-        int expectedNumberOfJobs = -1;
+		boolean exceptionExpected = (cfc==ControlFlowConstruct.PARFOR)? true : false; //dependency analysis
+		int expectedNumberOfJobs = -1;
 		runTest(true, exceptionExpected, LanguageException.class, expectedNumberOfJobs);
 	}
 }

@@ -30,15 +30,17 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.function.BiFunction;
+import java.util.stream.Stream;
 
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
-import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.CacheBlock;
 import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest.RequestType;
+import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.instructions.cp.ScalarObject;
 import org.apache.sysds.runtime.instructions.cp.VariableCPInstruction;
+import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.CommonThreadPool;
 import org.apache.sysds.runtime.util.IndexRange;
@@ -134,7 +136,7 @@ public class FederationMap {
 	/**
 	 * Creates separate slices of an input data object according to the index ranges of federated data. Theses slices
 	 * are then wrapped in separate federated requests for broadcasting.
-	 * 
+	 *
 	 * @param data       input data object (matrix, tensor, frame)
 	 * @param transposed false: slice according to federated data, true: slice according to transposed federated data
 	 * @return array of federated requests corresponding to federated data
@@ -142,11 +144,11 @@ public class FederationMap {
 	public FederatedRequest[] broadcastSliced(CacheableData<?> data, boolean transposed) {
 		if( _type == FType.FULL )
 			return new FederatedRequest[]{broadcast(data)};
-		
+
 		// prepare broadcast id and pin input
 		long id = FederationUtils.getNextFedDataID();
 		CacheBlock cb = data.acquireReadAndRelease();
-		
+
 		// prepare indexing ranges
 		int[][] ix = new int[_fedMap.size()][];
 		int pos = 0;
@@ -168,6 +170,22 @@ public class FederationMap {
 		Arrays.parallelSetAll(ret,
 			i -> new FederatedRequest(RequestType.PUT_VAR, id,
 				cb.slice(ix[i][0], ix[i][1], ix[i][2], ix[i][3], new MatrixBlock())));
+		return ret;
+	}
+
+	public FederatedRequest[] broadcastSliced(CacheableData<?> data, boolean isFrame, int[][] ix) {
+		if( _type == FType.FULL )
+			return new FederatedRequest[]{broadcast(data)};
+
+		// prepare broadcast id and pin input
+		long id = FederationUtils.getNextFedDataID();
+		CacheBlock cb = data.acquireReadAndRelease();
+
+		// multi-threaded block slicing and federation request creation
+		FederatedRequest[] ret = new FederatedRequest[ix.length];
+		Arrays.setAll(ret,
+			i -> new FederatedRequest(RequestType.PUT_VAR, id,
+				cb.slice(ix[i][0], ix[i][1], ix[i][2], ix[i][3], isFrame ? new FrameBlock() : new MatrixBlock())));
 		return ret;
 	}
 
@@ -204,6 +222,56 @@ public class FederationMap {
 		int pos = 0;
 		for(Entry<FederatedRange, FederatedData> e : _fedMap.entrySet())
 			ret.add(e.getValue().executeFederatedOperation((frSlices != null) ? addAll(frSlices[pos++], fr) : fr));
+
+		// prepare results (future federated responses), with optional wait to ensure the
+		// order of requests without data dependencies (e.g., cleanup RPCs)
+		if(wait)
+			FederationUtils.waitFor(ret);
+		return ret.toArray(new Future[0]);
+	}
+
+	@SuppressWarnings("unchecked")
+	public Future<FederatedResponse>[] execute(long tid, boolean wait, FederatedRange[] fedRange1, FederatedRequest elseFr, FederatedRequest[] frSlices1, FederatedRequest[] frSlices2, FederatedRequest... fr) {
+		// executes step1[] - step 2 - ... step4 (only first step federated-data-specific)
+		setThreadID(tid, frSlices1, fr);
+		setThreadID(tid, frSlices2, fr);
+		List<Future<FederatedResponse>> ret = new ArrayList<>();
+		int pos = 0;
+		for(Entry<FederatedRange, FederatedData> e : _fedMap.entrySet()) {
+			if(Arrays.asList(fedRange1).contains(e.getKey())) {
+				FederatedRequest[] newFr = (frSlices1 != null) ? ((frSlices2 != null) ? (addAll(frSlices2[pos],
+					addAll(frSlices1[pos++], fr))) : addAll(frSlices1[pos++], fr)) : fr;
+				ret.add(e.getValue().executeFederatedOperation(newFr));
+			}
+			else ret.add(e.getValue().executeFederatedOperation(elseFr));
+		}
+
+		// prepare results (future federated responses), with optional wait to ensure the
+		// order of requests without data dependencies (e.g., cleanup RPCs)
+		if( wait )
+			FederationUtils.waitFor(ret);
+		return ret.toArray(new Future[0]);
+	}
+
+	public Future<FederatedResponse>[] execute(long tid, boolean wait, FederatedRequest[] frSlices1, FederatedRequest[] frSlices2, FederatedRequest... fr) {
+		return execute(tid, wait, Arrays.stream(_fedMap.keySet().toArray()).toArray(FederatedRange[]::new), null, frSlices1, frSlices2, fr);
+	}
+
+	@SuppressWarnings("unchecked")
+	public Future<FederatedResponse>[] executeMultipleSlices(long tid, boolean wait,
+		FederatedRequest[][] frSlices, FederatedRequest[] fr) {
+		// executes step1[] - ... - stepM[] - stepM+1 - ... stepN (only first step federated-data-specific)
+		FederatedRequest[] allSlices = Arrays.stream(frSlices).flatMap(Stream::of).toArray(FederatedRequest[]::new);
+		setThreadID(tid, allSlices, fr);
+		List<Future<FederatedResponse>> ret = new ArrayList<>();
+		int pos = 0;
+		for(Entry<FederatedRange, FederatedData> e : _fedMap.entrySet()) {
+			FederatedRequest[] fedReq = fr;
+			for(FederatedRequest[] slice : frSlices)
+				fedReq = addAll(slice[pos], fedReq);
+			ret.add(e.getValue().executeFederatedOperation(fedReq));
+			pos++;
+		}
 
 		// prepare results (future federated responses), with optional wait to ensure the
 		// order of requests without data dependencies (e.g., cleanup RPCs)
@@ -340,7 +408,7 @@ public class FederationMap {
 	 * Execute a function for each <code>FederatedRange</code> + <code>FederatedData</code> pair. The function should
 	 * not change any data of the pair and instead use <code>mapParallel</code> if that is a necessity. Note that this
 	 * operation is parallel and necessary synchronisation has to be performed.
-	 * 
+	 *
 	 * @param forEachFunction function to execute for each pair
 	 */
 	public void forEachParallel(BiFunction<FederatedRange, FederatedData, Void> forEachFunction) {

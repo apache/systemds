@@ -19,6 +19,8 @@
 
 package org.apache.sysds.runtime.data;
 
+import org.apache.sysds.utils.MemoryEstimates;
+
 /**
  * SparseBlock implementation that realizes a 'modified compressed sparse row'
  * representation, where each compressed row is stored as a separate SparseRow
@@ -97,19 +99,25 @@ public class SparseBlockMCSR extends SparseBlock
 	 * @param sparsity sparsity ratio
 	 * @return memory estimate
 	 */
-	public static long estimateMemory(long nrows, long ncols, double sparsity) {
-		double cnnz = Math.max(SparseRowVector.initialCapacity, Math.ceil(sparsity*ncols));
-		double rlen = Math.min(nrows, Math.ceil(sparsity*nrows*ncols));
+	public static long estimateSizeInMemory(long nrows, long ncols, double sparsity) {
+		double nnz = Math.ceil(sparsity*nrows*ncols);
+		double rlen = Math.min(nrows, nnz); // num sparse row objects
+		double cnnz = Math.max(SparseRowVector.initialCapacity, nnz/rlen);
 		
 		//Each sparse row has a fixed overhead of 16B (object) + 12B (3 ints),
 		//24B (int array), 24B (double array), i.e., in total 76B
 		//Each non-zero value requires 12B for the column-index/value pair.
 		//Overheads for arrays, objects, and references refer to 64bit JVMs
 		//If nnz < rows we have guaranteed also empty rows.
-		double size = 16;                //object
-		size += 24 + nrows * 8d;         //references
-		size += rlen * (76 + cnnz * 12); //sparse rows
-		
+		double size = 16; //object
+		size += MemoryEstimates.objectArrayCost((long)rlen); //references
+		long sparseRowSize = 16; // object
+		sparseRowSize += 4*4; // 3 integers + padding
+		sparseRowSize += MemoryEstimates.intArrayCost(0);
+		sparseRowSize += MemoryEstimates.doubleArrayCost(0);
+		sparseRowSize += 12*Math.max(1, cnnz); //avoid bias by down cast for ultra-sparse
+		size += rlen * sparseRowSize; //sparse rows
+
 		// robustness for long overflows
 		return (long) Math.min(size, Long.MAX_VALUE);
 	}

@@ -19,35 +19,35 @@
 
 package org.apache.sysds.runtime.compress.estim;
 
-import java.util.HashMap;
 import java.util.List;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 
 /**
  * A helper reusable object for maintaining information about estimated compression
  */
 public class CompressedSizeInfo {
+	
+	protected static final Log LOG = LogFactory.getLog(CompressedSizeInfo.class.getName());
 
-	// protected static final Log LOG = LogFactory.getLog(CompressedSizeInfo.class.getName());
+	public List<CompressedSizeInfoColGroup> compressionInfo;
 
-	public CompressedSizeInfoColGroup[] compressionInfo;
-	public List<Integer> colsC;
-	public List<Integer> colsUC;
-	public HashMap<Integer, Double> compRatios;
-	public int nnzUC;
-
-	public CompressedSizeInfo(CompressedSizeInfoColGroup[] compressionInfo, List<Integer> colsC, List<Integer> colsUC,
-		HashMap<Integer, Double> compRatios, int nnzUC) {
+	public CompressedSizeInfo(List<CompressedSizeInfoColGroup> compressionInfo) {
 		this.compressionInfo = compressionInfo;
-		this.colsC = colsC;
-		this.colsUC = colsUC;
-		this.compRatios = compRatios;
-		this.nnzUC = nnzUC;
 	}
 
 	public CompressedSizeInfoColGroup getGroupInfo(int index) {
-		return compressionInfo[index];
+		return compressionInfo.get(index);
+	}
+
+	public List<CompressedSizeInfoColGroup> getInfo(){
+		return compressionInfo;
+	}
+
+	public void setInfo(List<CompressedSizeInfoColGroup> info){
+		compressionInfo = info;
 	}
 
 	/**
@@ -62,23 +62,20 @@ public class CompressedSizeInfo {
 		for(CompressedSizeInfoColGroup csi : compressionInfo) {
 			est += csi.getMinSize();
 		}
-
 		return est;
 	}
 
-	public boolean isCompressible() {
-
-		double sum = compRatios.values().stream().reduce(0.0, (a, b) -> a + b);
-		return colsC.size() > 0 && sum / compRatios.size() > 1.0;
+	public int getNumberColGroups(){
+		return compressionInfo.size();
 	}
 
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
 		sb.append("CompressedSizeInfo");
-		sb.append("\n  - CompressableColumns: " + (colsC) + " UncompressableColumns: " + (colsUC));
-		sb.append("\n  - CompressionRatio: " + compRatios);
-		sb.append("\n  - nnzUC: " + nnzUC);
+		// sb.append("num Rows" + numRows + "  NumCols" + numCols );
+		for(CompressedSizeInfoColGroup g : compressionInfo)
+			sb.append("\n" + g.toString());
 		return sb.toString();
 	}
 }

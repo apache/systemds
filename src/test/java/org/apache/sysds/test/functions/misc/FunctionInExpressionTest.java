@@ -29,13 +29,12 @@ import org.apache.sysds.test.TestUtils;
 
 public class FunctionInExpressionTest extends AutomatedTestBase 
 {
-	private final static String TEST_NAME1 = "FunInExpression1";
-	private final static String TEST_NAME2 = "FunInExpression2";
-	private final static String TEST_NAME3 = "FunInExpression3";
-	private final static String TEST_NAME4 = "FunInExpression4";
-	private final static String TEST_NAME5 = "FunInExpression5";
-	private final static String TEST_NAME6 = "FunInExpression6";
-	private final static String TEST_NAME7 = "FunInExpression7"; //dml-bodied builtin
+	private final static String[] TEST_NAMES = new String[] {
+		"FunInExpression1", "FunInExpression2", "FunInExpression3",
+		"FunInExpression4", "FunInExpression5", "FunInExpression6",
+		 //dml-bodied functions (w/ and w/o CSEs)
+		"FunInExpression7", "FunInExpression8", "FunInExpression9"
+	};
 	
 	private final static String TEST_DIR = "functions/misc/";
 	private final static String TEST_CLASS_DIR = TEST_DIR + FunctionInExpressionTest.class.getSimpleName() + "/";
@@ -43,48 +42,53 @@ public class FunctionInExpressionTest extends AutomatedTestBase
 	@Override
 	public void setUp() {
 		TestUtils.clearAssertionInformation();
-		addTestConfiguration( TEST_NAME1, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] { "R" }) );
-		addTestConfiguration( TEST_NAME2, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2, new String[] { "R" }) );
-		addTestConfiguration( TEST_NAME3, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME3, new String[] { "R" }) );
-		addTestConfiguration( TEST_NAME4, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME4, new String[] { "R" }) );
-		addTestConfiguration( TEST_NAME5, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME5, new String[] { "R" }) );
-		addTestConfiguration( TEST_NAME6, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME6, new String[] { "R" }) );
-		addTestConfiguration( TEST_NAME7, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME7, new String[] { "R" }) );
+		for(int i=0; i<TEST_NAMES.length; i++)
+			addTestConfiguration(TEST_NAMES[i], new TestConfiguration(TEST_CLASS_DIR, TEST_NAMES[i], new String[] {"R"}));
 	}
 
 	@Test
 	public void testFunInExpression1() {
-		runFunInExpressionTest( TEST_NAME1 );
+		runFunInExpressionTest( TEST_NAMES[0] );
 	}
 	
 	@Test
 	public void testFunInExpression2() {
-		runFunInExpressionTest( TEST_NAME2 );
+		runFunInExpressionTest( TEST_NAMES[1] );
 	}
 	
 	@Test
 	public void testFunInExpression3() {
-		runFunInExpressionTest( TEST_NAME3 );
+		runFunInExpressionTest( TEST_NAMES[2] );
 	}
 	
 	@Test
 	public void testFunInExpression4() {
-		runFunInExpressionTest( TEST_NAME4 );
+		runFunInExpressionTest( TEST_NAMES[3] );
 	}
 
 	@Test
 	public void testFunInExpression5() {
-		runFunInExpressionTest( TEST_NAME5 );
+		runFunInExpressionTest( TEST_NAMES[4] );
 	}
 
 	@Test
 	public void testFunInExpression6() {
-		runFunInExpressionTest( TEST_NAME6 );
+		runFunInExpressionTest( TEST_NAMES[5] );
 	}
 	
 	@Test
 	public void testFunInExpression7() {
-		runFunInExpressionTest( TEST_NAME7 );
+		runFunInExpressionTest( TEST_NAMES[6] );
+	}
+	
+	@Test
+	public void testFunInExpression8() {
+		runFunInExpressionTest( TEST_NAMES[7] );
+	}
+	
+	@Test
+	public void testFunInExpression9() {
+		runFunInExpressionTest( TEST_NAMES[8] );
 	}
 	
 	private void runFunInExpressionTest( String testName )
@@ -94,7 +98,7 @@ public class FunctionInExpressionTest extends AutomatedTestBase
 		
 		String HOME = SCRIPT_DIR + TEST_DIR;
 		fullDMLScriptName = HOME + testName + ".dml";
-		programArgs = new String[]{"-stats", "-args", output("R") };
+		programArgs = new String[]{"-explain","-args", output("R") };
 		
 		fullRScriptName = HOME + testName + ".R";
 		rCmd = getRCmd(expectedDir());

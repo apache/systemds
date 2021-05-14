@@ -29,7 +29,7 @@ This guide helps in the install and setup of SystemDS from source code.
 
 ## Windows
 
-TODO
+[Developer Guide](windows-source-installation)
 
 ---
 
@@ -42,6 +42,11 @@ First setup java and maven to compile the system note that the java version is 1
 ```bash
 sudo apt install openjdk-8-jdk-headless
 sudo apt install maven
+```
+
+Note: To update the `java` command to `openjdk-8` run:
+```sh
+update-alternatives --set java /usr/lib/jvm/java-8-openjdk-amd64/jre/bin/java
 ```
 
 Verify the install with:
@@ -148,4 +153,3 @@ But successive compiles should become faster.
 
 Now everything is setup and ready to go!
 To execute dml scripts look at [Execute SystemDS](run)
-

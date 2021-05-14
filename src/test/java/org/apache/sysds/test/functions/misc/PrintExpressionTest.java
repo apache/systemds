@@ -80,7 +80,7 @@ public class PrintExpressionTest extends AutomatedTestBase
 		
 		try
 		{
-			String HOME = SCRIPT_DIR + TEST_DIR;			
+			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
 			programArgs = new String[]{"-args", output("R")};
 			
@@ -90,8 +90,7 @@ public class PrintExpressionTest extends AutomatedTestBase
 			//run Tests
 			runTest(true, false, null, -1);
 		}
-		finally
-		{
+		finally {
 			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = oldRewriteFlag;
 		}
 	}

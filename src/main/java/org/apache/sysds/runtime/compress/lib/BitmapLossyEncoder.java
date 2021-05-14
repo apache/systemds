@@ -34,7 +34,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.CompressionSettings;
-import org.apache.sysds.runtime.compress.colgroup.ColGroup;
+import org.apache.sysds.runtime.compress.colgroup.AColGroup;
 import org.apache.sysds.runtime.compress.utils.ABitmap;
 import org.apache.sysds.runtime.compress.utils.Bitmap;
 import org.apache.sysds.runtime.compress.utils.BitmapLossy;
@@ -65,9 +65,10 @@ public class BitmapLossyEncoder {
 	 * Given a Bitmap try to make a lossy version of the same bitmap.
 	 * 
 	 * @param ubm The Uncompressed version of the bitmap.
+	 * @param numRows The number of rows contained in the ubm.
 	 * @return A bitmap.
 	 */
-	public static ABitmap makeBitmapLossy(Bitmap ubm) {
+	public static ABitmap makeBitmapLossy(Bitmap ubm, int numRows) {
 		final double[] fp = ubm.getValues();
 		if(fp.length == 0) {
 			return ubm;
@@ -79,7 +80,7 @@ public class BitmapLossyEncoder {
 			return ubm;
 		}
 		else {
-			return make8BitLossy(ubm, stats);
+			return make8BitLossy(ubm, stats, numRows);
 		}
 	}
 
@@ -88,17 +89,18 @@ public class BitmapLossyEncoder {
 	 * 
 	 * @param ubm   The uncompressed Bitmap.
 	 * @param stats The statistics associated with the bitmap.
+	 * @param numRows The number of Rows.
 	 * @return a lossy bitmap.
 	 */
-	private static BitmapLossy make8BitLossy(Bitmap ubm, Stats stats) {
+	private static BitmapLossy make8BitLossy(Bitmap ubm, Stats stats, int numRows) {
 		final double[] fp = ubm.getValues();
 		int numCols = ubm.getNumColumns();
 		double scale = get8BitScale(stats.min, stats.max);
 		byte[] scaledValues = scaleValuesToByte(fp, scale);
 		if(numCols == 1)
-			return makeBitmapLossySingleCol(ubm, scaledValues, scale);
+			return makeBitmapLossySingleCol(ubm, scaledValues, scale, numRows);
 		else
-			return makeBitmapLossyMultiCol(ubm, scaledValues, scale);
+			return makeBitmapLossyMultiCol(ubm, scaledValues, scale, numRows);
 
 	}
 
@@ -114,16 +116,16 @@ public class BitmapLossyEncoder {
 	 * @param ubm          The original uncompressed bitmap.
 	 * @param scaledValues The scaled values to map into.
 	 * @param scale        The scale in use.
+	 * @param numRows      The number of rows in the input.
 	 * @return The Lossy bitmap.
 	 */
-	private static BitmapLossy makeBitmapLossySingleCol(Bitmap ubm, byte[] scaledValues, double scale) {
+	private static BitmapLossy makeBitmapLossySingleCol(Bitmap ubm, byte[] scaledValues, double scale, int numRows) {
 
 		// Using Linked Hashmap to preserve the sorted order.
 		Map<Byte, Queue<IntArrayList>> values = new LinkedHashMap<>();
 		Map<Byte, Integer> lengths = new HashMap<>();
 
 		IntArrayList[] fullSizeOffsetsLists = ubm.getOffsetList();
-		int numZeroGroups = ubm.getZeroCounts();
 		boolean somethingToMerge = false;
 
 		for(int idx = 0; idx < scaledValues.length; idx++) {
@@ -140,8 +142,6 @@ public class BitmapLossyEncoder {
 					lengths.put(scaledValues[idx], fullSizeOffsetsLists[idx].size());
 				}
 			}
-			else
-				numZeroGroups++;
 
 		}
 
@@ -162,10 +162,10 @@ public class BitmapLossyEncoder {
 				}
 				idx++;
 			}
-			return new BitmapLossy(ubm.getNumColumns(), newOffsetsLists, numZeroGroups, scaledValuesReduced, scale);
+			return new BitmapLossy(ubm.getNumColumns(), newOffsetsLists,  scaledValuesReduced, scale, numRows);
 		}
 		else
-			return new BitmapLossy(ubm.getNumColumns(), fullSizeOffsetsLists, numZeroGroups, scaledValues, scale);
+			return new BitmapLossy(ubm.getNumColumns(), fullSizeOffsetsLists,  scaledValues, scale, numRows);
 	}
 
 	/**
@@ -174,14 +174,15 @@ public class BitmapLossyEncoder {
 	 * @param ubm          The original uncompressed bitmap.
 	 * @param scaledValues The scaled values to map into.
 	 * @param scale        The scale in use.
+	 * @param numRows      The number of rows in each column group
 	 * @return The Lossy bitmap.
 	 */
-	private static BitmapLossy makeBitmapLossyMultiCol(Bitmap ubm, byte[] scaledValues, double scale) {
+	private static BitmapLossy makeBitmapLossyMultiCol(Bitmap ubm, byte[] scaledValues, double scale, int numRows) {
 		int numColumns = ubm.getNumColumns();
 		Map<List<Byte>, Queue<IntArrayList>> values = new HashMap<>();
 		Map<List<Byte>, Integer> lengths = new HashMap<>();
 		IntArrayList[] fullSizeOffsetsLists = ubm.getOffsetList();
-		int numZeroGroups = ubm.getZeroCounts();
+
 		boolean allZero = true;
 		boolean somethingToMerge = false;
 		for(int idx = 0; idx < scaledValues.length; idx += numColumns) {
@@ -191,7 +192,6 @@ public class BitmapLossyEncoder {
 				array.add(scaledValues[idx + off]);
 			}
 
-			numZeroGroups += allZero ? 1 : 0;
 			if(!allZero) {
 				IntArrayList entry = fullSizeOffsetsLists[idx / numColumns];
 				if(values.containsKey(array)) {
@@ -209,12 +209,6 @@ public class BitmapLossyEncoder {
 			allZero = true;
 		}
 
-		// HACK; we make sure that the first sparse unsafe operation assume
-		// that we have entries with zero values. This makes the first sparse
-		// unsafe operation slightly slower, if the input compressed matrix is
-		// fully dense, aka containing no zero values.
-		// This is required for multi-column colGroups.
-		numZeroGroups = numZeroGroups + 1;
 
 		if(somethingToMerge) {
 
@@ -238,10 +232,10 @@ public class BitmapLossyEncoder {
 				idx++;
 			}
 
-			return new BitmapLossy(ubm.getNumColumns(), newOffsetsLists, numZeroGroups, scaledValuesReduced, scale);
+			return new BitmapLossy(ubm.getNumColumns(), newOffsetsLists, scaledValuesReduced, scale, numRows);
 		}
 		else {
-			return new BitmapLossy(ubm.getNumColumns(), fullSizeOffsetsLists, numZeroGroups, scaledValues, scale);
+			return new BitmapLossy(ubm.getNumColumns(), fullSizeOffsetsLists,  scaledValues, scale, numRows);
 		}
 	}
 
@@ -280,14 +274,14 @@ public class BitmapLossyEncoder {
 		return res;
 	}
 
-	public static ABitmap extractMapFromCompressedSingleColumn(CompressedMatrixBlock m, int columnId, double min,
-		double max) {
+ 	public static ABitmap extractMapFromCompressedSingleColumn(CompressedMatrixBlock m, int columnId, double min,
+		double max, int numRows) {
 		double scale = get8BitScale(min, max);
 		final int blkSz = CompressionSettings.BITMAP_BLOCK_SZ;
 		Map<Byte, IntArrayList> values = new HashMap<>();
 		double[] tmp = getMemLocalDoubleArray(blkSz, true);
 		for(int i = 0; i < m.getNumRows(); i += blkSz) {
-			ColGroup.decompressColumnToBlock(tmp, columnId, i, Math.min(m.getNumRows(), (i + blkSz)), m.getColGroups());
+			AColGroup.decompressColumnToBlock(tmp, columnId, i, Math.min(m.getNumRows(), (i + blkSz)), m.getColGroups());
 
 			byte[] scaledValues = scaleValuesToByte(tmp, scale);
 			for(int j = 0, off = i; j < Math.min(m.getNumRows(), (i + blkSz)) - i; j++, off++) {
@@ -310,7 +304,7 @@ public class BitmapLossyEncoder {
 			idx++;
 		}
 
-		return new BitmapLossy(1, newOffsetsLists, 0, scaledValuesReduced, scale);
+		return new BitmapLossy(1, newOffsetsLists, scaledValuesReduced, scale, numRows);
 		// return BitmapLossyEncoder.makeBitmapLossy(BitmapEncoder.extractBitmap(new int[1], tmp, true));
 	}
 

@@ -26,6 +26,7 @@ import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.common.Types.OpOp1;
 import org.apache.sysds.common.Types.OpOp2;
+import org.apache.sysds.common.Types.OpOp3;
 import org.apache.sysds.common.Types.OpOpData;
 import org.apache.sysds.common.Types.ReOrgOp;
 import org.apache.sysds.common.Types.ValueType;
@@ -194,6 +195,11 @@ public class OptimizerUtils
 	 * out of while, for, and parfor loops.
 	 */
 	public static boolean ALLOW_CODE_MOTION = false;
+
+	/**
+	 * Compile federated instructions based on input federation state and privacy constraints.
+	 */
+	public static boolean FEDERATED_COMPILATION = false;
 	
 	
 	/**
@@ -1305,6 +1311,8 @@ public class OptimizerUtils
 				ret = rEvalSimpleUnaryDoubleExpression(root, valMemo);
 			else if( root instanceof BinaryOp )
 				ret = rEvalSimpleBinaryDoubleExpression(root, valMemo);
+			else if( root instanceof TernaryOp )
+				ret = rEvalSimpleTernaryDoubleExpression(root, valMemo);
 		}
 		
 		valMemo.put(root.getHopID(), ret);
@@ -1450,6 +1458,23 @@ public class OptimizerUtils
 		return ret;
 	}
 
+	protected static double rEvalSimpleTernaryDoubleExpression( Hop root, HashMap<Long, Double> valMemo ) {
+		//memoization (prevent redundant computation of common subexpr)
+		if( valMemo.containsKey(root.getHopID()) )
+			return valMemo.get(root.getHopID());
+		
+		double ret = Double.MAX_VALUE;
+		TernaryOp troot = (TernaryOp) root;
+		if( troot.getOp()==OpOp3.IFELSE ) {
+			if( HopRewriteUtils.isLiteralOfValue(troot.getInput(0), true) )
+				ret = rEvalSimpleDoubleExpression(troot.getInput().get(1), valMemo);
+			else if( HopRewriteUtils.isLiteralOfValue(troot.getInput(0), false) )
+				ret = rEvalSimpleDoubleExpression(troot.getInput().get(2), valMemo);
+		}
+		valMemo.put(root.getHopID(), ret);
+		return ret;
+	}
+	
 	protected static double rEvalSimpleBinaryDoubleExpression( Hop root, HashMap<Long, Double> valMemo, LocalVariableMap vars ) 
 	{
 		//memoization (prevent redundant computation of common subexpr)

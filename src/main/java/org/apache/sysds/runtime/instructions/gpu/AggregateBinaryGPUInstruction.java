@@ -35,19 +35,13 @@ import org.apache.sysds.runtime.matrix.operators.ReorgOperator;
 import org.apache.sysds.utils.GPUStatistics;
 
 public class AggregateBinaryGPUInstruction extends GPUInstruction {
-	private CPOperand _input1 = null;
-	private CPOperand _input2 = null;
-	private CPOperand _output = null;
 	private boolean _isLeftTransposed;
 	private boolean _isRightTransposed;
 
 	private AggregateBinaryGPUInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out, String opcode,
 			String istr, boolean leftTranspose, boolean rightTranspose) {
-		super(op, opcode, istr);
+		super(op, in1, in2, out, opcode, istr);
 		_gputype = GPUINSTRUCTION_TYPE.AggregateBinary;
-		_input1 = in1;
-		_input2 = in2;
-		_output = out;
 		_isLeftTransposed = leftTranspose;
 		_isRightTransposed = rightTranspose;
 	}
@@ -97,4 +91,5 @@ public class AggregateBinaryGPUInstruction extends GPUInstruction {
 		MatrixObject mo = ec.getMatrixObject(var);
 		return LibMatrixCUDA.isInSparseFormat(ec.getGPUContext(0), mo);
 	}
+
 }

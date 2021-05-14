@@ -33,7 +33,17 @@ import org.apache.sysds.runtime.meta.TensorCharacteristics;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.BitSet;
+import java.util.HashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class UtilFunctions {
 	// private static final Log LOG = LogFactory.getLog(UtilFunctions.class.getName());
@@ -47,12 +57,6 @@ public class UtilFunctions {
 	//because it determines the max hash domain size
 	public static final long ADD_PRIME1 = 99991;
 	public static final int DIVIDE_PRIME = 1405695061; 
-	
-	public static final HashSet<String> defaultNaString = new HashSet<>();
-
-	static{
-		defaultNaString.add("NA");
-	}
 
 	public static int intHashCode(int key1, int key2) {
 		return 31 * (31 + key1) + key2;
@@ -355,7 +359,7 @@ public class UtilFunctions {
 	 * @return double value
 	 */
 	public static double parseToDouble(String str, Set<String> isNan ) {
-		return isNan.contains(str) ?
+		return isNan != null && isNan.contains(str) ?
 			Double.NaN :
 			Double.parseDouble(str);
 	}
@@ -631,6 +635,16 @@ public class UtilFunctions {
 		return "\"" + s + "\"";
 	}
 
+	public static int getAsciiAtIdx(String s, int idx) {
+		int strlen = s.length();
+		int c = 0;
+		int javaIdx = idx - 1;
+		if (javaIdx >= 0 && javaIdx < strlen) {
+			c = (int)s.charAt(javaIdx);
+		}
+		return c;
+	}
+
 	/**
 	 * Parses a memory size with optional g/m/k quantifiers into its
 	 * number representation.
@@ -842,17 +856,63 @@ public class UtilFunctions {
 			.map(DATE_FORMATS::get).orElseThrow(() -> new NullPointerException("Unknown date format."));
 	}
 
-	 public static double jaccardSim(String x, String y) {
+	public static String[] getSplittedStringAsArray (String input) {
+		//Frame f = new Frame();
+		String[] string_array = input.split("'[ ]*,[ ]*'");
+		return string_array;//.subList(0,2);
+	}
+	
+	public static double jaccardSim(String x, String y) {
 		Set<String> charsX = new LinkedHashSet<>(Arrays.asList(x.split("(?!^)")));
 		Set<String> charsY = new LinkedHashSet<>(Arrays.asList(y.split("(?!^)")));
-
+	
 		final int sa = charsX.size();
 		final int sb = charsY.size();
 		charsX.retainAll(charsY);
 		final int intersection = charsX.size();
 		return 1d / (sa + sb - charsX.size()) * intersection;
 	}
-
+	
+	public static String columnStringToCSVString(String input, String separator) {
+		StringBuffer sb = new StringBuffer(input);
+		StringBuilder outStringBuilder = new StringBuilder();
+		String[] string_array;
+		
+		// remove leading and trailing brackets: []
+		int startOfArray = sb.indexOf("\"[");
+		if (startOfArray >=0)
+		  sb.delete(startOfArray, startOfArray + 2);
+		
+		
+		int endOfArray = sb.lastIndexOf("]\"");
+		if (endOfArray >=0) 
+		  sb.delete(endOfArray, endOfArray + 2);
+		
+	
+		// split values depending on their format
+		if (sb.indexOf("'") != -1) { // string contains strings
+		  // replace "None" with "'None'"
+		  Pattern p = Pattern.compile(", None,");
+		  Matcher m = p.matcher(sb);
+		  string_array = m.replaceAll(", 'None',").split("'[ ]*,[ ]*'");
+		
+		  // remove apostrophe in first and last string element
+		  string_array[0] = string_array[0].replaceFirst("'", "");
+		  int lastArrayIndex = string_array.length - 1;
+		  string_array[lastArrayIndex] = string_array[lastArrayIndex]
+				.substring(0, string_array[lastArrayIndex].length() - 1);
+		} 
+		else  // string contains numbers only
+		  string_array = sb.toString().split(",");
+	
+		// select a suitable separator that can be used to read in the file properly
+		for(String s : string_array) 
+			outStringBuilder.append(s).append(separator);
+		
+		outStringBuilder.delete(outStringBuilder.length() - separator.length(), outStringBuilder.length());
+		return outStringBuilder.toString();
+	}
+	
 	/**
 	 * Generates a random FrameBlock with given parameters.
 	 * 
@@ -862,7 +922,7 @@ public class UtilFunctions {
 	 * @param random random number generator
 	 * @return FrameBlock
 	 */
-	public static FrameBlock generateRandomFrameBlock(int rows, int cols, ValueType[] schema, Random random){
+	public static FrameBlock generateRandomFrameBlock(int rows, int cols, ValueType[] schema, Random random) {
 		String[] names = new String[cols];
 		for(int i = 0; i < cols; i++)
 			names[i] = schema[i].toString();
@@ -881,7 +941,7 @@ public class UtilFunctions {
 	 * @param random random number generator
 	 * @return Object
 	 */
-	public static Object generateRandomValueFromValueType(ValueType valueType, Random random){
+	public static Object generateRandomValueFromValueType(ValueType valueType, Random random) {
 		switch (valueType){
 			case FP32:    return random.nextFloat();
 			case FP64:    return random.nextDouble();
@@ -923,4 +983,11 @@ public class UtilFunctions {
 		}
 		return vt;
 	}
+
+
+	public static int getEndIndex(int arrayLength, int startIndex, int blockSize){
+		return (blockSize <= 0)? arrayLength: Math.min(arrayLength, startIndex + blockSize);
+	}
+
+
 }

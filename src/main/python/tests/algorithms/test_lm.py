@@ -25,7 +25,6 @@ import numpy as np
 from sklearn.linear_model import LinearRegression
 from systemds.context import SystemDSContext
 from systemds.operator.algorithm import lm
-from systemds.matrix import Matrix
 
 np.random.seed(7)
 
@@ -48,8 +47,8 @@ class TestLm(unittest.TestCase):
         regressor = LinearRegression(fit_intercept=False)
         model = regressor.fit(X, Y).coef_
 
-        X_sds = Matrix(self.sds, X)
-        Y_sds = Matrix(self.sds, Y)
+        X_sds = self.sds.from_numpy( X)
+        Y_sds = self.sds.from_numpy( Y)
 
         sds_model_weights = lm(X_sds, Y_sds).compute()
         model = model.reshape(sds_model_weights.shape)
@@ -60,12 +59,6 @@ class TestLm(unittest.TestCase):
             np.allclose(sds_model_weights, model, eps),
             "All elements are not close")
 
-    def test_lm_invalid_shape(self):
-        X = Matrix(self.sds, np.random.rand(30, 0))
-        Y = Matrix(self.sds, np.random.rand(0, 1))
-
-        with self.assertRaises(ValueError) as context:
-            sds_model_weights = lm(X, Y).compute()
 
 
 if __name__ == "__main__":

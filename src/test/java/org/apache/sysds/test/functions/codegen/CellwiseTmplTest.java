@@ -171,15 +171,10 @@ public class CellwiseTmplTest extends AutomatedTestBase
 	}
 	
 	@Test
-	public void testCodegenCellwise4() 
-	{
-		testCodegenIntegration( TEST_NAME4, false, ExecType.CP  );
-	}
+	public void testCodegenCellwise4() { testCodegenIntegration( TEST_NAME4, false, ExecType.CP ); }
 	
 	@Test
-	public void testCodegenCellwise5() {
-		testCodegenIntegration( TEST_NAME5, false, ExecType.CP  );
-	}
+	public void testCodegenCellwise5() { testCodegenIntegration( TEST_NAME5, false, ExecType.CP  );	}
 	
 	@Test
 	public void testCodegenCellwise6() {
@@ -192,9 +187,7 @@ public class CellwiseTmplTest extends AutomatedTestBase
 	}
 	
 	@Test
-	public void testCodegenCellwise8() {
-		testCodegenIntegration( TEST_NAME8, false, ExecType.CP  );
-	}
+	public void testCodegenCellwise8() { testCodegenIntegration( TEST_NAME8, false, ExecType.CP  );	}
 	
 	@Test
 	public void testCodegenCellwise9() {
@@ -508,7 +501,7 @@ public class CellwiseTmplTest extends AutomatedTestBase
 			if( !(rewrites && (testname.equals(TEST_NAME2)
 				|| testname.equals(TEST_NAME19))) && !testname.equals(TEST_NAME27) )
 				Assert.assertTrue(heavyHittersContainsSubString(
-						"spoofCell", "sp_spoofCell", "spoofMA", "sp_spoofMA", "gpu_SpoofCUDA_CW_"));
+						"spoofCell", "sp_spoofCell", "spoofMA", "sp_spoofMA", "gpu_spoofCUDACell"));
 			if( testname.equals(TEST_NAME7) ) //ensure matrix mult is fused
 				Assert.assertTrue(!heavyHittersContainsSubString("tsmm"));
 			else if( testname.equals(TEST_NAME10) ) //ensure min/max is fused

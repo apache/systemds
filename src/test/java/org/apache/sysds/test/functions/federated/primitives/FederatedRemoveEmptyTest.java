@@ -49,7 +49,6 @@ public class FederatedRemoveEmptyTest extends AutomatedTestBase {
 	public int rows;
 	@Parameterized.Parameter(1)
 	public int cols;
-
 	@Parameterized.Parameter(2)
 	public boolean rowPartitioned;
 

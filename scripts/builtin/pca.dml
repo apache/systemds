@@ -20,13 +20,17 @@
 #-------------------------------------------------------------
 
 # Principal Component Analysis (PCA) for dimensionality reduction
+# 
+# INPUT PARAMETERS:
 # ---------------------------------------------------------------------------------------------
 # NAME   TYPE    DEFAULT  MEANING
 # ---------------------------------------------------------------------------------------------
 # X      Matrix  ---      Input feature matrix
-# K      Int     ---      Number of reduced dimensions (i.e., columns)
+# K      Int     2        Number of reduced dimensions (i.e., columns)
 # Center Boolean TRUE     Indicates whether or not to center the feature matrix
 # Scale  Boolean TRUE     Indicates whether or not to scale the feature matrix
+
+# RETURN VALUES
 # ---------------------------------------------------------------------------------------------
 # Xout   Matrix  ---      Output feature matrix with K columns
 # Mout   Matrix  ---      Output dominant eigen vectors (can be used for projections)
@@ -37,6 +41,11 @@
 m_pca = function(Matrix[Double] X, Integer K=2, Boolean center=TRUE, Boolean scale=TRUE)
   return (Matrix[Double] Xout, Matrix[Double] Mout, Matrix[Double] Centering, Matrix[Double] ScaleFactor) 
 {
+  if(K > ncol(X)) {
+    print("PCA: invalid parameter value, the value of k should not be greater than the no. of columns in X ")
+    print("setting k = ncol(X)")
+    K = ncol(X)
+  }
   N = nrow(X);
   D = ncol(X);
 

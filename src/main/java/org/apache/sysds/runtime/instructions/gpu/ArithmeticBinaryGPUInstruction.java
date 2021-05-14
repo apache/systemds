@@ -26,17 +26,11 @@ import org.apache.sysds.runtime.instructions.cp.CPOperand;
 import org.apache.sysds.runtime.matrix.operators.Operator;
 
 public abstract class ArithmeticBinaryGPUInstruction extends GPUInstruction {
-	protected CPOperand _input1;
-	protected CPOperand _input2;
-	protected CPOperand _output;
 
 	protected ArithmeticBinaryGPUInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out, String opcode,
 			String istr) {
-		super(op, opcode, istr);
+		super(op, in1, in2, out, opcode, istr);
 		_gputype = GPUINSTRUCTION_TYPE.ArithmeticBinary;
-		_input1 = in1;
-		_input2 = in2;
-		_output = out;
 	}
 
 	public static ArithmeticBinaryGPUInstruction parseInstruction ( String str ) {

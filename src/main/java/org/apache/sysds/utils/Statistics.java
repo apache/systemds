@@ -45,7 +45,6 @@ import org.apache.sysds.runtime.instructions.cp.FunctionCallCPInstruction;
 import org.apache.sysds.runtime.instructions.spark.SPInstruction;
 import org.apache.sysds.runtime.lineage.LineageCacheConfig.ReuseCacheType;
 import org.apache.sysds.runtime.lineage.LineageCacheStatistics;
-import org.apache.sysds.runtime.matrix.data.LibMatrixDNN;
 import org.apache.sysds.runtime.privacy.CheckedConstraintsLog;
 
 /**
@@ -511,7 +510,6 @@ public class Statistics
 		nativeConv2dTime = 0;
 		nativeConv2dBwdFilterTime = 0;
 		nativeConv2dBwdDataTime = 0;
-		LibMatrixDNN.resetStatistics();
 		federatedReadCount.reset();
 		federatedPutCount.reset();
 		federatedGetCount.reset();

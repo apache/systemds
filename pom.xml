@@ -50,6 +50,7 @@
 		<jcuda.version>10.2.0</jcuda.version>
 		<!-->Testing settings<!-->
 		<maven.test.skip>true</maven.test.skip>
+		<rerun.failing.tests.count>2</rerun.failing.tests.count>
 		<jacoco.skip>true</jacoco.skip>
 		<automatedtestbase.outputbuffering>false</automatedtestbase.outputbuffering>
 		<argLine>-Xms4g -Xmx4g -Xmn400m</argLine>
@@ -111,8 +112,19 @@
 					<include>spoof_utils.cuh</include>
 					<include>TempStorage.cuh</include>
 					<include>utils.cuh</include>
+					<include>vector_write.cuh</include>
+					<include>vector_add.cuh</include>
+					<include>Matrix.h</include>
 				</includes>
 				<targetPath>cuda/headers</targetPath>
+			</resource>
+			<resource>
+				<directory>src/main/java/org/apache/sysds/hops/codegen/cplan/java</directory>
+				<includes>
+					<include>Cellwise.java.template</include>
+					<include>Rowwise.java.template</include>
+				</includes>
+				<targetPath>java/spoof</targetPath>
 			</resource>
 		</resources>
 
@@ -271,18 +283,17 @@
 			<plugin> <!-- unit tests -->
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-surefire-plugin</artifactId>
-				<version>3.0.0-M4</version><!--$NO-MVN-MAN-VER$ -->
+				<version>3.0.0-M5</version>
 				<configuration>
 					<skipTests>${maven.test.skip}</skipTests>
 					<parallel>classes</parallel>
-					<!-- <useUnlimitedThreads>true</useUnlimitedThreads> -->
 					<threadCount>12</threadCount>
 					<!-- 1C means the number of threads times 1 possible maximum forks for testing-->
 					<forkCount>1C</forkCount>
 					<reuseForks>false</reuseForks>
 					<reportFormat>brief</reportFormat>
 					<trimStackTrace>true</trimStackTrace>
-					<rerunFailingTestsCount>2</rerunFailingTestsCount>
+					<rerunFailingTestsCount>${rerun.failing.tests.count}</rerunFailingTestsCount>
 				</configuration>
 			</plugin>
 
@@ -556,6 +567,7 @@
 								<exclude>.project</exclude>
 								<exclude>src/main/python/docs/build/**/*</exclude>
 								<exclude>src/main/python/docs/source/_build/**</exclude>
+								<exclude>src/main/python/generator/resources/**</exclude>
 								<exclude>docs/api/**/*</exclude>
 								<exclude>docs/_site/**/*</exclude>
 								<exclude>docs/site/run_issues.md</exclude>

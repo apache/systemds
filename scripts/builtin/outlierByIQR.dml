@@ -46,6 +46,7 @@
 m_outlierByIQR = function(Matrix[Double] X, Double k =1.5, Integer repairMethod = 1, 
   Integer max_iterations, Boolean verbose = TRUE) return(Matrix[Double] Y) 
 {
+
   sumPrevious = as.double(0)
   sumNext = as.double(1)
   counter = 0
@@ -70,6 +71,7 @@ m_outlierByIQR = function(Matrix[Double] X, Double k =1.5, Integer repairMethod 
     counter = counter + 1; 
   }
   Y = X
+
   if(verbose) {
     print("Total executed iterations = "+counter)
     print("Upper-bound of data was calculated using Q3 + k * IQR")
@@ -111,8 +113,10 @@ compute_quartiles = function(Matrix[Double] X)
   colQ3 = matrix(0, 1, cols)
   if(nrow(X) > 1) {
     parfor(i in 1:cols) {
-      colQ1[,i] = quantile(X[,i], 0.25)
-      colQ3[,i] = quantile(X[,i], 0.75)
+      isNull = is.na(X[, i])
+      Xt = removeEmpty(target=X[, i], margin="rows", select=(isNull == 0))
+      colQ1[,i] = quantile(Xt, 0.25)
+      colQ3[,i] = quantile(Xt, 0.75)
     }
   }
   IQR = colQ3 - colQ1

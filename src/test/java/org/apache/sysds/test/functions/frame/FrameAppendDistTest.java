@@ -83,12 +83,12 @@ public class FrameAppendDistTest extends AutomatedTestBase
 	@Test
 	public void testAppendInBlock1DenseRBindSP() {
 		commonAppendTest(ExecMode.SPARK, rows1, rows2, cols1a, cols1a, false, AppendMethod.MR_RAPPEND, true);
-	}   
+	}
 	
 	@Test
 	public void testAppendInBlock1SparseRBindSP() {
 		commonAppendTest(ExecMode.SPARK, rows1, rows1, cols1a, cols1a, true, AppendMethod.MR_RAPPEND, true);
-	}   
+	}
 	
 	//NOTE: mappend only applied for m2_cols<=blocksize
 	@Test
@@ -114,7 +114,7 @@ public class FrameAppendDistTest extends AutomatedTestBase
 	public void commonAppendTest(ExecMode platform, int rows1, int rows2, int cols1, int cols2, boolean sparse, AppendMethod forcedAppendMethod, boolean rbind)
 	{
 		TestConfiguration config = getAndLoadTestConfiguration(TEST_NAME);
-	    
+		
 		ExecMode prevPlfm=rtplatform;
 		
 		double sparsity = (sparse) ? sparsity2 : sparsity1; 
@@ -131,21 +131,17 @@ public class FrameAppendDistTest extends AutomatedTestBase
 	
 			config.addVariable("rows", rows1);
 			config.addVariable("cols", cols1);
-	          
+			
 			/* This is for running the junit test the new way, i.e., construct the arguments directly */
 			String RI_HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = RI_HOME + TEST_NAME + ".dml";
 			programArgs = new String[]{"-explain","-args",  input("A"), 
-					                             Long.toString(rows1), 
-					                             Long.toString(cols1),
-								                 input("B"),
-					                             Long.toString(rows2), 
-								                 Long.toString(cols2),
-		                                         output("C"),
-		                                         (rbind? "rbind": "cbind")};
+				Long.toString(rows1), Long.toString(cols1), input("B"),
+				Long.toString(rows2), Long.toString(cols2), output("C"),
+				(rbind? "rbind": "cbind")};
 			fullRScriptName = RI_HOME + TEST_NAME + ".R";
 			rCmd = "Rscript" + " " + fullRScriptName + " " + 
-			       inputDir() + " " + expectedDir() + " " + (rbind? "rbind": "cbind");
+				inputDir() + " " + expectedDir() + " " + (rbind? "rbind": "cbind");
 	
 			//initialize the frame data.
 			ValueType[] lschemaA = genMixSchema(cols1);

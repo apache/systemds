@@ -1,0 +1,101 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+#
+# UNDERSAMPLING TECHNIQUE;
+# COMPUTES TOMEK LINKS AND DROPS THEM FROM DATA MATRIX AND LABEL VECTOR
+# DROPS ONLY THE MAJORITY LABEL AND CORRESPONDING POINT OF TOMEK LINKS
+#
+# INPUT   				PARAMETERS:
+# ---------------------------------------------------------------------------------------------
+# NAME    				TYPE     DEFAULT  MEANING
+# ---------------------------------------------------------------------------------------------
+# X       				MATRIX   ---      Data Matrix (nxm)
+# y      				MATRIX   ---      Label Matrix (nx1)
+# ---------------------------------------------------------------------------------------------
+# OUTPUT:
+# X_under  - Data Matrix without Tomek links
+# y_under  - Labels corresponding to undersampled data
+# drop_idx - Indices of dropped rows/labels wrt input
+
+
+###### MAIN PART ######
+
+m_tomeklink = function(Matrix[Double] X, Matrix[Double] y)
+    return (Matrix[Double] X_under, Matrix[Double] y_under, Matrix[Double] drop_idx) {
+  majority_label = 0
+  n = nrow(X)
+  m = ncol(X)
+
+  tomek_links = get_links(X, y, majority_label)
+
+  X_under = matrix(0, rows = 0, cols = m)
+  y_under = matrix(0, rows = 0, cols = 1)
+  drop_idx = matrix(0, rows = 0, cols = 1)
+
+  for (i in 1:nrow(X)) {
+    is_link = as.scalar(tomek_links[i, 1])
+    if (is_link == 1) {
+      X_under = rbind(X_under, X[i,])
+      y_under = rbind(y_under, y[i,])
+      drop_idx = rbind(drop_idx, matrix(i, rows = 1, cols = 1))
+    }
+  }
+}
+
+###### END MAIN PART ######
+
+###### UTILS ######
+
+# nearest nb function ----------------------------------------------------------
+get_nn = function(Matrix[Double] X)
+    return (Matrix[Double] nn) {
+  nn = matrix(0, rows = nrow(X), cols = 1)
+  for (i in 1:nrow(X)) {
+    dists = rowSums((X - X[i,])^2)
+    sort_dists = order(target = dists, by = 1, decreasing = FALSE, index.return = TRUE)
+    nn[i, 1] = as.scalar(sort_dists[2, 1])  # nearest, not self
+  }
+}
+
+# find tomek link function  ----------------------------------------------------
+get_links = function(Matrix[Double] X, Matrix[Double] y, double majority_label)
+    return (Matrix[Double] tomek_links) {
+  tomek_links = matrix(0, rows = nrow(X), cols = 1)
+  nn = get_nn(X)
+
+  for (index in 1:nrow(X)) {
+    # this is a tomek link according to R: ubTomek https://rdrr.io/cran/unbalanced/src/R/ubTomek.R
+    # other sources define it as a pair of mutual nearest neighbor
+    # where exactly one endpoint has the majority label
+
+    nn_index = as.scalar(nn[index, 1])
+    label = as.scalar(y[index, 1])
+    nn_label = as.scalar(y[nn_index, 1])
+
+    if (label != majority_label) {
+      if (nn_label == majority_label) {
+        tomek_links[nn_index, 1] = 1
+      }
+    }
+  }
+}
+
+###### END UTILS ######

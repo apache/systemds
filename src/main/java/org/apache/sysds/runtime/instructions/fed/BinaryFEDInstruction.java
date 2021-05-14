@@ -31,8 +31,18 @@ import org.apache.sysds.runtime.matrix.operators.Operator;
 public abstract class BinaryFEDInstruction extends ComputationFEDInstruction {
 
 	protected BinaryFEDInstruction(FEDInstruction.FEDType type, Operator op,
+		CPOperand in1, CPOperand in2, CPOperand out, String opcode, String istr, boolean federatedOutput) {
+		super(type, op, in1, in2, out, opcode, istr, federatedOutput);
+	}
+
+	protected BinaryFEDInstruction(FEDInstruction.FEDType type, Operator op,
 		CPOperand in1, CPOperand in2, CPOperand out, String opcode, String istr) {
-		super(type, op, in1, in2, out, opcode, istr);
+		this(type, op, in1, in2, out, opcode, istr, false);
+	}
+
+	public BinaryFEDInstruction(FEDInstruction.FEDType type, Operator op,
+		CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out, String opcode, String istr) {
+		super(type, op, in1, in2, in3, out, opcode, istr);
 	}
 
 	public static BinaryFEDInstruction parseInstruction(String str) {
@@ -42,11 +52,12 @@ public abstract class BinaryFEDInstruction extends ComputationFEDInstruction {
 		}
 
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
-		InstructionUtils.checkNumFields(parts, 3, 4);
+		InstructionUtils.checkNumFields(parts, 3, 4, 5);
 		String opcode = parts[0];
 		CPOperand in1 = new CPOperand(parts[1]);
 		CPOperand in2 = new CPOperand(parts[2]);
 		CPOperand out = new CPOperand(parts[3]);
+		boolean federatedOutput = parts.length > 5 && Boolean.parseBoolean(parts[5]);
 
 		checkOutputDataType(in1, in2, out);
 		Operator operator = InstructionUtils.parseBinaryOrBuiltinOperator(opcode, in1, in2);
@@ -56,15 +67,36 @@ public abstract class BinaryFEDInstruction extends ComputationFEDInstruction {
 		if( in1.getDataType() == DataType.SCALAR && in2.getDataType() == DataType.SCALAR )
 			throw new DMLRuntimeException("Federated binary scalar scalar operations not yet supported");
 		else if( in1.getDataType() == DataType.MATRIX && in2.getDataType() == DataType.MATRIX )
-			return new BinaryMatrixMatrixFEDInstruction(operator, in1, in2, out, opcode, str);
+			return new BinaryMatrixMatrixFEDInstruction(operator, in1, in2, out, opcode, str, federatedOutput);
 		else if( in1.getDataType() == DataType.TENSOR && in2.getDataType() == DataType.TENSOR )
 			throw new DMLRuntimeException("Federated binary tensor tensor operations not yet supported");
-		else if( in1.isMatrix() && in2.isScalar() )
-			return new BinaryMatrixScalarFEDInstruction(operator, in1, in2, out, opcode, str);
-		else if( in2.isMatrix() && in1.isScalar() )
-			return new BinaryMatrixScalarFEDInstruction(operator, in1, in2, out, opcode, str);
+		else if( in1.isMatrix() && in2.isScalar() || in2.isMatrix() && in1.isScalar() )
+			return new BinaryMatrixScalarFEDInstruction(operator, in1, in2, out, opcode, str, federatedOutput);
 		else
 			throw new DMLRuntimeException("Federated binary operations not yet supported:" + opcode);
+	}
+
+	protected static String parseBinaryInstruction(String instr, CPOperand in1, CPOperand in2, CPOperand out) {
+		String[] parts = InstructionUtils.getInstructionPartsWithValueType(instr);
+		InstructionUtils.checkNumFields ( parts, 3, 4 );
+		String opcode = parts[0];
+		in1.split(parts[1]);
+		in2.split(parts[2]);
+		out.split(parts[3]);
+		return opcode;
+	}
+
+	protected static String parseBinaryInstruction(String instr, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out) {
+		String[] parts = InstructionUtils.getInstructionPartsWithValueType(instr);
+		InstructionUtils.checkNumFields ( parts, 4 );
+
+		String opcode = parts[0];
+		in1.split(parts[1]);
+		in2.split(parts[2]);
+		in3.split(parts[3]);
+		out.split(parts[4]);
+
+		return opcode;
 	}
 
 	protected static void checkOutputDataType(CPOperand in1, CPOperand in2, CPOperand out) {

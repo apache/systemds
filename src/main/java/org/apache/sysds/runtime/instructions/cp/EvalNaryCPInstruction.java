@@ -25,6 +25,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.stream.Collectors;
 
 import org.apache.sysds.common.Builtins;
 import org.apache.sysds.common.Types.DataType;
@@ -60,9 +61,12 @@ public class EvalNaryCPInstruction extends BuiltinNaryCPInstruction {
 	public void processInstruction(ExecutionContext ec) {
 		//1. get the namespace and func
 		String funcName = ec.getScalarInput(inputs[0]).getStringValue();
-		if( funcName.contains(Program.KEY_DELIM) )
-			throw new DMLRuntimeException("Eval calls to '"+funcName+"', i.e., a function outside "
-				+ "the default "+ "namespace, are not supported yet. Please call the function directly.");
+		String nsName = null; //default namespace
+		if( funcName.contains(Program.KEY_DELIM) ) {
+			String[] parts = DMLProgram.splitFunctionKey(funcName);
+			funcName = parts[1];
+			nsName = parts[0];
+		}
 		
 		// bound the inputs to avoiding being deleted after the function call
 		CPOperand[] boundInputs = Arrays.copyOfRange(inputs, 1, inputs.length);
@@ -77,14 +81,17 @@ public class EvalNaryCPInstruction extends BuiltinNaryCPInstruction {
 		DataType dt1 = boundInputs[0].getDataType().isList() ? 
 			DataType.MATRIX : boundInputs[0].getDataType();
 		String funcName2 = Builtins.getInternalFName(funcName, dt1);
-		if( !ec.getProgram().containsFunctionProgramBlock(null, funcName)) {
-			if( !ec.getProgram().containsFunctionProgramBlock(null,funcName2) )
-				compileFunctionProgramBlock(funcName, dt1, ec.getProgram());
+		if( !ec.getProgram().containsFunctionProgramBlock(nsName, funcName)) {
+			nsName = DMLProgram.BUILTIN_NAMESPACE;
+			synchronized(ec.getProgram()) { //prevent concurrent recompile/prog modify
+				if( !ec.getProgram().containsFunctionProgramBlock(nsName, funcName2) )
+					compileFunctionProgramBlock(funcName, dt1, ec.getProgram());
+			}
 			funcName = funcName2;
 		}
 		
 		//obtain function block (but unoptimized version of existing functions for correctness)
-		FunctionProgramBlock fpb = ec.getProgram().getFunctionProgramBlock(null, funcName, false);
+		FunctionProgramBlock fpb = ec.getProgram().getFunctionProgramBlock(nsName, funcName, false);
 		
 		//4. expand list arguments if needed
 		CPOperand[] boundInputs2 = null;
@@ -105,8 +112,8 @@ public class EvalNaryCPInstruction extends BuiltinNaryCPInstruction {
 			boundInputs = boundInputs2;
 		}
 		
-		//5. call the function
-		FunctionCallCPInstruction fcpi = new FunctionCallCPInstruction(null, funcName,
+		//5. call the function (to unoptimized function)
+		FunctionCallCPInstruction fcpi = new FunctionCallCPInstruction(nsName, funcName,
 			false, boundInputs, fpb.getInputParamNames(), boundOutputNames, "eval func");
 		fcpi.processInstruction(ec);
 
@@ -136,20 +143,26 @@ public class EvalNaryCPInstruction extends BuiltinNaryCPInstruction {
 	
 	private static void compileFunctionProgramBlock(String name, DataType dt, Program prog) {
 		//load builtin file and parse function statement block
+		String nsName = DMLProgram.BUILTIN_NAMESPACE;
 		Map<String,FunctionStatementBlock> fsbs = DmlSyntacticValidator
-			.loadAndParseBuiltinFunction(name, DMLProgram.DEFAULT_NAMESPACE);
+			.loadAndParseBuiltinFunction(name, nsName);
 		if( fsbs.isEmpty() )
 			throw new DMLRuntimeException("Failed to compile function '"+name+"'.");
+		
+		DMLProgram dmlp = (prog.getDMLProg() != null) ? prog.getDMLProg() :
+			fsbs.get(Builtins.getInternalFName(name, dt)).getDMLProg();
+		
+		//filter already existing functions (e.g., already loaded internally-called functions)
+		fsbs = (dmlp.getBuiltinFunctionDictionary() == null) ? fsbs : fsbs.entrySet().stream()
+			.filter(e -> !dmlp.getBuiltinFunctionDictionary().containsFunction(e.getKey()))
+			.collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue()));
 		
 		// prepare common data structures, including a consolidated dml program
 		// to facilitate function validation which tries to inline lazily loaded
 		// and existing functions.
-		DMLProgram dmlp = (prog.getDMLProg() != null) ? prog.getDMLProg() :
-			fsbs.get(Builtins.getInternalFName(name, dt)).getDMLProg();
 		for( Entry<String,FunctionStatementBlock> fsb : fsbs.entrySet() ) {
-			if( !dmlp.getDefaultFunctionDictionary().containsFunction(fsb.getKey()) ) {
-				dmlp.addFunctionStatementBlock(fsb.getKey(), fsb.getValue());
-			}
+			dmlp.createNamespace(nsName); // create namespace on demand
+			dmlp.addFunctionStatementBlock(nsName, fsb.getKey(), fsb.getValue());
 			fsb.getValue().setDMLProg(dmlp);
 		}
 		DMLTranslator dmlt = new DMLTranslator(dmlp);
@@ -180,12 +193,10 @@ public class EvalNaryCPInstruction extends BuiltinNaryCPInstruction {
 		
 		// compile runtime program
 		for( Entry<String,FunctionStatementBlock> fsb : fsbs.entrySet() ) {
-			if( !prog.containsFunctionProgramBlock(null, fsb.getKey(), false) ) {
-				FunctionProgramBlock fpb = (FunctionProgramBlock) dmlt
-					.createRuntimeProgramBlock(prog, fsb.getValue(), ConfigurationManager.getDMLConfig());
-				prog.addFunctionProgramBlock(null, fsb.getKey(), fpb, true); // optimized
-				prog.addFunctionProgramBlock(null, fsb.getKey(), fpb, false);    // unoptimized -> eval
-			}
+			FunctionProgramBlock fpb = (FunctionProgramBlock) dmlt
+				.createRuntimeProgramBlock(prog, fsb.getValue(), ConfigurationManager.getDMLConfig());
+			prog.addFunctionProgramBlock(nsName, fsb.getKey(), fpb, true);  // optimized
+			prog.addFunctionProgramBlock(nsName, fsb.getKey(), fpb, false); // unoptimized -> eval
 		}
 	}
 	

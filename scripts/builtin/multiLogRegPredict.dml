@@ -20,18 +20,19 @@
 #-------------------------------------------------------------
 
 
-#THIS SCRIPT APPLIES THE ESTIMATED PARAMETERS OF MULTINOMIAL LOGISTIC REGRESSION TO A NEW (TEST) DATASET
+# THIS SCRIPT APPLIES THE ESTIMATED PARAMETERS OF MULTINOMIAL LOGISTIC REGRESSION TO A NEW (TEST) DATASET
+# Matrix M of predicted means/probabilities, some statistics in CSV format (see below)
 #
 # INPUT PARAMETERS:
 # ---------------------------------------------------------------------------------------------
-# NAME  TYPE   DEFAULT  MEANING
+# NAME          TYPE        DEFAULT  MEANING
 # ---------------------------------------------------------------------------------------------
-# X     Double  ---     Data Matrix X
-# B     Double  ---     Regression parameters betas
-# Y     Double  ---     Response vector Y
-# ---------------------------------------------------------------------------------------------
-# OUTPUT: Matrix M of predicted means/probabilities, some statistics in CSV format (see below)
-# OUTPUT:
+# X             Matrix      ---     Data Matrix X
+# B             Matrix      ---     Regression parameters betas
+# Y             Matrix      ---     Response vector Y
+# verbose       Boolean     FALSE   /
+#
+# RETURN VALUES
 # ---------------------------------------------------------------------------------------------
 # NAME               TYPE   DEFAULT  MEANING
 # ---------------------------------------------------------------------------------------------
@@ -50,7 +51,7 @@ m_multiLogRegPredict = function(Matrix[Double] X, Matrix[Double] B, Matrix[Doubl
   }
   if(ncol(X) < nrow(B)-1)
     stop("multiLogRegPredict: mismatching ncol(X) and nrow(B): "+ncol(X)+" "+nrow(B));
-
+  accuracy = 0.0 # initialize variable 
   beta = B[1:ncol(X), ];
   intercept = ifelse(ncol(X)==nrow(B), matrix(0,1,ncol(B)), B[nrow(B),]);
   linear_terms = X %*% beta + matrix(1,nrow(X),1) %*% intercept;

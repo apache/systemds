@@ -29,7 +29,7 @@
     if (status != CUDA_SUCCESS) {                                         \
       const char* str;                                                    \
       cuGetErrorName(status, &str);                                       \
-      std::cout << "(CUDA) returned " << str;                             \
+      std::cout << "(CUDA) returned: " << str;                             \
       std::cout << " (" << __FILE__ << ":" << __LINE__ << ":" << __func__ \
                 << "())" << std::endl;                                    \
     }                                                                     \
@@ -39,10 +39,19 @@
   do {                                                                    \
     cudaError_t status = call;                                            \
     if (status != cudaSuccess) {                                          \
-      std::cout << "(CUDART) returned " << cudaGetErrorString(status);    \
+      std::cout << "(CUDART) returned: " << cudaGetErrorString(status);    \
       std::cout << " (" << __FILE__ << ":" << __LINE__ << ":" << __func__ \
                 << "())" << std::endl;                                    \
     }                                                                     \
   } while (0)
 
+#define CHECK_CUBLAS(call)                                                \
+  do {                                                                    \
+    cublasStatus_t status = call;                                            \
+    if (status != CUBLAS_STATUS_SUCCESS) {                                          \
+      std::cout << "(CUBLAS) returned " << status;    \
+      std::cout << " (" << __FILE__ << ":" << __LINE__ << ":" << __func__ \
+                << "())" << std::endl;                                    \
+    }                                                                     \
+  } while (0)
 #endif // HOST_UTILS_H

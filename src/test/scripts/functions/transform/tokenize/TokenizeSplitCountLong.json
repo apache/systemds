@@ -1,0 +1,9 @@
+{
+  "algo": "split",
+  "out": "count",
+  "out_params": {
+    "sort_alpha": true
+  },
+  "id_cols": [2],
+  "tokenize_col": 3
+}

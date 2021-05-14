@@ -707,6 +707,13 @@ public class HopRewriteUtils
 		return createUnary(ix, OpOp1.CAST_AS_SCALAR);
 	}
 	
+	public static IndexingOp createIndexingOp(Hop input, Hop batchsize) {
+		LiteralOp rl = new LiteralOp(1);
+		LiteralOp cl = new LiteralOp(1);
+		Hop cu = createUnary(input, OpOp1.NCOL);
+		return createIndexingOp(input, rl, batchsize, cl, cu);
+	}
+	
 	public static IndexingOp createIndexingOp(Hop input, long rix, long cix) {
 		LiteralOp row = new LiteralOp(rix);
 		LiteralOp col = new LiteralOp(cix);
@@ -955,6 +962,10 @@ public class HopRewriteUtils
 	
 	public static boolean isSparse( Hop hop, double threshold ) {
 		return hop.getSparsity() < threshold;
+	}
+
+	public static boolean isEqualValue( Hop hop1, Hop hop2 ) {
+		return isEqualValue((LiteralOp)hop1, (LiteralOp)hop2);
 	}
 	
 	public static boolean isEqualValue( LiteralOp hop1, LiteralOp hop2 ) {
@@ -1579,6 +1590,11 @@ public class HopRewriteUtils
 		return Arrays.stream(mc).allMatch(h -> h.nnzKnown() || (worstcase && h.dimsKnown()));
 	}
 	
+	public static boolean hasListInputs(Hop hop) {
+		return hop.getInput()!= null 
+			&& hop.getInput().stream().anyMatch(h -> h.getDataType().isList());
+	}
+	
 	public static boolean containsSecondOrderBuiltin(ArrayList<Hop> roots) {
 		Hop.resetVisitStatus(roots);
 		return roots.stream().anyMatch(r -> containsSecondOrderBuiltin(r));
@@ -1588,8 +1604,17 @@ public class HopRewriteUtils
 		if( hop.isVisited() ) return false;
 		hop.setVisited();
 		return HopRewriteUtils.isNary(hop, OpOpN.EVAL)
-			|| HopRewriteUtils.isParameterBuiltinOp(hop, ParamBuiltinOp.PARAMSERV)
+			|| (HopRewriteUtils.isParameterBuiltinOp(hop, ParamBuiltinOp.PARAMSERV) 
+				&& !knownParamservFunctions(hop))
 			|| hop.getInput().stream().anyMatch(c -> containsSecondOrderBuiltin(c));
+	}
+	
+	public static boolean knownParamservFunctions(Hop hop) {
+		ParameterizedBuiltinOp pop = (ParameterizedBuiltinOp) hop;
+		return pop.getParameterHop("upd") instanceof LiteralOp
+			&& pop.getParameterHop("agg") instanceof LiteralOp
+			&& (pop.getParameterHop("val") == null 
+			 || pop.getParameterHop("val") instanceof LiteralOp);
 	}
 
 	public static void setUnoptimizedFunctionCalls(StatementBlock sb) {

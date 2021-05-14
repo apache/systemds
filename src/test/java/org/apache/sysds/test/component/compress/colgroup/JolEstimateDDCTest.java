@@ -22,7 +22,7 @@ package org.apache.sysds.test.component.compress.colgroup;
 import java.util.ArrayList;
 import java.util.Collection;
 
-import org.apache.sysds.runtime.compress.colgroup.ColGroup.CompressionType;
+import org.apache.sysds.runtime.compress.colgroup.AColGroup.CompressionType;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.DataConverter;
 import org.apache.sysds.test.TestUtils;
@@ -44,67 +44,71 @@ public class JolEstimateDDCTest extends JolEstimateTest {
 		// DCC is different in that it is a dense compression
 		// that also encode 0 values the same as all the other values.
 
-		// mb = DataConverter.convertToMatrixBlock(new double[][] {{0}});
-		// tests.add(new Object[] {mb, 0});
+		mb = DataConverter.convertToMatrixBlock(new double[][] {{0}});
+		tests.add(new Object[] {mb});
 
 		mb = DataConverter.convertToMatrixBlock(new double[][] {{1}});
-		tests.add(new Object[] {mb, 0});
+		tests.add(new Object[] {mb});
 		mb = DataConverter.convertToMatrixBlock(new double[][] {{1, 2}});
-		tests.add(new Object[] {mb, 0});
+		tests.add(new Object[] {mb});
 		mb = DataConverter.convertToMatrixBlock(new double[][] {{1, 2, 3}});
-		tests.add(new Object[] {mb, 0});
+		tests.add(new Object[] {mb});
 		mb = DataConverter.convertToMatrixBlock(new double[][] {{1, 2, 3, 4}});
-		tests.add(new Object[] {mb, 0});
+		tests.add(new Object[] {mb});
 		mb = DataConverter.convertToMatrixBlock(new double[][] {{1, 2, 3, 4, 5}});
-		tests.add(new Object[] {mb, 0});
+		tests.add(new Object[] {mb});
 		mb = DataConverter.convertToMatrixBlock(new double[][] {{1, 2, 3, 4, 5, 6}});
-		tests.add(new Object[] {mb, 0});
+		tests.add(new Object[] {mb});
 
 		// Dense Random
 		mb = DataConverter.convertToMatrixBlock(TestUtils.generateTestMatrix(1, 20, 0, 20, 1.0, 7));
-		tests.add(new Object[] {mb, 0});
+		tests.add(new Object[] {mb});
 		mb = DataConverter.convertToMatrixBlock(TestUtils.generateTestMatrix(1, 100, 0, 20, 1.0, 7));
-		tests.add(new Object[] {mb, 0});
+		tests.add(new Object[] {mb});
 		mb = DataConverter.convertToMatrixBlock(TestUtils.generateTestMatrix(1, 500, 0, 20, 1.0, 7));
-		tests.add(new Object[] {mb, 0});
+		tests.add(new Object[] {mb});
 
 		// Random Sparse Very big, because 0 is materialized.
 		mb = DataConverter
 			.convertToMatrixBlock(TestUtils.round(TestUtils.generateTestMatrix(1, 4000, 0, 254, 0.01, 7)));
-		tests.add(new Object[] {mb, 0});
+		tests.add(new Object[] {mb});
 		mb = DataConverter
 			.convertToMatrixBlock(TestUtils.round(TestUtils.generateTestMatrix(1, 8000, 0, 254, 0.01, 7)));
-		tests.add(new Object[] {mb, 0});
+		tests.add(new Object[] {mb});
 		mb = DataConverter
 			.convertToMatrixBlock(TestUtils.round(TestUtils.generateTestMatrix(1, 16000, 0, 254, 0.01, 7)));
-		tests.add(new Object[] {mb, 0});
+		tests.add(new Object[] {mb});
 
 		mb = DataConverter
 			.convertToMatrixBlock(TestUtils.round(TestUtils.generateTestMatrix(1, 4000, 0, 254, 0.001, 7)));
-		tests.add(new Object[] {mb, 0});
+		tests.add(new Object[] {mb});
 		mb = DataConverter
 			.convertToMatrixBlock(TestUtils.round(TestUtils.generateTestMatrix(1, 8000, 0, 254, 0.001, 7)));
-		tests.add(new Object[] {mb, 0});
+		tests.add(new Object[] {mb});
 		mb = DataConverter
 			.convertToMatrixBlock(TestUtils.round(TestUtils.generateTestMatrix(1, 16000, 0, 254, 0.001, 7)));
-		tests.add(new Object[] {mb, 0});
+		tests.add(new Object[] {mb});
 
 		// DDC2 instances, need more unique values than 255
 
 		mb = DataConverter.convertToMatrixBlock(TestUtils.round(TestUtils.generateTestMatrix(1, 4000, 0, 512, 0.7, 7)));
-		tests.add(new Object[] {mb, 0});
+		tests.add(new Object[] {mb});
 		mb = DataConverter
 			.convertToMatrixBlock(TestUtils.round(TestUtils.generateTestMatrix(1, 8000, 0, 1024, 0.7, 7)));
-		tests.add(new Object[] {mb, 0});
+		tests.add(new Object[] {mb});
 		mb = DataConverter
 			.convertToMatrixBlock(TestUtils.round(TestUtils.generateTestMatrix(1, 16000, 0, 2048, 0.7, 7)));
-		tests.add(new Object[] {mb, 0});
+		tests.add(new Object[] {mb});
 
+		// Multi columns
+
+		mb = DataConverter.convertToMatrixBlock(TestUtils.round(TestUtils.generateTestMatrix(4, 100, 0, 2, 0.7, 7)));
+		tests.add(new Object[] {mb});
 		return tests;
 	}
 
-	public JolEstimateDDCTest(MatrixBlock mb, int tolerance) {
-		super(mb, tolerance);
+	public JolEstimateDDCTest(MatrixBlock mb) {
+		super(mb);
 	}
 
 	@Override

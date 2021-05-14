@@ -1,0 +1,122 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+test_num = $in_test_num;
+row_part = $in_rp;
+
+if(row_part) {
+  X = rbind(read($in_X1), read($in_X2));
+}
+else {
+  X = cbind(read($in_X1), read($in_X2));
+}
+
+if(test_num == 1) {
+  # X ... 2000x2000 matrix
+  Y= matrix(2, rows=2000, cols=1);
+
+  lamda = sum(Y);
+  Z = round(abs(X + lamda)) + 5;
+}
+else if(test_num == 2) {
+  # X ... 10x10 matrix
+  Z = 1/(1+exp(-X));
+}
+else if(test_num == 3) {
+  # X ... 4x4 matrix
+  Z = 10 + floor(round(abs(7 + (1 / exp(X)))));
+}
+else if(test_num == 4) {
+  # X ... 4x4 matrix
+  w = matrix(3, rows=4, cols=4);
+  v = matrix(5, rows=4, cols=4);
+  Z = 10 + floor(round(abs((X + w) * v)));
+}
+else if(test_num == 5) {
+  # X ... 4x4 matrix
+  w = matrix("1 2 3 4", rows=4, cols=1);
+  v = matrix("4 4 4 4", rows=4, cols=1);
+
+  G = abs(exp(X));
+  Y = 10 + floor(round(abs((X / w) + v)));
+  Z = G + Y;
+}
+else if(test_num == 6) {
+  # X ... 4x1 vector
+  y = matrix("1 1 1 1", rows=4, cols=1);
+  v = matrix("3 3 3 3", rows=4, cols=1);
+
+  Z = as.matrix(sum(X * y * v));
+}
+else if(test_num == 7) {
+  # X ... 1000x1 vector
+  Y = seq(6, 1006);
+
+  U = X + Y - 7 + abs(X);
+  Z = t(U) %*% U;
+}
+else if(test_num == 8) {
+  # X ... 1002x24 matrix
+  Y = seq(1, 1002);
+  X[100:900,] = matrix(0, rows=801, cols=24);
+
+  Z = X * ((X + 7.7) * Y);
+}
+else if(test_num == 9) {
+  # X ... 500x2 matrix
+  Y = matrix(seq(6, 1005), 500, 2);
+
+  U = X + 7 * Y;
+  Z = as.matrix(sum(log(U)))
+}
+else if(test_num == 10) {
+  while(FALSE){} #TODO
+  # X ... 500x2 matrix
+  Y = (0 / (X - 500))+1;
+  Z = replace(target=Y, pattern=0/0, replacement=7);
+}
+else if(test_num == 11) {
+  # X ... 1100x2000 matrix
+  Y = seq(1, 2000);
+
+  Z = -2 * X + t(Y);
+}
+else if(test_num == 12) {
+  # X ... 2x500 matrix
+  Y = matrix(seq(6, 1005), 2, 500);
+
+  U = X + 7 * Y;
+  Z = as.matrix(sum(sqrt(U)))
+}
+else if(test_num == 13) {
+  # X ... 2x4 matrix
+  w = matrix(seq(1,8), rows=2, cols=4);
+  v = matrix(5, rows=2, cols=4);
+  Z = 10 + floor(round(abs((X + w) * v)));
+}
+else if(test_num == 14) {
+  while(FALSE){} #TODO
+
+  # X ... 1100x200 matrix  
+  Z = colMins(2 * log(X));
+}
+
+write(Z, $out_Z);

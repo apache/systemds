@@ -1736,44 +1736,40 @@ public class DMLTranslator
 		Hop left  = processExpression(source.getLeft(),  null, hops);
 		Hop right = processExpression(source.getRight(), null, hops);
 
-		if (left == null || right == null){
-			left  = processExpression(source.getLeft(),  null, hops);
-			right = processExpression(source.getRight(), null, hops);
+		if (left == null || right == null) {
+			throw new ParseException("Missing input in binary expressions (" + source.toString()+"): "
+				+ ((left==null)?source.getLeft():source.getRight())+", line="+source.getBeginLine());
 		}
-	
-		Hop currBop = null;
-
+		
 		//prepare target identifier and ensure that output type is of inferred type 
-        //(type should not be determined by target (e.g., string for print)
+		//(type should not be determined by target (e.g., string for print)
 		if (target == null) {
-		    target = createTarget(source);
+			target = createTarget(source);
 		}
 		target.setValueType(source.getOutput().getValueType());
 		
-		if (source.getOpCode() == Expression.BinaryOp.PLUS) {
-			currBop = new BinaryOp(target.getName(), target.getDataType(), target.getValueType(), OpOp2.PLUS, left, right);
-		} else if (source.getOpCode() == Expression.BinaryOp.MINUS) {
-			currBop = new BinaryOp(target.getName(), target.getDataType(), target.getValueType(), OpOp2.MINUS, left, right);
-		} else if (source.getOpCode() == Expression.BinaryOp.MULT) {
-			currBop = new BinaryOp(target.getName(), target.getDataType(), target.getValueType(), OpOp2.MULT, left, right);
-		} else if (source.getOpCode() == Expression.BinaryOp.DIV) {
-			currBop = new BinaryOp(target.getName(), target.getDataType(), target.getValueType(), OpOp2.DIV, left, right);
-		} else if (source.getOpCode() == Expression.BinaryOp.MODULUS) {
-			currBop = new BinaryOp(target.getName(), target.getDataType(), target.getValueType(), OpOp2.MODULUS, left, right);
-		} else if (source.getOpCode() == Expression.BinaryOp.INTDIV) {
-			currBop = new BinaryOp(target.getName(), target.getDataType(), target.getValueType(), OpOp2.INTDIV, left, right);
-		} else if (source.getOpCode() == Expression.BinaryOp.MATMULT) {
-			currBop = new AggBinaryOp(target.getName(), target.getDataType(), target.getValueType(), OpOp2.MULT, org.apache.sysds.common.Types.AggOp.SUM, left, right);
-		} else if (source.getOpCode() == Expression.BinaryOp.POW) {
-			currBop = new BinaryOp(target.getName(), target.getDataType(), target.getValueType(), OpOp2.POW, left, right);
+		Hop currBop = null;
+		switch( source.getOpCode() ) {
+			case PLUS:
+			case MINUS:
+			case MULT:
+			case DIV:
+			case MODULUS:
+			case POW:
+			case INTDIV:
+				currBop = new BinaryOp(target.getName(), target.getDataType(),
+					target.getValueType(), OpOp2.valueOf(source.getOpCode().name()), left, right);
+				break;
+			case MATMULT:
+				currBop = new AggBinaryOp(target.getName(), target.getDataType(), target.getValueType(), OpOp2.MULT, org.apache.sysds.common.Types.AggOp.SUM, left, right);
+				break;
+			default:
+				throw new ParseException("Unsupported parsing of binary expression: "+source.getOpCode());
 		}
-		else {
-			throw new ParseException("Unsupported parsing of binary expression: "+source.getOpCode());
-		}
+		
 		setIdentifierParams(currBop, source.getOutput());
 		currBop.setParseInfo(source);
 		return currBop;
-		
 	}
 
 	private Hop processRelationalExpression(RelationalExpression source, DataIdentifier target, HashMap<String, Hop> hops) {
@@ -2003,6 +1999,7 @@ public class DMLTranslator
 			case REPLACE:
 			case LOWER_TRI:
 			case UPPER_TRI:
+			case TOKENIZE:
 			case TRANSFORMAPPLY:
 			case TRANSFORMDECODE:
 			case TRANSFORMCOLMAP:

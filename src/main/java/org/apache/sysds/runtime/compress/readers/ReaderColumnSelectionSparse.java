@@ -59,28 +59,30 @@ public class ReaderColumnSelectionSparse extends ReaderColumnSelection {
 
 		boolean zeroResult = true;
 
-		if(a != null && !a.isEmpty(_lastRow)) {
-
+		if(!a.isEmpty(_lastRow)) {
 			int apos = a.pos(_lastRow);
 			int alen = a.size(_lastRow) + apos;
 			int[] aix = a.indexes(_lastRow);
 			double[] avals = a.values(_lastRow);
 			int skip = 0;
 			int j = apos;
-
+			while(j < alen && aix[j] < _colIndexes[0])
+				j++;
 			while(skip < _colIndexes.length && j < alen) {
 				if(_colIndexes[skip] == aix[j]) {
-					reusableArr[skip++] = avals[j++];
+					reusableArr[skip] = avals[j];
 					zeroResult = false;
+					skip ++;
+					j ++;
 				}
-				else if(_colIndexes[skip] > aix[j]) {
+				else if(_colIndexes[skip] > aix[j]) 
 					j++;
-				}
-				else {
+				else 
 					reusableArr[skip++] = 0;
-				}
-
 			}
+			if(!zeroResult)
+				while(skip < _colIndexes.length)
+					reusableArr[skip++] = 0;
 		}
 
 		return zeroResult ? empty : reusableReturn;

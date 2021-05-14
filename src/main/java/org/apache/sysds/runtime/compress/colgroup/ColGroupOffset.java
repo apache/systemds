@@ -25,10 +25,10 @@ import java.io.IOException;
 import java.util.Arrays;
 
 import org.apache.sysds.runtime.compress.CompressionSettings;
+import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
 import org.apache.sysds.runtime.compress.utils.ABitmap;
 import org.apache.sysds.runtime.compress.utils.LinearAlgebraUtils;
 import org.apache.sysds.runtime.functionobjects.Builtin;
-import org.apache.sysds.runtime.functionobjects.Builtin.BuiltinCode;
 
 /**
  * Base class for column groups encoded with various types of bitmap encoding.
@@ -44,8 +44,13 @@ public abstract class ColGroupOffset extends ColGroupValue {
 	/** Linearized bitmaps (variable lengths) */
 	protected char[] _data;
 
-	protected ColGroupOffset() {
-		super();
+	/**
+	 * Constructor for serialization
+	 * 
+	 * @param numRows Number of rows contained
+	 */
+	protected ColGroupOffset(int numRows) {
+		super(numRows);
 	}
 
 	/**
@@ -86,14 +91,10 @@ public abstract class ColGroupOffset extends ColGroupValue {
 	public long estimateInMemorySize() {
 		// Could use a ternary operator, but it looks odd with our code formatter here.
 
-		return ColGroupSizes.estimateInMemorySizeOffset(getNumCols(),
-			getValues() == null ? 0 : getValues().length,
-			_ptr == null ? 0 : _ptr.length,
-			_data == null ? 0 : _data.length,
+		return ColGroupSizes.estimateInMemorySizeOffset(getNumCols(), getNumValues(), _ptr.length, _data.length,
 			isLossy());
 
 	}
-
 
 	protected final void sumAllValues(double[] b, double[] c) {
 		final int numVals = getNumValues();
@@ -109,9 +110,8 @@ public abstract class ColGroupOffset extends ColGroupValue {
 	protected final double mxxValues(int bitmapIx, Builtin builtin, double[] values) {
 		final int numCols = getNumCols();
 		final int valOff = bitmapIx * numCols;
-		double val = (builtin
-			.getBuiltinCode() == BuiltinCode.MAX) ? Double.NEGATIVE_INFINITY : Double.POSITIVE_INFINITY;
-		for(int i = 0; i < numCols; i++)
+		double val = values[valOff];
+		for(int i = 1; i < numCols; i++)
 			val = builtin.execute(val, values[valOff + i]);
 
 		return val;
@@ -187,8 +187,6 @@ public abstract class ColGroupOffset extends ColGroupValue {
 		ret += 4 * _ptr.length;
 		ret += 4; // _data list
 		ret += 2 * _data.length;
-		// for(int i = 0; i < getNumValues(); i++)
-		// ret += 4 + 2 * len(i);
 
 		return ret;
 	}
@@ -201,11 +199,15 @@ public abstract class ColGroupOffset extends ColGroupValue {
 		sb.append(super.toString());
 		sb.append(String.format("\n%15s%5d ", "Pointers:", this._ptr.length));
 		sb.append(Arrays.toString(this._ptr));
-		sb.append(String.format("\n%15s%5d ", "Data:", this._data.length));
+		return sb.toString();
+	}
+
+	protected static String charsToString(char[] data) {
+		StringBuilder sb = new StringBuilder();
 		sb.append("[");
-		for(int x = 0; x < _data.length; x++) {
-			sb.append(((int) _data[x]));
-			if(x != _data.length - 1)
+		for(int x = 0; x < data.length; x++) {
+			sb.append(((int) data[x]));
+			if(x != data.length - 1)
 				sb.append(", ");
 		}
 		sb.append("]");

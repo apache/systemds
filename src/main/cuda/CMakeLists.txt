@@ -19,7 +19,7 @@
 #
 #-------------------------------------------------------------
 
-cmake_minimum_required(VERSION 3.17 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.18 FATAL_ERROR)
 
 # default to gcc 8.x while we're still supporting CUDA 10.x only
 if (UNIX)
@@ -49,8 +49,13 @@ target_include_directories(SystemDS PUBLIC "${CMAKE_SOURCE_DIR}/headers")
 
 find_package(CUDAToolkit REQUIRED)
 cmake_policy(SET CMP0104 NEW)
+
 set(CMAKE_CUDA_ARCHITECTURES  OFF)
 #ToDo: more compiler flag settings for Debug/Release compilation
+#set(CMAKE_CUDA_ARCHITECTURES 52 60 61 75 CACHE STRING "CUDA architectures" FORCE)
+#set(CUDA_ARCHITECTURES ${CMAKE_CUDA_ARCHITECTURES})
+#message("CUDA_ARCHITECTURES: ${CUDA_ARCHITECTURES}")
+
 set(CMAKE_CUDA_FLAGS "--expt-relaxed-constexpr")
 
 set_property(TARGET SystemDS PROPERTY CUDA_ARCHITECTURES ${CMAKE_CUDA_ARCHITECTURES})
@@ -85,15 +90,40 @@ endif()
 
 set(SPOOF_HEADERS 
 	spoof-launcher/jni_bridge.h
-	spoof-launcher/SpoofCUDAContext.h)
+	spoof-launcher/SpoofCUDAContext.h
+	headers/Matrix.h
+	spoof-launcher/SpoofOperator.h
+	spoof-launcher/SpoofRowwise.h
+	spoof-launcher/SpoofCellwise.h)
+
 set(SPOOF_SOURCES 
 	spoof-launcher/jni_bridge.cpp
-	spoof-launcher/SpoofCUDAContext.cpp)
+	spoof-launcher/SpoofCUDAContext.cpp
+		)
 
-add_library(spoof_cuda SHARED ${SPOOF_HEADERS} ${SPOOF_SOURCES} )
+set(SPOOF_CUDA_HEADERS
+	headers/agg_ops.cuh
+	headers/reduction.cuh
+	headers/spoof_utils.cuh
+	headers/TempStorage.cuh
+	headers/utils.cuh
+	headers/operators.cuh
+	headers/Matrix.h
+	headers/vector_write.cuh
+	headers/vector_add.cuh)
 
-target_include_directories(spoof_cuda PRIVATE "${CMAKE_SOURCE_DIR}/ext/jitify")
-target_link_libraries(spoof_cuda CUDA::nvrtc CUDA::cuda_driver CUDA::cudart)
+set(SPOOF_TEMPLATES
+	spoof/cellwise.cu    
+	spoof/rowwise.cu)
+source_group("SPOOF Templates" FILES ${SPOOF_TEMPLATES})
+set_source_files_properties( ${SPOOF_TEMPLATES} PROPERTIES HEADER_FILE_ONLY ON)
+add_library(spoof_cuda SHARED ${SPOOF_HEADERS} ${SPOOF_CUDA_HEADERS} ${SPOOF_SOURCES} ${SPOOF_TEMPLATES})
+
+set_property(TARGET reduction PROPERTY CUDA_ARCHITECTURES ${CMAKE_CUDA_ARCHITECTURES})
+set_property(TARGET spoof_cuda PROPERTY CUDA_ARCHITECTURES ${CMAKE_CUDA_ARCHITECTURES})
+
+target_include_directories(spoof_cuda PRIVATE "${CMAKE_SOURCE_DIR}/ext/jitify" headers)
+target_link_libraries(spoof_cuda CUDA::nvrtc CUDA::cuda_driver CUDA::cudart CUDA::cublas)
 target_compile_features(spoof_cuda PUBLIC cxx_std_11)
 set_target_properties(spoof_cuda PROPERTIES POSITION_INDEPENDENT_CODE ON)
 set_target_properties(spoof_cuda PROPERTIES OUTPUT_NAME "systemds_spoof_cuda-${CMAKE_SYSTEM_NAME}-${CMAKE_SYSTEM_PROCESSOR}")

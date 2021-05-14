@@ -1,0 +1,60 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+# Document for .asf.yml file is available at
+# https://cwiki.apache.org/confluence/display/INFRA/Git+-+.asf.yaml+features
+
+github:
+  description: "Apache SystemDS - A versatile system for the end-to-end data science lifecycle"
+  homepage: https://systemds.apache.org/
+  labels:
+    - systemds
+    - java
+    - dml
+    
+  features:
+    # Enable issues management
+    issues: false
+    # Enable projects for project management boards
+    projects: false
+    # Enable wiki for documentation
+    wiki: false
+    
+  # Choose the type of commit merge in the PR UI
+  enabled_merge_buttons:
+    # Enable squash button
+    squash: true
+    # Enable merge button
+    merge: false
+    # Enable rebase button
+    rebase: true
+    
+
+  protected_branches:
+    master:
+      # Do not allow merge commits
+      # by allowing linear history
+      required_linear_history: true
+
+staging:
+  profile: beta
+  whoami: master
+  outputdir: docs

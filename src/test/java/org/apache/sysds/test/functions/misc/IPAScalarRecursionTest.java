@@ -44,19 +44,15 @@ public class IPAScalarRecursionTest extends AutomatedTestBase
 	{
 		String TEST_NAME = TEST_NAME1;
 		
-		try
-		{		
+		try {
 			getAndLoadTestConfiguration(TEST_NAME);
-		    
-		    String HOME = SCRIPT_DIR + TEST_DIR;
+		
+			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
 			programArgs = new String[]{"-args", Integer.toString(7) };
-			
-			//run tests
-	        runTest(true, false, null, 0);
+			runTest(true, false, null, 0);
 		}
-		catch(Exception ex)
-		{
+		catch(Exception ex) {
 			throw new RuntimeException(ex);
 		}
 	}

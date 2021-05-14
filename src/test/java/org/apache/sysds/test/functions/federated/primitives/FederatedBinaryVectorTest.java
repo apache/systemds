@@ -19,6 +19,7 @@
 
 package org.apache.sysds.test.functions.federated.primitives;
 
+import org.apache.sysds.hops.OptimizerUtils;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -57,19 +58,22 @@ public class FederatedBinaryVectorTest extends AutomatedTestBase {
 	public static Collection<Object[]> data() {
 		// rows have to be even and > 1
 		return Arrays.asList(new Object[][] {
-            // {2, 1000}, 
-			// {10, 100}, 
-			{100, 10}, 
-			// {1000, 1}, {10, 2000}, {2000, 10}
-        });
+			{100, 10},
+			{100, 1},
+		});
 	}
 
 	@Test
 	public void federatedMultiplyCP() {
-		federatedMultiply(Types.ExecMode.SINGLE_NODE);
+		federatedMultiply(Types.ExecMode.SINGLE_NODE, false);
 	}
 
-	public void federatedMultiply(Types.ExecMode execMode) {
+	@Test
+	public void federatedMultiplyCPCompileToFED() {
+		federatedMultiply(Types.ExecMode.SINGLE_NODE, true);
+	}
+
+	public void federatedMultiply(Types.ExecMode execMode, boolean federatedCompilation) {
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
 		Types.ExecMode platformOld = rtplatform;
 		rtplatform = execMode;
@@ -109,6 +113,7 @@ public class FederatedBinaryVectorTest extends AutomatedTestBase {
 		runTest(true, false, null, -1);
 
 		// Run actual dml script with federated matrix
+		OptimizerUtils.FEDERATED_COMPILATION = federatedCompilation;
 		fullDMLScriptName = HOME + TEST_NAME + ".dml";
 		programArgs = new String[] {"-nvargs", "X1=" + TestUtils.federatedAddress(port1, input("X1")),
 			"X2=" + TestUtils.federatedAddress(port2, input("X2")),
@@ -123,5 +128,6 @@ public class FederatedBinaryVectorTest extends AutomatedTestBase {
 
 		rtplatform = platformOld;
 		DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
+		OptimizerUtils.FEDERATED_COMPILATION = false;
 	}
 }

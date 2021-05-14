@@ -37,6 +37,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
+import org.apache.sysds.runtime.lineage.LineageCacheConfig;
 import org.apache.sysds.utils.GPUStatistics;
 
 import jcuda.Pointer;
@@ -251,6 +252,31 @@ public class GPUContext {
 	public GPUObject createGPUObject(MatrixObject mo) {
 		GPUObject ret = new GPUObject(this, mo);
 		getMemoryManager().getGPUMatrixMemoryManager().addGPUObject(ret);
+		return ret;
+	}
+	
+	/**
+	 * Shallow copy the given source {@link GPUObject} to a new {@link GPUObject} and 
+	 * assign that to the given {@link MatrixObject}.
+	 * This copy doesn't memcopy the device memory.
+	 * 
+	 * @param source a {@link GPUObject} which is the source of the copy
+	 * @param mo a {@link MatrixObject} to associate with the new {@link GPUObject}
+	 * @return a new {@link GPUObject} instance
+	 */
+	public GPUObject shallowCopyGPUObject(GPUObject source, MatrixObject mo) {
+		GPUObject ret = new GPUObject(this, source, mo);
+		getMemoryManager().getGPUMatrixMemoryManager().addGPUObject(ret);
+
+		// Maintain the linked list of GPUObjects that point to same memory region
+		if (!LineageCacheConfig.ReuseCacheType.isNone()) {
+			if (source.lineageCachedChainHead == null)
+				source.lineageCachedChainHead = source;
+			if (source.nextLineageCachedEntry != null)
+				ret.nextLineageCachedEntry = source.nextLineageCachedEntry;
+			source.nextLineageCachedEntry = ret;
+			ret.lineageCachedChainHead = source;
+		}
 		return ret;
 	}
 

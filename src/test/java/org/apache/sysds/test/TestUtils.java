@@ -78,6 +78,8 @@ import org.apache.sysds.runtime.util.DataConverter;
 import org.apache.sysds.runtime.util.UtilFunctions;
 import org.junit.Assert;
 
+import jcuda.runtime.JCuda;
+
 
 /**
  * <p>
@@ -1045,10 +1047,12 @@ public class TestUtils
 			if (!compareCellValue(v1, v2, 0, ignoreNaN)) {
 				if (!compareCellValue(v1, v2, tolerance, ignoreNaN)) {
 					countErrorWithinTolerance++;
-					if(!flag)
-						System.out.println(e.getKey()+": "+v1+" <--> "+v2);
-					else
-						System.out.println(e.getKey()+": "+v2+" <--> "+v1);
+					if(LOG.isDebugEnabled()){
+						if(!flag)
+							LOG.debug(e.getKey()+": "+v1+" <--> "+v2);
+						else
+							LOG.debug(e.getKey()+": "+v2+" <--> "+v1);
+					}
 				}
 			} else {
 				countIdentical++;
@@ -3055,5 +3059,18 @@ public class TestUtils
 		}
 
 		return y;
+	}
+
+	public static boolean containsNan(double[][] data, int col) {
+		for (double[] datum : data)
+			if (Double.isNaN(datum[col]))
+				return true;
+		return false;
+	}
+	
+	public static int isGPUAvailable() {
+		// returns cudaSuccess if at least one gpu is available
+		final int[] deviceCount = new int[1];
+		return JCuda.cudaGetDeviceCount(deviceCount);
 	}
 }

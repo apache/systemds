@@ -22,6 +22,7 @@ package org.apache.sysds.hops.codegen.cplan;
 import java.util.ArrayList;
 
 import org.apache.sysds.common.Types.AggOp;
+import org.apache.sysds.hops.codegen.SpoofCompiler;
 import org.apache.sysds.hops.codegen.SpoofCompiler.GeneratorAPI;
 import org.apache.sysds.hops.codegen.SpoofFusedOp.SpoofOutputDimsType;
 import org.apache.sysds.runtime.codegen.SpoofCellwise;
@@ -119,16 +120,26 @@ public class CNodeCell extends CNodeTpl
 	public String codegen(boolean sparse, GeneratorAPI _api) {
 		api = _api;
 
-		String tmp = getLanguageTemplateClass(this, api).getTemplate(_type);
+		String tmp = getLanguageTemplate(this, api);
 
 		//generate dense/sparse bodies
 		String tmpDense = _output.codegen(false, api);
+		// TODO: workaround to fix name clash of cell and row template
+		if(api == GeneratorAPI.CUDA)
+			tmpDense = tmpDense.replace("a.vals(0)", "a");
 		_output.resetGenerated();
 		
-		if(getVarname() == null)
-			tmp = tmp.replace("%TMP%", createVarname());
+		String varName = (getVarname() == null) ?
+			createVarname() : getVarname();
+		tmp = tmp.replace(api.isJava() ? 
+			"%TMP%" : "/*%TMP%*/SPOOF_OP_NAME", varName);
+		
+		if(tmpDense.contains("grix"))
+			tmp = tmp.replace("//%NEED_GRIX%", "\t\tuint32_t grix=_grix + rix;");
 		else
-			tmp = tmp.replace("%TMP%", getVarname());
+			tmp = tmp.replace("//%NEED_GRIX%", "");
+		tmp = tmp.replace("//%NEED_RIX%", "");
+		tmp = tmp.replace("//%NEED_CIX%", "");
 		
 		tmp = tmp.replace("%BODY_dense%", tmpDense);
 		
@@ -140,11 +151,14 @@ public class CNodeCell extends CNodeTpl
 		tmp = tmp.replace("%AGG_OP_NAME%", (_aggOp != null) ? "AggOp." + _aggOp.name() : "null");
 		tmp = tmp.replace("%SPARSE_SAFE%", String.valueOf(isSparseSafe()));
 		tmp = tmp.replace("%SEQ%", String.valueOf(containsSeq()));
-
+		
+		// maybe empty lines
+		//tmp = tmp.replaceAll("(?m)^[ \t]*\r?\n", "");
+		
 		if(api == GeneratorAPI.CUDA) {
 			// ToDo: initial_value is misused to pass VT (values per thread) to no_agg operator
 			String agg_op = "IdentityOp";
-			String initial_value = "(T)4.0";
+			String initial_value = "(T)1.0";
 			if(_aggOp != null)
 			switch(_aggOp) {
 				case SUM:
@@ -245,4 +259,13 @@ public class CNodeCell extends CNodeTpl
 		return (api == GeneratorAPI.CUDA || api == GeneratorAPI.JAVA) && _output.isSupported(api) &&
 			!(getSpoofAggOp() == SpoofCellwise.AggOp.SUM_SQ);
 	}
+	
+	public int compile(GeneratorAPI api, String src) {
+		if(api == GeneratorAPI.CUDA)
+			return compile_nvrtc(SpoofCompiler.native_contexts.get(api), _genVar, src, _type.getValue(), 
+				_aggOp != null ? _aggOp.getValue() : 0, _sparseSafe);
+		return -1;
+	}
+	
+	private native int compile_nvrtc(long context, String name, String src, int type, int agg_op, boolean sparseSafe);
 }

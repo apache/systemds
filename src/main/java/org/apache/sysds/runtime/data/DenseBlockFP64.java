@@ -21,6 +21,7 @@
 package org.apache.sysds.runtime.data;
 
 import org.apache.sysds.runtime.util.UtilFunctions;
+import org.apache.sysds.utils.MemoryEstimates;
 
 import java.util.Arrays;
 
@@ -63,6 +64,13 @@ public class DenseBlockFP64 extends DenseBlockDRB
 		}
 		_rlen = rlen;
 		_odims = odims;
+	}
+	
+	public static double estimateMemory(long nrows, long ncols) {
+		if( (double)nrows + ncols > Long.MAX_VALUE )
+			return Long.MAX_VALUE;
+		return DenseBlock.estimateMemory(nrows, ncols)
+			+ MemoryEstimates.doubleArrayCost(nrows * ncols);
 	}
 
 	@Override

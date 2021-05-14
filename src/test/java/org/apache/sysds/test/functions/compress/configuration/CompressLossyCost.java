@@ -24,9 +24,9 @@ import java.io.File;
 public class CompressLossyCost extends CompressCost {
 
 	public String TEST_NAME = "compress";
-	public String TEST_DIR = "functions/compress/cost/lossy";
+	public String TEST_DIR = "functions/compress/cost";
 	public String TEST_CLASS_DIR = TEST_DIR + CompressLossyCost.class.getSimpleName() + "/";
-	private String TEST_CONF = "SystemDS-config-compress-lossy-cost.xml";
+	private String TEST_CONF = "SystemDS-config-compress-cost-lossy.xml";
 	private File TEST_CONF_FILE = new File(SCRIPT_DIR + TEST_DIR, TEST_CONF);
 
 	protected String getTestClassDir() {

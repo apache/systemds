@@ -20,16 +20,13 @@
 package org.apache.sysds.hops.codegen.cplan.java;
 
 import org.apache.sysds.hops.codegen.cplan.CNodeBinary.BinType;
-import org.apache.sysds.hops.codegen.cplan.CNodeTernary;
-import org.apache.sysds.hops.codegen.cplan.CNodeUnary;
 import org.apache.sysds.hops.codegen.cplan.CodeTemplate;
-import org.apache.sysds.runtime.codegen.SpoofCellwise;
 
-public class Binary implements CodeTemplate {
-	@Override
-	public String getTemplate(BinType type, boolean sparseLhs, boolean sparseRhs, boolean scalarVector,
-							  boolean scalarInput) {
+public class Binary extends CodeTemplate {
 
+	public String getTemplate(BinType type, boolean sparseLhs, boolean sparseRhs,
+		boolean scalarVector, boolean scalarInput, boolean vectorVector)
+	{
 		switch (type) {
 			case DOT_PRODUCT:
 				return sparseLhs ? "    double %TMP% = LibSpoofPrimitives.dotProduct(%IN1v%, %IN2%, %IN1i%, %POS1%, %POS2%, alen);\n" :
@@ -61,7 +58,7 @@ public class Binary implements CodeTemplate {
 				String vectName = type.getVectorPrimitiveName();
 				if( scalarVector )
 					return sparseLhs ? "    LibSpoofPrimitives.vect"+vectName+"Add(%IN1%, %IN2v%, %OUT%, %IN2i%, %POS2%, %POSOUT%, alen, %LEN%);\n" :
-							"	LibSpoofPrimitives.vect"+vectName+"Add(%IN1%, %IN2%, %OUT%, %POS2%, %POSOUT%, %LEN%);\n";
+							"    LibSpoofPrimitives.vect"+vectName+"Add(%IN1%, %IN2%, %OUT%, %POS2%, %POSOUT%, %LEN%);\n";
 				else
 					return sparseLhs ? "    LibSpoofPrimitives.vect"+vectName+"Add(%IN1v%, %IN2%, %OUT%, %IN1i%, %POS1%, %POSOUT%, alen, %LEN%);\n" :
 							"    LibSpoofPrimitives.vect"+vectName+"Add(%IN1%, %IN2%, %OUT%, %POS1%, %POSOUT%, %LEN%);\n";
@@ -95,10 +92,14 @@ public class Binary implements CodeTemplate {
 			case VECT_CBIND:
 				if( scalarInput )
 					return  "    double[] %TMP% = LibSpoofPrimitives.vectCbindWrite(%IN1%, %IN2%);\n";
-				else
+				else if( !vectorVector )
 					return sparseLhs ?
 							"    double[] %TMP% = LibSpoofPrimitives.vectCbindWrite(%IN1v%, %IN2%, %IN1i%, %POS1%, alen, %LEN%);\n" :
 							"    double[] %TMP% = LibSpoofPrimitives.vectCbindWrite(%IN1%, %IN2%, %POS1%, %LEN%);\n";
+				else //vect/vect
+					return sparseLhs ?
+						"    double[] %TMP% = LibSpoofPrimitives.vectCbindWrite(%IN1v%, %IN2%, %IN1i%, %POS1%, %POS2%, alen, %LEN1%, %LEN2%);\n" :
+						"    double[] %TMP% = LibSpoofPrimitives.vectCbindWrite(%IN1%, %IN2%, %POS1%, %POS2%, %LEN1%, %LEN2%);\n";
 
 				//vector-vector operations
 			case VECT_MULT:
@@ -121,8 +122,8 @@ public class Binary implements CodeTemplate {
 				return sparseLhs ?
 						"    double[] %TMP% = LibSpoofPrimitives.vect"+vectName+"Write(%IN1v%, %IN2%, %IN1i%, %POS1%, %POS2%, alen, %LEN%);\n" :
 						sparseRhs ?
-								"    double[] %TMP% = LibSpoofPrimitives.vect"+vectName+"Write(%IN1%, %IN2v%, %POS1%, %IN2i%, %POS2%, alen, %LEN%);\n" :
-								"    double[] %TMP% = LibSpoofPrimitives.vect"+vectName+"Write(%IN1%, %IN2%, %POS1%, %POS2%, %LEN%);\n";
+						"    double[] %TMP% = LibSpoofPrimitives.vect"+vectName+"Write(%IN1%, %IN2v%, %POS1%, %IN2i%, %POS2%, alen, %LEN%);\n" :
+						"    double[] %TMP% = LibSpoofPrimitives.vect"+vectName+"Write(%IN1%, %IN2%, %POS1%, %POS2%, %LEN%);\n";
 			}
 
 			//scalar-scalar operations
@@ -176,25 +177,5 @@ public class Binary implements CodeTemplate {
 			default:
 				throw new RuntimeException("Invalid binary type: "+this.toString());
 		}
-	}
-
-	@Override
-	public String getTemplate() {
-		throw new RuntimeException("Calling wrong getTemplate method on " + getClass().getCanonicalName());
-	}
-
-	@Override
-	public String getTemplate(SpoofCellwise.CellType ct) {
-		throw new RuntimeException("Calling wrong getTemplate method on " + getClass().getCanonicalName());
-	}
-
-	@Override
-	public String getTemplate(CNodeUnary.UnaryType type, boolean sparse) {
-		throw new RuntimeException("Calling wrong getTemplate method on " + getClass().getCanonicalName());
-	}
-
-	@Override
-	public String getTemplate(CNodeTernary.TernaryType type, boolean sparse) {
-		throw new RuntimeException("Calling wrong getTemplate method on " + getClass().getCanonicalName());
 	}
 }

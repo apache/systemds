@@ -20,5 +20,5 @@
 <root>
 	<sysds.compressed.linalg>true</sysds.compressed.linalg>
 	<sysds.cp.parallel.ops>true</sysds.cp.parallel.ops>
-	<sysds.scratch>comp_scratch_space</sysds.scratch>
+	<sysds.scratch>target/force_comp_scratch_space</sysds.scratch>
 </root>

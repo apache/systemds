@@ -52,14 +52,18 @@ import org.apache.sysds.runtime.codegen.CodegenUtils;
 import org.apache.sysds.runtime.controlprogram.caching.CacheBlock;
 import org.apache.sysds.runtime.controlprogram.parfor.util.IDSequence;
 import org.apache.sysds.runtime.functionobjects.ValueComparisonFunction;
-import org.apache.sysds.runtime.instructions.cp.*;
+import org.apache.sysds.runtime.instructions.cp.BooleanObject;
+import org.apache.sysds.runtime.instructions.cp.DoubleObject;
+import org.apache.sysds.runtime.instructions.cp.IntObject;
+import org.apache.sysds.runtime.instructions.cp.ScalarObject;
 import org.apache.sysds.runtime.io.IOUtilFunctions;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
-import org.apache.sysds.runtime.transform.encode.EncoderRecode;
+import org.apache.sysds.runtime.transform.encode.ColumnEncoderRecode;
 import org.apache.sysds.runtime.util.CommonThreadPool;
 import org.apache.sysds.runtime.util.DMVUtils;
+import org.apache.sysds.runtime.util.EMAUtils;
 import org.apache.sysds.runtime.util.IndexRange;
 import org.apache.sysds.runtime.util.UtilFunctions;
 
@@ -611,6 +615,17 @@ public class FrameBlock implements CacheBlock, Externalizable  {
 	}
 
 	/**
+	 * Get a row iterator over the frame where all selected fields are encoded as strings independent of their value
+	 * types.
+	 *
+	 * @param colID column selection, 1-based
+	 * @return string array iterator
+	 */
+	public Iterator<String[]> getStringRowIterator(int colID) {
+		return new StringRowIterator(0, _numRows, new int[] {colID});
+	}
+
+	/**
 	 * Get a row iterator over the frame where all fields are encoded
 	 * as strings independent of their value types.
 	 *
@@ -634,6 +649,20 @@ public class FrameBlock implements CacheBlock, Externalizable  {
 	public Iterator<String[]> getStringRowIterator(int rl, int ru, int[] cols) {
 		return new StringRowIterator(rl, ru, cols);
 	}
+
+	/**
+	 * Get a row iterator over the frame where all selected fields are
+	 * encoded as strings independent of their value types.
+	 *
+	 * @param rl lower row index
+	 * @param ru upper row index
+	 * @param colID columnID, 1-based
+	 * @return string array iterator
+	 */
+	public Iterator<String[]> getStringRowIterator(int rl, int ru, int colID) {
+		return new StringRowIterator(rl, ru, new int[] {colID});
+	}
+
 
 	/**
 	 * Get a row iterator over the frame where all fields are encoded
@@ -770,7 +799,7 @@ public class FrameBlock implements CacheBlock, Externalizable  {
 	}
 
 	@Override
-	public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
+	public void readExternal(ObjectInput in) throws IOException {
 		//redirect deserialization to writable impl
 		readFields(in);
 	}
@@ -1236,7 +1265,7 @@ public class FrameBlock implements CacheBlock, Externalizable  {
 		for( int i=0; i<getNumRows(); i++ ) {
 			Object val = ldata.get(i);
 			if( val != null ) {
-				String[] tmp = EncoderRecode.splitRecodeMapEntry(val.toString());
+				String[] tmp = ColumnEncoderRecode.splitRecodeMapEntry(val.toString());
 				map.put(tmp[0], Long.parseLong(tmp[1]));
 			}
 		}
@@ -2036,8 +2065,10 @@ public class FrameBlock implements CacheBlock, Externalizable  {
 
 				ValueType dataType = isType(dataValue);
 
-				if(!dataType.toString().contains(type) && !(dataType == ValueType.BOOLEAN && type == "INT") &&  !(dataType == ValueType.BOOLEAN && type == "FP")){
-					LOG.warn("Datatype detected: " + dataType + " where expected: " + schemaString[i] + " col: " + (i+1) + ", row:" +(j+1));
+				if(!dataType.toString().contains(type) && !(dataType == ValueType.BOOLEAN && type.equals("INT")) &&
+					!(dataType == ValueType.BOOLEAN && type.equals("FP"))){
+					LOG.warn("Datatype detected: " + dataType + " where expected: " + schemaString[i] + " col: " +
+						(i+1) + ", row:" +(j+1));
 
 					this.set(j,i,null);
 				}
@@ -2124,6 +2155,9 @@ public class FrameBlock implements CacheBlock, Externalizable  {
 			if(args.contains(",")) {
 				String[] arguments = args.split(",");
 				return DMVUtils.syntacticalPatternDiscovery(this, Double.parseDouble(arguments[0]), arguments[1]);
+			} else if (args.contains(";")) {
+				String[] arguments = args.split(";");
+				return EMAUtils.exponentialMovingAverageImputation(this, Integer.parseInt(arguments[0]), arguments[1], Integer.parseInt(arguments[2]), Double.parseDouble(arguments[3]), Double.parseDouble(arguments[4]), Double.parseDouble(arguments[5]));
 			}
 		}
 		if(lambdaExpr.contains("jaccardSim"))

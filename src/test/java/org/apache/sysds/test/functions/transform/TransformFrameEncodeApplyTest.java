@@ -31,8 +31,7 @@ import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
 import org.apache.sysds.utils.Statistics;
 
-public class TransformFrameEncodeApplyTest extends AutomatedTestBase 
-{
+public class TransformFrameEncodeApplyTest extends AutomatedTestBase {
 	private final static String TEST_NAME1 = "TransformFrameEncodeApply";
 	private final static String TEST_DIR = "functions/transform/";
 	private final static String TEST_CLASS_DIR = TEST_DIR + TransformFrameEncodeApplyTest.class.getSimpleName() + "/";
@@ -357,8 +356,7 @@ public class TransformFrameEncodeApplyTest extends AutomatedTestBase
 		runTransformTest(ExecMode.HYBRID, "csv", TransformType.HASH_RECODE, false);
 	}
 	
-	private void runTransformTest( ExecMode rt, String ofmt, TransformType type, boolean colnames )
-	{
+	private void runTransformTest( ExecMode rt, String ofmt, TransformType type, boolean colnames )	{
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
 		if( rtplatform == ExecMode.SPARK || rtplatform == ExecMode.HYBRID)
 			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
@@ -389,8 +387,8 @@ public class TransformFrameEncodeApplyTest extends AutomatedTestBase
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME1 + ".dml";
 			programArgs = new String[]{"-nvargs", 
-				"DATA=" + HOME + "input/" + DATASET,
-				"TFSPEC=" + HOME + "input/" + SPEC,
+				"DATA=" + DATASET_DIR + DATASET,
+				"TFSPEC=" + DATASET_DIR + SPEC,
 				"TFDATA1=" + output("tfout1"),
 				"TFDATA2=" + output("tfout2"),
 				"OFMT=" + ofmt };
@@ -431,6 +429,10 @@ public class TransformFrameEncodeApplyTest extends AutomatedTestBase
 							1:0, R1[i][10+j], 1e-8);
 					}
 				}
+			} else if (type == TransformType.IMPUTE){
+				// Column 8 had GLOBAL_MEAN applied
+				Assert.assertFalse(TestUtils.containsNan(R1, 8));
+				Assert.assertFalse(TestUtils.containsNan(R2, 8));
 			}
 		}
 		catch(Exception ex) {

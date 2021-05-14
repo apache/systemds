@@ -23,10 +23,7 @@ package org.apache.sysds.test.component.compress;
  * Class Containing Testing Constants, for easy enumeration of typical Parameters classes
  */
 public class TestConstants {
-
-	private static final int rows[] = {4, 2008, 1283, 500, 1, 100, 5000, 100000, 64000 * 2};
-	private static final int cols[] = {20, 20, 13, 1, 321, 1, 5, 1, 1};
-	private static final double[] sparsityValues = {0.9, 0.1, 0.01, 0.0, 1.0};
+	private static final double[] sparsityValues = {1.0, 0.1, 0.01, 0.0, 1.0};
 
 	private static final int[] mins = {-4, -127 * 2};
 	private static final int[] maxs = {5, 127};
@@ -56,17 +53,17 @@ public class TestConstants {
 	}
 
 	public enum ValueRange {
-		SMALL, LARGE, BYTE, BOOLEAN
+		SMALL, LARGE, BYTE, BOOLEAN, NEGATIVE
 	}
 
 	public enum OverLapping {
-		COL, MATRIX, NONE, MATRIX_PLUS, MATRIX_MULT_NEGATIVE, SQUEEZE;
+		COL, MATRIX, NONE, MATRIX_PLUS, MATRIX_MULT_NEGATIVE, SQUASH, PLUS;
 
 		public static boolean effectOnOutput(OverLapping opcode) {
 			switch(opcode) {
 				case MATRIX_MULT_NEGATIVE:
 				case MATRIX:
-				case SQUEEZE:
+				case SQUASH:
 				case COL:
 				case MATRIX_PLUS:
 					return true;
@@ -103,6 +100,8 @@ public class TestConstants {
 				return -127;
 			case BOOLEAN:
 				return 0;
+			case NEGATIVE:
+				return -132;
 			default:
 				throw new RuntimeException("Invalid range value enum type");
 		}
@@ -118,6 +117,8 @@ public class TestConstants {
 				return 127;
 			case BOOLEAN:
 				return 1;
+			case NEGATIVE:
+				return -23;
 			default:
 				throw new RuntimeException("Invalid range value enum type");
 		}
@@ -126,23 +127,23 @@ public class TestConstants {
 	public static int getNumberOfRows(MatrixTypology matrixTypology) {
 		switch(matrixTypology) {
 			case SMALL:
-				return rows[0];
+				return 4;
 			case LARGE:
-				return rows[1];
+				return 200;
 			case FEW_ROW:
-				return rows[2];
+				return 1283;
 			case FEW_COL:
-				return rows[3];
+				return 500;
 			case SINGLE_ROW:
-				return rows[4];
+				return 1;
 			case SINGLE_COL:
-				return rows[5];
+				return 100;
 			case L_ROWS:
-				return rows[6];
+				return 5000;
 			case XL_ROWS:
-				return rows[7];
+				return 66000;
 			case SINGLE_COL_L:
-				return rows[8];
+				return 64000 * 2;
 			default:
 				throw new RuntimeException("Invalid matrix enum type");
 		}
@@ -151,23 +152,23 @@ public class TestConstants {
 	public static int getNumberOfColumns(MatrixTypology matrixTypology) {
 		switch(matrixTypology) {
 			case SMALL:
-				return cols[0];
+				return 20;
 			case LARGE:
-				return cols[1];
+				return 20;
 			case FEW_ROW:
-				return cols[2];
+				return 13;
 			case FEW_COL:
-				return cols[3];
+				return 1;
 			case SINGLE_ROW:
-				return cols[4];
+				return 321;
 			case SINGLE_COL:
-				return cols[5];
+				return 1;
 			case L_ROWS:
-				return cols[6];
+				return 5;
 			case XL_ROWS:
-				return cols[7];
+				return 10;
 			case SINGLE_COL_L:
-				return cols[8];
+				return 1;
 			default:
 				throw new RuntimeException("Invalid matrix enum type");
 		}

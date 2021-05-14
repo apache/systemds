@@ -21,14 +21,18 @@ package org.apache.sysds.runtime.compress.colgroup;
 
 import java.util.Arrays;
 
+import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.runtime.DMLCompressionException;
 import org.apache.sysds.runtime.compress.CompressionSettings;
+import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
+import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
+import org.apache.sysds.runtime.compress.colgroup.offset.AIterator;
+import org.apache.sysds.runtime.compress.colgroup.pre.IPreAggregate;
+import org.apache.sysds.runtime.compress.colgroup.pre.PreAggregateFactory;
 import org.apache.sysds.runtime.compress.utils.ABitmap;
 import org.apache.sysds.runtime.compress.utils.LinearAlgebraUtils;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.functionobjects.Builtin;
-import org.apache.sysds.runtime.functionobjects.KahanFunction;
-import org.apache.sysds.runtime.functionobjects.KahanPlus;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
@@ -40,8 +44,13 @@ import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
 public class ColGroupOLE extends ColGroupOffset {
 	private static final long serialVersionUID = -9157676271360528008L;
 
-	protected ColGroupOLE() {
-		super();
+		/**
+	 * Constructor for serialization
+	 * 
+	 * @param numRows Number of rows contained
+	 */
+	protected ColGroupOLE(int numRows) {
+		super(numRows);
 	}
 
 	/**
@@ -81,12 +90,12 @@ public class ColGroupOLE extends ColGroupOffset {
 	}
 
 	@Override
-	protected ColGroupType getColGroupType() {
+	public ColGroupType getColGroupType() {
 		return ColGroupType.OLE;
 	}
 
 	@Override
-	public void decompressToBlockSafe(MatrixBlock target, int rl, int ru, int offT, double[] values, boolean safe) {
+	public void decompressToBlockSafe(MatrixBlock target, int rl, int ru, int offT, double[] values) {
 
 		final int blksz = CompressionSettings.BITMAP_BLOCK_SZ;
 		final int numCols = getNumCols();
@@ -112,20 +121,54 @@ public class ColGroupOLE extends ColGroupOffset {
 						int rix = row - (rl - offT);
 						int rc = rix * target.getNumColumns();
 						for(int j = 0; j < numCols; j++) {
-							if(safe) {
-								double v = c[rc + _colIndexes[j]];
-								double nv = c[rc + _colIndexes[j]] + values[off + j];
-								if(v == 0.0 && nv != 0.0) {
-									target.setNonZeros(target.getNonZeros() + 1);
-								}
-								c[rc + _colIndexes[j]] = nv;
+							double v = c[rc + _colIndexes[j]];
+							double nv = c[rc + _colIndexes[j]] + values[off + j];
+							if(v == 0.0 && nv != 0.0) {
+								target.setNonZeros(target.getNonZeros() + 1);
 							}
-							else {
-								c[rc + _colIndexes[j]] += values[off + j];
-							}
+							c[rc + _colIndexes[j]] = nv;
 
 						}
 					}
+				}
+				apos[k] += len + 1;
+			}
+		}
+	}
+
+	@Override
+	public void decompressToBlockUnSafe(MatrixBlock target, int rl, int ru, int offT, double[] values) {
+
+		final int blksz = CompressionSettings.BITMAP_BLOCK_SZ;
+		final int numCols = getNumCols();
+		final int numVals = getNumValues();
+		final int offOut = (rl - offT);
+		final int targetCols = target.getNumColumns();
+
+		// cache blocking config and position array
+		int[] apos = skipScan(numVals, rl);
+		double[] c = target.getDenseBlockValues();
+		// cache conscious append via horizontal scans
+		for(int bi = (rl / blksz) * blksz; bi < ru; bi += blksz) {
+			for(int k = 0, off = 0; k < numVals; k++, off += numCols) {
+				int boff = _ptr[k];
+				int blen = len(k);
+				int bix = apos[k];
+
+				if(bix >= blen)
+					continue;
+				int pos = boff + bix;
+				int len = _data[pos];
+				int i = 1;
+				int row = bi + _data[pos + 1];
+				while(i <= len && row < rl)
+					row = bi + _data[pos + i++];
+
+				for(; i <= len && row < ru; i++) {
+					row = bi + _data[pos + i];
+					int rc = (row - offOut) * targetCols;
+					for(int j = 0; j < numCols; j++)
+						c[rc + _colIndexes[j]] += values[off + j];
 				}
 				apos[k] += len + 1;
 			}
@@ -278,7 +321,7 @@ public class ColGroupOLE extends ColGroupOffset {
 			int count = 0;
 			int boff = _ptr[k];
 			int bix = 0;
-			for(; bix < blen ; bix += _data[boff + bix] + 1)
+			for(; bix < blen; bix += _data[boff + bix] + 1)
 				count += _data[boff + bix];
 			sum += count;
 			counts[k] = count;
@@ -312,18 +355,13 @@ public class ColGroupOLE extends ColGroupOffset {
 
 	@Override
 	public long estimateInMemorySize() {
-		// Note 0 is because the size can be calculated based on the given values,
-		// And because the fourth argument is only needed in estimation, not when an OLE ColGroup is created.
-		return ColGroupSizes.estimateInMemorySizeOLE(getNumCols(),
-			_dict.size(),
-			(_data == null) ? 0 : _data.length,
-			_numRows,
-			isLossy());
+		return ColGroupSizes.estimateInMemorySizeOLE(getNumCols(), getNumValues(), _data.length, _numRows, isLossy());
 	}
 
 	@Override
-	public ColGroup scalarOperation(ScalarOperator op) {
+	public AColGroup scalarOperation(ScalarOperator op) {
 		double val0 = op.executeScalar(0);
+
 		// fast path: sparse-safe operations
 		// Note that bitmaps don't change and are shallow-copied
 		if(op.sparseSafe || val0 == 0 || !_zeros) {
@@ -349,14 +387,14 @@ public class ColGroupOLE extends ColGroupOffset {
 	}
 
 	@Override
-	public ColGroup binaryRowOp(BinaryOperator op, double[] v, boolean sparseSafe) {
+	public AColGroup binaryRowOp(BinaryOperator op, double[] v, boolean sparseSafe, boolean left) {
 
 		sparseSafe = sparseSafe || !_zeros;
 		// fast path: sparse-safe operations
 		// Note that bitmaps don't change and are shallow-copied
 		if(sparseSafe) {
-			return new ColGroupOLE(_colIndexes, _numRows, _zeros, applyBinaryRowOp(op.fn, v, sparseSafe), _data, _ptr,
-				getCachedCounts());
+			return new ColGroupOLE(_colIndexes, _numRows, _zeros, applyBinaryRowOp(op.fn, v, sparseSafe, left), _data,
+				_ptr, getCachedCounts());
 		}
 
 		// slow path: sparse-unsafe operations (potentially create new bitmap)
@@ -364,10 +402,10 @@ public class ColGroupOLE extends ColGroupOffset {
 		boolean[] lind = computeZeroIndicatorVector();
 		int[] loff = computeOffsets(lind);
 		if(loff.length == 0) { // empty offset list: go back to fast path
-			return new ColGroupOLE(_colIndexes, _numRows, false, applyBinaryRowOp(op.fn, v, true), _data, _ptr,
+			return new ColGroupOLE(_colIndexes, _numRows, false, applyBinaryRowOp(op.fn, v, true, left), _data, _ptr,
 				getCachedCounts());
 		}
-		ADictionary rvalues = applyBinaryRowOp(op.fn, v, sparseSafe);
+		ADictionary rvalues = applyBinaryRowOp(op.fn, v, sparseSafe, left);
 		char[] lbitmap = genOffsetBitmap(loff, loff.length);
 		char[] rbitmaps = Arrays.copyOf(_data, _data.length + lbitmap.length);
 		System.arraycopy(lbitmap, 0, rbitmaps, _data.length, lbitmap.length);
@@ -385,382 +423,311 @@ public class ColGroupOLE extends ColGroupOffset {
 		return new ColGroupOLE(_colIndexes, _numRows, false, rvalues, rbitmaps, rbitmapOffs, getCachedCounts());
 	}
 
-	@Override
-	public void rightMultByVector(double[] b, double[] c, int rl, int ru, double[] dictVals) {
-		final int blksz = CompressionSettings.BITMAP_BLOCK_SZ;
-		final int numVals = getNumValues();
+	// @Override
+	// public void rightMultByVector(double[] b, double[] c, int rl, int ru, double[] dictVals) {
+	// 	final int blksz = CompressionSettings.BITMAP_BLOCK_SZ;
+	// 	final int numVals = getNumValues();
 
-		if(rl % blksz != 0)
-			throw new DMLCompressionException("All blocks should be starting at block segments for OLE");
+	// 	if(rl % blksz != 0)
+	// 		throw new DMLCompressionException("All blocks should be starting at block segments for OLE");
 
-		if(numVals > 1 && _numRows > blksz * 2) {
-			// since single segment scans already exceed typical L2 cache sizes
-			// and because there is some overhead associated with blocking, the
-			// best configuration aligns with L3 cache size (x*vcores*64K*8B < L3)
-			// x=4 leads to a good yet slightly conservative compromise for single-/
-			// multi-threaded and typical number of cores and L3 cache sizes
-			final int blksz2 = CompressionSettings.BITMAP_BLOCK_SZ * 2;
-			int[] apos = skipScan(numVals, rl);
-			double[] aval = preaggValues(numVals, b, dictVals);
+	// 	if(numVals > 1 && _numRows > blksz * 2) {
+	// 		// since single segment scans already exceed typical L2 cache sizes
+	// 		// and because there is some overhead associated with blocking, the
+	// 		// best configuration aligns with L3 cache size (x*vcores*64K*8B < L3)
+	// 		// x=4 leads to a good yet slightly conservative compromise for single-/
+	// 		// multi-threaded and typical number of cores and L3 cache sizes
+	// 		final int blksz2 = CompressionSettings.BITMAP_BLOCK_SZ * 2;
+	// 		int[] apos = skipScan(numVals, rl);
+	// 		double[] aval = preaggValues(numVals, b, dictVals);
 
-			// step 2: cache conscious matrix-vector via horizontal scans
-			for(int bi = rl; bi < ru; bi += blksz2) {
-				int bimax = Math.min(bi + blksz2, ru);
+	// 		// step 2: cache conscious matrix-vector via horizontal scans
+	// 		for(int bi = rl; bi < ru; bi += blksz2) {
+	// 			int bimax = Math.min(bi + blksz2, ru);
 
-				// horizontal segment scan, incl pos maintenance
-				for(int k = 0; k < numVals; k++) {
-					int boff = _ptr[k];
-					int blen = len(k);
-					double val = aval[k];
-					int bix = apos[k];
+	// 			// horizontal segment scan, incl pos maintenance
+	// 			for(int k = 0; k < numVals; k++) {
+	// 				int boff = _ptr[k];
+	// 				int blen = len(k);
+	// 				double val = aval[k];
+	// 				int bix = apos[k];
 
-					for(int ii = bi; ii < bimax && bix < blen; ii += blksz) {
-						// prepare length, start, and end pos
-						int len = _data[boff + bix];
-						int pos = boff + bix + 1;
+	// 				for(int ii = bi; ii < bimax && bix < blen; ii += blksz) {
+	// 					// prepare length, start, and end pos
+	// 					int len = _data[boff + bix];
+	// 					int pos = boff + bix + 1;
 
-						// compute partial results
-						LinearAlgebraUtils.vectAdd(val, c, _data, pos, ii, len);
-						bix += len + 1;
-					}
+	// 					// compute partial results
+	// 					LinearAlgebraUtils.vectAdd(val, c, _data, pos, ii, len);
+	// 					bix += len + 1;
+	// 				}
 
-					apos[k] = bix;
-				}
-			}
-		}
-		else {
-			// iterate over all values and their bitmaps
-			for(int k = 0; k < numVals; k++) {
-				// prepare value-to-add for entire value bitmap
-				int boff = _ptr[k];
-				int blen = len(k);
-				double val = sumValues(k, b, dictVals);
+	// 				apos[k] = bix;
+	// 			}
+	// 		}
+	// 	}
+	// 	else {
+	// 		// iterate over all values and their bitmaps
+	// 		for(int k = 0; k < numVals; k++) {
+	// 			// prepare value-to-add for entire value bitmap
+	// 			int boff = _ptr[k];
+	// 			int blen = len(k);
+	// 			double val = sumValues(k, b, dictVals);
 
-				// iterate over bitmap blocks and add values
-				if(val != 0) {
-					int bix = 0;
-					int off = 0;
-					int slen = -1;
+	// 			// iterate over bitmap blocks and add values
+	// 			if(val != 0) {
+	// 				int bix = 0;
+	// 				int off = 0;
+	// 				int slen = -1;
 
-					// scan to beginning offset if necessary
-					if(rl > 0) {
-						for(; bix < blen & off < rl; bix += slen + 1, off += blksz) {
-							slen = _data[boff + bix];
-						}
-					}
+	// 				// scan to beginning offset if necessary
+	// 				if(rl > 0) {
+	// 					for(; bix < blen & off < rl; bix += slen + 1, off += blksz) {
+	// 						slen = _data[boff + bix];
+	// 					}
+	// 				}
 
-					// compute partial results
-					for(; bix < blen & off < ru; bix += slen + 1, off += blksz) {
-						slen = _data[boff + bix];
-						for(int blckIx = 1; blckIx <= slen; blckIx++) {
-							c[off + _data[boff + bix + blckIx]] += val;
-						}
-					}
-				}
-			}
-		}
-	}
+	// 				// compute partial results
+	// 				for(; bix < blen & off < ru; bix += slen + 1, off += blksz) {
+	// 					slen = _data[boff + bix];
+	// 					for(int blckIx = 1; blckIx <= slen; blckIx++) {
+	// 						c[off + _data[boff + bix + blckIx]] += val;
+	// 					}
+	// 				}
+	// 			}
+	// 		}
+	// 	}
+	// }
 
-	@Override
-	public void rightMultByMatrix(int[] outputColumns, double[] preAggregatedB, double[] c, int thatNrColumns, int rl,
-		int ru) {
+	// @Override
+	// public void rightMultByMatrix(int[] outputColumns, double[] preAggregatedB, double[] c, int thatNrColumns, int rl,
+	// 	int ru) {
 
-		final int blksz = CompressionSettings.BITMAP_BLOCK_SZ;
-		final int numVals = getNumValues();
+	// 	final int blksz = CompressionSettings.BITMAP_BLOCK_SZ;
+	// 	final int numVals = getNumValues();
 
-		if(numVals > 1 && _numRows > blksz * 2) {
-			final int blksz2 = blksz * 2;
-			int[] apos = skipScan(numVals, rl);
-			int blockStart = rl - rl % blksz;
-			for(int bi = blockStart; bi < ru; bi += blksz2) {
-				int bimax = Math.min(bi + blksz2, ru);
-				for(int k = 0; k < numVals; k++) {
-					int boff = _ptr[k];
-					int blen = len(k);
-					int bix = apos[k];
-					for(int ii = bi; ii < bimax && bix < blen; ii += blksz) {
-						int len = _data[boff + bix];
-						int pos = _data[boff + bix + 1];
-						if(pos >= rl)
-							addV(c, preAggregatedB, outputColumns, (bi + pos) * thatNrColumns, k);
-						bix += len + 1;
-					}
-					apos[k] = bix;
-				}
-			}
-		}
-		else {
-			for(int k = 0; k < numVals; k++) {
-				int boff = _ptr[k];
-				int blen = len(k);
-				int bix = skipScanVal(k, rl);
-				int off = rl;
-				int slen = 0;
-				// compute partial results
-				for(; bix < blen & off < ru; bix += slen + 1, off += blksz) {
-					slen = _data[boff + bix];
-					for(int blckIx = 1; blckIx <= slen; blckIx++) {
-						int rowIdx = (_data[boff + bix + blckIx] + off) * thatNrColumns;
-						addV(c, preAggregatedB, outputColumns, rowIdx, k);
-					}
-				}
-			}
-		}
-	}
+	// 	if(numVals > 1 && _numRows > blksz * 2) {
+	// 		final int blksz2 = blksz * 2;
+	// 		int[] apos = skipScan(numVals, rl);
+	// 		int blockStart = rl - rl % blksz;
+	// 		for(int bi = blockStart; bi < ru; bi += blksz2) {
+	// 			int bimax = Math.min(bi + blksz2, ru);
+	// 			for(int k = 0; k < numVals; k++) {
+	// 				int boff = _ptr[k];
+	// 				int blen = len(k);
+	// 				int bix = apos[k];
+	// 				for(int ii = bi; ii < bimax && bix < blen; ii += blksz) {
+	// 					int len = _data[boff + bix];
+	// 					int pos = _data[boff + bix + 1];
+	// 					if(pos >= rl)
+	// 						addV(c, preAggregatedB, outputColumns, (bi + pos) * thatNrColumns, k);
+	// 					bix += len + 1;
+	// 				}
+	// 				apos[k] = bix;
+	// 			}
+	// 		}
+	// 	}
+	// 	else {
+	// 		for(int k = 0; k < numVals; k++) {
+	// 			int boff = _ptr[k];
+	// 			int blen = len(k);
+	// 			int bix = skipScanVal(k, rl);
+	// 			int off = rl;
+	// 			int slen = 0;
+	// 			// compute partial results
+	// 			for(; bix < blen & off < ru; bix += slen + 1, off += blksz) {
+	// 				slen = _data[boff + bix];
+	// 				for(int blckIx = 1; blckIx <= slen; blckIx++) {
+	// 					int rowIdx = (_data[boff + bix + blckIx] + off) * thatNrColumns;
+	// 					addV(c, preAggregatedB, outputColumns, rowIdx, k);
+	// 				}
+	// 			}
+	// 		}
+	// 	}
+	// }
 
-	private static void addV(double[] c, double[] preAggregatedB, int[] outputColumns, int rowIdx, int k) {
-		int n = k * outputColumns.length;
-		for(int i = 0; i < outputColumns.length; i++) {
-			c[rowIdx + outputColumns[i]] += preAggregatedB[n + i];
-		}
-	}
+	// private static void addV(double[] c, double[] preAggregatedB, int[] outputColumns, int rowIdx, int k) {
+	// 	int n = k * outputColumns.length;
+	// 	for(int i = 0; i < outputColumns.length; i++) {
+	// 		c[rowIdx + outputColumns[i]] += preAggregatedB[n + i];
+	// 	}
+	// }
 
-	@Override
-	public void leftMultByRowVector(double[] a, double[] c, int numVals, double[] values) {
-		final int blksz = CompressionSettings.BITMAP_BLOCK_SZ;
+	// @Override
+	// public void leftMultByRowVector(double[] a, double[] c, int numVals, double[] values) {
+	// 	final int blksz = CompressionSettings.BITMAP_BLOCK_SZ;
 
-		if(numVals >= 1 && _numRows > blksz)
-			leftMultByRowVectorBlocking(a, c, numVals, values);
-		else
-			leftMultByRowVectorNonBlocking(a, c, numVals, values);
+	// 	if(numVals >= 1 && _numRows > blksz)
+	// 		leftMultByRowVectorBlocking(a, c, numVals, values);
+	// 	else
+	// 		leftMultByRowVectorNonBlocking(a, c, numVals, values);
 
-	}
+	// }
 
-	private void leftMultByRowVectorBlocking(double[] a, double[] c, int numVals, double[] values) {
-		// cache blocking config (see matrix-vector mult for explanation)
-		final int blksz = CompressionSettings.BITMAP_BLOCK_SZ;
-		final int numCols = getNumCols();
-		final int blksz2 = 2 * blksz;
+	// private void leftMultByRowVectorBlocking(double[] a, double[] c, int numVals, double[] values) {
+	// 	double[] cvals = preAggregate(a);
+	// 	postScaling(values, cvals, c, numVals);
+	// }
 
-		// step 1: prepare position and value arrays
+	// private void leftMultByRowVectorNonBlocking(double[] a, double[] c, int numVals, double[] values) {
+	// 	// iterate over all values and their bitmaps
+	// 	final int blksz = CompressionSettings.BITMAP_BLOCK_SZ;
+	// 	final int numCols = getNumCols();
+	// 	for(int k = 0, valOff = 0; k < numVals; k++, valOff += numCols) {
+	// 		int boff = _ptr[k];
+	// 		int blen = len(k);
 
-		// current pos per OLs / output values
-		int[] apos = allocIVector(numVals, true);
-		double[] cvals = allocDVector(numVals, true);
+	// 		// iterate over bitmap blocks and add partial results
+	// 		double vsum = 0;
+	// 		for(int bix = 0, off = 0; bix < blen; bix += _data[boff + bix] + 1, off += blksz)
+	// 			vsum += LinearAlgebraUtils.vectSum(a, _data, off, boff + bix + 1, _data[boff + bix]);
 
-		// step 2: cache conscious matrix-vector via horizontal scans
-		for(int ai = 0; ai < _numRows; ai += blksz2) {
-			int aimax = Math.min(ai + blksz2, _numRows);
+	// 		// scale partial results by values and write results
+	// 		for(int j = 0; j < numCols; j++)
+	// 			c[_colIndexes[j]] += vsum * values[valOff + j];
+	// 	}
+	// }
 
-			// horizontal segment scan, incl pos maintenance
-			for(int k = 0; k < numVals; k++) {
-				int boff = _ptr[k];
-				int blen = len(k);
-				int bix = apos[k];
-				double vsum = 0;
+	// @Override
+	// public void leftMultByMatrix(double[] a, double[] c, double[] values, int numRows, int numCols, int rl, int ru,
+	// 	int vOff) {
+	// 	final int numVals = getNumValues();
+	// 	final int blksz = CompressionSettings.BITMAP_BLOCK_SZ;
+	// 	if(numVals >= 1 && _numRows > blksz)
+	// 		leftMultByMatrixBlocking(a, c, values, numRows, numCols, rl, ru, vOff, numVals);
+	// 	else
+	// 		leftMultByMatrixNonBlocking(a, c, values, numRows, numCols, rl, ru, vOff, numVals);
 
-				for(int ii = ai; ii < aimax && bix < blen; ii += blksz) {
-					// prepare length, start, and end pos
-					int len = _data[boff + bix];
-					int pos = boff + bix + 1;
+	// }
 
-					// iterate over bitmap blocks and compute partial results (a[i]*1)
-					vsum += LinearAlgebraUtils.vectSum(a, _data, ii, pos, len);
-					bix += len + 1;
-				}
+	// private void leftMultByMatrixBlocking(double[] a, double[] c, double[] values, int numRows, int numCols, int rl,
+	// 	int ru, int vOff, int numVals) {
+	// 	for(int i = rl; i < ru; i++) {
+	// 		double[] cvals = preAggregate(a, i);
+	// 		postScaling(values, cvals, c, numVals, i, numCols);
+	// 	}
+	// }
 
-				apos[k] = bix;
-				cvals[k] += vsum;
-			}
-		}
+	// private void leftMultByMatrixNonBlocking(double[] a, double[] c, double[] values, int numRows, int numCols, int rl,
+	// 	int ru, int vOff, int numVals) {
+	// 	final int blksz = CompressionSettings.BITMAP_BLOCK_SZ;
+	// 	for(int i = rl, offR = vOff * _numRows; i < ru; i++, offR += _numRows) {
+	// 		for(int k = 0, valOff = 0; k < numVals; k++, valOff += _colIndexes.length) {
+	// 			int boff = _ptr[k];
+	// 			int blen = len(k);
 
-		// step 3: scale partial results by values and write to global output
-		for(int k = 0, valOff = 0; k < numVals; k++, valOff += numCols)
-			for(int j = 0; j < numCols; j++)
-				c[_colIndexes[j]] += cvals[k] * values[valOff + j];
-	}
+	// 			// iterate over bitmap blocks and add partial results
+	// 			double vsum = 0;
+	// 			for(int bix = 0, off = 0; bix < blen; bix += _data[boff + bix] + 1, off += blksz)
+	// 				vsum += LinearAlgebraUtils.vectSum(a, _data, off + offR, boff + bix + 1, _data[boff + bix]);
 
-	private void leftMultByRowVectorNonBlocking(double[] a, double[] c, int numVals, double[] values) {
-		// iterate over all values and their bitmaps
-		final int blksz = CompressionSettings.BITMAP_BLOCK_SZ;
-		final int numCols = getNumCols();
-		for(int k = 0, valOff = 0; k < numVals; k++, valOff += numCols) {
-			int boff = _ptr[k];
-			int blen = len(k);
+	// 			// scale partial results by values and write results
 
-			// iterate over bitmap blocks and add partial results
-			double vsum = 0;
-			for(int bix = 0, off = 0; bix < blen; bix += _data[boff + bix] + 1, off += blksz)
-				vsum += LinearAlgebraUtils.vectSum(a, _data, off, boff + bix + 1, _data[boff + bix]);
+	// 			int offC = i * numCols;
+	// 			for(int j = 0; j < _colIndexes.length; j++) {
+	// 				int colIx = _colIndexes[j] + offC;
+	// 				c[colIx] += vsum * values[valOff + j];
+	// 			}
+	// 		}
+	// 	}
+	// }
 
-			// scale partial results by values and write results
-			for(int j = 0; j < numCols; j++)
-				c[_colIndexes[j]] += vsum * values[valOff + j];
-		}
-	}
+	// @Override
+	// public void leftMultBySparseMatrix(SparseBlock sb, double[] c, double[] values, int numRows, int numCols, int row) {
+	// 	// final int blksz = CompressionSettings.BITMAP_BLOCK_SZ;
+	// 	// final int numVals = getNumValues();
+	// 	throw new NotImplementedException("Not implemented Sparse multiplication OLE");
+	// 	// if(numVals > 1 && _numRows > blksz)
+	// 	// 	leftMultBySparseMatrixBlocking(sb, c, values, numRows, numCols, row, tmpA, numVals);
+	// 	// else
+	// 	// 	leftMultBySparseMatrixNonBlock(sb, c, values, numRows, numCols, row, tmpA, numVals);
 
-	@Override
-	public void leftMultByMatrix(double[] a, double[] c, double[] values, int numRows, int numCols, int rl, int ru,
-		int voff) {
-		final int blksz = CompressionSettings.BITMAP_BLOCK_SZ;
-		final int numVals = getNumValues();
-		if(numVals >= 1 && _numRows > blksz) {
+	// }
 
-			// cache blocking config (see matrix-vector mult for explanation)
-			final int blksz2 = 2 * CompressionSettings.BITMAP_BLOCK_SZ;
+	// private void leftMultBySparseMatrixBlocking(SparseBlock sb, double[] c, double[] values, int numRows, int numCols,
+	// 	int row, double[] tmpA, int numVals) {
+	// 	final int blksz = CompressionSettings.BITMAP_BLOCK_SZ;
+	// 	int sparseEndIndex = sb.size(row) + sb.pos(row);
+	// 	int[] indexes = sb.indexes(row);
+	// 	double[] sparseV = sb.values(row);
 
-			// step 1: prepare position and value arrays
+	// 	// cache blocking config (see matrix-vector mult for explanation)
+	// 	final int blksz2 = 2 * CompressionSettings.BITMAP_BLOCK_SZ;
 
-			// current pos per OLs / output values
+	// 	// step 1: prepare position and value arrays
+	// 	int[] apos = allocIVector(numVals, true);
+	// 	double[] cvals = allocDVector(numVals, true);
+	// 	// step 2: cache conscious matrix-vector via horizontal scans
+	// 	int pI = sb.pos(row);
+	// 	for(int ai = 0; ai < _numRows; ai += blksz2) {
+	// 		int aimax = Math.min(ai + blksz2, _numRows);
+	// 		Arrays.fill(tmpA, 0);
+	// 		for(; pI < sparseEndIndex && indexes[pI] < aimax; pI++) {
+	// 			if(indexes[pI] >= ai)
+	// 				tmpA[indexes[pI] - ai] = sparseV[pI];
+	// 		}
 
-			for(int i = rl, off = voff * _numRows; i < ru; i++, off += _numRows) {
-				int[] apos = allocIVector(numVals, true);
-				double[] cvals = allocDVector(numVals, true);
-				// step 2: cache conscious matrix-vector via horizontal scans
-				for(int ai = 0; ai < _numRows; ai += blksz2) {
-					int aimax = Math.min(ai + blksz2, _numRows);
+	// 		// horizontal segment scan, incl pos maintenance
+	// 		for(int k = 0; k < numVals; k++) {
+	// 			int boff = _ptr[k];
+	// 			int blen = len(k);
+	// 			int bix = apos[k];
+	// 			double vsum = 0;
+	// 			for(int ii = ai; ii < aimax && bix < blen; ii += blksz) {
+	// 				int len = _data[boff + bix];
+	// 				int pos = boff + bix + 1;
+	// 				int blockId = (ii / blksz) % 2;
+	// 				vsum += LinearAlgebraUtils.vectSum(tmpA, _data, blockId * blksz, pos, len);
+	// 				bix += len + 1;
+	// 			}
 
-					// horizontal segment scan, incl pos maintenance
-					for(int k = 0; k < numVals; k++) {
-						int boff = _ptr[k];
-						int blen = len(k);
-						int bix = apos[k];
-						double vsum = 0;
+	// 			apos[k] = bix;
+	// 			cvals[k] += vsum;
+	// 		}
+	// 	}
 
-						for(int ii = ai; ii < aimax && bix < blen; ii += blksz) {
-							// prepare length, start, and end pos
-							int len = _data[boff + bix];
-							int pos = boff + bix + 1;
+	// 	int offC = row * numCols;
+	// 	// step 3: scale partial results by values and write to global output
+	// 	for(int k = 0, valOff = 0; k < numVals; k++, valOff += _colIndexes.length)
+	// 		for(int j = 0; j < _colIndexes.length; j++) {
+	// 			int colIx = _colIndexes[j] + offC;
+	// 			c[colIx] += cvals[k] * values[valOff + j];
+	// 		}
 
-							// iterate over bitmap blocks and compute partial results (a[i]*1)
-							vsum += LinearAlgebraUtils.vectSum(a, _data, ii + off, pos, len);
-							bix += len + 1;
-						}
+	// }
 
-						apos[k] = bix;
-						cvals[k] += vsum;
-					}
-				}
+	// private void leftMultBySparseMatrixNonBlock(SparseBlock sb, double[] c, double[] values, int numRows, int numCols,
+	// 	int row, double[] tmpA, int numVals) {
+	// 	final int blksz = CompressionSettings.BITMAP_BLOCK_SZ;
+	// 	int sparseEndIndex = sb.size(row) + sb.pos(row);
+	// 	int[] indexes = sb.indexes(row);
+	// 	double[] sparseV = sb.values(row);
 
-				int offC = i * numCols;
-				// step 3: scale partial results by values and write to global output
-				for(int k = 0, valOff = 0; k < numVals; k++, valOff += _colIndexes.length)
-					for(int j = 0; j < _colIndexes.length; j++) {
-						int colIx = _colIndexes[j] + offC;
-						c[colIx] += cvals[k] * values[valOff + j];
-					}
-			}
-		}
-		else {
+	// 	for(int k = 0, valOff = 0; k < numVals; k++, valOff += _colIndexes.length) {
+	// 		int boff = _ptr[k];
+	// 		int blen = len(k);
+	// 		double vsum = 0;
+	// 		int pI = sb.pos(row);
+	// 		for(int bix = 0, off = 0; bix < blen; bix += _data[boff + bix] + 1, off += blksz) {
+	// 			// blockId = off / blksz;
+	// 			Arrays.fill(tmpA, 0);
+	// 			for(; pI < sparseEndIndex && indexes[pI] < off + blksz; pI++) {
+	// 				if(indexes[pI] >= off)
+	// 					tmpA[indexes[pI] - off] = sparseV[pI];
+	// 			}
+	// 			vsum += LinearAlgebraUtils.vectSum(tmpA, _data, 0, boff + bix + 1, _data[boff + bix]);
+	// 		}
 
-			for(int i = rl, offR = voff * _numRows; i < ru; i++, offR += _numRows) {
-				for(int k = 0, valOff = 0; k < numVals; k++, valOff += _colIndexes.length) {
-					int boff = _ptr[k];
-					int blen = len(k);
-
-					// iterate over bitmap blocks and add partial results
-					double vsum = 0;
-					for(int bix = 0, off = 0; bix < blen; bix += _data[boff + bix] + 1, off += blksz)
-						vsum += LinearAlgebraUtils.vectSum(a, _data, off + offR, boff + bix + 1, _data[boff + bix]);
-
-					// scale partial results by values and write results
-
-					int offC = i * numCols;
-					for(int j = 0; j < _colIndexes.length; j++) {
-						int colIx = _colIndexes[j] + offC;
-						c[colIx] += vsum * values[valOff + j];
-					}
-				}
-			}
-		}
-	}
-
-	@Override
-	public void leftMultBySparseMatrix(SparseBlock sb, double[] c, double[] values, int numRows, int numCols, int row,
-		double[] tmpA) {
-		final int blksz = CompressionSettings.BITMAP_BLOCK_SZ;
-		final int numVals = getNumValues();
-		if(numVals > 1 && _numRows > blksz)
-			leftMultBySparseMatrixBlocking(sb, c, values, numRows, numCols, row, tmpA, numVals);
-		else
-			leftMultBySparseMatrixNonBlock(sb, c, values, numRows, numCols, row, tmpA, numVals);
-
-	}
-
-	private void leftMultBySparseMatrixBlocking(SparseBlock sb, double[] c, double[] values, int numRows, int numCols,
-		int row, double[] tmpA, int numVals) {
-		final int blksz = CompressionSettings.BITMAP_BLOCK_SZ;
-		int sparseEndIndex = sb.size(row) + sb.pos(row);
-		int[] indexes = sb.indexes(row);
-		double[] sparseV = sb.values(row);
-
-		// cache blocking config (see matrix-vector mult for explanation)
-		final int blksz2 = 2 * CompressionSettings.BITMAP_BLOCK_SZ;
-
-		// step 1: prepare position and value arrays
-		int[] apos = allocIVector(numVals, true);
-		double[] cvals = allocDVector(numVals, true);
-		// step 2: cache conscious matrix-vector via horizontal scans
-		int pI = sb.pos(row);
-		for(int ai = 0; ai < _numRows; ai += blksz2) {
-			int aimax = Math.min(ai + blksz2, _numRows);
-			Arrays.fill(tmpA, 0);
-			for(; pI < sparseEndIndex && indexes[pI] < aimax; pI++) {
-				if(indexes[pI] >= ai)
-					tmpA[indexes[pI] - ai] = sparseV[pI];
-			}
-
-			// horizontal segment scan, incl pos maintenance
-			for(int k = 0; k < numVals; k++) {
-				int boff = _ptr[k];
-				int blen = len(k);
-				int bix = apos[k];
-				double vsum = 0;
-				for(int ii = ai; ii < aimax && bix < blen; ii += blksz) {
-					int len = _data[boff + bix];
-					int pos = boff + bix + 1;
-					int blockId = (ii / blksz) % 2;
-					vsum += LinearAlgebraUtils.vectSum(tmpA, _data, blockId * blksz, pos, len);
-					bix += len + 1;
-				}
-
-				apos[k] = bix;
-				cvals[k] += vsum;
-			}
-		}
-
-		int offC = row * numCols;
-		// step 3: scale partial results by values and write to global output
-		for(int k = 0, valOff = 0; k < numVals; k++, valOff += _colIndexes.length)
-			for(int j = 0; j < _colIndexes.length; j++) {
-				int colIx = _colIndexes[j] + offC;
-				c[colIx] += cvals[k] * values[valOff + j];
-			}
-
-	}
-
-	private void leftMultBySparseMatrixNonBlock(SparseBlock sb, double[] c, double[] values, int numRows, int numCols,
-		int row, double[] tmpA, int numVals) {
-		final int blksz = CompressionSettings.BITMAP_BLOCK_SZ;
-		int sparseEndIndex = sb.size(row) + sb.pos(row);
-		int[] indexes = sb.indexes(row);
-		double[] sparseV = sb.values(row);
-
-		for(int k = 0, valOff = 0; k < numVals; k++, valOff += _colIndexes.length) {
-			int boff = _ptr[k];
-			int blen = len(k);
-			double vsum = 0;
-			int pI = sb.pos(row);
-			for(int bix = 0, off = 0; bix < blen; bix += _data[boff + bix] + 1, off += blksz) {
-				// blockId = off / blksz;
-				Arrays.fill(tmpA, 0);
-				for(; pI < sparseEndIndex && indexes[pI] < off + blksz; pI++) {
-					if(indexes[pI] >= off)
-						tmpA[indexes[pI] - off] = sparseV[pI];
-				}
-				vsum += LinearAlgebraUtils.vectSum(tmpA, _data, 0, boff + bix + 1, _data[boff + bix]);
-			}
-
-			for(int j = 0; j < _colIndexes.length; j++) {
-				int Voff = _colIndexes[j] + row * numCols;
-				c[Voff] += vsum * values[valOff + j];
-			}
-		}
-	}
+	// 		for(int j = 0; j < _colIndexes.length; j++) {
+	// 			int Voff = _colIndexes[j] + row * numCols;
+	// 			c[Voff] += vsum * values[valOff + j];
+	// 		}
+	// 	}
+	// }
 
 	@Override
-	protected final void computeRowSums(double[] c, KahanFunction kplus, int rl, int ru, boolean mean) {
-		KahanPlus kplus2 = KahanPlus.getKahanPlusFnObject();
+	protected final void computeRowSums(double[] c, boolean square, int rl, int ru, boolean mean) {
+
 		final int blksz = CompressionSettings.BITMAP_BLOCK_SZ;
 		final int numVals = getNumValues();
 
@@ -769,10 +736,10 @@ public class ColGroupOLE extends ColGroupOffset {
 
 			// step 1: prepare position and value arrays
 			int[] apos = skipScan(numVals, rl);
-			double[] aval = _dict.sumAllRowsToDouble(kplus, _colIndexes.length);
+			double[] aval = _dict.sumAllRowsToDouble(square, _colIndexes.length);
 
 			// step 2: cache conscious row sums via horizontal scans
-			for(int bi = rl; bi < ru; bi += blksz2) {
+			for(int bi = (rl / blksz) * blksz; bi < ru; bi += blksz2) {
 				int bimax = Math.min(bi + blksz2, ru);
 
 				// horizontal segment scan, incl pos maintenance
@@ -785,12 +752,13 @@ public class ColGroupOLE extends ColGroupOffset {
 					for(int ii = bi; ii < bimax && bix < blen; ii += blksz) {
 						// prepare length, start, and end pos
 						int len = _data[boff + bix];
-						int pos = boff + bix + 1;
 
 						// compute partial results
-						for(int i = 0; i < len; i++) {
-							int rix = ii + _data[pos + i];
-							setandExecute(c, kplus2, val, rix * (2 + (mean ? 1 : 0)));
+						for(int i = 1; i <= len; i++) {
+							int rix = ii + _data[boff + bix + i];
+							if(rix >= getNumRows())
+								throw new DMLCompressionException("Invalid row " + rix);
+							c[rix] += val;
 						}
 						bix += len + 1;
 					}
@@ -805,7 +773,7 @@ public class ColGroupOLE extends ColGroupOffset {
 				// prepare value-to-add for entire value bitmap
 				int boff = _ptr[k];
 				int blen = len(k);
-				double val = _dict.sumRow(k, kplus, _colIndexes.length);
+				double val = _dict.sumRow(k, square, _colIndexes.length);
 
 				// iterate over bitmap blocks and add values
 				if(val != 0) {
@@ -815,7 +783,7 @@ public class ColGroupOLE extends ColGroupOffset {
 						slen = _data[boff + bix];
 						for(int i = 1; i <= slen; i++) {
 							int rix = off + _data[boff + bix + i];
-							setandExecute(c, kplus2, val, rix * (2 + (mean ? 1 : 0)));
+							c[rix] += val;
 						}
 					}
 				}
@@ -823,10 +791,8 @@ public class ColGroupOLE extends ColGroupOffset {
 		}
 	}
 
-
-
 	@Override
-	protected final void computeRowMxx(MatrixBlock c, Builtin builtin, int rl, int ru) {
+	protected final void computeRowMxx(double[] c, Builtin builtin, int rl, int ru) {
 		// NOTE: zeros handled once for all column groups outside
 		final int blksz = CompressionSettings.BITMAP_BLOCK_SZ;
 		final int numVals = getNumValues();
@@ -847,7 +813,7 @@ public class ColGroupOLE extends ColGroupOffset {
 				slen = _data[boff + bix];
 				for(int i = 1; i <= slen; i++) {
 					int rix = off + _data[boff + bix + i];
-					c.quickSetValue(rix, 0, builtin.execute(c.quickGetValue(rix, 0), val));
+					c[rix] = builtin.execute(c[rix], val);
 				}
 			}
 		}
@@ -999,7 +965,61 @@ public class ColGroupOLE extends ColGroupOffset {
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
 		sb.append(super.toString());
+		sb.append(String.format("\n%15s%5d ", "Data:", this._data.length));
+		sb.append(charsToString(_data));
 		return sb.toString();
+	}
+
+	@Override
+	public double[] preAggregate(double[] a, int row) {
+		final int numVals = getNumValues();
+		final int blksz = CompressionSettings.BITMAP_BLOCK_SZ;
+		final int blksz2 = CompressionSettings.BITMAP_BLOCK_SZ * 2;
+
+		int[] apos = allocIVector(numVals, true);
+		double[] cvals = allocDVector(numVals, true);
+		int off = row * _numRows;
+		for(int ai = 0; ai < _numRows; ai += blksz2) {
+			int aimax = Math.min(ai + blksz2, _numRows);
+
+			// horizontal segment scan, incl pos maintenance
+			for(int k = 0; k < numVals; k++) {
+				int boff = _ptr[k];
+				int blen = len(k);
+				int bix = apos[k];
+				double vsum = 0;
+
+				for(int ii = ai; ii < aimax && bix < blen; ii += blksz) {
+					// prepare length, start, and end pos
+					int len = _data[boff + bix];
+					int pos = boff + bix + 1;
+
+					// iterate over bitmap blocks and compute partial results (a[i]*1)
+					vsum += LinearAlgebraUtils.vectSum(a, _data, ii + off, pos, len);
+					bix += len + 1;
+				}
+
+				apos[k] = bix;
+				cvals[k] += vsum;
+			}
+		}
+
+		return cvals;
+	}
+
+	@Override
+	public double[] preAggregateSparse(SparseBlock sb, int row) {
+		return null;
+	}
+
+	@Override
+	public boolean sameIndexStructure(ColGroupCompressed that) {
+		return that instanceof ColGroupOLE && ((ColGroupOLE) that)._data == _data;
+	}
+
+	@Override
+	public int getIndexStructureHash() {
+		return _data.hashCode();
 	}
 
 	/**
@@ -1012,8 +1032,10 @@ public class ColGroupOLE extends ColGroupOffset {
 	 * @return compressed version of said bitmap
 	 */
 	public static char[] genOffsetBitmap(int[] offsets, int len) {
-		int lastOffset = offsets[len - 1];
+		if(offsets == null || offsets.length == 0 || len == 0)
+			return null;
 
+		int lastOffset = offsets[len - 1];
 		// Build up the blocks
 		int numBlocks = (lastOffset / CompressionSettings.BITMAP_BLOCK_SZ) + 1;
 		// To simplify the logic, we make two passes.
@@ -1049,8 +1071,160 @@ public class ColGroupOLE extends ColGroupOffset {
 			inputIx += blockSz;
 			blockStartIx += blockSz + 1;
 		}
-		
+
 		return encodedBlocks;
 	}
 
+	@Override
+	public IPreAggregate preAggregateDDC(ColGroupDDC lhs) {
+		final int NVR = this.getNumValues();
+		final int NVL = lhs.getNumValues();
+		final int retSize = NVR * NVL;
+		final int blksz = CompressionSettings.BITMAP_BLOCK_SZ;
+		IPreAggregate ag = PreAggregateFactory.ag(retSize);
+
+		for(int kr = 0; kr < NVR; kr++) {
+			final int bOffR = this._ptr[kr];
+			final int bLenR = this.len(kr);
+			final int krOff = kr * NVL;
+			for(int bixR = 0, offR = 0, sLenR = 0; bixR < bLenR; bixR += sLenR + 1, offR += blksz) {
+				sLenR = this._data[bOffR + bixR];
+				for(int j = 1; j <= sLenR; j++) {
+					int idx = lhs.getIndex(offR + this._data[bOffR + bixR + j]);
+					ag.increment(idx + krOff);
+				}
+			}
+		}
+
+		return ag;
+	}
+
+	@Override
+	public IPreAggregate preAggregateSDC(ColGroupSDC lhs) {
+		final int NVR = this.getNumValues();
+		final int NVL = lhs.getNumValues();
+		final int retSize = NVR * NVL;
+		final int blksz = CompressionSettings.BITMAP_BLOCK_SZ;
+		IPreAggregate ag = PreAggregateFactory.ag(retSize);
+
+		final int defL = NVL - 1;
+
+		for(int kr = 0; kr < NVR; kr++) {
+			AIterator lIt = lhs._indexes.getIterator();
+			final int bOffR = this._ptr[kr];
+			final int bLenR = this.len(kr);
+			final int krOff = kr * NVL;
+			for(int bixR = 0, offR = 0, sLenR = 0; bixR < bLenR; bixR += sLenR + 1, offR += blksz) {
+				sLenR = this._data[bOffR + bixR];
+				for(int j = 1; j <= sLenR; j++) {
+					final int row = offR + this._data[bOffR + bixR + j];
+					lIt.skipTo(row);
+					if(lIt.value() == row)
+						ag.increment(lhs.getIndex(lIt.getDataIndexAndIncrement()) + krOff);
+					else
+						ag.increment(defL + krOff);
+				}
+			}
+		}
+
+		return ag;
+	}
+
+	@Override
+	public IPreAggregate preAggregateSDCSingle(ColGroupSDCSingle lhs) {
+		throw new NotImplementedException("Not supported pre aggregate of :" + lhs.getClass().getSimpleName() + " in "
+			+ this.getClass().getSimpleName());
+	}
+
+	@Override
+	public IPreAggregate preAggregateSDCZeros(ColGroupSDCZeros lhs) {
+		final int NVR = this.getNumValues();
+		final int NVL = lhs.getNumValues();
+		final int retSize = NVR * NVL;
+		final int blksz = CompressionSettings.BITMAP_BLOCK_SZ;
+		final IPreAggregate ag = PreAggregateFactory.ag(retSize);
+
+		for(int kr = 0; kr < NVR; kr++) {
+			final AIterator lIt = lhs._indexes.getIterator();
+			final int bOffR = this._ptr[kr];
+			final int bLenR = this.len(kr);
+			final int krOff = kr * NVL;
+			for(int bixR = 0, offR = 0, sLenR = 0; lIt.hasNext() && bixR < bLenR; bixR += sLenR + 1, offR += blksz) {
+				sLenR = this._data[bOffR + bixR];
+				for(int j = 1; lIt.hasNext() && j <= sLenR; j++) {
+					final int row = offR + this._data[bOffR + bixR + j];
+					lIt.skipTo(row);
+					if(lIt.value() == row)
+						ag.increment(lhs.getIndex(lIt.getDataIndexAndIncrement()) + krOff);
+				}
+			}
+		}
+
+		return ag;
+	}
+
+	@Override
+	public IPreAggregate preAggregateSDCSingleZeros(ColGroupSDCSingleZeros lhs) {
+		throw new NotImplementedException("Not supported pre aggregate of :" + lhs.getClass().getSimpleName() + " in "
+			+ this.getClass().getSimpleName());
+	}
+
+	@Override
+	public IPreAggregate preAggregateOLE(ColGroupOLE lhs) {
+		final int NVR = this.getNumValues();
+		final int NVL = lhs.getNumValues();
+		final int retSize = NVR * NVL;
+		final int blksz = CompressionSettings.BITMAP_BLOCK_SZ;
+		IPreAggregate ag = PreAggregateFactory.ag(retSize);
+
+		for(int kl = 0; kl < NVL; kl++) {
+			final int bOffL = lhs._ptr[kl];
+			final int bLenL = lhs.len(kl);
+			for(int bixL = 0, offL = 0, sLenL = 0; bixL < bLenL; bixL += sLenL + 1, offL += blksz) {
+				sLenL = lhs._data[bOffL + bixL];
+				for(int i = 1; i <= sLenL; i++) {
+					final int col = offL + lhs._data[bOffL + bixL + i];
+					for(int kr = 0; kr < NVR; kr++) {
+						final int bOffR = this._ptr[kr];
+						final int bLenR = this.len(kr);
+						final int krOff = kr * NVL;
+						for(int bixR = 0, offR = 0, sLenR = 0; bixR < bLenR; bixR += sLenR + 1, offR += blksz) {
+							sLenR = this._data[bOffR + bixR];
+							for(int j = 1; j <= sLenR; j++)
+								if(col == offR + this._data[bOffR + bixR + j])
+									ag.increment(kl + krOff);
+						}
+					}
+				}
+			}
+		}
+
+		return ag;
+	}
+
+	@Override
+	public IPreAggregate preAggregateRLE(ColGroupRLE lhs) {
+		throw new NotImplementedException("Not supported pre aggregate of :" + lhs.getClass().getSimpleName() + " in "
+			+ this.getClass().getSimpleName());
+	}
+
+	@Override
+	public Dictionary preAggregateThatDDCStructure(ColGroupDDC that, Dictionary ret) {
+		throw new NotImplementedException();
+	}
+
+	@Override
+	public Dictionary preAggregateThatSDCStructure(ColGroupSDC that, Dictionary ret) {
+		throw new NotImplementedException();
+	}
+
+	@Override
+	public Dictionary preAggregateThatSDCZerosStructure(ColGroupSDCZeros that, Dictionary ret) {
+		throw new NotImplementedException();
+	}
+
+	@Override
+	public Dictionary preAggregateThatSDCSingleZerosStructure(ColGroupSDCSingleZeros that, Dictionary ret) {
+		throw new NotImplementedException();
+	}
 }

@@ -21,13 +21,13 @@ m_xgboost = function(Matrix[Double] X, Matrix[Double] y) return (Matrix[Double] 
    # test if input correct
    assert(nrow(X) == nrow(y))
    assert(ncol(y) == 1)
-   init_prediction = 0.5 # todo init prediction wirklich immer 0.5?
+
    M = matrix(1,rows=6,cols=0)
 
-   # select feature
+   # select feature for root node
    best_feature_index = findBestFeature(X, y, FALSE)
 
-
+   init_prediction = median(y) # todo init prediction wirklich immer 0.5? - geändert auf median
    residual_matrix = calculateResiduals(y, init_prediction)
    printMatrix(residual_matrix, "residual matrix")
    first_tree_matrix = matrix(0, rows=6, cols=3)
@@ -35,7 +35,7 @@ m_xgboost = function(Matrix[Double] X, Matrix[Double] y) return (Matrix[Double] 
    printDebug(similarity_score)
 
    # split dataset in 2 branches. try out each average value of 2 datapoints and calc sim- score for each new leaf
-   best_split = findBestSplit(y, similarity_score)
+   best_split = findBestSplit(y, similarity_score) # todo hier müssma glaub ich dann das selected feature nehmen !!
 
    printDebug("Best split is " + toString(best_split))
 

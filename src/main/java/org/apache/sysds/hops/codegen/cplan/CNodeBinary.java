@@ -76,6 +76,10 @@ public class CNodeBinary extends CNode {
 			return ssComm || vsComm || vvComm;
 		}
 		
+		public boolean isElementwise() {
+			return this != DOT_PRODUCT && this != VECT_MATRIXMULT && this != VECT_OUTERMULT_ADD;
+		}
+		
 		public boolean isVectorPrimitive() {
 			return isVectorScalarPrimitive() 
 				|| isVectorVectorPrimitive()
@@ -184,7 +188,8 @@ public class CNodeBinary extends CNode {
 			//replace start position of main input
 			tmp = tmp.replace("%POS"+(j+1)+"%", (_inputs.get(j) instanceof CNodeData 
 					&& _inputs.get(j).getDataType().isMatrix()) ? (!varj.startsWith("b")) ? varj+"i" : 
-					(TemplateUtils.isMatrix(_inputs.get(j)) && _type!=BinType.VECT_MATRIXMULT) ? 
+					((TemplateUtils.isMatrix(_inputs.get(j)) || (_type.isElementwise()
+						&& TemplateUtils.isColVector(_inputs.get(j)))) && _type!=BinType.VECT_MATRIXMULT) ?
 					varj + ".pos(rix)" : "0" : "0");
 		}
 		//replace length information (e.g., after matrix mult)

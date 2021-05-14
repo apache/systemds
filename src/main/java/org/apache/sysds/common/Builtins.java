@@ -139,6 +139,7 @@ public enum Builtins {
 	IMG_TRANSLATE("img_translate", true),
 	IMG_ROTATE("img_rotate", true),
 	IMG_SHEAR("img_shear", true),
+	IMG_CUTOUT("img_cutout", true),
 	IMPUTE_FD("imputeByFD", true),
 	INTERQUANTILE("interQuantile", false),
 	INTERSECT("intersect", true),

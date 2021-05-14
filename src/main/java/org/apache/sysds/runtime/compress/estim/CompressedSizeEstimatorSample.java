@@ -21,11 +21,17 @@ package org.apache.sysds.runtime.compress.estim;
 
 import java.util.HashMap;
 
+import org.apache.sysds.runtime.DMLCompressionException;
 import org.apache.sysds.runtime.compress.CompressionSettings;
+import org.apache.sysds.runtime.compress.colgroup.AColGroup.CompressionType;
 import org.apache.sysds.runtime.compress.estim.sample.HassAndStokes;
 import org.apache.sysds.runtime.compress.lib.BitmapEncoder;
 import org.apache.sysds.runtime.compress.utils.ABitmap;
 import org.apache.sysds.runtime.compress.utils.ABitmap.BitmapType;
+import org.apache.sysds.runtime.compress.utils.IntArrayList;
+import org.apache.sysds.runtime.data.SparseBlock;
+import org.apache.sysds.runtime.data.SparseBlockMCSR;
+import org.apache.sysds.runtime.data.SparseRow;
 import org.apache.sysds.runtime.matrix.data.LibMatrixReorg;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.UtilFunctions;
@@ -55,18 +61,40 @@ public class CompressedSizeEstimatorSample extends CompressedSizeEstimator {
 
 	protected MatrixBlock sampleData(MatrixBlock data, CompressionSettings compSettings, int[] sampleRows,
 		boolean transposed) {
-		// Override the _data Matrix block with the sampled matrix block.
-		MatrixBlock select = (transposed) ? new MatrixBlock(data.getNumColumns(), 1,
-			true) : new MatrixBlock(data.getNumRows(), 1, true);
-		for(int i = 0; i < sampleRows.length; i++)
-			select.appendValue(sampleRows[i], 0, 1);
-
-		MatrixBlock sampledMatrixBlock = data.removeEmptyOperations(new MatrixBlock(), !transposed, true, select);
-		if(!transposed && sampledMatrixBlock.isInSparseFormat() && sampleRows.length > FORCE_TRANSPOSE_ON_SAMPLE_THRESHOLD) {
+		MatrixBlock sampledMatrixBlock;
+		if(data.isInSparseFormat() && !transposed) {
+			sampledMatrixBlock = new MatrixBlock(sampleRows.length, data.getNumColumns(), true);
+			SparseRow[] rows = new SparseRow[sampleRows.length];
+			SparseBlock in = data.getSparseBlock();
+			for(int i = 0; i < sampleRows.length; i++) {
+				rows[i] = in.get(sampleRows[i]);
+			}
+			sampledMatrixBlock.setSparseBlock(new SparseBlockMCSR(rows, false));
+			sampledMatrixBlock.recomputeNonZeros();
 			_transposed = true;
-			sampledMatrixBlock = LibMatrixReorg
-				.transpose(sampledMatrixBlock, new MatrixBlock(sampleRows.length, data.getNumRows(), true), 1);
+			sampledMatrixBlock = LibMatrixReorg.transposeInPlace(sampledMatrixBlock, 16);
 		}
+		else {
+
+			// Override the _data Matrix block with the sampled matrix block.
+			MatrixBlock select = (transposed) ? new MatrixBlock(data.getNumColumns(), 1,
+				true) : new MatrixBlock(data.getNumRows(), 1, true);
+			for(int i = 0; i < sampleRows.length; i++)
+				select.appendValue(sampleRows[i], 0, 1);
+
+			sampledMatrixBlock = data.removeEmptyOperations(new MatrixBlock(), !transposed, true, select);
+
+		}
+
+		if(!transposed && sampledMatrixBlock.isInSparseFormat() &&
+			sampleRows.length > FORCE_TRANSPOSE_ON_SAMPLE_THRESHOLD) {
+			_transposed = true;
+			sampledMatrixBlock = LibMatrixReorg.transpose(sampledMatrixBlock,
+				new MatrixBlock(sampleRows.length, data.getNumRows(), true), 1);
+		}
+
+		if(sampledMatrixBlock.isEmpty())
+			throw new DMLCompressionException("Empty sample block");
 
 		return sampledMatrixBlock;
 
@@ -74,41 +102,59 @@ public class CompressedSizeEstimatorSample extends CompressedSizeEstimator {
 
 	@Override
 	public CompressedSizeInfoColGroup estimateCompressedColGroupSize(int[] colIndexes) {
-		int sampleSize = _sampleRows.length;
-		int numCols = colIndexes.length;
+		final int sampleSize = _sampleRows.length;
+		// final int numCols = colIndexes.length;
 
 		// extract statistics from sample
-		ABitmap ubm = BitmapEncoder.extractBitmap(colIndexes, _data, _transposed);
-		EstimationFactors fact = EstimationFactors.computeSizeEstimationFactors(ubm, false, _numRows, colIndexes);
+		final ABitmap ubm = BitmapEncoder.extractBitmap(colIndexes, _data, _transposed);
+		final EstimationFactors fact = EstimationFactors.computeSizeEstimationFactors(ubm, false, _numRows, colIndexes);
+		final int numZerosInSample = ubm.getZeroCounts();
+		final boolean lossy = ubm.getType() == BitmapType.Lossy;
+
+		if(numZerosInSample == sampleSize || ubm.getOffsetList() == null) {
+			// Since we sample, and this column seems to be empty, we set the return to 1 value detected.
+			// aka 1 value, and 1 offset.
+			// This makes it more robust in the co coding of Columns
+			return new CompressedSizeInfoColGroup(
+				new EstimationFactors(colIndexes, 1, 1, _numRows - 1, 2, 1, _numRows, lossy, true, 0, 0),
+				_compSettings.validCompressions);
+		}
 
 		// estimate number of distinct values (incl fixes for anomalies w/ large sample fraction)
-		// TODO Replace this with lib matrix/data/LibMatrixCountDistinct
 		int totalCardinality = getNumDistinctValues(ubm, _numRows, sampleSize, _solveCache);
 		totalCardinality = Math.max(totalCardinality, fact.numVals);
-		totalCardinality = _compSettings.lossy ? Math.min(totalCardinality, numCols * 127) : totalCardinality;
+		totalCardinality = lossy ? Math.min(totalCardinality, 256) : totalCardinality;
 		totalCardinality = Math.min(totalCardinality, _numRows);
 
 		// Number of unseen values
 		// int unseenVals = totalCardinality - fact.numVals;
 
-		// Note this numZeros is the count of rows that are all zero.
-		int numZeros = ubm.getZeroCounts();
-
 		// estimate number of non-zeros (conservatively round up)
-		double C = Math.max(1 - (double) fact.numSingle / sampleSize, (double) sampleSize / _numRows);
-
-		int numNonZeros = (int) Math.ceil(_numRows - (double) _numRows / sampleSize * C * numZeros);
-		numNonZeros = Math.max(numNonZeros, totalCardinality); // handle anomaly of zi=0
+		final double C = Math.max(1 - (double) fact.numSingle / sampleSize, (double) sampleSize / _numRows);
+		final int numNonZeros = Math.max(
+			(int) Math.floor(_numRows - (double) (_numRows / sampleSize) * C * numZerosInSample), totalCardinality);
 
 		// estimate number of segments and number of runs incl correction for
 		// empty segments and empty runs (via expected mean of offset value)
 		// int numUnseenSeg = (int) (unseenVals * Math.ceil((double) _numRows / BitmapEncoder.BITMAP_BLOCK_SZ / 2));
-		int totalNumRuns = ubm.getNumValues() > 0 ? getNumRuns(ubm, sampleSize, _numRows, _sampleRows) : 0;
+		final int totalNumRuns = _compSettings.validCompressions.contains(CompressionType.RLE) &&
+			ubm.getNumValues() > 0 ? getNumRuns(ubm, sampleSize, _numRows, _sampleRows) : 0;
 
-		boolean containsZero = numZeros > 0;
+		// Largest instance count ... initiate as the number of zeros.
+		int largestInstanceCount = numZerosInSample;
+		for(IntArrayList a : ubm.getOffsetList()) {
+			if(a.size() > largestInstanceCount)
+				largestInstanceCount = a.size();
+		}
 
-		EstimationFactors totalFacts = new EstimationFactors(colIndexes, totalCardinality, numNonZeros, totalNumRuns, numZeros,
-			fact.numSingle, _numRows, containsZero, ubm.getType() == BitmapType.Lossy);
+		final boolean zeroIsMostFrequent = largestInstanceCount == numZerosInSample;
+
+		// Scale largest Instance count to correctly reflect the number of instances.
+		largestInstanceCount = (int) (((double) _numRows / sampleSize) * largestInstanceCount);
+
+		EstimationFactors totalFacts = new EstimationFactors(colIndexes, totalCardinality, numNonZeros,
+			largestInstanceCount, totalNumRuns, fact.numSingle, _numRows, lossy, zeroIsMostFrequent, fact.tupleSparsity,
+			fact.overAllSparsity);
 
 		// construct new size info summary
 		return new CompressedSizeInfoColGroup(totalFacts, _compSettings.validCompressions);

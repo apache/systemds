@@ -32,32 +32,42 @@ public abstract class FEDInstruction extends Instruction {
 		AggregateTernary,
 		Append,
 		Binary,
+		Ctable,
+		CumulativeAggregate,
 		Init,
 		MultiReturnParameterizedBuiltin,
-		ParameterizedBuiltin,
-		Tsmm,
 		MMChain,
-		Reorg,
-		Reshape,
 		MatrixIndexing,
+		Ternary,
+		Tsmm,
+		ParameterizedBuiltin,
 		Quaternary,
 		QSort,
 		QPick,
+		Reorg,
+		Reshape,
+		SpoofFused,
 		Unary
 	}
 
 	protected final FEDType _fedType;
 	protected long _tid = -1; //main
+	protected boolean _federatedOutput = false;
 
 	protected FEDInstruction(FEDType type, String opcode, String istr) {
 		this(type, null, opcode, istr);
 	}
 
 	protected FEDInstruction(FEDType type, Operator op, String opcode, String istr) {
+		this(type, op, opcode, istr, false);
+	}
+
+	protected FEDInstruction(FEDType type, Operator op, String opcode, String istr, boolean federatedOutput) {
 		super(op);
 		_fedType = type;
 		instString = istr;
 		instOpcode = opcode;
+		_federatedOutput = federatedOutput;
 	}
 
 	@Override

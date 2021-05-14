@@ -189,7 +189,8 @@ public enum Builtins {
 	NCOL("ncol", false),
 	NORMALIZE("normalize", true),
 	NROW("nrow", false),
-	NAIVEBAYES("naivebayes", true, false),
+	NAIVEBAYES("naiveBayes", true, false),
+	NAIVEBAYESPREDICT("naiveBayesPredict", true, false),
 	OUTER("outer", false),
 	OUTLIER("outlier", true, false), //TODO parameterize opposite
 	OUTLIER_SD("outlierBySd", true),
@@ -204,6 +205,7 @@ public enum Builtins {
 	PROD("prod", false),
 	QR("qr", false, ReturnType.MULTI_RETURN),
 	QUANTILE("quantile", false),
+	RANDOM_FOREST("randomForest", true),
 	RANGE("range", false),
 	RBIND("rbind", false),
 	REMOVE("remove", false, ReturnType.MULTI_RETURN),
@@ -382,6 +384,7 @@ public enum Builtins {
 	}
 
 	public static String getInternalFName(String name, DataType dt) {
-		return (dt.isMatrix() ? "m_" : "s_") + name;
+		return !contains(name, true, false) ? name : // private builtin
+			(dt.isMatrix() ? "m_" : "s_") + name;    // public builtin
 	}
 }

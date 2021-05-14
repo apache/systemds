@@ -40,33 +40,26 @@ public class JolEstimateUncompressedTest extends JolEstimateTest {
 	public static Collection<Object[]> data() {
 
 		ArrayList<Object[]> tests = new ArrayList<>();
-		ArrayList<MatrixBlock> mb = new ArrayList<>();
 
 		// mb.add(DataConverter.convertToMatrixBlock(new double[][] {{0}}));
-		mb.add(DataConverter.convertToMatrixBlock(new double[][] {{1}}));
-		mb.add(DataConverter.convertToMatrixBlock(TestUtils.generateTestMatrix(1, 100, 0, 100, 1.0, 7)));
-		mb.add(DataConverter.convertToMatrixBlock(TestUtils.generateTestMatrix(1, 1000, 0, 100, 0.2, 7)));
-		mb.add(DataConverter.convertToMatrixBlock(TestUtils.generateTestMatrix(1, 100000, 0, 100, 0.01, 7)));
+		tests.add(new Object[] {DataConverter.convertToMatrixBlock(new double[][] {{1}})});
+		tests.add(new Object[] {DataConverter.convertToMatrixBlock(TestUtils.generateTestMatrix(1, 100, 0, 100, 1.0, 7))});
+		tests.add(new Object[] {DataConverter.convertToMatrixBlock(TestUtils.generateTestMatrix(1, 1000, 0, 100, 0.2, 7))});
+		// tests.add(new Object[] {DataConverter.convertToMatrixBlock(TestUtils.generateTestMatrix(1, 100000, 0, 100, 0.01, 7))});
 
 		// Multi column
-		// TODO Fix uncompressed columns in lossy situation
-		// mb.add(DataConverter.convertToMatrixBlock(TestUtils.generateTestMatrix(2, 10, 0, 100, 1.0, 7)));
-		// mb.add(DataConverter.convertToMatrixBlock(TestUtils.generateTestMatrix(13, 100, 0, 100, 1.0, 7)));
+		tests.add(new Object[] {DataConverter.convertToMatrixBlock(TestUtils.generateTestMatrix(2, 10, 0, 100, 1.0, 7))});
+		tests.add(new Object[] {DataConverter.convertToMatrixBlock(TestUtils.generateTestMatrix(13, 100, 0, 100, 1.0, 7))});
 
 		// sparse
-
-		// mb.add(DataConverter.convertToMatrixBlock(TestUtils.generateTestMatrix(13, 100, 0, 100, 0.3, 7)));
-		// mb.add(DataConverter.convertToMatrixBlock(TestUtils.generateTestMatrix(100, 100, 0, 100, 0.01, 7)));
-
-		for(MatrixBlock m : mb) {
-			tests.add(new Object[] {m});
-		}
+		tests.add(new Object[] {DataConverter.convertToMatrixBlock(TestUtils.generateTestMatrix(13, 100, 0, 100, 0.3, 7))});
+		tests.add(new Object[] {DataConverter.convertToMatrixBlock(TestUtils.generateTestMatrix(100, 100, 0, 100, 0.01, 7))});
 
 		return tests;
 	}
 
 	public JolEstimateUncompressedTest(MatrixBlock mb) {
-		super(mb, 0);
+		super(mb);
 	}
 
 	@Override

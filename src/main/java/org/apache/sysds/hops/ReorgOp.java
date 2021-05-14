@@ -61,6 +61,7 @@ public class ReorgOp extends MultiThreadedHop
 		_op = o;
 		getInput().add(0, inp);
 		inp.getParent().add(this);
+		updateETFed();
 		
 		//compute unknown dims and nnz
 		refreshSizeInformation();
@@ -76,6 +77,8 @@ public class ReorgOp extends MultiThreadedHop
 			getInput().add(i, in);
 			in.getParent().add(this);
 		}
+
+		updateETFed();
 		
 		//compute unknown dims and nnz
 		refreshSizeInformation();
@@ -159,6 +162,7 @@ public class ReorgOp extends MultiThreadedHop
 				else { //general case
 					int k = OptimizerUtils.getConstrainedNumThreads(_maxNumThreads);
 					Transform transform1 = new Transform(lin, _op, getDataType(), getValueType(), et, k);
+					setFederatedOutput(transform1);
 					setOutputDimensions(transform1);
 					setLineNumbers(transform1);
 					setLops(transform1);
@@ -220,7 +224,7 @@ public class ReorgOp extends MultiThreadedHop
 		
 		//add reblock/checkpoint lops if necessary
 		constructAndSetLopsDataFlowProperties();
-		
+
 		return getLops();
 	}
 
@@ -365,6 +369,8 @@ public class ReorgOp extends MultiThreadedHop
 			//check for valid CP dimensions and matrix size
 			checkAndSetInvalidCPDimsAndSize();
 		}
+
+		updateETFed();
 		
 		//mark for recompile (forever)
 		setRequiresRecompileIfNecessary();

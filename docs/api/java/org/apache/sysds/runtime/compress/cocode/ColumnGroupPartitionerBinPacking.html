@@ -49,7 +49,7 @@ var activeTableTab = "activeTableTab";
 </div>
 <div class="subNav">
 <ul class="navList">
-<li><a href="../../../../../../org/apache/sysds/runtime/compress/cocode/ColumnGroupPartitioner.html" title="class in org.apache.sysds.runtime.compress.cocode"><span class="typeNameLink">Prev&nbsp;Class</span></a></li>
+<li><a href="../../../../../../org/apache/sysds/runtime/compress/cocode/AColumnGroupPartitioner.html" title="class in org.apache.sysds.runtime.compress.cocode"><span class="typeNameLink">Prev&nbsp;Class</span></a></li>
 <li><a href="../../../../../../org/apache/sysds/runtime/compress/cocode/ColumnGroupPartitionerCost.html" title="class in org.apache.sysds.runtime.compress.cocode"><span class="typeNameLink">Next&nbsp;Class</span></a></li>
 </ul>
 <ul class="navList">
@@ -76,13 +76,13 @@ var activeTableTab = "activeTableTab";
 <li>Summary:&nbsp;</li>
 <li>Nested&nbsp;|&nbsp;</li>
 <li><a href="#field.summary">Field</a>&nbsp;|&nbsp;</li>
-<li><a href="#constructor.summary">Constr</a>&nbsp;|&nbsp;</li>
+<li>Constr&nbsp;|&nbsp;</li>
 <li><a href="#method.summary">Method</a></li>
 </ul>
 <ul class="subNavList">
 <li>Detail:&nbsp;</li>
 <li><a href="#field.detail">Field</a>&nbsp;|&nbsp;</li>
-<li><a href="#constructor.detail">Constr</a>&nbsp;|&nbsp;</li>
+<li>Constr&nbsp;|&nbsp;</li>
 <li><a href="#method.detail">Method</a></li>
 </ul>
 </div>
@@ -100,7 +100,7 @@ var activeTableTab = "activeTableTab";
 <li><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">java.lang.Object</a></li>
 <li>
 <ul class="inheritance">
-<li><a href="../../../../../../org/apache/sysds/runtime/compress/cocode/ColumnGroupPartitioner.html" title="class in org.apache.sysds.runtime.compress.cocode">org.apache.sysds.runtime.compress.cocode.ColumnGroupPartitioner</a></li>
+<li><a href="../../../../../../org/apache/sysds/runtime/compress/cocode/AColumnGroupPartitioner.html" title="class in org.apache.sysds.runtime.compress.cocode">org.apache.sysds.runtime.compress.cocode.AColumnGroupPartitioner</a></li>
 <li>
 <ul class="inheritance">
 <li>org.apache.sysds.runtime.compress.cocode.ColumnGroupPartitionerBinPacking</li>
@@ -115,8 +115,10 @@ var activeTableTab = "activeTableTab";
 <hr>
 <br>
 <pre>public class <span class="typeNameLabel">ColumnGroupPartitionerBinPacking</span>
-extends <a href="../../../../../../org/apache/sysds/runtime/compress/cocode/ColumnGroupPartitioner.html" title="class in org.apache.sysds.runtime.compress.cocode">ColumnGroupPartitioner</a></pre>
-<div class="block">Column group partitioning with bin packing heuristic.</div>
+extends <a href="../../../../../../org/apache/sysds/runtime/compress/cocode/AColumnGroupPartitioner.html" title="class in org.apache.sysds.runtime.compress.cocode">AColumnGroupPartitioner</a></pre>
+<div class="block">Column group partitioning with bin packing heuristic.
+ 
+ TODO add this back with the new API!</div>
 </li>
 </ul>
 </div>
@@ -142,23 +144,6 @@ extends <a href="../../../../../../org/apache/sysds/runtime/compress/cocode/Colu
 </table>
 </li>
 </ul>
-<!-- ======== CONSTRUCTOR SUMMARY ======== -->
-<ul class="blockList">
-<li class="blockList"><a name="constructor.summary">
-<!--   -->
-</a>
-<h3>Constructor Summary</h3>
-<table class="memberSummary" border="0" cellpadding="3" cellspacing="0" summary="Constructor Summary table, listing constructors, and an explanation">
-<caption><span>Constructors</span><span class="tabEnd">&nbsp;</span></caption>
-<tr>
-<th class="colOne" scope="col">Constructor and Description</th>
-</tr>
-<tr class="altColor">
-<td class="colOne"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/cocode/ColumnGroupPartitionerBinPacking.html#ColumnGroupPartitionerBinPacking--">ColumnGroupPartitionerBinPacking</a></span>()</code>&nbsp;</td>
-</tr>
-</table>
-</li>
-</ul>
 <!-- ========== METHOD SUMMARY =========== -->
 <ul class="blockList">
 <li class="blockList"><a name="method.summary">
@@ -172,12 +157,8 @@ extends <a href="../../../../../../org/apache/sysds/runtime/compress/cocode/Colu
 <th class="colLast" scope="col">Method and Description</th>
 </tr>
 <tr id="i0" class="altColor">
-<td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;int[]&gt;</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/cocode/ColumnGroupPartitionerBinPacking.html#partitionColumns-java.util.List-java.util.HashMap-org.apache.sysds.runtime.compress.CompressionSettings-">partitionColumns</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Integer.html?is-external=true" title="class or interface in java.lang">Integer</a>&gt;&nbsp;groupCols,
-                <a href="https://docs.oracle.com/javase/8/docs/api/java/util/HashMap.html?is-external=true" title="class or interface in java.util">HashMap</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Integer.html?is-external=true" title="class or interface in java.lang">Integer</a>,<a href="../../../../../../org/apache/sysds/runtime/compress/cocode/PlanningCoCoder.GroupableColInfo.html" title="class in org.apache.sysds.runtime.compress.cocode">PlanningCoCoder.GroupableColInfo</a>&gt;&nbsp;groupColsInfo,
-                <a href="../../../../../../org/apache/sysds/runtime/compress/CompressionSettings.html" title="class in org.apache.sysds.runtime.compress">CompressionSettings</a>&nbsp;cs)</code>
-<div class="block">Partitions a list of columns into a list of partitions that contains subsets of columns.</div>
-</td>
+<td class="colFirst"><code><a href="../../../../../../org/apache/sysds/runtime/compress/estim/CompressedSizeInfo.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeInfo</a></code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/cocode/ColumnGroupPartitionerBinPacking.html#partitionColumns-org.apache.sysds.runtime.compress.estim.CompressedSizeInfo-">partitionColumns</a></span>(<a href="../../../../../../org/apache/sysds/runtime/compress/estim/CompressedSizeInfo.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeInfo</a>&nbsp;colInfos)</code>&nbsp;</td>
 </tr>
 </table>
 <ul class="blockList">
@@ -212,50 +193,22 @@ extends <a href="../../../../../../org/apache/sysds/runtime/compress/cocode/Colu
 </ul>
 </li>
 </ul>
-<!-- ========= CONSTRUCTOR DETAIL ======== -->
-<ul class="blockList">
-<li class="blockList"><a name="constructor.detail">
-<!--   -->
-</a>
-<h3>Constructor Detail</h3>
-<a name="ColumnGroupPartitionerBinPacking--">
-<!--   -->
-</a>
-<ul class="blockListLast">
-<li class="blockList">
-<h4>ColumnGroupPartitionerBinPacking</h4>
-<pre>public&nbsp;ColumnGroupPartitionerBinPacking()</pre>
-</li>
-</ul>
-</li>
-</ul>
 <!-- ============ METHOD DETAIL ========== -->
 <ul class="blockList">
 <li class="blockList"><a name="method.detail">
 <!--   -->
 </a>
 <h3>Method Detail</h3>
-<a name="partitionColumns-java.util.List-java.util.HashMap-org.apache.sysds.runtime.compress.CompressionSettings-">
+<a name="partitionColumns-org.apache.sysds.runtime.compress.estim.CompressedSizeInfo-">
 <!--   -->
 </a>
 <ul class="blockListLast">
 <li class="blockList">
 <h4>partitionColumns</h4>
-<pre>public&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;int[]&gt;&nbsp;partitionColumns(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Integer.html?is-external=true" title="class or interface in java.lang">Integer</a>&gt;&nbsp;groupCols,
-                                    <a href="https://docs.oracle.com/javase/8/docs/api/java/util/HashMap.html?is-external=true" title="class or interface in java.util">HashMap</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Integer.html?is-external=true" title="class or interface in java.lang">Integer</a>,<a href="../../../../../../org/apache/sysds/runtime/compress/cocode/PlanningCoCoder.GroupableColInfo.html" title="class in org.apache.sysds.runtime.compress.cocode">PlanningCoCoder.GroupableColInfo</a>&gt;&nbsp;groupColsInfo,
-                                    <a href="../../../../../../org/apache/sysds/runtime/compress/CompressionSettings.html" title="class in org.apache.sysds.runtime.compress">CompressionSettings</a>&nbsp;cs)</pre>
-<div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="../../../../../../org/apache/sysds/runtime/compress/cocode/ColumnGroupPartitioner.html#partitionColumns-java.util.List-java.util.HashMap-org.apache.sysds.runtime.compress.CompressionSettings-">ColumnGroupPartitioner</a></code></span></div>
-<div class="block">Partitions a list of columns into a list of partitions that contains subsets of columns. Note that this call must
- compute a complete and disjoint partitioning.</div>
+<pre>public&nbsp;<a href="../../../../../../org/apache/sysds/runtime/compress/estim/CompressedSizeInfo.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeInfo</a>&nbsp;partitionColumns(<a href="../../../../../../org/apache/sysds/runtime/compress/estim/CompressedSizeInfo.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeInfo</a>&nbsp;colInfos)</pre>
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
-<dd><code><a href="../../../../../../org/apache/sysds/runtime/compress/cocode/ColumnGroupPartitioner.html#partitionColumns-java.util.List-java.util.HashMap-org.apache.sysds.runtime.compress.CompressionSettings-">partitionColumns</a></code>&nbsp;in class&nbsp;<code><a href="../../../../../../org/apache/sysds/runtime/compress/cocode/ColumnGroupPartitioner.html" title="class in org.apache.sysds.runtime.compress.cocode">ColumnGroupPartitioner</a></code></dd>
-<dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>groupCols</code> - list of columns</dd>
-<dd><code>groupColsInfo</code> - list of column infos</dd>
-<dd><code>cs</code> - The Compression settings used for the compression</dd>
-<dt><span class="returnLabel">Returns:</span></dt>
-<dd>list of partitions (where each partition is a list of columns)</dd>
+<dd><code><a href="../../../../../../org/apache/sysds/runtime/compress/cocode/AColumnGroupPartitioner.html#partitionColumns-org.apache.sysds.runtime.compress.estim.CompressedSizeInfo-">partitionColumns</a></code>&nbsp;in class&nbsp;<code><a href="../../../../../../org/apache/sysds/runtime/compress/cocode/AColumnGroupPartitioner.html" title="class in org.apache.sysds.runtime.compress.cocode">AColumnGroupPartitioner</a></code></dd>
 </dl>
 </li>
 </ul>
@@ -287,7 +240,7 @@ extends <a href="../../../../../../org/apache/sysds/runtime/compress/cocode/Colu
 </div>
 <div class="subNav">
 <ul class="navList">
-<li><a href="../../../../../../org/apache/sysds/runtime/compress/cocode/ColumnGroupPartitioner.html" title="class in org.apache.sysds.runtime.compress.cocode"><span class="typeNameLink">Prev&nbsp;Class</span></a></li>
+<li><a href="../../../../../../org/apache/sysds/runtime/compress/cocode/AColumnGroupPartitioner.html" title="class in org.apache.sysds.runtime.compress.cocode"><span class="typeNameLink">Prev&nbsp;Class</span></a></li>
 <li><a href="../../../../../../org/apache/sysds/runtime/compress/cocode/ColumnGroupPartitionerCost.html" title="class in org.apache.sysds.runtime.compress.cocode"><span class="typeNameLink">Next&nbsp;Class</span></a></li>
 </ul>
 <ul class="navList">
@@ -314,13 +267,13 @@ extends <a href="../../../../../../org/apache/sysds/runtime/compress/cocode/Colu
 <li>Summary:&nbsp;</li>
 <li>Nested&nbsp;|&nbsp;</li>
 <li><a href="#field.summary">Field</a>&nbsp;|&nbsp;</li>
-<li><a href="#constructor.summary">Constr</a>&nbsp;|&nbsp;</li>
+<li>Constr&nbsp;|&nbsp;</li>
 <li><a href="#method.summary">Method</a></li>
 </ul>
 <ul class="subNavList">
 <li>Detail:&nbsp;</li>
 <li><a href="#field.detail">Field</a>&nbsp;|&nbsp;</li>
-<li><a href="#constructor.detail">Constr</a>&nbsp;|&nbsp;</li>
+<li>Constr&nbsp;|&nbsp;</li>
 <li><a href="#method.detail">Method</a></li>
 </ul>
 </div>
@@ -328,6 +281,6 @@ extends <a href="../../../../../../org/apache/sysds/runtime/compress/cocode/Colu
 <!--   -->
 </a></div>
 <!-- ======== END OF BOTTOM NAVBAR ======= -->
-<p class="legalCopy"><small>Copyright &#169; 2020 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
+<p class="legalCopy"><small>Copyright &#169; 2021 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
 </body>
 </html>

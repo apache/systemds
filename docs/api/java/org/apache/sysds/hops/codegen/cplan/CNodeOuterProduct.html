@@ -18,7 +18,7 @@
     catch(err) {
     }
 //-->
-var methods = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10,"i8":10,"i9":10,"i10":10,"i11":10,"i12":10};
+var methods = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10,"i8":10,"i9":10,"i10":10,"i11":10,"i12":10,"i13":10,"i14":10};
 var tabs = {65535:["t0","All Methods"],2:["t2","Instance Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -168,49 +168,59 @@ extends <a href="../../../../../../org/apache/sysds/hops/codegen/cplan/CNodeTpl.
 </tr>
 <tr id="i1" class="rowColor">
 <td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a></code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/hops/codegen/cplan/CNodeOuterProduct.html#codegen-boolean-">codegen</a></span>(boolean&nbsp;sparse)</code>&nbsp;</td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/hops/codegen/cplan/CNodeOuterProduct.html#codegen-boolean-org.apache.sysds.hops.codegen.SpoofCompiler.GeneratorAPI-">codegen</a></span>(boolean&nbsp;sparse,
+       <a href="../../../../../../org/apache/sysds/hops/codegen/SpoofCompiler.GeneratorAPI.html" title="enum in org.apache.sysds.hops.codegen">SpoofCompiler.GeneratorAPI</a>&nbsp;api)</code>&nbsp;</td>
 </tr>
 <tr id="i2" class="altColor">
+<td class="colFirst"><code>int</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/hops/codegen/cplan/CNodeOuterProduct.html#compile-org.apache.sysds.hops.codegen.SpoofCompiler.GeneratorAPI-java.lang.String-">compile</a></span>(<a href="../../../../../../org/apache/sysds/hops/codegen/SpoofCompiler.GeneratorAPI.html" title="enum in org.apache.sysds.hops.codegen">SpoofCompiler.GeneratorAPI</a>&nbsp;api,
+       <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;src)</code>&nbsp;</td>
+</tr>
+<tr id="i3" class="rowColor">
 <td class="colFirst"><code>boolean</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/hops/codegen/cplan/CNodeOuterProduct.html#equals-java.lang.Object-">equals</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a>&nbsp;o)</code>&nbsp;</td>
 </tr>
-<tr id="i3" class="rowColor">
+<tr id="i4" class="altColor">
 <td class="colFirst"><code><a href="../../../../../../org/apache/sysds/lops/MMTSJ.MMTSJType.html" title="enum in org.apache.sysds.lops">MMTSJ.MMTSJType</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/hops/codegen/cplan/CNodeOuterProduct.html#getMMTSJtype--">getMMTSJtype</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i4" class="altColor">
+<tr id="i5" class="rowColor">
 <td class="colFirst"><code><a href="../../../../../../org/apache/sysds/runtime/codegen/SpoofOuterProduct.OutProdType.html" title="enum in org.apache.sysds.runtime.codegen">SpoofOuterProduct.OutProdType</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/hops/codegen/cplan/CNodeOuterProduct.html#getOutProdType--">getOutProdType</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i5" class="rowColor">
+<tr id="i6" class="altColor">
 <td class="colFirst"><code><a href="../../../../../../org/apache/sysds/hops/codegen/SpoofFusedOp.SpoofOutputDimsType.html" title="enum in org.apache.sysds.hops.codegen">SpoofFusedOp.SpoofOutputDimsType</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/hops/codegen/cplan/CNodeOuterProduct.html#getOutputDimType--">getOutputDimType</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i6" class="altColor">
+<tr id="i7" class="rowColor">
 <td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/hops/codegen/cplan/CNodeOuterProduct.html#getTemplateInfo--">getTemplateInfo</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i7" class="rowColor">
+<tr id="i8" class="altColor">
 <td class="colFirst"><code>int</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/hops/codegen/cplan/CNodeOuterProduct.html#hashCode--">hashCode</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i8" class="altColor">
+<tr id="i9" class="rowColor">
+<td class="colFirst"><code>boolean</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/hops/codegen/cplan/CNodeOuterProduct.html#isSupported-org.apache.sysds.hops.codegen.SpoofCompiler.GeneratorAPI-">isSupported</a></span>(<a href="../../../../../../org/apache/sysds/hops/codegen/SpoofCompiler.GeneratorAPI.html" title="enum in org.apache.sysds.hops.codegen">SpoofCompiler.GeneratorAPI</a>&nbsp;api)</code>&nbsp;</td>
+</tr>
+<tr id="i10" class="altColor">
 <td class="colFirst"><code>boolean</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/hops/codegen/cplan/CNodeOuterProduct.html#isTransposeOutput--">isTransposeOutput</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i9" class="rowColor">
+<tr id="i11" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/hops/codegen/cplan/CNodeOuterProduct.html#renameInputs--">renameInputs</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i10" class="altColor">
+<tr id="i12" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/hops/codegen/cplan/CNodeOuterProduct.html#setOutProdType-org.apache.sysds.runtime.codegen.SpoofOuterProduct.OutProdType-">setOutProdType</a></span>(<a href="../../../../../../org/apache/sysds/runtime/codegen/SpoofOuterProduct.OutProdType.html" title="enum in org.apache.sysds.runtime.codegen">SpoofOuterProduct.OutProdType</a>&nbsp;type)</code>&nbsp;</td>
 </tr>
-<tr id="i11" class="rowColor">
+<tr id="i13" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/hops/codegen/cplan/CNodeOuterProduct.html#setOutputDims--">setOutputDims</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i12" class="altColor">
+<tr id="i14" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/hops/codegen/cplan/CNodeOuterProduct.html#setTransposeOutput-boolean-">setTransposeOutput</a></span>(boolean&nbsp;transposeOutput)</code>&nbsp;</td>
 </tr>
@@ -220,14 +230,14 @@ extends <a href="../../../../../../org/apache/sysds/hops/codegen/cplan/CNodeTpl.
 <!--   -->
 </a>
 <h3>Methods inherited from class&nbsp;org.apache.sysds.hops.codegen.cplan.<a href="../../../../../../org/apache/sysds/hops/codegen/cplan/CNodeTpl.html" title="class in org.apache.sysds.hops.codegen.cplan">CNodeTpl</a></h3>
-<code><a href="../../../../../../org/apache/sysds/hops/codegen/cplan/CNodeTpl.html#addInput-org.apache.sysds.hops.codegen.cplan.CNode-">addInput</a>, <a href="../../../../../../org/apache/sysds/hops/codegen/cplan/CNodeTpl.html#codegen--">codegen</a>, <a href="../../../../../../org/apache/sysds/hops/codegen/cplan/CNodeTpl.html#getBeginLine--">getBeginLine</a>, <a href="../../../../../../org/apache/sysds/hops/codegen/cplan/CNodeTpl.html#getInputHopIDs-boolean-">getInputHopIDs</a>, <a href="../../../../../../org/apache/sysds/hops/codegen/cplan/CNodeTpl.html#getInputNames--">getInputNames</a>, <a href="../../../../../../org/apache/sysds/hops/codegen/cplan/CNodeTpl.html#resetVisitStatus-java.util.List-">resetVisitStatus</a>, <a href="../../../../../../org/apache/sysds/hops/codegen/cplan/CNodeTpl.html#resetVisitStatusOutputs--">resetVisitStatusOutputs</a>, <a href="../../../../../../org/apache/sysds/hops/codegen/cplan/CNodeTpl.html#rReorderCommutativeBinaryOps-org.apache.sysds.hops.codegen.cplan.CNode-long-">rReorderCommutativeBinaryOps</a>, <a href="../../../../../../org/apache/sysds/hops/codegen/cplan/CNodeTpl.html#setBeginLine-int-">setBeginLine</a></code></li>
+<code><a href="../../../../../../org/apache/sysds/hops/codegen/cplan/CNodeTpl.html#addInput-org.apache.sysds.hops.codegen.cplan.CNode-">addInput</a>, <a href="../../../../../../org/apache/sysds/hops/codegen/cplan/CNodeTpl.html#codegen--">codegen</a>, <a href="../../../../../../org/apache/sysds/hops/codegen/cplan/CNodeTpl.html#getBeginLine--">getBeginLine</a>, <a href="../../../../../../org/apache/sysds/hops/codegen/cplan/CNodeTpl.html#getGeneratorAPI--">getGeneratorAPI</a>, <a href="../../../../../../org/apache/sysds/hops/codegen/cplan/CNodeTpl.html#getInputHopIDs-boolean-">getInputHopIDs</a>, <a href="../../../../../../org/apache/sysds/hops/codegen/cplan/CNodeTpl.html#getInputNames--">getInputNames</a>, <a href="../../../../../../org/apache/sysds/hops/codegen/cplan/CNodeTpl.html#resetVisitStatus-java.util.List-">resetVisitStatus</a>, <a href="../../../../../../org/apache/sysds/hops/codegen/cplan/CNodeTpl.html#resetVisitStatusOutputs--">resetVisitStatusOutputs</a>, <a href="../../../../../../org/apache/sysds/hops/codegen/cplan/CNodeTpl.html#rReorderCommutativeBinaryOps-org.apache.sysds.hops.codegen.cplan.CNode-long-">rReorderCommutativeBinaryOps</a>, <a href="../../../../../../org/apache/sysds/hops/codegen/cplan/CNodeTpl.html#setBeginLine-int-">setBeginLine</a>, <a href="../../../../../../org/apache/sysds/hops/codegen/cplan/CNodeTpl.html#setGeneratorAPI-org.apache.sysds.hops.codegen.SpoofCompiler.GeneratorAPI-">setGeneratorAPI</a></code></li>
 </ul>
 <ul class="blockList">
 <li class="blockList"><a name="methods.inherited.from.class.org.apache.sysds.hops.codegen.cplan.CNode">
 <!--   -->
 </a>
 <h3>Methods inherited from class&nbsp;org.apache.sysds.hops.codegen.cplan.<a href="../../../../../../org/apache/sysds/hops/codegen/cplan/CNode.html" title="class in org.apache.sysds.hops.codegen.cplan">CNode</a></h3>
-<code><a href="../../../../../../org/apache/sysds/hops/codegen/cplan/CNode.html#createVarname--">createVarname</a>, <a href="../../../../../../org/apache/sysds/hops/codegen/cplan/CNode.html#getClassname--">getClassname</a>, <a href="../../../../../../org/apache/sysds/hops/codegen/cplan/CNode.html#getDataType--">getDataType</a>, <a href="../../../../../../org/apache/sysds/hops/codegen/cplan/CNode.html#getID--">getID</a>, <a href="../../../../../../org/apache/sysds/hops/codegen/cplan/CNode.html#getInput--">getInput</a>, <a href="../../../../../../org/apache/sysds/hops/codegen/cplan/CNode.html#getNumCols--">getNumCols</a>, <a href="../../../../../../org/apache/sysds/hops/codegen/cplan/CNode.html#getNumRows--">getNumRows</a>, <a href="../../../../../../org/apache/sysds/hops/codegen/cplan/CNode.html#getOutput--">getOutput</a>, <a href="../../../../../../org/apache/sysds/hops/codegen/cplan/CNode.html#getVarname--">getVarname</a>, <a href="../../../../../../org/apache/sysds/hops/codegen/cplan/CNode.html#getVectorLength--">getVectorLength</a>, <a href="../../../../../../org/apache/sysds/hops/codegen/cplan/CNode.html#isGenerated--">isGenerated</a>, <a href="../../../../../../org/apache/sysds/hops/codegen/cplan/CNode.html#isLiteral--">isLiteral</a>, <a href="../../../../../../org/apache/sysds/hops/codegen/cplan/CNode.html#isVisited--">isVisited</a>, <a href="../../../../../../org/apache/sysds/hops/codegen/cplan/CNode.html#resetGenerated--">resetGenerated</a>, <a href="../../../../../../org/apache/sysds/hops/codegen/cplan/CNode.html#resetHash--">resetHash</a>, <a href="../../../../../../org/apache/sysds/hops/codegen/cplan/CNode.html#resetVisitStatus--">resetVisitStatus</a>, <a href="../../../../../../org/apache/sysds/hops/codegen/cplan/CNode.html#setDataType-org.apache.sysds.common.Types.DataType-">setDataType</a>, <a href="../../../../../../org/apache/sysds/hops/codegen/cplan/CNode.html#setLiteral-boolean-">setLiteral</a>, <a href="../../../../../../org/apache/sysds/hops/codegen/cplan/CNode.html#setNumCols-long-">setNumCols</a>, <a href="../../../../../../org/apache/sysds/hops/codegen/cplan/CNode.html#setNumRows-long-">setNumRows</a>, <a href="../../../../../../org/apache/sysds/hops/codegen/cplan/CNode.html#setOutput-org.apache.sysds.hops.codegen.cplan.CNode-">setOutput</a>, <a href="../../../../../../org/apache/sysds/hops/codegen/cplan/CNode.html#setVisited--">setVisited</a>, <a href="../../../../../../org/apache/sysds/hops/codegen/cplan/CNode.html#setVisited-boolean-">setVisited</a></code></li>
+<code><a href="../../../../../../org/apache/sysds/hops/codegen/cplan/CNode.html#createVarname--">createVarname</a>, <a href="../../../../../../org/apache/sysds/hops/codegen/cplan/CNode.html#getClassname--">getClassname</a>, <a href="../../../../../../org/apache/sysds/hops/codegen/cplan/CNode.html#getDataType--">getDataType</a>, <a href="../../../../../../org/apache/sysds/hops/codegen/cplan/CNode.html#getID--">getID</a>, <a href="../../../../../../org/apache/sysds/hops/codegen/cplan/CNode.html#getInput--">getInput</a>, <a href="../../../../../../org/apache/sysds/hops/codegen/cplan/CNode.html#getNumCols--">getNumCols</a>, <a href="../../../../../../org/apache/sysds/hops/codegen/cplan/CNode.html#getNumRows--">getNumRows</a>, <a href="../../../../../../org/apache/sysds/hops/codegen/cplan/CNode.html#getOutput--">getOutput</a>, <a href="../../../../../../org/apache/sysds/hops/codegen/cplan/CNode.html#getVarname--">getVarname</a>, <a href="../../../../../../org/apache/sysds/hops/codegen/cplan/CNode.html#getVarname-org.apache.sysds.hops.codegen.SpoofCompiler.GeneratorAPI-">getVarname</a>, <a href="../../../../../../org/apache/sysds/hops/codegen/cplan/CNode.html#getVectorLength-org.apache.sysds.hops.codegen.SpoofCompiler.GeneratorAPI-">getVectorLength</a>, <a href="../../../../../../org/apache/sysds/hops/codegen/cplan/CNode.html#isGenerated--">isGenerated</a>, <a href="../../../../../../org/apache/sysds/hops/codegen/cplan/CNode.html#isLiteral--">isLiteral</a>, <a href="../../../../../../org/apache/sysds/hops/codegen/cplan/CNode.html#isVisited--">isVisited</a>, <a href="../../../../../../org/apache/sysds/hops/codegen/cplan/CNode.html#resetGenerated--">resetGenerated</a>, <a href="../../../../../../org/apache/sysds/hops/codegen/cplan/CNode.html#resetHash--">resetHash</a>, <a href="../../../../../../org/apache/sysds/hops/codegen/cplan/CNode.html#resetVisitStatus--">resetVisitStatus</a>, <a href="../../../../../../org/apache/sysds/hops/codegen/cplan/CNode.html#setDataType-org.apache.sysds.common.Types.DataType-">setDataType</a>, <a href="../../../../../../org/apache/sysds/hops/codegen/cplan/CNode.html#setLiteral-boolean-">setLiteral</a>, <a href="../../../../../../org/apache/sysds/hops/codegen/cplan/CNode.html#setNumCols-long-">setNumCols</a>, <a href="../../../../../../org/apache/sysds/hops/codegen/cplan/CNode.html#setNumRows-long-">setNumRows</a>, <a href="../../../../../../org/apache/sysds/hops/codegen/cplan/CNode.html#setOutput-org.apache.sysds.hops.codegen.cplan.CNode-">setOutput</a>, <a href="../../../../../../org/apache/sysds/hops/codegen/cplan/CNode.html#setVarName-java.lang.String-">setVarName</a>, <a href="../../../../../../org/apache/sysds/hops/codegen/cplan/CNode.html#setVisited--">setVisited</a>, <a href="../../../../../../org/apache/sysds/hops/codegen/cplan/CNode.html#setVisited-boolean-">setVisited</a></code></li>
 </ul>
 <ul class="blockList">
 <li class="blockList"><a name="methods.inherited.from.class.java.lang.Object">
@@ -291,16 +301,17 @@ extends <a href="../../../../../../org/apache/sysds/hops/codegen/cplan/CNodeTpl.
 </dl>
 </li>
 </ul>
-<a name="codegen-boolean-">
+<a name="codegen-boolean-org.apache.sysds.hops.codegen.SpoofCompiler.GeneratorAPI-">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
 <h4>codegen</h4>
-<pre>public&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;codegen(boolean&nbsp;sparse)</pre>
+<pre>public&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;codegen(boolean&nbsp;sparse,
+                      <a href="../../../../../../org/apache/sysds/hops/codegen/SpoofCompiler.GeneratorAPI.html" title="enum in org.apache.sysds.hops.codegen">SpoofCompiler.GeneratorAPI</a>&nbsp;api)</pre>
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
-<dd><code><a href="../../../../../../org/apache/sysds/hops/codegen/cplan/CNode.html#codegen-boolean-">codegen</a></code>&nbsp;in class&nbsp;<code><a href="../../../../../../org/apache/sysds/hops/codegen/cplan/CNode.html" title="class in org.apache.sysds.hops.codegen.cplan">CNode</a></code></dd>
+<dd><code><a href="../../../../../../org/apache/sysds/hops/codegen/cplan/CNode.html#codegen-boolean-org.apache.sysds.hops.codegen.SpoofCompiler.GeneratorAPI-">codegen</a></code>&nbsp;in class&nbsp;<code><a href="../../../../../../org/apache/sysds/hops/codegen/cplan/CNode.html" title="class in org.apache.sysds.hops.codegen.cplan">CNode</a></code></dd>
 </dl>
 </li>
 </ul>
@@ -408,13 +419,40 @@ extends <a href="../../../../../../org/apache/sysds/hops/codegen/cplan/CNodeTpl.
 <a name="getTemplateInfo--">
 <!--   -->
 </a>
-<ul class="blockListLast">
+<ul class="blockList">
 <li class="blockList">
 <h4>getTemplateInfo</h4>
 <pre>public&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;getTemplateInfo()</pre>
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
 <dd><code><a href="../../../../../../org/apache/sysds/hops/codegen/cplan/CNodeTpl.html#getTemplateInfo--">getTemplateInfo</a></code>&nbsp;in class&nbsp;<code><a href="../../../../../../org/apache/sysds/hops/codegen/cplan/CNodeTpl.html" title="class in org.apache.sysds.hops.codegen.cplan">CNodeTpl</a></code></dd>
+</dl>
+</li>
+</ul>
+<a name="isSupported-org.apache.sysds.hops.codegen.SpoofCompiler.GeneratorAPI-">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>isSupported</h4>
+<pre>public&nbsp;boolean&nbsp;isSupported(<a href="../../../../../../org/apache/sysds/hops/codegen/SpoofCompiler.GeneratorAPI.html" title="enum in org.apache.sysds.hops.codegen">SpoofCompiler.GeneratorAPI</a>&nbsp;api)</pre>
+<dl>
+<dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
+<dd><code><a href="../../../../../../org/apache/sysds/hops/codegen/cplan/CNode.html#isSupported-org.apache.sysds.hops.codegen.SpoofCompiler.GeneratorAPI-">isSupported</a></code>&nbsp;in class&nbsp;<code><a href="../../../../../../org/apache/sysds/hops/codegen/cplan/CNode.html" title="class in org.apache.sysds.hops.codegen.cplan">CNode</a></code></dd>
+</dl>
+</li>
+</ul>
+<a name="compile-org.apache.sysds.hops.codegen.SpoofCompiler.GeneratorAPI-java.lang.String-">
+<!--   -->
+</a>
+<ul class="blockListLast">
+<li class="blockList">
+<h4>compile</h4>
+<pre>public&nbsp;int&nbsp;compile(<a href="../../../../../../org/apache/sysds/hops/codegen/SpoofCompiler.GeneratorAPI.html" title="enum in org.apache.sysds.hops.codegen">SpoofCompiler.GeneratorAPI</a>&nbsp;api,
+                   <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;src)</pre>
+<dl>
+<dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
+<dd><code><a href="../../../../../../org/apache/sysds/hops/codegen/cplan/CNodeTpl.html#compile-org.apache.sysds.hops.codegen.SpoofCompiler.GeneratorAPI-java.lang.String-">compile</a></code>&nbsp;in class&nbsp;<code><a href="../../../../../../org/apache/sysds/hops/codegen/cplan/CNodeTpl.html" title="class in org.apache.sysds.hops.codegen.cplan">CNodeTpl</a></code></dd>
 </dl>
 </li>
 </ul>
@@ -487,6 +525,6 @@ extends <a href="../../../../../../org/apache/sysds/hops/codegen/cplan/CNodeTpl.
 <!--   -->
 </a></div>
 <!-- ======== END OF BOTTOM NAVBAR ======= -->
-<p class="legalCopy"><small>Copyright &#169; 2020 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
+<p class="legalCopy"><small>Copyright &#169; 2021 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
 </body>
 </html>

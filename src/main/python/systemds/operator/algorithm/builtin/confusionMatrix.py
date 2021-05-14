@@ -24,11 +24,11 @@
 
 from typing import Dict, Iterable
 
-from systemds.operator import OperationNode
+from systemds.operator import OperationNode, Matrix
 from systemds.script_building.dag import OutputType
 from systemds.utils.consts import VALID_INPUT_TYPES
 
-def confusionMatrix(P: OperationNode, Y: OperationNode) -> OperationNode:
+def confusionMatrix(P: OperationNode, Y: OperationNode) -> Matrix:
     """
     :param P: vector of Predictions
     :param Y: vector of Golden standard One Hot Encoded; the one hot encoded vector of actual labels

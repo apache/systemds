@@ -18,7 +18,7 @@
     catch(err) {
     }
 //-->
-var methods = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10,"i8":10,"i9":10,"i10":10,"i11":10,"i12":10,"i13":10,"i14":10,"i15":10,"i16":10,"i17":10,"i18":9,"i19":10,"i20":10,"i21":10,"i22":10,"i23":10,"i24":10,"i25":10,"i26":10,"i27":10,"i28":10,"i29":10,"i30":10,"i31":10,"i32":10,"i33":10,"i34":10,"i35":10,"i36":10,"i37":10,"i38":9,"i39":10,"i40":10,"i41":10,"i42":10,"i43":10,"i44":10,"i45":10,"i46":10,"i47":10,"i48":10};
+var methods = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10,"i8":10,"i9":10,"i10":10,"i11":10,"i12":10,"i13":10,"i14":10,"i15":10,"i16":10,"i17":10,"i18":10,"i19":9,"i20":10,"i21":10,"i22":10,"i23":10,"i24":10,"i25":10,"i26":10,"i27":10,"i28":10,"i29":10,"i30":10,"i31":10,"i32":10,"i33":10,"i34":10,"i35":10,"i36":10,"i37":10,"i38":10,"i39":9,"i40":10,"i41":10,"i42":10,"i43":10,"i44":10,"i45":10,"i46":10,"i47":10,"i48":10,"i49":10};
 var tabs = {65535:["t0","All Methods"],1:["t1","Static Methods"],2:["t2","Instance Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -276,106 +276,110 @@ implements <a href="../../../../../org/apache/sysds/runtime/controlprogram/cachi
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/data/TensorBlock.html#getBasicTensor--">getBasicTensor</a></span>()</code>&nbsp;</td>
 </tr>
 <tr id="i9" class="rowColor">
+<td class="colFirst"><code><a href="../../../../../org/apache/sysds/runtime/meta/DataCharacteristics.html" title="class in org.apache.sysds.runtime.meta">DataCharacteristics</a></code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/data/TensorBlock.html#getDataCharacteristics--">getDataCharacteristics</a></span>()</code>&nbsp;</td>
+</tr>
+<tr id="i10" class="altColor">
 <td class="colFirst"><code><a href="../../../../../org/apache/sysds/runtime/data/DataTensorBlock.html" title="class in org.apache.sysds.runtime.data">DataTensorBlock</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/data/TensorBlock.html#getDataTensor--">getDataTensor</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i10" class="altColor">
+<tr id="i11" class="rowColor">
 <td class="colFirst"><code>int</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/data/TensorBlock.html#getDim-int-">getDim</a></span>(int&nbsp;i)</code>&nbsp;</td>
 </tr>
-<tr id="i11" class="rowColor">
+<tr id="i12" class="altColor">
 <td class="colFirst"><code>int[]</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/data/TensorBlock.html#getDims--">getDims</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i12" class="altColor">
+<tr id="i13" class="rowColor">
 <td class="colFirst"><code>long</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/data/TensorBlock.html#getExactBlockDataSerializedSize-org.apache.sysds.runtime.data.BasicTensorBlock-">getExactBlockDataSerializedSize</a></span>(<a href="../../../../../org/apache/sysds/runtime/data/BasicTensorBlock.html" title="class in org.apache.sysds.runtime.data">BasicTensorBlock</a>&nbsp;bt)</code>
 <div class="block">Get the exact serialized size of a <code>BasicTensorBlock</code> if written by
  <code>TensorBlock.writeBlockData(DataOutput,BasicTensorBlock)</code>.</div>
 </td>
 </tr>
-<tr id="i13" class="rowColor">
+<tr id="i14" class="altColor">
 <td class="colFirst"><code>long</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/data/TensorBlock.html#getExactSerializedSize--">getExactSerializedSize</a></span>()</code>
 <div class="block">Get the exact serialized size in bytes of the cache block.</div>
 </td>
 </tr>
-<tr id="i14" class="altColor">
+<tr id="i15" class="rowColor">
 <td class="colFirst"><code>long</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/data/TensorBlock.html#getInMemorySize--">getInMemorySize</a></span>()</code>
 <div class="block">Get the in-memory size in bytes of the cache block.</div>
 </td>
 </tr>
-<tr id="i15" class="rowColor">
+<tr id="i16" class="altColor">
 <td class="colFirst"><code>long</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/data/TensorBlock.html#getLength--">getLength</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i16" class="altColor">
+<tr id="i17" class="rowColor">
 <td class="colFirst"><code>long[]</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/data/TensorBlock.html#getLongDims--">getLongDims</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i17" class="rowColor">
+<tr id="i18" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/data/TensorBlock.html#getNextIndexes-int:A-">getNextIndexes</a></span>(int[]&nbsp;ix)</code>
 <div class="block">Calculates the next index array.</div>
 </td>
 </tr>
-<tr id="i18" class="altColor">
+<tr id="i19" class="rowColor">
 <td class="colFirst"><code>static void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/data/TensorBlock.html#getNextIndexes-int:A-int:A-">getNextIndexes</a></span>(int[]&nbsp;dims,
               int[]&nbsp;ix)</code>
 <div class="block">Calculates the next index array.</div>
 </td>
 </tr>
-<tr id="i19" class="rowColor">
+<tr id="i20" class="altColor">
 <td class="colFirst"><code>long</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/data/TensorBlock.html#getNonZeros--">getNonZeros</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i20" class="altColor">
+<tr id="i21" class="rowColor">
 <td class="colFirst"><code>int</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/data/TensorBlock.html#getNumColumns--">getNumColumns</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i21" class="rowColor">
+<tr id="i22" class="altColor">
 <td class="colFirst"><code>int</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/data/TensorBlock.html#getNumDims--">getNumDims</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i22" class="altColor">
+<tr id="i23" class="rowColor">
 <td class="colFirst"><code>int</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/data/TensorBlock.html#getNumRows--">getNumRows</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i23" class="rowColor">
+<tr id="i24" class="altColor">
 <td class="colFirst"><code><a href="../../../../../org/apache/sysds/common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>[]</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/data/TensorBlock.html#getSchema--">getSchema</a></span>()</code>
 <div class="block">Get the schema if this <code>TensorBlock</code> is heterogeneous.</div>
 </td>
 </tr>
-<tr id="i24" class="altColor">
+<tr id="i25" class="rowColor">
 <td class="colFirst"><code><a href="../../../../../org/apache/sysds/common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/data/TensorBlock.html#getValueType--">getValueType</a></span>()</code>
 <div class="block">Get the <code>ValueType</code> if this <code>TensorBlock</code> is homogeneous.</div>
 </td>
 </tr>
-<tr id="i25" class="rowColor">
+<tr id="i26" class="altColor">
 <td class="colFirst"><code>boolean</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/data/TensorBlock.html#isAllocated--">isAllocated</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i26" class="altColor">
+<tr id="i27" class="rowColor">
 <td class="colFirst"><code>boolean</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/data/TensorBlock.html#isBasic--">isBasic</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i27" class="rowColor">
+<tr id="i28" class="altColor">
 <td class="colFirst"><code>boolean</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/data/TensorBlock.html#isEmpty--">isEmpty</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i28" class="altColor">
+<tr id="i29" class="rowColor">
 <td class="colFirst"><code>boolean</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/data/TensorBlock.html#isEmpty-boolean-">isEmpty</a></span>(boolean&nbsp;safe)</code>&nbsp;</td>
 </tr>
-<tr id="i29" class="rowColor">
+<tr id="i30" class="altColor">
 <td class="colFirst"><code>boolean</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/data/TensorBlock.html#isMatrix--">isMatrix</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i30" class="altColor">
+<tr id="i31" class="rowColor">
 <td class="colFirst"><code>boolean</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/data/TensorBlock.html#isShallowSerialize--">isShallowSerialize</a></span>()</code>
 <div class="block">Indicates if the cache block is subject to shallow serialized,
@@ -383,7 +387,7 @@ implements <a href="../../../../../org/apache/sysds/runtime/controlprogram/cachi
  are almost identical allowing to avoid unnecessary deep serialize.</div>
 </td>
 </tr>
-<tr id="i31" class="rowColor">
+<tr id="i32" class="altColor">
 <td class="colFirst"><code>boolean</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/data/TensorBlock.html#isShallowSerialize-boolean-">isShallowSerialize</a></span>(boolean&nbsp;inclConvert)</code>
 <div class="block">Indicates if the cache block is subject to shallow serialized,
@@ -391,50 +395,50 @@ implements <a href="../../../../../org/apache/sysds/runtime/controlprogram/cachi
  are almost identical allowing to avoid unnecessary deep serialize.</div>
 </td>
 </tr>
-<tr id="i32" class="altColor">
+<tr id="i33" class="rowColor">
 <td class="colFirst"><code>boolean</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/data/TensorBlock.html#isVector--">isVector</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i33" class="rowColor">
+<tr id="i34" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/data/TensorBlock.html#merge-org.apache.sysds.runtime.controlprogram.caching.CacheBlock-boolean-">merge</a></span>(<a href="../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheBlock.html" title="interface in org.apache.sysds.runtime.controlprogram.caching">CacheBlock</a>&nbsp;that,
      boolean&nbsp;appendOnly)</code>
 <div class="block">Merge the given block into the current block.</div>
 </td>
 </tr>
-<tr id="i34" class="altColor">
+<tr id="i35" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/data/TensorBlock.html#readExternal-java.io.ObjectInput-">readExternal</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/io/ObjectInput.html?is-external=true" title="class or interface in java.io">ObjectInput</a>&nbsp;in)</code>&nbsp;</td>
 </tr>
-<tr id="i35" class="rowColor">
+<tr id="i36" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/data/TensorBlock.html#readFields-java.io.DataInput-">readFields</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/io/DataInput.html?is-external=true" title="class or interface in java.io">DataInput</a>&nbsp;in)</code>&nbsp;</td>
 </tr>
-<tr id="i36" class="altColor">
+<tr id="i37" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/data/TensorBlock.html#reset--">reset</a></span>()</code>
 <div class="block">Reset all cells to 0.</div>
 </td>
 </tr>
-<tr id="i37" class="rowColor">
+<tr id="i38" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/data/TensorBlock.html#reset-int:A-">reset</a></span>(int[]&nbsp;dims)</code>
 <div class="block">Reset data with new dimensions.</div>
 </td>
 </tr>
-<tr id="i38" class="altColor">
+<tr id="i39" class="rowColor">
 <td class="colFirst"><code>static <a href="../../../../../org/apache/sysds/common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/data/TensorBlock.html#resultValueType-org.apache.sysds.common.Types.ValueType-org.apache.sysds.common.Types.ValueType-">resultValueType</a></span>(<a href="../../../../../org/apache/sysds/common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>&nbsp;in1,
                <a href="../../../../../org/apache/sysds/common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>&nbsp;in2)</code>&nbsp;</td>
 </tr>
-<tr id="i39" class="rowColor">
+<tr id="i40" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/data/TensorBlock.html#set-int:A-java.lang.Object-">set</a></span>(int[]&nbsp;ix,
    <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a>&nbsp;v)</code>
 <div class="block">Set a cell to the value given as an `Object`.</div>
 </td>
 </tr>
-<tr id="i40" class="altColor">
+<tr id="i41" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/data/TensorBlock.html#set-int-int-double-">set</a></span>(int&nbsp;r,
    int&nbsp;c,
@@ -442,22 +446,22 @@ implements <a href="../../../../../org/apache/sysds/runtime/controlprogram/cachi
 <div class="block">Set a cell in a 2-dimensional tensor.</div>
 </td>
 </tr>
-<tr id="i41" class="rowColor">
+<tr id="i42" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/data/TensorBlock.html#set-org.apache.sysds.runtime.matrix.data.MatrixBlock-">set</a></span>(<a href="../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;other)</code>&nbsp;</td>
 </tr>
-<tr id="i42" class="altColor">
+<tr id="i43" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/data/TensorBlock.html#set-java.lang.Object-">set</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a>&nbsp;v)</code>&nbsp;</td>
 </tr>
-<tr id="i43" class="rowColor">
+<tr id="i44" class="altColor">
 <td class="colFirst"><code><a href="../../../../../org/apache/sysds/runtime/data/TensorBlock.html" title="class in org.apache.sysds.runtime.data">TensorBlock</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/data/TensorBlock.html#slice-int:A-org.apache.sysds.runtime.data.TensorBlock-">slice</a></span>(int[]&nbsp;offsets,
      <a href="../../../../../org/apache/sysds/runtime/data/TensorBlock.html" title="class in org.apache.sysds.runtime.data">TensorBlock</a>&nbsp;outBlock)</code>
 <div class="block">Slice the current block and write into the outBlock.</div>
 </td>
 </tr>
-<tr id="i44" class="altColor">
+<tr id="i45" class="rowColor">
 <td class="colFirst"><code><a href="../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheBlock.html" title="interface in org.apache.sysds.runtime.controlprogram.caching">CacheBlock</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/data/TensorBlock.html#slice-int-int-int-int-org.apache.sysds.runtime.controlprogram.caching.CacheBlock-">slice</a></span>(int&nbsp;rl,
      int&nbsp;ru,
@@ -467,25 +471,25 @@ implements <a href="../../../../../org/apache/sysds/runtime/controlprogram/cachi
 <div class="block">Slice a sub block out of the current block and write into the given output block.</div>
 </td>
 </tr>
-<tr id="i45" class="rowColor">
+<tr id="i46" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/data/TensorBlock.html#toShallowSerializeBlock--">toShallowSerializeBlock</a></span>()</code>
 <div class="block">Converts a cache block that is not shallow serializable into
  a form that is shallow serializable.</div>
 </td>
 </tr>
-<tr id="i46" class="altColor">
+<tr id="i47" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/data/TensorBlock.html#write-java.io.DataOutput-">write</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/io/DataOutput.html?is-external=true" title="class or interface in java.io">DataOutput</a>&nbsp;out)</code>&nbsp;</td>
 </tr>
-<tr id="i47" class="rowColor">
+<tr id="i48" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/data/TensorBlock.html#writeBlockData-java.io.DataOutput-org.apache.sysds.runtime.data.BasicTensorBlock-">writeBlockData</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/io/DataOutput.html?is-external=true" title="class or interface in java.io">DataOutput</a>&nbsp;out,
               <a href="../../../../../org/apache/sysds/runtime/data/BasicTensorBlock.html" title="class in org.apache.sysds.runtime.data">BasicTensorBlock</a>&nbsp;bt)</code>
 <div class="block">Write a <code>BasicTensorBlock</code>.</div>
 </td>
 </tr>
-<tr id="i48" class="altColor">
+<tr id="i49" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/data/TensorBlock.html#writeExternal-java.io.ObjectOutput-">writeExternal</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/io/ObjectOutput.html?is-external=true" title="class or interface in java.io">ObjectOutput</a>&nbsp;out)</code>&nbsp;</td>
 </tr>
@@ -793,6 +797,19 @@ implements <a href="../../../../../org/apache/sysds/runtime/controlprogram/cachi
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
 <dd><code><a href="../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheBlock.html#getNumColumns--">getNumColumns</a></code>&nbsp;in interface&nbsp;<code><a href="../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheBlock.html" title="interface in org.apache.sysds.runtime.controlprogram.caching">CacheBlock</a></code></dd>
+</dl>
+</li>
+</ul>
+<a name="getDataCharacteristics--">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>getDataCharacteristics</h4>
+<pre>public&nbsp;<a href="../../../../../org/apache/sysds/runtime/meta/DataCharacteristics.html" title="class in org.apache.sysds.runtime.meta">DataCharacteristics</a>&nbsp;getDataCharacteristics()</pre>
+<dl>
+<dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
+<dd><code><a href="../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheBlock.html#getDataCharacteristics--">getDataCharacteristics</a></code>&nbsp;in interface&nbsp;<code><a href="../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheBlock.html" title="interface in org.apache.sysds.runtime.controlprogram.caching">CacheBlock</a></code></dd>
 </dl>
 </li>
 </ul>
@@ -1395,6 +1412,6 @@ implements <a href="../../../../../org/apache/sysds/runtime/controlprogram/cachi
 <!--   -->
 </a></div>
 <!-- ======== END OF BOTTOM NAVBAR ======= -->
-<p class="legalCopy"><small>Copyright &#169; 2020 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
+<p class="legalCopy"><small>Copyright &#169; 2021 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
 </body>
 </html>

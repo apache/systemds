@@ -86,13 +86,14 @@ import org.apache.sysds.runtime.instructions.spark.UnaryFrameSPInstruction;
 import org.apache.sysds.runtime.instructions.spark.UnaryMatrixSPInstruction;
 import org.apache.sysds.runtime.instructions.spark.WriteSPInstruction;
 import org.apache.sysds.runtime.instructions.spark.ZipmmSPInstruction;
+import org.apache.sysds.runtime.instructions.spark.LIBSVMReblockSPInstruction;
 
 public class SPInstructionParser extends InstructionParser
-{	
+{
 	public static final HashMap<String, SPType> String2SPInstructionType;
 	static {
 		String2SPInstructionType = new HashMap<>();
-		
+
 		//unary aggregate operators
 		String2SPInstructionType.put( "uak+"    , SPType.AggregateUnary);
 		String2SPInstructionType.put( "uark+"   , SPType.AggregateUnary);
@@ -136,7 +137,7 @@ public class SPInstructionParser extends InstructionParser
 
 
 		String2SPInstructionType.put( "uaggouterchain", SPType.UaggOuterChain);
-		
+
 		//ternary aggregate operators
 		String2SPInstructionType.put( "tak+*"      , SPType.AggregateTernary);
 		String2SPInstructionType.put( "tack+*"     , SPType.AggregateTernary);
@@ -146,18 +147,18 @@ public class SPInstructionParser extends InstructionParser
 		String2SPInstructionType.put( "conv2d_bias_add", SPType.Dnn);
 		String2SPInstructionType.put( "maxpooling",      SPType.Dnn);
 		String2SPInstructionType.put( "relu_maxpooling", SPType.Dnn);
-		
+
 		String2SPInstructionType.put( RightIndex.OPCODE, SPType.MatrixIndexing);
 		String2SPInstructionType.put( LeftIndex.OPCODE,  SPType.MatrixIndexing);
 		String2SPInstructionType.put( "mapLeftIndex",    SPType.MatrixIndexing);
-		
+
 		// Reorg Instruction Opcodes (repositioning of existing values)
 		String2SPInstructionType.put( "r'",       SPType.Reorg);
 		String2SPInstructionType.put( "rev",      SPType.Reorg);
 		String2SPInstructionType.put( "rdiag",    SPType.Reorg);
 		String2SPInstructionType.put( "rshape",   SPType.MatrixReshape);
 		String2SPInstructionType.put( "rsort",    SPType.Reorg);
-		
+
 		String2SPInstructionType.put( "+",        SPType.Binary);
 		String2SPInstructionType.put( "-",        SPType.Binary);
 		String2SPInstructionType.put( "*",        SPType.Binary);
@@ -194,8 +195,8 @@ public class SPInstructionParser extends InstructionParser
 		String2SPInstructionType.put( "map<="   , SPType.Binary);
 		String2SPInstructionType.put( "map=="   , SPType.Binary);
 		String2SPInstructionType.put( "map!="   , SPType.Binary);
-		
-		// Boolean Instruction Opcodes 
+
+		// Boolean Instruction Opcodes
 		String2SPInstructionType.put( "&&"   , SPType.Binary);
 		String2SPInstructionType.put( "||"   , SPType.Binary);
 		String2SPInstructionType.put( "xor"  , SPType.Binary);
@@ -213,23 +214,24 @@ public class SPInstructionParser extends InstructionParser
 		String2SPInstructionType.put( "mapbitwXor", SPType.Binary);
 		String2SPInstructionType.put( "mapbitwShiftL", SPType.Binary);
 		String2SPInstructionType.put( "mapbitwShiftR", SPType.Binary);
-		
+
 		// Builtin Instruction Opcodes
 		String2SPInstructionType.put( "max"     , SPType.Binary);
 		String2SPInstructionType.put( "min"     , SPType.Binary);
 		String2SPInstructionType.put( "mapmax"  , SPType.Binary);
 		String2SPInstructionType.put( "mapmin"  , SPType.Binary);
-		
-		// REBLOCK Instruction Opcodes 
+
+		// REBLOCK Instruction Opcodes
 		String2SPInstructionType.put( "rblk"   , SPType.Reblock);
 		String2SPInstructionType.put( "csvrblk", SPType.CSVReblock);
-	
+		String2SPInstructionType.put("libsvmrblk", SPType.LIBSVMReblock);
+
 		// Spark-specific instructions
 		String2SPInstructionType.put( Checkpoint.OPCODE, SPType.Checkpoint);
 		String2SPInstructionType.put( Compression.OPCODE, SPType.Compression);
 		String2SPInstructionType.put( DeCompression.OPCODE, SPType.DeCompression);
-		
-		// Builtin Instruction Opcodes 
+
+		// Builtin Instruction Opcodes
 		String2SPInstructionType.put( "log"  , SPType.Builtin);
 		String2SPInstructionType.put( "log_nz"  , SPType.Builtin);
 
@@ -257,7 +259,7 @@ public class SPInstructionParser extends InstructionParser
 		String2SPInstructionType.put( "isna", SPType.Unary);
 		String2SPInstructionType.put( "isnan", SPType.Unary);
 		String2SPInstructionType.put( "isinf", SPType.Unary);
-		
+
 		// Parameterized Builtin Functions
 		String2SPInstructionType.put( "groupedagg",     SPType.ParameterizedBuiltin);
 		String2SPInstructionType.put( "mapgroupedagg",  SPType.ParameterizedBuiltin);
@@ -270,18 +272,18 @@ public class SPInstructionParser extends InstructionParser
 		String2SPInstructionType.put( "transformapply", SPType.ParameterizedBuiltin);
 		String2SPInstructionType.put( "transformdecode",SPType.ParameterizedBuiltin);
 		String2SPInstructionType.put( "transformencode",SPType.MultiReturnBuiltin);
-		
+
 		String2SPInstructionType.put( "mappend", SPType.MAppend);
 		String2SPInstructionType.put( "rappend", SPType.RAppend);
 		String2SPInstructionType.put( "gappend", SPType.GAppend);
 		String2SPInstructionType.put( "galignedappend", SPType.GAlignedAppend);
-		
+
 		String2SPInstructionType.put( "cbind", SPType.BuiltinNary);
 		String2SPInstructionType.put( "rbind", SPType.BuiltinNary);
 		String2SPInstructionType.put( "nmin",  SPType.BuiltinNary);
 		String2SPInstructionType.put( "nmax",  SPType.BuiltinNary);
 		String2SPInstructionType.put( "n+",  SPType.BuiltinNary);
-		
+
 		String2SPInstructionType.put( DataGen.RAND_OPCODE  , SPType.Rand);
 		String2SPInstructionType.put( DataGen.SEQ_OPCODE   , SPType.Rand);
 		String2SPInstructionType.put( DataGen.SAMPLE_OPCODE, SPType.Rand);
@@ -290,12 +292,12 @@ public class SPInstructionParser extends InstructionParser
 		//ternary instruction opcodes
 		String2SPInstructionType.put( "ctable", SPType.Ctable);
 		String2SPInstructionType.put( "ctableexpand", SPType.Ctable);
-		
+
 		//ternary instruction opcodes
 		String2SPInstructionType.put( "+*",     SPType.Ternary);
 		String2SPInstructionType.put( "-*",     SPType.Ternary);
 		String2SPInstructionType.put( "ifelse", SPType.Ternary);
-		
+
 		//quaternary instruction opcodes
 		String2SPInstructionType.put( WeightedSquaredLoss.OPCODE,  SPType.Quaternary);
 		String2SPInstructionType.put( WeightedSquaredLossR.OPCODE, SPType.Quaternary);
@@ -307,7 +309,7 @@ public class SPInstructionParser extends InstructionParser
 		String2SPInstructionType.put( WeightedCrossEntropyR.OPCODE,SPType.Quaternary);
 		String2SPInstructionType.put( WeightedUnaryMM.OPCODE,      SPType.Quaternary);
 		String2SPInstructionType.put( WeightedUnaryMMR.OPCODE,     SPType.Quaternary);
-		
+
 		//cumsum/cumprod/cummin/cummax
 		String2SPInstructionType.put( "ucumack+"  , SPType.CumsumAggregate);
 		String2SPInstructionType.put( "ucumac*"   , SPType.CumsumAggregate);
@@ -325,21 +327,21 @@ public class SPInstructionParser extends InstructionParser
 		String2SPInstructionType.put( "cov"    , SPType.Covariance);
 		String2SPInstructionType.put( "qsort"  , SPType.QSort);
 		String2SPInstructionType.put( "qpick"  , SPType.QPick);
-		
+
 		String2SPInstructionType.put( "binuaggchain", SPType.BinUaggChain);
-		
+
 		String2SPInstructionType.put( "write"	, SPType.Write);
-	
+
 		String2SPInstructionType.put( "castdtm" , SPType.Cast);
 		String2SPInstructionType.put( "castdtf"	, SPType.Cast);
-		
+
 		String2SPInstructionType.put( "spoof"	, SPType.SpoofFused);
 	}
 
 	public static SPInstruction parseSingleInstruction (String str ) {
 		if ( str == null || str.isEmpty() )
 			return null;
-		SPType cptype = InstructionUtils.getSPType(str); 
+		SPType cptype = InstructionUtils.getSPType(str);
 		if ( cptype == null )
 			// return null;
 			throw new DMLRuntimeException("Invalid SP Instruction Type: " + str);
@@ -348,13 +350,13 @@ public class SPInstructionParser extends InstructionParser
 			throw new DMLRuntimeException("Unable to parse instruction: " + str);
 		return spinst;
 	}
-	
+
 	public static SPInstruction parseSingleInstruction ( SPType sptype, String str ) {
-		if ( str == null || str.isEmpty() ) 
+		if ( str == null || str.isEmpty() )
 			return null;
-		
+
 		String [] parts = null;
-		switch(sptype) 
+		switch(sptype)
 		{
 			// matrix multiplication instructions
 			case CPMM:
@@ -375,48 +377,51 @@ public class SPInstructionParser extends InstructionParser
 				return ZipmmSPInstruction.parseInstruction(str);
 			case PMAPMM:
 				return PMapmmSPInstruction.parseInstruction(str);
-				
-				
+
+
 			case UaggOuterChain:
 				return UaggOuterChainSPInstruction.parseInstruction(str);
-				
+
 			case AggregateUnary:
 				return AggregateUnarySPInstruction.parseInstruction(str);
-				
+
 			case AggregateTernary:
 				return AggregateTernarySPInstruction.parseInstruction(str);
-				
+
 			case Dnn:
 				 return DnnSPInstruction.parseInstruction(str);
 
 			case MatrixIndexing:
 				return IndexingSPInstruction.parseInstruction(str);
-				
+
 			case Reorg:
 				return ReorgSPInstruction.parseInstruction(str);
-				
+
 			case Binary:
 				return BinarySPInstruction.parseInstruction(str);
 
 			case Ternary:
 				return TernarySPInstruction.parseInstruction(str);
-			
+
 			//ternary instructions
 			case Ctable:
 				return CtableSPInstruction.parseInstruction(str);
-				
+
 			//quaternary instructions
 			case Quaternary:
 				return QuaternarySPInstruction.parseInstruction(str);
-				
-			// Reblock instructions	
+
+			// Reblock instructions
 			case Reblock:
 				return ReblockSPInstruction.parseInstruction(str);
-				
+
 			case CSVReblock:
 				return CSVReblockSPInstruction.parseInstruction(str);
-			
-			case Builtin: 
+
+			case LIBSVMReblock:
+				return LIBSVMReblockSPInstruction.parseInstruction(str);
+
+			case Builtin:
 				parts = InstructionUtils.getInstructionPartsWithValueType(str);
 				if ( parts[0].equals("log") || parts[0].equals("log_nz") ) {
 					if ( parts.length == 3 ) {
@@ -430,7 +435,7 @@ public class SPInstructionParser extends InstructionParser
 				else {
 					throw new DMLRuntimeException("Invalid Builtin Instruction: " + str );
 				}
-				
+
 			case Unary:
 				parts = InstructionUtils.getInstructionPartsWithValueType(str);
 				CPOperand in = new CPOperand(parts[1]);
@@ -440,67 +445,67 @@ public class SPInstructionParser extends InstructionParser
 					return UnaryFrameSPInstruction.parseInstruction(str);
 			case BuiltinNary:
 				return BuiltinNarySPInstruction.parseInstruction(str);
-			
+
 			case ParameterizedBuiltin:
 				return ParameterizedBuiltinSPInstruction.parseInstruction(str);
-				
+
 			case MultiReturnBuiltin:
 				return MultiReturnParameterizedBuiltinSPInstruction.parseInstruction(str);
-				
+
 			case MatrixReshape:
 				return MatrixReshapeSPInstruction.parseInstruction(str);
-				
+
 			case MAppend: //matrix/frame
 				return AppendMSPInstruction.parseInstruction(str);
-				
+
 			case RAppend: //matrix/frame
 				return AppendRSPInstruction.parseInstruction(str);
-			
-			case GAppend: 
+
+			case GAppend:
 				return AppendGSPInstruction.parseInstruction(str);
-			
+
 			case GAlignedAppend:
 				return AppendGAlignedSPInstruction.parseInstruction(str);
-				
+
 			case Rand:
 				return RandSPInstruction.parseInstruction(str);
-				
-			case QSort: 
+
+			case QSort:
 				return QuantileSortSPInstruction.parseInstruction(str);
-			
-			case QPick: 
+
+			case QPick:
 				return QuantilePickSPInstruction.parseInstruction(str);
-			
+
 			case Write:
 				return WriteSPInstruction.parseInstruction(str);
-				
+
 			case CumsumAggregate:
 				return CumulativeAggregateSPInstruction.parseInstruction(str);
-				
+
 			case CumsumOffset:
-				return CumulativeOffsetSPInstruction.parseInstruction(str); 
-		
+				return CumulativeOffsetSPInstruction.parseInstruction(str);
+
 			case CentralMoment:
 				return CentralMomentSPInstruction.parseInstruction(str);
-			
+
 			case Covariance:
 				return CovarianceSPInstruction.parseInstruction(str);
-			
+
 			case BinUaggChain:
 				return BinUaggChainSPInstruction.parseInstruction(str);
-				
+
 			case Checkpoint:
 				return CheckpointSPInstruction.parseInstruction(str);
-			
+
 			case Compression:
 				return CompressionSPInstruction.parseInstruction(str);
 
 			case SpoofFused:
 				return SpoofSPInstruction.parseInstruction(str);
-				
+
 			case Cast:
 				return CastSPInstruction.parseInstruction(str);
-			
+
 			default:
 				throw new DMLRuntimeException("Invalid SP Instruction Type: " + sptype );
 		}

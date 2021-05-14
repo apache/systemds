@@ -300,7 +300,7 @@ public class FunctionOp extends Hop
 		setLops(fcall);
 		
 		//note: no reblock lop because outputs directly bound
-		
+
 		return getLops();
 	}
 
@@ -383,5 +383,10 @@ public class FunctionOp extends Hop
 	@Override
 	public boolean compare(Hop that) {
 		return false;
+	}
+
+	@Override
+	public String toString(){
+		return getOpString();
 	}
 }

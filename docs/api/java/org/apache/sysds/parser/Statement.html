@@ -50,7 +50,7 @@ var activeTableTab = "activeTableTab";
 <div class="subNav">
 <ul class="navList">
 <li><a href="../../../../org/apache/sysds/parser/RelationalExpression.html" title="class in org.apache.sysds.parser"><span class="typeNameLink">Prev&nbsp;Class</span></a></li>
-<li><a href="../../../../org/apache/sysds/parser/Statement.PSCheckpointing.html" title="enum in org.apache.sysds.parser"><span class="typeNameLink">Next&nbsp;Class</span></a></li>
+<li><a href="../../../../org/apache/sysds/parser/Statement.FederatedPSScheme.html" title="enum in org.apache.sysds.parser"><span class="typeNameLink">Next&nbsp;Class</span></a></li>
 </ul>
 <ul class="navList">
 <li><a href="../../../../index.html?org/apache/sysds/parser/Statement.html" target="_top">Frames</a></li>
@@ -140,15 +140,23 @@ implements <a href="../../../../org/apache/sysds/parser/ParseInfo.html" title="i
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code>static class&nbsp;</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/parser/Statement.PSCheckpointing.html" title="enum in org.apache.sysds.parser">Statement.PSCheckpointing</a></span></code>&nbsp;</td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/parser/Statement.FederatedPSScheme.html" title="enum in org.apache.sysds.parser">Statement.FederatedPSScheme</a></span></code>&nbsp;</td>
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code>static class&nbsp;</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/parser/Statement.PSFrequency.html" title="enum in org.apache.sysds.parser">Statement.PSFrequency</a></span></code>&nbsp;</td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/parser/Statement.PSCheckpointing.html" title="enum in org.apache.sysds.parser">Statement.PSCheckpointing</a></span></code>&nbsp;</td>
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code>static class&nbsp;</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/parser/Statement.PSFrequency.html" title="enum in org.apache.sysds.parser">Statement.PSFrequency</a></span></code>&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>static class&nbsp;</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/parser/Statement.PSModeType.html" title="enum in org.apache.sysds.parser">Statement.PSModeType</a></span></code>&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>static class&nbsp;</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/parser/Statement.PSRuntimeBalancing.html" title="enum in org.apache.sysds.parser">Statement.PSRuntimeBalancing</a></span></code>&nbsp;</td>
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code>static class&nbsp;</code></td>
@@ -263,35 +271,75 @@ implements <a href="../../../../org/apache/sysds/parser/ParseInfo.html" title="i
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code>static <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a></code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/parser/Statement.html#PS_FREQUENCY">PS_FREQUENCY</a></span></code>&nbsp;</td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/parser/Statement.html#PS_FED_AGGREGATION_FNAME">PS_FED_AGGREGATION_FNAME</a></span></code>&nbsp;</td>
 </tr>
 <tr class="rowColor">
+<td class="colFirst"><code>static <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a></code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/parser/Statement.html#PS_FED_BATCH_SIZE">PS_FED_BATCH_SIZE</a></span></code>&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>static <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a></code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/parser/Statement.html#PS_FED_DATA_SIZE">PS_FED_DATA_SIZE</a></span></code>&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>static <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a></code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/parser/Statement.html#PS_FED_GRADIENTS_FNAME">PS_FED_GRADIENTS_FNAME</a></span></code>&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>static <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a></code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/parser/Statement.html#PS_FED_MODEL_VARID">PS_FED_MODEL_VARID</a></span></code>&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>static <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a></code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/parser/Statement.html#PS_FED_NAMESPACE">PS_FED_NAMESPACE</a></span></code>&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>static <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a></code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/parser/Statement.html#PS_FED_POSS_BATCHES_LOCAL">PS_FED_POSS_BATCHES_LOCAL</a></span></code>&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>static <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a></code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/parser/Statement.html#PS_FED_RUNTIME_BALANCING">PS_FED_RUNTIME_BALANCING</a></span></code>&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>static <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a></code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/parser/Statement.html#PS_FED_WEIGHTING">PS_FED_WEIGHTING</a></span></code>&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>static <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a></code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/parser/Statement.html#PS_FREQUENCY">PS_FREQUENCY</a></span></code>&nbsp;</td>
+</tr>
+<tr class="altColor">
 <td class="colFirst"><code>static <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/parser/Statement.html#PS_GRADIENTS">PS_GRADIENTS</a></span></code>&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>static <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/parser/Statement.html#PS_HYPER_PARAMS">PS_HYPER_PARAMS</a></span></code>&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>static <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/parser/Statement.html#PS_LABELS">PS_LABELS</a></span></code>&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>static <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/parser/Statement.html#PS_MODE">PS_MODE</a></span></code>&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>static <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/parser/Statement.html#PS_MODEL">PS_MODEL</a></span></code>&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>static <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/parser/Statement.html#PS_PARALLELISM">PS_PARALLELISM</a></span></code>&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>static <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/parser/Statement.html#PS_SCHEME">PS_SCHEME</a></span></code>&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>static <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a></code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/parser/Statement.html#PS_SEED">PS_SEED</a></span></code>&nbsp;</td>
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code>static <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a></code></td>
@@ -307,33 +355,37 @@ implements <a href="../../../../org/apache/sysds/parser/ParseInfo.html" title="i
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code>static <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a></code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/parser/Statement.html#PS_VAL_LABELS">PS_VAL_LABELS</a></span></code>&nbsp;</td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/parser/Statement.html#PS_VAL_FUN">PS_VAL_FUN</a></span></code>&nbsp;</td>
 </tr>
 <tr class="altColor">
+<td class="colFirst"><code>static <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a></code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/parser/Statement.html#PS_VAL_LABELS">PS_VAL_LABELS</a></span></code>&nbsp;</td>
+</tr>
+<tr class="rowColor">
 <td class="colFirst"><code>static <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/parser/Statement.html#SCALAR_DATA_TYPE">SCALAR_DATA_TYPE</a></span></code>&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>static <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/parser/Statement.html#SEQ_FROM">SEQ_FROM</a></span></code>&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>static <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/parser/Statement.html#SEQ_INCR">SEQ_INCR</a></span></code>&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>static <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/parser/Statement.html#SEQ_TO">SEQ_TO</a></span></code>&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>static <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/parser/Statement.html#SETWD">SETWD</a></span></code>&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>static <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/parser/Statement.html#SOURCE">SOURCE</a></span></code>&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>static <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/parser/Statement.html#STRING_VALUE_TYPE">STRING_VALUE_TYPE</a></span></code>&nbsp;</td>
 </tr>
@@ -895,6 +947,19 @@ implements <a href="../../../../org/apache/sysds/parser/ParseInfo.html" title="i
 </dl>
 </li>
 </ul>
+<a name="PS_VAL_FUN">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>PS_VAL_FUN</h4>
+<pre>public static final&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a> PS_VAL_FUN</pre>
+<dl>
+<dt><span class="seeLabel">See Also:</span></dt>
+<dd><a href="../../../../constant-values.html#org.apache.sysds.parser.Statement.PS_VAL_FUN">Constant Field Values</a></dd>
+</dl>
+</li>
+</ul>
 <a name="PS_UPDATE_FUN">
 <!--   -->
 </a>
@@ -947,6 +1012,19 @@ implements <a href="../../../../org/apache/sysds/parser/ParseInfo.html" title="i
 </dl>
 </li>
 </ul>
+<a name="PS_SEED">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>PS_SEED</h4>
+<pre>public static final&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a> PS_SEED</pre>
+<dl>
+<dt><span class="seeLabel">See Also:</span></dt>
+<dd><a href="../../../../constant-values.html#org.apache.sysds.parser.Statement.PS_SEED">Constant Field Values</a></dd>
+</dl>
+</li>
+</ul>
 <a name="PS_UPDATE_TYPE">
 <!--   -->
 </a>
@@ -970,6 +1048,32 @@ implements <a href="../../../../org/apache/sysds/parser/ParseInfo.html" title="i
 <dl>
 <dt><span class="seeLabel">See Also:</span></dt>
 <dd><a href="../../../../constant-values.html#org.apache.sysds.parser.Statement.PS_FREQUENCY">Constant Field Values</a></dd>
+</dl>
+</li>
+</ul>
+<a name="PS_FED_WEIGHTING">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>PS_FED_WEIGHTING</h4>
+<pre>public static final&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a> PS_FED_WEIGHTING</pre>
+<dl>
+<dt><span class="seeLabel">See Also:</span></dt>
+<dd><a href="../../../../constant-values.html#org.apache.sysds.parser.Statement.PS_FED_WEIGHTING">Constant Field Values</a></dd>
+</dl>
+</li>
+</ul>
+<a name="PS_FED_RUNTIME_BALANCING">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>PS_FED_RUNTIME_BALANCING</h4>
+<pre>public static final&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a> PS_FED_RUNTIME_BALANCING</pre>
+<dl>
+<dt><span class="seeLabel">See Also:</span></dt>
+<dd><a href="../../../../constant-values.html#org.apache.sysds.parser.Statement.PS_FED_RUNTIME_BALANCING">Constant Field Values</a></dd>
 </dl>
 </li>
 </ul>
@@ -1041,13 +1145,104 @@ implements <a href="../../../../org/apache/sysds/parser/ParseInfo.html" title="i
 <a name="PS_CHECKPOINTING">
 <!--   -->
 </a>
-<ul class="blockListLast">
+<ul class="blockList">
 <li class="blockList">
 <h4>PS_CHECKPOINTING</h4>
 <pre>public static final&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a> PS_CHECKPOINTING</pre>
 <dl>
 <dt><span class="seeLabel">See Also:</span></dt>
 <dd><a href="../../../../constant-values.html#org.apache.sysds.parser.Statement.PS_CHECKPOINTING">Constant Field Values</a></dd>
+</dl>
+</li>
+</ul>
+<a name="PS_FED_BATCH_SIZE">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>PS_FED_BATCH_SIZE</h4>
+<pre>public static final&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a> PS_FED_BATCH_SIZE</pre>
+<dl>
+<dt><span class="seeLabel">See Also:</span></dt>
+<dd><a href="../../../../constant-values.html#org.apache.sysds.parser.Statement.PS_FED_BATCH_SIZE">Constant Field Values</a></dd>
+</dl>
+</li>
+</ul>
+<a name="PS_FED_DATA_SIZE">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>PS_FED_DATA_SIZE</h4>
+<pre>public static final&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a> PS_FED_DATA_SIZE</pre>
+<dl>
+<dt><span class="seeLabel">See Also:</span></dt>
+<dd><a href="../../../../constant-values.html#org.apache.sysds.parser.Statement.PS_FED_DATA_SIZE">Constant Field Values</a></dd>
+</dl>
+</li>
+</ul>
+<a name="PS_FED_POSS_BATCHES_LOCAL">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>PS_FED_POSS_BATCHES_LOCAL</h4>
+<pre>public static final&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a> PS_FED_POSS_BATCHES_LOCAL</pre>
+<dl>
+<dt><span class="seeLabel">See Also:</span></dt>
+<dd><a href="../../../../constant-values.html#org.apache.sysds.parser.Statement.PS_FED_POSS_BATCHES_LOCAL">Constant Field Values</a></dd>
+</dl>
+</li>
+</ul>
+<a name="PS_FED_NAMESPACE">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>PS_FED_NAMESPACE</h4>
+<pre>public static final&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a> PS_FED_NAMESPACE</pre>
+<dl>
+<dt><span class="seeLabel">See Also:</span></dt>
+<dd><a href="../../../../constant-values.html#org.apache.sysds.parser.Statement.PS_FED_NAMESPACE">Constant Field Values</a></dd>
+</dl>
+</li>
+</ul>
+<a name="PS_FED_GRADIENTS_FNAME">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>PS_FED_GRADIENTS_FNAME</h4>
+<pre>public static final&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a> PS_FED_GRADIENTS_FNAME</pre>
+<dl>
+<dt><span class="seeLabel">See Also:</span></dt>
+<dd><a href="../../../../constant-values.html#org.apache.sysds.parser.Statement.PS_FED_GRADIENTS_FNAME">Constant Field Values</a></dd>
+</dl>
+</li>
+</ul>
+<a name="PS_FED_AGGREGATION_FNAME">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>PS_FED_AGGREGATION_FNAME</h4>
+<pre>public static final&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a> PS_FED_AGGREGATION_FNAME</pre>
+<dl>
+<dt><span class="seeLabel">See Also:</span></dt>
+<dd><a href="../../../../constant-values.html#org.apache.sysds.parser.Statement.PS_FED_AGGREGATION_FNAME">Constant Field Values</a></dd>
+</dl>
+</li>
+</ul>
+<a name="PS_FED_MODEL_VARID">
+<!--   -->
+</a>
+<ul class="blockListLast">
+<li class="blockList">
+<h4>PS_FED_MODEL_VARID</h4>
+<pre>public static final&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a> PS_FED_MODEL_VARID</pre>
+<dl>
+<dt><span class="seeLabel">See Also:</span></dt>
+<dd><a href="../../../../constant-values.html#org.apache.sysds.parser.Statement.PS_FED_MODEL_VARID">Constant Field Values</a></dd>
 </dl>
 </li>
 </ul>
@@ -1420,7 +1615,7 @@ implements <a href="../../../../org/apache/sysds/parser/ParseInfo.html" title="i
 <div class="subNav">
 <ul class="navList">
 <li><a href="../../../../org/apache/sysds/parser/RelationalExpression.html" title="class in org.apache.sysds.parser"><span class="typeNameLink">Prev&nbsp;Class</span></a></li>
-<li><a href="../../../../org/apache/sysds/parser/Statement.PSCheckpointing.html" title="enum in org.apache.sysds.parser"><span class="typeNameLink">Next&nbsp;Class</span></a></li>
+<li><a href="../../../../org/apache/sysds/parser/Statement.FederatedPSScheme.html" title="enum in org.apache.sysds.parser"><span class="typeNameLink">Next&nbsp;Class</span></a></li>
 </ul>
 <ul class="navList">
 <li><a href="../../../../index.html?org/apache/sysds/parser/Statement.html" target="_top">Frames</a></li>
@@ -1460,6 +1655,6 @@ implements <a href="../../../../org/apache/sysds/parser/ParseInfo.html" title="i
 <!--   -->
 </a></div>
 <!-- ======== END OF BOTTOM NAVBAR ======= -->
-<p class="legalCopy"><small>Copyright &#169; 2020 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
+<p class="legalCopy"><small>Copyright &#169; 2021 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
 </body>
 </html>

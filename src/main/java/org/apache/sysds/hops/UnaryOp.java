@@ -182,7 +182,7 @@ public class UnaryOp extends MultiThreadedHop
 		
 		//add reblock/checkpoint lops if necessary
 		constructAndSetLopsDataFlowProperties();
-		
+
 		return getLops();
 	}
 	
@@ -512,6 +512,9 @@ public class UnaryOp extends MultiThreadedHop
 			|| getInput().get(0).getDataType() == DataType.LIST || isMetadataOperation() )
 		{
 			_etype = ExecType.CP;
+		} else {
+			updateETFed();
+			setRequiresRecompileIfNecessary();
 		}
 		
 		return _etype;

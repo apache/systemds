@@ -933,10 +933,9 @@ public class LibMatrixCUDA {
 		int[] tmp = getKernelParamsForReduceAll(gCtx, n);
 		int blocks = tmp[0], threads = tmp[1], sharedMem = tmp[2];
 
-		Pointer tempOut = gCtx.allocate(instName, n*sizeOfDataType); 
+		Pointer tempOut = gCtx.allocate(instName, (long) blocks * sizeOfDataType); 
 
 		getCudaKernels(gCtx).launchKernel(kernelFunction, new ExecutionConfig(blocks, threads, sharedMem), in, tempOut, n);
-		//cudaDeviceSynchronize;
 		
 		int s = blocks;
 		while (s > 1) {

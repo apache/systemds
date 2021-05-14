@@ -80,6 +80,7 @@ public class TernaryOp extends MultiThreadedHop
 		getInput().add(0, inp1);
 		getInput().add(1, inp2);
 		getInput().add(2, inp3);
+		updateETFed();
 		inp1.getParent().add(this);
 		inp2.getParent().add(this);
 		inp3.getParent().add(this);
@@ -97,6 +98,7 @@ public class TernaryOp extends MultiThreadedHop
 		getInput().add(3, inp4);
 		getInput().add(4, inp5);
 		getInput().add(5, inp6);
+		updateETFed();
 		inp1.getParent().add(this);
 		inp2.getParent().add(this);
 		inp3.getParent().add(this);
@@ -193,10 +195,12 @@ public class TernaryOp extends MultiThreadedHop
 		catch(LopsException e) {
 			throw new HopsException(this.printErrorLocation() + "error constructing Lops for TernaryOp Hop " , e);
 		}
+
+		setFederatedOutput(getLops());
 		
 		//add reblock/checkpoint lops if necessary
 		constructAndSetLopsDataFlowProperties();
-		
+
 		return getLops();
 	}
 
@@ -499,6 +503,8 @@ public class TernaryOp extends MultiThreadedHop
 			//check for valid CP dimensions and matrix size
 			checkAndSetInvalidCPDimsAndSize();
 		}
+
+		updateETFed();
 
 		//mark for recompile (forever)
 		// additional condition: when execType=CP and additional dimension inputs 

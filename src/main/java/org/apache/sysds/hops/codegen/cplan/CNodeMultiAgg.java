@@ -55,7 +55,7 @@ public class CNodeMultiAgg extends CNodeTpl
 	private static final String TEMPLATE_OUT_MIN   = "    c[%IX%] = Math.min(c[%IX%], %IN%);\n";
 	private static final String TEMPLATE_OUT_MAX   = "    c[%IX%] = Math.max(c[%IX%], %IN%);\n";
 	
-	private ArrayList<CNode> _outputs = null; 
+	private ArrayList<CNode> _outputs = null;
 	private ArrayList<AggOp> _aggOps = null;
 	private ArrayList<Hop> _roots = null;
 	private boolean _sparseSafe = false;

@@ -59,82 +59,92 @@ public class BuiltinSliceFinderTest extends AutomatedTestBase
 
 	@Test
 	public void testTop4HybridDP() {
-		runSliceFinderTest(4, true, false, ExecMode.HYBRID);
+		runSliceFinderTest(4, "e", true, false, ExecMode.HYBRID);
 	}
 	
 	@Test
 	public void testTop4SinglenodeDP() {
-		runSliceFinderTest(4, true, false, ExecMode.SINGLE_NODE);
+		runSliceFinderTest(4, "e", true, false, ExecMode.SINGLE_NODE);
 	}
 	
 	@Test
 	public void testTop4HybridTP() {
-		runSliceFinderTest(4, false, false, ExecMode.HYBRID);
+		runSliceFinderTest(4, "e", false, false, ExecMode.HYBRID);
 	}
 	
 	@Test
 	public void testTop4SinglenodeTP() {
-		runSliceFinderTest(4, false, false, ExecMode.SINGLE_NODE);
+		runSliceFinderTest(4, "e", false, false, ExecMode.SINGLE_NODE);
 	}
 
 	@Test
 	public void testTop10HybridDP() {
-		runSliceFinderTest(10, true, false, ExecMode.HYBRID);
+		runSliceFinderTest(10, "e", true, false, ExecMode.HYBRID);
 	}
 	
 	@Test
 	public void testTop10SinglenodeDP() {
-		runSliceFinderTest(10, true, false, ExecMode.SINGLE_NODE);
+		runSliceFinderTest(10, "e", true, false, ExecMode.SINGLE_NODE);
 	}
 	
 	@Test
 	public void testTop10HybridTP() {
-		runSliceFinderTest(10, false, false, ExecMode.HYBRID);
+		runSliceFinderTest(10, "e", false, false, ExecMode.HYBRID);
 	}
 	
 	@Test
 	public void testTop10SinglenodeTP() {
-		runSliceFinderTest(10, false, false, ExecMode.SINGLE_NODE);
+		runSliceFinderTest(10, "e", false, false, ExecMode.SINGLE_NODE);
 	}
 
 	@Test
 	public void testTop4HybridDPSel() {
-		runSliceFinderTest(4, true, true, ExecMode.HYBRID);
+		runSliceFinderTest(4, "e", true, true, ExecMode.HYBRID);
 	}
 	
 	@Test
 	public void testTop4SinglenodeDPSel() {
-		runSliceFinderTest(4, true, true, ExecMode.SINGLE_NODE);
+		runSliceFinderTest(4, "e", true, true, ExecMode.SINGLE_NODE);
 	}
 	
 	@Test
 	public void testTop4HybridTPSel() {
-		runSliceFinderTest(4, false, true, ExecMode.HYBRID);
+		runSliceFinderTest(4, "e", false, true, ExecMode.HYBRID);
 	}
 	
 	@Test
 	public void testTop4SinglenodeTPSel() {
-		runSliceFinderTest(4, false, true, ExecMode.SINGLE_NODE);
+		runSliceFinderTest(4, "e", false, true, ExecMode.SINGLE_NODE);
 	}
 
 	@Test
 	public void testTop10HybridDPSel() {
-		runSliceFinderTest(10, true, true, ExecMode.HYBRID);
+		runSliceFinderTest(10, "e", true, true, ExecMode.HYBRID);
 	}
 	
 	@Test
 	public void testTop10SinglenodeDPSel() {
-		runSliceFinderTest(10, true, true, ExecMode.SINGLE_NODE);
+		runSliceFinderTest(10, "e", true, true, ExecMode.SINGLE_NODE);
 	}
 	
 	@Test
 	public void testTop10HybridTPSel() {
-		runSliceFinderTest(10, false, true, ExecMode.HYBRID);
+		runSliceFinderTest(10, "e", false, true, ExecMode.HYBRID);
 	}
 	
 	@Test
 	public void testTop10SinglenodeTPSel() {
-		runSliceFinderTest(10, false, true, ExecMode.SINGLE_NODE);
+		runSliceFinderTest(10, "e", false, true, ExecMode.SINGLE_NODE);
+	}
+	
+	@Test
+	public void testTop10HybridTPSelE2() {
+		runSliceFinderTest(10, "oe", false, true, ExecMode.HYBRID);
+	}
+	
+	@Test
+	public void testTop10SinglenodeTPSelE2() {
+		runSliceFinderTest(10, "oe", false, true, ExecMode.SINGLE_NODE);
 	}
 	
 //	@Test
@@ -142,18 +152,18 @@ public class BuiltinSliceFinderTest extends AutomatedTestBase
 //		runSliceFinderTest(10, false, ExecMode.SPARK);
 //	}
 	
-	private void runSliceFinderTest(int K, boolean dp, boolean selCols, ExecMode mode) {
+	private void runSliceFinderTest(int K, String err, boolean dp, boolean selCols, ExecMode mode) {
 		ExecMode platformOld = setExecMode(mode);
 		loadTestConfiguration(getTestConfiguration(TEST_NAME));
 		String HOME = SCRIPT_DIR + TEST_DIR;
-		String data = HOME + "/data/Salaries.csv";
+		String data = DATASET_DIR+ "Salaries.csv";
 		
 		try {
 			loadTestConfiguration(getTestConfiguration(TEST_NAME));
 			
 			//run data preparation
 			fullDMLScriptName = HOME + PREP_NAME + ".dml";
-			programArgs = new String[]{"-args", data, output("X"), output("e")};
+			programArgs = new String[]{"-args", data, err, output("X"), output("e")};
 			runTest(true, false, null, -1);
 			
 			//read output and store for dml and R
@@ -180,11 +190,13 @@ public class BuiltinSliceFinderTest extends AutomatedTestBase
 			TestUtils.compareMatrices(dmlfile, rfile, 1e-2, "Stat-DML", "Stat-R");
 			
 			//compare expected results
-			double[][] ret = TestUtils.convertHashMapToDoubleArray(dmlfile);
-			if( mode != ExecMode.SPARK ) //TODO why only CP correct, but R always matches? test framework?
-				for(int i=0; i<K; i++)
-					TestUtils.compareMatrices(EXPECTED_TOPK[i], ret[i], 1e-2);
-		
+			if( err.equals("e") ) {
+				double[][] ret = TestUtils.convertHashMapToDoubleArray(dmlfile);
+				if( mode != ExecMode.SPARK ) //TODO why only CP correct, but R always matches? test framework?
+					for(int i=0; i<K; i++)
+						TestUtils.compareMatrices(EXPECTED_TOPK[i], ret[i], 1e-2);
+			}
+			
 			//ensure proper inlining, despite initially multiple calls and large function
 			Assert.assertFalse(heavyHittersContainsSubString("evalSlice"));
 		}

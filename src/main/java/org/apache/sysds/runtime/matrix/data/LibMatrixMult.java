@@ -347,6 +347,10 @@ public class LibMatrixMult
 	}
 
 	public static void matrixMultTransposeSelf( MatrixBlock m1, MatrixBlock ret, boolean leftTranspose ) {
+		matrixMultTransposeSelf(m1, ret, leftTranspose, true);
+	}
+
+	public static void matrixMultTransposeSelf(MatrixBlock m1, MatrixBlock ret, boolean leftTranspose, boolean copyToLowerTriangle){
 		//check inputs / outputs
 		if( m1.isEmptyBlock(false) ) {
 			ret.examSparsity(); //turn empty dense into sparse
@@ -365,9 +369,11 @@ public class LibMatrixMult
 			matrixMultTransposeSelfDense(m1, ret, leftTranspose, 0, ret.rlen );
 
 		//post-processing
-		long nnz = copyUpperToLowerTriangle(ret);
-		ret.setNonZeros(nnz);
-		ret.examSparsity();
+		if(copyToLowerTriangle){
+			long nnz = copyUpperToLowerTriangle(ret);
+			ret.setNonZeros(nnz);
+			ret.examSparsity();
+		}
 		
 		//System.out.println("TSMM ("+m1.isInSparseFormat()+","+m1.getNumRows()+","+m1.getNumColumns()+","+m1.getNonZeros()+","+leftTranspose+") in "+time.stop());
 	}
@@ -3893,16 +3899,18 @@ public class LibMatrixMult
 	
 	public static boolean satisfiesMultiThreadingConstraints(MatrixBlock m1, boolean checkMem, boolean checkFLOPs, long FPfactor, int k) {
 		boolean sharedTP = (InfrastructureAnalyzer.getLocalParallelism() == k);
+		double jvmMem = InfrastructureAnalyzer.getLocalMaxMemory();
 		return k > 1 && LOW_LEVEL_OPTIMIZATION
-			&& (!checkMem || 8L * m1.clen * k < MEM_OVERHEAD_THRESHOLD)
+			&& (!checkMem || 8L * m1.clen * k < Math.max(MEM_OVERHEAD_THRESHOLD,0.01*jvmMem))
 			&& (!checkFLOPs || FPfactor * m1.rlen * m1.clen >
 			(sharedTP ? PAR_MINFLOP_THRESHOLD2 : PAR_MINFLOP_THRESHOLD1));
 	}
 	
 	public static boolean satisfiesMultiThreadingConstraints(MatrixBlock m1, MatrixBlock m2, boolean checkMem, boolean checkFLOPs, long FPfactor, int k) {
 		boolean sharedTP = (InfrastructureAnalyzer.getLocalParallelism() == k);
+		double jvmMem = InfrastructureAnalyzer.getLocalMaxMemory();
 		return k > 1 && LOW_LEVEL_OPTIMIZATION
-			&& (!checkMem || 8L * m2.clen * k < MEM_OVERHEAD_THRESHOLD)
+			&& (!checkMem || 8L * m2.clen * k < Math.max(MEM_OVERHEAD_THRESHOLD,0.01*jvmMem))
 			//note: cast to double to avoid long overflows on ultra-sparse matrices
 			//due to FLOP computation based on number of cells not non-zeros
 			&& (!checkFLOPs || (double)FPfactor * m1.rlen * m1.clen * m2.clen >

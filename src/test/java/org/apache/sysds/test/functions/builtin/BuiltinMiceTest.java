@@ -19,8 +19,6 @@
 
 package org.apache.sysds.test.functions.builtin;
 
-import org.junit.Assert;
-import org.junit.Test;
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.lops.LopProperties;
@@ -29,6 +27,8 @@ import org.apache.sysds.runtime.matrix.data.MatrixValue;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
+import org.junit.Assert;
+import org.junit.Test;
 
 import java.util.HashMap;
 
@@ -37,7 +37,8 @@ public class BuiltinMiceTest extends AutomatedTestBase {
 	private final static String TEST_DIR = "functions/builtin/";
 	private static final String TEST_CLASS_DIR = TEST_DIR + BuiltinMiceTest.class.getSimpleName() + "/";
 
-	private final static String DATASET = SCRIPT_DIR +"functions/transform/input/ChickWeight.csv";
+
+	private String DATASET = DATASET_DIR+"ChickWeight.csv";
 	private final static double eps = 0.16;
 	private final static int iter = 3;
 
@@ -82,10 +83,11 @@ public class BuiltinMiceTest extends AutomatedTestBase {
 	private void runMiceNominalTest(double[][] mask, int testType, boolean lineage, LopProperties.ExecType instType) {
 		Types.ExecMode platformOld = setExecMode(instType);
 		try {
+			System.out.println("Dataset "+DATASET);
 			loadTestConfiguration(getTestConfiguration(TEST_NAME));
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[]{"-nvargs", "X=" + DATASET, "Mask="+input("M"), 
+			programArgs = new String[]{"-nvargs", "X=" + DATASET, "Mask="+input("M"),
 				"iteration=" + iter, "dataN=" + output("N"), "dataC=" + output("C")};
 			if (lineage) {
 				programArgs = (String[]) ArrayUtils.addAll(programArgs, new String[] {

@@ -24,7 +24,6 @@ import random
 
 import numpy as np
 from systemds.context import SystemDSContext
-from systemds.matrix import Matrix
 
 np.random.seed(7)
 
@@ -47,25 +46,25 @@ class TestOrder(unittest.TestCase):
         cls.sds.close()
 
     def test_basic(self):
-        o = Matrix(self.sds, m).order(by=by, decreasing=False, index_return=False).compute()
+        o = self.sds.from_numpy(m).order(by=by, decreasing=False, index_return=False).compute()
         s = m[np.argsort(m[:, by-1])]
         self.assertTrue(np.allclose(o, s))
 
     def test_index(self):
-        o = Matrix(self.sds, m).order(by=by, decreasing=False, index_return=True).compute()
+        o = self.sds.from_numpy(m).order(by=by, decreasing=False, index_return=True).compute()
         s = np.argsort(m[:, by - 1]) + 1
         self.assertTrue(np.allclose(np.transpose(o), s))
 
-    def test_out_of_bounds(self):
-        by_max = np.size(m, 1) + 2
-        with self.assertRaises(IndexError) as context:
-            Matrix(self.sds, m).order(by=by_max).compute()
-
     def test_decreasing(self):
-        o = Matrix(self.sds, m).order(by=by, decreasing=True, index_return=True).compute()
+        o = self.sds.from_numpy(m).order(by=by, decreasing=True, index_return=True).compute()
         s = np.argsort(-m[:, by - 1]) + 1
         self.assertTrue(np.allclose(np.transpose(o), s))
 
+class TestOrder_1(TestOrder):
+    def test_out_of_bounds(self):
+        by_max = np.size(m, 1) + 2
+        with self.assertRaises(RuntimeError) as context:
+            self.sds.from_numpy(m).order(by=by_max).compute()
 
 if __name__ == "__main__":
     unittest.main(exit=False)

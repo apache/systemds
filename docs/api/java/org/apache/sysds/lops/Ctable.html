@@ -179,11 +179,12 @@ extends <a href="../../../../org/apache/sysds/lops/Lop.html" title="class in org
 <th class="colOne" scope="col">Constructor and Description</th>
 </tr>
 <tr class="altColor">
-<td class="colOne"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/lops/Ctable.html#Ctable-org.apache.sysds.lops.Lop:A-org.apache.sysds.lops.Ctable.OperationTypes-org.apache.sysds.common.Types.DataType-org.apache.sysds.common.Types.ValueType-boolean-org.apache.sysds.lops.LopProperties.ExecType-">Ctable</a></span>(<a href="../../../../org/apache/sysds/lops/Lop.html" title="class in org.apache.sysds.lops">Lop</a>[]&nbsp;inputLops,
+<td class="colOne"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/lops/Ctable.html#Ctable-org.apache.sysds.lops.Lop:A-org.apache.sysds.lops.Ctable.OperationTypes-org.apache.sysds.common.Types.DataType-org.apache.sysds.common.Types.ValueType-boolean-boolean-org.apache.sysds.lops.LopProperties.ExecType-">Ctable</a></span>(<a href="../../../../org/apache/sysds/lops/Lop.html" title="class in org.apache.sysds.lops">Lop</a>[]&nbsp;inputLops,
       <a href="../../../../org/apache/sysds/lops/Ctable.OperationTypes.html" title="enum in org.apache.sysds.lops">Ctable.OperationTypes</a>&nbsp;op,
       <a href="../../../../org/apache/sysds/common/Types.DataType.html" title="enum in org.apache.sysds.common">Types.DataType</a>&nbsp;dt,
       <a href="../../../../org/apache/sysds/common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>&nbsp;vt,
       boolean&nbsp;ignoreZeros,
+      boolean&nbsp;outputEmptyBlocks,
       <a href="../../../../org/apache/sysds/lops/LopProperties.ExecType.html" title="enum in org.apache.sysds.lops">LopProperties.ExecType</a>&nbsp;et)</code>&nbsp;</td>
 </tr>
 <tr class="rowColor">
@@ -281,7 +282,7 @@ extends <a href="../../../../org/apache/sysds/lops/Lop.html" title="class in org
               <a href="../../../../org/apache/sysds/lops/LopProperties.ExecType.html" title="enum in org.apache.sysds.lops">LopProperties.ExecType</a>&nbsp;et)</pre>
 </li>
 </ul>
-<a name="Ctable-org.apache.sysds.lops.Lop:A-org.apache.sysds.lops.Ctable.OperationTypes-org.apache.sysds.common.Types.DataType-org.apache.sysds.common.Types.ValueType-boolean-org.apache.sysds.lops.LopProperties.ExecType-">
+<a name="Ctable-org.apache.sysds.lops.Lop:A-org.apache.sysds.lops.Ctable.OperationTypes-org.apache.sysds.common.Types.DataType-org.apache.sysds.common.Types.ValueType-boolean-boolean-org.apache.sysds.lops.LopProperties.ExecType-">
 <!--   -->
 </a>
 <ul class="blockListLast">
@@ -292,6 +293,7 @@ extends <a href="../../../../org/apache/sysds/lops/Lop.html" title="class in org
               <a href="../../../../org/apache/sysds/common/Types.DataType.html" title="enum in org.apache.sysds.common">Types.DataType</a>&nbsp;dt,
               <a href="../../../../org/apache/sysds/common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>&nbsp;vt,
               boolean&nbsp;ignoreZeros,
+              boolean&nbsp;outputEmptyBlocks,
               <a href="../../../../org/apache/sysds/lops/LopProperties.ExecType.html" title="enum in org.apache.sysds.lops">LopProperties.ExecType</a>&nbsp;et)</pre>
 </li>
 </ul>
@@ -446,6 +448,6 @@ extends <a href="../../../../org/apache/sysds/lops/Lop.html" title="class in org
 <!--   -->
 </a></div>
 <!-- ======== END OF BOTTOM NAVBAR ======= -->
-<p class="legalCopy"><small>Copyright &#169; 2020 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
+<p class="legalCopy"><small>Copyright &#169; 2021 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
 </body>
 </html>

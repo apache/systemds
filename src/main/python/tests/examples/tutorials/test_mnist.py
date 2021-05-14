@@ -24,7 +24,6 @@ import unittest
 import numpy as np
 from systemds.context import SystemDSContext
 from systemds.examples.tutorials.mnist import DataManager
-from systemds.matrix import Matrix
 from systemds.operator.algorithm import kmeans, multiLogReg, multiLogRegPredict
 from systemds.script_building import DMLScript
 
@@ -68,15 +67,15 @@ class Test_DMLScript(unittest.TestCase):
         train_count = 15000
         test_count = 5000
         # Train data
-        X = Matrix(self.sds, self.d.get_train_data().reshape(
+        X = self.sds.from_numpy( self.d.get_train_data().reshape(
             (60000, 28*28))[:train_count])
-        Y = Matrix(self.sds, self.d.get_train_labels()[:train_count])
+        Y = self.sds.from_numpy( self.d.get_train_labels()[:train_count])
         Y = Y + 1.0
 
         # Test data
-        Xt = Matrix(self.sds, self.d.get_test_data().reshape(
+        Xt = self.sds.from_numpy( self.d.get_test_data().reshape(
             (10000, 28*28))[:test_count])
-        Yt = Matrix(self.sds, self.d.get_test_labels()[:test_count])
+        Yt = self.sds.from_numpy( self.d.get_test_labels()[:test_count])
         Yt = Yt + 1.0
 
         bias = multiLogReg(X, Y)
@@ -88,10 +87,10 @@ class Test_DMLScript(unittest.TestCase):
     def test_multi_log_reg_with_read(self):
         train_count = 100
         test_count = 100
-        X = Matrix(self.sds, self.d.get_train_data().reshape(
+        X = self.sds.from_numpy( self.d.get_train_data().reshape(
             (60000, 28*28))[:train_count])
         X.write(self.base_path + "train_data").compute()
-        Y = Matrix(self.sds, self.d.get_train_labels()[:train_count]) + 1
+        Y = self.sds.from_numpy( self.d.get_train_labels()[:train_count]) + 1
         Y.write(self.base_path + "train_labels").compute()
 
         Xr = self.sds.read(self.base_path + "train_data")
@@ -99,9 +98,9 @@ class Test_DMLScript(unittest.TestCase):
 
         bias = multiLogReg(Xr, Yr, verbose=False)
         # Test data
-        Xt = Matrix(self.sds, self.d.get_test_data().reshape(
+        Xt = self.sds.from_numpy( self.d.get_test_data().reshape(
             (10000, 28*28))[:test_count])
-        Yt = Matrix(self.sds, self.d.get_test_labels()[:test_count])
+        Yt = self.sds.from_numpy( self.d.get_test_labels()[:test_count])
         Yt = Yt + 1.0
 
         [_, _, acc] = multiLogRegPredict(Xt, bias, Yt).compute(verbose=False)

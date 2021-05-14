@@ -20,14 +20,14 @@
 #-------------------------------------------------------------
 
 m_lmPredict = function(Matrix[Double] X, Matrix[Double] B, 
-  Matrix[Double] ytest = matrix(0,1,1), Integer icpt = 0, Boolean verbose = FALSE) 
+  Matrix[Double] ytest, Integer icpt = 0, Boolean verbose = FALSE) 
   return (Matrix[Double] yhat)
 {
   intercept = ifelse(icpt==0, matrix(0,1,ncol(B)), B[nrow(B),]);
   yhat = X %*% B[1:ncol(X)] + matrix(1,nrow(X),1) %*% intercept;
 
   if( verbose ) {
-    y_residual = ytest - yhat;
+    y_residual =  ytest - yhat;
     avg_res = sum(y_residual) / nrow(ytest);
     ss_res = sum(y_residual^2);
     ss_avg_res = ss_res - nrow(ytest) * avg_res^2;

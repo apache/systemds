@@ -40,6 +40,8 @@
 ######################################################################################################################
 
 source("scripts/pipelines/scripts/utils.dml") as utils;
+source("scripts/builtin/bandit.dml") as bandit;
+
 
 F = read($1, data_type="frame", format="csv", header=FALSE, 
   naStrings= ["NA", "null","  ","NaN", "nan", "", "?", "99999"]);
@@ -49,11 +51,12 @@ O = read($2, data_type="frame", format="csv", header=FALSE,
 
 metaInfo = read($3, data_type="frame", format="csv", header=FALSE);  
 input = $4
-pip = read(input+"pip.csv", data_type="frame", format="csv", header=FALSE);
-hp = read(input+"hp.csv", data_type="matrix", format="csv", header=FALSE);
+pip = read(input+"pipelines.csv", data_type="frame", format="csv", header=FALSE);
+hp = read(input+"hyperparams.csv", data_type="matrix", format="csv", header=FALSE);
 
 getSchema = metaInfo[1, 2:ncol(metaInfo)]
 getMask = as.matrix(metaInfo[2, 2:ncol(metaInfo)])
+getFdMask = as.matrix(metaInfo[3, 2:ncol(metaInfo)]) # columns of interest for FD computation
 
 # # 1. dropInvalid function will remove the values which are not the part 
 # # of the column data type  
@@ -80,32 +83,26 @@ eX = eX[, 1:ncol(eX) - 1]
 # strip the mask of class label
 getMask = getMask[, 1:ncol(getMask) - 1] # strip the mask of class label
 getSchema = getSchema[, 1:ncol(getSchema) - 1] # strip the mask of class label
-
+getFdMask = getFdMask[, 1:ncol(getFdMask) - 1] # strip the mask of class label
 
 # construct hyper-parameters
 ls = list();
 i = 1; k = 1
 
-# take the oversampling out from the test processing
-pip1 = as.frame("")
+FD = discoverFD(X=replace(target=eX, pattern=NaN, replacement=1), Mask=getFdMask, threshold=0.8)
+FD = (diag(matrix(1, rows=nrow(FD), cols=1)) ==0) * FD 
+FD = FD > 0
 # construct the parameter list for best hyper-parameters if the oversampling technique is part of 
 # pipeline then take it out because oversampling is not applied on test dataset
 # this condition is unnecessary here in this case because the input dataset is balanced and 
 # instead of diving the dataset into train/test I am doing cross validations
-while(k <= ncol(pip))
-{
-  end = as.integer(i+as.integer(as.scalar(hp[1,i])))
-  mat = hp[1, i+1:end]
-  i = end + 1
-  if(as.scalar(pip[1,k]) != "SMOTE") {
-    pip1 = cbind(pip1, pip[1,k] )
-    ls = append(ls, mat)
-  }
-  k = k + 1
-}
+
+no_of_param = as.scalar(hp[1, 1]) + 1
+hp_width= hp[1, 2:no_of_param]
+hp_matrix = matrix(hp_width, rows=ncol(pip), cols=ncol(hp_width)/ncol(pip))
 
 # # clean using best pipeline 
-[cX , cY] = executePipeline(pip1[, 2:ncol(pip1)], eX, eY, getMask, ls, 1, FALSE)
+[cX , cY] = executePipeline(pip[1], eX, eY, getMask, FD, hp_matrix, 5, FALSE)
 
 if(sum(getMask) > 0)
 {
@@ -125,12 +122,12 @@ oX = oX[, 1:ncol(oX) - 1]
 
 
 # do the k cross validations for original clean data
-accuracyMatrix = crossV(oX, oY, 3, as.matrix(0), matrix("0.000001 100", rows=1, cols=2), TRUE)
+accuracyMatrix = bandit::crossV(oX, oY, 3, as.matrix(0), matrix("0.000001 100", rows=1, cols=2), TRUE)
 accuracyMatrix = removeEmpty(target=accuracyMatrix, margin="rows")
 oAcc = mean(accuracyMatrix)
 
 # do the k cross validations for cleaned data
-accuracyMatrix = crossV(cX, cY, 3, as.matrix(0), matrix("0.000001 100", rows=1, cols=2), TRUE)
+accuracyMatrix = bandit::crossV(cX, cY, 3, as.matrix(0), matrix("0.000001 100", rows=1, cols=2), TRUE)
 accuracyMatrix = removeEmpty(target=accuracyMatrix, margin="rows")
 cAcc = mean(accuracyMatrix)
 tol = 1
@@ -139,72 +136,4 @@ results = (tol+cAcc) >=  oAcc
 print("clean accuracy "+cAcc)
 print("original accuracy "+oAcc)
 write(results, $5, format = "text")
-
-
-# ######################################################################
-# # # Function for cross validation using hold out method
-# # # Inputs: The input dataset X, Y and the value of k validation, mask of the 
-# # # dataset for OHE of categorical columns, vector of ML hyper-parameters identified 
-# # # via gridsearch and a boolean value of (un)weighted accuracy.
-# # # Output: It return a matrix having the accuracy of each fold.
-# ######################################################################
-
-crossV = function(Matrix[double] X, Matrix[double] y, Integer k, Matrix[Double] mask,
-  Matrix[Double] MLhp, Boolean isWeighted) 
-return (Matrix[Double] accuracyMatrix)
-{
-
-  accuracyMatrix = matrix(0, k, 1)
-
-  dataList = list()
-  testL = list()
-  data = order(target = cbind(y, X),  by = 1, decreasing=FALSE, index.return=FALSE)
-  classes = table(data[, 1], 1)
-  ins_per_fold = classes/k
-  start_fold = matrix(1, rows=nrow(ins_per_fold), cols=1)
-  fold_idxes = cbind(start_fold, ins_per_fold)
-
-  start_i = 0; end_i = 0; idx_fold = 1;;
-  for(i in 1:k)
-  {
-    fold_i = matrix(0, 0, ncol(data))
-    start=0; end=0; 
-    for(j in 1:nrow(classes))
-    {
-      idx = as.scalar(classes[j, 1])
-      start = end + 1;
-      end = end + idx
-      class_j =  data[start:end, ]
-
-
-      start_i = as.scalar(fold_idxes[j, 1]);
-      end_i = as.scalar(fold_idxes[j, 2])
-
-      fold_i = rbind(fold_i, class_j[start_i:end_i, ])
-    }
-
-    dataList = append(dataList, fold_i)
-    fold_idxes[, 1] = fold_idxes[, 2] + 1
-    fold_idxes[, 2] += ins_per_fold
-    while(FALSE){}
-  }
-
-  for(i in seq(1,k))
-  {
-    [trainList, hold_out] = remove(dataList, i)
-    trainset = rbind(trainList)
-    testset = as.matrix(hold_out)
-    trainX = trainset[, 2:ncol(trainset)]
-    trainy = trainset[, 1]
-    testX = testset[, 2:ncol(testset)]
-    testy = testset[, 1]
-    beta = multiLogReg(X=trainX, Y=trainy, icpt=1, reg=as.scalar(MLhp[1,1]), tol= 1e-9, 
-    maxi=as.scalar(MLhp[1,2]), maxii= 50, verbose=FALSE);
-    [prob, yhat, a] = multiLogRegPredict(testX, beta, testy, FALSE)
-    accuracy = getAccuracy(testy, yhat, isWeighted)
-    accuracyMatrix[i] = accuracy
-  }
-
-}
-
 

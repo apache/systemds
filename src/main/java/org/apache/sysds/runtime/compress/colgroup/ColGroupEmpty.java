@@ -19,25 +19,25 @@
 
 package org.apache.sysds.runtime.compress.colgroup;
 
-import org.apache.commons.lang.NotImplementedException;
-import org.apache.sysds.runtime.compress.colgroup.pre.IPreAggregate;
+import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
 
-public class ColGroupEmpty extends ColGroupValue {
+public class ColGroupEmpty extends ColGroupCompressed {
 
 	private static final long serialVersionUID = 3204391661346504L;
 
 	/**
 	 * Constructor for serialization
+	 * 
+	 * @param numRows Number of rows contained
 	 */
-	protected ColGroupEmpty() {
-		super();
+	protected ColGroupEmpty(int numRows) {
+		super(numRows);
 	}
-
 
 	/**
 	 * Constructs an Constant Colum Group, that contains only one tuple, with the given value.
@@ -46,28 +46,15 @@ public class ColGroupEmpty extends ColGroupValue {
 	 * @param numRows    The number of rows contained in the group.
 	 */
 	public ColGroupEmpty(int[] colIndices, int numRows) {
-		super(colIndices, numRows, (ADictionary) null, null);
-		_zeros = true;
+		super(colIndices, numRows);
 	}
 
-	public static ColGroupEmpty generate(int nCol, int nRow){
+	public static ColGroupEmpty generate(int nCol, int nRow) {
 		int[] cols = new int[nCol];
-		for(int i =0; i < nCol; i++){
-			cols[i] =i;
+		for(int i = 0; i < nCol; i++) {
+			cols[i] = i;
 		}
-		return new ColGroupEmpty(cols,nRow);
-	}
-
-	@Override
-	public int[] getCounts(int[] out) {
-		// nothing
-		return out;
-	}
-
-	@Override
-	public int[] getCounts(int rl, int ru, int[] out) {
-		// nothing
-		return out;
+		return new ColGroupEmpty(cols, nRow);
 	}
 
 	@Override
@@ -84,7 +71,7 @@ public class ColGroupEmpty extends ColGroupValue {
 	protected void computeRowMxx(double[] c, Builtin builtin, int rl, int ru) {
 		for(int i = rl; i < ru; i++)
 			c[i] = builtin.execute(c[i], 0);
-		
+
 	}
 
 	@Override
@@ -99,7 +86,7 @@ public class ColGroupEmpty extends ColGroupValue {
 
 	@Override
 	public long estimateInMemorySize() {
-		return ColGroupSizes.estimateInMemorySizeCONST(getNumCols(), 0, isLossy());
+		return ColGroupSizes.estimateInMemorySizeEMPTY(getNumCols());
 	}
 
 	@Override
@@ -138,35 +125,12 @@ public class ColGroupEmpty extends ColGroupValue {
 	}
 
 	@Override
-	public void rightMultByVector(double[] b, double[] c, int rl, int ru, double[] dictVals) {
+	public void leftMultByMatrix(double[] a, double[] c, int numRows, int numCols, int rl, int ru) {
 		// do nothing.
 	}
 
 	@Override
-	public void rightMultByMatrix(int[] outputColumns, double[] preAggregatedB, double[] c, int thatNrColumns, int rl,
-		int ru) {
-		// do nothing.
-	}
-
-	@Override
-	public void leftMultByRowVector(double[] a, double[] c) {
-		// do nothing.
-	}
-
-	@Override
-	public void leftMultByRowVector(double[] a, double[] c, int numVals, double[] values, int offT) {
-		// do nothing.
-	}
-
-	@Override
-	public void leftMultByMatrix(double[] a, double[] c, double[] values, int numRows, int numCols, int rl, int ru,
-		int vOff) {
-		// do nothing.
-	}
-
-	@Override
-	public void leftMultBySparseMatrix(SparseBlock sb, double[] c, double[] values, int numRows, int numCols, int row,
-		double[] MaterializedRow) {
+	public void leftMultBySparseMatrix(SparseBlock sb, double[] c, int numRows, int numCols, int rl, int ru) {
 		// do nothing.
 	}
 
@@ -198,57 +162,94 @@ public class ColGroupEmpty extends ColGroupValue {
 	}
 
 	@Override
-	public double[] preAggregate(double[] a, int row) {
+	public double[] getValues() {
 		return null;
 	}
 
 	@Override
-	public double[] preAggregateSparse(SparseBlock sb, int row) {
-		return null;
+	public void addMinMax(double[] ret) {
+		// do nothing
 	}
 
 	@Override
-	public boolean sameIndexStructure(ColGroupValue that) {
+	public boolean isLossy() {
 		return false;
 	}
 
 	@Override
-	public int getIndexStructureHash() {
-		throw new NotImplementedException("This function should not be called");
+	protected int containsAllZeroTuple() {
+		return 0;
 	}
 
 	@Override
-	public IPreAggregate preAggregateDDC(ColGroupDDC lhs) {
-		return null;
+	protected double computeMxx(double c, Builtin builtin) {
+		return 0;
 	}
 
 	@Override
-	public IPreAggregate preAggregateSDC(ColGroupSDC lhs) {
-		return null;
+	protected void computeColMxx(double[] c, Builtin builtin) {
+		for(int col : _colIndexes)
+			c[col] = builtin.execute(c[col], 0);
 	}
 
 	@Override
-	public IPreAggregate preAggregateSDCSingle(ColGroupSDCSingle lhs) {
-		return null;
+	protected void computeSum(double[] c, boolean square) {
+		// do nothing
 	}
 
 	@Override
-	public IPreAggregate preAggregateSDCZeros(ColGroupSDCZeros lhs) {
-		return null;
+	protected boolean sameIndexStructure(ColGroupCompressed that) {
+		return that instanceof ColGroupEmpty || that instanceof ColGroupConst;
 	}
 
 	@Override
-	public IPreAggregate preAggregateSDCSingleZeros(ColGroupSDCSingleZeros lhs) {
-		return null;
+	public MatrixBlock getValuesAsBlock() {
+		return new MatrixBlock(0, 0, false);
 	}
 
 	@Override
-	public IPreAggregate preAggregateOLE(ColGroupOLE lhs) {
-		return null;
+	public void tsmm(double[] result, int numColumns) {
+		// do nothing
+
 	}
 
 	@Override
-	public IPreAggregate preAggregateRLE(ColGroupRLE lhs) {
+	public void leftMultByAColGroup(AColGroup lhs, double[] result, int numRows, int numCols) {
+		// do nothing
+	}
+
+	@Override
+	public boolean isDense() {
+		return false;
+	}
+
+	@Override
+	public AColGroup copy() {
+		return new ColGroupEmpty(_colIndexes, _numRows);
+	}
+
+	@Override
+	public boolean containsValue(double pattern) {
+		return pattern == 0;
+	}
+
+	@Override
+	public long getNumberNonZeros() {
+		return 0;
+	}
+
+	@Override
+	protected AColGroup sliceSingleColumn(int idx) {
+		return new ColGroupEmpty(new int[] {0}, _numRows);
+	}
+
+	@Override
+	protected AColGroup sliceMultiColumns(int idStart, int idEnd, int[] outputCols) {
+		return new ColGroupEmpty(outputCols, _numRows);
+	}
+
+	@Override
+	public AColGroup rightMultByMatrix(MatrixBlock right) {
 		return null;
 	}
 }

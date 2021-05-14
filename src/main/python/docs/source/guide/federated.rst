@@ -99,7 +99,6 @@ Once all three workers are up and running we can leverage all three in the follo
 
   # Import numpy and SystemDS federated
   import numpy as np
-  from systemds.matrix import Federated
   from systemds.context import SystemDSContext
 
   addr1 = "localhost:8001/temp/test.csv"
@@ -110,11 +109,11 @@ Once all three workers are up and running we can leverage all three in the follo
   # Note that the two federated matrices are stacked on top of each other
 
   with SystemDSContext() as sds:
-    fed_a = Federated(sds,
+    fed_a = sds.federated(
       [addr1, addr2],
       [([0,0], [3,3]), ([0,3], [3,6])])
     
-    fed_b = Federated(sds,
+    fed_b = sds.federated(
       [addr1, addr3],
       [([0,0], [3,3]), ([0,3], [3,6])])
     

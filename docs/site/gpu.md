@@ -24,6 +24,7 @@ limitations under the License.
 This guide covers the GPU hardware and software setup for using SystemDS `gpu` mode.
 
 - [Requirements](#requirements)
+- [Linux](#linux)
 - [Windows](#windows)
 - [Command-line users](#command-line-users)
 - [Scala Users](#scala-users)
@@ -54,6 +55,20 @@ architecture specific PTX is not available enable JIT PTX with instructions comp
   > nvcc SystemDS.cu --gpu-architecture=compute_50 --gpu-code=sm_50,sm_52
   > ```
 
+Note: A disk of minimum size 30 GB is recommended.
+
+
+A minimum version of 10.2 CUDA toolkit version is recommended, for the following GPUs.
+
+| GPU type | Status | 
+| --- | --- |
+| NVIDIA T4 | Experimental |
+| NVIDIA V100 | Experimental |
+| NVIDIA P100 | Experimental |
+| NVIDIA P4 | Experimental |
+| NVIDIA K80 | Tested |
+| NVIDIA A100 | Not supported |
+
 ### Software
 
 The following NVIDIA software is required to be installed in your system:
@@ -64,6 +79,121 @@ CUDA toolkit
      [CUDA compatibility](https://docs.nvidia.com/deploy/cuda-compatibility/index.html).
   3. [CUDA 10.2](https://developer.nvidia.com/cuda-10.2-download-archive)
   4. [CUDNN 7.x](https://developer.nvidia.com/cudnn)
+
+## Linux
+
+One easiest way to install the NVIDIA software is with `apt` on Ubuntu. For other distributions
+refer to the [CUDA install Linux](https://docs.nvidia.com/cuda/cuda-installation-guide-linux/index.html).
+
+Note: All linux distributions may not support this. you might encounter some problems with driver
+installations.
+
+To check the CUDA compatible driver version:
+
+Install [CUPTI](http://docs.nvidia.com/cuda/cupti/) which ships with CUDA toolkit for profiling.
+
+```sh
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/cuda/extras/CUPTI/lib64
+```
+
+### Install CUDA with apt
+
+The following instructions are for installing CUDA 10.2 on Ubuntu 18.04. These instructions
+might work for other Debian-based distros.
+
+Note: [Secure Boot](https://wiki.ubuntu.com/UEFI/SecureBoot) tends to complication installation.
+These instructions may not address this.
+
+#### Ubuntu 18.04 (CUDA 10.2)
+
+```sh
+
+# Add NVIDIA package repositories
+# 1. Download the Ubuntu 18.04 driver repository
+wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/cuda-ubuntu1804.pin
+# 2. Move the repository to preferences
+sudo mv cuda-ubuntu1804.pin /etc/apt/preferences.d/cuda-repository-pin-600
+# 3. Fetch keys
+sudo apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/7fa2af80.pub
+# 4. add repository
+sudo add-apt-repository "deb https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/ /"
+# 5. Update package lists
+sudo apt-get update
+
+# ---
+# 6. get the machine-learning repo
+# this downloads the repository package but not the actual installation package
+wget http://developer.download.nvidia.com/compute/machine-learning/repos/ubuntu1804/x86_64/nvidia-machine-learning-repo-ubuntu1804_1.0.0-1_amd64.deb
+
+sudo apt install ./nvidia-machine-learning-repo-ubuntu1804_1.0.0-1_amd64.deb
+sudo apt-get update
+
+wget http://developer.download.nvidia.com/compute/machine-learning/repos/ubuntu1804/x86_64/libcudnn7_7.6.5.32-1+cuda10.2_amd64.deb
+sudo apt install ./libcudnn7_7.6.5.32-1+cuda10.2_amd64.deb
+sudo apt-get update
+
+wget http://developer.download.nvidia.com/compute/machine-learning/repos/ubuntu1804/x86_64/libcudnn7-dev_7.6.5.32-1+cuda10.2_amd64.deb
+sudo apt install ./libcudnn7-dev_7.6.5.32-1+cuda10.2_amd64.deb
+sudo apt-get update
+
+# ---
+
+# 7. Install development and runtime libraries (~4GB)
+sudo apt-get install --no-install-recommends \
+    cuda-10-2 \
+    libcudnn7=7.6.5.32-1+cuda10.2 \
+    libcudnn7-dev=7.6.5.32-1+cuda10.2
+    
+# Reboot the system. And run `nvidia-smi` for GPU check.
+```
+
+#### Installation check
+
+```sh
+$ nvidia-smi
+Thu May 13 04:19:11 2021
++-----------------------------------------------------------------------------+
+| NVIDIA-SMI 465.19.01    Driver Version: 465.19.01    CUDA Version: 11.3     |
+|-------------------------------+----------------------+----------------------+
+| GPU  Name        Persistence-M| Bus-Id        Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp  Perf  Pwr:Usage/Cap|         Memory-Usage | GPU-Util  Compute M. |
+|                               |                      |               MIG M. |
+|===============================+======================+======================|
+|   0  NVIDIA Tesla K80    Off  | 00000000:00:1E.0 Off |                    0 |
+| N/A   38C    P0    58W / 149W |      0MiB / 11441MiB |     98%      Default |
+|                               |                      |                  N/A |
++-------------------------------+----------------------+----------------------+
+
++-----------------------------------------------------------------------------+
+| Processes:                                                                  |
+|  GPU   GI   CI        PID   Type   Process name                  GPU Memory |
+|        ID   ID                                                   Usage      |
+|=============================================================================|
+|  No running processes found                                                 |
++-----------------------------------------------------------------------------+
+```
+
+#### To run SystemDS with CUDA
+
+Pass `.dml` file with `-f` flag
+
+```sh
+java -Xmx4g -Xms4g -Xmn400m -cp target/SystemDS.jar:target/lib/*:target/SystemDS-*.jar org.apache.sysds.api.DMLScript -f ../main.dml -exec singlenode -gpu
+```
+
+```output
+[ INFO] BEGIN DML run 05/14/2021 02:37:26
+[ INFO] Initializing CUDA
+[ INFO] GPU memory - Total: 11996.954624 MB, Available: 11750.539264 MB on GPUContext{deviceNum=0}
+[ INFO] Total number of GPUs on the machine: 1
+[ INFO] GPUs being used: -1
+[ INFO] Initial GPU memory: 10575485337
+
+This is SystemDS!
+
+SystemDS Statistics:
+Total execution time:           0.020 sec.
+```
 
 ## Windows
 

@@ -1,0 +1,57 @@
+source("nn/layers/sigmoid.dml") as sigmoid
+source("nn/layers/leaky_relu.dml") as lrelu
+source("nn/layers/relu.dml") as relu
+source("nn/layers/tanh.dml") as tanh
+source("nn/layers/softmax.dml") as softmax
+
+m_affineForwardPass = function(Matrix[double] X, List[Unknown] layers) 
+return(Matrix[double] out) {
+    layers_num = length(layers) / 3
+    
+    input = X
+
+    for(i in 1:layers_num) {
+        W = as.matrix(layers[i * 3 - 2])
+        b = as.matrix(layers[i * 3 - 1])
+        activation = toString(layers[i * 3])
+ 
+        input = forward(input, W, b)
+        input = apply_activation(input, activation)
+    }
+
+    out = input
+}
+
+forward = function(Matrix[double] X, Matrix[double] W, Matrix[double] b)
+    return (Matrix[double] out) {
+  /*
+   * Computes the forward pass for an affine (fully-connected) layer
+   * with M neurons.  The input data has N examples, each with D
+   * features.
+   *
+   * Inputs:
+   *  - X: Inputs, of shape (N, D).
+   *  - W: Weights, of shape (D, M).
+   *  - b: Biases, of shape (1, M).
+   *
+   * Outputs:
+   *  - out: Outputs, of shape (N, M).
+   */
+  out = X %*% W + b
+}
+
+apply_activation = function(Matrix[double] input, String activation) 
+return (Matrix[double] out) {
+    
+    if(activation == "sigmoid") {
+        out = sigmoid::forward(input)
+    } else if (activation == "relu") {
+        out = relu::forward(input)
+    } else if (activation == "lrelu") {
+        out = lrelu::forward(input)
+    } else if (activation == "tanh") {
+        out = tanh::forward(input)
+    } else {
+        out = softmax::forward(input)
+    }
+}

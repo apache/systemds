@@ -1,0 +1,8 @@
+train = function(Matrix[double] X, Matrix[double] Y, List[Unknown] layers) {
+    
+    if(length(layers) %%  3 != 0) {
+        stop("Layers list should be multiple of 3: [W, b, activation function]+")
+    }
+    
+    out = affineForwardPass(X, layers)
+} 

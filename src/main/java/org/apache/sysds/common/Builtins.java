@@ -38,6 +38,9 @@ import org.apache.sysds.common.Types.ReturnType;
  */
 public enum Builtins {
 	//builtin functions
+	AFFINE("affine", true),
+	AFFINE_FORWARD_PASS("affineForwardPass", true),
+	TRAIN("train", true),
 	ARIMA("arima", true),
 	ABS("abs", false),
 	GET_ACCURACY("getAccuracy", true),

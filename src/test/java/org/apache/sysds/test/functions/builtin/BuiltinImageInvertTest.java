@@ -43,21 +43,21 @@ public class BuiltinImageInvertTest extends AutomatedTestBase {
 		addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[] {"B"}));
 	}
 
-	@Test public void testImageTranslateMatrixDenseCP() { runImageCutoutTest(false, ExecType.CP); }
+	@Test public void testImageInvertMatrixDenseCP() { runImageInvertTest(false, ExecType.CP); }
 
-	@Test public void testImageTranslateMatrixSparseCP() {
-		runImageCutoutTest(true, ExecType.CP);
+	@Test public void testImageInvertMatrixSparseCP() {
+		runImageInvertTest(true, ExecType.CP);
 	}
 
-	@Test public void testImageTranslateMatrixDenseSP() {
-		runImageCutoutTest(false, ExecType.SPARK);
+	@Test public void testImageInvertMatrixDenseSP() {
+		runImageInvertTest(false, ExecType.SPARK);
 	}
 
-	@Test public void testImageTranslateMatrixSparseSP() {
-		runImageCutoutTest(false, ExecType.SPARK);
+	@Test public void testImageInvertMatrixSparseSP() {
+		runImageInvertTest(false, ExecType.SPARK);
 	}
 
-	private void runImageCutoutTest(boolean sparse, ExecType instType) {
+	private void runImageInvertTest(boolean sparse, ExecType instType) {
 		ExecMode platformOld = setExecMode(instType);
 		disableOutAndExpectedDeletion();
 

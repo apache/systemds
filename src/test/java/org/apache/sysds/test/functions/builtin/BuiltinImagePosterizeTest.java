@@ -29,10 +29,10 @@ import org.junit.Test;
 import java.util.HashMap;
 import java.util.Random;
 
-public class BuiltinImageSamplePairingTest extends AutomatedTestBase {
-	private final static String TEST_NAME = "image_sample_pairing";
+public class BuiltinImagePosterizeTest extends AutomatedTestBase {
+	private final static String TEST_NAME = "image_posterize";
 	private final static String TEST_DIR = "functions/builtin/";
-	private final static String TEST_CLASS_DIR = TEST_DIR + BuiltinImageSamplePairingTest.class.getSimpleName() + "/";
+	private final static String TEST_CLASS_DIR = TEST_DIR + BuiltinImagePosterizeTest.class.getSimpleName() + "/";
 
 	private final static double eps = 1e-10;
 	private final static double spSparse = 0.1;
@@ -43,27 +43,44 @@ public class BuiltinImageSamplePairingTest extends AutomatedTestBase {
 		addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[] {"B"}));
 	}
 
-	@Test public void testImageSamplePairingMatrixDenseCP() { runImageSamplePairingTest(false, ExecType.CP); }
+	@Test public void testImagePosterizeMatrixDenseCP() { runImagePosterizeTest(false, ExecType.CP); }
 
-	@Test public void testImageSamplePairingMatrixSparseCP() {
-		runImageSamplePairingTest(true, ExecType.CP);
+	@Test public void testImagePosterizeMatrixSparseCP() {
+		runImagePosterizeTest(true, ExecType.CP);
 	}
 
-	@Test public void testImageSamplePairingMatrixDenseSP() {
-		runImageSamplePairingTest(false, ExecType.SPARK);
+	@Test public void testImagePosterizeMatrixDenseSP() {
+		runImagePosterizeTest(false, ExecType.SPARK);
 	}
 
-	@Test public void testImageSamplePairingMatrixSparseSP() {
-		runImageSamplePairingTest(false, ExecType.SPARK);
+	@Test public void testImagePosterizeMatrixSparseSP() {
+		runImagePosterizeTest(false, ExecType.SPARK);
 	}
 
-	private void runImageSamplePairingTest(boolean sparse, ExecType instType) {
+	@Test public void testImagePosterizePillow() throws Exception {
+		loadTestConfiguration(getTestConfiguration(TEST_NAME));
+		final int w = 500, h = 135;
+		double[][] input = TestUtils.readMatrixFromFile(this.getClass().getResource("ImageTransformInput"), h, w);
+		double[][] reference = TestUtils.readMatrixFromFile(this.getClass().getResource("ImageTransformPosterized"), h, w);
+		String HOME = SCRIPT_DIR + TEST_DIR;
+		fullDMLScriptName = HOME + TEST_NAME + ".dml";
+		programArgs = new String[] {"-nvargs", "in_file=" + input("A"), "out_file=" + output("B"), "width=" + w,
+				"height=" + h, "bits=" + 3};
+		writeInputMatrixWithMTD("A", input, true);
+		runTest(true, false, null, -1);
+
+		HashMap<MatrixValue.CellIndex, Double> dmlfile = readDMLMatrixFromOutputDir("B");
+		double[][] dml_res = TestUtils.convertMatrix(dmlfile, h, w);
+		TestUtils.compareMatrices(reference, dml_res, eps, "Pillow vs. DML");
+	}
+
+	private void runImagePosterizeTest(boolean sparse, ExecType instType) {
 		ExecMode platformOld = setExecMode(instType);
 		disableOutAndExpectedDeletion();
 
 		int rows = random.nextInt(1000) + 1;
 		int cols = random.nextInt(1000) + 1;
-		double weight = random.nextDouble();
+		int bits = random.nextInt(7) + 1;
 
 		try {
 			loadTestConfiguration(getTestConfiguration(TEST_NAME));
@@ -71,26 +88,24 @@ public class BuiltinImageSamplePairingTest extends AutomatedTestBase {
 
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[] {"-nvargs", "in_file1=" + input("A"), "in_file2=" + input("B"), "out_file=" + output("C"), "width=" + cols,
-				"height=" + rows, "weight=" + weight};
+			programArgs = new String[] {"-nvargs", "in_file=" + input("A"), "out_file=" + output("B"), "width=" + cols,
+				"height=" + rows, "bits=" + bits};
 
 			//generate actual dataset
 			double[][] A = getRandomMatrix(rows, cols, 0, 255, sparsity, 7);
 			writeInputMatrixWithMTD("A", A, true);
-			double[][] B = getRandomMatrix(rows, cols, 0, 255, sparsity, 7);
-			writeInputMatrixWithMTD("B", B, true);
 
 			double[][] ref = new double[rows][cols];
 			for (int i = 0; i < rows; i++) {
 				for (int j = 0; j < cols; j++) {
-					ref[i][j] = (1 - weight) * A[i][j] + weight * B[i][j];
+					ref[i][j] = (int)(A[i][j] / (1 << (8 - bits))) * (1 << (8 - bits));
 				}
 			}
 
 			runTest(true, false, null, -1);
 
 			//compare matrices
-			HashMap<MatrixValue.CellIndex, Double> dmlfile = readDMLMatrixFromOutputDir("C");
+			HashMap<MatrixValue.CellIndex, Double> dmlfile = readDMLMatrixFromOutputDir("B");
 			double[][] dml_res = TestUtils.convertMatrix(dmlfile, rows, cols);
 			TestUtils.compareMatrices(ref, dml_res, eps, "Java vs. DML");
 		}

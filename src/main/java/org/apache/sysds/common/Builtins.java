@@ -141,6 +141,7 @@ public enum Builtins {
 	IMG_SHEAR("img_shear", true),
 	IMG_CUTOUT("img_cutout", true),
 	IMG_SAMPLE_PAIRING("img_sample_pairing", true),
+	IMG_INVERT("img_invert", true),
 	IMPUTE_FD("imputeByFD", true),
 	INTERQUANTILE("interQuantile", false),
 	INTERSECT("intersect", true),

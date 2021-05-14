@@ -38,6 +38,7 @@ public class TestConstants {
 		RAND_ROUND, // Values rounded to nearest whole numbers.
 		OLE_COMPRESSIBLE, // Ideal inputs for OLE Compression.
 		RLE_COMPRESSIBLE, // Ideal inputs for RLE Compression.
+		ONE_HOT_ENCODED,
 	}
 
 	public enum MatrixTypology {

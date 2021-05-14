@@ -30,6 +30,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Queue;
 
+import org.apache.commons.lang.NotImplementedException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
@@ -68,20 +69,21 @@ public class BitmapLossyEncoder {
 	 * @param numRows The number of rows contained in the ubm.
 	 * @return A bitmap.
 	 */
-	public static ABitmap makeBitmapLossy(Bitmap ubm, int numRows) {
-		final double[] fp = ubm.getValues();
-		if(fp.length == 0) {
-			return ubm;
-		}
-		Stats stats = new Stats(fp);
-		// TODO make better decisions than just a 8 Bit encoding.
-		if(Double.isInfinite(stats.max) || Double.isInfinite(stats.min)) {
-			LOG.warn("Defaulting to incompressable colGroup");
-			return ubm;
-		}
-		else {
-			return make8BitLossy(ubm, stats, numRows);
-		}
+	public static ABitmap makeBitmapLossy(ABitmap ubm, int numRows) {
+		throw new NotImplementedException();
+		// final double[] fp = ubm.getValues();
+		// if(fp.length == 0) {
+		// 	return ubm;
+		// }
+		// Stats stats = new Stats(fp);
+		// // TODO make better decisions than just a 8 Bit encoding.
+		// if(Double.isInfinite(stats.max) || Double.isInfinite(stats.min)) {
+		// 	LOG.warn("Defaulting to incompressable colGroup");
+		// 	return ubm;
+		// }
+		// else {
+		// 	return make8BitLossy(ubm, stats, numRows);
+		// }
 	}
 
 	/**

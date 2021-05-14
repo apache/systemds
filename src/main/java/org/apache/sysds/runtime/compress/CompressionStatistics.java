@@ -31,10 +31,16 @@ import org.apache.sysds.runtime.compress.colgroup.AColGroup;
  */
 public class CompressionStatistics {
 
+	// sizes while compressing
+	public long estimatedSizeCoCoded;
+	public long estimatedSizeCols;
+	public long compressedInitialSize;
+
+	// sizes before compression
 	public long originalSize;
 	public long denseSize;
-	public long estimatedSizeColGroups;
-	public long estimatedSizeCols;
+
+	// compressed size
 	public long size;
 
 	private Map<String, int[]> colGroupCounts;
@@ -74,20 +80,20 @@ public class CompressionStatistics {
 
 		for(String ctKey : colGroupCounts.keySet())
 			sb.append(ctKey + ":" + colGroupCounts.get(ctKey)[0] + " ");
-		
+
 		return sb.toString();
 	}
 
 	public String getGroupsSizesString() {
 		StringBuilder sb = new StringBuilder();
 
-		for(String ctKey : colGroupCounts.keySet()) 
+		for(String ctKey : colGroupCounts.keySet())
 			sb.append(ctKey + ":" + colGroupCounts.get(ctKey)[1] + " ");
-		
+
 		return sb.toString();
 	}
 
-	public double getRatio(){
+	public double getRatio() {
 		return (double) originalSize / size;
 	}
 

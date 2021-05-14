@@ -97,10 +97,15 @@ public class CompressionSettings {
 	 */
 	public final EnumSet<CompressionType> validCompressions;
 
+	/**
+	 * The minimum size of the sample extracted.
+	 */
+	public final int minimumSampleSize;
+
 	protected CompressionSettings(double samplingRatio, boolean allowSharedDictionary, String transposeInput,
 		boolean skipList, int seed, boolean investigateEstimate, boolean lossy,
 		EnumSet<CompressionType> validCompressions, boolean sortValuesByLength, PartitionerType columnPartitioner,
-		int maxColGroupCoCode, double coCodePercentage) {
+		int maxColGroupCoCode, double coCodePercentage, int minimumSampleSize) {
 		this.samplingRatio = samplingRatio;
 		this.allowSharedDictionary = allowSharedDictionary;
 		this.transposeInput = transposeInput;
@@ -113,6 +118,7 @@ public class CompressionSettings {
 		this.columnPartitioner = columnPartitioner;
 		this.maxColGroupCoCode = maxColGroupCoCode;
 		this.coCodePercentage = coCodePercentage;
+		this.minimumSampleSize = minimumSampleSize;
 		LOG.debug(this);
 	}
 

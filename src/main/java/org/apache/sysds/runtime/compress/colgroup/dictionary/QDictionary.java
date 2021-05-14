@@ -499,4 +499,14 @@ public class QDictionary extends ADictionary {
 	public ADictionary subtractTuple(double[] tuple) {
 		throw new NotImplementedException();
 	}
+
+	@Override
+	public MatrixBlockDictionary getAsMatrixBlockDictionary(int nCol) {
+		throw new NotImplementedException();
+	}
+
+	@Override
+	public void aggregateCols(double[] c, Builtin fn, int[] colIndexes) {
+		throw new NotImplementedException();	
+	}
 }

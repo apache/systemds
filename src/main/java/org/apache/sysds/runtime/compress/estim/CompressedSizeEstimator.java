@@ -21,6 +21,7 @@ package org.apache.sysds.runtime.compress.estim;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
@@ -91,6 +92,52 @@ public abstract class CompressedSizeEstimator {
 		return new CompressedSizeInfo(sizeInfos);
 	}
 
+	/**
+	 * Multi threaded version of extracting Compression Size info from list of specified columns
+	 * 
+	 * @return
+	 */
+
+	/**
+	 * Multi threaded version of extracting Compression Size info from list of specified columns
+	 * 
+	 * @param columnLists The specified columns to extract.
+	 * @param k           The parallelization degree
+	 * @return The Compression information from the specified column groups.
+	 */
+	public List<CompressedSizeInfoColGroup> computeCompressedSizeInfos(Collection<int[]> columnLists, int k) {
+		if(k == 1)
+			return computeCompressedSizeInfos(columnLists);
+		try {
+			ExecutorService pool = CommonThreadPool.get(k);
+			ArrayList<SizeEstimationTask> tasks = new ArrayList<>();
+			for(int[] g : columnLists)
+				tasks.add(new SizeEstimationTask(this, g));
+			List<Future<CompressedSizeInfoColGroup>> rtask = pool.invokeAll(tasks);
+			ArrayList<CompressedSizeInfoColGroup> ret = new ArrayList<>();
+			for(Future<CompressedSizeInfoColGroup> lrtask : rtask)
+				ret.add(lrtask.get());
+			pool.shutdown();
+			return ret;
+		}
+		catch(InterruptedException | ExecutionException e) {
+			return computeCompressedSizeInfos(columnLists);
+		}
+	}
+
+	/**
+	 * Compression Size info from list of specified columns
+	 * 
+	 * @param columnLists The specified columns to extract.
+	 * @return The Compression information from the specified column groups.
+	 */
+	public List<CompressedSizeInfoColGroup> computeCompressedSizeInfos(Collection<int[]> columnLists) {
+		ArrayList<CompressedSizeInfoColGroup> ret = new ArrayList<>();
+		for(int[] g : columnLists)
+			ret.add(estimateCompressedColGroupSize(g));
+		return ret;
+	}
+
 	private CompressedSizeInfoColGroup[] estimateIndividualColumnGroupSizes(int k) {
 		return (k > 1) ? CompressedSizeInfoColGroup(_numCols, k) : CompressedSizeInfoColGroup(_numCols);
 	}
@@ -106,19 +153,36 @@ public abstract class CompressedSizeEstimator {
 	}
 
 	/**
-	 * Abstract method for extracting Compressed Size Info of specified columns, together in a single ColGroup
+	 * Method for extracting Compressed Size Info of specified columns, together in a single ColGroup
 	 * 
-	 * @param colIndexes The Colums to group together inside a ColGroup
+	 * @param colIndexes The columns to group together inside a ColGroup
 	 * @return The CompressedSizeInformation associated with the selected ColGroups.
 	 */
-	public abstract CompressedSizeInfoColGroup estimateCompressedColGroupSize(int[] colIndexes);
+	public CompressedSizeInfoColGroup estimateCompressedColGroupSize(int[] colIndexes) {
+		return estimateCompressedColGroupSize(colIndexes, Integer.MAX_VALUE);
+	}
+
+	/**
+	 * A method to extract the Compressed Size Info for a given list of columns, This method further limits the
+	 * estimated number of unique values, since in some cases the estimated number of uniques is estimated higher than
+	 * the number estimated in sub groups of the given colIndexes.
+	 * 
+	 * @param colIndexes         The columns to extract compression information from
+	 * @param nrUniqueUpperBound The upper bound of unique elements allowed in the estimate, can be calculated from the
+	 *                           number of unique elements estimated in sub columns multiplied together. This is
+	 *                           flexible in the sense that if the sample is small then this unique can be manually
+	 *                           edited like in CoCodeCostMatrixMult.
+	 * 
+	 * @return The CompressedSizeInfoColGroup fro the given column indexes.
+	 */
+	public abstract CompressedSizeInfoColGroup estimateCompressedColGroupSize(int[] colIndexes, int nrUniqueUpperBound);
 
 	/**
 	 * Method used to extract the CompressedSizeEstimationFactors from an constructed UncompressedBitmap. Note this
 	 * method works both for the sample based estimator and the exact estimator, since the bitmap, can be extracted from
 	 * a sample or from the entire dataset.
 	 * 
-	 * @param ubm        The UncompressedBitmap, either extracted from a sample or from the entier dataset
+	 * @param ubm        The UncompressedBitmap, either extracted from a sample or from the entire dataset
 	 * @param colIndexes The columns that is compressed together.
 	 * @return The size factors estimated from the Bit Map.
 	 */
@@ -154,16 +218,21 @@ public abstract class CompressedSizeEstimator {
 
 	private static class SizeEstimationTask implements Callable<CompressedSizeInfoColGroup> {
 		private final CompressedSizeEstimator _estimator;
-		private final int _col;
+		private final int[] _cols;
 
 		protected SizeEstimationTask(CompressedSizeEstimator estimator, int col) {
 			_estimator = estimator;
-			_col = col;
+			_cols = new int[] {col};
+		}
+
+		protected SizeEstimationTask(CompressedSizeEstimator estimator, int[] cols) {
+			_estimator = estimator;
+			_cols = cols;
 		}
 
 		@Override
 		public CompressedSizeInfoColGroup call() {
-			return _estimator.estimateCompressedColGroupSize(new int[] {_col});
+			return _estimator.estimateCompressedColGroupSize(_cols);
 		}
 	}
 
@@ -173,9 +242,5 @@ public abstract class CompressedSizeEstimator {
 			colIndexes[i] = i;
 		}
 		return colIndexes;
-	}
-
-	public MatrixBlock getSample() {
-		return _data;
 	}
 }

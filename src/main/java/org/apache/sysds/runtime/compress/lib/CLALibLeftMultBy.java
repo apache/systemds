@@ -255,7 +255,7 @@ public class CLALibLeftMultBy {
 				ExecutorService pool = CommonThreadPool.get(k);
 				// compute remaining compressed column groups in parallel
 				ArrayList<Callable<Object>> tasks = new ArrayList<>();
-				int rowBlockSize = 8;
+				int rowBlockSize = 1;
 				if(overlapping) {
 					for(int blo = 0; blo < that.getNumRows(); blo += rowBlockSize) {
 						tasks.add(new LeftMatrixMatrixMultTask(colGroups, that, ret, blo,

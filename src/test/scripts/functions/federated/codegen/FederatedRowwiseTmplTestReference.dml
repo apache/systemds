@@ -1,0 +1,123 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+test_num = $in_test_num;
+row_part = $in_rp;
+
+if(row_part) {
+  X = rbind(read($in_X1), read($in_X2));
+}
+else {
+  X = cbind(read($in_X1), read($in_X2));
+}
+
+if(test_num == 1) {
+  # X ... 6x4 matrix
+  Y = matrix(1, rows=4, cols=1);
+  lamda = sum(X);
+
+  Z = t(X) %*% (X %*% (lamda * Y));
+}
+else if(test_num == 2) {
+  # X ... 6x2 matrix
+  U = matrix(1, rows=2, cols=1);
+  Y = matrix( "1 1 1 4 5 6 7 8 9 10 11 12", rows=6, cols=2);
+  lambda = sum(Y);
+
+  Z = t(X) %*% (lambda * (X %*% U));
+}
+else if(test_num == 3) {
+  # X ... 6x4 matrix
+  U = matrix(1,rows=4,cols=1);
+  V = matrix( "1 2 3 4 5 6", rows=6, cols=1);
+  W = matrix( "3 3 3 3 3 3", rows=6, cols=1);
+
+  Z = t(X) %*% (W + (2 - (V * (X %*% U))));
+}
+else if(test_num == 4) {
+  # X ... 6x4 matrix
+  Z = colSums(X/rowSums(X));
+}
+else if(test_num == 10) {
+  # X ... 150x10 matrix
+
+  Y = (X <= rowMins(X));
+  U = (Y / rowSums(Y));
+  Z = colSums(U);
+}
+else if(test_num == 15) {
+  # X ... 150x10 matrix
+
+  Y1 = X - rowMaxs(X) 
+  Y2 = exp(Y1)
+  Y3 = Y2 / rowSums(Y2)
+  Y4 = Y3 * rowSums(Y3)
+  Z = Y4 - Y3 * rowSums(Y4)
+}
+else if(test_num == 20) {
+  # X ... 1500x8 matrix
+
+  Z = X / rowSums(X);
+  Z = 1 / (1 - Z);
+}
+else if(test_num == 21) {
+  # X ... 1500x8 matrix
+
+  Z = as.matrix(sum(X / rowSums(X)));
+}
+else if(test_num == 25) {
+  # X ... 600x10 matrix
+  C = matrix(seq(1,40), 4, 10);
+  while(FALSE){}
+
+  Z = -2 * (X %*% t(C)) + t(rowSums(C^2))
+}
+else if(test_num == 31) {
+  # X ... 150x10 matrix
+  y = seq(1, ncol(X));
+  Z = cbind((X %*% y), matrix (7, nrow(X), 1));
+  Z = Z - rowMaxs(Z);
+}
+else if(test_num == 40) {
+  # X ... 300x20 matrix
+
+  Y = X / rowSums(X);
+  Z = (X > 0) * Y;
+}
+else if(test_num == 45) {
+  # X ... 1500x100 matrix
+  X = X * t(seq(1,100));
+  while(FALSE){}
+
+  X0 = X - 0.5;
+  X1 = X / rowSums(X0);
+  X2 = abs(X1 * 0.5);
+  X3 = X1 / rowSums(X2);
+
+  while(FALSE){}
+  Z = as.matrix(sum(X3));
+}
+else if(test_num == 50) {
+  # X ... 376x4 matrix
+  Z = colSums(X == rowSums(X));
+}
+
+write(Z, $out_Z);

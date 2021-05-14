@@ -29,6 +29,8 @@ package org.apache.sysds.utils;
  */
 public class MemoryEstimates {
 
+	// private static final Log LOG = LogFactory.getLog(MemoryEstimates.class.getName());
+
 	/**
 	 * Get the worst case memory usage of an java.util.BitSet java object.
 	 * 

@@ -24,9 +24,6 @@ import java.io.IOException;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.sysds.runtime.compress.utils.ABitmap;
-import org.apache.sysds.runtime.compress.utils.Bitmap;
-import org.apache.sysds.runtime.compress.utils.BitmapLossy;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.functionobjects.ValueFunction;
 import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
@@ -143,13 +140,7 @@ public abstract class ADictionary {
 	 * @param fn         The function to apply to individual columns
 	 * @param colIndexes The mapping to the target columns from the individual columns
 	 */
-	public void aggregateCols(double[] c, Builtin fn, int[] colIndexes) {
-		int ncol = colIndexes.length;
-		int vlen = size() / ncol;
-		for(int k = 0; k < vlen; k++)
-			for(int j = 0, valOff = k * ncol; j < ncol; j++)
-				c[colIndexes[j]] = fn.execute(c[colIndexes[j]], getValue(valOff + j));
-	}
+	public abstract void aggregateCols(double[] c, Builtin fn, int[] colIndexes);
 
 	/**
 	 * Write the dictionary to a DataOutput.
@@ -178,7 +169,7 @@ public abstract class ADictionary {
 	public abstract boolean isLossy();
 
 	/**
-	 * Get the number of values given that the column group has n columns
+	 * Get the number of distinct tuples given that the column group has n columns
 	 * 
 	 * @param ncol The number of Columns in the ColumnGroup.
 	 * @return the number of value tuples contained in the dictionary.
@@ -254,6 +245,14 @@ public abstract class ADictionary {
 
 	public abstract boolean containsValue(double pattern);
 
+	/**
+	 * Calculate the number of non zeros in the dictionary. The number of non zeros should be scaled with the counts
+	 * given
+	 * 
+	 * @param counts The counts of each dictionary entry
+	 * @param nCol   The number of columns in this dictionary
+	 * @return The nonZero count
+	 */
 	public abstract long getNumberNonZeros(int[] counts, int nCol);
 
 	public abstract long getNumberNonZerosContained();
@@ -267,13 +266,6 @@ public abstract class ADictionary {
 	 * @param nCol the number of columns
 	 */
 	public abstract void addToEntry(Dictionary d, int fr, int to, int nCol);
-
-	public static ADictionary getDictionary(ABitmap ubm) {
-		if(ubm instanceof BitmapLossy)
-			return new QDictionary((BitmapLossy) ubm).makeDoubleDictionary();
-		else
-			return new Dictionary(((Bitmap) ubm).getValues());
-	}
 
 	/**
 	 * Get the most common tuple element contained in the dictionary
@@ -293,4 +285,12 @@ public abstract class ADictionary {
 	 * @return a new instance of dictionary with the tuple subtracted.
 	 */
 	public abstract ADictionary subtractTuple(double[] tuple);
+
+	/**
+	 * Get this dictionary as a matrixBlock dictionary. This allows us to use optimized kernels coded elsewhere in the
+	 * system, such as matrix multiplication.
+	 * 
+	 * @return A Dictionary containing a MatrixBlock.
+	 */
+	public abstract MatrixBlockDictionary getAsMatrixBlockDictionary(int nCol);
 }

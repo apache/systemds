@@ -329,11 +329,6 @@ public class ColGroupOLE extends ColGroupOffset {
 	}
 
 	@Override
-	public long estimateInMemorySize() {
-		return ColGroupSizes.estimateInMemorySizeOLE(getNumCols(), getNumValues(), _data.length, _numRows, isLossy());
-	}
-
-	@Override
 	public AColGroup scalarOperation(ScalarOperator op) {
 		double val0 = op.executeScalar(0);
 
@@ -1209,7 +1204,7 @@ public class ColGroupOLE extends ColGroupOffset {
 	}
 
 	@Override
-	public Dictionary preAggregateThatSDCSingleStructure(ColGroupSDCSingle that, Dictionary ret, boolean preModified){
+	public Dictionary preAggregateThatSDCSingleStructure(ColGroupSDCSingle that, Dictionary ret, boolean preModified) {
 		throw new NotImplementedException();
 	}
 

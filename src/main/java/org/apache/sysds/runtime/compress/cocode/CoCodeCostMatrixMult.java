@@ -26,28 +26,35 @@ import java.util.PriorityQueue;
 import java.util.Queue;
 
 import org.apache.sysds.runtime.compress.CompressionSettings;
-import org.apache.sysds.runtime.compress.colgroup.AColGroup.CompressionType;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeEstimator;
+import org.apache.sysds.runtime.compress.estim.CompressedSizeEstimatorSample;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfo;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup;
 
-/**
- * Column group partitioning by number of distinct items estimated. This allows us to join columns based on the worst
- * case estimate of the joined sizes. Then once we decide to join, if the worst case is okay, we then analyze the actual
- * cardinality of the join.
- * 
- * This method allows us to compress many more columns than the BinPacking
- * 
- */
 public class CoCodeCostMatrixMult extends AColumnCoCoder {
 
-	protected CoCodeCostMatrixMult(CompressedSizeEstimator e, CompressionSettings cs, int numRows) {
-		super(e, cs, numRows);
+	protected CoCodeCostMatrixMult(CompressedSizeEstimator e, CompressionSettings cs) {
+		super(e, cs);
 	}
 
 	@Override
 	protected CompressedSizeInfo coCodeColumns(CompressedSizeInfo colInfos, int k) {
-		colInfos.setInfo(join(colInfos.getInfo()));
+
+		List<CompressedSizeInfoColGroup> joinRes = join(colInfos.getInfo());
+
+		if(_cs.samplingRatio < 0.1 && _est instanceof CompressedSizeEstimatorSample) {
+			LOG.debug("Performing second join with double sample rate");
+			CompressedSizeEstimatorSample estS = (CompressedSizeEstimatorSample) _est;
+			estS.sampleData(estS.getSample().getNumRows() * 2);
+			List<int[]> colG = new ArrayList<>(joinRes.size());
+			for(CompressedSizeInfoColGroup g : joinRes)
+				colG.add(g.getColumns());
+
+			joinRes = join(estS.computeCompressedSizeInfos(colG, k));
+		}
+
+		colInfos.setInfo(joinRes);
+
 		return colInfos;
 	}
 
@@ -66,6 +73,8 @@ public class CoCodeCostMatrixMult extends AColumnCoCoder {
 					final CostOfJoin r = que.poll();
 					final double costIndividual = (l.cost + r.cost);
 					final CostOfJoin g = new CostOfJoin(joinWithAnalysis(l.elm, r.elm));
+					if(LOG.isDebugEnabled())
+						LOG.debug("\nl:      " + l + "\nr:      " + r + "\njoined: " + g);
 					if(g.cost < costIndividual)
 						que.add(g);
 					else {
@@ -81,6 +90,7 @@ public class CoCodeCostMatrixMult extends AColumnCoCoder {
 			else
 				break;
 		}
+
 		for(CostOfJoin g : que)
 			ret.add(g.elm);
 
@@ -94,30 +104,16 @@ public class CoCodeCostMatrixMult extends AColumnCoCoder {
 		protected CostOfJoin(CompressedSizeInfoColGroup elm) {
 			this.elm = elm;
 
-			final double constantOverheadForColGroup = 5;
-			final double nCols = elm.getColumns().length;
+			final int nCols = elm.getColumns().length;
 			final double nRows = _est.getNumRows();
-			if(elm.getBestCompressionType() == CompressionType.UNCOMPRESSED)
-				this.cost = nRows * nCols * 2 + constantOverheadForColGroup;
-			else {
-				final int blksz = CompressionSettings.BITMAP_BLOCK_SZ;
+			final double preAggregateCost = nRows;
 
-				// LOG.error(constantOverheadForColGroup);
-				final double commonFraction = elm.getMostCommonFraction();
-				final double rowsCost = commonFraction > 0.2 ? nRows * (1 - commonFraction) : nRows;
-				// this.cost = rowsToProcess + elm.getNumVals() * nCols + constantOverheadForColGroup;
-				// this.cost = rowsToProcess + elm.getNumVals() * nCols * (1 - commonFraction) +
-				// constantOverheadForColGroup;
-				// final double sparsity_tuple_effect = elm.getTupleSparsity() > 0.4 ? 1 -
-				// Math.min(elm.getTupleSparsity(), 0.9) : 1;
-				final int numberTuples = elm.getNumVals();
-				final double tuplesCost = (numberTuples < blksz) ? numberTuples : numberTuples * 2;
+			final int numberTuples = elm.getNumVals();
+			final double tupleSparsity = elm.getTupleSparsity();
+			final double postScalingCost = (nCols > 1 && elm.getTupleSparsity() > 0.4) ? numberTuples *
+				nCols : numberTuples * nCols * tupleSparsity;
 
-				// this.cost = elementsCost;
-				// this.cost = rowsCost + tuplesCost * sparsity_tuple_effect + constantOverheadForColGroup;
-
-				this.cost = rowsCost + tuplesCost + constantOverheadForColGroup;
-			}
+			this.cost = preAggregateCost + postScalingCost;
 		}
 
 		@Override
@@ -128,10 +124,14 @@ public class CoCodeCostMatrixMult extends AColumnCoCoder {
 		@Override
 		public String toString() {
 			StringBuilder sb = new StringBuilder();
-			sb.append("\n");
 			sb.append(cost);
 			sb.append(" - ");
+			sb.append(elm.getBestCompressionType());
+			sb.append(" nrVals: ");
+			sb.append(elm.getNumVals());
+			sb.append(" ");
 			sb.append(Arrays.toString(elm.getColumns()));
+
 			return sb.toString();
 		}
 	}

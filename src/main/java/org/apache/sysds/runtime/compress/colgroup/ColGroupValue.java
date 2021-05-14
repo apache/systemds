@@ -33,6 +33,7 @@ import org.apache.sysds.runtime.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.DictionaryFactory;
+import org.apache.sysds.runtime.compress.colgroup.dictionary.MatrixBlockDictionary;
 import org.apache.sysds.runtime.compress.colgroup.pre.ArrPreAggregate;
 import org.apache.sysds.runtime.compress.colgroup.pre.IPreAggregate;
 import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
@@ -93,11 +94,7 @@ public abstract class ColGroupValue extends ColGroupCompressed implements Clonea
 		decompressToBlock(target, rl, ru, offT, getValues());
 	}
 
-	/**
-	 * Obtain number of distinct sets of values associated with the bitmaps in this column group.
-	 * 
-	 * @return the number of distinct sets of values associated with the bitmaps in this column group
-	 */
+	@Override
 	public final int getNumValues() {
 		return _dict.getNumberOfValues(_colIndexes.length);
 	}
@@ -250,22 +247,21 @@ public abstract class ColGroupValue extends ColGroupCompressed implements Clonea
 		return aggregateColumns;
 	}
 
-	private Pair<int[], double[]> preaggValuesFromDense(final int numVals, final double[] b, double[] dictVals,
-		final int cl, final int cu, final int cut) {
+	private Pair<int[], double[]> preaggValuesFromDense(final int numVals, final double[] b, final int cl, final int cu,
+		final int cut) {
 
-		int[] aggregateColumns = getAggregateColumnsSetDense(b, cl, cu, cut);
-		double[] ret = new double[numVals * aggregateColumns.length];
+		final int[] aggregateColumns = getAggregateColumnsSetDense(b, cl, cu, cut);
+		final double[] ret = new double[numVals * aggregateColumns.length];
 
 		for(int k = 0, off = 0;
 			k < numVals * _colIndexes.length;
 			k += _colIndexes.length, off += aggregateColumns.length) {
 			for(int h = 0; h < _colIndexes.length; h++) {
 				int idb = _colIndexes[h] * cut;
-				double v = dictVals[k + h];
-				for(int i = 0; i < aggregateColumns.length; i++) {
-					ret[off + i] += v * b[idb + aggregateColumns[i]];
-				}
-
+				double v = _dict.getValue(k + h);
+				if(v != 0)
+					for(int i = 0; i < aggregateColumns.length; i++)
+						ret[off + i] += v * b[idb + aggregateColumns[i]];
 			}
 		}
 
@@ -290,8 +286,7 @@ public abstract class ColGroupValue extends ColGroupCompressed implements Clonea
 		return aggregateColumns;
 	}
 
-	private Pair<int[], double[]> preaggValuesFromSparse(int numVals, SparseBlock b, double[] dictVals, int cl, int cu,
-		int cut) {
+	private Pair<int[], double[]> preaggValuesFromSparse(int numVals, SparseBlock b, int cl, int cu, int cut) {
 
 		int[] aggregateColumns = getAggregateColumnsSetSparse(b);
 
@@ -310,7 +305,7 @@ public abstract class ColGroupValue extends ColGroupCompressed implements Clonea
 						for(int j = 0, offOrg = h;
 							j < numVals * aggregateColumns.length;
 							j += aggregateColumns.length, offOrg += _colIndexes.length) {
-							ret[j + retIdx] += dictVals[offOrg] * sValues[i];
+							ret[j + retIdx] += _dict.getValue(offOrg) * sValues[i];
 						}
 				}
 			}
@@ -318,18 +313,18 @@ public abstract class ColGroupValue extends ColGroupCompressed implements Clonea
 		return new ImmutablePair<>(aggregateColumns, ret);
 	}
 
-	public Pair<int[], double[]> preaggValues(int numVals, MatrixBlock b, double[] dictVals, int cl, int cu, int cut) {
-		return b.isInSparseFormat() ? preaggValuesFromSparse(numVals, b.getSparseBlock(), dictVals, cl, cu,
-			cut) : preaggValuesFromDense(numVals, b.getDenseBlockValues(), dictVals, cl, cu, cut);
+	public Pair<int[], double[]> preaggForRightMultiplyValues(int numVals, MatrixBlock b, int cl, int cu, int cut) {
+		return b.isInSparseFormat() ? preaggValuesFromSparse(numVals, b.getSparseBlock(), cl, cu,
+			cut) : preaggValuesFromDense(numVals, b.getDenseBlockValues(), cl, cu, cut);
 	}
 
-	protected static double[] sparsePreaggValues(int numVals, double v, boolean allocNew, double[] dictVals) {
-		double[] ret = allocNew ? new double[numVals + 1] : allocDVector(numVals + 1, true);
+	// protected static double[] sparsePreaggValues(int numVals, double v, boolean allocNew, ADictionary dict) {
+	// double[] ret = allocNew ? new double[numVals + 1] : allocDVector(numVals + 1, true);
 
-		for(int k = 0; k < numVals; k++)
-			ret[k] = dictVals[k] * v;
-		return ret;
-	}
+	// for(int k = 0; k < numVals; k++)
+	// ret[k] = dictVals[k] * v;
+	// return ret;
+	// }
 
 	protected double computeMxx(double c, Builtin builtin) {
 		if(_zeros)
@@ -1016,9 +1011,10 @@ public abstract class ColGroupValue extends ColGroupCompressed implements Clonea
 	 */
 	public void leftMultByMatrix(MatrixBlock matrix, MatrixBlock result, double[] values, int rl, int ru) {
 		final int numVals = getNumValues();
+		if(!(_dict instanceof MatrixBlockDictionary))
+			_dict = _dict.getAsMatrixBlockDictionary(_colIndexes.length);
 
-		DenseBlock dictV = new DenseBlockFP64(new int[] {numVals, _colIndexes.length}, values);
-		MatrixBlock dictM = new MatrixBlock(numVals, _colIndexes.length, dictV);
+		MatrixBlock dictM = ((MatrixBlockDictionary) _dict).getMatrixBlock();
 		dictM.examSparsity();
 		MatrixBlock tmpRes = new MatrixBlock(1, _colIndexes.length, false);
 		for(int i = rl; i < ru; i++) {
@@ -1064,10 +1060,22 @@ public abstract class ColGroupValue extends ColGroupCompressed implements Clonea
 	}
 
 	public AColGroup rightMultByMatrix(MatrixBlock right) {
-		Pair<int[], double[]> pre = preaggValues(getNumValues(), right, getValues(), 0, right.getNumColumns(),
+		Pair<int[], double[]> pre = preaggForRightMultiplyValues(getNumValues(), right, 0, right.getNumColumns(),
 			right.getNumColumns());
 		if(pre.getLeft().length > 0)
 			return copyAndSet(pre.getLeft(), pre.getRight());
 		return null;
+	}
+
+	@Override
+	public long estimateInMemorySize() {
+		long size = super.estimateInMemorySize();
+		size += 8; // Dictionary Reference.
+		size += 8; // Counts reference
+		size += 1; // _zeros boolean reference
+		size += 1; // _lossy boolean reference
+		size += 2; // padding
+		size += _dict.getInMemorySize();
+		return size;
 	}
 }

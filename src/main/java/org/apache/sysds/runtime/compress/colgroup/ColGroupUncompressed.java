@@ -660,4 +660,9 @@ public class ColGroupUncompressed extends AColGroup {
 		LibMatrixMult.matrixMult(_data, right, out, InfrastructureAnalyzer.getLocalParallelism());
 		return new ColGroupUncompressed(outputCols, out, false);
 	}
+
+	@Override
+	public int getNumValues() {
+		return _data.getNumRows();
+	}
 }

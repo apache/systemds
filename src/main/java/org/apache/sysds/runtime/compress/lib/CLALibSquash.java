@@ -39,7 +39,6 @@ import org.apache.sysds.runtime.compress.colgroup.ColGroupFactory;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupValue;
 import org.apache.sysds.runtime.compress.readers.ReaderColumnSelection;
 import org.apache.sysds.runtime.compress.utils.ABitmap;
-import org.apache.sysds.runtime.compress.utils.Bitmap;
 import org.apache.sysds.runtime.util.CommonThreadPool;
 
 public class CLALibSquash {
@@ -123,18 +122,16 @@ public class CLALibSquash {
 			map = extractBitmap(columnIds, m);
 		}
 		else
-			map = BitmapLossyEncoder.extractMapFromCompressedSingleColumn(m,
-				columnIds[0],
-				minMaxes[columnIds[0] * 2],
+			map = BitmapLossyEncoder.extractMapFromCompressedSingleColumn(m, columnIds[0], minMaxes[columnIds[0] * 2],
 				minMaxes[columnIds[0] * 2 + 1], m.getNumRows());
 
-		AColGroup newGroup = ColGroupFactory.compress(columnIds, m.getNumRows(), map, CompressionType.DDC, cs, m);
+		AColGroup newGroup = ColGroupFactory.compress(columnIds, m.getNumRows(), map, CompressionType.DDC, cs, m, 1);
 		return newGroup;
 	}
 
 	private static ABitmap extractBitmap(int[] colIndices, CompressedMatrixBlock compressedBlock) {
-		Bitmap x = BitmapEncoder.extractBitmap(colIndices,
-			ReaderColumnSelection.createCompressedReader(compressedBlock, colIndices),  compressedBlock.getNumRows());
+		ABitmap x = BitmapEncoder.extractBitmap(colIndices,
+			ReaderColumnSelection.createCompressedReader(compressedBlock, colIndices), compressedBlock.getNumRows());
 		return BitmapLossyEncoder.makeBitmapLossy(x, compressedBlock.getNumRows());
 	}
 

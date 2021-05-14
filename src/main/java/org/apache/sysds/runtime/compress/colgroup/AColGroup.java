@@ -32,6 +32,7 @@ import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
+import org.apache.sysds.utils.MemoryEstimates;
 
 import edu.emory.mathcs.backport.java.util.Arrays;
 
@@ -143,6 +144,15 @@ public abstract class AColGroup implements Serializable {
 	public abstract int getNumRows();
 
 	/**
+	 * Obtain number of distinct tuples in contained sets of values associated with this column group.
+	 * 
+	 * If the column group is uncompressed the number or rows is returned.
+	 * 
+	 * @return the number of distinct sets of values associated with the bitmaps in this column group
+	 */
+	public abstract int getNumValues();
+
+	/**
 	 * Obtain the number of columns in this column group.
 	 * 
 	 * @return number of columns in this column group
@@ -183,7 +193,11 @@ public abstract class AColGroup implements Serializable {
 	 * 
 	 * @return an upper bound on the number of bytes used to store this ColGroup in memory.
 	 */
-	public abstract long estimateInMemorySize();
+	public long estimateInMemorySize(){
+		long size = 16; // object header
+		size += MemoryEstimates.intArrayCost(_colIndexes.length);
+		return size;
+	}
 
 	/**
 	 * Decompress the contents of this column group into the specified full matrix block.

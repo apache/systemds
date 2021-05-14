@@ -34,6 +34,7 @@ import org.apache.sysds.runtime.compress.utils.DblArrayIntListHashMap.DArrayILis
 import org.apache.sysds.runtime.compress.utils.DoubleIntListHashMap;
 import org.apache.sysds.runtime.compress.utils.DoubleIntListHashMap.DIListEntry;
 import org.apache.sysds.runtime.compress.utils.IntArrayList;
+import org.apache.sysds.runtime.compress.utils.MultiColBitmap;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
@@ -52,29 +53,28 @@ public class BitmapEncoder {
 	 * @param transposed Boolean specifying if the rawblock was transposed.
 	 * @return uncompressed bitmap representation of the columns
 	 */
-	public static Bitmap extractBitmap(int[] colIndices, MatrixBlock rawBlock, boolean transposed) {
-
-		Bitmap res = null;
-		if(colIndices.length == 1) {
-			res = extractBitmap(colIndices[0], rawBlock, transposed);
-		}
-		// multiple column selection (general case)
-		else {
+	public static ABitmap extractBitmap(int[] colIndices, MatrixBlock rawBlock, boolean transposed) {
+		try {
 			final int numRows = transposed ? rawBlock.getNumColumns() : rawBlock.getNumRows();
-			try {
-				res = extractBitmap(colIndices, ReaderColumnSelection.createReader(rawBlock, colIndices, transposed), numRows);
-			}
-			catch(Exception e) {
-				throw new DMLRuntimeException("Failed to extract bitmap", e);
+			if(rawBlock.isEmpty() && colIndices.length == 1)
+				return new Bitmap(null, null, numRows);
+			else if(colIndices.length == 1)
+				return extractBitmap(colIndices[0], rawBlock, transposed);
+			else if(rawBlock.isEmpty())
+				return new MultiColBitmap(colIndices.length, null, null, numRows);
+			else {
+				ReaderColumnSelection reader = ReaderColumnSelection.createReader(rawBlock, colIndices, transposed);
+				return extractBitmap(colIndices, reader, numRows);
 			}
 		}
-		return res;
-
+		catch(Exception e) {
+			throw new DMLRuntimeException("Failed to extract bitmap", e);
+		}
 	}
 
 	public static ABitmap extractBitmap(int[] colIndices, int rows, BitSet rawBlock, CompressionSettings compSettings) {
 		ReaderColumnSelection reader = new ReaderColumnSelectionBitSet(rawBlock, rows, colIndices);
-		Bitmap res = extractBitmap(colIndices, reader, rows);
+		ABitmap res = extractBitmap(colIndices, reader, rows);
 		return res;
 	}
 
@@ -88,7 +88,7 @@ public class BitmapEncoder {
 	 * @param transposed Boolean specifying if the rawBlock is transposed or not.
 	 * @return Bitmap containing the Information of the column.
 	 */
-	private static Bitmap extractBitmap(int colIndex, MatrixBlock rawBlock, boolean transposed) {
+	private static ABitmap extractBitmap(int colIndex, MatrixBlock rawBlock, boolean transposed) {
 		DoubleIntListHashMap hashMap = transposed ? extractHashMapTransposed(colIndex,
 			rawBlock) : extractHashMap(colIndex, rawBlock);
 		return makeBitmap(hashMap, transposed ? rawBlock.getNumColumns() : rawBlock.getNumRows());
@@ -187,7 +187,7 @@ public class BitmapEncoder {
 	 * @param numRows    The number of contained rows
 	 * @return The Bitmap
 	 */
-	protected static Bitmap extractBitmap(int[] colIndices, ReaderColumnSelection rowReader, int numRows) {
+	protected static ABitmap extractBitmap(int[] colIndices, ReaderColumnSelection rowReader, int numRows) {
 		// probe map for distinct items (for value or value groups)
 		DblArrayIntListHashMap distinctVals = new DblArrayIntListHashMap();
 
@@ -216,24 +216,24 @@ public class BitmapEncoder {
 	 * @param numCols      Number of columns
 	 * @return The Bitmap.
 	 */
-	private static Bitmap makeBitmap(DblArrayIntListHashMap distinctVals, int numRows, int numCols) {
+	private static ABitmap makeBitmap(DblArrayIntListHashMap distinctVals, int numRows, int numCols) {
 		// added for one pass bitmap construction
 		// Convert inputs to arrays
 		ArrayList<DArrayIListEntry> mapEntries = distinctVals.extractValues();
 		if(!mapEntries.isEmpty()) {
 			int numVals = distinctVals.size();
-			double[] values = new double[numVals * numCols];
+			double[][] values = new double[numVals][];
 			IntArrayList[] offsetsLists = new IntArrayList[numVals];
 			int bitmapIx = 0;
 			for(DArrayIListEntry val : mapEntries) {
-				System.arraycopy(val.key.getData(), 0, values, bitmapIx * numCols, numCols);
+				values[bitmapIx] = val.key.getData();
 				offsetsLists[bitmapIx++] = val.value;
 			}
 
-			return new Bitmap(numCols, offsetsLists, values, numRows);
+			return new MultiColBitmap(numCols, offsetsLists, values, numRows);
 		}
 		else
-			return new Bitmap(numCols, null, null, numRows);
+			return new MultiColBitmap(numCols, null, null, numRows);
 
 	}
 
@@ -248,7 +248,7 @@ public class BitmapEncoder {
 		// added for one pass bitmap construction
 		// Convert inputs to arrays
 		int numVals = distinctVals.size();
-		if(numVals > 0){
+		if(numVals > 0) {
 
 			double[] values = new double[numVals];
 			IntArrayList[] offsetsLists = new IntArrayList[numVals];
@@ -257,11 +257,11 @@ public class BitmapEncoder {
 				values[bitmapIx] = val.key;
 				offsetsLists[bitmapIx++] = val.value;
 			}
-	
-			return new Bitmap(1, offsetsLists, values, numRows);
+
+			return new Bitmap(offsetsLists, values, numRows);
 		}
-		else{
-			return new Bitmap(1, null, null, numRows);
+		else {
+			return new Bitmap(null, null, numRows);
 		}
 	}
 

@@ -58,8 +58,6 @@ public abstract class ColGroupCompressed extends AColGroup {
 		_numRows = numRows;
 	}
 
-	public abstract int getNumValues();
-
 	public abstract double[] getValues();
 
 	public abstract void addMinMax(double[] ret);
@@ -147,4 +145,10 @@ public abstract class ColGroupCompressed extends AColGroup {
 		return _numRows;
 	}
 
+	@Override
+	public long estimateInMemorySize() {
+		long size = super.estimateInMemorySize();
+		size += 4;
+		return size;
+	}
 }

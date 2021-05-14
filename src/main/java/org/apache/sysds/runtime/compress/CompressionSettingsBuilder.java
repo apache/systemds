@@ -43,6 +43,7 @@ public class CompressionSettingsBuilder {
 	private PartitionerType columnPartitioner;
 	private int maxStaticColGroupCoCode = 10000;
 	private double coCodePercentage = 0.01;
+	private int minimumSampleSize = 2000;
 
 	private final static double defaultSampleRate = 0.01;
 
@@ -255,6 +256,18 @@ public class CompressionSettingsBuilder {
 	}
 
 	/**
+	 * Set the minimum sample size to extract from a given matrix, this overrules the sample percentage if the sample
+	 * percentage extracted is lower than this minimum bound.
+	 * 
+	 * @param minimumSampleSize The minimum sample size to extract
+	 * @return The CompressionSettingsBuilder
+	 */
+	public CompressionSettingsBuilder setMinimumSampleSize(int minimumSampleSize) {
+		this.minimumSampleSize = minimumSampleSize;
+		return this;
+	}
+
+	/**
 	 * Create the CompressionSettings object to use in the compression.
 	 * 
 	 * @return The CompressionSettings
@@ -262,6 +275,6 @@ public class CompressionSettingsBuilder {
 	public CompressionSettings create() {
 		return new CompressionSettings(samplingRatio, allowSharedDictionary, transposeInput, skipList, seed,
 			investigateEstimate, lossy, validCompressions, sortValuesByLength, columnPartitioner,
-			maxStaticColGroupCoCode, coCodePercentage);
+			maxStaticColGroupCoCode, coCodePercentage, minimumSampleSize);
 	}
 }

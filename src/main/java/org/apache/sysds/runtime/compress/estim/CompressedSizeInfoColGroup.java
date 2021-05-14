@@ -27,6 +27,8 @@ import java.util.Set;
 import org.apache.commons.lang.NotImplementedException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.sysds.runtime.compress.CompressionSettings;
+import org.apache.sysds.runtime.compress.cocode.PlanningCoCoder.PartitionerType;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup.CompressionType;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupSizes;
 
@@ -59,7 +61,7 @@ public class CompressedSizeInfoColGroup {
 		_cardinalityRatio = (double) numVals / numRows;
 		_sizes = null;
 		_bestCompressionType = null;
-		_minSize = ColGroupSizes.estimateInMemorySizeDDC(columns.length, numVals, numRows, false);
+		_minSize = ColGroupSizes.estimateInMemorySizeDDC(columns.length, numVals, numRows, 1.0, false);
 	}
 
 	/**
@@ -104,6 +106,15 @@ public class CompressedSizeInfoColGroup {
 
 	public long getCompressionSize(CompressionType ct) {
 		return _sizes.get(ct);
+	}
+
+	public CompressionType getBestCompressionType(CompressionSettings cs) {
+		if(cs.columnPartitioner == PartitionerType.COST_MATRIX_MULT) {
+			// if(_sizes.get(CompressionType.SDC) * 0.8 < _sizes.get(_bestCompressionType))
+			if(getMostCommonFraction() > 0.4)
+				return CompressionType.SDC;
+		}
+		return _bestCompressionType;
 	}
 
 	public CompressionType getBestCompressionType() {
@@ -171,26 +182,28 @@ public class CompressedSizeInfoColGroup {
 			case DDC:
 				// + 1 if the column contains zero
 				return ColGroupSizes.estimateInMemorySizeDDC(numCols,
-					fact.numVals + (fact.numOffs < fact.numRows ? 1 : 0), fact.numRows, fact.lossy);
+					fact.numVals + (fact.numOffs < fact.numRows ? 1 : 0), fact.numRows, fact.tupleSparsity, fact.lossy);
 			case RLE:
 				return ColGroupSizes.estimateInMemorySizeRLE(numCols, fact.numVals, fact.numRuns, fact.numRows,
-					fact.lossy);
+					fact.tupleSparsity, fact.lossy);
 			case OLE:
 				return ColGroupSizes.estimateInMemorySizeOLE(numCols, fact.numVals, fact.numOffs + fact.numVals,
-					fact.numRows, fact.lossy);
+					fact.numRows, fact.tupleSparsity, fact.lossy);
 			case UNCOMPRESSED:
 				return ColGroupSizes.estimateInMemorySizeUncompressed(fact.numRows, numCols, fact.overAllSparsity);
 			case SDC:
 				if(fact.numOffs <= 1)
 					return ColGroupSizes.estimateInMemorySizeSDCSingle(numCols, fact.numVals, fact.numRows,
-						fact.largestOff, fact.zeroIsMostFrequent, fact.containNoZeroValues, fact.lossy);
+						fact.largestOff, fact.zeroIsMostFrequent, fact.containNoZeroValues, fact.tupleSparsity,
+						fact.lossy);
 				return ColGroupSizes.estimateInMemorySizeSDC(numCols, fact.numVals, fact.numRows, fact.largestOff,
-					fact.zeroIsMostFrequent, fact.containNoZeroValues, fact.lossy);
+					fact.zeroIsMostFrequent, fact.containNoZeroValues, fact.tupleSparsity, fact.lossy);
 			case CONST:
 				if(fact.numOffs == 0)
 					return ColGroupSizes.estimateInMemorySizeEMPTY(numCols);
 				else if(fact.numOffs == fact.numRows && fact.numVals == 1)
-					return ColGroupSizes.estimateInMemorySizeCONST(numCols, fact.numVals, fact.lossy);
+					return ColGroupSizes.estimateInMemorySizeCONST(numCols, fact.numVals, fact.tupleSparsity,
+						fact.lossy);
 				else
 					return -1;
 			default:

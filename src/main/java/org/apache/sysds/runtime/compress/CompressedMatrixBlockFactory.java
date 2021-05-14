@@ -28,6 +28,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.cocode.PlanningCoCoder;
+import org.apache.sysds.runtime.compress.cocode.PlanningCoCoder.PartitionerType;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupConst;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupEmpty;
@@ -161,18 +162,18 @@ public class CompressedMatrixBlockFactory {
 			_stats.estimatedSizeCols = sizeInfos.memoryEstimate();
 
 		logPhase();
-		long memoryEstimate = sizeInfos.memoryEstimate();
 
-		if(memoryEstimate < _stats.originalSize)
+		if(_stats.estimatedSizeCols < _stats.originalSize || compSettings.columnPartitioner == PartitionerType.COST_MATRIX_MULT)
 			coCodePhase(sizeEstimator, sizeInfos, mb.getNumRows());
 		else {
-			LOG.info("Estimated Size of singleColGroups: " + memoryEstimate);
+			LOG.info("Estimated Size of singleColGroups: " + _stats.estimatedSizeCols);
 			LOG.info("Original size                    : " + _stats.originalSize);
 		}
 	}
 
 	private void coCodePhase(CompressedSizeEstimator sizeEstimator, CompressedSizeInfo sizeInfos, int numRows) {
 		coCodeColGroups = PlanningCoCoder.findCoCodesByPartitioning(sizeEstimator, sizeInfos, numRows, k, compSettings);
+		_stats.estimatedSizeCoCoded = coCodeColGroups.memoryEstimate();
 		logPhase();
 	}
 
@@ -206,6 +207,7 @@ public class CompressedMatrixBlockFactory {
 
 	private void compressPhase() {
 		res.allocateColGroupList(ColGroupFactory.compressColGroups(mb, coCodeColGroups, compSettings, k));
+		_stats.compressedInitialSize = res.getInMemorySize();
 		logPhase();
 	}
 
@@ -229,6 +231,7 @@ public class CompressedMatrixBlockFactory {
 			o.add(combineConst(c));
 
 		res.allocateColGroupList(o);
+
 		logPhase();
 	}
 
@@ -276,12 +279,11 @@ public class CompressedMatrixBlockFactory {
 	private void cleanupPhase() {
 
 		res.cleanupBlock(true, true);
-		mb.cleanupBlock(true, true);
 
 		_stats.size = res.estimateCompressedSizeInMemory();
 		
 		final double ratio = _stats.getRatio();
-		if(ratio < 1) {
+		if(ratio < 1 && compSettings.columnPartitioner != PartitionerType.COST_MATRIX_MULT)  {
 			LOG.info("--dense size:        " + _stats.denseSize);
 			LOG.info("--original size:     " + _stats.originalSize);
 			LOG.info("--compressed size:   " + _stats.size);
@@ -290,6 +292,8 @@ public class CompressedMatrixBlockFactory {
 			res = null;
 			return;
 		}
+
+		mb.cleanupBlock(true, true);
 
 		_stats.setColGroupsCounts(res.getColGroups());
 
@@ -311,10 +315,12 @@ public class CompressedMatrixBlockFactory {
 			switch(phase) {
 				case 0:
 					LOG.debug("--compression phase " + phase + " Classify  : " + getLastTimePhase());
+					LOG.debug("--Individual Columns Estimated Compression: " + _stats.estimatedSizeCols);
 					break;
 				case 1:
 					LOG.debug("--compression phase " + phase + " Grouping  : " + getLastTimePhase());
 					LOG.debug("Grouping using: " + compSettings.columnPartitioner);
+					LOG.debug("--Cocoded Columns estimated Compression:" + _stats.estimatedSizeCoCoded);
 					break;
 				case 2:
 					LOG.debug("--compression phase " + phase + " Transpose : " + getLastTimePhase());
@@ -324,6 +330,7 @@ public class CompressedMatrixBlockFactory {
 					LOG.debug("--compression phase " + phase + " Compress  : " + getLastTimePhase());
 					LOG.debug("--compression Hash collisions:" + DblArrayIntListHashMap.hashMissCount);
 					DblArrayIntListHashMap.hashMissCount = 0;
+					LOG.debug("--compressed initial actual size:" + _stats.compressedInitialSize);
 					break;
 				case 4:
 					LOG.debug("--compression phase " + phase + " Share     : " + getLastTimePhase());

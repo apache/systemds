@@ -25,8 +25,11 @@ import java.io.IOException;
 import java.util.Arrays;
 
 import org.apache.sysds.runtime.DMLCompressionException;
+import org.apache.sysds.runtime.data.DenseBlock;
+import org.apache.sysds.runtime.data.DenseBlockFP64;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.functionobjects.ValueFunction;
+import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
 import org.apache.sysds.utils.MemoryEstimates;
 
@@ -472,5 +475,24 @@ public class Dictionary extends ADictionary {
 			newValues[i] = _values[i] - tuple[i % tuple.length];
 		}
 		return new Dictionary(newValues);
+	}
+
+	@Override
+	public MatrixBlockDictionary getAsMatrixBlockDictionary(int nCol) {
+		final int nRow = _values.length / nCol;
+		DenseBlock dictV = new DenseBlockFP64(new int[] {nRow, nCol}, _values);
+		MatrixBlock dictM = new MatrixBlock(nRow, nCol, dictV);
+		dictM.examSparsity();
+		return new MatrixBlockDictionary(dictM);
+	}
+
+	@Override
+	public void aggregateCols(double[] c, Builtin fn, int[] colIndexes) {
+		int ncol = colIndexes.length;
+		int vlen = size() / ncol;
+		for(int k = 0; k < vlen; k++)
+			for(int j = 0, valOff = k * ncol; j < ncol; j++)
+				c[colIndexes[j]] = fn.execute(c[colIndexes[j]], getValue(valOff + j));
+		
 	}
 }

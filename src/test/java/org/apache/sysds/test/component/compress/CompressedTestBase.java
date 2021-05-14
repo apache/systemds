@@ -78,7 +78,7 @@ public abstract class CompressedTestBase extends TestBase {
 	protected static SparsityType[] usedSparsityTypes = new SparsityType[] {SparsityType.FULL, SparsityType.SPARSE,};
 
 	protected static ValueType[] usedValueTypes = new ValueType[] {ValueType.RAND_ROUND, ValueType.OLE_COMPRESSIBLE,
-		ValueType.RLE_COMPRESSIBLE,};
+		ValueType.RLE_COMPRESSIBLE};
 
 	protected static ValueRange[] usedValueRanges = new ValueRange[] {ValueRange.SMALL, ValueRange.NEGATIVE,
 		ValueRange.BYTE};
@@ -119,6 +119,9 @@ public abstract class CompressedTestBase extends TestBase {
 			.setColumnPartitioner(PartitionerType.BIN_PACKING).setInvestigateEstimate(true),
 		new CompressionSettingsBuilder().setSamplingRatio(0.1).setSeed(compressionSeed).setTransposeInput("true")
 			.setColumnPartitioner(PartitionerType.STATIC).setInvestigateEstimate(true),
+
+		new CompressionSettingsBuilder().setSamplingRatio(0.1).setSeed(compressionSeed).setTransposeInput("true")
+			.setColumnPartitioner(PartitionerType.COST_MATRIX_MULT).setInvestigateEstimate(true),
 
 		// Forced Uncompressed tests
 		new CompressionSettingsBuilder().setValidCompressions(EnumSet.of(CompressionType.UNCOMPRESSED)),
@@ -302,6 +305,8 @@ public abstract class CompressedTestBase extends TestBase {
 				for(OverLapping ov : overLapping) {
 					tests.add(new Object[] {SparsityType.EMPTY, ValueType.RAND, ValueRange.BOOLEAN, cs, mt, ov});
 					tests.add(new Object[] {SparsityType.FULL, ValueType.CONST, ValueRange.LARGE, cs, mt, ov});
+					tests.add(
+						new Object[] {SparsityType.FULL, ValueType.ONE_HOT_ENCODED, ValueRange.BOOLEAN, cs, mt, ov});
 				}
 		return tests;
 	}

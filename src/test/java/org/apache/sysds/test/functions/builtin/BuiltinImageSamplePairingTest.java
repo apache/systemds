@@ -29,10 +29,10 @@ import org.junit.Test;
 import java.util.HashMap;
 import java.util.Random;
 
-public class BuiltinImageCutoutTest extends AutomatedTestBase {
-	private final static String TEST_NAME = "image_cutout";
+public class BuiltinImageSamplePairingTest extends AutomatedTestBase {
+	private final static String TEST_NAME = "image_sample_pairing";
 	private final static String TEST_DIR = "functions/builtin/";
-	private final static String TEST_CLASS_DIR = TEST_DIR + BuiltinImageCutoutTest.class.getSimpleName() + "/";
+	private final static String TEST_CLASS_DIR = TEST_DIR + BuiltinImageSamplePairingTest.class.getSimpleName() + "/";
 
 	private final static double eps = 1e-10;
 	private final static double spSparse = 0.1;
@@ -63,11 +63,7 @@ public class BuiltinImageCutoutTest extends AutomatedTestBase {
 
 		int rows = random.nextInt(1000) + 1;
 		int cols = random.nextInt(1000) + 1;
-		int x = random.nextInt(cols);
-		int y = random.nextInt(rows);
-		int width = random.nextInt(cols - x) + 1;
-		int height = random.nextInt(rows - y) + 1;
-		int fill_color = random.nextInt(256);
+		double weight = random.nextDouble();
 
 		try {
 			loadTestConfiguration(getTestConfiguration(TEST_NAME));
@@ -75,27 +71,26 @@ public class BuiltinImageCutoutTest extends AutomatedTestBase {
 
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[] {"-nvargs", "in_file=" + input("A"), "out_file=" + output("B"), "width=" + cols,
-				"height=" + rows, "x=" + (x+1), "y=" + (y+1), "w=" + width, "h=" + height, "fill_color=" + fill_color};
+			programArgs = new String[] {"-nvargs", "in_file1=" + input("A"), "in_file2=" + input("B"), "out_file=" + output("C"), "width=" + cols,
+				"height=" + rows, "weight=" + weight};
 
 			//generate actual dataset
 			double[][] A = getRandomMatrix(rows, cols, 0, 255, sparsity, 7);
 			writeInputMatrixWithMTD("A", A, true);
+			double[][] B = getRandomMatrix(rows, cols, 0, 255, sparsity, 7);
+			writeInputMatrixWithMTD("B", B, true);
 
 			double[][] ref = new double[rows][cols];
 			for (int i = 0; i < rows; i++) {
 				for (int j = 0; j < cols; j++) {
-					ref[i][j] = A[i][j];
-					if (y <= i && i < y + height && x <= j && j < x + width) {
-						ref[i][j] = fill_color;
-					}
+					ref[i][j] = (1 - weight) * A[i][j] + weight * B[i][j];
 				}
 			}
 
 			runTest(true, false, null, -1);
 
 			//compare matrices
-			HashMap<MatrixValue.CellIndex, Double> dmlfile = readDMLMatrixFromOutputDir("B");
+			HashMap<MatrixValue.CellIndex, Double> dmlfile = readDMLMatrixFromOutputDir("C");
 			double[][] dml_res = TestUtils.convertMatrix(dmlfile, rows, cols);
 			TestUtils.compareMatrices(ref, dml_res, eps, "Java vs. DML");
 		}

@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.concurrent.Callable;
@@ -83,8 +84,13 @@ public class MultiColumnEncoder implements Encoder {
 		MatrixBlock out;
 		try {
 			build(in, k);
-			_meta = getMetaData(new FrameBlock(in.getNumColumns(), Types.ValueType.STRING));
-			initMetaData(_meta);
+			if(_legacyMVImpute != null){
+				// These operations are redundant for every encoder excluding the legacyMVImpute, the workaround to fix
+				// it for this encoder would be very dirty. This will only have a performance impact if there is a lot of
+				// recoding in combination with the legacyMVImpute. But since it is legacy this should be fine
+				_meta = getMetaData(new FrameBlock(in.getNumColumns(), Types.ValueType.STRING));
+				initMetaData(_meta);
+			}
 			// apply meta data
 			out = apply(in, k);
 		}
@@ -104,8 +110,10 @@ public class MultiColumnEncoder implements Encoder {
 			buildMT(in, k);
 		}
 		else {
-			for(ColumnEncoder columnEncoder : _columnEncoders)
+			for(ColumnEncoderComposite columnEncoder : _columnEncoders){
 				columnEncoder.build(in);
+				columnEncoder.updateAllDCEncoders();
+			}
 		}
 		legacyBuild(in);
 	}
@@ -117,6 +125,8 @@ public class MultiColumnEncoder implements Encoder {
 		try {
 			if(blockSize != in.getNumRows()) {
 				// Partial builds and merges
+				// Most of the time not worth it for RC with the current implementation, GC overhead is to large.
+				// Depending on unique values and rows more testing need to be done
 				List<List<Future<Object>>> partials = new ArrayList<>();
 				for(ColumnEncoderComposite encoder : _columnEncoders) {
 					List<Callable<Object>> partialBuildTasks = encoder.getPartialBuildTasks(in, blockSize);
@@ -179,7 +189,7 @@ public class MultiColumnEncoder implements Encoder {
 		if(in.getNumColumns() != numEncoders)
 			throw new DMLRuntimeException("Not every column in has a CompositeEncoder. Please make sure every column "
 				+ "has a encoder or slice the input accordingly");
-		// Denseblock allocation since access is only on the DenseBlock
+		// Block allocation for MT access
 		out.allocateBlock();
 		if(out.isInSparseFormat()) {
 			SparseBlock block = out.getSparseBlock();
@@ -204,7 +214,7 @@ public class MultiColumnEncoder implements Encoder {
 					offset += columnEncoder.getEncoder(ColumnEncoderDummycode.class)._domainSize - 1;
 			}
 		}
-		// Recomputing NNZ since we access the Dense block directly
+		// Recomputing NNZ since we access the block directly
 		// TODO set NNZ explicit count them in the encoders
 		out.recomputeNonZeros();
 		if(_legacyOmit != null)
@@ -634,6 +644,8 @@ public class MultiColumnEncoder implements Encoder {
 		@Override
 		public Integer call() throws Exception {
 			_encoder.build(_input);
+			if(_encoder instanceof ColumnEncoderComposite)
+				((ColumnEncoderComposite) _encoder).updateAllDCEncoders();
 			return 1;
 		}
 	}
@@ -652,6 +664,7 @@ public class MultiColumnEncoder implements Encoder {
 		@Override
 		public Integer call() throws Exception {
 			_encoder.mergeBuildPartial(_partials, 0, _partials.size());
+			_encoder.updateAllDCEncoders();
 			return 1;
 		}
 	}

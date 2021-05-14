@@ -201,7 +201,7 @@ Install the hardware and software requirements.
 
 Add CUDA, CUPTI, and cuDNN installation directories to `%PATH%` environmental
 variable. Neural networks won't run without cuDNN `cuDNN64_7*.dll`.
-See [Windows install from source guide](./windows-source-installation.md).
+See [Windows install from source guide](windows-source-installation).
 
 ```sh
 SET PATH=C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v10.2\bin;%PATH%

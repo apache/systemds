@@ -49,16 +49,20 @@ public class FederatedCodegenMultipleFedMOTest extends AutomatedTestBase
 	private final static String TEST_CONF = "SystemDS-config-codegen.xml";
 
 	private final static String OUTPUT_NAME = "Z";
-	private final static double TOLERANCE = 1e-12;
+	private final static double TOLERANCE = 1e-7;
 	private final static int BLOCKSIZE = 1024;
 
 	@Parameterized.Parameter()
 	public int test_num;
 	@Parameterized.Parameter(1)
-	public int rows;
+	public int rows_x;
 	@Parameterized.Parameter(2)
-	public int cols;
+	public int cols_x;
 	@Parameterized.Parameter(3)
+	public int rows_y;
+	@Parameterized.Parameter(4)
+	public int cols_y;
+	@Parameterized.Parameter(5)
 	public boolean row_partitioned;
 
 	@Override
@@ -68,44 +72,55 @@ public class FederatedCodegenMultipleFedMOTest extends AutomatedTestBase
 
 	@Parameterized.Parameters
 	public static Collection<Object[]> data() {
-		// rows must be even for row partitioned X
-		// cols must be even for col partitioned X
+		// rows must be even for row partitioned X and Y
+		// cols must be even for col partitioned X and Y
 		return Arrays.asList(new Object[][] {
-			// {test_num, rows, cols, row_partitioned}
+			// {test_num, rows_x, cols_x, rows_y, cols_y row_partitioned}
 
 			// cellwise
 			// row partitioned
-			{1, 4, 4, true},
-			{2, 4, 1, true},
-			{3, 4, 1, true},
-			{4, 1000, 1, true},
-			{5, 500, 2, true},
-			{6, 2, 500, true},
-			{7, 2, 4, true},
+			{1, 4, 4, 4, 4, true},
+			{2, 4, 4, 4, 1, true},
+			{3, 4, 1, 4, 1, true},
+			{4, 1000, 1, 1000, 1, true},
+			{5, 500, 2, 500, 2, true},
+			{6, 2, 500, 2, 500, true},
+			{7, 2, 4, 2, 4, true},
 			// column partitioned
-			{1, 4, 4, false},
-			// {5, 500, 2, false}, // only working when putting a while(FALSE){} after the cbind
-			{6, 2, 500, false},
-			{7, 2, 4, false},
+			{1, 4, 4, 4, 4, false},
+			{2, 4, 4, 1, 4, false},
+			{5, 500, 2, 500, 2, false},
+			{6, 2, 500, 2, 500, false},
+			{7, 2, 4, 2, 4, false},
 			
 			// rowwise
-			{101, 6, 2, true},
-			{102, 6, 1, true},
+			{101, 6, 2, 6, 2, true},
+			{102, 6, 1, 6, 4, true},
+			{103, 6, 4, 6, 2, true},
+			{104, 150, 10, 150, 10, true},
 
 			// multi aggregate
 			// row partitioned
-			{201, 6, 4, true},
-			{202, 6, 4, true},
-			{203, 20, 1, true},
+			{201, 6, 4, 6, 4, true},
+			{202, 6, 4, 6, 4, true},
+			{203, 20, 1, 20, 1, true},
 			// col partitioned
-			{201, 6, 4, false},
-			{202, 6, 4, false},
+			{201, 6, 4, 6, 4, false},
+			{202, 6, 4, 6, 4, false},
 
 			// outer product
 			// row partitioned
-			// {301, 2000, 10, true}, // not working yet (single node works, but does not create fed instruction)
+			{301, 2000, 1500, 2000, 10, true},
+			{303, 4000, 2000, 4000, 10, true},
+			{305, 4000, 2000, 4000, 10, true},
+			{307, 1000, 2000, 1000, 10, true},
+			{309, 1000, 2000, 1000, 10, true},
 			// col partitioned
-			// {301, 2000, 10, false}, // not working yet (single node works, but does not create fed instruction)
+			{302, 2000, 1500, 10, 1500, false},
+			{304, 4000, 2000, 10, 2000, false},
+			{306, 4000, 2000, 10, 2000, false},
+			{308, 1000, 2000, 10, 2000, false},
+			{310, 1000, 2000, 10, 2000, false},
 
 		});
 	}
@@ -137,25 +152,31 @@ public class FederatedCodegenMultipleFedMOTest extends AutomatedTestBase
 		getAndLoadTestConfiguration(TEST_NAME);
 		String HOME = SCRIPT_DIR + TEST_DIR;
 
-		int fed_rows = rows;
-		int fed_cols = cols;
-		if(row_partitioned)
-			fed_rows /= 2;
-		else
-			fed_cols /= 2;
+		int fed_rows_x = rows_x;
+		int fed_cols_x = cols_x;
+		int fed_rows_y = rows_y;
+		int fed_cols_y = cols_y;
+		if(row_partitioned) {
+			fed_rows_x /= 2;
+			fed_rows_y /= 2;
+		}
+		else {
+			fed_cols_x /= 2;
+			fed_cols_y /= 2;
+		}
 
 		// generate dataset
 		// matrix handled by two federated workers
-		double[][] X1 = getRandomMatrix(fed_rows, fed_cols, 0, 1, 1, 3);
-		double[][] X2 = getRandomMatrix(fed_rows, fed_cols, 0, 1, 1, 7);
+		double[][] X1 = getRandomMatrix(fed_rows_x, fed_cols_x, 0, 1, 1, 3);
+		double[][] X2 = getRandomMatrix(fed_rows_x, fed_cols_x, 0, 1, 1, 7);
 		// matrix handled by two federated workers
-		double[][] Y1 = getRandomMatrix(fed_rows, fed_cols, 0, 1, 1, 51);
-		double[][] Y2 = getRandomMatrix(fed_rows, fed_cols, 0, 1, 1, 118);
+		double[][] Y1 = getRandomMatrix(fed_rows_y, fed_cols_y, 0, 1, 1, 51);
+		double[][] Y2 = getRandomMatrix(fed_rows_y, fed_cols_y, 0, 1, 1, 118);
 
-		writeInputMatrixWithMTD("X1", X1, false, new MatrixCharacteristics(fed_rows, fed_cols, BLOCKSIZE, fed_rows * fed_cols));
-		writeInputMatrixWithMTD("X2", X2, false, new MatrixCharacteristics(fed_rows, fed_cols, BLOCKSIZE, fed_rows * fed_cols));
-		writeInputMatrixWithMTD("Y1", Y1, false, new MatrixCharacteristics(fed_rows, fed_cols, BLOCKSIZE, fed_rows * fed_cols));
-		writeInputMatrixWithMTD("Y2", Y2, false, new MatrixCharacteristics(fed_rows, fed_cols, BLOCKSIZE, fed_rows * fed_cols));
+		writeInputMatrixWithMTD("X1", X1, false, new MatrixCharacteristics(fed_rows_x, fed_cols_x, BLOCKSIZE, fed_rows_x * fed_cols_x));
+		writeInputMatrixWithMTD("X2", X2, false, new MatrixCharacteristics(fed_rows_x, fed_cols_x, BLOCKSIZE, fed_rows_x * fed_cols_x));
+		writeInputMatrixWithMTD("Y1", Y1, false, new MatrixCharacteristics(fed_rows_y, fed_cols_y, BLOCKSIZE, fed_rows_y * fed_cols_y));
+		writeInputMatrixWithMTD("Y2", Y2, false, new MatrixCharacteristics(fed_rows_y, fed_cols_y, BLOCKSIZE, fed_rows_y * fed_cols_y));
 
 		// empty script name because we don't execute any script, just start the worker
 		fullDMLScriptName = "";
@@ -185,7 +206,8 @@ public class FederatedCodegenMultipleFedMOTest extends AutomatedTestBase
 			"in_Y2=" + TestUtils.federatedAddress(port2, input("Y2")),
 			"in_rp=" + Boolean.toString(row_partitioned).toUpperCase(),
 			"in_test_num=" + Integer.toString(test_num),
-			"rows=" + rows, "cols=" + cols,
+			"rows_x=" + rows_x, "cols_x=" + cols_x,
+			"rows_y=" + rows_y, "cols_y=" + cols_y,
 			"out_Z=" + output(OUTPUT_NAME)};
 		runTest(true, false, null, -1);
 

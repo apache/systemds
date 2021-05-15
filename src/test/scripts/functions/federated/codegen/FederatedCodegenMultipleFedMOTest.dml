@@ -24,15 +24,15 @@ row_part = $in_rp;
 
 if(row_part) {
   X = federated(addresses=list($in_X1, $in_X2),
-    ranges=list(list(0, 0), list($rows / 2, $cols), list($rows / 2, 0), list($rows, $cols)));
+    ranges=list(list(0, 0), list($rows_x / 2, $cols_x), list($rows_x / 2, 0), list($rows_x, $cols_x)));
   Y = federated(addresses=list($in_Y1, $in_Y2),
-    ranges=list(list(0, 0), list($rows / 2, $cols), list($rows / 2, 0), list($rows, $cols)));
+    ranges=list(list(0, 0), list($rows_y / 2, $cols_y), list($rows_y / 2, 0), list($rows_y, $cols_y)));
 }
 else {
   X = federated(addresses=list($in_X1, $in_X2),
-    ranges=list(list(0, 0), list($rows, $cols / 2), list(0, $cols / 2), list($rows, $cols)));
+    ranges=list(list(0, 0), list($rows_x, $cols_x / 2), list(0, $cols_x / 2), list($rows_x, $cols_x)));
   Y = federated(addresses=list($in_Y1, $in_Y2),
-    ranges=list(list(0, 0), list($rows, $cols / 2), list(0, $cols / 2), list($rows, $cols)));
+    ranges=list(list(0, 0), list($rows_y, $cols_y / 2), list(0, $cols_y / 2), list($rows_y, $cols_y)));
 }
 
 if(test_num == 1) { # cellwise #4
@@ -42,11 +42,11 @@ if(test_num == 1) { # cellwise #4
   Z = 10 + floor(round(abs((X + w) * Y)));
 }
 else if(test_num == 2) { # cellwise #5
-  # X ... 4x1 vector
-  # Y ... 4x1 vector
-  U = matrix( "1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16", rows=4, cols=4);
-  G = abs(exp(U));
-  V = 10 + floor(round(abs((U / X) + Y)));
+  # X ... 4x4 vector
+  # Y ... 4x1 / 1x4 vector
+  U = matrix( "1 2 3 4", rows=4, cols=1);
+  G = abs(exp(X));
+  V = 10 + floor(round(abs((X / Y) + U)));
   Z = G + V;
 }
 else if(test_num == 3) { # cellwise #6
@@ -90,11 +90,24 @@ else if(test_num == 101) { # rowwise #2
 }
 else if(test_num == 102) { # rowwise #3
   # X ... 6x1 vector
-  # Y ... 6x1 vector
-  U = matrix( "1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24", rows=6, cols=4);
+  # Y ... 6x4 vector
+  U = matrix( "1 2 3 4 5 6", rows=6, cols=1);
   V = matrix(1,rows=4,cols=1);
 
-  Z = t(U) %*% (Y + (2 - (X * (U %*% V))));
+  Z = t(Y) %*% (U + (2 - (X * (Y %*% V))));
+}
+else if(test_num == 103) { # rowwise #4
+  # X ... 6x4 matrix
+  # Y ... 6x2 matrix
+  Z = colSums(X / rowSums(Y));
+}
+else if(test_num == 104) { # rowwise #10
+  # X ... 150x10 matrix
+  # Y ... 150x10 matrix
+
+  Y = Y + (X <= rowMins(X));
+  U = (Y / rowSums(Y));
+  Z = colSums(U);
 }
 else if(test_num == 201) { # multiagg #4
   # X ... 6x4 matrix
@@ -127,11 +140,76 @@ else if(test_num == 203) { # multiagg #7
   Z = r1 + r2 + r3;
 }
 else if(test_num == 301) { # outerproduct #1
-  # X ... 2000x10 matrix
+  # X ... 2000x1500 matrix
   # Y ... 2000x10 matrix
-  U = matrix(3, rows=2000, cols=2000);
+  U = matrix(seq(1,15000), rows=1500, cols=10);
   eps = 0.1;
-  Z = as.matrix(sum(U * log(X %*% t(Y) + eps)));
+  Z = as.matrix(sum(X * log(Y %*% t(U) + eps)));
+}
+else if(test_num == 302) { # outerproduct #1
+  # X ... 2000x1500 matrix
+  # Y ... 10x1500 matrix
+  U = matrix(seq(1,20000), rows=2000, cols=10);
+  eps = 0.1;
+  Z = as.matrix(sum(X * log(U %*% Y + eps)));
+}
+else if(test_num == 303) { # outerproduct #2
+  # X ... 4000x2000 matrix
+  # Y ... 4000x10 matrix
+  U = matrix(seq(51, 20050), rows=2000, cols=10);
+  eps = 0.1;
+  Z = t(t(Y) %*% (X / (Y %*% t(U) + eps)));
+}
+else if(test_num == 304) { # outerproduct #2
+  # X ... 4000x2000 matrix
+  # Y ... 10x2000 matrix
+  U = matrix(seq(51, 40050), rows=4000, cols=10);
+  eps = 0.1;
+  Z = t(t(U) %*% (X / (U %*% Y + eps)));
+}
+else if(test_num == 305) { # outerproduct #6
+  # X ... 4000x2000 matrix
+  # Y ... 4000x10 matrix
+  U = matrix(seq(-1, 19998), rows=10, cols=2000);
+  eps = 0.1;
+  Z = (X / ((Y %*% U) + eps)) %*% t(U);
+}
+else if(test_num == 306) { # outerproduct #6
+  # X ... 4000x2000 matrix
+  # Y ... 10x2000 matrix
+  U = matrix(seq(1, 40000), rows=4000, cols=10);
+  eps = 0.1;
+  Z = (X / ((U %*% Y) + eps)) %*% t(Y);
+}
+else if(test_num == 307) { # outerproduct #8
+  # X ... 1000x2000 matrix
+  # Y ... 1000x10 matrix
+  U = matrix(seq(1, 20000), rows=2000, cols=10);
+  eps = 0.1;
+  Z = X * (1 / (1 + exp(-(Y %*% t(U)))));
+}
+else if(test_num == 308) { # outerproduct #8
+  # X ... 1000x2000 matrix
+  # Y ... 10x2000 matrix
+  U = matrix(seq(1, 10000), rows=1000, cols=10);
+  eps = 0.1;
+  Z = X * (1 / (1 + exp(-(U %*% Y))));
+}
+else if(test_num == 309) { # outerproduct #9
+  # X ... 1000x2000 matrix
+  # Y ... 1000x10 matrix
+  U = matrix(seq(1, 20000), rows=2000, cols=10);
+  eps = 0.4;
+
+  Z = t(t(Y) %*% (X / (Y %*% t(U) + eps)));
+}
+else if(test_num == 310) { # outerproduct #9
+  # X ... 1000x2000 matrix
+  # Y ... 10x2000 matrix
+  U = matrix(seq(1, 10000), rows=1000, cols=10);
+  eps = 0.4;
+
+  Z = t(t(U) %*% (X / (U %*% Y + eps)));
 }
 
 write(Z, $out_Z);

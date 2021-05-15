@@ -606,25 +606,43 @@ public class DataConverter {
 			// special case double schema (without cell-object creation, 
 			// cache-friendly row-column copy)
 			double[][] a = new double[n][];
-			double[] c = mb.getDenseBlockValues();
 			for( int j=0; j<n; j++ )
 				a[j] = (double[])frame.getColumnData(j);
-			int blocksizeIJ = 16; //blocks of a+overhead/c in L1 cache
-			for( int bi=0; bi<m; bi+=blocksizeIJ )
-				for( int bj=0; bj<n; bj+=blocksizeIJ ) {
-					int bimin = Math.min(bi+blocksizeIJ, m);
-					int bjmin = Math.min(bj+blocksizeIJ, n);
-					for( int i=bi, aix=bi*n; i<bimin; i++, aix+=n )
-						for( int j=bj; j<bjmin; j++ )
-							c[aix+j] = a[j][i];
-				}
+			int blocksizeIJ = 32; //blocks of a+overhead/c in L1 cache
+			long lnnz = 0;
+			if( mb.getDenseBlock().isContiguous() ) {
+				double[] c = mb.getDenseBlockValues();
+				for( int bi=0; bi<m; bi+=blocksizeIJ )
+					for( int bj=0; bj<n; bj+=blocksizeIJ ) {
+						int bimin = Math.min(bi+blocksizeIJ, m);
+						int bjmin = Math.min(bj+blocksizeIJ, n);
+						for( int i=bi, aix=bi*n; i<bimin; i++, aix+=n )
+							for( int j=bj; j<bjmin; j++ )
+								lnnz += (c[aix+j] = a[j][i]) != 0 ? 1 : 0;
+					}
+			}
+			else {
+				DenseBlock c = mb.getDenseBlock();
+				for( int bi=0; bi<m; bi+=blocksizeIJ )
+					for( int bj=0; bj<n; bj+=blocksizeIJ ) {
+						int bimin = Math.min(bi+blocksizeIJ, m);
+						int bjmin = Math.min(bj+blocksizeIJ, n);
+						for( int i=bi; i<bimin; i++ ) {
+							double[] cvals = c.values(i);
+							int cpos = c.pos(i);
+							for( int j=bj; j<bjmin; j++ )
+								lnnz += (cvals[cpos+j] = a[j][i]) != 0 ? 1 : 0;
+						}
+					}
+			}
+			mb.setNonZeros(lnnz);
 		}
 		else { 
 			//general case
 			for( int i=0; i<frame.getNumRows(); i++ ) 
 				for( int j=0; j<frame.getNumColumns(); j++ ) {
 					mb.appendValue(i, j, UtilFunctions.objectToDouble(
-							schema[j], frame.get(i, j)));
+						schema[j], frame.get(i, j)));
 				}
 		}
 		
@@ -729,7 +747,7 @@ public class DataConverter {
 					double[] aval = sblock.values(i);
 					for( int j=apos; j<apos+alen; j++ ) {
 						row[aix[j]] = UtilFunctions.doubleToObject(
-								schema[aix[j]], aval[j]);
+							schema[aix[j]], aval[j]);
 					}
 				}
 				frame.appendRow(row);
@@ -751,18 +769,35 @@ public class DataConverter {
 				// col pre-allocation, and cache-friendly row-column copy)
 				int m = mb.getNumRows();
 				int n = mb.getNumColumns();
-				double[] a = mb.getDenseBlockValues();
 				double[][] c = new double[n][m];
-				int blocksizeIJ = 16; //blocks of a/c+overhead in L1 cache
-				if( !mb.isEmptyBlock(false) )
-					for( int bi=0; bi<m; bi+=blocksizeIJ )
-						for( int bj=0; bj<n; bj+=blocksizeIJ ) {
-							int bimin = Math.min(bi+blocksizeIJ, m);
-							int bjmin = Math.min(bj+blocksizeIJ, n);
-							for( int i=bi, aix=bi*n; i<bimin; i++, aix+=n )
-								for( int j=bj; j<bjmin; j++ )
-									c[j][i] = a[aix+j];
-						}
+				int blocksizeIJ = 32; //blocks of a/c+overhead in L1 cache
+				if( !mb.isEmptyBlock(false) ) {
+					if( mb.getDenseBlock().isContiguous() ) {
+						double[] a = mb.getDenseBlockValues();
+						for( int bi=0; bi<m; bi+=blocksizeIJ )
+							for( int bj=0; bj<n; bj+=blocksizeIJ ) {
+								int bimin = Math.min(bi+blocksizeIJ, m);
+								int bjmin = Math.min(bj+blocksizeIJ, n);
+								for( int i=bi, aix=bi*n; i<bimin; i++, aix+=n )
+									for( int j=bj; j<bjmin; j++ )
+										c[j][i] = a[aix+j];
+							}
+					}
+					else { // large dense blocks
+						DenseBlock a = mb.getDenseBlock();
+						for( int bi=0; bi<m; bi+=blocksizeIJ )
+							for( int bj=0; bj<n; bj+=blocksizeIJ ) {
+								int bimin = Math.min(bi+blocksizeIJ, m);
+								int bjmin = Math.min(bj+blocksizeIJ, n);
+								for( int i=bi; i<bimin; i++ ) {
+									double[] avals = a.values(i);
+									int apos = a.pos(i);
+									for( int j=bj; j<bjmin; j++ )
+										c[j][i] = avals[apos+j];
+								}
+							}
+					}
+				}
 				frame.reset();
 				frame.appendColumns(c);
 			}
@@ -770,8 +805,8 @@ public class DataConverter {
 				// general case
 				for( int i=0; i<mb.getNumRows(); i++ ) {
 					for( int j=0; j<mb.getNumColumns(); j++ ) {
-							row[j] = UtilFunctions.doubleToObject(
-									schema[j], mb.quickGetValue(i, j));
+						row[j] = UtilFunctions.doubleToObject(
+							schema[j], mb.quickGetValue(i, j));
 					}
 					frame.appendRow(row);
 				}

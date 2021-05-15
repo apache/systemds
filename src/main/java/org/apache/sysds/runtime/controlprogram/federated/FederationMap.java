@@ -248,6 +248,32 @@ public class FederationMap {
 		return ret;
 	}
 	
+	public boolean isAligned(FederationMap that, boolean transposed, boolean equalRows, boolean equalCols) {
+		// determines if the two federated data are aligned row/column partitions (depending on parameters equalRows/equalCols)
+		// at the same federated site (which often allows for purely federated operations)
+		boolean ret = true;
+		final int ROW_IX = transposed ? 1 : 0; // swapping row and col dimension index of "that" if transposed
+		final int COL_IX = transposed ? 0 : 1;
+		if(_fedMap.size() != that._fedMap.size())
+			return false; // directly returning false if it has a different number of paritions
+		Iterator<Pair<FederatedRange, FederatedData>> partitionIter = _fedMap.iterator();
+		while(partitionIter.hasNext() && !ret) { // directly returning if (ret == false) to skip further checks
+			Entry<FederatedRange, FederatedData> e = partitionIter.next();
+			FederatedRange range = null;
+			for(FederatedRange r : that.getFederatedRanges()) {
+				// searching for the matching federated range of "that"
+				if((!equalRows || (r.getBeginDims()[ROW_IX] == e.getKey().getBeginDims()[0]
+						&& r.getEndDims()[ROW_IX] == e.getKey().getEndDims()[0]))
+					&& (!equalCols || (r.getBeginDims()[COL_IX] == e.getKey().getBeginDims()[1]
+							&& r.getEndDims()[COL_IX] == e.getKey().getEndDims()[1])))
+					range = r;
+			}
+			FederatedData dat2 = that.getFederatedData(range); // range is null if no matching range has been found
+			ret &= e.getValue().equalAddress(dat2);
+		}
+		return ret;
+	}
+
 	public Future<FederatedResponse>[] execute(long tid, FederatedRequest... fr) {
 		return execute(tid, false, fr);
 	}

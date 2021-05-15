@@ -188,14 +188,20 @@ public class SpoofFEDInstruction extends FEDInstruction
 
 		protected boolean needsBroadcastSliced(FederationMap fedMap, long rowNum, long colNum, int inputIndex) {
 			FType fedType = fedMap.getType();
+
 			boolean retVal = (rowNum == fedMap.getMaxIndexInRange(0) && colNum == fedMap.getMaxIndexInRange(1));
-			if(fedType == FType.ROW)
-				retVal |= (rowNum == fedMap.getMaxIndexInRange(0) && (colNum == 1 || colNum == fedMap.getSize()));
-			else if(fedType == FType.COL)
-				retVal |= ((rowNum == 1 || rowNum == fedMap.getSize()) && colNum == fedMap.getMaxIndexInRange(1));
-			else
+			if(fedType == FType.ROW) {
+				retVal |= (rowNum == fedMap.getMaxIndexInRange(0) && (colNum == 1 || colNum == fedMap.getSize()
+						|| fedMap.getMaxIndexInRange(1) == 1));
+			}
+			else if(fedType == FType.COL) {
+				retVal |= ((rowNum == 1 || rowNum == fedMap.getSize() || fedMap.getMaxIndexInRange(0) == 1)
+					&& colNum == fedMap.getMaxIndexInRange(1));
+			}
+			else {
 				throw new DMLRuntimeException("Only row partitioned or column" +
 					" partitioned federated input supported yet.");
+			}
 			return retVal;
 		}
 

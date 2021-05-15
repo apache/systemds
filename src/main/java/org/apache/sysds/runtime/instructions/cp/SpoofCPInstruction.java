@@ -27,6 +27,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.runtime.codegen.CodegenUtils;
 import org.apache.sysds.runtime.codegen.SpoofOperator;
+import org.apache.sysds.runtime.codegen.SpoofOuterProduct;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
@@ -139,15 +140,28 @@ public class SpoofCPInstruction extends ComputationCPInstruction {
 	public boolean isFederated(ExecutionContext ec, FType type) {
 		FederationMap fedMap = null;
 		boolean retVal = false;
+
+		// flags for alignment check
+		boolean equalRows = false;
+		boolean equalCols = false;
+		boolean transposed = false; // to check if aligned transposed
+
 		for(CPOperand input : _in) {
 			Data data = ec.getVariable(input);
-			if(data instanceof MatrixObject && (type == null ? ((MatrixObject) data).isFederated() : (((MatrixObject) data).isFederated(type)))) {
-				if(fedMap == null) {
-					fedMap = ((MatrixObject)data).getFedMapping();
+			if(data instanceof MatrixObject && ((MatrixObject) data).isFederated(type)) {
+				MatrixObject mo = ((MatrixObject) data);
+				if(fedMap == null) { // first federated matrix
+					fedMap = mo.getFedMapping();
 					retVal = true;
+
+					// setting the constraints for alignment check on further federated matrices
+					equalRows = mo.isFederated(FType.ROW);
+					equalCols = mo.isFederated(FType.COL);
+					transposed = (getOperatorClass().getSuperclass() == SpoofOuterProduct.class);
 				}
-				else if(!((MatrixObject) data).getFedMapping().isAligned(fedMap, false)) {
-					retVal = false;
+				else if(!fedMap.isAligned(mo.getFedMapping(), false, equalRows, equalCols)
+					&& (!transposed || !fedMap.isAligned(mo.getFedMapping(), true, equalRows, equalCols))) {
+					retVal = false; // multiple federated matrices must be aligned
 				}
 			}
 		}

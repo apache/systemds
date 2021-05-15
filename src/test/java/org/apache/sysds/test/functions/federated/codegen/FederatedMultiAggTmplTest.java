@@ -75,21 +75,20 @@ public class FederatedMultiAggTmplTest extends AutomatedTestBase
 
 			// row partitioned
 			{1, 6, 4, true},
-			{2, 6, 4, true},
+			// {2, 6, 4, true},
 			{3, 6, 4, true},
-			{4, 6, 4, true},
+			// {4, 6, 4, true},
 			{5, 6, 4, true},
 			{6, 6, 4, true},
 			{7, 20, 1, true},
 
 			// column partitioned
-			// {1, 6, 4, false},
-			// {2, 6, 4, false},
+			{1, 6, 4, false},
+			{2, 6, 4, false},
 			// {3, 6, 4, false},
-			// {4, 6, 4, false},
+			{4, 6, 4, false},
 			// {5, 6, 4, false},
-			// {6, 6, 4, false},
-			// {7, 20, 1, false},
+			{6, 6, 4, false},
 		});
 	}
 

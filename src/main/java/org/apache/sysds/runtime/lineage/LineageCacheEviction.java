@@ -238,7 +238,7 @@ public class LineageCacheEviction
 			}
 
 			if (spilltime < LineageCacheConfig.MIN_SPILL_TIME_ESTIMATE) {
-				// Can't trust the estimate if less than 100ms.
+				// Can't trust the estimate if less than 10ms.
 				// Spill if it takes longer to recompute.
 				removeOrSpillEntry(cache, e, //spill or delete
 					exectime >= LineageCacheConfig.MIN_SPILL_TIME_ESTIMATE);
@@ -290,7 +290,7 @@ public class LineageCacheEviction
 			return; 
 		
 		double newIOSpeed = size / IOtime; // MB per second 
-		// Adjust the read/write speed taking into account the last read/write.
+		// Adjust the read/write speed using exponential smoothing (alpha = 0.5)
 		// These constants will eventually converge to the real speed.
 		if (read) {
 			if (isSparse(e))
@@ -304,6 +304,7 @@ public class LineageCacheEviction
 			else
 				LineageCacheConfig.FSWRITE_DENSE= (LineageCacheConfig.FSWRITE_DENSE+ newIOSpeed) / 2;
 		}
+		// TODO: exponential smoothing with arbitrary smoothing factor
 	}
 	
 	private static boolean isSparse(LineageCacheEntry e) {

@@ -126,6 +126,7 @@ public class LineageCacheEntry {
 	
 	public synchronized void setValue(MatrixBlock val, long computetime) {
 		_MBval = val;
+		_gpuObject = null;  //Matrix block and gpu object cannot coexist
 		_computeTime = computetime;
 		_status = isNullVal() ? LineageCacheStatus.EMPTY : LineageCacheStatus.CACHED;
 		//resume all threads waiting for val
@@ -138,6 +139,7 @@ public class LineageCacheEntry {
 
 	public synchronized void setValue(ScalarObject val, long computetime) {
 		_SOval = val;
+		_gpuObject = null;  //scalar and gpu object cannot coexist
 		_computeTime = computetime;
 		_status = isNullVal() ? LineageCacheStatus.EMPTY : LineageCacheStatus.CACHED;
 		//resume all threads waiting for val

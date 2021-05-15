@@ -21,6 +21,7 @@ package org.apache.sysds.runtime.lineage;
 
 import java.util.List;
 import java.util.TreeSet;
+import java.util.concurrent.ExecutorService;
 
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.instructions.gpu.context.GPUContextPool;
@@ -31,6 +32,7 @@ public class LineageGPUCacheEviction
 	private static long _currentCacheSize = 0;
 	private static long GPU_CACHE_LIMIT; //limit in bytes
 	private static long _startTimestamp = 0;
+	public static ExecutorService gpuEvictionThread = null;
 	private static TreeSet<LineageCacheEntry> weightedQueue = new TreeSet<>(LineageCacheConfig.LineageCacheComparator);
 
 	protected static void resetEviction() {
@@ -40,6 +42,8 @@ public class LineageGPUCacheEviction
 			e._gpuObject.clearData(null, true);
 		}
 		_currentCacheSize = 0;
+		gpuEvictionThread = null;
+		//LineageCacheConfig.CONCURRENTGPUEVICTION = false;
 		weightedQueue.clear();
 	}
 
@@ -58,6 +62,19 @@ public class LineageGPUCacheEviction
 
 	protected static long getStartTimestamp() {
 		return _startTimestamp;
+	}
+	
+	private static void adjustD2HTransferSpeed(double sizeByte, double copyTime) {
+		double sizeMB = sizeByte / (1024*1024);
+		double newTSpeed = sizeMB / copyTime;  //bandwidth (MB/sec) + java overhead
+
+		// FIXME: A D2H copy lazily executes previous kernels
+		if (newTSpeed > LineageCacheConfig.D2HMAXBANDWIDTH)
+			return;  //filter out errorneous measurements (~ >8GB/sec)
+		// Perform exponential smoothing.
+		double smFactor = 0.5;  //smoothing factor
+		LineageCacheConfig.D2HCOPY = (smFactor * newTSpeed) + ((1-smFactor) * LineageCacheConfig.D2HCOPY);
+		//System.out.println("size_t: "+sizeMB+ " speed_t: "+newTSpeed + " estimate_t+1: "+LineageCacheConfig.D2HCOPY);
 	}
 
 	//--------------- CACHE MAINTENANCE & LOOKUP FUNCTIONS --------------//
@@ -111,19 +128,25 @@ public class LineageGPUCacheEviction
 		return GPU_CACHE_LIMIT;
 	}
 	
-	public static void copyToHostCache(LineageCacheEntry entry, String instName, boolean eagerDelete) {
+	public static void copyToHostCache(LineageCacheEntry entry, String instName, boolean alreadyCopied) {
 		// TODO: move to the shadow buffer. Convert to double precision only when reused.
-		// FIXME: Remove double copying (copyFromDeviceToHost, evictFromDeviceToHostMB)
-		MatrixBlock mb = entry._gpuObject.evictFromDeviceToHostMB(instName, eagerDelete);
+		long t0 = System.nanoTime();
+		MatrixBlock mb = alreadyCopied ? entry._gpuObject.getMatrixObject().acquireReadAndRelease()
+				: entry._gpuObject.evictFromDeviceToHostMB(instName, false);
+		long t1 = System.nanoTime();
+		adjustD2HTransferSpeed(((double)entry._gpuObject.getSizeOnDevice()), ((double)(t1-t0))/1000000000);
 		long size = mb.getInMemorySize();
-		// make space in the host memory for the data
-		if (!LineageCacheEviction.isBelowThreshold(size))
-			LineageCacheEviction.makeSpace(LineageCache.getLineageCache(), size);
+		// make space in the host memory for the data TODO: synchronize
+		if (!LineageCacheEviction.isBelowThreshold(size)) {
+			synchronized (LineageCache.getLineageCache()) {
+				LineageCacheEviction.makeSpace(LineageCache.getLineageCache(), size);
+			}
+		}
+		// FIXME: updateSize outside of synchronized is problematic, but eliminates waiting for background eviction
 		LineageCacheEviction.updateSize(size, true);
-		// place the data
+		// place the data and set gpu object to null in the cache entry
 		entry.setValue(mb);
-		entry._gpuObject = null;
-		// maintain order for eviction of host cache
+		// maintain order for eviction of host cache. FIXME: synchronize
 		LineageCacheEviction.addEntry(entry);
 		// manage space in gpu cache
 		updateSize(size, false);

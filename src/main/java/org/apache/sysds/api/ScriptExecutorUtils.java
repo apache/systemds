@@ -35,6 +35,7 @@ import org.apache.sysds.runtime.instructions.gpu.context.GPUContext;
 import org.apache.sysds.runtime.instructions.gpu.context.GPUContextPool;
 import org.apache.sysds.runtime.instructions.gpu.context.GPUObject;
 import org.apache.sysds.runtime.lineage.LineageEstimatorStatistics;
+import org.apache.sysds.runtime.lineage.LineageGPUCacheEviction;
 import org.apache.sysds.utils.Statistics;
 
 public class ScriptExecutorUtils {
@@ -113,6 +114,8 @@ public class ScriptExecutorUtils {
 					gCtx.clearTemporaryMemory();
 				}
 				GPUContextPool.freeAllGPUContexts();
+				if (LineageGPUCacheEviction.gpuEvictionThread != null)
+					LineageGPUCacheEviction.gpuEvictionThread.shutdown();
 			}
 			if( ConfigurationManager.isCodegenEnabled() )
 				SpoofCompiler.cleanupCodeGenerator();

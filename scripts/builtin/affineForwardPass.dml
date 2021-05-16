@@ -5,21 +5,21 @@ source("nn/layers/tanh.dml") as tanh
 source("nn/layers/softmax.dml") as softmax
 
 m_affineForwardPass = function(Matrix[double] X, List[Unknown] layers) 
-return(Matrix[double] out) {
+return(List[Unknown] fp_cache) {
     layers_num = length(layers) / 3
     
     input = X
-
+    fp_cache = list()
     for(i in 1:layers_num) {
         W = as.matrix(layers[i * 3 - 2])
         b = as.matrix(layers[i * 3 - 1])
         activation = toString(layers[i * 3])
- 
+    
         input = forward(input, W, b)
+        fp_cache = append(fp_cache, input)
         input = apply_activation(input, activation)
+        fp_cache = append(fp_cache, input)
     }
-
-    out = input
 }
 
 forward = function(Matrix[double] X, Matrix[double] W, Matrix[double] b)
@@ -51,7 +51,9 @@ return (Matrix[double] out) {
         out = lrelu::forward(input)
     } else if (activation == "tanh") {
         out = tanh::forward(input)
-    } else {
+    } else if (activation == "softmax") {
         out = softmax::forward(input)
+    } else {
+        out = input
     }
 }

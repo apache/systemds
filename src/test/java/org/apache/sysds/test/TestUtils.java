@@ -37,8 +37,20 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.text.NumberFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Random;
+import java.util.Scanner;
+import java.util.Set;
+import java.util.StringTokenizer;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
@@ -57,7 +69,11 @@ import org.apache.sysds.runtime.data.TensorBlock;
 import org.apache.sysds.runtime.io.FrameWriter;
 import org.apache.sysds.runtime.io.FrameWriterFactory;
 import org.apache.sysds.runtime.io.IOUtilFunctions;
-import org.apache.sysds.runtime.matrix.data.*;
+import org.apache.sysds.runtime.matrix.data.FrameBlock;
+import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.matrix.data.MatrixCell;
+import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
+import org.apache.sysds.runtime.matrix.data.MatrixValue;
 import org.apache.sysds.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.util.DataConverter;
@@ -3080,14 +3096,14 @@ public class TestUtils
 
 	/**
 	 * Reads a matrix from a text file. Rows are separated by newline, Values are separated by space.
-	 * Take from https://www.tutorialspoint.com/How-to-read-a-2d-array-from-a-file-in-java
+	 * Taken from https://www.tutorialspoint.com/How-to-read-a-2d-array-from-a-file-in-java
 	 * @param url URL to the resource file obtained by Class.getResource()
 	 * @param rows The expected number of rows
 	 * @param cols The expected number of columns
 	 * @return The matrix
-	 * @throws Exception
+	 * @throws IOException
 	 */
-	public static double[][] readMatrixFromFile(java.net.URL url, int rows, int cols) throws Exception {
+	public static double[][] readMatrixFromFile(java.net.URL url, int rows, int cols) throws IOException {
 		Scanner sc = new Scanner(new BufferedReader(new InputStreamReader(url.openStream())));
 		double [][] myArray = new double[rows][cols];
 		while(sc.hasNextLine()) {

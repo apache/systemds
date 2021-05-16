@@ -19,27 +19,56 @@
 #
 #-------------------------------------------------------------
 
-m_img_translate = function(Matrix[Double] img_in, Double offset_x, Double offset_y, Integer out_w, Integer out_h, Double fill_value) return (Matrix[Double] img_out) {
-  # Translates by x pixels to the right and y pixels down
+# Image Translate
+# Translates the image.
+# Optionally resizes the image (without scaling).
+# Uses nearest neighbor sampling.
+#
+# INPUT PARAMETERS:
+# ---------------------------------------------------------------------------------------------
+# NAME       TYPE   DEFAULT MEANING
+# ---------------------------------------------------------------------------------------------
+# img_in     Matrix ---     Input image as 2D matrix with top left corner at [1, 1]
+# offset_x   Double ---     The distance to move the image in x direction
+# offset_y   Double ---     The distance to move the image in y direction
+# out_w      Int    ---     Width of the output image
+# out_h      Int    ---     Height of the output image
+# fill_value Double ---     The background of the image
 
+# RETURN VALUES
+# ---------------------------------------------------------------------------------------------
+# img_out    Matrix ---     Output image as 2D matrix with top left corner at [1, 1]
+# ---------------------------------------------------------------------------------------------
+
+m_img_translate = function(Matrix[Double] img_in, Double offset_x, Double offset_y, Integer out_w, Integer out_h, Double fill_value) return (Matrix[Double] img_out) {
   w = ncol(img_in)
   h = nrow(img_in)
+
+  # round to nearest integer as fraction is irrelevant for nearest neighbor sampling
   offset_x = round(offset_x)
   offset_y = round(offset_y)
+
+  # index range in input image
   start_x = 1 - offset_x
   start_y = 1 - offset_y
   end_x = max(w , out_w) - offset_x
   end_y = max(h, out_h) - offset_y
+
+  # clip copy region to left and top of input image
   if (start_x < 1)
     start_x = 1
   if (start_y < 1)
     start_y = 1
+
+  # clip copy region to right and bottom of input image
   if (w < end_x)
     end_x = w
-  if (out_w < end_x + offset_x)
-    end_x = out_w - offset_x
   if (h < end_y)
     end_y = h
+
+  # clip copy region to right and bottom of output image
+  if (out_w < end_x + offset_x)
+    end_x = out_w - offset_x
   if (out_h < end_y + offset_y)
     end_y = out_h - offset_y
 

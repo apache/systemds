@@ -19,9 +19,27 @@
 #
 #-------------------------------------------------------------
 
+# Image Transform
+# Applies an affine transformation to an image.
+# Optionally resizes the image (without scaling).
+# Uses nearest neighbor sampling.
+#
+# INPUT PARAMETERS:
+# ---------------------------------------------------------------------------------------------
+# NAME       TYPE   DEFAULT MEANING
+# ---------------------------------------------------------------------------------------------
+# img_in     Matrix ---     Input image as 2D matrix with top left corner at [1, 1]
+# out_w      Int    ---     Width of the output image
+# out_h      Int    ---     Height of the output image
+# abcdef     Int    ---     The first two rows of the affine matrix in row-major order
+# fill_value Double ---     The background of the image
+
+# RETURN VALUES
+# ---------------------------------------------------------------------------------------------
+# img_out    Matrix ---     Output image as 2D matrix with top left corner at [1, 1]
+# ---------------------------------------------------------------------------------------------
+
 m_img_transform = function(Matrix[Double] img_in, Integer out_w, Integer out_h, Double a, Double b, Double c, Double d, Double e, Double f, Double fill_value) return (Matrix[Double] img_out) {
-  # Applies an affine transformation to the input image.
-  # The parameters a-f are the first two rows of the affine transformation matrix.
   divisor = a * e - b * d
   if(divisor == 0) {
     print("Inverse matrix does not exist! Returning input.")
@@ -30,6 +48,9 @@ m_img_transform = function(Matrix[Double] img_in, Integer out_w, Integer out_h, 
   else {
     orig_w = ncol(img_in)
     orig_h = nrow(img_in)
+    # inverted transformation matrix
+    # inversion is necessary because we compute the sampling position of pixels in the output image
+    # and not the output coordinates of input pixels
     T_inv = matrix(0, rows=3, cols=3)
     T_inv[1, 1] = e / divisor
     T_inv[1, 2] = -b / divisor
@@ -39,12 +60,16 @@ m_img_transform = function(Matrix[Double] img_in, Integer out_w, Integer out_h, 
     T_inv[2, 3] = (c * d - a * f) / divisor
     T_inv[3, 3] = 1
 
-    img_out = matrix(fill_value, rows=out_w*out_h, cols=1)
+    # coordinates of output pixel-centers linearized in row-major order
     coords = matrix(1, rows=3, cols=out_w*out_h)
     coords[1] = t((seq(0, out_w*out_h-1) %% out_w) + 0.5)
     coords[2] = t((seq(0, out_w*out_h-1) %/% out_w) + 0.5)
+
+    # compute sampling pixel indices
     coords = floor(T_inv %*% coords) + 1
 
+    # fill output image
+    img_out = matrix(fill_value, rows=out_w*out_h, cols=1)
     parfor (cell in 1:(out_w*out_h)) {
       inx = as.scalar(coords[1, cell])
       iny = as.scalar(coords[2, cell])
@@ -53,6 +78,7 @@ m_img_transform = function(Matrix[Double] img_in, Integer out_w, Integer out_h, 
       }
     }
 
+    # reshape output
     img_out = matrix(img_out, rows=out_h, cols=out_w)
   }
 }

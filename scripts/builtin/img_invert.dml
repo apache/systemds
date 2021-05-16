@@ -19,11 +19,20 @@
 #
 #-------------------------------------------------------------
 
+# Invert Image
+#
+# INPUT PARAMETERS:
+# ---------------------------------------------------------------------------------------------
+# NAME       TYPE   DEFAULT MEANING
+# ---------------------------------------------------------------------------------------------
+# img_in     Matrix ---     Input image
+# max_value  Double ---     The maximum value pixels can have
+
+# RETURN VALUES
+# ---------------------------------------------------------------------------------------------
+# img_out    Matrix ---     Output image
+# ---------------------------------------------------------------------------------------------
+
 m_img_invert = function(Matrix[Double] img_in, Double max_value) return (Matrix[Double] img_out) {
-  # Inverts the image by subtracting each pixel from the max_value
-
-  rows = nrow(img_in)
-  cols = ncol(img_in)
-
   img_out = max_value - img_in
 }

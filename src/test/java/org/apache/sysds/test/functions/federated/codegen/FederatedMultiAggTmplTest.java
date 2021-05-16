@@ -29,6 +29,7 @@ import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
 import org.junit.Assert;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.Test;
@@ -97,15 +98,17 @@ public class FederatedMultiAggTmplTest extends AutomatedTestBase
 		TestUtils.clearDirectory(TEST_DATA_DIR + TEST_CLASS_DIR);
 	}
 
-	// @Test
-	// public void federatedCodegenMultiAggSingleNode() {
-	// 	testFederatedCodegenMultiAgg(ExecMode.SINGLE_NODE);
-	// }
-	// 
-	// @Test
-	// public void federatedCodegenMultiAggSpark() {
-	// 	testFederatedCodegenMultiAgg(ExecMode.SPARK);
-	// }
+	@Test
+	@Ignore
+	public void federatedCodegenMultiAggSingleNode() {
+		testFederatedCodegenMultiAgg(ExecMode.SINGLE_NODE);
+	}
+	
+	@Test
+	@Ignore
+	public void federatedCodegenMultiAggSpark() {
+		testFederatedCodegenMultiAgg(ExecMode.SPARK);
+	}
 	
 	@Test
 	public void federatedCodegenMultiAggHybrid() {

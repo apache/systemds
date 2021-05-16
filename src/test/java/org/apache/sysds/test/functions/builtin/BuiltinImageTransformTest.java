@@ -73,8 +73,8 @@ public class BuiltinImageTransformTest extends AutomatedTestBase {
 		loadTestConfiguration(getTestConfiguration(TEST_NAME));
 		final int w = 500, h = 135, out_w = 550, out_h = 330;
 		final double fill_value = 128.0;
-		double[][] input = TestUtils.readMatrixFromFile(this.getClass().getResource("ImageTransformInput"), h, w);
-		double[][] reference = TestUtils.readMatrixFromFile(this.getClass().getResource("ImageTransformTransformed"), out_h, out_w);
+		double[][] input = TestUtils.readMatrixFromFile(this.getClass().getResource("ImageTransformInput.csv"), h, w);
+		double[][] reference = TestUtils.readMatrixFromFile(this.getClass().getResource("ImageTransformTransformed.csv"), out_h, out_w);
 		String HOME = SCRIPT_DIR + TEST_DIR;
 		fullDMLScriptName = HOME + TEST_NAME + ".dml";
 		programArgs = new String[] {"-nvargs", "in_file=" + input("A"), "out_file=" + output("B"), "width=" + cols,

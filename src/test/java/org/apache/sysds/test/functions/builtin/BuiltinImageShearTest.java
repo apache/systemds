@@ -44,7 +44,7 @@ public class BuiltinImageShearTest extends AutomatedTestBase {
 
 	@Test public void testImageShearZero() throws Exception {
 		loadTestConfiguration(getTestConfiguration(TEST_NAME));
-		double[][] input = TestUtils.readMatrixFromFile(this.getClass().getResource("ImageTransformInput"), rows, cols);
+		double[][] input = TestUtils.readMatrixFromFile(this.getClass().getResource("ImageTransformInput.csv"), rows, cols);
 		double[][] reference = input;
 		String HOME = SCRIPT_DIR + TEST_DIR;
 		fullDMLScriptName = HOME + TEST_NAME + ".dml";
@@ -61,8 +61,8 @@ public class BuiltinImageShearTest extends AutomatedTestBase {
 	@Test public void testImageShearPillowX() throws Exception {
 		loadTestConfiguration(getTestConfiguration(TEST_NAME));
 		final double fill_value = 128.0;
-		double[][] input = TestUtils.readMatrixFromFile(this.getClass().getResource("ImageTransformInput"), rows, cols);
-		double[][] reference = TestUtils.readMatrixFromFile(this.getClass().getResource("ImageTransformShearedX"), rows, cols);
+		double[][] input = TestUtils.readMatrixFromFile(this.getClass().getResource("ImageTransformInput.csv"), rows, cols);
+		double[][] reference = TestUtils.readMatrixFromFile(this.getClass().getResource("ImageTransformShearedX.csv"), rows, cols);
 		String HOME = SCRIPT_DIR + TEST_DIR;
 		fullDMLScriptName = HOME + TEST_NAME + ".dml";
 		programArgs = new String[] {"-nvargs", "in_file=" + input("A"), "out_file=" + output("B"), "width=" + cols,
@@ -78,8 +78,8 @@ public class BuiltinImageShearTest extends AutomatedTestBase {
 	@Test public void testImageShearPillowY() throws Exception {
 		loadTestConfiguration(getTestConfiguration(TEST_NAME));
 		final double fill_value = 128.0;
-		double[][] input = TestUtils.readMatrixFromFile(this.getClass().getResource("ImageTransformInput"), rows, cols);
-		double[][] reference = TestUtils.readMatrixFromFile(this.getClass().getResource("ImageTransformShearedY"), rows, cols);
+		double[][] input = TestUtils.readMatrixFromFile(this.getClass().getResource("ImageTransformInput.csv"), rows, cols);
+		double[][] reference = TestUtils.readMatrixFromFile(this.getClass().getResource("ImageTransformShearedY.csv"), rows, cols);
 		String HOME = SCRIPT_DIR + TEST_DIR;
 		fullDMLScriptName = HOME + TEST_NAME + ".dml";
 		programArgs = new String[] {"-nvargs", "in_file=" + input("A"), "out_file=" + output("B"), "width=" + cols,

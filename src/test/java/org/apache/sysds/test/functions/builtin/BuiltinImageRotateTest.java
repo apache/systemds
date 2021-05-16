@@ -47,7 +47,7 @@ public class BuiltinImageRotateTest extends AutomatedTestBase {
 		loadTestConfiguration(getTestConfiguration(TEST_NAME));
 		final int w = 500, h = 135;
 		final double fill_value = 128.0;
-		double[][] input = TestUtils.readMatrixFromFile(this.getClass().getResource("ImageTransformInput"), h, w);
+		double[][] input = TestUtils.readMatrixFromFile(this.getClass().getResource("ImageTransformInput.csv"), h, w);
 		double[][] reference = input;
 		String HOME = SCRIPT_DIR + TEST_DIR;
 		fullDMLScriptName = HOME + TEST_NAME + ".dml";
@@ -65,7 +65,7 @@ public class BuiltinImageRotateTest extends AutomatedTestBase {
 		loadTestConfiguration(getTestConfiguration(TEST_NAME));
 		final int w = 500, h = 135;
 		final double fill_value = 128.0;
-		double[][] input = TestUtils.readMatrixFromFile(this.getClass().getResource("ImageTransformInput"), h, w);
+		double[][] input = TestUtils.readMatrixFromFile(this.getClass().getResource("ImageTransformInput.csv"), h, w);
 		double[][] reference = input;
 		String HOME = SCRIPT_DIR + TEST_DIR;
 		fullDMLScriptName = HOME + TEST_NAME + ".dml";
@@ -83,8 +83,8 @@ public class BuiltinImageRotateTest extends AutomatedTestBase {
 		loadTestConfiguration(getTestConfiguration(TEST_NAME));
 		final int w = 500, h = 135;
 		final double fill_value = 128.0;
-		double[][] input = TestUtils.readMatrixFromFile(this.getClass().getResource("ImageTransformInput"), h, w);
-		double[][] reference = TestUtils.readMatrixFromFile(this.getClass().getResource("ImageTransformRotated"), h, w);
+		double[][] input = TestUtils.readMatrixFromFile(this.getClass().getResource("ImageTransformInput.csv"), h, w);
+		double[][] reference = TestUtils.readMatrixFromFile(this.getClass().getResource("ImageTransformRotated.csv"), h, w);
 		String HOME = SCRIPT_DIR + TEST_DIR;
 		fullDMLScriptName = HOME + TEST_NAME + ".dml";
 		programArgs = new String[] {"-nvargs", "in_file=" + input("A"), "out_file=" + output("B"), "width=" + cols,

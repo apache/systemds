@@ -34,7 +34,6 @@ import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedUDF;
-import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysds.runtime.instructions.CPInstructionParser;
 import org.apache.sysds.runtime.instructions.Instruction;
 import org.apache.sysds.runtime.instructions.cp.CPInstruction.CPType;
@@ -46,7 +45,6 @@ import org.apache.sysds.runtime.instructions.cp.MultiReturnBuiltinCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.ParameterizedBuiltinCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.ScalarObject;
 import org.apache.sysds.runtime.instructions.fed.ComputationFEDInstruction;
-import org.apache.sysds.runtime.instructions.gpu.AggregateBinaryGPUInstruction;
 import org.apache.sysds.runtime.instructions.gpu.GPUInstruction;
 import org.apache.sysds.runtime.instructions.gpu.context.GPUObject;
 import org.apache.sysds.runtime.lineage.LineageCacheConfig.LineageCacheStatus;
@@ -63,13 +61,13 @@ import java.util.Map;
 public class LineageCache
 {
 	private static final Map<LineageItem, LineageCacheEntry> _cache = new HashMap<>();
-	private static final double CACHE_FRAC = 0.05; // 5% of JVM heap size
 	protected static final boolean DEBUG = false;
 
 	static {
-		long maxMem = InfrastructureAnalyzer.getLocalMaxMemory();
-		LineageCacheEviction.setCacheLimit((long)(CACHE_FRAC * maxMem));
+		LineageCacheEviction.setCacheLimit(LineageCacheConfig.CPU_CACHE_FRAC); //5%
 		LineageCacheEviction.setStartTimestamp();
+		LineageGPUCacheEviction.setStartTimestamp();
+		// Note: GPU cache initialization is done in GPUContextPool:initializeGPU()
 	}
 	
 	// Cache Synchronization Approach:
@@ -93,10 +91,11 @@ public class LineageCache
 		if (LineageCacheConfig.isReusable(inst, ec)) {
 			ComputationCPInstruction cinst = inst instanceof ComputationCPInstruction ? (ComputationCPInstruction)inst : null;
 			ComputationFEDInstruction cfinst = inst instanceof ComputationFEDInstruction ? (ComputationFEDInstruction)inst : null; 
+			GPUInstruction gpuinst = inst instanceof GPUInstruction ? (GPUInstruction)inst : null;
 				
 			LineageItem instLI = (cinst != null) ? cinst.getLineageItem(ec).getValue()
 					: (cfinst != null) ? cfinst.getLineageItem(ec).getValue() 
-					: ((LineageTraceable)inst).getLineageItem(ec).getValue();  //GPU instruction
+					: gpuinst.getLineageItem(ec).getValue();
 			List<MutablePair<LineageItem, LineageCacheEntry>> liList = null;
 			if (inst instanceof MultiReturnBuiltinCPInstruction) {
 				liList = new ArrayList<>();
@@ -134,8 +133,8 @@ public class LineageCache
 							putIntern(item.getKey(), cinst.output.getDataType(), null, null,  0);
 						else if (cfinst != null)
 							putIntern(item.getKey(), cfinst.output.getDataType(), null, null,  0);
-						else if (inst instanceof AggregateBinaryGPUInstruction)
-							putIntern(item.getKey(), ((AggregateBinaryGPUInstruction)inst)._output.getDataType(), null, null,  0);
+						else if (gpuinst != null)
+							putIntern(item.getKey(), gpuinst._output.getDataType(), null, null,  0);
 						//FIXME: different o/p datatypes for MultiReturnBuiltins.
 					}
 				}
@@ -154,16 +153,30 @@ public class LineageCache
 						outName = cinst.output.getName();
 					else if (inst instanceof ComputationFEDInstruction)
 						outName = cfinst.output.getName();
-					else if (inst instanceof AggregateBinaryGPUInstruction)
-						outName = ((AggregateBinaryGPUInstruction) inst)._output.getName();
+					else if (inst instanceof GPUInstruction)
+						outName = gpuinst._output.getName();
 					
-					if (e.isMatrixValue() && e._gpuPointer == null)
-						ec.setMatrixOutput(outName, e.getMBValue());
-					else if (e.isScalarValue())
-						ec.setScalarOutput(outName, e.getSOValue());
-					else //TODO handle locks on gpu objects
+					if (e.isMatrixValue() && e._gpuObject == null) {
+						MatrixBlock mb = e.getMBValue(); //wait if another thread is executing the same inst.
+						if (mb == null && e.getCacheStatus() == LineageCacheStatus.NOTCACHED)
+							return false;  //the executing thread removed this entry from cache
+						else
+							ec.setMatrixOutput(outName, e.getMBValue());
+					}
+					else if (e.isScalarValue()) {
+						ScalarObject so = e.getSOValue(); //wait if another thread is executing the same inst.
+						if (so == null && e.getCacheStatus() == LineageCacheStatus.NOTCACHED)
+							return false;  //the executing thread removed this entry from cache
+						else
+							ec.setScalarOutput(outName, e.getSOValue());
+					}
+					else { //TODO handle locks on gpu objects
+						//shallow copy the cached GPUObj to the output MatrixObject
 						ec.getMatrixObject(outName).setGPUObject(ec.getGPUContext(0), 
-								ec.getGPUContext(0).shallowCopyGPUObject(e._gpuPointer, ec.getMatrixObject(outName)));
+								ec.getGPUContext(0).shallowCopyGPUObject(e._gpuObject, ec.getMatrixObject(outName)));
+						//Set dirty to true, so that it is later copied to the host
+						ec.getMatrixObject(outName).getGPUObject(ec.getGPUContext(0)).setDirty(true);
+					}
 
 					reuse = true;
 
@@ -418,71 +431,96 @@ public class LineageCache
 					liData.add(Pair.of(li, value));
 				}
 			}
-			else if (inst instanceof AggregateBinaryGPUInstruction)
-				liGpuObj = ec.getMatrixObject(((AggregateBinaryGPUInstruction) inst)._output).getGPUObject(ec.getGPUContext(0));
+			else if (inst instanceof GPUInstruction) {
+				// TODO: gpu multiretrun instructions
+				Data gpudata = ec.getVariable(((GPUInstruction) inst)._output);
+				liGpuObj = gpudata instanceof MatrixObject ? 
+						ec.getMatrixObject(((GPUInstruction)inst)._output).getGPUObject(ec.getGPUContext(0)) : null;
+
+				// Scalar gpu intermediates is always copied back to host. 
+				// No need to cache the GPUobj for scalar intermediates.
+				if (liGpuObj == null)
+					liData = Arrays.asList(Pair.of(instLI, ec.getVariable(((GPUInstruction)inst)._output)));
+			}
 			else
 				liData = inst instanceof ComputationCPInstruction ? 
 						Arrays.asList(Pair.of(instLI, ec.getVariable(((ComputationCPInstruction) inst).output))) :
 						Arrays.asList(Pair.of(instLI, ec.getVariable(((ComputationFEDInstruction) inst).output)));
-			synchronized( _cache ) {
-				if (liGpuObj != null) {
-					LineageCacheEntry centry = _cache.get(instLI);
-					liGpuObj.setIsLinCached(true);
-					centry._gpuPointer = liGpuObj;
-					centry._computeTime = computetime;
-					centry._status = LineageCacheStatus.CACHED;
-					return;
+
+			if (liGpuObj == null)
+				putValueCPU(inst, liData, computetime);
+			else
+				putValueGPU(liGpuObj, instLI, computetime);
+		}
+	}
+	
+	private static void putValueCPU(Instruction inst, List<Pair<LineageItem, Data>> liData, long computetime)
+	{
+		synchronized( _cache ) {
+			for (Pair<LineageItem, Data> entry : liData) {
+				LineageItem item = entry.getKey();
+				Data data = entry.getValue();
+
+				if (!probe(item))
+					continue;
+
+				LineageCacheEntry centry = _cache.get(item);
+
+				if (!(data instanceof MatrixObject) && !(data instanceof ScalarObject)) {
+					// Reusable instructions can return a frame (rightIndex). Remove placeholders.
+					removePlaceholder(item);
+					continue;
 				}
-				for (Pair<LineageItem, Data> entry : liData) {
-					LineageItem item = entry.getKey();
-					Data data = entry.getValue();
-					LineageCacheEntry centry = _cache.get(item);
 
-					if (!(data instanceof MatrixObject) && !(data instanceof ScalarObject)) {
-						// Reusable instructions can return a frame (rightIndex). Remove placeholders.
-						_cache.remove(item);
-						continue;
-					}
-					
-					if (LineageCacheConfig.isOutputFederated(inst, data)) {
-						// Do not cache federated outputs (in the coordinator)
-						// Cannot skip putting the placeholder as the above is only known after execution
-						_cache.remove(item);
-						continue;
-					}
-
-					MatrixBlock mb = (data instanceof MatrixObject) ? 
-							((MatrixObject)data).acquireReadAndRelease() : null;
-					long size = mb != null ? mb.getInMemorySize() : ((ScalarObject)data).getSize();
-
-					//remove the placeholder if the entry is bigger than the cache.
-					//FIXME: the resumed threads will enter into infinite wait as the entry
-					//is removed. Need to add support for graceful remove (placeholder) and resume.
-					if (size > LineageCacheEviction.getCacheLimit()) {
-						_cache.remove(item);
-						continue; 
-					}
-
-					//make space for the data
-					if (!LineageCacheEviction.isBelowThreshold(size))
-						LineageCacheEviction.makeSpace(_cache, size);
-					LineageCacheEviction.updateSize(size, true);
-
-					//place the data
-					if (data instanceof MatrixObject)
-						centry.setValue(mb, computetime);
-					else if (data instanceof ScalarObject)
-						centry.setValue((ScalarObject)data, computetime);
-
-					if (DMLScript.STATISTICS && LineageCacheEviction._removelist.containsKey(centry._key)) {
-						// Add to missed compute time
-						LineageCacheStatistics.incrementMissedComputeTime(centry._computeTime);
-					}
-
-					//maintain order for eviction
-					LineageCacheEviction.addEntry(centry);
+				if (LineageCacheConfig.isOutputFederated(inst, data)) {
+					// Do not cache federated outputs (in the coordinator)
+					// Cannot skip putting the placeholder as the above is only known after execution
+					removePlaceholder(item);
+					continue;
 				}
+
+				MatrixBlock mb = (data instanceof MatrixObject) ? 
+						((MatrixObject)data).acquireReadAndRelease() : null;
+				long size = mb != null ? mb.getInMemorySize() : ((ScalarObject)data).getSize();
+
+				//remove the placeholder if the entry is bigger than the cache.
+				if (size > LineageCacheEviction.getCacheLimit()) {
+					removePlaceholder(item);
+					continue; 
+				}
+
+				//make space for the data
+				if (!LineageCacheEviction.isBelowThreshold(size))
+					LineageCacheEviction.makeSpace(_cache, size);
+				LineageCacheEviction.updateSize(size, true);
+
+				//place the data
+				if (data instanceof MatrixObject)
+					centry.setValue(mb, computetime);
+				else if (data instanceof ScalarObject)
+					centry.setValue((ScalarObject)data, computetime);
+
+				if (DMLScript.STATISTICS && LineageCacheEviction._removelist.containsKey(centry._key)) {
+					// Add to missed compute time
+					LineageCacheStatistics.incrementMissedComputeTime(centry._computeTime);
+				}
+
+				//maintain order for eviction
+				LineageCacheEviction.addEntry(centry);
 			}
+		}
+	}
+	
+	private static void putValueGPU(GPUObject gpuObj, LineageItem instLI, long computetime) {
+		synchronized( _cache ) {
+			LineageCacheEntry centry = _cache.get(instLI);
+			// Update the total size of lineage cached gpu objects
+			// The eviction is handled by the unified gpu memory manager
+			LineageGPUCacheEviction.updateSize(gpuObj.getSizeOnDevice(), true);
+			// Set the GPUOject in the cache
+			centry.setGPUValue(gpuObj, computetime);
+			// Maintain order for eviction
+			LineageGPUCacheEviction.addEntry(centry);
 		}
 	}
 	
@@ -518,7 +556,7 @@ public class LineageCache
 			if(AllOutputsCacheable)
 				FuncLIMap.forEach((Li, boundLI) -> mvIntern(Li, boundLI, computetime));
 			else
-				FuncLIMap.forEach((Li, boundLI) -> _cache.remove(Li));
+				FuncLIMap.forEach((Li, boundLI) -> removePlaceholder(Li));
 		}
 		
 		return;
@@ -535,11 +573,13 @@ public class LineageCache
 			return;
 		synchronized (_cache) {
 			LineageItem item = udf.getLineageItem(ec).getValue();
+			if (!probe(item))
+				return;
 			LineageCacheEntry entry = _cache.get(item);
 			Data data = ec.getVariable(String.valueOf(outIds.get(0)));
 			if (!(data instanceof MatrixObject) && !(data instanceof ScalarObject)) {
 				// Don't cache if the udf outputs frames
-				_cache.remove(item);
+				removePlaceholder(item);
 				return;
 			}
 			
@@ -548,10 +588,8 @@ public class LineageCache
 			long size = mb != null ? mb.getInMemorySize() : ((ScalarObject)data).getSize();
 
 			//remove the placeholder if the entry is bigger than the cache.
-			//FIXME: the resumed threads will enter into infinite wait as the entry
-			//is removed. Need to add support for graceful remove (placeholder) and resume.
 			if (size > LineageCacheEviction.getCacheLimit()) {
-				_cache.remove(item);
+				removePlaceholder(item);
 				return;
 			}
 
@@ -577,8 +615,14 @@ public class LineageCache
 		synchronized (_cache) {
 			_cache.clear();
 			LineageCacheEviction.resetEviction();
+			LineageGPUCacheEviction.resetEviction();
 		}
 	}
+	
+	public static Map<LineageItem, LineageCacheEntry> getLineageCache() {
+		return _cache;
+	}
+
 	
 	//----------------- INTERNAL CACHE LOGIC IMPLEMENTATION --------------//
 	
@@ -657,23 +701,29 @@ public class LineageCache
 			LineageCacheEviction.addEntry(e);
 		}
 		else
-			_cache.remove(item);    //remove the placeholder
+			removePlaceholder(item);    //remove the placeholder
+	}
+	
+	private static void removePlaceholder(LineageItem item) {
+		//Caller should hold the monitor on _cache
+		if (!_cache.containsKey(item))
+			return;
+		LineageCacheEntry centry = _cache.get(item);
+		centry.removeAndNotify();
+		_cache.remove(item);
 	}
 	
 	private static boolean isMarkedForCaching (Instruction inst, ExecutionContext ec) {
 		if (!LineageCacheConfig.getCompAssRW())
 			return true;
 		
-		if (inst instanceof GPUInstruction)
-			return true;
-
-		CPOperand output = inst instanceof ComputationCPInstruction ? 
-				((ComputationCPInstruction)inst).output :
-				((ComputationFEDInstruction)inst).output;
+		CPOperand output = inst instanceof ComputationCPInstruction ? ((ComputationCPInstruction)inst).output 
+				: inst instanceof ComputationFEDInstruction ? ((ComputationFEDInstruction)inst).output
+				: ((GPUInstruction)inst)._output;
 		if (output.isMatrix()) {
-			MatrixObject mo = inst instanceof ComputationCPInstruction ? 
-					ec.getMatrixObject(((ComputationCPInstruction)inst).output) :
-					ec.getMatrixObject(((ComputationFEDInstruction)inst).output);
+			MatrixObject mo = inst instanceof ComputationCPInstruction ? ec.getMatrixObject(((ComputationCPInstruction)inst).output) 
+				: inst instanceof ComputationFEDInstruction ? ec.getMatrixObject(((ComputationFEDInstruction)inst).output)
+				: ec.getMatrixObject(((GPUInstruction)inst)._output);
 			//limit this to full reuse as partial reuse is applicable even for loop dependent operation
 			return !(LineageCacheConfig.getCacheType() == ReuseCacheType.REUSE_FULL  
 				&& !mo.isMarked());

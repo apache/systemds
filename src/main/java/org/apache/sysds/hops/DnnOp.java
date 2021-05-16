@@ -155,7 +155,7 @@ public class DnnOp extends MultiThreadedHop {
 		
 		//add reblock/checkpoint lops if necessary
 		constructAndSetLopsDataFlowProperties();
-		
+
 		return getLops();
 	}
 	

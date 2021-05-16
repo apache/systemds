@@ -19,9 +19,10 @@
 
 package org.apache.sysds.runtime.compress.estim;
 
+import java.util.List;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.sysds.runtime.DMLCompressionException;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 
 /**
@@ -31,37 +32,21 @@ public class CompressedSizeInfo {
 	
 	protected static final Log LOG = LogFactory.getLog(CompressedSizeInfo.class.getName());
 
-	public CompressedSizeInfoColGroup[] compressionInfo;
-	public int numCols;
-	public int nnz;
-	public int numRows;
+	public List<CompressedSizeInfoColGroup> compressionInfo;
 
-	public CompressedSizeInfo(CompressedSizeInfoColGroup[] compressionInfo, int nnz, int numRows, int numCols) {
-		if(numCols < 0 )
-			throw new DMLCompressionException("Invalid number of columns");
+	public CompressedSizeInfo(List<CompressedSizeInfoColGroup> compressionInfo) {
 		this.compressionInfo = compressionInfo;
-		this.nnz = nnz;
-		this.numRows = numRows;
-		this.numCols = numCols;
-	}
-
-	public int[][] getGroups(){
-		int[][] ret = new int[compressionInfo.length][];
-		for(int i = 0; i < compressionInfo.length; i++){
-			ret[i] = compressionInfo[i].getColumns();
-		}
-		return ret;
 	}
 
 	public CompressedSizeInfoColGroup getGroupInfo(int index) {
-		return compressionInfo[index];
+		return compressionInfo.get(index);
 	}
 
-	public CompressedSizeInfoColGroup[] getInfo(){
+	public List<CompressedSizeInfoColGroup> getInfo(){
 		return compressionInfo;
 	}
 
-	public void setInfo(CompressedSizeInfoColGroup[] info){
+	public void setInfo(List<CompressedSizeInfoColGroup> info){
 		compressionInfo = info;
 	}
 
@@ -81,23 +66,14 @@ public class CompressedSizeInfo {
 	}
 
 	public int getNumberColGroups(){
-		return compressionInfo.length;
-	}
-
-	public boolean isCompressible(long orgSize) {
-		long sum = 0;
-		for(CompressedSizeInfoColGroup g : compressionInfo) {
-			sum += g.getMinSize();
-		}
-		// LOG.error("Original size :" + orgSize + "compressedSingleColumns: " + sum);
-		return sum <= orgSize;
+		return compressionInfo.size();
 	}
 
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
 		sb.append("CompressedSizeInfo");
-		sb.append("num Rows" + numRows + "  NumCols" + numCols + "  nnz" + nnz);
+		// sb.append("num Rows" + numRows + "  NumCols" + numCols );
 		for(CompressedSizeInfoColGroup g : compressionInfo)
 			sb.append("\n" + g.toString());
 		return sb.toString();

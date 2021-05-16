@@ -203,7 +203,7 @@ public class DataGenOp extends MultiThreadedHop
 		
 		//add reblock/checkpoint lops if necessary
 		constructAndSetLopsDataFlowProperties();
-		
+
 		return getLops();
 	}
 
@@ -332,7 +332,7 @@ public class DataGenOp extends MultiThreadedHop
 		Hop input2;
 		Hop input3;
 
-		if ( _op == OpOpDG.RAND || _op == OpOpDG.SINIT ) 
+		if ( _op == OpOpDG.RAND || _op == OpOpDG.SINIT || _op == OpOpDG.FRAMEINIT )
 		{
 			if (_dataType != DataType.TENSOR) {
 				input1 = getInput().get(_paramIndexMap.get(DataExpression.RAND_ROWS)); //rows

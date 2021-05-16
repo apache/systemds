@@ -54,7 +54,7 @@ m_mice= function(Matrix[Double] X, Matrix[Double] cMask, Integer iter = 3,
          expected number of columns > 1 found: "+ncol(X))
   
   if(ncol(cMask) != ncol(X))
-    stop("Dimension mismatch: the columns in X != columns in mask")
+    stop("MICE Dimension mismatch: the columns in X != columns in mask")
   
     
   lastIndex = ncol(X);
@@ -140,7 +140,7 @@ m_mice= function(Matrix[Double] X, Matrix[Double] cMask, Integer iter = 3,
         # learn a regression line
         beta = lm(X=train_X, y=train_Y, verbose=FALSE, icpt=1, reg = 1e-7, tol = 1e-7);
         # predicting missing values 
-        pred = lmPredict(X=test_X, B=beta, icpt=1)
+        pred = lmPredict(X=test_X, B=beta, ytest= matrix(0,1,1), icpt=1)
         # imputing missing column values (assumes Mask_Filled being 0/1-matrix)
         R = removeEmpty(target=Mask_Filled[, in_c] * seq(1,n), margin="rows");
         # TODO modify removeEmpty to return zero row and n columns
@@ -204,8 +204,9 @@ m_mice= function(Matrix[Double] X, Matrix[Double] cMask, Integer iter = 3,
 
 colDist= function(Matrix[Double] X, Matrix[Double] mask)
 return (Matrix[Double] dist){
+ 
   dist = matrix(1, 1, ncol(X))
-  X = replace(target=X, pattern=0, replacement=min(X))
+  X = replace(target=X, pattern=0, replacement=max(X)+1)
   parfor(i in 1:ncol(X))
   {
     if(as.scalar(mask[,i]) == 1)
@@ -214,5 +215,6 @@ return (Matrix[Double] dist){
       dist[1, i] = sum(distT != 0)
     }
   }
+
 }
 

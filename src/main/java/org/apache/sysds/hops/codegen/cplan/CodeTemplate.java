@@ -33,7 +33,7 @@ public abstract class CodeTemplate {
 	}
 	
 	public String getTemplate(CNodeBinary.BinType type, boolean sparseLhs, boolean sparseRhs, boolean scalarVector,
-		boolean scalarInput) {
+		boolean scalarInput, boolean vectorVector) {
 		throw new RuntimeException("Calling wrong getTemplate method on " + getClass().getCanonicalName());
 	}
 	

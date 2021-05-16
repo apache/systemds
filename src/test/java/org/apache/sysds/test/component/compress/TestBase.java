@@ -78,26 +78,12 @@ public class TestBase {
 				case OLE_COMPRESSIBLE:
 					// Note the Compressible Input generator, generates an already Transposed input
 					// normally, therefore last argument is true, to build a non transposed matrix.
-					this.input = CompressibleInputGenerator.getInputDoubleMatrix(rows,
-						cols,
-						CompressionType.OLE,
-						(max - min),
-						max,
-						min,
-						sparsity,
-						7,
-						true);
+					this.input = CompressibleInputGenerator.getInputDoubleMatrix(rows, cols, CompressionType.OLE,
+						(max - min), max, min, sparsity, 7, true);
 					break;
 				case RLE_COMPRESSIBLE:
-					this.input = CompressibleInputGenerator.getInputDoubleMatrix(rows,
-						cols,
-						CompressionType.RLE,
-						(max - min),
-						max,
-						min,
-						sparsity,
-						7,
-						true);
+					this.input = CompressibleInputGenerator.getInputDoubleMatrix(rows, cols, CompressionType.RLE,
+						(max - min), max, min, sparsity, 7, true);
 					break;
 				default:
 					throw new NotImplementedException("Not Implemented Test Value type input generator");

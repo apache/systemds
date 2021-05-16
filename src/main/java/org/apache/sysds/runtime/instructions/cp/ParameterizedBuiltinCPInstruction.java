@@ -404,9 +404,8 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction 
 		// warn on truncation because users might not be aware and use toString for verification
 		if((getParam("rows") == null && data.getNumRows() > rows) ||
 			(getParam("cols") == null && data.getNumColumns() > cols)) {
-			LOG.warn("Truncating " + data.getClass().getSimpleName() + " of size " + data.getNumRows() + "x"
-				+ data.getNumColumns() + " to " + rows + "x" + cols + ". "
-				+ "Use toString(X, rows=..., cols=...) if necessary.");
+			LOG.warn("Truncating " + data.getClass().getSimpleName() + " of size " + data.getNumRows() + "x" + data
+				.getNumColumns() + " to " + rows + "x" + cols + ". " + "Use toString(X, rows=..., cols=...) if necessary.");
 		}
 	}
 

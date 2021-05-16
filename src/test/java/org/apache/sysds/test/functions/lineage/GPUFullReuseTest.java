@@ -38,6 +38,7 @@ public class GPUFullReuseTest extends AutomatedTestBase{
 	
 	protected static final String TEST_DIR = "functions/lineage/";
 	protected static final String TEST_NAME1 = "FullReuseGPU1"; 
+	protected static final String TEST_NAME2 = "LineageTraceGPU1"; 
 	protected String TEST_CLASS_DIR = TEST_DIR + GPUFullReuseTest.class.getSimpleName() + "/";
 	
 	@BeforeClass
@@ -50,17 +51,24 @@ public class GPUFullReuseTest extends AutomatedTestBase{
 	public void setUp() {
 		TestUtils.clearAssertionInformation();
 		addTestConfiguration( TEST_NAME1, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] {"R"}) );
+		addTestConfiguration( TEST_NAME2, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2, new String[] {"R"}) );
 	}
 	
 	@Test
-	public void ReuseSingleInst() {           //reuse ba+*
+	public void ReuseAggBin() {           //reuse AggregateBinary and sum
 		testLineageTraceExec(TEST_NAME1);
+	}
+
+	@Test
+	public void ReuseSimpleHLM() {        //hyper-parameter tuning over LM (simple)
+		testLineageTraceExec(TEST_NAME2);
 	}
 	
 	private void testLineageTraceExec(String testname) {
 		System.out.println("------------ BEGIN " + testname + "------------");
 		getAndLoadTestConfiguration(testname);
 
+		AutomatedTestBase.TEST_GPU = true;  //adds '-gpu'
 		List<String> proArgs = new ArrayList<>();
 		proArgs.add("-stats");
 		proArgs.add("-args");
@@ -68,11 +76,11 @@ public class GPUFullReuseTest extends AutomatedTestBase{
 		programArgs = proArgs.toArray(new String[proArgs.size()]);
 		fullDMLScriptName = getScript();
 		
+		Lineage.resetInternalState();
 		//run the test
 		runTest(true, EXCEPTION_NOT_EXPECTED, null, -1);
 		HashMap<MatrixValue.CellIndex, Double> R_orig = readDMLMatrixFromOutputDir("R");
 		
-		AutomatedTestBase.TEST_GPU = true;  //adds '-gpu'
 		proArgs.add("-stats");
 		proArgs.add("-lineage");
 		proArgs.add("reuse_full");

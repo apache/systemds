@@ -24,11 +24,11 @@
 
 from typing import Dict, Iterable
 
-from systemds.operator import OperationNode
+from systemds.operator import OperationNode, Matrix
 from systemds.script_building.dag import OutputType
 from systemds.utils.consts import VALID_INPUT_TYPES
 
-def gmmPredict(X: OperationNode, weight: OperationNode, mu: OperationNode, precisions_cholesky: OperationNode, model: str) -> OperationNode:
+def gmmPredict(X: OperationNode, weight: OperationNode, mu: OperationNode, precisions_cholesky: OperationNode, model: str) -> Matrix:
     """
     :param X: Matrix X (instances to be clustered)
     :param weight: Weight of learned model

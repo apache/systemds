@@ -183,10 +183,10 @@ public class StatementBlock extends LiveVariableAnalysis implements ParseInfo
 	public boolean isMergeableFunctionCallBlock(DMLProgram dmlProg) {
 		// check whether targetIndex stmt block is for a mergable function call
 		Statement stmt = this.getStatement(0);
-
+		
 		// Check whether targetIndex block is: control stmt block or stmt block for un-mergable function call
 		if (   stmt instanceof WhileStatement || stmt instanceof IfStatement || stmt instanceof ForStatement
-			|| stmt instanceof FunctionStatement || isMergeablePrintStatement(stmt) /*|| stmt instanceof ELStatement*/ )
+			|| stmt instanceof FunctionStatement || isMergeablePrintStatement(stmt) )
 		{
 			return false;
 		}
@@ -232,7 +232,7 @@ public class StatementBlock extends LiveVariableAnalysis implements ParseInfo
 			}
 		}
 
-		// regular function block
+		// regular statement block
 		return true;
 	}
 
@@ -250,7 +250,8 @@ public class StatementBlock extends LiveVariableAnalysis implements ParseInfo
 				FunctionCallIdentifier fcall = (FunctionCallIdentifier) sourceExpr;
 				FunctionStatementBlock fblock = dmlProg.getFunctionStatementBlock(fcall.getNamespace(),fcall.getName());
 				if (fblock == null) {
-					if( Builtins.contains(fcall.getName(), true, false) )
+					if( Builtins.contains(fcall.getName(), true, false) 
+						|| DMLProgram.isInternalNamespace(fcall.getNamespace()))
 						return false;
 					throw new LanguageException(sourceExpr.printErrorLocation() + "function " 
 						+ fcall.getName() + " is undefined in namespace " + fcall.getNamespace());
@@ -359,18 +360,17 @@ public class StatementBlock extends LiveVariableAnalysis implements ParseInfo
 		ArrayList<StatementBlock> result = new ArrayList<>();
 		StatementBlock currentBlock = null;
 
-		for (int i = 0; i < body.size(); i++){
+		for (int i = 0; i < body.size(); i++) {
 			StatementBlock current = body.get(i);
 			if (current.isMergeableFunctionCallBlock(dmlProg)){
-				if (currentBlock != null) {
+				if (currentBlock != null)
 					currentBlock.addStatementBlock(current);
-				} else {
+				else
 					currentBlock = current;
-				}
-			} else {
-				if (currentBlock != null) {
+			}
+			else {
+				if (currentBlock != null)
 					result.add(currentBlock);
-				}
 				result.add(current);
 				currentBlock = null;
 			}
@@ -464,7 +464,6 @@ public class StatementBlock extends LiveVariableAnalysis implements ParseInfo
 		}
 
 		return result;
-
 	}
 	
 	public static List<StatementBlock> rHoistFunctionCallsFromExpressions(StatementBlock current, DMLProgram prog) {
@@ -604,16 +603,17 @@ public class StatementBlock extends LiveVariableAnalysis implements ParseInfo
 				di.setValueType(fexpr.getValueType());
 				tmp.add(new AssignmentStatement(di, fexpr, di));
 				//add hoisted dml-bodied builtin function to program (if not already loaded)
-				if( Builtins.contains(fexpr.getName(), true, false)
-					&& !prog.getDefaultFunctionDictionary().containsFunction(
-						Builtins.getInternalFName(fexpr.getName(), DataType.SCALAR))
-					&& !prog.getDefaultFunctionDictionary().containsFunction(
-						Builtins.getInternalFName(fexpr.getName(), DataType.MATRIX))) {
+				FunctionDictionary<FunctionStatementBlock> fdict = prog.getBuiltinFunctionDictionary();
+				if( Builtins.contains(fexpr.getName(), true, false) && (fdict == null ||
+					(!fdict.containsFunction(Builtins.getInternalFName(fexpr.getName(), DataType.SCALAR))
+					&& !fdict.containsFunction(Builtins.getInternalFName(fexpr.getName(), DataType.MATRIX)))) )
+				{
+					fdict = prog.createNamespace(DMLProgram.BUILTIN_NAMESPACE);
 					Map<String,FunctionStatementBlock> fsbs = DmlSyntacticValidator
-						.loadAndParseBuiltinFunction(fexpr.getName(), fexpr.getNamespace());
+						.loadAndParseBuiltinFunction(fexpr.getName(), DMLProgram.BUILTIN_NAMESPACE);
 					for( Entry<String,FunctionStatementBlock> fsb : fsbs.entrySet() ) {
-						if( !prog.getDefaultFunctionDictionary().containsFunction(fsb.getKey()) )
-							prog.getDefaultFunctionDictionary().addFunction(fsb.getKey(), fsb.getValue());
+						if( !fdict.containsFunction(fsb.getKey()) )
+							fdict.addFunction(fsb.getKey(), fsb.getValue());
 						fsb.getValue().setDMLProg(prog);
 					}
 				}
@@ -632,11 +632,17 @@ public class StatementBlock extends LiveVariableAnalysis implements ParseInfo
 		List<StatementBlock> ret = new ArrayList<>();
 		StatementBlock current = new StatementBlock(sb);
 		for(Statement stmt : stmts) {
+			//cut the statement block before and after the current function
+			//(cut before is precondition for subsequent merge steps which 
+			//assume function statements as the first statement in the block)
+			boolean cut = stmt instanceof AssignmentStatement
+				&& ((AssignmentStatement)stmt).getSource() instanceof FunctionCallIdentifier;
+			if( cut && current.getNumStatements() > 0 ) { //before
+				ret.add(current);
+				current = new StatementBlock(sb);
+			}
 			current.addStatement(stmt);
-			//cut the statement block after the current function
-			if( stmt instanceof AssignmentStatement
-				&& ((AssignmentStatement)stmt).getSource()
-				instanceof FunctionCallIdentifier ) {
+			if( cut ) { //after
 				ret.add(current);
 				current = new StatementBlock(sb);
 			}

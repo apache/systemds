@@ -65,21 +65,14 @@ public class FederationUtils {
 		return _idSeq.getNextID();
 	}
 
-	public static FederatedRequest callInstruction(String inst, CPOperand varOldOut, CPOperand[] varOldIn, long[] varNewIn) {
-		//TODO better and safe replacement of operand names --> instruction utils
+	public static FederatedRequest callInstruction(String inst, CPOperand varOldOut, CPOperand[] varOldIn, long[] varNewIn, boolean federatedOutput){
 		long id = getNextFedDataID();
-		String linst = inst.replace(ExecType.SPARK.name(), ExecType.CP.name());
-		linst = linst.replace(
-			Lop.OPERAND_DELIMITOR+varOldOut.getName()+Lop.DATATYPE_PREFIX,
-			Lop.OPERAND_DELIMITOR+String.valueOf(id)+Lop.DATATYPE_PREFIX);
-		for(int i=0; i<varOldIn.length; i++)
-			if( varOldIn[i] != null ) {
-				linst = linst.replace(
-					Lop.OPERAND_DELIMITOR+varOldIn[i].getName()+Lop.DATATYPE_PREFIX,
-					Lop.OPERAND_DELIMITOR+String.valueOf(varNewIn[i])+Lop.DATATYPE_PREFIX);
-				linst = linst.replace("="+varOldIn[i].getName(), "="+String.valueOf(varNewIn[i])); //parameterized
-			}
+		String linst = InstructionUtils.instructionStringFEDPrepare(inst, varOldOut, id, varOldIn, varNewIn, federatedOutput);
 		return new FederatedRequest(RequestType.EXEC_INST, id, linst);
+	}
+
+	public static FederatedRequest callInstruction(String inst, CPOperand varOldOut, CPOperand[] varOldIn, long[] varNewIn) {
+		return callInstruction(inst,varOldOut, varOldIn, varNewIn, false);
 	}
 
 	public static FederatedRequest[] callInstruction(String[] inst, CPOperand varOldOut, CPOperand[] varOldIn, long[] varNewIn) {
@@ -89,16 +82,33 @@ public class FederationUtils {
 		for(int j=0; j<inst.length; j++) {
 			for(int i = 0; i < varOldIn.length; i++) {
 				linst[j] = linst[j].replace(ExecType.SPARK.name(), ExecType.CP.name());
-				linst[j] = linst[j].replace(Lop.OPERAND_DELIMITOR + varOldOut.getName() + Lop.DATATYPE_PREFIX, Lop.OPERAND_DELIMITOR + String.valueOf(id) + Lop.DATATYPE_PREFIX);
+				linst[j] = linst[j].replace(
+					Lop.OPERAND_DELIMITOR + varOldOut.getName() + Lop.DATATYPE_PREFIX,
+					Lop.OPERAND_DELIMITOR + String.valueOf(id) + Lop.DATATYPE_PREFIX);
 
 				if(varOldIn[i] != null) {
-					linst[j] = linst[j].replace(Lop.OPERAND_DELIMITOR + varOldIn[i].getName() + Lop.DATATYPE_PREFIX, Lop.OPERAND_DELIMITOR + String.valueOf(varNewIn[i]) + Lop.DATATYPE_PREFIX);
+					linst[j] = linst[j].replace(
+						Lop.OPERAND_DELIMITOR + varOldIn[i].getName() + Lop.DATATYPE_PREFIX,
+						Lop.OPERAND_DELIMITOR + String.valueOf(varNewIn[i]) + Lop.DATATYPE_PREFIX);
 					linst[j] = linst[j].replace("=" + varOldIn[i].getName(), "=" + String.valueOf(varNewIn[i])); //parameterized
 				}
 			}
 			fr[j] = new FederatedRequest(RequestType.EXEC_INST, id, (Object) linst[j]);
 		}
 		return fr;
+	}
+
+	public static FederatedRequest callInstruction(String inst, CPOperand varOldOut, long outputId, CPOperand[] varOldIn, long[] varNewIn) {
+		String linst = InstructionUtils.replaceOperand(inst, 0, ExecType.CP.name());
+		linst = linst.replace(Lop.OPERAND_DELIMITOR+varOldOut.getName()+Lop.DATATYPE_PREFIX, Lop.OPERAND_DELIMITOR+outputId+Lop.DATATYPE_PREFIX);
+		for(int i=0; i<varOldIn.length; i++)
+			if( varOldIn[i] != null ) {
+				linst = linst.replace(
+					Lop.OPERAND_DELIMITOR+varOldIn[i].getName()+Lop.DATATYPE_PREFIX,
+					Lop.OPERAND_DELIMITOR+(varNewIn[i])+Lop.DATATYPE_PREFIX);
+				linst = linst.replace("="+varOldIn[i].getName(), "="+(varNewIn[i])); //parameterized
+			}
+		return new FederatedRequest(RequestType.EXEC_INST, outputId, linst);
 	}
 
 	public static MatrixBlock aggAdd(Future<FederatedResponse>[] ffr) {
@@ -187,6 +197,32 @@ public class FederationUtils {
 							Double.max(tmp[i].getValue(0, j), tmp[i + 1].getValue(0, j)));
 				return tmp[ffr.length-1];
 			}
+		}
+		catch (Exception ex) {
+			throw new DMLRuntimeException(ex);
+		}
+	}
+
+	public static MatrixBlock aggProd(Future<FederatedResponse>[] ffr, FederationMap fedMap, AggregateUnaryOperator aop) {
+		try {
+			boolean rowFed = fedMap.getType() == FederationMap.FType.ROW;
+			MatrixBlock ret = rowFed ?
+				new MatrixBlock(ffr.length, (int) fedMap.getFederatedRanges()[0].getEndDims()[1], 1.0) :
+				new MatrixBlock((int) fedMap.getFederatedRanges()[0].getEndDims()[0], ffr.length, 1.0);
+			MatrixBlock res = rowFed ?
+				new MatrixBlock(1, (int) fedMap.getFederatedRanges()[0].getEndDims()[1], 1.0) :
+				new MatrixBlock((int) fedMap.getFederatedRanges()[0].getEndDims()[0], 1, 1.0);
+
+			for(int i = 0; i < ffr.length; i++) {
+				MatrixBlock tmp = (MatrixBlock) ffr[i].get().getData()[0];
+				if(rowFed)
+					ret.copy(i, i, 0, ret.getNumColumns()-1, tmp, true);
+				else
+					ret.copy(0, ret.getNumRows()-1, i, i, tmp, true);
+			}
+
+			LibMatrixAgg.aggregateUnaryMatrix(ret, res, aop);
+			return res;
 		}
 		catch (Exception ex) {
 			throw new DMLRuntimeException(ex);
@@ -400,6 +436,8 @@ public class FederationUtils {
 			return aggAdd(ffr);
 		else if( aop.aggOp.increOp.fn instanceof Mean )
 			return aggMean(ffr, map);
+		else if(aop.aggOp.increOp.fn instanceof Multiply)
+			return aggProd(ffr, map, aop);
 		else if (aop.aggOp.increOp.fn instanceof Builtin) {
 			if ((((Builtin) aop.aggOp.increOp.fn).getBuiltinCode() == BuiltinCode.MIN ||
 				((Builtin) aop.aggOp.increOp.fn).getBuiltinCode() == BuiltinCode.MAX)) {
@@ -409,7 +447,7 @@ public class FederationUtils {
 			else if((((Builtin) aop.aggOp.increOp.fn).getBuiltinCode() == BuiltinCode.MININDEX)
 				|| (((Builtin) aop.aggOp.increOp.fn).getBuiltinCode() == BuiltinCode.MAXINDEX)) {
 				boolean isMin = ((Builtin) aop.aggOp.increOp.fn).getBuiltinCode() == BuiltinCode.MININDEX;
-				return aggMinMaxIndex(ffr,isMin, map);
+				return aggMinMaxIndex(ffr, isMin, map);
 			}
 			else throw new DMLRuntimeException("Unsupported aggregation operator: "
 					+ aop.aggOp.increOp.fn.getClass().getSimpleName());

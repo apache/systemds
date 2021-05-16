@@ -20,7 +20,7 @@
 package org.apache.sysds.test.functions.privacy;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertNotNull;
 
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -29,6 +29,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
+import org.apache.sysds.runtime.meta.MetaDataAll;
 import org.apache.sysds.runtime.privacy.PrivacyConstraint;
 import org.apache.sysds.runtime.privacy.PrivacyConstraint.PrivacyLevel;
 import org.apache.sysds.runtime.privacy.finegrained.DataRange;
@@ -36,7 +37,6 @@ import org.apache.sysds.runtime.privacy.finegrained.FineGrainedPrivacy;
 import org.apache.sysds.runtime.privacy.finegrained.FineGrainedPrivacyList;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
-import org.apache.wink.json4j.JSONObject;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -66,8 +66,8 @@ public class ReadWriteTest extends AutomatedTestBase {
 
 		writeA();
 		
-		JSONObject metadata = getMetaDataJSON("a", "in/");
-		assertTrue(metadata.containsKey("fine_grained_privacy"));
+		MetaDataAll metadata = getMetaData("a", "in/");
+		assertNotNull(metadata.getFineGrainedPrivacy());
 	}
 
 	@Test
@@ -85,8 +85,8 @@ public class ReadWriteTest extends AutomatedTestBase {
 		runTest(true,false,null,-1);
 		compareResults(1e-9);
 
-		JSONObject metadata = getMetaDataJSON("b");
-		assertTrue(metadata.containsKey("fine_grained_privacy"));
+		MetaDataAll metadata = getMetaData("b");
+		assertNotNull(metadata.getFineGrainedPrivacy());
 	}
 
 	@Test
@@ -96,8 +96,8 @@ public class ReadWriteTest extends AutomatedTestBase {
 
 		writeA();
 
-		JSONObject metadata = getMetaDataJSON("a", "in/");
-		assertTrue(metadata.containsKey("fine_grained_privacy"));
+		MetaDataAll metadata = getMetaData("a", "in/");
+		assertNotNull(metadata.getFineGrainedPrivacy());
 
 		PrivacyConstraint expectedPC = new PrivacyConstraint();
 		setFineGrained(expectedPC);
@@ -112,8 +112,8 @@ public class ReadWriteTest extends AutomatedTestBase {
 
 		writeA();
 
-		JSONObject metadata = getMetaDataJSON("a", "in/");
-		assertTrue(metadata.containsKey("fine_grained_privacy"));
+		MetaDataAll metadata = getMetaData("a", "in/");
+		assertNotNull(metadata.getFineGrainedPrivacy());
 
 		PrivacyConstraint expectedPC = new PrivacyConstraint();
 		setFineGrained(expectedPC);

@@ -24,11 +24,11 @@
 
 from typing import Dict, Iterable
 
-from systemds.operator import OperationNode
+from systemds.operator import OperationNode, Matrix
 from systemds.script_building.dag import OutputType
 from systemds.utils.consts import VALID_INPUT_TYPES
 
-def arima(X: OperationNode, **kwargs: Dict[str, VALID_INPUT_TYPES]) -> OperationNode:
+def arima(X: OperationNode, **kwargs: Dict[str, VALID_INPUT_TYPES]) -> Matrix:
     """
     :param X: The input Matrix to apply Arima on.
     :param max_func_invoc: ?
@@ -47,7 +47,7 @@ def arima(X: OperationNode, **kwargs: Dict[str, VALID_INPUT_TYPES]) -> Operation
     X._check_matrix_op()
     params_dict = {'X':X}
     params_dict.update(kwargs)
-    return OperationNode(X.sds_context, 'arima', named_input_nodes=params_dict, output_type=OutputType.MATRIX)
+    return Matrix(X.sds_context, 'arima', named_input_nodes=params_dict)
 
 
     

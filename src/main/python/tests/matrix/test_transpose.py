@@ -24,7 +24,6 @@ import random
 
 import numpy as np
 from systemds.context import SystemDSContext
-from systemds.matrix import Matrix
 
 np.random.seed(7)
 
@@ -46,19 +45,19 @@ class TestTranspose(unittest.TestCase):
         cls.sds.close()
 
     def test_basic(self):
-        trans = Matrix(self.sds, m).t().compute()
+        trans = self.sds.from_numpy( m).t().compute()
         self.assertTrue(np.allclose(trans, np.transpose(m)))
 
     def test_empty(self):
-        trans = Matrix(self.sds, np.asarray([])).t().compute()
+        trans = self.sds.from_numpy( np.asarray([])).t().compute()
         self.assertTrue(np.allclose(trans, np.asarray([])))
 
     def test_row(self):
-        trans = Matrix(self.sds, mx).t().compute()
+        trans = self.sds.from_numpy( mx).t().compute()
         self.assertTrue(np.allclose(trans, np.transpose(mx)))
 
     def test_col(self):
-        trans = Matrix(self.sds, my).t().compute()
+        trans = self.sds.from_numpy( my).t().compute()
         self.assertTrue(np.allclose(trans, np.transpose(my)))
 
 

@@ -26,12 +26,16 @@ import java.util.Arrays;
 
 import org.apache.sysds.utils.MemoryEstimates;
 
-public class MapToChar implements IMapToData {
+public class MapToChar extends AMapToData {
 
-	private char[] _data;
+	private final char[] _data;
 
 	public MapToChar(int size) {
 		_data = new char[size];
+	}
+
+	public MapToChar(char[] data) {
+		_data = data;
 	}
 
 	@Override
@@ -44,48 +48,45 @@ public class MapToChar implements IMapToData {
 		Arrays.fill(_data, (char) v);
 	}
 
-
 	@Override
 	public long getInMemorySize() {
 		return getInMemorySize(_data.length);
 	}
 
-    public static long getInMemorySize(int dataLength){
-		long size = 16; // object header
+	public static long getInMemorySize(int dataLength) {
+		long size = 16 + 8; // object header + object reference
 		size += MemoryEstimates.charArrayCost(dataLength);
 		return size;
-    }
+	}
+
+	@Override
+	public long getExactSizeOnDisk() {
+		return 4 + _data.length * 2;
+	}
 
 	@Override
 	public void set(int n, int v) {
-		_data[n] = (char)v;
+		_data[n] = (char) v;
+	}
+
+	@Override
+	public int size() {
+		return _data.length;
 	}
 
 	@Override
 	public void write(DataOutput out) throws IOException {
-        for(int i = 0; i < _data.length; i++)
-            out.writeChar(_data[i]);
+		out.writeInt(_data.length);
+		for(int i = 0; i < _data.length; i++)
+			out.writeChar(_data[i]);
 	}
 
-	@Override
-	public MapToChar readFields(DataInput in) throws IOException {
-        for(int i = 0; i < _data.length; i++)
-            _data[i] = in.readChar();
-        return this;
+	public static MapToChar readFields(DataInput in) throws IOException {
+		final int length = in.readInt();
+		final char[] data = new char[length];
+		for(int i = 0; i < length; i++)
+			data[i] = in.readChar();
+		return new MapToChar(data);
 	}
-
-		@Override
-	public String toString() {
-		StringBuilder sb = new StringBuilder();
-		sb.append("\nDataLength: " + _data.length);
-		sb.append("[");
-		for(char c : _data) {
-			sb.append((int) c);
-			sb.append(" ");
-		}
-		sb.append("]");
-		return sb.toString();
-	}
-
 
 }

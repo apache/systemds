@@ -279,7 +279,7 @@ public class PrivacyPropagator
 				ec.releaseMatrixInput(inst.input1.getName(), inst.input2.getName());
 			}
 			else {
-				mergedPrivacyConstraint = mergeNary(privacyConstraints, OperatorType.NonAggregate);
+				mergedPrivacyConstraint = mergeNary(privacyConstraints, OperatorType.Aggregate);
 				inst.setPrivacyConstraint(mergedPrivacyConstraint);
 			}
 			inst.output.setPrivacyConstraint(mergedPrivacyConstraint);

@@ -24,21 +24,18 @@
 
 from typing import Dict, Iterable
 
-from systemds.operator import OperationNode
+from systemds.operator import OperationNode, Matrix
 from systemds.script_building.dag import OutputType
 from systemds.utils.consts import VALID_INPUT_TYPES
 
-def bandit(X_train: OperationNode, Y_train: OperationNode, X_val: OperationNode, Y_val: OperationNode, mask: OperationNode, schema: OperationNode, lp: OperationNode, primitives: OperationNode, param: OperationNode, isWeighted: bool, **kwargs: Dict[str, VALID_INPUT_TYPES]) -> OperationNode:
+def bandit(X_train: OperationNode, Y_train: OperationNode, metaList: Iterable, targetList: Iterable, lp: OperationNode, primitives: OperationNode, param: OperationNode, **kwargs: Dict[str, VALID_INPUT_TYPES]) -> Matrix:
     
     
     X_train._check_matrix_op()
     Y_train._check_matrix_op()
-    X_val._check_matrix_op()
-    Y_val._check_matrix_op()
-    mask._check_matrix_op()
-    params_dict = {'X_train':X_train, 'Y_train':Y_train, 'X_val':X_val, 'Y_val':Y_val, 'mask':mask, 'schema':schema, 'lp':lp, 'primitives':primitives, 'param':param, 'isWeighted':isWeighted}
+    params_dict = {'X_train':X_train, 'Y_train':Y_train, 'metaList':metaList, 'targetList':targetList, 'lp':lp, 'primitives':primitives, 'param':param}
     params_dict.update(kwargs)
-    return OperationNode(X_train.sds_context, 'bandit', named_input_nodes=params_dict, output_type=OutputType.LIST, number_of_outputs=3, output_types=[OutputType.FRAME, OutputType.MATRIX, OutputType.MATRIX])
+    return OperationNode(X_train.sds_context, 'bandit', named_input_nodes=params_dict, output_type=OutputType.LIST, number_of_outputs=4, output_types=[OutputType.FRAME, OutputType.MATRIX, OutputType.MATRIX, OutputType.FRAME])
 
 
     

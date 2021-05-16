@@ -97,6 +97,7 @@ public class BinaryOp extends MultiThreadedHop
 		op = o;
 		getInput().add(0, inp1);
 		getInput().add(1, inp2);
+		updateETFed();
 
 		inp1.getParent().add(this);
 		inp2.getParent().add(this);
@@ -223,9 +224,11 @@ public class BinaryOp extends MultiThreadedHop
 				constructLopsBinaryDefault();
 		}
 
+		setFederatedOutput(getLops());
+
 		//add reblock/checkpoint lops if necessary
 		constructAndSetLopsDataFlowProperties();
-		
+
 		return getLops();
 	}
 	
@@ -442,7 +445,7 @@ public class BinaryOp extends MultiThreadedHop
 				setLineNumbers(softmax);
 				setLops(softmax);
 			}
-			else if ( et == ExecType.CP || et == ExecType.GPU ) 
+			else if ( et == ExecType.CP || et == ExecType.GPU || et == ExecType.FED )
 			{
 				Lop binary = null;
 				
@@ -462,7 +465,7 @@ public class BinaryOp extends MultiThreadedHop
 					binary = new Binary(getInput(0).constructLops(), getInput(1).constructLops(),
 						op, getDataType(), getValueType(), et,
 						OptimizerUtils.getConstrainedNumThreads(_maxNumThreads));
-				
+
 				setOutputDimensions(binary);
 				setLineNumbers(binary);
 				setLops(binary);
@@ -496,7 +499,7 @@ public class BinaryOp extends MultiThreadedHop
 				setOutputDimensions(binary);
 				setLineNumbers(binary);
 				setLops(binary);
-			}
+			} else throw new HopsException("Lop construction not implemented for ExecType " + et);
 		}
 	}
 
@@ -740,6 +743,8 @@ public class BinaryOp extends MultiThreadedHop
 			//check for valid CP dimensions and matrix size
 			checkAndSetInvalidCPDimsAndSize();
 		}
+
+		updateETFed();
 			
 		//spark-specific decision refinement (execute unary scalar w/ spark input and 
 		//single parent also in spark because it's likely cheap and reduces intermediates)

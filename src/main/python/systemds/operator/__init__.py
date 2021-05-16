@@ -20,6 +20,10 @@
 # -------------------------------------------------------------
 
 from systemds.operator.operation_node import OperationNode
+from systemds.operator.nodes.scalar import Scalar
+from systemds.operator.nodes.matrix import Matrix
+from systemds.operator.nodes.frame import Frame
+from systemds.operator.nodes.source import Source
 from systemds.operator import algorithm
 
-__all__ = [OperationNode, algorithm]
+__all__ = [OperationNode, algorithm, Scalar, Matrix, Frame, Source]

@@ -1,0 +1,141 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+# Generate the logical pipelines for data cleaning
+
+
+source("scripts/pipelines/scripts/logicalFunc.dml") as logical;
+
+# read the inputs
+F = read($dirtyData, data_type="frame", format="csv", header=TRUE, 
+  naStrings= ["NA", "null","  ","NaN", "nan", "", "?", "99999"]);
+
+metaInfo = read($metaData, data_type="frame", format="csv", header=FALSE);
+primitives = read($primitives, data_type = "frame", format="csv", header= TRUE)
+param = read($parameters, data_type = "frame", format="csv", header= TRUE)
+topK = $topk
+resources = $rv
+targetApplicaton = $target # accuracy flag
+cleanData = read($cleanData, data_type="frame", format="csv", header=TRUE, 
+  naStrings= ["NA", "null","  ","NaN", "nan", "", "?", "99999"]);
+
+
+  
+# take the sample of 500 rows to avoid java heap issue
+
+F = F[1:200, 1:20]
+cleanData = cleanData[1:200, 1:20]
+metaInfo = metaInfo[, 1:21]
+  
+if(nrow(metaInfo) < 2)
+  stop("incomplete meta info")
+
+ # Do the initial cleaning
+ 
+ 
+getSchema = metaInfo[1, 2:ncol(metaInfo)]
+getMask = as.matrix(metaInfo[2, 2:ncol(metaInfo)])
+getFdMask = as.matrix(metaInfo[3, 2:ncol(metaInfo)]) # columns of interest for FD computation
+  
+# 1. dropInvalid function will remove the values which are not the part 
+# of the column data type  
+
+X = dropInvalidType(F, getSchema)
+
+
+# 2. encode the categorical data
+if(sum(getMask) > 0)
+{
+  # always recode the label
+  index = vectorToCsv(getMask)
+  jspecR = "{ids:true, recode:["+index+"]}"
+
+  [eX, X_meta] = transformencode(target=rbind(cleanData, X), spec=jspecR);
+  cleanX = eX[1:nrow(cleanData)]
+  eX = eX[nrow(cleanData)+1:nrow(eX)]  
+
+  # change the schema to reflect the encoded values
+  getSchema = map(getSchema, "x->x.replace(\"STRING\", \"INT64\")")
+  getSchema = map(getSchema, "x->x.replace(\"BOOLEAN\", \"INT64\")")
+
+
+} 
+# if no categorical value exist then just cast the frame into matrix
+else {
+  eX = as.matrix(X)
+  cleanX = as.matrix(cleanData)  
+}
+  
+
+# get the logical seed
+lgSeed = logical::generateLogicalSeed(eX, as.matrix(0), getMask, targetApplicaton)
+allLgs = logical::transformLogical(lgSeed)
+
+
+
+FD = discoverFD(X=replace(target=eX, pattern=NaN, replacement=1), Mask=getFdMask, threshold=0.8)
+FD = (diag(matrix(1, rows=nrow(FD), cols=1)) ==0) * FD 
+FD = FD > 0
+
+expectedAccuracy = 0.5
+
+metaList = list(mask=getMask, schema=getSchema, fd=FD)
+targetClassification = list(target=targetApplicaton, cv=0, wAccuracy=FALSE, 
+  dirAcc = expectedAccuracy,  mlHp = as.matrix(0), cleanData = cleanX)
+
+
+# # initialize output variables
+pip = as.frame("NULL"); hp = matrix(0,0,0); acc = matrix(0,0,0); features = as.frame("NULL")
+
+[pip, hp, acc, features] = bandit(X_train=eX, Y_train=as.matrix(0),  metaList=metaList, targetList=targetClassification, 
+  lp=allLgs, primitives=primitives, param=param, k=topK, R=resources, verbose=TRUE);
+
+
+output = $output
+write(features, output+"/features.csv", format="csv")
+
+
+if(as.scalar((is.na(acc[1,1]))) == 1 | as.scalar(acc[1,1]) < expectedAccuracy)
+  stop("warning: no best pipeline found")
+  
+  
+print("best pipelines")
+print(toString(pip))
+
+print("best hyperparam")
+print(toString(hp))
+
+print("best accuracy")
+print(toString(acc))
+
+clean_accuracy = as.scalar(acc[1,1])
+
+
+result = expectedAccuracy < clean_accuracy  
+print("result satisfied ------------"+result)
+
+accuracies = cbind(as.matrix(expectedAccuracy), as.matrix(clean_accuracy))
+
+
+# write(pip, output+"/pipelines.csv", format="csv")
+# write(hp, output+"/hyperparams.csv", format="csv")
+# write(acc, output+"/accuracies.csv", format="csv")
+# write(accuracies , output+"/BestAccuracy.csv", format="csv")
+write(result , $O)

@@ -1,0 +1,14 @@
+<application>
+  <component name="FileTypeManager" version="17">
+    <extensionMap>
+      <mapping pattern="ss" type="Flatbuffers file" />
+      <mapping pattern=".Output.mtd.crc" type="PLAIN_TEXT" />
+      <mapping pattern=".B.mtd.crc" type="PLAIN_TEXT" />
+      <mapping pattern=".Output.mtx" type="PLAIN_TEXT" />
+      <mapping pattern=".X.mtd.crc" type="PLAIN_TEXT" />
+      <mapping ext="dml" type="PLAIN_TEXT" />
+      <mapping ext="fbs" type="PLAIN_TEXT" />
+      <mapping pattern=".A.mtd.crc" type="XML" />
+    </extensionMap>
+  </component>
+</application>

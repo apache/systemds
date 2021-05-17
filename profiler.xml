@@ -1,0 +1,9 @@
+<application>
+  <component name="CommonProfilerUISettings">
+    <option name="callTreeState">
+      <call-tree-ui>
+        <option name="showCalleesList" value="false" />
+      </call-tree-ui>
+    </option>
+  </component>
+</application>

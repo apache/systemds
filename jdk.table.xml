@@ -1,0 +1,219 @@
+<application>
+  <component name="ProjectJdkTable">
+    <jdk version="2">
+      <name value="1.8" />
+      <type value="JavaSDK" />
+      <version value="java version &quot;1.8.0_231&quot;" />
+      <homePath value="/usr/lib/jvm/jdk1.8.0_231" />
+      <roots>
+        <annotationsPath>
+          <root type="composite">
+            <root url="jar://$APPLICATION_HOME_DIR$/plugins/java/lib/jdkAnnotations.jar!/" type="simple" />
+          </root>
+        </annotationsPath>
+        <classPath>
+          <root type="composite">
+            <root url="jar:///usr/lib/jvm/jdk1.8.0_231/jre/lib/charsets.jar!/" type="simple" />
+            <root url="jar:///usr/lib/jvm/jdk1.8.0_231/jre/lib/deploy.jar!/" type="simple" />
+            <root url="jar:///usr/lib/jvm/jdk1.8.0_231/jre/lib/ext/cldrdata.jar!/" type="simple" />
+            <root url="jar:///usr/lib/jvm/jdk1.8.0_231/jre/lib/ext/dnsns.jar!/" type="simple" />
+            <root url="jar:///usr/lib/jvm/jdk1.8.0_231/jre/lib/ext/jaccess.jar!/" type="simple" />
+            <root url="jar:///usr/lib/jvm/jdk1.8.0_231/jre/lib/ext/jfxrt.jar!/" type="simple" />
+            <root url="jar:///usr/lib/jvm/jdk1.8.0_231/jre/lib/ext/localedata.jar!/" type="simple" />
+            <root url="jar:///usr/lib/jvm/jdk1.8.0_231/jre/lib/ext/nashorn.jar!/" type="simple" />
+            <root url="jar:///usr/lib/jvm/jdk1.8.0_231/jre/lib/ext/sunec.jar!/" type="simple" />
+            <root url="jar:///usr/lib/jvm/jdk1.8.0_231/jre/lib/ext/sunjce_provider.jar!/" type="simple" />
+            <root url="jar:///usr/lib/jvm/jdk1.8.0_231/jre/lib/ext/sunpkcs11.jar!/" type="simple" />
+            <root url="jar:///usr/lib/jvm/jdk1.8.0_231/jre/lib/ext/zipfs.jar!/" type="simple" />
+            <root url="jar:///usr/lib/jvm/jdk1.8.0_231/jre/lib/javaws.jar!/" type="simple" />
+            <root url="jar:///usr/lib/jvm/jdk1.8.0_231/jre/lib/jce.jar!/" type="simple" />
+            <root url="jar:///usr/lib/jvm/jdk1.8.0_231/jre/lib/jfr.jar!/" type="simple" />
+            <root url="jar:///usr/lib/jvm/jdk1.8.0_231/jre/lib/jfxswt.jar!/" type="simple" />
+            <root url="jar:///usr/lib/jvm/jdk1.8.0_231/jre/lib/jsse.jar!/" type="simple" />
+            <root url="jar:///usr/lib/jvm/jdk1.8.0_231/jre/lib/management-agent.jar!/" type="simple" />
+            <root url="jar:///usr/lib/jvm/jdk1.8.0_231/jre/lib/plugin.jar!/" type="simple" />
+            <root url="jar:///usr/lib/jvm/jdk1.8.0_231/jre/lib/resources.jar!/" type="simple" />
+            <root url="jar:///usr/lib/jvm/jdk1.8.0_231/jre/lib/rt.jar!/" type="simple" />
+          </root>
+        </classPath>
+        <javadocPath>
+          <root type="composite" />
+        </javadocPath>
+        <sourcePath>
+          <root type="composite">
+            <root url="jar:///usr/lib/jvm/jdk1.8.0_231/src.zip!/" type="simple" />
+            <root url="jar:///usr/lib/jvm/jdk1.8.0_231/javafx-src.zip!/" type="simple" />
+          </root>
+        </sourcePath>
+      </roots>
+      <additional />
+    </jdk>
+    <jdk version="2">
+      <name value="11" />
+      <type value="JavaSDK" />
+      <version value="java version &quot;11.0.8&quot;" />
+      <homePath value="$USER_HOME$/App/jdk-11.0.8_linux-x64_bin/jdk-11.0.8" />
+      <roots>
+        <annotationsPath>
+          <root type="composite">
+            <root url="jar://$APPLICATION_HOME_DIR$/plugins/java/lib/jdkAnnotations.jar!/" type="simple" />
+          </root>
+        </annotationsPath>
+        <classPath>
+          <root type="composite">
+            <root url="jrt:///home/saeed/App/jdk-11.0.8_linux-x64_bin/jdk-11.0.8!/java.base" type="simple" />
+            <root url="jrt:///home/saeed/App/jdk-11.0.8_linux-x64_bin/jdk-11.0.8!/java.compiler" type="simple" />
+            <root url="jrt:///home/saeed/App/jdk-11.0.8_linux-x64_bin/jdk-11.0.8!/java.datatransfer" type="simple" />
+            <root url="jrt:///home/saeed/App/jdk-11.0.8_linux-x64_bin/jdk-11.0.8!/java.desktop" type="simple" />
+            <root url="jrt:///home/saeed/App/jdk-11.0.8_linux-x64_bin/jdk-11.0.8!/java.instrument" type="simple" />
+            <root url="jrt:///home/saeed/App/jdk-11.0.8_linux-x64_bin/jdk-11.0.8!/java.logging" type="simple" />
+            <root url="jrt:///home/saeed/App/jdk-11.0.8_linux-x64_bin/jdk-11.0.8!/java.management" type="simple" />
+            <root url="jrt:///home/saeed/App/jdk-11.0.8_linux-x64_bin/jdk-11.0.8!/java.management.rmi" type="simple" />
+            <root url="jrt:///home/saeed/App/jdk-11.0.8_linux-x64_bin/jdk-11.0.8!/java.naming" type="simple" />
+            <root url="jrt:///home/saeed/App/jdk-11.0.8_linux-x64_bin/jdk-11.0.8!/java.net.http" type="simple" />
+            <root url="jrt:///home/saeed/App/jdk-11.0.8_linux-x64_bin/jdk-11.0.8!/java.prefs" type="simple" />
+            <root url="jrt:///home/saeed/App/jdk-11.0.8_linux-x64_bin/jdk-11.0.8!/java.rmi" type="simple" />
+            <root url="jrt:///home/saeed/App/jdk-11.0.8_linux-x64_bin/jdk-11.0.8!/java.scripting" type="simple" />
+            <root url="jrt:///home/saeed/App/jdk-11.0.8_linux-x64_bin/jdk-11.0.8!/java.se" type="simple" />
+            <root url="jrt:///home/saeed/App/jdk-11.0.8_linux-x64_bin/jdk-11.0.8!/java.security.jgss" type="simple" />
+            <root url="jrt:///home/saeed/App/jdk-11.0.8_linux-x64_bin/jdk-11.0.8!/java.security.sasl" type="simple" />
+            <root url="jrt:///home/saeed/App/jdk-11.0.8_linux-x64_bin/jdk-11.0.8!/java.smartcardio" type="simple" />
+            <root url="jrt:///home/saeed/App/jdk-11.0.8_linux-x64_bin/jdk-11.0.8!/java.sql" type="simple" />
+            <root url="jrt:///home/saeed/App/jdk-11.0.8_linux-x64_bin/jdk-11.0.8!/java.sql.rowset" type="simple" />
+            <root url="jrt:///home/saeed/App/jdk-11.0.8_linux-x64_bin/jdk-11.0.8!/java.transaction.xa" type="simple" />
+            <root url="jrt:///home/saeed/App/jdk-11.0.8_linux-x64_bin/jdk-11.0.8!/java.xml" type="simple" />
+            <root url="jrt:///home/saeed/App/jdk-11.0.8_linux-x64_bin/jdk-11.0.8!/java.xml.crypto" type="simple" />
+            <root url="jrt:///home/saeed/App/jdk-11.0.8_linux-x64_bin/jdk-11.0.8!/jdk.accessibility" type="simple" />
+            <root url="jrt:///home/saeed/App/jdk-11.0.8_linux-x64_bin/jdk-11.0.8!/jdk.aot" type="simple" />
+            <root url="jrt:///home/saeed/App/jdk-11.0.8_linux-x64_bin/jdk-11.0.8!/jdk.attach" type="simple" />
+            <root url="jrt:///home/saeed/App/jdk-11.0.8_linux-x64_bin/jdk-11.0.8!/jdk.charsets" type="simple" />
+            <root url="jrt:///home/saeed/App/jdk-11.0.8_linux-x64_bin/jdk-11.0.8!/jdk.compiler" type="simple" />
+            <root url="jrt:///home/saeed/App/jdk-11.0.8_linux-x64_bin/jdk-11.0.8!/jdk.crypto.cryptoki" type="simple" />
+            <root url="jrt:///home/saeed/App/jdk-11.0.8_linux-x64_bin/jdk-11.0.8!/jdk.crypto.ec" type="simple" />
+            <root url="jrt:///home/saeed/App/jdk-11.0.8_linux-x64_bin/jdk-11.0.8!/jdk.dynalink" type="simple" />
+            <root url="jrt:///home/saeed/App/jdk-11.0.8_linux-x64_bin/jdk-11.0.8!/jdk.editpad" type="simple" />
+            <root url="jrt:///home/saeed/App/jdk-11.0.8_linux-x64_bin/jdk-11.0.8!/jdk.hotspot.agent" type="simple" />
+            <root url="jrt:///home/saeed/App/jdk-11.0.8_linux-x64_bin/jdk-11.0.8!/jdk.httpserver" type="simple" />
+            <root url="jrt:///home/saeed/App/jdk-11.0.8_linux-x64_bin/jdk-11.0.8!/jdk.internal.ed" type="simple" />
+            <root url="jrt:///home/saeed/App/jdk-11.0.8_linux-x64_bin/jdk-11.0.8!/jdk.internal.jvmstat" type="simple" />
+            <root url="jrt:///home/saeed/App/jdk-11.0.8_linux-x64_bin/jdk-11.0.8!/jdk.internal.le" type="simple" />
+            <root url="jrt:///home/saeed/App/jdk-11.0.8_linux-x64_bin/jdk-11.0.8!/jdk.internal.opt" type="simple" />
+            <root url="jrt:///home/saeed/App/jdk-11.0.8_linux-x64_bin/jdk-11.0.8!/jdk.internal.vm.ci" type="simple" />
+            <root url="jrt:///home/saeed/App/jdk-11.0.8_linux-x64_bin/jdk-11.0.8!/jdk.internal.vm.compiler" type="simple" />
+            <root url="jrt:///home/saeed/App/jdk-11.0.8_linux-x64_bin/jdk-11.0.8!/jdk.internal.vm.compiler.management" type="simple" />
+            <root url="jrt:///home/saeed/App/jdk-11.0.8_linux-x64_bin/jdk-11.0.8!/jdk.jartool" type="simple" />
+            <root url="jrt:///home/saeed/App/jdk-11.0.8_linux-x64_bin/jdk-11.0.8!/jdk.javadoc" type="simple" />
+            <root url="jrt:///home/saeed/App/jdk-11.0.8_linux-x64_bin/jdk-11.0.8!/jdk.jcmd" type="simple" />
+            <root url="jrt:///home/saeed/App/jdk-11.0.8_linux-x64_bin/jdk-11.0.8!/jdk.jconsole" type="simple" />
+            <root url="jrt:///home/saeed/App/jdk-11.0.8_linux-x64_bin/jdk-11.0.8!/jdk.jdeps" type="simple" />
+            <root url="jrt:///home/saeed/App/jdk-11.0.8_linux-x64_bin/jdk-11.0.8!/jdk.jdi" type="simple" />
+            <root url="jrt:///home/saeed/App/jdk-11.0.8_linux-x64_bin/jdk-11.0.8!/jdk.jdwp.agent" type="simple" />
+            <root url="jrt:///home/saeed/App/jdk-11.0.8_linux-x64_bin/jdk-11.0.8!/jdk.jfr" type="simple" />
+            <root url="jrt:///home/saeed/App/jdk-11.0.8_linux-x64_bin/jdk-11.0.8!/jdk.jlink" type="simple" />
+            <root url="jrt:///home/saeed/App/jdk-11.0.8_linux-x64_bin/jdk-11.0.8!/jdk.jshell" type="simple" />
+            <root url="jrt:///home/saeed/App/jdk-11.0.8_linux-x64_bin/jdk-11.0.8!/jdk.jsobject" type="simple" />
+            <root url="jrt:///home/saeed/App/jdk-11.0.8_linux-x64_bin/jdk-11.0.8!/jdk.jstatd" type="simple" />
+            <root url="jrt:///home/saeed/App/jdk-11.0.8_linux-x64_bin/jdk-11.0.8!/jdk.localedata" type="simple" />
+            <root url="jrt:///home/saeed/App/jdk-11.0.8_linux-x64_bin/jdk-11.0.8!/jdk.management" type="simple" />
+            <root url="jrt:///home/saeed/App/jdk-11.0.8_linux-x64_bin/jdk-11.0.8!/jdk.management.agent" type="simple" />
+            <root url="jrt:///home/saeed/App/jdk-11.0.8_linux-x64_bin/jdk-11.0.8!/jdk.management.jfr" type="simple" />
+            <root url="jrt:///home/saeed/App/jdk-11.0.8_linux-x64_bin/jdk-11.0.8!/jdk.naming.dns" type="simple" />
+            <root url="jrt:///home/saeed/App/jdk-11.0.8_linux-x64_bin/jdk-11.0.8!/jdk.naming.ldap" type="simple" />
+            <root url="jrt:///home/saeed/App/jdk-11.0.8_linux-x64_bin/jdk-11.0.8!/jdk.naming.rmi" type="simple" />
+            <root url="jrt:///home/saeed/App/jdk-11.0.8_linux-x64_bin/jdk-11.0.8!/jdk.net" type="simple" />
+            <root url="jrt:///home/saeed/App/jdk-11.0.8_linux-x64_bin/jdk-11.0.8!/jdk.pack" type="simple" />
+            <root url="jrt:///home/saeed/App/jdk-11.0.8_linux-x64_bin/jdk-11.0.8!/jdk.rmic" type="simple" />
+            <root url="jrt:///home/saeed/App/jdk-11.0.8_linux-x64_bin/jdk-11.0.8!/jdk.scripting.nashorn" type="simple" />
+            <root url="jrt:///home/saeed/App/jdk-11.0.8_linux-x64_bin/jdk-11.0.8!/jdk.scripting.nashorn.shell" type="simple" />
+            <root url="jrt:///home/saeed/App/jdk-11.0.8_linux-x64_bin/jdk-11.0.8!/jdk.sctp" type="simple" />
+            <root url="jrt:///home/saeed/App/jdk-11.0.8_linux-x64_bin/jdk-11.0.8!/jdk.security.auth" type="simple" />
+            <root url="jrt:///home/saeed/App/jdk-11.0.8_linux-x64_bin/jdk-11.0.8!/jdk.security.jgss" type="simple" />
+            <root url="jrt:///home/saeed/App/jdk-11.0.8_linux-x64_bin/jdk-11.0.8!/jdk.unsupported" type="simple" />
+            <root url="jrt:///home/saeed/App/jdk-11.0.8_linux-x64_bin/jdk-11.0.8!/jdk.unsupported.desktop" type="simple" />
+            <root url="jrt:///home/saeed/App/jdk-11.0.8_linux-x64_bin/jdk-11.0.8!/jdk.xml.dom" type="simple" />
+            <root url="jrt:///home/saeed/App/jdk-11.0.8_linux-x64_bin/jdk-11.0.8!/jdk.zipfs" type="simple" />
+          </root>
+        </classPath>
+        <javadocPath>
+          <root type="composite" />
+        </javadocPath>
+        <sourcePath>
+          <root type="composite">
+            <root url="jar://$USER_HOME$/App/jdk-11.0.8_linux-x64_bin/jdk-11.0.8/lib/src.zip!/java.se" type="simple" />
+            <root url="jar://$USER_HOME$/App/jdk-11.0.8_linux-x64_bin/jdk-11.0.8/lib/src.zip!/jdk.aot" type="simple" />
+            <root url="jar://$USER_HOME$/App/jdk-11.0.8_linux-x64_bin/jdk-11.0.8/lib/src.zip!/jdk.jdi" type="simple" />
+            <root url="jar://$USER_HOME$/App/jdk-11.0.8_linux-x64_bin/jdk-11.0.8/lib/src.zip!/jdk.jfr" type="simple" />
+            <root url="jar://$USER_HOME$/App/jdk-11.0.8_linux-x64_bin/jdk-11.0.8/lib/src.zip!/jdk.net" type="simple" />
+            <root url="jar://$USER_HOME$/App/jdk-11.0.8_linux-x64_bin/jdk-11.0.8/lib/src.zip!/java.rmi" type="simple" />
+            <root url="jar://$USER_HOME$/App/jdk-11.0.8_linux-x64_bin/jdk-11.0.8/lib/src.zip!/java.sql" type="simple" />
+            <root url="jar://$USER_HOME$/App/jdk-11.0.8_linux-x64_bin/jdk-11.0.8/lib/src.zip!/java.xml" type="simple" />
+            <root url="jar://$USER_HOME$/App/jdk-11.0.8_linux-x64_bin/jdk-11.0.8/lib/src.zip!/jdk.jcmd" type="simple" />
+            <root url="jar://$USER_HOME$/App/jdk-11.0.8_linux-x64_bin/jdk-11.0.8/lib/src.zip!/jdk.pack" type="simple" />
+            <root url="jar://$USER_HOME$/App/jdk-11.0.8_linux-x64_bin/jdk-11.0.8/lib/src.zip!/jdk.rmic" type="simple" />
+            <root url="jar://$USER_HOME$/App/jdk-11.0.8_linux-x64_bin/jdk-11.0.8/lib/src.zip!/jdk.sctp" type="simple" />
+            <root url="jar://$USER_HOME$/App/jdk-11.0.8_linux-x64_bin/jdk-11.0.8/lib/src.zip!/java.base" type="simple" />
+            <root url="jar://$USER_HOME$/App/jdk-11.0.8_linux-x64_bin/jdk-11.0.8/lib/src.zip!/jdk.jdeps" type="simple" />
+            <root url="jar://$USER_HOME$/App/jdk-11.0.8_linux-x64_bin/jdk-11.0.8/lib/src.zip!/jdk.jlink" type="simple" />
+            <root url="jar://$USER_HOME$/App/jdk-11.0.8_linux-x64_bin/jdk-11.0.8/lib/src.zip!/jdk.zipfs" type="simple" />
+            <root url="jar://$USER_HOME$/App/jdk-11.0.8_linux-x64_bin/jdk-11.0.8/lib/src.zip!/java.prefs" type="simple" />
+            <root url="jar://$USER_HOME$/App/jdk-11.0.8_linux-x64_bin/jdk-11.0.8/lib/src.zip!/jdk.attach" type="simple" />
+            <root url="jar://$USER_HOME$/App/jdk-11.0.8_linux-x64_bin/jdk-11.0.8/lib/src.zip!/jdk.jshell" type="simple" />
+            <root url="jar://$USER_HOME$/App/jdk-11.0.8_linux-x64_bin/jdk-11.0.8/lib/src.zip!/jdk.jstatd" type="simple" />
+            <root url="jar://$USER_HOME$/App/jdk-11.0.8_linux-x64_bin/jdk-11.0.8/lib/src.zip!/java.naming" type="simple" />
+            <root url="jar://$USER_HOME$/App/jdk-11.0.8_linux-x64_bin/jdk-11.0.8/lib/src.zip!/jdk.editpad" type="simple" />
+            <root url="jar://$USER_HOME$/App/jdk-11.0.8_linux-x64_bin/jdk-11.0.8/lib/src.zip!/jdk.jartool" type="simple" />
+            <root url="jar://$USER_HOME$/App/jdk-11.0.8_linux-x64_bin/jdk-11.0.8/lib/src.zip!/jdk.javadoc" type="simple" />
+            <root url="jar://$USER_HOME$/App/jdk-11.0.8_linux-x64_bin/jdk-11.0.8/lib/src.zip!/jdk.xml.dom" type="simple" />
+            <root url="jar://$USER_HOME$/App/jdk-11.0.8_linux-x64_bin/jdk-11.0.8/lib/src.zip!/java.desktop" type="simple" />
+            <root url="jar://$USER_HOME$/App/jdk-11.0.8_linux-x64_bin/jdk-11.0.8/lib/src.zip!/java.logging" type="simple" />
+            <root url="jar://$USER_HOME$/App/jdk-11.0.8_linux-x64_bin/jdk-11.0.8/lib/src.zip!/jdk.charsets" type="simple" />
+            <root url="jar://$USER_HOME$/App/jdk-11.0.8_linux-x64_bin/jdk-11.0.8/lib/src.zip!/jdk.compiler" type="simple" />
+            <root url="jar://$USER_HOME$/App/jdk-11.0.8_linux-x64_bin/jdk-11.0.8/lib/src.zip!/jdk.dynalink" type="simple" />
+            <root url="jar://$USER_HOME$/App/jdk-11.0.8_linux-x64_bin/jdk-11.0.8/lib/src.zip!/jdk.jconsole" type="simple" />
+            <root url="jar://$USER_HOME$/App/jdk-11.0.8_linux-x64_bin/jdk-11.0.8/lib/src.zip!/jdk.jsobject" type="simple" />
+            <root url="jar://$USER_HOME$/App/jdk-11.0.8_linux-x64_bin/jdk-11.0.8/lib/src.zip!/java.compiler" type="simple" />
+            <root url="jar://$USER_HOME$/App/jdk-11.0.8_linux-x64_bin/jdk-11.0.8/lib/src.zip!/java.net.http" type="simple" />
+            <root url="jar://$USER_HOME$/App/jdk-11.0.8_linux-x64_bin/jdk-11.0.8/lib/src.zip!/jdk.crypto.ec" type="simple" />
+            <root url="jar://$USER_HOME$/App/jdk-11.0.8_linux-x64_bin/jdk-11.0.8/lib/src.zip!/java.scripting" type="simple" />
+            <root url="jar://$USER_HOME$/App/jdk-11.0.8_linux-x64_bin/jdk-11.0.8/lib/src.zip!/jdk.httpserver" type="simple" />
+            <root url="jar://$USER_HOME$/App/jdk-11.0.8_linux-x64_bin/jdk-11.0.8/lib/src.zip!/jdk.jdwp.agent" type="simple" />
+            <root url="jar://$USER_HOME$/App/jdk-11.0.8_linux-x64_bin/jdk-11.0.8/lib/src.zip!/jdk.localedata" type="simple" />
+            <root url="jar://$USER_HOME$/App/jdk-11.0.8_linux-x64_bin/jdk-11.0.8/lib/src.zip!/jdk.management" type="simple" />
+            <root url="jar://$USER_HOME$/App/jdk-11.0.8_linux-x64_bin/jdk-11.0.8/lib/src.zip!/jdk.naming.dns" type="simple" />
+            <root url="jar://$USER_HOME$/App/jdk-11.0.8_linux-x64_bin/jdk-11.0.8/lib/src.zip!/jdk.naming.rmi" type="simple" />
+            <root url="jar://$USER_HOME$/App/jdk-11.0.8_linux-x64_bin/jdk-11.0.8/lib/src.zip!/java.instrument" type="simple" />
+            <root url="jar://$USER_HOME$/App/jdk-11.0.8_linux-x64_bin/jdk-11.0.8/lib/src.zip!/java.management" type="simple" />
+            <root url="jar://$USER_HOME$/App/jdk-11.0.8_linux-x64_bin/jdk-11.0.8/lib/src.zip!/java.sql.rowset" type="simple" />
+            <root url="jar://$USER_HOME$/App/jdk-11.0.8_linux-x64_bin/jdk-11.0.8/lib/src.zip!/java.xml.crypto" type="simple" />
+            <root url="jar://$USER_HOME$/App/jdk-11.0.8_linux-x64_bin/jdk-11.0.8/lib/src.zip!/jdk.internal.ed" type="simple" />
+            <root url="jar://$USER_HOME$/App/jdk-11.0.8_linux-x64_bin/jdk-11.0.8/lib/src.zip!/jdk.internal.le" type="simple" />
+            <root url="jar://$USER_HOME$/App/jdk-11.0.8_linux-x64_bin/jdk-11.0.8/lib/src.zip!/jdk.naming.ldap" type="simple" />
+            <root url="jar://$USER_HOME$/App/jdk-11.0.8_linux-x64_bin/jdk-11.0.8/lib/src.zip!/jdk.unsupported" type="simple" />
+            <root url="jar://$USER_HOME$/App/jdk-11.0.8_linux-x64_bin/jdk-11.0.8/lib/src.zip!/java.smartcardio" type="simple" />
+            <root url="jar://$USER_HOME$/App/jdk-11.0.8_linux-x64_bin/jdk-11.0.8/lib/src.zip!/jdk.internal.opt" type="simple" />
+            <root url="jar://$USER_HOME$/App/jdk-11.0.8_linux-x64_bin/jdk-11.0.8/lib/src.zip!/java.datatransfer" type="simple" />
+            <root url="jar://$USER_HOME$/App/jdk-11.0.8_linux-x64_bin/jdk-11.0.8/lib/src.zip!/jdk.accessibility" type="simple" />
+            <root url="jar://$USER_HOME$/App/jdk-11.0.8_linux-x64_bin/jdk-11.0.8/lib/src.zip!/jdk.hotspot.agent" type="simple" />
+            <root url="jar://$USER_HOME$/App/jdk-11.0.8_linux-x64_bin/jdk-11.0.8/lib/src.zip!/jdk.security.auth" type="simple" />
+            <root url="jar://$USER_HOME$/App/jdk-11.0.8_linux-x64_bin/jdk-11.0.8/lib/src.zip!/jdk.security.jgss" type="simple" />
+            <root url="jar://$USER_HOME$/App/jdk-11.0.8_linux-x64_bin/jdk-11.0.8/lib/src.zip!/java.security.jgss" type="simple" />
+            <root url="jar://$USER_HOME$/App/jdk-11.0.8_linux-x64_bin/jdk-11.0.8/lib/src.zip!/java.security.sasl" type="simple" />
+            <root url="jar://$USER_HOME$/App/jdk-11.0.8_linux-x64_bin/jdk-11.0.8/lib/src.zip!/jdk.internal.vm.ci" type="simple" />
+            <root url="jar://$USER_HOME$/App/jdk-11.0.8_linux-x64_bin/jdk-11.0.8/lib/src.zip!/jdk.management.jfr" type="simple" />
+            <root url="jar://$USER_HOME$/App/jdk-11.0.8_linux-x64_bin/jdk-11.0.8/lib/src.zip!/java.management.rmi" type="simple" />
+            <root url="jar://$USER_HOME$/App/jdk-11.0.8_linux-x64_bin/jdk-11.0.8/lib/src.zip!/java.transaction.xa" type="simple" />
+            <root url="jar://$USER_HOME$/App/jdk-11.0.8_linux-x64_bin/jdk-11.0.8/lib/src.zip!/jdk.crypto.cryptoki" type="simple" />
+            <root url="jar://$USER_HOME$/App/jdk-11.0.8_linux-x64_bin/jdk-11.0.8/lib/src.zip!/jdk.internal.jvmstat" type="simple" />
+            <root url="jar://$USER_HOME$/App/jdk-11.0.8_linux-x64_bin/jdk-11.0.8/lib/src.zip!/jdk.management.agent" type="simple" />
+            <root url="jar://$USER_HOME$/App/jdk-11.0.8_linux-x64_bin/jdk-11.0.8/lib/src.zip!/jdk.scripting.nashorn" type="simple" />
+            <root url="jar://$USER_HOME$/App/jdk-11.0.8_linux-x64_bin/jdk-11.0.8/lib/src.zip!/jdk.unsupported.desktop" type="simple" />
+            <root url="jar://$USER_HOME$/App/jdk-11.0.8_linux-x64_bin/jdk-11.0.8/lib/src.zip!/jdk.internal.vm.compiler" type="simple" />
+            <root url="jar://$USER_HOME$/App/jdk-11.0.8_linux-x64_bin/jdk-11.0.8/lib/src.zip!/jdk.scripting.nashorn.shell" type="simple" />
+            <root url="jar://$USER_HOME$/App/jdk-11.0.8_linux-x64_bin/jdk-11.0.8/lib/src.zip!/jdk.internal.vm.compiler.management" type="simple" />
+          </root>
+        </sourcePath>
+      </roots>
+      <additional />
+    </jdk>
+  </component>
+</application>

@@ -196,6 +196,7 @@ public class BitmapEncoder {
 
 		while((cellVals = rowReader.nextRow()) != null) {
 			if(cellVals.getData() != null) {
+				cellVals.resetHash();
 				IntArrayList lstPtr = distinctVals.get(cellVals);
 				if(lstPtr == null) {
 					// create new objects only on demand

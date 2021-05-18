@@ -25,7 +25,7 @@ import java.io.IOException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.functionobjects.Builtin;
-import org.apache.sysds.runtime.functionobjects.ValueFunction;
+import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
 
 /**
@@ -113,16 +113,16 @@ public abstract class ADictionary {
 	 */
 	public abstract ADictionary applyScalarOp(ScalarOperator op, double newVal, int numCols);
 
-	public ADictionary applyBinaryRowOp(ValueFunction fn, double[] v, boolean sparseSafe, int[] colIndexes,
+	public ADictionary applyBinaryRowOp(BinaryOperator op, double[] v, boolean sparseSafe, int[] colIndexes,
 		boolean left) {
-		return (left) ? applyBinaryRowOpLeft(fn, v, sparseSafe, colIndexes) : applyBinaryRowOpRight(fn, v, sparseSafe,
+		return (left) ? applyBinaryRowOpLeft(op, v, sparseSafe, colIndexes) : applyBinaryRowOpRight(op, v, sparseSafe,
 			colIndexes);
 	}
 
-	public abstract ADictionary applyBinaryRowOpLeft(ValueFunction fn, double[] v, boolean sparseSafe,
+	public abstract ADictionary applyBinaryRowOpLeft(BinaryOperator op, double[] v, boolean sparseSafe,
 		int[] colIndexes);
 
-	public abstract ADictionary applyBinaryRowOpRight(ValueFunction fn, double[] v, boolean sparseSafe,
+	public abstract ADictionary applyBinaryRowOpRight(BinaryOperator op, double[] v, boolean sparseSafe,
 		int[] colIndexes);
 
 	/**
@@ -148,18 +148,14 @@ public abstract class ADictionary {
 	 * @param out the output sink to write the dictionary to.
 	 * @throws IOException if the sink fails.
 	 */
-	public void write(DataOutput out) throws IOException {
-		out.writeBoolean(isLossy());
-	}
+	public abstract void write(DataOutput out) throws IOException;
 
 	/**
 	 * Calculate the space consumption if the dictionary is stored on disk.
 	 * 
 	 * @return the long count of bytes to store the dictionary.
 	 */
-	public long getExactSizeOnDisk() {
-		return 1;
-	}
+	public abstract long getExactSizeOnDisk();
 
 	/**
 	 * Specify if the Dictionary is lossy.
@@ -275,7 +271,19 @@ public abstract class ADictionary {
 	 * @param counts The counts of the individual tuples contained, managed by the column group.
 	 * @return a new double array containing the most common value
 	 */
-	public abstract double[] getMostCommonTuple(int[] counts, int nCol);
+	public double[] getMostCommonTuple(int[] counts, int nCol) {
+		int maxIndex = 0;
+		int maxCount = 0;
+		for(int i = 0; i < counts.length; i++) {
+			if(counts[i] > maxCount) {
+				maxCount = counts[i];
+				maxIndex = i;
+			}
+		}
+		return getTuple(maxIndex, nCol);
+	}
+
+	public abstract double[] getTuple(int index, int nCol);
 
 	/**
 	 * Allocate a new dictionary where the tuple given is subtracted from all tuples in the previous dictionary.
@@ -293,4 +301,13 @@ public abstract class ADictionary {
 	 * @return A Dictionary containing a MatrixBlock.
 	 */
 	public abstract MatrixBlockDictionary getAsMatrixBlockDictionary(int nCol);
+
+	/**
+	 * Scale all tuples contained in the dictionary by the scaling factor given in the int list.
+	 * 
+	 * @param scaling The ammout to multiply the given tuples with
+	 * @param nCol    The number of columns contained in this column group.
+	 * @return A New dictionary (since we don't want to modify the underlying dictionary)
+	 */
+	public abstract ADictionary scaleTuples(int[] scaling, int nCol);
 }

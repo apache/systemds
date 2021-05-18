@@ -88,15 +88,16 @@ public class ColGroupSDCSingleZeros extends ColGroupValue {
 	}
 
 	@Override
-	public void decompressToBlockSafe(MatrixBlock target, int rl, int ru, int offT, double[] values) {
-		decompressToBlockUnSafe(target, rl, ru, offT, values);
+	public void decompressToBlockSafe(MatrixBlock target, int rl, int ru, int offT) {
+		decompressToBlockUnSafe(target, rl, ru, offT);
 		target.setNonZeros(_indexes.getSize() * _colIndexes.length + target.getNonZeros());
 	}
 
 	@Override
-	public void decompressToBlockUnSafe(MatrixBlock target, int rl, int ru, int offT, double[] values) {
+	public void decompressToBlockUnSafe(MatrixBlock target, int rl, int ru, int offT) {
 		final int nCol = _colIndexes.length;
 		final int tCol = target.getNumColumns();
+		final double[] values = getValues();
 		final int offTCorrected = offT - rl;
 		final double[] c = target.getDenseBlockValues();
 
@@ -108,6 +109,7 @@ public class ColGroupSDCSingleZeros extends ColGroupValue {
 			for(int j = 0; j < nCol; j++) {
 				c[rc + _colIndexes[j]] += values[j];
 			}
+			it.next();
 		}
 	}
 
@@ -280,7 +282,7 @@ public class ColGroupSDCSingleZeros extends ColGroupValue {
 		if(isSparseSafeOp)
 			return new ColGroupSDCSingleZeros(_colIndexes, _numRows, applyScalarOp(op), _indexes, getCachedCounts());
 		else {
-			ADictionary aDictionary = swapEntries(applyScalarOp(op, val0, getNumCols()));
+			ADictionary aDictionary = applyScalarOp(op, val0, getNumCols());// swapEntries();
 			// ADictionary aDictionary = applyScalarOp(op, val0, getNumCols());
 			return new ColGroupSDCSingle(_colIndexes, _numRows, aDictionary, _indexes, null);
 		}
@@ -289,22 +291,22 @@ public class ColGroupSDCSingleZeros extends ColGroupValue {
 	@Override
 	public AColGroup binaryRowOp(BinaryOperator op, double[] v, boolean sparseSafe, boolean left) {
 		if(sparseSafe)
-			return new ColGroupSDCSingleZeros(_colIndexes, _numRows, applyBinaryRowOp(op.fn, v, sparseSafe, left),
+			return new ColGroupSDCSingleZeros(_colIndexes, _numRows, applyBinaryRowOp(op, v, sparseSafe, left),
 				_indexes, getCachedCounts());
 		else {
-			ADictionary aDictionary = applyBinaryRowOp(op.fn, v, sparseSafe, left);
+			ADictionary aDictionary = applyBinaryRowOp(op, v, sparseSafe, left);
 			return new ColGroupSDCSingle(_colIndexes, _numRows, aDictionary, _indexes, getCachedCounts());
 		}
 	}
 
-	private ADictionary swapEntries(ADictionary aDictionary) {
-		double[] values = aDictionary.getValues().clone();
-		double[] swap = new double[_colIndexes.length];
-		System.arraycopy(values, 0, swap, 0, _colIndexes.length);
-		System.arraycopy(values, _colIndexes.length, values, 0, _colIndexes.length);
-		System.arraycopy(swap, 0, values, _colIndexes.length, _colIndexes.length);
-		return new Dictionary(values);
-	}
+	// private ADictionary swapEntries(ADictionary aDictionary) {
+	// 	double[] values = aDictionary.getValues().clone();
+	// 	double[] swap = new double[_colIndexes.length];
+	// 	System.arraycopy(values, 0, swap, 0, _colIndexes.length);
+	// 	System.arraycopy(values, _colIndexes.length, values, 0, _colIndexes.length);
+	// 	System.arraycopy(swap, 0, values, _colIndexes.length, _colIndexes.length);
+	// 	return new Dictionary(values);
+	// }
 
 	@Override
 	public void write(DataOutput out) throws IOException {

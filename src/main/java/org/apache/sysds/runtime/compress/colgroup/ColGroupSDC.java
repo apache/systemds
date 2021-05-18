@@ -97,17 +97,19 @@ public class ColGroupSDC extends ColGroupValue {
 	}
 
 	@Override
-	public void decompressToBlockSafe(MatrixBlock target, int rl, int ru, int offT, double[] values) {
-		decompressToBlockUnSafe(target, rl, ru, offT, values);
+	public void decompressToBlockSafe(MatrixBlock target, int rl, int ru, int offT) {
+		decompressToBlockUnSafe(target, rl, ru, offT);
 		target.setNonZeros(getNumberNonZeros());
 	}
 
 	@Override
-	public void decompressToBlockUnSafe(MatrixBlock target, int rl, int ru, int offT, double[] values) {
+	public void decompressToBlockUnSafe(MatrixBlock target, int rl, int ru, int offT) {
 
 		final int nCol = _colIndexes.length;
 		final int tCol = target.getNumColumns();
+		final double[] values = getValues();
 		final int offsetToDefault = values.length - nCol;
+
 		double[] c = target.getDenseBlockValues();
 		offT = offT * tCol;
 		int i = rl;
@@ -343,7 +345,7 @@ public class ColGroupSDC extends ColGroupValue {
 
 	@Override
 	public AColGroup binaryRowOp(BinaryOperator op, double[] v, boolean sparseSafe, boolean left) {
-		return new ColGroupSDC(_colIndexes, _numRows, applyBinaryRowOp(op.fn, v, true, left), _indexes, _data,
+		return new ColGroupSDC(_colIndexes, _numRows, applyBinaryRowOp(op, v, true, left), _indexes, _data,
 			getCachedCounts());
 	}
 

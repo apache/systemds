@@ -105,15 +105,16 @@ public class ColGroupSDCZeros extends ColGroupValue {
 	}
 
 	@Override
-	public void decompressToBlockSafe(MatrixBlock target, int rl, int ru, int offT, double[] values) {
-		decompressToBlockUnSafe(target, rl, ru, offT, values);
+	public void decompressToBlockSafe(MatrixBlock target, int rl, int ru, int offT) {
+		decompressToBlockUnSafe(target, rl, ru, offT);
 		target.setNonZeros(getNumberNonZeros());
 	}
 
 	@Override
-	public void decompressToBlockUnSafe(MatrixBlock target, int rl, int ru, int offT, double[] values) {
+	public void decompressToBlockUnSafe(MatrixBlock target, int rl, int ru, int offT) {
 		final int nCol = _colIndexes.length;
 		final int tCol = target.getNumColumns();
+		final double[] values = getValues();
 		final int offTCorrected = offT - rl;
 		final double[] c = target.getDenseBlockValues();
 
@@ -306,10 +307,10 @@ public class ColGroupSDCZeros extends ColGroupValue {
 	@Override
 	public AColGroup binaryRowOp(BinaryOperator op, double[] v, boolean sparseSafe, boolean left) {
 		if(sparseSafe)
-			return new ColGroupSDCZeros(_colIndexes, _numRows, applyBinaryRowOp(op.fn, v, sparseSafe, left), _indexes,
+			return new ColGroupSDCZeros(_colIndexes, _numRows, applyBinaryRowOp(op, v, sparseSafe, left), _indexes,
 				_data, getCachedCounts());
 		else
-			return new ColGroupSDC(_colIndexes, _numRows, applyBinaryRowOp(op.fn, v, sparseSafe, left), _indexes, _data,
+			return new ColGroupSDC(_colIndexes, _numRows, applyBinaryRowOp(op, v, sparseSafe, left), _indexes, _data,
 				getCachedCounts());
 	}
 

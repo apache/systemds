@@ -30,6 +30,7 @@ import java.io.DataOutputStream;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.CompressionSettingsBuilder;
 import org.apache.sysds.runtime.compress.CompressionStatistics;
+import org.apache.sysds.runtime.compress.cocode.PlanningCoCoder.PartitionerType;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup;
 import org.apache.sysds.runtime.matrix.data.LibMatrixCountDistinct;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
@@ -181,7 +182,8 @@ public class CompressedMatrixTest extends AbstractCompressedUnaryTests {
 	@Test
 	public void testCompressionRatio() {
 		try {
-			if(!(cmb instanceof CompressedMatrixBlock))
+			if(!(cmb instanceof CompressedMatrixBlock) ||
+				compressionSettings.columnPartitioner == PartitionerType.COST_MATRIX_MULT)
 				return;
 			CompressionStatistics cStat = cmbStats;
 			if(cStat != null)
@@ -196,7 +198,8 @@ public class CompressedMatrixTest extends AbstractCompressedUnaryTests {
 	@Test
 	public void testCompressionEstimationVSCompression() {
 		try {
-			if(!(cmb instanceof CompressedMatrixBlock))
+			if(!(cmb instanceof CompressedMatrixBlock) ||
+				compressionSettings.columnPartitioner == PartitionerType.COST_MATRIX_MULT)
 				return;
 			CompressionStatistics cStat = cmbStats;
 			if(cStat != null) {

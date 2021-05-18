@@ -53,11 +53,7 @@ public class ReaderCompressedSelection extends ReaderColumnSelection {
 			// decompress into the tmpBlock.
 			currentBlock = _lastRow / decompressRowCount;
 			for(AColGroup g : compressedOverlap.getColGroups()) {
-				g.decompressToBlockUnSafe(_tmp,
-					_lastRow,
-					Math.min(_lastRow + decompressRowCount, g.getNumRows()),
-					0,
-					g.getValues());
+				g.decompressToBlockUnSafe(_tmp, _lastRow, Math.min(_lastRow + decompressRowCount, g.getNumRows()), 0);
 			}
 		}
 

@@ -113,7 +113,7 @@ public class CoCodeCostMatrixMult extends AColumnCoCoder {
 			final double postScalingCost = (nCols > 1 && elm.getTupleSparsity() > 0.4) ? numberTuples *
 				nCols : numberTuples * nCols * tupleSparsity;
 
-			this.cost = preAggregateCost + postScalingCost;
+			this.cost = preAggregateCost + postScalingCost ;
 		}
 
 		@Override

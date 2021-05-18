@@ -19,6 +19,7 @@
 
 package org.apache.sysds.runtime.compress.colgroup.dictionary;
 
+import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.util.Arrays;
@@ -30,6 +31,7 @@ import org.apache.sysds.runtime.functionobjects.Divide;
 import org.apache.sysds.runtime.functionobjects.Multiply;
 import org.apache.sysds.runtime.functionobjects.Plus;
 import org.apache.sysds.runtime.functionobjects.ValueFunction;
+import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
 import org.apache.sysds.utils.MemoryEstimates;
 
@@ -193,8 +195,8 @@ public class QDictionary extends ADictionary {
 	}
 
 	@Override
-	public QDictionary applyBinaryRowOpRight(ValueFunction fn, double[] v, boolean sparseSafe, int[] colIndexes) {
-
+	public QDictionary applyBinaryRowOpRight(BinaryOperator op, double[] v, boolean sparseSafe, int[] colIndexes) {
+		ValueFunction fn = op.fn;
 		if(_values == null) {
 			if(sparseSafe) {
 				return new QDictionary(null, 1);
@@ -234,7 +236,7 @@ public class QDictionary extends ADictionary {
 	}
 
 	@Override
-	public QDictionary applyBinaryRowOpLeft(ValueFunction fn, double[] v, boolean sparseSafe, int[] colIndexes) {
+	public QDictionary applyBinaryRowOpLeft(BinaryOperator op, double[] v, boolean sparseSafe, int[] colIndexes) {
 		throw new NotImplementedException("Not Implemented yet");
 	}
 
@@ -256,16 +258,26 @@ public class QDictionary extends ADictionary {
 
 	@Override
 	public void write(DataOutput out) throws IOException {
-		super.write(out);
+		out.writeByte(DictionaryFactory.Type.INT8_DICT.ordinal());
 		out.writeDouble(_scale);
 		out.writeInt(_values.length);
 		for(int i = 0; i < _values.length; i++)
 			out.writeByte(_values[i]);
 	}
 
+	public static QDictionary read(DataInput in) throws IOException {
+		double scale = in.readDouble();
+		int numVals = in.readInt();
+		byte[] values = new byte[numVals];
+		for(int i = 0; i < numVals; i++) {
+			values[i] = in.readByte();
+		}
+		return new QDictionary(values, scale);
+	}
+
 	@Override
 	public long getExactSizeOnDisk() {
-		return 8 + 4 + size();
+		return 1 + 8 + 4 + size();
 	}
 
 	@Override
@@ -491,7 +503,7 @@ public class QDictionary extends ADictionary {
 	}
 
 	@Override
-	public double[] getMostCommonTuple(int[] counts, int nCol) {
+	public double[] getTuple(int index, int nCol) {
 		return null;
 	}
 
@@ -507,6 +519,11 @@ public class QDictionary extends ADictionary {
 
 	@Override
 	public void aggregateCols(double[] c, Builtin fn, int[] colIndexes) {
-		throw new NotImplementedException();	
+		throw new NotImplementedException();
+	}
+
+	@Override
+	public ADictionary scaleTuples(int[] scaling, int nCol) {
+		throw new NotImplementedException();
 	}
 }

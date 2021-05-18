@@ -52,7 +52,6 @@ public class TestBase {
 	protected OverLapping overlappingType;
 
 	// Input
-	protected double[][] input;
 	protected MatrixBlock mb;
 
 	public TestBase(SparsityType sparType, ValueType valType, ValueRange valueRange,
@@ -66,28 +65,29 @@ public class TestBase {
 			this.max = TestConstants.getMaxRangeValue(valueRange);
 			this.min = TestConstants.getMinRangeValue(valueRange);
 			this.overlappingType = ov;
+			double[][] input;
 			switch(valType) {
 				case CONST:
 					this.min = this.max;
 					// Do not Break, utilize the RAND afterwards.
 				case RAND:
-					this.input = TestUtils.generateTestMatrix(rows, cols, min, max, sparsity, seed);
+					input = TestUtils.generateTestMatrix(rows, cols, min, max, sparsity, seed);
 					break;
 				case RAND_ROUND:
-					this.input = TestUtils.round(TestUtils.generateTestMatrix(rows, cols, min, max, sparsity, seed));
+					input = TestUtils.round(TestUtils.generateTestMatrix(rows, cols, min, max, sparsity, seed));
 					break;
 				case OLE_COMPRESSIBLE:
 					// Note the Compressible Input generator, generates an already Transposed input
 					// normally, therefore last argument is true, to build a non transposed matrix.
-					this.input = CompressibleInputGenerator.getInputDoubleMatrix(rows, cols, CompressionType.OLE,
+					input = CompressibleInputGenerator.getInputDoubleMatrix(rows, cols, CompressionType.OLE,
 						(max - min), max, min, sparsity, seed, true);
 					break;
 				case RLE_COMPRESSIBLE:
-					this.input = CompressibleInputGenerator.getInputDoubleMatrix(rows, cols, CompressionType.RLE,
+					input = CompressibleInputGenerator.getInputDoubleMatrix(rows, cols, CompressionType.RLE,
 						(max - min), max, min, sparsity, seed, true);
 					break;
 				case ONE_HOT_ENCODED:
-					this.input = CompressibleInputGenerator.getInputOneHotMatrix(rows, cols, seed);
+					input = CompressibleInputGenerator.getInputOneHotMatrix(rows, cols, seed);
 					break;
 				default:
 					throw new NotImplementedException("Not Implemented Test Value type input generator");
@@ -97,7 +97,7 @@ public class TestBase {
 			this.valType = valType;
 			this.compressionSettings = compressionSettings.create();
 
-			mb = DataConverter.convertToMatrixBlock(this.input);
+			mb = DataConverter.convertToMatrixBlock(input);
 
 		}
 		catch(Exception e) {

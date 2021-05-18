@@ -30,6 +30,7 @@ import org.apache.sysds.runtime.data.DenseBlockFP64;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.functionobjects.ValueFunction;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
 import org.apache.sysds.utils.MemoryEstimates;
 
@@ -119,15 +120,16 @@ public class Dictionary extends ADictionary {
 	public Dictionary applyScalarOp(ScalarOperator op, double newVal, int numCols) {
 		// allocate new array just once because we need to add the newVal.
 		double[] values = new double[_values.length + numCols];
-		for(int i = 0; i < _values.length; i++) {
+		for(int i = 0; i < _values.length; i++)
 			values[i] = op.executeScalar(_values[i]);
-		}
+		
 		Arrays.fill(values, _values.length, _values.length + numCols, newVal);
 		return new Dictionary(values);
 	}
 
 	@Override
-	public Dictionary applyBinaryRowOpRight(ValueFunction fn, double[] v, boolean sparseSafe, int[] colIndexes) {
+	public Dictionary applyBinaryRowOpRight(BinaryOperator op, double[] v, boolean sparseSafe, int[] colIndexes) {
+		ValueFunction fn = op.fn;
 		final int len = size();
 		final int lenV = colIndexes.length;
 		if(sparseSafe) {
@@ -150,7 +152,8 @@ public class Dictionary extends ADictionary {
 	}
 
 	@Override
-	public Dictionary applyBinaryRowOpLeft(ValueFunction fn, double[] v, boolean sparseSafe, int[] colIndexes) {
+	public Dictionary applyBinaryRowOpLeft(BinaryOperator op, double[] v, boolean sparseSafe, int[] colIndexes) {
+		ValueFunction fn = op.fn;
 		final int len = size();
 		final int lenV = colIndexes.length;
 		if(sparseSafe) {
@@ -194,6 +197,7 @@ public class Dictionary extends ADictionary {
 
 	@Override
 	public void write(DataOutput out) throws IOException {
+		out.writeByte(DictionaryFactory.Type.FP64_DICT.ordinal());
 		out.writeInt(size());
 		for(int i = 0; i < size(); i++)
 			out.writeDouble(_values[i]);
@@ -201,7 +205,7 @@ public class Dictionary extends ADictionary {
 
 	@Override
 	public long getExactSizeOnDisk() {
-		return 4 + 8 * size();
+		return 1 + 4 + 8 * size();
 	}
 
 	public int size() {
@@ -446,18 +450,11 @@ public class Dictionary extends ADictionary {
 	}
 
 	@Override
-	public double[] getMostCommonTuple(int[] counts, int nCol) {
-		int maxIndex = 0;
-		int maxCount = 0;
-		for(int i = 0; i < counts.length; i++) {
-			if(counts[i] > maxCount) {
-				maxCount = counts[i];
-				maxIndex = i;
-			}
-		}
+	public double[] getTuple(int index, int nCol) {
+
 		final double[] tuple = new double[nCol];
 		boolean allZero = true;
-		for(int i = maxIndex * nCol, off = 0; i < (maxIndex + 1) * nCol && i < _values.length; i++, off++) {
+		for(int i = index * nCol, off = 0; i < (index + 1) * nCol && i < _values.length; i++, off++) {
 			final double v = _values[i];
 			if(v != 0) {
 				tuple[off] = _values[i];
@@ -493,6 +490,20 @@ public class Dictionary extends ADictionary {
 		for(int k = 0; k < vlen; k++)
 			for(int j = 0, valOff = k * ncol; j < ncol; j++)
 				c[colIndexes[j]] = fn.execute(c[colIndexes[j]], getValue(valOff + j));
-		
+
+	}
+
+	@Override
+	public ADictionary scaleTuples(int[] scaling, int nCol) {
+		final double[] scaledValues = new double[_values.length];
+		int off = 0;
+		for(int tuple = 0; tuple < _values.length / nCol; tuple++) {
+			final int scale = scaling[tuple];
+			for(int v = 0; v < nCol; v++) {
+				scaledValues[off] = _values[off] * scale;
+				off++;
+			}
+		}
+		return new Dictionary(scaledValues);
 	}
 }

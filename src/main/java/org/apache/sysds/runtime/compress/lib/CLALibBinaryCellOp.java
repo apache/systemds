@@ -177,7 +177,7 @@ public class CLALibBinaryCellOp {
 		}
 
 		List<AColGroup> newColGroups = new ArrayList<>(oldColGroups.size());
-		int k = OptimizerUtils.getConstrainedNumThreads(-1);
+		int k = op.getNumThreads();
 		ExecutorService pool = CommonThreadPool.get(k);
 		ArrayList<BinaryMVRowTask> tasks = new ArrayList<>();
 		try {
@@ -238,8 +238,7 @@ public class CLALibBinaryCellOp {
 		boolean foundConst = false;
 		for(AColGroup grp : m1.getColGroups()) {
 			if(!m2.isEmpty() && !foundConst && grp instanceof ColGroupConst) {
-				ADictionary newDict = ((ColGroupValue) grp).applyBinaryRowOp(op.fn, m2.getDenseBlockValues(), false,
-					left);
+				ADictionary newDict = ((ColGroupValue) grp).applyBinaryRowOp(op, m2.getDenseBlockValues(), false, left);
 				newColGroups.add(new ColGroupConst(grp.getColIndices(), m1.getNumRows(), newDict));
 				foundConst = true;
 			}
@@ -251,7 +250,7 @@ public class CLALibBinaryCellOp {
 			int[] colIndexes = oldColGroups.get(0).getColIndices();
 			double[] v = m2.getDenseBlockValues();
 			ADictionary newDict = new Dictionary(new double[colIndexes.length]);
-			newDict = newDict.applyBinaryRowOp(op.fn, v, true, colIndexes, left);
+			newDict = newDict.applyBinaryRowOp(op, v, true, colIndexes, left);
 			newColGroups.add(new ColGroupConst(colIndexes, m1.getNumRows(), newDict));
 		}
 		ret.allocateColGroupList(newColGroups);
@@ -354,7 +353,7 @@ public class CLALibBinaryCellOp {
 		public Integer call() {
 			// unsafe decompress, since we count nonzeros afterwards.
 			for(AColGroup g : _m1.getColGroups())
-				g.decompressToBlock(_ret, _rl, _ru, g.getValues(), false);
+				g.decompressToBlock(_ret, _rl, _ru, false);
 
 			if(_m2.isInSparseFormat())
 				throw new NotImplementedException("Not Implemented sparse Format execution for MM.");
@@ -398,7 +397,7 @@ public class CLALibBinaryCellOp {
 		public Integer call() {
 			// unsafe decompress, since we count nonzeros afterwards.
 			for(AColGroup g : _m1.getColGroups())
-				g.decompressToBlock(_ret, _rl, _ru, g.getValues(), false);
+				g.decompressToBlock(_ret, _rl, _ru, false);
 
 			if(_m2.isInSparseFormat())
 				throw new NotImplementedException("Not Implemented sparse Format execution for MM.");

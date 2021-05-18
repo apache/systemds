@@ -113,14 +113,15 @@ public class ColGroupConst extends ColGroupValue {
 	}
 
 	@Override
-	public void decompressToBlockSafe(MatrixBlock target, int rl, int ru, int offT, double[] values) {
-		decompressToBlockUnSafe(target, rl, ru, offT, values);
+	public void decompressToBlockSafe(MatrixBlock target, int rl, int ru, int offT) {
+		decompressToBlockUnSafe(target, rl, ru, offT);
 		target.setNonZeros(_colIndexes.length * target.getNumRows() + target.getNonZeros());
 	}
 
 	@Override
-	public void decompressToBlockUnSafe(MatrixBlock target, int rl, int ru, int offT, double[] values) {
+	public void decompressToBlockUnSafe(MatrixBlock target, int rl, int ru, int offT) {
 		double[] c = target.getDenseBlockValues();
+		double[] values = getValues();
 		offT = offT * target.getNumColumns();
 		for(int i = rl; i < ru; i++, offT += target.getNumColumns())
 			for(int j = 0; j < _colIndexes.length; j++)
@@ -205,9 +206,10 @@ public class ColGroupConst extends ColGroupValue {
 	}
 
 	@Override
-	public void leftMultByMatrix(MatrixBlock a, MatrixBlock c, double[] values, int rl, int ru) {
+	public void leftMultByMatrix(MatrixBlock a, MatrixBlock c, int rl, int ru) {
 		final double[] cV = c.getDenseBlockValues();
-		if(a.isEmpty())
+		final double[] values = getValues();
+		if(values == null  || a.isEmpty())
 			return;
 		else if(a.isInSparseFormat()) {
 			SparseBlock sb = a.getSparseBlock();
@@ -241,7 +243,7 @@ public class ColGroupConst extends ColGroupValue {
 
 	@Override
 	public AColGroup binaryRowOp(BinaryOperator op, double[] v, boolean sparseSafe, boolean left) {
-		return new ColGroupConst(_colIndexes, _numRows, applyBinaryRowOp(op.fn, v, true, left));
+		return new ColGroupConst(_colIndexes, _numRows, applyBinaryRowOp(op, v, true, left));
 	}
 
 	@Override

@@ -207,7 +207,7 @@ public abstract class AColGroup implements Serializable {
 	 * @param ru     row upper
 	 */
 	public void decompressToBlock(MatrixBlock target, int rl, int ru) {
-		decompressToBlock(target, rl, ru, rl, getValues(), true);
+		decompressToBlock(target, rl, ru, rl, true);
 	}
 
 	/**
@@ -219,23 +219,9 @@ public abstract class AColGroup implements Serializable {
 	 * @param offT   The rowOffset into target to decompress to.
 	 */
 	public void decompressToBlock(MatrixBlock target, int rl, int ru, int offT) {
-		decompressToBlock(target, rl, ru, offT, getValues(), true);
+		decompressToBlock(target, rl, ru, offT, true);
 	}
 
-	/**
-	 * Decompress the contents of this column group into the target matrixBlock using the values provided as replacement
-	 * of the dictionary values, it is assumed that the target matrix Block have the same number of columns and at least
-	 * the number of rows ru.
-	 * 
-	 * @param target The target matrixBlock to decompress into
-	 * @param rl     The row to start at
-	 * @param ru     The row to end at
-	 * @param values The dictionary values materialized.
-	 * @param safe   Boolean specifying if the operation should be safe, aka counting nnz.
-	 */
-	public void decompressToBlock(MatrixBlock target, int rl, int ru, double[] values, boolean safe) {
-		decompressToBlock(target, rl, ru, rl, values, safe);
-	}
 
 	/**
 	 * Decompress the contents of this column group into the target matrixBlock, it is assumed that the target matrix
@@ -247,25 +233,9 @@ public abstract class AColGroup implements Serializable {
 	 * @param safe   Boolean specifying if the operation should be safe, aka counting nnz.
 	 */
 	public void decompressToBlock(MatrixBlock target, int rl, int ru, boolean safe) {
-		decompressToBlock(target, rl, ru, rl, getValues(), safe);
+		decompressToBlock(target, rl, ru, rl, safe);
 	}
 
-	/**
-	 * Decompress the contents of this column group into the target matrixBlock with an offset of the indexes, it is
-	 * assumed that the target matrix Block have the same number of columns and at least the number of rows ru.
-	 * 
-	 * The offset of indexes makes it possible to decompress parts of the compressed column group like say rows 10 to
-	 * 20, into row 0 to 10 in the target matrix.
-	 * 
-	 * @param target The target matrixBlock to decompress into
-	 * @param rl     The row to start at
-	 * @param ru     The row to end at
-	 * @param offT   The offset into the target to decompress to.
-	 * @param safe   Boolean specifying if the operation should be safe, aka counting nnz.
-	 */
-	public void decompressToBlock(MatrixBlock target, int rl, int ru, int offT, boolean safe) {
-		decompressToBlock(target, rl, ru, offT, getValues(), safe);
-	}
 
 	/**
 	 * Decompress the contents of this column group into the target matrixBlock with an offset of the indexes using the
@@ -279,14 +249,13 @@ public abstract class AColGroup implements Serializable {
 	 * @param rl     The row to start at
 	 * @param ru     The row to end at
 	 * @param offT   The offset into the target to decompress to.
-	 * @param values The dictionary values materialized.
 	 * @param safe   Boolean specifying if the operation should be safe, aka counting nnz.
 	 */
-	public void decompressToBlock(MatrixBlock target, int rl, int ru, int offT, double[] values, boolean safe) {
+	public void decompressToBlock(MatrixBlock target, int rl, int ru, int offT,  boolean safe) {
 		if(safe)
-			decompressToBlockSafe(target, rl, ru, offT, values);
+			decompressToBlockSafe(target, rl, ru, offT);
 		else
-			decompressToBlockUnSafe(target, rl, ru, offT, values);
+			decompressToBlockUnSafe(target, rl, ru, offT);
 	}
 
 	/**
@@ -297,9 +266,8 @@ public abstract class AColGroup implements Serializable {
 	 * @param rl     row lower
 	 * @param ru     row upper
 	 * @param offT   Offset into target to assign from
-	 * @param values The Values materialized in the dictionary
 	 */
-	public abstract void decompressToBlockSafe(MatrixBlock target, int rl, int ru, int offT, double[] values);
+	public abstract void decompressToBlockSafe(MatrixBlock target, int rl, int ru, int offT);
 
 	/**
 	 * Decompress the contents of the columngroup unsafely, meaning that it does not count nonzero values.
@@ -308,22 +276,8 @@ public abstract class AColGroup implements Serializable {
 	 * @param rl     row lower
 	 * @param ru     row upper
 	 * @param offT   Offset into target to assign from
-	 * @param values The Values materialized in the dictionary
 	 */
-	public abstract void decompressToBlockUnSafe(MatrixBlock target, int rl, int ru, int offT, double[] values);
-
-	/**
-	 * Decompress the contents of this column group into the specified full matrix block.
-	 * 
-	 * @param target a matrix block where the columns covered by this column group have not yet been filled in.
-	 * @param rl     row lower
-	 * @param ru     row upper
-	 * @param offT   The offset into the target matrix block to decompress to.
-	 * @param values The Values materialized in the dictionary
-	 */
-	public void decompressToBlock(MatrixBlock target, int rl, int ru, int offT, double[] values) {
-		decompressToBlockSafe(target, rl, ru, offT, values);
-	}
+	public abstract void decompressToBlockUnSafe(MatrixBlock target, int rl, int ru, int offT);
 
 	/**
 	 * Decompress the contents of this column group into uncompressed packed columns
@@ -401,7 +355,7 @@ public abstract class AColGroup implements Serializable {
 	 */
 	public static void decompressColumnToBlockUnSafe(MatrixBlock target, int rl, int ru, List<AColGroup> colGroups) {
 		for(AColGroup g : colGroups)
-			g.decompressToBlockUnSafe(target, rl, ru, rl, g.getValues());
+			g.decompressToBlockUnSafe(target, rl, ru, rl);
 	}
 
 	/**

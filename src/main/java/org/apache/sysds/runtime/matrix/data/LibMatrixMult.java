@@ -1230,7 +1230,7 @@ public class LibMatrixMult
 				if( a.isEmpty(i) ) continue; 
 				int apos = a.pos(i);
 				int alen = a.size(i);
-				int[] aix = a.indexes(i);
+				// int[] aix = a.indexes(i);
 				double[] avals = a.values(i);
 				double[] cvals = c.values(i);
 				int cix = c.pos(i);

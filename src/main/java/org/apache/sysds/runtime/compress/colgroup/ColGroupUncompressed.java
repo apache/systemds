@@ -157,7 +157,7 @@ public class ColGroupUncompressed extends AColGroup {
 	}
 
 	@Override
-	public void decompressToBlockSafe(MatrixBlock target, int rl, int ru, int offT, double[] values) {
+	public void decompressToBlockSafe(MatrixBlock target, int rl, int ru, int offT) {
 		double[] c = target.getDenseBlockValues();
 		final int nCol = _colIndexes.length;
 		final int tCol = target.getNumColumns();
@@ -180,7 +180,7 @@ public class ColGroupUncompressed extends AColGroup {
 			}
 		}
 		else {
-			values = _data.getDenseBlockValues();
+			double[] values = _data.getDenseBlockValues();
 			offT = offT * tCol;
 			int offS = rl * nCol;
 			for(int row = rl; row < ru; row++, offT += tCol, offS += nCol) {
@@ -197,7 +197,7 @@ public class ColGroupUncompressed extends AColGroup {
 	}
 
 	@Override
-	public void decompressToBlockUnSafe(MatrixBlock target, int rl, int ru, int offT, double[] values) {
+	public void decompressToBlockUnSafe(MatrixBlock target, int rl, int ru, int offT) {
 		double[] c = target.getDenseBlockValues();
 		final int nCol = _colIndexes.length;
 		final int tCol = target.getNumColumns();
@@ -218,7 +218,7 @@ public class ColGroupUncompressed extends AColGroup {
 			}
 		}
 		else {
-			values = _data.getDenseBlockValues();
+			double[] values = _data.getDenseBlockValues();
 			offT = offT * tCol;
 			int offS = rl * nCol;
 			for(int row = rl; row < ru; row++, offT += tCol, offS += nCol)
@@ -521,7 +521,8 @@ public class ColGroupUncompressed extends AColGroup {
 
 	@Override
 	public void tsmm(double[] result, int numColumns) {
-		MatrixBlock tmp = new MatrixBlock(_colIndexes.length, _colIndexes.length, true);
+		final int tCol = _colIndexes.length;
+		MatrixBlock tmp = new MatrixBlock(tCol, tCol, true);
 		LibMatrixMult.matrixMultTransposeSelf(_data, tmp, true, false);
 		if(tmp.getDenseBlock() == null && tmp.getSparseBlock() == null)
 			return;
@@ -530,9 +531,9 @@ public class ColGroupUncompressed extends AColGroup {
 		}
 		else {
 			double[] tmpV = tmp.getDenseBlockValues();
-			for(int i = 0, offD = 0, offT = 0; i < numColumns; i++, offD += numColumns, offT += _colIndexes.length)
-				for(int j = i; j < numColumns; j++)
-					result[offD + _colIndexes[j]] += tmpV[offT + j];
+			for(int row = 0, offRet = 0, offTmp = 0; row < tCol; row++, offRet += numColumns, offTmp += tCol)
+				for(int col = row; col < tCol; col++)
+					result[offRet + _colIndexes[col]] += tmpV[offTmp + col];
 		}
 
 	}

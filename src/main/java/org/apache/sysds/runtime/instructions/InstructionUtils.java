@@ -1128,7 +1128,7 @@ public class InstructionUtils
 		return linst;
 	}
 
-	private static String removeFEDOutputFlag(String linst){
+	public static String removeFEDOutputFlag(String linst){
 		return linst.substring(0, linst.lastIndexOf(Lop.OPERAND_DELIMITOR));
 	}
 

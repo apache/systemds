@@ -1,0 +1,11 @@
+
+# this dml file will run the StableMarriageA  in builtin functions  in scripts/builtin
+P = read($1)
+A = read($2)
+alg = $3
+
+if( alg == "stablemarriage" )
+  [O] = stablemarriageA(P=P,A=A)
+
+
+write(O, $4)

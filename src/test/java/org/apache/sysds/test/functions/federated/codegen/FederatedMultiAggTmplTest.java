@@ -40,17 +40,17 @@ import java.util.HashMap;
 
 @RunWith(value = Parameterized.class)
 @net.jcip.annotations.NotThreadSafe
-public class FederatedCellwiseTmplTest extends AutomatedTestBase
+public class FederatedMultiAggTmplTest extends AutomatedTestBase
 {
-	private final static String TEST_NAME = "FederatedCellwiseTmplTest";
+	private final static String TEST_NAME = "FederatedMultiAggTmplTest";
 
 	private final static String TEST_DIR = "functions/federated/codegen/";
-	private final static String TEST_CLASS_DIR = TEST_DIR + FederatedCellwiseTmplTest.class.getSimpleName() + "/";
+	private final static String TEST_CLASS_DIR = TEST_DIR + FederatedMultiAggTmplTest.class.getSimpleName() + "/";
 
 	private final static String TEST_CONF = "SystemDS-config-codegen.xml";
 
 	private final static String OUTPUT_NAME = "Z";
-	private final static double TOLERANCE = 1e-11;
+	private final static double TOLERANCE = 1e-14;
 	private final static int BLOCKSIZE = 1024;
 
 	@Parameterized.Parameter()
@@ -75,38 +75,21 @@ public class FederatedCellwiseTmplTest extends AutomatedTestBase
 			// {test_num, rows, cols, row_partitioned}
 
 			// row partitioned
-			{1, 2000, 2000, true},
-			// {2, 10, 10, true},
-			// {3, 4, 4, true},
-			{4, 4, 4, true},
-			// {5, 4, 4, true},
-			{6, 4, 1, true},
-			{9, 500, 2, true},
-			{10, 500, 2, true},
-			// {11, 1100, 2000, true},
-			{12, 2, 500, true},
-			// {13, 2, 4, true},
-			{14, 1100, 200, true},
+			{1, 6, 4, true},
+			// {2, 6, 4, true},
+			{3, 6, 4, true},
+			// {4, 6, 4, true},
+			{5, 6, 4, true},
+			{6, 6, 4, true},
+			{7, 20, 1, true},
 
 			// column partitioned
-			// {1, 2000, 2000, false},
-			{2, 10, 10, false},
-			{3, 4, 4, false},
-			// {4, 4, 4, false},
-			{5, 4, 4, false},
-			{9, 500, 2, false},
-			{10, 500, 2, false},
-			{11, 1100, 2000, false},
-			// {12, 2, 500, false},
-			{14, 1100, 200, false},
-
-			// not working because of fused sequence operation
-			//	(wrong grix inside genexec call of fed worker)
-			// {7, 1000, 1, true},
-
-			// not creating a FedSpoof instruction
-			// {8, 1002, 24, true},
-			// {8, 1002, 24, false},
+			{1, 6, 4, false},
+			{2, 6, 4, false},
+			// {3, 6, 4, false},
+			{4, 6, 4, false},
+			// {5, 6, 4, false},
+			{6, 6, 4, false},
 		});
 	}
 
@@ -117,22 +100,22 @@ public class FederatedCellwiseTmplTest extends AutomatedTestBase
 
 	@Test
 	@Ignore
-	public void federatedCodegenCellwiseSingleNode() {
-		testFederatedCodegen(ExecMode.SINGLE_NODE);
-	}
-
-	@Test
-	@Ignore
-	public void federatedCodegenCellwiseSpark() {
-		testFederatedCodegen(ExecMode.SPARK);
-	}
-
-	@Test
-	public void federatedCodegenCellwiseHybrid() {
-		testFederatedCodegen(ExecMode.HYBRID);
+	public void federatedCodegenMultiAggSingleNode() {
+		testFederatedCodegenMultiAgg(ExecMode.SINGLE_NODE);
 	}
 	
-	private void testFederatedCodegen(ExecMode exec_mode) {
+	@Test
+	@Ignore
+	public void federatedCodegenMultiAggSpark() {
+		testFederatedCodegenMultiAgg(ExecMode.SPARK);
+	}
+	
+	@Test
+	public void federatedCodegenMultiAggHybrid() {
+		testFederatedCodegenMultiAgg(ExecMode.HYBRID);
+	}
+	
+	private void testFederatedCodegenMultiAgg(ExecMode exec_mode) {
 		// store the previous platform config to restore it after the test
 		ExecMode platform_old = setExecMode(exec_mode);
 
@@ -148,8 +131,8 @@ public class FederatedCellwiseTmplTest extends AutomatedTestBase
 
 		// generate dataset
 		// matrix handled by two federated workers
-		double[][] X1 = getRandomMatrix(fed_rows, fed_cols, 0, 1, 0.1, 3);
-		double[][] X2 = getRandomMatrix(fed_rows, fed_cols, 0, 1, 0.1, 23);
+		double[][] X1 = getRandomMatrix(fed_rows, fed_cols, 0, 1, 1, 3);
+		double[][] X2 = getRandomMatrix(fed_rows, fed_cols, 0, 1, 1, 7);
 
 		writeInputMatrixWithMTD("X1", X1, false, new MatrixCharacteristics(fed_rows, fed_cols, BLOCKSIZE, fed_rows * fed_cols));
 		writeInputMatrixWithMTD("X2", X2, false, new MatrixCharacteristics(fed_rows, fed_cols, BLOCKSIZE, fed_rows * fed_cols));
@@ -187,11 +170,11 @@ public class FederatedCellwiseTmplTest extends AutomatedTestBase
 		HashMap<CellIndex, Double> refResults  = readDMLMatrixFromExpectedDir(OUTPUT_NAME);
 		HashMap<CellIndex, Double> fedResults = readDMLMatrixFromOutputDir(OUTPUT_NAME);
 		TestUtils.compareMatrices(fedResults, refResults, TOLERANCE, "Fed", "Ref");
-		
+
 		TestUtils.shutdownThreads(thread1, thread2);
 
 		// check for federated operations
-		Assert.assertTrue(heavyHittersContainsSubString("fed_spoofCell"));
+		Assert.assertTrue(heavyHittersContainsSubString("fed_spoofMA"));
 
 		// check that federated input files are still existing
 		Assert.assertTrue(HDFSTool.existsFileOnHDFS(input("X1")));

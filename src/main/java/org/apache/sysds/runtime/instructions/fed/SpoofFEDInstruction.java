@@ -26,6 +26,7 @@ import org.apache.sysds.runtime.codegen.SpoofCellwise.AggOp;
 import org.apache.sysds.runtime.codegen.SpoofCellwise.CellType;
 import org.apache.sysds.runtime.codegen.SpoofRowwise;
 import org.apache.sysds.runtime.codegen.SpoofRowwise.RowType;
+import org.apache.sysds.runtime.codegen.SpoofMultiAggregate;
 import org.apache.sysds.runtime.codegen.SpoofOperator;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
@@ -40,6 +41,7 @@ import org.apache.sysds.runtime.instructions.cp.CPOperand;
 import org.apache.sysds.runtime.instructions.cp.Data;
 import org.apache.sysds.runtime.instructions.cp.ScalarObject;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
+import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator;
 
 import java.util.ArrayList;
@@ -153,11 +155,17 @@ public class SpoofFEDInstruction extends FEDInstruction
 			setOutputCellwise(ec, response, fedMap);
 		else if(_op.getClass().getSuperclass() == SpoofRowwise.class)
 			setOutputRowwise(ec, response, fedMap);
+
+		else if(_op.getClass().getSuperclass() == SpoofMultiAggregate.class)
+			setOutputMultiAgg(ec, response, fedMap);
 		else
-			throw new DMLRuntimeException("Federated code generation only supported for cellwise and rowwise templates.");
+			throw new DMLRuntimeException("Federated code generation only supported for cellwise, rowwise, and multiaggregate templates.");
 	}
 
 	private static boolean needsBroadcastSliced(FederationMap fedMap, long rowNum, long colNum) {
+		if(rowNum == fedMap.getMaxIndexInRange(0) && colNum == fedMap.getMaxIndexInRange(1))
+			return true;
+
 		if(fedMap.getType() == FType.ROW) {
 			return (rowNum == fedMap.getMaxIndexInRange(0) && (colNum == 1 || colNum == fedMap.getSize()))
 				|| (colNum > 1 && rowNum == fedMap.getSize());
@@ -291,4 +299,15 @@ public class SpoofFEDInstruction extends FEDInstruction
 			throw new DMLRuntimeException("AggregationType not supported yet.");
 		}
 	}
+	
+	private void setOutputMultiAgg(ExecutionContext ec, Future<FederatedResponse>[] response, FederationMap fedMap)
+	{
+		MatrixBlock[] partRes = FederationUtils.getResults(response);
+		SpoofCellwise.AggOp[] aggOps = ((SpoofMultiAggregate)_op).getAggOps();
+		for(int counter = 1; counter < partRes.length; counter++) {
+			SpoofMultiAggregate.aggregatePartialResults(aggOps, partRes[0], partRes[counter]);
+		}
+		ec.setMatrixOutput(_output.getName(), partRes[0]);
+	}
+
 }

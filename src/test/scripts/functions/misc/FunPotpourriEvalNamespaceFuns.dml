@@ -19,9 +19,9 @@
 #
 #-------------------------------------------------------------
 
-# DML script that tests read csv
-
-A = read($1, format="csv", header=TRUE, sep=$3);
-x = sum(A);
-write(x, $2);
-
+foo = function(Matrix[Double] X, Boolean verbose) return (Matrix[Double] s) {
+  s = as.matrix(5)
+  for(i in 1:ncol(X))
+    if(verbose)
+      print("this is i " +i)
+}

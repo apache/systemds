@@ -28,6 +28,7 @@ import org.apache.sysds.test.TestConfiguration;
 import org.junit.Test;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
+import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.util.UtilFunctions;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestUtils;
@@ -53,7 +54,8 @@ public class FrameConstructorTest extends AutomatedTestBase {
 		NO_SCHEMA,
 		RANDOM_DATA,
 		SINGLE_DATA,
-		MULTI_ROW_DATA
+		MULTI_ROW_DATA,
+		UNKNOWN_DIMS,
 	}
 
 	@Override
@@ -124,7 +126,19 @@ public class FrameConstructorTest extends AutomatedTestBase {
 		FrameBlock exp = createExpectedFrame(schemaStrings1, 5,"multi-row");
 		runFrameTest(TestType.MULTI_ROW_DATA, exp, Types.ExecMode.SPARK);
 	}
+	
+	@Test
+	public void testUnknownDims() {
+		FrameBlock exp = createExpectedFrame(schemaStrings1, rows,"constant");
+		runFrameTest(TestType.UNKNOWN_DIMS, exp, Types.ExecMode.SINGLE_NODE);
+	}
 
+	@Test
+	public void testUnknownDimsSP() {
+		FrameBlock exp = createExpectedFrame(schemaStrings1, rows, "constant");
+		runFrameTest(TestType.UNKNOWN_DIMS, exp, Types.ExecMode.SPARK);
+	}
+	
 	private void runFrameTest(TestType type, FrameBlock expectedOutput, Types.ExecMode et) {
 		Types.ExecMode platformOld = setExecMode(et);
 		boolean oldFlag = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
@@ -144,6 +158,8 @@ public class FrameConstructorTest extends AutomatedTestBase {
 			String[][] R1 = DataConverter.convertToStringFrame(expectedOutput);
 			String[][] R2 = DataConverter.convertToStringFrame(fB);
 			TestUtils.compareFrames(R1, R2, R1.length, R1[0].length);
+			int nrow = type == TestType.MULTI_ROW_DATA ? 5 : 40;
+			checkDMLMetaDataFile("F2", new MatrixCharacteristics(nrow, cols));
 		}
 		catch(Exception ex) {
 			throw new RuntimeException(ex);

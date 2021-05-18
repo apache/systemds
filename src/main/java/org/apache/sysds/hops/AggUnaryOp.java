@@ -157,11 +157,8 @@ public class AggUnaryOp extends MultiThreadedHop
 				setLineNumbers(agg1);
 				setLops(agg1);
 				
-				if (getDataType() == DataType.SCALAR) {
+				if (getDataType() == DataType.SCALAR)
 					agg1.getOutputParameters().setDimensions(1, 1, getBlocksize(), getNnz());
-				} else {
-					setFederatedOutput(agg1);
-				}
 			}
 			else if( et == ExecType.SPARK )
 			{
@@ -380,7 +377,7 @@ public class AggUnaryOp extends MultiThreadedHop
 			&& !(getInput().get(0) instanceof DataOp)  //input is not checkpoint
 			&& (getInput().get(0).getParent().size()==1 //uagg is only parent, or 
 			   || !requiresAggregation(getInput().get(0), _direction)) //w/o agg
-			&& getInput().get(0).optFindExecType() == ExecType.SPARK )					
+			&& getInput().get(0).optFindExecType() == ExecType.SPARK )
 		{
 			//pull unary aggregate into spark 
 			_etype = ExecType.SPARK;

@@ -35,6 +35,7 @@ import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysds.runtime.controlprogram.caching.FrameObject;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
+import org.apache.sysds.runtime.controlprogram.federated.FederatedData;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRange;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest;
 import org.apache.sysds.runtime.controlprogram.federated.FederationMap;
@@ -144,10 +145,10 @@ public final class IndexingFEDInstruction extends UnaryFEDInstruction {
 
 		//create new frame schema
 		List<Types.ValueType> schema = new ArrayList<>();
-
 		// replace old reshape values for each worker
 		int i = 0;
-		for(FederatedRange range : fedMap.getMap().keySet()) {
+		for(org.apache.commons.lang3.tuple.Pair<FederatedRange, FederatedData> e : fedMap.getMap()) {
+			FederatedRange range = e.getKey();
 			long rs = range.getBeginDims()[0], re = range.getEndDims()[0],
 				cs = range.getBeginDims()[1], ce = range.getEndDims()[1];
 			long rsn = (ixrange.rowStart >= rs) ? (ixrange.rowStart - rs) : 0;
@@ -219,7 +220,8 @@ public final class IndexingFEDInstruction extends UnaryFEDInstruction {
 
 		// replace old reshape values for each worker
 		int i = 0, prev = 0, from = fedMap.getSize();
-		for(FederatedRange range : fedMap.getMap().keySet()) {
+		for(org.apache.commons.lang3.tuple.Pair<FederatedRange, FederatedData> e : fedMap.getMap()) {
+			FederatedRange range = e.getKey();
 			long rs = range.getBeginDims()[0], re = range.getEndDims()[0],
 				cs = range.getBeginDims()[1], ce = range.getEndDims()[1];
 			long rsn = (ixrange.rowStart >= rs) ? (ixrange.rowStart - rs) : 0;

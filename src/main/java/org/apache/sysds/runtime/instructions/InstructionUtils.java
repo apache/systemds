@@ -1061,54 +1061,6 @@ public class InstructionUtils
 		return _strBuilders.get().toString();
 	}
 
-	/**
-	 * Concat the inputs as operands to generate the base instruction string.
-	 * The base instruction string can subsequently be extended with the
-	 * concatAdditional methods. The concatenation will be done using a
-	 * ThreadLocal StringBuilder, so the concatenation is local to the thread.
-	 * When all additional operands have been appended, the complete instruction
-	 * string can be retrieved by calling the getInstructionString method.
-	 * @param inputs operand inputs given as strings
-	 */
-	public static void concatBaseOperands(String... inputs){
-		concatBaseOperandsWithDelim(Lop.OPERAND_DELIMITOR, inputs);
-	}
-
-	/**
-	 * Concat input as an additional operand to the current thread-local base instruction string.
-	 * @param input operand input given as string
-	 */
-	public static void concatAdditionalOperand(String input){
-		StringBuilder sb = _strBuilders.get();
-		sb.append(Lop.OPERAND_DELIMITOR);
-		sb.append(input);
-	}
-
-	/**
-	 * Concat inputs as additional operands to the current thread-local base instruction string.
-	 * @param inputs operand inputs given as strings
-	 */
-	public static void concatAdditionalOperands(String... inputs){
-		concatOperandsWithDelim(Lop.OPERAND_DELIMITOR, inputs);
-	}
-
-	/**
-	 * Returns the current thread-local instruction string.
-	 * This instruction string is built using the concat methods.
-	 * @return instruction string
-	 */
-	public static String getInstructionString(){
-		return _strBuilders.get().toString();
-	}
-
-	private static void concatOperandsWithDelim(String delim, String... inputs){
-		StringBuilder sb = _strBuilders.get();
-		for( int i=0; i<inputs.length; i++ ) {
-			sb.append(delim);
-			sb.append(inputs[i]);
-		}
-	}
-
 	private static void concatBaseOperandsWithDelim(String delim, String... inputs){
 		StringBuilder sb = _strBuilders.get();
 		sb.setLength(0); //reuse allocated space
@@ -1149,11 +1101,12 @@ public class InstructionUtils
 	 * @param federatedOutput federated output flag
 	 * @return instruction string prepared for federated request
 	 */
-	public static String instructionStringFEDPrepare(String inst, CPOperand varOldOut, long id, CPOperand[] varOldIn, long[] varNewIn, boolean federatedOutput){
+	public static String instructionStringFEDPrepare(String inst, CPOperand varOldOut, long id, CPOperand[] varOldIn, long[] varNewIn, boolean rmFederatedOutput){
 		String linst = replaceExecTypeWithCP(inst);
 		linst = replaceOutputOperand(linst, varOldOut, id);
 		linst = replaceInputOperand(linst, varOldIn, varNewIn);
-		linst = removeFEDOutputFlag(linst, federatedOutput);
+		if(rmFederatedOutput)
+			linst = removeFEDOutputFlag(linst);
 		return linst;
 	}
 
@@ -1175,11 +1128,8 @@ public class InstructionUtils
 		return linst;
 	}
 
-	private static String removeFEDOutputFlag(String linst, boolean federatedOutput){
-		if ( federatedOutput ){
-			linst = linst.substring(0, linst.lastIndexOf(Lop.OPERAND_DELIMITOR));
-		}
-		return linst;
+	private static String removeFEDOutputFlag(String linst){
+		return linst.substring(0, linst.lastIndexOf(Lop.OPERAND_DELIMITOR));
 	}
 
 	private static String replaceOperand(String linst, CPOperand oldOperand, String newOperandName){

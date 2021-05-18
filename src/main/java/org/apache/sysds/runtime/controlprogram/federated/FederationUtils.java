@@ -19,13 +19,13 @@
 
 package org.apache.sysds.runtime.controlprogram.federated;
 
+import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.Future;
 
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.log4j.Logger;
 import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.lops.Lop;
@@ -65,9 +65,10 @@ public class FederationUtils {
 		return _idSeq.getNextID();
 	}
 
-	public static FederatedRequest callInstruction(String inst, CPOperand varOldOut, CPOperand[] varOldIn, long[] varNewIn, boolean federatedOutput){
+	//TODO remove rmFedOutFlag, once all federated instructions have this flag, then unconditionally remove
+	public static FederatedRequest callInstruction(String inst, CPOperand varOldOut, CPOperand[] varOldIn, long[] varNewIn, boolean rmFedOutFlag){
 		long id = getNextFedDataID();
-		String linst = InstructionUtils.instructionStringFEDPrepare(inst, varOldOut, id, varOldIn, varNewIn, federatedOutput);
+		String linst = InstructionUtils.instructionStringFEDPrepare(inst, varOldOut, id, varOldIn, varNewIn, rmFedOutFlag);
 		return new FederatedRequest(RequestType.EXEC_INST, id, linst);
 	}
 
@@ -460,9 +461,48 @@ public class FederationUtils {
 	public static FederationMap federateLocalData(CacheableData<?> data) {
 		long id = FederationUtils.getNextFedDataID();
 		FederatedLocalData federatedLocalData = new FederatedLocalData(id, data);
-		Map<FederatedRange, FederatedData> fedMap = new HashMap<>();
-		fedMap.put(new FederatedRange(new long[2], new long[] {data.getNumRows(), data.getNumColumns()}),
-			federatedLocalData);
+		List<Pair<FederatedRange, FederatedData>> fedMap = new ArrayList<>();
+		fedMap.add(Pair.of(
+			new FederatedRange(new long[2], new long[] {data.getNumRows(), data.getNumColumns()}),
+			federatedLocalData));
 		return new FederationMap(id, fedMap);
+	}
+	
+	/**
+	 * Bind data from federated workers based on non-overlapping federated ranges.
+	 * @param readResponses responses from federated workers containing the federated ranges and data
+	 * @param dims dimensions of output MatrixBlock
+	 * @return MatrixBlock of consolidated data
+	 * @throws Exception in case of problems with getting data from responses
+	 */
+	public static MatrixBlock bindResponses(List<Pair<FederatedRange, Future<FederatedResponse>>> readResponses, long[] dims)
+		throws Exception
+	{
+		MatrixBlock ret = new MatrixBlock((int) dims[0], (int) dims[1], false);
+		for(Pair<FederatedRange, Future<FederatedResponse>> readResponse : readResponses) {
+			FederatedRange range = readResponse.getLeft();
+			FederatedResponse response = readResponse.getRight().get();
+			// add result
+			int[] beginDimsInt = range.getBeginDimsInt();
+			int[] endDimsInt = range.getEndDimsInt();
+			MatrixBlock multRes = (MatrixBlock) response.getData()[0];
+			ret.copy(beginDimsInt[0], endDimsInt[0] - 1, beginDimsInt[1], endDimsInt[1] - 1, multRes, false);
+			ret.setNonZeros(ret.getNonZeros() + multRes.getNonZeros());
+		}
+		return ret;
+	}
+
+	/**
+	 * Aggregate partially aggregated data from federated workers
+	 * by adding values with the same index in different federated locations.
+	 * @param readResponses responses from federated workers containing the federated data
+	 * @return MatrixBlock of consolidated, aggregated data
+	 */
+	@SuppressWarnings("unchecked")
+	public static MatrixBlock aggregateResponses(List<Pair<FederatedRange, Future<FederatedResponse>>> readResponses) {
+		List<Future<FederatedResponse>> dataParts = new ArrayList<>();
+		for ( Pair<FederatedRange, Future<FederatedResponse>> readResponse : readResponses )
+			dataParts.add(readResponse.getValue());
+		return FederationUtils.aggAdd(dataParts.toArray(new Future[0]));
 	}
 }

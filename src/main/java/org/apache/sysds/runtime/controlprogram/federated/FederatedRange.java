@@ -24,8 +24,8 @@ import java.util.Arrays;
 import org.apache.sysds.runtime.util.IndexRange;
 
 public class FederatedRange implements Comparable<FederatedRange> {
-	private long[] _beginDims;
-	private long[] _endDims;
+	private final long[] _beginDims;
+	private final long[] _endDims;
 	
 	/**
 	 * Create a range with the indexes of each dimension between their respective <code>beginDims</code> and
@@ -81,6 +81,7 @@ public class FederatedRange implements Comparable<FederatedRange> {
 			size *= getSize(i);
 		return size;
 	}
+
 	
 	public long getSize(int dim) {
 		return _endDims[dim] - _beginDims[dim];
@@ -102,7 +103,8 @@ public class FederatedRange implements Comparable<FederatedRange> {
 		return Arrays.toString(_beginDims) + " - " + Arrays.toString(_endDims);
 	}
 
-	@Override public boolean equals(Object o) {
+	@Override
+	public boolean equals(Object o) {
 		if(this == o)
 			return true;
 		if(o == null || getClass() != o.getClass())
@@ -111,10 +113,10 @@ public class FederatedRange implements Comparable<FederatedRange> {
 		return Arrays.equals(_beginDims, range._beginDims) && Arrays.equals(_endDims, range._endDims);
 	}
 
-	@Override public int hashCode() {
+	@Override
+	public int hashCode() {
 		int result = Arrays.hashCode(_beginDims);
-		result = 31 * result + Arrays.hashCode(_endDims);
-		return result;
+		return 31 * result + Arrays.hashCode(_endDims);
 	}
 
 	public FederatedRange shift(long rshift, long cshift) {

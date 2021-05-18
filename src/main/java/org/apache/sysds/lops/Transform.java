@@ -172,16 +172,16 @@ public class Transform extends Lop
 			&& (_operation == ReOrgOp.TRANS || _operation == ReOrgOp.SORT) ) {
 			sb.append( OPERAND_DELIMITOR );
 			sb.append( _numThreads );
-			if ( federatedOutput ){
+			if ( getExecType()==ExecType.FED ) {
 				sb.append( OPERAND_DELIMITOR );
-				sb.append( federatedOutput );
+				sb.append( _fedOutput.name() );
 			}
 		}
-		if( getExecType()==ExecType.SPARK && _operation == ReOrgOp.RESHAPE ) {
+		else if( getExecType()==ExecType.SPARK && _operation == ReOrgOp.RESHAPE ) {
 			sb.append( OPERAND_DELIMITOR );
 			sb.append( _outputEmptyBlock );
 		}
-		if( getExecType()==ExecType.SPARK && _operation == ReOrgOp.SORT ){
+		else if( getExecType()==ExecType.SPARK && _operation == ReOrgOp.SORT ){
 			sb.append( OPERAND_DELIMITOR );
 			sb.append( _bSortIndInMem );
 		}

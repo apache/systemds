@@ -41,6 +41,7 @@ import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRange;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse;
 import org.apache.sysds.runtime.controlprogram.federated.FederationMap;
+import org.apache.sysds.runtime.controlprogram.federated.FederationUtils;
 import org.apache.sysds.runtime.instructions.fed.InitFEDInstruction;
 import org.apache.sysds.runtime.instructions.spark.data.RDDObject;
 import org.apache.sysds.runtime.io.FileFormatProperties;
@@ -548,28 +549,18 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 		throws IOException
 	{
 		// TODO sparse optimization
-		MatrixBlock ret = new MatrixBlock((int) dims[0], (int) dims[1], false);
 		List<Pair<FederatedRange, Future<FederatedResponse>>> readResponses = fedMap.requestFederatedData();
 		try {
-			for (Pair<FederatedRange, Future<FederatedResponse>> readResponse : readResponses) {
-				FederatedRange range = readResponse.getLeft();
-				FederatedResponse response = readResponse.getRight().get();
-				// add result
-				int[] beginDimsInt = range.getBeginDimsInt();
-				int[] endDimsInt = range.getEndDimsInt();
-				MatrixBlock multRes = (MatrixBlock) response.getData()[0];
-				ret.copy(beginDimsInt[0], endDimsInt[0] - 1,
-					beginDimsInt[1], endDimsInt[1] - 1, multRes, false);
-				ret.setNonZeros(ret.getNonZeros() + multRes.getNonZeros());
-			}
+			if ( fedMap.getType() == FederationMap.FType.PART )
+				return FederationUtils.aggregateResponses(readResponses);
+			else
+				return FederationUtils.bindResponses(readResponses, dims);
 		}
-		catch (Exception e) {
+		catch(Exception e) {
 			throw new DMLRuntimeException("Federated matrix read failed.", e);
 		}
-		
-		return ret;
 	}
-	
+
 	/**
 	 * Writes in-memory matrix to HDFS in a specified format.
 	 */

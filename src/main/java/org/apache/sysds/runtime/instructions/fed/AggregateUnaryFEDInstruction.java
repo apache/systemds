@@ -38,15 +38,15 @@ import org.apache.sysds.runtime.matrix.operators.Operator;
 public class AggregateUnaryFEDInstruction extends UnaryFEDInstruction {
 
 	private AggregateUnaryFEDInstruction(AggregateUnaryOperator auop,
-		CPOperand in, CPOperand out, String opcode, String istr, boolean federatedOutput)
+		CPOperand in, CPOperand out, String opcode, String istr, FederatedOutput fedOut)
 	{
-		super(FEDType.AggregateUnary, auop, in, out, opcode, istr, federatedOutput);
+		super(FEDType.AggregateUnary, auop, in, out, opcode, istr, fedOut);
 	}
 
 	protected AggregateUnaryFEDInstruction(Operator op,
-		CPOperand in1, CPOperand in2, CPOperand out, String opcode, String istr, boolean federatedOutput)
+		CPOperand in1, CPOperand in2, CPOperand out, String opcode, String istr, FederatedOutput fedOut)
 	{
-		super(FEDType.AggregateUnary, op, in1, in2, out, opcode, istr, federatedOutput);
+		super(FEDType.AggregateUnary, op, in1, in2, out, opcode, istr, fedOut);
 	}
 
 	protected AggregateUnaryFEDInstruction(Operator op,
@@ -76,12 +76,12 @@ public class AggregateUnaryFEDInstruction extends UnaryFEDInstruction {
 		if(InstructionUtils.getExecType(str) == ExecType.SPARK)
 			str = InstructionUtils.replaceOperand(str, 4, "-1");
 
-		boolean federatedOutput = false;
-		if ( parts.length > 6 )
-			federatedOutput = Boolean.parseBoolean(parts[5]);
-		else if ( parts.length == 5 && !parts[4].equals("uarimin") && !parts[4].equals("uarimax") )
-			federatedOutput = Boolean.parseBoolean(parts[4]);
-		return new AggregateUnaryFEDInstruction(aggun, in1, out, opcode, str, federatedOutput);
+		FederatedOutput fedOut = null;
+		if ( parts.length == 5 && !parts[4].equals("uarimin") && !parts[4].equals("uarimax") )
+			fedOut = FederatedOutput.valueOf(parts[4]);
+		else
+			fedOut = FederatedOutput.valueOf(parts[5]);
+		return new AggregateUnaryFEDInstruction(aggun, in1, out, opcode, str, fedOut);
 	}
 	
 	@Override
@@ -102,9 +102,9 @@ public class AggregateUnaryFEDInstruction extends UnaryFEDInstruction {
 		if((instOpcode.equalsIgnoreCase("uarimax") || instOpcode.equalsIgnoreCase("uarimin")) && in.isFederated(FederationMap.FType.COL))
 			instString = InstructionUtils.replaceOperand(instString, 5, "2");
 
-		//create federated commands for aggregation
-
-		if ( _federatedOutput )
+		// create federated commands for aggregation
+		// (by default obtain output, even though unnecessary row aggregates)
+		if ( _fedOut.isForcedFederated() )
 			processFederatedOutput(map, in, ec);
 		else
 			processGetOutput(map, aop, ec, in);
@@ -121,7 +121,7 @@ public class AggregateUnaryFEDInstruction extends UnaryFEDInstruction {
 			throw new DMLRuntimeException("Output of FED instruction, " + output.toString()
 				+ ", is a scalar and the output is set to be federated. Scalars cannot be federated. ");
 		FederatedRequest fr1 = FederationUtils.callInstruction(instString, output,
-			new CPOperand[]{input1}, new long[]{in.getFedMapping().getID()}, _federatedOutput);
+			new CPOperand[]{input1}, new long[]{in.getFedMapping().getID()}, true);
 		map.execute(getTID(), fr1);
 
 		// derive new fed mapping for output
@@ -138,7 +138,7 @@ public class AggregateUnaryFEDInstruction extends UnaryFEDInstruction {
 	 */
 	private void processGetOutput(FederationMap map, AggregateUnaryOperator aggUOptr, ExecutionContext ec, MatrixObject in){
 		FederatedRequest fr1 = FederationUtils.callInstruction(instString, output,
-			new CPOperand[]{input1}, new long[]{in.getFedMapping().getID()});
+			new CPOperand[]{input1}, new long[]{in.getFedMapping().getID()}, true);
 		FederatedRequest fr2 = new FederatedRequest(RequestType.GET_VAR, fr1.getID());
 		FederatedRequest fr3 = map.cleanup(getTID(), fr1.getID());
 
@@ -151,7 +151,7 @@ public class AggregateUnaryFEDInstruction extends UnaryFEDInstruction {
 	}
 
 	private void processVar(ExecutionContext ec){
-		if ( _federatedOutput ){
+		if ( _fedOut.isForcedFederated() ){
 			throw new DMLRuntimeException("Output of " + toString() + " should not be federated "
 				+ "since the instruction requires consolidation of partial results to be computed.");
 		}

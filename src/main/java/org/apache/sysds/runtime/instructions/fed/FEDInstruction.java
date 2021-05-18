@@ -49,25 +49,37 @@ public abstract class FEDInstruction extends Instruction {
 		SpoofFused,
 		Unary
 	}
+	
+	public enum FederatedOutput {
+		FOUT, // forced federated output 
+		LOUT, // forced local output (consolidated in CP)
+		NONE; // runtime heuristics
+		public boolean isForcedFederated() {
+			return this == FOUT;
+		}
+		public boolean isForcedLocal() {
+			return this == LOUT;
+		}
+	}
 
 	protected final FEDType _fedType;
 	protected long _tid = -1; //main
-	protected boolean _federatedOutput = false;
+	protected FederatedOutput _fedOut = FederatedOutput.NONE;
 
 	protected FEDInstruction(FEDType type, String opcode, String istr) {
 		this(type, null, opcode, istr);
 	}
 
 	protected FEDInstruction(FEDType type, Operator op, String opcode, String istr) {
-		this(type, op, opcode, istr, false);
+		this(type, op, opcode, istr, FederatedOutput.NONE);
 	}
 
-	protected FEDInstruction(FEDType type, Operator op, String opcode, String istr, boolean federatedOutput) {
+	protected FEDInstruction(FEDType type, Operator op, String opcode, String istr, FederatedOutput fedOut) {
 		super(op);
 		_fedType = type;
 		instString = istr;
 		instOpcode = opcode;
-		_federatedOutput = federatedOutput;
+		_fedOut = fedOut;
 	}
 
 	@Override

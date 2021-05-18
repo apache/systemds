@@ -51,14 +51,14 @@ public class QuantilePickFEDInstruction extends BinaryFEDInstruction {
 	}
 
 	private QuantilePickFEDInstruction(Operator op, CPOperand in, CPOperand in2, CPOperand out, OperationTypes type,
-			boolean inmem, String opcode, String istr, boolean federatedOutput) {
-		super(FEDType.QPick, op, in, in2, out, opcode, istr, federatedOutput);
+			boolean inmem, String opcode, String istr, FederatedOutput fedOut) {
+		super(FEDType.QPick, op, in, in2, out, opcode, istr, fedOut);
 		_type = type;
 	}
 
 	private QuantilePickFEDInstruction(Operator op, CPOperand in, CPOperand in2, CPOperand out, OperationTypes type,
 		boolean inmem, String opcode, String istr) {
-		this(op, in, in2, out, type, inmem, opcode, istr, false);
+		this(op, in, in2, out, type, inmem, opcode, istr, FederatedOutput.NONE);
 	}
 
 	public static QuantilePickFEDInstruction parseInstruction ( String str ) {

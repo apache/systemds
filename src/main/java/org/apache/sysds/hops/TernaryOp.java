@@ -195,8 +195,6 @@ public class TernaryOp extends MultiThreadedHop
 		catch(LopsException e) {
 			throw new HopsException(this.printErrorLocation() + "error constructing Lops for TernaryOp Hop " , e);
 		}
-
-		setFederatedOutput(getLops());
 		
 		//add reblock/checkpoint lops if necessary
 		constructAndSetLopsDataFlowProperties();

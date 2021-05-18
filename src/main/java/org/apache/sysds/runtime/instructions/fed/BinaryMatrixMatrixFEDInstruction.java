@@ -23,6 +23,7 @@ import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest;
+import org.apache.sysds.runtime.controlprogram.federated.FederationMap;
 import org.apache.sysds.runtime.controlprogram.federated.FederationMap.FType;
 import org.apache.sysds.runtime.controlprogram.federated.FederationUtils;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
@@ -32,8 +33,8 @@ import org.apache.sysds.runtime.matrix.operators.Operator;
 public class BinaryMatrixMatrixFEDInstruction extends BinaryFEDInstruction
 {
 	protected BinaryMatrixMatrixFEDInstruction(Operator op,
-		CPOperand in1, CPOperand in2, CPOperand out, String opcode, String istr, boolean federatedOutput) {
-		super(FEDType.Binary, op, in1, in2, out, opcode, istr, federatedOutput);
+		CPOperand in1, CPOperand in2, CPOperand out, String opcode, String istr, FederatedOutput fedOut) {
+		super(FEDType.Binary, op, in1, in2, out, opcode, istr, fedOut);
 	}
 
 	@Override
@@ -53,14 +54,16 @@ public class BinaryMatrixMatrixFEDInstruction extends BinaryFEDInstruction
 		FederatedRequest fr2 = null;
 		if( mo2.isFederated() ) {
 			if(mo1.isFederated() && mo1.getFedMapping().isAligned(mo2.getFedMapping(), false)) {
-				fr2 = FederationUtils.callInstruction(instString, output, new CPOperand[]{input1, input2},
-					new long[]{mo1.getFedMapping().getID(), mo2.getFedMapping().getID()}, _federatedOutput);
+				fr2 = FederationUtils.callInstruction(instString, output,
+					new CPOperand[]{input1, input2},
+					new long[]{mo1.getFedMapping().getID(), mo2.getFedMapping().getID()}, true);
 				mo1.getFedMapping().execute(getTID(), true, fr2);
 			}
 			else if ( !mo1.isFederated() ){
 				FederatedRequest[] fr1 = mo2.getFedMapping().broadcastSliced(mo1, false);
-				fr2 = FederationUtils.callInstruction(instString, output, new CPOperand[]{input1, input2},
-					new long[]{fr1[0].getID(), mo2.getFedMapping().getID()});
+				fr2 = FederationUtils.callInstruction(instString, output,
+					new CPOperand[]{input1, input2},
+					new long[]{fr1[0].getID(), mo2.getFedMapping().getID()}, true);
 				mo2.getFedMapping().execute(getTID(), true, fr1, fr2);
 			}
 			else {
@@ -75,7 +78,7 @@ public class BinaryMatrixMatrixFEDInstruction extends BinaryFEDInstruction
 					// only one partition (MM on a single fed worker)
 					FederatedRequest fr1 = mo1.getFedMapping().broadcast(mo2);
 					fr2 = FederationUtils.callInstruction(instString, output, new CPOperand[]{input1, input2},
-					new long[]{mo1.getFedMapping().getID(), fr1.getID()}, _federatedOutput);
+					new long[]{mo1.getFedMapping().getID(), fr1.getID()}, true);
 					FederatedRequest fr3 = mo1.getFedMapping().cleanup(getTID(), fr1.getID());
 					//execute federated instruction and cleanup intermediates
 					mo1.getFedMapping().execute(getTID(), true, fr1, fr2, fr3);
@@ -89,7 +92,7 @@ public class BinaryMatrixMatrixFEDInstruction extends BinaryFEDInstruction
 				// MV row partitioned row vector, MV col partitioned col vector
 				FederatedRequest fr1 = mo1.getFedMapping().broadcast(mo2);
 				fr2 = FederationUtils.callInstruction(instString, output, new CPOperand[]{input1, input2},
-				new long[]{mo1.getFedMapping().getID(), fr1.getID()}, _federatedOutput);
+				new long[]{mo1.getFedMapping().getID(), fr1.getID()}, true);
 				FederatedRequest fr3 = mo1.getFedMapping().cleanup(getTID(), fr1.getID());
 				//execute federated instruction and cleanup intermediates
 				mo1.getFedMapping().execute(getTID(), true, fr1, fr2, fr3);
@@ -99,8 +102,16 @@ public class BinaryMatrixMatrixFEDInstruction extends BinaryFEDInstruction
 				// row partitioned MM or col partitioned MM
 				FederatedRequest[] fr1 = mo1.getFedMapping().broadcastSliced(mo2, false);
 				fr2 = FederationUtils.callInstruction(instString, output, new CPOperand[]{input1, input2},
-					new long[]{mo1.getFedMapping().getID(), fr1[0].getID()}, _federatedOutput);
+					new long[]{mo1.getFedMapping().getID(), fr1[0].getID()}, true);
 				FederatedRequest fr3 = mo1.getFedMapping().cleanup(getTID(), fr1[0].getID());
+				//execute federated instruction and cleanup intermediates
+				mo1.getFedMapping().execute(getTID(), true, fr1, fr2, fr3);
+			}
+			else if ( mo1.isFederated(FType.PART) && !mo2.isFederated() ){
+				FederatedRequest fr1 = mo1.getFedMapping().broadcast(mo2);
+				fr2 = FederationUtils.callInstruction(instString, output, new CPOperand[]{input1, input2},
+					new long[]{mo1.getFedMapping().getID(), fr1.getID()}, true);
+				FederatedRequest fr3 = mo1.getFedMapping().cleanup(getTID(), fr1.getID());
 				//execute federated instruction and cleanup intermediates
 				mo1.getFedMapping().execute(getTID(), true, fr1, fr2, fr3);
 			}
@@ -109,11 +120,28 @@ public class BinaryMatrixMatrixFEDInstruction extends BinaryFEDInstruction
 			}
 		}
 
-		if ( mo1.isFederated() )
+		if ( mo1.isFederated(FType.PART) && !mo2.isFederated() )
+			setOutputFedMappingPart(mo1, mo2, fr2.getID(), ec);
+		else if ( mo1.isFederated() )
 			setOutputFedMapping(mo1, fr2.getID(), ec);
 		else if ( mo2.isFederated() )
 			setOutputFedMapping(mo2, fr2.getID(), ec);
 		else throw new DMLRuntimeException("Input is not federated, so the output FedMapping cannot be set!");
+	}
+
+	/**
+	 * Sets the output with a federation map of overlapping partial aggregates with metadata copied from mo1.
+	 * @param mo1 matrix object with number of rows used to set output number of rows and retrieve federated map
+	 * @param mo2 matrix object with number of columns used to set output number of columns
+	 * @param outputID ID of output
+	 * @param ec execution context
+	 */
+	private void setOutputFedMappingPart(MatrixObject mo1, MatrixObject mo2, long outputID, ExecutionContext ec){
+		MatrixObject out = ec.getMatrixObject(output);
+		out.getDataCharacteristics().set(mo1.getNumRows(), mo2.getNumColumns(), (int)mo1.getBlocksize());
+		FederationMap outputFedMap = mo1.getFedMapping()
+			.copyWithNewIDAndRange(mo1.getNumRows(), mo2.getNumColumns(), outputID);
+		out.setFedMapping(outputFedMap);
 	}
 
 	/**

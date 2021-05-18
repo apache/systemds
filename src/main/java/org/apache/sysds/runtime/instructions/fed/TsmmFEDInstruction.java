@@ -39,14 +39,14 @@ public class TsmmFEDInstruction extends BinaryFEDInstruction {
 	@SuppressWarnings("unused")
 	private final int _numThreads;
 	
-	public TsmmFEDInstruction(CPOperand in, CPOperand out, MMTSJType type, int k, String opcode, String istr, boolean federatedOutput) {
-		super(FEDType.Tsmm, null, in, null, out, opcode, istr, federatedOutput);
+	public TsmmFEDInstruction(CPOperand in, CPOperand out, MMTSJType type, int k, String opcode, String istr, FederatedOutput fedOut) {
+		super(FEDType.Tsmm, null, in, null, out, opcode, istr, fedOut);
 		_type = type;
 		_numThreads = k;
 	}
 
 	public TsmmFEDInstruction(CPOperand in, CPOperand out, MMTSJType type, int k, String opcode, String istr) {
-		this(in, out, type, k, opcode, istr, false);
+		this(in, out, type, k, opcode, istr, FederatedOutput.NONE);
 	}
 	
 	public static TsmmFEDInstruction parseInstruction(String str) {

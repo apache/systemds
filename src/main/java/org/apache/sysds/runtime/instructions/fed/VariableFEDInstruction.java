@@ -19,8 +19,9 @@
 
 package org.apache.sysds.runtime.instructions.fed;
 
+import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.lang3.tuple.Pair;
@@ -103,12 +104,12 @@ public class VariableFEDInstruction extends FEDInstruction implements LineageTra
 
 		MatrixObject out = ec.getMatrixObject(_in.getOutput());
 		FederationMap outMap = mo1.getFedMapping().copyWithNewID(fr1.getID());
-		Map<FederatedRange, FederatedData> newMap = new HashMap<>();
-		for(Map.Entry<FederatedRange, FederatedData> pair : outMap.getMap().entrySet()) {
+		List<Pair<FederatedRange, FederatedData>> newMap = new ArrayList<>();
+		for(Pair<FederatedRange, FederatedData> pair : outMap.getMap()) {
 			FederatedData om = pair.getValue();
-			FederatedData nf = new FederatedData(Types.DataType.MATRIX, om.getAddress(), om.getFilepath(),
-				om.getVarID());
-			newMap.put(pair.getKey(), nf);
+			FederatedData nf = new FederatedData(Types.DataType.MATRIX,
+				om.getAddress(), om.getFilepath(), om.getVarID());
+			newMap.add(Pair.of(pair.getKey(), nf));
 		}
 		out.setFedMapping(outMap);
 	}
@@ -130,12 +131,12 @@ public class VariableFEDInstruction extends FEDInstruction implements LineageTra
 		FrameObject out = ec.getFrameObject(_in.getOutput());
 		out.getDataCharacteristics().set(mo1.getNumRows(), mo1.getNumColumns(), (int) mo1.getBlocksize(), mo1.getNnz());
 		FederationMap outMap = mo1.getFedMapping().copyWithNewID(fr1.getID());
-		Map<FederatedRange, FederatedData> newMap = new HashMap<>();
-		for(Map.Entry<FederatedRange, FederatedData> pair : outMap.getMap().entrySet()) {
+		List<Pair<FederatedRange, FederatedData>> newMap = new ArrayList<>();
+		for(Map.Entry<FederatedRange, FederatedData> pair : outMap.getMap()) {
 			FederatedData om = pair.getValue();
-			FederatedData nf = new FederatedData(Types.DataType.FRAME, om.getAddress(), om.getFilepath(),
-				om.getVarID());
-			newMap.put(pair.getKey(), nf);
+			FederatedData nf = new FederatedData(Types.DataType.FRAME,
+				om.getAddress(), om.getFilepath(), om.getVarID());
+			newMap.add(Pair.of(pair.getKey(), nf));
 		}
 		ValueType[] schema = new ValueType[(int) mo1.getDataCharacteristics().getCols()];
 		Arrays.fill(schema, ValueType.FP64);

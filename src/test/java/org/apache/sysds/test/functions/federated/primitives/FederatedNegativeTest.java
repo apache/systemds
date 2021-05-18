@@ -23,10 +23,11 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import java.net.InetSocketAddress;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.Future;
 
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedData;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRange;
@@ -52,11 +53,11 @@ public class FederatedNegativeTest {
 			NegativeTest1();
 		}
 		FederationUtils.resetFedDataID(); //ensure expected ID when tests run in single JVM
-		Map<FederatedRange, FederatedData> fedMap = new HashMap<>();
+		List<Pair<FederatedRange, FederatedData>> fedMap = new ArrayList<>();
 		FederatedRange r = new FederatedRange(new long[]{0,0}, new long[]{1,1});
 		FederatedData d = new FederatedData(Types.DataType.SCALAR,
 			new InetSocketAddress("localhost", port), "Nowhere");
-		fedMap.put(r,d);
+		fedMap.add(Pair.of(r,d));
 		FederationMap fedM = new FederationMap(fedMap);
 		FederatedRequest fr = new FederatedRequest(FederatedRequest.RequestType.GET_VAR);
 		Future<FederatedResponse>[] res = fedM.execute(0, fr);

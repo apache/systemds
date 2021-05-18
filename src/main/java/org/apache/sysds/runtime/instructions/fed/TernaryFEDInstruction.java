@@ -37,8 +37,8 @@ import org.apache.sysds.runtime.matrix.operators.TernaryOperator;
 public class TernaryFEDInstruction extends ComputationFEDInstruction {
 
 	private TernaryFEDInstruction(TernaryOperator op, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out,
-		String opcode, String str, boolean federatedOutput) {
-		super(FEDInstruction.FEDType.Ternary, op, in1, in2, in3, out, opcode, str, federatedOutput);
+		String opcode, String str, FederatedOutput fedOut) {
+		super(FEDInstruction.FEDType.Ternary, op, in1, in2, in3, out, opcode, str, fedOut);
 	}
 
 	public static TernaryFEDInstruction parseInstruction(String str) {
@@ -49,9 +49,9 @@ public class TernaryFEDInstruction extends ComputationFEDInstruction {
 		CPOperand operand3 = new CPOperand(parts[3]);
 		CPOperand outOperand = new CPOperand(parts[4]);
 		int numThreads = parts.length>5 ? Integer.parseInt(parts[5]) : 1;
-		boolean federatedOutput = parts.length > 6 && parts[6].equals("true");
+		FederatedOutput fedOut = parts.length>7 ? FederatedOutput.valueOf(parts[6]) : FederatedOutput.NONE;
 		TernaryOperator op = InstructionUtils.parseTernaryOperator(opcode, numThreads);
-		return new TernaryFEDInstruction(op, operand1, operand2, operand3, outOperand, opcode, str, federatedOutput);
+		return new TernaryFEDInstruction(op, operand1, operand2, operand3, outOperand, opcode, str, fedOut);
 	}
 
 	@Override
@@ -166,12 +166,12 @@ public class TernaryFEDInstruction extends ComputationFEDInstruction {
 	 */
 	private void sendFederatedRequests(ExecutionContext ec, MatrixObject fedMapObj, long fedOutputID,
 		FederatedRequest[] federatedSlices1, FederatedRequest[] federatedSlices2, FederatedRequest... federatedRequests){
-		if ( _federatedOutput ){
+		if ( !_fedOut.isForcedLocal() ){
 			fedMapObj.getFedMapping().execute(getTID(), true, federatedSlices1, federatedSlices2, federatedRequests);
 			setOutputFedMapping(ec, fedMapObj, fedOutputID);
-		} else {
-			processAndRetrieve(ec, fedMapObj, fedOutputID, federatedSlices1, federatedSlices2, federatedRequests);
 		}
+		else
+			processAndRetrieve(ec, fedMapObj, fedOutputID, federatedSlices1, federatedSlices2, federatedRequests);
 	}
 
 	/**

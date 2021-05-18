@@ -31,8 +31,8 @@ public abstract class UnaryFEDInstruction extends ComputationFEDInstruction {
 	}
 
 	protected UnaryFEDInstruction(FEDType type, Operator op, CPOperand in, CPOperand out, String opcode, String instr,
-		boolean federatedOutput) {
-		this(type, op, in, null, null, out, opcode, instr, federatedOutput);
+		FederatedOutput fedOut) {
+		this(type, op, in, null, null, out, opcode, instr, fedOut);
 	}
 	
 	protected UnaryFEDInstruction(FEDType type, Operator op, CPOperand in1, CPOperand in2, CPOperand out, String opcode,
@@ -41,23 +41,27 @@ public abstract class UnaryFEDInstruction extends ComputationFEDInstruction {
 	}
 
 	protected UnaryFEDInstruction(FEDType type, Operator op, CPOperand in1, CPOperand in2, CPOperand out, String opcode,
-		String instr, boolean federatedOutput) {
-		this(type, op, in1, in2, null, out, opcode, instr, federatedOutput);
+		String instr, FederatedOutput fedOut) {
+		this(type, op, in1, in2, null, out, opcode, instr, fedOut);
 	}
 	
 	protected UnaryFEDInstruction(FEDType type, Operator op, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out,
 			String opcode, String instr) {
-		this(type, op, in1, in2, in3, out, opcode, instr, false);
+		this(type, op, in1, in2, in3, out, opcode, instr, FederatedOutput.NONE);
 	}
 
 	protected UnaryFEDInstruction(FEDType type, Operator op, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out,
-		String opcode, String instr, boolean federatedOutput) {
-		super(type, op, in1, in2, in3, out, opcode, instr, federatedOutput);
+		String opcode, String instr, FederatedOutput fedOut) {
+		super(type, op, in1, in2, in3, out, opcode, instr, fedOut);
 	}
 	
 	static String parseUnaryInstruction(String instr, CPOperand in, CPOperand out) {
-		InstructionUtils.checkNumFields(instr, 2);
-		return parse(instr, in, null, null, out);
+		//TODO: simplify once all fed instructions have consistent flags
+		int num = InstructionUtils.checkNumFields(instr, 2, 3);
+		if(num == 2)
+			return parse(instr, in, null, null, out);
+		else 
+			return parseWithFedOutFlag(instr, in, out);
 	}
 	
 	static String parseUnaryInstruction(String instr, CPOperand in1, CPOperand in2, CPOperand out) {
@@ -96,6 +100,14 @@ public abstract class UnaryFEDInstruction extends ComputationFEDInstruction {
 			default:
 				throw new DMLRuntimeException("Unexpected number of operands in the instruction: " + instr);
 		}
+		return opcode;
+	}
+	
+	private static String parseWithFedOutFlag(String instr, CPOperand in1, CPOperand out) {
+		String[] parts = InstructionUtils.getInstructionPartsWithValueType(instr);
+		String opcode = parts[0];
+		in1.split(parts[1]);
+		out.split(parts[parts.length - 2]);
 		return opcode;
 	}
 }

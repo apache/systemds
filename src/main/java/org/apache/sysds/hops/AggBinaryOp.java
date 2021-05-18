@@ -102,7 +102,6 @@ public class AggBinaryOp extends MultiThreadedHop
 		outerOp = outOp;
 		getInput().add(0, in1);
 		getInput().add(1, in2);
-		updateETFed();
 		in1.getParent().add(this);
 		in2.getParent().add(this);
 		

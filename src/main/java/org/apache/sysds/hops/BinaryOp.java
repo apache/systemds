@@ -97,7 +97,6 @@ public class BinaryOp extends MultiThreadedHop
 		op = o;
 		getInput().add(0, inp1);
 		getInput().add(1, inp2);
-		updateETFed();
 
 		inp1.getParent().add(this);
 		inp2.getParent().add(this);

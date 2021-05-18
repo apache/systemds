@@ -147,8 +147,8 @@ public class FederatedMultiplyPlanningTest extends AutomatedTestBase {
 		if ( testName.equals(TEST_NAME_5) ){
 			writeColStandardMatrix("X1", 42);
 			writeColStandardMatrix("X2", 1340);
-			writeColStandardMatrix("Y1", 44);
-			writeColStandardMatrix("Y2", 21);
+			writeColStandardMatrix("Y1", 44, new PrivacyConstraint(PrivacyLevel.None));
+			writeColStandardMatrix("Y2", 21, new PrivacyConstraint(PrivacyLevel.None));
 		}
 		else if ( testName.equals(TEST_NAME_6) ){
 			writeColStandardMatrix("X1", 42);

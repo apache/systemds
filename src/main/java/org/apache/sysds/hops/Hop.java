@@ -84,9 +84,9 @@ public abstract class Hop implements ParseInfo {
 	protected ExecType _etypeForced = null; //exec type forced via platform or external optimizer
 
 	/**
-	 * Boolean defining if the output of the operation should be federated.
-	 * If it is true, the output should be kept at federated sites.
-	 * If it is false, the output should be retrieved by the coordinator.
+	 * Field defining if the output of the operation should be federated.
+	 * If it is fout, the output should be kept at federated sites.
+	 * If it is lout, the output should be retrieved by the coordinator.
 	 */
 	protected FederatedOutput _federatedOutput = FederatedOutput.NONE;
 	
@@ -163,6 +163,14 @@ public abstract class Hop implements ParseInfo {
 	public ExecType getExecType()
 	{
 		return _etype;
+	}
+
+	public void setExecType(ExecType execType){
+		_etype = execType;
+	}
+
+	public void setFederatedOutput(FederatedOutput federatedOutput){
+		_federatedOutput = federatedOutput;
 	}
 	
 	public void resetExecType()
@@ -752,24 +760,8 @@ public abstract class Hop implements ParseInfo {
 	 * This method only has an effect if FEDERATED_COMPILATION is activated.
 	 */
 	protected void updateETFed(){
-		if ( OptimizerUtils.FEDERATED_COMPILATION ){
-			if ( inputIsFED() )
-				_etype = ExecType.FED;
-		}
-	}
-
-	/**
-	 * Returns true if any input has federated ExecType.
-	 * This method can only return true if FedDecision is activated.
-	 * @return true if any input has federated ExecType
-	 */
-	protected boolean inputIsFED(){
-		if ( !OptimizerUtils.FEDERATED_COMPILATION )
-			return false;
-		for ( Hop input : _input )
-			if ( input.isFederated() || input.isFederatedOutput() )
-				return true;
-		return false;
+		if ( _federatedOutput == FederatedOutput.FOUT || _federatedOutput == FederatedOutput.LOUT )
+			_etype = ExecType.FED;
 	}
 	
 	public boolean isFederated(){

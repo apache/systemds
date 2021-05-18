@@ -21,6 +21,13 @@ package org.apache.sysds.runtime.privacy.propagation;
 
 import java.util.*;
 
+import org.apache.sysds.hops.AggBinaryOp;
+import org.apache.sysds.hops.AggUnaryOp;
+import org.apache.sysds.hops.BinaryOp;
+import org.apache.sysds.hops.Hop;
+import org.apache.sysds.hops.ReorgOp;
+import org.apache.sysds.hops.TernaryOp;
+import org.apache.sysds.hops.UnaryOp;
 import org.apache.sysds.parser.DataExpression;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.instructions.Instruction;
@@ -133,6 +140,15 @@ public class PrivacyPropagator
 			mergedPrivacyConstraint = mergeBinary(mergedPrivacyConstraint, privacyConstraints[i]);
 		}
 		return mergedPrivacyConstraint;
+	}
+
+	public static void hopPropagation(Hop hop){
+		PrivacyConstraint[] inputConstraints = hop.getInput().stream()
+			.map(Hop::getPrivacy).toArray(PrivacyConstraint[]::new);
+		if ( hop instanceof TernaryOp || hop instanceof BinaryOp || hop instanceof ReorgOp )
+			hop.setPrivacy(mergeNary(inputConstraints, OperatorType.NonAggregate));
+		else if ( hop instanceof AggBinaryOp || hop instanceof AggUnaryOp  || hop instanceof UnaryOp )
+			hop.setPrivacy(mergeNary(inputConstraints, OperatorType.Aggregate));
 	}
 
 	/**

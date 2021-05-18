@@ -137,6 +137,9 @@ public class ProgramRewriter
 				_dagRuleSet.add( new RewriteAlgebraicSimplificationDynamic()      ); //dependencies: cse
 				_dagRuleSet.add( new RewriteAlgebraicSimplificationStatic()       ); //dependencies: cse
 			}
+			if ( OptimizerUtils.FEDERATED_COMPILATION ) {
+				_dagRuleSet.add( new RewriteFederatedExecution() );
+			}
 		}
 		
 		// cleanup after all rewrites applied 

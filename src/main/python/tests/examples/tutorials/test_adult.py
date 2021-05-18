@@ -30,7 +30,7 @@ from systemds.script_building import DMLScript
 
 class Test_DMLScript(unittest.TestCase):
     """
-    Test class for mnist dml script tutorial code.
+    Test class for adult dml script tutorial code.
     """
 
     sds: SystemDSContext = None
@@ -56,19 +56,42 @@ class Test_DMLScript(unittest.TestCase):
 
     def test_test_data(self):
         x_l = self.d.get_test_data()
-        self.assertEqual((16282, 14), x_l.shape)
+        self.assertEqual((16281, 14), x_l.shape)
 
     def test_test_labels(self):
         y_l = self.d.get_test_labels()
-        self.assertEqual((16282,), y_l.shape)
+        self.assertEqual((16281,), y_l.shape)
 
     def test_preprocess(self):
         #assumes certain preprocessing
         train_data, train_labels, test_data, test_labels = self.d.get_preprocessed_dataset()
         self.assertEqual((30162,104), train_data.shape)
         self.assertEqual((30162, ), train_labels.shape)
-        self.assertEqual((15061,104), test_data.shape)
-        self.assertEqual((15061, ), test_labels.shape)
+        self.assertEqual((15060,104), test_data.shape)
+        self.assertEqual((15060, ), test_labels.shape)
+
+    def test_multi_log_reg(self):
+        # Reduced because we want the tests to finish a bit faster.
+        train_count = 15000
+        test_count = 5000
+
+        train_data, train_labels, test_data, test_labels = self.d.get_preprocessed_dataset()
+
+        # Train data
+        X = self.sds.from_numpy( train_data[:train_count])
+        Y = self.sds.from_numpy( train_labels[:train_count])
+        Y = Y + 1.0
+
+        # Test data
+        Xt = self.sds.from_numpy(test_data[:test_count])
+        Yt = self.sds.from_numpy(test_labels[:test_count])
+        Yt = Yt + 1.0
+
+        betas = multiLogReg(X, Y)
+
+        [_, _, acc] = multiLogRegPredict(Xt, betas, Yt).compute()
+
+        self.assertGreater(acc, 80)
 
 
 if __name__ == "__main__":

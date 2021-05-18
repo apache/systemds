@@ -84,13 +84,13 @@ class DataManager:
     def get_test_data(self) -> np.array:
         self._get_data(self._test_data_url, self._test_data_loc)
         return self._parse_data(self._test_data_loc)\
-            .drop(labels=self._data_columns[len(self._data_columns)-1], axis=1).to_numpy()
+            .drop(labels=self._data_columns[len(self._data_columns)-1], axis=1).iloc[1:].to_numpy()
 
     def get_test_labels(self) -> np.array:
         self._get_data(self._test_data_url, self._test_data_loc)
         data_list = self._data_columns.copy()
         data_list.pop(len(self._data_columns)-1)
-        return self._parse_data(self._test_data_loc).drop(labels=data_list, axis=1).to_numpy().flatten()
+        return self._parse_data(self._test_data_loc).drop(labels=data_list, axis=1).iloc[1:].to_numpy().flatten()
 
     def _parse_data(self, loc) -> pd.DataFrame:
         return pd.read_csv(loc, header=None, names=self._data_columns)
@@ -110,7 +110,7 @@ class DataManager:
         self._get_data(self._test_data_url, self._test_data_loc)
 
         train_dataset = self._parse_data(self._train_data_loc)
-        test_dataset = self._parse_data(self._test_data_loc)
+        test_dataset = self._parse_data(self._test_data_loc).iloc[1:]
         #remove every line with ?
         train_dataset = train_dataset[~(train_dataset.astype(str) == ' ?').any(1)]
         test_dataset = test_dataset[~(test_dataset.astype(str) == ' ?').any(1)]

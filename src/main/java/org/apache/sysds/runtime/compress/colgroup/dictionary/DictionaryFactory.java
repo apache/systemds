@@ -25,6 +25,7 @@ import java.io.IOException;
 import org.apache.commons.lang.NotImplementedException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.sysds.runtime.DMLCompressionException;
 import org.apache.sysds.runtime.compress.utils.ABitmap;
 import org.apache.sysds.runtime.compress.utils.Bitmap;
 import org.apache.sysds.runtime.compress.utils.BitmapLossy;
@@ -36,26 +37,23 @@ public class DictionaryFactory {
 
 	protected static final Log LOG = LogFactory.getLog(DictionaryFactory.class.getName());
 
-	public static ADictionary read(DataInput in) throws IOException {
-		boolean lossy = in.readBoolean();
-		if(lossy) {
+	public enum Type {
+		FP64_DICT, MATRIX_BLOCK_DICT, INT8_DICT
+	}
 
-			double scale = in.readDouble();
-			int numVals = in.readInt();
-			// read distinct values
-			byte[] values = numVals == 0 ? null : new byte[numVals];
-			for(int i = 0; i < numVals; i++)
-				values[i] = in.readByte();
-			return new QDictionary(values, scale);
+	public static ADictionary read(DataInput in) throws IOException {
+		Type type = Type.values()[in.readByte()];
+		switch(type) {
+			case FP64_DICT:
+				return Dictionary.read(in);
+			case MATRIX_BLOCK_DICT:
+				return MatrixBlockDictionary.read(in);
+			case INT8_DICT:
+				return QDictionary.read(in);
+			default:
+				throw new DMLCompressionException("Unsupported type of dictionary : " + type);
 		}
-		else {
-			int numVals = in.readInt();
-			// read distinct values
-			double[] values = new double[numVals];
-			for(int i = 0; i < numVals; i++)
-				values[i] = in.readDouble();
-			return new Dictionary(values);
-		}
+
 	}
 
 	public static long getInMemorySize(int nrValues, int nrColumns, double tupleSparsity, boolean lossy) {

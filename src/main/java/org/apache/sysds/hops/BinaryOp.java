@@ -224,8 +224,6 @@ public class BinaryOp extends MultiThreadedHop
 				constructLopsBinaryDefault();
 		}
 
-		setFederatedOutput(getLops());
-
 		//add reblock/checkpoint lops if necessary
 		constructAndSetLopsDataFlowProperties();
 
@@ -418,7 +416,8 @@ public class BinaryOp extends MultiThreadedHop
 			Lop tmp = null;
 			if( ot != null ) {
 				tmp = new Unary(getInput(0).constructLops(), getInput(1).constructLops(),
-					ot, getDataType(), getValueType(), et);
+					ot, getDataType(), getValueType(), et,
+					OptimizerUtils.getConstrainedNumThreads(_maxNumThreads));
 			}
 			else { //general case
 				tmp = new Binary(getInput(0).constructLops(), getInput(1).constructLops(),

@@ -62,6 +62,14 @@ class Test_DMLScript(unittest.TestCase):
         y_l = self.d.get_test_labels()
         self.assertEqual((16282,), y_l.shape)
 
+    def test_preprocess(self):
+        #assumes certain preprocessing
+        train_data, train_labels, test_data, test_labels = self.d.get_preprocessed_dataset()
+        self.assertEqual((30162,104), train_data.shape)
+        self.assertEqual((30162, ), train_labels.shape)
+        self.assertEqual((15061,104), test_data.shape)
+        self.assertEqual((15061, ), test_labels.shape)
+
 
 if __name__ == "__main__":
     unittest.main(exit=False)

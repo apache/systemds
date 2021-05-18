@@ -1,12 +1,18 @@
 package org.apache.sysds.runtime.compress.colgroup.dictionary;
 
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
+
 import org.apache.commons.lang.NotImplementedException;
+import org.apache.sysds.runtime.data.DenseBlockFP64;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.functionobjects.Builtin.BuiltinCode;
-import org.apache.sysds.runtime.functionobjects.ValueFunction;
+import org.apache.sysds.runtime.functionobjects.Minus;
 import org.apache.sysds.runtime.matrix.data.LibMatrixReorg;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
 
 public class MatrixBlockDictionary extends ADictionary {
@@ -24,7 +30,8 @@ public class MatrixBlockDictionary extends ADictionary {
     @Override
     public double[] getValues() {
         LOG.warn("Inefficient force dense format.");
-        _data.sparseToDense();
+        if(_data.isInSparseFormat())
+            _data.sparseToDense();
         return _data.getDenseBlockValues();
     }
 
@@ -39,15 +46,13 @@ public class MatrixBlockDictionary extends ADictionary {
     public int hasZeroTuple(int nCol) {
         if(_data.isInSparseFormat()) {
             SparseBlock sb = _data.getSparseBlock();
-            for(int i = 0; i < _data.getNumRows(); i++) {
-                if(sb.isEmpty(i)) {
+            for(int i = 0; i < _data.getNumRows(); i++)
+                if(sb.isEmpty(i))
                     return i;
-                }
-            }
         }
-        else {
+        else
             throw new NotImplementedException();
-        }
+
         return -1;
     }
 
@@ -163,18 +168,56 @@ public class MatrixBlockDictionary extends ADictionary {
     @Override
     public ADictionary applyScalarOp(ScalarOperator op, double newVal, int numCols) {
         MatrixBlock res = _data.scalarOperations(op, new MatrixBlock());
-        MatrixBlock res2 = res.append(new MatrixBlock(1, 1, newVal), new MatrixBlock());
-        return new MatrixBlockDictionary(res2);
+        final int lastRow = res.getNumRows();
+        MatrixBlock res2 = new MatrixBlock(lastRow + 1, res.getNumColumns(), true);
+        if(res.isEmpty()) {
+            for(int i = 0; i < numCols; i++)
+                res2.appendValue(lastRow, i, newVal);
+            return new MatrixBlockDictionary(res2);
+        }
+        else {
+            res.append(new MatrixBlock(1, numCols, newVal), res2, false);
+            return new MatrixBlockDictionary(res2);
+        }
     }
 
     @Override
-    public ADictionary applyBinaryRowOpLeft(ValueFunction fn, double[] v, boolean sparseSafe, int[] colIndexes) {
-        throw new NotImplementedException();
+    public ADictionary applyBinaryRowOpLeft(BinaryOperator op, double[] v, boolean sparseSafe, int[] colIndexes) {
+        MatrixBlock rowVector = new MatrixBlock(1, colIndexes.length, false);
+        for(int i = 0; i < colIndexes.length; i++)
+            rowVector.quickSetValue(0, i, v[colIndexes[i]]);
+        MatrixBlock res = new MatrixBlock();
+        if(sparseSafe) {
+            rowVector.binaryOperations(op, _data, res);
+        }
+        else {
+            if(!_data.isInSparseFormat())
+                LOG.warn("Inefficient binary row op allocating Matrix multiple times");
+            MatrixBlock tmp = new MatrixBlock();
+            tmp = _data.append(new MatrixBlock(1, _data.getNumColumns(), 0), tmp, false);
+            rowVector.binaryOperations(op, tmp, res);
+
+        }
+        return new MatrixBlockDictionary(res);
     }
 
     @Override
-    public ADictionary applyBinaryRowOpRight(ValueFunction fn, double[] v, boolean sparseSafe, int[] colIndexes) {
-        throw new NotImplementedException();
+    public ADictionary applyBinaryRowOpRight(BinaryOperator op, double[] v, boolean sparseSafe, int[] colIndexes) {
+        MatrixBlock rowVector = new MatrixBlock(1, colIndexes.length, false);
+        for(int i = 0; i < colIndexes.length; i++)
+            rowVector.quickSetValue(0, i, v[colIndexes[i]]);
+        MatrixBlock res = new MatrixBlock();
+        if(sparseSafe) {
+            _data.binaryOperations(op, rowVector, res);
+        }
+        else {
+            if(!_data.isInSparseFormat())
+                LOG.warn("Inefficient binary row op allocating Matrix multiple times");
+            MatrixBlock tmp = new MatrixBlock();
+            tmp = _data.append(new MatrixBlock(1, _data.getNumColumns(), 0), tmp, false);
+            tmp.binaryOperations(op, rowVector, res);
+        }
+        return new MatrixBlockDictionary(res);
     }
 
     @Override
@@ -382,7 +425,8 @@ public class MatrixBlockDictionary extends ADictionary {
 
     @Override
     public ADictionary sliceOutColumnRange(int idxStart, int idxEnd, int previousNumberOfColumns) {
-        throw new NotImplementedException();
+        MatrixBlock retBlock = _data.slice(0, _data.getNumRows() - 1, idxStart, idxEnd - 1);
+        return new MatrixBlockDictionary(retBlock);
     }
 
     @Override
@@ -399,11 +443,12 @@ public class MatrixBlockDictionary extends ADictionary {
     public long getNumberNonZeros(int[] counts, int nCol) {
         if(_data.isEmpty())
             return 0;
+
         long nnz = 0;
         if(_data.isInSparseFormat()) {
             SparseBlock sb = _data.getSparseBlock();
             for(int i = 0; i < _data.getNumRows(); i++)
-                if(sb.isEmpty(i))
+                if(!sb.isEmpty(i))
                     nnz += sb.size(i) * counts[i];
 
         }
@@ -430,17 +475,67 @@ public class MatrixBlockDictionary extends ADictionary {
 
     @Override
     public void addToEntry(Dictionary d, int fr, int to, int nCol) {
-        throw new NotImplementedException();
+        double[] v = d.getValues();
+        if(_data.isEmpty())
+            return;
+        else if(_data.isInSparseFormat()) {
+            SparseBlock sb = _data.getSparseBlock();
+            if(sb.isEmpty(fr))
+                return;
+            final int apos = sb.pos(fr);
+            final int alen = sb.size(fr) + apos;
+            final int[] aix = sb.indexes(fr);
+            final double[] avals = sb.values(fr);
+            final int offsetTo = nCol * to;
+            for(int j = apos; j < alen; j++) {
+                v[offsetTo + aix[j]] += avals[j];
+            }
+        }
+        else {
+            final int sf = nCol * fr; // start from
+            final int ef = sf + nCol; // end from
+            final double[] thisV = _data.getDenseBlockValues();
+            for(int i = sf, j = nCol * to; i < ef; i++, j++) {
+                v[j] += thisV[i];
+            }
+        }
     }
 
     @Override
-    public double[] getMostCommonTuple(int[] counts, int nCol) {
-        throw new NotImplementedException();
+    public double[] getTuple(int index, int nCol) {
+        if(_data.isEmpty() || index >= _data.getNumRows())
+            return null;
+        else if(_data.isInSparseFormat()) {
+            SparseBlock sb = _data.getSparseBlock();
+            if(sb.isEmpty(index))
+                return null;
+            double[] tuple = new double[nCol];
+            final int apos = sb.pos(index);
+            final int alen = sb.size(index) + apos;
+            final int[] aix = sb.indexes(index);
+            final double[] avals = sb.values(index);
+            for(int j = apos; j < alen; j++) {
+                tuple[aix[j]] = avals[j];
+            }
+            return tuple;
+        }
+        else {
+            double[] tuple = new double[nCol];
+            double[] values = _data.getDenseBlockValues();
+            int offset = index * nCol;
+            for(int i = 0; i < nCol; i++, offset++)
+                tuple[i] = values[offset];
+            return tuple;
+        }
     }
 
     @Override
     public ADictionary subtractTuple(double[] tuple) {
-        throw new NotImplementedException();
+        DenseBlockFP64 b = new DenseBlockFP64(new int[] {1, tuple.length}, tuple);
+        MatrixBlock rowVector = new MatrixBlock(1, tuple.length, b);
+        MatrixBlock res = new MatrixBlock(_data.getNumColumns(), _data.getNumRows(), _data.isInSparseFormat());
+        _data.binaryOperations(new BinaryOperator(Minus.getMinusFnObject()), rowVector, res);
+        return new MatrixBlockDictionary(res);
     }
 
     @Override
@@ -452,5 +547,65 @@ public class MatrixBlockDictionary extends ADictionary {
     @Override
     public String toString() {
         return "MatrixBlock Dictionary :" + _data.toString();
+    }
+
+    @Override
+    public ADictionary scaleTuples(int[] scaling, int nCol) {
+        if(_data.isEmpty()) {
+            throw new NotImplementedException("could return null here? or empty DictionaryMatrixBlock...");
+        }
+        else if(_data.isInSparseFormat()) {
+            MatrixBlock retBlock = new MatrixBlock(_data.getNumRows(), _data.getNumColumns(), true);
+            retBlock.allocateSparseRowsBlock(true);
+            SparseBlock sbRet = retBlock.getSparseBlock();
+            SparseBlock sbThis = _data.getSparseBlock();
+            for(int i = 0; i < _data.getNumRows(); i++) {
+                if(!sbThis.isEmpty(i)) {
+                    sbRet.set(i, sbThis.get(i), true);
+
+                    final int count = scaling[i];
+                    final int apos = sbRet.pos(i);
+                    final int alen = sbRet.size(i) + apos;
+                    final double[] avals = sbRet.values(i);
+                    for(int j = apos; j < alen; j++)
+                        avals[j] = count * avals[j];
+                }
+            }
+            retBlock.setNonZeros(_data.getNonZeros());
+            return new MatrixBlockDictionary(retBlock);
+        }
+        else {
+            final double[] _values = _data.getDenseBlockValues();
+            final double[] scaledValues = new double[_values.length];
+            int off = 0;
+            for(int tuple = 0; tuple < _values.length / nCol; tuple++) {
+                final int scale = scaling[tuple];
+                for(int v = 0; v < nCol; v++) {
+                    scaledValues[off] = _values[off] * scale;
+                    off++;
+                }
+            }
+            DenseBlockFP64 db = new DenseBlockFP64(new int[] {_data.getNumRows(), _data.getNumColumns()}, scaledValues);
+            MatrixBlock retBlock = new MatrixBlock(_data.getNumRows(), _data.getNumColumns(), db);
+            retBlock.setNonZeros(_data.getNonZeros());
+            return new MatrixBlockDictionary(retBlock);
+        }
+    }
+
+    @Override
+    public void write(DataOutput out) throws IOException {
+        out.writeByte(DictionaryFactory.Type.MATRIX_BLOCK_DICT.ordinal());
+        _data.write(out);
+    }
+
+    public static MatrixBlockDictionary read(DataInput in) throws IOException {
+        MatrixBlock ret = new MatrixBlock();
+        ret.readFields(in);
+        return new MatrixBlockDictionary(ret);
+    }
+
+    @Override
+    public long getExactSizeOnDisk() {
+        return 1 + _data.getExactSizeOnDisk();
     }
 }

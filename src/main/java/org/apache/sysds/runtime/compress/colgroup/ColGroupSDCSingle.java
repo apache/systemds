@@ -86,17 +86,19 @@ public class ColGroupSDCSingle extends ColGroupValue {
 	}
 
 	@Override
-	public void decompressToBlockSafe(MatrixBlock target, int rl, int ru, int offT, double[] values) {
-		decompressToBlockUnSafe(target, rl, ru, offT, values);
+	public void decompressToBlockSafe(MatrixBlock target, int rl, int ru, int offT) {
+		decompressToBlockUnSafe(target, rl, ru, offT);
 		target.setNonZeros(_numRows * _colIndexes.length + target.getNonZeros());
 	}
 
 	@Override
-	public void decompressToBlockUnSafe(MatrixBlock target, int rl, int ru, int offT, double[] values) {
+	public void decompressToBlockUnSafe(MatrixBlock target, int rl, int ru, int offT) {
 
 		final int nCol = _colIndexes.length;
 		final int tCol = target.getNumColumns();
+		final double[] values = getValues();
 		final int offsetToDefault = values.length - nCol;
+
 		double[] c = target.getDenseBlockValues();
 		offT = offT * tCol;
 		int i = rl;
@@ -105,17 +107,17 @@ public class ColGroupSDCSingle extends ColGroupValue {
 		for(; i < ru && it.hasNext(); i++, offT += tCol) {
 			if(it.value() == i) {
 				for(int j = 0; j < nCol; j++)
-					c[offT + _colIndexes[j]] += values[offsetToDefault + j];
+					c[offT + _colIndexes[j]] += values[j];
 				it.next();
 			}
 			else
 				for(int j = 0; j < nCol; j++)
-					c[offT + _colIndexes[j]] += values[j];
+					c[offT + _colIndexes[j]] += values[offsetToDefault + j];
 		}
 
 		for(; i < ru; i++, offT += tCol)
 			for(int j = 0; j < nCol; j++)
-				c[offT + _colIndexes[j]] += values[j];
+				c[offT + _colIndexes[j]] += values[offsetToDefault + j];
 	}
 
 	@Override
@@ -166,14 +168,14 @@ public class ColGroupSDCSingle extends ColGroupValue {
 		for(; i < ru && it.hasNext(); i++, offT++) {
 			if(it.value() == i) {
 				it.next();
-				c[offT] += values[offsetToDefault + colpos];
+				c[offT] += values[colpos];
 			}
 			else
-				c[offT] += values[colpos];
+				c[offT] += values[offsetToDefault + colpos];
 		}
 
 		for(; i < ru; i++, offT++)
-			c[offT] += values[colpos];
+			c[offT] += values[offsetToDefault + colpos];
 	}
 
 	@Override
@@ -186,9 +188,9 @@ public class ColGroupSDCSingle extends ColGroupValue {
 		AIterator it = _indexes.getIterator();
 		it.skipTo(r);
 		if(it.value() == r)
-			return _dict.getValue(_colIndexes.length + ix);
+			return _dict.getValue(ix + c);
 		else
-			return _dict.getValue(ix);
+			return _dict.getValue(_colIndexes.length + c);
 
 	}
 
@@ -208,14 +210,14 @@ public class ColGroupSDCSingle extends ColGroupValue {
 		it.skipTo(rl);
 		for(; rix < ru && it.hasNext(); rix++) {
 			if(it.value() != rix)
-				c[rix] += vals[0];
-			else {
 				c[rix] += vals[1];
+			else {
+				c[rix] += vals[0];
 				it.next();
 			}
 		}
 		for(; rix < ru; rix++) {
-			c[rix] += vals[0];
+			c[rix] += vals[1];
 		}
 	}
 
@@ -230,14 +232,14 @@ public class ColGroupSDCSingle extends ColGroupValue {
 
 		for(; rix < ru && it.hasNext(); rix++) {
 			if(it.value() != rix)
-				c[rix] = builtin.execute(c[rix], vals[0]);
-			else {
 				c[rix] = builtin.execute(c[rix], vals[1]);
+			else {
+				c[rix] = builtin.execute(c[rix], vals[0]);
 				it.next();
 			}
 		}
 		for(; rix < ru; rix++) {
-			c[rix] = builtin.execute(c[rix], vals[0]);
+			c[rix] = builtin.execute(c[rix], vals[1]);
 		}
 	}
 
@@ -273,21 +275,25 @@ public class ColGroupSDCSingle extends ColGroupValue {
 		if(row > 0) {
 			int offA = _numRows * row;
 			for(; i < _numRows && it.hasNext(); i++, offA++)
-				if(it.value() == i)
-					vals[1] += a[offA];
-				else
+				if(it.value() == i){
+					it.next();
 					vals[0] += a[offA];
+				}
+				else
+					vals[1] += a[offA];
 			for(; i < _numRows; i++, offA++)
-				vals[0] += a[offA];
+				vals[1] += a[offA];
 		}
 		else {
 			for(; i < _numRows && it.hasNext(); i++)
-				if(it.value() == i)
-					vals[1] += a[i];
-				else
+				if(it.value() == i){
+					it.next();
 					vals[0] += a[i];
+				}
+				else
+					vals[1] += a[i];
 			for(; i < _numRows; i++)
-				vals[0] += a[i];
+				vals[1] += a[i];
 		}
 
 		return vals;
@@ -326,7 +332,7 @@ public class ColGroupSDCSingle extends ColGroupValue {
 
 	@Override
 	public AColGroup binaryRowOp(BinaryOperator op, double[] v, boolean sparseSafe, boolean left) {
-		return new ColGroupSDCSingle(_colIndexes, _numRows, applyBinaryRowOp(op.fn, v, true, left), _indexes,
+		return new ColGroupSDCSingle(_colIndexes, _numRows, applyBinaryRowOp(op, v, true, left), _indexes,
 			getCachedCounts());
 	}
 
@@ -382,11 +388,12 @@ public class ColGroupSDCSingle extends ColGroupValue {
 		for(; i < this._numRows && it.hasNext(); i++) {
 			int col = lhs._data.getIndex(i);
 			if(it.value() == i) {
-				row = 1;
+				row = 0;
 				it.next();
 			}
 			else
-				row = 0;
+				row = 1;
+
 			if(col < lhs.getNumValues())
 				ag.increment(col + row * nCol);
 		}
@@ -420,11 +427,11 @@ public class ColGroupSDCSingle extends ColGroupValue {
 			else
 				col = defL;
 			if(rIt.value() == i) {
-				row = 1;
+				row = 0;
 				rIt.next();
 			}
 			else
-				row = 0;
+				row = 1;
 			ag.increment(col + row * nCol);
 		}
 
@@ -444,11 +451,11 @@ public class ColGroupSDCSingle extends ColGroupValue {
 			col = defL;
 			for(; i < this._numRows && rIt.hasNext(); i++) {
 				if(rIt.value() == i) {
-					row = 1;
+					row = 0;
 					rIt.next();
 				}
 				else
-					row = 0;
+					row = 1;
 				ag.increment(col + row * nCol);
 			}
 		}

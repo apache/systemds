@@ -156,7 +156,7 @@ public class CLALibRelationalOp {
 			MatrixBlock tmp = new MatrixBlock(blkz, cols, false, -1).allocateBlock();
 			for(int i = 0; i * blkz < outRows; i++) {
 				for(MinMaxGroup mmg : minMax) {
-					mmg.g.decompressToBlock(tmp, i * blkz, Math.min((i + 1) * blkz, rows), 0, mmg.values);
+					mmg.g.decompressToBlock(tmp, i * blkz, Math.min((i + 1) * blkz, rows), 0);
 				}
 				for(int row = 0; row < blkz && row < rows - i * blkz; row++) {
 					int off = (row + i * blkz);
@@ -260,11 +260,8 @@ public class CLALibRelationalOp {
 			}
 
 			for(MinMaxGroup mmg : _minMax) {
-				mmg.g.decompressToBlockUnSafe(tmp,
-					_i * _blkz,
-					Math.min((_i + 1) * _blkz, mmg.g.getNumRows()),
-					0,
-					mmg.values);
+				if(mmg.g.getNumberNonZeros() != 0)
+					mmg.g.decompressToBlockUnSafe(tmp, _i * _blkz, Math.min((_i + 1) * _blkz, mmg.g.getNumRows()), 0);
 			}
 
 			for(int row = 0, off = _i * _blkz; row < _blkz && row < _rows - _i * _blkz; row++, off++) {

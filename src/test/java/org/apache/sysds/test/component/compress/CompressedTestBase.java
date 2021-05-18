@@ -75,17 +75,18 @@ import org.junit.runners.Parameterized.Parameters;
 public abstract class CompressedTestBase extends TestBase {
 	protected static final Log LOG = LogFactory.getLog(CompressedTestBase.class.getName());
 
-	protected static SparsityType[] usedSparsityTypes = new SparsityType[] {SparsityType.FULL, SparsityType.SPARSE,};
+	protected static SparsityType[] usedSparsityTypes = new SparsityType[] {SparsityType.FULL, SparsityType.SPARSE,
+		SparsityType.ULTRA_SPARSE};
 
 	protected static ValueType[] usedValueTypes = new ValueType[] {ValueType.RAND_ROUND, ValueType.OLE_COMPRESSIBLE,
 		ValueType.RLE_COMPRESSIBLE};
 
-	protected static ValueRange[] usedValueRanges = new ValueRange[] {ValueRange.SMALL, ValueRange.NEGATIVE,
-		ValueRange.BYTE};
+	protected static ValueRange[] usedValueRanges = new ValueRange[] {ValueRange.BOOLEAN, ValueRange.SMALL,
+		ValueRange.NEGATIVE};
 
 	protected static OverLapping[] overLapping = new OverLapping[] {
 		// OverLapping.COL,
-		OverLapping.PLUS, OverLapping.MATRIX, OverLapping.NONE, OverLapping.APPEND_EMPTY, OverLapping.APPEND_CONST,
+		OverLapping.PLUS, OverLapping.MATRIX, OverLapping.NONE, OverLapping.APPEND_CONST, OverLapping.APPEND_EMPTY
 		// OverLapping.MATRIX_PLUS,
 		// OverLapping.SQUASH,
 		// OverLapping.MATRIX_MULT_NEGATIVE
@@ -115,10 +116,11 @@ public abstract class CompressedTestBase extends TestBase {
 
 		new CompressionSettingsBuilder().setSamplingRatio(0.1).setSeed(compressionSeed).setTransposeInput("false")
 			.setInvestigateEstimate(true),
-		new CompressionSettingsBuilder().setSamplingRatio(0.1).setSeed(compressionSeed).setTransposeInput("true")
-			.setColumnPartitioner(PartitionerType.BIN_PACKING).setInvestigateEstimate(true),
-		new CompressionSettingsBuilder().setSamplingRatio(0.1).setSeed(compressionSeed).setTransposeInput("true")
-			.setColumnPartitioner(PartitionerType.STATIC).setInvestigateEstimate(true),
+
+		// new CompressionSettingsBuilder().setSamplingRatio(0.1).setSeed(compressionSeed).setTransposeInput("true")
+		// .setColumnPartitioner(PartitionerType.BIN_PACKING).setInvestigateEstimate(true),
+		// new CompressionSettingsBuilder().setSamplingRatio(0.1).setSeed(compressionSeed).setTransposeInput("true")
+		// .setColumnPartitioner(PartitionerType.STATIC).setInvestigateEstimate(true),
 
 		new CompressionSettingsBuilder().setSamplingRatio(0.1).setSeed(compressionSeed).setTransposeInput("true")
 			.setColumnPartitioner(PartitionerType.COST_MATRIX_MULT).setInvestigateEstimate(true),
@@ -155,7 +157,8 @@ public abstract class CompressedTestBase extends TestBase {
 	};
 
 	protected static MatrixTypology[] usedMatrixTypology = new MatrixTypology[] { // Selected Matrix Types
-		MatrixTypology.SMALL, MatrixTypology.FEW_COL,
+		// MatrixTypology.SMALL,
+		MatrixTypology.FEW_COL,
 		// MatrixTypology.FEW_ROW,
 		MatrixTypology.LARGE,
 		// // MatrixTypology.SINGLE_COL,
@@ -263,7 +266,7 @@ public abstract class CompressedTestBase extends TestBase {
 				}
 				if(ov == OverLapping.PLUS) {
 					// LOG.error(cmb.slice(0,10,0,10));
-					ScalarOperator sop = new LeftScalarOperator(Plus.getPlusFnObject(), 15);
+					ScalarOperator sop = new LeftScalarOperator(Plus.getPlusFnObject(), 5);
 					mb = mb.scalarOperations(sop, new MatrixBlock());
 					cmb = cmb.scalarOperations(sop, new MatrixBlock());
 					// LOG.error(cmb.slice(0,10,0,10));
@@ -296,10 +299,16 @@ public abstract class CompressedTestBase extends TestBase {
 		for(SparsityType st : usedSparsityTypes)
 			for(ValueType vt : usedValueTypes)
 				for(ValueRange vr : usedValueRanges)
-					for(CompressionSettingsBuilder cs : usedCompressionSettings)
-						for(MatrixTypology mt : usedMatrixTypology)
-							for(OverLapping ov : overLapping)
-								tests.add(new Object[] {st, vt, vr, cs, mt, ov});
+					if((st == SparsityType.ULTRA_SPARSE && vr == ValueRange.LARGE) || st != SparsityType.ULTRA_SPARSE)
+						for(CompressionSettingsBuilder cs : usedCompressionSettings)
+							for(MatrixTypology mt : usedMatrixTypology)
+								for(OverLapping ov : overLapping)
+									if((ov == OverLapping.APPEND_CONST || ov == OverLapping.APPEND_EMPTY)) {
+										if(vr == ValueRange.BOOLEAN)
+											tests.add(new Object[] {st, vt, vr, cs, mt, ov});
+									}
+									else
+										tests.add(new Object[] {st, vt, vr, cs, mt, ov});
 		for(CompressionSettingsBuilder cs : usedCompressionSettings)
 			for(MatrixTypology mt : usedMatrixTypology)
 				for(OverLapping ov : overLapping) {
@@ -707,6 +716,8 @@ public abstract class CompressedTestBase extends TestBase {
 				// matrix-vector compressed
 				MatrixBlock ret2 = cmb.transposeSelfMatrixMultOperations(new MatrixBlock(), mType, _k);
 
+				// LOG.error("actual : " + ret1);
+				// LOG.error("compressed : " + ret2);
 				// compare result with input
 				compareResultMatrices(ret1, ret2, 100);
 			}
@@ -1063,7 +1074,6 @@ public abstract class CompressedTestBase extends TestBase {
 		catch(Exception e) {
 			// e.printStackTrace();
 			throw new DMLRuntimeException(this.toString() + "\n" + e.getMessage(), e);
-
 		}
 	}
 

@@ -27,6 +27,7 @@ import java.util.Arrays;
 import org.apache.sysds.runtime.compress.CompressionSettings;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
+import org.apache.sysds.runtime.compress.colgroup.dictionary.MatrixBlockDictionary;
 import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory;
 import org.apache.sysds.runtime.compress.colgroup.offset.AIterator;
@@ -64,16 +65,50 @@ public class ColGroupDDC extends ColGroupValue {
 	}
 
 	@Override
-	public void decompressToBlockSafe(MatrixBlock target, int rl, int ru, int offT, double[] values) {
-		decompressToBlockUnSafe(target, rl, ru, offT, values);
+	public void decompressToBlockSafe(MatrixBlock target, int rl, int ru, int offT) {
+		decompressToBlockUnSafe(target, rl, ru, offT);
 		target.setNonZeros(target.getNonZeros() + _numRows * _colIndexes.length);
 	}
 
 	@Override
-	public void decompressToBlockUnSafe(MatrixBlock target, int rl, int ru, int offT, double[] values) {
+	public void decompressToBlockUnSafe(MatrixBlock target, int rl, int ru, int offT) {
 		final int nCol = _colIndexes.length;
 		final int tCol = target.getNumColumns();
 		final double[] c = target.getDenseBlockValues();
+		if(_dict instanceof MatrixBlockDictionary) {
+			MatrixBlock dmb = ((MatrixBlockDictionary) _dict).getMatrixBlock();
+			if(dmb.isEmpty())
+				return;
+			else if(dmb.isInSparseFormat())
+				decompressToBlockUnsafeSparse(c, rl, ru, offT, dmb.getSparseBlock(), tCol, nCol);
+			else
+				decompressToBlockUnsafeDense(c, rl, ru, offT, dmb.getDenseBlockValues(), tCol, nCol);
+		}
+		else
+			decompressToBlockUnsafeDense(c, rl, ru, offT, getValues(), tCol, nCol);
+
+	}
+
+	private void decompressToBlockUnsafeSparse(double[] c, int rl, int ru, int offT, SparseBlock sb, int tCol,
+		int nCol) {
+		offT = offT * tCol;
+		for(int i = rl; i < ru; i++, offT += tCol) {
+			final int rowIndex = _data.getIndex(i);
+			if(sb.isEmpty(rowIndex))
+				continue;
+			final int apos = sb.pos(rowIndex);
+			final int alen = sb.size(rowIndex) + apos;
+			final double[] avals = sb.values(rowIndex);
+			final int[] aix = sb.indexes(rowIndex);
+			for(int j = apos; j < alen; j++)
+				c[offT + _colIndexes[aix[j]]] += avals[j];
+
+		}
+	}
+
+	private void decompressToBlockUnsafeDense(double[] c, int rl, int ru, int offT, double[] values, int tCol,
+		int nCol) {
+		// final double[] values = getValues();
 		offT = offT * tCol;
 
 		for(int i = rl; i < ru; i++, offT += tCol) {
@@ -81,7 +116,6 @@ public class ColGroupDDC extends ColGroupValue {
 			for(int j = 0; j < nCol; j++)
 				c[offT + _colIndexes[j]] += values[rowIndex + j];
 		}
-
 	}
 
 	@Override
@@ -567,7 +601,7 @@ public class ColGroupDDC extends ColGroupValue {
 
 	@Override
 	public AColGroup binaryRowOp(BinaryOperator op, double[] v, boolean sparseSafe, boolean left) {
-		ADictionary aDict = applyBinaryRowOp(op.fn, v, true, left);
+		ADictionary aDict = applyBinaryRowOp(op, v, true, left);
 		return new ColGroupDDC(_colIndexes, _numRows, aDict, _data, getCachedCounts());
 	}
 

@@ -100,7 +100,6 @@ public class CLALibScalar {
 		}
 
 		ret.recomputeNonZeros();
-
 		return ret;
 
 	}

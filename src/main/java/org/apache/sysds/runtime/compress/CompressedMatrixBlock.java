@@ -62,7 +62,6 @@ import org.apache.sysds.runtime.compress.lib.CLALibReExpand;
 import org.apache.sysds.runtime.compress.lib.CLALibRightMultBy;
 import org.apache.sysds.runtime.compress.lib.CLALibScalar;
 import org.apache.sysds.runtime.compress.lib.CLALibSquash;
-import org.apache.sysds.runtime.compress.utils.LinearAlgebraUtils;
 import org.apache.sysds.runtime.controlprogram.caching.CacheBlock;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject.UpdateType;
 import org.apache.sysds.runtime.controlprogram.parfor.stat.Timing;
@@ -198,13 +197,17 @@ public class CompressedMatrixBlock extends MatrixBlock {
 
 		Timing time = new Timing(true);
 
+		long nnz = getNonZeros() == -1 ? recomputeNonZeros() : nonZeros;
+		if(isEmpty())
+			return new MatrixBlock(rlen, clen, true, 0);
+
 		// preallocation sparse rows to avoid repeated reallocations
 		MatrixBlock ret = getUncompressedColGroupAndRemoveFromListOfColGroups();
 		if(ret != null && getColGroups().size() == 0)
 			return ret;
 		else if(ret == null)
 			ret = new MatrixBlock(rlen, clen, false, -1);
-
+		ret.setNonZeros(nnz);
 		ret.allocateDenseBlock();
 		decompress(ret);
 
@@ -220,7 +223,7 @@ public class CompressedMatrixBlock extends MatrixBlock {
 	private MatrixBlock decompress(MatrixBlock ret) {
 
 		for(AColGroup grp : _colGroups)
-			grp.decompressToBlockUnSafe(ret, 0, rlen, 0, grp.getValues());
+			grp.decompressToBlockUnSafe(ret, 0, rlen, 0);
 
 		if(ret.isInSparseFormat())
 			ret.sortSparseRows();
@@ -229,10 +232,6 @@ public class CompressedMatrixBlock extends MatrixBlock {
 			ret.recomputeNonZeros();
 			ret.examSparsity();
 		}
-		else if(nonZeros == -1)
-			ret.setNonZeros(this.recomputeNonZeros());
-		else
-			ret.setNonZeros(nonZeros);
 
 		return ret;
 	}
@@ -289,10 +288,7 @@ public class CompressedMatrixBlock extends MatrixBlock {
 			ret.recomputeNonZeros();
 			ret.examSparsity();
 		}
-		else if(nonZeros == -1)
-			ret.setNonZeros(this.recomputeNonZeros());
-		else
-			ret.setNonZeros(nonZeros);
+
 		return ret;
 	}
 
@@ -332,7 +328,6 @@ public class CompressedMatrixBlock extends MatrixBlock {
 			long nnz = 0;
 			for(AColGroup g : _colGroups)
 				nnz += g.getNumberNonZeros();
-
 			nonZeros = nnz;
 		}
 		return nonZeros;
@@ -673,21 +668,17 @@ public class CompressedMatrixBlock extends MatrixBlock {
 		// check for transpose type
 		if(tstype != MMTSJType.LEFT) // right not supported yet
 			throw new DMLRuntimeException("Invalid MMTSJ type '" + tstype.toString() + "'.");
-
+		if(isEmptyBlock())
+			return new MatrixBlock(clen, clen, true);
 		// create output matrix block
 		if(out == null)
 			out = new MatrixBlock(clen, clen, false);
 		else
 			out.reset(clen, clen, false);
 		out.allocateDenseBlock();
-
-		if(!isEmptyBlock(false)) {
-			// compute matrix mult
-			CLALibLeftMultBy.leftMultByTransposeSelf(_colGroups, out, k, getNumColumns(), getMaxNumValues(),
-				isOverlapping());
-			// post-processing
-			out.setNonZeros(LinearAlgebraUtils.copyUpperToLowerTriangle(out));
-		}
+		// compute matrix mult
+		CLALibLeftMultBy.leftMultByTransposeSelf(_colGroups, out, k, getNumColumns(), getMaxNumValues(),
+			isOverlapping());
 		return out;
 	}
 
@@ -767,7 +758,7 @@ public class CompressedMatrixBlock extends MatrixBlock {
 
 			// decompress row partition
 			for(AColGroup grp : _colGroups)
-				grp.decompressToBlock(_ret, _rl, _ru, grp.getValues(), false);
+				grp.decompressToBlock(_ret, _rl, _ru, false);
 
 			// post processing (sort due to append)
 			if(_ret.isInSparseFormat())
@@ -927,7 +918,7 @@ public class CompressedMatrixBlock extends MatrixBlock {
 
 	@Override
 	public boolean isEmptyBlock(boolean safe) {
-		return(_colGroups == null || getNonZeros() == 0);
+		return _colGroups == null || nonZeros == 0;
 	}
 
 	@Override
@@ -1002,7 +993,7 @@ public class CompressedMatrixBlock extends MatrixBlock {
 		AColGroup grp = _colGroups.get(0);
 		MatrixBlock vals = grp.getValuesAsBlock();
 		if(grp instanceof ColGroupValue) {
-			MatrixBlock counts = getCountsAsBlock(((ColGroupValue) grp).getCounts());
+			MatrixBlock counts = getCountsAsBlock( ((ColGroupValue) grp).getCounts());
 			if(counts.isEmpty())
 				return vals.cmOperations(op);
 			return vals.cmOperations(op, counts);

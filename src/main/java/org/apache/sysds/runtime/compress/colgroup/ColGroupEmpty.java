@@ -85,12 +85,12 @@ public class ColGroupEmpty extends ColGroupCompressed {
 
 
 	@Override
-	public void decompressToBlockSafe(MatrixBlock target, int rl, int ru, int offT, double[] values) {
+	public void decompressToBlockSafe(MatrixBlock target, int rl, int ru, int offT) {
 		// do nothing.
 	}
 
 	@Override
-	public void decompressToBlockUnSafe(MatrixBlock target, int rl, int ru, int offT, double[] values) {
+	public void decompressToBlockUnSafe(MatrixBlock target, int rl, int ru, int offT) {
 		// do nothing.
 	}
 
@@ -138,7 +138,7 @@ public class ColGroupEmpty extends ColGroupCompressed {
 		if(sparseSafe)
 			return this;
 		return new ColGroupConst(_colIndexes, _numRows,
-			new Dictionary(new double[_colIndexes.length]).applyBinaryRowOp(op.fn, v, sparseSafe, _colIndexes, left));
+			new Dictionary(new double[_colIndexes.length]).applyBinaryRowOp(op, v, sparseSafe, _colIndexes, left));
 	}
 
 	@Override

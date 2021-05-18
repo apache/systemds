@@ -156,7 +156,7 @@ public class FEDInstructionUtils {
 				else
 					fedinst = BinaryFEDInstruction.parseInstruction(
 						InstructionUtils.concatOperands(inst.getInstructionString(),FederatedOutput.NONE.name()));
-			} else if(inst.getOpcode().equals("_map") && inst instanceof BinaryFrameScalarCPInstruction && !inst.getInstructionString().contains("jaccard")
+			} else if(inst.getOpcode().equals("_map") && inst instanceof BinaryFrameScalarCPInstruction && !inst.getInstructionString().contains("UtilFunctions")
 				&& instruction.input1.isFrame() && ec.getFrameObject(instruction.input1).isFederated()) {
 				fedinst = BinaryFrameScalarFEDInstruction.parseInstruction(InstructionUtils.concatOperands(inst.getInstructionString(),FederatedOutput.NONE.name()));
 			}

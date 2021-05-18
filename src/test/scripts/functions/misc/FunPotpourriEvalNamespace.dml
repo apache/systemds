@@ -19,9 +19,9 @@
 #
 #-------------------------------------------------------------
 
-# DML script that tests read csv
+source("./src/test/scripts/functions/misc/FunPotpourriEvalNamespaceFuns.dml") as fns1
 
-A = read($1, format="csv", header=TRUE, sep=$3);
-x = sum(A);
-write(x, $2);
-
+ns = "./src/test/scripts/functions/misc/FunPotpourriEvalNamespaceFuns.dml"
+X = rand(rows=100, cols=100)
+s = eval(ns+"::foo", list(X, TRUE))
+print(toString(s))

@@ -53,6 +53,7 @@ public class Unary extends Lop
 	 * @param dt data type
 	 * @param vt value type
 	 * @param et execution type
+	 * @param numThreads number of threads for execution
 	 */
 	public Unary(Lop input1, Lop input2, OpOp1 op, DataType dt, ValueType vt, ExecType et, int numThreads) {
 		super(Lop.Type.UNARY, dt, vt);

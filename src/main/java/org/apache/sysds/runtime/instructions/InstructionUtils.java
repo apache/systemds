@@ -1098,7 +1098,7 @@ public class InstructionUtils
 	 * @param id new output operand (always a number)
 	 * @param varOldIn current input operand (to be replaced)
 	 * @param varNewIn new input operand names (always numbers)
-	 * @param federatedOutput federated output flag
+	 * @param rmFederatedOutput remove federated output flag
 	 * @return instruction string prepared for federated request
 	 */
 	public static String instructionStringFEDPrepare(String inst, CPOperand varOldOut, long id, CPOperand[] varOldIn, long[] varNewIn, boolean rmFederatedOutput){

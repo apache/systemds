@@ -97,7 +97,6 @@ m_decisionTree = function(
         }
     }
     if (verbose) {
-
      print("Current column:   " + used_col)
      print("Current type:   " + type)
     }
@@ -108,7 +107,6 @@ m_decisionTree = function(
       [new_use_cols_vector, left_use_rows_vector, right_use_rows_vector] = splitData(X, use_rows_vector, use_cols_vector, used_col, threshold, type)
       use_rows_queue = dataQueuePush(left_use_rows_vector, right_use_rows_vector, use_rows_queue)
       use_cols_queue = dataQueuePush(new_use_cols_vector, new_use_cols_vector, use_cols_queue)
-
       impurity_queue = dataQueuePush(matrix(impurity, rows = 1, cols = 1), matrix(impurity, rows = 1, cols = 1), impurity_queue)
       offset = dataQueueLength(node_queue) - 1
       M = outputMatrixBind(M, node, offset, used_col, R, threshold)
@@ -122,6 +120,15 @@ m_decisionTree = function(
       print("")
     }
   }
+}
+
+printMatrix = function(Matrix[Double] m, string name) return() {
+    print("--------------------------------------")
+    print(":: [MATRIX] " + name + "  (col:" + ncol(m) + ",row:" + nrow(m) + ")")
+    for(i in 1:nrow(m)) {
+        print(":(" + i + ")   " + toString(m[i,], linesep=" ", sep="    "))
+    }
+    print("--------------------------------------")
 }
 
 dataQueueLength = function(Matrix[Double] queue)  return (Double len) {
@@ -426,13 +433,13 @@ outputMatrixBind = function(
     new_M = col
   } else {
     row_difference = nrow(M) - nrow(col)
-  if (row_difference < 0.0) {
-    buffer = matrix(-1, rows = -row_difference, cols = ncol(M))
-    M = rbind(M, buffer)
-  } else if (row_difference > 0.0) {
-    buffer = matrix(-1, rows = row_difference, cols = 1)
-    col = rbind(col, buffer)
-  }
+      if (row_difference < 0.0) {
+        buffer = matrix(-1, rows = -row_difference, cols = ncol(M))
+        M = rbind(M, buffer)
+      } else if (row_difference > 0.0) {
+        buffer = matrix(-1, rows = row_difference, cols = 1)
+        col = rbind(col, buffer)
+      }
     new_M = cbind(M, col)
   }
 }

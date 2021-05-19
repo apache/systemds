@@ -29,6 +29,7 @@ import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
 import org.junit.Assert;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.Test;
@@ -74,26 +75,26 @@ public class FederatedOuterProductTmplTest extends AutomatedTestBase
 			// {test_num, rows, cols, row_partitioned}
 
 			// row partitioned
-			{1, 3000, 2000, true}, // AGG_OUTER_PRODUCT
-			{2, 4000, 2000, true}, // LEFT_OUTER_PRODUCT
-			{3, 1000, 1500, true}, // CELLWISE_OUTER_PRODUCT
-			{4, 4000, 2000, true}, // RIGHT_OUTER_PRODUCT
-			{5, 4000, 2000, true}, // RIGHT_OUTER_PRODUCT
-			{6, 4000, 2000, true}, // RIGHT_OUTER_PRODUCT
-			{7, 4000, 2000, true}, // LEFT_OUTER_PRODUCT
-			{8, 1000, 2000, true}, // CELLWISE_OUTER_PRODUCT
-			{9, 1000, 2000, true}, // LEFT_OUTER_PRODUCT
+			{1, 3000, 2000, true},
+			{2, 4000, 2000, true},
+			{3, 1000, 1500, true},
+			{4, 4000, 2000, true},
+			// {5, 4000, 2000, true},
+			{6, 4000, 2000, true},
+			// {7, 4000, 2000, true},
+			// {8, 1000, 2000, true},
+			{9, 1000, 2000, true},
 
 			// column partitioned
 			{1, 3000, 2000, false},
-			{2, 4000, 2000, false},
-			{3, 1000, 1500, false},
+			// {2, 4000, 2000, false},
+			// {3, 1000, 1500, false},
 			{4, 4000, 2000, false},
 			{5, 4000, 2000, false},
-			{6, 4000, 2000, false},
+			// {6, 4000, 2000, false},
 			{7, 4000, 2000, false},
 			{8, 1000, 2000, false},
-			{9, 1000, 2000, false},
+			// {9, 1000, 2000, false},
 		});
 	}
 
@@ -103,11 +104,13 @@ public class FederatedOuterProductTmplTest extends AutomatedTestBase
 	}
 
 	@Test
+	@Ignore
 	public void federatedCodegenOuterProductSingleNode() {
 		testFederatedCodegenOuterProduct(ExecMode.SINGLE_NODE);
 	}
 	
 	@Test
+	@Ignore
 	public void federatedCodegenOuterProductSpark() {
 		testFederatedCodegenOuterProduct(ExecMode.SPARK);
 	}

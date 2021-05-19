@@ -1,4 +1,3 @@
-
 # this dml file will run the StableMarriageA  in builtin functions  in scripts/builtin
 P = read($1)
 A = read($2)

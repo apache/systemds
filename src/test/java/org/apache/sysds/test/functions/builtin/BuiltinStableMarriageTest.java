@@ -42,7 +42,6 @@ public class BuiltinStableMarriageTest extends AutomatedTestBase {
 	private final static int rows = 3;
 	private final static int cols = 3;
 
-
 	@Override
 	public void setUp() {
 		addTestConfiguration(TEST_NAME,new TestConfiguration(TEST_CLASS_DIR, TEST_NAME,new String[]{"SM"}));
@@ -52,7 +51,6 @@ public class BuiltinStableMarriageTest extends AutomatedTestBase {
 	public void testStableMarriage() {
 		runtestStableMarriage("stablemarriage");
 	}
-
 
 
 	private void runtestStableMarriage(String alg) {

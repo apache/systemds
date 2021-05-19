@@ -6,5 +6,4 @@ alg = $3
 if( alg == "stablemarriage" )
   [O] = stablemarriageA(P=P,A=A)
 
-
 write(O, $4)

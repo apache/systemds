@@ -28,10 +28,8 @@ from systemds.operator import OperationNode, Matrix
 from systemds.script_building.dag import OutputType
 from systemds.utils.consts import VALID_INPUT_TYPES
 
-def vectorToCsv(mask: OperationNode) -> Matrix:
+def vectorToCsv(mask: OperationNode):
     
-    
-    mask._check_matrix_op()
     params_dict = {'mask':mask}
     return Matrix(mask.sds_context, 'vectorToCsv', named_input_nodes=params_dict)
 

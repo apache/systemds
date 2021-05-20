@@ -28,15 +28,12 @@ from systemds.operator import OperationNode, Matrix
 from systemds.script_building.dag import OutputType
 from systemds.utils.consts import VALID_INPUT_TYPES
 
-def gaussianClassifier(D: OperationNode, C: OperationNode, **kwargs: Dict[str, VALID_INPUT_TYPES]) -> Matrix:
+def gaussianClassifier(D: OperationNode, C: OperationNode, **kwargs: Dict[str, VALID_INPUT_TYPES]):
     """
     :param varSmoothing: Smoothing factor for variances
     :param verbose: Print accuracy of the training set
     :return: 'OperationNode' containing  
     """
-    
-    D._check_matrix_op()
-    C._check_matrix_op()
     params_dict = {'D':D, 'C':C}
     params_dict.update(kwargs)
     return OperationNode(D.sds_context, 'gaussianClassifier', named_input_nodes=params_dict, output_type=OutputType.LIST, number_of_outputs=4, output_types=[OutputType.MATRIX, OutputType.MATRIX, OutputType.LIST, OutputType.MATRIX])

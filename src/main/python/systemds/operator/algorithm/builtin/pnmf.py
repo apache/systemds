@@ -28,10 +28,8 @@ from systemds.operator import OperationNode, Matrix
 from systemds.script_building.dag import OutputType
 from systemds.utils.consts import VALID_INPUT_TYPES
 
-def pnmf(X: OperationNode, rnk: int, **kwargs: Dict[str, VALID_INPUT_TYPES]) -> Matrix:
+def pnmf(X: OperationNode, rnk: int, **kwargs: Dict[str, VALID_INPUT_TYPES]):
     
-    
-    X._check_matrix_op()
     params_dict = {'X':X, 'rnk':rnk}
     params_dict.update(kwargs)
     return OperationNode(X.sds_context, 'pnmf', named_input_nodes=params_dict, output_type=OutputType.LIST, number_of_outputs=2, output_types=[OutputType.MATRIX, OutputType.MATRIX])

@@ -28,11 +28,8 @@ from systemds.operator import OperationNode, Matrix
 from systemds.script_building.dag import OutputType
 from systemds.utils.consts import VALID_INPUT_TYPES
 
-def msvm(X: OperationNode, Y: OperationNode, **kwargs: Dict[str, VALID_INPUT_TYPES]) -> Matrix:
+def msvm(X: OperationNode, Y: OperationNode, **kwargs: Dict[str, VALID_INPUT_TYPES]):
     
-    
-    X._check_matrix_op()
-    Y._check_matrix_op()
     params_dict = {'X':X, 'Y':Y}
     params_dict.update(kwargs)
     return Matrix(X.sds_context, 'msvm', named_input_nodes=params_dict)

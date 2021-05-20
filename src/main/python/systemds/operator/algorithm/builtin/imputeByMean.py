@@ -28,11 +28,8 @@ from systemds.operator import OperationNode, Matrix
 from systemds.script_building.dag import OutputType
 from systemds.utils.consts import VALID_INPUT_TYPES
 
-def imputeByMean(X: OperationNode, mask: OperationNode) -> Matrix:
+def imputeByMean(X: OperationNode, mask: OperationNode):
     
-    
-    X._check_matrix_op()
-    mask._check_matrix_op()
     params_dict = {'X':X, 'mask':mask}
     return Matrix(X.sds_context, 'imputeByMean', named_input_nodes=params_dict)
 

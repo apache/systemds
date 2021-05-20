@@ -28,11 +28,8 @@ from systemds.operator import OperationNode, Matrix
 from systemds.script_building.dag import OutputType
 from systemds.utils.consts import VALID_INPUT_TYPES
 
-def sherlock(X_train: OperationNode, y_train: OperationNode) -> Matrix:
+def sherlock(X_train: OperationNode, y_train: OperationNode):
     
-    
-    X_train._check_matrix_op()
-    y_train._check_matrix_op()
     params_dict = {'X_train':X_train, 'y_train':y_train}
     return OperationNode(X_train.sds_context, 'sherlock', named_input_nodes=params_dict, output_type=OutputType.LIST, number_of_outputs=30, output_types=[OutputType.MATRIX, OutputType.MATRIX, OutputType.MATRIX, OutputType.MATRIX, OutputType.MATRIX, OutputType.MATRIX, OutputType.MATRIX, OutputType.MATRIX, OutputType.MATRIX, OutputType.MATRIX, OutputType.MATRIX, OutputType.MATRIX, OutputType.MATRIX, OutputType.MATRIX, OutputType.MATRIX, OutputType.MATRIX, OutputType.MATRIX, OutputType.MATRIX, OutputType.MATRIX, OutputType.MATRIX, OutputType.MATRIX, OutputType.MATRIX, OutputType.MATRIX, OutputType.MATRIX, OutputType.MATRIX, OutputType.MATRIX, OutputType.MATRIX, OutputType.MATRIX, OutputType.MATRIX, OutputType.MATRIX])
 

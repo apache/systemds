@@ -28,10 +28,8 @@ from systemds.operator import OperationNode, Matrix
 from systemds.script_building.dag import OutputType
 from systemds.utils.consts import VALID_INPUT_TYPES
 
-def normalize(X: OperationNode) -> Matrix:
+def normalize(X: OperationNode):
     
-    
-    X._check_matrix_op()
     params_dict = {'X':X}
     return Matrix(X.sds_context, 'normalize', named_input_nodes=params_dict)
 

@@ -28,11 +28,8 @@ from systemds.operator import OperationNode, Matrix
 from systemds.script_building.dag import OutputType
 from systemds.utils.consts import VALID_INPUT_TYPES
 
-def splitBalanced(X: OperationNode, Y: OperationNode, splitRatio: float, verbose: bool) -> Matrix:
+def splitBalanced(X: OperationNode, Y: OperationNode, splitRatio: float, verbose: bool):
     
-    
-    X._check_matrix_op()
-    Y._check_matrix_op()
     params_dict = {'X':X, 'Y':Y, 'splitRatio':splitRatio, 'verbose':verbose}
     return OperationNode(X.sds_context, 'splitBalanced', named_input_nodes=params_dict, output_type=OutputType.LIST, number_of_outputs=4, output_types=[OutputType.MATRIX, OutputType.MATRIX, OutputType.MATRIX, OutputType.MATRIX])
 

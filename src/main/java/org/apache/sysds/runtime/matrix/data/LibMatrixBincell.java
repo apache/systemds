@@ -1153,10 +1153,10 @@ public class LibMatrixBincell
 		return lnnz;
 	}
 
-	private static void safeBinaryScalar(MatrixBlock m1, MatrixBlock ret, ScalarOperator op, int rl, int ru) {
+	private static long safeBinaryScalar(MatrixBlock m1, MatrixBlock ret, ScalarOperator op, int rl, int ru) {
 		//early abort possible since sparsesafe
 		if( m1.isEmptyBlock(false) ) {
-			return;
+			return 0;
 		}
 		
 		//sanity check input/output sparsity
@@ -1167,6 +1167,7 @@ public class LibMatrixBincell
 		boolean allocExact = (op.fn instanceof Multiply || op.fn instanceof Multiply2 
 			|| op.fn instanceof Power2 || Builtin.isBuiltinCode(op.fn, BuiltinCode.MAX)
 			|| Builtin.isBuiltinCode(op.fn, BuiltinCode.MIN));
+		long lnnz = 0;
 		
 		if( m1.sparse ) //SPARSE <- SPARSE
 		{
@@ -1207,11 +1208,13 @@ public class LibMatrixBincell
 					}
 				}
 			}
-			ret.nonZeros = nnz;
+			lnnz = (ret.nonZeros = nnz);
 		}
 		else { //DENSE <- DENSE
-			denseBinaryScalar(m1, ret, op, rl, ru);
+			lnnz = denseBinaryScalar(m1, ret, op, rl, ru);
 		}
+		
+		return lnnz;
 	}
 	
 	/**
@@ -1221,14 +1224,14 @@ public class LibMatrixBincell
 	 * @param ret result matrix
 	 * @param op scalar operator
 	 */
-	private static void unsafeBinaryScalar(MatrixBlock m1, MatrixBlock ret, ScalarOperator op) {
+	private static long unsafeBinaryScalar(MatrixBlock m1, MatrixBlock ret, ScalarOperator op) {
 		//early abort possible since sparsesafe
 		if( m1.isEmptyBlock(false) ) {
 			//compute 0 op constant once and set into dense output
 			double val = op.executeScalar(0);
 			if( val != 0 )
 				ret.reset(ret.rlen, ret.clen, val);
-			return;
+			return (val != 0) ? ret.getLength() : 0;
 		}
 		
 		//sanity check input/output sparsity
@@ -1237,6 +1240,7 @@ public class LibMatrixBincell
 		
 		int m = m1.rlen;
 		int n = m1.clen;
+		long lnnz = 0;
 		
 		if( m1.sparse ) //SPARSE MATRIX
 		{
@@ -1270,14 +1274,16 @@ public class LibMatrixBincell
 					}
 				}
 			}
-			ret.nonZeros = nnz;
+			lnnz = (ret.nonZeros = nnz);
 		}
 		else { //DENSE MATRIX
-			denseBinaryScalar(m1, ret, op, 0, m);
+			lnnz = denseBinaryScalar(m1, ret, op, 0, m);
 		}
+		
+		return lnnz;
 	}
 
-	private static void denseBinaryScalar(MatrixBlock m1, MatrixBlock ret, ScalarOperator op, int rl, int ru) {
+	private static long denseBinaryScalar(MatrixBlock m1, MatrixBlock ret, ScalarOperator op, int rl, int ru) {
 		//allocate dense block (if necessary), incl clear nnz
 		ret.allocateDenseBlock(true);
 		
@@ -1296,7 +1302,7 @@ public class LibMatrixBincell
 				nnz += (c[cpos+j] != 0) ? 1 : 0;
 			}
 		}
-		ret.nonZeros = nnz;
+		return ret.nonZeros = nnz;
 	}
 
 	private static void safeBinaryInPlace(MatrixBlock m1ret, MatrixBlock m2, BinaryOperator op) {
@@ -1616,10 +1622,7 @@ public class LibMatrixBincell
 		@Override
 		public Long call() {
 			//execute binary operation on row partition
-			safeBinaryScalar(_m1, _ret, _sop, _rl, _ru);
-			
-			//maintain block nnz (upper bounds inclusive)
-			return _ret.recomputeNonZeros(_rl, _ru-1);
+			return safeBinaryScalar(_m1, _ret, _sop, _rl, _ru);
 		}
 	}
 }

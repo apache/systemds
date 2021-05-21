@@ -25,71 +25,55 @@ m_xgboost = function(Matrix[Double] X, Matrix[Double] y) return (Matrix[Double] 
   M = matrix(0,rows=6,cols=0)
   init_prediction = median(y)
 
-   # todo ------------ loooooooop until specific depth of tree or leaf contains only one entry (no split possible)
-   # todo patrick try with queue :0
-   # todo fixed depth of 6 for now - maybe adding a parameter for modify depth
-
   node_queue = matrix(1, rows=1, cols=1)     # Add first Node
   curr_rows_queue = matrix(1, rows=nrow(X), cols=1)
+  gain_queue = matrix(1, rows=1, cols=1)
   node_queue_len = 1
   depth = 6
   level = 0
 
-  # then get the residualmatrix of the given feature
   # adjust this here if we create more trees to create new prediction values
-  # ??? what is the init_prediction after the first loop ???
-
-  while (node_queue_len > 0 & depth > level) {
+  while (node_queue_len > 0) {
+    has_child = FALSE
     [node_queue, node] = dataQueuePop(node_queue)
     [curr_rows_queue, curr_rows_vector] = dataQueuePop(curr_rows_queue)
     level = log(as.scalar(node), 2) + 1
-    print('<--- current node depth is ---->')
-    print(level)
-
-    printMatrix(curr_rows_vector, 'CURRENT ROWS VECTOR AT BEGINNING OF LOOP')
 
     available_rows = calcAvailableRows(curr_rows_vector)
 
-    # here we get the X and y in the form we need it for the current loop
-    [loop_X, loop_y] = updateMatrices(X, y, curr_rows_vector)
+    [curr_X, loop_y, curr_X_full] = updateMatrices(X, y, curr_rows_vector)
 
-    has_child = FALSE
+    best_feature_index = 0.00
+    if(available_rows > 1 & depth > level) {
+      best_feature_index = findBestFeature(X=curr_X, y=loop_y)
 
-    # check if we have the possibility to get children
-    if(available_rows > 1) {
-      best_feature_index = findBestFeature(X=loop_X, y=loop_y)
-      has_child = TRUE
+      # maybe for forest change here prediction?
+      residual_matrix = calculateResiduals(loop_y, median(loop_y))
+      printMatrix(residual_matrix, "the cgialculated residuals")
+
+      similarity_score = calculateSimilarityScore(residual_matrix)
+
+      [best_split_threshold, best_gain] = findBestSplit(curr_X[,best_feature_index], similarity_score)
+      has_child = best_gain > 0
     }
 
     if (has_child) {
       [left, right] = calculateChildNodes(node)
       node_queue = dataQueuePush(left, right, node_queue)
 
-      residual_matrix = calculateResiduals(loop_y, median(loop_y))
+      [left_row_vec, right_row_vec] = splitMatrixByValueLoop(curr_X_full[,best_feature_index], X[,best_feature_index], best_split_threshold)
 
-      similarity_score = calculateSimilarityScore(residual_matrix)
-      # then find the best split which would be our threshold
-      [best_split_threshold, sim_score_left, sim_score_right] = findBestSplit(loop_X[,best_feature_index], similarity_score)
-
-      # push in here the stuff for the next two nodes you will work on
-      [left_row_vec, right_row_vec] = splitMatrixByValueLoop(loop_X[,best_feature_index], best_split_threshold)
-      printMatrix(left_row_vec, "LEFT ROW VEC")
-      printMatrix(right_row_vec, "RIGHT ROW VEC")
-      printMatrix(curr_rows_queue, "CURRENT ROWS QUEUE")
-      # look here why the program crashes, somethin
       curr_rows_queue = dataQueuePush(left_row_vec, right_row_vec, curr_rows_queue)
 
-      offset = ncol(node) - 1
+      offset = ncol(node_queue) - 1
       M = addOutputRow(M, node, offset, best_feature_index, best_split_threshold)
-    } else {
+    }
+    else {
       M = addOutputRow(M, node, 0.0, best_feature_index, 0.0)
     }
     node_queue_len = ncol(node_queue)
-    # update here node_queue_len
-    printMatrix(M, "final tree matrix looks now like")
-
+    printMatrix(M, "FINAL MATRIX")
   }
-  # loop end-------------------------------------
 
   # todo pruning
   # todo create next tree depending on previous
@@ -110,6 +94,7 @@ calculateChildNodes = function(Matrix[Double] node)  return(Matrix[Double] left,
 # INPUT:    node: the current node
 # INPUT:    offset: offset to the left child
 # INPUT:    used_col: which feature got used
+# INPUT:
 # INPUT:    threshold: the value at the node we seperated it
 # OUTPUT:   new_M: nxn output Matrix
 addOutputRow = function(
@@ -126,7 +111,11 @@ addOutputRow = function(
   # change here to different stuff if it is classification
   current_node[4,1] = 1 # continuous data
   # also change here if it is classification
-  current_node[5,1] = 1 # type of data to split (1=numeric value)
+  if (threshold < 1.00) {
+    current_node[5,1] = 0 # number of values in threshhold // currently 0 if leaf node
+  } else {
+    current_node[5,1] = 1
+  }
   current_node[6,1] = threshold
   if (ncol(M) == 0 & nrow(M) == 0) {
     new_M = current_node
@@ -139,20 +128,36 @@ addOutputRow = function(
 # INPUT:    X: a nxn matrix (X Matrix from input)
 # INPUT:    y: a 1xn matrix (y Matrix from input)
 # INPUT:    vector: a 1xn matrix (contains 1 for relevant and 0 for non-relevant value)
-# OUTPUT:   new_X: the new X containing only the relevant datapoints
+# OUTPUT:   new_X: the new X containing only the relevant rows
 # OUTPUT:   new_y: the new y containing only the relevant rows
-updateMatrices = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] vector) return(Matrix[Double] new_X, Matrix[Double] new_y) {
+# OUTPUT:   new_X_full: the new X containing the relevant rows + 0 for non_relevant
+updateMatrices = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] vector)
+  return(Matrix[Double] new_X, Matrix[Double] new_y, Matrix[Double] new_X_full) {
   # change here to have the full matrices but not to cut it from 4x4 to 2x2 rather 4x4 but with 0 in the unused fields and then we gucci
   new_X = matrix(0, rows = 0, cols = 0)
   new_y = matrix(0, rows = 0, cols = 0)
+  zero_vec = matrix(0, rows=nrow(vector), cols=ncol(X))
+  new_X_full = matrix(0, rows = 0, cols=0)
   for(i in 1:nrow(vector)) {
     if(as.scalar(vector[i,]) > 0.0) {
-      if (ncol(new_X) == 0) {
+      if (ncol(new_X) == 0 & ncol(new_X_full) == 0) {
         new_X = X[i,]
         new_y = y[i,]
+        new_X_full = X[i,]
+      } else if (ncol(new_X) == 0 & ncol(new_X_full) != 0) {
+        new_X = X[i,]
+        new_y = y[i,]
+        new_X_full = rbind(new_X_full, X[i,])
       } else {
         new_X = rbind(new_X, X[i,])
         new_y = rbind(new_y, y[i,])
+        new_X_full = rbind(new_X_full, X[i,])
+      }
+    } else {
+      if (ncol(new_X_full) == 0) {
+       new_X_full = zero_vec[i,]
+      } else {
+       new_X_full = rbind(new_X_full, zero_vec[i,])
       }
     }
   }
@@ -194,7 +199,6 @@ dataQueuePop = function(Matrix[Double] queue)  return (Matrix[Double] new_queue,
 # OUTPUT:   new_queue: the new queue nxn matrix
 dataQueuePush = function(Matrix[Double] left, Matrix[Double] right, Matrix[Double] queue)  return (Matrix[Double] new_queue) {
   len = ncol(queue)
-  print(len)
   if(len <= 0) {
     new_queue = cbind(left, right)
   } else {
@@ -237,7 +241,7 @@ findBestFeature = function(Matrix[Double] X, Matrix[Double] y, boolean verbose =
 # INPUT:    one_featureX: a 1xn matrix (one feature with all values)
 # OUTPUT:   best_split: the best split (highest gain indicates best splitting of datasets)
 findBestSplit = function(Matrix[Double] one_featureX, Double sim_score_parent)
-  return (Double best_split, Double best_sim_score_left, Double best_sim_score_right)
+  return (Double best_split, Double best_gain)
 {
     assert(ncol(one_featureX) == 1)
     best_split = 0
@@ -275,8 +279,6 @@ findBestSplit = function(Matrix[Double] one_featureX, Double sim_score_parent)
             printDebug("best gain changed to  " + toString(best_gain) + " at value " + toString(best_split))
         }
     }
-
-    # best gain is the best split and will be returned
 }
 
 
@@ -307,26 +309,30 @@ splitMatrixByValue = function(Matrix[Double] X, Double value) return (Matrix[Dou
 }
 
 #-----------------------------------------------------------------------------------------------------------------------
-# INPUT:    X: a 1xn matrix (one feature with all values)
+# INPUT:    curr_X: a 1xn matrix (one feature with current values)
+#           X:     a 1xn matrix the feature of the X-Matrix with all values
 #           value: the border to separate the values
 # OUTPUT:   left: a 1xn matrix with 1.0 for if the value is smaller or 0.0 if it is bigger
 #           right: a 1xn matrix with 1.0 for if the value is bigger or 0.0 if it is smaller
-splitMatrixByValueLoop = function(Matrix[Double] X, Double value) return (Matrix[Double] left, Matrix[Double] right) {
-  assert(ncol(X) == 1)
+splitMatrixByValueLoop = function(Matrix[Double] curr_X, Matrix[Double] X, Double value) return (Matrix[Double] left, Matrix[Double] right) {
   left = matrix(0, rows=0, cols=1)
   right = matrix(0, rows=0, cols=1)
   one_vec = matrix(1, rows=1, cols=1)
   zero_vec = matrix(0, rows=1, cols=1)
 
   for(i in 1:nrow(X)) {
-    printDebug("current to look " + as.scalar(X[i,]))
-    if(as.scalar(X[i,]) < value) {
-      left = rbind(left, one_vec[1,])
-      right = rbind(right, zero_vec[1,])
-    }
-    else {
-      right = rbind(right, one_vec[1,])
+    if (as.scalar(X[i,]) == as.scalar(curr_X[i,])) {
+      if (as.scalar(X[i,]) < value) {
+        left = rbind(left, one_vec[1,])
+        right = rbind(right, zero_vec[1,])
+      }
+      else {
+        right = rbind(right, one_vec[1,])
+        left = rbind(left, zero_vec[1,])
+      }
+    } else {
       left = rbind(left, zero_vec[1,])
+      right = rbind(right, zero_vec[1,])
     }
   }
 }

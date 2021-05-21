@@ -121,6 +121,9 @@ public class FederatedCodegenMultipleFedMOTest extends AutomatedTestBase
 			{306, 4000, 2000, 10, 2000, false},
 			{308, 1000, 2000, 10, 2000, false},
 			{310, 1000, 2000, 10, 2000, false},
+			// row and col partitioned
+			// {311, 1000, 2000, 1000, 10, true}, // not working yet
+			{312, 1000, 2000, 10, 2000, false},
 
 		});
 	}

@@ -160,7 +160,8 @@ public class SpoofCPInstruction extends ComputationCPInstruction {
 					transposed = (getOperatorClass().getSuperclass() == SpoofOuterProduct.class);
 				}
 				else if(!fedMap.isAligned(mo.getFedMapping(), false, equalRows, equalCols)
-					&& (!transposed || !fedMap.isAligned(mo.getFedMapping(), true, equalRows, equalCols))) {
+					&& (!transposed || !(fedMap.isAligned(mo.getFedMapping(), true, equalRows, equalCols)
+						|| mo.getFedMapping().isAligned(fedMap, true, equalRows, equalCols)))) {
 					retVal = false; // multiple federated matrices must be aligned
 				}
 			}

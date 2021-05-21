@@ -207,5 +207,21 @@ else if(test_num == 310) { # outerproduct #9
 
   Z = t(t(U) %*% (X / (U %*% Y + eps)));
 }
+else if(test_num == 311) { # outerproduct #8
+  # X ... 1000x2000 matrix
+  Y = t(Y);
+  # Y ... 10x1000 matrix
+  U = matrix(seq(1, 20000), rows=2000, cols=10);
+  eps = 0.1;
+  Z = X * (1 / (1 + exp(-(t(Y) %*% t(U)))));
+}
+else if(test_num == 312) { # outerproduct #8
+  # X ... 1000x2000 matrix
+  Y = t(Y);
+  # Y ... 2000x10 matrix
+  U = matrix(seq(1, 10000), rows=1000, cols=10);
+  eps = 0.1;
+  Z = X * (1 / (1 + exp(-(U %*% t(Y)))));
+}
 
 write(Z, $out_Z);

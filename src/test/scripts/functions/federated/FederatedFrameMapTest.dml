@@ -19,11 +19,6 @@
 #
 #-------------------------------------------------------------
 
-from = $from;
-to = $to;
-from2 = $from2;
-to2 = $to2;
-
 if ($rP) {
   A = federated(addresses=list($in_X1, $in_X2, $in_X3, $in_X4),
     ranges=list(list(0, 0), list($rows/4, $cols), list($rows/4, 0), list(2*$rows/4, $cols),
@@ -34,12 +29,9 @@ if ($rP) {
     list(0,$cols/2), list($rows, 3*($cols/4)), list(0, 3*($cols/4)), list($rows, $cols)));
 }
 
-B = read($in_Y)
-
-B = as.frame(B)
 A = as.frame(A)
 
-A[from:to, from2:to2] = B;
-write(A, $out_S);
-
-print(toString(A))
+S = map(A, "x -> x.replace(\"1\", \"2\")");
+write(S, $out_S);
+print(toString(A[1,1]))
+print(toString(S[1,1]))

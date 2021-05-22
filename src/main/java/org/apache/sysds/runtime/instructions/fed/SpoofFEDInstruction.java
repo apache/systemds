@@ -126,7 +126,7 @@ public class SpoofFEDInstruction extends FEDInstruction
 		int index = 0;
 		frIds[index++] = fedMap.getID(); // insert federation map id at the beginning
 		for(MatrixObject mo : inMo) {
-			if(spoofType.needsBroadcastSliced(fedMap, mo.getNumRows(), mo.getNumColumns())) {
+			if(spoofType.needsBroadcastSliced(fedMap, mo.getNumRows(), mo.getNumColumns(), index)) {
 				FederatedRequest[] tmpFr = spoofType.broadcastSliced(mo, fedMap);
 				frIds[index++] = tmpFr[0].getID();
 				frBroadcastSliced.add(tmpFr);
@@ -183,7 +183,7 @@ public class SpoofFEDInstruction extends FEDInstruction
 			return fedMap.broadcastSliced(mo, false);
 		}
 
-		protected boolean needsBroadcastSliced(FederationMap fedMap, long rowNum, long colNum) {
+		protected boolean needsBroadcastSliced(FederationMap fedMap, long rowNum, long colNum, int inputIndex) {
 			boolean retVal = false;
 
 			FType fedType = fedMap.getType();
@@ -381,16 +381,16 @@ public class SpoofFEDInstruction extends FEDInstruction
 			return fedMap.broadcastSliced(mo, (fedMap.getType() == FType.COL));
 		}
 
-		protected boolean needsBroadcastSliced(FederationMap fedMap, long rowNum, long colNum) {
+		protected boolean needsBroadcastSliced(FederationMap fedMap, long rowNum, long colNum, int inputIndex) {
 			boolean retVal = false;
 			FType fedType = fedMap.getType();
 			
 			retVal |= (rowNum == fedMap.getMaxIndexInRange(0) && colNum == fedMap.getMaxIndexInRange(1));
 			
 			if(fedType == FType.ROW)
-				retVal |= (rowNum == fedMap.getMaxIndexInRange(0));
+				retVal |= (rowNum == fedMap.getMaxIndexInRange(0)) && (inputIndex != 2); // input at index 2 is V
 			else if(fedType == FType.COL)
-				retVal |= (rowNum == fedMap.getMaxIndexInRange(1));
+				retVal |= (rowNum == fedMap.getMaxIndexInRange(1)) && (inputIndex != 1); // input at index 1 is U
 			else
 				throw new DMLRuntimeException("Only row partitioned or column" +
 					" partitioned federated input supported yet.");

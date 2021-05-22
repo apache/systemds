@@ -34,7 +34,7 @@ else {
 if(test_num == 1) { # wcemm
   # X ... 2000x2000 matrix
   
-  U = matrix(seq(1, 30000), rows=3000, cols=10);
+  U = matrix(seq(1, 20000), rows=2000, cols=10);
   V = matrix(seq(20001, 40000), rows=2000, cols=10);
   eps = 0.1;
   Z = as.matrix(sum(X * log(U %*% t(V) + eps)));
@@ -48,10 +48,10 @@ else if(test_num == 2) { # wdivmm
   Z = t(t(U) %*% (X / (U %*% t(V) + eps)));
 }
 else if(test_num == 3) { # wdivmmbasic
-  # X 1000x1500 matrix
+  # X 1000x1000 matrix
 
   U = matrix(seq(1, 10000), rows=1000, cols=10);
-  V = matrix(seq(-7499, 7500), rows=1500, cols=10);
+  V = matrix(seq(-7499, 2500), rows=1000, cols=10);
   eps = 0.1;
   Z = X / ((U %*% t(V)) + eps);
 }
@@ -80,9 +80,9 @@ else if(test_num == 6) { # wdivmmRightNotranspose
   Z = (X / ((U %*% V) + eps)) %*% t(V);
 }
 else if(test_num == 7) { # wdivmmTransposeOut
-  # X ... 4000x2000 matrix
+  # X ... 2000x2000 matrix
 
-  U = matrix(seq(600, 40599), rows=4000, cols=10);
+  U = matrix(seq(600, 20599), rows=2000, cols=10);
   V = matrix(seq(0, 19999), rows=10, cols=2000);
   eps = 0.1;
   Z = (t(U) %*% (X / ((U %*% V) + eps)));

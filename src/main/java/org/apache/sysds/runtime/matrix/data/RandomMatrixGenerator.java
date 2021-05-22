@@ -48,6 +48,10 @@ public class RandomMatrixGenerator {
 		_valuePRNG = null;
 		_mean = 1.0;
 	}
+	
+	public boolean isFullyDense() {
+		return _sparsity == 1 & (_min != 0 | _max != 0);
+	}
 
 	/**
 	 * Instantiates a Random number generator

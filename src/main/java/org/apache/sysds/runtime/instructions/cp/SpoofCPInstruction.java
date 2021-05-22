@@ -28,8 +28,8 @@ import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.runtime.codegen.CodegenUtils;
 import org.apache.sysds.runtime.codegen.SpoofOperator;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
-import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
+import org.apache.sysds.runtime.controlprogram.federated.FederationMap.FType;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.lineage.LineageCodegenItem;
 import org.apache.sysds.runtime.lineage.LineageItem;
@@ -131,11 +131,16 @@ public class SpoofCPInstruction extends ComputationCPInstruction {
 	}
 
 	public boolean isFederated(ExecutionContext ec) {
-		for(CPOperand input : _in) {
-			Data data = ec.getVariable(input);
-			if(data instanceof MatrixObject && ((MatrixObject) data).isFederated())
+		for(CPOperand input : _in)
+			if( ec.isFederated(input) )
 				return true;
-		}
+		return false;
+	}
+	
+	public boolean isFederated(ExecutionContext ec, FType type) {
+		for(CPOperand input : _in)
+			if( ec.isFederated(input, type) )
+				return true;
 		return false;
 	}
 }

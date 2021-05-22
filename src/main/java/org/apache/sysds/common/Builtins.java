@@ -227,6 +227,7 @@ public enum Builtins {
 	SOLVE("solve", false),
 	SPLIT("split", true),
 	SPLIT_BALANCED("splitBalanced", true),
+	STABLE_MARRIAGE("stableMarriage", true),
 	STATSNA("statsNA", true),
 	SQRT("sqrt", false),
 	SUM("sum", false),
@@ -377,6 +378,6 @@ public enum Builtins {
 
 	public static String getInternalFName(String name, DataType dt) {
 		return !contains(name, true, false) ? name : // private builtin
-			(dt.isMatrix() ? "m_" : "s_") + name;    // public builtin
+				(dt.isMatrix() ? "m_" : "s_") + name;    // public builtin
 	}
 }

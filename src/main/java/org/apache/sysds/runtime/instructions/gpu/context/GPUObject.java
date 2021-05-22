@@ -155,6 +155,9 @@ public class GPUObject {
 		shadowBuffer.clearShadowPointer();
 	}
 	
+	public MatrixObject getMatrixObject() {
+		return mat;
+	}
 	
 	/**
 	 * Convenience method to directly set the dense matrix pointer on GPU

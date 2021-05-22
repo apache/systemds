@@ -39,17 +39,17 @@ public abstract class ComputationFEDInstruction extends FEDInstruction implement
 	
 	protected ComputationFEDInstruction(FEDType type, Operator op,
 		CPOperand in1, CPOperand in2, CPOperand out, String opcode, String istr) {
-		this(type, op, in1, in2, null, out, opcode, istr, false);
+		this(type, op, in1, in2, null, out, opcode, istr, FederatedOutput.NONE);
 	}
 
 	protected ComputationFEDInstruction(FEDType type, Operator op,
-		CPOperand in1, CPOperand in2, CPOperand out, String opcode, String istr, boolean federatedOutput) {
-		this(type, op, in1, in2, null, out, opcode, istr, federatedOutput);
+		CPOperand in1, CPOperand in2, CPOperand out, String opcode, String istr,FederatedOutput fedOut) {
+		this(type, op, in1, in2, null, out, opcode, istr, fedOut);
 	}
 
 	protected ComputationFEDInstruction(FEDType type, Operator op,
-		CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out, String opcode, String istr, boolean federatedOutput){
-		super(type, op, opcode, istr, federatedOutput);
+		CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out, String opcode, String istr, FederatedOutput fedOut){
+		super(type, op, opcode, istr, fedOut);
 		input1 = in1;
 		input2 = in2;
 		input3 = in3;
@@ -58,7 +58,7 @@ public abstract class ComputationFEDInstruction extends FEDInstruction implement
 	
 	protected ComputationFEDInstruction(FEDType type, Operator op,
 		CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out, String opcode, String istr) {
-		this(type, op, in1, in2, in3, out, opcode, istr, false);
+		this(type, op, in1, in2, in3, out, opcode, istr, FederatedOutput.NONE);
 	}
 	
 	public String getOutputVariableName() {

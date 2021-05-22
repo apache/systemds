@@ -28,11 +28,8 @@ from systemds.operator import OperationNode, Matrix
 from systemds.script_building.dag import OutputType
 from systemds.utils.consts import VALID_INPUT_TYPES
 
-def lmCG(X: OperationNode, y: OperationNode, **kwargs: Dict[str, VALID_INPUT_TYPES]) -> Matrix:
+def lmCG(X: OperationNode, y: OperationNode, **kwargs: Dict[str, VALID_INPUT_TYPES]):
     
-    
-    X._check_matrix_op()
-    y._check_matrix_op()
     params_dict = {'X':X, 'y':y}
     params_dict.update(kwargs)
     return Matrix(X.sds_context, 'lmCG', named_input_nodes=params_dict)

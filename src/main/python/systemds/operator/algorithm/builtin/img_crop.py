@@ -28,10 +28,8 @@ from systemds.operator import OperationNode, Matrix
 from systemds.script_building.dag import OutputType
 from systemds.utils.consts import VALID_INPUT_TYPES
 
-def img_crop(img_in: OperationNode, w: int, h: int, x_offset: int, y_offset: int) -> Matrix:
+def img_crop(img_in: OperationNode, w: int, h: int, x_offset: int, y_offset: int):
     
-    
-    img_in._check_matrix_op()
     params_dict = {'img_in':img_in, 'w':w, 'h':h, 'x_offset':x_offset, 'y_offset':y_offset}
     return Matrix(img_in.sds_context, 'img_crop', named_input_nodes=params_dict)
 

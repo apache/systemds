@@ -19,10 +19,17 @@
 
 package org.apache.sysds.runtime.transform.encode;
 
+import static org.apache.sysds.runtime.util.UtilFunctions.getEndIndex;
+
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 
 import org.apache.commons.lang3.tuple.MutableTriple;
 import org.apache.sysds.lops.Lop;
@@ -82,14 +89,41 @@ public class ColumnEncoderBin extends ColumnEncoder {
 	public void build(FrameBlock in) {
 		if(!isApplicable())
 			return;
+		double[] pairMinMax = getMinMaxOfCol(in, _colID, 0, -1);
+		computeBins(pairMinMax[0], pairMinMax[1]);
+	}
 
+	private static double[] getMinMaxOfCol(FrameBlock in, int colID, int startRow, int blockSize){
 		// derive bin boundaries from min/max per column
 		double min = Double.POSITIVE_INFINITY;
 		double max = Double.NEGATIVE_INFINITY;
-		for(int i = 0; i < in.getNumRows(); i++) {
-			double inVal = UtilFunctions.objectToDouble(in.getSchema()[_colID - 1], in.get(i, _colID - 1));
+		for(int i = startRow; i < getEndIndex(in.getNumRows(), startRow, blockSize); i++) {
+			double inVal = UtilFunctions.objectToDouble(in.getSchema()[colID - 1], in.get(i, colID - 1));
 			min = Math.min(min, inVal);
 			max = Math.max(max, inVal);
+		}
+		return new double[]{min, max};
+	}
+
+	@Override
+	public List<Callable<Object>> getPartialBuildTasks(FrameBlock in, int blockSize){
+		List<Callable<Object>> tasks = new ArrayList<>();
+		for(int i = 0; i < in.getNumRows(); i=i+blockSize)
+			tasks.add(new BinPartialBuildTask(in, _colID, i, blockSize));
+		if(in.getNumRows() % blockSize != 0)
+			tasks.add(new BinPartialBuildTask(in, _colID,
+					in.getNumRows()-in.getNumRows()%blockSize, -1));
+		return tasks;
+	}
+
+	@Override
+	public void mergeBuildPartial(List<Future<Object>> futurePartials, int start, int end) throws ExecutionException, InterruptedException {
+		double min = Double.POSITIVE_INFINITY;
+		double max = Double.NEGATIVE_INFINITY;
+		for(int i = start; i < end; i++){
+			double[] pairMinMax = (double[]) futurePartials.get(i).get();
+			min = Math.min(min, pairMinMax[0]);
+			max = Math.max(max, pairMinMax[1]);
 		}
 		computeBins(min, max);
 	}
@@ -116,35 +150,40 @@ public class ColumnEncoderBin extends ColumnEncoder {
 		if(!isApplicable())
 			return;
 		// derive bin boundaries from min/max per column
-		double min = Double.POSITIVE_INFINITY;
-		double max = Double.NEGATIVE_INFINITY;
-		for(int i = 0; i < in.getNumRows(); i++) {
-			double inVal = UtilFunctions.objectToDouble(in.getSchema()[_colID - 1], in.get(i, _colID - 1));
-			min = Math.min(min, inVal);
-			max = Math.max(max, inVal);
-		}
-		_colMins = min;
-		_colMaxs = max;
+		double[] pairMinMax = getMinMaxOfCol(in, _colID, 0 ,-1);
+		_colMins = pairMinMax[0];
+		_colMaxs = pairMinMax[1];
 	}
 
 	@Override
 	public MatrixBlock apply(FrameBlock in, MatrixBlock out, int outputCol) {
-		for(int i = 0; i < in.getNumRows(); i++) {
+		return apply(in, out, outputCol, 0, -1);
+	}
+
+	@Override
+	public MatrixBlock apply(MatrixBlock in, MatrixBlock out, int outputCol) {
+		return apply(in, out, outputCol, 0, -1);
+	}
+
+	@Override
+	public MatrixBlock apply(FrameBlock in, MatrixBlock out, int outputCol, int rowStart, int blk) {
+		for(int i = rowStart; i < getEndIndex(in.getNumRows(), rowStart, blk); i++) {
 			double inVal = UtilFunctions.objectToDouble(in.getSchema()[_colID - 1], in.get(i, _colID - 1));
 			int ix = Arrays.binarySearch(_binMaxs, inVal);
 			int binID = ((ix < 0) ? Math.abs(ix + 1) : ix) + 1;
-			out.quickSetValue(i, outputCol, binID);
+			out.quickSetValueThreadSafe(i, outputCol, binID);
 		}
 		return out;
 	}
 
 	@Override
-	public MatrixBlock apply(MatrixBlock in, MatrixBlock out, int outputCol) {
-		for(int i = 0; i < in.getNumRows(); i++) {
-			double inVal = in.quickGetValue(i, _colID - 1);
+	public MatrixBlock apply(MatrixBlock in, MatrixBlock out, int outputCol, int rowStart, int blk) {
+		int end = (blk <= 0)? in.getNumRows(): in.getNumRows() < rowStart + blk ? in.getNumRows() : rowStart + blk;
+		for(int i = rowStart; i < end; i++) {
+			double inVal = in.quickGetValueThreadSafe(i, _colID - 1);
 			int ix = Arrays.binarySearch(_binMaxs, inVal);
 			int binID = ((ix < 0) ? Math.abs(ix + 1) : ix) + 1;
-			out.quickSetValue(i, outputCol, binID);
+			out.quickSetValueThreadSafe(i, outputCol, binID);
 		}
 		return out;
 	}
@@ -236,4 +275,26 @@ public class ColumnEncoderBin extends ColumnEncoder {
 			_binMins[j] = in.readDouble();
 		}
 	}
+
+	private static class BinPartialBuildTask implements Callable<Object> {
+
+		private final FrameBlock _input;
+		private final int _blockSize;
+		private final int _startRow;
+		private final int _colID;
+
+		// if a pool is passed the task may be split up into multiple smaller tasks.
+		protected BinPartialBuildTask(FrameBlock input, int colID, int startRow, int blocksize){
+			_input = input;
+			_blockSize = blocksize;
+			_colID = colID;
+			_startRow = startRow;
+		}
+
+		@Override
+		public double[] call() throws Exception {
+			return getMinMaxOfCol(_input, _colID, _startRow, _blockSize);
+		}
+	}
+
 }

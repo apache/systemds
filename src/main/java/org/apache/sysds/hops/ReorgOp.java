@@ -162,7 +162,6 @@ public class ReorgOp extends MultiThreadedHop
 				else { //general case
 					int k = OptimizerUtils.getConstrainedNumThreads(_maxNumThreads);
 					Transform transform1 = new Transform(lin, _op, getDataType(), getValueType(), et, k);
-					setFederatedOutput(transform1);
 					setOutputDimensions(transform1);
 					setLineNumbers(transform1);
 					setLops(transform1);

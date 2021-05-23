@@ -74,8 +74,8 @@ from .builtin.msvmPredict import msvmPredict
 from .builtin.multiLogReg import multiLogReg 
 from .builtin.multiLogRegPredict import multiLogRegPredict 
 from .builtin.na_locf import na_locf 
-from .builtin.naiveBayes import naiveBayes
-from .builtin.naiveBayesPredict import naiveBayesPredict
+from .builtin.naiveBayes import naiveBayes 
+from .builtin.naiveBayesPredict import naiveBayesPredict 
 from .builtin.normalize import normalize 
 from .builtin.outlier import outlier 
 from .builtin.outlierByArima import outlierByArima 
@@ -94,6 +94,7 @@ from .builtin.slicefinder import slicefinder
 from .builtin.smote import smote 
 from .builtin.split import split 
 from .builtin.splitBalanced import splitBalanced 
+from .builtin.stableMarriage import stableMarriage 
 from .builtin.statsNA import statsNA 
 from .builtin.steplm import steplm 
 from .builtin.toOneHot import toOneHot 
@@ -104,4 +105,4 @@ from .builtin.winsorize import winsorize
 from .builtin.xdummy1 import xdummy1 
 from .builtin.xdummy2 import xdummy2 
 
-__all__ = [abstain, als, alsCG, alsDS, alsPredict, alsTopkPredict, arima, bandit, bivar, components, confusionMatrix, cor, cox, cspline, csplineDS, cvlm, dbscan, decisionTree, discoverFD, dist, gaussianClassifier, getAccuracy, glm, gmm, gmmPredict, gnmf, gridSearch, hyperband, img_brightness, img_crop, img_mirror, imputeByFD, imputeByMean, imputeByMedian, imputeByMode, intersect, km, kmeans, kmeansPredict, knnbf, l2svm, l2svmPredict, lasso, lm, lmCG, lmDS, lmPredict, logSumExp, msvm, msvmPredict, multiLogReg, multiLogRegPredict, na_locf, naiveBayes, naiveBayesPredict, normalize, outlier, outlierByArima, outlierByIQR, outlierBySd, pca, pnmf, ppca, randomForest, scale, scaleApply, sherlock, sherlockPredict, sigmoid, slicefinder, smote, split, splitBalanced, statsNA, steplm, toOneHot, tomeklink, univar, vectorToCsv, winsorize, xdummy1, xdummy2]
+__all__ = [abstain, als, alsCG, alsDS, alsPredict, alsTopkPredict, arima, bandit, bivar, components, confusionMatrix, cor, cox, cspline, csplineDS, cvlm, dbscan, decisionTree, discoverFD, dist, gaussianClassifier, getAccuracy, glm, gmm, gmmPredict, gnmf, gridSearch, hyperband, img_brightness, img_crop, img_mirror, imputeByFD, imputeByMean, imputeByMedian, imputeByMode, intersect, km, kmeans, kmeansPredict, knnbf, l2svm, l2svmPredict, lasso, lm, lmCG, lmDS, lmPredict, logSumExp, msvm, msvmPredict, multiLogReg, multiLogRegPredict, na_locf, naiveBayes, naiveBayesPredict, normalize, outlier, outlierByArima, outlierByIQR, outlierBySd, pca, pnmf, ppca, randomForest, scale, scaleApply, sherlock, sherlockPredict, sigmoid, slicefinder, smote, split, splitBalanced, stableMarriage, statsNA, steplm, toOneHot, tomeklink, univar, vectorToCsv, winsorize, xdummy1, xdummy2] 

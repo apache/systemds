@@ -19,6 +19,8 @@
 
 package org.apache.sysds.runtime.instructions.fed;
 
+import org.apache.sysds.api.mlcontext.Matrix;
+import org.apache.sysds.common.Types;
 import org.apache.sysds.lops.MMTSJ.MMTSJType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
@@ -28,6 +30,7 @@ import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse;
 import org.apache.sysds.runtime.controlprogram.federated.FederationMap;
 import org.apache.sysds.runtime.controlprogram.federated.FederationUtils;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest.RequestType;
+import org.apache.sysds.runtime.instructions.Instruction;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
@@ -78,6 +81,34 @@ public class TsmmFEDInstruction extends BinaryFEDInstruction {
 			Future<FederatedResponse>[] tmp = mo1.getFedMapping().execute(getTID(), fr1, fr2, fr3);
 			MatrixBlock ret = FederationUtils.aggAdd(tmp);
 			ec.setMatrixOutput(output.getName(), ret);
+		}
+		else if(mo1.isFederated(FederationMap.FType.COL) && _type.isLeft()) {
+			// FIXME actually X is revealed
+			MatrixObject transpose = ExecutionContext.createMatrixObject(new MatrixBlock());
+			long id = FederationUtils.getNextFedDataID();
+			ec.setVariable(String.valueOf(id), transpose);
+
+			CPOperand tOperand = new CPOperand(String.valueOf(id), Types.ValueType.FP64, Types.DataType.MATRIX);
+
+			// mm
+			String mmInst = InstructionUtils.constructBinaryInstString(instString, "*", input1, tOperand, output);
+			mmInst = InstructionUtils.concatOperands(mmInst, FederatedOutput.NONE.name());
+			FederatedRequest[] fr2 = mo1.getFedMapping().broadcastSliced(mo1, true);
+			FederatedRequest fr3 = FederationUtils.callInstruction(mmInst, output, new CPOperand[]{tOperand, input1},
+				new long[]{fr2[0].getID(), mo1.getFedMapping().getID()}, true);
+			FederatedRequest fr4 = mo1.getFedMapping().cleanup(getTID(), fr2[0].getID());
+			//execute federated instruction and cleanup intermediates
+			mo1.getFedMapping().execute(getTID(), true, fr2, fr3, fr4);
+
+			FederationMap fedMap = mo1.getFedMapping();
+			for(int i = 0; i < fedMap.getSize(); i++)
+				fedMap.getFederatedRanges()[i].setEndDim(0, mo1.getNumColumns());
+
+			MatrixObject out = ec.getMatrixObject(output);
+			out.setFedMapping(mo1.getFedMapping().copyWithNewID(fr2[0].getID()));
+			out.getDataCharacteristics().setDimension(mo1.getNumColumns(), mo1.getNumColumns());
+
+			ec.removeVariable(tOperand.getName());
 		}
 		else { //other combinations
 			throw new DMLRuntimeException("Federated Tsmm not supported with the "

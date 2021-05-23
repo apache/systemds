@@ -33,7 +33,7 @@ import org.apache.sysds.lops.CentralMoment;
 import org.apache.sysds.lops.CoVariance;
 import org.apache.sysds.lops.Ctable;
 import org.apache.sysds.lops.Lop;
-import org.apache.sysds.lops.LopProperties.ExecType;
+import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.lops.LopsException;
 import org.apache.sysds.lops.PickByCount;
 import org.apache.sysds.lops.SortKeys;

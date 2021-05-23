@@ -24,7 +24,7 @@ import java.util.Arrays;
 import java.util.Collection;
 
 import org.apache.sysds.common.Types;
-import org.apache.sysds.lops.LopProperties;
+import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
@@ -86,7 +86,7 @@ public class BuiltinMDTest extends AutomatedTestBase {
 			{7267, 3, 223, 432, 1132, 500},
 			{7254, 3, 223, 432, 1132, 0},
 		};
-		runMDTests(D, LHSf, LHSt, RHSf, RHSt, LopProperties.ExecType.CP);
+		runMDTests(D, LHSf, LHSt, RHSf, RHSt, ExecType.CP);
 	}
 
 	@Test
@@ -98,10 +98,10 @@ public class BuiltinMDTest extends AutomatedTestBase {
 			{7267, 3, 223, 432, 1132, 500},
 			{7254, 3, 223, 432, 1132, 0},
 		};
-		runMDTests(D, LHSf, LHSt, RHSf, RHSt, LopProperties.ExecType.SPARK);
+		runMDTests(D, LHSf, LHSt, RHSf, RHSt, ExecType.SPARK);
 	}
 	
-	private void runMDTests(double [][] X , double[][] LHSf, double[][] LHSt, double[][] RHSf, double[][] RHSt, LopProperties.ExecType instType) {
+	private void runMDTests(double [][] X , double[][] LHSf, double[][] LHSt, double[][] RHSf, double[][] RHSt, ExecType instType) {
 		Types.ExecMode platformOld = setExecMode(instType);
 		try
 		{

@@ -25,8 +25,7 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import org.apache.sysds.common.Types;
-import org.apache.sysds.lops.LopProperties;
-import org.apache.sysds.lops.LopProperties.ExecType;
+import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.runtime.matrix.data.MatrixValue;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
@@ -45,22 +44,22 @@ public class BuiltinComponentsTest extends AutomatedTestBase {
 
 	@Test
 	public void testConnectedComponents11CP() {
-		runConnectedComponentsTest(11, 0, LopProperties.ExecType.CP);
+		runConnectedComponentsTest(11, 0, ExecType.CP);
 	}
 	
 	@Test
 	public void testConnectedComponents201CP() {
-		runConnectedComponentsTest(201, 0, LopProperties.ExecType.CP);
+		runConnectedComponentsTest(201, 0, ExecType.CP);
 	}
 	
 	@Test
 	public void testConnectedComponents2001CP() {
-		runConnectedComponentsTest(2001, 0, LopProperties.ExecType.CP);
+		runConnectedComponentsTest(2001, 0, ExecType.CP);
 	}
 	
 	@Test
 	public void testConnectedComponents11Maxi100CP() {
-		runConnectedComponentsTest(11, 100, LopProperties.ExecType.CP);
+		runConnectedComponentsTest(11, 100, ExecType.CP);
 	}
 
 	private void runConnectedComponentsTest(int numVertices, int maxi, ExecType instType)

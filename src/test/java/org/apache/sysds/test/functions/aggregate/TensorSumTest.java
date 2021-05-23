@@ -25,7 +25,7 @@ import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.ExecMode;
-import org.apache.sysds.lops.LopProperties;
+import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 
@@ -70,19 +70,19 @@ public class TensorSumTest extends AutomatedTestBase
 
 	@Test
 	public void tensorSumTestCP() {
-		testTensorSum(TEST_NAME, LopProperties.ExecType.CP);
+		testTensorSum(TEST_NAME, ExecType.CP);
 	}
 
 	// Sp instructions not supported for tensors.
 	// TODO: make support for spark
 	// @Test
 	// public void tensorSumTestSpark() {
-	// 	testTensorSum(TEST_NAME, LopProperties.ExecType.SPARK);
+	// 	testTensorSum(TEST_NAME, ExecType.SPARK);
 	// }
 
-	private void testTensorSum(String testName, LopProperties.ExecType platform) {
+	private void testTensorSum(String testName, ExecType platform) {
 		ExecMode platformOld = rtplatform;
-		if (platform == LopProperties.ExecType.SPARK) {
+		if (platform == ExecType.SPARK) {
 			rtplatform = ExecMode.SPARK;
 		}
 		else {

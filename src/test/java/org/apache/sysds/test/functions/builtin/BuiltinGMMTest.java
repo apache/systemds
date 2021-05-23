@@ -20,8 +20,8 @@
 package org.apache.sysds.test.functions.builtin;
 
 import org.apache.sysds.common.Types;
+import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.hops.OptimizerUtils;
-import org.apache.sysds.lops.LopProperties;
 import org.apache.sysds.runtime.matrix.data.MatrixValue;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
@@ -49,102 +49,102 @@ public class BuiltinGMMTest extends AutomatedTestBase {
 
 	@Test
 	public void testGMMMDefault() { runGMMTest(10, "VVV", "kmeans", 100,
-		1e-6, 0.000001,42, false, LopProperties.ExecType.CP); }
+		1e-6, 0.000001,42, false, ExecType.CP); }
 		
 	@Test
 	public void testGMMM1() { runGMMTest(3, "VVV", "random", 100,
-			0.0000001, 0.0001,42, true, LopProperties.ExecType.CP); }
+			0.0000001, 0.0001,42, true, ExecType.CP); }
 
 	@Test
 	public void testGMMM2() {
 		runGMMTest(3, "EEE", "random", 150,
-			0.000001, tol1,42,true, LopProperties.ExecType.CP);
+			0.000001, tol1,42,true, ExecType.CP);
 	}
 
 	@Test
 	public void testGMMM3() {
 		runGMMTest(3, "VVI", "random", 10,
-			0.000000001, tol,42,true, LopProperties.ExecType.CP);
+			0.000000001, tol,42,true, ExecType.CP);
 	}
 
 	@Test
 	public void testGMMM4() {
 		runGMMTest(3, "VII", "random", 50,
-			0.000001, tol2,42,true, LopProperties.ExecType.CP);
+			0.000001, tol2,42,true, ExecType.CP);
 	}
 
 	@Test
 	public void testGMMM1Kmean() {
 		runGMMTest(3, "VVV", "kmeans", 10,
-			0.0000001, tol,42,true, LopProperties.ExecType.CP);
+			0.0000001, tol,42,true, ExecType.CP);
 	}
 
 	@Test
 	public void testGMMM2Kmean() {
 		runGMMTest(3, "EEE", "kmeans", 150,
-			0.000001, tol,42,true, LopProperties.ExecType.CP);
+			0.000001, tol,42,true, ExecType.CP);
 	}
 
 	@Test
 	public void testGMMM3Kmean() {
 		runGMMTest(3, "VVI", "kmeans", 10,
-			0.00000001, tol1,42,true, LopProperties.ExecType.CP);
+			0.00000001, tol1,42,true, ExecType.CP);
 	}
 
 	@Test
 	public void testGMMM4Kmean() {
 		runGMMTest(3, "VII", "kmeans", 50,
-				0.000001, tol2,42,true, LopProperties.ExecType.CP);
+				0.000001, tol2,42,true, ExecType.CP);
 	}
 
 	@Test
 	public void testGMMM1Spark() { runGMMTest(3, "VVV", "random", 10,
-			0.0000001, tol,42,true, LopProperties.ExecType.SPARK); }
+			0.0000001, tol,42,true, ExecType.SPARK); }
 
 	@Test
 	public void testGMMM2Spark() {
 		runGMMTest(3, "EEE", "random", 50,
-			0.0000001, tol,42,true, LopProperties.ExecType.CP);
+			0.0000001, tol,42,true, ExecType.CP);
 	}
 
 	@Test
 	public void testGMMMS3Spark() {
 		runGMMTest(3, "VVI", "random", 100,
-			0.000001, tol,42,true, LopProperties.ExecType.CP);
+			0.000001, tol,42,true, ExecType.CP);
 	}
 
 	@Test
 	public void testGMMM4Spark() {
 		runGMMTest(3, "VII", "random", 100,
-			0.000001, tol1,42,true, LopProperties.ExecType.CP);
+			0.000001, tol1,42,true, ExecType.CP);
 	}
 
 	@Test
 	public void testGMMM1KmeanSpark() {
 		runGMMTest(3, "VVV", "kmeans", 100,
-			0.000001, tol2,42,false, LopProperties.ExecType.SPARK);
+			0.000001, tol2,42,false, ExecType.SPARK);
 	}
 
 	@Test
 	public void testGMMM2KmeanSpark() {
 		runGMMTest(3, "EEE", "kmeans", 50,
-			0.00000001, tol1,42,false, LopProperties.ExecType.SPARK);
+			0.00000001, tol1,42,false, ExecType.SPARK);
 	}
 
 	@Test
 	public void testGMMM3KmeanSpark() {
 		runGMMTest(3, "VVI", "kmeans", 100,
-			0.000001, tol,42,false, LopProperties.ExecType.SPARK);
+			0.000001, tol,42,false, ExecType.SPARK);
 	}
 
 	@Test
 	public void testGMMM4KmeanSpark() {
 		runGMMTest(3, "VII", "kmeans", 100,
-			0.000001, tol,42,false, LopProperties.ExecType.SPARK);
+			0.000001, tol,42,false, ExecType.SPARK);
 	}
 
 	private void runGMMTest(int G_mixtures, String model, String init_param, int iter,
-							double reg, double tol, int seed, boolean rewrite, LopProperties.ExecType instType) {
+							double reg, double tol, int seed, boolean rewrite, ExecType instType) {
 
 		Types.ExecMode platformOld = setExecMode(instType);
 		OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = rewrite;

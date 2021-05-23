@@ -25,8 +25,8 @@ import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.ExecMode;
+import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.hops.BinaryOp;
-import org.apache.sysds.lops.LopProperties;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 
@@ -71,24 +71,24 @@ public class ElementwiseAdditionTest extends AutomatedTestBase {
 
 	@Test
 	public void elementwiseAdditionTestCP() {
-		testElementwiseAddition(TEST_NAME, LopProperties.ExecType.CP);
+		testElementwiseAddition(TEST_NAME, ExecType.CP);
 	}
 
 	@Test
 	public void elementwiseAdditionTestSpark() {
 		BinaryOp.FORCED_BINARY_METHOD = null;
-		testElementwiseAddition(TEST_NAME, LopProperties.ExecType.SPARK);
+		testElementwiseAddition(TEST_NAME, ExecType.SPARK);
 	}
 
 	@Test
 	public void elementwiseAdditionTestBroadcastSpark() {
 		BinaryOp.FORCED_BINARY_METHOD = BinaryOp.MMBinaryMethod.MR_BINARY_M;
-		testElementwiseAddition(TEST_NAME, LopProperties.ExecType.SPARK);
+		testElementwiseAddition(TEST_NAME, ExecType.SPARK);
 	}
 
-	private void testElementwiseAddition(String testName, LopProperties.ExecType platform) {
+	private void testElementwiseAddition(String testName, ExecType platform) {
 		ExecMode platformOld = rtplatform;
-		if (platform == LopProperties.ExecType.SPARK) {
+		if (platform == ExecType.SPARK) {
 			rtplatform = ExecMode.SPARK;
 		}
 		else {

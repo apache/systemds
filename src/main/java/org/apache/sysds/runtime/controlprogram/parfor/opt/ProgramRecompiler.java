@@ -21,6 +21,7 @@ package org.apache.sysds.runtime.controlprogram.parfor.opt;
 
 import java.util.ArrayList;
 
+import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.conf.DMLConfig;
 import org.apache.sysds.hops.Hop;
@@ -30,7 +31,6 @@ import org.apache.sysds.hops.codegen.SpoofCompiler;
 import org.apache.sysds.hops.codegen.SpoofCompiler.IntegrationType;
 import org.apache.sysds.hops.recompile.Recompiler;
 import org.apache.sysds.lops.Lop;
-import org.apache.sysds.lops.LopProperties;
 import org.apache.sysds.parser.DMLProgram;
 import org.apache.sysds.parser.DMLTranslator;
 import org.apache.sysds.parser.ForStatement;
@@ -384,9 +384,9 @@ public class ProgramRecompiler
 				//(rowblock/colblock only applied if in total less than two blocks,
 				// hence always mem_est<mem_budget)
 				if( hop.getMemEstimate() < OptimizerUtils.getLocalMemBudget() )
-					hop.setForcedExecType( LopProperties.ExecType.CP );
+					hop.setForcedExecType( ExecType.CP );
 				else
-					hop.setForcedExecType( LopProperties.ExecType.CP_FILE );
+					hop.setForcedExecType( ExecType.CP_FILE );
 				
 				ret = true;
 			}

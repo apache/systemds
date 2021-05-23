@@ -22,7 +22,7 @@ package org.apache.sysds.test.functions.builtin;
 import java.util.HashMap;
 
 import org.apache.sysds.common.Types;
-import org.apache.sysds.lops.LopProperties;
+import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.runtime.matrix.data.MatrixValue;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
@@ -43,15 +43,15 @@ public class BuiltinDecisionTreeTest extends AutomatedTestBase {
 
 	@Test
 	public void testDecisionTreeDefaultCP() {
-		runDecisionTree(true, LopProperties.ExecType.CP);
+		runDecisionTree(true, ExecType.CP);
 	}
 
 	@Test
 	public void testDecisionTreeSP() {
-		runDecisionTree(true, LopProperties.ExecType.SPARK);
+		runDecisionTree(true, ExecType.SPARK);
 	}
 
-	private void runDecisionTree(boolean defaultProb, LopProperties.ExecType instType) {
+	private void runDecisionTree(boolean defaultProb, ExecType instType) {
 		Types.ExecMode platformOld = setExecMode(instType);
 		try {
 			loadTestConfiguration(getTestConfiguration(TEST_NAME));

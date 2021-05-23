@@ -21,7 +21,7 @@ package org.apache.sysds.test.functions.builtin;
 
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.sysds.common.Types;
-import org.apache.sysds.lops.LopProperties;
+import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.runtime.lineage.LineageCacheConfig.ReuseCacheType;
 import org.apache.sysds.runtime.matrix.data.MatrixValue;
 import org.apache.sysds.test.AutomatedTestBase;
@@ -47,45 +47,45 @@ public class BuiltinNaLocfTest extends AutomatedTestBase {
 
 	@Test
 	public void tesLocfNoLineageCP() {
-		runLocfTest(false, "locf", LopProperties.ExecType.CP);
+		runLocfTest(false, "locf", ExecType.CP);
 	}
 
 	@Test
 	public void tesLocfLineageCP() {
-		runLocfTest(true, "locf", LopProperties.ExecType.CP);
+		runLocfTest(true, "locf", ExecType.CP);
 	}
 
 	@Test
 	public void tesLocfNoLineageSPARK() {
-		runLocfTest(false,"locf",  LopProperties.ExecType.SPARK);
+		runLocfTest(false,"locf",  ExecType.SPARK);
 	}
 
 	@Test
 	public void tesLocfLineageSPARK() {
-		runLocfTest(true,"locf",  LopProperties.ExecType.SPARK);
+		runLocfTest(true,"locf",  ExecType.SPARK);
 	}
 
 	@Test
 	public void tesnocbNoLineageCP() {
-		runLocfTest(false, "nocb", LopProperties.ExecType.CP);
+		runLocfTest(false, "nocb", ExecType.CP);
 	}
 
 	@Test
 	public void tesnocbLineageCP() {
-		runLocfTest(true, "nocb", LopProperties.ExecType.CP);
+		runLocfTest(true, "nocb", ExecType.CP);
 	}
 
 	@Test
 	public void tesnocbNoLineageSPARK() {
-		runLocfTest(false,"nocb",  LopProperties.ExecType.SPARK);
+		runLocfTest(false,"nocb",  ExecType.SPARK);
 	}
 
 	@Test
 	public void tesnocbLineageSPARK() {
-		runLocfTest(true,"nocb",  LopProperties.ExecType.SPARK);
+		runLocfTest(true,"nocb",  ExecType.SPARK);
 	}
 
-	private void runLocfTest(boolean lineage, String option, LopProperties.ExecType instType) {
+	private void runLocfTest(boolean lineage, String option, ExecType instType) {
 		Types.ExecMode platformOld = setExecMode(instType);
 		try {
 			

@@ -26,6 +26,7 @@ import org.apache.hadoop.fs.Path;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.common.Types.OpOpN;
+import org.apache.sysds.common.Types;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.hops.AggBinaryOp;
 import org.apache.sysds.hops.AggBinaryOp.MMultMethod;
@@ -43,7 +44,6 @@ import org.apache.sysds.hops.rewrite.HopRewriteUtils;
 import org.apache.sysds.hops.rewrite.ProgramRewriteStatus;
 import org.apache.sysds.hops.rewrite.ProgramRewriter;
 import org.apache.sysds.hops.rewrite.RewriteInjectSparkLoopCheckpointing;
-import org.apache.sysds.lops.LopProperties;
 import org.apache.sysds.parser.DMLProgram;
 import org.apache.sysds.parser.FunctionStatementBlock;
 import org.apache.sysds.parser.ParForStatement;
@@ -239,7 +239,7 @@ public class OptimizerRuleBased extends Optimizer {
 		
 		//determine memory consumption for what-if: all-cp or partitioned 
 		double M2 = pn.isCPOnly() ? M1 :
-			_cost.getEstimate(TestMeasure.MEMORY_USAGE, pn, LopProperties.ExecType.CP);
+			_cost.getEstimate(TestMeasure.MEMORY_USAGE, pn, Types.ExecType.CP);
 		LOG.debug(getOptMode()+" OPT: estimated new mem (serial exec, all CP) M="+toMB(M2) );
 		double M3 = _cost.getEstimate(TestMeasure.MEMORY_USAGE, pn, true);
 		LOG.debug(getOptMode()+" OPT: estimated new mem (cond partitioning) M="+toMB(M3) );
@@ -516,7 +516,7 @@ public class OptimizerRuleBased extends Optimizer {
 			OptimizerUtils.DEFAULT_SIZE;
 	}
 
-	protected static LopProperties.ExecType getRIXExecType( MatrixObject mo, PDataPartitionFormat dpf, boolean withSparsity ) 
+	protected static Types.ExecType getRIXExecType( MatrixObject mo, PDataPartitionFormat dpf, boolean withSparsity ) 
 	{
 		double mem = -1;
 		
@@ -547,13 +547,13 @@ public class OptimizerRuleBased extends Optimizer {
 		}
 		
 		if( mem < OptimizerUtils.getLocalMemBudget() )
-			return LopProperties.ExecType.CP;
+			return Types.ExecType.CP;
 		else
-			return LopProperties.ExecType.CP_FILE;
+			return Types.ExecType.CP_FILE;
 	}
 
 	public static boolean allowsBinaryCellPartitions( MatrixObject mo, PartitionFormat dpf ) {
-		return (getRIXExecType(mo, PDataPartitionFormat.COLUMN_BLOCK_WISE, false)==LopProperties.ExecType.CP );
+		return (getRIXExecType(mo, PDataPartitionFormat.COLUMN_BLOCK_WISE, false)==Types.ExecType.CP );
 	}
 	
 	///////
@@ -719,7 +719,7 @@ public class OptimizerRuleBased extends Optimizer {
 		Hop h = OptTreeConverter.getAbstractPlanMapping().getMappedHop(n.getID());
 		
 		//set forced exec type
-		h.setForcedExecType(LopProperties.ExecType.CP);
+		h.setForcedExecType(Types.ExecType.CP);
 		n.setExecType(ExecType.CP);
 		
 		//recompile parent pb
@@ -863,10 +863,10 @@ public class OptimizerRuleBased extends Optimizer {
 		if( n.isLeaf() && et == getRemoteExecType() )
 		{
 			Hop h = OptTreeConverter.getAbstractPlanMapping().getMappedHop( n.getID() );
-			if(    h.getForcedExecType()!=LopProperties.ExecType.SPARK 
+			if(    h.getForcedExecType()!=Types.ExecType.SPARK 
 				&& h.hasValidCPDimsAndSize() ) //integer dims
 			{
-				double mem = _cost.getLeafNodeEstimate(TestMeasure.MEMORY_USAGE, n, LopProperties.ExecType.CP);
+				double mem = _cost.getLeafNodeEstimate(TestMeasure.MEMORY_USAGE, n, Types.ExecType.CP);
 				if( mem <= memBudget )
 					ret = true;
 			}
@@ -896,7 +896,7 @@ public class OptimizerRuleBased extends Optimizer {
 		ParForProgramBlock pfpb = (ParForProgramBlock) OptTreeConverter
 			.getAbstractPlanMapping().getMappedProg(pn.getID())[1];
 		HashSet<String> fnStack = new HashSet<>();
-		Recompiler.recompileProgramBlockHierarchy2Forced(pfpb.getChildBlocks(), 0, fnStack, LopProperties.ExecType.CP);
+		Recompiler.recompileProgramBlockHierarchy2Forced(pfpb.getChildBlocks(), 0, fnStack, Types.ExecType.CP);
 		
 		//debug output
 		LOG.debug(getOptMode()+" OPT: rewrite 'set operation exec type CP' - result="+count);
@@ -1105,8 +1105,8 @@ public class OptimizerRuleBased extends Optimizer {
 
 		if (n.isLeaf() && et != getRemoteExecType()) {
 			Hop h = OptTreeConverter.getAbstractPlanMapping().getMappedHop(n.getID());
-			if ( h.getForcedExecType() != LopProperties.ExecType.SPARK) {
-				double mem = _cost.getLeafNodeEstimate(TestMeasure.MEMORY_USAGE, n, LopProperties.ExecType.CP);
+			if ( h.getForcedExecType() != Types.ExecType.SPARK) {
+				double mem = _cost.getLeafNodeEstimate(TestMeasure.MEMORY_USAGE, n, Types.ExecType.CP);
 				if (mem >= OptimizerUtils.DEFAULT_SIZE) {
 					// memory estimate for worst case scenario.
 					// optimistically ignoring this

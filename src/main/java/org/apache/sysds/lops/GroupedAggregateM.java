@@ -22,7 +22,7 @@ package org.apache.sysds.lops;
 import java.util.HashMap;
 
  
-import org.apache.sysds.lops.LopProperties.ExecType;
+import org.apache.sysds.common.Types.ExecType;
 
 import org.apache.sysds.parser.Statement;
 import org.apache.sysds.runtime.instructions.InstructionUtils;

@@ -27,8 +27,8 @@ import java.util.List;
 import java.util.Random;
 
 import org.apache.sysds.common.Types;
+import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.hops.OptimizerUtils;
-import org.apache.sysds.lops.LopProperties;
 import org.apache.sysds.runtime.matrix.data.MatrixValue;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.privacy.PrivacyConstraint;
@@ -107,7 +107,7 @@ public class BuiltinGLMTest extends AutomatedTestBase
 	}
 
 	public void runtestGLM(PrivacyConstraint privacyConstraint, Class<?> expectedException) {
-		Types.ExecMode platformOld = setExecMode(LopProperties.ExecType.CP);
+		Types.ExecMode platformOld = setExecMode(ExecType.CP);
 		try {
 			int rows = numRecords;                // # of rows in the training data
 			int cols = numFeatures;                // # of features in the training data

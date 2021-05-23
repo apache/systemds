@@ -20,7 +20,7 @@
 package org.apache.sysds.test.functions.builtin;
 
 import org.apache.sysds.common.Types;
-import org.apache.sysds.lops.LopProperties;
+import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.runtime.matrix.data.MatrixValue;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
@@ -43,26 +43,26 @@ public class BuiltinStatsNATest extends AutomatedTestBase {
 
 	@Test
 	public void testStatsNA1() {
-		runStatsNA(1, 100, LopProperties.ExecType.CP);
+		runStatsNA(1, 100, ExecType.CP);
 	}
 
 	@Test
 	public void testStatsNA2() {
-		runStatsNA(4, 100, LopProperties.ExecType.CP);
+		runStatsNA(4, 100, ExecType.CP);
 	}
 
 	@Test
 	public void testStatsNA3() {
-		runStatsNA(100, 1000, LopProperties.ExecType.CP);
+		runStatsNA(100, 1000, ExecType.CP);
 	}
 
 	@Test
 	public void testStatsNA4() {
-		runStatsNA(100, 10000, LopProperties.ExecType.CP);
+		runStatsNA(100, 10000, ExecType.CP);
 	}
 
 
-	private void runStatsNA(int bins, int size, LopProperties.ExecType instType) {
+	private void runStatsNA(int bins, int size, ExecType instType) {
 		Types.ExecMode platformOld = setExecMode(instType);
 		try {
 			loadTestConfiguration(getTestConfiguration(TEST_NAME));

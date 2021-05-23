@@ -21,7 +21,7 @@ package org.apache.sysds.test.functions.builtin;
 
 import org.junit.Test;
 import org.apache.sysds.common.Types;
-import org.apache.sysds.lops.LopProperties;
+import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 
@@ -44,50 +44,50 @@ public class BuiltinOutlierBySDTest extends AutomatedTestBase {
 
 	@Test
 	public void testOutlierRepair0CP() {
-		runOutlierTest(false, 2, 0, 0, LopProperties.ExecType.CP);
+		runOutlierTest(false, 2, 0, 0, ExecType.CP);
 	}
 
 	@Test
 	public void testOutlierRepair1CP() {
-		runOutlierTest(false, 2, 1, 0, LopProperties.ExecType.CP);
+		runOutlierTest(false, 2, 1, 0, ExecType.CP);
 	}
 
 	@Test
 	public void testOutlierRepair2CP() {
-		runOutlierTest(false, 2, 2, 10, LopProperties.ExecType.CP);
+		runOutlierTest(false, 2, 2, 10, ExecType.CP);
 	}
 
 	@Test
 	public void testOutlierRepair2SP() {
-		runOutlierTest(false, 2, 2, 0, LopProperties.ExecType.CP);
+		runOutlierTest(false, 2, 2, 0, ExecType.CP);
 	}
 
 	@Test
 	public void testOutlierRepair0SP() {
-		runOutlierTest(false, 2, 0, 10, LopProperties.ExecType.SPARK);
+		runOutlierTest(false, 2, 0, 10, ExecType.SPARK);
 	}
 
 	@Test
 	public void testOutlierRepair1SP() {
-		runOutlierTest(false, 2, 1, 10, LopProperties.ExecType.SPARK);
+		runOutlierTest(false, 2, 1, 10, ExecType.SPARK);
 	}
 
 	@Test
 	public void testOutlierK3CP() {
-		runOutlierTest(true, 3, 1, 10,LopProperties.ExecType.CP);
+		runOutlierTest(true, 3, 1, 10,ExecType.CP);
 	}
 
 	@Test
 	public void testOutlierIterativeCP() {
-		runOutlierTest(false, 2, 1, 0, LopProperties.ExecType.CP);
+		runOutlierTest(false, 2, 1, 0, ExecType.CP);
 	}
 
 	@Test
 	public void testOutlierIterativeSP() {
-		runOutlierTest(false, 2, 1, 10, LopProperties.ExecType.SPARK);
+		runOutlierTest(false, 2, 1, 10, ExecType.SPARK);
 	}
 
-	private void runOutlierTest(boolean sparse, double  k,  int repair, int max_iterations, LopProperties.ExecType instType)
+	private void runOutlierTest(boolean sparse, double  k,  int repair, int max_iterations, ExecType instType)
 	{
 		Types.ExecMode platformOld = setExecMode(instType);
 

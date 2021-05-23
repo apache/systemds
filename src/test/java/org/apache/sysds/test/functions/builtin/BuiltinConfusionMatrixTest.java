@@ -22,8 +22,7 @@ package org.apache.sysds.test.functions.builtin;
 import java.util.HashMap;
 
 import org.apache.sysds.common.Types.ExecMode;
-import org.apache.sysds.lops.LopProperties;
-import org.apache.sysds.lops.LopProperties.ExecType;
+import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.runtime.DMLScriptException;
 import org.apache.sysds.runtime.matrix.data.MatrixValue;
 import org.apache.sysds.runtime.matrix.data.MatrixValue.CellIndex;
@@ -58,7 +57,7 @@ public class BuiltinConfusionMatrixTest extends AutomatedTestBase {
 		res.put(new CellIndex(1, 1), 1.0);
 		res.put(new CellIndex(2, 2), 1.0);
 
-		for(LopProperties.ExecType ex : new ExecType[] {LopProperties.ExecType.CP, LopProperties.ExecType.SPARK}) {
+		for(ExecType ex : new ExecType[] {ExecType.CP, ExecType.SPARK}) {
 			runConfusionMatrixTest(y, p, res, ex);
 		}
 	}
@@ -67,28 +66,28 @@ public class BuiltinConfusionMatrixTest extends AutomatedTestBase {
 	public void test_02() {
 		HashMap<MatrixValue.CellIndex, Double> res = new HashMap<>();
 		res.put(new CellIndex(2, 2), 1.0);
-		runConfusionMatrixTest(new double[][] {{2}}, new double[][] {{2}}, res, LopProperties.ExecType.CP);
+		runConfusionMatrixTest(new double[][] {{2}}, new double[][] {{2}}, res, ExecType.CP);
 	}
 
 	@Test
 	public void test_03() {
 		HashMap<MatrixValue.CellIndex, Double> res = new HashMap<>();
 		res.put(new CellIndex(2, 1), 1.0);
-		runConfusionMatrixTest(new double[][] {{1}}, new double[][] {{2}}, res, LopProperties.ExecType.CP);
+		runConfusionMatrixTest(new double[][] {{1}}, new double[][] {{2}}, res, ExecType.CP);
 	}
 
 	@Test
 	public void test_04() {
 		HashMap<MatrixValue.CellIndex, Double> res = new HashMap<>();
 		res.put(new CellIndex(6, 1), 1.0);
-		runConfusionMatrixTest(new double[][] {{1}}, new double[][] {{6}}, res, LopProperties.ExecType.CP);
+		runConfusionMatrixTest(new double[][] {{1}}, new double[][] {{6}}, res, ExecType.CP);
 	}
 
 	@Test
 	public void test_05() {
 		HashMap<MatrixValue.CellIndex, Double> res = new HashMap<>();
 		res.put(new CellIndex(1, 9), 1.0);
-		runConfusionMatrixTest(new double[][] {{9}}, new double[][] {{1}}, res, LopProperties.ExecType.CP);
+		runConfusionMatrixTest(new double[][] {{9}}, new double[][] {{1}}, res, ExecType.CP);
 	}
 
 	@Test
@@ -100,7 +99,7 @@ public class BuiltinConfusionMatrixTest extends AutomatedTestBase {
 		res.put(new CellIndex(2, 1), 0.25);
 		res.put(new CellIndex(3, 1), 0.25);
 		res.put(new CellIndex(4, 1), 0.25);
-		runConfusionMatrixTest(y, p, res, LopProperties.ExecType.CP);
+		runConfusionMatrixTest(y, p, res, ExecType.CP);
 	}
 
 	@Test
@@ -112,7 +111,7 @@ public class BuiltinConfusionMatrixTest extends AutomatedTestBase {
 		res.put(new CellIndex(1, 2), 1.0);
 		res.put(new CellIndex(1, 3), 1.0);
 		res.put(new CellIndex(1, 4), 1.0);
-		runConfusionMatrixTest(y, p, res, LopProperties.ExecType.CP);
+		runConfusionMatrixTest(y, p, res, ExecType.CP);
 	}
 
 	private void runConfusionMatrixTest(double[][] y, double[][] p, HashMap<MatrixValue.CellIndex, Double> res,
@@ -161,7 +160,7 @@ public class BuiltinConfusionMatrixTest extends AutomatedTestBase {
 	}
 
 	private void runConfusionMatrixExceptionTest(double[][] y, double[][] p) {
-		ExecMode platformOld = setExecMode(LopProperties.ExecType.CP);
+		ExecMode platformOld = setExecMode(ExecType.CP);
 
 		try {
 			loadTestConfiguration(getTestConfiguration(TEST_NAME));

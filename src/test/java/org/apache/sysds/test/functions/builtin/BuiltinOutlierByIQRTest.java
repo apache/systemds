@@ -21,7 +21,7 @@ package org.apache.sysds.test.functions.builtin;
 
 import org.junit.Test;
 import org.apache.sysds.common.Types;
-import org.apache.sysds.lops.LopProperties;
+import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 
@@ -44,56 +44,56 @@ public class BuiltinOutlierByIQRTest extends AutomatedTestBase {
 
 	@Test
 	public void testOutlierRepair0CP() {
-		runOutlierTest(false, 1.5, 0, 10,LopProperties.ExecType.CP);
+		runOutlierTest(false, 1.5, 0, 10,ExecType.CP);
 	}
 
 	@Test
 	public void testOutlierRepair1CP() {
-		runOutlierTest(false, 2, 1, 10,LopProperties.ExecType.CP);
+		runOutlierTest(false, 2, 1, 10,ExecType.CP);
 	}
 
 
 	@Test
 	public void testOutlierRepair0SP() {
-		runOutlierTest(false, 2, 0, 10,LopProperties.ExecType.SPARK);
+		runOutlierTest(false, 2, 0, 10,ExecType.SPARK);
 	}
 
 	@Test
 	public void testOutlierRepair1SP() {
-		runOutlierTest(false, 1.5, 1, 10,LopProperties.ExecType.SPARK);
+		runOutlierTest(false, 1.5, 1, 10,ExecType.SPARK);
 	}
 	@Test
 	public void testOutlierRepair0IterativeCP() {
-		runOutlierTest(false, 1.5, 0, 0,LopProperties.ExecType.CP);
+		runOutlierTest(false, 1.5, 0, 0,ExecType.CP);
 	}
 
 	@Test
 	public void testOutlierRepair1IterativeCP() {
-		runOutlierTest(false, 1.5, 1, 0,LopProperties.ExecType.CP);
+		runOutlierTest(false, 1.5, 1, 0,ExecType.CP);
 	}
 
 
 	@Test
 	public void testOutlierRepair0IterativeSP() {
-		runOutlierTest(false, 1.5, 0, 0,LopProperties.ExecType.SPARK);
+		runOutlierTest(false, 1.5, 0, 0,ExecType.SPARK);
 	}
 
 	@Test
 	public void testOutlierRepair1IterativeSP() {
-		runOutlierTest(false, 1.5, 1, 0,LopProperties.ExecType.SPARK);
+		runOutlierTest(false, 1.5, 1, 0,ExecType.SPARK);
 	}
 
 	@Test
 	public void testOutlierRepair2IterativeCP() {
-		runOutlierTest(false, 1.5, 2, 0,LopProperties.ExecType.CP);
+		runOutlierTest(false, 1.5, 2, 0,ExecType.CP);
 	}
 
 	@Test
 	public void testOutlierRepair2IterativeSP() {
-		runOutlierTest(false, 1.5, 2, 0,LopProperties.ExecType.SPARK);
+		runOutlierTest(false, 1.5, 2, 0,ExecType.SPARK);
 	}
 
-	private void runOutlierTest(boolean sparse, double  k,  int repair, int max_iterations, LopProperties.ExecType instType)
+	private void runOutlierTest(boolean sparse, double  k,  int repair, int max_iterations, ExecType instType)
 	{
 		Types.ExecMode platformOld = setExecMode(instType);
 

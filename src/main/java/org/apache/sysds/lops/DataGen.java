@@ -21,7 +21,7 @@ package org.apache.sysds.lops;
 
 import java.util.HashMap;
 
-import org.apache.sysds.lops.LopProperties.ExecType;
+import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.parser.DataExpression;
 import org.apache.sysds.parser.DataIdentifier;
 import org.apache.sysds.parser.Statement;

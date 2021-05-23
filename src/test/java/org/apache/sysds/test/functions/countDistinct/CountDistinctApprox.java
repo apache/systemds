@@ -19,7 +19,7 @@
 
 package org.apache.sysds.test.functions.countDistinct;
 
-import org.apache.sysds.lops.LopProperties;
+import org.apache.sysds.common.Types.ExecType;
 import org.junit.Test;
 
 public class CountDistinctApprox extends CountDistinctBase {
@@ -34,14 +34,14 @@ public class CountDistinctApprox extends CountDistinctBase {
 
 	@Test
 	public void testXXLarge() {
-		LopProperties.ExecType ex = LopProperties.ExecType.CP;
+		ExecType ex = ExecType.CP;
 		double tolerance = 9000 * percentTolerance;
 		countDistinctTest(9000, 10000, 5000, 0.1, ex, tolerance);
 	}
 
 	@Test
 	public void testSparse500Unique(){
-		LopProperties.ExecType ex = LopProperties.ExecType.CP;
+		ExecType ex = ExecType.CP;
 		double tolerance = 0.00001 + 120 * percentTolerance;
 		countDistinctTest(500, 100, 100000, 0.1, ex, tolerance);
 	}

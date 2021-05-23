@@ -25,7 +25,7 @@ import org.apache.sysds.hops.Hop;
 import org.apache.sysds.hops.LeftIndexingOp;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.hops.rewrite.HopRewriteUtils;
-import org.apache.sysds.lops.LopProperties.ExecType;
+import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.parfor.opt.OptNode.NodeType;
 import org.apache.sysds.runtime.controlprogram.parfor.opt.Optimizer.CostModelType;

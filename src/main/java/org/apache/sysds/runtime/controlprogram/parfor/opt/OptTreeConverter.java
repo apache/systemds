@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.sysds.common.Types;
 import org.apache.sysds.hops.DataOp;
 import org.apache.sysds.hops.FunctionOp;
 import org.apache.sysds.hops.Hop;
@@ -32,7 +33,6 @@ import org.apache.sysds.hops.HopsException;
 import org.apache.sysds.hops.LiteralOp;
 import org.apache.sysds.hops.MultiThreadedHop;
 import org.apache.sysds.hops.OptimizerUtils;
-import org.apache.sysds.lops.LopProperties;
 import org.apache.sysds.parser.DMLProgram;
 import org.apache.sysds.parser.ForStatement;
 import org.apache.sysds.parser.ForStatementBlock;
@@ -72,15 +72,14 @@ import org.apache.sysds.runtime.instructions.spark.SPInstruction;
  * NOTE: currently only one abstract and one runtime plan at a time.
  * This implies that only one parfor optimization can happen at a time.
  */
-public class OptTreeConverter 
-{		
-	
+public class OptTreeConverter
+{
 	//internal configuration flags
 	public static boolean INCLUDE_FUNCTIONS = true;
 	
 	//internal state
-	private static OptTreePlanMappingAbstract _hlMap = null; 
-	private static OptTreePlanMappingRuntime  _rtMap = null;	
+	private static OptTreePlanMappingAbstract _hlMap = null;
+	private static OptTreePlanMappingRuntime  _rtMap = null;
 	
 	static
 	{
@@ -470,8 +469,8 @@ public class OptTreeConverter
 			node.addParam(ParamType.OPSTRING,opstr);
 			
 			//handle execution type
-			LopProperties.ExecType et = (hop.getExecType()!=null) ? 
-					   hop.getExecType() : LopProperties.ExecType.CP;
+			Types.ExecType et = (hop.getExecType()!=null) ? 
+					   hop.getExecType() : Types.ExecType.CP;
 			switch( et ) {
 				case CP:case GPU:
 					node.setExecType(ExecType.CP); break;
@@ -482,7 +481,7 @@ public class OptTreeConverter
 			}
 			
 			//handle degree of parallelism
-			if( et == LopProperties.ExecType.CP && hop instanceof MultiThreadedHop ){
+			if( et == Types.ExecType.CP && hop instanceof MultiThreadedHop ){
 				MultiThreadedHop mtop = (MultiThreadedHop) hop;
 				node.setK( OptimizerUtils.getConstrainedNumThreads(mtop.getMaxNumThreads()) );
 			}

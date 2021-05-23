@@ -23,7 +23,7 @@ import java.util.HashMap;
 import java.util.Map.Entry;
 
  
-import org.apache.sysds.lops.LopProperties.ExecType;
+import org.apache.sysds.common.Types.ExecType;
 
 import org.apache.sysds.parser.Statement;
 import org.apache.sysds.common.Types.DataType;

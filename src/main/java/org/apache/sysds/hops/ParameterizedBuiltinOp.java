@@ -43,7 +43,7 @@ import org.apache.sysds.lops.Data;
 import org.apache.sysds.lops.GroupedAggregate;
 import org.apache.sysds.lops.GroupedAggregateM;
 import org.apache.sysds.lops.Lop;
-import org.apache.sysds.lops.LopProperties.ExecType;
+import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.lops.ParameterizedBuiltin;
 import org.apache.sysds.parser.DMLProgram;
 import org.apache.sysds.parser.Statement;

@@ -24,8 +24,8 @@ import java.util.HashMap;
 import org.junit.Test;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types;
+import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.hops.OptimizerUtils;
-import org.apache.sysds.lops.LopProperties;
 import org.apache.sysds.runtime.matrix.data.MatrixValue;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
@@ -54,44 +54,44 @@ public class BuiltinL2SVMTest extends AutomatedTestBase {
 
 	@Test
 	public void testL2SVMDense() {
-		runL2SVMTest(false, false, eps, 1.0, max_iter, LopProperties.ExecType.CP);
+		runL2SVMTest(false, false, eps, 1.0, max_iter, ExecType.CP);
 	}
 	@Test
 	public void testL2SVMSparse() {
-		runL2SVMTest(true, false, eps, 1.0, max_iter, LopProperties.ExecType.CP);
+		runL2SVMTest(true, false, eps, 1.0, max_iter, ExecType.CP);
 	}
 
 	@Test
 	public void testL2SVMIntercept() {
-		runL2SVMTest(true,true, eps, 1.0, max_iter, LopProperties.ExecType.SPARK);
+		runL2SVMTest(true,true, eps, 1.0, max_iter, ExecType.SPARK);
 	}
 
 	@Test
 	public void testL2SVMDenseIntercept() {
-		 runL2SVMTest(false,true, 1, 1.0, max_iter, LopProperties.ExecType.CP);
+		 runL2SVMTest(false,true, 1, 1.0, max_iter, ExecType.CP);
 	}
 
 	@Test
 	public void testL2SVMSparseLambda2() {
-		runL2SVMTest(true,true, 1, 2.0, max_iter, LopProperties.ExecType.CP);
+		runL2SVMTest(true,true, 1, 2.0, max_iter, ExecType.CP);
 	}
 
 	@Test
 	public void testL2SVMSparseLambda100CP() {
-		runL2SVMTest(true,true, 1, 100, max_iter, LopProperties.ExecType.CP);
+		runL2SVMTest(true,true, 1, 100, max_iter, ExecType.CP);
 	}
 	@Test
 	public void testL2SVMSparseLambda100Spark() {
-		runL2SVMTest(true,true, 1, 100, max_iter, LopProperties.ExecType.SPARK);
+		runL2SVMTest(true,true, 1, 100, max_iter, ExecType.SPARK);
 	}
 
 	@Test
 	public void testL2SVMIteration() {
-		runL2SVMTest(true,true, 1, 2.0, 100, LopProperties.ExecType.CP);
+		runL2SVMTest(true,true, 1, 2.0, 100, ExecType.CP);
 	}
 
 	private void runL2SVMTest(boolean sparse, boolean intercept, double eps,
-		double lambda, int run, LopProperties.ExecType instType)
+		double lambda, int run, ExecType instType)
 	{
 		Types.ExecMode platformOld = setExecMode(instType);
 

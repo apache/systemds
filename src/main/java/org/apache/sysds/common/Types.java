@@ -55,6 +55,9 @@ public class Types
 		public boolean isFrame() {
 			return this == FRAME;
 		}
+		public boolean isMatrixOrFrame() {
+			return isMatrix() | isFrame();
+		}
 		public boolean isScalar() {
 			return this == SCALAR;
 		}

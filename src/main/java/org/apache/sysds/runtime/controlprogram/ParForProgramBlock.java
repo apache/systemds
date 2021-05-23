@@ -37,6 +37,7 @@ import org.apache.sysds.parser.ParForStatementBlock.ResultVar;
 import org.apache.sysds.parser.StatementBlock;
 import org.apache.sysds.parser.VariableSet;
 import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
@@ -1143,8 +1144,8 @@ public class ParForProgramBlock extends ForProgramBlock
 			for (String key : ec.getVariables().keySet() ) {
 				if( varsRead.containsVariable(key) && !excludeNames.contains(key) ) {
 					Data d = ec.getVariable(key);
-					if( d.getDataType() == DataType.MATRIX )
-						((MatrixObject)d).exportData(_replicationExport);
+					if( d.getDataType().isMatrixOrFrame() )
+						((CacheableData<?>)d).exportData(_replicationExport);
 				}
 			}
 		}
@@ -1153,8 +1154,8 @@ public class ParForProgramBlock extends ForProgramBlock
 			for (String key : ec.getVariables().keySet() ) {
 				if( !excludeNames.contains(key) ) {
 					Data d = ec.getVariable(key);
-					if( d.getDataType() == DataType.MATRIX )
-						((MatrixObject)d).exportData(_replicationExport);
+					if( d.getDataType().isMatrixOrFrame() )
+						((CacheableData<?>)d).exportData(_replicationExport);
 				}
 			}
 		}

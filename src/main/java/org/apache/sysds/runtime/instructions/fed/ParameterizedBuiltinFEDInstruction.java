@@ -157,7 +157,7 @@ public class ParameterizedBuiltinFEDInstruction extends ComputationFEDInstructio
 			transformDecode(ec);
 		else if(opcode.equalsIgnoreCase("transformapply"))
 			transformApply(ec);
-		if(opcode.equals("tokenize"))
+		else if(opcode.equals("tokenize"))
 			tokenize(ec);
 		else {
 			throw new DMLRuntimeException("Unknown opcode : " + opcode);

@@ -78,7 +78,7 @@ import org.apache.sysds.runtime.util.DataConverter;
 import org.apache.sysds.runtime.util.UtilFunctions;
 import org.junit.Assert;
 
-import jcuda.runtime.JCuda;
+//import jcuda.runtime.JCuda;
 
 
 /**
@@ -646,6 +646,22 @@ public class TestUtils
 		return Double.NaN;
 	}
 
+	public static double[][] readExpectedResource(String file, int rows, int cols) throws IOException {
+		String file2 = "src/test/resources/expected/" + file;
+		double[][] ret = new double[rows][cols];
+		try(BufferedReader br = new BufferedReader(new FileReader(file2))) {
+			String line = null;
+			int i = 0;
+			while((line = br.readLine()) != null) {
+				String[] tmp = line.trim().split(" ");
+				for (int j=0; j<tmp.length; j++)
+					ret[i][j] = Double.parseDouble(tmp[j]);
+				i++;
+			}
+		}
+		return ret;
+	}
+	
 	public static String processMultiPartCSVForR(String csvFile) throws IOException {
 		File csv = new File(csvFile);
 		if (csv.isDirectory()) {
@@ -1160,46 +1176,23 @@ public class TestUtils
 	 * @param matrix
 	 * @return
 	 */
-	public static double[][] convertHashMapToDoubleArray(HashMap <CellIndex, Double> matrix)
-	{
+	public static double[][] convertHashMapToDoubleArray(HashMap <CellIndex, Double> matrix) {
 		int max_rows = -1, max_cols= -1;
-		for(CellIndex ci :matrix.keySet())
-		{
-			if(ci.row > max_rows)
-			{
-				max_rows = ci.row;
-			}
-			if(ci.column > max_cols)
-			{
-				max_cols = ci.column;
-			}
+		for(CellIndex ix : matrix.keySet()) {
+			max_rows = Math.max(max_rows, ix.row);
+			max_cols = Math.max(max_cols, ix.column);
 		}
-
-		double [][] ret_arr = new double[max_rows][max_cols];
-
-		for(CellIndex ci:matrix.keySet())
-		{
-			int i = ci.row-1;
-			int j = ci.column-1;
-			ret_arr[i][j] = matrix.get(ci);
-		}
-
-		return ret_arr;
-
+		return convertHashMapToDoubleArray(matrix, max_rows, max_cols);
 	}
 
-	public static double[][] convertHashMapToDoubleArray(HashMap <CellIndex, Double> matrix, int rows, int cols)
-	{
+	public static double[][] convertHashMapToDoubleArray(HashMap<CellIndex, Double> matrix, int rows, int cols) {
 		double [][] ret_arr = new double[rows][cols];
-
-		for(CellIndex ci:matrix.keySet()) {
-			int i = ci.row-1;
-			int j = ci.column-1;
-			ret_arr[i][j] = matrix.get(ci);
+		for(Entry<CellIndex, Double> e : matrix.entrySet()) {
+			int i = e.getKey().row-1;
+			int j = e.getKey().column-1;
+			ret_arr[i][j] = e.getValue();
 		}
-
 		return ret_arr;
-
 	}
 
 	/**
@@ -3070,7 +3063,9 @@ public class TestUtils
 	
 	public static int isGPUAvailable() {
 		// returns cudaSuccess if at least one gpu is available
-		final int[] deviceCount = new int[1];
-		return JCuda.cudaGetDeviceCount(deviceCount);
+		//final int[] deviceCount = new int[1];
+		//return JCuda.cudaGetDeviceCount(deviceCount);
+		// FIXME: Fails to skip if gpu available but no libraries
+		return 1; //return false for now
 	}
 }

@@ -341,7 +341,6 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction 
 			int decimal = (getParam("decimal") != null) ? Integer.parseInt(getParam("decimal")) : TOSTRING_DECIMAL;
 			boolean sparse = (getParam("sparse") != null) ? Boolean.parseBoolean(getParam("sparse")) : TOSTRING_SPARSE;
 			String separator = (getParam("sep") != null) ? getParam("sep") : TOSTRING_SEPARATOR;
-			String indexSeparator = (getParam("indSep") != null) ? getParam("indSep") : TOSTRING_SEPARATOR;
 			String lineSeparator = (getParam("linesep") != null) ? getParam("linesep") : TOSTRING_LINESEPARATOR;
 
 			// get input matrix/frame and convert to string

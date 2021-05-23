@@ -28,11 +28,8 @@ from systemds.operator import OperationNode, Matrix
 from systemds.script_building.dag import OutputType
 from systemds.utils.consts import VALID_INPUT_TYPES
 
-def smote(X: OperationNode, mask: OperationNode, **kwargs: Dict[str, VALID_INPUT_TYPES]) -> Matrix:
+def smote(X: OperationNode, mask: OperationNode, **kwargs: Dict[str, VALID_INPUT_TYPES]):
     
-    
-    X._check_matrix_op()
-    mask._check_matrix_op()
     params_dict = {'X':X, 'mask':mask}
     params_dict.update(kwargs)
     return Matrix(X.sds_context, 'smote', named_input_nodes=params_dict)

@@ -28,12 +28,8 @@ from systemds.operator import OperationNode, Matrix
 from systemds.script_building.dag import OutputType
 from systemds.utils.consts import VALID_INPUT_TYPES
 
-def lmPredict(X: OperationNode, B: OperationNode, ytest: OperationNode, **kwargs: Dict[str, VALID_INPUT_TYPES]) -> Matrix:
+def lmPredict(X: OperationNode, B: OperationNode, ytest: OperationNode, **kwargs: Dict[str, VALID_INPUT_TYPES]):
     
-    
-    X._check_matrix_op()
-    B._check_matrix_op()
-    ytest._check_matrix_op()
     params_dict = {'X':X, 'B':B, 'ytest':ytest}
     params_dict.update(kwargs)
     return Matrix(X.sds_context, 'lmPredict', named_input_nodes=params_dict)

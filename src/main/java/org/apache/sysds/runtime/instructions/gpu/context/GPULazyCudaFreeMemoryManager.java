@@ -51,7 +51,7 @@ public class GPULazyCudaFreeMemoryManager {
 	 * @param size size in bytes
 	 * @return pointer
 	 */
-	public Pointer getRmvarPointer(String opcode, long size) {
+	synchronized public Pointer getRmvarPointer(String opcode, long size) {
 		if (rmvarGPUPointers.containsKey(size)) {
 			if(LOG.isTraceEnabled())
 				LOG.trace("Getting rmvar-ed pointers for size:" + size);
@@ -65,11 +65,11 @@ public class GPULazyCudaFreeMemoryManager {
 		}
 	}
 	
-	public Set<Pointer> getAllPointers() {
+	synchronized public Set<Pointer> getAllPointers() {
 		return rmvarGPUPointers.values().stream().flatMap(ptrs -> ptrs.stream()).collect(Collectors.toSet());
 	}
 	
-	public void clearAll() {
+	synchronized public void clearAll() {
 		Set<Pointer> toFree = new HashSet<>();
 		for(Set<Pointer> ptrs : rmvarGPUPointers.values()) {
 			toFree.addAll(ptrs);
@@ -80,7 +80,7 @@ public class GPULazyCudaFreeMemoryManager {
 		}
 	}
 	
-	public Pointer getRmvarPointerMinSize(String opcode, long minSize) throws DMLRuntimeException {
+	synchronized public Pointer getRmvarPointerMinSize(String opcode, long minSize) throws DMLRuntimeException {
 		Optional<Long> toClear = rmvarGPUPointers.entrySet().stream().filter(e -> e.getValue().size() > 0).map(e -> e.getKey())
 				.filter(size -> size >= minSize).min((s1, s2) -> s1 < s2 ? -1 : 1);
 		if(toClear.isPresent()) {
@@ -145,7 +145,7 @@ public class GPULazyCudaFreeMemoryManager {
 	 * @param size size of the pointer
 	 * @param toFree pointer
 	 */
-	public void add(long size, Pointer toFree) {
+	synchronized public void add(long size, Pointer toFree) {
 		Set<Pointer> freeList = rmvarGPUPointers.get(size);
 		if (freeList == null) {
 			freeList = new HashSet<>();
@@ -162,7 +162,7 @@ public class GPULazyCudaFreeMemoryManager {
 	 * @param size size in bytes
 	 * @param ptr pointer to be removed
 	 */
-	public void removeIfPresent(long size, Pointer ptr) {
+	synchronized public void removeIfPresent(long size, Pointer ptr) {
 		if(rmvarGPUPointers.containsKey(size) && rmvarGPUPointers.get(size).contains(ptr)) {
 			rmvarGPUPointers.get(size).remove(ptr);
 			if (rmvarGPUPointers.get(size).isEmpty())

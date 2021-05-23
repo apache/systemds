@@ -20,6 +20,9 @@
 package org.apache.sysds.runtime.instructions.fed;
 
 import org.apache.sysds.runtime.codegen.SpoofCellwise;
+import org.apache.sysds.runtime.codegen.SpoofMultiAggregate;
+import org.apache.sysds.runtime.codegen.SpoofOuterProduct;
+import org.apache.sysds.runtime.codegen.SpoofRowwise;
 import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysds.runtime.controlprogram.caching.FrameObject;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
@@ -27,10 +30,12 @@ import org.apache.sysds.runtime.controlprogram.caching.TensorObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.federated.FederationMap.FType;
 import org.apache.sysds.runtime.instructions.Instruction;
+import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.AggregateBinaryCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.AggregateTernaryCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.AggregateUnaryCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.BinaryCPInstruction;
+import org.apache.sysds.runtime.instructions.cp.BinaryFrameScalarCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.CtableCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.Data;
 import org.apache.sysds.runtime.instructions.cp.IndexingCPInstruction;
@@ -46,6 +51,7 @@ import org.apache.sysds.runtime.instructions.cp.UnaryCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.UnaryMatrixCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.VariableCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.VariableCPInstruction.VariableOperationCode;
+import org.apache.sysds.runtime.instructions.fed.FEDInstruction.FederatedOutput;
 import org.apache.sysds.runtime.instructions.spark.AggregateUnarySPInstruction;
 import org.apache.sysds.runtime.instructions.spark.AppendGAlignedSPInstruction;
 import org.apache.sysds.runtime.instructions.spark.AppendGSPInstruction;
@@ -86,7 +92,8 @@ public class FEDInstructionUtils {
 				MatrixObject mo1 = ec.getMatrixObject(instruction.input1);
 				MatrixObject mo2 = ec.getMatrixObject(instruction.input2);
 				if (mo1.isFederated(FType.ROW) || mo2.isFederated(FType.ROW) || mo1.isFederated(FType.COL)) {
-					fedinst = AggregateBinaryFEDInstruction.parseInstruction(inst.getInstructionString());
+					fedinst = AggregateBinaryFEDInstruction.parseInstruction(
+						InstructionUtils.concatOperands(inst.getInstructionString(), FederatedOutput.NONE.name()));
 				}
 			}
 		}
@@ -110,7 +117,8 @@ public class FEDInstructionUtils {
 				CacheableData<?> mo = ec.getCacheableData(rinst.input1);
 
 				if((mo instanceof MatrixObject || mo instanceof FrameObject) && mo.isFederated() )
-					fedinst = ReorgFEDInstruction.parseInstruction(rinst.getInstructionString());
+					fedinst = ReorgFEDInstruction.parseInstruction(
+						InstructionUtils.concatOperands(rinst.getInstructionString(),FederatedOutput.NONE.name()));
 			}
 			else if(instruction.input1 != null && instruction.input1.isMatrix()
 				&& ec.containsVariable(instruction.input1)) {
@@ -126,7 +134,8 @@ public class FEDInstructionUtils {
 					fedinst = ReshapeFEDInstruction.parseInstruction(inst.getInstructionString());
 				else if(inst instanceof AggregateUnaryCPInstruction  && mo1.isFederated() &&
 					((AggregateUnaryCPInstruction) instruction).getAUType() == AggregateUnaryCPInstruction.AUType.DEFAULT)
-					fedinst = AggregateUnaryFEDInstruction.parseInstruction(inst.getInstructionString());
+					fedinst = AggregateUnaryFEDInstruction.parseInstruction(
+						InstructionUtils.concatOperands(inst.getInstructionString(),FederatedOutput.NONE.name()));
 				else if(inst instanceof UnaryMatrixCPInstruction && mo1.isFederated()) {
 					if(UnaryMatrixFEDInstruction.isValidOpcode(inst.getOpcode()) &&
 						!(inst.getOpcode().equalsIgnoreCase("ucumk+*") && mo1.isFederated(FType.COL)))
@@ -146,7 +155,11 @@ public class FEDInstructionUtils {
 					ec.getMatrixObject(instruction.input2).isFederated(FType.ROW)))
 					fedinst = CovarianceFEDInstruction.parseInstruction(inst.getInstructionString());
 				else
-					fedinst = BinaryFEDInstruction.parseInstruction(inst.getInstructionString());
+					fedinst = BinaryFEDInstruction.parseInstruction(
+						InstructionUtils.concatOperands(inst.getInstructionString(),FederatedOutput.NONE.name()));
+			} else if(inst.getOpcode().equals("_map") && inst instanceof BinaryFrameScalarCPInstruction && !inst.getInstructionString().contains("UtilFunctions")
+				&& instruction.input1.isFrame() && ec.getFrameObject(instruction.input1).isFederated()) {
+				fedinst = BinaryFrameScalarFEDInstruction.parseInstruction(InstructionUtils.concatOperands(inst.getInstructionString(),FederatedOutput.NONE.name()));
 			}
 		}
 		else if( inst instanceof ParameterizedBuiltinCPInstruction ) {
@@ -220,8 +233,12 @@ public class FEDInstructionUtils {
 		}
 		else if(inst instanceof SpoofCPInstruction) {
 			SpoofCPInstruction instruction = (SpoofCPInstruction) inst;
-			if(instruction.getOperatorClass().getSuperclass() == SpoofCellwise.class && instruction.isFederated(ec))
+			Class<?> scla = instruction.getOperatorClass().getSuperclass();
+			if(((scla == SpoofCellwise.class || scla == SpoofMultiAggregate.class
+						|| scla == SpoofOuterProduct.class) && instruction.isFederated(ec))
+				|| (scla == SpoofRowwise.class && instruction.isFederated(ec, FType.ROW))) {
 				fedinst = SpoofFEDInstruction.parseInstruction(instruction.getInstructionString());
+			}
 		}
 		else if(inst instanceof CtableCPInstruction) {
 			CtableCPInstruction cinst = (CtableCPInstruction) inst;
@@ -269,7 +286,8 @@ public class FEDInstructionUtils {
 				AggregateUnarySPInstruction instruction = (AggregateUnarySPInstruction) inst;
 				Data data = ec.getVariable(instruction.input1);
 				if(data instanceof MatrixObject && ((MatrixObject) data).isFederated())
-					fedinst = AggregateUnaryFEDInstruction.parseInstruction(inst.getInstructionString());
+					fedinst = AggregateUnaryFEDInstruction.parseInstruction(
+						InstructionUtils.concatOperands(inst.getInstructionString(),FederatedOutput.NONE.name()));
 			}
 		}
 		else if(inst instanceof BinarySPInstruction) {
@@ -303,7 +321,8 @@ public class FEDInstructionUtils {
 				Data data = ec.getVariable(instruction.input1);
 				if((data instanceof MatrixObject && ((MatrixObject)data).isFederated())
 					|| (data instanceof TensorObject && ((TensorObject)data).isFederated())) {
-					fedinst = BinaryFEDInstruction.parseInstruction(inst.getInstructionString());
+					fedinst = BinaryFEDInstruction.parseInstruction(
+						InstructionUtils.concatOperands(inst.getInstructionString(),FederatedOutput.NONE.name()));
 				}
 			}
 		}
@@ -324,7 +343,10 @@ public class FEDInstructionUtils {
 		}
 		else if(inst instanceof SpoofSPInstruction) {
 			SpoofSPInstruction instruction = (SpoofSPInstruction) inst;
-			if(instruction.getOperatorClass().getSuperclass() == SpoofCellwise.class && instruction.isFederated(ec)) {
+			Class<?> scla = instruction.getOperatorClass().getSuperclass();
+			if(((scla == SpoofCellwise.class || scla == SpoofMultiAggregate.class
+						|| scla == SpoofOuterProduct.class) && instruction.isFederated(ec))
+				|| (scla == SpoofRowwise.class && instruction.isFederated(ec, FType.ROW))) {
 				fedinst = SpoofFEDInstruction.parseInstruction(inst.getInstructionString());
 			}
 		}

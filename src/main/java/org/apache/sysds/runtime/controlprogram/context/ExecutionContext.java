@@ -36,6 +36,7 @@ import org.apache.sysds.runtime.controlprogram.caching.FrameObject;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject.UpdateType;
 import org.apache.sysds.runtime.controlprogram.caching.TensorObject;
+import org.apache.sysds.runtime.controlprogram.federated.FederationMap.FType;
 import org.apache.sysds.runtime.data.TensorBlock;
 import org.apache.sysds.runtime.instructions.Instruction;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
@@ -788,6 +789,20 @@ public class ExecutionContext {
 		catch(Exception ex) {
 			throw new DMLRuntimeException(ex);
 		}
+	}
+	
+	public boolean isFederated(CPOperand input) {
+		Data data = getVariable(input);
+		if(data instanceof CacheableData && ((CacheableData<?>) data).isFederated())
+			return true;
+		return false;
+	}
+	
+	public boolean isFederated(CPOperand input, FType type) {
+		Data data = getVariable(input);
+		if(data instanceof CacheableData && ((CacheableData<?>) data).isFederated(type))
+			return true;
+		return false;
 	}
 
 	public void traceLineage(Instruction inst) {

@@ -44,6 +44,7 @@ public class GPUFullReuseTest extends AutomatedTestBase{
 	@BeforeClass
 	public static void checkGPU() {
 		// Skip all the tests if no GPU is available
+		// FIXME: Fails to skip if gpu available but no libraries
 		Assume.assumeTrue(TestUtils.isGPUAvailable() == cudaError.cudaSuccess);
 	}
 	

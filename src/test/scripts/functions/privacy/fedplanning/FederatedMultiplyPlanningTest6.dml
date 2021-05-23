@@ -20,12 +20,10 @@
 #-------------------------------------------------------------
 
 X = federated(addresses=list($X1, $X2),
-ranges=list(list(0, 0), list($r / 2, $c), list($r / 2, 0), list($r, $c)))
+              ranges=list(list(0, 0), list($r, $c / 2), list(0, $c / 2), list($r, $c)))
 Y = federated(addresses=list($Y1, $Y2),
-ranges=list(list(0, 0), list($r/2, $c), list($r / 2, 0), list($r, $c)))
-W = rand(rows=$r, cols=$c, min=0, max=1, pdf='uniform', seed=5)
-s = 3.5
-Z0 = W + s * X
-Z1 = 1 - Y * Z0
-Z = sum(Z1)
+              ranges=list(list(0, 0), list($c / 2, 1), list($c / 2, 0), list($c, 1)))
+P = rand(rows = 1, cols = ncol(X), min=0, max=1, pdf='uniform', seed=6)
+Z0 = X %*% Y
+Z = Z0 %*% P
 write(Z, $Z)

@@ -28,10 +28,8 @@ from systemds.operator import OperationNode, Matrix
 from systemds.script_building.dag import OutputType
 from systemds.utils.consts import VALID_INPUT_TYPES
 
-def scale(X: OperationNode, center: bool, scale: bool) -> Matrix:
+def scale(X: OperationNode, center: bool, scale: bool):
     
-    
-    X._check_matrix_op()
     params_dict = {'X':X, 'center':center, 'scale':scale}
     return OperationNode(X.sds_context, 'scale', named_input_nodes=params_dict, output_type=OutputType.LIST, number_of_outputs=3, output_types=[OutputType.MATRIX, OutputType.MATRIX, OutputType.MATRIX])
 

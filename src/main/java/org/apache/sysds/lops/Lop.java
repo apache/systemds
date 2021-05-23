@@ -25,6 +25,7 @@ import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.lops.LopProperties.ExecType;
 import org.apache.sysds.lops.compile.Dag;
+import org.apache.sysds.runtime.instructions.fed.FEDInstruction.FederatedOutput;
 import org.apache.sysds.runtime.privacy.PrivacyConstraint;
 
 
@@ -119,7 +120,7 @@ public abstract class Lop
 	 * If it is true, the output should be kept at federated sites.
 	 * If it is false, the output should be retrieved by the coordinator.
 	 */
-	protected boolean federatedOutput = false;
+	protected FederatedOutput _fedOutput = null;
 	
 	/**
 	 * refers to #lops whose input is equal to the output produced by this lop.
@@ -294,8 +295,8 @@ public abstract class Lop
 		return privacyConstraint;
 	}
 
-	public void setFederatedOutput(boolean federatedOutput){
-		this.federatedOutput = federatedOutput;
+	public void setFederatedOutput(FederatedOutput fedOutput){
+		_fedOutput = fedOutput;
 	}
 	
 	public void setConsumerCount(int cc) {

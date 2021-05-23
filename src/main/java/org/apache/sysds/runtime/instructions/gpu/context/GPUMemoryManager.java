@@ -43,6 +43,7 @@ import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.instructions.gpu.GPUInstruction;
 import org.apache.sysds.runtime.lineage.LineageCacheConfig;
 import org.apache.sysds.runtime.lineage.LineageCacheEntry;
+import org.apache.sysds.runtime.lineage.LineageCacheStatistics;
 import org.apache.sysds.runtime.lineage.LineageGPUCacheEviction;
 import org.apache.sysds.utils.GPUStatistics;
 
@@ -355,7 +356,7 @@ public class GPUMemoryManager {
 				// Copy from device cache to CPU lineage cache if not already copied
 				LineageGPUCacheEviction.copyToHostCache(le, opcode, copied);
 				if (DMLScript.STATISTICS)
-					GPUStatistics.cudaEvictCount.increment();
+					LineageCacheStatistics.incrementGpuSyncEvicts();
 
 				// For all the other objects, remove and clear data (only once)
 				nextgpuObj = headGpuObj;

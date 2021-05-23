@@ -36,10 +36,15 @@ public class LineageCacheStatistics {
 	private static final LongAdder _numWritesFS     = new LongAdder();
 	private static final LongAdder _numMemDel       = new LongAdder();
 	private static final LongAdder _numRewrites     = new LongAdder();
-	private static final LongAdder _ctimeFSRead     = new LongAdder(); //in nano sec
-	private static final LongAdder _ctimeFSWrite    = new LongAdder(); //in nano sec
-	private static final LongAdder _ctimeSaved      = new LongAdder(); //in nano sec
-	private static final LongAdder _ctimeMissed     = new LongAdder(); //in nano sec
+	// All the time measurements are in nanoseconds
+	private static final LongAdder _ctimeFSRead     = new LongAdder();
+	private static final LongAdder _ctimeFSWrite    = new LongAdder();
+	private static final LongAdder _ctimeSaved      = new LongAdder();
+	private static final LongAdder _ctimeMissed     = new LongAdder();
+	// Bellow entries are for specific to gpu lineage cache
+	private static final LongAdder _numHitsGpu      = new LongAdder();
+	private static final LongAdder _numAsyncEvictGpu= new LongAdder();
+	private static final LongAdder _numSyncEvictGpu = new LongAdder();
 
 	public static void reset() {
 		_numHitsMem.reset();
@@ -56,6 +61,9 @@ public class LineageCacheStatistics {
 		_ctimeFSWrite.reset();
 		_ctimeSaved.reset();
 		_ctimeMissed.reset();
+		_numHitsGpu.reset();
+		_numAsyncEvictGpu.reset();
+		_numSyncEvictGpu.reset();
 	}
 	
 	public static void incrementMemHits() {
@@ -146,6 +154,21 @@ public class LineageCacheStatistics {
 		return _numHitsSB.longValue();
 	}
 
+	public static void incrementGpuHits() {
+		// Number of times single instruction results are reused in the gpu.
+		_numHitsGpu.increment();
+	}
+
+	public static void incrementGpuAsyncEvicts() {
+		// Number of gpu cache entries moved to cpu cache via the background thread
+		_numAsyncEvictGpu.increment();
+	}
+
+	public static void incrementGpuSyncEvicts() {
+		// Number of gpu cache entries moved to cpu cache during malloc 
+		_numSyncEvictGpu.increment();
+	}
+
 	public static String displayHits() {
 		StringBuilder sb = new StringBuilder();
 		sb.append(_numHitsMem.longValue());
@@ -194,6 +217,16 @@ public class LineageCacheStatistics {
 		sb.append(String.format("%.3f", ((double)_ctimeSaved.longValue())/1000000000)); //in sec
 		sb.append("/");
 		sb.append(String.format("%.3f", ((double)_ctimeMissed.longValue())/1000000000)); //in sec
+		return sb.toString();
+	}
+
+	public static String displayGpuStats() {
+		StringBuilder sb = new StringBuilder();
+		sb.append(_numHitsGpu.longValue());
+		sb.append("/");
+		sb.append(_numAsyncEvictGpu.longValue());
+		sb.append("/");
+		sb.append(_numSyncEvictGpu.longValue());
 		return sb.toString();
 	}
 }

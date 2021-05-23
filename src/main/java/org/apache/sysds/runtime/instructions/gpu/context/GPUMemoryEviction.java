@@ -25,6 +25,7 @@ import java.util.List;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.runtime.lineage.LineageCacheConfig;
 import org.apache.sysds.runtime.lineage.LineageCacheEntry;
+import org.apache.sysds.runtime.lineage.LineageCacheStatistics;
 import org.apache.sysds.runtime.lineage.LineageGPUCacheEviction;
 import org.apache.sysds.utils.GPUStatistics;
 
@@ -122,7 +123,7 @@ public class GPUMemoryEviction implements Runnable
 				// This doesn't guarantee allocation due to fragmented freed memory
 			//	A = cudaMallocNoWarn(tmpA, size, null); 
 			if (DMLScript.STATISTICS) {
-				GPUStatistics.cudaEvictCount.increment();
+				LineageCacheStatistics.incrementGpuAsyncEvicts();
 			}
 			count++;
 		}

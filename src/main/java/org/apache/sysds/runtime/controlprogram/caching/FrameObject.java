@@ -272,7 +272,9 @@ public class FrameObject extends CacheableData<FrameBlock>
 	protected void writeBlobToHDFS(String fname, String ofmt, int rep, FileFormatProperties fprop)
 		throws IOException, DMLRuntimeException 
 	{
-		FileFormat fmt = FileFormat.safeValueOf(ofmt);
+		MetaDataFormat iimd = (MetaDataFormat) _metaData;
+		FileFormat fmt = (ofmt != null ? FileFormat.safeValueOf(ofmt) : iimd.getFileFormat());
+		
 		FrameWriter writer = FrameWriterFactory.createFrameWriter(fmt, fprop);
 		writer.writeFrameToHDFS(_data, fname,  getNumRows(), getNumColumns());
 	}

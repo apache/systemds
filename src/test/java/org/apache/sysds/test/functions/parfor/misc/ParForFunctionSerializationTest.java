@@ -69,9 +69,8 @@ public class ParForFunctionSerializationTest extends AutomatedTestBase
 		
 		fullRScriptName = HOME + TEST_NAME1 + ".R";
 		rCmd = "Rscript" + " " + fullRScriptName + " " + inputDir() + " " + expectedDir();
-
-		long seed = System.nanoTime();
-		double[][] V = getRandomMatrix(rows, cols, 0, 1, sparsity, seed);
+		
+		double[][] V = getRandomMatrix(rows, cols, 0, 1, sparsity, 7);
 		writeInputMatrix("V", V, true);
 
 		boolean exceptionExpected = false;

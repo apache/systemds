@@ -28,9 +28,14 @@ from systemds.operator import OperationNode, Matrix
 from systemds.script_building.dag import OutputType
 from systemds.utils.consts import VALID_INPUT_TYPES
 
-def naiveBayes(D: OperationNode, C: OperationNode, **kwargs: Dict[str, VALID_INPUT_TYPES]):
+def naiveBayes(D: OperationNode, C: OperationNode, **kwargs: Dict[str, VALID_INPUT_TYPES]) -> Matrix:
     
+    
+    D._check_matrix_op()
+    C._check_matrix_op()
     params_dict = {'D':D, 'C':C}
     params_dict.update(kwargs)
     return OperationNode(D.sds_context, 'naiveBayes', named_input_nodes=params_dict, output_type=OutputType.LIST, number_of_outputs=2, output_types=[OutputType.MATRIX, OutputType.MATRIX])
+
+
     

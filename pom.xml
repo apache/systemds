@@ -69,8 +69,8 @@
 
 	<scm>
 		<developerConnection>scm:git:https://github.com/apache/systemds.git</developerConnection>
-		<tag>HEAD</tag>
-	</scm>
+	  <tag>HEAD</tag>
+  </scm>
 
 	<build>
 		<!-- Adds scripts to main jar, in-memory jar, sources jar, and standalone jar -->
@@ -774,10 +774,10 @@
 			<exclusions>
 				<exclusion>
 					<!-- always exclude recursive fetching of native libraries -->
-					<groupId>org.jcuda</groupId>
+			  		<groupId>org.jcuda</groupId>
 					<artifactId>jcuda-natives</artifactId>
 				</exclusion>
-			</exclusions>
+		  	</exclusions>
 		</dependency>
 
 		<dependency>
@@ -788,10 +788,10 @@
 			<exclusions>
 				<exclusion>
 					<!-- always exclude recursive fetching of native libraries -->
-					<groupId>org.jcuda</groupId>
+			  		<groupId>org.jcuda</groupId>
 					<artifactId>jcublas-natives</artifactId>
 				</exclusion>
-			</exclusions>
+		  	</exclusions>
 		</dependency>
 
 		<dependency>
@@ -802,10 +802,10 @@
 			<exclusions>
 				<exclusion>
 					<!-- always exclude recursive fetching of native libraries -->
-					<groupId>org.jcuda</groupId>
+			  		<groupId>org.jcuda</groupId>
 					<artifactId>jcusparse-natives</artifactId>
 				</exclusion>
-			</exclusions>
+		  	</exclusions>
 		</dependency>
 
 		<dependency>
@@ -816,10 +816,10 @@
 			<exclusions>
 				<exclusion>
 					<!-- always exclude recursive fetching of native libraries -->
-					<groupId>org.jcuda</groupId>
+			  		<groupId>org.jcuda</groupId>
 					<artifactId>jcusolver-natives</artifactId>
 				</exclusion>
-			</exclusions>
+		  	</exclusions>
 		</dependency>
 
 		<dependency>
@@ -830,10 +830,10 @@
 			<exclusions>
 				<exclusion>
 					<!-- always exclude recursive fetching of native libraries -->
-					<groupId>org.jcuda</groupId>
+			  		<groupId>org.jcuda</groupId>
 					<artifactId>jcudnn-natives</artifactId>
 				</exclusion>
-			</exclusions>
+		  	</exclusions>
 		</dependency>
 
 		<!-- for all platforms, to be included in the extra jar -->

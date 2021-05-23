@@ -519,8 +519,7 @@ public class Types
 		JSONL,  // text nested JSON (Line) representation
 		BINARY, // binary block representation (dense/sparse/ultra-sparse)
 		FEDERATED, // A federated matrix
-		PROTO, // protocol buffer representation
-		HDF5; // Hierarchical Data Format (HDF)
+		PROTO;  // protocol buffer representation
 		
 		public boolean isIJV() {
 			return this == TEXT || this == MM;

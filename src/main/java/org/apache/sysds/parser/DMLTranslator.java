@@ -1058,10 +1058,6 @@ public class DMLTranslator
 					case FEDERATED:
 						ae.setOutputParams(ae.getDim1(), ae.getDim2(), -1, ae.getUpdateType(), -1);
 						break;
-					case HDF5:
-						// write output in HDF5 format
-							ae.setOutputParams(ae.getDim1(), ae.getDim2(), ae.getNnz(), ae.getUpdateType(), ConfigurationManager.getBlocksize());
-							break;
 						default:
 							throw new LanguageException("Unrecognized file format: " + ae.getFileFormat());
 					}

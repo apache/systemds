@@ -22,8 +22,7 @@ package org.apache.sysds.test.functions.builtin;
 import java.util.HashMap;
 
 import org.apache.sysds.common.Types;
-import org.apache.sysds.lops.LopProperties;
-import org.apache.sysds.lops.LopProperties.ExecType;
+import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.runtime.DMLScriptException;
 import org.apache.sysds.runtime.matrix.data.MatrixValue;
 import org.apache.sysds.test.AutomatedTestBase;
@@ -48,7 +47,7 @@ public class BuiltinToOneHotTest extends AutomatedTestBase {
 
 	@Test
 	public void runSimpleTest() {
-		runToOneHotTest(false, false, LopProperties.ExecType.CP, false);
+		runToOneHotTest(false, false, ExecType.CP, false);
 	}
 
 	@Test

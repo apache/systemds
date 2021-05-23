@@ -22,8 +22,8 @@ package org.apache.sysds.test.functions.builtin;
 import org.junit.Assert;
 import org.junit.Test;
 import org.apache.sysds.common.Types;
+import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.common.Types.FileFormat;
-import org.apache.sysds.lops.LopProperties;
 import org.apache.sysds.runtime.io.FrameWriter;
 import org.apache.sysds.runtime.io.FrameWriterFactory;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
@@ -53,24 +53,24 @@ public class BuiltinImputeFDTest extends AutomatedTestBase {
 
 	@Test
 	public void test1() throws IOException {
-		runImpute_RFDTests(2,3, 0.6, 1,  LopProperties.ExecType.CP);
+		runImpute_RFDTests(2,3, 0.6, 1,  ExecType.CP);
 	}
 
 	@Test
 	public void test2() throws IOException {
-		runImpute_RFDTests(2,3, 0.45, 2, LopProperties.ExecType.CP);
+		runImpute_RFDTests(2,3, 0.45, 2, ExecType.CP);
 	}
 
 	@Test
 	public void test3() throws IOException {
-		runImpute_RFDTests(2,3, 0.6, 1, LopProperties.ExecType.SPARK);
+		runImpute_RFDTests(2,3, 0.6, 1, ExecType.SPARK);
 	}
 
 	@Test
 	public void test4() throws IOException {
-		runImpute_RFDTests(2,3, 0.4, 2, LopProperties.ExecType.SPARK);
+		runImpute_RFDTests(2,3, 0.4, 2, ExecType.SPARK);
 	}
-	private void runImpute_RFDTests(int source, int target, double threshold, int test, LopProperties.ExecType instType)
+	private void runImpute_RFDTests(int source, int target, double threshold, int test, ExecType instType)
 			throws IOException
 	{
 		Types.ExecMode platformOld = setExecMode(instType);

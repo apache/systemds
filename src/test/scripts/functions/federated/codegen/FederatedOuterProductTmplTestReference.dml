@@ -31,139 +31,63 @@ else {
 
 if(test_num == 1) { # wcemm
   # X ... 2000x2000 matrix
-  
-<<<<<<< HEAD
-<<<<<<< HEAD
+
   U = matrix(seq(1, 20000), rows=2000, cols=10);
   V = matrix(seq(20001, 40000), rows=2000, cols=10);
-=======
-  U = matrix(1, rows=2000, cols=10);
-  V = matrix(2, rows=2000, cols=10);
->>>>>>> feat(FederatedOuterProductTmplTest): add java test class and dml scripts for federated spoof instructions with outerproduct template
-=======
-  U = matrix(seq(1, 30000), rows=3000, cols=10);
-  V = matrix(seq(20001, 40000), rows=2000, cols=10);
->>>>>>> feat(SpoofFEDInstruction.java): add method broadcastSliced to the nested class SpoofFEDType to dynamically distinguish between transposed broadcast and normal broadcast for the different template types
   eps = 0.1;
   Z = as.matrix(sum(X * log(U %*% t(V) + eps)));
 }
 else if(test_num == 2) { # wdivmm
   # X ... 4000x2000 matrix
   
-<<<<<<< HEAD
-<<<<<<< HEAD
   U = matrix(seq(1, 40000), rows=4000, cols=10);
   V = matrix(seq(51, 20050), rows=2000, cols=10);
-=======
-  U = matrix(4, rows=4000, cols=10);
-  V = matrix(5, rows=2000, cols=10);
->>>>>>> feat(FederatedOuterProductTmplTest): add java test class and dml scripts for federated spoof instructions with outerproduct template
-=======
-  U = matrix(seq(1, 40000), rows=4000, cols=10);
-  V = matrix(seq(51, 20050), rows=2000, cols=10);
->>>>>>> feat(SpoofFEDInstruction.java): add method broadcastSliced to the nested class SpoofFEDType to dynamically distinguish between transposed broadcast and normal broadcast for the different template types
   eps = 0.1;
   Z = t(t(U) %*% (X / (U %*% t(V) + eps)));
 }
 else if(test_num == 3) { # wdivmmbasic
-<<<<<<< HEAD
   # X 1000x1000 matrix
 
   U = matrix(seq(1, 10000), rows=1000, cols=10);
   V = matrix(seq(-7499, 2500), rows=1000, cols=10);
-=======
-  # X 1000x1500 matrix
-
-<<<<<<< HEAD
-  U = matrix(4, rows=1000, cols=10);
-  V = matrix(5, rows=1500, cols=10);
->>>>>>> feat(FederatedOuterProductTmplTest): add java test class and dml scripts for federated spoof instructions with outerproduct template
-=======
-  U = matrix(seq(1, 10000), rows=1000, cols=10);
-  V = matrix(seq(-7499, 7500), rows=1500, cols=10);
->>>>>>> feat(SpoofFEDInstruction.java): add method broadcastSliced to the nested class SpoofFEDType to dynamically distinguish between transposed broadcast and normal broadcast for the different template types
   eps = 0.1;
   Z = X / ((U %*% t(V)) + eps);
 }
 else if(test_num == 4) { # wdivmmNeq
   # X ...4000x2000 matrix
   
-<<<<<<< HEAD
-<<<<<<< HEAD
   U = matrix(seq(1, 40000), rows=4000, cols=10) / 1000;
   V = matrix(seq(501, 20500), rows=2000, cols=10) / 1000;
-=======
-  U = matrix(4, rows=4000, cols=10);
-  V = matrix(5, rows=2000, cols=10);
->>>>>>> feat(FederatedOuterProductTmplTest): add java test class and dml scripts for federated spoof instructions with outerproduct template
-=======
-  U = matrix(seq(1, 40000), rows=4000, cols=10) / 1000;
-  V = matrix(seq(501, 20500), rows=2000, cols=10) / 1000;
->>>>>>> feat(SpoofFEDInstruction.java): add method broadcastSliced to the nested class SpoofFEDType to dynamically distinguish between transposed broadcast and normal broadcast for the different template types
   eps = 0.1;
   Z = ((X!=0) * (U %*% t(V) + eps)) %*% V;
 }
 else if(test_num == 5) { # wdivmmRight
   # X ... 4000x2000 matrix
 
-<<<<<<< HEAD
-<<<<<<< HEAD
   U = matrix(seq(1, 40000), rows=4000, cols=10);
   V = matrix(seq(1, 20000), rows=2000, cols=10);
-=======
-  U = matrix(4, rows=4000, cols=10);
-  V = matrix(5, rows=2000, cols=10);
->>>>>>> feat(FederatedOuterProductTmplTest): add java test class and dml scripts for federated spoof instructions with outerproduct template
-=======
-  U = matrix(seq(1, 40000), rows=4000, cols=10);
-  V = matrix(seq(1, 20000), rows=2000, cols=10);
->>>>>>> feat(SpoofFEDInstruction.java): add method broadcastSliced to the nested class SpoofFEDType to dynamically distinguish between transposed broadcast and normal broadcast for the different template types
   eps = 0.1;
   Z = (X / (U %*% t(V))) %*% V;
 }
 else if(test_num == 6) { # wdivmmRightNotranspose
   # X ... 4000x2000 matrix
   
-<<<<<<< HEAD
-<<<<<<< HEAD
   U = matrix(seq(1, 40000), rows=4000, cols=10);
   V = matrix(seq(-1, 19998), rows=10, cols=2000);
-=======
-  U = matrix(4, rows=4000, cols=10);
-  V = matrix(5, rows=10, cols=2000);
->>>>>>> feat(FederatedOuterProductTmplTest): add java test class and dml scripts for federated spoof instructions with outerproduct template
-=======
-  U = matrix(seq(1, 40000), rows=4000, cols=10);
-  V = matrix(seq(-1, 19998), rows=10, cols=2000);
->>>>>>> feat(SpoofFEDInstruction.java): add method broadcastSliced to the nested class SpoofFEDType to dynamically distinguish between transposed broadcast and normal broadcast for the different template types
   eps = 0.1;
   Z = (X / ((U %*% V) + eps)) %*% t(V);
 }
 else if(test_num == 7) { # wdivmmTransposeOut
-<<<<<<< HEAD
   # X ... 2000x2000 matrix
 
   U = matrix(seq(600, 20599), rows=2000, cols=10);
   V = matrix(seq(0, 19999), rows=10, cols=2000);
-=======
-  # X ... 4000x2000 matrix
-
-<<<<<<< HEAD
-  U = matrix(4, rows=4000, cols=10);
-  V = matrix(5, rows=10, cols=2000);
->>>>>>> feat(FederatedOuterProductTmplTest): add java test class and dml scripts for federated spoof instructions with outerproduct template
-=======
-  U = matrix(seq(600, 40599), rows=4000, cols=10);
-  V = matrix(seq(0, 19999), rows=10, cols=2000);
->>>>>>> feat(SpoofFEDInstruction.java): add method broadcastSliced to the nested class SpoofFEDType to dynamically distinguish between transposed broadcast and normal broadcast for the different template types
   eps = 0.1;
   Z = (t(U) %*% (X / ((U %*% V) + eps)));
 }
 else if(test_num == 8) { # wsigmoid
   # X ... 1000x2000 matrix
 
-<<<<<<< HEAD
-<<<<<<< HEAD
   U = matrix(seq(1, 10000), rows=1000, cols=10);
   V = matrix(seq(1, 20000), rows=2000, cols=10);
   eps = 0.1;
@@ -178,28 +102,5 @@ else if(test_num == 9) { #wdivmmLeftEps
 
   Z = t(t(U) %*% (X / (U %*% t(V) + eps)));
 }
-=======
-  U = matrix(4, rows=1000, cols=10);
-  V = matrix(5, rows=2000, cols=10);
-  eps = 0.1;
-  Z = X * (1 / (1 + exp(-(U %*% t(V)))));
-}
->>>>>>> feat(FederatedOuterProductTmplTest): add java test class and dml scripts for federated spoof instructions with outerproduct template
-=======
-  U = matrix(seq(1, 10000), rows=1000, cols=10);
-  V = matrix(seq(1, 20000), rows=2000, cols=10);
-  eps = 0.1;
-  Z = X * (1 / (1 + exp(-(U %*% t(V)))));
-}
-else if(test_num == 9) { #wdivmmLeftEps
-  # X ... 1000x2000 matrix
-
-  U = matrix(seq(1, 10000), rows=1000, cols=10);
-  V = matrix(seq(1, 20000), rows=2000, cols=10);
-  eps = 0.4;
-
-  Z = t(t(U) %*% (X / (U %*% t(V) + eps)));
-}
->>>>>>> feat(SpoofFEDInstruction.java): add method broadcastSliced to the nested class SpoofFEDType to dynamically distinguish between transposed broadcast and normal broadcast for the different template types
 
 write(Z, $out_Z);

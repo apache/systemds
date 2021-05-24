@@ -651,6 +651,20 @@ public class FrameBlock implements CacheBlock, Externalizable  {
 	}
 
 	/**
+	 * Get a row iterator over the frame where all selected fields are
+	 * encoded as strings independent of their value types.
+	 *
+	 * @param rl lower row index
+	 * @param ru upper row index
+	 * @param colID columnID, 1-based
+	 * @return string array iterator
+	 */
+	public Iterator<String[]> getStringRowIterator(int rl, int ru, int colID) {
+		return new StringRowIterator(rl, ru, new int[] {colID});
+	}
+
+
+	/**
 	 * Get a row iterator over the frame where all fields are encoded
 	 * as boxed objects according to their value types.
 	 *
@@ -785,7 +799,7 @@ public class FrameBlock implements CacheBlock, Externalizable  {
 	}
 
 	@Override
-	public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
+	public void readExternal(ObjectInput in) throws IOException {
 		//redirect deserialization to writable impl
 		readFields(in);
 	}
@@ -2051,8 +2065,10 @@ public class FrameBlock implements CacheBlock, Externalizable  {
 
 				ValueType dataType = isType(dataValue);
 
-				if(!dataType.toString().contains(type) && !(dataType == ValueType.BOOLEAN && type == "INT") &&  !(dataType == ValueType.BOOLEAN && type == "FP")){
-					LOG.warn("Datatype detected: " + dataType + " where expected: " + schemaString[i] + " col: " + (i+1) + ", row:" +(j+1));
+				if(!dataType.toString().contains(type) && !(dataType == ValueType.BOOLEAN && type.equals("INT")) &&
+					!(dataType == ValueType.BOOLEAN && type.equals("FP"))){
+					LOG.warn("Datatype detected: " + dataType + " where expected: " + schemaString[i] + " col: " +
+						(i+1) + ", row:" +(j+1));
 
 					this.set(j,i,null);
 				}

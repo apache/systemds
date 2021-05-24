@@ -20,7 +20,7 @@
 package org.apache.sysds.lops;
 
  
-import org.apache.sysds.lops.LopProperties.ExecType;
+import org.apache.sysds.common.Types.ExecType;
 
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.ReOrgOp;
@@ -168,16 +168,20 @@ public class Transform extends Lop
 		sb.append( OPERAND_DELIMITOR );
 		sb.append( this.prepOutputOperand(output));
 		
-		if( getExecType()==ExecType.CP 
+		if( (getExecType()==ExecType.CP || getExecType()==ExecType.FED)
 			&& (_operation == ReOrgOp.TRANS || _operation == ReOrgOp.SORT) ) {
 			sb.append( OPERAND_DELIMITOR );
 			sb.append( _numThreads );
+			if ( getExecType()==ExecType.FED ) {
+				sb.append( OPERAND_DELIMITOR );
+				sb.append( _fedOutput.name() );
+			}
 		}
-		if( getExecType()==ExecType.SPARK && _operation == ReOrgOp.RESHAPE ) {
+		else if( getExecType()==ExecType.SPARK && _operation == ReOrgOp.RESHAPE ) {
 			sb.append( OPERAND_DELIMITOR );
 			sb.append( _outputEmptyBlock );
 		}
-		if( getExecType()==ExecType.SPARK && _operation == ReOrgOp.SORT ){
+		else if( getExecType()==ExecType.SPARK && _operation == ReOrgOp.SORT ){
 			sb.append( OPERAND_DELIMITOR );
 			sb.append( _bSortIndInMem );
 		}

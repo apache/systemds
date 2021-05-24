@@ -643,7 +643,36 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 				nonZeros--;
 		}
 	}
-	
+
+	/*
+		Thread save set.
+		Blocks need to be allocated, and in case of MCSR sparse, all rows 
+		that are going to be accessed need to be allocated as well.
+	 */
+	public void quickSetValueThreadSafe(int r, int c, double v) {
+		if(sparse) {
+			if(!(sparseBlock instanceof SparseBlockMCSR))
+				throw new RuntimeException("Only MCSR Blocks are supported for Multithreaded sparse set.");
+			synchronized (sparseBlock.get(r)) {
+				sparseBlock.set(r,c,v);
+			}
+		}
+		else
+			denseBlock.set(r,c,v);
+	}
+
+	public double quickGetValueThreadSafe(int r, int c) {
+		if(sparse) {
+			if(!(sparseBlock instanceof SparseBlockMCSR))
+				throw new RuntimeException("Only MCSR Blocks are supported for Multithreaded sparse get.");
+			synchronized (sparseBlock.get(r)) {
+				return sparseBlock.get(r,c);
+			}
+		}
+		else
+			return denseBlock.get(r,c);
+	}
+
 	public double getValueDenseUnsafe(int r, int c) {
 		if(denseBlock==null)
 			return 0;
@@ -3931,6 +3960,10 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	public MatrixBlock slice(int rl, int ru) {
 		return slice(rl, ru, 0, clen-1, true, null);
 	}
+
+	public MatrixBlock slice(int rl, int ru, boolean deep){
+		return slice(rl,ru, 0, clen-1, deep, null);
+	}
 	
 	public MatrixBlock slice(int rl, int ru, int cl, int cu){
 		return slice(rl, ru, cl, cu, true, null);
@@ -3939,6 +3972,10 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	@Override
 	public MatrixBlock slice(int rl, int ru, int cl, int cu, CacheBlock ret) {
 		return slice(rl, ru, cl, cu, true, ret);
+	}
+
+	public MatrixBlock slice(int rl, int ru, int cl, int cu, boolean deep){
+		return slice(rl, ru, cl, cu, deep, null);
 	}
 	
 	/**
@@ -4332,6 +4369,28 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	@Override
 	public MatrixBlock aggregateUnaryOperations(AggregateUnaryOperator op, MatrixValue result,
 			int blen, MatrixIndexes indexesIn, boolean inCP)  {
+
+		MatrixBlock ret = prepareAggregateUnaryOutput(op,result,blen);
+		
+		if( LibMatrixAgg.isSupportedUnaryAggregateOperator(op) ) {
+			if( op.getNumThreads() > 1 )
+				LibMatrixAgg.aggregateUnaryMatrix(this, ret, op, op.getNumThreads());
+			else
+				LibMatrixAgg.aggregateUnaryMatrix(this, ret, op);
+			LibMatrixAgg.recomputeIndexes(ret, op, blen, indexesIn);
+		}
+		else if(op.sparseSafe)
+			sparseAggregateUnaryHelp(op, ret, blen, indexesIn);
+		else
+			denseAggregateUnaryHelp(op, ret, blen, indexesIn);
+		
+		if(op.aggOp.existsCorrection() && inCP)
+			((MatrixBlock)result).dropLastRowsOrColumns(op.aggOp.correction);
+		
+		return ret;
+	}
+
+	public MatrixBlock prepareAggregateUnaryOutput(AggregateUnaryOperator op, MatrixValue result, int blen){
 		CellIndex tempCellIndex = new CellIndex(-1,-1);
 		op.indexFn.computeDimension(rlen, clen, tempCellIndex);
 		if(op.aggOp.existsCorrection())
@@ -4366,24 +4425,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 			result=new MatrixBlock(tempCellIndex.row, tempCellIndex.column, false);
 		else
 			result.reset(tempCellIndex.row, tempCellIndex.column, false);
-		MatrixBlock ret = (MatrixBlock) result;
-		
-		if( LibMatrixAgg.isSupportedUnaryAggregateOperator(op) ) {
-			if( op.getNumThreads() > 1 )
-				LibMatrixAgg.aggregateUnaryMatrix(this, ret, op, op.getNumThreads());
-			else
-				LibMatrixAgg.aggregateUnaryMatrix(this, ret, op);
-			LibMatrixAgg.recomputeIndexes(ret, op, blen, indexesIn);
-		}
-		else if(op.sparseSafe)
-			sparseAggregateUnaryHelp(op, ret, blen, indexesIn);
-		else
-			denseAggregateUnaryHelp(op, ret, blen, indexesIn);
-		
-		if(op.aggOp.existsCorrection() && inCP)
-			((MatrixBlock)result).dropLastRowsOrColumns(op.aggOp.correction);
-		
-		return ret;
+		return (MatrixBlock)result;
 	}
 	
 	private void sparseAggregateUnaryHelp(AggregateUnaryOperator op, MatrixBlock result,

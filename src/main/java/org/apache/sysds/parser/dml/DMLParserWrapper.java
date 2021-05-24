@@ -259,8 +259,14 @@ public class DMLParserWrapper extends ParserWrapper
 	}
 	
 	private static void addFunctions(DMLProgram dmlPgm, String namespace, FunctionDictionary<FunctionStatementBlock> dict) {
-		// TODO handle namespace key already exists for different program value instead of overwriting
-		if (dict != null)
-			dmlPgm.getNamespaces().put(namespace, dict);
+		if( dict != null ) {
+			// merge function dictionary into existing dictionary
+			// (e.g., for builtin namespaces)
+			if( dmlPgm.getNamespaces().containsKey(namespace) )
+				dmlPgm.getNamespaces().get(namespace).merge(dict);
+			// add entire dictionary for non-existing namespace
+			else
+				dmlPgm.getNamespaces().put(namespace, dict);
+		}
 	}
 }

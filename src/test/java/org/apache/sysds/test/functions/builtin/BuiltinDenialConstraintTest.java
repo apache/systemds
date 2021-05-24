@@ -20,7 +20,7 @@
 package org.apache.sysds.test.functions.builtin;
 
 import org.apache.sysds.common.Types;
-import org.apache.sysds.lops.LopProperties.ExecType;
+import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
@@ -35,6 +35,8 @@ public class BuiltinDenialConstraintTest extends AutomatedTestBase {
 	private final static String TEST_NAME = "denial_constraints";
 	private final static String TEST_DIR = "functions/builtin/";
 	private static final String TEST_CLASS_DIR = TEST_DIR + BuiltinDenialConstraintTest.class.getSimpleName() + "/";
+	private static final String DATASET = DATASET_DIR + "Salaries_testDenialConstraints.csv";
+	private static final String DCs = DATASET_DIR + "DenialConstraints.csv";
 	private final static double eps = 1e-10;
 	
 	@Override
@@ -62,7 +64,7 @@ public class BuiltinDenialConstraintTest extends AutomatedTestBase {
 			loadTestConfiguration(getTestConfiguration(TEST_NAME));
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[] {"-nvargs", "M="+ output("Mx")}; 
+			programArgs = new String[] {"-nvargs", "input="+DATASET, "dc="+DCs, "M="+ output("Mx")};
 
 			runTest(true, false, null, -1);
 			double[][] X = {{1, 1}, {1, 2}, {1, 5}, {2, 2}, {2, 5}, {3, 6}, {4 , 2}, {4, 5}, {5, 1}, {5, 2}, {5, 5},

@@ -24,7 +24,8 @@ import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.hops.Hop;
 import org.apache.sysds.hops.LeftIndexingOp;
 import org.apache.sysds.hops.OptimizerUtils;
-import org.apache.sysds.lops.LopProperties.ExecType;
+import org.apache.sysds.hops.rewrite.HopRewriteUtils;
+import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.parfor.opt.OptNode.NodeType;
 import org.apache.sysds.runtime.controlprogram.parfor.opt.Optimizer.CostModelType;
@@ -69,7 +70,7 @@ public class CostEstimatorHops extends CostEstimator
 			}
 			//check for invalid cp memory estimate
 			else if ( h.getExecType()==ExecType.CP && value >= OptimizerUtils.getLocalMemBudget() ) {
-				if( !forcedExec )
+				if( !forcedExec && !HopRewriteUtils.hasListInputs(h) )
 					LOG.warn("Memory estimate larger than budget but CP exec type (op="+h.getOpString()+", name="+h.getName()+", memest="+h.getMemEstimate()+").");
 				value = DEFAULT_MEM_REMOTE;
 			}

@@ -21,10 +21,10 @@ package org.apache.sysds.test.functions.frame;
 
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types;
+import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.hops.OptimizerUtils;
-import org.apache.sysds.lops.LopProperties;
 import org.apache.sysds.runtime.io.FrameWriter;
 import org.apache.sysds.runtime.io.FrameWriterFactory;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
@@ -62,65 +62,71 @@ public class FrameDropInvalidTypeTest extends AutomatedTestBase
 		TestUtils.clearAssertionInformation();
 		addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[] {"B"}));
 		if (TEST_CACHE_ENABLED) {
-			setOutAndExpectedDeletionDisabled(true);
+//			setOutAndExpectedDeletionDisabled(true);
 		}
 	}
 
 	@Test
 	public void testDoubleinStringCP() {
 		// This test now verifies floating points are okay in string columns
-		runIsCorrectTest(schemaStrings, rows, schemaStrings.length, 3, 1, LopProperties.ExecType.CP, true);
+		runIsCorrectTest(schemaStrings, rows, schemaStrings.length, 3, 1, ExecType.CP, true);
 	}
 
 	@Test
 	public void testDoubleinStringSpark() {
 		// This test now verifies floating points are okay in string columns
-		runIsCorrectTest(schemaStrings, rows, schemaStrings.length, 3, 1, LopProperties.ExecType.SPARK, true);
+		runIsCorrectTest(schemaStrings, rows, schemaStrings.length, 3, 1, ExecType.SPARK, true);
 	}
 
 	@Test
 	public void testStringInDouble() {
 		// This test now verifies strings are removed in float columns
-		runIsCorrectTest(schemaStrings, rows, schemaStrings.length, 3, 2, LopProperties.ExecType.CP);
+		runIsCorrectTest(schemaStrings, rows, schemaStrings.length, 3, 2, ExecType.CP);
 	}
 
 	@Test
 	public void testStringInDoubleSpark() {
 		// This test now verifies strings are removed in float columns
-		runIsCorrectTest(schemaStrings, rows, schemaStrings.length, 3, 2, LopProperties.ExecType.SPARK);
+		runIsCorrectTest(schemaStrings, rows, schemaStrings.length, 3, 2, ExecType.SPARK);
 	}
 
 	@Test
 	public void testDoubleInFloat() {
 		// This test now verifies that changing from FP64 to FP32 is okay.
-		runIsCorrectTest(schemaStrings, rows, schemaStrings.length, 5, 3, LopProperties.ExecType.CP,true);
+		runIsCorrectTest(schemaStrings, rows, schemaStrings.length, 5, 3, ExecType.CP,true);
 	}
 
 	@Test
 	public void testDoubleInFloatSpark() {
 		// This test now verifies that changing from FP64 to FP32 is okay.
-		runIsCorrectTest(schemaStrings, rows, schemaStrings.length, 5, 3, LopProperties.ExecType.SPARK, true);
+		runIsCorrectTest(schemaStrings, rows, schemaStrings.length, 5, 3, ExecType.SPARK, true);
 	}
 
 	@Test
 	public void testLongInInt() {
 		// This test now verifies that changing from INT32 to INT64 is okay.
-		runIsCorrectTest(schemaStrings, rows, schemaStrings.length, 5, 4, LopProperties.ExecType.CP, true);
+		runIsCorrectTest(schemaStrings, rows, schemaStrings.length, 5, 4, ExecType.CP, true);
+	}
+
+	@Test
+	public void testIntInBool() {
+		// This test now verifies that changing from INT32 to INT64 is okay.
+		runIsCorrectTest(schemaStrings, rows, schemaStrings.length, 5, 5, ExecType.CP, true);
 	}
 
 	@Test
 	public void testLongInIntSpark() {
 		// This test now verifies that changing from INT32 to INT64 is okay.
-		runIsCorrectTest(schemaStrings, rows, schemaStrings.length, 5, 4, LopProperties.ExecType.SPARK, true);
+		runIsCorrectTest(schemaStrings, rows, schemaStrings.length, 5, 4, ExecType.SPARK, true);
 	}
 
 	private void runIsCorrectTest(ValueType[] schema, int rows, int cols,
-								  int badValues, int test, LopProperties.ExecType et){
+								  int badValues, int test, ExecType et){
 		runIsCorrectTest(schema, rows, cols, badValues, test, et, false);
 	}
 
 	private void runIsCorrectTest(ValueType[] schema, int rows, int cols,
-		int badValues, int test, LopProperties.ExecType et, boolean ignore)
+		int badValues, int test, ExecType et, boolean ignore)
 	{
 		Types.ExecMode platformOld = setExecMode(et);
 		boolean oldFlag = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
@@ -177,6 +183,16 @@ public class FrameDropInvalidTypeTest extends AutomatedTestBase
 						tmp1[i] = "12345678910111212";
 					frame1.appendColumn(tmp1);
 					meta[meta.length - 1] = "INT32";
+					break;
+				}
+				case 5: { // int in bool
+					String[] tmp1 = new String[rows];
+					for (int i = 0; i < rows; i++)
+						tmp1[i] = "true";
+					for (int i = 0; i < badValues; i++)
+						tmp1[i] = "1";
+					frame1.appendColumn(tmp1);
+					meta[meta.length - 1] = "BOOLEAN";
 					break;
 				}
 			}

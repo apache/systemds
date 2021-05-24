@@ -20,7 +20,8 @@
 package org.apache.sysds.test.functions.builtin;
 
 import org.apache.sysds.common.Types.ExecMode;
-import org.apache.sysds.lops.LopProperties.ExecType;
+import org.apache.sysds.common.Types.ExecType;
+import org.apache.sysds.runtime.controlprogram.ParForProgramBlock;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
@@ -30,7 +31,10 @@ import org.junit.Test;
 
 public class BuiltinHyperbandTest extends AutomatedTestBase
 {
-	private final static String TEST_NAME = "HyperbandLM";
+	private final static String TEST_NAME1 = "HyperbandLM";
+	private final static String TEST_NAME2 = "HyperbandLM2";
+	private final static String TEST_NAME3 = "HyperbandLM3";
+	
 	private final static String TEST_DIR = "functions/builtin/";
 	private final static String TEST_CLASS_DIR = TEST_DIR + BuiltinHyperbandTest.class.getSimpleName() + "/";
 	
@@ -39,26 +43,41 @@ public class BuiltinHyperbandTest extends AutomatedTestBase
 	
 	@Override
 	public void setUp() {
-		addTestConfiguration(TEST_NAME,new TestConfiguration(TEST_CLASS_DIR, TEST_NAME,new String[]{"R"})); 
+		addTestConfiguration(TEST_NAME1,new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1,new String[]{"R"}));
+		addTestConfiguration(TEST_NAME2,new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2,new String[]{"R"}));
+		addTestConfiguration(TEST_NAME3,new TestConfiguration(TEST_CLASS_DIR, TEST_NAME3,new String[]{"R"}));
 	}
 	
 	@Test
 	public void testHyperbandCP() {
-		runHyperband(ExecType.CP);
+		runHyperband(TEST_NAME1, ExecType.CP);
+	}
+
+	@Test
+	public void testHyperbandNoCompareCP() {
+		runHyperband(TEST_NAME2, ExecType.CP);
+	}
+	
+	@Test
+	public void testHyperbandNoCompare2CP() {
+		runHyperband(TEST_NAME3, ExecType.CP);
 	}
 	
 	@Test
 	public void testHyperbandSpark() {
-		runHyperband(ExecType.SPARK);
+		runHyperband(TEST_NAME2, ExecType.SPARK);
 	}
 	
-	private void runHyperband(ExecType et) {
+	private void runHyperband(String testname, ExecType et) {
 		ExecMode modeOld = setExecMode(et);
+		int retries = ParForProgramBlock.MAX_RETRYS_ON_ERROR;
+		
 		try {
-			loadTestConfiguration(getTestConfiguration(TEST_NAME));
+			loadTestConfiguration(getTestConfiguration(testname));
 			String HOME = SCRIPT_DIR + TEST_DIR;
-	
-			fullDMLScriptName = HOME + TEST_NAME + ".dml";
+			ParForProgramBlock.MAX_RETRYS_ON_ERROR = 0;
+			
+			fullDMLScriptName = HOME + testname + ".dml";
 			programArgs = new String[] {"-stats","-args", input("X"), input("y"), output("R")};
 			double[][] X = getRandomMatrix(rows, cols, 0, 1, 0.8, 3);
 			double[][] y = getRandomMatrix(rows, 1, 0, 1, 0.8, 7);
@@ -68,9 +87,11 @@ public class BuiltinHyperbandTest extends AutomatedTestBase
 			runTest(true, EXCEPTION_NOT_EXPECTED, null, -1);
 			
 			//expected loss smaller than default invocation
-			Assert.assertTrue(TestUtils.readDMLBoolean(output("R")));
+			if( testname.equals(TEST_NAME1) )
+				Assert.assertTrue(TestUtils.readDMLBoolean(output("R")));
 		}
 		finally {
+			ParForProgramBlock.MAX_RETRYS_ON_ERROR = retries;
 			resetExecMode(modeOld);
 		}
 	}

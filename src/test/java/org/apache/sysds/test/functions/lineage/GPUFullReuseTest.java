@@ -44,6 +44,7 @@ public class GPUFullReuseTest extends AutomatedTestBase{
 	@BeforeClass
 	public static void checkGPU() {
 		// Skip all the tests if no GPU is available
+		// FIXME: Fails to skip if gpu available but no libraries
 		Assume.assumeTrue(TestUtils.isGPUAvailable() == cudaError.cudaSuccess);
 	}
 	
@@ -76,6 +77,7 @@ public class GPUFullReuseTest extends AutomatedTestBase{
 		programArgs = proArgs.toArray(new String[proArgs.size()]);
 		fullDMLScriptName = getScript();
 		
+		Lineage.resetInternalState();
 		//run the test
 		runTest(true, EXCEPTION_NOT_EXPECTED, null, -1);
 		HashMap<MatrixValue.CellIndex, Double> R_orig = readDMLMatrixFromOutputDir("R");

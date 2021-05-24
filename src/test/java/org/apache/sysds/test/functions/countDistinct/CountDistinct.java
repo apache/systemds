@@ -19,7 +19,7 @@
 
 package org.apache.sysds.test.functions.countDistinct;
 
-import org.apache.sysds.lops.LopProperties;
+import org.apache.sysds.common.Types.ExecType;
 import org.junit.Test;
 
 public class CountDistinct extends CountDistinctBase {
@@ -43,7 +43,7 @@ public class CountDistinct extends CountDistinctBase {
 	@Test
 	public void testSimple1by1() {
 		// test simple 1 by 1.
-		LopProperties.ExecType ex = LopProperties.ExecType.CP;
+		ExecType ex = ExecType.CP;
 		countDistinctTest(1, 1, 1, 1.0, ex, 0.00001);
 	}
 }

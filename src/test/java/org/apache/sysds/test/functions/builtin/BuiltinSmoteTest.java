@@ -21,8 +21,8 @@ package org.apache.sysds.test.functions.builtin;
 
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types;
+import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.hops.OptimizerUtils;
-import org.apache.sysds.lops.LopProperties;
 import org.apache.sysds.runtime.matrix.data.MatrixValue;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
@@ -50,44 +50,44 @@ public class BuiltinSmoteTest extends AutomatedTestBase {
 	@Test
 	public void testSmote0CP() {
 		double[][] mask =  new double[][]{{1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}};
-		runSmoteTest(100, 3, mask, LopProperties.ExecType.CP);
+		runSmoteTest(100, 3, mask, ExecType.CP);
 	}
 
 	@Test
 	public void testSmote1CP() {
 		double[][] mask =  new double[][]{{1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1}};
-		runSmoteTest(300, 10, mask, LopProperties.ExecType.CP);
+		runSmoteTest(300, 10, mask, ExecType.CP);
 	}
 
 	@Test
 	public void testSmote2CP() {
 		double[][] mask =  new double[][]{{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}};
-		runSmoteTest(400, 5, mask, LopProperties.ExecType.CP);
+		runSmoteTest(400, 5, mask, ExecType.CP);
 	}
 
 	@Test
 	public void testSmote3CP() {
 		double[][] mask =  new double[][]{{1,0,0,0,0,0,0,1,1,1,0,0,0,0,0,0,0,0,0,0}};
-		runSmoteTest(300, 3, mask, LopProperties.ExecType.CP);
+		runSmoteTest(300, 3, mask, ExecType.CP);
 	}
 
 	@Test
 	public void testSmote4CP() {
 		double[][] mask =  new double[][]{{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}};
-		runSmoteTest(400, 5, mask, LopProperties.ExecType.CP);	}
+		runSmoteTest(400, 5, mask, ExecType.CP);	}
 
 	public void testSmote3Spark() {
 		double[][] mask =  new double[][]{{1,0,0,0,0,0,0,1,1,1,0,0,0,0,0,0,0,0,0,0}};
-		runSmoteTest(300, 3, mask, LopProperties.ExecType.SPARK);
+		runSmoteTest(300, 3, mask, ExecType.SPARK);
 	}
 
 	@Test
 	public void testSmote4Spark() {
 		double[][] mask =  new double[][]{{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}};
-		runSmoteTest(400, 5, mask, LopProperties.ExecType.SPARK);	}
+		runSmoteTest(400, 5, mask, ExecType.SPARK);	}
 		
 
-	private void runSmoteTest(int sample, int nn, double[][] mask, LopProperties.ExecType instType) {
+	private void runSmoteTest(int sample, int nn, double[][] mask, ExecType instType) {
 		Types.ExecMode platformOld = setExecMode(instType);
 
 		boolean oldFlag = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;

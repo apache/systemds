@@ -26,7 +26,7 @@ import java.util.List;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.lops.FunctionCallCP;
 import org.apache.sysds.lops.Lop;
-import org.apache.sysds.lops.LopProperties.ExecType;
+import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.parser.DMLProgram;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.ValueType;
@@ -300,7 +300,7 @@ public class FunctionOp extends Hop
 		setLops(fcall);
 		
 		//note: no reblock lop because outputs directly bound
-		
+
 		return getLops();
 	}
 
@@ -383,5 +383,10 @@ public class FunctionOp extends Hop
 	@Override
 	public boolean compare(Hop that) {
 		return false;
+	}
+
+	@Override
+	public String toString(){
+		return getOpString();
 	}
 }

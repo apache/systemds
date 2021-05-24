@@ -24,20 +24,18 @@
 
 from typing import Dict, Iterable
 
-from systemds.operator import OperationNode
+from systemds.operator import OperationNode, Matrix
 from systemds.script_building.dag import OutputType
 from systemds.utils.consts import VALID_INPUT_TYPES
 
-def toOneHot(X: OperationNode, numClasses: int) -> OperationNode:
+def toOneHot(X: OperationNode, numClasses: int):
     """
     :param X: vector with N integer entries between 1 and numClasses
     :param numclasses: number of columns, must be >= largest value in X
     :return: 'OperationNode' containing matrix with shape (n, numclasses) 
     """
-    
-    X._check_matrix_op()
     params_dict = {'X':X, 'numClasses':numClasses}
-    return OperationNode(X.sds_context, 'toOneHot', named_input_nodes=params_dict, output_type=OutputType.MATRIX)
+    return Matrix(X.sds_context, 'toOneHot', named_input_nodes=params_dict)
 
 
     

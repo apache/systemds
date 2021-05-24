@@ -27,13 +27,14 @@ import java.util.TreeSet;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysds.runtime.lineage.LineageCacheConfig.LineageCacheStatus;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.LocalFileUtils;
 
 public class LineageCacheEviction
 {
-	protected static long _cachesize = 0;
+	private static long _cachesize = 0;
 	private static long CACHE_LIMIT; //limit in bytes
 	private static long _startTimestamp = 0;
 	protected static final Map<LineageItem, Integer> _removelist = new HashMap<>();
@@ -46,8 +47,7 @@ public class LineageCacheEviction
 		_cachesize = 0;
 		weightedQueue.clear();
 		_outdir = null;
-		if (DMLScript.STATISTICS)
-			_removelist.clear();
+		_removelist.clear();
 	}
 
 	//--------------- CACHE MAINTENANCE & LOOKUP FUNCTIONS --------------//
@@ -82,7 +82,7 @@ public class LineageCacheEviction
 		// Reset the timestamp to maintain the LRU component of the scoring function
 		if (LineageCacheConfig.isTimeBased()) { 
 			if (weightedQueue.remove(entry)) {
-				entry.setTimestamp();
+				entry.updateTimestamp();
 				weightedQueue.add(entry);
 			}
 		}
@@ -173,7 +173,9 @@ public class LineageCacheEviction
 
 	//---------------- CACHE SPACE MANAGEMENT METHODS -----------------//
 	
-	protected static void setCacheLimit(long limit) {
+	protected static void setCacheLimit(double fraction) {
+		long maxMem = InfrastructureAnalyzer.getLocalMaxMemory();
+		long limit = (long)(fraction * maxMem);
 		CACHE_LIMIT = limit;
 	}
 
@@ -236,7 +238,7 @@ public class LineageCacheEviction
 			}
 
 			if (spilltime < LineageCacheConfig.MIN_SPILL_TIME_ESTIMATE) {
-				// Can't trust the estimate if less than 100ms.
+				// Can't trust the estimate if less than 10ms.
 				// Spill if it takes longer to recompute.
 				removeOrSpillEntry(cache, e, //spill or delete
 					exectime >= LineageCacheConfig.MIN_SPILL_TIME_ESTIMATE);
@@ -288,7 +290,7 @@ public class LineageCacheEviction
 			return; 
 		
 		double newIOSpeed = size / IOtime; // MB per second 
-		// Adjust the read/write speed taking into account the last read/write.
+		// Adjust the read/write speed using exponential smoothing (alpha = 0.5)
 		// These constants will eventually converge to the real speed.
 		if (read) {
 			if (isSparse(e))
@@ -302,6 +304,7 @@ public class LineageCacheEviction
 			else
 				LineageCacheConfig.FSWRITE_DENSE= (LineageCacheConfig.FSWRITE_DENSE+ newIOSpeed) / 2;
 		}
+		// TODO: exponential smoothing with arbitrary smoothing factor
 	}
 	
 	private static boolean isSparse(LineageCacheEntry e) {

@@ -30,7 +30,6 @@ public class ReaderColumnSelectionDenseMultiBlockTransposed extends ReaderColumn
 	public ReaderColumnSelectionDenseMultiBlockTransposed(MatrixBlock data, int[] colIndices) {
 		super(colIndices.clone(), data.getNumColumns() );
 		_data = data.getDenseBlock();
-
 	}
 
 	protected DblArray getNextRow() {

@@ -24,18 +24,12 @@
 
 from typing import Dict, Iterable
 
-from systemds.operator import OperationNode
+from systemds.operator import OperationNode, Matrix
 from systemds.script_building.dag import OutputType
 from systemds.utils.consts import VALID_INPUT_TYPES
 
-def hyperband(X_train: OperationNode, y_train: OperationNode, X_val: OperationNode, y_val: OperationNode, params: Iterable, paramRanges: OperationNode, **kwargs: Dict[str, VALID_INPUT_TYPES]) -> OperationNode:
+def hyperband(X_train: OperationNode, y_train: OperationNode, X_val: OperationNode, y_val: OperationNode, params: Iterable, paramRanges: OperationNode, **kwargs: Dict[str, VALID_INPUT_TYPES]):
     
-    
-    X_train._check_matrix_op()
-    y_train._check_matrix_op()
-    X_val._check_matrix_op()
-    y_val._check_matrix_op()
-    paramRanges._check_matrix_op()
     params_dict = {'X_train':X_train, 'y_train':y_train, 'X_val':X_val, 'y_val':y_val, 'params':params, 'paramRanges':paramRanges}
     params_dict.update(kwargs)
     return OperationNode(X_train.sds_context, 'hyperband', named_input_nodes=params_dict, output_type=OutputType.LIST, number_of_outputs=2, output_types=[OutputType.MATRIX, OutputType.FRAME])

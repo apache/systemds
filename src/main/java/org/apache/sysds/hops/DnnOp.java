@@ -31,7 +31,7 @@ import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.hops.rewrite.HopRewriteUtils;
 import org.apache.sysds.lops.DnnTransform;
 import org.apache.sysds.lops.Lop;
-import org.apache.sysds.lops.LopProperties.ExecType;
+import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.instructions.gpu.context.GPUContextPool;
 import org.apache.sysds.runtime.matrix.data.DnnParameters;
@@ -155,7 +155,7 @@ public class DnnOp extends MultiThreadedHop {
 		
 		//add reblock/checkpoint lops if necessary
 		constructAndSetLopsDataFlowProperties();
-		
+
 		return getLops();
 	}
 	

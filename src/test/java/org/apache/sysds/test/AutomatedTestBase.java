@@ -40,6 +40,7 @@ import java.util.stream.Collectors;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
@@ -56,7 +57,7 @@ import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.conf.DMLConfig;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.lops.Lop;
-import org.apache.sysds.lops.LopProperties.ExecType;
+import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.lops.compile.Dag;
 import org.apache.sysds.parser.DataExpression;
 import org.apache.sysds.parser.ParseException;
@@ -76,6 +77,7 @@ import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
+import org.apache.sysds.runtime.meta.MetaDataAll;
 import org.apache.sysds.runtime.meta.MetaDataFormat;
 import org.apache.sysds.runtime.privacy.CheckedConstraintsLog;
 import org.apache.sysds.runtime.privacy.PrivacyConstraint;
@@ -86,7 +88,6 @@ import org.apache.sysds.runtime.util.HDFSTool;
 import org.apache.sysds.utils.ParameterBuilder;
 import org.apache.sysds.utils.Statistics;
 import org.apache.wink.json4j.JSONException;
-import org.apache.wink.json4j.JSONObject;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -128,6 +129,7 @@ public abstract class AutomatedTestBase {
 	 * Script source directory for .dml and .r files only (TEST_DATA_DIR for generated test data artifacts).
 	 */
 	protected static final String SCRIPT_DIR = "./src/test/scripts/";
+	protected static final String DATASET_DIR = "./src/test/resources/datasets/";
 	protected static final String INPUT_DIR = "in/";
 	protected static final String OUTPUT_DIR = "out/";
 	protected static final String EXPECTED_DIR = "expected/";
@@ -642,7 +644,7 @@ public abstract class AutomatedTestBase {
 			new MatrixCharacteristics(nrows, ncol), Types.FileFormat.BINARY));
 
 		// write parts and generate FederationMap
-		HashMap<FederatedRange, FederatedData> fedHashMap = new HashMap<>();
+		List<Pair<FederatedRange, FederatedData>> fedHashMap = new ArrayList<>();
 		for(int i = 0; i < numFederatedWorkers; i++) {
 			double lowerBound = ranges[i][0];
 			double upperBound = ranges[i][1];
@@ -657,7 +659,7 @@ public abstract class AutomatedTestBase {
 			// generate fedmap entry
 			FederatedRange range = new FederatedRange(new long[]{(long) lowerBound, 0}, new long[]{(long) upperBound, ncol});
 			FederatedData data = new FederatedData(DataType.MATRIX, new InetSocketAddress(ports.get(i)), input(path));
-			fedHashMap.put(range, data);
+			fedHashMap.add(Pair.of(range, data));
 		}
 		
 		federatedMatrixObject.setFedMapping(new FederationMap(FederationUtils.getNextFedDataID(), fedHashMap));
@@ -905,9 +907,9 @@ public abstract class AutomatedTestBase {
 
 	public static MatrixCharacteristics readDMLMetaDataFile(String fileName) {
 		try {
-			JSONObject meta = getMetaDataJSON(fileName);
-			long rlen = Long.parseLong(meta.get(DataExpression.READROWPARAM).toString());
-			long clen = Long.parseLong(meta.get(DataExpression.READCOLPARAM).toString());
+			MetaDataAll metaDataAll = getMetaData(fileName);
+			long rlen = metaDataAll.getDim1();
+			long clen = metaDataAll.getDim2();
 			return new MatrixCharacteristics(rlen, clen, -1, -1);
 		}
 		catch(Exception ex) {
@@ -915,13 +917,13 @@ public abstract class AutomatedTestBase {
 		}
 	}
 
-	public static JSONObject getMetaDataJSON(String fileName) {
-		return getMetaDataJSON(fileName, OUTPUT_DIR);
+	public static MetaDataAll getMetaData(String fileName) {
+		return getMetaData(fileName, OUTPUT_DIR);
 	}
 
-	public static JSONObject getMetaDataJSON(String fileName, String outputDir) {
+	public static MetaDataAll getMetaData(String fileName, String outputDir) {
 		String fname = baseDirectory + outputDir + fileName + ".mtd";
-		return new DataExpression().readMetadataFile(fname, false);
+		return new MetaDataAll(fname, false, true);
 	}
 
 	/**
@@ -933,17 +935,16 @@ public abstract class AutomatedTestBase {
 	public static PrivacyConstraint getPrivacyConstraintFromMetaData(String fileName, String dir) throws DMLRuntimeException {
 		PrivacyConstraint outputPrivacyConstraint = new PrivacyConstraint();
 		try {
-			JSONObject metadata = getMetaDataJSON(fileName, dir);
-			if ( metadata != null ){
-				if ( metadata.containsKey(DataExpression.PRIVACY) ){
-					PrivacyLevel readPrivacyLevel = PrivacyLevel.valueOf(metadata.get(DataExpression.PRIVACY).toString());
-					outputPrivacyConstraint.setPrivacyLevel(readPrivacyLevel);
+			MetaDataAll metadata = getMetaData(fileName, dir);
+			Object metaValue;
+			if ( metadata.mtdExists() ){
+				if ( (metaValue = metadata.getPrivacy()) != null){
+					outputPrivacyConstraint.setPrivacyLevel(((PrivacyConstraint) metaValue).getPrivacyLevel());
 				} else {
 					outputPrivacyConstraint.setPrivacyLevel(PrivacyLevel.None);
 				}
-				if ( metadata.containsKey(DataExpression.FINE_GRAINED_PRIVACY)){
-					JSONObject fineGrainedJSON = (JSONObject) metadata.get(DataExpression.FINE_GRAINED_PRIVACY);
-					PrivacyUtils.putFineGrainedConstraintsFromString(outputPrivacyConstraint.getFineGrainedPrivacy(), fineGrainedJSON.toString());
+				if ((metaValue = metadata.getFineGrainedPrivacy()) != null ){
+					PrivacyUtils.putFineGrainedConstraintsFromString(outputPrivacyConstraint.getFineGrainedPrivacy(), (String) metaValue);
 				}
 			}
 		} catch (JSONException e){
@@ -956,9 +957,9 @@ public abstract class AutomatedTestBase {
 		return getPrivacyConstraintFromMetaData(fileName, OUTPUT_DIR);
 	}
 
-	public static String readDMLMetaDataValue(String fileName, String outputDir, String key) throws JSONException {
-		JSONObject meta = getMetaDataJSON(fileName, outputDir);
-		return meta.get(key).toString();
+	public static String readDMLMetaDataPrivacyValue(String fileName, String outputDir, String key) {
+		MetaDataAll meta = getMetaData(fileName, outputDir);
+		return key.equals(DataExpression.FINE_GRAINED_PRIVACY) ? meta.getFineGrainedPrivacy() : meta.getPrivacy().getPrivacyLevel().name();
 	}
 
 	/**
@@ -969,11 +970,11 @@ public abstract class AutomatedTestBase {
 	 * @param key       key to find in metadata
 	 * @return value retrieved from metadata for the given key
 	 */
-	public static String readDMLMetaDataValueCatchException(String fileName, String outputDir, String key) {
+	public static String readDMLMetaDataPrivacyValueCatchException(String fileName, String outputDir, String key) {
 		try {
-			return readDMLMetaDataValue(fileName, outputDir, key);
+			return readDMLMetaDataPrivacyValue(fileName, outputDir, key);
 		}
-		catch(JSONException | NullPointerException e) {
+		catch(NullPointerException e) {
 			fail("Privacy constraint not written to output metadata file:\n" + e);
 			return null;
 		}
@@ -981,8 +982,8 @@ public abstract class AutomatedTestBase {
 
 	public static ValueType readDMLMetaDataValueType(String fileName) {
 		try {
-			JSONObject meta = getMetaDataJSON(fileName);
-			return ValueType.fromExternalString(meta.get(DataExpression.VALUETYPEPARAM).toString());
+			MetaDataAll meta = getMetaData(fileName);
+			return meta.getValueType();
 		}
 		catch(Exception ex) {
 			throw new RuntimeException(ex);

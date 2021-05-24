@@ -33,7 +33,7 @@ import org.apache.sysds.lops.CentralMoment;
 import org.apache.sysds.lops.CoVariance;
 import org.apache.sysds.lops.Ctable;
 import org.apache.sysds.lops.Lop;
-import org.apache.sysds.lops.LopProperties.ExecType;
+import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.lops.LopsException;
 import org.apache.sysds.lops.PickByCount;
 import org.apache.sysds.lops.SortKeys;
@@ -80,6 +80,7 @@ public class TernaryOp extends MultiThreadedHop
 		getInput().add(0, inp1);
 		getInput().add(1, inp2);
 		getInput().add(2, inp3);
+		updateETFed();
 		inp1.getParent().add(this);
 		inp2.getParent().add(this);
 		inp3.getParent().add(this);
@@ -97,6 +98,7 @@ public class TernaryOp extends MultiThreadedHop
 		getInput().add(3, inp4);
 		getInput().add(4, inp5);
 		getInput().add(5, inp6);
+		updateETFed();
 		inp1.getParent().add(this);
 		inp2.getParent().add(this);
 		inp3.getParent().add(this);
@@ -196,7 +198,7 @@ public class TernaryOp extends MultiThreadedHop
 		
 		//add reblock/checkpoint lops if necessary
 		constructAndSetLopsDataFlowProperties();
-		
+
 		return getLops();
 	}
 
@@ -499,6 +501,8 @@ public class TernaryOp extends MultiThreadedHop
 			//check for valid CP dimensions and matrix size
 			checkAndSetInvalidCPDimsAndSize();
 		}
+
+		updateETFed();
 
 		//mark for recompile (forever)
 		// additional condition: when execType=CP and additional dimension inputs 

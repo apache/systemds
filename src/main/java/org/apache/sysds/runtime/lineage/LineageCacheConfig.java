@@ -72,6 +72,8 @@ public class LineageCacheConfig
 		}
 	}
 
+	protected static final double CPU_CACHE_FRAC = 0.05; // 5% of JVM heap size
+	protected static final double GPU_CACHE_MAX = 0.30; // 30% of gpu memory
 	private static ReuseCacheType _cacheType = null;
 	private static CachedItemHead _itemH = null;
 	private static CachedItemTail _itemT = null;
@@ -93,6 +95,8 @@ public class LineageCacheConfig
 	public static double FSREAD_SPARSE = 400;
 	public static double FSWRITE_DENSE = 450;
 	public static double FSWRITE_SPARSE = 225;
+	public static double D2HCOPY = 1500;
+	public static double D2HMAXBANDWIDTH = 8192;
 	
 	private enum CachedItemHead {
 		TSMM,
@@ -111,13 +115,17 @@ public class LineageCacheConfig
 	private static LineageCachePolicy _cachepolicy = null;
 	// Weights for scoring components (computeTime/size, LRU timestamp, DAG height)
 	protected static double[] WEIGHTS = {1, 0, 0};
+	public static boolean CONCURRENTGPUEVICTION = false;
+	public static volatile boolean STOPBACKGROUNDEVICTION = false;
 
 	protected enum LineageCacheStatus {
 		EMPTY,     //Placeholder with no data. Cannot be evicted.
+		NOTCACHED, //Placeholder removed from the cache
 		CACHED,    //General cached data. Can be evicted.
 		SPILLED,   //Data is in disk. Empty value. Cannot be evicted.
 		RELOADED,  //Reloaded from disk. Can be evicted.
 		PINNED,    //Pinned to memory. Cannot be evicted.
+		GPUCACHED, //Points to GPU intermediate
 		TOSPILL,   //To be spilled lazily 
 		TODELETE;  //TO be removed lazily
 		public boolean canEvict() {

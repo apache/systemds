@@ -24,14 +24,12 @@
 
 from typing import Dict, Iterable
 
-from systemds.operator import OperationNode
+from systemds.operator import OperationNode, Matrix
 from systemds.script_building.dag import OutputType
 from systemds.utils.consts import VALID_INPUT_TYPES
 
-def xdummy2(X: OperationNode) -> OperationNode:
+def xdummy2(X: OperationNode):
     
-    
-    X._check_matrix_op()
     params_dict = {'X':X}
     return OperationNode(X.sds_context, 'xdummy2', named_input_nodes=params_dict, output_type=OutputType.LIST, number_of_outputs=2, output_types=[OutputType.MATRIX, OutputType.MATRIX])
 

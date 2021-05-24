@@ -37,7 +37,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.BitSet;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -984,4 +983,11 @@ public class UtilFunctions {
 		}
 		return vt;
 	}
+
+
+	public static int getEndIndex(int arrayLength, int startIndex, int blockSize){
+		return (blockSize <= 0)? arrayLength: Math.min(arrayLength, startIndex + blockSize);
+	}
+
+
 }

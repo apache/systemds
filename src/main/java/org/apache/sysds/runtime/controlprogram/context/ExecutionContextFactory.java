@@ -54,7 +54,8 @@ public class ExecutionContextFactory
 			case SINGLE_NODE:
 				//NOTE: even in case of forced singlenode operations, users might still 
 				//want to run remote parfor which requires the correct execution context
-				if( OptimizerUtils.getDefaultExecutionMode()==ExecMode.HYBRID)
+				if( OptimizerUtils.getDefaultExecutionMode()==ExecMode.HYBRID
+					&& !(prog!=null && prog.getDMLProg()!=null && prog.getDMLProg().containsRemoteParfor()))
 					ec = new ExecutionContext(allocateVars, allocateLineage, prog);
 				else
 					ec = new SparkExecutionContext(allocateVars, allocateLineage, prog);

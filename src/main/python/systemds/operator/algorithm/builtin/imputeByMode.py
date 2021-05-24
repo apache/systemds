@@ -24,16 +24,14 @@
 
 from typing import Dict, Iterable
 
-from systemds.operator import OperationNode
+from systemds.operator import OperationNode, Matrix
 from systemds.script_building.dag import OutputType
 from systemds.utils.consts import VALID_INPUT_TYPES
 
-def imputeByMode(X: OperationNode) -> OperationNode:
+def imputeByMode(X: OperationNode):
     
-    
-    X._check_matrix_op()
     params_dict = {'X':X}
-    return OperationNode(X.sds_context, 'imputeByMode', named_input_nodes=params_dict, output_type=OutputType.MATRIX)
+    return Matrix(X.sds_context, 'imputeByMode', named_input_nodes=params_dict)
 
 
     

@@ -24,11 +24,11 @@
 
 from typing import Dict, Iterable
 
-from systemds.operator import OperationNode
+from systemds.operator import OperationNode, Matrix
 from systemds.script_building.dag import OutputType
 from systemds.utils.consts import VALID_INPUT_TYPES
 
-def alsCG(X: OperationNode, **kwargs: Dict[str, VALID_INPUT_TYPES]) -> OperationNode:
+def alsCG(X: OperationNode, **kwargs: Dict[str, VALID_INPUT_TYPES]):
     """
     :param X: Location to read the input matrix X to be factorized
     :param rank: Rank of the factorization
@@ -41,8 +41,6 @@ def alsCG(X: OperationNode, **kwargs: Dict[str, VALID_INPUT_TYPES]) -> Operation
     :param if: FALSE thr is ignored
     :return: 'OperationNode' containing x n matrix v 
     """
-    
-    X._check_matrix_op()
     params_dict = {'X':X}
     params_dict.update(kwargs)
     return OperationNode(X.sds_context, 'alsCG', named_input_nodes=params_dict, output_type=OutputType.LIST, number_of_outputs=2, output_types=[OutputType.MATRIX, OutputType.MATRIX])

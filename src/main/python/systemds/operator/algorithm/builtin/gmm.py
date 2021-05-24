@@ -24,14 +24,12 @@
 
 from typing import Dict, Iterable
 
-from systemds.operator import OperationNode
+from systemds.operator import OperationNode, Matrix
 from systemds.script_building.dag import OutputType
 from systemds.utils.consts import VALID_INPUT_TYPES
 
-def gmm(X: OperationNode, verbose: bool, **kwargs: Dict[str, VALID_INPUT_TYPES]) -> OperationNode:
+def gmm(X: OperationNode, verbose: bool, **kwargs: Dict[str, VALID_INPUT_TYPES]):
     
-    
-    X._check_matrix_op()
     params_dict = {'X':X, 'verbose':verbose}
     params_dict.update(kwargs)
     return OperationNode(X.sds_context, 'gmm', named_input_nodes=params_dict, output_type=OutputType.LIST, number_of_outputs=7, output_types=[OutputType.MATRIX, OutputType.MATRIX, OutputType.INTEGER, OutputType.DOUBLE, OutputType.MATRIX, OutputType.MATRIX, OutputType.MATRIX])

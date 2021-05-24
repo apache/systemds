@@ -39,7 +39,7 @@ public class Types
 	 * Execution type of individual operations.
 	 */
 	public enum ExecType { CP, CP_FILE, SPARK, GPU, FED, INVALID }
-	
+
 	/**
 	 * Data types (tensor, matrix, scalar, frame, object, unknown).
 	 */
@@ -54,6 +54,9 @@ public class Types
 		}
 		public boolean isFrame() {
 			return this == FRAME;
+		}
+		public boolean isMatrixOrFrame() {
+			return isMatrix() | isFrame();
 		}
 		public boolean isScalar() {
 			return this == SCALAR;

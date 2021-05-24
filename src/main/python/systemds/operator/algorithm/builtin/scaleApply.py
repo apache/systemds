@@ -24,18 +24,14 @@
 
 from typing import Dict, Iterable
 
-from systemds.operator import OperationNode
+from systemds.operator import OperationNode, Matrix
 from systemds.script_building.dag import OutputType
 from systemds.utils.consts import VALID_INPUT_TYPES
 
-def scaleApply(X: OperationNode, Centering: OperationNode, ScaleFactor: OperationNode) -> OperationNode:
+def scaleApply(X: OperationNode, Centering: OperationNode, ScaleFactor: OperationNode):
     
-    
-    X._check_matrix_op()
-    Centering._check_matrix_op()
-    ScaleFactor._check_matrix_op()
     params_dict = {'X':X, 'Centering':Centering, 'ScaleFactor':ScaleFactor}
-    return OperationNode(X.sds_context, 'scaleApply', named_input_nodes=params_dict, output_type=OutputType.MATRIX)
+    return Matrix(X.sds_context, 'scaleApply', named_input_nodes=params_dict)
 
 
     

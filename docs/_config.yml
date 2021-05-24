@@ -19,6 +19,11 @@
 #
 #-------------------------------------------------------------
 
+# Documentation https://jekyllrb.com/docs/configuration/options/#build-command-options
+
+baseurl: "/docs/latest" # the subpath of your site, e.g. /blog
+url: "http://systemds.apache.org" # the base hostname & protocol for your site
+
 highlighter: rouge
 markdown: kramdown
 
@@ -34,7 +39,7 @@ exclude:
   - updateAPI.sh
 
 # These allow the documentation to be updated with newer releases
-SYSTEMDS_VERSION: 2.0.0-SNAPSHOT
+SYSTEMDS_VERSION: 2.1.0-SNAPSHOT
 
 # if 'analytics_on' is true, analytics section will be rendered on the HTML pages
 analytics_on: true

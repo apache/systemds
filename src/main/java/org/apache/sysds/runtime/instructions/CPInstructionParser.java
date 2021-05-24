@@ -25,7 +25,7 @@ import org.apache.sysds.hops.FunctionOp;
 import org.apache.sysds.lops.Append;
 import org.apache.sysds.lops.DataGen;
 import org.apache.sysds.lops.LeftIndex;
-import org.apache.sysds.lops.LopProperties.ExecType;
+import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.lops.RightIndex;
 import org.apache.sysds.lops.UnaryCP;
 import org.apache.sysds.runtime.DMLRuntimeException;

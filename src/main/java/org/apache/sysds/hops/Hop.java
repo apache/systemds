@@ -38,7 +38,7 @@ import org.apache.sysds.lops.Compression;
 import org.apache.sysds.lops.Data;
 import org.apache.sysds.lops.DeCompression;
 import org.apache.sysds.lops.Lop;
-import org.apache.sysds.lops.LopProperties.ExecType;
+import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.lops.LopsException;
 import org.apache.sysds.lops.ReBlock;
 import org.apache.sysds.lops.UnaryCP;
@@ -47,6 +47,7 @@ import org.apache.sysds.runtime.controlprogram.LocalVariableMap;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject.UpdateType;
 import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysds.runtime.controlprogram.parfor.util.IDSequence;
+import org.apache.sysds.runtime.instructions.fed.FEDInstruction.FederatedOutput;
 import org.apache.sysds.runtime.instructions.gpu.context.GPUContextPool;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
@@ -81,6 +82,13 @@ public abstract class Hop implements ParseInfo {
 
 	protected ExecType _etype = null; //currently used exec type
 	protected ExecType _etypeForced = null; //exec type forced via platform or external optimizer
+
+	/**
+	 * Boolean defining if the output of the operation should be federated.
+	 * If it is true, the output should be kept at federated sites.
+	 * If it is false, the output should be retrieved by the coordinator.
+	 */
+	protected FederatedOutput _federatedOutput = FederatedOutput.NONE;
 	
 	// Estimated size for the output produced from this Hop
 	protected double _outputMemEstimate = OptimizerUtils.INVALID_SIZE;
@@ -281,6 +289,10 @@ public abstract class Hop implements ParseInfo {
 	}
 	
 	public void constructAndSetLopsDataFlowProperties() {
+		//propagate federated output configuration to lops
+		if( isFederated() )
+			getLops().setFederatedOutput(_federatedOutput);
+		
 		//Step 1: construct reblock lop if required (output of hop)
 		constructAndSetReblockLopIfRequired();
 		
@@ -734,6 +746,37 @@ public abstract class Hop implements ParseInfo {
 		return et;
 	}
 
+	/**
+	 * Update the execution type if input is federated and federated compilation is activated.
+	 * Federated compilation is activated in OptimizerUtils.
+	 */
+	protected void updateETFed(){
+		if ( inputIsFED() )
+			_etype = ExecType.FED;
+	}
+
+	/**
+	 * Returns true if any input has federated ExecType.
+	 * This method can only return true if FedDecision is activated.
+	 * @return true if any input has federated ExecType
+	 */
+	protected boolean inputIsFED(){
+		if ( !OptimizerUtils.FEDERATED_COMPILATION )
+			return false;
+		for ( Hop input : _input )
+			if ( input.isFederated() || input.isFederatedOutput() )
+				return true;
+		return false;
+	}
+	
+	public boolean isFederated(){
+		return getExecType() == ExecType.FED;
+	}
+	
+	public boolean isFederatedOutput(){
+		return _federatedOutput == FederatedOutput.FOUT;
+	}
+
 	public ArrayList<Hop> getParent() {
 		return _parent;
 	}
@@ -778,6 +821,10 @@ public abstract class Hop implements ParseInfo {
 
 	public PrivacyConstraint getPrivacy(){
 		return _privacyConstraint;
+	}
+
+	public boolean hasFederatedOutput(){
+		return _federatedOutput == FederatedOutput.FOUT;
 	}
 
 	public void setUpdateType(UpdateType update){
@@ -861,7 +908,7 @@ public abstract class Hop implements ParseInfo {
 	
 	public boolean dimsKnown() {
 		return ( _dataType == DataType.SCALAR 
-			|| ((_dataType==DataType.MATRIX || _dataType==DataType.FRAME) 
+			|| ((_dataType==DataType.MATRIX || _dataType==DataType.FRAME || _dataType==DataType.LIST) 
 				&& _dc.rowsKnown() && _dc.colsKnown()) );
 	}
 	

@@ -20,7 +20,7 @@
 package org.apache.sysds.lops;
 
  
-import org.apache.sysds.lops.LopProperties.ExecType;
+import org.apache.sysds.common.Types.ExecType;
 
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.OpOp1;
@@ -53,10 +53,12 @@ public class Unary extends Lop
 	 * @param dt data type
 	 * @param vt value type
 	 * @param et execution type
+	 * @param numThreads number of threads for execution
 	 */
-	public Unary(Lop input1, Lop input2, OpOp1 op, DataType dt, ValueType vt, ExecType et) {
+	public Unary(Lop input1, Lop input2, OpOp1 op, DataType dt, ValueType vt, ExecType et, int numThreads) {
 		super(Lop.Type.UNARY, dt, vt);
 		init(input1, input2, op, dt, vt, et);
+		_numThreads = numThreads;
 	}
 
 	private void init(Lop input1, Lop input2, OpOp1 op, DataType dt, ValueType vt, ExecType et) {
@@ -182,7 +184,12 @@ public class Unary extends Lop
 			sb.append( getInputs().get(1).prepInputOperand(input2));
 		
 		sb.append( OPERAND_DELIMITOR );
-		sb.append( this.prepOutputOperand(output));
+		sb.append( prepOutputOperand(output));
+		
+		if( getExecType() == ExecType.CP ) {
+			sb.append( OPERAND_DELIMITOR );
+			sb.append( String.valueOf(_numThreads) );
+		}
 		
 		return sb.toString();
 	}

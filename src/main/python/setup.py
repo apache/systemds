@@ -38,7 +38,8 @@ ARTIFACT_VERSION_SHORT = ARTIFACT_VERSION.split("-")[0]
 REQUIRED_PACKAGES = [
     'numpy >= 1.8.2',
     'py4j >= 0.10.9',
-    'requests >= 2.24.0'
+    'requests >= 2.24.0',
+    'pandas >= 1.2.2' 
 ]
 
 python_dir = 'systemds'
@@ -49,7 +50,8 @@ setup(
     name=ARTIFACT_NAME,
     version=ARTIFACT_VERSION_SHORT,
     description='SystemDS is a distributed and declarative machine learning platform.',
-    long_description=open('README.md').read(),
+    long_description=open('README.md', encoding='utf-8').read(),
+    long_description_content_type='text/markdown',
     url='https://github.com/apache/systemds',
     author='SystemDS',
     author_email='dev@systemds.apache.org',

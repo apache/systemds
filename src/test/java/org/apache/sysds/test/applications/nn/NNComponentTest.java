@@ -108,6 +108,11 @@ public class NNComponentTest extends BaseTest {
 		run("transpose_NCHW_to_CNHW.dml");
 	}
 
+	@Test 
+	public void logcosh(){
+		run("logcosh.dml");
+	}
+
 	@Override
 	protected void run(String name) {
 		super.run("component/" + name);

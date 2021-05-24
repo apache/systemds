@@ -18,7 +18,7 @@
     catch(err) {
     }
 //-->
-var methods = {"i0":10,"i1":10,"i2":10,"i3":10};
+var methods = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10};
 var tabs = {65535:["t0","All Methods"],2:["t2","Instance Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -76,13 +76,13 @@ var activeTableTab = "activeTableTab";
 <li>Summary:&nbsp;</li>
 <li>Nested&nbsp;|&nbsp;</li>
 <li>Field&nbsp;|&nbsp;</li>
-<li>Constr&nbsp;|&nbsp;</li>
+<li><a href="#constructor.summary">Constr</a>&nbsp;|&nbsp;</li>
 <li><a href="#method.summary">Method</a></li>
 </ul>
 <ul class="subNavList">
 <li>Detail:&nbsp;</li>
 <li>Field&nbsp;|&nbsp;</li>
-<li>Constr&nbsp;|&nbsp;</li>
+<li><a href="#constructor.detail">Constr</a>&nbsp;|&nbsp;</li>
 <li><a href="#method.detail">Method</a></li>
 </ul>
 </div>
@@ -114,7 +114,7 @@ var activeTableTab = "activeTableTab";
 <li class="blockList">
 <dl>
 <dt>All Implemented Interfaces:</dt>
-<dd><a href="https://docs.oracle.com/javase/8/docs/api/java/io/Serializable.html?is-external=true" title="class or interface in java.io">Serializable</a></dd>
+<dd><a href="https://docs.oracle.com/javase/8/docs/api/java/io/Externalizable.html?is-external=true" title="class or interface in java.io">Externalizable</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Serializable.html?is-external=true" title="class or interface in java.io">Serializable</a></dd>
 </dl>
 <hr>
 <br>
@@ -133,6 +133,23 @@ extends <a href="../../../../../../org/apache/sysds/runtime/transform/decode/Dec
 <div class="summary">
 <ul class="blockList">
 <li class="blockList">
+<!-- ======== CONSTRUCTOR SUMMARY ======== -->
+<ul class="blockList">
+<li class="blockList"><a name="constructor.summary">
+<!--   -->
+</a>
+<h3>Constructor Summary</h3>
+<table class="memberSummary" border="0" cellpadding="3" cellspacing="0" summary="Constructor Summary table, listing constructors, and an explanation">
+<caption><span>Constructors</span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colOne" scope="col">Constructor and Description</th>
+</tr>
+<tr class="altColor">
+<td class="colOne"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/transform/decode/DecoderComposite.html#DecoderComposite--">DecoderComposite</a></span>()</code>&nbsp;</td>
+</tr>
+</table>
+</li>
+</ul>
 <!-- ========== METHOD SUMMARY =========== -->
 <ul class="blockList">
 <li class="blockList"><a name="method.summary">
@@ -157,6 +174,13 @@ extends <a href="../../../../../../org/apache/sysds/runtime/transform/decode/Dec
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/transform/decode/DecoderComposite.html#initMetaData-org.apache.sysds.runtime.matrix.data.FrameBlock-">initMetaData</a></span>(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;meta)</code>&nbsp;</td>
 </tr>
 <tr id="i2" class="altColor">
+<td class="colFirst"><code>void</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/transform/decode/DecoderComposite.html#readExternal-java.io.ObjectInput-">readExternal</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/io/ObjectInput.html?is-external=true" title="class or interface in java.io">ObjectInput</a>&nbsp;in)</code>
+<div class="block">Redirects the default java serialization via externalizable to our default
+ hadoop writable serialization for efficient broadcast/rdd deserialization.</div>
+</td>
+</tr>
+<tr id="i3" class="rowColor">
 <td class="colFirst"><code><a href="../../../../../../org/apache/sysds/runtime/transform/decode/Decoder.html" title="class in org.apache.sysds.runtime.transform.decode">Decoder</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/transform/decode/DecoderComposite.html#subRangeDecoder-int-int-int-">subRangeDecoder</a></span>(int&nbsp;colStart,
                int&nbsp;colEnd,
@@ -164,11 +188,18 @@ extends <a href="../../../../../../org/apache/sysds/runtime/transform/decode/Dec
 <div class="block">Returns a new Decoder that only handles a sub range of columns.</div>
 </td>
 </tr>
-<tr id="i3" class="rowColor">
+<tr id="i4" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/transform/decode/DecoderComposite.html#updateIndexRanges-long:A-long:A-">updateIndexRanges</a></span>(long[]&nbsp;beginDims,
                  long[]&nbsp;endDims)</code>
 <div class="block">Update index-ranges to after decoding.</div>
+</td>
+</tr>
+<tr id="i5" class="rowColor">
+<td class="colFirst"><code>void</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/transform/decode/DecoderComposite.html#writeExternal-java.io.ObjectOutput-">writeExternal</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/io/ObjectOutput.html?is-external=true" title="class or interface in java.io">ObjectOutput</a>&nbsp;out)</code>
+<div class="block">Redirects the default java serialization via externalizable to our default
+ hadoop writable serialization for efficient broadcast/rdd serialization.</div>
 </td>
 </tr>
 </table>
@@ -194,6 +225,23 @@ extends <a href="../../../../../../org/apache/sysds/runtime/transform/decode/Dec
 <div class="details">
 <ul class="blockList">
 <li class="blockList">
+<!-- ========= CONSTRUCTOR DETAIL ======== -->
+<ul class="blockList">
+<li class="blockList"><a name="constructor.detail">
+<!--   -->
+</a>
+<h3>Constructor Detail</h3>
+<a name="DecoderComposite--">
+<!--   -->
+</a>
+<ul class="blockListLast">
+<li class="blockList">
+<h4>DecoderComposite</h4>
+<pre>public&nbsp;DecoderComposite()</pre>
+</li>
+</ul>
+</li>
+</ul>
 <!-- ============ METHOD DETAIL ========== -->
 <ul class="blockList">
 <li class="blockList"><a name="method.detail">
@@ -267,13 +315,59 @@ extends <a href="../../../../../../org/apache/sysds/runtime/transform/decode/Dec
 <a name="initMetaData-org.apache.sysds.runtime.matrix.data.FrameBlock-">
 <!--   -->
 </a>
-<ul class="blockListLast">
+<ul class="blockList">
 <li class="blockList">
 <h4>initMetaData</h4>
 <pre>public&nbsp;void&nbsp;initMetaData(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;meta)</pre>
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
 <dd><code><a href="../../../../../../org/apache/sysds/runtime/transform/decode/Decoder.html#initMetaData-org.apache.sysds.runtime.matrix.data.FrameBlock-">initMetaData</a></code>&nbsp;in class&nbsp;<code><a href="../../../../../../org/apache/sysds/runtime/transform/decode/Decoder.html" title="class in org.apache.sysds.runtime.transform.decode">Decoder</a></code></dd>
+</dl>
+</li>
+</ul>
+<a name="writeExternal-java.io.ObjectOutput-">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>writeExternal</h4>
+<pre>public&nbsp;void&nbsp;writeExternal(<a href="https://docs.oracle.com/javase/8/docs/api/java/io/ObjectOutput.html?is-external=true" title="class or interface in java.io">ObjectOutput</a>&nbsp;out)
+                   throws <a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io">IOException</a></pre>
+<div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="../../../../../../org/apache/sysds/runtime/transform/decode/Decoder.html#writeExternal-java.io.ObjectOutput-">Decoder</a></code></span></div>
+<div class="block">Redirects the default java serialization via externalizable to our default
+ hadoop writable serialization for efficient broadcast/rdd serialization.</div>
+<dl>
+<dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
+<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/io/Externalizable.html?is-external=true#writeExternal-java.io.ObjectOutput-" title="class or interface in java.io">writeExternal</a></code>&nbsp;in interface&nbsp;<code><a href="https://docs.oracle.com/javase/8/docs/api/java/io/Externalizable.html?is-external=true" title="class or interface in java.io">Externalizable</a></code></dd>
+<dt><span class="overrideSpecifyLabel">Overrides:</span></dt>
+<dd><code><a href="../../../../../../org/apache/sysds/runtime/transform/decode/Decoder.html#writeExternal-java.io.ObjectOutput-">writeExternal</a></code>&nbsp;in class&nbsp;<code><a href="../../../../../../org/apache/sysds/runtime/transform/decode/Decoder.html" title="class in org.apache.sysds.runtime.transform.decode">Decoder</a></code></dd>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>out</code> - object output</dd>
+<dt><span class="throwsLabel">Throws:</span></dt>
+<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io">IOException</a></code> - if IOException occurs</dd>
+</dl>
+</li>
+</ul>
+<a name="readExternal-java.io.ObjectInput-">
+<!--   -->
+</a>
+<ul class="blockListLast">
+<li class="blockList">
+<h4>readExternal</h4>
+<pre>public&nbsp;void&nbsp;readExternal(<a href="https://docs.oracle.com/javase/8/docs/api/java/io/ObjectInput.html?is-external=true" title="class or interface in java.io">ObjectInput</a>&nbsp;in)
+                  throws <a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io">IOException</a></pre>
+<div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="../../../../../../org/apache/sysds/runtime/transform/decode/Decoder.html#readExternal-java.io.ObjectInput-">Decoder</a></code></span></div>
+<div class="block">Redirects the default java serialization via externalizable to our default
+ hadoop writable serialization for efficient broadcast/rdd deserialization.</div>
+<dl>
+<dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
+<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/io/Externalizable.html?is-external=true#readExternal-java.io.ObjectInput-" title="class or interface in java.io">readExternal</a></code>&nbsp;in interface&nbsp;<code><a href="https://docs.oracle.com/javase/8/docs/api/java/io/Externalizable.html?is-external=true" title="class or interface in java.io">Externalizable</a></code></dd>
+<dt><span class="overrideSpecifyLabel">Overrides:</span></dt>
+<dd><code><a href="../../../../../../org/apache/sysds/runtime/transform/decode/Decoder.html#readExternal-java.io.ObjectInput-">readExternal</a></code>&nbsp;in class&nbsp;<code><a href="../../../../../../org/apache/sysds/runtime/transform/decode/Decoder.html" title="class in org.apache.sysds.runtime.transform.decode">Decoder</a></code></dd>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>in</code> - object input</dd>
+<dt><span class="throwsLabel">Throws:</span></dt>
+<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io">IOException</a></code> - if IOException occur</dd>
 </dl>
 </li>
 </ul>
@@ -332,13 +426,13 @@ extends <a href="../../../../../../org/apache/sysds/runtime/transform/decode/Dec
 <li>Summary:&nbsp;</li>
 <li>Nested&nbsp;|&nbsp;</li>
 <li>Field&nbsp;|&nbsp;</li>
-<li>Constr&nbsp;|&nbsp;</li>
+<li><a href="#constructor.summary">Constr</a>&nbsp;|&nbsp;</li>
 <li><a href="#method.summary">Method</a></li>
 </ul>
 <ul class="subNavList">
 <li>Detail:&nbsp;</li>
 <li>Field&nbsp;|&nbsp;</li>
-<li>Constr&nbsp;|&nbsp;</li>
+<li><a href="#constructor.detail">Constr</a>&nbsp;|&nbsp;</li>
 <li><a href="#method.detail">Method</a></li>
 </ul>
 </div>
@@ -346,6 +440,6 @@ extends <a href="../../../../../../org/apache/sysds/runtime/transform/decode/Dec
 <!--   -->
 </a></div>
 <!-- ======== END OF BOTTOM NAVBAR ======= -->
-<p class="legalCopy"><small>Copyright &#169; 2020 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
+<p class="legalCopy"><small>Copyright &#169; 2021 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
 </body>
 </html>

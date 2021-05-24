@@ -24,18 +24,15 @@
 
 from typing import Dict, Iterable
 
-from systemds.operator import OperationNode
+from systemds.operator import OperationNode, Matrix
 from systemds.script_building.dag import OutputType
 from systemds.utils.consts import VALID_INPUT_TYPES
 
-def abstain(X: OperationNode, Y: OperationNode, threshold: float, **kwargs: Dict[str, VALID_INPUT_TYPES]) -> OperationNode:
+def abstain(X: OperationNode, Y: OperationNode, threshold: float, **kwargs: Dict[str, VALID_INPUT_TYPES]):
     
-    
-    X._check_matrix_op()
-    Y._check_matrix_op()
     params_dict = {'X':X, 'Y':Y, 'threshold':threshold}
     params_dict.update(kwargs)
-    return OperationNode(X.sds_context, 'abstain', named_input_nodes=params_dict, output_type=OutputType.MATRIX)
+    return Matrix(X.sds_context, 'abstain', named_input_nodes=params_dict)
 
 
     

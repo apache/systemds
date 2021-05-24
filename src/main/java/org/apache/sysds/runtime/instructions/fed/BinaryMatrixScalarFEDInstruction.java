@@ -29,8 +29,8 @@ import org.apache.sysds.runtime.matrix.operators.Operator;
 public class BinaryMatrixScalarFEDInstruction extends BinaryFEDInstruction
 {
 	protected BinaryMatrixScalarFEDInstruction(Operator op,
-		CPOperand in1, CPOperand in2, CPOperand out, String opcode, String istr) {
-		super(FEDType.Binary, op, in1, in2, out, opcode, istr);
+		CPOperand in1, CPOperand in2, CPOperand out, String opcode, String istr, FederatedOutput fedOut) {
+		super(FEDType.Binary, op, in1, in2, out, opcode, istr, fedOut);
 	}
 
 	@Override
@@ -44,7 +44,7 @@ public class BinaryMatrixScalarFEDInstruction extends BinaryFEDInstruction
 			mo.getFedMapping().broadcast(ec.getScalarInput(scalar)) : null;
 		FederatedRequest fr2 = FederationUtils.callInstruction(instString, output,
 			new CPOperand[]{matrix, (fr1 != null)?scalar:null},
-			new long[]{mo.getFedMapping().getID(), (fr1 != null)?fr1.getID():-1});
+			new long[]{mo.getFedMapping().getID(), (fr1 != null)?fr1.getID():-1}, true);
 		
 		//execute federated matrix-scalar operation and cleanups
 		if( fr1 != null ) {

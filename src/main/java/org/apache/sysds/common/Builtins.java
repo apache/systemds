@@ -135,6 +135,14 @@ public enum Builtins {
 	IMPUTE_BY_MEDIAN("imputeByMedian", true),
 	IMPUTE_BY_MODE("imputeByMode", true),
 	IMG_CROP("img_crop", true),
+	IMG_TRANSFORM("img_transform", true),
+	IMG_TRANSLATE("img_translate", true),
+	IMG_ROTATE("img_rotate", true),
+	IMG_SHEAR("img_shear", true),
+	IMG_CUTOUT("img_cutout", true),
+	IMG_SAMPLE_PAIRING("img_sample_pairing", true),
+	IMG_INVERT("img_invert", true),
+	IMG_POSTERIZE("img_posterize", true),
 	IMPUTE_FD("imputeByFD", true),
 	INTERQUANTILE("interQuantile", false),
 	INTERSECT("intersect", true),
@@ -181,7 +189,8 @@ public enum Builtins {
 	NCOL("ncol", false),
 	NORMALIZE("normalize", true),
 	NROW("nrow", false),
-	NAIVEBAYES("naivebayes", true, false),
+	NAIVEBAYES("naiveBayes", true, false),
+	NAIVEBAYESPREDICT("naiveBayesPredict", true, false),
 	OUTER("outer", false),
 	OUTLIER("outlier", true, false), //TODO parameterize opposite
 	OUTLIER_SD("outlierBySd", true),
@@ -226,6 +235,7 @@ public enum Builtins {
 	SOLVE("solve", false),
 	SPLIT("split", true),
 	SPLIT_BALANCED("splitBalanced", true),
+	STABLE_MARRIAGE("stableMarriage", true),
 	STATSNA("statsNA", true),
 	SQRT("sqrt", false),
 	SUM("sum", false),
@@ -376,6 +386,6 @@ public enum Builtins {
 
 	public static String getInternalFName(String name, DataType dt) {
 		return !contains(name, true, false) ? name : // private builtin
-			(dt.isMatrix() ? "m_" : "s_") + name;    // public builtin
+				(dt.isMatrix() ? "m_" : "s_") + name;    // public builtin
 	}
 }

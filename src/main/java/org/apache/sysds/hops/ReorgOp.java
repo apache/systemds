@@ -25,7 +25,7 @@ import org.apache.sysds.common.Types.ReOrgOp;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.hops.rewrite.HopRewriteUtils;
 import org.apache.sysds.lops.Lop;
-import org.apache.sysds.lops.LopProperties.ExecType;
+import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.lops.Transform;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
@@ -61,6 +61,7 @@ public class ReorgOp extends MultiThreadedHop
 		_op = o;
 		getInput().add(0, inp);
 		inp.getParent().add(this);
+		updateETFed();
 		
 		//compute unknown dims and nnz
 		refreshSizeInformation();
@@ -76,6 +77,8 @@ public class ReorgOp extends MultiThreadedHop
 			getInput().add(i, in);
 			in.getParent().add(this);
 		}
+
+		updateETFed();
 		
 		//compute unknown dims and nnz
 		refreshSizeInformation();
@@ -220,7 +223,7 @@ public class ReorgOp extends MultiThreadedHop
 		
 		//add reblock/checkpoint lops if necessary
 		constructAndSetLopsDataFlowProperties();
-		
+
 		return getLops();
 	}
 
@@ -365,6 +368,8 @@ public class ReorgOp extends MultiThreadedHop
 			//check for valid CP dimensions and matrix size
 			checkAndSetInvalidCPDimsAndSize();
 		}
+
+		updateETFed();
 		
 		//mark for recompile (forever)
 		setRequiresRecompileIfNecessary();

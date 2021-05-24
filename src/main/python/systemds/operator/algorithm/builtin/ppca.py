@@ -24,11 +24,11 @@
 
 from typing import Dict, Iterable
 
-from systemds.operator import OperationNode
+from systemds.operator import OperationNode, Matrix
 from systemds.script_building.dag import OutputType
 from systemds.utils.consts import VALID_INPUT_TYPES
 
-def ppca(X: OperationNode, **kwargs: Dict[str, VALID_INPUT_TYPES]) -> OperationNode:
+def ppca(X: OperationNode, **kwargs: Dict[str, VALID_INPUT_TYPES]):
     """
     :param X: n x m input feature matrix
     :param k: indicates dimension of the new vector space constructed from eigen vectors
@@ -38,8 +38,6 @@ def ppca(X: OperationNode, **kwargs: Dict[str, VALID_INPUT_TYPES]) -> OperationN
     :param verbose: verbose debug output
     :return: 'OperationNode' containing output feature matrix with k columns & output dominant eigen vectors (can be used for projections) 
     """
-    
-    X._check_matrix_op()
     params_dict = {'X':X}
     params_dict.update(kwargs)
     return OperationNode(X.sds_context, 'ppca', named_input_nodes=params_dict, output_type=OutputType.LIST, number_of_outputs=2, output_types=[OutputType.MATRIX, OutputType.MATRIX])

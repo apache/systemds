@@ -98,6 +98,10 @@
 <td class="colFirst"><a href="#org.apache.sysds.lops">org.apache.sysds.lops</a></td>
 <td class="colLast">&nbsp;</td>
 </tr>
+<tr class="altColor">
+<td class="colFirst"><a href="#org.apache.sysds.runtime.instructions.cp">org.apache.sysds.runtime.instructions.cp</a></td>
+<td class="colLast">&nbsp;</td>
+</tr>
 </tbody>
 </table>
 </li>
@@ -215,15 +219,39 @@ the order they are declared.</div>
 </tr>
 <tbody>
 <tr class="altColor">
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/lops/DataGen.html#DataGen-org.apache.sysds.common.Types.OpOpDG-org.apache.sysds.parser.DataIdentifier-java.util.HashMap-java.lang.String-org.apache.sysds.common.Types.DataType-org.apache.sysds.common.Types.ValueType-org.apache.sysds.lops.LopProperties.ExecType-">DataGen</a></span>(<a href="../../../../../org/apache/sysds/common/Types.OpOpDG.html" title="enum in org.apache.sysds.common">Types.OpOpDG</a>&nbsp;op,
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/lops/DataGen.html#DataGen-org.apache.sysds.common.Types.OpOpDG-org.apache.sysds.parser.DataIdentifier-java.util.HashMap-java.lang.String-org.apache.sysds.common.Types.DataType-org.apache.sysds.common.Types.ValueType-org.apache.sysds.lops.ExecType-">DataGen</a></span>(<a href="../../../../../org/apache/sysds/common/Types.OpOpDG.html" title="enum in org.apache.sysds.common">Types.OpOpDG</a>&nbsp;op,
        <a href="../../../../../org/apache/sysds/parser/DataIdentifier.html" title="class in org.apache.sysds.parser">DataIdentifier</a>&nbsp;id,
        <a href="https://docs.oracle.com/javase/8/docs/api/java/util/HashMap.html?is-external=true" title="class or interface in java.util">HashMap</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>,<a href="../../../../../org/apache/sysds/lops/Lop.html" title="class in org.apache.sysds.lops">Lop</a>&gt;&nbsp;inputParametersLops,
        <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;baseDir,
        <a href="../../../../../org/apache/sysds/common/Types.DataType.html" title="enum in org.apache.sysds.common">Types.DataType</a>&nbsp;dt,
        <a href="../../../../../org/apache/sysds/common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>&nbsp;vt,
-       <a href="../../../../../org/apache/sysds/lops/LopProperties.ExecType.html" title="enum in org.apache.sysds.lops">LopProperties.ExecType</a>&nbsp;et)</code>
+       <a href="../../../../../org/apache/sysds/lops/ExecType.html" title="enum in org.apache.sysds.lops">ExecType</a>&nbsp;et)</code>
 <div class="block">Creates a new Rand-LOP.</div>
 </td>
+</tr>
+</tbody>
+</table>
+</li>
+<li class="blockList"><a name="org.apache.sysds.runtime.instructions.cp">
+<!--   -->
+</a>
+<h3>Uses of <a href="../../../../../org/apache/sysds/common/Types.OpOpDG.html" title="enum in org.apache.sysds.common">Types.OpOpDG</a> in <a href="../../../../../org/apache/sysds/runtime/instructions/cp/package-summary.html">org.apache.sysds.runtime.instructions.cp</a></h3>
+<table class="useSummary" border="0" cellpadding="3" cellspacing="0" summary="Use table, listing constructors, and an explanation">
+<caption><span>Constructors in <a href="../../../../../org/apache/sysds/runtime/instructions/cp/package-summary.html">org.apache.sysds.runtime.instructions.cp</a> with parameters of type <a href="../../../../../org/apache/sysds/common/Types.OpOpDG.html" title="enum in org.apache.sysds.common">Types.OpOpDG</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colOne" scope="col">Constructor and Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/instructions/cp/DataGenCPInstruction.html#DataGenCPInstruction-org.apache.sysds.runtime.matrix.operators.Operator-org.apache.sysds.common.Types.OpOpDG-org.apache.sysds.runtime.instructions.cp.CPOperand-org.apache.sysds.runtime.instructions.cp.CPOperand-org.apache.sysds.runtime.instructions.cp.CPOperand-java.lang.String-java.lang.String-java.lang.String-java.lang.String-">DataGenCPInstruction</a></span>(<a href="../../../../../org/apache/sysds/runtime/matrix/operators/Operator.html" title="class in org.apache.sysds.runtime.matrix.operators">Operator</a>&nbsp;op,
+                    <a href="../../../../../org/apache/sysds/common/Types.OpOpDG.html" title="enum in org.apache.sysds.common">Types.OpOpDG</a>&nbsp;method,
+                    <a href="../../../../../org/apache/sysds/runtime/instructions/cp/CPOperand.html" title="class in org.apache.sysds.runtime.instructions.cp">CPOperand</a>&nbsp;out,
+                    <a href="../../../../../org/apache/sysds/runtime/instructions/cp/CPOperand.html" title="class in org.apache.sysds.runtime.instructions.cp">CPOperand</a>&nbsp;rows,
+                    <a href="../../../../../org/apache/sysds/runtime/instructions/cp/CPOperand.html" title="class in org.apache.sysds.runtime.instructions.cp">CPOperand</a>&nbsp;cols,
+                    <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;data,
+                    <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;schema,
+                    <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;opcode,
+                    <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;str)</code>&nbsp;</td>
 </tr>
 </tbody>
 </table>
@@ -279,6 +307,6 @@ the order they are declared.</div>
 <!--   -->
 </a></div>
 <!-- ======== END OF BOTTOM NAVBAR ======= -->
-<p class="legalCopy"><small>Copyright &#169; 2020 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
+<p class="legalCopy"><small>Copyright &#169; 2021 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
 </body>
 </html>

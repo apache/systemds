@@ -34,7 +34,7 @@ import org.apache.sysds.hops.rewrite.HopRewriteUtils;
 import org.apache.sysds.lops.Data;
 import org.apache.sysds.lops.Federated;
 import org.apache.sysds.lops.Lop;
-import org.apache.sysds.lops.LopProperties.ExecType;
+import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.lops.LopsException;
 import org.apache.sysds.lops.Sql;
 import org.apache.sysds.parser.DataExpression;
@@ -322,7 +322,7 @@ public class DataOp extends Hop {
 		
 		//add reblock/checkpoint lops if necessary
 		constructAndSetLopsDataFlowProperties();
-	
+
 		return getLops();
 
 	}
@@ -487,7 +487,16 @@ public class DataOp extends Hop {
 		
 		return _etype;
 	}
-	
+
+	/**
+	 * True if execution is federated, if output is federated, or if OpOpData is federated.
+	 * @return true if federated
+	 */
+	@Override
+	public boolean isFederated() {
+		return super.isFederated() || getOp() == OpOpData.FEDERATED;
+	}
+
 	@Override
 	public void refreshSizeInformation() {
 		if( _op == OpOpData.PERSISTENTWRITE || _op == OpOpData.TRANSIENTWRITE ) {

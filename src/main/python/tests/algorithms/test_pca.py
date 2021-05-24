@@ -23,7 +23,6 @@ import unittest
 
 import numpy as np
 from systemds.context import SystemDSContext
-from systemds.matrix import Matrix
 from systemds.operator.algorithm import pca
 
 
@@ -47,7 +46,7 @@ class TestPCA(unittest.TestCase):
         then the output value should be similar.
         """
         m1 = self.generate_matrices_for_pca(30, seed=1304)
-        X = Matrix(self.sds, m1)
+        X = self.sds.from_numpy( m1)
         # print(features)
         [res, model, _, _ ] = pca(X, K=1, scale="FALSE", center="FALSE").compute()
         for (x, y) in zip(m1, res):
@@ -58,7 +57,7 @@ class TestPCA(unittest.TestCase):
         line of numbers. Here the pca should return values that are double or close to double of the last value
         """
         m1 = np.array([[1, 1], [2, 2], [3, 3], [4, 4], [5, 5]])
-        [res, model, _, _ ] = pca(Matrix(self.sds, m1), K=1,
+        [res, model, _, _ ] = pca(self.sds.from_numpy( m1), K=1,
                   scale=False, center=False).compute()
         for x in range(len(m1) - 1):
             self.assertTrue(abs(res[x + 1] - res[0] * (x + 2)) < 0.001)

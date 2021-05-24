@@ -22,6 +22,7 @@
 import static jcuda.runtime.JCuda.cudaMemGetInfo;
 import static jcuda.runtime.JCuda.cudaMemset;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -40,6 +41,10 @@ import org.apache.sysds.conf.DMLConfig;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.instructions.gpu.GPUInstruction;
+import org.apache.sysds.runtime.lineage.LineageCacheConfig;
+import org.apache.sysds.runtime.lineage.LineageCacheEntry;
+import org.apache.sysds.runtime.lineage.LineageCacheStatistics;
+import org.apache.sysds.runtime.lineage.LineageGPUCacheEviction;
 import org.apache.sysds.utils.GPUStatistics;
 
 import jcuda.Pointer;
@@ -102,8 +107,10 @@ public class GPUMemoryManager {
 	 * @return either the size or -1 if no such pointer exists
 	 */
 	public long getSizeAllocatedGPUPointer(Pointer ptr) {
-		if(allPointers.containsKey(ptr)) {
-			return allPointers.get(ptr).getSizeInBytes();
+		synchronized(allPointers) {
+			if(allPointers.containsKey(ptr)) {
+				return allPointers.get(ptr).getSizeInBytes();
+			}
 		}
 		return -1;
 	}
@@ -171,7 +178,9 @@ public class GPUMemoryManager {
 		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 		try {
 			allocator.allocate(A, size);
-			allPointers.put(A, new PointerInfo(size));
+			synchronized(allPointers) {
+				allPointers.put(A, new PointerInfo(size));
+			}
 			if(DMLScript.STATISTICS) {
 				long totalTime = System.nanoTime() - t0;
 				GPUStatistics.cudaAllocSuccessTime.add(totalTime);
@@ -245,7 +254,7 @@ public class GPUMemoryManager {
 		if(DEBUG_MEMORY_LEAK) {
 			LOG.info("GPU Memory info during malloc:" + toString());
 		}
-		
+
 		// Step 1: First try reusing exact match in rmvarGPUPointers to avoid holes in the GPU memory
 		Pointer A = lazyCudaFreeMemoryManager.getRmvarPointer(opcode, size);
 		
@@ -270,7 +279,7 @@ public class GPUMemoryManager {
 		
 		// Step 4: Eagerly free-up rmvarGPUPointers and check if memory is available on GPU
 		// Evictions of matrix blocks are expensive (as they might lead them to be written to disk in case of smaller CPU budget) 
-		// than doing cuda free/malloc/memset. So, rmvar-ing every blocks (step 4) is preferred to eviction (step 5).
+		// than doing cuda free/malloc/memset. So, rmvar-ing every blocks (step 4) is preferred over eviction (step 5, 6, 7).
 		if(A == null) {
 			lazyCudaFreeMemoryManager.clearAll();
 			if(allocator.canAllocate(size)) {
@@ -282,49 +291,140 @@ public class GPUMemoryManager {
 		// Step 5: Try eviction/clearing exactly one with size restriction
 		if(A == null) {
 			long t0 =  DMLScript.STATISTICS ? System.nanoTime() : 0;
-			Optional<GPUObject> sizeBasedUnlockedGPUObjects = matrixMemoryManager.gpuObjects.stream()
-						.filter(gpuObj -> !gpuObj.isLocked() && matrixMemoryManager.getWorstCaseContiguousMemorySize(gpuObj) >= size)
-						.min((o1, o2) -> worstCaseContiguousMemorySizeCompare(o1, o2));
-			if(sizeBasedUnlockedGPUObjects.isPresent()) {
-				evictOrClear(sizeBasedUnlockedGPUObjects.get(), opcode);
-				A = cudaMallocNoWarn(tmpA, size, null);
-				if(A == null)
-					LOG.warn("cudaMalloc failed after clearing/evicting based on size.");
-				if(DMLScript.STATISTICS) {
-					long totalTime = System.nanoTime() - t0;
-					GPUStatistics.cudaEvictTime.add(totalTime);
-					GPUStatistics.cudaEvictSizeTime.add(totalTime);
-					GPUStatistics.cudaEvictCount.increment();
-					GPUStatistics.cudaEvictSizeCount.increment();
+			synchronized (matrixMemoryManager.gpuObjects) {
+				Optional<GPUObject> sizeBasedUnlockedGPUObjects = matrixMemoryManager.gpuObjects.stream()
+							.filter(gpuObj -> !gpuObj.isLocked() && !gpuObj.isLinCached() 
+							&& matrixMemoryManager.getWorstCaseContiguousMemorySize(gpuObj) >= size)
+							.min((o1, o2) -> worstCaseContiguousMemorySizeCompare(o1, o2));
+				if(sizeBasedUnlockedGPUObjects.isPresent()) {
+					evictOrClear(sizeBasedUnlockedGPUObjects.get(), opcode);
+					A = cudaMallocNoWarn(tmpA, size, null);
+					if(A == null)
+						LOG.warn("cudaMalloc failed after clearing/evicting based on size.");
+					if(DMLScript.STATISTICS) {
+						long totalTime = System.nanoTime() - t0;
+						GPUStatistics.cudaEvictTime.add(totalTime);
+						GPUStatistics.cudaEvictSizeTime.add(totalTime);
+						GPUStatistics.cudaEvictCount.increment();
+						GPUStatistics.cudaEvictSizeCount.increment();
+					}
 				}
 			}
 		}
 		
-		// Step 6: Try eviction/clearing one-by-one based on the given policy without size restriction
+		// Step 6: Evict gpu intermediates from lineage cache
+		// This can create holes. However, evicting rmVarpending objects might right away make the required space
+		// TODO: Size dependent eviction logic (CostNSize is one)
+		if (A == null && !LineageCacheConfig.ReuseCacheType.isNone()) {
+			long currentAvailableMemory = allocator.getAvailableMemory();
+			List<LineageCacheEntry> lockedEntries = new ArrayList<>();
+			long t0 =  DMLScript.STATISTICS ? System.nanoTime() : 0;
+			while (A == null && !LineageGPUCacheEviction.isGPUCacheEmpty()) {
+				LineageCacheEntry le = LineageGPUCacheEviction.pollFirstEntry();
+				GPUObject cachedGpuObj = le.getGPUObject();
+				GPUObject headGpuObj = cachedGpuObj.lineageCachedChainHead != null
+						? cachedGpuObj.lineageCachedChainHead : cachedGpuObj;
+				// Check and continue if any object in the linked list is locked
+				boolean locked = false;
+				GPUObject nextgpuObj = headGpuObj;
+				while (nextgpuObj!= null) {
+					if (nextgpuObj.isLocked())
+						locked = true;
+					nextgpuObj = nextgpuObj.nextLineageCachedEntry;
+				}
+				if (locked) {
+					lockedEntries.add(le);
+					continue;
+				}
+
+				// TODO: First remove the gobj chains that don't contain any live and dirty objects.
+				currentAvailableMemory += headGpuObj.getSizeOnDevice();
+
+				// Copy from device to host for all live and dirty objects
+				boolean copied = false;
+				nextgpuObj = headGpuObj;
+				while (nextgpuObj!= null) {
+					// Keeping isLinCached as True here will save data deletion by copyFromDeviceToHost
+					if (!nextgpuObj.isrmVarPending() && nextgpuObj.isDirty()) { //live and dirty
+						nextgpuObj.copyFromDeviceToHost(opcode, true, true);
+						copied = true;
+					}
+					nextgpuObj.setIsLinCached(false);
+					nextgpuObj = nextgpuObj.nextLineageCachedEntry;
+				}
+
+				// Copy from device cache to CPU lineage cache if not already copied
+				LineageGPUCacheEviction.copyToHostCache(le, opcode, copied);
+				if (DMLScript.STATISTICS)
+					LineageCacheStatistics.incrementGpuSyncEvicts();
+
+				// For all the other objects, remove and clear data (only once)
+				nextgpuObj = headGpuObj;
+				boolean freed = false;
+				while (nextgpuObj!= null) {
+					// If not live or live but not dirty
+					if (nextgpuObj.isrmVarPending() || !nextgpuObj.isDirty()) {
+						if (!freed) {
+							nextgpuObj.clearData(opcode, true);
+							freed = true;
+						}
+						else
+							nextgpuObj.clearGPUObject();
+					}
+					nextgpuObj = nextgpuObj.nextLineageCachedEntry;
+				}
+				// Clear the GPUOjects chain
+				GPUObject currgpuObj = headGpuObj;
+				while (currgpuObj.nextLineageCachedEntry != null) {
+					nextgpuObj = currgpuObj.nextLineageCachedEntry;
+					currgpuObj.lineageCachedChainHead = null;
+					currgpuObj.nextLineageCachedEntry = null;
+					nextgpuObj.lineageCachedChainHead = null;
+					currgpuObj = nextgpuObj;
+				}
+
+				if(currentAvailableMemory >= size)
+					// This doesn't guarantee allocation due to fragmented freed memory
+					A = cudaMallocNoWarn(tmpA, size, null); 
+			}
+
+			// Add the locked entries back to the eviction queue
+			if (!lockedEntries.isEmpty())
+				LineageGPUCacheEviction.addEntryList(lockedEntries);
+			if (DMLScript.STATISTICS) //TODO: dedicated statistics for lineage
+				GPUStatistics.cudaEvictTime.add(System.nanoTime() - t0);
+
+			if (A == null)
+				LOG.warn("cudaMalloc failed after Lineage GPU cache eviction.");
+		}
+		
+		// Step 7: Try eviction/clearing one-by-one based on the given policy without size restriction
 		if(A == null) {
 			long t0 =  DMLScript.STATISTICS ? System.nanoTime() : 0;
 			long currentAvailableMemory = allocator.getAvailableMemory();
 			boolean canFit = false;
 			// ---------------------------------------------------------------
 			// Evict unlocked GPU objects one-by-one and try malloc
-			List<GPUObject> unlockedGPUObjects = matrixMemoryManager.gpuObjects.stream()
-						.filter(gpuObj -> !gpuObj.isLocked()).collect(Collectors.toList());
-			Collections.sort(unlockedGPUObjects, new EvictionPolicyBasedComparator(size));
-			while(A == null && unlockedGPUObjects.size() > 0) {
-				GPUObject evictedGPUObject = unlockedGPUObjects.remove(unlockedGPUObjects.size()-1);
-				evictOrClear(evictedGPUObject, opcode);
-				if(!canFit) {
-					currentAvailableMemory += evictedGPUObject.getSizeOnDevice();
-					if(currentAvailableMemory >= size)
-						canFit = true;
+			synchronized(matrixMemoryManager.gpuObjects) {
+				List<GPUObject> unlockedGPUObjects = matrixMemoryManager.gpuObjects.stream()
+						.filter(gpuObj -> !gpuObj.isLocked() && !gpuObj.isLinCached()).collect(Collectors.toList());
+				Collections.sort(unlockedGPUObjects, new EvictionPolicyBasedComparator(size));
+				while(A == null && unlockedGPUObjects.size() > 0) {
+					GPUObject evictedGPUObject = unlockedGPUObjects.remove(unlockedGPUObjects.size()-1);
+					evictOrClear(evictedGPUObject, opcode);
+					if(!canFit) {
+						currentAvailableMemory += evictedGPUObject.getSizeOnDevice();
+						if(currentAvailableMemory >= size)
+							canFit = true;
+					}
+					if(canFit) {
+						// Checking before invoking cudaMalloc reduces the time spent in unnecessary cudaMalloc.
+						// This was the bottleneck for ResNet200 experiments with batch size > 32 on P100+Intel
+						A = cudaMallocNoWarn(tmpA, size, null); 
+					}
+					if(DMLScript.STATISTICS) 
+						GPUStatistics.cudaEvictCount.increment();
 				}
-				if(canFit) {
-					// Checking before invoking cudaMalloc reduces the time spent in unnecessary cudaMalloc.
-					// This was the bottleneck for ResNet200 experiments with batch size > 32 on P100+Intel
-					A = cudaMallocNoWarn(tmpA, size, null); 
-				}
-				if(DMLScript.STATISTICS) 
-					GPUStatistics.cudaEvictCount.increment();
 			}
 			if(DMLScript.STATISTICS) {
 				long totalTime = System.nanoTime() - t0;
@@ -333,7 +433,7 @@ public class GPUMemoryManager {
 		}
 		
 		
-		// Step 7: Handle defragmentation
+		// Step 8: Handle defragmentation
 		if(A == null) {
 			LOG.warn("Potential fragmentation of the GPU memory. Forcibly evicting all ...");
 			LOG.info("Before clearAllUnlocked, GPU Memory info:" + toString());
@@ -398,19 +498,22 @@ public class GPUMemoryManager {
 	 * @param toFree pointer to call cudaFree method on
 	 */
 	void guardedCudaFree(Pointer toFree) {
-		if(allPointers.containsKey(toFree)) {
-			long size = allPointers.get(toFree).getSizeInBytes();
-			if(LOG.isTraceEnabled()) {
-				LOG.trace("Free-ing up the pointer of size " +  byteCountToDisplaySize(size));
+		synchronized(allPointers) {
+			if(allPointers.containsKey(toFree)) {
+				long size = allPointers.get(toFree).getSizeInBytes();
+				if(LOG.isTraceEnabled()) {
+					LOG.trace("Free-ing up the pointer of size " +  byteCountToDisplaySize(size));
+				}
+				allPointers.remove(toFree);
+				lazyCudaFreeMemoryManager.removeIfPresent(size, toFree);
+				allocator.free(toFree);
+				if(DMLScript.SYNCHRONIZE_GPU)
+					// Force a device synchronize after free-ing the pointer for debugging
+					jcuda.runtime.JCuda.cudaDeviceSynchronize(); 
 			}
-			allPointers.remove(toFree);
-			lazyCudaFreeMemoryManager.removeIfPresent(size, toFree);
-			allocator.free(toFree);
-			if(DMLScript.SYNCHRONIZE_GPU)
-				jcuda.runtime.JCuda.cudaDeviceSynchronize(); // Force a device synchronize after free-ing the pointer for debugging
-		}
-		else {
-			throw new RuntimeException("Attempting to free an unaccounted pointer:" + toFree);
+			else {
+				throw new RuntimeException("Attempting to free an unaccounted pointer:" + toFree);
+			}
 		}
 
 	}
@@ -432,11 +535,14 @@ public class GPUMemoryManager {
 			addMiscTime(opcode, GPUStatistics.cudaDeAllocTime, GPUStatistics.cudaDeAllocCount, GPUInstruction.MISC_TIMER_CUDA_FREE, t0);
 		}
 		else {
-			if (!allPointers.containsKey(toFree)) {
-				LOG.info("GPU memory info before failure:" + toString());
-				throw new RuntimeException("ERROR : Internal state corrupted, cache block size map is not aware of a block it trying to free up");
+			long size = 0;
+			synchronized(allPointers) {
+				if (!allPointers.containsKey(toFree)) {
+					LOG.info("GPU memory info before failure:" + toString());
+					throw new RuntimeException("ERROR : Internal state corrupted, cache block size map is not aware of a block it trying to free up");
+				}
+				size = allPointers.get(toFree).getSizeInBytes();
 			}
-			long size = allPointers.get(toFree).getSizeInBytes();
 			lazyCudaFreeMemoryManager.add(size, toFree);
 		}
 	}
@@ -475,11 +581,13 @@ public class GPUMemoryManager {
 		matrixMemoryManager.gpuObjects.clear();
 		
 		// Then clean up remaining allocated GPU pointers 
-		Set<Pointer> remainingPtr = new HashSet<>(allPointers.keySet());
-		for(Pointer toFree : remainingPtr) {
-			guardedCudaFree(toFree); // cleans up allocatedGPUPointers and rmvarGPUPointers as well
+		synchronized(allPointers) {
+			Set<Pointer> remainingPtr = new HashSet<>(allPointers.keySet());
+			for(Pointer toFree : remainingPtr) {
+				guardedCudaFree(toFree); // cleans up allocatedGPUPointers and rmvarGPUPointers as well
+			}
+			allPointers.clear();
 		}
-		allPointers.clear();
 	}
 		
 	/**
@@ -500,12 +608,12 @@ public class GPUMemoryManager {
 	}
 	
 	/**
-	 * Clears up the memory used by non-dirty pointers.
+	 * Clears up the memory used by non-dirty pointers that are not inside lineage cache
 	 */
 	public void clearTemporaryMemory() {
 		// To record the cuda block sizes needed by allocatedGPUObjects, others are cleared up.
-		Set<Pointer> unlockedDirtyPointers = matrixMemoryManager.getPointers(false, true);
-		Set<Pointer> temporaryPointers = nonIn(allPointers.keySet(), unlockedDirtyPointers);
+		Set<Pointer> unlockedDirtyOrCachedPointers = matrixMemoryManager.getPointers(false, true, true);
+		Set<Pointer> temporaryPointers = nonIn(allPointers.keySet(), unlockedDirtyOrCachedPointers);
 		for(Pointer tmpPtr : temporaryPointers) {
 			guardedCudaFree(tmpPtr);
 		}
@@ -537,11 +645,18 @@ public class GPUMemoryManager {
 		long sizeOfLockedGPUObjects = 0; int numLockedGPUObjects = 0; int numLockedPointers = 0;
 		long sizeOfUnlockedDirtyGPUObjects = 0; int numUnlockedDirtyGPUObjects = 0; int numUnlockedDirtyPointers = 0;
 		long sizeOfUnlockedNonDirtyGPUObjects = 0; int numUnlockedNonDirtyGPUObjects = 0; int numUnlockedNonDirtyPointers = 0;
+		long sizeOfLockedCachedGPUObjects = 0; int numLockedCachedGPUObjects = 0; int numLockedCachedPointers = 0;
+		long sizeOfUnlockedCachedGPUObjects = 0; int numUnlockedCachedGPUObjects = 0; int numUnlockedCachedPointers = 0;
 		for(GPUObject gpuObj : matrixMemoryManager.gpuObjects) {
 			if(gpuObj.isLocked()) {
 				numLockedGPUObjects++;
 				sizeOfLockedGPUObjects += gpuObj.getSizeOnDevice();
 				numLockedPointers += matrixMemoryManager.getPointers(gpuObj).size();
+				if (gpuObj.isLinCached()) {
+					numLockedCachedGPUObjects++;
+					sizeOfLockedCachedGPUObjects += gpuObj.getSizeOnDevice();
+					numLockedCachedPointers += matrixMemoryManager.getPointers(gpuObj).size();
+				}
 			}
 			else {
 				if(gpuObj.isDirty()) {
@@ -553,6 +668,11 @@ public class GPUMemoryManager {
 					numUnlockedNonDirtyGPUObjects++;
 					sizeOfUnlockedNonDirtyGPUObjects += gpuObj.getSizeOnDevice();
 					numUnlockedNonDirtyPointers += matrixMemoryManager.getPointers(gpuObj).size();
+				}
+				if (gpuObj.isLinCached()) {
+					numUnlockedCachedGPUObjects++;
+					sizeOfUnlockedCachedGPUObjects += gpuObj.getSizeOnDevice();
+					numUnlockedCachedPointers += matrixMemoryManager.getPointers(gpuObj).size();
 				}
 			}
 		}
@@ -585,6 +705,10 @@ public class GPUMemoryManager {
 				numUnlockedNonDirtyGPUObjects, numUnlockedNonDirtyPointers, byteCountToDisplaySize(sizeOfUnlockedNonDirtyGPUObjects)));
 		ret.append(String.format("%-35s%-15s%-15s%-15s\n", "Locked GPU objects", 
 				numLockedGPUObjects, numLockedPointers, byteCountToDisplaySize(sizeOfLockedGPUObjects)));
+		ret.append(String.format("%-35s%-15s%-15s%-15s\n", "Locked Cached GPU objects", 
+				numLockedCachedGPUObjects, numLockedCachedPointers, byteCountToDisplaySize(sizeOfLockedCachedGPUObjects)));
+		ret.append(String.format("%-35s%-15s%-15s%-15s\n", "Unlocked Cached GPU objects", 
+				numUnlockedCachedGPUObjects, numUnlockedCachedPointers, byteCountToDisplaySize(sizeOfUnlockedCachedGPUObjects)));
 		ret.append(String.format("%-35s%-15s%-15s%-15s\n", "Cached rmvar-ed pointers", 
 				"-", lazyCudaFreeMemoryManager.getNumPointers(), byteCountToDisplaySize(lazyCudaFreeMemoryManager.getTotalMemoryAllocated())));
 		ret.append(String.format("%-35s%-15s%-15s%-15s\n", "Non-matrix/non-cached pointers", 

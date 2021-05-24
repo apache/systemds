@@ -24,11 +24,11 @@
 
 from typing import Dict, Iterable
 
-from systemds.operator import OperationNode
+from systemds.operator import OperationNode, Matrix
 from systemds.script_building.dag import OutputType
 from systemds.utils.consts import VALID_INPUT_TYPES
 
-def alsTopkPredict(userIDs: OperationNode, I: OperationNode, L: OperationNode, R: OperationNode, **kwargs: Dict[str, VALID_INPUT_TYPES]) -> OperationNode:
+def alsTopkPredict(userIDs: OperationNode, I: OperationNode, L: OperationNode, R: OperationNode, **kwargs: Dict[str, VALID_INPUT_TYPES]):
     """
     :param userIDs: Column vector of user-ids (n x 1)
     :param I: Indicator matrix user-id x user-id to exclude from scoring
@@ -37,11 +37,6 @@ def alsTopkPredict(userIDs: OperationNode, I: OperationNode, L: OperationNode, R
     :param K: The number of top-K items
     :return: 'OperationNode' containing users (rows) & a matrix containing the top-k predicted ratings for the specified users (rows) 
     """
-    
-    userIDs._check_matrix_op()
-    I._check_matrix_op()
-    L._check_matrix_op()
-    R._check_matrix_op()
     params_dict = {'userIDs':userIDs, 'I':I, 'L':L, 'R':R}
     params_dict.update(kwargs)
     return OperationNode(userIDs.sds_context, 'alsTopkPredict', named_input_nodes=params_dict, output_type=OutputType.LIST, number_of_outputs=2, output_types=[OutputType.MATRIX, OutputType.MATRIX])

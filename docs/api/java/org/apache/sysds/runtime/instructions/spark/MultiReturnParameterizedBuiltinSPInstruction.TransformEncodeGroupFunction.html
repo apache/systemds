@@ -120,11 +120,10 @@ var activeTableTab = "activeTableTab";
 <pre>public static class <span class="typeNameLabel">MultiReturnParameterizedBuiltinSPInstruction.TransformEncodeGroupFunction</span>
 extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a>
 implements org.apache.spark.api.java.function.FlatMapFunction&lt;scala.Tuple2&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Integer.html?is-external=true" title="class or interface in java.lang">Integer</a>,<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Iterable.html?is-external=true" title="class or interface in java.lang">Iterable</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a>&gt;&gt;,<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&gt;</pre>
-<div class="block">This function assigns codes to globally distinct values of recoded columns 
- and writes the resulting column map in textcell (IJV) format to the output. 
- (part of distributed recode map construction, used for recoding, binning and 
- dummy coding). We operate directly over schema-specific objects to avoid 
- unnecessary string conversion, as well as reduce memory overhead and shuffle.</div>
+<div class="block">This function assigns codes to globally distinct values of recoded columns and writes the resulting column map in
+ textcell (IJV) format to the output. (part of distributed recode map construction, used for recoding, binning and
+ dummy coding). We operate directly over schema-specific objects to avoid unnecessary string conversion, as well
+ as reduce memory overhead and shuffle.</div>
 <dl>
 <dt><span class="seeLabel">See Also:</span></dt>
 <dd><a href="../../../../../../serialized-form.html#org.apache.sysds.runtime.instructions.spark.MultiReturnParameterizedBuiltinSPInstruction.TransformEncodeGroupFunction">Serialized Form</a></dd>
@@ -147,7 +146,8 @@ implements org.apache.spark.api.java.function.FlatMapFunction&lt;scala.Tuple2&lt
 <th class="colOne" scope="col">Constructor and Description</th>
 </tr>
 <tr class="altColor">
-<td class="colOne"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/instructions/spark/MultiReturnParameterizedBuiltinSPInstruction.TransformEncodeGroupFunction.html#TransformEncodeGroupFunction-org.apache.sysds.runtime.instructions.spark.MultiReturnParameterizedBuiltinSPInstruction.MaxLongAccumulator-">TransformEncodeGroupFunction</a></span>(org.apache.sysds.runtime.instructions.spark.MultiReturnParameterizedBuiltinSPInstruction.MaxLongAccumulator&nbsp;accMax)</code>&nbsp;</td>
+<td class="colOne"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/instructions/spark/MultiReturnParameterizedBuiltinSPInstruction.TransformEncodeGroupFunction.html#TransformEncodeGroupFunction-org.apache.sysds.runtime.transform.encode.MultiColumnEncoder-org.apache.sysds.runtime.instructions.spark.MultiReturnParameterizedBuiltinSPInstruction.MaxLongAccumulator-">TransformEncodeGroupFunction</a></span>(<a href="../../../../../../org/apache/sysds/runtime/transform/encode/MultiColumnEncoder.html" title="class in org.apache.sysds.runtime.transform.encode">MultiColumnEncoder</a>&nbsp;encoder,
+                            org.apache.sysds.runtime.instructions.spark.MultiReturnParameterizedBuiltinSPInstruction.MaxLongAccumulator&nbsp;accMax)</code>&nbsp;</td>
 </tr>
 </table>
 </li>
@@ -190,13 +190,14 @@ implements org.apache.spark.api.java.function.FlatMapFunction&lt;scala.Tuple2&lt
 <!--   -->
 </a>
 <h3>Constructor Detail</h3>
-<a name="TransformEncodeGroupFunction-org.apache.sysds.runtime.instructions.spark.MultiReturnParameterizedBuiltinSPInstruction.MaxLongAccumulator-">
+<a name="TransformEncodeGroupFunction-org.apache.sysds.runtime.transform.encode.MultiColumnEncoder-org.apache.sysds.runtime.instructions.spark.MultiReturnParameterizedBuiltinSPInstruction.MaxLongAccumulator-">
 <!--   -->
 </a>
 <ul class="blockListLast">
 <li class="blockList">
 <h4>TransformEncodeGroupFunction</h4>
-<pre>public&nbsp;TransformEncodeGroupFunction(org.apache.sysds.runtime.instructions.spark.MultiReturnParameterizedBuiltinSPInstruction.MaxLongAccumulator&nbsp;accMax)</pre>
+<pre>public&nbsp;TransformEncodeGroupFunction(<a href="../../../../../../org/apache/sysds/runtime/transform/encode/MultiColumnEncoder.html" title="class in org.apache.sysds.runtime.transform.encode">MultiColumnEncoder</a>&nbsp;encoder,
+                                    org.apache.sysds.runtime.instructions.spark.MultiReturnParameterizedBuiltinSPInstruction.MaxLongAccumulator&nbsp;accMax)</pre>
 </li>
 </ul>
 </li>
@@ -292,6 +293,6 @@ implements org.apache.spark.api.java.function.FlatMapFunction&lt;scala.Tuple2&lt
 <!--   -->
 </a></div>
 <!-- ======== END OF BOTTOM NAVBAR ======= -->
-<p class="legalCopy"><small>Copyright &#169; 2020 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
+<p class="legalCopy"><small>Copyright &#169; 2021 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
 </body>
 </html>

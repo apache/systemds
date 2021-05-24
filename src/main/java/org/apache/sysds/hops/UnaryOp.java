@@ -30,7 +30,7 @@ import org.apache.sysds.lops.CumulativeOffsetBinary;
 import org.apache.sysds.lops.CumulativePartialAggregate;
 import org.apache.sysds.lops.Data;
 import org.apache.sysds.lops.Lop;
-import org.apache.sysds.lops.LopProperties.ExecType;
+import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.lops.PickByCount;
 import org.apache.sysds.lops.SortKeys;
 import org.apache.sysds.lops.Unary;
@@ -182,7 +182,7 @@ public class UnaryOp extends MultiThreadedHop
 		
 		//add reblock/checkpoint lops if necessary
 		constructAndSetLopsDataFlowProperties();
-		
+
 		return getLops();
 	}
 	
@@ -512,6 +512,9 @@ public class UnaryOp extends MultiThreadedHop
 			|| getInput().get(0).getDataType() == DataType.LIST || isMetadataOperation() )
 		{
 			_etype = ExecType.CP;
+		} else {
+			updateETFed();
+			setRequiresRecompileIfNecessary();
 		}
 		
 		return _etype;

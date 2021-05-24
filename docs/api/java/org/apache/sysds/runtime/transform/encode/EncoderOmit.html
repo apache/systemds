@@ -18,7 +18,7 @@
     catch(err) {
     }
 //-->
-var methods = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10,"i8":10,"i9":10,"i10":10};
+var methods = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10,"i8":10,"i9":10,"i10":10,"i11":10,"i12":10,"i13":10,"i14":10,"i15":10,"i16":10};
 var tabs = {65535:["t0","All Methods"],2:["t2","Instance Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -50,7 +50,7 @@ var activeTableTab = "activeTableTab";
 <div class="subNav">
 <ul class="navList">
 <li><a href="../../../../../../org/apache/sysds/runtime/transform/encode/EncoderMVImpute.MVMethod.html" title="enum in org.apache.sysds.runtime.transform.encode"><span class="typeNameLink">Prev&nbsp;Class</span></a></li>
-<li><a href="../../../../../../org/apache/sysds/runtime/transform/encode/EncoderPassThrough.html" title="class in org.apache.sysds.runtime.transform.encode"><span class="typeNameLink">Next&nbsp;Class</span></a></li>
+<li><a href="../../../../../../org/apache/sysds/runtime/transform/encode/LegacyEncoder.html" title="class in org.apache.sysds.runtime.transform.encode"><span class="typeNameLink">Next&nbsp;Class</span></a></li>
 </ul>
 <ul class="navList">
 <li><a href="../../../../../../index.html?org/apache/sysds/runtime/transform/encode/EncoderOmit.html" target="_top">Frames</a></li>
@@ -100,7 +100,7 @@ var activeTableTab = "activeTableTab";
 <li><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">java.lang.Object</a></li>
 <li>
 <ul class="inheritance">
-<li><a href="../../../../../../org/apache/sysds/runtime/transform/encode/Encoder.html" title="class in org.apache.sysds.runtime.transform.encode">org.apache.sysds.runtime.transform.encode.Encoder</a></li>
+<li><a href="../../../../../../org/apache/sysds/runtime/transform/encode/LegacyEncoder.html" title="class in org.apache.sysds.runtime.transform.encode">org.apache.sysds.runtime.transform.encode.LegacyEncoder</a></li>
 <li>
 <ul class="inheritance">
 <li>org.apache.sysds.runtime.transform.encode.EncoderOmit</li>
@@ -114,12 +114,12 @@ var activeTableTab = "activeTableTab";
 <li class="blockList">
 <dl>
 <dt>All Implemented Interfaces:</dt>
-<dd><a href="https://docs.oracle.com/javase/8/docs/api/java/io/Serializable.html?is-external=true" title="class or interface in java.io">Serializable</a></dd>
+<dd><a href="https://docs.oracle.com/javase/8/docs/api/java/io/Externalizable.html?is-external=true" title="class or interface in java.io">Externalizable</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Serializable.html?is-external=true" title="class or interface in java.io">Serializable</a></dd>
 </dl>
 <hr>
 <br>
 <pre>public class <span class="typeNameLabel">EncoderOmit</span>
-extends <a href="../../../../../../org/apache/sysds/runtime/transform/encode/Encoder.html" title="class in org.apache.sysds.runtime.transform.encode">Encoder</a></pre>
+extends <a href="../../../../../../org/apache/sysds/runtime/transform/encode/LegacyEncoder.html" title="class in org.apache.sysds.runtime.transform.encode">LegacyEncoder</a></pre>
 <dl>
 <dt><span class="seeLabel">See Also:</span></dt>
 <dd><a href="../../../../../../serialized-form.html#org.apache.sysds.runtime.transform.encode.EncoderOmit">Serialized Form</a></dd>
@@ -148,6 +148,10 @@ extends <a href="../../../../../../org/apache/sysds/runtime/transform/encode/Enc
 <td class="colOne"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/transform/encode/EncoderOmit.html#EncoderOmit-boolean-">EncoderOmit</a></span>(boolean&nbsp;federated)</code>&nbsp;</td>
 </tr>
 <tr class="altColor">
+<td class="colOne"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/transform/encode/EncoderOmit.html#EncoderOmit-int:A-int-">EncoderOmit</a></span>(int[]&nbsp;colList,
+           int&nbsp;clen)</code>&nbsp;</td>
+</tr>
+<tr class="rowColor">
 <td class="colOne"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/transform/encode/EncoderOmit.html#EncoderOmit-org.apache.wink.json4j.JSONObject-java.lang.String:A-int-int-int-">EncoderOmit</a></span>(org.apache.wink.json4j.JSONObject&nbsp;parsedSpec,
            <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>[]&nbsp;colnames,
            int&nbsp;clen,
@@ -173,8 +177,7 @@ extends <a href="../../../../../../org/apache/sysds/runtime/transform/encode/Enc
 <td class="colFirst"><code><a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/transform/encode/EncoderOmit.html#apply-org.apache.sysds.runtime.matrix.data.FrameBlock-org.apache.sysds.runtime.matrix.data.MatrixBlock-">apply</a></span>(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;in,
      <a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;out)</code>
-<div class="block">Encode input data blockwise according to existing transform meta
- data (transform apply).</div>
+<div class="block">Encode input data blockwise according to existing transform meta data (transform apply).</div>
 </td>
 </tr>
 <tr id="i1" class="rowColor">
@@ -191,65 +194,95 @@ extends <a href="../../../../../../org/apache/sysds/runtime/transform/encode/Enc
 </td>
 </tr>
 <tr id="i3" class="rowColor">
+<td class="colFirst"><code>boolean</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/transform/encode/EncoderOmit.html#equals-java.lang.Object-">equals</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a>&nbsp;o)</code>&nbsp;</td>
+</tr>
+<tr id="i4" class="altColor">
 <td class="colFirst"><code><a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/transform/encode/EncoderOmit.html#getMetaData-org.apache.sysds.runtime.matrix.data.FrameBlock-">getMetaData</a></span>(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;out)</code>
 <div class="block">Construct a frame block out of the transform meta data.</div>
 </td>
 </tr>
-<tr id="i4" class="altColor">
+<tr id="i5" class="rowColor">
 <td class="colFirst"><code>int</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/transform/encode/EncoderOmit.html#getNumRemovedRows--">getNumRemovedRows</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i5" class="rowColor">
+<tr id="i6" class="altColor">
 <td class="colFirst"><code>int</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/transform/encode/EncoderOmit.html#getNumRemovedRows-boolean:A-">getNumRemovedRows</a></span>(boolean[]&nbsp;rmRows)</code>&nbsp;</td>
 </tr>
-<tr id="i6" class="altColor">
+<tr id="i7" class="rowColor">
+<td class="colFirst"><code>int</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/transform/encode/EncoderOmit.html#hashCode--">hashCode</a></span>()</code>&nbsp;</td>
+</tr>
+<tr id="i8" class="altColor">
+<td class="colFirst"><code>int</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/transform/encode/EncoderOmit.html#initColList-int:A-">initColList</a></span>(int[]&nbsp;colList)</code>&nbsp;</td>
+</tr>
+<tr id="i9" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/transform/encode/EncoderOmit.html#initMetaData-org.apache.sysds.runtime.matrix.data.FrameBlock-">initMetaData</a></span>(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;meta)</code>
 <div class="block">Sets up the required meta data for a subsequent call to apply.</div>
 </td>
 </tr>
-<tr id="i7" class="rowColor">
-<td class="colFirst"><code>void</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/transform/encode/EncoderOmit.html#mergeAt-org.apache.sysds.runtime.transform.encode.Encoder-int-int-">mergeAt</a></span>(<a href="../../../../../../org/apache/sysds/runtime/transform/encode/Encoder.html" title="class in org.apache.sysds.runtime.transform.encode">Encoder</a>&nbsp;other,
-       int&nbsp;row,
-       int&nbsp;col)</code>
-<div class="block">Merges another encoder, of a compatible type, in after a certain position.</div>
+<tr id="i10" class="altColor">
+<td class="colFirst"><code>boolean</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/transform/encode/EncoderOmit.html#isApplicable--">isApplicable</a></span>()</code>
+<div class="block">Indicates if this encoder is applicable, i.e, if there is at least one column to encode.</div>
 </td>
 </tr>
-<tr id="i8" class="altColor">
+<tr id="i11" class="rowColor">
+<td class="colFirst"><code>void</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/transform/encode/EncoderOmit.html#mergeAt-org.apache.sysds.runtime.transform.encode.EncoderOmit-int-int-">mergeAt</a></span>(<a href="../../../../../../org/apache/sysds/runtime/transform/encode/EncoderOmit.html" title="class in org.apache.sysds.runtime.transform.encode">EncoderOmit</a>&nbsp;other,
+       int&nbsp;row,
+       int&nbsp;col)</code>&nbsp;</td>
+</tr>
+<tr id="i12" class="altColor">
 <td class="colFirst"><code>boolean</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/transform/encode/EncoderOmit.html#omit-java.lang.String:A-org.apache.sysds.runtime.transform.TfUtils-">omit</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>[]&nbsp;words,
     <a href="../../../../../../org/apache/sysds/runtime/transform/TfUtils.html" title="class in org.apache.sysds.runtime.transform">TfUtils</a>&nbsp;agents)</code>&nbsp;</td>
 </tr>
-<tr id="i9" class="rowColor">
-<td class="colFirst"><code><a href="../../../../../../org/apache/sysds/runtime/transform/encode/Encoder.html" title="class in org.apache.sysds.runtime.transform.encode">Encoder</a></code></td>
+<tr id="i13" class="rowColor">
+<td class="colFirst"><code>void</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/transform/encode/EncoderOmit.html#readExternal-java.io.ObjectInput-">readExternal</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/io/ObjectInput.html?is-external=true" title="class or interface in java.io">ObjectInput</a>&nbsp;in)</code>
+<div class="block">Redirects the default java serialization via externalizable to our default hadoop writable serialization for
+ efficient broadcast/rdd deserialization.</div>
+</td>
+</tr>
+<tr id="i14" class="altColor">
+<td class="colFirst"><code><a href="../../../../../../org/apache/sysds/runtime/transform/encode/EncoderOmit.html" title="class in org.apache.sysds.runtime.transform.encode">EncoderOmit</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/transform/encode/EncoderOmit.html#subRangeEncoder-org.apache.sysds.runtime.util.IndexRange-">subRangeEncoder</a></span>(<a href="../../../../../../org/apache/sysds/runtime/util/IndexRange.html" title="class in org.apache.sysds.runtime.util">IndexRange</a>&nbsp;ixRange)</code>
 <div class="block">Returns a new Encoder that only handles a sub range of columns.</div>
 </td>
 </tr>
-<tr id="i10" class="altColor">
+<tr id="i15" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/transform/encode/EncoderOmit.html#updateIndexRanges-long:A-long:A-">updateIndexRanges</a></span>(long[]&nbsp;beginDims,
                  long[]&nbsp;endDims)</code>
 <div class="block">Update index-ranges to after encoding.</div>
 </td>
 </tr>
+<tr id="i16" class="altColor">
+<td class="colFirst"><code>void</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/transform/encode/EncoderOmit.html#writeExternal-java.io.ObjectOutput-">writeExternal</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/io/ObjectOutput.html?is-external=true" title="class or interface in java.io">ObjectOutput</a>&nbsp;out)</code>
+<div class="block">Redirects the default java serialization via externalizable to our default hadoop writable serialization for
+ efficient broadcast/rdd serialization.</div>
+</td>
+</tr>
 </table>
 <ul class="blockList">
-<li class="blockList"><a name="methods.inherited.from.class.org.apache.sysds.runtime.transform.encode.Encoder">
+<li class="blockList"><a name="methods.inherited.from.class.org.apache.sysds.runtime.transform.encode.LegacyEncoder">
 <!--   -->
 </a>
-<h3>Methods inherited from class&nbsp;org.apache.sysds.runtime.transform.encode.<a href="../../../../../../org/apache/sysds/runtime/transform/encode/Encoder.html" title="class in org.apache.sysds.runtime.transform.encode">Encoder</a></h3>
-<code><a href="../../../../../../org/apache/sysds/runtime/transform/encode/Encoder.html#getColList--">getColList</a>, <a href="../../../../../../org/apache/sysds/runtime/transform/encode/Encoder.html#getColMapping-org.apache.sysds.runtime.matrix.data.FrameBlock-org.apache.sysds.runtime.matrix.data.MatrixBlock-">getColMapping</a>, <a href="../../../../../../org/apache/sysds/runtime/transform/encode/Encoder.html#getNumCols--">getNumCols</a>, <a href="../../../../../../org/apache/sysds/runtime/transform/encode/Encoder.html#initColList-int:A-">initColList</a>, <a href="../../../../../../org/apache/sysds/runtime/transform/encode/Encoder.html#initColList-org.apache.wink.json4j.JSONArray-">initColList</a>, <a href="../../../../../../org/apache/sysds/runtime/transform/encode/Encoder.html#isApplicable--">isApplicable</a>, <a href="../../../../../../org/apache/sysds/runtime/transform/encode/Encoder.html#isApplicable-int-">isApplicable</a>, <a href="../../../../../../org/apache/sysds/runtime/transform/encode/Encoder.html#setColList-int:A-">setColList</a></code></li>
+<h3>Methods inherited from class&nbsp;org.apache.sysds.runtime.transform.encode.<a href="../../../../../../org/apache/sysds/runtime/transform/encode/LegacyEncoder.html" title="class in org.apache.sysds.runtime.transform.encode">LegacyEncoder</a></h3>
+<code><a href="../../../../../../org/apache/sysds/runtime/transform/encode/LegacyEncoder.html#buildPartial-org.apache.sysds.runtime.matrix.data.FrameBlock-">buildPartial</a>, <a href="../../../../../../org/apache/sysds/runtime/transform/encode/LegacyEncoder.html#getColList--">getColList</a>, <a href="../../../../../../org/apache/sysds/runtime/transform/encode/LegacyEncoder.html#getColMapping-org.apache.sysds.runtime.matrix.data.FrameBlock-org.apache.sysds.runtime.matrix.data.MatrixBlock-">getColMapping</a>, <a href="../../../../../../org/apache/sysds/runtime/transform/encode/LegacyEncoder.html#initColList-org.apache.wink.json4j.JSONArray-">initColList</a>, <a href="../../../../../../org/apache/sysds/runtime/transform/encode/LegacyEncoder.html#isApplicable-int-">isApplicable</a>, <a href="../../../../../../org/apache/sysds/runtime/transform/encode/LegacyEncoder.html#mergeAt-org.apache.sysds.runtime.transform.encode.LegacyEncoder-int-int-">mergeAt</a>, <a href="../../../../../../org/apache/sysds/runtime/transform/encode/LegacyEncoder.html#prepareBuildPartial--">prepareBuildPartial</a>, <a href="../../../../../../org/apache/sysds/runtime/transform/encode/LegacyEncoder.html#setColList-int:A-">setColList</a>, <a href="../../../../../../org/apache/sysds/runtime/transform/encode/LegacyEncoder.html#shiftCols-int-">shiftCols</a></code></li>
 </ul>
 <ul class="blockList">
 <li class="blockList"><a name="methods.inherited.from.class.java.lang.Object">
 <!--   -->
 </a>
 <h3>Methods inherited from class&nbsp;java.lang.<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a></h3>
-<code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#equals-java.lang.Object-" title="class or interface in java.lang">equals</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#getClass--" title="class or interface in java.lang">getClass</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#hashCode--" title="class or interface in java.lang">hashCode</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#notify--" title="class or interface in java.lang">notify</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#notifyAll--" title="class or interface in java.lang">notifyAll</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#toString--" title="class or interface in java.lang">toString</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#wait--" title="class or interface in java.lang">wait</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#wait-long-" title="class or interface in java.lang">wait</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#wait-long-int-" title="class or interface in java.lang">wait</a></code></li>
+<code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#getClass--" title="class or interface in java.lang">getClass</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#notify--" title="class or interface in java.lang">notify</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#notifyAll--" title="class or interface in java.lang">notifyAll</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#toString--" title="class or interface in java.lang">toString</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#wait--" title="class or interface in java.lang">wait</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#wait-long-" title="class or interface in java.lang">wait</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#wait-long-int-" title="class or interface in java.lang">wait</a></code></li>
 </ul>
 </li>
 </ul>
@@ -292,6 +325,16 @@ extends <a href="../../../../../../org/apache/sysds/runtime/transform/encode/Enc
 <pre>public&nbsp;EncoderOmit()</pre>
 </li>
 </ul>
+<a name="EncoderOmit-int:A-int-">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>EncoderOmit</h4>
+<pre>public&nbsp;EncoderOmit(int[]&nbsp;colList,
+                   int&nbsp;clen)</pre>
+</li>
+</ul>
 <a name="EncoderOmit-boolean-">
 <!--   -->
 </a>
@@ -309,6 +352,35 @@ extends <a href="../../../../../../org/apache/sysds/runtime/transform/encode/Enc
 <!--   -->
 </a>
 <h3>Method Detail</h3>
+<a name="initColList-int:A-">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>initColList</h4>
+<pre>public&nbsp;int&nbsp;initColList(int[]&nbsp;colList)</pre>
+<dl>
+<dt><span class="overrideSpecifyLabel">Overrides:</span></dt>
+<dd><code><a href="../../../../../../org/apache/sysds/runtime/transform/encode/LegacyEncoder.html#initColList-int:A-">initColList</a></code>&nbsp;in class&nbsp;<code><a href="../../../../../../org/apache/sysds/runtime/transform/encode/LegacyEncoder.html" title="class in org.apache.sysds.runtime.transform.encode">LegacyEncoder</a></code></dd>
+</dl>
+</li>
+</ul>
+<a name="isApplicable--">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>isApplicable</h4>
+<pre>public&nbsp;boolean&nbsp;isApplicable()</pre>
+<div class="block">Indicates if this encoder is applicable, i.e, if there is at least one column to encode.</div>
+<dl>
+<dt><span class="overrideSpecifyLabel">Overrides:</span></dt>
+<dd><code><a href="../../../../../../org/apache/sysds/runtime/transform/encode/LegacyEncoder.html#isApplicable--">isApplicable</a></code>&nbsp;in class&nbsp;<code><a href="../../../../../../org/apache/sysds/runtime/transform/encode/LegacyEncoder.html" title="class in org.apache.sysds.runtime.transform.encode">LegacyEncoder</a></code></dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>true if at least one column to encode</dd>
+</dl>
+</li>
+</ul>
 <a name="getNumRemovedRows-boolean:A-">
 <!--   -->
 </a>
@@ -345,11 +417,11 @@ extends <a href="../../../../../../org/apache/sysds/runtime/transform/encode/Enc
 <h4>encode</h4>
 <pre>public&nbsp;<a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;encode(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;in,
                           <a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;out)</pre>
-<div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="../../../../../../org/apache/sysds/runtime/transform/encode/Encoder.html#encode-org.apache.sysds.runtime.matrix.data.FrameBlock-org.apache.sysds.runtime.matrix.data.MatrixBlock-">Encoder</a></code></span></div>
+<div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="../../../../../../org/apache/sysds/runtime/transform/encode/LegacyEncoder.html#encode-org.apache.sysds.runtime.matrix.data.FrameBlock-org.apache.sysds.runtime.matrix.data.MatrixBlock-">LegacyEncoder</a></code></span></div>
 <div class="block">Block encode: build and apply (transform encode).</div>
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
-<dd><code><a href="../../../../../../org/apache/sysds/runtime/transform/encode/Encoder.html#encode-org.apache.sysds.runtime.matrix.data.FrameBlock-org.apache.sysds.runtime.matrix.data.MatrixBlock-">encode</a></code>&nbsp;in class&nbsp;<code><a href="../../../../../../org/apache/sysds/runtime/transform/encode/Encoder.html" title="class in org.apache.sysds.runtime.transform.encode">Encoder</a></code></dd>
+<dd><code><a href="../../../../../../org/apache/sysds/runtime/transform/encode/LegacyEncoder.html#encode-org.apache.sysds.runtime.matrix.data.FrameBlock-org.apache.sysds.runtime.matrix.data.MatrixBlock-">encode</a></code>&nbsp;in class&nbsp;<code><a href="../../../../../../org/apache/sysds/runtime/transform/encode/LegacyEncoder.html" title="class in org.apache.sysds.runtime.transform.encode">LegacyEncoder</a></code></dd>
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>in</code> - input frame block</dd>
 <dd><code>out</code> - output matrix block</dd>
@@ -365,12 +437,11 @@ extends <a href="../../../../../../org/apache/sysds/runtime/transform/encode/Enc
 <li class="blockList">
 <h4>build</h4>
 <pre>public&nbsp;void&nbsp;build(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;in)</pre>
-<div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="../../../../../../org/apache/sysds/runtime/transform/encode/Encoder.html#build-org.apache.sysds.runtime.matrix.data.FrameBlock-">Encoder</a></code></span></div>
-<div class="block">Build the transform meta data for the given block input. This call modifies
- and keeps meta data as encoder state.</div>
+<div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="../../../../../../org/apache/sysds/runtime/transform/encode/LegacyEncoder.html#build-org.apache.sysds.runtime.matrix.data.FrameBlock-">LegacyEncoder</a></code></span></div>
+<div class="block">Build the transform meta data for the given block input. This call modifies and keeps meta data as encoder state.</div>
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
-<dd><code><a href="../../../../../../org/apache/sysds/runtime/transform/encode/Encoder.html#build-org.apache.sysds.runtime.matrix.data.FrameBlock-">build</a></code>&nbsp;in class&nbsp;<code><a href="../../../../../../org/apache/sysds/runtime/transform/encode/Encoder.html" title="class in org.apache.sysds.runtime.transform.encode">Encoder</a></code></dd>
+<dd><code><a href="../../../../../../org/apache/sysds/runtime/transform/encode/LegacyEncoder.html#build-org.apache.sysds.runtime.matrix.data.FrameBlock-">build</a></code>&nbsp;in class&nbsp;<code><a href="../../../../../../org/apache/sysds/runtime/transform/encode/LegacyEncoder.html" title="class in org.apache.sysds.runtime.transform.encode">LegacyEncoder</a></code></dd>
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>in</code> - input frame block</dd>
 </dl>
@@ -384,12 +455,11 @@ extends <a href="../../../../../../org/apache/sysds/runtime/transform/encode/Enc
 <h4>apply</h4>
 <pre>public&nbsp;<a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;apply(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;in,
                          <a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;out)</pre>
-<div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="../../../../../../org/apache/sysds/runtime/transform/encode/Encoder.html#apply-org.apache.sysds.runtime.matrix.data.FrameBlock-org.apache.sysds.runtime.matrix.data.MatrixBlock-">Encoder</a></code></span></div>
-<div class="block">Encode input data blockwise according to existing transform meta
- data (transform apply).</div>
+<div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="../../../../../../org/apache/sysds/runtime/transform/encode/LegacyEncoder.html#apply-org.apache.sysds.runtime.matrix.data.FrameBlock-org.apache.sysds.runtime.matrix.data.MatrixBlock-">LegacyEncoder</a></code></span></div>
+<div class="block">Encode input data blockwise according to existing transform meta data (transform apply).</div>
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
-<dd><code><a href="../../../../../../org/apache/sysds/runtime/transform/encode/Encoder.html#apply-org.apache.sysds.runtime.matrix.data.FrameBlock-org.apache.sysds.runtime.matrix.data.MatrixBlock-">apply</a></code>&nbsp;in class&nbsp;<code><a href="../../../../../../org/apache/sysds/runtime/transform/encode/Encoder.html" title="class in org.apache.sysds.runtime.transform.encode">Encoder</a></code></dd>
+<dd><code><a href="../../../../../../org/apache/sysds/runtime/transform/encode/LegacyEncoder.html#apply-org.apache.sysds.runtime.matrix.data.FrameBlock-org.apache.sysds.runtime.matrix.data.MatrixBlock-">apply</a></code>&nbsp;in class&nbsp;<code><a href="../../../../../../org/apache/sysds/runtime/transform/encode/LegacyEncoder.html" title="class in org.apache.sysds.runtime.transform.encode">LegacyEncoder</a></code></dd>
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>in</code> - input frame block</dd>
 <dd><code>out</code> - output matrix block</dd>
@@ -404,12 +474,12 @@ extends <a href="../../../../../../org/apache/sysds/runtime/transform/encode/Enc
 <ul class="blockList">
 <li class="blockList">
 <h4>subRangeEncoder</h4>
-<pre>public&nbsp;<a href="../../../../../../org/apache/sysds/runtime/transform/encode/Encoder.html" title="class in org.apache.sysds.runtime.transform.encode">Encoder</a>&nbsp;subRangeEncoder(<a href="../../../../../../org/apache/sysds/runtime/util/IndexRange.html" title="class in org.apache.sysds.runtime.util">IndexRange</a>&nbsp;ixRange)</pre>
-<div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="../../../../../../org/apache/sysds/runtime/transform/encode/Encoder.html#subRangeEncoder-org.apache.sysds.runtime.util.IndexRange-">Encoder</a></code></span></div>
+<pre>public&nbsp;<a href="../../../../../../org/apache/sysds/runtime/transform/encode/EncoderOmit.html" title="class in org.apache.sysds.runtime.transform.encode">EncoderOmit</a>&nbsp;subRangeEncoder(<a href="../../../../../../org/apache/sysds/runtime/util/IndexRange.html" title="class in org.apache.sysds.runtime.util">IndexRange</a>&nbsp;ixRange)</pre>
+<div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="../../../../../../org/apache/sysds/runtime/transform/encode/LegacyEncoder.html#subRangeEncoder-org.apache.sysds.runtime.util.IndexRange-">LegacyEncoder</a></code></span></div>
 <div class="block">Returns a new Encoder that only handles a sub range of columns.</div>
 <dl>
 <dt><span class="overrideSpecifyLabel">Overrides:</span></dt>
-<dd><code><a href="../../../../../../org/apache/sysds/runtime/transform/encode/Encoder.html#subRangeEncoder-org.apache.sysds.runtime.util.IndexRange-">subRangeEncoder</a></code>&nbsp;in class&nbsp;<code><a href="../../../../../../org/apache/sysds/runtime/transform/encode/Encoder.html" title="class in org.apache.sysds.runtime.transform.encode">Encoder</a></code></dd>
+<dd><code><a href="../../../../../../org/apache/sysds/runtime/transform/encode/LegacyEncoder.html#subRangeEncoder-org.apache.sysds.runtime.util.IndexRange-">subRangeEncoder</a></code>&nbsp;in class&nbsp;<code><a href="../../../../../../org/apache/sysds/runtime/transform/encode/LegacyEncoder.html" title="class in org.apache.sysds.runtime.transform.encode">LegacyEncoder</a></code></dd>
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>ixRange</code> - the range (1-based, begin inclusive, end exclusive)</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
@@ -417,27 +487,15 @@ extends <a href="../../../../../../org/apache/sysds/runtime/transform/encode/Enc
 </dl>
 </li>
 </ul>
-<a name="mergeAt-org.apache.sysds.runtime.transform.encode.Encoder-int-int-">
+<a name="mergeAt-org.apache.sysds.runtime.transform.encode.EncoderOmit-int-int-">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
 <h4>mergeAt</h4>
-<pre>public&nbsp;void&nbsp;mergeAt(<a href="../../../../../../org/apache/sysds/runtime/transform/encode/Encoder.html" title="class in org.apache.sysds.runtime.transform.encode">Encoder</a>&nbsp;other,
+<pre>public&nbsp;void&nbsp;mergeAt(<a href="../../../../../../org/apache/sysds/runtime/transform/encode/EncoderOmit.html" title="class in org.apache.sysds.runtime.transform.encode">EncoderOmit</a>&nbsp;other,
                     int&nbsp;row,
                     int&nbsp;col)</pre>
-<div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="../../../../../../org/apache/sysds/runtime/transform/encode/Encoder.html#mergeAt-org.apache.sysds.runtime.transform.encode.Encoder-int-int-">Encoder</a></code></span></div>
-<div class="block">Merges another encoder, of a compatible type, in after a certain position. Resizes as necessary.
- <code>Encoders</code> are compatible with themselves and <code>EncoderComposite</code> is compatible with every
- other <code>Encoder</code>.</div>
-<dl>
-<dt><span class="overrideSpecifyLabel">Overrides:</span></dt>
-<dd><code><a href="../../../../../../org/apache/sysds/runtime/transform/encode/Encoder.html#mergeAt-org.apache.sysds.runtime.transform.encode.Encoder-int-int-">mergeAt</a></code>&nbsp;in class&nbsp;<code><a href="../../../../../../org/apache/sysds/runtime/transform/encode/Encoder.html" title="class in org.apache.sysds.runtime.transform.encode">Encoder</a></code></dd>
-<dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>other</code> - the encoder that should be merged in</dd>
-<dd><code>row</code> - the row where it should be placed (1-based)</dd>
-<dd><code>col</code> - the col where it should be placed (1-based)</dd>
-</dl>
 </li>
 </ul>
 <a name="updateIndexRanges-long:A-long:A-">
@@ -448,11 +506,11 @@ extends <a href="../../../../../../org/apache/sysds/runtime/transform/encode/Enc
 <h4>updateIndexRanges</h4>
 <pre>public&nbsp;void&nbsp;updateIndexRanges(long[]&nbsp;beginDims,
                               long[]&nbsp;endDims)</pre>
-<div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="../../../../../../org/apache/sysds/runtime/transform/encode/Encoder.html#updateIndexRanges-long:A-long:A-">Encoder</a></code></span></div>
+<div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="../../../../../../org/apache/sysds/runtime/transform/encode/LegacyEncoder.html#updateIndexRanges-long:A-long:A-">LegacyEncoder</a></code></span></div>
 <div class="block">Update index-ranges to after encoding. Note that only Dummycoding changes the ranges.</div>
 <dl>
 <dt><span class="overrideSpecifyLabel">Overrides:</span></dt>
-<dd><code><a href="../../../../../../org/apache/sysds/runtime/transform/encode/Encoder.html#updateIndexRanges-long:A-long:A-">updateIndexRanges</a></code>&nbsp;in class&nbsp;<code><a href="../../../../../../org/apache/sysds/runtime/transform/encode/Encoder.html" title="class in org.apache.sysds.runtime.transform.encode">Encoder</a></code></dd>
+<dd><code><a href="../../../../../../org/apache/sysds/runtime/transform/encode/LegacyEncoder.html#updateIndexRanges-long:A-long:A-">updateIndexRanges</a></code>&nbsp;in class&nbsp;<code><a href="../../../../../../org/apache/sysds/runtime/transform/encode/LegacyEncoder.html" title="class in org.apache.sysds.runtime.transform.encode">LegacyEncoder</a></code></dd>
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>beginDims</code> - begin dimensions of range</dd>
 <dd><code>endDims</code> - end dimensions of range</dd>
@@ -466,11 +524,11 @@ extends <a href="../../../../../../org/apache/sysds/runtime/transform/encode/Enc
 <li class="blockList">
 <h4>getMetaData</h4>
 <pre>public&nbsp;<a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;getMetaData(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;out)</pre>
-<div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="../../../../../../org/apache/sysds/runtime/transform/encode/Encoder.html#getMetaData-org.apache.sysds.runtime.matrix.data.FrameBlock-">Encoder</a></code></span></div>
+<div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="../../../../../../org/apache/sysds/runtime/transform/encode/LegacyEncoder.html#getMetaData-org.apache.sysds.runtime.matrix.data.FrameBlock-">LegacyEncoder</a></code></span></div>
 <div class="block">Construct a frame block out of the transform meta data.</div>
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
-<dd><code><a href="../../../../../../org/apache/sysds/runtime/transform/encode/Encoder.html#getMetaData-org.apache.sysds.runtime.matrix.data.FrameBlock-">getMetaData</a></code>&nbsp;in class&nbsp;<code><a href="../../../../../../org/apache/sysds/runtime/transform/encode/Encoder.html" title="class in org.apache.sysds.runtime.transform.encode">Encoder</a></code></dd>
+<dd><code><a href="../../../../../../org/apache/sysds/runtime/transform/encode/LegacyEncoder.html#getMetaData-org.apache.sysds.runtime.matrix.data.FrameBlock-">getMetaData</a></code>&nbsp;in class&nbsp;<code><a href="../../../../../../org/apache/sysds/runtime/transform/encode/LegacyEncoder.html" title="class in org.apache.sysds.runtime.transform.encode">LegacyEncoder</a></code></dd>
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>out</code> - output frame block</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
@@ -481,17 +539,89 @@ extends <a href="../../../../../../org/apache/sysds/runtime/transform/encode/Enc
 <a name="initMetaData-org.apache.sysds.runtime.matrix.data.FrameBlock-">
 <!--   -->
 </a>
-<ul class="blockListLast">
+<ul class="blockList">
 <li class="blockList">
 <h4>initMetaData</h4>
 <pre>public&nbsp;void&nbsp;initMetaData(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;meta)</pre>
-<div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="../../../../../../org/apache/sysds/runtime/transform/encode/Encoder.html#initMetaData-org.apache.sysds.runtime.matrix.data.FrameBlock-">Encoder</a></code></span></div>
+<div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="../../../../../../org/apache/sysds/runtime/transform/encode/LegacyEncoder.html#initMetaData-org.apache.sysds.runtime.matrix.data.FrameBlock-">LegacyEncoder</a></code></span></div>
 <div class="block">Sets up the required meta data for a subsequent call to apply.</div>
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
-<dd><code><a href="../../../../../../org/apache/sysds/runtime/transform/encode/Encoder.html#initMetaData-org.apache.sysds.runtime.matrix.data.FrameBlock-">initMetaData</a></code>&nbsp;in class&nbsp;<code><a href="../../../../../../org/apache/sysds/runtime/transform/encode/Encoder.html" title="class in org.apache.sysds.runtime.transform.encode">Encoder</a></code></dd>
+<dd><code><a href="../../../../../../org/apache/sysds/runtime/transform/encode/LegacyEncoder.html#initMetaData-org.apache.sysds.runtime.matrix.data.FrameBlock-">initMetaData</a></code>&nbsp;in class&nbsp;<code><a href="../../../../../../org/apache/sysds/runtime/transform/encode/LegacyEncoder.html" title="class in org.apache.sysds.runtime.transform.encode">LegacyEncoder</a></code></dd>
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>meta</code> - frame block</dd>
+</dl>
+</li>
+</ul>
+<a name="writeExternal-java.io.ObjectOutput-">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>writeExternal</h4>
+<pre>public&nbsp;void&nbsp;writeExternal(<a href="https://docs.oracle.com/javase/8/docs/api/java/io/ObjectOutput.html?is-external=true" title="class or interface in java.io">ObjectOutput</a>&nbsp;out)
+                   throws <a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io">IOException</a></pre>
+<div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="../../../../../../org/apache/sysds/runtime/transform/encode/LegacyEncoder.html#writeExternal-java.io.ObjectOutput-">LegacyEncoder</a></code></span></div>
+<div class="block">Redirects the default java serialization via externalizable to our default hadoop writable serialization for
+ efficient broadcast/rdd serialization.</div>
+<dl>
+<dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
+<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/io/Externalizable.html?is-external=true#writeExternal-java.io.ObjectOutput-" title="class or interface in java.io">writeExternal</a></code>&nbsp;in interface&nbsp;<code><a href="https://docs.oracle.com/javase/8/docs/api/java/io/Externalizable.html?is-external=true" title="class or interface in java.io">Externalizable</a></code></dd>
+<dt><span class="overrideSpecifyLabel">Overrides:</span></dt>
+<dd><code><a href="../../../../../../org/apache/sysds/runtime/transform/encode/LegacyEncoder.html#writeExternal-java.io.ObjectOutput-">writeExternal</a></code>&nbsp;in class&nbsp;<code><a href="../../../../../../org/apache/sysds/runtime/transform/encode/LegacyEncoder.html" title="class in org.apache.sysds.runtime.transform.encode">LegacyEncoder</a></code></dd>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>out</code> - object output</dd>
+<dt><span class="throwsLabel">Throws:</span></dt>
+<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io">IOException</a></code> - if IOException occurs</dd>
+</dl>
+</li>
+</ul>
+<a name="readExternal-java.io.ObjectInput-">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>readExternal</h4>
+<pre>public&nbsp;void&nbsp;readExternal(<a href="https://docs.oracle.com/javase/8/docs/api/java/io/ObjectInput.html?is-external=true" title="class or interface in java.io">ObjectInput</a>&nbsp;in)
+                  throws <a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io">IOException</a></pre>
+<div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="../../../../../../org/apache/sysds/runtime/transform/encode/LegacyEncoder.html#readExternal-java.io.ObjectInput-">LegacyEncoder</a></code></span></div>
+<div class="block">Redirects the default java serialization via externalizable to our default hadoop writable serialization for
+ efficient broadcast/rdd deserialization.</div>
+<dl>
+<dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
+<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/io/Externalizable.html?is-external=true#readExternal-java.io.ObjectInput-" title="class or interface in java.io">readExternal</a></code>&nbsp;in interface&nbsp;<code><a href="https://docs.oracle.com/javase/8/docs/api/java/io/Externalizable.html?is-external=true" title="class or interface in java.io">Externalizable</a></code></dd>
+<dt><span class="overrideSpecifyLabel">Overrides:</span></dt>
+<dd><code><a href="../../../../../../org/apache/sysds/runtime/transform/encode/LegacyEncoder.html#readExternal-java.io.ObjectInput-">readExternal</a></code>&nbsp;in class&nbsp;<code><a href="../../../../../../org/apache/sysds/runtime/transform/encode/LegacyEncoder.html" title="class in org.apache.sysds.runtime.transform.encode">LegacyEncoder</a></code></dd>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>in</code> - object input</dd>
+<dt><span class="throwsLabel">Throws:</span></dt>
+<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io">IOException</a></code> - if IOException occur</dd>
+</dl>
+</li>
+</ul>
+<a name="equals-java.lang.Object-">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>equals</h4>
+<pre>public&nbsp;boolean&nbsp;equals(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a>&nbsp;o)</pre>
+<dl>
+<dt><span class="overrideSpecifyLabel">Overrides:</span></dt>
+<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#equals-java.lang.Object-" title="class or interface in java.lang">equals</a></code>&nbsp;in class&nbsp;<code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a></code></dd>
+</dl>
+</li>
+</ul>
+<a name="hashCode--">
+<!--   -->
+</a>
+<ul class="blockListLast">
+<li class="blockList">
+<h4>hashCode</h4>
+<pre>public&nbsp;int&nbsp;hashCode()</pre>
+<dl>
+<dt><span class="overrideSpecifyLabel">Overrides:</span></dt>
+<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#hashCode--" title="class or interface in java.lang">hashCode</a></code>&nbsp;in class&nbsp;<code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a></code></dd>
 </dl>
 </li>
 </ul>
@@ -524,7 +654,7 @@ extends <a href="../../../../../../org/apache/sysds/runtime/transform/encode/Enc
 <div class="subNav">
 <ul class="navList">
 <li><a href="../../../../../../org/apache/sysds/runtime/transform/encode/EncoderMVImpute.MVMethod.html" title="enum in org.apache.sysds.runtime.transform.encode"><span class="typeNameLink">Prev&nbsp;Class</span></a></li>
-<li><a href="../../../../../../org/apache/sysds/runtime/transform/encode/EncoderPassThrough.html" title="class in org.apache.sysds.runtime.transform.encode"><span class="typeNameLink">Next&nbsp;Class</span></a></li>
+<li><a href="../../../../../../org/apache/sysds/runtime/transform/encode/LegacyEncoder.html" title="class in org.apache.sysds.runtime.transform.encode"><span class="typeNameLink">Next&nbsp;Class</span></a></li>
 </ul>
 <ul class="navList">
 <li><a href="../../../../../../index.html?org/apache/sysds/runtime/transform/encode/EncoderOmit.html" target="_top">Frames</a></li>
@@ -564,6 +694,6 @@ extends <a href="../../../../../../org/apache/sysds/runtime/transform/encode/Enc
 <!--   -->
 </a></div>
 <!-- ======== END OF BOTTOM NAVBAR ======= -->
-<p class="legalCopy"><small>Copyright &#169; 2020 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
+<p class="legalCopy"><small>Copyright &#169; 2021 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
 </body>
 </html>

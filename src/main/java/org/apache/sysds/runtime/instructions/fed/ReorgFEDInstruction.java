@@ -53,6 +53,10 @@ import org.apache.sysds.runtime.matrix.operators.ReorgOperator;
 
 public class ReorgFEDInstruction extends UnaryFEDInstruction {
 	
+	public ReorgFEDInstruction(Operator op, CPOperand in1, CPOperand out, String opcode, String istr, FederatedOutput fedOut) {
+		super(FEDType.Reorg, op, in1, out, opcode, istr, fedOut);
+	}
+
 	public ReorgFEDInstruction(Operator op, CPOperand in1, CPOperand out, String opcode, String istr) {
 		super(FEDType.Reorg, op, in1, out, opcode, istr);
 	}
@@ -64,11 +68,12 @@ public class ReorgFEDInstruction extends UnaryFEDInstruction {
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
 		String opcode = parts[0];
 		if ( opcode.equalsIgnoreCase("r'") ) {
-			InstructionUtils.checkNumFields(str, 2, 3);
+			InstructionUtils.checkNumFields(str, 2, 3, 4);
 			in.split(parts[1]);
 			out.split(parts[2]);
 			int k = Integer.parseInt(parts[3]);
-			return new ReorgFEDInstruction(new ReorgOperator(SwapIndex.getSwapIndexFnObject(), k), in, out, opcode, str);
+			FederatedOutput fedOut = FederatedOutput.valueOf(parts[4]);
+			return new ReorgFEDInstruction(new ReorgOperator(SwapIndex.getSwapIndexFnObject(), k), in, out, opcode, str, fedOut);
 		}
 		else if ( opcode.equalsIgnoreCase("rdiag") ) {
 			parseUnaryInstruction(str, in, out); //max 2 operands
@@ -95,9 +100,8 @@ public class ReorgFEDInstruction extends UnaryFEDInstruction {
 		if(instOpcode.equals("r'")) {
 			//execute transpose at federated site
 			FederatedRequest fr1 = FederationUtils.callInstruction(instString,
-				output,
-				new CPOperand[] {input1},
-				new long[] {mo1.getFedMapping().getID()});
+				output, new CPOperand[] {input1},
+				new long[] {mo1.getFedMapping().getID()}, true);
 			mo1.getFedMapping().execute(getTID(), true, fr1);
 
 			//drive output federated mapping
@@ -108,9 +112,8 @@ public class ReorgFEDInstruction extends UnaryFEDInstruction {
 		else if(instOpcode.equalsIgnoreCase("rev")) {
 			//execute transpose at federated site
 			FederatedRequest fr1 = FederationUtils.callInstruction(instString,
-				output,
-				new CPOperand[] {input1},
-				new long[] {mo1.getFedMapping().getID()});
+				output, new CPOperand[] {input1},
+				new long[] {mo1.getFedMapping().getID()}, true);
 			mo1.getFedMapping().execute(getTID(), true, fr1);
 
 			if(mo1.isFederated(FederationMap.FType.ROW))

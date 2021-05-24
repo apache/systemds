@@ -116,14 +116,11 @@ var activeTableTab = "activeTableTab";
 <br>
 <pre>public class <span class="typeNameLabel">ReaderTextCSVParallel</span>
 extends <a href="../../../../../org/apache/sysds/runtime/io/MatrixReader.html" title="class in org.apache.sysds.runtime.io">MatrixReader</a></pre>
-<div class="block">Parallel version of ReaderTextCSV.java. To summarize, we do two passes in
- order to compute row offsets and the actual read. We accordingly create count
- and read tasks and use fixed-size thread pools to execute these tasks. If the
- target matrix is dense, the inserts are done lock-free. In contrast to
- textcell parallel read, we also do lock-free inserts. If the matrix is
- sparse, because splits contain row partitioned lines and hence there is no
- danger of lost updates. Note, there is also no sorting of sparse rows
- required because data comes in sorted order per row.</div>
+<div class="block">Parallel version of ReaderTextCSV.java. To summarize, we do two passes in order to compute row offsets and the actual
+ read. We accordingly create count and read tasks and use fixed-size thread pools to execute these tasks. If the
+ target matrix is dense, the inserts are done lock-free. In contrast to textcell parallel read, we also do lock-free
+ inserts. If the matrix is sparse, because splits contain row partitioned lines and hence there is no danger of lost
+ updates. Note, there is also no sorting of sparse rows required because data comes in sorted order per row.</div>
 </li>
 </ul>
 </div>
@@ -327,6 +324,6 @@ extends <a href="../../../../../org/apache/sysds/runtime/io/MatrixReader.html" t
 <!--   -->
 </a></div>
 <!-- ======== END OF BOTTOM NAVBAR ======= -->
-<p class="legalCopy"><small>Copyright &#169; 2020 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
+<p class="legalCopy"><small>Copyright &#169; 2021 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
 </body>
 </html>

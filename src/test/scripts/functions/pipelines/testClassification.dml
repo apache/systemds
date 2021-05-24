@@ -24,6 +24,7 @@ source("scripts/pipelines/scripts/utils.dml") as utils;
 source("scripts/pipelines/scripts/logicalFunc.dml") as logical;
 source("scripts/pipelines/scripts/gridsearchMLR.dml") as gs;
 
+
 # read the inputs
 F = read($dirtyData, data_type="frame", format="csv", header=TRUE, 
   naStrings= ["NA", "null","  ","NaN", "nan", "", "?", "99999"]);
@@ -43,9 +44,6 @@ targetApplicaton = $target # accuracy flag
 if(nrow(metaInfo) < 2)
   stop("incomplete meta info")
 
- # Do the initial cleaning
- 
- 
 getSchema = metaInfo[1, 2:ncol(metaInfo)]
 getMask = as.matrix(metaInfo[2, 2:ncol(metaInfo)])
 getFdMask = as.matrix(metaInfo[3, 2:ncol(metaInfo)]) # columns of interest for FD computation
@@ -59,7 +57,7 @@ X = dropInvalidType(F, getSchema)
 if(sum(getMask) > 0)
 {
   # always recode the label
-  index = utils::vectorToCsv(getMask)
+  index = vectorToCsv(getMask)
   jspecR = "{ids:true, recode:["+index+"]}"
   [eX, X_meta] = transformencode(target=X, spec=jspecR);
   # change the schema to reflect the encoded values
@@ -84,39 +82,36 @@ getSchema = getSchema[, 1:ncol(getSchema) - 1] # strip the mask of class label
 lgSeed = logical::generateLogicalSeed(eX, eY, getMask, targetApplicaton)
 allLgs = logical::transformLogical(lgSeed)
 
-
 d_accuracy = 0
 # 4. perform the sampling
 
 [eX, eY] = utils::doSample(eX, eY, sample)
 
 # 5. get train test and validation set with balanced class distribution
-# [X_train, y_train, X_test, y_test] = splitBalanced(X=eX, Y=eY, splitRatio=0.7, verbose=FALSE)
-X_train = eX
-y_train = eY
+[X_train, y_train, X_test, y_test] = splitBalanced(X=eX, Y=eY, splitRatio=0.7, verbose=FALSE)
+
 # 6. find the best hyper parameters for classification algorithm
 # for now only find the best values for intercept and maximum outer iteration
 params = list("reg", "maxi");
 paramRanges = list(10^seq(0,-10), seq(10,100, 10));
-# if(sum(getMask) > 0)
-# {
-  # dX_train = utils::dummycoding(replace(target = rbind(X_train, X_test), pattern = NaN, replacement=0), getMask)
-  # dX_test = dX_train[nrow(y_train)+1:nrow(dX_train),] 
-  # dX_train = dX_train[1:nrow(y_train),] 
-  # [opt, loss] = gs::gridSearchMLR(dX_train, y_train, dX_test, y_test, 
-  # "multiLogReg", "lossFunc", params, paramRanges, FALSE);
-#  }
-# else  
-  # [opt, loss] = gs::gridSearchMLR(X_train, y_train, X_test, y_test, 
-    # "multiLogReg", "lossFunc", params, paramRanges, FALSE);
-# hardcoded hyper-params for multilogReg
-opt = matrix("0 100", 1, 2)
+if(sum(getMask) > 0)
+{
+  dX_train = utils::dummycoding(replace(target = rbind(X_train, X_test), pattern = NaN, replacement=0), getMask)
+  dX_test = dX_train[nrow(y_train)+1:nrow(dX_train),] 
+  dX_train = dX_train[1:nrow(y_train),] 
+  [opt, loss] = gs::gridSearchMLR(dX_train, y_train, dX_test, y_test, 
+  "multiLogReg", "lossFunc", params, paramRanges, FALSE);
+ }
+else  
+  [opt, loss] = gs::gridSearchMLR(X_train, y_train, X_test, y_test, 
+    "multiLogReg", "lossFunc", params, paramRanges, FALSE);
 
+# as I am testing on CV not on holdout train/test
+X_train = eX
+y_train = eY
 # 7. get the cross validated accuracy on dirty dataset (only on training set)
-d_accuracy = classifyDirty(X_train, y_train, opt, getMask, weightedAccuracy, crossValidations)
-# print("dirty accuracy is "+d_accuracy)
- # [eX, eY] = prioritise(eX, eY, getMask)
- 
+d_accuracy = utils::classifyDirty(X_train, y_train, opt, getMask, weightedAccuracy, crossValidations)
+
 FD = discoverFD(X=replace(target=eX, pattern=NaN, replacement=1), Mask=getFdMask, threshold=0.8)
 FD = (diag(matrix(1, rows=nrow(FD), cols=1)) ==0) * FD 
 FD = FD > 0
@@ -128,11 +123,12 @@ targetClassification = list(target=targetApplicaton, cv=crossValidations, wAccur
 # # initialize output variables
 pip = as.frame("NULL"); hp = matrix(0,0,0); acc = matrix(0,0,0); features = as.frame("NULL")
 
-[pip, hp, acc, features] = bandit(X_train=eX, Y_train=eY,  metaList=metaList, targetList=targetClassification, lp=allLgs[1],
-  primitives=primitives, param=param, k=topK, R=resources, verbose=TRUE);
 
 output = $output
-write(features, output+"/features.csv", format="csv")
+
+[pip, hp, acc, features] = bandit(X_train=eX, Y_train=eY,  metaList=metaList, targetList=targetClassification, lp=allLgs[1,],
+  primitives=primitives, param=param, k=topK, R=resources, verbose=TRUE);
+
 
 
 if(as.scalar((is.na(acc[1,1]))) == 1 | as.scalar(acc[1,1]) < d_accuracy)
@@ -146,53 +142,23 @@ print("best hyperparam")
 print(toString(hp))
 
 print("best accuracy")
-print(toString(acc))
+print(toString(acc[1, 1]))
 
 
-clean_accuracy = as.scalar(acc[1,1])
+clean_accuracy = max(acc[1,1])
 
 
 result = d_accuracy < clean_accuracy  
 print("result satisfied ------------"+result)
 
-accuracies = cbind(as.matrix(d_accuracy), as.matrix(clean_accuracy))
-
 
 write(pip, output+"/pipelines.csv", format="csv")
 write(hp, output+"/hyperparams.csv", format="csv")
 write(acc, output+"/accuracies.csv", format="csv")
+accuracies = cbind(as.matrix(d_accuracy), acc[1,1])
 write(accuracies , output+"/BestAccuracy.csv", format="csv")
+write(features, output+"/features.csv", format="csv")
 write(result , $O)
-
-
-
-
-####################################################################
-# Function for classifying the dirty dataset, makes a call to crossV()
-# Inputs: takes the input dataset X, Y and the value of k validation, mask of the 
-# dataset for OHE of categorical columns, vector of ML hyper-parameters identified 
-# via grid-search and a boolean value of (un)weighted accuracy.
-# Output: It return a matrix having the accuracy of each fold.
-####################################################################
-classifyDirty = function(Matrix[Double] Xtrain, Matrix[Double] ytrain, Matrix[Double] opt, 
-  Matrix[Double] mask, Boolean isWeighted = TRUE, Integer cv)
-  return (Double accuracy)
-{
-  # # classify without cleaning fill with default values 1
-  Xtrain = replace(target = Xtrain, pattern = NaN, replacement=0)
-  if(sum(mask) > 0)
-    Xtrain = utils::dummycoding(Xtrain, mask)
-  # print("rows in data ")
-  # print(nrow(dX_train))
-  # print("column in data")
-  # print(ncol(dX_train))
-  accuracy = crossV(Xtrain, ytrain, cv, mask, opt, isWeighted)
-  accuracy = mean(accuracy)
-  print("cross validated dirty accuracy "+accuracy)
-}
-
-
-
 
 lossFunc = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] B) 
 return (Matrix[Double] loss) {

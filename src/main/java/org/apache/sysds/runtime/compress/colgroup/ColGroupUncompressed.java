@@ -23,17 +23,20 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.util.Arrays;
-import java.util.List;
 
 import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.runtime.DMLCompressionException;
+import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
+import org.apache.sysds.runtime.data.DenseBlock;
+import org.apache.sysds.runtime.data.DenseBlockFP64;
 import org.apache.sysds.runtime.data.SparseBlock;
-import org.apache.sysds.runtime.data.SparseBlock.Type;
 import org.apache.sysds.runtime.functionobjects.Builtin;
+import org.apache.sysds.runtime.functionobjects.ReduceAll;
 import org.apache.sysds.runtime.functionobjects.ReduceRow;
-import org.apache.sysds.runtime.matrix.data.LibMatrixAgg;
 import org.apache.sysds.runtime.matrix.data.LibMatrixMult;
+import org.apache.sysds.runtime.matrix.data.LibMatrixReorg;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
@@ -53,12 +56,11 @@ public class ColGroupUncompressed extends AColGroup {
 	 */
 	private MatrixBlock _data;
 
+	/**
+	 * Constructor for serialization
+	 */
 	protected ColGroupUncompressed() {
 		super();
-	}
-
-	public long getValuesSize() {
-		throw new DMLCompressionException("Should not currently be used to estimate uncompressed size.");
 	}
 
 	/**
@@ -67,17 +69,31 @@ public class ColGroupUncompressed extends AColGroup {
 	 * @param colIndicesList Indices (relative to the current block) of the columns that this column group represents.
 	 * @param rawBlock       The uncompressed block; uncompressed data must be present at the time that the constructor
 	 *                       is called
-	 * @param transposed     Says if the input matrix raw block have been transposed. This should not ever be true since
-	 *                       we still have the original matrixBlock in case of aborting the compression.
+	 * @param transposed     Says if the input matrix raw block have been transposed.
 	 */
 	public ColGroupUncompressed(int[] colIndicesList, MatrixBlock rawBlock, boolean transposed) {
-		super(colIndicesList, transposed ? rawBlock.getNumColumns() : rawBlock.getNumRows());
+		super(colIndicesList);
+		final int _numRows = transposed ? rawBlock.getNumColumns() : rawBlock.getNumRows();
+		if(colIndicesList.length == 1) {
+			final int col = colIndicesList[0];
+			if(transposed) {
+				_data = rawBlock.slice(col, col, 0, rawBlock.getNumColumns() - 1);
+				_data = LibMatrixReorg.transposeInPlace(_data, 1);
+			}
+			else
+				_data = rawBlock.slice(0, rawBlock.getNumRows() - 1, col, col);
 
-		// prepare meta data
-		int numRows = transposed ? rawBlock.getNumColumns() : rawBlock.getNumRows();
+			return;
+		}
+
+		if(rawBlock.isInSparseFormat() && transposed) {
+			_data = new MatrixBlock();
+			_data.setNumRows(_numRows);
+			_data.setNumColumns(colIndicesList.length);
+		}
 
 		// Create a matrix with just the requested rows of the original block
-		_data = new MatrixBlock(numRows, _colIndexes.length, rawBlock.isInSparseFormat());
+		_data = new MatrixBlock(_numRows, _colIndexes.length, rawBlock.isInSparseFormat());
 
 		// ensure sorted col indices
 		if(!SortUtils.isSorted(0, _colIndexes.length, _colIndexes))
@@ -87,14 +103,14 @@ public class ColGroupUncompressed extends AColGroup {
 		if(rawBlock.isEmptyBlock(false))
 			return;
 
-		// special cases full block
+		// special cases full blocks
 		if(!transposed && _data.getNumColumns() == rawBlock.getNumColumns()) {
 			_data.copy(rawBlock);
 			return;
 		}
 
 		// dense implementation for dense and sparse matrices to avoid linear search
-		int m = numRows;
+		int m = _numRows;
 		int n = _colIndexes.length;
 		for(int i = 0; i < m; i++) {
 			for(int j = 0; j < n; j++) {
@@ -104,45 +120,16 @@ public class ColGroupUncompressed extends AColGroup {
 			}
 		}
 		_data.examSparsity();
-
-		// convert sparse MCSR to read-optimized CSR representation
-		if(_data.isInSparseFormat()) {
-			_data = new MatrixBlock(_data, Type.CSR, false);
-		}
-	}
-
-	/**
-	 * Constructor for creating temporary decompressed versions of one or more compressed column groups.
-	 * 
-	 * @param groupsToDecompress compressed columns to subsume. Must contain at least one element.
-	 */
-	protected ColGroupUncompressed(List<AColGroup> groupsToDecompress) {
-		super(mergeColIndices(groupsToDecompress), groupsToDecompress.get(0)._numRows);
-
-		// Invert the list of column indices
-		int maxColIndex = _colIndexes[_colIndexes.length - 1];
-		int[] colIndicesInverted = new int[maxColIndex + 1];
-		for(int i = 0; i < _colIndexes.length; i++) {
-			colIndicesInverted[_colIndexes[i]] = i;
-		}
-
-		// Create the buffer that holds the uncompressed data, packed together
-		_data = new MatrixBlock(_numRows, _colIndexes.length, false);
-
-		for(AColGroup colGroup : groupsToDecompress) {
-			colGroup.decompressToBlock(_data, colIndicesInverted);
-		}
 	}
 
 	/**
 	 * Constructor for internal use. Used when a method needs to build an instance of this class from scratch.
 	 * 
 	 * @param colIndices column mapping for this column group
-	 * @param numRows    number of rows in the column, for passing to the superclass
 	 * @param data       matrix block
 	 */
-	protected ColGroupUncompressed(int[] colIndices, int numRows, MatrixBlock data) {
-		super(colIndices, numRows);
+	protected ColGroupUncompressed(int[] colIndices, MatrixBlock data) {
+		super(colIndices);
 		_data = data;
 	}
 
@@ -165,149 +152,134 @@ public class ColGroupUncompressed extends AColGroup {
 		return _data;
 	}
 
-	/**
-	 * Subroutine of constructor.
-	 * 
-	 * @param groupsToDecompress input to the constructor that decompresses into a temporary UncompressedColGroup
-	 * @return a merged set of column indices across all those groups
-	 */
-	private static int[] mergeColIndices(List<AColGroup> groupsToDecompress) {
-		// Pass 1: Determine number of columns
-		int sz = 0;
-		for(AColGroup colGroup : groupsToDecompress) {
-			sz += colGroup.getNumCols();
-		}
-
-		// Pass 2: Copy column offsets out
-		int[] ret = new int[sz];
-		int pos = 0;
-		for(AColGroup colGroup : groupsToDecompress) {
-			int[] tmp = colGroup.getColIndices();
-			System.arraycopy(tmp, 0, ret, pos, tmp.length);
-			pos += tmp.length;
-		}
-
-		// Pass 3: Sort and return the list of columns
-		Arrays.sort(ret);
-		return ret;
-	}
-
 	@Override
 	public long estimateInMemorySize() {
-		return ColGroupSizes.estimateInMemorySizeUncompressed(_numRows, getNumCols(), _data.getSparsity());
-	}
-
-	@Override
-	public void decompressToBlock(MatrixBlock target, int rl, int ru, int offT) {
-		// empty block, nothing to add to output
-		if(_data.isEmptyBlock(false))
-			return;
-		for(int row = rl; row < ru; row++, offT++) {
-			for(int colIx = 0; colIx < _colIndexes.length; colIx++) {
-				int col = _colIndexes[colIx];
-				double cellVal = _data.quickGetValue(row, colIx);
-				target.quickSetValue(offT, col, target.quickGetValue(offT, col) + cellVal);
-			}
-		}
-	}
-
-	private void decompressToBlockUncompressed(MatrixBlock target, int rl, int ru, int offT, double[] values) {
-		// empty block, nothing to add to output
-		if(_data.isEmptyBlock(false))
-			return;
-		for(int row = rl; row < ru; row++, offT++) {
-			for(int colIx = 0; colIx < _colIndexes.length; colIx++) {
-				int col = _colIndexes[colIx];
-				double cellVal = _data.quickGetValue(row, colIx);
-				target.quickSetValue(offT, col, target.quickGetValue(offT, col) + cellVal);
-			}
-		}
+		return ColGroupSizes.estimateInMemorySizeUncompressed(_data.getNumRows(), getNumCols(), _data.getSparsity());
 	}
 
 	@Override
 	public void decompressToBlockSafe(MatrixBlock target, int rl, int ru, int offT, double[] values) {
-		decompressToBlockUncompressed(target, rl, ru, offT, values);
+		double[] c = target.getDenseBlockValues();
+		final int nCol = _colIndexes.length;
+		final int tCol = target.getNumColumns();
+		long nnz = 0;
+		if(_data.isEmpty())
+			return;
+		else if(_data.isInSparseFormat()) {
+			SparseBlock sb = _data.getSparseBlock();
+			for(int row = rl; row < ru; row++, offT += tCol) {
+				if(!sb.isEmpty(row)) {
+					int apos = sb.pos(row);
+					int alen = sb.size(row) + apos;
+					int[] aix = sb.indexes(row);
+					double[] avals = sb.values(row);
+					nnz += alen;
+					for(int col = apos; col < alen; col++) {
+						c[_colIndexes[aix[col]] + offT] += avals[col];
+					}
+				}
+			}
+		}
+		else {
+			values = _data.getDenseBlockValues();
+			offT = offT * tCol;
+			int offS = rl * nCol;
+			for(int row = rl; row < ru; row++, offT += tCol, offS += nCol) {
+				for(int j = 0; j < nCol; j++) {
+					final double v = values[offS + j];
+					if(v != 0) {
+						c[offT + _colIndexes[j]] += v;
+						nnz++;
+					}
+				}
+			}
+		}
+		target.setNonZeros(nnz + target.getNonZeros());
 	}
 
 	@Override
 	public void decompressToBlockUnSafe(MatrixBlock target, int rl, int ru, int offT, double[] values) {
-		decompressToBlockUncompressed(target, rl, ru, offT, values);
+		double[] c = target.getDenseBlockValues();
+		final int nCol = _colIndexes.length;
+		final int tCol = target.getNumColumns();
+		if(_data.isInSparseFormat()) {
+			SparseBlock sb = _data.getSparseBlock();
+			if(sb == null)
+				return;
+			for(int row = rl; row < ru; row++, offT += tCol) {
+				if(!sb.isEmpty(row)) {
+					int apos = sb.pos(row);
+					int alen = sb.size(row) + apos;
+					int[] aix = sb.indexes(row);
+					double[] avals = sb.values(row);
+					for(int col = apos; col < alen; col++)
+						c[_colIndexes[aix[col]] + offT] += avals[col];
+
+				}
+			}
+		}
+		else {
+			values = _data.getDenseBlockValues();
+			offT = offT * tCol;
+			int offS = rl * nCol;
+			for(int row = rl; row < ru; row++, offT += tCol, offS += nCol)
+				for(int j = 0; j < nCol; j++)
+					c[offT + _colIndexes[j]] += values[offS + j];
+
+		}
 	}
 
 	@Override
 	public void decompressToBlock(MatrixBlock target, int[] colIndexTargets) {
-		// empty block, nothing to add to output
-		if(_data.isEmptyBlock(false)) {
-			return;
-		}
-		// Run through the rows, putting values into the appropriate locations
-		for(int row = 0; row < _data.getNumRows(); row++) {
-			for(int colIx = 0; colIx < _data.getNumColumns(); colIx++) {
-				int origMatrixColIx = getColIndex(colIx);
-				int col = colIndexTargets[origMatrixColIx];
-				double cellVal = _data.quickGetValue(row, colIx);
-				target.quickSetValue(row, col, cellVal);
-			}
-		}
+		throw new NotImplementedException("Not Implemented");
 	}
 
 	@Override
 	public void decompressColumnToBlock(MatrixBlock target, int colpos) {
-		// empty block, nothing to add to output
-		if(_data.isEmptyBlock(false)) {
-			return;
+		double[] c = target.getDenseBlockValues();
+		int nnz = 0;
+		int off = colpos;
+		if(_data.isInSparseFormat()) {
+			for(int i = 0; i < _data.getNumRows(); i++) {
+				c[i] += _data.quickGetValue(i, colpos);
+				if(c[i] != 0)
+					nnz++;
+			}
 		}
-		// Run through the rows, putting values into the appropriate locations
-		for(int row = 0; row < _data.getNumRows(); row++) {
-			double cellVal = _data.quickGetValue(row, colpos);
-			// Apparently rows are cols here.
-			target.quickSetValue(0, row, cellVal);
+		else {
+			double[] denseValues = _data.getDenseBlockValues();
+			for(int i = 0; i < _data.getNumRows(); i++, off += _colIndexes.length) {
+				c[i] += denseValues[off];
+				if(c[i] != 0)
+					nnz++;
+			}
 		}
+		target.setNonZeros(nnz);
 	}
 
 	@Override
 	public void decompressColumnToBlock(MatrixBlock target, int colpos, int rl, int ru) {
-		// empty block, nothing to add to output
-		if(_data.isEmptyBlock(false)) {
-			return;
-		}
-		// Run through the rows, putting values into the appropriate locations
-		for(int row = rl; row < ru; row++) {
-			double cellVal = _data.quickGetValue(row, colpos);
-			// Apparently rows are cols here.
-			target.quickSetValue(0, row, cellVal);
-		}
+		throw new NotImplementedException("Not Implemented");
 	}
 
 	@Override
 	public void decompressColumnToBlock(double[] target, int colpos, int rl, int ru) {
-		// empty block, nothing to add to output
-		if(_data.isEmptyBlock(false)) {
-			return;
-		}
-		// Run through the rows, putting values into the appropriate locations
-		for(int row = rl; row < ru; row++) {
-			double cellVal = _data.quickGetValue(row, colpos);
-			// Apparently rows are cols here.
-			target[row] += cellVal;
-		}
+		throw new NotImplementedException("Not Implemented");
 	}
 
 	@Override
 	public double get(int r, int c) {
-		// find local column index
-		int ix = Arrays.binarySearch(_colIndexes, c);
+		final int ix = Arrays.binarySearch(_colIndexes, c);
 		if(ix < 0)
-			throw new RuntimeException("Column index " + c + " not in uncompressed group.");
-
-		// uncompressed get value
-		return _data.quickGetValue(r, ix);
+			return 0;
+		else
+			return _data.quickGetValue(r, ix);
 	}
 
-	@Override
-	public void rightMultByVector(double[] b, double[] c, int rl, int ru, double[] dictVals) {
-		throw new NotImplementedException("Should not be called use other matrix function");
-	}
+	// @Override
+	// public void rightMultByVector(double[] b, double[] c, int rl, int ru, double[] dictVals) {
+	// throw new NotImplementedException("Should not be called use other matrix function");
+	// }
 
 	public void rightMultByVector(MatrixBlock vector, MatrixBlock result, int rl, int ru) {
 		// Pull out the relevant rows of the vector
@@ -344,30 +316,40 @@ public class ColGroupUncompressed extends AColGroup {
 		LibMatrixMult.matrixMult(_data, subMatrix, result);
 	}
 
+	public void leftMultByMatrix(MatrixBlock matrix, double[] result, int numCols, int rl, int ru) {
+
+		MatrixBlock tmpRet = new MatrixBlock(ru - rl, _data.getNumColumns(), false);
+		tmpRet.allocateDenseBlock();
+		MatrixBlock leftSlice = matrix.slice(rl, ru - 1, false);
+		LibMatrixMult.matrixMult(leftSlice, _data, tmpRet);
+		int offT = numCols * rl;
+
+		if(tmpRet.isEmpty())
+			return;
+		if(tmpRet.isInSparseFormat()) {
+			SparseBlock sb = tmpRet.getSparseBlock();
+			for(int rowIdx = 0; rowIdx < ru - rl; rowIdx++, offT += numCols) {
+				if(!sb.isEmpty(rowIdx)) {
+					final int apos = sb.pos(rowIdx);
+					final int alen = sb.size(rowIdx) + apos;
+					final int[] aix = sb.indexes(rowIdx);
+					final double[] avals = sb.values(rowIdx);
+					for(int col = apos; col < alen; col++)
+						result[offT + _colIndexes[aix[col]]] += avals[col];
+				}
+			}
+		}
+		else {
+			double[] tmpRetV = tmpRet.getDenseBlockValues();
+			for(int j = rl, offTemp = 0; j < ru; j++, offTemp += _colIndexes.length, offT += numCols) {
+				for(int i = 0; i < _colIndexes.length; i++)
+					result[offT + _colIndexes[i]] += tmpRetV[offTemp + i];
+			}
+		}
+	}
+
 	public void rightMultByMatrix(int[] outputColumns, double[] preAggregatedB, double[] c, int thatNrColumns, int rl,
 		int ru) {
-		throw new NotImplementedException("Should not be called use other matrix function for uncompressed columns");
-	}
-
-	@Override
-	public void leftMultByRowVector(double[] vector, double[] c) {
-		throw new NotImplementedException("Should not be called use other matrix function for uncompressed columns");
-	}
-
-	@Override
-	public void leftMultByRowVector(double[] vector, double[] c, int numVals, double[] values) {
-		throw new NotImplementedException("Should not be called use other matrix function for uncompressed columns");
-	}
-
-	@Override
-	public void leftMultByMatrix(double[] vector, double[] c, double[] values, int numRows, int numCols, int rl, int ru,
-		int vOff) {
-		throw new NotImplementedException("Should not be called use other matrix function for uncompressed columns");
-	}
-
-	@Override
-	public void leftMultBySparseMatrix(SparseBlock sb, double[] c, double[] values, int numRows, int numCols, int row,
-		double[] MaterializedRow) {
 		throw new NotImplementedException("Should not be called use other matrix function for uncompressed columns");
 	}
 
@@ -392,43 +374,77 @@ public class ColGroupUncompressed extends AColGroup {
 	public AColGroup scalarOperation(ScalarOperator op) {
 		// execute scalar operations
 		MatrixBlock retContent = _data.scalarOperations(op, new MatrixBlock());
+		if(retContent.isEmpty())
+			return new ColGroupEmpty(_colIndexes, _data.getNumRows());
 		// construct new uncompressed column group
-		return new ColGroupUncompressed(getColIndices(), _data.getNumRows(), retContent);
+		return new ColGroupUncompressed(getColIndices(), retContent);
 	}
 
 	@Override
 	public AColGroup binaryRowOp(BinaryOperator op, double[] v, boolean sparseSafe, boolean left) {
-		throw new NotImplementedException("Should not be called use other matrix function for uncompressed columns");
+		DenseBlock b = new DenseBlockFP64(new int[] {1, v.length}, v);
+		MatrixBlock that = new MatrixBlock(1, v.length, b);
+		that.setNonZeros(v.length);
+		MatrixBlock resultBlock = new MatrixBlock();
+		if(left)
+			that.binaryOperations(op, _data, resultBlock);
+		else
+			_data.binaryOperations(op, that, resultBlock);
+		return new ColGroupUncompressed(_colIndexes, resultBlock, false);
 	}
 
 	public void unaryAggregateOperations(AggregateUnaryOperator op, double[] ret) {
-		throw new NotImplementedException("Should not be called");
-	}
-
-	public void unaryAggregateOperations(AggregateUnaryOperator op, MatrixBlock ret) {
-		// execute unary aggregate operations
-		LibMatrixAgg.aggregateUnaryMatrix(_data, ret, op);
-		ret = ret.allocateBlock();
-		// shift result into correct column indexes
-		if(op.indexFn instanceof ReduceRow) {
-			// shift partial results, incl corrections
-			for(int i = _colIndexes.length - 1; i >= 0; i--) {
-				double val = ret.quickGetValue(0, i);
-				ret.quickSetValue(0, i, 0);
-				ret.quickSetValue(0, _colIndexes[i], val);
-				if(op.aggOp.existsCorrection())
-					for(int j = 1; j < ret.getNumRows(); j++) {
-						double corr = ret.quickGetValue(j, i);
-						ret.quickSetValue(j, i, 0);
-						ret.quickSetValue(j, _colIndexes[i], corr);
-					}
-			}
-		}
+		unaryAggregateOperations(op, ret, 0, _data.getNumRows());
 	}
 
 	@Override
 	public void unaryAggregateOperations(AggregateUnaryOperator op, double[] result, int rl, int ru) {
-		throw new NotImplementedException("Unimplemented Specific Sub ColGroup Aggregation Operation");
+		LOG.warn("Inefficient Unary Aggregate because of Uncompressed ColumnGroup");
+		// Since usually Uncompressed column groups are used in case of extreme sparsity, it is fine
+		// using a slice, since we dont allocate extra just extract the pointers to the sparse rows.
+		MatrixBlock tmpData = _data.slice(rl, ru - 1, false);
+		MatrixBlock tmp = tmpData.aggregateUnaryOperations(op, new MatrixBlock(), _data.getNumRows(),
+			new MatrixIndexes(1, 1), true);
+		if(tmp.isEmpty()) {
+			if(op.aggOp.increOp.fn instanceof Builtin) {
+				Builtin b = (Builtin) op.aggOp.increOp.fn;
+				if(op.indexFn instanceof ReduceRow)
+					for(int i = 0; i < _colIndexes.length; i++)
+						result[_colIndexes[i]] = b.execute(result[_colIndexes[i]], 0);
+				else if(op.indexFn instanceof ReduceAll)
+					result[0] = b.execute(result[0], 0);
+				else
+					for(int row = rl; row < ru; row++)
+						result[row] = b.execute(result[row], 0);
+			}
+			return;
+		}
+
+		tmp.sparseToDense();
+		// The output is always dense in unary aggregates.
+		double[] tmpV = tmp.getDenseBlockValues();
+
+		if(op.aggOp.increOp.fn instanceof Builtin) {
+			Builtin b = (Builtin) op.aggOp.increOp.fn;
+			if(op.indexFn instanceof ReduceRow)
+				for(int i = 0; i < tmpV.length; i++)
+					result[_colIndexes[i]] = b.execute(result[_colIndexes[i]], tmpV[i]);
+			else if(op.indexFn instanceof ReduceAll)
+				result[0] = b.execute(result[0], tmpV[0]);
+			else
+				for(int i = 0, row = rl; i < tmpV.length; i++, row++)
+					result[row] = b.execute(result[row], tmpV[i]);
+		}
+		else {
+			if(op.indexFn instanceof ReduceRow)
+				for(int i = 0; i < tmpV.length; i++)
+					result[_colIndexes[i]] += tmpV[i];
+			else if(op.indexFn instanceof ReduceAll)
+				result[0] += tmpV[0];
+			else
+				for(int i = 0, row = rl; i < tmpV.length; i++, row++)
+					result[row] += tmpV[i];
+		}
 	}
 
 	@Override
@@ -436,7 +452,6 @@ public class ColGroupUncompressed extends AColGroup {
 		// read col contents (w/ meta data)
 		_data = new MatrixBlock();
 		_data.readFields(in);
-		_numRows = _data.getNumRows();
 
 		// read col indices
 		int numCols = _data.getNumColumns();
@@ -472,11 +487,19 @@ public class ColGroupUncompressed extends AColGroup {
 		StringBuilder sb = new StringBuilder();
 		sb.append(super.toString());
 		sb.append("\n");
-		sb.append(_data.getNumColumns() + " ");
-		sb.append(_data.getNumRows() + " ");
-		sb.append(_data.getNonZeros() + " ");
-		sb.append(_data.isInSparseFormat() + " ");
-		// sb.append(_data.toString());
+		sb.append(" numCols : " + _data.getNumColumns());
+		sb.append(" numRows : " + _data.getNumRows());
+		sb.append(" nonZeros: " + _data.getNonZeros());
+		sb.append(" Sparse  : " + _data.isInSparseFormat());
+		sb.append("\n");
+
+		if(!_data.isInSparseFormat() && _data.getNumRows() < 100000)
+			sb.append(Arrays.toString(_data.getDenseBlockValues()));
+		else if(_data.getNumRows() < 100)
+			sb.append(_data.toString());
+		else
+			sb.append(" dont print uncompressed matrix because it is to big.");
+
 		return sb.toString();
 	}
 
@@ -486,18 +509,17 @@ public class ColGroupUncompressed extends AColGroup {
 	}
 
 	@Override
-	public boolean getIfCountsType() {
-		return false;
-	}
-
-	@Override
 	public double[] getValues() {
 		if(_data.isInSparseFormat()) {
-			return _data.getSparseBlock().values(0);
+			SparseBlock sb = _data.getSparseBlock();
+
+			if(sb == null || sb.isEmpty(0))
+				return null;
+			else
+				return _data.getSparseBlock().values(0);
 		}
-		else {
+		else
 			return _data.getDenseBlock().values(0);
-		}
 	}
 
 	@Override
@@ -506,32 +528,31 @@ public class ColGroupUncompressed extends AColGroup {
 	}
 
 	@Override
-	public AColGroup sliceColumns(int cl, int cu) {
-		throw new NotImplementedException("Not implemented slice columns");
-	}
-
 	public double getMin() {
 		return _data.min();
 	}
 
+	@Override
 	public double getMax() {
 		return _data.max();
 	}
 
 	@Override
-	public void leftMultByRowVector(double[] vector, double[] result, int offT) {
-		throw new NotImplementedException("Not implemented slice columns");
-	}
+	public void tsmm(double[] result, int numColumns) {
+		MatrixBlock tmp = new MatrixBlock(_colIndexes.length, _colIndexes.length, true);
+		LibMatrixMult.matrixMultTransposeSelf(_data, tmp, true, false);
+		if(tmp.getDenseBlock() == null && tmp.getSparseBlock() == null)
+			return;
+		else if(tmp.isInSparseFormat()) {
+			throw new NotImplementedException("not Implemented sparse output of tsmm in compressed ColGroup.");
+		}
+		else {
+			double[] tmpV = tmp.getDenseBlockValues();
+			for(int i = 0, offD = 0, offT = 0; i < numColumns; i++, offD += numColumns, offT += _colIndexes.length)
+				for(int j = i; j < numColumns; j++)
+					result[offD + _colIndexes[j]] += tmpV[offT + j];
+		}
 
-	@Override
-	public void leftMultByRowVector(double[] vector, double[] result, int numVals, double[] values, int offT) {
-		throw new NotImplementedException("Not implemented slice columns");
-
-	}
-
-	@Override
-	public void leftMultBySelfDiagonalColGroup(double[] result, int numColumns) {
-		throw new NotImplementedException("Not implemented slice columns");
 	}
 
 	@Override
@@ -540,12 +561,72 @@ public class ColGroupUncompressed extends AColGroup {
 	}
 
 	@Override
-	public boolean containsValue(double pattern){
+	public boolean containsValue(double pattern) {
 		return _data.containsValue(pattern);
 	}
 
 	@Override
-	public long getNumberNonZeros(){
+	public long getNumberNonZeros() {
 		return _data.getNonZeros();
+	}
+
+	@Override
+	public int getNumRows() {
+		return _data.getNumRows();
+	}
+
+	@Override
+	public boolean isDense() {
+		return !_data.isInSparseFormat();
+	}
+
+	@Override
+	public void leftMultByAColGroup(AColGroup lhs, double[] result, final int numRows, final int numCols) {
+		if(lhs instanceof ColGroupEmpty)
+			return;
+		if(lhs instanceof ColGroupUncompressed) {
+			throw new DMLCompressionException("Not Implemented");
+		}
+		else {
+
+			LOG.warn("Inefficient transpose of uncompressed to fit to"
+				+ " t(AColGroup) %*% UncompressedColGroup mult by colGroup uncompressed column"
+				+ " Currently solved by t(t(Uncompressed) %*% AColGroup");
+			double[] tmpTransposedResult = new double[result.length];
+
+			MatrixBlock ucCG = getData();
+			MatrixBlock tmp = new MatrixBlock(ucCG.getNumColumns(), ucCG.getNumRows(), ucCG.isInSparseFormat());
+			LibMatrixReorg.transpose(ucCG, tmp, InfrastructureAnalyzer.getLocalParallelism());
+			lhs.leftMultByMatrix(tmp, tmpTransposedResult, numRows);
+
+			for(int row = 0; row < numRows; row++) {
+				for(int col = 0; col < numCols; col++) {
+					result[row * numCols + col] += tmpTransposedResult[col * numRows + row];
+				}
+			}
+		}
+	}
+
+	@Override
+	protected AColGroup sliceSingleColumn(int idx) {
+		return sliceMultiColumns(idx, idx + 1, new int[] {0});
+	}
+
+	@Override
+	protected AColGroup sliceMultiColumns(int idStart, int idEnd, int[] outputCols) {
+		MatrixBlock newData = _data.slice(0, _data.getNumRows() - 1, idStart, idEnd - 1, true);
+		if(newData.isEmpty())
+			return new ColGroupEmpty(outputCols, newData.getNumRows());
+		return new ColGroupUncompressed(outputCols, newData, false);
+	}
+
+	@Override
+	public AColGroup rightMultByMatrix(MatrixBlock right) {
+		int[] outputCols = new int[right.getNumColumns()];
+		for(int i = 0; i < outputCols.length; i++)
+			outputCols[i] = i;
+		MatrixBlock out = new MatrixBlock(_data.getNumRows(), right.getNumColumns(), true);
+		LibMatrixMult.matrixMult(_data, right, out, InfrastructureAnalyzer.getLocalParallelism());
+		return new ColGroupUncompressed(outputCols, out, false);
 	}
 }

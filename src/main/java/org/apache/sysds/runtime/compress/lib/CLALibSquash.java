@@ -48,17 +48,13 @@ public class CLALibSquash {
 
 	public static CompressedMatrixBlock squash(CompressedMatrixBlock m, int k) {
 
-		CompressedMatrixBlock ret = new CompressedMatrixBlock(true);
-		ret.setNumColumns(m.getNumColumns());
-		ret.setNumRows(m.getNumRows());
-
+		CompressedMatrixBlock ret = new CompressedMatrixBlock(m.getNumRows(), m.getNumColumns());
 		CompressionSettings cs = new CompressionSettingsBuilder().create();
 
 		double[] minMaxes = extractMinMaxes(m);
 		List<AColGroup> retCg = (k <= 1) ? singleThreadSquash(m, cs, minMaxes) : multiThreadSquash(m, cs, k, minMaxes);
 
 		ret.allocateColGroupList(retCg);
-		ret.setOverlapping(false);
 		ret.recomputeNonZeros();
 
 		if(ret.isOverlapping())
@@ -130,7 +126,7 @@ public class CLALibSquash {
 			map = BitmapLossyEncoder.extractMapFromCompressedSingleColumn(m,
 				columnIds[0],
 				minMaxes[columnIds[0] * 2],
-				minMaxes[columnIds[0] * 2 + 1]);
+				minMaxes[columnIds[0] * 2 + 1], m.getNumRows());
 
 		AColGroup newGroup = ColGroupFactory.compress(columnIds, m.getNumRows(), map, CompressionType.DDC, cs, m);
 		return newGroup;
@@ -138,8 +134,8 @@ public class CLALibSquash {
 
 	private static ABitmap extractBitmap(int[] colIndices, CompressedMatrixBlock compressedBlock) {
 		Bitmap x = BitmapEncoder.extractBitmap(colIndices,
-			ReaderColumnSelection.createCompressedReader(compressedBlock, colIndices));
-		return BitmapLossyEncoder.makeBitmapLossy(x);
+			ReaderColumnSelection.createCompressedReader(compressedBlock, colIndices),  compressedBlock.getNumRows());
+		return BitmapLossyEncoder.makeBitmapLossy(x, compressedBlock.getNumRows());
 	}
 
 	private static class SquashTask implements Callable<AColGroup> {

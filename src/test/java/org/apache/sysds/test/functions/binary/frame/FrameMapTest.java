@@ -21,7 +21,7 @@ package org.apache.sysds.test.functions.binary.frame;
 
 import org.apache.sysds.common.Types;
 import org.apache.sysds.common.Types.FileFormat;
-import org.apache.sysds.lops.LopProperties.ExecType;
+import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.runtime.io.FileFormatPropertiesCSV;
 import org.apache.sysds.runtime.io.FrameWriterFactory;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
@@ -139,8 +139,8 @@ public class FrameMapTest extends AutomatedTestBase {
 			else if(type == TestType.SHERLOCK_PREP) {
 				String[][] data = new String[1][1];
 				data[0][0] =  "\"['Global', 'United States', 'Australia']\"";
-        FileFormatPropertiesCSV ffp = new FileFormatPropertiesCSV();
-        ffp.setDelim(";");
+				FileFormatPropertiesCSV ffp = new FileFormatPropertiesCSV();
+				ffp.setDelim(";");
 				FrameWriterFactory.createFrameWriter(FileFormat.CSV, ffp).
 					writeFrameToHDFS(new FrameBlock(schemaStrings1, data), input("A"), 1, 1);
 			}

@@ -29,6 +29,7 @@
 # FIELDS
 workerdir="tests/federated/worker/"
 outputdir="tests/federated/output/"
+tmpfiledir="tests/federated/tmp/"
 mkdir $workerdir
 mkdir $outputdir
 w1_Output="$workerdir/w1"
@@ -59,6 +60,7 @@ echo -e "\n------------\nTest output:\n------------"
 cat $log
 grepvals="$(tail -n 10 $log | grep OK)"
 rm -r $outputdir
+rm -r $tmpfiledir
 echo -e "------------\n"
 if [[ $grepvals == *"OK"* ]]; then
 	exit 0

@@ -725,8 +725,12 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 			_bcHandle.setBackReference(null);
 		if( _gpuObjects != null ) {
 			for (GPUObject gObj : _gpuObjects.values())
-				if (gObj != null)
+				if (gObj != null) {
 					gObj.clearData(null, DMLScript.EAGER_CUDA_FREE);
+					if (gObj.isLinCached())
+						// set rmVarPending which helps detecting liveness
+						gObj.setrmVarPending(true);
+				}
 		}
 		
 		//clear federated matrix

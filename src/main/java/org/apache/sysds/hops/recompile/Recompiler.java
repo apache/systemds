@@ -19,9 +19,17 @@
 
 package org.apache.sysds.hops.recompile;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.wink.json4j.JSONObject;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.api.jmlc.JMLCUtils;
 import org.apache.sysds.common.Types.DataType;
@@ -49,7 +57,7 @@ import org.apache.sysds.hops.codegen.SpoofCompiler;
 import org.apache.sysds.hops.rewrite.HopRewriteUtils;
 import org.apache.sysds.hops.rewrite.ProgramRewriter;
 import org.apache.sysds.lops.Lop;
-import org.apache.sysds.lops.LopProperties.ExecType;
+import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.lops.compile.Dag;
 import org.apache.sysds.parser.DMLProgram;
 import org.apache.sysds.parser.DataExpression;
@@ -85,22 +93,13 @@ import org.apache.sysds.runtime.io.IOUtilFunctions;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
+import org.apache.sysds.runtime.meta.MetaDataAll;
 import org.apache.sysds.runtime.meta.MetaDataFormat;
 import org.apache.sysds.runtime.util.HDFSTool;
 import org.apache.sysds.runtime.util.ProgramConverter;
 import org.apache.sysds.runtime.util.UtilFunctions;
 import org.apache.sysds.utils.Explain;
 import org.apache.sysds.utils.Explain.ExplainType;
-import org.apache.sysds.utils.JSONHelper;
-
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
 
 /**
  * Dynamic recompilation of hop dags to runtime instructions, which includes the 
@@ -1600,13 +1599,13 @@ public class Recompiler
 			FileSystem fs = IOUtilFunctions.getFileSystem(mtdname); //no auto-close
 			if( fs.exists(path) ){
 				try(BufferedReader br = new BufferedReader(new InputStreamReader(fs.open(path)))) {
-					JSONObject mtd = JSONHelper.parse(br);
-					DataType dt = DataType.valueOf(String.valueOf(mtd.get(DataExpression.DATATYPEPARAM)).toUpperCase());
+					MetaDataAll mtd = new MetaDataAll(br);
+					DataType dt = mtd.getDataType();
 					dop.setDataType(dt);
 					if(dt != DataType.FRAME)
-						dop.setValueType(ValueType.valueOf(String.valueOf(mtd.get(DataExpression.VALUETYPEPARAM)).toUpperCase()));
-					dop.setDim1((dt==DataType.MATRIX||dt==DataType.FRAME)?Long.parseLong(mtd.get(DataExpression.READROWPARAM).toString()):0);
-					dop.setDim2((dt==DataType.MATRIX||dt==DataType.FRAME)?Long.parseLong(mtd.get(DataExpression.READCOLPARAM).toString()):0);
+						dop.setValueType(mtd.getValueType());
+					dop.setDim1((dt==DataType.MATRIX||dt==DataType.FRAME)? mtd.getDim1():0);
+					dop.setDim2((dt==DataType.MATRIX||dt==DataType.FRAME)? mtd.getDim2():0);
 				}
 			}
 		}

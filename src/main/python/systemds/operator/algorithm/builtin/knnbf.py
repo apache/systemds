@@ -24,17 +24,14 @@
 
 from typing import Dict, Iterable
 
-from systemds.operator import OperationNode
+from systemds.operator import OperationNode, Matrix
 from systemds.script_building.dag import OutputType
 from systemds.utils.consts import VALID_INPUT_TYPES
 
-def knnbf(X: OperationNode, T: OperationNode, k_value: int) -> OperationNode:
+def knnbf(X: OperationNode, T: OperationNode, k_value: int):
     
-    
-    X._check_matrix_op()
-    T._check_matrix_op()
     params_dict = {'X':X, 'T':T, 'k_value':k_value}
-    return OperationNode(X.sds_context, 'knnbf', named_input_nodes=params_dict, output_type=OutputType.MATRIX)
+    return Matrix(X.sds_context, 'knnbf', named_input_nodes=params_dict)
 
 
     

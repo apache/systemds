@@ -32,15 +32,15 @@ public class CleaningTestClassification extends AutomatedTestBase {
 	private final static String TEST_NAME2 = "compareAccuracy";
 	private final static String TEST_CLASS_DIR = SCRIPT_DIR + CleaningTestClassification.class.getSimpleName() + "/";
 
-	protected static final String RESOURCE = SCRIPT_DIR+"functions/pipelines/";
-	protected static final String DATA_DIR = RESOURCE+"data/";
+	private static final String RESOURCE = SCRIPT_DIR+"functions/pipelines/";
+	private static final String DATA_DIR = DATASET_DIR+ "pipelines/";
 
 	private final static String DIRTY = DATA_DIR+ "dirty.csv";
 	private final static String CLEAN = DATA_DIR+ "clean.csv";
 	private final static String META = RESOURCE+ "meta/meta_census.csv";
 	private final static String OUTPUT = RESOURCE+"intermediates/";
 
-	protected static final String PARAM_DIR = "./scripts/pipelines/properties/";
+	private static final String PARAM_DIR = "./scripts/pipelines/properties/";
 	private final static String PARAM = PARAM_DIR + "param.csv";
 	private final static String PRIMITIVES = PARAM_DIR + "primitives.csv";
 
@@ -50,15 +50,14 @@ public class CleaningTestClassification extends AutomatedTestBase {
 		addTestConfiguration(TEST_NAME2,new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2,new String[]{"R"}));
 	}
 
-
 	@Ignore
-	public void testCP1() {
+	public void testFindBestPipeline() {
 		runFindPipelineTest(0.1, 5,10, 2,
 			true, "classification", Types.ExecMode.SINGLE_NODE);
 	}
 
 	@Test
-	public void testCP2() {
+	public void testCompareRepairs() {
 		runCleanAndCompareTest( Types.ExecMode.SINGLE_NODE);
 	}
 
@@ -71,11 +70,10 @@ public class CleaningTestClassification extends AutomatedTestBase {
 		try {
 			loadTestConfiguration(getTestConfiguration(TEST_NAME1));
 			fullDMLScriptName = HOME + TEST_NAME1 + ".dml";
-			programArgs = new String[] {"-stats", "-exec", "singlenode", "-nvargs", "dirtyData="+DIRTY, "metaData="+META,
-				"primitives="+PRIMITIVES, "parameters="+PARAM, "sampleSize="+String.valueOf(sample),
-				"topk="+String.valueOf(topk), "rv="+String.valueOf(resources), "cv="+String.valueOf(crossfold),
-				"weighted="+ String.valueOf(weightedAccuracy), "output="+OUTPUT, "target="+target, "cleanData="+CLEAN,
-				"O="+output("O")};
+			programArgs = new String[] {"-stats", "-exec", "singlenode", "-nvargs", "dirtyData="+DIRTY,
+				"metaData="+META, "primitives="+PRIMITIVES, "parameters="+PARAM, "sampleSize="+ sample,
+				"topk="+ topk, "rv="+ resources, "cv="+ crossfold, "weighted="+ weightedAccuracy,
+				"output="+OUTPUT, "target="+target, "cleanData="+CLEAN, "O="+output("O")};
 
 			runTest(true, EXCEPTION_NOT_EXPECTED, null, -1);
 

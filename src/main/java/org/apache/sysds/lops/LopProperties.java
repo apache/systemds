@@ -21,12 +21,11 @@ package org.apache.sysds.lops;
 
 import java.util.ArrayList;
 
+import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.runtime.controlprogram.parfor.util.IDSequence;
 
 public class LopProperties 
 {
-	public enum ExecType { CP, CP_FILE, SPARK, GPU, INVALID, FED }
-
 	// static variable to assign an unique ID to every lop that is created
 	private static IDSequence UniqueLopID = null;
 	
@@ -60,6 +59,10 @@ public class LopProperties
 	
 	public ExecType getExecType() {
 		return execType;
+	}
+
+	public void setExecType(ExecType newExecType){
+		execType = newExecType;
 	}
 	
 	public boolean getProducesIntermediateOutput() {

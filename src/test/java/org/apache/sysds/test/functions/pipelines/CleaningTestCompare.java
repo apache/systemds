@@ -24,7 +24,6 @@ import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
 import org.junit.Assert;
-import org.junit.Ignore;
 import org.junit.Test;
 
 public class CleaningTestCompare extends AutomatedTestBase {
@@ -32,10 +31,9 @@ public class CleaningTestCompare extends AutomatedTestBase {
 	private final static String TEST_CLASS_DIR = SCRIPT_DIR + CleaningTestCompare.class.getSimpleName() + "/";
 
 	protected static final String RESOURCE = SCRIPT_DIR+"functions/pipelines/";
-	protected static final String DATA_DIR = RESOURCE+"data/";
 
-	private final static String DIRTY = DATA_DIR+ "dirty.csv";
-	private final static String CLEAN = DATA_DIR+ "clean.csv";
+	private final static String DIRTY = DATASET_DIR+ "pipelines/dirty.csv";
+	private final static String CLEAN = DATASET_DIR+ "pipelines/clean.csv";
 	private final static String META = RESOURCE+ "meta/meta_census.csv";
 	private final static String OUTPUT = RESOURCE+"intermediates/";
 
@@ -48,7 +46,6 @@ public class CleaningTestCompare extends AutomatedTestBase {
 		addTestConfiguration(TEST_NAME1,new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1,new String[]{"R"}));
 	}
 
-
 	@Test
 	public void testCP1() {
 		runFindPipelineTest(5,10, 2,
@@ -58,14 +55,14 @@ public class CleaningTestCompare extends AutomatedTestBase {
 	private void runFindPipelineTest(int topk, int resources, int crossfold,
 		boolean weightedAccuracy, String target, Types.ExecMode et) {
 
-		setOutputBuffering(false);
+		setOutputBuffering(true);
 		String HOME = SCRIPT_DIR+"functions/pipelines/" ;
 		Types.ExecMode modeOld = setExecMode(et);
 		try {
 			loadTestConfiguration(getTestConfiguration(TEST_NAME1));
 			fullDMLScriptName = HOME + TEST_NAME1 + ".dml";
-			programArgs = new String[] {"-stats", "-exec", "singlenode", "-nvargs", "dirtyData="+DIRTY, "metaData="+META,
-				"primitives="+PRIMITIVES, "parameters="+PARAM,  "topk="+String.valueOf(topk), "rv="+String.valueOf(resources),
+			programArgs = new String[] {"-stats", "-exec", "singlenode", "-nvargs", "dirtyData="+DIRTY,
+				"metaData="+META, "primitives="+PRIMITIVES, "parameters="+PARAM,  "topk="+ topk, "rv="+ resources,
 				"output="+OUTPUT, "target="+target, "cleanData="+CLEAN, "O="+output("O")};
 
 			runTest(true, EXCEPTION_NOT_EXPECTED, null, -1);

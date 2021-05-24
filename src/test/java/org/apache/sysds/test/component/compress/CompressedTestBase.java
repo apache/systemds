@@ -20,7 +20,6 @@
 package org.apache.sysds.test.component.compress;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.fail;
 
 import java.util.ArrayList;
@@ -35,9 +34,12 @@ import org.apache.sysds.lops.MapMultChain.ChainType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlockFactory;
+import org.apache.sysds.runtime.compress.CompressionSettings;
 import org.apache.sysds.runtime.compress.CompressionSettingsBuilder;
 import org.apache.sysds.runtime.compress.CompressionStatistics;
+import org.apache.sysds.runtime.compress.cocode.PlanningCoCoder.PartitionerType;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup.CompressionType;
+import org.apache.sysds.runtime.compress.colgroup.ColGroupUncompressed;
 import org.apache.sysds.runtime.functionobjects.Divide;
 import org.apache.sysds.runtime.functionobjects.Equals;
 import org.apache.sysds.runtime.functionobjects.GreaterThan;
@@ -73,29 +75,17 @@ import org.junit.runners.Parameterized.Parameters;
 public abstract class CompressedTestBase extends TestBase {
 	protected static final Log LOG = LogFactory.getLog(CompressedTestBase.class.getName());
 
-	protected static SparsityType[] usedSparsityTypes = new SparsityType[] {SparsityType.FULL,
-		// SparsityType.DENSE,
-		SparsityType.SPARSE,
-		// SparsityType.ULTRA_SPARSE,
-		// SparsityType.EMPTY
-	};
+	protected static SparsityType[] usedSparsityTypes = new SparsityType[] {SparsityType.FULL, SparsityType.SPARSE,};
 
-	protected static ValueType[] usedValueTypes = new ValueType[] {
-		// ValueType.RAND,
-		// ValueType.CONST,
-		ValueType.RAND_ROUND, ValueType.OLE_COMPRESSIBLE, ValueType.RLE_COMPRESSIBLE,};
+	protected static ValueType[] usedValueTypes = new ValueType[] {ValueType.RAND_ROUND, ValueType.OLE_COMPRESSIBLE,
+		ValueType.RLE_COMPRESSIBLE,};
 
 	protected static ValueRange[] usedValueRanges = new ValueRange[] {ValueRange.SMALL, ValueRange.NEGATIVE,
-		// ValueRange.LARGE,
-		ValueRange.BYTE,
-		// ValueRange.BOOLEAN,
-	};
+		ValueRange.BYTE};
 
 	protected static OverLapping[] overLapping = new OverLapping[] {
 		// OverLapping.COL,
-		OverLapping.PLUS,
-		// OverLapping.MATRIX,
-		OverLapping.NONE,
+		OverLapping.PLUS, OverLapping.MATRIX, OverLapping.NONE,
 		// OverLapping.MATRIX_PLUS,
 		// OverLapping.SQUASH,
 		// OverLapping.MATRIX_MULT_NEGATIVE
@@ -106,16 +96,16 @@ public abstract class CompressedTestBase extends TestBase {
 	protected static CompressionSettingsBuilder[] usedCompressionSettings = new CompressionSettingsBuilder[] {
 		// CLA TESTS!
 
-		new CompressionSettingsBuilder().setSamplingRatio(0.1).setSeed(compressionSeed)
-			.setValidCompressions(EnumSet.of(CompressionType.DDC)).setInvestigateEstimate(true),
+		// new CompressionSettingsBuilder().setSamplingRatio(0.1).setSeed(compressionSeed)
+		// .setValidCompressions(EnumSet.of(CompressionType.DDC)).setInvestigateEstimate(true),
 
 		// new CompressionSettingsBuilder().setSamplingRatio(0.1).setSeed(compressionSeed)
 		// .setValidCompressions(EnumSet.of(CompressionType.OLE)).setInvestigateEstimate(true),
 		// new CompressionSettingsBuilder().setSamplingRatio(0.1).setSeed(compressionSeed)
 		// .setValidCompressions(EnumSet.of(CompressionType.RLE)).setInvestigateEstimate(true),
 
-		new CompressionSettingsBuilder().setSamplingRatio(0.1).setSeed(compressionSeed)
-			.setValidCompressions(EnumSet.of(CompressionType.SDC)).setInvestigateEstimate(true),
+		// new CompressionSettingsBuilder().setSamplingRatio(0.1).setSeed(compressionSeed)
+		// .setValidCompressions(EnumSet.of(CompressionType.SDC)).setInvestigateEstimate(true),
 
 		// new CompressionSettingsBuilder().setSamplingRatio(0.1).setSeed(compressionSeed)
 		// .setValidCompressions(EnumSet.of(CompressionType.SDC, CompressionType.DDC)).setInvestigateEstimate(true),
@@ -123,16 +113,21 @@ public abstract class CompressedTestBase extends TestBase {
 		// .setValidCompressions(EnumSet.of(CompressionType.OLE, CompressionType.SDC, CompressionType.DDC))
 		// .setInvestigateEstimate(true),
 
-		// new CompressionSettingsBuilder().setSamplingRatio(0.1).setSeed(compressionSeed).setTransposeInput("false")
-		// .setInvestigateEstimate(true),
-		// new CompressionSettingsBuilder().setSamplingRatio(0.1).setSeed(compressionSeed).setTransposeInput("true")
-		// .setInvestigateEstimate(true),
+		new CompressionSettingsBuilder().setSamplingRatio(0.1).setSeed(compressionSeed).setTransposeInput("false")
+			.setInvestigateEstimate(true),
+		new CompressionSettingsBuilder().setSamplingRatio(0.1).setSeed(compressionSeed).setTransposeInput("true")
+			.setColumnPartitioner(PartitionerType.BIN_PACKING).setInvestigateEstimate(true),
+		new CompressionSettingsBuilder().setSamplingRatio(0.1).setSeed(compressionSeed).setTransposeInput("true")
+			.setColumnPartitioner(PartitionerType.STATIC).setInvestigateEstimate(true),
+
+		// Forced Uncompressed tests
+		new CompressionSettingsBuilder().setValidCompressions(EnumSet.of(CompressionType.UNCOMPRESSED)),
 
 		// new CompressionSettingsBuilder().setSamplingRatio(0.1).setSeed(compressionSeed).setInvestigateEstimate(true),
 		// new CompressionSettingsBuilder().setSamplingRatio(1.0).setSeed(compressionSeed).setInvestigateEstimate(true)
 		// .setAllowSharedDictionary(false).setmaxStaticColGroupCoCode(1),
 
-		// // // // LOSSY TESTS!
+		// LOSSY TESTS!
 
 		// new CompressionSettingsBuilder().setSamplingRatio(0.1).setSeed(compressionSeed)
 		// .setValidCompressions(EnumSet.of(CompressionType.DDC)).setInvestigateEstimate(true).setLossy(true).create(),
@@ -145,7 +140,7 @@ public abstract class CompressedTestBase extends TestBase {
 		// new CompressionSettingsBuilder().setSamplingRatio(1.0).setSeed(compressionSeed).setInvestigateEstimate(true)
 		// .setAllowSharedDictionary(false).setmaxStaticColGroupCoCode(1).setLossy(true).create(),
 
-		// COCODING TESTS!!
+		// CO CODING TESTS!!
 
 		// new CompressionSettingsBuilder().setSamplingRatio(1.0).setSeed(compressionSeed).setInvestigateEstimate(true)
 		// .setAllowSharedDDCDictionary(false).setmaxStaticColGroupCoCode(20).create(),
@@ -172,8 +167,6 @@ public abstract class CompressedTestBase extends TestBase {
 	protected CompressionStatistics cmbStats;
 
 	// Decompressed Result
-	// protected MatrixBlock cmbDeCompressed;
-	// protected double[][] deCompressed;
 
 	/** number of threads used for the operation */
 	protected final int _k;
@@ -191,10 +184,24 @@ public abstract class CompressedTestBase extends TestBase {
 		try {
 			if(compressionSettings.lossy || ov == OverLapping.SQUASH)
 				setLossyTolerance(valueRange);
-			Pair<MatrixBlock, CompressionStatistics> pair = CompressedMatrixBlockFactory
-				.compress(mb, _k, compSettings.create());
-			cmb = pair.getLeft();
-			cmbStats = pair.getRight();
+			CompressionSettings cs = compSettings.create();
+			if(cs.validCompressions.size() == 2) { // In case only Uncompressed and Const colgroups are available.
+				// filter the big tests from uncompressed colgroup tests since the functionality should be verified even
+				// with smaller matrices
+				if(rows < 10000) {
+
+					int[] colIndexes = new int[mb.getNumColumns()];
+					for(int i = 0; i < colIndexes.length; i++)
+						colIndexes[i] = i;
+					cmb = new CompressedMatrixBlock(mb.getNumRows(), mb.getNumColumns());
+					((CompressedMatrixBlock) cmb).allocateColGroup(new ColGroupUncompressed(colIndexes, mb, false));
+				}
+			}
+			else {
+				Pair<MatrixBlock, CompressionStatistics> pair = CompressedMatrixBlockFactory.compress(mb, _k, cs);
+				cmb = pair.getLeft();
+				cmbStats = pair.getRight();
+			}
 			MatrixBlock tmp = null;
 			switch(ov) {
 				case COL:
@@ -278,6 +285,12 @@ public abstract class CompressedTestBase extends TestBase {
 						for(MatrixTypology mt : usedMatrixTypology)
 							for(OverLapping ov : overLapping)
 								tests.add(new Object[] {st, vt, vr, cs, mt, ov});
+		for(CompressionSettingsBuilder cs : usedCompressionSettings)
+			for(MatrixTypology mt : usedMatrixTypology)
+				for(OverLapping ov : overLapping) {
+					tests.add(new Object[] {SparsityType.EMPTY, ValueType.RAND, ValueRange.BOOLEAN, cs, mt, ov});
+					tests.add(new Object[] {SparsityType.FULL, ValueType.CONST, ValueRange.LARGE, cs, mt, ov});
+				}
 		return tests;
 	}
 
@@ -290,9 +303,11 @@ public abstract class CompressedTestBase extends TestBase {
 
 			MatrixBlock decompressedMatrixBlock = ((CompressedMatrixBlock) cmb).decompress(_k);
 
-			// LOG.error(mb.slice(0, 10, 0, mb.getNumColumns() - 1, null));
-			// LOG.error(decompressedMatrixBlock.slice(0,10, 0, decompressedMatrixBlock.getNumColumns()-1, null));
+			// LOG.error(mb.slice(0, 3, 0, mb.getNumColumns() - 1, null));
+			// LOG.error(decompressedMatrixBlock.slice(0, 3, 0, decompressedMatrixBlock.getNumColumns()-1, null));
 			compareResultMatrices(mb, decompressedMatrixBlock, 1);
+			assertEquals(this.toString() + " number of non zeros should be equal after decompression", mb.getNonZeros(),
+				decompressedMatrixBlock.getNonZeros());
 		}
 		catch(Exception e) {
 			e.printStackTrace();
@@ -336,8 +351,8 @@ public abstract class CompressedTestBase extends TestBase {
 			// LOG.error(ret1);
 			// LOG.error(ret2);
 			// compare result with input
-			TestUtils.compareMatricesPercentageDistance(DataConverter
-				.convertToDoubleMatrix(ret1), DataConverter.convertToDoubleMatrix(ret2), 0.9, 0.9, this.toString());
+			TestUtils.compareMatricesPercentageDistance(DataConverter.convertToDoubleMatrix(ret1),
+				DataConverter.convertToDoubleMatrix(ret2), 0.9, 0.9, this.toString());
 
 		}
 		catch(Exception e) {
@@ -573,6 +588,13 @@ public abstract class CompressedTestBase extends TestBase {
 		try {
 			if(!(cmb instanceof CompressedMatrixBlock))
 				return; // Input was not compressed then just pass test
+			// vector-matrix compressed
+			CompressionSettings cs = new CompressionSettingsBuilder()
+				.setValidCompressions(EnumSet.of(CompressionType.DDC)).create();
+			MatrixBlock compMatrix = compressMatrix ? CompressedMatrixBlockFactory.compress(matrix, cs)
+				.getLeft() : matrix;
+			if(compressMatrix && !(compMatrix instanceof CompressedMatrixBlock))
+				return; // Early termination since the test does not test what we wanted.
 
 			// Make Operator
 			AggregateBinaryOperator abop = InstructionUtils.getMatMultOperator(_k);
@@ -581,21 +603,17 @@ public abstract class CompressedTestBase extends TestBase {
 			// vector-matrix uncompressed
 			ReorgOperator r_op = new ReorgOperator(SwapIndex.getSwapIndexFnObject(), _k);
 
+			// vector-matrix compressed
 			MatrixBlock left = transposeLeft ? matrix.reorgOperations(r_op, new MatrixBlock(), 0, 0, 0) : matrix;
 			MatrixBlock right = transposeRight ? mb.reorgOperations(r_op, new MatrixBlock(), 0, 0, 0) : mb;
 			MatrixBlock ret1 = right.aggregateBinaryOperations(left, right, new MatrixBlock(), abopSingle);
 
-			// vector-matrix compressed
-			MatrixBlock compMatrix = compressMatrix ? CompressedMatrixBlockFactory.compress(matrix, 1)
-				.getLeft() : matrix;
-			assertFalse("Failed to compress other matrix",
-				compressMatrix && !(compMatrix instanceof CompressedMatrixBlock));
-			MatrixBlock ret2 = ((CompressedMatrixBlock) cmb)
-				.aggregateBinaryOperations(compMatrix, cmb, new MatrixBlock(), abop, transposeLeft, transposeRight);
+			MatrixBlock ret2 = ((CompressedMatrixBlock) cmb).aggregateBinaryOperations(compMatrix, cmb,
+				new MatrixBlock(), abop, transposeLeft, transposeRight);
 
 			if(comparePercent && overlappingType == OverLapping.SQUASH)
-				TestUtils.compareMatricesPercentageDistance(DataConverter.convertToDoubleMatrix(
-					ret1), DataConverter.convertToDoubleMatrix(ret2), 0.40, 0.9, this.toString());
+				TestUtils.compareMatricesPercentageDistance(DataConverter.convertToDoubleMatrix(ret1),
+					DataConverter.convertToDoubleMatrix(ret2), 0.40, 0.9, this.toString());
 			else
 				compareResultMatrices(ret1, ret2, 100);
 
@@ -636,18 +654,18 @@ public abstract class CompressedTestBase extends TestBase {
 			// Make Operator
 			AggregateBinaryOperator abop = InstructionUtils.getMatMultOperator(_k);
 
-			// vector-matrix compressed
-			MatrixBlock compMatrix = compressMatrix ? CompressedMatrixBlockFactory.compress(matrix, _k)
-				.getLeft() : matrix;
-			MatrixBlock ret2 = ((CompressedMatrixBlock) cmb)
-				.aggregateBinaryOperations(cmb, compMatrix, new MatrixBlock(), abop, transposeLeft, transposeRight);
-
 			// vector-matrix uncompressed
 			ReorgOperator r_op = new ReorgOperator(SwapIndex.getSwapIndexFnObject(), _k);
 
 			MatrixBlock left = transposeLeft ? mb.reorgOperations(r_op, new MatrixBlock(), 0, 0, 0) : mb;
 			MatrixBlock right = transposeRight ? matrix.reorgOperations(r_op, new MatrixBlock(), 0, 0, 0) : matrix;
 			MatrixBlock ret1 = right.aggregateBinaryOperations(left, right, new MatrixBlock(), abop);
+
+			// vector-matrix compressed
+			MatrixBlock compMatrix = compressMatrix ? CompressedMatrixBlockFactory.compress(matrix, _k)
+				.getLeft() : matrix;
+			MatrixBlock ret2 = ((CompressedMatrixBlock) cmb).aggregateBinaryOperations(cmb, compMatrix,
+				new MatrixBlock(), abop, transposeLeft, transposeRight);
 
 			compareResultMatrices(ret1, ret2, 100);
 		}
@@ -976,9 +994,7 @@ public abstract class CompressedTestBase extends TestBase {
 
 	@Test
 	public void testSliceInternal() {
-		testSlice(rows / 5,
-			Math.min(rows - 1, (rows / 5) * 2),
-			Math.min(cols - 1, cols / 5),
+		testSlice(rows / 5, Math.min(rows - 1, (rows / 5) * 2), Math.min(cols - 1, cols / 5),
 			Math.min(cols - 1, cols / 5 + 1));
 	}
 
@@ -1026,7 +1042,8 @@ public abstract class CompressedTestBase extends TestBase {
 				return;
 			MatrixBlock ret2 = cmb.slice(rl, ru, cl, cu);
 			MatrixBlock ret1 = mb.slice(rl, ru, cl, cu);
-			assertEquals(ret1.getNonZeros(), ret2.getNonZeros());
+			if(!(ret2 instanceof CompressedMatrixBlock))
+				assertEquals(ret1.getNonZeros(), ret2.getNonZeros());
 			compareResultMatrices(ret1, ret2, 1);
 		}
 		catch(Exception e) {
@@ -1036,28 +1053,28 @@ public abstract class CompressedTestBase extends TestBase {
 		}
 	}
 
-	protected void compareResultMatrices(double[][] d1, double[][] d2, double toleranceMultiplier) {
+	protected void compareResultMatrices(double[][] expected, double[][] result, double toleranceMultiplier) {
 		if(compressionSettings.lossy)
-			TestUtils.compareMatricesPercentageDistance(d1, d2, 0.25, 0.83, this.toString());
+			TestUtils.compareMatricesPercentageDistance(expected, result, 0.25, 0.83, this.toString());
 		else if(overlappingType == OverLapping.SQUASH)
-			TestUtils.compareMatrices(d1, d2, lossyTolerance * toleranceMultiplier * 1.3, this.toString());
+			TestUtils.compareMatrices(expected, result, lossyTolerance * toleranceMultiplier * 1.3, this.toString());
 		else if(rows > 65000)
-			TestUtils.compareMatricesPercentageDistance(d1, d2, 0.99, 0.99, this.toString());
+			TestUtils.compareMatricesPercentageDistance(expected, result, 0.99, 0.99, this.toString());
 		else if(OverLapping.effectOnOutput(overlappingType))
-			TestUtils.compareMatricesPercentageDistance(d1, d2, 0.99, 0.99, this.toString());
+			TestUtils.compareMatricesPercentageDistance(expected, result, 0.99, 0.99, this.toString());
 		else
-			TestUtils
-				.compareMatricesBitAvgDistance(d1, d2, (long) (27000 * toleranceMultiplier), 1024, this.toString());
+			TestUtils.compareMatricesBitAvgDistance(expected, result, (long) (27000 * toleranceMultiplier), 1024,
+				this.toString());
 
 	}
 
-	protected void compareResultMatrices(MatrixBlock ret1, MatrixBlock ret2, double toleranceMultiplier) {
-		if(ret2 instanceof CompressedMatrixBlock)
-			ret2 = ((CompressedMatrixBlock) ret2).decompress();
+	protected void compareResultMatrices(MatrixBlock expected, MatrixBlock result, double toleranceMultiplier) {
+		if(result instanceof CompressedMatrixBlock)
+			result = ((CompressedMatrixBlock) result).decompress();
 
 		// compare result with input
-		double[][] d1 = DataConverter.convertToDoubleMatrix(ret1);
-		double[][] d2 = DataConverter.convertToDoubleMatrix(ret2);
+		double[][] d1 = DataConverter.convertToDoubleMatrix(expected);
+		double[][] d2 = DataConverter.convertToDoubleMatrix(result);
 		compareResultMatrices(d1, d2, toleranceMultiplier);
 	}
 

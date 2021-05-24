@@ -24,16 +24,14 @@
 
 from typing import Dict, Iterable
 
-from systemds.operator import OperationNode
+from systemds.operator import OperationNode, Matrix
 from systemds.script_building.dag import OutputType
 from systemds.utils.consts import VALID_INPUT_TYPES
 
-def img_brightness(img_in: OperationNode, value: float, channel_max: int) -> OperationNode:
+def img_brightness(img_in: OperationNode, value: float, channel_max: int):
     
-    
-    img_in._check_matrix_op()
     params_dict = {'img_in':img_in, 'value':value, 'channel_max':channel_max}
-    return OperationNode(img_in.sds_context, 'img_brightness', named_input_nodes=params_dict, output_type=OutputType.MATRIX)
+    return Matrix(img_in.sds_context, 'img_brightness', named_input_nodes=params_dict)
 
 
     

@@ -1590,6 +1590,11 @@ public class HopRewriteUtils
 		return Arrays.stream(mc).allMatch(h -> h.nnzKnown() || (worstcase && h.dimsKnown()));
 	}
 	
+	public static boolean hasListInputs(Hop hop) {
+		return hop.getInput()!= null 
+			&& hop.getInput().stream().anyMatch(h -> h.getDataType().isList());
+	}
+	
 	public static boolean containsSecondOrderBuiltin(ArrayList<Hop> roots) {
 		Hop.resetVisitStatus(roots);
 		return roots.stream().anyMatch(r -> containsSecondOrderBuiltin(r));

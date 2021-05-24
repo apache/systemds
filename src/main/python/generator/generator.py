@@ -94,9 +94,8 @@ class PythonAPIFileGenerator(object):
 
 class PythonAPIFunctionGenerator(object):
 
-    api_template = u"""def {function_name}({parameters}) -> OperationNode:
+    api_template = u"""def {function_name}({parameters}):
     {header}
-    {value_checks}
     {params_dict}
     return {api_call}\n\n
     """
@@ -113,8 +112,8 @@ class PythonAPIFunctionGenerator(object):
     path = os.path.dirname(__file__)
     type_mapping_path = os.path.join(path, type_mapping_file)
 
-    with open(type_mapping_path, 'r') as mapping:
-        type_mapping = json.load(mapping)
+    with open(type_mapping_path, 'r') as megamap:
+        type_mapping = json.load(megamap)
 
     def __init__(self):
         super(PythonAPIFunctionGenerator, self).__init__()
@@ -134,7 +133,6 @@ class PythonAPIFunctionGenerator(object):
         parameters = self.format_param_string(data['parameters'])
         function_name = data['function_name']
         header = data['function_header'] if data['function_header'] else ""
-        value_checks = self.format_value_checks(data['parameters'])
         params_dict = self.format_params_dict_string(data['parameters'])
         api_call = self.format_api_call(
             data['parameters'],
@@ -145,7 +143,6 @@ class PythonAPIFunctionGenerator(object):
             function_name=function_name,
             parameters=parameters,
             header=header,
-            value_checks=value_checks,
             params_dict=params_dict,
             api_call=api_call
         )
@@ -211,7 +208,7 @@ class PythonAPIFunctionGenerator(object):
         function_name: str
     ) -> str:
         length = len(return_values)
-        result = "OperationNode({params})"
+        result = "Matrix({params})"
         param_string = ""
         param = parameters[0]
         pattern = r"^[^\[]+"
@@ -219,7 +216,7 @@ class PythonAPIFunctionGenerator(object):
             output_type_list = ""
             for value in return_values:
                 output_type = re.search(pattern, value[1])[0].upper()
-                # print(output_type)
+
                 if len(output_type_list):
                     output_type_list = "{output_type_list}, ".format(
                         output_type_list=output_type_list
@@ -238,6 +235,14 @@ class PythonAPIFunctionGenerator(object):
                 n=length,
                 output_type_list=output_type_list
             )
+            result = "{param}.sds_context, \'{function_name}\', named_input_nodes=params_dict, " \
+                "output_type=OutputType.{output_type}".format(
+                     param=param[0],
+                     function_name=function_name,
+                     output_type=output_type
+                )
+            result = "OperationNode({params})".format(params=result)
+            return result
         else:
             value = return_values[0]
             output_type = re.search(pattern, value[1])
@@ -245,28 +250,12 @@ class PythonAPIFunctionGenerator(object):
                 output_type = output_type[0].upper()
             else:
                 raise AttributeError("Error in pattern match")
-            # print(output_type)
-        result = "{param}.sds_context, \'{function_name}\', named_input_nodes=params_dict, " \
-                 "output_type=OutputType.{output_type}".format(
+            result = "{param}.sds_context, \'{function_name}\', named_input_nodes=params_dict".format(
                      param=param[0],
                      function_name=function_name,
-                     output_type=output_type
-                 )
-        result = "OperationNode({params})".format(params=result)
-        return result
-
-    def format_value_checks(self, parameters: List[Tuple[str]]) -> str:
-        result = ""
-        for param in parameters:
-            if "matrix" not in param[1].lower():
-                continue
-            matrix_check = self.__class__.matrix_check_template.format(
-                param=param[0])
-            result = "{result}{matrix_check}".format(
-                result=result,
-                matrix_check=matrix_check,
             )
-        return result
+            result = "Matrix({params})".format(params=result)
+            return result
 
 
 class PythonAPIDocumentationGenerator(object):

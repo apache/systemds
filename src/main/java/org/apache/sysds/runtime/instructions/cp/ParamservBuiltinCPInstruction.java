@@ -56,8 +56,8 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.spark.network.server.TransportServer;
 import org.apache.spark.util.LongAccumulator;
 import org.apache.sysds.api.DMLScript;
+import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.hops.recompile.Recompiler;
-import org.apache.sysds.lops.LopProperties;
 import org.apache.sysds.parser.Statement.PSFrequency;
 import org.apache.sysds.parser.Statement.PSModeType;
 import org.apache.sysds.parser.Statement.PSScheme;
@@ -244,7 +244,7 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 
 		// Force all the instructions to CP type
 		Recompiler.recompileProgramBlockHierarchy2Forced(
-			newEC.getProgram().getProgramBlocks(), 0, new HashSet<>(), LopProperties.ExecType.CP);
+			newEC.getProgram().getProgramBlocks(), 0, new HashSet<>(), ExecType.CP);
 
 		// Serialize all the needed params for remote workers
 		SparkPSBody body = new SparkPSBody(newEC);

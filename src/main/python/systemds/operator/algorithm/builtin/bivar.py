@@ -24,21 +24,15 @@
 
 from typing import Dict, Iterable
 
-from systemds.operator import OperationNode
+from systemds.operator import OperationNode, Matrix
 from systemds.script_building.dag import OutputType
 from systemds.utils.consts import VALID_INPUT_TYPES
 
-def bivar(X: OperationNode, S1: OperationNode, S2: OperationNode, T1: OperationNode, T2: OperationNode, verbose: bool) -> OperationNode:
+def bivar(X: OperationNode, S1: OperationNode, S2: OperationNode, T1: OperationNode, T2: OperationNode, verbose: bool):
     """
     :param verbose: Print bivar stats
     :return: 'OperationNode' containing  
     """
-    
-    X._check_matrix_op()
-    S1._check_matrix_op()
-    S2._check_matrix_op()
-    T1._check_matrix_op()
-    T2._check_matrix_op()
     params_dict = {'X':X, 'S1':S1, 'S2':S2, 'T1':T1, 'T2':T2, 'verbose':verbose}
     return OperationNode(X.sds_context, 'bivar', named_input_nodes=params_dict, output_type=OutputType.LIST, number_of_outputs=4, output_types=[OutputType.MATRIX, OutputType.MATRIX, OutputType.MATRIX, OutputType.MATRIX])
 

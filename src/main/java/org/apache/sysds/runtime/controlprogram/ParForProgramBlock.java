@@ -29,7 +29,7 @@ import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.hops.recompile.Recompiler;
 import org.apache.sysds.lops.Lop;
-import org.apache.sysds.lops.LopProperties.ExecType;
+import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.parser.DMLProgram;
 import org.apache.sysds.parser.DataIdentifier;
 import org.apache.sysds.parser.ParForStatementBlock;
@@ -37,6 +37,7 @@ import org.apache.sysds.parser.ParForStatementBlock.ResultVar;
 import org.apache.sysds.parser.StatementBlock;
 import org.apache.sysds.parser.VariableSet;
 import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
@@ -293,7 +294,7 @@ public class ParForProgramBlock extends ForProgramBlock
 	public static final boolean CREATE_UNSCOPED_RESULTVARS  = true;
 	public static       boolean ALLOW_REUSE_PARTITION_VARS  = true; //reuse partition input matrices, applied only if read-only in surrounding loops
 	public static final int     WRITE_REPLICATION_FACTOR    = 1;
-	public static final int     MAX_RETRYS_ON_ERROR         = 1;
+	public static       int     MAX_RETRYS_ON_ERROR         = 1;
 	public static final boolean FORCE_CP_ON_REMOTE_SPARK    = true; // compile body to CP if exec type forced to Spark
 	public static final boolean LIVEVAR_AWARE_EXPORT        = true; // export only read variables according to live variable analysis
 	public static final boolean RESET_RECOMPILATION_FLAGs   = true;
@@ -1143,8 +1144,8 @@ public class ParForProgramBlock extends ForProgramBlock
 			for (String key : ec.getVariables().keySet() ) {
 				if( varsRead.containsVariable(key) && !excludeNames.contains(key) ) {
 					Data d = ec.getVariable(key);
-					if( d.getDataType() == DataType.MATRIX )
-						((MatrixObject)d).exportData(_replicationExport);
+					if( d.getDataType().isMatrixOrFrame() )
+						((CacheableData<?>)d).exportData(_replicationExport);
 				}
 			}
 		}
@@ -1153,8 +1154,8 @@ public class ParForProgramBlock extends ForProgramBlock
 			for (String key : ec.getVariables().keySet() ) {
 				if( !excludeNames.contains(key) ) {
 					Data d = ec.getVariable(key);
-					if( d.getDataType() == DataType.MATRIX )
-						((MatrixObject)d).exportData(_replicationExport);
+					if( d.getDataType().isMatrixOrFrame() )
+						((CacheableData<?>)d).exportData(_replicationExport);
 				}
 			}
 		}

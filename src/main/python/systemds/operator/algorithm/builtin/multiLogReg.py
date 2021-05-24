@@ -24,11 +24,11 @@
 
 from typing import Dict, Iterable
 
-from systemds.operator import OperationNode
+from systemds.operator import OperationNode, Matrix
 from systemds.script_building.dag import OutputType
 from systemds.utils.consts import VALID_INPUT_TYPES
 
-def multiLogReg(X: OperationNode, Y: OperationNode, **kwargs: Dict[str, VALID_INPUT_TYPES]) -> OperationNode:
+def multiLogReg(X: OperationNode, Y: OperationNode, **kwargs: Dict[str, VALID_INPUT_TYPES]):
     """
     :param X: Location to read the matrix of feature vectors
     :param Y: Location to read the matrix with category labels
@@ -40,12 +40,9 @@ def multiLogReg(X: OperationNode, Y: OperationNode, **kwargs: Dict[str, VALID_IN
     :param verbose: flag specifying if logging information should be printed
     :return: 'OperationNode' containing betas as output for prediction 
     """
-    
-    X._check_matrix_op()
-    Y._check_matrix_op()
     params_dict = {'X':X, 'Y':Y}
     params_dict.update(kwargs)
-    return OperationNode(X.sds_context, 'multiLogReg', named_input_nodes=params_dict, output_type=OutputType.MATRIX)
+    return Matrix(X.sds_context, 'multiLogReg', named_input_nodes=params_dict)
 
 
     

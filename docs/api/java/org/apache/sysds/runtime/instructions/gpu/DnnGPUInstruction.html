@@ -117,6 +117,10 @@ var activeTableTab = "activeTableTab";
 <div class="description">
 <ul class="blockList">
 <li class="blockList">
+<dl>
+<dt>All Implemented Interfaces:</dt>
+<dd><a href="../../../../../../org/apache/sysds/runtime/lineage/LineageTraceable.html" title="interface in org.apache.sysds.runtime.lineage">LineageTraceable</a></dd>
+</dl>
 <hr>
 <br>
 <pre>public class <span class="typeNameLabel">DnnGPUInstruction</span>
@@ -316,7 +320,7 @@ extends <a href="../../../../../../org/apache/sysds/runtime/instructions/gpu/GPU
 <!--   -->
 </a>
 <h3>Methods inherited from class&nbsp;org.apache.sysds.runtime.instructions.gpu.<a href="../../../../../../org/apache/sysds/runtime/instructions/gpu/GPUInstruction.html" title="class in org.apache.sysds.runtime.instructions.gpu">GPUInstruction</a></h3>
-<code><a href="../../../../../../org/apache/sysds/runtime/instructions/gpu/GPUInstruction.html#getGPUInstructionType--">getGPUInstructionType</a>, <a href="../../../../../../org/apache/sysds/runtime/instructions/gpu/GPUInstruction.html#getGraphString--">getGraphString</a>, <a href="../../../../../../org/apache/sysds/runtime/instructions/gpu/GPUInstruction.html#getType--">getType</a>, <a href="../../../../../../org/apache/sysds/runtime/instructions/gpu/GPUInstruction.html#postprocessInstruction-org.apache.sysds.runtime.controlprogram.context.ExecutionContext-">postprocessInstruction</a>, <a href="../../../../../../org/apache/sysds/runtime/instructions/gpu/GPUInstruction.html#preprocessInstruction-org.apache.sysds.runtime.controlprogram.context.ExecutionContext-">preprocessInstruction</a>, <a href="../../../../../../org/apache/sysds/runtime/instructions/gpu/GPUInstruction.html#requiresLabelUpdate--">requiresLabelUpdate</a></code></li>
+<code><a href="../../../../../../org/apache/sysds/runtime/instructions/gpu/GPUInstruction.html#getGPUInstructionType--">getGPUInstructionType</a>, <a href="../../../../../../org/apache/sysds/runtime/instructions/gpu/GPUInstruction.html#getGraphString--">getGraphString</a>, <a href="../../../../../../org/apache/sysds/runtime/instructions/gpu/GPUInstruction.html#getLineageItem-org.apache.sysds.runtime.controlprogram.context.ExecutionContext-">getLineageItem</a>, <a href="../../../../../../org/apache/sysds/runtime/instructions/gpu/GPUInstruction.html#getType--">getType</a>, <a href="../../../../../../org/apache/sysds/runtime/instructions/gpu/GPUInstruction.html#postprocessInstruction-org.apache.sysds.runtime.controlprogram.context.ExecutionContext-">postprocessInstruction</a>, <a href="../../../../../../org/apache/sysds/runtime/instructions/gpu/GPUInstruction.html#preprocessInstruction-org.apache.sysds.runtime.controlprogram.context.ExecutionContext-">preprocessInstruction</a>, <a href="../../../../../../org/apache/sysds/runtime/instructions/gpu/GPUInstruction.html#requiresLabelUpdate--">requiresLabelUpdate</a></code></li>
 </ul>
 <ul class="blockList">
 <li class="blockList"><a name="methods.inherited.from.class.org.apache.sysds.runtime.instructions.Instruction">
@@ -331,6 +335,13 @@ extends <a href="../../../../../../org/apache/sysds/runtime/instructions/gpu/GPU
 </a>
 <h3>Methods inherited from class&nbsp;java.lang.<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a></h3>
 <code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#equals-java.lang.Object-" title="class or interface in java.lang">equals</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#getClass--" title="class or interface in java.lang">getClass</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#hashCode--" title="class or interface in java.lang">hashCode</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#notify--" title="class or interface in java.lang">notify</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#notifyAll--" title="class or interface in java.lang">notifyAll</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#wait--" title="class or interface in java.lang">wait</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#wait-long-" title="class or interface in java.lang">wait</a>, <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true#wait-long-int-" title="class or interface in java.lang">wait</a></code></li>
+</ul>
+<ul class="blockList">
+<li class="blockList"><a name="methods.inherited.from.class.org.apache.sysds.runtime.lineage.LineageTraceable">
+<!--   -->
+</a>
+<h3>Methods inherited from interface&nbsp;org.apache.sysds.runtime.lineage.<a href="../../../../../../org/apache/sysds/runtime/lineage/LineageTraceable.html" title="interface in org.apache.sysds.runtime.lineage">LineageTraceable</a></h3>
+<code><a href="../../../../../../org/apache/sysds/runtime/lineage/LineageTraceable.html#getLineageItems-org.apache.sysds.runtime.controlprogram.context.ExecutionContext-">getLineageItems</a>, <a href="../../../../../../org/apache/sysds/runtime/lineage/LineageTraceable.html#hasSingleLineage--">hasSingleLineage</a></code></li>
 </ul>
 </li>
 </ul>
@@ -635,6 +646,6 @@ extends <a href="../../../../../../org/apache/sysds/runtime/instructions/gpu/GPU
 <!--   -->
 </a></div>
 <!-- ======== END OF BOTTOM NAVBAR ======= -->
-<p class="legalCopy"><small>Copyright &#169; 2020 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
+<p class="legalCopy"><small>Copyright &#169; 2021 <a href="https://www.apache.org/">The Apache Software Foundation</a>. All rights reserved.</small></p>
 </body>
 </html>

@@ -24,19 +24,16 @@
 
 from typing import Dict, Iterable
 
-from systemds.operator import OperationNode
+from systemds.operator import OperationNode, Matrix
 from systemds.script_building.dag import OutputType
 from systemds.utils.consts import VALID_INPUT_TYPES
 
-def confusionMatrix(P: OperationNode, Y: OperationNode) -> OperationNode:
+def confusionMatrix(P: OperationNode, Y: OperationNode):
     """
     :param P: vector of Predictions
     :param Y: vector of Golden standard One Hot Encoded; the one hot encoded vector of actual labels
     :return: 'OperationNode' containing the confusion matrix sums of classifications & the confusion matrix averages of each true class 
     """
-    
-    P._check_matrix_op()
-    Y._check_matrix_op()
     params_dict = {'P':P, 'Y':Y}
     return OperationNode(P.sds_context, 'confusionMatrix', named_input_nodes=params_dict, output_type=OutputType.LIST, number_of_outputs=2, output_types=[OutputType.MATRIX, OutputType.MATRIX])
 

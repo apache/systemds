@@ -24,11 +24,11 @@
 
 from typing import Dict, Iterable
 
-from systemds.operator import OperationNode
+from systemds.operator import OperationNode, Matrix
 from systemds.script_building.dag import OutputType
 from systemds.utils.consts import VALID_INPUT_TYPES
 
-def alsDS(X: OperationNode, **kwargs: Dict[str, VALID_INPUT_TYPES]) -> OperationNode:
+def alsDS(X: OperationNode, **kwargs: Dict[str, VALID_INPUT_TYPES]):
     """
     :param V: Location to read the input matrix V to be factorized
     :param L: Location to write the factor matrix L
@@ -42,8 +42,6 @@ def alsDS(X: OperationNode, **kwargs: Dict[str, VALID_INPUT_TYPES]) -> Operation
     :param if: FALSE thr is ignored
     :return: 'OperationNode' containing x n matrix r 
     """
-    
-    X._check_matrix_op()
     params_dict = {'X':X}
     params_dict.update(kwargs)
     return OperationNode(X.sds_context, 'alsDS', named_input_nodes=params_dict, output_type=OutputType.LIST, number_of_outputs=2, output_types=[OutputType.MATRIX, OutputType.MATRIX])

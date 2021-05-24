@@ -20,7 +20,7 @@
 package org.apache.sysds.runtime.compress.colgroup.tree;
 
 import org.apache.sysds.runtime.DMLCompressionException;
-import org.apache.sysds.runtime.compress.colgroup.mapping.IMapToData;
+import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory;
 import org.apache.sysds.runtime.compress.utils.IntArrayList;
 
@@ -32,7 +32,7 @@ public class MaterializeSort extends AInsertionSorter {
 
 	@Override
 	public void insert(final IntArrayList[] offsets) {
-		IMapToData md = MapToFactory.create(_knownMax, _numLabels);
+		AMapToData md = MapToFactory.create(_knownMax, _numLabels);
 		md.fill(_numLabels);
 
 		for (int i = 0; i < offsets.length; i++) {
@@ -53,7 +53,7 @@ public class MaterializeSort extends AInsertionSorter {
 
 	@Override
 	public void insert(final IntArrayList[] offsets, final int negativeIndex) {
-		IMapToData md = MapToFactory.create(_knownMax, _numLabels);
+		AMapToData md = MapToFactory.create(_knownMax, _numLabels);
 		md.fill(_numLabels);
 		
 		for (int i = 0; i < offsets.length; i++) {
@@ -87,7 +87,7 @@ public class MaterializeSort extends AInsertionSorter {
 	}
 
 	@Override
-	public IMapToData getData() {
+	public AMapToData getData() {
 		return _labels;
 	}
 

@@ -24,11 +24,11 @@
 
 from typing import Dict, Iterable
 
-from systemds.operator import OperationNode
+from systemds.operator import OperationNode, Matrix
 from systemds.script_building.dag import OutputType
 from systemds.utils.consts import VALID_INPUT_TYPES
 
-def gmmPredict(X: OperationNode, weight: OperationNode, mu: OperationNode, precisions_cholesky: OperationNode, model: str) -> OperationNode:
+def gmmPredict(X: OperationNode, weight: OperationNode, mu: OperationNode, precisions_cholesky: OperationNode, model: str):
     """
     :param X: Matrix X (instances to be clustered)
     :param weight: Weight of learned model
@@ -37,11 +37,6 @@ def gmmPredict(X: OperationNode, weight: OperationNode, mu: OperationNode, preci
     :param model: fitted model
     :return: 'OperationNode' containing predicted cluster labels & probabilities of belongingness & for new instances given the variance and mean of fitted data 
     """
-    
-    X._check_matrix_op()
-    weight._check_matrix_op()
-    mu._check_matrix_op()
-    precisions_cholesky._check_matrix_op()
     params_dict = {'X':X, 'weight':weight, 'mu':mu, 'precisions_cholesky':precisions_cholesky, 'model':model}
     return OperationNode(X.sds_context, 'gmmPredict', named_input_nodes=params_dict, output_type=OutputType.LIST, number_of_outputs=2, output_types=[OutputType.MATRIX, OutputType.MATRIX])
 

@@ -1,0 +1,5 @@
+source("nn/layers/resnetForwardPass.dml") as resnet_fw
+
+m = matrix(0, rows=5, cols=3)
+resnetTrain(m, m, m, m, 1, 1, 1, 1)
+resnetPredict(m, 1, 1, 1, list(), list())

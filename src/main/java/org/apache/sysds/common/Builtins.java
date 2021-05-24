@@ -38,9 +38,15 @@ import org.apache.sysds.common.Types.ReturnType;
  */
 public enum Builtins {
 	//builtin functions
-	AFFINE("affine", true),
-	AFFINE_FORWARD_PASS("affineForwardPass", true),
-	TRAIN("train", true),
+	//AFFINE("affine", true),
+	// AFFINE_FORWARD_PASS("affineForwardPass", true),
+	// AFFINE_BACKWARD_PASS("affineBackwardPass", true),
+	FF_TRAIN("ffTrain", true),
+	FF_PREDICT("ffPredict", true),
+	LENET_TRAIN("lenetTrain", true),
+	LENET_PREDICT("lenetPredict", true),
+	RESNET_TRAIN("resnetTrain", true),
+	RESNET_PREDICT("resnetPredict", true),
 	ARIMA("arima", true),
 	ABS("abs", false),
 	GET_ACCURACY("getAccuracy", true),

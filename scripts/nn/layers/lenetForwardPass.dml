@@ -1,0 +1,5 @@
+lenetForward = function(int M) 
+return (int R) {
+    print("LeNet Forward")
+    R = 5
+}

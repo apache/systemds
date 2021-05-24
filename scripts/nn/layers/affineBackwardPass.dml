@@ -1,0 +1,11 @@
+m_affineBackwardPass = function(List[Unknown] fp_cache, List[Unknown] layers)
+return(List[Unknown] gradients) {
+    
+    layers_num = length(layers) / 3
+    for(i in layers_num:1) {
+        W = as.matrix(layers[i * 3 - 2])
+        b = as.matrix(layers[i * 3 - 1])
+        activation = toString(layers[i * 3])
+
+    } 
+}

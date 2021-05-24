@@ -1,0 +1,5 @@
+resnetForward = function(int M) 
+return (int R) {
+    print("ResNet Forward")
+    R = 5
+}

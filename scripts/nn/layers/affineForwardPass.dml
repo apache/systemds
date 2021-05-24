@@ -4,7 +4,7 @@ source("nn/layers/relu.dml") as relu
 source("nn/layers/tanh.dml") as tanh
 source("nn/layers/softmax.dml") as softmax
 
-m_affineForwardPass = function(Matrix[double] X, List[Unknown] layers) 
+affineForwardPass = function(Matrix[double] X, List[Unknown] layers) 
 return(List[Unknown] fp_cache) {
     layers_num = length(layers) / 3
     

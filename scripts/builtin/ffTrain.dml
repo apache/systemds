@@ -2,16 +2,22 @@ source("nn/layers/l1_loss.dml") as l1_loss
 source("nn/layers/l2_loss.dml") as l2_loss
 source("nn/layers/log_loss.dml") as log_loss
 source("nn/layers/logcosh_loss.dml") as logcosh_loss
+source("nn/layers/affineForwardPass.dml") as ff_pass
 
-train = function(Matrix[double] X, Matrix[double] Y, List[Unknown] layers, String loss_fcn) {
+m_ffTrain = function(Matrix[double] X, Matrix[double] Y, List[Unknown] layers, String loss_fcn) {
     
     if(length(layers) %%  3 != 0) {
         stop("Layers list should be multiple of 3: [W, b, activation function]+")
     }
     
-    out = affineForwardPass(X, layers)
+    out = ff_pass::affineForwardPass(X, layers)
     loss = loss_forward(as.matrix(out[length(out)]), Y, loss_fcn)
     dout = loss_backward(as.matrix(out[length(out)]), Y, loss_fcn)
+
+    fp_cache = append(out, dout)
+
+    #gradients = affineBackwardPass(fp_cache, layers)
+
 } 
 
 loss_forward = function(Matrix[double] prediction, Matrix[double] target, String loss_fcn)

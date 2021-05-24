@@ -31,6 +31,25 @@ import org.apache.sysds.runtime.util.UtilFunctions;
 
 public class CNodeCell extends CNodeTpl 
 {
+	protected static final String JAVA_TEMPLATE = 
+		  "package codegen;\n"
+		+ "import org.apache.sysds.runtime.codegen.LibSpoofPrimitives;\n"
+		+ "import org.apache.sysds.runtime.codegen.SpoofCellwise;\n"
+		+ "import org.apache.sysds.runtime.codegen.SpoofCellwise.AggOp;\n"
+		+ "import org.apache.sysds.runtime.codegen.SpoofCellwise.CellType;\n"
+		+ "import org.apache.sysds.runtime.codegen.SpoofOperator.SideInput;\n"
+		+ "import org.apache.commons.math3.util.FastMath;\n"
+		+ "\n"
+		+ "public final class %TMP% extends SpoofCellwise {\n" 
+		+ "  public %TMP%() {\n"
+		+ "    super(CellType.%TYPE%, %SPARSE_SAFE%, %SEQ%, %AGG_OP_NAME%);\n"
+		+ "  }\n"
+		+ "  protected double genexec(double a, SideInput[] b, double[] scalars, int m, int n, long grix, int rix, int cix) { \n"
+		+ "%BODY_dense%"
+		+ "    return %OUT%;\n"
+		+ "  }\n"
+		+ "}\n";
+	
 	private CellType _type = null;
 	private AggOp _aggOp = null;
 	private boolean _sparseSafe = false;

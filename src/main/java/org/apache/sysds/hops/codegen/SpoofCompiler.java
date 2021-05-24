@@ -120,9 +120,18 @@ public class SpoofCompiler {
 	public static PlanCachePolicy PLAN_CACHE_POLICY    = PlanCachePolicy.CSLH;
 	public static final int PLAN_CACHE_SIZE            = 1024; //max 1K classes
 	public static final RegisterAlloc REG_ALLOC_POLICY = RegisterAlloc.EXACT_STATIC_BUFF;
-	public static GeneratorAPI API = GeneratorAPI.JAVA;
-	public static HashMap<GeneratorAPI, Long> native_contexts;
+	public static GeneratorAPI API                     = GeneratorAPI.JAVA;
+	public static HashMap<GeneratorAPI, Long> native_contexts = new HashMap<>();
 
+	//plan cache for cplan->compiled source to avoid unnecessary codegen/source code compile
+	//for equal operators from (1) different hop dags and (2) repeated recompilation 
+	//note: if PLAN_CACHE_SIZE is exceeded, we evict the least-recently-used plan (LRU policy)
+	private static final PlanCache planCache = new PlanCache(PLAN_CACHE_SIZE);
+	
+	private static ProgramRewriter rewriteCSE = new ProgramRewriter(
+		new RewriteCommonSubexpressionElimination(true),
+		new RewriteRemoveUnnecessaryCasts());
+	
 	public enum CompilerType {
 		AUTO,
 		JAVAC,
@@ -178,26 +187,20 @@ public class SpoofCompiler {
 		EXACT_STATIC_BUFF,   //min number of live vector intermediates, assuming static array ring buffer
 	}
 
-	@Override
-	protected void finalize() {
-			SpoofCompiler.cleanupCodeGenerator();
-	}
-
 	public static void loadNativeCodeGenerator(GeneratorAPI generator) {
 		if(DMLScript.getGlobalExecMode() == ExecMode.SPARK) {
 			LOG.warn("Not loading native codegen library in SPARK execution mode!\n");
+			generator = GeneratorAPI.JAVA;
 			return;
 		}
 
 		// loading cuda codegen (the only supported API atm)
-		if(generator == GeneratorAPI.AUTO && DMLScript.USE_ACCELERATOR)
-			generator = GeneratorAPI.CUDA;
-
-		if(generator == GeneratorAPI.CUDA && !DMLScript.USE_ACCELERATOR)
-			generator = GeneratorAPI.JAVA;
-
-		if(native_contexts == null)
-			native_contexts = new HashMap<>();
+		if( generator == GeneratorAPI.AUTO | generator == GeneratorAPI.CUDA ) {
+			generator = DMLScript.USE_ACCELERATOR ?
+				GeneratorAPI.CUDA : GeneratorAPI.JAVA;
+			if( generator == GeneratorAPI.JAVA )
+				return;
+		}
 
 		if(!native_contexts.containsKey(generator)) {
 			String local_tmp = ConfigurationManager.getDMLConfig().getTextValue(DMLConfig.LOCAL_TMP_DIR);
@@ -277,6 +280,7 @@ public class SpoofCompiler {
 		}
 	}
 
+	//FIXME completely remove or load via resource stream (see builtin functions)
 	private static void extractCodegenSources(String resource_path, String jar_path) throws IOException {
 		try(JarFile jar_file = new JarFile(jar_path)) {
 			Enumeration<JarEntry> files_in_jar = jar_file.entries();
@@ -301,15 +305,6 @@ public class SpoofCompiler {
 	private static native long initialize_cuda_context(int device_id, String resource_path);
 
 	private static native void destroy_cuda_context(long ctx, int device_id);
-
-	//plan cache for cplan->compiled source to avoid unnecessary codegen/source code compile
-	//for equal operators from (1) different hop dags and (2) repeated recompilation 
-	//note: if PLAN_CACHE_SIZE is exceeded, we evict the least-recently-used plan (LRU policy)
-	private static final PlanCache planCache = new PlanCache(PLAN_CACHE_SIZE);
-	
-	private static ProgramRewriter rewriteCSE = new ProgramRewriter(
-			new RewriteCommonSubexpressionElimination(true),
-			new RewriteRemoveUnnecessaryCasts());
 	
 	public static void generateCode(DMLProgram dmlprog) {
 		// for each namespace, handle function statement blocks
@@ -630,7 +625,6 @@ public class SpoofCompiler {
 
 		if(API != GeneratorAPI.JAVA)
 			unloadNativeCodeGenerator();
-
 	}
 	
 	/**

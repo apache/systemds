@@ -280,9 +280,9 @@ public abstract class CNode
 				else return null;
 			case JAVA:
 				if(caller instanceof CNodeCell)
-					return CodeTemplate.getTemplate("/java/org/apache/sysds/hops/codegen/cplan/java/Cellwise.java.template");
+					return CNodeCell.JAVA_TEMPLATE;
 				else if(caller instanceof CNodeRow)
-					return CodeTemplate.getTemplate("/java/org/apache/sysds/hops/codegen/cplan/java/Rowwise.java.template");
+					return CNodeRow.JAVA_TEMPLATE;
 				else return null;
 			default:
 				throw new RuntimeException("API not supported by code generator: " + api.toString());

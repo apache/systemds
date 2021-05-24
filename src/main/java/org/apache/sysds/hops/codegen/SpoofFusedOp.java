@@ -21,6 +21,7 @@ package org.apache.sysds.hops.codegen;
 
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.ValueType;
+import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.hops.codegen.SpoofCompiler.GeneratorAPI;
 import org.apache.sysds.hops.Hop;
 import org.apache.sysds.hops.MemoTable;
@@ -64,8 +65,8 @@ public class SpoofFusedOp extends MultiThreadedHop
 	
 	}
 	
-	public SpoofFusedOp( String name, DataType dt, ValueType vt, Class<?> cla, GeneratorAPI api, String genVarName,
-						 boolean dist, SpoofOutputDimsType type ) {
+	public SpoofFusedOp( String name, DataType dt, ValueType vt, Class<?> cla, GeneratorAPI api,
+		String genVarName, boolean dist, SpoofOutputDimsType type ) {
 		super(name, dt, vt);
 		_class = cla;
 		_distSupported = dist;
@@ -101,13 +102,19 @@ public class SpoofFusedOp extends MultiThreadedHop
 
 	@Override
 	protected double computeOutputMemEstimate(long dim1, long dim2, long nnz) {
-		if(_api == GeneratorAPI.JAVA) {
-			return _class.getGenericSuperclass().equals(SpoofRowwise.class) ?
-					OptimizerUtils.estimateSize(dim1, dim2) :
-					OptimizerUtils.estimatePartitionedSizeExactSparsity(dim1, dim2, getBlocksize(), nnz);
-		}
-		else
-			return OptimizerUtils.estimatePartitionedSizeExactSparsity(dim1, dim2, getBlocksize(), nnz);
+		// The output estimate influences the ExecType decision as usual, 
+		// but for codegen operators also various fusion decisions in both 
+		// local and distributed environments. For that reason, we use the 
+		// partitioned size as a more conservative estimate - for dense this
+		// is almost the same, but for sparse it includes the block indexes
+		// and overhead of row arrays per block. In forced singlenode exec
+		// mode, the blocksize is however -1 and need appropriate treatment.
+		boolean onlyDenseOut = (_api == GeneratorAPI.JAVA
+			&& _class.getGenericSuperclass().equals(SpoofRowwise.class));
+		int blen = (getBlocksize() > 0) ? getBlocksize() : ConfigurationManager.getBlocksize();
+		return onlyDenseOut ?
+			OptimizerUtils.estimateSize(dim1, dim2) :
+			OptimizerUtils.estimatePartitionedSizeExactSparsity(dim1, dim2, blen, nnz);
 	}
 
 	@Override

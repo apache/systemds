@@ -47,6 +47,7 @@ import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.conf.DMLConfig;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.hops.codegen.SpoofCompiler;
+import org.apache.sysds.hops.codegen.SpoofCompiler.GeneratorAPI;
 import org.apache.sysds.lops.Lop;
 import org.apache.sysds.parser.DMLProgram;
 import org.apache.sysds.parser.DMLTranslator;
@@ -602,7 +603,8 @@ public class DMLScript
 	private static void configureCodeGen() {
 		// load native codegen if configured
 		if(ConfigurationManager.isCodegenEnabled()) {
-			SpoofCompiler.GeneratorAPI configured_generator = SpoofCompiler.GeneratorAPI.valueOf(ConfigurationManager.getDMLConfig().getTextValue(DMLConfig.CODEGEN_API).toUpperCase());
+			GeneratorAPI configured_generator = GeneratorAPI.valueOf(
+				ConfigurationManager.getDMLConfig().getTextValue(DMLConfig.CODEGEN_API).toUpperCase());
 			try {
 				SpoofCompiler.loadNativeCodeGenerator(configured_generator);
 			}

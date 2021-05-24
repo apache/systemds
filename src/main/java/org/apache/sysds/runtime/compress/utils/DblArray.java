@@ -49,6 +49,10 @@ public class DblArray {
 		hash = 0;
 	}
 
+	public boolean isEmpty(){
+		return _arr == null;
+	}
+
 	@Override
 	public int hashCode() {
 		if(hash != 0)

@@ -73,9 +73,6 @@ public class CompressionSettings {
 	/** If the seed is -1 then the system used system millisecond time and class hash for seeding. */
 	public final int seed;
 
-	/** Boolean specifying if the compression strategy should be investigated and monitored. */
-	public final boolean investigateEstimate;
-
 	/** True if lossy compression is enabled */
 	public final boolean lossy;
 
@@ -103,7 +100,7 @@ public class CompressionSettings {
 	public final int minimumSampleSize;
 
 	protected CompressionSettings(double samplingRatio, boolean allowSharedDictionary, String transposeInput,
-		boolean skipList, int seed, boolean investigateEstimate, boolean lossy,
+		boolean skipList, int seed, boolean lossy,
 		EnumSet<CompressionType> validCompressions, boolean sortValuesByLength, PartitionerType columnPartitioner,
 		int maxColGroupCoCode, double coCodePercentage, int minimumSampleSize) {
 		this.samplingRatio = samplingRatio;
@@ -111,7 +108,6 @@ public class CompressionSettings {
 		this.transposeInput = transposeInput;
 		this.skipList = skipList;
 		this.seed = seed;
-		this.investigateEstimate = investigateEstimate;
 		this.validCompressions = validCompressions;
 		this.lossy = lossy;
 		this.sortValuesByLength = sortValuesByLength;

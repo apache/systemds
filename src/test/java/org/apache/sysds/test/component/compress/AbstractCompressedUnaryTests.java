@@ -21,9 +21,12 @@ package org.apache.sysds.test.component.compress;
 
 import static org.junit.Assert.assertTrue;
 
+import java.util.Collection;
+
 import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.CompressionSettingsBuilder;
+import org.apache.sysds.runtime.compress.colgroup.AColGroup.CompressionType;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator;
@@ -39,8 +42,9 @@ import org.junit.Test;
 public abstract class AbstractCompressedUnaryTests extends CompressedTestBase {
 
 	public AbstractCompressedUnaryTests(SparsityType sparType, ValueType valType, ValueRange valRange,
-		CompressionSettingsBuilder compSettings, MatrixTypology matrixTypology, OverLapping ov, int parallelism) {
-		super(sparType, valType, valRange, compSettings, matrixTypology, ov, parallelism);
+		CompressionSettingsBuilder compSettings, MatrixTypology matrixTypology, OverLapping ov, int parallelism,
+		Collection<CompressionType> ct) {
+		super(sparType, valType, valRange, compSettings, matrixTypology, ov, parallelism, ct);
 	}
 
 	enum AggType {
@@ -170,7 +174,8 @@ public abstract class AbstractCompressedUnaryTests extends CompressedTestBase {
 			MatrixBlock ret1 = mb.aggregateUnaryOperations(auop, new MatrixBlock(), Math.max(rows, cols), null, true);
 			// matrix-vector compressed
 			MatrixBlock ret2 = cmb.aggregateUnaryOperations(auop, new MatrixBlock(), Math.max(rows, cols), null, true);
-			// LOG.error(ret1 + "vs" + ret2);
+			// LOG.error(ret1 + "\nvs\n" + ret2);
+			// LOG.error(cmb);
 			// compare result with input
 			double[][] d1 = DataConverter.convertToDoubleMatrix(ret1);
 			double[][] d2 = DataConverter.convertToDoubleMatrix(ret2);
@@ -192,7 +197,7 @@ public abstract class AbstractCompressedUnaryTests extends CompressedTestBase {
 				d2[0].length == dim2);
 
 			String css = this.toString();
-			if(compressionSettings.lossy) {
+			if(_cs != null && _cs.lossy) {
 				if(aggType == AggType.COLSUMS) {
 					TestUtils.compareMatrices(d1, d2, lossyTolerance * 10 * rows, css);
 				}

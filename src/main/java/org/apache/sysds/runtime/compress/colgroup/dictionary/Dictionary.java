@@ -71,19 +71,6 @@ public class Dictionary extends ADictionary {
 	}
 
 	@Override
-	public int hasZeroTuple(int nCol) {
-		int len = getNumberOfValues(nCol);
-		for(int i = 0, off = 0; i < len; i++, off += nCol) {
-			boolean allZeros = true;
-			for(int j = 0; j < nCol; j++)
-				allZeros &= (_values[off + j] == 0);
-			if(allZeros)
-				return i;
-		}
-		return -1;
-	}
-
-	@Override
 	public double aggregate(double init, Builtin fn) {
 		// full aggregate can disregard tuple boundaries
 		double ret = init;
@@ -122,7 +109,7 @@ public class Dictionary extends ADictionary {
 		double[] values = new double[_values.length + numCols];
 		for(int i = 0; i < _values.length; i++)
 			values[i] = op.executeScalar(_values[i]);
-		
+
 		Arrays.fill(values, _values.length, _values.length + numCols, newVal);
 		return new Dictionary(values);
 	}
@@ -208,13 +195,13 @@ public class Dictionary extends ADictionary {
 		return 1 + 4 + 8 * size();
 	}
 
-	public int size() {
-		return (_values == null) ? 0 : _values.length;
+	private int size() {
+		return _values.length;
 	}
 
 	@Override
 	public int getNumberOfValues(int nCol) {
-		return (_values == null) ? 0 : _values.length / nCol;
+		return _values.length / nCol;
 	}
 
 	@Override
@@ -234,8 +221,7 @@ public class Dictionary extends ADictionary {
 
 	@Override
 	public double sumRow(int k, boolean square, int nrColumns) {
-		if(_values == null)
-			return 0;
+
 		int valOff = k * nrColumns;
 		double res = 0.0;
 		if(!square) {
@@ -265,8 +251,6 @@ public class Dictionary extends ADictionary {
 
 	@Override
 	public void colSum(double[] c, int[] counts, int[] colIndexes, boolean square) {
-		if(_values == null)
-			return;
 		for(int k = 0; k < _values.length / colIndexes.length; k++) {
 			final int cntk = counts[k];
 			for(int j = 0; j < colIndexes.length; j++) {
@@ -282,8 +266,6 @@ public class Dictionary extends ADictionary {
 
 	@Override
 	public double sum(int[] counts, int ncol) {
-		if(_values == null)
-			return 0;
 		double out = 0;
 		int valOff = 0;
 		for(int k = 0; k < _values.length / ncol; k++) {
@@ -297,8 +279,6 @@ public class Dictionary extends ADictionary {
 
 	@Override
 	public double sumsq(int[] counts, int ncol) {
-		if(_values == null)
-			return 0;
 		double out = 0;
 		int valOff = 0;
 		for(int k = 0; k < _values.length / ncol; k++) {
@@ -322,8 +302,7 @@ public class Dictionary extends ADictionary {
 
 	@Override
 	public void addMaxAndMin(double[] ret, int[] colIndexes) {
-		if(_values == null || _values.length == 0)
-			return;
+
 		double[] mins = new double[colIndexes.length];
 		double[] maxs = new double[colIndexes.length];
 		for(int i = 0; i < colIndexes.length; i++) {
@@ -347,15 +326,14 @@ public class Dictionary extends ADictionary {
 		if(colIndexes == 1)
 			sb.append(Arrays.toString(_values));
 		else {
-			sb.append("[");
+			sb.append("[\n");
 			for(int i = 0; i < _values.length - 1; i++) {
 				sb.append(_values[i]);
-				sb.append((i) % (colIndexes) == colIndexes - 1 ? "\n: " : ", ");
+				sb.append((i) % (colIndexes) == colIndexes - 1 ? "\nt" + i + ": " : ", ");
 			}
-			if(_values != null && _values.length > 0) {
-				sb.append(_values[_values.length - 1]);
-			}
-			sb.append("]");
+			sb.append(_values[_values.length - 1]);
+
+			sb.append("\n]");
 		}
 		return sb.toString();
 	}
@@ -388,10 +366,6 @@ public class Dictionary extends ADictionary {
 
 	@Override
 	public boolean containsValue(double pattern) {
-
-		if(_values == null)
-			return false;
-
 		boolean NaNpattern = Double.isNaN(pattern);
 
 		if(NaNpattern) {
@@ -440,16 +414,6 @@ public class Dictionary extends ADictionary {
 	}
 
 	@Override
-	public long getNumberNonZerosContained() {
-		long count = 0;
-		for(double v : _values) {
-			if(v != 0.0)
-				count++;
-		}
-		return count;
-	}
-
-	@Override
 	public double[] getTuple(int index, int nCol) {
 
 		final double[] tuple = new double[nCol];
@@ -457,7 +421,7 @@ public class Dictionary extends ADictionary {
 		for(int i = index * nCol, off = 0; i < (index + 1) * nCol && i < _values.length; i++, off++) {
 			final double v = _values[i];
 			if(v != 0) {
-				tuple[off] = _values[i];
+				tuple[off] = v;
 				allZero = false;
 			}
 		}
@@ -479,6 +443,7 @@ public class Dictionary extends ADictionary {
 		final int nRow = _values.length / nCol;
 		DenseBlock dictV = new DenseBlockFP64(new int[] {nRow, nCol}, _values);
 		MatrixBlock dictM = new MatrixBlock(nRow, nCol, dictV);
+		dictM.getNonZeros();
 		dictM.examSparsity();
 		return new MatrixBlockDictionary(dictM);
 	}
@@ -505,5 +470,21 @@ public class Dictionary extends ADictionary {
 			}
 		}
 		return new Dictionary(scaledValues);
+	}
+
+	@Override
+	public void preaggValuesFromDense(int numVals, int[] colIndexes, int[] aggregateColumns, double[] b, double[] ret,
+		int cut) {
+		for(int k = 0, off = 0;
+			k < numVals * colIndexes.length;
+			k += colIndexes.length, off += aggregateColumns.length) {
+			for(int h = 0; h < colIndexes.length; h++) {
+				int idb = colIndexes[h] * cut;
+				double v = _values[k + h];
+				if(v != 0)
+					for(int i = 0; i < aggregateColumns.length; i++)
+						ret[off + i] += v * b[idb + aggregateColumns[i]];
+			}
+		}
 	}
 }

@@ -27,9 +27,6 @@ import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.runtime.compress.CompressionSettings;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
-import org.apache.sysds.runtime.compress.colgroup.pre.IPreAggregate;
-import org.apache.sysds.runtime.compress.colgroup.pre.PreAggregateFactory;
-import org.apache.sysds.runtime.compress.utils.LinearAlgebraUtils;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
@@ -68,55 +65,11 @@ public class ColGroupRLE extends ColGroupOffset {
 	}
 
 	@Override
-	public void decompressToBlockSafe(MatrixBlock target, int rl, int ru, int offT) {
+	protected void decompressToBlockUnSafeDenseDictionary(MatrixBlock target, int rl, int ru, int offT,
+		double[] values) {
 		final int blksz = CompressionSettings.BITMAP_BLOCK_SZ;
 		final int numCols = getNumCols();
 		final int numVals = getNumValues();
-		final double[] values = getValues();
-
-		// position and start offset arrays
-		int[] astart = new int[numVals];
-		int[] apos = skipScan(numVals, rl, astart);
-
-		double[] c = target.getDenseBlockValues();
-		// cache conscious append via horizontal scans
-		for(int bi = rl; bi < ru; bi += blksz) {
-			int bimax = Math.min(bi + blksz, ru);
-			for(int k = 0, off = 0; k < numVals; k++, off += numCols) {
-				int boff = _ptr[k];
-				int blen = len(k);
-				int bix = apos[k];
-				int start = astart[k];
-				for(; bix < blen & start < bimax; bix += 2) {
-					start += _data[boff + bix];
-					int len = _data[boff + bix + 1];
-					for(int i = Math.max(rl, start) - (rl - offT); i < Math.min(start + len, ru) - (rl - offT); i++) {
-
-						int rc = i * target.getNumColumns();
-						for(int j = 0; j < numCols; j++) {
-							double v = c[rc + _colIndexes[j]];
-							double nv = c[rc + _colIndexes[j]] + values[off + j];
-							if(v == 0.0 && nv != 0.0) {
-								target.setNonZeros(target.getNonZeros() + 1);
-							}
-							c[rc + _colIndexes[j]] = nv;
-
-						}
-					}
-					start += len;
-				}
-				apos[k] = bix;
-				astart[k] = start;
-			}
-		}
-	}
-
-	@Override
-	public void decompressToBlockUnSafe(MatrixBlock target, int rl, int ru, int offT) {
-		final int blksz = CompressionSettings.BITMAP_BLOCK_SZ;
-		final int numCols = getNumCols();
-		final int numVals = getNumValues();
-		final double[] values = getValues();
 
 		// position and start offset arrays
 		int[] astart = new int[numVals];
@@ -150,172 +103,178 @@ public class ColGroupRLE extends ColGroupOffset {
 	}
 
 	@Override
-	public void decompressToBlock(MatrixBlock target, int[] colixTargets) {
-		// if(getNumValues() > 1) {
-		final int blksz = CompressionSettings.BITMAP_BLOCK_SZ;
-		final int numCols = getNumCols();
-		final int numVals = getNumValues();
-		final double[] values = getValues();
-
-		// position and start offset arrays
-		int[] apos = new int[numVals];
-		int[] astart = new int[numVals];
-		int[] cix = new int[numCols];
-
-		// prepare target col indexes
-		for(int j = 0; j < numCols; j++)
-			cix[j] = colixTargets[_colIndexes[j]];
-
-		// cache conscious append via horizontal scans
-		for(int bi = 0; bi < _numRows; bi += blksz) {
-			int bimax = Math.min(bi + blksz, _numRows);
-			for(int k = 0, off = 0; k < numVals; k++, off += numCols) {
-				int boff = _ptr[k];
-				int blen = len(k);
-				int bix = apos[k];
-				if(bix >= blen)
-					continue;
-				int start = astart[k];
-				for(; bix < blen & start < bimax; bix += 2) {
-					start += _data[boff + bix];
-					int len = _data[boff + bix + 1];
-					for(int i = start; i < start + len; i++)
-						for(int j = 0; j < numCols; j++)
-							if(values[off + j] != 0) {
-								double v = target.quickGetValue(i, _colIndexes[j]);
-								target.setValue(i, _colIndexes[j], values[off + j] + v);
-							}
-
-					start += len;
-				}
-				apos[k] = bix;
-				astart[k] = start;
-			}
-		}
-		// }
-		// else {
-		// // call generic decompression with decoder
-		// super.decompressToBlock(target, colixTargets);
-		// }
+	protected void decompressToBlockUnSafeSparseDictionary(MatrixBlock target, int rl, int ru, int offT,
+		SparseBlock values) {
+		throw new NotImplementedException();
 	}
 
-	@Override
-	public void decompressColumnToBlock(MatrixBlock target, int colpos) {
-		final int blksz = CompressionSettings.BITMAP_BLOCK_SZ;
-		final int numCols = getNumCols();
-		final int numVals = getNumValues();
-		double[] c = target.getDenseBlockValues();
-		final double[] values = getValues();
+	// @Override
+	// public void decompressToBlock(MatrixBlock target, int[] colixTargets) {
+	// 	// if(getNumValues() > 1) {
+	// 	final int blksz = CompressionSettings.BITMAP_BLOCK_SZ;
+	// 	final int numCols = getNumCols();
+	// 	final int numVals = getNumValues();
+	// 	final double[] values = getValues();
 
-		// position and start offset arrays
-		int[] astart = new int[numVals];
-		int[] apos = allocIVector(numVals, true);
+	// 	// position and start offset arrays
+	// 	int[] apos = new int[numVals];
+	// 	int[] astart = new int[numVals];
+	// 	int[] cix = new int[numCols];
 
-		// cache conscious append via horizontal scans
-		int nnz = 0;
-		for(int bi = 0; bi < _numRows; bi += blksz) {
-			int bimax = Math.min(bi + blksz, _numRows);
-			// Arrays.fill(c, bi, bimax, 0);
-			for(int k = 0, off = 0; k < numVals; k++, off += numCols) {
-				int boff = _ptr[k];
-				int blen = len(k);
-				int bix = apos[k];
-				if(bix >= blen)
-					continue;
-				int start = astart[k];
-				for(; bix < blen & start < bimax; bix += 2) {
-					start += _data[boff + bix];
-					int len = _data[boff + bix + 1];
-					for(int i = start; i < start + len; i++)
-						c[i] += values[off + colpos];
-					nnz += len;
-					start += len;
-				}
-				apos[k] = bix;
-				astart[k] = start;
-			}
-		}
-		target.setNonZeros(nnz);
-	}
+	// 	// prepare target col indexes
+	// 	for(int j = 0; j < numCols; j++)
+	// 		cix[j] = colixTargets[_colIndexes[j]];
 
-	@Override
-	public void decompressColumnToBlock(MatrixBlock target, int colpos, int rl, int ru) {
-		final int blksz = CompressionSettings.BITMAP_BLOCK_SZ;
-		final int numCols = getNumCols();
-		final int numVals = getNumValues();
-		double[] c = target.getDenseBlockValues();
-		final double[] values = getValues();
+	// 	// cache conscious append via horizontal scans
+	// 	for(int bi = 0; bi < _numRows; bi += blksz) {
+	// 		int bimax = Math.min(bi + blksz, _numRows);
+	// 		for(int k = 0, off = 0; k < numVals; k++, off += numCols) {
+	// 			int boff = _ptr[k];
+	// 			int blen = len(k);
+	// 			int bix = apos[k];
+	// 			if(bix >= blen)
+	// 				continue;
+	// 			int start = astart[k];
+	// 			for(; bix < blen & start < bimax; bix += 2) {
+	// 				start += _data[boff + bix];
+	// 				int len = _data[boff + bix + 1];
+	// 				for(int i = start; i < start + len; i++)
+	// 					for(int j = 0; j < numCols; j++)
+	// 						if(values[off + j] != 0) {
+	// 							double v = target.quickGetValue(i, _colIndexes[j]);
+	// 							target.setValue(i, _colIndexes[j], values[off + j] + v);
+	// 						}
 
-		// position and start offset arrays
-		int[] astart = new int[numVals];
-		int[] apos = allocIVector(numVals, true);
+	// 				start += len;
+	// 			}
+	// 			apos[k] = bix;
+	// 			astart[k] = start;
+	// 		}
+	// 	}
+	// 	// }
+	// 	// else {
+	// 	// // call generic decompression with decoder
+	// 	// super.decompressToBlock(target, colixTargets);
+	// 	// }
+	// }
 
-		// cache conscious append via horizontal scans
-		int nnz = 0;
-		for(int bi = (rl / blksz) * blksz; bi < ru; bi += blksz) {
-			int bimax = Math.min(bi + blksz, ru);
-			for(int k = 0, off = 0; k < numVals; k++, off += numCols) {
-				int boff = _ptr[k];
-				int blen = len(k);
-				int bix = apos[k];
-				if(bix >= blen)
-					continue;
-				int start = astart[k];
-				for(; bix < blen & start < bimax; bix += 2) {
-					start += _data[boff + bix];
-					int len = _data[boff + bix + 1];
-					if(start + len >= rl) {
-						int offsetStart = Math.max(start, rl);
-						for(int i = offsetStart; i < Math.min(start + len, bimax); i++)
-							c[i - rl] += values[off + colpos];
-						nnz += len - (offsetStart - start);
-					}
-					start += len;
-				}
-				apos[k] = bix;
-				astart[k] = start;
-			}
-		}
-		target.setNonZeros(nnz);
-	}
+	// @Override
+	// public void decompressColumnToBlock(MatrixBlock target, int colpos) {
+	// 	final int blksz = CompressionSettings.BITMAP_BLOCK_SZ;
+	// 	final int numCols = getNumCols();
+	// 	final int numVals = getNumValues();
+	// 	double[] c = target.getDenseBlockValues();
+	// 	final double[] values = getValues();
 
-	@Override
-	public void decompressColumnToBlock(double[] c, int colpos, int rl, int ru) {
-		final int blksz = CompressionSettings.BITMAP_BLOCK_SZ;
-		final int numCols = getNumCols();
-		final int numVals = getNumValues();
-		final double[] values = getValues();
+	// 	// position and start offset arrays
+	// 	int[] astart = new int[numVals];
+	// 	int[] apos = allocIVector(numVals, true);
 
-		// position and start offset arrays
-		int[] astart = new int[numVals];
-		int[] apos = allocIVector(numVals, true);
+	// 	// cache conscious append via horizontal scans
+	// 	int nnz = 0;
+	// 	for(int bi = 0; bi < _numRows; bi += blksz) {
+	// 		int bimax = Math.min(bi + blksz, _numRows);
+	// 		// Arrays.fill(c, bi, bimax, 0);
+	// 		for(int k = 0, off = 0; k < numVals; k++, off += numCols) {
+	// 			int boff = _ptr[k];
+	// 			int blen = len(k);
+	// 			int bix = apos[k];
+	// 			if(bix >= blen)
+	// 				continue;
+	// 			int start = astart[k];
+	// 			for(; bix < blen & start < bimax; bix += 2) {
+	// 				start += _data[boff + bix];
+	// 				int len = _data[boff + bix + 1];
+	// 				for(int i = start; i < start + len; i++)
+	// 					c[i] += values[off + colpos];
+	// 				nnz += len;
+	// 				start += len;
+	// 			}
+	// 			apos[k] = bix;
+	// 			astart[k] = start;
+	// 		}
+	// 	}
+	// 	target.setNonZeros(nnz);
+	// }
 
-		// cache conscious append via horizontal scans
+	// @Override
+	// public void decompressColumnToBlock(MatrixBlock target, int colpos, int rl, int ru) {
+	// 	final int blksz = CompressionSettings.BITMAP_BLOCK_SZ;
+	// 	final int numCols = getNumCols();
+	// 	final int numVals = getNumValues();
+	// 	double[] c = target.getDenseBlockValues();
+	// 	final double[] values = getValues();
 
-		for(int bi = (rl / blksz) * blksz; bi < ru; bi += blksz) {
-			int bimax = Math.min(bi + blksz, ru);
-			for(int k = 0, off = 0; k < numVals; k++, off += numCols) {
-				int boff = _ptr[k];
-				int blen = len(k);
-				int bix = apos[k];
-				if(bix >= blen)
-					continue;
-				int start = astart[k];
-				for(; bix < blen & start < bimax; bix += 2) {
-					start += _data[boff + bix];
-					int len = _data[boff + bix + 1];
-					if(start + len >= rl) {
-						int offsetStart = Math.max(start, rl);
-						for(int i = offsetStart; i < Math.min(start + len, bimax); i++)
-							c[i - rl] += values[off + colpos];
-					}
-					start += len;
-				}
-				apos[k] = bix;
-				astart[k] = start;
-			}
-		}
-	}
+	// 	// position and start offset arrays
+	// 	int[] astart = new int[numVals];
+	// 	int[] apos = allocIVector(numVals, true);
+
+	// 	// cache conscious append via horizontal scans
+	// 	int nnz = 0;
+	// 	for(int bi = (rl / blksz) * blksz; bi < ru; bi += blksz) {
+	// 		int bimax = Math.min(bi + blksz, ru);
+	// 		for(int k = 0, off = 0; k < numVals; k++, off += numCols) {
+	// 			int boff = _ptr[k];
+	// 			int blen = len(k);
+	// 			int bix = apos[k];
+	// 			if(bix >= blen)
+	// 				continue;
+	// 			int start = astart[k];
+	// 			for(; bix < blen & start < bimax; bix += 2) {
+	// 				start += _data[boff + bix];
+	// 				int len = _data[boff + bix + 1];
+	// 				if(start + len >= rl) {
+	// 					int offsetStart = Math.max(start, rl);
+	// 					for(int i = offsetStart; i < Math.min(start + len, bimax); i++)
+	// 						c[i - rl] += values[off + colpos];
+	// 					nnz += len - (offsetStart - start);
+	// 				}
+	// 				start += len;
+	// 			}
+	// 			apos[k] = bix;
+	// 			astart[k] = start;
+	// 		}
+	// 	}
+	// 	target.setNonZeros(nnz);
+	// }
+
+	// @Override
+	// public void decompressColumnToBlock(double[] c, int colpos, int rl, int ru) {
+	// 	final int blksz = CompressionSettings.BITMAP_BLOCK_SZ;
+	// 	final int numCols = getNumCols();
+	// 	final int numVals = getNumValues();
+	// 	final double[] values = getValues();
+
+	// 	// position and start offset arrays
+	// 	int[] astart = new int[numVals];
+	// 	int[] apos = allocIVector(numVals, true);
+
+	// 	// cache conscious append via horizontal scans
+
+	// 	for(int bi = (rl / blksz) * blksz; bi < ru; bi += blksz) {
+	// 		int bimax = Math.min(bi + blksz, ru);
+	// 		for(int k = 0, off = 0; k < numVals; k++, off += numCols) {
+	// 			int boff = _ptr[k];
+	// 			int blen = len(k);
+	// 			int bix = apos[k];
+	// 			if(bix >= blen)
+	// 				continue;
+	// 			int start = astart[k];
+	// 			for(; bix < blen & start < bimax; bix += 2) {
+	// 				start += _data[boff + bix];
+	// 				int len = _data[boff + bix + 1];
+	// 				if(start + len >= rl) {
+	// 					int offsetStart = Math.max(start, rl);
+	// 					for(int i = offsetStart; i < Math.min(start + len, bimax); i++)
+	// 						c[i - rl] += values[off + colpos];
+	// 				}
+	// 				start += len;
+	// 			}
+	// 			apos[k] = bix;
+	// 			astart[k] = start;
+	// 		}
+	// 	}
+	// }
 
 	@Override
 	public int[] getCounts(int[] counts) {
@@ -658,7 +617,7 @@ public class ColGroupRLE extends ColGroupOffset {
 	}
 
 	@Override
-	protected final void computeRowSums(double[] c, boolean square, int rl, int ru, boolean mean) {
+	protected void computeRowSums(double[] c, boolean square, int rl, int ru) {
 
 		final int numVals = getNumValues();
 
@@ -903,46 +862,51 @@ public class ColGroupRLE extends ColGroupOffset {
 		return new Pair<>(apos, astart);
 	}
 
+	// @Override
+	// public double[] preAggregate(double[] a, int row) {
+	// 	final int numVals = getNumValues();
+	// 	final int blksz = CompressionSettings.BITMAP_BLOCK_SZ;
+	// 	// current pos per OLs / output values
+	// 	int[] astart = new int[numVals];
+	// 	int[] apos = allocIVector(numVals, true);
+	// 	double[] cvals = allocDVector(numVals, true);
+	// 	int off = row * _numRows;
+
+	// 	// step 2: cache conscious matrix-vector via horizontal scans
+	// 	for(int ai = 0; ai < _numRows; ai += blksz) {
+	// 		int aimax = Math.min(ai + blksz, _numRows);
+
+	// 		// horizontal scan, incl pos maintenance
+	// 		for(int k = 0; k < numVals; k++) {
+	// 			int boff = _ptr[k];
+	// 			int blen = len(k);
+	// 			int bix = apos[k];
+	// 			int start = astart[k];
+
+	// 			// compute partial results, not aligned
+	// 			while(bix < blen & start < aimax) {
+	// 				start += _data[boff + bix];
+	// 				int len = _data[boff + bix + 1];
+	// 				cvals[k] += LinearAlgebraUtils.vectSum(a, start + off, len);
+	// 				start += len;
+	// 				bix += 2;
+	// 			}
+
+	// 			apos[k] = bix;
+	// 			astart[k] = start;
+	// 		}
+	// 	}
+	// 	return cvals;
+	// }
+
+	// @Override
+	// public double[] preAggregateSparse(SparseBlock sb, int row) {
+	// 	return null;
+	// }
+	
 	@Override
-	public double[] preAggregate(double[] a, int row) {
-		final int numVals = getNumValues();
-		final int blksz = CompressionSettings.BITMAP_BLOCK_SZ;
-		// current pos per OLs / output values
-		int[] astart = new int[numVals];
-		int[] apos = allocIVector(numVals, true);
-		double[] cvals = allocDVector(numVals, true);
-		int off = row * _numRows;
-
-		// step 2: cache conscious matrix-vector via horizontal scans
-		for(int ai = 0; ai < _numRows; ai += blksz) {
-			int aimax = Math.min(ai + blksz, _numRows);
-
-			// horizontal scan, incl pos maintenance
-			for(int k = 0; k < numVals; k++) {
-				int boff = _ptr[k];
-				int blen = len(k);
-				int bix = apos[k];
-				int start = astart[k];
-
-				// compute partial results, not aligned
-				while(bix < blen & start < aimax) {
-					start += _data[boff + bix];
-					int len = _data[boff + bix + 1];
-					cvals[k] += LinearAlgebraUtils.vectSum(a, start + off, len);
-					start += len;
-					bix += 2;
-				}
-
-				apos[k] = bix;
-				astart[k] = start;
-			}
-		}
-		return cvals;
-	}
-
-	@Override
-	public double[] preAggregateSparse(SparseBlock sb, int row) {
-		return null;
+	public void preAggregate(MatrixBlock m, MatrixBlock preAgg, int rl, int ru){
+		throw new NotImplementedException();
 	}
 
 	@Override
@@ -1053,93 +1017,93 @@ public class ColGroupRLE extends ColGroupOffset {
 		return ret;
 	}
 
-	@Override
-	public IPreAggregate preAggregateDDC(ColGroupDDC lhs) {
-		final int NVR = this.getNumValues();
-		final int NVL = lhs.getNumValues();
-		final int retSize = NVR * NVL;
-		IPreAggregate ag = PreAggregateFactory.ag(retSize);
+	// @Override
+	// public IPreAggregate preAggregateDDC(ColGroupDDC lhs) {
+	// 	final int NVR = this.getNumValues();
+	// 	final int NVL = lhs.getNumValues();
+	// 	final int retSize = NVR * NVL;
+	// 	IPreAggregate ag = PreAggregateFactory.ag(retSize);
 
-		for(int kr = 0; kr < NVR; kr++) {
-			final int boffL = _ptr[kr];
-			final int blenL = len(kr);
-			final int offKr = kr * NVL;
-			for(int bixL = 0, startL = 0, lenL = 0; bixL < blenL && startL < _numRows; startL += lenL, bixL += 2) {
-				startL += _data[boffL + bixL];
-				lenL = _data[boffL + bixL + 1];
-				final int endL = startL + lenL;
-				for(int i = startL; i < endL; i++)
-					ag.increment(lhs._data.getIndex(i) + offKr);
+	// 	for(int kr = 0; kr < NVR; kr++) {
+	// 		final int boffL = _ptr[kr];
+	// 		final int blenL = len(kr);
+	// 		final int offKr = kr * NVL;
+	// 		for(int bixL = 0, startL = 0, lenL = 0; bixL < blenL && startL < _numRows; startL += lenL, bixL += 2) {
+	// 			startL += _data[boffL + bixL];
+	// 			lenL = _data[boffL + bixL + 1];
+	// 			final int endL = startL + lenL;
+	// 			for(int i = startL; i < endL; i++)
+	// 				ag.increment(lhs._data.getIndex(i) + offKr);
 
-			}
-		}
-		return ag;
-	}
+	// 		}
+	// 	}
+	// 	return ag;
+	// }
 
-	@Override
-	public IPreAggregate preAggregateSDC(ColGroupSDC lhs) {
-		throw new NotImplementedException("Not supported pre aggregate of :" + lhs.getClass().getSimpleName() + " in "
-			+ this.getClass().getSimpleName());
-	}
+	// @Override
+	// public IPreAggregate preAggregateSDC(ColGroupSDC lhs) {
+	// 	throw new NotImplementedException("Not supported pre aggregate of :" + lhs.getClass().getSimpleName() + " in "
+	// 		+ this.getClass().getSimpleName());
+	// }
 
-	@Override
-	public IPreAggregate preAggregateSDCSingle(ColGroupSDCSingle lhs) {
-		throw new NotImplementedException("Not supported pre aggregate of :" + lhs.getClass().getSimpleName() + " in "
-			+ this.getClass().getSimpleName());
-	}
+	// @Override
+	// public IPreAggregate preAggregateSDCSingle(ColGroupSDCSingle lhs) {
+	// 	throw new NotImplementedException("Not supported pre aggregate of :" + lhs.getClass().getSimpleName() + " in "
+	// 		+ this.getClass().getSimpleName());
+	// }
 
-	@Override
-	public IPreAggregate preAggregateSDCZeros(ColGroupSDCZeros lhs) {
-		throw new NotImplementedException("Not supported pre aggregate of :" + lhs.getClass().getSimpleName() + " in "
-			+ this.getClass().getSimpleName());
-	}
+	// @Override
+	// public IPreAggregate preAggregateSDCZeros(ColGroupSDCZeros lhs) {
+	// 	throw new NotImplementedException("Not supported pre aggregate of :" + lhs.getClass().getSimpleName() + " in "
+	// 		+ this.getClass().getSimpleName());
+	// }
 
-	@Override
-	public IPreAggregate preAggregateSDCSingleZeros(ColGroupSDCSingleZeros lhs) {
-		throw new NotImplementedException("Not supported pre aggregate of :" + lhs.getClass().getSimpleName() + " in "
-			+ this.getClass().getSimpleName());
-	}
+	// @Override
+	// public IPreAggregate preAggregateSDCSingleZeros(ColGroupSDCSingleZeros lhs) {
+	// 	throw new NotImplementedException("Not supported pre aggregate of :" + lhs.getClass().getSimpleName() + " in "
+	// 		+ this.getClass().getSimpleName());
+	// }
 
-	@Override
-	public IPreAggregate preAggregateOLE(ColGroupOLE lhs) {
-		throw new NotImplementedException("Not supported pre aggregate of :" + lhs.getClass().getSimpleName() + " in "
-			+ this.getClass().getSimpleName());
-	}
+	// @Override
+	// public IPreAggregate preAggregateOLE(ColGroupOLE lhs) {
+	// 	throw new NotImplementedException("Not supported pre aggregate of :" + lhs.getClass().getSimpleName() + " in "
+	// 		+ this.getClass().getSimpleName());
+	// }
 
-	@Override
-	public IPreAggregate preAggregateRLE(ColGroupRLE lhs) {
-		final int NVR = this.getNumValues();
-		final int NVL = lhs.getNumValues();
-		final int retSize = NVR * NVL;
-		IPreAggregate ag = PreAggregateFactory.ag(retSize);
+	// @Override
+	// public IPreAggregate preAggregateRLE(ColGroupRLE lhs) {
+	// 	final int NVR = this.getNumValues();
+	// 	final int NVL = lhs.getNumValues();
+	// 	final int retSize = NVR * NVL;
+	// 	IPreAggregate ag = PreAggregateFactory.ag(retSize);
 
-		for(int kl = 0; kl < NVL; kl++) {
-			final int boffL = lhs._ptr[kl];
-			final int blenL = lhs.len(kl);
-			for(int bixL = 0, startL = 0, lenL = 0; bixL < blenL && startL < _numRows; startL += lenL, bixL += 2) {
-				startL += lhs._data[boffL + bixL];
-				lenL = lhs._data[boffL + bixL + 1];
-				final int endL = startL + lenL;
-				for(int kr = 0; kr < NVR; kr++) {
-					final int boffR = _ptr[kr];
-					final int blenR = len(kr);
-					final int krOff = kr * NVL;
-					for(int bixR = 0, startR = 0, lenR = 0; bixR < blenR & startR < endL; startR += lenR, bixR += 2) {
-						startR += _data[boffR + bixR];
-						lenR = _data[boffR + bixR + 1];
-						final int endR = startR + lenR;
-						if(startL < endR && startR < endL) {
-							final int endOverlap = Math.min(endR, endL);
-							final int startOverlap = Math.max(startL, startR);
-							final int lenOverlap = endOverlap - startOverlap;
-							ag.increment(kl + krOff, lenOverlap);
-						}
-					}
-				}
-			}
-		}
-		return ag;
-	}
+	// 	for(int kl = 0; kl < NVL; kl++) {
+	// 		final int boffL = lhs._ptr[kl];
+	// 		final int blenL = lhs.len(kl);
+	// 		for(int bixL = 0, startL = 0, lenL = 0; bixL < blenL && startL < _numRows; startL += lenL, bixL += 2) {
+	// 			startL += lhs._data[boffL + bixL];
+	// 			lenL = lhs._data[boffL + bixL + 1];
+	// 			final int endL = startL + lenL;
+	// 			for(int kr = 0; kr < NVR; kr++) {
+	// 				final int boffR = _ptr[kr];
+	// 				final int blenR = len(kr);
+	// 				final int krOff = kr * NVL;
+	// 				for(int bixR = 0, startR = 0, lenR = 0; bixR < blenR & startR < endL; startR += lenR, bixR += 2) {
+	// 					startR += _data[boffR + bixR];
+	// 					lenR = _data[boffR + bixR + 1];
+	// 					final int endR = startR + lenR;
+	// 					if(startL < endR && startR < endL) {
+	// 						final int endOverlap = Math.min(endR, endL);
+	// 						final int startOverlap = Math.max(startL, startR);
+	// 						final int lenOverlap = endOverlap - startOverlap;
+	// 						ag.increment(kl + krOff, lenOverlap);
+	// 					}
+	// 				}
+	// 			}
+	// 		}
+	// 	}
+	// 	return ag;
+	// }
 
 	@Override
 	public Dictionary preAggregateThatDDCStructure(ColGroupDDC that, Dictionary ret) {
@@ -1162,12 +1126,8 @@ public class ColGroupRLE extends ColGroupOffset {
 	}
 
 	@Override
-	public Dictionary preAggregateThatSDCSingleStructure(ColGroupSDCSingle that, Dictionary ret, boolean preModified){
+	public Dictionary preAggregateThatSDCSingleStructure(ColGroupSDCSingle that, Dictionary ret, boolean preModified) {
 		throw new NotImplementedException();
 	}
 
-	@Override
-	public MatrixBlock preAggregate(MatrixBlock m, int rl, int ru) {
-		throw new NotImplementedException();
-	}
 }

@@ -26,8 +26,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.DMLCompressionException;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
@@ -43,7 +41,7 @@ import org.apache.sysds.runtime.util.CommonThreadPool;
 
 public class CLALibSquash {
 
-	private static final Log LOG = LogFactory.getLog(CLALibSquash.class.getName());
+	// private static final Log LOG = LogFactory.getLog(CLALibSquash.class.getName());
 
 	public static CompressedMatrixBlock squash(CompressedMatrixBlock m, int k) {
 
@@ -116,14 +114,7 @@ public class CLALibSquash {
 	private static AColGroup extractNewGroup(CompressedMatrixBlock m, CompressionSettings cs, int[] columnIds,
 		double[] minMaxes) {
 
-		ABitmap map;
-		if(columnIds.length > 1) {
-			LOG.error("Not Optimized Extraction...");
-			map = extractBitmap(columnIds, m);
-		}
-		else
-			map = BitmapLossyEncoder.extractMapFromCompressedSingleColumn(m, columnIds[0], minMaxes[columnIds[0] * 2],
-				minMaxes[columnIds[0] * 2 + 1], m.getNumRows());
+		ABitmap map = extractBitmap(columnIds, m);
 
 		AColGroup newGroup = ColGroupFactory.compress(columnIds, m.getNumRows(), map, CompressionType.DDC, cs, m, 1);
 		return newGroup;

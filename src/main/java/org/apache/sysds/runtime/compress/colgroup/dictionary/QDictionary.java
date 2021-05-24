@@ -96,21 +96,6 @@ public class QDictionary extends ADictionary {
 	}
 
 	@Override
-	public int hasZeroTuple(int nCol) {
-		if(_values == null)
-			return -1;
-		int len = getNumberOfValues(nCol);
-		for(int i = 0, off = 0; i < len; i++, off += nCol) {
-			boolean allZeros = true;
-			for(int j = 0; j < nCol; j++)
-				allZeros &= (_values[off + j] == 0);
-			if(allZeros)
-				return i;
-		}
-		return -1;
-	}
-
-	@Override
 	public double aggregate(double init, Builtin fn) {
 		// full aggregate can disregard tuple boundaries
 		int len = size();
@@ -240,9 +225,8 @@ public class QDictionary extends ADictionary {
 		throw new NotImplementedException("Not Implemented yet");
 	}
 
-	@Override
-	public int size() {
-		return _values == null ? 0 : _values.length;
+	private int size() {
+		return _values.length;
 	}
 
 	@Override
@@ -493,16 +477,6 @@ public class QDictionary extends ADictionary {
 	}
 
 	@Override
-	public long getNumberNonZerosContained() {
-		long count = 0;
-		for(double v : _values) {
-			if(v != 0.0)
-				count++;
-		}
-		return count;
-	}
-
-	@Override
 	public double[] getTuple(int index, int nCol) {
 		return null;
 	}
@@ -524,6 +498,12 @@ public class QDictionary extends ADictionary {
 
 	@Override
 	public ADictionary scaleTuples(int[] scaling, int nCol) {
+		throw new NotImplementedException();
+	}
+
+	@Override
+	public void preaggValuesFromDense(int numVals, int[] colIndexes, int[] aggregateColumns, double[] b, double[] ret,
+		int cut) {
 		throw new NotImplementedException();
 	}
 }

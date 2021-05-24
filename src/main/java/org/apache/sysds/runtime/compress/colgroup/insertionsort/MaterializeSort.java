@@ -17,32 +17,38 @@
  * under the License.
  */
 
-package org.apache.sysds.runtime.compress.colgroup.tree;
+package org.apache.sysds.runtime.compress.colgroup.insertionsort;
 
-import org.apache.sysds.runtime.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory;
 import org.apache.sysds.runtime.compress.utils.IntArrayList;
 
 public class MaterializeSort extends AInsertionSorter {
 
-	public MaterializeSort(int endLength, int uniqueLabels, int knownMax) {
-		super(endLength, uniqueLabels, knownMax);
+	/** a dense mapToData, that have a value for each row in the input. */
+	AMapToData md;
+
+	public MaterializeSort(int endLength, int knownMax, IntArrayList[] offsets, int negativeIndex) {
+		super(endLength, knownMax, offsets, negativeIndex);
+
+		md = MapToFactory.create(_knownMax, _numLabels);
+		md.fill(_numLabels);
+		if(_negativeIndex == -1)
+			insert();
+		else
+			insertWithNegative();
 	}
 
-	@Override
-	public void insert(final IntArrayList[] offsets) {
-		AMapToData md = MapToFactory.create(_knownMax, _numLabels);
-		md.fill(_numLabels);
+	private void insert() {
 
-		for (int i = 0; i < offsets.length; i++) {
-			IntArrayList of = offsets[i];
-			for (int k = 0; k < of.size(); k++)
+		for(int i = 0; i < _offsets.length; i++) {
+			IntArrayList of = _offsets[i];
+			for(int k = 0; k < of.size(); k++)
 				md.set(of.get(k), i);
 		}
 
 		int off = 0;
-		for (int i = 0; i < _knownMax; i++) {
+		for(int i = 0; i < _knownMax; i++) {
 			int idx = md.getIndex(i);
 			if(idx != _numLabels)
 				set(off++, i, idx);
@@ -50,45 +56,20 @@ public class MaterializeSort extends AInsertionSorter {
 
 	}
 
-
-	@Override
-	public void insert(final IntArrayList[] offsets, final int negativeIndex) {
-		AMapToData md = MapToFactory.create(_knownMax, _numLabels);
-		md.fill(_numLabels);
-		
-		for (int i = 0; i < offsets.length; i++) {
-			IntArrayList of = offsets[i];
-			for (int k = 0; k < of.size(); k++)
+	private void insertWithNegative() {
+		for(int i = 0; i < _offsets.length; i++) {
+			IntArrayList of = _offsets[i];
+			for(int k = 0; k < of.size(); k++)
 				md.set(of.get(k), i);
 		}
 		int off = 0;
-		for (int i = 0; i < _knownMax; i++) {
+		for(int i = 0; i < _knownMax; i++) {
 			int idx = md.getIndex(i);
-			if (idx < negativeIndex) 
+			if(idx < _negativeIndex)
 				set(off++, i, idx);
-			else if (idx > negativeIndex) 
+			else if(idx > _negativeIndex)
 				set(off++, i, idx - 1);
 		}
-	}
-
-	@Override
-	protected void insert(IntArrayList array, int label) {
-		throw new DMLCompressionException("This class does not use this method");
-	}
-
-	@Override
-	protected void negativeInsert(IntArrayList array) {
-		throw new DMLCompressionException("This class does not use this method");
-	}
-
-	@Override
-	public int[] getIndexes() {
-		return _indexes;
-	}
-
-	@Override
-	public AMapToData getData() {
-		return _labels;
 	}
 
 }

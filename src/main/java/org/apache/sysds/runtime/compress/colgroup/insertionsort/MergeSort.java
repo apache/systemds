@@ -17,27 +17,46 @@
  * under the License.
  */
 
-package org.apache.sysds.runtime.compress.colgroup.tree;
+package org.apache.sysds.runtime.compress.colgroup.insertionsort;
 
-import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
 import org.apache.sysds.runtime.compress.utils.IntArrayList;
 
 public class MergeSort extends AInsertionSorter {
 
 	private int currentFill = 0;
 
-	public MergeSort(int endLength, int uniqueLabels, int knownMax) {
-		super(endLength, uniqueLabels, knownMax);
+	public MergeSort(int endLength, int knownMax, IntArrayList[] offsets, int negativeIndex) {
+		super(endLength, knownMax, offsets, negativeIndex);
+		if(_negativeIndex == -1)
+			insert();
+		else
+			insertWithNegative();
 	}
 
-	@Override
+	private void insert() {
+		for(int i = 0; i < _offsets.length; i++) {
+			insert(_offsets[i], i);
+		}
+	}
+
+	private void insertWithNegative() {
+		for(int i = 0; i < _offsets.length; i++) {
+			if(i < _negativeIndex)
+				insert(_offsets[i], i);
+			else if(i > _negativeIndex)
+				insert(_offsets[i], i - 1);
+		}
+		negativeInsert(_offsets[_negativeIndex]);
+	}
+
 	protected void insert(IntArrayList array, int label) {
 
-		if (currentFill == 0) {
+		if(currentFill == 0) {
 			currentFill = array.size();
-			for (int i = 0; i < currentFill; i++)
+			for(int i = 0; i < currentFill; i++)
 				set(i, array.get(i), label);
-		} else
+		}
+		else
 			merge(array, label);
 
 	}
@@ -51,70 +70,75 @@ public class MergeSort extends AInsertionSorter {
 		pP--; // last element
 		int vA, vP;
 
-		while (pP >= 0 && pA >= 0) {
+		while(pP >= 0 && pA >= 0) {
 			vA = a.get(pA);
 			vP = _indexes[pP];
-			if (vP > vA) {
+			if(vP > vA) {
 				set(pN--, vP, _labels.getIndex(pP--));
-			} else {
+			}
+			else {
 				set(pN--, vA, label);
 				pA--;
 			}
 		}
-		while (pA >= 0)
+		while(pA >= 0)
 			set(pN--, a.get(pA--), label);
 
 	}
 
-
-	@Override
 	protected void negativeInsert(IntArrayList a) {
-		if (currentFill == _indexes.length)
-			return;
 		final int label = _numLabels - 1;
 		int pA = a.size() - 1; // Pointer A
 		int pP = currentFill - 1; // Pointer Previous
 		// From here on currentFill is no longer needed.
 		int pN = _indexes.length - 1; // Pointer new
 		int vA = a.get(pA);
-		int vP;
-		int vM = _knownMax;
-		while (pP > 0 && pA >= 0 && pN >= 0) {
-			vP = _indexes[pP];
+		// Pointer to last index
+		int vM = _knownMax - 1;
+
+		// While both old indexes have to be added and a have to be ignored.
+		while(pP >= 0 && pA >= 0 && pN >= 0) {
+			final int vP = _indexes[pP];
 			vA = a.get(pA);
-			if (vP == vM)
+			if(vP == vM)
 				set(pN--, vM, _labels.getIndex(pP--));
-			else if (vA == vM)
+			else if(vA == vM)
 				pA--;
 			else
 				set(pN--, vM, label);
 			vM--;
 		}
 
-		while (pN >= 0 && pA >= 0) {
-			vA = a.get(pA);
-			if (vA < vM)
-				set(pN--, vM, label);
-			else if (vA == vM)
-				pA--;
+		// if there is no mor indexes to ignore
+		if(pA < 0) {
+			// add all remaining indexes from other arrays
+			while(pP >= 0 && pN >= 0) {
+				final int vP = _indexes[pP];
+				if(vP == vM)
+					set(pN--, vM, _labels.getIndex(pP--));
+				else
+					set(pN--, vM, label);
+				vM--;
+			}
+		}
+		else {
+			// skip all indexes in a.
+			while(pN >= 0 && pA >= 0) {
+				vA = a.get(pA);
+				if(vA < vM)
+					set(pN--, vM, label);
+				else
+					pA--;
 
-			vM--;
+				vM--;
 
+			}
 		}
 
-		while (pN >= 0 && vM > 0)
+		// Fill the rest with the default value.
+		while(pN >= 0 && vM >= 0)
 			set(pN--, vM--, label);
 
-	}
-
-	@Override
-	public int[] getIndexes() {
-		return _indexes;
-	}
-
-	@Override
-	public AMapToData getData() {
-		return _labels;
 	}
 
 }

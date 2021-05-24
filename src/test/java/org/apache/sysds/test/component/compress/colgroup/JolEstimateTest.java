@@ -104,17 +104,17 @@ public abstract class JolEstimateTest {
 
 	// @Test
 	// public void compressedSizeInfoEstimatorSample_10() {
-	// 	compressedSizeInfoEstimatorSample(0.1, 0.6);
+	// compressedSizeInfoEstimatorSample(0.1, 0.6);
 	// }
 
 	// @Test
 	// public void compressedSizeInfoEstimatorSample_5() {
-	// 	compressedSizeInfoEstimatorSample(0.05, 0.5);
+	// compressedSizeInfoEstimatorSample(0.05, 0.5);
 	// }
 
 	// @Test
 	// public void compressedSizeInfoEstimatorSample_1() {
-	// 	compressedSizeInfoEstimatorSample(0.01, 0.4);
+	// compressedSizeInfoEstimatorSample(0.01, 0.4);
 	// }
 
 	public void compressedSizeInfoEstimatorSample(double ratio, double tolerance) {
@@ -154,33 +154,4 @@ public abstract class JolEstimateTest {
 			assertTrue("Failed sample test " + getCT() + "", false);
 		}
 	}
-
-	// Currently ignore because lossy compression is disabled.
-	// @Test
-	// @Ignore
-	// public void compressedSizeInfoEstimatorExactLossy() {
-	// try {
-	// // CompressionSettings cs = new CompressionSettings(1.0);
-	// csl.transposed = true;
-	// CompressedSizeEstimator cse = CompressedSizeEstimatorFactory.getSizeEstimator(mbt, csl);
-	// CompressedSizeInfoColGroup csi = cse.estimateCompressedColGroupSize();
-	// long estimateCSI = csi.getCompressionSize(getCT());
-	// long estimateObject = cgl.estimateInMemorySize();
-
-	// String errorMessage = "CSI estimate " + estimateCSI + " should be exactly " + estimateObject + "\n"
-	// + cg.toString();
-	// boolean res = Math.abs(estimateCSI - estimateObject) <= 0;
-	// if(res && !(estimateCSI == estimateObject)) {
-	// // Make a warning in case that it is not exactly the same.
-	// // even if the test allows some tolerance.
-	// System.out.println("NOT EXACTLY THE SAME! " + this.getClass().getName() + " " + errorMessage);
-	// }
-	// assertTrue(errorMessage, res);
-	// }
-	// catch(Exception e) {
-	// e.printStackTrace();
-	// assertTrue("Failed Test", false);
-	// }
-	// }
-
 }

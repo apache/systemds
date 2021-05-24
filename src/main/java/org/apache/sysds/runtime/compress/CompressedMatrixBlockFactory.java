@@ -122,9 +122,9 @@ public class CompressedMatrixBlockFactory {
 	 */
 	public static CompressedMatrixBlock createConstant(int numRows, int numCols, double value) {
 		CompressedMatrixBlock block = new CompressedMatrixBlock(numRows, numCols);
-		ColGroupConst cg = ColGroupConst.genColGroupConst(numRows, numCols, value);
+		AColGroup cg = ColGroupFactory.genColGroupConst(numRows, numCols, value);
 		block.allocateColGroup(cg);
-		block.setNonZeros(value == 0.0 ? 0 : numRows * numCols);
+		block.recomputeNonZeros();
 		return block;
 	}
 
@@ -157,13 +157,11 @@ public class CompressedMatrixBlockFactory {
 	private void classifyPhase() {
 		CompressedSizeEstimator sizeEstimator = CompressedSizeEstimatorFactory.getSizeEstimator(mb, compSettings);
 		CompressedSizeInfo sizeInfos = sizeEstimator.computeCompressedSizeInfos(k);
-
-		if(compSettings.investigateEstimate)
-			_stats.estimatedSizeCols = sizeInfos.memoryEstimate();
-
+		_stats.estimatedSizeCols = sizeInfos.memoryEstimate();
 		logPhase();
-
-		if(_stats.estimatedSizeCols < _stats.originalSize || compSettings.columnPartitioner == PartitionerType.COST_MATRIX_MULT)
+		
+		if(_stats.estimatedSizeCols < _stats.originalSize ||
+			compSettings.columnPartitioner == PartitionerType.COST_MATRIX_MULT)
 			coCodePhase(sizeEstimator, sizeInfos, mb.getNumRows());
 		else {
 			LOG.info("Estimated Size of singleColGroups: " + _stats.estimatedSizeCols);
@@ -281,9 +279,9 @@ public class CompressedMatrixBlockFactory {
 		res.cleanupBlock(true, true);
 
 		_stats.size = res.estimateCompressedSizeInMemory();
-		
+
 		final double ratio = _stats.getRatio();
-		if(ratio < 1 && compSettings.columnPartitioner != PartitionerType.COST_MATRIX_MULT)  {
+		if(ratio < 1 && compSettings.columnPartitioner != PartitionerType.COST_MATRIX_MULT) {
 			LOG.info("--dense size:        " + _stats.denseSize);
 			LOG.info("--original size:     " + _stats.originalSize);
 			LOG.info("--compressed size:   " + _stats.size);
@@ -304,7 +302,7 @@ public class CompressedMatrixBlockFactory {
 	private Pair<MatrixBlock, CompressionStatistics> abortCompression() {
 		LOG.warn("Compression aborted at phase: " + phase);
 		if(compSettings.transposed)
-			LibMatrixReorg.transposeInPlace(mb,k);
+			LibMatrixReorg.transposeInPlace(mb, k);
 		return new ImmutablePair<>(mb, _stats);
 	}
 
@@ -346,10 +344,9 @@ public class CompressedMatrixBlockFactory {
 					LOG.debug("--compression ratio: " + _stats.getRatio());
 					int[] lengths = new int[res.getColGroups().size()];
 					int i = 0;
-					for(AColGroup colGroup : res.getColGroups()) {
-						if(colGroup.getValues() != null)
-							lengths[i++] = colGroup.getValues().length / colGroup.getColIndices().length;
-					}
+					for(AColGroup colGroup : res.getColGroups())
+						lengths[i++] = colGroup.getNumValues();
+
 					LOG.debug("--compressed colGroup dictionary sizes: " + Arrays.toString(lengths));
 					if(LOG.isTraceEnabled()) {
 						for(AColGroup colGroup : res.getColGroups()) {

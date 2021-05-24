@@ -30,8 +30,6 @@ import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
 import org.apache.sysds.runtime.compress.colgroup.offset.AIterator;
 import org.apache.sysds.runtime.compress.colgroup.offset.AOffset;
 import org.apache.sysds.runtime.compress.colgroup.offset.OffsetFactory;
-import org.apache.sysds.runtime.compress.colgroup.pre.IPreAggregate;
-import org.apache.sysds.runtime.compress.colgroup.pre.PreAggregateFactory;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
@@ -88,21 +86,14 @@ public class ColGroupSDCSingleZeros extends ColGroupValue {
 	}
 
 	@Override
-	public void decompressToBlockSafe(MatrixBlock target, int rl, int ru, int offT) {
-		decompressToBlockUnSafe(target, rl, ru, offT);
-		target.setNonZeros(_indexes.getSize() * _colIndexes.length + target.getNonZeros());
-	}
-
-	@Override
-	public void decompressToBlockUnSafe(MatrixBlock target, int rl, int ru, int offT) {
+	protected void decompressToBlockUnSafeDenseDictionary(MatrixBlock target, int rl, int ru, int offT,
+		double[] values) {
 		final int nCol = _colIndexes.length;
 		final int tCol = target.getNumColumns();
-		final double[] values = getValues();
 		final int offTCorrected = offT - rl;
 		final double[] c = target.getDenseBlockValues();
 
-		AIterator it = _indexes.getIterator();
-		it.skipTo(rl);
+		AIterator it = _indexes.getIterator(rl);
 
 		while(it.hasNext() && it.value() < ru) {
 			int rc = (offTCorrected + it.value()) * tCol;
@@ -114,37 +105,42 @@ public class ColGroupSDCSingleZeros extends ColGroupValue {
 	}
 
 	@Override
-	public void decompressToBlock(MatrixBlock target, int[] colIndexTargets) {
-		throw new NotImplementedException("Not Implemented");
+	protected void decompressToBlockUnSafeSparseDictionary(MatrixBlock target, int rl, int ru, int offT,
+		SparseBlock values) {
+		throw new NotImplementedException();
 	}
 
-	@Override
-	public void decompressColumnToBlock(MatrixBlock target, int colpos) {
-		final double[] c = target.getDenseBlockValues();
-		final double[] values = getValues();
-		final AIterator it = _indexes.getIterator();
-		while(it.hasNext()) {
-			c[it.value()] += values[_colIndexes.length + colpos];
-			it.next();
-		}
-		target.setNonZeros(getNumberNonZeros() / _colIndexes.length);
-	}
+	// @Override
+	// public void decompressToBlock(MatrixBlock target, int[] colIndexTargets) {
+	// 	throw new NotImplementedException("Not Implemented");
+	// }
 
-	@Override
-	public void decompressColumnToBlock(MatrixBlock target, int colpos, int rl, int ru) {
-		throw new NotImplementedException("Not Implemented");
-	}
+	// @Override
+	// public void decompressColumnToBlock(MatrixBlock target, int colpos) {
+	// 	final double[] c = target.getDenseBlockValues();
+	// 	final double[] values = getValues();
+	// 	final AIterator it = _indexes.getIterator();
+	// 	while(it.hasNext()) {
+	// 		c[it.value()] += values[_colIndexes.length + colpos];
+	// 		it.next();
+	// 	}
+	// 	target.setNonZeros(getNumberNonZeros() / _colIndexes.length);
+	// }
 
-	@Override
-	public void decompressColumnToBlock(double[] c, int colpos, int rl, int ru) {
-		final double[] values = getValues();
-		final AIterator it = _indexes.getIterator();
-		it.skipTo(rl);
-		while(it.hasNext() && it.value() < ru) {
-			c[it.value() - rl] += values[colpos];
-			it.next();
-		}
-	}
+	// @Override
+	// public void decompressColumnToBlock(MatrixBlock target, int colpos, int rl, int ru) {
+	// 	throw new NotImplementedException("Not Implemented");
+	// }
+
+	// @Override
+	// public void decompressColumnToBlock(double[] c, int colpos, int rl, int ru) {
+	// 	final double[] values = getValues();
+	// 	final AIterator it = _indexes.getIterator(rl);
+	// 	while(it.hasNext() && it.value() < ru) {
+	// 		c[it.value() - rl] += values[colpos];
+	// 		it.next();
+	// 	}
+	// }
 
 	@Override
 	public double get(int r, int c) {
@@ -152,8 +148,7 @@ public class ColGroupSDCSingleZeros extends ColGroupValue {
 		if(ix < 0)
 			throw new RuntimeException("Column index " + c + " not in group.");
 
-		final AIterator it = _indexes.getIterator();
-		it.skipTo(r);
+		final AIterator it = _indexes.getIterator(r);
 		if(it.value() == r)
 			return _dict.getValue(ix);
 		else
@@ -164,8 +159,7 @@ public class ColGroupSDCSingleZeros extends ColGroupValue {
 	@Override
 	public void countNonZerosPerRow(int[] rnnz, int rl, int ru) {
 		final int nCol = _colIndexes.length;
-		final AIterator it = _indexes.getIterator();
-		it.skipTo(rl);
+		final AIterator it = _indexes.getIterator(rl);
 		while(it.hasNext() && it.value() < ru) {
 			rnnz[it.value() - rl] += nCol;
 			it.next();
@@ -173,10 +167,9 @@ public class ColGroupSDCSingleZeros extends ColGroupValue {
 	}
 
 	@Override
-	protected void computeRowSums(double[] c, boolean square, int rl, int ru, boolean mean) {
+	protected void computeRowSums(double[] c, boolean square, int rl, int ru) {
 		final double vals = _dict.sumAllRowsToDouble(square, _colIndexes.length)[0];
-		final AIterator it = _indexes.getIterator();
-		it.skipTo(rl);
+		final AIterator it = _indexes.getIterator(rl);
 		while(it.hasNext() && it.value() < ru) {
 			c[it.value()] += vals;
 			it.next();
@@ -187,8 +180,7 @@ public class ColGroupSDCSingleZeros extends ColGroupValue {
 	@Override
 	protected void computeRowMxx(double[] c, Builtin builtin, int rl, int ru) {
 		final double vals = _dict.aggregateTuples(builtin, _colIndexes.length)[0];
-		final AIterator it = _indexes.getIterator();
-		it.skipTo(rl);
+		final AIterator it = _indexes.getIterator(rl);
 		int rix = rl;
 		for(; rix < ru && it.hasNext(); rix++) {
 			if(it.value() != rix)
@@ -213,8 +205,7 @@ public class ColGroupSDCSingleZeros extends ColGroupValue {
 
 	@Override
 	public int[] getCounts(int rl, int ru, int[] counts) {
-		final AIterator it = _indexes.getIterator();
-		it.skipTo(rl);
+		final AIterator it = _indexes.getIterator(rl);
 
 		while(it.hasNext() && it.value() < ru) {
 			it.next();
@@ -226,46 +217,90 @@ public class ColGroupSDCSingleZeros extends ColGroupValue {
 		return counts;
 	}
 
-	public double[] preAggregate(double[] a, int aRows) {
-		final double[] vals = allocDVector(getNumValues(), true);
-		final AIterator it = _indexes.getIterator();
-		if(aRows > 0) {
-			final int offT = _numRows * aRows;
-			while(it.hasNext()) {
-				final int i = it.value();
-				vals[0] += a[i + offT];
-				it.next();
-			}
-		}
-		else
-			while(it.hasNext()) {
-				final int i = it.value();
-				vals[0] += a[i];
-				it.next();
-			}
+	// @Override
+	// public double[] preAggregate(double[] a, int row) {
+	// 	final double[] vals = allocDVector(getNumValues(), true);
+	// 	final AIterator it = _indexes.getIterator();
+	// 	if(row > 0) {
+	// 		final int offT = _numRows * row;
+	// 		while(it.hasNext()) {
+	// 			final int i = it.value();
+	// 			vals[0] += a[i + offT];
+	// 			it.next();
+	// 		}
+	// 	}
+	// 	else
+	// 		while(it.hasNext()) {
+	// 			final int i = it.value();
+	// 			vals[0] += a[i];
+	// 			it.next();
+	// 		}
 
-		return vals;
+	// 	return vals;
+	// }
+
+	// @Override
+	// public double[] preAggregateSparse(SparseBlock sb, int row) {
+	// 	final double[] vals = allocDVector(getNumValues(), true);
+	// 	final int[] sbIndexes = sb.indexes(row);
+	// 	final double[] sparseV = sb.values(row);
+	// 	final AIterator it = _indexes.getIterator();
+	// 	final int sbEnd = sb.size(row) + sb.pos(row);
+
+	// 	int sbP = sb.pos(row);
+
+	// 	while(it.hasNext() && sbP < sbEnd) {
+	// 		if(it.value() == sbIndexes[sbP])
+	// 			vals[0] += sparseV[sbP++];
+	// 		if(sbP < sbEnd)
+	// 			it.skipTo(sbIndexes[sbP]);
+	// 		while(sbP < sbEnd && sbIndexes[sbP] < it.value())
+	// 			sbP++;
+	// 	}
+
+	// 	return vals;
+	// }
+
+	@Override
+	protected void preAggregate(MatrixBlock m, MatrixBlock preAgg, int rl, int ru){
+		if(m.isInSparseFormat())
+			preAggregateSparse(m.getSparseBlock(), preAgg, rl, ru);
+		else
+			preAggregateDense(m, preAgg, rl, ru);
 	}
 
-	public double[] preAggregateSparse(SparseBlock sb, int row) {
-		final double[] vals = allocDVector(getNumValues(), true);
-		final int[] sbIndexes = sb.indexes(row);
-		final double[] sparseV = sb.values(row);
-		final AIterator it = _indexes.getIterator();
-		final int sbEnd = sb.size(row) + sb.pos(row);
-
-		int sbP = sb.pos(row);
-
-		while(it.hasNext() && sbP < sbEnd) {
-			if(it.value() == sbIndexes[sbP])
-				vals[0] += sparseV[sbP++];
-			if(sbP < sbEnd)
-				it.skipTo(sbIndexes[sbP]);
-			while(sbP < sbEnd && sbIndexes[sbP] < it.value())
-				sbP++;
+	private void preAggregateDense(MatrixBlock m, MatrixBlock preAgg, int rl, int ru) {
+		final double[] preAV = preAgg.getDenseBlockValues();
+		final double[] mV = m.getDenseBlockValues();
+		final int numVals = getNumValues();
+		for(int rowLeft = rl, offOut = 0; rowLeft < ru; rowLeft++, offOut += numVals) {
+			final AIterator it = _indexes.getIterator();
+			final int offLeft = rowLeft * _numRows;
+			while(it.hasNext()) {
+				final int i = it.value();
+				preAV[offOut] += mV[offLeft + i];
+				it.next();
+			}
 		}
+	}
 
-		return vals;
+	private void preAggregateSparse(SparseBlock sb, MatrixBlock preAgg, int rl, int ru) {
+		final double[] preAV = preAgg.getDenseBlockValues();
+		final int numVals = getNumValues();
+		for(int rowLeft = rl, offOut = 0; rowLeft < ru; rowLeft++, offOut += numVals) {
+			if(sb.isEmpty(rowLeft))
+				continue;
+			final AIterator it = _indexes.getIterator();
+			final int apos = sb.pos(rowLeft);
+			final int alen = sb.size(rowLeft) + apos;
+			final int[] aix = sb.indexes(rowLeft);
+			final double[] avals = sb.values(rowLeft);
+			for(int j = apos; j < alen; j++) {
+				it.skipTo(aix[j]);
+				if(it.value() == aix[j])
+					preAV[offOut] += avals[j];
+			}
+		}
 	}
 
 	@Override
@@ -300,12 +335,12 @@ public class ColGroupSDCSingleZeros extends ColGroupValue {
 	}
 
 	// private ADictionary swapEntries(ADictionary aDictionary) {
-	// 	double[] values = aDictionary.getValues().clone();
-	// 	double[] swap = new double[_colIndexes.length];
-	// 	System.arraycopy(values, 0, swap, 0, _colIndexes.length);
-	// 	System.arraycopy(values, _colIndexes.length, values, 0, _colIndexes.length);
-	// 	System.arraycopy(swap, 0, values, _colIndexes.length, _colIndexes.length);
-	// 	return new Dictionary(values);
+	// double[] values = aDictionary.getValues().clone();
+	// double[] swap = new double[_colIndexes.length];
+	// System.arraycopy(values, 0, swap, 0, _colIndexes.length);
+	// System.arraycopy(values, _colIndexes.length, values, 0, _colIndexes.length);
+	// System.arraycopy(swap, 0, values, _colIndexes.length, _colIndexes.length);
+	// return new Dictionary(values);
 	// }
 
 	@Override
@@ -346,87 +381,87 @@ public class ColGroupSDCSingleZeros extends ColGroupValue {
 		return sb.toString();
 	}
 
-	@Override
-	public IPreAggregate preAggregateDDC(ColGroupDDC lhs) {
-		final int rhsNV = this.getNumValues();
-		final int nCol = lhs.getNumValues();
-		final int retSize = nCol * rhsNV;
-		final IPreAggregate ag = PreAggregateFactory.ag(retSize);
-		final AIterator it = _indexes.getIterator();
+	// @Override
+	// public IPreAggregate preAggregateDDC(ColGroupDDC lhs) {
+	// 	final int rhsNV = this.getNumValues();
+	// 	final int nCol = lhs.getNumValues();
+	// 	final int retSize = nCol * rhsNV;
+	// 	final IPreAggregate ag = PreAggregateFactory.ag(retSize);
+	// 	final AIterator it = _indexes.getIterator();
 
-		while(it.hasNext()) {
-			final int col = lhs._data.getIndex(it.value());
-			ag.increment(col);
-		}
-		return ag;
-	}
+	// 	while(it.hasNext()) {
+	// 		final int col = lhs._data.getIndex(it.value());
+	// 		ag.increment(col);
+	// 	}
+	// 	return ag;
+	// }
 
-	@Override
-	public IPreAggregate preAggregateSDC(ColGroupSDC lhs) {
-		throw new NotImplementedException("Not supported pre aggregate of :" + lhs.getClass().getSimpleName() + " in "
-			+ this.getClass().getSimpleName());
-	}
+	// @Override
+	// public IPreAggregate preAggregateSDC(ColGroupSDC lhs) {
+	// 	throw new NotImplementedException("Not supported pre aggregate of :" + lhs.getClass().getSimpleName() + " in "
+	// 		+ this.getClass().getSimpleName());
+	// }
 
-	@Override
-	public IPreAggregate preAggregateSDCSingle(ColGroupSDCSingle lhs) {
-		throw new NotImplementedException("Not supported pre aggregate of :" + lhs.getClass().getSimpleName() + " in "
-			+ this.getClass().getSimpleName());
-	}
+	// @Override
+	// public IPreAggregate preAggregateSDCSingle(ColGroupSDCSingle lhs) {
+	// 	throw new NotImplementedException("Not supported pre aggregate of :" + lhs.getClass().getSimpleName() + " in "
+	// 		+ this.getClass().getSimpleName());
+	// }
 
-	@Override
-	public IPreAggregate preAggregateSDCZeros(ColGroupSDCZeros lhs) {
-		final int rhsNV = this.getNumValues();
-		final int nCol = lhs.getNumValues();
-		final int retSize = nCol * rhsNV;
+	// @Override
+	// public IPreAggregate preAggregateSDCZeros(ColGroupSDCZeros lhs) {
+	// 	final int rhsNV = this.getNumValues();
+	// 	final int nCol = lhs.getNumValues();
+	// 	final int retSize = nCol * rhsNV;
 
-		final IPreAggregate ag = PreAggregateFactory.ag(retSize);
-		final AIterator lIt = lhs._indexes.getIterator();
-		final AIterator rIt = this._indexes.getIterator();
+	// 	final IPreAggregate ag = PreAggregateFactory.ag(retSize);
+	// 	final AIterator lIt = lhs._indexes.getIterator();
+	// 	final AIterator rIt = this._indexes.getIterator();
 
-		while(lIt.hasNext() && rIt.hasNext())
-			if(lIt.value() == rIt.value()) {
-				ag.increment(lhs.getIndex(lIt.getDataIndexAndIncrement()));
-				rIt.next();
-			}
-			else if(lIt.value() < rIt.value())
-				lIt.next();
-			else
-				rIt.next();
+	// 	while(lIt.hasNext() && rIt.hasNext())
+	// 		if(lIt.value() == rIt.value()) {
+	// 			ag.increment(lhs.getIndex(lIt.getDataIndexAndIncrement()));
+	// 			rIt.next();
+	// 		}
+	// 		else if(lIt.value() < rIt.value())
+	// 			lIt.next();
+	// 		else
+	// 			rIt.next();
 
-		return ag;
-	}
+	// 	return ag;
+	// }
 
-	@Override
-	public IPreAggregate preAggregateSDCSingleZeros(ColGroupSDCSingleZeros lhs) {
-		// we always know that there is only one value in each column group.
-		int[] ret = new int[1];
-		final AIterator lIt = lhs._indexes.getIterator();
-		final AIterator rIt = this._indexes.getIterator();
-		while(lIt.hasNext() && rIt.hasNext())
-			if(lIt.value() == rIt.value()) {
-				ret[0]++;
-				lIt.next();
-				rIt.next();
-			}
-			else if(lIt.value() < rIt.value())
-				lIt.next();
-			else
-				rIt.next();
+	// @Override
+	// public IPreAggregate preAggregateSDCSingleZeros(ColGroupSDCSingleZeros lhs) {
+	// 	// we always know that there is only one value in each column group.
+	// 	int[] ret = new int[1];
+	// 	final AIterator lIt = lhs._indexes.getIterator();
+	// 	final AIterator rIt = this._indexes.getIterator();
+	// 	while(lIt.hasNext() && rIt.hasNext())
+	// 		if(lIt.value() == rIt.value()) {
+	// 			ret[0]++;
+	// 			lIt.next();
+	// 			rIt.next();
+	// 		}
+	// 		else if(lIt.value() < rIt.value())
+	// 			lIt.next();
+	// 		else
+	// 			rIt.next();
 
-		return PreAggregateFactory.ag(ret);
-	}
+	// 	return PreAggregateFactory.ag(ret);
+	// }
 
-	@Override
-	public IPreAggregate preAggregateOLE(ColGroupOLE lhs) {
-		throw new NotImplementedException("Not supported pre aggregate of :" + lhs.getClass().getSimpleName() + " in "
-			+ this.getClass().getSimpleName());
-	}
+	// @Override
+	// public IPreAggregate preAggregateOLE(ColGroupOLE lhs) {
+	// 	throw new NotImplementedException("Not supported pre aggregate of :" + lhs.getClass().getSimpleName() + " in "
+	// 		+ this.getClass().getSimpleName());
+	// }
 
-	@Override
-	public IPreAggregate preAggregateRLE(ColGroupRLE lhs) {
-		throw new NotImplementedException("Not supported pre aggregate of :" + lhs.getClass().getSimpleName() + " in "
-			+ this.getClass().getSimpleName());
-	}
+	// @Override
+	// public IPreAggregate preAggregateRLE(ColGroupRLE lhs) {
+	// 	throw new NotImplementedException("Not supported pre aggregate of :" + lhs.getClass().getSimpleName() + " in "
+	// 		+ this.getClass().getSimpleName());
+	// }
 
 	@Override
 	public Dictionary preAggregateThatDDCStructure(ColGroupDDC that, Dictionary ret) {
@@ -440,7 +475,19 @@ public class ColGroupSDCSingleZeros extends ColGroupValue {
 
 	@Override
 	public Dictionary preAggregateThatSDCZerosStructure(ColGroupSDCZeros that, Dictionary ret) {
-		throw new NotImplementedException();
+		final AIterator itThat = that._indexes.getIterator();
+		final AIterator itThis = that._indexes.getIterator();
+		final int nCol = that._colIndexes.length;
+
+		while(itThat.hasNext() && itThis.hasNext()) {
+			final int v = itThat.value();
+			if(v == itThis.skipTo(v))
+				that._dict.addToEntry(ret, that.getIndex(itThat.getDataIndex()), 0, nCol);
+
+			itThat.next();
+		}
+
+		return ret;
 	}
 
 	@Override
@@ -464,8 +511,4 @@ public class ColGroupSDCSingleZeros extends ColGroupValue {
 		throw new NotImplementedException();
 	}
 
-	@Override
-	public MatrixBlock preAggregate(MatrixBlock m, int rl, int ru) {
-		throw new NotImplementedException();
-	}
 }

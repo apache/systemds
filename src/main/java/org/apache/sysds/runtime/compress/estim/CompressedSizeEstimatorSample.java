@@ -133,7 +133,8 @@ public class CompressedSizeEstimatorSample extends CompressedSizeEstimator {
 		final boolean zeroIsMostFrequent = largestInstanceCount == numZerosInSample;
 
 		// Scale largest Instance count to correctly reflect the number of instances.
-		largestInstanceCount = (int) (scalingFactor * largestInstanceCount);
+		largestInstanceCount = Math.min((int) (scalingFactor * largestInstanceCount), _numRows);
+		
 		EstimationFactors totalFacts = new EstimationFactors(colIndexes, totalCardinality, numNonZeros,
 			largestInstanceCount, totalNumRuns, fact.numSingle, _numRows, lossy, zeroIsMostFrequent,
 			fact.overAllSparsity, fact.tupleSparsity);

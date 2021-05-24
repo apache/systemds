@@ -35,9 +35,13 @@ public class ReaderColumnSelectionDenseMultiBlock extends ReaderColumnSelection 
 		if(_lastRow == _numRows - 1)
 			return null;
 		_lastRow++;
+		boolean empty = true;
 		for(int i = 0; i < _colIndexes.length; i++) {
-			reusableArr[i] = _data.get(_lastRow, _colIndexes[i]);
+			double v = _data.get(_lastRow, _colIndexes[i]);
+			if(v != 0)
+				empty = false;
+			reusableArr[i] = v;
 		}
-		return reusableReturn;
+		return empty ? emptyReturn : reusableReturn;
 	}
 }

@@ -187,8 +187,12 @@ public abstract class CompressedSizeEstimator {
 	 * @return The size factors estimated from the Bit Map.
 	 */
 	public EstimationFactors estimateCompressedColGroupSize(ABitmap ubm, int[] colIndexes) {
-		return EstimationFactors.computeSizeEstimationFactors(ubm, _cs.validCompressions.contains(CompressionType.RLE),
-			_numRows, colIndexes);
+		return estimateCompressedColGroupSize(ubm, colIndexes, _numRows, _cs);
+	}
+
+	public static EstimationFactors estimateCompressedColGroupSize(ABitmap ubm, int[] colIndexes, int nrRows,  CompressionSettings cs) {
+		return EstimationFactors.computeSizeEstimationFactors(ubm, cs.validCompressions.contains(CompressionType.RLE),
+		nrRows, colIndexes);
 	}
 
 	private CompressedSizeInfoColGroup[] CompressedSizeInfoColGroup(int clen) {

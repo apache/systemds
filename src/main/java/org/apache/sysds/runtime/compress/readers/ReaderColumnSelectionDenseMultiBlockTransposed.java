@@ -26,9 +26,8 @@ import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 public class ReaderColumnSelectionDenseMultiBlockTransposed extends ReaderColumnSelection {
 	private DenseBlock _data;
 
-
 	public ReaderColumnSelectionDenseMultiBlockTransposed(MatrixBlock data, int[] colIndices) {
-		super(colIndices.clone(), data.getNumColumns() );
+		super(colIndices.clone(), data.getNumColumns());
 		_data = data.getDenseBlock();
 	}
 
@@ -36,9 +35,14 @@ public class ReaderColumnSelectionDenseMultiBlockTransposed extends ReaderColumn
 		if(_lastRow == _numRows - 1)
 			return null;
 		_lastRow++;
+
+		boolean empty = true;
 		for(int i = 0; i < _colIndexes.length; i++) {
-			reusableArr[i] = _data.get(_colIndexes[i],_lastRow);
+			double v = _data.get(_colIndexes[i], _lastRow);
+			if(v != 0)
+				empty = false;
+			reusableArr[i] = v;
 		}
-		return reusableReturn;
+		return empty ? emptyReturn : reusableReturn;
 	}
 }

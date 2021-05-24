@@ -24,7 +24,6 @@ import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.functionobjects.Builtin.BuiltinCode;
 import org.apache.sysds.runtime.functionobjects.KahanPlus;
 import org.apache.sysds.runtime.functionobjects.KahanPlusSq;
-import org.apache.sysds.runtime.functionobjects.Mean;
 import org.apache.sysds.runtime.functionobjects.Plus;
 import org.apache.sysds.runtime.functionobjects.ReduceAll;
 import org.apache.sysds.runtime.functionobjects.ReduceCol;
@@ -64,20 +63,13 @@ public abstract class ColGroupCompressed extends AColGroup {
 
 	public abstract boolean isLossy();
 
-	/**
-	 * if -1 is returned it means false, otherwise it returns an index where the zero tuple can be found.
-	 * 
-	 * @return A Index where the zero tuple can be found.
-	 */
-	protected abstract int containsAllZeroTuple();
-
 	protected abstract double computeMxx(double c, Builtin builtin);
 
 	protected abstract void computeColMxx(double[] c, Builtin builtin);
 
 	protected abstract void computeSum(double[] c, boolean square);
 
-	protected abstract void computeRowSums(double[] c, boolean square, int rl, int ru, boolean mean);
+	protected abstract void computeRowSums(double[] c, boolean square, int rl, int ru);
 
 	protected abstract void computeColSums(double[] c, boolean square);
 
@@ -102,30 +94,31 @@ public abstract class ColGroupCompressed extends AColGroup {
 
 	@Override
 	public final void unaryAggregateOperations(AggregateUnaryOperator op, double[] c, int rl, int ru) {
-		// sum and sumsq (reduceall/reducerow over tuples and counts)
 		if(op.aggOp.increOp.fn instanceof Plus || op.aggOp.increOp.fn instanceof KahanPlus ||
 			op.aggOp.increOp.fn instanceof KahanPlusSq) {
 			boolean square = op.aggOp.increOp.fn instanceof KahanPlusSq;
-			boolean mean = op.aggOp.increOp.fn instanceof Mean;
 			if(op.indexFn instanceof ReduceAll)
 				computeSum(c, square);
 			else if(op.indexFn instanceof ReduceCol)
-				computeRowSums(c, square, rl, ru, mean);
+				computeRowSums(c, square, rl, ru);
 			else if(op.indexFn instanceof ReduceRow)
 				computeColSums(c, square);
 		}
-		// min and max (reduceall/reducerow over tuples only)
-		else if(op.aggOp.increOp.fn instanceof Builtin &&
-			(((Builtin) op.aggOp.increOp.fn).getBuiltinCode() == BuiltinCode.MAX ||
-				((Builtin) op.aggOp.increOp.fn).getBuiltinCode() == BuiltinCode.MIN)) {
-			Builtin builtin = (Builtin) op.aggOp.increOp.fn;
+		else if(op.aggOp.increOp.fn instanceof Builtin) {
+			Builtin bop = (Builtin) op.aggOp.increOp.fn;
+			BuiltinCode bopC = bop.getBuiltinCode();
+			if(bopC == BuiltinCode.MAX || bopC == BuiltinCode.MIN) {
+				if(op.indexFn instanceof ReduceAll)
+					c[0] = computeMxx(c[0], bop);
+				else if(op.indexFn instanceof ReduceCol)
+					computeRowMxx(c, bop, rl, ru);
+				else if(op.indexFn instanceof ReduceRow)
+					computeColMxx(c, bop);
+			}
+			else {
+				throw new DMLScriptException("unsupported builtin type: " + bop);
+			}
 
-			if(op.indexFn instanceof ReduceAll)
-				c[0] = computeMxx(c[0], builtin);
-			else if(op.indexFn instanceof ReduceCol)
-				computeRowMxx(c, builtin, rl, ru);
-			else if(op.indexFn instanceof ReduceRow)
-				computeColMxx(c, builtin);
 		}
 		else {
 			throw new DMLScriptException("Unknown UnaryAggregate operator on CompressedMatrixBlock");

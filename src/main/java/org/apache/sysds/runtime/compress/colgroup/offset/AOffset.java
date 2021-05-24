@@ -45,6 +45,18 @@ public abstract class AOffset {
 	public abstract AIterator getIterator();
 
 	/**
+	 * Get an iterator that is pointing at a specific offset.
+	 * 
+	 * @param row The row requested.
+	 * @return AIterator that iterate through index and dictionary offset values.
+	 */
+	public AIterator getIterator(int row) {
+		AIterator it = getIterator();
+		it.skipTo(row);
+		return it;
+	}
+
+	/**
 	 * Write the offsets to disk.
 	 * 
 	 * If you implement another remember to write the ordinal of the new type to disk as well and add it to the
@@ -82,8 +94,7 @@ public abstract class AOffset {
 		AIterator i = getIterator();
 		sb.append(this.getClass().getSimpleName());
 		sb.append(" [");
-		if(i.hasNext())
-			sb.append(i.valueAndIncrement());
+		sb.append(i.valueAndIncrement());
 
 		while(i.hasNext())
 			sb.append(", " + i.valueAndIncrement());

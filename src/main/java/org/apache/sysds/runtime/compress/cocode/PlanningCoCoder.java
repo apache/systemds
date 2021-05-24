@@ -41,7 +41,17 @@ public class PlanningCoCoder {
 	 * The Valid coCoding techniques
 	 */
 	public enum PartitionerType {
-		BIN_PACKING, STATIC, COST, COST_MATRIX_MULT;
+		BIN_PACKING, STATIC, COST, COST_MATRIX_MULT, COST_TSMM;
+
+		public static boolean isCostBased( PartitionerType pt) {
+			switch(pt) {
+				case COST_MATRIX_MULT:
+				case COST_TSMM:
+					return true;
+				default:
+					return false;
+			}
+		}
 	}
 
 	/**
@@ -100,6 +110,8 @@ public class PlanningCoCoder {
 				return new CoCodeCost(est, cs);
 			case COST_MATRIX_MULT:
 				return new CoCodeCostMatrixMult(est, cs);
+			case COST_TSMM:
+				return new CoCodeCostTSMM(est, cs);
 			default:
 				throw new RuntimeException("Unsupported column group partitioner: " + type.toString());
 		}

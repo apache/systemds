@@ -25,8 +25,6 @@ import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.runtime.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
-import org.apache.sysds.runtime.compress.colgroup.pre.ArrPreAggregate;
-import org.apache.sysds.runtime.compress.colgroup.pre.IPreAggregate;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
@@ -44,20 +42,6 @@ public class ColGroupConst extends ColGroupValue {
 	 */
 	protected ColGroupConst(int numRows) {
 		super(numRows);
-	}
-
-	public static ColGroupConst genColGroupConst(int numRows, int numCols, double value) {
-
-		int[] colIndices = new int[numCols];
-		for(int i = 0; i < numCols; i++)
-			colIndices[i] = i;
-
-		double[] values = new double[numCols];
-		for(int i = 0; i < numCols; i++)
-			values[i] = value;
-
-		ADictionary dict = new Dictionary(values);
-		return new ColGroupConst(colIndices, numRows, dict);
 	}
 
 	/**
@@ -84,15 +68,10 @@ public class ColGroupConst extends ColGroupValue {
 	}
 
 	@Override
-	protected void computeRowSums(double[] c, boolean square, int rl, int ru, boolean mean) {
+	protected void computeRowSums(double[] c, boolean square, int rl, int ru) {
 		double vals = _dict.sumAllRowsToDouble(square, _colIndexes.length)[0];
 		for(int rix = rl; rix < ru; rix++)
 			c[rix] += vals;
-	}
-
-	@Override
-	protected void computeColSums(double[] c, boolean square) {
-		_dict.colSum(c, getCounts(), _colIndexes, square);
 	}
 
 	@Override
@@ -113,15 +92,9 @@ public class ColGroupConst extends ColGroupValue {
 	}
 
 	@Override
-	public void decompressToBlockSafe(MatrixBlock target, int rl, int ru, int offT) {
-		decompressToBlockUnSafe(target, rl, ru, offT);
-		target.setNonZeros(_colIndexes.length * target.getNumRows() + target.getNonZeros());
-	}
-
-	@Override
-	public void decompressToBlockUnSafe(MatrixBlock target, int rl, int ru, int offT) {
+	protected void decompressToBlockUnSafeDenseDictionary(MatrixBlock target, int rl, int ru, int offT,
+		double[] values) {
 		double[] c = target.getDenseBlockValues();
-		double[] values = getValues();
 		offT = offT * target.getNumColumns();
 		for(int i = rl; i < ru; i++, offT += target.getNumColumns())
 			for(int j = 0; j < _colIndexes.length; j++)
@@ -129,112 +102,155 @@ public class ColGroupConst extends ColGroupValue {
 	}
 
 	@Override
-	public void decompressToBlock(MatrixBlock target, int[] colIndexTargets) {
-		int ncol = getNumCols();
-		double[] values = getValues();
-		for(int i = 0; i < _numRows; i++)
-			for(int colIx = 0; colIx < ncol; colIx++) {
-				int origMatrixColIx = getColIndex(colIx);
-				int col = colIndexTargets[origMatrixColIx];
-				double cellVal = values[colIx];
-				target.quickSetValue(i, col, target.quickGetValue(i, col) + cellVal);
-			}
-
+	protected void decompressToBlockUnSafeSparseDictionary(MatrixBlock target, int rl, int ru, int offT,
+		SparseBlock values) {
+		throw new NotImplementedException();
 	}
 
-	@Override
-	public void decompressColumnToBlock(MatrixBlock target, int colPos) {
-		double[] c = target.getDenseBlockValues();
-		double v = _dict.getValue(colPos);
-		if(v != 0)
-			for(int i = 0; i < c.length; i++)
-				c[i] += v;
+	// @Override
+	// public void decompressToBlock(MatrixBlock target, int[] colIndexTargets) {
+	// 	int ncol = getNumCols();
+	// 	double[] values = getValues();
+	// 	for(int i = 0; i < _numRows; i++)
+	// 		for(int colIx = 0; colIx < ncol; colIx++) {
+	// 			int origMatrixColIx = _colIndexes[colIx];
+	// 			int col = colIndexTargets[origMatrixColIx];
+	// 			double cellVal = values[colIx];
+	// 			target.quickSetValue(i, col, target.quickGetValue(i, col) + cellVal);
+	// 		}
 
-		target.setNonZeros(_numRows);
+	// }
 
-	}
+	// @Override
+	// public void decompressColumnToBlock(MatrixBlock target, int colPos) {
+	// 	double[] c = target.getDenseBlockValues();
+	// 	double v = _dict.getValue(colPos);
+	// 	if(v != 0)
+	// 		for(int i = 0; i < c.length; i++)
+	// 			c[i] += v;
 
-	@Override
-	public void decompressColumnToBlock(MatrixBlock target, int colPos, int rl, int ru) {
-		double[] c = target.getDenseBlockValues();
-		double v = _dict.getValue(colPos);
-		final int length = ru - rl;
-		if(v != 0)
-			for(int i = 0; i < length; i++)
-				c[i] += v;
+	// 	target.setNonZeros(_numRows);
 
-		target.setNonZeros(_numRows);
-	}
+	// }
 
-	@Override
-	public void decompressColumnToBlock(double[] c, int colPos, int rl, int ru) {
-		double v = _dict.getValue(colPos);
-		final int length = ru - rl;
-		if(v != 0)
-			for(int i = 0; i < length; i++)
-				c[i] += v;
+	// @Override
+	// public void decompressColumnToBlock(MatrixBlock target, int colPos, int rl, int ru) {
+	// 	double[] c = target.getDenseBlockValues();
+	// 	double v = _dict.getValue(colPos);
+	// 	final int length = ru - rl;
+	// 	if(v != 0)
+	// 		for(int i = 0; i < length; i++)
+	// 			c[i] += v;
 
-	}
+	// 	target.setNonZeros(_numRows);
+	// }
+
+	// @Override
+	// public void decompressColumnToBlock(double[] c, int colPos, int rl, int ru) {
+	// 	double v = _dict.getValue(colPos);
+	// 	final int length = ru - rl;
+	// 	if(v != 0)
+	// 		for(int i = 0; i < length; i++)
+	// 			c[i] += v;
+
+	// }
 
 	@Override
 	public double get(int r, int c) {
 		return _dict.getValue(Arrays.binarySearch(_colIndexes, c));
 	}
 
-	public double[] preAggregate(double[] a, int row) {
-		return new double[] {preAggregateSingle(a, row)};
-	}
+	// @Override
+	// public double[] preAggregate(double[] a, int row) {
+	// return new double[] {preAggregateSingle(a, row)};
+	// }
 
-	public double[] preAggregateSparse(SparseBlock sb, int row) {
-		return new double[] {preAggregateSparseSingle(sb, row)};
-	}
-
-	public double preAggregateSparseSingle(SparseBlock sb, int row) {
-		double v = 0;
-		double[] sparseV = sb.values(row);
-		for(int i = sb.pos(row); i < sb.pos(row) + sb.size(row); i++) {
-			v += sparseV[i];
-		}
-		return v;
-	}
-
-	private double preAggregateSingle(double[] a, int row) {
-		double vals = 0;
-		for(int off = _numRows * row; off < _numRows * row + _numRows; off++)
-			vals += a[off];
-		return vals;
-	}
+	// @Override
+	// public double[] preAggregateSparse(SparseBlock sb, int row) {
+	// return new double[] {preAggregateSparseSingle(sb, row)};
+	// }
 
 	@Override
-	public void leftMultByMatrix(MatrixBlock a, MatrixBlock c, int rl, int ru) {
-		final double[] cV = c.getDenseBlockValues();
-		final double[] values = getValues();
-		if(values == null  || a.isEmpty())
-			return;
-		else if(a.isInSparseFormat()) {
-			SparseBlock sb = a.getSparseBlock();
-			for(int i = rl; i < ru; i++) {
+	protected void preAggregate(MatrixBlock m, MatrixBlock preAgg, int rl, int ru) {
+		if(m.isInSparseFormat())
+			preAggregateSparse(m.getSparseBlock(), preAgg, rl, ru);
+		else
+			preAggregateDense(m, preAgg, rl, ru);
+	}
 
-				if(!sb.isEmpty(i)) {
-					double v = preAggregateSparseSingle(sb, i);
-					int offC = i * c.getNumColumns();
-					for(int j = 0; j < _colIndexes.length; j++)
-						cV[offC + _colIndexes[j]] += v * values[j];
-
-				}
-			}
-		}
-		else {
-			double[] aV = a.getDenseBlockValues();
-			for(int i = rl; i < ru; i++) {
-				double preAggVals = preAggregateSingle(aV, i);
-				int offC = i * c.getNumColumns();
-				for(int j = 0; j < _colIndexes.length; j++)
-					cV[offC + _colIndexes[j]] += preAggVals * values[j];
-
+	private void preAggregateDense(MatrixBlock m, MatrixBlock preAgg, int rl, int ru) {
+		final double[] preAV = preAgg.getDenseBlockValues();
+		final double[] mV = m.getDenseBlockValues();
+		final int numVals = getNumValues();
+		for(int rowLeft = rl, offOut = 0; rowLeft < ru; rowLeft++, offOut += numVals) {
+			for(int rc = 0, offLeft = rowLeft * _numRows; rc < _numRows; rc++, offLeft++) {
+				preAV[offOut] += mV[offLeft];
 			}
 		}
 	}
+
+	private void preAggregateSparse(SparseBlock sb, MatrixBlock preAgg, int rl, int ru) {
+		final double[] preAV = preAgg.getDenseBlockValues();
+		final int numVals = getNumValues();
+		for(int rowLeft = rl, offOut = 0; rowLeft < ru; rowLeft++, offOut += numVals) {
+			if(sb.isEmpty(rowLeft))
+				continue;
+			final int apos = sb.pos(rowLeft);
+			final int alen = sb.size(rowLeft) + apos;
+			final double[] avals = sb.values(rowLeft);
+			for(int j = apos; j < alen; j++) {
+				preAV[offOut] += avals[j];
+			}
+		}
+	}
+
+
+	// public double preAggregateSparseSingle(SparseBlock sb, int row) {
+	// double v = 0;
+	// double[] sparseV = sb.values(row);
+	// for(int i = sb.pos(row); i < sb.pos(row) + sb.size(row); i++) {
+	// v += sparseV[i];
+	// }
+	// return v;
+	// }
+
+	// private double preAggregateSingle(double[] a, int row) {
+	// double vals = 0;
+	// for(int off = _numRows * row; off < _numRows * row + _numRows; off++)
+	// vals += a[off];
+	// return vals;
+	// }
+
+	// @Override
+	// public void leftMultByMatrix(MatrixBlock a, MatrixBlock c, int rl, int ru) {
+	// final double[] cV = c.getDenseBlockValues();
+	// final double[] values = getValues();
+	// if(values == null || a.isEmpty())
+	// return;
+	// else if(a.isInSparseFormat()) {
+	// SparseBlock sb = a.getSparseBlock();
+	// for(int i = rl; i < ru; i++) {
+
+	// if(!sb.isEmpty(i)) {
+	// double v = preAggregateSparseSingle(sb, i);
+	// int offC = i * c.getNumColumns();
+	// for(int j = 0; j < _colIndexes.length; j++)
+	// cV[offC + _colIndexes[j]] += v * values[j];
+
+	// }
+	// }
+	// }
+	// else {
+	// double[] aV = a.getDenseBlockValues();
+	// for(int i = rl; i < ru; i++) {
+	// double preAggVals = preAggregateSingle(aV, i);
+	// int offC = i * c.getNumColumns();
+	// for(int j = 0; j < _colIndexes.length; j++)
+	// cV[offC + _colIndexes[j]] += preAggVals * values[j];
+
+	// }
+	// }
+	// }
 
 	@Override
 	public AColGroup scalarOperation(ScalarOperator op) {
@@ -264,40 +280,40 @@ public class ColGroupConst extends ColGroupValue {
 		throw new NotImplementedException("This function should not be called");
 	}
 
-	@Override
-	public IPreAggregate preAggregateDDC(ColGroupDDC lhs) {
-		return new ArrPreAggregate(lhs.getCounts());
-	}
+	// @Override
+	// public IPreAggregate preAggregateDDC(ColGroupDDC lhs) {
+	// 	return new ArrPreAggregate(lhs.getCounts());
+	// }
 
-	@Override
-	public IPreAggregate preAggregateSDC(ColGroupSDC lhs) {
-		return new ArrPreAggregate(lhs.getCounts());
-	}
+	// @Override
+	// public IPreAggregate preAggregateSDC(ColGroupSDC lhs) {
+	// 	return new ArrPreAggregate(lhs.getCounts());
+	// }
 
-	@Override
-	public IPreAggregate preAggregateSDCSingle(ColGroupSDCSingle lhs) {
-		return new ArrPreAggregate(lhs.getCounts());
-	}
+	// @Override
+	// public IPreAggregate preAggregateSDCSingle(ColGroupSDCSingle lhs) {
+	// 	return new ArrPreAggregate(lhs.getCounts());
+	// }
 
-	@Override
-	public IPreAggregate preAggregateSDCZeros(ColGroupSDCZeros lhs) {
-		return new ArrPreAggregate(lhs.getCounts());
-	}
+	// @Override
+	// public IPreAggregate preAggregateSDCZeros(ColGroupSDCZeros lhs) {
+	// 	return new ArrPreAggregate(lhs.getCounts());
+	// }
 
-	@Override
-	public IPreAggregate preAggregateSDCSingleZeros(ColGroupSDCSingleZeros lhs) {
-		return new ArrPreAggregate(lhs.getCounts());
-	}
+	// @Override
+	// public IPreAggregate preAggregateSDCSingleZeros(ColGroupSDCSingleZeros lhs) {
+	// 	return new ArrPreAggregate(lhs.getCounts());
+	// }
 
-	@Override
-	public IPreAggregate preAggregateOLE(ColGroupOLE lhs) {
-		return new ArrPreAggregate(lhs.getCounts());
-	}
+	// @Override
+	// public IPreAggregate preAggregateOLE(ColGroupOLE lhs) {
+	// 	return new ArrPreAggregate(lhs.getCounts());
+	// }
 
-	@Override
-	public IPreAggregate preAggregateRLE(ColGroupRLE lhs) {
-		return new ArrPreAggregate(lhs.getCounts());
-	}
+	// @Override
+	// public IPreAggregate preAggregateRLE(ColGroupRLE lhs) {
+	// 	return new ArrPreAggregate(lhs.getCounts());
+	// }
 
 	@Override
 	public Dictionary preAggregateThatDDCStructure(ColGroupDDC that, Dictionary ret) {
@@ -325,17 +341,7 @@ public class ColGroupConst extends ColGroupValue {
 	}
 
 	@Override
-	protected int containsAllZeroTuple() {
-		return -1;
-	}
-
-	@Override
 	protected boolean sameIndexStructure(ColGroupCompressed that) {
 		return that instanceof ColGroupEmpty || that instanceof ColGroupConst;
-	}
-
-	@Override
-	public MatrixBlock preAggregate(MatrixBlock m, int rl, int ru) {
-		throw new NotImplementedException();
 	}
 }

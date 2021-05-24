@@ -24,6 +24,7 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.util.Arrays;
 
+import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory.MAP_TYPE;
 import org.apache.sysds.utils.MemoryEstimates;
 
 public class MapToInt extends AMapToData {
@@ -61,7 +62,7 @@ public class MapToInt extends AMapToData {
 
 	@Override
 	public long getExactSizeOnDisk() {
-		return 4 + _data.length * 4;
+		return 1 + 4 + _data.length * 4;
 	}
 
 	@Override
@@ -76,6 +77,7 @@ public class MapToInt extends AMapToData {
 
 	@Override
 	public void write(DataOutput out) throws IOException {
+		out.writeByte(MAP_TYPE.INT.ordinal());
 		out.writeInt(_data.length);
 		for(int i = 0; i < _data.length; i++)
 			out.writeInt(_data[i]);

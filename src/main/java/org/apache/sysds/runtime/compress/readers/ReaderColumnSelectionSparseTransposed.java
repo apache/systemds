@@ -31,9 +31,6 @@ import org.apache.sysds.runtime.matrix.data.MatrixBlock;
  */
 public class ReaderColumnSelectionSparseTransposed extends ReaderColumnSelection {
 
-	// an empty array to return if the entire row was 0.
-	private DblArray empty = new DblArray();
-
 	private SparseBlock a;
 	// current sparse skip positions.
 	private int[] sparsePos = null;
@@ -96,7 +93,7 @@ public class ReaderColumnSelectionSparseTransposed extends ReaderColumnSelection
 			}
 		}
 
-		return zeroResult ? empty : reusableReturn;
+		return zeroResult ? emptyReturn : reusableReturn;
 
 	}
 }

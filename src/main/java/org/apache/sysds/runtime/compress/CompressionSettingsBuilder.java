@@ -36,12 +36,11 @@ public class CompressionSettingsBuilder {
 	private String transposeInput;
 	private boolean skipList = true;
 	private int seed = -1;
-	private boolean investigateEstimate = true;
 	private boolean lossy = false;
 	private EnumSet<CompressionType> validCompressions;
 	private boolean sortValuesByLength = true;
 	private PartitionerType columnPartitioner;
-	private int maxStaticColGroupCoCode = 10000;
+	private int maxColGroupCoCode = 10000;
 	private double coCodePercentage = 0.01;
 	private int minimumSampleSize = 2000;
 
@@ -74,9 +73,15 @@ public class CompressionSettingsBuilder {
 		this.samplingRatio = that.samplingRatio;
 		this.allowSharedDictionary = that.allowSharedDictionary;
 		this.transposeInput = that.transposeInput;
+		this.skipList = that.skipList;
 		this.seed = that.seed;
-		this.investigateEstimate = that.investigateEstimate;
+		this.lossy = that.lossy;
 		this.validCompressions = EnumSet.copyOf(that.validCompressions);
+		this.sortValuesByLength = that.sortValuesByLength;
+		this.columnPartitioner = that.columnPartitioner;
+		this.maxColGroupCoCode = that.maxColGroupCoCode;
+		this.coCodePercentage = that.coCodePercentage;
+		this.minimumSampleSize = that.minimumSampleSize;
 		return this;
 	}
 
@@ -170,17 +175,6 @@ public class CompressionSettingsBuilder {
 	}
 
 	/**
-	 * Set if the compression should be investigated while compressing.
-	 * 
-	 * @param investigateEstimate A boolean specifying it the input should be estimated.
-	 * @return The CompressionSettingsBuilder
-	 */
-	public CompressionSettingsBuilder setInvestigateEstimate(boolean investigateEstimate) {
-		this.investigateEstimate = investigateEstimate;
-		return this;
-	}
-
-	/**
 	 * Set the valid compression strategies used for the compression.
 	 * 
 	 * @param validCompressions An EnumSet of CompressionTypes to use in the compression
@@ -230,14 +224,14 @@ public class CompressionSettingsBuilder {
 	}
 
 	/**
-	 * Set the maximum number of columns to CoCode together in the static CoCoding strategy. Compression time increase
-	 * with higher numbers.
+	 * Set the maximum number of columns to CoCode together in the CoCoding strategy. Compression time increase with
+	 * higher numbers.
 	 * 
-	 * @param maxStaticColGroupCoCode The max selected.
+	 * @param maxColGroupCoCode The max selected.
 	 * @return The CompressionSettingsBuilder
 	 */
-	public CompressionSettingsBuilder setmaxStaticColGroupCoCode(int maxStaticColGroupCoCode) {
-		this.maxStaticColGroupCoCode = maxStaticColGroupCoCode;
+	public CompressionSettingsBuilder setMaxColGroupCoCode(int maxColGroupCoCode) {
+		this.maxColGroupCoCode = maxColGroupCoCode;
 		return this;
 	}
 
@@ -273,8 +267,8 @@ public class CompressionSettingsBuilder {
 	 * @return The CompressionSettings
 	 */
 	public CompressionSettings create() {
-		return new CompressionSettings(samplingRatio, allowSharedDictionary, transposeInput, skipList, seed,
-			investigateEstimate, lossy, validCompressions, sortValuesByLength, columnPartitioner,
-			maxStaticColGroupCoCode, coCodePercentage, minimumSampleSize);
+		return new CompressionSettings(samplingRatio, allowSharedDictionary, transposeInput, skipList, seed, lossy,
+			validCompressions, sortValuesByLength, columnPartitioner, maxColGroupCoCode, coCodePercentage,
+			minimumSampleSize);
 	}
 }

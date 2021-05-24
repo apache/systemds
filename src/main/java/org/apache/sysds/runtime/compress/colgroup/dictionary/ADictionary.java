@@ -29,8 +29,7 @@ import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
 
 /**
- * This dictionary class aims to encapsulate the storage and operations over unique floating point values of a column
- * group.
+ * This dictionary class aims to encapsulate the storage and operations over unique tuple values of a column group.
  */
 public abstract class ADictionary {
 
@@ -50,15 +49,6 @@ public abstract class ADictionary {
 	 * @return The value contained at the index
 	 */
 	public abstract double getValue(int i);
-
-	/**
-	 * Determines if the content has a zero tuple. meaning all values at a specific row are zero value. This is useful
-	 * information to find out if the dictionary is used in a dense context. To improve some specific operations.
-	 * 
-	 * @param nCol The number of columns in the dictionary.
-	 * @return The index at which the zero tuple is located.
-	 */
-	public abstract int hasZeroTuple(int nCol);
 
 	/**
 	 * Returns the memory usage of the dictionary.
@@ -87,13 +77,6 @@ public abstract class ADictionary {
 	public abstract double[] aggregateTuples(Builtin fn, int nCol);
 
 	/**
-	 * returns the count of values contained in the dictionary.
-	 * 
-	 * @return an integer of count of values.
-	 */
-	public abstract int size();
-
-	/**
 	 * Applies the scalar operation on the dictionary. Note that this operation modifies the underlying data, and
 	 * normally require a copy of the original Dictionary to preserve old objects.
 	 * 
@@ -113,15 +96,46 @@ public abstract class ADictionary {
 	 */
 	public abstract ADictionary applyScalarOp(ScalarOperator op, double newVal, int numCols);
 
+	/**
+	 * Apply binary row operation on this dictionary.
+	 * 
+	 * @param op         The operation to this dictionary
+	 * @param v          The values to use on the left hand side.
+	 * @param sparseSafe boolean specifying if the operation is safe, and therefore dont need to allocate an extended
+	 *                   dictionary
+	 * @param colIndexes The column indexes to consider inside v.
+	 * @param left       A Boolean specifying if the operation is done on the left or right side of the dictionary.
+	 * @return A new dictionary containing the updated values.
+	 */
 	public ADictionary applyBinaryRowOp(BinaryOperator op, double[] v, boolean sparseSafe, int[] colIndexes,
 		boolean left) {
 		return (left) ? applyBinaryRowOpLeft(op, v, sparseSafe, colIndexes) : applyBinaryRowOpRight(op, v, sparseSafe,
 			colIndexes);
 	}
 
+	/**
+	 * Apply binary row operation on this dictionary on the left side.
+	 * 
+	 * @param op         The operation to this dictionary
+	 * @param v          The values to use on the left hand side.
+	 * @param sparseSafe boolean specifying if the operation is safe, and therefore dont need to allocate an extended
+	 *                   dictionary
+	 * @param colIndexes The column indexes to consider inside v.
+	 * @return A new dictionary containing the updated values.
+	 */
 	public abstract ADictionary applyBinaryRowOpLeft(BinaryOperator op, double[] v, boolean sparseSafe,
 		int[] colIndexes);
 
+	/**
+	 * Apply binary row operation on this dictionary on the right side.
+	 * 
+	 * @param op         The operation to this dictionary
+	 * @param v          The values to use on the right hand side.
+	 * @param sparseSafe boolean specifying if the operation is safe, and therefore dont need to allocate an extended
+	 *                   dictionary
+	 * @param colIndexes The column indexes to consider inside v.
+	 * @return A new dictionary containing the updated values.
+	 */
 	public abstract ADictionary applyBinaryRowOpRight(BinaryOperator op, double[] v, boolean sparseSafe,
 		int[] colIndexes);
 
@@ -130,6 +144,12 @@ public abstract class ADictionary {
 	 */
 	public abstract ADictionary clone();
 
+	/**
+	 * Clone the dictionary, and extend size of the dictionary by a given length
+	 * 
+	 * @param len The length to extend the dictionary, it is assumed this value is positive.
+	 * @return a clone of the dictionary, extended by len.
+	 */
 	public abstract ADictionary cloneAndExtend(int len);
 
 	/**
@@ -173,14 +193,6 @@ public abstract class ADictionary {
 	public abstract int getNumberOfValues(int ncol);
 
 	/**
-	 * Materializes a Zero tuple at the last index of the dictionary.
-	 * 
-	 * @param numCols The number of columns in the dictionary
-	 * @return the new Dictionary with materialized zero tuple.
-	 */
-	// public abstract IDictionary materializeZeroValue(int numCols);
-
-	/**
 	 * Method used as a pre-aggregate of each tuple in the dictionary, to single double values.
 	 * 
 	 * Note if the number of columns is one the actual dictionaries values are simply returned.
@@ -201,14 +213,50 @@ public abstract class ADictionary {
 	 */
 	public abstract double sumRow(int k, boolean square, int nrColumns);
 
+	/**
+	 * get the column sum of this dictionary only.
+	 * 
+	 * @param counts the counts of the values contained
+	 * @param nCol   The number of columns contained in each tuple.
+	 * @return the colSums of this column group.
+	 */
 	public abstract double[] colSum(int[] counts, int nCol);
 
+	/**
+	 * Get the column sum of the values contained in the dictionary
+	 * 
+	 * @param c          The output array allocated to contain all column groups output.
+	 * @param counts     The counts of the individual tuples.
+	 * @param colIndexes The columns indexes of the parent column group, this indicate where to put the column sum into
+	 *                   the c output.
+	 * @param square     Specify if the values should be squared
+	 */
 	public abstract void colSum(double[] c, int[] counts, int[] colIndexes, boolean square);
 
-	public abstract double sum(int[] counts, int ncol);
+	/**
+	 * Get the sum of the values contained in the dictionary
+	 * 
+	 * @param counts The counts of the individual tuples
+	 * @param nCol   The number of columns contained
+	 * @return The sum scaled by the counts provided.
+	 */
+	public abstract double sum(int[] counts, int nCol);
 
-	public abstract double sumsq(int[] counts, int ncol);
+	/**
+	 * Get the square sum of the values contained in the dictionary
+	 * 
+	 * @param counts The counts of the individual tuples
+	 * @param nCol   The number of columns contained
+	 * @return The square sum scaled by the counts provided.
+	 */
+	public abstract double sumsq(int[] counts, int nCol);
 
+	/**
+	 * Get a string representation of the dictionary, that considers the layout of the data.
+	 * 
+	 * @param colIndexes The number of columns in the dictionary.
+	 * @return A string that is nicer to print.
+	 */
 	public abstract String getString(int colIndexes);
 
 	/**
@@ -239,19 +287,23 @@ public abstract class ADictionary {
 	 */
 	public abstract ADictionary reExpandColumns(int max);
 
+	/**
+	 * Detect if the dictionary contains a specific value.
+	 * 
+	 * @param pattern The value to search for
+	 * @return true if the value is contained else false.
+	 */
 	public abstract boolean containsValue(double pattern);
 
 	/**
 	 * Calculate the number of non zeros in the dictionary. The number of non zeros should be scaled with the counts
-	 * given
+	 * given. This gives the exact number of non zero values in the parent column group.
 	 * 
 	 * @param counts The counts of each dictionary entry
 	 * @param nCol   The number of columns in this dictionary
 	 * @return The nonZero count
 	 */
 	public abstract long getNumberNonZeros(int[] counts, int nCol);
-
-	public abstract long getNumberNonZerosContained();
 
 	/**
 	 * Copies and adds the dictionary entry from this dictionary to the d dictionary
@@ -269,6 +321,7 @@ public abstract class ADictionary {
 	 * returns null if that tuple is all zero values.
 	 * 
 	 * @param counts The counts of the individual tuples contained, managed by the column group.
+	 * @param nCol   The number of columns contained in this dictionary
 	 * @return a new double array containing the most common value
 	 */
 	public double[] getMostCommonTuple(int[] counts, int nCol) {
@@ -283,6 +336,13 @@ public abstract class ADictionary {
 		return getTuple(maxIndex, nCol);
 	}
 
+	/**
+	 * Get the values contained in a specific tuple of the dictionary.
+	 * 
+	 * @param index The index where the values are located
+	 * @param nCol  The number of columns contained in this dictionary
+	 * @return a materialized double array containing the tuple.
+	 */
 	public abstract double[] getTuple(int index, int nCol);
 
 	/**
@@ -298,6 +358,7 @@ public abstract class ADictionary {
 	 * Get this dictionary as a matrixBlock dictionary. This allows us to use optimized kernels coded elsewhere in the
 	 * system, such as matrix multiplication.
 	 * 
+	 * @param nCol The number of columns contained in this column group.
 	 * @return A Dictionary containing a MatrixBlock.
 	 */
 	public abstract MatrixBlockDictionary getAsMatrixBlockDictionary(int nCol);
@@ -310,4 +371,18 @@ public abstract class ADictionary {
 	 * @return A New dictionary (since we don't want to modify the underlying dictionary)
 	 */
 	public abstract ADictionary scaleTuples(int[] scaling, int nCol);
+
+	/**
+	 * Pre Aggregate values for right Matrix Multiplication.
+	 * 
+	 * @param numVals          The number of values contained in this dictionary
+	 * @param colIndexes       The column indexes that is associated with the parent column group
+	 * @param aggregateColumns The column to aggregate, this is preprocessed, to find remove consideration for empty
+	 *                         columns
+	 * @param b                The values in the right hand side matrix
+	 * @param ret              The double array to put in the aggregate.
+	 * @param cut              The number of columns in b.
+	 */
+	public abstract void preaggValuesFromDense(final int numVals, final int[] colIndexes, final int[] aggregateColumns,
+		final double[] b, final double[] ret, final int cut);
 }

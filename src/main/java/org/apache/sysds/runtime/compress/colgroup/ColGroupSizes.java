@@ -28,7 +28,7 @@ import org.apache.sysds.runtime.compress.colgroup.offset.OffsetFactory;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.utils.MemoryEstimates;
 
-public class ColGroupSizes {
+public final class ColGroupSizes {
 	protected static final Log LOG = LogFactory.getLog(ColGroupSizes.class.getName());
 
 	public static long estimateInMemorySizeGroup(int nrColumns) {
@@ -44,7 +44,6 @@ public class ColGroupSizes {
 	public static long estimateInMemorySizeGroupValue(int nrColumns, int nrValues, double tupleSparsity,
 		boolean lossy) {
 		long size = estimateInMoemorySizeCompressedColumn(nrColumns);
-		// LOG.error("MemorySize Group Value: " + nrColumns + " " + nrValues + " " + lossy);
 		size += 8; // Dictionary Reference.
 		size += 8; // Counts reference
 		size += 1; // _zeros boolean reference
@@ -56,7 +55,6 @@ public class ColGroupSizes {
 
 	public static long estimateInMemorySizeDDC(int nrCols, int numTuples, int dataLength, double tupleSparsity,
 		boolean lossy) {
-		// LOG.error("Arguments for DDC memory Estimate " + nrCols + " " + numTuples + " " + dataLength + " " + lossy);
 		long size = estimateInMemorySizeGroupValue(nrCols, numTuples, tupleSparsity, lossy);
 		size += MapToFactory.estimateInMemorySize(dataLength, numTuples);
 		return size;
@@ -64,7 +62,6 @@ public class ColGroupSizes {
 
 	public static long estimateInMemorySizeOffset(int nrColumns, int nrValues, int pointers, int offsetLength,
 		double tupleSparsity, boolean lossy) {
-		// LOG.error("Offset Size: " + nrColumns + " " + nrValues + " " + pointers + " " + offsetLength);
 		long size = estimateInMemorySizeGroupValue(nrColumns, nrValues, tupleSparsity, lossy);
 		size += MemoryEstimates.intArrayCost(pointers);
 		size += MemoryEstimates.charArrayCost(offsetLength);
@@ -73,17 +70,14 @@ public class ColGroupSizes {
 
 	public static long estimateInMemorySizeOLE(int nrColumns, int nrValues, int offsetLength, int nrRows,
 		double tupleSparsity, boolean lossy) {
-		// LOG.error(nrColumns + " " + nrValues + " " + offsetLength + " " + nrRows + " " + lossy);
 		nrColumns = nrColumns > 0 ? nrColumns : 1;
 		offsetLength += (nrRows / CompressionSettings.BITMAP_BLOCK_SZ) * 2;
-		long size = estimateInMemorySizeOffset(nrColumns, nrValues, nrValues  + 1, offsetLength,
-			tupleSparsity, lossy);
+		long size = estimateInMemorySizeOffset(nrColumns, nrValues, nrValues + 1, offsetLength, tupleSparsity, lossy);
 		return size;
 	}
 
 	public static long estimateInMemorySizeRLE(int nrColumns, int nrValues, int nrRuns, int nrRows,
 		double tupleSparsity, boolean lossy) {
-		// LOG.error("RLE Size: " + nrColumns + " " + nrValues + " " + nrRuns + " " + nrRows);
 		int offsetLength = (nrRuns) * 2;
 		long size = estimateInMemorySizeOffset(nrColumns, nrValues, (nrValues) + 1, offsetLength, tupleSparsity, lossy);
 
@@ -94,10 +88,9 @@ public class ColGroupSizes {
 		boolean largestOffIsZero, boolean containNoZeroValues, double tupleSparsity, boolean lossy) {
 		long size = estimateInMemorySizeGroupValue(nrColumns,
 			nrValues + (largestOffIsZero || containNoZeroValues ? 0 : 1), tupleSparsity, lossy);
-		// LOG.error("SDC Estimation values: " + nrColumns + " " + nrValues + " " + nrRows + " " + largestOff);
-		size += OffsetFactory.estimateInMemorySize(nrRows - largestOff - 1, nrRows);
+		size += OffsetFactory.estimateInMemorySize(nrRows - largestOff, nrRows);
 		if(nrValues > 1)
-			size += MapToFactory.estimateInMemorySize(nrRows - largestOff, nrValues);
+			size += MapToFactory.estimateInMemorySize(nrRows - largestOff, nrValues - 1);
 		return size;
 	}
 

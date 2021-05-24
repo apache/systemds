@@ -26,24 +26,30 @@ import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 public class ReaderColumnSelectionDenseSingleBlockTransposed extends ReaderColumnSelection {
 	private double[] _data;
 
+
 	public ReaderColumnSelectionDenseSingleBlockTransposed(MatrixBlock data, int[] colIndexes) {
 		super(colIndexes.clone(), data.getNumColumns());
 		_data = data.getDenseBlockValues();
 		if(data.getDenseBlock().numBlocks() > 1)
 			throw new DMLCompressionException("Not handling multi block data reading in dense transposed reader");
-		for(int i = 0; i < _colIndexes.length; i++) 
+		for(int i = 0; i < _colIndexes.length; i++)
 			_colIndexes[i] = _colIndexes[i] * data.getNumColumns();
-		
+
 	}
 
 	protected DblArray getNextRow() {
 		if(_lastRow == _numRows - 1)
 			return null;
 		_lastRow++;
-		
-		for(int i = 0; i < _colIndexes.length; i++)
-			reusableArr[i] = _data[_colIndexes[i]++];
 
-		return reusableReturn;
+		boolean empty = true;
+		for(int i = 0; i < _colIndexes.length; i++) {
+			double v = _data[_colIndexes[i]++];
+			if(v != 0)
+				empty = false;
+			reusableArr[i] =v;
+		}
+
+		return empty ? emptyReturn : reusableReturn;
 	}
 }

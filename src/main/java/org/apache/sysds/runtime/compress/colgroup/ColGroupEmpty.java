@@ -57,7 +57,7 @@ public class ColGroupEmpty extends ColGroupCompressed {
 	}
 
 	@Override
-	protected void computeRowSums(double[] c, boolean square, int rl, int ru, boolean mean) {
+	protected void computeRowSums(double[] c, boolean square, int rl, int ru) {
 		// do nothing
 	}
 
@@ -83,7 +83,6 @@ public class ColGroupEmpty extends ColGroupCompressed {
 		return ColGroupType.EMPTY;
 	}
 
-
 	@Override
 	public void decompressToBlockSafe(MatrixBlock target, int rl, int ru, int offT) {
 		// do nothing.
@@ -94,25 +93,25 @@ public class ColGroupEmpty extends ColGroupCompressed {
 		// do nothing.
 	}
 
-	@Override
-	public void decompressToBlock(MatrixBlock target, int[] colIndexTargets) {
-		// do nothing.
-	}
+	// @Override
+	// public void decompressToBlock(MatrixBlock target, int[] colIndexTargets) {
+	// 	// do nothing.
+	// }
 
-	@Override
-	public void decompressColumnToBlock(MatrixBlock target, int colpos) {
-		// do nothing.
-	}
+	// @Override
+	// public void decompressColumnToBlock(MatrixBlock target, int colpos) {
+	// 	// do nothing.
+	// }
 
-	@Override
-	public void decompressColumnToBlock(MatrixBlock target, int colpos, int rl, int ru) {
-		// do nothing.
-	}
+	// @Override
+	// public void decompressColumnToBlock(MatrixBlock target, int colpos, int rl, int ru) {
+	// 	// do nothing.
+	// }
 
-	@Override
-	public void decompressColumnToBlock(double[] c, int colpos, int rl, int ru) {
-		// do nothing.
-	}
+	// @Override
+	// public void decompressColumnToBlock(double[] c, int colpos, int rl, int ru) {
+	// 	// do nothing.
+	// }
 
 	@Override
 	public double get(int r, int c) {
@@ -130,7 +129,7 @@ public class ColGroupEmpty extends ColGroupCompressed {
 		if(val0 == 0)
 			return this;
 		return new ColGroupConst(_colIndexes, _numRows,
-			new Dictionary(new double[_colIndexes.length]).applyScalarOp(op, val0, _colIndexes.length));
+			new Dictionary(new double[_colIndexes.length]).apply(op));
 	}
 
 	@Override
@@ -138,7 +137,7 @@ public class ColGroupEmpty extends ColGroupCompressed {
 		if(sparseSafe)
 			return this;
 		return new ColGroupConst(_colIndexes, _numRows,
-			new Dictionary(new double[_colIndexes.length]).applyBinaryRowOp(op, v, sparseSafe, _colIndexes, left));
+			new Dictionary(new double[_colIndexes.length]).applyBinaryRowOp(op, v, true, _colIndexes, left));
 	}
 
 	@Override
@@ -164,11 +163,6 @@ public class ColGroupEmpty extends ColGroupCompressed {
 	@Override
 	public boolean isLossy() {
 		return false;
-	}
-
-	@Override
-	protected int containsAllZeroTuple() {
-		return 0;
 	}
 
 	@Override
@@ -200,7 +194,11 @@ public class ColGroupEmpty extends ColGroupCompressed {
 	@Override
 	public void tsmm(double[] result, int numColumns) {
 		// do nothing
+	}
 
+	@Override
+	public void tsmm(double[] result, int numColumns, int idxStart, int idxEnd) {
+		// do nothing.
 	}
 
 	@Override

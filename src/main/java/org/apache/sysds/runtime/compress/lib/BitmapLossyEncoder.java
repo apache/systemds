@@ -31,11 +31,6 @@ import java.util.Map.Entry;
 import java.util.Queue;
 
 import org.apache.commons.lang.NotImplementedException;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
-import org.apache.sysds.runtime.compress.CompressionSettings;
-import org.apache.sysds.runtime.compress.colgroup.AColGroup;
 import org.apache.sysds.runtime.compress.utils.ABitmap;
 import org.apache.sysds.runtime.compress.utils.Bitmap;
 import org.apache.sysds.runtime.compress.utils.BitmapLossy;
@@ -46,7 +41,7 @@ import org.apache.sysds.runtime.compress.utils.IntArrayList;
  */
 public class BitmapLossyEncoder {
 
-	private static final Log LOG = LogFactory.getLog(BitmapLossyEncoder.class.getName());
+	// private static final Log LOG = LogFactory.getLog(BitmapLossyEncoder.class.getName());
 
 	private static ThreadLocal<byte[]> memPoolByteArray = new ThreadLocal<byte[]>() {
 		@Override
@@ -65,7 +60,7 @@ public class BitmapLossyEncoder {
 	/**
 	 * Given a Bitmap try to make a lossy version of the same bitmap.
 	 * 
-	 * @param ubm The Uncompressed version of the bitmap.
+	 * @param ubm     The Uncompressed version of the bitmap.
 	 * @param numRows The number of rows contained in the ubm.
 	 * @return A bitmap.
 	 */
@@ -89,8 +84,8 @@ public class BitmapLossyEncoder {
 	/**
 	 * Make the specific 8 bit encoding version of a bitmap.
 	 * 
-	 * @param ubm   The uncompressed Bitmap.
-	 * @param stats The statistics associated with the bitmap.
+	 * @param ubm     The uncompressed Bitmap.
+	 * @param stats   The statistics associated with the bitmap.
 	 * @param numRows The number of Rows.
 	 * @return a lossy bitmap.
 	 */
@@ -164,10 +159,10 @@ public class BitmapLossyEncoder {
 				}
 				idx++;
 			}
-			return new BitmapLossy(ubm.getNumColumns(), newOffsetsLists,  scaledValuesReduced, scale, numRows);
+			return new BitmapLossy(ubm.getNumColumns(), newOffsetsLists, scaledValuesReduced, scale, numRows);
 		}
 		else
-			return new BitmapLossy(ubm.getNumColumns(), fullSizeOffsetsLists,  scaledValues, scale, numRows);
+			return new BitmapLossy(ubm.getNumColumns(), fullSizeOffsetsLists, scaledValues, scale, numRows);
 	}
 
 	/**
@@ -211,7 +206,6 @@ public class BitmapLossyEncoder {
 			allZero = true;
 		}
 
-
 		if(somethingToMerge) {
 
 			byte[] scaledValuesReduced = new byte[values.keySet().size() * numColumns];
@@ -237,7 +231,7 @@ public class BitmapLossyEncoder {
 			return new BitmapLossy(ubm.getNumColumns(), newOffsetsLists, scaledValuesReduced, scale, numRows);
 		}
 		else {
-			return new BitmapLossy(ubm.getNumColumns(), fullSizeOffsetsLists,  scaledValues, scale, numRows);
+			return new BitmapLossy(ubm.getNumColumns(), fullSizeOffsetsLists, scaledValues, scale, numRows);
 		}
 	}
 
@@ -274,40 +268,6 @@ public class BitmapLossyEncoder {
 			res[idx] = (byte) (Math.round(fp[idx] / scale));
 
 		return res;
-	}
-
- 	public static ABitmap extractMapFromCompressedSingleColumn(CompressedMatrixBlock m, int columnId, double min,
-		double max, int numRows) {
-		double scale = get8BitScale(min, max);
-		final int blkSz = CompressionSettings.BITMAP_BLOCK_SZ;
-		Map<Byte, IntArrayList> values = new HashMap<>();
-		double[] tmp = getMemLocalDoubleArray(blkSz, true);
-		for(int i = 0; i < m.getNumRows(); i += blkSz) {
-			AColGroup.decompressColumnToBlock(tmp, columnId, i, Math.min(m.getNumRows(), (i + blkSz)), m.getColGroups());
-
-			byte[] scaledValues = scaleValuesToByte(tmp, scale);
-			for(int j = 0, off = i; j < Math.min(m.getNumRows(), (i + blkSz)) - i; j++, off++) {
-				byte key = scaledValues[j];
-				if(values.containsKey(key))
-					values.get(key).appendValue(off);
-				else
-					values.put(key, new IntArrayList(off));
-			}
-		}
-
-		IntArrayList[] newOffsetsLists = new IntArrayList[values.keySet().size()];
-		byte[] scaledValuesReduced = new byte[values.keySet().size()];
-		Iterator<Entry<Byte, IntArrayList>> x = values.entrySet().iterator();
-		int idx = 0;
-		while(x.hasNext()) {
-			Entry<Byte, IntArrayList> ent = x.next();
-			scaledValuesReduced[idx] = ent.getKey().byteValue();
-			newOffsetsLists[idx] = ent.getValue();
-			idx++;
-		}
-
-		return new BitmapLossy(1, newOffsetsLists, scaledValuesReduced, scale, numRows);
-		// return BitmapLossyEncoder.makeBitmapLossy(BitmapEncoder.extractBitmap(new int[1], tmp, true));
 	}
 
 	private static byte[] getMemLocalByteArray(int length, boolean clean) {

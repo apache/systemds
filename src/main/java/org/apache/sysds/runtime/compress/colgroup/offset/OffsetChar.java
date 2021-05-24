@@ -22,6 +22,7 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
+import org.apache.sysds.runtime.DMLCompressionException;
 import org.apache.sysds.utils.MemoryEstimates;
 
 public class OffsetChar extends AOffset {
@@ -47,6 +48,8 @@ public class OffsetChar extends AOffset {
 		for(int i = 1; i < indexes.length; i++) {
 			final int nv = indexes[i];
 			final int offsetSize = (nv - ov);
+			if(offsetSize == 0)
+				throw new DMLCompressionException("Invalid difference between cells");
 			final int div = offsetSize / maxV;
 			final int mod = offsetSize % maxV;
 			if(mod == 0) {
@@ -74,7 +77,7 @@ public class OffsetChar extends AOffset {
 
 	@Override
 	public void write(DataOutput out) throws IOException {
-		out.writeByte(OffsetFactory.Types.CHAR.ordinal());
+		out.writeByte(OffsetFactory.OFF_TYPE.CHAR.ordinal());
 		out.writeInt(offsetToFirst);
 		out.writeInt(offsets.length);
 		for(char o : offsets)
@@ -112,7 +115,7 @@ public class OffsetChar extends AOffset {
 
 	public static long getInMemorySize(int length) {
 		long size = 16 + 4 + 8; // object header plus int plus reference
-		size += MemoryEstimates.charArrayCost(length);
+		size += MemoryEstimates.charArrayCost(length-1);
 		return size;
 	}
 

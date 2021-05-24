@@ -32,8 +32,6 @@ import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 public class ReaderColumnSelectionSparse extends ReaderColumnSelection {
 
 
-	// an empty array to return if the entire row was 0.
-	private DblArray empty = new DblArray();
 
 	private SparseBlock a;
 
@@ -85,6 +83,6 @@ public class ReaderColumnSelectionSparse extends ReaderColumnSelection {
 					reusableArr[skip++] = 0;
 		}
 
-		return zeroResult ? empty : reusableReturn;
+		return zeroResult ? emptyReturn : reusableReturn;
 	}
 }

@@ -195,7 +195,7 @@ public class BitmapEncoder {
 		DblArray cellVals = null;
 
 		while((cellVals = rowReader.nextRow()) != null) {
-			if(cellVals.getData() != null) {
+			if(!cellVals.isEmpty()) {
 				cellVals.resetHash();
 				IntArrayList lstPtr = distinctVals.get(cellVals);
 				if(lstPtr == null) {

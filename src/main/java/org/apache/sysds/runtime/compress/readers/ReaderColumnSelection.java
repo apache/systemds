@@ -35,7 +35,8 @@ public abstract class ReaderColumnSelection {
 	protected int _lastRow = -1;
 
 	private DblArray nonZeroReturn;
-
+	final protected DblArray emptyReturn = new DblArray();
+	
 	protected DblArray reusableReturn;
 	protected double[] reusableArr;
 

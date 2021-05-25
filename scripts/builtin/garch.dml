@@ -1,67 +1,219 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+# Builtin function that implements GARCH(1,1)
+#
+# INPUT PARAMETERS:
+# ----------------------------------------------------------------------------
+# NAME              TYPE      DEFAULT   MEANING
+# ----------------------------------------------------------------------------
+# X                 Double    ---       The input Matrix to apply Arima on.
+# kmax              Integer   ---       Number of iterations
+# momentum          Double    ---       Momentum for momentum-gradient descent (set to 0 to deactivate)
+# start_stepsize    Double    ---       Initial gradient-descent stepsize
+# end_stepsize      Double    ---       gradient-descent stepsize at end (linear descent)
+# start_vicinity    Double    ---       proportion of randomness of restart-location for gradient descent at beginning
+# end_vicinity      Double    ---       same at end (linear decay)
+# sim_seed          Integer   ---       seed for simulation of process on fitted coefficients
+# verbose           Boolean   ---       verbosity, comments during fitting
+#
+# RETURN VALUES
+# ----------------------------------------------------------------------------
+# NAME         TYPE   DEFAULT  MEANING
+# ----------------------------------------------------------------------------
+# fitted_X          Double  ---     simulated garch(1,1) process on fitted coefficients
+# fitted_var_hist   Double  ---     variances of simulated fitted process
+# best_a0           Double  ---     constant term of fitted process
+# best_arch_coef    Double  ---     1-st arch-coefficient of fitted process
+# best_var_coef     Double  ---     1-st garch-coefficient of fitted process
+# ----------------------------------------------------------------------------
+#
+# COMMENTS
+# This has some drawbacks: slow convergence of optimization (sort of simulated annealing/gradient descent)
+# TODO: use BFGS or BHHH if it is available (this are go to methods)
+# TODO: (only then) extend to garch(p,q); otherwise the search space is way too big for the current method
 
 
+# ------- MAIN FUNCTION
 
-sim_garch = function(Double a0, Double arch_coef, Double var_coef, Integer simsteps, Integer seed)
-return (Matrix[Double] Xt, Matrix[Double] var_hist) {
+m_garch = function(Matrix[Double] X, Integer kmax, Double momentum, Double start_stepsize, Double end_stepsize, Double start_vicinity, Double end_vicinity, Integer sim_seed, Boolean verbose)
+return (Matrix[Double] fitted_X, Matrix[Double] fitted_var_hist, Double best_a0, Double best_arch_coef, Double best_var_coef) {
 
-    # init var and std
-    var = a0 / (1 - arch_coef - var_coef)
-    std = sqrt(var)
+    [a0, arch_coef, var_coef] = sample_feasible_params() # initialize startpoint
+    curr_qmle = qmle(X, a0, arch_coef, var_coef) # initialize quasi-log-likelihood at start
 
-    # init outputs
-    var_hist = matrix(0, rows=0, cols=1)
-    Xt = matrix(0, rows=0, cols=1)
+    # record the parameters of max-quasi-log-likelihood thus far
+    best_a0 = a0
+    best_arch_coef = arch_coef
+    best_var_coef = var_coef
+    best_qmle = curr_qmle
 
-    # recursively construct time series
-    for (t in seq(1,simsteps,1)) {
-        noise = as.scalar(rand(rows=1, cols=1, pdf="normal", seed=seed)) # N(0,1) noise
-        xt = noise * std
+    # record last change of gradient if update was applied
+    last_change_a0 = 0
+    last_change_arch_coef = 0
+    last_change_var_coef = 0
 
-        Xt = rbind(Xt, matrix(xt, rows=1,cols=1))
-        var_hist = rbind(var_hist,  matrix(var, rows=1,cols=1))
+    # initialize stepsize (linear decay)
+    stepsize = start_stepsize
 
-        # get var and std for next round
-        var = a0 + arch_coef * (xt^2) + var_coef * var
-        std = sqrt(var)
+    # initialize vicinity (linear decay)
+    vicinity = start_vicinity
 
-        seed = seed + 1
+    # all coeffs need be >0 to provide a feasible solution; clip at this constant
+    clip_at = 0.00001
+
+    # do gradient descent
+    for (k in 1:kmax-1) {
+
+        # update vicinity and stepsize
+        progress = k/kmax
+        stepsize = (1-progress) * start_stepsize + progress*end_stepsize
+        vicinity = (1-progress) * start_vicinity + progress*end_vicinity
+
+        # get gradient
+        [d_a0, d_arch_coef, d_var_coef] = gradient(X, a0, arch_coef, var_coef)
+
+        # newly proposed parameters
+        new_a0 = max(a0 + (stepsize * d_a0) + momentum * (last_change_a0), clip_at)
+        new_arch_coef = max(arch_coef + (stepsize * arch_coef) + (momentum * last_change_arch_coef), clip_at)
+        new_var_coef = max(var_coef + (stepsize * var_coef) + (momentum * last_change_var_coef), clip_at)
+
+        # ensure feasibility (this condition provides stationarity, see literature)
+        while (new_arch_coef + new_var_coef > 1) {
+            new_arch_coef = new_arch_coef / 2
+            new_var_coef = new_var_coef / 2
+        }
+
+        # objective function value of new feasible parameters
+        new_qmle = qmle(X, new_a0, new_arch_coef, new_var_coef)
+
+        # record the change of coefficients for momentum updates
+        change_a0 = new_a0 - a0
+        change_arch_coef = new_arch_coef - arch_coef
+        change_var_coef = new_var_coef - var_coef
+
+        # check if improvement
+        if (new_qmle > curr_qmle) {
+            # if so, update and use change for momentum
+            last_change_a0 = change_a0
+            last_change_arch_cof = change_arch_coef
+            last_change_var_coef = change_var_coef
+
+            update_reason = "gradient"
+
+        }
+        else {
+            # else: chance for restart at close point and reset momentum
+
+            update_reason = "no update" # unless the random restart applies
+            coin_flip = as.scalar(rand(rows=1, cols=1)) # random restart gets less likely with progressing search
+
+            if (coin_flip > progress) {
+                # sample random restart-point
+                # vicinity tells how far we move to the random point (0: dont move, 1: move fully to random point)
+                # similar to simulated annealing with adaptive neighborhood
+
+                [new_a0, new_arch_coef, new_var_coef] = sample_neighbor(a0, arch_coef, var_coef, vicinity)
+
+                # reset momentum
+                last_change_a0 = 0
+                last_change_arch_cof = 0
+                last_change_var_coef = 0
+
+                update_reason = "restart"
+            }
+        }
+
+        # update the point
+        a0 = new_a0
+        arch_coef = new_arch_coef
+        var_coef = new_var_coef
+
+        # update qmle at the moment
+        curr_qmle = qmle(X, a0, arch_coef, var_coef)
+
+        # check and record if it is the best point thus far
+        if (curr_qmle > best_qmle) {
+            best_qmle = curr_qmle
+            best_a0 = a0
+            best_arch_coef = arch_coef
+            best_var_coef = var_coef
+            update_best = TRUE
+        } else {
+            update_best = FALSE
+        }
+
+        # logging: report state of gradient descent
+        if (verbose) {
+        print("k                | " + toString(k))
+        print("a0               | " +  toString(a0))
+        print("arch coef        | " +  toString(arch_coef))
+        print("var coef         | " +  toString(var_coef))
+        print("qmle             | " +  toString(curr_qmle))
+        print("stepsize         | " + toString(stepsize))
+        print("update reason    | " + update_reason)
+        print("update best      | " + update_best)
+        print("____________________________________")
+        }
+    }
+
+    # simulate process from best solution
+    sim_steps = nrow(X)
+    [fitted_X, fitted_var_hist] = sim_garch(best_a0, best_arch_coef, best_var_coef, sim_steps, sim_seed)
+
+    # logging: report output
+    if (verbose) {
+        print("end iteration: return the following: ")
+        print("best qmle            | " + toString(best_qmle))
+        print("best a0              | " + toString(best_a0))
+        print("best arch_coef       |" + toString(best_arch_coef))
+        print("best var_coef        |" + toString(best_var_coef))
+        print("____________________________________")
     }
 }
 
-# test sim garch ______________________________________________________
-a0 = 0.2
-arch_coef = 0.02
-var_coef = 0.005
-simsteps = 500
-seed = 0
 
-[Xt, var_hist] = sim_garch(a0, arch_coef, var_coef, simsteps, seed)
-print(nrow(Xt))
+# ------- UTILITY FUNCTIONS
 
-# ______________________________________________________
-
-# qmle ________________________________________________________________
-# https://math.berkeley.edu/~btw/thesis4.pdf
-
-qmle = function(Matrix[Double] Xt, Double a0, Double arch_coef, Double var_coef)
+# ------- quasi-log-likelihood of garch-1-1 coefficients for given data
+# ------- https://math.berkeley.edu/~btw/thesis4.pdf
+qmle = function(Matrix[Double] X, Double a0, Double arch_coef, Double var_coef)
 return (Double qmle) {
-    n = nrow(Xt)
+    n = nrow(X)
 
-    # initialize var
+    # initialize variance
     var_0 = a0 / (1-arch_coef - var_coef)
     vars = matrix(var_0, rows=1, cols=1)
 
     # init loop for var and qmle computation
     var_lag = var_0
-    xq_lag = as.scalar(Xt[1,1])^2
+    xq_lag = as.scalar(X[1,1])^2
     qmle = 0
 
     # compute vars and qmle recursively
     for (t in 2:n) {
 
-        xq_t = as.scalar(Xt[t,1])^2
+        xq_t = as.scalar(X[t,1])^2
         var_t = a0 + arch_coef*xq_lag + var_coef*var_lag
-        qmle = qmle + 1/2*log(var_t) + (xq_t / var_t)
+        qmle = qmle - (1/(2*n)) * (log(var_t) + (xq_t / var_t)) # up to constant
 
         vars = rbind(vars, matrix(var_t, rows=1, cols=1))
         var_lag = var_t
@@ -69,17 +221,9 @@ return (Double qmle) {
     }
 }
 
-#log_likelihood =  qmle(Xt, a0, arch_coef, var_coef)
-#print(log_likelihood)
 
-#log_likelihood =  qmle(Xt, 0.1, 0.4, 0.1)
-#print(log_likelihood)
-
-
-# ______________________________________________________
-# returns coefs which yield a stationary garch process sampled uniform at random
-
-sample_candidate = function()
+# ------- returns coefs which yield a stationary garch process; sampled uniform at random in feasible region
+sample_feasible_params = function()
 return (Double a0, Double arch_coef, Double var_coef) {
     a0 = as.scalar(rand(rows=1, cols=1))
     arch_coef = as.scalar(rand(rows=1, cols=1))
@@ -91,110 +235,58 @@ return (Double a0, Double arch_coef, Double var_coef) {
     }
 }
 
-sample_neighbor = function(Double a0, Double arch_coef, Double var_coef, Double nb_eps)
+
+# ------- sample random feasible point and blend with current point
+# ------- vicinity tells the proportion of the newly random point is blended in
+sample_neighbor = function(Double a0, Double arch_coef, Double var_coef, Double vicinity)
 return (Double nb_a0, Double nb_arch_coef, Double nb_var_coef) {
+    # nb is convex comb of current val and a distant target value
+    # the smaller the vicinity, the closer we are to the current point and the less randomness there is
 
-    [sample_a0, sample_arch_coef, sample_var_coef] = sample_candidate()
+    [target_a0, target_arch_coef, target_var_coef] = sample_feasible_params()
 
-    nb_a0 = nb_eps * sample_a0 + (1-nb_eps) * a0
-    nb_arch_coef = nb_eps * sample_arch_coef + (1-nb_eps) * arch_coef
-    nb_var_coef = nb_eps * sample_var_coef + (1-nb_eps) * var_coef
-
-    print("inside fct")
-    print(nb_a0)
-    print(nb_arch_coef)
-    print(nb_var_coef)
-
-}
-
-diff_qmle = function(Matrix[Double] Xt, Double a0, Double arch_coef, Double var_coef, Double curr_qmle)
-return (Double diff_a0, Double diff_arch_coef, Double diff_var_coef) {
-
-    nb_eps = 0.1
-    [nb_a0, nb_arch_coef, nb_var_coef] = sample_neighbor(a0, arch_coef, var_coef, nb_eps)
-
-    # BUG ? ________________________________________________________
-    # what is happening here ?
-    # comment L120 and uncomment L124 yields a null-pointer exception; commenting both works, uncomment L120 and comment L124 works too
-
-    df_a0 = qmle(Xt, nb_a0, arch_coef, var_coef) - curr_qmle
-    print("arch_coef")
-    print(nb_arch_coef)
-
-    df_a0 = qmle(Xt, nb_a0, arch_coef, var_coef) - curr_qmle
-    #_______________________________________________________________
-
-
-    #print(nb_a0)
-    #print(nb_arch_coef)
-    #print(nb_var_coef)
-    #print(curr_qmle)
-
-    #print(a0)
-    #print(arch_coef)
-    #print(var_coef)
-
-    #df_a0 = qmle(Xt, nb_a0, arch_coef, var_coef) - curr_qmle
-    #df_arch_coef = 0 #qmle(Xt, a0, nb_arch_coef, var_coef) - curr_qmle
-    #df_var_coef = 0 #qmle(Xt, a0, arch_coef, nb_var_coef) - curr_qmle
-
-    diff_a0 = 0             # df_a0 / (nb_a0 - a0)
-    diff_arch_coef = 0      # df_arch_coef / (nb_arch_coef - arch_coef)
-    diff_var_coef = 0       #df_var_coef / (nb_var_coef - var_coef)
-
+    nb_a0 = vicinity*target_a0 + (1-vicinity)*a0
+    nb_arch_coef = vicinity*target_arch_coef + (1-vicinity)*arch_coef
+    nb_var_coef = vicinity*target_var_coef + (1-vicinity)*var_coef
 }
 
 
-# TODO implement descent with momentum (esque)
-# use simulated annealing
-# when available, use BHHH or BFGS to maximize qmle
-
-fit_garch = function(Matrix[Double] Xt, Integer kmax, Double stepsize, Double momentum)
-return (Double a0, Double arch_coef, Double var_coef) {
-
-    decay_rate = - 2/(log(2)*kmax) # halflife of kmax/2
-    nb_eps = 0.01
-
-    # initialize
-    [a0, arch_coef, var_coef] = sample_candidate()
-    print(arch_coef)
-
-    curr_qmle = qmle(Xt, a0, arch_coef, var_coef)
-
-    change_a0 = 0
-    change_arch_coef = 0
-    change_var_coef = 0
-
-    for (k in 1:kmax-1) {
-        #temp = (kmax-k) / kmax # from 1 -> 0
-        temp = exp(decay_rate*k)
-
-        [diff_a0, diff_arch_coef, diff_var_coef] = diff_qmle(Xt, a0, arch_coef, var_coef, curr_qmle)
+# ------- numerically approximated gradient of quasi-log-likelihood
+gradient = function(Matrix[Double] X, Double a0, Double arch_coef, Double var_coef)
+return (Double d_a0, Double d_arch_coef, Double d_var_coef) {
+    eps = 0.00001
+    qmle_val = qmle(X, a0, arch_coef, var_coef)
+    d_a0 = (qmle(X, a0 + eps, arch_coef, var_coef) - qmle_val) / eps
+    d_arch_coef = (qmle(X, a0, arch_coef + eps, var_coef) - qmle_val) / eps
+    d_var_coef = (qmle(X, a0, arch_coef, var_coef + eps) - qmle_val) / eps
+}
 
 
-        #print(diff_a0)
-        #print(diff_arch_coef)
-        #print(diff_var_coef)
-        print("")
+# ------- simulate a garch-process with given parameters
+sim_garch = function(Double a0, Double arch_coef, Double var_coef, Integer simsteps, Integer seed)
+return (Matrix[Double] X, Matrix[Double] var_hist) {
 
-        change_a0 = stepsize * diff_a0 #+ momentum * change_a0
-        change_arch_coef = stepsize * diff_arch_coef #+ momentum * change_arch_coef
-        change_var_coef = stepsize * diff_var_coef #+ momentum * change_var_coef
+    # init var and std
+    var = a0 / (1 - arch_coef - var_coef)
+    std = sqrt(var)
 
-        #a0 = a0 + change_a0
-        #arch_coef = arch_coef + change_a0
-        #var_coef = var_coef + change_var_coef
+    # init outputs
+    var_hist = matrix(0, rows=0, cols=1)
+    X = matrix(0, rows=0, cols=1)
+
+    # recursively construct time series
+    for (t in seq(1,simsteps,1)) {
+        noise = as.scalar(rand(rows=1, cols=1, pdf="normal", seed=seed)) # N(0,1) noise
+        xt = noise * std
+
+        X = rbind(X, matrix(xt, rows=1,cols=1))
+        var_hist = rbind(var_hist,  matrix(var, rows=1,cols=1))
+
+        # get var and std for next round
+        var = a0 + arch_coef * (xt^2) + var_coef * var
+        std = sqrt(var)
+
+        seed = seed + 1 # prevent same innovations
     }
 }
 
-[fitted_a0, fitted_arch_coef, fitted_var_coef] = fit_garch(Xt, 10, 0.005, 0.9)
-
-#print(a0)
-#print(arch_coef)
-#print(garch_coef)
-
-#[Yt, var_hist] = sim_garch(fitted_a0, fitted_arch_coef, fitted_var_coef, nrow(Xt), 0)
-
-
-#print("")
-#print("mse: " + toString(sum((Xt - Yt)^2) / nrow(Xt)))

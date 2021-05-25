@@ -120,6 +120,7 @@ public enum Builtins {
 	EVAL("eval", false),
 	FLOOR("floor", false),
 	FRAME_SORT("frameSort", true),
+	GARCH("garch", true),
 	GAUSSIAN_CLASSIFIER("gaussianClassifier", true),
 	GET_PERMUTATIONS("getPermutations", true),
 	GLM("glm", true),

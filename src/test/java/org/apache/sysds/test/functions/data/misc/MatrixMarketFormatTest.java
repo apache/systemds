@@ -22,7 +22,7 @@ package org.apache.sysds.test.functions.data.misc;
 import org.junit.Test;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.ExecMode;
-import org.apache.sysds.lops.LopProperties.ExecType;
+import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.runtime.io.IOUtilFunctions;
 import org.apache.sysds.runtime.io.FileFormatPropertiesMM.MMField;
 import org.apache.sysds.runtime.io.FileFormatPropertiesMM.MMFormat;

@@ -21,7 +21,7 @@ package org.apache.sysds.test.functions.indexing;
 
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.ExecMode;
-import org.apache.sysds.lops.LopProperties.ExecType;
+import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;

@@ -22,8 +22,8 @@ package org.apache.sysds.test.functions.builtin;
 import org.junit.Test;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types;
+import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.hops.OptimizerUtils;
-import org.apache.sysds.lops.LopProperties;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
@@ -50,30 +50,30 @@ public class BuiltinMultiLogRegTest extends AutomatedTestBase {
 
 	@Test
 	public void testMultiLogRegInterceptCP0() {
-		runMultiLogeRegTest( 0, tol, 1.0, maxIter, maxInnerIter, LopProperties.ExecType.CP);
+		runMultiLogeRegTest( 0, tol, 1.0, maxIter, maxInnerIter, ExecType.CP);
 	}
 	@Test
 	public void testMultiLogRegInterceptCP1() {
-		runMultiLogeRegTest( 1, tol, 1.0, maxIter, maxInnerIter, LopProperties.ExecType.CP);
+		runMultiLogeRegTest( 1, tol, 1.0, maxIter, maxInnerIter, ExecType.CP);
 	}
 	@Test
 	public void testMultiLogRegInterceptCP2() {
-		runMultiLogeRegTest( 2, tol, 1.0, maxIter, maxInnerIter, LopProperties.ExecType.CP);
+		runMultiLogeRegTest( 2, tol, 1.0, maxIter, maxInnerIter, ExecType.CP);
 	}
 	@Test
 	public void testMultiLogRegInterceptSpark0() {
-		runMultiLogeRegTest( 0, tol, 1.0, maxIter, maxInnerIter, LopProperties.ExecType.SPARK);
+		runMultiLogeRegTest( 0, tol, 1.0, maxIter, maxInnerIter, ExecType.SPARK);
 	}
 	@Test
 	public void testMultiLogRegInterceptSpark1() {
-		runMultiLogeRegTest( 1, tol, 1.0, maxIter, maxInnerIter, LopProperties.ExecType.SPARK);
+		runMultiLogeRegTest( 1, tol, 1.0, maxIter, maxInnerIter, ExecType.SPARK);
 	}
 	@Test
 	public void testMultiLogRegInterceptSpark2() {
-		runMultiLogeRegTest(2, tol, 1.0, maxIter, maxInnerIter, LopProperties.ExecType.SPARK);
+		runMultiLogeRegTest(2, tol, 1.0, maxIter, maxInnerIter, ExecType.SPARK);
 	}
 
-	private void runMultiLogeRegTest( int inc, double tol, double reg, int maxOut, int maxIn, LopProperties.ExecType instType) {
+	private void runMultiLogeRegTest( int inc, double tol, double reg, int maxOut, int maxIn, ExecType instType) {
 		Types.ExecMode platformOld = setExecMode(instType);
 
 		boolean oldFlag = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;

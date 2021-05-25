@@ -20,7 +20,7 @@
 package org.apache.sysds.lops;
 
  
-import org.apache.sysds.lops.LopProperties.ExecType;
+import org.apache.sysds.common.Types.ExecType;
 
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.ValueType;

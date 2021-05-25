@@ -24,6 +24,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.spark.Partitioner;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.sysds.api.DMLScript;
+import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.conf.ConfigurationManager;
@@ -31,7 +32,6 @@ import org.apache.sysds.hops.Hop;
 import org.apache.sysds.hops.MultiThreadedHop;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.hops.recompile.Recompiler;
-import org.apache.sysds.lops.LopProperties;
 import org.apache.sysds.parser.DMLProgram;
 import org.apache.sysds.parser.DMLTranslator;
 import org.apache.sysds.parser.Statement;
@@ -330,7 +330,7 @@ public class ParamservUtils {
 			// Recompile the program block
 			if (recompiled) {
 				if(forceExecTypeCP)
-					Recompiler.rRecompileProgramBlock2Forced(pb, pb.getThreadID(), new HashSet<>(), LopProperties.ExecType.CP);
+					Recompiler.rRecompileProgramBlock2Forced(pb, pb.getThreadID(), new HashSet<>(), ExecType.CP);
 				else
 					Recompiler.recompileProgramBlockInstructions(pb);
 			}

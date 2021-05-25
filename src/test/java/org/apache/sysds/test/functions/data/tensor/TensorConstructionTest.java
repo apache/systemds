@@ -25,7 +25,7 @@ import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.ExecMode;
-import org.apache.sysds.lops.LopProperties;
+import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 
@@ -70,17 +70,17 @@ public class TensorConstructionTest extends AutomatedTestBase {
 
 	@Test
 	public void tensorConstructionTestCP() {
-		testTensorConstruction(TEST_NAME, LopProperties.ExecType.CP);
+		testTensorConstruction(TEST_NAME, ExecType.CP);
 	}
 
 	@Test
 	public void tensorConstructionTestSpark() {
-		testTensorConstruction(TEST_NAME, LopProperties.ExecType.SPARK);
+		testTensorConstruction(TEST_NAME, ExecType.SPARK);
 	}
 
-	private void testTensorConstruction(String testName, LopProperties.ExecType platform) {
+	private void testTensorConstruction(String testName, ExecType platform) {
 		ExecMode platformOld = rtplatform;
-		if (platform == LopProperties.ExecType.SPARK) {
+		if (platform == ExecType.SPARK) {
 			rtplatform = ExecMode.SPARK;
 		}
 		else {

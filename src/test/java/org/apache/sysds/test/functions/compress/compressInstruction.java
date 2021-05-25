@@ -22,8 +22,7 @@ package org.apache.sysds.test.functions.compress;
 import static org.junit.Assert.assertTrue;
 
 import org.apache.sysds.common.Types;
-import org.apache.sysds.lops.LopProperties;
-import org.apache.sysds.lops.LopProperties.ExecType;
+import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.runtime.controlprogram.parfor.stat.Timing;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
@@ -83,7 +82,7 @@ public class compressInstruction extends AutomatedTestBase {
 		}
 	}
 
-	public void compressTest(int cols, int rows, double sparsity, LopProperties.ExecType instType, int min, int max,
+	public void compressTest(int cols, int rows, double sparsity, ExecType instType, int min, int max,
 		int decompressionCountExpected, int compressionCountsExpected, String name) {
 
 		Types.ExecMode platformOld = setExecMode(instType);

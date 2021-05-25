@@ -328,7 +328,7 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/lops/Lop.html#getEndLine--">getEndLine</a></span>()</code>&nbsp;</td>
 </tr>
 <tr id="i9" class="rowColor">
-<td class="colFirst"><code><a href="../../../../org/apache/sysds/lops/LopProperties.ExecType.html" title="enum in org.apache.sysds.lops">LopProperties.ExecType</a></code></td>
+<td class="colFirst"><code><a href="../../../../org/apache/sysds/lops/ExecType.html" title="enum in org.apache.sysds.lops">ExecType</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/lops/Lop.html#getExecType--">getExecType</a></span>()</code>
 <div class="block">Method to get the execution type (CP, CP_FILE, MR, SPARK, GPU, INVALID) of LOP</div>
 </td>
@@ -553,7 +553,7 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 </tr>
 <tr id="i44" class="altColor">
 <td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a></code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/lops/Lop.html#prepScalarInputOperand-org.apache.sysds.lops.LopProperties.ExecType-">prepScalarInputOperand</a></span>(<a href="../../../../org/apache/sysds/lops/LopProperties.ExecType.html" title="enum in org.apache.sysds.lops">LopProperties.ExecType</a>&nbsp;et)</code>&nbsp;</td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/lops/Lop.html#prepScalarInputOperand-org.apache.sysds.lops.ExecType-">prepScalarInputOperand</a></span>(<a href="../../../../org/apache/sysds/lops/ExecType.html" title="enum in org.apache.sysds.lops">ExecType</a>&nbsp;et)</code>&nbsp;</td>
 </tr>
 <tr id="i45" class="rowColor">
 <td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a></code></td>
@@ -567,7 +567,7 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 </tr>
 <tr id="i47" class="rowColor">
 <td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a></code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/lops/Lop.html#prepScalarOperand-org.apache.sysds.lops.LopProperties.ExecType-java.lang.String-">prepScalarOperand</a></span>(<a href="../../../../org/apache/sysds/lops/LopProperties.ExecType.html" title="enum in org.apache.sysds.lops">LopProperties.ExecType</a>&nbsp;et,
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/lops/Lop.html#prepScalarOperand-org.apache.sysds.lops.ExecType-java.lang.String-">prepScalarOperand</a></span>(<a href="../../../../org/apache/sysds/lops/ExecType.html" title="enum in org.apache.sysds.lops">ExecType</a>&nbsp;et,
                  <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;label)</code>
 <div class="block">Function to be used in creating instructions for creating scalar
  operands.</div>
@@ -1230,7 +1230,7 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <ul class="blockList">
 <li class="blockList">
 <h4>getExecType</h4>
-<pre>public&nbsp;<a href="../../../../org/apache/sysds/lops/LopProperties.ExecType.html" title="enum in org.apache.sysds.lops">LopProperties.ExecType</a>&nbsp;getExecType()</pre>
+<pre>public&nbsp;<a href="../../../../org/apache/sysds/lops/ExecType.html" title="enum in org.apache.sysds.lops">ExecType</a>&nbsp;getExecType()</pre>
 <div class="block">Method to get the execution type (CP, CP_FILE, MR, SPARK, GPU, INVALID) of LOP</div>
 <dl>
 <dt><span class="returnLabel">Returns:</span></dt>
@@ -1727,13 +1727,13 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 </dl>
 </li>
 </ul>
-<a name="prepScalarOperand-org.apache.sysds.lops.LopProperties.ExecType-java.lang.String-">
+<a name="prepScalarOperand-org.apache.sysds.lops.ExecType-java.lang.String-">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
 <h4>prepScalarOperand</h4>
-<pre>public&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;prepScalarOperand(<a href="../../../../org/apache/sysds/lops/LopProperties.ExecType.html" title="enum in org.apache.sysds.lops">LopProperties.ExecType</a>&nbsp;et,
+<pre>public&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;prepScalarOperand(<a href="../../../../org/apache/sysds/lops/ExecType.html" title="enum in org.apache.sysds.lops">ExecType</a>&nbsp;et,
                                 <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;label)</pre>
 <div class="block">Function to be used in creating instructions for creating scalar
  operands. It decides whether or not attach placeholders for instruction
@@ -1756,13 +1756,13 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 </dl>
 </li>
 </ul>
-<a name="prepScalarInputOperand-org.apache.sysds.lops.LopProperties.ExecType-">
+<a name="prepScalarInputOperand-org.apache.sysds.lops.ExecType-">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
 <h4>prepScalarInputOperand</h4>
-<pre>public&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;prepScalarInputOperand(<a href="../../../../org/apache/sysds/lops/LopProperties.ExecType.html" title="enum in org.apache.sysds.lops">LopProperties.ExecType</a>&nbsp;et)</pre>
+<pre>public&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;prepScalarInputOperand(<a href="../../../../org/apache/sysds/lops/ExecType.html" title="enum in org.apache.sysds.lops">ExecType</a>&nbsp;et)</pre>
 </li>
 </ul>
 <a name="prepScalarInputOperand-java.lang.String-">

@@ -24,7 +24,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import org.junit.Test;
 import org.apache.sysds.common.Types;
-import org.apache.sysds.lops.LopProperties;
+import org.apache.sysds.common.Types.ExecType;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
@@ -75,7 +75,7 @@ public class BuiltinOutlierByArima extends AutomatedTestBase {
 
 	@Test
 	public void testOutlierByArima(){
-		Types.ExecMode platformOld = setExecMode(LopProperties.ExecType.CP);
+		Types.ExecMode platformOld = setExecMode(ExecType.CP);
 		try {
 			loadTestConfiguration(getTestConfiguration(TEST_NAME));
 			String HOME = SCRIPT_DIR + TEST_DIR;

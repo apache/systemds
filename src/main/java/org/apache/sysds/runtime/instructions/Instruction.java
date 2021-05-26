@@ -250,5 +250,8 @@ public abstract class Instruction
 	 * 
 	 * @param ec execution context
 	 */
-	public void postprocessInstruction(ExecutionContext ec) {}
+	public void postprocessInstruction(ExecutionContext ec) {
+		if (DMLScript.LINEAGE_DEBUGGER)
+			ec.maintainLineageDebuggerInfo(this);
+	}
 }

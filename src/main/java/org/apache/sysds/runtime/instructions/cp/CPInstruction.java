@@ -152,6 +152,9 @@ public abstract class CPInstruction extends Instruction
 		if (!LineageCacheConfig.ReuseCacheType.isNone() && DMLScript.USE_ACCELERATOR
 			&& LineageCacheConfig.CONCURRENTGPUEVICTION)
 			LineageCacheConfig.STOPBACKGROUNDEVICTION = true;
+		
+		//default post-process behavior
+		super.postprocessInstruction(ec);
 	}
 	
 	/** 

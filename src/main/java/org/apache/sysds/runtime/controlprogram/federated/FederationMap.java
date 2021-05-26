@@ -23,9 +23,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.Map.Entry;
-import java.util.TreeMap;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
@@ -46,18 +44,44 @@ import org.apache.sysds.runtime.util.CommonThreadPool;
 import org.apache.sysds.runtime.util.IndexRange;
 
 public class FederationMap {
+	public enum FPartitioning{
+		ROW,   //row partitioned, groups of entire rows
+		COL,   //column partitioned, groups of entire columns
+		MIXED, //arbitrary rectangles
+		NONE,  //entire data in a location
+	}
+	
+	public enum FReplication {
+		NONE,    //every data item in a separate location
+		FULL,    //every data item at every location
+		OVERLAP, //every data item partially at every location, w/ addition as aggregation method
+	}
+	
 	public enum FType {
-		ROW, // row partitioned, groups of rows
-		COL, // column partitioned, groups of columns
-		FULL, // Meaning both Row and Column indicating a single federated location and a full matrix
-		OTHER;
+		ROW(FPartitioning.ROW, FReplication.NONE),
+		COL(FPartitioning.COL, FReplication.NONE),
+		FULL(FPartitioning.NONE, FReplication.NONE),
+		BROADCAST(FPartitioning.NONE, FReplication.FULL),
+		PART(FPartitioning.NONE, FReplication.OVERLAP),
+		OTHER(FPartitioning.MIXED, FReplication.NONE);
 
+		private final FPartitioning _partType;
+		@SuppressWarnings("unused") //not yet
+		private final FReplication _repType;
+		
+		private FType(FPartitioning ptype, FReplication rtype) {
+			_partType = ptype;
+			_repType = rtype;
+		}
+		
 		public boolean isRowPartitioned() {
-			return this == ROW || this == FULL;
+			return _partType == FPartitioning.ROW
+				|| _partType == FPartitioning.NONE;
 		}
 
 		public boolean isColPartitioned() {
-			return this == COL || this == FULL;
+			return _partType == FPartitioning.COL
+				|| _partType == FPartitioning.NONE;
 		}
 
 		public boolean isType(FType t) {
@@ -75,18 +99,18 @@ public class FederationMap {
 	}
 
 	private long _ID = -1;
-	private final Map<FederatedRange, FederatedData> _fedMap;
+	private final List<Pair<FederatedRange, FederatedData>> _fedMap;
 	private FType _type;
 
-	public FederationMap(Map<FederatedRange, FederatedData> fedMap) {
+	public FederationMap(List<Pair<FederatedRange, FederatedData>> fedMap) {
 		this(-1, fedMap);
 	}
 
-	public FederationMap(long ID, Map<FederatedRange, FederatedData> fedMap) {
+	public FederationMap(long ID, List<Pair<FederatedRange, FederatedData>> fedMap) {
 		this(ID, fedMap, FType.OTHER);
 	}
 
-	public FederationMap(long ID, Map<FederatedRange, FederatedData> fedMap, FType type) {
+	public FederationMap(long ID, List<Pair<FederatedRange, FederatedData>> fedMap, FType type) {
 		_ID = ID;
 		_fedMap = fedMap;
 		_type = type;
@@ -113,13 +137,31 @@ public class FederationMap {
 	}
 
 	public FederatedRange[] getFederatedRanges() {
-		return _fedMap.keySet().toArray(new FederatedRange[0]);
+		return _fedMap.stream().map(e -> e.getKey()).toArray(FederatedRange[]::new);
+	}
+	
+	public FederatedData[] getFederatedData() {
+		return _fedMap.stream().map(e -> e.getValue()).toArray(FederatedData[]::new);
+	}
+	
+	private FederatedData getFederatedData(FederatedRange range) {
+		for( Pair<FederatedRange, FederatedData> e : _fedMap )
+			if( e.getKey().equals(range) )
+				return e.getValue();
+		return null;
+	}
+	
+	private void removeFederatedData(FederatedRange range) {
+		Iterator<Pair<FederatedRange, FederatedData>> iter = _fedMap.iterator();
+		while( iter.hasNext() )
+			if( iter.next().getKey().equals(range) )
+				iter.remove();
 	}
 
-	public Map<FederatedRange, FederatedData> getMap() {
+	public List<Pair<FederatedRange, FederatedData>> getMap() {
 		return _fedMap;
 	}
-
+	
 	public FederatedRequest broadcast(CacheableData<?> data) {
 		// prepare single request for all federated data
 		long id = FederationUtils.getNextFedDataID();
@@ -152,7 +194,7 @@ public class FederationMap {
 		// prepare indexing ranges
 		int[][] ix = new int[_fedMap.size()][];
 		int pos = 0;
-		for(Entry<FederatedRange, FederatedData> e : _fedMap.entrySet()) {
+		for(Pair<FederatedRange, FederatedData> e : _fedMap) {
 			int beg = e.getKey().getBeginDimsInt()[(_type == FType.ROW ? 0 : 1)];
 			int end = e.getKey().getEndDimsInt()[(_type == FType.ROW ? 0 : 1)];
 			int nr = _type == FType.ROW ? cb.getNumRows() : cb.getNumColumns();
@@ -189,18 +231,23 @@ public class FederationMap {
 		return ret;
 	}
 
+	/**
+	 * Determines if the two federation maps are aligned row/column partitions
+	 * at the same federated sites (which allows for purely federated operation)
+	 * @param that FederationMap to check alignment with
+	 * @param transposed true if that FederationMap should be transposed before checking alignment
+	 * @return true if this and that FederationMap are aligned
+	 */
 	public boolean isAligned(FederationMap that, boolean transposed) {
-		// determines if the two federated data are aligned row/column partitions
-		// at the same federated site (which allows for purely federated operation)
 		boolean ret = true;
-		for(Entry<FederatedRange, FederatedData> e : _fedMap.entrySet()) {
+		for(Pair<FederatedRange, FederatedData> e : _fedMap) {
 			FederatedRange range = !transposed ? e.getKey() : new FederatedRange(e.getKey()).transpose();
-			FederatedData dat2 = that._fedMap.get(range);
+			FederatedData dat2 = that.getFederatedData(range);
 			ret &= e.getValue().equalAddress(dat2);
 		}
 		return ret;
 	}
-
+	
 	public Future<FederatedResponse>[] execute(long tid, FederatedRequest... fr) {
 		return execute(tid, false, fr);
 	}
@@ -220,7 +267,7 @@ public class FederationMap {
 		setThreadID(tid, frSlices, fr);
 		List<Future<FederatedResponse>> ret = new ArrayList<>();
 		int pos = 0;
-		for(Entry<FederatedRange, FederatedData> e : _fedMap.entrySet())
+		for(Pair<FederatedRange, FederatedData> e : _fedMap)
 			ret.add(e.getValue().executeFederatedOperation((frSlices != null) ? addAll(frSlices[pos++], fr) : fr));
 
 		// prepare results (future federated responses), with optional wait to ensure the
@@ -237,7 +284,7 @@ public class FederationMap {
 		setThreadID(tid, frSlices2, fr);
 		List<Future<FederatedResponse>> ret = new ArrayList<>();
 		int pos = 0;
-		for(Entry<FederatedRange, FederatedData> e : _fedMap.entrySet()) {
+		for(Pair<FederatedRange, FederatedData> e : _fedMap) {
 			if(Arrays.asList(fedRange1).contains(e.getKey())) {
 				FederatedRequest[] newFr = (frSlices1 != null) ? ((frSlices2 != null) ? (addAll(frSlices2[pos],
 					addAll(frSlices1[pos++], fr))) : addAll(frSlices1[pos++], fr)) : fr;
@@ -254,7 +301,9 @@ public class FederationMap {
 	}
 
 	public Future<FederatedResponse>[] execute(long tid, boolean wait, FederatedRequest[] frSlices1, FederatedRequest[] frSlices2, FederatedRequest... fr) {
-		return execute(tid, wait, Arrays.stream(_fedMap.keySet().toArray()).toArray(FederatedRange[]::new), null, frSlices1, frSlices2, fr);
+		return execute(tid, wait,
+			_fedMap.stream().map(e->e.getKey()).toArray(FederatedRange[]::new),
+			null, frSlices1, frSlices2, fr);
 	}
 
 	@SuppressWarnings("unchecked")
@@ -265,7 +314,7 @@ public class FederationMap {
 		setThreadID(tid, allSlices, fr);
 		List<Future<FederatedResponse>> ret = new ArrayList<>();
 		int pos = 0;
-		for(Entry<FederatedRange, FederatedData> e : _fedMap.entrySet()) {
+		for(Pair<FederatedRange, FederatedData> e : _fedMap) {
 			FederatedRequest[] fedReq = fr;
 			for(FederatedRequest[] slice : frSlices)
 				fedReq = addAll(slice[pos], fedReq);
@@ -286,7 +335,7 @@ public class FederationMap {
 
 		List<Pair<FederatedRange, Future<FederatedResponse>>> readResponses = new ArrayList<>();
 		FederatedRequest request = new FederatedRequest(RequestType.GET_VAR, _ID);
-		for(Map.Entry<FederatedRange, FederatedData> e : _fedMap.entrySet())
+		for(Pair<FederatedRange, FederatedData> e : _fedMap)
 			readResponses.add(new ImmutablePair<>(e.getKey(), e.getValue().executeFederatedOperation(request)));
 		return readResponses;
 	}
@@ -303,8 +352,8 @@ public class FederationMap {
 			VariableCPInstruction.prepareRemoveInstruction(id).toString());
 		request.setTID(tid);
 		List<Future<FederatedResponse>> tmp = new ArrayList<>();
-		for(FederatedData fd : _fedMap.values())
-			tmp.add(fd.executeFederatedOperation(request));
+		for(Pair<FederatedRange, FederatedData> fd : _fedMap)
+			tmp.add(fd.getValue().executeFederatedOperation(request));
 		// This cleaning is allowed to go in a separate thread, and finish on its own.
 		// The benefit is that the program is able to continue working on other things.
 		// The downside is that at the end of execution these threads can have executed
@@ -348,40 +397,80 @@ public class FederationMap {
 		return copyFederationMap;
 	}
 
+	/**
+	 * Copy the federation map with the next available federated ID as reference to the federated data.
+	 * This means that the federated map refers to the next federated data object on the workers.
+	 * @return copied federation map with next federated ID
+	 */
 	public FederationMap copyWithNewID() {
 		return copyWithNewID(FederationUtils.getNextFedDataID());
 	}
 
+	/**
+	 * Copy the federation map with the given ID as reference to the federated data.
+	 * This means that the federated map refers to the federated data object on the workers with the given ID.
+	 * @param id federated data object ID
+	 * @return copied federation map with given federated ID
+	 */
 	public FederationMap copyWithNewID(long id) {
-		Map<FederatedRange, FederatedData> map = new TreeMap<>();
+		List<Pair<FederatedRange, FederatedData>> map = new ArrayList<>();
 		// TODO handling of file path, but no danger as never written
-		for(Entry<FederatedRange, FederatedData> e : _fedMap.entrySet()) {
+		for(Entry<FederatedRange, FederatedData> e : _fedMap) {
 			if(e.getKey().getSize() != 0)
-				map.put(new FederatedRange(e.getKey()), e.getValue().copyWithNewID(id));
+				map.add(Pair.of(new FederatedRange(e.getKey()), e.getValue().copyWithNewID(id)));
 		}
 		return new FederationMap(id, map, _type);
 	}
 
+	/**
+	 * Copy the federation map with the given ID as reference to the federated data
+	 * and with given clen as end dimension for the columns in the range.
+	 * This means that the federated map refers to the federated data object on the workers with the given ID.
+	 * @param id federated data object ID
+	 * @param clen column length of data objects on federated workers
+	 * @return copied federation map with given federated ID and ranges adapted according to clen
+	 */
 	public FederationMap copyWithNewID(long id, long clen) {
-		Map<FederatedRange, FederatedData> map = new TreeMap<>();
+		List<Pair<FederatedRange, FederatedData>> map = new ArrayList<>();
 		// TODO handling of file path, but no danger as never written
-		for(Entry<FederatedRange, FederatedData> e : _fedMap.entrySet())
-			map.put(new FederatedRange(e.getKey(), clen), e.getValue().copyWithNewID(id));
+		for(Pair<FederatedRange, FederatedData> e : _fedMap)
+			map.add(Pair.of(new FederatedRange(e.getKey(), clen), e.getValue().copyWithNewID(id)));
 		return new FederationMap(id, map, _type);
 	}
 
+	/**
+	 * Copy federated mapping while giving the federated data new IDs
+	 * and setting the ranges from zero to row and column ends specified.
+	 * The overlapping ranges are given an overlap number to separate the ranges when putting to the federated map.
+	 * The federation map returned is of type FType.PART.
+	 * @param rowRangeEnd end of range for the rows
+	 * @param colRangeEnd end of range for the columns
+	 * @param outputID ID given to the output
+	 * @return new federation map with overlapping ranges with partially aggregated values
+	 */
+	public FederationMap copyWithNewIDAndRange(long rowRangeEnd, long colRangeEnd, long outputID){
+		List<Pair<FederatedRange, FederatedData>> outputMap = new ArrayList<>();
+		for(Pair<FederatedRange, FederatedData> e : _fedMap) {
+			if(e.getKey().getSize() != 0)
+				outputMap.add(Pair.of(
+					new FederatedRange(new long[]{0,0}, new long[]{rowRangeEnd, colRangeEnd}),
+					e.getValue().copyWithNewID(outputID)));
+		}
+		return new FederationMap(outputID, outputMap, FType.PART);
+	}
+
 	public FederationMap bind(long rOffset, long cOffset, FederationMap that) {
-		for(Entry<FederatedRange, FederatedData> e : that._fedMap.entrySet()) {
-			_fedMap.put(new FederatedRange(e.getKey()).shift(rOffset, cOffset), e.getValue().copyWithNewID(_ID));
+		for(Entry<FederatedRange, FederatedData> e : that._fedMap) {
+			_fedMap.add(Pair.of(new FederatedRange(e.getKey()).shift(rOffset, cOffset), e.getValue().copyWithNewID(_ID)));
 		}
 		return this;
 	}
 
 	public FederationMap transpose() {
-		Map<FederatedRange, FederatedData> tmp = new TreeMap<>(_fedMap);
+		List<Pair<FederatedRange, FederatedData>> tmp = new ArrayList<>(_fedMap);
 		_fedMap.clear();
-		for(Entry<FederatedRange, FederatedData> e : tmp.entrySet()) {
-			_fedMap.put(new FederatedRange(e.getKey()).transpose(), e.getValue().copyWithNewID(_ID));
+		for(Pair<FederatedRange, FederatedData> e : tmp) {
+			_fedMap.add(Pair.of(new FederatedRange(e.getKey()).transpose(), e.getValue().copyWithNewID(_ID)));
 		}
 		// derive output type
 		switch(_type) {
@@ -394,6 +483,8 @@ public class FederationMap {
 			case COL:
 				_type = FType.ROW;
 				break;
+			case PART:
+				_type = FType.PART;
 			default:
 				_type = FType.OTHER;
 		}
@@ -401,7 +492,7 @@ public class FederationMap {
 	}
 
 	public long getMaxIndexInRange(int dim) {
-		return _fedMap.keySet().stream().mapToLong(range -> range.getEndDims()[dim]).max().orElse(-1L);
+		return _fedMap.stream().mapToLong(range -> range.getKey().getEndDims()[dim]).max().orElse(-1L);
 	}
 
 	/**
@@ -415,7 +506,7 @@ public class FederationMap {
 		ExecutorService pool = CommonThreadPool.get(_fedMap.size());
 
 		ArrayList<MappingTask> mappingTasks = new ArrayList<>();
-		for(Map.Entry<FederatedRange, FederatedData> fedMap : _fedMap.entrySet())
+		for(Pair<FederatedRange, FederatedData> fedMap : _fedMap)
 			mappingTasks.add(new MappingTask(fedMap.getKey(), fedMap.getValue(), forEachFunction, _ID));
 		CommonThreadPool.invokeAndShutdown(pool, mappingTasks);
 	}
@@ -435,7 +526,7 @@ public class FederationMap {
 
 		FederationMap fedMapCopy = copyWithNewID(_ID);
 		ArrayList<MappingTask> mappingTasks = new ArrayList<>();
-		for(Map.Entry<FederatedRange, FederatedData> fedMap : fedMapCopy._fedMap.entrySet())
+		for(Pair<FederatedRange, FederatedData> fedMap : fedMapCopy._fedMap)
 			mappingTasks.add(new MappingTask(fedMap.getKey(), fedMap.getValue(), mappingFunction, newVarID));
 		CommonThreadPool.invokeAndShutdown(pool, mappingTasks);
 		fedMapCopy._ID = newVarID;
@@ -445,7 +536,7 @@ public class FederationMap {
 	public FederationMap filter(IndexRange ixrange) {
 		FederationMap ret = this.clone(); // same ID
 
-		Iterator<Entry<FederatedRange, FederatedData>> iter = ret._fedMap.entrySet().iterator();
+		Iterator<Pair<FederatedRange, FederatedData>> iter = ret._fedMap.iterator();
 		while(iter.hasNext()) {
 			Entry<FederatedRange, FederatedData> e = iter.next();
 			FederatedRange range = e.getKey();
@@ -466,19 +557,20 @@ public class FederationMap {
 	}
 
 	public void reverseFedMap() {
+		// TODO perf
 		// TODO: add a check if the map is sorted based on indexes before reversing.
 		// TODO: add a setup such that on construction the federated map is already sorted.
-		FederatedRange[] fedRanges = this.getFederatedRanges();
+		FederatedRange[] fedRanges = getFederatedRanges();
 
 		for(int i = 0; i < Math.floor(fedRanges.length / 2.0); i++) {
-			FederatedData data1 = _fedMap.get(fedRanges[i]);
-			FederatedData data2 = _fedMap.get(fedRanges[fedRanges.length-1-i]);
+			FederatedData data1 = getFederatedData(fedRanges[i]);
+			FederatedData data2 = getFederatedData(fedRanges[fedRanges.length-1-i]);
 
-			_fedMap.remove(fedRanges[i]);
-			_fedMap.remove(fedRanges[fedRanges.length-1-i]);
+			removeFederatedData(fedRanges[i]);
+			removeFederatedData(fedRanges[fedRanges.length-1-i]);
 
-			_fedMap.put(fedRanges[i], data2);
-			_fedMap.put(fedRanges[fedRanges.length-1-i], data1);
+			_fedMap.add(Pair.of(fedRanges[i], data2));
+			_fedMap.add(Pair.of(fedRanges[fedRanges.length-1-i], data1));
 		}
 	}
 

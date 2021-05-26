@@ -40,6 +40,7 @@ import java.util.stream.Collectors;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
@@ -56,7 +57,7 @@ import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.conf.DMLConfig;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.lops.Lop;
-import org.apache.sysds.lops.LopProperties.ExecType;
+import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.lops.compile.Dag;
 import org.apache.sysds.parser.DataExpression;
 import org.apache.sysds.parser.ParseException;
@@ -643,7 +644,7 @@ public abstract class AutomatedTestBase {
 			new MatrixCharacteristics(nrows, ncol), Types.FileFormat.BINARY));
 
 		// write parts and generate FederationMap
-		HashMap<FederatedRange, FederatedData> fedHashMap = new HashMap<>();
+		List<Pair<FederatedRange, FederatedData>> fedHashMap = new ArrayList<>();
 		for(int i = 0; i < numFederatedWorkers; i++) {
 			double lowerBound = ranges[i][0];
 			double upperBound = ranges[i][1];
@@ -658,7 +659,7 @@ public abstract class AutomatedTestBase {
 			// generate fedmap entry
 			FederatedRange range = new FederatedRange(new long[]{(long) lowerBound, 0}, new long[]{(long) upperBound, ncol});
 			FederatedData data = new FederatedData(DataType.MATRIX, new InetSocketAddress(ports.get(i)), input(path));
-			fedHashMap.put(range, data);
+			fedHashMap.add(Pair.of(range, data));
 		}
 		
 		federatedMatrixObject.setFedMapping(new FederationMap(FederationUtils.getNextFedDataID(), fedHashMap));

@@ -26,8 +26,8 @@ import java.util.stream.Collectors;
 
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types;
+import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.hops.OptimizerUtils;
-import org.apache.sysds.lops.LopProperties;
 import org.apache.sysds.runtime.io.FrameWriter;
 import org.apache.sysds.runtime.io.FrameWriterFactory;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
@@ -69,52 +69,52 @@ public class FrameDropInvalidLengthTest extends AutomatedTestBase {
 	@Test
 	public void testTwoBadColCP() {
 		double[][] invalidLength =  {{-1,30,20,-1}};
-		runDropInvalidLenTest( invalidLength,1, LopProperties.ExecType.CP);
+		runDropInvalidLenTest( invalidLength,1, ExecType.CP);
 	}
 
 	@Test
 	public void testTwoBadColSP() {
 		double[][] invalidLength =  {{-1,30,20,-1}};
-		runDropInvalidLenTest( invalidLength,1, LopProperties.ExecType.SPARK);
+		runDropInvalidLenTest( invalidLength,1, ExecType.SPARK);
 	}
 
 	@Test
 	public void testOneBadColCP() {
 		double[][] invalidLength =  {{-1,-1,20,-1}};
-		runDropInvalidLenTest( invalidLength,2, LopProperties.ExecType.CP);
+		runDropInvalidLenTest( invalidLength,2, ExecType.CP);
 	}
 
 	@Test
 	public void testOneBadColSP() {
 		double[][] invalidLength =  {{-1,-1,20,-1}};
-		runDropInvalidLenTest( invalidLength,2, LopProperties.ExecType.SPARK);
+		runDropInvalidLenTest( invalidLength,2, ExecType.SPARK);
 	}
 
 	@Test
 	public void testAllBadColCP() {
 		double[][] invalidLength =  {{2,2,2,1}};
-		runDropInvalidLenTest( invalidLength,3, LopProperties.ExecType.CP);
+		runDropInvalidLenTest( invalidLength,3, ExecType.CP);
 	}
 
 	@Test
 	public void testAllBadColSP() {
 		double[][] invalidLength =  {{2,2,2,1}};
-		runDropInvalidLenTest( invalidLength,3, LopProperties.ExecType.SPARK);
+		runDropInvalidLenTest( invalidLength,3, ExecType.SPARK);
 	}
 
 	@Test
 	public void testNoneBadColCP() {
 		double[][] invalidLength =  {{-1,20,20,-1}};
-		runDropInvalidLenTest( invalidLength,4, LopProperties.ExecType.CP);
+		runDropInvalidLenTest( invalidLength,4, ExecType.CP);
 	}
 
 	@Test
 	public void testNoneBadColSP() {
 		double[][] invalidLength =  {{-1,20,20,-1}};
-		runDropInvalidLenTest( invalidLength,4, LopProperties.ExecType.SPARK);
+		runDropInvalidLenTest( invalidLength,4, ExecType.SPARK);
 	}
 
-	private void runDropInvalidLenTest(double[][] colInvalidLength, int test, LopProperties.ExecType et)
+	private void runDropInvalidLenTest(double[][] colInvalidLength, int test, ExecType et)
 	{
 		Types.ExecMode platformOld = setExecMode(et);
 		boolean oldFlag = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;

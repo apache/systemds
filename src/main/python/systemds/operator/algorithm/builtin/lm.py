@@ -28,7 +28,7 @@ from systemds.operator import OperationNode, Matrix
 from systemds.script_building.dag import OutputType
 from systemds.utils.consts import VALID_INPUT_TYPES
 
-def lm(X: OperationNode, y: OperationNode, **kwargs: Dict[str, VALID_INPUT_TYPES]) -> Matrix:
+def lm(X: OperationNode, y: OperationNode, **kwargs: Dict[str, VALID_INPUT_TYPES]):
     """
     :param X: Matrix of feature vectors.
     :param y: 1-column matrix of response values.
@@ -39,9 +39,6 @@ def lm(X: OperationNode, y: OperationNode, **kwargs: Dict[str, VALID_INPUT_TYPES
     :param verbose: If TRUE print messages are activated
     :return: 'OperationNode' containing the model fit 
     """
-    
-    X._check_matrix_op()
-    y._check_matrix_op()
     params_dict = {'X':X, 'y':y}
     params_dict.update(kwargs)
     return Matrix(X.sds_context, 'lm', named_input_nodes=params_dict)

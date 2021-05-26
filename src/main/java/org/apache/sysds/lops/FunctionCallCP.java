@@ -24,7 +24,7 @@ import java.util.ArrayList;
 
 import org.apache.sysds.hops.FunctionOp;
 import org.apache.sysds.hops.Hop;
-import org.apache.sysds.lops.LopProperties.ExecType;
+import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.parser.DMLProgram;
 import org.apache.sysds.common.Builtins;
 import org.apache.sysds.common.Types.DataType;

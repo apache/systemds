@@ -17,11 +17,11 @@
  * under the License.
  */
 
-package org.apache.sysds.test.functions.builtin;
+package org.apache.sysds.test.functions.pipelines;
 
 import org.junit.Test;
 import org.apache.sysds.common.Types.ExecMode;
-import org.apache.sysds.lops.LopProperties.ExecType;
+import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.runtime.matrix.data.MatrixValue;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
@@ -99,7 +99,6 @@ public class BuiltinImageMirrorTest extends AutomatedTestBase
 			HashMap<MatrixValue.CellIndex, Double> rfile_y  = readRMatrixFromExpectedDir("By");
 			TestUtils.compareMatrices(dmlfile_y, rfile_y, eps, "Stat-DML", "Stat-R");
 		}
-
 		finally {
 			rtplatform = platformOld;
 		}

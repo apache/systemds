@@ -104,8 +104,8 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 		incWorkerNumber();
 
 		// prepare features and labels
-		_featuresData = (FederatedData) _features.getFedMapping().getMap().values().toArray()[0];
-		_labelsData = (FederatedData) _labels.getFedMapping().getMap().values().toArray()[0];
+		_featuresData = _features.getFedMapping().getFederatedData()[0];
+		_labelsData = _labels.getFedMapping().getFederatedData()[0];
 
 		// weighting factor is always set, but only used when weighting is specified
 		_weightingFactor = weightingFactor;

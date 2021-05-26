@@ -21,7 +21,7 @@ package org.apache.sysds.test.functions.builtin;
 
 import org.junit.Test;
 import org.apache.sysds.common.Types;
-import org.apache.sysds.lops.LopProperties;
+import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
@@ -46,7 +46,7 @@ public class BuiltinIntersectionTest extends AutomatedTestBase
 		double[][] X =  {{12},{22},{13},{4},{6},{7},{8},{9},{12},{12}};
 		double[][] Y = {{1},{2},{11},{12},{13},{18},{20},{21},{12}};
 		double[][] expected = {{12},{13}};
-		runIntersectTest(X, Y, expected, LopProperties.ExecType.CP);
+		runIntersectTest(X, Y, expected, ExecType.CP);
 	}
 
 	@Test
@@ -54,7 +54,7 @@ public class BuiltinIntersectionTest extends AutomatedTestBase
 		double[][] X = {{12},{22},{13},{4},{6},{7},{8},{9},{12},{12}};
 		double[][] Y = {{1},{2},{11},{12},{13},{18},{20},{21},{12}};
 		double[][] expected = {{12},{13}};
-		runIntersectTest(X, Y, expected, LopProperties.ExecType.SPARK);
+		runIntersectTest(X, Y, expected, ExecType.SPARK);
 	}
 
 	@Test
@@ -62,7 +62,7 @@ public class BuiltinIntersectionTest extends AutomatedTestBase
 		double[][] X = TestUtils.seq(2, 200, 4);
 		double[][] Y = TestUtils.seq(2, 100, 2);
 		double[][] expected = TestUtils.seq(2, 100, 4);
-		runIntersectTest(X, Y, expected, LopProperties.ExecType.CP);
+		runIntersectTest(X, Y, expected, ExecType.CP);
 	}
 
 	@Test
@@ -70,10 +70,10 @@ public class BuiltinIntersectionTest extends AutomatedTestBase
 		double[][] X = TestUtils.seq(2, 200, 4);
 		double[][] Y = TestUtils.seq(2, 100, 2);
 		double[][] expected = TestUtils.seq(2, 100, 4);
-		runIntersectTest(X, Y, expected, LopProperties.ExecType.SPARK);
+		runIntersectTest(X, Y, expected, ExecType.SPARK);
 	}
 
-	private void runIntersectTest(double X[][], double Y[][], double[][] expected, LopProperties.ExecType instType)
+	private void runIntersectTest(double X[][], double Y[][], double[][] expected, ExecType instType)
 	{
 		Types.ExecMode platformOld = setExecMode(instType);
 		

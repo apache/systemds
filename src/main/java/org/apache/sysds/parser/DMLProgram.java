@@ -35,10 +35,12 @@ public class DMLProgram
 	
 	private ArrayList<StatementBlock> _blocks;
 	private Map<String, FunctionDictionary<FunctionStatementBlock>> _namespaces;
+	private boolean _containsRemoteParfor;
 	
 	public DMLProgram(){
 		_blocks = new ArrayList<>();
 		_namespaces = new HashMap<>();
+		_containsRemoteParfor = false;
 	}
 	
 	public DMLProgram(String namespace) {
@@ -56,6 +58,14 @@ public class DMLProgram
 	
 	public int getNumStatementBlocks(){
 		return _blocks.size();
+	}
+	
+	public void setContainsRemoteParfor(boolean flag) {
+		_containsRemoteParfor = flag;
+	}
+	
+	public boolean containsRemoteParfor() {
+		return _containsRemoteParfor;
 	}
 	
 	public static boolean isInternalNamespace(String namespace) {

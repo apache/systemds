@@ -29,7 +29,7 @@ import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.hops.AggBinaryOp.SparkAggType;
 import org.apache.sysds.hops.rewrite.HopRewriteUtils;
 import org.apache.sysds.lops.Lop;
-import org.apache.sysds.lops.LopProperties.ExecType;
+import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.lops.PartialAggregate;
 import org.apache.sysds.lops.TernaryAggregate;
 import org.apache.sysds.lops.UAggOuterChain;
@@ -157,11 +157,8 @@ public class AggUnaryOp extends MultiThreadedHop
 				setLineNumbers(agg1);
 				setLops(agg1);
 				
-				if (getDataType() == DataType.SCALAR) {
+				if (getDataType() == DataType.SCALAR)
 					agg1.getOutputParameters().setDimensions(1, 1, getBlocksize(), getNnz());
-				} else {
-					setFederatedOutput(agg1);
-				}
 			}
 			else if( et == ExecType.SPARK )
 			{
@@ -380,7 +377,7 @@ public class AggUnaryOp extends MultiThreadedHop
 			&& !(getInput().get(0) instanceof DataOp)  //input is not checkpoint
 			&& (getInput().get(0).getParent().size()==1 //uagg is only parent, or 
 			   || !requiresAggregation(getInput().get(0), _direction)) //w/o agg
-			&& getInput().get(0).optFindExecType() == ExecType.SPARK )					
+			&& getInput().get(0).optFindExecType() == ExecType.SPARK )
 		{
 			//pull unary aggregate into spark 
 			_etype = ExecType.SPARK;

@@ -136,7 +136,8 @@ public class LineageItemUtils {
 				.collect(Collectors.joining(" "));
 			sb.append(ids);
 			
-			sb.append(" ").append("[").append(li.getSpecialValueBits()).append("]");
+			if (DMLScript.LINEAGE_DEBUGGER)
+				sb.append(" ").append("[").append(li.getSpecialValueBits()).append("]");
 		}
 		return sb.toString().trim();
 	}

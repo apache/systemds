@@ -31,7 +31,8 @@ import org.apache.sysds.test.TestUtils;
 
 public class BuiltinGridSearchTest extends AutomatedTestBase
 {
-	private final static String TEST_NAME = "GridSearchLM";
+	private final static String TEST_NAME1 = "GridSearchLM";
+	private final static String TEST_NAME2 = "GridSearchMLogreg";
 	private final static String TEST_DIR = "functions/builtin/";
 	private final static String TEST_CLASS_DIR = TEST_DIR + BuiltinGridSearchTest.class.getSimpleName() + "/";
 	
@@ -40,30 +41,36 @@ public class BuiltinGridSearchTest extends AutomatedTestBase
 	
 	@Override
 	public void setUp() {
-		addTestConfiguration(TEST_NAME,new TestConfiguration(TEST_CLASS_DIR, TEST_NAME,new String[]{"R"})); 
+		addTestConfiguration(TEST_NAME1,new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1,new String[]{"R"}));
+		addTestConfiguration(TEST_NAME2,new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2,new String[]{"R"}));
 	}
 	
 	@Test
-	public void testGridSearchCP() {
-		runGridSearch(ExecType.CP);
+	public void testGridSearchLmCP() {
+		runGridSearch(TEST_NAME1, ExecType.CP);
 	}
 	
 	@Test
-	public void testGridSearchSpark() {
-		runGridSearch(ExecType.SPARK);
+	public void testGridSearchLmSpark() {
+		runGridSearch(TEST_NAME1, ExecType.SPARK);
 	}
 	
-	private void runGridSearch(ExecType et)
+	@Test
+	public void testGridSearchMLogregCP() {
+		runGridSearch(TEST_NAME2, ExecType.CP);
+	}
+	
+	private void runGridSearch(String testname, ExecType et)
 	{
 		ExecMode modeOld = setExecMode(et);
 		try {
-			loadTestConfiguration(getTestConfiguration(TEST_NAME));
+			loadTestConfiguration(getTestConfiguration(testname));
 			String HOME = SCRIPT_DIR + TEST_DIR;
 	
-			fullDMLScriptName = HOME + TEST_NAME + ".dml";
+			fullDMLScriptName = HOME + testname + ".dml";
 			programArgs = new String[] {"-args", input("X"), input("y"), output("R")};
-			double[][] X = getRandomMatrix(rows, cols, 0, 1, 0.8, -1);
-			double[][] y = getRandomMatrix(rows, 1, 0, 1, 0.8, -1);
+			double[][] X = getRandomMatrix(rows, cols, 0, 1, 0.8, 7);
+			double[][] y = getRandomMatrix(rows, 1, 1, 2, 1, 1);
 			writeInputMatrixWithMTD("X", X, true);
 			writeInputMatrixWithMTD("y", y, true);
 			

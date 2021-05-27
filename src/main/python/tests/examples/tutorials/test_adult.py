@@ -24,7 +24,8 @@ import unittest
 import numpy as np
 from systemds.context import SystemDSContext
 from systemds.examples.tutorials.adult import DataManager
-from systemds.operator.algorithm import kmeans, multiLogReg, multiLogRegPredict
+from systemds.operator import OperationNode
+from systemds.operator.algorithm import kmeans, multiLogReg, multiLogRegPredict, l2svm, confusionMatrix
 from systemds.script_building import DMLScript
 
 
@@ -89,9 +90,20 @@ class Test_DMLScript(unittest.TestCase):
 
         betas = multiLogReg(X, Y)
 
-        [_, _, acc] = multiLogRegPredict(Xt, betas, Yt).compute()
+        [_, y_pred, acc] = multiLogRegPredict(Xt, betas, Yt).compute()
 
         self.assertGreater(acc, 80)
+
+        confusion_matrix_abs, _ = confusionMatrix(self.sds.from_numpy(y_pred), Yt).compute()
+
+        self.assertTrue(
+            np.allclose(
+                confusion_matrix_abs,
+                np.array([[3503, 503],
+                          [268, 726]])
+            )
+        )
+
 
 
 if __name__ == "__main__":

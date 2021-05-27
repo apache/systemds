@@ -29,6 +29,7 @@ import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
 import org.junit.Assert;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.Test;
@@ -80,50 +81,56 @@ public class FederatedCodegenMultipleFedMOTest extends AutomatedTestBase
 			// cellwise
 			// row partitioned
 			{1, 4, 4, 4, 4, true},
-			{2, 4, 4, 4, 1, true},
+			// {2, 4, 4, 4, 1, true},
 			{3, 4, 1, 4, 1, true},
 			{4, 1000, 1, 1000, 1, true},
-			{5, 500, 2, 500, 2, true},
+			// {5, 500, 2, 500, 2, true},
 			{6, 2, 500, 2, 500, true},
 			{7, 2, 4, 2, 4, true},
 			// column partitioned
-			{1, 4, 4, 4, 4, false},
+			// {1, 4, 4, 4, 4, false},
 			{2, 4, 4, 1, 4, false},
 			{5, 500, 2, 500, 2, false},
-			{6, 2, 500, 2, 500, false},
+			// {6, 2, 500, 2, 500, false},
 			{7, 2, 4, 2, 4, false},
-			
+
 			// rowwise
-			{101, 6, 2, 6, 2, true},
+			// {101, 6, 2, 6, 2, true},
 			{102, 6, 1, 6, 4, true},
-			{103, 6, 4, 6, 2, true},
+			// {103, 6, 4, 6, 2, true},
 			{104, 150, 10, 150, 10, true},
 
 			// multi aggregate
 			// row partitioned
-			{201, 6, 4, 6, 4, true},
+			// {201, 6, 4, 6, 4, true},
 			{202, 6, 4, 6, 4, true},
-			{203, 20, 1, 20, 1, true},
+			// {203, 20, 1, 20, 1, true},
 			// col partitioned
 			{201, 6, 4, 6, 4, false},
 			{202, 6, 4, 6, 4, false},
 
 			// outer product
 			// row partitioned
-			{301, 2000, 1500, 2000, 10, true},
+			// {301, 1500, 1500, 1500, 10, true},
 			{303, 4000, 2000, 4000, 10, true},
-			{305, 4000, 2000, 4000, 10, true},
-			{307, 1000, 2000, 1000, 10, true},
-			{309, 1000, 2000, 1000, 10, true},
+			// {305, 4000, 2000, 4000, 10, true},
+			// {307, 1000, 2000, 1000, 10, true},
+			// {309, 1000, 2000, 1000, 10, true},
 			// col partitioned
-			{302, 2000, 1500, 10, 1500, false},
-			{304, 4000, 2000, 10, 2000, false},
-			{306, 4000, 2000, 10, 2000, false},
+			// {302, 2000, 2000, 10, 2000, false},
+			// {304, 4000, 2000, 10, 2000, false},
+			// {306, 4000, 2000, 10, 2000, false},
 			{308, 1000, 2000, 10, 2000, false},
-			{310, 1000, 2000, 10, 2000, false},
+			// {310, 1000, 2000, 10, 2000, false},
 			// row and col partitioned
-			// {311, 1000, 2000, 1000, 10, true}, // not working yet
+			// {311, 1000, 2000, 1000, 10, true}, // not working yet - ArrayIndexOutOfBoundsException in dotProduct
 			{312, 1000, 2000, 10, 2000, false},
+			// {313, 4000, 2000, 4000, 10, true}, // not working yet - ArrayIndexOutOfBoundsException in dotProduct
+			{314, 4000, 2000, 10, 2000, false},
+
+			// combined tests
+			{401, 20, 10, 20, 6, true}, // cellwise, rowwise, multiaggregate
+			{402, 2000, 2000, 2000, 10, true}, // outerproduct
 
 		});
 	}
@@ -134,11 +141,13 @@ public class FederatedCodegenMultipleFedMOTest extends AutomatedTestBase
 	}
 
 	@Test
+	@Ignore
 	public void federatedCodegenMultipleFedMOSingleNode() {
 		testFederatedCodegenMultipleFedMO(ExecMode.SINGLE_NODE);
 	}
 
 	@Test
+	@Ignore
 	public void federatedCodegenMultipleFedMOSpark() {
 		testFederatedCodegenMultipleFedMO(ExecMode.SPARK);
 	}
@@ -170,11 +179,11 @@ public class FederatedCodegenMultipleFedMOTest extends AutomatedTestBase
 
 		// generate dataset
 		// matrix handled by two federated workers
-		double[][] X1 = getRandomMatrix(fed_rows_x, fed_cols_x, 0, 1, 1, 3);
-		double[][] X2 = getRandomMatrix(fed_rows_x, fed_cols_x, 0, 1, 1, 7);
+		double[][] X1 = getRandomMatrix(fed_rows_x, fed_cols_x, 0, 1, 0.1, 3);
+		double[][] X2 = getRandomMatrix(fed_rows_x, fed_cols_x, 0, 1, 0.1, 23);
 		// matrix handled by two federated workers
-		double[][] Y1 = getRandomMatrix(fed_rows_y, fed_cols_y, 0, 1, 1, 51);
-		double[][] Y2 = getRandomMatrix(fed_rows_y, fed_cols_y, 0, 1, 1, 118);
+		double[][] Y1 = getRandomMatrix(fed_rows_y, fed_cols_y, 0, 1, 0.1, 64);
+		double[][] Y2 = getRandomMatrix(fed_rows_y, fed_cols_y, 0, 1, 0.1, 135);
 
 		writeInputMatrixWithMTD("X1", X1, false, new MatrixCharacteristics(fed_rows_x, fed_cols_x, BLOCKSIZE, fed_rows_x * fed_cols_x));
 		writeInputMatrixWithMTD("X2", X2, false, new MatrixCharacteristics(fed_rows_x, fed_cols_x, BLOCKSIZE, fed_rows_x * fed_cols_x));
@@ -230,6 +239,13 @@ public class FederatedCodegenMultipleFedMOTest extends AutomatedTestBase
 			Assert.assertTrue(heavyHittersContainsSubString("fed_spoofMA"));
 		else if(test_num < 400)
 			Assert.assertTrue(heavyHittersContainsSubString("fed_spoofOP"));
+		else if(test_num == 401) {
+			Assert.assertTrue(heavyHittersContainsSubString("fed_spoofRA"));
+			Assert.assertTrue(heavyHittersContainsSubString("fed_spoofCell"));
+			Assert.assertTrue(heavyHittersContainsSubString("fed_spoofMA", exec_mode == ExecMode.SPARK ? 0 : 1));
+		}
+		else if(test_num == 402)
+			Assert.assertTrue(heavyHittersContainsSubString("fed_spoofOP", 3, exec_mode == ExecMode.SPARK? 1 :2));
 
 		// check that federated input files are still existing
 		Assert.assertTrue(HDFSTool.existsFileOnHDFS(input("X1")));

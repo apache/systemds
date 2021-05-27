@@ -144,7 +144,7 @@ public class SpoofCPInstruction extends ComputationCPInstruction {
 		// flags for alignment check
 		boolean equalRows = false;
 		boolean equalCols = false;
-		boolean transposed = false; // to check if aligned transposed
+		boolean transposed = false; // flag indicates to check for transposed alignment
 
 		for(CPOperand input : _in) {
 			Data data = ec.getVariable(input);

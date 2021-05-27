@@ -2080,6 +2080,20 @@ public abstract class AutomatedTestBase {
 		return(count >= minCount);
 	}
 
+	protected boolean heavyHittersContainsString(String str, int minCount, long minCallCount) {
+		int count = 0;
+		long callCount = Long.MAX_VALUE;
+		for(String opcode : Statistics.getCPHeavyHitterOpCodes()) {
+			if(opcode.equals(str)) {
+				count++;
+				long tmpCallCount = Statistics.getCPHeavyHitterCount(opcode);
+				if(tmpCallCount < callCount)
+					callCount = tmpCallCount;
+			}
+		}
+		return (count >= minCount && callCount >= minCallCount);
+	}
+
 	protected boolean heavyHittersContainsSubString(String... str) {
 		for(String opcode : Statistics.getCPHeavyHitterOpCodes())
 			for(String s : str)
@@ -2093,6 +2107,20 @@ public abstract class AutomatedTestBase {
 		for(String opcode : Statistics.getCPHeavyHitterOpCodes())
 			count += opcode.contains(str) ? 1 : 0;
 		return(count >= minCount);
+	}
+
+	protected boolean heavyHittersContainsSubString(String str, int minCount, long minCallCount) {
+		int count = 0;
+		long callCount = Long.MAX_VALUE;
+		for(String opcode : Statistics.getCPHeavyHitterOpCodes()) {
+			if(opcode.contains(str)) {
+				count++;
+				long tmpCallCount = Statistics.getCPHeavyHitterCount(opcode);
+				if(tmpCallCount < callCount)
+					callCount = tmpCallCount;
+			}
+		}
+		return (count >= minCount && callCount >= minCallCount);
 	}
 
 	protected boolean checkedPrivacyConstraintsContains(PrivacyLevel... levels) {

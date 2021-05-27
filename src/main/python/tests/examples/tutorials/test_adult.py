@@ -105,6 +105,41 @@ class Test_DMLScript(unittest.TestCase):
         )
 
 
+    def test_multi_log_reg_interpolated_standardized(self):
+        # Reduced because we want the tests to finish a bit faster.
+        train_count = 15000
+        test_count = 5000
+
+        train_data, train_labels, test_data, test_labels = self.d.get_preprocessed_dataset(interpolate=True, standardize=True, dimred=0.1)
+
+        # Train data
+        X = self.sds.from_numpy( train_data[:train_count])
+        Y = self.sds.from_numpy( train_labels[:train_count])
+        Y = Y + 1.0
+
+        # Test data
+        Xt = self.sds.from_numpy(test_data[:test_count])
+        Yt = self.sds.from_numpy(test_labels[:test_count])
+        Yt = Yt + 1.0
+
+        betas = multiLogReg(X, Y)
+
+        [_, y_pred, acc] = multiLogRegPredict(Xt, betas, Yt).compute()
+
+        self.assertGreater(acc, 80)
+        
+        confusion_matrix_abs, _ = confusionMatrix(self.sds.from_numpy(y_pred), Yt).compute()
+
+        self.assertTrue(
+            np.allclose(
+                confusion_matrix_abs,
+                np.array([[3583,  502],
+                         [245,  670]])
+            )
+        )
+
+
+
 
 if __name__ == "__main__":
     unittest.main(exit=False)

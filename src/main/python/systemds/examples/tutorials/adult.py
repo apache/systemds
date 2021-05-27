@@ -43,7 +43,7 @@ class DataManager:
     _test_labels_loc: str
 
     _data_columns: []
-    _data_string_labels:[]
+    _data_string_labels: []
 
     def __init__(self):
         self._train_data_url = "https://archive.ics.uci.edu/ml/machine-learning-databases/adult/adult.data"
@@ -70,6 +70,7 @@ class DataManager:
 
 
 
+
     def get_train_data(self) -> np.array:
         self._get_data(self._train_data_url, self._train_data_loc)
         return self._parse_data(self._train_data_loc)\
@@ -79,7 +80,8 @@ class DataManager:
         self._get_data(self._train_data_url, self._train_data_loc)
         data_list = self._data_columns.copy()
         data_list.pop(len(self._data_columns)-1)
-        return self._parse_data(self._train_data_loc).drop(labels=data_list, axis=1).to_numpy().flatten()
+        data = self._parse_data(self._train_data_loc).drop(labels=data_list, axis=1)
+        return data.to_numpy().flatten()
 
     def get_test_data(self) -> np.array:
         self._get_data(self._test_data_url, self._test_data_loc)
@@ -90,7 +92,10 @@ class DataManager:
         self._get_data(self._test_data_url, self._test_data_loc)
         data_list = self._data_columns.copy()
         data_list.pop(len(self._data_columns)-1)
-        return self._parse_data(self._test_data_loc).drop(labels=data_list, axis=1).iloc[1:].to_numpy().flatten()
+        data = self._parse_data(self._test_data_loc).drop(labels=data_list, axis=1).iloc[1:]
+        data["income"] = data["income"].str.replace('>50K.','>50K', regex=False)
+        data["income"] = data["income"].str.replace('<=50K.','<=50K', regex=False)
+        return data.to_numpy().flatten()
 
     def _parse_data(self, loc) -> pd.DataFrame:
         return pd.read_csv(loc, header=None, names=self._data_columns)
@@ -105,30 +110,47 @@ class DataManager:
             with open(loc, 'wb') as f:
                 f.write(myfile.content)
 
-    def get_preprocessed_dataset(self):
-        self._get_data(self._train_data_url, self._train_data_loc)
-        self._get_data(self._test_data_url, self._test_data_loc)
 
-        train_dataset = self._parse_data(self._train_data_loc)
-        test_dataset = self._parse_data(self._test_data_loc).iloc[1:]
-        #remove every line with ?
-        train_dataset = train_dataset[~(train_dataset.astype(str) == ' ?').any(1)]
-        test_dataset = test_dataset[~(test_dataset.astype(str) == ' ?').any(1)]
+    def get_preprocessed_dataset(self, interpolate=False, standardize=False, dimred=0):
+        train_array = np.concatenate([self.get_train_data(), self.get_train_labels()[...,np.newaxis]], axis=1)
+        train_dataset = pd.DataFrame(train_array, columns=self._data_columns)
+        test_array = np.concatenate([self.get_test_data(), self.get_test_labels()[...,np.newaxis]], axis=1)
+        test_dataset = pd.DataFrame(test_array, columns=self._data_columns)
+
+        if not interpolate:
+            train_dataset = train_dataset[~(train_dataset.astype(str) == ' ?').any(1)]
+            test_dataset = test_dataset[~(test_dataset.astype(str) == ' ?').any(1)]
 
         train_len = len(train_dataset)
-        test_len = len(test_dataset)
 
         combined_dataset = train_dataset.append(test_dataset, ignore_index=True, sort=False)
-        combined_dataset["income"] = combined_dataset["income"].str.replace('>50K.','>50K', regex=False)
-        combined_dataset["income"] = combined_dataset["income"].str.replace('<=50K.','<=50K', regex=False)
         conditional_labels = [list(dic.keys())[0]for dic in self._classification_features_labels]
         combined_dataset_frame = combined_dataset.copy().drop(labels=conditional_labels, axis=1)
+        combined_dataset_frame = combined_dataset_frame.apply(pd.to_numeric)
+
+        if standardize:
+            train_data = combined_dataset_frame.iloc[0:train_len,:]
+            test_data = combined_dataset_frame.iloc[train_len:,:]
+            train_mean = train_data.mean(axis=0)
+            train_std = train_data.std(axis=0)
+            train_data = (train_data - train_mean)/train_std
+            test_data = (test_data - train_mean)/train_std
+            combined_dataset_frame = train_data.append(test_data, ignore_index=True, sort=False)
 
         for x in self._classification_features_labels:
-            converted_one_hot_column = pd.get_dummies(combined_dataset[x.keys()], prefix=x.keys())
+            #insert most common string
+            current_frame = combined_dataset[list(x.keys())[0]]
+            if interpolate:
+                most_common_category = current_frame.iloc[:train_len].mode()
+                current_frame = current_frame.str.replace(' ?', most_common_category.iloc[0], regex=False)
+            if dimred > 0 and dimred <= 1:
+                labels_percent = (current_frame.iloc[:train_len].value_counts() / train_len)
+                labels_to_combine = labels_percent.index[labels_percent < dimred]
+                current_frame = current_frame.str.replace("|".join(labels_to_combine), " other", regex=True)
+
+            converted_one_hot_column = pd.get_dummies(current_frame, prefix=x.keys())
             combined_dataset_frame = pd.concat([combined_dataset_frame, converted_one_hot_column],  axis=1, join="outer", sort=False)
-        #probably not necessary
-        combined_dataset_frame = combined_dataset_frame[~(combined_dataset_frame.astype(str) == ' ?').any(1)]
+
         processed_labels = combined_dataset_frame.iloc[: , -1:]
         combined_dataset_frame = combined_dataset_frame.iloc[:, :-2]
 

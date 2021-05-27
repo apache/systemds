@@ -20,8 +20,10 @@
 #-------------------------------------------------------------
 
 m_gridSearch = function(Matrix[Double] X, Matrix[Double] y, String train, String predict,
-  List[String] params, List[Unknown] paramValues, Boolean verbose = TRUE) 
-  return (Matrix[Double] B, Frame[Unknown] opt) 
+    Integer ncolB=ncol(X), List[String] params, List[Unknown] paramValues, List[Unknown]
+    trainArgs = list(X=X, y=y, icpt=0, reg=-1, tol=-1, maxi=-1, verbose=FALSE),
+    Boolean verbose = TRUE) 
+  return (Matrix[Double] B, Frame[Unknown] opt)
 {
   # Step 0) preparation of parameters, lengths, and values in convenient form
   numParams = length(params);
@@ -38,7 +40,7 @@ m_gridSearch = function(Matrix[Double] X, Matrix[Double] y, String train, String
   cumLens = rev(cumprod(rev(paramLens))/rev(paramLens));
   numConfigs = prod(paramLens);
   
-  # Step 1) materialize hyper-parameter combinations 
+  # Step 1) materialize hyper-parameter combinations
   # (simplify debugging and compared to compute negligible)
   HP = matrix(0, numConfigs, numParams);
   parfor( i in 1:nrow(HP) ) {
@@ -46,24 +48,24 @@ m_gridSearch = function(Matrix[Double] X, Matrix[Double] y, String train, String
       HP[i,j] = paramVals[j,as.scalar(((i-1)/cumLens[j,1])%%paramLens[j,1]+1)];
   }
 
-  if( verbose )
+  if( verbose ) {
+    print("GridSeach: Number of hyper-parameters: \n"+toString(paramLens));
     print("GridSeach: Hyper-parameter combinations: \n"+toString(HP));
+  }
 
   # Step 2) training/scoring of parameter combinations
   # TODO integrate cross validation
-  Rbeta = matrix(0, nrow(HP), ncol(X));
+  Rbeta = matrix(0, nrow(HP), ncolB);
   Rloss = matrix(0, nrow(HP), 1);
-  # TODO pass arguments for function call from outside
-  arguments = list(X=X, y=y, icpt=0, reg=-1, tol=-1, maxi=-1, verbose=FALSE);
 
   parfor( i in 1:nrow(HP) ) {
     # a) replace training arguments
-    largs = arguments;
+    largs = trainArgs;
     for( j in 1:numParams )
       largs[as.scalar(params[j])] = as.scalar(HP[i,j]);
     # b) core training/scoring and write-back
-    # TODO investigate rmvar handling with explicit binding (lbeta)
-    Rbeta[i,] = t(eval(train, largs));
+    lbeta = t(eval(train, largs))
+    Rbeta[i,1:ncol(lbeta)] = lbeta;
     Rloss[i,] = eval(predict, list(X, y, t(Rbeta[i,])));
   }
 

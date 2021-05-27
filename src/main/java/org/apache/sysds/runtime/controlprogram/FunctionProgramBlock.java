@@ -27,6 +27,7 @@ import java.util.stream.Collectors;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.common.Types.FunctionBlock;
+import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.hops.recompile.Recompiler;
 import org.apache.sysds.hops.recompile.Recompiler.ResetType;
@@ -155,7 +156,7 @@ public class FunctionProgramBlock extends ProgramBlock implements FunctionBlock
 				LOG.error("Function output "+ varName +" is missing.");
 			else if( dat.getDataType() != diOut.getDataType() )
 				LOG.warn("Function output "+ varName +" has wrong data type: "+dat.getDataType()+".");
-			else if( dat.getValueType() != diOut.getValueType() )
+			else if( diOut.getValueType() != ValueType.UNKNOWN && dat.getValueType() != diOut.getValueType() )
 				LOG.warn("Function output "+ varName +" has wrong value type: "+dat.getValueType()+".");
 		}
 	}

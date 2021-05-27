@@ -42,8 +42,9 @@ paramRanges = matrix("0 20", rows=1, cols=2);
   X_val=X_val, y_val=y_val, params=params, paramRanges=paramRanges);
 
 paramRanges2 = list(10^seq(0,-4))
-[bestWeights, optHyperParams2] = gridSearch(X=X_train, y=y_train,
-  train="lm", predict="l2norm", params=params, paramValues=paramRanges2);
+trainArgs = list(X=X_train, y=y_train, icpt=0, reg=-1, tol=1e-9, maxi=0, verbose=FALSE);
+[bestWeights, optHyperParams2] = gridSearch(X=X_train, y=y_train, ncolB=ncol(X),
+  train="lm", predict="l2norm", trainArgs=trainArgs, params=params, paramValues=paramRanges2);
 
 print(toString(optHyperParams))
 print(toString(optHyperParams2))

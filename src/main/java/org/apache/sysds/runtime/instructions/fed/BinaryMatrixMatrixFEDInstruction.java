@@ -39,7 +39,6 @@ public class BinaryMatrixMatrixFEDInstruction extends BinaryFEDInstruction
 
 	@Override
 	public void processInstruction(ExecutionContext ec) {
-		System.out.println("Olga");
 		MatrixObject mo1 = ec.getMatrixObject(input1);
 		MatrixObject mo2 = ec.getMatrixObject(input2);
 		
@@ -106,7 +105,7 @@ public class BinaryMatrixMatrixFEDInstruction extends BinaryFEDInstruction
 					new long[]{mo1.getFedMapping().getID(), fr1[0].getID()}, true);
 				FederatedRequest fr3 = mo1.getFedMapping().cleanup(getTID(), fr1[0].getID());
 				//execute federated instruction and cleanup intermediates
-				mo1.getFedMapping().execute(getTID(), fr1, fr2, fr3);
+				mo1.getFedMapping().execute(getTID(), true, fr1, fr2, fr3);
 			}
 			else if ( mo1.isFederated(FType.PART) && !mo2.isFederated() ){
 				FederatedRequest fr1 = mo1.getFedMapping().broadcast(mo2);

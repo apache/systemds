@@ -39,6 +39,7 @@ public class BinaryMatrixMatrixFEDInstruction extends BinaryFEDInstruction
 
 	@Override
 	public void processInstruction(ExecutionContext ec) {
+		System.out.println("Olga");
 		MatrixObject mo1 = ec.getMatrixObject(input1);
 		MatrixObject mo2 = ec.getMatrixObject(input2);
 		
@@ -57,14 +58,14 @@ public class BinaryMatrixMatrixFEDInstruction extends BinaryFEDInstruction
 				fr2 = FederationUtils.callInstruction(instString, output,
 					new CPOperand[]{input1, input2},
 					new long[]{mo1.getFedMapping().getID(), mo2.getFedMapping().getID()}, true);
-				mo1.getFedMapping().execute(getTID(), true, fr2);
+				mo1.getFedMapping().execute(getTID(), fr2);
 			}
 			else if ( !mo1.isFederated() ){
 				FederatedRequest[] fr1 = mo2.getFedMapping().broadcastSliced(mo1, false);
 				fr2 = FederationUtils.callInstruction(instString, output,
 					new CPOperand[]{input1, input2},
 					new long[]{fr1[0].getID(), mo2.getFedMapping().getID()}, true);
-				mo2.getFedMapping().execute(getTID(), true, fr1, fr2);
+				mo2.getFedMapping().execute(getTID(), fr1, fr2);
 			}
 			else {
 				throw new DMLRuntimeException("Matrix-matrix binary operations with a "
@@ -81,7 +82,7 @@ public class BinaryMatrixMatrixFEDInstruction extends BinaryFEDInstruction
 					new long[]{mo1.getFedMapping().getID(), fr1.getID()}, true);
 					FederatedRequest fr3 = mo1.getFedMapping().cleanup(getTID(), fr1.getID());
 					//execute federated instruction and cleanup intermediates
-					mo1.getFedMapping().execute(getTID(), true, fr1, fr2, fr3);
+					mo1.getFedMapping().execute(getTID(), fr1, fr2, fr3);
 				}
 				else {
 					throw new DMLRuntimeException("Matrix-matrix binary operations with a full partitioned federated input with multiple partitions are not supported yet.");
@@ -95,7 +96,7 @@ public class BinaryMatrixMatrixFEDInstruction extends BinaryFEDInstruction
 				new long[]{mo1.getFedMapping().getID(), fr1.getID()}, true);
 				FederatedRequest fr3 = mo1.getFedMapping().cleanup(getTID(), fr1.getID());
 				//execute federated instruction and cleanup intermediates
-				mo1.getFedMapping().execute(getTID(), true, fr1, fr2, fr3);
+				mo1.getFedMapping().execute(getTID(), fr1, fr2, fr3);
 			}
 			else if((mo1.isFederated(FType.ROW) ^ mo1.isFederated(FType.COL))
 			 	|| (mo1.isFederated(FType.FULL) && mo1.getFedMapping().getSize() == 1)) {
@@ -105,7 +106,7 @@ public class BinaryMatrixMatrixFEDInstruction extends BinaryFEDInstruction
 					new long[]{mo1.getFedMapping().getID(), fr1[0].getID()}, true);
 				FederatedRequest fr3 = mo1.getFedMapping().cleanup(getTID(), fr1[0].getID());
 				//execute federated instruction and cleanup intermediates
-				mo1.getFedMapping().execute(getTID(), true, fr1, fr2, fr3);
+				mo1.getFedMapping().execute(getTID(), fr1, fr2, fr3);
 			}
 			else if ( mo1.isFederated(FType.PART) && !mo2.isFederated() ){
 				FederatedRequest fr1 = mo1.getFedMapping().broadcast(mo2);
@@ -113,7 +114,7 @@ public class BinaryMatrixMatrixFEDInstruction extends BinaryFEDInstruction
 					new long[]{mo1.getFedMapping().getID(), fr1.getID()}, true);
 				FederatedRequest fr3 = mo1.getFedMapping().cleanup(getTID(), fr1.getID());
 				//execute federated instruction and cleanup intermediates
-				mo1.getFedMapping().execute(getTID(), true, fr1, fr2, fr3);
+				mo1.getFedMapping().execute(getTID(), fr1, fr2, fr3);
 			}
 			else {
 				throw new DMLRuntimeException("Matrix-matrix binary operations are only supported with a row partitioned or column partitioned federated input yet.");

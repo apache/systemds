@@ -25,6 +25,7 @@ import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse;
+import org.apache.sysds.runtime.controlprogram.federated.FederationMap;
 import org.apache.sysds.runtime.controlprogram.federated.FederationUtils;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest.RequestType;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
@@ -95,20 +96,45 @@ public class MMChainFEDInstruction extends UnaryFEDInstruction {
 			ec.setMatrixOutput(output.getName(), ret);
 		}
 		else { //XtwXv | XtXvy
+			boolean colBroadcast = mo1.isFederated(FederationMap.FType.COL) && _type == ChainType.XtwXv;
+			int[][] ix = new int[mo1.getFedMapping().getSize()][];
+			for(int i = 0; i< ix.length; i++)
+				if(colBroadcast) {
+					ix[i] = new int[] {
+						(int) mo1.getFedMapping().getFederatedRanges()[i].getBeginDims()[1],
+						(int) (mo1.getFedMapping().getFederatedRanges()[i].getEndDims()[1] - 1),
+						0, (int) mo2.getNumColumns() - 1};
+				}
 			//construct commands: broadcast 2 vectors, execute, get and aggregate, cleanup
-			FederatedRequest[] fr0 = mo1.getFedMapping().broadcastSliced(mo3, false);
-			FederatedRequest fr1 = mo1.getFedMapping().broadcast(mo2);
+			FederatedRequest[] fr0 = mo1.getFedMapping().broadcastSliced(mo3, false, colBroadcast);
+			FederatedRequest fr1 = !colBroadcast ? mo1.getFedMapping().broadcast(mo2) :
+				mo1.getFedMapping().broadcastSliced(mo2, false, ix)[0];
 			FederatedRequest fr2 = FederationUtils.callInstruction(instString, output,
 				new CPOperand[]{input1, input2, input3},
 				new long[]{mo1.getFedMapping().getID(), fr1.getID(), fr0[0].getID()});
 			FederatedRequest fr3 = new FederatedRequest(RequestType.GET_VAR, fr2.getID());
-			FederatedRequest fr4 = mo1.getFedMapping()
-				.cleanup(getTID(), fr0[0].getID(), fr1.getID(), fr2.getID());
-			
-			//execute federated operations and aggregate
-			Future<FederatedResponse>[] tmp = mo1.getFedMapping().execute(getTID(), fr0, fr1, fr2, fr3, fr4);
-			MatrixBlock ret = FederationUtils.aggAdd(tmp);
-			ec.setMatrixOutput(output.getName(), ret);
+			FederatedRequest fr4 = colBroadcast ? mo1.getFedMapping().cleanup(getTID(), fr0[0].getID(), fr1.getID()):
+				mo1.getFedMapping().cleanup(getTID(), fr0[0].getID(), fr1.getID(), fr2.getID());
+
+			if(colBroadcast) {
+				mo1.getFedMapping().execute(getTID(), true, fr0, fr1, fr2, fr4);
+				MatrixObject out = ec.getMatrixObject(output);
+				out.getDataCharacteristics().setDimension(mo1.getNumColumns(), mo2.getNumColumns());
+				out.setFedMapping(mo1.getFedMapping().copyWithNewID(fr2.getID()).transpose());
+
+				// modify fedMap
+				FederationMap fedMap = out.getFedMapping();
+				for(int i = 0; i < fedMap.getSize(); i++)
+					fedMap.getFederatedRanges()[i].setEndDim(1, mo2.getNumColumns());
+				fedMap.setType(FederationMap.FType.ROW);
+
+
+			} else {
+				//execute federated operations and aggregate
+				Future<FederatedResponse>[] tmp = mo1.getFedMapping().execute(getTID(), fr0, fr1, fr2, fr3, fr4);
+				MatrixBlock ret = FederationUtils.aggAdd(tmp);
+				ec.setMatrixOutput(output.getName(), ret);
+			}
 		}
 	}
 }

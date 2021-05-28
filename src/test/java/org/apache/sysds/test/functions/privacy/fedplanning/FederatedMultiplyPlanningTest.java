@@ -22,7 +22,6 @@ package org.apache.sysds.test.functions.privacy.fedplanning;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.runtime.privacy.PrivacyConstraint;
 import org.apache.sysds.runtime.privacy.PrivacyConstraint.PrivacyLevel;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -81,7 +80,6 @@ public class FederatedMultiplyPlanningTest extends AutomatedTestBase {
 	}
 
 	@Test
-	@Ignore
 	public void federatedRowSum(){
 		federatedTwoMatricesSingleNodeTest(TEST_NAME_2);
 	}
@@ -98,14 +96,12 @@ public class FederatedMultiplyPlanningTest extends AutomatedTestBase {
 	}
 
 	@Test
-	@Ignore
 	public void federatedAggregateBinaryColFedSequence(){
 		cols = rows;
 		federatedTwoMatricesSingleNodeTest(TEST_NAME_5);
 	}
 
 	@Test
-	@Ignore
 	public void federatedAggregateBinarySequence2(){
 		federatedTwoMatricesSingleNodeTest(TEST_NAME_6);
 	}
@@ -147,8 +143,8 @@ public class FederatedMultiplyPlanningTest extends AutomatedTestBase {
 		if ( testName.equals(TEST_NAME_5) ){
 			writeColStandardMatrix("X1", 42);
 			writeColStandardMatrix("X2", 1340);
-			writeColStandardMatrix("Y1", 44, new PrivacyConstraint(PrivacyLevel.None));
-			writeColStandardMatrix("Y2", 21, new PrivacyConstraint(PrivacyLevel.None));
+			writeColStandardMatrix("Y1", 44, null);
+			writeColStandardMatrix("Y2", 21, null);
 		}
 		else if ( testName.equals(TEST_NAME_6) ){
 			writeColStandardMatrix("X1", 42);

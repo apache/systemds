@@ -772,6 +772,10 @@ public abstract class Hop implements ParseInfo {
 		return _federatedOutput == FederatedOutput.FOUT;
 	}
 
+	public boolean someInputFederated(){
+		return getInput().stream().anyMatch(Hop::hasFederatedOutput);
+	}
+
 	public ArrayList<Hop> getParent() {
 		return _parent;
 	}

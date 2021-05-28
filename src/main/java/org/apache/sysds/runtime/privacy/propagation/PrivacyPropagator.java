@@ -49,12 +49,21 @@ public class PrivacyPropagator
 	public static Data parseAndSetPrivacyConstraint(Data cd, JSONObject mtd)
 		throws JSONException
 	{
+		PrivacyConstraint mtdPrivConstraint = parseAndReturnPrivacyConstraint(mtd);
+		if ( mtdPrivConstraint != null )
+			cd.setPrivacyConstraints(mtdPrivConstraint);
+		return cd;
+	}
+
+	public static PrivacyConstraint parseAndReturnPrivacyConstraint(JSONObject mtd)
+		throws JSONException
+	{
 		if ( mtd.containsKey(DataExpression.PRIVACY) ) {
 			String privacyLevel = mtd.getString(DataExpression.PRIVACY);
 			if ( privacyLevel != null )
-				cd.setPrivacyConstraints(new PrivacyConstraint(PrivacyLevel.valueOf(privacyLevel)));
+				return new PrivacyConstraint(PrivacyLevel.valueOf(privacyLevel));
 		}
-		return cd;
+		return null;
 	}
 
 	private static boolean anyInputHasLevel(PrivacyLevel[] inputLevels, PrivacyLevel targetLevel){

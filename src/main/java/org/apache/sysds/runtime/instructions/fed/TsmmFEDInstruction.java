@@ -19,23 +19,20 @@
 
 package org.apache.sysds.runtime.instructions.fed;
 
-import org.apache.sysds.api.mlcontext.Matrix;
-import org.apache.sysds.common.Types;
+import java.util.concurrent.Future;
+
 import org.apache.sysds.lops.MMTSJ.MMTSJType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest;
+import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest.RequestType;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse;
 import org.apache.sysds.runtime.controlprogram.federated.FederationMap;
 import org.apache.sysds.runtime.controlprogram.federated.FederationUtils;
-import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest.RequestType;
-import org.apache.sysds.runtime.instructions.Instruction;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
-
-import java.util.concurrent.Future;
 
 public class TsmmFEDInstruction extends BinaryFEDInstruction {
 	private final MMTSJType _type;
@@ -84,31 +81,35 @@ public class TsmmFEDInstruction extends BinaryFEDInstruction {
 		}
 		else if(mo1.isFederated(FederationMap.FType.COL) && _type.isLeft()) {
 			// FIXME actually X is revealed
-			MatrixObject transpose = ExecutionContext.createMatrixObject(new MatrixBlock());
-			long id = FederationUtils.getNextFedDataID();
-			ec.setVariable(String.valueOf(id), transpose);
+			MatrixObject out = ec.getMatrixObject(output);
 
-			CPOperand tOperand = new CPOperand(String.valueOf(id), Types.ValueType.FP64, Types.DataType.MATRIX);
+			// transpose
+			String tInst = InstructionUtils.constructUnaryInstString(instString, "r'", input1, output);
+			tInst = InstructionUtils.concatOperands(tInst, "16");
+			FederatedRequest fr1 = FederationUtils.callInstruction(tInst, output, new CPOperand[]{input1},
+				new long[]{mo1.getFedMapping().getID()}, false);
+			mo1.getFedMapping().execute(getTID(), true, fr1);
+
+			out.setFedMapping(mo1.getFedMapping().copyWithNewID(fr1.getID()).transpose());
+			out.getDataCharacteristics().setDimension(mo1.getNumColumns(), mo1.getNumRows());
 
 			// mm
-			String mmInst = InstructionUtils.constructBinaryInstString(instString, "*", input1, tOperand, output);
-			mmInst = InstructionUtils.concatOperands(mmInst, FederatedOutput.NONE.name());
-			FederatedRequest[] fr2 = mo1.getFedMapping().broadcastSliced(mo1, true);
-			FederatedRequest fr3 = FederationUtils.callInstruction(mmInst, output, new CPOperand[]{tOperand, input1},
-				new long[]{fr2[0].getID(), mo1.getFedMapping().getID()}, true);
-			FederatedRequest fr4 = mo1.getFedMapping().cleanup(getTID(), fr2[0].getID());
+			String mmInst = InstructionUtils.constructBinaryInstString(instString, "ba+*", output, input1, output);
+			mmInst = InstructionUtils.concatOperands(mmInst, "16");
+			FederatedRequest fr2 = mo1.getFedMapping().broadcast(out);
+			FederatedRequest fr3 = FederationUtils.callInstruction(mmInst, output, fr2.getID(), new CPOperand[]{output, input1},
+				new long[]{fr2.getID(), mo1.getFedMapping().getID()});
+			FederatedRequest fr4 = mo1.getFedMapping().cleanup(getTID(), fr2.getID());
 			//execute federated instruction and cleanup intermediates
-			mo1.getFedMapping().execute(getTID(), true, fr2, fr3, fr4);
+			mo1.getFedMapping().execute(getTID(), true, fr2, fr3);
 
-			FederationMap fedMap = mo1.getFedMapping();
+			out.getDataCharacteristics().setDimension(mo1.getNumColumns(), mo1.getNumColumns());
+			out.setFedMapping(mo1.getFedMapping().copyWithNewID(fr3.getID()));
+
+			// modify fedMap
+			FederationMap fedMap = out.getFedMapping();
 			for(int i = 0; i < fedMap.getSize(); i++)
 				fedMap.getFederatedRanges()[i].setEndDim(0, mo1.getNumColumns());
-
-			MatrixObject out = ec.getMatrixObject(output);
-			out.setFedMapping(mo1.getFedMapping().copyWithNewID(fr2[0].getID()));
-			out.getDataCharacteristics().setDimension(mo1.getNumColumns(), mo1.getNumColumns());
-
-			ec.removeVariable(tOperand.getName());
 		}
 		else { //other combinations
 			throw new DMLRuntimeException("Federated Tsmm not supported with the "

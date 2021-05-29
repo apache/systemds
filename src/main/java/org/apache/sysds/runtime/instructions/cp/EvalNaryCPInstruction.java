@@ -32,6 +32,7 @@ import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.hops.rewrite.HopRewriteUtils;
 import org.apache.sysds.hops.rewrite.ProgramRewriter;
+import org.apache.sysds.lops.Lop;
 import org.apache.sysds.lops.compile.Dag;
 import org.apache.sysds.parser.DMLProgram;
 import org.apache.sysds.parser.DMLTranslator;
@@ -39,13 +40,16 @@ import org.apache.sysds.parser.FunctionStatementBlock;
 import org.apache.sysds.parser.dml.DmlSyntacticValidator;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.FunctionProgramBlock;
+import org.apache.sysds.runtime.controlprogram.ParForProgramBlock;
 import org.apache.sysds.runtime.controlprogram.Program;
+import org.apache.sysds.runtime.controlprogram.ProgramBlock;
 import org.apache.sysds.runtime.controlprogram.caching.FrameObject;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.Operator;
 import org.apache.sysds.runtime.util.DataConverter;
+import org.apache.sysds.runtime.util.ProgramConverter;
 
 /**
  * Eval built-in function instruction
@@ -53,6 +57,8 @@ import org.apache.sysds.runtime.util.DataConverter;
  */
 public class EvalNaryCPInstruction extends BuiltinNaryCPInstruction {
 
+	private int _threadID = -1;
+	
 	public EvalNaryCPInstruction(Operator op, String opcode, String istr, CPOperand output, CPOperand... inputs) {
 		super(op, opcode, istr, output, inputs);
 	}
@@ -93,6 +99,17 @@ public class EvalNaryCPInstruction extends BuiltinNaryCPInstruction {
 		//obtain function block (but unoptimized version of existing functions for correctness)
 		FunctionProgramBlock fpb = ec.getProgram().getFunctionProgramBlock(nsName, funcName, false);
 		
+		//copy function block in parfor context (avoid excessive thread contention on recompilation)
+		if( ProgramBlock.isThreadID(_threadID) && ParForProgramBlock.COPY_EVAL_FUNCTIONS ) {
+			String funcNameParfor = funcName + Lop.CP_CHILD_THREAD + _threadID;
+			if( !ec.getProgram().containsFunctionProgramBlock(nsName, funcNameParfor, false) ) { //copy on demand
+				fpb = ProgramConverter.createDeepCopyFunctionProgramBlock(fpb, new HashSet<>(), new HashSet<>());
+				ec.getProgram().addFunctionProgramBlock(nsName, funcNameParfor, fpb, false);
+			}
+			fpb = ec.getProgram().getFunctionProgramBlock(nsName, funcNameParfor, false);
+			funcName = funcNameParfor;
+		}
+		
 		//4. expand list arguments if needed
 		CPOperand[] boundInputs2 = null;
 		if( boundInputs.length == 1 && boundInputs[0].getDataType().isList()
@@ -116,7 +133,7 @@ public class EvalNaryCPInstruction extends BuiltinNaryCPInstruction {
 		FunctionCallCPInstruction fcpi = new FunctionCallCPInstruction(nsName, funcName,
 			false, boundInputs, fpb.getInputParamNames(), boundOutputNames, "eval func");
 		fcpi.processInstruction(ec);
-
+		
 		//6. convert the result to matrix
 		Data newOutput = ec.getVariable(output);
 		if (!(newOutput instanceof MatrixObject)) {
@@ -139,6 +156,12 @@ public class EvalNaryCPInstruction extends BuiltinNaryCPInstruction {
 			for( CPOperand op : boundInputs2 )
 				VariableCPInstruction.processRmvarInstruction(ec, op.getName());
 		}
+	}
+	
+	@Override
+	public void updateInstructionThreadID(String pattern, String replace) {
+		//obtain thread (parfor worker) ID from replacement string
+		_threadID = Integer.parseInt(replace.substring(Lop.CP_CHILD_THREAD.length()));
 	}
 	
 	private static void compileFunctionProgramBlock(String name, DataType dt, Program prog) {

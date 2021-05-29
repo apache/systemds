@@ -1,0 +1,329 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+test_num = $in_test_num;
+row_part = $in_rp;
+
+if(row_part) {
+  X = rbind(read($in_X1), read($in_X2));
+  Y = rbind(read($in_Y1), read($in_Y2));
+}
+else {
+  X = cbind(read($in_X1), read($in_X2));
+  Y = cbind(read($in_Y1), read($in_Y2));
+}
+
+if(test_num == 1) { # cellwise #4
+  # X ... 4x4 matrix
+  # Y ... 4x4 matrix
+  w = matrix(3, rows=4, cols=4);
+  Z = test1(X, Y, w);
+}
+else if(test_num == 2) { # cellwise #5
+  # X ... 4x4 matrix
+  # Y ... 4x1 / 1x4 vector
+  U = matrix( "1 2 3 4", rows=4, cols=1);
+  Z = test2(X, Y, U);
+}
+else if(test_num == 3) { # cellwise #6
+  # X ... 4x1 vector
+  # Y ... 4x1 vector
+  v = matrix("3 3 3 3", rows=4, cols=1);
+  Z = test3(X, Y, v);
+}
+else if(test_num == 4) { # cellwise #7
+  # X ... 1000x1 vector
+  # Y ... 1000x1 vector
+  Z = test4(X, Y);
+}
+else if(test_num == 5) { # cellwise #9
+  # X ... 500x2 matrix
+  # Y ... 500x2 matrix
+  Z = test5(X, Y);
+}
+else if(test_num == 6) { # cellwise #12
+  # X ... 2x500 matrix
+  # Y ... 2x500 matrix
+  Z = test6(X, Y);
+}
+else if(test_num == 7) { # cellwise #13
+  # X ... 2x4 matrix
+  # Y ... 2x4 matrix
+  w = matrix(seq(1,8), rows=2, cols=4);
+  Z = test1(X, Y, w);
+}
+else if(test_num == 101) { # rowwise #2
+  # X ... 6x2 matrix
+  # Y ... 6x2 matrix
+  U = matrix(1, rows=2, cols=1);
+  Z = test101(X, Y, U);
+}
+else if(test_num == 102) { # rowwise #3
+  # X ... 6x1 vector
+  # Y ... 6x4 vector
+  U = matrix( "1 2 3 4 5 6", rows=6, cols=1);
+  V = matrix(1,rows=4,cols=1);
+  Z = test102(X, Y, U, V);
+}
+else if(test_num == 103) { # rowwise #4
+  # X ... 6x4 matrix
+  # Y ... 6x2 matrix
+  Z = test103(X, Y);
+}
+else if(test_num == 104) { # rowwise #10
+  # X ... 150x10 matrix
+  # Y ... 150x10 matrix
+  Z = test104(X, Y);
+}
+else if(test_num == 201) { # multiagg #4
+  # X ... 6x4 matrix
+  # Y ... 6x4 matrix
+  Z = test201(X, Y);
+}
+else if(test_num == 202) { # multiagg #5
+  # X ... 6x4 matrix
+  # Y ... 6x4 matrix
+  U = matrix(seq(0,23), rows=6, cols=4);
+  V = matrix(seq(2,25), rows=6, cols=4);
+  Z = test202(X, Y, U, V);
+}
+else if(test_num == 203) { # multiagg #7
+  # X ... 20x1 vector
+  # Y ... 20x1 vector
+  Z = test203(X, Y);
+}
+else if(test_num == 301) { # outerproduct #1
+  # X ... 1500x1500 matrix
+  # Y ... 1500x10 matrix
+  V = matrix(seq(1,15000), rows=1500, cols=10);
+  Z = test301(X, Y, V);
+}
+else if(test_num == 302) { # outerproduct #1
+  # X ... 2000x2000 matrix
+  # Y ... 10x2000 matrix
+  U = matrix(seq(1,20000), rows=2000, cols=10);
+  Z = test301(X, U, t(Y));
+}
+else if(test_num == 303) { # outerproduct #2
+  # X ... 4000x2000 matrix
+  # Y ... 4000x10 matrix
+  V = matrix(seq(51, 20050), rows=2000, cols=10);
+  Z = test303(X, Y, V);
+}
+else if(test_num == 304) { # outerproduct #2
+  # X ... 4000x2000 matrix
+  # Y ... 10x2000 matrix
+  U = matrix(seq(51, 40050), rows=4000, cols=10);
+  Z = test303(X, U, t(Y));
+}
+else if(test_num == 305) { # outerproduct #6
+  # X ... 4000x2000 matrix
+  # Y ... 4000x10 matrix
+  V = matrix(seq(-1, 19998), rows=2000, cols=10);
+  Z = test305(X, Y, V);
+}
+else if(test_num == 306) { # outerproduct #6
+  # X ... 4000x2000 matrix
+  # Y ... 10x2000 matrix
+  U = matrix(seq(1, 40000), rows=4000, cols=10);
+  Z = test305(X, U, t(Y));
+}
+else if(test_num == 307) { # outerproduct #8
+  # X ... 1000x2000 matrix
+  # Y ... 1000x10 matrix
+  V = matrix(seq(1, 20000), rows=2000, cols=10);
+  Z = test307(X, Y, V);
+}
+else if(test_num == 308) { # outerproduct #8
+  # X ... 1000x2000 matrix
+  # Y ... 10x2000 matrix
+  U = matrix(seq(1, 10000), rows=1000, cols=10);
+  Z = test307(X, U, t(Y));
+}
+else if(test_num == 309) { # outerproduct #9
+  # X ... 1000x2000 matrix
+  # Y ... 1000x10 matrix
+  V = matrix(seq(1, 20000), rows=2000, cols=10);
+  Z = test309(X, Y, V);
+}
+else if(test_num == 310) { # outerproduct #9
+  # X ... 1000x2000 matrix
+  # Y ... 10x2000 matrix
+  U = matrix(seq(1, 10000), rows=1000, cols=10);
+  Z = test309(X, U, t(Y));
+}
+else if(test_num == 311) { # outerproduct #8
+  # X ... 1000x2000 matrix
+  # Y ... 1000x10 matrix
+  Y = t(Y); # col partitioned Y
+  while(FALSE) { }
+  # Y ... 10x1000 matrix
+  V = matrix(seq(1, 20000), rows=2000, cols=10);
+  Z = test307(X, t(Y), V);
+}
+else if(test_num == 312) { # outerproduct #8
+  # X ... 1000x2000 matrix
+  Y = t(Y); # row partitioned Y
+  while(FALSE) { }
+  # Y ... 2000x10 matrix
+  U = matrix(seq(1, 10000), rows=1000, cols=10);
+  Z = test307(X, U, Y);
+}
+else if(test_num == 313) {
+  # X ... 4000x2000 matrix
+  # Y ... 4000x10 matrix
+  Y = t(Y); # col partitioned Y
+  while(FALSE) { }
+  # Y ... 10x4000 matrix
+  V = matrix(seq(51, 20050), rows=2000, cols=10);
+  Z = test303(X, t(Y), V);
+}
+else if(test_num == 314) {
+  # X ... 4000x2000 matrix
+  # Y ... 10x2000 matrix
+  Y = t(Y); # row partitioned Y
+  while(FALSE) { }
+  # Y ... 2000x10 matrix
+  U = matrix(seq(51, 40050), rows=4000, cols=10);
+  Z = test303(X, U, Y);
+}
+else if(test_num == 401) { # combined tests
+  # X ... 20x10 matrix
+  # Y ... 20x6 matrix
+  
+  A = test103(X, Y); # not federated output
+  B = test2(X, Y[, 1], t(cbind(A, A)));
+  while(FALSE) { }
+  U = X[6:13, 7:10];
+  V = B[6:13, 3:6];
+  while(FALSE) { }
+  C = test201(U, V);
+  while(FALSE) { }
+  Z = B - C;
+}
+else if(test_num == 402) { # combined outerproduct tests
+  # X ... 2000x2000 matrix
+  # Y ... 2000x10 matrix
+  
+  V = matrix(seq(1,20000), rows=2000, cols=10);
+  A = test301(X, Y, V);
+  while(FALSE) { }
+  B = test305(X, Y, V);
+  while(FALSE) { }
+  C = test309(X, Y, V);
+  while(FALSE) { }
+  X = t(X); # col partitioned X and Y
+  Y = t(Y);
+  while(FALSE) { }
+  U = matrix(seq(1, 20000), rows=2000, cols=10);
+  D = test301(X, U, t(Y));
+  while(FALSE) { }
+  E = test305(X, U, t(Y));
+  while(FALSE) { }
+  F = test309(X, U, t(Y));
+  while(FALSE) { }
+  Z = as.scalar(A) - B + C - as.scalar(D) + E - F;
+}
+
+write(Z, $out_Z);
+
+# ************** Tests defined in functions for reusability **************
+test1 = function(Matrix[Double] X, Matrix[Double] Y, Matrix[Double] w) return(Matrix[Double] Z) {
+  Z = 10 + floor(round(abs((X + w) * Y)));
+}
+test2 = function(Matrix[Double] X, Matrix[Double] Y, Matrix[Double] U) return(Matrix[Double] Z) {
+  G = abs(exp(X));
+  V = 10 + floor(round(abs((X / Y) + U)));
+  Z = G + V;
+}
+test3 = function(Matrix[Double] X, Matrix[Double] Y, Matrix[Double] v) return(Matrix[Double] Z) {
+  Z = as.matrix(sum(X * Y * v));
+}
+test4 = function(Matrix[Double] X, Matrix[Double] Y) return(Matrix[Double] Z) {
+  U = X + Y - 7 + abs(X);
+  Z = t(U) %*% U;
+}
+test5 = function(Matrix[Double] X, Matrix[Double] Y) return(Matrix[Double] Z) {
+  U = X + 7 * Y;
+  Z = as.matrix(sum(log(U)));
+}
+test6 = function(Matrix[Double] X, Matrix[Double] Y) return(Matrix[Double] Z) {
+  U = X + 7 * Y;
+  Z = as.matrix(sum(sqrt(U)));
+}
+
+test101 = function(Matrix[Double] X, Matrix[Double] Y, Matrix[Double] U) return(Matrix[Double] Z) {
+  lambda = sum(Y);
+  Z = t(X) %*% (lambda * (X %*% U));
+}
+test102 = function(Matrix[Double] X, Matrix[Double] Y, Matrix[Double] U, Matrix[Double] V) return(Matrix[Double] Z) {
+  Z = t(Y) %*% (U + (2 - (X * (Y %*% V))));
+}
+test103 = function(Matrix[Double] X, Matrix[Double] Y) return(Matrix[Double] Z) {
+  Z = colSums(X / rowSums(Y));
+}
+test104 = function(Matrix[Double] X, Matrix[Double] Y) return(Matrix[Double] Z) {
+  Y = Y + (X <= rowMins(X));
+  U = (Y / rowSums(Y));
+  Z = colSums(U);
+}
+
+test201 = function(Matrix[Double] X, Matrix[Double] Y) return(Matrix[Double] Z) {
+  #disjoint partitions with partial shared reads
+  r1 = sum(X * Y);
+  r2 = sum(X ^ 2);
+  r3 = sum(Y ^ 2);
+  Z = as.matrix(r1 + r2 + r3);
+}
+test202 = function(Matrix[Double] X, Matrix[Double] Y, Matrix[Double] U, Matrix[Double] V) return(Matrix[Double] Z) {
+  #disjoint partitions with transitive partial shared reads
+  r1 = sum(X * U);
+  r2 = sum(V * Y);
+  r3 = sum(X * V * Y);
+  Z = as.matrix(r1 + r2 + r3);
+}
+test203 = function(Matrix[Double] X, Matrix[Double] Y) return(Matrix[Double] Z) {
+  r1 = t(X) %*% X;
+  r2 = t(X) %*% Y;
+  r3 = t(Y) %*% Y;
+  Z = r1 + r2 + r3;
+}
+
+test301 = function(Matrix[Double] X, Matrix[Double] U, Matrix[Double] V) return(Matrix[Double] Z) {
+  eps = 0.1;
+  Z = as.matrix(sum(X * log(U %*% t(V) + eps)));
+}
+test303 = function(Matrix[Double] X, Matrix[Double] U, Matrix[Double] V) return(Matrix[Double] Z) {
+  eps = 0.1;
+  Z = t(t(U) %*% (X / (U %*% t(V) + eps)));
+}
+test305 = function(Matrix[Double] X, Matrix[Double] U, Matrix[Double] V) return(Matrix[Double] Z) {
+  eps = 0.1;
+  Z = (X / ((U %*% t(V)) + eps)) %*% V;
+}
+test307 = function(Matrix[Double] X, Matrix[Double] U, Matrix[Double] V) return(Matrix[Double] Z) {
+  eps = 0.1;
+  Z = X * (1 / (1 + exp(-(U %*% t(V)))));
+}
+test309 = function(Matrix[Double] X, Matrix[Double] U, Matrix[Double] V) return(Matrix[Double] Z) {
+  eps = 0.4;
+  Z = t(t(U) %*% (X / (U %*% t(V) + eps)));
+}

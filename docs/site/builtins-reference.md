@@ -1345,6 +1345,7 @@ sherlockPredict(X, cW1, cb1, cW2, cb2, cW3, cb3, wW1, wb1, wW2, wb2, wW3, wb3,
 | Type           | Description |
 | :------------- | :---------- |
 | Matrix[Double] | Class probabilities of shape (N, K). |
+
 ### Example
 
 ```r
@@ -1943,6 +1944,7 @@ correctTypos(strings, frequency_threshold, distance_threshold, decapitalize, cor
 | is_verbose                    |    Boolean |  FALSE |   Print debug information |
 
 ### Returns
+
 |   TYPE     |   Description|
 |  :------------- |  :---------- |
 |      String   |  Corrected nx1 output frame |

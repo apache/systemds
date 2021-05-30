@@ -297,6 +297,46 @@ return(Matrix[Double] X){
   X = replace(target=X, pattern=NaN, replacement=max(X))
   Mask = Mask * defaullt
   X = X + Mask
+  print("fillDefault: no of NaNs "+sum(is.na(X)))
 }
+
+########################################################
+# A slightly changes version of PCA
+########################################################
+m_pca = function(Matrix[Double] X, Integer K=2, Boolean center=TRUE, Boolean scale=TRUE)
+  return (Matrix[Double] Xout) 
+{
+  if(K < ncol(X)) {
+    N = nrow(X);
+    D = ncol(X);
+
+    # perform z-scoring (centering and scaling)
+    [X, Centering, ScaleFactor] = scale(X, center, scale);
+
+    # co-variance matrix
+    mu = colSums(X)/N;
+    C = (t(X) %*% X)/(N-1) - (N/(N-1))*t(mu) %*% mu;
+
+    # compute eigen vectors and values
+    [evalues, evectors] = eigen(C);
+
+    decreasing_Idx = order(target=evalues,by=1,decreasing=TRUE,index.return=TRUE);
+    diagmat = table(seq(1,D),decreasing_Idx);
+    # sorts eigenvalues by decreasing order
+    evalues = diagmat %*% evalues;
+    # sorts eigenvectors column-wise in the order of decreasing eigenvalues
+    evectors = evectors %*% diagmat;
+
+    eval_dominant = evalues[1:K, 1];
+    evec_dominant = evectors[,1:K];
+
+    # Construct new data set by treating computed dominant eigenvectors as the basis vectors
+    Xout = X %*% evec_dominant;
+    Mout = evec_dominant;
+  }
+  else Xout = X
+
+}
+
 
 

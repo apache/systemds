@@ -34,25 +34,28 @@
 # 11. n_pop, children created in each generation
 # output: best logical pipeline and evaluation time in ms
 
-
 # idea is to get the initial set of logical pipelines, as population, then get the num_inst physical pipelines foreach
-# logical pipeline in population. Then execute these physical pipelines num_exec time were in each execution a random set of
-# hyperparameters is used to execute operators. The compute a score vector by storing the best score foreach logical pipeline in 
-# population. Sort the pipelines by score and take n_pop pipelines as parents for generating new population.
-# from the selected pipelines take a pair in each iteration as parent and generate a pair of children by doing crossover and mutation.
-# In crossover make a child by taking some operation from p1 and some operations from p2 and in mutation randomly swap the 
-# operators in children. There new children will be the population in next iteration. Repeat the process max_iter time.
-# Converge in between if the best_score of previous generation is better then best_score of new generation.
+# logical pipeline in population. Then execute these physical pipelines num_exec time were in each execution a random
+# set of hyperparameters is used to execute operators. 
+# The compute a score vector by storing the best score foreach logical pipeline in population. Sort the pipelines by
+# score and take n_pop pipelines as parents for generating new population from the selected pipelines take a pair in
+# each iteration as parent and generate a pair of children by doing crossover and mutation.
+# There are total 3 transformation that will be performed to create a new chromosomes (children)
+#   1. crossover to create children by adding n operation from p1 to p2 and vice versa. 
+#   2. mutation to swap two operations in the children based on a mutation rate, swap is randomly based on mutationRatio.
+#   3. removal to remove n operations from a child
+# These new children will be the population in next iteration.
+# Repeat the process max_iter time. Converge in between if the best_score of previous generation is better then
+# best_score of new generation.
 
 source("scripts/builtin/bandit.dml") as bandit;
 source("scripts/pipelines/scripts/utils.dml") as utils;
 
-enumerateLogical = function(Matrix[Double] X, Matrix[Double] y, Frame[Unknown] population, Integer max_iter=10,
-  Integer pipLength, List[Unknown] metaList, List[Unknown] targetList, Frame[Unknown] primitives, Frame[Unknown] param,
-  Integer num_inst, Integer num_exec, Integer n_pop, Boolean verbose)
+enumerateLogical = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] cmr, Matrix[Double] cat, Frame[Unknown] population,
+  Integer max_iter=10, List[Unknown] metaList, List[Unknown] targetList, Frame[Unknown] primitives, Frame[Unknown] param,
+  Integer num_inst, Integer num_exec,  Boolean verbose)
 return (Frame[Unknown] bestLg, Double pre_best, Double T)
 { 
-
   t1 = time()
   bestLg = as.frame("")
   best_score = 0
@@ -80,9 +83,11 @@ return (Frame[Unknown] bestLg, Double pre_best, Double T)
       physicalConf = as.frame(physicalPipList[i])
       # # append configuration keys for extracting the pipeline later on
       id = seq(1, nrow(physicalConf))
+      tail = frame(["dummycoding", "m_pca"], rows=nrow(physicalConf), cols=2)
       physicalConf = cbind(as.frame(id), physicalConf)
+      physicalConfTailed = cbind(physicalConf, tail)
       # # execute the physical instances and store the minimum scores, each pipeline is executed num_exec times
-      [outPip,outHp, feaFrameOuter] = bandit::run_with_hyperparam(physicalConf, num_exec, X, y, metaList,
+      [outPip,outHp, feaFrameOuter] = bandit::run_with_hyperparam(physicalConfTailed, num_exec, X, y, metaList,
         targetList, param, as.frame(""), verbose)
       # # sort the configurations groupwise
       max_perf =  bandit::getMaxPerConf(outPip, nrow(physicalConf)) 
@@ -95,16 +100,18 @@ return (Frame[Unknown] bestLg, Double pre_best, Double T)
     best_score = as.scalar(scores[idxR])
     if(verbose)
     {
-      print("best score "+best_score)
-      print("previous score "+pre_best)
+      print("best score " + best_score)
+      print("previous score " + pre_best)
     }
-    
-    converge = ifelse(pre_best > best_score, TRUE, FALSE)
-    if(converge) {
-      convergedOuter = TRUE
-      print("----------- converged after "+iter+" iteration-------------")
-      print("best score "+pre_best)
-      print("best pipeline "+toString(bestLg))
+    converged = pre_best > best_score
+    convergedOuter = converged
+    if(converged)
+    {
+      lg_tail = frame(["DUMMY", "DIM"], rows=1, cols=2)
+      bestLg = cbind(bestLg, lg_tail)
+      print("converged after "+iter+" iteration(s)")
+      print("best score " + pre_best)
+      print("best pipeline " + toString(bestLg))
     }
     else 
     {
@@ -112,61 +119,102 @@ return (Frame[Unknown] bestLg, Double pre_best, Double T)
       idxC = as.integer(as.scalar(population[idxR, 1])) + 1
       bestLg = population[idxR, 2:idxC]
     }
-    
+    pipLength = max(as.matrix(population[, 1])) + as.scalar(cmr[1, 1]) + 1
     # # # if new best is not better than pre_best then no need od generating new population
-    children = frame(0, rows=n_pop, cols=pipLength+1)
-    CROSS_OVER_RATE = 2
+    children = frame(0, rows=ceil(nrow(scores)/2), cols=pipLength)
     i = 1
-    while(i <= n_pop & !converge)
+    while(i <= ceil(nrow(scores)/2) & !converged)
     {
-      p1 = population[as.scalar(selected[i]), ]
-      p2 = population[as.scalar(selected[i+1]), ]
-      lengthp1 = as.integer(as.scalar(p1[1, 1]))
-      lengthp2 = as.integer(as.scalar(p2[1, 1]))
-      p1 = p1[, 2:(lengthp1+1)]
-      p2 = p2[, 2:(lengthp2+1)]
-      # # # cross over, this constrained crossover will only add first operator from each parent to child
-      
-      if(lengthp1 >= 5 & (lengthp1 + CROSS_OVER_RATE) < pipLength) #check if pipeline is less than 5 operation only crossover one 
-        c1 = cbind(p1[1,1:CROSS_OVER_RATE], p2)                    # operator so the probability of swapping pca and dummycoding is 
-      else if ((lengthp1 + 1) < pipLength)          # low and the crossover all should not exceed pipeline total length 
-        c1 = cbind(p1[1,1], p2)
-        
-      if(lengthp2 >= 5 & (lengthp2 + CROSS_OVER_RATE) < pipLength)
-        c2 = cbind(p2[1,1:CROSS_OVER_RATE], p1)
-      else if ((lengthp2 + 1) < pipLength)
-        c2 = cbind(p2[1,1], p1)
+      top = population[as.scalar(selected[i]), ]
 
-      # # # mutation swap the operators at random positions if the length is greater than 5
-      if(ncol(c1) >= 5)
-      {
-        r = sample(3, 2)
-        r1 = as.scalar(r[1,1])
-        r2 = as.scalar(r[2,1])
-        temp = c1[1, r1]
-        c1[1, r1] = c1[1, r2]
-        c1[1, r2] = temp
-      }
-      if(ncol(c2) >= 5)
-      {
-        r = sample(3, 2)
-        r1 = as.scalar(r[1,1])
-        r2 = as.scalar(r[2,1])
-        temp = c2[1, r1]
-        c2[1, r1] = c2[1, r2]
-        c2[1, r2] = temp
-      }
+      length_top = as.integer(as.scalar(top[1, 1]))
+      top = top[, 2:(length_top+1)]
+      print("top 1 "+toString(top))
+      
+      # generate children from crossover
+      c1 = addition(top, cat, as.scalar(cmr[1,1]))
+
+      # perform mutation
+      c1 = mutation(c1, as.scalar(cmr[1, 2]))
+
+
+      # perform removal if non-zero
+      c1 = removal(c1, as.scalar(cmr[1, 3]))
+
       # # # append length of pipeline and pipeline in frame
       children[i, 1] = ncol(c1)
       children[i, 2:(ncol(c1) + 1)] = c1
-      children[i+1, 1] = ncol(c2)
-      children[i+1, 2:(ncol(c2) + 1)] = c2
 
-      i = i + 2
+      i = i + 1
     }
     population = children
+    iter  = iter + 1
   }
+
   T = floor((time() - t1) / 1e+6)
   print("time "+T+" ms")
+}
+
+
+addition = function(Frame[Unknown] top, Frame[Unknown] allOps, Integer addCount)
+return (Frame [Unknown] child)
+{
+  print("Starting addition")
+  for(i in 1:addCount)
+  {
+    c = as.scalar(sample(ncol(allOps), 1))
+    place_to_add = as.scalar(sample(ncol(top)+1, 1))
+    if(place_to_add == 1)
+      child = cbind(allOps[1, c], top)
+    else if(place_to_add >= ncol(top))
+      child = cbind(top, allOps[1, c])
+    else
+    {
+      start = top[, 1:place_to_add-1]
+      end = top[, place_to_add+1:ncol(top)]
+      child = cbind(cbind(start, allOps[1, c]), end)
+    }
+  }
+}
+
+mutation = function(Frame[Unknown] child, Double mutationRate)
+return (Frame [Unknown] mChild)
+{
+  print("Starting mutation on "+toString(child))
+  random = as.scalar(rand(rows=1, cols=1))
+  if(random > mutationRate & ncol(child) >= 2)
+  {
+    print("before mutation "+toString(child))
+    r = sample(ncol(child), 2)
+    r1 = as.scalar(r[1,1])
+    r2 = as.scalar(r[2,1])
+    temp = child[1, r1]
+    child[1, r1] = child[1, r2]
+    child[1, r2] = temp
+    print("after mutation "+toString(child))
+  }
+  mChild = child
+}
+
+removal = function(Frame[Unknown] child, Integer removal)
+return (Frame[Unknown] output)
+{
+  if(ncol(child) > 1 & ncol(child) > removal & removal > 0)
+  {
+    print("Starting removal on "+toString(child))
+    for(i in 1:removal)
+    {
+      idx = as.scalar(sample(ncol(child), 1))
+      if(idx == 1)
+        ch = child[, 2:ncol(child)]
+      else if (idx == ncol(child))
+        ch = child[, 1:ncol(child)-1]
+      else 
+        ch = cbind(child[, 1:(idx-1)], child[,(idx+1):ncol(child)])
+      child = ch
+    }
+  }
+  output = child
+  print("Starting removal on "+toString(output))
 }
 

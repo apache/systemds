@@ -21,8 +21,6 @@
 # Generate the logical pipelines for data cleaning
 
 source("scripts/pipelines/scripts/utils.dml") as utils;
-source("scripts/pipelines/scripts/logicalFunc.dml") as logical;
-source("scripts/pipelines/scripts/gridsearchMLR.dml") as gs;
 source("scripts/pipelines/scripts/enumerateLogical.dml") as lg;
 
 
@@ -39,16 +37,13 @@ targetApplicaton = $target # accuracy flag
 max_iter = $max_iter
 num_inst = $num_inst
 num_exec = $num_exec
-n_pop=$n_pop
-pipLength = $pipLength
 crossValidations = $cv
-
+output = $output
 
 getSchema = metaInfo[1, 2:ncol(metaInfo)]
 getMask = as.matrix(metaInfo[2, 2:ncol(metaInfo)])
 getFdMask = as.matrix(metaInfo[3, 2:ncol(metaInfo)]) # columns of interest for FD computation
   
-
 # encode the categorical data
 if(sum(getMask) > 0)
 {
@@ -73,8 +68,8 @@ getMask = getMask[, 1:ncol(getMask) - 1] # strip the mask of class label
 getFdMask = getFdMask[, 1:ncol(getFdMask) - 1] # strip the mask of class label
 getSchema = getSchema[, 1:ncol(getSchema) - 1] # strip the mask of class label
 # hyperparam for classifier
-opt = matrix("0 100", rows=1, cols=2)
-
+opt = utils::getOpByTarget(eX, eY, getMask, targetApplicaton)
+print("opt "+toString(opt))
 # get the cross validated accuracy on dirty dataset (only on training set)
 d_accuracy = 0
 d_accuracy = utils::classifyDirty(eX, eY, opt, getMask, weightedAccuracy, crossValidations)
@@ -92,31 +87,38 @@ targetClassification = list(target=targetApplicaton, cv=crossValidations, wAccur
 pip = as.frame("NULL"); hp = matrix(0,0,0); acc = matrix(0,0,0); features = as.frame("NULL")
 
 
-logical1 =  frame(["4", "MVI", "SCALE", "DUMMY", "DIM", "0", "0", "0"], rows=1, cols=8)
-# logical2 =  frame(["2", "MVI", "DUMMY", "0", "0", "0", "0", "0"], rows=1, cols=8)
-logical3 =  frame(["3", "MVI", "SCALE", "DUMMY", "0", "0", "0", "0"], rows=1, cols=8)
-logical4 =  frame(["6", "MVI", "OTLR", "CI", "SCALE", "DUMMY", "DIM", "0"], rows=1, cols=8)
-logical5 =  frame(["7", "MVI", "OTLR", "MVI", "CI", "SCALE", "DUMMY", "DIM"], rows=1, cols=8)
-logical6 =  frame(["6", "OTLR", "MVI", "CI", "SCALE", "DUMMY", "DIM", "0"], rows=1, cols=8)
+logical =  frame([
+                   "1", "MVI", "0", "0", "0", "0", 
+                   # "1", "OTLR", "0", "0", "0", "0", 
+                   # "1", "CI", "0", "0", "0", "0", 
+                   # "2", "MVI", "CI", "0", "0", "0", 
+                   "2", "MVI", "OTLR", "0", "0", "0",
+                   "2", "MVI", "SCALE", "0", "0", "0", 
+                   "3", "MVI", "SCALE", "OTLR", "0", "0"
+                   # "4", "MVI", "OTLR", "CI", "SCALE", "0", 
+                   # "4", "OTLR", "MVI", "CI", "SCALE", "0",
+                   # "5", "MVI", "OTLR", "MVI", "CI", "SCALE"
+                   ], rows=4, cols=6)
 
-# log = rbind(logical1, logical2)
-log = rbind(logical1, logical3)
-log = rbind(log, logical4)
-log = rbind(log, logical5)
-log = rbind(log, logical6)
 
-[logicalEnum, score, T] = lg::enumerateLogical(X=eX, y=eY, population=log, max_iter=max_iter, pipLength=pipLength, metaList=metaList,
-  targetList=targetClassification, primitives=primitives, param=param, num_inst=num_inst, num_exec=num_exec, n_pop=n_pop, verbose=FALSE)
-# [logicalEnum, score, T] = lg::enumerateLogical(X=eX, y=eY, population=log, max_iter=3, pipLength=10, metaList=metaList,
-  # targetList=targetClassification, primitives=primitives, param=param, num_inst=4, num_exec=2, n_pop=4, verbose=FALSE)
+categories = frame(["MVI", "OTLR", "SCALE"], rows=1, cols=3)
+cmr = matrix("4 0.7 2", rows=1, cols=3)
+[bestLogical, score, T] = lg::enumerateLogical(X=eX, y=eY, cmr=cmr, cat=categories, population=logical,
+  max_iter=max_iter, metaList=metaList, targetList=targetClassification, primitives=primitives, param=param,
+  num_inst=num_inst, num_exec=num_exec, verbose=FALSE)
 
 print("score of pipeline: "+toString(score)+" in "+(T/60000)+" mins")
-print("logicalENum "+toString(logicalEnum))
+print("bestLogical "+toString(bestLogical))
 
 result = d_accuracy < score  
 print("result satisfied ------------"+result)
 
 write(result , $O)
+write(bestLogical , output, format="csv")
 
-
+accuracy = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] B) 
+return (Matrix[Double] loss) {
+  [prob, yhat, acc] = multiLogRegPredict(X=X, B=B, Y=y,  verbose=FALSE)
+  loss = as.matrix(1 - (acc/100))
+}
 

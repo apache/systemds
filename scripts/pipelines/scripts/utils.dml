@@ -88,6 +88,7 @@ doSample = function(Matrix[Double] eX, Matrix[Double] eY, Double ratio)
     eY = out[, 1]
     eX = out[, 2:ncol(out)]
   }
+  print("AFTER SAMPLES "+nrow(eX))
 }
 
 # #######################################################################
@@ -120,10 +121,10 @@ classifyDirty = function(Matrix[Double] Xtrain, Matrix[Double] ytrain, Matrix[Do
   Matrix[Double] mask, Boolean isWeighted = TRUE, Integer cv)
   return (Double accuracy)
 {
-  # # classify without cleaning fill with edfault values 1
-  Xtrain = replace(target = Xtrain, pattern = NaN, replacement=0)
+  # # classify without cleaning fill with default values 1
+  Xtrain = replace(target = Xtrain, pattern = NaN, replacement=1)
   dX_train = dummycoding(Xtrain, mask)
-  [accuracy, T] = bandit::crossV(Xtrain, ytrain, cv, mask, opt, isWeighted)
+  [accuracy, T] = bandit::crossV(dX_train, ytrain, cv, mask, opt, isWeighted)
   accuracy = mean(accuracy)
   print("cross validated dirty accuracy "+accuracy)
 }
@@ -168,4 +169,66 @@ return(Boolean validForResources)
   }
   validForResources = count > 0
 }
+
+#####################################
+# Create a pipeline for string processing that needs to be applied before data recoding
+# The pipelines will drop invalid types, transform cases, deduplicate and remove pattern outliers
+######################################
+stringProcessing = function(Frame[Unknown] data, Matrix[Double] mask, Frame[String] schema)
+return(Frame[Unknown] processedData)
+{
+  n = nrow(data)
+  
+  # step 1 drop invalid types
+  data = dropInvalidType(data, schema)
+  
+  # step 2 do the case transformations
+  for(i in 1:ncol(mask))
+  {
+    if(as.scalar(schema[1,i]) == "STRING")
+    {
+      lowerCase = map(data[, i], "x -> x.toLowerCase()")
+      data[, i] = lowerCase
+    }
+  }
+  # TODO add deduplication
+  processedData = data
+
+}
+
+getOpByTarget = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] mask, String target)
+return (Matrix[Double] bestOpt)
+{
+  opt = as.frame(0)
+  if(target == "multiLogReg")
+  {
+    params = list("icpt", "reg", "maxii");
+    paramRanges = list(10^seq(0,-4), 10^seq(1,-6), 10^seq(1,3));
+
+    if(sum(mask) > 0)
+      X = dummycoding(replace(target = X, pattern = NaN, replacement=0), mask)
+      
+    trainArgs = list(X=X, Y=y, icpt=-1, reg=-1, tol=1e-9, maxi=100, maxii=-1, verbose=FALSE);
+    [B1,opt] = gridSearch(X, y, "multiLogReg", "accuracy", ncol(X)+1, params, paramRanges, trainArgs, FALSE);
+
+  }
+  else if(target == "lm")
+  {
+    params = list("reg", "tol", "maxi");
+    paramRanges = list(10^seq(0,-4), 10^seq(1,-6), seq(10,100,10));
+
+    if(sum(mask) > 0)
+      X = dummycoding(replace(target = X, pattern = NaN, replacement=0), mask)
+      
+    trainArgs = list(X=X, y=y, icpt=0, reg=-1, tol=-1, maxi=-1, verbose=FALSE);
+    [B1, opt] = gridSearch(X=X, y=y, train="lm", predict="l2norm", 
+      ncolB=ncol(X), params=params, paramValues=paramRanges, trainArgs=trainArgs, verbose=FALSE);
+  }
+  else
+    print("getOptByTarget: target type not supported. Expected multiLogReg or lm found: "+target)
+  
+  bestOpt = as.matrix(opt)
+}
+
+
 

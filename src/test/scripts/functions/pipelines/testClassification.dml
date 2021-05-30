@@ -21,9 +21,6 @@
 # Generate the logical pipelines for data cleaning
 
 source("scripts/pipelines/scripts/utils.dml") as utils;
-source("scripts/pipelines/scripts/logicalFunc.dml") as logical;
-source("scripts/pipelines/scripts/gridsearchMLR.dml") as gs;
-
 
 # read the inputs
 F = read($dirtyData, data_type="frame", format="csv", header=TRUE, 
@@ -32,14 +29,14 @@ F = read($dirtyData, data_type="frame", format="csv", header=TRUE,
 metaInfo = read($metaData, data_type="frame", format="csv", header=FALSE);
 primitives = read($primitives, data_type = "frame", format="csv", header= TRUE)
 param = read($parameters, data_type = "frame", format="csv", header= TRUE)
+logical = read($logical, data_type = "frame", format="csv", header= FALSE)
 sample = $sampleSize
 topK = $topk
 resources = $rv
 crossValidations = $cv
 weightedAccuracy = $weighted # accuracy flag
 targetApplicaton = $target # accuracy flag
-
-
+output = $output
 
 if(nrow(metaInfo) < 2)
   stop("incomplete meta info")
@@ -49,9 +46,9 @@ getMask = as.matrix(metaInfo[2, 2:ncol(metaInfo)])
 getFdMask = as.matrix(metaInfo[3, 2:ncol(metaInfo)]) # columns of interest for FD computation
   
 # 1. dropInvalid function will remove the values which are not the part 
-# of the column data type  
+# of the column data type and convert the data to lowercase
 
-X = dropInvalidType(F, getSchema)
+X = utils::stringProcessing(F, getMask, getSchema)
 
 # 2. encode the categorical data
 if(sum(getMask) > 0)
@@ -78,39 +75,16 @@ getFdMask = getFdMask[, 1:ncol(getFdMask) - 1] # strip the mask of class label
 getSchema = getSchema[, 1:ncol(getSchema) - 1] # strip the mask of class label
 
 
-# get the logical seed
-lgSeed = logical::generateLogicalSeed(eX, eY, getMask, targetApplicaton)
-allLgs = logical::transformLogical(lgSeed)
-
-d_accuracy = 0
 # 4. perform the sampling
-
 [eX, eY] = utils::doSample(eX, eY, sample)
 
-# 5. get train test and validation set with balanced class distribution
-[X_train, y_train, X_test, y_test] = splitBalanced(X=eX, Y=eY, splitRatio=0.7, verbose=FALSE)
-
-# 6. find the best hyper parameters for classification algorithm
+# 5. find the best hyper parameters for classification algorithm
 # for now only find the best values for intercept and maximum outer iteration
-params = list("reg", "maxi");
-paramRanges = list(10^seq(0,-10), seq(10,100, 10));
-if(sum(getMask) > 0)
-{
-  dX_train = utils::dummycoding(replace(target = rbind(X_train, X_test), pattern = NaN, replacement=0), getMask)
-  dX_test = dX_train[nrow(y_train)+1:nrow(dX_train),] 
-  dX_train = dX_train[1:nrow(y_train),] 
-  [opt, loss] = gs::gridSearchMLR(dX_train, y_train, dX_test, y_test, 
-  "multiLogReg", "lossFunc", params, paramRanges, FALSE);
- }
-else  
-  [opt, loss] = gs::gridSearchMLR(X_train, y_train, X_test, y_test, 
-    "multiLogReg", "lossFunc", params, paramRanges, FALSE);
+opt = utils::getOpByTarget(eX, eY, getMask, targetApplicaton)
 
-# as I am testing on CV not on holdout train/test
-X_train = eX
-y_train = eY
-# 7. get the cross validated accuracy on dirty dataset (only on training set)
-d_accuracy = utils::classifyDirty(X_train, y_train, opt, getMask, weightedAccuracy, crossValidations)
+# 6. get the cross validated accuracy on dirty dataset (only on training set)
+d_accuracy = 0
+d_accuracy = utils::classifyDirty(eX, eY, opt, getMask, weightedAccuracy, crossValidations)
 
 FD = discoverFD(X=replace(target=eX, pattern=NaN, replacement=1), Mask=getFdMask, threshold=0.8)
 FD = (diag(matrix(1, rows=nrow(FD), cols=1)) ==0) * FD 
@@ -121,20 +95,15 @@ targetClassification = list(target=targetApplicaton, cv=crossValidations, wAccur
   dirAcc = d_accuracy, mlHp = opt, cleanData = as.matrix(0))
 
 # # initialize output variables
+# 7. call the optimizer
 pip = as.frame("NULL"); hp = matrix(0,0,0); acc = matrix(0,0,0); features = as.frame("NULL")
-
-
-output = $output
-
-[pip, hp, acc, features] = bandit(X_train=eX, Y_train=eY,  metaList=metaList, targetList=targetClassification, lp=allLgs[1,],
+[pip, hp, acc, features] = bandit(X_train=eX, Y_train=eY,  metaList=metaList, targetList=targetClassification, lp=logical,
   primitives=primitives, param=param, k=topK, R=resources, verbose=TRUE);
-
 
 
 if(as.scalar((is.na(acc[1,1]))) == 1 | as.scalar(acc[1,1]) < d_accuracy)
   stop("warning: no best pipeline found")
   
-
 print("best pipelines")
 print(toString(pip))
 
@@ -146,11 +115,9 @@ print(toString(acc[1, 1]))
 
 
 clean_accuracy = max(acc[1,1])
-
-
+#8. compare results
 result = d_accuracy < clean_accuracy  
-print("result satisfied ------------"+result)
-
+print("result satisfied: "+result)
 
 write(pip, output+"/pipelines.csv", format="csv")
 write(hp, output+"/hyperparams.csv", format="csv")
@@ -160,10 +127,11 @@ write(accuracies , output+"/BestAccuracy.csv", format="csv")
 write(features, output+"/features.csv", format="csv")
 write(result , $O)
 
-lossFunc = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] B) 
+accuracy = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] B) 
 return (Matrix[Double] loss) {
   [prob, yhat, acc] = multiLogRegPredict(X=X, B=B, Y=y,  verbose=FALSE)
   loss = as.matrix(1 - (acc/100))
-  # [confusionCount_c, confusionAVG_c] = confusionMatrix(P=yhat, Y=y)
 }
+
+
 

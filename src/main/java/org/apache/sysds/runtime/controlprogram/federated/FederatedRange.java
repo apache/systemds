@@ -94,6 +94,10 @@ public class FederatedRange implements Comparable<FederatedRange> {
 				return -1;
 			if ( _beginDims[i] > o._beginDims[i])
 				return 1;
+			if ( _endDims[i] < o._endDims[i])
+				return -1;
+			if ( _endDims[i] > o._endDims[i])
+				return 1;
 		}
 		return 0;
 	}

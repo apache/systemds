@@ -94,60 +94,51 @@ public class SpoofFEDInstruction extends FEDInstruction
 			throw new DMLRuntimeException("Federated code generation only supported" +
 				" for cellwise, rowwise, multiaggregate, and outerproduct templates.");
 
-		ArrayList<CPOperand> inCpoMat = new ArrayList<>();
-		ArrayList<CPOperand> inCpoScal = new ArrayList<>();
-		ArrayList<MatrixObject> inMo = new ArrayList<>();
-		ArrayList<ScalarObject> inSo = new ArrayList<>();
+
 		FederationMap fedMap = null;
-		for(CPOperand cpo : _inputs) {
+		for(CPOperand cpo : _inputs) { // searching for the first federated matrix to obtain the federation map
 			Data tmpData = ec.getVariable(cpo);
-			if(tmpData instanceof MatrixObject) {
-				MatrixObject tmp = (MatrixObject) tmpData;
-				if(fedMap == null & tmp.isFederated()) { //take first
-					inCpoMat.add(0, cpo); // insert federated CPO at the beginning
-					fedMap = tmp.getFedMapping();
-				}
-				else {
-					inCpoMat.add(cpo);
-					inMo.add(tmp);
-				}
-			}
-			else if(tmpData instanceof ScalarObject) {
-				ScalarObject tmp = (ScalarObject) tmpData;
-				inCpoScal.add(cpo);
-				inSo.add(tmp);
+			if(tmpData instanceof MatrixObject && ((MatrixObject)tmpData).isFederated()) {
+				fedMap = ((MatrixObject)tmpData).getFedMapping();
+				break;
 			}
 		}
 
 		ArrayList<FederatedRequest> frBroadcast = new ArrayList<>();
 		ArrayList<FederatedRequest[]> frBroadcastSliced = new ArrayList<>();
-		long[] frIds = new long[1 + inMo.size() + inSo.size()];
+		long[] frIds = new long[_inputs.length];
 		int index = 0;
-		frIds[index++] = fedMap.getID(); // insert federation map id at the beginning
-		for(MatrixObject mo : inMo) {
-			if(spoofType.needsBroadcastSliced(fedMap, mo.getNumRows(), mo.getNumColumns(), index)) {
-				FederatedRequest[] tmpFr = spoofType.broadcastSliced(mo, fedMap);
-				frIds[index++] = tmpFr[0].getID();
-				frBroadcastSliced.add(tmpFr);
+		
+		for(CPOperand cpo : _inputs) {
+			Data tmpData = ec.getVariable(cpo);
+			if(tmpData instanceof MatrixObject) {
+				MatrixObject mo = (MatrixObject) tmpData;
+				if(mo.isFederated()) {
+					frIds[index++] = mo.getFedMapping().getID();
+				}
+				else if(spoofType.needsBroadcastSliced(fedMap, mo.getNumRows(), mo.getNumColumns(), index)) {
+					FederatedRequest[] tmpFr = spoofType.broadcastSliced(mo, fedMap);
+					frIds[index++] = tmpFr[0].getID();
+					frBroadcastSliced.add(tmpFr);
+				}
+				else {
+					FederatedRequest tmpFr = fedMap.broadcast(mo);
+					frIds[index++] = tmpFr.getID();
+					frBroadcast.add(tmpFr);
+				}
 			}
-			else {
-				FederatedRequest tmpFr = fedMap.broadcast(mo);
+			else if(tmpData instanceof ScalarObject) {
+				ScalarObject so = (ScalarObject) tmpData;
+				FederatedRequest tmpFr = fedMap.broadcast(so);
 				frIds[index++] = tmpFr.getID();
 				frBroadcast.add(tmpFr);
 			}
-		}
-		for(ScalarObject so : inSo) {
-			FederatedRequest tmpFr = fedMap.broadcast(so);
-			frIds[index++] = tmpFr.getID();
-			frBroadcast.add(tmpFr);
 		}
 
 		// change the is_literal flag from true to false because when broadcasted it is not a literal anymore
 		instString = instString.replace("true", "false");
 
-		CPOperand[] inCpo = ArrayUtils.addAll(inCpoMat.toArray(new CPOperand[0]),
-			inCpoScal.toArray(new CPOperand[0]));
-		FederatedRequest frCompute = FederationUtils.callInstruction(instString, _output, inCpo, frIds);
+		FederatedRequest frCompute = FederationUtils.callInstruction(instString, _output, _inputs, frIds);
 
 		// get partial results from federated workers
 		FederatedRequest frGet = new FederatedRequest(RequestType.GET_VAR, frCompute.getID());
@@ -184,14 +175,18 @@ public class SpoofFEDInstruction extends FEDInstruction
 
 		protected boolean needsBroadcastSliced(FederationMap fedMap, long rowNum, long colNum, int inputIndex) {
 			FType fedType = fedMap.getType();
+
 			boolean retVal = (rowNum == fedMap.getMaxIndexInRange(0) && colNum == fedMap.getMaxIndexInRange(1));
 			if(fedType == FType.ROW)
-				retVal |= (rowNum == fedMap.getMaxIndexInRange(0) && (colNum == 1 || colNum == fedMap.getSize()));
+				retVal |= (rowNum == fedMap.getMaxIndexInRange(0) 
+					&& (colNum == 1 || colNum == fedMap.getSize() || fedMap.getMaxIndexInRange(1) == 1));
 			else if(fedType == FType.COL)
-				retVal |= ((rowNum == 1 || rowNum == fedMap.getSize()) && colNum == fedMap.getMaxIndexInRange(1));
-			else
+				retVal |= (colNum == fedMap.getMaxIndexInRange(1)
+					&& (rowNum == 1 || rowNum == fedMap.getSize() || fedMap.getMaxIndexInRange(0) == 1));
+			else {
 				throw new DMLRuntimeException("Only row partitioned or column" +
 					" partitioned federated input supported yet.");
+			}
 			return retVal;
 		}
 

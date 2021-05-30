@@ -209,7 +209,8 @@ return (Matrix[Double] bestOpt)
       X = dummycoding(replace(target = X, pattern = NaN, replacement=0), mask)
       
     trainArgs = list(X=X, Y=y, icpt=-1, reg=-1, tol=1e-9, maxi=100, maxii=-1, verbose=FALSE);
-    [B1,opt] = gridSearch(X, y, "multiLogReg", "accuracy", ncol(X)+1, params, paramRanges, trainArgs, FALSE);
+    [B1,opt] = gridSearch(X=X, y=y, train="multiLogReg", predict="accuracy", numB=ncol(X)+1,
+      params=params, paramValues=paramRanges, trainArgs=trainArgs, verbose=FALSE);
 
   }
   else if(target == "lm")

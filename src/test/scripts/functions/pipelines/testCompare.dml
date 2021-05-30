@@ -18,11 +18,7 @@
 # under the License.
 #
 #-------------------------------------------------------------
-# Generate the logical pipelines for data cleaning
-
-
-source("scripts/pipelines/scripts/logicalFunc.dml") as logical;
-
+source("scripts/pipelines/scripts/utils.dml") as utils;
 # read the inputs
 F = read($dirtyData, data_type="frame", format="csv", header=TRUE, 
   naStrings= ["NA", "null","  ","NaN", "nan", "", "?", "99999"]);
@@ -36,7 +32,7 @@ targetApplicaton = $target # accuracy flag
 cleanData = read($cleanData, data_type="frame", format="csv", header=TRUE, 
   naStrings= ["NA", "null","  ","NaN", "nan", "", "?", "99999"]);
 
-
+logical = as.frame("MVI")
   
 # take the sample of 500 rows to avoid java heap issue
 
@@ -47,20 +43,19 @@ metaInfo = metaInfo[, 1:21]
 if(nrow(metaInfo) < 2)
   stop("incomplete meta info")
 
- # Do the initial cleaning
- 
- 
+# construct meta vectors
 getSchema = metaInfo[1, 2:ncol(metaInfo)]
 getMask = as.matrix(metaInfo[2, 2:ncol(metaInfo)])
 getFdMask = as.matrix(metaInfo[3, 2:ncol(metaInfo)]) # columns of interest for FD computation
-  
-# 1. dropInvalid function will remove the values which are not the part 
-# of the column data type  
 
-X = dropInvalidType(F, getSchema)
+# can not perform string processing as this creates conflicts with original data like the 
+# string processing change the case to lower case then the value comparison with original data
+# is not possible
+# X = utils::stringProcessing(F, getMask, getSchema)
 
+X = F
 
-# 2. encode the categorical data
+# encode the categorical data
 if(sum(getMask) > 0)
 {
   # always recode the label
@@ -84,12 +79,6 @@ else {
 }
   
 
-# get the logical seed
-lgSeed = logical::generateLogicalSeed(eX, as.matrix(0), getMask, targetApplicaton)
-allLgs = logical::transformLogical(lgSeed)
-
-
-
 FD = discoverFD(X=replace(target=eX, pattern=NaN, replacement=1), Mask=getFdMask, threshold=0.8)
 FD = (diag(matrix(1, rows=nrow(FD), cols=1)) ==0) * FD 
 FD = FD > 0
@@ -97,15 +86,14 @@ FD = FD > 0
 expectedAccuracy = 0.5
 
 metaList = list(mask=getMask, schema=getSchema, fd=FD)
-targetClassification = list(target=targetApplicaton, cv=0, wAccuracy=FALSE, 
+targetCompare = list(target=targetApplicaton, cv=0, wAccuracy=FALSE, 
   dirAcc = expectedAccuracy,  mlHp = as.matrix(0), cleanData = cleanX)
 
 
 # # initialize output variables
 pip = as.frame("NULL"); hp = matrix(0,0,0); acc = matrix(0,0,0); features = as.frame("NULL")
-
-[pip, hp, acc, features] = bandit(X_train=eX, Y_train=as.matrix(0),  metaList=metaList, targetList=targetClassification, 
-  lp=allLgs, primitives=primitives, param=param, k=topK, R=resources, verbose=TRUE);
+[pip, hp, acc, features] = bandit(X_train=eX, Y_train=as.matrix(0),  metaList=metaList, targetList=targetCompare, 
+  lp=logical, primitives=primitives, param=param, k=topK, R=resources, verbose=TRUE);
 
 
 output = $output
@@ -133,9 +121,4 @@ print("result satisfied ------------"+result)
 
 accuracies = cbind(as.matrix(expectedAccuracy), as.matrix(clean_accuracy))
 
-
-# write(pip, output+"/pipelines.csv", format="csv")
-# write(hp, output+"/hyperparams.csv", format="csv")
-# write(acc, output+"/accuracies.csv", format="csv")
-# write(accuracies , output+"/BestAccuracy.csv", format="csv")
 write(result , $O)

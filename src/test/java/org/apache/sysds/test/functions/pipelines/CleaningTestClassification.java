@@ -28,6 +28,7 @@ import org.junit.Ignore;
 import org.junit.Test;
 
 public class CleaningTestClassification extends AutomatedTestBase {
+//	private final static String TEST_NAME1 = "prioritized";
 	private final static String TEST_NAME1 = "testClassification";
 	private final static String TEST_NAME2 = "compareAccuracy";
 	private final static String TEST_CLASS_DIR = SCRIPT_DIR + CleaningTestClassification.class.getSimpleName() + "/";
@@ -39,10 +40,11 @@ public class CleaningTestClassification extends AutomatedTestBase {
 	private final static String CLEAN = DATA_DIR+ "clean.csv";
 	private final static String META = RESOURCE+ "meta/meta_census.csv";
 	private final static String OUTPUT = RESOURCE+"intermediates/";
+	private final static String LOGICAL = RESOURCE+"intermediates/logical.csv";
 
 	private static final String PARAM_DIR = "./scripts/pipelines/properties/";
 	private final static String PARAM = PARAM_DIR + "param.csv";
-	private final static String PRIMITIVES = PARAM_DIR + "primitives.csv";
+	private final static String PRIMITIVES = PARAM_DIR + "testPrimitives.csv";
 
 	@Override
 	public void setUp() {
@@ -50,10 +52,16 @@ public class CleaningTestClassification extends AutomatedTestBase {
 		addTestConfiguration(TEST_NAME2,new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2,new String[]{"R"}));
 	}
 
-	@Ignore
+	@Test
 	public void testFindBestPipeline() {
-		runFindPipelineTest(0.1, 5,10, 2,
-			true, "classification", Types.ExecMode.SINGLE_NODE);
+		runFindPipelineTest(0.1, 5,5, 2,
+			true, "multiLogReg", Types.ExecMode.SINGLE_NODE);
+	}
+
+	@Ignore
+	public void testFindBestPipelineHybrid() {
+		runFindPipelineTest(0.1, 5,5, 2,
+			true, "multiLogReg", Types.ExecMode.HYBRID);
 	}
 
 	@Test
@@ -64,16 +72,17 @@ public class CleaningTestClassification extends AutomatedTestBase {
 	private void runFindPipelineTest(Double sample, int topk, int resources, int crossfold,
 		boolean weightedAccuracy, String target, Types.ExecMode et) {
 
-		setOutputBuffering(true);
+//		setOutputBuffering(true);
 		String HOME = SCRIPT_DIR+"functions/pipelines/" ;
 		Types.ExecMode modeOld = setExecMode(et);
 		try {
 			loadTestConfiguration(getTestConfiguration(TEST_NAME1));
 			fullDMLScriptName = HOME + TEST_NAME1 + ".dml";
 			programArgs = new String[] {"-stats", "-exec", "singlenode", "-nvargs", "dirtyData="+DIRTY,
-				"metaData="+META, "primitives="+PRIMITIVES, "parameters="+PARAM, "sampleSize="+ sample,
-				"topk="+ topk, "rv="+ resources, "cv="+ crossfold, "weighted="+ weightedAccuracy,
-				"output="+OUTPUT, "target="+target, "cleanData="+CLEAN, "O="+output("O")};
+				"metaData="+META, "primitives="+PRIMITIVES, "parameters="+PARAM, "logical="+LOGICAL,
+				"sampleSize="+ sample, "topk="+ topk, "rv="+ resources, "cv="+ crossfold,
+				"weighted="+ weightedAccuracy, "output="+OUTPUT, "target="+target, "cleanData="+CLEAN,
+				"O="+output("O")};
 
 			runTest(true, EXCEPTION_NOT_EXPECTED, null, -1);
 

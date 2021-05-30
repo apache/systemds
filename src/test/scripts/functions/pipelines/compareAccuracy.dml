@@ -58,12 +58,11 @@ getSchema = metaInfo[1, 2:ncol(metaInfo)]
 getMask = as.matrix(metaInfo[2, 2:ncol(metaInfo)])
 getFdMask = as.matrix(metaInfo[3, 2:ncol(metaInfo)]) # columns of interest for FD computation
 
-# # 1. dropInvalid function will remove the values which are not the part 
+# # dropInvalid function will remove the values which are not the part 
 # # of the column data type  
-# print("check 1")
-X = dropInvalidType(F, getSchema)
+X = utils::stringProcessing(F, getMask, getSchema)
 
-# 2. encode the categorical data
+# encode the categorical data
 if(sum(getMask) > 0)
 {
   # recode the dirty data, always recode the label
@@ -75,7 +74,7 @@ if(sum(getMask) > 0)
 else
   eX = as.matrix(X)
 
-# # 3. extract the class label  
+# extract the class label  
 eY = eX[, ncol(eX)]
 eX = eX[, 1:ncol(eX) - 1]
 
@@ -85,9 +84,6 @@ getMask = getMask[, 1:ncol(getMask) - 1] # strip the mask of class label
 getSchema = getSchema[, 1:ncol(getSchema) - 1] # strip the mask of class label
 getFdMask = getFdMask[, 1:ncol(getFdMask) - 1] # strip the mask of class label
 
-# construct hyper-parameters
-ls = list();
-i = 1; k = 1
 
 FD = discoverFD(X=replace(target=eX, pattern=NaN, replacement=1), Mask=getFdMask, threshold=0.8)
 FD = (diag(matrix(1, rows=nrow(FD), cols=1)) ==0) * FD 
@@ -115,19 +111,19 @@ if(sum(getMask) > 0)
 else 
   oX = as.matrix(O)
 
-# # 3. extract the class label  
+# # extract the class label of original data
 oY = oX[, ncol(oX)]
 oX = oX[, 1:ncol(oX) - 1]
 
 
 
 # do the k cross validations for original clean data
-accuracyMatrix = bandit::crossV(oX, oY, 3, as.matrix(0), matrix("0.000001 100", rows=1, cols=2), TRUE)
+accuracyMatrix = bandit::crossV(oX, oY, 3, as.matrix(0), matrix("0 0.000001 100", rows=1, cols=3), TRUE)
 accuracyMatrix = removeEmpty(target=accuracyMatrix, margin="rows")
 oAcc = mean(accuracyMatrix)
 
 # do the k cross validations for cleaned data
-accuracyMatrix = bandit::crossV(cX, cY, 3, as.matrix(0), matrix("0.000001 100", rows=1, cols=2), TRUE)
+accuracyMatrix = bandit::crossV(cX, cY, 3, as.matrix(0), matrix("0 0.000001 100", rows=1, cols=3), TRUE)
 accuracyMatrix = removeEmpty(target=accuracyMatrix, margin="rows")
 cAcc = mean(accuracyMatrix)
 tol = 1

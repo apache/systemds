@@ -21,7 +21,7 @@
 
 accuracy = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] B) return (Matrix[Double] err) {
   [M,yhat,acc] = multiLogRegPredict(X=X, B=B, Y=y, verbose=TRUE);
-  err = as.matrix(1-acc);
+  err = as.matrix(1-(acc/100));
 }
 
 X = read($1);

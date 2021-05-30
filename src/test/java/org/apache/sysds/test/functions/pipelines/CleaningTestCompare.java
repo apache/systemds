@@ -62,7 +62,7 @@ public class CleaningTestCompare extends AutomatedTestBase {
 			loadTestConfiguration(getTestConfiguration(TEST_NAME1));
 			fullDMLScriptName = HOME + TEST_NAME1 + ".dml";
 			programArgs = new String[] {"-stats", "-exec", "singlenode", "-nvargs", "dirtyData="+DIRTY,
-				"metaData="+META, "primitives="+PRIMITIVES, "parameters="+PARAM,  "topk="+ topk, "rv="+ resources,
+				"metaData="+META, "primitives="+PRIMITIVES, "parameters="+PARAM, "topk="+ topk, "rv="+ resources,
 				"output="+OUTPUT, "target="+target, "cleanData="+CLEAN, "O="+output("O")};
 
 			runTest(true, EXCEPTION_NOT_EXPECTED, null, -1);

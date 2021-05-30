@@ -153,9 +153,11 @@ print(toString(D))
 
 Note that reshape construction is not yet supported for **SPARK** execution.
 
+
 # DML-Bodied Built-In Functions
 
 **DML-bodied built-in functions** are written as DML-Scripts and executed as such when called.
+
 
 ## `confusionMatrix`-Function
 
@@ -235,6 +237,7 @@ By default, it calculates via `csplineDS`-function.
 Algorithm reference: https://en.wikipedia.org/wiki/Spline_interpolation#Algorithm_to_find_the_interpolating_cubic_spline
 
 ### Usage
+
 ```r
 [result, K] = cspline(X, Y, inp_x, tol, maxi)
 ```
@@ -269,11 +272,13 @@ max_iter = num_rec
 [result, K] = cspline(X=X, Y=Y, inp_x=inp_x, tol=tolerance, maxi=max_iter)
 ```
 
+
 ## `csplineCG`-Function
 
 This `csplineCG`-function solves Cubic spline interpolation with conjugate gradient method. Usage will be same as `cspline`-function.
 
 ### Usage
+
 ```r
 [result, K] = csplineCG(X, Y, inp_x, tol, maxi)
 ```
@@ -307,11 +312,13 @@ max_iter = num_rec
 [result, K] = csplineCG(X=X, Y=Y, inp_x=inp_x, tol=tolerance, maxi=max_iter)
 ```
 
+
 ## `csplineDS`-Function
 
 This `csplineDS`-function solves Cubic spline interpolation with direct solver method.
 
 ### Usage
+
 ```r
 [result, K] = csplineDS(X, Y, inp_x)
 ```
@@ -380,6 +387,7 @@ y = X %*% rand(rows = ncol(X), cols = 1)
 [predict, beta] = cvlm(X = X, y = y, k = 4)
 ```
 
+
 ## `DBSCAN`-Function
 
 The dbscan() implements the DBSCAN Clustering algorithm using Euclidian distance.
@@ -410,6 +418,7 @@ Y = dbscan(X = X, eps = 2.5, minPts = 5)
 X = rand(rows=1780, cols=180, min=1, max=20) 
 dbscan(X = X, eps = 2.5, minPts = 360)
 ```
+
 
 ## `decisionTree`-Function
 
@@ -481,6 +490,7 @@ discoverFD(X, Mask, threshold)
 | :----- | :---------- |
 | Double | matrix of functional dependencies |
 
+
 ## `dist`-Function
 
 The `dist`-function is used to compute Euclidian distances between N d-dimensional points.
@@ -509,7 +519,6 @@ dist(X)
 X = rand (rows = 5, cols = 5)
 Y = dist(X)
 ```
-
 
 
 ## `dmv`-Function
@@ -544,6 +553,7 @@ Z = dmv(X=A)
 Z = dmv(X=A, threshold=0.9)
 Z = dmv(X=A, threshold=0.9, replace="NaN")
 ```
+
 
 ## `gaussianClassifier`-Function
 
@@ -588,6 +598,7 @@ y = X %*% rand(rows = ncol(X), cols = 1)
 [prior, means, covs, det] = gaussianClassifier(D=X, C=y, varSmoothing=1e-9)
 ```
 
+
 ## `glm`-Function
 
 The `glm`-function  is a flexible generalization of ordinary linear regression that allows for response variables that have
@@ -623,11 +634,13 @@ glm(X,Y)
 | Matrix[Double] | Matrix whose size depends on icpt ( icpt=0: ncol(X) x 1;  icpt=1: (ncol(X) + 1) x 1;  icpt=2: (ncol(X) + 1) x 2) |
 
 ### Example
+
 ```r
 X = rand (rows = 5, cols = 5 )
 y = X %*% rand(rows = ncol(X), cols = 1)
 beta = glm(X=X,Y=y)
 ```
+
 
 ## `gmm`-Function
 
@@ -751,6 +764,7 @@ paramRanges = list(10^seq(0,-4), 10^seq(-5,-9), 10^seq(1,3))
 [B, opt]= gridSearch(X=X, y=y, train="lm", predict="lmPredict", params=params, paramValues=paramRanges, verbose = TRUE)
 ```
 
+
 ## `hyperband`-Function
 
 The `hyperband`-function is used for hyper parameter optimization and is based on multi-armed bandits and early elimination.
@@ -763,6 +777,7 @@ Notes:
 * `hyperband` can only optimize continuous hyperparameters
 
 ### Usage
+
 ```r
 hyperband(X_train, y_train, X_val, y_val, params, paramRanges, R, eta, verbose)
 ```
@@ -803,6 +818,7 @@ paramRanges = matrix("0 20", rows=1, cols=2);
     X_val=X_val, y_val=y_val, params=params, paramRanges=paramRanges);
 ```
 
+
 ## `img_brightness`-Function
 
 The `img_brightness`-function is an image data augumentation function.
@@ -834,6 +850,7 @@ img_brightness(img_in, value, channel_max)
 A = rand(rows = 3, cols = 3, min = 0, max = 255)
 B = img_brightness(img_in = A, value = 128, channel_max = 255)
 ```
+
 
 ## `img_crop`-Function
 
@@ -869,6 +886,7 @@ A = rand(rows = 3, cols = 3, min = 0, max = 255)
 B = img_crop(img_in = A, w = 20, h = 10, x_offset = 0, y_offset = 0)
 ```
 
+
 ## `img_mirror`-Function
 
 The `img_mirror`-function is an image data augumentation function.
@@ -899,6 +917,7 @@ img_mirror(img_in, horizontal_axis)
 A = rand(rows = 3, cols = 3, min = 0, max = 255)
 B = img_mirror(img_in = A, horizontal_axis = TRUE)
 ```
+
 
 ## `imputeByFD`-Function
 
@@ -969,6 +988,7 @@ X = read("fileA", data_type="frame")
 ema(X = X, search_iterations = 1, mode = "triple", freq = 4, alpha = 0.1, beta = 0.1, gamma = 0.1,)
 ```
 
+
 ## `KMeans`-Function
 
 The kmeans() implements the KMeans Clustering algorithm.
@@ -1005,6 +1025,7 @@ kmeans(X = X, k = 20, runs = 10, max_iter = 5000, eps = 0.000001, is_verbose = F
 X = rand (rows = 3972, cols = 972)
 kmeans(X = X, k = 20, runs = 10, max_iter = 5000, eps = 0.000001, is_verbose = FALSE, avg_sample_size_per_centroid = 50, seed = -1)
 ```
+
 
 ## `KNN`-Function
 
@@ -1104,11 +1125,13 @@ y = X %*% rand(rows = ncol(X), cols = 1)
 lm(X = X, y = y)
 ```
 
+
 ## `intersect`-Function
 
 The `intersect`-function implements set intersection for numeric data.
 
 ### Usage
+
 ```r
 intersect(X, Y)
 ```
@@ -1219,7 +1242,6 @@ lmPredict(X=X, B=w, ytest= Y)
 | icpt    | Integer        | 0        | Intercept presence, shifting and rescaling of X ([Details](#icpt-argument))|
 | verbose | Boolean        | FALSE    | Print various statistics for evaluating accuracy. |
 
-
 ### Returns
 
 | Type           | Description |
@@ -1258,13 +1280,11 @@ mdedup(X, Y, intercept, epsilon, lamda, maxIterations, verbose)
 | RHSthreshold  | Matrix[Double]   | ---        | A matrix 1xd with threshold values in interval [0, 1] for MDs |
 | verbose       | Boolean          | False      | Set to true to print duplicates.|
 
-
 ### Returns
 
 | Type            | Default  | Description |
 | :-------------- | -------- | :---------- |
 | Matrix[Integer] | ---      | Matrix of duplicates (rows). |
-
 
 ### Example
 
@@ -1303,7 +1323,6 @@ mice(F, cMask, iter, complete, verbose)
 | :------------- | :---------- |
 | Matrix[Double]  | imputed dataset. |
 
-
 ### Example
 
 ```r
@@ -1324,7 +1343,6 @@ It learns one-against-the-rest binary-class classifiers by making a function cal
 msvm(X, Y, intercept, epsilon, lamda, maxIterations, verbose)
 ```
 
-
 ### Arguments
 
 | Name          | Type             | Default    | Description |
@@ -1338,13 +1356,11 @@ msvm(X, Y, intercept, epsilon, lamda, maxIterations, verbose)
 | maxIterations | Integer          | 100        | Maximum number of conjugate gradient iterations|
 | verbose       | Boolean          | False      | Set to true to print while training.|
 
-
 ### Returns
 
 | Name    | Type           | Default  | Description |
 | :------ | :------------- | -------- | :---------- |
 | model   | Double         | ---      | Model matrix. |
-
 
 ### Example
 
@@ -1427,6 +1443,7 @@ C=rand(rows=10,cols=1,min=10)
 [prior, classConditionals] = naiveBayes(D, C, laplace = 1, verbose = TRUE)
 ```
 
+
 ## `naiveBaysePredict`-Function
 
 The `naiveBaysePredict`-function predicts the scoring with a naive Bayes model.
@@ -1458,6 +1475,7 @@ naiveBaysePredict(X=X, P=P, C=C)
 [YRaw, Y] = naiveBaysePredict(X=data, P=model_prior, C=model_conditionals)
 ```
 
+
 ## `normalize`-Function
 
 The `normalize`-function normalises the values of a matrix by changing the dataset to use a common scale.
@@ -1476,14 +1494,11 @@ normalize(X);
 | :------ | :------------- | -------- | :---------- |
 | X       | Matrix[Double] | required | Matrix of feature vectors. |
 
-
 ### Returns
 
 | Type           | Description |
 | :------------- | :---------- |
 | Matrix[Double] | 1-column matrix of normalized values. |
-
-
 
 ### Example
 
@@ -1548,7 +1563,6 @@ pnmf(X, rnk, eps = 10^-8, maxi = 10, verbose = TRUE)
 | maxi    | Integer        | `10`     | Maximum number of conjugate gradient iterations. |
 | verbose | Boolean        | TRUE     | If TRUE, 'iter' and 'obj' are printed.|
 
-
 ### Returns
 
 | Type           | Description |
@@ -1562,6 +1576,7 @@ pnmf(X, rnk, eps = 10^-8, maxi = 10, verbose = TRUE)
 X = rand(rows = 50, cols = 10)
 [W, H] = pnmf(X = X, rnk = 2, eps = 10^-8, maxi = 10, verbose = TRUE)
 ```
+
 
 ## `scale`-Function
 
@@ -1596,12 +1611,14 @@ scale=TRUE;
 Y= scale(X,center,scale)
 ```
 
+
 ## `sherlock`-Function
 
 Implements training phase of Sherlock: A Deep Learning Approach to Semantic Data Type Detection
 
 [Hulsebos, Madelon, et al. "Sherlock: A deep learning approach to semantic data type detection."
 Proceedings of the 25th ACM SIGKDD International Conference on Knowledge Discovery & Data Mining., 2019]
+
 ### Usage
 
 ```r
@@ -1658,6 +1675,7 @@ Implements prediction and evaluation phase of Sherlock: A Deep Learning Approach
 
 [Hulsebos, Madelon, et al. "Sherlock: A deep learning approach to semantic data type detection."
 Proceedings of the 25th ACM SIGKDD International Conference on Knowledge Discovery & Data Mining., 2019]
+
 ### Usage
 
 ```r
@@ -1665,6 +1683,7 @@ sherlockPredict(X, cW1, cb1, cW2, cb2, cW3, cb3, wW1, wb1, wW2, wb2, wW3, wb3,
                    pW1, pb1, pW2, pb2, pW3, pb3, sW1, sb1, sW2, sb2, sW3, sb3,
                    fW1, fb1, fW2, fb2, fW3, fb3)
 ```
+
 ### Arguments
 
 | Name    | Type           | Default  | Description |
@@ -1716,6 +1735,7 @@ fW3,  fb3)
 [loss, accuracy] = sherlockPredict::eval(probs, processed_val_labels)
 ```
 
+
 ## `sigmoid`-Function
 
 The Sigmoid function is a type of activation function, and also defined as a squashing function which limit the output
@@ -1746,6 +1766,7 @@ sigmoid(X)
 X = rand (rows = 20, cols = 10)
 Y = sigmoid(X)
 ```
+
 
 ## `slicefinder`-Function
 
@@ -1911,6 +1932,7 @@ X = round(rand(rows = 53, cols = 6, min = -1, max = 1))
 y = round(rand(rows = nrow(X), cols = 1, min = 0, max = 1))
 [X_under, y_under, drop_idx] = tomeklink(X, y)
 ```
+
 
 ## `toOneHot`-Function
 

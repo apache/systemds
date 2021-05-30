@@ -31,7 +31,7 @@ else {
 
 if(test_num == 1) { # wcemm
   # X ... 2000x2000 matrix
-  
+
   U = matrix(seq(1, 20000), rows=2000, cols=10);
   V = matrix(seq(20001, 40000), rows=2000, cols=10);
   eps = 0.1;

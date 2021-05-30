@@ -121,10 +121,9 @@ classifyDirty = function(Matrix[Double] Xtrain, Matrix[Double] ytrain, Matrix[Do
   Matrix[Double] mask, Boolean isWeighted = TRUE, Integer cv)
   return (Double accuracy)
 {
-  # # classify without cleaning fill with default values 1
-  Xtrain = replace(target = Xtrain, pattern = NaN, replacement=1)
-  dX_train = dummycoding(Xtrain, mask)
-  [accuracy, T] = bandit::crossV(dX_train, ytrain, cv, mask, opt, isWeighted)
+  if(sum(mask) > 0)
+    Xtrain = dummycoding(Xtrain, mask)
+  [accuracy, T] = bandit::crossV(Xtrain, ytrain, cv, mask, opt, isWeighted)
   accuracy = mean(accuracy)
   print("cross validated dirty accuracy "+accuracy)
 }
@@ -223,7 +222,7 @@ return (Matrix[Double] bestOpt)
       
     trainArgs = list(X=X, y=y, icpt=0, reg=-1, tol=-1, maxi=-1, verbose=FALSE);
     [B1, opt] = gridSearch(X=X, y=y, train="lm", predict="l2norm", 
-      ncolB=ncol(X), params=params, paramValues=paramRanges, trainArgs=trainArgs, verbose=FALSE);
+      numB=ncol(X), params=params, paramValues=paramRanges, trainArgs=trainArgs, verbose=FALSE);
   }
   else
     print("getOptByTarget: target type not supported. Expected multiLogReg or lm found: "+target)

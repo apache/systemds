@@ -225,12 +225,14 @@ return (Matrix[Double] dX_train) {
 imputeByFd = function(Matrix[Double] X, Matrix[Double] FD,  Double threshold)
 return (Matrix[Double] X_filled)
 {
-  
-  for(i in 1: nrow(FD))
+  if(sum(FD) > 0)
   {
-    for(j in 1:ncol(FD)) {
-      if(as.scalar(FD[i, j]) > 0 & (min(X[, i]) != 0) & (min(X[, j]) != 0) & (sum(FD[, j]) != nrow(FD)))
-        X = imputeByFD(X, i, j, threshold, FALSE)
+    for(i in 1: nrow(FD))
+    {
+      for(j in 1:ncol(FD)) {
+        if(as.scalar(FD[i, j]) > 0 & (min(X[, i]) != 0) & (min(X[, j]) != 0) & (sum(FD[, j]) != nrow(FD)))
+          X = imputeByFD(X, i, j, threshold, FALSE)
+      }
     }
   }
   X_filled = X
@@ -283,8 +285,6 @@ return (Matrix[Double] XY)
   XY = cbind(X,Y)
   classes = table(Y, 1)
 }
-
-
 
 
 ########################################################

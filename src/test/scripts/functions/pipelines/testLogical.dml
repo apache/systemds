@@ -105,7 +105,7 @@ categories = frame(["MVI", "OTLR", "SCALE"], rows=1, cols=3)
 cmr = matrix("4 0.7 2", rows=1, cols=3)
 [bestLogical, score, T] = lg::enumerateLogical(X=eX, y=eY, cmr=cmr, cat=categories, population=logical,
   max_iter=max_iter, metaList=metaList, targetList=targetClassification, primitives=primitives, param=param,
-  num_inst=num_inst, num_exec=num_exec, verbose=FALSE)
+  num_inst=num_inst, num_exec=num_exec, isTailed=TRUE, verbose=TRUE)
 
 print("score of pipeline: "+toString(score)+" in "+(T/60000)+" mins")
 print("bestLogical "+toString(bestLogical))

@@ -86,9 +86,13 @@ opt = utils::getOpByTarget(eX, eY, getMask, targetApplicaton)
 d_accuracy = 0
 d_accuracy = utils::classifyDirty(eX, eY, opt, getMask, weightedAccuracy, crossValidations)
 
-FD = discoverFD(X=replace(target=eX, pattern=NaN, replacement=1), Mask=getFdMask, threshold=0.8)
-FD = (diag(matrix(1, rows=nrow(FD), cols=1)) ==0) * FD 
-FD = FD > 0
+if(sum(getFdMask) > 0)
+{
+  FD = discoverFD(X=replace(target=eX, pattern=NaN, replacement=1), Mask=getFdMask, threshold=0.8)
+  FD = (diag(matrix(1, rows=nrow(FD), cols=1)) ==0) * FD 
+  FD = FD > 0
+}
+FD = as.matrix(0)
 
 metaList = list(mask=getMask, schema=getSchema, fd=FD)
 targetClassification = list(target=targetApplicaton, cv=crossValidations, wAccuracy=weightedAccuracy, 

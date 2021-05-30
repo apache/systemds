@@ -34,7 +34,6 @@ public class CleaningTestLogical extends AutomatedTestBase {
 	private static final String DATA_DIR = DATASET_DIR+ "pipelines/";
 
 	private final static String DIRTY = DATA_DIR+ "dirty.csv";
-	private final static String CLEAN = DATA_DIR+ "clean.csv";
 	private final static String META = RESOURCE+ "meta/meta_census.csv";
 
 	private static final String PARAM_DIR = "./scripts/pipelines/properties/";

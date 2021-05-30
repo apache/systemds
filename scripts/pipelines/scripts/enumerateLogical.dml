@@ -53,7 +53,7 @@ source("scripts/pipelines/scripts/utils.dml") as utils;
 
 enumerateLogical = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] cmr, Matrix[Double] cat, Frame[Unknown] population,
   Integer max_iter=10, List[Unknown] metaList, List[Unknown] targetList, Frame[Unknown] primitives, Frame[Unknown] param,
-  Integer num_inst, Integer num_exec,  Boolean verbose)
+  Integer num_inst, Integer num_exec, Boolean isTailed = TRUE, Boolean verbose)
 return (Frame[Unknown] bestLg, Double pre_best, Double T)
 { 
   t1 = time()
@@ -83,11 +83,13 @@ return (Frame[Unknown] bestLg, Double pre_best, Double T)
       physicalConf = as.frame(physicalPipList[i])
       # # append configuration keys for extracting the pipeline later on
       id = seq(1, nrow(physicalConf))
-      tail = frame(["dummycoding", "m_pca"], rows=nrow(physicalConf), cols=2)
       physicalConf = cbind(as.frame(id), physicalConf)
-      physicalConfTailed = cbind(physicalConf, tail)
+      if(isTailed) {
+        tail = frame(["dummycoding", "m_pca"], rows=nrow(physicalConf), cols=2)
+        physicalConf = cbind(physicalConf, tail)
+      }
       # # execute the physical instances and store the minimum scores, each pipeline is executed num_exec times
-      [outPip,outHp, feaFrameOuter] = bandit::run_with_hyperparam(physicalConfTailed, num_exec, X, y, metaList,
+      [outPip,outHp, feaFrameOuter] = bandit::run_with_hyperparam(physicalConf, num_exec, X, y, metaList,
         targetList, param, as.frame(""), verbose)
       # # sort the configurations groupwise
       max_perf =  bandit::getMaxPerConf(outPip, nrow(physicalConf)) 
@@ -102,13 +104,17 @@ return (Frame[Unknown] bestLg, Double pre_best, Double T)
     {
       print("best score " + best_score)
       print("previous score " + pre_best)
+      print("bestLg " + toString(bestLg))
     }
     converged = pre_best > best_score
     convergedOuter = converged
     if(converged)
     {
-      lg_tail = frame(["DUMMY", "DIM"], rows=1, cols=2)
-      bestLg = cbind(bestLg, lg_tail)
+      if(isTailed)
+      {
+        lg_tail = frame(["DUMMY", "DIM"], rows=1, cols=2)
+        bestLg = cbind(bestLg, lg_tail)
+      }
       print("converged after "+iter+" iteration(s)")
       print("best score " + pre_best)
       print("best pipeline " + toString(bestLg))

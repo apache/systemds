@@ -19,22 +19,21 @@
 #
 #-------------------------------------------------------------
 
-if($in_partitioned) {
-  A = rbind(read($in_A1), read($in_A2));
-  B = rbind(read($in_B1), read($in_B2));
-}
-else {
-  A = read($in_A1);
-  B = read($in_B1);
+if ($rP) {
+    X = federated(addresses=list($in_X1, $in_X2, $in_X3, $in_X4),
+        ranges=list(list(0, 0), list($rows/4, $cols), list($rows/4, 0), list(2*$rows/4, $cols),
+    		list(2*$rows/4, 0), list(3*$rows/4, $cols), list(3*$rows/4, 0), list($rows, $cols)));
+    Y = X * 7; # row partitioned federated Y
+    Z = X - 1.5; # row partitioned federated Z
+} else {
+    X = federated(addresses=list($in_X1, $in_X2, $in_X3, $in_X4),
+            ranges=list(list(0, 0), list($rows, $cols/4), list(0,$cols/4), list($rows, $cols/2),
+            	list(0,$cols/2), list($rows, 3*($cols/4)), list(0, 3*($cols/4)), list($rows, $cols)));
+    Y = X * 7; # col partitioned federated Y
+    Z = X - 1.5; # col partitioned federated Z
 }
 
-R = rbind(A, B)
-C = cbind(A, B)
-R_LF = rbind(B, A)
-C_LF = cbind(B, A)
-write(R, $out_R_FF)
-write(R, $out_R_FL)
-write(R_LF, $out_R_LF)
-write(C, $out_C_FF)
-write(C, $out_C_FL)
-write(C_LF, $out_C_LF)
+while(FALSE) { }
+
+s = colSums(X * Y * Z);
+write(s, $out_S);

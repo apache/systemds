@@ -19,22 +19,17 @@
 #
 #-------------------------------------------------------------
 
-if($in_partitioned) {
-  A = rbind(read($in_A1), read($in_A2));
-  B = rbind(read($in_B1), read($in_B2));
+if($6) {
+  X = rbind(read($1), read($2), read($3), read($4));
+  Y = X * 7;
+  X = t(X);
 }
 else {
-  A = read($in_A1);
-  B = read($in_B1);
+  X = cbind(read($1), read($2), read($3), read($4));
+  Y = t(X) * 7;
 }
 
-R = rbind(A, B)
-C = cbind(A, B)
-R_LF = rbind(B, A)
-C_LF = cbind(B, A)
-write(R, $out_R_FF)
-write(R, $out_R_FL)
-write(R_LF, $out_R_LF)
-write(C, $out_C_FF)
-write(C, $out_C_FL)
-write(C_LF, $out_C_LF)
+while(FALSE) { }
+
+s = X %*% Y;
+write(s, $5);

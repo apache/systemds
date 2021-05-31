@@ -45,17 +45,22 @@ public class FederatedRCBindTest extends AutomatedTestBase {
 	public int rows;
 	@Parameterized.Parameter(1)
 	public int cols;
+	@Parameterized.Parameter(2)
+	public boolean partitioned;
 
 	@Parameterized.Parameters
 	public static Collection<Object[]> data() {
 		//TODO add tests and support of aligned blocksized (which is however a special case)
+		// rows must be even if paritioned
 		return Arrays.asList(new Object[][] {
-			// {1, 1001},
-			//  {10, 100}, 
-			{100, 10}, 
-			// {1001, 1},
-			// {10, 2001}, 
-			// {2001, 10}
+			// (rows, cols, paritioned)
+			// {1, 1001, false},
+			{10, 100, false},
+			{100, 10, true},
+			// {1001, 1, false},
+			// {10, 2001, false},
+			// {2000, 10, true},
+			// {100, 100, true},
 		});
 	}
 
@@ -87,10 +92,20 @@ public class FederatedRCBindTest extends AutomatedTestBase {
 		getAndLoadTestConfiguration(TEST_NAME);
 		String HOME = SCRIPT_DIR + TEST_DIR;
 
-		double[][] A = getRandomMatrix(rows, cols, -10, 10, 1, 1);
-		writeInputMatrixWithMTD("A", A, false, new MatrixCharacteristics(rows, cols, blocksize, rows * cols));
-		double[][] B = getRandomMatrix(rows, cols, -10, 10, 1, 2);
-		writeInputMatrixWithMTD("B", B, false, new MatrixCharacteristics(rows, cols, blocksize, rows * cols));
+		if(partitioned)
+			rows = rows / 2;
+
+		double[][] A1 = getRandomMatrix(rows, cols, -10, 10, 1, 1);
+		writeInputMatrixWithMTD("A1", A1, false, new MatrixCharacteristics(rows, cols, blocksize, rows * cols));
+		double[][] B1 = getRandomMatrix(rows, cols, -10, 10, 1, 2);
+		writeInputMatrixWithMTD("B1", B1, false, new MatrixCharacteristics(rows, cols, blocksize, rows * cols));
+		
+		double[][] A2 = partitioned ? getRandomMatrix(rows, cols, -10, 10, 1, 1) : null;
+		double[][] B2 = partitioned ? getRandomMatrix(rows, cols, -10, 10, 1, 2) : null;
+		if(partitioned) {
+			writeInputMatrixWithMTD("A2", A2, false, new MatrixCharacteristics(rows, cols, blocksize, rows * cols));
+			writeInputMatrixWithMTD("B2", B2, false, new MatrixCharacteristics(rows, cols, blocksize, rows * cols));
+		}
 
 		int port1 = getRandomAvailablePort();
 		int port2 = getRandomAvailablePort();
@@ -101,7 +116,10 @@ public class FederatedRCBindTest extends AutomatedTestBase {
 		rtplatform = Types.ExecMode.SINGLE_NODE;
 		// Run reference dml script with normal matrix for Row/Col sum
 		fullDMLScriptName = HOME + TEST_NAME + "Reference.dml";
-		programArgs = new String[] {"-nvargs", "in1=" + input("A"), "in2=" + input("B"), "out_R_FF=" + expected("R_FF"),
+		programArgs = new String[] {"-nvargs", "in_A1=" + input("A1"), "in_A2=" + input("A2"),
+			"in_B1=" + input("B1"), "in_B2=" + input("B2"),
+			"in_partitioned=" + Boolean.toString(partitioned).toUpperCase(),
+			"out_R_FF=" + expected("R_FF"),
 			"out_R_FL=" + expected("R_FL"), "out_R_LF=" + expected("R_LF"), "out_C_FF=" + expected("C_FF"),
 			"out_C_FL=" + expected("C_FL"), "out_C_LF=" + expected("C_LF")};
 		runTest(true, false, null, -1);
@@ -114,11 +132,15 @@ public class FederatedRCBindTest extends AutomatedTestBase {
 		TestConfiguration config = availableTestConfigurations.get(TEST_NAME);
 		loadTestConfiguration(config);
 		fullDMLScriptName = HOME + TEST_NAME + ".dml";
-		programArgs = new String[] {"-nvargs", "in1=" + TestUtils.federatedAddress(port1, input("A")),
-			"in2=" + TestUtils.federatedAddress(port2, input("B")), "in2_local=" + input("B"), "rows=" + rows,
-			"cols=" + cols, "out_R_FF=" + output("R_FF"), "out_R_FL=" + output("R_FL"),
-			"out_R_LF=" + output("R_LF"), "out_C_FF=" + output("C_FF"), "out_C_FL=" + output("C_FL"),
-			"out_C_LF=" + output("C_LF")};
+		programArgs = new String[] {"-nvargs",
+			"in_A1=" + TestUtils.federatedAddress(port1, input("A1")),
+			"in_A2=" + TestUtils.federatedAddress(port1, input("A2")),
+			"in_B1=" + TestUtils.federatedAddress(port2, input("B1")),
+			"in_B2=" + TestUtils.federatedAddress(port2, input("B2")),
+			"in_partitioned=" + Boolean.toString(partitioned).toUpperCase(),
+			"in_B1_local=" + input("B1"), "in_B2_local=" + input("B2"), "rows=" + rows, "cols=" + cols,
+			"out_R_FF=" + output("R_FF"), "out_R_FL=" + output("R_FL"), "out_R_LF=" + output("R_LF"),
+			"out_C_FF=" + output("C_FF"), "out_C_FL=" + output("C_FL"), "out_C_LF=" + output("C_LF")};
 
 		runTest(true, false, null, -1);
 

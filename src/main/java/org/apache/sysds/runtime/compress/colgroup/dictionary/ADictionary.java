@@ -385,4 +385,18 @@ public abstract class ADictionary {
 	 */
 	public abstract void preaggValuesFromDense(final int numVals, final int[] colIndexes, final int[] aggregateColumns,
 		final double[] b, final double[] ret, final int cut);
+
+	/**
+	 * Make a copy of the values, and replace all values that match pattern with replacement value. If needed add a new
+	 * column index.
+	 * 
+	 * @param pattern The value to look for
+	 * @param replace The value to replace the other value with
+	 * @param nCol    The number of columns contained in the dictionary.
+	 * @param safe    Specify if the operation require consideration of adding a new tuple. This happens if the
+	 *                dictionary have allocated the last zero tuple or not.
+	 * @return A new Column Group, reusing the index structure but with new values.
+	 */
+	public abstract ADictionary replace(double pattern, double replace, int nCol, boolean safe);
+
 }

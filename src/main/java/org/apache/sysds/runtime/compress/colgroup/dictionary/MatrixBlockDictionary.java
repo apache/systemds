@@ -639,4 +639,14 @@ public class MatrixBlockDictionary extends ADictionary {
 			}
 		}
 	}
+
+	@Override
+	public ADictionary replace(double pattern, double replace, int nCol, boolean safe) {
+		if(!safe && replace == 0)
+			throw new NotImplementedException("Not implemented Replacement of 0");
+		else {
+			MatrixBlock ret = _data.replaceOperations(new MatrixBlock(), pattern, replace);
+			return new MatrixBlockDictionary(ret);
+		}
+	}
 }

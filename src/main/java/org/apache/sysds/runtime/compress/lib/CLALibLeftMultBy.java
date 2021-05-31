@@ -240,6 +240,7 @@ public class CLALibLeftMultBy {
 				ExecutorService pool = CommonThreadPool.get(k);
 				// compute remaining compressed column groups in parallel
 				ArrayList<Callable<Object>> tasks = new ArrayList<>();
+				// int rowBlockSize = Math.min(that.getNumRows(), 16);
 				int rowBlockSize = 1;
 				if(overlapping) {
 					for(int blo = 0; blo < that.getNumRows(); blo += rowBlockSize) {
@@ -330,7 +331,7 @@ public class CLALibLeftMultBy {
 		public Object call() {
 
 			try {
-				ColGroupValue.setupThreadLocalMemory(_v.getLeft());
+				ColGroupValue.setupThreadLocalMemory(_v.getLeft() * (_ru - _rl));
 				_group.leftMultByMatrix(_that, _ret, _rl, _ru);
 			}
 			catch(Exception e) {

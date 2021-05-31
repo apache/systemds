@@ -78,7 +78,6 @@ import org.apache.sysds.runtime.instructions.cp.CM_COV_Object;
 import org.apache.sysds.runtime.instructions.cp.ScalarObject;
 import org.apache.sysds.runtime.instructions.spark.data.IndexedMatrixValue;
 import org.apache.sysds.runtime.matrix.data.CTableMap;
-import org.apache.sysds.runtime.matrix.data.LibMatrixBincell;
 import org.apache.sysds.runtime.matrix.data.LibMatrixDatagen;
 import org.apache.sysds.runtime.matrix.data.LibMatrixReorg;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
@@ -476,22 +475,11 @@ public class CompressedMatrixBlock extends MatrixBlock {
 	public MatrixBlock chainMatrixMultOperations(MatrixBlock v, MatrixBlock w, MatrixBlock out, ChainType ctype,
 		int k) {
 
-		if(this.getNumColumns() != v.getNumRows())
-			throw new DMLRuntimeException(
-				"Dimensions mismatch on mmchain operation (" + this.getNumColumns() + " != " + v.getNumRows() + ")");
-		if(v.getNumColumns() != 1)
-			throw new DMLRuntimeException(
-				"Invalid input vector (column vector expected, but ncol=" + v.getNumColumns() + ")");
-		if(w != null && w.getNumColumns() != 1)
-			throw new DMLRuntimeException(
-				"Invalid weight vector (column vector expected, but ncol=" + w.getNumColumns() + ")");
+		checkMMChain(ctype, v, w);
 
 		// multi-threaded MMChain of single uncompressed ColGroup
-		if(isSingleUncompressedGroup()) {
+		if(isSingleUncompressedGroup())
 			return ((ColGroupUncompressed) _colGroups.get(0)).getData().chainMatrixMultOperations(v, w, out, ctype, k);
-		}
-
-		// Timing time = LOG.isDebugEnabled() ? new Timing(true) : null;
 
 		// prepare result
 		if(out != null)
@@ -505,16 +493,13 @@ public class CompressedMatrixBlock extends MatrixBlock {
 
 		BinaryOperator bop = new BinaryOperator(Multiply.getMultiplyFnObject());
 
-		// compute matrix mult
-
-		// boolean tryOverlapOutput = v.getNumColumns() > _colGroups.size();
 		MatrixBlock tmp = CLALibRightMultBy.rightMultByMatrix(this, v, null, k, true);
 
 		if(ctype == ChainType.XtwXv) {
-			if(tmp instanceof CompressedMatrixBlock)
-				tmp = CLALibBinaryCellOp.binaryOperations(bop, (CompressedMatrixBlock) tmp, w, null);
-			else
-				LibMatrixBincell.bincellOpInPlace(tmp, w, bop);
+			// if(tmp instanceof CompressedMatrixBlock)
+			tmp = CLALibBinaryCellOp.binaryOperations(bop, (CompressedMatrixBlock) tmp, w, null);
+			// else
+			// LibMatrixBincell.bincellOpInPlace(tmp, w, bop);
 		}
 
 		if(tmp instanceof CompressedMatrixBlock)
@@ -687,10 +672,25 @@ public class CompressedMatrixBlock extends MatrixBlock {
 
 	@Override
 	public MatrixBlock replaceOperations(MatrixValue result, double pattern, double replacement) {
-		printDecompressWarning("replaceOperations " + pattern + "  -> " + replacement);
-		LOG.error("Overlapping? : " + isOverlapping() + " If not then wite a proper replace command");
-		MatrixBlock tmp = getUncompressed(this);
-		return tmp.replaceOperations(result, pattern, replacement);
+		if(isOverlapping()) {
+			printDecompressWarning("replaceOperations " + pattern + "  -> " + replacement);
+			MatrixBlock tmp = getUncompressed(this);
+			return tmp.replaceOperations(result, pattern, replacement);
+		}
+		else {
+
+			CompressedMatrixBlock ret = new CompressedMatrixBlock(getNumRows(), getNumColumns());
+			final List<AColGroup> prev = getColGroups();
+			final int colGroupsLength = prev.size();
+			final List<AColGroup> retList = new ArrayList<>(colGroupsLength);
+			for(int i = 0; i < colGroupsLength; i++) {
+				retList.add(prev.get(i).replace(pattern, replacement));
+			}
+			ret.allocateColGroupList(retList);
+			ret.recomputeNonZeros();
+			ret.setOverlapping(false); // since the other if checks it
+			return ret;
+		}
 	}
 
 	@Override

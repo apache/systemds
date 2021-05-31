@@ -469,12 +469,16 @@ public final class ColGroupFactory {
 
 		if(value == 0)
 			return new ColGroupEmpty(colIndices, numRows);
+		else
+			return getColGroupConst(numRows, colIndices, value);
+	}
 
+	public static AColGroup getColGroupConst(int numRows, int[] cols, double value ){
+		final int numCols = cols.length;
 		double[] values = new double[numCols];
 		for(int i = 0; i < numCols; i++)
 			values[i] = value;
-
 		ADictionary dict = new Dictionary(values);
-		return new ColGroupConst(colIndices, numRows, dict);
+		return new ColGroupConst(cols, numRows, dict);
 	}
 }

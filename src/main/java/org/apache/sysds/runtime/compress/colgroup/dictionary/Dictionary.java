@@ -24,6 +24,7 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.util.Arrays;
 
+import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.runtime.DMLCompressionException;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.DenseBlockFP64;
@@ -485,6 +486,23 @@ public class Dictionary extends ADictionary {
 					for(int i = 0; i < aggregateColumns.length; i++)
 						ret[off + i] += v * b[idb + aggregateColumns[i]];
 			}
+		}
+	}
+
+	@Override
+	public ADictionary replace(double pattern, double replace, int nCol, boolean safe) {
+		if(!safe && replace == 0)
+			throw new NotImplementedException("Not implemented Replacement of 0");
+		else {
+			double[] retV = new double[_values.length];
+			for(int i = 0; i < _values.length; i++) {
+				final double v = _values[i];
+				if(v == pattern)
+					retV[i] = replace;
+				else
+					retV[i] = v;
+			}
+			return new Dictionary(retV);
 		}
 	}
 }

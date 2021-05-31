@@ -195,44 +195,6 @@ public class ColGroupUncompressed extends AColGroup {
 		}
 	}
 
-	// @Override
-	// public void decompressToBlock(MatrixBlock target, int[] colIndexTargets) {
-	// 	throw new NotImplementedException("Not Implemented");
-	// }
-
-	// @Override
-	// public void decompressColumnToBlock(MatrixBlock target, int colpos) {
-	// 	double[] c = target.getDenseBlockValues();
-	// 	int nnz = 0;
-	// 	int off = colpos;
-	// 	if(_data.isInSparseFormat()) {
-	// 		for(int i = 0; i < _data.getNumRows(); i++) {
-	// 			c[i] += _data.quickGetValue(i, colpos);
-	// 			if(c[i] != 0)
-	// 				nnz++;
-	// 		}
-	// 	}
-	// 	else {
-	// 		double[] denseValues = _data.getDenseBlockValues();
-	// 		for(int i = 0; i < _data.getNumRows(); i++, off += _colIndexes.length) {
-	// 			c[i] += denseValues[off];
-	// 			if(c[i] != 0)
-	// 				nnz++;
-	// 		}
-	// 	}
-	// 	target.setNonZeros(nnz);
-	// }
-
-	// @Override
-	// public void decompressColumnToBlock(MatrixBlock target, int colpos, int rl, int ru) {
-	// 	throw new NotImplementedException("Not Implemented");
-	// }
-
-	// @Override
-	// public void decompressColumnToBlock(double[] target, int colpos, int rl, int ru) {
-	// 	throw new NotImplementedException("Not Implemented");
-	// }
-
 	@Override
 	public double get(int r, int c) {
 		final int ix = Arrays.binarySearch(_colIndexes, c);
@@ -651,5 +613,11 @@ public class ColGroupUncompressed extends AColGroup {
 	@Override
 	public int getNumValues() {
 		return _data.getNumRows();
+	}
+
+	@Override
+	public AColGroup replace(double pattern, double replace) {
+		MatrixBlock replaced = _data.replaceOperations(new MatrixBlock(), pattern, replace);
+		return new ColGroupUncompressed(_colIndexes, replaced);
 	}
 }

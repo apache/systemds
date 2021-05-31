@@ -93,26 +93,6 @@ public class ColGroupEmpty extends ColGroupCompressed {
 		// do nothing.
 	}
 
-	// @Override
-	// public void decompressToBlock(MatrixBlock target, int[] colIndexTargets) {
-	// 	// do nothing.
-	// }
-
-	// @Override
-	// public void decompressColumnToBlock(MatrixBlock target, int colpos) {
-	// 	// do nothing.
-	// }
-
-	// @Override
-	// public void decompressColumnToBlock(MatrixBlock target, int colpos, int rl, int ru) {
-	// 	// do nothing.
-	// }
-
-	// @Override
-	// public void decompressColumnToBlock(double[] c, int colpos, int rl, int ru) {
-	// 	// do nothing.
-	// }
-
 	@Override
 	public double get(int r, int c) {
 		return 0;
@@ -128,8 +108,7 @@ public class ColGroupEmpty extends ColGroupCompressed {
 		double val0 = op.executeScalar(0);
 		if(val0 == 0)
 			return this;
-		return new ColGroupConst(_colIndexes, _numRows,
-			new Dictionary(new double[_colIndexes.length]).apply(op));
+		return new ColGroupConst(_colIndexes, _numRows, new Dictionary(new double[_colIndexes.length]).apply(op));
 	}
 
 	@Override
@@ -239,5 +218,13 @@ public class ColGroupEmpty extends ColGroupCompressed {
 	@Override
 	public AColGroup rightMultByMatrix(MatrixBlock right) {
 		return null;
+	}
+
+	@Override
+	public AColGroup replace(double pattern, double replace) {
+		if(pattern == 0)
+			return ColGroupFactory.getColGroupConst(getNumRows(), _colIndexes, replace);
+		else
+			return new ColGroupEmpty(_colIndexes, getNumRows());
 	}
 }

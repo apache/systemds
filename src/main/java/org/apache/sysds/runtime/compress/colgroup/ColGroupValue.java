@@ -91,7 +91,7 @@ public abstract class ColGroupValue extends ColGroupCompressed implements Clonea
 	}
 
 	@Override
-	public void decompressToBlockUnSafe(MatrixBlock target, int rl, int ru, int offT) {
+	public final void decompressToBlockUnSafe(MatrixBlock target, int rl, int ru, int offT) {
 		if(_dict instanceof MatrixBlockDictionary) {
 			final MatrixBlockDictionary md = (MatrixBlockDictionary) _dict;
 			final MatrixBlock mb = md.getMatrixBlock();
@@ -106,9 +106,27 @@ public abstract class ColGroupValue extends ColGroupCompressed implements Clonea
 			decompressToBlockUnSafeDenseDictionary(target, rl, ru, offT, _dict.getValues());
 	}
 
+	/**
+	 * Decompress to block using a sparse dictionary to lookup into.
+	 * 
+	 * @param target The dense target block to decompress into
+	 * @param rl     The row to start decompression from
+	 * @param ru     The row to end decompression at
+	 * @param offT   The offset into target block to decompress to (use full if the target it a multi block matrix)
+	 * @param sb     the sparse dictionary block to take value tuples from
+	 */
 	protected abstract void decompressToBlockUnSafeSparseDictionary(MatrixBlock target, int rl, int ru, int offT,
 		SparseBlock sb);
 
+	/**
+	 * Decompress to block using a dense dictionary to lookup into.
+	 * 
+	 * @param target The dense target block to decompress into
+	 * @param rl     The row to start decompression from
+	 * @param ru     The row to end decompression at
+	 * @param offT   The offset into target block to decompress to (use full if the target it a multi block matrix)
+	 * @param values The dense dictionary values, linearized row major.
+	 */
 	protected abstract void decompressToBlockUnSafeDenseDictionary(MatrixBlock target, int rl, int ru, int offT,
 		double[] values);
 
@@ -129,10 +147,6 @@ public abstract class ColGroupValue extends ColGroupCompressed implements Clonea
 	@Override
 	public final void addMinMax(double[] ret) {
 		_dict.addMaxAndMin(ret, _colIndexes);
-	}
-
-	protected final void setDictionary(ADictionary dict) {
-		_dict = dict;
 	}
 
 	@Override
@@ -461,7 +475,7 @@ public abstract class ColGroupValue extends ColGroupCompressed implements Clonea
 
 	public AColGroup copyAndSet(ADictionary newDictionary) {
 		ColGroupValue clone = (ColGroupValue) this.clone();
-		clone.setDictionary(newDictionary);
+		clone._dict = newDictionary;
 		return clone;
 	}
 
@@ -471,7 +485,7 @@ public abstract class ColGroupValue extends ColGroupCompressed implements Clonea
 
 	public AColGroup copyAndSet(int[] colIndexes, ADictionary newDictionary) {
 		ColGroupValue clone = (ColGroupValue) this.clone();
-		clone.setDictionary(newDictionary);
+		clone._dict = newDictionary;
 		clone.setColIndices(colIndexes);
 		return clone;
 	}
@@ -533,56 +547,6 @@ public abstract class ColGroupValue extends ColGroupCompressed implements Clonea
 	 */
 	protected abstract void preAggregate(MatrixBlock m, MatrixBlock preAgg, int rl, int ru);
 
-	public abstract int getIndexStructureHash();
-
-	// private IPreAggregate preAggregate(ColGroupValue lhs) {
-	// IPreAggregate r = preCallAggregate(lhs);
-	// return r;
-	// }
-
-	// private IPreAggregate preCallAggregate(ColGroupValue lhs) {
-	// // (lhs.getClass().getSimpleName() + " in " + this.getClass().getSimpleName() + " "
-	// // + Arrays.toString(lhs.getColIndices()) + " " + Arrays.toString(this.getColIndices()));
-
-	// if(lhs instanceof ColGroupDDC)
-	// return preAggregateDDC((ColGroupDDC) lhs);
-	// else if(lhs instanceof ColGroupSDC)
-	// return preAggregateSDC((ColGroupSDC) lhs);
-	// else if(lhs instanceof ColGroupSDCSingle)
-	// return preAggregateSDCSingle((ColGroupSDCSingle) lhs);
-	// else if(lhs instanceof ColGroupSDCZeros)
-	// return preAggregateSDCZeros((ColGroupSDCZeros) lhs);
-	// else if(lhs instanceof ColGroupSDCSingleZeros)
-	// return preAggregateSDCSingleZeros((ColGroupSDCSingleZeros) lhs);
-	// else if(lhs instanceof ColGroupOLE)
-	// return preAggregateOLE((ColGroupOLE) lhs);
-	// else if(lhs instanceof ColGroupRLE)
-	// return preAggregateRLE((ColGroupRLE) lhs);
-	// else if(lhs instanceof ColGroupConst)
-	// return preAggregateCONST((ColGroupConst) lhs);
-
-	// throw new NotImplementedException("Not supported pre aggregate of :" + lhs.getClass().getSimpleName() + " in "
-	// + this.getClass().getSimpleName());
-	// }
-
-	// public IPreAggregate preAggregateCONST(ColGroupConst lhs) {
-	// 	return new ArrPreAggregate(getCounts());
-	// }
-
-	// public abstract IPreAggregate preAggregateDDC(ColGroupDDC lhs);
-
-	// public abstract IPreAggregate preAggregateSDC(ColGroupSDC lhs);
-
-	// public abstract IPreAggregate preAggregateSDCSingle(ColGroupSDCSingle lhs);
-
-	// public abstract IPreAggregate preAggregateSDCZeros(ColGroupSDCZeros lhs);
-
-	// public abstract IPreAggregate preAggregateSDCSingleZeros(ColGroupSDCSingleZeros lhs);
-
-	// public abstract IPreAggregate preAggregateOLE(ColGroupOLE lhs);
-
-	// public abstract IPreAggregate preAggregateRLE(ColGroupRLE lhs);
-
 	/**
 	 * Pre aggregate into a dictionary. It is assumed that "that" have more distinct values than, "this".
 	 * 
@@ -611,18 +575,32 @@ public abstract class ColGroupValue extends ColGroupCompressed implements Clonea
 			+ that.getClass().getSimpleName() + " in " + this.getClass().getSimpleName());
 	}
 
-	public abstract Dictionary preAggregateThatDDCStructure(ColGroupDDC that, Dictionary ret);
+	protected int getIndexStructureHash() {
+		throw new NotImplementedException("This base function should not be called");
+	}
 
-	public abstract Dictionary preAggregateThatSDCStructure(ColGroupSDC that, Dictionary ret, boolean preModified);
+	protected Dictionary preAggregateThatDDCStructure(ColGroupDDC that, Dictionary ret) {
+		throw new DMLCompressionException("Does not make sense to call this, implement function for sub class");
+	}
 
-	public abstract Dictionary preAggregateThatSDCZerosStructure(ColGroupSDCZeros that, Dictionary ret);
+	protected Dictionary preAggregateThatSDCStructure(ColGroupSDC that, Dictionary ret, boolean preModified) {
+		throw new DMLCompressionException("Does not make sense to call this, implement function for sub class");
+	}
 
-	public abstract Dictionary preAggregateThatSDCSingleZerosStructure(ColGroupSDCSingleZeros that, Dictionary ret);
+	protected Dictionary preAggregateThatSDCZerosStructure(ColGroupSDCZeros that, Dictionary ret) {
+		throw new DMLCompressionException("Does not make sense to call this, implement function for sub class");
+	}
 
-	public abstract Dictionary preAggregateThatSDCSingleStructure(ColGroupSDCSingle that, Dictionary ret,
-		boolean preModified);
+	protected Dictionary preAggregateThatSDCSingleZerosStructure(ColGroupSDCSingleZeros that, Dictionary ret) {
+		throw new DMLCompressionException("Does not make sense to call this, implement function for sub class");
+	}
 
-	public Dictionary preAggregateThatConstStructure(ColGroupConst that, Dictionary ret) {
+	protected Dictionary preAggregateThatSDCSingleStructure(ColGroupSDCSingle that, Dictionary ret,
+		boolean preModified) {
+		throw new DMLCompressionException("Does not make sense to call this, implement function for sub class");
+	}
+
+	protected Dictionary preAggregateThatConstStructure(ColGroupConst that, Dictionary ret) {
 		computeColSums(ret.getValues(), false);
 		return ret;
 	}
@@ -1067,8 +1045,12 @@ public abstract class ColGroupValue extends ColGroupCompressed implements Clonea
 	private MatrixBlock leftMultByMatrixIntermediateMatrix(MatrixBlock matrix, int rl, int ru) {
 		// Get dictionary.
 		MatrixBlock dictM = forceMatrixBlockDictionary().getMatrixBlock();
+
 		// Allocate temporary matrix to multiply into.
-		MatrixBlock tmpRes = new MatrixBlock(matrix.getNumRows(), _colIndexes.length, false);
+		final int tmpCol = _colIndexes.length;
+		final int tmpRow = matrix.getNumRows();
+		MatrixBlock tmpRes = new MatrixBlock(tmpRow, tmpCol, false);
+		
 		// Pre aggregate the matrix into same size as dictionary
 		MatrixBlock preAgg = preAggregate(matrix, rl, ru);
 
@@ -1196,5 +1178,11 @@ public abstract class ColGroupValue extends ColGroupCompressed implements Clonea
 		size += 2; // padding
 		size += _dict.getInMemorySize();
 		return size;
+	}
+
+	@Override
+	public AColGroup replace(double pattern, double replace) {
+		ADictionary replaced = _dict.replace(pattern, replace, _colIndexes.length, _zeros);
+		return copyAndSet(replaced);
 	}
 }

@@ -3781,18 +3781,8 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	}
 
 	public MatrixBlock chainMatrixMultOperations( MatrixBlock v, MatrixBlock w, MatrixBlock out, ChainType ctype, int k ) {
-		//check for transpose type
-		if( !(ctype == ChainType.XtXv || ctype == ChainType.XtwXv || ctype == ChainType.XtXvy) )
-			throw new DMLRuntimeException("Invalid mmchain type '"+ctype.toString()+"'.");
-		
-		//check for matching dimensions
-		if( this.getNumColumns() != v.getNumRows() )
-			throw new DMLRuntimeException("Dimensions mismatch on mmchain operation ("+this.getNumColumns()+" != "+v.getNumRows()+")");
-		if( v.getNumColumns() != 1 )
-			throw new DMLRuntimeException("Invalid input vector (column vector expected, but ncol="+v.getNumColumns()+")");
-		if( w!=null && w.getNumColumns() != 1 )
-			throw new DMLRuntimeException("Invalid weight vector (column vector expected, but ncol="+w.getNumColumns()+")");
-		
+		checkMMChain(ctype, v, w);
+
 		//prepare result
 		if( out != null )
 			out.reset(clen, 1, false);
@@ -3806,6 +3796,21 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 			LibMatrixMult.matrixMultChain(this, v, w, out, ctype);
 		
 		return out;
+	}
+
+	protected void checkMMChain(ChainType ctype, MatrixBlock v, MatrixBlock w){
+		//check for transpose type
+		if( !(ctype == ChainType.XtXv || ctype == ChainType.XtwXv || ctype == ChainType.XtXvy) )
+			throw new DMLRuntimeException("Invalid mmchain type '"+ctype.toString()+"'.");
+
+		//check for matching dimensions
+		if( this.getNumColumns() != v.getNumRows() )
+			throw new DMLRuntimeException("Dimensions mismatch on mmchain operation ("+this.getNumColumns()+" != "+v.getNumRows()+")");
+		if( v.getNumColumns() != 1 )
+			throw new DMLRuntimeException("Invalid input vector (column vector expected, but ncol="+v.getNumColumns()+")");
+		if( w!=null && w.getNumColumns() != 1 )
+			throw new DMLRuntimeException("Invalid weight vector (column vector expected, but ncol="+w.getNumColumns()+")");
+			
 	}
 
 	public void permutationMatrixMultOperations( MatrixValue m2Val, MatrixValue out1Val, MatrixValue out2Val ) {

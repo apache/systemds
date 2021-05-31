@@ -506,4 +506,9 @@ public class QDictionary extends ADictionary {
 		int cut) {
 		throw new NotImplementedException();
 	}
+
+	@Override
+	public ADictionary replace(double pattern, double replace, int nCol, boolean safe) {
+		throw new NotImplementedException();
+	}
 }

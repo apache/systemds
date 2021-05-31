@@ -431,7 +431,6 @@ public class CompressedMatrixTest extends AbstractCompressedUnaryTests {
 	@Test
 	public void testCompressionStatisticsToString() {
 		try {
-
 			if(cmbStats != null) {
 				String st = cmbStats.toString();
 				assertTrue(st.contains("CompressionStatistics"));
@@ -439,7 +438,7 @@ public class CompressedMatrixTest extends AbstractCompressedUnaryTests {
 		}
 		catch(Exception e) {
 			e.printStackTrace();
-			throw new DMLRuntimeException("Error in printing Compression Statistics");
+			throw new DMLRuntimeException(e);
 		}
 	}
 
@@ -454,7 +453,7 @@ public class CompressedMatrixTest extends AbstractCompressedUnaryTests {
 		}
 		catch(Exception e) {
 			e.printStackTrace();
-			throw new DMLRuntimeException("Error in printing Compression Statistics");
+			throw new DMLRuntimeException(e);
 		}
 	}
 
@@ -469,7 +468,22 @@ public class CompressedMatrixTest extends AbstractCompressedUnaryTests {
 		}
 		catch(Exception e) {
 			e.printStackTrace();
-			throw new DMLRuntimeException("Error in printing Compression Statistics");
+			throw new DMLRuntimeException(e);
+		}
+	}
+
+	@Test
+	public void testReplace() {
+		try {
+			if(!(cmb instanceof CompressedMatrixBlock) || rows * cols > 10000)
+				return;
+			MatrixBlock ret1 = cmb.replaceOperations(new MatrixBlock(), min - 1, 1425);
+			MatrixBlock ret2 = mb.replaceOperations(new MatrixBlock(), min - 1, 1425);
+			compareResultMatrices(ret2, ret1, 1);
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			throw new DMLRuntimeException(e);
 		}
 	}
 
@@ -485,7 +499,7 @@ public class CompressedMatrixTest extends AbstractCompressedUnaryTests {
 		}
 		catch(Exception e) {
 			e.printStackTrace();
-			throw new DMLRuntimeException("Error in printing Compression Statistics");
+			throw new DMLRuntimeException(e);
 		}
 	}
 
@@ -501,7 +515,7 @@ public class CompressedMatrixTest extends AbstractCompressedUnaryTests {
 		}
 		catch(Exception e) {
 			e.printStackTrace();
-			throw new DMLRuntimeException("Error in printing Compression Statistics");
+			throw new DMLRuntimeException(e);
 		}
 	}
 

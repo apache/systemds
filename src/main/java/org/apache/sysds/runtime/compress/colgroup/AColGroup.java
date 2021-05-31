@@ -188,12 +188,12 @@ public abstract class AColGroup implements Serializable {
 	public abstract void decompressToBlockUnSafe(MatrixBlock target, int rl, int ru, int offT);
 
 	// /**
-	//  * Decompress the contents of this column group into uncompressed packed columns
-	//  * 
-	//  * @param target          a dense matrix block. The block must have enough space to hold the contents of this column
-	//  *                        group.
-	//  * @param colIndexTargets array that maps column indices in the original matrix block to columns of target.
-	//  */
+	// * Decompress the contents of this column group into uncompressed packed columns
+	// *
+	// * @param target a dense matrix block. The block must have enough space to hold the contents of this column
+	// * group.
+	// * @param colIndexTargets array that maps column indices in the original matrix block to columns of target.
+	// */
 	// public abstract void decompressToBlock(MatrixBlock target, int[] colIndexTargets);
 
 	/**
@@ -523,6 +523,15 @@ public abstract class AColGroup implements Serializable {
 	 * @return The nnz.
 	 */
 	public abstract long getNumberNonZeros();
+
+	/**
+	 * Make a copy of the column group values, and replace all values that match pattern with replacement value.
+	 * 
+	 * @param pattern The value to look for
+	 * @param replace The value to replace the other value with
+	 * @return A new Column Group, reusing the index structure but with new values.
+	 */
+	public abstract AColGroup replace(double pattern, double replace);
 
 	@Override
 	public String toString() {

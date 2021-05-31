@@ -28,6 +28,7 @@ import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
 import org.junit.Assert;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -74,7 +75,10 @@ public class FederatedLogicalTest extends AutomatedTestBase
 	private enum YType {
 		MATRIX,
 		ROW_VEC,
-		COL_VEC
+		COL_VEC,
+		FED_MAT, // federated matrix Y
+		FED_RV, // federated row vector Y
+		FED_CV // federated col vector Y
 	}
 
 	@Parameterized.Parameter()
@@ -109,6 +113,7 @@ public class FederatedLogicalTest extends AutomatedTestBase
 			// {4, 75, 0.9, FederationType.ROW_PARTITIONED, YType.MATRIX},
 			// {100, 1, 0.01, FederationType.ROW_PARTITIONED, YType.MATRIX},
 			// {100, 1, 0.9, FederationType.ROW_PARTITIONED, YType.MATRIX},
+			{24, 16, 0.25, FederationType.ROW_PARTITIONED, YType.FED_MAT},
 
 			// row partitioned MV row vector
 			{100, 75, 0.01, FederationType.ROW_PARTITIONED, YType.ROW_VEC},
@@ -125,6 +130,7 @@ public class FederatedLogicalTest extends AutomatedTestBase
 			// {4, 75, 0.9, FederationType.ROW_PARTITIONED, YType.COL_VEC},
 			// {100, 1, 0.01, FederationType.ROW_PARTITIONED, YType.COL_VEC},
 			// {100, 1, 0.9, FederationType.ROW_PARTITIONED, YType.COL_VEC},
+			{24, 16, 0.25, FederationType.ROW_PARTITIONED, YType.FED_CV},
 
 			// col partitioned MM
 			{100, 76, 0.01, FederationType.COL_PARTITIONED, YType.MATRIX},
@@ -133,6 +139,7 @@ public class FederatedLogicalTest extends AutomatedTestBase
 			// {1, 76, 0.9, FederationType.COL_PARTITIONED, YType.MATRIX},
 			// {100, 4, 0.01, FederationType.COL_PARTITIONED, YType.MATRIX},
 			// {100, 4, 0.9, FederationType.COL_PARTITIONED, YType.MATRIX},
+			{24, 16, 0.25, FederationType.COL_PARTITIONED, YType.FED_MAT},
 
 			// col partitioned MV row vector
 			{100, 76, 0.01, FederationType.COL_PARTITIONED, YType.ROW_VEC},
@@ -141,6 +148,7 @@ public class FederatedLogicalTest extends AutomatedTestBase
 			// {1, 76, 0.9, FederationType.COL_PARTITIONED, YType.ROW_VEC},
 			// {100, 4, 0.01, FederationType.COL_PARTITIONED, YType.ROW_VEC},
 			// {100, 4, 0.9, FederationType.COL_PARTITIONED, YType.ROW_VEC},
+			{24, 16, 0.25, FederationType.COL_PARTITIONED, YType.FED_RV},
 
 			// col partitioned MV col vector
 			{100, 76, 0.01, FederationType.COL_PARTITIONED, YType.COL_VEC},
@@ -157,6 +165,7 @@ public class FederatedLogicalTest extends AutomatedTestBase
 			// {1, 75, 0.9, FederationType.SINGLE_FED_WORKER, YType.MATRIX},
 			// {100, 1, 0.01, FederationType.SINGLE_FED_WORKER, YType.MATRIX},
 			// {100, 1, 0.9, FederationType.SINGLE_FED_WORKER, YType.MATRIX},
+			{24, 16, 0.25, FederationType.SINGLE_FED_WORKER, YType.FED_MAT},
 
 			// full partitioned (not supported yet)
 			// {70, 80, 0.01, FederationType.FULL_PARTITIONED, YType.MATRIX},
@@ -182,17 +191,20 @@ public class FederatedLogicalTest extends AutomatedTestBase
 		federatedLogicalTest(SCALAR_TEST_NAME, Type.GREATER, ExecMode.SPARK);
 	}
 
-//	@Test
-//	public void federatedLogicalScalarLessSingleNode() {
-//		federatedLogicalTest(SCALAR_TEST_NAME, Type.LESS, ExecMode.SINGLE_NODE);
-//	}
-//
-//	@Test
-//	public void federatedLogicalScalarLessSpark() {
-//		federatedLogicalTest(SCALAR_TEST_NAME, Type.LESS, ExecMode.SPARK);
-//	}
+	@Test
+	@Ignore
+	public void federatedLogicalScalarLessSingleNode() {
+		federatedLogicalTest(SCALAR_TEST_NAME, Type.LESS, ExecMode.SINGLE_NODE);
+	}
 
 	@Test
+	@Ignore
+	public void federatedLogicalScalarLessSpark() {
+		federatedLogicalTest(SCALAR_TEST_NAME, Type.LESS, ExecMode.SPARK);
+	}
+
+	@Test
+	@Ignore
 	public void federatedLogicalScalarEqualsSingleNode() {
 		federatedLogicalTest(SCALAR_TEST_NAME, Type.EQUALS, ExecMode.SINGLE_NODE);
 	}
@@ -208,29 +220,34 @@ public class FederatedLogicalTest extends AutomatedTestBase
 	}
 
 	@Test
+	@Ignore
 	public void federatedLogicalScalarNotEqualsSpark() {
 		federatedLogicalTest(SCALAR_TEST_NAME, Type.NOT_EQUALS, ExecMode.SPARK);
 	}
 
 	@Test
+	@Ignore
 	public void federatedLogicalScalarGreaterEqualsSingleNode() {
 		federatedLogicalTest(SCALAR_TEST_NAME, Type.GREATER_EQUALS, ExecMode.SINGLE_NODE);
 	}
 
 	@Test
+	@Ignore
 	public void federatedLogicalScalarGreaterEqualsSpark() {
 		federatedLogicalTest(SCALAR_TEST_NAME, Type.GREATER_EQUALS, ExecMode.SPARK);
 	}
 
-//	@Test
-//	public void federatedLogicalScalarLessEqualsSingleNode() {
-//		federatedLogicalTest(SCALAR_TEST_NAME, Type.LESS_EQUALS, ExecMode.SINGLE_NODE);
-//	}
-//
-//	@Test
-//	public void federatedLogicalScalarLessEqualsSpark() {
-//		federatedLogicalTest(SCALAR_TEST_NAME, Type.LESS_EQUALS, ExecMode.SPARK);
-//	}
+	@Test
+	@Ignore
+	public void federatedLogicalScalarLessEqualsSingleNode() {
+		federatedLogicalTest(SCALAR_TEST_NAME, Type.LESS_EQUALS, ExecMode.SINGLE_NODE);
+	}
+
+	@Test
+	@Ignore
+	public void federatedLogicalScalarLessEqualsSpark() {
+		federatedLogicalTest(SCALAR_TEST_NAME, Type.LESS_EQUALS, ExecMode.SPARK);
+	}
 
 	//---------------------------MATRIX MATRIX--------------------------
 	@Test
@@ -243,15 +260,17 @@ public class FederatedLogicalTest extends AutomatedTestBase
 		federatedLogicalTest(MATRIX_TEST_NAME, Type.GREATER, ExecMode.SPARK);
 	}
 
-//	@Test
-//	public void federatedLogicalMatrixLessSingleNode() {
-//		federatedLogicalTest(MATRIX_TEST_NAME, Type.LESS, ExecMode.SINGLE_NODE);
-//	}
-//
-//	@Test
-//	public void federatedLogicalMatrixLessSpark() {
-//		federatedLogicalTest(MATRIX_TEST_NAME, Type.LESS, ExecMode.SPARK);
-//	}
+	@Test
+	@Ignore
+	public void federatedLogicalMatrixLessSingleNode() {
+		federatedLogicalTest(MATRIX_TEST_NAME, Type.LESS, ExecMode.SINGLE_NODE);
+	}
+
+	@Test
+	@Ignore
+	public void federatedLogicalMatrixLessSpark() {
+		federatedLogicalTest(MATRIX_TEST_NAME, Type.LESS, ExecMode.SPARK);
+	}
 
 	@Test
 	public void federatedLogicalMatrixEqualsSingleNode() {
@@ -259,11 +278,13 @@ public class FederatedLogicalTest extends AutomatedTestBase
 	}
 
 	@Test
+	@Ignore
 	public void federatedLogicalMatrixEqualsSpark() {
 		federatedLogicalTest(MATRIX_TEST_NAME, Type.EQUALS, ExecMode.SPARK);
 	}
 
 	@Test
+	@Ignore
 	public void federatedLogicalMatrixNotEqualsSingleNode() {
 		federatedLogicalTest(MATRIX_TEST_NAME, Type.NOT_EQUALS, ExecMode.SINGLE_NODE);
 	}
@@ -274,24 +295,28 @@ public class FederatedLogicalTest extends AutomatedTestBase
 	}
 
 	@Test
+	@Ignore
 	public void federatedLogicalMatrixGreaterEqualsSingleNode() {
 		federatedLogicalTest(MATRIX_TEST_NAME, Type.GREATER_EQUALS, ExecMode.SINGLE_NODE);
 	}
 
 	@Test
+	@Ignore
 	public void federatedLogicalMatrixGreaterEqualsSpark() {
 		federatedLogicalTest(MATRIX_TEST_NAME, Type.GREATER_EQUALS, ExecMode.SPARK);
 	}
 
-//	@Test
-//	public void federatedLogicalMatrixLessEqualsSingleNode() {
-//		federatedLogicalTest(MATRIX_TEST_NAME, Type.LESS_EQUALS, ExecMode.SINGLE_NODE);
-//	}
-//
-//	@Test
-//	public void federatedLogicalMatrixLessEqualsSpark() {
-//		federatedLogicalTest(MATRIX_TEST_NAME, Type.LESS_EQUALS, ExecMode.SPARK);
-//	}
+	@Test
+	@Ignore
+	public void federatedLogicalMatrixLessEqualsSingleNode() {
+		federatedLogicalTest(MATRIX_TEST_NAME, Type.LESS_EQUALS, ExecMode.SINGLE_NODE);
+	}
+
+	@Test
+	@Ignore
+	public void federatedLogicalMatrixLessEqualsSpark() {
+		federatedLogicalTest(MATRIX_TEST_NAME, Type.LESS_EQUALS, ExecMode.SPARK);
+	}
 
 // -----------------------------------------------------------------------------
 
@@ -346,8 +371,8 @@ public class FederatedLogicalTest extends AutomatedTestBase
 		double[][] Y_mat = null;
 		double Y_scal = 0;
 		if(is_matrix_test) {
-			int y_rows = (y_type == YType.ROW_VEC ? 1 : rows);
-			int y_cols = (y_type == YType.COL_VEC ? 1 : cols);
+			int y_rows = ((y_type == YType.ROW_VEC || y_type == YType.FED_RV) ? 1 : rows);
+			int y_cols = ((y_type == YType.COL_VEC || y_type == YType.FED_CV) ? 1 : cols);
 
 			Y_mat = getRandomMatrix(y_rows, y_cols, 0, 1, sparsity, 5040);
 			writeInputMatrixWithMTD("Y", Y_mat, false, new MatrixCharacteristics(y_rows, y_cols, BLOCKSIZE, y_rows * y_cols));
@@ -375,6 +400,7 @@ public class FederatedLogicalTest extends AutomatedTestBase
 			"in_X4=" + (!single_fed_worker ? input("X4") : input("X1")), // not needed in case of a single federated worker
 			"in_Y=" + (is_matrix_test ? input("Y") : Double.toString(Y_scal)),
 			"in_fed_type=" + Integer.toString(fed_type.ordinal()),
+			"in_y_type=" + Integer.toString(y_type.ordinal()),
 			"in_op_type=" + Integer.toString(op_type.ordinal()),
 			"out_Z=" + expected(OUTPUT_NAME)};
 		runTest(true, false, null, -1);
@@ -388,6 +414,7 @@ public class FederatedLogicalTest extends AutomatedTestBase
 			"in_X4=" + (!single_fed_worker ? TestUtils.federatedAddress(port4, input("X4")) : null),
 			"in_Y=" + (is_matrix_test ? input("Y") : Double.toString(Y_scal)),
 			"in_fed_type=" + Integer.toString(fed_type.ordinal()),
+			"in_y_type=" + Integer.toString(y_type.ordinal()),
 			"in_op_type=" + Integer.toString(op_type.ordinal()),
 			"rows=" + Integer.toString(fed_rows), "cols=" + Integer.toString(fed_cols),
 			"out_Z=" + output(OUTPUT_NAME)};

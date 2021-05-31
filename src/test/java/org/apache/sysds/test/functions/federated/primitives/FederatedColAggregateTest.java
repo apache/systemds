@@ -43,6 +43,7 @@ public class FederatedColAggregateTest extends AutomatedTestBase {
 	private final static String TEST_NAME4 = "FederatedColMinTest";
 	private final static String TEST_NAME5 = "FederatedColProdTest";
 	private final static String TEST_NAME10 = "FederatedColVarTest";
+	private final static String TEST_NAME11 = "FederatedTernaryColSumTest";
 
 	private final static String TEST_DIR = "functions/federated/aggregate/";
 	private static final String TEST_CLASS_DIR = TEST_DIR + FederatedColAggregateTest.class.getSimpleName() + "/";
@@ -65,7 +66,7 @@ public class FederatedColAggregateTest extends AutomatedTestBase {
 	}
 
 	private enum OpType {
-		SUM, MEAN, MAX, MIN, VAR, PROD
+		SUM, MEAN, MAX, MIN, VAR, PROD, TERNARY_SUM
 	}
 
 	@Override
@@ -77,6 +78,7 @@ public class FederatedColAggregateTest extends AutomatedTestBase {
 		addTestConfiguration(TEST_NAME4, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME4, new String[] {"S"}));
 		addTestConfiguration(TEST_NAME10, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME10, new String[] {"S"}));
 		addTestConfiguration(TEST_NAME5, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME5, new String[] {"S"}));
+		addTestConfiguration(TEST_NAME11, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME11, new String[] {"S"}));
 	}
 
 	@Test
@@ -94,7 +96,6 @@ public class FederatedColAggregateTest extends AutomatedTestBase {
 		runAggregateOperationTest(OpType.MAX, ExecMode.SINGLE_NODE);
 	}
 
-
 	@Test
 	public void testColMinDenseMatrixCP() {
 		runAggregateOperationTest(OpType.MIN, ExecMode.SINGLE_NODE);
@@ -108,6 +109,11 @@ public class FederatedColAggregateTest extends AutomatedTestBase {
 	@Test
 	public void testColProdDenseMatrixCP() {
 		runAggregateOperationTest(OpType.PROD, ExecMode.SINGLE_NODE);
+	}
+
+	@Test
+	public void testTernaryColSumDenseMatrixCP() {
+		runAggregateOperationTest(OpType.TERNARY_SUM, ExecMode.SINGLE_NODE);
 	}
 
 	private void runAggregateOperationTest(OpType type, ExecMode execMode) {
@@ -136,6 +142,9 @@ public class FederatedColAggregateTest extends AutomatedTestBase {
 				break;
 			case PROD:
 				TEST_NAME = TEST_NAME5;
+				break;
+			case TERNARY_SUM:
+				TEST_NAME = TEST_NAME11;
 				break;
 		}
 
@@ -222,6 +231,8 @@ public class FederatedColAggregateTest extends AutomatedTestBase {
 			case PROD:
 				Assert.assertTrue(heavyHittersContainsString(fedInst.concat("*")));
 				break;
+			case TERNARY_SUM:
+				Assert.assertTrue(heavyHittersContainsString("fed_tack+*"));
 		}
 
 		// check that federated input files are still existing

@@ -20,6 +20,7 @@
 #-------------------------------------------------------------
 
 fed_type = $in_fed_type;
+y_type = $in_y_type;
 
 if(fed_type == 0) { # single federated worker
   X = read($in_X1);
@@ -35,6 +36,13 @@ else if(fed_type == 3) { # full partitioned
 }
 
 Y = read($in_Y);
+if(y_type == 3) # make Y federated
+  Y = X + Y;
+else if(y_type == 4) # make Y federated
+  Y = X[1,] + Y;
+else if(y_type == 5) # make Y federated
+  Y = X[, 1] + Y;
+
 op_type = $in_op_type;
 
 if(op_type == 0)

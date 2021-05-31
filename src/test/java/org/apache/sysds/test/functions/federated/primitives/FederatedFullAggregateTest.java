@@ -44,6 +44,7 @@ public class FederatedFullAggregateTest extends AutomatedTestBase {
 	private final static String TEST_NAME3 = "FederatedMaxTest";
 	private final static String TEST_NAME4 = "FederatedMinTest";
 	private final static String TEST_NAME5 = "FederatedVarTest";
+	private final static String TEST_NAME6 = "FederatedTernarySumTest";
 
 	private final static String TEST_DIR = "functions/federated/aggregate/";
 	private static final String TEST_CLASS_DIR = TEST_DIR + FederatedFullAggregateTest.class.getSimpleName() + "/";
@@ -69,7 +70,7 @@ public class FederatedFullAggregateTest extends AutomatedTestBase {
 	}
 
 	private enum OpType {
-		SUM, MEAN, MAX, MIN, VAR
+		SUM, MEAN, MAX, MIN, VAR, TERNARY_SUM
 	}
 
 	@Override
@@ -80,64 +81,70 @@ public class FederatedFullAggregateTest extends AutomatedTestBase {
 		addTestConfiguration(TEST_NAME3, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME3, new String[] {"S.scalar"}));
 		addTestConfiguration(TEST_NAME4, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME4, new String[] {"S.scalar"}));
 		addTestConfiguration(TEST_NAME5, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME5, new String[] {"S.scalar"}));
+		addTestConfiguration(TEST_NAME6, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME6, new String[] {"S.scalar"}));
 	}
 
 	@Test
 	public void testSumDenseMatrixCP() {
-		runColAggregateOperationTest(OpType.SUM, ExecType.CP);
+		runAggregateOperationTest(OpType.SUM, ExecType.CP);
 	}
 
 	@Test
 	public void testMeanDenseMatrixCP() {
-		runColAggregateOperationTest(OpType.MEAN, ExecType.CP);
+		runAggregateOperationTest(OpType.MEAN, ExecType.CP);
 	}
 
 	@Test
 	public void testMaxDenseMatrixCP() {
-		runColAggregateOperationTest(OpType.MAX, ExecType.CP);
+		runAggregateOperationTest(OpType.MAX, ExecType.CP);
 	}
 
 	@Test
 	public void testMinDenseMatrixCP() {
-		runColAggregateOperationTest(OpType.MIN, ExecType.CP);
+		runAggregateOperationTest(OpType.MIN, ExecType.CP);
 	}
 
 	@Test
 	public void testVarDenseMatrixCP() {
-		runColAggregateOperationTest(OpType.VAR, ExecType.CP);
+		runAggregateOperationTest(OpType.VAR, ExecType.CP);
+	}
+
+	@Test
+	public void testTernarySumDenseMatrixCP() {
+		runAggregateOperationTest(OpType.TERNARY_SUM, ExecType.CP);
 	}
 
 	@Test
 	@Ignore
 	public void testSumDenseMatrixSP() {
-		runColAggregateOperationTest(OpType.SUM, ExecType.SPARK);
+		runAggregateOperationTest(OpType.SUM, ExecType.SPARK);
 	}
 
 	@Test
 	@Ignore
 	public void testMeanDenseMatrixSP() {
-		runColAggregateOperationTest(OpType.MEAN, ExecType.SPARK);
+		runAggregateOperationTest(OpType.MEAN, ExecType.SPARK);
 	}
 
 	@Test
 	@Ignore
 	public void testMaxDenseMatrixSP() {
-		runColAggregateOperationTest(OpType.MAX, ExecType.SPARK);
+		runAggregateOperationTest(OpType.MAX, ExecType.SPARK);
 	}
 
 	@Test
 	@Ignore
 	public void testMinDenseMatrixSP() {
-		runColAggregateOperationTest(OpType.MIN, ExecType.SPARK);
+		runAggregateOperationTest(OpType.MIN, ExecType.SPARK);
 	}
 
 	@Test
 	@Ignore
 	public void testVarDenseMatrixSP() {
-		runColAggregateOperationTest(OpType.VAR, ExecType.SPARK);
+		runAggregateOperationTest(OpType.VAR, ExecType.SPARK);
 	}
 
-	private void runColAggregateOperationTest(OpType type, ExecType instType) {
+	private void runAggregateOperationTest(OpType type, ExecType instType) {
 		ExecMode platformOld = rtplatform;
 		switch(instType) {
 			case SPARK:
@@ -167,6 +174,9 @@ public class FederatedFullAggregateTest extends AutomatedTestBase {
 				break;
 			case VAR:
 				TEST_NAME = TEST_NAME5;
+				break;
+			case TERNARY_SUM:
+				TEST_NAME = TEST_NAME6;
 				break;
 		}
 
@@ -242,6 +252,9 @@ public class FederatedFullAggregateTest extends AutomatedTestBase {
 				break;
 			case VAR:
 				Assert.assertTrue(heavyHittersContainsString("fed_uavar"));
+				break;
+			case TERNARY_SUM:
+				Assert.assertTrue(heavyHittersContainsString("fed_tak+*"));
 				break;
 		}
 

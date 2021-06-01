@@ -24,6 +24,8 @@ from enum import Enum, auto
 from typing import TYPE_CHECKING, Any, Dict, Sequence, Union, Optional
 
 from py4j.java_gateway import JavaObject, JVMView
+
+import systemds.operator
 from systemds.utils.consts import VALID_INPUT_TYPES
 
 if TYPE_CHECKING:
@@ -65,6 +67,24 @@ class OutputType(Enum):
                     return label._output_type
                 else:
                     return OutputType.DOUBLE
+
+        return OutputType.NONE
+
+    @staticmethod
+    def from_type(obj):
+        if obj is not None:
+            if isinstance(obj, systemds.operator.Matrix):
+                return OutputType.MATRIX
+            elif isinstance(obj, systemds.operator.Frame):
+                return OutputType.FRAME
+            elif isinstance(obj, systemds.operator.Scalar):
+                return OutputType.SCALAR
+            elif isinstance(obj, float):  # TODO is this correct?
+                return OutputType.DOUBLE
+            elif isinstance(obj, str):
+                return OutputType.STRING
+            elif isinstance(obj, systemds.operator.List):
+                return OutputType.LIST
 
         return OutputType.NONE
 

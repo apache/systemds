@@ -135,18 +135,6 @@ class OperationNode(DAGNode):
             self.sds_context, result_variables.getFrameBlock(var_name)
         )
 
-    def __parse_output_result_list(self, result_variables):
-        result_var = []
-        named_output_nodes_types_list = [type(named_output_node).__name__ for named_output_node in list(self.named_output_nodes.values())]
-        for idx, v in enumerate(self._script.out_var_name):
-            if named_output_nodes_types_list[idx] == "Matrix":
-                result_var.append(self.__parse_output_result_matrix(result_variables, v))
-            elif named_output_nodes_types_list[idx] == "Frame":
-                result_var.append(self.__parse_output_result_frame(result_variables, v))
-            else:
-                result_var.append(result_variables.getDouble(self._script.out_var_name[idx]))
-        return result_var
-
     def get_lineage_trace(self) -> str:
         """Get the lineage trace for this node.
 
@@ -161,9 +149,6 @@ class OperationNode(DAGNode):
 
     def code_line(self, var_name: str, unnamed_input_vars: Sequence[str],
                   named_input_vars: Dict[str, str]) -> str:
-        if self.operation is None:
-            return f'{var_name}={list(named_input_vars.values())[0]}'
-
         if self.operation in BINARY_OPERATIONS:
             assert len(
                 named_input_vars) == 0, 'Named parameters can not be used with binary operations'
@@ -173,13 +158,7 @@ class OperationNode(DAGNode):
 
         inputs_comma_sep = create_params_string(unnamed_input_vars, named_input_vars)
 
-        if self.output_type == OutputType.LIST:
-            output = "["
-            for idx, output_node in enumerate(self.named_output_nodes):
-                output += f'{var_name}_{idx},'
-            output = output[:-1] + "]"
-            return f'{output}={self.operation}({inputs_comma_sep});'
-        elif self.output_type == OutputType.NONE:
+        if self.output_type == OutputType.NONE:
             return f'{self.operation}({inputs_comma_sep});'
         # elif self.output_type == OutputType.ASSIGN:
         #     return f'{var_name}={self.operation};'

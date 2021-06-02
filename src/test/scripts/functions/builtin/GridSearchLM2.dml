@@ -19,24 +19,30 @@
 #
 #-------------------------------------------------------------
 
-m_lmPredict = function(Matrix[Double] X, Matrix[Double] B, 
-  Matrix[Double] ytest, Integer icpt = 0, Boolean verbose = FALSE) 
-  return (Matrix[Double] yhat)
+l2norm = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] B) 
+  return (Matrix[Double] loss)
 {
-  intercept = ifelse(icpt>0 | ncol(X)+1==nrow(B), as.scalar(B[nrow(B),]), 0);
-  yhat = X %*% B[1:ncol(X),] + intercept;
-
-  if( verbose ) {
-    y_residual = ytest - yhat;
-    avg_res = sum(y_residual) / nrow(ytest);
-    ss_res = sum(y_residual^2);
-    ss_avg_res = ss_res - nrow(ytest) * avg_res^2;
-    R2 = 1 - ss_res / (sum(ytest^2) - nrow(ytest) * (sum(ytest)/nrow(ytest))^2);
-    print("\nAccuracy:" +
-          "\n--sum(ytest) = " + sum(ytest) +
-          "\n--sum(yhat) = " + sum(yhat) +
-          "\n--AVG_RES_Y: " + avg_res +
-          "\n--SS_AVG_RES_Y: " + ss_avg_res +
-          "\n--R2: " + R2 );
-  }
+  yhat = lmPredict(X=X, B=B, ytest=y)
+  loss = as.matrix(sum((y - yhat)^2));
 }
+
+X = read($1);
+y = read($2);
+
+N = 200;
+Xtrain = X[1:N,];
+ytrain = y[1:N,];
+Xtest = X[(N+1):nrow(X),];
+ytest = y[(N+1):nrow(X),];
+
+params = list("icpt","reg", "tol", "maxi");
+paramRanges = list(seq(0,1,2),10^seq(0,-4), 10^seq(-6,-12), 10^seq(1,3));
+[B1, opt] = gridSearch(X=Xtrain, y=ytrain, train="lm", predict="l2norm",
+  numB=ncol(X)+1, params=params, paramValues=paramRanges);
+B2 = lm(X=Xtrain, y=ytrain, verbose=FALSE);
+
+l1 = l2norm(Xtest, ytest, B1);
+l2 = l2norm(Xtest, ytest, B2);
+R = as.scalar(l1 < l2);
+
+write(R, $3)

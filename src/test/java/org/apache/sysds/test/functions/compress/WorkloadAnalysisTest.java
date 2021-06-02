@@ -26,6 +26,7 @@ import org.apache.sysds.hops.ipa.InterProceduralAnalysis;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
+import org.junit.Assert;
 import org.junit.Test;
 
 public class WorkloadAnalysisTest extends AutomatedTestBase
@@ -64,7 +65,7 @@ public class WorkloadAnalysisTest extends AutomatedTestBase
 			InterProceduralAnalysis.CLA_WORKLOAD_ANALYSIS = true;
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + testname + ".dml";
-			programArgs = new String[]{"-args", input("X"), input("y"), output("B") };
+			programArgs = new String[]{"-stats","-args", input("X"), input("y"), output("B") };
 
 			double[][] X = getRandomMatrix(10000, 20, 0, 1, 1.0, 7);
 			writeInputMatrixWithMTD("X", X, false);
@@ -74,6 +75,9 @@ public class WorkloadAnalysisTest extends AutomatedTestBase
 			runTest(true, false, null, -1);
 			//TODO check for compressed operations 
 			//(right now test only checks that the workload analysis does not crash)
+			
+			//check various additional expectations
+			Assert.assertFalse(heavyHittersContainsString("m_scale"));
 		}
 		finally {
 			resetExecMode(oldPlatform);

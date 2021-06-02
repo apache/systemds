@@ -21,6 +21,7 @@ package org.apache.sysds.runtime.compress.readers;
 
 import java.util.BitSet;
 
+import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.runtime.compress.utils.DblArray;
 
 public class ReaderColumnSelectionBitSet extends ReaderColumnSelection {
@@ -33,12 +34,13 @@ public class ReaderColumnSelectionBitSet extends ReaderColumnSelection {
 	}
 
 	protected DblArray getNextRow() {
-		if(_lastRow == _numRows - 1)
-			return null;
-		_lastRow++;
-		for(int i = 0; i < _colIndexes.length; i++) {
-			reusableArr[i] = _data.get(_lastRow * _colIndexes.length + i) ? 1 : 0;
-		}
-		return reusableReturn;
+		throw new NotImplementedException();
+		// if(_lastRow == _numRows - 1)
+		// 	return null;
+		// _lastRow++;
+		// for(int i = 0; i < _colIndexes.length; i++) {
+		// 	reusableArr[i] = _data.get(_lastRow * _colIndexes.length + i) ? 1 : 0;
+		// }
+		// return reusableReturn;
 	}
 }

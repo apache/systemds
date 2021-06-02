@@ -20,7 +20,6 @@
 package org.apache.sysds.runtime.compress.colgroup;
 
 import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
-import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
@@ -58,7 +57,7 @@ public class ColGroupEmpty extends ColGroupCompressed {
 	}
 
 	@Override
-	protected void computeRowSums(double[] c, boolean square, int rl, int ru, boolean mean) {
+	protected void computeRowSums(double[] c, boolean square, int rl, int ru) {
 		// do nothing
 	}
 
@@ -85,37 +84,12 @@ public class ColGroupEmpty extends ColGroupCompressed {
 	}
 
 	@Override
-	public long estimateInMemorySize() {
-		return ColGroupSizes.estimateInMemorySizeEMPTY(getNumCols());
-	}
-
-	@Override
-	public void decompressToBlockSafe(MatrixBlock target, int rl, int ru, int offT, double[] values) {
+	public void decompressToBlockSafe(MatrixBlock target, int rl, int ru, int offT) {
 		// do nothing.
 	}
 
 	@Override
-	public void decompressToBlockUnSafe(MatrixBlock target, int rl, int ru, int offT, double[] values) {
-		// do nothing.
-	}
-
-	@Override
-	public void decompressToBlock(MatrixBlock target, int[] colIndexTargets) {
-		// do nothing.
-	}
-
-	@Override
-	public void decompressColumnToBlock(MatrixBlock target, int colpos) {
-		// do nothing.
-	}
-
-	@Override
-	public void decompressColumnToBlock(MatrixBlock target, int colpos, int rl, int ru) {
-		// do nothing.
-	}
-
-	@Override
-	public void decompressColumnToBlock(double[] c, int colpos, int rl, int ru) {
+	public void decompressToBlockUnSafe(MatrixBlock target, int rl, int ru, int offT) {
 		// do nothing.
 	}
 
@@ -125,12 +99,7 @@ public class ColGroupEmpty extends ColGroupCompressed {
 	}
 
 	@Override
-	public void leftMultByMatrix(double[] a, double[] c, int numRows, int numCols, int rl, int ru) {
-		// do nothing.
-	}
-
-	@Override
-	public void leftMultBySparseMatrix(SparseBlock sb, double[] c, int numRows, int numCols, int rl, int ru) {
+	public void leftMultByMatrix(MatrixBlock a, MatrixBlock c, int rl, int ru) {
 		// do nothing.
 	}
 
@@ -139,8 +108,7 @@ public class ColGroupEmpty extends ColGroupCompressed {
 		double val0 = op.executeScalar(0);
 		if(val0 == 0)
 			return this;
-		return new ColGroupConst(_colIndexes, _numRows,
-			new Dictionary(new double[0]).applyScalarOp(op, val0, _colIndexes.length));
+		return new ColGroupConst(_colIndexes, _numRows, new Dictionary(new double[_colIndexes.length]).apply(op));
 	}
 
 	@Override
@@ -148,7 +116,7 @@ public class ColGroupEmpty extends ColGroupCompressed {
 		if(sparseSafe)
 			return this;
 		return new ColGroupConst(_colIndexes, _numRows,
-			new Dictionary(new double[0]).applyBinaryRowOp(op.fn, v, sparseSafe, _colIndexes, left));
+			new Dictionary(new double[_colIndexes.length]).applyBinaryRowOp(op, v, true, _colIndexes, left));
 	}
 
 	@Override
@@ -177,13 +145,8 @@ public class ColGroupEmpty extends ColGroupCompressed {
 	}
 
 	@Override
-	protected int containsAllZeroTuple() {
-		return 0;
-	}
-
-	@Override
 	protected double computeMxx(double c, Builtin builtin) {
-		return 0;
+		return builtin.execute(c, 0);
 	}
 
 	@Override
@@ -210,11 +173,15 @@ public class ColGroupEmpty extends ColGroupCompressed {
 	@Override
 	public void tsmm(double[] result, int numColumns) {
 		// do nothing
-
 	}
 
 	@Override
-	public void leftMultByAColGroup(AColGroup lhs, double[] result, int numRows, int numCols) {
+	public void tsmm(double[] result, int numColumns, int idxStart, int idxEnd) {
+		// do nothing.
+	}
+
+	@Override
+	public void leftMultByAColGroup(AColGroup lhs, MatrixBlock c) {
 		// do nothing
 	}
 
@@ -251,5 +218,13 @@ public class ColGroupEmpty extends ColGroupCompressed {
 	@Override
 	public AColGroup rightMultByMatrix(MatrixBlock right) {
 		return null;
+	}
+
+	@Override
+	public AColGroup replace(double pattern, double replace) {
+		if(pattern == 0)
+			return ColGroupFactory.getColGroupConst(getNumRows(), _colIndexes, replace);
+		else
+			return new ColGroupEmpty(_colIndexes, getNumRows());
 	}
 }

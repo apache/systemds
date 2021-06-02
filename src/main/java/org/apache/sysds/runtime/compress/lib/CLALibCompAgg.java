@@ -83,7 +83,6 @@ public class CLALibCompAgg {
 			else
 				aggregateUnaryNormalCompressedMatrixBlock(inputMatrix, outputMatrix, op, blen, indexesIn, inCP);
 		}
-
 		outputMatrix.recomputeNonZeros();
 
 		return outputMatrix;
@@ -497,7 +496,7 @@ public class CLALibCompAgg {
 		private MatrixBlock decompressToTemp() {
 			MatrixBlock tmp = getTmp();
 			for(AColGroup g : _m1.getColGroups())
-				g.decompressToBlockUnSafe(tmp, _rl, _ru, 0, g.getValues());
+				g.decompressToBlockUnSafe(tmp, _rl, _ru, 0);
 			tmp.setNonZeros(_rl + _ru);
 			return tmp;
 		}

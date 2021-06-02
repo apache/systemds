@@ -30,7 +30,7 @@ public class RandomMatrixGenerator {
 	/**
 	 * Types of Probability density functions
 	 */
-	enum PDF {
+	public enum PDF {
 		NORMAL, UNIFORM, POISSON
 	}
 

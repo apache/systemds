@@ -27,6 +27,8 @@ import java.util.Arrays;
 public class DblArray {
 	private double[] _arr;
 
+	private int hash = 0;
+
 	public DblArray() {
 		_arr = null;
 	}
@@ -43,9 +45,20 @@ public class DblArray {
 		return _arr;
 	}
 
+	public void resetHash(){
+		hash = 0;
+	}
+
+	public boolean isEmpty(){
+		return _arr == null;
+	}
+
 	@Override
 	public int hashCode() {
-		return _arr == null ? 0 : Arrays.hashCode(_arr);
+		if(hash != 0)
+			return hash;
+		hash = _arr == null ? 0 : Arrays.hashCode(_arr);
+		return hash;
 	}
 
 	@Override

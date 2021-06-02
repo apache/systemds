@@ -33,6 +33,7 @@ import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup;
+import org.apache.sysds.runtime.compress.colgroup.ColGroupCompressed;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupConst;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupOLE;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupUncompressed;
@@ -99,7 +100,6 @@ public class CLALibScalar {
 		}
 
 		ret.recomputeNonZeros();
-
 		return ret;
 
 	}
@@ -180,7 +180,7 @@ public class CLALibScalar {
 				tasks.add(new ScalarTask(uc, sop));
 			}
 			else {
-				int nv = ((ColGroupValue) grp).getNumValues() * grp.getColIndices().length;
+				int nv = ((ColGroupCompressed) grp).getNumValues() * grp.getColIndices().length;
 				if(nv < MINIMUM_PARALLEL_SIZE && !(grp instanceof ColGroupOLE)) {
 					small.add(grp);
 				}

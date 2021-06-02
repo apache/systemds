@@ -76,7 +76,7 @@ public class OffsetByte extends AOffset {
 
 	@Override
 	public void write(DataOutput out) throws IOException {
-		out.writeByte(OffsetFactory.Types.BYTE.ordinal());
+		out.writeByte(OffsetFactory.OFF_TYPE.BYTE.ordinal());
 		out.writeInt(offsetToFirst);
 		out.writeInt(offsets.length);
 		for(byte o : offsets)
@@ -94,9 +94,9 @@ public class OffsetByte extends AOffset {
 	}
 
 	@Override
-	public int getSize(){
+	public int getSize() {
 		int size = 1;
-		for(byte b : offsets){
+		for(byte b : offsets) {
 			if(b != 0)
 				size++;
 		}

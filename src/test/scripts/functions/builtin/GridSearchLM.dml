@@ -34,7 +34,8 @@ ytest = y[(N+1):nrow(X),];
 
 params = list("reg", "tol", "maxi");
 paramRanges = list(10^seq(0,-4), 10^seq(-6,-12), 10^seq(1,3));
-[B1, opt] = gridSearch(Xtrain, ytrain, "lm", "l2norm", params, paramRanges, TRUE);
+[B1, opt] = gridSearch(X=Xtrain, y=ytrain, train="lm", predict="l2norm",
+  numB=ncol(X), params=params, paramValues=paramRanges);
 B2 = lm(X=Xtrain, y=ytrain, verbose=FALSE);
 
 l1 = l2norm(Xtest, ytest, B1);

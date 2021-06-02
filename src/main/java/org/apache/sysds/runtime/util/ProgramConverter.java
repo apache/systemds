@@ -79,6 +79,7 @@ import org.apache.sysds.runtime.instructions.cp.BooleanObject;
 import org.apache.sysds.runtime.instructions.cp.CPInstruction;
 import org.apache.sysds.runtime.instructions.cp.Data;
 import org.apache.sysds.runtime.instructions.cp.DoubleObject;
+import org.apache.sysds.runtime.instructions.cp.EvalNaryCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.FunctionCallCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.IntObject;
 import org.apache.sysds.runtime.instructions.cp.ListObject;
@@ -1718,7 +1719,8 @@ public class ProgramConverter
 	 * @return instruction
 	 */
 	private static Instruction saveReplaceThreadID( Instruction inst, String pattern, String replacement ) {
-		if ( inst instanceof VariableCPInstruction ) { //createvar, setfilename
+		if ( inst instanceof VariableCPInstruction //createvar, setfilename
+			|| inst instanceof EvalNaryCPInstruction ) {
 			//update in-memory representation
 			inst.updateInstructionThreadID(pattern, replacement);
 		}

@@ -108,15 +108,19 @@ public class LineageParser
 		}*/
 
 		ArrayList<LineageItem> inputs = new ArrayList<>();
+		int specialValueBits = 0;
 		for( int i=1; i<tokens.length; i++ ) {
 			String token = tokens[i];
 			if (token.startsWith("(") && token.endsWith(")")) {
 				token = token.substring(1, token.length()-1); //rm parentheses
 				inputs.add(map.get(Long.valueOf(token)));
+			} else if (token.startsWith("[") && token.endsWith("]")) {
+				token = token.substring(1, token.length() - 1); //rm parentheses
+				specialValueBits = Integer.parseInt(token);
 			} else
 				throw new ParseException("Invalid format for LineageItem reference");
 		}
-		return new LineageItem(id, "", opcode, inputs.toArray(new LineageItem[0]));
+		return new LineageItem(id, "", opcode, inputs.toArray(new LineageItem[0]), specialValueBits);
 	}
 	
 	protected static void parseLineageTraceDedup(String str) {

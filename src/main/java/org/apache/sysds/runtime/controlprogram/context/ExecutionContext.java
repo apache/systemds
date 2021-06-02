@@ -48,6 +48,7 @@ import org.apache.sysds.runtime.instructions.gpu.context.CSRPointer;
 import org.apache.sysds.runtime.instructions.gpu.context.GPUContext;
 import org.apache.sysds.runtime.instructions.gpu.context.GPUObject;
 import org.apache.sysds.runtime.lineage.Lineage;
+import org.apache.sysds.runtime.lineage.LineageDebugger;
 import org.apache.sysds.runtime.lineage.LineageItem;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
@@ -808,9 +809,16 @@ public class ExecutionContext {
 	public void traceLineage(Instruction inst) {
 		if( _lineage == null )
 			throw new DMLRuntimeException("Lineage Trace unavailable.");
+		// TODO bra: store all newly created lis in active list
 		_lineage.trace(inst, this);
 	}
-
+	
+	public void maintainLineageDebuggerInfo(Instruction inst) {
+		if( _lineage == null )
+			throw new DMLRuntimeException("Lineage Trace unavailable.");
+		LineageDebugger.maintainSpecialValueBits(_lineage, inst, this);
+	}
+	
 	public LineageItem getLineageItem(CPOperand input) {
 		if( _lineage == null )
 			throw new DMLRuntimeException("Lineage Trace unavailable.");

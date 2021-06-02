@@ -37,6 +37,7 @@ public class LineageItem {
 	private int _hash = 0;
 	private LineageItem _dedupPatch;
 	private long _distLeaf2Node;
+	private final BooleanArray32 _specialValueBits;  // TODO: Move this to a new subclass
 	// init visited to true to ensure visited items are
 	// not hidden when used as inputs to new items
 	private boolean _visited = true;
@@ -53,30 +54,30 @@ public class LineageItem {
 	}
 
 	public LineageItem(long id, String data) {
-		this(id, data, "", null);
+		this(id, data, "", null, 0);
 	}
 	
 	public LineageItem(String data, String opcode) {
-		this(_idSeq.getNextID(), data, opcode, null);
+		this(_idSeq.getNextID(), data, opcode, null, 0);
 	}
 	
 	public LineageItem(String opcode, LineageItem[] inputs) { 
-		this(_idSeq.getNextID(), "", opcode, inputs);
+		this(_idSeq.getNextID(), "", opcode, inputs, 0);
 	}
 
 	public LineageItem(String data, String opcode, LineageItem[] inputs) {
-		this(_idSeq.getNextID(), data, opcode, inputs);
+		this(_idSeq.getNextID(), data, opcode, inputs, 0);
 	}
 
 	public LineageItem(String opcode, LineageItem dedupPatch, LineageItem[] inputs) { 
-		this(_idSeq.getNextID(), "", opcode, inputs);
+		this(_idSeq.getNextID(), "", opcode, inputs, 0);
 		// maintain a pointer to the dedup patch
 		_dedupPatch = dedupPatch;
 		_hash = _dedupPatch._hash;
 	}
 
 	public LineageItem(String opcode, LineageItem dedupPatch, int dpatchHash, LineageItem[] inputs) { 
-		this(_idSeq.getNextID(), "", opcode, inputs);
+		this(_idSeq.getNextID(), "", opcode, inputs, 0);
 		// maintain a pointer to the dedup patch
 		_dedupPatch = dedupPatch;
 		_hash = dpatchHash;
@@ -87,14 +88,14 @@ public class LineageItem {
 	}
 	
 	public LineageItem(long id, LineageItem li) {
-		this(id, li._data, li._opcode, li._inputs);
+		this(id, li._data, li._opcode, li._inputs, 0);
 	}
 
 	public LineageItem(long id, String data, String opcode) {
-		this(id, data, opcode, null);
+		this(id, data, opcode, null, 0);
 	}
 	
-	public LineageItem(long id, String data, String opcode, LineageItem[] inputs) {
+	public LineageItem(long id, String data, String opcode, LineageItem[] inputs, int specialValueBits) {
 		_id = id;
 		_opcode = opcode;
 		_data = data;
@@ -104,6 +105,7 @@ public class LineageItem {
 		_hash = hashCode();
 		// store the distance of this node from the leaves. (O(#inputs)) operation
 		_distLeaf2Node = distLeaf2Node();
+		_specialValueBits = new BooleanArray32(specialValueBits);
 	}
 	
 	public LineageItem[] getInputs() {
@@ -142,6 +144,14 @@ public class LineageItem {
 		_visited = flag;
 	}
 	
+	public void setSpecialValueBit(int pos, boolean flag) {
+		_specialValueBits.set(pos, flag);
+	}
+	
+	public void setSpecialValueBits(int value) {
+		_specialValueBits.setValue(value);
+	}
+
 	private long distLeaf2Node() {
 		// Derive height only if the corresponding reuse
 		// policy is selected, otherwise set -1.
@@ -169,6 +179,14 @@ public class LineageItem {
 		return _opcode;
 	}
 	
+	public boolean getSpecialValueBit(int pos) {
+		return _specialValueBits.get(pos);
+	}
+
+	public int getSpecialValueBits() {
+		return _specialValueBits.getValue();
+	}
+
 	public boolean isPlaceholder() {
 		return _opcode.startsWith(LineageItemUtils.LPLACEHOLDER);
 	}

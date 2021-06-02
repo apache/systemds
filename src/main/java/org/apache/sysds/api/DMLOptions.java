@@ -66,6 +66,7 @@ public class DMLOptions {
 	public ReuseCacheType       linReuseType  = ReuseCacheType.NONE; // reuse type (full, partial, hybrid)
 	public LineageCachePolicy   linCachePolicy= LineageCachePolicy.COSTNSIZE; // lineage cache eviction policy
 	public boolean              lineage_estimate = false;         // whether estimate reuse benefits
+	public boolean              lineage_debugger = false;         // whether enable lineage debugger
 	public boolean              fedWorker     = false;
 	public int                  fedWorkerPort = -1;
 	public boolean              checkPrivacy  = false;            // Check which privacy constraints are loaded and checked during federated execution 
@@ -140,6 +141,8 @@ public class DMLOptions {
 							dmlOptions.linCachePolicy = LineageCachePolicy.DAGHEIGHT;
 						else if (lineageType.equalsIgnoreCase("estimate"))
 							dmlOptions.lineage_estimate = lineageType.equalsIgnoreCase("estimate");
+						else if (lineageType.equalsIgnoreCase("debugger"))
+							dmlOptions.lineage_debugger = lineageType.equalsIgnoreCase("debugger");							
 						else
 							throw new org.apache.commons.cli.ParseException(
 								"Invalid argument specified for -lineage option: " + lineageType);

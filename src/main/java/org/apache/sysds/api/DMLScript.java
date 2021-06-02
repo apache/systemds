@@ -100,6 +100,7 @@ public class DMLScript
 	public static ReuseCacheType LINEAGE_REUSE = DMLOptions.defaultOptions.linReuseType;   // whether lineage-based reuse
 	public static LineageCachePolicy LINEAGE_POLICY = DMLOptions.defaultOptions.linCachePolicy; // lineage cache eviction policy
 	public static boolean     LINEAGE_ESTIMATE = DMLOptions.defaultOptions.lineage_estimate; // whether estimate reuse benefits
+	public static boolean     LINEAGE_DEBUGGER = DMLOptions.defaultOptions.lineage_debugger; // whether enable lineage debugger
 	public static boolean     CHECK_PRIVACY = DMLOptions.defaultOptions.checkPrivacy;      // Check which privacy constraints are loaded and checked during federated execution
 
 	public static boolean           USE_ACCELERATOR     = DMLOptions.defaultOptions.gpu;
@@ -224,6 +225,7 @@ public class DMLScript
 			LINEAGE_POLICY      = dmlOptions.linCachePolicy;
 			LINEAGE_ESTIMATE    = dmlOptions.lineage_estimate;
 			CHECK_PRIVACY       = dmlOptions.checkPrivacy;
+			LINEAGE_DEBUGGER	= dmlOptions.lineage_debugger;
 
 			String fnameOptConfig = dmlOptions.configFile;
 			boolean isFile = dmlOptions.filePath != null;

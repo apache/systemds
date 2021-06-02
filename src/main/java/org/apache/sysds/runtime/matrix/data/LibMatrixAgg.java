@@ -1549,6 +1549,12 @@ public class LibMatrixAgg
 				s_ucumkp(a, agg, dc, m, n, kbuff, kplus, rl, ru);
 				break;
 			}
+			case CUM_SUM_PROD: { //CUMSUMPROD
+				if( n != 2 )
+					throw new DMLRuntimeException("Cumsumprod expects two-column input (n="+n+").");
+				s_ucumkpp(a, agg, dc, rl, ru);
+				break;
+			}
 			case CUM_PROD: { //CUMPROD
 				s_ucumm(a, agg, c, n, rl, ru);
 				break;
@@ -2362,6 +2368,33 @@ public class LibMatrixAgg
 				sumAgg( a.values(i), csums, a.indexes(i), a.pos(i), a.size(i), n, kbuff, kplus );
 			//always copy current sum (not sparse-safe)
 			c.set(i, csums.values(0));
+		}
+	}
+	
+	
+	/**
+	 * CUMSUMPROD, opcode: ucumk+*, dense input.
+	 * 
+	 * @param a sparse block
+	 * @param agg ?
+	 * @param c ?
+	 * @param rl row lower index
+	 * @param ru row upper index
+	 */
+	private static void s_ucumkpp( SparseBlock a, double[] agg, DenseBlock c, int rl, int ru ) {
+		//init current row sum/correction arrays w/ neutral 0
+		double sum = (agg != null) ? agg[0] : 0;
+		//scan once and compute prefix sums
+		double[] cvals = c.values(0);
+		for( int i=rl; i<ru; i++ ) {
+			if( a.isEmpty(i) )
+				sum = cvals[i] = 0;
+			else if( a.size(i) == 2 ) {
+				double[] avals = a.values(i); int apos = a.pos(i);
+				sum = cvals[i] = avals[apos] + avals[apos+1] * sum;
+			}
+			else //fallback
+				sum = cvals[i] = a.get(i,0) + a.get(i,1) * sum;
 		}
 	}
 	

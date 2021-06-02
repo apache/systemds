@@ -1020,6 +1020,10 @@ public class TestUtils
 	public static void compareScalars(String expected, String actual) {
 			assertEquals(expected, actual);
 	}
+	
+	public static void compareScalars(Boolean expected, Boolean actual) {
+			assertEquals(expected, actual);
+	}
 
 	public static boolean compareMatrices(HashMap<CellIndex, Double> m1, HashMap<CellIndex, Double> m2,
 			double tolerance, String name1, String name2)

@@ -23,16 +23,16 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import org.apache.sysds.common.Types.ExecMode;
-import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
-
+import org.apache.sysds.utils.Statistics;
 
 public class BuiltinGridSearchTest extends AutomatedTestBase
 {
 	private final static String TEST_NAME1 = "GridSearchLM";
 	private final static String TEST_NAME2 = "GridSearchMLogreg";
+	private final static String TEST_NAME3 = "GridSearchLM2";
 	private final static String TEST_DIR = "functions/builtin/";
 	private final static String TEST_CLASS_DIR = TEST_DIR + BuiltinGridSearchTest.class.getSimpleName() + "/";
 	
@@ -43,24 +43,45 @@ public class BuiltinGridSearchTest extends AutomatedTestBase
 	public void setUp() {
 		addTestConfiguration(TEST_NAME1,new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1,new String[]{"R"}));
 		addTestConfiguration(TEST_NAME2,new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2,new String[]{"R"}));
+		addTestConfiguration(TEST_NAME3,new TestConfiguration(TEST_CLASS_DIR, TEST_NAME3,new String[]{"R"}));
 	}
 	
 	@Test
 	public void testGridSearchLmCP() {
-		runGridSearch(TEST_NAME1, ExecType.CP);
+		runGridSearch(TEST_NAME1, ExecMode.SINGLE_NODE);
+	}
+	
+	@Test
+	public void testGridSearchLmHybrid() {
+		runGridSearch(TEST_NAME1, ExecMode.HYBRID);
 	}
 	
 	@Test
 	public void testGridSearchLmSpark() {
-		runGridSearch(TEST_NAME1, ExecType.SPARK);
+		runGridSearch(TEST_NAME1, ExecMode.SPARK);
 	}
 	
 	@Test
 	public void testGridSearchMLogregCP() {
-		runGridSearch(TEST_NAME2, ExecType.CP);
+		runGridSearch(TEST_NAME2, ExecMode.SINGLE_NODE);
 	}
 	
-	private void runGridSearch(String testname, ExecType et)
+	@Test
+	public void testGridSearchMLogregHybrid() {
+		runGridSearch(TEST_NAME2, ExecMode.HYBRID);
+	}
+	
+	@Test
+	public void testGridSearchLm2CP() {
+		runGridSearch(TEST_NAME3, ExecMode.SINGLE_NODE);
+	}
+	
+	@Test
+	public void testGridSearchLm2Hybrid() {
+		runGridSearch(TEST_NAME3, ExecMode.HYBRID);
+	}
+	
+	private void runGridSearch(String testname, ExecMode et)
 	{
 		ExecMode modeOld = setExecMode(et);
 		try {
@@ -78,6 +99,8 @@ public class BuiltinGridSearchTest extends AutomatedTestBase
 			
 			//expected loss smaller than default invocation
 			Assert.assertTrue(TestUtils.readDMLBoolean(output("R")));
+			if( et != ExecMode.SPARK )
+				Assert.assertEquals(0, Statistics.getNoOfExecutedSPInst());
 		}
 		finally {
 			resetExecMode(modeOld);

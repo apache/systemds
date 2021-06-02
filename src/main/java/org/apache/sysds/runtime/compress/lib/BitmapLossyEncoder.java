@@ -89,6 +89,7 @@ public class BitmapLossyEncoder {
 	 * @param numRows The number of Rows.
 	 * @return a lossy bitmap.
 	 */
+	@SuppressWarnings("unused")
 	private static BitmapLossy make8BitLossy(Bitmap ubm, Stats stats, int numRows) {
 		final double[] fp = ubm.getValues();
 		int numCols = ubm.getNumColumns();
@@ -284,6 +285,7 @@ public class BitmapLossyEncoder {
 		}
 	}
 
+	@SuppressWarnings("unused")
 	private static double[] getMemLocalDoubleArray(int length, boolean clean) {
 		double[] ar = memPoolDoubleArray.get();
 		if(ar != null && ar.length >= length) {
@@ -312,6 +314,7 @@ public class BitmapLossyEncoder {
 		protected double maxDelta;
 		protected boolean sameDelta;
 
+		@SuppressWarnings("unused")
 		public Stats(double[] fp) {
 			max = Double.NEGATIVE_INFINITY;
 			min = Double.POSITIVE_INFINITY;

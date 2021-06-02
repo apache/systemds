@@ -27,9 +27,9 @@ from typing import Dict, Optional, Sequence, Tuple, Union, TYPE_CHECKING, Iterab
 import numpy as np
 import pandas as pd
 from py4j.java_gateway import JavaObject, JVMView
-from systemds.operator import OperationNode, Matrix
+from systemds.operator import OperationNode, Matrix, MultiReturn
 from systemds.utils.consts import VALID_INPUT_TYPES
-from systemds.utils.converters import pandas_to_frame_block
+from systemds.utils.converters import pandas_to_frame_block, frame_block_to_pandas
 from systemds.script_building.dag import OutputType, DAGNode
 
 if TYPE_CHECKING:
@@ -78,19 +78,30 @@ class Frame(OperationNode):
         else:
             return super().compute(verbose, lineage)
 
+    def _parse_output_result_variables(self, result_variables):
+        return frame_block_to_pandas(self.sds_context, result_variables.getFrameBlock(self._script.out_var_name[0]))
+
     def _is_pandas(self) -> bool:
         return self._pd_dataframe is not None
 
     def transform_encode(self, spec: "Scalar"):
         params_dict = {"target": self, "spec": spec}
-        return OperationNode(
+        
+        frame = Frame(self.sds_context,"")
+        matrix = Matrix(self.sds_context,"")
+
+        output_nodes = [matrix,frame]
+        op = MultiReturn(
             self.sds_context,
             "transformencode",
+            output_nodes,
             named_input_nodes=params_dict,
-            output_type=OutputType.LIST,
-            number_of_outputs=2,
-            output_types=[OutputType.MATRIX, OutputType.FRAME],
         )
+
+        frame._unnamed_input_nodes = [op]
+        matrix._unnamed_input_nodes = [op]
+
+        return op
 
     def transform_apply(self, spec: "Scalar", meta: "Frame"):
         params_dict = {"target": self, "spec": spec, "meta": meta}
@@ -103,7 +114,7 @@ class Frame(OperationNode):
         :return: The OperationNode containing the concatenated frames.
         """
 
-        return Frame(self.sds_context, "rbind",[self, other])
+        return Frame(self.sds_context, "rbind", [self, other])
 
     def cbind(self, other) -> 'Frame':
         """
@@ -111,12 +122,5 @@ class Frame(OperationNode):
         :param: The other frame to bind to the right hand side.
         :return: The OperationNode containing the concatenated frames.
         """
-        return Frame(self.sds_context,"cbind",[self, other])
+        return Frame(self.sds_context, "cbind", [self, other])
 
-    def t(self) -> 'OperationNode':
-        """ Transposes the input
-
-        :return: the OperationNode representing this operation
-        """
-
-        return Frame(self.sds_context, 't', [self])

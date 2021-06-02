@@ -17,37 +17,25 @@
  * under the License.
  */
 
+package org.apache.sysds.test.component.compress.offset;
 
-package org.apache.sysds.runtime.compress.colgroup.pre;
+import org.apache.sysds.runtime.compress.colgroup.offset.OffsetFactory;
+import org.junit.Test;
 
-import java.util.Arrays;
+public class OffsetSingleTests {
 
-public class ArrPreAggregate implements IPreAggregate {
-	
-	private final int[] arr;
-	
-	public ArrPreAggregate(int[] arr){
-		this.arr = arr;
+	@Test(expected = RuntimeException.class)
+	public void testInvalidSize_01() {
+		OffsetFactory.estimateInMemorySize(-1, 100);
 	}
 
-	protected ArrPreAggregate(int size){
-		this.arr = IPreAggregate.allocIVector(size, true);
+	@Test(expected = RuntimeException.class)
+	public void testInvalidSize_02() {
+		OffsetFactory.estimateInMemorySize(10, -1);
 	}
 
-	public int[] getArr() {
-		return arr;
-	}
-
-	public void increment(int idx){
-		arr[idx]++;
-	}
-
-	public void increment(int idx, int v){
-		arr[idx] += v;
-	}
-
-	@Override
-	public String toString() {
-		return Arrays.toString(arr);
+	@Test(expected = RuntimeException.class)
+	public void testInvalidCreation() {
+		OffsetFactory.create(new int[] {1, 2, 3, 4}, -1);
 	}
 }

@@ -76,7 +76,7 @@ public class JolEstimateOLETest extends JolEstimateTest {
 		// Random rounded numbers dense
 		mb = DataConverter.convertToMatrixBlock(TestUtils.round(TestUtils.generateTestMatrix(1, 1523, 0, 99, 1.0, 7)));
 		tests.add(new Object[] {mb});
-		mb = DataConverter.convertToMatrixBlock(TestUtils.round(TestUtils.generateTestMatrix(1, 4000, 0, 255, 1.0, 7)));
+		mb = DataConverter.convertToMatrixBlock(TestUtils.round(TestUtils.generateTestMatrix(1, 4000, 0, 100, 1.0, 7)));
 		tests.add(new Object[] {mb});
 
 		// Sparse rounded numbers
@@ -88,7 +88,7 @@ public class JolEstimateOLETest extends JolEstimateTest {
 		mb = DataConverter
 			.convertToMatrixBlock(TestUtils.round(TestUtils.generateTestMatrix(1, 2321, 0, 99, 0.1, 512)));
 		tests.add(new Object[] {mb});
-		mb = DataConverter.convertToMatrixBlock(TestUtils.round(TestUtils.generateTestMatrix(1, 4000, 0, 255, 0.1, 7)));
+		mb = DataConverter.convertToMatrixBlock(TestUtils.round(TestUtils.generateTestMatrix(1, 4000, 0, 100, 0.1, 7)));
 		tests.add(new Object[] {mb});
 
 		mb = DataConverter.convertToMatrixBlock(TestUtils.round(TestUtils.generateTestMatrix(1, 1523, 0, 99, 0.5, 7)));
@@ -99,7 +99,7 @@ public class JolEstimateOLETest extends JolEstimateTest {
 		mb = DataConverter
 			.convertToMatrixBlock(TestUtils.round(TestUtils.generateTestMatrix(1, 2321, 0, 99, 0.5, 512)));
 		tests.add(new Object[] {mb});
-		mb = DataConverter.convertToMatrixBlock(TestUtils.round(TestUtils.generateTestMatrix(1, 4000, 0, 255, 0.5, 7)));
+		mb = DataConverter.convertToMatrixBlock(TestUtils.round(TestUtils.generateTestMatrix(1, 4000, 0, 100, 0.5, 7)));
 		tests.add(new Object[] {mb});
 
 		// Paper

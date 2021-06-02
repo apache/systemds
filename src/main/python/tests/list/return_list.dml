@@ -1,4 +1,4 @@
-# -------------------------------------------------------------
+#-------------------------------------------------------------
 #
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
@@ -17,16 +17,11 @@
 # specific language governing permissions and limitations
 # under the License.
 #
-# -------------------------------------------------------------
+#-------------------------------------------------------------
 
-from systemds.operator.operation_node import OperationNode
-from systemds.operator.nodes.multi_return import MultiReturn
-from systemds.operator.nodes.scalar import Scalar
-from systemds.operator.nodes.matrix import Matrix
-from systemds.operator.nodes.frame import Frame
-from systemds.operator.nodes.list_access import ListAccess
-from systemds.operator.nodes.list import List
-from systemds.operator.nodes.source import Source
-from systemds.operator import algorithm
-
-__all__ = [OperationNode, algorithm, Scalar, List, ListAccess, Matrix, Frame, Source, MultiReturn]
+f = function() return(list[unknown] C){
+    m1 = matrix(1,1,1)
+    m2 = matrix(2,2,2)
+    m3 = matrix(3,3,3)
+    C = list(m1, m2, m3)
+}

@@ -34,21 +34,21 @@ from systemds.script_building.dag import OutputType
 from systemds.utils.consts import VALID_INPUT_TYPES, BINARY_OPERATIONS, VALID_ARITHMETIC_TYPES
 
 
-
 class Scalar(OperationNode):
-    __assign : bool
+    __assign: bool
 
     def __init__(self, sds_context: 'SystemDSContext', operation: str,
                  unnamed_input_nodes: Iterable[VALID_INPUT_TYPES] = None,
                  named_input_nodes: Dict[str, VALID_INPUT_TYPES] = None,
-                 output_type : OutputType = OutputType.DOUBLE,
-                 assign : bool = False) -> 'Scalar':
+                 output_type: OutputType = OutputType.DOUBLE,
+                 assign: bool = False) -> 'Scalar':
         self.__assign = assign
         super().__init__(sds_context, operation, unnamed_input_nodes=unnamed_input_nodes,
                          named_input_nodes=named_input_nodes, output_type=output_type)
 
     def pass_python_data_to_prepared_script(self, sds, var_name: str, prepared_script: JavaObject) -> None:
-        raise RuntimeError('Scalar Operation Nodes, should not have python data input')
+        raise RuntimeError(
+            'Scalar Operation Nodes, should not have python data input')
 
     def code_line(self, var_name: str, unnamed_input_vars: Sequence[str],
                   named_input_vars: Dict[str, str]) -> str:
@@ -59,6 +59,14 @@ class Scalar(OperationNode):
 
     def compute(self, verbose: bool = False, lineage: bool = False) -> Union[np.array]:
         return super().compute(verbose, lineage)
+
+    def _parse_output_result_variables(self, result_variables):
+        if self.output_type == OutputType.DOUBLE:
+            return result_variables.getDouble(self._script.out_var_name[0])
+        elif self.output_type == OutputType.STRING:
+            return result_variables.getString(self._script.out_var_name[0])
+        else:
+            raise NotImplemented("Not currently support scalar type: " + self.output_type)
 
     def __add__(self, other: VALID_ARITHMETIC_TYPES) -> 'Scalar':
         return Scalar(self.sds_context, '+', [self, other])
@@ -214,4 +222,4 @@ class Scalar(OperationNode):
         """ Converts the input to a string representation.
         :return: `Scalar` containing the string.
         """
-        return Scalar(self.sds_context, 'toString', [self], kwargs, output_type=OutputType.STRING)
+        return Scalar(self.sds_context, 'toString', [self], named_input_nodes=kwargs, output_type=OutputType.STRING)

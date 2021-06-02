@@ -23,12 +23,15 @@ import unittest
 
 import numpy as np
 from systemds.context import SystemDSContext
+from systemds.operator import List
+from systemds.operator.algorithm import pca
+from systemds.script_building.dag import OutputType
 
 
-class TestSource_NeuralNet(unittest.TestCase):
+class TestListOperationsUnknown(unittest.TestCase):
 
     sds: SystemDSContext = None
-    src_path: str = "./tests/source/neural_net_source.dml"
+    src_path: str = "./tests/list/return_list.dml"
 
     @classmethod
     def setUpClass(cls):
@@ -38,17 +41,20 @@ class TestSource_NeuralNet(unittest.TestCase):
     def tearDownClass(cls):
         cls.sds.close()
 
-    def test_01(self):
-        # Verify that it parses it...
-        s = self.sds.source(self.src_path, "test")
+    def test_access_other_index_1(self):
+        s = self.sds.source(self.src_path, "func")
+        res = s.f()[1].as_matrix().compute()[0]
+        self.assertEqual(1, res)
 
-    def test_test_method(self):
-        # Verify that we can call a function.
-        m = np.full((1, 2), 1)
-        res = self.sds.source(self.src_path, "test")\
-            .test_function(self.sds.full((1, 2), 1))[1]\
-            .as_matrix().compute()
-        self.assertTrue(np.allclose(m, res))
+    def test_access_other_index_2(self):
+        s = self.sds.source(self.src_path, "func")
+        res = s.f()[2].as_matrix().compute()
+        self.assertTrue(np.allclose(np.full((2, 2), 2), res))
+
+    def test_access_other_index_3(self):
+        s = self.sds.source(self.src_path, "func")
+        res = s.f()[3].as_matrix().compute()
+        self.assertTrue(np.allclose(np.full((3, 3), 3), res))
 
 
 if __name__ == "__main__":

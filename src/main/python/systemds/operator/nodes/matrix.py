@@ -28,16 +28,18 @@ import numpy as np
 from py4j.java_gateway import JavaObject, JVMView
 from systemds.operator import OperationNode, Scalar
 from systemds.utils.consts import VALID_INPUT_TYPES
-from systemds.utils.converters import numpy_to_matrix_block
+from systemds.utils.converters import numpy_to_matrix_block, matrix_block_to_numpy
 from systemds.script_building.dag import OutputType
 
 from systemds.utils.consts import VALID_INPUT_TYPES, BINARY_OPERATIONS, VALID_ARITHMETIC_TYPES
+
 
 class Matrix(OperationNode):
     _np_array: np.array
 
     def __init__(self, sds_context: 'SystemDSContext', operation: str,
-                 unnamed_input_nodes: Union[str,Iterable[VALID_INPUT_TYPES]] = None,
+                 unnamed_input_nodes: Union[str,
+                                            Iterable[VALID_INPUT_TYPES]] = None,
                  named_input_nodes: Dict[str, VALID_INPUT_TYPES] = None,
                  local_data: np.array = None) -> 'Matrix':
 
@@ -71,6 +73,10 @@ class Matrix(OperationNode):
             return self._np_array
         else:
             return super().compute(verbose, lineage)
+
+    def _parse_output_result_variables(self, result_variables):
+        return matrix_block_to_numpy(self.sds_context.java_gateway.jvm,
+                                     result_variables.getMatrixBlock(self._script.out_var_name[0]))
 
     def _is_numpy(self) -> bool:
         return self._np_array is not None
@@ -146,7 +152,7 @@ class Matrix(OperationNode):
     def __matmul__(self, other: 'Matrix') -> 'Matrix':
         return Matrix(self.sds_context, '%*%', [self, other])
 
-    def sum(self, axis: int = None) -> 'Matrix':
+    def sum(self, axis: int = None) -> 'OperationNode':
         """Calculate sum of matrix.
 
         :param axis: can be 0 or 1 to do either row or column sums
@@ -161,7 +167,7 @@ class Matrix(OperationNode):
         raise ValueError(
             f"Axis has to be either 0, 1 or None, for column, row or complete {self.operation}")
 
-    def mean(self, axis: int = None) -> 'Matrix':
+    def mean(self, axis: int = None) -> 'OperationNode':
         """Calculate mean of matrix.
 
         :param axis: can be 0 or 1 to do either row or column means
@@ -176,7 +182,7 @@ class Matrix(OperationNode):
         raise ValueError(
             f"Axis has to be either 0, 1 or None, for column, row or complete {self.operation}")
 
-    def var(self, axis: int = None) -> 'Matrix':
+    def var(self, axis: int = None) -> 'OperationNode':
         """Calculate variance of matrix.
 
         :param axis: can be 0 or 1 to do either row or column vars
@@ -268,7 +274,7 @@ class Matrix(OperationNode):
         unnamed_inputs.append(moment)
         return Matrix(self.sds_context, 'moment', unnamed_inputs, output_type=OutputType.DOUBLE)
 
-    def cholesky(self, safe: bool = False) -> 'OperationNode':
+    def cholesky(self, safe: bool = False) -> 'Matrix':
         """ Computes the Cholesky decomposition of a symmetric, positive definite matrix
 
         :param safe: default value is False, if flag is True additional checks to ensure
@@ -277,7 +283,7 @@ class Matrix(OperationNode):
         """
         return Matrix(self.sds_context, 'cholesky', [self])
 
-    def to_one_hot(self, num_classes: int) -> 'OperationNode':
+    def to_one_hot(self, num_classes: int) -> 'Matrix':
         """ OneHot encode the matrix.
 
         It is assumed that there is only one column to encode, and all values are whole numbers > 0
@@ -307,7 +313,7 @@ class Matrix(OperationNode):
         """
         return Matrix(self.sds_context, "cbind", [self, other])
 
-    def t(self) -> 'OperationNode':
+    def t(self) -> 'Matrix':
         """ Transposes the input
 
         :return: the OperationNode representing this operation
@@ -315,7 +321,7 @@ class Matrix(OperationNode):
         return Matrix(self.sds_context, 't', [self])
 
     def order(self, by: int = 1, decreasing: bool = False,
-              index_return: bool = False) -> 'OperationNode':
+              index_return: bool = False) -> 'Matrix':
         """ Sort by a column of the matrix X in increasing/decreasing order and returns either the index or data
 
         :param by: sort matrix by this column number
@@ -327,10 +333,18 @@ class Matrix(OperationNode):
         named_input_nodes = {'target': self, 'by': by, 'decreasing': str(decreasing).upper(),
                              'index.return': str(index_return).upper()}
 
-        return OperationNode(self.sds_context, 'order', [], named_input_nodes=named_input_nodes)
+        return Matrix(self.sds_context, 'order', [], named_input_nodes=named_input_nodes)
 
-    def to_string(self, **kwargs: Dict[str, VALID_INPUT_TYPES]) -> 'OperationNode':
+    def to_string(self, **kwargs: Dict[str, VALID_INPUT_TYPES]) -> 'Matrix':
         """ Converts the input to a string representation.
         :return: `Scalar` containing the string.
         """
         return Scalar(self.sds_context, 'toString', [self], kwargs, output_type=OutputType.STRING)
+
+    def rev(self) -> 'Matrix':
+        """ Reverses the rows
+
+        :return: the OperationNode representing this operation
+        """
+        return Matrix(self.sds_context, 'rev', [self])
+

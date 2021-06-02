@@ -38,11 +38,13 @@ class OutputType(Enum):
     DOUBLE = auto()
     FRAME = auto()
     LIST = auto()
+    MULTI_RETURN = auto()
     MATRIX = auto()
     NONE = auto()
     SCALAR = auto()
     STRING = auto()
     IMPORT = auto()
+    UNKNOWN = auto()
 
     @staticmethod
     def from_str(label: Union[str, VALID_INPUT_TYPES]):

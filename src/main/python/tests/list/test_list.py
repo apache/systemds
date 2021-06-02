@@ -23,12 +23,15 @@ import unittest
 
 import numpy as np
 from systemds.context import SystemDSContext
+from systemds.operator.algorithm import pca
+
+from systemds.operator import List
+from systemds.script_building.dag import OutputType
 
 
-class TestSource_NeuralNet(unittest.TestCase):
+class TestListOperations(unittest.TestCase):
 
     sds: SystemDSContext = None
-    src_path: str = "./tests/source/neural_net_source.dml"
 
     @classmethod
     def setUpClass(cls):
@@ -38,18 +41,31 @@ class TestSource_NeuralNet(unittest.TestCase):
     def tearDownClass(cls):
         cls.sds.close()
 
-    def test_01(self):
-        # Verify that it parses it...
-        s = self.sds.source(self.src_path, "test")
+    def test_creation(self):
+        """
+        Tests the creation of a List object via the SystemDSContext
+        """
+        m1 = np.array([1., 2., 3.])
+        m1p = self.sds.from_numpy(m1)
+        m2 = np.array([4., 5., 6.])
+        m2p = self.sds.from_numpy(m2)
+        list_obj = self.sds.list(m1p, m2p)
+        tmp = list_obj[0] + list_obj[1]
+        res = tmp.compute().flatten()
+        self.assertTrue(np.allclose(m1 + m2, res))
 
-    def test_test_method(self):
-        # Verify that we can call a function.
-        m = np.full((1, 2), 1)
-        res = self.sds.source(self.src_path, "test")\
-            .test_function(self.sds.full((1, 2), 1))[1]\
-            .as_matrix().compute()
-        self.assertTrue(np.allclose(m, res))
-
+    def test_addition(self):
+        """
+        Tests the creation of a List object via the SystemDSContext and adds a value
+        """
+        m1 = np.array([1., 2., 3.])
+        m1p = self.sds.from_numpy(m1)
+        m2 = np.array([4., 5., 6.])
+        m2p = self.sds.from_numpy(m2)
+        list_obj = self.sds.list(m1p, m2p)
+        tmp = list_obj[0] + 2
+        res = tmp.compute().flatten()
+        self.assertTrue(np.allclose(m1 + 2, res))
 
 if __name__ == "__main__":
     unittest.main(exit=False)

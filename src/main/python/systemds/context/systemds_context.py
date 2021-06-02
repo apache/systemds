@@ -446,7 +446,7 @@ class SystemDSContext(object):
         The importing is done thorugh the DML command source, and adds all defined methods from
         the script to the Source object returned in python. This gives the flexibility to call the methods 
         directly on the object returned.
-    
+
         In systemds a method called func_01 can then be imported using
 
         ```python
@@ -460,15 +460,4 @@ class SystemDSContext(object):
         return Source(self, path, name, print_imported_methods)
 
     def list(self, *args: Sequence[VALID_INPUT_TYPES], **kwargs: Dict[str, VALID_INPUT_TYPES]) -> 'List':
-        if len(kwargs) != 0 and len(args) != 0:
-            raise Exception("Accepts either args or kwargs")
-        elif len(kwargs) != 0:
-            out = []
-            for key, arg in kwargs.items():
-                out.append((key, OutputType.from_type(arg)))
-            return List(self, 'list', named_input_nodes=kwargs, outputs=out)
-        elif len(args) != 0:
-            out = []
-            for idx, arg in enumerate(args):
-                out.append((f"_{idx}", OutputType.from_type(arg)))
-            return List(self, 'list', unnamed_input_nodes=args, outputs=out)
+        return List(self, unnamed_input_nodes=args, named_input_nodes=kwargs)

@@ -31,10 +31,16 @@ import org.apache.sysds.runtime.compress.colgroup.AColGroup;
  */
 public class CompressionStatistics {
 
+	// sizes while compressing
+	public long estimatedSizeCoCoded;
+	public long estimatedSizeCols;
+	public long compressedInitialSize;
+
+	// sizes before compression
 	public long originalSize;
 	public long denseSize;
-	public long estimatedSizeColGroups;
-	public long estimatedSizeCols;
+
+	// compressed size
 	public long size;
 
 	private Map<String, int[]> colGroupCounts;
@@ -74,29 +80,35 @@ public class CompressionStatistics {
 
 		for(String ctKey : colGroupCounts.keySet())
 			sb.append(ctKey + ":" + colGroupCounts.get(ctKey)[0] + " ");
-		
+
 		return sb.toString();
 	}
 
 	public String getGroupsSizesString() {
 		StringBuilder sb = new StringBuilder();
 
-		for(String ctKey : colGroupCounts.keySet()) 
+		for(String ctKey : colGroupCounts.keySet())
 			sb.append(ctKey + ":" + colGroupCounts.get(ctKey)[1] + " ");
-		
+
 		return sb.toString();
 	}
 
-	public double getRatio(){
-		return (double) originalSize / size;
+	public double getRatio() {
+		return size == 0.0 ? Double.POSITIVE_INFINITY : (double) originalSize / size;
 	}
 
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
-		sb.append("Compression Statistics:\n");
-		sb.append("\t" + getGroupsTypesString() + "\n");
-		sb.append("\t" + getGroupsSizesString() + "\n");
+		sb.append("CompressionStatistics:\n");
+		sb.append("Dense Size       : " + denseSize);
+		sb.append("Original Size    : " + originalSize);
+		sb.append("Compressed Size  : " + size);
+		sb.append("CompressionRatio : " + getRatio());
+		if(colGroupCounts != null){
+			sb.append("\t" + getGroupsTypesString() + "\n");
+			sb.append("\t" + getGroupsSizesString() + "\n");
+		}
 		return sb.toString();
 	}
 

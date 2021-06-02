@@ -82,6 +82,21 @@ public class CompressibleInputGenerator {
 		return output;
 	}
 
+	public static double[][] getInputOneHotMatrix(int rows, int cols, int seed) {
+		double[][] variations = new double[cols][];
+		for(int i = 0; i < cols; i++) {
+			variations[i] = new double[cols];
+			variations[i][i] = 1;
+		}
+
+		double[][] matrix = new double[rows][];
+		Random r = new Random(seed);
+		for(int i = 0; i < rows; i++)
+			matrix[i] = variations[r.nextInt(cols)];
+
+		return matrix;
+	}
+
 	private static double[][] rle(int rows, int cols, int nrUnique, int max, int min, double sparsity, int seed,
 		boolean transpose) {
 

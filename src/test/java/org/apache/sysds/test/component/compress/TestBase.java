@@ -21,6 +21,8 @@ package org.apache.sysds.test.component.compress;
 
 import static org.junit.Assert.assertTrue;
 
+import java.util.Collection;
+
 import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.runtime.compress.CompressionSettings;
 import org.apache.sysds.runtime.compress.CompressionSettingsBuilder;
@@ -35,6 +37,7 @@ import org.apache.sysds.test.component.compress.TestConstants.ValueRange;
 import org.apache.sysds.test.component.compress.TestConstants.ValueType;
 
 public class TestBase {
+	// private static final Log LOG = LogFactory.getLog(TestBase.class.getName());
 
 	protected ValueType valType;
 	protected ValueRange valRange;
@@ -47,15 +50,17 @@ public class TestBase {
 	protected double samplingRatio;
 	protected double sparsity;
 
-	protected CompressionSettings compressionSettings;
+	protected CompressionSettings _cs;
 	protected OverLapping overlappingType;
 
+	protected Collection<CompressionType> _ct;
+
 	// Input
-	protected double[][] input;
 	protected MatrixBlock mb;
 
 	public TestBase(SparsityType sparType, ValueType valType, ValueRange valueRange,
-		CompressionSettingsBuilder compressionSettings, MatrixTypology MatrixTypology, OverLapping ov) {
+		CompressionSettingsBuilder compressionSettings, MatrixTypology MatrixTypology, OverLapping ov,
+		Collection<CompressionType> ct) {
 		try {
 
 			this.sparsity = TestConstants.getSparsityValue(sparType);
@@ -64,36 +69,52 @@ public class TestBase {
 
 			this.max = TestConstants.getMaxRangeValue(valueRange);
 			this.min = TestConstants.getMinRangeValue(valueRange);
+			this._ct = ct;
 			this.overlappingType = ov;
-			switch(valType) {
-				case CONST:
-					this.min = this.max;
-					// Do not Break, utilize the RAND afterwards.
-				case RAND:
-					this.input = TestUtils.generateTestMatrix(rows, cols, min, max, sparsity, 7);
-					break;
-				case RAND_ROUND:
-					this.input = TestUtils.round(TestUtils.generateTestMatrix(rows, cols, min, max, sparsity, 7));
-					break;
-				case OLE_COMPRESSIBLE:
-					// Note the Compressible Input generator, generates an already Transposed input
-					// normally, therefore last argument is true, to build a non transposed matrix.
-					this.input = CompressibleInputGenerator.getInputDoubleMatrix(rows, cols, CompressionType.OLE,
-						(max - min), max, min, sparsity, 7, true);
-					break;
-				case RLE_COMPRESSIBLE:
-					this.input = CompressibleInputGenerator.getInputDoubleMatrix(rows, cols, CompressionType.RLE,
-						(max - min), max, min, sparsity, 7, true);
-					break;
-				default:
-					throw new NotImplementedException("Not Implemented Test Value type input generator");
-			}
-
 			this.valRange = valueRange;
 			this.valType = valType;
-			this.compressionSettings = compressionSettings.create();
+			this._cs = compressionSettings != null ? compressionSettings.create() : null;
 
-			mb = DataConverter.convertToMatrixBlock(this.input);
+			if(ct != null && ct.contains(CompressionType.CONST)) {
+				mb = new MatrixBlock(rows, cols, false, max);
+				mb.recomputeNonZeros();
+				mb.examSparsity();
+			}
+			else {
+
+				double[][] input;
+				switch(valType) {
+					case CONST:
+						this.min = this.max;
+						// Do not Break, utilize the RAND afterwards.
+					case RAND:
+						input = TestUtils.generateTestMatrix(rows, cols, min, max, sparsity, seed);
+						break;
+					case RAND_ROUND:
+						input = TestUtils.round(TestUtils.generateTestMatrix(rows, cols, min, max, sparsity, seed));
+						break;
+					case OLE_COMPRESSIBLE:
+						// Note the Compressible Input generator, generates an already Transposed input
+						// normally, therefore last argument is true, to build a non transposed matrix.
+						input = CompressibleInputGenerator.getInputDoubleMatrix(rows, cols, CompressionType.OLE,
+							(max - min), max, min, sparsity, seed, true);
+						break;
+					case RLE_COMPRESSIBLE:
+						input = CompressibleInputGenerator.getInputDoubleMatrix(rows, cols, CompressionType.RLE,
+							(max - min), max, min, sparsity, seed, true);
+						break;
+					case ONE_HOT_ENCODED:
+						input = CompressibleInputGenerator.getInputOneHotMatrix(rows, cols, seed);
+						break;
+					default:
+						throw new NotImplementedException("Not Implemented Test Value type input generator");
+				}
+
+				mb = DataConverter.convertToMatrixBlock(input);
+				mb.recomputeNonZeros();
+				mb.examSparsity();
+			}
+
 		}
 		catch(Exception e) {
 			e.printStackTrace();
@@ -115,8 +136,10 @@ public class TestBase {
 		builder.append(String.format("%6s%12s", "Max:", max));
 		builder.append(String.format("%6s%5s", "Spar:", sparsity));
 		builder.append(String.format("%6s%5s", "OV:", overlappingType));
-		builder.append(String.format("%6s%8s", "CP:", compressionSettings));
-
+		if(_cs != null)
+			builder.append(String.format("%6s%8s", "CP:", _cs));
+		else
+			builder.append(String.format("%8s%5s", "FORCED:", _ct));
 		return builder.toString();
 	}
 }

@@ -24,14 +24,14 @@
 
 from typing import Dict, Iterable
 
-from systemds.operator import OperationNode, Matrix
+from systemds.operator import OperationNode, Matrix, Frame, List, MultiReturn, Scalar
 from systemds.script_building.dag import OutputType
 from systemds.utils.consts import VALID_INPUT_TYPES
 
-def dist(X: OperationNode):
-    
-    params_dict = {'X':X}
-    return Matrix(X.sds_context, 'dist', named_input_nodes=params_dict)
 
-
+def dist(X: Matrix):
     
+    params_dict = {'X': X}
+    return Matrix(X.sds_context,
+        'dist',
+        named_input_nodes=params_dict)

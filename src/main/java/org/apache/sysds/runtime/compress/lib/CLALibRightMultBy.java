@@ -149,7 +149,7 @@ public class CLALibRightMultBy {
 	}
 
 	private static ColGroupEmpty findEmptyColumnsAndMakeEmptyColGroup(List<AColGroup> colGroups, int nCols, int nRows) {
-		Set<Integer> emptyColumns = new HashSet<Integer>(nCols);
+		Set<Integer> emptyColumns = new HashSet<>(nCols);
 		for(int i = 0; i < nCols; i++)
 			emptyColumns.add(i);
 

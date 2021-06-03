@@ -24,11 +24,8 @@ import org.apache.sysds.api.DMLException;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 
-/**
- *   
- */
 public class PrintMatrixTest extends AutomatedTestBase
-{	
+{
 	private final static String TEST_DIR = "functions/misc/";
 	private final static String TEST_NAME1 = "PrintMatrixTest";
 	private final static String TEST_CLASS_DIR = TEST_DIR + PrintMatrixTest.class.getSimpleName() + "/";

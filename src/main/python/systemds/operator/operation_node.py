@@ -19,17 +19,17 @@
 #
 # -------------------------------------------------------------
 
-from typing import Union, Optional, Iterable, Dict, Sequence, Tuple, TYPE_CHECKING
 from multiprocessing import Process
+from typing import (TYPE_CHECKING, Dict, Iterable, Optional, Sequence, Tuple,
+                    Union)
 
 import numpy as np
-from py4j.java_gateway import JVMView, JavaObject
-
-from systemds.utils.consts import VALID_INPUT_TYPES, BINARY_OPERATIONS, VALID_ARITHMETIC_TYPES
-from systemds.utils.helpers import create_params_string
-from systemds.utils.converters import matrix_block_to_numpy, frame_block_to_pandas
+from py4j.java_gateway import JavaObject, JVMView
+from systemds.script_building.dag import DAGNode, OutputType
 from systemds.script_building.script import DMLScript
-from systemds.script_building.dag import OutputType, DAGNode
+from systemds.utils.consts import (BINARY_OPERATIONS, VALID_ARITHMETIC_TYPES,
+                                   VALID_INPUT_TYPES)
+from systemds.utils.helpers import create_params_string
 
 if TYPE_CHECKING:
     # to avoid cyclic dependencies during runtime
@@ -44,16 +44,13 @@ class OperationNode(DAGNode):
     _script: Optional[DMLScript]
     _output_types: Optional[Iterable[VALID_INPUT_TYPES]]
     _source_node: Optional["DAGNode"]
-    
+
     def __init__(self, sds_context: 'SystemDSContext', operation: str,
                  unnamed_input_nodes: Union[str,
                                             Iterable[VALID_INPUT_TYPES]] = None,
                  named_input_nodes: Dict[str, VALID_INPUT_TYPES] = None,
                  output_type: OutputType = OutputType.MATRIX,
-                 is_python_local_data: bool = False,
-                 number_of_outputs=1,
-                 output_types: Iterable[OutputType] = None):
-                 
+                 is_python_local_data: bool = False):
         """
         Create general `OperationNode`
 
@@ -81,10 +78,9 @@ class OperationNode(DAGNode):
         self._result_var = None
         self._lineage_trace = None
         self._script = None
-        self._number_of_outputs = number_of_outputs
-        self._output_types = output_types
         self._source_node = None
         self._already_added = False
+        self.dml_name = ""
 
     def compute(self, verbose: bool = False, lineage: bool = False) -> \
             Union[float, np.array, Tuple[Union[float, np.array], str]]:
@@ -102,7 +98,7 @@ class OperationNode(DAGNode):
                 result_variables = self._script.execute()
 
             if result_variables is not None:
-                self._result_var = self.__parse_output_result_variables(
+                self._result_var = self._parse_output_result_variables(
                     result_variables)
 
         if verbose:
@@ -111,47 +107,18 @@ class OperationNode(DAGNode):
             for y in self.sds_context.get_stderr():
                 print(y)
 
+        self._script.clear(self)
         if lineage:
             return self._result_var, self._lineage_trace
         else:
             return self._result_var
 
-    def __parse_output_result_variables(self, result_variables):
-        if self.output_type == OutputType.DOUBLE:
-            return self.__parse_output_result_double(result_variables, self._script.out_var_name[0])
-        elif self.output_type == OutputType.MATRIX:
-            return self.__parse_output_result_matrix(result_variables, self._script.out_var_name[0])
-        elif self.output_type == OutputType.LIST:
-            return self.__parse_output_result_list(result_variables)
-        elif self.output_type == OutputType.FRAME:
-            return self.__parse_output_result_frame(result_variables, self._script.out_var_name[0])
-
-    def __parse_output_result_double(self, result_variables, var_name):
-        return result_variables.getDouble(var_name)
-
-    def __parse_output_result_matrix(self, result_variables, var_name):
-        return matrix_block_to_numpy(self.sds_context.java_gateway.jvm,
-                                     result_variables.getMatrixBlock(var_name))
-
-    def __parse_output_result_frame(self, result_variables, var_name):
-        return frame_block_to_pandas(
-            self.sds_context, result_variables.getFrameBlock(var_name)
-        )
-
-    def __parse_output_result_list(self, result_variables):
-        result_var = []
-        for idx, v in enumerate(self._script.out_var_name):
-            if(self._output_types == None or self._output_types[idx] == OutputType.MATRIX):
-                result_var.append(
-                    self.__parse_output_result_matrix(result_variables, v))
-            elif self._output_types[idx] == OutputType.FRAME:
-                result_var.append(
-                    self.__parse_output_result_frame(result_variables, v))
-
-            else:
-                result_var.append(result_variables.getDouble(
-                    self._script.out_var_name[idx]))
-        return result_var
+    def _parse_output_result_variables(self, result_variables):
+        if self._output_type == None or self._output_type == OutputType.NONE:
+            return None
+        else:
+            raise NotImplementedError(
+                "This method should be overwritten by subclasses")
 
     def get_lineage_trace(self) -> str:
         """Get the lineage trace for this node.
@@ -177,63 +144,14 @@ class OperationNode(DAGNode):
         inputs_comma_sep = create_params_string(
             unnamed_input_vars, named_input_vars)
 
-        if self.output_type == OutputType.LIST:
-            output = "["
-            for idx in range(self._number_of_outputs):
-                output += f'{var_name}_{idx},'
-            output = output[:-1] + "]"
-            return f'{output}={self.operation}({inputs_comma_sep});'
-        elif self.output_type == OutputType.NONE:
+        if self.output_type == OutputType.NONE:
             return f'{self.operation}({inputs_comma_sep});'
-        # elif self.output_type == OutputType.ASSIGN:
-        #     return f'{var_name}={self.operation};'
         else:
             return f'{var_name}={self.operation}({inputs_comma_sep});'
 
     def pass_python_data_to_prepared_script(self, jvm: JVMView, var_name: str, prepared_script: JavaObject) -> None:
         raise NotImplementedError(
             'Operation node has no python local data. Missing implementation in derived class?')
-
-    def _check_matrix_op(self):
-        """Perform checks to assure operation is allowed to be performed on data type of this `OperationNode`
-
-        :raise: AssertionError
-        """
-        assert self.output_type == OutputType.MATRIX, f'{self.operation} only supported for matrices'
-
-    def _check_frame_op(self):
-        """Perform checks to assure operation is allowed to be performed on data type of this `OperationNode`
-
-        :raise: AssertionError
-        """
-        assert self.output_type == OutputType.FRAME, f'{self.operation} only supported for frames'
-
-    def _check_matrix_or_frame_op(self):
-        """Perform checks to assure operation is allowed to be performed on data type of this `OperationNode`
-
-        :raise: AssertionError
-        """
-        assert (
-            self.output_type == OutputType.FRAME
-            or self.output_type == OutputType.MATRIX
-        ), f"{self.operation} only supported for frames or matrices"
-
-    def _check_equal_op_type_as(self, other: "OperationNode"):
-        """Perform checks to assure operation is equal to 'other'. Used for rBind and cBind type equality check.
-
-        :raise: AssertionError
-        """
-        assert (
-            self.output_type == other.output_type
-        ), f"{self.operation} only supported for Nodes of equal output-type. Got self: {self.output_type} and other: {other.output_type}"
-
-    def _check_other(self, other: "OperationNode", expectedOutputType: OutputType):
-        """Perform check to assure other operation has expected output type.
-
-        :raise: AssertionError
-        """
-        assert other.output_type == expectedOutputType, "not correctly asserted output types expected: " + \
-            str(expectedOutputType) + " got " + str(other.output_type)
 
     def write(self, destination: str, format: str = "binary", **kwargs: Dict[str, VALID_INPUT_TYPES]) -> 'OperationNode':
         """ Write input to disk. 
@@ -255,16 +173,3 @@ class OperationNode(DAGNode):
         To get the returned string look at the stdout of SystemDSContext.
         """
         return OperationNode(self.sds_context, 'print', [self], kwargs, output_type=OutputType.NONE)
-
-    def rev(self) -> 'OperationNode':
-        """ Reverses the rows
-
-        :return: the OperationNode representing this operation
-        """
-        return OperationNode(self.sds_context, 'rev', [self])
-
-    def to_string(self, **kwargs: Dict[str, VALID_INPUT_TYPES]) -> 'OperationNode':
-        """ Converts the input to a string representation.
-        :return: `Scalar` containing the string.
-        """
-        return OperationNode(self.sds_context, 'toString', [self], kwargs, output_type=OutputType.STRING)

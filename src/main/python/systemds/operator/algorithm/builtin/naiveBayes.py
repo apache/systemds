@@ -24,13 +24,25 @@
 
 from typing import Dict, Iterable
 
-from systemds.operator import OperationNode, Matrix
+from systemds.operator import OperationNode, Matrix, Frame, List, MultiReturn, Scalar
 from systemds.script_building.dag import OutputType
 from systemds.utils.consts import VALID_INPUT_TYPES
 
-def naiveBayes(D: OperationNode, C: OperationNode, **kwargs: Dict[str, VALID_INPUT_TYPES]):
+
+def naiveBayes(D: Matrix,
+               C: Matrix,
+               **kwargs: Dict[str, VALID_INPUT_TYPES]):
     
-    params_dict = {'D':D, 'C':C}
+    params_dict = {'D': D, 'C': C}
     params_dict.update(kwargs)
-    return OperationNode(D.sds_context, 'naiveBayes', named_input_nodes=params_dict, output_type=OutputType.LIST, number_of_outputs=2, output_types=[OutputType.MATRIX, OutputType.MATRIX])
     
+    vX_0 = Matrix(D.sds_context, '')
+    vX_1 = Matrix(D.sds_context, '')
+    output_nodes = [vX_0, vX_1, ]
+
+    op = MultiReturn(D.sds_context, 'naiveBayes', output_nodes, named_input_nodes=params_dict)
+
+    vX_0._unnamed_input_nodes = [op]
+    vX_1._unnamed_input_nodes = [op]
+
+    return op

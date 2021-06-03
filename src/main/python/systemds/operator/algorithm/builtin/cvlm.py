@@ -24,15 +24,26 @@
 
 from typing import Dict, Iterable
 
-from systemds.operator import OperationNode, Matrix
+from systemds.operator import OperationNode, Matrix, Frame, List, MultiReturn, Scalar
 from systemds.script_building.dag import OutputType
 from systemds.utils.consts import VALID_INPUT_TYPES
 
-def cvlm(X: OperationNode, y: OperationNode, k: int, **kwargs: Dict[str, VALID_INPUT_TYPES]):
+
+def cvlm(X: Matrix,
+         y: Matrix,
+         k: int,
+         **kwargs: Dict[str, VALID_INPUT_TYPES]):
     
-    params_dict = {'X':X, 'y':y, 'k':k}
+    params_dict = {'X': X, 'y': y, 'k': k}
     params_dict.update(kwargs)
-    return OperationNode(X.sds_context, 'cvlm', named_input_nodes=params_dict, output_type=OutputType.LIST, number_of_outputs=2, output_types=[OutputType.MATRIX, OutputType.MATRIX])
-
-
     
+    vX_0 = Matrix(X.sds_context, '')
+    vX_1 = Matrix(X.sds_context, '')
+    output_nodes = [vX_0, vX_1, ]
+
+    op = MultiReturn(X.sds_context, 'cvlm', output_nodes, named_input_nodes=params_dict)
+
+    vX_0._unnamed_input_nodes = [op]
+    vX_1._unnamed_input_nodes = [op]
+
+    return op

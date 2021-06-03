@@ -22,11 +22,7 @@
 X = read($1);
 y = read($2);
 
-#X = scale(X=X, scale=TRUE, center=TRUE);
-X = X - colMeans(X);
-X = X / sqrt(colVars(X));
-
-while(FALSE){}
+X = scale(X=X, scale=TRUE, center=TRUE);
 B = lm(X=X, y=y, verbose=TRUE);
 
 write(B, $3)

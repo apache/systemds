@@ -149,7 +149,7 @@ public class CoCodeCostTSMM extends AColumnCoCoder {
 		return cost;
 	}
 
-	private double getCostOfSelfTSMM(CompressedSizeInfoColGroup g) {
+	private static double getCostOfSelfTSMM(CompressedSizeInfoColGroup g) {
 		double cost = 0;
 		final int nCol = g.getColumns().length;
 		cost += g.getNumVals() * (nCol * (nCol + 1)) / 2;

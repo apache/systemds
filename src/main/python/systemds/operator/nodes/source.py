@@ -26,7 +26,7 @@ from typing import (TYPE_CHECKING, Dict, Iterable, Optional, Sequence, Tuple,
                     Union)
 
 import numpy as np
-from systemds.operator import Matrix, OperationNode, Scalar
+from systemds.operator import Matrix, OperationNode, Scalar, List
 from systemds.script_building.dag import OutputType
 
 
@@ -106,7 +106,7 @@ class Func(object):
         elif var_l[0] == 'b':  # boolean
             return (self.split_to_value_and_def(var[7:], True), 'Scalar')
         elif var_l[0] == 'l': # list[unknown]
-            return (self.split_to_value_and_def(var[13:]), 'OperationNode')
+            return (self.split_to_value_and_def(var[13:]), 'List')
         elif var_l[0] == 's': # string
             return (self.split_to_value_and_def(var[6:]), 'Scalar')
         else:
@@ -135,16 +135,11 @@ class Source(OperationNode):
                          f'"{path}"', output_type=OutputType.IMPORT)
         self.__name = name
         functions = self.__parse_functions_from_script(path)
-        # if print_imported_methods:
-        #     current_functions = set(dir(self))
 
         # Add all the functions found in the source file to this object.
         for id, f in enumerate(functions):
             func = f.get_func(sds_context, name, id, print_imported_methods)
             setattr(self, f._name, MethodType(func, self))
-
-        # if print_imported_methods:
-        #     print(set(dir(self)) - current_functions)
 
     def __parse_functions_from_script(self, path: str) -> Iterable[Func]:
         lines = self.__parse_lines_with_filter(path)

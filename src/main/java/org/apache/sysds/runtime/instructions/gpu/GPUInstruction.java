@@ -226,6 +226,9 @@ public abstract class GPUInstruction extends Instruction implements LineageTrace
 				if(gpuCtx != null)
 					gpuCtx.printMemoryInfo(getOpcode());
 		}
+		
+		//default post-process behavior
+		super.postprocessInstruction(ec);
 	}
 
 	/**

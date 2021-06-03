@@ -28,9 +28,10 @@ from systemds.operator import OperationNode, Matrix, Frame, List, MultiReturn, S
 from systemds.script_building.dag import OutputType
 from systemds.utils.consts import VALID_INPUT_TYPES
 
-def xdummy2(X: OperationNode):
+
+def xdummy2(X: Matrix):
     
-    params_dict = {'X':X}
+    params_dict = {'X': X}
     
     vX_0 = Matrix(X.sds_context, '')
     vX_1 = Matrix(X.sds_context, '')
@@ -42,6 +43,3 @@ def xdummy2(X: OperationNode):
     vX_1._unnamed_input_nodes = [op]
 
     return op
-
-
-    

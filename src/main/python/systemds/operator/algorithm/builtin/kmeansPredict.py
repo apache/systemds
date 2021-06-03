@@ -28,16 +28,15 @@ from systemds.operator import OperationNode, Matrix, Frame, List, MultiReturn, S
 from systemds.script_building.dag import OutputType
 from systemds.utils.consts import VALID_INPUT_TYPES
 
-def kmeansPredict(X: OperationNode, C: OperationNode):
+
+def kmeansPredict(X: Matrix,
+                  C: Matrix):
     """
     :param X: The input Matrix to do KMeans on.
     :param C: The input Centroids to map X onto.
     :return: 'OperationNode' containing the mapping of records to centroids 
     """
-    params_dict = {'X':X, 'C':C}
+    params_dict = {'X': X, 'C': C}
     return Matrix(X.sds_context,
-		'kmeansPredict',
-		named_input_nodes=params_dict)
-
-
-    
+        'kmeansPredict',
+        named_input_nodes=params_dict)

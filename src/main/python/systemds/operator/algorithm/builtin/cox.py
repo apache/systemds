@@ -28,7 +28,12 @@ from systemds.operator import OperationNode, Matrix, Frame, List, MultiReturn, S
 from systemds.script_building.dag import OutputType
 from systemds.utils.consts import VALID_INPUT_TYPES
 
-def cox(X: OperationNode, TE: OperationNode, F: OperationNode, R: OperationNode, **kwargs: Dict[str, VALID_INPUT_TYPES]):
+
+def cox(X: Matrix,
+        TE: Matrix,
+        F: Matrix,
+        R: Matrix,
+        **kwargs: Dict[str, VALID_INPUT_TYPES]):
     """
     :param X: Location to read the input matrix X containing the survival data 
     :param containing: information
@@ -46,7 +51,7 @@ def cox(X: OperationNode, TE: OperationNode, F: OperationNode, R: OperationNode,
     :param mii: Max. number of inner (conjugate gradient) iterations, 0 = no max
     :return: 'OperationNode' containing a summary of some statistics of the fitted model: & matrix rt that contains the order-preserving recoded timestamps from x & which is matrix x with sorted timestamps & matrix mf that contains the column indices of x with the baseline factors removed (if available) 
     """
-    params_dict = {'X':X, 'TE':TE, 'F':F, 'R':R}
+    params_dict = {'X': X, 'TE': TE, 'F': F, 'R': R}
     params_dict.update(kwargs)
     
     vX_0 = Matrix(X.sds_context, '')
@@ -67,6 +72,3 @@ def cox(X: OperationNode, TE: OperationNode, F: OperationNode, R: OperationNode,
     vX_5._unnamed_input_nodes = [op]
 
     return op
-
-
-    

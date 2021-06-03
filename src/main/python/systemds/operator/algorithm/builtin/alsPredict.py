@@ -28,12 +28,13 @@ from systemds.operator import OperationNode, Matrix, Frame, List, MultiReturn, S
 from systemds.script_building.dag import OutputType
 from systemds.utils.consts import VALID_INPUT_TYPES
 
-def alsPredict(userIDs: OperationNode, I: OperationNode, L: OperationNode, R: OperationNode):
+
+def alsPredict(userIDs: Matrix,
+               I: Matrix,
+               L: Matrix,
+               R: Matrix):
     
-    params_dict = {'userIDs':userIDs, 'I':I, 'L':L, 'R':R}
+    params_dict = {'userIDs': userIDs, 'I': I, 'L': L, 'R': R}
     return Matrix(userIDs.sds_context,
-		'alsPredict',
-		named_input_nodes=params_dict)
-
-
-    
+        'alsPredict',
+        named_input_nodes=params_dict)

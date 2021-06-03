@@ -28,12 +28,11 @@ from systemds.operator import OperationNode, Matrix, Frame, List, MultiReturn, S
 from systemds.script_building.dag import OutputType
 from systemds.utils.consts import VALID_INPUT_TYPES
 
-def img_mirror(img_in: OperationNode, horizontal_axis: bool):
+
+def img_mirror(img_in: Matrix,
+               horizontal_axis: bool):
     
-    params_dict = {'img_in':img_in, 'horizontal_axis':horizontal_axis}
+    params_dict = {'img_in': img_in, 'horizontal_axis': horizontal_axis}
     return Matrix(img_in.sds_context,
-		'img_mirror',
-		named_input_nodes=params_dict)
-
-
-    
+        'img_mirror',
+        named_input_nodes=params_dict)

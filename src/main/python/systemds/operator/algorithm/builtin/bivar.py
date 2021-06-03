@@ -28,12 +28,18 @@ from systemds.operator import OperationNode, Matrix, Frame, List, MultiReturn, S
 from systemds.script_building.dag import OutputType
 from systemds.utils.consts import VALID_INPUT_TYPES
 
-def bivar(X: OperationNode, S1: OperationNode, S2: OperationNode, T1: OperationNode, T2: OperationNode, verbose: bool):
+
+def bivar(X: Matrix,
+          S1: Matrix,
+          S2: Matrix,
+          T1: Matrix,
+          T2: Matrix,
+          verbose: bool):
     """
     :param verbose: Print bivar stats
     :return: 'OperationNode' containing  
     """
-    params_dict = {'X':X, 'S1':S1, 'S2':S2, 'T1':T1, 'T2':T2, 'verbose':verbose}
+    params_dict = {'X': X, 'S1': S1, 'S2': S2, 'T1': T1, 'T2': T2, 'verbose': verbose}
     
     vX_0 = Matrix(X.sds_context, '')
     vX_1 = Matrix(X.sds_context, '')
@@ -49,6 +55,3 @@ def bivar(X: OperationNode, S1: OperationNode, S2: OperationNode, T1: OperationN
     vX_3._unnamed_input_nodes = [op]
 
     return op
-
-
-    

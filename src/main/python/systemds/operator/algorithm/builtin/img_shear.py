@@ -28,7 +28,11 @@ from systemds.operator import OperationNode, Matrix, Frame, List, MultiReturn, S
 from systemds.script_building.dag import OutputType
 from systemds.utils.consts import VALID_INPUT_TYPES
 
-def img_shear(img_in: OperationNode, shear_x: float, shear_y: float, fill_value: float):
+
+def img_shear(img_in: Matrix,
+              shear_x: float,
+              shear_y: float,
+              fill_value: float):
     """
     :param img_in: Input image as 2D matrix with top left corner at [1, 1]
     :param shear_x: Shearing factor for horizontal shearing
@@ -36,10 +40,7 @@ def img_shear(img_in: OperationNode, shear_x: float, shear_y: float, fill_value:
     :param fill_value: The background color revealed by the shearing
     :return: 'OperationNode' containing output image as 2d matrix with top left corner at [1, 1] 
     """
-    params_dict = {'img_in':img_in, 'shear_x':shear_x, 'shear_y':shear_y, 'fill_value':fill_value}
+    params_dict = {'img_in': img_in, 'shear_x': shear_x, 'shear_y': shear_y, 'fill_value': fill_value}
     return Matrix(img_in.sds_context,
-		'img_shear',
-		named_input_nodes=params_dict)
-
-
-    
+        'img_shear',
+        named_input_nodes=params_dict)

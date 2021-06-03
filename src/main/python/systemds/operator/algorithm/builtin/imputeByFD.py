@@ -28,13 +28,15 @@ from systemds.operator import OperationNode, Matrix, Frame, List, MultiReturn, S
 from systemds.script_building.dag import OutputType
 from systemds.utils.consts import VALID_INPUT_TYPES
 
-def imputeByFD(X: OperationNode, sourceAttribute: int, targetAttribute: int, threshold: float, **kwargs: Dict[str, VALID_INPUT_TYPES]):
+
+def imputeByFD(X: Matrix,
+               sourceAttribute: int,
+               targetAttribute: int,
+               threshold: float,
+               **kwargs: Dict[str, VALID_INPUT_TYPES]):
     
-    params_dict = {'X':X, 'sourceAttribute':sourceAttribute, 'targetAttribute':targetAttribute, 'threshold':threshold}
+    params_dict = {'X': X, 'sourceAttribute': sourceAttribute, 'targetAttribute': targetAttribute, 'threshold': threshold}
     params_dict.update(kwargs)
     return Matrix(X.sds_context,
-		'imputeByFD',
-		named_input_nodes=params_dict)
-
-
-    
+        'imputeByFD',
+        named_input_nodes=params_dict)

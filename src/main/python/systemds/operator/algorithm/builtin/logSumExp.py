@@ -28,13 +28,12 @@ from systemds.operator import OperationNode, Matrix, Frame, List, MultiReturn, S
 from systemds.script_building.dag import OutputType
 from systemds.utils.consts import VALID_INPUT_TYPES
 
-def logSumExp(M: OperationNode, **kwargs: Dict[str, VALID_INPUT_TYPES]):
+
+def logSumExp(M: Matrix,
+              **kwargs: Dict[str, VALID_INPUT_TYPES]):
     
-    params_dict = {'M':M}
+    params_dict = {'M': M}
     params_dict.update(kwargs)
     return Matrix(M.sds_context,
-		'logSumExp',
-		named_input_nodes=params_dict)
-
-
-    
+        'logSumExp',
+        named_input_nodes=params_dict)

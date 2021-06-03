@@ -28,7 +28,12 @@ from systemds.operator import OperationNode, Matrix, Frame, List, MultiReturn, S
 from systemds.script_building.dag import OutputType
 from systemds.utils.consts import VALID_INPUT_TYPES
 
-def alsTopkPredict(userIDs: OperationNode, I: OperationNode, L: OperationNode, R: OperationNode, **kwargs: Dict[str, VALID_INPUT_TYPES]):
+
+def alsTopkPredict(userIDs: Matrix,
+                   I: Matrix,
+                   L: Matrix,
+                   R: Matrix,
+                   **kwargs: Dict[str, VALID_INPUT_TYPES]):
     """
     :param userIDs: Column vector of user-ids (n x 1)
     :param I: Indicator matrix user-id x user-id to exclude from scoring
@@ -37,7 +42,7 @@ def alsTopkPredict(userIDs: OperationNode, I: OperationNode, L: OperationNode, R
     :param K: The number of top-K items
     :return: 'OperationNode' containing users (rows) & a matrix containing the top-k predicted ratings for the specified users (rows) 
     """
-    params_dict = {'userIDs':userIDs, 'I':I, 'L':L, 'R':R}
+    params_dict = {'userIDs': userIDs, 'I': I, 'L': L, 'R': R}
     params_dict.update(kwargs)
     
     vX_0 = Matrix(userIDs.sds_context, '')
@@ -50,6 +55,3 @@ def alsTopkPredict(userIDs: OperationNode, I: OperationNode, L: OperationNode, R
     vX_1._unnamed_input_nodes = [op]
 
     return op
-
-
-    

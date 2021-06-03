@@ -28,12 +28,12 @@ from systemds.operator import OperationNode, Matrix, Frame, List, MultiReturn, S
 from systemds.script_building.dag import OutputType
 from systemds.utils.consts import VALID_INPUT_TYPES
 
-def scaleApply(X: OperationNode, Centering: OperationNode, ScaleFactor: OperationNode):
+
+def scaleApply(X: Matrix,
+               Centering: Matrix,
+               ScaleFactor: Matrix):
     
-    params_dict = {'X':X, 'Centering':Centering, 'ScaleFactor':ScaleFactor}
+    params_dict = {'X': X, 'Centering': Centering, 'ScaleFactor': ScaleFactor}
     return Matrix(X.sds_context,
-		'scaleApply',
-		named_input_nodes=params_dict)
-
-
-    
+        'scaleApply',
+        named_input_nodes=params_dict)

@@ -28,13 +28,13 @@ from systemds.operator import OperationNode, Matrix, Frame, List, MultiReturn, S
 from systemds.script_building.dag import OutputType
 from systemds.utils.consts import VALID_INPUT_TYPES
 
-def lmDS(X: OperationNode, y: OperationNode, **kwargs: Dict[str, VALID_INPUT_TYPES]):
+
+def lmDS(X: Matrix,
+         y: Matrix,
+         **kwargs: Dict[str, VALID_INPUT_TYPES]):
     
-    params_dict = {'X':X, 'y':y}
+    params_dict = {'X': X, 'y': y}
     params_dict.update(kwargs)
     return Matrix(X.sds_context,
-		'lmDS',
-		named_input_nodes=params_dict)
-
-
-    
+        'lmDS',
+        named_input_nodes=params_dict)

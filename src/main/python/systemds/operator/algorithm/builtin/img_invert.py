@@ -28,16 +28,15 @@ from systemds.operator import OperationNode, Matrix, Frame, List, MultiReturn, S
 from systemds.script_building.dag import OutputType
 from systemds.utils.consts import VALID_INPUT_TYPES
 
-def img_invert(img_in: OperationNode, max_value: float):
+
+def img_invert(img_in: Matrix,
+               max_value: float):
     """
     :param img_in: Input image
     :param max_value: The maximum value pixels can have
     :return: 'OperationNode' containing  
     """
-    params_dict = {'img_in':img_in, 'max_value':max_value}
+    params_dict = {'img_in': img_in, 'max_value': max_value}
     return Matrix(img_in.sds_context,
-		'img_invert',
-		named_input_nodes=params_dict)
-
-
-    
+        'img_invert',
+        named_input_nodes=params_dict)

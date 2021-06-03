@@ -28,13 +28,15 @@ from systemds.operator import OperationNode, Matrix, Frame, List, MultiReturn, S
 from systemds.script_building.dag import OutputType
 from systemds.utils.consts import VALID_INPUT_TYPES
 
-def confusionMatrix(P: OperationNode, Y: OperationNode):
+
+def confusionMatrix(P: Matrix,
+                    Y: Matrix):
     """
     :param P: vector of Predictions
     :param Y: vector of Golden standard One Hot Encoded; the one hot encoded vector of actual labels
     :return: 'OperationNode' containing the confusion matrix sums of classifications & the confusion matrix averages of each true class 
     """
-    params_dict = {'P':P, 'Y':Y}
+    params_dict = {'P': P, 'Y': Y}
     
     vX_0 = Matrix(P.sds_context, '')
     vX_1 = Matrix(P.sds_context, '')
@@ -46,6 +48,3 @@ def confusionMatrix(P: OperationNode, Y: OperationNode):
     vX_1._unnamed_input_nodes = [op]
 
     return op
-
-
-    

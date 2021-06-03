@@ -28,12 +28,12 @@ from systemds.operator import OperationNode, Matrix, Frame, List, MultiReturn, S
 from systemds.script_building.dag import OutputType
 from systemds.utils.consts import VALID_INPUT_TYPES
 
-def discoverFD(X: OperationNode, Mask: OperationNode, threshold: float):
+
+def discoverFD(X: Matrix,
+               Mask: Matrix,
+               threshold: float):
     
-    params_dict = {'X':X, 'Mask':Mask, 'threshold':threshold}
+    params_dict = {'X': X, 'Mask': Mask, 'threshold': threshold}
     return Matrix(X.sds_context,
-		'discoverFD',
-		named_input_nodes=params_dict)
-
-
-    
+        'discoverFD',
+        named_input_nodes=params_dict)

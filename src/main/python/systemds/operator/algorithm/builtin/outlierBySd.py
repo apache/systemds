@@ -28,13 +28,13 @@ from systemds.operator import OperationNode, Matrix, Frame, List, MultiReturn, S
 from systemds.script_building.dag import OutputType
 from systemds.utils.consts import VALID_INPUT_TYPES
 
-def outlierBySd(X: OperationNode, max_iterations: int, **kwargs: Dict[str, VALID_INPUT_TYPES]):
+
+def outlierBySd(X: Matrix,
+                max_iterations: int,
+                **kwargs: Dict[str, VALID_INPUT_TYPES]):
     
-    params_dict = {'X':X, 'max_iterations':max_iterations}
+    params_dict = {'X': X, 'max_iterations': max_iterations}
     params_dict.update(kwargs)
     return Matrix(X.sds_context,
-		'outlierBySd',
-		named_input_nodes=params_dict)
-
-
-    
+        'outlierBySd',
+        named_input_nodes=params_dict)

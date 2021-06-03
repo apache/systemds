@@ -28,14 +28,17 @@ from systemds.operator import OperationNode, Matrix, Frame, List, MultiReturn, S
 from systemds.script_building.dag import OutputType
 from systemds.utils.consts import VALID_INPUT_TYPES
 
-def l2svmPredict(X: OperationNode, W: OperationNode, **kwargs: Dict[str, VALID_INPUT_TYPES]):
+
+def l2svmPredict(X: Matrix,
+                 W: Matrix,
+                 **kwargs: Dict[str, VALID_INPUT_TYPES]):
     """
     :param X: matrix X of feature vectors to classify
     :param W: matrix of the trained variables
     :param verbose: Set to true if one wants print statements.
     :return: 'OperationNode' containing classification labels maxed to ones and zeros. 
     """
-    params_dict = {'X':X, 'W':W}
+    params_dict = {'X': X, 'W': W}
     params_dict.update(kwargs)
     
     vX_0 = Matrix(X.sds_context, '')
@@ -48,6 +51,3 @@ def l2svmPredict(X: OperationNode, W: OperationNode, **kwargs: Dict[str, VALID_I
     vX_1._unnamed_input_nodes = [op]
 
     return op
-
-
-    

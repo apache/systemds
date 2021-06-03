@@ -28,7 +28,10 @@ from systemds.operator import OperationNode, Matrix, Frame, List, MultiReturn, S
 from systemds.script_building.dag import OutputType
 from systemds.utils.consts import VALID_INPUT_TYPES
 
-def lasso(X: OperationNode, y: OperationNode, **kwargs: Dict[str, VALID_INPUT_TYPES]):
+
+def lasso(X: Matrix,
+          y: Matrix,
+          **kwargs: Dict[str, VALID_INPUT_TYPES]):
     """
     :param X: input feature matrix
     :param y: matrix Y columns of the design matrix
@@ -38,11 +41,8 @@ def lasso(X: OperationNode, y: OperationNode, **kwargs: Dict[str, VALID_INPUT_TY
     :param maxi: maximum number of iterations until convergence
     :return: 'OperationNode' containing  
     """
-    params_dict = {'X':X, 'y':y}
+    params_dict = {'X': X, 'y': y}
     params_dict.update(kwargs)
     return Matrix(X.sds_context,
-		'lasso',
-		named_input_nodes=params_dict)
-
-
-    
+        'lasso',
+        named_input_nodes=params_dict)

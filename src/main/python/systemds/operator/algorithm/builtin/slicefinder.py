@@ -28,9 +28,12 @@ from systemds.operator import OperationNode, Matrix, Frame, List, MultiReturn, S
 from systemds.script_building.dag import OutputType
 from systemds.utils.consts import VALID_INPUT_TYPES
 
-def slicefinder(X: OperationNode, e: OperationNode, **kwargs: Dict[str, VALID_INPUT_TYPES]):
+
+def slicefinder(X: Matrix,
+                e: Matrix,
+                **kwargs: Dict[str, VALID_INPUT_TYPES]):
     
-    params_dict = {'X':X, 'e':e}
+    params_dict = {'X': X, 'e': e}
     params_dict.update(kwargs)
     
     vX_0 = Matrix(X.sds_context, '')
@@ -45,6 +48,3 @@ def slicefinder(X: OperationNode, e: OperationNode, **kwargs: Dict[str, VALID_IN
     vX_2._unnamed_input_nodes = [op]
 
     return op
-
-
-    

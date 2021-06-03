@@ -28,9 +28,11 @@ from systemds.operator import OperationNode, Matrix, Frame, List, MultiReturn, S
 from systemds.script_building.dag import OutputType
 from systemds.utils.consts import VALID_INPUT_TYPES
 
-def sherlock(X_train: OperationNode, y_train: OperationNode):
+
+def sherlock(X_train: Matrix,
+             y_train: Matrix):
     
-    params_dict = {'X_train':X_train, 'y_train':y_train}
+    params_dict = {'X_train': X_train, 'y_train': y_train}
     
     vX_0 = Matrix(X_train.sds_context, '')
     vX_1 = Matrix(X_train.sds_context, '')
@@ -98,6 +100,3 @@ def sherlock(X_train: OperationNode, y_train: OperationNode):
     vX_29._unnamed_input_nodes = [op]
 
     return op
-
-
-    

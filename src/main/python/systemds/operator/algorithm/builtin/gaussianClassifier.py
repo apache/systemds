@@ -24,21 +24,25 @@
 
 from typing import Dict, Iterable
 
-from systemds.operator import OperationNode, Matrix, Frame, List, MultiReturn
+from systemds.operator import OperationNode, Matrix, Frame, List, MultiReturn, Scalar
 from systemds.script_building.dag import OutputType
 from systemds.utils.consts import VALID_INPUT_TYPES
 
-def gaussianClassifier(D: OperationNode, C: OperationNode, **kwargs: Dict[str, VALID_INPUT_TYPES]):
+
+def gaussianClassifier(D: Matrix,
+                       C: Matrix,
+                       **kwargs: Dict[str, VALID_INPUT_TYPES]):
     """
     :param varSmoothing: Smoothing factor for variances
     :param verbose: Print accuracy of the training set
     :return: 'OperationNode' containing  
     """
-    params_dict = {'D':D, 'C':C}
+    params_dict = {'D': D, 'C': C}
     params_dict.update(kwargs)
     
     vX_0 = Matrix(D.sds_context, '')
     vX_1 = Matrix(D.sds_context, '')
+    vX_2 = List(D.sds_context, '')
     vX_3 = Matrix(D.sds_context, '')
     output_nodes = [vX_0, vX_1, vX_2, vX_3, ]
 
@@ -50,6 +54,3 @@ def gaussianClassifier(D: OperationNode, C: OperationNode, **kwargs: Dict[str, V
     vX_3._unnamed_input_nodes = [op]
 
     return op
-
-
-    

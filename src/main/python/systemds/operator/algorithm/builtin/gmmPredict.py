@@ -28,7 +28,12 @@ from systemds.operator import OperationNode, Matrix, Frame, List, MultiReturn, S
 from systemds.script_building.dag import OutputType
 from systemds.utils.consts import VALID_INPUT_TYPES
 
-def gmmPredict(X: OperationNode, weight: OperationNode, mu: OperationNode, precisions_cholesky: OperationNode, model: str):
+
+def gmmPredict(X: Matrix,
+               weight: Matrix,
+               mu: Matrix,
+               precisions_cholesky: Matrix,
+               model: str):
     """
     :param X: Matrix X (instances to be clustered)
     :param weight: Weight of learned model
@@ -37,7 +42,7 @@ def gmmPredict(X: OperationNode, weight: OperationNode, mu: OperationNode, preci
     :param model: fitted model
     :return: 'OperationNode' containing predicted cluster labels & probabilities of belongingness & for new instances given the variance and mean of fitted data 
     """
-    params_dict = {'X':X, 'weight':weight, 'mu':mu, 'precisions_cholesky':precisions_cholesky, 'model':model}
+    params_dict = {'X': X, 'weight': weight, 'mu': mu, 'precisions_cholesky': precisions_cholesky, 'model': model}
     
     vX_0 = Matrix(X.sds_context, '')
     vX_1 = Matrix(X.sds_context, '')
@@ -49,6 +54,3 @@ def gmmPredict(X: OperationNode, weight: OperationNode, mu: OperationNode, preci
     vX_1._unnamed_input_nodes = [op]
 
     return op
-
-
-    

@@ -28,7 +28,11 @@ from systemds.operator import OperationNode, Matrix, Frame, List, MultiReturn, S
 from systemds.script_building.dag import OutputType
 from systemds.utils.consts import VALID_INPUT_TYPES
 
-def multiLogRegPredict(X: OperationNode, B: OperationNode, Y: OperationNode, **kwargs: Dict[str, VALID_INPUT_TYPES]):
+
+def multiLogRegPredict(X: Matrix,
+                       B: Matrix,
+                       Y: Matrix,
+                       **kwargs: Dict[str, VALID_INPUT_TYPES]):
     """
     :param X: Data Matrix X
     :param B: Regression parameters betas
@@ -36,7 +40,7 @@ def multiLogRegPredict(X: OperationNode, B: OperationNode, Y: OperationNode, **k
     :param verbose: /
     :return: 'OperationNode' containing matrix m of predicted means/probabilities & predicted response vector & scalar value of accuracy 
     """
-    params_dict = {'X':X, 'B':B, 'Y':Y}
+    params_dict = {'X': X, 'B': B, 'Y': Y}
     params_dict.update(kwargs)
     
     vX_0 = Matrix(X.sds_context, '')
@@ -51,6 +55,3 @@ def multiLogRegPredict(X: OperationNode, B: OperationNode, Y: OperationNode, **k
     vX_2._unnamed_input_nodes = [op]
 
     return op
-
-
-    

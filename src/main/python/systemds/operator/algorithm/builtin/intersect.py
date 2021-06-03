@@ -28,12 +28,11 @@ from systemds.operator import OperationNode, Matrix, Frame, List, MultiReturn, S
 from systemds.script_building.dag import OutputType
 from systemds.utils.consts import VALID_INPUT_TYPES
 
-def intersect(X: OperationNode, Y: OperationNode):
+
+def intersect(X: Matrix,
+              Y: Matrix):
     
-    params_dict = {'X':X, 'Y':Y}
+    params_dict = {'X': X, 'Y': Y}
     return Matrix(X.sds_context,
-		'intersect',
-		named_input_nodes=params_dict)
-
-
-    
+        'intersect',
+        named_input_nodes=params_dict)

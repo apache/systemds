@@ -28,9 +28,12 @@ from systemds.operator import OperationNode, Matrix, Frame, List, MultiReturn, S
 from systemds.script_building.dag import OutputType
 from systemds.utils.consts import VALID_INPUT_TYPES
 
-def gnmf(X: OperationNode, rnk: int, **kwargs: Dict[str, VALID_INPUT_TYPES]):
+
+def gnmf(X: Matrix,
+         rnk: int,
+         **kwargs: Dict[str, VALID_INPUT_TYPES]):
     
-    params_dict = {'X':X, 'rnk':rnk}
+    params_dict = {'X': X, 'rnk': rnk}
     params_dict.update(kwargs)
     
     vX_0 = Matrix(X.sds_context, '')
@@ -43,6 +46,3 @@ def gnmf(X: OperationNode, rnk: int, **kwargs: Dict[str, VALID_INPUT_TYPES]):
     vX_1._unnamed_input_nodes = [op]
 
     return op
-
-
-    

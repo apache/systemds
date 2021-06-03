@@ -28,7 +28,17 @@ from systemds.operator import OperationNode, Matrix, Frame, List, MultiReturn, S
 from systemds.script_building.dag import OutputType
 from systemds.utils.consts import VALID_INPUT_TYPES
 
-def img_transform(img_in: OperationNode, out_w: int, out_h: int, a: float, b: float, c: float, d: float, e: float, f: float, fill_value: float):
+
+def img_transform(img_in: Matrix,
+                  out_w: int,
+                  out_h: int,
+                  a: float,
+                  b: float,
+                  c: float,
+                  d: float,
+                  e: float,
+                  f: float,
+                  fill_value: float):
     """
     :param img_in: Input image as 2D matrix with top left corner at [1, 1]
     :param out_w: Width of the output image
@@ -37,10 +47,7 @@ def img_transform(img_in: OperationNode, out_w: int, out_h: int, a: float, b: fl
     :param fill_value: The background of the image
     :return: 'OperationNode' containing output image as 2d matrix with top left corner at [1, 1] 
     """
-    params_dict = {'img_in':img_in, 'out_w':out_w, 'out_h':out_h, 'a':a, 'b':b, 'c':c, 'd':d, 'e':e, 'f':f, 'fill_value':fill_value}
+    params_dict = {'img_in': img_in, 'out_w': out_w, 'out_h': out_h, 'a': a, 'b': b, 'c': c, 'd': d, 'e': e, 'f': f, 'fill_value': fill_value}
     return Matrix(img_in.sds_context,
-		'img_transform',
-		named_input_nodes=params_dict)
-
-
-    
+        'img_transform',
+        named_input_nodes=params_dict)

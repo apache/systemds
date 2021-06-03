@@ -28,9 +28,16 @@ from systemds.operator import OperationNode, Matrix, Frame, List, MultiReturn, S
 from systemds.script_building.dag import OutputType
 from systemds.utils.consts import VALID_INPUT_TYPES
 
-def hyperband(X_train: OperationNode, y_train: OperationNode, X_val: OperationNode, y_val: OperationNode, params: Iterable, paramRanges: OperationNode, **kwargs: Dict[str, VALID_INPUT_TYPES]):
+
+def hyperband(X_train: Matrix,
+              y_train: Matrix,
+              X_val: Matrix,
+              y_val: Matrix,
+              params: Iterable,
+              paramRanges: Matrix,
+              **kwargs: Dict[str, VALID_INPUT_TYPES]):
     
-    params_dict = {'X_train':X_train, 'y_train':y_train, 'X_val':X_val, 'y_val':y_val, 'params':params, 'paramRanges':paramRanges}
+    params_dict = {'X_train': X_train, 'y_train': y_train, 'X_val': X_val, 'y_val': y_val, 'params': params, 'paramRanges': paramRanges}
     params_dict.update(kwargs)
     
     vX_0 = Matrix(X_train.sds_context, '')
@@ -43,6 +50,3 @@ def hyperband(X_train: OperationNode, y_train: OperationNode, X_val: OperationNo
     vX_1._unnamed_input_nodes = [op]
 
     return op
-
-
-    

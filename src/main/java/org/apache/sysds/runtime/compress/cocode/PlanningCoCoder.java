@@ -32,6 +32,7 @@ import org.apache.sysds.runtime.compress.colgroup.AColGroup.CompressionType;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeEstimator;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfo;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup;
+import org.apache.sysds.runtime.compress.utils.Util;
 
 public class PlanningCoCoder {
 
@@ -132,7 +133,10 @@ public class PlanningCoCoder {
 		List<CompressedSizeInfoColGroup> finalGroups = new ArrayList<>();
 		// For each bin of columns that is allowed to potentially cocode.
 		for(CompressedSizeInfoColGroup bin : bins.getInfo()) {
-			if(bin.getColumns().length == 1)
+			final int len = bin.getColumns().length;
+			if(len == 0)
+				continue;
+			else if(len == 1)
 				// early termination
 				finalGroups.add(bin);
 			else
@@ -248,7 +252,7 @@ public class PlanningCoCoder {
 					g = CompressedSizeInfoColGroup.addConstGroup(c, left, cs.validCompressions);
 				else {
 					st3++;
-					g = est.estimateCompressedColGroupSize(c);
+					g = est.estimateJoinCompressedSize(left, right);
 				}
 
 				if(leftConst || rightConst)

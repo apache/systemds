@@ -33,6 +33,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.CompressionSettings;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup.CompressionType;
 import org.apache.sysds.runtime.compress.utils.ABitmap;
+import org.apache.sysds.runtime.compress.utils.Util;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.CommonThreadPool;
 
@@ -178,6 +179,32 @@ public abstract class CompressedSizeEstimator {
 	public abstract CompressedSizeInfoColGroup estimateCompressedColGroupSize(int[] colIndexes, int nrUniqueUpperBound);
 
 	/**
+	 * Join two analyzed column groups together. without materializing the dictionaries of either side.
+	 * 
+	 * If either side was constructed without analysis then fall back to default materialization of double arrays.
+	 * 
+	 * @param g1 First group
+	 * @param g2 Second group
+	 * @return A joined compressed size estimation for the group.
+	 */
+	public CompressedSizeInfoColGroup estimateJoinCompressedSize(CompressedSizeInfoColGroup g1,
+		CompressedSizeInfoColGroup g2) {
+		int[] joined = Util.join(g1.getColumns(), g2.getColumns());
+		final int g1V = g1.getNumVals();
+		final int g2V = g2.getNumVals();
+		if(g1V * g2V < 0 || g1V * g2V > getNumRows())
+			return null;
+		else if(joined.length == 2 || (g1.getMap() == null && g2V != 0) || (g2.getMap() == null && g2V != 0))
+			return estimateCompressedColGroupSize(joined, (g1V + 1) * (g2V + 1));
+		else
+			return estimateJoinCompressedSize(joined, g1, g2);
+
+	}
+
+	protected abstract CompressedSizeInfoColGroup estimateJoinCompressedSize(int[] joinedcols,
+		CompressedSizeInfoColGroup g1, CompressedSizeInfoColGroup g2);
+
+	/**
 	 * Method used to extract the CompressedSizeEstimationFactors from an constructed UncompressedBitmap. Note this
 	 * method works both for the sample based estimator and the exact estimator, since the bitmap, can be extracted from
 	 * a sample or from the entire dataset.
@@ -190,9 +217,10 @@ public abstract class CompressedSizeEstimator {
 		return estimateCompressedColGroupSize(ubm, colIndexes, _numRows, _cs);
 	}
 
-	public static EstimationFactors estimateCompressedColGroupSize(ABitmap ubm, int[] colIndexes, int nrRows,  CompressionSettings cs) {
+	public static EstimationFactors estimateCompressedColGroupSize(ABitmap ubm, int[] colIndexes, int nrRows,
+		CompressionSettings cs) {
 		return EstimationFactors.computeSizeEstimationFactors(ubm, cs.validCompressions.contains(CompressionType.RLE),
-		nrRows, colIndexes);
+			colIndexes);
 	}
 
 	private CompressedSizeInfoColGroup[] CompressedSizeInfoColGroup(int clen) {
@@ -247,4 +275,18 @@ public abstract class CompressedSizeEstimator {
 		}
 		return colIndexes;
 	}
+
+	@Override
+	public String toString() {
+		StringBuilder sb = new StringBuilder();
+		sb.append(this.getClass().getSimpleName());
+		sb.append(" transposed: ");
+		sb.append(_transposed);
+		sb.append(" cols: ");
+		sb.append(_numCols);
+		sb.append(" rows: ");
+		sb.append(_numRows);
+		return sb.toString();
+	}
+
 }

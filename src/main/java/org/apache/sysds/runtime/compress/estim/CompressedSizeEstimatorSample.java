@@ -21,13 +21,14 @@ package org.apache.sysds.runtime.compress.estim;
 
 import java.util.HashMap;
 
+import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.runtime.compress.CompressionSettings;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup.CompressionType;
-import org.apache.sysds.runtime.compress.estim.sample.HassAndStokes;
+import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
+import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory;
+import org.apache.sysds.runtime.compress.estim.sample.SampleEstimatorFactory;
 import org.apache.sysds.runtime.compress.lib.BitmapEncoder;
 import org.apache.sysds.runtime.compress.utils.ABitmap;
-import org.apache.sysds.runtime.compress.utils.ABitmap.BitmapType;
-import org.apache.sysds.runtime.compress.utils.IntArrayList;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.data.SparseBlockMCSR;
 import org.apache.sysds.runtime.data.SparseRow;
@@ -91,63 +92,85 @@ public class CompressedSizeEstimatorSample extends CompressedSizeEstimator {
 
 	@Override
 	public CompressedSizeInfoColGroup estimateCompressedColGroupSize(int[] colIndexes, int nrUniqueUpperBound) {
-		final int sampleSize = _sampleRows.length;
-		// final int numCols = colIndexes.length;
-		final double scalingFactor = ((double) _numRows / sampleSize);
+
 		// extract statistics from sample
 		final ABitmap ubm = BitmapEncoder.extractBitmap(colIndexes, _sample, _transposed);
-		final EstimationFactors fact = EstimationFactors.computeSizeEstimationFactors(ubm, false, _numRows, colIndexes);
-		final int numZerosInSample = ubm.getZeroCounts();
-		final boolean lossy = ubm.getType() == BitmapType.Lossy;
+		final EstimationFactors sampleFacts = EstimationFactors.computeSizeEstimationFactors(ubm, false, colIndexes);
+		final AMapToData map = MapToFactory.create(ubm);
 
-		if(numZerosInSample == sampleSize || ubm.getOffsetList() == null) {
-			// Since we sample, and this column seems to be empty, we set the return to 1 value detected.
-			// aka 1 value, and 1 offset.
-			// This makes it more robust in the coCoding of Columns
-			return new CompressedSizeInfoColGroup(new EstimationFactors(colIndexes, 1, 1, _numRows - 1, 2, 1, _numRows,
-				lossy, true, (double) 1 / _numRows, (double) 1 / ubm.getNumColumns()), _cs.validCompressions);
+		// result facts
+		EstimationFactors em = estimateCompressionFactors(sampleFacts, map, colIndexes, nrUniqueUpperBound);
+		return new CompressedSizeInfoColGroup(em, _cs.validCompressions, map);
+	}
+
+	@Override
+	public CompressedSizeInfoColGroup estimateJoinCompressedSize(int[] joined, CompressedSizeInfoColGroup g1,
+		CompressedSizeInfoColGroup g2) {
+		final int g1V = g1.getMap().getUnique();
+		final int g2V = g2.getMap().getUnique();
+		final int nrUniqueUpperBound = g1V * g2V;
+
+		final AMapToData map = MapToFactory.join(g1.getMap(), g2.getMap());
+		EstimationFactors sampleFacts = EstimationFactors.computeSizeEstimation(joined, map,
+			_cs.validCompressions.contains(CompressionType.RLE), map.size(), false);
+
+		// result facts
+		EstimationFactors em = estimateCompressionFactors(sampleFacts, map, joined, nrUniqueUpperBound);
+		return new CompressedSizeInfoColGroup(em, _cs.validCompressions, map);
+	}
+
+	private EstimationFactors estimateCompressionFactors(EstimationFactors sampleFacts, AMapToData map,
+		int[] colIndexes, int nrUniqueUpperBound) {
+		final int numZerosInSample = sampleFacts.numRows - sampleFacts.numOffs;
+		final int sampleSize = _sampleRows.length;
+
+		if(numZerosInSample == sampleSize) {
+			final int nCol = sampleFacts.cols.length;
+			/**
+			 * Since we sample, and this column seems to be empty we set the return to 1 value detected. aka 1 value,
+			 * and 1 offset. This makes it more robust in the coCoding of Columns
+			 */
+			final int largestInstanceCount = _numRows - 1;
+			return new EstimationFactors(colIndexes, 1, 1, largestInstanceCount, new int[] {largestInstanceCount}, 2, 1,
+				_numRows, sampleFacts.lossy, true, (double) 1 / _numRows, (double) 1 / nCol);
 		}
+		else {
 
-		// Estimate number of distinct values (incl fixes for anomalies w/ large sample fraction)
-		int totalCardinality = getNumDistinctValues(ubm, _numRows, sampleSize, _solveCache);
-		// Number of unique is trivially bounded by the sampled number of uniques and the number of rows.
-		totalCardinality = Math.min(Math.min(Math.max(totalCardinality, fact.numVals), _numRows), nrUniqueUpperBound);
+			final double scalingFactor = ((double) _numRows / sampleSize);
+			// Estimate number of distinct values (incl fixes for anomalies w/ large sample fraction)
+			final int totalCardinality = Math.max(map.getUnique(), Math.min(_numRows,
+				getEstimatedDistinctCount(sampleFacts.frequencies, nrUniqueUpperBound)));
 
-		// estimate number of non-zeros (conservatively round up)
-		final double C = Math.max(1 - (double) fact.numSingle / sampleSize, (double) sampleSize / _numRows);
-		final int numNonZeros = Math.max((int) Math.floor(_numRows - scalingFactor * C * numZerosInSample),
-			totalCardinality);
+			// estimate number of non-zeros (conservatively round up)
+			final double C = Math.max(1 - (double) sampleFacts.numSingle / sampleSize, (double) sampleSize / _numRows);
+			final int numNonZeros = Math.max((int) Math.floor(_numRows - scalingFactor * C * numZerosInSample),
+				totalCardinality);
 
+			final int totalNumRuns = getNumRuns(map, sampleFacts.numVals, sampleSize, _numRows, _sampleRows);
+
+			final int largestInstanceCount = Math.min(_numRows, (int) Math.floor(sampleFacts.largestOff * scalingFactor));
+
+			return new EstimationFactors(colIndexes, totalCardinality, numNonZeros, largestInstanceCount,
+				sampleFacts.frequencies, totalNumRuns, sampleFacts.numSingle, _numRows, sampleFacts.lossy,
+				sampleFacts.zeroIsMostFrequent, sampleFacts.overAllSparsity, sampleFacts.tupleSparsity);
+		}
+	}
+
+	private int getEstimatedDistinctCount( int[] frequencies, int upperBound) {
+		return Math.min(SampleEstimatorFactory.distinctCount( frequencies, _numRows, _sampleRows.length,
+			_cs.estimationType, _solveCache), upperBound);
+	}
+
+	private int getNumRuns(AMapToData map, int numVals, int sampleSize, int totalNumRows, int[] sampleRows) {
 		// estimate number of segments and number of runs incl correction for
 		// empty segments and empty runs (via expected mean of offset value)
 		// int numUnseenSeg = (int) (unseenVals * Math.ceil((double) _numRows / BitmapEncoder.BITMAP_BLOCK_SZ / 2));
-		final int totalNumRuns = _cs.validCompressions.contains(CompressionType.RLE) &&
-			ubm.getNumValues() > 0 ? getNumRuns(ubm, sampleSize, _numRows, _sampleRows) : 0;
-
-		// Largest instance count ... initiate as the number of zeros.
-		int largestInstanceCount = numZerosInSample;
-		for(IntArrayList a : ubm.getOffsetList())
-			if(a.size() > largestInstanceCount)
-				largestInstanceCount = a.size();
-
-		final boolean zeroIsMostFrequent = largestInstanceCount == numZerosInSample;
-
-		// Scale largest Instance count to correctly reflect the number of instances.
-		largestInstanceCount = Math.min((int) (scalingFactor * largestInstanceCount), _numRows);
-		
-		EstimationFactors totalFacts = new EstimationFactors(colIndexes, totalCardinality, numNonZeros,
-			largestInstanceCount, totalNumRuns, fact.numSingle, _numRows, lossy, zeroIsMostFrequent,
-			fact.overAllSparsity, fact.tupleSparsity);
-
-		// construct new size info summary
-		return new CompressedSizeInfoColGroup(totalFacts, _cs.validCompressions);
+		return _cs.validCompressions.contains(CompressionType.RLE) && numVals > 0 ? getNumRuns(map, sampleSize,
+			_numRows, _sampleRows) : 0;
 	}
 
-	private static int getNumDistinctValues(ABitmap ubm, int numRows, int sampleSize,
-		HashMap<Integer, Double> solveCache) {
-		return HassAndStokes.haasAndStokes(ubm, numRows, sampleSize, solveCache);
-	}
-
+	// Fix getNumRuns when adding RLE back.
+	@SuppressWarnings("unused")
 	private static int getNumRuns(ABitmap ubm, int sampleSize, int totalNumRows, int[] sampleRows) {
 		int numVals = ubm.getNumValues();
 		double numRuns = 0;
@@ -306,6 +329,11 @@ public class CompressedSizeEstimatorSample extends CompressedSizeEstimator {
 		return (int) Math.min(Math.round(numRuns), Integer.MAX_VALUE);
 	}
 
+	private static int getNumRuns(AMapToData map, int sampleSize, int totalNumRows, int[] sampleRows) {
+
+		throw new NotImplementedException("Not Supported ever since the ubm was replaced by the map");
+	}
+
 	/**
 	 * Returns a sorted array of n integers, drawn uniformly from the range [0,range).
 	 * 
@@ -320,7 +348,7 @@ public class CompressedSizeEstimatorSample extends CompressedSizeEstimator {
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
-		sb.append(this.getClass().getSimpleName());
+		sb.append(super.toString());
 		sb.append(" sampleSize: ");
 		sb.append(_sampleRows.length);
 		sb.append(" transposed: ");
@@ -331,5 +359,4 @@ public class CompressedSizeEstimatorSample extends CompressedSizeEstimator {
 		sb.append(_numRows);
 		return sb.toString();
 	}
-
 }

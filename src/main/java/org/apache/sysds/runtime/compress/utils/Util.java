@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.apache.sysds.runtime.compress.cocode;
+package org.apache.sysds.runtime.compress.utils;
 
 public class Util {
 	public static int[] join(int[] lhs, int[] rhs) {

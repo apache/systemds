@@ -26,6 +26,7 @@ import org.apache.sysds.conf.DMLConfig;
 import org.apache.sysds.runtime.DMLCompressionException;
 import org.apache.sysds.runtime.compress.cocode.PlanningCoCoder.PartitionerType;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup.CompressionType;
+import org.apache.sysds.runtime.compress.estim.sample.SampleEstimatorFactory.EstimationType;
 
 /**
  * Builder pattern for Compression Settings. See CompressionSettings for details on values.
@@ -43,6 +44,7 @@ public class CompressionSettingsBuilder {
 	private int maxColGroupCoCode = 10000;
 	private double coCodePercentage = 0.01;
 	private int minimumSampleSize = 2000;
+	private EstimationType estimationType = EstimationType.HassAndStokes;
 
 	private final static double defaultSampleRate = 0.01;
 
@@ -261,6 +263,11 @@ public class CompressionSettingsBuilder {
 		return this;
 	}
 
+	public CompressionSettingsBuilder setEstimationType(EstimationType estimationType){
+		this.estimationType = estimationType;
+		return this;
+	}
+
 	/**
 	 * Create the CompressionSettings object to use in the compression.
 	 * 
@@ -269,6 +276,6 @@ public class CompressionSettingsBuilder {
 	public CompressionSettings create() {
 		return new CompressionSettings(samplingRatio, allowSharedDictionary, transposeInput, skipList, seed, lossy,
 			validCompressions, sortValuesByLength, columnPartitioner, maxColGroupCoCode, coCodePercentage,
-			minimumSampleSize);
+			minimumSampleSize, estimationType);
 	}
 }

@@ -109,4 +109,9 @@ public final class MultiColBitmap extends ABitmap {
 	public BitmapType getType() {
 		return BitmapType.Full;
 	}
+	
+	@Override
+	public boolean lossy(){
+		return false;
+	}
 }

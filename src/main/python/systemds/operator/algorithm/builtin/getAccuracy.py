@@ -24,7 +24,7 @@
 
 from typing import Dict, Iterable
 
-from systemds.operator import OperationNode, Matrix
+from systemds.operator import OperationNode, Matrix, Frame, List, MultiReturn, Scalar
 from systemds.script_building.dag import OutputType
 from systemds.utils.consts import VALID_INPUT_TYPES
 
@@ -32,7 +32,9 @@ def getAccuracy(y: OperationNode, yhat: OperationNode, **kwargs: Dict[str, VALID
     
     params_dict = {'y':y, 'yhat':yhat}
     params_dict.update(kwargs)
-    return Matrix(y.sds_context, 'getAccuracy', named_input_nodes=params_dict)
+    return Matrix(y.sds_context,
+		'getAccuracy',
+		named_input_nodes=params_dict)
 
 
     

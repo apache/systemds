@@ -129,6 +129,7 @@ public class CompressedMatrixBlockFactory {
 	}
 
 	private Pair<MatrixBlock, CompressionStatistics> compressMatrix() {
+		LOG.error(compSettings);
 		// Check for redundant compression
 		if(mb instanceof CompressedMatrixBlock) {
 			LOG.info("MatrixBlock already compressed");
@@ -170,7 +171,9 @@ public class CompressedMatrixBlockFactory {
 	}
 
 	private void coCodePhase(CompressedSizeEstimator sizeEstimator, CompressedSizeInfo sizeInfos, int numRows) {
-		coCodeColGroups = PlanningCoCoder.findCoCodesByPartitioning(sizeEstimator, sizeInfos, numRows, k, compSettings);
+		// for(int i = 0; i < 100000; i ++)
+			coCodeColGroups = PlanningCoCoder.findCoCodesByPartitioning(sizeEstimator, sizeInfos, numRows, k, compSettings);
+		
 		_stats.estimatedSizeCoCoded = coCodeColGroups.memoryEstimate();
 		logPhase();
 	}

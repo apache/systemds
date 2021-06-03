@@ -25,6 +25,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.cocode.PlanningCoCoder.PartitionerType;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup.CompressionType;
+import org.apache.sysds.runtime.compress.estim.sample.SampleEstimatorFactory.EstimationType;
 
 /**
  * Compression Settings class, used as a bundle of parameters inside the Compression framework. See
@@ -99,10 +100,13 @@ public class CompressionSettings {
 	 */
 	public final int minimumSampleSize;
 
+	/** The sample type used for sampling */
+	public final EstimationType estimationType;
+
 	protected CompressionSettings(double samplingRatio, boolean allowSharedDictionary, String transposeInput,
-		boolean skipList, int seed, boolean lossy,
-		EnumSet<CompressionType> validCompressions, boolean sortValuesByLength, PartitionerType columnPartitioner,
-		int maxColGroupCoCode, double coCodePercentage, int minimumSampleSize) {
+		boolean skipList, int seed, boolean lossy, EnumSet<CompressionType> validCompressions,
+		boolean sortValuesByLength, PartitionerType columnPartitioner, int maxColGroupCoCode, double coCodePercentage,
+		int minimumSampleSize, EstimationType estimationType) {
 		this.samplingRatio = samplingRatio;
 		this.allowSharedDictionary = allowSharedDictionary;
 		this.transposeInput = transposeInput;
@@ -115,7 +119,9 @@ public class CompressionSettings {
 		this.maxColGroupCoCode = maxColGroupCoCode;
 		this.coCodePercentage = coCodePercentage;
 		this.minimumSampleSize = minimumSampleSize;
-		LOG.debug(this);
+		this.estimationType = estimationType;
+		if(LOG.isDebugEnabled())
+			LOG.debug(this);
 	}
 
 	@Override
@@ -131,6 +137,8 @@ public class CompressionSettings {
 		sb.append("\n Max Static ColGroup CoCode: " + maxColGroupCoCode);
 		sb.append("\n Max cocodePercentage: " + coCodePercentage);
 		sb.append("\n Sample Percentage: " + samplingRatio);
+		if(samplingRatio < 1.0)
+			sb.append("\n Estimation Type: " + estimationType);
 		// If needed for debugging add more fields to the printing.
 		return sb.toString();
 	}

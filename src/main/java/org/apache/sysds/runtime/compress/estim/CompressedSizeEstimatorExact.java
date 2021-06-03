@@ -20,6 +20,9 @@
 package org.apache.sysds.runtime.compress.estim;
 
 import org.apache.sysds.runtime.compress.CompressionSettings;
+import org.apache.sysds.runtime.compress.colgroup.AColGroup.CompressionType;
+import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
+import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory;
 import org.apache.sysds.runtime.compress.lib.BitmapEncoder;
 import org.apache.sysds.runtime.compress.utils.ABitmap;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
@@ -37,20 +40,17 @@ public class CompressedSizeEstimatorExact extends CompressedSizeEstimator {
 	public CompressedSizeInfoColGroup estimateCompressedColGroupSize(int[] colIndexes, int nrUniqueUpperBound) {
 		// exact estimator can ignore upper bound.
 		ABitmap entireBitMap = BitmapEncoder.extractBitmap(colIndexes, _data, _transposed);
-		return new CompressedSizeInfoColGroup(estimateCompressedColGroupSize(entireBitMap, colIndexes),
-			_cs.validCompressions);
+		EstimationFactors em = estimateCompressedColGroupSize(entireBitMap, colIndexes);
+		return new CompressedSizeInfoColGroup(em, _cs.validCompressions, entireBitMap);
 	}
 
 	@Override
-	public String toString() {
-		StringBuilder sb = new StringBuilder();
-		sb.append(this.getClass().getSimpleName());
-		sb.append(" transposed: ");
-		sb.append(_transposed);
-		sb.append(" cols: ");
-		sb.append(_numCols);
-		sb.append(" rows: ");
-		sb.append(_numRows);
-		return sb.toString();
+	public CompressedSizeInfoColGroup estimateJoinCompressedSize(int[] joined, CompressedSizeInfoColGroup g1,
+		CompressedSizeInfoColGroup g2) {
+		AMapToData map = MapToFactory.join(g1.getMap(), g2.getMap());
+		EstimationFactors em = EstimationFactors.computeSizeEstimation(joined, map,
+			_cs.validCompressions.contains(CompressionType.RLE), _numRows, false);
+		return new CompressedSizeInfoColGroup(em, _cs.validCompressions, map);
 	}
+
 }

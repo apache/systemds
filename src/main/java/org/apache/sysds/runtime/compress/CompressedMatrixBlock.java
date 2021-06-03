@@ -78,6 +78,7 @@ import org.apache.sysds.runtime.instructions.cp.CM_COV_Object;
 import org.apache.sysds.runtime.instructions.cp.ScalarObject;
 import org.apache.sysds.runtime.instructions.spark.data.IndexedMatrixValue;
 import org.apache.sysds.runtime.matrix.data.CTableMap;
+import org.apache.sysds.runtime.matrix.data.LibMatrixBincell;
 import org.apache.sysds.runtime.matrix.data.LibMatrixDatagen;
 import org.apache.sysds.runtime.matrix.data.LibMatrixReorg;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
@@ -492,14 +493,14 @@ public class CompressedMatrixBlock extends MatrixBlock {
 			return out;
 
 		BinaryOperator bop = new BinaryOperator(Multiply.getMultiplyFnObject());
-
-		MatrixBlock tmp = CLALibRightMultBy.rightMultByMatrix(this, v, null, k, true);
+		boolean allowOverlap = ConfigurationManager.getDMLConfig().getBooleanValue(DMLConfig.COMPRESSED_OVERLAPPING);
+		MatrixBlock tmp = CLALibRightMultBy.rightMultByMatrix(this, v, null, k, allowOverlap);
 
 		if(ctype == ChainType.XtwXv) {
-			// if(tmp instanceof CompressedMatrixBlock)
-			tmp = CLALibBinaryCellOp.binaryOperations(bop, (CompressedMatrixBlock) tmp, w, null);
-			// else
-			// LibMatrixBincell.bincellOpInPlace(tmp, w, bop);
+			if(tmp instanceof CompressedMatrixBlock)
+				tmp = CLALibBinaryCellOp.binaryOperations(bop, (CompressedMatrixBlock) tmp, w, null);
+			else
+				LibMatrixBincell.bincellOpInPlace(tmp, w, bop);
 		}
 
 		if(tmp instanceof CompressedMatrixBlock)

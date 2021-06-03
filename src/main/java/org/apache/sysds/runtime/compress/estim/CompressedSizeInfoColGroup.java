@@ -31,6 +31,9 @@ import org.apache.sysds.runtime.compress.CompressionSettings;
 import org.apache.sysds.runtime.compress.cocode.PlanningCoCoder.PartitionerType;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup.CompressionType;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupSizes;
+import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
+import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory;
+import org.apache.sysds.runtime.compress.utils.ABitmap;
 
 /**
  * Information collected about a specific ColGroup's compression size.
@@ -44,6 +47,11 @@ public class CompressedSizeInfoColGroup {
 	private final long _minSize;
 	private final CompressionType _bestCompressionType;
 	private final Map<CompressionType, Long> _sizes;
+
+	/**
+	 * Map containing a mapping to unique values, but not necessarily the actual values contained in this column group
+	 */
+	private final AMapToData _map;
 
 	/**
 	 * Join columns without analyzing the content. This only specify the compression ratio if encoded in DDC since this
@@ -62,6 +70,7 @@ public class CompressedSizeInfoColGroup {
 		_sizes = null;
 		_bestCompressionType = null;
 		_minSize = ColGroupSizes.estimateInMemorySizeDDC(columns.length, numVals, numRows, 1.0, false);
+		_map = null;
 	}
 
 	/**
@@ -70,7 +79,8 @@ public class CompressedSizeInfoColGroup {
 	 * @param facts                 The facts extracted from a number of columns, based on the estimateFactors
 	 * @param validCompressionTypes The list of valid compression types, allowed to be performed.
 	 */
-	public CompressedSizeInfoColGroup(EstimationFactors facts, Set<CompressionType> validCompressionTypes) {
+	public CompressedSizeInfoColGroup(EstimationFactors facts, Set<CompressionType> validCompressionTypes,
+		ABitmap map) {
 		_facts = facts;
 		_cardinalityRatio = (double) facts.numVals / facts.numRows;
 		_sizes = calculateCompressionSizes(facts, validCompressionTypes);
@@ -82,6 +92,25 @@ public class CompressedSizeInfoColGroup {
 
 		_bestCompressionType = bestEntry.getKey();
 		_minSize = bestEntry.getValue();
+		_map = MapToFactory.create(map);
+		if(LOG.isTraceEnabled())
+			LOG.trace(this);
+	}
+
+	protected CompressedSizeInfoColGroup(EstimationFactors facts, Set<CompressionType> validCompressionTypes,
+		AMapToData map) {
+		_facts = facts;
+		_cardinalityRatio = (double) facts.numVals / facts.numRows;
+		_sizes = calculateCompressionSizes(facts, validCompressionTypes);
+		Map.Entry<CompressionType, Long> bestEntry = null;
+		for(Map.Entry<CompressionType, Long> ent : _sizes.entrySet()) {
+			if(bestEntry == null || ent.getValue() < bestEntry.getValue())
+				bestEntry = ent;
+		}
+
+		_bestCompressionType = bestEntry.getKey();
+		_minSize = bestEntry.getValue();
+		_map = map;
 		if(LOG.isTraceEnabled())
 			LOG.trace(this);
 	}
@@ -89,7 +118,7 @@ public class CompressedSizeInfoColGroup {
 	/**
 	 * This method adds a column group without having to analyze. This is because the columns added are constant groups.
 	 * 
-	 * NOTE THIS IS ONLY VALID IF THE COLUMN ADDED IS EMPTY!
+	 * NOTE THIS IS ONLY VALID IF THE COLUMN ADDED IS EMPTY OR CONSTANT!
 	 * 
 	 * @param columns               The columns of the colgroups together
 	 * @param oneSide               One of the sides, this may contain something, but the other side (not part of the
@@ -100,7 +129,7 @@ public class CompressedSizeInfoColGroup {
 	public static CompressedSizeInfoColGroup addConstGroup(int[] columns, CompressedSizeInfoColGroup oneSide,
 		Set<CompressionType> validCompressionTypes) {
 		EstimationFactors fact = new EstimationFactors(columns, oneSide._facts);
-		CompressedSizeInfoColGroup ret = new CompressedSizeInfoColGroup(fact, validCompressionTypes);
+		CompressedSizeInfoColGroup ret = new CompressedSizeInfoColGroup(fact, validCompressionTypes, oneSide._map);
 		return ret;
 	}
 
@@ -109,11 +138,6 @@ public class CompressedSizeInfoColGroup {
 	}
 
 	public CompressionType getBestCompressionType(CompressionSettings cs) {
-		if(cs.columnPartitioner == PartitionerType.COST_MATRIX_MULT) {
-			// if(_sizes.get(CompressionType.SDC) * 0.8 < _sizes.get(_bestCompressionType))
-			if(getMostCommonFraction() > 0.4)
-				return CompressionType.SDC;
-		}
 		return _bestCompressionType;
 	}
 
@@ -161,6 +185,14 @@ public class CompressedSizeInfoColGroup {
 
 	public double getTupleSparsity() {
 		return _facts.tupleSparsity;
+	}
+
+	public AMapToData getMap() {
+		return _map;
+	}
+
+	public boolean containsZeros() {
+		return _facts.numOffs < _facts.numRows;
 	}
 
 	private static Map<CompressionType, Long> calculateCompressionSizes(EstimationFactors fact,
@@ -218,10 +250,10 @@ public class CompressedSizeInfoColGroup {
 
 	@Override
 	public boolean equals(Object that) {
-		if(!(that instanceof CompressedSizeInfoColGroup))
-			return false;
-
-		return Arrays.equals(_facts.cols, ((CompressedSizeInfoColGroup) that)._facts.cols);
+		throw new NotImplementedException();
+		// if(!(that instanceof CompressedSizeInfoColGroup))
+		// return false;
+		// return Arrays.equals(_facts.cols, ((CompressedSizeInfoColGroup) that)._facts.cols);
 	}
 
 	@Override

@@ -103,17 +103,22 @@ public class CoCodeCostMatrixMult extends AColumnCoCoder {
 
 		protected CostOfJoin(CompressedSizeInfoColGroup elm) {
 			this.elm = elm;
+			if(elm == null) {
+				this.cost = Double.POSITIVE_INFINITY;
+			}
+			else {
 
-			final int nCols = elm.getColumns().length;
-			final double nRows = _est.getNumRows();
-			final double preAggregateCost = nRows;
+				final int nCols = elm.getColumns().length;
+				final double nRows = _est.getNumRows();
+				final double preAggregateCost = nRows;
 
-			final int numberTuples = elm.getNumVals();
-			final double tupleSparsity = elm.getTupleSparsity();
-			final double postScalingCost = (nCols > 1 && tupleSparsity > 0.4) ? numberTuples * nCols : numberTuples *
-				nCols * tupleSparsity;
+				final int numberTuples = elm.getNumVals();
+				final double tupleSparsity = elm.getTupleSparsity();
+				final double postScalingCost = (nCols > 1 && tupleSparsity > 0.4) ? numberTuples *
+					nCols : numberTuples * nCols * tupleSparsity;
 
-			this.cost = preAggregateCost + postScalingCost;
+				this.cost = preAggregateCost + postScalingCost;
+			}
 		}
 
 		@Override

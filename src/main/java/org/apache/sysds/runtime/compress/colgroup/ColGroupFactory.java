@@ -200,7 +200,7 @@ public final class ColGroupFactory {
 		CompressedSizeEstimator estimator = new CompressedSizeEstimatorExact(in, compSettings);
 
 		CompressedSizeInfoColGroup sizeInfo = new CompressedSizeInfoColGroup(
-			estimator.estimateCompressedColGroupSize(ubm, colIndexes), compSettings.validCompressions);
+			estimator.estimateCompressedColGroupSize(ubm, colIndexes), compSettings.validCompressions, ubm);
 
 		int numRows = compSettings.transposed ? in.getNumColumns() : in.getNumRows();
 		return compress(colIndexes, numRows, ubm, sizeInfo.getBestCompressionType(compSettings), compSettings, in,
@@ -285,8 +285,8 @@ public final class ColGroupFactory {
 	public static AColGroup compress(int[] colIndexes, int rlen, ABitmap ubm, CompressionType compType,
 		CompressionSettings cs, MatrixBlock rawMatrixBlock, double tupleSparsity) {
 
-		if(compType == CompressionType.UNCOMPRESSED && PartitionerType.isCostBased(cs.columnPartitioner))
-			compType = CompressionType.DDC;
+		// if(compType == CompressionType.UNCOMPRESSED && PartitionerType.isCostBased(cs.columnPartitioner))
+		// 	compType = CompressionType.DDC;
 
 		final IntArrayList[] of = ubm.getOffsetList();
 
@@ -411,7 +411,7 @@ public final class ColGroupFactory {
 
 	private static AColGroup compressDDC(int[] colIndexes, int rlen, ABitmap ubm, CompressionSettings cs,
 		double tupleSparsity) {
-		boolean zeros = ubm.getNumOffsets() < (long) rlen;
+		boolean zeros = ubm.getNumOffsets() < rlen;
 		ADictionary dict = DictionaryFactory.create(ubm, tupleSparsity, zeros);
 		AMapToData data = MapToFactory.create(rlen, zeros, ubm.getOffsetList());
 		return new ColGroupDDC(colIndexes, rlen, dict, data, null);

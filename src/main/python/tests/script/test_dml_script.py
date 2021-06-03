@@ -20,6 +20,7 @@
 # -------------------------------------------------------------
 
 import unittest
+import time
 
 from systemds.context import SystemDSContext
 from systemds.script_building import DMLScript
@@ -43,6 +44,7 @@ class Test_DMLScript(unittest.TestCase):
         script = DMLScript(self.sds)
         script.add_code('print("Hello")')
         script.execute()
+        time.sleep(0.5)
         stdout = self.sds.get_stdout(100)
         self.assertListEqual(["Hello"], stdout)
 
@@ -52,6 +54,7 @@ class Test_DMLScript(unittest.TestCase):
         script.add_code('print("World")')
         script.add_code('print("!")')
         script.execute()
+        time.sleep(0.5)
         stdout = self.sds.get_stdout(100)
         self.assertListEqual(['Hello', 'World', '!'], stdout)
 
@@ -59,14 +62,11 @@ class Test_DMLScript(unittest.TestCase):
         scr_a = DMLScript(self.sds)
         scr_a.add_code('x = 4')
         scr_a.add_code('print(x)')
-        # TODO FIX HERE TO ENABLE MULTI EXECUTION
-        # scr_a.execute()
         scr_a.add_code('y = x + 1')
         scr_a.add_code('print(y)')
-        # print(scr_a.dml_script)
         scr_a.execute()
+        time.sleep(0.5)
         stdout = self.sds.get_stdout(100)
-        # print(stdout)
         self.assertEqual("4", stdout[0])
         self.assertEqual("5", stdout[1])
 

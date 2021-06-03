@@ -765,8 +765,7 @@ public class ExecutionContext {
 			cleanupCacheableData( (CacheableData<?>)dat );
 		else if( dat instanceof ListObject )
 			for( Data dat2 : ((ListObject)dat).getData() )
-				if( dat2 instanceof CacheableData<?> )
-					cleanupCacheableData( (CacheableData<?>)dat2 );
+				cleanupDataObject(dat2);
 	}
 	
 	public void cleanupCacheableData(CacheableData<?> mo) {

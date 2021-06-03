@@ -118,7 +118,7 @@ public class LocalVariableMap implements Cloneable
 	public boolean hasReferences( Data d ) {
 		//perf: avoid java streams here for reduced overhead in rmvar
 		for( Data o : localMap.values() )
-			if( o instanceof ListObject ? ((ListObject)o).getData().contains(d) : o == d )
+			if( o instanceof ListObject ? ((ListObject)o).contains(d) : o == d )
 				return true;
 		return false;
 	}

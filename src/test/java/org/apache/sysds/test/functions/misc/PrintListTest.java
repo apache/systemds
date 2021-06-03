@@ -24,20 +24,27 @@ import org.apache.sysds.api.DMLException;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 
-public class PrintMatrixTest extends AutomatedTestBase
+public class PrintListTest extends AutomatedTestBase
 {
 	private final static String TEST_DIR = "functions/misc/";
-	private final static String TEST_NAME1 = "PrintMatrixTest";
-	private final static String TEST_CLASS_DIR = TEST_DIR + PrintMatrixTest.class.getSimpleName() + "/";
+	private final static String TEST_NAME1 = "PrintListTest1";
+	private final static String TEST_NAME2 = "PrintListTest2";
+	private final static String TEST_CLASS_DIR = TEST_DIR + PrintListTest.class.getSimpleName() + "/";
 	
 	@Override
 	public void setUp() {
 		addTestConfiguration(TEST_NAME1, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] {}));
+		addTestConfiguration(TEST_NAME2, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2, new String[] {}));
 	}
 	
 	@Test
-	public void testPrintMatrix() {
+	public void testPrintNestedList() {
 		runTest( TEST_NAME1, false );
+	}
+	
+	@Test
+	public void testPrintMixedLists() {
+		runTest( TEST_NAME2, false );
 	}
 	
 	private void runTest( String testName, boolean exceptionExpected ) {
@@ -45,8 +52,8 @@ public class PrintMatrixTest extends AutomatedTestBase
 		loadTestConfiguration(config);
 		
 		String HOME = SCRIPT_DIR + TEST_DIR;
-		fullDMLScriptName = HOME + TEST_NAME1 + ".dml";
-		programArgs = new String[]{""};
+		fullDMLScriptName = HOME + testName + ".dml";
+		programArgs = new String[]{"-explain"};
 		
 		//run tests
 		runTest(true, exceptionExpected, DMLException.class, -1);

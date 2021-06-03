@@ -184,10 +184,6 @@ public class FederationMap {
 	 * @return array of federated requests corresponding to federated data
 	 */
 	public FederatedRequest[] broadcastSliced(CacheableData<?> data, boolean transposed) {
-		return broadcastSliced(data, transposed, false);
-	}
-
-	public FederatedRequest[] broadcastSliced(CacheableData<?> data, boolean transposed, boolean row) {
 		if( _type == FType.FULL )
 			return new FederatedRequest[]{broadcast(data)};
 
@@ -199,15 +195,15 @@ public class FederationMap {
 		int[][] ix = new int[_fedMap.size()][];
 		int pos = 0;
 		for(Pair<FederatedRange, FederatedData> e : _fedMap) {
-			int beg = e.getKey().getBeginDimsInt()[(_type == FType.ROW || row ? 0 : 1)];
-			int end = e.getKey().getEndDimsInt()[(_type == FType.ROW || row ? 0 : 1)];
-			int nr = _type == FType.ROW || row ? cb.getNumRows() : cb.getNumColumns();
-			int nc = _type == FType.ROW || row ? cb.getNumColumns() : cb.getNumRows();
+			int beg = e.getKey().getBeginDimsInt()[(_type == FType.ROW ? 0 : 1)];
+			int end = e.getKey().getEndDimsInt()[(_type == FType.ROW ? 0 : 1)];
+			int nr = _type == FType.ROW ? cb.getNumRows() : cb.getNumColumns();
+			int nc = _type == FType.ROW ? cb.getNumColumns() : cb.getNumRows();
 			int rl = transposed ? 0 : beg;
 			int ru = transposed ? nr - 1 : end - 1;
 			int cl = transposed ? beg : 0;
 			int cu = transposed ? end - 1 : nc - 1;
-			ix[pos++] = _type == FType.ROW || row ?
+			ix[pos++] = _type == FType.ROW ?
 				new int[] {rl, ru, cl, cu} : new int[] {cl, cu, rl, ru};
 		}
 

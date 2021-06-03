@@ -79,38 +79,6 @@ public class TsmmFEDInstruction extends BinaryFEDInstruction {
 			MatrixBlock ret = FederationUtils.aggAdd(tmp);
 			ec.setMatrixOutput(output.getName(), ret);
 		}
-		else if(mo1.isFederated(FederationMap.FType.COL) && _type.isLeft()) {
-			// FIXME actually X is revealed
-			MatrixObject out = ec.getMatrixObject(output);
-
-			// transpose
-			String tInst = InstructionUtils.constructUnaryInstString(instString, "r'", input1, output);
-			tInst = InstructionUtils.concatOperands(tInst, "16");
-			FederatedRequest fr1 = FederationUtils.callInstruction(tInst, output, new CPOperand[]{input1},
-				new long[]{mo1.getFedMapping().getID()}, false);
-			mo1.getFedMapping().execute(getTID(), true, fr1);
-
-			out.setFedMapping(mo1.getFedMapping().copyWithNewID(fr1.getID()).transpose());
-			out.getDataCharacteristics().setDimension(mo1.getNumColumns(), mo1.getNumRows());
-
-			// mm
-			String mmInst = InstructionUtils.constructBinaryInstString(instString, "ba+*", output, input1, output);
-			mmInst = InstructionUtils.concatOperands(mmInst, "16");
-			FederatedRequest fr2 = mo1.getFedMapping().broadcast(out);
-			FederatedRequest fr3 = FederationUtils.callInstruction(mmInst, output, fr2.getID(), new CPOperand[]{output, input1},
-				new long[]{fr2.getID(), mo1.getFedMapping().getID()});
-			FederatedRequest fr4 = mo1.getFedMapping().cleanup(getTID(), fr2.getID());
-			//execute federated instruction and cleanup intermediates
-			mo1.getFedMapping().execute(getTID(), true, fr2, fr3);
-
-			out.getDataCharacteristics().setDimension(mo1.getNumColumns(), mo1.getNumColumns());
-			out.setFedMapping(mo1.getFedMapping().copyWithNewID(fr3.getID()));
-
-			// modify fedMap
-			FederationMap fedMap = out.getFedMapping();
-			for(int i = 0; i < fedMap.getSize(); i++)
-				fedMap.getFederatedRanges()[i].setEndDim(0, mo1.getNumColumns());
-		}
 		else { //other combinations
 			throw new DMLRuntimeException("Federated Tsmm not supported with the "
 				+ "following federated objects: "+mo1.isFederated()+" "+_fedType);

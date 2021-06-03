@@ -60,8 +60,8 @@ public class FederatedGLMTest extends AutomatedTestBase {
 	public static Collection<Object[]> data() {
 		// rows have to be even and > 1
 		return Arrays.asList(new Object[][] {
-			// {10000, 10}, {1000, 100},
-//			{2000, 44, true},
+			// {10000, 10, true}, {1000, 100, false},
+			{2000, 44, true},
 			{2000, 44, false}});
 	}
 
@@ -129,7 +129,7 @@ public class FederatedGLMTest extends AutomatedTestBase {
 		Assert.assertTrue(heavyHittersContainsString("fed_uark+", "fed_uarsqk+"));
 		Assert.assertTrue(heavyHittersContainsString("fed_uack+"));
 		// Assert.assertTrue(heavyHittersContainsString("fed_uak+"));
-		Assert.assertTrue(heavyHittersContainsString("fed_mmchain"));
+		Assert.assertTrue(!rowPartitioned || heavyHittersContainsString("fed_mmchain"));
 
 		// check that federated input files are still existing
 		Assert.assertTrue(HDFSTool.existsFileOnHDFS(input("X1")));

@@ -19,6 +19,7 @@
 
 package org.apache.sysds.runtime.instructions.fed;
 
+import org.apache.sysds.lops.MMTSJ;
 import org.apache.sysds.runtime.codegen.SpoofCellwise;
 import org.apache.sysds.runtime.codegen.SpoofMultiAggregate;
 import org.apache.sysds.runtime.codegen.SpoofOuterProduct;
@@ -100,13 +101,14 @@ public class FEDInstructionUtils {
 		else if( inst instanceof MMChainCPInstruction) {
 			MMChainCPInstruction linst = (MMChainCPInstruction) inst;
 			MatrixObject mo = ec.getMatrixObject(linst.input1);
-			if( mo.isFederated() )
+			if( mo.isFederated(FType.ROW) )
 				fedinst = MMChainFEDInstruction.parseInstruction(linst.getInstructionString());
 		}
 		else if( inst instanceof MMTSJCPInstruction ) {
 			MMTSJCPInstruction linst = (MMTSJCPInstruction) inst;
 			MatrixObject mo = ec.getMatrixObject(linst.input1);
-			if( mo.isFederated() )
+			if( (mo.isFederated(FType.ROW) && linst.getMMTSJType().isLeft()) ||
+				(mo.isFederated(FType.COL) && linst.getMMTSJType().isRight()))
 				fedinst = TsmmFEDInstruction.parseInstruction(linst.getInstructionString());
 		}
 		else if (inst instanceof UnaryCPInstruction && ! (inst instanceof IndexingCPInstruction)) {

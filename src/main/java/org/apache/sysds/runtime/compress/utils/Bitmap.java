@@ -95,4 +95,9 @@ public final class Bitmap extends ABitmap {
 	public BitmapType getType() {
 		return BitmapType.Full;
 	}
+
+	@Override
+	public boolean lossy(){
+		return false;
+	}
 }

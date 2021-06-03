@@ -25,6 +25,7 @@ import org.apache.sysds.runtime.compress.CompressionSettings;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeEstimator;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfo;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup;
+import org.apache.sysds.runtime.compress.utils.Util;
 
 public abstract class AColumnCoCoder {
 
@@ -54,15 +55,17 @@ public abstract class AColumnCoCoder {
 
 	protected CompressedSizeInfoColGroup joinWithAnalysis(CompressedSizeInfoColGroup lhs,
 		CompressedSizeInfoColGroup rhs) {
-		int[] joined = Util.join(lhs.getColumns(), rhs.getColumns());
-		return _est.estimateCompressedColGroupSize(joined,( lhs.getNumVals() + 1) * (rhs.getNumVals() + 1));
+		return _est.estimateJoinCompressedSize(lhs, rhs);
 	}
 
 	protected CompressedSizeInfoColGroup joinWithoutAnalysis(CompressedSizeInfoColGroup lhs,
 		CompressedSizeInfoColGroup rhs) {
 		int[] joined = Util.join(lhs.getColumns(), rhs.getColumns());
 		int numVals = lhs.getNumVals() + rhs.getNumVals();
-		return new CompressedSizeInfoColGroup(joined, numVals, _est.getNumRows());
+		if(numVals< 0 || numVals > _est.getNumRows())
+			return null;
+		else
+			return new CompressedSizeInfoColGroup(joined, numVals, _est.getNumRows());
 	}
 
 	protected CompressedSizeInfoColGroup analyze(CompressedSizeInfoColGroup g) {

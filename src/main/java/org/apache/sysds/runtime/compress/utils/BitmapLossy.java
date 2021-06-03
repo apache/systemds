@@ -109,6 +109,11 @@ public final class BitmapLossy extends ABitmap {
 	}
 
 	@Override
+	public boolean lossy(){
+		return true;
+	}
+
+	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
 		sb.append(super.toString());

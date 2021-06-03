@@ -233,7 +233,7 @@ public abstract class CompressedTestBase extends TestBase {
 
 						EstimationFactors ef = CompressedSizeEstimator.estimateCompressedColGroupSize(ubm, colIndexes,
 							mb.getNumRows(), cs);
-						CompressedSizeInfoColGroup cgi = new CompressedSizeInfoColGroup(ef, cs.validCompressions);
+						CompressedSizeInfoColGroup cgi = new CompressedSizeInfoColGroup(ef, cs.validCompressions, ubm);
 						AColGroup cg = ColGroupFactory.compress(colIndexes, mb.getNumRows(), ubm, c, cs, mb,
 							cgi.getTupleSparsity());
 						colGroups.add(cg);

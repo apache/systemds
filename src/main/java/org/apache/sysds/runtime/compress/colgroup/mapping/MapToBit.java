@@ -32,12 +32,14 @@ public class MapToBit extends AMapToData {
 	private final BitSet _data;
 	private final int _size;
 
-	public MapToBit(int size) {
+	public MapToBit(int unique, int size) {
+		super(unique);
 		_data = new BitSet(size);
 		_size = size;
 	}
 
-	private MapToBit(BitSet d, int size) {
+	private MapToBit(int unique, BitSet d, int size) {
+		super(unique);
 		_data = d;
 		_size = size;
 	}
@@ -66,7 +68,7 @@ public class MapToBit extends AMapToData {
 	@Override
 	public long getExactSizeOnDisk() {
 		final int dSize = _data.size();
-		long size = 1 + 4 + 4; // base variables
+		long size = 1 + 4 +  4 + 4; // base variables
 		size += (dSize / 64) * 8; // all longs except last
 		size += (dSize % 64 == 0 ? 0 : 8); // last long
 		return size;
@@ -86,6 +88,7 @@ public class MapToBit extends AMapToData {
 	public void write(DataOutput out) throws IOException {
 		long[] internals = _data.toLongArray();
 		out.writeByte(MAP_TYPE.BIT.ordinal());
+		out.writeInt(getUnique());
 		out.writeInt(_size);
 		out.writeInt(internals.length);
 		for(int i = 0; i < internals.length; i++)
@@ -93,11 +96,12 @@ public class MapToBit extends AMapToData {
 	}
 
 	public static MapToBit readFields(DataInput in) throws IOException {
+		int unique = in.readInt();
 		int size = in.readInt();
 		long[] internalLong = new long[in.readInt()];
 		for(int i = 0; i < internalLong.length; i++)
 			internalLong[i] = in.readLong();
 
-		return new MapToBit(BitSet.valueOf(internalLong), size);
+		return new MapToBit(unique, BitSet.valueOf(internalLong), size);
 	}
 }

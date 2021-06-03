@@ -23,7 +23,6 @@ import java.util.HashMap;
 
 import org.apache.commons.math3.analysis.UnivariateFunction;
 import org.apache.commons.math3.analysis.solvers.UnivariateSolverUtils;
-import org.apache.sysds.runtime.compress.utils.ABitmap;
 
 public class HassAndStokes {
 
@@ -40,16 +39,14 @@ public class HassAndStokes {
 	 * 
 	 * The hybrid estimator given by Eq. 33 in Section 6
 	 * 
-	 * @param ubm        The Uncompressed Bit map
+	 * @param numVals	 The number of unique values in the sample
+	 * @param freqCounts The inverse histogram of frequencies. counts extracted 
 	 * @param nRows      The number of rows originally in the input
 	 * @param sampleSize The number of rows used in the sample
 	 * @param solveCache A Hashmap containing information for getDuj2aEstimate
 	 * @return An estimation of distinct elements in the population.
 	 */
-	public static int haasAndStokes(ABitmap ubm, int nRows, int sampleSize, HashMap<Integer, Double> solveCache) {
-		// obtain value and frequency histograms
-		int numVals = ubm.getNumValues();
-		int[] freqCounts = FrequencyCount.get(ubm);
+	protected static int distinctCount(int numVals, int[] freqCounts, int nRows, int sampleSize, HashMap<Integer, Double> solveCache) {
 
 		// all values in the sample are zeros.
 		if(numVals == 0)
@@ -74,7 +71,9 @@ public class HassAndStokes {
 			d = getSh3Estimate(q, freqCounts, numVals);
 
 		// round and ensure min value 1
-		return Math.max(1, (int) Math.round(d));
+		final int est = Math.max(1, (int) Math.round(d));
+		// Number of unique is trivially bounded by the sampled number of uniques and the number of rows.
+		return Math.min(Math.max(est, numVals), nRows);
 	}
 
 	/**

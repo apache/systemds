@@ -29,6 +29,20 @@ public abstract class AMapToData {
 
 	protected static final Log LOG = LogFactory.getLog(AMapToData.class.getName());
 
+	private int nUnique;
+
+	protected AMapToData(int nUnique) {
+		this.nUnique = nUnique;
+	}
+
+	public int getUnique() {
+		return nUnique;
+	}
+
+	protected void setUnique(int nUnique){
+		this.nUnique = nUnique;
+	}
+
 	public abstract int getIndex(int n);
 
 	public abstract void set(int n, int v);

@@ -33,6 +33,7 @@ public abstract class ABitmap {
 	}
 
 	protected final int _numCols;
+	protected final int _numRows;
 
 	/** Bitmaps (as lists of offsets) for each of the values. */
 	protected IntArrayList[] _offsetsLists;
@@ -42,6 +43,7 @@ public abstract class ABitmap {
 
 	public ABitmap(int numCols, IntArrayList[] offsetsLists, int rows) {
 		_numCols = numCols;
+		_numRows = rows;
 		int offsetsTotal = 0;
 		if(offsetsLists != null) {
 			for(IntArrayList a : offsetsLists)
@@ -60,6 +62,16 @@ public abstract class ABitmap {
 	public int getNumColumns() {
 		return _numCols;
 	}
+
+	public int getNumRows(){
+		return _numRows;
+	}
+
+	public boolean isEmpty(){
+		return _offsetsLists == null;
+	}
+
+	public abstract boolean lossy();
 
 	/**
 	 * Obtain number of distinct value groups in the column. this number is also the number of bitmaps, since there is

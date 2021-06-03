@@ -19,25 +19,21 @@
 
 package org.apache.sysds.runtime.compress.estim.sample;
 
-import org.apache.sysds.runtime.compress.utils.Bitmap;
-
 public class ShlosserEstimator {
 
 	/**
 	 * Peter J. Haas, Jeffrey F. Naughton, S. Seshadri, and Lynne Stokes. Sampling-Based Estimation of the Number of
 	 * Distinct Values of an Attribute. VLDB'95, Section 3.2.
 	 * 
-	 * @param ubm        The Uncompressed Bitmap containing the data from the sample
+	 * @param numVals	 The number of unique values in the sample
+	 * @param freqCounts The inverse histogram of frequencies. counts extracted 
 	 * @param nRows      The original number of rows in the entire input
 	 * @param sampleSize The number of rows in the sample
 	 * @return an estimation of number of distinct values.
 	 */
-	public static int get(Bitmap ubm, int nRows, int sampleSize) {
+	protected static int distinctCount(int numVals, int[] freqCounts, int nRows, int sampleSize) {
 		double q = ((double) sampleSize) / nRows;
 		double oneMinusQ = 1 - q;
-
-		int numVals = ubm.getNumValues();
-		int[] freqCounts = FrequencyCount.get(ubm);
 
 		double numerSum = 0, denomSum = 0;
 		int iPlusOne = 1;

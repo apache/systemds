@@ -24,6 +24,7 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.channels.FileChannel;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.BitSet;
 import java.util.List;
@@ -58,11 +59,25 @@ public class H5 {
 	}
 
 	// Open a file and data space
+	public static H5RootObject H5Fopen(Path path) {
+		File file = path.toFile();
+		return H5.H5Fopen(file);
+	}
+
 	public static H5RootObject H5Fopen(String fileName) {
+		try {
+			File file = new File(fileName);
+			return H5.H5Fopen(file);
+		}
+		catch(Exception exception){
+			throw new H5Exception(exception);
+		}
+	}
+
+	public static H5RootObject H5Fopen(File file) {
 
 		H5RootObject rootObject = new H5RootObject();
 		try {
-			File file = new File(fileName);
 			FileChannel fc = FileChannel.open(file.toPath(), StandardOpenOption.READ);
 
 			// Find out if the file is a HDF5 file
@@ -193,6 +208,9 @@ public class H5 {
 	}
 
 	// Write Data
+	public static void H5Dwrite(H5RootObject rootObject, double[] data) {
+
+	}
 	public static void H5Dwrite(H5RootObject rootObject, double[][] data) {
 
 		long dataSize = rootObject.getRow() * rootObject.getCol() * 8;

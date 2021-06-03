@@ -1205,7 +1205,9 @@ public class DataExpression extends DataIdentifier
 					}
 				}
 			}
-			
+			boolean isHDF5;
+			isHDF5 = (formatTypeString != null && formatTypeString.equalsIgnoreCase(FileFormat.HDF5.toString()));
+
 			dataTypeString = (getVarParam(DATATYPEPARAM) == null) ? null : getVarParam(DATATYPEPARAM).toString();
 			
 			if ( dataTypeString == null || dataTypeString.equalsIgnoreCase(Statement.MATRIX_DATA_TYPE) 

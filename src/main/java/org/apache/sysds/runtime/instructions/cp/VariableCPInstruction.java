@@ -48,12 +48,7 @@ import org.apache.sysds.runtime.controlprogram.parfor.util.IDSequence;
 import org.apache.sysds.runtime.data.TensorBlock;
 import org.apache.sysds.runtime.instructions.Instruction;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
-import org.apache.sysds.runtime.io.FileFormatProperties;
-import org.apache.sysds.runtime.io.FileFormatPropertiesCSV;
-import org.apache.sysds.runtime.io.FileFormatPropertiesLIBSVM;
-import org.apache.sysds.runtime.io.IOUtilFunctions;
-import org.apache.sysds.runtime.io.WriterMatrixMarket;
-import org.apache.sysds.runtime.io.WriterTextCSV;
+import org.apache.sysds.runtime.io.*;
 import org.apache.sysds.runtime.lineage.LineageItem;
 import org.apache.sysds.runtime.lineage.LineageItemUtils;
 import org.apache.sysds.runtime.lineage.LineageTraceable;
@@ -522,6 +517,9 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
           boolean sparse = Boolean.parseBoolean(parts[6]);
           fprops = new FileFormatPropertiesLIBSVM(delim, indexDelim, sparse);
 			}
+			else if(in3.getName().equalsIgnoreCase("hdf5") ){
+				fprops = new FileFormatPropertiesHDF5();
+			}
 			else {
 				fprops = new FileFormatProperties();
 				in4 = new CPOperand(parts[4]); // description
@@ -976,7 +974,7 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 		String fmtStr = getInput3().getName();
 		FileFormat fmt = FileFormat.safeValueOf(fmtStr);
 		if( fmt != FileFormat.LIBSVM ) {
-			String desc = ec.getScalarInput(getInput4().getName(), ValueType.STRING, getInput4().isLiteral()).getStringValue();
+			String desc = "aaaaaaaaaaaaaaa";//ec.getScalarInput(getInput4().getName(), ValueType.STRING, getInput4().isLiteral()).getStringValue();
 			_formatProperties.setDescription(desc);
 		}
 
@@ -988,8 +986,10 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 				writeMMFile(ec, fname);
 			else if( fmt == FileFormat.CSV )
 				writeCSVFile(ec, fname);
-			else if(fmt == FileFormat.LIBSVM)
-				writeLIBSVMFile(ec, fname);
+       		else if(fmt == FileFormat.LIBSVM)
+        		writeLIBSVMFile(ec, fname);
+			else if(fmt == FileFormat.HDF5)
+				writeHDF5File(ec, fname);
 			else {
 				// Default behavior
 				MatrixObject mo = ec.getMatrixObject(getInput1().getName());
@@ -1101,6 +1101,40 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 				HDFSTool.writeMetaDataFile(fname + ".mtd", mo.getValueType(),
 					mo.getMetaData().getDataCharacteristics(), FileFormat.LIBSVM, _formatProperties,
 				mo.getPrivacyConstraint());
+			}
+			catch (IOException e) {
+				throw new DMLRuntimeException(e);
+			}
+		}
+	}
+
+	/**
+	 * Helper function to write HDF5 files to HDFS.
+	 *
+	 * @param ec    execution context
+	 * @param fname file name
+	 */
+	private void writeHDF5File(ExecutionContext ec, String fname) {
+		MatrixObject mo = ec.getMatrixObject(getInput1().getName());
+		String outFmt = "hdf5";
+
+		if(mo.isDirty()) {
+			// there exist data computed in CP that is not backed up on HDFS
+			// i.e., it is either in-memory or in evicted space
+			mo.exportData(fname, outFmt, _formatProperties);
+		}
+		else {
+			try {
+				FileFormat fmt = ((MetaDataFormat) mo.getMetaData()).getFileFormat();
+				DataCharacteristics dc = (mo.getMetaData()).getDataCharacteristics();
+				//if(fmt == FileFormat.HDF5 && !getInput1().getName().startsWith(org.apache.sysds.lops.Data.PREAD_PREFIX)) {
+				WriterHDF5 writer = new WriterHDF5((FileFormatPropertiesHDF5) _formatProperties);
+				//				}
+				//				else {
+				//					mo.exportData(fname, outFmt, _formatProperties);
+				//				}
+				HDFSTool.writeMetaDataFile(fname + ".mtd", mo.getValueType(), dc, FileFormat.HDF5, _formatProperties,
+					mo.getPrivacyConstraint());
 			}
 			catch (IOException e) {
 				throw new DMLRuntimeException(e);

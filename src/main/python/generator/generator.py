@@ -97,13 +97,11 @@ class PythonAPIFunctionGenerator(object):
     api_template = u"""def {function_name}({parameters}):
     {header}
     {params_dict}
-    return {api_call}\n\n
+    {api_call}\n\n
     """
 
     kwargs_parameter_string = u"**kwargs: Dict[str, VALID_INPUT_TYPES]"
     kwargs_result = u"params_dict.update(kwargs)"
-
-    matrix_check_template = u"\n    {param}._check_matrix_op()"
 
     type_mapping_file = os.path.join('resources', 'type_mapping.json')
 
@@ -112,8 +110,8 @@ class PythonAPIFunctionGenerator(object):
     path = os.path.dirname(__file__)
     type_mapping_path = os.path.join(path, type_mapping_file)
 
-    with open(type_mapping_path, 'r') as megamap:
-        type_mapping = json.load(megamap)
+    with open(type_mapping_path, 'r') as mapping:
+        type_mapping = json.load(mapping)
 
     def __init__(self):
         super(PythonAPIFunctionGenerator, self).__init__()
@@ -201,47 +199,27 @@ class PythonAPIFunctionGenerator(object):
             )
         return result
 
-    def format_api_call(
-        self,
-        parameters: List[Tuple[str]],
-        return_values: List[Tuple[str]],
-        function_name: str
-    ) -> str:
+    def format_api_call(self,
+                        parameters: List[Tuple[str]],
+                        return_values: List[Tuple[str]],
+                        function_name: str
+                        ) -> str:
+        nl = "\n\t\t"
         length = len(return_values)
-        result = "Matrix({params})"
         param_string = ""
         param = parameters[0]
+        sds_context = "{param}.sds_context".format(param=param[0])
         pattern = r"^[^\[]+"
         if length > 1:
-            output_type_list = ""
-            for value in return_values:
-                output_type = re.search(pattern, value[1])[0].upper()
-
-                if len(output_type_list):
-                    output_type_list = "{output_type_list}, ".format(
-                        output_type_list=output_type_list
-                    )
-                else:
-                    output_type_list = "output_types=["
-
-                output_type_list = "{output_type_list}OutputType.{typ}".format(
-                    output_type_list=output_type_list,
-                    typ=output_type
-                )
-            output_type_list = "{output_type_list}]".format(
-                output_type_list=output_type_list
+            output_nodes_str, op_assignments = self.generate_output_nodes(
+                return_values, pattern, sds_context)
+            multi_return_str = self.generate_multireturn(
+                sds_context, function_name)
+            result = "\n{out_nodes}\n\n{multi_return}\n\n{op_assign}\n\n    return op".format(
+                out_nodes=output_nodes_str,
+                multi_return=multi_return_str,
+                op_assign=op_assignments
             )
-            output_type = "LIST, number_of_outputs={n}, {output_type_list}".format(
-                n=length,
-                output_type_list=output_type_list
-            )
-            result = "{param}.sds_context, \'{function_name}\', named_input_nodes=params_dict, " \
-                "output_type=OutputType.{output_type}".format(
-                     param=param[0],
-                     function_name=function_name,
-                     output_type=output_type
-                )
-            result = "OperationNode({params})".format(params=result)
             return result
         else:
             value = return_values[0]
@@ -250,12 +228,50 @@ class PythonAPIFunctionGenerator(object):
                 output_type = output_type[0].upper()
             else:
                 raise AttributeError("Error in pattern match")
-            result = "{param}.sds_context, \'{function_name}\', named_input_nodes=params_dict".format(
-                     param=param[0],
-                     function_name=function_name,
+            result = ("{sds_context}," +
+                      "{nl}\'{function_name}\'," +
+                      "{nl}named_input_nodes=params_dict").format(
+                sds_context=sds_context,
+                function_name=function_name,
+                nl=nl
             )
-            result = "Matrix({params})".format(params=result)
+            result = "return Matrix({params})".format(params=result)
             return result
+
+    def generate_output_nodes(self, return_values, pattern, sds_context):
+        lines = []
+        op_assignment = []
+        output_nodes = "\n    output_nodes = ["
+        for idx, value in enumerate(return_values):
+            output_type = re.search(pattern, value[1])[0].upper()
+            # print(output_type)
+            output_type = output_type.lower()
+            if output_type == "matrix":
+                object_type= "Matrix"
+            elif output_type == "frame":
+                object_type = "Frame"
+            elif output_type == "double":
+                object_type = "Scalar"
+            elif output_type == "boolean":
+                object_type = "Scalar"
+            elif output_type == "integer":
+                object_type = "Scalar"
+            else:
+                raise ValueError("Unknown type " + object_type)
+            lines.append("    vX_{idx} = {obj}({sds}, '')".format(
+                idx=idx,obj = object_type, sds=sds_context))
+            output_nodes += "vX_{idx}, ".format(idx=idx)
+            op_assignment.append(
+                "    vX_{idx}._unnamed_input_nodes = [op]".format(idx=idx))
+        output_nodes += "]"
+        lines = "\n".join(lines) + output_nodes
+        op_assignment = "\n".join(op_assignment)
+        return lines, op_assignment
+
+    def generate_multireturn(self, sds_context, function_name):
+        return ("    op = MultiReturn({sds}, \'{function_name}\', output_nodes," +
+                " named_input_nodes=params_dict)").format(
+            sds=sds_context, function_name=function_name)
 
 
 class PythonAPIDocumentationGenerator(object):
@@ -316,8 +332,8 @@ if __name__ == "__main__":
     fun_generator = PythonAPIFunctionGenerator()
     f_parser = FunctionParser(source_path)
     doc_generator = PythonAPIDocumentationGenerator()
-
-    for dml_file in f_parser.files():
+    files = f_parser.files()
+    for dml_file in files:
         try:
             header_data = f_parser.parse_header(dml_file)
             data = f_parser.parse_function(dml_file)
@@ -332,5 +348,12 @@ if __name__ == "__main__":
             continue
         file_generator.generate_file(
             data["function_name"], script_content, dml_file)
-
+    # [print(x) for x in enumerate(files)]
+    # dml_file = next(x for i, x in enumerate(files) if i == 80)
+    # header_data = f_parser.parse_header(dml_file)
+    # data = f_parser.parse_function(dml_file)
+    # f_parser.check_parameters(header_data, data)
+    # data['function_header'] = doc_generator.generate_documentation(
+    #     header_data)
+    # script_content = fun_generator.generate_function(data)
     file_generator.generate_init_file()

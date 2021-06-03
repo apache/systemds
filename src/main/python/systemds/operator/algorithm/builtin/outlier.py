@@ -24,14 +24,16 @@
 
 from typing import Dict, Iterable
 
-from systemds.operator import OperationNode, Matrix
+from systemds.operator import OperationNode, Matrix, Frame, List, MultiReturn, Scalar
 from systemds.script_building.dag import OutputType
 from systemds.utils.consts import VALID_INPUT_TYPES
 
 def outlier(X: OperationNode, opposite: bool):
     
     params_dict = {'X':X, 'opposite':opposite}
-    return Matrix(X.sds_context, 'outlier', named_input_nodes=params_dict)
+    return Matrix(X.sds_context,
+		'outlier',
+		named_input_nodes=params_dict)
 
 
     

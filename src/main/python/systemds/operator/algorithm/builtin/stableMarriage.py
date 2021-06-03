@@ -24,7 +24,7 @@
 
 from typing import Dict, Iterable
 
-from systemds.operator import OperationNode, Matrix
+from systemds.operator import OperationNode, Matrix, Frame, List, MultiReturn, Scalar
 from systemds.script_building.dag import OutputType
 from systemds.utils.consts import VALID_INPUT_TYPES
 
@@ -40,7 +40,9 @@ def stableMarriage(P: OperationNode, A: OperationNode, **kwargs: Dict[str, VALID
     """
     params_dict = {'P':P, 'A':A}
     params_dict.update(kwargs)
-    return Matrix(P.sds_context, 'stableMarriage', named_input_nodes=params_dict)
+    return Matrix(P.sds_context,
+		'stableMarriage',
+		named_input_nodes=params_dict)
 
 
     

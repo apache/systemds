@@ -92,7 +92,6 @@ class OperationNode(DAGNode):
                 print("SCRIPT:")
                 print(self._script.dml_script)
 
-
             if lineage:
                 result_variables, self._lineage_trace = self._script.execute_with_lineage()
             else:
@@ -115,7 +114,11 @@ class OperationNode(DAGNode):
             return self._result_var
 
     def _parse_output_result_variables(self, result_variables):
-        raise NotImplementedError("This method should be overwritten by subclasses")
+        if self._output_type == None or self._output_type == OutputType.NONE:
+            return None
+        else:
+            raise NotImplementedError(
+                "This method should be overwritten by subclasses")
 
     def get_lineage_trace(self) -> str:
         """Get the lineage trace for this node.

@@ -24,7 +24,7 @@
 
 from typing import Dict, Iterable
 
-from systemds.operator import OperationNode, Matrix
+from systemds.operator import OperationNode, Matrix, Frame, List, MultiReturn, Scalar
 from systemds.script_building.dag import OutputType
 from systemds.utils.consts import VALID_INPUT_TYPES
 
@@ -49,7 +49,21 @@ def randomForest(X: OperationNode, Y: OperationNode, R: OperationNode, **kwargs:
     """
     params_dict = {'X':X, 'Y':Y, 'R':R}
     params_dict.update(kwargs)
-    return OperationNode(X.sds_context, 'randomForest', named_input_nodes=params_dict, output_type=OutputType.LIST, number_of_outputs=4, output_types=[OutputType.MATRIX, OutputType.MATRIX, OutputType.MATRIX, OutputType.MATRIX])
+    
+    vX_0 = Matrix(X.sds_context, '')
+    vX_1 = Matrix(X.sds_context, '')
+    vX_2 = Matrix(X.sds_context, '')
+    vX_3 = Matrix(X.sds_context, '')
+    output_nodes = [vX_0, vX_1, vX_2, vX_3, ]
+
+    op = MultiReturn(X.sds_context, 'randomForest', output_nodes, named_input_nodes=params_dict)
+
+    vX_0._unnamed_input_nodes = [op]
+    vX_1._unnamed_input_nodes = [op]
+    vX_2._unnamed_input_nodes = [op]
+    vX_3._unnamed_input_nodes = [op]
+
+    return op
 
 
     

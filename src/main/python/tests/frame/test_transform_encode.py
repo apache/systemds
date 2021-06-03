@@ -81,8 +81,9 @@ class TestTransformEncode(unittest.TestCase):
         )
         jspec = self.sds.read(self.JSPEC_PATH, data_type="scalar", value_type="string")
         X, M = F1.transform_encode(spec=jspec)
-        xm = X + 1
-        res = xm.compute(verbose=True)
+        xm = X.sum() + 1
+        res = xm.compute()
+        self.assertTrue(isinstance(res,float))
 
 if __name__ == "__main__":
     unittest.main(exit=False)

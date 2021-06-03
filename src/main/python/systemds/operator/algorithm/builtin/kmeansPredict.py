@@ -24,7 +24,7 @@
 
 from typing import Dict, Iterable
 
-from systemds.operator import OperationNode, Matrix
+from systemds.operator import OperationNode, Matrix, Frame, List, MultiReturn, Scalar
 from systemds.script_building.dag import OutputType
 from systemds.utils.consts import VALID_INPUT_TYPES
 
@@ -35,7 +35,9 @@ def kmeansPredict(X: OperationNode, C: OperationNode):
     :return: 'OperationNode' containing the mapping of records to centroids 
     """
     params_dict = {'X':X, 'C':C}
-    return Matrix(X.sds_context, 'kmeansPredict', named_input_nodes=params_dict)
+    return Matrix(X.sds_context,
+		'kmeansPredict',
+		named_input_nodes=params_dict)
 
 
     

@@ -89,8 +89,8 @@ class Frame(OperationNode):
         
         frame = Frame(self.sds_context,"")
         matrix = Matrix(self.sds_context,"")
-
         output_nodes = [matrix,frame]
+        
         op = MultiReturn(
             self.sds_context,
             "transformencode",

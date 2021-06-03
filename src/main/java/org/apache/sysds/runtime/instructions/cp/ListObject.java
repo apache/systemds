@@ -136,6 +136,11 @@ public class ListObject extends Data implements Externalizable {
 		return _lineage;
 	}
 
+	public boolean contains(Data d) {
+		return _data.stream().anyMatch(lo -> lo instanceof ListObject ?
+			(lo == d || ((ListObject)lo).contains(d)) : lo == d);
+	}
+	
 	public long getDataSize() {
 		return _data.stream().filter(data -> data instanceof CacheableData)
 			.mapToLong(data -> ((CacheableData<?>) data).getDataSize()).sum();

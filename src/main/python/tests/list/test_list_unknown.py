@@ -21,15 +21,17 @@
 
 import unittest
 
+import numpy as np
 from systemds.context import SystemDSContext
-from systemds.script_building import DMLScript
+from systemds.operator import List
+from systemds.operator.algorithm import pca
+from systemds.script_building.dag import OutputType
 
 
-class Test_DMLScript(unittest.TestCase):
-    """Test class for testing behavior of the fundamental DMLScript class
-    """
+class TestListOperationsUnknown(unittest.TestCase):
 
     sds: SystemDSContext = None
+    src_path: str = "./tests/list/return_list.dml"
 
     @classmethod
     def setUpClass(cls):
@@ -39,36 +41,20 @@ class Test_DMLScript(unittest.TestCase):
     def tearDownClass(cls):
         cls.sds.close()
 
-    def test_simple_print_1(self):
-        script = DMLScript(self.sds)
-        script.add_code('print("Hello")')
-        script.execute()
-        stdout = self.sds.get_stdout(100)
-        self.assertListEqual(["Hello"], stdout)
+    def test_access_other_index_1(self):
+        s = self.sds.source(self.src_path, "func")
+        res = s.f()[1].as_matrix().compute()[0]
+        self.assertEqual(1, res)
 
-    def test_simple_print_2(self):
-        script = DMLScript(self.sds)
-        script.add_code('print("Hello")')
-        script.add_code('print("World")')
-        script.add_code('print("!")')
-        script.execute()
-        stdout = self.sds.get_stdout(100)
-        self.assertListEqual(['Hello', 'World', '!'], stdout)
+    def test_access_other_index_2(self):
+        s = self.sds.source(self.src_path, "func")
+        res = s.f()[2].as_matrix().compute()
+        self.assertTrue(np.allclose(np.full((2, 2), 2), res))
 
-    def test_multiple_executions_1(self):
-        scr_a = DMLScript(self.sds)
-        scr_a.add_code('x = 4')
-        scr_a.add_code('print(x)')
-        # TODO FIX HERE TO ENABLE MULTI EXECUTION
-        # scr_a.execute()
-        scr_a.add_code('y = x + 1')
-        scr_a.add_code('print(y)')
-        # print(scr_a.dml_script)
-        scr_a.execute()
-        stdout = self.sds.get_stdout(100)
-        # print(stdout)
-        self.assertEqual("4", stdout[0])
-        self.assertEqual("5", stdout[1])
+    def test_access_other_index_3(self):
+        s = self.sds.source(self.src_path, "func")
+        res = s.f()[3].as_matrix().compute()
+        self.assertTrue(np.allclose(np.full((3, 3), 3), res))
 
 
 if __name__ == "__main__":

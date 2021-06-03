@@ -24,11 +24,13 @@
 
 from typing import Dict, Iterable
 
-from systemds.operator import OperationNode, Matrix
+from systemds.operator import OperationNode, Matrix, Frame, List, MultiReturn, Scalar
 from systemds.script_building.dag import OutputType
 from systemds.utils.consts import VALID_INPUT_TYPES
 
-def arima(X: OperationNode, **kwargs: Dict[str, VALID_INPUT_TYPES]):
+
+def arima(X: Matrix,
+          **kwargs: Dict[str, VALID_INPUT_TYPES]):
     """
     :param X: The input Matrix to apply Arima on.
     :param max_func_invoc: ?
@@ -43,9 +45,8 @@ def arima(X: OperationNode, **kwargs: Dict[str, VALID_INPUT_TYPES]):
     :param solver: solver, is either "cg" or "jacobi"
     :return: 'OperationNode' containing the calculated coefficients 
     """
-    params_dict = {'X':X}
+    params_dict = {'X': X}
     params_dict.update(kwargs)
-    return Matrix(X.sds_context, 'arima', named_input_nodes=params_dict)
-
-
-    
+    return Matrix(X.sds_context,
+        'arima',
+        named_input_nodes=params_dict)

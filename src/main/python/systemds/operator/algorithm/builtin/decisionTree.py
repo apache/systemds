@@ -24,11 +24,16 @@
 
 from typing import Dict, Iterable
 
-from systemds.operator import OperationNode, Matrix
+from systemds.operator import OperationNode, Matrix, Frame, List, MultiReturn, Scalar
 from systemds.script_building.dag import OutputType
 from systemds.utils.consts import VALID_INPUT_TYPES
 
-def decisionTree(X: OperationNode, Y: OperationNode, R: OperationNode, verbose: bool, **kwargs: Dict[str, VALID_INPUT_TYPES]):
+
+def decisionTree(X: Matrix,
+                 Y: Matrix,
+                 R: Matrix,
+                 verbose: bool,
+                 **kwargs: Dict[str, VALID_INPUT_TYPES]):
     """
     :param a: vector, other positive Integers indicate the number of categories
     :param If: not provided by default all variables are assumed to be scale
@@ -37,9 +42,8 @@ def decisionTree(X: OperationNode, Y: OperationNode, R: OperationNode, verbose: 
     :param verbose: boolean specifying if the algorithm should print information while executing
     :return: 'OperationNode' containing looks at if j is an internal node, otherwise 0 & 6,7,... if j is categorical & a leaf node: number of misclassified samples reaching at node j & feature chosen for j is categorical rows 6,7,... depict the value subset chosen for j & a leaf node 1 if j is impure and the number of samples at j > threshold, otherwise 0 
     """
-    params_dict = {'X':X, 'Y':Y, 'R':R, 'verbose':verbose}
+    params_dict = {'X': X, 'Y': Y, 'R': R, 'verbose': verbose}
     params_dict.update(kwargs)
-    return Matrix(X.sds_context, 'decisionTree', named_input_nodes=params_dict)
-
-
-    
+    return Matrix(X.sds_context,
+        'decisionTree',
+        named_input_nodes=params_dict)

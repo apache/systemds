@@ -24,15 +24,35 @@
 
 from typing import Dict, Iterable
 
-from systemds.operator import OperationNode, Matrix
+from systemds.operator import OperationNode, Matrix, Frame, List, MultiReturn, Scalar
 from systemds.script_building.dag import OutputType
 from systemds.utils.consts import VALID_INPUT_TYPES
 
-def gmm(X: OperationNode, verbose: bool, **kwargs: Dict[str, VALID_INPUT_TYPES]):
+
+def gmm(X: Matrix,
+        verbose: bool,
+        **kwargs: Dict[str, VALID_INPUT_TYPES]):
     
-    params_dict = {'X':X, 'verbose':verbose}
+    params_dict = {'X': X, 'verbose': verbose}
     params_dict.update(kwargs)
-    return OperationNode(X.sds_context, 'gmm', named_input_nodes=params_dict, output_type=OutputType.LIST, number_of_outputs=7, output_types=[OutputType.MATRIX, OutputType.MATRIX, OutputType.INTEGER, OutputType.DOUBLE, OutputType.MATRIX, OutputType.MATRIX, OutputType.MATRIX])
-
-
     
+    vX_0 = Matrix(X.sds_context, '')
+    vX_1 = Matrix(X.sds_context, '')
+    vX_2 = Scalar(X.sds_context, '')
+    vX_3 = Scalar(X.sds_context, '')
+    vX_4 = Matrix(X.sds_context, '')
+    vX_5 = Matrix(X.sds_context, '')
+    vX_6 = Matrix(X.sds_context, '')
+    output_nodes = [vX_0, vX_1, vX_2, vX_3, vX_4, vX_5, vX_6, ]
+
+    op = MultiReturn(X.sds_context, 'gmm', output_nodes, named_input_nodes=params_dict)
+
+    vX_0._unnamed_input_nodes = [op]
+    vX_1._unnamed_input_nodes = [op]
+    vX_2._unnamed_input_nodes = [op]
+    vX_3._unnamed_input_nodes = [op]
+    vX_4._unnamed_input_nodes = [op]
+    vX_5._unnamed_input_nodes = [op]
+    vX_6._unnamed_input_nodes = [op]
+
+    return op

@@ -24,11 +24,14 @@
 
 from typing import Dict, Iterable
 
-from systemds.operator import OperationNode, Matrix
+from systemds.operator import OperationNode, Matrix, Frame, List, MultiReturn, Scalar
 from systemds.script_building.dag import OutputType
 from systemds.utils.consts import VALID_INPUT_TYPES
 
-def l2svm(X: OperationNode, Y: OperationNode, **kwargs: Dict[str, VALID_INPUT_TYPES]):
+
+def l2svm(X: Matrix,
+          Y: Matrix,
+          **kwargs: Dict[str, VALID_INPUT_TYPES]):
     """
     :param X: matrix X of feature vectors
     :param Y: matrix Y of class labels have to be a single column
@@ -41,9 +44,8 @@ def l2svm(X: OperationNode, Y: OperationNode, **kwargs: Dict[str, VALID_INPUT_TY
     :param columnId: The column Id used if one wants to add a ID to the print statement, Specificly usefull when L2SVM is used in MSVM.
     :return: 'OperationNode' containing model matrix 
     """
-    params_dict = {'X':X, 'Y':Y}
+    params_dict = {'X': X, 'Y': Y}
     params_dict.update(kwargs)
-    return Matrix(X.sds_context, 'l2svm', named_input_nodes=params_dict)
-
-
-    
+    return Matrix(X.sds_context,
+        'l2svm',
+        named_input_nodes=params_dict)

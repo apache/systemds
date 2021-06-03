@@ -24,14 +24,15 @@
 
 from typing import Dict, Iterable
 
-from systemds.operator import OperationNode, Matrix
+from systemds.operator import OperationNode, Matrix, Frame, List, MultiReturn, Scalar
 from systemds.script_building.dag import OutputType
 from systemds.utils.consts import VALID_INPUT_TYPES
 
-def img_mirror(img_in: OperationNode, horizontal_axis: bool):
-    
-    params_dict = {'img_in':img_in, 'horizontal_axis':horizontal_axis}
-    return Matrix(img_in.sds_context, 'img_mirror', named_input_nodes=params_dict)
 
-
+def img_mirror(img_in: Matrix,
+               horizontal_axis: bool):
     
+    params_dict = {'img_in': img_in, 'horizontal_axis': horizontal_axis}
+    return Matrix(img_in.sds_context,
+        'img_mirror',
+        named_input_nodes=params_dict)

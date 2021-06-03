@@ -6,8 +6,8 @@ full_path_p = "/home/arch/Desktop/Studium/Master/2_Semester/AMLS/systemds/"
 
 
 print("[DEBUG] starting script calling xgboost")
-X = read(full_path_p + "ownscripts/small_X.csv", format="csv");
-y = read(full_path_p + "ownscripts/small_y.csv", format="csv");
+X = read("./ownscripts/small_X.csv", format="csv");
+y = read("./ownscripts/small_y.csv", format="csv");
 
 
 #printMatrix(X, "training set")

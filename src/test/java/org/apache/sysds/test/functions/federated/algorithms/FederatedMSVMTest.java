@@ -70,12 +70,6 @@ public class FederatedMSVMTest extends AutomatedTestBase {
 		federatedMSVM(Types.ExecMode.SINGLE_NODE, true);
 	}
 
-	/*
-	 * TODO support SPARK execution mode -> RDDs and SPARK instructions lead to quite a few problems
-	 * 
-	 * @Test public void federatedL2SVMSP() { federatedL2SVM(Types.ExecMode.SPARK); }
-	 */
-
 	public void federatedMSVM(Types.ExecMode execMode, boolean singleWorker) {
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
 		Types.ExecMode platformOld = rtplatform;
@@ -117,7 +111,7 @@ public class FederatedMSVMTest extends AutomatedTestBase {
 
 		// Run actual dml script with federated matrix
 		fullDMLScriptName = HOME + TEST_NAME + ".dml";
-		programArgs = new String[] {"-nvargs", "in_X1=" + TestUtils.federatedAddress(port1, input("X1")),
+		programArgs = new String[] {"-stats",  "30", "-nvargs", "in_X1=" + TestUtils.federatedAddress(port1, input("X1")),
 			"in_X2=" + TestUtils.federatedAddress(port2, input("X2")), "rows=" + rows, "cols=" + cols,
 			"in_Y=" + input("Y"), "single=" + String.valueOf(singleWorker).toUpperCase(), "out=" + output("Z")};
 		runTest(true, false, null, -1);

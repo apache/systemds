@@ -24,14 +24,16 @@
 
 from typing import Dict, Iterable
 
-from systemds.operator import OperationNode, Matrix
+from systemds.operator import OperationNode, Matrix, Frame, List, MultiReturn, Scalar
 from systemds.script_building.dag import OutputType
 from systemds.utils.consts import VALID_INPUT_TYPES
 
 def alsPredict(userIDs: OperationNode, I: OperationNode, L: OperationNode, R: OperationNode):
     
     params_dict = {'userIDs':userIDs, 'I':I, 'L':L, 'R':R}
-    return Matrix(userIDs.sds_context, 'alsPredict', named_input_nodes=params_dict)
+    return Matrix(userIDs.sds_context,
+		'alsPredict',
+		named_input_nodes=params_dict)
 
 
     

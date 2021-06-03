@@ -24,7 +24,7 @@
 
 from typing import Dict, Iterable
 
-from systemds.operator import OperationNode, Matrix
+from systemds.operator import OperationNode, Matrix, Frame, List, MultiReturn
 from systemds.script_building.dag import OutputType
 from systemds.utils.consts import VALID_INPUT_TYPES
 
@@ -36,7 +36,20 @@ def gaussianClassifier(D: OperationNode, C: OperationNode, **kwargs: Dict[str, V
     """
     params_dict = {'D':D, 'C':C}
     params_dict.update(kwargs)
-    return OperationNode(D.sds_context, 'gaussianClassifier', named_input_nodes=params_dict, output_type=OutputType.LIST, number_of_outputs=4, output_types=[OutputType.MATRIX, OutputType.MATRIX, OutputType.LIST, OutputType.MATRIX])
+    
+    vX_0 = Matrix(D.sds_context, '')
+    vX_1 = Matrix(D.sds_context, '')
+    vX_3 = Matrix(D.sds_context, '')
+    output_nodes = [vX_0, vX_1, vX_2, vX_3, ]
+
+    op = MultiReturn(D.sds_context, 'gaussianClassifier', output_nodes, named_input_nodes=params_dict)
+
+    vX_0._unnamed_input_nodes = [op]
+    vX_1._unnamed_input_nodes = [op]
+    vX_2._unnamed_input_nodes = [op]
+    vX_3._unnamed_input_nodes = [op]
+
+    return op
 
 
     

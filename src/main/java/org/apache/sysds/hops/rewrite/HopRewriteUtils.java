@@ -1120,6 +1120,13 @@ public class HopRewriteUtils
 		return ret;
 	}
 	
+	public static boolean isData(Hop hop, OpOpData... types) {
+		boolean ret = false;
+		for( OpOpData type : types )
+			ret |= isData(hop, type);
+		return ret;
+	}
+	
 	public static boolean isData(Hop hop, OpOpData type) {
 		return hop instanceof DataOp && ((DataOp)hop).getOp()==type;
 	}

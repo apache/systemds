@@ -27,6 +27,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Future;
 import java.util.stream.Stream;
 import java.util.zip.Adler32;
 import java.util.zip.Checksum;
@@ -57,6 +58,7 @@ import org.apache.sysds.runtime.functionobjects.ValueFunction;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
 import org.apache.sysds.runtime.instructions.cp.Data;
+import org.apache.sysds.runtime.instructions.cp.ScalarObject;
 import org.apache.sysds.runtime.lineage.LineageItem;
 import org.apache.sysds.runtime.lineage.LineageItemUtils;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
@@ -119,7 +121,7 @@ public class ParameterizedBuiltinFEDInstruction extends ComputationFEDInstructio
 			ValueFunction func = ParameterizedBuiltin.getParameterizedBuiltinFnObject(opcode);
 			return new ParameterizedBuiltinFEDInstruction(new SimpleOperator(func), paramsMap, out, opcode, str);
 		}
-		else if(opcode.equals("transformapply") || opcode.equals("transformdecode")) {
+		else if(opcode.equals("transformapply") || opcode.equals("transformdecode") || opcode.equals("tokenize")) {
 			return new ParameterizedBuiltinFEDInstruction(null, paramsMap, out, opcode, str);
 		}
 		else {
@@ -154,9 +156,55 @@ public class ParameterizedBuiltinFEDInstruction extends ComputationFEDInstructio
 			transformDecode(ec);
 		else if(opcode.equalsIgnoreCase("transformapply"))
 			transformApply(ec);
+		else if(opcode.equals("tokenize"))
+			tokenize(ec);
 		else {
 			throw new DMLRuntimeException("Unknown opcode : " + opcode);
 		}
+	}
+
+	private void tokenize(ExecutionContext ec)
+	{
+		FrameObject in = ec.getFrameObject(getTargetOperand());
+		FederationMap fedMap = in.getFedMapping();
+
+		FederatedRequest fr1 = FederationUtils.callInstruction(instString, output,
+			new CPOperand[] {getTargetOperand()}, new long[] {fedMap.getID()});
+		fedMap.execute(getTID(), true, fr1);
+
+		FrameObject out = ec.getFrameObject(output);
+		out.setFedMapping(fedMap.copyWithNewID(fr1.getID()));
+
+		// get new dims and fed mapping
+		long ncolId = FederationUtils.getNextFedDataID();
+		CPOperand ncolOp = new CPOperand(String.valueOf(ncolId), ValueType.INT64, DataType.SCALAR);
+
+		String unaryString = InstructionUtils.constructUnaryInstString(instString, output, "ncol", ncolOp);
+		FederatedRequest fr2 = FederationUtils.callInstruction(unaryString, ncolOp,
+			new CPOperand[] {output}, new long[] {out.getFedMapping().getID()});
+		FederatedRequest fr3 = new FederatedRequest(FederatedRequest.RequestType.GET_VAR, fr2.getID());
+		Future<FederatedResponse>[] ffr = out.getFedMapping().execute(getTID(), true, fr2, fr3);
+
+		long cols = 0;
+		for(int i = 0; i < ffr.length; i++) {
+			try {
+				if(in.isFederated(FederationMap.FType.COL)) {
+					out.getFedMapping().getFederatedRanges()[i + 1].setBeginDim(1, cols);
+					cols += ((ScalarObject) ffr[i].get().getData()[0]).getLongValue();
+				}
+				else if(in.isFederated(FederationMap.FType.ROW))
+					cols = ((ScalarObject) ffr[i].get().getData()[0]).getLongValue();
+				out.getFedMapping().getFederatedRanges()[i].setEndDim(1, cols);
+			}
+			catch(Exception e) {
+				throw new DMLRuntimeException(e);
+			}
+		}
+
+		Types.ValueType[] schema = new Types.ValueType[(int) cols];
+		Arrays.fill(schema, ValueType.STRING);
+		out.setSchema(schema);
+		out.getDataCharacteristics().setDimension(in.getNumRows(), cols);
 	}
 
 	private void triangle(ExecutionContext ec, String opcode) {

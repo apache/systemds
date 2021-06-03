@@ -22,7 +22,7 @@ package org.apache.sysds.test.functions.builtin;
 
 import org.junit.Test;
 import org.apache.sysds.common.Types;
-import org.apache.sysds.lops.LopProperties;
+import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
@@ -43,38 +43,38 @@ public class BuiltinFDTest extends AutomatedTestBase {
 	public void testFD1() {
 		double[][] X =  {{7,1,1,2,2,1},{7,2,2,3,2,1},{7,3,1,4,1,1},{7,4,2,5,3,1},{7,5,3,6,5,1}, {7,6,5,1,4,1}};
 		double[][] M = {{0, 1, 1, 0, 1, 1}};
-		runFDTests(X, M, 1, LopProperties.ExecType.CP );
+		runFDTests(X, M, 1, ExecType.CP );
 	}
 
 	@Test
 	public void testFD2() {
 		double[][] X =  {{1,1,1,1,1},{2,1,2,2,1},{3,2,1,1,1},{4,2,2,2,1},{5,3,3,1,1}};
 		double[][] M = {{1, 1, 1, 1, 1}};
-		runFDTests(X, M, 0.8, LopProperties.ExecType.CP );
+		runFDTests(X, M, 0.8, ExecType.CP );
 	}
 
 	@Test
 	public void testFD3() {
 		double[][] X =  {{1,1},{2,1},{3,2},{2,2},{4,2}, {5,3}};
 		double[][] M = {{0, 1}};
-		runFDTests(X, M, 0.8, LopProperties.ExecType.CP );
+		runFDTests(X, M, 0.8, ExecType.CP );
 	}
 	
 	@Test
 	public void testFD4() {
 		double[][] X =  {{1,1,1,1,1,1,2},{2,1,2,2,1,2,2},{3,2,1,1,1,3,2},{4,2,2,2,1,4,2},{5,3,3,1,1,5,1}};
 		double[][] M = {{0, 1, 1, 1, 0, 1, 1}};
-		runFDTests(X, M, 0.8, LopProperties.ExecType.CP );
+		runFDTests(X, M, 0.8, ExecType.CP );
 	}
 	
 	@Test
 	public void testFD5() {
 		double[][] X =  {{7,1,1,2,2,1},{7,2,2,3,2,1},{7,3,1,4,1,1},{7,4,2,5,3,1},{7,5,3,6,5,1}, {7,6,5,1,4,1}};
 		double[][] M = {{0, 1, 1, 0, 1, 1}};
-		runFDTests(X, M, 0.8, LopProperties.ExecType.CP );
+		runFDTests(X, M, 0.8, ExecType.CP );
 	}
 	
-	private void runFDTests(double [][] X , double[][] M, double threshold, LopProperties.ExecType instType) {
+	private void runFDTests(double [][] X , double[][] M, double threshold, ExecType instType) {
 		Types.ExecMode platformOld = setExecMode(instType);
 		try
 		{

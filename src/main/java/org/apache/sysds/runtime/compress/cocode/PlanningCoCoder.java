@@ -41,7 +41,17 @@ public class PlanningCoCoder {
 	 * The Valid coCoding techniques
 	 */
 	public enum PartitionerType {
-		BIN_PACKING, STATIC, COST;
+		BIN_PACKING, STATIC, COST, COST_MATRIX_MULT, COST_TSMM;
+
+		public static boolean isCostBased( PartitionerType pt) {
+			switch(pt) {
+				case COST_MATRIX_MULT:
+				case COST_TSMM:
+					return true;
+				default:
+					return false;
+			}
+		}
 	}
 
 	/**
@@ -66,10 +76,10 @@ public class PlanningCoCoder {
 			constantGroups = new ArrayList<>();
 			List<CompressedSizeInfoColGroup> newGroups = new ArrayList<>();
 			mem = new Memorizer();
-			for(CompressedSizeInfoColGroup g : colInfos.getInfo()){
-				if(g.getBestCompressionType() == CompressionType.CONST)
+			for(CompressedSizeInfoColGroup g : colInfos.getInfo()) {
+				if(g.getBestCompressionType(cs) == CompressionType.CONST)
 					constantGroups.add(g);
-				else{
+				else {
 					mem.put(g);
 					newGroups.add(g);
 				}
@@ -93,11 +103,15 @@ public class PlanningCoCoder {
 		CompressionSettings cs, int numRows) {
 		switch(type) {
 			case BIN_PACKING:
-				return new CoCodeBinPacking(est, cs, numRows);
+				return new CoCodeBinPacking(est, cs);
 			case STATIC:
-				return new CoCodeStatic(est, cs, numRows);
+				return new CoCodeStatic(est, cs);
 			case COST:
-				return new CoCodeCost(est, cs, numRows);
+				return new CoCodeCost(est, cs);
+			case COST_MATRIX_MULT:
+				return new CoCodeCostMatrixMult(est, cs);
+			case COST_TSMM:
+				return new CoCodeCostTSMM(est, cs);
 			default:
 				throw new RuntimeException("Unsupported column group partitioner: " + type.toString());
 		}
@@ -184,7 +198,7 @@ public class PlanningCoCoder {
 				break;
 		}
 
-		LOG.error(mem.stats());
+		LOG.debug(mem.stats());
 		mem.resetStats();
 
 		List<CompressedSizeInfoColGroup> ret = new ArrayList<>(workset.size());
@@ -224,9 +238,9 @@ public class PlanningCoCoder {
 			if(g == null) {
 				final CompressedSizeInfoColGroup left = mem.get(new ColIndexes(c1));
 				final CompressedSizeInfoColGroup right = mem.get(new ColIndexes(c2));
-				final boolean leftConst = left.getBestCompressionType() == CompressionType.CONST &&
+				final boolean leftConst = left.getBestCompressionType(cs) == CompressionType.CONST &&
 					left.getNumOffs() == 0;
-				final boolean rightConst = right.getBestCompressionType() == CompressionType.CONST &&
+				final boolean rightConst = right.getBestCompressionType(cs) == CompressionType.CONST &&
 					right.getNumOffs() == 0;
 				if(leftConst)
 					g = CompressedSizeInfoColGroup.addConstGroup(c, right, cs.validCompressions);

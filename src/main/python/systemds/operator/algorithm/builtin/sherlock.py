@@ -24,14 +24,79 @@
 
 from typing import Dict, Iterable
 
-from systemds.operator import OperationNode, Matrix
+from systemds.operator import OperationNode, Matrix, Frame, List, MultiReturn, Scalar
 from systemds.script_building.dag import OutputType
 from systemds.utils.consts import VALID_INPUT_TYPES
 
-def sherlock(X_train: OperationNode, y_train: OperationNode):
-    
-    params_dict = {'X_train':X_train, 'y_train':y_train}
-    return OperationNode(X_train.sds_context, 'sherlock', named_input_nodes=params_dict, output_type=OutputType.LIST, number_of_outputs=30, output_types=[OutputType.MATRIX, OutputType.MATRIX, OutputType.MATRIX, OutputType.MATRIX, OutputType.MATRIX, OutputType.MATRIX, OutputType.MATRIX, OutputType.MATRIX, OutputType.MATRIX, OutputType.MATRIX, OutputType.MATRIX, OutputType.MATRIX, OutputType.MATRIX, OutputType.MATRIX, OutputType.MATRIX, OutputType.MATRIX, OutputType.MATRIX, OutputType.MATRIX, OutputType.MATRIX, OutputType.MATRIX, OutputType.MATRIX, OutputType.MATRIX, OutputType.MATRIX, OutputType.MATRIX, OutputType.MATRIX, OutputType.MATRIX, OutputType.MATRIX, OutputType.MATRIX, OutputType.MATRIX, OutputType.MATRIX])
 
-
+def sherlock(X_train: Matrix,
+             y_train: Matrix):
     
+    params_dict = {'X_train': X_train, 'y_train': y_train}
+    
+    vX_0 = Matrix(X_train.sds_context, '')
+    vX_1 = Matrix(X_train.sds_context, '')
+    vX_2 = Matrix(X_train.sds_context, '')
+    vX_3 = Matrix(X_train.sds_context, '')
+    vX_4 = Matrix(X_train.sds_context, '')
+    vX_5 = Matrix(X_train.sds_context, '')
+    vX_6 = Matrix(X_train.sds_context, '')
+    vX_7 = Matrix(X_train.sds_context, '')
+    vX_8 = Matrix(X_train.sds_context, '')
+    vX_9 = Matrix(X_train.sds_context, '')
+    vX_10 = Matrix(X_train.sds_context, '')
+    vX_11 = Matrix(X_train.sds_context, '')
+    vX_12 = Matrix(X_train.sds_context, '')
+    vX_13 = Matrix(X_train.sds_context, '')
+    vX_14 = Matrix(X_train.sds_context, '')
+    vX_15 = Matrix(X_train.sds_context, '')
+    vX_16 = Matrix(X_train.sds_context, '')
+    vX_17 = Matrix(X_train.sds_context, '')
+    vX_18 = Matrix(X_train.sds_context, '')
+    vX_19 = Matrix(X_train.sds_context, '')
+    vX_20 = Matrix(X_train.sds_context, '')
+    vX_21 = Matrix(X_train.sds_context, '')
+    vX_22 = Matrix(X_train.sds_context, '')
+    vX_23 = Matrix(X_train.sds_context, '')
+    vX_24 = Matrix(X_train.sds_context, '')
+    vX_25 = Matrix(X_train.sds_context, '')
+    vX_26 = Matrix(X_train.sds_context, '')
+    vX_27 = Matrix(X_train.sds_context, '')
+    vX_28 = Matrix(X_train.sds_context, '')
+    vX_29 = Matrix(X_train.sds_context, '')
+    output_nodes = [vX_0, vX_1, vX_2, vX_3, vX_4, vX_5, vX_6, vX_7, vX_8, vX_9, vX_10, vX_11, vX_12, vX_13, vX_14, vX_15, vX_16, vX_17, vX_18, vX_19, vX_20, vX_21, vX_22, vX_23, vX_24, vX_25, vX_26, vX_27, vX_28, vX_29, ]
+
+    op = MultiReturn(X_train.sds_context, 'sherlock', output_nodes, named_input_nodes=params_dict)
+
+    vX_0._unnamed_input_nodes = [op]
+    vX_1._unnamed_input_nodes = [op]
+    vX_2._unnamed_input_nodes = [op]
+    vX_3._unnamed_input_nodes = [op]
+    vX_4._unnamed_input_nodes = [op]
+    vX_5._unnamed_input_nodes = [op]
+    vX_6._unnamed_input_nodes = [op]
+    vX_7._unnamed_input_nodes = [op]
+    vX_8._unnamed_input_nodes = [op]
+    vX_9._unnamed_input_nodes = [op]
+    vX_10._unnamed_input_nodes = [op]
+    vX_11._unnamed_input_nodes = [op]
+    vX_12._unnamed_input_nodes = [op]
+    vX_13._unnamed_input_nodes = [op]
+    vX_14._unnamed_input_nodes = [op]
+    vX_15._unnamed_input_nodes = [op]
+    vX_16._unnamed_input_nodes = [op]
+    vX_17._unnamed_input_nodes = [op]
+    vX_18._unnamed_input_nodes = [op]
+    vX_19._unnamed_input_nodes = [op]
+    vX_20._unnamed_input_nodes = [op]
+    vX_21._unnamed_input_nodes = [op]
+    vX_22._unnamed_input_nodes = [op]
+    vX_23._unnamed_input_nodes = [op]
+    vX_24._unnamed_input_nodes = [op]
+    vX_25._unnamed_input_nodes = [op]
+    vX_26._unnamed_input_nodes = [op]
+    vX_27._unnamed_input_nodes = [op]
+    vX_28._unnamed_input_nodes = [op]
+    vX_29._unnamed_input_nodes = [op]
+
+    return op

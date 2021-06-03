@@ -39,14 +39,17 @@ import org.apache.sysds.runtime.codegen.SpoofOuterProduct.OutProdType;
 import org.apache.sysds.runtime.codegen.SpoofRowwise;
 import org.apache.sysds.runtime.codegen.SpoofRowwise.RowType;
 import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
+import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
+import org.apache.sysds.runtime.controlprogram.federated.FederationMap;
 import org.apache.sysds.runtime.controlprogram.federated.FederationMap.FType;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.functionobjects.Builtin.BuiltinCode;
 import org.apache.sysds.runtime.functionobjects.KahanPlus;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
+import org.apache.sysds.runtime.instructions.cp.Data;
 import org.apache.sysds.runtime.instructions.cp.DoubleObject;
 import org.apache.sysds.runtime.instructions.cp.ScalarObject;
 import org.apache.sysds.runtime.instructions.spark.data.PartitionedBroadcast;
@@ -678,16 +681,40 @@ public class SpoofSPInstruction extends SPInstruction {
 	}
 
 	public boolean isFederated(ExecutionContext ec) {
-		for(CPOperand input : _in)
-			if( ec.isFederated(input) )
-				return true;
-		return false;
+		return isFederated(ec, null);
 	}
 	
 	public boolean isFederated(ExecutionContext ec, FType type) {
-		for(CPOperand input : _in)
-			if( ec.isFederated(input, type) )
-				return true;
-		return false;
+		//FIXME remove redundancy with SpoofCPInstruction
+		
+		FederationMap fedMap = null;
+		boolean retVal = false;
+
+		// flags for alignment check
+		boolean equalRows = false;
+		boolean equalCols = false;
+		boolean transposed = false; // flag indicates to check for transposed alignment
+
+		for(CPOperand input : _in) {
+			Data data = ec.getVariable(input);
+			if(data instanceof MatrixObject && ((MatrixObject) data).isFederated(type)) {
+				MatrixObject mo = ((MatrixObject) data);
+				if(fedMap == null) { // first federated matrix
+					fedMap = mo.getFedMapping();
+					retVal = true;
+
+					// setting the constraints for alignment check on further federated matrices
+					equalRows = mo.isFederated(FType.ROW);
+					equalCols = mo.isFederated(FType.COL);
+					transposed = (getOperatorClass().getSuperclass() == SpoofOuterProduct.class);
+				}
+				else if(!fedMap.isAligned(mo.getFedMapping(), false, equalRows, equalCols)
+					&& (!transposed || !(fedMap.isAligned(mo.getFedMapping(), true, equalRows, equalCols)
+						|| mo.getFedMapping().isAligned(fedMap, true, equalRows, equalCols)))) {
+					retVal = false; // multiple federated matrices must be aligned
+				}
+			}
+		}
+		return retVal;
 	}
 }

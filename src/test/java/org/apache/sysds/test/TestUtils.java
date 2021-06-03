@@ -825,11 +825,24 @@ public class TestUtils
 		long distance;
 		for (int i = 0; i < rows && countErrors < 20; i++) {
 			for (int j = 0; j < cols && countErrors < 20; j++) {
-				distance = compareScalarBits(expectedMatrix[i][j], actualMatrix[i][j]);
-				sumDistance += distance;
-				if(distance > maxUnitsOfLeastPrecision){
-					message += ("\n Expected:" + expectedMatrix[i][j] +" vs actual: "+actualMatrix[i][j]+" at "+i+" "+j + " Distance in bits: " + distance);
-					countErrors++;
+				double v1 = expectedMatrix[i][j];
+				double v2 = actualMatrix[i][j];
+				if(v1 == 0 && v2 == 0)
+					continue;
+				else if(v1 == 0 || v2 == 0){
+    				if( Math.abs(v1 - v2) > 1E-16){
+						message +=  ("\n Expected:" + v1 +" vs actual: "+v2+" at "+i+" "+j + " Not using Bit distance since one value is 0");
+						countErrors ++;
+					}
+				}
+				else{
+					distance = compareScalarBits(expectedMatrix[i][j], actualMatrix[i][j]);
+					sumDistance += distance;
+					if(distance > maxUnitsOfLeastPrecision){
+						message += ("\n Expected:" + v1 +" vs actual: "+v2+" at "+i+" "+j + " Distance in bits: " + distance);
+						countErrors++;
+					}
+
 				}
 			}
 		}
@@ -991,12 +1004,24 @@ public class TestUtils
 	}
 
 	public static void compareScalarBitsJUnit(double d1, double d2, long maxUnitsOfLeastPrecision){
+		compareScalarBitsJUnit(d1,d2,maxUnitsOfLeastPrecision, null);
+	}
 
+	public static void compareScalarBitsJUnit(double d1, double d2, long maxUnitsOfLeastPrecision, String errorMessage){
 		long distance = compareScalarBits(d1,d2);
-		assertTrue("Given scalars do not match: " + d1 + " != " + d2 + " with bitDistance: " + distance ,distance <= maxUnitsOfLeastPrecision);
+		boolean equal = distance <= maxUnitsOfLeastPrecision;
+
+		String message = "Given scalars do not match: " + d1 + " != " + d2 + " with bitDistance: " + distance;
+		if(errorMessage != null)
+			message = errorMessage + "\n" + message;
+		assertTrue(message, equal);
 	}
 
 	public static void compareScalars(String expected, String actual) {
+			assertEquals(expected, actual);
+	}
+	
+	public static void compareScalars(Boolean expected, Boolean actual) {
 			assertEquals(expected, actual);
 	}
 

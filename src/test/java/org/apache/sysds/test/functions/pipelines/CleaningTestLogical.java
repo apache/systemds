@@ -24,7 +24,6 @@ import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
 import org.junit.Assert;
-import org.junit.Ignore;
 import org.junit.Test;
 
 public class CleaningTestLogical extends AutomatedTestBase {
@@ -35,12 +34,12 @@ public class CleaningTestLogical extends AutomatedTestBase {
 	private static final String DATA_DIR = DATASET_DIR+ "pipelines/";
 
 	private final static String DIRTY = DATA_DIR+ "dirty.csv";
-	private final static String CLEAN = DATA_DIR+ "clean.csv";
 	private final static String META = RESOURCE+ "meta/meta_census.csv";
 
 	private static final String PARAM_DIR = "./scripts/pipelines/properties/";
 	private final static String PARAM = PARAM_DIR + "param.csv";
-	private final static String PRIMITIVES = PARAM_DIR + "primitives.csv";
+	private final static String PRIMITIVES = PARAM_DIR + "testPrimitives.csv";
+	private final static String OUTPUT = RESOURCE+"intermediates/logical.csv";
 
 	@Override
 	public void setUp() {
@@ -49,18 +48,24 @@ public class CleaningTestLogical extends AutomatedTestBase {
 
 	@Test
 	public void testLogical1() {
-		runTestLogical(2, 10, 2, 2, 2, 2,
-			"classification", Types.ExecMode.SINGLE_NODE);
+		runTestLogical(10,  4, 2, 2,
+			"multiLogReg", Types.ExecMode.SINGLE_NODE);
 	}
 
-	@Ignore
-	public void testLogicalSP() {
-		runTestLogical(3, 10, 3, 2, 2, 4,
-			"classification", Types.ExecMode.SPARK);
+	@Test
+	public void testLogical2() {
+		runTestLogical(2,  3, 3, 2,
+			"multiLogReg", Types.ExecMode.SINGLE_NODE);
 	}
 
-	private void runTestLogical(int max_iter, int pipelineLength, int crossfold,
-		int num_inst, int num_exec, int n_pop, String target, Types.ExecMode et) {
+	@Test
+	public void testLogicalHybrid() {
+		runTestLogical(3,  3, 2, 2,
+			"multiLogReg", Types.ExecMode.HYBRID);
+	}
+
+	private void runTestLogical(int max_iter, int crossfold,
+		int num_inst, int num_exec,  String target, Types.ExecMode et) {
 
 		//		setOutputBuffering(true);
 		String HOME = SCRIPT_DIR+"functions/pipelines/" ;
@@ -70,8 +75,8 @@ public class CleaningTestLogical extends AutomatedTestBase {
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
 			programArgs = new String[] {"-stats", "-exec", "singlenode", "-nvargs", "dirtyData="+DIRTY,
 				"metaData="+META, "primitives="+PRIMITIVES, "parameters="+PARAM, "max_iter="+ max_iter,
-				 "pipLength="+ pipelineLength, "cv="+ crossfold, "num_inst="+ num_inst, "num_exec="+ num_exec,
-				"n_pop="+ n_pop,"target="+target, "cleanData="+CLEAN, "O="+output("O")};
+				 "cv="+ crossfold, "num_inst="+ num_inst, "num_exec="+ num_exec,
+				"target="+target, "output="+OUTPUT, "O="+output("O")};
 
 			runTest(true, EXCEPTION_NOT_EXPECTED, null, -1);
 

@@ -19,19 +19,19 @@
 
 package org.apache.sysds.runtime.compress.colgroup.dictionary;
 
+import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.util.Arrays;
 
 import org.apache.commons.lang.NotImplementedException;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.utils.BitmapLossy;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.functionobjects.Divide;
 import org.apache.sysds.runtime.functionobjects.Multiply;
 import org.apache.sysds.runtime.functionobjects.Plus;
 import org.apache.sysds.runtime.functionobjects.ValueFunction;
+import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
 import org.apache.sysds.utils.MemoryEstimates;
 
@@ -42,7 +42,6 @@ import org.apache.sysds.utils.MemoryEstimates;
  */
 public class QDictionary extends ADictionary {
 
-	protected static final Log LOG = LogFactory.getLog(QDictionary.class.getName());
 	protected double _scale;
 	protected byte[] _values;
 
@@ -97,21 +96,6 @@ public class QDictionary extends ADictionary {
 	}
 
 	@Override
-	public int hasZeroTuple(int nCol) {
-		if(_values == null)
-			return -1;
-		int len = getNumberOfValues(nCol);
-		for(int i = 0, off = 0; i < len; i++, off += nCol) {
-			boolean allZeros = true;
-			for(int j = 0; j < nCol; j++)
-				allZeros &= (_values[off + j] == 0);
-			if(allZeros)
-				return i;
-		}
-		return -1;
-	}
-
-	@Override
 	public double aggregate(double init, Builtin fn) {
 		// full aggregate can disregard tuple boundaries
 		int len = size();
@@ -121,14 +105,13 @@ public class QDictionary extends ADictionary {
 		return ret;
 	}
 
-
 	@Override
-	public double[] aggregateTuples(Builtin fn, final int nCol){
+	public double[] aggregateTuples(Builtin fn, final int nCol) {
 		if(nCol == 1)
 			return getValues();
 		final int nRows = _values.length / nCol;
 		double[] res = new double[nRows];
-		for(int i = 0; i < nRows; i++){
+		for(int i = 0; i < nRows; i++) {
 			final int off = i * nCol;
 			res[i] = _values[off];
 			for(int j = off + 1; j < off + nCol; j++)
@@ -197,8 +180,8 @@ public class QDictionary extends ADictionary {
 	}
 
 	@Override
-	public QDictionary applyBinaryRowOpRight(ValueFunction fn, double[] v, boolean sparseSafe, int[] colIndexes) {
-
+	public QDictionary applyBinaryRowOpRight(BinaryOperator op, double[] v, boolean sparseSafe, int[] colIndexes) {
+		ValueFunction fn = op.fn;
 		if(_values == null) {
 			if(sparseSafe) {
 				return new QDictionary(null, 1);
@@ -238,13 +221,12 @@ public class QDictionary extends ADictionary {
 	}
 
 	@Override
-	public QDictionary applyBinaryRowOpLeft(ValueFunction fn, double[] v, boolean sparseSafe, int[] colIndexes) {
+	public QDictionary applyBinaryRowOpLeft(BinaryOperator op, double[] v, boolean sparseSafe, int[] colIndexes) {
 		throw new NotImplementedException("Not Implemented yet");
 	}
 
-	@Override
-	public int size() {
-		return _values == null ? 0 : _values.length;
+	private int size() {
+		return _values.length;
 	}
 
 	@Override
@@ -258,19 +240,28 @@ public class QDictionary extends ADictionary {
 		return new QDictionary(ret, _scale);
 	}
 
-
 	@Override
 	public void write(DataOutput out) throws IOException {
-		super.write(out);
+		out.writeByte(DictionaryFactory.Type.INT8_DICT.ordinal());
 		out.writeDouble(_scale);
 		out.writeInt(_values.length);
 		for(int i = 0; i < _values.length; i++)
 			out.writeByte(_values[i]);
 	}
 
+	public static QDictionary read(DataInput in) throws IOException {
+		double scale = in.readDouble();
+		int numVals = in.readInt();
+		byte[] values = new byte[numVals];
+		for(int i = 0; i < numVals; i++) {
+			values[i] = in.readByte();
+		}
+		return new QDictionary(values, scale);
+	}
+
 	@Override
 	public long getExactSizeOnDisk() {
-		return 8 + 4 + size();
+		return 1 + 8 + 4 + size();
 	}
 
 	@Override
@@ -312,6 +303,20 @@ public class QDictionary extends ADictionary {
 				res += (int) (_values[valOff + i] * _values[valOff + i]) * _scale * _scale;
 			return res;
 		}
+	}
+
+	@Override
+	public double[] colSum(int[] counts, int nCol) {
+		throw new NotImplementedException("Not Implemented");
+		// final double[] res = new double[counts.length];
+		// int idx = 0;
+		// for(int k = 0; k< _values.length / counts.length; k++){
+		// final int cntk = counts[k];
+		// for(int j = 0; j< counts.length; j++){
+		// res[j] += _values[idx++] * cntk;
+		// }
+		// }
+		// return res;
 	}
 
 	@Override
@@ -398,12 +403,13 @@ public class QDictionary extends ADictionary {
 		}
 	}
 
-	public StringBuilder getString(StringBuilder sb, int colIndexes) {
+	public String getString(int colIndexes) {
+		StringBuilder sb = new StringBuilder();
 		for(int i = 0; i < size(); i++) {
 			sb.append(_values[i]);
 			sb.append((i) % (colIndexes) == colIndexes - 1 ? "\n" : " ");
 		}
-		return sb;
+		return sb.toString();
 	}
 
 	public Dictionary makeDoubleDictionary() {
@@ -438,36 +444,71 @@ public class QDictionary extends ADictionary {
 	}
 
 	@Override
-	public boolean containsValue(double pattern){
+	public boolean containsValue(double pattern) {
 		if(Double.isNaN(pattern) || Double.isInfinite(pattern))
 			return false;
 		throw new NotImplementedException("Not contains value on Q Dictionary");
 	}
 
 	@Override
-	public long getNumberNonZeros(int[] counts, int nCol){
-		long nnz =  0;
+	public long getNumberNonZeros(int[] counts, int nCol) {
+		long nnz = 0;
 		final int nRow = _values.length / nCol;
-		for(int i = 0; i < nRow; i++){
+		for(int i = 0; i < nRow; i++) {
 			long rowCount = 0;
-			final int off = i * nCol; 
-			for(int j = off; j < off + nCol; j++){
+			final int off = i * nCol;
+			for(int j = off; j < off + nCol; j++) {
 				if(_values[j] != 0)
-					rowCount ++;
+					rowCount++;
 			}
 			nnz += rowCount * counts[i];
 		}
 		return nnz;
 	}
 
-
 	@Override
-	public void addToEntry(Dictionary d, int fr, int to, int nCol){
-		throw new NotImplementedException("Not implemented yet");	
+	public void addToEntry(Dictionary d, int fr, int to, int nCol) {
+		throw new NotImplementedException("Not implemented yet");
 	}
 
 	@Override
 	public boolean isLossy() {
 		return false;
+	}
+
+	@Override
+	public double[] getTuple(int index, int nCol) {
+		return null;
+	}
+
+	@Override
+	public ADictionary subtractTuple(double[] tuple) {
+		throw new NotImplementedException();
+	}
+
+	@Override
+	public MatrixBlockDictionary getAsMatrixBlockDictionary(int nCol) {
+		throw new NotImplementedException();
+	}
+
+	@Override
+	public void aggregateCols(double[] c, Builtin fn, int[] colIndexes) {
+		throw new NotImplementedException();
+	}
+
+	@Override
+	public ADictionary scaleTuples(int[] scaling, int nCol) {
+		throw new NotImplementedException();
+	}
+
+	@Override
+	public void preaggValuesFromDense(int numVals, int[] colIndexes, int[] aggregateColumns, double[] b, double[] ret,
+		int cut) {
+		throw new NotImplementedException();
+	}
+
+	@Override
+	public ADictionary replace(double pattern, double replace, int nCol, boolean safe) {
+		throw new NotImplementedException();
 	}
 }

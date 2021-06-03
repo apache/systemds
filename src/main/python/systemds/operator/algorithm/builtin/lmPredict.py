@@ -24,15 +24,18 @@
 
 from typing import Dict, Iterable
 
-from systemds.operator import OperationNode, Matrix
+from systemds.operator import OperationNode, Matrix, Frame, List, MultiReturn, Scalar
 from systemds.script_building.dag import OutputType
 from systemds.utils.consts import VALID_INPUT_TYPES
 
-def lmPredict(X: OperationNode, B: OperationNode, ytest: OperationNode, **kwargs: Dict[str, VALID_INPUT_TYPES]):
+
+def lmPredict(X: Matrix,
+              B: Matrix,
+              ytest: Matrix,
+              **kwargs: Dict[str, VALID_INPUT_TYPES]):
     
-    params_dict = {'X':X, 'B':B, 'ytest':ytest}
+    params_dict = {'X': X, 'B': B, 'ytest': ytest}
     params_dict.update(kwargs)
-    return Matrix(X.sds_context, 'lmPredict', named_input_nodes=params_dict)
-
-
-    
+    return Matrix(X.sds_context,
+        'lmPredict',
+        named_input_nodes=params_dict)

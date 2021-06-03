@@ -38,7 +38,7 @@ import numpy as np
 import pandas as pd
 from py4j.java_gateway import GatewayParameters, JavaGateway
 from py4j.protocol import Py4JNetworkError
-from systemds.operator import Frame, Matrix, OperationNode, Scalar, Source
+from systemds.operator import Frame, Matrix, OperationNode, Scalar, Source, List
 from systemds.script_building import OutputType
 from systemds.utils.consts import VALID_INPUT_TYPES
 from systemds.utils.helpers import get_module_dir
@@ -446,7 +446,7 @@ class SystemDSContext(object):
         The importing is done thorugh the DML command source, and adds all defined methods from
         the script to the Source object returned in python. This gives the flexibility to call the methods 
         directly on the object returned.
-    
+
         In systemds a method called func_01 can then be imported using
 
         ```python
@@ -458,3 +458,6 @@ class SystemDSContext(object):
         :param print_imported_methods: boolean specifying if the imported methods should be printed.
         """
         return Source(self, path, name, print_imported_methods)
+
+    def list(self, *args: Sequence[VALID_INPUT_TYPES], **kwargs: Dict[str, VALID_INPUT_TYPES]) -> 'List':
+        return List(self, unnamed_input_nodes=args, named_input_nodes=kwargs)

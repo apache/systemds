@@ -223,6 +223,12 @@ public class ParForStatementBlock extends ForStatementBlock
 					else //default case
 						params.put(key, _paramDefaults.get(key));
 				}
+			
+			//keep info if forced into remote exec
+			if( constrained && params.containsKey(EXEC_MODE) )
+				dmlProg.setContainsRemoteParfor(
+					params.get(EXEC_MODE).equals(PExecMode.REMOTE_SPARK.name()) ||
+					params.get(EXEC_MODE).equals(PExecMode.REMOTE_SPARK_DP.name()));
 		}
 		else {
 			//set all defaults

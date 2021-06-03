@@ -64,6 +64,7 @@ import org.apache.sysds.runtime.controlprogram.ParForProgramBlock.PartitionForma
 import org.apache.sysds.runtime.controlprogram.Program;
 import org.apache.sysds.runtime.controlprogram.ProgramBlock;
 import org.apache.sysds.runtime.controlprogram.WhileProgramBlock;
+import org.apache.sysds.runtime.controlprogram.caching.FrameObject;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject.UpdateType;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
@@ -78,6 +79,7 @@ import org.apache.sysds.runtime.instructions.cp.BooleanObject;
 import org.apache.sysds.runtime.instructions.cp.CPInstruction;
 import org.apache.sysds.runtime.instructions.cp.Data;
 import org.apache.sysds.runtime.instructions.cp.DoubleObject;
+import org.apache.sysds.runtime.instructions.cp.EvalNaryCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.FunctionCallCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.IntObject;
 import org.apache.sysds.runtime.instructions.cp.ListObject;
@@ -160,8 +162,6 @@ public class ProgramConverter
 	public static final String PSBODY_END = LEVELOUT + CDATA_END;
 	
 	//exception msgs
-	public static final String NOT_SUPPORTED_EXTERNALFUNCTION_PB = "Not supported: ExternalFunctionProgramBlock contains MR instructions. " +
-																	"(ExternalFunctionPRogramBlockCP can be used)";
 	public static final String NOT_SUPPORTED_SPARK_INSTRUCTION   = "Not supported: Instructions of type other than CP instructions";
 	public static final String NOT_SUPPORTED_SPARK_PARFOR        = "Not supported: Nested ParFOR REMOTE_SPARK due to possible deadlocks." +
 																	"(LOCAL can be used for innner ParFOR)";
@@ -920,7 +920,7 @@ public class ProgramConverter
 				//name = so.getName();
 				value = so.getStringValue();
 				break;
-			case MATRIX:
+			case MATRIX: {
 				MatrixObject mo = (MatrixObject) dat;
 				MetaDataFormat md = (MetaDataFormat) dat.getMetaData();
 				DataCharacteristics dc = md.getDataCharacteristics();
@@ -938,6 +938,21 @@ public class ProgramConverter
 				metaData[7] = String.valueOf(mo.isHDFSFileExists());
 				metaData[8] = String.valueOf(mo.isCleanupEnabled());
 				break;
+			}
+			case FRAME: {
+				FrameObject fo = (FrameObject) dat;
+				MetaDataFormat md = (MetaDataFormat) dat.getMetaData();
+				DataCharacteristics dc = md.getDataCharacteristics();
+				value = fo.getFileName();
+				metaData = new String[6];
+				metaData[0] = String.valueOf(dc.getRows());
+				metaData[1] = String.valueOf(dc.getCols());
+				metaData[2] = String.valueOf(dc.getBlocksize());
+				metaData[3] = md.getFileFormat().toString();
+				metaData[4] = String.valueOf(fo.isHDFSFileExists());
+				metaData[5] = String.valueOf(fo.isCleanupEnabled());
+				break;
+			}
 			case LIST:
 				// SCHEMA: <name>|<datatype>|<valuetype>|value|<metadata>|<tab>element1<tab>element2<tab>element3 (this is the list)
 				//         (for the element1) <listName-index>|<datatype>|<valuetype>|value
@@ -1639,6 +1654,20 @@ public class ProgramConverter
 				dat = mo;
 				break;
 			}
+			case FRAME: {
+				FrameObject mo = new FrameObject(valString);
+				long rows = Long.parseLong(st.nextToken());
+				long cols = Long.parseLong(st.nextToken());
+				int blen = Integer.parseInt(st.nextToken());
+				FileFormat fmt = FileFormat.safeValueOf(st.nextToken());
+				MatrixCharacteristics mc = new MatrixCharacteristics(rows, cols, blen, -1);
+				MetaDataFormat md = new MetaDataFormat(mc, fmt);
+				mo.setMetaData( md );
+				mo.setHDFSFileExists(Boolean.valueOf(st.nextToken()));
+				mo.enableCleanup(Boolean.valueOf(st.nextToken()));
+				dat = mo;
+				break;
+			}
 			case LIST:
 				int size = Integer.parseInt(st.nextToken());
 				String namesStr = st.nextToken();
@@ -1690,7 +1719,8 @@ public class ProgramConverter
 	 * @return instruction
 	 */
 	private static Instruction saveReplaceThreadID( Instruction inst, String pattern, String replacement ) {
-		if ( inst instanceof VariableCPInstruction ) { //createvar, setfilename
+		if ( inst instanceof VariableCPInstruction //createvar, setfilename
+			|| inst instanceof EvalNaryCPInstruction ) {
 			//update in-memory representation
 			inst.updateInstructionThreadID(pattern, replacement);
 		}

@@ -19,6 +19,7 @@
 
 package org.apache.sysds.runtime.instructions.fed;
 
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.sysds.lops.MMTSJ;
 import org.apache.sysds.runtime.codegen.SpoofCellwise;
 import org.apache.sysds.runtime.codegen.SpoofMultiAggregate;
@@ -72,6 +73,10 @@ import org.apache.sysds.runtime.instructions.spark.UnarySPInstruction;
 import org.apache.sysds.runtime.instructions.spark.WriteSPInstruction;
 
 public class FEDInstructionUtils {
+
+	private static String[] PARAM_BUILTINS = new String[]{
+		"replace", "rmempty", "lowertri", "uppertri", "transformdecode", "transformapply", "tokenize"};
+
 	// private static final Log LOG = LogFactory.getLog(FEDInstructionUtils.class.getName());
 
 	// This is currently a rather simplistic to our solution of replacing instructions with their correct federated
@@ -166,15 +171,8 @@ public class FEDInstructionUtils {
 		}
 		else if( inst instanceof ParameterizedBuiltinCPInstruction ) {
 			ParameterizedBuiltinCPInstruction pinst = (ParameterizedBuiltinCPInstruction) inst;
-			if((pinst.getOpcode().equals("replace") || pinst.getOpcode().equals("rmempty")
-				|| pinst.getOpcode().equals("lowertri") || pinst.getOpcode().equals("uppertri"))
-				&& pinst.getTarget(ec).isFederated()) {
+			if( ArrayUtils.contains(PARAM_BUILTINS, pinst.getOpcode()) && pinst.getTarget(ec).isFederated() )
 				fedinst = ParameterizedBuiltinFEDInstruction.parseInstruction(pinst.getInstructionString());
-			}
-			else if((pinst.getOpcode().equals("transformdecode") || pinst.getOpcode().equals("transformapply")) &&
-				pinst.getTarget(ec).isFederated()) {
-				return ParameterizedBuiltinFEDInstruction.parseInstruction(pinst.getInstructionString());
-			}
 		}
 		else if (inst instanceof MultiReturnParameterizedBuiltinCPInstruction) {
 			MultiReturnParameterizedBuiltinCPInstruction minst = (MultiReturnParameterizedBuiltinCPInstruction) inst;
@@ -237,7 +235,7 @@ public class FEDInstructionUtils {
 			SpoofCPInstruction instruction = (SpoofCPInstruction) inst;
 			Class<?> scla = instruction.getOperatorClass().getSuperclass();
 			if(((scla == SpoofCellwise.class || scla == SpoofMultiAggregate.class
-						|| scla == SpoofOuterProduct.class) && instruction.isFederated(ec))
+				|| scla == SpoofOuterProduct.class) && instruction.isFederated(ec))
 				|| (scla == SpoofRowwise.class && instruction.isFederated(ec, FType.ROW))) {
 				fedinst = SpoofFEDInstruction.parseInstruction(instruction.getInstructionString());
 			}

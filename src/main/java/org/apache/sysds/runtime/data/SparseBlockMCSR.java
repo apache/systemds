@@ -48,7 +48,8 @@ public class SparseBlockMCSR extends SparseBlock
 			SparseRow[] orows = ((SparseBlockMCSR)sblock)._rows;
 			_rows = new SparseRow[orows.length];
 			for( int i=0; i<_rows.length; i++ )
-				_rows[i] = new SparseRowVector(orows[i]);
+				if( orows[i] != null )
+					_rows[i] = new SparseRowVector(orows[i]);
 		}
 		//general case SparseBlock
 		else { 

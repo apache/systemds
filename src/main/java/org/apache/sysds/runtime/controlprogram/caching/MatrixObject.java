@@ -462,9 +462,10 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 
 		// Read matrix and maintain meta data, 
 		// if the MatrixObject is federated there is nothing extra to read, and therefore only acquire read and release
+		int blen = mc.getBlocksize() <= 0 ? ConfigurationManager.getBlocksize() : mc.getBlocksize();
 		MatrixBlock newData = isFederated() ? acquireReadAndRelease() :
 			DataConverter.readMatrixFromHDFS(fname, iimd.getFileFormat(), rlen,
-			clen, mc.getBlocksize(), mc.getNonZeros(), getFileFormatProperties());
+			clen, blen, mc.getNonZeros(), getFileFormatProperties());
 		
 		if(iimd.getFileFormat() == FileFormat.CSV){
 			_metaData = _metaData instanceof MetaDataFormat ?

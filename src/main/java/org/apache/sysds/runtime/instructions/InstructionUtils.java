@@ -39,7 +39,7 @@ import org.apache.sysds.lops.WeightedSquaredLoss;
 import org.apache.sysds.lops.WeightedSquaredLossR;
 import org.apache.sysds.lops.WeightedUnaryMM;
 import org.apache.sysds.lops.WeightedUnaryMMR;
-import org.apache.sysds.lops.LopProperties.ExecType;
+import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.functionobjects.And;
 import org.apache.sysds.runtime.functionobjects.BitwAnd;
@@ -1089,7 +1089,7 @@ public class InstructionUtils
 		return InstructionUtils.concatOperands(parts[0], parts[1], createOperand(op1), createOperand(op2), createOperand(out));
 	}
 
-	public static String constructUnaryInstString(String instString, String opcode, CPOperand op1, CPOperand out) {
+	public static String constructUnaryInstString(String instString, CPOperand op1, String opcode, CPOperand out) {
 		String[] parts = instString.split(Lop.OPERAND_DELIMITOR);
 		parts[1] = opcode;
 		return InstructionUtils.concatOperands(parts[0], parts[1], createOperand(op1), createOperand(out));

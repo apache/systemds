@@ -43,7 +43,7 @@
     <sysds.codegen.enabled>false</sysds.codegen.enabled>
 
     <!-- set the codegen API (auto, java, cuda) -->
-   <sysds.codegen.api>auto</sysds.codegen.api>
+    <sysds.codegen.api>auto</sysds.codegen.api>
 
     <!-- set the codegen java compiler (auto, janino, javac, nvcc, nvrtc) -->
     <sysds.codegen.compiler>auto</sysds.codegen.compiler>

@@ -22,8 +22,8 @@ package org.apache.sysds.test.functions.builtin;
 import org.junit.Test;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types;
+import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.hops.OptimizerUtils;
-import org.apache.sysds.lops.LopProperties;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
@@ -52,86 +52,86 @@ public class BuiltinKmeansTest extends AutomatedTestBase
 
 	@Test
 	public void testKMeansDenseBinSingleRewritesCP() {
-		runKMeansTest(false, 2, 1, true, LopProperties.ExecType.CP);
+		runKMeansTest(false, 2, 1, true, ExecType.CP);
 	}
 
 	@Test
 	public void testKMeansSparseBinSingleRewritesCP() {
-		runKMeansTest(true,2, 1, true,  LopProperties.ExecType.CP);
+		runKMeansTest(true,2, 1, true,  ExecType.CP);
 	}
 
 	@Test
 	public void testKMeansDenseBinSingleCP() {
-		runKMeansTest(false,2, 1, false,  LopProperties.ExecType.CP);
+		runKMeansTest(false,2, 1, false,  ExecType.CP);
 	}
 
 	@Test
 	public void testKMeansSparseBinSingleCP() {
-		runKMeansTest(true, 2, 1, false, LopProperties.ExecType.CP);
+		runKMeansTest(true, 2, 1, false, ExecType.CP);
 	}
 
 	@Test
 	public void testKMeansDenseBinMultiRewritesCP() {
-		runKMeansTest(false, 2, 10, true, LopProperties.ExecType.CP);
+		runKMeansTest(false, 2, 10, true, ExecType.CP);
 	}
 
 	@Test
 	public void testKMeansSparseBinMultiRewritesCP() {
-		runKMeansTest(true, 2, 10, true, LopProperties.ExecType.CP);
+		runKMeansTest(true, 2, 10, true, ExecType.CP);
 	}
 
 	@Test
 	public void testKMeansDenseBinMultiCP() {
-		runKMeansTest(false, 2, 10, false, LopProperties.ExecType.CP);
+		runKMeansTest(false, 2, 10, false, ExecType.CP);
 	}
 
 	@Test
 	public void testKMeansSparseBinMultiCP() {
-		runKMeansTest(true, 2, 10, false, LopProperties.ExecType.CP);
+		runKMeansTest(true, 2, 10, false, ExecType.CP);
 	}
 
 	@Test
 	public void testKMeansDenseMulSingleRewritesCP() {
-		runKMeansTest(false, 20, 1, true, LopProperties.ExecType.CP);
+		runKMeansTest(false, 20, 1, true, ExecType.CP);
 	}
 
 	@Test
 	public void testKMeansSparseMulSingleRewritesCP() {
-		runKMeansTest(true, 20, 1, true, LopProperties.ExecType.CP);
+		runKMeansTest(true, 20, 1, true, ExecType.CP);
 	}
 
 	@Test
 	public void testKMeansDenseMulSingleCP() {
-		runKMeansTest(false, 20, 1, false, LopProperties.ExecType.CP);
+		runKMeansTest(false, 20, 1, false, ExecType.CP);
 	}
 
 	@Test
 	public void testKMeansSparseMulSingleCP() {
-		runKMeansTest(true, 20, 1, false, LopProperties.ExecType.CP);
+		runKMeansTest(true, 20, 1, false, ExecType.CP);
 	}
 
 	@Test
 	public void testKMeansDenseMulMultiRewritesCP() {
-		runKMeansTest( false, 20, 10, true, LopProperties.ExecType.CP);
+		runKMeansTest( false, 20, 10, true, ExecType.CP);
 	}
 
 	@Test
 	public void testKMeansSparseMulMultiRewritesCP() {
-		runKMeansTest(true, 20, 10, true, LopProperties.ExecType.CP);
+		runKMeansTest(true, 20, 10, true, ExecType.CP);
 	}
 
 	@Test
 	public void testKMeansDenseMulMultiCP() {
-		runKMeansTest(false, 20, 10, false, LopProperties.ExecType.CP);
+		runKMeansTest(false, 20, 10, false, ExecType.CP);
 	}
 
 	@Test
 	public void testKMeansSparseMulMultiCP() {
-		runKMeansTest(true, 20, 10, false, LopProperties.ExecType.CP);
+		runKMeansTest(true, 20, 10, false, ExecType.CP);
 	}
 	
 	private void runKMeansTest(boolean sparse, int centroids, int runs,
-		boolean rewrites, LopProperties.ExecType instType)
+		boolean rewrites, ExecType instType)
 	{
 		Types.ExecMode platformOld = setExecMode(instType);
 

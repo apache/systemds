@@ -27,8 +27,7 @@ import java.io.File;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.common.Types;
-import org.apache.sysds.lops.LopProperties;
-import org.apache.sysds.lops.LopProperties.ExecType;
+import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
@@ -111,7 +110,7 @@ public class compressInstructionRewrite extends AutomatedTestBase {
 	}
 
 
-	public void compressTest(int cols, int rows, double sparsity, LopProperties.ExecType instType, int min, int max,
+	public void compressTest(int cols, int rows, double sparsity, ExecType instType, int min, int max,
 		int decompressionCountExpected, int compressionCountsExpected, String name) {
 
 		Types.ExecMode platformOld = setExecMode(instType);

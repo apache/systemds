@@ -341,7 +341,7 @@ public class ParameterizedBuiltinFEDInstruction extends ComputationFEDInstructio
 				output,
 				new CPOperand[] {getTargetOperand()},
 				new long[] {mo.getFedMapping().getID()});
-			mo.getFedMapping().execute(getTID(), fr1);
+			mo.getFedMapping().execute(getTID(), true, fr1);
 			out.setFedMapping(mo.getFedMapping().copyWithNewID(fr1.getID()));
 		}
 		else if(!isNotAligned) {
@@ -355,7 +355,7 @@ public class ParameterizedBuiltinFEDInstruction extends ComputationFEDInstructio
 			FederatedRequest fr3 = mo.getFedMapping().cleanup(getTID(), fr1[0].getID());
 
 			// execute federated operations and set output
-			mo.getFedMapping().execute(getTID(), fr1, fr2, fr3);
+			mo.getFedMapping().execute(getTID(), true, fr1, fr2, fr3);
 			out.setFedMapping(mo.getFedMapping().copyWithNewID(fr2.getID()));
 		}
 		else {
@@ -369,7 +369,7 @@ public class ParameterizedBuiltinFEDInstruction extends ComputationFEDInstructio
 			FederatedRequest fr3 = mo.getFedMapping().cleanup(getTID(), fr1.getID());
 
 			// execute federated operations and set output
-			mo.getFedMapping().execute(getTID(), fr1, fr2, fr3);
+			mo.getFedMapping().execute(getTID(), true, fr1, fr2, fr3);
 			out.setFedMapping(mo.getFedMapping().copyWithNewID(fr2.getID()));
 		}
 

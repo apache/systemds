@@ -28,16 +28,15 @@ from systemds.operator import OperationNode, Matrix, Frame, List, MultiReturn, S
 from systemds.script_building.dag import OutputType
 from systemds.utils.consts import VALID_INPUT_TYPES
 
-def toOneHot(X: OperationNode, numClasses: int):
+
+def toOneHot(X: Matrix,
+             numClasses: int):
     """
     :param X: vector with N integer entries between 1 and numClasses
     :param numclasses: number of columns, must be >= largest value in X
     :return: 'OperationNode' containing matrix with shape (n, numclasses) 
     """
-    params_dict = {'X':X, 'numClasses':numClasses}
+    params_dict = {'X': X, 'numClasses': numClasses}
     return Matrix(X.sds_context,
-		'toOneHot',
-		named_input_nodes=params_dict)
-
-
-    
+        'toOneHot',
+        named_input_nodes=params_dict)

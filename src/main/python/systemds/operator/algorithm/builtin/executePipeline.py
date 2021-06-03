@@ -28,15 +28,14 @@ from systemds.operator import OperationNode, Matrix, Frame, List, MultiReturn, S
 from systemds.script_building.dag import OutputType
 from systemds.utils.consts import VALID_INPUT_TYPES
 
-def executePipeline(X: OperationNode, **kwargs: Dict[str, VALID_INPUT_TYPES]):
+
+def executePipeline(X: Matrix,
+                    **kwargs: Dict[str, VALID_INPUT_TYPES]):
     """
     :return: 'OperationNode' containing encoding of categorical features & features & ohe call, to call inside eval as a function & to call inside eval as a function & doing relative over-sampling & count  & replace the null with default values & version of pca 
     """
-    params_dict = {'X':X}
+    params_dict = {'X': X}
     params_dict.update(kwargs)
     return Matrix(X.sds_context,
-		'executePipeline',
-		named_input_nodes=params_dict)
-
-
-    
+        'executePipeline',
+        named_input_nodes=params_dict)

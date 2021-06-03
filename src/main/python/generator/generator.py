@@ -97,8 +97,7 @@ class PythonAPIFunctionGenerator(object):
     api_template = u"""def {function_name}({parameters}):
     {header}
     {params_dict}
-    {api_call}\n\n
-    """
+    {api_call}\n"""
 
     kwargs_parameter_string = u"**kwargs: Dict[str, VALID_INPUT_TYPES]"
     kwargs_result = u"params_dict.update(kwargs)"
@@ -128,8 +127,9 @@ class PythonAPIFunctionGenerator(object):
             }
         @return: function definition
         """
-        parameters = self.format_param_string(data['parameters'])
         function_name = data['function_name']
+        parameters = self.format_param_string(
+            data['parameters'], len(function_name))
         header = data['function_header'] if data['function_header'] else ""
         params_dict = self.format_params_dict_string(data['parameters'])
         api_call = self.format_api_call(
@@ -138,39 +138,32 @@ class PythonAPIFunctionGenerator(object):
             data['function_name']
         )
         return self.__class__.api_template.format(
-            function_name=function_name,
-            parameters=parameters,
-            header=header,
-            params_dict=params_dict,
-            api_call=api_call
-        )
+            function_name=function_name, parameters=parameters, header=header,
+            params_dict=params_dict, api_call=api_call)
 
-    def format_param_string(self, parameters: List[Tuple[str]]) -> str:
-        result = u""
+    def format_param_string(self, parameters: List[Tuple[str]], nameLength: int) -> str:
+        result = []
         has_optional = False
         path = os.path.dirname(__file__)
+        newline_spacing = "\n" + " " * (nameLength + 5)
         for param in parameters:
             # map data types
             pattern = self.__class__.type_mapping_pattern
-            param = tuple([self.__class__.type_mapping["type"].get(re.search(pattern, str(
-                item).lower()).group() if item else str(item).lower(), item) for item in param])
+            param = [self.__class__.type_mapping["type"].get(re.search(pattern, str(
+                item).lower()).group() if item else str(item).lower(), item) for item in param]
             if param[2] is not None:
                 has_optional = True
             else:
-                if len(result):
-                    result = u"{result}, ".format(result=result)
-                result = u"{result}{name}: {typ}".format(
-                    result=result,
-                    name=param[0],
-                    typ=param[1]
-                )
+                result.append("{nl}{name}: {typ},".format(
+                    result=result, name=param[0], typ=param[1],
+                    nl=newline_spacing))
+        result[0] = result[0][len(newline_spacing):]
+        result[-1] = result[-1][:-1]
+        result = "".join(result)
         if has_optional:
-            if len(result):
-                result = u"{result}, ".format(result=result)
-            result = u"{result}{kwargs}".format(
-                result=result,
-                kwargs=self.__class__.kwargs_parameter_string
-            )
+            result = u"{result},{nl}{kwargs}".format(
+                result=result, kwargs=self.__class__.kwargs_parameter_string,
+                nl=newline_spacing)
         return result
 
     def format_params_dict_string(self, parameters: List[Tuple[str]]) -> str:
@@ -187,7 +180,7 @@ class PythonAPIFunctionGenerator(object):
                         result=result)
                 else:
                     result = u"params_dict = {"
-                result = u"{result}\'{name}\':{name}".format(
+                result = u"{result}\'{name}\': {name}".format(
                     result=result,
                     name=param[0]
                 )
@@ -204,7 +197,6 @@ class PythonAPIFunctionGenerator(object):
                         return_values: List[Tuple[str]],
                         function_name: str
                         ) -> str:
-        nl = "\n\t\t"
         length = len(return_values)
         param_string = ""
         param = parameters[0]
@@ -229,11 +221,10 @@ class PythonAPIFunctionGenerator(object):
             else:
                 raise AttributeError("Error in pattern match")
             result = ("{sds_context}," +
-                      "{nl}\'{function_name}\'," +
-                      "{nl}named_input_nodes=params_dict").format(
+                      "\n        \'{function_name}\'," +
+                      "\n        named_input_nodes=params_dict").format(
                 sds_context=sds_context,
-                function_name=function_name,
-                nl=nl
+                function_name=function_name
             )
             result = "return Matrix({params})".format(params=result)
             return result
@@ -246,8 +237,9 @@ class PythonAPIFunctionGenerator(object):
             output_type = re.search(pattern, value[1])[0].upper()
             # print(output_type)
             output_type = output_type.lower()
+
             if output_type == "matrix":
-                object_type= "Matrix"
+                object_type = "Matrix"
             elif output_type == "frame":
                 object_type = "Frame"
             elif output_type == "double":
@@ -256,10 +248,13 @@ class PythonAPIFunctionGenerator(object):
                 object_type = "Scalar"
             elif output_type == "integer":
                 object_type = "Scalar"
+            elif output_type == "list":
+                object_type = "List"
             else:
                 raise ValueError("Unknown type " + object_type)
+
             lines.append("    vX_{idx} = {obj}({sds}, '')".format(
-                idx=idx,obj = object_type, sds=sds_context))
+                idx=idx, obj=object_type, sds=sds_context))
             output_nodes += "vX_{idx}, ".format(idx=idx)
             op_assignment.append(
                 "    vX_{idx}._unnamed_input_nodes = [op]".format(idx=idx))
@@ -348,12 +343,4 @@ if __name__ == "__main__":
             continue
         file_generator.generate_file(
             data["function_name"], script_content, dml_file)
-    # [print(x) for x in enumerate(files)]
-    # dml_file = next(x for i, x in enumerate(files) if i == 80)
-    # header_data = f_parser.parse_header(dml_file)
-    # data = f_parser.parse_function(dml_file)
-    # f_parser.check_parameters(header_data, data)
-    # data['function_header'] = doc_generator.generate_documentation(
-    #     header_data)
-    # script_content = fun_generator.generate_function(data)
     file_generator.generate_init_file()

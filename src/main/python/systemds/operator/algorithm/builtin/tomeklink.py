@@ -28,13 +28,15 @@ from systemds.operator import OperationNode, Matrix, Frame, List, MultiReturn, S
 from systemds.script_building.dag import OutputType
 from systemds.utils.consts import VALID_INPUT_TYPES
 
-def tomeklink(X: OperationNode, y: OperationNode):
+
+def tomeklink(X: Matrix,
+              y: Matrix):
     """
     :param X: Data Matrix (nxm)
     :param y: Label Matrix (nx1)
     :return: 'OperationNode' containing  
     """
-    params_dict = {'X':X, 'y':y}
+    params_dict = {'X': X, 'y': y}
     
     vX_0 = Matrix(X.sds_context, '')
     vX_1 = Matrix(X.sds_context, '')
@@ -48,6 +50,3 @@ def tomeklink(X: OperationNode, y: OperationNode):
     vX_2._unnamed_input_nodes = [op]
 
     return op
-
-
-    

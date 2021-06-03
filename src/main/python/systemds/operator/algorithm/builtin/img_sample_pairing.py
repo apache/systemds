@@ -28,7 +28,10 @@ from systemds.operator import OperationNode, Matrix, Frame, List, MultiReturn, S
 from systemds.script_building.dag import OutputType
 from systemds.utils.consts import VALID_INPUT_TYPES
 
-def img_sample_pairing(img_in1: OperationNode, img_in2: OperationNode, weight: float):
+
+def img_sample_pairing(img_in1: Matrix,
+                       img_in2: Matrix,
+                       weight: float):
     """
     :param img_in1: First input image
     :param img_in2: Second input image
@@ -36,10 +39,7 @@ def img_sample_pairing(img_in1: OperationNode, img_in2: OperationNode, weight: f
     :param 0: img_in1, 1 means only img_in2 will be visible
     :return: 'OperationNode' containing  
     """
-    params_dict = {'img_in1':img_in1, 'img_in2':img_in2, 'weight':weight}
+    params_dict = {'img_in1': img_in1, 'img_in2': img_in2, 'weight': weight}
     return Matrix(img_in1.sds_context,
-		'img_sample_pairing',
-		named_input_nodes=params_dict)
-
-
-    
+        'img_sample_pairing',
+        named_input_nodes=params_dict)

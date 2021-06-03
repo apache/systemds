@@ -28,7 +28,9 @@ from systemds.operator import OperationNode, Matrix, Frame, List, MultiReturn, S
 from systemds.script_building.dag import OutputType
 from systemds.utils.consts import VALID_INPUT_TYPES
 
-def pca(X: OperationNode, **kwargs: Dict[str, VALID_INPUT_TYPES]):
+
+def pca(X: Matrix,
+        **kwargs: Dict[str, VALID_INPUT_TYPES]):
     """
     :param X: Input feature matrix
     :param K: Number of reduced dimensions (i.e., columns)
@@ -36,7 +38,7 @@ def pca(X: OperationNode, **kwargs: Dict[str, VALID_INPUT_TYPES]):
     :param Scale: Indicates whether or not to scale the feature matrix
     :return: 'OperationNode' containing output dominant eigen vectors (can be used for projections) & the column means of the input, subtracted to construct the pca & the scaling of the values, to make each dimension same size. 
     """
-    params_dict = {'X':X}
+    params_dict = {'X': X}
     params_dict.update(kwargs)
     
     vX_0 = Matrix(X.sds_context, '')
@@ -53,6 +55,3 @@ def pca(X: OperationNode, **kwargs: Dict[str, VALID_INPUT_TYPES]):
     vX_3._unnamed_input_nodes = [op]
 
     return op
-
-
-    

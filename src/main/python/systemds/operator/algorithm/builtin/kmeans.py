@@ -28,7 +28,9 @@ from systemds.operator import OperationNode, Matrix, Frame, List, MultiReturn, S
 from systemds.script_building.dag import OutputType
 from systemds.utils.consts import VALID_INPUT_TYPES
 
-def kmeans(X: OperationNode, **kwargs: Dict[str, VALID_INPUT_TYPES]):
+
+def kmeans(X: Matrix,
+           **kwargs: Dict[str, VALID_INPUT_TYPES]):
     """
     :param X: The input Matrix to do KMeans on.
     :param k: Number of centroids
@@ -40,7 +42,7 @@ def kmeans(X: OperationNode, **kwargs: Dict[str, VALID_INPUT_TYPES]):
     :param seed: The seed used for initial sampling. If set to -1 random seeds are selected.
     :return: 'OperationNode' containing the mapping of records to centroids & the output matrix with the centroids 
     """
-    params_dict = {'X':X}
+    params_dict = {'X': X}
     params_dict.update(kwargs)
     
     vX_0 = Matrix(X.sds_context, '')
@@ -53,6 +55,3 @@ def kmeans(X: OperationNode, **kwargs: Dict[str, VALID_INPUT_TYPES]):
     vX_1._unnamed_input_nodes = [op]
 
     return op
-
-
-    

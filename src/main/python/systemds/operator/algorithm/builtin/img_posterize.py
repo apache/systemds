@@ -28,17 +28,16 @@ from systemds.operator import OperationNode, Matrix, Frame, List, MultiReturn, S
 from systemds.script_building.dag import OutputType
 from systemds.utils.consts import VALID_INPUT_TYPES
 
-def img_posterize(img_in: OperationNode, bits: int):
+
+def img_posterize(img_in: Matrix,
+                  bits: int):
     """
     :param img_in: Input image
     :param bits: The number of bits keep for the values.
     :param 1: and white, 8 means every integer between 0 and 255.
     :return: 'OperationNode' containing  
     """
-    params_dict = {'img_in':img_in, 'bits':bits}
+    params_dict = {'img_in': img_in, 'bits': bits}
     return Matrix(img_in.sds_context,
-		'img_posterize',
-		named_input_nodes=params_dict)
-
-
-    
+        'img_posterize',
+        named_input_nodes=params_dict)

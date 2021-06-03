@@ -28,13 +28,14 @@ from systemds.operator import OperationNode, Matrix, Frame, List, MultiReturn, S
 from systemds.script_building.dag import OutputType
 from systemds.utils.consts import VALID_INPUT_TYPES
 
-def outlierByIQR(X: OperationNode, k: float, max_iterations: int, **kwargs: Dict[str, VALID_INPUT_TYPES]):
+
+def outlierByIQR(X: Matrix,
+                 k: float,
+                 max_iterations: int,
+                 **kwargs: Dict[str, VALID_INPUT_TYPES]):
     
-    params_dict = {'X':X, 'k':k, 'max_iterations':max_iterations}
+    params_dict = {'X': X, 'k': k, 'max_iterations': max_iterations}
     params_dict.update(kwargs)
     return Matrix(X.sds_context,
-		'outlierByIQR',
-		named_input_nodes=params_dict)
-
-
-    
+        'outlierByIQR',
+        named_input_nodes=params_dict)

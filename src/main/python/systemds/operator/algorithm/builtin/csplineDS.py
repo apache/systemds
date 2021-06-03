@@ -28,9 +28,12 @@ from systemds.operator import OperationNode, Matrix, Frame, List, MultiReturn, S
 from systemds.script_building.dag import OutputType
 from systemds.utils.consts import VALID_INPUT_TYPES
 
-def csplineDS(X: OperationNode, Y: OperationNode, inp_x: float):
+
+def csplineDS(X: Matrix,
+              Y: Matrix,
+              inp_x: float):
     
-    params_dict = {'X':X, 'Y':Y, 'inp_x':inp_x}
+    params_dict = {'X': X, 'Y': Y, 'inp_x': inp_x}
     
     vX_0 = Matrix(X.sds_context, '')
     vX_1 = Matrix(X.sds_context, '')
@@ -42,6 +45,3 @@ def csplineDS(X: OperationNode, Y: OperationNode, inp_x: float):
     vX_1._unnamed_input_nodes = [op]
 
     return op
-
-
-    

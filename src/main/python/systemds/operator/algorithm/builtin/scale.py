@@ -28,9 +28,12 @@ from systemds.operator import OperationNode, Matrix, Frame, List, MultiReturn, S
 from systemds.script_building.dag import OutputType
 from systemds.utils.consts import VALID_INPUT_TYPES
 
-def scale(X: OperationNode, center: bool, scale: bool):
+
+def scale(X: Matrix,
+          center: bool,
+          scale: bool):
     
-    params_dict = {'X':X, 'center':center, 'scale':scale}
+    params_dict = {'X': X, 'center': center, 'scale': scale}
     
     vX_0 = Matrix(X.sds_context, '')
     vX_1 = Matrix(X.sds_context, '')
@@ -44,6 +47,3 @@ def scale(X: OperationNode, center: bool, scale: bool):
     vX_2._unnamed_input_nodes = [op]
 
     return op
-
-
-    

@@ -28,12 +28,12 @@ from systemds.operator import OperationNode, Matrix, Frame, List, MultiReturn, S
 from systemds.script_building.dag import OutputType
 from systemds.utils.consts import VALID_INPUT_TYPES
 
-def knnbf(X: OperationNode, T: OperationNode, k_value: int):
+
+def knnbf(X: Matrix,
+          T: Matrix,
+          k_value: int):
     
-    params_dict = {'X':X, 'T':T, 'k_value':k_value}
+    params_dict = {'X': X, 'T': T, 'k_value': k_value}
     return Matrix(X.sds_context,
-		'knnbf',
-		named_input_nodes=params_dict)
-
-
-    
+        'knnbf',
+        named_input_nodes=params_dict)

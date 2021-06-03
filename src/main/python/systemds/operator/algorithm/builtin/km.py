@@ -28,7 +28,12 @@ from systemds.operator import OperationNode, Matrix, Frame, List, MultiReturn, S
 from systemds.script_building.dag import OutputType
 from systemds.utils.consts import VALID_INPUT_TYPES
 
-def km(X: OperationNode, TE: OperationNode, GI: OperationNode, SI: OperationNode, **kwargs: Dict[str, VALID_INPUT_TYPES]):
+
+def km(X: Matrix,
+       TE: Matrix,
+       GI: Matrix,
+       SI: Matrix,
+       **kwargs: Dict[str, VALID_INPUT_TYPES]):
     """
     :param X: Input matrix X containing the survival data: 
     :param number: (categorical features) for grouping and/or stratifying 
@@ -45,7 +50,7 @@ def km(X: OperationNode, TE: OperationNode, GI: OperationNode, SI: OperationNode
     :param perform: survival data across multiple groups: "none" (the default)
     :return: 'OperationNode' containing 7 consecutive columns in km corresponds to a unique combination of groups and strata in the data  & schema & whose dimension depends on the number of groups (g) and strata (s) in the data (k denotes the number  & for grouping  ,i.e., ncol(gi) and l denotes the number of factors used for stratifying, i.e., ncol(si)) & of groups and strata is equal to 1, m will have 4 columns with  & data from multiple groups available and ttype=log-rank or wilcoxon, a 1 x 4 matrix t and an g x 5 matrix t_groups_oe with 
     """
-    params_dict = {'X':X, 'TE':TE, 'GI':GI, 'SI':SI}
+    params_dict = {'X': X, 'TE': TE, 'GI': GI, 'SI': SI}
     params_dict.update(kwargs)
     
     vX_0 = Matrix(X.sds_context, '')
@@ -62,6 +67,3 @@ def km(X: OperationNode, TE: OperationNode, GI: OperationNode, SI: OperationNode
     vX_3._unnamed_input_nodes = [op]
 
     return op
-
-
-    

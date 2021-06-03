@@ -28,9 +28,12 @@ from systemds.operator import OperationNode, Matrix, Frame, List, MultiReturn, S
 from systemds.script_building.dag import OutputType
 from systemds.utils.consts import VALID_INPUT_TYPES
 
-def split(X: OperationNode, Y: OperationNode, **kwargs: Dict[str, VALID_INPUT_TYPES]):
+
+def split(X: Matrix,
+          Y: Matrix,
+          **kwargs: Dict[str, VALID_INPUT_TYPES]):
     
-    params_dict = {'X':X, 'Y':Y}
+    params_dict = {'X': X, 'Y': Y}
     params_dict.update(kwargs)
     
     vX_0 = Matrix(X.sds_context, '')
@@ -47,6 +50,3 @@ def split(X: OperationNode, Y: OperationNode, **kwargs: Dict[str, VALID_INPUT_TY
     vX_3._unnamed_input_nodes = [op]
 
     return op
-
-
-    

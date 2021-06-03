@@ -28,12 +28,12 @@ from systemds.operator import OperationNode, Matrix, Frame, List, MultiReturn, S
 from systemds.script_building.dag import OutputType
 from systemds.utils.consts import VALID_INPUT_TYPES
 
-def img_brightness(img_in: OperationNode, value: float, channel_max: int):
+
+def img_brightness(img_in: Matrix,
+                   value: float,
+                   channel_max: int):
     
-    params_dict = {'img_in':img_in, 'value':value, 'channel_max':channel_max}
+    params_dict = {'img_in': img_in, 'value': value, 'channel_max': channel_max}
     return Matrix(img_in.sds_context,
-		'img_brightness',
-		named_input_nodes=params_dict)
-
-
-    
+        'img_brightness',
+        named_input_nodes=params_dict)

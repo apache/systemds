@@ -28,7 +28,13 @@ from systemds.operator import OperationNode, Matrix, Frame, List, MultiReturn, S
 from systemds.script_building.dag import OutputType
 from systemds.utils.consts import VALID_INPUT_TYPES
 
-def img_translate(img_in: OperationNode, offset_x: float, offset_y: float, out_w: int, out_h: int, fill_value: float):
+
+def img_translate(img_in: Matrix,
+                  offset_x: float,
+                  offset_y: float,
+                  out_w: int,
+                  out_h: int,
+                  fill_value: float):
     """
     :param img_in: Input image as 2D matrix with top left corner at [1, 1]
     :param offset_x: The distance to move the image in x direction
@@ -38,10 +44,7 @@ def img_translate(img_in: OperationNode, offset_x: float, offset_y: float, out_w
     :param fill_value: The background of the image
     :return: 'OperationNode' containing output image as 2d matrix with top left corner at [1, 1] 
     """
-    params_dict = {'img_in':img_in, 'offset_x':offset_x, 'offset_y':offset_y, 'out_w':out_w, 'out_h':out_h, 'fill_value':fill_value}
+    params_dict = {'img_in': img_in, 'offset_x': offset_x, 'offset_y': offset_y, 'out_w': out_w, 'out_h': out_h, 'fill_value': fill_value}
     return Matrix(img_in.sds_context,
-		'img_translate',
-		named_input_nodes=params_dict)
-
-
-    
+        'img_translate',
+        named_input_nodes=params_dict)

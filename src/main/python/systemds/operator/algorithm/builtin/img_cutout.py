@@ -28,7 +28,13 @@ from systemds.operator import OperationNode, Matrix, Frame, List, MultiReturn, S
 from systemds.script_building.dag import OutputType
 from systemds.utils.consts import VALID_INPUT_TYPES
 
-def img_cutout(img_in: OperationNode, x: int, y: int, width: int, height: int, fill_value: float):
+
+def img_cutout(img_in: Matrix,
+               x: int,
+               y: int,
+               width: int,
+               height: int,
+               fill_value: float):
     """
     :param img_in: Input image as 2D matrix with top left corner at [1, 1]
     :param x: Column index of the top left corner of the rectangle (starting at 1)
@@ -38,10 +44,7 @@ def img_cutout(img_in: OperationNode, x: int, y: int, width: int, height: int, f
     :param fill_value: The value to set for the rectangle
     :return: 'OperationNode' containing output image as 2d matrix with top left corner at [1, 1] 
     """
-    params_dict = {'img_in':img_in, 'x':x, 'y':y, 'width':width, 'height':height, 'fill_value':fill_value}
+    params_dict = {'img_in': img_in, 'x': x, 'y': y, 'width': width, 'height': height, 'fill_value': fill_value}
     return Matrix(img_in.sds_context,
-		'img_cutout',
-		named_input_nodes=params_dict)
-
-
-    
+        'img_cutout',
+        named_input_nodes=params_dict)

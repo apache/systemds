@@ -28,7 +28,11 @@ from systemds.operator import OperationNode, Matrix, Frame, List, MultiReturn, S
 from systemds.script_building.dag import OutputType
 from systemds.utils.consts import VALID_INPUT_TYPES
 
-def randomForest(X: OperationNode, Y: OperationNode, R: OperationNode, **kwargs: Dict[str, VALID_INPUT_TYPES]):
+
+def randomForest(X: Matrix,
+                 Y: Matrix,
+                 R: Matrix,
+                 **kwargs: Dict[str, VALID_INPUT_TYPES]):
     """
     :param X: Feature matrix X; note that X needs to be both recoded and dummy coded
     :param Y: Label matrix Y; note that Y needs to be both recoded and dummy coded
@@ -47,7 +51,7 @@ def randomForest(X: OperationNode, Y: OperationNode, R: OperationNode, **kwargs:
     :param impurity: Impurity measure: entropy or Gini (the default)
     :return: 'OperationNode' containing tree and each row contains the following information: & that leaf node j is supposed to predict & 7,8,... if j is categorical & chosen for j is categorical rows 7,8,... depict the value subset chosen for j & c containing the number of times samples are chosen in each tree of the random forest & from scale feature ids to global feature ids & from categorical feature ids to global feature ids 
     """
-    params_dict = {'X':X, 'Y':Y, 'R':R}
+    params_dict = {'X': X, 'Y': Y, 'R': R}
     params_dict.update(kwargs)
     
     vX_0 = Matrix(X.sds_context, '')
@@ -64,6 +68,3 @@ def randomForest(X: OperationNode, Y: OperationNode, R: OperationNode, **kwargs:
     vX_3._unnamed_input_nodes = [op]
 
     return op
-
-
-    

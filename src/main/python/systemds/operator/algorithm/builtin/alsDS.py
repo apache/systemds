@@ -28,7 +28,9 @@ from systemds.operator import OperationNode, Matrix, Frame, List, MultiReturn, S
 from systemds.script_building.dag import OutputType
 from systemds.utils.consts import VALID_INPUT_TYPES
 
-def alsDS(X: OperationNode, **kwargs: Dict[str, VALID_INPUT_TYPES]):
+
+def alsDS(X: Matrix,
+          **kwargs: Dict[str, VALID_INPUT_TYPES]):
     """
     :param V: Location to read the input matrix V to be factorized
     :param L: Location to write the factor matrix L
@@ -42,7 +44,7 @@ def alsDS(X: OperationNode, **kwargs: Dict[str, VALID_INPUT_TYPES]):
     :param if: FALSE thr is ignored
     :return: 'OperationNode' containing x n matrix r 
     """
-    params_dict = {'X':X}
+    params_dict = {'X': X}
     params_dict.update(kwargs)
     
     vX_0 = Matrix(X.sds_context, '')
@@ -55,6 +57,3 @@ def alsDS(X: OperationNode, **kwargs: Dict[str, VALID_INPUT_TYPES]):
     vX_1._unnamed_input_nodes = [op]
 
     return op
-
-
-    

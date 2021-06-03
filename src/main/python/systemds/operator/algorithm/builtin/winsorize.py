@@ -28,12 +28,11 @@ from systemds.operator import OperationNode, Matrix, Frame, List, MultiReturn, S
 from systemds.script_building.dag import OutputType
 from systemds.utils.consts import VALID_INPUT_TYPES
 
-def winsorize(X: OperationNode, verbose: bool):
+
+def winsorize(X: Matrix,
+              verbose: bool):
     
-    params_dict = {'X':X, 'verbose':verbose}
+    params_dict = {'X': X, 'verbose': verbose}
     return Matrix(X.sds_context,
-		'winsorize',
-		named_input_nodes=params_dict)
-
-
-    
+        'winsorize',
+        named_input_nodes=params_dict)

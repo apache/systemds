@@ -28,12 +28,11 @@ from systemds.operator import OperationNode, Matrix, Frame, List, MultiReturn, S
 from systemds.script_building.dag import OutputType
 from systemds.utils.consts import VALID_INPUT_TYPES
 
-def outlier(X: OperationNode, opposite: bool):
+
+def outlier(X: Matrix,
+            opposite: bool):
     
-    params_dict = {'X':X, 'opposite':opposite}
+    params_dict = {'X': X, 'opposite': opposite}
     return Matrix(X.sds_context,
-		'outlier',
-		named_input_nodes=params_dict)
-
-
-    
+        'outlier',
+        named_input_nodes=params_dict)

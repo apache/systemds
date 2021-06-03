@@ -28,12 +28,11 @@ from systemds.operator import OperationNode, Matrix, Frame, List, MultiReturn, S
 from systemds.script_building.dag import OutputType
 from systemds.utils.consts import VALID_INPUT_TYPES
 
-def imputeByMedian(X: OperationNode, mask: OperationNode):
+
+def imputeByMedian(X: Matrix,
+                   mask: Matrix):
     
-    params_dict = {'X':X, 'mask':mask}
+    params_dict = {'X': X, 'mask': mask}
     return Matrix(X.sds_context,
-		'imputeByMedian',
-		named_input_nodes=params_dict)
-
-
-    
+        'imputeByMedian',
+        named_input_nodes=params_dict)

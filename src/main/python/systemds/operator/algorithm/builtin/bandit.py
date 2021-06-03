@@ -28,9 +28,17 @@ from systemds.operator import OperationNode, Matrix, Frame, List, MultiReturn, S
 from systemds.script_building.dag import OutputType
 from systemds.utils.consts import VALID_INPUT_TYPES
 
-def bandit(X_train: OperationNode, Y_train: OperationNode, metaList: Iterable, targetList: Iterable, lp: OperationNode, primitives: OperationNode, param: OperationNode, **kwargs: Dict[str, VALID_INPUT_TYPES]):
+
+def bandit(X_train: Matrix,
+           Y_train: Matrix,
+           metaList: Iterable,
+           targetList: Iterable,
+           lp: Frame,
+           primitives: Frame,
+           param: Frame,
+           **kwargs: Dict[str, VALID_INPUT_TYPES]):
     
-    params_dict = {'X_train':X_train, 'Y_train':Y_train, 'metaList':metaList, 'targetList':targetList, 'lp':lp, 'primitives':primitives, 'param':param}
+    params_dict = {'X_train': X_train, 'Y_train': Y_train, 'metaList': metaList, 'targetList': targetList, 'lp': lp, 'primitives': primitives, 'param': param}
     params_dict.update(kwargs)
     
     vX_0 = Frame(X_train.sds_context, '')
@@ -47,6 +55,3 @@ def bandit(X_train: OperationNode, Y_train: OperationNode, metaList: Iterable, t
     vX_3._unnamed_input_nodes = [op]
 
     return op
-
-
-    

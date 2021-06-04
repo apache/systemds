@@ -452,8 +452,29 @@ printDebug = function(string variable) return() {
 printMatrix = function(Matrix[Double] m, string name) return() {
     print("--------------------------------------")
     print(":: [MATRIX] " + name + "  (col:" + ncol(m) + ",row:" + nrow(m) + ")")
-    for(i in 1:nrow(m)) {
-        print(":(" + i + ")   " + toString(m[i,], linesep=" ", sep="    "))
+
+    col_string = ":::::::"
+    for(col in 1:ncol(m)) {
+        col_string = col_string + ":::(" + toString(col) + ")::::"
+    }
+    print(col_string)
+    for(row in 1:nrow(m)) {
+
+        print_string = ":(" + row + ")     "
+        for(col in 1:ncol(m)) {
+            curr_value = m[row,col]
+            if(as.scalar(curr_value) < 9)
+                print_string = print_string + toString(curr_value, linesep="     ", sep=",")
+            else if(as.scalar(curr_value) < 99)
+                print_string = print_string + toString(curr_value, linesep="    ", sep=",")
+            else if(as.scalar(curr_value) < 999)
+                print_string = print_string + toString(curr_value, linesep="   ", sep=",")
+            else if(as.scalar(curr_value) < 9999)
+                print_string = print_string + toString(curr_value, linesep="  ", sep=",")
+            else
+                print_string = print_string + toString(curr_value, linesep=" ", sep=",")
+        }
+        print(print_string)
     }
     print("--------------------------------------")
 }

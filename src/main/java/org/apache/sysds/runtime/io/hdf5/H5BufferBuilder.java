@@ -97,80 +97,20 @@ public class H5BufferBuilder {
 		}
 	}
 
-	public BitSet convert(long value) {
-		BitSet bits = new BitSet();
-		int index = 0;
-		while (value != 0L) {
-			if (value % 2L != 0) {
-				bits.set(index);
-			}
-			++index;
-			value = value >>> 1;
-		}
-		return bits;
-	}
-
 	public void writeDouble(double l) {
 		try {
-			//System.out.println(byteOrder.toString());
-			//this.byteOrder=BIG_ENDIAN;
-//			if(byteOrder == LITTLE_ENDIAN) {
-//				Double s=10d;
-				//l = Float.r
-//				Long.reverseBytes()
-//				l = Double.re r.reverseBytes(l);
-//			}
-			//l = Double.doubleToLongBits(l);
-			//int intBits = Float.floatToIntBits(value);
-			//        String binary = Integer.toBinaryString(intBits);
-			//        return binary;
-
-//			long longBits = Double.doubleToLongBits(l);
-//			//BitSet bs = BitSet.valueOf();
-//			//String s= Long.toBinaryString(longBits);
-//			BitSet bs= convert(longBits);
-//			this.writeBytes(bs.toByteArray());
-//			//this.writeBitSet(bs,bs.length());
-//			System.out.println(l);
-//			System.out.println(bs.length());
-
-			//l = Double.doubleToRawLongBits(l);
-			//System.out.println(l);
-			//long dtl = Double.dou(l);//Double.doubleToLongBits(l);
-			//Double.parseDouble()
-
-			//dtl = Long.reverseBytes(dtl);
-
-
-			//double d = Double.longBitsToDouble(dtl);
-			//dataOutputStream.writeDouble(dtl);
-			//System.out.println("value="+l+"  iee="+dtl);
-			//this.writeLong((long) dtl);
-			//dataOutputStream.writeDouble(l);
-
-			byte[] b = getFloat64(l);
-			this.writeBytes(b);
+			//MIPS-specific datatypes
+			//For MIPS CPUs, commonly used in SGI system
+			//Big-endian
+			//Signed integer (2's complement), unsigned integer, bitfield, and IEEE floating point
+			//8-bit, 16-bit, 32-bit, and 64-bit
+			// H5T_MIPS_F64
+			this.dataOutputStream.writeDouble(l);
 		}
 		catch(Exception e) {
 			throw new H5Exception(e);
 		}
 	}
-
-	public static byte[] getFloat64(double value)
-	{
-		final byte[] float64Bytes = new byte[8];
-		long double64Long=Double.doubleToLongBits(value);
-		float64Bytes[0] = (byte)((double64Long >> 56) & 0xff);
-		float64Bytes[1] = (byte)((double64Long >> 48) & 0xff);
-		float64Bytes[2] = (byte)((double64Long >> 40) & 0xff);
-		float64Bytes[3] = (byte)((double64Long >> 32) & 0xff);
-		float64Bytes[4] = (byte)((double64Long >> 24) & 0xff);
-		float64Bytes[5] = (byte)((double64Long >> 16) & 0xff);
-		float64Bytes[6] = (byte)((double64Long >> 8) & 0xff);
-		float64Bytes[7] = (byte)((double64Long >> 0) & 0xff);
-		return float64Bytes;
-	}
-
 	public void write(long v, int sizeOfLength){
 		try {
 			switch(sizeOfLength){

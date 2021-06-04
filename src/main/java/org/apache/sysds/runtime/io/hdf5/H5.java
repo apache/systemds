@@ -219,34 +219,34 @@ public class H5 {
 
 		H5BufferBuilder bb = new H5BufferBuilder();
 		try {
-//			for(int i = 0; i < rootObject.getRow(); i++) {
-//				for(int j = 0; j < rootObject.getCol(); j++) {
+			for(int i = 0; i < rootObject.getRow(); i++) {
+				for(int j = 0; j < rootObject.getCol(); j++) {
 //					if(bb.getSize() + 8 > bufferSize) {
 //						rootObject.getFileChannel().write(bb.build());
 //						bb = new H5BufferBuilder();
 //					}
-//					bb.writeDouble(data[i][j]);
-//				}
-//			}
+					bb.writeDouble(data[i][j]);
+				}
+			}
 
-			BitSet bitSet1=new BitSet(64);
-			BitSet bitSet2=new BitSet(64);
-			BitSet bitSet3=new BitSet(64);
-			BitSet bitSet4=new BitSet(64);
-
-
-			//2
-			bitSet1.set(1);
-			bb.writeBitSet(bitSet1,64);
-			//3
-			bitSet2.set(1);
-			bb.writeBitSet(bitSet2,64);
-			//4
-			bitSet3.set(1);
-			bb.writeBitSet(bitSet3,64);
-			//5
-			bitSet4.set(1);
-			bb.writeBitSet(bitSet4,64);
+//			BitSet bitSet1=new BitSet(64);
+//			BitSet bitSet2=new BitSet(64);
+//			BitSet bitSet3=new BitSet(64);
+//			BitSet bitSet4=new BitSet(64);
+//
+//
+//			//2
+//			bitSet1.set(1);
+//			bb.writeBitSet(bitSet1,64);
+//			//3
+//			bitSet2.set(1);
+//			bb.writeBitSet(bitSet2,64);
+//			//4
+//			bitSet3.set(1);
+//			bb.writeBitSet(bitSet3,64);
+//			//5
+//			bitSet4.set(1);
+//			bb.writeBitSet(bitSet4,64);
 
 
 			rootObject.getFileChannel().write(bb.build());

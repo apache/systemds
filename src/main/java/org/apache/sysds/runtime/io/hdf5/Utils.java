@@ -24,8 +24,6 @@ import org.apache.commons.lang3.ArrayUtils;
 
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
-import java.nio.charset.CharsetEncoder;
-import java.nio.charset.StandardCharsets;
 import java.util.BitSet;
 
 import static java.nio.ByteOrder.LITTLE_ENDIAN;

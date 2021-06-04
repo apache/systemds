@@ -267,7 +267,7 @@ public class FEDInstructionUtils {
 			if (data instanceof MatrixObject && ((MatrixObject) data).isFederated()) {
 				// TODO correct FED instruction string
 				fedinst = new AggregateBinaryFEDInstruction(instruction.getOperator(),
-					instruction.input1, instruction.input2, instruction.output, "ba+*", "FED...");
+					instruction.input1, instruction.input2, instruction.output, "ba+*", "FED");
 			}
 		}
 		else if (inst instanceof UnarySPInstruction) {

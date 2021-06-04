@@ -21,6 +21,7 @@ package org.apache.sysds.runtime.instructions.fed;
 
 import java.util.concurrent.Future;
 
+import org.apache.sysds.lops.Lop;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
@@ -69,13 +70,16 @@ public class AggregateBinaryFEDInstruction extends BinaryFEDInstruction {
 		MatrixObject mo1 = ec.getMatrixObject(input1);
 		MatrixObject mo2 = ec.getMatrixObject(input2);
 
+		instString = InstructionUtils.constructBinaryInstString(instString, instOpcode, input1, input2, output)
+			+ Lop.OPERAND_DELIMITOR + "1"; // num threads
+
 		//TODO cleanup unnecessary redundancy
 		//#1 federated matrix-vector multiplication
 		if(mo1.isFederated(FType.COL) && mo2.isFederated(FType.ROW)
 			&& mo1.getFedMapping().isAligned(mo2.getFedMapping(), true) ) {
 			FederatedRequest fr1 = FederationUtils.callInstruction(instString, output,
 				new CPOperand[]{input1, input2},
-				new long[]{mo1.getFedMapping().getID(), mo2.getFedMapping().getID()}, true);
+				new long[]{mo1.getFedMapping().getID(), mo2.getFedMapping().getID()}, false);
 
 			if ( _fedOut.isForcedFederated() ){
 				mo1.getFedMapping().execute(getTID(), fr1);

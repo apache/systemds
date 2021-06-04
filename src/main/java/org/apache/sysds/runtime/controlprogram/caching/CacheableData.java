@@ -826,7 +826,7 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 		boolean eqScheme = IOUtilFunctions.isSameFileScheme(
 			new Path(_hdfsFileName), new Path(fName));
 		boolean eqFormat = isEqualOutputFormat(outputFormat);
-		boolean eqBlksize = outputFormat.equals("binary")
+		boolean eqBlksize = (outputFormat == null || outputFormat.equals("binary"))
 			&& ConfigurationManager.getBlocksize() != getBlocksize();
 		
 		//actual export (note: no direct transfer of local copy in order to ensure blocking (and hence, parallelism))
@@ -841,25 +841,23 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 			{
 				//read data from HDFS if required (never read before), this applies only to pWrite w/ different output formats
 				//note: for large rdd outputs, we compile dedicated writespinstructions (no need to handle this here) 
-				try
-				{
+				try {
 					if( getRDDHandle()==null || getRDDHandle().allowsShortCircuitRead() )
 						_data = readBlobFromHDFS( _hdfsFileName );
 					else if( getRDDHandle() != null )
 						_data = readBlobFromRDD( getRDDHandle(), new MutableBoolean() );
 					else if(!federatedWrite)
 						_data = readBlobFromFederated( getFedMapping() );
-					
 					setDirty(false);
+					refreshMetaData(); //e.g., after unknown csv read
 				}
 				catch (IOException e) {
 					throw new DMLRuntimeException("Reading of " + _hdfsFileName + " ("+hashCode()+") failed.", e);
 				}
 			}
 			//get object from cache
-			if(!federatedWrite){
-
-				if(  _data == null )
+			if(!federatedWrite) {
+				if( _data == null )
 					getCache();
 				acquire( false, _data==null ); //incl. read matrix if evicted
 			}

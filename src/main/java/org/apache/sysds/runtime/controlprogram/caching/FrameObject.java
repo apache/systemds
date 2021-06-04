@@ -276,7 +276,7 @@ public class FrameObject extends CacheableData<FrameBlock>
 		FileFormat fmt = (ofmt != null ? FileFormat.safeValueOf(ofmt) : iimd.getFileFormat());
 		
 		FrameWriter writer = FrameWriterFactory.createFrameWriter(fmt, fprop);
-		writer.writeFrameToHDFS(_data, fname,  getNumRows(), getNumColumns());
+		writer.writeFrameToHDFS(_data, fname, getNumRows(), getNumColumns());
 	}
 
 	@Override

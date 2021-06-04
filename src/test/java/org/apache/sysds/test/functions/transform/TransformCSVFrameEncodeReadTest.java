@@ -126,6 +126,7 @@ public class TransformCSVFrameEncodeReadTest extends AutomatedTestBase
 		try
 		{
 			getAndLoadTestConfiguration(TEST_NAME1);
+			setOutputBuffering(true);
 			
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			int nrows = subset ? 4 : 13;
@@ -133,7 +134,7 @@ public class TransformCSVFrameEncodeReadTest extends AutomatedTestBase
 			programArgs = new String[]{"-args", 
 				DATASET_DIR + DATASET, String.valueOf(nrows), output("R") };
 			
-			String stdOut = runTest(null).toString(); 
+			String stdOut = runTest(null).toString();
 			
 			//read input/output and compare
 			FrameReader reader2 = parRead ? 

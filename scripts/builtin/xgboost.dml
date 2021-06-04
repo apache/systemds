@@ -1,3 +1,13 @@
+# INPUT         PARAMETERS:
+# ---------------------------------------------------------------------------------------------
+# NAME          TYPE     DEFAULT      MEANING
+# ---------------------------------------------------------------------------------------------
+# X             String   ---          Location to read feature matrix X; note that X needs to be both recoded and dummy coded
+# Y 			String   ---		  Location to read label matrix Y; note that Y needs to be both recoded and dummy coded
+# R   	  		String   " "	      Location to read the matrix R(nx1) which for each feature in X contains the following information
+#										- R[,2]: 1 (scalar feature)
+#										- R[,1]: 2 (categorical feature)
+# ---------------------------------------------------------------------------------------------
 
 # ---------------------------------------------------------------------------------------------
 # OUTPUT:
@@ -15,12 +25,13 @@
 #     If j is a leaf node 1 if j is impure and the number of samples at j > threshold, otherwise 0
 # -------------------------------------------------------------------------------------------
 
-m_xgboost = function(Matrix[Double] X, Matrix[Double] y) return (Matrix[Double] M) {
+m_xgboost = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] R) return (Matrix[Double] M) {
   print("[DEBUG] inside xgboost")
 
   # test if input correct
   assert(nrow(X) == nrow(y))
   assert(ncol(y) == 1)
+  assert(nrow(R) == 1)
 
   M = matrix(0,rows=6,cols=0)
   init_prediction = median(y)
@@ -29,50 +40,75 @@ m_xgboost = function(Matrix[Double] X, Matrix[Double] y) return (Matrix[Double] 
   curr_rows_queue = matrix(1, rows=nrow(X), cols=1)
   gain_queue = matrix(1, rows=1, cols=1)
   node_queue_len = 1
-  depth = 6
+  max_depth = 15
+  depth = 0.0
   level = 0
 
   # adjust this here if we create more trees to create new prediction values
-  while (node_queue_len > 0) {
+  while (node_queue_len > 0 & depth < max_depth) {
     has_child = FALSE
     [node_queue, node] = dataQueuePop(node_queue)
     [curr_rows_queue, curr_rows_vector] = dataQueuePop(curr_rows_queue)
     level = log(as.scalar(node), 2) + 1
-
     available_rows = calcAvailableRows(curr_rows_vector)
 
     [curr_X, loop_y, curr_X_full] = updateMatrices(X, y, curr_rows_vector)
 
     best_feature_index = 0.00
-    if(available_rows > 1 & depth > level) {
-      best_feature_index = findBestFeature(X=curr_X, y=loop_y)
-
+    if(available_rows > 1 & max_depth > level) {
+      best_feature_index = findBestFeature(X=curr_X, y=loop_y, verbose=FALSE)
       # maybe for forest change here prediction?
-      residual_matrix = calculateResiduals(loop_y, median(loop_y))
-      printMatrix(residual_matrix, "the cgialculated residuals")
 
-      similarity_score = calculateSimilarityScore(residual_matrix)
+      type = getTypeOfFeature(R, best_feature_index)
 
-      [best_split_threshold, best_gain] = findBestSplit(curr_X[,best_feature_index], similarity_score)
-      has_child = best_gain > 0
+      if(type == 1.0) # SCALAR
+      {
+        residual_matrix = calculateResiduals(loop_y, median(loop_y))
+        # printMatrix(residual_matrix, "the calculated residuals")
+
+        similarity_score = calculateSimilarityScore(residual_matrix)
+
+        [best_split_threshold, best_gain] = findBestSplit(curr_X[,best_feature_index], similarity_score)
+        has_child = best_gain > 0
+      }
+      else # CATEGORICAL
+      {
+        # TODO: always true?
+        assert(type == 2.0)
+        has_child = TRUE
+      }
     }
 
     if (has_child) {
       [left, right] = calculateChildNodes(node)
       node_queue = dataQueuePush(left, right, node_queue)
 
-      [left_row_vec, right_row_vec] = splitMatrixByValueLoop(curr_X_full[,best_feature_index], X[,best_feature_index], best_split_threshold)
+      if (type == 1.0) # SCALAR
+      {
+          # print("[DEBUG] SCALAR:")
+          [left_row_vec, right_row_vec] = splitMatrixByValueLoop(curr_X_full[,best_feature_index], X[,best_feature_index], best_split_threshold)
+          curr_rows_queue = dataQueuePush(left_row_vec, right_row_vec, curr_rows_queue)
+          offset = ncol(node_queue) - 1
+          M = addOutputRow(M, node, R, offset, best_feature_index, best_split_threshold)
 
-      curr_rows_queue = dataQueuePush(left_row_vec, right_row_vec, curr_rows_queue)
+      }
+      else # CATEGORICAL
+      {
+          assert(type == 2.0)
+          # print("[DEBUG] CATEGORY:")
+          [left_row_vec, right_row_vec] = splitMatrixByCategory(curr_X_full[,best_feature_index], X[,best_feature_index])
+          curr_rows_queue = dataQueuePush(left_row_vec, right_row_vec, curr_rows_queue)
+          offset = ncol(node_queue) - 1
+          M = addOutputRow(M, node, R, offset, best_feature_index, 0.0)
 
-      offset = ncol(node_queue) - 1
-      M = addOutputRow(M, node, offset, best_feature_index, best_split_threshold)
+      }
     }
     else {
-      M = addOutputRow(M, node, 0.0, best_feature_index, 0.0)
+      M = addOutputRow(M, node, R, 0.0, best_feature_index, 0.0)
     }
     node_queue_len = ncol(node_queue)
-    printMatrix(M, "FINAL MATRIX")
+    printMatrix(M, "OUTPUT MATRIX")
+    depth = depth + 1
   }
 
   # todo pruning
@@ -92,36 +128,60 @@ calculateChildNodes = function(Matrix[Double] node)  return(Matrix[Double] left,
 #-----------------------------------------------------------------------------------------------------------------------
 # INPUT:    M: the nxn output matrix
 # INPUT:    node: the current node
+# R   	  	The matrix R which for each feature in X contains the following information
+#					- R[,2]: 1 (scalar feature)
+#				    - R[,1]: 2 (categorical feature)
 # INPUT:    offset: offset to the left child
 # INPUT:    used_col: which feature got used
 # INPUT:
-# INPUT:    threshold: the value at the node we seperated it
+# INPUT:    threshold: the value at the node we separated it
 # OUTPUT:   new_M: nxn output Matrix
 addOutputRow = function(
   Matrix[Double] M,
   Matrix[Double] node,
+  Matrix[Double] R,
   Double offset,
   Double used_col,
   Double threshold
 ) return (Matrix[Double] new_M) {
-  current_node = matrix(0, rows=6, cols=1)
-  current_node[1,1] = node[1,1] # node id
-  current_node[2,1] = offset # offset to left child
-  current_node[3,1] = used_col # features used
-  # change here to different stuff if it is classification
-  current_node[4,1] = 1 # continuous data
-  # also change here if it is classification
-  if (threshold < 1.00) {
-    current_node[5,1] = 0 # number of values in threshhold // currently 0 if leaf node
-  } else {
-    current_node[5,1] = 1
+  if(used_col != 0)
+  {
+      current_node = matrix(0, rows=6, cols=1)
+      current_node[1,1] = node[1,1] # node id
+      current_node[2,1] = offset # offset to left child
+      current_node[3,1] = used_col # features used
+      # change here to different stuff if it is classification
+
+      current_node[4, 1] = R[1, used_col]
+      # also change here if it is classification
+      if (threshold < 1.00) {
+        current_node[5,1] = 0 # number of values in threshold // currently 0 if leaf node
+      } else {
+        current_node[5,1] = 1
+      }
+      current_node[6,1] = threshold
+      if (ncol(M) == 0 & nrow(M) == 0) {
+        new_M = current_node
+      } else {
+        new_M = cbind(M, current_node)
+      }
   }
-  current_node[6,1] = threshold
-  if (ncol(M) == 0 & nrow(M) == 0) {
-    new_M = current_node
-  } else {
-    new_M = cbind(M, current_node)
+  else
+  {
+    new_M = M
   }
+}
+
+
+#-----------------------------------------------------------------------------------------------------------------------
+# INPUT:   R: Location to read the matrix R(nx1) which for each feature in X contains the following information
+#					- R[,2]: 1 (scalar feature)
+#			    	- R[,1]: 2 (categorical feature)
+# INPUT:    col: the col that is desired to know the type
+# OUTPUT:   [1.0,scalar] or  [2.0,categorical]
+#-----------------------------------------------------------------------------------------------------------------------
+getTypeOfFeature = function(Matrix[Double] R, Double col)  return(Double type) {
+  type = as.scalar(R[1, col])
 }
 
 #-----------------------------------------------------------------------------------------------------------------------
@@ -232,7 +292,7 @@ findBestFeature = function(Matrix[Double] X, Matrix[Double] y, boolean verbose =
             lowest_residuals_index = i
         }
    }
-   printDebug("best feature for root note is: " + toString(lowest_residuals_index) + " with residuals: " + toString(lowest_residuals))
+   printDebug("best feature for root node is: " + toString(lowest_residuals_index) + " with residuals: " + toString(lowest_residuals))
 
 }
 
@@ -248,27 +308,27 @@ findBestSplit = function(Matrix[Double] one_featureX, Double sim_score_parent)
     best_gain = 0
     best_sim_score_left = 0
     best_sim_score_right = 0
-    printDebug("inside find best split")
+    # printDebug("inside find best split")
 
     # order entries by feature value
     ordered_X = orderFeature(one_featureX)
-    printMatrix(ordered_X, "ordered X")
+    # printMatrix(ordered_X, "ordered X")
 
     # iterate over all averages between 2 points
     for(i in 1: (nrow(ordered_X)-1)) {
 
         current_split = average(ordered_X[i,], ordered_X[i+1,])
-        printDebug("first average = " + toString(current_split))
+        # printDebug("first average = " + toString(current_split))
         [left, right] = splitMatrixByValue(one_featureX, current_split)
-        printMatrix(left, "left matrix")
-        printMatrix(right, "right matrix")
+        # printMatrix(left, "left matrix")
+        # printMatrix(right, "right matrix")
 
         # calculate similarity score for that split and calculate gain
         sim_score_left = calculateSimilarityScore(left)
         sim_score_right = calculateSimilarityScore(right)
-        printDebug("sim score left " + toString(sim_score_left) + "   sim score right " + toString(sim_score_right))
+        # printDebug("sim score left " + toString(sim_score_left) + "   sim score right " + toString(sim_score_right))
         current_gain = sim_score_left + sim_score_right - sim_score_parent
-        printDebug("current gain " + toString(current_gain))
+        # printDebug("current gain " + toString(current_gain))
 
         if(current_gain > best_gain)
         {
@@ -276,13 +336,10 @@ findBestSplit = function(Matrix[Double] one_featureX, Double sim_score_parent)
             best_split = current_split
             best_sim_score_left = sim_score_left
             best_sim_score_right = sim_score_right
-            printDebug("best gain changed to  " + toString(best_gain) + " at value " + toString(best_split))
+            # printDebug("best gain changed to  " + toString(best_gain) + " at value " + toString(best_split))
         }
     }
 }
-
-
-
 
 #-----------------------------------------------------------------------------------------------------------------------
 # INPUT:    X: a 1xn matrix (one feature with all values)
@@ -292,13 +349,13 @@ findBestSplit = function(Matrix[Double] one_featureX, Double sim_score_parent)
 #           right: a 1xn matrix with all values larger than "value"
 splitMatrixByValue = function(Matrix[Double] X, Double value) return (Matrix[Double] left, Matrix[Double] right) {
   assert(ncol(X) == 1)
-  printDebug("in splitMatrixByValue")
-  printDebug("split at " + value)
+  # printDebug("in splitMatrixByValue")
+  # printDebug("split at " + value)
   left = matrix(0, rows=0, cols=1)
   right = matrix(0, rows=0, cols=1)
 
   for(i in 1:nrow(X)) {
-    printDebug("current to look " + as.scalar(X[i,]))
+    # printDebug("current to look " + as.scalar(X[i,]))
     if(as.scalar(X[i,]) < value) {
       left = rbind(left,X[i,])
     }
@@ -312,10 +369,10 @@ splitMatrixByValue = function(Matrix[Double] X, Double value) return (Matrix[Dou
 # INPUT:    curr_X: a 1xn matrix (one feature with current values)
 #           X:     a 1xn matrix the feature of the X-Matrix with all values
 #           value: the border to separate the values
-# OUTPUT:   left: a 1xn matrix with 1.0 for if the value is smaller or 0.0 if it is bigger
-#           right: a 1xn matrix with 1.0 for if the value is bigger or 0.0 if it is smaller
+# OUTPUT:   left: a 1xn matrix with 1.0 if the value is smaller or 0.0 if it is bigger
+#           right: a 1xn matrix with 1.0 if the value is bigger or 0.0 if it is smaller
 splitMatrixByValueLoop = function(Matrix[Double] curr_X, Matrix[Double] X, Double value) return (Matrix[Double] left, Matrix[Double] right) {
-  left = matrix(0, rows=0, cols=1)
+  left = matrix(0, rows=0, cols=1) # TODO why rows 0??
   right = matrix(0, rows=0, cols=1)
   one_vec = matrix(1, rows=1, cols=1)
   zero_vec = matrix(0, rows=1, cols=1)
@@ -338,12 +395,34 @@ splitMatrixByValueLoop = function(Matrix[Double] curr_X, Matrix[Double] X, Doubl
 }
 
 #-----------------------------------------------------------------------------------------------------------------------
+# INPUT:    curr_X: a 1xn matrix (one feature with current values)
+#           X:     a 1xn matrix the feature of the X-Matrix with all values
+# OUTPUT:   left: a 1xn matrix with 1.0 for if the value is true or 0.0 if it is false
+#           right: a 1xn matrix with 1.0 for if the value is false or 0.0 if it is true
+splitMatrixByCategory = function(Matrix[Double] curr_X, Matrix[Double] X) return (Matrix[Double] left, Matrix[Double] right) {
+  left = matrix(0, rows=0, cols=1)
+  right = matrix(0, rows=0, cols=1)
+
+  for(i in 1:nrow(X)) {
+      if (as.scalar(X[i,]) == 1) {
+        left = rbind(left, X[i,])
+        right = rbind(right, matrix(0, rows=1, cols=1))
+      }
+      else {
+        left = rbind(left, X[i,])
+        right = rbind(right, matrix(1, rows=1, cols=1))
+      }
+    }
+
+}
+
+#-----------------------------------------------------------------------------------------------------------------------
 # INPUT:    row_vector: a 1xn matrix (one feature with all residuals)
 # OUTPUT:   similarity_score: the similarity score of the residuals
 calculateSimilarityScore = function (matrix[Double] row_vector) return (Double similarity_score) {
   lambda = 0.0; # TODO
   similarity_score = (sum(row_vector)^2) / (nrow(row_vector) + lambda);
-  printDebug("Calculated similarity score: " + similarity_score);
+  #printDebug("Calculated similarity score: " + similarity_score);
 }
 
 

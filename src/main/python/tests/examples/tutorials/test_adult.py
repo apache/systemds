@@ -37,6 +37,7 @@ class Test_DMLScript(unittest.TestCase):
     sds: SystemDSContext = None
     d: DataManager = None
     base_path = "systemds/examples/tutorials/adult/"
+    neural_net_src_path: str = "./tests/source/neural_net_source.dml"
 
     @classmethod
     def setUpClass(cls):
@@ -139,7 +140,30 @@ class Test_DMLScript(unittest.TestCase):
         )
 
 
+    def test_neural_net(self):
+        # Reduced because we want the tests to finish a bit faster.
+        train_count = 15000
+        test_count = 5000
 
+        train_data, train_labels, test_data, test_labels = self.d.get_preprocessed_dataset(interpolate=True, standardize=True, dimred=0.1)
+
+        # Train data
+        X = self.sds.from_numpy( train_data[:train_count])
+        Y = self.sds.from_numpy( train_labels[:train_count])
+
+        # Test data
+        Xt = self.sds.from_numpy(test_data[:test_count])
+        Yt = self.sds.from_numpy(test_labels[:test_count])
+
+        FFN_package = self.sds.source(self.neural_net_src_path, "fnn")
+
+        network = FFN_package.train_paramserv(X, Y, 1, 128, 0.01, 1, '"BSP"', '"EPOCH"', '"LOCAL"', 42)
+
+        self.assertTrue(type(network) is not None) # sourcing and training seems to works
+
+        # TODO This does not work yet, not sure what the problem is
+        # probs = FFN_package.predict(network, Xt).compute()
+        # FFN_package.eval(probs, Yt).compute()
 
 if __name__ == "__main__":
     unittest.main(exit=False)

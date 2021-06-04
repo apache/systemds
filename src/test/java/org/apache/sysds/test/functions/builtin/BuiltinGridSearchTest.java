@@ -33,10 +33,11 @@ public class BuiltinGridSearchTest extends AutomatedTestBase
 	private final static String TEST_NAME1 = "GridSearchLM";
 	private final static String TEST_NAME2 = "GridSearchMLogreg";
 	private final static String TEST_NAME3 = "GridSearchLM2";
+	private final static String TEST_NAME4 = "GridSearchLMCV";
 	private final static String TEST_DIR = "functions/builtin/";
 	private final static String TEST_CLASS_DIR = TEST_DIR + BuiltinGridSearchTest.class.getSimpleName() + "/";
 	
-	private final static int rows = 300;
+	private final static int rows = 400;
 	private final static int cols = 20;
 	
 	@Override
@@ -44,6 +45,7 @@ public class BuiltinGridSearchTest extends AutomatedTestBase
 		addTestConfiguration(TEST_NAME1,new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1,new String[]{"R"}));
 		addTestConfiguration(TEST_NAME2,new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2,new String[]{"R"}));
 		addTestConfiguration(TEST_NAME3,new TestConfiguration(TEST_CLASS_DIR, TEST_NAME3,new String[]{"R"}));
+		addTestConfiguration(TEST_NAME4,new TestConfiguration(TEST_CLASS_DIR, TEST_NAME4,new String[]{"R"}));
 	}
 	
 	@Test
@@ -79,6 +81,16 @@ public class BuiltinGridSearchTest extends AutomatedTestBase
 	@Test
 	public void testGridSearchLm2Hybrid() {
 		runGridSearch(TEST_NAME3, ExecMode.HYBRID);
+	}
+	
+	@Test
+	public void testGridSearchLmCvCP() {
+		runGridSearch(TEST_NAME4, ExecMode.SINGLE_NODE);
+	}
+	
+	@Test
+	public void testGridSearchLmCvHybrid() {
+		runGridSearch(TEST_NAME4, ExecMode.HYBRID);
 	}
 	
 	private void runGridSearch(String testname, ExecMode et)

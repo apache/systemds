@@ -96,11 +96,10 @@ public class RewriteRemoveReadAfterWrite extends HopRewriteRule
 			DataOp dop = (DataOp)hop;
 			if( dop.getOp()==OpOpData.PERSISTENTREAD )
 				pReads.put(dop.getFileName(), dop);
-			else if( dop.getOp()==OpOpData.PERSISTENTWRITE )
-			{
+			else if( dop.getOp()==OpOpData.PERSISTENTWRITE ) {
 				Hop fname = dop.getInput().get(dop.getParameterIndex(DataExpression.IO_FILENAME));
 				if( fname instanceof LiteralOp ) //only constant writes
-					pWrites.put(((LiteralOp) fname).getStringValue(), dop);	
+					pWrites.put(((LiteralOp) fname).getStringValue(), dop);
 			}
 		}
 		

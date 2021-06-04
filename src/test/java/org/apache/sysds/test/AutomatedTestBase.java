@@ -907,10 +907,9 @@ public abstract class AutomatedTestBase {
 
 	public static MatrixCharacteristics readDMLMetaDataFile(String fileName) {
 		try {
-			MetaDataAll metaDataAll = getMetaData(fileName);
-			long rlen = metaDataAll.getDim1();
-			long clen = metaDataAll.getDim2();
-			return new MatrixCharacteristics(rlen, clen, -1, -1);
+			MetaDataAll meta = getMetaData(fileName);
+			return new MatrixCharacteristics(
+				meta.getDim1(), meta.getDim2(), meta.getBlocksize(), -1);
 		}
 		catch(Exception ex) {
 			throw new RuntimeException(ex);

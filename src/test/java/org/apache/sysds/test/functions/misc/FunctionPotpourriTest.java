@@ -19,6 +19,7 @@
 
 package org.apache.sysds.test.functions.misc;
 
+import org.apache.sysds.hops.HopsException;
 import org.apache.sysds.parser.LanguageException;
 import org.apache.sysds.parser.ParseException;
 import org.apache.sysds.test.AutomatedTestBase;
@@ -120,7 +121,7 @@ public class FunctionPotpourriTest extends AutomatedTestBase
 	
 	@Test
 	public void testFunctionNamedArgsUnkown2() {
-		runFunctionTest( TEST_NAMES[10], NullPointerException.class );
+		runFunctionTest( TEST_NAMES[10], HopsException.class );
 	}
 	
 	@Test

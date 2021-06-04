@@ -118,8 +118,9 @@ public class ScalarIOTest extends AutomatedTestBase
 
 		int int_scalar = 464;
 		
+		setOutputBuffering(true);
 		fullDMLScriptName = HOME + "ScalarWrite.dml";
-		programArgs = new String[]{	"-args", String.valueOf(int_scalar), output("a.scalar") };
+		programArgs = new String[]{"-args", String.valueOf(int_scalar), output("a.scalar")};
 		runTest(true, false, null, -1);
 		
 		//int int_out_scalar = TestUtils.readDMLScalarFromHDFS(output(OUT_FILE)).get(new CellIndex(1,1)).intValue();

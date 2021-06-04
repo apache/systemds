@@ -21,8 +21,6 @@ package org.apache.sysds.hops.rewrite;
 
 import java.util.ArrayList;
 
-import org.apache.sysds.api.DMLScript;
-import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.common.Types.OpOpData;
 import org.apache.sysds.conf.ConfigurationManager;
@@ -41,16 +39,13 @@ import org.apache.sysds.common.Types.DataType;
  */
 public class RewriteBlockSizeAndReblock extends HopRewriteRule
 {
-	
 	@Override
-	public ArrayList<Hop> rewriteHopDAGs(ArrayList<Hop> roots, ProgramRewriteStatus state)
-	{
+	public ArrayList<Hop> rewriteHopDAGs(ArrayList<Hop> roots, ProgramRewriteStatus state) {
 		if( roots == null )
 			return null;
 		
 		//maintain rewrite status
-		if( isReblockValid() )
-			state.setBlocksize(ConfigurationManager.getBlocksize());
+		state.setBlocksize(ConfigurationManager.getBlocksize());
 		
 		//perform reblock and blocksize rewrite
 		for( Hop h : roots ) 
@@ -60,14 +55,12 @@ public class RewriteBlockSizeAndReblock extends HopRewriteRule
 	}
 
 	@Override
-	public Hop rewriteHopDAG(Hop root, ProgramRewriteStatus state) 
-	{
+	public Hop rewriteHopDAG(Hop root, ProgramRewriteStatus state) {
 		if( root == null )
 			return null;
 		
 		//maintain rewrite status
-		if( isReblockValid() )
-			state.setBlocksize(ConfigurationManager.getBlocksize());
+		state.setBlocksize(ConfigurationManager.getBlocksize());
 		
 		//perform reblock and blocksize rewrite
 		rule_BlockSizeAndReblock(root, ConfigurationManager.getBlocksize());
@@ -82,18 +75,15 @@ public class RewriteBlockSizeAndReblock extends HopRewriteRule
 			if (!hi.isVisited())
 				rule_BlockSizeAndReblock(hi, blocksize);
 		}
-
-		boolean canReblock = isReblockValid();
 		
 		if (hop instanceof DataOp) 
 		{
 			DataOp dop = (DataOp) hop;
 			
 			// if block size does not match
-			if( canReblock && 
-				( (dop.getDataType() == DataType.MATRIX && (dop.getBlocksize() != blocksize))
+			if(   (dop.getDataType() == DataType.MATRIX && (dop.getBlocksize() != blocksize))
 				||(dop.getDataType() == DataType.FRAME && OptimizerUtils.isSparkExecutionMode() && (dop.getFileFormat()==FileFormat.TEXT
-						  || dop.getFileFormat()==FileFormat.CSV))) )
+						  || dop.getFileFormat()==FileFormat.CSV)) )
 			{
 				if( dop.getOp() == OpOpData.PERSISTENTREAD)
 				{
@@ -115,23 +105,11 @@ public class RewriteBlockSizeAndReblock extends HopRewriteRule
 						// if a reblock is feeding into this, then use it if this is
 						// the only parent, otherwise new Reblock
 						dop.getInput().get(0).setBlocksize(dop.getBlocksize());
-					} 
-					else 
-					{
-						// insert reblock after the hop
-						dop.setRequiresReblock(true);
-						dop.setBlocksize(blocksize);
 					}
 				} 
 				else if (dop.getOp().isTransient()) {
-					if ( DMLScript.getGlobalExecMode() == ExecMode.SINGLE_NODE ) {
-						// simply copy the values from its input
-						dop.setBlocksize(hop.getInput().get(0).getBlocksize());
-					}
-					else {
-						// by default, all transient reads and writes are in blocked format
-						dop.setBlocksize(blocksize);
-					}
+					// by default, all transient reads and writes are in blocked format
+					dop.setBlocksize(blocksize);
 				}
 				else if (dop.getOp() == OpOpData.FEDERATED) {
 					dop.setBlocksize(blocksize);
@@ -177,20 +155,15 @@ public class RewriteBlockSizeAndReblock extends HopRewriteRule
 
 			// Constraint C3:
 			else {
-				if ( !canReblock ) {
-					hop.setBlocksize(-1);
-				}
-				else {
-					hop.setBlocksize(blocksize);
-					
-					// Functions may return multiple outputs, as defined in array of outputs in FunctionOp.
-					// Reblock properties need to be set for each output.
-					if ( hop instanceof FunctionOp ) {
-						FunctionOp fop = (FunctionOp) hop;
-						if ( fop.getOutputs() != null) {
-							for(Hop out : fop.getOutputs()) {
-								out.setBlocksize(blocksize);
-							}
+				hop.setBlocksize(blocksize);
+				
+				// Functions may return multiple outputs, as defined in array of outputs in FunctionOp.
+				// Reblock properties need to be set for each output.
+				if ( hop instanceof FunctionOp ) {
+					FunctionOp fop = (FunctionOp) hop;
+					if ( fop.getOutputs() != null) {
+						for(Hop out : fop.getOutputs()) {
+							out.setBlocksize(blocksize);
 						}
 					}
 				}
@@ -206,9 +179,5 @@ public class RewriteBlockSizeAndReblock extends HopRewriteRule
 		}
 
 		hop.setVisited();
-	}
-	
-	private static boolean isReblockValid() {
-		return ( DMLScript.getGlobalExecMode() != ExecMode.SINGLE_NODE);
 	}
 }

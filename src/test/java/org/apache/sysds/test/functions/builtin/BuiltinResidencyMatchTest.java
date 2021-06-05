@@ -74,7 +74,6 @@ public class BuiltinResidencyMatchTest extends AutomatedTestBase {
 		//defining Capacity for hospitals
 		double[][] C = {
 			{1},{1},{1}};
-
 		double[][]EM = { // this is an expected matrix
 				{0,0,3},{0,2,0},{1,0,0}};
 

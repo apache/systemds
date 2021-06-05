@@ -40,7 +40,7 @@
 # ordered               Boolean    TRUE  If true, P and A are assumed to be ordered,
 #                                        i.e. the leftmost value in a row is the most preferred partner's index.
 #                                        If false, P and A are assumed to be unordered,
-#                                        i.e. the leftmost value in a row in P is the preference value for the acceptor with index 1 and vice-versa (higher is better).
+#                                        i.e. the leftmost valune in a row in P is the preference value for the acceptor with index 1 and vice-versa (higher is better).
 #
 #
 # Example:
@@ -75,9 +75,9 @@
 #
 
 #TODO set a finite number of maximum iterations so that the execution termiates after maximum iterations.
-fileP = ifdef ($P, "");
-fileA = ifdef ($A, "");
-fileOutput = ifdef ($O, "");
+fileP = ifdef ($RR, "");
+fileA = ifdef ($HH, "");
+fileOutput = ifdef ($OUT, "");
 ordered = ifdef ($ordered, TRUE);
 
 print("\n")
@@ -131,6 +131,8 @@ else
       }
 
       A = Unordered_A
+      print("Unordered_AUnordered_AUnordered_AUnordered_AUnordered_A ")
+          print(toString(Unordered_A))
     }
 
     proposer_pointers = matrix(1.0, rows=n, cols=1)

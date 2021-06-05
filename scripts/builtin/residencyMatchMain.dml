@@ -89,7 +89,6 @@ m_residencyMatchMain = function(Matrix[Double] R, Matrix[Double] H,Matrix[Double
 # in this step we consider that  Residents Matrix is ORDERED   !!!!
 # in this step we consider that  Hospital  Matrix is UNORDERED !!!!
 
-
 print("STARTING Resident Hospital Match");
 #TODO set a finite number of maximum iterations so that the execution termiates after maximum iterations.
 

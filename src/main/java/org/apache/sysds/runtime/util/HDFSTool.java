@@ -313,7 +313,15 @@ public class HDFSTool
 	
 	public static ScalarObject readScalarObjectFromHDFSFile(String fname, ValueType vt) {
 		try {
-			return ScalarObjectFactory.createScalarObject(vt, readObjectFromHDFSFile(fname, vt));
+			Object obj = null;
+			switch( vt ) {
+				case INT64:   obj = readIntegerFromHDFSFile(fname); break;
+				case FP64:    obj = readDoubleFromHDFSFile(fname); break;
+				case BOOLEAN: obj = readBooleanFromHDFSFile(fname); break;
+				case STRING:
+				default:      obj = readStringFromHDFSFile(fname);
+			}
+			return ScalarObjectFactory.createScalarObject(vt, obj);
 		}
 		catch(Exception ex) {
 			throw new DMLRuntimeException(ex);

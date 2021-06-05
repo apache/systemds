@@ -179,7 +179,7 @@ public class ParameterizedBuiltinFEDInstruction extends ComputationFEDInstructio
 		long ncolId = FederationUtils.getNextFedDataID();
 		CPOperand ncolOp = new CPOperand(String.valueOf(ncolId), ValueType.INT64, DataType.SCALAR);
 
-		String unaryString = InstructionUtils.constructUnaryInstString(instString, "ncol", ncolOp, output);
+		String unaryString = InstructionUtils.constructUnaryInstString(instString, "ncol", output, ncolOp);
 		FederatedRequest fr2 = FederationUtils.callInstruction(unaryString, ncolOp,
 			new CPOperand[] {output}, new long[] {out.getFedMapping().getID()});
 		FederatedRequest fr3 = new FederatedRequest(FederatedRequest.RequestType.GET_VAR, fr2.getID());

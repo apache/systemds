@@ -43,7 +43,7 @@ public class ListWriter
 	 * @param fname directory name 
 	 * @param fmtStr format string
 	 * @param props file format properties
-	 * @throws DMLRuntimeException
+	 * @throws DMLRuntimeException if write fails
 	 */
 	public static void writeListToHDFS(ListObject lo, String fname, String fmtStr, FileFormatProperties props)
 		throws DMLRuntimeException

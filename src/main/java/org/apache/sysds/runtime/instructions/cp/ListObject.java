@@ -61,9 +61,17 @@ public class ListObject extends Data implements Externalizable {
 	public ListObject(List<Data> data) {
 		this(data, null, null);
 	}
+	
+	public ListObject(Data[] data) {
+		this(Arrays.asList(data), null, null);
+	}
 
 	public ListObject(List<Data> data, List<String> names) {
 		this(data, names, null);
+	}
+	
+	public ListObject(Data[] data, String[] names) {
+		this(Arrays.asList(data), Arrays.asList(names), null);
 	}
 
 	public ListObject(List<Data> data, List<String> names, List<LineageItem> lineage) {

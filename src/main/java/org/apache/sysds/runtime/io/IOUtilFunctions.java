@@ -559,6 +559,24 @@ public class IOUtilFunctions
 		return ret;
 	}
 	
+	public static Path[] getMetadataFilePaths( FileSystem fs, Path file ) 
+		throws IOException
+	{
+		Path[] ret = null;
+		if( fs.isDirectory(file) || IOUtilFunctions.isObjectStoreFileScheme(file) ) {
+			LinkedList<Path> tmp = new LinkedList<>();
+			FileStatus[] dStatus = fs.listStatus(file);
+			for( FileStatus fdStatus : dStatus )
+				if( fdStatus.getPath().toString().endsWith(".mtd") ) //mtd file
+					tmp.add(fdStatus.getPath());
+			ret = tmp.toArray(new Path[0]);
+		}
+		else {
+			throw new DMLRuntimeException("Unable to read meta data files from directory "+file.toString());
+		}
+		return ret;
+	}
+	
 	/**
 	 * Delete the CRC files from the local file system associated with a
 	 * particular file and its metadata file.

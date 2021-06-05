@@ -343,7 +343,8 @@ public class Dag<N extends Lop>
 			if (n.isDataExecLocation() 
 				&& !((Data) n).getOperationType().isTransient()
 				&& ((Data) n).getOperationType().isRead()
-				&& (n.getDataType() == DataType.MATRIX || n.getDataType() == DataType.FRAME) )
+				&& (n.getDataType() == DataType.MATRIX || n.getDataType() == DataType.FRAME 
+				   || n.getDataType() == DataType.LIST) )
 			{
 				if ( !((Data)n).isLiteral() ) {
 					try {

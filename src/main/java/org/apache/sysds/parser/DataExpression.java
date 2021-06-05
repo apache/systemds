@@ -1298,8 +1298,14 @@ public class DataExpression extends DataIdentifier
 				getOutput().setNnz(-1L);
 				setPrivacy();
 			}
+			else if ( dataTypeString.equalsIgnoreCase(DataType.LIST.name())) {
+				getOutput().setDataType(DataType.LIST);
+				setPrivacy();
+			}
 			else{
-				raiseValidateError("Unknown Data Type " + dataTypeString + ". Valid  values: " + Statement.SCALAR_DATA_TYPE +", " + Statement.MATRIX_DATA_TYPE, conditional, LanguageErrorCodes.INVALID_PARAMETERS);
+				raiseValidateError("Unknown Data Type " + dataTypeString + ". Valid  values: " 
+					+ Statement.SCALAR_DATA_TYPE +", " + Statement.MATRIX_DATA_TYPE+", " + Statement.FRAME_DATA_TYPE
+					+", " + DataType.LIST.name().toLowerCase(), conditional, LanguageErrorCodes.INVALID_PARAMETERS);
 			}
 			
 			// handle value type parameter
@@ -1310,17 +1316,19 @@ public class DataExpression extends DataIdentifier
 			// Identify the value type (used only for read method)
 			String valueTypeString = getVarParam(VALUETYPEPARAM) == null ? null :  getVarParam(VALUETYPEPARAM).toString();
 			if (valueTypeString != null) {
-				if (valueTypeString.equalsIgnoreCase(Statement.DOUBLE_VALUE_TYPE)) {
+				if (valueTypeString.equalsIgnoreCase(Statement.DOUBLE_VALUE_TYPE))
 					getOutput().setValueType(ValueType.FP64);
-				} else if (valueTypeString.equalsIgnoreCase(Statement.STRING_VALUE_TYPE)) {
+				else if (valueTypeString.equalsIgnoreCase(Statement.STRING_VALUE_TYPE))
 					getOutput().setValueType(ValueType.STRING);
-				} else if (valueTypeString.equalsIgnoreCase(Statement.INT_VALUE_TYPE)) {
+				else if (valueTypeString.equalsIgnoreCase(Statement.INT_VALUE_TYPE))
 					getOutput().setValueType(ValueType.INT64);
-				} else if (valueTypeString.equalsIgnoreCase(Statement.BOOLEAN_VALUE_TYPE)) {
+				else if (valueTypeString.equalsIgnoreCase(Statement.BOOLEAN_VALUE_TYPE))
 					getOutput().setValueType(ValueType.BOOLEAN);
-				} else {
+				else if (valueTypeString.equalsIgnoreCase(ValueType.UNKNOWN.name()))
+					getOutput().setValueType(ValueType.UNKNOWN);
+				else {
 					raiseValidateError("Unknown Value Type " + valueTypeString
-							+ ". Valid values are: " + Statement.DOUBLE_VALUE_TYPE +", " + Statement.INT_VALUE_TYPE + ", " + Statement.BOOLEAN_VALUE_TYPE + ", " + Statement.STRING_VALUE_TYPE, conditional);
+						+ ". Valid values are: " + Statement.DOUBLE_VALUE_TYPE +", " + Statement.INT_VALUE_TYPE + ", " + Statement.BOOLEAN_VALUE_TYPE + ", " + Statement.STRING_VALUE_TYPE, conditional);
 				}
 			} else {
 				getOutput().setValueType(ValueType.FP64);

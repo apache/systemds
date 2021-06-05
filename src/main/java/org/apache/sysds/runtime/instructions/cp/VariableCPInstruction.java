@@ -52,6 +52,8 @@ import org.apache.sysds.runtime.io.FileFormatProperties;
 import org.apache.sysds.runtime.io.FileFormatPropertiesCSV;
 import org.apache.sysds.runtime.io.FileFormatPropertiesLIBSVM;
 import org.apache.sysds.runtime.io.IOUtilFunctions;
+import org.apache.sysds.runtime.io.ListReader;
+import org.apache.sysds.runtime.io.ListWriter;
 import org.apache.sysds.runtime.io.WriterMatrixMarket;
 import org.apache.sysds.runtime.io.WriterTextCSV;
 import org.apache.sysds.runtime.lineage.LineageItem;
@@ -371,7 +373,7 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 			}
 
 			MetaDataFormat iimd = null;
-			if (dt == DataType.MATRIX || dt == DataType.FRAME) {
+			if (dt == DataType.MATRIX || dt == DataType.FRAME || dt == DataType.LIST) {
 				DataCharacteristics mc = new MatrixCharacteristics();
 				if (parts.length == 6) {
 					// do nothing
@@ -660,6 +662,12 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 				ec.setVariable(getInput1().getName(), fobj);
 				break;
 			}
+			case LIST: {
+				ListObject lo = ListReader.readListFromHDFS(getInput2().getName(),
+					((MetaDataFormat)metadata).getFileFormat().name(), _formatProperties);
+				ec.setVariable(getInput1().getName(), lo);
+				break;
+			}
 			case SCALAR: {
 				//created variable not called for scalars
 				ec.setScalarOutput(getInput1().getName(), null);
@@ -912,29 +920,8 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 	 * @param ec execution context
 	 */
 	private void processReadInstruction(ExecutionContext ec){
-		ScalarObject res = null;
-			try {
-				switch(getInput1().getValueType()) {
-					case FP64:
-						res = new DoubleObject(HDFSTool.readDoubleFromHDFSFile(getInput2().getName()));
-						break;
-					case INT64:
-						res = new IntObject(HDFSTool.readIntegerFromHDFSFile(getInput2().getName()));
-						break;
-					case BOOLEAN:
-						res = new BooleanObject(HDFSTool.readBooleanFromHDFSFile(getInput2().getName()));
-						break;
-					case STRING:
-						res = new StringObject(HDFSTool.readStringFromHDFSFile(getInput2().getName()));
-						break;
-					default:
-						throw new DMLRuntimeException("Invalid value type ("
-							+ getInput1().getValueType() + ") while processing readScalar instruction.");
-				}
-			} catch ( IOException e ) {
-				throw new DMLRuntimeException(e);
-			}
-			ec.setScalarOutput(getInput1().getName(), res);
+		ec.setScalarOutput(getInput1().getName(),
+			HDFSTool.readScalarObjectFromHDFSFile(getInput2().getName(), getInput1().getValueType()));
 	}
 
 	/**
@@ -1011,6 +998,10 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 			TensorObject to = ec.getTensorObject(getInput1().getName());
 			setPrivacyConstraint(to.getPrivacyConstraint());
 			to.exportData(fname, fmtStr, _formatProperties);
+		}
+		else if( getInput1().getDataType() == DataType.LIST ) {
+			ListObject lo = ec.getListObject(getInput1().getName());
+			ListWriter.writeListToHDFS(lo, fname, fmtStr, _formatProperties);
 		}
 	}
 
@@ -1162,8 +1153,8 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 				Path path = new Path(fname);
 				IOUtilFunctions.deleteCrcFilesFromLocalFileSystem(fs, path);
 			}
-
-		} catch ( IOException e ) {
+		}
+		catch ( IOException e ) {
 			throw new DMLRuntimeException(e);
 		}
 	}

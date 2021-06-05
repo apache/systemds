@@ -87,6 +87,7 @@ public class MetaDataAll extends DataIdentifier {
 	}
 
 	public MetaDataAll(String mtdFileName, boolean conditional, boolean parseMeta) {
+		setFilename(mtdFileName);
 		_metaObj = readMetadataFile(mtdFileName, conditional);
 		setPrivacy(PrivacyConstraint.PrivacyLevel.None);
 		if(parseMeta)
@@ -234,6 +235,10 @@ public class MetaDataAll extends DataIdentifier {
 		_formatTypeString = _formatTypeString != null && format == null && _metaObj != null ? (String)JSONHelper.get(_metaObj, DataExpression.FORMAT_TYPE) : format ;
 		if(_formatTypeString != null && EnumUtils.isValidEnum(Types.FileFormat.class, _formatTypeString.toUpperCase()))
 			setFileFormat(Types.FileFormat.safeValueOf(_formatTypeString));
+	}
+	
+	public DataCharacteristics getDataCharacteristics() {
+		return new MatrixCharacteristics(getDim1(), getDim2(), getBlocksize(), getNnz());
 	}
 
 	@SuppressWarnings("unchecked")

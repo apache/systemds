@@ -109,6 +109,7 @@ public class Types
 				case "INT":      return INT64;
 				case "BOOLEAN":  return BOOLEAN;
 				case "STRING":   return STRING;
+				case "UNKNOWN":  return UNKNOWN;
 				default:
 					throw new DMLRuntimeException("Unknown value type: "+value);
 			}

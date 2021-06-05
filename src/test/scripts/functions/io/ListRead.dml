@@ -1,0 +1,41 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+L = read($1);
+W1 = as.matrix(L[1]);
+W2 = as.matrix(L[2]);
+s3 = as.scalar(L[3]);
+W4 = as.matrix(L[4]);
+R1 = sum(W1 * W2 + s3 * W4);
+
+# cut and reexecute to ensure that
+# individual files were not deleted
+while(FALSE){} 
+Lb = read($1);
+W1b = as.matrix(Lb[1]);
+W2b = as.matrix(Lb[2]);
+s3b = as.scalar(Lb[3]);
+W4b = as.matrix(Lb[4]);
+
+R2 = sum(W1b * W2b + s3b * W4b);
+R3 = R1/2 + R2/2
+
+write(R3, $2, format="text");

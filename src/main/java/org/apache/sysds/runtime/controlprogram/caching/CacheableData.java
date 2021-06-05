@@ -1033,7 +1033,8 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 
 	// Federated read
 	protected T readBlobFromFederated(FederationMap fedMap) throws IOException {
-		LOG.info("Pulling data from federated sites");
+		if( LOG.isDebugEnabled() ) //common if instructions keep federated outputs
+			LOG.debug("Pulling data from federated sites");
 		MetaDataFormat iimd = (MetaDataFormat) _metaData;
 		DataCharacteristics dc = iimd.getDataCharacteristics();
 		return readBlobFromFederated(fedMap, dc.getDims());

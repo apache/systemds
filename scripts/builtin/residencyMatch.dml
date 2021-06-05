@@ -1,0 +1,145 @@
+#-------------------------------------------------------------
+## Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+##-------------------------------------------------------------------------------------------------------------------------------------------------------
+# THIS SCRIPT COMPUTES A SOLUTION FOR THE Resident Hospital Matching Problem
+#---------------------------------------------------------------------------------------------------------------------------------------------------------
+
+#The total number of Residents on one side might not equal the total capacity to which they are to be matched on the other side.
+# The resulting matching might not match all of the Residents.
+#Each participant may only be willing to be matched to a subset of the participants on the other side of the matching. (Residents and Hospitals)
+#The participants on one side of the matching (the hospitals) may have a numerical capacity, specifying the number of Residents they are willing to hire.
+
+# R Residents
+# H Hospitals
+# C Capacity of each hospitals
+#-----------------------------------------------------------------------------------------------------------------------------------------------------------
+
+m_residencyMatch = function(Matrix[Double] R, Matrix[Double] H,Matrix[Double] C ,Boolean Ordered = TRUE)
+  return (Matrix[Double] Result_matrix)
+{
+
+ ordered= TRUE;
+ H =  matrix("3 1 2 2 1 3 3 2 1", rows=3, cols=3);
+ R=  matrix("2 1 3 1 2 3 1 3 2", rows=3, cols=3);
+ C = matrix ("3 3 3", rows = 3 , cols = 1);
+
+
+   ordered= TRUE;
+   print("\n")
+   print("STARTING Residency Match Problem");
+   #assert(nrow(R) == ncol(H)); #### check it later  ????????
+   #assert(ncol(R) == nrow(H)); #### check it later  ????????
+   ############################################################
+   m = nrow(R)
+   n = ncol (H)
+   ################################################################
+   Capacity = matrix(1.0, rows=nrow(C), cols=1))
+   Capacity = C;
+
+   ResidencyMatch = matrix(0.0, rows=nrow(R), ncol(R))
+   HospitalMatch = matrix(0.0, rows=nrow(H), ncol(H))
+   #########################################################################################################
+   # Check that no Residents is matched to an unacceptable Hospitals. """
+   #########################################################################################################
+
+   #check_Residence_unhappy(Residence, Hospital):
+   #""" Determine whether a Residence is unhappy because they are unmatched, or
+   #they prefer the Hospital to their current match. """
+
+   #########################################################################################################
+   # Set all residents to be unmatched, and  """ all hospitals to be totally unsubscribed.
+############################################################################################################333333
+#      1. Take any unmatched resident with a non-empty preference list,
+#     :math:`r`, and consider their most preferred hospital, :math:`h`. Match
+#    them to one another.
+#
+#       2. If, as a result of this new matching, :math:`h` is now
+#      over-subscribed, find the worst resident currently assigned to
+#     :math:`h`, :math:`r'`. Set :math:`r'` to be unmatched and remove them
+#    from :math:`h`'s matching. Otherwise, go to 3.
+#
+#       3. If :math:`h` is at capacity (fully subscribed) then find their worst
+#      current match :math:`r'`. Then, for each successor, :math:`s`, to
+#     :math:`r'` in the preference list of :math:`h`, delete the pair
+#    :math:`(s, h)` from the game. Otherwise, go to 4.
+#
+#       4. Go to 1 until there are no such residents left, then end.
+  ###############################################################################################33
+
+
+
+   Result_matrix = matrix(0.0, rows=nrow(R), cols=ncol(R))
+
+   if(nrow(Capacity) != nrow(H)) {
+        print("ERROR: Wrong Input !Capacity indexes is not match with the Number of hospitals ")
+        #it means that some hospitals' capacity is not defined.
+      }# end of if
+
+
+# in this step we consider that  Residents Matrix is ORDERED   !!!!
+# in this step we consider that  Hospital  Matrix is UNORDERED !!!!
+######### we check if the hospital has the cepacity and also resident i has the high preference to match hospital so the Hopotalmatch will be OK for resident i #########
+######### scalar (R[i,j]) in Hospital number (we consider that residency matrix in ORDERED)---------------------------------------------------------------------#########
+
+        prev_Residents_vector = rowMins(HospitalMatch)
+        prevIndex_Residents_vector =  rowIndexMin(HospitalMatch)
+
+
+        prev1_best_Residents = rowMins(Result_matrix)
+
+
+ S = diag(matrix(1.0, rows=m, cols=1))  ### for checking while
+
+ while(sum(S) > 0) {
+     parfor(i in 1:m) {
+        parfor(j in 1:n) {
+              HIndex = as.scalar (R[i,j])
+              if (HIndex != 0 ){
+                if (H [HIndex,i] != 0  & as.scalar (Capacity[HIndex,1]) >= 1){
+                  Capacity[HIndex,1] = as.scalar (Capacity[HIndex,1]) -1
+                  ResidencyMatch [i,HIndex] = j
+                  HospitalMatch [HIndex, i] = j
+                  #Disable freshly Matched resident to search for a new Hospital in the next round
+                  S[i, i] = 0
+                }# end of if HIndex
+              }# end of if
+
+              else if  (as.scalar (Capacity[HIndex,1]) < 1 & prev_Residents_vector[HIndex] > j ){
+
+                 ##### in this step we check that if the hospital capacity is 0 but the preference value of  prev residents is higher that the preference value of current resident #######
+                 ##### we should replace the prev resident with current resident----------------------------------------------------------------------------------------------------#######
+                 HospitalMatch [HIndex ,as.scalar[prevIndex_Residents_vector[HIndex]]] = 0
+                 ResidencyMatch[as.scalar[prevIndex_Residents_vector[HIndex]],HIndex] = 0
+                 HospitalMatch [HIndex,i ] = j
+                 ResidencyMatch [i,HIndex] = j
+
+              }## end of else if
+                 new_best_proposer_index = i
+                 # #################If ?????#############I should check again
+                 if(prev_Residents_vector[HIndex]] > 0)
+                   S[as.scalar[prevIndex_Residents_vector[HIndex], as.scalar[prevIndex_Residents_vector[HIndex]] = 1
+
+        }##  end of for (j 1:n)
+     } ##  end of for (i 1:m)
+
+   }# end of while
+   Result_matrix = ResidencyMatch
+   print("Result: ")
+   print(toString(Result_matrix))
+
+}# end of function

@@ -1089,7 +1089,7 @@ public class InstructionUtils
 		return InstructionUtils.concatOperands(parts[0], parts[1], createOperand(op1), createOperand(op2), createOperand(out));
 	}
 
-	public static String constructUnaryInstString(String instString, CPOperand op1, String opcode, CPOperand out) {
+	public static String constructUnaryInstString(String instString, String opcode, CPOperand op1, CPOperand out) {
 		String[] parts = instString.split(Lop.OPERAND_DELIMITOR);
 		parts[1] = opcode;
 		return InstructionUtils.concatOperands(parts[0], parts[1], createOperand(op1), createOperand(out));

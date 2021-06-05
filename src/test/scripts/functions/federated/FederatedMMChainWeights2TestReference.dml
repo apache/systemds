@@ -18,14 +18,12 @@
 # under the License.
 #
 #-------------------------------------------------------------
-if ($rP) {
-  X = federated(addresses=list($in_X1, $in_X2),
-      ranges=list(list(0, 0), list($rows / 2, $cols), list($rows / 2, 0), list($rows, $cols)))
-} else {
-  X = federated(addresses=list($in_X1, $in_X2),
-        ranges=list(list(0, 0), list($rows, $cols / 2), list(0, $cols / 2), list($rows, $cols)))
-}
-Y = read($in_Y)
 
-model = glm(X=X, Y=Y, icpt = FALSE, tol = 1e-6, reg = 0.01)
-write(model, $out)
+if($5) { X = rbind(read($1), read($2), read($3), read($4)); }
+else { X = cbind(read($1), read($2), read($3), read($4));}
+
+v = read($6);
+w = read($7);
+S = t(X) %*% ((X %*% v)-w);
+
+write(S, $8);

@@ -51,7 +51,7 @@ public class ListReader
 	 * @param fmtStr format string
 	 * @param props file format properties
 	 * @return list object
-	 * @throws DMLRuntimeException
+	 * @throws DMLRuntimeException if inconsistent meta data or read fails
 	 */
 	public static ListObject readListFromHDFS(String fname, String fmtStr, FileFormatProperties props)
 		throws DMLRuntimeException

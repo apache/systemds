@@ -18,14 +18,20 @@
 # under the License.
 #
 #-------------------------------------------------------------
-if ($rP) {
-  X = federated(addresses=list($in_X1, $in_X2),
-      ranges=list(list(0, 0), list($rows / 2, $cols), list($rows / 2, 0), list($rows, $cols)))
-} else {
-  X = federated(addresses=list($in_X1, $in_X2),
-        ranges=list(list(0, 0), list($rows, $cols / 2), list(0, $cols / 2), list($rows, $cols)))
-}
-Y = read($in_Y)
 
-model = glm(X=X, Y=Y, icpt = FALSE, tol = 1e-6, reg = 0.01)
-write(model, $out)
+if ($rP) {
+    X = federated(addresses=list($in_X1, $in_X2, $in_X3, $in_X4),
+        ranges=list(list(0, 0), list($rows/4, $cols), list($rows/4, 0), list(2*$rows/4, $cols),
+    		list(2*$rows/4, 0), list(3*$rows/4, $cols), list(3*$rows/4, 0), list($rows, $cols)));
+  } else {
+    X = federated(addresses=list($in_X1, $in_X2, $in_X3, $in_X4),
+            ranges=list(list(0, 0), list($rows, $cols/4), list(0,$cols/4), list($rows, $cols/2),
+            	list(0,$cols/2), list($rows, 3*($cols/4)), list(0, 3*($cols/4)), list($rows, $cols)));
+    }
+
+v = read($in_v);
+
+S = (t(X) %*% (X %*% v));
+print(nrow(S))
+print(ncol(S))
+write(S, $out_S);

@@ -19,10 +19,9 @@
 
 package org.apache.sysds.test.functions.federated.algorithms;
 
-import org.junit.Assert;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
+import java.util.Arrays;
+import java.util.Collection;
+
 import org.apache.sysds.common.Types;
 import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
@@ -30,9 +29,10 @@ import org.apache.sysds.runtime.util.HDFSTool;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
-
-import java.util.Arrays;
-import java.util.Collection;
+import org.junit.Assert;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
 @RunWith(value = Parameterized.class)
 @net.jcip.annotations.NotThreadSafe
@@ -47,6 +47,8 @@ public class FederatedGLMTest extends AutomatedTestBase {
 	public int rows;
 	@Parameterized.Parameter(1)
 	public int cols;
+	@Parameterized.Parameter(2)
+	public boolean rowPartitioned;
 
 	@Override
 	public void setUp() {
@@ -58,8 +60,9 @@ public class FederatedGLMTest extends AutomatedTestBase {
 	public static Collection<Object[]> data() {
 		// rows have to be even and > 1
 		return Arrays.asList(new Object[][] {
-			// {10000, 10}, {1000, 100},
-			{2000, 43}});
+			// {10000, 10, true}, {1000, 100, false},
+			{2000, 44, true},
+			{2000, 44, false}});
 	}
 
 	@Test
@@ -79,16 +82,18 @@ public class FederatedGLMTest extends AutomatedTestBase {
 		String HOME = SCRIPT_DIR + TEST_DIR;
 
 		// write input matrices
-		int halfRows = rows / 2;
+		int r = rowPartitioned ? rows / 2 : rows;
+		int c = rowPartitioned ? cols : cols / 2;
+
 		// We have two matrices handled by a single federated worker
-		double[][] X1 = getRandomMatrix(halfRows, cols, 0, 1, 1, 42);
-		double[][] X2 = getRandomMatrix(halfRows, cols, 0, 1, 1, 1340);
+		double[][] X1 = getRandomMatrix(r, c, 0, 1, 1, 42);
+		double[][] X2 = getRandomMatrix(r, c, 0, 1, 1, 1340);
 		double[][] Y = getRandomMatrix(rows, 1, -1, 1, 1, 1233);
 		for(int i = 0; i < rows; i++)
 			Y[i][0] = (Y[i][0] > 0) ? 1 : -1;
 
-		writeInputMatrixWithMTD("X1", X1, false, new MatrixCharacteristics(halfRows, cols, blocksize, halfRows * cols));
-		writeInputMatrixWithMTD("X2", X2, false, new MatrixCharacteristics(halfRows, cols, blocksize, halfRows * cols));
+		writeInputMatrixWithMTD("X1", X1, false, new MatrixCharacteristics(r, c, blocksize, r * c));
+		writeInputMatrixWithMTD("X2", X2, false, new MatrixCharacteristics(r, c, blocksize, r * c));
 		writeInputMatrixWithMTD("Y", Y, false, new MatrixCharacteristics(rows, 1, blocksize, rows));
 
 		// empty script name because we don't execute any script, just start the worker
@@ -104,18 +109,18 @@ public class FederatedGLMTest extends AutomatedTestBase {
 
 		// Run reference dml script with normal matrix
 		fullDMLScriptName = HOME + TEST_NAME + "Reference.dml";
-		programArgs = new String[] {"-args", input("X1"), input("X2"), input("Y"), expected("Z")};
+		programArgs = new String[] {"-args", input("X1"), input("X2"), input("Y"), Boolean.toString(rowPartitioned).toUpperCase(), expected("Z")};
 		runTest(true, false, null, -1);
 
 		// Run actual dml script with federated matrix
 		fullDMLScriptName = HOME + TEST_NAME + ".dml";
 		programArgs = new String[] {"-stats", "-nvargs", "in_X1=" + TestUtils.federatedAddress(port1, input("X1")),
 			"in_X2=" + TestUtils.federatedAddress(port2, input("X2")), "rows=" + rows, "cols=" + cols,
-			"in_Y=" + input("Y"), "out=" + output("Z")};
+			"in_Y=" + input("Y"), "rP=" + Boolean.toString(rowPartitioned).toUpperCase(), "out=" + output("Z")};
 		runTest(true, false, null, -1);
 
 		// compare via files
-		compareResults(1e-9);
+		compareResults(1e-2);
 
 		TestUtils.shutdownThreads(t1, t2);
 
@@ -124,7 +129,7 @@ public class FederatedGLMTest extends AutomatedTestBase {
 		Assert.assertTrue(heavyHittersContainsString("fed_uark+", "fed_uarsqk+"));
 		Assert.assertTrue(heavyHittersContainsString("fed_uack+"));
 		// Assert.assertTrue(heavyHittersContainsString("fed_uak+"));
-		Assert.assertTrue(heavyHittersContainsString("fed_mmchain"));
+		Assert.assertTrue(!rowPartitioned || heavyHittersContainsString("fed_mmchain"));
 
 		// check that federated input files are still existing
 		Assert.assertTrue(HDFSTool.existsFileOnHDFS(input("X1")));

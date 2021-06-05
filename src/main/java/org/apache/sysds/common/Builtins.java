@@ -38,6 +38,7 @@ import org.apache.sysds.common.Types.ReturnType;
 public enum Builtins {
 	//builtin functions
 	STABLEMARRIAGE("stablemarriageA", true),
+	RESIDENCYMATCH("residencyMatchMain", true),
 	ARIMA("arima", true),
 	ABS("abs", false),
 	GET_ACCURACY("getAccuracy", true),

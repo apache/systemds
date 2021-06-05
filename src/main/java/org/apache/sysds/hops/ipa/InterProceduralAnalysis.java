@@ -547,6 +547,9 @@ public class InterProceduralAnalysis
 		for( int i=0; i<Math.min(inputOps.size(), funArgNames.length); i++ ) {
 			//create mapping between input hops and vars
 			DataIdentifier dat = fstmt.getInputParam(funArgNames[i]);
+			if( dat == null )
+				throw new HopsException("Failed IPA: function argument '"+funArgNames[i]+"' "
+					+ "does not exist in function signature of "+fop.getFunctionKey()+".");
 			Hop input = inputOps.get(i);
 			
 			if( input.getDataType()==DataType.MATRIX )

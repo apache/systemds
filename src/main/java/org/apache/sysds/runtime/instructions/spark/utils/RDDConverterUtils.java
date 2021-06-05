@@ -59,6 +59,7 @@ import org.apache.sysds.runtime.instructions.spark.data.ReblockBuffer;
 import org.apache.sysds.runtime.instructions.spark.data.SerLongWritable;
 import org.apache.sysds.runtime.instructions.spark.data.SerText;
 import org.apache.sysds.runtime.instructions.spark.functions.ConvertMatrixBlockToIJVLines;
+import org.apache.sysds.runtime.instructions.spark.functions.ExtractBlockForBinaryReblock;
 import org.apache.sysds.runtime.io.FileFormatPropertiesCSV;
 import org.apache.sysds.runtime.io.FileFormatPropertiesLIBSVM;
 import org.apache.sysds.runtime.io.FileFormatPropertiesMM;
@@ -182,7 +183,21 @@ public class RDDConverterUtils {
 
 		return out;
 	}
+	
+	public static JavaPairRDD<MatrixIndexes, MatrixBlock> binaryBlockToBinaryBlock(
+		JavaPairRDD<MatrixIndexes, MatrixBlock> in, DataCharacteristics mcIn, DataCharacteristics mcOut)
+	{
+		boolean shuffleFreeReblock = mcIn.dimsKnown() && mcOut.dimsKnown()
+			&& (mcIn.getRows() < mcOut.getBlocksize() || mcIn.getBlocksize()%mcOut.getBlocksize() == 0)
+			&& (mcIn.getCols() < mcOut.getBlocksize() || mcIn.getBlocksize()%mcOut.getBlocksize() == 0);
 
+		JavaPairRDD<MatrixIndexes, MatrixBlock> out = in
+			.flatMapToPair(new ExtractBlockForBinaryReblock(mcIn, mcOut));
+		if( !shuffleFreeReblock )
+			out = RDDAggregateUtils.mergeByKey(out, false);
+		return out;
+	}
+	
 	public static JavaPairRDD<MatrixIndexes, MatrixBlock> csvToBinaryBlock(JavaSparkContext sc,
 			JavaPairRDD<LongWritable, Text> input, DataCharacteristics mc,
 			boolean hasHeader, String delim, boolean fill, double fillValue, Set<String> naStrings) {

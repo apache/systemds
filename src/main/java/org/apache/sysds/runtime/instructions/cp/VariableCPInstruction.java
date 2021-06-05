@@ -68,19 +68,19 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 	/*
 	 * Supported Operations
 	 * --------------------
-	 *	1) assignvar x:type y:type
-	 *	    assign value of y to x (both types should match)
-	 *	2) rmvar x
-	 *	    remove variable x
-	 *	3) cpvar x y
-	 *	    copy x to y (same as assignvar followed by rmvar, types are not required)
-	 *	4) rmfilevar x:type b:type
-	 *	    remove variable x, and if b=true then the file object associated with x (b's type should be boolean)
-	 *	5) assignvarwithfile FN x
-	 *	    assign x with the first value from the file whose name=FN
-	 *	6) attachfiletovar FP x
-	 *	    allocate a new file object with name FP, and associate it with variable x
-	 *     createvar x FP [dimensions] [formatinfo]
+	 *  1) assignvar x:type y:type
+	 *      assign value of y to x (both types should match)
+	 *  2) rmvar x
+	 *      remove variable x
+	 *  3) cpvar x y
+	 *      copy x to y (same as assignvar followed by rmvar, types are not required)
+	 *  4) rmfilevar x:type b:type
+	 *      remove variable x, and if b=true then the file object associated with x (b's type should be boolean)
+	 *  5) assignvarwithfile FN x
+	 *      assign x with the first value from the file whose name=FN
+	 *  6) attachfiletovar FP x
+	 *      allocate a new file object with name FP, and associate it with variable x
+	 *      createvar x FP [dimensions] [formatinfo]
 	 */
 
 	public enum VariableOperationCode
@@ -320,7 +320,7 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 			// Write instructions for csv files also include three additional parameters (hasHeader, delimiter, sparse)
 			// Write instructions for libsvm files also include one additional parameters (sparse)
 			// TODO - replace hardcoded numbers with more sophisticated code
-			if ( parts.length != 5 && parts.length != 6 && parts.length != 8 )
+			if ( parts.length != 6 && parts.length != 7 && parts.length != 9 )
 				throw new DMLRuntimeException("Invalid number of operands in write instruction: " + str);
 		}
 		else {
@@ -352,13 +352,13 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 				// 14 inputs: createvar corresponding to READ -- includes properties hasHeader, delim, fill, and fillValue
 				if ( parts.length < 14+extSchema || parts.length > 16+extSchema )
 					throw new DMLRuntimeException("Invalid number of operands in createvar instruction: " + str);
-        }
-        else if(fmt.equalsIgnoreCase("libsvm")) {
-          // 13 inputs: createvar corresponding to WRITE -- includes properties delim, index delim, and sparse
-          // 12 inputs: createvar corresponding to READ -- includes properties delim, index delim, and sparse
+			}
+			else if(fmt.equalsIgnoreCase("libsvm")) {
+				// 13 inputs: createvar corresponding to WRITE -- includes properties delim, index delim, and sparse
+				// 12 inputs: createvar corresponding to READ -- includes properties delim, index delim, and sparse
 
-          if(parts.length < 12 + extSchema)
-            throw new DMLRuntimeException("Invalid number of operands in createvar instruction: " + str);
+				if(parts.length < 12 + extSchema)
+					throw new DMLRuntimeException("Invalid number of operands in createvar instruction: " + str);
 			}
 			else {
 				if ( parts.length != 6 && parts.length != 11+extSchema )
@@ -427,29 +427,29 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 						naStrings = parts[curPos+4];
 					fmtProperties = new FileFormatPropertiesCSV(hasHeader, delim, fill, fillValue, naStrings) ;
 				}
-          return new VariableCPInstruction(VariableOperationCode.CreateVariable, in1, in2, in3, iimd, updateType,
-            fmtProperties, schema, opcode, str);
-        }
-        else if(fmt.equalsIgnoreCase("libsvm")) {
-          // Cretevar instructions for LIBSVM format has 13.
-          // 13 inputs: createvar corresponding to WRITE -- includes properties delim, index delim and sparse
-          // 12 inputs: createvar corresponding to READ -- includes properties delim, index delim, and sparse
-          FileFormatProperties fmtProperties = null;
-          int curPos = 11;
-          if(parts.length == 12 + extSchema) {
-            String delim = parts[curPos];
-            String indexDelim = parts[curPos + 1];
-            fmtProperties = new FileFormatPropertiesLIBSVM(delim, indexDelim);
-          }
-          else {
-            String delim = parts[curPos];
-            String indexDelim = parts[curPos + 1];
-            boolean sparse = Boolean.parseBoolean(parts[curPos + 2]);
-            fmtProperties = new FileFormatPropertiesLIBSVM(delim, indexDelim, sparse);
-          }
-
-          return new VariableCPInstruction(VariableOperationCode.CreateVariable, in1, in2, in3, iimd, updateType,
-            fmtProperties, schema, opcode, str);
+				return new VariableCPInstruction(VariableOperationCode.CreateVariable,
+					in1, in2, in3, iimd, updateType, fmtProperties, schema, opcode, str);
+			}
+			else if(fmt.equalsIgnoreCase("libsvm")) {
+				// Cretevar instructions for LIBSVM format has 13.
+				// 13 inputs: createvar corresponding to WRITE -- includes properties delim, index delim and sparse
+				// 12 inputs: createvar corresponding to READ -- includes properties delim, index delim, and sparse
+				FileFormatProperties fmtProperties = null;
+				int curPos = 11;
+				if(parts.length == 12 + extSchema) {
+					String delim = parts[curPos];
+					String indexDelim = parts[curPos + 1];
+					fmtProperties = new FileFormatPropertiesLIBSVM(delim, indexDelim);
+				}
+				else {
+					String delim = parts[curPos];
+					String indexDelim = parts[curPos + 1];
+					boolean sparse = Boolean.parseBoolean(parts[curPos + 2]);
+					fmtProperties = new FileFormatPropertiesLIBSVM(delim, indexDelim, sparse);
+				}
+	
+				return new VariableCPInstruction(VariableOperationCode.CreateVariable,
+					in1, in2, in3, iimd, updateType, fmtProperties, schema, opcode, str);
 			}
 			else {
 				return new VariableCPInstruction(VariableOperationCode.CreateVariable, in1, in2, in3, iimd, updateType, schema, opcode, str);
@@ -512,17 +512,17 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 				in4 = new CPOperand(parts[7]); // description
 			}
 			else if ( in3.getName().equalsIgnoreCase("libsvm") ) {
-          String delim = parts[4];
-          String indexDelim = parts[5];
-          boolean sparse = Boolean.parseBoolean(parts[6]);
-          fprops = new FileFormatPropertiesLIBSVM(delim, indexDelim, sparse);
+				String delim = parts[4];
+				String indexDelim = parts[5];
+				boolean sparse = Boolean.parseBoolean(parts[6]);
+				fprops = new FileFormatPropertiesLIBSVM(delim, indexDelim, sparse);
 			}
 			else if(in3.getName().equalsIgnoreCase("hdf5") ){
 				fprops = new FileFormatPropertiesHDF5();
 			}
 			else {
 				fprops = new FileFormatProperties();
-				in4 = new CPOperand(parts[4]); // description
+				in4 = new CPOperand(parts[5]); // blocksize in empty description
 			}
 			VariableCPInstruction inst = new VariableCPInstruction(
 				getVariableOperationCode(opcode), in1, in2, in3, out, null, fprops, null, null, opcode, str);
@@ -993,6 +993,9 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 			else {
 				// Default behavior
 				MatrixObject mo = ec.getMatrixObject(getInput1().getName());
+				int blen = Integer.parseInt(getInput4().getName());
+				if( mo.getBlocksize() != blen )
+					mo.getMetaData().getDataCharacteristics().setBlocksize(blen);
 				mo.exportData(fname, fmtStr, _formatProperties);
 			}
 			// Set privacy constraint of write instruction to the same as that of the input
@@ -1083,7 +1086,7 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 	/**
 	 * Helper function to write LIBSVM files to HDFS.
 	 *
-	 * @param ec    execution context
+	 * @param ec	execution context
 	 * @param fname file name
 	 */
 	private void writeLIBSVMFile(ExecutionContext ec, String fname) {

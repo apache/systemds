@@ -29,6 +29,7 @@ import org.apache.spark.util.LongAccumulator;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.common.Types.ValueType;
+import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
@@ -48,6 +49,7 @@ import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
+import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.util.HDFSTool;
 
 import java.io.IOException;
@@ -80,7 +82,7 @@ public class WriteSPInstruction extends SPInstruction implements LineageTraceabl
 		// All write instructions have 3 parameters, except in case of delimited/csv/libsvm file.
 		// Write instructions for csv files also include three additional parameters (hasHeader, delimiter, sparse)
 		// Write instructions for libsvm files also include three additional parameters (delimiter, index delimiter, sparse)
-		if ( parts.length != 5 && parts.length != 9 ) {
+		if ( parts.length != 6 && parts.length != 10 ) {
 			throw new DMLRuntimeException("Invalid number of operands in write instruction: " + str);
 		}
 
@@ -112,7 +114,7 @@ public class WriteSPInstruction extends SPInstruction implements LineageTraceabl
 		else {
 			FileFormatProperties ffp = new FileFormatProperties();
 
-			CPOperand in4 = new CPOperand(parts[4]);
+			CPOperand in4 = new CPOperand(parts[5]);
 			inst.input4 = in4;
 			inst.setFormatProperties(ffp);
 		}
@@ -230,6 +232,12 @@ public class WriteSPInstruction extends SPInstruction implements LineageTraceabl
 				mc.setNonZeros(aNnz.value().longValue());
 		}
 		else if( fmt == FileFormat.BINARY ) {
+			//reblock output if needed
+			int blen = Integer.parseInt(input4.getName());
+			DataCharacteristics mcOut = new MatrixCharacteristics(mc).setBlocksize(blen);
+			if( ConfigurationManager.getBlocksize() != blen )
+				in1 = RDDConverterUtils.binaryBlockToBinaryBlock(in1, mc, mcOut);
+			
 			//piggyback nnz computation on actual write
 			LongAccumulator aNnz = null;
 			if( !mc.nnzKnown() ) {

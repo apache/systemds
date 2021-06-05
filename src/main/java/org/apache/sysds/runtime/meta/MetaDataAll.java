@@ -178,33 +178,57 @@ public class MetaDataAll extends DataIdentifier {
 		}
 	}
 
-	public boolean mtdExists() { return _metaObj != null && !_metaObj.isEmpty(); }
+	public boolean mtdExists() {
+		return _metaObj != null && !_metaObj.isEmpty();
+	}
 
 	public CacheableData<?> parseAndSetPrivacyConstraint(CacheableData<?> cd) throws JSONException {
 		return (CacheableData<?>) PrivacyPropagator.parseAndSetPrivacyConstraint(cd, _metaObj);
 	}
 
-	public String getFormatTypeString() { return _formatTypeString; }
+	public String getFormatTypeString() {
+		return _formatTypeString;
+	}
 
-	public String getFineGrainedPrivacy() { return _fineGrainedPrivacy; }
+	public String getFineGrainedPrivacy() {
+		return _fineGrainedPrivacy;
+	}
 
-	public String getDelim() { return _delim; }
+	public String getDelim() {
+		return _delim;
+	}
 
-	public String getSchema() { return _schema; }
+	public String getSchema() {
+		return _schema;
+	}
 
-	public boolean getHasHeader() { return _hasHeader; }
+	public boolean getHasHeader() {
+		return _hasHeader;
+	}
 
-	public boolean getSparseDelim() { return _sparseDelim; }
+	public boolean getSparseDelim() {
+		return _sparseDelim;
+	}
 
-	public void setSparseDelim(boolean sparseDelim) { _sparseDelim = sparseDelim; }
+	public void setSparseDelim(boolean sparseDelim) {
+		_sparseDelim = sparseDelim;
+	}
 
-	public void setHasHeader(boolean hasHeader) { _hasHeader = hasHeader; }
+	public void setHasHeader(boolean hasHeader) {
+		_hasHeader = hasHeader;
+	}
 
-	public void setFineGrainedPrivacy(String fineGrainedPrivacy) { _fineGrainedPrivacy = fineGrainedPrivacy; }
+	public void setFineGrainedPrivacy(String fineGrainedPrivacy) {
+		_fineGrainedPrivacy = fineGrainedPrivacy;
+	}
 
-	public void setSchema(String schema) { _schema = schema; }
+	public void setSchema(String schema) {
+		_schema = schema;
+	}
 
-	public void setDelim(String delim) { _delim = delim; }
+	public void setDelim(String delim) {
+		_delim = delim;
+	}
 
 	public void setFormatTypeString(String format) {
 		_formatTypeString = _formatTypeString != null && format == null && _metaObj != null ? (String)JSONHelper.get(_metaObj, DataExpression.FORMAT_TYPE) : format ;

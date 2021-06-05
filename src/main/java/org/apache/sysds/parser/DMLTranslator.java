@@ -1053,7 +1053,7 @@ public class DMLTranslator
 						
 					case BINARY:
 						// write output in binary block format
-						ae.setOutputParams(ae.getDim1(), ae.getDim2(), ae.getNnz(), ae.getUpdateType(), ConfigurationManager.getBlocksize());
+						ae.setOutputParams(ae.getDim1(), ae.getDim2(), ae.getNnz(), ae.getUpdateType(), ae.getBlocksize());
 						break;
 					case FEDERATED:
 						ae.setOutputParams(ae.getDim1(), ae.getDim2(), -1, ae.getUpdateType(), -1);
@@ -2132,8 +2132,12 @@ public class DMLTranslator
 		setIdentifierParams(currBuiltinOp, source.getOutput());
 		if( source.getOpCode()==DataExpression.DataOp.READ )
 			((DataOp)currBuiltinOp).setInputBlocksize(target.getBlocksize());
-		else if ( source.getOpCode() == DataExpression.DataOp.WRITE )
+		else if ( source.getOpCode() == DataExpression.DataOp.WRITE ) {
 			((DataOp)currBuiltinOp).setPrivacy(hops.get(target.getName()).getPrivacy());
+			if( source.getVarParam(DataExpression.ROWBLOCKCOUNTPARAM) != null )
+				currBuiltinOp.setBlocksize(Integer.parseInt(
+					source.getVarParam(DataExpression.ROWBLOCKCOUNTPARAM).toString()));
+		}
 		currBuiltinOp.setParseInfo(source);
 		
 		return currBuiltinOp;

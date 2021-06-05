@@ -1357,39 +1357,16 @@ public class DataExpression extends DataIdentifier
 						addVarParam(DELIM_SPARSE, new BooleanIdentifier(DEFAULT_DELIM_SPARSE, this));
 					}
 				}
-
-			/* NOTE MB: disabled filename concatenation because we now support dynamic rewrite
-			if (getVarParam(IO_FILENAME) instanceof BinaryExpression){
-				BinaryExpression expr = (BinaryExpression)getVarParam(IO_FILENAME);
-								
-				if (expr.getKind()== Expression.Kind.BinaryOp){
-					Expression.BinaryOp op = expr.getOpCode();
-					switch (op){
-						case PLUS:
-							mtdFileName = "";
-							mtdFileName = fileNameCat(expr, currConstVars, mtdFileName);
-							// Since we have computed the value of filename, we update
-							// varParams with a const string value
-							StringIdentifier fileString = new StringIdentifier(mtdFileName, 
-									this.getFilename(), this.getBeginLine(), this.getBeginColumn(), 
-									this.getEndLine(), this.getEndColumn());
-							removeVarParam(IO_FILENAME);
-							addVarParam(IO_FILENAME, fileString);
-												
-							break;
-						default:
-							raiseValidateError("for OutputStatement, parameter " + IO_FILENAME 
-									+ " can only be a const string or const string concatenations. ", 
-									conditional);
-					}
-				}
-			}*/
 			
 			//validate read filename
 			if (getVarParam(FORMAT_TYPE) == null || FileFormat.isTextFormat(getVarParam(FORMAT_TYPE).toString()))
 				getOutput().setBlocksize(-1);
-			else if (getVarParam(FORMAT_TYPE).toString().equalsIgnoreCase(FileFormat.BINARY.toString()))
-				getOutput().setBlocksize(ConfigurationManager.getBlocksize());
+			else if (getVarParam(FORMAT_TYPE).toString().equalsIgnoreCase(FileFormat.BINARY.toString())) {
+				if( getVarParam(ROWBLOCKCOUNTPARAM)!=null )
+					getOutput().setBlocksize(Integer.parseInt(getVarParam(ROWBLOCKCOUNTPARAM).toString()));
+				else
+					getOutput().setBlocksize(ConfigurationManager.getBlocksize());
+			}
 			else
 				raiseValidateError("Invalid format " + getVarParam(FORMAT_TYPE)
 					+ " in statement: " + toString(), conditional);

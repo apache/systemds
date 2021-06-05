@@ -242,6 +242,7 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 		_hdfsFileExists = that._hdfsFileExists; 
 		_gpuObjects = that._gpuObjects;
 		_privacyConstraint = that._privacyConstraint;
+		_dirtyFlag = that._dirtyFlag;
 	}
 
 	
@@ -340,6 +341,10 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 
 	public long getNumColumns() {
 		return getDataCharacteristics().getCols();
+	}
+	
+	public long getBlocksize() {
+		return getDataCharacteristics().getBlocksize();
 	}
 	
 	public abstract void refreshMetaData();
@@ -820,10 +825,13 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 		//check for common file scheme (otherwise no copy/rename)
 		boolean eqScheme = IOUtilFunctions.isSameFileScheme(
 			new Path(_hdfsFileName), new Path(fName));
+		boolean eqFormat = isEqualOutputFormat(outputFormat);
+		boolean eqBlksize = (outputFormat == null || outputFormat.equals("binary"))
+			&& ConfigurationManager.getBlocksize() != getBlocksize();
 		
 		//actual export (note: no direct transfer of local copy in order to ensure blocking (and hence, parallelism))
 		if( isDirty() || !eqScheme || isFederated() ||
-			(pWrite && !isEqualOutputFormat(outputFormat)) ) 
+			(pWrite && (!eqFormat | !eqBlksize)) )
 		{
 			// CASE 1: dirty in-mem matrix or pWrite w/ different format (write matrix to fname; load into memory if evicted)
 			// a) get the matrix
@@ -833,25 +841,23 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 			{
 				//read data from HDFS if required (never read before), this applies only to pWrite w/ different output formats
 				//note: for large rdd outputs, we compile dedicated writespinstructions (no need to handle this here) 
-				try
-				{
+				try {
 					if( getRDDHandle()==null || getRDDHandle().allowsShortCircuitRead() )
 						_data = readBlobFromHDFS( _hdfsFileName );
 					else if( getRDDHandle() != null )
 						_data = readBlobFromRDD( getRDDHandle(), new MutableBoolean() );
 					else if(!federatedWrite)
 						_data = readBlobFromFederated( getFedMapping() );
-					
 					setDirty(false);
+					refreshMetaData(); //e.g., after unknown csv read
 				}
 				catch (IOException e) {
 					throw new DMLRuntimeException("Reading of " + _hdfsFileName + " ("+hashCode()+") failed.", e);
 				}
 			}
 			//get object from cache
-			if(!federatedWrite){
-
-				if(  _data == null )
+			if(!federatedWrite) {
+				if( _data == null )
 					getCache();
 				acquire( false, _data==null ); //incl. read matrix if evicted
 			}
@@ -1065,7 +1071,7 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 			if ( fmt == FileFormat.BINARY && DMLScript.getGlobalExecMode() == ExecMode.SINGLE_NODE
 				&& dc.getBlocksize() != ConfigurationManager.getBlocksize() )
 			{
-				dc = new MatrixCharacteristics(dc.getRows(), dc.getCols(), ConfigurationManager.getBlocksize(), dc.getNonZeros());
+				dc = new MatrixCharacteristics(dc.getRows(), dc.getCols(), dc.getBlocksize(), dc.getNonZeros());
 			}
 			
 			//write the actual meta data file

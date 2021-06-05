@@ -360,6 +360,8 @@ public class Data extends Lop
 			} else {
 				sb.append(prepOperand("", DataType.SCALAR, ValueType.STRING, true));
 			}
+			sb.append(OPERAND_DELIMITOR);
+			sb.append(oparams.getBlocksize());
 		}
 
 		return sb.toString();

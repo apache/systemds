@@ -19,6 +19,7 @@
 
 
 package org.apache.sysds.runtime.io.hdf5;
+
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -26,6 +27,7 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.Arrays;
 import java.util.BitSet;
+
 import static java.nio.ByteOrder.LITTLE_ENDIAN;
 
 public class H5BufferBuilder {
@@ -39,7 +41,7 @@ public class H5BufferBuilder {
 		this.dataOutputStream = new DataOutputStream(byteArrayOutputStream);
 	}
 
-	public int getSize(){
+	public int getSize() {
 		return dataOutputStream.size();
 	}
 
@@ -111,9 +113,10 @@ public class H5BufferBuilder {
 			throw new H5Exception(e);
 		}
 	}
-	public void write(long v, int sizeOfLength){
+
+	public void write(long v, int sizeOfLength) {
 		try {
-			switch(sizeOfLength){
+			switch(sizeOfLength) {
 				case 2:
 					this.writeShort((short) v);
 					break;
@@ -126,7 +129,7 @@ public class H5BufferBuilder {
 
 			}
 		}
-		catch(Exception e){
+		catch(Exception e) {
 			throw new H5Exception(e);
 		}
 
@@ -144,6 +147,7 @@ public class H5BufferBuilder {
 			throw new H5Exception(e);
 		}
 	}
+
 	public ByteBuffer noOrderBuild() {
 		try {
 			ByteBuffer byteBuffer = ByteBuffer.wrap(byteArrayOutputStream.toByteArray());

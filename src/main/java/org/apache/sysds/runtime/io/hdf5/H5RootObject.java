@@ -28,6 +28,7 @@ import java.io.DataInputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
+
 import static java.nio.ByteOrder.LITTLE_ENDIAN;
 
 public class H5RootObject {
@@ -41,8 +42,8 @@ public class H5RootObject {
 	protected long row;
 	protected long col;
 	protected int[] dimensions;
-	protected  long maxRow;
-	protected  long maxCol;
+	protected long maxRow;
+	protected long maxCol;
 	protected int[] maxSizes;
 	protected String datasetName;
 	public H5BufferBuilder bufferBuilder;
@@ -69,7 +70,7 @@ public class H5RootObject {
 	public ByteBuffer readBufferFromAddress(long address, int length) {
 		ByteBuffer bb = ByteBuffer.allocate(length);
 		try {
-			byte[] b=new byte[length];
+			byte[] b = new byte[length];
 			bufferedInputStream.reset();
 			bufferedInputStream.skip(address);
 			bufferedInputStream.read(b);
@@ -86,8 +87,9 @@ public class H5RootObject {
 	public ByteBuffer readBufferFromAddressNoOrder(long address, int length) {
 		ByteBuffer bb = ByteBuffer.allocate(length);
 		try {
-			byte[] b=new byte[length];
-			bufferedInputStream.reset();
+			byte[] b = new byte[length];
+			bufferedInputStream.mark(0);
+			//bufferedInputStream.reset();
 			bufferedInputStream.skip(address);
 			bufferedInputStream.read(b);
 			bb.put(b);
@@ -112,8 +114,8 @@ public class H5RootObject {
 	}
 
 	public void setBufferedOutputStream(BufferedOutputStream bufferedOutputStream) {
-		this.bufferedOutputStream = bufferedOutputStream;}
-
+		this.bufferedOutputStream = bufferedOutputStream;
+	}
 
 	public H5Superblock getSuperblock() {
 		return superblock;

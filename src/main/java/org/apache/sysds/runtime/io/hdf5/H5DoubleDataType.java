@@ -47,7 +47,8 @@ public class H5DoubleDataType {
 	private byte mantissaSize;
 	private int exponentBias;
 
-	public H5DoubleDataType() {	}
+	public H5DoubleDataType() {
+	}
 
 	public H5DoubleDataType(ByteBuffer bb) {
 
@@ -145,7 +146,6 @@ public class H5DoubleDataType {
 		db.get(data);
 		return data;
 	}
-
 
 	public int getVersion() {
 		return version;

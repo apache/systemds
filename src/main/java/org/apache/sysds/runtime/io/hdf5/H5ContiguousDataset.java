@@ -48,13 +48,14 @@ public class H5ContiguousDataset {
 	public ByteBuffer getDataBuffer(int row) {
 		try {
 			long rowPos = row * rootObject.getCol() * this.dataTypeMessage.getDoubleDataType().getSize();
-			ByteBuffer data = rootObject.readBufferFromAddressNoOrder(dataLayoutMessage.getAddress()+ rowPos,
+			ByteBuffer data = rootObject.readBufferFromAddressNoOrder(dataLayoutMessage.getAddress() + rowPos,
 				(int) (rootObject.getCol() * this.dataTypeMessage.getDoubleDataType().getSize()));
 			//data.order(LITTLE_ENDIAN);
 
 			return data;
 		}
 		catch(Exception e) {
+			e.printStackTrace();
 			throw new H5Exception("Failed to map data buffer for dataset", e);
 		}
 	}

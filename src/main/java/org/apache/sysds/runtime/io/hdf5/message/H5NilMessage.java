@@ -34,9 +34,11 @@ public class H5NilMessage extends H5Message {
 		// Move buffer to the end
 		bb.position(bb.limit());
 	}
-	public H5NilMessage(H5RootObject rootObject, BitSet flags){
-		super(rootObject,flags);
+
+	public H5NilMessage(H5RootObject rootObject, BitSet flags) {
+		super(rootObject, flags);
 	}
+
 	@Override public void toBuffer(H5BufferBuilder bb) {
 		super.toBuffer(bb, H5Constants.NIL_MESSAGE);
 		byte[] reserve = new byte[104];

@@ -31,7 +31,11 @@ public class FileFormatPropertiesHDF5 extends FileFormatProperties implements Se
 	private String datasetName;
 
 	public FileFormatPropertiesHDF5() {
-		this.datasetName = "dst";
+		this.datasetName = "systemdsh5";
+	}
+
+	public FileFormatPropertiesHDF5(String datasetName) {
+		this.datasetName = datasetName;
 	}
 
 	public String getDatasetName() {

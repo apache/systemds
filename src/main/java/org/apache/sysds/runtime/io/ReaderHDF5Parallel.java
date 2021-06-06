@@ -28,6 +28,7 @@ import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.CommonThreadPool;
+
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -64,23 +65,21 @@ public class ReaderHDF5Parallel extends ReaderHDF5 {
 		checkValidInputFile(fs, path);
 
 		// allocate output matrix block
-		// First Read Pass (count rows/cols, determine offsets, allocate matrix block)
 		ArrayList<Path> files = new ArrayList<>();
 		files.add(path);
-		MatrixBlock src = computeHDF5Size(files, fs,  _props.getDatasetName());
-
+		MatrixBlock src = computeHDF5Size(files, fs, _props.getDatasetName());
 
 		//create and execute tasks
-		try
-		{
+		try {
 			ExecutorService pool = CommonThreadPool.get(_numThreads);
 			ArrayList<ReadHDF5Task> tasks = new ArrayList<>();
 			rlen = src.getNumRows();
-			int blklen = (int)Math.ceil((double)rlen / _numThreads);
-			for(int i=0; i<_numThreads & i*blklen<rlen; i++) {
+			int blklen = (int) Math.ceil((double) rlen / _numThreads);
+			for(int i = 0; i < _numThreads & i * blklen < rlen; i++) {
 				BufferedInputStream bis = new BufferedInputStream(fs.open(path));
-				MutableInt row = new MutableInt(i*blklen);
-				tasks.add(new ReadHDF5Task( bis, _props.getDatasetName(),src,row, (int) Math.min((i+1)*blklen, rlen)));
+				MutableInt row = new MutableInt(i * blklen);
+				tasks.add(
+					new ReadHDF5Task(bis, _props.getDatasetName(), src, row, (int) Math.min((i + 1) * blklen, rlen)));
 			}
 
 			//wait until all tasks have been executed
@@ -88,11 +87,11 @@ public class ReaderHDF5Parallel extends ReaderHDF5 {
 			pool.shutdown();
 
 			//check for exceptions
-			for( Future<Object> task : rt )
+			for(Future<Object> task : rt)
 				task.get();
 		}
-		catch (Exception e) {
-			throw new IOException("Failed parallel write of csv output.", e);
+		catch(Exception e) {
+			throw new IOException("Failed parallel read of HDF5 input.", e);
 		}
 		return src;
 	}
@@ -100,12 +99,10 @@ public class ReaderHDF5Parallel extends ReaderHDF5 {
 	@Override public MatrixBlock readMatrixFromInputStream(InputStream is, long rlen, long clen, int blen, long estnnz)
 		throws IOException, DMLRuntimeException {
 
-		return new ReaderHDF5(_props).readMatrixFromInputStream(is,rlen,clen,blen,estnnz);
+		return new ReaderHDF5(_props).readMatrixFromInputStream(is, rlen, clen, blen, estnnz);
 	}
 
-
-	private static class ReadHDF5Task implements Callable<Object>
-	{
+	private static class ReadHDF5Task implements Callable<Object> {
 
 		private final BufferedInputStream _bis;
 		private final String _datasetName;
@@ -113,7 +110,7 @@ public class ReaderHDF5Parallel extends ReaderHDF5 {
 		private final MutableInt _rl;
 		private final int _ru;
 
-		public ReadHDF5Task(BufferedInputStream bis,String datasetName, MatrixBlock src, MutableInt rl, int ru) {
+		public ReadHDF5Task(BufferedInputStream bis, String datasetName, MatrixBlock src, MutableInt rl, int ru) {
 			_bis = bis;
 			_datasetName = datasetName;
 			_src = src;
@@ -121,9 +118,8 @@ public class ReaderHDF5Parallel extends ReaderHDF5 {
 			_ru = ru;
 		}
 
-		@Override
-		public Object call() throws IOException {
-			readMatrixFromHDF5(_bis,_datasetName,_src,_rl,_ru,0,0);
+		@Override public Object call() throws IOException {
+			readMatrixFromHDF5(_bis, _datasetName, _src, _rl, _ru, 0, 0);
 			return null;
 		}
 	}

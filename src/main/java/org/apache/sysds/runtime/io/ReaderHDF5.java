@@ -106,6 +106,7 @@ public class ReaderHDF5 extends MatrixReader {
 		if(dest == null) {
 			dest = computeHDF5Size(files, fs, datasetName);
 			clen = dest.getNumColumns();
+			rlen = dest.getNumRows();
 		}
 
 		//actual read of individual files
@@ -142,7 +143,7 @@ public class ReaderHDF5 extends MatrixReader {
 			}
 			row++;
 		}
-		
+
 		rowPos.setValue(row);
 		return lnnz;
 	}

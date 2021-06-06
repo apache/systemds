@@ -58,7 +58,7 @@ public class H5SymbolTableEntry {
 		// Reserved 4 bytes
 		bb.writeInt(0);
 
-		if(cacheType==1) {
+		if(cacheType == 1) {
 			// B Tree
 			// Address of B Tree
 			bb.writeLong(this.bTreeAddress);
@@ -93,7 +93,7 @@ public class H5SymbolTableEntry {
 
 		// Address of Name Heap
 		nameHeapAddress = Utils.readBytesAsUnsignedLong(bb, rootObject.getSuperblock().sizeOfOffsets);
-	
+
 	}
 
 	public long getAddress() {

@@ -19,10 +19,9 @@
 #
 #-------------------------------------------------------------
 
-# DML script that tests read/write HDF5
+# DML script that tests read HDF5
 
-A = read($1);
+A = read($1, dataset=$2);
 A = A + 1;
-write(A, $2, format="hdf5", dataset=$3);
-
+write(A, $3);
 

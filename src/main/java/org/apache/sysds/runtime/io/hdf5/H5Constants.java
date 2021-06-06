@@ -29,12 +29,12 @@ public final class H5Constants {
 
 	public static final long UNDEFINED_ADDRESS = -1L;
 
-	public  static  final  int NIL_MESSAGE = 0;
-	public  static  final  int DATA_SPACE_MESSAGE = 1;
-	public  static  final  int DATA_TYPE_MESSAGE = 3;
-	public  static  final  int FILL_VALUE_MESSAGE = 5;
-	public  static  final  int DATA_LAYOUT_MESSAGE = 8;
-	public  static  final  int SYMBOL_TABLE_MESSAGE = 17;
-	public  static  final  int OBJECT_MODIFICATION_TIME_MESSAGE = 18;
+	public static final int NIL_MESSAGE = 0;
+	public static final int DATA_SPACE_MESSAGE = 1;
+	public static final int DATA_TYPE_MESSAGE = 3;
+	public static final int FILL_VALUE_MESSAGE = 5;
+	public static final int DATA_LAYOUT_MESSAGE = 8;
+	public static final int SYMBOL_TABLE_MESSAGE = 17;
+	public static final int OBJECT_MODIFICATION_TIME_MESSAGE = 18;
 
 }

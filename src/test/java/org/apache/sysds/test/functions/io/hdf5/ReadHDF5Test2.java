@@ -19,10 +19,10 @@
 
 package org.apache.sysds.test.functions.io.hdf5;
 
-public class WriteHDF5Test1 extends WriteHDF5Test {
+public class ReadHDF5Test2 extends ReadHDF5Test {
 
-	private final static String TEST_NAME = "WriteHDF5Test";
-	public final static String TEST_CLASS_DIR = TEST_DIR + WriteHDF5Test1.class.getSimpleName() + "/";
+	private final static String TEST_NAME = "ReadHDF5Test";
+	private final static String TEST_CLASS_DIR = TEST_DIR + ReadHDF5Test2.class.getSimpleName() + "/";
 
 	protected String getTestName() {
 		return TEST_NAME;
@@ -33,6 +33,6 @@ public class WriteHDF5Test1 extends WriteHDF5Test {
 	}
 
 	protected int getId() {
-		return 1;
+		return 2;
 	}
 }

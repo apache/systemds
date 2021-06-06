@@ -32,8 +32,8 @@ public class H5DataTypeMessage extends H5Message {
 
 	private H5DoubleDataType doubleDataType;
 
-	public H5DataTypeMessage(H5RootObject rootObject, BitSet flags,ByteBuffer bb) {
-		super(rootObject,flags);
+	public H5DataTypeMessage(H5RootObject rootObject, BitSet flags, ByteBuffer bb) {
+		super(rootObject, flags);
 		doubleDataType = new H5DoubleDataType(bb);
 	}
 

@@ -112,6 +112,9 @@ public class DataExpression extends DataIdentifier
 	public static final String DELIM_NA_STRING_SEP = "\u00b7";
 	// Parameter names relevant to reading/writing delimited index/libsvmv files
 	public static final String LIBSVM_INDEX_DELIM = "indSep";
+
+	// Parameter names relevant to reading/writing dataset name/hdf5 files
+	public static final String HDF5_DATASET_NAME = "dataset";
 	
 	public static final String DELIM_SPARSE = "sparse";  // applicable only for write
 	
@@ -140,6 +143,8 @@ public class DataExpression extends DataIdentifier
 			DELIM_FILL_VALUE, DELIM_DELIMITER, DELIM_FILL, DELIM_HAS_HEADER_ROW, DELIM_NA_STRINGS,
 			// Parameters related to delimited/libsvm files.
 			LIBSVM_INDEX_DELIM,
+			//Parameters related to dataset name/HDF4 files.
+			HDF5_DATASET_NAME,
 			// Parameters related to privacy
 			PRIVACY, FINE_GRAINED_PRIVACY));
 
@@ -150,7 +155,9 @@ public class DataExpression extends DataIdentifier
 			// Parameters related to delimited/csv files.
 			DELIM_FILL_VALUE, DELIM_DELIMITER, DELIM_FILL, DELIM_HAS_HEADER_ROW, DELIM_NA_STRINGS,
 			// Parameters related to delimited/libsvm files.
-			LIBSVM_INDEX_DELIM));
+			LIBSVM_INDEX_DELIM,
+			//Parameters related to dataset name/HDF4 files.
+			HDF5_DATASET_NAME));
 	
 	/* Default Values for delimited (CSV/LIBSVM) files */
 	public static final String  DEFAULT_DELIM_DELIMITER = ",";

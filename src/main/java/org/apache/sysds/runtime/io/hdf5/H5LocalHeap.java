@@ -19,6 +19,7 @@
 
 
 package org.apache.sysds.runtime.io.hdf5;
+
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
@@ -86,9 +87,9 @@ public class H5LocalHeap {
 		this.dataBuffer.put(childName_atBytes);
 		this.dataBuffer.put(H5Constants.NULL);
 
-		this.dataBuffer.position(blockCount * 8-1);
+		this.dataBuffer.position(blockCount * 8 - 1);
 		this.dataBuffer.putShort((short) 1);
-		this.dataBuffer.position((int) (this.offsetToHeadOfFreeList+8-1));
+		this.dataBuffer.position((int) (this.offsetToHeadOfFreeList + 8 - 1));
 		this.dataBuffer.putShort((short) (this.dataSegmentSize - this.offsetToHeadOfFreeList));
 	}
 

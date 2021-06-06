@@ -20,6 +20,7 @@
 package org.apache.sysds.runtime.io.hdf5;
 
 import org.apache.sysds.runtime.io.hdf5.message.*;
+
 import java.nio.ByteBuffer;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -33,7 +34,7 @@ public class H5ObjectHeader {
 
 	private final H5RootObject rootObject;
 	private final List<H5Message> messages = new ArrayList<>();
-	private int referenceCount=1;
+	private int referenceCount = 1;
 	private String datasetName;
 
 	public H5ObjectHeader(H5RootObject rootObject, long address) {
@@ -158,19 +159,16 @@ public class H5ObjectHeader {
 		// 2. Write Object Header Message for second step
 		this.writeObjectHeader(bb, (short) 6, 256);
 
-
 		// 2.1 Write Data Space
 		flags = new BitSet(8);
 		//flags.set(0);
 		H5DataSpaceMessage dataSpaceMessage = new H5DataSpaceMessage(rootObject, flags);
 		dataSpaceMessage.toBuffer(bb);
 
-
-
 		flags.set(0);
 		// 2.2 Write Data Type
 		H5DoubleDataType doubleDataType = new H5DoubleDataType();
-		H5DataTypeMessage dataTypeMessage=new H5DataTypeMessage(rootObject, flags, doubleDataType);
+		H5DataTypeMessage dataTypeMessage = new H5DataTypeMessage(rootObject, flags, doubleDataType);
 		dataTypeMessage.toBuffer(bb);
 
 		// 2.3 Write Fill Value

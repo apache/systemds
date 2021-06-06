@@ -36,9 +36,9 @@ public final class Utils {
 
 	public static String readUntilNull(ByteBuffer buffer) {
 		StringBuilder sb = new StringBuilder(buffer.remaining());
-		while (buffer.hasRemaining()) {
+		while(buffer.hasRemaining()) {
 			byte b = buffer.get();
-			if (b == H5Constants.NULL) {
+			if(b == H5Constants.NULL) {
 				return sb.toString();
 			}
 			sb.append((char) b);
@@ -46,79 +46,78 @@ public final class Utils {
 		throw new IllegalArgumentException("End of buffer reached before NULL");
 	}
 
-
 	public static void seekBufferToNextMultipleOfEight(ByteBuffer bb) {
 		int pos = bb.position();
-		if (pos % 8 == 0) {
+		if(pos % 8 == 0) {
 			return; // Already on a 8 byte multiple
 		}
 		bb.position(pos + (8 - (pos % 8)));
 	}
 
 	public static int readBytesAsUnsignedInt(ByteBuffer buffer, int length) {
-		switch (length) {
-		case 1:
-			return Byte.toUnsignedInt(buffer.get());
-		case 2:
-			return Short.toUnsignedInt(buffer.getShort());
-		case 3:
-			return readArbitraryLengthBytesAsUnsignedInt(buffer, length);
-		case 4:
-			int value = buffer.getInt();
-			if (value < 0) {
-				throw new ArithmeticException("Could not convert to unsigned");
-			}
-			return value;
-		case 5:
-		case 6:
-		case 7:
-			return readArbitraryLengthBytesAsUnsignedInt(buffer, length);
-		case 8:
-			// Throws if the long can't be converted safely
-			return Math.toIntExact(buffer.getLong());
-		default:
-			throw new IllegalArgumentException("Couldn't read " + length + " bytes as int");
+		switch(length) {
+			case 1:
+				return Byte.toUnsignedInt(buffer.get());
+			case 2:
+				return Short.toUnsignedInt(buffer.getShort());
+			case 3:
+				return readArbitraryLengthBytesAsUnsignedInt(buffer, length);
+			case 4:
+				int value = buffer.getInt();
+				if(value < 0) {
+					throw new ArithmeticException("Could not convert to unsigned");
+				}
+				return value;
+			case 5:
+			case 6:
+			case 7:
+				return readArbitraryLengthBytesAsUnsignedInt(buffer, length);
+			case 8:
+				// Throws if the long can't be converted safely
+				return Math.toIntExact(buffer.getLong());
+			default:
+				throw new IllegalArgumentException("Couldn't read " + length + " bytes as int");
 		}
 	}
 
 	private static int readArbitraryLengthBytesAsUnsignedInt(ByteBuffer buffer, int length) {
 		byte[] bytes = new byte[length];
 		buffer.get(bytes);
-		if (buffer.order() == LITTLE_ENDIAN) {
+		if(buffer.order() == LITTLE_ENDIAN) {
 			ArrayUtils.reverse(bytes);
 		}
 		return new BigInteger(1, bytes).intValueExact();
 	}
 
 	public static long readBytesAsUnsignedLong(ByteBuffer buffer, int length) {
-		switch (length) {
-		case 1:
-			return Byte.toUnsignedLong(buffer.get());
-		case 2:
-			return Short.toUnsignedLong(buffer.getShort());
-		case 3:
-			return readArbitraryLengthBytesAsUnsignedLong(buffer, length);
-		case 4:
-			return Integer.toUnsignedLong(buffer.getInt());
-		case 5:
-		case 6:
-		case 7:
-			return readArbitraryLengthBytesAsUnsignedLong(buffer, length);
-		case 8:
-			long value = buffer.getLong();
-			if (value < 0 && value != H5Constants.UNDEFINED_ADDRESS) {
-				throw new ArithmeticException("Could not convert to unsigned");
-			}
-			return value;
-		default:
-			throw new IllegalArgumentException("Couldn't read " + length + " bytes as int");
+		switch(length) {
+			case 1:
+				return Byte.toUnsignedLong(buffer.get());
+			case 2:
+				return Short.toUnsignedLong(buffer.getShort());
+			case 3:
+				return readArbitraryLengthBytesAsUnsignedLong(buffer, length);
+			case 4:
+				return Integer.toUnsignedLong(buffer.getInt());
+			case 5:
+			case 6:
+			case 7:
+				return readArbitraryLengthBytesAsUnsignedLong(buffer, length);
+			case 8:
+				long value = buffer.getLong();
+				if(value < 0 && value != H5Constants.UNDEFINED_ADDRESS) {
+					throw new ArithmeticException("Could not convert to unsigned");
+				}
+				return value;
+			default:
+				throw new IllegalArgumentException("Couldn't read " + length + " bytes as int");
 		}
 	}
 
 	private static long readArbitraryLengthBytesAsUnsignedLong(ByteBuffer buffer, int length) {
 		byte[] bytes = new byte[length];
 		buffer.get(bytes);
-		if (buffer.order() == LITTLE_ENDIAN) {
+		if(buffer.order() == LITTLE_ENDIAN) {
 			ArrayUtils.reverse(bytes);
 		}
 		return new BigInteger(1, bytes).longValueExact();
@@ -135,14 +134,13 @@ public final class Utils {
 
 	private static final BigInteger TWO = BigInteger.valueOf(2);
 
-
 	public static int bitsToInt(BitSet bits, int start, int length) {
-		if (length <= 0) {
+		if(length <= 0) {
 			throw new IllegalArgumentException("length must be >0");
 		}
 		BigInteger result = BigInteger.ZERO;
-		for (int i = 0; i < length; i++) {
-			if (bits.get(start + i)) {
+		for(int i = 0; i < length; i++) {
+			if(bits.get(start + i)) {
 				result = result.add(TWO.pow(i));
 			}
 		}

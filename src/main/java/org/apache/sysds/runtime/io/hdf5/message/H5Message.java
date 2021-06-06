@@ -20,6 +20,7 @@
 package org.apache.sysds.runtime.io.hdf5.message;
 
 import org.apache.sysds.runtime.io.hdf5.*;
+
 import java.nio.ByteBuffer;
 import java.util.BitSet;
 
@@ -102,10 +103,12 @@ public class H5Message {
 				throw new H5Exception("Unrecognized message type = " + messageType);
 		}
 		// Flags
-		if(flags.length()!=0) {
+		if(flags.length() != 0) {
 			bb.writeBitSet(flags, flags.length());
 		}
-		else { bb.writeByte(0); }
+		else {
+			bb.writeByte(0);
+		}
 
 		// Skip 3 reserved zero bytes
 		bb.writeBytes(reserved);

@@ -21,6 +21,7 @@
 package org.apache.sysds.runtime.io.hdf5.message;
 
 import org.apache.sysds.runtime.io.hdf5.*;
+
 import java.nio.ByteBuffer;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
@@ -30,16 +31,16 @@ public class H5ObjectModificationTimeMessage extends H5Message {
 
 	private final long unixEpocSecond;
 
-	public H5ObjectModificationTimeMessage(H5RootObject rootObject,BitSet flags, long unixEpocSecond) {
-		super(rootObject,flags);
+	public H5ObjectModificationTimeMessage(H5RootObject rootObject, BitSet flags, long unixEpocSecond) {
+		super(rootObject, flags);
 		this.unixEpocSecond = unixEpocSecond;
 	}
 
 	public H5ObjectModificationTimeMessage(H5RootObject rootObject, BitSet flags, ByteBuffer bb) {
-		super(rootObject,flags);
+		super(rootObject, flags);
 
 		rootObject.setObjectModificationTimeVersion(bb.get());
-		if (rootObject.getObjectModificationTimeVersion() != 1) {
+		if(rootObject.getObjectModificationTimeVersion() != 1) {
 			throw new H5Exception("Unrecognized version " + rootObject.getObjectModificationTimeVersion());
 		}
 
@@ -55,7 +56,7 @@ public class H5ObjectModificationTimeMessage extends H5Message {
 		bb.writeByte(rootObject.getObjectModificationTimeVersion());
 
 		// Skip 3 reserved zero bytes
-		byte[] reserved={(byte) 0,0,0};
+		byte[] reserved = {(byte) 0, 0, 0};
 		bb.writeBytes(reserved);
 
 		bb.writeInt((int) unixEpocSecond);

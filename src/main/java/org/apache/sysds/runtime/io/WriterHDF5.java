@@ -90,8 +90,7 @@ public class WriterHDF5 extends MatrixWriter {
 		H5.H5Dcreate(rootObject, src.getNumRows(), src.getNumColumns(), datasetName);
 
 		//write headers
-		if( rl==0 )
-		{
+		if(rl == 0) {
 			H5.H5WriteHeaders(rootObject);
 		}
 

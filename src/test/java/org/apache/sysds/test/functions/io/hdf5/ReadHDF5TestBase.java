@@ -19,20 +19,22 @@
 
 package org.apache.sysds.test.functions.io.hdf5;
 
-public class WriteHDF5Test1 extends WriteHDF5Test {
+import org.apache.sysds.test.AutomatedTestBase;
+import org.apache.sysds.test.TestConfiguration;
+import org.apache.sysds.test.TestUtils;
 
-	private final static String TEST_NAME = "WriteHDF5Test";
-	public final static String TEST_CLASS_DIR = TEST_DIR + WriteHDF5Test1.class.getSimpleName() + "/";
+public abstract class ReadHDF5TestBase extends AutomatedTestBase {
 
-	protected String getTestName() {
-		return TEST_NAME;
-	}
+	protected final static String TEST_DIR = "functions/io/hdf5/";
+	protected final static String TEST_CLASS_DIR = TEST_DIR + ReadHDF5Test.class.getSimpleName() + "/";
 
-	protected String getTestClassDir() {
-		return TEST_CLASS_DIR;
-	}
+	protected abstract String getTestClassDir();
 
-	protected int getId() {
-		return 1;
+	protected abstract String getTestName();
+
+	@Override public void setUp() {
+		TestUtils.clearAssertionInformation();
+		addTestConfiguration(getTestName(),
+			new TestConfiguration(getTestClassDir(), getTestName(), new String[] {"Y"}));
 	}
 }

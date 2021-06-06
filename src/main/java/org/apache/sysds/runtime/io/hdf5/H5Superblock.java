@@ -24,6 +24,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.util.Arrays;
+
 import static java.nio.ByteOrder.LITTLE_ENDIAN;
 
 public class H5Superblock {
@@ -58,7 +59,7 @@ public class H5Superblock {
 			bis.read(signature);
 		}
 		catch(IOException e) {
-			throw new H5Exception("Failed to read from address: " +offset, e);
+			throw new H5Exception("Failed to read from address: " + offset, e);
 		}
 		// Verify signature
 		return Arrays.equals(HDF5_FILE_SIGNATURE, signature);
@@ -132,9 +133,9 @@ public class H5Superblock {
 			int nextSectionSize = 4 * sizeOfOffsets;
 			header = ByteBuffer.allocate(nextSectionSize);
 
-			byte[] hb= new byte[nextSectionSize];
+			byte[] hb = new byte[nextSectionSize];
 			bis.reset();
-			bis.skip( address);
+			bis.skip(address);
 			bis.read(hb);
 			header.put(hb);
 			address += nextSectionSize;

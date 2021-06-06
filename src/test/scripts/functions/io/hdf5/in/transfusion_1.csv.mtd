@@ -1,6 +1,0 @@
-{ 
-    "data_type": "matrix"
-    ,"format": "csv"
-    ,"header": true
-    ,"description": { "author": "SystemDS" } 
-}

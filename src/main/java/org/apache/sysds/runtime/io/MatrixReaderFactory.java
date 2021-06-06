@@ -62,6 +62,10 @@ public class MatrixReaderFactory {
 					new ReaderBinaryBlockParallel(false) : new ReaderBinaryBlock(false);
 				break;
 
+			case HDF5:
+				reader = (par & mcsr) ? new ReaderHDF5Parallel(
+					new FileFormatPropertiesHDF5()) : new ReaderHDF5(new FileFormatPropertiesHDF5());
+				break;
 			default:
 				throw new DMLRuntimeException("Failed to create matrix reader for unknown format: " + fmt.toString());
 		}
@@ -107,6 +111,7 @@ public class MatrixReaderFactory {
 				reader = (par & mcsr) ?
 					new ReaderBinaryBlockParallel(props.localFS) : new ReaderBinaryBlock(props.localFS);
 				break;
+
 			case HDF5:
 				FileFormatPropertiesHDF5 fileFormatPropertiesHDF5 = props.formatProperties != null ? (FileFormatPropertiesHDF5) props.formatProperties : new FileFormatPropertiesHDF5();
 				reader = (par & mcsr) ? new ReaderHDF5Parallel(fileFormatPropertiesHDF5) : new ReaderHDF5(

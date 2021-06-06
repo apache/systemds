@@ -23,6 +23,7 @@ import org.apache.sysds.runtime.io.hdf5.H5BufferBuilder;
 import org.apache.sysds.runtime.io.hdf5.H5Constants;
 import org.apache.sysds.runtime.io.hdf5.H5RootObject;
 import org.apache.sysds.runtime.io.hdf5.Utils;
+
 import java.nio.ByteBuffer;
 import java.util.BitSet;
 import java.util.stream.IntStream;
@@ -36,7 +37,7 @@ public class H5DataSpaceMessage extends H5Message {
 		super(rootObject, flags);
 	}
 
-	public H5DataSpaceMessage(H5RootObject rootObject, BitSet flags,ByteBuffer bb) {
+	public H5DataSpaceMessage(H5RootObject rootObject, BitSet flags, ByteBuffer bb) {
 		super(rootObject, flags);
 		rootObject.setDataSpaceVersion(bb.get());
 		rootObject.setRank(bb.get());
@@ -83,7 +84,7 @@ public class H5DataSpaceMessage extends H5Message {
 		bb.writeByte(rootObject.getRank());
 
 		byte flag = 0;
-		if(rootObject.getMaxSizes()!= null && rootObject.getMaxSizes().length > 0) {
+		if(rootObject.getMaxSizes() != null && rootObject.getMaxSizes().length > 0) {
 			flag = 1;
 		}
 		bb.writeByte(flag);
@@ -91,11 +92,11 @@ public class H5DataSpaceMessage extends H5Message {
 		// Skip 5 reserved bytes
 		byte[] reserved = new byte[5];
 		bb.writeBytes(reserved);
-		
+
 		// Dimensions sizes
 		if(rootObject.getRank() != 0) {
 			for(int i = 0; i < rootObject.getRank(); i++) {
-				bb.write(rootObject.getDimensions()[i],rootObject.getSuperblock().sizeOfLengths);
+				bb.write(rootObject.getDimensions()[i], rootObject.getSuperblock().sizeOfLengths);
 			}
 		}
 		// Max dimension sizes

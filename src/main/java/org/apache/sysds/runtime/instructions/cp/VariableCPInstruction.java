@@ -360,6 +360,11 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 				if(parts.length < 12 + extSchema)
 					throw new DMLRuntimeException("Invalid number of operands in createvar instruction: " + str);
 			}
+			else if(fmt.equalsIgnoreCase("hdf5")) {
+				// 11 inputs: createvar corresponding to WRITE/READ -- includes properties dataset name
+				if(parts.length < 11 + extSchema)
+					throw new DMLRuntimeException("Invalid number of operands in createvar instruction: " + str);
+			}
 			else {
 				if ( parts.length != 6 && parts.length != 11+extSchema )
 					throw new DMLRuntimeException("Invalid number of operands in createvar instruction: " + str);
@@ -451,6 +456,17 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 				return new VariableCPInstruction(VariableOperationCode.CreateVariable,
 					in1, in2, in3, iimd, updateType, fmtProperties, schema, opcode, str);
 			}
+			else if(fmt.equalsIgnoreCase("hdf5")) {
+				// Cretevar instructions for HDF5 format has 13.
+				// 11 inputs: createvar corresponding to WRITE/READ -- includes properties dataset name
+				int curPos = 11;
+				String datasetName = parts[curPos];
+				FileFormatProperties fmtProperties = new FileFormatPropertiesHDF5(datasetName);
+
+				return new VariableCPInstruction(VariableOperationCode.CreateVariable,
+					in1, in2, in3, iimd, updateType, fmtProperties, schema, opcode, str);
+			}
+
 			else {
 				return new VariableCPInstruction(VariableOperationCode.CreateVariable, in1, in2, in3, iimd, updateType, schema, opcode, str);
 			}
@@ -518,7 +534,8 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 				fprops = new FileFormatPropertiesLIBSVM(delim, indexDelim, sparse);
 			}
 			else if(in3.getName().equalsIgnoreCase("hdf5") ){
-				fprops = new FileFormatPropertiesHDF5();
+				String datasetName = parts[4];
+				fprops = new FileFormatPropertiesHDF5(datasetName);
 			}
 			else {
 				fprops = new FileFormatProperties();
@@ -973,8 +990,8 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 		String fname = ec.getScalarInput(getInput2().getName(), ValueType.STRING, getInput2().isLiteral()).getStringValue();
 		String fmtStr = getInput3().getName();
 		FileFormat fmt = FileFormat.safeValueOf(fmtStr);
-		if( fmt != FileFormat.LIBSVM ) {
-			String desc = "aaaaaaaaaaaaaaa";//ec.getScalarInput(getInput4().getName(), ValueType.STRING, getInput4().isLiteral()).getStringValue();
+		if( fmt != FileFormat.LIBSVM  && fmt != FileFormat.HDF5) {
+			String desc = ec.getScalarInput(getInput4().getName(), ValueType.STRING, getInput4().isLiteral()).getStringValue();
 			_formatProperties.setDescription(desc);
 		}
 

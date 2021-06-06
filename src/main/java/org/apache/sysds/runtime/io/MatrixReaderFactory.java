@@ -109,9 +109,8 @@ public class MatrixReaderFactory {
 				break;
 			case HDF5:
 				FileFormatPropertiesHDF5 fileFormatPropertiesHDF5 = props.formatProperties != null ? (FileFormatPropertiesHDF5) props.formatProperties : new FileFormatPropertiesHDF5();
-//				reader = (par & mcsr) ? new ReaderTextLIBSVMParallel(fileFormatPropertiesHDF5) : new ReaderHDF5(
-//					fileFormatPropertiesHDF5);
-				reader = new ReaderHDF5(fileFormatPropertiesHDF5);
+				reader = (par & mcsr) ? new ReaderHDF5Parallel(fileFormatPropertiesHDF5) : new ReaderHDF5(
+					fileFormatPropertiesHDF5);
 				break;
 
 			default:

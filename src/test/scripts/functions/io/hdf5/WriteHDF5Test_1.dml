@@ -21,8 +21,8 @@
 
 # DML script that tests read/write HDF5
 
-B = matrix(5, rows=100, cols=100)
-write(B, "/home/sfathollahzadeh/new1.h5", format="hdf5");
+#B = matrix(5, rows=10, cols=10)
+#write(B, "/home/sfathollahzadeh/new1.h5", format="hdf5");
 
 A = read("/home/sfathollahzadeh/new1.h5", format="hdf5");
 A = A + 1;

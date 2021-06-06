@@ -40,6 +40,10 @@ public abstract class WriteHDF5Test extends WriteHDF5TestBase {
 		runWriteHDF5Test(getId(), ExecMode.SINGLE_NODE, false, false);
 	}
 
+	@Test public void testHDF51_Parallel_CP() {
+		runWriteHDF5Test(getId(), ExecMode.SINGLE_NODE, true, false);
+	}
+
 	protected void runWriteHDF5Test(int testNumber, ExecMode platform, boolean parallel, boolean sparse) {
 
 		ExecMode oldPlatform = rtplatform;
@@ -59,7 +63,7 @@ public abstract class WriteHDF5Test extends WriteHDF5TestBase {
 			loadTestConfiguration(config);
 
 			String HOME = SCRIPT_DIR + TEST_DIR;
-			String inputMatrixName =HOME + INPUT_DIR + getInputHDF5FileName(); // "/home/sfathollahzadeh/adbc.h5";//
+			String inputMatrixName =HOME + INPUT_DIR + getInputHDF5FileName();
 			String dmlOutput = output("dml.scalar");
 			String rOutput = output("R.scalar");
 			//String libsvmOutputName = output("libsvm_write" + testNumber + ".data");

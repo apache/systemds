@@ -24,6 +24,7 @@ import java.nio.ByteBuffer;
 import java.util.List;
 
 import static java.nio.ByteOrder.LITTLE_ENDIAN;
+
 import org.apache.sysds.runtime.io.hdf5.message.H5SymbolTableMessage;
 
 public class H5 {
@@ -105,7 +106,6 @@ public class H5 {
 			symbolTableEntry.toBuffer(rootObject.bufferBuilder);
 
 			return rootObject;
-			//rootObject.getBufferedOutputStream().write(rootObject.bufferBuilder.build().array());
 
 		}
 		catch(Exception exception) {
@@ -160,16 +160,20 @@ public class H5 {
 			rootObject.setDatasetName(datasetName);
 			H5ObjectHeader objectHeader = new H5ObjectHeader(rootObject, datasetName);
 			objectHeader.toBuffer(rootObject.bufferBuilder);
-			try {
-				rootObject.bufferBuilder.goToPositionWithWriteZero(2048);
-				rootObject.getBufferedOutputStream().write(rootObject.bufferBuilder.build().array());
-			}
-			catch(Exception exception) {
-				throw new H5Exception(exception);
-			}
+			rootObject.bufferBuilder.goToPositionWithWriteZero(2048);
+
 		}
 		else
 			throw new H5Exception("Just support Matrix!");
+	}
+
+	public static void H5WriteHeaders(H5RootObject rootObject) {
+		try {
+			rootObject.getBufferedOutputStream().write(rootObject.bufferBuilder.build().array());
+		}
+		catch(Exception exception) {
+			throw new H5Exception(exception);
+		}
 	}
 
 	// Write Data

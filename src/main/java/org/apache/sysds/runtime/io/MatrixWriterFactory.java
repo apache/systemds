@@ -80,10 +80,10 @@ public class MatrixWriterFactory
 			case HDF5:
 				if(props != null && !(props instanceof FileFormatPropertiesHDF5))
 					throw new DMLRuntimeException("Wrong type of file format properties for HDF5 writer.");
-				//				if( ConfigurationManager.getCompilerConfigFlag(ConfigType.PARALLEL_CP_WRITE_BINARYFORMATS) )
-				//					writer = new WriterBinaryBlockParallel(replication);
-				//				else
-				writer = new WriterHDF5((FileFormatPropertiesHDF5) props);
+				if( ConfigurationManager.getCompilerConfigFlag(ConfigType.PARALLEL_CP_WRITE_TEXTFORMATS) )
+					writer = new WriterHDF5Parallel((FileFormatPropertiesHDF5) props);
+				else
+					writer = new WriterHDF5((FileFormatPropertiesHDF5) props);
 				break;
 
 			default:

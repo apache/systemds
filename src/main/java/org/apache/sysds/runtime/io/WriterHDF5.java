@@ -21,7 +21,6 @@ package org.apache.sysds.runtime.io;
 
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.runtime.DMLRuntimeException;
@@ -44,8 +43,8 @@ public class WriterHDF5 extends MatrixWriter {
 		WriterHDF5._props = _props;
 	}
 
-	@Override public final void writeMatrixToHDFS(MatrixBlock src, String fname, long rlen, long clen, int blen,
-		long nnz, boolean diag) throws IOException, DMLRuntimeException {
+	@Override public void writeMatrixToHDFS(MatrixBlock src, String fname, long rlen, long clen, int blen, long nnz,
+		boolean diag) throws IOException, DMLRuntimeException {
 
 		//validity check matrix dimensions
 		if(src.getNumRows() != rlen || src.getNumColumns() != clen)
@@ -83,43 +82,37 @@ public class WriterHDF5 extends MatrixWriter {
 	protected static void writeHDF5MatrixToFile(Path path, JobConf job, FileSystem fs, MatrixBlock src, int rl,
 		int rlen) throws IOException {
 
-		boolean sparse = src.isInSparseFormat();
 		int clen = src.getNumColumns();
-		BufferedOutputStream bos = new BufferedOutputStream(fs.create(path, true));
 
-		// DATA SET NAME SHOULD READ FROM INPUT (file properties)
+		BufferedOutputStream bos = new BufferedOutputStream(fs.create(path, true));
 		String datasetName = _props.getDatasetName();
-		H5RootObject rootObject = H5.H5Screate(bos, rlen, clen);
-		H5.H5Dcreate(rootObject, rlen, clen, datasetName);
+		H5RootObject rootObject = H5.H5Screate(bos, src.getNumRows(), src.getNumColumns());
+		H5.H5Dcreate(rootObject, src.getNumRows(), src.getNumColumns(), datasetName);
+
+		//write headers
+		if( rl==0 )
+		{
+			H5.H5WriteHeaders(rootObject);
+		}
 
 		try {
-
-			if(sparse) {
-				// TODO: create an extendable dataset and write blocks
-			}
-			else {
-				// Write the data to the datasets.
-				//double[][] data=new double[rlen][clen];
-				for(int i = rl; i < rlen; i++) {
-					double[] dataRow = new double[clen];
-					//write row chunk-wise to prevent OOM on large number of columns
-					for(int bj = 0; bj < clen; bj += BLOCKSIZE_J) {
-						for(int j = bj; j < Math.min(clen, bj + BLOCKSIZE_J); j++) {
-							double lvalue = src.getValueDenseUnsafe(i, j);
-							dataRow[j] = lvalue;
-						}
+			// HDF5 format don't support spars matrix
+			// Write the data to the datasets.
+			for(int i = rl; i < rlen; i++) {
+				double[] dataRow = new double[clen];
+				//write row chunk-wise to prevent OOM on large number of columns
+				for(int bj = 0; bj < clen; bj += BLOCKSIZE_J) {
+					for(int j = bj; j < Math.min(clen, bj + BLOCKSIZE_J); j++) {
+						double lvalue = src.getValueDenseUnsafe(i, j);
+						dataRow[j] = lvalue;
 					}
-					//IOUtilFunctions.closeSilently(bos);
-					H5.H5Dwrite(rootObject, dataRow);
-					//break;
 				}
+				H5.H5Dwrite(rootObject, dataRow);
 			}
-		}
-		catch(Exception exception) {
-			exception.printStackTrace();
 		}
 		finally {
 			IOUtilFunctions.closeSilently(bos);
 		}
+
 	}
 }

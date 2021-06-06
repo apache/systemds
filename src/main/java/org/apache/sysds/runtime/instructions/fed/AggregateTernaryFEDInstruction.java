@@ -24,6 +24,7 @@ import java.util.concurrent.Future;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
+import org.apache.sysds.runtime.controlprogram.federated.FederationMap.FType;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest.RequestType;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse;
@@ -31,7 +32,9 @@ import org.apache.sysds.runtime.controlprogram.federated.FederationUtils;
 import org.apache.sysds.runtime.instructions.cp.AggregateTernaryCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
 import org.apache.sysds.runtime.instructions.cp.DoubleObject;
+import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.ScalarObject;
+import org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator;
 
 public class AggregateTernaryFEDInstruction extends FEDInstruction {
 	// private static final Log LOG = LogFactory.getLog(AggregateTernaryFEDInstruction.class.getName());
@@ -52,7 +55,26 @@ public class AggregateTernaryFEDInstruction extends FEDInstruction {
 		MatrixObject mo1 = ec.getMatrixObject(_ins.input1);
 		MatrixObject mo2 = ec.getMatrixObject(_ins.input2);
 		MatrixObject mo3 = _ins.input3.isLiteral() ? null : ec.getMatrixObject(_ins.input3);
-		if(mo1.isFederated() && mo2.isFederated() && mo1.getFedMapping().isAligned(mo2.getFedMapping(), false) &&
+		if(mo3 != null && mo1.isFederated() && mo2.isFederated() && mo3.isFederated()
+				&& mo1.getFedMapping().isAligned(mo2.getFedMapping(), false, mo1.isFederated(FType.ROW), mo1.isFederated(FType.COL))
+				&& mo2.getFedMapping().isAligned(mo3.getFedMapping(), false, mo1.isFederated(FType.ROW), mo1.isFederated(FType.COL))) {
+			FederatedRequest fr1 = FederationUtils.callInstruction(_ins.getInstructionString(), _ins.getOutput(),
+				new CPOperand[] {_ins.input1, _ins.input2, _ins.input3},
+				new long[] {mo1.getFedMapping().getID(), mo2.getFedMapping().getID(), mo3.getFedMapping().getID()});
+			FederatedRequest fr2 = new FederatedRequest(RequestType.GET_VAR, fr1.getID());
+			FederatedRequest fr3 = mo1.getFedMapping().cleanup(getTID(), fr1.getID());
+			Future<FederatedResponse>[] response = mo1.getFedMapping().execute(getTID(), fr1, fr2, fr3);
+			
+			if(_ins.output.getDataType().isScalar()) {
+				AggregateUnaryOperator aop = InstructionUtils.parseBasicAggregateUnaryOperator("uak+");
+				ec.setScalarOutput(_ins.output.getName(), FederationUtils.aggScalar(aop, response, mo1.getFedMapping()));
+			}
+			else {
+				AggregateUnaryOperator aop = InstructionUtils.parseBasicAggregateUnaryOperator(_ins.getOpcode().equals("fed_tak+*") ? "uak+" : "uack+");
+				ec.setMatrixOutput(_ins.output.getName(), FederationUtils.aggMatrix(aop, response, mo1.getFedMapping()));
+			}
+		}
+		else if(mo1.isFederated() && mo2.isFederated() && mo1.getFedMapping().isAligned(mo2.getFedMapping(), false) &&
 			mo3 == null) {
 			FederatedRequest fr1 = mo1.getFedMapping().broadcast(ec.getScalarInput(_ins.input3));
 			FederatedRequest fr2 = FederationUtils.callInstruction(_ins.getInstructionString(),

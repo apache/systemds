@@ -29,10 +29,11 @@ import org.apache.sysds.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 
-public class ParForRemoteRobustnessTest extends AutomatedTestBase 
+public class ParForRemoteRobustnessTest extends AutomatedTestBase
 {
 	private final static String TEST_NAME1 = "parfor_remote1";
 	private final static String TEST_NAME2 = "parfor_remote2";
+	private final static String TEST_NAME3 = "parfor_remote3";
 	private final static String TEST_DIR = "functions/parfor/";
 	private final static String TEST_CLASS_DIR = TEST_DIR + ParForRemoteRobustnessTest.class.getSimpleName() + "/";
 	private final static double eps = 1e-10;
@@ -45,6 +46,7 @@ public class ParForRemoteRobustnessTest extends AutomatedTestBase
 	public void setUp() {
 		addTestConfiguration(TEST_NAME1, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[]{"Rout"}));
 		addTestConfiguration(TEST_NAME2, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2, new String[]{"Rout"}));
+		addTestConfiguration(TEST_NAME3, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME3, new String[]{"Rout"}));
 	}
 
 	@Test
@@ -65,6 +67,16 @@ public class ParForRemoteRobustnessTest extends AutomatedTestBase
 	@Test
 	public void testParForRemoteFrameHybrid() {
 		runParforRemoteTest(TEST_NAME2, ExecMode.HYBRID);
+	}
+	
+	@Test
+	public void testParForRemoteEvalCP() {
+		runParforRemoteTest(TEST_NAME3, ExecMode.SINGLE_NODE);
+	}
+	
+	@Test
+	public void testParForRemoteEvalHybrid() {
+		runParforRemoteTest(TEST_NAME3, ExecMode.HYBRID);
 	}
 	
 	private void runParforRemoteTest( String TEST_NAME, ExecMode type )

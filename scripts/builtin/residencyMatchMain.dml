@@ -84,7 +84,6 @@
 m_residencyMatchMain = function(Matrix[Double] R, Matrix[Double] H,Matrix[Double] C )
   return (Matrix[Double] ResidencyMatch)
 {
-
 #TODO PLEASE PAY ATTENTION
 # in this step we consider that  Residents Matrix is ORDERED   !!!!
 # in this step we consider that  Hospital  Matrix is UNORDERED !!!!

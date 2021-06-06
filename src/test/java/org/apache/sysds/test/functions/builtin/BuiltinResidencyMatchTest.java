@@ -51,7 +51,6 @@ public class BuiltinResidencyMatchTest extends AutomatedTestBase {
 		runtestResidencyMatchTest("residencymatch");
 	}
 
-
 	private void runtestResidencyMatchTest(String alg) {
 		loadTestConfiguration(getTestConfiguration(TEST_NAME));
 		String HOME = SCRIPT_DIR + TEST_DIR;
@@ -76,7 +75,6 @@ public class BuiltinResidencyMatchTest extends AutomatedTestBase {
 			{1},{1},{1}};
 		double[][]EM = { // this is an expected matrix
 				{0,0,3},{0,2,0},{1,0,0}};
-
 
 		writeInputMatrixWithMTD("R", R, true);
 		writeInputMatrixWithMTD("H", H, true);

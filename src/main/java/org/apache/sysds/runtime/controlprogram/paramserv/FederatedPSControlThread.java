@@ -150,11 +150,10 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 			aggProgramBlock.setInstructions(new ArrayList<>(Collections.singletonList(_ps.getAggInst())));
 			pbs.add(aggProgramBlock);
 		}
-
-		boolean opt = _ec.getProgram().getFunctionProgramBlocks(false).isEmpty();
+		
 		programSerialized = InstructionUtils.concatStrings(
 			PROG_BEGIN, NEWLINE,
-			ProgramConverter.serializeProgram(_ec.getProgram(), pbs, new HashMap<>(), opt),
+			ProgramConverter.serializeProgram(_ec.getProgram(), pbs, new HashMap<>()),
 			PROG_END);
 
 		// write program and meta data to worker
@@ -216,7 +215,7 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 		@Override
 		public FederatedResponse execute(ExecutionContext ec, Data... data) {
 			// parse and set program
-			ec.setProgram(ProgramConverter.parseProgram(_programString, 0, false));
+			ec.setProgram(ProgramConverter.parseProgram(_programString, 0));
 
 			// set variables to ec
 			ec.setVariable(Statement.PS_FED_BATCH_SIZE, new IntObject(_batchSize));

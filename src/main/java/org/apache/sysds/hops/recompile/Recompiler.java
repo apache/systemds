@@ -74,6 +74,7 @@ import org.apache.sysds.runtime.controlprogram.FunctionProgramBlock;
 import org.apache.sysds.runtime.controlprogram.IfProgramBlock;
 import org.apache.sysds.runtime.controlprogram.LocalVariableMap;
 import org.apache.sysds.runtime.controlprogram.ParForProgramBlock;
+import org.apache.sysds.runtime.controlprogram.Program;
 import org.apache.sysds.runtime.controlprogram.ProgramBlock;
 import org.apache.sysds.runtime.controlprogram.WhileProgramBlock;
 import org.apache.sysds.runtime.controlprogram.caching.CacheBlock;
@@ -84,7 +85,9 @@ import org.apache.sysds.runtime.controlprogram.caching.TensorObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.parfor.opt.OptTreeConverter;
 import org.apache.sysds.runtime.instructions.Instruction;
+import org.apache.sysds.runtime.instructions.cp.CPOperand;
 import org.apache.sysds.runtime.instructions.cp.Data;
+import org.apache.sysds.runtime.instructions.cp.EvalNaryCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.FunctionCallCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.IntObject;
 import org.apache.sysds.runtime.instructions.cp.ListObject;
@@ -1017,7 +1020,7 @@ public class Recompiler
 			WhileProgramBlock pbTmp = (WhileProgramBlock)pb;
 			WhileStatementBlock sbTmp = (WhileStatementBlock)pbTmp.getStatementBlock();
 			//recompile predicate
-			if(	sbTmp!=null && !(et==ExecType.CP && !OptTreeConverter.containsSparkInstruction(pbTmp.getPredicate(), true)) )
+			if( sbTmp!=null && !(et==ExecType.CP && !OptTreeConverter.containsSparkInstruction(pbTmp.getPredicate(), true)) )
 				pbTmp.setPredicate( Recompiler.recompileHopsDag2Forced(sbTmp.getPredicateHops(), tid, et) );
 			
 			//recompile body
@@ -1026,7 +1029,7 @@ public class Recompiler
 		}
 		else if (pb instanceof IfProgramBlock)
 		{
-			IfProgramBlock pbTmp = (IfProgramBlock)pb;	
+			IfProgramBlock pbTmp = (IfProgramBlock)pb;
 			IfStatementBlock sbTmp = (IfStatementBlock)pbTmp.getStatementBlock();
 			//recompile predicate
 			if( sbTmp!=null &&!(et==ExecType.CP && !OptTreeConverter.containsSparkInstruction(pbTmp.getPredicate(), true)) )
@@ -1073,24 +1076,46 @@ public class Recompiler
 			if( OptTreeConverter.containsFunctionCallInstruction(bpb) )
 			{
 				ArrayList<Instruction> tmp = bpb.getInstructions();
-				for( Instruction inst : tmp )
+				for( Instruction inst : tmp ) {
 					if( inst instanceof FunctionCallCPInstruction ) {
 						FunctionCallCPInstruction func = (FunctionCallCPInstruction)inst;
 						String fname = func.getFunctionName();
 						String fnamespace = func.getNamespace();
-						String fKey = DMLProgram.constructFunctionKey(fnamespace, fname);
-						
-						if( !fnStack.contains(fKey) ) { //memoization for multiple calls, recursion
-							fnStack.add(fKey);
-							FunctionProgramBlock fpb = pb.getProgram().getFunctionProgramBlock(fnamespace, fname);
-							rRecompileProgramBlock2Forced(fpb, tid, fnStack, et); //recompile chains of functions
+						rRecompileProgramBlock2Forced(fnamespace, fname, pb.getProgram(), tid, fnStack, et);
+					}
+					else if( inst instanceof EvalNaryCPInstruction ) {
+						CPOperand fname = ((EvalNaryCPInstruction)inst).getInputs()[0];
+						if( fname.isLiteral() ) {
+							rRecompileProgramBlock2Forced(DMLProgram.DEFAULT_NAMESPACE,
+								fname.getName(), pb.getProgram(), tid, fnStack, et);
+						}
+						else {
+							for( String fkey : pb.getProgram().getFunctionProgramBlocks().keySet() )
+								if(!fkey.startsWith(DMLProgram.BUILTIN_NAMESPACE)) {
+									String[] parts = DMLProgram.splitFunctionKey(fkey);
+									rRecompileProgramBlock2Forced(
+										parts[0], parts[1], pb.getProgram(), tid, fnStack, et);
+								}
 						}
 					}
+				}
 			}
 		}
-		
 	}
 
+	private static void rRecompileProgramBlock2Forced(String fnamespace, String fname, Program prog, long tid, HashSet<String> fnStack, ExecType et) {
+		String fKey = DMLProgram.constructFunctionKey(fnamespace, fname);
+		if( !fnStack.contains(fKey) ) { //memoization for multiple calls, recursion
+			fnStack.add(fKey);
+			FunctionProgramBlock fpb = prog.getFunctionProgramBlock(fnamespace, fname, true);
+			rRecompileProgramBlock2Forced(fpb, tid, fnStack, et); //recompile chains of functions
+			if( prog.containsFunctionProgramBlock(fnamespace, fname, false) ) {
+				FunctionProgramBlock fpb2 = prog.getFunctionProgramBlock(fnamespace, fname, false);
+				rRecompileProgramBlock2Forced(fpb2, tid, fnStack, et); //recompile chains of functions
+			}
+		}
+	}
+	
 	/**
 	 * Remove any scalar variables from the variable map if the variable
 	 * is updated in this block.

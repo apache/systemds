@@ -37,24 +37,29 @@ public class BuiltinNaiveBayesPredictTest extends AutomatedTestBase {
 
 	public double eps = 1e-7;
 
-	@Override public void setUp() {
+	@Override
+	public void setUp() {
 		TestUtils.clearAssertionInformation();
 		addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[] {"YRaw", "Y"}));
 	}
 
-	@Test public void testSmallDense() {
+	@Test
+	public void testSmallDense() {
 		testNaiveBayesPredict(100, 50, 0.7);
 	}
 
-	@Test public void testLargeDense() {
+	@Test
+	public void testLargeDense() {
 		testNaiveBayesPredict(10000, 750, 0.7);
 	}
 
-	@Test public void testSmallSparse() {
+	@Test
+	public void testSmallSparse() {
 		testNaiveBayesPredict(100, 50, 0.01);
 	}
 
-	@Test public void testLargeSparse() {
+	@Test
+	public void testLargeSparse() {
 		testNaiveBayesPredict(10000, 750, 0.01);
 	}
 

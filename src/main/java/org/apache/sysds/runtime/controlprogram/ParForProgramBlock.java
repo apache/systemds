@@ -844,9 +844,9 @@ public class ParForProgramBlock extends ForProgramBlock
 		if( FORCE_CP_ON_REMOTE_SPARK && (_optMode == POptMode.NONE 
 			|| (_optMode == POptMode.CONSTRAINED && _execMode==PExecMode.REMOTE_SPARK)) ) {
 			//tid = 0  because replaced in remote parworker
-			flagForced = checkMRAndRecompileToCP(0); 
+			flagForced = checkSparkAndRecompileToCP(0);
 		}
-			
+		
 		// Step 1) init parallel workers (serialize PBs)
 		// NOTES: each mapper changes filenames with regard to his ID as we submit a single 
 		// job, cannot reuse serialized string, since variables are serialized as well.
@@ -905,7 +905,7 @@ public class ParForProgramBlock extends ForProgramBlock
 		Timing time = ( _monitor ? new Timing(true) : null );
 		
 		// Step 0) check and compile to CP (if forced remote parfor)
-		boolean flagForced = checkMRAndRecompileToCP(0);
+		boolean flagForced = checkSparkAndRecompileToCP(0);
 		
 		// Step 1) prepare partitioned input matrix (needs to happen before serializing the program)
 		ParForStatementBlock sb = (ParForStatementBlock) getStatementBlock();
@@ -1346,10 +1346,10 @@ public class ParForProgramBlock extends ForProgramBlock
 	 * @param tid thread id
 	 * @return true if recompile was necessary and possible
 	 */
-	private boolean checkMRAndRecompileToCP(long tid) 
+	private boolean checkSparkAndRecompileToCP(long tid) 
 	{
-		//no MR instructions, ok
-		if( !OptTreeConverter.rContainsMRJobInstruction(this, true) )
+		//no Spark instructions, ok
+		if( !OptTreeConverter.rContainsSparkInstruction(this, true) )
 			return false;
 		
 		//no statement block, failed
@@ -1359,7 +1359,7 @@ public class ParForProgramBlock extends ForProgramBlock
 			return false;
 		}
 		
-		//try recompile MR instructions to CP
+		//try recompile Spark instructions to CP
 		HashSet<String> fnStack = new HashSet<>();
 		Recompiler.recompileProgramBlockHierarchy2Forced(_childBlocks, tid, fnStack, ExecType.CP);
 		return true;

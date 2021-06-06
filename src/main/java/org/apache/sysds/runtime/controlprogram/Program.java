@@ -57,6 +57,11 @@ public class Program
 		return _prog;
 	}
 	
+	public synchronized void addFunctionProgramBlock(String fkey, FunctionProgramBlock fpb, boolean opt) {
+		String[] parts = DMLProgram.splitFunctionKey(fkey);
+		addFunctionProgramBlock(parts[0], parts[1], fpb, opt);
+	}
+	
 	public synchronized void addFunctionProgramBlock(String namespace, String fname, FunctionProgramBlock fpb) {
 		addFunctionProgramBlock(namespace, fname, fpb, true);
 	}

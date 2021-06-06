@@ -45,12 +45,10 @@ public class BuiltinResidencyMatchTest extends AutomatedTestBase {
 	public void setUp() {
 		addTestConfiguration(TEST_NAME,new TestConfiguration(TEST_CLASS_DIR, TEST_NAME,new String[]{"SM"}));
 	}
-
 	@Test
 	public void testResidencyMatchTest() {
 		runtestResidencyMatchTest("residencymatch");
 	}
-
 
 	private void runtestResidencyMatchTest(String alg) {
 		loadTestConfiguration(getTestConfiguration(TEST_NAME));
@@ -76,7 +74,6 @@ public class BuiltinResidencyMatchTest extends AutomatedTestBase {
 			{1},{1},{1}};
 		double[][]EM = { // this is an expected matrix
 				{0,0,3},{0,2,0},{1,0,0}};
-
 
 		writeInputMatrixWithMTD("R", R, true);
 		writeInputMatrixWithMTD("H", H, true);

@@ -52,49 +52,65 @@ public class FrameSerializationTest extends AutomatedTestBase
 
 	@Test
 	public void testFrameStringsWritable()  {
-		runFrameSerializeTest(schemaStrings, SerType.WRITABLE_SER);
+		runFrameSerializeTest(schemaStrings, SerType.WRITABLE_SER, false);
 	}
 	
 	@Test
 	public void testFrameMixedWritable()  {
-		runFrameSerializeTest(schemaMixed, SerType.WRITABLE_SER);
+		runFrameSerializeTest(schemaMixed, SerType.WRITABLE_SER, false);
 	}
 	
 	@Test
 	public void testFrameStringsJava()  {
-		runFrameSerializeTest(schemaStrings, SerType.JAVA_SER);
+		runFrameSerializeTest(schemaStrings, SerType.JAVA_SER, false);
 	}
 	
 	@Test
 	public void testFrameMixedJava()  {
-		runFrameSerializeTest(schemaMixed, SerType.JAVA_SER);
+		runFrameSerializeTest(schemaMixed, SerType.JAVA_SER, false);
 	}
-
 	
-	/**
-	 * 
-	 * @param sparseM1
-	 * @param sparseM2
-	 * @param instType
-	 */
-	private void runFrameSerializeTest( ValueType[] schema, SerType stype)
+	@Test
+	public void testEmptyFrameStringsWritable()  {
+		runFrameSerializeTest(schemaStrings, SerType.WRITABLE_SER, true);
+	}
+	
+	@Test
+	public void testEmptyFrameMixedWritable()  {
+		runFrameSerializeTest(schemaMixed, SerType.WRITABLE_SER, true);
+	}
+	
+	@Test
+	public void testEmptyFrameStringsJava()  {
+		runFrameSerializeTest(schemaStrings, SerType.JAVA_SER, true);
+	}
+	
+	@Test
+	public void testEmptyFrameMixedJava()  {
+		runFrameSerializeTest(schemaMixed, SerType.JAVA_SER, true);
+	}
+	
+	private void runFrameSerializeTest( ValueType[] schema, SerType stype, boolean empty)
 	{
 		try
 		{
-			//data generation
-			double[][] A = getRandomMatrix(rows, schema.length, -10, 10, 0.9, 8234); 
-			
 			//init data frame
 			FrameBlock frame = new FrameBlock(schema);
+		
+			//data generation
+			double[][] A = empty ? null :
+				getRandomMatrix(rows, schema.length, -10, 10, 0.9, 8234);
 			
 			//init data frame 
-			Object[] row = new Object[schema.length];
-			for( int i=0; i<rows; i++ ) {
-				for( int j=0; j<schema.length; j++ )
-					A[i][j] = UtilFunctions.objectToDouble(schema[j], 
-							row[j] = UtilFunctions.doubleToObject(schema[j], A[i][j]));
-				frame.appendRow(row);
-			}			
+			if( !empty ) {
+				Object[] row = new Object[schema.length];
+				for( int i=0; i<rows; i++ ) {
+					for( int j=0; j<schema.length; j++ )
+						A[i][j] = UtilFunctions.objectToDouble(schema[j],
+								row[j] = UtilFunctions.doubleToObject(schema[j], A[i][j]));
+					frame.appendRow(row);
+				}
+			}
 			
 			//core serialization and deserialization
 			if( stype == SerType.WRITABLE_SER ) {
@@ -122,16 +138,19 @@ public class FrameSerializationTest extends AutomatedTestBase
 			}
 			
 			//check basic meta data
-			if( frame.getNumRows() != rows )
-				Assert.fail("Wrong number of rows: "+frame.getNumRows()+", expected: "+rows);
+			int numExpected = empty ? 0 : rows;
+			if( frame.getNumRows() != numExpected )
+				Assert.fail("Wrong number of rows: "+frame.getNumRows()+", expected: "+numExpected);
 		
-			//check correct values			
-			for( int i=0; i<rows; i++ ) 
-				for( int j=0; j<schema.length; j++ )	{
-					double tmp = UtilFunctions.objectToDouble(schema[j], frame.get(i, j));
-					if( tmp != A[i][j] )
-						Assert.fail("Wrong get value for cell ("+i+","+j+"): "+tmp+", expected: "+A[i][j]);
-				}		
+			//check correct values
+			if( !empty ) {
+				for( int i=0; i<rows; i++ ) 
+					for( int j=0; j<schema.length; j++ ) {
+						double tmp = UtilFunctions.objectToDouble(schema[j], frame.get(i, j));
+						if( tmp != A[i][j] )
+							Assert.fail("Wrong get value for cell ("+i+","+j+"): "+tmp+", expected: "+A[i][j]);
+					}
+			}
 		}
 		catch(Exception ex) {
 			ex.printStackTrace();

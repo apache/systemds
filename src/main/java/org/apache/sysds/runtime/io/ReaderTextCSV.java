@@ -140,6 +140,7 @@ public class ReaderTextCSV extends MatrixReader
 		long lnnz = 0;
 		
 		BufferedReader br = new BufferedReader(new InputStreamReader(is));
+
 		if(first && hasHeader ) 
 			br.readLine(); //ignore header
 		

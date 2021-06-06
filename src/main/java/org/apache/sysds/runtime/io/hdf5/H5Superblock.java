@@ -19,6 +19,7 @@
 
 package org.apache.sysds.runtime.io.hdf5;
 
+import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
@@ -47,21 +48,23 @@ public class H5Superblock {
 	public H5Superblock() {
 	}
 
-	static boolean verifySignature(FileChannel fc, long offset) {
+	static boolean verifySignature(BufferedInputStream bis, long offset) {
 		// Format Signature
-		ByteBuffer signatureBuffer = ByteBuffer.allocate(HDF5_FILE_SIGNATURE_LENGTH);
+		byte[] signature = new byte[HDF5_FILE_SIGNATURE_LENGTH];
 
 		try {
-			fc.read(signatureBuffer, offset);
+			bis.reset();
+			bis.skip(offset);
+			bis.read(signature);
 		}
 		catch(IOException e) {
 			throw new H5Exception("Failed to read from address: " +offset, e);
 		}
 		// Verify signature
-		return Arrays.equals(HDF5_FILE_SIGNATURE, signatureBuffer.array());
+		return Arrays.equals(HDF5_FILE_SIGNATURE, signature);
 	}
 
-	public H5Superblock(FileChannel fc, long address) {
+	public H5Superblock(BufferedInputStream bis, long address) {
 
 		// Calculated bytes for the super block header is = 56
 		int superBlockHeaderSize = 12;
@@ -72,10 +75,16 @@ public class H5Superblock {
 		ByteBuffer header = ByteBuffer.allocate(superBlockHeaderSize);
 
 		try {
-			fc.read(header, fileLocation);
+			byte[] b = new byte[superBlockHeaderSize];
+			//bis.read(b, (int) fileLocation,superBlockHeaderSize);
+			bis.reset();
+			bis.skip((int) fileLocation);
+			bis.read(b);
+			header.put(b);
 		}
 		catch(IOException e) {
-			throw new H5Exception(e);
+			e.printStackTrace();
+			//throw new H5Exception(e);
 		}
 
 		header.order(LITTLE_ENDIAN);
@@ -122,7 +131,12 @@ public class H5Superblock {
 
 			int nextSectionSize = 4 * sizeOfOffsets;
 			header = ByteBuffer.allocate(nextSectionSize);
-			fc.read(header, address);
+
+			byte[] hb= new byte[nextSectionSize];
+			bis.reset();
+			bis.skip( address);
+			bis.read(hb);
+			header.put(hb);
 			address += nextSectionSize;
 			header.order(LITTLE_ENDIAN);
 			header.rewind();

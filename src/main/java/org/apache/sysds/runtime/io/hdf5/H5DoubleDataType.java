@@ -131,7 +131,6 @@ public class H5DoubleDataType {
 		int row = dimensions[0];
 		int col = dimensions[1];
 		final double[][] data = new double[row][col];
-		//DoubleBuffer db = buffer.order(order).asDoubleBuffer();
 		DoubleBuffer db = buffer.asDoubleBuffer();
 		for(int i = 0; i < row; i++) {
 			db.position(i * col);
@@ -139,6 +138,14 @@ public class H5DoubleDataType {
 		}
 		return data;
 	}
+
+	public double[] fillData(ByteBuffer buffer, int col) {
+		double[] data = new double[col];
+		DoubleBuffer db = buffer.asDoubleBuffer();
+		db.get(data);
+		return data;
+	}
+
 
 	public int getVersion() {
 		return version;

@@ -19,6 +19,12 @@
 
 package org.apache.sysds.runtime.io.hdf5;
 
+import org.apache.commons.collections.BufferOverflowException;
+import scala.util.control.Exception;
+
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.DataInputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
@@ -26,7 +32,10 @@ import static java.nio.ByteOrder.LITTLE_ENDIAN;
 
 public class H5RootObject {
 
-	protected FileChannel fileChannel;
+	protected BufferedInputStream bufferedInputStream;
+	protected BufferedOutputStream bufferedOutputStream;
+	//------------------
+	//protected FileChannel fileChannel;
 	protected H5Superblock superblock;
 	protected int rank;
 	protected long row;
@@ -60,7 +69,11 @@ public class H5RootObject {
 	public ByteBuffer readBufferFromAddress(long address, int length) {
 		ByteBuffer bb = ByteBuffer.allocate(length);
 		try {
-			fileChannel.read(bb, address + superblock.baseAddressByte);
+			byte[] b=new byte[length];
+			bufferedInputStream.reset();
+			bufferedInputStream.skip(address);
+			bufferedInputStream.read(b);
+			bb.put(b);
 		}
 		catch(IOException e) {
 			throw new H5Exception(e);
@@ -70,26 +83,37 @@ public class H5RootObject {
 		return bb;
 	}
 
-	public ByteBuffer map(long address, long length) {
-		return mapNoOffset(address + superblock.baseAddressByte, length);
-	}
-
-	public ByteBuffer mapNoOffset(long address, long length) {
+	public ByteBuffer readBufferFromAddressNoOrder(long address, int length) {
+		ByteBuffer bb = ByteBuffer.allocate(length);
 		try {
-			return fileChannel.map(FileChannel.MapMode.READ_ONLY, address, length);
+			byte[] b=new byte[length];
+			bufferedInputStream.reset();
+			bufferedInputStream.skip(address);
+			bufferedInputStream.read(b);
+			bb.put(b);
 		}
 		catch(IOException e) {
-			throw new H5Exception("Failed to map buffer at address '" + address + "' of length '" + length + "'", e);
+			throw new H5Exception(e);
 		}
+		bb.rewind();
+		return bb;
 	}
 
-	public FileChannel getFileChannel() {
-		return fileChannel;
+	public BufferedInputStream getBufferedInputStream() {
+		return bufferedInputStream;
 	}
 
-	public void setFileChannel(FileChannel fileChannel) {
-		this.fileChannel = fileChannel;
+	public void setBufferedInputStream(BufferedInputStream bufferedInputStream) {
+		this.bufferedInputStream = bufferedInputStream;
 	}
+
+	public BufferedOutputStream getBufferedOutputStream() {
+		return bufferedOutputStream;
+	}
+
+	public void setBufferedOutputStream(BufferedOutputStream bufferedOutputStream) {
+		this.bufferedOutputStream = bufferedOutputStream;}
+
 
 	public H5Superblock getSuperblock() {
 		return superblock;

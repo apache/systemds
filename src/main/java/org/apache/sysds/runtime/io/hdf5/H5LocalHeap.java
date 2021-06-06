@@ -64,7 +64,7 @@ public class H5LocalHeap {
 			// Address of Data Segment
 			addressOfDataSegment = Utils.readBytesAsUnsignedLong(header, sizeOfOffset);
 
-			dataBuffer = rootObject.map(addressOfDataSegment, dataSegmentSize);
+			dataBuffer = rootObject.readBufferFromAddress(addressOfDataSegment, (int) dataSegmentSize);
 
 		}
 		catch(Exception e) {

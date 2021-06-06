@@ -59,7 +59,7 @@ public abstract class WriteHDF5Test extends WriteHDF5TestBase {
 			loadTestConfiguration(config);
 
 			String HOME = SCRIPT_DIR + TEST_DIR;
-			String inputMatrixName = "/home/sfathollahzadeh/adbc.h5";//HOME + INPUT_DIR + getInputHDF5FileName();
+			String inputMatrixName =HOME + INPUT_DIR + getInputHDF5FileName(); // "/home/sfathollahzadeh/adbc.h5";//
 			String dmlOutput = output("dml.scalar");
 			String rOutput = output("R.scalar");
 			//String libsvmOutputName = output("libsvm_write" + testNumber + ".data");

@@ -25,6 +25,7 @@ import org.apache.sysds.runtime.io.hdf5.message.H5DataSpaceMessage;
 import org.apache.sysds.runtime.io.hdf5.message.H5DataTypeMessage;
 
 import java.nio.ByteBuffer;
+
 import static java.nio.ByteOrder.LITTLE_ENDIAN;
 
 public class H5ContiguousDataset {
@@ -44,18 +45,25 @@ public class H5ContiguousDataset {
 		this.dataSpaceMessage = objectHeader.getMessageOfType(H5DataSpaceMessage.class);
 	}
 
+	public ByteBuffer getDataBuffer(int row) {
+		try {
+			long rowPos = row * rootObject.getCol() * this.dataTypeMessage.getDoubleDataType().getSize();
+			ByteBuffer data = rootObject.readBufferFromAddressNoOrder(dataLayoutMessage.getAddress()+ rowPos,
+				(int) (rootObject.getCol() * this.dataTypeMessage.getDoubleDataType().getSize()));
+			//data.order(LITTLE_ENDIAN);
+
+			return data;
+		}
+		catch(Exception e) {
+			throw new H5Exception("Failed to map data buffer for dataset", e);
+		}
+	}
+
 	public ByteBuffer getDataBuffer() {
 		try {
-			ByteBuffer data = rootObject.map(dataLayoutMessage.getAddress(),
-				this.dataSpaceMessage.getTotalLength() * this.dataTypeMessage.getDoubleDataType().getSize());
-
-			//			if(dataTypeMessage instanceof OrderedDataType) {
-			//				final ByteOrder order = (((OrderedDataType) dataTypeMessage).getByteOrder());
-			//				data.order(order);
-			//			}
-			//			else {
+			ByteBuffer data = rootObject.readBufferFromAddress(dataLayoutMessage.getAddress(),
+				(int) (this.dataSpaceMessage.getTotalLength() * this.dataTypeMessage.getDoubleDataType().getSize()));
 			data.order(LITTLE_ENDIAN);
-			//	}
 
 			return data;
 		}

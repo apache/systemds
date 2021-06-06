@@ -19,16 +19,11 @@
 
 package org.apache.sysds.runtime.io.hdf5;
 
-import java.io.File;
+import java.io.*;
 import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-import java.nio.channels.FileChannel;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.StandardOpenOption;
-import java.util.BitSet;
 import java.util.List;
 
+import static java.nio.ByteOrder.LITTLE_ENDIAN;
 import org.apache.sysds.runtime.io.hdf5.message.H5SymbolTableMessage;
 
 public class H5 {
@@ -40,51 +35,17 @@ public class H5 {
 	// 4. Write/Read
 	// 5. Close File
 
-	// Create a file
-	public static H5RootObject H5Fcreate(String fileName) {
+	public static H5RootObject H5Fopen(BufferedInputStream bis) {
+		bis.mark(0);
 
 		H5RootObject rootObject = new H5RootObject();
 		try {
-			File file = new File(fileName);
-			Files.deleteIfExists(file.toPath());
-			file.createNewFile();
-			FileChannel fc = FileChannel.open(file.toPath(), StandardOpenOption.WRITE);
-			rootObject.setFileChannel(fc);
-			rootObject.bufferBuilder=new H5BufferBuilder();
-		}
-		catch(Exception exception) {
-			throw new H5Exception("Can't create fine in path " + fileName);
-		}
-		return rootObject;
-	}
-
-	// Open a file and data space
-	public static H5RootObject H5Fopen(Path path) {
-		File file = path.toFile();
-		return H5.H5Fopen(file);
-	}
-
-	public static H5RootObject H5Fopen(String fileName) {
-		try {
-			File file = new File(fileName);
-			return H5.H5Fopen(file);
-		}
-		catch(Exception exception){
-			throw new H5Exception(exception);
-		}
-	}
-
-	public static H5RootObject H5Fopen(File file) {
-
-		H5RootObject rootObject = new H5RootObject();
-		try {
-			FileChannel fc = FileChannel.open(file.toPath(), StandardOpenOption.READ);
-
 			// Find out if the file is a HDF5 file
+			int maxSignatureLength = 2048;
 			boolean validSignature = false;
 			long offset;
-			for(offset = 0; offset < fc.size(); offset = nextOffset(offset)) {
-				validSignature = H5Superblock.verifySignature(fc, offset);
+			for(offset = 0; offset < maxSignatureLength; offset = nextOffset(offset)) {
+				validSignature = H5Superblock.verifySignature(bis, offset);
 				if(validSignature) {
 					break;
 				}
@@ -92,14 +53,14 @@ public class H5 {
 			if(!validSignature) {
 				throw new H5Exception("No valid HDF5 signature found");
 			}
-			rootObject.setFileChannel(fc);
+			rootObject.setBufferedInputStream(bis);
 
-			final H5Superblock superblock = new H5Superblock(rootObject.getFileChannel(), offset);
+			final H5Superblock superblock = new H5Superblock(bis, offset);
 			rootObject.setSuperblock(superblock);
 		}
 		catch(Exception exception) {
-			exception.printStackTrace();
-			//throw new H5Exception("Can't open fine in path " + fileName);
+			//exception.printStackTrace();
+			throw new H5Exception("Can't open fine " + exception);
 		}
 		return rootObject;
 	}
@@ -112,9 +73,12 @@ public class H5 {
 	}
 
 	// Create Data Space
-	public static void H5Screate(H5RootObject rootObject, long row, long col) {
+	public static H5RootObject H5Screate(BufferedOutputStream bos, long row, long col) {
 
 		try {
+			H5RootObject rootObject = new H5RootObject();
+			rootObject.setBufferedOutputStream(bos);
+			rootObject.bufferBuilder = new H5BufferBuilder();
 			final H5Superblock superblock = new H5Superblock();
 			superblock.versionOfSuperblock = 0;
 			superblock.versionNumberOfTheFileFreeSpaceInformation = 0;
@@ -140,7 +104,9 @@ public class H5 {
 			H5SymbolTableEntry symbolTableEntry = new H5SymbolTableEntry(rootObject);
 			symbolTableEntry.toBuffer(rootObject.bufferBuilder);
 
-			rootObject.getFileChannel().write(rootObject.bufferBuilder.build());
+			return rootObject;
+			//rootObject.getBufferedOutputStream().write(rootObject.bufferBuilder.build().array());
+
 		}
 		catch(Exception exception) {
 			throw new H5Exception(exception);
@@ -196,8 +162,7 @@ public class H5 {
 			objectHeader.toBuffer(rootObject.bufferBuilder);
 			try {
 				rootObject.bufferBuilder.goToPositionWithWriteZero(2048);
-				rootObject.fileChannel.position(0);
-				rootObject.getFileChannel().write(rootObject.bufferBuilder.build());
+				rootObject.getBufferedOutputStream().write(rootObject.bufferBuilder.build().array());
 			}
 			catch(Exception exception) {
 				throw new H5Exception(exception);
@@ -209,58 +174,42 @@ public class H5 {
 
 	// Write Data
 	public static void H5Dwrite(H5RootObject rootObject, double[] data) {
-
+		try {
+			H5BufferBuilder bb = new H5BufferBuilder();
+			for(Double d : data) {
+				bb.writeDouble(d);
+			}
+			rootObject.getBufferedOutputStream().write(bb.noOrderBuild().array());
+		}
+		catch(Exception exception) {
+			throw new H5Exception(exception);
+		}
 	}
+
 	public static void H5Dwrite(H5RootObject rootObject, double[][] data) {
 
-		long dataSize = rootObject.getRow() * rootObject.getCol() * 8;
-		int maxBufferSize = 100000;//Integer.MAX_VALUE;
+		long dataSize = rootObject.getRow() * rootObject.getCol() * 8; // 8 value is size of double
+		int maxBufferSize = (int) (Integer.MAX_VALUE * 0.2); // max buffer size is ratio of data transfer
 		int bufferSize = (int) Math.min(maxBufferSize, dataSize);
 
 		H5BufferBuilder bb = new H5BufferBuilder();
 		try {
 			for(int i = 0; i < rootObject.getRow(); i++) {
 				for(int j = 0; j < rootObject.getCol(); j++) {
-//					if(bb.getSize() + 8 > bufferSize) {
-//						rootObject.getFileChannel().write(bb.build());
-//						bb = new H5BufferBuilder();
-//					}
+
+					// if the buffer is full then flush buffer into file and reseat the buffer
+					if(bb.getSize() + 8 > bufferSize) {
+						rootObject.getBufferedOutputStream().write(bb.build().array());
+						bb = new H5BufferBuilder();
+					}
 					bb.writeDouble(data[i][j]);
 				}
 			}
-
-//			BitSet bitSet1=new BitSet(64);
-//			BitSet bitSet2=new BitSet(64);
-//			BitSet bitSet3=new BitSet(64);
-//			BitSet bitSet4=new BitSet(64);
-//
-//
-//			//2
-//			bitSet1.set(1);
-//			bb.writeBitSet(bitSet1,64);
-//			//3
-//			bitSet2.set(1);
-//			bb.writeBitSet(bitSet2,64);
-//			//4
-//			bitSet3.set(1);
-//			bb.writeBitSet(bitSet3,64);
-//			//5
-//			bitSet4.set(1);
-//			bb.writeBitSet(bitSet4,64);
-
-
-			rootObject.getFileChannel().write(bb.build());
+			// write last data to buffer
+			rootObject.getBufferedOutputStream().write(bb.build().array());
 		}
 		catch(Exception exception) {
 			throw new H5Exception(exception);
-		}
-	}
-	public static void H5Fclose(H5RootObject rootObject){
-		try {
-			rootObject.getFileChannel().close();
-		}
-		catch(Exception exception){
-			throw  new H5Exception(exception);
 		}
 	}
 
@@ -269,6 +218,13 @@ public class H5 {
 		ByteBuffer buffer = dataset.getDataBuffer();
 		int[] dimensions = rootObject.getDimensions();
 		final double[][] data = dataset.getDataType().getDoubleDataType().fillData(buffer, dimensions);
+		return data;
+	}
+
+	public static double[] H5Dread(H5RootObject rootObject, H5ContiguousDataset dataset, int row) {
+
+		ByteBuffer buffer = dataset.getDataBuffer(row);
+		final double[] data = dataset.getDataType().getDoubleDataType().fillData(buffer, (int) rootObject.getCol());
 		return data;
 	}
 

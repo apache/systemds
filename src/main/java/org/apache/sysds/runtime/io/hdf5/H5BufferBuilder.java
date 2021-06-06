@@ -144,6 +144,17 @@ public class H5BufferBuilder {
 			throw new H5Exception(e);
 		}
 	}
+	public ByteBuffer noOrderBuild() {
+		try {
+			ByteBuffer byteBuffer = ByteBuffer.wrap(byteArrayOutputStream.toByteArray());
+			dataOutputStream.close();
+			byteArrayOutputStream.close();
+			return byteBuffer;
+		}
+		catch(IOException e) {
+			throw new H5Exception(e);
+		}
+	}
 
 	public void writeBitSet(BitSet bitSet, int length) {
 		if(bitSet.length() > length) {

@@ -21,6 +21,7 @@ package org.apache.sysds.runtime.io;
 
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.runtime.DMLRuntimeException;
@@ -29,11 +30,13 @@ import org.apache.sysds.runtime.io.hdf5.H5RootObject;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.HDFSTool;
 
-import java.io.IOException;
+import java.io.*;
 
 public class WriterHDF5 extends MatrixWriter {
 
 	protected static FileFormatPropertiesHDF5 _props = null;
+
+	protected int _replication = -1;
 
 	public static final int BLOCKSIZE_J = 32; //32 cells (typically ~512B, should be less than write buffer of 1KB)
 
@@ -43,6 +46,7 @@ public class WriterHDF5 extends MatrixWriter {
 
 	@Override public final void writeMatrixToHDFS(MatrixBlock src, String fname, long rlen, long clen, int blen,
 		long nnz, boolean diag) throws IOException, DMLRuntimeException {
+
 		//validity check matrix dimensions
 		if(src.getNumRows() != rlen || src.getNumColumns() != clen)
 			throw new IOException("Matrix dimensions mismatch with metadata: " + src.getNumRows() + "x" + src
@@ -63,6 +67,7 @@ public class WriterHDF5 extends MatrixWriter {
 		writeHDF5MatrixToHDFS(path, job, fs, src);
 
 		IOUtilFunctions.deleteCrcFilesFromLocalFileSystem(fs, path);
+
 	}
 
 	@Override public final void writeEmptyMatrixToHDFS(String fname, long rlen, long clen, int blen)
@@ -80,20 +85,23 @@ public class WriterHDF5 extends MatrixWriter {
 
 		boolean sparse = src.isInSparseFormat();
 		int clen = src.getNumColumns();
+		BufferedOutputStream bos = new BufferedOutputStream(fs.create(path, true));
 
 		// DATA SET NAME SHOULD READ FROM INPUT (file properties)
 		String datasetName = _props.getDatasetName();
-		H5RootObject rootObject = H5.H5Fcreate(path.toUri().getPath());
-		H5.H5Screate(rootObject, rlen, clen);
+		H5RootObject rootObject = H5.H5Screate(bos, rlen, clen);
 		H5.H5Dcreate(rootObject, rlen, clen, datasetName);
 
-		if(sparse) {
-			// TODO: create an extendable dataset and write blocks
-		}
-		else {
-			// Write the data to the datasets.
-				double[] dataRow = new double[clen];
+		try {
+
+			if(sparse) {
+				// TODO: create an extendable dataset and write blocks
+			}
+			else {
+				// Write the data to the datasets.
+				//double[][] data=new double[rlen][clen];
 				for(int i = rl; i < rlen; i++) {
+					double[] dataRow = new double[clen];
 					//write row chunk-wise to prevent OOM on large number of columns
 					for(int bj = 0; bj < clen; bj += BLOCKSIZE_J) {
 						for(int j = bj; j < Math.min(clen, bj + BLOCKSIZE_J); j++) {
@@ -101,9 +109,17 @@ public class WriterHDF5 extends MatrixWriter {
 							dataRow[j] = lvalue;
 						}
 					}
+					//IOUtilFunctions.closeSilently(bos);
 					H5.H5Dwrite(rootObject, dataRow);
+					//break;
 				}
+			}
 		}
-		H5.H5Fclose(rootObject);
+		catch(Exception exception) {
+			exception.printStackTrace();
+		}
+		finally {
+			IOUtilFunctions.closeSilently(bos);
+		}
 	}
 }

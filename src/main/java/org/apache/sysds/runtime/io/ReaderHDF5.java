@@ -32,8 +32,10 @@ import org.apache.sysds.runtime.io.hdf5.H5ContiguousDataset;
 import org.apache.sysds.runtime.io.hdf5.H5RootObject;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
+import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -59,8 +61,6 @@ public class ReaderHDF5 extends MatrixReader {
 
 		//check existence and non-empty file
 		checkValidInputFile(fs, path);
-
-
 		//core read 
 		ret = readHDF5MatrixFromHDFS(path, job, fs, ret, rlen, clen, blen, _props.getDatasetName());
 
@@ -79,7 +79,9 @@ public class ReaderHDF5 extends MatrixReader {
 		//core read
 		String datasetName = _props.getDatasetName();
 
-		long lnnz = readMatrixFromHDF5("", datasetName, ret, new MutableInt(0), rlen, clen, blen);
+		BufferedInputStream bis= new BufferedInputStream(is);
+
+		long lnnz = readMatrixFromHDF5(bis, datasetName, ret, new MutableInt(0), rlen, clen, blen);
 
 		//finally check if change of sparse/dense block representation required
 		ret.setNonZeros(lnnz);
@@ -102,7 +104,7 @@ public class ReaderHDF5 extends MatrixReader {
 
 		//determine matrix size via additional pass if required
 		if(dest == null) {
-			dest = computeHDF5Size(files, datasetName);
+			dest = computeHDF5Size(files, fs, datasetName);
 			clen = dest.getNumColumns();
 		}
 
@@ -110,22 +112,22 @@ public class ReaderHDF5 extends MatrixReader {
 		long lnnz = 0;
 		MutableInt row = new MutableInt(0);
 		for(int fileNo = 0; fileNo < files.size(); fileNo++) {
-			lnnz += readMatrixFromHDF5(files.get(fileNo).toUri().getPath(), datasetName, dest, row, rlen, clen, blen);
+			BufferedInputStream bis=new BufferedInputStream(fs.open(files.get(fileNo)));
+			lnnz += readMatrixFromHDF5(bis, datasetName, dest, row, rlen, clen, blen);
 		}
-
 		//post processing
 		dest.setNonZeros(lnnz);
 
 		return dest;
 	}
 
-	private static long readMatrixFromHDF5(String srcFile, String datasetName, MatrixBlock dest, MutableInt rowPos,
+	private static long readMatrixFromHDF5(BufferedInputStream bis, String datasetName, MatrixBlock dest, MutableInt rowPos,
 		long rlen, long clen, int blen) {
 		boolean sparse = dest.isInSparseFormat();
 		int row = rowPos.intValue();
 		long lnnz = 0;
 
-		H5RootObject rootObject = H5.H5Fopen(srcFile);
+		H5RootObject rootObject = H5.H5Fopen(bis);
 		H5ContiguousDataset contiguousDataset = H5.H5Dopen(rootObject, datasetName);
 
 		int[] dims = rootObject.getDimensions();
@@ -135,16 +137,16 @@ public class ReaderHDF5 extends MatrixReader {
 		if(sparse) //SPARSE<-value
 		{
 			//TODO: check the HDF5 support SPARSE matrix
+			int a=100;
 		}
 		else //DENSE<-value
 		{
 			DenseBlock denseBlock = dest.getDenseBlock();
-
-			double[][] data = H5.H5Dread(rootObject, contiguousDataset);
 			for(int i = 0; i < nrow; i++) {
+				double[] rowData = H5.H5Dread(rootObject, contiguousDataset,i);
 				for(int j = 0; j < ncol; j++) {
-					if(data[i][j] != 0) {
-						denseBlock.set(i, j, data[i][j]);
+					if(rowData[j] != 0) {
+						denseBlock.set(i, j, rowData[j]);
 						lnnz++;
 					}
 				}
@@ -156,20 +158,20 @@ public class ReaderHDF5 extends MatrixReader {
 		return lnnz;
 	}
 
-	public static MatrixBlock computeHDF5Size(List<Path> files, String datasetName)
+	public static MatrixBlock computeHDF5Size(List<Path> files,FileSystem fs, String datasetName)
 		throws IOException, DMLRuntimeException {
 		int nrow = 0;
 		int ncol = 0;
 
 		for(int fileNo = 0; fileNo < files.size(); fileNo++) {
 
-			H5RootObject rootObject = H5.H5Fopen(files.get(fileNo).toUri().getPath());
-			H5ContiguousDataset contiguousDataset = H5.H5Dopen(rootObject, datasetName);
+			BufferedInputStream bis =new BufferedInputStream(fs.open(files.get(fileNo)));
+			H5RootObject rootObject = H5.H5Fopen(bis);
+			H5.H5Dopen(rootObject, datasetName);
 
 			int[] dims = rootObject.getDimensions();
 			nrow += dims[0];
 			ncol += dims[1];
-			H5.H5Fclose(rootObject);
 		}
 		// allocate target matrix block based on given size;
 		return createOutputMatrixBlock(nrow, ncol, nrow, (long) nrow * ncol, true, false);

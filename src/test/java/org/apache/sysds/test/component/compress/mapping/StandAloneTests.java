@@ -34,14 +34,16 @@ public class StandAloneTests {
 		AMapToData a = MapToFactory.create(10, true, new IntArrayList[] {gen(new int[] {1, 2, 3, 4})});
 		AMapToData b = MapToFactory.create(10, true, new IntArrayList[] {gen(new int[] {2, 4, 6, 8})});
 		AMapToData c = MapToFactory.join(a, b);
-		compare(c, new int[] {3, 2, 0, 2, 0, 3, 1, 3, 1, 3});
+		// compare(c, new int[] {3, 2, 0, 2, 0, 3, 1, 3, 1, 3});
+		compare(c, new int[] {0, 1, 2, 1, 2, 0, 3, 0, 3, 0});
 	}
 
 	@Test
 	public void testJoin_02() {
 		AMapToData a = MapToFactory.create(10, true, new IntArrayList[] {gen(new int[] {1, 2, 3, 4})});
 		AMapToData c = MapToFactory.join(a, a);
-		compare(c, new int[] {1, 0, 0, 0, 0, 1, 1, 1, 1, 1});
+		// compare(c, new int[] {1, 0, 0, 0, 0, 1, 1, 1, 1, 1});
+		compare(c, new int[] {0, 1, 1, 1, 1, 0, 0, 0, 0, 0});
 	}
 
 	@Test
@@ -49,7 +51,8 @@ public class StandAloneTests {
 		AMapToData a = MapToFactory.create(10, true, new IntArrayList[] {gen(new int[] {1, 2, 3, 4})});
 		AMapToData b = MapToFactory.create(10, true, new IntArrayList[] {gen(new int[] {1, 2, 3})});
 		AMapToData c = MapToFactory.join(a, b);
-		compare(c, new int[] {2, 0, 0, 0, 1, 2, 2, 2, 2, 2});
+		// compare(c, new int[] {2, 0, 0, 0, 1, 2, 2, 2, 2, 2});
+		compare(c, new int[] {0, 1, 1, 1, 2, 0, 0, 0, 0, 0});
 	}
 
 	@Test
@@ -57,7 +60,8 @@ public class StandAloneTests {
 		AMapToData a = MapToFactory.create(10, true, new IntArrayList[] {gen(new int[] {1, 2, 3})});
 		AMapToData b = MapToFactory.create(10, true, new IntArrayList[] {gen(new int[] {1, 2, 3, 4})});
 		AMapToData c = MapToFactory.join(a, b);
-		compare(c, new int[] {2, 0, 0, 0, 1, 2, 2, 2, 2, 2});
+		// compare(c, new int[] {2, 0, 0, 0, 1, 2, 2, 2, 2, 2});
+		compare(c, new int[] {0, 1, 1, 1, 2, 0, 0, 0, 0, 0});
 	}
 
 	@Test
@@ -65,7 +69,8 @@ public class StandAloneTests {
 		AMapToData a = MapToFactory.create(10, true, new IntArrayList[] {gen(new int[] {1, 2, 3}), gen(new int[] {4})});
 		AMapToData b = MapToFactory.create(10, true, new IntArrayList[] {gen(new int[] {1, 2, 3, 4})});
 		AMapToData c = MapToFactory.join(a, b);
-		compare(c, new int[] {2, 0, 0, 0, 1, 2, 2, 2, 2, 2});
+		// compare(c, new int[] {2, 0, 0, 0, 1, 2, 2, 2, 2, 2});
+		compare(c, new int[] {0, 1, 1, 1, 2, 0, 0, 0, 0, 0});
 	}
 
 	@Test
@@ -74,7 +79,8 @@ public class StandAloneTests {
 			new IntArrayList[] {gen(new int[] {1, 2, 3}), gen(new int[] {4, 5})});
 		AMapToData b = MapToFactory.create(10, true, new IntArrayList[] {gen(new int[] {1, 2, 3, 4})});
 		AMapToData c = MapToFactory.join(a, b);
-		compare(c, new int[] {3, 0, 0, 0, 1, 2, 3, 3, 3, 3});
+		// compare(c, new int[] {3, 0, 0, 0, 1, 2, 3, 3, 3, 3});
+		compare(c, new int[] {0, 1, 1, 1, 2, 3, 0, 0, 0, 0});
 	}
 
 	@Test
@@ -83,7 +89,8 @@ public class StandAloneTests {
 			new IntArrayList[] {gen(new int[] {1, 2, 3}), gen(new int[] {4, 5}), gen(new int[] {6, 7})});
 		AMapToData b = MapToFactory.create(10, true, new IntArrayList[] {gen(new int[] {1, 2, 3, 4})});
 		AMapToData c = MapToFactory.join(a, b);
-		compare(c, new int[] {4, 0, 0, 0, 1, 2, 3, 3, 4, 4});
+		// compare(c, new int[] {4, 0, 0, 0, 1, 2, 3, 3, 4, 4});
+		compare(c, new int[] {0, 1, 1, 1, 2, 3, 4, 4, 0, 0});
 	}
 
 	@Test(expected = RuntimeException.class)
@@ -100,6 +107,7 @@ public class StandAloneTests {
 		AMapToData b = MapToFactory.create(10, true, new IntArrayList[] {gen(new int[] {1, 2, 3, 4})});
 		AMapToData c = MapToFactory.join(a, b);
 		compare(c, new int[] {1, 0, 0, 0, 0, 1, 1, 1, 1, 1});
+		// compare(c, new int[] {0, 1, 1, 1, 1, 0, 0, 0, 0, 0});
 	}
 
 	@Test
@@ -108,6 +116,7 @@ public class StandAloneTests {
 		AMapToData b = null;
 		AMapToData c = MapToFactory.join(a, b);
 		compare(c, new int[] {1, 0, 0, 0, 0, 1, 1, 1, 1, 1});
+		// compare(c, new int[] {0, 1, 1, 1, 1, 0, 0, 0, 0, 0});
 	}
 
 	private void compare(AMapToData res, int[] expected) {

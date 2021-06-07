@@ -129,7 +129,6 @@ public class CompressedMatrixBlockFactory {
 	}
 
 	private Pair<MatrixBlock, CompressionStatistics> compressMatrix() {
-		LOG.error(compSettings);
 		// Check for redundant compression
 		if(mb instanceof CompressedMatrixBlock) {
 			LOG.info("MatrixBlock already compressed");

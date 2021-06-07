@@ -26,10 +26,10 @@ import org.apache.sysds.runtime.compress.CompressionSettingsBuilder;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeEstimator;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeEstimatorFactory;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup;
-import org.apache.sysds.runtime.controlprogram.parfor.stat.Timing;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.DataConverter;
 import org.apache.sysds.test.TestUtils;
+import org.junit.Assert;
 import org.junit.Test;
 
 public class JoinCompressionInfoTest {
@@ -48,7 +48,6 @@ public class JoinCompressionInfoTest {
 			DataConverter
 				.convertToMatrixBlock(TestUtils.round(TestUtils.generateTestMatrix(1, 500000, 1, 2, 1.0, seed + 1))),
 			new MatrixBlock(), false);
-		LOG.error(tmp.getNumRows() + "  " + tmp.getNumColumns());
 		mbt = tmp;
 	}
 
@@ -106,32 +105,10 @@ public class JoinCompressionInfoTest {
 			g1 = es.estimateJoinCompressedSize(g1, g2);
 			g2 = es.estimateCompressedColGroupSize(new int[] {2});
 
-			final int rep = 100;
+			CompressedSizeInfoColGroup joined_result = es.estimateJoinCompressedSize(g1, g2);
+			CompressedSizeInfoColGroup estimate_full = es.estimateCompressedColGroupSize(new int[] {0, 1, 2});
 
-			double joinSum = 0.0;
-			CompressedSizeInfoColGroup joined_result = null;
-			for(int i = 0; i < rep; i++) {
-				Timing time = new Timing(true);
-				joined_result = es.estimateJoinCompressedSize(g1, g2);
-				double t = time.stop();
-				if(i > 5)
-					joinSum += t;
-			}
-			LOG.error("Join AVG: " + ratio + " " + (joinSum / (rep - 5)));
-
-			CompressedSizeInfoColGroup estimate_full = null;
-
-			double fullSum = 0.0;
-			for(int i = 0; i < rep; i++) {
-				Timing time = new Timing(true);
-				estimate_full = es.estimateCompressedColGroupSize(new int[] {0, 1});
-				double t = time.stop();
-				if(i > 5)
-					fullSum += t;
-			}
-			LOG.error("Full AVG: " + ratio + " " + (fullSum / (rep - 5)));
-
-			// LOG.error("\nEstimated_full:\n" + estimate_full + "\n\nJoinedEstimate:\n" + joined_result + "\n");
+			Assert.assertEquals(joined_result.getNumVals(), estimate_full.getNumVals());
 		}
 		catch(Exception e) {
 			e.printStackTrace();

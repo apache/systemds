@@ -84,7 +84,7 @@ public class CoCodeCost extends AColumnCoCoder {
 			}
 			else if(worstCaseJoinedSize < largestDistinct) {
 				CompressedSizeInfoColGroup g = joinWithAnalysis(l, r);
-				if(g.getNumVals() < largestDistinct) {
+				if(g != null && g.getNumVals() < largestDistinct) {
 					que.poll();
 					que.add(g);
 				}

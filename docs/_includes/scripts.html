@@ -16,24 +16,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 {% endcomment %}
 -->
-{% if site.analytics_on == true %} {% case site.analytics_provider %} {% when "google_universal" %}
-<!-- Analytics -->
-<script>
-    (function(i, s, o, g, r, a, m) {
-        i['GoogleAnalyticsObject'] = r;
-        i[r] = i[r] || function() {
-            (i[r].q = i[r].q || []).push(arguments)
-        }, i[r].l = 1 * new Date();
-        a = s.createElement(o),
-            m = s.getElementsByTagName(o)[0];
-        a.async = 1;
-        a.src = g;
-        m.parentNode.insertBefore(a, m)
-    })(window, document, 'script', '//www.google-analytics.com/analytics.js', 'ga');
-    ga('create', '{{ site.analytics_google_universal_tracking_id }}', 'auto');
-    ga('send', 'pageview');
-</script>
-{% endcase %} {% endif %}
+
 
 <!-- MathJax Section -->
 <script type="text/x-mathjax-config">
@@ -66,20 +49,4 @@ limitations under the License.
             'cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML';
         d.getElementsByTagName('head')[0].appendChild(script);
     }(document));
-</script>
-<!-- Algolia search section -->
-<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/docsearch.js@2/dist/cdn/docsearch.min.js"></script>
-<script>
-    // Crawler configuration for the search indexing is available at:
-    // https://github.com/algolia/docsearch-configs/blob/master/configs/apache_systemml.json
-
-    docsearch({
-        apiKey: '78c19564c220d4642a41197baae304ef',
-        indexName: 'apache_systemds',
-        inputSelector: "#s-bar",
-        // For custom styling for the dropdown, please set debug to true
-        // so that the dropdown won't disappear when the inspect tools are 
-        // open.
-        debug: false
-    });
 </script>

@@ -112,6 +112,9 @@ public class DataExpression extends DataIdentifier
 	public static final String DELIM_NA_STRING_SEP = "\u00b7";
 	// Parameter names relevant to reading/writing delimited index/libsvmv files
 	public static final String LIBSVM_INDEX_DELIM = "indSep";
+
+	// Parameter names relevant to reading/writing dataset name/hdf5 files
+	public static final String HDF5_DATASET_NAME = "dataset";
 	
 	public static final String DELIM_SPARSE = "sparse";  // applicable only for write
 	
@@ -140,6 +143,8 @@ public class DataExpression extends DataIdentifier
 			DELIM_FILL_VALUE, DELIM_DELIMITER, DELIM_FILL, DELIM_HAS_HEADER_ROW, DELIM_NA_STRINGS,
 			// Parameters related to delimited/libsvm files.
 			LIBSVM_INDEX_DELIM,
+			//Parameters related to dataset name/HDF4 files.
+			HDF5_DATASET_NAME,
 			// Parameters related to privacy
 			PRIVACY, FINE_GRAINED_PRIVACY));
 
@@ -150,7 +155,9 @@ public class DataExpression extends DataIdentifier
 			// Parameters related to delimited/csv files.
 			DELIM_FILL_VALUE, DELIM_DELIMITER, DELIM_FILL, DELIM_HAS_HEADER_ROW, DELIM_NA_STRINGS,
 			// Parameters related to delimited/libsvm files.
-			LIBSVM_INDEX_DELIM));
+			LIBSVM_INDEX_DELIM,
+			//Parameters related to dataset name/HDF4 files.
+			HDF5_DATASET_NAME));
 	
 	/* Default Values for delimited (CSV/LIBSVM) files */
 	public static final String  DEFAULT_DELIM_DELIMITER = ",";
@@ -1205,7 +1212,9 @@ public class DataExpression extends DataIdentifier
 					}
 				}
 			}
-			
+			boolean isHDF5;
+			isHDF5 = (formatTypeString != null && formatTypeString.equalsIgnoreCase(FileFormat.HDF5.toString()));
+
 			dataTypeString = (getVarParam(DATATYPEPARAM) == null) ? null : getVarParam(DATATYPEPARAM).toString();
 			
 			if ( dataTypeString == null || dataTypeString.equalsIgnoreCase(Statement.MATRIX_DATA_TYPE) 
@@ -1232,7 +1241,7 @@ public class DataExpression extends DataIdentifier
 				// initialize size of target data identifier to UNKNOWN
 				getOutput().setDimensions(-1, -1);
 				
-				if (!isCSV && !isLIBSVM && ConfigurationManager.getCompilerConfig()
+				if (!isCSV && !isLIBSVM && !isHDF5 && ConfigurationManager.getCompilerConfig()
 						.getBool(ConfigType.REJECT_READ_WRITE_UNKNOWNS) //skip check for csv/libsvm format / jmlc api
 					&& (getVarParam(READROWPARAM) == null || getVarParam(READCOLPARAM) == null) ) {
 						raiseValidateError("Missing or incomplete dimension information in read statement: "

@@ -869,6 +869,7 @@ SystemDS supports 4 file formats:
   * Matrix Market (coordinate)
   * Text (i,j,v)
   * Binary
+  * HDF5
 
 The CSV format is a standard text-based format where columns are separated by delimiter characters, typically commas, and
 rows are represented on separate lines.
@@ -888,6 +889,10 @@ coordinate format, except metadata is stored in a separate file rather than in t
 can span multiple part files.
 
 The binary format can only be read and written by SystemDS.
+
+Hierarchical Data Format (HDF) is a file format designed to store and organize large amounts of data. SystemDS supports 
+some features of the HDF5 like two dimension data (Matrix), matrix with FP64 (double) data type, 
+single dataset, single group, and contiguous dataset.
 
 Let's look at a matrix and examples of its data represented in the supported formats with corresponding metadata. In the table below, we have
 a matrix consisting of 4 rows and 3 columns.
@@ -992,6 +997,24 @@ Below, we have examples of this matrix in the CSV, Matrix Market, IJV, and Binar
 	    "format": "binary",
 	    "author": "SystemDS",
 	    "created": "2017-01-01 00:00:01 PST"
+	}
+</div>
+
+<div data-lang="HDF5" markdown="1">
+	HDF5 is not a text-based format.
+</div>
+
+<div data-lang="HDF5 MTD" markdown="1">
+	{
+	    "data_type": "matrix",
+	    "value_type": "double",
+	    "rows": 4,
+	    "cols": 3,
+	    "nnz": 6,
+	    "dataset": "systemds",
+	    "format": "hdf5",
+	    "author": "SystemDS",
+	    "created": "2021-06-11 13:36:15 CET"
 	}
 </div>
 

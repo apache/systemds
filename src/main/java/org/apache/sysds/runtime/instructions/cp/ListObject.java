@@ -140,6 +140,12 @@ public class ListObject extends Data implements Externalizable {
 		return slice(name);
 	}
 	
+	public LineageItem getLineageItem(String name) {
+		//lookup position by name, incl error handling
+		int pos = getPosForName(name);
+		return getLineageItem(pos);
+	}
+	
 	public List<LineageItem> getLineageItems() {
 		return _lineage;
 	}
@@ -206,6 +212,12 @@ public class ListObject extends Data implements Externalizable {
 		_data.set(ix, data);
 		return this;
 	}
+
+	public ListObject set(int ix, Data data, LineageItem li) {
+		_data.set(ix, data);
+		if (li != null) _lineage.set(ix, li);
+		return this;
+	}
 	
 	public ListObject set(int ix1, int ix2, ListObject data) {
 		int range = ix2 - ix1 + 1;
@@ -240,6 +252,13 @@ public class ListObject extends Data implements Externalizable {
 		
 		//set entry into position
 		return set(pos, data);
+	}
+	
+	public Data set(String name, Data data, LineageItem li) {
+		//lookup position by name, incl error handling
+		int pos = getPosForName(name);
+		//set entry into position
+		return set(pos, data, li);
 	}
 	
 	public ListObject set(String name1, String name2, ListObject data) {

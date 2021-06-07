@@ -229,11 +229,11 @@ public abstract class Instruction
 	 * @param ec execution context
 	 * @return instruction
 	 */
-	public Instruction preprocessInstruction(ExecutionContext ec){
+	public Instruction preprocessInstruction(ExecutionContext ec) {
 		// Lineage tracing
 		if (DMLScript.LINEAGE)
 			ec.traceLineage(this);
-		//return instruction ifself
+		//return the instruction itself
 		return this;
 	}
 	/**

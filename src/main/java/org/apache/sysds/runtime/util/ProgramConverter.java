@@ -1120,14 +1120,15 @@ public class ProgramConverter
 		for( String fkey : prog.getFunctionProgramBlocks().keySet() ) {
 			if( !cand.contains(fkey) ) //skip function not included in the parfor body
 				continue;
-			if( count>0 ) {
+			if( count>0 )
 				sb.append( ELEMENT_DELIM );
-			}
 			sb.append( fkey );
 			sb.append( KEY_VALUE_DELIM );
 			FunctionProgramBlock fpb1 = prog.getFunctionProgramBlock(fkey, true);
 			sb.append( rSerializeProgramBlock(fpb1, clsMap) );
 			if( prog.containsFunctionProgramBlock(fkey, false) ) {
+				sb.append( ELEMENT_DELIM );
+				sb.append( fkey );
 				sb.append( KEY_VALUE_DELIM );
 				FunctionProgramBlock fpb2 = prog.getFunctionProgramBlock(fkey, false);
 				sb.append( rSerializeProgramBlock(fpb2, clsMap) );
@@ -1392,21 +1393,11 @@ public class ProgramConverter
 			String lvar  = st.nextToken(); //with ID = CP_CHILD_THREAD+id for current use
 			//put first copy into prog (for direct use)
 			int index = lvar.indexOf( KEY_VALUE_DELIM );
-			String tmp1 = lvar.substring(0, index);
-			String tmp2 = lvar.substring(index + 1);
-			if( tmp2.contains(KEY_VALUE_DELIM) ) {
-				int index2 = tmp2.indexOf( KEY_VALUE_DELIM );
-				String tmp21 = tmp2.substring(0, index2);
-				String tmp22 = tmp2.substring(index2 + 1);
-				prog.addFunctionProgramBlock(tmp1,
-					(FunctionProgramBlock)rParseProgramBlock(tmp21, prog, id), true);
-				prog.addFunctionProgramBlock(tmp1,
-					(FunctionProgramBlock)rParseProgramBlock(tmp22, prog, id), false);
-			}
-			else {
-				prog.addFunctionProgramBlock(tmp1,
-					(FunctionProgramBlock)rParseProgramBlock(tmp2, prog, id), true);
-			}
+			String fkey = lvar.substring(0, index);
+			String tmp = lvar.substring(index + 1);
+			boolean opt = !prog.containsFunctionProgramBlock(fkey, true);
+			prog.addFunctionProgramBlock(fkey,
+				(FunctionProgramBlock)rParseProgramBlock(tmp, prog, id), opt);
 		}
 		return ret;
 	}

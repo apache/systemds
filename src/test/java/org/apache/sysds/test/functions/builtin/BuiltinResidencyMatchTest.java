@@ -75,6 +75,7 @@ public class BuiltinResidencyMatchTest extends AutomatedTestBase {
 		double[][]EM = { // this is an expected matrix
 				{0,0,3},{0,2,0},{1,0,0}};
 
+
 		writeInputMatrixWithMTD("R", R, true);
 		writeInputMatrixWithMTD("H", H, true);
 		writeInputMatrixWithMTD("C", C, true);

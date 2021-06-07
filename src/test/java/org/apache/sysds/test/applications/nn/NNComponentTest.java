@@ -21,7 +21,7 @@ package org.apache.sysds.test.applications.nn;
 
 import org.junit.Test;
 
-public class NNComponentTest extends BaseTest {
+public class NNComponentTest extends TestFolder {
 
 	@Test
 	public void batch_norm1d() {

@@ -19,12 +19,10 @@ limitations under the License.
 
 # SystemDS-NN
 
-### A deep learning library for [Apache SystemDS](https://github.com/apache/systemds).
+This folder contains different primitives for neural network training, and predictions.
+## Neural net for regression with vanilla SGD:
 
-## Examples:
-#### Please see the [`examples`](examples) folder for more detailed examples, or view the following two quick examples.
-### Neural net for regression with vanilla SGD:
-```python
+```R
 # Imports
 source("nn/layers/affine.dml") as affine
 source("nn/layers/l2_loss.dml") as l2_loss
@@ -41,8 +39,8 @@ y = rand(rows=N, cols=t)
 # Create 2-layer network:
 ## affine1 -> relu1 -> affine2
 M = 64 # number of neurons
-[W1, b1] = affine::init(D, M)
-[W2, b2] = affine::init(M, t)
+[W1, b1] = affine::init(D, M, -1)
+[W2, b2] = affine::init(M, t, -1)
 
 # Initialize optimizer
 lr = 0.05  # learning rate
@@ -86,8 +84,9 @@ for (e in 1:epochs) {
 }
 ```
 
-### Neural net for multi-class classification with dropout and SGD w/ Nesterov momentum:
-```python
+## Neural net for multi-class classification with dropout and SGD w/ Nesterov momentum
+
+```R
 # Imports
 source("nn/layers/affine.dml") as affine
 source("nn/layers/cross_entropy_loss.dml") as cross_entropy_loss
@@ -112,9 +111,9 @@ parfor (i in 1:N) {
 H1 = 64 # number of neurons in 1st hidden layer
 H2 = 64 # number of neurons in 2nd hidden layer
 p = 0.5  # dropout probability
-[W1, b1] = affine::init(D, H1)
-[W2, b2] = affine::init(H1, H2)
-[W3, b3] = affine::init(H2, t)
+[W1, b1] = affine::init(D, H1, -1)
+[W2, b2] = affine::init(H1, H2, -1)
+[W3, b3] = affine::init(H2, t, -1)
 
 # Initialize SGD w/ Nesterov momentum optimizer
 lr = 0.05  # learning rate

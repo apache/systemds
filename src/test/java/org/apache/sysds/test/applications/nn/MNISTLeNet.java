@@ -21,11 +21,9 @@ package org.apache.sysds.test.applications.nn;
 
 import org.junit.Test;
 
-public class NNGradientTest extends TestFolder {
-
+public class MNISTLeNet extends NNTests {
 	@Test
-	public void testNNLibrary_Gradients() {
-		run("run_tests_gradients.dml");
+	public void testRegession() {
+		run("mnist_lenet_distrib_sgd-train-dummy-data.dml");
 	}
-
 }

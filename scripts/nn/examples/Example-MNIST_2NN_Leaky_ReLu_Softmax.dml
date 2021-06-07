@@ -30,12 +30,6 @@
  *  - train: The file containing the training data
  *  - test: the file containing the test data
  *
- * The MNIST Data can be downloaded as follows:
- * mkdir -p data/mnist/
- * cd data/mnist/
- * curl -O https://pjreddie.com/media/files/mnist_train.csv
- * curl -O https://pjreddie.com/media/files/mnist_test.csv
- *
  * Sample Invocation
  *
  * systemds "<path to systemds repo>/systemds/scripts/nn/examples/Example-MNIST_2NN_Leaky_ReLu_Softmax.dml"

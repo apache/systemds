@@ -29,7 +29,7 @@ import org.junit.runners.Parameterized.Parameters;
 
 @RunWith(value = Parameterized.class)
 @net.jcip.annotations.NotThreadSafe
-public class NNMaxPool2dComponentTest extends BaseTest {
+public class NNMaxPool2dComponentTest extends TestFolder {
 
 	@Parameters
 	public static Collection<Object[]> data() {

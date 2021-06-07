@@ -27,23 +27,32 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.api.mlcontext.Script;
 import org.apache.sysds.test.functions.mlcontext.MLContextTestBase;
 
-public class BaseTest extends MLContextTestBase {
+public abstract class BaseTest extends MLContextTestBase {
 	protected static final Log LOG = LogFactory.getLog(BaseTest.class.getName());
 
 	private static final String ERROR_STRING = "ERROR:";
-	private static final String BASE_FILEPATH = "src/test/scripts/applications/nn/";
+
 
 	protected void run(String name) {
-		Script script = dmlFromFile(BASE_FILEPATH + name);
+		run(name, false);
+	}
+
+	protected void run(String name, boolean printStdOut) {
+		Script script = dmlFromFile(getBaseFilePath() + name);
 		String stdOut = executeAndCaptureStdOut(script).getRight();
+		if(printStdOut){
+			LOG.error(stdOut);
+		}
 		assertTrue(stdOut, !stdOut.contains(ERROR_STRING));
 	}
 
 	protected void run(String name, String[] var, Object[] val) {
-		Script script = dmlFromFile(BASE_FILEPATH + name);
+		Script script = dmlFromFile(getBaseFilePath() + name);
 		for(int i = 0; i < var.length; i++)
 			script.in(var[i], val[i]);
 		String stdOut = executeAndCaptureStdOut(script).getRight();
 		assertTrue(stdOut, !stdOut.contains(ERROR_STRING));
 	}
+
+	protected abstract String getBaseFilePath();
 }

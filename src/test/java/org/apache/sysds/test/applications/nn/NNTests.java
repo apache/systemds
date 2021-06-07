@@ -19,13 +19,13 @@
 
 package org.apache.sysds.test.applications.nn;
 
-import org.junit.Test;
+public class NNTests extends BaseTest {
 
-public class NNGradientTest extends TestFolder {
+	private static final String BASE_FILEPATH = "scripts/nn/examples/";
 
-	@Test
-	public void testNNLibrary_Gradients() {
-		run("run_tests_gradients.dml");
+	@Override
+	protected String getBaseFilePath() {
+		return BASE_FILEPATH;
 	}
 
 }

@@ -21,11 +21,14 @@ package org.apache.sysds.test.applications.nn;
 
 import org.junit.Test;
 
-public class NNGradientTest extends TestFolder {
-
+public class FMTests extends NNTests {
 	@Test
-	public void testNNLibrary_Gradients() {
-		run("run_tests_gradients.dml");
+	public void testBinClass() {
+		run("fm-binclass-dummy-data.dml");
 	}
 
+	@Test
+	public void testRegression() {
+		run("fm-regression-dummy-data.dml");
+	}
 }

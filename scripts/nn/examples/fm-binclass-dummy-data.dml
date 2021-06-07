@@ -30,12 +30,8 @@ X_val = rand(rows=100, cols=7);
 y_val = round(rand(rows=100, cols=1));
 
 # Train
-[w0, W, V, loss] = fm_binclass::train(X, y, X_val, y_val);
+[w0, W, V, loss] = fm_binclass::train(X, y, X_val, y_val, 2);
 
-# Write model out
-#write(w0, out_dir+"/w0");
-#write(W, out_dir+"/W");
-#write(V, out_dir+"/V");
 
 # eval on test set
 probs = fm_binclass::predict(X, w0, W, V);
@@ -43,6 +39,3 @@ probs = fm_binclass::predict(X, w0, W, V);
 
 # Output results
 print("Test Accuracy: " + accuracy)
-#write(accuracy, out_dir+"/accuracy")
-
-print("")

@@ -19,13 +19,6 @@
 #
 #-------------------------------------------------------------
 
-/*
-* The MNIST Data can be downloaded as follows:
-* mkdir -p data/mnist/
-* cd data/mnist/
-* curl -O https://pjreddie.com/media/files/mnist_train.csv
-* curl -O https://pjreddie.com/media/files/mnist_test.csv
-*/
 
 source("nn/examples/mnist_softmax.dml") as mnist_softmax
 

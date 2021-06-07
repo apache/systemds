@@ -60,20 +60,8 @@ public class CoCodeCostTSMM extends AColumnCoCoder {
 
 	private List<CompressedSizeInfoColGroup> join(List<CompressedSizeInfoColGroup> currentGroups) {
 
-		Queue<CompressedSizeInfoColGroup> que = new PriorityQueue<>(currentGroups.size(),
-			new Comparator<CompressedSizeInfoColGroup>() {
-				@Override
-				public int compare(CompressedSizeInfoColGroup a, CompressedSizeInfoColGroup b) {
-					final int aNV = a.getNumVals();
-					final int bNV = b.getNumVals();
-					if(aNV == bNV)
-						return 0;
-					else if(aNV > bNV)
-						return 1;
-					else
-						return -1;
-				}
-			});
+		Comparator<CompressedSizeInfoColGroup> comp = Comparator.comparing(CompressedSizeInfoColGroup::getNumVals);
+		Queue<CompressedSizeInfoColGroup> que = new PriorityQueue<>(currentGroups.size(), comp);
 
 		List<CompressedSizeInfoColGroup> ret = new ArrayList<>();
 		for(CompressedSizeInfoColGroup g : currentGroups)

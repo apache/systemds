@@ -46,27 +46,23 @@ public class BuiltinShortestPathTest extends AutomatedTestBase {
 
 	@Test
 	public void testShortestPathNode1CP() {
-		runShortestPathNodeTest(1, new double[][] {{0}, {2}, {5}, {5}}, ExecType.SPARK);
+		runShortestPathNodeTest(1, new double[][] {{0}, {2}, {5}, {5}});
 	}
 	
 	@Test
 	public void testShortestPathNode2CP() {
-		runShortestPathNodeTest(2, new double[][] {{1}, {0}, {4}, {5}}, ExecType.SPARK);
+		runShortestPathNodeTest(2, new double[][] {{1}, {0}, {4}, {5}});
 	}
 	
 	@Test
 	public void testShortestPathNode3CP() {
-		runShortestPathNodeTest(3, new double[][] {{4}, {3}, {0}, {1}}, ExecType.SPARK);
+		runShortestPathNodeTest(3, new double[][] {{4}, {3}, {0}, {1}});
 	}
 	
 	
 
-	private void runShortestPathNodeTest(int node, double [][] Res, ExecType instType)
+	private void runShortestPathNodeTest(int node, double [][] Res)
 	{
-		Types.ExecMode platformOld = setExecMode(instType);
-
-		try
-		{
 			loadTestConfiguration(getTestConfiguration(TEST_NAME));
 
 			String HOME = SCRIPT_DIR + TEST_DIR;
@@ -87,9 +83,5 @@ public class BuiltinShortestPathTest extends AutomatedTestBase {
 			double[][] Y = TestUtils.convertHashMapToDoubleArray(dmlfile);
 			TestUtils.compareMatrices(Res, Y, eps);
 			
-		}
-		finally {
-			rtplatform = platformOld;
-		}
 	}
 }

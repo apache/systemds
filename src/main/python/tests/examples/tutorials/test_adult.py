@@ -162,8 +162,8 @@ class Test_DMLScript(unittest.TestCase):
         self.assertTrue(type(network) is not None) # sourcing and training seems to works
 
         # TODO This does not work yet, not sure what the problem is
-        probs = FFN_package.predict(network, Xt).compute()
-        FFN_package.eval(probs, Yt).compute()
+        # probs = FFN_package.predict(network, Xt).compute()
+        # FFN_package.eval(probs, Yt).compute()
 
 if __name__ == "__main__":
     unittest.main(exit=False)

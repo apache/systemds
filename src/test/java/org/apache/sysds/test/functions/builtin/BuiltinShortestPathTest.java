@@ -46,17 +46,17 @@ public class BuiltinShortestPathTest extends AutomatedTestBase {
 
 	@Test
 	public void testShortestPathNode1CP() {
-		runShortestPathNodeTest(1, new double[][] {{0}, {2}, {5}, {5}}, LopProperties.ExecType.CP);
+		runShortestPathNodeTest(1, new double[][] {{0}, {2}, {5}, {5}}, ExecType.SPARK);
 	}
 	
 	@Test
 	public void testShortestPathNode2CP() {
-		runShortestPathNodeTest(2, new double[][] {{1}, {0}, {4}, {5}}, LopProperties.ExecType.CP);
+		runShortestPathNodeTest(2, new double[][] {{1}, {0}, {4}, {5}}, ExecType.SPARK);
 	}
 	
 	@Test
 	public void testShortestPathNode3CP() {
-		runShortestPathNodeTest(3, new double[][] {{4}, {3}, {0}, {1}},LopProperties.ExecType.CP);
+		runShortestPathNodeTest(3, new double[][] {{4}, {3}, {0}, {1}}, ExecType.SPARK);
 	}
 	
 	

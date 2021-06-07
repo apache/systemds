@@ -19,17 +19,15 @@
 ..
 .. -------------------------------------------------------------
 
-Matrix
-======
+Frame
+=====
 
-A ``Matrix`` is represented either by an ``OperationNode``, or the derived class ``Matrix``.
-Matrices are the most fundamental objects SystemDS operates on.
+A ``Frame`` is represented either by an ``OperationNode``, or the derived class ``Frame``.
 
 Although it is possible to generate matrices with the function calls or object construction specified below,
-the recommended way is to use the methods defined on ``SystemDSContext``.
+the recommended way is to use the methods defined on ``SystemDSContext``, to read in a frame from disk.
 
-.. autoclass:: systemds.operator.Matrix
+.. autoclass:: systemds.operator.Frame
     :members:
     
     .. automethod:: __init__
-

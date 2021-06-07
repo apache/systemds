@@ -49,7 +49,7 @@ class TestListOperations(unittest.TestCase):
         m1p = self.sds.from_numpy(m1)
         m2 = np.array([4., 5., 6.])
         m2p = self.sds.from_numpy(m2)
-        list_obj = self.sds.list(m1p, m2p)
+        list_obj = self.sds.array(m1p, m2p)
         tmp = list_obj[0] + list_obj[1]
         res = tmp.compute().flatten()
         self.assertTrue(np.allclose(m1 + m2, res))
@@ -62,7 +62,7 @@ class TestListOperations(unittest.TestCase):
         m1p = self.sds.from_numpy(m1)
         m2 = np.array([4., 5., 6.])
         m2p = self.sds.from_numpy(m2)
-        list_obj = self.sds.list(m1p, m2p)
+        list_obj = self.sds.array(m1p, m2p)
         tmp = list_obj[0] + 2
         res = tmp.compute().flatten()
         self.assertTrue(np.allclose(m1 + 2, res))

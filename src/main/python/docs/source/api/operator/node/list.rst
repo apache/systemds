@@ -19,17 +19,20 @@
 ..
 .. -------------------------------------------------------------
 
-Matrix
-======
+List
+====
 
-A ``Matrix`` is represented either by an ``OperationNode``, or the derived class ``Matrix``.
-Matrices are the most fundamental objects SystemDS operates on.
+A ``List`` is represented either by an ``OperationNode``, or the derived class ``List``.
 
-Although it is possible to generate matrices with the function calls or object construction specified below,
-the recommended way is to use the methods defined on ``SystemDSContext``.
+List can contain any of the other types: frame, matrix, scalar and itself list.
+The list can be handled like a dictionary or a list primitive, since both access patters are the same at
+dml script level.
 
-.. autoclass:: systemds.operator.Matrix
+Although it is possible to generate lists with the function calls or object construction specified below,
+the recommended way is to use the methods defined on ``SystemDSContext``, to read in a list from disk,
+or construct one using either constructors `array`, `dict` or `list` provided in ``SystemDSContext``.
+
+.. autoclass:: systemds.operator.List
     :members:
     
     .. automethod:: __init__
-

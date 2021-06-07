@@ -19,17 +19,17 @@
 ..
 .. -------------------------------------------------------------
 
-Matrix
+Scalar
 ======
 
-A ``Matrix`` is represented either by an ``OperationNode``, or the derived class ``Matrix``.
-Matrices are the most fundamental objects SystemDS operates on.
+A ``Scalar`` is represented either by an ``OperationNode``, or the derived class ``Scalar``.
 
-Although it is possible to generate matrices with the function calls or object construction specified below,
+Scalar can contain strings, ints, floats.
+
+Although it is possible to generate Scalars with the function calls or object construction specified below,
 the recommended way is to use the methods defined on ``SystemDSContext``.
 
-.. autoclass:: systemds.operator.Matrix
+.. autoclass:: systemds.operator.Scalar
     :members:
     
     .. automethod:: __init__
-

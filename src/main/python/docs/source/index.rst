@@ -62,13 +62,17 @@ tensors (multi-dimensional arrays) whose first dimension may have a heterogeneou
    api/context/systemds_context.rst
    api/operator/algorithms.rst
    api/operator/node/matrix.rst
-   api/operator/operation_node.rst
+   api/operator/node/frame.rst
+   api/operator/node/list.rst
+   api/operator/node/scalar.rst
+   api/operator/node/source.rst
 
 .. toctree::
    :maxdepth: 1
    :hidden:
    :caption: Internals API
 
+   api/operator/operation_node.rst
    api/script_building/dag.rst
    api/script_building/script.rst
    api/utils/converters.rst

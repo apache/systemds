@@ -21,4 +21,4 @@
 
 from systemds.context.systemds_context import SystemDSContext
 
-__all__ = [SystemDSContext]
+__all__ = ["SystemDSContext"]

@@ -19,17 +19,17 @@
 ..
 .. -------------------------------------------------------------
 
-Matrix
+Source
 ======
 
-A ``Matrix`` is represented either by an ``OperationNode``, or the derived class ``Matrix``.
-Matrices are the most fundamental objects SystemDS operates on.
+A ``Source`` is the action of importing method declarations from other DML scripts.
+This function allows one to define a function in DML and use it in the python API.
 
-Although it is possible to generate matrices with the function calls or object construction specified below,
-the recommended way is to use the methods defined on ``SystemDSContext``.
+Although it is possible to generate sources with the function calls or object construction specified below,
+the recommended way is to use the method defined on ``SystemDSContext`` called source to construct one
+using a path to the dml file to source.
 
-.. autoclass:: systemds.operator.Matrix
+.. autoclass:: systemds.operator.Source
     :members:
     
     .. automethod:: __init__
-

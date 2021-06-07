@@ -23,4 +23,4 @@ from systemds import context
 from systemds import operator
 from systemds import examples
 
-__all__ = [context, operator, examples]
+__all__ = ["context", "operator", "examples"]

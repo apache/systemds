@@ -159,7 +159,7 @@ public class CompressedMatrixBlockFactory {
 		CompressedSizeInfo sizeInfos = sizeEstimator.computeCompressedSizeInfos(k);
 		_stats.estimatedSizeCols = sizeInfos.memoryEstimate();
 		logPhase();
-		
+
 		if(_stats.estimatedSizeCols < _stats.originalSize ||
 			compSettings.columnPartitioner == PartitionerType.COST_MATRIX_MULT)
 			coCodePhase(sizeEstimator, sizeInfos, mb.getNumRows());
@@ -170,9 +170,8 @@ public class CompressedMatrixBlockFactory {
 	}
 
 	private void coCodePhase(CompressedSizeEstimator sizeEstimator, CompressedSizeInfo sizeInfos, int numRows) {
-		// for(int i = 0; i < 100000; i ++)
-			coCodeColGroups = PlanningCoCoder.findCoCodesByPartitioning(sizeEstimator, sizeInfos, numRows, k, compSettings);
-		
+		coCodeColGroups = PlanningCoCoder.findCoCodesByPartitioning(sizeEstimator, sizeInfos, numRows, k, compSettings);
+
 		_stats.estimatedSizeCoCoded = coCodeColGroups.memoryEstimate();
 		logPhase();
 	}

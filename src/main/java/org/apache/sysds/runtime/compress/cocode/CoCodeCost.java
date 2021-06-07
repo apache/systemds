@@ -61,17 +61,14 @@ public class CoCodeCost extends AColumnCoCoder {
 	}
 
 	private List<CompressedSizeInfoColGroup> join(List<CompressedSizeInfoColGroup> currentGroups) {
-		// return joinToSmallForAnalysis(currentGroups);
-		List<CompressedSizeInfoColGroup> filteredGroups = joinToSmallForAnalysis(currentGroups);
-		// return currentGroups;
 		Comparator<CompressedSizeInfoColGroup> comp = Comparator.comparing(CompressedSizeInfoColGroup::getNumVals);
-		Queue<CompressedSizeInfoColGroup> que = new PriorityQueue<>(filteredGroups.size(), comp);
+		Queue<CompressedSizeInfoColGroup> que = new PriorityQueue<>(currentGroups.size(), comp);
 		List<CompressedSizeInfoColGroup> ret = new ArrayList<>();
 
-		for(CompressedSizeInfoColGroup g : filteredGroups) {
+		for(CompressedSizeInfoColGroup g : currentGroups)
 			if(g != null)
 				que.add(g);
-		}
+		
 
 		CompressedSizeInfoColGroup l = que.poll();
 
@@ -88,40 +85,20 @@ public class CoCodeCost extends AColumnCoCoder {
 					que.poll();
 					que.add(g);
 				}
-				else 
+				else
 					ret.add(l);
 			}
-			else 
+			else
 				ret.add(l);
-			
+
 			l = que.poll();
 		}
-
-		ret.add(l);
+		if(l != null)
+			ret.add(l);
 
 		for(CompressedSizeInfoColGroup g : que)
 			ret.add(g);
 
 		return ret;
-	}
-
-	private List<CompressedSizeInfoColGroup> joinToSmallForAnalysis(List<CompressedSizeInfoColGroup> currentGroups) {
-		return currentGroups;
-		// List<CompressedSizeInfoColGroup> tmp = new ArrayList<>();
-		// int id = 0;
-		// while(id < currentGroups.size() - 1) {
-		// 	CompressedSizeInfoColGroup g1 = currentGroups.get(id);
-		// 	CompressedSizeInfoColGroup g2 = currentGroups.get(id + 1);
-		// 	if(g1.getNumVals() * g2.getNumVals() < toSmallForAnalysis) {
-		// 		tmp.add(joinWithoutAnalysis(g1, g2));
-		// 	}
-		// 	else {
-		// 		tmp.add(g1);
-		// 		tmp.add(g2);
-		// 	}
-		// 	id += 2;
-
-		// }
-		// return tmp;
 	}
 }

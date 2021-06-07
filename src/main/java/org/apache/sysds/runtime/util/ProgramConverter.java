@@ -77,6 +77,7 @@ import org.apache.sysds.runtime.instructions.Instruction;
 import org.apache.sysds.runtime.instructions.InstructionParser;
 import org.apache.sysds.runtime.instructions.cp.BooleanObject;
 import org.apache.sysds.runtime.instructions.cp.CPInstruction;
+import org.apache.sysds.runtime.instructions.cp.CPOperand;
 import org.apache.sysds.runtime.instructions.cp.Data;
 import org.apache.sysds.runtime.instructions.cp.DoubleObject;
 import org.apache.sysds.runtime.instructions.cp.EvalNaryCPInstruction;
@@ -99,7 +100,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map.Entry;
 import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.stream.Collectors;
@@ -752,7 +752,7 @@ public class ProgramConverter
 		//handle program
 		builder.append(PROG_BEGIN);
 		builder.append(NEWLINE);
-		builder.append(rSerializeFunctionProgramBlocks(ec.getProgram().getFunctionProgramBlocks(),
+		builder.append(rSerializeFunctionProgramBlocks(ec.getProgram(),
 			new HashSet<>(ec.getProgram().getFunctionProgramBlocks().keySet()), clsMap));
 		builder.append(PROG_END);
 		builder.append(NEWLINE);
@@ -817,7 +817,7 @@ public class ProgramConverter
 		//handle program
 		sb.append(PROG_BEGIN);
 		sb.append( NEWLINE );
-		sb.append( serializeProgram(prog, pbs, clsMap, true) );
+		sb.append( serializeProgram(prog, pbs, clsMap) );
 		sb.append(PROG_END);
 		sb.append( NEWLINE );
 		sb.append( COMPONENTS_DELIM );
@@ -849,46 +849,55 @@ public class ProgramConverter
 		return sb.toString();
 	}
 
-	public static String serializeProgram( Program prog, ArrayList<ProgramBlock> pbs, HashMap<String, byte[]> clsMap, boolean opt) {
+	public static String serializeProgram( Program prog, ArrayList<ProgramBlock> pbs, HashMap<String, byte[]> clsMap) {
 		//note program contains variables, programblocks and function program blocks
 		//but in order to avoid redundancy, we only serialize function program blocks
-		HashMap<String, FunctionProgramBlock> fpb = prog.getFunctionProgramBlocks(opt);
 		HashSet<String> cand = new HashSet<>();
-		rFindSerializationCandidates(pbs, cand, opt);
-		return rSerializeFunctionProgramBlocks(fpb, cand, clsMap);
+		rFindSerializationCandidates(pbs, cand);
+		return rSerializeFunctionProgramBlocks(prog, cand, clsMap);
 	}
 
-	private static void rFindSerializationCandidates( ArrayList<ProgramBlock> pbs, HashSet<String> cand, boolean opt)
+	private static void rFindSerializationCandidates( ArrayList<ProgramBlock> pbs, HashSet<String> cand)
 	{
 		for( ProgramBlock pb : pbs )
 		{
 			if( pb instanceof WhileProgramBlock ) {
 				WhileProgramBlock wpb = (WhileProgramBlock) pb;
-				rFindSerializationCandidates(wpb.getChildBlocks(), cand, opt);
+				rFindSerializationCandidates(wpb.getChildBlocks(), cand);
 			}
 			else if ( pb instanceof ForProgramBlock || pb instanceof ParForProgramBlock ) {
 				ForProgramBlock fpb = (ForProgramBlock) pb; 
-				rFindSerializationCandidates(fpb.getChildBlocks(), cand, opt);
+				rFindSerializationCandidates(fpb.getChildBlocks(), cand);
 			}
 			else if ( pb instanceof IfProgramBlock ) {
 				IfProgramBlock ipb = (IfProgramBlock) pb;
-				rFindSerializationCandidates(ipb.getChildBlocksIfBody(), cand, opt);
+				rFindSerializationCandidates(ipb.getChildBlocksIfBody(), cand);
 				if( ipb.getChildBlocksElseBody() != null )
-					rFindSerializationCandidates(ipb.getChildBlocksElseBody(), cand, opt);
+					rFindSerializationCandidates(ipb.getChildBlocksElseBody(), cand);
 			}
 			else if( pb instanceof BasicProgramBlock ) { 
 				BasicProgramBlock bpb = (BasicProgramBlock) pb;
-				for( Instruction inst : bpb.getInstructions() )
+				for( Instruction inst : bpb.getInstructions() ) {
 					if( inst instanceof FunctionCallCPInstruction ) {
 						FunctionCallCPInstruction fci = (FunctionCallCPInstruction) inst;
 						String fkey = DMLProgram.constructFunctionKey(fci.getNamespace(), fci.getFunctionName());
 						if( !cand.contains(fkey) ) { //memoization for multiple calls, recursion
 							cand.add( fkey ); //add to candidates
 							//investigate chains of function calls
-							FunctionProgramBlock fpb = pb.getProgram().getFunctionProgramBlock(fci.getNamespace(), fci.getFunctionName(), opt);
-							rFindSerializationCandidates(fpb.getChildBlocks(), cand, opt);
+							FunctionProgramBlock fpb = pb.getProgram().getFunctionProgramBlock(fci.getNamespace(), fci.getFunctionName());
+							rFindSerializationCandidates(fpb.getChildBlocks(), cand);
 						}
 					}
+					else if(inst instanceof EvalNaryCPInstruction) {
+						CPOperand fname = ((EvalNaryCPInstruction)inst).getInputs()[0];
+						if( fname.isLiteral() )
+							cand.add(DMLProgram.constructFunctionKey(DMLProgram.DEFAULT_NAMESPACE, fname.getName()));
+						else //add all potential targets, other than builtin functions
+							pb.getProgram().getFunctionProgramBlocks().keySet().stream()
+								.filter(s -> !s.startsWith(DMLProgram.BUILTIN_NAMESPACE))
+								.forEach(s -> cand.add(s));
+					}
+				}
 			}
 		}
 	}
@@ -1105,18 +1114,25 @@ public class ProgramConverter
 		return sb.toString();
 	}
 
-	private static String rSerializeFunctionProgramBlocks(HashMap<String,FunctionProgramBlock> pbs, HashSet<String> cand, HashMap<String, byte[]> clsMap) {
+	private static String rSerializeFunctionProgramBlocks(Program prog, HashSet<String> cand, HashMap<String, byte[]> clsMap) {
 		StringBuilder sb = new StringBuilder();
 		int count = 0;
-		for( Entry<String,FunctionProgramBlock> pb : pbs.entrySet() ) {
-			if( !cand.contains(pb.getKey()) ) //skip function not included in the parfor body
+		for( String fkey : prog.getFunctionProgramBlocks().keySet() ) {
+			if( !cand.contains(fkey) ) //skip function not included in the parfor body
 				continue;
-			if( count>0 ) {
+			if( count>0 )
 				sb.append( ELEMENT_DELIM );
-			}
-			sb.append( pb.getKey() );
+			sb.append( fkey );
 			sb.append( KEY_VALUE_DELIM );
-			sb.append( rSerializeProgramBlock(pb.getValue(), clsMap) );
+			FunctionProgramBlock fpb1 = prog.getFunctionProgramBlock(fkey, true);
+			sb.append( rSerializeProgramBlock(fpb1, clsMap) );
+			if( prog.containsFunctionProgramBlock(fkey, false) ) {
+				sb.append( ELEMENT_DELIM );
+				sb.append( fkey );
+				sb.append( KEY_VALUE_DELIM );
+				FunctionProgramBlock fpb2 = prog.getFunctionProgramBlock(fkey, false);
+				sb.append( rSerializeProgramBlock(fpb2, clsMap) );
+			}
 			count++;
 		}
 		sb.append(NEWLINE);
@@ -1352,19 +1368,9 @@ public class ProgramConverter
 	}
 
 	public static Program parseProgram( String in, int id ) {
-		return parseProgram(in, id, true);
-	}
-
-	public static Program parseProgram( String in, int id, boolean opt ) {
 		String lin = in.substring( PROG_BEGIN.length(),in.length()- PROG_END.length()).trim();
 		Program prog = new Program();
-		HashMap<String,FunctionProgramBlock> fc = parseFunctionProgramBlocks(lin, prog, id);
-		for( Entry<String,FunctionProgramBlock> e : fc.entrySet() ) {
-			String[] keypart = e.getKey().split( Program.KEY_DELIM );
-			String namespace = keypart[0];
-			String name      = keypart[1];
-			prog.addFunctionProgramBlock(namespace, name, e.getValue(), opt);
-		}
+		parseFunctionProgramBlocks(lin, prog, id);
 		return prog;
 	}
 
@@ -1387,9 +1393,11 @@ public class ProgramConverter
 			String lvar  = st.nextToken(); //with ID = CP_CHILD_THREAD+id for current use
 			//put first copy into prog (for direct use)
 			int index = lvar.indexOf( KEY_VALUE_DELIM );
-			String tmp1 = lvar.substring(0, index); // + CP_CHILD_THREAD+id;
-			String tmp2 = lvar.substring(index + 1);
-			ret.put(tmp1, (FunctionProgramBlock)rParseProgramBlock(tmp2, prog, id));
+			String fkey = lvar.substring(0, index);
+			String tmp = lvar.substring(index + 1);
+			boolean opt = !prog.containsFunctionProgramBlock(fkey, true);
+			prog.addFunctionProgramBlock(fkey,
+				(FunctionProgramBlock)rParseProgramBlock(tmp, prog, id), opt);
 		}
 		return ret;
 	}

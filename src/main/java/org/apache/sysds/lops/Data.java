@@ -360,6 +360,8 @@ public class Data extends Lop
 			} else {
 				sb.append(prepOperand("", DataType.SCALAR, ValueType.STRING, true));
 			}
+			sb.append(OPERAND_DELIMITOR);
+			sb.append(oparams.getBlocksize());
 		}
 
 		return sb.toString();
@@ -380,7 +382,7 @@ public class Data extends Lop
 	}
 
 	public String getCreateVarInstructions(String outputFileName, String outputLabel) {
-		if ( getDataType() == DataType.MATRIX || getDataType() == DataType.FRAME ) {
+		if ( getDataType() == DataType.MATRIX || getDataType() == DataType.FRAME || getDataType() == DataType.LIST ) {
 
 			if ( _op.isTransient() )
 				throw new LopsException("getInstructions() should not be called for transient nodes.");

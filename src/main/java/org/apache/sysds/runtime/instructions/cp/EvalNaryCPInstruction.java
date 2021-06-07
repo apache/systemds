@@ -88,6 +88,14 @@ public class EvalNaryCPInstruction extends BuiltinNaryCPInstruction {
 			DataType.MATRIX : boundInputs[0].getDataType();
 		String funcName2 = Builtins.getInternalFName(funcName, dt1);
 		if( !ec.getProgram().containsFunctionProgramBlock(nsName, funcName)) {
+			//error handling non-existing functions
+			if( !Builtins.contains(funcName, true, false) //builtins and their private functions
+				&& !ec.getProgram().containsFunctionProgramBlock(DMLProgram.BUILTIN_NAMESPACE, funcName2)) {
+				String msgNs = (nsName==null) ? DMLProgram.DEFAULT_NAMESPACE : nsName;
+				throw new DMLRuntimeException("Function '" 
+					+ DMLProgram.constructFunctionKey(msgNs, funcName)+"' (called through eval) is non-existing.");
+			}
+			//load and compile missing builtin function
 			nsName = DMLProgram.BUILTIN_NAMESPACE;
 			synchronized(ec.getProgram()) { //prevent concurrent recompile/prog modify
 				if( !ec.getProgram().containsFunctionProgramBlock(nsName, funcName2) )

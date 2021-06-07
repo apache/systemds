@@ -18,9 +18,13 @@
 # under the License.
 #
 #-------------------------------------------------------------
-
-X = federated(addresses=list($in_X1, $in_X2),
-    ranges=list(list(0, 0), list($rows / 2, $cols), list($rows / 2, 0), list($rows, $cols)))
+if ($rP) {
+  X = federated(addresses=list($in_X1, $in_X2),
+      ranges=list(list(0, 0), list($rows / 2, $cols), list($rows / 2, 0), list($rows, $cols)))
+} else {
+  X = federated(addresses=list($in_X1, $in_X2),
+        ranges=list(list(0, 0), list($rows, $cols / 2), list(0, $cols / 2), list($rows, $cols)))
+}
 Y = read($in_Y)
 
 model = glm(X=X, Y=Y, icpt = FALSE, tol = 1e-6, reg = 0.01)

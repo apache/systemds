@@ -28,7 +28,6 @@ import org.apache.commons.lang.mutable.MutableBoolean;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.DataType;
-import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.conf.ConfigurationManager;
@@ -510,7 +509,8 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 			//obtain matrix block from RDD
 			int rlen = (int)mc.getRows();
 			int clen = (int)mc.getCols();
-			int blen = mc.getBlocksize();
+			int blen = mc.getBlocksize() > 0 ? mc.getBlocksize() : 
+				ConfigurationManager.getBlocksize();
 			long nnz = mc.getNonZerosBound();
 			
 			//guarded rdd collect 
@@ -589,19 +589,10 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 			DataCharacteristics mc = iimd.getDataCharacteristics();
 			// Write the matrix to HDFS in requested format
 			FileFormat fmt = (ofmt != null ? FileFormat.safeValueOf(ofmt) : iimd.getFileFormat());
+			mc = (fmt == FileFormat.BINARY && mc.getBlocksize() > 0) ? mc :
+				new MatrixCharacteristics(mc).setBlocksize(ConfigurationManager.getBlocksize());
+			DataConverter.writeMatrixToHDFS(_data, fname, fmt, mc, rep, fprop, _diag);
 			
-			// when outputFormat is binaryblock, make sure that matrixCharacteristics has correct blocking dimensions
-			// note: this is only required if singlenode (due to binarycell default) 
-			if ( fmt == FileFormat.BINARY && DMLScript.getGlobalExecMode() == ExecMode.SINGLE_NODE
-				&& mc.getBlocksize() != ConfigurationManager.getBlocksize() )
-			{
-				DataConverter.writeMatrixToHDFS(_data, fname, fmt, new MatrixCharacteristics(mc.getRows(), mc.getCols(),
-					ConfigurationManager.getBlocksize(), mc.getNonZeros()), rep, fprop, _diag);
-			}
-			else {
-				DataConverter.writeMatrixToHDFS(_data, fname, fmt, mc, rep, fprop, _diag);
-			}
-
 			if( LOG.isTraceEnabled() )
 				LOG.trace("Writing matrix to HDFS ("+fname+") - COMPLETED... " + (System.currentTimeMillis()-begin) + " msec.");
 		}

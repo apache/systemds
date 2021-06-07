@@ -107,7 +107,7 @@ public class FullDynWriteTest extends AutomatedTestBase
 		programArgs = new String[]{ "-explain","-args",
 			input("A"), fmt.toString(), outputDir()};
 		
-		try 
+		try
 		{
 			long seed1 = System.nanoTime();
 			double[][] A = getRandomMatrix(rows, cols, 0, 1, 1.0, seed1);

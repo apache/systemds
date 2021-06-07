@@ -26,7 +26,6 @@ import org.junit.Test;
 
 import org.apache.sysds.common.Types;
 import org.apache.sysds.lops.LopProperties;
-import org.apache.sysds.lops.LopProperties.ExecType;
 import org.apache.sysds.runtime.matrix.data.MatrixValue;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;

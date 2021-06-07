@@ -19,16 +19,25 @@
 #
 #-------------------------------------------------------------
 
-A = federated(addresses=list($in1), ranges=list(list(0, 0), list($rows, $cols)))
-BF = federated(addresses=list($in2), ranges=list(list(0, 0), list($rows, $cols)))
-B = read($in2_local)
+if($in_partitioned) {
+  AF = federated(addresses=list($in_A1, $in_A2), ranges=list(list(0, 0), list($rows, $cols), list($rows, 0), list($rows * 2, $cols)));
+  BF = federated(addresses=list($in_B1, $in_B2), ranges=list(list(0, 0), list($rows, $cols), list($rows, 0), list($rows * 2, $cols)));
+  B = rbind(read($in_B1_local), read($in_B2_local));
+  while(FALSE) { }
+}
+else {
+  AF = federated(addresses=list($in_A1), ranges=list(list(0, 0), list($rows, $cols)))
+  BF = federated(addresses=list($in_B1), ranges=list(list(0, 0), list($rows, $cols)))
+  B = read($in_B1_local);
+}
 
-R_FF = rbind(A, BF)
-C_FF = cbind(A, BF)
-R_FL = rbind(A, B)
-C_FL = cbind(A, B)
-R_LF = rbind(B, A)
-C_LF = cbind(B, A)
+
+R_FF = rbind(AF, BF)
+C_FF = cbind(AF, BF)
+R_FL = rbind(AF, B)
+C_FL = cbind(AF, B)
+R_LF = rbind(B, AF)
+C_LF = cbind(B, AF)
 
 write(R_FF, $out_R_FF)
 write(R_FL, $out_R_FL)

@@ -19,63 +19,28 @@ limitations under the License.
 
 # SystemDS-NN Examples
 
-#### This folder contains scripts and PySpark Jupyter notebooks serving as examples of using the *SystemDS-NN* (`nn`) deep learning library.
+## MNIST Softmax Classifier
 
----
-
-# Examples
-### MNIST Softmax Classifier
-
-* This example trains a softmax classifier, which is essentially a multi-class logistic regression model, on the MNIST data.  The model will be trained on the *training* images, validated on the *validation* images, and tested for final performance metrics on the *test* images.
-* Notebook: `Example - MNIST Softmax Classifier.ipynb`.
+* This example trains a softmax classifier, which is essentially a multi-class logistic regression model, on the MNIST data.
+The model will be trained on the *training* images, validated on the *validation* images, and tested for final performance metrics on the *test* images.
 * DML Functions: `mnist_softmax.dml`
 * Training script: `mnist_softmax-train.dml`
 * Prediction script: `mnist_softmax-predict.dml`
 
-### MNIST "LeNet" Neural Net
+## MNIST "LeNet" Neural Net
 
-* This example trains a neural network on the MNIST data using a ["LeNet" architecture](http://yann.lecun.com/exdb/publis/pdf/lecun-98.pdf). The model will be trained on the *training* images, validated on the *validation* images, and tested for final performance metrics on the *test* images.
-* Notebook: `Example - MNIST LeNet.ipynb`.
+* This example trains a neural network on the MNIST data using a ["LeNet" architecture](http://yann.lecun.com/exdb/publis/pdf/lecun-98.pdf).
+The model will be trained on the *training* images, validated on the *validation* images, and tested for final performance metrics on the *test* images.
 * DML Functions: `mnist_lenet.dml`
 * Training script: `mnist_lenet-train.dml`
 * Prediction script: `mnist_lenet-predict.dml`
 
 ### Neural Collaborative Filtering
 
-* This example trains a neural network on the MovieLens data set using the concept of [Neural Collaborative Filtering (NCF)](https://dl.acm.org/doi/abs/10.1145/3038912.3052569) that is aimed at approaching recommendation problems using deep neural networks as opposed to common matrix factorization approaches.
-* As in the original paper, the targets are binary and only indicate whether a user has rated a movie or not. This makes the recommendation problem harder than working with the values of the ratings, but interaction data is in practice easier to collect.
+* This example trains a neural network on the MovieLens data set using the concept of [Neural Collaborative Filtering (NCF)](https://dl.acm.org/doi/abs/10.1145/3038912.3052569)
+that is aimed at approaching recommendation problems using deep neural networks as opposed to common matrix factorization approaches.
+* As in the original paper, the targets are binary and only indicate whether a user has rated a movie or not.
+This makes the recommendation problem harder than working with the values of the ratings, but interaction data is in practice easier to collect.
 * MovieLens only provides positive interactions in form of ratings. We therefore randomly sample negative interactions as suggested by the original paper.
-* The implementation works with a fixed layer architecture with two embedding layers at the beginning for users and items, three dense layers with ReLu activations in the middle and a sigmoid activation for the final classification.
-
----
-
-# Setup
-## Code
-* To run the examples, please first download and unzip the project via GitHub using the "Clone or download" button on the [homepage of the project](https://github.com/dusenberrymw/systemml-nn), *or* via the following commands:
-
-  ```
-  git clone https://github.com/dusenberrymw/systemml-nn.git
-  ```
-
-* Then, move into the `systemml-nn` folder via:
-  ```
-  cd systemml-nn
-  ```
-
-## Data
-* These examples use the classic [MNIST](http://yann.lecun.com/exdb/mnist/) dataset, which contains labeled 28x28 pixel images of handwritten digits in the range of 0-9.  There are 60,000 training images, and 10,000 testing images.  Of the 60,000 training images, 5,000 will be used as validation images.
-* **Download**:
-  * **Notebooks**: The data will be automatically downloaded as a step in either of the example notebooks.
-  * **Training scripts**: Please run `get_mnist_data.sh` to download the data separately.
-
-## Execution
-* These examples contain scripts written in SystemDS's R-like language (`*.dml`), as well as PySpark Jupyter notebooks (`*.ipynb`).  The scripts contain the math for the algorithms, enclosed in functions, and the notebooks serve as full, end-to-end examples of reading in data, training models using the functions within the scripts, and evaluating final performance.
-* **Notebooks**: To run the notebook examples, please install the SystemDS Python package with `pip install systemds`, and then startup Jupyter in the following manner from this directory (or for more information, please see [this great blog post](http://spark.tc/0-to-life-changing-application-with-apache-systemml/)):
-
-  ```
-  PYSPARK_DRIVER_PYTHON=jupyter PYSPARK_DRIVER_PYTHON_OPTS="notebook" pyspark --master local[*] --driver-memory 3G --driver-class-path SystemDS.jar --jars SystemDS.jar
-  ```
-
-  Note that all printed output, such as training statistics, from the SystemDS scripts will be sent to the terminal in which Jupyter was started (for now...).
-
-* **Scripts**: To run the scripts from the command line using `spark-submit`, please see the comments located at the top of the `-train` and `-predict` scripts.
+* The implementation works with a fixed layer architecture with two embedding layers at the beginning for users and items,
+three dense layers with ReLu activations in the middle and a sigmoid activation for the final classification.

@@ -31,7 +31,6 @@ import org.apache.sysds.common.Types.ReturnType;
  * always, user-defined DML-bodied functions take precedence over all
  * builtin functions.
  *
- *
  * * To add a new builtin script function, simply add the definition here
  * as well as a dml file in scripts/builtin with a matching name. On
  * building SystemDS, these scripts are packaged into the jar as well.

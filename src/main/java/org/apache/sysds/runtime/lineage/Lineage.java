@@ -53,6 +53,10 @@ public class Lineage {
 	}
 	
 	public void trace(Instruction inst, ExecutionContext ec) {
+		if (inst.getOpcode().equalsIgnoreCase("toString"))
+			//Silently skip toString. TODO: trace toString
+			return;
+
 		if (_activeDedupBlock == null || !_activeDedupBlock.isAllPathsTaken() || !LineageCacheConfig.ReuseCacheType.isNone())
 			_map.trace(inst, ec);
 	}

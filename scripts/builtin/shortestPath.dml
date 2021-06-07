@@ -51,7 +51,7 @@
 #------------------------------------------------------------------------------
 
   
-m_shortestPath = function(Matrix[Double] G, Integer maxi = 0, Int sourceNode, Boolean verbose = FALSE) 
+m_shortestPath = function(Matrix[Double] G, Integer maxi = 0, Integer sourceNode, Boolean verbose = FALSE) 
   return (Matrix[Double] C) 
 {
 	

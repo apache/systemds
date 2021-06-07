@@ -27,6 +27,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
 
+import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Builtins;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.conf.ConfigurationManager;
@@ -46,6 +47,7 @@ import org.apache.sysds.runtime.controlprogram.ProgramBlock;
 import org.apache.sysds.runtime.controlprogram.caching.FrameObject;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
+import org.apache.sysds.runtime.lineage.LineageItem;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.Operator;
 import org.apache.sysds.runtime.util.DataConverter;
@@ -120,6 +122,7 @@ public class EvalNaryCPInstruction extends BuiltinNaryCPInstruction {
 		
 		//4. expand list arguments if needed
 		CPOperand[] boundInputs2 = null;
+		LineageItem[] lineageInputs = null;
 		if( boundInputs.length == 1 && boundInputs[0].getDataType().isList()
 			&& !(fpb.getInputParams().size() == 1 && fpb.getInputParams().get(0).getDataType().isList()))
 		{
@@ -135,11 +138,13 @@ public class EvalNaryCPInstruction extends BuiltinNaryCPInstruction {
 				boundInputs2[i] = new CPOperand(varName, in);
 			}
 			boundInputs = boundInputs2;
+			lineageInputs = DMLScript.LINEAGE 
+					? lo.getLineageItems().toArray(new LineageItem[lo.getLength()]) : null;
 		}
 		
 		//5. call the function (to unoptimized function)
 		FunctionCallCPInstruction fcpi = new FunctionCallCPInstruction(nsName, funcName,
-			false, boundInputs, fpb.getInputParamNames(), boundOutputNames, "eval func");
+			false, boundInputs, lineageInputs, fpb.getInputParamNames(), boundOutputNames, "eval func");
 		fcpi.processInstruction(ec);
 		
 		//6. convert the result to matrix
@@ -251,8 +256,12 @@ public class EvalNaryCPInstruction extends BuiltinNaryCPInstruction {
 	
 	private static ListObject reorderNamedListForFunctionCall(ListObject in, List<String> fArgNames) {
 		List<Data> sortedData = new ArrayList<>();
-		for( String name : fArgNames )
+		List<LineageItem> sortedLI = DMLScript.LINEAGE ? new ArrayList<>() : null;
+		for( String name : fArgNames ) {
 			sortedData.add(in.getData(name));
-		return new ListObject(sortedData, new ArrayList<>(fArgNames));
+			if (DMLScript.LINEAGE)
+				sortedLI.add(in.getLineageItem(name));
+		}
+		return new ListObject(sortedData, new ArrayList<>(fArgNames), sortedLI);
 	}
 }

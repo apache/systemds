@@ -211,6 +211,7 @@ public enum Builtins {
 	RANGE("range", false),
 	RBIND("rbind", false),
 	REMOVE("remove", false, ReturnType.MULTI_RETURN),
+	RESIDENCYMATCH("residencyMatchMain", true),
 	REV("rev", false),
 	ROUND("round", false),
 	ROWINDEXMAX("rowIndexMax", false),
@@ -389,3 +390,4 @@ public enum Builtins {
 				(dt.isMatrix() ? "m_" : "s_") + name;    // public builtin
 	}
 }
+

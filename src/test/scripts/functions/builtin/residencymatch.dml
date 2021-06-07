@@ -1,0 +1,7 @@
+# this dml file will run the  ResidencyMatchMain function in builtin functions  in scripts/builtin
+R = read($1)
+H = read($2)
+C = read($3)
+Out = residencyMatchMain(R=R,H=H,C=C)
+write(Out, $4)
+

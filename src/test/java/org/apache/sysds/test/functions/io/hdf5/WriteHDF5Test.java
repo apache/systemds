@@ -30,13 +30,13 @@ public abstract class WriteHDF5Test extends WriteHDF5TestBase {
 	protected abstract int getId();
 
 	protected String getOutputHDF5FileName() {
-		return "transfusion_2.h5";
+		return "transfusion_"+getId()+".h5";
 	}
 
 	private final static double eps = 1e-9;
 
 	@Test public void testHDF51_Seq_CP() {
-		runWriteHDF5Test(getId(), ExecMode.SINGLE_NODE, false, 20, 20);
+		runWriteHDF5Test(getId(), ExecMode.SINGLE_NODE, false, 100, 100);
 	}
 
 	@Test public void testHDF52_Seq_CP() {

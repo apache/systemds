@@ -95,11 +95,15 @@ public class ScalarBuiltinNaryCPInstruction extends BuiltinNaryCPInstruction imp
 		}
 		else if( "list".equals(getOpcode()) ) {
 			//obtain all input data objects, incl handling of literals
-			List<Data> data = (inputs== null) ? new ArrayList<>() :
+			List<Data> data = (inputs == null) ? new ArrayList<>() :
 				Arrays.stream(inputs).map(in -> ec.getVariable(in)).collect(Collectors.toList());
+			List<LineageItem> li = null;
+			if (DMLScript.LINEAGE)
+				li = (inputs == null) ? new ArrayList<>() :
+					Arrays.stream(inputs).map(in -> ec.getLineage().get(in)).collect(Collectors.toList());
 			
 			//create list object over all inputs
-			ListObject list = new ListObject(data);
+			ListObject list = new ListObject(data, null, li);
 			list.deriveAndSetStatusFromData();
 			
 			ec.setVariable(output.getName(), list);

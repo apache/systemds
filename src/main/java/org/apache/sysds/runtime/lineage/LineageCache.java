@@ -234,6 +234,9 @@ public class LineageCache
 				Data boundValue = null;
 				//convert to matrix object
 				if (e.isMatrixValue()) {
+					MatrixBlock mb = e.getMBValue();
+					if (mb == null && e.getCacheStatus() == LineageCacheStatus.NOTCACHED)
+						return false;  //the executing thread removed this entry from cache
 					MetaDataFormat md = new MetaDataFormat(
 						e.getMBValue().getDataCharacteristics(),FileFormat.BINARY);
 					boundValue = new MatrixObject(ValueType.FP64, boundVarName, md);
@@ -242,6 +245,8 @@ public class LineageCache
 				}
 				else {
 					boundValue = e.getSOValue();
+					if (boundValue == null && e.getCacheStatus() == LineageCacheStatus.NOTCACHED)
+						return false;  //the executing thread removed this entry from cache
 				}
 
 				funcOutputs.put(boundVarName, boundValue);
@@ -310,6 +315,11 @@ public class LineageCache
 			Data outValue = null;
 			//convert to matrix object
 			if (e.isMatrixValue()) {
+				MatrixBlock mb = e.getMBValue();
+				if (mb == null && e.getCacheStatus() == LineageCacheStatus.NOTCACHED)
+					//the executing thread removed this entry from cache
+					return new FederatedResponse(FederatedResponse.ResponseType.ERROR);
+
 				MetaDataFormat md = new MetaDataFormat(
 					e.getMBValue().getDataCharacteristics(),FileFormat.BINARY);
 				outValue = new MatrixObject(ValueType.FP64, outName, md);
@@ -318,6 +328,9 @@ public class LineageCache
 			}
 			else {
 				outValue = e.getSOValue();
+				if (outValue == null && e.getCacheStatus() == LineageCacheStatus.NOTCACHED)
+					//the executing thread removed this entry from cache
+					return new FederatedResponse(FederatedResponse.ResponseType.ERROR);
 			}
 			udfOutputs.put(outName, outValue);
 			savedComputeTime = e._computeTime;

@@ -56,21 +56,29 @@ public class FunctionCallCPInstruction extends CPInstruction {
 	private final String _namespace;
 	private final boolean _opt;
 	private final CPOperand[] _boundInputs;
+	private final LineageItem[] _lineageInputs;
 	private final List<String> _boundInputNames;
 	private final List<String> _funArgNames;
 	private final List<String> _boundOutputNames;
 
 	public FunctionCallCPInstruction(String namespace, String functName, boolean opt,
-		CPOperand[] boundInputs, List<String> funArgNames, List<String> boundOutputNames, String istr) {
+		CPOperand[] boundInputs, LineageItem[] lineageInputs, List<String> funArgNames, 
+		List<String> boundOutputNames, String istr) {
 		super(CPType.FCall, null, functName, istr);
 		_functionName = functName;
 		_namespace = namespace;
 		_opt = opt;
 		_boundInputs = boundInputs;
+		_lineageInputs = lineageInputs;
 		_boundInputNames = Arrays.stream(boundInputs).map(i -> i.getName())
 			.collect(Collectors.toCollection(ArrayList::new));
 		_funArgNames = funArgNames;
 		_boundOutputNames = boundOutputNames;
+	}
+
+	public FunctionCallCPInstruction(String namespace, String functName, boolean opt,
+		CPOperand[] boundInputs, List<String> funArgNames, List<String> boundOutputNames, String istr) {
+		this(namespace, functName, opt, boundInputs, null, funArgNames, boundOutputNames, istr);
 	}
 
 	public String getFunctionName() {
@@ -125,8 +133,10 @@ public class FunctionCallCPInstruction extends CPInstruction {
 		}
 		
 		// check if function outputs can be reused from cache
-		LineageItem[] liInputs = LineageCacheConfig.isMultiLevelReuse() || DMLScript.LINEAGE_ESTIMATE ?
-			LineageItemUtils.getLineage(ec, _boundInputs) : null;
+		LineageItem[] liInputs = _lineageInputs;
+		if (_lineageInputs == null)
+			liInputs = (LineageCacheConfig.isMultiLevelReuse() || DMLScript.LINEAGE_ESTIMATE) 
+				? LineageItemUtils.getLineage(ec, _boundInputs) : null;
 		if (!fpb.isNondeterministic() && reuseFunctionOutputs(liInputs, fpb, ec))
 			return; //only if all the outputs are found in cache
 		
@@ -164,7 +174,7 @@ public class FunctionCallCPInstruction extends CPInstruction {
 			
 			//map lineage to function arguments
 			if( lineage != null ) {
-				LineageItem litem = ec.getLineageItem(input);
+				LineageItem litem = _lineageInputs == null ? ec.getLineageItem(input) : _lineageInputs[i];
 				lineage.set(currFormalParam.getName(), (litem!=null) ? 
 					litem : ec.getLineage().getOrCreate(input));
 			}

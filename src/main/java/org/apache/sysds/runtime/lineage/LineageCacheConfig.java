@@ -195,9 +195,9 @@ public class LineageCacheConfig
 	}
 
 	public static boolean isReusable (Instruction inst, ExecutionContext ec) {
-		boolean insttype = inst instanceof ComputationCPInstruction 
+		boolean insttype = (inst instanceof ComputationCPInstruction 
 			|| inst instanceof ComputationFEDInstruction
-			|| inst instanceof GPUInstruction
+			|| inst instanceof GPUInstruction)
 			&& !(inst instanceof ListIndexingCPInstruction);
 		boolean rightop = (ArrayUtils.contains(REUSE_OPCODES, inst.getOpcode())
 			|| (inst.getOpcode().equals("append") && isVectorAppend(inst, ec))

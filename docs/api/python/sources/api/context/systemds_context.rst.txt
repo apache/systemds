@@ -24,17 +24,23 @@ SystemDSContext
 
 All operations using SystemDS need a java instance running.
 The connection is ensured by an ``SystemDSContext`` object.
-An ``SystemDSContext`` object can be created using::
+An ``SystemDSContext`` object can be created using
+
+.. code-block:: python
 
   from systemds.context import SystemDSContext
   sds = SystemDSContext()
 
-When the calculations are finished the context has to be closed again::
+When the calculations are finished the context has to be closed again
+
+.. code-block:: python
 
   sds.close()
 
 Since it is annoying that it is always necessary to close the context, ``SystemDSContext``
-implements the python context management protocol, which supports the following syntax::
+implements the python context management protocol, which supports the following syntax
+
+.. code-block:: python
 
   with SystemDSContext() as sds:
     # do something with sds which is an SystemDSContext

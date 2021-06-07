@@ -83,22 +83,18 @@
 </tr>
 <tbody>
 <tr class="altColor">
-<td class="colFirst"><a href="#org.apache.sysds.runtime.compress.colgroup">org.apache.sysds.runtime.compress.colgroup</a></td>
-<td class="colLast">&nbsp;</td>
-</tr>
-<tr class="rowColor">
 <td class="colFirst"><a href="#org.apache.sysds.runtime.controlprogram.caching">org.apache.sysds.runtime.controlprogram.caching</a></td>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><a href="#org.apache.sysds.runtime.data">org.apache.sysds.runtime.data</a></td>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><a href="#org.apache.sysds.runtime.matrix.data">org.apache.sysds.runtime.matrix.data</a></td>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><a href="#org.apache.sysds.runtime.util">org.apache.sysds.runtime.util</a></td>
 <td class="colLast">&nbsp;</td>
 </tr>
@@ -107,195 +103,6 @@
 </li>
 <li class="blockList">
 <ul class="blockList">
-<li class="blockList"><a name="org.apache.sysds.runtime.compress.colgroup">
-<!--   -->
-</a>
-<h3>Uses of <a href="../../../../../../org/apache/sysds/runtime/data/SparseBlock.html" title="class in org.apache.sysds.runtime.data">SparseBlock</a> in <a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/package-summary.html">org.apache.sysds.runtime.compress.colgroup</a></h3>
-<table class="useSummary" border="0" cellpadding="3" cellspacing="0" summary="Use table, listing methods, and an explanation">
-<caption><span>Methods in <a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/package-summary.html">org.apache.sysds.runtime.compress.colgroup</a> with parameters of type <a href="../../../../../../org/apache/sysds/runtime/data/SparseBlock.html" title="class in org.apache.sysds.runtime.data">SparseBlock</a></span><span class="tabEnd">&nbsp;</span></caption>
-<tr>
-<th class="colFirst" scope="col">Modifier and Type</th>
-<th class="colLast" scope="col">Method and Description</th>
-</tr>
-<tbody>
-<tr class="altColor">
-<td class="colFirst"><code>void</code></td>
-<td class="colLast"><span class="typeNameLabel">ColGroupRLE.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupRLE.html#leftMultBySparseMatrix-org.apache.sysds.runtime.data.SparseBlock-double:A-double:A-int-int-int-double:A-">leftMultBySparseMatrix</a></span>(<a href="../../../../../../org/apache/sysds/runtime/data/SparseBlock.html" title="class in org.apache.sysds.runtime.data">SparseBlock</a>&nbsp;sb,
-                      double[]&nbsp;c,
-                      double[]&nbsp;values,
-                      int&nbsp;numRows,
-                      int&nbsp;numCols,
-                      int&nbsp;row,
-                      double[]&nbsp;MaterializedRow)</code>&nbsp;</td>
-</tr>
-<tr class="rowColor">
-<td class="colFirst"><code>void</code></td>
-<td class="colLast"><span class="typeNameLabel">ColGroupEmpty.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupEmpty.html#leftMultBySparseMatrix-org.apache.sysds.runtime.data.SparseBlock-double:A-double:A-int-int-int-double:A-">leftMultBySparseMatrix</a></span>(<a href="../../../../../../org/apache/sysds/runtime/data/SparseBlock.html" title="class in org.apache.sysds.runtime.data">SparseBlock</a>&nbsp;sb,
-                      double[]&nbsp;c,
-                      double[]&nbsp;values,
-                      int&nbsp;numRows,
-                      int&nbsp;numCols,
-                      int&nbsp;row,
-                      double[]&nbsp;MaterializedRow)</code>&nbsp;</td>
-</tr>
-<tr class="altColor">
-<td class="colFirst"><code>void</code></td>
-<td class="colLast"><span class="typeNameLabel">ColGroupConst.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupConst.html#leftMultBySparseMatrix-org.apache.sysds.runtime.data.SparseBlock-double:A-double:A-int-int-int-double:A-">leftMultBySparseMatrix</a></span>(<a href="../../../../../../org/apache/sysds/runtime/data/SparseBlock.html" title="class in org.apache.sysds.runtime.data">SparseBlock</a>&nbsp;sb,
-                      double[]&nbsp;c,
-                      double[]&nbsp;values,
-                      int&nbsp;numRows,
-                      int&nbsp;numCols,
-                      int&nbsp;row,
-                      double[]&nbsp;MaterializedRow)</code>&nbsp;</td>
-</tr>
-<tr class="rowColor">
-<td class="colFirst"><code>void</code></td>
-<td class="colLast"><span class="typeNameLabel">ColGroupSDCZeros.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupSDCZeros.html#leftMultBySparseMatrix-org.apache.sysds.runtime.data.SparseBlock-double:A-double:A-int-int-int-double:A-">leftMultBySparseMatrix</a></span>(<a href="../../../../../../org/apache/sysds/runtime/data/SparseBlock.html" title="class in org.apache.sysds.runtime.data">SparseBlock</a>&nbsp;sb,
-                      double[]&nbsp;c,
-                      double[]&nbsp;values,
-                      int&nbsp;numRows,
-                      int&nbsp;numCols,
-                      int&nbsp;row,
-                      double[]&nbsp;MaterializedRow)</code>&nbsp;</td>
-</tr>
-<tr class="altColor">
-<td class="colFirst"><code>void</code></td>
-<td class="colLast"><span class="typeNameLabel">ColGroupDDC.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupDDC.html#leftMultBySparseMatrix-org.apache.sysds.runtime.data.SparseBlock-double:A-double:A-int-int-int-double:A-">leftMultBySparseMatrix</a></span>(<a href="../../../../../../org/apache/sysds/runtime/data/SparseBlock.html" title="class in org.apache.sysds.runtime.data">SparseBlock</a>&nbsp;sb,
-                      double[]&nbsp;c,
-                      double[]&nbsp;values,
-                      int&nbsp;numRows,
-                      int&nbsp;numCols,
-                      int&nbsp;row,
-                      double[]&nbsp;MaterializedRow)</code>&nbsp;</td>
-</tr>
-<tr class="rowColor">
-<td class="colFirst"><code>void</code></td>
-<td class="colLast"><span class="typeNameLabel">ColGroupSDCSingle.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupSDCSingle.html#leftMultBySparseMatrix-org.apache.sysds.runtime.data.SparseBlock-double:A-double:A-int-int-int-double:A-">leftMultBySparseMatrix</a></span>(<a href="../../../../../../org/apache/sysds/runtime/data/SparseBlock.html" title="class in org.apache.sysds.runtime.data">SparseBlock</a>&nbsp;sb,
-                      double[]&nbsp;c,
-                      double[]&nbsp;values,
-                      int&nbsp;numRows,
-                      int&nbsp;numCols,
-                      int&nbsp;row,
-                      double[]&nbsp;MaterializedRow)</code>&nbsp;</td>
-</tr>
-<tr class="altColor">
-<td class="colFirst"><code>void</code></td>
-<td class="colLast"><span class="typeNameLabel">ColGroupSDC.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupSDC.html#leftMultBySparseMatrix-org.apache.sysds.runtime.data.SparseBlock-double:A-double:A-int-int-int-double:A-">leftMultBySparseMatrix</a></span>(<a href="../../../../../../org/apache/sysds/runtime/data/SparseBlock.html" title="class in org.apache.sysds.runtime.data">SparseBlock</a>&nbsp;sb,
-                      double[]&nbsp;c,
-                      double[]&nbsp;values,
-                      int&nbsp;numRows,
-                      int&nbsp;numCols,
-                      int&nbsp;row,
-                      double[]&nbsp;MaterializedRow)</code>&nbsp;</td>
-</tr>
-<tr class="rowColor">
-<td class="colFirst"><code>void</code></td>
-<td class="colLast"><span class="typeNameLabel">ColGroupUncompressed.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupUncompressed.html#leftMultBySparseMatrix-org.apache.sysds.runtime.data.SparseBlock-double:A-double:A-int-int-int-double:A-">leftMultBySparseMatrix</a></span>(<a href="../../../../../../org/apache/sysds/runtime/data/SparseBlock.html" title="class in org.apache.sysds.runtime.data">SparseBlock</a>&nbsp;sb,
-                      double[]&nbsp;c,
-                      double[]&nbsp;values,
-                      int&nbsp;numRows,
-                      int&nbsp;numCols,
-                      int&nbsp;row,
-                      double[]&nbsp;MaterializedRow)</code>&nbsp;</td>
-</tr>
-<tr class="altColor">
-<td class="colFirst"><code>abstract void</code></td>
-<td class="colLast"><span class="typeNameLabel">AColGroup.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.html#leftMultBySparseMatrix-org.apache.sysds.runtime.data.SparseBlock-double:A-double:A-int-int-int-double:A-">leftMultBySparseMatrix</a></span>(<a href="../../../../../../org/apache/sysds/runtime/data/SparseBlock.html" title="class in org.apache.sysds.runtime.data">SparseBlock</a>&nbsp;sb,
-                      double[]&nbsp;result,
-                      double[]&nbsp;values,
-                      int&nbsp;numRows,
-                      int&nbsp;numCols,
-                      int&nbsp;row,
-                      double[]&nbsp;MaterializedRow)</code>
-<div class="block">Multiply with a sparse matrix on the left hand side, and add the values to the output result</div>
-</td>
-</tr>
-<tr class="rowColor">
-<td class="colFirst"><code>void</code></td>
-<td class="colLast"><span class="typeNameLabel">ColGroupSDCSingleZeros.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupSDCSingleZeros.html#leftMultBySparseMatrix-org.apache.sysds.runtime.data.SparseBlock-double:A-double:A-int-int-int-double:A-">leftMultBySparseMatrix</a></span>(<a href="../../../../../../org/apache/sysds/runtime/data/SparseBlock.html" title="class in org.apache.sysds.runtime.data">SparseBlock</a>&nbsp;sb,
-                      double[]&nbsp;c,
-                      double[]&nbsp;values,
-                      int&nbsp;numRows,
-                      int&nbsp;numCols,
-                      int&nbsp;row,
-                      double[]&nbsp;MaterializedRow)</code>&nbsp;</td>
-</tr>
-<tr class="altColor">
-<td class="colFirst"><code>void</code></td>
-<td class="colLast"><span class="typeNameLabel">ColGroupOLE.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupOLE.html#leftMultBySparseMatrix-org.apache.sysds.runtime.data.SparseBlock-double:A-double:A-int-int-int-double:A-">leftMultBySparseMatrix</a></span>(<a href="../../../../../../org/apache/sysds/runtime/data/SparseBlock.html" title="class in org.apache.sysds.runtime.data">SparseBlock</a>&nbsp;sb,
-                      double[]&nbsp;c,
-                      double[]&nbsp;values,
-                      int&nbsp;numRows,
-                      int&nbsp;numCols,
-                      int&nbsp;row,
-                      double[]&nbsp;tmpA)</code>&nbsp;</td>
-</tr>
-<tr class="rowColor">
-<td class="colFirst"><code>double[]</code></td>
-<td class="colLast"><span class="typeNameLabel">ColGroupValue.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupValue.html#preAggregate-org.apache.sysds.runtime.data.SparseBlock-">preAggregate</a></span>(<a href="../../../../../../org/apache/sysds/runtime/data/SparseBlock.html" title="class in org.apache.sysds.runtime.data">SparseBlock</a>&nbsp;sb)</code>
-<div class="block">Pre aggregate for left multiplication</div>
-</td>
-</tr>
-<tr class="altColor">
-<td class="colFirst"><code>double[]</code></td>
-<td class="colLast"><span class="typeNameLabel">ColGroupRLE.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupRLE.html#preAggregateSparse-org.apache.sysds.runtime.data.SparseBlock-int-">preAggregateSparse</a></span>(<a href="../../../../../../org/apache/sysds/runtime/data/SparseBlock.html" title="class in org.apache.sysds.runtime.data">SparseBlock</a>&nbsp;sb,
-                  int&nbsp;row)</code>&nbsp;</td>
-</tr>
-<tr class="rowColor">
-<td class="colFirst"><code>double[]</code></td>
-<td class="colLast"><span class="typeNameLabel">ColGroupEmpty.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupEmpty.html#preAggregateSparse-org.apache.sysds.runtime.data.SparseBlock-int-">preAggregateSparse</a></span>(<a href="../../../../../../org/apache/sysds/runtime/data/SparseBlock.html" title="class in org.apache.sysds.runtime.data">SparseBlock</a>&nbsp;sb,
-                  int&nbsp;row)</code>&nbsp;</td>
-</tr>
-<tr class="altColor">
-<td class="colFirst"><code>double[]</code></td>
-<td class="colLast"><span class="typeNameLabel">ColGroupConst.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupConst.html#preAggregateSparse-org.apache.sysds.runtime.data.SparseBlock-int-">preAggregateSparse</a></span>(<a href="../../../../../../org/apache/sysds/runtime/data/SparseBlock.html" title="class in org.apache.sysds.runtime.data">SparseBlock</a>&nbsp;sb,
-                  int&nbsp;row)</code>&nbsp;</td>
-</tr>
-<tr class="rowColor">
-<td class="colFirst"><code>double[]</code></td>
-<td class="colLast"><span class="typeNameLabel">ColGroupSDCZeros.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupSDCZeros.html#preAggregateSparse-org.apache.sysds.runtime.data.SparseBlock-int-">preAggregateSparse</a></span>(<a href="../../../../../../org/apache/sysds/runtime/data/SparseBlock.html" title="class in org.apache.sysds.runtime.data">SparseBlock</a>&nbsp;sb,
-                  int&nbsp;row)</code>&nbsp;</td>
-</tr>
-<tr class="altColor">
-<td class="colFirst"><code>double[]</code></td>
-<td class="colLast"><span class="typeNameLabel">ColGroupDDC.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupDDC.html#preAggregateSparse-org.apache.sysds.runtime.data.SparseBlock-int-">preAggregateSparse</a></span>(<a href="../../../../../../org/apache/sysds/runtime/data/SparseBlock.html" title="class in org.apache.sysds.runtime.data">SparseBlock</a>&nbsp;sb,
-                  int&nbsp;row)</code>&nbsp;</td>
-</tr>
-<tr class="rowColor">
-<td class="colFirst"><code>double[]</code></td>
-<td class="colLast"><span class="typeNameLabel">ColGroupSDCSingle.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupSDCSingle.html#preAggregateSparse-org.apache.sysds.runtime.data.SparseBlock-int-">preAggregateSparse</a></span>(<a href="../../../../../../org/apache/sysds/runtime/data/SparseBlock.html" title="class in org.apache.sysds.runtime.data">SparseBlock</a>&nbsp;sb,
-                  int&nbsp;row)</code>&nbsp;</td>
-</tr>
-<tr class="altColor">
-<td class="colFirst"><code>double[]</code></td>
-<td class="colLast"><span class="typeNameLabel">ColGroupSDC.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupSDC.html#preAggregateSparse-org.apache.sysds.runtime.data.SparseBlock-int-">preAggregateSparse</a></span>(<a href="../../../../../../org/apache/sysds/runtime/data/SparseBlock.html" title="class in org.apache.sysds.runtime.data">SparseBlock</a>&nbsp;sb,
-                  int&nbsp;row)</code>&nbsp;</td>
-</tr>
-<tr class="rowColor">
-<td class="colFirst"><code>abstract double[]</code></td>
-<td class="colLast"><span class="typeNameLabel">ColGroupValue.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupValue.html#preAggregateSparse-org.apache.sysds.runtime.data.SparseBlock-int-">preAggregateSparse</a></span>(<a href="../../../../../../org/apache/sysds/runtime/data/SparseBlock.html" title="class in org.apache.sysds.runtime.data">SparseBlock</a>&nbsp;sb,
-                  int&nbsp;row)</code>
-<div class="block">Pre aggregate for left multiplication of sparse vector or matrix.</div>
-</td>
-</tr>
-<tr class="altColor">
-<td class="colFirst"><code>double[]</code></td>
-<td class="colLast"><span class="typeNameLabel">ColGroupSDCSingleZeros.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupSDCSingleZeros.html#preAggregateSparse-org.apache.sysds.runtime.data.SparseBlock-int-">preAggregateSparse</a></span>(<a href="../../../../../../org/apache/sysds/runtime/data/SparseBlock.html" title="class in org.apache.sysds.runtime.data">SparseBlock</a>&nbsp;sb,
-                  int&nbsp;row)</code>&nbsp;</td>
-</tr>
-<tr class="rowColor">
-<td class="colFirst"><code>double[]</code></td>
-<td class="colLast"><span class="typeNameLabel">ColGroupOLE.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupOLE.html#preAggregateSparse-org.apache.sysds.runtime.data.SparseBlock-int-">preAggregateSparse</a></span>(<a href="../../../../../../org/apache/sysds/runtime/data/SparseBlock.html" title="class in org.apache.sysds.runtime.data">SparseBlock</a>&nbsp;sb,
-                  int&nbsp;row)</code>&nbsp;</td>
-</tr>
-<tr class="altColor">
-<td class="colFirst"><code>double</code></td>
-<td class="colLast"><span class="typeNameLabel">ColGroupConst.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupConst.html#preAggregateSparseSingle-org.apache.sysds.runtime.data.SparseBlock-int-">preAggregateSparseSingle</a></span>(<a href="../../../../../../org/apache/sysds/runtime/data/SparseBlock.html" title="class in org.apache.sysds.runtime.data">SparseBlock</a>&nbsp;sb,
-                        int&nbsp;row)</code>&nbsp;</td>
-</tr>
-</tbody>
-</table>
-</li>
 <li class="blockList"><a name="org.apache.sysds.runtime.controlprogram.caching">
 <!--   -->
 </a>

@@ -87,7 +87,15 @@
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
-<td class="colFirst"><a href="#org.apache.sysds.runtime.compress.colgroup.tree">org.apache.sysds.runtime.compress.colgroup.tree</a></td>
+<td class="colFirst"><a href="#org.apache.sysds.runtime.compress.colgroup.dictionary">org.apache.sysds.runtime.compress.colgroup.dictionary</a></td>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><a href="#org.apache.sysds.runtime.compress.colgroup.insertionsort">org.apache.sysds.runtime.compress.colgroup.insertionsort</a></td>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><a href="#org.apache.sysds.runtime.compress.colgroup.mapping">org.apache.sysds.runtime.compress.colgroup.mapping</a></td>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">
@@ -125,25 +133,57 @@
 <tr class="altColor">
 <td class="colOne"><a href="../../../../../../org/apache/sysds/runtime/compress/utils/class-use/ABitmap.html#org.apache.sysds.runtime.compress.colgroup">ABitmap</a>&nbsp;</td>
 </tr>
+</tbody>
+</table>
+</li>
+<li class="blockList"><a name="org.apache.sysds.runtime.compress.colgroup.dictionary">
+<!--   -->
+</a>
+<table class="useSummary" border="0" cellpadding="3" cellspacing="0" summary="Use table, listing classes, and an explanation">
+<caption><span>Classes in <a href="../../../../../../org/apache/sysds/runtime/compress/utils/package-summary.html">org.apache.sysds.runtime.compress.utils</a> used by <a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/dictionary/package-summary.html">org.apache.sysds.runtime.compress.colgroup.dictionary</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colOne" scope="col">Class and Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colOne"><a href="../../../../../../org/apache/sysds/runtime/compress/utils/class-use/ABitmap.html#org.apache.sysds.runtime.compress.colgroup.dictionary">ABitmap</a>&nbsp;</td>
+</tr>
 <tr class="rowColor">
-<td class="colOne"><a href="../../../../../../org/apache/sysds/runtime/compress/utils/class-use/BitmapLossy.html#org.apache.sysds.runtime.compress.colgroup">BitmapLossy</a>
+<td class="colOne"><a href="../../../../../../org/apache/sysds/runtime/compress/utils/class-use/BitmapLossy.html#org.apache.sysds.runtime.compress.colgroup.dictionary">BitmapLossy</a>
 <div class="block">Uncompressed but Quantized representation of contained data.</div>
 </td>
 </tr>
 </tbody>
 </table>
 </li>
-<li class="blockList"><a name="org.apache.sysds.runtime.compress.colgroup.tree">
+<li class="blockList"><a name="org.apache.sysds.runtime.compress.colgroup.insertionsort">
 <!--   -->
 </a>
 <table class="useSummary" border="0" cellpadding="3" cellspacing="0" summary="Use table, listing classes, and an explanation">
-<caption><span>Classes in <a href="../../../../../../org/apache/sysds/runtime/compress/utils/package-summary.html">org.apache.sysds.runtime.compress.utils</a> used by <a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/tree/package-summary.html">org.apache.sysds.runtime.compress.colgroup.tree</a></span><span class="tabEnd">&nbsp;</span></caption>
+<caption><span>Classes in <a href="../../../../../../org/apache/sysds/runtime/compress/utils/package-summary.html">org.apache.sysds.runtime.compress.utils</a> used by <a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/insertionsort/package-summary.html">org.apache.sysds.runtime.compress.colgroup.insertionsort</a></span><span class="tabEnd">&nbsp;</span></caption>
 <tr>
 <th class="colOne" scope="col">Class and Description</th>
 </tr>
 <tbody>
 <tr class="altColor">
-<td class="colOne"><a href="../../../../../../org/apache/sysds/runtime/compress/utils/class-use/IntArrayList.html#org.apache.sysds.runtime.compress.colgroup.tree">IntArrayList</a>
+<td class="colOne"><a href="../../../../../../org/apache/sysds/runtime/compress/utils/class-use/IntArrayList.html#org.apache.sysds.runtime.compress.colgroup.insertionsort">IntArrayList</a>
+<div class="block">This class provides a memory-efficient replacement for <code>ArrayList&lt;Integer&gt;</code> for restricted use cases.</div>
+</td>
+</tr>
+</tbody>
+</table>
+</li>
+<li class="blockList"><a name="org.apache.sysds.runtime.compress.colgroup.mapping">
+<!--   -->
+</a>
+<table class="useSummary" border="0" cellpadding="3" cellspacing="0" summary="Use table, listing classes, and an explanation">
+<caption><span>Classes in <a href="../../../../../../org/apache/sysds/runtime/compress/utils/package-summary.html">org.apache.sysds.runtime.compress.utils</a> used by <a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/mapping/package-summary.html">org.apache.sysds.runtime.compress.colgroup.mapping</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colOne" scope="col">Class and Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colOne"><a href="../../../../../../org/apache/sysds/runtime/compress/utils/class-use/IntArrayList.html#org.apache.sysds.runtime.compress.colgroup.mapping">IntArrayList</a>
 <div class="block">This class provides a memory-efficient replacement for <code>ArrayList&lt;Integer&gt;</code> for restricted use cases.</div>
 </td>
 </tr>
@@ -196,11 +236,6 @@
 <tbody>
 <tr class="altColor">
 <td class="colOne"><a href="../../../../../../org/apache/sysds/runtime/compress/utils/class-use/ABitmap.html#org.apache.sysds.runtime.compress.lib">ABitmap</a>&nbsp;</td>
-</tr>
-<tr class="rowColor">
-<td class="colOne"><a href="../../../../../../org/apache/sysds/runtime/compress/utils/class-use/Bitmap.html#org.apache.sysds.runtime.compress.lib">Bitmap</a>
-<div class="block">Uncompressed representation of one or more columns in bitmap format.</div>
-</td>
 </tr>
 </tbody>
 </table>

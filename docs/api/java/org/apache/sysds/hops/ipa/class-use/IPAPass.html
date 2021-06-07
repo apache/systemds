@@ -112,23 +112,30 @@
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code>class&nbsp;</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/hops/ipa/IPAPassCompressionWorkloadAnalysis.html" title="class in org.apache.sysds.hops.ipa">IPAPassCompressionWorkloadAnalysis</a></span></code>
+<div class="block">This rewrite obtains workload summaries for all hops candidates amenable
+ for compression as a basis for workload-aware compression planning.</div>
+</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>class&nbsp;</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/hops/ipa/IPAPassEliminateDeadCode.html" title="class in org.apache.sysds.hops.ipa">IPAPassEliminateDeadCode</a></span></code>
 <div class="block">This rewrite eliminates unnecessary sub-DAGs that produce
  transient write outputs which are never consumed subsequently.</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>class&nbsp;</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/hops/ipa/IPAPassFlagFunctionsRecompileOnce.html" title="class in org.apache.sysds.hops.ipa">IPAPassFlagFunctionsRecompileOnce</a></span></code>
 <div class="block">This rewrite marks functions with loops as recompile once
  in order to reduce recompilation overhead.</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>class&nbsp;</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/hops/ipa/IPAPassFlagNonDeterminism.html" title="class in org.apache.sysds.hops.ipa">IPAPassFlagNonDeterminism</a></span></code>&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>class&nbsp;</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/hops/ipa/IPAPassForwardFunctionCalls.html" title="class in org.apache.sysds.hops.ipa">IPAPassForwardFunctionCalls</a></span></code>
 <div class="block">This rewrite forwards a function call to a function with a simple
@@ -136,21 +143,21 @@
  into the original call location.</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>class&nbsp;</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/hops/ipa/IPAPassInlineFunctions.html" title="class in org.apache.sysds.hops.ipa">IPAPassInlineFunctions</a></span></code>
 <div class="block">This rewrite inlines single statement block functions, which have fewer 
  operations than an internal threshold.</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>class&nbsp;</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/hops/ipa/IPAPassPropagateReplaceLiterals.html" title="class in org.apache.sysds.hops.ipa">IPAPassPropagateReplaceLiterals</a></span></code>
 <div class="block">This rewrite propagates and replaces literals into functions
  in order to enable subsequent rewrites such as branch removal.</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>class&nbsp;</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/hops/ipa/IPAPassRemoveConstantBinaryOps.html" title="class in org.apache.sysds.hops.ipa">IPAPassRemoveConstantBinaryOps</a></span></code>
 <div class="block">This rewrite identifies binary operations with constant matrices 
@@ -158,14 +165,14 @@
  before a loop.</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>class&nbsp;</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/hops/ipa/IPAPassRemoveUnnecessaryCheckpoints.html" title="class in org.apache.sysds.hops.ipa">IPAPassRemoveUnnecessaryCheckpoints</a></span></code>
 <div class="block">This rewrite identifies and removes unnecessary checkpoints, i.e.,
  persisting of Spark RDDs into a given storage level.</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>class&nbsp;</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/hops/ipa/IPAPassRemoveUnusedFunctions.html" title="class in org.apache.sysds.hops.ipa">IPAPassRemoveUnusedFunctions</a></span></code>
 <div class="block">This rewrite identifies and removes unused functions in order

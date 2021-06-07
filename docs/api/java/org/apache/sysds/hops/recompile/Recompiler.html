@@ -256,16 +256,16 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 </tr>
 <tr id="i12" class="altColor">
 <td class="colFirst"><code>static <a href="https://docs.oracle.com/javase/8/docs/api/java/util/ArrayList.html?is-external=true" title="class or interface in java.util">ArrayList</a>&lt;<a href="../../../../../org/apache/sysds/runtime/instructions/Instruction.html" title="class in org.apache.sysds.runtime.instructions">Instruction</a>&gt;</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/hops/recompile/Recompiler.html#recompileHopsDag2Forced-org.apache.sysds.hops.Hop-long-org.apache.sysds.lops.ExecType-">recompileHopsDag2Forced</a></span>(<a href="../../../../../org/apache/sysds/hops/Hop.html" title="class in org.apache.sysds.hops">Hop</a>&nbsp;hop,
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/hops/recompile/Recompiler.html#recompileHopsDag2Forced-org.apache.sysds.hops.Hop-long-org.apache.sysds.common.Types.ExecType-">recompileHopsDag2Forced</a></span>(<a href="../../../../../org/apache/sysds/hops/Hop.html" title="class in org.apache.sysds.hops">Hop</a>&nbsp;hop,
                        long&nbsp;tid,
-                       <a href="../../../../../org/apache/sysds/lops/ExecType.html" title="enum in org.apache.sysds.lops">ExecType</a>&nbsp;et)</code>&nbsp;</td>
+                       <a href="../../../../../org/apache/sysds/common/Types.ExecType.html" title="enum in org.apache.sysds.common">Types.ExecType</a>&nbsp;et)</code>&nbsp;</td>
 </tr>
 <tr id="i13" class="rowColor">
 <td class="colFirst"><code>static <a href="https://docs.oracle.com/javase/8/docs/api/java/util/ArrayList.html?is-external=true" title="class or interface in java.util">ArrayList</a>&lt;<a href="../../../../../org/apache/sysds/runtime/instructions/Instruction.html" title="class in org.apache.sysds.runtime.instructions">Instruction</a>&gt;</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/hops/recompile/Recompiler.html#recompileHopsDag2Forced-org.apache.sysds.parser.StatementBlock-java.util.ArrayList-long-org.apache.sysds.lops.ExecType-">recompileHopsDag2Forced</a></span>(<a href="../../../../../org/apache/sysds/parser/StatementBlock.html" title="class in org.apache.sysds.parser">StatementBlock</a>&nbsp;sb,
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/hops/recompile/Recompiler.html#recompileHopsDag2Forced-org.apache.sysds.parser.StatementBlock-java.util.ArrayList-long-org.apache.sysds.common.Types.ExecType-">recompileHopsDag2Forced</a></span>(<a href="../../../../../org/apache/sysds/parser/StatementBlock.html" title="class in org.apache.sysds.parser">StatementBlock</a>&nbsp;sb,
                        <a href="https://docs.oracle.com/javase/8/docs/api/java/util/ArrayList.html?is-external=true" title="class or interface in java.util">ArrayList</a>&lt;<a href="../../../../../org/apache/sysds/hops/Hop.html" title="class in org.apache.sysds.hops">Hop</a>&gt;&nbsp;hops,
                        long&nbsp;tid,
-                       <a href="../../../../../org/apache/sysds/lops/ExecType.html" title="enum in org.apache.sysds.lops">ExecType</a>&nbsp;et)</code>&nbsp;</td>
+                       <a href="../../../../../org/apache/sysds/common/Types.ExecType.html" title="enum in org.apache.sysds.common">Types.ExecType</a>&nbsp;et)</code>&nbsp;</td>
 </tr>
 <tr id="i14" class="altColor">
 <td class="colFirst"><code>static <a href="https://docs.oracle.com/javase/8/docs/api/java/util/ArrayList.html?is-external=true" title="class or interface in java.util">ArrayList</a>&lt;<a href="../../../../../org/apache/sysds/runtime/instructions/Instruction.html" title="class in org.apache.sysds.runtime.instructions">Instruction</a>&gt;</code></td>
@@ -286,10 +286,10 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 </tr>
 <tr id="i17" class="rowColor">
 <td class="colFirst"><code>static void</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/hops/recompile/Recompiler.html#recompileProgramBlockHierarchy2Forced-java.util.ArrayList-long-java.util.HashSet-org.apache.sysds.lops.ExecType-">recompileProgramBlockHierarchy2Forced</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/ArrayList.html?is-external=true" title="class or interface in java.util">ArrayList</a>&lt;<a href="../../../../../org/apache/sysds/runtime/controlprogram/ProgramBlock.html" title="class in org.apache.sysds.runtime.controlprogram">ProgramBlock</a>&gt;&nbsp;pbs,
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/hops/recompile/Recompiler.html#recompileProgramBlockHierarchy2Forced-java.util.ArrayList-long-java.util.HashSet-org.apache.sysds.common.Types.ExecType-">recompileProgramBlockHierarchy2Forced</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/ArrayList.html?is-external=true" title="class or interface in java.util">ArrayList</a>&lt;<a href="../../../../../org/apache/sysds/runtime/controlprogram/ProgramBlock.html" title="class in org.apache.sysds.runtime.controlprogram">ProgramBlock</a>&gt;&nbsp;pbs,
                                      long&nbsp;tid,
                                      <a href="https://docs.oracle.com/javase/8/docs/api/java/util/HashSet.html?is-external=true" title="class or interface in java.util">HashSet</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&gt;&nbsp;fnStack,
-                                     <a href="../../../../../org/apache/sysds/lops/ExecType.html" title="enum in org.apache.sysds.lops">ExecType</a>&nbsp;et)</code>
+                                     <a href="../../../../../org/apache/sysds/common/Types.ExecType.html" title="enum in org.apache.sysds.common">Types.ExecType</a>&nbsp;et)</code>
 <div class="block">Method to recompile program block hierarchy to forced execution time.</div>
 </td>
 </tr>
@@ -358,10 +358,10 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 </tr>
 <tr id="i29" class="rowColor">
 <td class="colFirst"><code>static void</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/hops/recompile/Recompiler.html#rRecompileProgramBlock2Forced-org.apache.sysds.runtime.controlprogram.ProgramBlock-long-java.util.HashSet-org.apache.sysds.lops.ExecType-">rRecompileProgramBlock2Forced</a></span>(<a href="../../../../../org/apache/sysds/runtime/controlprogram/ProgramBlock.html" title="class in org.apache.sysds.runtime.controlprogram">ProgramBlock</a>&nbsp;pb,
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/hops/recompile/Recompiler.html#rRecompileProgramBlock2Forced-org.apache.sysds.runtime.controlprogram.ProgramBlock-long-java.util.HashSet-org.apache.sysds.common.Types.ExecType-">rRecompileProgramBlock2Forced</a></span>(<a href="../../../../../org/apache/sysds/runtime/controlprogram/ProgramBlock.html" title="class in org.apache.sysds.runtime.controlprogram">ProgramBlock</a>&nbsp;pb,
                              long&nbsp;tid,
                              <a href="https://docs.oracle.com/javase/8/docs/api/java/util/HashSet.html?is-external=true" title="class or interface in java.util">HashSet</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&gt;&nbsp;fnStack,
-                             <a href="../../../../../org/apache/sysds/lops/ExecType.html" title="enum in org.apache.sysds.lops">ExecType</a>&nbsp;et)</code>&nbsp;</td>
+                             <a href="../../../../../org/apache/sysds/common/Types.ExecType.html" title="enum in org.apache.sysds.common">Types.ExecType</a>&nbsp;et)</code>&nbsp;</td>
 </tr>
 <tr id="i30" class="altColor">
 <td class="colFirst"><code>static void</code></td>
@@ -379,8 +379,8 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 </tr>
 <tr id="i32" class="altColor">
 <td class="colFirst"><code>static void</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/hops/recompile/Recompiler.html#rSetExecType-org.apache.sysds.hops.Hop-org.apache.sysds.lops.ExecType-">rSetExecType</a></span>(<a href="../../../../../org/apache/sysds/hops/Hop.html" title="class in org.apache.sysds.hops">Hop</a>&nbsp;hop,
-            <a href="../../../../../org/apache/sysds/lops/ExecType.html" title="enum in org.apache.sysds.lops">ExecType</a>&nbsp;etype)</code>&nbsp;</td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/hops/recompile/Recompiler.html#rSetExecType-org.apache.sysds.hops.Hop-org.apache.sysds.common.Types.ExecType-">rSetExecType</a></span>(<a href="../../../../../org/apache/sysds/hops/Hop.html" title="class in org.apache.sysds.hops">Hop</a>&nbsp;hop,
+            <a href="../../../../../org/apache/sysds/common/Types.ExecType.html" title="enum in org.apache.sysds.common">Types.ExecType</a>&nbsp;etype)</code>&nbsp;</td>
 </tr>
 <tr id="i33" class="rowColor">
 <td class="colFirst"><code>static void</code></td>
@@ -500,7 +500,7 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
                                                       long&nbsp;tid)</pre>
 </li>
 </ul>
-<a name="recompileHopsDag2Forced-org.apache.sysds.parser.StatementBlock-java.util.ArrayList-long-org.apache.sysds.lops.ExecType-">
+<a name="recompileHopsDag2Forced-org.apache.sysds.parser.StatementBlock-java.util.ArrayList-long-org.apache.sysds.common.Types.ExecType-">
 <!--   -->
 </a>
 <ul class="blockList">
@@ -509,10 +509,10 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <pre>public static&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/util/ArrayList.html?is-external=true" title="class or interface in java.util">ArrayList</a>&lt;<a href="../../../../../org/apache/sysds/runtime/instructions/Instruction.html" title="class in org.apache.sysds.runtime.instructions">Instruction</a>&gt;&nbsp;recompileHopsDag2Forced(<a href="../../../../../org/apache/sysds/parser/StatementBlock.html" title="class in org.apache.sysds.parser">StatementBlock</a>&nbsp;sb,
                                                              <a href="https://docs.oracle.com/javase/8/docs/api/java/util/ArrayList.html?is-external=true" title="class or interface in java.util">ArrayList</a>&lt;<a href="../../../../../org/apache/sysds/hops/Hop.html" title="class in org.apache.sysds.hops">Hop</a>&gt;&nbsp;hops,
                                                              long&nbsp;tid,
-                                                             <a href="../../../../../org/apache/sysds/lops/ExecType.html" title="enum in org.apache.sysds.lops">ExecType</a>&nbsp;et)</pre>
+                                                             <a href="../../../../../org/apache/sysds/common/Types.ExecType.html" title="enum in org.apache.sysds.common">Types.ExecType</a>&nbsp;et)</pre>
 </li>
 </ul>
-<a name="recompileHopsDag2Forced-org.apache.sysds.hops.Hop-long-org.apache.sysds.lops.ExecType-">
+<a name="recompileHopsDag2Forced-org.apache.sysds.hops.Hop-long-org.apache.sysds.common.Types.ExecType-">
 <!--   -->
 </a>
 <ul class="blockList">
@@ -520,7 +520,7 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <h4>recompileHopsDag2Forced</h4>
 <pre>public static&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/util/ArrayList.html?is-external=true" title="class or interface in java.util">ArrayList</a>&lt;<a href="../../../../../org/apache/sysds/runtime/instructions/Instruction.html" title="class in org.apache.sysds.runtime.instructions">Instruction</a>&gt;&nbsp;recompileHopsDag2Forced(<a href="../../../../../org/apache/sysds/hops/Hop.html" title="class in org.apache.sysds.hops">Hop</a>&nbsp;hop,
                                                              long&nbsp;tid,
-                                                             <a href="../../../../../org/apache/sysds/lops/ExecType.html" title="enum in org.apache.sysds.lops">ExecType</a>&nbsp;et)</pre>
+                                                             <a href="../../../../../org/apache/sysds/common/Types.ExecType.html" title="enum in org.apache.sysds.common">Types.ExecType</a>&nbsp;et)</pre>
 </li>
 </ul>
 <a name="recompileHopsDagInstructions-org.apache.sysds.parser.StatementBlock-java.util.ArrayList-">
@@ -555,7 +555,7 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
                                                   <a href="../../../../../org/apache/sysds/hops/recompile/Recompiler.ResetType.html" title="enum in org.apache.sysds.hops.recompile">Recompiler.ResetType</a>&nbsp;resetRecompile)</pre>
 </li>
 </ul>
-<a name="recompileProgramBlockHierarchy2Forced-java.util.ArrayList-long-java.util.HashSet-org.apache.sysds.lops.ExecType-">
+<a name="recompileProgramBlockHierarchy2Forced-java.util.ArrayList-long-java.util.HashSet-org.apache.sysds.common.Types.ExecType-">
 <!--   -->
 </a>
 <ul class="blockList">
@@ -564,7 +564,7 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <pre>public static&nbsp;void&nbsp;recompileProgramBlockHierarchy2Forced(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/ArrayList.html?is-external=true" title="class or interface in java.util">ArrayList</a>&lt;<a href="../../../../../org/apache/sysds/runtime/controlprogram/ProgramBlock.html" title="class in org.apache.sysds.runtime.controlprogram">ProgramBlock</a>&gt;&nbsp;pbs,
                                                          long&nbsp;tid,
                                                          <a href="https://docs.oracle.com/javase/8/docs/api/java/util/HashSet.html?is-external=true" title="class or interface in java.util">HashSet</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&gt;&nbsp;fnStack,
-                                                         <a href="../../../../../org/apache/sysds/lops/ExecType.html" title="enum in org.apache.sysds.lops">ExecType</a>&nbsp;et)</pre>
+                                                         <a href="../../../../../org/apache/sysds/common/Types.ExecType.html" title="enum in org.apache.sysds.common">Types.ExecType</a>&nbsp;et)</pre>
 <div class="block">Method to recompile program block hierarchy to forced execution time. This affects also
  referenced functions and chains of functions. Use et==null in order to release the forced 
  exec type.</div>
@@ -713,7 +713,7 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
                                                          <a href="../../../../../org/apache/sysds/parser/StatementBlock.html" title="class in org.apache.sysds.parser">StatementBlock</a>&nbsp;sb)</pre>
 </li>
 </ul>
-<a name="rRecompileProgramBlock2Forced-org.apache.sysds.runtime.controlprogram.ProgramBlock-long-java.util.HashSet-org.apache.sysds.lops.ExecType-">
+<a name="rRecompileProgramBlock2Forced-org.apache.sysds.runtime.controlprogram.ProgramBlock-long-java.util.HashSet-org.apache.sysds.common.Types.ExecType-">
 <!--   -->
 </a>
 <ul class="blockList">
@@ -722,7 +722,7 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <pre>public static&nbsp;void&nbsp;rRecompileProgramBlock2Forced(<a href="../../../../../org/apache/sysds/runtime/controlprogram/ProgramBlock.html" title="class in org.apache.sysds.runtime.controlprogram">ProgramBlock</a>&nbsp;pb,
                                                  long&nbsp;tid,
                                                  <a href="https://docs.oracle.com/javase/8/docs/api/java/util/HashSet.html?is-external=true" title="class or interface in java.util">HashSet</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&gt;&nbsp;fnStack,
-                                                 <a href="../../../../../org/apache/sysds/lops/ExecType.html" title="enum in org.apache.sysds.lops">ExecType</a>&nbsp;et)</pre>
+                                                 <a href="../../../../../org/apache/sysds/common/Types.ExecType.html" title="enum in org.apache.sysds.common">Types.ExecType</a>&nbsp;et)</pre>
 </li>
 </ul>
 <a name="removeUpdatedScalars-org.apache.sysds.runtime.controlprogram.LocalVariableMap-org.apache.sysds.parser.StatementBlock-">
@@ -834,14 +834,14 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
                                     boolean&nbsp;scalarsOnly)</pre>
 </li>
 </ul>
-<a name="rSetExecType-org.apache.sysds.hops.Hop-org.apache.sysds.lops.ExecType-">
+<a name="rSetExecType-org.apache.sysds.hops.Hop-org.apache.sysds.common.Types.ExecType-">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
 <h4>rSetExecType</h4>
 <pre>public static&nbsp;void&nbsp;rSetExecType(<a href="../../../../../org/apache/sysds/hops/Hop.html" title="class in org.apache.sysds.hops">Hop</a>&nbsp;hop,
-                                <a href="../../../../../org/apache/sysds/lops/ExecType.html" title="enum in org.apache.sysds.lops">ExecType</a>&nbsp;etype)</pre>
+                                <a href="../../../../../org/apache/sysds/common/Types.ExecType.html" title="enum in org.apache.sysds.common">Types.ExecType</a>&nbsp;etype)</pre>
 </li>
 </ul>
 <a name="rGetMaxParallelism-java.util.List-">

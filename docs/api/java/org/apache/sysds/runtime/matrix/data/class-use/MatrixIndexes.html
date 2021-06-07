@@ -904,54 +904,60 @@
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code>static org.apache.spark.api.java.JavaPairRDD&lt;<a href="../../../../../../../org/apache/sysds/runtime/matrix/data/MatrixIndexes.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixIndexes</a>,<a href="../../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&gt;</code></td>
-<td class="colLast"><span class="typeNameLabel">FrameRDDConverterUtils.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/instructions/spark/utils/FrameRDDConverterUtils.html#binaryBlockToMatrixBlock-org.apache.spark.api.java.JavaPairRDD-org.apache.sysds.runtime.meta.DataCharacteristics-org.apache.sysds.runtime.meta.DataCharacteristics-">binaryBlockToMatrixBlock</a></span>(org.apache.spark.api.java.JavaPairRDD&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Long.html?is-external=true" title="class or interface in java.lang">Long</a>,<a href="../../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&gt;&nbsp;input,
+<td class="colLast"><span class="typeNameLabel">RDDConverterUtils.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/instructions/spark/utils/RDDConverterUtils.html#binaryBlockToBinaryBlock-org.apache.spark.api.java.JavaPairRDD-org.apache.sysds.runtime.meta.DataCharacteristics-org.apache.sysds.runtime.meta.DataCharacteristics-">binaryBlockToBinaryBlock</a></span>(org.apache.spark.api.java.JavaPairRDD&lt;<a href="../../../../../../../org/apache/sysds/runtime/matrix/data/MatrixIndexes.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixIndexes</a>,<a href="../../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&gt;&nbsp;in,
                         <a href="../../../../../../../org/apache/sysds/runtime/meta/DataCharacteristics.html" title="class in org.apache.sysds.runtime.meta">DataCharacteristics</a>&nbsp;mcIn,
                         <a href="../../../../../../../org/apache/sysds/runtime/meta/DataCharacteristics.html" title="class in org.apache.sysds.runtime.meta">DataCharacteristics</a>&nbsp;mcOut)</code>&nbsp;</td>
 </tr>
 <tr class="altColor">
+<td class="colFirst"><code>static org.apache.spark.api.java.JavaPairRDD&lt;<a href="../../../../../../../org/apache/sysds/runtime/matrix/data/MatrixIndexes.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixIndexes</a>,<a href="../../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&gt;</code></td>
+<td class="colLast"><span class="typeNameLabel">FrameRDDConverterUtils.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/instructions/spark/utils/FrameRDDConverterUtils.html#binaryBlockToMatrixBlock-org.apache.spark.api.java.JavaPairRDD-org.apache.sysds.runtime.meta.DataCharacteristics-org.apache.sysds.runtime.meta.DataCharacteristics-">binaryBlockToMatrixBlock</a></span>(org.apache.spark.api.java.JavaPairRDD&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Long.html?is-external=true" title="class or interface in java.lang">Long</a>,<a href="../../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&gt;&nbsp;input,
+                        <a href="../../../../../../../org/apache/sysds/runtime/meta/DataCharacteristics.html" title="class in org.apache.sysds.runtime.meta">DataCharacteristics</a>&nbsp;mcIn,
+                        <a href="../../../../../../../org/apache/sysds/runtime/meta/DataCharacteristics.html" title="class in org.apache.sysds.runtime.meta">DataCharacteristics</a>&nbsp;mcOut)</code>&nbsp;</td>
+</tr>
+<tr class="rowColor">
 <td class="colFirst"><code>static org.apache.spark.api.java.JavaPairRDD&lt;<a href="../../../../../../../org/apache/sysds/runtime/matrix/data/MatrixIndexes.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixIndexes</a>,<a href="../../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&gt;</code></td>
 <td class="colLast"><span class="typeNameLabel">RDDConverterUtils.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/instructions/spark/utils/RDDConverterUtils.html#binaryCellToBinaryBlock-org.apache.spark.api.java.JavaSparkContext-org.apache.spark.api.java.JavaPairRDD-org.apache.sysds.runtime.meta.DataCharacteristics-boolean-">binaryCellToBinaryBlock</a></span>(org.apache.spark.api.java.JavaSparkContext&nbsp;sc,
                        org.apache.spark.api.java.JavaPairRDD&lt;<a href="../../../../../../../org/apache/sysds/runtime/matrix/data/MatrixIndexes.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixIndexes</a>,<a href="../../../../../../../org/apache/sysds/runtime/matrix/data/MatrixCell.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixCell</a>&gt;&nbsp;input,
                        <a href="../../../../../../../org/apache/sysds/runtime/meta/DataCharacteristics.html" title="class in org.apache.sysds.runtime.meta">DataCharacteristics</a>&nbsp;mcOut,
                        boolean&nbsp;outputEmptyBlocks)</code>&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>static org.apache.spark.api.java.JavaPairRDD&lt;<a href="../../../../../../../org/apache/sysds/runtime/matrix/data/MatrixIndexes.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixIndexes</a>,<a href="../../../../../../../org/apache/sysds/runtime/matrix/data/MatrixCell.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixCell</a>&gt;</code></td>
 <td class="colLast"><span class="typeNameLabel">SparkUtils.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/instructions/spark/utils/SparkUtils.html#cacheBinaryCellRDD-org.apache.spark.api.java.JavaPairRDD-">cacheBinaryCellRDD</a></span>(org.apache.spark.api.java.JavaPairRDD&lt;<a href="../../../../../../../org/apache/sysds/runtime/matrix/data/MatrixIndexes.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixIndexes</a>,<a href="../../../../../../../org/apache/sysds/runtime/matrix/data/MatrixCell.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixCell</a>&gt;&nbsp;input)</code>&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/util/Iterator.html?is-external=true" title="class or interface in java.util">Iterator</a>&lt;scala.Tuple2&lt;<a href="../../../../../../../org/apache/sysds/runtime/matrix/data/MatrixIndexes.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixIndexes</a>,<a href="../../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&gt;&gt;</code></td>
 <td class="colLast"><span class="typeNameLabel">RDDConverterUtils.BinaryCellToBinaryBlockFunction.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/instructions/spark/utils/RDDConverterUtils.BinaryCellToBinaryBlockFunction.html#call-java.util.Iterator-">call</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/Iterator.html?is-external=true" title="class or interface in java.util">Iterator</a>&lt;scala.Tuple2&lt;<a href="../../../../../../../org/apache/sysds/runtime/matrix/data/MatrixIndexes.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixIndexes</a>,<a href="../../../../../../../org/apache/sysds/runtime/matrix/data/MatrixCell.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixCell</a>&gt;&gt;&nbsp;arg0)</code>&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>static org.apache.spark.api.java.JavaPairRDD&lt;<a href="../../../../../../../org/apache/sysds/runtime/matrix/data/MatrixIndexes.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixIndexes</a>,<a href="../../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&gt;</code></td>
 <td class="colLast"><span class="typeNameLabel">RDDConverterUtilsExt.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/instructions/spark/utils/RDDConverterUtilsExt.html#coordinateMatrixToBinaryBlock-org.apache.spark.api.java.JavaSparkContext-org.apache.spark.mllib.linalg.distributed.CoordinateMatrix-org.apache.sysds.runtime.meta.DataCharacteristics-boolean-">coordinateMatrixToBinaryBlock</a></span>(org.apache.spark.api.java.JavaSparkContext&nbsp;sc,
                              org.apache.spark.mllib.linalg.distributed.CoordinateMatrix&nbsp;input,
                              <a href="../../../../../../../org/apache/sysds/runtime/meta/DataCharacteristics.html" title="class in org.apache.sysds.runtime.meta">DataCharacteristics</a>&nbsp;mcIn,
                              boolean&nbsp;outputEmptyBlocks)</code>&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>static org.apache.spark.api.java.JavaPairRDD&lt;<a href="../../../../../../../org/apache/sysds/runtime/matrix/data/MatrixIndexes.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixIndexes</a>,<a href="../../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&gt;</code></td>
 <td class="colLast"><span class="typeNameLabel">RDDConverterUtilsExt.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/instructions/spark/utils/RDDConverterUtilsExt.html#coordinateMatrixToBinaryBlock-org.apache.spark.SparkContext-org.apache.spark.mllib.linalg.distributed.CoordinateMatrix-org.apache.sysds.runtime.meta.DataCharacteristics-boolean-">coordinateMatrixToBinaryBlock</a></span>(org.apache.spark.SparkContext&nbsp;sc,
                              org.apache.spark.mllib.linalg.distributed.CoordinateMatrix&nbsp;input,
                              <a href="../../../../../../../org/apache/sysds/runtime/meta/DataCharacteristics.html" title="class in org.apache.sysds.runtime.meta">DataCharacteristics</a>&nbsp;mcIn,
                              boolean&nbsp;outputEmptyBlocks)</code>&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>static org.apache.spark.api.java.JavaPairRDD&lt;<a href="../../../../../../../org/apache/sysds/runtime/matrix/data/MatrixIndexes.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixIndexes</a>,<a href="../../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&gt;</code></td>
 <td class="colLast"><span class="typeNameLabel">SparkUtils.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/instructions/spark/utils/SparkUtils.html#copyBinaryBlockMatrix-org.apache.spark.api.java.JavaPairRDD-">copyBinaryBlockMatrix</a></span>(org.apache.spark.api.java.JavaPairRDD&lt;<a href="../../../../../../../org/apache/sysds/runtime/matrix/data/MatrixIndexes.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixIndexes</a>,<a href="../../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&gt;&nbsp;in)</code>
 <div class="block">Creates a partitioning-preserving deep copy of the input matrix RDD, where 
  the indexes and values are copied.</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>static org.apache.spark.api.java.JavaPairRDD&lt;<a href="../../../../../../../org/apache/sysds/runtime/matrix/data/MatrixIndexes.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixIndexes</a>,<a href="../../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&gt;</code></td>
 <td class="colLast"><span class="typeNameLabel">SparkUtils.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/instructions/spark/utils/SparkUtils.html#copyBinaryBlockMatrix-org.apache.spark.api.java.JavaPairRDD-boolean-">copyBinaryBlockMatrix</a></span>(org.apache.spark.api.java.JavaPairRDD&lt;<a href="../../../../../../../org/apache/sysds/runtime/matrix/data/MatrixIndexes.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixIndexes</a>,<a href="../../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&gt;&nbsp;in,
                      boolean&nbsp;deep)</code>
 <div class="block">Creates a partitioning-preserving copy of the input matrix RDD.</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>static org.apache.spark.api.java.JavaPairRDD&lt;<a href="../../../../../../../org/apache/sysds/runtime/matrix/data/MatrixIndexes.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixIndexes</a>,<a href="../../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&gt;</code></td>
 <td class="colLast"><span class="typeNameLabel">RDDConverterUtils.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/instructions/spark/utils/RDDConverterUtils.html#csvToBinaryBlock-org.apache.spark.api.java.JavaSparkContext-org.apache.spark.api.java.JavaPairRDD-org.apache.sysds.runtime.meta.DataCharacteristics-boolean-java.lang.String-boolean-double-java.util.Set-">csvToBinaryBlock</a></span>(org.apache.spark.api.java.JavaSparkContext&nbsp;sc,
                 org.apache.spark.api.java.JavaPairRDD&lt;org.apache.hadoop.io.LongWritable,org.apache.hadoop.io.Text&gt;&nbsp;input,
@@ -962,7 +968,7 @@
                 double&nbsp;fillValue,
                 <a href="https://docs.oracle.com/javase/8/docs/api/java/util/Set.html?is-external=true" title="class or interface in java.util">Set</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&gt;&nbsp;naStrings)</code>&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>static org.apache.spark.api.java.JavaPairRDD&lt;<a href="../../../../../../../org/apache/sysds/runtime/matrix/data/MatrixIndexes.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixIndexes</a>,<a href="../../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&gt;</code></td>
 <td class="colLast"><span class="typeNameLabel">RDDConverterUtils.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/instructions/spark/utils/RDDConverterUtils.html#csvToBinaryBlock-org.apache.spark.api.java.JavaSparkContext-org.apache.spark.api.java.JavaRDD-org.apache.sysds.runtime.meta.DataCharacteristics-boolean-java.lang.String-boolean-double-java.util.Set-">csvToBinaryBlock</a></span>(org.apache.spark.api.java.JavaSparkContext&nbsp;sc,
                 org.apache.spark.api.java.JavaRDD&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&gt;&nbsp;input,
@@ -973,7 +979,7 @@
                 double&nbsp;fillValue,
                 <a href="https://docs.oracle.com/javase/8/docs/api/java/util/Set.html?is-external=true" title="class or interface in java.util">Set</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&gt;&nbsp;naStrings)</code>&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>static org.apache.spark.api.java.JavaPairRDD&lt;<a href="../../../../../../../org/apache/sysds/runtime/matrix/data/MatrixIndexes.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixIndexes</a>,<a href="../../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&gt;</code></td>
 <td class="colLast"><span class="typeNameLabel">RDDConverterUtils.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/instructions/spark/utils/RDDConverterUtils.html#dataFrameToBinaryBlock-org.apache.spark.api.java.JavaSparkContext-org.apache.spark.sql.Dataset-org.apache.sysds.runtime.meta.DataCharacteristics-boolean-boolean-">dataFrameToBinaryBlock</a></span>(org.apache.spark.api.java.JavaSparkContext&nbsp;sc,
                       org.apache.spark.sql.Dataset&lt;org.apache.spark.sql.Row&gt;&nbsp;df,
@@ -981,28 +987,36 @@
                       boolean&nbsp;containsID,
                       boolean&nbsp;isVector)</code>&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>static scala.Tuple2&lt;<a href="../../../../../../../org/apache/sysds/runtime/matrix/data/MatrixIndexes.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixIndexes</a>,<a href="../../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&gt;</code></td>
 <td class="colLast"><span class="typeNameLabel">SparkUtils.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/instructions/spark/utils/SparkUtils.html#fromIndexedMatrixBlock-org.apache.sysds.runtime.instructions.spark.data.IndexedMatrixValue-">fromIndexedMatrixBlock</a></span>(<a href="../../../../../../../org/apache/sysds/runtime/instructions/spark/data/IndexedMatrixValue.html" title="class in org.apache.sysds.runtime.instructions.spark.data">IndexedMatrixValue</a>&nbsp;in)</code>&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>static <a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;scala.Tuple2&lt;<a href="../../../../../../../org/apache/sysds/runtime/matrix/data/MatrixIndexes.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixIndexes</a>,<a href="../../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&gt;&gt;</code></td>
 <td class="colLast"><span class="typeNameLabel">SparkUtils.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/instructions/spark/utils/SparkUtils.html#fromIndexedMatrixBlock-java.util.List-">fromIndexedMatrixBlock</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;<a href="../../../../../../../org/apache/sysds/runtime/instructions/spark/data/IndexedMatrixValue.html" title="class in org.apache.sysds.runtime.instructions.spark.data">IndexedMatrixValue</a>&gt;&nbsp;in)</code>&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>static <a href="../../../../../../../org/apache/sysds/runtime/matrix/data/Pair.html" title="class in org.apache.sysds.runtime.matrix.data">Pair</a>&lt;<a href="../../../../../../../org/apache/sysds/runtime/matrix/data/MatrixIndexes.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixIndexes</a>,<a href="../../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&gt;</code></td>
 <td class="colLast"><span class="typeNameLabel">SparkUtils.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/instructions/spark/utils/SparkUtils.html#fromIndexedMatrixBlockToPair-org.apache.sysds.runtime.instructions.spark.data.IndexedMatrixValue-">fromIndexedMatrixBlockToPair</a></span>(<a href="../../../../../../../org/apache/sysds/runtime/instructions/spark/data/IndexedMatrixValue.html" title="class in org.apache.sysds.runtime.instructions.spark.data">IndexedMatrixValue</a>&nbsp;in)</code>&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>static <a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;<a href="../../../../../../../org/apache/sysds/runtime/matrix/data/Pair.html" title="class in org.apache.sysds.runtime.matrix.data">Pair</a>&lt;<a href="../../../../../../../org/apache/sysds/runtime/matrix/data/MatrixIndexes.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixIndexes</a>,<a href="../../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&gt;&gt;</code></td>
 <td class="colLast"><span class="typeNameLabel">SparkUtils.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/instructions/spark/utils/SparkUtils.html#fromIndexedMatrixBlockToPair-java.util.List-">fromIndexedMatrixBlockToPair</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;<a href="../../../../../../../org/apache/sysds/runtime/instructions/spark/data/IndexedMatrixValue.html" title="class in org.apache.sysds.runtime.instructions.spark.data">IndexedMatrixValue</a>&gt;&nbsp;in)</code>&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>static org.apache.spark.api.java.JavaPairRDD&lt;<a href="../../../../../../../org/apache/sysds/runtime/matrix/data/MatrixIndexes.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixIndexes</a>,<a href="../../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&gt;</code></td>
 <td class="colLast"><span class="typeNameLabel">SparkUtils.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/instructions/spark/utils/SparkUtils.html#getEmptyBlockRDD-org.apache.spark.api.java.JavaSparkContext-org.apache.sysds.runtime.meta.DataCharacteristics-">getEmptyBlockRDD</a></span>(org.apache.spark.api.java.JavaSparkContext&nbsp;sc,
                 <a href="../../../../../../../org/apache/sysds/runtime/meta/DataCharacteristics.html" title="class in org.apache.sysds.runtime.meta">DataCharacteristics</a>&nbsp;mc)</code>
 <div class="block">Creates an RDD of empty blocks according to the given matrix characteristics.</div>
 </td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>static org.apache.spark.api.java.JavaPairRDD&lt;<a href="../../../../../../../org/apache/sysds/runtime/matrix/data/MatrixIndexes.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixIndexes</a>,<a href="../../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&gt;</code></td>
+<td class="colLast"><span class="typeNameLabel">RDDConverterUtils.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/instructions/spark/utils/RDDConverterUtils.html#libsvmToBinaryBlock-org.apache.spark.api.java.JavaSparkContext-org.apache.spark.api.java.JavaPairRDD-org.apache.sysds.runtime.meta.DataCharacteristics-java.lang.String-java.lang.String-">libsvmToBinaryBlock</a></span>(org.apache.spark.api.java.JavaSparkContext&nbsp;sc,
+                   org.apache.spark.api.java.JavaPairRDD&lt;org.apache.hadoop.io.LongWritable,org.apache.hadoop.io.Text&gt;&nbsp;input,
+                   <a href="../../../../../../../org/apache/sysds/runtime/meta/DataCharacteristics.html" title="class in org.apache.sysds.runtime.meta">DataCharacteristics</a>&nbsp;mc,
+                   <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;delim,
+                   <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;indexDelim)</code>&nbsp;</td>
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code>static org.apache.spark.api.java.JavaPairRDD&lt;<a href="../../../../../../../org/apache/sysds/runtime/matrix/data/MatrixIndexes.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixIndexes</a>,<a href="../../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&gt;</code></td>
@@ -1187,20 +1201,26 @@
 </td>
 </tr>
 <tr class="altColor">
+<td class="colFirst"><code>static org.apache.spark.api.java.JavaPairRDD&lt;<a href="../../../../../../../org/apache/sysds/runtime/matrix/data/MatrixIndexes.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixIndexes</a>,<a href="../../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&gt;</code></td>
+<td class="colLast"><span class="typeNameLabel">RDDConverterUtils.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/instructions/spark/utils/RDDConverterUtils.html#binaryBlockToBinaryBlock-org.apache.spark.api.java.JavaPairRDD-org.apache.sysds.runtime.meta.DataCharacteristics-org.apache.sysds.runtime.meta.DataCharacteristics-">binaryBlockToBinaryBlock</a></span>(org.apache.spark.api.java.JavaPairRDD&lt;<a href="../../../../../../../org/apache/sysds/runtime/matrix/data/MatrixIndexes.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixIndexes</a>,<a href="../../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&gt;&nbsp;in,
+                        <a href="../../../../../../../org/apache/sysds/runtime/meta/DataCharacteristics.html" title="class in org.apache.sysds.runtime.meta">DataCharacteristics</a>&nbsp;mcIn,
+                        <a href="../../../../../../../org/apache/sysds/runtime/meta/DataCharacteristics.html" title="class in org.apache.sysds.runtime.meta">DataCharacteristics</a>&nbsp;mcOut)</code>&nbsp;</td>
+</tr>
+<tr class="rowColor">
 <td class="colFirst"><code>static org.apache.spark.api.java.JavaRDD&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&gt;</code></td>
 <td class="colLast"><span class="typeNameLabel">RDDConverterUtils.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/instructions/spark/utils/RDDConverterUtils.html#binaryBlockToCsv-org.apache.spark.api.java.JavaPairRDD-org.apache.sysds.runtime.meta.DataCharacteristics-org.apache.sysds.runtime.io.FileFormatPropertiesCSV-boolean-">binaryBlockToCsv</a></span>(org.apache.spark.api.java.JavaPairRDD&lt;<a href="../../../../../../../org/apache/sysds/runtime/matrix/data/MatrixIndexes.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixIndexes</a>,<a href="../../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&gt;&nbsp;in,
                 <a href="../../../../../../../org/apache/sysds/runtime/meta/DataCharacteristics.html" title="class in org.apache.sysds.runtime.meta">DataCharacteristics</a>&nbsp;mcIn,
                 <a href="../../../../../../../org/apache/sysds/runtime/io/FileFormatPropertiesCSV.html" title="class in org.apache.sysds.runtime.io">FileFormatPropertiesCSV</a>&nbsp;props,
                 boolean&nbsp;strict)</code>&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>static org.apache.spark.sql.Dataset&lt;org.apache.spark.sql.Row&gt;</code></td>
 <td class="colLast"><span class="typeNameLabel">RDDConverterUtils.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/instructions/spark/utils/RDDConverterUtils.html#binaryBlockToDataFrame-org.apache.spark.sql.SparkSession-org.apache.spark.api.java.JavaPairRDD-org.apache.sysds.runtime.meta.DataCharacteristics-boolean-">binaryBlockToDataFrame</a></span>(org.apache.spark.sql.SparkSession&nbsp;sparkSession,
                       org.apache.spark.api.java.JavaPairRDD&lt;<a href="../../../../../../../org/apache/sysds/runtime/matrix/data/MatrixIndexes.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixIndexes</a>,<a href="../../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&gt;&nbsp;in,
                       <a href="../../../../../../../org/apache/sysds/runtime/meta/DataCharacteristics.html" title="class in org.apache.sysds.runtime.meta">DataCharacteristics</a>&nbsp;mc,
                       boolean&nbsp;toVector)</code>&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>static org.apache.spark.sql.Dataset&lt;org.apache.spark.sql.Row&gt;</code></td>
 <td class="colLast"><span class="typeNameLabel">RDDConverterUtils.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/instructions/spark/utils/RDDConverterUtils.html#binaryBlockToDataFrame-org.apache.spark.sql.SQLContext-org.apache.spark.api.java.JavaPairRDD-org.apache.sysds.runtime.meta.DataCharacteristics-boolean-">binaryBlockToDataFrame</a></span>(org.apache.spark.sql.SQLContext&nbsp;sqlContext,
                       org.apache.spark.api.java.JavaPairRDD&lt;<a href="../../../../../../../org/apache/sysds/runtime/matrix/data/MatrixIndexes.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixIndexes</a>,<a href="../../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&gt;&nbsp;in,
@@ -1209,11 +1229,18 @@
 <div class="block"><span class="deprecatedLabel">Deprecated.</span>&nbsp;</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>static org.apache.spark.api.java.JavaRDD&lt;org.apache.spark.ml.feature.LabeledPoint&gt;</code></td>
 <td class="colLast"><span class="typeNameLabel">RDDConverterUtils.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/instructions/spark/utils/RDDConverterUtils.html#binaryBlockToLabeledPoints-org.apache.spark.api.java.JavaPairRDD-">binaryBlockToLabeledPoints</a></span>(org.apache.spark.api.java.JavaPairRDD&lt;<a href="../../../../../../../org/apache/sysds/runtime/matrix/data/MatrixIndexes.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixIndexes</a>,<a href="../../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&gt;&nbsp;in)</code>
 <div class="block">Converter from binary block rdd to rdd of labeled points.</div>
 </td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>static org.apache.spark.api.java.JavaRDD&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&gt;</code></td>
+<td class="colLast"><span class="typeNameLabel">RDDConverterUtils.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/instructions/spark/utils/RDDConverterUtils.html#binaryBlockToLibsvm-org.apache.spark.api.java.JavaPairRDD-org.apache.sysds.runtime.meta.DataCharacteristics-org.apache.sysds.runtime.io.FileFormatPropertiesLIBSVM-boolean-">binaryBlockToLibsvm</a></span>(org.apache.spark.api.java.JavaPairRDD&lt;<a href="../../../../../../../org/apache/sysds/runtime/matrix/data/MatrixIndexes.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixIndexes</a>,<a href="../../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&gt;&nbsp;in,
+                   <a href="../../../../../../../org/apache/sysds/runtime/meta/DataCharacteristics.html" title="class in org.apache.sysds.runtime.meta">DataCharacteristics</a>&nbsp;mcIn,
+                   <a href="../../../../../../../org/apache/sysds/runtime/io/FileFormatPropertiesLIBSVM.html" title="class in org.apache.sysds.runtime.io">FileFormatPropertiesLIBSVM</a>&nbsp;props,
+                   boolean&nbsp;strict)</code>&nbsp;</td>
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code>static org.apache.spark.api.java.JavaRDD&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&gt;</code></td>

@@ -167,7 +167,7 @@ extends <a href="../../../../../../org/apache/sysds/runtime/instructions/fed/Una
 <!--   -->
 </a>
 <h3>Nested classes/interfaces inherited from class&nbsp;org.apache.sysds.runtime.instructions.fed.<a href="../../../../../../org/apache/sysds/runtime/instructions/fed/FEDInstruction.html" title="class in org.apache.sysds.runtime.instructions.fed">FEDInstruction</a></h3>
-<code><a href="../../../../../../org/apache/sysds/runtime/instructions/fed/FEDInstruction.FEDType.html" title="enum in org.apache.sysds.runtime.instructions.fed">FEDInstruction.FEDType</a></code></li>
+<code><a href="../../../../../../org/apache/sysds/runtime/instructions/fed/FEDInstruction.FederatedOutput.html" title="enum in org.apache.sysds.runtime.instructions.fed">FEDInstruction.FederatedOutput</a>, <a href="../../../../../../org/apache/sysds/runtime/instructions/fed/FEDInstruction.FEDType.html" title="enum in org.apache.sysds.runtime.instructions.fed">FEDInstruction.FEDType</a></code></li>
 </ul>
 <ul class="blockList">
 <li class="blockList"><a name="nested.classes.inherited.from.class.org.apache.sysds.runtime.instructions.Instruction">
@@ -217,6 +217,14 @@ extends <a href="../../../../../../org/apache/sysds/runtime/instructions/fed/Una
                    <a href="../../../../../../org/apache/sysds/runtime/instructions/cp/CPOperand.html" title="class in org.apache.sysds.runtime.instructions.cp">CPOperand</a>&nbsp;out,
                    <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;opcode,
                    <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;istr)</code>&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colOne"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/instructions/fed/ReorgFEDInstruction.html#ReorgFEDInstruction-org.apache.sysds.runtime.matrix.operators.Operator-org.apache.sysds.runtime.instructions.cp.CPOperand-org.apache.sysds.runtime.instructions.cp.CPOperand-java.lang.String-java.lang.String-org.apache.sysds.runtime.instructions.fed.FEDInstruction.FederatedOutput-">ReorgFEDInstruction</a></span>(<a href="../../../../../../org/apache/sysds/runtime/matrix/operators/Operator.html" title="class in org.apache.sysds.runtime.matrix.operators">Operator</a>&nbsp;op,
+                   <a href="../../../../../../org/apache/sysds/runtime/instructions/cp/CPOperand.html" title="class in org.apache.sysds.runtime.instructions.cp">CPOperand</a>&nbsp;in1,
+                   <a href="../../../../../../org/apache/sysds/runtime/instructions/cp/CPOperand.html" title="class in org.apache.sysds.runtime.instructions.cp">CPOperand</a>&nbsp;out,
+                   <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;opcode,
+                   <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;istr,
+                   <a href="../../../../../../org/apache/sysds/runtime/instructions/fed/FEDInstruction.FederatedOutput.html" title="enum in org.apache.sysds.runtime.instructions.fed">FEDInstruction.FederatedOutput</a>&nbsp;fedOut)</code>&nbsp;</td>
 </tr>
 </table>
 </li>
@@ -293,6 +301,20 @@ extends <a href="../../../../../../org/apache/sysds/runtime/instructions/fed/Una
 <!--   -->
 </a>
 <h3>Constructor Detail</h3>
+<a name="ReorgFEDInstruction-org.apache.sysds.runtime.matrix.operators.Operator-org.apache.sysds.runtime.instructions.cp.CPOperand-org.apache.sysds.runtime.instructions.cp.CPOperand-java.lang.String-java.lang.String-org.apache.sysds.runtime.instructions.fed.FEDInstruction.FederatedOutput-">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>ReorgFEDInstruction</h4>
+<pre>public&nbsp;ReorgFEDInstruction(<a href="../../../../../../org/apache/sysds/runtime/matrix/operators/Operator.html" title="class in org.apache.sysds.runtime.matrix.operators">Operator</a>&nbsp;op,
+                           <a href="../../../../../../org/apache/sysds/runtime/instructions/cp/CPOperand.html" title="class in org.apache.sysds.runtime.instructions.cp">CPOperand</a>&nbsp;in1,
+                           <a href="../../../../../../org/apache/sysds/runtime/instructions/cp/CPOperand.html" title="class in org.apache.sysds.runtime.instructions.cp">CPOperand</a>&nbsp;out,
+                           <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;opcode,
+                           <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;istr,
+                           <a href="../../../../../../org/apache/sysds/runtime/instructions/fed/FEDInstruction.FederatedOutput.html" title="enum in org.apache.sysds.runtime.instructions.fed">FEDInstruction.FederatedOutput</a>&nbsp;fedOut)</pre>
+</li>
+</ul>
 <a name="ReorgFEDInstruction-org.apache.sysds.runtime.matrix.operators.Operator-org.apache.sysds.runtime.instructions.cp.CPOperand-org.apache.sysds.runtime.instructions.cp.CPOperand-java.lang.String-java.lang.String-">
 <!--   -->
 </a>

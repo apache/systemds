@@ -462,26 +462,30 @@
 <li class="blockList">
 <h3>Serialized Fields</h3>
 <ul class="blockList">
-<li class="blockList">
+<li class="blockListLast">
 <h4>_colIndexes</h4>
 <pre>int[] _colIndexes</pre>
-<div class="block">The ColGroup Indexes 0 offset, contained in the ColGroup</div>
+<div class="block">The ColGroup Indexes contained in the ColGroup</div>
 </li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="blockList"><a name="org.apache.sysds.runtime.compress.colgroup.ColGroupCompressed">
+<!--   -->
+</a>
+<h3>Class <a href="org/apache/sysds/runtime/compress/colgroup/ColGroupCompressed.html" title="class in org.apache.sysds.runtime.compress.colgroup">org.apache.sysds.runtime.compress.colgroup.ColGroupCompressed</a> extends <a href="org/apache/sysds/runtime/compress/colgroup/AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a> implements Serializable</h3>
+<dl class="nameValue">
+<dt>serialVersionUID:</dt>
+<dd>3786247536054353658L</dd>
+</dl>
+<ul class="blockList">
 <li class="blockList">
+<h3>Serialized Fields</h3>
+<ul class="blockList">
+<li class="blockListLast">
 <h4>_numRows</h4>
 <pre>int _numRows</pre>
-<div class="block">Number of rows in the matrix, for use by child classes.</div>
-</li>
-<li class="blockList">
-<h4>_zeros</h4>
-<pre>boolean _zeros</pre>
-<div class="block">ColGroup Implementation Contains zero row. Note this is not if it contains a zero value. If false then the stored
- values are filling the ColGroup making it a dense representation, that can be leveraged in operations.</div>
-</li>
-<li class="blockListLast">
-<h4>_lossy</h4>
-<pre>boolean _lossy</pre>
-<div class="block">boolean specifying if the column group is encoded lossy</div>
 </li>
 </ul>
 </li>
@@ -510,7 +514,7 @@
 <ul class="blockList">
 <li class="blockListLast">
 <h4>_data</h4>
-<pre><a href="org/apache/sysds/runtime/compress/colgroup/mapping/IMapToData.html" title="interface in org.apache.sysds.runtime.compress.colgroup.mapping">IMapToData</a> _data</pre>
+<pre><a href="org/apache/sysds/runtime/compress/colgroup/mapping/AMapToData.html" title="class in org.apache.sysds.runtime.compress.colgroup.mapping">AMapToData</a> _data</pre>
 </li>
 </ul>
 </li>
@@ -519,7 +523,7 @@
 <li class="blockList"><a name="org.apache.sysds.runtime.compress.colgroup.ColGroupEmpty">
 <!--   -->
 </a>
-<h3>Class <a href="org/apache/sysds/runtime/compress/colgroup/ColGroupEmpty.html" title="class in org.apache.sysds.runtime.compress.colgroup">org.apache.sysds.runtime.compress.colgroup.ColGroupEmpty</a> extends <a href="org/apache/sysds/runtime/compress/colgroup/ColGroupValue.html" title="class in org.apache.sysds.runtime.compress.colgroup">ColGroupValue</a> implements Serializable</h3>
+<h3>Class <a href="org/apache/sysds/runtime/compress/colgroup/ColGroupEmpty.html" title="class in org.apache.sysds.runtime.compress.colgroup">org.apache.sysds.runtime.compress.colgroup.ColGroupEmpty</a> extends <a href="org/apache/sysds/runtime/compress/colgroup/ColGroupCompressed.html" title="class in org.apache.sysds.runtime.compress.colgroup">ColGroupCompressed</a> implements Serializable</h3>
 <dl class="nameValue">
 <dt>serialVersionUID:</dt>
 <dd>3204391661346504L</dd>
@@ -583,12 +587,12 @@
 <ul class="blockList">
 <li class="blockList">
 <h4>_indexes</h4>
-<pre>int[] _indexes</pre>
+<pre><a href="org/apache/sysds/runtime/compress/colgroup/offset/AOffset.html" title="class in org.apache.sysds.runtime.compress.colgroup.offset">AOffset</a> _indexes</pre>
 <div class="block">Sparse row indexes for the data</div>
 </li>
 <li class="blockListLast">
 <h4>_data</h4>
-<pre><a href="org/apache/sysds/runtime/compress/colgroup/mapping/IMapToData.html" title="interface in org.apache.sysds.runtime.compress.colgroup.mapping">IMapToData</a> _data</pre>
+<pre><a href="org/apache/sysds/runtime/compress/colgroup/mapping/AMapToData.html" title="class in org.apache.sysds.runtime.compress.colgroup.mapping">AMapToData</a> _data</pre>
 <div class="block">Pointers to row indexes in the dictionary. Note the dictionary has one extra entry.</div>
 </li>
 </ul>
@@ -609,7 +613,7 @@
 <ul class="blockList">
 <li class="blockListLast">
 <h4>_indexes</h4>
-<pre>int[] _indexes</pre>
+<pre><a href="org/apache/sysds/runtime/compress/colgroup/offset/AOffset.html" title="class in org.apache.sysds.runtime.compress.colgroup.offset">AOffset</a> _indexes</pre>
 <div class="block">Sparse row indexes for the data</div>
 </li>
 </ul>
@@ -630,7 +634,7 @@
 <ul class="blockList">
 <li class="blockListLast">
 <h4>_indexes</h4>
-<pre>int[] _indexes</pre>
+<pre><a href="org/apache/sysds/runtime/compress/colgroup/offset/AOffset.html" title="class in org.apache.sysds.runtime.compress.colgroup.offset">AOffset</a> _indexes</pre>
 <div class="block">Sparse row indexes for the data</div>
 </li>
 </ul>
@@ -651,12 +655,12 @@
 <ul class="blockList">
 <li class="blockList">
 <h4>_indexes</h4>
-<pre>int[] _indexes</pre>
+<pre><a href="org/apache/sysds/runtime/compress/colgroup/offset/AOffset.html" title="class in org.apache.sysds.runtime.compress.colgroup.offset">AOffset</a> _indexes</pre>
 <div class="block">Sparse row indexes for the data</div>
 </li>
 <li class="blockListLast">
 <h4>_data</h4>
-<pre><a href="org/apache/sysds/runtime/compress/colgroup/mapping/IMapToData.html" title="interface in org.apache.sysds.runtime.compress.colgroup.mapping">IMapToData</a> _data</pre>
+<pre><a href="org/apache/sysds/runtime/compress/colgroup/mapping/AMapToData.html" title="class in org.apache.sysds.runtime.compress.colgroup.mapping">AMapToData</a> _data</pre>
 <div class="block">Pointers to row indexes in the dictionary. Note the dictionary has one extra entry.</div>
 </li>
 </ul>
@@ -688,7 +692,7 @@
 <li class="blockList"><a name="org.apache.sysds.runtime.compress.colgroup.ColGroupValue">
 <!--   -->
 </a>
-<h3>Class <a href="org/apache/sysds/runtime/compress/colgroup/ColGroupValue.html" title="class in org.apache.sysds.runtime.compress.colgroup">org.apache.sysds.runtime.compress.colgroup.ColGroupValue</a> extends <a href="org/apache/sysds/runtime/compress/colgroup/AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a> implements Serializable</h3>
+<h3>Class <a href="org/apache/sysds/runtime/compress/colgroup/ColGroupValue.html" title="class in org.apache.sysds.runtime.compress.colgroup">org.apache.sysds.runtime.compress.colgroup.ColGroupValue</a> extends <a href="org/apache/sysds/runtime/compress/colgroup/ColGroupCompressed.html" title="class in org.apache.sysds.runtime.compress.colgroup">ColGroupCompressed</a> implements Serializable</h3>
 <dl class="nameValue">
 <dt>serialVersionUID:</dt>
 <dd>3786247536054353658L</dd>
@@ -698,13 +702,20 @@
 <h3>Serialized Fields</h3>
 <ul class="blockList">
 <li class="blockList">
+<h4>_zeros</h4>
+<pre>boolean _zeros</pre>
+<div class="block">ColGroup Implementation Contains zero tuple. Note this is not if it contains a zero value. If false then the
+ stored values are filling the ColGroup making it a dense representation, that can be leveraged in operations.</div>
+</li>
+<li class="blockList">
 <h4>_dict</h4>
-<pre><a href="org/apache/sysds/runtime/compress/colgroup/ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup">ADictionary</a> _dict</pre>
+<pre><a href="org/apache/sysds/runtime/compress/colgroup/dictionary/ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a> _dict</pre>
 <div class="block">Distinct value tuples associated with individual bitmaps.</div>
 </li>
 <li class="blockListLast">
 <h4>counts</h4>
 <pre>int[] counts</pre>
+<div class="block">The count of each distinct value contained in the dictionary</div>
 </li>
 </ul>
 </li>
@@ -5241,6 +5252,34 @@
 </li>
 </ul>
 </li>
+<li class="blockList"><a name="org.apache.sysds.runtime.io.FileFormatPropertiesLIBSVM">
+<!--   -->
+</a>
+<h3>Class <a href="org/apache/sysds/runtime/io/FileFormatPropertiesLIBSVM.html" title="class in org.apache.sysds.runtime.io">org.apache.sysds.runtime.io.FileFormatPropertiesLIBSVM</a> extends <a href="org/apache/sysds/runtime/io/FileFormatProperties.html" title="class in org.apache.sysds.runtime.io">FileFormatProperties</a> implements Serializable</h3>
+<dl class="nameValue">
+<dt>serialVersionUID:</dt>
+<dd>-2870393360885401604L</dd>
+</dl>
+<ul class="blockList">
+<li class="blockList">
+<h3>Serialized Fields</h3>
+<ul class="blockList">
+<li class="blockList">
+<h4>delim</h4>
+<pre><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a> delim</pre>
+</li>
+<li class="blockList">
+<h4>indexDelim</h4>
+<pre><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a> indexDelim</pre>
+</li>
+<li class="blockListLast">
+<h4>sparse</h4>
+<pre>boolean sparse</pre>
+</li>
+</ul>
+</li>
+</ul>
+</li>
 <li class="blockList"><a name="org.apache.sysds.runtime.io.FileFormatPropertiesMM">
 <!--   -->
 </a>
@@ -5437,12 +5476,10 @@
 <li class="blockList">
 <h4>readExternal</h4>
 <pre>public&nbsp;void&nbsp;readExternal(<a href="https://docs.oracle.com/javase/8/docs/api/java/io/ObjectInput.html?is-external=true" title="class or interface in java.io">ObjectInput</a>&nbsp;in)
-                  throws <a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io">IOException</a>,
-                         <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/ClassNotFoundException.html?is-external=true" title="class or interface in java.lang">ClassNotFoundException</a></pre>
+                  throws <a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io">IOException</a></pre>
 <dl>
 <dt><span class="throwsLabel">Throws:</span></dt>
 <dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io">IOException</a></code></dd>
-<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/ClassNotFoundException.html?is-external=true" title="class or interface in java.lang">ClassNotFoundException</a></code></dd>
 </dl>
 </li>
 <li class="blockListLast">

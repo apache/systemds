@@ -90,6 +90,10 @@
 <td class="colFirst"><a href="#org.apache.sysds.runtime.instructions.gpu.context">org.apache.sysds.runtime.instructions.gpu.context</a></td>
 <td class="colLast">&nbsp;</td>
 </tr>
+<tr class="altColor">
+<td class="colFirst"><a href="#org.apache.sysds.runtime.lineage">org.apache.sysds.runtime.lineage</a></td>
+<td class="colLast">&nbsp;</td>
+</tr>
 </tbody>
 </table>
 </li>
@@ -131,6 +135,27 @@
 <!--   -->
 </a>
 <h3>Uses of <a href="../../../../../../../../org/apache/sysds/runtime/instructions/gpu/context/GPUObject.html" title="class in org.apache.sysds.runtime.instructions.gpu.context">GPUObject</a> in <a href="../../../../../../../../org/apache/sysds/runtime/instructions/gpu/context/package-summary.html">org.apache.sysds.runtime.instructions.gpu.context</a></h3>
+<table class="useSummary" border="0" cellpadding="3" cellspacing="0" summary="Use table, listing fields, and an explanation">
+<caption><span>Fields in <a href="../../../../../../../../org/apache/sysds/runtime/instructions/gpu/context/package-summary.html">org.apache.sysds.runtime.instructions.gpu.context</a> declared as <a href="../../../../../../../../org/apache/sysds/runtime/instructions/gpu/context/GPUObject.html" title="class in org.apache.sysds.runtime.instructions.gpu.context">GPUObject</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colLast" scope="col">Field and Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../../../../../../../../org/apache/sysds/runtime/instructions/gpu/context/GPUObject.html" title="class in org.apache.sysds.runtime.instructions.gpu.context">GPUObject</a></code></td>
+<td class="colLast"><span class="typeNameLabel">GPUObject.</span><code><span class="memberNameLink"><a href="../../../../../../../../org/apache/sysds/runtime/instructions/gpu/context/GPUObject.html#lineageCachedChainHead">lineageCachedChainHead</a></span></code>
+<div class="block">Next GPUObject that points to the same lineage cached GPU pointer</div>
+</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="../../../../../../../../org/apache/sysds/runtime/instructions/gpu/context/GPUObject.html" title="class in org.apache.sysds.runtime.instructions.gpu.context">GPUObject</a></code></td>
+<td class="colLast"><span class="typeNameLabel">GPUObject.</span><code><span class="memberNameLink"><a href="../../../../../../../../org/apache/sysds/runtime/instructions/gpu/context/GPUObject.html#nextLineageCachedEntry">nextLineageCachedEntry</a></span></code>
+<div class="block">Head of the linked list of GPUObjects that point to the same lineage cached GPU pointer</div>
+</td>
+</tr>
+</tbody>
+</table>
 <table class="useSummary" border="0" cellpadding="3" cellspacing="0" summary="Use table, listing methods, and an explanation">
 <caption><span>Methods in <a href="../../../../../../../../org/apache/sysds/runtime/instructions/gpu/context/package-summary.html">org.apache.sysds.runtime.instructions.gpu.context</a> that return <a href="../../../../../../../../org/apache/sysds/runtime/instructions/gpu/context/GPUObject.html" title="class in org.apache.sysds.runtime.instructions.gpu.context">GPUObject</a></span><span class="tabEnd">&nbsp;</span></caption>
 <tr>
@@ -195,6 +220,38 @@
 </tr>
 <tr class="rowColor">
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../../../org/apache/sysds/runtime/instructions/gpu/context/ShadowBuffer.html#ShadowBuffer-org.apache.sysds.runtime.instructions.gpu.context.GPUObject-">ShadowBuffer</a></span>(<a href="../../../../../../../../org/apache/sysds/runtime/instructions/gpu/context/GPUObject.html" title="class in org.apache.sysds.runtime.instructions.gpu.context">GPUObject</a>&nbsp;gpuObj)</code>&nbsp;</td>
+</tr>
+</tbody>
+</table>
+</li>
+<li class="blockList"><a name="org.apache.sysds.runtime.lineage">
+<!--   -->
+</a>
+<h3>Uses of <a href="../../../../../../../../org/apache/sysds/runtime/instructions/gpu/context/GPUObject.html" title="class in org.apache.sysds.runtime.instructions.gpu.context">GPUObject</a> in <a href="../../../../../../../../org/apache/sysds/runtime/lineage/package-summary.html">org.apache.sysds.runtime.lineage</a></h3>
+<table class="useSummary" border="0" cellpadding="3" cellspacing="0" summary="Use table, listing methods, and an explanation">
+<caption><span>Methods in <a href="../../../../../../../../org/apache/sysds/runtime/lineage/package-summary.html">org.apache.sysds.runtime.lineage</a> that return <a href="../../../../../../../../org/apache/sysds/runtime/instructions/gpu/context/GPUObject.html" title="class in org.apache.sysds.runtime.instructions.gpu.context">GPUObject</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colLast" scope="col">Method and Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../../../../../../../../org/apache/sysds/runtime/instructions/gpu/context/GPUObject.html" title="class in org.apache.sysds.runtime.instructions.gpu.context">GPUObject</a></code></td>
+<td class="colLast"><span class="typeNameLabel">LineageCacheEntry.</span><code><span class="memberNameLink"><a href="../../../../../../../../org/apache/sysds/runtime/lineage/LineageCacheEntry.html#getGPUObject--">getGPUObject</a></span>()</code>&nbsp;</td>
+</tr>
+</tbody>
+</table>
+<table class="useSummary" border="0" cellpadding="3" cellspacing="0" summary="Use table, listing methods, and an explanation">
+<caption><span>Methods in <a href="../../../../../../../../org/apache/sysds/runtime/lineage/package-summary.html">org.apache.sysds.runtime.lineage</a> with parameters of type <a href="../../../../../../../../org/apache/sysds/runtime/instructions/gpu/context/GPUObject.html" title="class in org.apache.sysds.runtime.instructions.gpu.context">GPUObject</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colLast" scope="col">Method and Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code>void</code></td>
+<td class="colLast"><span class="typeNameLabel">LineageCacheEntry.</span><code><span class="memberNameLink"><a href="../../../../../../../../org/apache/sysds/runtime/lineage/LineageCacheEntry.html#setGPUValue-org.apache.sysds.runtime.instructions.gpu.context.GPUObject-long-">setGPUValue</a></span>(<a href="../../../../../../../../org/apache/sysds/runtime/instructions/gpu/context/GPUObject.html" title="class in org.apache.sysds.runtime.instructions.gpu.context">GPUObject</a>&nbsp;gpuObj,
+           long&nbsp;computetime)</code>&nbsp;</td>
 </tr>
 </tbody>
 </table>

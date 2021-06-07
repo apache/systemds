@@ -92,14 +92,17 @@
 </ul>
 <p class="caption"><span class="caption-text">API</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="api/operator/algorithms.html">Algorithms</a></li>
 <li class="toctree-l1"><a class="reference internal" href="api/context/systemds_context.html">SystemDSContext</a></li>
-<li class="toctree-l1"><a class="reference internal" href="api/matrix/matrix.html">Matrix</a></li>
-<li class="toctree-l1"><a class="reference internal" href="api/matrix/federated.html">Federated</a></li>
-<li class="toctree-l1"><a class="reference internal" href="api/operator/operation_node.html">Operation Node</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api/operator/algorithms.html">Algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api/operator/node/matrix.html">Matrix</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api/operator/node/frame.html">Frame</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api/operator/node/list.html">List</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api/operator/node/scalar.html">Scalar</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api/operator/node/source.html">Source</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Internals API</span></p>
 <ul>
+<li class="toctree-l1"><a class="reference internal" href="api/operator/operation_node.html">Operation Node</a></li>
 <li class="toctree-l1"><a class="reference internal" href="api/script_building/dag.html">Dag</a></li>
 <li class="toctree-l1"><a class="reference internal" href="api/script_building/script.html">Script</a></li>
 <li class="toctree-l1"><a class="reference internal" href="api/utils/converters.html">Converters</a></li>
@@ -179,6 +182,9 @@
  | <a href="#E"><strong>E</strong></a>
  | <a href="#F"><strong>F</strong></a>
  | <a href="#G"><strong>G</strong></a>
+ | <a href="#I"><strong>I</strong></a>
+ | <a href="#K"><strong>K</strong></a>
+ | <a href="#L"><strong>L</strong></a>
  | <a href="#M"><strong>M</strong></a>
  | <a href="#N"><strong>N</strong></a>
  | <a href="#O"><strong>O</strong></a>
@@ -196,11 +202,17 @@
       <li><a href="api/context/systemds_context.html#systemds.context.SystemDSContext.__init__">__init__() (systemds.context.SystemDSContext method)</a>
 
       <ul>
-        <li><a href="api/matrix/federated.html#systemds.matrix.Federated.__init__">(systemds.matrix.Federated method)</a>
+        <li><a href="api/operator/node/frame.html#systemds.operator.Frame.__init__">(systemds.operator.Frame method)</a>
 </li>
-        <li><a href="api/matrix/matrix.html#systemds.matrix.Matrix.__init__">(systemds.matrix.Matrix method)</a>
+        <li><a href="api/operator/node/list.html#systemds.operator.List.__init__">(systemds.operator.List method)</a>
+</li>
+        <li><a href="api/operator/node/matrix.html#systemds.operator.Matrix.__init__">(systemds.operator.Matrix method)</a>
 </li>
         <li><a href="api/operator/operation_node.html#systemds.operator.OperationNode.__init__">(systemds.operator.OperationNode method)</a>
+</li>
+        <li><a href="api/operator/node/scalar.html#systemds.operator.Scalar.__init__">(systemds.operator.Scalar method)</a>
+</li>
+        <li><a href="api/operator/node/source.html#systemds.operator.Source.__init__">(systemds.operator.Source method)</a>
 </li>
       </ul></li>
   </ul></td>
@@ -209,25 +221,57 @@
 <h2 id="A">A</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="api/operator/operation_node.html#systemds.operator.OperationNode.abs">abs() (systemds.operator.OperationNode method)</a>
+      <li><a href="api/operator/node/matrix.html#systemds.operator.Matrix.abs">abs() (systemds.operator.Matrix method)</a>
+
+      <ul>
+        <li><a href="api/operator/node/scalar.html#systemds.operator.Scalar.abs">(systemds.operator.Scalar method)</a>
 </li>
-      <li><a href="api/operator/operation_node.html#systemds.operator.OperationNode.acos">acos() (systemds.operator.OperationNode method)</a>
+      </ul></li>
+      <li><a href="api/operator/node/matrix.html#systemds.operator.Matrix.acos">acos() (systemds.operator.Matrix method)</a>
+
+      <ul>
+        <li><a href="api/operator/node/scalar.html#systemds.operator.Scalar.acos">(systemds.operator.Scalar method)</a>
 </li>
+      </ul></li>
       <li><a href="api/script_building/script.html#systemds.script_building.script.DMLScript.add_code">add_code() (systemds.script_building.script.DMLScript method)</a>
+</li>
+      <li><a href="api/script_building/script.html#systemds.script_building.script.DMLScript.add_input_from_python">add_input_from_python() (systemds.script_building.script.DMLScript method)</a>
+</li>
+      <li><a href="api/operator/algorithms.html#systemds.operator.algorithm.als">als() (in module systemds.operator.algorithm)</a>
+</li>
+      <li><a href="api/operator/algorithms.html#systemds.operator.algorithm.alsCG">alsCG() (in module systemds.operator.algorithm)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="api/script_building/script.html#systemds.script_building.script.DMLScript.add_input_from_python">add_input_from_python() (systemds.script_building.script.DMLScript method)</a>
+      <li><a href="api/operator/algorithms.html#systemds.operator.algorithm.alsDS">alsDS() (in module systemds.operator.algorithm)</a>
 </li>
-      <li><a href="api/operator/operation_node.html#systemds.operator.OperationNode.asin">asin() (systemds.operator.OperationNode method)</a>
+      <li><a href="api/operator/algorithms.html#systemds.operator.algorithm.alsTopkPredict">alsTopkPredict() (in module systemds.operator.algorithm)</a>
 </li>
-      <li><a href="api/operator/operation_node.html#systemds.operator.OperationNode.atan">atan() (systemds.operator.OperationNode method)</a>
+      <li><a href="api/operator/algorithms.html#systemds.operator.algorithm.arima">arima() (in module systemds.operator.algorithm)</a>
 </li>
+      <li><a href="api/context/systemds_context.html#systemds.context.SystemDSContext.array">array() (systemds.context.SystemDSContext method)</a>
+</li>
+      <li><a href="api/operator/node/matrix.html#systemds.operator.Matrix.asin">asin() (systemds.operator.Matrix method)</a>
+
+      <ul>
+        <li><a href="api/operator/node/scalar.html#systemds.operator.Scalar.asin">(systemds.operator.Scalar method)</a>
+</li>
+      </ul></li>
+      <li><a href="api/operator/node/matrix.html#systemds.operator.Matrix.atan">atan() (systemds.operator.Matrix method)</a>
+
+      <ul>
+        <li><a href="api/operator/node/scalar.html#systemds.operator.Scalar.atan">(systemds.operator.Scalar method)</a>
+</li>
+      </ul></li>
   </ul></td>
 </tr></table>
 
 <h2 id="B">B</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/operator/algorithms.html#systemds.operator.algorithm.bivar">bivar() (in module systemds.operator.algorithm)</a>
+</li>
+  </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api/script_building/script.html#systemds.script_building.script.DMLScript.build_code">build_code() (systemds.script_building.script.DMLScript method)</a>
 </li>
@@ -237,33 +281,65 @@
 <h2 id="C">C</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="api/operator/operation_node.html#systemds.operator.OperationNode.cbind">cbind() (systemds.operator.OperationNode method)</a>
+      <li><a href="api/operator/node/frame.html#systemds.operator.Frame.cbind">cbind() (systemds.operator.Frame method)</a>
+
+      <ul>
+        <li><a href="api/operator/node/matrix.html#systemds.operator.Matrix.cbind">(systemds.operator.Matrix method)</a>
 </li>
-      <li><a href="api/operator/operation_node.html#systemds.operator.OperationNode.cholesky">cholesky() (systemds.operator.OperationNode method)</a>
+      </ul></li>
+      <li><a href="api/operator/node/matrix.html#systemds.operator.Matrix.cholesky">cholesky() (systemds.operator.Matrix method)</a>
 </li>
       <li><a href="api/context/systemds_context.html#systemds.context.SystemDSContext.close">close() (systemds.context.SystemDSContext method)</a>
 </li>
-      <li><a href="api/matrix/matrix.html#systemds.matrix.Matrix.code_line">code_line() (systemds.matrix.Matrix method)</a>
+      <li><a href="api/operator/node/frame.html#systemds.operator.Frame.code_line">code_line() (systemds.operator.Frame method)</a>
 
       <ul>
+        <li><a href="api/operator/node/list.html#systemds.operator.List.code_line">(systemds.operator.List method)</a>
+</li>
+        <li><a href="api/operator/node/matrix.html#systemds.operator.Matrix.code_line">(systemds.operator.Matrix method)</a>
+</li>
         <li><a href="api/operator/operation_node.html#systemds.operator.OperationNode.code_line">(systemds.operator.OperationNode method)</a>
+</li>
+        <li><a href="api/operator/node/scalar.html#systemds.operator.Scalar.code_line">(systemds.operator.Scalar method)</a>
+</li>
+        <li><a href="api/operator/node/source.html#systemds.operator.Source.code_line">(systemds.operator.Source method)</a>
 </li>
         <li><a href="api/script_building/dag.html#systemds.script_building.dag.DAGNode.code_line">(systemds.script_building.dag.DAGNode method)</a>
 </li>
       </ul></li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="api/matrix/matrix.html#systemds.matrix.Matrix.compute">compute() (systemds.matrix.Matrix method)</a>
+      <li><a href="api/operator/node/frame.html#systemds.operator.Frame.compute">compute() (systemds.operator.Frame method)</a>
 
       <ul>
+        <li><a href="api/operator/node/list.html#systemds.operator.List.compute">(systemds.operator.List method)</a>
+</li>
+        <li><a href="api/operator/node/matrix.html#systemds.operator.Matrix.compute">(systemds.operator.Matrix method)</a>
+</li>
         <li><a href="api/operator/operation_node.html#systemds.operator.OperationNode.compute">(systemds.operator.OperationNode method)</a>
+</li>
+        <li><a href="api/operator/node/scalar.html#systemds.operator.Scalar.compute">(systemds.operator.Scalar method)</a>
+</li>
+        <li><a href="api/operator/node/source.html#systemds.operator.Source.compute">(systemds.operator.Source method)</a>
 </li>
         <li><a href="api/script_building/dag.html#systemds.script_building.dag.DAGNode.compute">(systemds.script_building.dag.DAGNode method)</a>
 </li>
       </ul></li>
-      <li><a href="api/operator/operation_node.html#systemds.operator.OperationNode.cos">cos() (systemds.operator.OperationNode method)</a>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/operator/algorithms.html#systemds.operator.algorithm.confusionMatrix">confusionMatrix() (in module systemds.operator.algorithm)</a>
 </li>
-      <li><a href="api/operator/operation_node.html#systemds.operator.OperationNode.cosh">cosh() (systemds.operator.OperationNode method)</a>
+      <li><a href="api/operator/node/matrix.html#systemds.operator.Matrix.cos">cos() (systemds.operator.Matrix method)</a>
+
+      <ul>
+        <li><a href="api/operator/node/scalar.html#systemds.operator.Scalar.cos">(systemds.operator.Scalar method)</a>
+</li>
+      </ul></li>
+      <li><a href="api/operator/node/matrix.html#systemds.operator.Matrix.cosh">cosh() (systemds.operator.Matrix method)</a>
+
+      <ul>
+        <li><a href="api/operator/node/scalar.html#systemds.operator.Scalar.cosh">(systemds.operator.Scalar method)</a>
+</li>
+      </ul></li>
+      <li><a href="api/operator/algorithms.html#systemds.operator.algorithm.cox">cox() (in module systemds.operator.algorithm)</a>
 </li>
       <li><a href="api/utils/helpers.html#systemds.utils.helpers.create_params_string">create_params_string() (in module systemds.utils.helpers)</a>
 </li>
@@ -275,8 +351,12 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api/script_building/dag.html#systemds.script_building.dag.DAGNode">DAGNode (class in systemds.script_building.dag)</a>
 </li>
+      <li><a href="api/operator/algorithms.html#systemds.operator.algorithm.decisionTree">decisionTree() (in module systemds.operator.algorithm)</a>
+</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/context/systemds_context.html#systemds.context.SystemDSContext.dict">dict() (systemds.context.SystemDSContext method)</a>
+</li>
       <li><a href="api/script_building/script.html#systemds.script_building.script.DMLScript">DMLScript (class in systemds.script_building.script)</a>
 </li>
   </ul></td>
@@ -287,11 +367,13 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api/context/systemds_context.html#systemds.context.SystemDSContext.exception_and_close">exception_and_close() (systemds.context.SystemDSContext method)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api/script_building/script.html#systemds.script_building.script.DMLScript.execute">execute() (systemds.script_building.script.DMLScript method)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api/script_building/script.html#systemds.script_building.script.DMLScript.execute_with_lineage">execute_with_lineage() (systemds.script_building.script.DMLScript method)</a>
+</li>
+      <li><a href="api/operator/algorithms.html#systemds.operator.algorithm.executePipeline">executePipeline() (in module systemds.operator.algorithm)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -299,10 +381,16 @@
 <h2 id="F">F</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="api/matrix/federated.html#systemds.matrix.Federated">Federated (class in systemds.matrix)</a>
+      <li><a href="api/context/systemds_context.html#systemds.context.SystemDSContext.federated">federated() (systemds.context.SystemDSContext method)</a>
+</li>
+      <li><a href="api/operator/node/frame.html#systemds.operator.Frame">Frame (class in systemds.operator)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/context/systemds_context.html#systemds.context.SystemDSContext.from_numpy">from_numpy() (systemds.context.SystemDSContext method)</a>
+</li>
+      <li><a href="api/context/systemds_context.html#systemds.context.SystemDSContext.from_pandas">from_pandas() (systemds.context.SystemDSContext method)</a>
+</li>
       <li><a href="api/context/systemds_context.html#systemds.context.SystemDSContext.full">full() (systemds.context.SystemDSContext method)</a>
 </li>
   </ul></td>
@@ -311,6 +399,8 @@
 <h2 id="G">G</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/operator/algorithms.html#systemds.operator.algorithm.gaussianClassifier">gaussianClassifier() (in module systemds.operator.algorithm)</a>
+</li>
       <li><a href="api/operator/operation_node.html#systemds.operator.OperationNode.get_lineage_trace">get_lineage_trace() (systemds.operator.OperationNode method)</a>
 
       <ul>
@@ -325,17 +415,77 @@
 </li>
       <li><a href="api/context/systemds_context.html#systemds.context.SystemDSContext.get_stdout">get_stdout() (systemds.context.SystemDSContext method)</a>
 </li>
+      <li><a href="api/operator/algorithms.html#systemds.operator.algorithm.gmmPredict">gmmPredict() (in module systemds.operator.algorithm)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="I">I</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/operator/algorithms.html#systemds.operator.algorithm.img_cutout">img_cutout() (in module systemds.operator.algorithm)</a>
+</li>
+      <li><a href="api/operator/algorithms.html#systemds.operator.algorithm.img_invert">img_invert() (in module systemds.operator.algorithm)</a>
+</li>
+      <li><a href="api/operator/algorithms.html#systemds.operator.algorithm.img_posterize">img_posterize() (in module systemds.operator.algorithm)</a>
+</li>
+      <li><a href="api/operator/algorithms.html#systemds.operator.algorithm.img_rotate">img_rotate() (in module systemds.operator.algorithm)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/operator/algorithms.html#systemds.operator.algorithm.img_sample_pairing">img_sample_pairing() (in module systemds.operator.algorithm)</a>
+</li>
+      <li><a href="api/operator/algorithms.html#systemds.operator.algorithm.img_shear">img_shear() (in module systemds.operator.algorithm)</a>
+</li>
+      <li><a href="api/operator/algorithms.html#systemds.operator.algorithm.img_transform">img_transform() (in module systemds.operator.algorithm)</a>
+</li>
+      <li><a href="api/operator/algorithms.html#systemds.operator.algorithm.img_translate">img_translate() (in module systemds.operator.algorithm)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="K">K</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/operator/algorithms.html#systemds.operator.algorithm.km">km() (in module systemds.operator.algorithm)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/operator/algorithms.html#systemds.operator.algorithm.kmeans">kmeans() (in module systemds.operator.algorithm)</a>
+</li>
+      <li><a href="api/operator/algorithms.html#systemds.operator.algorithm.kmeansPredict">kmeansPredict() (in module systemds.operator.algorithm)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="L">L</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/operator/algorithms.html#systemds.operator.algorithm.l2svm">l2svm() (in module systemds.operator.algorithm)</a>
+</li>
+      <li><a href="api/operator/algorithms.html#systemds.operator.algorithm.l2svmPredict">l2svmPredict() (in module systemds.operator.algorithm)</a>
+</li>
+      <li><a href="api/operator/algorithms.html#systemds.operator.algorithm.lasso">lasso() (in module systemds.operator.algorithm)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/operator/node/list.html#systemds.operator.List">List (class in systemds.operator)</a>
+</li>
+      <li><a href="api/context/systemds_context.html#systemds.context.SystemDSContext.list">list() (systemds.context.SystemDSContext method)</a>
+</li>
+      <li><a href="api/operator/algorithms.html#systemds.operator.algorithm.lm">lm() (in module systemds.operator.algorithm)</a>
+</li>
   </ul></td>
 </tr></table>
 
 <h2 id="M">M</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="api/matrix/matrix.html#systemds.matrix.Matrix">Matrix (class in systemds.matrix)</a>
+      <li><a href="api/operator/node/matrix.html#systemds.operator.Matrix">Matrix (class in systemds.operator)</a>
 </li>
       <li><a href="api/utils/converters.html#systemds.utils.converters.matrix_block_to_numpy">matrix_block_to_numpy() (in module systemds.utils.converters)</a>
 </li>
-      <li><a href="api/operator/operation_node.html#systemds.operator.OperationNode.mean">mean() (systemds.operator.OperationNode method)</a>
+      <li><a href="api/operator/node/matrix.html#systemds.operator.Matrix.mean">mean() (systemds.operator.Matrix method)</a>
 </li>
       <li>
     module
@@ -352,6 +502,14 @@
         <li><a href="api/utils/helpers.html#module-systemds.utils.helpers">systemds.utils.helpers</a>
 </li>
       </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/operator/algorithms.html#systemds.operator.algorithm.msvmPredict">msvmPredict() (in module systemds.operator.algorithm)</a>
+</li>
+      <li><a href="api/operator/algorithms.html#systemds.operator.algorithm.multiLogReg">multiLogReg() (in module systemds.operator.algorithm)</a>
+</li>
+      <li><a href="api/operator/algorithms.html#systemds.operator.algorithm.multiLogRegPredict">multiLogRegPredict() (in module systemds.operator.algorithm)</a>
+</li>
   </ul></td>
 </tr></table>
 
@@ -370,7 +528,7 @@
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="api/operator/operation_node.html#systemds.operator.OperationNode.order">order() (systemds.operator.OperationNode method)</a>
+      <li><a href="api/operator/node/matrix.html#systemds.operator.Matrix.order">order() (systemds.operator.Matrix method)</a>
 </li>
       <li><a href="api/script_building/dag.html#systemds.script_building.dag.OutputType">OutputType (class in systemds.script_building.dag)</a>
 </li>
@@ -380,16 +538,28 @@
 <h2 id="P">P</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="api/matrix/matrix.html#systemds.matrix.Matrix.pass_python_data_to_prepared_script">pass_python_data_to_prepared_script() (systemds.matrix.Matrix method)</a>
+      <li><a href="api/utils/converters.html#systemds.utils.converters.pandas_to_frame_block">pandas_to_frame_block() (in module systemds.utils.converters)</a>
+</li>
+      <li><a href="api/operator/node/frame.html#systemds.operator.Frame.pass_python_data_to_prepared_script">pass_python_data_to_prepared_script() (systemds.operator.Frame method)</a>
 
       <ul>
+        <li><a href="api/operator/node/list.html#systemds.operator.List.pass_python_data_to_prepared_script">(systemds.operator.List method)</a>
+</li>
+        <li><a href="api/operator/node/matrix.html#systemds.operator.Matrix.pass_python_data_to_prepared_script">(systemds.operator.Matrix method)</a>
+</li>
         <li><a href="api/operator/operation_node.html#systemds.operator.OperationNode.pass_python_data_to_prepared_script">(systemds.operator.OperationNode method)</a>
+</li>
+        <li><a href="api/operator/node/scalar.html#systemds.operator.Scalar.pass_python_data_to_prepared_script">(systemds.operator.Scalar method)</a>
 </li>
         <li><a href="api/script_building/dag.html#systemds.script_building.dag.DAGNode.pass_python_data_to_prepared_script">(systemds.script_building.dag.DAGNode method)</a>
 </li>
       </ul></li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/operator/algorithms.html#systemds.operator.algorithm.pca">pca() (in module systemds.operator.algorithm)</a>
+</li>
+      <li><a href="api/operator/algorithms.html#systemds.operator.algorithm.ppca">ppca() (in module systemds.operator.algorithm)</a>
+</li>
       <li><a href="api/operator/operation_node.html#systemds.operator.OperationNode.print">print() (systemds.operator.OperationNode method)</a>
 </li>
   </ul></td>
@@ -400,13 +570,19 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api/context/systemds_context.html#systemds.context.SystemDSContext.rand">rand() (systemds.context.SystemDSContext method)</a>
 </li>
-      <li><a href="api/operator/operation_node.html#systemds.operator.OperationNode.rbind">rbind() (systemds.operator.OperationNode method)</a>
+      <li><a href="api/operator/algorithms.html#systemds.operator.algorithm.randomForest">randomForest() (in module systemds.operator.algorithm)</a>
 </li>
+      <li><a href="api/operator/node/frame.html#systemds.operator.Frame.rbind">rbind() (systemds.operator.Frame method)</a>
+
+      <ul>
+        <li><a href="api/operator/node/matrix.html#systemds.operator.Matrix.rbind">(systemds.operator.Matrix method)</a>
+</li>
+      </ul></li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api/context/systemds_context.html#systemds.context.SystemDSContext.read">read() (systemds.context.SystemDSContext method)</a>
 </li>
-      <li><a href="api/operator/operation_node.html#systemds.operator.OperationNode.rev">rev() (systemds.operator.OperationNode method)</a>
+      <li><a href="api/operator/node/matrix.html#systemds.operator.Matrix.rev">rev() (systemds.operator.Matrix method)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -414,16 +590,34 @@
 <h2 id="S">S</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/operator/node/scalar.html#systemds.operator.Scalar">Scalar (class in systemds.operator)</a>
+</li>
       <li><a href="api/context/systemds_context.html#systemds.context.SystemDSContext.scalar">scalar() (systemds.context.SystemDSContext method)</a>
 </li>
       <li><a href="api/context/systemds_context.html#systemds.context.SystemDSContext.seq">seq() (systemds.context.SystemDSContext method)</a>
 </li>
-      <li><a href="api/operator/operation_node.html#systemds.operator.OperationNode.sin">sin() (systemds.operator.OperationNode method)</a>
+      <li><a href="api/operator/node/matrix.html#systemds.operator.Matrix.sin">sin() (systemds.operator.Matrix method)</a>
+
+      <ul>
+        <li><a href="api/operator/node/scalar.html#systemds.operator.Scalar.sin">(systemds.operator.Scalar method)</a>
 </li>
-      <li><a href="api/operator/operation_node.html#systemds.operator.OperationNode.sinh">sinh() (systemds.operator.OperationNode method)</a>
+      </ul></li>
+      <li><a href="api/operator/node/matrix.html#systemds.operator.Matrix.sinh">sinh() (systemds.operator.Matrix method)</a>
+
+      <ul>
+        <li><a href="api/operator/node/scalar.html#systemds.operator.Scalar.sinh">(systemds.operator.Scalar method)</a>
 </li>
-      <li><a href="api/operator/operation_node.html#systemds.operator.OperationNode.sum">sum() (systemds.operator.OperationNode method)</a>
+      </ul></li>
+      <li><a href="api/operator/node/source.html#systemds.operator.Source">Source (class in systemds.operator)</a>
 </li>
+      <li><a href="api/context/systemds_context.html#systemds.context.SystemDSContext.source">source() (systemds.context.SystemDSContext method)</a>
+</li>
+      <li><a href="api/operator/algorithms.html#systemds.operator.algorithm.stableMarriage">stableMarriage() (in module systemds.operator.algorithm)</a>
+</li>
+      <li><a href="api/operator/node/matrix.html#systemds.operator.Matrix.sum">sum() (systemds.operator.Matrix method)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li>
     systemds.operator.algorithm
 
@@ -438,8 +632,6 @@
         <li><a href="api/script_building/dag.html#module-systemds.script_building.dag">module</a>
 </li>
       </ul></li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li>
     systemds.script_building.script
 
@@ -469,17 +661,33 @@
 <h2 id="T">T</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="api/operator/operation_node.html#systemds.operator.OperationNode.t">t() (systemds.operator.OperationNode method)</a>
+      <li><a href="api/operator/node/matrix.html#systemds.operator.Matrix.t">t() (systemds.operator.Matrix method)</a>
 </li>
-      <li><a href="api/operator/operation_node.html#systemds.operator.OperationNode.tan">tan() (systemds.operator.OperationNode method)</a>
+      <li><a href="api/operator/node/matrix.html#systemds.operator.Matrix.tan">tan() (systemds.operator.Matrix method)</a>
+
+      <ul>
+        <li><a href="api/operator/node/scalar.html#systemds.operator.Scalar.tan">(systemds.operator.Scalar method)</a>
 </li>
+      </ul></li>
+      <li><a href="api/operator/node/matrix.html#systemds.operator.Matrix.tanh">tanh() (systemds.operator.Matrix method)</a>
+
+      <ul>
+        <li><a href="api/operator/node/scalar.html#systemds.operator.Scalar.tanh">(systemds.operator.Scalar method)</a>
+</li>
+      </ul></li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="api/operator/operation_node.html#systemds.operator.OperationNode.tanh">tanh() (systemds.operator.OperationNode method)</a>
+      <li><a href="api/operator/node/matrix.html#systemds.operator.Matrix.to_one_hot">to_one_hot() (systemds.operator.Matrix method)</a>
 </li>
-      <li><a href="api/operator/operation_node.html#systemds.operator.OperationNode.to_one_hot">to_one_hot() (systemds.operator.OperationNode method)</a>
+      <li><a href="api/operator/node/matrix.html#systemds.operator.Matrix.to_string">to_string() (systemds.operator.Matrix method)</a>
+
+      <ul>
+        <li><a href="api/operator/node/scalar.html#systemds.operator.Scalar.to_string">(systemds.operator.Scalar method)</a>
 </li>
-      <li><a href="api/operator/operation_node.html#systemds.operator.OperationNode.to_string">to_string() (systemds.operator.OperationNode method)</a>
+      </ul></li>
+      <li><a href="api/operator/algorithms.html#systemds.operator.algorithm.tomeklink">tomeklink() (in module systemds.operator.algorithm)</a>
+</li>
+      <li><a href="api/operator/algorithms.html#systemds.operator.algorithm.toOneHot">toOneHot() (in module systemds.operator.algorithm)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -487,7 +695,7 @@
 <h2 id="V">V</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="api/operator/operation_node.html#systemds.operator.OperationNode.var">var() (systemds.operator.OperationNode method)</a>
+      <li><a href="api/operator/node/matrix.html#systemds.operator.Matrix.var">var() (systemds.operator.Matrix method)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -513,7 +721,7 @@
   <div role="contentinfo">
     <p>
         
-        &copy; Copyright 2020, Apache SystemDS
+        &copy; Copyright 2021, Apache SystemDS
 
     </p>
   </div>

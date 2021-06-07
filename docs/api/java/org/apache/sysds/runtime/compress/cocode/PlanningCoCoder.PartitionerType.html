@@ -49,8 +49,8 @@ var activeTableTab = "activeTableTab";
 </div>
 <div class="subNav">
 <ul class="navList">
-<li><a href="../../../../../../org/apache/sysds/runtime/compress/cocode/PlanningCoCoder.html" title="class in org.apache.sysds.runtime.compress.cocode"><span class="typeNameLink">Prev&nbsp;Class</span></a></li>
-<li>Next&nbsp;Class</li>
+<li><a href="../../../../../../org/apache/sysds/runtime/compress/cocode/PlanningCoCoder.Memorizer.html" title="class in org.apache.sysds.runtime.compress.cocode"><span class="typeNameLink">Prev&nbsp;Class</span></a></li>
+<li><a href="../../../../../../org/apache/sysds/runtime/compress/cocode/Util.html" title="class in org.apache.sysds.runtime.compress.cocode"><span class="typeNameLink">Next&nbsp;Class</span></a></li>
 </ul>
 <ul class="navList">
 <li><a href="../../../../../../index.html?org/apache/sysds/runtime/compress/cocode/PlanningCoCoder.PartitionerType.html" target="_top">Frames</a></li>
@@ -124,6 +124,7 @@ var activeTableTab = "activeTableTab";
 <br>
 <pre>public static enum <span class="typeNameLabel">PlanningCoCoder.PartitionerType</span>
 extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Enum.html?is-external=true" title="class or interface in java.lang">Enum</a>&lt;<a href="../../../../../../org/apache/sysds/runtime/compress/cocode/PlanningCoCoder.PartitionerType.html" title="enum in org.apache.sysds.runtime.compress.cocode">PlanningCoCoder.PartitionerType</a>&gt;</pre>
+<div class="block">The Valid coCoding techniques</div>
 </li>
 </ul>
 </div>
@@ -148,9 +149,12 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Enum.html?i
 <td class="colOne"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/cocode/PlanningCoCoder.PartitionerType.html#COST">COST</a></span></code>&nbsp;</td>
 </tr>
 <tr class="altColor">
-<td class="colOne"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/cocode/PlanningCoCoder.PartitionerType.html#COST_REEVALUATE">COST_REEVALUATE</a></span></code>&nbsp;</td>
+<td class="colOne"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/cocode/PlanningCoCoder.PartitionerType.html#COST_MATRIX_MULT">COST_MATRIX_MULT</a></span></code>&nbsp;</td>
 </tr>
 <tr class="rowColor">
+<td class="colOne"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/cocode/PlanningCoCoder.PartitionerType.html#COST_TSMM">COST_TSMM</a></span></code>&nbsp;</td>
+</tr>
+<tr class="altColor">
 <td class="colOne"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/cocode/PlanningCoCoder.PartitionerType.html#STATIC">STATIC</a></span></code>&nbsp;</td>
 </tr>
 </table>
@@ -170,7 +174,7 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Enum.html?i
 </tr>
 <tr id="i0" class="altColor">
 <td class="colFirst"><code>static boolean</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/cocode/PlanningCoCoder.PartitionerType.html#isCost-org.apache.sysds.runtime.compress.cocode.PlanningCoCoder.PartitionerType-">isCost</a></span>(<a href="../../../../../../org/apache/sysds/runtime/compress/cocode/PlanningCoCoder.PartitionerType.html" title="enum in org.apache.sysds.runtime.compress.cocode">PlanningCoCoder.PartitionerType</a>&nbsp;x)</code>&nbsp;</td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/cocode/PlanningCoCoder.PartitionerType.html#isCostBased-org.apache.sysds.runtime.compress.cocode.PlanningCoCoder.PartitionerType-">isCostBased</a></span>(<a href="../../../../../../org/apache/sysds/runtime/compress/cocode/PlanningCoCoder.PartitionerType.html" title="enum in org.apache.sysds.runtime.compress.cocode">PlanningCoCoder.PartitionerType</a>&nbsp;pt)</code>&nbsp;</td>
 </tr>
 <tr id="i1" class="rowColor">
 <td class="colFirst"><code>static <a href="../../../../../../org/apache/sysds/runtime/compress/cocode/PlanningCoCoder.PartitionerType.html" title="enum in org.apache.sysds.runtime.compress.cocode">PlanningCoCoder.PartitionerType</a></code></td>
@@ -241,13 +245,22 @@ the order they are declared.</div>
 <pre>public static final&nbsp;<a href="../../../../../../org/apache/sysds/runtime/compress/cocode/PlanningCoCoder.PartitionerType.html" title="enum in org.apache.sysds.runtime.compress.cocode">PlanningCoCoder.PartitionerType</a> COST</pre>
 </li>
 </ul>
-<a name="COST_REEVALUATE">
+<a name="COST_MATRIX_MULT">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>COST_MATRIX_MULT</h4>
+<pre>public static final&nbsp;<a href="../../../../../../org/apache/sysds/runtime/compress/cocode/PlanningCoCoder.PartitionerType.html" title="enum in org.apache.sysds.runtime.compress.cocode">PlanningCoCoder.PartitionerType</a> COST_MATRIX_MULT</pre>
+</li>
+</ul>
+<a name="COST_TSMM">
 <!--   -->
 </a>
 <ul class="blockListLast">
 <li class="blockList">
-<h4>COST_REEVALUATE</h4>
-<pre>public static final&nbsp;<a href="../../../../../../org/apache/sysds/runtime/compress/cocode/PlanningCoCoder.PartitionerType.html" title="enum in org.apache.sysds.runtime.compress.cocode">PlanningCoCoder.PartitionerType</a> COST_REEVALUATE</pre>
+<h4>COST_TSMM</h4>
+<pre>public static final&nbsp;<a href="../../../../../../org/apache/sysds/runtime/compress/cocode/PlanningCoCoder.PartitionerType.html" title="enum in org.apache.sysds.runtime.compress.cocode">PlanningCoCoder.PartitionerType</a> COST_TSMM</pre>
 </li>
 </ul>
 </li>
@@ -300,13 +313,13 @@ not permitted.)</div>
 </dl>
 </li>
 </ul>
-<a name="isCost-org.apache.sysds.runtime.compress.cocode.PlanningCoCoder.PartitionerType-">
+<a name="isCostBased-org.apache.sysds.runtime.compress.cocode.PlanningCoCoder.PartitionerType-">
 <!--   -->
 </a>
 <ul class="blockListLast">
 <li class="blockList">
-<h4>isCost</h4>
-<pre>public static&nbsp;boolean&nbsp;isCost(<a href="../../../../../../org/apache/sysds/runtime/compress/cocode/PlanningCoCoder.PartitionerType.html" title="enum in org.apache.sysds.runtime.compress.cocode">PlanningCoCoder.PartitionerType</a>&nbsp;x)</pre>
+<h4>isCostBased</h4>
+<pre>public static&nbsp;boolean&nbsp;isCostBased(<a href="../../../../../../org/apache/sysds/runtime/compress/cocode/PlanningCoCoder.PartitionerType.html" title="enum in org.apache.sysds.runtime.compress.cocode">PlanningCoCoder.PartitionerType</a>&nbsp;pt)</pre>
 </li>
 </ul>
 </li>
@@ -337,8 +350,8 @@ not permitted.)</div>
 </div>
 <div class="subNav">
 <ul class="navList">
-<li><a href="../../../../../../org/apache/sysds/runtime/compress/cocode/PlanningCoCoder.html" title="class in org.apache.sysds.runtime.compress.cocode"><span class="typeNameLink">Prev&nbsp;Class</span></a></li>
-<li>Next&nbsp;Class</li>
+<li><a href="../../../../../../org/apache/sysds/runtime/compress/cocode/PlanningCoCoder.Memorizer.html" title="class in org.apache.sysds.runtime.compress.cocode"><span class="typeNameLink">Prev&nbsp;Class</span></a></li>
+<li><a href="../../../../../../org/apache/sysds/runtime/compress/cocode/Util.html" title="class in org.apache.sysds.runtime.compress.cocode"><span class="typeNameLink">Next&nbsp;Class</span></a></li>
 </ul>
 <ul class="navList">
 <li><a href="../../../../../../index.html?org/apache/sysds/runtime/compress/cocode/PlanningCoCoder.PartitionerType.html" target="_top">Frames</a></li>

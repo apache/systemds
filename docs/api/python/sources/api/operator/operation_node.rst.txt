@@ -31,8 +31,7 @@ An ``OperationNode`` represents an operation that executes in SystemDS.
 Most methods are overloaded for ``OperationNode``.
 This means that they return an ``OperationNode``.
 
-To get the result from an ``OperationNode`` you simply call ``.compute()`` on it, thereby getting the numpy equivalent result.
-Even comparisons like ``__eq__``, ``__lt__`` etc. return ``OperationNode``.
+To get the result from an ``OperationNode`` you simply call ``.compute()`` on it, thereby getting the numpy or pandas equivalent result.
 
 .. note::
 

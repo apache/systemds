@@ -18,7 +18,7 @@
     catch(err) {
     }
 //-->
-var methods = {"i0":6,"i1":6,"i2":6,"i3":6,"i4":9,"i5":6,"i6":9,"i7":6,"i8":6,"i9":9,"i10":9,"i11":9,"i12":6,"i13":10,"i14":10,"i15":10,"i16":10,"i17":10,"i18":10,"i19":10,"i20":6,"i21":6,"i22":6,"i23":6,"i24":6,"i25":10,"i26":10,"i27":6,"i28":6,"i29":6,"i30":6,"i31":6,"i32":6,"i33":10,"i34":10,"i35":6,"i36":6,"i37":10,"i38":6,"i39":6,"i40":6,"i41":6,"i42":6,"i43":6,"i44":6,"i45":6,"i46":6,"i47":6,"i48":6,"i49":6,"i50":10,"i51":6,"i52":10,"i53":6,"i54":6,"i55":6};
+var methods = {"i0":6,"i1":6,"i2":6,"i3":6,"i4":9,"i5":6,"i6":10,"i7":6,"i8":10,"i9":6,"i10":10,"i11":6,"i12":10,"i13":6,"i14":6,"i15":6,"i16":10,"i17":6,"i18":6,"i19":6,"i20":6,"i21":6,"i22":6,"i23":6,"i24":10,"i25":6,"i26":10,"i27":6,"i28":6,"i29":6,"i30":10,"i31":10,"i32":10,"i33":10,"i34":6,"i35":6,"i36":6,"i37":6,"i38":10};
 var tabs = {65535:["t0","All Methods"],1:["t1","Static Methods"],2:["t2","Instance Methods"],4:["t3","Abstract Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -50,7 +50,7 @@ var activeTableTab = "activeTableTab";
 <div class="subNav">
 <ul class="navList">
 <li>Prev&nbsp;Class</li>
-<li><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.ColGroupType.html" title="enum in org.apache.sysds.runtime.compress.colgroup"><span class="typeNameLink">Next&nbsp;Class</span></a></li>
+<li><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.CompressionType.html" title="enum in org.apache.sysds.runtime.compress.colgroup"><span class="typeNameLink">Next&nbsp;Class</span></a></li>
 </ul>
 <ul class="navList">
 <li><a href="../../../../../../index.html?org/apache/sysds/runtime/compress/colgroup/AColGroup.html" target="_top">Frames</a></li>
@@ -113,15 +113,16 @@ var activeTableTab = "activeTableTab";
 </dl>
 <dl>
 <dt>Direct Known Subclasses:</dt>
-<dd><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupUncompressed.html" title="class in org.apache.sysds.runtime.compress.colgroup">ColGroupUncompressed</a>, <a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupValue.html" title="class in org.apache.sysds.runtime.compress.colgroup">ColGroupValue</a></dd>
+<dd><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupCompressed.html" title="class in org.apache.sysds.runtime.compress.colgroup">ColGroupCompressed</a>, <a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupUncompressed.html" title="class in org.apache.sysds.runtime.compress.colgroup">ColGroupUncompressed</a></dd>
 </dl>
 <hr>
 <br>
 <pre>public abstract class <span class="typeNameLabel">AColGroup</span>
 extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a>
 implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Serializable.html?is-external=true" title="class or interface in java.io">Serializable</a></pre>
-<div class="block">Class that stores information about a column group within a compressed matrix block. There are subclasses specific to
- each compression type.</div>
+<div class="block">Abstract Class that is the lowest class type for the Compression framework.
+ 
+ AColGroup store information about a number of columns.</div>
 <dl>
 <dt><span class="seeLabel">See Also:</span></dt>
 <dd><a href="../../../../../../serialized-form.html#org.apache.sysds.runtime.compress.colgroup.AColGroup">Serialized Form</a></dd>
@@ -146,18 +147,8 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Serializab
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code>static class&nbsp;</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.ColGroupType.html" title="enum in org.apache.sysds.runtime.compress.colgroup">AColGroup.ColGroupType</a></span></code>
-<div class="block">Concrete ColGroupType
- 
- Protected such that outside the ColGroup package it should be unknown which specific subtype is used.</div>
-</td>
-</tr>
-<tr class="rowColor">
-<td class="colFirst"><code>static class&nbsp;</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.CompressionType.html" title="enum in org.apache.sysds.runtime.compress.colgroup">AColGroup.CompressionType</a></span></code>
-<div class="block">Public Group types supported
- 
- Note For instance DDC is called DDC not DDC1, or DDC2 which is a specific subtype of the DDC.</div>
+<div class="block">Public super types of compression ColGroups supported</div>
 </td>
 </tr>
 </table>
@@ -186,11 +177,15 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Serializab
 </tr>
 <tr id="i1" class="rowColor">
 <td class="colFirst"><code>abstract boolean</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.html#containsValue-double-">containsValue</a></span>(double&nbsp;pattern)</code>&nbsp;</td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.html#containsValue-double-">containsValue</a></span>(double&nbsp;pattern)</code>
+<div class="block">Detect if the column group contains a specific value.</div>
+</td>
 </tr>
 <tr id="i2" class="altColor">
 <td class="colFirst"><code>abstract <a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a></code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.html#copy--">copy</a></span>()</code>&nbsp;</td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.html#copy--">copy</a></span>()</code>
+<div class="block">Get a copy of this column group.</div>
+</td>
 </tr>
 <tr id="i3" class="rowColor">
 <td class="colFirst"><code>abstract void</code></td>
@@ -202,66 +197,6 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Serializab
 </tr>
 <tr id="i4" class="altColor">
 <td class="colFirst"><code>static void</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.html#decompressColumnToArray-double:A-int-java.util.List-">decompressColumnToArray</a></span>(double[]&nbsp;target,
-                       int&nbsp;colIndex,
-                       <a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;<a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a>&gt;&nbsp;colGroups)</code>&nbsp;</td>
-</tr>
-<tr id="i5" class="rowColor">
-<td class="colFirst"><code>abstract void</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.html#decompressColumnToBlock-double:A-int-int-int-">decompressColumnToBlock</a></span>(double[]&nbsp;target,
-                       int&nbsp;colpos,
-                       int&nbsp;rl,
-                       int&nbsp;ru)</code>
-<div class="block">Decompress to dense array.</div>
-</td>
-</tr>
-<tr id="i6" class="altColor">
-<td class="colFirst"><code>static void</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.html#decompressColumnToBlock-double:A-int-int-int-java.util.List-">decompressColumnToBlock</a></span>(double[]&nbsp;target,
-                       int&nbsp;colIndex,
-                       int&nbsp;rl,
-                       int&nbsp;ru,
-                       <a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;<a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a>&gt;&nbsp;colGroups)</code>
-<div class="block">Decompress part of the col groups into the target dense double array.</div>
-</td>
-</tr>
-<tr id="i7" class="rowColor">
-<td class="colFirst"><code>abstract void</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.html#decompressColumnToBlock-org.apache.sysds.runtime.matrix.data.MatrixBlock-int-">decompressColumnToBlock</a></span>(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;target,
-                       int&nbsp;colpos)</code>
-<div class="block">Decompress to block.</div>
-</td>
-</tr>
-<tr id="i8" class="altColor">
-<td class="colFirst"><code>abstract void</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.html#decompressColumnToBlock-org.apache.sysds.runtime.matrix.data.MatrixBlock-int-int-int-">decompressColumnToBlock</a></span>(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;target,
-                       int&nbsp;colpos,
-                       int&nbsp;rl,
-                       int&nbsp;ru)</code>
-<div class="block">Decompress to block.</div>
-</td>
-</tr>
-<tr id="i9" class="rowColor">
-<td class="colFirst"><code>static void</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.html#decompressColumnToBlock-org.apache.sysds.runtime.matrix.data.MatrixBlock-int-int-int-java.util.List-">decompressColumnToBlock</a></span>(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;target,
-                       int&nbsp;colIndex,
-                       int&nbsp;rl,
-                       int&nbsp;ru,
-                       <a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;<a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a>&gt;&nbsp;colGroups)</code>
-<div class="block">Decompress part of the col groups into the target matrix block, this decompression maintain the number of non
- zeros.</div>
-</td>
-</tr>
-<tr id="i10" class="altColor">
-<td class="colFirst"><code>static void</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.html#decompressColumnToBlock-org.apache.sysds.runtime.matrix.data.MatrixBlock-int-java.util.List-">decompressColumnToBlock</a></span>(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;target,
-                       int&nbsp;colIndex,
-                       <a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;<a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a>&gt;&nbsp;colGroups)</code>
-<div class="block">Decompress an entire column into the target matrix block.</div>
-</td>
-</tr>
-<tr id="i11" class="rowColor">
-<td class="colFirst"><code>static void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.html#decompressColumnToBlockUnSafe-org.apache.sysds.runtime.matrix.data.MatrixBlock-int-int-java.util.List-">decompressColumnToBlockUnSafe</a></span>(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;target,
                              int&nbsp;rl,
                              int&nbsp;ru,
@@ -270,311 +205,213 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Serializab
  zeros.</div>
 </td>
 </tr>
-<tr id="i12" class="altColor">
+<tr id="i5" class="rowColor">
 <td class="colFirst"><code>abstract void</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.html#decompressToBlock-org.apache.sysds.runtime.matrix.data.MatrixBlock-int:A-">decompressToBlock</a></span>(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;target,
-                 int[]&nbsp;colIndexTargets)</code>
-<div class="block">Decompress the contents of this column group into uncompressed packed columns</div>
-</td>
-</tr>
-<tr id="i13" class="rowColor">
-<td class="colFirst"><code>void</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.html#decompressToBlock-org.apache.sysds.runtime.matrix.data.MatrixBlock-int-int-">decompressToBlock</a></span>(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;target,
-                 int&nbsp;rl,
-                 int&nbsp;ru)</code>
-<div class="block">Decompress the contents of this column group into the specified full matrix block.</div>
-</td>
-</tr>
-<tr id="i14" class="altColor">
-<td class="colFirst"><code>void</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.html#decompressToBlock-org.apache.sysds.runtime.matrix.data.MatrixBlock-int-int-boolean-">decompressToBlock</a></span>(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;target,
-                 int&nbsp;rl,
-                 int&nbsp;ru,
-                 boolean&nbsp;safe)</code>&nbsp;</td>
-</tr>
-<tr id="i15" class="rowColor">
-<td class="colFirst"><code>void</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.html#decompressToBlock-org.apache.sysds.runtime.matrix.data.MatrixBlock-int-int-double:A-boolean-">decompressToBlock</a></span>(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;target,
-                 int&nbsp;rl,
-                 int&nbsp;ru,
-                 double[]&nbsp;values,
-                 boolean&nbsp;safe)</code>
-<div class="block">Decompress the contents of this column group into the target matrixBlock, it is assumed that the target matrix
- Block have the same number of columns and at least the number of rows ru.</div>
-</td>
-</tr>
-<tr id="i16" class="altColor">
-<td class="colFirst"><code>void</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.html#decompressToBlock-org.apache.sysds.runtime.matrix.data.MatrixBlock-int-int-int-">decompressToBlock</a></span>(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;target,
-                 int&nbsp;rl,
-                 int&nbsp;ru,
-                 int&nbsp;offT)</code>
-<div class="block">Decompress the contents of this column group into the specified full matrix block.</div>
-</td>
-</tr>
-<tr id="i17" class="rowColor">
-<td class="colFirst"><code>void</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.html#decompressToBlock-org.apache.sysds.runtime.matrix.data.MatrixBlock-int-int-int-boolean-">decompressToBlock</a></span>(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;target,
-                 int&nbsp;rl,
-                 int&nbsp;ru,
-                 int&nbsp;offT,
-                 boolean&nbsp;safe)</code>&nbsp;</td>
-</tr>
-<tr id="i18" class="altColor">
-<td class="colFirst"><code>void</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.html#decompressToBlock-org.apache.sysds.runtime.matrix.data.MatrixBlock-int-int-int-double:A-">decompressToBlock</a></span>(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;target,
-                 int&nbsp;rl,
-                 int&nbsp;ru,
-                 int&nbsp;offT,
-                 double[]&nbsp;values)</code>
-<div class="block">Decompress the contents of this column group into the specified full matrix block.</div>
-</td>
-</tr>
-<tr id="i19" class="rowColor">
-<td class="colFirst"><code>void</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.html#decompressToBlock-org.apache.sysds.runtime.matrix.data.MatrixBlock-int-int-int-double:A-boolean-">decompressToBlock</a></span>(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;target,
-                 int&nbsp;rl,
-                 int&nbsp;ru,
-                 int&nbsp;offT,
-                 double[]&nbsp;values,
-                 boolean&nbsp;safe)</code>&nbsp;</td>
-</tr>
-<tr id="i20" class="altColor">
-<td class="colFirst"><code>abstract void</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.html#decompressToBlockSafe-org.apache.sysds.runtime.matrix.data.MatrixBlock-int-int-int-double:A-">decompressToBlockSafe</a></span>(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;target,
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.html#decompressToBlockSafe-org.apache.sysds.runtime.matrix.data.MatrixBlock-int-int-int-">decompressToBlockSafe</a></span>(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;target,
                      int&nbsp;rl,
                      int&nbsp;ru,
-                     int&nbsp;offT,
-                     double[]&nbsp;values)</code>
-<div class="block">Decompress the contents of this column group into the specified full matrix block without managing the number of
+                     int&nbsp;offT)</code>
+<div class="block">Decompress the contents of this column group into the specified full matrix block while managing the number of
  non zeros.</div>
 </td>
 </tr>
-<tr id="i21" class="rowColor">
-<td class="colFirst"><code>abstract void</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.html#decompressToBlockUnSafe-org.apache.sysds.runtime.matrix.data.MatrixBlock-int-int-int-double:A-">decompressToBlockUnSafe</a></span>(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;target,
+<tr id="i6" class="altColor">
+<td class="colFirst"><code>void</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.html#decompressToBlockUnSafe-org.apache.sysds.runtime.matrix.data.MatrixBlock-int-int-">decompressToBlockUnSafe</a></span>(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;target,
                        int&nbsp;rl,
-                       int&nbsp;ru,
-                       int&nbsp;offT,
-                       double[]&nbsp;values)</code>&nbsp;</td>
-</tr>
-<tr id="i22" class="altColor">
-<td class="colFirst"><code>abstract long</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.html#estimateInMemorySize--">estimateInMemorySize</a></span>()</code>
-<div class="block">Note: Must be overridden by child classes to account for additional data and metadata</div>
+                       int&nbsp;ru)</code>
+<div class="block">Decompress the contents of the columngroup unsafely, meaning that it does not count nonzero values.</div>
 </td>
 </tr>
-<tr id="i23" class="rowColor">
+<tr id="i7" class="rowColor">
+<td class="colFirst"><code>abstract void</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.html#decompressToBlockUnSafe-org.apache.sysds.runtime.matrix.data.MatrixBlock-int-int-int-">decompressToBlockUnSafe</a></span>(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;target,
+                       int&nbsp;rl,
+                       int&nbsp;ru,
+                       int&nbsp;offT)</code>
+<div class="block">Decompress the contents of the columngroup unsafely, meaning that it does not count nonzero values.</div>
+</td>
+</tr>
+<tr id="i8" class="altColor">
+<td class="colFirst"><code>long</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.html#estimateInMemorySize--">estimateInMemorySize</a></span>()</code>
+<div class="block">Get the upper bound estimate of in memory allocation for the column group.</div>
+</td>
+</tr>
+<tr id="i9" class="rowColor">
 <td class="colFirst"><code>abstract double</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.html#get-int-int-">get</a></span>(int&nbsp;r,
    int&nbsp;c)</code>
 <div class="block">Get the value at a global row/column position.</div>
 </td>
 </tr>
-<tr id="i24" class="altColor">
-<td class="colFirst"><code>abstract <a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.ColGroupType.html" title="enum in org.apache.sysds.runtime.compress.colgroup">AColGroup.ColGroupType</a></code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.html#getColGroupType--">getColGroupType</a></span>()</code>
-<div class="block">Internally get the specific type of ColGroup, this could be extracted from the object but that does not allow for
- nice switches in the code.</div>
-</td>
-</tr>
-<tr id="i25" class="rowColor">
-<td class="colFirst"><code>int</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.html#getColIndex-int-">getColIndex</a></span>(int&nbsp;colNum)</code>
-<div class="block">Obtain a column index value.</div>
-</td>
-</tr>
-<tr id="i26" class="altColor">
+<tr id="i10" class="altColor">
 <td class="colFirst"><code>int[]</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.html#getColIndices--">getColIndices</a></span>()</code>
 <div class="block">Obtain the offsets of the columns in the matrix block that make up the group</div>
 </td>
 </tr>
-<tr id="i27" class="rowColor">
+<tr id="i11" class="rowColor">
 <td class="colFirst"><code>abstract <a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.CompressionType.html" title="enum in org.apache.sysds.runtime.compress.colgroup">AColGroup.CompressionType</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.html#getCompType--">getCompType</a></span>()</code>
 <div class="block">Obtain the compression type.</div>
 </td>
 </tr>
-<tr id="i28" class="altColor">
-<td class="colFirst"><code>abstract long</code></td>
+<tr id="i12" class="altColor">
+<td class="colFirst"><code>long</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.html#getExactSizeOnDisk--">getExactSizeOnDisk</a></span>()</code>
 <div class="block">Returns the exact serialized size of column group.</div>
 </td>
 </tr>
-<tr id="i29" class="rowColor">
-<td class="colFirst"><code>abstract boolean</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.html#getIfCountsType--">getIfCountsType</a></span>()</code>
-<div class="block">Returns true if in the getValuesAsBlock method returns values in groups (that needs to be counted) or
- individually potentially repeated values</div>
+<tr id="i13" class="rowColor">
+<td class="colFirst"><code>abstract double</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.html#getMax--">getMax</a></span>()</code>
+<div class="block">Short hand method for getting maximum value contained in this column group.</div>
 </td>
 </tr>
-<tr id="i30" class="altColor">
+<tr id="i14" class="altColor">
 <td class="colFirst"><code>abstract double</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.html#getMax--">getMax</a></span>()</code>&nbsp;</td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.html#getMin--">getMin</a></span>()</code>
+<div class="block">Short hand method for getting minimum value contained in this column group.</div>
+</td>
 </tr>
-<tr id="i31" class="rowColor">
-<td class="colFirst"><code>abstract double</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.html#getMin--">getMin</a></span>()</code>&nbsp;</td>
-</tr>
-<tr id="i32" class="altColor">
+<tr id="i15" class="rowColor">
 <td class="colFirst"><code>abstract long</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.html#getNumberNonZeros--">getNumberNonZeros</a></span>()</code>&nbsp;</td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.html#getNumberNonZeros--">getNumberNonZeros</a></span>()</code>
+<div class="block">Get the number of nonZeros contained in this column group.</div>
+</td>
 </tr>
-<tr id="i33" class="rowColor">
+<tr id="i16" class="altColor">
 <td class="colFirst"><code>int</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.html#getNumCols--">getNumCols</a></span>()</code>
 <div class="block">Obtain the number of columns in this column group.</div>
 </td>
 </tr>
-<tr id="i34" class="altColor">
-<td class="colFirst"><code>int</code></td>
+<tr id="i17" class="rowColor">
+<td class="colFirst"><code>abstract int</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.html#getNumRows--">getNumRows</a></span>()</code>
 <div class="block">Get number of rows contained in the ColGroup.</div>
 </td>
 </tr>
-<tr id="i35" class="rowColor">
+<tr id="i18" class="altColor">
+<td class="colFirst"><code>abstract int</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.html#getNumValues--">getNumValues</a></span>()</code>
+<div class="block">Obtain number of distinct tuples in contained sets of values associated with this column group.</div>
+</td>
+</tr>
+<tr id="i19" class="rowColor">
 <td class="colFirst"><code>abstract double[]</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.html#getValues--">getValues</a></span>()</code>
 <div class="block">Get all the values in the colGroup.</div>
 </td>
 </tr>
-<tr id="i36" class="altColor">
+<tr id="i20" class="altColor">
 <td class="colFirst"><code>abstract <a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.html#getValuesAsBlock--">getValuesAsBlock</a></span>()</code>
 <div class="block">Returns the ColGroup as a MatrixBlock.</div>
 </td>
 </tr>
-<tr id="i37" class="rowColor">
-<td class="colFirst"><code>boolean</code></td>
+<tr id="i21" class="rowColor">
+<td class="colFirst"><code>abstract boolean</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.html#isDense--">isDense</a></span>()</code>
 <div class="block">Is dense, signals that the entire column group is allocated an processed.</div>
 </td>
 </tr>
-<tr id="i38" class="altColor">
+<tr id="i22" class="altColor">
 <td class="colFirst"><code>abstract boolean</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.html#isLossy--">isLossy</a></span>()</code>
 <div class="block">Is Lossy</div>
 </td>
 </tr>
-<tr id="i39" class="rowColor">
+<tr id="i23" class="rowColor">
 <td class="colFirst"><code>abstract void</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.html#leftMultByMatrix-double:A-double:A-double:A-int-int-int-int-int-">leftMultByMatrix</a></span>(double[]&nbsp;matrix,
-                double[]&nbsp;result,
-                double[]&nbsp;values,
-                int&nbsp;numRows,
-                int&nbsp;numCols,
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.html#leftMultByAColGroup-org.apache.sysds.runtime.compress.colgroup.AColGroup-org.apache.sysds.runtime.matrix.data.MatrixBlock-">leftMultByAColGroup</a></span>(<a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a>&nbsp;lhs,
+                   <a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;result)</code>
+<div class="block">Left side matrix multiplication with a column group that is transposed.</div>
+</td>
+</tr>
+<tr id="i24" class="altColor">
+<td class="colFirst"><code>void</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.html#leftMultByMatrix-org.apache.sysds.runtime.matrix.data.MatrixBlock-org.apache.sysds.runtime.matrix.data.MatrixBlock-">leftMultByMatrix</a></span>(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;matrix,
+                <a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;result)</code>
+<div class="block">Left multiply with this column group</div>
+</td>
+</tr>
+<tr id="i25" class="rowColor">
+<td class="colFirst"><code>abstract void</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.html#leftMultByMatrix-org.apache.sysds.runtime.matrix.data.MatrixBlock-org.apache.sysds.runtime.matrix.data.MatrixBlock-int-int-">leftMultByMatrix</a></span>(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;matrix,
+                <a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;result,
                 int&nbsp;rl,
-                int&nbsp;ru,
-                int&nbsp;vOff)</code>
-<div class="block">Multiply with a matrix on the left.</div>
+                int&nbsp;ru)</code>
+<div class="block">Left multiply with this column group.</div>
 </td>
 </tr>
-<tr id="i40" class="altColor">
-<td class="colFirst"><code>abstract void</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.html#leftMultByRowVector-double:A-double:A-">leftMultByRowVector</a></span>(double[]&nbsp;vector,
-                   double[]&nbsp;result)</code>
-<div class="block">Multiply the slice of the matrix that this column group represents by a row vector on the left (the original
- column vector is assumed to be transposed already i.e.</div>
-</td>
-</tr>
-<tr id="i41" class="rowColor">
-<td class="colFirst"><code>abstract void</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.html#leftMultByRowVector-double:A-double:A-int-">leftMultByRowVector</a></span>(double[]&nbsp;vector,
-                   double[]&nbsp;result,
-                   int&nbsp;offT)</code>
-<div class="block">Multiply the slice of the matrix that this column group represents by a row vector on the left (the original
- column vector is assumed to be transposed already i.e.</div>
-</td>
-</tr>
-<tr id="i42" class="altColor">
-<td class="colFirst"><code>abstract void</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.html#leftMultByRowVector-double:A-double:A-int-double:A-">leftMultByRowVector</a></span>(double[]&nbsp;vector,
-                   double[]&nbsp;result,
-                   int&nbsp;numVals,
-                   double[]&nbsp;values)</code>
-<div class="block">Multiply the slice of the matrix that this column group represents by a row vector on the left (the original
- column vector is assumed to be transposed already i.e.</div>
-</td>
-</tr>
-<tr id="i43" class="rowColor">
-<td class="colFirst"><code>abstract void</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.html#leftMultByRowVector-double:A-double:A-int-double:A-int-">leftMultByRowVector</a></span>(double[]&nbsp;vector,
-                   double[]&nbsp;result,
-                   int&nbsp;numVals,
-                   double[]&nbsp;values,
-                   int&nbsp;offT)</code>
-<div class="block">Multiply the slice of the matrix that this column group represents by a row vector on the left (the original
- column vector is assumed to be transposed already i.e.</div>
-</td>
-</tr>
-<tr id="i44" class="altColor">
-<td class="colFirst"><code>abstract void</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.html#leftMultBySelfDiagonalColGroup-double:A-int-">leftMultBySelfDiagonalColGroup</a></span>(double[]&nbsp;result,
-                              int&nbsp;numColumns)</code>&nbsp;</td>
-</tr>
-<tr id="i45" class="rowColor">
-<td class="colFirst"><code>abstract void</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.html#leftMultBySparseMatrix-org.apache.sysds.runtime.data.SparseBlock-double:A-double:A-int-int-int-double:A-">leftMultBySparseMatrix</a></span>(<a href="../../../../../../org/apache/sysds/runtime/data/SparseBlock.html" title="class in org.apache.sysds.runtime.data">SparseBlock</a>&nbsp;sb,
-                      double[]&nbsp;result,
-                      double[]&nbsp;values,
-                      int&nbsp;numRows,
-                      int&nbsp;numCols,
-                      int&nbsp;row,
-                      double[]&nbsp;MaterializedRow)</code>
-<div class="block">Multiply with a sparse matrix on the left hand side, and add the values to the output result</div>
-</td>
-</tr>
-<tr id="i46" class="altColor">
-<td class="colFirst"><code>abstract void</code></td>
+<tr id="i26" class="altColor">
+<td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.html#readFields-java.io.DataInput-">readFields</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/io/DataInput.html?is-external=true" title="class or interface in java.io">DataInput</a>&nbsp;in)</code>
 <div class="block">Deserialize column group from data input.</div>
 </td>
 </tr>
-<tr id="i47" class="rowColor">
-<td class="colFirst"><code>abstract void</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.html#rightMultByMatrix-int:A-double:A-double:A-int-int-int-">rightMultByMatrix</a></span>(int[]&nbsp;outputColumns,
-                 double[]&nbsp;preAggregatedB,
-                 double[]&nbsp;c,
-                 int&nbsp;thatNrColumns,
-                 int&nbsp;rl,
-                 int&nbsp;ru)</code>
-<div class="block">Right multiply by matrix.</div>
+<tr id="i27" class="rowColor">
+<td class="colFirst"><code>abstract <a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a></code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.html#replace-double-double-">replace</a></span>(double&nbsp;pattern,
+       double&nbsp;replace)</code>
+<div class="block">Make a copy of the column group values, and replace all values that match pattern with replacement value.</div>
 </td>
 </tr>
-<tr id="i48" class="altColor">
-<td class="colFirst"><code>abstract void</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.html#rightMultByVector-double:A-double:A-int-int-double:A-">rightMultByVector</a></span>(double[]&nbsp;vector,
-                 double[]&nbsp;c,
-                 int&nbsp;rl,
-                 int&nbsp;ru,
-                 double[]&nbsp;dictVals)</code>
-<div class="block">Multiply the slice of the matrix that this column group represents by a vector on the right.</div>
+<tr id="i28" class="altColor">
+<td class="colFirst"><code>abstract <a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a></code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.html#rightMultByMatrix-org.apache.sysds.runtime.matrix.data.MatrixBlock-">rightMultByMatrix</a></span>(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;right)</code>
+<div class="block">Right matrix multiplication with this column group.</div>
 </td>
 </tr>
-<tr id="i49" class="rowColor">
+<tr id="i29" class="rowColor">
 <td class="colFirst"><code>abstract <a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.html#scalarOperation-org.apache.sysds.runtime.matrix.operators.ScalarOperator-">scalarOperation</a></span>(<a href="../../../../../../org/apache/sysds/runtime/matrix/operators/ScalarOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">ScalarOperator</a>&nbsp;op)</code>
 <div class="block">Perform the specified scalar operation directly on the compressed column group, without decompressing individual
  cells if possible.</div>
 </td>
 </tr>
-<tr id="i50" class="altColor">
+<tr id="i30" class="altColor">
 <td class="colFirst"><code>void</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.html#shiftColIndices-int-">shiftColIndices</a></span>(int&nbsp;offset)</code>&nbsp;</td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.html#shiftColIndices-int-">shiftColIndices</a></span>(int&nbsp;offset)</code>
+<div class="block">Shift all column indexes contained by an offset.</div>
+</td>
 </tr>
-<tr id="i51" class="rowColor">
-<td class="colFirst"><code>abstract <a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a></code></td>
+<tr id="i31" class="rowColor">
+<td class="colFirst"><code><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a></code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.html#sliceColumn-int-">sliceColumn</a></span>(int&nbsp;col)</code>
+<div class="block">Slice out a single column from the column group.</div>
+</td>
+</tr>
+<tr id="i32" class="altColor">
+<td class="colFirst"><code><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.html#sliceColumns-int-int-">sliceColumns</a></span>(int&nbsp;cl,
             int&nbsp;cu)</code>
 <div class="block">Slice out the columns within the range of cl and cu to remove the dictionary values related to these columns.</div>
 </td>
 </tr>
-<tr id="i52" class="altColor">
+<tr id="i33" class="rowColor">
 <td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.html#toString--">toString</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i53" class="rowColor">
+<tr id="i34" class="altColor">
+<td class="colFirst"><code>abstract void</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.html#tsmm-double:A-int-">tsmm</a></span>(double[]&nbsp;result,
+    int&nbsp;numColumns)</code>
+<div class="block">Do a transposed self matrix multiplication on the left side t(x) %*% x.</div>
+</td>
+</tr>
+<tr id="i35" class="rowColor">
+<td class="colFirst"><code>abstract void</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.html#tsmm-double:A-int-int-int-">tsmm</a></span>(double[]&nbsp;result,
+    int&nbsp;numColumns,
+    int&nbsp;idxStart,
+    int&nbsp;idxEnd)</code>
+<div class="block">Do a transposed self matrix multiplication on the left side t(x) %*% x.</div>
+</td>
+</tr>
+<tr id="i36" class="altColor">
 <td class="colFirst"><code>abstract void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.html#unaryAggregateOperations-org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator-double:A-">unaryAggregateOperations</a></span>(<a href="../../../../../../org/apache/sysds/runtime/matrix/operators/AggregateUnaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">AggregateUnaryOperator</a>&nbsp;op,
                         double[]&nbsp;c)</code>
@@ -582,7 +419,7 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Serializab
  matrix.</div>
 </td>
 </tr>
-<tr id="i54" class="altColor">
+<tr id="i37" class="rowColor">
 <td class="colFirst"><code>abstract void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.html#unaryAggregateOperations-org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator-double:A-int-int-">unaryAggregateOperations</a></span>(<a href="../../../../../../org/apache/sysds/runtime/matrix/operators/AggregateUnaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">AggregateUnaryOperator</a>&nbsp;op,
                         double[]&nbsp;c,
@@ -592,8 +429,8 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Serializab
  matrix.</div>
 </td>
 </tr>
-<tr id="i55" class="rowColor">
-<td class="colFirst"><code>abstract void</code></td>
+<tr id="i38" class="altColor">
+<td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.html#write-java.io.DataOutput-">write</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/io/DataOutput.html?is-external=true" title="class or interface in java.io">DataOutput</a>&nbsp;out)</code>
 <div class="block">Serializes column group to data output.</div>
 </td>
@@ -634,33 +471,33 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Serializab
 </dl>
 </li>
 </ul>
-<a name="getColIndex-int-">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>getColIndex</h4>
-<pre>public&nbsp;int&nbsp;getColIndex(int&nbsp;colNum)</pre>
-<div class="block">Obtain a column index value.</div>
-<dl>
-<dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>colNum</code> - column number</dd>
-<dt><span class="returnLabel">Returns:</span></dt>
-<dd>column index value</dd>
-</dl>
-</li>
-</ul>
 <a name="getNumRows--">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
 <h4>getNumRows</h4>
-<pre>public&nbsp;int&nbsp;getNumRows()</pre>
+<pre>public abstract&nbsp;int&nbsp;getNumRows()</pre>
 <div class="block">Get number of rows contained in the ColGroup.</div>
 <dl>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>An integer that is the number of rows.</dd>
+</dl>
+</li>
+</ul>
+<a name="getNumValues--">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>getNumValues</h4>
+<pre>public abstract&nbsp;int&nbsp;getNumValues()</pre>
+<div class="block">Obtain number of distinct tuples in contained sets of values associated with this column group.
+ 
+ If the column group is uncompressed the number or rows is returned.</div>
+<dl>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>the number of distinct sets of values associated with the bitmaps in this column group</dd>
 </dl>
 </li>
 </ul>
@@ -692,28 +529,20 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Serializab
 </dl>
 </li>
 </ul>
-<a name="getColGroupType--">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>getColGroupType</h4>
-<pre>public abstract&nbsp;<a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.ColGroupType.html" title="enum in org.apache.sysds.runtime.compress.colgroup">AColGroup.ColGroupType</a>&nbsp;getColGroupType()</pre>
-<div class="block">Internally get the specific type of ColGroup, this could be extracted from the object but that does not allow for
- nice switches in the code.</div>
-<dl>
-<dt><span class="returnLabel">Returns:</span></dt>
-<dd>ColGroupType of the object.</dd>
-</dl>
-</li>
-</ul>
 <a name="shiftColIndices-int-">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
 <h4>shiftColIndices</h4>
-<pre>public&nbsp;void&nbsp;shiftColIndices(int&nbsp;offset)</pre>
+<pre>public final&nbsp;void&nbsp;shiftColIndices(int&nbsp;offset)</pre>
+<div class="block">Shift all column indexes contained by an offset.
+
+ This is used for rbind to combine compressed matrices.</div>
+<dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>offset</code> - The offset to move all columns</dd>
+</dl>
 </li>
 </ul>
 <a name="estimateInMemorySize--">
@@ -722,115 +551,15 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Serializab
 <ul class="blockList">
 <li class="blockList">
 <h4>estimateInMemorySize</h4>
-<pre>public abstract&nbsp;long&nbsp;estimateInMemorySize()</pre>
-<div class="block">Note: Must be overridden by child classes to account for additional data and metadata</div>
+<pre>public&nbsp;long&nbsp;estimateInMemorySize()</pre>
+<div class="block">Get the upper bound estimate of in memory allocation for the column group.</div>
 <dl>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>an upper bound on the number of bytes used to store this ColGroup in memory.</dd>
 </dl>
 </li>
 </ul>
-<a name="decompressToBlock-org.apache.sysds.runtime.matrix.data.MatrixBlock-int-int-">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>decompressToBlock</h4>
-<pre>public&nbsp;void&nbsp;decompressToBlock(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;target,
-                              int&nbsp;rl,
-                              int&nbsp;ru)</pre>
-<div class="block">Decompress the contents of this column group into the specified full matrix block.</div>
-<dl>
-<dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>target</code> - a matrix block where the columns covered by this column group have not yet been filled in.</dd>
-<dd><code>rl</code> - row lower</dd>
-<dd><code>ru</code> - row upper</dd>
-</dl>
-</li>
-</ul>
-<a name="decompressToBlock-org.apache.sysds.runtime.matrix.data.MatrixBlock-int-int-int-">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>decompressToBlock</h4>
-<pre>public&nbsp;void&nbsp;decompressToBlock(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;target,
-                              int&nbsp;rl,
-                              int&nbsp;ru,
-                              int&nbsp;offT)</pre>
-<div class="block">Decompress the contents of this column group into the specified full matrix block.</div>
-<dl>
-<dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>target</code> - a matrix block where the columns covered by this column group have not yet been filled in.</dd>
-<dd><code>rl</code> - The row to start at</dd>
-<dd><code>ru</code> - The row to end at</dd>
-<dd><code>offT</code> - The rowOffset into target to decompress to.</dd>
-</dl>
-</li>
-</ul>
-<a name="decompressToBlock-org.apache.sysds.runtime.matrix.data.MatrixBlock-int-int-double:A-boolean-">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>decompressToBlock</h4>
-<pre>public&nbsp;void&nbsp;decompressToBlock(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;target,
-                              int&nbsp;rl,
-                              int&nbsp;ru,
-                              double[]&nbsp;values,
-                              boolean&nbsp;safe)</pre>
-<div class="block">Decompress the contents of this column group into the target matrixBlock, it is assumed that the target matrix
- Block have the same number of columns and at least the number of rows ru.</div>
-<dl>
-<dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>target</code> - The target matrixBlock to decompress into</dd>
-<dd><code>rl</code> - The row to start at</dd>
-<dd><code>ru</code> - The row to end at</dd>
-<dd><code>values</code> - The dictionary values materialized.</dd>
-<dd><code>safe</code> - Boolean specifying if the operation should be safe, aka counting nnz.</dd>
-</dl>
-</li>
-</ul>
-<a name="decompressToBlock-org.apache.sysds.runtime.matrix.data.MatrixBlock-int-int-boolean-">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>decompressToBlock</h4>
-<pre>public&nbsp;void&nbsp;decompressToBlock(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;target,
-                              int&nbsp;rl,
-                              int&nbsp;ru,
-                              boolean&nbsp;safe)</pre>
-</li>
-</ul>
-<a name="decompressToBlock-org.apache.sysds.runtime.matrix.data.MatrixBlock-int-int-int-boolean-">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>decompressToBlock</h4>
-<pre>public&nbsp;void&nbsp;decompressToBlock(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;target,
-                              int&nbsp;rl,
-                              int&nbsp;ru,
-                              int&nbsp;offT,
-                              boolean&nbsp;safe)</pre>
-</li>
-</ul>
-<a name="decompressToBlock-org.apache.sysds.runtime.matrix.data.MatrixBlock-int-int-int-double:A-boolean-">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>decompressToBlock</h4>
-<pre>public&nbsp;void&nbsp;decompressToBlock(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;target,
-                              int&nbsp;rl,
-                              int&nbsp;ru,
-                              int&nbsp;offT,
-                              double[]&nbsp;values,
-                              boolean&nbsp;safe)</pre>
-</li>
-</ul>
-<a name="decompressToBlockSafe-org.apache.sysds.runtime.matrix.data.MatrixBlock-int-int-int-double:A-">
+<a name="decompressToBlockSafe-org.apache.sysds.runtime.matrix.data.MatrixBlock-int-int-int-">
 <!--   -->
 </a>
 <ul class="blockList">
@@ -839,9 +568,8 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Serializab
 <pre>public abstract&nbsp;void&nbsp;decompressToBlockSafe(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;target,
                                            int&nbsp;rl,
                                            int&nbsp;ru,
-                                           int&nbsp;offT,
-                                           double[]&nbsp;values)</pre>
-<div class="block">Decompress the contents of this column group into the specified full matrix block without managing the number of
+                                           int&nbsp;offT)</pre>
+<div class="block">Decompress the contents of this column group into the specified full matrix block while managing the number of
  non zeros.</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
@@ -849,11 +577,28 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Serializab
 <dd><code>rl</code> - row lower</dd>
 <dd><code>ru</code> - row upper</dd>
 <dd><code>offT</code> - Offset into target to assign from</dd>
-<dd><code>values</code> - The Values materialized in the dictionary</dd>
 </dl>
 </li>
 </ul>
-<a name="decompressToBlockUnSafe-org.apache.sysds.runtime.matrix.data.MatrixBlock-int-int-int-double:A-">
+<a name="decompressToBlockUnSafe-org.apache.sysds.runtime.matrix.data.MatrixBlock-int-int-">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>decompressToBlockUnSafe</h4>
+<pre>public&nbsp;void&nbsp;decompressToBlockUnSafe(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;target,
+                                    int&nbsp;rl,
+                                    int&nbsp;ru)</pre>
+<div class="block">Decompress the contents of the columngroup unsafely, meaning that it does not count nonzero values.</div>
+<dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>target</code> - a matrix block where the columns covered by this column group have not yet been filled in.</dd>
+<dd><code>rl</code> - row lower</dd>
+<dd><code>ru</code> - row upper</dd>
+</dl>
+</li>
+</ul>
+<a name="decompressToBlockUnSafe-org.apache.sysds.runtime.matrix.data.MatrixBlock-int-int-int-">
 <!--   -->
 </a>
 <ul class="blockList">
@@ -862,98 +607,14 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Serializab
 <pre>public abstract&nbsp;void&nbsp;decompressToBlockUnSafe(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;target,
                                              int&nbsp;rl,
                                              int&nbsp;ru,
-                                             int&nbsp;offT,
-                                             double[]&nbsp;values)</pre>
-</li>
-</ul>
-<a name="decompressToBlock-org.apache.sysds.runtime.matrix.data.MatrixBlock-int-int-int-double:A-">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>decompressToBlock</h4>
-<pre>public&nbsp;void&nbsp;decompressToBlock(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;target,
-                              int&nbsp;rl,
-                              int&nbsp;ru,
-                              int&nbsp;offT,
-                              double[]&nbsp;values)</pre>
-<div class="block">Decompress the contents of this column group into the specified full matrix block.</div>
+                                             int&nbsp;offT)</pre>
+<div class="block">Decompress the contents of the columngroup unsafely, meaning that it does not count nonzero values.</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>target</code> - a matrix block where the columns covered by this column group have not yet been filled in.</dd>
 <dd><code>rl</code> - row lower</dd>
 <dd><code>ru</code> - row upper</dd>
-<dd><code>offT</code> - The offset into the target matrix block to decompress to.</dd>
-<dd><code>values</code> - The Values materialized in the dictionary</dd>
-</dl>
-</li>
-</ul>
-<a name="decompressToBlock-org.apache.sysds.runtime.matrix.data.MatrixBlock-int:A-">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>decompressToBlock</h4>
-<pre>public abstract&nbsp;void&nbsp;decompressToBlock(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;target,
-                                       int[]&nbsp;colIndexTargets)</pre>
-<div class="block">Decompress the contents of this column group into uncompressed packed columns</div>
-<dl>
-<dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>target</code> - a dense matrix block. The block must have enough space to hold the contents of this column
-                        group.</dd>
-<dd><code>colIndexTargets</code> - array that maps column indices in the original matrix block to columns of target.</dd>
-</dl>
-</li>
-</ul>
-<a name="decompressColumnToBlock-org.apache.sysds.runtime.matrix.data.MatrixBlock-int-java.util.List-">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>decompressColumnToBlock</h4>
-<pre>public static&nbsp;void&nbsp;decompressColumnToBlock(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;target,
-                                           int&nbsp;colIndex,
-                                           <a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;<a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a>&gt;&nbsp;colGroups)</pre>
-<div class="block">Decompress an entire column into the target matrix block. This decompression maintain the number of non zeros.</div>
-<dl>
-<dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>target</code> - Target matrix block to decompress into.</dd>
-<dd><code>colIndex</code> - The column index to decompress.</dd>
-<dd><code>colGroups</code> - The list of column groups to decompress.</dd>
-</dl>
-</li>
-</ul>
-<a name="decompressColumnToArray-double:A-int-java.util.List-">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>decompressColumnToArray</h4>
-<pre>public static&nbsp;void&nbsp;decompressColumnToArray(double[]&nbsp;target,
-                                           int&nbsp;colIndex,
-                                           <a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;<a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a>&gt;&nbsp;colGroups)</pre>
-</li>
-</ul>
-<a name="decompressColumnToBlock-org.apache.sysds.runtime.matrix.data.MatrixBlock-int-int-int-java.util.List-">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>decompressColumnToBlock</h4>
-<pre>public static&nbsp;void&nbsp;decompressColumnToBlock(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;target,
-                                           int&nbsp;colIndex,
-                                           int&nbsp;rl,
-                                           int&nbsp;ru,
-                                           <a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;<a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a>&gt;&nbsp;colGroups)</pre>
-<div class="block">Decompress part of the col groups into the target matrix block, this decompression maintain the number of non
- zeros.</div>
-<dl>
-<dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>target</code> - The Target matrix block to decompress into</dd>
-<dd><code>colIndex</code> - The column index to decompress.</dd>
-<dd><code>rl</code> - The row to start the decompression from</dd>
-<dd><code>ru</code> - The row to end the decompression at</dd>
-<dd><code>colGroups</code> - The list of column groups to decompress.</dd>
+<dd><code>offT</code> - Offset into target to assign from</dd>
 </dl>
 </li>
 </ul>
@@ -963,10 +624,10 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Serializab
 <ul class="blockList">
 <li class="blockList">
 <h4>decompressColumnToBlockUnSafe</h4>
-<pre>public static&nbsp;void&nbsp;decompressColumnToBlockUnSafe(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;target,
-                                                 int&nbsp;rl,
-                                                 int&nbsp;ru,
-                                                 <a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;<a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a>&gt;&nbsp;colGroups)</pre>
+<pre>public static final&nbsp;void&nbsp;decompressColumnToBlockUnSafe(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;target,
+                                                       int&nbsp;rl,
+                                                       int&nbsp;ru,
+                                                       <a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;<a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a>&gt;&nbsp;colGroups)</pre>
 <div class="block">Decompress part of the col groups into the target matrix block, this decompression maintain the number of non
  zeros.</div>
 <dl>
@@ -978,95 +639,14 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Serializab
 </dl>
 </li>
 </ul>
-<a name="decompressColumnToBlock-double:A-int-int-int-java.util.List-">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>decompressColumnToBlock</h4>
-<pre>public static&nbsp;void&nbsp;decompressColumnToBlock(double[]&nbsp;target,
-                                           int&nbsp;colIndex,
-                                           int&nbsp;rl,
-                                           int&nbsp;ru,
-                                           <a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;<a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a>&gt;&nbsp;colGroups)</pre>
-<div class="block">Decompress part of the col groups into the target dense double array. This assumes that the double array is a row
- linearized matrix double array.
- 
- This is much faster than decompressing into a target matrix block since nnz is not managed.</div>
-<dl>
-<dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>target</code> - Target double array to decompress into</dd>
-<dd><code>colIndex</code> - The column index to decompress.</dd>
-<dd><code>rl</code> - The row to start decompression from</dd>
-<dd><code>ru</code> - The row to end the decompression at</dd>
-<dd><code>colGroups</code> - The list of column groups to decompress.</dd>
-</dl>
-</li>
-</ul>
-<a name="decompressColumnToBlock-org.apache.sysds.runtime.matrix.data.MatrixBlock-int-">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>decompressColumnToBlock</h4>
-<pre>public abstract&nbsp;void&nbsp;decompressColumnToBlock(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;target,
-                                             int&nbsp;colpos)</pre>
-<div class="block">Decompress to block.</div>
-<dl>
-<dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>target</code> - dense output vector</dd>
-<dd><code>colpos</code> - column to decompress, error if larger or equal numCols</dd>
-</dl>
-</li>
-</ul>
-<a name="decompressColumnToBlock-org.apache.sysds.runtime.matrix.data.MatrixBlock-int-int-int-">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>decompressColumnToBlock</h4>
-<pre>public abstract&nbsp;void&nbsp;decompressColumnToBlock(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;target,
-                                             int&nbsp;colpos,
-                                             int&nbsp;rl,
-                                             int&nbsp;ru)</pre>
-<div class="block">Decompress to block.</div>
-<dl>
-<dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>target</code> - dense output vector</dd>
-<dd><code>colpos</code> - column to decompress, error if larger or equal numCols</dd>
-<dd><code>rl</code> - the Row to start decompression from</dd>
-<dd><code>ru</code> - the Row to end decompression at</dd>
-</dl>
-</li>
-</ul>
-<a name="decompressColumnToBlock-double:A-int-int-int-">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>decompressColumnToBlock</h4>
-<pre>public abstract&nbsp;void&nbsp;decompressColumnToBlock(double[]&nbsp;target,
-                                             int&nbsp;colpos,
-                                             int&nbsp;rl,
-                                             int&nbsp;ru)</pre>
-<div class="block">Decompress to dense array.</div>
-<dl>
-<dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>target</code> - dense output vector double array.</dd>
-<dd><code>colpos</code> - column to decompress, error if larger or equal numCols</dd>
-<dd><code>rl</code> - the Row to start decompression from</dd>
-<dd><code>ru</code> - the Row to end decompression at</dd>
-</dl>
-</li>
-</ul>
 <a name="write-java.io.DataOutput-">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
 <h4>write</h4>
-<pre>public abstract&nbsp;void&nbsp;write(<a href="https://docs.oracle.com/javase/8/docs/api/java/io/DataOutput.html?is-external=true" title="class or interface in java.io">DataOutput</a>&nbsp;out)
-                    throws <a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io">IOException</a></pre>
+<pre>public&nbsp;void&nbsp;write(<a href="https://docs.oracle.com/javase/8/docs/api/java/io/DataOutput.html?is-external=true" title="class or interface in java.io">DataOutput</a>&nbsp;out)
+           throws <a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io">IOException</a></pre>
 <div class="block">Serializes column group to data output.</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
@@ -1082,8 +662,8 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Serializab
 <ul class="blockList">
 <li class="blockList">
 <h4>readFields</h4>
-<pre>public abstract&nbsp;void&nbsp;readFields(<a href="https://docs.oracle.com/javase/8/docs/api/java/io/DataInput.html?is-external=true" title="class or interface in java.io">DataInput</a>&nbsp;in)
-                         throws <a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io">IOException</a></pre>
+<pre>public&nbsp;void&nbsp;readFields(<a href="https://docs.oracle.com/javase/8/docs/api/java/io/DataInput.html?is-external=true" title="class or interface in java.io">DataInput</a>&nbsp;in)
+                throws <a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io">IOException</a></pre>
 <div class="block">Deserialize column group from data input.</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
@@ -1099,7 +679,7 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Serializab
 <ul class="blockList">
 <li class="blockList">
 <h4>getExactSizeOnDisk</h4>
-<pre>public abstract&nbsp;long&nbsp;getExactSizeOnDisk()</pre>
+<pre>public&nbsp;long&nbsp;getExactSizeOnDisk()</pre>
 <div class="block">Returns the exact serialized size of column group. This can be used for example for buffer preallocation.</div>
 <dl>
 <dt><span class="returnLabel">Returns:</span></dt>
@@ -1155,210 +735,121 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Serializab
 </dl>
 </li>
 </ul>
-<a name="getIfCountsType--">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>getIfCountsType</h4>
-<pre>public abstract&nbsp;boolean&nbsp;getIfCountsType()</pre>
-<div class="block">Returns true if in the getValuesAsBlock method returns values in groups (that needs to be counted) or
- individually potentially repeated values</div>
-<dl>
-<dt><span class="returnLabel">Returns:</span></dt>
-<dd>boolean</dd>
-</dl>
-</li>
-</ul>
-<a name="rightMultByVector-double:A-double:A-int-int-double:A-">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>rightMultByVector</h4>
-<pre>public abstract&nbsp;void&nbsp;rightMultByVector(double[]&nbsp;vector,
-                                       double[]&nbsp;c,
-                                       int&nbsp;rl,
-                                       int&nbsp;ru,
-                                       double[]&nbsp;dictVals)</pre>
-<div class="block">Multiply the slice of the matrix that this column group represents by a vector on the right.</div>
-<dl>
-<dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>vector</code> - Vector to multiply by (tall vector)</dd>
-<dd><code>c</code> - Accumulator for holding the result</dd>
-<dd><code>rl</code> - Row to start at</dd>
-<dd><code>ru</code> - Row to stop at</dd>
-<dd><code>dictVals</code> - The dictionary values materialized</dd>
-</dl>
-</li>
-</ul>
-<a name="rightMultByMatrix-int:A-double:A-double:A-int-int-int-">
+<a name="rightMultByMatrix-org.apache.sysds.runtime.matrix.data.MatrixBlock-">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
 <h4>rightMultByMatrix</h4>
-<pre>public abstract&nbsp;void&nbsp;rightMultByMatrix(int[]&nbsp;outputColumns,
-                                       double[]&nbsp;preAggregatedB,
-                                       double[]&nbsp;c,
-                                       int&nbsp;thatNrColumns,
-                                       int&nbsp;rl,
-                                       int&nbsp;ru)</pre>
-<div class="block">Right multiply by matrix. for which the compressed matrix is on the left and the uncompressed is on the right.
- Note that there is no b argument, but the b is aggregated into the values needed for assignment and addition into
- output.</div>
+<pre>public abstract&nbsp;<a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a>&nbsp;rightMultByMatrix(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;right)</pre>
+<div class="block">Right matrix multiplication with this column group.</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>outputColumns</code> - The Columns that are affected by the right multiplication.</dd>
-<dd><code>preAggregatedB</code> - The preAggregated values that is to be put into c</dd>
-<dd><code>c</code> - The output matrix</dd>
-<dd><code>thatNrColumns</code> - The number of columns in B (before aggregation)</dd>
-<dd><code>rl</code> - The row index to start the multiplication from</dd>
-<dd><code>ru</code> - The row index to stop the multiplication at</dd>
+<dd><code>right</code> - The matrixBlock on the right of this matrix multiplication</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>The new Column Group that is the result of the matrix multiplication.</dd>
 </dl>
 </li>
 </ul>
-<a name="leftMultByRowVector-double:A-double:A-">
+<a name="tsmm-double:A-int-">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
-<h4>leftMultByRowVector</h4>
-<pre>public abstract&nbsp;void&nbsp;leftMultByRowVector(double[]&nbsp;vector,
-                                         double[]&nbsp;result)</pre>
-<div class="block">Multiply the slice of the matrix that this column group represents by a row vector on the left (the original
- column vector is assumed to be transposed already i.e. its size now is 1xn).</div>
+<h4>tsmm</h4>
+<pre>public abstract&nbsp;void&nbsp;tsmm(double[]&nbsp;result,
+                          int&nbsp;numColumns)</pre>
+<div class="block">Do a transposed self matrix multiplication on the left side t(x) %*% x. but only with this column group.
+ 
+ This gives better performance since there is no need to iterate through all the rows of the matrix, but the
+ execution can be limited to its number of distinct values.
+ 
+ Note it only calculate the upper triangle</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>vector</code> - row vector</dd>
-<dd><code>result</code> - matrix block result</dd>
+<dd><code>result</code> - A row major dense allocation of a matrixBlock, of size [numColumns x numColumns]</dd>
+<dd><code>numColumns</code> - The number of columns in the row major result matrix.</dd>
 </dl>
 </li>
 </ul>
-<a name="leftMultByRowVector-double:A-double:A-int-">
+<a name="tsmm-double:A-int-int-int-">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
-<h4>leftMultByRowVector</h4>
-<pre>public abstract&nbsp;void&nbsp;leftMultByRowVector(double[]&nbsp;vector,
-                                         double[]&nbsp;result,
-                                         int&nbsp;offT)</pre>
-<div class="block">Multiply the slice of the matrix that this column group represents by a row vector on the left (the original
- column vector is assumed to be transposed already i.e. its size now is 1xn).</div>
+<h4>tsmm</h4>
+<pre>public abstract&nbsp;void&nbsp;tsmm(double[]&nbsp;result,
+                          int&nbsp;numColumns,
+                          int&nbsp;idxStart,
+                          int&nbsp;idxEnd)</pre>
+<div class="block">Do a transposed self matrix multiplication on the left side t(x) %*% x. but only with this column group, and only
+ on a subset of the columns contained in this columnGroup.
+ 
+ This gives better performance since there is no need to iterate through all the rows of the matrix, but the
+ execution can be limited to its number of distinct values.
+ 
+ Note it only calculate the upper triangle</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>vector</code> - row vector</dd>
-<dd><code>result</code> - matrix block result</dd>
-<dd><code>offT</code> - The offset into target result array to put the result values.</dd>
+<dd><code>result</code> - A row major dense allocation of a matrixBlock, of size [numColumns x numColumns]</dd>
+<dd><code>numColumns</code> - The number of columns in the row major result matrix.</dd>
+<dd><code>idxStart</code> - The starting index in the _colIndexes.</dd>
+<dd><code>idxEnd</code> - The ending index in the _colIndexes.</dd>
 </dl>
 </li>
 </ul>
-<a name="leftMultByRowVector-double:A-double:A-int-double:A-">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>leftMultByRowVector</h4>
-<pre>public abstract&nbsp;void&nbsp;leftMultByRowVector(double[]&nbsp;vector,
-                                         double[]&nbsp;result,
-                                         int&nbsp;numVals,
-                                         double[]&nbsp;values)</pre>
-<div class="block">Multiply the slice of the matrix that this column group represents by a row vector on the left (the original
- column vector is assumed to be transposed already i.e. its size now is 1xn).</div>
-<dl>
-<dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>vector</code> - Row vector</dd>
-<dd><code>result</code> - Matrix block result</dd>
-<dd><code>numVals</code> - The Number of values contained in the Column.</dd>
-<dd><code>values</code> - The materialized list of values contained in the dictionary.</dd>
-</dl>
-</li>
-</ul>
-<a name="leftMultByRowVector-double:A-double:A-int-double:A-int-">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>leftMultByRowVector</h4>
-<pre>public abstract&nbsp;void&nbsp;leftMultByRowVector(double[]&nbsp;vector,
-                                         double[]&nbsp;result,
-                                         int&nbsp;numVals,
-                                         double[]&nbsp;values,
-                                         int&nbsp;offT)</pre>
-<div class="block">Multiply the slice of the matrix that this column group represents by a row vector on the left (the original
- column vector is assumed to be transposed already i.e. its size now is 1xn).</div>
-<dl>
-<dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>vector</code> - Row vector</dd>
-<dd><code>result</code> - Matrix block result</dd>
-<dd><code>numVals</code> - The Number of values contained in the Column.</dd>
-<dd><code>values</code> - The materialized list of values contained in the dictionary.</dd>
-<dd><code>offT</code> - The offset into target result array to put the result values.</dd>
-</dl>
-</li>
-</ul>
-<a name="leftMultBySelfDiagonalColGroup-double:A-int-">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>leftMultBySelfDiagonalColGroup</h4>
-<pre>public abstract&nbsp;void&nbsp;leftMultBySelfDiagonalColGroup(double[]&nbsp;result,
-                                                    int&nbsp;numColumns)</pre>
-</li>
-</ul>
-<a name="leftMultByMatrix-double:A-double:A-double:A-int-int-int-int-int-">
+<a name="leftMultByMatrix-org.apache.sysds.runtime.matrix.data.MatrixBlock-org.apache.sysds.runtime.matrix.data.MatrixBlock-">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
 <h4>leftMultByMatrix</h4>
-<pre>public abstract&nbsp;void&nbsp;leftMultByMatrix(double[]&nbsp;matrix,
-                                      double[]&nbsp;result,
-                                      double[]&nbsp;values,
-                                      int&nbsp;numRows,
-                                      int&nbsp;numCols,
-                                      int&nbsp;rl,
-                                      int&nbsp;ru,
-                                      int&nbsp;vOff)</pre>
-<div class="block">Multiply with a matrix on the left.</div>
+<pre>public final&nbsp;void&nbsp;leftMultByMatrix(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;matrix,
+                                   <a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;result)</pre>
+<div class="block">Left multiply with this column group</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>matrix</code> - matrix to left multiply</dd>
-<dd><code>result</code> - matrix block result</dd>
-<dd><code>values</code> - The materialized list of values contained in the dictionary.</dd>
-<dd><code>numRows</code> - The number of rows in the matrix input</dd>
-<dd><code>numCols</code> - The number of columns in the colGroups parent matrix.</dd>
-<dd><code>rl</code> - The row to start the matrix multiplication from</dd>
-<dd><code>ru</code> - The row to stop the matrix multiplication at.</dd>
-<dd><code>vOff</code> - The offset into the first argument matrix to start at.</dd>
+<dd><code>matrix</code> - The matrix to multiply with on the left</dd>
+<dd><code>result</code> - The result to output the values into, always dense for the purpose of the column groups
+               parallelizing</dd>
 </dl>
 </li>
 </ul>
-<a name="leftMultBySparseMatrix-org.apache.sysds.runtime.data.SparseBlock-double:A-double:A-int-int-int-double:A-">
+<a name="leftMultByMatrix-org.apache.sysds.runtime.matrix.data.MatrixBlock-org.apache.sysds.runtime.matrix.data.MatrixBlock-int-int-">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
-<h4>leftMultBySparseMatrix</h4>
-<pre>public abstract&nbsp;void&nbsp;leftMultBySparseMatrix(<a href="../../../../../../org/apache/sysds/runtime/data/SparseBlock.html" title="class in org.apache.sysds.runtime.data">SparseBlock</a>&nbsp;sb,
-                                            double[]&nbsp;result,
-                                            double[]&nbsp;values,
-                                            int&nbsp;numRows,
-                                            int&nbsp;numCols,
-                                            int&nbsp;row,
-                                            double[]&nbsp;MaterializedRow)</pre>
-<div class="block">Multiply with a sparse matrix on the left hand side, and add the values to the output result</div>
+<h4>leftMultByMatrix</h4>
+<pre>public abstract&nbsp;void&nbsp;leftMultByMatrix(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;matrix,
+                                      <a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;result,
+                                      int&nbsp;rl,
+                                      int&nbsp;ru)</pre>
+<div class="block">Left multiply with this column group.</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>sb</code> - The sparse block to multiply with</dd>
-<dd><code>result</code> - The linearized output matrix</dd>
-<dd><code>values</code> - The dictionary values materialized</dd>
-<dd><code>numRows</code> - The number of rows in the left hand side input matrix (the sparse one)</dd>
-<dd><code>numCols</code> - The number of columns in the compression.</dd>
-<dd><code>row</code> - The row index of the sparse row to multiply with.</dd>
-<dd><code>MaterializedRow</code> - A Temporary dense row vector to materialize the sparse values into used for OLE</dd>
+<dd><code>matrix</code> - The matrix to multiply with on the left</dd>
+<dd><code>result</code> - The result to output the values into, always dense for the purpose of the column groups
+               parallelizing</dd>
+<dd><code>rl</code> - The row to begin the multiplication from on the lhs matrix</dd>
+<dd><code>ru</code> - The row to end the multiplication at on the lhs matrix</dd>
+</dl>
+</li>
+</ul>
+<a name="leftMultByAColGroup-org.apache.sysds.runtime.compress.colgroup.AColGroup-org.apache.sysds.runtime.matrix.data.MatrixBlock-">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>leftMultByAColGroup</h4>
+<pre>public abstract&nbsp;void&nbsp;leftMultByAColGroup(<a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a>&nbsp;lhs,
+                                         <a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;result)</pre>
+<div class="block">Left side matrix multiplication with a column group that is transposed.</div>
+<dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>lhs</code> - The left hand side Column group to multiply with, the left hand side should be considered
+               transposed.</dd>
+<dd><code>result</code> - The result matrix to insert the result of the multiplication into</dd>
 </dl>
 </li>
 </ul>
@@ -1477,14 +968,14 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Serializab
 <ul class="blockList">
 <li class="blockList">
 <h4>isDense</h4>
-<pre>public&nbsp;boolean&nbsp;isDense()</pre>
+<pre>public abstract&nbsp;boolean&nbsp;isDense()</pre>
 <div class="block">Is dense, signals that the entire column group is allocated an processed. This is useful in Row wise min and max
  for instance, to avoid having to scan through each row to look for empty rows.
  
  an example where it is true is DDC, Const and Uncompressed. examples where false is OLE and RLE.</div>
 <dl>
 <dt><span class="returnLabel">Returns:</span></dt>
-<dd>returns if the colgroup is allocated in a dense fashion.</dd>
+<dd>returns if the colGroup is allocated in a dense fashion.</dd>
 </dl>
 </li>
 </ul>
@@ -1494,8 +985,8 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Serializab
 <ul class="blockList">
 <li class="blockList">
 <h4>sliceColumns</h4>
-<pre>public abstract&nbsp;<a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a>&nbsp;sliceColumns(int&nbsp;cl,
-                                       int&nbsp;cu)</pre>
+<pre>public final&nbsp;<a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a>&nbsp;sliceColumns(int&nbsp;cl,
+                                    int&nbsp;cu)</pre>
 <div class="block">Slice out the columns within the range of cl and cu to remove the dictionary values related to these columns. If
  the ColGroup slicing from does not contain any columns within the range null is returned.</div>
 <dl>
@@ -1508,6 +999,23 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Serializab
 </dl>
 </li>
 </ul>
+<a name="sliceColumn-int-">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>sliceColumn</h4>
+<pre>public final&nbsp;<a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a>&nbsp;sliceColumn(int&nbsp;col)</pre>
+<div class="block">Slice out a single column from the column group.</div>
+<dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>col</code> - The column to slice, the column could potentially not be inside the column group</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>A new column group that is a single column, if the column requested is not in this column group null is
+         returned.</dd>
+</dl>
+</li>
+</ul>
 <a name="getMin--">
 <!--   -->
 </a>
@@ -1515,6 +1023,11 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Serializab
 <li class="blockList">
 <h4>getMin</h4>
 <pre>public abstract&nbsp;double&nbsp;getMin()</pre>
+<div class="block">Short hand method for getting minimum value contained in this column group.</div>
+<dl>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>The minimum value contained in this ColumnGroup</dd>
+</dl>
 </li>
 </ul>
 <a name="getMax--">
@@ -1524,6 +1037,11 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Serializab
 <li class="blockList">
 <h4>getMax</h4>
 <pre>public abstract&nbsp;double&nbsp;getMax()</pre>
+<div class="block">Short hand method for getting maximum value contained in this column group.</div>
+<dl>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>The maximum value contained in this ColumnGroup</dd>
+</dl>
 </li>
 </ul>
 <a name="copy--">
@@ -1533,6 +1051,12 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Serializab
 <li class="blockList">
 <h4>copy</h4>
 <pre>public abstract&nbsp;<a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a>&nbsp;copy()</pre>
+<div class="block">Get a copy of this column group. Depending on which column group is copied it is a deep or shallow copy. If the
+ primitives for the underlying column groups is Immutable then only shallow copies is performed.</div>
+<dl>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>Get a copy of this column group.</dd>
+</dl>
 </li>
 </ul>
 <a name="containsValue-double-">
@@ -1542,6 +1066,13 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Serializab
 <li class="blockList">
 <h4>containsValue</h4>
 <pre>public abstract&nbsp;boolean&nbsp;containsValue(double&nbsp;pattern)</pre>
+<div class="block">Detect if the column group contains a specific value.</div>
+<dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>pattern</code> - The value to look for.</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>boolean saying true if the value is contained.</dd>
+</dl>
 </li>
 </ul>
 <a name="getNumberNonZeros--">
@@ -1551,6 +1082,29 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Serializab
 <li class="blockList">
 <h4>getNumberNonZeros</h4>
 <pre>public abstract&nbsp;long&nbsp;getNumberNonZeros()</pre>
+<div class="block">Get the number of nonZeros contained in this column group.</div>
+<dl>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>The nnz.</dd>
+</dl>
+</li>
+</ul>
+<a name="replace-double-double-">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>replace</h4>
+<pre>public abstract&nbsp;<a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a>&nbsp;replace(double&nbsp;pattern,
+                                  double&nbsp;replace)</pre>
+<div class="block">Make a copy of the column group values, and replace all values that match pattern with replacement value.</div>
+<dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>pattern</code> - The value to look for</dd>
+<dd><code>replace</code> - The value to replace the other value with</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>A new Column Group, reusing the index structure but with new values.</dd>
+</dl>
 </li>
 </ul>
 <a name="toString--">
@@ -1595,7 +1149,7 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Serializab
 <div class="subNav">
 <ul class="navList">
 <li>Prev&nbsp;Class</li>
-<li><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.ColGroupType.html" title="enum in org.apache.sysds.runtime.compress.colgroup"><span class="typeNameLink">Next&nbsp;Class</span></a></li>
+<li><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.CompressionType.html" title="enum in org.apache.sysds.runtime.compress.colgroup"><span class="typeNameLink">Next&nbsp;Class</span></a></li>
 </ul>
 <ul class="navList">
 <li><a href="../../../../../../index.html?org/apache/sysds/runtime/compress/colgroup/AColGroup.html" target="_top">Frames</a></li>

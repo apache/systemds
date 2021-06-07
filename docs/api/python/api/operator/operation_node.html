@@ -37,7 +37,7 @@
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
     <link rel="next" title="Dag" href="../script_building/dag.html" />
-    <link rel="prev" title="Federated" href="../matrix/federated.html" /> 
+    <link rel="prev" title="Source" href="node/source.html" /> 
 </head>
 
 <body class="wy-body-for-nav">
@@ -93,15 +93,18 @@
 <li class="toctree-l1"><a class="reference internal" href="../../guide/algorithms_basics.html">Built-in Algorithms</a></li>
 </ul>
 <p class="caption"><span class="caption-text">API</span></p>
-<ul class="current">
-<li class="toctree-l1"><a class="reference internal" href="algorithms.html">Algorithms</a></li>
+<ul>
 <li class="toctree-l1"><a class="reference internal" href="../context/systemds_context.html">SystemDSContext</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../matrix/matrix.html">Matrix</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../matrix/federated.html">Federated</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Operation Node</a></li>
+<li class="toctree-l1"><a class="reference internal" href="algorithms.html">Algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="node/matrix.html">Matrix</a></li>
+<li class="toctree-l1"><a class="reference internal" href="node/frame.html">Frame</a></li>
+<li class="toctree-l1"><a class="reference internal" href="node/list.html">List</a></li>
+<li class="toctree-l1"><a class="reference internal" href="node/scalar.html">Scalar</a></li>
+<li class="toctree-l1"><a class="reference internal" href="node/source.html">Source</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Internals API</span></p>
-<ul>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Operation Node</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../script_building/dag.html">Dag</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../script_building/script.html">Script</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../utils/converters.html">Converters</a></li>
@@ -178,8 +181,7 @@
 <p>An <code class="docutils literal notranslate"><span class="pre">OperationNode</span></code> represents an operation that executes in SystemDS.
 Most methods are overloaded for <code class="docutils literal notranslate"><span class="pre">OperationNode</span></code>.
 This means that they return an <code class="docutils literal notranslate"><span class="pre">OperationNode</span></code>.</p>
-<p>To get the result from an <code class="docutils literal notranslate"><span class="pre">OperationNode</span></code> you simply call <code class="docutils literal notranslate"><span class="pre">.compute()</span></code> on it, thereby getting the numpy equivalent result.
-Even comparisons like <code class="docutils literal notranslate"><span class="pre">__eq__</span></code>, <code class="docutils literal notranslate"><span class="pre">__lt__</span></code> etc. return <code class="docutils literal notranslate"><span class="pre">OperationNode</span></code>.</p>
+<p>To get the result from an <code class="docutils literal notranslate"><span class="pre">OperationNode</span></code> you simply call <code class="docutils literal notranslate"><span class="pre">.compute()</span></code> on it, thereby getting the numpy or pandas equivalent result.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>All operations are lazily evaluated, meaning before calling <code class="docutils literal notranslate"><span class="pre">.compute()</span></code> nothing will be executed in SystemDS.
@@ -187,11 +189,11 @@ Therefore errors will not immediately be recognized while constructing an sequen
 </div>
 <dl class="py class">
 <dt id="systemds.operator.OperationNode">
-<em class="property">class </em><code class="sig-prename descclassname">systemds.operator.</code><code class="sig-name descname">OperationNode</code><span class="sig-paren">(</span><em class="sig-param">sds_context: SystemDSContext</em>, <em class="sig-param">operation: str</em>, <em class="sig-param">unnamed_input_nodes: Iterable[Union[DAGNode</em>, <em class="sig-param">str</em>, <em class="sig-param">int</em>, <em class="sig-param">float</em>, <em class="sig-param">bool]] = None</em>, <em class="sig-param">named_input_nodes: Dict[str</em>, <em class="sig-param">Union[DAGNode</em>, <em class="sig-param">str</em>, <em class="sig-param">int</em>, <em class="sig-param">float</em>, <em class="sig-param">bool]] = None</em>, <em class="sig-param">output_type: systemds.script_building.dag.OutputType = &lt;OutputType.MATRIX: 1&gt;</em>, <em class="sig-param">is_python_local_data: bool = False</em>, <em class="sig-param">shape: Tuple[int] = ()</em>, <em class="sig-param">number_of_outputs=1</em>, <em class="sig-param">output_types: Iterable[systemds.script_building.dag.OutputType] = None</em><span class="sig-paren">)</span><a class="headerlink" href="#systemds.operator.OperationNode" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="sig-prename descclassname">systemds.operator.</code><code class="sig-name descname">OperationNode</code><span class="sig-paren">(</span><em class="sig-param">sds_context: SystemDSContext</em>, <em class="sig-param">operation: str</em>, <em class="sig-param">unnamed_input_nodes: Union[str</em>, <em class="sig-param">Iterable[Union[DAGNode</em>, <em class="sig-param">str</em>, <em class="sig-param">int</em>, <em class="sig-param">float</em>, <em class="sig-param">bool]]] = None</em>, <em class="sig-param">named_input_nodes: Dict[str</em>, <em class="sig-param">Union[DAGNode</em>, <em class="sig-param">str</em>, <em class="sig-param">int</em>, <em class="sig-param">float</em>, <em class="sig-param">bool]] = None</em>, <em class="sig-param">output_type: systemds.script_building.dag.OutputType = &lt;OutputType.MATRIX: 5&gt;</em>, <em class="sig-param">is_python_local_data: bool = False</em><span class="sig-paren">)</span><a class="headerlink" href="#systemds.operator.OperationNode" title="Permalink to this definition">¶</a></dt>
 <dd><p>A Node representing an operation in SystemDS</p>
 <dl class="py method">
 <dt id="systemds.operator.OperationNode.__init__">
-<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param">sds_context: SystemDSContext</em>, <em class="sig-param">operation: str</em>, <em class="sig-param">unnamed_input_nodes: Iterable[Union[DAGNode</em>, <em class="sig-param">str</em>, <em class="sig-param">int</em>, <em class="sig-param">float</em>, <em class="sig-param">bool]] = None</em>, <em class="sig-param">named_input_nodes: Dict[str</em>, <em class="sig-param">Union[DAGNode</em>, <em class="sig-param">str</em>, <em class="sig-param">int</em>, <em class="sig-param">float</em>, <em class="sig-param">bool]] = None</em>, <em class="sig-param">output_type: systemds.script_building.dag.OutputType = &lt;OutputType.MATRIX: 1&gt;</em>, <em class="sig-param">is_python_local_data: bool = False</em>, <em class="sig-param">shape: Tuple[int] = ()</em>, <em class="sig-param">number_of_outputs=1</em>, <em class="sig-param">output_types: Iterable[systemds.script_building.dag.OutputType] = None</em><span class="sig-paren">)</span><a class="headerlink" href="#systemds.operator.OperationNode.__init__" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param">sds_context: SystemDSContext</em>, <em class="sig-param">operation: str</em>, <em class="sig-param">unnamed_input_nodes: Union[str</em>, <em class="sig-param">Iterable[Union[DAGNode</em>, <em class="sig-param">str</em>, <em class="sig-param">int</em>, <em class="sig-param">float</em>, <em class="sig-param">bool]]] = None</em>, <em class="sig-param">named_input_nodes: Dict[str</em>, <em class="sig-param">Union[DAGNode</em>, <em class="sig-param">str</em>, <em class="sig-param">int</em>, <em class="sig-param">float</em>, <em class="sig-param">bool]] = None</em>, <em class="sig-param">output_type: systemds.script_building.dag.OutputType = &lt;OutputType.MATRIX: 5&gt;</em>, <em class="sig-param">is_python_local_data: bool = False</em><span class="sig-paren">)</span><a class="headerlink" href="#systemds.operator.OperationNode.__init__" title="Permalink to this definition">¶</a></dt>
 <dd><p>Create general <cite>OperationNode</cite></p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -207,73 +209,6 @@ that this operation node returns multiple values. If set remember to set the out
 <li><p><strong>output_types</strong> – The types of output in a multi output scenario.
 Default is None, and means every multi output is a matrix.</p></li>
 </ul>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt id="systemds.operator.OperationNode.abs">
-<code class="sig-name descname">abs</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; systemds.operator.operation_node.OperationNode<a class="headerlink" href="#systemds.operator.OperationNode.abs" title="Permalink to this definition">¶</a></dt>
-<dd><p>Calculate absolute.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Returns</dt>
-<dd class="field-odd"><p><cite>OperationNode</cite> representing operation</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt id="systemds.operator.OperationNode.acos">
-<code class="sig-name descname">acos</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; systemds.operator.operation_node.OperationNode<a class="headerlink" href="#systemds.operator.OperationNode.acos" title="Permalink to this definition">¶</a></dt>
-<dd><p>Calculate arccos.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Returns</dt>
-<dd class="field-odd"><p><cite>OperationNode</cite> representing operation</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt id="systemds.operator.OperationNode.asin">
-<code class="sig-name descname">asin</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; systemds.operator.operation_node.OperationNode<a class="headerlink" href="#systemds.operator.OperationNode.asin" title="Permalink to this definition">¶</a></dt>
-<dd><p>Calculate arcsin.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Returns</dt>
-<dd class="field-odd"><p><cite>OperationNode</cite> representing operation</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt id="systemds.operator.OperationNode.atan">
-<code class="sig-name descname">atan</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; systemds.operator.operation_node.OperationNode<a class="headerlink" href="#systemds.operator.OperationNode.atan" title="Permalink to this definition">¶</a></dt>
-<dd><p>Calculate arctan.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Returns</dt>
-<dd class="field-odd"><p><cite>OperationNode</cite> representing operation</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt id="systemds.operator.OperationNode.cbind">
-<code class="sig-name descname">cbind</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">other</span></em><span class="sig-paren">)</span> &#x2192; systemds.operator.operation_node.OperationNode<a class="headerlink" href="#systemds.operator.OperationNode.cbind" title="Permalink to this definition">¶</a></dt>
-<dd><p>Column-wise matrix concatenation, by concatenating the second matrix as additional columns to the first matrix. 
-:param: The other matrix to bind to the right hand side.
-:return: The OperationNode containing the concatenated matrices.</p>
-</dd></dl>
-
-<dl class="py method">
-<dt id="systemds.operator.OperationNode.cholesky">
-<code class="sig-name descname">cholesky</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">safe</span><span class="p">:</span> <span class="n">bool</span> <span class="o">=</span> <span class="default_value">False</span></em><span class="sig-paren">)</span> &#x2192; systemds.operator.operation_node.OperationNode<a class="headerlink" href="#systemds.operator.OperationNode.cholesky" title="Permalink to this definition">¶</a></dt>
-<dd><p>Computes the Cholesky decomposition of a symmetric, positive definite matrix</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>safe</strong> – default value is False, if flag is True additional checks to ensure
-that the matrix is symmetric positive definite are applied, if False, checks will be skipped</p>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>the OperationNode representing this operation</p>
 </dd>
 </dl>
 </dd></dl>
@@ -315,66 +250,12 @@ all operations are only building the DAG without actually executing (lazy evalua
 </dd></dl>
 
 <dl class="py method">
-<dt id="systemds.operator.OperationNode.cos">
-<code class="sig-name descname">cos</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; systemds.operator.operation_node.OperationNode<a class="headerlink" href="#systemds.operator.OperationNode.cos" title="Permalink to this definition">¶</a></dt>
-<dd><p>Calculate cos.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Returns</dt>
-<dd class="field-odd"><p><cite>OperationNode</cite> representing operation</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt id="systemds.operator.OperationNode.cosh">
-<code class="sig-name descname">cosh</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; systemds.operator.operation_node.OperationNode<a class="headerlink" href="#systemds.operator.OperationNode.cosh" title="Permalink to this definition">¶</a></dt>
-<dd><p>Calculate cos.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Returns</dt>
-<dd class="field-odd"><p><cite>OperationNode</cite> representing operation</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
 <dt id="systemds.operator.OperationNode.get_lineage_trace">
 <code class="sig-name descname">get_lineage_trace</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; str<a class="headerlink" href="#systemds.operator.OperationNode.get_lineage_trace" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get the lineage trace for this node.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns</dt>
 <dd class="field-odd"><p>Lineage trace</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt id="systemds.operator.OperationNode.mean">
-<code class="sig-name descname">mean</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">axis</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="default_value">None</span></em><span class="sig-paren">)</span> &#x2192; systemds.operator.operation_node.OperationNode<a class="headerlink" href="#systemds.operator.OperationNode.mean" title="Permalink to this definition">¶</a></dt>
-<dd><p>Calculate mean of matrix.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>axis</strong> – can be 0 or 1 to do either row or column means</p>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p><cite>OperationNode</cite> representing operation</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt id="systemds.operator.OperationNode.order">
-<code class="sig-name descname">order</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">by</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="default_value">1</span></em>, <em class="sig-param"><span class="n">decreasing</span><span class="p">:</span> <span class="n">bool</span> <span class="o">=</span> <span class="default_value">False</span></em>, <em class="sig-param"><span class="n">index_return</span><span class="p">:</span> <span class="n">bool</span> <span class="o">=</span> <span class="default_value">False</span></em><span class="sig-paren">)</span> &#x2192; systemds.operator.operation_node.OperationNode<a class="headerlink" href="#systemds.operator.OperationNode.order" title="Permalink to this definition">¶</a></dt>
-<dd><p>Sort by a column of the matrix X in increasing/decreasing order and returns either the index or data</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>by</strong> – sort matrix by this column number</p></li>
-<li><p><strong>decreasing</strong> – If true the matrix will be sorted in decreasing order</p></li>
-<li><p><strong>index_return</strong> – If true, the index numbers will be returned</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>the OperationNode representing this operation</p>
 </dd>
 </dl>
 </dd></dl>
@@ -400,130 +281,6 @@ all operations are only building the DAG without actually executing (lazy evalua
 <dd><p>Prints the given Operation Node.
 There is no return on calling.
 To get the returned string look at the stdout of SystemDSContext.</p>
-</dd></dl>
-
-<dl class="py method">
-<dt id="systemds.operator.OperationNode.rbind">
-<code class="sig-name descname">rbind</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">other</span></em><span class="sig-paren">)</span> &#x2192; systemds.operator.operation_node.OperationNode<a class="headerlink" href="#systemds.operator.OperationNode.rbind" title="Permalink to this definition">¶</a></dt>
-<dd><p>Row-wise matrix concatenation, by concatenating the second matrix as additional rows to the first matrix. 
-:param: The other matrix to bind to the right hand side
-:return: The OperationNode containing the concatenated matrices.</p>
-</dd></dl>
-
-<dl class="py method">
-<dt id="systemds.operator.OperationNode.rev">
-<code class="sig-name descname">rev</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; systemds.operator.operation_node.OperationNode<a class="headerlink" href="#systemds.operator.OperationNode.rev" title="Permalink to this definition">¶</a></dt>
-<dd><p>Reverses the rows in a matrix</p>
-<dl class="field-list simple">
-<dt class="field-odd">Returns</dt>
-<dd class="field-odd"><p>the OperationNode representing this operation</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt id="systemds.operator.OperationNode.sin">
-<code class="sig-name descname">sin</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; systemds.operator.operation_node.OperationNode<a class="headerlink" href="#systemds.operator.OperationNode.sin" title="Permalink to this definition">¶</a></dt>
-<dd><p>Calculate sin.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Returns</dt>
-<dd class="field-odd"><p><cite>OperationNode</cite> representing operation</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt id="systemds.operator.OperationNode.sinh">
-<code class="sig-name descname">sinh</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; systemds.operator.operation_node.OperationNode<a class="headerlink" href="#systemds.operator.OperationNode.sinh" title="Permalink to this definition">¶</a></dt>
-<dd><p>Calculate sin.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Returns</dt>
-<dd class="field-odd"><p><cite>OperationNode</cite> representing operation</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt id="systemds.operator.OperationNode.sum">
-<code class="sig-name descname">sum</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">axis</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="default_value">None</span></em><span class="sig-paren">)</span> &#x2192; systemds.operator.operation_node.OperationNode<a class="headerlink" href="#systemds.operator.OperationNode.sum" title="Permalink to this definition">¶</a></dt>
-<dd><p>Calculate sum of matrix.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>axis</strong> – can be 0 or 1 to do either row or column sums</p>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p><cite>OperationNode</cite> representing operation</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt id="systemds.operator.OperationNode.t">
-<code class="sig-name descname">t</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; systemds.operator.operation_node.OperationNode<a class="headerlink" href="#systemds.operator.OperationNode.t" title="Permalink to this definition">¶</a></dt>
-<dd><p>Transposes the input matrix</p>
-<dl class="field-list simple">
-<dt class="field-odd">Returns</dt>
-<dd class="field-odd"><p>the OperationNode representing this operation</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt id="systemds.operator.OperationNode.tan">
-<code class="sig-name descname">tan</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; systemds.operator.operation_node.OperationNode<a class="headerlink" href="#systemds.operator.OperationNode.tan" title="Permalink to this definition">¶</a></dt>
-<dd><p>Calculate tan.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Returns</dt>
-<dd class="field-odd"><p><cite>OperationNode</cite> representing operation</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt id="systemds.operator.OperationNode.tanh">
-<code class="sig-name descname">tanh</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; systemds.operator.operation_node.OperationNode<a class="headerlink" href="#systemds.operator.OperationNode.tanh" title="Permalink to this definition">¶</a></dt>
-<dd><p>Calculate tan.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Returns</dt>
-<dd class="field-odd"><p><cite>OperationNode</cite> representing operation</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt id="systemds.operator.OperationNode.to_one_hot">
-<code class="sig-name descname">to_one_hot</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">num_classes</span><span class="p">:</span> <span class="n">int</span></em><span class="sig-paren">)</span> &#x2192; systemds.operator.operation_node.OperationNode<a class="headerlink" href="#systemds.operator.OperationNode.to_one_hot" title="Permalink to this definition">¶</a></dt>
-<dd><p>OneHot encode the matrix.</p>
-<p>It is assumed that there is only one column to encode, and all values are whole numbers &gt; 0</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>num_classes</strong> – The number of classes to encode into. max value contained in the matrix must be &lt;= num_classes</p>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>The OperationNode containing the oneHotEncoded values</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt id="systemds.operator.OperationNode.to_string">
-<code class="sig-name descname">to_string</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Dict<span class="p">[</span>str<span class="p">, </span>Union<span class="p">[</span>DAGNode<span class="p">, </span>str<span class="p">, </span>int<span class="p">, </span>float<span class="p">, </span>bool<span class="p">]</span><span class="p">]</span></span></em><span class="sig-paren">)</span> &#x2192; systemds.operator.operation_node.OperationNode<a class="headerlink" href="#systemds.operator.OperationNode.to_string" title="Permalink to this definition">¶</a></dt>
-<dd><p>Converts the input to a string representation.
-:return: <cite>OperationNode</cite> containing the string.</p>
-</dd></dl>
-
-<dl class="py method">
-<dt id="systemds.operator.OperationNode.var">
-<code class="sig-name descname">var</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">axis</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="default_value">None</span></em><span class="sig-paren">)</span> &#x2192; systemds.operator.operation_node.OperationNode<a class="headerlink" href="#systemds.operator.OperationNode.var" title="Permalink to this definition">¶</a></dt>
-<dd><p>Calculate variance of matrix.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>axis</strong> – can be 0 or 1 to do either row or column vars</p>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p><cite>OperationNode</cite> representing operation</p>
-</dd>
-</dl>
 </dd></dl>
 
 <dl class="py method">
@@ -558,7 +315,7 @@ There is no return on write.</p>
         <a href="../script_building/dag.html" class="btn btn-neutral float-right" title="Dag" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
-        <a href="../matrix/federated.html" class="btn btn-neutral float-left" title="Federated" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+        <a href="node/source.html" class="btn btn-neutral float-left" title="Source" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
       
     </div>
   
@@ -568,7 +325,7 @@ There is no return on write.</p>
   <div role="contentinfo">
     <p>
         
-        &copy; Copyright 2020, Apache SystemDS
+        &copy; Copyright 2021, Apache SystemDS
 
     </p>
   </div>

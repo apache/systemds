@@ -28,7 +28,6 @@ import org.apache.commons.lang.NotImplementedException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.CompressionSettings;
-import org.apache.sysds.runtime.compress.cocode.PlanningCoCoder.PartitionerType;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup.CompressionType;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupSizes;
 import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
@@ -78,6 +77,7 @@ public class CompressedSizeInfoColGroup {
 	 * 
 	 * @param facts                 The facts extracted from a number of columns, based on the estimateFactors
 	 * @param validCompressionTypes The list of valid compression types, allowed to be performed.
+	 * @param map                   The map of the distinct values contained in this column group.
 	 */
 	public CompressedSizeInfoColGroup(EstimationFactors facts, Set<CompressionType> validCompressionTypes,
 		ABitmap map) {

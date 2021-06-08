@@ -455,7 +455,10 @@ printMatrix = function(Matrix[Double] m, string name) return() {
 
     col_string = ":::::::"
     for(col in 1:ncol(m)) {
-        col_string = col_string + ":::(" + toString(col) + ")::::"
+        if(col < 10)
+            col_string = col_string + ":::(" + toString(col) + ")::::"
+        else
+            col_string = col_string + ":::(" + toString(col) + "):::"
     }
     print(col_string)
     for(row in 1:nrow(m)) {
@@ -463,13 +466,13 @@ printMatrix = function(Matrix[Double] m, string name) return() {
         print_string = ":(" + row + ")     "
         for(col in 1:ncol(m)) {
             curr_value = m[row,col]
-            if(as.scalar(curr_value) < 9)
+            if(as.scalar(curr_value) < 10)
                 print_string = print_string + toString(curr_value, linesep="     ", sep=",")
-            else if(as.scalar(curr_value) < 99)
+            else if(as.scalar(curr_value) < 100)
                 print_string = print_string + toString(curr_value, linesep="    ", sep=",")
-            else if(as.scalar(curr_value) < 999)
+            else if(as.scalar(curr_value) < 1000)
                 print_string = print_string + toString(curr_value, linesep="   ", sep=",")
-            else if(as.scalar(curr_value) < 9999)
+            else if(as.scalar(curr_value) < 10000)
                 print_string = print_string + toString(curr_value, linesep="  ", sep=",")
             else
                 print_string = print_string + toString(curr_value, linesep=" ", sep=",")

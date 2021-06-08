@@ -27,13 +27,11 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.runtime.codegen.CodegenUtils;
 import org.apache.sysds.runtime.codegen.SpoofOperator;
-import org.apache.sysds.runtime.codegen.SpoofOuterProduct;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
-import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
-import org.apache.sysds.runtime.controlprogram.federated.FederationMap;
 import org.apache.sysds.runtime.controlprogram.federated.FederationMap.FType;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
+import org.apache.sysds.runtime.instructions.fed.SpoofFEDInstruction;
 import org.apache.sysds.runtime.lineage.LineageCodegenItem;
 import org.apache.sysds.runtime.lineage.LineageItem;
 import org.apache.sysds.runtime.lineage.LineageItemUtils;
@@ -138,34 +136,6 @@ public class SpoofCPInstruction extends ComputationCPInstruction {
 	}
 	
 	public boolean isFederated(ExecutionContext ec, FType type) {
-		FederationMap fedMap = null;
-		boolean retVal = false;
-
-		// flags for alignment check
-		boolean equalRows = false;
-		boolean equalCols = false;
-		boolean transposed = false; // flag indicates to check for transposed alignment
-
-		for(CPOperand input : _in) {
-			Data data = ec.getVariable(input);
-			if(data instanceof MatrixObject && ((MatrixObject) data).isFederated(type)) {
-				MatrixObject mo = ((MatrixObject) data);
-				if(fedMap == null) { // first federated matrix
-					fedMap = mo.getFedMapping();
-					retVal = true;
-
-					// setting the constraints for alignment check on further federated matrices
-					equalRows = mo.isFederated(FType.ROW);
-					equalCols = mo.isFederated(FType.COL);
-					transposed = (getOperatorClass().getSuperclass() == SpoofOuterProduct.class);
-				}
-				else if(!fedMap.isAligned(mo.getFedMapping(), false, equalRows, equalCols)
-					&& (!transposed || !(fedMap.isAligned(mo.getFedMapping(), true, equalRows, equalCols)
-						|| mo.getFedMapping().isAligned(fedMap, true, equalRows, equalCols)))) {
-					retVal = false; // multiple federated matrices must be aligned
-				}
-			}
-		}
-		return retVal;
+		return SpoofFEDInstruction.isFederated(ec, type, _in, getOperatorClass().getSuperclass());
 	}
 }

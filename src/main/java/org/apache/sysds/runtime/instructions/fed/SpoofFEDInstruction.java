@@ -36,6 +36,7 @@ import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest.RequestType;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse;
 import org.apache.sysds.runtime.controlprogram.federated.FederationMap;
+import org.apache.sysds.runtime.controlprogram.federated.FederationMap.AType;
 import org.apache.sysds.runtime.controlprogram.federated.FederationMap.FType;
 import org.apache.sysds.runtime.controlprogram.federated.FederationUtils;
 import org.apache.sysds.runtime.DMLRuntimeException;
@@ -47,6 +48,7 @@ import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.concurrent.Future;
 
 public class SpoofFEDInstruction extends FEDInstruction
@@ -427,4 +429,33 @@ public class SpoofFEDInstruction extends FEDInstruction
 			}
 		}
 	}
+
+
+	public static boolean isFederated(ExecutionContext ec, FType type, CPOperand[] inputs, Class<?> scla) {
+		FederationMap fedMap = null;
+		boolean retVal = false;
+
+		ArrayList<AType> alignmentTypes = new ArrayList<>();
+
+		for(CPOperand input : inputs) {
+			Data data = ec.getVariable(input);
+			if(data instanceof MatrixObject && ((MatrixObject) data).isFederated(type)) {
+				MatrixObject mo = ((MatrixObject) data);
+				if(fedMap == null) { // first federated matrix
+					fedMap = mo.getFedMapping();
+					retVal = true;
+
+					// setting the alignment types for alignment check on further federated matrices
+					alignmentTypes.add(mo.isFederated(FType.ROW) ? AType.ROW : AType.COL);
+					if(scla == SpoofOuterProduct.class)
+						Collections.addAll(alignmentTypes, AType.ROW_T, AType.COL_T);
+				}
+				else if(!fedMap.isAligned(mo.getFedMapping(), alignmentTypes.toArray(new AType[0]))) {
+					retVal = false; // multiple federated matrices must be aligned
+				}
+			}
+		}
+		return retVal;
+	}
+
 }

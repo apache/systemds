@@ -83,8 +83,7 @@ public class H5Superblock {
 			header.put(b);
 		}
 		catch(IOException e) {
-			e.printStackTrace();
-			//throw new H5Exception(e);
+			throw new H5Exception(e);
 		}
 
 		header.order(LITTLE_ENDIAN);
@@ -157,7 +156,6 @@ public class H5Superblock {
 			rootGroupSymbolTableAddress = address;
 		}
 		catch(Exception e) {
-			e.printStackTrace();
 			throw new H5Exception("Failed to read superblock from address " + address, e);
 		}
 	}

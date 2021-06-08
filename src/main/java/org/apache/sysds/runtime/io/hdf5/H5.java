@@ -59,7 +59,6 @@ public class H5 {
 			rootObject.setSuperblock(superblock);
 		}
 		catch(Exception exception) {
-			//exception.printStackTrace();
 			throw new H5Exception("Can't open fine " + exception);
 		}
 		return rootObject;

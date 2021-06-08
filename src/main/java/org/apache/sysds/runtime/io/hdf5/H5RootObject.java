@@ -30,8 +30,6 @@ public class H5RootObject {
 
 	protected BufferedInputStream bufferedInputStream;
 	protected BufferedOutputStream bufferedOutputStream;
-	//------------------
-	//protected FileChannel fileChannel;
 	protected H5Superblock superblock;
 	protected int rank;
 	protected long row;

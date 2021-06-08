@@ -55,7 +55,6 @@ public class H5ContiguousDataset {
 			return data;
 		}
 		catch(Exception e) {
-			e.printStackTrace();
 			throw new H5Exception("Failed to map data buffer for dataset", e);
 		}
 	}

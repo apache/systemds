@@ -98,7 +98,6 @@ print("READING R  as residents AND H as Hospitals and also C as capacity...");
 m = nrow(R)
 n = ncol (R)
 Capacityrows = nrow(C)
-
 #######################################################################################################
 Capacity = matrix(0.0, rows=Capacityrows , cols=1)
 Capacity = C;

@@ -40,12 +40,12 @@ m_xgboost = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] R) retur
   curr_rows_queue = matrix(1, rows=nrow(X), cols=1)
   gain_queue = matrix(1, rows=1, cols=1)
   node_queue_len = 1
-  max_depth = 15
+  max_depth = 6
   depth = 0.0
   level = 0
 
   # adjust this here if we create more trees to create new prediction values
-  while (node_queue_len > 0 & depth < max_depth) {
+  while (node_queue_len > 0) {
     has_child = FALSE
     [node_queue, node] = dataQueuePop(node_queue)
     [curr_rows_queue, curr_rows_vector] = dataQueuePop(curr_rows_queue)
@@ -112,7 +112,6 @@ m_xgboost = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] R) retur
     }
     node_queue_len = ncol(node_queue)
     printMatrix(M, "OUTPUT MATRIX")
-    depth = depth + 1
   }
 
   # todo pruning

@@ -5,3 +5,5 @@
 node_modules/*
 _site
 _src
+
+.vscode

@@ -39,6 +39,7 @@ import org.apache.sysds.runtime.compress.estim.CompressedSizeEstimator;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeEstimatorFactory;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfo;
 import org.apache.sysds.runtime.compress.utils.DblArrayIntListHashMap;
+import org.apache.sysds.runtime.compress.workload.WTreeRoot;
 import org.apache.sysds.runtime.controlprogram.parfor.stat.Timing;
 import org.apache.sysds.runtime.matrix.data.LibMatrixReorg;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
@@ -85,6 +86,10 @@ public class CompressedMatrixBlockFactory {
 	}
 
 	public static Pair<MatrixBlock, CompressionStatistics> compress(MatrixBlock mb, int k) {
+		return compress(mb, k, new CompressionSettingsBuilder().create());
+	}
+
+	public static Pair<MatrixBlock, CompressionStatistics> compress(MatrixBlock mb, int k, WTreeRoot root){
 		return compress(mb, k, new CompressionSettingsBuilder().create());
 	}
 

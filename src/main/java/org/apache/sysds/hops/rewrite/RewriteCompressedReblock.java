@@ -105,22 +105,22 @@ public class RewriteCompressedReblock extends StatementBlockRewriteRule {
 		switch(compress) {
 			case TRUE:
 				if(satisfiesCompressionCondition(hop))
-					hop.setRequiresCompression(true);
+					hop.setRequiresCompression();
 				break;
 			case AUTO:
 				if(OptimizerUtils.isSparkExecutionMode() && satisfiesAutoCompressionCondition(hop, prog))
-					hop.setRequiresCompression(true);
+					hop.setRequiresCompression();
 				break;
 			case COST:
 				if(satisfiesCostCompressionCondition(hop, prog))
-					hop.setRequiresCompression(true);
+					hop.setRequiresCompression();
 				break;
 			default:
 				break;
 		}
 
 		if(satisfiesDeCompressionCondition(hop)) {
-			hop.setRequiresDeCompression(true);
+			hop.setRequiresDeCompression();
 		}
 
 		hop.setVisited();

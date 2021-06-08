@@ -26,11 +26,14 @@ import org.apache.sysds.hops.ipa.InterProceduralAnalysis;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
+import org.apache.sysds.utils.Statistics;
 import org.junit.Assert;
 import org.junit.Test;
 
-public class WorkloadAnalysisTest extends AutomatedTestBase
-{
+public class WorkloadAnalysisTest extends AutomatedTestBase {
+
+	// private static final Log LOG = LogFactory.getLog(WorkloadAnalysisTest.class.getName());
+
 	private final static String TEST_NAME1 = "WorkloadAnalysisMlogreg";
 	private final static String TEST_NAME2 = "WorkloadAnalysisLm";
 	private final static String TEST_DIR = "functions/compress/";
@@ -39,33 +42,31 @@ public class WorkloadAnalysisTest extends AutomatedTestBase
 	@Override
 	public void setUp() {
 		TestUtils.clearAssertionInformation();
-		addTestConfiguration(TEST_NAME1, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[]{"B"}));
-		addTestConfiguration(TEST_NAME2, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2, new String[]{"B"}));
+		addTestConfiguration(TEST_NAME1, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] {"B"}));
+		addTestConfiguration(TEST_NAME2, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2, new String[] {"B"}));
 	}
 
 	@Test
 	public void testMlogregCP() {
-		runWorkloadAnalysisTest(TEST_NAME1, ExecMode.HYBRID);
-	}
-	
-	@Test
-	public void testLmCP() {
-		runWorkloadAnalysisTest(TEST_NAME2, ExecMode.HYBRID);
+		runWorkloadAnalysisTest(TEST_NAME1, ExecMode.HYBRID, 2);
 	}
 
-	private void runWorkloadAnalysisTest(String testname, ExecMode mode)
-	{
+	@Test
+	public void testLmCP() {
+		runWorkloadAnalysisTest(TEST_NAME2, ExecMode.HYBRID, 2);
+	}
+
+	private void runWorkloadAnalysisTest(String testname, ExecMode mode, int compressionCount) {
 		ExecMode oldPlatform = setExecMode(mode);
 		boolean oldFlag = InterProceduralAnalysis.CLA_WORKLOAD_ANALYSIS;
-		
-		try
-		{
+
+		try {
 			loadTestConfiguration(getTestConfiguration(testname));
-			
+
 			InterProceduralAnalysis.CLA_WORKLOAD_ANALYSIS = true;
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + testname + ".dml";
-			programArgs = new String[]{"-stats","-args", input("X"), input("y"), output("B") };
+			programArgs = new String[] {"-stats", "40", "-args", input("X"), input("y"), output("B")};
 
 			double[][] X = getRandomMatrix(10000, 20, 0, 1, 1.0, 7);
 			writeInputMatrixWithMTD("X", X, false);
@@ -73,20 +74,22 @@ public class WorkloadAnalysisTest extends AutomatedTestBase
 			writeInputMatrixWithMTD("y", y, false);
 
 			runTest(true, false, null, -1);
-			//TODO check for compressed operations 
-			//(right now test only checks that the workload analysis does not crash)
-			
-			//check various additional expectations
+
+			// check various additional expectations
+			long actualCompressionCount = Statistics.getCPHeavyHitterCount("compress");
+			Assert.assertEquals(compressionCount, actualCompressionCount);
+			Assert.assertTrue(heavyHittersContainsString("compress"));
 			Assert.assertFalse(heavyHittersContainsString("m_scale"));
+
 		}
 		finally {
 			resetExecMode(oldPlatform);
 			InterProceduralAnalysis.CLA_WORKLOAD_ANALYSIS = oldFlag;
 		}
 	}
-	
+
 	@Override
 	protected File getConfigTemplateFile() {
-		return new File(SCRIPT_DIR + TEST_DIR + "force", "SystemDS-config-compress.xml");
+		return new File(SCRIPT_DIR + TEST_DIR + "force", "SystemDS-config-compress-workload.xml");
 	}
 }

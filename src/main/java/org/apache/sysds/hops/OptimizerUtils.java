@@ -226,6 +226,12 @@ public class OptimizerUtils
 	 */
 	public static final boolean ALLOW_SCRIPT_LEVEL_COMPRESS_COMMAND = true;
 
+	/**
+	 * Boolean specifying if compression rewrites is allowed. This is disabled at run time if the IPA for Workload aware compression
+	 * is activated.
+	 */
+	public static boolean ALLOW_COMPRESSION_REWRITE = true;
+
 	//////////////////////
 	// Optimizer levels //
 	//////////////////////

@@ -19,11 +19,17 @@
 
 package org.apache.sysds.hops;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.ExecMode;
+import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.common.Types.OpOp1;
 import org.apache.sysds.common.Types.OpOp2;
@@ -38,12 +44,13 @@ import org.apache.sysds.lops.Compression;
 import org.apache.sysds.lops.Data;
 import org.apache.sysds.lops.DeCompression;
 import org.apache.sysds.lops.Lop;
-import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.lops.LopsException;
 import org.apache.sysds.lops.ReBlock;
 import org.apache.sysds.lops.UnaryCP;
 import org.apache.sysds.parser.ParseInfo;
+import org.apache.sysds.runtime.compress.workload.AWTreeNode;
 import org.apache.sysds.runtime.controlprogram.LocalVariableMap;
+import org.apache.sysds.runtime.controlprogram.SingletonLookupHashMap;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject.UpdateType;
 import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysds.runtime.controlprogram.parfor.util.IDSequence;
@@ -54,11 +61,6 @@ import org.apache.sysds.runtime.meta.DataCharacteristics;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.privacy.PrivacyConstraint;
 import org.apache.sysds.runtime.util.UtilFunctions;
-
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
 
 public abstract class Hop implements ParseInfo {
 	private static final Log LOG =  LogFactory.getLog(Hop.class.getName());
@@ -107,9 +109,16 @@ public abstract class Hop implements ParseInfo {
 	// (usually this happens on persistent reads dataops)
 	protected boolean _requiresReblock = false;
 
-	// indicates if the output of this hop needs to be compressed
-	// (this happens on persistent reads after reblock but before checkpoint)
+	/**
+	 *  indicates if the output of this hop needs to be compressed
+	 * (this happens on persistent reads after reblock but before checkpoint)
+	*/
 	protected boolean _requiresCompression = false;
+
+	/**
+	 * A WTree for this hop instruction in case the compression 
+	 */
+	protected AWTreeNode _compressedWorkloadTree = null;
 
 	/** Boolean specifying if decompression is required.*/
 	protected boolean _requiresDeCompression = false;
@@ -268,12 +277,17 @@ public abstract class Hop implements ParseInfo {
 		return _requiresCheckpoint;
 	}
 
-	public void setRequiresCompression(boolean flag) {
-		_requiresCompression = flag;
+	public void setRequiresCompression(){
+		_requiresCompression = true;
 	}
 
-	public void setRequiresDeCompression(boolean flag){
-		_requiresDeCompression = flag;
+	public void setRequiresCompression(AWTreeNode node) {
+		_requiresCompression = true;
+		_compressedWorkloadTree = node;
+	}
+
+	public void setRequiresDeCompression(){
+		_requiresDeCompression = true;
 	}
 	
 	public boolean requiresCompression() {
@@ -394,8 +408,15 @@ public abstract class Hop implements ParseInfo {
 			ExecType et = getExecutionModeForCompression();
 			Lop compressionInstruction = null;
 			try{
-				if( _requiresCompression ) 
-					compressionInstruction = new Compression(getLops(), getDataType(), getValueType(), et);
+				if( _requiresCompression ){
+					if(_compressedWorkloadTree != null){
+						int singletonID = SingletonLookupHashMap.getMap().put(_compressedWorkloadTree);
+						compressionInstruction = new Compression(getLops(), getDataType(), getValueType(), et, singletonID);
+					}
+					else {
+						compressionInstruction = new Compression(getLops(), getDataType(), getValueType(), et, 0);
+					}
+				}
 				else if( _requiresDeCompression )
 					compressionInstruction = new DeCompression(getLops(), getDataType(), getValueType(), et);
 			}

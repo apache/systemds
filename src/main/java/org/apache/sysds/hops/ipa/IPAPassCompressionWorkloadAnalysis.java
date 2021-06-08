@@ -38,32 +38,26 @@ public class IPAPassCompressionWorkloadAnalysis extends IPAPass {
 
 	@Override
 	public boolean isApplicable(FunctionCallGraph fgraph) {
-		return InterProceduralAnalysis.CLA_WORKLOAD_ANALYSIS && CompressConfig
-			.valueOf(ConfigurationManager.getDMLConfig().getTextValue(DMLConfig.COMPRESSED_LINALG).toUpperCase())
-			.isEnabled();
+		return CompressConfig.valueOf(ConfigurationManager.getDMLConfig().getTextValue(DMLConfig.COMPRESSED_LINALG)
+			.toUpperCase()) == CompressConfig.WORKLOAD;
 	}
 
 	@Override
 	public boolean rewriteProgram(DMLProgram prog, FunctionCallGraph fgraph, FunctionCallSizeInfo fcallSizes) {
-		// Parse compression config
-		DMLConfig conf = ConfigurationManager.getDMLConfig();
-		CompressConfig compress = CompressConfig.valueOf(conf.getTextValue(DMLConfig.COMPRESSED_LINALG).toUpperCase());
-		// Verify that we have Workload enabled.
-		if(compress == CompressConfig.WORKLOAD) {
-			// Set rewrite rule for CLA to false, since we are using workload based planning.
-			OptimizerUtils.ALLOW_COMPRESSION_REWRITE = false;
 
-			// Obtain CLA workload analysis for all applicable operators
-			Map<Long, WTreeRoot> map = WorkloadAnalyzer.getAllCandidateWorkloads(prog);
+		// Set rewrite rule for CLA to false, since we are using workload based planning.
+		OptimizerUtils.ALLOW_COMPRESSION_REWRITE = false;
 
-			// TODO Prune away obviously bad compression locations.
+		// Obtain CLA workload analysis for all applicable operators
+		Map<Long, WTreeRoot> map = WorkloadAnalyzer.getAllCandidateWorkloads(prog);
 
-			// Add compression instruction to all remaining locations
-			for(Entry<Long, WTreeRoot> e : map.entrySet())
-				e.getValue().getRoot().setRequiresCompression(e.getValue());
+		// TODO Prune away obviously bad compression locations.
 
-			return map != null;
-		}
-		return false;
+		// Add compression instruction to all remaining locations
+		for(Entry<Long, WTreeRoot> e : map.entrySet())
+			e.getValue().getRoot().setRequiresCompression(e.getValue());
+
+		return map != null;
+
 	}
 }

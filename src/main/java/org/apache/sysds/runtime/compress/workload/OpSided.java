@@ -17,25 +17,42 @@
  * under the License.
  */
 
-package org.apache.sysds.runtime.compress.cocode;
+package org.apache.sysds.runtime.compress.workload;
 
-import org.apache.sysds.runtime.compress.CompressionSettings;
-import org.apache.sysds.runtime.compress.cost.ICostEstimate;
-import org.apache.sysds.runtime.compress.estim.CompressedSizeEstimator;
-import org.apache.sysds.runtime.compress.estim.CompressedSizeInfo;
+import org.apache.sysds.hops.Hop;
 
-/**
- * Column group co coding with static distribution heuristic.
- */
-public class CoCodeStatic extends AColumnCoCoder {
+public class OpSided extends Op {
+	private final boolean _left;
+	private final boolean _right;
 
-	protected CoCodeStatic(CompressedSizeEstimator sizeEstimator, ICostEstimate costEstimator, CompressionSettings cs) {
-		super(sizeEstimator, costEstimator, cs);
+	public OpSided(Hop op, boolean left, boolean right) {
+		super(op);
+		_left = left;
+		_right = right;
+	}
+
+	public boolean getLeft() {
+		return _left;
+	}
+
+	public boolean getRight() {
+		return _right;
 	}
 
 	@Override
-	protected CompressedSizeInfo coCodeColumns(CompressedSizeInfo colInfos, int k) {
-		return colInfos;
+	public String toString() {
+		return super.toString() + " L:" + _left + " R:" + _right;
 	}
 
+	public boolean isLeftMM() {
+		return !_left && _right;
+	}
+
+	public boolean isRightMM() {
+		return _left && !_right;
+	}
+
+	public boolean isCompCompMM() {
+		return _left && _right;
+	}
 }

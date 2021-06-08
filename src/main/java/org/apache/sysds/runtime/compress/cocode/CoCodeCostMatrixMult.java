@@ -26,32 +26,22 @@ import java.util.PriorityQueue;
 import java.util.Queue;
 
 import org.apache.sysds.runtime.compress.CompressionSettings;
+import org.apache.sysds.runtime.compress.cost.ICostEstimate;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeEstimator;
-import org.apache.sysds.runtime.compress.estim.CompressedSizeEstimatorSample;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfo;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup;
 
 public class CoCodeCostMatrixMult extends AColumnCoCoder {
 
-	protected CoCodeCostMatrixMult(CompressedSizeEstimator e, CompressionSettings cs) {
-		super(e, cs);
+	protected CoCodeCostMatrixMult(CompressedSizeEstimator sizeEstimator, ICostEstimate costEstimator,
+		CompressionSettings cs) {
+		super(sizeEstimator, costEstimator, cs);
 	}
 
 	@Override
 	protected CompressedSizeInfo coCodeColumns(CompressedSizeInfo colInfos, int k) {
 
 		List<CompressedSizeInfoColGroup> joinRes = join(colInfos.getInfo());
-
-		if(_cs.samplingRatio < 0.1 && _est instanceof CompressedSizeEstimatorSample) {
-			LOG.debug("Performing second join with double sample rate");
-			CompressedSizeEstimatorSample estS = (CompressedSizeEstimatorSample) _est;
-			estS.sampleData(estS.getSample().getNumRows() * 2);
-			List<int[]> colG = new ArrayList<>(joinRes.size());
-			for(CompressedSizeInfoColGroup g : joinRes)
-				colG.add(g.getColumns());
-
-			joinRes = join(estS.computeCompressedSizeInfos(colG, k));
-		}
 
 		colInfos.setInfo(joinRes);
 
@@ -104,7 +94,7 @@ public class CoCodeCostMatrixMult extends AColumnCoCoder {
 			else {
 
 				final int nCols = elm.getColumns().length;
-				final double nRows = _est.getNumRows();
+				final double nRows = _sest.getNumRows();
 				final double preAggregateCost = nRows;
 
 				final int numberTuples = elm.getNumVals();

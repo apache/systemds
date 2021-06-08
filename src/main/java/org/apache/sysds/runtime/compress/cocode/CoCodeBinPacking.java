@@ -28,6 +28,7 @@ import java.util.Map;
 
 import org.apache.sysds.runtime.compress.CompressionSettings;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup.CompressionType;
+import org.apache.sysds.runtime.compress.cost.ICostEstimate;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeEstimator;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfo;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup;
@@ -52,8 +53,9 @@ public class CoCodeBinPacking extends AColumnCoCoder {
 	 */
 	public static double BIN_CAPACITY = 0.000032;
 
-	protected CoCodeBinPacking(CompressedSizeEstimator sizeEstimator, CompressionSettings cs) {
-		super(sizeEstimator, cs);
+	protected CoCodeBinPacking(CompressedSizeEstimator sizeEstimator, ICostEstimate costEstimator,
+		CompressionSettings cs) {
+		super(sizeEstimator, costEstimator, cs);
 		mem = new Memorizer();
 	}
 
@@ -165,7 +167,7 @@ public class CoCodeBinPacking extends AColumnCoCoder {
 	 * @param bins The bins constructed based on lightweight estimations
 	 * @param k    The number of threads allowed to be used.
 	 * @param est  The Estimator to be used.
-	 * @return
+	 * @return The cocoded columns
 	 */
 	private CompressedSizeInfo getCoCodingGroupsBruteForce(CompressedSizeInfo bins, int k) {
 
@@ -289,7 +291,7 @@ public class CoCodeBinPacking extends AColumnCoCoder {
 					g = CompressedSizeInfoColGroup.addConstGroup(c, left, _cs.validCompressions);
 				else {
 					st3++;
-					g = _est.estimateJoinCompressedSize(left, right);
+					g = _sest.estimateJoinCompressedSize(left, right);
 				}
 
 				if(leftConst || rightConst)

@@ -23,8 +23,9 @@ import java.util.EnumSet;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.sysds.runtime.compress.cocode.PlanningCoCoder.PartitionerType;
+import org.apache.sysds.runtime.compress.cocode.CoCoderFactory.PartitionerType;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup.CompressionType;
+import org.apache.sysds.runtime.compress.cost.CostEstimatorFactory.CostType;
 import org.apache.sysds.runtime.compress.estim.sample.SampleEstimatorFactory.EstimationType;
 
 /**
@@ -60,12 +61,6 @@ public class CompressionSettings {
 	public final String transposeInput;
 
 	/**
-	 * Transpose input matrix, to optimize access when extracting bitmaps. This setting is changed inside the script
-	 * based on the transposeInput setting.
-	 */
-	public boolean transposed = false;
-
-	/**
 	 * Boolean specifying if the OLE and RLE should construct skip to enable skipping large amounts of rows.
 	 * (Optimization)
 	 */
@@ -79,6 +74,9 @@ public class CompressionSettings {
 
 	/** The selected method for column partitioning used in CoCoding compressed columns */
 	public final PartitionerType columnPartitioner;
+
+	/** The cost computation type for the compression */
+	public final CostType costComputationType;
 
 	/** The maximum number of columns CoCoded allowed */
 	public final int maxColGroupCoCode;
@@ -103,10 +101,18 @@ public class CompressionSettings {
 	/** The sample type used for sampling */
 	public final EstimationType estimationType;
 
+	/**
+	 * Transpose input matrix, to optimize access when extracting bitmaps. This setting is changed inside the script
+	 * based on the transposeInput setting.
+	 * 
+	 * This is intentionally left as a mutable value, since the transposition of the input matrix is decided in phase 3.
+	 */
+	public boolean transposed = false;
+
 	protected CompressionSettings(double samplingRatio, boolean allowSharedDictionary, String transposeInput,
 		boolean skipList, int seed, boolean lossy, EnumSet<CompressionType> validCompressions,
 		boolean sortValuesByLength, PartitionerType columnPartitioner, int maxColGroupCoCode, double coCodePercentage,
-		int minimumSampleSize, EstimationType estimationType) {
+		int minimumSampleSize, EstimationType estimationType, CostType costComputationType) {
 		this.samplingRatio = samplingRatio;
 		this.allowSharedDictionary = allowSharedDictionary;
 		this.transposeInput = transposeInput;
@@ -120,6 +126,7 @@ public class CompressionSettings {
 		this.coCodePercentage = coCodePercentage;
 		this.minimumSampleSize = minimumSampleSize;
 		this.estimationType = estimationType;
+		this.costComputationType = costComputationType;
 		if(LOG.isDebugEnabled())
 			LOG.debug(this);
 	}
@@ -137,6 +144,7 @@ public class CompressionSettings {
 		sb.append("\n Max Static ColGroup CoCode: " + maxColGroupCoCode);
 		sb.append("\n Max cocodePercentage: " + coCodePercentage);
 		sb.append("\n Sample Percentage: " + samplingRatio);
+		sb.append("\n Cost Computation Type" + costComputationType);
 		if(samplingRatio < 1.0)
 			sb.append("\n Estimation Type: " + estimationType);
 		// If needed for debugging add more fields to the printing.

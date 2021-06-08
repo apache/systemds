@@ -22,6 +22,9 @@ package org.apache.sysds.runtime.compress.workload;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
 /**
  * A workload tree is a compact representation of the operations on a matrix and derived intermediates, including the
  * basic control structure and inlined functions as well as links to categories.
@@ -31,6 +34,7 @@ import java.util.List;
  * 
  */
 public abstract class AWTreeNode {
+	protected static final Log LOG = LogFactory.getLog(AWTreeNode.class.getName());
 
 	public enum WTNodeType {
 		ROOT, FCALL, IF, WHILE, FOR, PARFOR, BASIC_BLOCK;
@@ -59,10 +63,6 @@ public abstract class AWTreeNode {
 		_children.add(node);
 	}
 
-	public boolean isEmpty(){
-		return _children.isEmpty();
-	}
-
 	protected String explain(int level) {
 		StringBuilder sb = new StringBuilder();
 		// append indentation
@@ -78,10 +78,14 @@ public abstract class AWTreeNode {
 		return sb.toString();
 	}
 
+	public boolean isEmpty() {
+		return _children.isEmpty();
+	}
+
 	@Override
 	public String toString() {
-		StringBuilder sb = new StringBuilder("Workload Tree:\n");
-		sb.append("--------------------------------------------------------------------------------\n");
+		StringBuilder sb = new StringBuilder();
+		sb.append("\n---------------------------Workload Tree:---------------------------------------\n");
 		sb.append(this.explain(1));
 		sb.append("--------------------------------------------------------------------------------\n");
 		return sb.toString();

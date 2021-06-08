@@ -27,7 +27,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.common.Types.OpOpData;
+import org.apache.sysds.hops.AggBinaryOp;
 import org.apache.sysds.hops.FunctionOp;
 import org.apache.sysds.hops.Hop;
 import org.apache.sysds.hops.rewrite.HopRewriteUtils;
@@ -47,6 +50,7 @@ import org.apache.sysds.parser.WhileStatementBlock;
 import org.apache.sysds.runtime.compress.workload.AWTreeNode.WTNodeType;
 
 public class WorkloadAnalyzer {
+	protected static final Log LOG = LogFactory.getLog(WorkloadAnalyzer.class.getName());
 
 	public static Map<Long, WTreeRoot> getAllCandidateWorkloads(DMLProgram prog) {
 		// extract all compression candidates from program
@@ -264,7 +268,17 @@ public class WorkloadAnalyzer {
 		if(hop.getInput().stream().anyMatch(h -> compressed2.contains(h.getHopID()))) {
 			if(!HopRewriteUtils.isData(hop, OpOpData.PERSISTENTREAD, // all, but data ops
 				OpOpData.TRANSIENTREAD, OpOpData.TRANSIENTWRITE)) {
-				parent.addOp(hop);
+				LOG.error(hop.getClass().getSimpleName());
+				if(hop instanceof AggBinaryOp) {
+					AggBinaryOp agbhop = (AggBinaryOp) hop;
+					List<Hop> in = agbhop.getInput();
+					boolean left = compressed2.contains(in.get(0).getHopID());
+					boolean right = compressed2.contains(in.get(1).getHopID());
+					parent.addOp(new OpSided(hop, left, right));
+				}
+				else {
+					parent.addOp(new Op(hop));
+				}
 			}
 
 			// if the output size also qualifies for compression, we propagate this status

@@ -17,25 +17,34 @@
  * under the License.
  */
 
-package org.apache.sysds.runtime.compress.cocode;
+package org.apache.sysds.runtime.compress.cost;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.CompressionSettings;
-import org.apache.sysds.runtime.compress.cost.ICostEstimate;
-import org.apache.sysds.runtime.compress.estim.CompressedSizeEstimator;
-import org.apache.sysds.runtime.compress.estim.CompressedSizeInfo;
+import org.apache.sysds.runtime.compress.workload.WTreeRoot;
 
-/**
- * Column group co coding with static distribution heuristic.
- */
-public class CoCodeStatic extends AColumnCoCoder {
+public final class CostEstimatorFactory {
 
-	protected CoCodeStatic(CompressedSizeEstimator sizeEstimator, ICostEstimate costEstimator, CompressionSettings cs) {
-		super(sizeEstimator, costEstimator, cs);
+	protected static final Log LOG = LogFactory.getLog(CostEstimatorFactory.class.getName());
+
+	public enum CostType {
+		MEMORY, LEFT_MATRIX_MULT, DECOMPRESSION, TSMM, W_TREE, HYBRID_W_TREE, DISTINCT, AUTO;
 	}
 
-	@Override
-	protected CompressedSizeInfo coCodeColumns(CompressedSizeInfo colInfos, int k) {
-		return colInfos;
+	public static ICostEstimate create(CompressionSettings cs, WTreeRoot root, int nRows) {
+		switch(cs.costComputationType) {
+			case DISTINCT:
+				return new DistinctCostEstimator(nRows, cs);
+			case W_TREE:
+			case AUTO:
+				if(root != null)
+					return ComputationCostEstimator.create(root, nRows, cs);
+				else
+					return new DistinctCostEstimator(nRows, cs);
+			case MEMORY:
+			default:
+				return new MemoryCostEstimator();
+		}
 	}
-
 }

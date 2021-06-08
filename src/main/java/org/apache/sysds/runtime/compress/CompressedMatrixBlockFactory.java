@@ -27,14 +27,16 @@ import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.sysds.runtime.compress.cocode.PlanningCoCoder;
-import org.apache.sysds.runtime.compress.cocode.PlanningCoCoder.PartitionerType;
+import org.apache.sysds.runtime.compress.cocode.CoCoderFactory;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupConst;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupEmpty;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupFactory;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupValue;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
+import org.apache.sysds.runtime.compress.cost.CostEstimatorFactory;
+import org.apache.sysds.runtime.compress.cost.ICostEstimate;
+import org.apache.sysds.runtime.compress.cost.MemoryCostEstimator;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeEstimator;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeEstimatorFactory;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfo;
@@ -46,28 +48,38 @@ import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.utils.DMLCompressionStatistics;
 
 /**
- * Factory pattern to construct a CompressedMatrixBlock.
+ * Factory pattern to compress a Matrix Block into a CompressedMatrixBlock.
  */
 public class CompressedMatrixBlockFactory {
 
 	private static final Log LOG = LogFactory.getLog(CompressedMatrixBlockFactory.class.getName());
 
+	/** Timing object to measure the time of each phase in the compression */
 	private Timing time = new Timing(true);
+	/** Time stamp of last phase */
 	private double lastPhase;
+	/** Compression statistics gathered throughout the compression */
 	private CompressionStatistics _stats = new CompressionStatistics();
-	/** Shallow copy of the original matrix block, and the object that is overwritten with the compressed block */
+	/** Pointer to the original matrix Block that is about to be compressed. */
 	private MatrixBlock mb;
+	/** Parallelization degree */
 	private int k;
+	/** Compression settings used for this compression */
 	private CompressionSettings compSettings;
+	/** The resulting compressed matrix */
 	private CompressedMatrixBlock res;
+	/** The current Phase ID */
 	private int phase = 0;
-
+	/** Compression information gathered through the sampling, used for the actual compression decided */
 	private CompressedSizeInfo coCodeColGroups;
+	/** The workload tree that specify the instuctions that use this compressed object */
+	private WTreeRoot root;
 
-	private CompressedMatrixBlockFactory(MatrixBlock mb, int k, CompressionSettings compSettings) {
+	private CompressedMatrixBlockFactory(MatrixBlock mb, int k, CompressionSettings compSettings, WTreeRoot root) {
 		this.mb = mb;
 		this.k = k;
 		this.compSettings = compSettings;
+		this.root = root;
 	}
 
 	/**
@@ -89,8 +101,13 @@ public class CompressedMatrixBlockFactory {
 		return compress(mb, k, new CompressionSettingsBuilder().create());
 	}
 
-	public static Pair<MatrixBlock, CompressionStatistics> compress(MatrixBlock mb, int k, WTreeRoot root){
-		return compress(mb, k, new CompressionSettingsBuilder().create());
+	public static Pair<MatrixBlock, CompressionStatistics> compress(MatrixBlock mb, int k, WTreeRoot root) {
+		return compress(mb, k, new CompressionSettingsBuilder().create(), root);
+	}
+
+	public static Pair<MatrixBlock, CompressionStatistics> compress(MatrixBlock mb, int k,
+		CompressionSettings compSettings) {
+		return compress(mb, k, compSettings, null);
 	}
 
 	/**
@@ -106,11 +123,13 @@ public class CompressedMatrixBlockFactory {
 	 * @param mb           The matrix block to compress
 	 * @param k            The number of threads used to execute the compression
 	 * @param compSettings The Compression settings used
+	 * @param root         The root instruction compressed, and used for calculating the computation cost of the
+	 *                     compression
 	 * @return A pair of an possibly compressed matrix block and compression statistics.
 	 */
 	public static Pair<MatrixBlock, CompressionStatistics> compress(MatrixBlock mb, int k,
-		CompressionSettings compSettings) {
-		CompressedMatrixBlockFactory cmbf = new CompressedMatrixBlockFactory(mb, k, compSettings);
+		CompressionSettings compSettings, WTreeRoot root) {
+		CompressedMatrixBlockFactory cmbf = new CompressedMatrixBlockFactory(mb, k, compSettings, root);
 		return cmbf.compressMatrix();
 	}
 
@@ -165,17 +184,20 @@ public class CompressedMatrixBlockFactory {
 		_stats.estimatedSizeCols = sizeInfos.memoryEstimate();
 		logPhase();
 
-		if(_stats.estimatedSizeCols < _stats.originalSize ||
-			compSettings.columnPartitioner == PartitionerType.COST_MATRIX_MULT)
-			coCodePhase(sizeEstimator, sizeInfos, mb.getNumRows());
+		ICostEstimate costEstimator = CostEstimatorFactory.create(compSettings, root, mb.getNumRows());
+
+		if(!(costEstimator instanceof MemoryCostEstimator) || _stats.estimatedSizeCols < _stats.originalSize)
+			coCodePhase(sizeEstimator, sizeInfos, costEstimator);
 		else {
 			LOG.info("Estimated Size of singleColGroups: " + _stats.estimatedSizeCols);
 			LOG.info("Original size                    : " + _stats.originalSize);
 		}
 	}
 
-	private void coCodePhase(CompressedSizeEstimator sizeEstimator, CompressedSizeInfo sizeInfos, int numRows) {
-		coCodeColGroups = PlanningCoCoder.findCoCodesByPartitioning(sizeEstimator, sizeInfos, numRows, k, compSettings);
+	private void coCodePhase(CompressedSizeEstimator sizeEstimator, CompressedSizeInfo sizeInfos,
+		ICostEstimate costEstimator) {
+		coCodeColGroups = CoCoderFactory.findCoCodesByPartitioning(sizeEstimator, sizeInfos, k, costEstimator,
+			compSettings);
 
 		_stats.estimatedSizeCoCoded = coCodeColGroups.memoryEstimate();
 		logPhase();
@@ -287,13 +309,16 @@ public class CompressedMatrixBlockFactory {
 		_stats.size = res.estimateCompressedSizeInMemory();
 
 		final double ratio = _stats.getRatio();
-		if(ratio < 1 && compSettings.columnPartitioner != PartitionerType.COST_MATRIX_MULT) {
+
+		if(ratio < 1) {
 			LOG.info("--dense size:        " + _stats.denseSize);
 			LOG.info("--original size:     " + _stats.originalSize);
 			LOG.info("--compressed size:   " + _stats.size);
 			LOG.info("--compression ratio: " + ratio);
 			LOG.info("Abort block compression because compression ratio is less than 1.");
 			res = null;
+			setNextTimePhase(time.stop());
+			DMLCompressionStatistics.addCompressionTime(getLastTimePhase(), phase);
 			return;
 		}
 

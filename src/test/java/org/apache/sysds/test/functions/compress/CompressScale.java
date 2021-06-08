@@ -32,8 +32,8 @@ import org.apache.sysds.test.TestUtils;
 import org.apache.sysds.utils.DMLCompressionStatistics;
 import org.junit.Test;
 
-public class compressScale extends AutomatedTestBase {
-	private static final Log LOG = LogFactory.getLog(compressScale.class.getName());
+public class CompressScale extends AutomatedTestBase {
+	private static final Log LOG = LogFactory.getLog(CompressScale.class.getName());
 
 	protected String getTestClassDir() {
 		return getTestDir() + this.getClass().getSimpleName() + "/";

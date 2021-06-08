@@ -98,7 +98,6 @@ public class InterProceduralAnalysis
 	protected static final boolean ELIMINATE_DEAD_CODE            = true; //remove dead code (e.g., assigments) not used later on
 	protected static final boolean FORWARD_SIMPLE_FUN_CALLS       = true; //replace a call to a simple forwarding function with the function itself
 	protected static final boolean FLAG_NONDETERMINISM            = true; //flag functions which directly or transitively contain non-deterministic calls
-	public    static       boolean CLA_WORKLOAD_ANALYSIS          = false; //obtain workload for workload-aware compression
 	
 	private final DMLProgram _prog;
 	private final StatementBlock _sb;

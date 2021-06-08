@@ -49,6 +49,10 @@ m_xgboost = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] R) retur
     has_child = FALSE
     [node_queue, node] = dataQueuePop(node_queue)
     [curr_rows_queue, curr_rows_vector] = dataQueuePop(curr_rows_queue)
+    printMatrix(node_queue, "Node Queue")
+    printMatrix(node, "Node")
+    printMatrix(curr_rows_queue, "curr_rows_queue")
+    printMatrix(curr_rows_vector, "curr_rows_vector")
     level = log(as.scalar(node), 2) + 1
     available_rows = calcAvailableRows(curr_rows_vector)
 
@@ -227,6 +231,7 @@ updateMatrices = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] vec
 # INPUT:    vector: a 1xn matrix (current datapoints which are interesting)
 # OUTPUT:   available_elements: nr. of available datapoints
 calcAvailableRows = function(Matrix[Double] vector) return(Double available_elements){
+  assert(ncol(vector) == 1)
   len = nrow(vector)
   available_elements = 0.0
   for (index in 1:len) {
@@ -453,31 +458,34 @@ printMatrix = function(Matrix[Double] m, string name) return() {
     print("--------------------------------------")
     print(":: [MATRIX] " + name + "  (col:" + ncol(m) + ",row:" + nrow(m) + ")")
 
-    col_string = ":::::::"
-    for(col in 1:ncol(m)) {
-        if(col < 10)
-            col_string = col_string + ":::(" + toString(col) + ")::::"
-        else
-            col_string = col_string + ":::(" + toString(col) + "):::"
-    }
-    print(col_string)
-    for(row in 1:nrow(m)) {
-
-        print_string = ":(" + row + ")     "
+    if(nrow(m) != 0 & ncol(m) != 0)
+    {
+        col_string = ":::::::"
         for(col in 1:ncol(m)) {
-            curr_value = m[row,col]
-            if(as.scalar(curr_value) < 10)
-                print_string = print_string + toString(curr_value, linesep="     ", sep=",")
-            else if(as.scalar(curr_value) < 100)
-                print_string = print_string + toString(curr_value, linesep="    ", sep=",")
-            else if(as.scalar(curr_value) < 1000)
-                print_string = print_string + toString(curr_value, linesep="   ", sep=",")
-            else if(as.scalar(curr_value) < 10000)
-                print_string = print_string + toString(curr_value, linesep="  ", sep=",")
+            if(col < 10)
+                col_string = col_string + ":::(" + toString(col) + ")::::"
             else
-                print_string = print_string + toString(curr_value, linesep=" ", sep=",")
+                col_string = col_string + ":::(" + toString(col) + "):::"
         }
-        print(print_string)
+        print(col_string)
+        for(row in 1:nrow(m)) {
+
+            print_string = ":(" + row + ")     "
+            for(col in 1:ncol(m)) {
+                curr_value = m[row,col]
+                if(as.scalar(curr_value) < 10)
+                    print_string = print_string + toString(curr_value, linesep="     ", sep=",")
+                else if(as.scalar(curr_value) < 100)
+                    print_string = print_string + toString(curr_value, linesep="    ", sep=",")
+                else if(as.scalar(curr_value) < 1000)
+                    print_string = print_string + toString(curr_value, linesep="   ", sep=",")
+                else if(as.scalar(curr_value) < 10000)
+                    print_string = print_string + toString(curr_value, linesep="  ", sep=",")
+                else
+                    print_string = print_string + toString(curr_value, linesep=" ", sep=",")
+            }
+            print(print_string)
+        }
     }
     print("--------------------------------------")
 }

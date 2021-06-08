@@ -21,6 +21,8 @@ package org.apache.sysds.runtime.instructions.cp;
 
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlockFactory;
+import org.apache.sysds.runtime.compress.workload.WTreeRoot;
+import org.apache.sysds.runtime.controlprogram.SingletonLookupHashMap;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
@@ -28,8 +30,12 @@ import org.apache.sysds.runtime.matrix.operators.Operator;
 
 public class CompressionCPInstruction extends ComputationCPInstruction {
 
-	private CompressionCPInstruction(Operator op, CPOperand in, CPOperand out, String opcode, String istr) {
+	private final int _singletonLookupID;
+
+	private CompressionCPInstruction(Operator op, CPOperand in, CPOperand out, String opcode, String istr,
+		int singletonLookupID) {
 		super(CPType.Compression, op, in, null, null, out, opcode, istr);
+		this._singletonLookupID = singletonLookupID;
 	}
 
 	public static CompressionCPInstruction parseInstruction(String str) {
@@ -37,15 +43,27 @@ public class CompressionCPInstruction extends ComputationCPInstruction {
 		String opcode = parts[0];
 		CPOperand in1 = new CPOperand(parts[1]);
 		CPOperand out = new CPOperand(parts[2]);
-		return new CompressionCPInstruction(null, in1, out, opcode, str);
+		if(parts.length == 4) {
+			int treeNodeID = Integer.parseInt(parts[3]);
+			return new CompressionCPInstruction(null, in1, out, opcode, str, treeNodeID);
+		}
+		else {
+			return new CompressionCPInstruction(null, in1, out, opcode, str, 0);
+		}
 	}
 
 	@Override
 	public void processInstruction(ExecutionContext ec) {
 		// Get matrix block input
 		MatrixBlock in = ec.getMatrixInput(input1.getName());
+		SingletonLookupHashMap m = SingletonLookupHashMap.getMap();
+
+		WTreeRoot root = (_singletonLookupID != 0) ? (WTreeRoot) m.get(_singletonLookupID) : null;
 		// Compress the matrix block
-		MatrixBlock out = CompressedMatrixBlockFactory.compress(in, OptimizerUtils.getConstrainedNumThreads(-1)).getLeft();
+		MatrixBlock out = CompressedMatrixBlockFactory.compress(in, OptimizerUtils.getConstrainedNumThreads(-1), root)
+			.getLeft();
+
+		m.removeKey(_singletonLookupID);
 		// Set output and release input
 		ec.releaseMatrixInput(input1.getName());
 		ec.setMatrixOutput(output.getName(), out);

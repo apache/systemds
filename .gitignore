@@ -1,1 +1,7 @@
 .svn/*
+
+# ignore files src files in the generated content
+# branch
+node_modules/*
+_site
+_src

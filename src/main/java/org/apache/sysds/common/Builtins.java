@@ -37,8 +37,6 @@ import org.apache.sysds.common.Types.ReturnType;
  */
 public enum Builtins {
 	//builtin functions
-	STABLEMARRIAGE("stableMarriage", true),
-	RESIDENCYMATCH("residencyMatchMain", true),
 	ARIMA("arima", true),
 	ABS("abs", false),
 	GET_ACCURACY("getAccuracy", true),
@@ -202,6 +200,7 @@ public enum Builtins {
 	RANGE("range", false),
 	RBIND("rbind", false),
 	REMOVE("remove", false, ReturnType.MULTI_RETURN),
+	RESIDENCYMATCH("residencyMatchMain", true),
 	REV("rev", false),
 	ROUND("round", false),
 	ROWINDEXMAX("rowIndexMax", false),
@@ -230,6 +229,7 @@ public enum Builtins {
 	SPLIT_BALANCED("splitBalanced", true),
 	STATSNA("statsNA", true),
 	SQRT("sqrt", false),
+	STABLEMARRIAGE("stableMarriage", true),
 	SUM("sum", false),
 	SVD("svd", false, ReturnType.MULTI_RETURN),
 	TRANS("t", false),

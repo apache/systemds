@@ -25,4 +25,4 @@ y = read($2);
 X = scale(X=X, scale=TRUE, center=TRUE);
 B = multiLogReg(X=X, Y=y, verbose=TRUE);
 
-write(B, $3)
+print(sum(B))

@@ -17,26 +17,26 @@
  * under the License.
  */
 
-package org.apache.sysds.test.functions.compress;
+package org.apache.sysds.test.functions.compress.workload;
 
 import java.io.File;
 
 import org.apache.sysds.common.Types.ExecMode;
-import org.apache.sysds.hops.ipa.InterProceduralAnalysis;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
 import org.apache.sysds.utils.Statistics;
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 
-public class WorkloadAnalysisTest extends AutomatedTestBase {
+public class WorkloadAlgorithmTest extends AutomatedTestBase {
 
 	// private static final Log LOG = LogFactory.getLog(WorkloadAnalysisTest.class.getName());
 
 	private final static String TEST_NAME1 = "WorkloadAnalysisMlogreg";
 	private final static String TEST_NAME2 = "WorkloadAnalysisLm";
-	private final static String TEST_DIR = "functions/compress/";
+	private final static String TEST_DIR = "functions/compress/workload/";
 	private final static String TEST_CLASS_DIR = TEST_DIR + WorkloadAnalysisTest.class.getSimpleName() + "/";
 
 	@Override
@@ -47,28 +47,30 @@ public class WorkloadAnalysisTest extends AutomatedTestBase {
 	}
 
 	@Test
-	public void testMlogregCP() {
+	@Ignore
+	public void testMLogRegCP() {
 		runWorkloadAnalysisTest(TEST_NAME1, ExecMode.HYBRID, 2);
 	}
 
 	@Test
+	@Ignore
 	public void testLmCP() {
 		runWorkloadAnalysisTest(TEST_NAME2, ExecMode.HYBRID, 2);
 	}
 
+
 	private void runWorkloadAnalysisTest(String testname, ExecMode mode, int compressionCount) {
 		ExecMode oldPlatform = setExecMode(mode);
-		boolean oldFlag = InterProceduralAnalysis.CLA_WORKLOAD_ANALYSIS;
 
 		try {
+
 			loadTestConfiguration(getTestConfiguration(testname));
 
-			InterProceduralAnalysis.CLA_WORKLOAD_ANALYSIS = true;
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + testname + ".dml";
 			programArgs = new String[] {"-stats", "40", "-args", input("X"), input("y"), output("B")};
 
-			double[][] X = getRandomMatrix(10000, 20, 0, 1, 1.0, 7);
+			double[][] X = TestUtils.round(getRandomMatrix(10000, 20, 0, 1, 1.0, 7));
 			writeInputMatrixWithMTD("X", X, false);
 			double[][] y = TestUtils.round(getRandomMatrix(10000, 1, 1, 2, 1.0, 3));
 			writeInputMatrixWithMTD("y", y, false);
@@ -84,12 +86,11 @@ public class WorkloadAnalysisTest extends AutomatedTestBase {
 		}
 		finally {
 			resetExecMode(oldPlatform);
-			InterProceduralAnalysis.CLA_WORKLOAD_ANALYSIS = oldFlag;
 		}
 	}
 
 	@Override
 	protected File getConfigTemplateFile() {
-		return new File(SCRIPT_DIR + TEST_DIR + "force", "SystemDS-config-compress-workload.xml");
+		return new File(SCRIPT_DIR + TEST_DIR, "SystemDS-config-compress-workload.xml");
 	}
 }

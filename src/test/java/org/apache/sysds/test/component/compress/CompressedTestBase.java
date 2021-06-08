@@ -39,11 +39,11 @@ import org.apache.sysds.runtime.compress.CompressedMatrixBlockFactory;
 import org.apache.sysds.runtime.compress.CompressionSettings;
 import org.apache.sysds.runtime.compress.CompressionSettingsBuilder;
 import org.apache.sysds.runtime.compress.CompressionStatistics;
-import org.apache.sysds.runtime.compress.cocode.PlanningCoCoder.PartitionerType;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup.CompressionType;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupFactory;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupUncompressed;
+import org.apache.sysds.runtime.compress.cost.CostEstimatorFactory.CostType;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeEstimator;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup;
 import org.apache.sysds.runtime.compress.estim.EstimationFactors;
@@ -135,7 +135,7 @@ public abstract class CompressedTestBase extends TestBase {
 		// .setColumnPartitioner(PartitionerType.STATIC),
 
 		new CompressionSettingsBuilder().setSamplingRatio(0.1).setSeed(compressionSeed).setTransposeInput("true")
-			.setColumnPartitioner(PartitionerType.COST_MATRIX_MULT),
+			.setCostType(CostType.LEFT_MATRIX_MULT),
 
 		// new CompressionSettingsBuilder().setSamplingRatio(0.1).setSeed(compressionSeed),
 		// new CompressionSettingsBuilder().setSamplingRatio(1.0).setSeed(compressionSeed)

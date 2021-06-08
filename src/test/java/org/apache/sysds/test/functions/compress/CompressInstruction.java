@@ -30,7 +30,7 @@ import org.apache.sysds.test.TestUtils;
 import org.apache.sysds.utils.Statistics;
 import org.junit.Test;
 
-public class compressInstruction extends AutomatedTestBase {
+public class CompressInstruction extends AutomatedTestBase {
 	// private static final Log LOG = LogFactory.getLog(compressInstruction.class.getName());
 
 	protected String getTestClassDir() {

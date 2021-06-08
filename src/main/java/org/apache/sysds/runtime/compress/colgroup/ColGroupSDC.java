@@ -274,6 +274,9 @@ public class ColGroupSDC extends ColGroupValue {
 			int rc = 0;
 			int offLeft = rowLeft * _numRows;
 			for(; rc < _numRows && it.hasNext(); rc++, offLeft++) {
+				for(; it.value() > rc && rc < _numRows ; rc++, offLeft++){
+					preAV[def] += mV[offLeft];
+				}
 				if(it.value() == rc)
 					preAV[offOut + _data.getIndex(it.getDataIndexAndIncrement())] += mV[offLeft];
 				else

@@ -25,4 +25,4 @@ y = read($2);
 X = scale(X=X, scale=TRUE, center=TRUE);
 B = lm(X=X, y=y, verbose=TRUE);
 
-write(B, $3)
+print(sum(B))

@@ -17,25 +17,23 @@
  * under the License.
  */
 
-package org.apache.sysds.runtime.compress.cocode;
+package org.apache.sysds.runtime.compress.workload;
 
-import org.apache.sysds.runtime.compress.CompressionSettings;
-import org.apache.sysds.runtime.compress.cost.ICostEstimate;
-import org.apache.sysds.runtime.compress.estim.CompressedSizeEstimator;
-import org.apache.sysds.runtime.compress.estim.CompressedSizeInfo;
+import org.apache.sysds.hops.Hop;
 
-/**
- * Column group co coding with static distribution heuristic.
- */
-public class CoCodeStatic extends AColumnCoCoder {
+public class Op {
+	private final Hop _op;
 
-	protected CoCodeStatic(CompressedSizeEstimator sizeEstimator, ICostEstimate costEstimator, CompressionSettings cs) {
-		super(sizeEstimator, costEstimator, cs);
+	public Op(Hop op) {
+		_op = op;
+	}
+
+	public Hop getHop() {
+		return _op;
 	}
 
 	@Override
-	protected CompressedSizeInfo coCodeColumns(CompressedSizeInfo colInfos, int k) {
-		return colInfos;
+	public String toString() {
+		return _op.toString();
 	}
-
 }

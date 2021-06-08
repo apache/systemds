@@ -19,45 +19,29 @@
 
 package org.apache.sysds.runtime.compress.workload;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import org.apache.sysds.hops.Hop;
 
 /**
- * A Node in the WTree, this is used for any nodes that are not the root.
+ * The root node of the tree, located at the top of the tree.
+ * 
+ * This represent a single Hop that have a result that is used on subsequent operations.
  */
-public class WTreeNode extends AWTreeNode {
+public class WTreeRoot extends AWTreeNode {
 
-	private final List<Hop> _ops = new ArrayList<>();
+	private final Hop _root;
 
-	public WTreeNode(WTNodeType type) {
-		super(type);
+	public WTreeRoot(Hop root) {
+		super(WTNodeType.ROOT);
+		_root = root;
 	}
 
-	public List<Hop> getOps() {
-		return _ops;
+	/**
+	 * Get the Root hop instruction, that is producing a result used in the rest of the tree.
+	 * 
+	 * @return The root hop
+	 */
+	public Hop getRoot() {
+		return _root;
 	}
 
-	public void addOp(Hop hop) {
-		_ops.add(hop);
-	}
-
-	@Override
-	public boolean isEmpty(){
-		return _ops.isEmpty() && super.isEmpty();
-	}
-
-	@Override
-	protected String explain(int level){
-		StringBuilder sb = new StringBuilder();
-		sb.append(super.explain(level));
-		for(Hop hop : _ops) {
-			for(int i = 0; i < level + 1; i++)
-				sb.append("--");
-			sb.append(hop.toString());
-			sb.append("\n");
-		}
-		return sb.toString();
-	}
 }

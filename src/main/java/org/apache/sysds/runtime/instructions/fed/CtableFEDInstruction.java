@@ -36,6 +36,7 @@ import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedUDF;
 import org.apache.sysds.runtime.controlprogram.federated.FederationMap;
+import org.apache.sysds.runtime.controlprogram.federated.FederationMap.AType;
 import org.apache.sysds.runtime.controlprogram.federated.FederationUtils;
 import org.apache.sysds.runtime.functionobjects.And;
 import org.apache.sysds.runtime.instructions.Instruction;
@@ -127,7 +128,20 @@ public class CtableFEDInstruction extends ComputationFEDInstruction {
 
 		FederatedRequest[] fr1 = mo1.getFedMapping().broadcastSliced(mo2, false);
 		FederatedRequest fr2, fr3;
-		if(mo3 == null) {
+		if(mo3 != null && mo1.isFederated() && mo3.isFederated()
+		&& mo1.getFedMapping().isAligned(mo3.getFedMapping(), AType.FULL)) { // mo1 and mo3 federated and aligned
+			if(!reversed)
+				fr2 = FederationUtils.callInstruction(instString, output, new CPOperand[] {input1, input2, input3},
+					new long[] {mo1.getFedMapping().getID(), fr1[0].getID(), mo3.getFedMapping().getID()});
+			else
+				fr2 = FederationUtils.callInstruction(instString, output, new CPOperand[] {input1, input2, input3},
+					new long[] {fr1[0].getID(), mo1.getFedMapping().getID(), mo3.getFedMapping().getID()});
+
+			fr3 = new FederatedRequest(FederatedRequest.RequestType.GET_VAR, fr2.getID());
+			FederatedRequest fr4 = mo1.getFedMapping().cleanup(getTID(), fr1[0].getID());
+			ffr = mo1.getFedMapping().execute(getTID(), true, fr1, fr2, fr3, fr4);
+		}
+		else if(mo3 == null) {
 			if(!reversed)
 				fr2 = FederationUtils.callInstruction(instString, output, new CPOperand[] {input1, input2},
 					new long[] {mo1.getFedMapping().getID(), fr1[0].getID()});

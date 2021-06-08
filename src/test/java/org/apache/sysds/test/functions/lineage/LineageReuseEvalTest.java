@@ -55,7 +55,7 @@ public class LineageReuseEvalTest extends LineageBase {
 
 	@Test
 	public void testGridSearchMLR() {
-		testLineageTrace(TEST_NAME+"2", ReuseCacheType.REUSE_HYBRID);
+		testLineageTrace(TEST_NAME+"2", ReuseCacheType.REUSE_MULTILEVEL);
 		//FIXME: 2x slower with reuse. Heavy hitter function is lineageitem equals.
 		//This problem only exists with parfor.
 	}

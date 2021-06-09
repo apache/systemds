@@ -17,22 +17,26 @@
  * under the License.
  */
 
-package org.apache.sysds.test.functions.io.hdf5;
+package org.apache.sysds.runtime.io.hdf5;
 
-public class WriteHDF5Test1 extends WriteHDF5Test {
+import java.io.IOException;
 
-	private final static String TEST_NAME = "WriteHDF5Test";
-	public final static String TEST_CLASS_DIR = TEST_DIR + WriteHDF5Test1.class.getSimpleName() + "/";
+public class H5RuntimeException extends RuntimeException {
 
-	protected String getTestName() {
-		return TEST_NAME;
+	public H5RuntimeException(String message) {
+		super(message);
 	}
 
-	protected String getTestClassDir() {
-		return TEST_CLASS_DIR;
+	public H5RuntimeException(String message, Throwable throwable) {
+		super(message, throwable);
 	}
 
-	protected int getId() {
-		return 1;
+	public H5RuntimeException(Exception e) {
+		super(e);
 	}
+
+	public H5RuntimeException(IOException e) {
+		super(e);
+	}
+
 }

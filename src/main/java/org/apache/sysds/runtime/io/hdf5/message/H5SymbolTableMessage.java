@@ -45,7 +45,8 @@ public class H5SymbolTableMessage extends H5Message {
 		this.localHeapAddress = localHeapAddress;
 	}
 
-	@Override public void toBuffer(H5BufferBuilder bb) {
+	@Override
+	public void toBuffer(H5BufferBuilder bb) {
 
 		super.toBuffer(bb, H5Constants.SYMBOL_TABLE_MESSAGE);
 

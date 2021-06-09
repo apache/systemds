@@ -78,7 +78,8 @@ public class H5DataSpaceMessage extends H5Message {
 
 	}
 
-	@Override public void toBuffer(H5BufferBuilder bb) {
+	@Override
+	public void toBuffer(H5BufferBuilder bb) {
 		super.toBuffer(bb, H5Constants.DATA_SPACE_MESSAGE);
 		bb.writeByte(rootObject.getDataSpaceVersion());
 		bb.writeByte(rootObject.getRank());

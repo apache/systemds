@@ -19,8 +19,14 @@
 
 package org.apache.sysds.runtime.io.hdf5;
 
-import org.apache.sysds.runtime.io.hdf5.message.*;
-
+import org.apache.sysds.runtime.io.hdf5.message.H5Message;
+import org.apache.sysds.runtime.io.hdf5.message.H5DataTypeMessage;
+import org.apache.sysds.runtime.io.hdf5.message.H5DataSpaceMessage;
+import org.apache.sysds.runtime.io.hdf5.message.H5FillValueMessage;
+import org.apache.sysds.runtime.io.hdf5.message.H5NilMessage;
+import org.apache.sysds.runtime.io.hdf5.message.H5ObjectModificationTimeMessage;
+import org.apache.sysds.runtime.io.hdf5.message.H5SymbolTableMessage;
+import org.apache.sysds.runtime.io.hdf5.message.H5DataLayoutMessage;
 import java.nio.ByteBuffer;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -45,7 +51,7 @@ public class H5ObjectHeader {
 			// Version
 			rootObject.setObjectHeaderVersion(header.get());
 			if(rootObject.getObjectHeaderVersion() != 1) {
-				throw new H5Exception("Invalid version detected. Version is = " + rootObject.getObjectHeaderVersion());
+				throw new H5RuntimeException("Invalid version detected. Version is = " + rootObject.getObjectHeaderVersion());
 			}
 
 			// Skip reserved byte
@@ -68,7 +74,7 @@ public class H5ObjectHeader {
 
 		}
 		catch(Exception e) {
-			throw new H5Exception("Failed to read object header at address: " + address, e);
+			throw new H5RuntimeException("Failed to read object header at address: " + address, e);
 		}
 	}
 
@@ -84,10 +90,10 @@ public class H5ObjectHeader {
 		List<T> messagesOfType = getMessagesOfType(type);
 		// Validate only one message exists
 		if(messagesOfType.isEmpty()) {
-			throw new H5Exception("Requested message type '" + type.getSimpleName() + "' not present");
+			throw new H5RuntimeException("Requested message type '" + type.getSimpleName() + "' not present");
 		}
 		if(messagesOfType.size() > 1) {
-			throw new H5Exception("Requested message type '" + type.getSimpleName() + "' is not unique");
+			throw new H5RuntimeException("Requested message type '" + type.getSimpleName() + "' is not unique");
 		}
 
 		return messagesOfType.get(0);

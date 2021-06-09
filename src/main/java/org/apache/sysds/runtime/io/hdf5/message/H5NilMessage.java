@@ -39,7 +39,8 @@ public class H5NilMessage extends H5Message {
 		super(rootObject, flags);
 	}
 
-	@Override public void toBuffer(H5BufferBuilder bb) {
+	@Override
+	public void toBuffer(H5BufferBuilder bb) {
 		super.toBuffer(bb, H5Constants.NIL_MESSAGE);
 		byte[] reserve = new byte[104];
 		bb.writeBytes(reserve);

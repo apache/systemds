@@ -42,7 +42,8 @@ public class H5DataTypeMessage extends H5Message {
 		this.doubleDataType = doubleDataType;
 	}
 
-	@Override public void toBuffer(H5BufferBuilder bb) {
+	@Override
+	public void toBuffer(H5BufferBuilder bb) {
 		super.toBuffer(bb, H5Constants.DATA_TYPE_MESSAGE);
 		this.doubleDataType.toBuffer(bb);
 	}

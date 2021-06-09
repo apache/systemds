@@ -47,7 +47,7 @@ public class H5LocalHeap {
 
 			// Verify signature
 			if(!Arrays.equals(HEAP_SIGNATURE, formatSignatureBytes)) {
-				throw new H5Exception("Heap signature not matched");
+				throw new H5RuntimeException("Heap signature not matched");
 			}
 
 			// Version
@@ -69,7 +69,7 @@ public class H5LocalHeap {
 
 		}
 		catch(Exception e) {
-			throw new H5Exception("Error reading local heap", e);
+			throw new H5RuntimeException("Error reading local heap", e);
 		}
 	}
 

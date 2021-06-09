@@ -61,7 +61,7 @@ public class H5RootObject {
 			bb.put(b);
 		}
 		catch(IOException e) {
-			throw new H5Exception(e);
+			throw new H5RuntimeException(e);
 		}
 		bb.order(LITTLE_ENDIAN);
 		bb.rewind();
@@ -78,7 +78,7 @@ public class H5RootObject {
 			bb.put(b);
 		}
 		catch(IOException e) {
-			throw new H5Exception(e);
+			throw new H5RuntimeException(e);
 		}
 		bb.rewind();
 		return bb;

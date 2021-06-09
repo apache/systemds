@@ -47,7 +47,8 @@ public class H5DataLayoutMessage extends H5Message {
 		this.size = size;
 	}
 
-	@Override public void toBuffer(H5BufferBuilder bb) {
+	@Override
+	public void toBuffer(H5BufferBuilder bb) {
 		super.toBuffer(bb, H5Constants.DATA_LAYOUT_MESSAGE);
 
 		// Version

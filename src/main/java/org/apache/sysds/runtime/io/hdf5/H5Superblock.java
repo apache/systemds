@@ -31,7 +31,6 @@ public class H5Superblock {
 
 	protected static final byte[] HDF5_FILE_SIGNATURE = new byte[] {(byte) 137, 72, 68, 70, 13, 10, 26, 10};
 	protected static final int HDF5_FILE_SIGNATURE_LENGTH = HDF5_FILE_SIGNATURE.length;
-
 	public int versionOfSuperblock;
 	public int versionNumberOfTheFileFreeSpaceInformation;
 	public int versionOfRootGroupSymbolTableEntry;
@@ -59,7 +58,7 @@ public class H5Superblock {
 			bis.read(signature);
 		}
 		catch(IOException e) {
-			throw new H5Exception("Failed to read from address: " + offset, e);
+			throw new H5RuntimeException("Failed to read from address: " + offset, e);
 		}
 		// Verify signature
 		return Arrays.equals(HDF5_FILE_SIGNATURE, signature);
@@ -83,7 +82,7 @@ public class H5Superblock {
 			header.put(b);
 		}
 		catch(IOException e) {
-			throw new H5Exception(e);
+			throw new H5RuntimeException(e);
 		}
 
 		header.order(LITTLE_ENDIAN);
@@ -95,7 +94,7 @@ public class H5Superblock {
 			versionOfSuperblock = header.get();
 
 			if(versionOfSuperblock != 0 && versionOfSuperblock != 1) {
-				throw new H5Exception("Detected superblock version not 0 or 1");
+				throw new H5RuntimeException("Detected superblock version not 0 or 1");
 			}
 
 			// Version # of File Free-space Storage
@@ -156,7 +155,7 @@ public class H5Superblock {
 			rootGroupSymbolTableAddress = address;
 		}
 		catch(Exception e) {
-			throw new H5Exception("Failed to read superblock from address " + address, e);
+			throw new H5RuntimeException("Failed to read superblock from address " + address, e);
 		}
 	}
 
@@ -215,6 +214,5 @@ public class H5Superblock {
 
 		// Driver Information Block Address
 		bb.writeLong(driverInformationBlockAddress);
-
 	}
 }

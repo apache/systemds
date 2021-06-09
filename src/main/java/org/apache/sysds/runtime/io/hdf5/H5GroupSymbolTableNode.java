@@ -48,7 +48,7 @@ public class H5GroupSymbolTableNode {
 
 			// Verify signature
 			if(!Arrays.equals(NODE_SIGNATURE, formatSignatureBytes)) {
-				throw new H5Exception("Group symbol table Node signature not matched");
+				throw new H5RuntimeException("Group symbol table Node signature not matched");
 			}
 
 			// Version Number
@@ -72,7 +72,7 @@ public class H5GroupSymbolTableNode {
 			}
 		}
 		catch(Exception e) {
-			throw new H5Exception("Error reading Group symbol table node", e);
+			throw new H5RuntimeException("Error reading Group symbol table node", e);
 		}
 	}
 

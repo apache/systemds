@@ -23,12 +23,12 @@ import org.apache.sysds.runtime.io.hdf5.H5BufferBuilder;
 import org.apache.sysds.runtime.io.hdf5.H5Constants;
 import org.apache.sysds.runtime.io.hdf5.H5RootObject;
 import org.apache.sysds.runtime.io.hdf5.Utils;
-import org.apache.sysds.runtime.io.hdf5.H5Exception;
+import org.apache.sysds.runtime.io.hdf5.H5RuntimeException;
 
 import java.nio.ByteBuffer;
 import java.util.BitSet;
 
-public class H5Message {
+public abstract class H5Message {
 
 	private final BitSet flags;
 
@@ -60,8 +60,7 @@ public class H5Message {
 		return bb;
 	}
 
-	public void toBuffer(H5BufferBuilder bb) {
-	}
+	protected void toBuffer(H5BufferBuilder bb){}
 
 	protected void toBuffer(H5BufferBuilder bb, int messageType) {
 
@@ -104,7 +103,7 @@ public class H5Message {
 				bb.writeShort((short) 24);
 				break;
 			default:
-				throw new H5Exception("Unrecognized message type = " + messageType);
+				throw new H5RuntimeException("Unrecognized message type = " + messageType);
 		}
 		// Flags
 		if(flags.length() != 0) {
@@ -142,7 +141,7 @@ public class H5Message {
 				return new H5ObjectModificationTimeMessage(rootObject, flags, bb);
 
 			default:
-				throw new H5Exception("Unrecognized message type = " + messageType);
+				throw new H5RuntimeException("Unrecognized message type = " + messageType);
 		}
 	}
 }

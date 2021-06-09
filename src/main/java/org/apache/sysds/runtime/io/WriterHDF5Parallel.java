@@ -45,7 +45,8 @@ public class WriterHDF5Parallel extends WriterHDF5 {
 		super(_props);
 	}
 
-	@Override public void writeHDF5MatrixToHDFS(Path path, JobConf job, FileSystem fs, MatrixBlock src)
+	@Override
+	public void writeHDF5MatrixToHDFS(Path path, JobConf job, FileSystem fs, MatrixBlock src)
 		throws IOException, DMLRuntimeException {
 
 		//estimate output size and number of output blocks (min 1)
@@ -114,7 +115,8 @@ public class WriterHDF5Parallel extends WriterHDF5 {
 			_ru = ru;
 		}
 
-		@Override public Object call() throws IOException {
+		@Override
+		public Object call() throws IOException {
 			writeHDF5MatrixToFile(_path, _job, _fs, _src, _rl, _ru);
 			return null;
 		}

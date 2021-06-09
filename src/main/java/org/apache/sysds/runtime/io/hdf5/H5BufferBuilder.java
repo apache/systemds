@@ -50,7 +50,7 @@ public class H5BufferBuilder {
 			dataOutputStream.writeByte(i);
 		}
 		catch(IOException e) {
-			throw new H5Exception(e);
+			throw new H5RuntimeException(e);
 		}
 	}
 
@@ -59,7 +59,7 @@ public class H5BufferBuilder {
 			dataOutputStream.write(bytes);
 		}
 		catch(IOException e) {
-			throw new H5Exception(e);
+			throw new H5RuntimeException(e);
 		}
 	}
 
@@ -71,7 +71,7 @@ public class H5BufferBuilder {
 			dataOutputStream.writeInt(i);
 		}
 		catch(IOException e) {
-			throw new H5Exception(e);
+			throw new H5RuntimeException(e);
 		}
 	}
 
@@ -83,7 +83,7 @@ public class H5BufferBuilder {
 			dataOutputStream.writeShort(i);
 		}
 		catch(IOException e) {
-			throw new H5Exception(e);
+			throw new H5RuntimeException(e);
 		}
 	}
 
@@ -95,7 +95,7 @@ public class H5BufferBuilder {
 			dataOutputStream.writeLong(l);
 		}
 		catch(IOException e) {
-			throw new H5Exception(e);
+			throw new H5RuntimeException(e);
 		}
 	}
 
@@ -126,7 +126,7 @@ public class H5BufferBuilder {
 			this.writeLong(Double.doubleToLongBits(l));
 		}
 		catch(Exception e) {
-			throw new H5Exception(e);
+			throw new H5RuntimeException(e);
 		}
 	}
 
@@ -146,7 +146,7 @@ public class H5BufferBuilder {
 			}
 		}
 		catch(Exception e) {
-			throw new H5Exception(e);
+			throw new H5RuntimeException(e);
 		}
 
 	}
@@ -160,7 +160,7 @@ public class H5BufferBuilder {
 			return byteBuffer;
 		}
 		catch(IOException e) {
-			throw new H5Exception(e);
+			throw new H5RuntimeException(e);
 		}
 	}
 
@@ -172,20 +172,20 @@ public class H5BufferBuilder {
 			return byteBuffer;
 		}
 		catch(IOException e) {
-			throw new H5Exception(e);
+			throw new H5RuntimeException(e);
 		}
 	}
 
 	public void writeBitSet(BitSet bitSet, int length) {
 		if(bitSet.length() > length) {
-			throw new H5Exception("BitSet is longer than length provided");
+			throw new H5RuntimeException("BitSet is longer than length provided");
 		}
 		try {
 			final byte[] bytes = Arrays.copyOf(bitSet.toByteArray(), length); // Ensure empty Bitset are not shortened
 			dataOutputStream.write(bytes);
 		}
 		catch(IOException e) {
-			throw new H5Exception(e);
+			throw new H5RuntimeException(e);
 		}
 	}
 

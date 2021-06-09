@@ -23,10 +23,7 @@ import org.apache.sysds.runtime.io.hdf5.message.H5SymbolTableMessage;
 
 import java.io.*;
 import java.nio.ByteBuffer;
-import java.nio.DoubleBuffer;
 import java.util.List;
-
-import static java.nio.ByteOrder.LITTLE_ENDIAN;
 
 public class H5 {
 
@@ -52,7 +49,7 @@ public class H5 {
 				}
 			}
 			if(!validSignature) {
-				throw new H5Exception("No valid HDF5 signature found");
+				throw new H5RuntimeException("No valid HDF5 signature found");
 			}
 			rootObject.setBufferedInputStream(bis);
 
@@ -60,7 +57,7 @@ public class H5 {
 			rootObject.setSuperblock(superblock);
 		}
 		catch(Exception exception) {
-			throw new H5Exception("Can't open fine " + exception);
+			throw new H5RuntimeException("Can't open fine " + exception);
 		}
 		return rootObject;
 	}
@@ -108,7 +105,7 @@ public class H5 {
 
 		}
 		catch(Exception exception) {
-			throw new H5Exception(exception);
+			throw new H5RuntimeException(exception);
 		}
 	}
 
@@ -136,7 +133,7 @@ public class H5 {
 			String childName = Utils.readUntilNull(nameBuffer);
 
 			if(!childName.equals(datasetName)) {
-				throw new H5Exception("The dataset name '" + datasetName + "' not found!");
+				throw new H5RuntimeException("The dataset name '" + datasetName + "' not found!");
 			}
 
 			final H5ObjectHeader header = new H5ObjectHeader(rootObject, symbolTableEntry.getObjectHeaderAddress());
@@ -145,7 +142,7 @@ public class H5 {
 
 		}
 		catch(Exception exception) {
-			throw new H5Exception(exception);
+			throw new H5RuntimeException(exception);
 		}
 	}
 
@@ -163,7 +160,7 @@ public class H5 {
 
 		}
 		else
-			throw new H5Exception("Just support Matrix!");
+			throw new H5RuntimeException("Just support Matrix!");
 	}
 
 	public static void H5WriteHeaders(H5RootObject rootObject) {
@@ -171,7 +168,7 @@ public class H5 {
 			rootObject.getBufferedOutputStream().write(rootObject.bufferBuilder.build().array());
 		}
 		catch(Exception exception) {
-			throw new H5Exception(exception);
+			throw new H5RuntimeException(exception);
 		}
 	}
 
@@ -185,49 +182,27 @@ public class H5 {
 			rootObject.getBufferedOutputStream().write(bb.noOrderBuild().array());
 		}
 		catch(Exception exception) {
-			throw new H5Exception(exception);
+			throw new H5RuntimeException(exception);
 		}
 	}
 
 	public static void H5Dwrite(H5RootObject rootObject, double[][] data) {
 
-		long dataSize = rootObject.getRow() * rootObject.getCol() * 8; // 8 value is size of double
-		int maxBufferSize = (int) (Integer.MAX_VALUE * 0.2); // max buffer size is ratio of data transfer
-		int bufferSize = (int) Math.min(maxBufferSize, dataSize);
-
-		H5BufferBuilder bb = new H5BufferBuilder();
-		try {
-			for(int i = 0; i < rootObject.getRow(); i++) {
-				for(int j = 0; j < rootObject.getCol(); j++) {
-
-					// if the buffer is full then flush buffer into file and reseat the buffer
-					if(bb.getSize() + 8 > bufferSize) {
-						rootObject.getBufferedOutputStream().write(bb.build().array());
-						bb = new H5BufferBuilder();
-					}
-					bb.writeDouble(data[i][j]);
-				}
-			}
-			// write last data to buffer
-			rootObject.getBufferedOutputStream().write(bb.build().array());
-		}
-		catch(Exception exception) {
-			throw new H5Exception(exception);
+		for(int i = 0; i < rootObject.getRow(); i++) {
+			H5Dwrite(rootObject, data[i]);
 		}
 	}
 
-	public static double[][] H5Dread(H5RootObject rootObject, H5ContiguousDataset dataset) {
-
-		ByteBuffer buffer = dataset.getDataBuffer();
-		int[] dimensions = rootObject.getDimensions();
-		final double[][] data = dataset.getDataType().getDoubleDataType().fillData(buffer, dimensions);
-		return data;
+	public static void H5Dread(H5RootObject rootObject, H5ContiguousDataset dataset, double[][] data) {
+		for(int i = 0; i < rootObject.getRow(); i++) {
+			ByteBuffer buffer = dataset.getDataBuffer(i);
+			dataset.getDataType().getDoubleDataType().fillData(buffer, data[i]);
+		}
 	}
 
-	public static double[] H5Dread(H5RootObject rootObject, H5ContiguousDataset dataset, int row) {
+	public static void H5Dread(H5ContiguousDataset dataset, int row, double[] data) {
 		ByteBuffer buffer = dataset.getDataBuffer(row);
-		final double[] data = dataset.getDataType().getDoubleDataType().fillData(buffer, (int) rootObject.getCol());
-		return data;
+		dataset.getDataType().getDoubleDataType().fillData(buffer, data);
 	}
 
 }

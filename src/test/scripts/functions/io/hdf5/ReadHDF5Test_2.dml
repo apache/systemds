@@ -22,6 +22,6 @@
 # DML script that tests read HDF5
 
 Y = read($1, dataset=$2);
-Y = Y + 1;
+Y = Y + 0;
 write(Y, $3);
 

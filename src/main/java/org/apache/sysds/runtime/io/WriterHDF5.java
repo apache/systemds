@@ -36,15 +36,12 @@ public class WriterHDF5 extends MatrixWriter {
 
 	protected static FileFormatPropertiesHDF5 _props = null;
 
-	protected int _replication = -1;
-
-	public static final int BLOCKSIZE_J = 32; //32 cells (typically ~512B, should be less than write buffer of 1KB)
-
 	public WriterHDF5(FileFormatPropertiesHDF5 _props) {
 		WriterHDF5._props = _props;
 	}
 
-	@Override public void writeMatrixToHDFS(MatrixBlock src, String fname, long rlen, long clen, int blen, long nnz,
+	@Override
+	public void writeMatrixToHDFS(MatrixBlock src, String fname, long rlen, long clen, int blen, long nnz,
 		boolean diag) throws IOException, DMLRuntimeException {
 
 		//validity check matrix dimensions
@@ -70,7 +67,8 @@ public class WriterHDF5 extends MatrixWriter {
 
 	}
 
-	@Override public final void writeEmptyMatrixToHDFS(String fname, long rlen, long clen, int blen)
+	@Override
+	public final void writeEmptyMatrixToHDFS(String fname, long rlen, long clen, int blen)
 		throws IOException, DMLRuntimeException {
 
 	}
@@ -84,7 +82,6 @@ public class WriterHDF5 extends MatrixWriter {
 		int rlen) throws IOException {
 
 		int clen = src.getNumColumns();
-
 		BufferedOutputStream bos = new BufferedOutputStream(fs.create(path, true));
 		String datasetName = _props.getDatasetName();
 		H5RootObject rootObject = H5.H5Screate(bos, src.getNumRows(), src.getNumColumns());
@@ -96,18 +93,17 @@ public class WriterHDF5 extends MatrixWriter {
 		}
 
 		try {
-			// HDF5 format don't support spars matrix
+			//TODO: HDF5 format don't support spars matrix
+			// How to store spars matrix in HDF5 format?
+
 			// Write the data to the datasets.
+			double[] data = new double[clen];
 			for(int i = rl; i < rlen; i++) {
-				double[] dataRow = new double[clen];
-				//write row chunk-wise to prevent OOM on large number of columns
-				for(int bj = 0; bj < clen; bj += BLOCKSIZE_J) {
-					for(int j = bj; j < Math.min(clen, bj + BLOCKSIZE_J); j++) {
-						double lvalue = src.getValueDenseUnsafe(i, j);
-						dataRow[j] = lvalue;
-					}
+				for(int j = 0; j < clen;j++) {
+					double lvalue = src.getValueDenseUnsafe(i, j);
+					data[j] = lvalue;
 				}
-				H5.H5Dwrite(rootObject, dataRow);
+				H5.H5Dwrite(rootObject, data);
 			}
 		}
 		finally {

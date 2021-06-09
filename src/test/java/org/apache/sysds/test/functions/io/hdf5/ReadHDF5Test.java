@@ -39,11 +39,13 @@ public abstract class ReadHDF5Test extends ReadHDF5TestBase {
 
 	private final static double eps = 1e-9;
 
-	@Test public void testHDF51_Seq_CP() {
+	@Test
+	public void testHDF51_Seq_CP() {
 		runReadHDF5Test(getId(), ExecMode.SINGLE_NODE, false);
 	}
 
-	@Test public void testHDF51_Parallel_CP() {
+	@Test
+	public void testHDF51_Parallel_CP() {
 		runReadHDF5Test(getId(), ExecMode.SINGLE_NODE, true);
 	}
 

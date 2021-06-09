@@ -21,7 +21,7 @@
 package org.apache.sysds.runtime.io.hdf5.message;
 
 import org.apache.sysds.runtime.io.hdf5.H5RootObject;
-import org.apache.sysds.runtime.io.hdf5.H5Exception;
+import org.apache.sysds.runtime.io.hdf5.H5RuntimeException;
 import org.apache.sysds.runtime.io.hdf5.Utils;
 import org.apache.sysds.runtime.io.hdf5.H5BufferBuilder;
 import org.apache.sysds.runtime.io.hdf5.H5Constants;
@@ -45,7 +45,7 @@ public class H5ObjectModificationTimeMessage extends H5Message {
 
 		rootObject.setObjectModificationTimeVersion(bb.get());
 		if(rootObject.getObjectModificationTimeVersion() != 1) {
-			throw new H5Exception("Unrecognized version " + rootObject.getObjectModificationTimeVersion());
+			throw new H5RuntimeException("Unrecognized version " + rootObject.getObjectModificationTimeVersion());
 		}
 
 		// Skip 3 unused bytes
@@ -55,7 +55,8 @@ public class H5ObjectModificationTimeMessage extends H5Message {
 		unixEpocSecond = Utils.readBytesAsUnsignedLong(bb, 4);
 	}
 
-	@Override public void toBuffer(H5BufferBuilder bb) {
+	@Override
+	public void toBuffer(H5BufferBuilder bb) {
 		super.toBuffer(bb, H5Constants.OBJECT_MODIFICATION_TIME_MESSAGE);
 		bb.writeByte(rootObject.getObjectModificationTimeVersion());
 

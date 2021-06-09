@@ -30,7 +30,6 @@ public class H5BTree {
 
 	private static final byte[] BTREE_NODE_SIGNATURE = "TREE".getBytes(StandardCharsets.US_ASCII);
 	private static final int HEADER_BYTES = 6;
-
 	private final long address;
 	protected final int entriesUsed;
 	private final long leftSiblingAddress;
@@ -96,7 +95,7 @@ public class H5BTree {
 		bb.writeBytes(BTREE_NODE_SIGNATURE);
 
 		if(nodeType != 0) {
-			throw new H5Exception("B tree type is not group. Type is: " + nodeType);
+			throw new H5RuntimeException("B tree type is not group. Type is: " + nodeType);
 		}
 
 		bb.writeByte(nodeType);
@@ -119,7 +118,7 @@ public class H5BTree {
 		byte[] formatSignatureByte = new byte[4];
 		header.get(formatSignatureByte, 0, formatSignatureByte.length);
 		if(!Arrays.equals(BTREE_NODE_SIGNATURE, formatSignatureByte)) {
-			throw new H5Exception("B tree node signature not matched");
+			throw new H5RuntimeException("B tree node signature not matched");
 		}
 		return header;
 	}

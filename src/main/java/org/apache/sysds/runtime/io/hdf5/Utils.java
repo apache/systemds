@@ -21,7 +21,6 @@
 package org.apache.sysds.runtime.io.hdf5;
 
 import org.apache.commons.lang3.ArrayUtils;
-
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.util.BitSet;
@@ -33,6 +32,8 @@ public final class Utils {
 	private Utils() {
 		throw new AssertionError("No instances of Utils");
 	}
+
+	private static final BigInteger TWO = BigInteger.valueOf(2);
 
 	public static String readUntilNull(ByteBuffer buffer) {
 		StringBuilder sb = new StringBuilder(buffer.remaining());
@@ -131,8 +132,6 @@ public final class Utils {
 		source.position(source.position() + length);
 		return headerData;
 	}
-
-	private static final BigInteger TWO = BigInteger.valueOf(2);
 
 	public static int bitsToInt(BitSet bits, int start, int length) {
 		if(length <= 0) {

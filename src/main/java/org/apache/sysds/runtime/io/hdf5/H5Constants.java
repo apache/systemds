@@ -21,13 +21,11 @@ package org.apache.sysds.runtime.io.hdf5;
 
 public final class H5Constants {
 
-	private H5Constants() {
-		throw new AssertionError("No instances of Constants");
-	}
-
 	public static final byte NULL = '\0';
 
 	public static final long UNDEFINED_ADDRESS = -1L;
+
+	public static final int STATIC_HEADER_SIZE = 2048;
 
 	public static final int NIL_MESSAGE = 0;
 	public static final int DATA_SPACE_MESSAGE = 1;

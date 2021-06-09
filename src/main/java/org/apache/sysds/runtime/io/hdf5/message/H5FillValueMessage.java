@@ -72,7 +72,8 @@ public class H5FillValueMessage extends H5Message {
 		}
 	}
 
-	@Override public void toBuffer(H5BufferBuilder bb) {
+	@Override
+	public void toBuffer(H5BufferBuilder bb) {
 		super.toBuffer(bb, H5Constants.FILL_VALUE_MESSAGE);
 		bb.writeByte(rootObject.getFillValueVersion());
 		bb.writeByte(spaceAllocationTime);

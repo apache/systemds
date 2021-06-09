@@ -134,7 +134,7 @@ public class MultiColumnEncoder implements Encoder {
 						partials.add(null);
 						continue;
 					}
-					partials.add(pool.invokeAll(partialBuildTasks));
+					partials.add(partialBuildTasks.stream().map(pool::submit).collect(Collectors.toList()));
 				}
 				for(int e = 0; e < _columnEncoders.size(); e++) {
 					List<Future<Object>> partial = partials.get(e);

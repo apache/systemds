@@ -19,24 +19,18 @@
 
 package org.apache.sysds.runtime.io.hdf5;
 
-import java.io.IOException;
+import org.apache.sysds.runtime.DMLRuntimeException;
 
-public class H5RuntimeException extends RuntimeException {
-
-	public H5RuntimeException(String message) {
-		super(message);
-	}
-
-	public H5RuntimeException(String message, Throwable throwable) {
-		super(message, throwable);
+public class H5RuntimeException extends DMLRuntimeException {
+	public H5RuntimeException(String string) {
+		super(string);
 	}
 
 	public H5RuntimeException(Exception e) {
 		super(e);
 	}
 
-	public H5RuntimeException(IOException e) {
-		super(e);
+	public H5RuntimeException(String string, Exception ex) {
+		super(string, ex);
 	}
-
 }

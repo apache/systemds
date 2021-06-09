@@ -149,10 +149,16 @@ public class TemplateCell extends TemplateBase
 			.filter(h -> !(h.getDataType().isScalar() && tmp.get(h.getHopID()).isLiteral()))
 			.sorted(new HopInputComparator()).toArray(Hop[]::new);
 		
-		//construct template node
+		//prepare input nodes
 		ArrayList<CNode> inputs = new ArrayList<>();
 		for( Hop in : sinHops )
 			inputs.add(tmp.get(in.getHopID()));
+		
+		//sanity check for pure scalar inputs
+		if( inputs.stream().allMatch(h -> h.getDataType().isScalar()) )
+			return null; //later eliminated by cleanupCPlans
+		
+		//construct template node
 		CNode output = tmp.get(hop.getHopID());
 		CNodeCell tpl = new CNodeCell(inputs, output);
 		tpl.setCellType(TemplateUtils.getCellType(hop));

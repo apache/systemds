@@ -1,0 +1,216 @@
+<!--
+
+-->
+<!--
+
+-->
+<!DOCTYPE html>
+<html lang="en">
+  <!--
+
+-->
+
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+
+  <title>MNIST Dataset</title>
+  
+  <meta name="description" content="The MNIST database of handwritten digits."> 
+  <meta name="author" content="Apache SystemDS">
+
+  <!-- Enable responsive viewport -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- You can use Open Graph tags to customize link previews.
+  Learn more: https://developers.facebook.com/docs/sharing/webmasters -->
+  <meta property="og:url" content="https://systemds.apache.org/" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="MNIST Dataset" />
+  <meta property="og:description" content="Apache SystemDS provides an optimal workplace for Machine Learning using big data" />
+  <meta property="og:image" content="" />
+
+  <!-- Le HTML5 shim, for IE6-8 support of HTML elements -->
+  <!--[if lt IE 9]>
+  <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <!-- Le styles -->
+  <link rel="stylesheet" href="/assets/css/main.css">
+
+  <!-- favicons -->
+  <link rel="shortcut icon" href="/assets/img/favicon.png">
+</head> <!-- META -->
+  <body class="vcard">
+    <!--
+
+-->
+<header class="site-header site-header--not-home">
+  <h1 class="logo"><a class="url" href="/"><i class="logo-mark"></i><span class="fn org">Apache SystemDS<sup
+          id="trademark">&trade;</sup></span></a></h1>
+  <nav class="main-nav">
+    <ul>
+      
+      <li role="presentation">
+        
+        
+        <a href="/download" target="_self">Download</a>
+        
+      </li>
+      
+      <li role="presentation">
+        
+        
+        <a href="/get-started" target="_self">Get Started</a>
+        
+      </li>
+      
+      <li role="presentation">
+        
+        
+        <a href="/documentation" target="_self">Docs</a>
+        
+      </li>
+      
+      <li role="presentation">
+        
+        <a class="nav-link--hover">Community <i class="icon icon-chevron-down"></i></a>
+        <ul>
+          
+          
+          <li><a href="/community" target="_self">Get Involved</a></li>
+          
+          
+          <li><a href="https://issues.apache.org/jira/browse/SYSTEMDS" target="_blank">Issue Tracker</a></li>
+          
+          
+          <li><a href="https://github.com/apache/systemds" target="_blank">Source Code</a></li>
+          
+          
+          <li><a href="https://github.com/apache/systemds-website" target="_blank">Website Source Code</a></li>
+          
+        </ul>
+        
+      </li>
+      
+      <li role="presentation">
+        
+        <a class="nav-link--hover">Apache <i class="icon icon-chevron-down"></i></a>
+        <ul>
+          
+          
+          <li><a href="https://www.apache.org/foundation/how-it-works" target="_blank">Apache Software Foundation</a></li>
+          
+          
+          <li><a href="https://www.apache.org/licenses/" target="_blank">Apache License</a></li>
+          
+          
+          <li><a href="https://www.apache.org/foundation/sponsorship" target="_blank">Sponsorship</a></li>
+          
+          
+          <li><a href="https://www.apache.org/foundation/thanks" target="_blank">Thanks</a></li>
+          
+          
+          <li><a href="/privacy-policy" target="_self">Privacy Policy</a></li>
+          
+          
+          <li><a href="/security" target="_self">Security</a></li>
+          
+        </ul>
+        
+      </li>
+      
+    </ul>
+  </nav>
+</header> <!-- GLOBAL HEADER -->
+    <!-- https://jekyllrb.com/docs/step-by-step/09-collections/#configuration -->
+<!-- <h1>MNIST Dataset</h1> -->
+<section class="full-stripe full-stripe--alternate">
+  <div class="ml-container ml-container--vertically-centered ">
+    <div class="col col-6 content-group content-group--more-padding">
+      <img src="/assets/img/datasets.png" alt="Datasets for SystemDS">
+    </div>
+    <div class="col col-6 content-group content-group--more-padding button-group">
+      <h2>MNIST Dataset</h2>
+      <h4>The MNIST database of handwritten digits.</h4>
+
+      <p>The MNIST database of handwritten digits, available from this page,
+has a training set of 60,000 examples, and a test set of 10,000 examples.
+It is a subset of a larger set available from NIST. The digits have been
+size-normalized and centered in a fixed-size image.</p>
+
+<p>Home Page: <a href="http://yann.lecun.com/exdb/mnist/">http://yann.lecun.com/exdb/mnist/</a></p>
+
+<p>Download Size: <code class="language-plaintext highlighter-rouge">11.06 MiB</code></p>
+
+<h3 id="files">Files</h3>
+
+<ol>
+  <li><a href="https://systemds.apache.org/assets/datasets/mnist/train-images-idx3-ubyte.gz"><code class="language-plaintext highlighter-rouge">train-images-idx3-ubyte.gz</code>:  training set images (9912422 bytes)</a></li>
+  <li><a href="https://systemds.apache.org/assets/datasets/mnist/train-labels-idx1-ubyte.gz"><code class="language-plaintext highlighter-rouge">train-labels-idx1-ubyte.gz</code>:  training set labels (28881 bytes)</a></li>
+  <li><a href="https://systemds.apache.org/assets/datasets/mnist/t10k-images-idx3-ubyte.gz"><code class="language-plaintext highlighter-rouge">t10k-images-idx3-ubyte.gz</code>:   test set images (1648877 bytes)</a></li>
+  <li><a href="https://systemds.apache.org/assets/datasets/mnist/t10k-labels-idx1-ubyte.gz"><code class="language-plaintext highlighter-rouge">t10k-labels-idx1-ubyte.gz</code>:   test set labels (4542 bytes)</a></li>
+</ol>
+
+<h3 id="split">Split:</h3>
+
+<table>
+  <thead>
+    <tr>
+      <th>Split</th>
+      <th>Examples</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">train</code></td>
+      <td>60,000</td>
+    </tr>
+    <tr>
+      <td><code class="language-plaintext highlighter-rouge">test</code></td>
+      <td>10,000</td>
+    </tr>
+  </tbody>
+</table>
+
+
+    </div>
+  </div>
+</section>
+ 
+    <!--
+
+-->
+<footer class="site-footer">
+  <div class="ml-container ml-container--horizontally-center">
+    <div class="footer-col-wrapper">
+      <div style="margin-top: 20px; margin-bottom: 20px;">
+        <a href="https://www.apache.org"><img src="/assets/img/apache-foundation-logo.png" alt="Apache Incubator" /></a>
+      </div>
+      <!--Footer copyright year update credit: http://updateyourfooter.com/-->
+      <div>
+        Copyright &copy; 2015
+        <script>new Date().getFullYear() > 2015 && document.write("-" + new Date().getFullYear());</script>
+        <a href="https://www.apache.org">The Apache Software Foundation</a>.
+        Licensed under the <a href="https://www.apache.org/licenses/LICENSE-2.0">Apache License, Version 2.0</a>.
+        <br>
+        Apache and the Apache Feather logo are trademarks of The Apache Software Foundation.
+      </div>
+    </div>
+  </div>
+  <script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-71553733-1', 'auto');
+  ga('send', 'pageview');
+</script>
+
+</footer> <!-- GLOBAL FOOTER-->
+    <script src="assets/js/bundle.min.js"></script>
+  </body>
+</html>
+

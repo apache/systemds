@@ -64,32 +64,27 @@ public class CoCodeCostMatrixMult extends AColumnCoCoder {
 
 		List<CompressedSizeInfoColGroup> ret = new ArrayList<>();
 		for(CompressedSizeInfoColGroup g : currentGroups)
-			que.add(new CostOfJoin(g));
+			if(g != null)
+				que.add(new CostOfJoin(g));
 
-		while(true) {
-			if(que.peek() != null) {
-				final CostOfJoin l = que.poll();
-				if(que.peek() != null) {
-					final CostOfJoin r = que.poll();
-					final double costIndividual = (l.cost + r.cost);
-					final CostOfJoin g = new CostOfJoin(joinWithAnalysis(l.elm, r.elm));
-					if(LOG.isDebugEnabled())
-						LOG.debug("\nl:      " + l + "\nr:      " + r + "\njoined: " + g);
-					if(g.cost < costIndividual)
-						que.add(g);
-					else {
-						ret.add(l.elm);
-						que.add(r);
-					}
-				}
-				else {
-					ret.add(l.elm);
-					break;
-				}
+		CostOfJoin l = que.poll();
+
+		while(que.peek() != null) {
+			final CostOfJoin r = que.peek();
+			final double costIndividual = (l.cost + r.cost);
+			final CostOfJoin g = new CostOfJoin(joinWithAnalysis(l.elm, r.elm));
+			if(g.cost < costIndividual) {
+				if(LOG.isDebugEnabled())
+					LOG.debug("\nl:      " + l + "\nr:      " + r + "\njoined: " + g);
+				que.poll();
+				que.add(g);
 			}
 			else
-				break;
+				ret.add(l.elm);
+			l = que.poll();
 		}
+		if(l != null)
+			ret.add(l.elm);
 
 		for(CostOfJoin g : que)
 			ret.add(g.elm);
@@ -103,17 +98,22 @@ public class CoCodeCostMatrixMult extends AColumnCoCoder {
 
 		protected CostOfJoin(CompressedSizeInfoColGroup elm) {
 			this.elm = elm;
+			if(elm == null) {
+				this.cost = Double.POSITIVE_INFINITY;
+			}
+			else {
 
-			final int nCols = elm.getColumns().length;
-			final double nRows = _est.getNumRows();
-			final double preAggregateCost = nRows;
+				final int nCols = elm.getColumns().length;
+				final double nRows = _est.getNumRows();
+				final double preAggregateCost = nRows;
 
-			final int numberTuples = elm.getNumVals();
-			final double tupleSparsity = elm.getTupleSparsity();
-			final double postScalingCost = (nCols > 1 && tupleSparsity > 0.4) ? numberTuples * nCols : numberTuples *
-				nCols * tupleSparsity;
+				final int numberTuples = elm.getNumVals();
+				final double tupleSparsity = elm.getTupleSparsity();
+				final double postScalingCost = (nCols > 1 && tupleSparsity > 0.4) ? numberTuples *
+					nCols : numberTuples * nCols * tupleSparsity;
 
-			this.cost = preAggregateCost + postScalingCost;
+				this.cost = preAggregateCost + postScalingCost;
+			}
 		}
 
 		@Override

@@ -18,7 +18,7 @@
     catch(err) {
     }
 //-->
-var methods = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":6,"i5":10,"i6":10,"i7":6,"i8":10,"i9":6,"i10":10};
+var methods = {"i0":10,"i1":10,"i2":6,"i3":10,"i4":10,"i5":6,"i6":10,"i7":10,"i8":6,"i9":10,"i10":6,"i11":10};
 var tabs = {65535:["t0","All Methods"],2:["t2","Instance Methods"],4:["t3","Abstract Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -109,7 +109,7 @@ var activeTableTab = "activeTableTab";
 <li class="blockList">
 <dl>
 <dt>Direct Known Subclasses:</dt>
-<dd><a href="../../../../../../org/apache/sysds/runtime/compress/utils/Bitmap.html" title="class in org.apache.sysds.runtime.compress.utils">Bitmap</a>, <a href="../../../../../../org/apache/sysds/runtime/compress/utils/BitmapLossy.html" title="class in org.apache.sysds.runtime.compress.utils">BitmapLossy</a></dd>
+<dd><a href="../../../../../../org/apache/sysds/runtime/compress/utils/Bitmap.html" title="class in org.apache.sysds.runtime.compress.utils">Bitmap</a>, <a href="../../../../../../org/apache/sysds/runtime/compress/utils/BitmapLossy.html" title="class in org.apache.sysds.runtime.compress.utils">BitmapLossy</a>, <a href="../../../../../../org/apache/sysds/runtime/compress/utils/MultiColBitmap.html" title="class in org.apache.sysds.runtime.compress.utils">MultiColBitmap</a></dd>
 </dl>
 <hr>
 <br>
@@ -154,7 +154,7 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <tr class="altColor">
 <td class="colOne"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/utils/ABitmap.html#ABitmap-int-org.apache.sysds.runtime.compress.utils.IntArrayList:A-int-">ABitmap</a></span>(int&nbsp;numCols,
        <a href="../../../../../../org/apache/sysds/runtime/compress/utils/IntArrayList.html" title="class in org.apache.sysds.runtime.compress.utils">IntArrayList</a>[]&nbsp;offsetsLists,
-       int&nbsp;numZeroGroups)</code>&nbsp;</td>
+       int&nbsp;rows)</code>&nbsp;</td>
 </tr>
 </table>
 </li>
@@ -180,40 +180,46 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/utils/ABitmap.html#getNumColumns--">getNumColumns</a></span>()</code>&nbsp;</td>
 </tr>
 <tr id="i2" class="altColor">
+<td class="colFirst"><code>abstract int</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/utils/ABitmap.html#getNumNonZerosInOffset-int-">getNumNonZerosInOffset</a></span>(int&nbsp;idx)</code>&nbsp;</td>
+</tr>
+<tr id="i3" class="rowColor">
 <td class="colFirst"><code>long</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/utils/ABitmap.html#getNumOffsets--">getNumOffsets</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i3" class="rowColor">
-<td class="colFirst"><code>int</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/utils/ABitmap.html#getNumOffsets-int-">getNumOffsets</a></span>(int&nbsp;ix)</code>&nbsp;</td>
-</tr>
 <tr id="i4" class="altColor">
+<td class="colFirst"><code>int</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/utils/ABitmap.html#getNumOffsets-int-">getNumOffsets</a></span>(int&nbsp;ix)</code>
+<div class="block">Get the number of offsets for a specific unique offset.</div>
+</td>
+</tr>
+<tr id="i5" class="rowColor">
 <td class="colFirst"><code>abstract int</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/utils/ABitmap.html#getNumValues--">getNumValues</a></span>()</code>
 <div class="block">Obtain number of distinct value groups in the column.</div>
 </td>
 </tr>
-<tr id="i5" class="rowColor">
+<tr id="i6" class="altColor">
 <td class="colFirst"><code><a href="../../../../../../org/apache/sysds/runtime/compress/utils/IntArrayList.html" title="class in org.apache.sysds.runtime.compress.utils">IntArrayList</a>[]</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/utils/ABitmap.html#getOffsetList--">getOffsetList</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i6" class="altColor">
+<tr id="i7" class="rowColor">
 <td class="colFirst"><code><a href="../../../../../../org/apache/sysds/runtime/compress/utils/IntArrayList.html" title="class in org.apache.sysds.runtime.compress.utils">IntArrayList</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/utils/ABitmap.html#getOffsetsList-int-">getOffsetsList</a></span>(int&nbsp;idx)</code>&nbsp;</td>
 </tr>
-<tr id="i7" class="rowColor">
+<tr id="i8" class="altColor">
 <td class="colFirst"><code>abstract <a href="../../../../../../org/apache/sysds/runtime/compress/utils/ABitmap.BitmapType.html" title="enum in org.apache.sysds.runtime.compress.utils">ABitmap.BitmapType</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/utils/ABitmap.html#getType--">getType</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i8" class="altColor">
+<tr id="i9" class="rowColor">
 <td class="colFirst"><code>int</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/utils/ABitmap.html#getZeroCounts--">getZeroCounts</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i9" class="rowColor">
+<tr id="i10" class="altColor">
 <td class="colFirst"><code>abstract void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/utils/ABitmap.html#sortValuesByFrequency--">sortValuesByFrequency</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i10" class="altColor">
+<tr id="i11" class="rowColor">
 <td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/utils/ABitmap.html#toString--">toString</a></span>()</code>&nbsp;</td>
 </tr>
@@ -247,7 +253,7 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <h4>ABitmap</h4>
 <pre>public&nbsp;ABitmap(int&nbsp;numCols,
                <a href="../../../../../../org/apache/sysds/runtime/compress/utils/IntArrayList.html" title="class in org.apache.sysds.runtime.compress.utils">IntArrayList</a>[]&nbsp;offsetsLists,
-               int&nbsp;numZeroGroups)</pre>
+               int&nbsp;rows)</pre>
 </li>
 </ul>
 </li>
@@ -316,6 +322,13 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <li class="blockList">
 <h4>getNumOffsets</h4>
 <pre>public&nbsp;int&nbsp;getNumOffsets(int&nbsp;ix)</pre>
+<div class="block">Get the number of offsets for a specific unique offset.</div>
+<dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>ix</code> - The offset index.</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>The number of offsets for this unique value.</dd>
+</dl>
 </li>
 </ul>
 <a name="sortValuesByFrequency--">
@@ -343,6 +356,15 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <li class="blockList">
 <h4>getZeroCounts</h4>
 <pre>public&nbsp;int&nbsp;getZeroCounts()</pre>
+</li>
+</ul>
+<a name="getNumNonZerosInOffset-int-">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>getNumNonZerosInOffset</h4>
+<pre>public abstract&nbsp;int&nbsp;getNumNonZerosInOffset(int&nbsp;idx)</pre>
 </li>
 </ul>
 <a name="getType--">

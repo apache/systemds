@@ -55,7 +55,7 @@ train = function(matrix[double] X, matrix[double] Y,
 
   # Create softmax classifier:
   # affine -> softmax
-  [W, b] = affine::init(D, K)
+  [W, b] = affine::init(D, K, -1)
   W = W / sqrt(2.0/(D)) * sqrt(1/(D))
 
   # Initialize SGD w/ Nesterov momentum optimizer

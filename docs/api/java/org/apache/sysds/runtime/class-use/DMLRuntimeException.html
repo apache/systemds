@@ -351,6 +351,11 @@
 </td>
 </tr>
 <tr class="rowColor">
+<td class="colFirst"><code><a href="../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
+<td class="colLast"><span class="typeNameLabel">GPUObject.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/instructions/gpu/context/GPUObject.html#evictFromDeviceToHostMB-java.lang.String-boolean-">evictFromDeviceToHostMB</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;instName,
+                       boolean&nbsp;eagerDelete)</code>&nbsp;</td>
+</tr>
+<tr class="altColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><span class="typeNameLabel">GPUMemoryManager.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/instructions/gpu/context/GPUMemoryManager.html#free-java.lang.String-jcuda.Pointer-boolean-">free</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;opcode,
     jcuda.Pointer&nbsp;toFree,
@@ -358,7 +363,7 @@
 <div class="block">Deallocate the pointer</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>jcuda.Pointer</code></td>
 <td class="colLast"><span class="typeNameLabel">GPULazyCudaFreeMemoryManager.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/instructions/gpu/context/GPULazyCudaFreeMemoryManager.html#getRmvarPointerMinSize-java.lang.String-long-">getRmvarPointerMinSize</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;opcode,
                       long&nbsp;minSize)</code>&nbsp;</td>
@@ -517,6 +522,14 @@
                                int&nbsp;blen)</code>&nbsp;</td>
 </tr>
 <tr class="rowColor">
+<td class="colFirst"><code>static <a href="../../../../../org/apache/sysds/runtime/instructions/cp/ListObject.html" title="class in org.apache.sysds.runtime.instructions.cp">ListObject</a></code></td>
+<td class="colLast"><span class="typeNameLabel">ListReader.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/io/ListReader.html#readListFromHDFS-java.lang.String-java.lang.String-org.apache.sysds.runtime.io.FileFormatProperties-">readListFromHDFS</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;fname,
+                <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;fmtStr,
+                <a href="../../../../../org/apache/sysds/runtime/io/FileFormatProperties.html" title="class in org.apache.sysds.runtime.io">FileFormatProperties</a>&nbsp;props)</code>
+<div class="block">Reads a list object and all contained objects from a folder with related meta data.</div>
+</td>
+</tr>
+<tr class="altColor">
 <td class="colFirst"><code><a href="../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <td class="colLast"><span class="typeNameLabel">ReaderTextLIBSVMParallel.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/io/ReaderTextLIBSVMParallel.html#readMatrixFromHDFS-java.lang.String-long-long-int-long-">readMatrixFromHDFS</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;fname,
                   long&nbsp;rlen,
@@ -524,7 +537,7 @@
                   int&nbsp;blen,
                   long&nbsp;estnnz)</code>&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code><a href="../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <td class="colLast"><span class="typeNameLabel">ReaderTextCell.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/io/ReaderTextCell.html#readMatrixFromHDFS-java.lang.String-long-long-int-long-">readMatrixFromHDFS</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;fname,
                   long&nbsp;rlen,
@@ -532,7 +545,7 @@
                   int&nbsp;blen,
                   long&nbsp;estnnz)</code>&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code><a href="../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <td class="colLast"><span class="typeNameLabel">ReaderBinaryBlock.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/io/ReaderBinaryBlock.html#readMatrixFromHDFS-java.lang.String-long-long-int-long-">readMatrixFromHDFS</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;fname,
                   long&nbsp;rlen,
@@ -540,7 +553,7 @@
                   int&nbsp;blen,
                   long&nbsp;estnnz)</code>&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code><a href="../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <td class="colLast"><span class="typeNameLabel">ReaderTextCSV.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/io/ReaderTextCSV.html#readMatrixFromHDFS-java.lang.String-long-long-int-long-">readMatrixFromHDFS</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;fname,
                   long&nbsp;rlen,
@@ -548,7 +561,7 @@
                   int&nbsp;blen,
                   long&nbsp;estnnz)</code>&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>abstract <a href="../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <td class="colLast"><span class="typeNameLabel">MatrixReader.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/io/MatrixReader.html#readMatrixFromHDFS-java.lang.String-long-long-int-long-">readMatrixFromHDFS</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;fname,
                   long&nbsp;rlen,
@@ -556,7 +569,7 @@
                   int&nbsp;blen,
                   long&nbsp;estnnz)</code>&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code><a href="../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <td class="colLast"><span class="typeNameLabel">ReaderBinaryBlockParallel.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/io/ReaderBinaryBlockParallel.html#readMatrixFromHDFS-java.lang.String-long-long-int-long-">readMatrixFromHDFS</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;fname,
                   long&nbsp;rlen,
@@ -564,7 +577,7 @@
                   int&nbsp;blen,
                   long&nbsp;estnnz)</code>&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code><a href="../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <td class="colLast"><span class="typeNameLabel">ReaderTextLIBSVM.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/io/ReaderTextLIBSVM.html#readMatrixFromHDFS-java.lang.String-long-long-int-long-">readMatrixFromHDFS</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;fname,
                   long&nbsp;rlen,
@@ -572,7 +585,7 @@
                   int&nbsp;blen,
                   long&nbsp;estnnz)</code>&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code><a href="../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <td class="colLast"><span class="typeNameLabel">ReaderTextCSVParallel.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/io/ReaderTextCSVParallel.html#readMatrixFromHDFS-java.lang.String-long-long-int-long-">readMatrixFromHDFS</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;fname,
                   long&nbsp;rlen,
@@ -580,7 +593,7 @@
                   int&nbsp;blen,
                   long&nbsp;estnnz)</code>&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code><a href="../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <td class="colLast"><span class="typeNameLabel">ReaderTextLIBSVMParallel.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/io/ReaderTextLIBSVMParallel.html#readMatrixFromInputStream-java.io.InputStream-long-long-int-long-">readMatrixFromInputStream</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/io/InputStream.html?is-external=true" title="class or interface in java.io">InputStream</a>&nbsp;is,
                          long&nbsp;rlen,
@@ -588,7 +601,7 @@
                          int&nbsp;blen,
                          long&nbsp;estnnz)</code>&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code><a href="../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <td class="colLast"><span class="typeNameLabel">ReaderTextCell.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/io/ReaderTextCell.html#readMatrixFromInputStream-java.io.InputStream-long-long-int-long-">readMatrixFromInputStream</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/io/InputStream.html?is-external=true" title="class or interface in java.io">InputStream</a>&nbsp;is,
                          long&nbsp;rlen,
@@ -596,7 +609,7 @@
                          int&nbsp;blen,
                          long&nbsp;estnnz)</code>&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code><a href="../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <td class="colLast"><span class="typeNameLabel">ReaderBinaryBlock.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/io/ReaderBinaryBlock.html#readMatrixFromInputStream-java.io.InputStream-long-long-int-long-">readMatrixFromInputStream</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/io/InputStream.html?is-external=true" title="class or interface in java.io">InputStream</a>&nbsp;is,
                          long&nbsp;rlen,
@@ -604,7 +617,7 @@
                          int&nbsp;blen,
                          long&nbsp;estnnz)</code>&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code><a href="../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <td class="colLast"><span class="typeNameLabel">ReaderTextCSV.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/io/ReaderTextCSV.html#readMatrixFromInputStream-java.io.InputStream-long-long-int-long-">readMatrixFromInputStream</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/io/InputStream.html?is-external=true" title="class or interface in java.io">InputStream</a>&nbsp;is,
                          long&nbsp;rlen,
@@ -612,7 +625,7 @@
                          int&nbsp;blen,
                          long&nbsp;estnnz)</code>&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>abstract <a href="../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <td class="colLast"><span class="typeNameLabel">MatrixReader.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/io/MatrixReader.html#readMatrixFromInputStream-java.io.InputStream-long-long-int-long-">readMatrixFromInputStream</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/io/InputStream.html?is-external=true" title="class or interface in java.io">InputStream</a>&nbsp;is,
                          long&nbsp;rlen,
@@ -620,7 +633,7 @@
                          int&nbsp;blen,
                          long&nbsp;estnnz)</code>&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code><a href="../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <td class="colLast"><span class="typeNameLabel">ReaderTextLIBSVM.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/io/ReaderTextLIBSVM.html#readMatrixFromInputStream-java.io.InputStream-long-long-int-long-">readMatrixFromInputStream</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/io/InputStream.html?is-external=true" title="class or interface in java.io">InputStream</a>&nbsp;is,
                          long&nbsp;rlen,
@@ -628,7 +641,7 @@
                          int&nbsp;blen,
                          long&nbsp;estnnz)</code>&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code><a href="../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <td class="colLast"><span class="typeNameLabel">ReaderTextCSVParallel.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/io/ReaderTextCSVParallel.html#readMatrixFromInputStream-java.io.InputStream-long-long-int-long-">readMatrixFromInputStream</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/io/InputStream.html?is-external=true" title="class or interface in java.io">InputStream</a>&nbsp;is,
                          long&nbsp;rlen,
@@ -636,97 +649,106 @@
                          int&nbsp;blen,
                          long&nbsp;estnnz)</code>&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>abstract <a href="../../../../../org/apache/sysds/runtime/data/TensorBlock.html" title="class in org.apache.sysds.runtime.data">TensorBlock</a></code></td>
 <td class="colLast"><span class="typeNameLabel">TensorReader.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/io/TensorReader.html#readTensorFromHDFS-java.lang.String-long:A-int-org.apache.sysds.common.Types.ValueType:A-">readTensorFromHDFS</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;fname,
                   long[]&nbsp;dims,
                   int&nbsp;blen,
                   <a href="../../../../../org/apache/sysds/common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>[]&nbsp;schema)</code>&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code><a href="../../../../../org/apache/sysds/runtime/data/TensorBlock.html" title="class in org.apache.sysds.runtime.data">TensorBlock</a></code></td>
 <td class="colLast"><span class="typeNameLabel">TensorReaderTextCell.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/io/TensorReaderTextCell.html#readTensorFromHDFS-java.lang.String-long:A-int-org.apache.sysds.common.Types.ValueType:A-">readTensorFromHDFS</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;fname,
                   long[]&nbsp;dims,
                   int&nbsp;blen,
                   <a href="../../../../../org/apache/sysds/common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>[]&nbsp;schema)</code>&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code><a href="../../../../../org/apache/sysds/runtime/data/TensorBlock.html" title="class in org.apache.sysds.runtime.data">TensorBlock</a></code></td>
 <td class="colLast"><span class="typeNameLabel">TensorReaderBinaryBlock.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/io/TensorReaderBinaryBlock.html#readTensorFromHDFS-java.lang.String-long:A-int-org.apache.sysds.common.Types.ValueType:A-">readTensorFromHDFS</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;fname,
                   long[]&nbsp;dims,
                   int&nbsp;blen,
                   <a href="../../../../../org/apache/sysds/common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>[]&nbsp;schema)</code>&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><span class="typeNameLabel">WriterTextCSV.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/io/WriterTextCSV.html#writeEmptyMatrixToHDFS-java.lang.String-long-long-int-">writeEmptyMatrixToHDFS</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;fname,
                       long&nbsp;rlen,
                       long&nbsp;clen,
                       int&nbsp;blen)</code>&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><span class="typeNameLabel">WriterMatrixMarket.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/io/WriterMatrixMarket.html#writeEmptyMatrixToHDFS-java.lang.String-long-long-int-">writeEmptyMatrixToHDFS</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;fname,
                       long&nbsp;rlen,
                       long&nbsp;clen,
                       int&nbsp;blen)</code>&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><span class="typeNameLabel">WriterBinaryBlock.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/io/WriterBinaryBlock.html#writeEmptyMatrixToHDFS-java.lang.String-long-long-int-">writeEmptyMatrixToHDFS</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;fname,
                       long&nbsp;rlen,
                       long&nbsp;clen,
                       int&nbsp;blen)</code>&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><span class="typeNameLabel">WriterTextLIBSVM.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/io/WriterTextLIBSVM.html#writeEmptyMatrixToHDFS-java.lang.String-long-long-int-">writeEmptyMatrixToHDFS</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;fname,
                       long&nbsp;rlen,
                       long&nbsp;clen,
                       int&nbsp;blen)</code>&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><span class="typeNameLabel">WriterTextCell.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/io/WriterTextCell.html#writeEmptyMatrixToHDFS-java.lang.String-long-long-int-">writeEmptyMatrixToHDFS</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;fname,
                       long&nbsp;rlen,
                       long&nbsp;clen,
                       int&nbsp;blen)</code>&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><span class="typeNameLabel">FrameWriterTextCell.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/io/FrameWriterTextCell.html#writeFrameToHDFS-org.apache.sysds.runtime.matrix.data.FrameBlock-java.lang.String-long-long-">writeFrameToHDFS</a></span>(<a href="../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;src,
                 <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;fname,
                 long&nbsp;rlen,
                 long&nbsp;clen)</code>&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>abstract void</code></td>
 <td class="colLast"><span class="typeNameLabel">FrameWriter.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/io/FrameWriter.html#writeFrameToHDFS-org.apache.sysds.runtime.matrix.data.FrameBlock-java.lang.String-long-long-">writeFrameToHDFS</a></span>(<a href="../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;src,
                 <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;fname,
                 long&nbsp;rlen,
                 long&nbsp;clen)</code>&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><span class="typeNameLabel">FrameWriterTextCSV.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/io/FrameWriterTextCSV.html#writeFrameToHDFS-org.apache.sysds.runtime.matrix.data.FrameBlock-java.lang.String-long-long-">writeFrameToHDFS</a></span>(<a href="../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;src,
                 <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;fname,
                 long&nbsp;rlen,
                 long&nbsp;clen)</code>&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><span class="typeNameLabel">FrameWriterBinaryBlock.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/io/FrameWriterBinaryBlock.html#writeFrameToHDFS-org.apache.sysds.runtime.matrix.data.FrameBlock-java.lang.String-long-long-">writeFrameToHDFS</a></span>(<a href="../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;src,
                 <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;fname,
                 long&nbsp;rlen,
                 long&nbsp;clen)</code>&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><span class="typeNameLabel">FrameWriterJSONL.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/io/FrameWriterJSONL.html#writeFrameToHDFS-org.apache.sysds.runtime.matrix.data.FrameBlock-java.lang.String-java.util.Map-long-long-">writeFrameToHDFS</a></span>(<a href="../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;src,
                 <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;fname,
                 <a href="https://docs.oracle.com/javase/8/docs/api/java/util/Map.html?is-external=true" title="class or interface in java.util">Map</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>,<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Integer.html?is-external=true" title="class or interface in java.lang">Integer</a>&gt;&nbsp;schemaMap,
                 long&nbsp;rlen,
                 long&nbsp;clen)</code>&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>static void</code></td>
+<td class="colLast"><span class="typeNameLabel">ListWriter.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/io/ListWriter.html#writeListToHDFS-org.apache.sysds.runtime.instructions.cp.ListObject-java.lang.String-java.lang.String-org.apache.sysds.runtime.io.FileFormatProperties-">writeListToHDFS</a></span>(<a href="../../../../../org/apache/sysds/runtime/instructions/cp/ListObject.html" title="class in org.apache.sysds.runtime.instructions.cp">ListObject</a>&nbsp;lo,
+               <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;fname,
+               <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;fmtStr,
+               <a href="../../../../../org/apache/sysds/runtime/io/FileFormatProperties.html" title="class in org.apache.sysds.runtime.io">FileFormatProperties</a>&nbsp;props)</code>
+<div class="block">Writes a list object and all contained objects to a folder with related meta data.</div>
+</td>
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code>void</code></td>

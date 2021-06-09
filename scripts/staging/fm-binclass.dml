@@ -32,7 +32,7 @@ source("nn/layers/sigmoid.dml") as sigmoid
 source("nn/layers/l2_reg.dml") as l2_reg
 source("nn/layers/cross_entropy_loss.dml") as cross_entropy_loss
 
-train = function(matrix[double] X, matrix[double] y, matrix[double] X_val, matrix[double] y_val)
+train = function(matrix[double] X, matrix[double] y, matrix[double] X_val, matrix[double] y_val, int epochs)
     return (matrix[double] w0, matrix[double] W, matrix[double] V, double loss) {
   /*
    * Trains the FM model.
@@ -78,7 +78,7 @@ train = function(matrix[double] X, matrix[double] y, matrix[double] X_val, matri
     print("Starting optimization")
     batch_size = 10
     iters = ceil(1000 / batch_size)
-    epochs = 100; N = n;
+    N = n;
     for (e in 1:epochs) {
       for (i in 1:iters) {
         # Get the next batch

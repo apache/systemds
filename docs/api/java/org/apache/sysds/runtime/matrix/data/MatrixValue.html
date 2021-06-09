@@ -215,14 +215,14 @@ implements org.apache.hadoop.io.WritableComparable</pre>
 <tr id="i5" class="rowColor">
 <td class="colFirst"><code>abstract void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixValue.html#copy-org.apache.sysds.runtime.matrix.data.MatrixValue-">copy</a></span>(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixValue.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixValue</a>&nbsp;that)</code>
-<div class="block">Copy this MatrixValue into that MatrixValue.</div>
+<div class="block">Copy that MatrixValue into this MatrixValue.</div>
 </td>
 </tr>
 <tr id="i6" class="altColor">
 <td class="colFirst"><code>abstract void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixValue.html#copy-org.apache.sysds.runtime.matrix.data.MatrixValue-boolean-">copy</a></span>(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixValue.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixValue</a>&nbsp;that,
     boolean&nbsp;sp)</code>
-<div class="block">Copy this MatrixValue into that MatrixValue.</div>
+<div class="block">Copy that MatrixValue into this MatrixValue.</div>
 </td>
 </tr>
 <tr id="i7" class="rowColor">
@@ -569,7 +569,7 @@ implements org.apache.hadoop.io.WritableComparable</pre>
 <li class="blockList">
 <h4>copy</h4>
 <pre>public abstract&nbsp;void&nbsp;copy(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixValue.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixValue</a>&nbsp;that)</pre>
-<div class="block">Copy this MatrixValue into that MatrixValue.
+<div class="block">Copy that MatrixValue into this MatrixValue.
  
  If the MatrixValue is a MatrixBlock evaluate the sparsity of the original matrix,
  and copy into either a sparse or a dense matrix.</div>
@@ -587,7 +587,7 @@ implements org.apache.hadoop.io.WritableComparable</pre>
 <h4>copy</h4>
 <pre>public abstract&nbsp;void&nbsp;copy(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixValue.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixValue</a>&nbsp;that,
                           boolean&nbsp;sp)</pre>
-<div class="block">Copy this MatrixValue into that MatrixValue. But select sparse destination block depending on boolean parameter.</div>
+<div class="block">Copy that MatrixValue into this MatrixValue. But select sparse destination block depending on boolean parameter.</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>that</code> - object to copy the values into.</dd>

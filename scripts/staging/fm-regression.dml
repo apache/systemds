@@ -29,7 +29,7 @@ source("nn/layers/fm.dml") as fm
 source("nn/layers/l2_loss.dml") as l2_loss
 source("nn/layers/l2_reg.dml") as l2_reg
 
-train = function(matrix[double] X, matrix[double] y, matrix[double] X_val, matrix[double] y_val)
+train = function(matrix[double] X, matrix[double] y, matrix[double] X_val, matrix[double] y_val, int epochs)
     return (matrix[double] w0, matrix[double] W, matrix[double] V) {
   /*
    * Trains the FM model.
@@ -75,7 +75,7 @@ train = function(matrix[double] X, matrix[double] y, matrix[double] X_val, matri
     # Optimize
     print("Starting optimization")
     batch_size = 10
-    epochs = 100; N = n;
+    N = n;
     iters = ceil(N / batch_size)
 
     for (e in 1:epochs) {

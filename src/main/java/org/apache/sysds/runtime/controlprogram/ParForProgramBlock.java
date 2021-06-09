@@ -734,7 +734,7 @@ public class ParForProgramBlock extends ForProgramBlock
 			LocalTaskQueue<Task> queue = new LocalTaskQueue<>();
 			Thread[] threads         = new Thread[_numThreads];
 			LocalParWorker[] workers = new LocalParWorker[_numThreads];
-			IntStream.range(0, _numThreads).parallel().forEach(i -> {
+			IntStream.range(0, _numThreads).forEach(i -> {
 				workers[i] = createParallelWorker( _pwIDs[i], queue, ec, i);
 				threads[i] = new Thread( workers[i] );
 				threads[i].setPriority(Thread.MAX_PRIORITY);
@@ -1060,7 +1060,7 @@ public class ParForProgramBlock extends ForProgramBlock
 		//check for empty inputs (no iterations executed)
 		Stream<MatrixObject> results = Arrays.stream(in).filter(m -> m!=null && m!=out);
 		//perform cleanup (parallel to mitigate file deletion bottlenecks)
-		(parallel ? results.parallel() : results)
+		(parallel ? results : results)
 			.forEach(m -> ec.cleanupCacheableData(m));
 	}
 	

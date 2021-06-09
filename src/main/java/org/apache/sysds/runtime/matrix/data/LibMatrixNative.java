@@ -362,7 +362,7 @@ public class LibMatrixNative
 		//copy to direct byte buffer
 		final FloatBuffer ret2 = ret;
 		if( copy ) {
-			IntStream.range(0, input.length).parallel()
+			IntStream.range(0, input.length)
 				.forEach(i -> ret2.put(i, (float)input[i]));
 		}
 		return ret2;

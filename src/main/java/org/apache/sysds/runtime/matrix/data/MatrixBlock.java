@@ -1803,7 +1803,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 				double[] avals = a.valuesAt(bi);
 				int alen = a.blockSize(bi);
 				final int lroff = roff; //final for lambda
-				IntStream.range(lroff, lroff+alen).parallel().forEach(i -> {
+				IntStream.range(lroff, lroff+alen).forEach(i -> {
 					if( b.isEmpty(i) ) return;
 					int aix = (i-lroff)*clen;
 					int bpos = b.pos(i);

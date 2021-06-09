@@ -3851,7 +3851,7 @@ public class LibMatrixMult
 			//tsmm with the existing dense block operations w/o unnecessary gather/scatter
 			SparseBlockCSR sblock = (SparseBlockCSR)m1.sparseBlock;
 			boolean convertDense = (par ?
-				IntStream.range(0, rlen).parallel() : IntStream.range(0, rlen))
+				IntStream.range(0, rlen) : IntStream.range(0, rlen))
 				.allMatch(i -> sblock.isEmpty(i) || sblock.size(i)==clen );
 			if( convertDense ) {
 				int rows = (int) sblock.size() / clen;

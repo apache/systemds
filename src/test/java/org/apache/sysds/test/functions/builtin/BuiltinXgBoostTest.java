@@ -32,22 +32,25 @@ public class BuiltinXgBoostTest extends AutomatedTestBase {
 
             String HOME = SCRIPT_DIR + TEST_DIR;
             fullDMLScriptName = HOME + TEST_NAME + ".dml";
-            programArgs = new String[]{"-args", input("X"), input("Y"), output("M")};
+            programArgs = new String[]{"-args", input("X"), input("Y"), input("R"), output("M")};
 
             // TODO: Replace with expected input
-            double[][] Y = {{1.0}, {0.0}, {0.0}, {1.0}, {0.0}};
+            double[][] Y = {{1.0}, {2.0}, {3.0}, {4.0}, {5.0}, {6.0}, {7.0}, {8.0}};
 
-            double[][] X = {{4.5, 4.0, 3.0, 2.8, 3.5}, {1.9, 2.4, 1.0, 3.4, 2.9}, {2.0, 1.1, 1.0, 4.9, 3.4},
-                    {2.3, 5.0, 2.0, 1.4, 1.8}, {2.1, 1.1, 3.0, 1.0, 1.9},};
+            double[][] X = {{15.0, 25.0, 35.0, 45.0, 17.0,27.0,37.0,99.0}, {20.0,30.0,87.0,90.0,30.0,40.0,97.0,80.0}, {15.0,24.0,38.0,43.0,25.0,34.0,48.0,53.0},};
+
+            double[][] R = {{1.0,1.0,1.0},};
+
             writeInputMatrixWithMTD("X", X, true);
             writeInputMatrixWithMTD("Y", Y, true);
+            writeInputMatrixWithMTD("R", R, true);
 
             runTest(true, false, null, -1);
 
             HashMap<MatrixValue.CellIndex, Double> actual_M = readDMLMatrixFromOutputDir("M");
             HashMap<MatrixValue.CellIndex, Double> expected_M = new HashMap<>();
             //TODO: Replace with expected outputs
-            expected_M.put(new MatrixValue.CellIndex(1, 1), 987.0);
+            expected_M.put(new MatrixValue.CellIndex(1, 1), 1.0);
             TestUtils.compareMatrices(expected_M, actual_M, 0, "Expected-DML", "Actual-DML");
         } catch (Exception ex) {
             System.out.println("[ERROR] Xgboost test failed, cause: " + ex);

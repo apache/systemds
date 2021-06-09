@@ -38,7 +38,6 @@ m_xgboost = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] R) retur
 
   node_queue = matrix(1, rows=1, cols=1)     # Add first Node
   curr_rows_queue = matrix(1, rows=nrow(X), cols=1)
-  gain_queue = matrix(1, rows=1, cols=1)
   node_queue_len = 1
   max_depth = 6
   depth = 0.0
@@ -49,31 +48,39 @@ m_xgboost = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] R) retur
     has_child = FALSE
     [node_queue, node] = dataQueuePop(node_queue)
     [curr_rows_queue, curr_rows_vector] = dataQueuePop(curr_rows_queue)
-    printMatrix(node_queue, "Node Queue")
-    printMatrix(node, "Node")
-    printMatrix(curr_rows_queue, "curr_rows_queue")
-    printMatrix(curr_rows_vector, "curr_rows_vector")
-    level = log(as.scalar(node), 2) + 1
-    available_rows = calcAvailableRows(curr_rows_vector)
 
-    [curr_X, loop_y, curr_X_full] = updateMatrices(X, y, curr_rows_vector)
+#    printMatrix(node_queue, "Node Queue")
+    printMatrix(node, "Node - bei welcher node sind wir gerade?")
+#    printMatrix(curr_rows_queue, "curr_rows_queue")
+    printMatrix(curr_rows_vector, "curr_rows_vector - welche rows sollen wir jz in betracht ziehen?")
+
+    level = log(as.scalar(node), 2) + 1
+    available_rows = calcAvailableRows(curr_rows_vector) # check if leaf
+    print("avaliable rows " + toString(available_rows))
+
+    [curr_X, curr_y, curr_X_full] = updateMatrices(X, y, curr_rows_vector)
+
+    printMatrix(curr_X, "curr_X - alle rows die jz für mich relevant sind")
+    printMatrix(curr_y, "curr_y - y zu rows die relevant sind")
+    printMatrix(curr_X_full, "curr_X_full - gleich wie X, aber die nicht relevanten rows sind 0")
 
     best_feature_index = 0.00
-    if(available_rows > 1 & max_depth > level) {
-      best_feature_index = findBestFeature(X=curr_X, y=loop_y, verbose=FALSE)
+    if(available_rows > 1 & max_depth > level) # leaf check or max depth check
+    {
+      best_feature_index = findBestFeature(X=curr_X, y=curr_y, verbose=FALSE)
       # maybe for forest change here prediction?
 
       type = getTypeOfFeature(R, best_feature_index)
 
       if(type == 1.0) # SCALAR
       {
-        residual_matrix = calculateResiduals(loop_y, median(loop_y))
+        residual_matrix = calculateResiduals(curr_y, median(curr_y))
         # printMatrix(residual_matrix, "the calculated residuals")
 
         similarity_score = calculateSimilarityScore(residual_matrix)
 
         [best_split_threshold, best_gain] = findBestSplit(curr_X[,best_feature_index], similarity_score)
-        has_child = best_gain > 0
+        has_child = best_gain > 0 # if the gain is < 0, the split is worse than the current node
       }
       else # CATEGORICAL
       {
@@ -83,8 +90,9 @@ m_xgboost = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] R) retur
       }
     }
 
-    if (has_child) {
-      [left, right] = calculateChildNodes(node)
+    if (has_child)
+    {
+      [left, right] = calculateChildNodeIDs(node)
       node_queue = dataQueuePush(left, right, node_queue)
 
       if (type == 1.0) # SCALAR
@@ -107,12 +115,14 @@ m_xgboost = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] R) retur
 
       }
     }
-    else {
+    else # has no child
+    {
       M = addOutputRow(M, node, R, 0.0, best_feature_index, 0.0)
     }
     node_queue_len = ncol(node_queue)
-    printMatrix(M, "OUTPUT MATRIX")
+    printMMatrix(M)
   }
+  print("[DEBUG] we successfully created one tree - lets make another one")
 
   # todo pruning
   # todo create next tree depending on previous
@@ -123,7 +133,7 @@ m_xgboost = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] R) retur
 # INPUT:    node: a 1xn matrix (node containing values)
 # OUTPUT:   left: the new left node id
 # OUTPUT:   right: the new right node id
-calculateChildNodes = function(Matrix[Double] node)  return(Matrix[Double] left, Matrix[Double] right) {
+calculateChildNodeIDs = function(Matrix[Double] node)  return(Matrix[Double] left, Matrix[Double] right) {
   left = node * 2.0
   right = node * 2.0 + 1.0
 }
@@ -147,15 +157,13 @@ addOutputRow = function(
   Double used_col,
   Double threshold
 ) return (Matrix[Double] new_M) {
-  if(used_col != 0)
-  {
       current_node = matrix(0, rows=6, cols=1)
       current_node[1,1] = node[1,1] # node id
       current_node[2,1] = offset # offset to left child
       current_node[3,1] = used_col # features used
       # change here to different stuff if it is classification
 
-      current_node[4, 1] = R[1, used_col]
+      if (used_col >= 1.0) { current_node[4, 1] = R[1, used_col] } # for all nodes, which used a features (all except leafs), write the type (scalar or cat)
       # also change here if it is classification
       if (threshold < 1.00) {
         current_node[5,1] = 0 # number of values in threshold // currently 0 if leaf node
@@ -168,11 +176,6 @@ addOutputRow = function(
       } else {
         new_M = cbind(M, current_node)
       }
-  }
-  else
-  {
-    new_M = M
-  }
 }
 
 
@@ -282,21 +285,22 @@ findBestFeature = function(Matrix[Double] X, Matrix[Double] y, boolean verbose =
         current_feature = X[,i]
         weights = lm(X=current_feature, y=y, verbose=verbose)
         y_residual = y - current_feature %*% weights
-        avg_res = abs(sum (y_residual) / nrow (X));
+        res = sum(y_residual ^ 2)                # sum of least square calculation
+#        res = abs(sum (y_residual) / nrow (X)); # average calculation
 
         if(verbose) {
             printDebug("currentFeature col " + toString(i))
             printDebug("weights of lm " + toString(weights))
-            printDebug("feature residuals: " + avg_res)
+            printDebug("feature residuals: " + res)
             print("--------------------------------------")
         }
 
-        if(i == 1 | avg_res < lowest_residuals) {
-            lowest_residuals = avg_res
+        if(i == 1 | res < lowest_residuals) {
+            lowest_residuals = res
             lowest_residuals_index = i
         }
    }
-   printDebug("best feature for root node is: " + toString(lowest_residuals_index) + " with residuals: " + toString(lowest_residuals))
+   printDebug("best feature for current node is: " + toString(lowest_residuals_index) + " with residuals: " + toString(lowest_residuals))
 
 }
 
@@ -382,17 +386,17 @@ splitMatrixByValueLoop = function(Matrix[Double] curr_X, Matrix[Double] X, Doubl
   zero_vec = matrix(0, rows=1, cols=1)
 
   for(i in 1:nrow(X)) {
-    if (as.scalar(X[i,]) == as.scalar(curr_X[i,])) {
+    if (as.scalar(X[i,]) == as.scalar(curr_X[i,])) { # if same row in curr_X and X
       if (as.scalar(X[i,]) < value) {
-        left = rbind(left, one_vec[1,])
+        left = rbind(left, one_vec[1,]) # add 1 to left and 0 to right vector
         right = rbind(right, zero_vec[1,])
       }
       else {
-        right = rbind(right, one_vec[1,])
+        right = rbind(right, one_vec[1,]) # add 1 to right and 0 to left vector
         left = rbind(left, zero_vec[1,])
       }
     } else {
-      left = rbind(left, zero_vec[1,])
+      left = rbind(left, zero_vec[1,]) # add 0 to both vectors
       right = rbind(right, zero_vec[1,])
     }
   }
@@ -413,6 +417,7 @@ splitMatrixByCategory = function(Matrix[Double] curr_X, Matrix[Double] X) return
         right = rbind(right, matrix(0, rows=1, cols=1))
       }
       else {
+        assert(as.scalar(X[i,]) == 0) #
         left = rbind(left, X[i,])
         right = rbind(right, matrix(1, rows=1, cols=1))
       }
@@ -470,6 +475,56 @@ printMatrix = function(Matrix[Double] m, string name) return() {
         for(row in 1:nrow(m)) {
 
             print_string = ":(" + row + ")     "
+            for(col in 1:ncol(m)) {
+                curr_value = m[row,col]
+                if(as.scalar(curr_value) < 10)
+                    print_string = print_string + toString(curr_value, linesep="     ", sep=",")
+                else if(as.scalar(curr_value) < 100)
+                    print_string = print_string + toString(curr_value, linesep="    ", sep=",")
+                else if(as.scalar(curr_value) < 1000)
+                    print_string = print_string + toString(curr_value, linesep="   ", sep=",")
+                else if(as.scalar(curr_value) < 10000)
+                    print_string = print_string + toString(curr_value, linesep="  ", sep=",")
+                else
+                    print_string = print_string + toString(curr_value, linesep=" ", sep=",")
+            }
+            print(print_string)
+        }
+    }
+    print("--------------------------------------")
+}
+
+
+printMMatrix = function(Matrix[Double] m) return() {
+    print("--------------------------------------")
+    print(":: [MATRIX] OUTPUT M MATRIX  (col:" + ncol(m) + ",row:" + nrow(m) + ")")
+
+    if(nrow(m) != 0 & ncol(m) != 0)
+    {
+        col_string = "::::::::::::::::::::::::::::::::::::::::"
+        for(col in 1:ncol(m)) {
+            if(col < 10)
+                col_string = col_string + ":::(" + toString(col) + ")::::"
+            else
+                col_string = col_string + ":::(" + toString(col) + "):::"
+        }
+        print(col_string)
+        for(row in 1:nrow(m)) {
+
+            if(row == 1)
+                print_string = "                         node id :(" + row + ")     "
+            if(row == 2)
+                print_string = "            offset to left child :(" + row + ")     "
+            if(row == 3)
+                print_string = "          used feature col index :(" + row + ")     "
+            if(row == 4)
+                print_string = "          if scalar=1 / if cat=2 :(" + row + ")     "
+            if(row == 5)
+                print_string = "    leaf=0 / scalar=1 / cat=2..X :(" + row + ")     "
+            if(row == 6)
+                print_string = "scalar=splitvalue / cat=firstcat :(" + row + ")     "
+
+
             for(col in 1:ncol(m)) {
                 curr_value = m[row,col]
                 if(as.scalar(curr_value) < 10)

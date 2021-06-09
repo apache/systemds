@@ -22,8 +22,12 @@ package org.apache.sysds.test.functions.io.hdf5;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.conf.CompilerConfig;
+import org.apache.sysds.runtime.matrix.data.MatrixValue;
 import org.apache.sysds.test.TestConfiguration;
+import org.apache.sysds.test.TestUtils;
 import org.junit.Test;
+
+import java.util.HashMap;
 
 public abstract class WriteHDF5Test extends WriteHDF5TestBase {
 
@@ -36,23 +40,23 @@ public abstract class WriteHDF5Test extends WriteHDF5TestBase {
 	private final static double eps = 1e-9;
 
 	@Test public void testHDF51_Seq_CP() {
-		runWriteHDF5Test(getId(), ExecMode.SINGLE_NODE, false, 100, 100);
+		runWriteHDF5Test(getId(), ExecMode.SINGLE_NODE, false, 50, 50);
 	}
 
 	@Test public void testHDF52_Seq_CP() {
-		runWriteHDF5Test(getId(), ExecMode.SINGLE_NODE, false, 1000, 1000);
+		runWriteHDF5Test(getId(), ExecMode.SINGLE_NODE, false, 500, 800);
 	}
 
 	@Test public void testHDF53_Seq_CP() {
-		runWriteHDF5Test(getId(), ExecMode.SINGLE_NODE, false, 5000, 5000);
+		runWriteHDF5Test(getId(), ExecMode.SINGLE_NODE, false, 1000, 2000);
 	}
 
 	@Test public void testHDF51_Parallel_CP() {
-		runWriteHDF5Test(getId(), ExecMode.SINGLE_NODE, true, 1000, 1000);
+		runWriteHDF5Test(getId(), ExecMode.SINGLE_NODE, true, 500, 500);
 	}
 
 	@Test public void testHDF52_Parallel_CP() {
-		runWriteHDF5Test(getId(), ExecMode.SINGLE_NODE, true, 5000, 5000);
+		runWriteHDF5Test(getId(), ExecMode.SINGLE_NODE, true, 1500, 1500);
 	}
 
 	protected void runWriteHDF5Test(int testNumber, ExecMode platform, boolean parallel, int rows, int cols) {
@@ -75,11 +79,8 @@ public abstract class WriteHDF5Test extends WriteHDF5TestBase {
 
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			String outMatrixName = HOME + OUTPUT_DIR + getOutputHDF5FileName();
-			String dmlOutput = output("dml.scalar");
 
 			String datasetName = "DATASET_1";
-
-			//TODO: add RScript for verify file format
 
 			fullDMLScriptName = HOME + getTestName() + "_" + testNumber + ".dml";
 			programArgs = new String[] {"-args", input("A"), outMatrixName, datasetName};
@@ -89,6 +90,16 @@ public abstract class WriteHDF5Test extends WriteHDF5TestBase {
 			writeInputMatrixWithMTD("A", A, false);
 
 			runTest(true, false, null, -1);
+
+			fullRScriptName = HOME + "ReadHDF5_Verify.R";
+			rCmd = "Rscript" + " " + fullRScriptName + " " + outMatrixName + " " + datasetName + " " + expectedDir();
+
+			runRScript(true);
+
+			HashMap<MatrixValue.CellIndex, Double> YR = readRMatrixFromExpectedDir("Y");
+			HashMap<MatrixValue.CellIndex, Double> YA = TestUtils.convert2DDoubleArrayToHashMap(A);
+			TestUtils.compareMatrices(YR, YA, eps, "YR", "YA");
+
 		}
 		finally {
 			rtplatform = oldPlatform;

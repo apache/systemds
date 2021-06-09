@@ -1,9 +1,9 @@
 {
     "data_type": "matrix",
     "value_type": "double",
-    "rows": 20,
-    "cols": 20,
-    "nnz": 400,
+    "rows": 1000,
+    "cols": 1000,
+    "nnz": 1000000,
     "format": "hdf5",
     "author": "sfathollahzadeh",
     "created": "2021-06-07 01:35:41 CEST"

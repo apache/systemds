@@ -99,15 +99,31 @@ public class H5BufferBuilder {
 		}
 	}
 
+	public strictfp Double getNewVal(double d) {
+		return d;
+	}
+
+	public static BitSet convert(long value) {
+		BitSet bits = new BitSet();
+		String a = "";
+		int index = 0;
+		while(value != 0L) {
+			if(value % 2L != 0) {
+				bits.set(index);
+				a += "1";
+			}
+			else
+				a += "0";
+			++index;
+			value = value >>> 1;
+		}
+		System.out.println(a);
+		return bits;
+	}
+
 	public void writeDouble(double l) {
 		try {
-			//MIPS-specific datatypes
-			//For MIPS CPUs, commonly used in SGI system
-			//Big-endian
-			//Signed integer (2's complement), unsigned integer, bitfield, and IEEE floating point
-			//8-bit, 16-bit, 32-bit, and 64-bit
-			// H5T_MIPS_F64
-			this.dataOutputStream.writeDouble(l);
+			this.writeLong(Double.doubleToLongBits(l));
 		}
 		catch(Exception e) {
 			throw new H5Exception(e);

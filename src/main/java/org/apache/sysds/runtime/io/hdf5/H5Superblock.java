@@ -19,6 +19,7 @@
 
 package org.apache.sysds.runtime.io.hdf5;
 
+
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -76,7 +77,6 @@ public class H5Superblock {
 
 		try {
 			byte[] b = new byte[superBlockHeaderSize];
-			//bis.read(b, (int) fileLocation,superBlockHeaderSize);
 			bis.reset();
 			bis.skip((int) fileLocation);
 			bis.read(b);

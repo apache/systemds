@@ -51,15 +51,6 @@ public class H5RootObject {
 
 	protected byte dataLayoutClass = 1;
 
-	protected H5BufferBuilder toBuffer() {
-		H5BufferBuilder bb = new H5BufferBuilder();
-		this.toBuffer(bb);
-		return bb;
-	}
-
-	protected void toBuffer(H5BufferBuilder bb) {
-	}
-
 	public ByteBuffer readBufferFromAddress(long address, int length) {
 		ByteBuffer bb = ByteBuffer.allocate(length);
 		try {
@@ -81,8 +72,7 @@ public class H5RootObject {
 		ByteBuffer bb = ByteBuffer.allocate(length);
 		try {
 			byte[] b = new byte[length];
-			bufferedInputStream.mark(0);
-			//bufferedInputStream.reset();
+			bufferedInputStream.reset();
 			bufferedInputStream.skip(address);
 			bufferedInputStream.read(b);
 			bb.put(b);

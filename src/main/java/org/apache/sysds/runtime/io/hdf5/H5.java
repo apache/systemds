@@ -21,10 +21,12 @@ package org.apache.sysds.runtime.io.hdf5;
 
 import org.apache.sysds.runtime.io.hdf5.message.H5SymbolTableMessage;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
+import java.io.*;
 import java.nio.ByteBuffer;
+import java.nio.DoubleBuffer;
 import java.util.List;
+
+import static java.nio.ByteOrder.LITTLE_ENDIAN;
 
 public class H5 {
 
@@ -36,9 +38,8 @@ public class H5 {
 	// 5. Close File
 
 	public static H5RootObject H5Fopen(BufferedInputStream bis) {
-		bis.mark(0);
-
 		H5RootObject rootObject = new H5RootObject();
+		bis.mark(0);
 		try {
 			// Find out if the file is a HDF5 file
 			int maxSignatureLength = 2048;
@@ -224,7 +225,6 @@ public class H5 {
 	}
 
 	public static double[] H5Dread(H5RootObject rootObject, H5ContiguousDataset dataset, int row) {
-
 		ByteBuffer buffer = dataset.getDataBuffer(row);
 		final double[] data = dataset.getDataType().getDoubleDataType().fillData(buffer, (int) rootObject.getCol());
 		return data;

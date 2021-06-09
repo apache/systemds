@@ -24,6 +24,7 @@ import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.conf.CompilerConfig;
 import org.apache.sysds.runtime.matrix.data.MatrixValue;
 import org.apache.sysds.test.TestConfiguration;
+import org.apache.sysds.test.TestUtils;
 import org.junit.Test;
 
 import java.util.HashMap;
@@ -66,18 +67,20 @@ public abstract class ReadHDF5Test extends ReadHDF5TestBase {
 
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			String inputMatrixName = HOME + INPUT_DIR + getInputHDF5FileName();
-			String dmlOutput = output("dml.scalar");
-
 			String datasetName = "DATASET_1";
-
-			//TODO: add RScript for verify file format
 
 			fullDMLScriptName = HOME + getTestName() + "_" + testNumber + ".dml";
 			programArgs = new String[] {"-args", inputMatrixName, datasetName, output("Y")};
 
-			runTest(true, false, null, -1);
+			fullRScriptName = HOME + "ReadHDF5_Verify.R";
+			rCmd = "Rscript" + " " + fullRScriptName + " " + inputMatrixName + " " + datasetName + " " + expectedDir();
 
+			runTest(true, false, null, -1);
+			runRScript(true);
+
+			HashMap<MatrixValue.CellIndex, Double> YR = readRMatrixFromExpectedDir("Y");
 			HashMap<MatrixValue.CellIndex, Double> YSYSTEMDS = readDMLMatrixFromOutputDir("Y");
+			TestUtils.compareMatrices(YR, YSYSTEMDS, eps, "YR", "YSYSTEMDS");
 		}
 		finally {
 			rtplatform = oldPlatform;

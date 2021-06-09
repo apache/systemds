@@ -19,10 +19,10 @@
 #
 #-------------------------------------------------------------
 
-# DML script that tests read/write HDF5
+# DML script that tests write HDF5
 
 A = read($1);
-A = A + 1;
+A = A + 0;
 write(A, $2, format="hdf5", dataset=$3);
 
 

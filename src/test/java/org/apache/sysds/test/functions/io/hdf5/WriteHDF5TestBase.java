@@ -35,6 +35,6 @@ public abstract class WriteHDF5TestBase extends AutomatedTestBase {
 	@Override public void setUp() {
 		TestUtils.clearAssertionInformation();
 		addTestConfiguration(getTestName(),
-			new TestConfiguration(getTestClassDir(), getTestName(), new String[] {"Rout"}));
+			new TestConfiguration(getTestClassDir(), getTestName(), new String[] {"Y"}));
 	}
 }

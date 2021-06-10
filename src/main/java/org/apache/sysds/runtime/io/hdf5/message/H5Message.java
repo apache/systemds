@@ -60,7 +60,9 @@ public abstract class H5Message {
 		return bb;
 	}
 
-	protected void toBuffer(H5BufferBuilder bb){}
+	protected void toBuffer(H5BufferBuilder bb){
+		throw new H5RuntimeException("Unimplemented method!");
+	}
 
 	protected void toBuffer(H5BufferBuilder bb, int messageType) {
 

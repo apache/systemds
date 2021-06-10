@@ -24,12 +24,12 @@ if ($rP) {
         ranges=list(list(0, 0), list($rows/4, $cols), list($rows/4, 0), list(2*$rows/4, $cols),
     		list(2*$rows/4, 0), list(3*$rows/4, $cols), list(3*$rows/4, 0), list($rows, $cols)));
     Y = X * 7; # row partitioned federated Y
-    X = t(X); # col partitined federated X
+    X = t(X); # col partitioned federated X
 } else {
     X = federated(addresses=list($in_X1, $in_X2, $in_X3, $in_X4),
             ranges=list(list(0, 0), list($rows, $cols/4), list(0,$cols/4), list($rows, $cols/2),
             	list(0,$cols/2), list($rows, 3*($cols/4)), list(0, 3*($cols/4)), list($rows, $cols)));
-    Y = t(X * 7); # row partitioned federated Y
+    Y = t(X) * 7; # row partitioned federated Y
 }
 
 while(FALSE) { }

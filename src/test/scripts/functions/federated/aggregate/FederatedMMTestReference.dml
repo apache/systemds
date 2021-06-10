@@ -26,7 +26,7 @@ if($6) {
 }
 else {
   X = cbind(read($1), read($2), read($3), read($4));
-  Y = t(X * 7);
+  Y = t(X) * 7;
 }
 
 while(FALSE) { }

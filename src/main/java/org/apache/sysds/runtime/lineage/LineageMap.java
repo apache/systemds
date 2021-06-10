@@ -167,7 +167,8 @@ public class LineageMap {
 					break;
 				}
 				case Write: {
-					processWriteLI(vcp_inst.getInput1(), vcp_inst.getInput2(), ec);
+					if (!vcp_inst.getInput1().isLiteral())
+						processWriteLI(vcp_inst.getInput1(), vcp_inst.getInput2(), ec);
 					break;
 				}
 				case MoveVariable: {

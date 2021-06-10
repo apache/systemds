@@ -30,6 +30,7 @@ import java.util.stream.IntStream;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.lops.Lop;
@@ -389,8 +390,19 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction 
 				.collect(Collectors.toList());
 			List<String> names = new ArrayList<>(params.keySet());
 
-			// create list object over all inputs
-			ListObject list = new ListObject(data, names);
+			ListObject list = null;
+			if (DMLScript.LINEAGE) {
+				CPOperand[] listOperands = names.stream().map(n -> ec.containsVariable(params.get(n)) 
+						? new CPOperand(n, ec.getVariable(params.get(n))) 
+						: getStringLiteral(n)).toArray(CPOperand[]::new);
+				LineageItem[] liList = LineageItemUtils.getLineage(ec, listOperands);
+				// create list object over all inputs w/ the corresponding lineage items
+				list = new ListObject(data, names, Arrays.asList(liList));
+			}
+			else
+				// create list object over all inputs
+				list = new ListObject(data, names);
+
 			list.deriveAndSetStatusFromData();
 
 			ec.setVariable(output.getName(), list);
@@ -478,6 +490,14 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction 
 			CPOperand spec = getStringLiteral("spec");
 			return Pair.of(output.getName(),
 				new LineageItem(getOpcode(), LineageItemUtils.getLineage(ec, target, meta, spec)));
+		}
+		else if (opcode.equalsIgnoreCase("nvlist")) {
+			List<String> names = new ArrayList<>(params.keySet());
+			CPOperand[] listOperands = names.stream().map(n -> ec.containsVariable(params.get(n)) 
+					? new CPOperand(n, ec.getVariable(params.get(n))) 
+					: getStringLiteral(n)).toArray(CPOperand[]::new);
+			return Pair.of(output.getName(), 
+				new LineageItem(getOpcode(), LineageItemUtils.getLineage(ec, listOperands)));
 		}
 		else {
 			// NOTE: for now, we cannot have a generic fall through path, because the

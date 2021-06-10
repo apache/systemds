@@ -101,7 +101,7 @@ public class RewriteFederatedExecution extends HopRewriteRule {
 	 * @hop hop for which privacy constraints are loaded
 	 */
 	private void loadFederatedPrivacyConstraints(Hop hop){
-		if ( isFederatedDataOp(hop) ){
+		if ( isFederatedDataOp(hop) && hop.getPrivacy() == null){
 			try {
 				PrivacyConstraint privConstraint = unwrapPrivConstraint(sendPrivConstraintRequest(hop));
 				hop.setPrivacy(privConstraint);

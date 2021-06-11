@@ -131,3 +131,4 @@ public class BuiltinResidencyMatchTest extends AutomatedTestBase {
 			}
 	}
 }
+

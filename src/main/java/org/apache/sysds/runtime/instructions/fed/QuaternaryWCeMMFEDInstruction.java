@@ -73,7 +73,7 @@ public class QuaternaryWCeMMFEDInstruction extends QuaternaryFEDInstruction
 		if(X.isFederated()) {
 			FederationMap fedMap = X.getFedMapping();
 			FederatedRequest[] frSliced = null;
-			ArrayList<FederatedRequest> frB = new ArrayList<>(); // FederatedRequest of broadcasts
+			ArrayList<FederatedRequest> frB = new ArrayList<>(); // FederatedRequests of broadcasts
 			long[] varNewIn = new long[eps != null ? 4 : 3];
 			varNewIn[0] = fedMap.getID();
 			
@@ -113,8 +113,7 @@ public class QuaternaryWCeMMFEDInstruction extends QuaternaryFEDInstruction
 
 			FederatedRequest frComp = FederationUtils.callInstruction(instString, output,
 				eps == null ? new CPOperand[]{input1, input2, input3}
-					: new CPOperand[]{input1, input2, input3, _input4},
-				varNewIn);
+					: new CPOperand[]{input1, input2, input3, _input4}, varNewIn);
 
 			FederatedRequest frGet = new FederatedRequest(RequestType.GET_VAR, frComp.getID());
 			

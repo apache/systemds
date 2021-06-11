@@ -398,12 +398,14 @@ public class PrivacyPropagator
 	 * @return input instruction if privacy constraints are not activated
 	 */
 	private static Instruction throwExceptionIfInputOrInstPrivacy(Instruction inst, ExecutionContext ec){
-		CPOperand[] inputOperands = getInputOperands(inst);
 		throwExceptionIfPrivacyActivated(inst);
-		for ( CPOperand input : inputOperands ){
-			PrivacyConstraint privacyConstraint = getInputPrivacyConstraint(ec, input);
-			if ( privacyConstraint != null){
-				throw new DMLPrivacyException("Input of instruction " + inst + " has privacy constraints activated, but the constraints are not propagated during preprocessing of instruction.");
+		CPOperand[] inputOperands = getInputOperands(inst);
+		if (inputOperands != null){
+			for ( CPOperand input : inputOperands ){
+				PrivacyConstraint privacyConstraint = getInputPrivacyConstraint(ec, input);
+				if ( privacyConstraint != null){
+					throw new DMLPrivacyException("Input of instruction " + inst + " has privacy constraints activated, but the constraints are not propagated during preprocessing of instruction.");
+				}
 			}
 		}
 		return inst;

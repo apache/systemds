@@ -31,11 +31,13 @@ public class MapToChar extends AMapToData {
 
 	private final char[] _data;
 
-	public MapToChar(int size) {
+	public MapToChar(int unique, int size) {
+		super(unique);
 		_data = new char[size];
 	}
 
-	public MapToChar(char[] data) {
+	public MapToChar(int unique, char[] data) {
+		super(unique);
 		_data = data;
 	}
 
@@ -78,17 +80,19 @@ public class MapToChar extends AMapToData {
 	@Override
 	public void write(DataOutput out) throws IOException {
 		out.writeByte(MAP_TYPE.CHAR.ordinal());
+		out.writeInt(getUnique());
 		out.writeInt(_data.length);
 		for(int i = 0; i < _data.length; i++)
 			out.writeChar(_data[i]);
 	}
 
 	public static MapToChar readFields(DataInput in) throws IOException {
+		int unique = in.readInt();
 		final int length = in.readInt();
 		final char[] data = new char[length];
 		for(int i = 0; i < length; i++)
 			data[i] = in.readChar();
-		return new MapToChar(data);
+		return new MapToChar(unique, data);
 	}
 
 }

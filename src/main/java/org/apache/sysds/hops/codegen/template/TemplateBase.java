@@ -153,5 +153,5 @@ public abstract class TemplateBase
 	 * always compiled as constants.
 	 * @return pair containing hops and code template
 	 */
-	public abstract Pair<Hop[], CNodeTpl> constructCplan(Hop hop, CPlanMemoTable memo, boolean compileLiterals);	
+	public abstract Pair<Hop[], CNodeTpl> constructCplan(Hop hop, CPlanMemoTable memo, boolean compileLiterals);
 }

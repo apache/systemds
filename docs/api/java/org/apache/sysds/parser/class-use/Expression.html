@@ -95,10 +95,14 @@
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
-<td class="colFirst"><a href="#org.apache.sysds.runtime.privacy">org.apache.sysds.runtime.privacy</a></td>
+<td class="colFirst"><a href="#org.apache.sysds.runtime.meta">org.apache.sysds.runtime.meta</a></td>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">
+<td class="colFirst"><a href="#org.apache.sysds.runtime.privacy">org.apache.sysds.runtime.privacy</a></td>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
 <td class="colFirst"><a href="#org.apache.sysds.utils">org.apache.sysds.utils</a></td>
 <td class="colLast">&nbsp;</td>
 </tr>
@@ -755,6 +759,75 @@
 <tr class="rowColor">
 <td class="colFirst"><code><a href="../../../../../org/apache/sysds/parser/Expression.html" title="class in org.apache.sysds.parser">Expression</a></code></td>
 <td class="colLast"><span class="typeNameLabel">ExpressionInfo.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/parser/dml/ExpressionInfo.html#to">to</a></span></code>&nbsp;</td>
+</tr>
+</tbody>
+</table>
+</li>
+<li class="blockList"><a name="org.apache.sysds.runtime.meta">
+<!--   -->
+</a>
+<h3>Uses of <a href="../../../../../org/apache/sysds/parser/Expression.html" title="class in org.apache.sysds.parser">Expression</a> in <a href="../../../../../org/apache/sysds/runtime/meta/package-summary.html">org.apache.sysds.runtime.meta</a></h3>
+<table class="useSummary" border="0" cellpadding="3" cellspacing="0" summary="Use table, listing subclasses, and an explanation">
+<caption><span>Subclasses of <a href="../../../../../org/apache/sysds/parser/Expression.html" title="class in org.apache.sysds.parser">Expression</a> in <a href="../../../../../org/apache/sysds/runtime/meta/package-summary.html">org.apache.sysds.runtime.meta</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colLast" scope="col">Class and Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code>class&nbsp;</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/meta/MetaDataAll.html" title="class in org.apache.sysds.runtime.meta">MetaDataAll</a></span></code>&nbsp;</td>
+</tr>
+</tbody>
+</table>
+<table class="useSummary" border="0" cellpadding="3" cellspacing="0" summary="Use table, listing methods, and an explanation">
+<caption><span>Methods in <a href="../../../../../org/apache/sysds/runtime/meta/package-summary.html">org.apache.sysds.runtime.meta</a> that return types with arguments of type <a href="../../../../../org/apache/sysds/parser/Expression.html" title="class in org.apache.sysds.parser">Expression</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colLast" scope="col">Method and Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/util/HashMap.html?is-external=true" title="class or interface in java.util">HashMap</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>,<a href="../../../../../org/apache/sysds/parser/Expression.html" title="class in org.apache.sysds.parser">Expression</a>&gt;</code></td>
+<td class="colLast"><span class="typeNameLabel">MetaDataAll.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/meta/MetaDataAll.html#parseMetaDataFileParameters-java.lang.String-boolean-java.util.HashMap-">parseMetaDataFileParameters</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;mtdFileName,
+                           boolean&nbsp;conditional,
+                           <a href="https://docs.oracle.com/javase/8/docs/api/java/util/HashMap.html?is-external=true" title="class or interface in java.util">HashMap</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>,<a href="../../../../../org/apache/sysds/parser/Expression.html" title="class in org.apache.sysds.parser">Expression</a>&gt;&nbsp;varParams)</code>&nbsp;</td>
+</tr>
+</tbody>
+</table>
+<table class="useSummary" border="0" cellpadding="3" cellspacing="0" summary="Use table, listing methods, and an explanation">
+<caption><span>Methods in <a href="../../../../../org/apache/sysds/runtime/meta/package-summary.html">org.apache.sysds.runtime.meta</a> with parameters of type <a href="../../../../../org/apache/sysds/parser/Expression.html" title="class in org.apache.sysds.parser">Expression</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colLast" scope="col">Method and Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code>void</code></td>
+<td class="colLast"><span class="typeNameLabel">MetaDataAll.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/meta/MetaDataAll.html#addVarParam-java.lang.String-org.apache.sysds.parser.Expression-java.util.HashMap-">addVarParam</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;name,
+           <a href="../../../../../org/apache/sysds/parser/Expression.html" title="class in org.apache.sysds.parser">Expression</a>&nbsp;value,
+           <a href="https://docs.oracle.com/javase/8/docs/api/java/util/HashMap.html?is-external=true" title="class or interface in java.util">HashMap</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>,<a href="../../../../../org/apache/sysds/parser/Expression.html" title="class in org.apache.sysds.parser">Expression</a>&gt;&nbsp;varParams)</code>&nbsp;</td>
+</tr>
+</tbody>
+</table>
+<table class="useSummary" border="0" cellpadding="3" cellspacing="0" summary="Use table, listing methods, and an explanation">
+<caption><span>Method parameters in <a href="../../../../../org/apache/sysds/runtime/meta/package-summary.html">org.apache.sysds.runtime.meta</a> with type arguments of type <a href="../../../../../org/apache/sysds/parser/Expression.html" title="class in org.apache.sysds.parser">Expression</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colLast" scope="col">Method and Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code>void</code></td>
+<td class="colLast"><span class="typeNameLabel">MetaDataAll.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/meta/MetaDataAll.html#addVarParam-java.lang.String-org.apache.sysds.parser.Expression-java.util.HashMap-">addVarParam</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;name,
+           <a href="../../../../../org/apache/sysds/parser/Expression.html" title="class in org.apache.sysds.parser">Expression</a>&nbsp;value,
+           <a href="https://docs.oracle.com/javase/8/docs/api/java/util/HashMap.html?is-external=true" title="class or interface in java.util">HashMap</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>,<a href="../../../../../org/apache/sysds/parser/Expression.html" title="class in org.apache.sysds.parser">Expression</a>&gt;&nbsp;varParams)</code>&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/util/HashMap.html?is-external=true" title="class or interface in java.util">HashMap</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>,<a href="../../../../../org/apache/sysds/parser/Expression.html" title="class in org.apache.sysds.parser">Expression</a>&gt;</code></td>
+<td class="colLast"><span class="typeNameLabel">MetaDataAll.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/meta/MetaDataAll.html#parseMetaDataFileParameters-java.lang.String-boolean-java.util.HashMap-">parseMetaDataFileParameters</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;mtdFileName,
+                           boolean&nbsp;conditional,
+                           <a href="https://docs.oracle.com/javase/8/docs/api/java/util/HashMap.html?is-external=true" title="class or interface in java.util">HashMap</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>,<a href="../../../../../org/apache/sysds/parser/Expression.html" title="class in org.apache.sysds.parser">Expression</a>&gt;&nbsp;varParams)</code>&nbsp;</td>
 </tr>
 </tbody>
 </table>

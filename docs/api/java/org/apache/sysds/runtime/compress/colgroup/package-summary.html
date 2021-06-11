@@ -44,7 +44,7 @@
 <div class="subNav">
 <ul class="navList">
 <li><a href="../../../../../../org/apache/sysds/runtime/compress/cocode/package-summary.html">Prev&nbsp;Package</a></li>
-<li><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/mapping/package-summary.html">Next&nbsp;Package</a></li>
+<li><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/dictionary/package-summary.html">Next&nbsp;Package</a></li>
 </ul>
 <ul class="navList">
 <li><a href="../../../../../../index.html?org/apache/sysds/runtime/compress/colgroup/package-summary.html" target="_top">Frames</a></li>
@@ -85,14 +85,13 @@
 <tr class="altColor">
 <td class="colFirst"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a></td>
 <td class="colLast">
-<div class="block">Class that stores information about a column group within a compressed matrix block.</div>
+<div class="block">Abstract Class that is the lowest class type for the Compression framework.</div>
 </td>
 </tr>
 <tr class="rowColor">
-<td class="colFirst"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup">ADictionary</a></td>
+<td class="colFirst"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupCompressed.html" title="class in org.apache.sysds.runtime.compress.colgroup">ColGroupCompressed</a></td>
 <td class="colLast">
-<div class="block">This dictionary class aims to encapsulate the storage and operations over unique floating point values of a column
- group.</div>
+<div class="block">Base class for column groups encoded Encoded in a compressed manner.</div>
 </td>
 </tr>
 <tr class="altColor">
@@ -100,105 +99,85 @@
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
-<td class="colFirst"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupConverter.html" title="class in org.apache.sysds.runtime.compress.colgroup">ColGroupConverter</a></td>
-<td class="colLast">
-<div class="block">Utility functions for ColGroup to convert ColGroups or MatrixBlocks.</div>
-</td>
-</tr>
-<tr class="altColor">
 <td class="colFirst"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupDDC.html" title="class in org.apache.sysds.runtime.compress.colgroup">ColGroupDDC</a></td>
 <td class="colLast">
 <div class="block">Class to encapsulate information about a column group that is encoded with dense dictionary encoding (DDC).</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupEmpty.html" title="class in org.apache.sysds.runtime.compress.colgroup">ColGroupEmpty</a></td>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupFactory.html" title="class in org.apache.sysds.runtime.compress.colgroup">ColGroupFactory</a></td>
 <td class="colLast">
 <div class="block">Factory pattern for constructing ColGroups.</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupIO.html" title="class in org.apache.sysds.runtime.compress.colgroup">ColGroupIO</a></td>
 <td class="colLast">
 <div class="block">This has the IO responsibility of ColGroups, such that it enables to read and write ColGroups to and from a DataInput
  and DataOutput</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupOffset.html" title="class in org.apache.sysds.runtime.compress.colgroup">ColGroupOffset</a></td>
 <td class="colLast">
 <div class="block">Base class for column groups encoded with various types of bitmap encoding.</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupOLE.html" title="class in org.apache.sysds.runtime.compress.colgroup">ColGroupOLE</a></td>
 <td class="colLast">
 <div class="block">Class to encapsulate information about a column group that is encoded with simple lists of offsets for each set of
  distinct values.</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupRLE.html" title="class in org.apache.sysds.runtime.compress.colgroup">ColGroupRLE</a></td>
 <td class="colLast">
 <div class="block">A group of columns compressed with a single run-length encoded bitmap.</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupSDC.html" title="class in org.apache.sysds.runtime.compress.colgroup">ColGroupSDC</a></td>
 <td class="colLast">
 <div class="block">Column group that sparsely encodes the dictionary values.</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupSDCSingle.html" title="class in org.apache.sysds.runtime.compress.colgroup">ColGroupSDCSingle</a></td>
 <td class="colLast">
 <div class="block">Column group that sparsely encodes the dictionary values.</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupSDCSingleZeros.html" title="class in org.apache.sysds.runtime.compress.colgroup">ColGroupSDCSingleZeros</a></td>
 <td class="colLast">
 <div class="block">Column group that sparsely encodes the dictionary values.</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupSDCZeros.html" title="class in org.apache.sysds.runtime.compress.colgroup">ColGroupSDCZeros</a></td>
 <td class="colLast">
 <div class="block">Column group that sparsely encodes the dictionary values.</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupSizes.html" title="class in org.apache.sysds.runtime.compress.colgroup">ColGroupSizes</a></td>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupUncompressed.html" title="class in org.apache.sysds.runtime.compress.colgroup">ColGroupUncompressed</a></td>
 <td class="colLast">
 <div class="block">Column group type for columns that are stored as dense arrays of doubles.</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupValue.html" title="class in org.apache.sysds.runtime.compress.colgroup">ColGroupValue</a></td>
 <td class="colLast">
 <div class="block">Base class for column groups encoded with value dictionary.</div>
-</td>
-</tr>
-<tr class="altColor">
-<td class="colFirst"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/Dictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup">Dictionary</a></td>
-<td class="colLast">
-<div class="block">This dictionary class aims to encapsulate the storage and operations over unique floating point values of a column
- group.</div>
-</td>
-</tr>
-<tr class="rowColor">
-<td class="colFirst"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/QDictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup">QDictionary</a></td>
-<td class="colLast">
-<div class="block">This dictionary class aims to encapsulate the storage and operations over unique floating point values of a column
- group.</div>
 </td>
 </tr>
 </tbody>
@@ -213,19 +192,9 @@
 </tr>
 <tbody>
 <tr class="altColor">
-<td class="colFirst"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.ColGroupType.html" title="enum in org.apache.sysds.runtime.compress.colgroup">AColGroup.ColGroupType</a></td>
-<td class="colLast">
-<div class="block">Concrete ColGroupType
- 
- Protected such that outside the ColGroup package it should be unknown which specific subtype is used.</div>
-</td>
-</tr>
-<tr class="rowColor">
 <td class="colFirst"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.CompressionType.html" title="enum in org.apache.sysds.runtime.compress.colgroup">AColGroup.CompressionType</a></td>
 <td class="colLast">
-<div class="block">Public Group types supported
- 
- Note For instance DDC is called DDC not DDC1, or DDC2 which is a specific subtype of the DDC.</div>
+<div class="block">Public super types of compression ColGroups supported</div>
 </td>
 </tr>
 </tbody>
@@ -255,7 +224,7 @@
 <div class="subNav">
 <ul class="navList">
 <li><a href="../../../../../../org/apache/sysds/runtime/compress/cocode/package-summary.html">Prev&nbsp;Package</a></li>
-<li><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/mapping/package-summary.html">Next&nbsp;Package</a></li>
+<li><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/dictionary/package-summary.html">Next&nbsp;Package</a></li>
 </ul>
 <ul class="navList">
 <li><a href="../../../../../../index.html?org/apache/sysds/runtime/compress/colgroup/package-summary.html" target="_top">Frames</a></li>

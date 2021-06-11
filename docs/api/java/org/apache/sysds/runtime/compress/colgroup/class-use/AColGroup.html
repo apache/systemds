@@ -125,7 +125,9 @@
 <tbody>
 <tr class="altColor">
 <td class="colFirst"><code>void</code></td>
-<td class="colLast"><span class="typeNameLabel">CompressedMatrixBlock.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/compress/CompressedMatrixBlock.html#allocateColGroup-org.apache.sysds.runtime.compress.colgroup.AColGroup-">allocateColGroup</a></span>(<a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a>&nbsp;cg)</code>&nbsp;</td>
+<td class="colLast"><span class="typeNameLabel">CompressedMatrixBlock.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/compress/CompressedMatrixBlock.html#allocateColGroup-org.apache.sysds.runtime.compress.colgroup.AColGroup-">allocateColGroup</a></span>(<a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a>&nbsp;cg)</code>
+<div class="block">Allocate the given column group and remove all references to old column groups.</div>
+</td>
 </tr>
 </tbody>
 </table>
@@ -139,12 +141,6 @@
 <tr class="altColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><span class="typeNameLabel">CompressedMatrixBlock.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/compress/CompressedMatrixBlock.html#allocateColGroupList-java.util.List-">allocateColGroupList</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;<a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a>&gt;&nbsp;colGroups)</code>&nbsp;</td>
-</tr>
-<tr class="rowColor">
-<td class="colFirst"><code>void</code></td>
-<td class="colLast"><span class="typeNameLabel">CompressionStatistics.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/compress/CompressionStatistics.html#setColGroupsCounts-java.util.List-">setColGroupsCounts</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;<a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a>&gt;&nbsp;colGroups)</code>
-<div class="block">Set array of counts regarding col group types.</div>
-</td>
 </tr>
 </tbody>
 </table>
@@ -162,68 +158,74 @@
 <tbody>
 <tr class="altColor">
 <td class="colFirst"><code>class&nbsp;</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupConst.html" title="class in org.apache.sysds.runtime.compress.colgroup">ColGroupConst</a></span></code>&nbsp;</td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupCompressed.html" title="class in org.apache.sysds.runtime.compress.colgroup">ColGroupCompressed</a></span></code>
+<div class="block">Base class for column groups encoded Encoded in a compressed manner.</div>
+</td>
 </tr>
 <tr class="rowColor">
+<td class="colFirst"><code>class&nbsp;</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupConst.html" title="class in org.apache.sysds.runtime.compress.colgroup">ColGroupConst</a></span></code>&nbsp;</td>
+</tr>
+<tr class="altColor">
 <td class="colFirst"><code>class&nbsp;</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupDDC.html" title="class in org.apache.sysds.runtime.compress.colgroup">ColGroupDDC</a></span></code>
 <div class="block">Class to encapsulate information about a column group that is encoded with dense dictionary encoding (DDC).</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>class&nbsp;</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupEmpty.html" title="class in org.apache.sysds.runtime.compress.colgroup">ColGroupEmpty</a></span></code>&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>class&nbsp;</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupOffset.html" title="class in org.apache.sysds.runtime.compress.colgroup">ColGroupOffset</a></span></code>
 <div class="block">Base class for column groups encoded with various types of bitmap encoding.</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>class&nbsp;</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupOLE.html" title="class in org.apache.sysds.runtime.compress.colgroup">ColGroupOLE</a></span></code>
 <div class="block">Class to encapsulate information about a column group that is encoded with simple lists of offsets for each set of
  distinct values.</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>class&nbsp;</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupRLE.html" title="class in org.apache.sysds.runtime.compress.colgroup">ColGroupRLE</a></span></code>
 <div class="block">A group of columns compressed with a single run-length encoded bitmap.</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>class&nbsp;</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupSDC.html" title="class in org.apache.sysds.runtime.compress.colgroup">ColGroupSDC</a></span></code>
 <div class="block">Column group that sparsely encodes the dictionary values.</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>class&nbsp;</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupSDCSingle.html" title="class in org.apache.sysds.runtime.compress.colgroup">ColGroupSDCSingle</a></span></code>
 <div class="block">Column group that sparsely encodes the dictionary values.</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>class&nbsp;</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupSDCSingleZeros.html" title="class in org.apache.sysds.runtime.compress.colgroup">ColGroupSDCSingleZeros</a></span></code>
 <div class="block">Column group that sparsely encodes the dictionary values.</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>class&nbsp;</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupSDCZeros.html" title="class in org.apache.sysds.runtime.compress.colgroup">ColGroupSDCZeros</a></span></code>
 <div class="block">Column group that sparsely encodes the dictionary values.</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>class&nbsp;</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupUncompressed.html" title="class in org.apache.sysds.runtime.compress.colgroup">ColGroupUncompressed</a></span></code>
 <div class="block">Column group type for columns that are stored as dense arrays of doubles.</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>class&nbsp;</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupValue.html" title="class in org.apache.sysds.runtime.compress.colgroup">ColGroupValue</a></span></code>
 <div class="block">Base class for column groups encoded with value dictionary.</div>
@@ -319,23 +321,19 @@
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code>static <a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a></code></td>
-<td class="colLast"><span class="typeNameLabel">ColGroupFactory.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupFactory.html#compress-int:A-int-org.apache.sysds.runtime.compress.utils.ABitmap-org.apache.sysds.runtime.compress.colgroup.AColGroup.CompressionType-org.apache.sysds.runtime.compress.CompressionSettings-org.apache.sysds.runtime.matrix.data.MatrixBlock-">compress</a></span>(int[]&nbsp;colIndexes,
+<td class="colLast"><span class="typeNameLabel">ColGroupFactory.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupFactory.html#compress-int:A-int-org.apache.sysds.runtime.compress.utils.ABitmap-org.apache.sysds.runtime.compress.colgroup.AColGroup.CompressionType-org.apache.sysds.runtime.compress.CompressionSettings-org.apache.sysds.runtime.matrix.data.MatrixBlock-double-">compress</a></span>(int[]&nbsp;colIndexes,
         int&nbsp;rlen,
         <a href="../../../../../../../org/apache/sysds/runtime/compress/utils/ABitmap.html" title="class in org.apache.sysds.runtime.compress.utils">ABitmap</a>&nbsp;ubm,
         <a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.CompressionType.html" title="enum in org.apache.sysds.runtime.compress.colgroup">AColGroup.CompressionType</a>&nbsp;compType,
         <a href="../../../../../../../org/apache/sysds/runtime/compress/CompressionSettings.html" title="class in org.apache.sysds.runtime.compress">CompressionSettings</a>&nbsp;cs,
-        <a href="../../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;rawMatrixBlock)</code>
+        <a href="../../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;rawMatrixBlock,
+        double&nbsp;tupleSparsity)</code>
 <div class="block">Method for compressing an ColGroup.</div>
 </td>
 </tr>
 <tr class="altColor">
-<td class="colFirst"><code>static <a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a>[]</code></td>
-<td class="colLast"><span class="typeNameLabel">ColGroupFactory.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupFactory.html#compressColGroups-org.apache.sysds.runtime.matrix.data.MatrixBlock-org.apache.sysds.runtime.compress.estim.CompressedSizeInfo-org.apache.sysds.runtime.compress.CompressionSettings-int-">compressColGroups</a></span>(<a href="../../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;in,
-                 <a href="../../../../../../../org/apache/sysds/runtime/compress/estim/CompressedSizeInfo.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeInfo</a>&nbsp;csi,
-                 <a href="../../../../../../../org/apache/sysds/runtime/compress/CompressionSettings.html" title="class in org.apache.sysds.runtime.compress">CompressionSettings</a>&nbsp;compSettings,
-                 int&nbsp;k)</code>
-<div class="block">The actual compression method, that handles the logic of compressing multiple columns together.</div>
-</td>
+<td class="colFirst"><code><a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a></code></td>
+<td class="colLast"><span class="typeNameLabel">ColGroupEmpty.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupEmpty.html#copy--">copy</a></span>()</code>&nbsp;</td>
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code><a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a></code></td>
@@ -343,17 +341,79 @@
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code>abstract <a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a></code></td>
-<td class="colLast"><span class="typeNameLabel">AColGroup.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.html#copy--">copy</a></span>()</code>&nbsp;</td>
+<td class="colLast"><span class="typeNameLabel">AColGroup.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.html#copy--">copy</a></span>()</code>
+<div class="block">Get a copy of this column group.</div>
+</td>
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code><a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a></code></td>
-<td class="colLast"><span class="typeNameLabel">ColGroupValue.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupValue.html#copyAndSet-int:A-org.apache.sysds.runtime.compress.colgroup.ADictionary-">copyAndSet</a></span>(int[]&nbsp;colIndexes,
-          <a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup">ADictionary</a>&nbsp;newDictionary)</code>&nbsp;</td>
+<td class="colLast"><span class="typeNameLabel">ColGroupValue.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupValue.html#copyAndSet-org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary-">copyAndSet</a></span>(<a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/dictionary/ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a>&nbsp;newDictionary)</code>&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a></code></td>
+<td class="colLast"><span class="typeNameLabel">ColGroupValue.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupValue.html#copyAndSet-double:A-">copyAndSet</a></span>(double[]&nbsp;newDictionary)</code>&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a></code></td>
+<td class="colLast"><span class="typeNameLabel">ColGroupValue.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupValue.html#copyAndSet-int:A-org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary-">copyAndSet</a></span>(int[]&nbsp;colIndexes,
+          <a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/dictionary/ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a>&nbsp;newDictionary)</code>&nbsp;</td>
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code><a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a></code></td>
 <td class="colLast"><span class="typeNameLabel">ColGroupValue.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupValue.html#copyAndSet-int:A-double:A-">copyAndSet</a></span>(int[]&nbsp;colIndexes,
           double[]&nbsp;newDictionary)</code>&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>static <a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a></code></td>
+<td class="colLast"><span class="typeNameLabel">ColGroupFactory.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupFactory.html#genColGroupConst-int-int-double-">genColGroupConst</a></span>(int&nbsp;numRows,
+                int&nbsp;numCols,
+                double&nbsp;value)</code>&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>static <a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a></code></td>
+<td class="colLast"><span class="typeNameLabel">ColGroupFactory.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupFactory.html#getColGroupConst-int-int:A-double-">getColGroupConst</a></span>(int&nbsp;numRows,
+                int[]&nbsp;cols,
+                double&nbsp;value)</code>&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a></code></td>
+<td class="colLast"><span class="typeNameLabel">ColGroupEmpty.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupEmpty.html#replace-double-double-">replace</a></span>(double&nbsp;pattern,
+       double&nbsp;replace)</code>&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a></code></td>
+<td class="colLast"><span class="typeNameLabel">ColGroupUncompressed.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupUncompressed.html#replace-double-double-">replace</a></span>(double&nbsp;pattern,
+       double&nbsp;replace)</code>&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>abstract <a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a></code></td>
+<td class="colLast"><span class="typeNameLabel">AColGroup.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.html#replace-double-double-">replace</a></span>(double&nbsp;pattern,
+       double&nbsp;replace)</code>
+<div class="block">Make a copy of the column group values, and replace all values that match pattern with replacement value.</div>
+</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a></code></td>
+<td class="colLast"><span class="typeNameLabel">ColGroupValue.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupValue.html#replace-double-double-">replace</a></span>(double&nbsp;pattern,
+       double&nbsp;replace)</code>&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a></code></td>
+<td class="colLast"><span class="typeNameLabel">ColGroupEmpty.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupEmpty.html#rightMultByMatrix-org.apache.sysds.runtime.matrix.data.MatrixBlock-">rightMultByMatrix</a></span>(<a href="../../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;right)</code>&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a></code></td>
+<td class="colLast"><span class="typeNameLabel">ColGroupUncompressed.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupUncompressed.html#rightMultByMatrix-org.apache.sysds.runtime.matrix.data.MatrixBlock-">rightMultByMatrix</a></span>(<a href="../../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;right)</code>&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>abstract <a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a></code></td>
+<td class="colLast"><span class="typeNameLabel">AColGroup.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.html#rightMultByMatrix-org.apache.sysds.runtime.matrix.data.MatrixBlock-">rightMultByMatrix</a></span>(<a href="../../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;right)</code>
+<div class="block">Right matrix multiplication with this column group.</div>
+</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a></code></td>
+<td class="colLast"><span class="typeNameLabel">ColGroupValue.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupValue.html#rightMultByMatrix-org.apache.sysds.runtime.matrix.data.MatrixBlock-">rightMultByMatrix</a></span>(<a href="../../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;right)</code>&nbsp;</td>
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code><a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a></code></td>
@@ -404,20 +464,16 @@
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code><a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a></code></td>
-<td class="colLast"><span class="typeNameLabel">ColGroupUncompressed.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupUncompressed.html#sliceColumns-int-int-">sliceColumns</a></span>(int&nbsp;cl,
-            int&nbsp;cu)</code>&nbsp;</td>
+<td class="colLast"><span class="typeNameLabel">AColGroup.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.html#sliceColumn-int-">sliceColumn</a></span>(int&nbsp;col)</code>
+<div class="block">Slice out a single column from the column group.</div>
+</td>
 </tr>
 <tr class="rowColor">
-<td class="colFirst"><code>abstract <a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a></code></td>
+<td class="colFirst"><code><a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a></code></td>
 <td class="colLast"><span class="typeNameLabel">AColGroup.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.html#sliceColumns-int-int-">sliceColumns</a></span>(int&nbsp;cl,
             int&nbsp;cu)</code>
 <div class="block">Slice out the columns within the range of cl and cu to remove the dictionary values related to these columns.</div>
 </td>
-</tr>
-<tr class="altColor">
-<td class="colFirst"><code><a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a></code></td>
-<td class="colLast"><span class="typeNameLabel">ColGroupValue.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupValue.html#sliceColumns-int-int-">sliceColumns</a></span>(int&nbsp;cl,
-            int&nbsp;cu)</code>&nbsp;</td>
 </tr>
 </tbody>
 </table>
@@ -430,7 +486,17 @@
 <tbody>
 <tr class="altColor">
 <td class="colFirst"><code>static <a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;<a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a>&gt;</code></td>
-<td class="colLast"><span class="typeNameLabel">ColGroupIO.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupIO.html#readGroups-java.io.DataInput-">readGroups</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/io/DataInput.html?is-external=true" title="class or interface in java.io">DataInput</a>&nbsp;in)</code>
+<td class="colLast"><span class="typeNameLabel">ColGroupFactory.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupFactory.html#compressColGroups-org.apache.sysds.runtime.matrix.data.MatrixBlock-org.apache.sysds.runtime.compress.estim.CompressedSizeInfo-org.apache.sysds.runtime.compress.CompressionSettings-int-">compressColGroups</a></span>(<a href="../../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;in,
+                 <a href="../../../../../../../org/apache/sysds/runtime/compress/estim/CompressedSizeInfo.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeInfo</a>&nbsp;csi,
+                 <a href="../../../../../../../org/apache/sysds/runtime/compress/CompressionSettings.html" title="class in org.apache.sysds.runtime.compress">CompressionSettings</a>&nbsp;compSettings,
+                 int&nbsp;k)</code>
+<div class="block">The actual compression method, that handles the logic of compressing multiple columns together.</div>
+</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>static <a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;<a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a>&gt;</code></td>
+<td class="colLast"><span class="typeNameLabel">ColGroupIO.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupIO.html#readGroups-java.io.DataInput-int-">readGroups</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/io/DataInput.html?is-external=true" title="class or interface in java.io">DataInput</a>&nbsp;in,
+          int&nbsp;nRows)</code>
 <div class="block">Read groups from a file.</div>
 </td>
 </tr>
@@ -444,10 +510,26 @@
 </tr>
 <tbody>
 <tr class="altColor">
-<td class="colFirst"><code>static <a href="../../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
-<td class="colLast"><span class="typeNameLabel">ColGroupConverter.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupConverter.html#getUncompressedColBlock-org.apache.sysds.runtime.compress.colgroup.AColGroup-">getUncompressedColBlock</a></span>(<a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a>&nbsp;group)</code>
-<div class="block">Extracts the Uncompressed MatrixBlock representation of a Col Group</div>
+<td class="colFirst"><code>void</code></td>
+<td class="colLast"><span class="typeNameLabel">ColGroupEmpty.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupEmpty.html#leftMultByAColGroup-org.apache.sysds.runtime.compress.colgroup.AColGroup-org.apache.sysds.runtime.matrix.data.MatrixBlock-">leftMultByAColGroup</a></span>(<a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a>&nbsp;lhs,
+                   <a href="../../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;c)</code>&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>void</code></td>
+<td class="colLast"><span class="typeNameLabel">ColGroupUncompressed.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupUncompressed.html#leftMultByAColGroup-org.apache.sysds.runtime.compress.colgroup.AColGroup-org.apache.sysds.runtime.matrix.data.MatrixBlock-">leftMultByAColGroup</a></span>(<a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a>&nbsp;lhs,
+                   <a href="../../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;result)</code>&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>abstract void</code></td>
+<td class="colLast"><span class="typeNameLabel">AColGroup.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.html#leftMultByAColGroup-org.apache.sysds.runtime.compress.colgroup.AColGroup-org.apache.sysds.runtime.matrix.data.MatrixBlock-">leftMultByAColGroup</a></span>(<a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a>&nbsp;lhs,
+                   <a href="../../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;result)</code>
+<div class="block">Left side matrix multiplication with a column group that is transposed.</div>
 </td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>void</code></td>
+<td class="colLast"><span class="typeNameLabel">ColGroupValue.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupValue.html#leftMultByAColGroup-org.apache.sysds.runtime.compress.colgroup.AColGroup-org.apache.sysds.runtime.matrix.data.MatrixBlock-">leftMultByAColGroup</a></span>(<a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a>&nbsp;lhs,
+                   <a href="../../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;result)</code>&nbsp;</td>
 </tr>
 </tbody>
 </table>
@@ -460,41 +542,6 @@
 <tbody>
 <tr class="altColor">
 <td class="colFirst"><code>static void</code></td>
-<td class="colLast"><span class="typeNameLabel">AColGroup.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.html#decompressColumnToArray-double:A-int-java.util.List-">decompressColumnToArray</a></span>(double[]&nbsp;target,
-                       int&nbsp;colIndex,
-                       <a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;<a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a>&gt;&nbsp;colGroups)</code>&nbsp;</td>
-</tr>
-<tr class="rowColor">
-<td class="colFirst"><code>static void</code></td>
-<td class="colLast"><span class="typeNameLabel">AColGroup.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.html#decompressColumnToBlock-double:A-int-int-int-java.util.List-">decompressColumnToBlock</a></span>(double[]&nbsp;target,
-                       int&nbsp;colIndex,
-                       int&nbsp;rl,
-                       int&nbsp;ru,
-                       <a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;<a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a>&gt;&nbsp;colGroups)</code>
-<div class="block">Decompress part of the col groups into the target dense double array.</div>
-</td>
-</tr>
-<tr class="altColor">
-<td class="colFirst"><code>static void</code></td>
-<td class="colLast"><span class="typeNameLabel">AColGroup.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.html#decompressColumnToBlock-org.apache.sysds.runtime.matrix.data.MatrixBlock-int-int-int-java.util.List-">decompressColumnToBlock</a></span>(<a href="../../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;target,
-                       int&nbsp;colIndex,
-                       int&nbsp;rl,
-                       int&nbsp;ru,
-                       <a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;<a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a>&gt;&nbsp;colGroups)</code>
-<div class="block">Decompress part of the col groups into the target matrix block, this decompression maintain the number of non
- zeros.</div>
-</td>
-</tr>
-<tr class="rowColor">
-<td class="colFirst"><code>static void</code></td>
-<td class="colLast"><span class="typeNameLabel">AColGroup.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.html#decompressColumnToBlock-org.apache.sysds.runtime.matrix.data.MatrixBlock-int-java.util.List-">decompressColumnToBlock</a></span>(<a href="../../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;target,
-                       int&nbsp;colIndex,
-                       <a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;<a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a>&gt;&nbsp;colGroups)</code>
-<div class="block">Decompress an entire column into the target matrix block.</div>
-</td>
-</tr>
-<tr class="altColor">
-<td class="colFirst"><code>static void</code></td>
 <td class="colLast"><span class="typeNameLabel">AColGroup.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.html#decompressColumnToBlockUnSafe-org.apache.sysds.runtime.matrix.data.MatrixBlock-int-int-java.util.List-">decompressColumnToBlockUnSafe</a></span>(<a href="../../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;target,
                              int&nbsp;rl,
                              int&nbsp;ru,
@@ -504,6 +551,12 @@
 </td>
 </tr>
 <tr class="rowColor">
+<td class="colFirst"><code>static long</code></td>
+<td class="colLast"><span class="typeNameLabel">ColGroupIO.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupIO.html#getExactSizeOnDisk-java.util.List-">getExactSizeOnDisk</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;<a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a>&gt;&nbsp;colGroups)</code>
+<div class="block">Get the size on disk for the given list of column groups</div>
+</td>
+</tr>
+<tr class="altColor">
 <td class="colFirst"><code>static void</code></td>
 <td class="colLast"><span class="typeNameLabel">ColGroupIO.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupIO.html#writeGroups-java.io.DataOutput-java.util.List-">writeGroups</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/io/DataOutput.html?is-external=true" title="class or interface in java.io">DataOutput</a>&nbsp;out,
            <a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;<a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a>&gt;&nbsp;colGroups)</code>

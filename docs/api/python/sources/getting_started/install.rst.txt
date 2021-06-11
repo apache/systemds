@@ -70,7 +70,7 @@ Then to build the system you do the following
 - Open an terminal at the root of the repository.
 - Package the Java code using the ``mvn clean package -P distribution`` command
 - ``cd src/main/python`` to point at the root of the SystemDS Python library.
-- Copy `jars` with ``python pre_setup.py``
+- Build the Python API ``python create_python_dist.py``
 - Install with ``pip install .``
 
 After this you are ready to go.

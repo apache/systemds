@@ -336,7 +336,6 @@ table {
 .dropdown-menu li>a:hover {
     background-color: #ff5003;
     background-image: none;
-    font-color: red;
 }
 
 a {

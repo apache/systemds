@@ -49,8 +49,8 @@ var activeTableTab = "activeTableTab";
 </div>
 <div class="subNav">
 <ul class="navList">
-<li><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.ColGroupType.html" title="enum in org.apache.sysds.runtime.compress.colgroup"><span class="typeNameLink">Prev&nbsp;Class</span></a></li>
-<li><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup"><span class="typeNameLink">Next&nbsp;Class</span></a></li>
+<li><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup"><span class="typeNameLink">Prev&nbsp;Class</span></a></li>
+<li><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupCompressed.html" title="class in org.apache.sysds.runtime.compress.colgroup"><span class="typeNameLink">Next&nbsp;Class</span></a></li>
 </ul>
 <ul class="navList">
 <li><a href="../../../../../../index.html?org/apache/sysds/runtime/compress/colgroup/AColGroup.CompressionType.html" target="_top">Frames</a></li>
@@ -124,13 +124,7 @@ var activeTableTab = "activeTableTab";
 <br>
 <pre>public static enum <span class="typeNameLabel">AColGroup.CompressionType</span>
 extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Enum.html?is-external=true" title="class or interface in java.lang">Enum</a>&lt;<a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.CompressionType.html" title="enum in org.apache.sysds.runtime.compress.colgroup">AColGroup.CompressionType</a>&gt;</pre>
-<div class="block">Public Group types supported
- 
- Note For instance DDC is called DDC not DDC1, or DDC2 which is a specific subtype of the DDC. That
- differentiation is hidden to a user.
- 
- Includes Uncompressed for sparse/dense representation RLE for Run length encoding OLE for Offset Length encoding
- DDC for Dense dictionary encoding</div>
+<div class="block">Public super types of compression ColGroups supported</div>
 </li>
 </ul>
 </div>
@@ -155,15 +149,18 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Enum.html?i
 <td class="colOne"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.CompressionType.html#DDC">DDC</a></span></code>&nbsp;</td>
 </tr>
 <tr class="altColor">
+<td class="colOne"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.CompressionType.html#EMPTY">EMPTY</a></span></code>&nbsp;</td>
+</tr>
+<tr class="rowColor">
 <td class="colOne"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.CompressionType.html#OLE">OLE</a></span></code>&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colOne"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.CompressionType.html#RLE">RLE</a></span></code>&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colOne"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.CompressionType.html#SDC">SDC</a></span></code>&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colOne"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.CompressionType.html#UNCOMPRESSED">UNCOMPRESSED</a></span></code>&nbsp;</td>
 </tr>
 </table>
@@ -268,6 +265,15 @@ the order they are declared.</div>
 <pre>public static final&nbsp;<a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.CompressionType.html" title="enum in org.apache.sysds.runtime.compress.colgroup">AColGroup.CompressionType</a> CONST</pre>
 </li>
 </ul>
+<a name="EMPTY">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>EMPTY</h4>
+<pre>public static final&nbsp;<a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.CompressionType.html" title="enum in org.apache.sysds.runtime.compress.colgroup">AColGroup.CompressionType</a> EMPTY</pre>
+</li>
+</ul>
 <a name="SDC">
 <!--   -->
 </a>
@@ -355,8 +361,8 @@ not permitted.)</div>
 </div>
 <div class="subNav">
 <ul class="navList">
-<li><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.ColGroupType.html" title="enum in org.apache.sysds.runtime.compress.colgroup"><span class="typeNameLink">Prev&nbsp;Class</span></a></li>
-<li><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup"><span class="typeNameLink">Next&nbsp;Class</span></a></li>
+<li><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup"><span class="typeNameLink">Prev&nbsp;Class</span></a></li>
+<li><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupCompressed.html" title="class in org.apache.sysds.runtime.compress.colgroup"><span class="typeNameLink">Next&nbsp;Class</span></a></li>
 </ul>
 <ul class="navList">
 <li><a href="../../../../../../index.html?org/apache/sysds/runtime/compress/colgroup/AColGroup.CompressionType.html" target="_top">Frames</a></li>

@@ -144,15 +144,16 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 </td>
 </tr>
 <tr class="altColor">
-<td class="colFirst"><code><a href="../../../../../org/apache/sysds/runtime/compress/cocode/PlanningCoCoder.PartitionerType.html" title="enum in org.apache.sysds.runtime.compress.cocode">PlanningCoCoder.PartitionerType</a></code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/compress/CompressionSettings.html#columnPartitioner">columnPartitioner</a></span></code>
-<div class="block">The selected method for column partitioning used in CoCoding compressed columns</div>
+<td class="colFirst"><code>double</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/compress/CompressionSettings.html#coCodePercentage">coCodePercentage</a></span></code>
+<div class="block">A Cocode parameter that differ in behavior based on compression method, in general it is a value that reflects
+ aggressively likely coCoding is used.</div>
 </td>
 </tr>
 <tr class="rowColor">
-<td class="colFirst"><code>boolean</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/compress/CompressionSettings.html#investigateEstimate">investigateEstimate</a></span></code>
-<div class="block">Boolean specifying if the compression strategy should be investigated and monitored.</div>
+<td class="colFirst"><code><a href="../../../../../org/apache/sysds/runtime/compress/cocode/PlanningCoCoder.PartitionerType.html" title="enum in org.apache.sysds.runtime.compress.cocode">PlanningCoCoder.PartitionerType</a></code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/compress/CompressionSettings.html#columnPartitioner">columnPartitioner</a></span></code>
+<div class="block">The selected method for column partitioning used in CoCoding compressed columns</div>
 </td>
 </tr>
 <tr class="altColor">
@@ -163,29 +164,35 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code>int</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/compress/CompressionSettings.html#maxStaticColGroupCoCode">maxStaticColGroupCoCode</a></span></code>
-<div class="block">The maximum number of columns CoCoded if the Static CoCoding strategy is selected</div>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/compress/CompressionSettings.html#maxColGroupCoCode">maxColGroupCoCode</a></span></code>
+<div class="block">The maximum number of columns CoCoded allowed</div>
 </td>
 </tr>
 <tr class="altColor">
+<td class="colFirst"><code>int</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/compress/CompressionSettings.html#minimumSampleSize">minimumSampleSize</a></span></code>
+<div class="block">The minimum size of the sample extracted.</div>
+</td>
+</tr>
+<tr class="rowColor">
 <td class="colFirst"><code>double</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/compress/CompressionSettings.html#samplingRatio">samplingRatio</a></span></code>
 <div class="block">The sampling ratio used when choosing ColGroups.</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>int</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/compress/CompressionSettings.html#seed">seed</a></span></code>
 <div class="block">If the seed is -1 then the system used system millisecond time and class hash for seeding.</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>boolean</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/compress/CompressionSettings.html#skipList">skipList</a></span></code>
 <div class="block">Boolean specifying if the OLE and RLE should construct skip to enable skipping large amounts of rows.</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>boolean</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/compress/CompressionSettings.html#sortValuesByLength">sortValuesByLength</a></span></code>
 <div class="block">Sorting of values by physical length helps by 10-20%, especially for serial, while slight performance decrease
@@ -193,19 +200,19 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
  garbage collection increases)</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>boolean</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/compress/CompressionSettings.html#transposed">transposed</a></span></code>
 <div class="block">Transpose input matrix, to optimize access when extracting bitmaps.</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/compress/CompressionSettings.html#transposeInput">transposeInput</a></span></code>
 <div class="block">Boolean specifying which transpose setting is used, can be auto, true or false</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/util/EnumSet.html?is-external=true" title="class or interface in java.util">EnumSet</a>&lt;<a href="../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.CompressionType.html" title="enum in org.apache.sysds.runtime.compress.colgroup">AColGroup.CompressionType</a>&gt;</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/compress/CompressionSettings.html#validCompressions">validCompressions</a></span></code>
 <div class="block">Valid Compressions List, containing the ColGroup CompressionTypes that are allowed to be used for the compression
@@ -343,16 +350,6 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <div class="block">If the seed is -1 then the system used system millisecond time and class hash for seeding.</div>
 </li>
 </ul>
-<a name="investigateEstimate">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>investigateEstimate</h4>
-<pre>public final&nbsp;boolean investigateEstimate</pre>
-<div class="block">Boolean specifying if the compression strategy should be investigated and monitored.</div>
-</li>
-</ul>
 <a name="lossy">
 <!--   -->
 </a>
@@ -373,25 +370,46 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <div class="block">The selected method for column partitioning used in CoCoding compressed columns</div>
 </li>
 </ul>
-<a name="maxStaticColGroupCoCode">
+<a name="maxColGroupCoCode">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
-<h4>maxStaticColGroupCoCode</h4>
-<pre>public final&nbsp;int maxStaticColGroupCoCode</pre>
-<div class="block">The maximum number of columns CoCoded if the Static CoCoding strategy is selected</div>
+<h4>maxColGroupCoCode</h4>
+<pre>public final&nbsp;int maxColGroupCoCode</pre>
+<div class="block">The maximum number of columns CoCoded allowed</div>
+</li>
+</ul>
+<a name="coCodePercentage">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>coCodePercentage</h4>
+<pre>public final&nbsp;double coCodePercentage</pre>
+<div class="block">A Cocode parameter that differ in behavior based on compression method, in general it is a value that reflects
+ aggressively likely coCoding is used.</div>
 </li>
 </ul>
 <a name="validCompressions">
 <!--   -->
 </a>
-<ul class="blockListLast">
+<ul class="blockList">
 <li class="blockList">
 <h4>validCompressions</h4>
 <pre>public final&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/util/EnumSet.html?is-external=true" title="class or interface in java.util">EnumSet</a>&lt;<a href="../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.CompressionType.html" title="enum in org.apache.sysds.runtime.compress.colgroup">AColGroup.CompressionType</a>&gt; validCompressions</pre>
 <div class="block">Valid Compressions List, containing the ColGroup CompressionTypes that are allowed to be used for the compression
  Default is to always allow for Uncompromisable ColGroup.</div>
+</li>
+</ul>
+<a name="minimumSampleSize">
+<!--   -->
+</a>
+<ul class="blockListLast">
+<li class="blockList">
+<h4>minimumSampleSize</h4>
+<pre>public final&nbsp;int minimumSampleSize</pre>
+<div class="block">The minimum size of the sample extracted.</div>
 </li>
 </ul>
 </li>

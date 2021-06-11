@@ -89,7 +89,7 @@ class PythonAPIFileGenerator(object):
                 init_file.write(self.init_import.format(function=f))
             init_file.write("\n")
             init_file.write(self.init_all.format(
-                functions=self.function_names).replace("'", ""))
+                functions=self.function_names).replace(",",",\n"))
 
 
 class PythonAPIFunctionGenerator(object):

@@ -20,7 +20,6 @@
 package org.apache.sysds.runtime.compress.estim.sample;
 
 import org.apache.commons.math3.distribution.ChiSquaredDistribution;
-import org.apache.sysds.runtime.compress.utils.Bitmap;
 
 public class ShlosserJackknifeEstimator {
 
@@ -30,14 +29,15 @@ public class ShlosserJackknifeEstimator {
 	 * Peter J. Haas, Jeffrey F. Naughton, S. Seshadri, and Lynne Stokes. 1995. Sampling-Based Estimation of the Number
 	 * of Distinct Values of an Attribute. VLDB'95, Section 5.2, recommended estimator by the authors
 	 * 
-	 * @param ubm        The Uncompressed Bitmap containing the data from the sample
+	 * @param numVals	 The number of unique values in the sample
+	 * @param frequencies The Frequencies of the different unique values
+	 * @param freqCounts The inverse histogram of frequencies. counts extracted 
 	 * @param nRows      The original number of rows in the entire input
 	 * @param sampleSize The number of rows in the sample
 	 * @return an estimation of number of distinct values.
 	 */
-	@SuppressWarnings("unused")
-	private static int shlosserJackknifeEstimator(Bitmap ubm, int nRows, int sampleSize) {
-		int numVals = ubm.getNumValues();
+	protected static int distinctCount(int numVals, int[] frequencies, int[] freqCounts, int nRows, int sampleSize) {
+
 		CriticalValue cv = computeCriticalValue(sampleSize);
 
 		// uniformity chi-square test
@@ -45,15 +45,15 @@ public class ShlosserJackknifeEstimator {
 		// test-statistic
 		double u = 0;
 		for(int i = 0; i < numVals; i++) {
-			u += Math.pow(ubm.getNumOffsets(i) - nBar, 2);
+			u += Math.pow(frequencies[i] - nBar, 2);
 		}
 		u /= nBar;
 		if(sampleSize != cv.usedSampleSize)
 			computeCriticalValue(sampleSize);
 		if(u < cv.uniformityCriticalValue) // uniform
-			return SmoothedJackknifeEstimator.get(ubm, nRows, sampleSize);
+			return SmoothedJackknifeEstimator.distinctCount(numVals, freqCounts, nRows, sampleSize);
 		else
-			return ShlosserEstimator.get(ubm, nRows, sampleSize);
+			return ShlosserEstimator.distinctCount(numVals, freqCounts, nRows, sampleSize);
 	}
 
 	private static CriticalValue computeCriticalValue(int sampleSize) {

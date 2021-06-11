@@ -13,13 +13,11 @@
 # OUTPUT:
 # Matrix M where each column corresponds to a node in the learned tree and each row contains the following information:
 #  M[1,j]: id of node j (in a complete binary tree)
-#  M[2,j]: Offset (no. of columns) to left child of j if j is an internal node, otherwise 0
-#  M[3,j]: Feature index of the feature (scale feature id if the feature is scale or categorical feature id if the feature is categorical)
+#  M[2,j]: tree id to which node j belongs
+#  M[3,j]: Offset (no. of columns) to left child of j if j is an internal node, otherwise 0
+#  M[4,j]: Feature index of the feature (scale feature id if the feature is scale or categorical feature id if the feature is categorical)
 #    that node j looks at if j is an internal node, otherwise 0
-#  M[4,j]: Type of the feature that node j looks at if j is an internal node: holds the same information as R input vector
-#  M[5,j]: If j is an internal node: 1 if the feature chosen for j is scale, otherwise the size of the subset of values
-#    stored in rows 6,7,... if j is categorical
-#    If j is a leaf node: 0
+#  M[5,j]: Type of the feature that node j looks at if j is an internal node. if leaf = 0, if scalar = 1, if categorical = 2
 #  M[6:,j]: If j is an internal node: Threshold the example's feature value is compared to is stored at M[6,j] if the feature chosen for j is scale,
 #     otherwise if the feature chosen for j is categorical rows 6,7,... depict the value subset chosen for j
 #     If j is a leaf node 1 if j is impure and the number of samples at j > threshold, otherwise 0
@@ -42,6 +40,7 @@ m_xgboost = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] R) retur
   max_depth = 6
   depth = 0.0
   level = 0
+  tree_id = 1
 
   # adjust this here if we create more trees to create new prediction values
   while (node_queue_len > 0) {
@@ -101,7 +100,7 @@ m_xgboost = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] R) retur
           [left_row_vec, right_row_vec] = splitMatrixByValueLoop(curr_X_full[,best_feature_index], X[,best_feature_index], best_split_threshold)
           curr_rows_queue = dataQueuePush(left_row_vec, right_row_vec, curr_rows_queue)
           offset = ncol(node_queue) - 1
-          M = addOutputRow(M, node, R, offset, best_feature_index, best_split_threshold)
+          M = addOutputRow(M, node, tree_id, R, offset, best_feature_index, best_split_threshold)
 
       }
       else # CATEGORICAL
@@ -111,13 +110,13 @@ m_xgboost = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] R) retur
           [left_row_vec, right_row_vec] = splitMatrixByCategory(curr_X_full[,best_feature_index], X[,best_feature_index])
           curr_rows_queue = dataQueuePush(left_row_vec, right_row_vec, curr_rows_queue)
           offset = ncol(node_queue) - 1
-          M = addOutputRow(M, node, R, offset, best_feature_index, 0.0)
+          M = addOutputRow(M, node, tree_id, R, offset, best_feature_index, 0.0)
 
       }
     }
     else # has no child
     {
-      M = addOutputRow(M, node, R, 0.0, best_feature_index, 0.0)
+      M = addOutputRow(M, node, tree_id, R, 0.0, best_feature_index, 0.0)
     }
     node_queue_len = ncol(node_queue)
     printMMatrix(M)
@@ -152,6 +151,7 @@ calculateChildNodeIDs = function(Matrix[Double] node)  return(Matrix[Double] lef
 addOutputRow = function(
   Matrix[Double] M,
   Matrix[Double] node,
+  Double tree_id,
   Matrix[Double] R,
   Double offset,
   Double used_col,
@@ -159,19 +159,20 @@ addOutputRow = function(
 ) return (Matrix[Double] new_M) {
       current_node = matrix(0, rows=6, cols=1)
       current_node[1,1] = node[1,1] # node id
-      current_node[2,1] = offset # offset to left child
-      current_node[3,1] = used_col # features used
+      current_node[2,1] = tree_id
+      current_node[3,1] = offset # offset to left child
+      current_node[4,1] = used_col # features used
       # change here to different stuff if it is classification
 
-      if (used_col >= 1.0) { current_node[4, 1] = R[1, used_col] } # for all nodes, which used a features (all except leafs), write the type (scalar or cat)
+      if (used_col >= 1.0) { current_node[5, 1] = R[1, used_col] } # for all nodes, which used a features (all except leafs), write the type (scalar or cat)
       # also change here if it is classification
       if (threshold < 1.00) {
         current_node[5,1] = 0 # number of values in threshold // currently 0 if leaf node
       } else {
         current_node[5,1] = 1
       }
-      current_node[6,1] = threshold
-      if (ncol(M) == 0 & nrow(M) == 0) {
+      current_node[6,1] = threshold # split value ( 0 if leaf or categorical)
+      if (ncol(M) == 0 & nrow(M) == 0) { # first node
         new_M = current_node
       } else {
         new_M = cbind(M, current_node)
@@ -501,7 +502,7 @@ printMMatrix = function(Matrix[Double] m) return() {
 
     if(nrow(m) != 0 & ncol(m) != 0)
     {
-        col_string = "::::::::::::::::::::::::::::::::::::::::"
+        col_string = "::::::::::::::::::::::::::::::::"
         for(col in 1:ncol(m)) {
             if(col < 10)
                 col_string = col_string + ":::(" + toString(col) + ")::::"
@@ -512,17 +513,17 @@ printMMatrix = function(Matrix[Double] m) return() {
         for(row in 1:nrow(m)) {
 
             if(row == 1)
-                print_string = "                         node id :(" + row + ")     "
+                print_string = "                 node id :(" + row + ")     "
             if(row == 2)
-                print_string = "            offset to left child :(" + row + ")     "
+                print_string = "                 tree id :(" + row + ")     "
             if(row == 3)
-                print_string = "          used feature col index :(" + row + ")     "
+                print_string = "    offset to left child :(" + row + ")     "
             if(row == 4)
-                print_string = "          if scalar=1 / if cat=2 :(" + row + ")     "
+                print_string = "  used feature col index :(" + row + ")     "
             if(row == 5)
-                print_string = "    leaf=0 / scalar=1 / cat=2..X :(" + row + ")     "
+                print_string = "if leaf=0/scalar=1/cat=2 :(" + row + ")     "
             if(row == 6)
-                print_string = "scalar=splitvalue / cat=firstcat :(" + row + ")     "
+                print_string = "       scalar=splitvalue :(" + row + ")     "
 
 
             for(col in 1:ncol(m)) {

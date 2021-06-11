@@ -20,7 +20,7 @@
 #-------------------------------------------------------------
 
 X = read($1);
-Y = read($2);
-R = read($3)
-M = decisionTree(X = X, Y = Y, R = R);
+y = read($2);
+R = read($3);
+M = xgboost(X = X, y = y, R = R);
 write(M, $4);

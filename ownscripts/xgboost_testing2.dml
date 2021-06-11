@@ -16,9 +16,9 @@ R = read(file_to_test + "_R.csv", format="csv");
 #printMatrix(Y, "testing set")
 print("[DEBUG] calling xgboost")
 
-X_onehot = toOneHot(X[,1],2)
-X = cbind(X_onehot, X[,2])
-printMatrix(X, "x one hot")
+#X_onehot = toOneHot(X[,1],2)
+#X = cbind(X_onehot, X[,2])
+#printMatrix(X, "x one hot")
 M = xgboost(X = X, y = y, R = R);
 
 

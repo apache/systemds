@@ -68,7 +68,7 @@ public abstract class ReadHDF5Test extends ReadHDF5TestBase {
 			loadTestConfiguration(config);
 
 			String HOME = SCRIPT_DIR + TEST_DIR;
-			String inputMatrixName = HOME + INPUT_DIR + getInputHDF5FileName();
+			String inputMatrixName = HOME + INPUT_DIR + getInputHDF5FileName(); // always read the same data
 			String datasetName = "DATASET_1";
 
 			fullDMLScriptName = HOME + getTestName() + "_" + testNumber + ".dml";

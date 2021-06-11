@@ -522,6 +522,12 @@ public class PrivacyPropagator
 	private static CPOperand[] getInputOperands(Instruction inst){
 		if ( inst instanceof ComputationCPInstruction )
 			return ((ComputationCPInstruction)inst).getInputs();
+		if ( inst instanceof BuiltinNaryCPInstruction )
+			return ((BuiltinNaryCPInstruction)inst).getInputs();
+		if ( inst instanceof FunctionCallCPInstruction )
+			return ((FunctionCallCPInstruction)inst).getInputs();
+		if ( inst instanceof SqlCPInstruction )
+			return ((SqlCPInstruction)inst).getInputs();
 		else return null;
 	}
 

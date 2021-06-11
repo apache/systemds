@@ -155,15 +155,17 @@ class Test_DMLScript(unittest.TestCase):
         Xt = self.sds.from_numpy(test_data[:test_count])
         Yt = self.sds.from_numpy(test_labels[:test_count])
 
-        FFN_package = self.sds.source(self.neural_net_src_path, "fnn")
+        FFN_package = self.sds.source(self.neural_net_src_path, "fnn", print_imported_methods=True)
 
-        network = FFN_package.train_paramserv(X, Y, 1, 128, 0.01, 1, '"BSP"', '"EPOCH"', '"LOCAL"', 42)
+        network = FFN_package.train(X, Y, 1, 16, 0.01, 1)
 
         self.assertTrue(type(network) is not None) # sourcing and training seems to works
 
+        FFN_package.save_model(network, '"model/python_FFN/"').compute(verbose=True)
+
         # TODO This does not work yet, not sure what the problem is
-        # probs = FFN_package.predict(network, Xt).compute()
-        # FFN_package.eval(probs, Yt).compute()
+        # probs = FFN_package.predict(Xt, network).compute(True)
+        # FFN_package.eval(Yt, Yt).compute()
 
 if __name__ == "__main__":
     unittest.main(exit=False)

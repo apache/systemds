@@ -213,9 +213,13 @@ public class ColumnEncoderComposite extends ColumnEncoder {
 				addEncoder(otherEnc);
 			}
 		}
-		else {
+		else
 			addEncoder(other);
-		}
+
+		updateAllDCEncoders();
+	}
+
+	public void updateAllDCEncoders(){
 		// update dummycode encoder domain sizes based on distinctness information from other encoders
 		ColumnEncoderDummycode dc = getEncoder(ColumnEncoderDummycode.class);
 		if(dc != null)

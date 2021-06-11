@@ -19,6 +19,7 @@
 
 package org.apache.sysds.runtime.instructions.fed;
 
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest.RequestType;
 import org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
@@ -29,6 +30,7 @@ import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse;
 import org.apache.sysds.runtime.controlprogram.federated.FederationMap;
+import org.apache.sysds.runtime.controlprogram.federated.FederationMap.AType;
 import org.apache.sysds.runtime.controlprogram.federated.FederationMap.FType;
 import org.apache.sysds.runtime.controlprogram.federated.FederationUtils;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
@@ -37,11 +39,12 @@ import org.apache.sysds.runtime.instructions.cp.ScalarObject;
 import org.apache.sysds.runtime.matrix.operators.Operator;
 import org.apache.sysds.runtime.matrix.operators.QuaternaryOperator;
 
+import java.util.ArrayList;
 import java.util.concurrent.Future;
 
 public class QuaternaryWCeMMFEDInstruction extends QuaternaryFEDInstruction
 {
-	// input1 ... federated X
+	// input1 ... X
 	// input2 ... U
 	// input3 ... V
 	// _input4 ... W (=epsilon)
@@ -67,46 +70,69 @@ public class QuaternaryWCeMMFEDInstruction extends QuaternaryFEDInstruction
 				new DoubleObject(ec.getMatrixInput(_input4.getName()).quickGetValue(0, 0));
 		}
 
-		if(X.isFederated(FType.ROW) && !U.isFederated() && !V.isFederated()) {
+		if(X.isFederated()) {
 			FederationMap fedMap = X.getFedMapping();
-			FederatedRequest[] fr1 = fedMap.broadcastSliced(U, false);
-			FederatedRequest fr2 = fedMap.broadcast(V);
-			FederatedRequest fr3 = null;
-			FederatedRequest frComp = null;
+			FederatedRequest[] frSliced = null;
+			ArrayList<FederatedRequest> frB = new ArrayList<>(); // FederatedRequest of broadcasts
+			long[] varNewIn = new long[eps != null ? 4 : 3];
+			varNewIn[0] = fedMap.getID();
+			
+			if(X.isFederated(FType.ROW)) { // row partitioned X
+				if(U.isFederated(FType.ROW) && fedMap.isAligned(U.getFedMapping(), AType.ROW)) {
+					varNewIn[1] = U.getFedMapping().getID();
+				}
+				else {
+					frSliced = fedMap.broadcastSliced(U, false);
+					varNewIn[1] = frSliced[0].getID();
+				}
+				FederatedRequest tmpFr = fedMap.broadcast(V);
+				varNewIn[2] = tmpFr.getID();
+				frB.add(tmpFr);
+			}
+			else { // col paritioned X
+				FederatedRequest tmpFr = fedMap.broadcast(U);
+				varNewIn[1] = tmpFr.getID();
+				frB.add(tmpFr);
+				if(V.isFederated() && fedMap.isAligned(V.getFedMapping(), AType.COL, AType.COL_T)) {
+					varNewIn[2] = V.getFedMapping().getID();
+				}
+				else {
+					frSliced = fedMap.broadcastSliced(V, true);
+					varNewIn[2] = frSliced[0].getID();
+				}
+			}
 
 			// broadcast the scalar epsilon if there are four inputs
 			if(eps != null) {
-				fr3 = fedMap.broadcast(eps);
+				FederatedRequest tmpFr = fedMap.broadcast(eps);
+				varNewIn[3] = tmpFr.getID();
+				frB.add(tmpFr);
 				// change the is_literal flag from true to false because when broadcasted it is no literal anymore
 				instString = instString.replace("true", "false");
-				frComp = FederationUtils.callInstruction(instString, output,
-					new CPOperand[]{input1, input2, input3, _input4},
-					new long[]{fedMap.getID(), fr1[0].getID(), fr2.getID(), fr3.getID()});
 			}
-			else {
-				frComp = FederationUtils.callInstruction(instString, output,
-				new CPOperand[]{input1, input2, input3},
-				new long[]{fedMap.getID(), fr1[0].getID(), fr2.getID()});
-			}
+
+			FederatedRequest frComp = FederationUtils.callInstruction(instString, output,
+				eps == null ? new CPOperand[]{input1, input2, input3}
+					: new CPOperand[]{input1, input2, input3, _input4},
+				varNewIn);
 
 			FederatedRequest frGet = new FederatedRequest(RequestType.GET_VAR, frComp.getID());
-			FederatedRequest frClean1 = fedMap.cleanup(getTID(), frComp.getID());
-			FederatedRequest frClean2 = fedMap.cleanup(getTID(), fr1[0].getID());
-			FederatedRequest frClean3 = fedMap.cleanup(getTID(), fr2.getID());
+			
+			ArrayList<FederatedRequest> frC = new ArrayList<>(); // FederatedRequests for cleanup
+			frC.add(fedMap.cleanup(getTID(), frComp.getID()));
+			if(frSliced != null)
+				frC.add(fedMap.cleanup(getTID(), frSliced[0].getID()));
+			for(FederatedRequest fr : frB)
+				frC.add(fedMap.cleanup(getTID(), fr.getID()));
 
-			Future<FederatedResponse>[] response;
-			if(fr3 != null) {
-				FederatedRequest frClean4 = fedMap.cleanup(getTID(), fr3.getID());
-				// execute federated instructions
-				response = fedMap.execute(getTID(), true, fr1, fr2, fr3,
-					frComp, frGet, frClean1, frClean2, frClean3, frClean4);
-			}
-			else {
-				// execute federated instructions
-				response = fedMap.execute(getTID(), true, fr1, fr2,
-					frComp, frGet, frClean1, frClean2, frClean3);
-			}
+			FederatedRequest[] frAll = ArrayUtils.addAll(ArrayUtils.addAll(
+				frB.toArray(new FederatedRequest[0]), frComp, frGet),
+				frC.toArray(new FederatedRequest[0]));
 
+			// execute federated instructions
+			Future<FederatedResponse>[] response = frSliced == null ?
+				fedMap.execute(getTID(), true, frAll) : fedMap.execute(getTID(), true, frSliced, frAll);
+			
 			//aggregate partial results from federated responses
 			AggregateUnaryOperator aop = InstructionUtils.parseBasicAggregateUnaryOperator("uak+");
 			ec.setVariable(output.getName(), FederationUtils.aggScalar(aop, response));

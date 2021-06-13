@@ -38,6 +38,11 @@ class Test_DMLScript(unittest.TestCase):
     d: DataManager = None
     base_path = "systemds/examples/tutorials/adult/"
     neural_net_src_path: str = "./tests/source/neural_net_source.dml"
+    dataset_path_train: str = "../../test/resources/datasets/adult/train_data.csv"
+    dataset_path_train_mtd: str = "../../test/resources/datasets/adult/train_data.csv.mtd"
+    dataset_path_test: str = "../../test/resources/datasets/adult/test_data.csv"
+    dataset_path_test_mtd: str = "../../test/resources/datasets/adult/test_data.csv.mtd"
+    dataset_jspec: str = "../../test/resources/datasets/adult/jspec.json"
 
     @classmethod
     def setUpClass(cls):
@@ -112,7 +117,6 @@ class Test_DMLScript(unittest.TestCase):
         test_count = 5000
 
         train_data, train_labels, test_data, test_labels = self.d.get_preprocessed_dataset(interpolate=True, standardize=True, dimred=0.1)
-
         # Train data
         X = self.sds.from_numpy( train_data[:train_count])
         Y = self.sds.from_numpy( train_labels[:train_count])
@@ -164,8 +168,49 @@ class Test_DMLScript(unittest.TestCase):
         FFN_package.save_model(network, '"model/python_FFN/"').compute(verbose=True)
 
         # TODO This does not work yet, not sure what the problem is
-        # probs = FFN_package.predict(Xt, network).compute(True)
+        #probs = FFN_package.predict(Xt, network).compute(True)
         # FFN_package.eval(Yt, Yt).compute()
+
+
+    def test_parse_dataset_with_systemdsread(self):
+        # Reduced because we want the tests to finish a bit faster.
+        train_count = 15000
+        test_count = 5000
+
+        #self.sds.read(self.dataset_path_train, schema=self.dataset_path_train_mtd).compute(verbose=True)
+        print("")
+
+        SCHEMA = '"DOUBLE,STRING,DOUBLE,STRING,DOUBLE,STRING,STRING,STRING,STRING,STRING,DOUBLE,DOUBLE,DOUBLE,STRING,STRING"'
+        F1 = self.sds.read(
+            self.dataset_path_train,
+            schema=SCHEMA
+        )
+        #F2 = self.sds.read(
+        #    self.dataset_path_test,
+        #    schema=SCHEMA
+        #)
+        jspec = self.sds.read(self.dataset_jspec, data_type="scalar", value_type="string")
+        #scaling does not have effect yet. We need to replace labels in test set with the same string as in train dataset
+        X1, M1 = F1.transform_encode(spec=jspec).compute(True)#F1.rbind(F2).transform_encode(spec=jspec).compute(True)
+        # Train data
+        col_length = len(X1[0])
+        X = self.sds.from_numpy(X1[0:train_count,0:col_length-2])
+        Y = self.sds.from_numpy(X1[0:train_count,col_length-2:col_length-1].flatten())
+        # Test data
+        Xt = self.sds.from_numpy(X1[train_count:train_count+test_count,0:col_length-2])
+        Yt = self.sds.from_numpy(X1[train_count:train_count+test_count,col_length-2:col_length-1].flatten())
+        FFN_package = self.sds.source(self.neural_net_src_path, "fnn", print_imported_methods=True)
+
+        network = FFN_package.train(X, Y, 1, 16, 0.01, 1)
+
+        self.assertTrue(type(network) is not None) # sourcing and training seems to works
+
+        FFN_package.save_model(network, '"model/python_FFN/"').compute(verbose=True)
+
+        # TODO This does not work yet, not sure what the problem is
+        # FFN_package.eval(Yt, Yt).compute()"""
+
+
 
 if __name__ == "__main__":
     unittest.main(exit=False)

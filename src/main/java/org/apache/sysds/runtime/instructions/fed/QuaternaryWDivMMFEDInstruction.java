@@ -110,7 +110,7 @@ public class QuaternaryWDivMMFEDInstruction extends QuaternaryFEDInstruction
 				varNewIn[2] = tmpFr.getID();
 				frB.add(tmpFr);
 			}
-			else { // col paritioned X
+			else if(X.isFederated(FType.COL)) { // col paritioned X
 				FederatedRequest tmpFr = fedMap.broadcast(U);
 				varNewIn[1] = tmpFr.getID();
 				frB.add(tmpFr);
@@ -123,6 +123,10 @@ public class QuaternaryWDivMMFEDInstruction extends QuaternaryFEDInstruction
 					varNewIn[2] = tmpFrS[0].getID();
 					frSliced.add(tmpFrS);
 				}
+			}
+			else {
+				throw new DMLRuntimeException("Federated WDivMM only supported for ROW or COLUMN partitioned "
+					+ "federated data.");
 			}
 
 			// broadcast matrix MX if there is a fourth matrix input

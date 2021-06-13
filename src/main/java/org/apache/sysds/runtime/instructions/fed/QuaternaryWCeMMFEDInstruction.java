@@ -89,7 +89,7 @@ public class QuaternaryWCeMMFEDInstruction extends QuaternaryFEDInstruction
 				varNewIn[2] = tmpFr.getID();
 				frB.add(tmpFr);
 			}
-			else { // col paritioned X
+			else if(X.isFederated(FType.COL)) { // col paritioned X
 				FederatedRequest tmpFr = fedMap.broadcast(U);
 				varNewIn[1] = tmpFr.getID();
 				frB.add(tmpFr);
@@ -100,6 +100,10 @@ public class QuaternaryWCeMMFEDInstruction extends QuaternaryFEDInstruction
 					frSliced = fedMap.broadcastSliced(V, true);
 					varNewIn[2] = frSliced[0].getID();
 				}
+			}
+			else {
+				throw new DMLRuntimeException("Federated WCeMM only supported for ROW or COLUMN partitioned "
+					+ "federated data.");
 			}
 
 			// broadcast the scalar epsilon if there are four inputs

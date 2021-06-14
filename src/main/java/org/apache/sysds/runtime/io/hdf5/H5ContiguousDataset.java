@@ -33,6 +33,7 @@ public class H5ContiguousDataset {
 	private final H5RootObject rootObject;
 	private final H5DataLayoutMessage dataLayoutMessage;
 	private final H5DataTypeMessage dataTypeMessage;
+	@SuppressWarnings("unused")
 	private final H5DataSpaceMessage dataSpaceMessage;
 
 	public H5ContiguousDataset(H5RootObject rootObject, H5ObjectHeader objectHeader) {

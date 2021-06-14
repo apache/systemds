@@ -30,6 +30,7 @@ public class H5BTree {
 
 	private static final byte[] BTREE_NODE_SIGNATURE = "TREE".getBytes(StandardCharsets.US_ASCII);
 	private static final int HEADER_BYTES = 6;
+	@SuppressWarnings("unused")
 	private final long address;
 	protected final int entriesUsed;
 	private final long leftSiblingAddress;

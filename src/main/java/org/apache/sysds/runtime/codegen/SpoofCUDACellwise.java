@@ -93,8 +93,8 @@ public class SpoofCUDACellwise extends SpoofCellwise implements SpoofCUDAOperato
 		long nnz = in_obj.getNnz("spoofCUDA" + getSpoofType(), false);
 		MatrixObject out_obj = sparseOut ?
 				(ec.getSparseMatrixOutputForGPUInstruction(outputName, out_rows, out_cols, (isSparseSafe() && nnz > 0) ?
-						nnz : out_rows * out_cols).getKey()) :
-				(ec.getDenseMatrixOutputForGPUInstruction(outputName, out_rows, out_cols).getKey());
+						nnz : out_rows * out_cols, false).getKey()) :
+				(ec.getDenseMatrixOutputForGPUInstruction(outputName, out_rows, out_cols, false).getKey());
 
 		packDataForTransfer(ec, inputs, scalarObjects, out_obj, 1, ID, 0,false, null);
 		if(NotEmpty(in_obj) || !sparseSafe) {

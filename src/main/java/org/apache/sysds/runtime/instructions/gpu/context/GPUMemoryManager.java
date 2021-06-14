@@ -245,9 +245,10 @@ public class GPUMemoryManager {
 	 * 
 	 * @param opcode instruction name
 	 * @param size size in bytes
+	 * @param initialize if cudaMemset() should be called
 	 * @return allocated pointer
 	 */
-	public Pointer malloc(String opcode, long size) {
+	public Pointer malloc(String opcode, long size, boolean initialize) {
 		if(size < 0) {
 			throw new DMLRuntimeException("Cannot allocate memory of size " + byteCountToDisplaySize(size));
 		}
@@ -432,7 +433,6 @@ public class GPUMemoryManager {
 			}
 		}
 		
-		
 		// Step 8: Handle defragmentation
 		if(A == null) {
 			LOG.warn("Potential fragmentation of the GPU memory. Forcibly evicting all ...");
@@ -448,11 +448,12 @@ public class GPUMemoryManager {
 		}
 		
 		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
-		cudaMemset(A, 0, size);
+		if(initialize)
+			cudaMemset(A, 0, size);
 		addMiscTime(opcode, GPUStatistics.cudaMemSet0Time, GPUStatistics.cudaMemSet0Count, GPUInstruction.MISC_TIMER_SET_ZERO, t0);
 		return A;
 	}
-	
+
 	private int worstCaseContiguousMemorySizeCompare(GPUObject o1, GPUObject o2) {
 		long ret = matrixMemoryManager.getWorstCaseContiguousMemorySize(o1) - matrixMemoryManager.getWorstCaseContiguousMemorySize(o2);
 		return ret < 0 ? -1 : (ret == 0 ? 0 : 1);

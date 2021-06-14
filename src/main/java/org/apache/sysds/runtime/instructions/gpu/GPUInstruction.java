@@ -252,7 +252,13 @@ public abstract class GPUInstruction extends Instruction implements LineageTrace
 	 * @return	the matrix object
 	 */
 	protected MatrixObject getDenseMatrixOutputForGPUInstruction(ExecutionContext ec, String name, long numRows, long numCols) {
-		return ec.getDenseMatrixOutputForGPUInstruction(name, numRows, numCols).getKey();
+		return getDenseMatrixOutputForGPUInstruction(ec, name, numRows, numCols, true);
+	}
+
+	protected MatrixObject getDenseMatrixOutputForGPUInstruction(ExecutionContext ec, String name, long numRows, long numCols,
+		boolean initialize)
+	{
+		return ec.getDenseMatrixOutputForGPUInstruction(name, numRows, numCols, initialize).getKey();
 	}
 
 	@Override

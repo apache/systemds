@@ -185,11 +185,6 @@ class DMLScript:
         if dag_node.dml_name != "":
             return dag_node.dml_name
 
-        if dag_node._output_type == OutputType.IMPORT:
-            if not dag_node.already_added:
-                self.add_code(dag_node.code_line(None, None))
-            return None
-
         if dag_node._source_node is not None:
             self._dfs_dag_nodes(dag_node._source_node)
         # for each node do the dfs operation and save the variable names in `input_var_names`
@@ -228,6 +223,8 @@ class DMLScript:
             self._dfs_clear_dag_nodes(n)
         for name, n in dag_node.named_input_nodes.items():
             self._dfs_clear_dag_nodes(n)
+        if dag_node._source_node is not None:
+            self._dfs_clear_dag_nodes(dag_node._source_node)
 
     def _next_unique_var(self) -> str:
         """Gets the next unique variable name

@@ -119,7 +119,7 @@ public class StandAloneTests {
 		// compare(c, new int[] {0, 1, 1, 1, 1, 0, 0, 0, 0, 0});
 	}
 
-	private void compare(AMapToData res, int[] expected) {
+	private static void compare(AMapToData res, int[] expected) {
 		StringBuilder sb = new StringBuilder();
 		sb.append("\nExpected:\n");
 		sb.append(Arrays.toString(expected));

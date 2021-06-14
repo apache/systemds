@@ -1146,6 +1146,8 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 				FileFormat fmt = ((MetaDataFormat) mo.getMetaData()).getFileFormat();
 				DataCharacteristics dc = (mo.getMetaData()).getDataCharacteristics();
 				if(fmt == FileFormat.HDF5 && !getInput1().getName().startsWith(org.apache.sysds.lops.Data.PREAD_PREFIX)) {
+					//FIXME why is this writer never used?
+					@SuppressWarnings("unused")
 					WriterHDF5 writer = new WriterHDF5((FileFormatPropertiesHDF5) _formatProperties);
 				}
 				else {

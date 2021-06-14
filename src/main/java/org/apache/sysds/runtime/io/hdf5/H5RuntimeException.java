@@ -22,6 +22,8 @@ package org.apache.sysds.runtime.io.hdf5;
 import org.apache.sysds.runtime.DMLRuntimeException;
 
 public class H5RuntimeException extends DMLRuntimeException {
+	private static final long serialVersionUID = -3551978964353888835L;
+
 	public H5RuntimeException(String string) {
 		super(string);
 	}

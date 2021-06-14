@@ -25,6 +25,8 @@ import java.util.Set;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.hops.OptimizerUtils;
@@ -110,10 +112,10 @@ public class OptimizationWrapper
 			StatisticMonitor.putPFStat( pb.getID() , Stat.OPT_T, timeVal);
 	}
 
-	// public static void setLogLevel( Level optLogLevel ) {
-	// 	Logger.getLogger("org.apache.sysds.runtime.controlprogram.parfor.opt")
-	// 			.setLevel( optLogLevel );
-	// }
+	public static void setLogLevel( Level optLogLevel ) {
+		Logger.getLogger("org.apache.sysds.runtime.controlprogram.parfor.opt")
+			.setLevel( optLogLevel );
+	}
 
 	@SuppressWarnings("unused")
 	private static void optimize( POptMode otype, int ck, double cm, ParForStatementBlock sb, ParForProgramBlock pb, ExecutionContext ec, boolean monitor ) 

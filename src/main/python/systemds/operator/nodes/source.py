@@ -191,9 +191,8 @@ class Source(OperationNode):
 
         return filtered_lines
 
-    def code_line(self, unnamed_input_vars: Sequence[str], named_input_vars: Dict[str, str]) -> str:
+    def code_line(self, var_name: str, unnamed_input_vars: Sequence[str], named_input_vars: Dict[str, str]) -> str:
         line = f'source({self.operation}) as { self.__name}'
-        self._already_added = True
         return line
 
     def compute(self, verbose: bool = False, lineage: bool = False):

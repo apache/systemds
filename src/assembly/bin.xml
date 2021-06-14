@@ -38,8 +38,10 @@
 			<excludes>
 				<exclude>algorithms/obsolete/*</exclude>
 				<exclude>algorithms/obsolete</exclude>
-				<exclude>perftest/*</exclude>
+				<exclude>perftest/**/*</exclude>
 				<exclude>perftest</exclude>
+				<exclude>perftestDeprecated/*</exclude>
+				<exclude>perftestDeprecated</exclude>
 				<exclude>staging/**/*</exclude>
 				<exclude>staging</exclude>
 			</excludes>

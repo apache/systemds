@@ -373,8 +373,14 @@ public class ExecutionContext {
 	 * @return a pair containing the wrapping {@link MatrixObject} and a boolean indicating whether a cuda memory allocation took place (as opposed to the space already being allocated)
 	 */
 	public Pair<MatrixObject, Boolean> getDenseMatrixOutputForGPUInstruction(String varName, long numRows, long numCols) {
+		return 	getDenseMatrixOutputForGPUInstruction(varName, numRows, numCols, true);
+	}
+
+	public Pair<MatrixObject, Boolean> getDenseMatrixOutputForGPUInstruction(String varName, long numRows, long numCols,
+		boolean initialize)
+	{
 		MatrixObject mo = allocateGPUMatrixObject(varName, numRows, numCols);
-		boolean allocated = mo.getGPUObject(getGPUContext(0)).acquireDeviceModifyDense();
+		boolean allocated = mo.getGPUObject(getGPUContext(0)).acquireDeviceModifyDense(initialize);
 		mo.getDataCharacteristics().setNonZeros(-1);
 		return new Pair<>(mo, allocated);
 	}
@@ -390,9 +396,15 @@ public class ExecutionContext {
 	 * @return matrix object
 	 */
 	public Pair<MatrixObject, Boolean> getSparseMatrixOutputForGPUInstruction(String varName, long numRows, long numCols, long nnz) {
+		return getSparseMatrixOutputForGPUInstruction(varName, numRows, numCols, nnz, true);
+	}
+
+	public Pair<MatrixObject, Boolean> getSparseMatrixOutputForGPUInstruction(String varName, long numRows, long numCols,
+		long nnz, boolean initialize)
+	{
 		MatrixObject mo = allocateGPUMatrixObject(varName, numRows, numCols);
 		mo.getDataCharacteristics().setNonZeros(nnz);
-		boolean allocated = mo.getGPUObject(getGPUContext(0)).acquireDeviceModifySparse();
+		boolean allocated = mo.getGPUObject(getGPUContext(0)).acquireDeviceModifySparse(initialize);
 		return new Pair<>(mo, allocated);
 	}
 

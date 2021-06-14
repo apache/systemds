@@ -72,7 +72,7 @@ public interface SpoofCUDAOperator  {
 				int rows = (int)mo.getNumRows();
 				int cols = (int)mo.getNumColumns();
 				Pointer b1 = mo.getGPUObject(ec.getGPUContext(0)).getDensePointer();
-				Pointer ptr = ec.getGPUContext(0).allocate(getName(), (long) rows * cols * sizeOfDataType);
+				Pointer ptr = ec.getGPUContext(0).allocate(getName(), (long) rows * cols * sizeOfDataType, false);
 				LibMatrixCUDA.denseTranspose(ec, ec.getGPUContext(0), getName(), b1, ptr, rows, cols);
 				writeMatrixDescriptorToBuffer(buf, rows, cols, 0, 0, GPUObject.getPointerAddress(ptr), mo.getNnz());
 			} else {
@@ -115,8 +115,10 @@ public interface SpoofCUDAOperator  {
 				int NT = 256;
 				long N = inputs.get(0).getNumRows() * inputs.get(0).getNumColumns();
 				num_blocks = ((N + NT * 2 - 1) / (NT * 2));
+				ptr[0] = ec.getGPUContext(0).allocate(getName(), LibMatrixCUDA.sizeOfDataType * num_blocks, false);
 			}
-			ptr[0] = ec.getGPUContext(0).allocate(getName(), LibMatrixCUDA.sizeOfDataType * num_blocks);
+			else
+				ptr[0] = ec.getGPUContext(0).allocate(getName(), LibMatrixCUDA.sizeOfDataType * num_blocks, true);
 			writeMatrixDescriptorToBuffer(buf, 1, 1, 0, 0, GPUObject.getPointerAddress(ptr[0]), 1);
 		}
  		else {

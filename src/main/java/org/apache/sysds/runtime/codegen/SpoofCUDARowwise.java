@@ -77,7 +77,7 @@ public class SpoofCUDARowwise extends SpoofRowwise implements SpoofCUDAOperator 
 				hasMatrixObjectSideInput(inputs) ? getMinColsMatrixObjectSideInputs(inputs) : -1;
 		OutputDimensions out_dims = new OutputDimensions(m, n, n2);
 		ec.setMetaData(outputName, out_dims.rows, out_dims.cols);
-		MatrixObject out_obj = ec.getDenseMatrixOutputForGPUInstruction(outputName, out_dims.rows, out_dims.cols).getKey();
+		MatrixObject out_obj = ec.getDenseMatrixOutputForGPUInstruction(outputName, out_dims.rows, out_dims.cols, false).getKey();
 
 		packDataForTransfer(ec, inputs, scalarObjects, out_obj, 1, ID, 0,_tB1, null);
 

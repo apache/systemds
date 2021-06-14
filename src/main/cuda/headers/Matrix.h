@@ -76,27 +76,27 @@ public:
 	__device__ uint32_t cols() { return _mat->cols; }
 	__device__ uint32_t rows() { return _mat->rows; }
 	
-	__device__ uint32_t len() { return _mat->data == nullptr ? len_sparse() : len_dense(); }
+	__device__ uint32_t len() { return _mat->row_ptr == nullptr ? len_dense() : len_sparse(); }
 	
 	__device__ uint32_t pos(uint32_t rix) {
-		return _mat->data == nullptr ? pos_sparse(rix) : pos_dense(rix);
+		return _mat->row_ptr == nullptr ? pos_dense(rix) : pos_sparse(rix);
 	}
 	
 	__device__ T& val(uint32_t r, uint32_t c) {
-		return _mat->data == nullptr ? val_sparse_rc(r, c) : val_dense_rc(r,c);
+		return _mat->row_ptr == nullptr ? val_dense_rc(r,c) : val_sparse_rc(r, c) ;
 	}
 	
 	__device__ T& val(uint32_t i) {
-		return _mat->data == nullptr ? val_sparse_i(i) : val_dense_i(i);
+		return _mat->row_ptr == nullptr ? val_dense_i(i) : val_sparse_i(i);
 	}
 	__device__ T& operator[](uint32_t i) { return val(i); }
 	
 	__device__ T* vals(uint32_t rix) {
-		return _mat->data == nullptr ? vals_sparse(rix) : vals_dense(rix);
+		return _mat->row_ptr == nullptr ? vals_dense(rix) : vals_sparse(rix) ;
 	}
 	
 	__device__ uint32_t row_len(uint32_t rix) {
-		return _mat->data == nullptr ? row_len_sparse(rix) : row_len_dense(rix);
+		return _mat->row_ptr == nullptr ? row_len_dense(rix) : row_len_sparse(rix);
 	}
 	
 	__device__ uint32_t* col_idxs(uint32_t rix) { return cols_sparse(rix); }

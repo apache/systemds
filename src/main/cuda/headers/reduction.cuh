@@ -330,47 +330,30 @@ __device__ void NO_AGG_SPARSE(MatrixAccessor<T>* in, MatrixAccessor<T>* out, uin
 {
 	const uint32_t& rix = blockIdx.x;
 	uint32_t tid = threadIdx.x;
-//	uint32_t rix = (gtid * VT) / in->cols();
-//	//uint32_t cix = (gtid % in->cols());// *static_cast<uint32_t>(VT);
-//	uint32_t cix = in->col_idxs(0)[gtid];
-	uint32_t row_start = in->pos(rix);
-	uint32_t row_len = in->row_len(rix);
-
+	uint32_t row_start = 0;
+	uint32_t row_len = 0;
+	if(in->hasData()) {
+		row_start = in->pos(rix);
+		row_len = in->row_len(rix);
+	}
+	else {
+		row_start = rix * in->cols();
+		row_len = in->cols();
+	}
 	while(tid < row_len) {
+		uint32_t idx = row_start + tid;
 		if(in->hasData()) {
 			uint32_t *aix = in->col_idxs(rix);
 			uint32_t cix = aix[tid];
-//		T result = spoof_op(in->val(rix, cix), rix*in->rows()+cix, rix, cix);
-			T result = spoof_op(in->val(row_start + tid), rix * in->rows() + cix, rix, cix);
-			out->set(row_start + tid, cix, result);
-
-//		if(rix > 899 && rix < 903 && cix==0)
-//		if(rix < 10 && cix==0)
-//			printf("rix=%d row_start=%d tid=%d result=%4.3f\n", rix, row_start, tid, result);
+			T result = spoof_op(in->val(idx), idx, rix, cix);
+			out->set(idx, cix, result);
 		}
 		else {
 			uint32_t cix = tid;
-			T result = spoof_op(0, rix * in->rows() + cix, rix, cix);
-			out->set(row_start + tid, cix, result);
+			T result = spoof_op(0, idx, rix, cix);
+			out->set(idx, cix, result);
 		}
 		tid+=blockDim.x;
-
-
-//#pragma unroll
-//		for (auto i = first_idx; i < last_idx; i++) {
-////		out->vals(0)[i] = spoof_op(in->vals(0)[i], i);
-////		out->col_idxs(0)[i] = gtid % blockDim.x;
-//			T result = spoof_op(in->vals(0)[i], i);
-//			out->vals(0)[i] = result;
-//			//out->col_idxs(0)[i] = i % in->cols();
-//			out->col_idxs(0)[i] = in->col_idxs(0)[i];
-//			//out->set(i/in->cols(), i%in->cols(), result);
-//			//out->set(rix, i%in->cols(), result);
-//			if (i > in->nnz() - 10)
-//				printf("i=%d in=%4.3f res=%4.3f out=%4.3f r=%d out->index(i=%d)=%d out->col_idxs()[i=%d]=%d first=%d last=%d gtid=%d\n",
-//					   i, in->vals(0)[i], result, out->vals(0)[i],
-//					   i / in->cols(), i, out->indexes()[i], i, out->col_idxs(0)[i], first_idx, last_idx, gtid);
-//		}
 	}
 }
 

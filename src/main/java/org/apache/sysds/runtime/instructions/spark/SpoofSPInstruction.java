@@ -41,7 +41,6 @@ import org.apache.sysds.runtime.codegen.SpoofRowwise.RowType;
 import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
-import org.apache.sysds.runtime.controlprogram.federated.FederationMap.FType;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.functionobjects.Builtin.BuiltinCode;
 import org.apache.sysds.runtime.functionobjects.KahanPlus;
@@ -49,7 +48,6 @@ import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
 import org.apache.sysds.runtime.instructions.cp.DoubleObject;
 import org.apache.sysds.runtime.instructions.cp.ScalarObject;
-import org.apache.sysds.runtime.instructions.fed.SpoofFEDInstruction;
 import org.apache.sysds.runtime.instructions.spark.data.PartitionedBroadcast;
 import org.apache.sysds.runtime.instructions.spark.functions.MapInputSignature;
 import org.apache.sysds.runtime.instructions.spark.functions.MapJoinSignature;
@@ -678,11 +676,7 @@ public class SpoofSPInstruction extends SPInstruction {
 		return null;
 	}
 
-	public boolean isFederated(ExecutionContext ec) {
-		return isFederated(ec, null);
-	}
-	
-	public boolean isFederated(ExecutionContext ec, FType type) {
-		return SpoofFEDInstruction.isFederated(ec, type, _in, getOperatorClass().getSuperclass());
+	public CPOperand[] getInputs() {
+		return _in;
 	}
 }

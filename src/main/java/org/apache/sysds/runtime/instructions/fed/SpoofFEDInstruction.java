@@ -36,7 +36,7 @@ import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest.RequestType;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse;
 import org.apache.sysds.runtime.controlprogram.federated.FederationMap;
-import org.apache.sysds.runtime.controlprogram.federated.FederationMap.AType;
+import org.apache.sysds.runtime.controlprogram.federated.FederationMap.AlignType;
 import org.apache.sysds.runtime.controlprogram.federated.FederationMap.FType;
 import org.apache.sysds.runtime.controlprogram.federated.FederationUtils;
 import org.apache.sysds.runtime.DMLRuntimeException;
@@ -430,12 +430,15 @@ public class SpoofFEDInstruction extends FEDInstruction
 		}
 	}
 
+	public static boolean isFederated(ExecutionContext ec, CPOperand[] inputs, Class<?> scla) {
+		return isFederated(ec, null, inputs, scla);
+	}
 
 	public static boolean isFederated(ExecutionContext ec, FType type, CPOperand[] inputs, Class<?> scla) {
 		FederationMap fedMap = null;
 		boolean retVal = false;
 
-		ArrayList<AType> alignmentTypes = new ArrayList<>();
+		ArrayList<AlignType> alignmentTypes = new ArrayList<>();
 
 		for(CPOperand input : inputs) {
 			Data data = ec.getVariable(input);
@@ -446,11 +449,11 @@ public class SpoofFEDInstruction extends FEDInstruction
 					retVal = true;
 
 					// setting the alignment types for alignment check on further federated matrices
-					alignmentTypes.add(mo.isFederated(FType.ROW) ? AType.ROW : AType.COL);
+					alignmentTypes.add(mo.isFederated(FType.ROW) ? AlignType.ROW : AlignType.COL);
 					if(scla == SpoofOuterProduct.class)
-						Collections.addAll(alignmentTypes, AType.ROW_T, AType.COL_T);
+						Collections.addAll(alignmentTypes, AlignType.ROW_T, AlignType.COL_T);
 				}
-				else if(!fedMap.isAligned(mo.getFedMapping(), alignmentTypes.toArray(new AType[0]))) {
+				else if(!fedMap.isAligned(mo.getFedMapping(), alignmentTypes.toArray(new AlignType[0]))) {
 					retVal = false; // multiple federated matrices must be aligned
 				}
 			}

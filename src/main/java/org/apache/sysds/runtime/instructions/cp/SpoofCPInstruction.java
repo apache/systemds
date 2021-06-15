@@ -29,9 +29,7 @@ import org.apache.sysds.runtime.codegen.CodegenUtils;
 import org.apache.sysds.runtime.codegen.SpoofOperator;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
-import org.apache.sysds.runtime.controlprogram.federated.FederationMap.FType;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
-import org.apache.sysds.runtime.instructions.fed.SpoofFEDInstruction;
 import org.apache.sysds.runtime.lineage.LineageCodegenItem;
 import org.apache.sysds.runtime.lineage.LineageItem;
 import org.apache.sysds.runtime.lineage.LineageItemUtils;
@@ -131,11 +129,7 @@ public class SpoofCPInstruction extends ComputationCPInstruction {
 		return Pair.of(output.getName(), LIroot);
 	}
 
-	public boolean isFederated(ExecutionContext ec) {
-		return isFederated(ec, null);
-	}
-	
-	public boolean isFederated(ExecutionContext ec, FType type) {
-		return SpoofFEDInstruction.isFederated(ec, type, _in, getOperatorClass().getSuperclass());
+	public CPOperand[] getInputs() {
+		return _in;
 	}
 }

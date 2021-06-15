@@ -99,13 +99,13 @@ public class FederationMap {
 	}
 
 	// Alignment Check Type
-	public enum AType {
-		FULL,
-		ROW,
-		COL,
-		FULL_T,
-		ROW_T,
-		COL_T;
+	public enum AlignType {
+		FULL, // exact matching dimensions of partitions on the same federated worker
+		ROW, // matching rows of partitions on the same federated worker
+		COL, // matching columns of partitions on the same federated worker
+		FULL_T, // matching dimensions with transposed dimensions of partitions on the same federated worker
+		ROW_T, // matching rows with columns of partitions on the same federated worker
+		COL_T; // matching columns with rows of partitions on the same federated worker
 
 		public boolean isTransposed() {
 			return (this == FULL_T || this == ROW_T || this == COL_T);
@@ -258,12 +258,12 @@ public class FederationMap {
 	/**
 	 * helper function for checking multiple allowed alignment types
 	 * @param that FederationMap to check alignment with
-	 * @param aTypes different alignment types which should be checked
+	 * @param alignTypes collection of alignment types which should be checked
 	 * @return true if this and that FederationMap are aligned according to at least one alignment type
 	 */
-	public boolean isAligned(FederationMap that, AType... aTypes) {
+	public boolean isAligned(FederationMap that, AlignType... alignTypes) {
 		boolean ret = false;
-		for(AType at : aTypes) {
+		for(AlignType at : alignTypes) {
 			if(at.isFullType())
 				ret |= isAligned(that, at.isTransposed());
 			else

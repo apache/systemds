@@ -24,7 +24,7 @@ import java.util.concurrent.Future;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
-import org.apache.sysds.runtime.controlprogram.federated.FederationMap.AType;
+import org.apache.sysds.runtime.controlprogram.federated.FederationMap.AlignType;
 import org.apache.sysds.runtime.controlprogram.federated.FederationMap.FType;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest.RequestType;
@@ -57,8 +57,8 @@ public class AggregateTernaryFEDInstruction extends FEDInstruction {
 		MatrixObject mo2 = ec.getMatrixObject(_ins.input2);
 		MatrixObject mo3 = _ins.input3.isLiteral() ? null : ec.getMatrixObject(_ins.input3);
 		if(mo3 != null && mo1.isFederated() && mo2.isFederated() && mo3.isFederated()
-				&& mo1.getFedMapping().isAligned(mo2.getFedMapping(), mo1.isFederated(FType.ROW) ? AType.ROW : AType.COL)
-				&& mo2.getFedMapping().isAligned(mo3.getFedMapping(), mo1.isFederated(FType.ROW) ? AType.ROW : AType.COL)) {
+				&& mo1.getFedMapping().isAligned(mo2.getFedMapping(), mo1.isFederated(FType.ROW) ? AlignType.ROW : AlignType.COL)
+				&& mo2.getFedMapping().isAligned(mo3.getFedMapping(), mo1.isFederated(FType.ROW) ? AlignType.ROW : AlignType.COL)) {
 			FederatedRequest fr1 = FederationUtils.callInstruction(_ins.getInstructionString(), _ins.getOutput(),
 				new CPOperand[] {_ins.input1, _ins.input2, _ins.input3},
 				new long[] {mo1.getFedMapping().getID(), mo2.getFedMapping().getID(), mo3.getFedMapping().getID()});

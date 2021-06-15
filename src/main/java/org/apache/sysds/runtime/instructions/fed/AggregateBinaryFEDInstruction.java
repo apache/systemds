@@ -28,7 +28,7 @@ import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest.RequestType;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse;
 import org.apache.sysds.runtime.controlprogram.federated.FederationMap;
-import org.apache.sysds.runtime.controlprogram.federated.FederationMap.AType;
+import org.apache.sysds.runtime.controlprogram.federated.FederationMap.AlignType;
 import org.apache.sysds.runtime.controlprogram.federated.FederationMap.FType;
 import org.apache.sysds.runtime.controlprogram.federated.FederationUtils;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
@@ -73,7 +73,7 @@ public class AggregateBinaryFEDInstruction extends BinaryFEDInstruction {
 		//TODO cleanup unnecessary redundancy
 		//#1 federated matrix-vector multiplication
 		if(mo1.isFederated(FType.COL) && mo2.isFederated(FType.ROW)
-			&& mo1.getFedMapping().isAligned(mo2.getFedMapping(), AType.COL_T) ) {
+			&& mo1.getFedMapping().isAligned(mo2.getFedMapping(), AlignType.COL_T) ) {
 			FederatedRequest fr1 = FederationUtils.callInstruction(instString, output,
 				new CPOperand[]{input1, input2},
 				new long[]{mo1.getFedMapping().getID(), mo2.getFedMapping().getID()}, true);

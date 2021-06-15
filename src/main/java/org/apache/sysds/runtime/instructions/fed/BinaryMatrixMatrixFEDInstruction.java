@@ -24,7 +24,7 @@ import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest;
 import org.apache.sysds.runtime.controlprogram.federated.FederationMap;
-import org.apache.sysds.runtime.controlprogram.federated.FederationMap.AType;
+import org.apache.sysds.runtime.controlprogram.federated.FederationMap.AlignType;
 import org.apache.sysds.runtime.controlprogram.federated.FederationMap.FType;
 import org.apache.sysds.runtime.controlprogram.federated.FederationUtils;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
@@ -55,7 +55,7 @@ public class BinaryMatrixMatrixFEDInstruction extends BinaryFEDInstruction
 		FederatedRequest fr2 = null;
 		if( mo2.isFederated() ) {
 			if(mo1.isFederated() && mo1.getFedMapping().isAligned(mo2.getFedMapping(),
-					mo1.isFederated(FType.ROW) ? AType.ROW : AType.COL)) {
+					mo1.isFederated(FType.ROW) ? AlignType.ROW : AlignType.COL)) {
 				fr2 = FederationUtils.callInstruction(instString, output,
 					new CPOperand[]{input1, input2},
 					new long[]{mo1.getFedMapping().getID(), mo2.getFedMapping().getID()}, true);

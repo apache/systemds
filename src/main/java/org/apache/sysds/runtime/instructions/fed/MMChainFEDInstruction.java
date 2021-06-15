@@ -25,7 +25,7 @@ import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse;
-import org.apache.sysds.runtime.controlprogram.federated.FederationMap.AType;
+import org.apache.sysds.runtime.controlprogram.federated.FederationMap.AlignType;
 import org.apache.sysds.runtime.controlprogram.federated.FederationUtils;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest.RequestType;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
@@ -85,7 +85,7 @@ public class MMChainFEDInstruction extends UnaryFEDInstruction {
 		FederatedRequest fr1 = mo1.getFedMapping().broadcast(mo2);
 
 		if(_type.isWeighted() && mo3.isFederated()
-			&& mo1.getFedMapping().isAligned(mo3.getFedMapping(), AType.ROW)) {
+			&& mo1.getFedMapping().isAligned(mo3.getFedMapping(), AlignType.ROW)) {
 				//construct commands: execute, get and aggregate, cleanup
 				FederatedRequest fr2 = FederationUtils.callInstruction(instString, output,
 					new CPOperand[]{input1, input2, input3},

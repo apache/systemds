@@ -30,7 +30,7 @@ import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest.RequestType;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse;
 import org.apache.sysds.runtime.controlprogram.federated.FederationMap;
-import org.apache.sysds.runtime.controlprogram.federated.FederationMap.AType;
+import org.apache.sysds.runtime.controlprogram.federated.FederationMap.AlignType;
 import org.apache.sysds.runtime.controlprogram.federated.FederationMap.FType;
 import org.apache.sysds.runtime.controlprogram.federated.FederationUtils;
 import org.apache.sysds.runtime.DMLRuntimeException;
@@ -97,7 +97,7 @@ public class QuaternaryWDivMMFEDInstruction extends QuaternaryFEDInstruction
 			varNewIn[0] = fedMap.getID();
 
 			if(X.isFederated(FType.ROW)) { // row partitioned X
-				if(U.isFederated(FType.ROW) && fedMap.isAligned(U.getFedMapping(), AType.ROW)) {
+				if(U.isFederated(FType.ROW) && fedMap.isAligned(U.getFedMapping(), AlignType.ROW)) {
 					// U federated and aligned
 					varNewIn[1] = U.getFedMapping().getID();
 				}
@@ -114,7 +114,7 @@ public class QuaternaryWDivMMFEDInstruction extends QuaternaryFEDInstruction
 				FederatedRequest tmpFr = fedMap.broadcast(U);
 				varNewIn[1] = tmpFr.getID();
 				frB.add(tmpFr);
-				if(V.isFederated() && fedMap.isAligned(V.getFedMapping(), AType.COL, AType.COL_T)) {
+				if(V.isFederated() && fedMap.isAligned(V.getFedMapping(), AlignType.COL, AlignType.COL_T)) {
 					// V federated and aligned
 					varNewIn[2] = V.getFedMapping().getID();
 				}
@@ -131,7 +131,7 @@ public class QuaternaryWDivMMFEDInstruction extends QuaternaryFEDInstruction
 
 			// broadcast matrix MX if there is a fourth matrix input
 			if(MX != null) {
-				if(MX.isFederated() && fedMap.isAligned(MX.getFedMapping(), AType.FULL)) {
+				if(MX.isFederated() && fedMap.isAligned(MX.getFedMapping(), AlignType.FULL)) {
 					varNewIn[3] = MX.getFedMapping().getID();
 				}
 				else {

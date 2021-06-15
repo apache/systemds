@@ -30,7 +30,7 @@ import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest.RequestType;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse;
 import org.apache.sysds.runtime.controlprogram.federated.FederationMap;
-import org.apache.sysds.runtime.controlprogram.federated.FederationMap.AType;
+import org.apache.sysds.runtime.controlprogram.federated.FederationMap.AlignType;
 import org.apache.sysds.runtime.controlprogram.federated.FederationMap.FType;
 import org.apache.sysds.runtime.controlprogram.federated.FederationUtils;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
@@ -70,7 +70,7 @@ public class QuaternaryWSigmoidFEDInstruction extends QuaternaryFEDInstruction {
 			varNewIn[0] = fedMap.getID();
 
 			if(X.isFederated(FType.ROW)) { // row partitioned X
-				if(U.isFederated(FType.ROW) && fedMap.isAligned(U.getFedMapping(), AType.ROW)) {
+				if(U.isFederated(FType.ROW) && fedMap.isAligned(U.getFedMapping(), AlignType.ROW)) {
 					// U federated and aligned
 					varNewIn[1] = U.getFedMapping().getID();
 				}
@@ -84,7 +84,7 @@ public class QuaternaryWSigmoidFEDInstruction extends QuaternaryFEDInstruction {
 			else if(X.isFederated(FType.COL)) { // col partitioned X
 				frB = fedMap.broadcast(U);
 				varNewIn[1] = frB.getID();
-				if(V.isFederated() && fedMap.isAligned(V.getFedMapping(), AType.COL, AType.COL_T)) {
+				if(V.isFederated() && fedMap.isAligned(V.getFedMapping(), AlignType.COL, AlignType.COL_T)) {
 					// V federated and aligned
 					varNewIn[2] = V.getFedMapping().getID();
 				}

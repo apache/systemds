@@ -48,7 +48,7 @@ public class FederatedWeightedSquaredLossTest extends AutomatedTestBase {
 
 	private final static String OUTPUT_NAME = "Z";
 
-	private final static double TOLERANCE = 1e-8;
+	private final static double TOLERANCE = 1e-7;
 
 	private final static int BLOCKSIZE = 1024;
 
@@ -182,7 +182,7 @@ public class FederatedWeightedSquaredLossTest extends AutomatedTestBase {
 		TestUtils.shutdownThreads(thread1, thread2);
 
 		// check for federated operations
-		Assert.assertTrue(heavyHittersContainsString("fed_wsloss"));
+		Assert.assertTrue(heavyHittersContainsString("fed_wsloss", 1, exec_mode == ExecMode.SPARK ? 2 : 3));
 
 		// check that federated input files are still existing
 		Assert.assertTrue(HDFSTool.existsFileOnHDFS(input("X1")));

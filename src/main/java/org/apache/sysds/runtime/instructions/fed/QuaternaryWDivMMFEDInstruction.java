@@ -136,7 +136,7 @@ public class QuaternaryWDivMMFEDInstruction extends QuaternaryFEDInstruction
 				}
 				else {
 					FederatedRequest[] tmpFrS = fedMap.broadcastSliced(MX, false);
-					varNewIn[1] = tmpFrS[0].getID();
+					varNewIn[3] = tmpFrS[0].getID();
 					frSliced.add(tmpFrS);
 				}
 			}
@@ -169,7 +169,7 @@ public class QuaternaryWDivMMFEDInstruction extends QuaternaryFEDInstruction
 				frC.toArray(new FederatedRequest[0]));
 
 			// execute federated instructions
-			Future<FederatedResponse>[] response = frSliced == null ?
+			Future<FederatedResponse>[] response = frSliced.isEmpty() ?
 				fedMap.execute(getTID(), true, frAll) : fedMap.executeMultipleSlices(
 					getTID(), true, frSliced.toArray(new FederatedRequest[0][]), frAll);
 

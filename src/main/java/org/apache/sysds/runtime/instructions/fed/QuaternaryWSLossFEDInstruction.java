@@ -19,12 +19,14 @@
 
 package org.apache.sysds.runtime.instructions.fed;
 
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest.RequestType;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse;
 import org.apache.sysds.runtime.controlprogram.federated.FederationMap;
+import org.apache.sysds.runtime.controlprogram.federated.FederationMap.AlignType;
 import org.apache.sysds.runtime.controlprogram.federated.FederationMap.FType;
 import org.apache.sysds.runtime.controlprogram.federated.FederationUtils;
 import org.apache.sysds.runtime.DMLRuntimeException;
@@ -34,6 +36,7 @@ import org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator;
 import org.apache.sysds.runtime.matrix.operators.Operator;
 import org.apache.sysds.runtime.matrix.operators.QuaternaryOperator;
 
+import java.util.ArrayList;
 import java.util.concurrent.Future;
 
 public class QuaternaryWSLossFEDInstruction extends QuaternaryFEDInstruction {
@@ -70,45 +73,76 @@ public class QuaternaryWSLossFEDInstruction extends QuaternaryFEDInstruction {
 			W = ec.getMatrixObject(_input4);
 		}
 
-		if(X.isFederated(FType.ROW) && !U.isFederated() && !V.isFederated() && (W == null || !W.isFederated())) {
+		if(X.isFederated()) {
 			FederationMap fedMap = X.getFedMapping();
-			FederatedRequest[] frInit1 = fedMap.broadcastSliced(U, false);
-			FederatedRequest frInit2 = fedMap.broadcast(V);
+			ArrayList<FederatedRequest[]> frSliced = new ArrayList<>();
+			FederatedRequest frB = null;
+			long[] varNewIn = new long[qop.hasFourInputs() ? 4 : 3];
+			varNewIn[0] = fedMap.getID();
 
-			FederatedRequest[] frInit3 = null;
-			FederatedRequest frCompute1 = null;
+			if(X.isFederated(FType.ROW)) { // row partitined X
+				if(U.isFederated(FType.ROW) && fedMap.isAligned(U.getFedMapping(), AlignType.ROW)) {
+					// U federated and aligned
+					varNewIn[1] = U.getFedMapping().getID();
+				}
+				else {
+					FederatedRequest[] tmpFrS = fedMap.broadcastSliced(U, false);
+					varNewIn[1] = tmpFrS[0].getID();
+					frSliced.add(tmpFrS);
+				}
+				frB = fedMap.broadcast(V);
+				varNewIn[2] = frB.getID();
+			}
+			else if(X.isFederated(FType.COL)) { // col partitioned X
+				frB = fedMap.broadcast(U);
+				varNewIn[1] = frB.getID();
+				if(V.isFederated() && fedMap.isAligned(V.getFedMapping(), AlignType.COL, AlignType.COL_T)) {
+					// V federated and aligned
+					varNewIn[2] = V.getFedMapping().getID();
+				}
+				else {
+					FederatedRequest[] tmpFrS = fedMap.broadcastSliced(V, true);
+					varNewIn[2] = tmpFrS[0].getID();
+					frSliced.add(tmpFrS);
+				}
+			}
+			else {
+				throw new DMLRuntimeException("Federated WSLoss only supported for ROW or COLUMN partitioned "
+					+ "federated data.");
+			}
+
+			// broadcast matrix W if there is a fourth input
 			if(W != null) {
-				frInit3 = fedMap.broadcastSliced(W, false);
-				frCompute1 = FederationUtils.callInstruction(instString,
-					output,
-					new CPOperand[] {input1, input2, input3, _input4},
-					new long[] {fedMap.getID(), frInit1[0].getID(), frInit2.getID(), frInit3[0].getID()});
-			}
-			else {
-				frCompute1 = FederationUtils.callInstruction(instString,
-					output,
-					new CPOperand[] {input1, input2, input3},
-					new long[] {fedMap.getID(), frInit1[0].getID(), frInit2.getID()});
+				if(W.isFederated() && fedMap.isAligned(W.getFedMapping(), AlignType.FULL)) {
+					// W federated and aligned
+					varNewIn[3] = W.getFedMapping().getID();
+				}
+				else {
+					FederatedRequest[] tmpFrS = fedMap.broadcastSliced(W, false);
+					varNewIn[3] = tmpFrS[0].getID();
+					frSliced.add(tmpFrS);
+				}
 			}
 
-			FederatedRequest frGet1 = new FederatedRequest(RequestType.GET_VAR, frCompute1.getID());
-			FederatedRequest frCleanup1 = fedMap.cleanup(getTID(), frCompute1.getID());
-			FederatedRequest frCleanup2 = fedMap.cleanup(getTID(), frInit1[0].getID());
-			FederatedRequest frCleanup3 = fedMap.cleanup(getTID(), frInit2.getID());
+			FederatedRequest frComp = FederationUtils.callInstruction(instString, output,
+				qop.hasFourInputs() ? new CPOperand[] {input1, input2, input3, _input4}
+				: new CPOperand[]{input1, input2, input3}, varNewIn);
 
-			Future<FederatedResponse>[] response;
-			if(frInit3 != null) {
-				FederatedRequest frCleanup4 = fedMap.cleanup(getTID(), frInit3[0].getID());
-				// execute federated instructions
-				fedMap.execute(getTID(), true, frInit1, frInit2);
-				response = fedMap
-					.execute(getTID(), true, frInit3, frCompute1, frGet1, frCleanup1, frCleanup2, frCleanup3, frCleanup4);
-			}
-			else {
-				// execute federated instructions
-				response = fedMap
-					.execute(getTID(), true, frInit1, frInit2, frCompute1, frGet1, frCleanup1, frCleanup2, frCleanup3);
-			}
+			FederatedRequest frGet = new FederatedRequest(RequestType.GET_VAR, frComp.getID());
+
+			ArrayList<FederatedRequest> frC = new ArrayList<>();
+			frC.add(fedMap.cleanup(getTID(), frComp.getID()));
+			for(FederatedRequest[] frS : frSliced)
+				frC.add(fedMap.cleanup(getTID(), frS[0].getID()));
+			frC.add(fedMap.cleanup(getTID(), frB.getID()));
+
+			FederatedRequest[] frAll = ArrayUtils.addAll(new FederatedRequest[]{frB, frComp, frGet},
+				frC.toArray(new FederatedRequest[0]));
+
+			// execute federated instructions
+			Future<FederatedResponse>[] response = frSliced.isEmpty() ?
+				fedMap.execute(getTID(), true, frAll) : fedMap.executeMultipleSlices(
+					getTID(), true, frSliced.toArray(new FederatedRequest[0][]), frAll);
 
 			// aggregate partial results from federated responses
 			AggregateUnaryOperator aop = InstructionUtils.parseBasicAggregateUnaryOperator("uak+");

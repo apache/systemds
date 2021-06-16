@@ -672,7 +672,6 @@ public abstract class ColGroupValue extends ColGroupCompressed implements Clonea
 				double[] lhsSum = lhs._dict.colSum(lhs.getCounts(), lCol);
 				if(mct != null)
 					outerProduct(lhsSum, lhs._colIndexes, mct, this._colIndexes, resV, numCols);
-
 				ColGroupValue thisM = (mct != null) ? (ColGroupValue) this
 					.copyAndSet(this._dict.subtractTuple(mct)) : this;
 				Dictionary preAgg = lhs.preAggregateThatIndexStructure(thisM, true);
@@ -723,7 +722,13 @@ public abstract class ColGroupValue extends ColGroupCompressed implements Clonea
 	}
 
 	@Override
-	public final void tsmm(double[] result, int numColumns) {
+	public final void tsmm(MatrixBlock ret) {
+		double[] result = ret.getDenseBlockValues();
+		int numColumns = ret.getNumColumns();
+		tsmm(result, numColumns);
+	}
+
+	private final void tsmm(double[] result, int numColumns) {
 
 		final int[] counts = getCounts();
 
@@ -741,11 +746,6 @@ public abstract class ColGroupValue extends ColGroupCompressed implements Clonea
 		else
 			tsmmDense(result, numColumns, getValues(), counts);
 
-	}
-
-	@Override
-	public final void tsmm(double[] result, int numColumns, int idxStart, int idxEnd) {
-		throw new NotImplementedException();
 	}
 
 	private void tsmmDense(double[] result, int numColumns, double[] values, int[] counts) {
@@ -1068,6 +1068,9 @@ public abstract class ColGroupValue extends ColGroupCompressed implements Clonea
 		if(tmpLeftMultRes != null && tmpLeftMultRes.length >= tmpCol * tmpRow) {
 			tmpRes = new MatrixBlock(tmpRow, tmpCol, new DenseBlockFP64(new int[] {tmpRow, tmpCol}, tmpLeftMultRes));
 			tmpRes.reset();
+		}
+		else {
+			tmpRes = new MatrixBlock(tmpRow, tmpCol, false);
 		}
 
 		LibMatrixMult.matrixMult(preAgg, dictM, tmpRes);

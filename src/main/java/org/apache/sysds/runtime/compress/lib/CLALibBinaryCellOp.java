@@ -63,20 +63,23 @@ public class CLALibBinaryCellOp {
 		MatrixValue result) {
 		MatrixBlock that = CompressedMatrixBlock.getUncompressed(thatValue);
 		LibMatrixBincell.isValidDimensionsBinary(m1, that);
+		thatValue = that;
 		BinaryAccessType atype = LibMatrixBincell.getBinaryAccessType(m1, that);
-		return selectProcessingBasedOnAccessType(op, m1, that, thatValue, result, atype, false);
+		return selectProcessingBasedOnAccessType(op, m1, thatValue, result, atype, false);
 	}
 
 	public static MatrixBlock binaryOperationsLeft(BinaryOperator op, CompressedMatrixBlock m1, MatrixValue thatValue,
 		MatrixValue result) {
 		MatrixBlock that = CompressedMatrixBlock.getUncompressed(thatValue);
 		LibMatrixBincell.isValidDimensionsBinary(that, m1);
+		thatValue = that;
 		BinaryAccessType atype = LibMatrixBincell.getBinaryAccessType(that, m1);
-		return selectProcessingBasedOnAccessType(op, m1, that, thatValue, result, atype, true);
+		return selectProcessingBasedOnAccessType(op, m1, thatValue, result, atype, true);
 	}
 
 	private static MatrixBlock selectProcessingBasedOnAccessType(BinaryOperator op, CompressedMatrixBlock m1,
-		MatrixBlock that, MatrixValue thatValue, MatrixValue result, BinaryAccessType atype, boolean left) {
+		 MatrixValue thatValue, MatrixValue result, BinaryAccessType atype, boolean left) {
+		MatrixBlock that = (MatrixBlock)thatValue;
 		if(atype == BinaryAccessType.MATRIX_COL_VECTOR)
 			return binaryMVCol(m1, that, op, left);
 		else if(atype == BinaryAccessType.MATRIX_MATRIX) {
@@ -87,12 +90,14 @@ public class CLALibBinaryCellOp {
 			}
 			else {
 				MatrixBlock d_compressed = m1.decompress(op.getNumThreads());
-				if(left) {
-					return that.binaryOperations(op, d_compressed, result);
-				}
-				else {
-					return d_compressed.binaryOperations(op, that, result);
-				}
+				LibMatrixBincell.bincellOpInPlace(d_compressed, that, op);
+				return d_compressed;
+				// if(left) {
+				// 	return that.binaryOperations(op, d_compressed, result);
+				// }
+				// else {
+				// 	return d_compressed.binaryOperations(op, that, result);
+				// }
 			}
 			// else if(that.isInSparseFormat())
 			// return binaryMMSparse(m1, that, op, left);

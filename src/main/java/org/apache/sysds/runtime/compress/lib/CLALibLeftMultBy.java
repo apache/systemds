@@ -113,7 +113,8 @@ public class CLALibLeftMultBy {
 				throw new DMLRuntimeException(e);
 			}
 		}
-
+		// LOG.error(groups);
+		// LOG.error(result);
 		// Move values in the lower part of the matrix to the upper part
 		copyToUpperTriangle(result.getDenseBlockValues(), numColumns);
 		// calculate the number of non zeros, and allocate all value locations by copying upper triangle back to bottom.
@@ -217,7 +218,7 @@ public class CLALibLeftMultBy {
 			if(rhs != lhs)
 				rhs.leftMultByAColGroup(lhs, ret);
 			else
-				rhs.tsmm(ret.getDenseBlockValues(), ret.getNumColumns());
+				rhs.tsmm(ret);
 		}
 
 	}

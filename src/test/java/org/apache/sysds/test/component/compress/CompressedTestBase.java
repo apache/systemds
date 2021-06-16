@@ -819,28 +819,21 @@ public abstract class CompressedTestBase extends TestBase {
 		if(!(cmb instanceof CompressedMatrixBlock))
 			return; // Input was not compressed then just pass test
 		if(_k != 1) {
-
 			// matrix-vector compressed
 			MatrixBlock ret2 = cmb.transposeSelfMatrixMultOperations(new MatrixBlock(), mType, _k);
-
 			// matrix-vector uncompressed
 			MatrixBlock ret1 = mb.transposeSelfMatrixMultOperations(new MatrixBlock(), mType, _k);
-
 			// compare result with input
 			compareResultMatrices(ret1, ret2, 100);
 		}
 		else {
-
 			// matrix-vector compressed
 			MatrixBlock ret2 = cmb.transposeSelfMatrixMultOperations(new MatrixBlock(), mType);
-
 			// matrix-vector uncompressed
 			MatrixBlock ret1 = mb.transposeSelfMatrixMultOperations(new MatrixBlock(), mType);
-
 			// compare result with input
 			compareResultMatrices(ret1, ret2, 100);
 		}
-
 	}
 
 	@Test

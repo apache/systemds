@@ -53,8 +53,6 @@ struct SpoofCellwiseOp {
 	}
 
 	__device__  __forceinline__ T operator()(T a, uint32_t idx, uint32_t rix, uint32_t cix) {
-//%NEED_RIX%
-//%NEED_CIX%
 //%NEED_GRIX%
 %BODY_dense%
 		return %OUT%;

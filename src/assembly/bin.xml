@@ -100,12 +100,14 @@
 				<include>*:hadoop-yarn*</include>
 				<include>*:jackson-core-asl*</include>
 				<include>*:jackson-mapper-asl*</include>
+				<include>*:janino*</include>
 				<include>*:log4j*</include>
+				<include>*:netty*</include>
 				<include>*:protobuf-java*</include>
+				<include>*:py4j*</include>
 				<include>*:slf4j-api*</include>
 				<include>*:slf4j-log4j*</include>
-				<include>*:netty*</include>
-				<include>*:py4j*</include>
+				<include>*:spark-core*</include>
 			</includes>
 			<outputDirectory>./lib</outputDirectory>
 			<scope>compile</scope>

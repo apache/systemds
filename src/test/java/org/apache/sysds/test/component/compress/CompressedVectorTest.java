@@ -77,7 +77,6 @@ public class CompressedVectorTest extends CompressedTestBase {
 
 			AggregateOperationTypes opType = CMOperator.getCMAggOpType(2);
 			CMOperator cm = new CMOperator(CM.getCMFnObject(opType), opType);
-
 			double ret1 = mb.cmOperations(cm).getRequiredResult(opType);
 			double ret2 = cmb.cmOperations(cm).getRequiredResult(opType);
 

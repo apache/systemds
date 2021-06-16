@@ -113,7 +113,6 @@ public class CLALibLeftMultBy {
 				throw new DMLRuntimeException(e);
 			}
 		}
-
 		// Move values in the lower part of the matrix to the upper part
 		copyToUpperTriangle(result.getDenseBlockValues(), numColumns);
 		// calculate the number of non zeros, and allocate all value locations by copying upper triangle back to bottom.
@@ -146,7 +145,8 @@ public class CLALibLeftMultBy {
 					+ " could be implemented multi-threaded but is not yet.");
 			leftMultByCompressedTransposedMatrix(colGroups, thatCGs, ret);
 		}
-		else
+		else {
+
 			try {
 				ExecutorService pool = CommonThreadPool.get(k);
 				ArrayList<Callable<Object>> tasks = new ArrayList<>();
@@ -161,7 +161,7 @@ public class CLALibLeftMultBy {
 			catch(InterruptedException | ExecutionException e) {
 				throw new DMLRuntimeException(e);
 			}
-
+		}
 		ret.recomputeNonZeros();
 		return ret;
 	}
@@ -217,7 +217,7 @@ public class CLALibLeftMultBy {
 			if(rhs != lhs)
 				rhs.leftMultByAColGroup(lhs, ret);
 			else
-				rhs.tsmm(ret.getDenseBlockValues(), ret.getNumColumns());
+				rhs.tsmm(ret);
 		}
 
 	}
@@ -299,6 +299,12 @@ public class CLALibLeftMultBy {
 		public Object call() {
 			try {
 				ColGroupValue.setupThreadLocalMemory(_v.getLeft());
+				int maxNCol = 0;
+				for(AColGroup g : _group)
+					if(g.getNumCols() > maxNCol)
+						maxNCol = g.getNumCols();
+
+				ColGroupValue.setupLeftMultThreadLocalMemory(maxNCol * (_ru - _rl));
 				for(int j = 0; j < _group.size(); j++)
 					_group.get(j).leftMultByMatrix(_that, _ret, _rl, _ru);
 			}
@@ -332,6 +338,7 @@ public class CLALibLeftMultBy {
 
 			try {
 				ColGroupValue.setupThreadLocalMemory(_v.getLeft() * (_ru - _rl));
+				ColGroupValue.setupLeftMultThreadLocalMemory(_group.getNumCols() * (_ru - _rl));
 				_group.leftMultByMatrix(_that, _ret, _rl, _ru);
 			}
 			catch(Exception e) {

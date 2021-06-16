@@ -21,6 +21,7 @@ package org.apache.sysds.runtime.compress.cost;
 
 import java.util.Collection;
 
+import org.apache.sysds.runtime.DMLCompressionException;
 import org.apache.sysds.runtime.compress.CompressionSettings;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup;
 
@@ -66,6 +67,20 @@ public class DistinctCostEstimator implements ICostEstimate {
 			distinct += g.getNumVals();
 
 		return distinct;
+	}
+
+	@Override
+	public double getCostOfCollectionOfGroups(Collection<CompressedSizeInfoColGroup> gs, CompressedSizeInfoColGroup g) {
+		long distinct = 0;
+		for(CompressedSizeInfoColGroup ge : gs)
+			distinct += ge.getNumVals();
+		distinct += g.getNumVals();
+		return distinct;
+	}
+
+	@Override
+	public double getCostOfTwoGroups(CompressedSizeInfoColGroup g1, CompressedSizeInfoColGroup g2) {
+		throw new DMLCompressionException("Should not be called");
 	}
 
 	@Override

@@ -75,8 +75,8 @@ public class QuaternaryWSLossFEDInstruction extends QuaternaryFEDInstruction {
 
 		if(X.isFederated()) {
 			FederationMap fedMap = X.getFedMapping();
-			ArrayList<FederatedRequest[]> frSliced = new ArrayList<>();
-			FederatedRequest frB = null;
+			ArrayList<FederatedRequest[]> frSliced = new ArrayList<>(); // FederatedRequests of broadcastSliced
+			FederatedRequest frB = null; // FederatedRequest for broadcast
 			long[] varNewIn = new long[qop.hasFourInputs() ? 4 : 3];
 			varNewIn[0] = fedMap.getID();
 
@@ -128,6 +128,7 @@ public class QuaternaryWSLossFEDInstruction extends QuaternaryFEDInstruction {
 				qop.hasFourInputs() ? new CPOperand[] {input1, input2, input3, _input4}
 				: new CPOperand[]{input1, input2, input3}, varNewIn);
 
+			// get partial results from federated workers
 			FederatedRequest frGet = new FederatedRequest(RequestType.GET_VAR, frComp.getID());
 
 			ArrayList<FederatedRequest> frC = new ArrayList<>();

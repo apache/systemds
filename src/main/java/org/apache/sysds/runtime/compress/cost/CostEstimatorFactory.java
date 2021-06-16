@@ -32,14 +32,14 @@ public final class CostEstimatorFactory {
 		MEMORY, LEFT_MATRIX_MULT, DECOMPRESSION, TSMM, W_TREE, HYBRID_W_TREE, DISTINCT, AUTO;
 	}
 
-	public static ICostEstimate create(CompressionSettings cs, WTreeRoot root, int nRows) {
+	public static ICostEstimate create(CompressionSettings cs, WTreeRoot root, int nRows, int nCols) {
 		switch(cs.costComputationType) {
 			case DISTINCT:
 				return new DistinctCostEstimator(nRows, cs);
 			case W_TREE:
 			case AUTO:
 				if(root != null)
-					return ComputationCostEstimator.create(root, nRows, cs);
+					return ComputationCostEstimator.create(root, nRows, nCols, cs);
 				else
 					return new DistinctCostEstimator(nRows, cs);
 			case MEMORY:

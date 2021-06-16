@@ -21,21 +21,23 @@ package org.apache.sysds.test.functions.compress.workload;
 
 import java.io.File;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
 import org.apache.sysds.utils.Statistics;
 import org.junit.Assert;
-import org.junit.Ignore;
 import org.junit.Test;
 
 public class WorkloadAlgorithmTest extends AutomatedTestBase {
 
-	// private static final Log LOG = LogFactory.getLog(WorkloadAnalysisTest.class.getName());
+	private static final Log LOG = LogFactory.getLog(WorkloadAnalysisTest.class.getName());
 
 	private final static String TEST_NAME1 = "WorkloadAnalysisMlogreg";
 	private final static String TEST_NAME2 = "WorkloadAnalysisLm";
+	private final static String TEST_NAME3 = "WorkloadAnalysisPCA";
 	private final static String TEST_DIR = "functions/compress/workload/";
 	private final static String TEST_CLASS_DIR = TEST_DIR + WorkloadAnalysisTest.class.getSimpleName() + "/";
 
@@ -44,20 +46,24 @@ public class WorkloadAlgorithmTest extends AutomatedTestBase {
 		TestUtils.clearAssertionInformation();
 		addTestConfiguration(TEST_NAME1, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] {"B"}));
 		addTestConfiguration(TEST_NAME2, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2, new String[] {"B"}));
+		addTestConfiguration(TEST_NAME3, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME3, new String[] {"B"}));
+
 	}
 
 	@Test
-	@Ignore
 	public void testMLogRegCP() {
 		runWorkloadAnalysisTest(TEST_NAME1, ExecMode.HYBRID, 2);
 	}
 
 	@Test
-	@Ignore
 	public void testLmCP() {
 		runWorkloadAnalysisTest(TEST_NAME2, ExecMode.HYBRID, 2);
 	}
 
+	@Test
+	public void testPCACP() {
+		runWorkloadAnalysisTest(TEST_NAME3, ExecMode.HYBRID, 1);
+	}
 
 	private void runWorkloadAnalysisTest(String testname, ExecMode mode, int compressionCount) {
 		ExecMode oldPlatform = setExecMode(mode);
@@ -75,7 +81,7 @@ public class WorkloadAlgorithmTest extends AutomatedTestBase {
 			double[][] y = TestUtils.round(getRandomMatrix(10000, 1, 1, 2, 1.0, 3));
 			writeInputMatrixWithMTD("y", y, false);
 
-			runTest(true, false, null, -1);
+			LOG.debug(runTest(true, false, null, -1));
 
 			// check various additional expectations
 			long actualCompressionCount = Statistics.getCPHeavyHitterCount("compress");

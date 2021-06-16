@@ -241,17 +241,23 @@ public class LibMatrixReorg {
 
 
 	public static MatrixBlock transposeInPlace(MatrixBlock in, int k){
-		// If input is sparse return to default implementation
-		// and allocate a new matrix.
-		if(in.sparse){
-			return transpose(in, new MatrixBlock(in.getNumColumns(), in.getNumRows(), true), k);
-		}
-
 		// Timing time = new Timing(true);
-		transposeInPlaceDense(in, k);
+		MatrixBlock out = null;
+		if(in.isEmpty()){
+			out = new MatrixBlock(in.getNumColumns(), in.getNumRows(), true);
+		}
+		else if(in.isInSparseFormat()){
+			// If input is sparse return to default implementation
+			// and allocate a new matrix.
+			out =  transpose(in, new MatrixBlock(in.getNumColumns(), in.getNumRows(), true), k);
+		}
+		else{
+
+			transposeInPlaceDense(in, k);
+			out = in;
+		}
 		// System.out.println("r' in place k="+k+" ("+in.rlen+", "+in.clen+") in "+time.stop()+" ms.");
-		
-		return in;
+		return out;
 	}
 
 	public static MatrixBlock rev( MatrixBlock in, MatrixBlock out ) {

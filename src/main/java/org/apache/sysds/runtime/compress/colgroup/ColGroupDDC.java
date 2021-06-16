@@ -245,11 +245,10 @@ public class ColGroupDDC extends ColGroupValue {
 	public Dictionary preAggregateThatSDCSingleZerosStructure(ColGroupSDCSingleZeros that, Dictionary ret) {
 		final AIterator itThat = that._indexes.getIterator();
 		final int nCol = that._colIndexes.length;
-
 		while(itThat.hasNext()) {
 			final int to = _data.getIndex(itThat.value());
-			itThat.next();
 			that._dict.addToEntry(ret, 0, to, nCol);
+			itThat.next();
 		}
 
 		return ret;
@@ -262,8 +261,8 @@ public class ColGroupDDC extends ColGroupValue {
 		if(preModified) {
 			while(itThat.hasNext()) {
 				final int to = _data.getIndex(itThat.value());
-				itThat.next();
 				that._dict.addToEntry(ret, 0, to, nCol);
+				itThat.next();
 			}
 		}
 		else {

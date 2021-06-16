@@ -328,7 +328,7 @@ public abstract class ADictionary {
 		int maxIndex = 0;
 		int maxCount = 0;
 		for(int i = 0; i < counts.length; i++) {
-			if(counts[i] > maxCount) {
+			if(counts[i] >= maxCount) {
 				maxCount = counts[i];
 				maxIndex = i;
 			}

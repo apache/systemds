@@ -69,6 +69,10 @@ public interface ICostEstimate {
 	 */
 	public double getCostOfCollectionOfGroups(Collection<CompressedSizeInfoColGroup> gs);
 
+	public double getCostOfCollectionOfGroups(Collection<CompressedSizeInfoColGroup> gs, CompressedSizeInfoColGroup g);
+
+	public double getCostOfTwoGroups(CompressedSizeInfoColGroup g1, CompressedSizeInfoColGroup g2);
+
 	/**
 	 * Function that returns true if the cost is based an an all compare all column groups false otherwise.
 	 * 

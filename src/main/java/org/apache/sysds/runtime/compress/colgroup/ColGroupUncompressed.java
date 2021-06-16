@@ -412,7 +412,13 @@ public class ColGroupUncompressed extends AColGroup {
 	}
 
 	@Override
-	public void tsmm(double[] result, int numColumns) {
+	public final void tsmm(MatrixBlock ret) {
+		double[] result = ret.getDenseBlockValues();
+		int numColumns = ret.getNumColumns();
+		tsmm(result, numColumns);
+	}
+
+	private void tsmm(double[] result, int numColumns) {
 		final int tCol = _colIndexes.length;
 		MatrixBlock tmp = new MatrixBlock(tCol, tCol, true);
 		LibMatrixMult.matrixMultTransposeSelf(_data, tmp, true, false);
@@ -429,11 +435,6 @@ public class ColGroupUncompressed extends AColGroup {
 					result[offRet + _colIndexes[col]] += tmpV[offTmp + col];
 			}
 		}
-	}
-
-	@Override
-	public void tsmm(double[] result, int numColumns, int idxStart, int idxEnd) {
-		throw new NotImplementedException();
 	}
 
 	@Override

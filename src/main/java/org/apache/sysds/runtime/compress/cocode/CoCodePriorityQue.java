@@ -61,38 +61,66 @@ public class CoCodePriorityQue extends AColumnCoCoder {
 			if(g != null)
 				que.add(g);
 
-		CompressedSizeInfoColGroup l = que.poll();
+		CompressedSizeInfoColGroup l = null;
+		if(_cest.isCompareAll()) {
+			double costBeforeJoin = _cest.getCostOfCollectionOfGroups(que);
+			l = que.poll();
+			while(que.peek() != null) {
 
-		while(que.peek() != null) {
-			CompressedSizeInfoColGroup r = que.peek();
+				CompressedSizeInfoColGroup r = que.poll();
+				final CompressedSizeInfoColGroup g = joinWithAnalysis(l, r);
+				if(g != null) {
+					final double costOfJoin = _cest.getCostOfCollectionOfGroups(que, g);
+					if(costOfJoin < costBeforeJoin) {
+						costBeforeJoin = costOfJoin;
+						que.add(g);
+					}
+					else {
+						que.add(r);
+						ret.add(l);
+					}
+				}
+				else{
+					que.add(r);
+					ret.add(l);
+				}
 
-			if(_cest.shouldTryJoin(l, r)) {
-				if(_cest.shouldAnalyze(l, r)) {
-					CompressedSizeInfoColGroup g = joinWithAnalysis(l, r);
-					if(g != null) {
-						double costOfJoin = _cest.getCostOfColumnGroup(g);
-						double costIndividual = _cest.getCostOfColumnGroup(l) + _cest.getCostOfColumnGroup(r);
+				l = que.poll();
+			}
+		}
+		else {
+			l = que.poll();
+			while(que.peek() != null) {
+				CompressedSizeInfoColGroup r = que.peek();
 
-						if(costOfJoin < costIndividual) {
-							que.poll();
-							que.add(g);
+				if(_cest.shouldTryJoin(l, r)) {
+					if(_cest.shouldAnalyze(l, r)) {
+						CompressedSizeInfoColGroup g = joinWithAnalysis(l, r);
+						if(g != null) {
+							double costOfJoin = _cest.getCostOfColumnGroup(g);
+							double costIndividual = _cest.getCostOfColumnGroup(l) + _cest.getCostOfColumnGroup(r);
+
+							if(costOfJoin < costIndividual) {
+								que.poll();
+								que.add(g);
+							}
+							else
+								ret.add(l);
 						}
-						else 
+						else
 							ret.add(l);
 					}
-					else
-						ret.add(l);
+					else {
+						// Quick join without analysis
+						que.poll();
+						que.add(joinWithoutAnalysis(l, r));
+					}
 				}
-				else {
-					// Quick join without analysis
-					que.poll();
-					que.add(joinWithoutAnalysis(l, r));
-				}
-			}
-			else
-				ret.add(l);
+				else
+					ret.add(l);
 
-			l = que.poll();
+				l = que.poll();
+			}
 		}
 		if(l != null)
 			ret.add(l);

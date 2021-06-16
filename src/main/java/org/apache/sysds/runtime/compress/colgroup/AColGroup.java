@@ -287,26 +287,9 @@ public abstract class AColGroup implements Serializable {
 	 * 
 	 * Note it only calculate the upper triangle
 	 * 
-	 * @param result     A row major dense allocation of a matrixBlock, of size [numColumns x numColumns]
-	 * @param numColumns The number of columns in the row major result matrix.
+	 * @param ret The return matrix block [numColumns x numColumns]
 	 */
-	public abstract void tsmm(double[] result, int numColumns);
-
-	/**
-	 * Do a transposed self matrix multiplication on the left side t(x) %*% x. but only with this column group, and only
-	 * on a subset of the columns contained in this columnGroup.
-	 * 
-	 * This gives better performance since there is no need to iterate through all the rows of the matrix, but the
-	 * execution can be limited to its number of distinct values.
-	 * 
-	 * Note it only calculate the upper triangle
-	 * 
-	 * @param result     A row major dense allocation of a matrixBlock, of size [numColumns x numColumns]
-	 * @param numColumns The number of columns in the row major result matrix.
-	 * @param idxStart   The starting index in the _colIndexes.
-	 * @param idxEnd     The ending index in the _colIndexes.
-	 */
-	public abstract void tsmm(double[] result, int numColumns, int idxStart, int idxEnd);
+	public abstract void tsmm(MatrixBlock ret);
 
 	/**
 	 * Left multiply with this column group

@@ -225,7 +225,7 @@ public class ColGroupSDCSingleZeros extends ColGroupValue {
 				final int v = it.value();
 				if(index < v)
 					j++;
-				else if(index == v){
+				else if(index == v) {
 					preAV[offOut] += avals[j++];
 					it.next();
 				}
@@ -317,7 +317,7 @@ public class ColGroupSDCSingleZeros extends ColGroupValue {
 	@Override
 	public Dictionary preAggregateThatSDCZerosStructure(ColGroupSDCZeros that, Dictionary ret) {
 		final AIterator itThat = that._indexes.getIterator();
-		final AIterator itThis = that._indexes.getIterator();
+		final AIterator itThis = _indexes.getIterator();
 		final int nCol = that._colIndexes.length;
 
 		while(itThat.hasNext() && itThis.hasNext()) {
@@ -334,9 +334,8 @@ public class ColGroupSDCSingleZeros extends ColGroupValue {
 	@Override
 	public Dictionary preAggregateThatSDCSingleZerosStructure(ColGroupSDCSingleZeros that, Dictionary ret) {
 		final AIterator itThat = that._indexes.getIterator();
-		final AIterator itThis = that._indexes.getIterator();
+		final AIterator itThis = _indexes.getIterator();
 		final int nCol = that._colIndexes.length;
-
 		while(itThat.hasNext()) {
 			final int v = itThat.value();
 			if(v == itThis.skipTo(v))
@@ -349,7 +348,22 @@ public class ColGroupSDCSingleZeros extends ColGroupValue {
 
 	@Override
 	public Dictionary preAggregateThatSDCSingleStructure(ColGroupSDCSingle that, Dictionary ret, boolean preModified) {
-		throw new NotImplementedException();
+		final AIterator itThat = that._indexes.getIterator();
+		final AIterator itThis = _indexes.getIterator();
+		final int nCol = that._colIndexes.length;
+		if(preModified) {
+			while(itThat.hasNext()) {
+				final int thatV = itThat.value();
+				if(thatV == itThis.skipTo(thatV))
+					that._dict.addToEntry(ret, 0, 0, nCol);
+				itThat.next();
+			}
+
+			return ret;
+		}
+		else {
+			throw new NotImplementedException();
+		}
 	}
 
 }

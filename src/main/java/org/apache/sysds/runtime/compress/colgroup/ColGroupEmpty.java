@@ -171,13 +171,8 @@ public class ColGroupEmpty extends ColGroupCompressed {
 	}
 
 	@Override
-	public void tsmm(double[] result, int numColumns) {
+	public void tsmm(MatrixBlock ret) {
 		// do nothing
-	}
-
-	@Override
-	public void tsmm(double[] result, int numColumns, int idxStart, int idxEnd) {
-		// do nothing.
 	}
 
 	@Override

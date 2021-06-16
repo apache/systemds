@@ -124,7 +124,6 @@ public enum Builtins {
 	FRAME_SORT("frameSort", true),
 	GAUSSIAN_CLASSIFIER("gaussianClassifier", true),
 	GET_ACCURACY("getAccuracy", true),
-	GET_PERMUTATIONS("getPermutations", true),
 	GLM("glm", true),
 	GMM("gmm", true),
 	GMM_PREDICT("gmmPredict", true),

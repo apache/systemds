@@ -696,8 +696,9 @@ public class CompressedMatrixBlock extends MatrixBlock {
 
 	@Override
 	public MatrixBlock reorgOperations(ReorgOperator op, MatrixValue ret, int startRow, int startColumn, int length) {
+		// Allow transpose to be compressed output. In general we need to have a transposed flag on
+		// the compressed matrix. https://issues.apache.org/jira/browse/SYSTEMDS-3025
 		printDecompressWarning(op.getClass().getSimpleName() + " -- " + op.fn.getClass().getSimpleName());
-		// TODO make transposed decompress.
 		MatrixBlock tmp = decompress(op.getNumThreads());
 		return tmp.reorgOperations(op, ret, startRow, startColumn, length);
 	}

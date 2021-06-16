@@ -299,6 +299,12 @@ public class CLALibLeftMultBy {
 		public Object call() {
 			try {
 				ColGroupValue.setupThreadLocalMemory(_v.getLeft());
+				int maxNCol = 0;
+				for(AColGroup g : _group)
+					if(g.getNumCols() > maxNCol)
+						maxNCol = g.getNumCols();
+
+				ColGroupValue.setupLeftMultThreadLocalMemory(maxNCol * (_ru - _rl));
 				for(int j = 0; j < _group.size(); j++)
 					_group.get(j).leftMultByMatrix(_that, _ret, _rl, _ru);
 			}
@@ -332,6 +338,7 @@ public class CLALibLeftMultBy {
 
 			try {
 				ColGroupValue.setupThreadLocalMemory(_v.getLeft() * (_ru - _rl));
+				ColGroupValue.setupLeftMultThreadLocalMemory(_group.getNumCols() * (_ru - _rl));
 				_group.leftMultByMatrix(_that, _ret, _rl, _ru);
 			}
 			catch(Exception e) {

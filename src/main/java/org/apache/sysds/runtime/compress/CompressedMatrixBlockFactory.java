@@ -184,7 +184,7 @@ public class CompressedMatrixBlockFactory {
 		_stats.estimatedSizeCols = sizeInfos.memoryEstimate();
 		logPhase();
 
-		ICostEstimate costEstimator = CostEstimatorFactory.create(compSettings, root, mb.getNumRows());
+		ICostEstimate costEstimator = CostEstimatorFactory.create(compSettings, root, mb.getNumRows(), mb.getNumColumns());
 
 		if(!(costEstimator instanceof MemoryCostEstimator) || _stats.estimatedSizeCols < _stats.originalSize)
 			coCodePhase(sizeEstimator, sizeInfos, costEstimator);

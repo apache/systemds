@@ -62,6 +62,13 @@ public abstract class ColGroupValue extends ColGroupCompressed implements Clonea
 		}
 	};
 
+	private static ThreadLocal<double[]> tmpLeftMultDoubleArray = new ThreadLocal<double[]>() {
+		@Override
+		protected double[] initialValue() {
+			return null;
+		}
+	};
+
 	/**
 	 * ColGroup Implementation Contains zero tuple. Note this is not if it contains a zero value. If false then the
 	 * stored values are filling the ColGroup making it a dense representation, that can be leveraged in operations.
@@ -357,6 +364,11 @@ public abstract class ColGroupValue extends ColGroupCompressed implements Clonea
 			Pair<int[], double[]> p = new ImmutablePair<>(new int[len], new double[len]);
 			memPool.set(p);
 		}
+	}
+
+	public static void setupLeftMultThreadLocalMemory(int len) {
+		if(tmpLeftMultDoubleArray.get() == null || tmpLeftMultDoubleArray.get().length < len)
+			tmpLeftMultDoubleArray.set(new double[len]);
 	}
 
 	public static void cleanupThreadLocalMemory() {
@@ -880,7 +892,6 @@ public abstract class ColGroupValue extends ColGroupCompressed implements Clonea
 				MatrixBlockDictionary leftD = left.getAsMatrixBlockDictionary(rowsLeft.length);
 				MatrixBlock leftMB = leftD.getMatrixBlock();
 				if(leftMB.isEmpty()) {
-					LOG.error("Left is empty: " + leftMB);
 					return;
 				}
 				else if(right instanceof MatrixBlockDictionary) {
@@ -919,7 +930,6 @@ public abstract class ColGroupValue extends ColGroupCompressed implements Clonea
 				MatrixBlock rightMB = rightD.getMatrixBlock();
 
 				if(rightMB.isEmpty()) {
-					LOG.error("Right is empty: " + rightMB);
 					return;
 				}
 				else if(rightMB.isInSparseFormat()) {
@@ -1046,13 +1056,19 @@ public abstract class ColGroupValue extends ColGroupCompressed implements Clonea
 		// Get dictionary.
 		MatrixBlock dictM = forceMatrixBlockDictionary().getMatrixBlock();
 
-		// Allocate temporary matrix to multiply into.
-		final int tmpCol = _colIndexes.length;
-		final int tmpRow = matrix.getNumRows();
-		MatrixBlock tmpRes = new MatrixBlock(tmpRow, tmpCol, false);
-		
 		// Pre aggregate the matrix into same size as dictionary
 		MatrixBlock preAgg = preAggregate(matrix, rl, ru);
+
+		// Allocate temporary matrix to multiply into.
+		final int tmpCol = _colIndexes.length;
+		final int tmpRow = ru - rl;
+		double[] tmpLeftMultRes = tmpLeftMultDoubleArray.get();
+
+		MatrixBlock tmpRes = null;
+		if(tmpLeftMultRes != null && tmpLeftMultRes.length >= tmpCol * tmpRow) {
+			tmpRes = new MatrixBlock(tmpRow, tmpCol, new DenseBlockFP64(new int[] {tmpRow, tmpCol}, tmpLeftMultRes));
+			tmpRes.reset();
+		}
 
 		LibMatrixMult.matrixMult(preAgg, dictM, tmpRes);
 		return tmpRes;

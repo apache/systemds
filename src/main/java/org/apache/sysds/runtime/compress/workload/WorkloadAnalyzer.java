@@ -27,12 +27,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.common.Types.OpOpData;
+import org.apache.sysds.common.Types.ReOrgOp;
 import org.apache.sysds.hops.AggBinaryOp;
 import org.apache.sysds.hops.FunctionOp;
 import org.apache.sysds.hops.Hop;
+import org.apache.sysds.hops.ReorgOp;
 import org.apache.sysds.hops.rewrite.HopRewriteUtils;
 import org.apache.sysds.hops.rewrite.RewriteCompressedReblock;
 import org.apache.sysds.parser.DMLProgram;
@@ -50,7 +50,7 @@ import org.apache.sysds.parser.WhileStatementBlock;
 import org.apache.sysds.runtime.compress.workload.AWTreeNode.WTNodeType;
 
 public class WorkloadAnalyzer {
-	protected static final Log LOG = LogFactory.getLog(WorkloadAnalyzer.class.getName());
+	// private static final Log LOG = LogFactory.getLog(WorkloadAnalyzer.class.getName());
 
 	public static Map<Long, WTreeRoot> getAllCandidateWorkloads(DMLProgram prog) {
 		// extract all compression candidates from program
@@ -98,7 +98,9 @@ public class WorkloadAnalyzer {
 	}
 
 	private static void getCandidates(StatementBlock sb, DMLProgram prog, List<Hop> cands, Set<String> fStack) {
-		if(sb instanceof FunctionStatementBlock) {
+		if(sb == null)
+			return;
+		else if(sb instanceof FunctionStatementBlock) {
 			FunctionStatementBlock fsb = (FunctionStatementBlock) sb;
 			FunctionStatement fstmt = (FunctionStatement) fsb.getStatement(0);
 			for(StatementBlock csb : fstmt.getBody())
@@ -213,6 +215,8 @@ public class WorkloadAnalyzer {
 						if(!fStack.contains(fop.getFunctionKey())) {
 							fStack.add(fop.getFunctionKey());
 							FunctionStatementBlock fsb = prog.getFunctionStatementBlock(fop.getFunctionKey());
+							if(fsb == null)
+								continue;
 							FunctionStatement fstmt = (FunctionStatement) fsb.getStatement(0);
 							Set<String> fCompressed = new HashSet<>();
 							// handle propagation of compressed intermediates into functions
@@ -268,25 +272,40 @@ public class WorkloadAnalyzer {
 		if(hop.getInput().stream().anyMatch(h -> compressed2.contains(h.getHopID()))) {
 			if(!HopRewriteUtils.isData(hop, OpOpData.PERSISTENTREAD, // all, but data ops
 				OpOpData.TRANSIENTREAD, OpOpData.TRANSIENTWRITE)) {
-				LOG.error(hop.getClass().getSimpleName());
-				if(hop instanceof AggBinaryOp) {
-					AggBinaryOp agbhop = (AggBinaryOp) hop;
-					List<Hop> in = agbhop.getInput();
-					boolean left = compressed2.contains(in.get(0).getHopID());
-					boolean right = compressed2.contains(in.get(1).getHopID());
-					parent.addOp(new OpSided(hop, left, right));
-				}
-				else {
-					parent.addOp(new Op(hop));
-				}
+				parent.addOp(generateNode(hop, compressed2));
 			}
 
 			// if the output size also qualifies for compression, we propagate this status
-			if(RewriteCompressedReblock.satisfiesSizeConstraintsForCompression(hop) && hop.getDataType().isMatrix()) {
+			if(isCompressedOutput(hop)) {
 				compressed2.add(hop.getHopID());
 			}
 		}
 
 		hop.setVisited();
+	}
+
+	private static Op generateNode(Hop hop, Set<Long> compressed2) {
+		if(hop instanceof AggBinaryOp) {
+			AggBinaryOp agbhop = (AggBinaryOp) hop;
+			List<Hop> in = agbhop.getInput();
+			boolean left = compressed2.contains(in.get(0).getHopID());
+			boolean right = compressed2.contains(in.get(1).getHopID());
+			return new OpSided(hop, left, right);
+		}
+		else {
+			return new Op(hop);
+		}
+	}
+
+	private static boolean isCompressedOutput(Hop hop) {
+		if(hop.getDataType().isMatrix()) {
+			// Allow transpose to be compressed output. In general we need to have a transposed flag on
+			// the compressed matrix. https://issues.apache.org/jira/browse/SYSTEMDS-3025
+			if(hop instanceof ReorgOp && ((ReorgOp) hop).getOp().equals(ReOrgOp.TRANS))
+				return true;
+			return(RewriteCompressedReblock.satisfiesSizeConstraintsForCompression(hop));
+		}
+		else
+			return false;
 	}
 }

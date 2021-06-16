@@ -62,7 +62,7 @@ public:
 
 	static void destroy_cuda(SpoofCUDAContext *ctx, uint32_t device_id);
 	
-	int compile(std::unique_ptr<SpoofOperator> op, const std::string &src);
+	size_t compile(std::unique_ptr<SpoofOperator> op, const std::string &src);
 	
 	template <typename T, typename CALL>
 	int launch(uint32_t opID, std::vector<Matrix<T>>& input, std::vector<Matrix<T>>& sides, Matrix<T>& output,

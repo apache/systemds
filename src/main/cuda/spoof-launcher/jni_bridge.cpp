@@ -39,12 +39,12 @@ template<typename T>
 struct LaunchMetadata {
 	const T& opID;
 	const T& grix;
-	const T& num_inputs;
-	const T& num_sides;
+	const size_t& num_inputs;
+	const size_t& num_sides;
 	
 	// num entries describing one matrix (6 entries):
 	// {nnz,rows,cols,row_ptr,col_idxs,data}
-	const T& entry_size;
+	const size_t& entry_size;
 	const T& num_scalars;
 	
 	explicit LaunchMetadata(const size_t* jvals) : opID(jvals[0]), grix(jvals[1]), num_inputs(jvals[2]),
@@ -58,7 +58,7 @@ Java_org_apache_sysds_hops_codegen_SpoofCompiler_initialize_1cuda_1context(
 	const char *cstr_rp = jenv->GetStringUTFChars(resource_path, nullptr);
 	size_t ctx = SpoofCUDAContext::initialize_cuda(device_id, cstr_rp);
 	jenv->ReleaseStringUTFChars(resource_path, cstr_rp);
-	return ctx;
+	return static_cast<jlong>(ctx);
 }
 
 
@@ -136,12 +136,12 @@ int launch_spoof_operator(JNIEnv *jenv, [[maybe_unused]] jclass jobj, jlong _ctx
 		
 		// wrap/cast inputs
 		std::vector<Matrix<T>> mats_in;
-		for(auto i = 0; i < meta.num_inputs; i+=meta.entry_size)
+		for(auto i = 0ul; i < meta.num_inputs; i+=meta.entry_size)
 			mats_in.emplace_back(&inputs[i]);
 		
 		// wrap/cast sides
 		std::vector<Matrix<T>> mats_sides;
-		for(auto i = 0; i < meta.num_sides; i+=meta.entry_size)
+		for(auto i = 0ul; i < meta.num_sides; i+=meta.entry_size)
 			mats_sides.emplace_back(&sides[i]);
 		
 		// wrap/cast output

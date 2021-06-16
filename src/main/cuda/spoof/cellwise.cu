@@ -56,9 +56,7 @@ struct SpoofCellwiseOp {
 //%NEED_RIX%
 //%NEED_CIX%
 //%NEED_GRIX%
-
 %BODY_dense%
-//printf("tid=%d a=%4.1f\n", threadIdx.x, a);
 		return %OUT%;
 	}
 };
@@ -75,9 +73,4 @@ __global__ void /*%TMP%*/SPOOF_OP_NAME_SPARSE (Matrix<T>* a, Matrix<T>* b, Matri
 	%AGG_OP%<T> agg_op;
 	SpoofCellwiseOp<T, NUM_B> spoof_op(a, b, c, scalars, grix);
 	%TYPE%_SPARSE<T, %AGG_OP%<T>, SpoofCellwiseOp<T, NUM_B>>(&(spoof_op.A), &(spoof_op.c), n, %INITIAL_VALUE%, agg_op, spoof_op);
-
-//	if(blockIdx.x == 0 && threadIdx.x == 0) {
-//		for(auto i = 0; i < 30; ++i)
-//			printf("%4.3f ", spoof_op.c.val(i));
-//	}
 };

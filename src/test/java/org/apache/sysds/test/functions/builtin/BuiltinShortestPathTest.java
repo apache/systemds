@@ -62,25 +62,25 @@ public class BuiltinShortestPathTest extends AutomatedTestBase {
 
 	private void runShortestPathNodeTest(int node, double [][] Res)
 	{
-			loadTestConfiguration(getTestConfiguration(TEST_NAME));
-
-			String HOME = SCRIPT_DIR + TEST_DIR;
-			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[]{ "-args",
-				input("X"), String.valueOf(node), output("R")};
-
-			double[][] X = {{0, 2, 5, 5 }, 
-							{1, 0, 4, 10}, 
-							{0, 3, 0, 1 },
-							{3, 2, 0, 0 }};
-			
-			writeInputMatrixWithMTD("X", X, true);
-
-			runTest(true, false, null, -1);
-
-			HashMap<MatrixValue.CellIndex, Double> dmlfile = readDMLMatrixFromOutputDir("R");
-			double[][] Y = TestUtils.convertHashMapToDoubleArray(dmlfile);
-			TestUtils.compareMatrices(Res, Y, eps);
+		loadTestConfiguration(getTestConfiguration(TEST_NAME));
+	
+		String HOME = SCRIPT_DIR + TEST_DIR;
+		fullDMLScriptName = HOME + TEST_NAME + ".dml";
+		programArgs = new String[]{ "-args",
+			input("X"), String.valueOf(node), output("R")};
+	
+		double[][] X = {{0, 2, 5, 5 }, 
+						{1, 0, 4, 10}, 
+						{0, 3, 0, 1 },
+						{3, 2, 0, 0 }};
+		
+		writeInputMatrixWithMTD("X", X, true);
+	
+		runTest(true, false, null, -1);
+	
+		HashMap<MatrixValue.CellIndex, Double> dmlfile = readDMLMatrixFromOutputDir("R");
+		double[][] Y = TestUtils.convertHashMapToDoubleArray(dmlfile);
+		TestUtils.compareMatrices(Res, Y, eps);
 			
 	}
 }

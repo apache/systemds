@@ -91,7 +91,7 @@ public class CompressionSPInstruction extends UnarySPInstruction {
 		final WTreeRoot workTree;
 
 		public CompressionWorkloadFunction(int id){
-			workTree = ((WTreeRoot) SingletonLookupHashMap.getMap().get(id) ;
+			workTree = (WTreeRoot) SingletonLookupHashMap.getMap().get(id);
 		}
 
 		@Override

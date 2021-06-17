@@ -22,6 +22,8 @@ package org.apache.sysds.runtime.instructions.spark;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.function.Function;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlockFactory;
+import org.apache.sysds.runtime.compress.workload.WTreeRoot;
+import org.apache.sysds.runtime.controlprogram.SingletonLookupHashMap;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
@@ -32,14 +34,27 @@ import org.apache.sysds.runtime.matrix.operators.Operator;
 
 public class CompressionSPInstruction extends UnarySPInstruction {
 
-	private CompressionSPInstruction(Operator op, CPOperand in, CPOperand out, String opcode, String istr) {
+	private final int _singletonLookupID;
+
+	private CompressionSPInstruction(Operator op, CPOperand in, CPOperand out, String opcode, String istr,
+		int singletonLookupID) {
 		super(SPType.Compression, op, in, out, opcode, istr);
+		_singletonLookupID = singletonLookupID;
 	}
 
 	public static CompressionSPInstruction parseInstruction(String str) {
-		InstructionUtils.checkNumFields(str, 2);
+		InstructionUtils.checkNumFields(str, 2, 3);
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
-		return new CompressionSPInstruction(null, new CPOperand(parts[1]), new CPOperand(parts[2]), parts[0], str);
+		String opcode = parts[0];
+		CPOperand in1 = new CPOperand(parts[1]);
+		CPOperand out = new CPOperand(parts[2]);
+
+		if(parts.length == 4) {
+			int treeNodeID = Integer.parseInt(parts[3]);
+			return new CompressionSPInstruction(null, in1, out, opcode, str, treeNodeID);
+		}
+		else
+			return new CompressionSPInstruction(null, in1, out, opcode, str, 0);
 	}
 
 	@Override
@@ -49,8 +64,12 @@ public class CompressionSPInstruction extends UnarySPInstruction {
 		// get input rdd handle
 		JavaPairRDD<MatrixIndexes, MatrixBlock> in = sec.getBinaryMatrixBlockRDDHandleForVariable(input1.getName());
 
+		// construct the compression mapping function
+		Function<MatrixBlock, MatrixBlock> mappingFunction = _singletonLookupID == 0 ? new CompressionFunction() : new CompressionWorkloadFunction(
+			_singletonLookupID);
+
 		// execute compression
-		JavaPairRDD<MatrixIndexes, MatrixBlock> out = in.mapValues(new CompressionFunction());
+		JavaPairRDD<MatrixIndexes, MatrixBlock> out = in.mapValues(mappingFunction);
 
 		// set outputs
 		sec.setRDDHandleForVariable(output.getName(), out);
@@ -63,6 +82,21 @@ public class CompressionSPInstruction extends UnarySPInstruction {
 		@Override
 		public MatrixBlock call(MatrixBlock arg0) throws Exception {
 			return CompressedMatrixBlockFactory.compress(arg0).getLeft();
+		}
+	}
+
+	public static class CompressionWorkloadFunction implements Function<MatrixBlock, MatrixBlock> {
+		private static final long serialVersionUID = -65288330833922L;
+
+		final WTreeRoot workTree;
+
+		public CompressionWorkloadFunction(int id){
+			workTree = ((WTreeRoot) SingletonLookupHashMap.getMap().get(id) ;
+		}
+
+		@Override
+		public MatrixBlock call(MatrixBlock arg0) throws Exception {
+			return CompressedMatrixBlockFactory.compress(arg0, workTree).getLeft();
 		}
 	}
 }

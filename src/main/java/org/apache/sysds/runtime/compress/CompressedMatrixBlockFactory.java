@@ -92,6 +92,10 @@ public class CompressedMatrixBlockFactory {
 		return compress(mb, 1, new CompressionSettingsBuilder().create());
 	}
 
+	public static Pair<MatrixBlock, CompressionStatistics> compress(MatrixBlock mb, WTreeRoot root){
+		return compress(mb, -1, new CompressionSettingsBuilder().create(), root);
+	}
+
 	public static Pair<MatrixBlock, CompressionStatistics> compress(MatrixBlock mb,
 		CompressionSettings customSettings) {
 		return compress(mb, 1, customSettings);

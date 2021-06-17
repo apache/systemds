@@ -39,6 +39,7 @@ public class CompressionCPInstruction extends ComputationCPInstruction {
 	}
 
 	public static CompressionCPInstruction parseInstruction(String str) {
+		InstructionUtils.checkNumFields(str, 2, 3);
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
 		String opcode = parts[0];
 		CPOperand in1 = new CPOperand(parts[1]);

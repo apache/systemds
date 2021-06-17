@@ -27,7 +27,8 @@ import org.apache.sysds.hops.Hop;
  * This represent a single Hop that have a result that is used on subsequent operations.
  */
 public class WTreeRoot extends AWTreeNode {
-
+	private static final long serialVersionUID = 25397135414081481L;
+	
 	private final Hop _root;
 
 	public WTreeRoot(Hop root) {

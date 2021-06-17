@@ -3,7 +3,7 @@
 full_path_d = "/home/d/Desktop/TU-UNI/8.SEMESTER/AMLS/systemds/"
 full_path_p = "/home/arch/Desktop/Studium/Master/2_Semester/AMLS/systemds/"
 
-file_to_test = "./ownscripts/tests/test2"
+file_to_test = "./ownscripts/tests/test3"
 
 
 

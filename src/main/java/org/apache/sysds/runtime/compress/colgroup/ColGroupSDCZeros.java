@@ -48,7 +48,6 @@ import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
  * This column group is handy in cases where sparse unsafe operations is executed on very sparse columns.
  */
 public class ColGroupSDCZeros extends ColGroupValue {
-	private static final long serialVersionUID = -32143916423465004L;
 
 	/**
 	 * Sparse row indexes for the data
@@ -67,6 +66,13 @@ public class ColGroupSDCZeros extends ColGroupValue {
 	 */
 	protected ColGroupSDCZeros(int numRows) {
 		super(numRows);
+	}
+
+	protected ColGroupSDCZeros(int[] colIndices, int numRows, ADictionary dict, int[] indexes, AMapToData data) {
+		super(colIndices, numRows, dict);
+		_indexes = OffsetFactory.create(indexes, numRows);
+		_data = data;
+		_zeros = true;
 	}
 
 	protected ColGroupSDCZeros(int[] colIndices, int numRows, ADictionary dict, int[] indexes, AMapToData data,

@@ -21,6 +21,7 @@ package org.apache.sysds.runtime.compress.colgroup.offset;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
+import java.util.Arrays;
 
 import org.apache.sysds.runtime.DMLCompressionException;
 import org.apache.sysds.utils.MemoryEstimates;
@@ -48,7 +49,7 @@ public class OffsetByte extends AOffset {
 			final int nv = indexes[i];
 			final int offsetSize = nv - ov;
 			if(offsetSize == 0)
-				throw new DMLCompressionException("Invalid difference between cells");
+				throw new DMLCompressionException("Invalid difference between cells :\n" + Arrays.toString(indexes));
 			final int div = offsetSize / maxV;
 			final int mod = offsetSize % maxV;
 			if(mod == 0) {

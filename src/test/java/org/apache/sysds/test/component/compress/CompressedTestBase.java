@@ -239,7 +239,6 @@ public abstract class CompressedTestBase extends TestBase {
 						colGroups.add(cg);
 						index++;
 					}
-					// LOG.error(columns);
 					((CompressedMatrixBlock) cmb).allocateColGroupList(colGroups);
 					cmb.recomputeNonZeros();
 				}
@@ -327,11 +326,9 @@ public abstract class CompressedTestBase extends TestBase {
 					}
 				}
 				if(ov == OverLapping.PLUS) {
-					// LOG.error(cmb.slice(0,10,0,10));
 					ScalarOperator sop = new LeftScalarOperator(Plus.getPlusFnObject(), 5);
 					mb = mb.scalarOperations(sop, new MatrixBlock());
 					cmb = cmb.scalarOperations(sop, new MatrixBlock());
-					// LOG.error(cmb.slice(0,10,0,10));
 				}
 			}
 
@@ -409,16 +406,10 @@ public abstract class CompressedTestBase extends TestBase {
 	@Test
 	public void testDecompress() {
 		try {
-			if(!(cmb instanceof CompressedMatrixBlock)) {
+			if(!(cmb instanceof CompressedMatrixBlock))
 				return; // Input was not compressed then just pass test
-			}
 
 			MatrixBlock decompressedMatrixBlock = ((CompressedMatrixBlock) cmb).decompress(_k);
-
-			// LOG.error(mb);
-			// LOG.error(cmb);
-			// LOG.error(mb.slice(0, 3, 0, mb.getNumColumns() - 1, null));
-			// LOG.error(decompressedMatrixBlock.slice(0, 3, 0, decompressedMatrixBlock.getNumColumns()-1, null));
 			compareResultMatrices(mb, decompressedMatrixBlock, 1);
 			assertEquals(this.toString() + " number of non zeros should be equal after decompression", mb.getNonZeros(),
 				decompressedMatrixBlock.getNonZeros());
@@ -462,8 +453,6 @@ public abstract class CompressedTestBase extends TestBase {
 			// matrix-vector compressed
 			MatrixBlock ret2 = cmb.chainMatrixMultOperations(vector1, vector2, new MatrixBlock(), ctype, _k);
 
-			// LOG.error(ret1);
-			// LOG.error(ret2);
 			// compare result with input
 			TestUtils.compareMatricesPercentageDistance(DataConverter.convertToDoubleMatrix(ret1),
 				DataConverter.convertToDoubleMatrix(ret2), 0.9, 0.9, this.toString());
@@ -540,9 +529,6 @@ public abstract class CompressedTestBase extends TestBase {
 			// Make Operator
 			AggregateBinaryOperator abop = InstructionUtils.getMatMultOperator(_k);
 
-			// vector-matrix uncompressed
-
-			// vector-matrix compressed
 			MatrixBlock ret1 = mb.aggregateBinaryOperations(matrix, mb, new MatrixBlock(), abop);
 			MatrixBlock ret2 = cmb.aggregateBinaryOperations(matrix, cmb, new MatrixBlock(), abop);
 
@@ -675,7 +661,8 @@ public abstract class CompressedTestBase extends TestBase {
 	@Test
 	public void testLeftMatrixMatrixMultDoubleCompressedTransposedLeftSideBigger() {
 		if(rows < 6000) {
-			MatrixBlock matrix = CompressibleInputGenerator.getInput(rows, cols + 1, CompressionType.OLE, 5, 20, -20, 1.0, 3);
+			MatrixBlock matrix = CompressibleInputGenerator.getInput(rows, cols + 1, CompressionType.OLE, 5, 20, -20,
+				1.0, 3);
 			ReorgOperator r_op = new ReorgOperator(SwapIndex.getSwapIndexFnObject(), _k);
 			matrix = matrix.reorgOperations(r_op, new MatrixBlock(), 0, 0, 0);
 			testLeftMatrixMatrixMultiplicationTransposed(matrix, true, false, true, true);
@@ -998,8 +985,6 @@ public abstract class CompressedTestBase extends TestBase {
 
 			// matrix-scalar compressed
 			MatrixBlock ret2 = cmb.scalarOperations(sop, new MatrixBlock());
-			// LOG.error(ret1.slice(4, 10, 15, ret1.getNumColumns() - 1, null));
-			// LOG.error(ret2.slice(4, 10, 15, ret2.getNumColumns() - 1, null));
 			// compare result with input
 			compareResultMatrices(ret1, ret2, tolerance);
 

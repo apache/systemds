@@ -22,6 +22,7 @@ package org.apache.sysds.runtime.compress.workload;
 import org.apache.sysds.hops.Hop;
 
 public class Op {
+
 	private final Hop _op;
 
 	public Op(Hop op) {

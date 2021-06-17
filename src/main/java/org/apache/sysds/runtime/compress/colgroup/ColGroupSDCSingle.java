@@ -45,7 +45,6 @@ import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
  * would be materialized in the group without any overhead.
  */
 public class ColGroupSDCSingle extends ColGroupValue {
-	private static final long serialVersionUID = -32043916423465004L;
 
 	/**
 	 * Sparse row indexes for the data
@@ -59,6 +58,12 @@ public class ColGroupSDCSingle extends ColGroupValue {
 	 */
 	protected ColGroupSDCSingle(int numRows) {
 		super(numRows);
+	}
+
+	protected ColGroupSDCSingle(int[] colIndices, int numRows, ADictionary dict, int[] indexes) {
+		super(colIndices, numRows, dict);
+		_indexes = OffsetFactory.create(indexes, numRows);
+		_zeros = false;
 	}
 
 	protected ColGroupSDCSingle(int[] colIndices, int numRows, ADictionary dict, int[] indexes, int[] cachedCounts) {

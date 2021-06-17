@@ -17,31 +17,24 @@
  * under the License.
  */
 
-package org.apache.sysds.runtime.compress.workload;
+package org.apache.sysds.runtime.compress.cost;
 
-import org.apache.sysds.hops.Hop;
+import java.io.Serializable;
 
-/**
- * The root node of the tree, located at the top of the tree.
- * 
- * This represent a single Hop that have a result that is used on subsequent operations.
- */
-public class WTreeRoot extends AWTreeNode {
-	
-	private final Hop _root;
+public final class InstructionTypeCounter implements Serializable {
 
-	public WTreeRoot(Hop root) {
-		super(WTNodeType.ROOT);
-		_root = root;
+	private static final long serialVersionUID = 115L;
+
+	protected int scans = 0;
+	protected int decompressions = 1;
+	protected int overlappingDecompressions = 1;
+	protected int leftMultiplications = 1;
+	protected int rightMultiplications = 0;
+	protected int compressedMultiplications = 0;
+	protected int dictionaryOps = 1; // base cost is one pass of dictionary
+	protected int rowBasedOps = 0;
+
+	protected InstructionTypeCounter() {
+
 	}
-
-	/**
-	 * Get the Root hop instruction, that is producing a result used in the rest of the tree.
-	 * 
-	 * @return The root hop
-	 */
-	public Hop getRoot() {
-		return _root;
-	}
-
 }

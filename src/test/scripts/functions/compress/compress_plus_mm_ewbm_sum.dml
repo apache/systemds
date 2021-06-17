@@ -19,6 +19,8 @@
 #
 #-------------------------------------------------------------
 
-A = read($A)
-r = rowMins(A)
-print(sum(r))
+x = read($A)
+v = rand(rows=ncol(x), cols=10, min=0.0, max=1.0, seed= 13);
+b = rand(rows=nrow(x), cols=10, min=0.0, max=1.0, seed= 14);
+r = ((x + 142) %*% v) + b
+print(mean(r))

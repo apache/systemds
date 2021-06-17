@@ -19,6 +19,7 @@
 
 package org.apache.sysds.runtime.compress.cost;
 
+import java.io.Serializable;
 import java.util.Collection;
 
 import org.apache.commons.logging.Log;
@@ -32,7 +33,9 @@ import org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup;
  * 
  * It is used to estimate the cost of a specific compression layout.
  */
-public interface ICostEstimate {
+public interface ICostEstimate extends Serializable {
+
+	public static final long serialVersionUID = -8885748390L;
 
 	public static final Log LOG = LogFactory.getLog(ICostEstimate.class.getName());
 
@@ -80,16 +83,22 @@ public interface ICostEstimate {
 	 */
 	public boolean isCompareAll();
 
-	// /**
-	// * Method for determining if a given cost is to small for analysis, this allows one to skip a more costly joining
-	// * analysis
-	// *
-	// * @param value A given cost.
-	// * @return boolean specifying if the full analysis is needed for join.
-	// */
-	// public boolean isToSmallForAnalysis(double value);
-
+	/**
+	 * Decide if the column groups should try to join, this is to filter obviously bad joins out.
+	 * 
+	 * @param g1 Group 1
+	 * @param g2 Group 2
+	 * @return Boolean specifying if they should try to join.
+	 */
 	public boolean shouldTryJoin(CompressedSizeInfoColGroup g1, CompressedSizeInfoColGroup g2);
 
+	/**
+	 * Decide if the column groups should be analysed, or the worst case join should be expected. This is use full if
+	 * the column groups are very small and the in practice difference between joining or not is small.
+	 * 
+	 * @param g1 Group 1
+	 * @param g2 Group 2
+	 * @return If the joining should be analyzed.
+	 */
 	public boolean shouldAnalyze(CompressedSizeInfoColGroup g1, CompressedSizeInfoColGroup g2);
 }

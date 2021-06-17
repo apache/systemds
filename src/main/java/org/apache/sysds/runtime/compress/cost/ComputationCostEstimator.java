@@ -22,13 +22,7 @@ package org.apache.sysds.runtime.compress.cost;
 import java.util.Collection;
 
 import org.apache.commons.lang.NotImplementedException;
-import org.apache.sysds.hops.AggUnaryOp;
-import org.apache.sysds.runtime.compress.CompressionSettings;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup;
-import org.apache.sysds.runtime.compress.workload.Op;
-import org.apache.sysds.runtime.compress.workload.OpSided;
-import org.apache.sysds.runtime.compress.workload.WTreeNode;
-import org.apache.sysds.runtime.compress.workload.WTreeRoot;
 
 public class ComputationCostEstimator implements ICostEstimate {
 
@@ -51,7 +45,7 @@ public class ComputationCostEstimator implements ICostEstimate {
 	 * 
 	 * @param tree The tree to estimate cost from.
 	 */
-	private ComputationCostEstimator(int nRows, int nCols, boolean compareAll, InstructionTypeCounter counts) {
+	protected ComputationCostEstimator(int nRows, int nCols, boolean compareAll, InstructionTypeCounter counts) {
 		_nRows = nRows;
 		_nColsInMatrix = nCols;
 		_isCompareAll = compareAll;
@@ -65,70 +59,6 @@ public class ComputationCostEstimator implements ICostEstimate {
 		// _rowBasedOps = counts.rowBasedOps;
 		if(LOG.isDebugEnabled())
 			LOG.debug(this);
-	}
-
-	public static ComputationCostEstimator create(WTreeRoot tree, int nRows, int nCols, CompressionSettings cs) {
-
-		InstructionTypeCounter counter = new InstructionTypeCounter();
-
-		for(WTreeNode n : tree.getChildNodes())
-			addNode(1, n, counter);
-		if(LOG.isDebugEnabled())
-			LOG.debug(tree);
-		return new ComputationCostEstimator(nRows, nCols, counter.compressedMultiplications > 0, counter);
-
-	}
-
-	private static void addNode(int count, WTreeNode n, InstructionTypeCounter counter) {
-
-		int mult;
-		switch(n.getType()) {
-			case IF:
-			case FCALL:
-			case BASIC_BLOCK:
-				mult = 1;
-				break;
-			case WHILE:
-			case FOR:
-			case PARFOR:
-			default:
-				mult = 10;
-		}
-
-		for(Op o : n.getOps())
-			addOp(count * mult, o, counter);
-		for(WTreeNode nc : n.getChildNodes())
-			addNode(count * mult, nc, counter);
-	}
-
-	private static void addOp(int count, Op o, InstructionTypeCounter counter) {
-		if(o instanceof OpSided) {
-			OpSided os = (OpSided) o;
-			if(os.isLeftMM())
-				counter.leftMultiplications += count;
-			else if(os.isRightMM()){
-				counter.rightMultiplications += count;
-				counter.overlappingDecompressions += count;
-			}
-			else
-				counter.compressedMultiplications += count;
-		}
-		else {
-			if(o.getHop() instanceof AggUnaryOp) {
-				AggUnaryOp agop = (AggUnaryOp) o.getHop();
-
-				switch(agop.getDirection()) {
-					case Row:
-						counter.scans += count;
-						break;
-					default:
-						counter.dictionaryOps += count;
-				}
-			}
-			else {
-				counter.dictionaryOps += count;
-			}
-		}
 	}
 
 	@Override
@@ -285,14 +215,4 @@ public class ComputationCostEstimator implements ICostEstimate {
 		return sb.toString();
 	}
 
-	protected static class InstructionTypeCounter {
-		protected int scans = 0;
-		protected int decompressions = 1;
-		protected int overlappingDecompressions = 1;
-		protected int leftMultiplications = 1;
-		protected int rightMultiplications = 0;
-		protected int compressedMultiplications = 0;
-		protected int dictionaryOps = 1; // base cost is one pass of dictionary
-		protected int rowBasedOps = 0;
-	}
 }

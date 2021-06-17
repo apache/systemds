@@ -22,6 +22,8 @@ package org.apache.sysds.runtime.compress.workload;
 import org.apache.sysds.hops.Hop;
 
 public class OpSided extends Op {
+	private static final long serialVersionUID = 213452151527888881L;
+
 	private final boolean _left;
 	private final boolean _right;
 

@@ -33,7 +33,8 @@ import org.apache.commons.logging.LogFactory;
  * away the rest of the DAG.
  * 
  */
-public abstract class AWTreeNode {
+public abstract class AWTreeNode  {
+	
 	protected static final Log LOG = LogFactory.getLog(AWTreeNode.class.getName());
 
 	public enum WTNodeType {

@@ -22,13 +22,11 @@ package org.apache.sysds.runtime.compress.workload;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.sysds.hops.Hop;
-
 /**
  * A Node in the WTree, this is used for any nodes that are not the root.
  */
 public class WTreeNode extends AWTreeNode {
-
+	
 	private final List<Op> _ops = new ArrayList<>();
 
 	public WTreeNode(WTNodeType type) {

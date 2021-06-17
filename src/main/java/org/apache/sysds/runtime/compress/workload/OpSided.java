@@ -22,6 +22,7 @@ package org.apache.sysds.runtime.compress.workload;
 import org.apache.sysds.hops.Hop;
 
 public class OpSided extends Op {
+
 	private final boolean _left;
 	private final boolean _right;
 

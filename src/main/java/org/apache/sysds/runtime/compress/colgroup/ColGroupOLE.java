@@ -37,8 +37,7 @@ import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
  * distinct values.
  */
 public class ColGroupOLE extends ColGroupOffset {
-	private static final long serialVersionUID = -9157676271360528008L;
-
+	
 	/**
 	 * Constructor for serialization
 	 * 

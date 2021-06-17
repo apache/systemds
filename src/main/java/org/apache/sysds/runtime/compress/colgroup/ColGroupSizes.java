@@ -90,7 +90,7 @@ public final class ColGroupSizes {
 			nrValues + (largestOffIsZero || containNoZeroValues ? 0 : 1), tupleSparsity, lossy);
 		size += OffsetFactory.estimateInMemorySize(nrRows - largestOff, nrRows);
 		if(nrValues > 1)
-			size += MapToFactory.estimateInMemorySize(nrRows - largestOff, nrValues - 1);
+			size += MapToFactory.estimateInMemorySize(nrRows - largestOff, nrValues);
 		return size;
 	}
 

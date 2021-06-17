@@ -48,7 +48,6 @@ import org.apache.sysds.runtime.util.SortUtils;
  * 
  */
 public class ColGroupUncompressed extends AColGroup {
-	private static final long serialVersionUID = 4870546053280378891L;
 
 	/**
 	 * We store the contents of the columns as a MatrixBlock to take advantage of high-performance routines available

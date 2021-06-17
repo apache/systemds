@@ -42,7 +42,7 @@ import org.apache.sysds.utils.MemoryEstimates;
  */
 public abstract class AColGroup implements Serializable {
 	protected static final Log LOG = LogFactory.getLog(AColGroup.class.getName());
-	private static final long serialVersionUID = 2439785418908671481L;
+	private static final long serialVersionUID = -1318908671481L;
 
 	/** Public super types of compression ColGroups supported */
 	public enum CompressionType {

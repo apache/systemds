@@ -47,7 +47,6 @@ import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
  * would be materialized in the group without any overhead.
  */
 public class ColGroupSDC extends ColGroupValue {
-	private static final long serialVersionUID = -12043916423465004L;
 
 	/**
 	 * Sparse row indexes for the data
@@ -65,6 +64,13 @@ public class ColGroupSDC extends ColGroupValue {
 	 */
 	protected ColGroupSDC(int numRows) {
 		super(numRows);
+	}
+
+	protected ColGroupSDC(int[] colIndices, int numRows, ADictionary dict, int[] indexes, AMapToData data) {
+		super(colIndices, numRows, dict);
+		_indexes = OffsetFactory.create(indexes, numRows);
+		_data = data;
+		_zeros = false;
 	}
 
 	protected ColGroupSDC(int[] colIndices, int numRows, ADictionary dict, int[] indexes, AMapToData data,
@@ -479,26 +485,6 @@ public class ColGroupSDC extends ColGroupValue {
 				that._dict.addToEntry(ret, fr, defThis, nCol);
 		}
 		return ret;
-
-		// while(itThat.hasNext() && itThis.hasNext()) {
-		// 	if(itThat.value() == itThis.value()) {
-		// 		final int fr = that.getIndex(itThat.getDataIndexAndIncrement());
-		// 		final int to = getIndex(itThis.getDataIndexAndIncrement());
-		// 		that._dict.addToEntry(ret, fr, to, nCol);
-		// 	}
-		// 	else if(itThat.value() < itThis.value()) {
-		// 		final int fr = that.getIndex(itThat.getDataIndexAndIncrement());
-		// 		that._dict.addToEntry(ret, fr, defThis, nCol);
-		// 	}
-		// 	else
-		// 		itThis.next();
-		// }
-
-		// while(itThat.hasNext()) {
-		// 	final int fr = that.getIndex(itThat.getDataIndexAndIncrement());
-		// 	that._dict.addToEntry(ret, fr, defThis, nCol);
-		// }
-		// return ret;
 
 	}
 

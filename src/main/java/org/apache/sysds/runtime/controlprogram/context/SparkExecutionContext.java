@@ -1056,8 +1056,9 @@ public class SparkExecutionContext extends ExecutionContext
 				int cols = block.getNumColumns();
 				
 				//handle compressed blocks (decompress for robustness)
-				if( block instanceof CompressedMatrixBlock )
-					block = ((CompressedMatrixBlock)block).decompress();
+				if( block instanceof CompressedMatrixBlock ){
+					block = ((CompressedMatrixBlock)block).decompress(InfrastructureAnalyzer.getLocalParallelism());
+				}
 
 				//append block
 				if( sparse ) { //SPARSE OUTPUT

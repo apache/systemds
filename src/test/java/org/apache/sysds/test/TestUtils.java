@@ -1611,6 +1611,7 @@ public class TestUtils
 					continue;
 				double v = (random.nextDouble()) * (max - min);
 				matrix[i][j] = (v + min ) - v % delta;
+				matrix[i][j] = Math.round(matrix[i][j]  * 100.0) / 100.0;
 			}
 		}
 

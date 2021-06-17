@@ -55,7 +55,9 @@ public class OffsetNegativeTests {
 			tests.add(new Object[] {new int[] {1, 1,}, t});
 			tests.add(new Object[] {new int[] {2, 2, 2, 2}, t});
 			tests.add(new Object[] {new int[] {1, 2, 3, 4, 5, 5}, t});
-
+			tests.add(new Object[] {null, t});
+			tests.add(new Object[] {new int[] {}, t});
+			
 		}
 		return tests;
 	}

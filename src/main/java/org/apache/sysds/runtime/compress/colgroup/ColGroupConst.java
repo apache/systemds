@@ -31,8 +31,6 @@ import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
 
 public class ColGroupConst extends ColGroupValue {
 
-	private static final long serialVersionUID = 3204391661346504L;
-
 	/**
 	 * Constructor for serialization
 	 * 

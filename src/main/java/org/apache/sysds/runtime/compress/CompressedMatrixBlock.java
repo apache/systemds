@@ -242,7 +242,6 @@ public class CompressedMatrixBlock extends MatrixBlock {
 	 * @return a new uncompressed matrix block containing the contents of this block
 	 */
 	public MatrixBlock decompress(int k) {
-
 		if(k <= 1)
 			return decompress();
 
@@ -331,7 +330,7 @@ public class CompressedMatrixBlock extends MatrixBlock {
 			nonZeros = nnz;
 		}
 
-		if (nonZeros == 0){
+		if(nonZeros == 0) {
 			ColGroupEmpty cg = ColGroupEmpty.generate(getNumColumns(), getNumRows());
 			allocateColGroup(cg);
 		}
@@ -522,6 +521,11 @@ public class CompressedMatrixBlock extends MatrixBlock {
 	}
 
 	@Override
+	public MatrixBlock aggregateBinaryOperations(MatrixBlock m1, MatrixBlock m2, AggregateBinaryOperator op) {
+		return aggregateBinaryOperations(m1, m2, null, op);
+	}
+
+	@Override
 	public MatrixBlock aggregateBinaryOperations(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret,
 		AggregateBinaryOperator op) {
 		return aggregateBinaryOperations(m1, m2, ret, op, false, false);
@@ -529,6 +533,7 @@ public class CompressedMatrixBlock extends MatrixBlock {
 
 	public MatrixBlock aggregateBinaryOperations(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret,
 		AggregateBinaryOperator op, boolean transposeLeft, boolean transposeRight) {
+
 		if(m1 instanceof CompressedMatrixBlock && m2 instanceof CompressedMatrixBlock) {
 			return doubleCompressedAggregateBinaryOperations((CompressedMatrixBlock) m1, (CompressedMatrixBlock) m2,
 				ret, op, transposeLeft, transposeRight);
@@ -620,12 +625,6 @@ public class CompressedMatrixBlock extends MatrixBlock {
 
 	@Override
 	public MatrixBlock aggregateUnaryOperations(AggregateUnaryOperator op, MatrixValue result, int blen,
-		MatrixIndexes indexesIn) {
-		return aggregateUnaryOperations(op, result, blen, indexesIn, false);
-	}
-
-	@Override
-	public MatrixBlock aggregateUnaryOperations(AggregateUnaryOperator op, MatrixValue result, int blen,
 		MatrixIndexes indexesIn, boolean inCP) {
 
 		// check for supported operations
@@ -637,19 +636,7 @@ public class CompressedMatrixBlock extends MatrixBlock {
 			throw new NotImplementedException("Unary aggregate " + op.aggOp.increOp.fn + " not supported yet.");
 		}
 
-		// prepare output dimensions
-		CellIndex tempCellIndex = new CellIndex(-1, -1);
-		op.indexFn.computeDimension(rlen, clen, tempCellIndex);
-
-		// initialize and allocate the result
-		if(result == null)
-			result = new MatrixBlock(tempCellIndex.row, tempCellIndex.column, false);
-		else
-			result.reset(tempCellIndex.row, tempCellIndex.column, false);
-		MatrixBlock ret = (MatrixBlock) result;
-		ret.allocateDenseBlock();
-
-		return CLALibCompAgg.aggregateUnary(this, ret, op, blen, indexesIn, inCP);
+		return CLALibCompAgg.aggregateUnary(this, result, op, blen, indexesIn, inCP);
 	}
 
 	@Override
@@ -1086,14 +1073,14 @@ public class CompressedMatrixBlock extends MatrixBlock {
 		}
 	}
 
-	@Override
-	public MatrixBlock aggregateBinaryOperations(MatrixIndexes m1Index, MatrixBlock m1Value, MatrixIndexes m2Index,
-		MatrixBlock m2Value, MatrixBlock result, AggregateBinaryOperator op) {
-		printDecompressWarning("aggregateBinaryOperations");
-		MatrixBlock left = getUncompressed();
-		MatrixBlock right = getUncompressed(m2Value);
-		return left.aggregateBinaryOperations(m1Index, left, m2Index, right, result, op);
-	}
+	// @Override
+	// public MatrixBlock aggregateBinaryOperations(MatrixIndexes m1Index, MatrixBlock m1Value, MatrixIndexes m2Index,
+	// 	MatrixBlock m2Value, MatrixBlock result, AggregateBinaryOperator op) {
+	// 	if(m2Value == this )
+	// 		return m2Value.aggregateBinaryOperations(m1Value, m2Value, op);
+	// 	else 
+	// 		return m1Value.aggregateBinaryOperations(m1Value, m2Value, op);
+	// }
 
 	@Override
 	public MatrixBlock aggregateTernaryOperations(MatrixBlock m1, MatrixBlock m2, MatrixBlock m3, MatrixBlock ret,

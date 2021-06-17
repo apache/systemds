@@ -19,6 +19,7 @@
 #
 #-------------------------------------------------------------
 
-A = read($A)
-r = rowMins(A)
-print(sum(r))
+x = read($A)
+b = rand(rows=nrow(x), cols=ncol(x), min=0.0, max=1.0, seed= 14);
+r = b * x
+print(mean(r))

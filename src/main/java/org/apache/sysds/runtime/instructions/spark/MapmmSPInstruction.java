@@ -380,15 +380,14 @@ public class MapmmSPInstruction extends BinarySPInstruction {
 			{
 				MatrixIndexes ixIn = arg._1();
 				MatrixBlock blkIn = arg._2();
-				MatrixBlock blkOut = new MatrixBlock();
-		
-				if( _type == CacheType.LEFT )
-				{
-					//get the right hand side matrix
+				MatrixBlock blkOut;
+				
+				if( _type == CacheType.LEFT ) {
+					//get the right hand side matrixW
 					MatrixBlock left = _pbc.getBlock(1, (int)ixIn.getRowIndex());
-					
+
 					//execute index preserving matrix multiplication
-					OperationsOnMatrixValues.matMult(left, blkIn, blkOut, _op);
+					blkOut = OperationsOnMatrixValues.matMult(left, blkIn, _op);
 				}
 				else //if( _type == CacheType.RIGHT )
 				{
@@ -396,9 +395,8 @@ public class MapmmSPInstruction extends BinarySPInstruction {
 					MatrixBlock right = _pbc.getBlock((int)ixIn.getColumnIndex(), 1);
 
 					//execute index preserving matrix multiplication
-					OperationsOnMatrixValues.matMult(blkIn, right, blkOut, _op);
+					blkOut = OperationsOnMatrixValues.matMult(blkIn, right, _op);
 				}
-			
 				return new Tuple2<>(ixIn, blkOut);
 			}
 		}

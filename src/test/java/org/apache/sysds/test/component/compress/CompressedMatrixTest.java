@@ -181,9 +181,9 @@ public class CompressedMatrixTest extends AbstractCompressedUnaryTests {
 	}
 
 	@Override
-	public void testUnaryOperators(AggType aggType) {
+	public void testUnaryOperators(AggType aggType, boolean inCP) {
 		AggregateUnaryOperator auop = super.getUnaryOperator(aggType, 1);
-		testUnaryOperators(aggType, auop);
+		testUnaryOperators(aggType, auop, inCP);
 	}
 
 	@Test

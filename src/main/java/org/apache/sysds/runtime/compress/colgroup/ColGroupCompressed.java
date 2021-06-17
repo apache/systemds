@@ -34,7 +34,6 @@ import org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator;
  * Base class for column groups encoded Encoded in a compressed manner.
  */
 public abstract class ColGroupCompressed extends AColGroup {
-	private static final long serialVersionUID = 3786247536054353658L;
 
 	final protected int _numRows;
 

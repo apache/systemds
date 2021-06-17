@@ -52,7 +52,6 @@ import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
  * 
  */
 public abstract class ColGroupValue extends ColGroupCompressed implements Cloneable {
-	private static final long serialVersionUID = 3786247536054353658L;
 
 	/** Thread-local pairs of reusable temporary vectors for positions and values */
 	private static ThreadLocal<Pair<int[], double[]>> memPool = new ThreadLocal<Pair<int[], double[]>>() {
@@ -83,6 +82,11 @@ public abstract class ColGroupValue extends ColGroupCompressed implements Clonea
 
 	protected ColGroupValue(int numRows) {
 		super(numRows);
+	}
+
+	protected ColGroupValue(int[] colIndices, int numRows, ADictionary dict) {
+		super(colIndices, numRows);
+		_dict = dict;
 	}
 
 	protected ColGroupValue(int[] colIndices, int numRows, ADictionary dict, int[] cachedCounts) {

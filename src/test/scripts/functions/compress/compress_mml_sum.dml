@@ -19,6 +19,9 @@
 #
 #-------------------------------------------------------------
 
-A = read($A)
-r = rowMins(A)
-print(sum(r))
+x = read($A)
+v = rand(rows=10, cols=nrow(x), min=0.0, max=1.0, seed= 13);
+r = v %*% x
+s = sum(r)
+print(toString(r))
+print(s)

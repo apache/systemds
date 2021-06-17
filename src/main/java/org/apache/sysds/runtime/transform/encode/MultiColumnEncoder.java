@@ -42,12 +42,17 @@ import org.apache.sysds.runtime.data.SparseBlockMCSR;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.CommonThreadPool;
+import org.apache.sysds.runtime.util.DependencyTask;
+import org.apache.sysds.runtime.util.DependencyThreadPool;
 import org.apache.sysds.runtime.util.IndexRange;
 
 public class MultiColumnEncoder implements Encoder {
 
 	protected static final Log LOG = LogFactory.getLog(MultiColumnEncoder.class.getName());
 	private static final boolean MULTI_THREADED = true;
+	public static boolean DEPENDENCY_POOL = true;
+
+
 	private List<ColumnEncoderComposite> _columnEncoders;
 	// These encoders are deprecated and will be fazed out soon.
 	private EncoderMVImpute _legacyMVImpute = null;
@@ -106,7 +111,10 @@ public class MultiColumnEncoder implements Encoder {
 
 	public void build(FrameBlock in, int k) {
 		if(MULTI_THREADED && k > 1) {
-			buildMT(in, k);
+			if(DEPENDENCY_POOL)
+				buildMTNew(in, k);
+			else
+				buildMT(in, k);
 		}
 		else {
 			for(ColumnEncoderComposite columnEncoder : _columnEncoders){
@@ -116,6 +124,7 @@ public class MultiColumnEncoder implements Encoder {
 		}
 		legacyBuild(in);
 	}
+
 
 	private void buildMT(FrameBlock in, int k) {
 		int blockSize = BUILD_BLOCKSIZE <= 0 ? in.getNumRows() : BUILD_BLOCKSIZE;
@@ -158,6 +167,22 @@ public class MultiColumnEncoder implements Encoder {
 			e.printStackTrace();
 		}
 	}
+
+
+	private void buildMTNew(FrameBlock in, int k){
+		List<DependencyTask<?>> tasks = new ArrayList<>();
+		for(ColumnEncoderComposite columnEncoder : _columnEncoders){
+			tasks.addAll(columnEncoder.getBuildTasks(in, -1));
+		}
+		DependencyThreadPool pool = new DependencyThreadPool(k);
+		try {
+			pool.submitAllAndWait(tasks);
+		} catch (ExecutionException | InterruptedException e) {
+			LOG.error("MT Column encode failed");
+			e.printStackTrace();
+		}
+	}
+
 
 	public void legacyBuild(FrameBlock in) {
 		if(_legacyOmit != null)
@@ -203,7 +228,10 @@ public class MultiColumnEncoder implements Encoder {
 		}
 		// TODO smart checks
 		if(MULTI_THREADED && k > 1) {
-			applyMT(in, out, outputCol, k);
+			if(DEPENDENCY_POOL)
+				applyMTNew(in, out, outputCol, k);
+			else
+				applyMT(in, out, outputCol, k);
 		}
 		else {
 			int offset = outputCol;
@@ -250,6 +278,24 @@ public class MultiColumnEncoder implements Encoder {
 			e.printStackTrace();
 		}
 	}
+
+	private void applyMTNew(FrameBlock in, MatrixBlock out, int outputCol, int k){
+		List<DependencyTask<?>> tasks = new ArrayList<>();
+		int offset = outputCol;
+		for(ColumnEncoderComposite e : _columnEncoders) {
+			tasks.addAll(e.getApplyTasks(in, out, e._colID - 1 + offset));
+			if(e.hasEncoder(ColumnEncoderDummycode.class))
+				offset += e.getEncoder(ColumnEncoderDummycode.class)._domainSize - 1;
+		}
+		DependencyThreadPool pool = new DependencyThreadPool(k);
+		try {
+			pool.submitAllAndWait(tasks);
+		} catch (ExecutionException | InterruptedException e) {
+			LOG.error("MT Column encode failed");
+			e.printStackTrace();
+		}
+	}
+
 
 	@Override
 	public FrameBlock getMetaData(FrameBlock meta) {
@@ -654,7 +700,6 @@ public class MultiColumnEncoder implements Encoder {
 		private final ColumnEncoderComposite _encoder;
 		private final List<Future<Object>> _partials;
 
-		// if a pool is passed the task may be split up into multiple smaller tasks.
 		protected ColumnMergeBuildPartialTask(ColumnEncoderComposite encoder, List<Future<Object>> partials) {
 			_encoder = encoder;
 			_partials = partials;
@@ -665,6 +710,41 @@ public class MultiColumnEncoder implements Encoder {
 			_encoder.mergeBuildPartial(_partials, 0, _partials.size());
 			_encoder.updateAllDCEncoders();
 			return 1;
+		}
+	}
+
+	private static class MultiColumnLegacyBuildTask implements Callable<Object> {
+
+		private final MultiColumnEncoder _encoder;
+		private final FrameBlock _input;
+
+		protected MultiColumnLegacyBuildTask(MultiColumnEncoder encoder, FrameBlock input) {
+			_encoder = encoder;
+			_input = input;
+		}
+
+		@Override
+		public Void call() throws Exception {
+			_encoder.legacyBuild(_input);
+			return null;
+		}
+	}
+
+	private static class MultiColumnLegacyMVImputeMetaPrepareTask implements Callable<Object> {
+
+		private final MultiColumnEncoder _encoder;
+		private final FrameBlock _input;
+
+		protected MultiColumnLegacyMVImputeMetaPrepareTask(MultiColumnEncoder encoder, FrameBlock input) {
+			_encoder = encoder;
+			_input = input;
+		}
+
+		@Override
+		public Void call() throws Exception {
+			_encoder._meta = _encoder.getMetaData(new FrameBlock(_input.getNumColumns(), Types.ValueType.STRING));
+			_encoder.initMetaData(_encoder._meta);
+			return null;
 		}
 	}
 

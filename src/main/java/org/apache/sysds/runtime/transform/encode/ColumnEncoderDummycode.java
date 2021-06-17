@@ -32,6 +32,7 @@ import java.util.concurrent.Future;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.util.DependencyTask;
 
 public class ColumnEncoderDummycode extends ColumnEncoder {
 	private static final long serialVersionUID = 5832130477659116489L;
@@ -65,6 +66,11 @@ public class ColumnEncoderDummycode extends ColumnEncoder {
 	@Override
 	public void mergeBuildPartial(List<Future<Object>> futurePartials, int start, int end) {
 
+	}
+
+	@Override
+	public List<DependencyTask<?>> getBuildTasks(FrameBlock in, int blockSize) {
+		return null;
 	}
 
 	@Override

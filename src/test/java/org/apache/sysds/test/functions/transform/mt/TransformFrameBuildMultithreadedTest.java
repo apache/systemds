@@ -163,7 +163,6 @@ public class TransformFrameBuildMultithreadedTest  extends AutomatedTestBase {
 			MultiColumnEncoder encoderM = EncoderFactory.createEncoder(specSb.toString(), 
 					input.getColumnNames(), input.getNumColumns(), null);
 
-			encoderM.setBuildBlockSize(10);
 			encoderS.build(input, 1);
 			encoderM.build(input, 12);
 			if (type == TransformType.RECODE) {

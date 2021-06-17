@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
@@ -39,10 +40,8 @@ public class DependencyThreadPool{
         _pool = CommonThreadPool.get(k);
     }
 
-    public List<Future<Future<?>>> submitAll(List<? extends Callable<?>> tasks,
-                                             List<List<? extends Callable<?>>> dependencies) {
+    public List<Future<Future<?>>> submitAll(List<DependencyTask<?>> dtasks) {
         List<Future<Future<?>>> futures = new ArrayList<>();
-        List<DependencyTask<?>> dtasks = createDependencyTasks(tasks, dependencies);
         for(DependencyTask<?> t : dtasks){
             CompletableFuture<Future<?>> f = new CompletableFuture<>();
             t.addPool(_pool);
@@ -56,23 +55,52 @@ public class DependencyThreadPool{
         }
         return futures;
     }
-    
+
+
+    public List<Future<Future<?>>> submitAll(List<? extends Callable<?>> tasks,
+                                             List<List<? extends Callable<?>>> dependencies) {
+        List<DependencyTask<?>> dtasks = createDependencyTasks(tasks, dependencies);
+        return submitAll(dtasks);
+    }
+
+    public List<Object> submitAllAndWait(List<DependencyTask<?>> dtasks)
+            throws ExecutionException, InterruptedException {
+        List<Object> res = new ArrayList<>();
+        List<Future<Future<?>>> futures = submitAll(dtasks);
+        for(Future<Future<?>> ff: futures){
+            res.add(ff.get().get());
+        }
+        return res;
+    }
+
+    public static DependencyTask<?> createDependencyTask(Callable<?> task){
+        return new DependencyTask<>(task, new ArrayList<>());
+    }
+
     public static List<DependencyTask<?>> createDependencyTasks(List<? extends Callable<?>> tasks,
                                                                     List<List<? extends Callable<?>>> dependencies){
-        if(tasks.size() != dependencies.size())
+        if(dependencies != null && tasks.size() != dependencies.size())
             throw new DMLRuntimeException("Could not create DependencyTasks since the input array sizes are where mismatched");
         List<DependencyTask<?>> ret = new ArrayList<>();
         Map<Callable<?>, DependencyTask<?>> map = new HashMap<>();
         for (Callable<?> task : tasks) {
-            DependencyTask<?> dt = new DependencyTask<>(task, new ArrayList<>());
+            DependencyTask<?> dt;
+            if (task instanceof  DependencyTask){
+                dt = (DependencyTask<?>) task;
+            }else{
+                dt = new DependencyTask<>(task, new ArrayList<>());
+            }
             ret.add(dt);
             map.put(task, dt);
         }
+        if(dependencies == null)
+            return ret;
+
         for(int i = 0; i < tasks.size(); i++){
-            DependencyTask<?> t = ret.get(i);
             List<? extends Callable<?>> deps = dependencies.get(i);
             if(deps == null)
                 continue;
+            DependencyTask<?> t = ret.get(i);
             for(Callable<?> dep : deps){
                 DependencyTask<?> dt = map.get(dep);
                 if (dt != null)
@@ -81,63 +109,4 @@ public class DependencyThreadPool{
         }
         return ret;
     }
-
-
-
-    private static class DependencyTask<E> implements Callable<E>{
-
-        private final Callable<E> _task;
-        private final List<DependencyTask<?>> _dependantTasks;
-        private CompletableFuture<Future<?>> _future;
-        private int _rdy = 0;
-        private ExecutorService _pool;
-
-
-        protected DependencyTask(Callable<E> task, List<DependencyTask<?>> dependantTasks){
-            _dependantTasks = dependantTasks;
-            _task = task;
-        }
-
-        private void addPool(ExecutorService pool){
-            _pool = pool;
-        }
-
-        private void assignFuture(CompletableFuture<Future<?>> f) {
-            _future = f;
-        }
-
-        private boolean isReady() {
-            return _rdy == 0;
-        }
-
-        private boolean decrease(){
-            synchronized (this){
-                _rdy -= 1;
-                return isReady();
-            }
-        }
-
-        private void addDependent(DependencyTask<?> dependencyTask) {
-            _dependantTasks.add(dependencyTask);
-            dependencyTask._rdy += 1;
-        }
-
-        @Override
-        public E call() throws Exception {
-            E ret = _task.call();
-
-            _dependantTasks.forEach(t -> {
-                if(t.decrease()){
-                    if(_pool == null)
-                        throw new DMLRuntimeException("ExecutorService was not set for DependencyTask");
-                    t._future.complete(_pool.submit(t));
-                }
-            });
-
-            return ret;
-        }
-
-    }
-
-
 }

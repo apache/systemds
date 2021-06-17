@@ -41,6 +41,8 @@ import org.apache.sysds.lops.Lop;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.util.DependencyTask;
+import org.apache.sysds.runtime.util.DependencyThreadPool;
 
 public class ColumnEncoderRecode extends ColumnEncoder {
 	private static final long serialVersionUID = 8213163881283341874L;
@@ -142,6 +144,14 @@ public class ColumnEncoderRecode extends ColumnEncoder {
 		makeRcdMap(in, _rcdMap, _colID, 0, in.getNumRows());
 	}
 
+	@Override
+	public List<DependencyTask<?>> getBuildTasks(FrameBlock in, int blockSize){
+		List<Callable<Object>> tasks = new ArrayList<>();
+		tasks.add(new ColumnRecodeBuildTask(this, in));
+		return DependencyThreadPool.createDependencyTasks(tasks, null);
+	}
+	
+	
 	@Override
 	public List<Callable<Object>> getPartialBuildTasks(FrameBlock in, int blockSize) {
 		List<Callable<Object>> tasks = new ArrayList<>();
@@ -351,4 +361,21 @@ public class ColumnEncoderRecode extends ColumnEncoder {
 		}
 	}
 
+	private static class ColumnRecodeBuildTask implements Callable<Object> {
+
+		private final ColumnEncoderRecode _encoder;
+		private final FrameBlock _input;
+		
+		protected ColumnRecodeBuildTask(ColumnEncoderRecode encoder, FrameBlock input) {
+			_encoder = encoder;
+			_input = input;
+		}
+
+		@Override
+		public Void call() throws Exception {
+			_encoder.build(_input);
+			return null;
+		}
+	}
+	
 }

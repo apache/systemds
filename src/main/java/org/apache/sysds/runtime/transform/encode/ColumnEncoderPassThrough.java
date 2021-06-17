@@ -28,6 +28,7 @@ import java.util.concurrent.Future;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.util.DependencyTask;
 import org.apache.sysds.runtime.util.UtilFunctions;
 
 public class ColumnEncoderPassThrough extends ColumnEncoder {
@@ -46,6 +47,7 @@ public class ColumnEncoderPassThrough extends ColumnEncoder {
 		// do nothing
 	}
 
+
 	@Override
 	public List<Callable<Object>> getPartialBuildTasks(FrameBlock in, int blockSize) {
 		// do nothing
@@ -55,6 +57,11 @@ public class ColumnEncoderPassThrough extends ColumnEncoder {
 	@Override
 	public void mergeBuildPartial(List<Future<Object>> futurePartials, int start, int end) {
 
+	}
+
+	@Override
+	public List<DependencyTask<?>> getBuildTasks(FrameBlock in, int blockSize) {
+		return null;
 	}
 
 	@Override

@@ -49,7 +49,7 @@ public class DependencyThreadPoolTest extends AutomatedTestBase {
 
     @Test
     public void testSimpleDependency() throws InterruptedException, ExecutionException {
-        DependencyThreadPool pool = new DependencyThreadPool(12);
+        DependencyThreadPool pool = new DependencyThreadPool(4);
         TestObj global = new TestObj();
         TestTaskAdd task1 = new TestTaskAdd(1, 5, global);
         TestTaskMult task2 = new TestTaskMult(2, 20, global);
@@ -66,12 +66,12 @@ public class DependencyThreadPoolTest extends AutomatedTestBase {
 
     @Test
     public void testMultipleDependency() throws InterruptedException, ExecutionException {
-        DependencyThreadPool pool = new DependencyThreadPool(12);
+        DependencyThreadPool pool = new DependencyThreadPool(4);
         TestObj global = new TestObj();
         TestTaskMult task1 = new TestTaskMult(1, 20, global);
         TestTaskAdd task2 = new TestTaskAdd(2, 5, global);
         TestTaskMult task3 = new TestTaskMult(3, 20, global);
-        TestTaskMult task4 = new TestTaskMult(4, 10, global);
+        TestTaskAdd task4 = new TestTaskAdd(4, 10, global);
 
         List<? extends Callable<?>> tasks = Arrays.asList(task1, task2, task3, task4);
         List<List<? extends Callable<?>>> dependencies = new ArrayList<>();
@@ -83,7 +83,7 @@ public class DependencyThreadPoolTest extends AutomatedTestBase {
         for(Future<Future<?>> ff : futures){
             ff.get().get();
         }
-        Assert.assertEquals(20000, global.value);
+        Assert.assertEquals(2010, global.value);
     }
 
 

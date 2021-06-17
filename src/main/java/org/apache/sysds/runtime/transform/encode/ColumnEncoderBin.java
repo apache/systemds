@@ -35,6 +35,8 @@ import org.apache.commons.lang3.tuple.MutableTriple;
 import org.apache.sysds.lops.Lop;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.util.DependencyTask;
+import org.apache.sysds.runtime.util.DependencyThreadPool;
 import org.apache.sysds.runtime.util.UtilFunctions;
 
 public class ColumnEncoderBin extends ColumnEncoder {
@@ -126,6 +128,13 @@ public class ColumnEncoderBin extends ColumnEncoder {
 			max = Math.max(max, pairMinMax[1]);
 		}
 		computeBins(min, max);
+	}
+
+	@Override
+	public List<DependencyTask<?>> getBuildTasks(FrameBlock in, int blockSize) {
+		List<Callable<Object>> tasks = new ArrayList<>();
+		tasks.add(new ColumnBinBuildTask(this, in));
+		return DependencyThreadPool.createDependencyTasks(tasks, null);
 	}
 
 	public void computeBins(double min, double max) {
@@ -294,6 +303,23 @@ public class ColumnEncoderBin extends ColumnEncoder {
 		@Override
 		public double[] call() throws Exception {
 			return getMinMaxOfCol(_input, _colID, _startRow, _blockSize);
+		}
+	}
+
+	private static class ColumnBinBuildTask implements Callable<Object> {
+
+		private final ColumnEncoderBin _encoder;
+		private final FrameBlock _input;
+
+		protected ColumnBinBuildTask(ColumnEncoderBin encoder, FrameBlock input) {
+			_encoder = encoder;
+			_input = input;
+		}
+
+		@Override
+		public Void call() throws Exception {
+			_encoder.build(_input);
+			return null;
 		}
 	}
 

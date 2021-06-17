@@ -25,6 +25,7 @@ import java.io.Externalizable;
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
@@ -35,6 +36,8 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.util.DependencyTask;
+import org.apache.sysds.runtime.util.DependencyThreadPool;
 
 /**
  * Base class for all transform encoders providing both a row and block interface for decoding frames to matrices.
@@ -168,8 +171,64 @@ public abstract class ColumnEncoder implements Externalizable, Encoder, Comparab
 
 	public abstract void mergeBuildPartial(List<Future<Object>> futurePartials, int start, int end)
 		throws ExecutionException, InterruptedException;
+	
+	public abstract List<DependencyTask<?>> getBuildTasks(FrameBlock in, int blockSize);
+
+	public List<DependencyTask<?>> getApplyTasks(FrameBlock in, MatrixBlock out, int outputCol) {
+		List<Callable<Object>> tasks = new ArrayList<>();
+		tasks.add(new ColumnApplyTask(this, in, out, outputCol));
+		return DependencyThreadPool.createDependencyTasks(tasks, null);
+	}
+
+	public List<DependencyTask<?>> getApplyTasks(MatrixBlock in, MatrixBlock out, int outputCol) {
+		List<Callable<Object>> tasks = new ArrayList<>();
+		tasks.add(new ColumnApplyTask(this, in, out, outputCol));
+		return DependencyThreadPool.createDependencyTasks(tasks, null);
+	}
+
+	public List<DependencyTask<?>> getEncodeTasks(MatrixBlock in, MatrixBlock out, int outputCol) {
+		List<Callable<Object>> tasks = new ArrayList<>();
+		tasks.add(new ColumnApplyTask(this, in, out, outputCol));
+		return DependencyThreadPool.createDependencyTasks(tasks, null);
+	}
+
 
 	public enum EncoderType {
 		Recode, FeatureHash, PassThrough, Bin, Dummycode, Omit, MVImpute, Composite
+	}
+
+	private static class ColumnApplyTask implements Callable<Object> {
+
+		private final ColumnEncoder _encoder;
+		private final FrameBlock _inputF;
+		private final MatrixBlock _inputM;
+		private final MatrixBlock _out;
+		private final int _outputCol;
+
+		protected ColumnApplyTask(ColumnEncoder encoder, FrameBlock input, MatrixBlock out, int outputCol) {
+			_encoder = encoder;
+			_inputF = input;
+			_inputM = null;
+			_out = out;
+			_outputCol = outputCol;
+		}
+
+		protected ColumnApplyTask(ColumnEncoder encoder, MatrixBlock input, MatrixBlock out, int outputCol) {
+			_encoder = encoder;
+			_inputM = input;
+			_inputF = null;
+			_out = out;
+			_outputCol = outputCol;
+		}
+
+
+		@Override
+		public Void call() throws Exception {
+			if(_inputF == null)
+				_encoder.apply(_inputM, _out, _outputCol);
+			else
+				_encoder.apply(_inputF, _out, _outputCol);
+			return null;
+		}
 	}
 }

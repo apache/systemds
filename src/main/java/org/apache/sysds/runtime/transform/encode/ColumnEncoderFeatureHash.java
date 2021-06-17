@@ -31,6 +31,7 @@ import java.util.concurrent.Future;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.util.DependencyTask;
 import org.apache.sysds.runtime.util.UtilFunctions;
 
 /**
@@ -74,6 +75,11 @@ public class ColumnEncoderFeatureHash extends ColumnEncoder {
 	@Override
 	public void mergeBuildPartial(List<Future<Object>> futurePartials, int start, int end) {
 
+	}
+
+	@Override
+	public List<DependencyTask<?>> getBuildTasks(FrameBlock in, int blockSize) {
+		return null;
 	}
 
 	@Override

@@ -34,13 +34,16 @@ m_xgboost = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] R) retur
   M = matrix(0,rows=6,cols=0)
   init_prediction = median(y)
 
+   tree_id = 1
+   # todo: iterator with while/for for each tree
+  new_created_tree_M = buildOneTree(tree_id)
+
   node_queue = matrix(1, rows=1, cols=1)     # Add first Node
   curr_rows_queue = matrix(1, rows=nrow(X), cols=1)
   node_queue_len = 1
   max_depth = 6
   depth = 0.0
   level = 0
-  tree_id = 1
 
   # adjust this here if we create more trees to create new prediction values
   while (node_queue_len > 0) {
@@ -48,9 +51,9 @@ m_xgboost = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] R) retur
     [node_queue, node] = dataQueuePop(node_queue)
     [curr_rows_queue, curr_rows_vector] = dataQueuePop(curr_rows_queue)
 
-#    printMatrix(node_queue, "Node Queue")
+    printMatrix(node_queue, "Node Queue")
     printMatrix(node, "Node - bei welcher node sind wir gerade?")
-#    printMatrix(curr_rows_queue, "curr_rows_queue")
+    printMatrix(curr_rows_queue, "curr_rows_queue")
     printMatrix(curr_rows_vector, "curr_rows_vector - welche rows sollen wir jz in betracht ziehen?")
 
     level = log(as.scalar(node), 2) + 1
@@ -67,6 +70,7 @@ m_xgboost = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] R) retur
     if(available_rows > 1 & max_depth > level) # leaf check or max depth check
     {
       best_feature_index = findBestFeature(X=curr_X, y=curr_y, verbose=FALSE)
+      print("best freatures index " + best_feature_index)
       # maybe for forest change here prediction?
 
       type = getTypeOfFeature(R, best_feature_index)
@@ -108,6 +112,8 @@ m_xgboost = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] R) retur
           assert(type == 2.0)
           # print("[DEBUG] CATEGORY:")
           [left_row_vec, right_row_vec] = splitMatrixByCategory(curr_X_full[,best_feature_index], X[,best_feature_index])
+          printMatrix(left_row_vec, "left row vector after categorical split")
+          printMatrix(right_row_vec, "right row vector after categorical split")
           curr_rows_queue = dataQueuePush(left_row_vec, right_row_vec, curr_rows_queue)
           offset = ncol(node_queue) - 1
           M = addOutputRow(M, node, tree_id, R, offset, best_feature_index, 0.0)
@@ -127,6 +133,17 @@ m_xgboost = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] R) retur
   # todo create next tree depending on previous
   print("[DEBUG] Return xgboost")
 }
+
+
+#-----------------------------------------------------------------------------------------------------------------------
+# INPUT:    tree_id: the id of the new creating tree
+# OUTPUT:   current_tree_M: The M matrix of this new created tree
+buildOneTree = function(Double tree_id) return (Matrix[Double] current_tree_M) {
+
+    current_tree_M = matrix(0, rows=6, cols=1)
+}
+
+
 
 #-----------------------------------------------------------------------------------------------------------------------
 # INPUT:    node: a 1xn matrix (node containing values)
@@ -157,6 +174,9 @@ addOutputRow = function(
   Double used_col,
   Double threshold
 ) return (Matrix[Double] new_M) {
+
+      print("best feature into M " + used_col)
+
       current_node = matrix(0, rows=6, cols=1)
       current_node[1,1] = node[1,1] # node id
       current_node[2,1] = tree_id
@@ -164,12 +184,15 @@ addOutputRow = function(
       current_node[4,1] = used_col # features used
       # change here to different stuff if it is classification
 
-      if (used_col >= 1.0) { current_node[5, 1] = R[1, used_col] } # for all nodes, which used a features (all except leafs), write the type (scalar or cat)
-      # also change here if it is classification
-      if (threshold < 1.00) {
-        current_node[5,1] = 0 # number of values in threshold // currently 0 if leaf node
-      } else {
-        current_node[5,1] = 1
+      if(used_col == 0.0) { # is a single value or max depth reached => leaf
+         current_node[5,1] = 0 #  0 if leaf node
+         assert(threshold < 1.00)
+      }
+      else if (as.scalar(R[1, used_col]) == 2.0) {
+        current_node[5, 1] = 2.0 # categorical
+      }
+      else {
+        current_node[5,1] = 1 # 1 if it is scalar
       }
       current_node[6,1] = threshold # split value ( 0 if leaf or categorical)
       if (ncol(M) == 0 & nrow(M) == 0) { # first node
@@ -206,7 +229,8 @@ updateMatrices = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] vec
   zero_vec = matrix(0, rows=nrow(vector), cols=ncol(X))
   new_X_full = matrix(0, rows = 0, cols=0)
   for(i in 1:nrow(vector)) {
-    if(as.scalar(vector[i,]) > 0.0) {
+    if(as.scalar(vector[i,]) > 0.0)
+    {
       if (ncol(new_X) == 0 & ncol(new_X_full) == 0) {
         new_X = X[i,]
         new_y = y[i,]
@@ -220,7 +244,7 @@ updateMatrices = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] vec
         new_y = rbind(new_y, y[i,])
         new_X_full = rbind(new_X_full, X[i,])
       }
-    } else {
+    } else { # is 0
       if (ncol(new_X_full) == 0) {
        new_X_full = zero_vec[i,]
       } else {

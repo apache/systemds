@@ -154,15 +154,22 @@ public class CompressedMatrixBlockFactory {
 
 	private Pair<MatrixBlock, CompressionStatistics> compressMatrix() {
 		// Check for redundant compression
-		if(mb instanceof CompressedMatrixBlock) {
-			LOG.info("MatrixBlock already compressed");
+		if(mb instanceof CompressedMatrixBlock ) {
+			LOG.info("MatrixBlock already compressed or is Empty");
 			return new ImmutablePair<>(mb, null);
+		}
+		else if (mb.isEmpty()){
+			LOG.info("Empty input to compress, returning a compressed Matrix block with empty column group");
+			CompressedMatrixBlock ret = new CompressedMatrixBlock(mb.getNumRows(), mb.getNumColumns());
+			ColGroupEmpty cg = ColGroupEmpty.generate(mb.getNumColumns(), mb.getNumRows());
+			ret.allocateColGroup(cg);
+			ret.setNonZeros(0);
+			return new ImmutablePair<>(ret, null);
 		}
 
 		_stats.denseSize = MatrixBlock.estimateSizeInMemory(mb.getNumRows(), mb.getNumColumns(), 1.0);
 		_stats.originalSize = mb.getInMemorySize();
 		res = new CompressedMatrixBlock(mb); // copy metadata.
-
 		classifyPhase();
 		if(coCodeColGroups == null)
 			return abortCompression();
@@ -184,7 +191,8 @@ public class CompressedMatrixBlockFactory {
 		_stats.estimatedSizeCols = sizeInfos.memoryEstimate();
 		logPhase();
 
-		ICostEstimate costEstimator = CostEstimatorFactory.create(compSettings, root, mb.getNumRows(), mb.getNumColumns());
+		ICostEstimate costEstimator = CostEstimatorFactory.create(compSettings, root, mb.getNumRows(),
+			mb.getNumColumns());
 
 		if(!(costEstimator instanceof MemoryCostEstimator) || _stats.estimatedSizeCols < _stats.originalSize)
 			coCodePhase(sizeEstimator, sizeInfos, costEstimator);
@@ -332,8 +340,10 @@ public class CompressedMatrixBlockFactory {
 
 	private Pair<MatrixBlock, CompressionStatistics> abortCompression() {
 		LOG.warn("Compression aborted at phase: " + phase);
+
 		if(compSettings.transposed)
 			LibMatrixReorg.transposeInPlace(mb, k);
+
 		return new ImmutablePair<>(mb, _stats);
 	}
 

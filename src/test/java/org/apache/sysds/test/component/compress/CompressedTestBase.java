@@ -665,7 +665,7 @@ public abstract class CompressedTestBase extends TestBase {
 
 	@Test
 	public void testLeftMatrixMatrixMultDoubleCompressedTransposedLeftSideSmaller() {
-		MatrixBlock matrix = CompressibleInputGenerator.getInput(rows, 1, CompressionType.OLE, 5, 1.0, 3);
+		MatrixBlock matrix = CompressibleInputGenerator.getInput(rows, 1, CompressionType.OLE, 5, 20, -20, 1.0, 3);
 		ReorgOperator r_op = new ReorgOperator(SwapIndex.getSwapIndexFnObject(), _k);
 		matrix = matrix.reorgOperations(r_op, new MatrixBlock(), 0, 0, 0);
 		testLeftMatrixMatrixMultiplicationTransposed(matrix, true, false, true, true);
@@ -675,7 +675,7 @@ public abstract class CompressedTestBase extends TestBase {
 	@Test
 	public void testLeftMatrixMatrixMultDoubleCompressedTransposedLeftSideBigger() {
 		if(rows < 6000) {
-			MatrixBlock matrix = CompressibleInputGenerator.getInput(rows, cols + 1, CompressionType.OLE, 5, 1.0, 3);
+			MatrixBlock matrix = CompressibleInputGenerator.getInput(rows, cols + 1, CompressionType.OLE, 5, 20, -20, 1.0, 3);
 			ReorgOperator r_op = new ReorgOperator(SwapIndex.getSwapIndexFnObject(), _k);
 			matrix = matrix.reorgOperations(r_op, new MatrixBlock(), 0, 0, 0);
 			testLeftMatrixMatrixMultiplicationTransposed(matrix, true, false, true, true);
@@ -1204,8 +1204,7 @@ public abstract class CompressedTestBase extends TestBase {
 	@Test
 	public void testCompressAgain() {
 		try {
-			Pair<MatrixBlock, CompressionStatistics> a = CompressedMatrixBlockFactory.compress(cmb, _k);
-			MatrixBlock cmba = a.getLeft();
+			MatrixBlock cmba = CompressedMatrixBlockFactory.compress(cmb, _k).getLeft();
 			compareResultMatrices(mb, cmba, 1);
 		}
 		catch(Exception e) {

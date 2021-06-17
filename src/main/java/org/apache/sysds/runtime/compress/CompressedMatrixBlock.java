@@ -330,6 +330,12 @@ public class CompressedMatrixBlock extends MatrixBlock {
 				nnz += g.getNumberNonZeros();
 			nonZeros = nnz;
 		}
+
+		if (nonZeros == 0){
+			ColGroupEmpty cg = ColGroupEmpty.generate(getNumColumns(), getNumRows());
+			allocateColGroup(cg);
+		}
+
 		return nonZeros;
 
 	}
@@ -508,7 +514,9 @@ public class CompressedMatrixBlock extends MatrixBlock {
 		else
 			CLALibLeftMultBy.leftMultByMatrixTransposed(this, tmp, out, k);
 
-		out = LibMatrixReorg.transposeInPlace(out, k);
+		if(out.getNumColumns() != 1)
+			out = LibMatrixReorg.transposeInPlace(out, k);
+
 		out.recomputeNonZeros();
 		return out;
 	}
@@ -923,7 +931,7 @@ public class CompressedMatrixBlock extends MatrixBlock {
 
 	@Override
 	public boolean isEmptyBlock(boolean safe) {
-		return _colGroups == null || nonZeros == 0;
+		return _colGroups == null || getNonZeros() == 0 || (getNonZeros() == -1 && recomputeNonZeros() == 0);
 	}
 
 	@Override

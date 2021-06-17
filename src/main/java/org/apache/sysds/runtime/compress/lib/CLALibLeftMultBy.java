@@ -113,8 +113,6 @@ public class CLALibLeftMultBy {
 				throw new DMLRuntimeException(e);
 			}
 		}
-		// LOG.error(groups);
-		// LOG.error(result);
 		// Move values in the lower part of the matrix to the upper part
 		copyToUpperTriangle(result.getDenseBlockValues(), numColumns);
 		// calculate the number of non zeros, and allocate all value locations by copying upper triangle back to bottom.
@@ -147,7 +145,8 @@ public class CLALibLeftMultBy {
 					+ " could be implemented multi-threaded but is not yet.");
 			leftMultByCompressedTransposedMatrix(colGroups, thatCGs, ret);
 		}
-		else
+		else {
+
 			try {
 				ExecutorService pool = CommonThreadPool.get(k);
 				ArrayList<Callable<Object>> tasks = new ArrayList<>();
@@ -162,7 +161,7 @@ public class CLALibLeftMultBy {
 			catch(InterruptedException | ExecutionException e) {
 				throw new DMLRuntimeException(e);
 			}
-
+		}
 		ret.recomputeNonZeros();
 		return ret;
 	}

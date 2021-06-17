@@ -640,7 +640,7 @@ public abstract class ColGroupValue extends ColGroupCompressed implements Clonea
 		final double[] resV = result.getDenseBlockValues();
 		final int numCols = result.getNumColumns();
 
-		final double threshold = 0.2;
+		final double CommonElementThreshold = 0.4;
 
 		if(sameIndexStructure(lhs)) {
 			if(this._dict == lhs._dict) {
@@ -658,16 +658,23 @@ public abstract class ColGroupValue extends ColGroupCompressed implements Clonea
 			matrixMultDictionariesAndOutputToColIndexes(l, r, lhs._colIndexes, this._colIndexes, result);
 		}
 		else {
-			int[] countsRight = getCounts();
-			int mostFrequentRight = Math.max(countsRight[0], countsRight[countsRight.length - 1]);
-			double percentageRight = (double) mostFrequentRight / this._numRows;
-			double skipRight = percentageRight * rCol;
-			int[] countsLeft = lhs.getCounts();
-			int mostFrequentLeft = Math.max(countsLeft[0], countsLeft[countsLeft.length - 1]);
-			double percentageLeft = (double) mostFrequentLeft / this._numRows;
-			double skipLeft = percentageLeft * lCol;
+			final int[] countsRight = getCounts();
+			final int mostFrequentRight = Math.max(countsRight[0], countsRight[countsRight.length - 1]);
+			final double percentageRight = (double) mostFrequentRight / this._numRows;
+			final int[] countsLeft = lhs.getCounts();
+			final int mostFrequentLeft = Math.max(countsLeft[0], countsLeft[countsLeft.length - 1]);
+			final double percentageLeft = (double) mostFrequentLeft / this._numRows;
 
-			if(skipRight > threshold && percentageRight > percentageLeft && !(this instanceof ColGroupDDC)) {
+			// If exploiting common elements
+			final double costRightSkipping = percentageRight * nvR * rCol;
+			final double costLeftSkipping = percentageLeft * nvL * lCol;
+
+			// If dense iteration
+			final double costRightDense = nvR * rCol;
+			final double costLeftDense = nvL * lCol;
+
+			if(percentageRight > CommonElementThreshold && costRightSkipping < costLeftSkipping &&
+				!(this instanceof ColGroupDDC)) {
 				double[] mct = this._dict.getMostCommonTuple(this.getCounts(), rCol);
 				double[] lhsSum = lhs._dict.colSum(lhs.getCounts(), lCol);
 				if(mct != null)
@@ -678,7 +685,8 @@ public abstract class ColGroupValue extends ColGroupCompressed implements Clonea
 				matrixMultDictionariesAndOutputToColIndexes(lhs._dict, preAgg, lhs._colIndexes, this._colIndexes,
 					result);
 			}
-			else if(skipLeft > threshold && !(lhs instanceof ColGroupDDC)) {
+			else if(percentageLeft > CommonElementThreshold && costLeftSkipping < costRightDense &&
+				!(lhs instanceof ColGroupDDC)) {
 				double[] mct = lhs._dict.getMostCommonTuple(lhs.getCounts(), lCol);
 				double[] thisColSum = this._dict.colSum(getCounts(), rCol);
 				if(mct != null)
@@ -689,7 +697,7 @@ public abstract class ColGroupValue extends ColGroupCompressed implements Clonea
 				matrixMultDictionariesAndOutputToColIndexes(preAgg, this._dict, lhs._colIndexes, this._colIndexes,
 					result);
 			}
-			else if(nvR * rCol < nvL * lCol) {
+			else if(costRightDense < costLeftDense) {
 				Dictionary preAgg = lhs.preAggregateThatIndexStructure(this, false);
 				matrixMultDictionariesAndOutputToColIndexes(lhs._dict, preAgg, lhs._colIndexes, this._colIndexes,
 					result);
@@ -786,6 +794,8 @@ public abstract class ColGroupValue extends ColGroupCompressed implements Clonea
 
 	@Override
 	public final boolean containsValue(double pattern) {
+		if(pattern == 0 && _zeros)
+			return true;
 		return _dict.containsValue(pattern);
 	}
 

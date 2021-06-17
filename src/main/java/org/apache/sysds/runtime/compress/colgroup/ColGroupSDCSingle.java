@@ -330,50 +330,16 @@ public class ColGroupSDCSingle extends ColGroupValue {
 		final AIterator itThat = that._indexes.getIterator();
 		final AIterator itThis = _indexes.getIterator();
 		final int nCol = that._colIndexes.length;
-		final int defThat = that.getNumValues() -1;
 
 		if(preModified) {
-			// LOG.error(that);
-			// LOG.error(this);
-			// while(itThat.hasNext()) {
-			// 	final int thatV = itThat.value();
-			// 	final int fr = that.getIndex(itThat.getDataIndexAndIncrement());
-			// 	if(thatV == itThis.skipTo(thatV)){
-			// 		LOG.error(fr);
-			// 		that._dict.addToEntry(ret, fr, 0, nCol);
-			// 	}
-			// 	else
-			// 		that._dict.addToEntry(ret, fr, 1, nCol);
-			// 	itThat.next();
-			// }
-			// LOG.error(ret);
 			while(itThat.hasNext()) {
 				final int thatV = itThat.value();
 				final int fr = that.getIndex(itThat.getDataIndexAndIncrement());
 				if(thatV == itThis.skipTo(thatV)) 
 					that._dict.addToEntry(ret, fr, 0, nCol);
-				
 				else 
 					that._dict.addToEntry(ret, fr, 1, nCol);
-				
 			}
-	
-			// while(itThat.hasNext()) {
-			// 	final int fr = that.getIndex(itThat.getDataIndexAndIncrement());
-			// 	that._dict.addToEntry(ret, fr, 1, nCol);
-			// }
-			// while(itThat.hasNext() && itThis.hasNext()) {
-			// 	if(itThat.value() == itThis.value()) {
-			// 		final int fr = that.getIndex(itThat.getDataIndexAndIncrement());
-			// 		that._dict.addToEntry(ret, fr, 1, nCol);
-			// 	}
-			// 	else if(itThat.value() < itThis.value())
-			// 		itThat.next();
-			// 	else {
-			// 		itThis.next();
-			// 		// that._dict.addToEntry(ret, defThat, 0, nCol);
-			// 	}
-			// }
 			return ret;
 		}
 		else {

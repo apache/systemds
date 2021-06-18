@@ -44,13 +44,13 @@ public abstract class AInsertionSorter {
 	protected final AMapToData _labels;
 
 	protected final int _numLabels;
-	protected final int _knownMax;
+	protected final int _numRows;
 
-	public AInsertionSorter(int endLength, int knownMax, IntArrayList[] offsets, int negativeIndex) {
+	public AInsertionSorter(int endLength, int numRows, IntArrayList[] offsets, int negativeIndex) {
 		_indexes = new int[endLength];
 		_numLabels = offsets.length;
-		_labels = MapToFactory.create(endLength, _numLabels - 1);
-		_knownMax = knownMax;
+		_labels = MapToFactory.create(endLength, _numLabels );
+		_numRows = numRows;
 		_offsets = offsets;
 		_negativeIndex = negativeIndex;
 	}

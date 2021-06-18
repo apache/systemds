@@ -356,8 +356,8 @@ public final class ColGroupFactory {
 	}
 
 	private static AColGroup setupMultiValueZeroColGroup(int[] colIndexes, ABitmap ubm, ADictionary dict) {
-		IntArrayList[] offsets = ubm.getOffsetList();
 		try {
+			IntArrayList[] offsets = ubm.getOffsetList();
 			final int numRows = ubm.getNumRows();
 			AInsertionSorter s = InsertionSorterFactory.create(numRows, offsets);
 			int[] _indexes = s.getIndexes();

@@ -65,9 +65,9 @@ public final class MapToFactory {
 	public static AMapToData create(int size, int numTuples) {
 		if(numTuples <= 1)
 			return new MapToBit(numTuples, size);
-		else if(numTuples <= 256)
+		else if(numTuples < 256)
 			return new MapToByte(numTuples, size);
-		else if(numTuples <= Character.MAX_VALUE)
+		else if(numTuples < Character.MAX_VALUE)
 			return new MapToChar(numTuples, size);
 		else
 			return new MapToInt(numTuples, size);
@@ -76,9 +76,9 @@ public final class MapToFactory {
 	public static long estimateInMemorySize(int size, int numTuples) {
 		if(numTuples <= 1)
 			return MapToBit.getInMemorySize(size);
-		else if(numTuples <= 256)
+		else if(numTuples < 256)
 			return MapToByte.getInMemorySize(size);
-		else if(numTuples <= Character.MAX_VALUE)
+		else if(numTuples < Character.MAX_VALUE)
 			return MapToChar.getInMemorySize(size);
 		else
 			return MapToInt.getInMemorySize(size);

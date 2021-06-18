@@ -41,13 +41,12 @@ public class TestInsertionSorters {
 
     public final int[][] data;
     public final SORT_TYPE st;
-    public final int knownMax;
+    public final int numRows;
 
     public final int[] expectedIndexes;
     public final int[] expectedData;
 
     private final IntArrayList[] offsets;
-    private final int numOffsets;
     private final int negativeIndex;
 
     @Parameters
@@ -90,34 +89,25 @@ public class TestInsertionSorters {
         return tests;
     }
 
-    public TestInsertionSorters(int knownMax, int[][] data, SORT_TYPE st, int negativeIndex, int[] expectedIndexes,
+    public TestInsertionSorters(int numRows, int[][] data, SORT_TYPE st, int negativeIndex, int[] expectedIndexes,
         int[] expectedData) {
         this.data = data;
         this.st = st;
         this.expectedIndexes = expectedIndexes;
         this.expectedData = expectedData;
-        this.knownMax = knownMax;
+        this.numRows = numRows;
         this.negativeIndex = negativeIndex;
 
         offsets = new IntArrayList[data.length];
         for(int i = 0; i < data.length; i++)
             offsets[i] = new IntArrayList(data[i]);
 
-        if(negativeIndex != -1)
-            numOffsets = knownMax - data[negativeIndex].length;
-        else {
-            int numOffsetsCount = 0;
-            for(int i = 0; i < data.length; i++)
-                numOffsetsCount += data[i].length;
-            numOffsets = numOffsetsCount;
-
-        }
     }
 
     @Test
     public void testInsertionSingle() {
         try {
-            AInsertionSorter res = InsertionSorterFactory.create(knownMax, offsets, negativeIndex, st);
+            AInsertionSorter res = InsertionSorterFactory.create(numRows, offsets, negativeIndex, st);
             assertArrayEquals(st.toString() + "\n\t" + Arrays.toString(expectedIndexes) + "\n\t"
                 + Arrays.toString(res.getIndexes()) + "\n", expectedIndexes, res.getIndexes());
             compareData(res.getData());

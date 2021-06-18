@@ -60,6 +60,9 @@ public abstract class FEDInstruction extends Instruction {
 		public boolean isForcedLocal() {
 			return this == LOUT;
 		}
+		public boolean isForced(){
+			return this == FOUT || this == LOUT;
+		}
 	}
 
 	protected final FEDType _fedType;

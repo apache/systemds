@@ -217,10 +217,10 @@ public class CtableFEDInstruction extends ComputationFEDInstruction {
 	 * @param mo2 input matrix object mo2
 	 * @return boolean indicating if the output can be kept on the federated sites
 	 */
-	private boolean isFedOutput(FederationMap fedMap, MatrixObject mo2) {
+	private static boolean isFedOutput(FederationMap fedMap, MatrixObject mo2) {
 		MatrixBlock mb = mo2.acquireReadAndRelease();
 		FederatedRange[] fedRanges = fedMap.getFederatedRanges(); // federated ranges of mo1
-		SortedMap<Double, Double> fedDims = new TreeMap<Double, Double>(); // <beginDim, endDim>
+		SortedMap<Double, Double> fedDims = new TreeMap<>(); // <beginDim, endDim>
 
 		// collect min and max of the corresponding slices of mo2
 		IntStream.range(0, fedRanges.length).forEach(i -> {

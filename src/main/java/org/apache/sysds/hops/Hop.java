@@ -36,6 +36,7 @@ import org.apache.sysds.common.Types.OpOp2;
 import org.apache.sysds.common.Types.OpOpData;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.conf.ConfigurationManager;
+import org.apache.sysds.hops.cost.FederatedCost;
 import org.apache.sysds.hops.recompile.Recompiler;
 import org.apache.sysds.hops.recompile.Recompiler.ResetType;
 import org.apache.sysds.lops.CSVReBlock;
@@ -91,8 +92,9 @@ public abstract class Hop implements ParseInfo {
 	 * If it is lout, the output should be retrieved by the coordinator.
 	 */
 	protected FederatedOutput _federatedOutput = FederatedOutput.NONE;
+	protected FederatedCost _federatedCost = new FederatedCost();
 	
-	// Estimated size for the output produced from this Hop
+	// Estimated size for the output produced from this Hop in bytes
 	protected double _outputMemEstimate = OptimizerUtils.INVALID_SIZE;
 	
 	// Estimated size for the entire operation represented by this Hop
@@ -535,7 +537,7 @@ public abstract class Hop implements ParseInfo {
 	 * only use getMemEstimate(), which gives memory required to store 
 	 * all inputs and the output.
 	 * 
-	 * @return output size memory estimate
+	 * @return output size memory estimate in bytes
 	 */
 	protected double getOutputSize() {
 		return _outputMemEstimate;
@@ -545,14 +547,22 @@ public abstract class Hop implements ParseInfo {
 		return getInputSize(null);
 	}
 
-	protected double getInputSize(Collection<String> exclVars) {
+	/**
+	 * Get the memory estimate of inputs as the sum of input estimates in bytes.
+	 * @param exclVars name of input hops to exclude from the input estimate
+	 * @param injectedDefault default memory estimate (bytes) used when the memory estimate of the input is negative
+	 * @return input memory estimate in bytes
+	 */
+	protected double getInputSize(Collection<String> exclVars, double injectedDefault){
 		double sum = 0;
 		int len = _input.size();
 		for( int i=0; i<len; i++ ) { //for all inputs
 			Hop hi = _input.get(i);
 			if( exclVars != null && exclVars.contains(hi.getName()) )
 				continue;
-			double hmout = hi.getOutputMemEstimate();
+			double hmout = hi.getOutputMemEstimate(injectedDefault);
+			if (hmout < 0)
+				hmout = injectedDefault*(Math.max(hi.getDim1(),1) * Math.max(hi.getDim2(),1));
 			if( hmout > 1024*1024 ) {//for relevant sizes
 				//check if already included in estimate (if an input is used
 				//multiple times it is still only required once in memory)
@@ -564,8 +574,17 @@ public abstract class Hop implements ParseInfo {
 			}
 			sum += hmout;
 		}
-		
+
 		return sum;
+	}
+
+	/**
+	 * Get the memory estimate of inputs as the sum of input estimates in bytes.
+	 * @param exclVars name of input hops to exclude from the input estimate
+	 * @return input memory estimate in bytes
+	 */
+	protected double getInputSize(Collection<String> exclVars) {
+		return getInputSize(exclVars, OptimizerUtils.INVALID_SIZE);
 	}
 
 	protected double getInputSize( int pos ){
@@ -582,12 +601,11 @@ public abstract class Hop implements ParseInfo {
 	/**
 	 * NOTES:
 	 * * Purpose: Whenever the output dimensions / sparsity of a hop are unknown, this hop
-	 *   should store its worst-case output statistics (if known) in that table. Subsequent
-	 *   hops can then
+	 *   should store its worst-case output statistics (if known) in that table.
 	 * * Invocation: Intended to be called for ALL root nodes of one Hops DAG with the same
 	 *   (initially empty) memo table.
 	 * 
-	 * @return memory estimate
+	 * @return memory estimate in bytes
 	 */
 	public double getMemEstimate() {
 		if ( OptimizerUtils.isMemoryBasedOptLevel() ) {
@@ -620,15 +638,44 @@ public abstract class Hop implements ParseInfo {
 	}
 
 	//wrappers for meaningful public names to memory estimates.
-	
+
+	/**
+	 * Get the memory estimate of inputs as the sum of input estimates in bytes.
+	 * @return input memory estimate in bytes
+	 */
 	public double getInputMemEstimate()
 	{
 		return getInputSize();
 	}
-	
+
+	/**
+	 * Get the memory estimate of inputs as the sum of input estimates in bytes.
+	 * @param injectedDefault default memory estimate (bytes) used when the memory estimate of the input is negative
+	 * @return input memory estimate in bytes
+	 */
+	public double getInputMemEstimate(double injectedDefault){
+		return getInputSize(null, injectedDefault);
+	}
+
+	/**
+	 * Output memory estimate in bytes.
+	 * @return output memory estimate in bytes
+	 */
 	public double getOutputMemEstimate()
 	{
 		return getOutputSize();
+	}
+
+	/**
+	 * Output memory estimate in bytes with negative memory estimates replaced by the injected default.
+	 * The injected default represents the memory estimate per output cell, hence it is multiplied by the estimated
+	 * dimensions of the output of the hop.
+	 * @param injectedDefault memory estimate to be returned in case the memory estimate defaults to a negative number
+	 * @return output memory estimate in bytes
+	 */
+	public double getOutputMemEstimate(double injectedDefault)
+	{
+		return Math.max(getOutputMemEstimate(),injectedDefault*(Math.max(getDim1(),1) * Math.max(getDim2(),1)));
 	}
 
 	public double getIntermediateMemEstimate()
@@ -823,16 +870,12 @@ public abstract class Hop implements ParseInfo {
 	 * This method only has an effect if FEDERATED_COMPILATION is activated.
 	 */
 	protected void updateETFed(){
-		if ( _federatedOutput == FederatedOutput.FOUT || _federatedOutput == FederatedOutput.LOUT )
+		if ( _federatedOutput.isForced() )
 			_etype = ExecType.FED;
 	}
 	
 	public boolean isFederated(){
 		return getExecType() == ExecType.FED;
-	}
-	
-	public boolean isFederatedOutput(){
-		return _federatedOutput == FederatedOutput.FOUT;
 	}
 
 	public boolean someInputFederated(){
@@ -887,6 +930,26 @@ public abstract class Hop implements ParseInfo {
 
 	public boolean hasFederatedOutput(){
 		return _federatedOutput == FederatedOutput.FOUT;
+	}
+
+	public boolean hasLocalOutput(){
+		return _federatedOutput == FederatedOutput.LOUT;
+	}
+
+	/**
+	 * Check if federated cost has been initialized for this Hop.
+	 * @return true if federated cost has been initialized
+	 */
+	public boolean federatedCostInitialized(){
+		return _federatedCost.getTotal() > 0;
+	}
+
+	public FederatedCost getFederatedCost(){
+		return _federatedCost;
+	}
+
+	public void setFederatedCost(FederatedCost cost){
+		_federatedCost = cost;
 	}
 
 	public void setUpdateType(UpdateType update){

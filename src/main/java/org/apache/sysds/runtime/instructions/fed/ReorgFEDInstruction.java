@@ -24,6 +24,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Future;
 import java.util.stream.Stream;
 
 import org.apache.commons.lang3.tuple.Pair;
@@ -52,7 +53,8 @@ import org.apache.sysds.runtime.matrix.operators.Operator;
 import org.apache.sysds.runtime.matrix.operators.ReorgOperator;
 
 public class ReorgFEDInstruction extends UnaryFEDInstruction {
-	
+	private static boolean fedoutFlagInString = false;
+
 	public ReorgFEDInstruction(Operator op, CPOperand in1, CPOperand out, String opcode, String istr, FederatedOutput fedOut) {
 		super(FEDType.Reorg, op, in1, out, opcode, istr, fedOut);
 	}
@@ -80,6 +82,7 @@ public class ReorgFEDInstruction extends UnaryFEDInstruction {
 			return new ReorgFEDInstruction(new ReorgOperator(DiagIndex.getDiagIndexFnObject()), in, out, opcode, str);
 		}
 		else if ( opcode.equalsIgnoreCase("rev") ) {
+			fedoutFlagInString = parts.length > 3;
 			parseUnaryInstruction(str, in, out); //max 2 operands
 			return new ReorgFEDInstruction(new ReorgOperator(RevIndex.getRevIndexFnObject()), in, out, opcode, str);
 		}
@@ -96,24 +99,34 @@ public class ReorgFEDInstruction extends UnaryFEDInstruction {
 		if( !mo1.isFederated() )
 			throw new DMLRuntimeException("Federated Reorg: "
 				+ "Federated input expected, but invoked w/ "+mo1.isFederated());
+		if ( !( mo1.isFederated(FederationMap.FType.COL) || mo1.isFederated(FederationMap.FType.ROW)) )
+			throw new DMLRuntimeException("Federation type " + mo1.getFedMapping().getType()
+				+ " is not supported for Reorg processing");
 
 		if(instOpcode.equals("r'")) {
 			//execute transpose at federated site
 			FederatedRequest fr1 = FederationUtils.callInstruction(instString,
 				output, new CPOperand[] {input1},
 				new long[] {mo1.getFedMapping().getID()}, true);
-			mo1.getFedMapping().execute(getTID(), true, fr1);
+			if (_fedOut != null && !_fedOut.isForcedLocal()){
+				mo1.getFedMapping().execute(getTID(), true, fr1);
 
-			//drive output federated mapping
-			MatrixObject out = ec.getMatrixObject(output);
-			out.getDataCharacteristics().set(mo1.getNumColumns(), mo1.getNumRows(), (int) mo1.getBlocksize(), mo1.getNnz());
-			out.setFedMapping(mo1.getFedMapping().copyWithNewID(fr1.getID()).transpose());
+				//drive output federated mapping
+				MatrixObject out = ec.getMatrixObject(output);
+				out.getDataCharacteristics().set(mo1.getNumColumns(), mo1.getNumRows(), (int) mo1.getBlocksize(), mo1.getNnz());
+				out.setFedMapping(mo1.getFedMapping().copyWithNewID(fr1.getID()).transpose());
+			} else {
+				FederatedRequest getRequest = new FederatedRequest(FederatedRequest.RequestType.GET_VAR, fr1.getID());
+				Future<FederatedResponse>[] execResponse = mo1.getFedMapping().execute(getTID(), true, fr1, getRequest);
+				ec.setMatrixOutput(output.getName(),
+					FederationUtils.bind(execResponse, mo1.isFederated(FederationMap.FType.COL)));
+			}
 		}
 		else if(instOpcode.equalsIgnoreCase("rev")) {
 			//execute transpose at federated site
 			FederatedRequest fr1 = FederationUtils.callInstruction(instString,
 				output, new CPOperand[] {input1},
-				new long[] {mo1.getFedMapping().getID()}, true);
+				new long[] {mo1.getFedMapping().getID()}, fedoutFlagInString);
 			mo1.getFedMapping().execute(getTID(), true, fr1);
 
 			if(mo1.isFederated(FederationMap.FType.ROW))
@@ -123,6 +136,11 @@ public class ReorgFEDInstruction extends UnaryFEDInstruction {
 			MatrixObject out = ec.getMatrixObject(output);
 			out.getDataCharacteristics().set(mo1.getNumRows(), mo1.getNumColumns(), (int) mo1.getBlocksize(), mo1.getNnz());
 			out.setFedMapping(mo1.getFedMapping().copyWithNewID(fr1.getID()));
+
+			if ( _fedOut != null && _fedOut.isForcedLocal() ){
+				out.acquireReadAndRelease();
+				out.getFedMapping().cleanup(getTID(), fr1.getID());
+			}
 		}
 		else if (instOpcode.equals("rdiag")) {
 			RdiagResult result;
@@ -158,6 +176,10 @@ public class ReorgFEDInstruction extends UnaryFEDInstruction {
 				.set(diagFedMap.getMaxIndexInRange(0), diagFedMap.getMaxIndexInRange(1),
 					(int) mo1.getBlocksize());
 			rdiag.setFedMapping(diagFedMap);
+			if ( _fedOut != null && _fedOut.isForcedLocal() ){
+				rdiag.acquireReadAndRelease();
+				rdiag.getFedMapping().cleanup(getTID(), rdiag.getFedMapping().getID());
+			}
 		}
 	}
 

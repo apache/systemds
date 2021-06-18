@@ -344,30 +344,30 @@ public class CostEstimatorStaticRuntime extends CostEstimator
 						}
 						return (leftSparse) ? xcm * (d1m * d1s + 1) : xcm * d1m;
 					}
-				    else if( optype.equals("uatrace") || optype.equals("uaktrace") )
-				    	return 2 * d1m * d1n;
-				    else if( optype.equals("ua+") || optype.equals("uar+") || optype.equals("uac+")  ){
-				    	//sparse safe operations
-				    	if( !leftSparse ) //dense
-				    		return d1m * d1n;
-				    	else //sparse
-				    		return d1m * d1n * d1s;
-				    }
-				    else if( optype.equals("uak+") || optype.equals("uark+") || optype.equals("uack+"))
-				    	return 4 * d1m * d1n; //1*k+
-				    else if( optype.equals("uasqk+") || optype.equals("uarsqk+") || optype.equals("uacsqk+"))
+					else if( optype.equals("uatrace") || optype.equals("uaktrace") )
+						return 2 * d1m * d1n;
+					else if( optype.equals("ua+") || optype.equals("uar+") || optype.equals("uac+")  ){
+						//sparse safe operations
+						if( !leftSparse ) //dense
+							return d1m * d1n;
+						else //sparse
+							return d1m * d1n * d1s;
+					}
+					else if( optype.equals("uak+") || optype.equals("uark+") || optype.equals("uack+"))
+						return 4 * d1m * d1n; //1*k+
+					else if( optype.equals("uasqk+") || optype.equals("uarsqk+") || optype.equals("uacsqk+"))
 						return 5 * d1m * d1n; // +1 for multiplication to square term
-				    else if( optype.equals("uamean") || optype.equals("uarmean") || optype.equals("uacmean"))
+					else if( optype.equals("uamean") || optype.equals("uarmean") || optype.equals("uacmean"))
 						return 7 * d1m * d1n; //1*k+
-				    else if( optype.equals("uavar") || optype.equals("uarvar") || optype.equals("uacvar"))
+					else if( optype.equals("uavar") || optype.equals("uarvar") || optype.equals("uacvar"))
 						return 14 * d1m * d1n;
-				    else if(   optype.equals("uamax") || optype.equals("uarmax") || optype.equals("uacmax")
-				    		|| optype.equals("uamin") || optype.equals("uarmin") || optype.equals("uacmin")
-				    		|| optype.equals("uarimax") || optype.equals("ua*") )
-				    	return d1m * d1n;
+					else if(   optype.equals("uamax") || optype.equals("uarmax") || optype.equals("uacmax")
+						|| optype.equals("uamin") || optype.equals("uarmin") || optype.equals("uacmin")
+						|| optype.equals("uarimax") || optype.equals("ua*") )
+						return d1m * d1n;
 					
-				    return 0;
-				    
+					return 0;
+				
 				case Binary: //opcodes: +, -, *, /, ^ (incl. ^2, *2),
 					//max, min, solve, ==, !=, <, >, <=, >=  
 					//note: all relational ops are not sparsesafe

@@ -36,6 +36,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.apache.commons.io.FileUtils;
@@ -2095,6 +2096,31 @@ public abstract class AutomatedTestBase {
 				if(opcode.equals(s))
 					return true;
 		return false;
+	}
+
+	/**
+	 * Checks if given strings are all in the set of heavy hitters.
+	 * @param str opcodes for which it is checked if all are in the heavy hitters
+	 * @return true if all given strings are in the set of heavy hitters
+	 */
+	protected boolean heavyHittersContainsAllString(String... str){
+		Set<String> heavyHitters = Statistics.getCPHeavyHitterOpCodes();
+		return Arrays.stream(str).allMatch(heavyHitters::contains);
+	}
+
+	/**
+	 * Returns an array of the given opcodes which are not present in the set of heavy hitter opcodes.
+	 * @param opcodes for which it is checked if they are among the heavy hitters
+	 * @return array of opcodes not found in heavy hitters
+	 */
+	protected String[] missingHeavyHitters(String... opcodes){
+		Set<String> heavyHitters = Statistics.getCPHeavyHitterOpCodes();
+		List<String> missingHeavyHitters = new ArrayList<>();
+		for (String opcode : opcodes){
+			if ( !heavyHitters.contains(opcode) )
+				missingHeavyHitters.add(opcode);
+		}
+		return missingHeavyHitters.toArray(new String[0]);
 	}
 
 	protected boolean heavyHittersContainsString(String str, int minCount) {

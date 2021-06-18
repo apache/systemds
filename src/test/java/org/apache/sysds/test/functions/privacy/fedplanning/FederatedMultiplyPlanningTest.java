@@ -35,7 +35,7 @@ import org.apache.sysds.test.TestUtils;
 import java.util.Arrays;
 import java.util.Collection;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 @RunWith(value = Parameterized.class)
 @net.jcip.annotations.NotThreadSafe
@@ -76,34 +76,40 @@ public class FederatedMultiplyPlanningTest extends AutomatedTestBase {
 
 	@Test
 	public void federatedMultiplyCP() {
-		federatedTwoMatricesSingleNodeTest(TEST_NAME);
+		String[] expectedHeavyHitters = new String[]{"fed_*", "fed_fedinit", "fed_r'", "fed_ba+*"};
+		federatedTwoMatricesSingleNodeTest(TEST_NAME, expectedHeavyHitters);
 	}
 
 	@Test
 	public void federatedRowSum(){
-		federatedTwoMatricesSingleNodeTest(TEST_NAME_2);
+		String[] expectedHeavyHitters = new String[]{"fed_*", "fed_r'", "fed_fedinit", "fed_ba+*", "fed_uark+"};
+		federatedTwoMatricesSingleNodeTest(TEST_NAME_2, expectedHeavyHitters);
 	}
 
 	@Test
 	public void federatedTernarySequence(){
-		federatedTwoMatricesSingleNodeTest(TEST_NAME_3);
+		String[] expectedHeavyHitters = new String[]{"fed_+*", "fed_1-*", "fed_fedinit", "fed_uak+"};
+		federatedTwoMatricesSingleNodeTest(TEST_NAME_3, expectedHeavyHitters);
 	}
 
 	@Test
 	public void federatedAggregateBinarySequence(){
 		cols = rows;
-		federatedTwoMatricesSingleNodeTest(TEST_NAME_4);
+		String[] expectedHeavyHitters = new String[]{"fed_ba+*", "fed_*", "fed_fedinit"};
+		federatedTwoMatricesSingleNodeTest(TEST_NAME_4, expectedHeavyHitters);
 	}
 
 	@Test
 	public void federatedAggregateBinaryColFedSequence(){
 		cols = rows;
-		federatedTwoMatricesSingleNodeTest(TEST_NAME_5);
+		String[] expectedHeavyHitters = new String[]{"fed_ba+*","fed_*","fed_fedinit"};
+		federatedTwoMatricesSingleNodeTest(TEST_NAME_5, expectedHeavyHitters);
 	}
 
 	@Test
 	public void federatedAggregateBinarySequence2(){
-		federatedTwoMatricesSingleNodeTest(TEST_NAME_6);
+		String[] expectedHeavyHitters = new String[]{"fed_ba+*","fed_fedinit"};
+		federatedTwoMatricesSingleNodeTest(TEST_NAME_6, expectedHeavyHitters);
 	}
 
 	private void writeStandardMatrix(String matrixName, long seed){
@@ -166,11 +172,11 @@ public class FederatedMultiplyPlanningTest extends AutomatedTestBase {
 		}
 	}
 
-	private void federatedTwoMatricesSingleNodeTest(String testName){
-		federatedTwoMatricesTest(Types.ExecMode.SINGLE_NODE, testName);
+	private void federatedTwoMatricesSingleNodeTest(String testName, String[] expectedHeavyHitters){
+		federatedTwoMatricesTest(Types.ExecMode.SINGLE_NODE, testName, expectedHeavyHitters);
 	}
 
-	private void federatedTwoMatricesTest(Types.ExecMode execMode, String testName) {
+	private void federatedTwoMatricesTest(Types.ExecMode execMode, String testName, String[] expectedHeavyHitters) {
 		OptimizerUtils.FEDERATED_COMPILATION = true;
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
 		Types.ExecMode platformOld = rtplatform;
@@ -213,10 +219,9 @@ public class FederatedMultiplyPlanningTest extends AutomatedTestBase {
 
 		// compare via files
 		compareResults(1e-9);
-		if ( testName.equals(TEST_NAME_3) )
-			assertTrue(heavyHittersContainsString("fed_+*", "fed_1-*"));
-		else
-			assertTrue(heavyHittersContainsString("fed_*", "fed_ba+*"));
+		if (!heavyHittersContainsAllString(expectedHeavyHitters))
+			fail("The following expected heavy hitters are missing: "
+				+ Arrays.toString(missingHeavyHitters(expectedHeavyHitters)));
 
 		TestUtils.shutdownThreads(t1, t2);
 

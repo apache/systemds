@@ -130,8 +130,9 @@ public class AppendFEDInstruction extends BinaryFEDInstruction {
 		}
 		else {
 			throw new DMLRuntimeException("Unsupported federated append: "
-				+ (mo1.isFederated() ? mo1.getFedMapping().getType().name():"LOCAL") + " "
-				+ (mo2.isFederated() ? mo2.getFedMapping().getType().name():"LOCAL") + " " + _cbind);
+				+ " input 1 FType is " + (mo1.isFederated() ? mo1.getFedMapping().getType().name():"LOCAL")
+				+ ", input 2 FType is " + (mo2.isFederated() ? mo2.getFedMapping().getType().name():"LOCAL")
+				+ ", and column bind is " + _cbind);
 		}
 	}
 }

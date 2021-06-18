@@ -823,7 +823,7 @@ public abstract class Hop implements ParseInfo {
 	 * This method only has an effect if FEDERATED_COMPILATION is activated.
 	 */
 	protected void updateETFed(){
-		if ( _federatedOutput == FederatedOutput.FOUT || _federatedOutput == FederatedOutput.LOUT )
+		if ( _federatedOutput.isForced() )
 			_etype = ExecType.FED;
 	}
 	

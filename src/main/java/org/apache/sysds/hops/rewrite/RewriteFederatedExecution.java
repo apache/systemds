@@ -23,9 +23,15 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.sysds.api.DMLException;
+import org.apache.sysds.hops.AggBinaryOp;
+import org.apache.sysds.hops.AggUnaryOp;
+import org.apache.sysds.hops.BinaryOp;
 import org.apache.sysds.hops.DataOp;
 import org.apache.sysds.hops.Hop;
 import org.apache.sysds.hops.LiteralOp;
+import org.apache.sysds.hops.NaryOp;
+import org.apache.sysds.hops.TernaryOp;
+import org.apache.sysds.hops.UnaryOp;
 import org.apache.sysds.parser.DataExpression;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
@@ -52,6 +58,9 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Future;
 
 public class RewriteFederatedExecution extends HopRewriteRule {
@@ -61,6 +70,15 @@ public class RewriteFederatedExecution extends HopRewriteRule {
 			return null;
 		for ( Hop root : roots )
 			visitHop(root);
+
+		return selectFederatedExecutionPlan(roots);
+	}
+
+	private ArrayList<Hop> selectFederatedExecutionPlan(ArrayList<Hop> roots){
+		List<FedPlan> fedPlans = generateFedPlans(roots);
+		FedPlan selectedPlan = selectFedPlan(fedPlans);
+		selectedPlan.updateHops();
+
 		return roots;
 	}
 
@@ -70,6 +88,172 @@ public class RewriteFederatedExecution extends HopRewriteRule {
 			return null;
 		visitHop(root);
 		return root;
+	}
+
+	private FedPlan selectFedPlan(List<FedPlan> fedPlans){
+		//TODO: Different selection algorithm (instead of linear)
+		FedPlan bestPlan = fedPlans.get(0);
+		if ( fedPlans.size() > 1 ){
+			for ( FedPlan planUtility : fedPlans )
+				if (planUtility.utility > bestPlan.utility)
+					bestPlan = planUtility;
+		}
+		return bestPlan;
+	}
+
+	private List<FedPlan> generateFedPlans(List<Hop> roots){
+		List<FedPlan> fedPlans = new ArrayList<>();
+
+		// Create two extreme fed plans
+		fedPlans.add(new FedPlan(roots, FEDInstruction.FederatedOutput.FOUT));
+		fedPlans.add(new FedPlan(roots, FEDInstruction.FederatedOutput.LOUT));
+
+		return fedPlans;
+	}
+
+	class FedPlan {
+		private final List<FedPlanRoot> fedPlanRoots = new ArrayList<>();
+		private long utility;
+
+		public FedPlan (List<Hop> roots){
+			Map<Hop,FedPlanNode> hopToNode = new HashMap<>();
+			for ( Hop root : roots ){
+				fedPlanRoots.add(new FedPlanRoot(root, hopToNode));
+			}
+		}
+
+		public FedPlan (List<Hop> roots, FEDInstruction.FederatedOutput strategy){
+			this(roots);
+			setFedOut(strategy);
+			setUtility();
+		}
+
+		public void setFedOut(FEDInstruction.FederatedOutput fedOut){
+			for ( FedPlanRoot fedPlanRoot : fedPlanRoots ){
+				fedPlanRoot.setFedOut(fedOut);
+			}
+		}
+
+		public long setUtility(){
+			fedPlanRoots.forEach(root -> utility += root.getUtility());
+			return utility;
+		}
+
+		public void updateHops(){
+			for ( FedPlanRoot fedPlanRoot : fedPlanRoots )
+				fedPlanRoot.updateHops();
+		}
+	}
+
+	class FedPlanRoot extends FedPlanNode {
+		public FedPlanRoot(Hop root, Map<Hop,FedPlanNode> hopToNode){
+			super(root, hopToNode);
+		}
+	}
+
+	class FedPlanChild extends FedPlanNode {
+		private final List<FedPlanNode> parents = new ArrayList<>();
+
+		public FedPlanChild(Hop currentHop, Map<Hop,FedPlanNode> hopToNode){
+			super(currentHop, hopToNode);
+		}
+
+		public void addParent(FedPlanNode parent){
+			parents.add(parent);
+		}
+	}
+
+	abstract class FedPlanNode {
+		protected final List<FedPlanNode> children = new ArrayList<>();
+		protected Hop associatedHop;
+		protected FEDInstruction.FederatedOutput federatedOutput;
+		protected Map<Hop,FedPlanNode> hopToNode;
+		protected boolean fedOutputVisited = false;
+		protected boolean utilityVisited = false;
+		protected long utility = 0;
+
+		public FedPlanNode(Hop currentHop, Map<Hop,FedPlanNode> hopToNode){
+			this.hopToNode = hopToNode;
+			addChildren(currentHop);
+			associatedHop = currentHop;
+		}
+
+		private void addChildren(Hop currentHop){
+			for ( Hop child : currentHop.getInput() ){
+				FedPlanChild fedPlanChild;
+				if ( !(hopToNode.containsKey(child)) ){
+					fedPlanChild = new FedPlanChild(child, hopToNode);
+					hopToNode.put(currentHop, fedPlanChild);
+				}
+				else
+					fedPlanChild = (FedPlanChild) hopToNode.get(child);
+				fedPlanChild.addParent(this);
+				children.add(fedPlanChild);
+			}
+		}
+
+		protected void setFedOut(FEDInstruction.FederatedOutput strategy){
+			for ( FedPlanNode child : children ){
+				if ( !child.fedOutputVisited )
+					child.setFedOut(strategy);
+			}
+
+			if ( ( strategy.isForcedFederated() ) && isFedInstSupportedHop(associatedHop)
+				|| ( strategy.isForcedLocal() && isFedInstSupportedHop(associatedHop)
+				&& (associatedHop.getPrivacy() == null
+				|| ( associatedHop.getPrivacy() != null && !associatedHop.getPrivacy().hasConstraints() ) )) )
+				federatedOutput = strategy;
+			else if ( strategy.isForcedLocal() && isFedInstSupportedHop(associatedHop)
+				&& ( associatedHop.getPrivacy() != null && associatedHop.getPrivacy().hasConstraints() ) )
+				federatedOutput = FEDInstruction.FederatedOutput.FOUT;
+			else
+				federatedOutput = FEDInstruction.FederatedOutput.NONE;
+
+			fedOutputVisited = true;
+		}
+
+		public void updateHops(){
+			associatedHop.setFederatedOutput(federatedOutput);
+			for ( FedPlanNode child : children )
+				child.updateHops();
+		}
+
+		public long getUtility(){
+			//Add utility from children
+			for ( FedPlanNode child : children ){
+				if ( !child.utilityVisited )
+					utility += child.getUtility();
+			}
+
+			//Add utility from current node
+			utility += estimateUtility();
+
+			utilityVisited = true;
+
+			return utility;
+		}
+
+		private long estimateUtility(){
+			//TODO: Make better utility estimation
+			//Possibly make a class for utility estimators.
+			//Quick version by adding one if it is FOUT:
+			if ( federatedOutput == FEDInstruction.FederatedOutput.FOUT)
+				return 1;
+			else
+				return 0;
+		}
+	}
+
+	/**
+	 * Hops with supporting federated instructions with parsing and processing based on FederatedOutput flags.
+	 * @param hop to check for supporting fed instructions
+	 * @return true if the hop is supported by a federated instruction
+	 */
+	private boolean isFedInstSupportedHop(Hop hop){
+		//TODO: Add classes to this list and check the already added classes if they actually belong here
+		return ( hop instanceof AggBinaryOp || hop instanceof AggUnaryOp || hop instanceof BinaryOp
+			|| hop instanceof UnaryOp || hop instanceof DataOp || hop instanceof TernaryOp
+			|| hop instanceof NaryOp );
 	}
 	
 	private void visitHop(Hop hop){
@@ -101,7 +285,7 @@ public class RewriteFederatedExecution extends HopRewriteRule {
 	 */
 	private static void privacyBasedHopDecisionWithFedCall(Hop hop){
 		loadFederatedPrivacyConstraints(hop);
-		privacyBasedHopDecision(hop);
+		PrivacyPropagator.hopPropagation(hop);
 	}
 
 	/**

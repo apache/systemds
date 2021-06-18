@@ -206,7 +206,7 @@ public final class ColGroupFactory {
 				sizeInfo.getTupleSparsity());
 		}
 		catch(Exception e) {
-			throw new DMLCompressionException("Error while compression based on :\n" + sizeInfo, e);
+			throw new DMLCompressionException("Error while compressing colgroup based on :\n" + sizeInfo, e);
 		}
 	}
 

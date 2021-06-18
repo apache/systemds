@@ -74,6 +74,18 @@ public class TestInsertionSorters {
 
             tests.add(new Object[] {4, new int[][] {new int[] {1}, new int[] {0}, new int[] {2}, new int[] {3}}, t, 0,
                 new int[] {0, 2, 3}, new int[] {0, 1, 2}});
+
+            tests.add(new Object[]{10, new int[][]{new int[] {2},new int[]{6}, new int[]{0,1,3,4,7,8,9}}, t, 2, new int[]{2,5,6}, new int[]{0,2,1}});
+            tests.add(new Object[]{10, new int[][]{new int[] {5},new int[]{6}, new int[]{0,1,3,4,7,8,9}}, t, 2, new int[]{2,5,6}, new int[]{2,0,1}});
+            tests.add(new Object[]{10, new int[][]{new int[] {5},new int[]{2}, new int[]{0,1,3,4,7,8,9}}, t, 2, new int[]{2,5,6}, new int[]{1,0,2}});
+            tests.add(new Object[]{10, new int[][]{new int[] {5},new int[]{2}, new int[]{0,1,3,4,7,8}}, t, 2, new int[]{2,5,6,9}, new int[]{1,0,2,2}});
+            tests.add(new Object[]{10, new int[][]{new int[] {5},new int[]{2}, new int[]{0,1,3,4,7}}, t, 2, new int[]{2,5,6,8,9}, new int[]{1,0,2,2,2}});
+            tests.add(new Object[]{10, new int[][]{new int[] {5,8},new int[]{2}, new int[]{0,1,3,4,7}}, t, 2, new int[]{2,5,6,8,9}, new int[]{1,0,2,0,2}});
+
+            tests.add(new Object[]{10, new int[][]{new int[]{0,1,3,4,7}, new int[] {5,8}, new int[]{2}}, t, 0, new int[]{2,5,6,8,9}, new int[]{1,0,2,0,2}});
+            tests.add(new Object[]{10, new int[][]{new int[]{0,1,3,4,7}, new int[] {5,8}, new int[]{2}}, t, -1, new int[]{0,1,2,3,4,5,7,8}, new int[]{0,0,2,0,0,1,0,1}});
+
+            tests.add(new Object[]{10, new int[][]{new int[]{0,1,3,4,7}, new int[] {5,8}, new int[]{2,9}}, t, 0, new int[]{2,5,6,8,9}, new int[]{1,0,2,0,1}});
         }
         return tests;
     }
@@ -105,7 +117,7 @@ public class TestInsertionSorters {
     @Test
     public void testInsertionSingle() {
         try {
-            AInsertionSorter res = InsertionSorterFactory.create(numOffsets, knownMax, offsets, negativeIndex, st);
+            AInsertionSorter res = InsertionSorterFactory.create(knownMax, offsets, negativeIndex, st);
             assertArrayEquals(st.toString() + "\n\t" + Arrays.toString(expectedIndexes) + "\n\t"
                 + Arrays.toString(res.getIndexes()) + "\n", expectedIndexes, res.getIndexes());
             compareData(res.getData());

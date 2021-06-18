@@ -61,6 +61,12 @@ public class ColGroupSDCSingle extends ColGroupValue {
 		super(numRows);
 	}
 
+	protected ColGroupSDCSingle(int[] colIndices, int numRows, ADictionary dict, int[] indexes) {
+		super(colIndices, numRows, dict);
+		_indexes = OffsetFactory.create(indexes, numRows);
+		_zeros = false;
+	}
+
 	protected ColGroupSDCSingle(int[] colIndices, int numRows, ADictionary dict, int[] indexes, int[] cachedCounts) {
 		super(colIndices, numRows, dict, cachedCounts);
 		_indexes = OffsetFactory.create(indexes, numRows);

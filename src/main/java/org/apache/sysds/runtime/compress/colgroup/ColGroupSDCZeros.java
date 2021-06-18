@@ -69,6 +69,13 @@ public class ColGroupSDCZeros extends ColGroupValue {
 		super(numRows);
 	}
 
+	protected ColGroupSDCZeros(int[] colIndices, int numRows, ADictionary dict, int[] indexes, AMapToData data) {
+		super(colIndices, numRows, dict);
+		_indexes = OffsetFactory.create(indexes, numRows);
+		_data = data;
+		_zeros = true;
+	}
+
 	protected ColGroupSDCZeros(int[] colIndices, int numRows, ADictionary dict, int[] indexes, AMapToData data,
 		int[] cachedCounts) {
 		super(colIndices, numRows, dict, cachedCounts);

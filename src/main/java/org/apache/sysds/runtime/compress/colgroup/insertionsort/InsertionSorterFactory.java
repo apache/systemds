@@ -27,12 +27,24 @@ public final class InsertionSorterFactory {
 		MERGE, MATERIALIZE;
 	}
 
+	public static AInsertionSorter create(int knownMax, IntArrayList[] offsets) {
+		return create(getEndLength(offsets), knownMax, offsets);
+	}
+
 	public static AInsertionSorter create(int endLength, int knownMax, IntArrayList[] offsets) {
 		return create(endLength, knownMax, offsets, -1, SORT_TYPE.MATERIALIZE);
 	}
 
+	public static AInsertionSorter create(int knownMax, IntArrayList[] offsets, int negativeIndex) {
+		return create(getEndLength(offsets) - offsets[negativeIndex].size(), knownMax, offsets, negativeIndex);
+	}
+
 	public static AInsertionSorter create(int endLength, int knownMax, IntArrayList[] offsets, int negativeIndex) {
 		return create(endLength, knownMax, offsets, negativeIndex, SORT_TYPE.MATERIALIZE);
+	}
+
+	public static AInsertionSorter create(int knownMax, IntArrayList[] offsets, int negativeIndex, SORT_TYPE st) {
+		return create(getEndLength(offsets) - offsets[negativeIndex].size(), knownMax, offsets, negativeIndex, st);
 	}
 
 	public static AInsertionSorter create(int endLength, int knownMax, IntArrayList[] offsets, int negativeIndex,
@@ -43,5 +55,13 @@ public final class InsertionSorterFactory {
 			default:
 				return new MaterializeSort(endLength, knownMax, offsets, negativeIndex);
 		}
+	}
+
+	private static int getEndLength(IntArrayList[] offsets) {
+		int endLength = 0;
+		for(IntArrayList l : offsets) {
+			endLength += l.size();
+		}
+		return endLength;
 	}
 }

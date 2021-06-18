@@ -85,6 +85,11 @@ public abstract class ColGroupValue extends ColGroupCompressed implements Clonea
 		super(numRows);
 	}
 
+	protected ColGroupValue(int[] colIndices, int numRows, ADictionary dict) {
+		super(colIndices, numRows);
+		_dict = dict;
+	}
+
 	protected ColGroupValue(int[] colIndices, int numRows, ADictionary dict, int[] cachedCounts) {
 		super(colIndices, numRows);
 		_dict = dict;

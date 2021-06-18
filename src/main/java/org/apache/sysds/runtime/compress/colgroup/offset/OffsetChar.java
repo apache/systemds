@@ -21,6 +21,7 @@ package org.apache.sysds.runtime.compress.colgroup.offset;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
+import java.util.Arrays;
 
 import org.apache.sysds.runtime.DMLCompressionException;
 import org.apache.sysds.utils.MemoryEstimates;

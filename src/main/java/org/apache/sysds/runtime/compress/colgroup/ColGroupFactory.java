@@ -193,7 +193,6 @@ public final class ColGroupFactory {
 
 	private static AColGroup compressColGroupForced(MatrixBlock in, int[] colIndexes,
 		CompressionSettings compSettings) {
-
 		ABitmap ubm = BitmapEncoder.extractBitmap(colIndexes, in, compSettings.transposed);
 
 		CompressedSizeEstimator estimator = new CompressedSizeEstimatorExact(in, compSettings);
@@ -201,9 +200,14 @@ public final class ColGroupFactory {
 		CompressedSizeInfoColGroup sizeInfo = new CompressedSizeInfoColGroup(
 			estimator.estimateCompressedColGroupSize(ubm, colIndexes), compSettings.validCompressions, ubm);
 
-		int numRows = compSettings.transposed ? in.getNumColumns() : in.getNumRows();
-		return compress(colIndexes, numRows, ubm, sizeInfo.getBestCompressionType(compSettings), compSettings, in,
-			sizeInfo.getTupleSparsity());
+		try {
+			int numRows = compSettings.transposed ? in.getNumColumns() : in.getNumRows();
+			return compress(colIndexes, numRows, ubm, sizeInfo.getBestCompressionType(compSettings), compSettings, in,
+				sizeInfo.getTupleSparsity());
+		}
+		catch(Exception e) {
+			throw new DMLCompressionException("Error while compression based on :\n" + sizeInfo, e);
+		}
 	}
 
 	// private static AColGroup compressColGroupCorrecting(MatrixBlock in,
@@ -285,18 +289,18 @@ public final class ColGroupFactory {
 		CompressionSettings cs, MatrixBlock rawMatrixBlock, double tupleSparsity) {
 
 		// if(compType == CompressionType.UNCOMPRESSED && PartitionerType.isCostBased(cs.columnPartitioner))
-		// 	compType = CompressionType.DDC;
+		// compType = CompressionType.DDC;
 
-		final IntArrayList[] of = ubm.getOffsetList();
-
-		if(of == null)
-			return new ColGroupEmpty(colIndexes, rlen);
-		else if(of.length == 1 && of[0].size() == rlen)
-			return new ColGroupConst(colIndexes, rlen, DictionaryFactory.create(ubm));
-
-		if(LOG.isTraceEnabled())
-			LOG.trace("compressing to: " + compType);
 		try {
+			final IntArrayList[] of = ubm.getOffsetList();
+
+			if(of == null)
+				return new ColGroupEmpty(colIndexes, rlen);
+			else if(of.length == 1 && of[0].size() == rlen)
+				return new ColGroupConst(colIndexes, rlen, DictionaryFactory.create(ubm));
+
+			if(LOG.isTraceEnabled())
+				LOG.trace("compressing to: " + compType);
 			if(cs.sortValuesByLength)
 				ubm.sortValuesByFrequency();
 
@@ -314,9 +318,6 @@ public final class ColGroupFactory {
 				default:
 					throw new DMLCompressionException("Not implemented ColGroup Type compressed in factory.");
 			}
-		}
-		catch(DMLCompressionException e) {
-			throw e;
 		}
 		catch(Exception e) {
 			throw new DMLCompressionException("Error in construction of colGroup type: " + compType, e);
@@ -383,7 +384,8 @@ public final class ColGroupFactory {
 		}
 		catch(Exception e) {
 			throw new DMLCompressionException(
-				"Failed to construct SDC Group with columns :" + Arrays.toString(colIndexes), e);
+				"Failed to construct SDC Group with columns :\n" + Arrays.toString(colIndexes) + "\nand Bitmap: " + ubm,
+				e);
 		}
 
 	}
@@ -472,7 +474,7 @@ public final class ColGroupFactory {
 			return getColGroupConst(numRows, colIndices, value);
 	}
 
-	public static AColGroup getColGroupConst(int numRows, int[] cols, double value ){
+	public static AColGroup getColGroupConst(int numRows, int[] cols, double value) {
 		final int numCols = cols.length;
 		double[] values = new double[numCols];
 		for(int i = 0; i < numCols; i++)

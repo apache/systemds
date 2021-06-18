@@ -49,7 +49,7 @@ public class OffsetChar extends AOffset {
 			final int nv = indexes[i];
 			final int offsetSize = (nv - ov);
 			if(offsetSize == 0)
-				throw new DMLCompressionException("Invalid difference between cells");
+				throw new DMLCompressionException("Invalid difference between cells :\n" + Arrays.toString(indexes));
 			final int div = offsetSize / maxV;
 			final int mod = offsetSize % maxV;
 			if(mod == 0) {
@@ -95,14 +95,15 @@ public class OffsetChar extends AOffset {
 	}
 
 	@Override
-	public int getSize(){
+	public int getSize() {
 		int size = 1;
-		for(char b : offsets){
+		for(char b : offsets) {
 			if(b != 0)
 				size++;
 		}
 		return size;
 	}
+
 	public static OffsetChar readFields(DataInput in) throws IOException {
 		int offsetToFirst = in.readInt();
 		int offsetsLength = in.readInt();
@@ -115,7 +116,7 @@ public class OffsetChar extends AOffset {
 
 	public static long getInMemorySize(int length) {
 		long size = 16 + 4 + 8; // object header plus int plus reference
-		size += MemoryEstimates.charArrayCost(length-1);
+		size += MemoryEstimates.charArrayCost(length - 1);
 		return size;
 	}
 

@@ -48,7 +48,7 @@ public class OffsetByte extends AOffset {
 			final int nv = indexes[i];
 			final int offsetSize = nv - ov;
 			if(offsetSize == 0)
-				throw new DMLCompressionException("Invalid difference between cells");
+				throw new DMLCompressionException("Invalid difference between cells :\n" + Arrays.toString(indexes));
 			final int div = offsetSize / maxV;
 			final int mod = offsetSize % maxV;
 			if(mod == 0) {

@@ -46,32 +46,64 @@ public class CompressForce extends CompressBase {
 
 	@Test
 	public void testTranspose_CP() {
-		transpose(1, 1, ExecType.CP);
+		runTest(1, 1, ExecType.CP, "transpose");
 	}
 
 	@Test
 	public void testTranspose_SP() {
-		transpose(1, 1, ExecType.SPARK);
+		runTest(2, 1, ExecType.SPARK, "transpose");
 	}
 
 	@Test
 	public void testSum_CP() {
-		sum(0, 1, ExecType.CP);
+		runTest(0, 1, ExecType.CP, "sum");
 	}
 
 	@Test
 	public void testSum_SP() {
-		sum(0, 1, ExecType.SPARK);
+		runTest(0, 1, ExecType.SPARK, "sum");
 	}
 
 	@Test
 	public void testRowAggregate_CP() {
-		rowAggregate(0, 1, ExecType.CP);
+		runTest(0, 1, ExecType.CP, "row_min");
 	}
 
 	@Test
 	public void testRowAggregate_SP() {
-		rowAggregate(0, 1, ExecType.SPARK);
+		runTest(0, 1, ExecType.SPARK, "row_min");
+	}
+
+	@Test
+	public void testSequence_CP() {
+		runTest(1, 1, ExecType.CP, "plus_mm_ewbm_sum");
+	}
+
+	@Test
+	public void testSequence_SP() {
+		runTest(2, 1, ExecType.SPARK, "plus_mm_ewbm_sum");
+	}
+
+	@Test
+	public void testMatrixMultSum_CP() {
+		runTest(0, 1, ExecType.CP, "mmr_sum");
+	}
+
+	@Test
+	public void testMatrixMultRightSum_SP() {
+		runTest(0, 1, ExecType.SPARK, "mmr_sum");
+	}
+
+	@Test
+	public void testMatrixMultLeftSum_CP() {
+		runTest(0, 1, ExecType.CP, "mml_sum");
+
+	}
+
+	@Test
+	public void testMatrixMultLeftSum_SP() {
+		runTest(0, 1, ExecType.SPARK, "mml_sum");
+
 	}
 
 	/**

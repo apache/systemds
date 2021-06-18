@@ -48,25 +48,8 @@ public abstract class CompressBase extends AutomatedTestBase {
 		addTestConfiguration(getTestName(), new TestConfiguration(getTestClassDir(), getTestName()));
 	}
 
-	public void transpose(int decompressCount, int compressCount, ExecType ex) {
-		// Currently the transpose would decompress the compression.
-		// But since this script only contain one operation on potentially compressed, it should not try to compress but
-		// will if forced.
-		compressTest(1, 1000, 1.0, ex, 1, 10, 1, decompressCount, compressCount, "transpose");
-	}
-
-	public void sum(int decompressCount, int compressCount, ExecType ex) {
-		// Only using sum operations the compression should not be decompressed.
-		// But since this script only contain one operation on potentially compressed, it should not try to compress but
-		// will if forced.
-		compressTest(1, 1000, 1.0, ex, 1, 10, 1, decompressCount, compressCount, "sum");
-	}
-
-	public void rowAggregate(int decompressCount, int compressCount, ExecType ex) {
-		// If we use row aggregates, it is preferable not to compress at all.
-		// But since this script only contain one operation on potentially compressed, it should not try to compress but
-		// will if forced.
-		compressTest(1, 1000, 1.0, ex, 1, 10, 1, decompressCount, compressCount, "row_min");
+	public void runTest(int decompressCount, int compressCount, ExecType ex, String name) {
+		compressTest(1, 1500, 1.0, ex, 1, 10, 1, decompressCount, compressCount, name);
 	}
 
 	public void compressTest(int cols, int rows, double sparsity, ExecType instType, int min, int max, double delta,
@@ -84,7 +67,7 @@ public abstract class CompressBase extends AutomatedTestBase {
 
 			programArgs = new String[] {"-stats", "100", "-nvargs", "A=" + input("A")};
 
-			LOG.debug(runTest(null));
+			LOG.error(runTest(null));
 
 			int decompressCount = 0;
 			decompressCount += DMLCompressionStatistics.getDecompressionCount();

@@ -331,7 +331,7 @@ public class CompressedMatrixBlock extends MatrixBlock {
 			nonZeros = nnz;
 		}
 
-		if (nonZeros == 0){
+		if(nonZeros == 0) {
 			ColGroupEmpty cg = ColGroupEmpty.generate(getNumColumns(), getNumRows());
 			allocateColGroup(cg);
 		}
@@ -637,19 +637,7 @@ public class CompressedMatrixBlock extends MatrixBlock {
 			throw new NotImplementedException("Unary aggregate " + op.aggOp.increOp.fn + " not supported yet.");
 		}
 
-		// prepare output dimensions
-		CellIndex tempCellIndex = new CellIndex(-1, -1);
-		op.indexFn.computeDimension(rlen, clen, tempCellIndex);
-
-		// initialize and allocate the result
-		if(result == null)
-			result = new MatrixBlock(tempCellIndex.row, tempCellIndex.column, false);
-		else
-			result.reset(tempCellIndex.row, tempCellIndex.column, false);
-		MatrixBlock ret = (MatrixBlock) result;
-		ret.allocateDenseBlock();
-
-		return CLALibCompAgg.aggregateUnary(this, ret, op, blen, indexesIn, inCP);
+		return CLALibCompAgg.aggregateUnary(this, result, op, blen, indexesIn, inCP);
 	}
 
 	@Override

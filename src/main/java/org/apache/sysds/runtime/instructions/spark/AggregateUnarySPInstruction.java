@@ -19,8 +19,6 @@
 
 package org.apache.sysds.runtime.instructions.spark;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.function.Function;
@@ -50,7 +48,6 @@ import org.apache.sysds.runtime.meta.DataCharacteristics;
 import scala.Tuple2;
 
 public class AggregateUnarySPInstruction extends UnarySPInstruction {
-	private static final Log LOG = LogFactory.getLog(AggregateUnarySPInstruction.class.getName());
 	private SparkAggType _aggtype = null;
 	private AggregateOperator _aop = null;
 

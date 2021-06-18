@@ -19,6 +19,8 @@
 
 package org.apache.sysds.runtime.instructions.spark;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.function.Function;
@@ -44,9 +46,11 @@ import org.apache.sysds.runtime.matrix.data.OperationsOnMatrixValues;
 import org.apache.sysds.runtime.matrix.operators.AggregateOperator;
 import org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
+
 import scala.Tuple2;
 
 public class AggregateUnarySPInstruction extends UnarySPInstruction {
+	private static final Log LOG = LogFactory.getLog(AggregateUnarySPInstruction.class.getName());
 	private SparkAggType _aggtype = null;
 	private AggregateOperator _aop = null;
 
@@ -115,6 +119,7 @@ public class AggregateUnarySPInstruction extends UnarySPInstruction {
 			//put output block into symbol table (no lineage because single block)
 			//this also includes implicit maintenance of matrix characteristics
 			sec.setMatrixOutput(output.getName(), out3);
+			
 		}
 		else //MULTI_BLOCK or NONE
 		{

@@ -21,6 +21,7 @@ package org.apache.sysds.test.functions.compress.configuration;
 
 import java.io.File;
 
+import org.apache.sysds.common.Types.ExecType;
 import org.junit.Test;
 
 public class CompressForce extends CompressBase {
@@ -44,18 +45,33 @@ public class CompressForce extends CompressBase {
 	}
 
 	@Test
-	public void testTranspose() {
-		transpose(1, 1);
+	public void testTranspose_CP() {
+		transpose(1, 1, ExecType.CP);
 	}
 
 	@Test
-	public void testSum(){
-		sum(0,1);
+	public void testTranspose_SP() {
+		transpose(1, 1, ExecType.SPARK);
 	}
-	
+
 	@Test
-	public void testRowAggregate() {
-		rowAggregate(0,1);
+	public void testSum_CP() {
+		sum(0, 1, ExecType.CP);
+	}
+
+	@Test
+	public void testSum_SP() {
+		sum(0, 1, ExecType.SPARK);
+	}
+
+	@Test
+	public void testRowAggregate_CP() {
+		rowAggregate(0, 1, ExecType.CP);
+	}
+
+	@Test
+	public void testRowAggregate_SP() {
+		rowAggregate(0, 1, ExecType.SPARK);
 	}
 
 	/**

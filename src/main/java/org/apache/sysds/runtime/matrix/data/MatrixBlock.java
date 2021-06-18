@@ -4554,7 +4554,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	{
 		//determine number of rows/cols to be removed
 		int step = correctionLocation.getNumRemovedRowsColumns();
-		if( step <= 0 )
+		if( step <= 0)
 			return; 
 		
 		//e.g., colSums, colMeans, colMaxs, colMeans, colVars
@@ -4562,7 +4562,9 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		   || correctionLocation==CorrectionLocationType.LASTTWOROWS
 		   || correctionLocation==CorrectionLocationType.LASTFOURROWS )
 		{
-			if( sparse && sparseBlock!=null ) { //SPARSE
+			if(getNumColumns() - step <= 0)
+				return;
+			else if( sparse && sparseBlock!=null ) { //SPARSE
 				nonZeros -= recomputeNonZeros(1, rlen-1, 0, clen-1);
 				sparseBlock = SparseBlockFactory
 					.createSparseBlock(DEFAULT_SPARSEBLOCK, sparseBlock.get(0));
@@ -4581,7 +4583,9 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		        || correctionLocation==CorrectionLocationType.LASTTWOCOLUMNS
 		        || correctionLocation==CorrectionLocationType.LASTFOURCOLUMNS )
 		{
-			if( sparse && sparseBlock!=null ) { //SPARSE
+			if(getNumRows() - step <= 0)
+				return;
+			else if( sparse && sparseBlock!=null ) { //SPARSE
 				//sparse blocks are converted to a dense representation
 				//because column vectors are always smaller in dense
 				double[] tmp = new double[rlen];

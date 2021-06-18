@@ -21,6 +21,7 @@ package org.apache.sysds.test.functions.compress.configuration;
 
 import java.io.File;
 
+import org.apache.sysds.common.Types.ExecType;
 import org.junit.Test;
 
 public class CompressCost extends CompressBase {
@@ -45,17 +46,17 @@ public class CompressCost extends CompressBase {
 
 	@Test
 	public void testTranspose() {
-		transpose(0, 0);
+		transpose(0, 0, ExecType.CP);
 	}
 
 	@Test
 	public void testSum() {
-		sum(0, 0);
+		sum(0, 0, ExecType.CP);
 	}
 
 	@Test
 	public void testRowAggregate() {
-		rowAggregate(0, 0);
+		rowAggregate(0, 0, ExecType.CP);
 	}
 
 	/**

@@ -1,0 +1,181 @@
+#-------------------------------------------------------------
+## Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+##-------------------------------------------------------------
+# THIS SCRIPT COMPUTES A SOLUTION FOR THE HOSPITAL RESIDENCY MATCH PROBLEM
+#
+# INPUT PARAMETERS:
+# --------------------------------------------------------------------------------------------
+# NAME                  TYPE       DEFAULT      MEANING
+# --------------------------------------------------------------------------------------------
+# R                     Matrix     ---          Residents matrix R.
+#                                               It must be an ORDERED  matrix.
+#
+# H                     Matrix     ---          Hospitals matrix H.
+#                                               It must be an UNORDRED matrix.
+#
+# capacity              Matrix     ---          capacity of Hospitals matrix C.
+#                                               It must be a [n*1] matrix with non zero values.
+#                                               i.e. the leftmost value in a row is the most preferred partner's index.
+#                                               i.e. the leftmost value in a row in P is the preference value for the acceptor
+#                                               with index 1 and vice-versa (higher is better).
+# OUTPUT PARAMETERS:
+# --------------------------------------------------------------------------------------------
+# NAME                  TYPE       DEFAULT      MEANING
+# --------------------------------------------------------------------------------------------
+# residencyMatch        Matrix     ---          Result Matrix
+#                                               If cell [i,j] is non-zero, it means that Resident i has matched with Hospital j.
+#                                               Further, if cell [i,j] is non-zero, it holds the preference value that led to the match.
+#
+#
+# hospitalMatch         Matrix     ---          Result Matrix
+#                                               If cell [i,j] is non-zero, it means that Resident i has matched with Hospital j.
+#                                               Further, if cell [i,j] is non-zero, it holds the preference value that led to the match.
+#
+#
+# Residents.mtx:
+# 2.0,1.0,3.0
+# 1.0,2.0,3.0
+# 1.0,2.0,0.0
+#
+# Since it is an ORDERED  matrix, this means that Resident 1 (row 1) likes hospital 2 the most, followed by hospital 1 and hospital 3.
+# If it was UNORDERED, this would mean that resident 1 (row 1) likes hospital 3 the most (since the value at [1,3] is the row max),
+# followed by hospital 1 (2.0 preference value) and hospital 2 (1.0 preference value).
+#
+# Hospitals.mtx:
+# 2.0,1.0,0.0
+# 0.0,1.0,2.0
+# 1.0,2.0,0.0
+#
+# Since it is an UNORDERED matrix this means that Hospital 1 (row 1) likes Resident 1 the most (since the value at [1,1] is the row max).
+#
+# capacity.mtx
+# 1.0
+# 1.0
+# 1.0
+#
+# residencyMatch.mtx
+# 2.0,0.0,0.0
+# 1.0,0.0,0.0
+# 0.0,2.0,0.0
+#
+
+
+# hospitalMatch.mtx
+# 0.0,1.0,0.0
+# 0.0,0.0,2.0
+# 1.0,0.0,0.0
+#
+# Resident 1 has matched with Hospital 3 (since [1,3] is non-zero) at a preference level of 2.0.
+# Resident 2 has matched with Hospital 1 (since [2,1] is non-zero) at a preference level of 1.0.
+# Resident 3 has matched with Hospital 2 (since [3,2] is non-zero) at a preference level of 2.0.
+# --------------------------------------------------------------------------------------------
+
+m_hospitalResidencyMatch = function(Matrix[Double] R, Matrix[Double] H, Matrix[Double] capacity, Boolean verbose = FALSE)
+  return (Matrix[Double] residencyMatch, Matrix[Double] hospitalMatch)
+{
+
+  # in this step we consider that  Residents Matrix is ORDERED.
+  # in this step we consider that  Hospital  Matrix is UNORDERED.
+  # in the next implementation can consider number of choices for every resident.
+  
+  #TODO set a finite number of maximum iterations so that the execution terminates after maximum iterations.
+
+  print("STARTING RESIDENCY MATCH ALGORITHM");
+  print("READING R  as residents AND H as Hospitals and capacity...");
+
+  m = nrow(R)
+  n = ncol(R)
+
+  residencyMatch = matrix(0.0, rows=m, cols=n)
+  hospitalMatch = matrix(0.0, rows=n, cols=m)
+  resultmMatrix = matrix(0.0, rows=nrow(R), cols=ncol(R))
+
+  if(nrow(capacity) != nrow(H)) 
+    print("ERROR: Missing capacity info for some hospitals")
+  
+
+  startM = matrix(1.0, rows=m, cols=1)  ### for checking while
+
+  hIndex =matrix(1.0, rows=m, cols=1)
+  proposer_pointers = matrix(1.0, rows=m, cols=1)
+  prev_Residents_vector = matrix(1.0, rows=n, cols=1)
+  prevIndex_Residents_vector = matrix(1.0, rows=n, cols=1)
+
+  prev_Residents_vector = rowMins(hospitalMatch)
+  prevIndex_Residents_vector =  rowIndexMin(hospitalMatch)
+  # TODO remove the nested looping by vectorizing 
+  while(sum(startM) > 0) { 
+    for(i in 1:m) {
+      if(as.scalar(startM[i]) == 1) { 
+        secondIndex = as.scalar (proposer_pointers[i])   
+        hIndex[i] = as.scalar (R[i,secondIndex]) 
+        #the minimum value means most preference.
+        prev_Residents_vector = rowMaxs(hospitalMatch)  
+        prevIndex_Residents_vector =  rowIndexMax(hospitalMatch)
+        if (as.scalar(hIndex[i]) != 0) { 
+          hosValue = as.scalar (H[as.scalar(hIndex[i]),i])
+          if (hosValue > 0) {
+            # if this hospital likes this resident and has the capacity ...
+            if(as.scalar(capacity[as.scalar (hIndex[i]),1]) >= 1) { 
+              capacity[as.scalar(hIndex[i]),1] = as.scalar(capacity[as.scalar (hIndex[i]),1]) - 1
+              residencyMatch [i,as.scalar(hIndex[i])] = as.scalar(proposer_pointers[i]) 
+              hospitalMatch [as.scalar(hIndex[i]), i] = hosValue 
+              #Disable freshly Matched resident to search for a new Hospital in the next round
+              startM[i] = 0 
+              proposer_pointers[i] = as.scalar(proposer_pointers[i]) + 1  
+              if (as.scalar(proposer_pointers[i]) > n)
+                proposer_pointers[i] = n
+            }
+            else if(as.scalar(prev_Residents_vector[as.scalar(hIndex[i])]) >= secondIndex) {
+              #in this step we check that if the hospital capacity is 0
+              # but the preference value of prev residents is lower than
+              #the preference value of current resident.
+              # we should replace the prev resident with current resident.
+              resPrev= as.scalar(prevIndex_Residents_vector[as.scalar (hIndex[i]),1])
+              hospitalMatch [as.scalar(hIndex[i]) ,resPrev] = 0
+              residencyMatch[resPrev,as.scalar(hIndex[i])] = 0
+              hospitalMatch [as.scalar(hIndex[i]),i ] = as.scalar(proposer_pointers[i])
+              residencyMatch [i,as.scalar(hIndex[i])] = as.scalar(proposer_pointers[i])
+              startM[i] = 0
+              prevResIndex =as.scalar(prevIndex_Residents_vector[as.scalar(hIndex[i]),1])
+              if(prevResIndex  > 0){
+                startM[prevResIndex ] =1
+                proposer_pointers[i] = as.scalar(proposer_pointers[i]) + 1
+                if (as.scalar(proposer_pointers[i]) > n)
+                  proposer_pointers[i] = n 
+              }
+            } 
+          } 
+          if ( as.scalar (startM[i]) == 1 ) {
+            proposer_pointers[i] = as.scalar(proposer_pointers[i]) + 1 
+            if (as.scalar(proposer_pointers[i]) > n)
+              proposer_pointers[i] = n  
+          }
+        }
+      }
+    } 
+  }
+  if(verbose) {
+    print("residencyMatch")
+    print(toString(residencyMatch))
+    print("hospitalMatch")
+    print(toString(hospitalMatch))
+  }
+}
+
+

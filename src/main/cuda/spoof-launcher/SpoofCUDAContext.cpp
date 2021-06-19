@@ -22,10 +22,10 @@
 #include <filesystem>
 #include <iostream>
 #include <cstdlib>
-#include <sstream>
 
-using clk = std::chrono::high_resolution_clock;
-using sec = std::chrono::duration<double, std::ratio<1>>;
+//#include <sstream>
+//using clk = std::chrono::high_resolution_clock;
+//using sec = std::chrono::duration<double, std::ratio<1>>;
 
 size_t SpoofCUDAContext::initialize_cuda(uint32_t device_id, const char* resource_path) {
 
@@ -56,17 +56,14 @@ size_t SpoofCUDAContext::initialize_cuda(uint32_t device_id, const char* resourc
 	
 	CUfunction func;
 	
-	// SUM
+	// SUM and SUM_SQ have the same behavior for intermediate buffers (squaring is done in the initial reduction step,
+	// after that it is just summing up the temporary data)
 	CHECK_CUDA(cuModuleGetFunction(&func, ctx->reductions, "reduce_sum_f"));
 	ctx->reduction_kernels_f.insert(std::make_pair(std::make_pair(SpoofOperator::AggType::FULL_AGG, SpoofOperator::AggOp::SUM), func));
+	ctx->reduction_kernels_f.insert(std::make_pair(std::make_pair(SpoofOperator::AggType::FULL_AGG, SpoofOperator::AggOp::SUM_SQ), func));
 	CHECK_CUDA(cuModuleGetFunction(&func, ctx->reductions, "reduce_sum_d"));
 	ctx->reduction_kernels_d.insert(std::make_pair(std::make_pair(SpoofOperator::AggType::FULL_AGG, SpoofOperator::AggOp::SUM), func));
-
-	//  // SUM_SQ
-	//  CHECK_CUDA(cuModuleGetFunction(&func, ctx->reductions, "reduce_sum_sq_d"));
-	//  ctx->reduction_kernels.insert(std::make_pair("reduce_sum_sq_d", func));
-	//  CHECK_CUDA(cuModuleGetFunction(&func, ctx->reductions, "reduce_sum_sq_f"));
-	//  ctx->reduction_kernels.insert(std::make_pair("reduce_sum_sq_f", func));
+	ctx->reduction_kernels_d.insert(std::make_pair(std::make_pair(SpoofOperator::AggType::FULL_AGG, SpoofOperator::AggOp::SUM_SQ), func));
 
 	// MIN
 	CHECK_CUDA(cuModuleGetFunction(&func, ctx->reductions, "reduce_min_f"));
@@ -83,13 +80,13 @@ size_t SpoofCUDAContext::initialize_cuda(uint32_t device_id, const char* resourc
 	return reinterpret_cast<size_t>(ctx);
 }
 
-void SpoofCUDAContext::destroy_cuda(SpoofCUDAContext *ctx, uint32_t device_id) {
+void SpoofCUDAContext::destroy_cuda(SpoofCUDAContext *ctx, [[maybe_unused]] uint32_t device_id) {
 	delete ctx;
 	// cuda device is handled by jCuda atm
 	//cudaDeviceReset();
 }
 
-int SpoofCUDAContext::compile(std::unique_ptr<SpoofOperator> op, const std::string &src) {
+size_t SpoofCUDAContext::compile(std::unique_ptr<SpoofOperator> op, const std::string &src) {
 #ifndef NDEBUG
 //	std::cout << "---=== START source listing of spoof cuda kernel [ " << name << " ]: " << std::endl;
 //    uint32_t line_num = 0;

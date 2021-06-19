@@ -74,6 +74,8 @@ public class InputOutputInfo implements Serializable
 		TextInputFormat.class, TextOutputFormat.class, LongWritable.class, Text.class);
 	public static final InputOutputInfo LIBSVMInputOutputInfo = new InputOutputInfo(
 		TextInputFormat.class, TextOutputFormat.class, LongWritable.class, Text.class);
+	public static final InputOutputInfo HDF5InputOutputInfo = new InputOutputInfo(
+		TextInputFormat.class, TextOutputFormat.class, LongWritable.class, Text.class);
 
 	@SuppressWarnings("incomplete-switch")
 	public static InputOutputInfo get(DataType dt, FileFormat fmt) {
@@ -82,6 +84,7 @@ public class InputOutputInfo implements Serializable
 			case MM:     return MatrixMarketInputOutputInfo;
 			case CSV:    return CSVInputOutputInfo;
 			case LIBSVM: return LIBSVMInputOutputInfo;
+			case HDF5:   return HDF5InputOutputInfo;
 			case BINARY: {
 				switch( dt ) {
 					case MATRIX: return BinaryBlockInputOutputInfo;

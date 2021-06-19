@@ -77,6 +77,14 @@ public class MatrixWriterFactory
 					writer = new WriterBinaryBlock(replication);
 				break;
 
+			case HDF5:
+				if(props != null && !(props instanceof FileFormatPropertiesHDF5))
+					throw new DMLRuntimeException("Wrong type of file format properties for HDF5 writer.");
+				else if( ConfigurationManager.getCompilerConfigFlag(ConfigType.PARALLEL_CP_WRITE_TEXTFORMATS) )
+					return new WriterHDF5Parallel((FileFormatPropertiesHDF5) props);
+				else
+					return new WriterHDF5((FileFormatPropertiesHDF5) props);
+
 			default:
 				throw new DMLRuntimeException("Failed to create matrix writer for unknown format: " + fmt.toString());
 		}

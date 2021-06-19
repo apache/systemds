@@ -39,9 +39,12 @@ if [ -z "$SYSDS_QUIET" ]; then
   SYSDS_QUIET=0
 fi
 
-# if not set by env, set to singlenode execution by default
+# if not set by env, set to default exec modes
 if [[ -z "$SYSDS_EXEC_MODE" ]]; then
-  SYSDS_EXEC_MODE=singlenode
+  case "$SYSDS_DISTRIBUTED" in
+    0) SYSDS_EXEC_MODE=singlenode ;;
+    *) SYSDS_EXEC_MODE=hybrid ;;
+  esac
 fi
 
 # an echo toggle
@@ -69,13 +72,14 @@ else
 fi
 
 if [ -n "${SYSTEMDS_DISTRIBUTED_OPTS}" ]; then
-	print_out "Overriding SYSTEMDS_DISTRIBUTED_OPTS with env var $SYSTEMDS_DISTRIBUTED_OPTS"
+  print_out "Overriding SYSTEMDS_DISTRIBUTED_OPTS with env var $SYSTEMDS_DISTRIBUTED_OPTS"
 else
   # specify parameters to pass to spark-submit when running on spark here
   SYSTEMDS_DISTRIBUTED_OPTS="\
       --master yarn \
       --deploy-mode client\
       --driver-memory 96g \
+      --conf spark.ui.showConsoleProgress=true \
       --num-executors 4 \
       --executor-memory 64g \
       --executor-cores 16 "
@@ -222,10 +226,10 @@ fi
 
 if [[ -z $SYSTEMDS_ROOT ]] ; then
   SYSTEMDS_ROOT=.
-	print_out "SYSTEMDS_ROOT not set defaulting to current dir $(pwd)"
+  print_out "SYSTEMDS_ROOT not set defaulting to current dir $(pwd)"
 else
   # construct a relative path
-	SYSTEMDS_ROOT=$(realpath --relative-to=. ${SYSTEMDS_ROOT})
+  SYSTEMDS_ROOT=$(realpath --relative-to=. ${SYSTEMDS_ROOT})
 fi;
 
 # when using find, look in the directories in this order
@@ -254,7 +258,7 @@ if [ -z "$SYSTEMDS_JAR_FILE" ];then
     fi
   fi
 else
-	print_out "Using user supplied systemds jar file $SYSTEMDS_JAR_FILE"
+  print_out "Using user supplied systemds jar file $SYSTEMDS_JAR_FILE"
 fi
 
 # check if log4j config file exists, otherwise unset
@@ -286,7 +290,7 @@ if [[ "$*" == *-config* ]]; then
   INDEX=0
   for i in "${myArray[@]}"; do
     if [[ ${myArray[INDEX]} == *-config* ]]; then
-      if [ -f "${myArray[((INDEX+1))]}" ]; then      
+      if [ -f "${myArray[((INDEX+1))]}" ]; then
         CONFIG_FILE="${myArray[((INDEX+1))]}"
       else
         echo Warning! Passed config file "${myArray[((INDEX+1))]}" does not exist.
@@ -309,7 +313,7 @@ if [[ "$*" == *-config* ]]; then
 
   if [ -f "$CONFIG_FILE" ] ; then
     CONFIG_FILE="-config $CONFIG_FILE"
-  else    
+  else
     CONFIG_FILE=""
   fi
 elif [ -z "$CONFIG_FILE" ] ; then
@@ -332,7 +336,7 @@ fi
 # override exec mode if given as parameter to SystemDS (e.g. -exec singlenode)
 read -r -d '' -a myArray < <( echo "$@" )
 INDEX=0
-for i in "${myArray[@]}"; do 
+for i in "${myArray[@]}"; do
   if [[ ${myArray[INDEX]} == *-exec* ]]; then
     SYSDS_EXEC_MODE="${myArray[((INDEX+1))]}"
     break;

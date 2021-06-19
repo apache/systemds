@@ -206,7 +206,8 @@ public class SumSqTest extends AutomatedTestBase {
             // On CP and Spark modes, check that the rewrite actually
             // occurred for matrix cases and not for vector cases.
             if (rewrites && (platform == ExecType.SPARK || platform == ExecType.CP)) {
-                String prefix = (platform == ExecType.SPARK) ? Instruction.SP_INST_PREFIX : "";
+                String prefix = (platform == ExecType.SPARK) ? Instruction.SP_INST_PREFIX :
+                    (DMLScript.USE_ACCELERATOR ? "gpu_": "");
                 String opcode = prefix + op;
                 boolean rewriteApplied = Statistics.getCPHeavyHitterOpCodes().contains(opcode);
                 if (vector)

@@ -101,7 +101,6 @@ class DAGNode(ABC):
     _output_type: OutputType
     _script: Optional["DMLScript"]
     _is_python_local_data: bool
-    _already_added: bool
     _dml_name: str
 
     def compute(self, verbose: bool = False, lineage: bool = False) -> Any:
@@ -159,10 +158,6 @@ class DAGNode(ABC):
     @property
     def output_type(self):
         return self._output_type
-    
-    @property
-    def already_added(self):
-        return self._already_added
 
     @property
     def script(self):

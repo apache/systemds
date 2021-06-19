@@ -1,0 +1,10 @@
+{
+    "data_type": "matrix",
+    "value_type": "double",
+    "rows": 1000,
+    "cols": 1000,
+    "nnz": 1000000,
+    "format": "hdf5",
+    "author": "Saeed Fathollahzadeh",
+    "created": "2021-06-07 01:35:41 CEST"
+}

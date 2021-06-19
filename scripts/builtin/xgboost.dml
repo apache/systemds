@@ -32,12 +32,109 @@ m_xgboost = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] R) retur
   assert(nrow(R) == 1)
 
   M = matrix(0,rows=6,cols=0)
-  init_prediction = median(y)
+  tree_start_offset_matrix = matrix(1,rows=1,cols=1)
+  current_prediction = matrix(median(y), rows=nrow(y), cols=1)
+  learning_rate = 0.3
 
-   tree_id = 1
-   # todo: iterator with while/for for each tree
-  new_created_tree_M = buildOneTree(tree_id)
+  tree_id = 1
+  while(tree_id < 3)
+  {
+     # todo abbruch wenn max nr of trees oder residuals are very small
+    new_M = buildOneTree(X, y, R, current_prediction, tree_id)
+    M = cbind(M, new_M) # concat the new tree to the existing one (forest-ing)
+    tree_start_offset_matrix = cbind(tree_start_offset_matrix, as.matrix(ncol(new_M)))
+    current_prediction = calculateNewPredictions(X, current_prediction, learning_rate, M, tree_start_offset_matrix)
+    print("we callculated new predictions and start with next tree")
 
+    tree_id = tree_id + 1
+  }
+
+
+  print("[DEBUG] Complete XGBoostTree")
+  printMMatrix(M)
+  # todo pruning
+  # todo create next tree depending on previous
+  print("[DEBUG] Return xgboost")
+}
+
+
+#-----------------------------------------------------------------------------------------------------------------------
+# INPUT:    X: nxn matrix, original input matrix
+# INPUT:    current_prediction: nx1 vector of the current prediction for my target features y (1st run is init prediction)
+# INPUT:    learning_rate: set by user
+# INPUT:    M: The current M matrix of all trees created until here
+# OUTPUT:   new_prediction: x1 vector of new new_prediction for my target features y
+calculateNewPredictions = function(Matrix[Double] X, Matrix[Double] current_prediction,
+    Double learning_rate, Matrix[Double] M, Matrix[Double] tree_start_offset_matrix)
+    return (Matrix[Double] new_prediction) {
+  assert(ncol(current_prediction) == 1)
+  assert(nrow(current_prediction) == nrow(X)) # each Entry should have an own initial prediction
+  new_prediction = matrix(0, rows=nrow(current_prediction), cols=1)
+
+  print("start with new_prediction by using init prediction and trees ")
+  printMatrix(current_prediction, "current_prediction")
+  printMatrix(tree_start_offset_matrix, "tree_start_offset_matrix ")
+  for(entry in 1:nrow(X)) # go though each entry in X and calculate the new prediction
+  {
+    current_tree_start_index = 0
+    output_values = matrix(0, rows=1, cols=0)
+    # for each row go through each tree
+
+    # todo problem here - we ussed always refreshed current prediction - no need to go through all trees. (only if we start always at init prediction)
+    for(i in 1:ncol(tree_start_offset_matrix)-1) # last tree is not added by now, but the index is already in the matrix
+    {
+      current_tree_start_index = current_tree_start_index + as.scalar(tree_start_offset_matrix[,i])
+      start_node_current_tree = M[,current_tree_start_index]
+
+      output_value = getOutputValueForEntry(X[entry,], M, start_node_current_tree)
+      output_values = cbind(output_values, as.matrix(output_value))
+    }
+    new_prediction[entry,] = current_prediction[entry,] + sum(learning_rate * output_values)
+  }
+  printMatrix(new_prediction, "all  new_prediction for y fresh calculated")
+}
+
+getOutputValueForEntry = function(Matrix[Double] row_vector, Matrix[Double] M, Matrix[Double] current_node)
+    return (Double output_value) {
+    assert(nrow(row_vector) == 1)
+
+    printMatrix(row_vector, "rowvector")
+    # go over one tree and finde output value
+    while(as.scalar(current_node[5,]) != 0.0) # until leaf
+    {
+#      printMatrix(current_node, "current node in getOutputValue")
+
+      cur_node_id = as.scalar(current_node[1,])
+      used_feature = as.scalar(current_node[4,])
+      if(as.scalar(row_vector[,used_feature]) < as.scalar(current_node[6,])) # go left
+      {
+        current_node = M[,cur_node_id + as.scalar(current_node[3,])]
+      }
+      else #  go right
+      {
+        current_node = M[,cur_node_id + as.scalar(current_node[3,]) + 1]
+      }
+    }
+
+    output_value = as.scalar(current_node[6,])
+    print("output value found " + output_value)
+
+}
+
+#-----------------------------------------------------------------------------------------------------------------------
+# INPUT:    X: nxn matrix, original input matrix
+# INPUT:    y: nx1 vector of my target values
+# INPUT:    R The matrix R which for each feature in X contains the following information
+#					- R[,2]: 1 (scalar feature)
+#				    - R[,1]: 2 (categorical feature)
+# INPUT:    M: the nxn output matrix
+# INPUT:    prediction: nx1 vector, my current predictions for my target value y
+# INPUT:    tree_id: The current tree id, starting at 1
+# OUTPUT:   M: the
+buildOneTree = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] R, Matrix[Double] prediction, Double tree_id)
+  return (Matrix[Double] M) {
+
+  M = matrix(0,rows=6,cols=0)
   node_queue = matrix(1, rows=1, cols=1)     # Add first Node
   curr_rows_queue = matrix(1, rows=nrow(X), cols=1)
   node_queue_len = 1
@@ -51,43 +148,44 @@ m_xgboost = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] R) retur
     [node_queue, node] = dataQueuePop(node_queue)
     [curr_rows_queue, curr_rows_vector] = dataQueuePop(curr_rows_queue)
 
-    printMatrix(node_queue, "Node Queue")
-    printMatrix(node, "Node - bei welcher node sind wir gerade?")
-    printMatrix(curr_rows_queue, "curr_rows_queue")
-    printMatrix(curr_rows_vector, "curr_rows_vector - welche rows sollen wir jz in betracht ziehen?")
+#    printMatrix(node_queue, "Node Queue")
+    print("Node - bei welcher node sind wir gerade? " + as.scalar(node[1:1]))
+#    printMatrix(curr_rows_queue, "curr_rows_queue (1 = left child, 0 = right child)")
+    printMatrix(curr_rows_vector, "curr_rows_vector - welche rows sollen wir jz in betracht ziehen? (1 = left child, 0 = right child, NaN is a row we ignore (if categorical)")
 
     level = log(as.scalar(node), 2) + 1
     available_rows = calcAvailableRows(curr_rows_vector) # check if leaf
     print("avaliable rows " + toString(available_rows))
 
-    [curr_X, curr_y, curr_X_full] = updateMatrices(X, y, curr_rows_vector)
+    [curr_X, curr_y, curr_X_full, curr_prediction] = updateMatrices(X, y, prediction, curr_rows_vector)
 
     printMatrix(curr_X, "curr_X - alle rows die jz für mich relevant sind")
     printMatrix(curr_y, "curr_y - y zu rows die relevant sind")
-    printMatrix(curr_X_full, "curr_X_full - gleich wie X, aber die nicht relevanten rows sind 0")
+    printMatrix(curr_prediction, "curr_prediction - y prediction zu rows die relevant sind")
+    printMatrix(curr_X_full, "curr_X_full - gleich wie X, aber die nicht relevanten rows sind NaN")
+
+    residual_matrix = calculateResiduals(curr_y, curr_prediction) # we need residuals calculated also for leafs for output value
+    printMatrix(residual_matrix, "the calculated residuals")
 
     best_feature_index = 0.00
     if(available_rows > 1 & max_depth > level) # leaf check or max depth check
     {
       best_feature_index = findBestFeature(X=curr_X, y=curr_y, verbose=FALSE)
-      print("best freatures index " + best_feature_index)
       # maybe for forest change here prediction?
 
       type = getTypeOfFeature(R, best_feature_index)
 
       if(type == 1.0) # SCALAR
       {
-        residual_matrix = calculateResiduals(curr_y, median(curr_y))
-        # printMatrix(residual_matrix, "the calculated residuals")
-
         similarity_score = calculateSimilarityScore(residual_matrix)
 
         [best_split_threshold, best_gain] = findBestSplit(curr_X[,best_feature_index], similarity_score)
         has_child = best_gain > 0 # if the gain is < 0, the split is worse than the current node
+        print("gain at this split " + best_gain)
       }
       else # CATEGORICAL
       {
-        # TODO: always true?
+        # TODO: always true? maybe if a split would create a empty child we do not need to split
         assert(type == 2.0)
         has_child = TRUE
       }
@@ -104,7 +202,7 @@ m_xgboost = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] R) retur
           [left_row_vec, right_row_vec] = splitMatrixByValueLoop(curr_X_full[,best_feature_index], X[,best_feature_index], best_split_threshold)
           curr_rows_queue = dataQueuePush(left_row_vec, right_row_vec, curr_rows_queue)
           offset = ncol(node_queue) - 1
-          M = addOutputRow(M, node, tree_id, R, offset, best_feature_index, best_split_threshold)
+          M = addOutputRow(M, node, tree_id, R, offset, best_feature_index, best_split_threshold, 0.0)
 
       }
       else # CATEGORICAL
@@ -112,35 +210,26 @@ m_xgboost = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] R) retur
           assert(type == 2.0)
            print("[DEBUG] CATEGORY:")
           [left_row_vec, right_row_vec] = splitMatrixByCategory(curr_X_full[,best_feature_index], X[,best_feature_index])
-          printMatrix(left_row_vec, "left row vector after categorical split")
-          printMatrix(right_row_vec, "right row vector after categorical split")
+          printMatrix(left_row_vec, "left row vector after categorical split (1 = left child, 0 = right child, NaN is a row we ignore)")
+          printMatrix(right_row_vec, "right row vector after categorical split (1 = left child, 0 = right child, NaN is a row we ignore)")
           curr_rows_queue = dataQueuePush(left_row_vec, right_row_vec, curr_rows_queue)
           offset = ncol(node_queue) - 1
-          M = addOutputRow(M, node, tree_id, R, offset, best_feature_index, 0.0)
+          M = addOutputRow(M, node, tree_id, R, offset, best_feature_index, 0.0, 0.0)
 
       }
     }
-    else # has no child
+    else # has no child => must be leaf
     {
-      M = addOutputRow(M, node, tree_id, R, 0.0, best_feature_index, 0.0)
+      printMatrix(residual_matrix, "residuals matrix for a leaf") # todo da passt noch was nicht, weil bei leaf waren 2 einträge in residual matrix
+      output_value = calculateOutputValue(residual_matrix)
+      print("We have a leaf with output value " + output_value)
+                                    # offset, best_feature_idx, threshold
+      M = addOutputRow(M, node, tree_id, R, 0.0, 0.0, 0.0, output_value)
     }
     node_queue_len = ncol(node_queue)
     printMMatrix(M)
   }
-  print("[DEBUG] we successfully created one tree - lets make another one")
-
-  # todo pruning
-  # todo create next tree depending on previous
-  print("[DEBUG] Return xgboost")
-}
-
-
-#-----------------------------------------------------------------------------------------------------------------------
-# INPUT:    tree_id: the id of the new creating tree
-# OUTPUT:   current_tree_M: The M matrix of this new created tree
-buildOneTree = function(Double tree_id) return (Matrix[Double] current_tree_M) {
-
-    current_tree_M = matrix(0, rows=6, cols=1)
+  print("[DEBUG] we successfully created one tree")
 }
 
 
@@ -157,13 +246,13 @@ calculateChildNodeIDs = function(Matrix[Double] node)  return(Matrix[Double] lef
 #-----------------------------------------------------------------------------------------------------------------------
 # INPUT:    M: the nxn output matrix
 # INPUT:    node: the current node
-# R   	  	The matrix R which for each feature in X contains the following information
+# INPUT:    R The matrix R which for each feature in X contains the following information
 #					- R[,2]: 1 (scalar feature)
 #				    - R[,1]: 2 (categorical feature)
 # INPUT:    offset: offset to the left child
 # INPUT:    used_col: which feature got used
 # INPUT:
-# INPUT:    threshold: the value at the node we separated it
+# INPUT:    threshold: the value at the node we separated it, if leaf => the output value
 # OUTPUT:   new_M: nxn output Matrix
 addOutputRow = function(
   Matrix[Double] M,
@@ -172,10 +261,9 @@ addOutputRow = function(
   Matrix[Double] R,
   Double offset,
   Double used_col,
-  Double threshold
+  Double threshold,
+  Double output_value
 ) return (Matrix[Double] new_M) {
-
-      print("best feature into M " + used_col)
 
       current_node = matrix(0, rows=6, cols=1)
       current_node[1,1] = node[1,1] # node id
@@ -186,15 +274,19 @@ addOutputRow = function(
 
       if(used_col == 0.0) { # is a single value or max depth reached => leaf
          current_node[5,1] = 0 #  0 if leaf node
-         assert(threshold < 1.00)
+         assert(threshold == 0)
+         current_node[6,1] = output_value
       }
       else if (as.scalar(R[1, used_col]) == 2.0) {
         current_node[5, 1] = 2.0 # categorical
+        assert(threshold == 0.0) # should be 0 at categorical
+        current_node[6,1] = threshold
       }
       else {
-        current_node[5,1] = 1 # 1 if it is scalar
+        current_node[5,1] = 1.0 # 1 if it is scalar
+        current_node[6,1] = threshold # split value ( 0 if leaf or categorical)
       }
-      current_node[6,1] = threshold # split value ( 0 if leaf or categorical)
+
       if (ncol(M) == 0 & nrow(M) == 0) { # first node
         new_M = current_node
       } else {
@@ -217,12 +309,14 @@ getTypeOfFeature = function(Matrix[Double] R, Double col)  return(Double type) {
 #-----------------------------------------------------------------------------------------------------------------------
 # INPUT:    X: a nxn matrix (X Matrix from input)
 # INPUT:    y: a 1xn matrix (y Matrix from input)
+# INPUT:    prediction: a 1xn matrix with the current predictions for y (median at first tree)
 # INPUT:    vector: a 1xn matrix (contains 1 for relevant and 0 for non-relevant value)
 # OUTPUT:   new_X: the new X containing only the relevant rows
 # OUTPUT:   new_y: the new y containing only the relevant rows
 # OUTPUT:   new_X_full: the new X containing the relevant rows + 0 for non_relevant
-updateMatrices = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] vector)
-  return(Matrix[Double] new_X, Matrix[Double] new_y, Matrix[Double] new_X_full) {
+# OUTPUT:   new_prediction: the current prediction containing only the relevant rows
+updateMatrices = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] prediction, Matrix[Double] vector)
+  return(Matrix[Double] new_X, Matrix[Double] new_y, Matrix[Double] new_X_full, Matrix[Double] new_prediction) {
   # change here to have the full matrices but not to cut it from 4x4 to 2x2 rather 4x4 but with 0 in the unused fields and then we gucci
   assert(ncol(vector) == 1)
   assert(nrow(vector) == nrow(X))
@@ -232,27 +326,32 @@ updateMatrices = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] vec
   zero_vec = matrix(0, rows=nrow(vector), cols=ncol(X))
   nan_vec = fillMatrixWithNaN(zero_vec) # could not directly set to NaN
   new_X_full = matrix(0, rows = 0, cols=0)
+  new_prediction = matrix(0, rows=0, cols=0)
   for(i in 1:nrow(vector)) {
-    if(as.scalar(vector[i,]) > 0.0)
+    if(as.scalar(vector[i,]) == 1.0) # this row is relevant for this node
     {
-      if (ncol(new_X) == 0 & ncol(new_X_full) == 0) {
+      if (ncol(new_X) == 0 & ncol(new_X_full) == 0) { # first iteration
         new_X = X[i,]
         new_y = y[i,]
         new_X_full = X[i,]
-      } else if (ncol(new_X) == 0 & ncol(new_X_full) != 0) {
+        new_prediction = prediction[i,]
+      } else if (ncol(new_X) == 0 & ncol(new_X_full) != 0) { # already a 0 row found
         new_X = X[i,]
         new_y = y[i,]
         new_X_full = rbind(new_X_full, X[i,])
-      } else {
+        new_prediction = prediction[i,]
+      } else { # adding all others
         new_X = rbind(new_X, X[i,])
         new_y = rbind(new_y, y[i,])
         new_X_full = rbind(new_X_full, X[i,])
+        new_prediction = rbind(new_prediction, prediction[i,])
       }
-    } else { # is 0
-      if (ncol(new_X_full) == 0) {
+    } else { # this row is NOT relevant for this node
+      assert(as.scalar(vector[i,]) == 0.0 | as.scalar(vector[i,]) == 'NaN')
+      if (ncol(new_X_full) == 0) { # first row
        new_X_full = nan_vec[i,]
       } else {
-       new_X_full = rbind(new_X_full, nan_vec[i,])
+       new_X_full = rbind(new_X_full, nan_vec[i,]) # add a new row filled with NaNs
       }
     }
   }
@@ -306,13 +405,12 @@ dataQueuePush = function(Matrix[Double] left, Matrix[Double] right, Matrix[Doubl
 findBestFeature = function(Matrix[Double] X, Matrix[Double] y, boolean verbose = FALSE) return (Integer lowest_residuals_index) {
 
    printDebug("Finding Best feature")
-
    lowest_residuals = 0
    lowest_residuals_index = 1
 
    for(i in 1: ncol(X)) {
         current_feature = X[,i]
-        weights = lm(X=current_feature, y=y, verbose=verbose)
+        weights = lm(X=current_feature, y=y, verbose=verbose) # todo GLM statt lm für classification
         y_residual = y - current_feature %*% weights
         res = sum(y_residual ^ 2)                # sum of least square calculation
 #        res = abs(sum (y_residual) / nrow (X)); # average calculation
@@ -409,7 +507,7 @@ splitMatrixByValue = function(Matrix[Double] X, Double value) return (Matrix[Dou
 # OUTPUT:   left: a 1xn matrix with 1.0 if the value is smaller or 0.0 if it is bigger
 #           right: a 1xn matrix with 1.0 if the value is bigger or 0.0 if it is smaller
 splitMatrixByValueLoop = function(Matrix[Double] curr_X, Matrix[Double] X, Double value) return (Matrix[Double] left, Matrix[Double] right) {
-  left = matrix(0, rows=0, cols=1) # TODO why rows 0??
+  left = matrix(0, rows=0, cols=1)
   right = matrix(0, rows=0, cols=1)
   one_vec = matrix(1, rows=1, cols=1)
   zero_vec = matrix(0, rows=1, cols=1)
@@ -448,16 +546,16 @@ splitMatrixByCategory = function(Matrix[Double] curr_X, Matrix[Double] X) return
   printMatrix(X, "x in split matrix by cat")
   for(i in 1:nrow(curr_X))
   {
-      if (as.scalar(curr_X[i,]) == 1)
+      if (as.scalar(curr_X[i,]) == 1) # categorical true
       {
         left = rbind(left, curr_X[i,])
         right = rbind(right, matrix(0, rows=1, cols=1))
       }
-      else if(as.scalar(curr_X[i,]) == 0) {
+      else if(as.scalar(curr_X[i,]) == 0) { # categorical false
         left = rbind(left, curr_X[i,])
         right = rbind(right, matrix(1, rows=1, cols=1))
       }
-      else {
+      else { # if we ignore this line because it is not in an other branch of the tree
         assert(as.scalar(curr_X[i,]) == 'NaN')
         left = rbind(left, curr_X[i,])
         right = rbind(right, curr_X[i,])
@@ -475,16 +573,29 @@ calculateSimilarityScore = function (matrix[Double] row_vector) return (Double s
   #printDebug("Calculated similarity score: " + similarity_score);
 }
 
+#-----------------------------------------------------------------------------------------------------------------------
+# INPUT:    residuals_vector: a 1xn matrix (one feature with all residuals)
+# OUTPUT:   similarity_score: the similarity score of the residuals
+calculateOutputValue = function (matrix[Double] residuals_vector) return (Double output_value) {
+  lambda = 0.0; # TODO
+  output_value = (sum(residuals_vector)) / (nrow(residuals_vector) + lambda);
+  #printDebug("Calculated similarity score: " + similarity_score);
+}
+
 
 #-----------------------------------------------------------------------------------------------------------------------
 # INPUT:    row_vector: a 1xn matrix (one feature with all rows)
-#           prediction: the current prediction value
+#           prediction: a 1xn matrix, the current prediction value of each row
 # OUTPUT:   the residuals from the "prediction" as 1xn matrix
-calculateResiduals = function (matrix[Double] row_vector, Double prediction) return (matrix[Double] residuals_row) {
+calculateResiduals = function (matrix[Double] row_vector, matrix[Double] prediction) return (matrix[Double] residuals_row) {
    assert(ncol(row_vector) == 1)
    residuals_row = row_vector - prediction;
 }
 
+
+#-----------------------------------------------------------------------------------------------------------------------
+# INPUT:    row_vector: a 1xn matrix which has unordered values
+# OUTPUT:   row_vector_ordered: 1xn matrix were the values are in accessing order
 orderFeature = function (matrix[double] row_vector) return (matrix[double] row_vector_ordered) {
     row_vector_ordered = order(target=row_vector, by=1, decreasing=FALSE, index.return=FALSE);
 }
@@ -558,40 +669,42 @@ printMMatrix = function(Matrix[Double] m) return() {
 
     if(nrow(m) != 0 & ncol(m) != 0)
     {
-        col_string = "::::::::::::::::::::::::::::::::"
+        col_string = "::::::::::::::::::::::::"
         for(col in 1:ncol(m)) {
             if(col < 10)
-                col_string = col_string + ":::(" + toString(col) + ")::::"
+                col_string = col_string + "::(" + toString(col) + "):::"
             else
-                col_string = col_string + ":::(" + toString(col) + "):::"
+                col_string = col_string + "::(" + toString(col) + ")::"
         }
         print(col_string)
         for(row in 1:nrow(m)) {
 
             if(row == 1)
-                print_string = "                 node id :(" + row + ")     "
+                print_string = "             node id (" + row + ")  "
             if(row == 2)
-                print_string = "                 tree id :(" + row + ")     "
+                print_string = "             tree id (" + row + ")  "
             if(row == 3)
-                print_string = "    offset to left child :(" + row + ")     "
+                print_string = "offset to left child (" + row + ")  "
             if(row == 4)
-                print_string = "  used feature col index :(" + row + ")     "
+                print_string = "used feature col idx (" + row + ")  "
             if(row == 5)
-                print_string = "if leaf=0/scalar=1/cat=2 :(" + row + ")     "
+                print_string = " leaf=0/scal=1/cat=2 (" + row + ")  "
             if(row == 6)
-                print_string = "       scalar=splitvalue :(" + row + ")     "
+                print_string = "   scalar=splitvalue (" + row + ")  "
 
 
             for(col in 1:ncol(m)) {
                 curr_value = m[row,col]
-                if(as.scalar(curr_value) < 10)
-                    print_string = print_string + toString(curr_value, linesep="     ", sep=",")
-                else if(as.scalar(curr_value) < 100)
-                    print_string = print_string + toString(curr_value, linesep="    ", sep=",")
-                else if(as.scalar(curr_value) < 1000)
-                    print_string = print_string + toString(curr_value, linesep="   ", sep=",")
-                else if(as.scalar(curr_value) < 10000)
+                if(as.scalar(curr_value) < 0)
                     print_string = print_string + toString(curr_value, linesep="  ", sep=",")
+                else if(as.scalar(curr_value) < 10)
+                    print_string = print_string + toString(curr_value, linesep="   ", sep=",")
+                else if(as.scalar(curr_value) < 100)
+                    print_string = print_string + toString(curr_value, linesep="  ", sep=",")
+                else if(as.scalar(curr_value) < 1000)
+                    print_string = print_string + toString(curr_value, linesep=" ", sep=",")
+                else if(as.scalar(curr_value) < 10000)
+                    print_string = print_string + toString(curr_value, linesep=" ", sep=",")
                 else
                     print_string = print_string + toString(curr_value, linesep=" ", sep=",")
             }

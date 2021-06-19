@@ -23,7 +23,8 @@
      ,{ "name": "capital-loss", "method": "z-score" }
      ,{ "name": "hours-per-week", "method": "mean-subtraction" }
     ],
-   "dummycode": ["workclass", "education", "marital-status", "occupation", "relationship", "race", "sex", "native-country", "income"]
+   "dummycode": ["workclass", "education", "marital-status", "occupation", "relationship", "race", "sex", "native-country"],
+   "recode": ["income"]
 
 
 }

@@ -18,14 +18,14 @@
 # under the License.
 #
 # -------------------------------------------------------------
-
+import os
 import unittest
 
 import numpy as np
 from systemds.context import SystemDSContext
 from systemds.examples.tutorials.adult import DataManager
 from systemds.operator import OperationNode
-from systemds.operator.algorithm import kmeans, multiLogReg, multiLogRegPredict, l2svm, confusionMatrix
+from systemds.operator.algorithm import kmeans, multiLogReg, multiLogRegPredict, l2svm, confusionMatrix, scale, scaleApply, split, winsorize
 from systemds.script_building import DMLScript
 
 
@@ -36,13 +36,12 @@ class Test_DMLScript(unittest.TestCase):
 
     sds: SystemDSContext = None
     d: DataManager = None
-    base_path = "systemds/examples/tutorials/adult/"
-    neural_net_src_path: str = "./tests/source/neural_net_source.dml"
-    dataset_path_train: str = "../../test/resources/datasets/adult/train_data.csv"
-    dataset_path_train_mtd: str = "../../test/resources/datasets/adult/train_data.csv.mtd"
-    dataset_path_test: str = "../../test/resources/datasets/adult/test_data.csv"
-    dataset_path_test_mtd: str = "../../test/resources/datasets/adult/test_data.csv.mtd"
-    dataset_jspec: str = "../../test/resources/datasets/adult/jspec.json"
+    neural_net_src_path: str = "./src/main/python/tests/source/neural_net_source.dml"
+    dataset_path_train: str = "./src/test/resources/datasets/adult/train_data.csv"
+    dataset_path_train_mtd: str = "./src/test/resources/datasets/adult/train_data.csv.mtd"
+    dataset_path_test: str = "./src/test/resources/datasets/adult/test_data.csv"
+    dataset_path_test_mtd: str = "./src/test/resources/datasets/adult/test_data.csv.mtd"
+    dataset_jspec: str = "./src/test/resources/datasets/adult/jspec.json"
 
     @classmethod
     def setUpClass(cls):
@@ -174,9 +173,8 @@ class Test_DMLScript(unittest.TestCase):
 
     def test_parse_dataset_with_systemdsread(self):
         # Reduced because we want the tests to finish a bit faster.
-        train_count = 15000
-        test_count = 5000
-
+        train_count = 30000
+        test_count = 10000
         #self.sds.read(self.dataset_path_train, schema=self.dataset_path_train_mtd).compute(verbose=True)
         print("")
 
@@ -185,23 +183,52 @@ class Test_DMLScript(unittest.TestCase):
             self.dataset_path_train,
             schema=SCHEMA
         )
-        #F2 = self.sds.read(
-        #    self.dataset_path_test,
-        #    schema=SCHEMA
-        #)
+        F2 = self.sds.read(
+            self.dataset_path_test,
+            schema=SCHEMA
+        )
         jspec = self.sds.read(self.dataset_jspec, data_type="scalar", value_type="string")
         #scaling does not have effect yet. We need to replace labels in test set with the same string as in train dataset
-        X1, M1 = F1.transform_encode(spec=jspec).compute(True)#F1.rbind(F2).transform_encode(spec=jspec).compute(True)
-        # Train data
+        X1, M1 = F1.rbind(F2).transform_encode(spec=jspec).compute()
         col_length = len(X1[0])
-        X = self.sds.from_numpy(X1[0:train_count,0:col_length-2])
-        Y = self.sds.from_numpy(X1[0:train_count,col_length-2:col_length-1].flatten())
+        X = X1[0:train_count, 0:col_length-1]
+        Y = X1[0:train_count, col_length-1:col_length].flatten()-1
         # Test data
-        Xt = self.sds.from_numpy(X1[train_count:train_count+test_count,0:col_length-2])
-        Yt = self.sds.from_numpy(X1[train_count:train_count+test_count,col_length-2:col_length-1].flatten())
+        Xt = X1[train_count:train_count+test_count, 0:col_length-1]
+        Yt = X1[train_count:train_count+test_count, col_length-1:col_length].flatten()-1
+
+        _ , mean , sigma = scale(self.sds.from_numpy(X), True, True).compute()
+
+        mean_copy = np.array(mean)
+        sigma_copy = np.array(sigma)
+
+        numerical_cols = []
+        for count, col in enumerate(np.transpose(X)):
+            for entry in col:
+                if entry > 1 or entry < 0 or entry > 0 and entry < 1:
+                    numerical_cols.append(count)
+                    break
+
+        for x in range(0,105):
+            if not x in numerical_cols:
+                mean_copy[0][x] = 0
+                sigma_copy[0][x] = 1
+
+        mean = self.sds.from_numpy(mean_copy)
+        sigma = self.sds.from_numpy(sigma_copy)
+        X = self.sds.from_numpy(X)
+        Xt = self.sds.from_numpy(Xt)
+        X = scaleApply(winsorize(X, True), mean, sigma)
+        Xt = scaleApply(winsorize(Xt, True), mean, sigma)
+        #node = PROCESSING_split_package.m_split(X1,X1)
+        #X,Y = node.compute()
+
+        # Train data
+
         FFN_package = self.sds.source(self.neural_net_src_path, "fnn", print_imported_methods=True)
 
-        network = FFN_package.train(X, Y, 1, 16, 0.01, 1)
+
+        network = FFN_package.train(X, self.sds.from_numpy(Y), 1, 16, 0.01, 1)
 
         self.assertTrue(type(network) is not None) # sourcing and training seems to works
 

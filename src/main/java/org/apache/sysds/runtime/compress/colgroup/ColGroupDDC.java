@@ -40,7 +40,6 @@ import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
  * 
  */
 public class ColGroupDDC extends ColGroupValue {
-	public static final long serialVersionUID = -3204391646123465004L;
 
 	protected AMapToData _data;
 

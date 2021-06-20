@@ -486,26 +486,6 @@ public class ColGroupSDC extends ColGroupValue {
 		}
 		return ret;
 
-		// while(itThat.hasNext() && itThis.hasNext()) {
-		// 	if(itThat.value() == itThis.value()) {
-		// 		final int fr = that.getIndex(itThat.getDataIndexAndIncrement());
-		// 		final int to = getIndex(itThis.getDataIndexAndIncrement());
-		// 		that._dict.addToEntry(ret, fr, to, nCol);
-		// 	}
-		// 	else if(itThat.value() < itThis.value()) {
-		// 		final int fr = that.getIndex(itThat.getDataIndexAndIncrement());
-		// 		that._dict.addToEntry(ret, fr, defThis, nCol);
-		// 	}
-		// 	else
-		// 		itThis.next();
-		// }
-
-		// while(itThat.hasNext()) {
-		// 	final int fr = that.getIndex(itThat.getDataIndexAndIncrement());
-		// 	that._dict.addToEntry(ret, fr, defThis, nCol);
-		// }
-		// return ret;
-
 	}
 
 	@Override

@@ -41,17 +41,18 @@ public class MemoryCostEstimator implements ICostEstimate {
 	}
 
 	@Override
-	public  double getCostOfCollectionOfGroups(Collection<CompressedSizeInfoColGroup> gss) {
+	public double getCostOfCollectionOfGroups(Collection<CompressedSizeInfoColGroup> gss) {
 		throw new DMLCompressionException("Memory based compression is not related to comparing all columns");
 	}
 
 	@Override
-	public  double getCostOfCollectionOfGroups(Collection<CompressedSizeInfoColGroup> gss, CompressedSizeInfoColGroup g) {
+	public double getCostOfCollectionOfGroups(Collection<CompressedSizeInfoColGroup> gss,
+		CompressedSizeInfoColGroup g) {
 		throw new DMLCompressionException("Memory based compression is not related to comparing all columns");
 	}
 
 	@Override
-	public double getCostOfTwoGroups(CompressedSizeInfoColGroup g1, CompressedSizeInfoColGroup g2){
+	public double getCostOfTwoGroups(CompressedSizeInfoColGroup g1, CompressedSizeInfoColGroup g2) {
 		throw new DMLCompressionException("Memory based compression is not related to comparing all columns");
 	}
 

@@ -38,7 +38,7 @@ public final class CostEstimatorFactory {
 				return new DistinctCostEstimator(nRows, cs);
 			case W_TREE:
 			case AUTO:
-				if(root != null){
+				if(root != null) {
 					CostEstimatorBuilder b = new CostEstimatorBuilder(root);
 					return b.create(nRows, nCols);
 				}
@@ -49,6 +49,5 @@ public final class CostEstimatorFactory {
 				return new MemoryCostEstimator();
 		}
 	}
-
 
 }

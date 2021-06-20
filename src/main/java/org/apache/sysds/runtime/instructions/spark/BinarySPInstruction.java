@@ -52,7 +52,6 @@ import org.apache.sysds.runtime.meta.DataCharacteristics;
 import org.apache.sysds.runtime.meta.MetaDataUtils;
 
 public abstract class BinarySPInstruction extends ComputationSPInstruction {
-	// private static final Log LOG = LogFactory.getLog(BinarySPInstruction.class.getName());
 
 	protected BinarySPInstruction(SPType type, Operator op, CPOperand in1, CPOperand in2, CPOperand out, String opcode, String istr) {
 		super(type, op, in1, in2, out, opcode, istr);
@@ -317,8 +316,10 @@ public abstract class BinarySPInstruction extends ComputationSPInstruction {
 		ScalarObject constant = ec.getScalarInput(scalar);
 		ScalarOperator sc_op = (ScalarOperator) _optr;
 		sc_op = sc_op.setConstant(constant.getDoubleValue());
+		
 		//execute scalar matrix arithmetic instruction
 		JavaPairRDD<MatrixIndexes,MatrixBlock> out = in1.mapValues( new MatrixScalarUnaryFunction(sc_op) );
+		
 		//put output RDD handle into symbol table
 		updateUnaryOutputDataCharacteristics(sec, rddVar, output.getName());
 		sec.setRDDHandleForVariable(output.getName(), out);

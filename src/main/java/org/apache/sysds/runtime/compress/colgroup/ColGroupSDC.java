@@ -47,7 +47,6 @@ import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
  * would be materialized in the group without any overhead.
  */
 public class ColGroupSDC extends ColGroupValue {
-	private static final long serialVersionUID = -12043916423465004L;
 
 	/**
 	 * Sparse row indexes for the data

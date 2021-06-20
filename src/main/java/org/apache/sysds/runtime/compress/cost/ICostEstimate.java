@@ -19,6 +19,7 @@
 
 package org.apache.sysds.runtime.compress.cost;
 
+import java.io.Serializable;
 import java.util.Collection;
 
 import org.apache.commons.logging.Log;
@@ -32,7 +33,9 @@ import org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup;
  * 
  * It is used to estimate the cost of a specific compression layout.
  */
-public interface ICostEstimate {
+public interface ICostEstimate extends Serializable {
+
+	public static final long serialVersionUID = -8885748390L;
 
 	public static final Log LOG = LogFactory.getLog(ICostEstimate.class.getName());
 

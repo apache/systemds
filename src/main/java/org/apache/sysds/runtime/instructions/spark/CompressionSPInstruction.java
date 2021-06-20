@@ -22,10 +22,13 @@ package org.apache.sysds.runtime.instructions.spark;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.function.Function;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlockFactory;
+import org.apache.sysds.runtime.compress.cost.CostEstimatorBuilder;
+import org.apache.sysds.runtime.compress.cost.ICostEstimate;
 import org.apache.sysds.runtime.compress.workload.WTreeRoot;
 import org.apache.sysds.runtime.controlprogram.SingletonLookupHashMap;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
+import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
@@ -65,8 +68,14 @@ public class CompressionSPInstruction extends UnarySPInstruction {
 		JavaPairRDD<MatrixIndexes, MatrixBlock> in = sec.getBinaryMatrixBlockRDDHandleForVariable(input1.getName());
 
 		// construct the compression mapping function
-		Function<MatrixBlock, MatrixBlock> mappingFunction = _singletonLookupID == 0 ? new CompressionFunction() : new CompressionWorkloadFunction(
-			_singletonLookupID);
+		Function<MatrixBlock, MatrixBlock> mappingFunction;
+		if(_singletonLookupID == 0)
+			mappingFunction = new CompressionFunction();
+		else {
+			WTreeRoot root = (WTreeRoot) SingletonLookupHashMap.getMap().get(_singletonLookupID);
+			CostEstimatorBuilder costBuilder = new CostEstimatorBuilder(root);
+			mappingFunction = new CompressionWorkloadFunction(costBuilder);
+		}
 
 		// execute compression
 		JavaPairRDD<MatrixIndexes, MatrixBlock> out = in.mapValues(mappingFunction);
@@ -88,15 +97,17 @@ public class CompressionSPInstruction extends UnarySPInstruction {
 	public static class CompressionWorkloadFunction implements Function<MatrixBlock, MatrixBlock> {
 		private static final long serialVersionUID = -65288330833922L;
 
-		final WTreeRoot workTree;
+		final CostEstimatorBuilder costBuilder;
 
-		public CompressionWorkloadFunction(int id){
-			workTree = (WTreeRoot) SingletonLookupHashMap.getMap().get(id);
+		public CompressionWorkloadFunction(CostEstimatorBuilder costBuilder) {
+			this.costBuilder = costBuilder;
 		}
 
 		@Override
 		public MatrixBlock call(MatrixBlock arg0) throws Exception {
-			return CompressedMatrixBlockFactory.compress(arg0, workTree).getLeft();
+			ICostEstimate a = costBuilder.create(arg0.getNumRows(), arg0.getNumColumns());
+			return CompressedMatrixBlockFactory.compress(arg0, InfrastructureAnalyzer.getLocalParallelism(), a)
+				.getLeft();
 		}
 	}
 }

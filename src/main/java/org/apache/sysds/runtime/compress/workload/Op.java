@@ -19,13 +19,10 @@
 
 package org.apache.sysds.runtime.compress.workload;
 
-import java.io.Serializable;
-
 import org.apache.sysds.hops.Hop;
 
-public class Op implements Serializable {
+public class Op {
 
-	private static final long serialVersionUID = 2134521515271481L;
 	private final Hop _op;
 
 	public Op(Hop op) {

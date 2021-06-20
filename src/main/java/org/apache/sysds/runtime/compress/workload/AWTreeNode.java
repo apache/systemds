@@ -19,7 +19,6 @@
 
 package org.apache.sysds.runtime.compress.workload;
 
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -34,9 +33,8 @@ import org.apache.commons.logging.LogFactory;
  * away the rest of the DAG.
  * 
  */
-public abstract class AWTreeNode implements Serializable {
-	private static final long serialVersionUID = 2539713541408671481L;
-
+public abstract class AWTreeNode  {
+	
 	protected static final Log LOG = LogFactory.getLog(AWTreeNode.class.getName());
 
 	public enum WTNodeType {

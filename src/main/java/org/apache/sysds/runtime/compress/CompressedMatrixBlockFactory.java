@@ -119,7 +119,8 @@ public class CompressedMatrixBlockFactory {
 		return compress(mb, k, new CompressionSettingsBuilder().create(), root);
 	}
 
-	public static Pair<MatrixBlock, CompressionStatistics> compress(MatrixBlock mb, int k, ICostEstimate costEstimator) {
+	public static Pair<MatrixBlock, CompressionStatistics> compress(MatrixBlock mb, int k,
+		ICostEstimate costEstimator) {
 		return compress(mb, k, new CompressionSettingsBuilder().create(), costEstimator);
 	}
 

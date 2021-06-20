@@ -19,8 +19,6 @@
 
 package org.apache.sysds.runtime.instructions.spark.functions;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.spark.api.java.function.Function;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
@@ -29,7 +27,7 @@ import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 import scala.Tuple2;
 
 public class MatrixMatrixBinaryOpFunction implements Function<Tuple2<MatrixBlock, MatrixBlock>, MatrixBlock> {
-	private static final Log LOG = LogFactory.getLog(MatrixMatrixBinaryOpFunction.class.getName());
+	// private static final Log LOG = LogFactory.getLog(MatrixMatrixBinaryOpFunction.class.getName());
 	private static final long serialVersionUID = -2683276102742977900L;
 
 	private BinaryOperator _bop;
@@ -42,7 +40,6 @@ public class MatrixMatrixBinaryOpFunction implements Function<Tuple2<MatrixBlock
 	public MatrixBlock call(Tuple2<MatrixBlock, MatrixBlock> arg0) throws Exception {
 		MatrixBlock left = arg0._1();
 		MatrixBlock right = arg0._2();
-		LOG.error("Left: " + left.getNumRows() + " " + left.getNumColumns() + left+ "\nRight:" + right.getNumRows() +" " + right.getNumColumns());
 		if(right instanceof CompressedMatrixBlock)
 			return ((CompressedMatrixBlock) right).binaryOperationsLeft(_bop, left, new MatrixBlock());
 		else

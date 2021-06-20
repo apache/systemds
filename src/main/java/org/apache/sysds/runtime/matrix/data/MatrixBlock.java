@@ -4971,6 +4971,11 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		return aggregateBinaryOperations(m1, m2, ret, op);
 	}
 
+
+	public MatrixBlock aggregateBinaryOperations(MatrixBlock m1, MatrixBlock m2, AggregateBinaryOperator op){
+		return aggregateBinaryOperations(m1, m2, null, op);
+	}
+
 	public MatrixBlock aggregateBinaryOperations(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, AggregateBinaryOperator op) {
 		//check input types, dimensions, configuration
 		if( m1.clen != m2.rlen ) {

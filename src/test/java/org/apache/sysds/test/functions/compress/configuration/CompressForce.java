@@ -81,7 +81,7 @@ public class CompressForce extends CompressBase {
 
 	@Test
 	public void testSequence_SP() {
-		runTest(1500, 1, 0, 1, ExecType.SPARK, "plus_mm_ewbm_sum");
+		runTest(1500, 1, 2, 1, ExecType.SPARK, "plus_mm_ewbm_sum");
 	}
 
 	@Test
@@ -135,18 +135,23 @@ public class CompressForce extends CompressBase {
 	}
 
 	@Test
-	public void testMatrixMultSum_CP() {
-		runTest(1500, 20, 0, 1, ExecType.CP, "mmr_sum");
+	public void testMatrixMultRightSum_Smaller_CP() {
+		runTest(1500, 1, 0, 1, ExecType.CP, "mmr_sum");
 	}
 
 	@Test
-	public void testMatrixMultRightSum_SP() {
+	public void testMatrixMultRightSum_Smaller_SP() {
 		runTest(1500, 1, 0, 1, ExecType.SPARK, "mmr_sum");
 	}
 
 	@Test
+	public void testMatrixMultRightSum_Larger_SP() {
+		runTest(1500, 11, 0, 1, ExecType.SPARK, "mmr_sum");
+	}
+
+	@Test
 	public void testMatrixMultLeftSum_CP() {
-		runTest(1500, 20, 0, 1, ExecType.CP, "mml_sum");
+		runTest(1500, 1, 0, 1, ExecType.CP, "mml_sum");
 	}
 
 	@Test

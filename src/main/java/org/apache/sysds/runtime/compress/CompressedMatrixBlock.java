@@ -242,7 +242,6 @@ public class CompressedMatrixBlock extends MatrixBlock {
 	 * @return a new uncompressed matrix block containing the contents of this block
 	 */
 	public MatrixBlock decompress(int k) {
-
 		if(k <= 1)
 			return decompress();
 
@@ -616,12 +615,6 @@ public class CompressedMatrixBlock extends MatrixBlock {
 			ReorgOperator r_op = new ReorgOperator(SwapIndex.getSwapIndexFnObject(), op.getNumThreads());
 			return ret.reorgOperations(r_op, new MatrixBlock(), 0, 0, 0);
 		}
-	}
-
-	@Override
-	public MatrixBlock aggregateUnaryOperations(AggregateUnaryOperator op, MatrixValue result, int blen,
-		MatrixIndexes indexesIn) {
-		return aggregateUnaryOperations(op, result, blen, indexesIn, false);
 	}
 
 	@Override

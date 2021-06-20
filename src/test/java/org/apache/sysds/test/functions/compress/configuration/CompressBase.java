@@ -48,11 +48,11 @@ public abstract class CompressBase extends AutomatedTestBase {
 		addTestConfiguration(getTestName(), new TestConfiguration(getTestClassDir(), getTestName()));
 	}
 
-	public void runTest(int decompressCount, int compressCount, ExecType ex, String name) {
-		compressTest(1, 1500, 1.0, ex, 1, 10, 1, decompressCount, compressCount, name);
+	public void runTest(int rows, int cols, int decompressCount, int compressCount, ExecType ex, String name) {
+		compressTest(rows, cols, 1.0, ex, 1, 10, 1.4, decompressCount, compressCount, name);
 	}
 
-	public void compressTest(int cols, int rows, double sparsity, ExecType instType, int min, int max, double delta,
+	public void compressTest(int rows, int cols, double sparsity, ExecType instType, int min, int max, double delta,
 		int decompressionCountExpected, int compressionCountsExpected, String name) {
 
 		Types.ExecMode platformOld = setExecMode(instType);
@@ -61,7 +61,7 @@ public abstract class CompressBase extends AutomatedTestBase {
 			loadTestConfiguration(getTestConfiguration(getTestName()));
 
 			double[][] A = getRandomMatrix(rows, cols, min, max, sparsity, 42, delta);
-			writeInputMatrixWithMTD("A", A, false, new MatrixCharacteristics(rows, cols, 1024, rows * cols));
+			writeInputMatrixWithMTD("A", A, false, new MatrixCharacteristics(rows, cols, 1000, rows * cols));
 
 			fullDMLScriptName = SCRIPT_DIR + "/functions/compress/compress_" + name + ".dml";
 
@@ -74,6 +74,7 @@ public abstract class CompressBase extends AutomatedTestBase {
 			decompressCount += DMLCompressionStatistics.getDecompressionSTCount();
 			long compressionCount = (instType == ExecType.SPARK) ? Statistics
 				.getCPHeavyHitterCount("sp_compress") : Statistics.getCPHeavyHitterCount("compress");
+			DMLCompressionStatistics.reset();
 
 			Assert.assertEquals("Expected compression count   : ", compressionCount, compressionCountsExpected);
 			Assert.assertEquals("Expected Decompression count : ", decompressionCountExpected, decompressCount);

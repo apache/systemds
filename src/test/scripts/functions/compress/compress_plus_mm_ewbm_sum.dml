@@ -23,4 +23,4 @@ x = read($A)
 v = rand(rows=ncol(x), cols=10, min=0.0, max=1.0, seed= 13);
 b = rand(rows=nrow(x), cols=10, min=0.0, max=1.0, seed= 14);
 r = (x + 132) %*% v * b
-print(toString(r, rows = 1, cols = 1))
+print(mean(r))

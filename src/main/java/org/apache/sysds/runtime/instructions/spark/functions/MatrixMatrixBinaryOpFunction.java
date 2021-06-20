@@ -42,7 +42,7 @@ public class MatrixMatrixBinaryOpFunction implements Function<Tuple2<MatrixBlock
 	public MatrixBlock call(Tuple2<MatrixBlock, MatrixBlock> arg0) throws Exception {
 		MatrixBlock left = arg0._1();
 		MatrixBlock right = arg0._2();
-		LOG.error("Left: " + left + "\nRight:" + right);
+		LOG.error("Left: " + left.getNumRows() + " " + left.getNumColumns() + left+ "\nRight:" + right.getNumRows() +" " + right.getNumColumns());
 		if(right instanceof CompressedMatrixBlock)
 			return ((CompressedMatrixBlock) right).binaryOperationsLeft(_bop, left, new MatrixBlock());
 		else

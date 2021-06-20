@@ -46,17 +46,17 @@ public class CompressCost extends CompressBase {
 
 	@Test
 	public void testTranspose() {
-		runTest(0, 0, ExecType.CP, "transpose");
+		runTest(100, 20, 0, 0, ExecType.CP, "transpose");
 	}
 
 	@Test
 	public void testSum() {
-		runTest(0, 0, ExecType.CP, "sum");
+		runTest(100, 20, 0, 0, ExecType.CP, "sum");
 	}
 
 	@Test
 	public void testRowAggregate() {
-		runTest(0, 0, ExecType.CP, "row_min");
+		runTest(100, 20, 0, 0, ExecType.CP, "row_min");
 	}
 
 	/**

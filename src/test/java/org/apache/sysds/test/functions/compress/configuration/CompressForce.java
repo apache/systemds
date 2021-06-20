@@ -95,6 +95,36 @@ public class CompressForce extends CompressBase {
 	}
 
 	@Test
+	public void test_ElementWiseBinaryMultiplyOp_right_CP() {
+		runTest(1500, 1, 1, 1, ExecType.CP, "ewbm_right");
+	}
+
+	@Test
+	public void test_ElementWiseBinaryMultiplyOp_right_SP() {
+		runTest(1500, 1, 2, 1, ExecType.SPARK, "ewbm_right");
+	}
+
+	@Test
+	public void test_ElementWiseBinaryMultiplyOp_left_CP() {
+		runTest(1500, 1, 1, 1, ExecType.CP, "ewbm_left");
+	}
+
+	@Test
+	public void test_ElementWiseBinaryMultiplyOp_left_SP() {
+		runTest(1500, 1, 2, 1, ExecType.SPARK, "ewbm_left");
+	}
+
+	@Test
+	public void test_ElementWiseBinaryPlusOp_CP() {
+		runTest(1500, 1, 0, 1, ExecType.CP, "ewbp");
+	}
+
+	@Test
+	public void test_ElementWiseBinaryPlusOp_SP() {
+		runTest(1500, 1, 0, 1, ExecType.SPARK, "ewbp");
+	}
+
+	@Test
 	public void testPlus_MM_CP() {
 		runTest(1500, 1, 0, 1, ExecType.CP, "plus_mm");
 	}
@@ -103,7 +133,6 @@ public class CompressForce extends CompressBase {
 	public void testPlus_SP() {
 		runTest(1500, 1, 0, 1, ExecType.SPARK, "plus");
 	}
-
 
 	@Test
 	public void testMatrixMultSum_CP() {

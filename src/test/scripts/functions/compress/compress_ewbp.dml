@@ -20,7 +20,6 @@
 #-------------------------------------------------------------
 
 x = read($A)
-v = rand(rows=ncol(x), cols=10, min=0.0, max=1.0, seed= 13);
-b = rand(rows=nrow(x), cols=10, min=0.0, max=1.0, seed= 14);
-r = ((x + 132) %*% v) * b
+b = rand(rows=1, cols=ncol(x), min=0.0, max=1.0, seed= 14);
+r = x + b
 print(mean(r))

@@ -92,8 +92,6 @@ struct IdentityOp {
 template<typename T>
 struct SumOp {
 	__device__  __forceinline__ T operator()(T a, T b) const {
-//		 if(blockIdx.x==0 && threadIdx.x ==0)
-//		 	printf("a=%f + b=%f => %f\n", a, b, a+b);
 		return a + b;
 	}
 
@@ -121,16 +119,6 @@ struct MinusOp {
 
 	__device__  __forceinline__ static T init() {
 		return SumNeutralElement<T>::get();
-	}
-};
-
-/**
- * Functor op for sum of squares operation (returns a + b * b)
- */
-template<typename T>
-struct SumSqOp {
-	__device__  __forceinline__ T operator()(T a, T b) const {
-		return a + b * b;
 	}
 };
 

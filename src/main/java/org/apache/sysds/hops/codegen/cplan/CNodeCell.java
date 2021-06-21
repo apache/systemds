@@ -162,8 +162,9 @@ public class CNodeCell extends CNodeTpl
 		
 		tmp = tmp.replace("%BODY_dense%", tmpDense);
 		
-		//return last TMP
-		tmp = tmp.replaceAll("%OUT%", _output.getVarname());
+		//Return last TMP. Square it for CUDA+SUM_SQ
+		tmp = (api.isJava() || _aggOp != AggOp.SUM_SQ) ? tmp.replaceAll("%OUT%", _output.getVarname()) :
+			tmp.replaceAll("%OUT%", _output.getVarname() + " * " + _output.getVarname());
 
 		//replace meta data information
 		tmp = tmp.replaceAll("%TYPE%", getCellType().name());
@@ -181,11 +182,8 @@ public class CNodeCell extends CNodeTpl
 			if(_aggOp != null)
 			switch(_aggOp) {
 				case SUM:
-					agg_op = "SumOp";
-					initial_value = "(T)0.0";
-					break;
 				case SUM_SQ:
-					agg_op = "SumSqOp";
+					agg_op = "SumOp";
 					initial_value = "(T)0.0";
 					break;
 				case MIN:

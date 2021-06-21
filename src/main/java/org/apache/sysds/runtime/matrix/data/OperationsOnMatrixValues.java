@@ -229,7 +229,7 @@ public class OperationsOnMatrixValues
 		if (value2 instanceof CompressedMatrixBlock)
 			return value2.aggregateBinaryOperations(value1, value2, valueOut, op);
 		else
-			return value1.aggregateBinaryOperations(indexes1, value1, indexes2, value2, valueOut, op);
+			return value1.aggregateBinaryOperations(value1, value2, valueOut, op);
 	}
 
 	public static MatrixBlock matMult(MatrixBlock value1, MatrixBlock value2, AggregateBinaryOperator op) {

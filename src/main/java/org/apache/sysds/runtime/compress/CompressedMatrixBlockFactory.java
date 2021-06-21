@@ -99,7 +99,7 @@ public class CompressedMatrixBlockFactory {
 	 * @return A Pair of a Matrix Block and Compression Statistics.
 	 */
 	public static Pair<MatrixBlock, CompressionStatistics> compress(MatrixBlock mb) {
-		return compress(mb, 1, new CompressionSettingsBuilder().create());
+		return compress(mb, 1, new CompressionSettingsBuilder().create(), (WTreeRoot) null);
 	}
 
 	public static Pair<MatrixBlock, CompressionStatistics> compress(MatrixBlock mb, WTreeRoot root) {
@@ -108,11 +108,11 @@ public class CompressedMatrixBlockFactory {
 
 	public static Pair<MatrixBlock, CompressionStatistics> compress(MatrixBlock mb,
 		CompressionSettings customSettings) {
-		return compress(mb, 1, customSettings);
+		return compress(mb, 1, customSettings, (WTreeRoot) null);
 	}
 
 	public static Pair<MatrixBlock, CompressionStatistics> compress(MatrixBlock mb, int k) {
-		return compress(mb, k, new CompressionSettingsBuilder().create());
+		return compress(mb, k, new CompressionSettingsBuilder().create(), (WTreeRoot) null);
 	}
 
 	public static Pair<MatrixBlock, CompressionStatistics> compress(MatrixBlock mb, int k, WTreeRoot root) {
@@ -126,7 +126,7 @@ public class CompressedMatrixBlockFactory {
 
 	public static Pair<MatrixBlock, CompressionStatistics> compress(MatrixBlock mb, int k,
 		CompressionSettings compSettings) {
-		return compress(mb, k, compSettings);
+		return compress(mb, k, compSettings, (WTreeRoot) null);
 	}
 
 	/**

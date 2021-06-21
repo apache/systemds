@@ -25,6 +25,7 @@ import java.lang.management.ManagementFactory;
 import java.text.DecimalFormat;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -32,12 +33,15 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.DoubleAdder;
 import java.util.concurrent.atomic.LongAdder;
 
+import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.runtime.controlprogram.caching.CacheStatistics;
 import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest.RequestType;
+import org.apache.sysds.runtime.controlprogram.federated.FederatedStatistics;
 import org.apache.sysds.runtime.controlprogram.parfor.stat.Timing;
 import org.apache.sysds.runtime.instructions.Instruction;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
@@ -732,6 +736,17 @@ public class Statistics
 		return (tmp != null) ? tmp.count.longValue() : 0;
 	}
 
+	public static HashMap<String, Pair<Long, Double>> getHeavyHittersHashMap() {
+		HashMap<String, Pair<Long, Double>> heavyHitters = new HashMap<>();
+		for(String opcode : _instStats.keySet()) {
+			InstStats val = _instStats.get(opcode);
+			long count = val.count.longValue();
+			double time = val.time.longValue() / 1000000000d; // in sec
+			heavyHitters.put(opcode, new ImmutablePair<Long, Double>(new Long(count), new Double(time)));
+		}
+		return heavyHitters;
+	}
+
 	/**
 	 * Obtain a string tabular representation of the heavy hitter instructions
 	 * that displays the time, instruction count, and optionally GPU stats about
@@ -956,7 +971,7 @@ public class Statistics
 	}
 	
 	
-	private static String [] wrap(String str, int wrapLength) {
+	public static String [] wrap(String str, int wrapLength) {
 		int numLines = (int) Math.ceil( ((double)str.length()) / wrapLength);
 		int len = str.length();
 		String [] ret = new String[numLines];
@@ -1104,6 +1119,11 @@ public class Statistics
 
 		if (DMLScript.CHECK_PRIVACY)
 			sb.append(CheckedConstraintsLog.display());
+
+		if(DMLScript.FED_STATISTICS) {
+			sb.append("\n");
+			sb.append(FederatedStatistics.displayFedStatistics(DMLScript.FED_STATISTICS_COUNT));
+		}
 
 		return sb.toString();
 	}

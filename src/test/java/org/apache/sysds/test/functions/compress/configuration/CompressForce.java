@@ -22,6 +22,7 @@ package org.apache.sysds.test.functions.compress.configuration;
 import java.io.File;
 
 import org.apache.sysds.common.Types.ExecType;
+import org.junit.Ignore;
 import org.junit.Test;
 
 public class CompressForce extends CompressBase {
@@ -155,7 +156,9 @@ public class CompressForce extends CompressBase {
 	}
 
 	@Test
+	@Ignore
 	public void testMatrixMultLeftSum_SP_SmallerThanLeft() {
+		// see task: https://issues.apache.org/jira/browse/SYSTEMDS-3038
 		runTest(1500, 1, 0, 1, ExecType.SPARK, "mml_sum");
 	}
 

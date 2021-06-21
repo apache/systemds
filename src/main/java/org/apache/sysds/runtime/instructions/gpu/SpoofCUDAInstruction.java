@@ -38,6 +38,7 @@ import org.apache.sysds.runtime.instructions.gpu.context.GPUObject;
 import org.apache.sysds.runtime.lineage.LineageItem;
 import org.apache.sysds.runtime.lineage.LineageItemUtils;
 import org.apache.sysds.runtime.lineage.LineageTraceable;
+import org.apache.sysds.utils.GPUStatistics;
 
 import java.util.ArrayList;
 
@@ -116,6 +117,7 @@ public class SpoofCUDAInstruction extends GPUInstruction implements LineageTrace
 
 	@Override
 	public void processInstruction(ExecutionContext ec) {
+		GPUStatistics.incrementNoOfExecutedGPUInst();
 
 		//get input matrices and scalars, incl pinning of matrices
 		ArrayList<MatrixObject> inputs = new ArrayList<>();

@@ -80,7 +80,10 @@
 				<excludes>
 					<exclude>algorithms/obsolete/*</exclude>
 					<exclude>datagen/obsolete/*</exclude>
-					<exclude>perftest/*</exclude>
+					<exclude>perftest/**/*</exclude>
+					<exclude>perftest</exclude>
+					<exclude>perftestDeprecated/*</exclude>
+					<exclude>perftestDeprecated</exclude>
 					<exclude>staging/**/*</exclude>
 					<exclude>nn/test/compare_backends/*</exclude>
 					<exclude>nn/test/compare_backends/*</exclude>

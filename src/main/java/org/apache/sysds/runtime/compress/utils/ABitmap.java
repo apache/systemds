@@ -23,7 +23,7 @@ import java.util.Arrays;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.sysds.runtime.DMLCompressionException;
+import org.apache.sysds.runtime.compress.DMLCompressionException;
 
 public abstract class ABitmap {
 	protected static final Log LOG = LogFactory.getLog(ABitmap.class.getName());

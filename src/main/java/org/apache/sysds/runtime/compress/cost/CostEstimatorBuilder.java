@@ -24,6 +24,9 @@ import java.io.Serializable;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.hops.AggUnaryOp;
+import org.apache.sysds.hops.Hop;
+import org.apache.sysds.hops.IndexingOp;
+import org.apache.sysds.hops.ParameterizedBuiltinOp;
 import org.apache.sysds.runtime.compress.workload.Op;
 import org.apache.sysds.runtime.compress.workload.OpSided;
 import org.apache.sysds.runtime.compress.workload.WTreeNode;
@@ -48,21 +51,13 @@ public final class CostEstimatorBuilder implements Serializable {
 		return new ComputationCostEstimator(nRows, nCols, counter.compressedMultiplications > 0, counter);
 	}
 
+	public InstructionTypeCounter getCounter() {
+		return counter;
+	}
+
 	private static void addNode(int count, WTreeNode n, InstructionTypeCounter counter) {
 
-		int mult;
-		switch(n.getType()) {
-			case IF:
-			case FCALL:
-			case BASIC_BLOCK:
-				mult = 1;
-				break;
-			case WHILE:
-			case FOR:
-			case PARFOR:
-			default:
-				mult = 10;
-		}
+		int mult = n.getReps();
 
 		for(Op o : n.getOps())
 			addOp(count * mult, o, counter);
@@ -71,19 +66,22 @@ public final class CostEstimatorBuilder implements Serializable {
 	}
 
 	private static void addOp(int count, Op o, InstructionTypeCounter counter) {
+		if(o.isDecompressing())
+			counter.decompressions += count;
 		if(o instanceof OpSided) {
 			OpSided os = (OpSided) o;
 			if(os.isLeftMM())
 				counter.leftMultiplications += count;
 			else if(os.isRightMM()) {
 				counter.rightMultiplications += count;
-				counter.overlappingDecompressions += count;
+				// counter.overlappingDecompressions += count;
 			}
 			else
 				counter.compressedMultiplications += count;
 		}
 		else {
-			if(o.getHop() instanceof AggUnaryOp) {
+			Hop h = o.getHop();
+			if(h instanceof AggUnaryOp) {
 				AggUnaryOp agop = (AggUnaryOp) o.getHop();
 
 				switch(agop.getDirection()) {
@@ -94,10 +92,29 @@ public final class CostEstimatorBuilder implements Serializable {
 						counter.dictionaryOps += count;
 				}
 			}
-			else {
-				counter.dictionaryOps += count;
+			else if(h instanceof IndexingOp) {
+				IndexingOp idxO = (IndexingOp) h;
+				if(idxO.isRowLowerEqualsUpper() && idxO.isColLowerEqualsUpper())
+					counter.indexing++;
+				else if(idxO.isAllRows())
+					counter.dictionaryOps += count; // Technically not correct but better than decompression
+				else
+					counter.decompressions += count;
 			}
+			else if(h instanceof ParameterizedBuiltinOp){
+				// ParameterizedBuiltinOp pop = (ParameterizedBuiltinOp) h;
+				counter.decompressions += count;
+			}
+			else
+				counter.dictionaryOps += count;
 		}
+	}
+
+	@Override
+	public String toString() {
+		StringBuilder sb = new StringBuilder();
+		sb.append(counter);
+		return sb.toString();
 	}
 
 }

@@ -27,8 +27,10 @@ import org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup;
 public class ComputationCostEstimator implements ICostEstimate {
 
 	private final boolean _isCompareAll;
+	
 	private final int _nRows;
 	private final int _nColsInMatrix;
+
 	// Iteration through each row of decompressed.
 	private final int _scans;
 	private final int _decompressions;
@@ -197,6 +199,15 @@ public class ComputationCostEstimator implements ICostEstimate {
 	@Override
 	public boolean shouldTryJoin(CompressedSizeInfoColGroup g1, CompressedSizeInfoColGroup g2) {
 		return true;
+	}
+
+	@Override
+	public boolean shouldTryToCompress() {
+		int numberOps = 0;
+		numberOps += _scans + _leftMultiplications + _rightMultiplications + _compressedMultiplication + _dictionaryOps;
+		numberOps -= _decompressions + _overlappingDecompressions;
+
+		return numberOps > 4;
 	}
 
 	@Override

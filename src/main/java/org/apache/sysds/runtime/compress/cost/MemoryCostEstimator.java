@@ -21,7 +21,7 @@ package org.apache.sysds.runtime.compress.cost;
 
 import java.util.Collection;
 
-import org.apache.sysds.runtime.DMLCompressionException;
+import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup;
 
 public class MemoryCostEstimator implements ICostEstimate {
@@ -70,5 +70,9 @@ public class MemoryCostEstimator implements ICostEstimate {
 	public boolean shouldTryJoin(CompressedSizeInfoColGroup g1, CompressedSizeInfoColGroup g2) {
 		return true;
 	}
-
+	
+	@Override
+	public boolean shouldTryToCompress() {
+		return true;
+	}
 }

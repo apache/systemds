@@ -22,8 +22,8 @@ package org.apache.sysds.runtime.compress.colgroup;
 import java.util.Arrays;
 
 import org.apache.commons.lang.NotImplementedException;
-import org.apache.sysds.runtime.DMLCompressionException;
 import org.apache.sysds.runtime.compress.CompressionSettings;
+import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
 import org.apache.sysds.runtime.data.SparseBlock;

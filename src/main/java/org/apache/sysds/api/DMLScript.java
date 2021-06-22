@@ -284,7 +284,7 @@ public class DMLScript
 	 * @return a string representation of the script
 	 * @throws IOException	if error
 	 */
-	protected static String readDMLScript( boolean isFile, String scriptOrFilename )
+	public static String readDMLScript( boolean isFile, String scriptOrFilename )
 		throws IOException
 	{
 		String dmlScriptStr;

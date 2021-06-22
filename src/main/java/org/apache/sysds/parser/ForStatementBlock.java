@@ -22,9 +22,11 @@ package org.apache.sysds.parser;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.hops.Hop;
+import org.apache.sysds.hops.LiteralOp;
 import org.apache.sysds.hops.recompile.Recompiler;
 import org.apache.sysds.lops.Lop;
 import org.apache.sysds.runtime.instructions.cp.BooleanObject;
@@ -429,5 +431,22 @@ public class ForStatementBlock extends StatementBlock
 	
 	public boolean requiresIncrementRecompilation() {
 		return _requiresIncrementRecompile;
+	}
+
+	public int getEstimateReps(){
+		if(_fromHops != null && _toHops != null && _incrementHops != null){
+			List<Hop> fr = _fromHops.getInput();
+			List<Hop> to = _toHops.getInput();
+			List<Hop> in = _incrementHops.getInput();
+			if (fr.size() == 1 && to.size() == 1 && in.size()== 1 && 
+				fr.get(0) instanceof LiteralOp && to.get(0) instanceof LiteralOp && in.get(0) instanceof LiteralOp){
+				long f = ((LiteralOp)fr.get(0)).getLongValue();
+				long t = ((LiteralOp)to.get(0)).getLongValue();
+				long i = ((LiteralOp)in.get(0)).getLongValue();
+				return (int)((t-f)/i);
+			}
+		}
+		
+		return 10;
 	}
 }

@@ -29,8 +29,11 @@ public class WTreeNode extends AWTreeNode {
 	
 	private final List<Op> _ops = new ArrayList<>();
 
-	public WTreeNode(WTNodeType type) {
+	private final int _reps;
+
+	public WTreeNode(WTNodeType type, int reps) {
 		super(type);
+		_reps = reps;
 	}
 
 	public List<Op> getOps() {
@@ -39,6 +42,10 @@ public class WTreeNode extends AWTreeNode {
 
 	public void addOp(Op op) {
 		_ops.add(op);
+	}
+
+	public int getReps(){
+		return _reps;
 	}
 
 	@Override

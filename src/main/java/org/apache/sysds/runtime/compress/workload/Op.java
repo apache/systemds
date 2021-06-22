@@ -21,9 +21,9 @@ package org.apache.sysds.runtime.compress.workload;
 
 import org.apache.sysds.hops.Hop;
 
-public class Op {
+public abstract class Op {
 
-	private final Hop _op;
+	protected final Hop _op;
 
 	public Op(Hop op) {
 		_op = op;
@@ -37,4 +37,9 @@ public class Op {
 	public String toString() {
 		return _op.toString();
 	}
+
+	public abstract boolean isCompressedOutput();
+
+	public abstract boolean isDecompressing();
+
 }

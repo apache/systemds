@@ -23,7 +23,7 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.util.Arrays;
 
-import org.apache.sysds.runtime.DMLCompressionException;
+import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.utils.MemoryEstimates;
 
 public class OffsetByte extends AOffset {

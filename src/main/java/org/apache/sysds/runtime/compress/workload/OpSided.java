@@ -23,37 +23,61 @@ import org.apache.sysds.hops.Hop;
 
 public class OpSided extends Op {
 
-	private final boolean _left;
-	private final boolean _right;
+	// Compressed Sides:
+	private final boolean _cLeft;
+	private final boolean _cRight;
+	// Transposed Sides:
+	private final boolean _tLeft;
+	private final boolean _tRight;
 
-	public OpSided(Hop op, boolean left, boolean right) {
+	public OpSided(Hop op, boolean cLeft, boolean cRight, boolean tLeft, boolean tRight) {
 		super(op);
-		_left = left;
-		_right = right;
+		_cLeft = cLeft;
+		_cRight = cRight;
+		_tLeft = tLeft;
+		_tRight = tRight;
 	}
 
 	public boolean getLeft() {
-		return _left;
+		return _cLeft;
 	}
 
 	public boolean getRight() {
-		return _right;
+		return _cRight;
+	}
+
+	public boolean getTLeft() {
+		return _tLeft;
+	}
+
+	public boolean getTRight() {
+		return _tRight;
 	}
 
 	@Override
 	public String toString() {
-		return super.toString() + " L:" + _left + " R:" + _right;
+		return super.toString() + " L:" + _cLeft + " R:" + _cRight + " tL:" + _tLeft + " tR:" + _tRight;
 	}
 
 	public boolean isLeftMM() {
-		return !_left && _right;
+		return (!_cLeft && _cRight && !_tRight) || (_cLeft && !_cRight && _tLeft);
 	}
 
 	public boolean isRightMM() {
-		return _left && !_right;
+		return (_cLeft && !_cRight && !_tLeft) || (!_cLeft && _cRight && _tRight);
 	}
 
 	public boolean isCompCompMM() {
-		return _left && _right;
+		return _cLeft && _cRight;
+	}
+
+	@Override
+	public boolean isCompressedOutput() {
+		return isRightMM();
+	}
+
+	@Override
+	public boolean isDecompressing() {
+		return false;
 	}
 }

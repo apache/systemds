@@ -56,7 +56,7 @@ public class IPAPassCompressionWorkloadAnalysis extends IPAPass {
 		// Add compression instruction to all remaining locations
 		for(Entry<Long, WTreeRoot> e : map.entrySet())
 			e.getValue().getRoot().setRequiresCompression(e.getValue());
-
+		
 		return map != null;
 
 	}

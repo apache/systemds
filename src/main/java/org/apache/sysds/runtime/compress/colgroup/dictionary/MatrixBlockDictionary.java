@@ -24,7 +24,7 @@ import java.io.DataOutput;
 import java.io.IOException;
 
 import org.apache.commons.lang.NotImplementedException;
-import org.apache.sysds.runtime.DMLCompressionException;
+import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.data.DenseBlockFP64;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.functionobjects.Builtin;

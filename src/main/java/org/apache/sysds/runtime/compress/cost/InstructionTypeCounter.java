@@ -26,15 +26,61 @@ public final class InstructionTypeCounter implements Serializable {
 	private static final long serialVersionUID = 115L;
 
 	protected int scans = 0;
-	protected int decompressions = 1;
-	protected int overlappingDecompressions = 1;
-	protected int leftMultiplications = 1;
+	protected int decompressions = 0;
+	protected int overlappingDecompressions = 0;
+	protected int leftMultiplications = 0;
 	protected int rightMultiplications = 0;
 	protected int compressedMultiplications = 0;
-	protected int dictionaryOps = 1; // base cost is one pass of dictionary
-	protected int rowBasedOps = 0;
+	protected int dictionaryOps = 0; // base cost is one pass of dictionary
+	protected int indexing = 0;
 
 	protected InstructionTypeCounter() {
 
+	}
+
+	public int getScans() {
+		return scans;
+	}
+
+	public int getDecompressions() {
+		return decompressions;
+	}
+
+	public int getOverlappingDecompressions() {
+		return overlappingDecompressions;
+	}
+
+	public int getLeftMultipications() {
+		return leftMultiplications;
+	}
+
+	public int getRightMultiplications() {
+		return rightMultiplications;
+	}
+
+	public int getCompressedMultiplications() {
+		return compressedMultiplications;
+	}
+
+	public int getDictionaryOps() {
+		return dictionaryOps;
+	}
+
+	public int getIndexing() {
+		return indexing;
+	}
+
+	@Override
+	public String toString() {
+		StringBuilder sb = new StringBuilder();
+		sb.append(String.format("\n scans                     :%4d", scans));
+		sb.append(String.format("\n decompressions            :%4d", decompressions));
+		sb.append(String.format("\n overlappingDecompressions :%4d", overlappingDecompressions));
+		sb.append(String.format("\n leftMultiplications       :%4d", leftMultiplications));
+		sb.append(String.format("\n rightMultiplications      :%4d", rightMultiplications));
+		sb.append(String.format("\n compressedMultiplications :%4d", compressedMultiplications));
+		sb.append(String.format("\n dictionaryOps             :%4d", dictionaryOps));
+		sb.append(String.format("\n indexing                  :%4d", indexing));
+		return sb.toString();
 	}
 }

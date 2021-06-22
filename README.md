@@ -22,10 +22,10 @@ limitations under the License.
 **Overview:** SystemDS is a versatile system for the end-to-end data science lifecycle from data integration, cleaning,
 and feature engineering, over efficient, local and distributed ML model training, to deployment and serving. To this
 end, we aim to provide a stack of declarative languages with R-like syntax for (1) the different tasks of the data-science
-lifecycle, and (2) users with different expertise. These high-level scripts are compiled into hybrid execution plans of 
-local, in-memory CPU and GPU operations, as well as distributed operations on Apache Spark. In contrast to existing 
+lifecycle, and (2) users with different expertise. These high-level scripts are compiled into hybrid execution plans of
+local, in-memory CPU and GPU operations, as well as distributed operations on Apache Spark. In contrast to existing
 systems - that either provide homogeneous tensors or 2D Datasets - and in order to serve the entire data science lifecycle,
-the underlying data model are DataTensors, i.e., tensors (multi-dimensional arrays) whose first dimension may have a 
+the underlying data model are DataTensors, i.e., tensors (multi-dimensional arrays) whose first dimension may have a
 heterogeneous and nested schema.
 
 **Quick Start** [Install, Quick Start and Hello World](https://apache.github.io/systemds/site/install.html)
@@ -36,8 +36,8 @@ heterogeneous and nested schema.
 
 **Issue Tracker** [Jira Dashboard](https://issues.apache.org/jira/secure/Dashboard.jspa?selectPageId=12335852)
 
-**Status and Build:** SystemDS is renamed from SystemML which is an **Apache Top Level Project**. 
-To build from source visit [SystemDS Install from source](http://apache.github.io/systemds/site/install.html)
+**Status and Build:** SystemDS is renamed from SystemML which is an **Apache Top Level Project**.
+To build from source visit [SystemDS Install from source](https://apache.github.io/systemds/site/install.html)
   
 [![Build](https://github.com/apache/systemds/workflows/Build/badge.svg?branch=master&event=push)](https://github.com/apache/systemds/actions?query=workflow%3A%22Build%22+branch%3Amaster+event%3Apush)
 [![Documentation](https://github.com/apache/systemds/workflows/Documentation/badge.svg?branch=master&event=push)](https://github.com/apache/systemds/actions?query=workflow%3ADocumentation+branch%3Amaster+event%3Apush)

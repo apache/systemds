@@ -36,12 +36,12 @@ class Test_DMLScript(unittest.TestCase):
 
     sds: SystemDSContext = None
     d: DataManager = None
-    neural_net_src_path: str = "./src/main/python/tests/source/neural_net_source.dml"
-    dataset_path_train: str = "./src/test/resources/datasets/adult/train_data.csv"
-    dataset_path_train_mtd: str = "./src/test/resources/datasets/adult/train_data.csv.mtd"
-    dataset_path_test: str = "./src/test/resources/datasets/adult/test_data.csv"
-    dataset_path_test_mtd: str = "./src/test/resources/datasets/adult/test_data.csv.mtd"
-    dataset_jspec: str = "./src/test/resources/datasets/adult/jspec.json"
+    neural_net_src_path: str = "tests/examples/tutorials/neural_net_source.dml"
+    dataset_path_train: str = "../../test/resources/datasets/adult/train_data.csv"
+    dataset_path_train_mtd: str = "../../test/resources/datasets/adult/train_data.csv.mtd"
+    dataset_path_test: str = "../../test/resources/datasets/adult/test_data.csv"
+    dataset_path_test_mtd: str = "../../test/resources/datasets/adult/test_data.csv.mtd"
+    dataset_jspec: str = "../../test/resources/datasets/adult/jspec.json"
 
     @classmethod
     def setUpClass(cls):

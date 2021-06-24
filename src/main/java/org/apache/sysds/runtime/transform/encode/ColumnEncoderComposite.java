@@ -176,34 +176,6 @@ public class ColumnEncoderComposite extends ColumnEncoder {
 		return DependencyThreadPool.createDependencyTasks(tasks, dep);
 	}
 
-
-	
-	@Override
-	public List<Callable<Object>> getPartialBuildTasks(FrameBlock in, int blockSize) {
-		List<Callable<Object>> tasks = new ArrayList<>();
-		_partialBuildTaskMap = new HashMap<>();
-		for(ColumnEncoder columnEncoder : _columnEncoders) {
-			List<Callable<Object>> _tasks = columnEncoder.getPartialBuildTasks(in, blockSize);
-			if(_tasks != null)
-				tasks.addAll(_tasks);
-			_partialBuildTaskMap.put(columnEncoder, _tasks != null ? _tasks.size() : 0);
-		}
-		return tasks.size() == 0 ? null : tasks;
-	}
-
-	@Override
-	public void mergeBuildPartial(List<Future<Object>> futurePartials, int start, int end)
-		throws ExecutionException, InterruptedException {
-		int endLocal;
-		for(ColumnEncoder columnEncoder : _columnEncoders) {
-			endLocal = start + _partialBuildTaskMap.get(columnEncoder);
-			columnEncoder.mergeBuildPartial(futurePartials, start, endLocal);
-			start = endLocal;
-			if(start >= end)
-				break;
-		}
-	}
-
 	@Override
 	public void prepareBuildPartial() {
 		for(ColumnEncoder columnEncoder : _columnEncoders)

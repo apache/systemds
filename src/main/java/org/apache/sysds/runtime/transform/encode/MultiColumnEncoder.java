@@ -111,10 +111,7 @@ public class MultiColumnEncoder implements Encoder {
 
 	public void build(FrameBlock in, int k) {
 		if(MULTI_THREADED && k > 1) {
-			if(DEPENDENCY_POOL)
-				buildMTNew(in, k);
-			else
-				buildMT(in, k);
+			buildMT(in, k);
 		}
 		else {
 			for(ColumnEncoderComposite columnEncoder : _columnEncoders){
@@ -126,50 +123,7 @@ public class MultiColumnEncoder implements Encoder {
 	}
 
 
-	private void buildMT(FrameBlock in, int k) {
-		int blockSize = BUILD_BLOCKSIZE <= 0 ? in.getNumRows() : BUILD_BLOCKSIZE;
-		List<Callable<Integer>> tasks = new ArrayList<>();
-		ExecutorService pool = CommonThreadPool.get(k);
-		try {
-			if(blockSize != in.getNumRows()) {
-				// Partial builds and merges
-				// Most of the time not worth it for RC with the current implementation, GC overhead is to large.
-				// Depending on unique values and rows more testing need to be done
-				List<List<Future<Object>>> partials = new ArrayList<>();
-				for(ColumnEncoderComposite encoder : _columnEncoders) {
-					List<Callable<Object>> partialBuildTasks = encoder.getPartialBuildTasks(in, blockSize);
-					if(partialBuildTasks == null) {
-						partials.add(null);
-						continue;
-					}
-					partials.add(partialBuildTasks.stream().map(pool::submit).collect(Collectors.toList()));
-				}
-				for(int e = 0; e < _columnEncoders.size(); e++) {
-					List<Future<Object>> partial = partials.get(e);
-					if(partial == null)
-						continue;
-					tasks.add(new ColumnMergeBuildPartialTask(_columnEncoders.get(e), partial));
-				}
-			}
-			else {
-				// building every column in one thread
-				for(ColumnEncoderComposite e : _columnEncoders) {
-					tasks.add(new ColumnBuildTask(e, in));
-				}
-			}
-			List<Future<Integer>> rtasks = pool.invokeAll(tasks);
-			pool.shutdown();
-			for(Future<Integer> t : rtasks)
-				t.get();
-		}
-		catch(InterruptedException | ExecutionException e) {
-			LOG.error("MT Column encode failed");
-			e.printStackTrace();
-		}
-	}
-
-
-	private void buildMTNew(FrameBlock in, int k){
+	private void buildMT(FrameBlock in, int k){
 		List<DependencyTask<?>> tasks = new ArrayList<>();
 		for(ColumnEncoderComposite columnEncoder : _columnEncoders){
 			tasks.addAll(columnEncoder.getBuildTasks(in, BUILD_BLOCKSIZE));
@@ -228,10 +182,7 @@ public class MultiColumnEncoder implements Encoder {
 		}
 		// TODO smart checks
 		if(MULTI_THREADED && k > 1) {
-			if(DEPENDENCY_POOL)
-				applyMTNew(in, out, outputCol, k);
-			else
-				applyMT(in, out, outputCol, k);
+			applyMT(in, out, outputCol, k);
 		}
 		else {
 			int offset = outputCol;
@@ -252,34 +203,7 @@ public class MultiColumnEncoder implements Encoder {
 		return out;
 	}
 
-	private void applyMT(FrameBlock in, MatrixBlock out, int outputCol, int k) {
-		try {
-			ExecutorService pool = CommonThreadPool.get(k);
-			ArrayList<ColumnApplyTask> tasks = new ArrayList<>();
-			int offset = outputCol;
-			// TODO calculate smart blocksize
-			int blockSize = APPLY_BLOCKSIZE <= 0 ? in.getNumRows() : APPLY_BLOCKSIZE;
-			for(ColumnEncoderComposite e : _columnEncoders) {
-				for(int i = 0; i < in.getNumRows(); i = i + blockSize)
-					tasks.add(new ColumnApplyTask(e, in, out, e._colID - 1 + offset, i, blockSize));
-				if(in.getNumRows() % blockSize != 0)
-					tasks.add(new ColumnApplyTask(e, in, out, e._colID - 1 + offset,
-						in.getNumRows() - in.getNumRows() % blockSize, -1));
-				if(e.hasEncoder(ColumnEncoderDummycode.class))
-					offset += e.getEncoder(ColumnEncoderDummycode.class)._domainSize - 1;
-			}
-			List<Future<Integer>> rtasks = pool.invokeAll(tasks);
-			pool.shutdown();
-			for(Future<Integer> t : rtasks)
-				t.get();
-		}
-		catch(InterruptedException | ExecutionException e) {
-			LOG.error("MT Column encode failed");
-			e.printStackTrace();
-		}
-	}
-
-	private void applyMTNew(FrameBlock in, MatrixBlock out, int outputCol, int k){
+	private void applyMT(FrameBlock in, MatrixBlock out, int outputCol, int k){
 		List<DependencyTask<?>> tasks = new ArrayList<>();
 		int offset = outputCol;
 		for(ColumnEncoderComposite e : _columnEncoders) {
@@ -643,74 +567,6 @@ public class MultiColumnEncoder implements Encoder {
 			_legacyOmit.shiftCols(_colOffset);
 		if(_legacyMVImpute != null)
 			_legacyMVImpute.shiftCols(_colOffset);
-	}
-
-	private static class ColumnApplyTask implements Callable<Integer> {
-
-		private final ColumnEncoder _encoder;
-		private final FrameBlock _input;
-		private final MatrixBlock _out;
-		private final int _columnOut;
-		private int _rowStart = 0;
-		private int _blk = -1;
-
-		protected ColumnApplyTask(ColumnEncoder encoder, FrameBlock input, MatrixBlock out, int columnOut) {
-			_encoder = encoder;
-			_input = input;
-			_out = out;
-			_columnOut = columnOut;
-		}
-
-		protected ColumnApplyTask(ColumnEncoder encoder, FrameBlock input, MatrixBlock out, int columnOut, int rowStart, int blk) {
-			this(encoder, input, out, columnOut);
-			_rowStart = rowStart;
-			_blk = blk;
-		}
-
-		@Override
-		public Integer call() throws Exception {
-			_encoder.apply(_input, _out, _columnOut, _rowStart, _blk);
-			// TODO return NNZ
-			return 1;
-		}
-	}
-
-	private static class ColumnBuildTask implements Callable<Integer> {
-
-		private final ColumnEncoder _encoder;
-		private final FrameBlock _input;
-
-		// if a pool is passed the task may be split up into multiple smaller tasks.
-		protected ColumnBuildTask(ColumnEncoder encoder, FrameBlock input) {
-			_encoder = encoder;
-			_input = input;
-		}
-
-		@Override
-		public Integer call() throws Exception {
-			_encoder.build(_input);
-			if(_encoder instanceof ColumnEncoderComposite)
-				((ColumnEncoderComposite) _encoder).updateAllDCEncoders();
-			return 1;
-		}
-	}
-
-	private static class ColumnMergeBuildPartialTask implements Callable<Integer> {
-
-		private final ColumnEncoderComposite _encoder;
-		private final List<Future<Object>> _partials;
-
-		protected ColumnMergeBuildPartialTask(ColumnEncoderComposite encoder, List<Future<Object>> partials) {
-			_encoder = encoder;
-			_partials = partials;
-		}
-
-		@Override
-		public Integer call() throws Exception {
-			_encoder.mergeBuildPartial(_partials, 0, _partials.size());
-			_encoder.updateAllDCEncoders();
-			return 1;
-		}
 	}
 
 	private static class MultiColumnLegacyBuildTask implements Callable<Object> {

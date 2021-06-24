@@ -26,13 +26,17 @@ import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.spark.sql.catalyst.expressions.In;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
@@ -167,17 +171,42 @@ public abstract class ColumnEncoder implements Externalizable, Encoder, Comparab
 		return Integer.compare(getEncoderType(this), getEncoderType(o));
 	}
 
-	public abstract List<Callable<Object>> getPartialBuildTasks(FrameBlock in, int blockSize);
-
-	public abstract void mergeBuildPartial(List<Future<Object>> futurePartials, int start, int end)
-		throws ExecutionException, InterruptedException;
-
 	/*
 	Returns a Dependency Task List such that if executed the encoder is built.
 	Last Task in the list shall only complete if all previous tasks are done.
 	This is so that we can use the last task as a dependency for the whole build, reducing unnecessary dependencies.
 	 */
-	public abstract List<DependencyTask<?>> getBuildTasks(FrameBlock in, int blockSize);
+	public List<DependencyTask<?>> getBuildTasks(FrameBlock in, int blockSize){
+		List<Callable<Object>> tasks = new ArrayList<>();
+		List<List<? extends Callable<?>>> dep = null;
+		if(blockSize == -1 || blockSize >= in.getNumRows()){
+			tasks.add(getBuildTask(in));
+		}else{
+			HashMap<Integer, Object> ret = new HashMap<>();
+			for(int i = 0; i < in.getNumRows(); i = i + blockSize)
+				tasks.add(getPartialBuildTask(in, i, blockSize, ret));
+			if(in.getNumRows() % blockSize != 0)
+				tasks.add(getPartialBuildTask(in, in.getNumRows() - in.getNumRows() % blockSize,-1, ret));
+			tasks.add(getPartialMergeBuildTask(ret));
+			dep = new ArrayList<>(Collections.nCopies(tasks.size()-1, null));
+			dep.add(tasks.subList(0, tasks.size()-1));
+		}
+		return DependencyThreadPool.createDependencyTasks(tasks, dep);
+	}
+
+	public Callable<Object> getBuildTask(FrameBlock in){
+		throw new DMLRuntimeException("Trying to get the Build task of an Encoder which does not require building");
+	}
+
+	public Callable<Object> getPartialBuildTask(FrameBlock in, int startRow, int blockSize, HashMap<Integer, Object> ret){
+		throw new DMLRuntimeException("Trying to get the PartialBuild task of an Encoder which does not support  " +
+				"partial building");
+	}
+
+	public Callable<Object> getPartialMergeBuildTask(HashMap<Integer, ?> ret){
+		throw new DMLRuntimeException("Trying to get the BuildMergeTask task of an Encoder which does not support " +
+				"partial building");
+	}
 
 	public List<DependencyTask<?>> getApplyTasks(FrameBlock in, MatrixBlock out, int outputCol) {
 		List<Callable<Object>> tasks = new ArrayList<>();
@@ -203,6 +232,8 @@ public abstract class ColumnEncoder implements Externalizable, Encoder, Comparab
 		private final MatrixBlock _inputM;
 		private final MatrixBlock _out;
 		private final int _outputCol;
+		private int _rowStart = 0;
+		private int _blk = -1;
 
 		protected ColumnApplyTask(ColumnEncoder encoder, FrameBlock input, MatrixBlock out, int outputCol) {
 			_encoder = encoder;
@@ -220,13 +251,27 @@ public abstract class ColumnEncoder implements Externalizable, Encoder, Comparab
 			_outputCol = outputCol;
 		}
 
+		protected ColumnApplyTask(ColumnEncoder encoder, MatrixBlock input, MatrixBlock out, int outputCol,
+								  int rowStart, int blk) {
+			this(encoder, input, out, outputCol);
+			_rowStart = rowStart;
+			_blk = blk;
+		}
+
+		protected ColumnApplyTask(ColumnEncoder encoder, FrameBlock input, MatrixBlock out, int outputCol,
+								  int rowStart, int blk) {
+			this(encoder, input, out, outputCol);
+			_rowStart = rowStart;
+			_blk = blk;
+		}
+
 
 		@Override
 		public Void call() throws Exception {
 			if(_inputF == null)
-				_encoder.apply(_inputM, _out, _outputCol);
+				_encoder.apply(_inputM, _out, _outputCol, _rowStart, _blk);
 			else
-				_encoder.apply(_inputF, _out, _outputCol);
+				_encoder.apply(_inputF, _out, _outputCol, _rowStart, _blk);
 			return null;
 		}
 	}

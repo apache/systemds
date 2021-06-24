@@ -26,6 +26,7 @@ import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
@@ -35,8 +36,6 @@ import org.apache.commons.lang3.tuple.MutableTriple;
 import org.apache.sysds.lops.Lop;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
-import org.apache.sysds.runtime.util.DependencyTask;
-import org.apache.sysds.runtime.util.DependencyThreadPool;
 import org.apache.sysds.runtime.util.UtilFunctions;
 
 public class ColumnEncoderBin extends ColumnEncoder {
@@ -107,35 +106,22 @@ public class ColumnEncoderBin extends ColumnEncoder {
 		return new double[]{min, max};
 	}
 
+
 	@Override
-	public List<Callable<Object>> getPartialBuildTasks(FrameBlock in, int blockSize){
-		List<Callable<Object>> tasks = new ArrayList<>();
-		for(int i = 0; i < in.getNumRows(); i=i+blockSize)
-			tasks.add(new BinPartialBuildTask(in, _colID, i, blockSize));
-		if(in.getNumRows() % blockSize != 0)
-			tasks.add(new BinPartialBuildTask(in, _colID,
-					in.getNumRows()-in.getNumRows()%blockSize, -1));
-		return tasks;
+	public Callable<Object> getBuildTask(FrameBlock in){
+		return new ColumnBinBuildTask(this, in);
 	}
 
 	@Override
-	public void mergeBuildPartial(List<Future<Object>> futurePartials, int start, int end) throws ExecutionException, InterruptedException {
-		double min = Double.POSITIVE_INFINITY;
-		double max = Double.NEGATIVE_INFINITY;
-		for(int i = start; i < end; i++){
-			double[] pairMinMax = (double[]) futurePartials.get(i).get();
-			min = Math.min(min, pairMinMax[0]);
-			max = Math.max(max, pairMinMax[1]);
-		}
-		computeBins(min, max);
+	public Callable<Object> getPartialBuildTask(FrameBlock in, int startRow, int blockSize, HashMap<Integer, Object> ret){
+		return new BinPartialBuildTask(in, _colID, startRow, blockSize, ret);
 	}
 
 	@Override
-	public List<DependencyTask<?>> getBuildTasks(FrameBlock in, int blockSize) {
-		List<Callable<Object>> tasks = new ArrayList<>();
-		tasks.add(new ColumnBinBuildTask(this, in));
-		return DependencyThreadPool.createDependencyTasks(tasks, null);
+	public Callable<Object> getPartialMergeBuildTask(HashMap<Integer, ?> ret){
+		return new BinMergePartialBuildTask(this, ret);
 	}
+
 
 	public void computeBins(double min, double max) {
 		// ensure allocated internal transformation metadata
@@ -291,20 +277,49 @@ public class ColumnEncoderBin extends ColumnEncoder {
 		private final int _blockSize;
 		private final int _startRow;
 		private final int _colID;
+		private final HashMap<Integer, Object> _partialMinMax;
 
 		// if a pool is passed the task may be split up into multiple smaller tasks.
-		protected BinPartialBuildTask(FrameBlock input, int colID, int startRow, int blocksize){
+		protected BinPartialBuildTask(FrameBlock input, int colID, int startRow, int blocksize,
+									  HashMap<Integer, Object> partialMinMax){
 			_input = input;
 			_blockSize = blocksize;
 			_colID = colID;
 			_startRow = startRow;
+			_partialMinMax = partialMinMax;
 		}
 
 		@Override
 		public double[] call() throws Exception {
-			return getMinMaxOfCol(_input, _colID, _startRow, _blockSize);
+			_partialMinMax.put(_startRow, getMinMaxOfCol(_input, _colID, _startRow, _blockSize));
+			return null;
 		}
 	}
+
+	private static class BinMergePartialBuildTask implements Callable<Object>{
+		private final HashMap<Integer, ?> _partialMaps;
+		private final ColumnEncoderBin _encoder;
+
+		private BinMergePartialBuildTask(ColumnEncoderBin encoderBin,
+											HashMap<Integer, ?> partialMaps) {
+			_partialMaps = partialMaps;
+			_encoder = encoderBin;
+		}
+
+		@Override
+		public Object call() throws Exception {
+			double min = Double.POSITIVE_INFINITY;
+			double max = Double.NEGATIVE_INFINITY;
+			for(Object minMax: _partialMaps.values()){
+				min = Math.min(min, ((double[]) minMax)[0]);
+				max = Math.max(max, ((double[]) minMax)[1]);
+			}
+			_encoder.computeBins(min, max);
+			return null;
+		}
+	}
+
+
 
 	private static class ColumnBinBuildTask implements Callable<Object> {
 

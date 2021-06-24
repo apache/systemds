@@ -47,18 +47,6 @@ public class ColumnEncoderPassThrough extends ColumnEncoder {
 		// do nothing
 	}
 
-
-	@Override
-	public List<Callable<Object>> getPartialBuildTasks(FrameBlock in, int blockSize) {
-		// do nothing
-		return null;
-	}
-
-	@Override
-	public void mergeBuildPartial(List<Future<Object>> futurePartials, int start, int end) {
-
-	}
-
 	@Override
 	public List<DependencyTask<?>> getBuildTasks(FrameBlock in, int blockSize) {
 		return null;

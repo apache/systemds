@@ -171,7 +171,12 @@ public abstract class ColumnEncoder implements Externalizable, Encoder, Comparab
 
 	public abstract void mergeBuildPartial(List<Future<Object>> futurePartials, int start, int end)
 		throws ExecutionException, InterruptedException;
-	
+
+	/*
+	Returns a Dependency Task List such that if executed the encoder is built.
+	Last Task in the list shall only complete if all previous tasks are done.
+	This is so that we can use the last task as a dependency for the whole build, reducing unnecessary dependencies.
+	 */
 	public abstract List<DependencyTask<?>> getBuildTasks(FrameBlock in, int blockSize);
 
 	public List<DependencyTask<?>> getApplyTasks(FrameBlock in, MatrixBlock out, int outputCol) {
@@ -181,12 +186,6 @@ public abstract class ColumnEncoder implements Externalizable, Encoder, Comparab
 	}
 
 	public List<DependencyTask<?>> getApplyTasks(MatrixBlock in, MatrixBlock out, int outputCol) {
-		List<Callable<Object>> tasks = new ArrayList<>();
-		tasks.add(new ColumnApplyTask(this, in, out, outputCol));
-		return DependencyThreadPool.createDependencyTasks(tasks, null);
-	}
-
-	public List<DependencyTask<?>> getEncodeTasks(MatrixBlock in, MatrixBlock out, int outputCol) {
 		List<Callable<Object>> tasks = new ArrayList<>();
 		tasks.add(new ColumnApplyTask(this, in, out, outputCol));
 		return DependencyThreadPool.createDependencyTasks(tasks, null);

@@ -59,9 +59,10 @@ public class TransformFrameBuildMultithreadedTest  extends AutomatedTestBase {
 	private final static String SPEC8b = "homes3/homes.tfspec_hash2.json";
 	private final static String SPEC9 = "homes3/homes.tfspec_hash_recode.json";
 	private final static String SPEC9b = "homes3/homes.tfspec_hash_recode2.json";
+	private final static String SPEC10 = "homes3/homes.tfspec_recode_bin.json";
 
 	public enum TransformType {
-		RECODE, DUMMY, RECODE_DUMMY, BIN, BIN_DUMMY, HASH, HASH_RECODE,
+		RECODE, DUMMY, RECODE_DUMMY, BIN, BIN_DUMMY, HASH, HASH_RECODE, RECODE_BIN,
 	}
 
 	@Override
@@ -83,6 +84,11 @@ public class TransformFrameBuildMultithreadedTest  extends AutomatedTestBase {
 	@Test
 	public void testHomesRecodeDummyCodeIDsSingleNodeCSV() {
 		runTransformTest(Types.ExecMode.SINGLE_NODE, "csv", TransformType.RECODE_DUMMY, false);
+	}
+
+	@Test
+	public void testHomesRecodeBinningIDsSingleNodeCSV() {
+		runTransformTest(Types.ExecMode.SINGLE_NODE, "csv", TransformType.RECODE_BIN, false);
 	}
 
 	@Test
@@ -140,6 +146,10 @@ public class TransformFrameBuildMultithreadedTest  extends AutomatedTestBase {
 				SPEC = colnames ? SPEC9b : SPEC9;
 				DATASET = DATASET1;
 				break;
+			case RECODE_BIN:
+				SPEC = colnames ? SPEC10 : SPEC10;
+				DATASET = DATASET1;
+				break;
 		}
 
 		if (!ofmt.equals("csv"))
@@ -163,8 +173,10 @@ public class TransformFrameBuildMultithreadedTest  extends AutomatedTestBase {
 			MultiColumnEncoder encoderM = EncoderFactory.createEncoder(specSb.toString(), 
 					input.getColumnNames(), input.getNumColumns(), null);
 
+			MultiColumnEncoder.BUILD_BLOCKSIZE = 10;
 			encoderS.build(input, 1);
 			encoderM.build(input, 12);
+
 			if (type == TransformType.RECODE) {
 				List<ColumnEncoderRecode> encodersS = encoderS.getColumnEncoders(ColumnEncoderRecode.class);
 				List<ColumnEncoderRecode> encodersM = encoderM.getColumnEncoders(ColumnEncoderRecode.class);

@@ -26,6 +26,7 @@ import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -147,8 +148,21 @@ public class ColumnEncoderRecode extends ColumnEncoder {
 	@Override
 	public List<DependencyTask<?>> getBuildTasks(FrameBlock in, int blockSize){
 		List<Callable<Object>> tasks = new ArrayList<>();
-		tasks.add(new ColumnRecodeBuildTask(this, in));
-		return DependencyThreadPool.createDependencyTasks(tasks, null);
+		List<List<? extends Callable<?>>> dep = null;
+		if(blockSize == -1 || blockSize >= in.getNumRows()){
+			tasks.add(new ColumnRecodeBuildTask(this, in));
+		}else{
+			HashMap<Integer, HashMap<String, Long>> partialMaps = new HashMap<>();
+			for(int i = 0; i < in.getNumRows(); i = i + blockSize)
+				tasks.add(new RecodePartialBuildTask(in, _colID, i, blockSize, partialMaps));
+			if(in.getNumRows() % blockSize != 0)
+				tasks.add(new RecodePartialBuildTask(in, _colID, in.getNumRows() - in.getNumRows() % blockSize,
+						-1, partialMaps));
+			tasks.add(new RecodeMergePartialBuildTask(this, partialMaps));
+			dep = new ArrayList<>(Collections.nCopies(tasks.size()-1, null));
+			dep.add(tasks.subList(0, tasks.size()-1));
+		}
+		return DependencyThreadPool.createDependencyTasks(tasks, dep);
 	}
 	
 	
@@ -344,22 +358,64 @@ public class ColumnEncoderRecode extends ColumnEncoder {
 		private final int _blockSize;
 		private final int _startRow;
 		private final int _colID;
+		private final HashMap<Integer, HashMap<String, Long>> _partialMaps;
 
-		// if a pool is passed the task may be split up into multiple smaller tasks.
 		protected RecodePartialBuildTask(FrameBlock input, int colID, int startRow, int blocksize) {
 			_input = input;
 			_blockSize = blocksize;
 			_colID = colID;
 			_startRow = startRow;
+			_partialMaps = null;
 		}
+
+		protected RecodePartialBuildTask(FrameBlock input, int colID, int startRow, int blocksize,
+											HashMap<Integer, HashMap<String, Long>> partialMaps) {
+			_input = input;
+			_blockSize = blocksize;
+			_colID = colID;
+			_startRow = startRow;
+			_partialMaps = partialMaps;
+		}
+
 
 		@Override
 		public HashMap<String, Long> call() throws Exception {
 			HashMap<String, Long> partialMap = new HashMap<>();
 			makeRcdMap(_input, partialMap, _colID, _startRow, _blockSize);
+			if(_partialMaps != null){
+				synchronized (_partialMaps){
+					_partialMaps.put(_startRow, partialMap);
+				}
+				return null;
+			}
 			return partialMap;
 		}
 	}
+
+	private static class RecodeMergePartialBuildTask implements Callable<Object>{
+		private final HashMap<Integer, HashMap<String, Long>> _partialMaps;
+		private final ColumnEncoderRecode _encoder;
+
+		private RecodeMergePartialBuildTask(ColumnEncoderRecode encoderRecode,
+											HashMap<Integer, HashMap<String, Long>> partialMaps) {
+			_partialMaps = partialMaps;
+			_encoder = encoderRecode;
+		}
+
+		@Override
+		public Object call() throws Exception {
+			HashMap<String, Long> rcdMap = _encoder.getRcdMap();
+			_partialMaps.forEach((start_row, map) -> {
+				map.forEach((k, v) -> {
+					if(!rcdMap.containsKey(k))
+						putCode(rcdMap, k);
+				});
+			});
+			_encoder._rcdMap = rcdMap;
+			return null;
+		}
+	}
+
 
 	private static class ColumnRecodeBuildTask implements Callable<Object> {
 

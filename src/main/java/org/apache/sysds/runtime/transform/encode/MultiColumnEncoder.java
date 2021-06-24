@@ -172,7 +172,7 @@ public class MultiColumnEncoder implements Encoder {
 	private void buildMTNew(FrameBlock in, int k){
 		List<DependencyTask<?>> tasks = new ArrayList<>();
 		for(ColumnEncoderComposite columnEncoder : _columnEncoders){
-			tasks.addAll(columnEncoder.getBuildTasks(in, -1));
+			tasks.addAll(columnEncoder.getBuildTasks(in, BUILD_BLOCKSIZE));
 		}
 		DependencyThreadPool pool = new DependencyThreadPool(k);
 		try {

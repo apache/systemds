@@ -72,8 +72,6 @@ public class CompressedMatrixBlockFactory {
 	private int phase = 0;
 	/** Compression information gathered through the sampling, used for the actual compression decided */
 	private CompressedSizeInfo coCodeColGroups;
-	/** The workload tree that specify the instructions that use this compressed object */
-	private WTreeRoot root;
 	/** The main cost estimator used for the compression */
 	private ICostEstimate costEstimator;
 
@@ -188,6 +186,7 @@ public class CompressedMatrixBlockFactory {
 
 		_stats.denseSize = MatrixBlock.estimateSizeInMemory(mb.getNumRows(), mb.getNumColumns(), 1.0);
 		_stats.originalSize = mb.getInMemorySize();
+
 		res = new CompressedMatrixBlock(mb); // copy metadata.
 		classifyPhase();
 		if(coCodeColGroups == null)

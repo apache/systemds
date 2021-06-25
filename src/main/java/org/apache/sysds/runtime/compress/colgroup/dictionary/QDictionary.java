@@ -502,8 +502,7 @@ public class QDictionary extends ADictionary {
 	}
 
 	@Override
-	public void preaggValuesFromDense(int numVals, int[] colIndexes, int[] aggregateColumns, double[] b, double[] ret,
-		int cut) {
+	public ADictionary preaggValuesFromDense(int numVals, int[] colIndexes, int[] aggregateColumns, double[] b, int cut) {
 		throw new NotImplementedException();
 	}
 

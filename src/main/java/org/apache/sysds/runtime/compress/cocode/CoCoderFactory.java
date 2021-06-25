@@ -30,7 +30,7 @@ public class CoCoderFactory {
 	 * The Valid coCoding techniques
 	 */
 	public enum PartitionerType {
-		BIN_PACKING, STATIC, PRIORITY_QUE, AUTO;
+		BIN_PACKING, STATIC, PRIORITY_QUE, GREEDY, AUTO;
 	}
 
 	/**
@@ -59,14 +59,16 @@ public class CoCoderFactory {
 	private static AColumnCoCoder createColumnGroupPartitioner(PartitionerType type, CompressedSizeEstimator est,
 		ICostEstimate costEstimator, CompressionSettings cs) {
 		switch(type) {
-			case BIN_PACKING:
-				return new CoCodeBinPacking(est, costEstimator, cs);
-			case STATIC:
-				return new CoCodeStatic(est, costEstimator, cs);
 			case AUTO:
 				// TODO make decision better depending on how much time is allocated for the compression
 				// for instance if the compressed object is used for a million instructions, it might be good to
 				// search for a really good compression even if it take longer.
+			case GREEDY:
+				return new CoCodeGreedy(est,costEstimator, cs);
+			case BIN_PACKING:
+				return new CoCodeBinPacking(est, costEstimator, cs);
+			case STATIC:
+				return new CoCodeStatic(est, costEstimator, cs);
 			case PRIORITY_QUE:
 				return new CoCodePriorityQue(est, costEstimator, cs);
 			default:

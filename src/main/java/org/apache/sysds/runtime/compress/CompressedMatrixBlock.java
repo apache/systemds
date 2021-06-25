@@ -527,11 +527,13 @@ public class CompressedMatrixBlock extends MatrixBlock {
 	@Override
 	public MatrixBlock aggregateBinaryOperations(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret,
 		AggregateBinaryOperator op) {
-		return aggregateBinaryOperations(m1, m2, ret, op, false, false);
+		return  aggregateBinaryOperations(m1, m2, ret, op, false, false);
 	}
 
 	public MatrixBlock aggregateBinaryOperations(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret,
 		AggregateBinaryOperator op, boolean transposeLeft, boolean transposeRight) {
+
+		// Timing time = new Timing(true);
 
 		if(m1 instanceof CompressedMatrixBlock && m2 instanceof CompressedMatrixBlock) {
 			return doubleCompressedAggregateBinaryOperations((CompressedMatrixBlock) m1, (CompressedMatrixBlock) m2,
@@ -581,6 +583,11 @@ public class CompressedMatrixBlock extends MatrixBlock {
 		else {
 			ret = CLALibLeftMultBy.leftMultByMatrix(this, that, ret, op.getNumThreads());
 		}
+
+		// double t = time.stop();
+		// LOG.error("MM: Time block w/ sharedDim: " + m1.getNumColumns() + " rowLeft: " + m1.getNumRows() + "
+		// colRight:"
+		// + m2.getNumColumns() + " in " + t + "ms.");
 
 		if(transposeOutput) {
 			ReorgOperator r_op = new ReorgOperator(SwapIndex.getSwapIndexFnObject(), op.getNumThreads());
@@ -1074,11 +1081,11 @@ public class CompressedMatrixBlock extends MatrixBlock {
 
 	// @Override
 	// public MatrixBlock aggregateBinaryOperations(MatrixIndexes m1Index, MatrixBlock m1Value, MatrixIndexes m2Index,
-	// 	MatrixBlock m2Value, MatrixBlock result, AggregateBinaryOperator op) {
-	// 	if(m2Value == this )
-	// 		return m2Value.aggregateBinaryOperations(m1Value, m2Value, op);
-	// 	else 
-	// 		return m1Value.aggregateBinaryOperations(m1Value, m2Value, op);
+	// MatrixBlock m2Value, MatrixBlock result, AggregateBinaryOperator op) {
+	// if(m2Value == this )
+	// return m2Value.aggregateBinaryOperations(m1Value, m2Value, op);
+	// else
+	// return m1Value.aggregateBinaryOperations(m1Value, m2Value, op);
 	// }
 
 	@Override

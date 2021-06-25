@@ -40,6 +40,8 @@ public final class CostEstimatorFactory {
 			case AUTO:
 				if(root != null) {
 					CostEstimatorBuilder b = new CostEstimatorBuilder(root);
+					if(LOG.isDebugEnabled())
+						LOG.debug(b);
 					return b.create(nRows, nCols);
 				}
 				else

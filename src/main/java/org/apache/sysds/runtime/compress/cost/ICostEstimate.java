@@ -101,11 +101,4 @@ public interface ICostEstimate extends Serializable {
 	 * @return If the joining should be analyzed.
 	 */
 	public boolean shouldAnalyze(CompressedSizeInfoColGroup g1, CompressedSizeInfoColGroup g2);
-
-
-	/**
-	 * Heuristic function that define if compression should be tried
-	 * @return boolean specifying if we should try to compress
-	 */
-	public boolean shouldTryToCompress();
 }

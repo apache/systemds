@@ -19,16 +19,11 @@
 
 package org.apache.sysds.runtime.compress.workload;
 
-import java.util.ArrayList;
-import java.util.List;
-
 /**
  * A Node in the WTree, this is used for any nodes that are not the root.
  */
 public class WTreeNode extends AWTreeNode {
 	
-	private final List<Op> _ops = new ArrayList<>();
-
 	private final int _reps;
 
 	public WTreeNode(WTNodeType type, int reps) {
@@ -36,33 +31,8 @@ public class WTreeNode extends AWTreeNode {
 		_reps = reps;
 	}
 
-	public List<Op> getOps() {
-		return _ops;
-	}
-
-	public void addOp(Op op) {
-		_ops.add(op);
-	}
-
 	public int getReps(){
 		return _reps;
 	}
 
-	@Override
-	public boolean isEmpty() {
-		return _ops.isEmpty() && super.isEmpty();
-	}
-
-	@Override
-	protected String explain(int level) {
-		StringBuilder sb = new StringBuilder();
-		sb.append(super.explain(level));
-		for(Op hop : _ops) {
-			for(int i = 0; i < level + 1; i++)
-				sb.append("--");
-			sb.append(hop.toString());
-			sb.append("\n");
-		}
-		return sb.toString();
-	}
 }

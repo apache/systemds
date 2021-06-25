@@ -194,7 +194,7 @@ public abstract class CompressedSizeEstimator {
 		final int g2V = g2.getNumVals();
 		if(g1V * g2V < 0 || g1V * g2V > getNumRows())
 			return null;
-		else if(joined.length == 2 || (g1.getMap() == null && g2V != 0) || (g2.getMap() == null && g2V != 0))
+		else if((g1.getMap() == null && g2V != 0) || (g2.getMap() == null && g2V != 0))
 			return estimateCompressedColGroupSize(joined, (g1V + 1) * (g2V + 1));
 		else
 			return estimateJoinCompressedSize(joined, g1, g2);

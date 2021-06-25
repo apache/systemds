@@ -472,6 +472,11 @@ public class ColGroupRLE extends ColGroupOffset {
 	}
 
 	@Override
+	public void preAggregateDense(MatrixBlock m, MatrixBlock preAgg, int rl, int ru, int vl, int vu){
+		throw new NotImplementedException();
+	}
+
+	@Override
 	public boolean sameIndexStructure(ColGroupCompressed that) {
 		return that instanceof ColGroupRLE && ((ColGroupRLE) that)._data == _data;
 	}

@@ -70,51 +70,97 @@ public class WorkloadTest {
 	public boolean withRewrites;
 	@Parameterized.Parameter(10)
 	public String scriptName;
+	@Parameterized.Parameter(11)
+	public Map<String, String> args;
 
 	@Parameters
 	public static Collection<Object[]> data() {
 		ArrayList<Object[]> tests = new ArrayList<>();
+		Map<String, String> args = new HashMap<>();
+		args.put("$1", testFile);
+
 		// Simple tests no loops verifying basic behavior
-		tests.add(new Object[] {0, 0, 0, 0, 0, 0, 1, 0, false, false, "sum.dml"});
-		tests.add(new Object[] {0, 0, 0, 0, 0, 0, 1, 0, false, false, "mean.dml"});
-		tests.add(new Object[] {0, 0, 0, 0, 0, 0, 1, 1, false, false, "plus.dml"});
-		tests.add(new Object[] {0, 1, 0, 0, 0, 0, 1, 0, false, false, "sliceCols.dml"});
-		tests.add(new Object[] {0, 0, 0, 0, 0, 0, 2, 0, false, false, "sliceIndex.dml"});
-		tests.add(new Object[] {0, 0, 0, 1, 0, 0, 0, 0, false, false, "leftMult.dml"});
-		tests.add(new Object[] {0, 0, 0, 0, 1, 0, 1, 0, false, false, "rightMult.dml"});
-		tests.add(new Object[] {0, 0, 0, 1, 0, 0, 0, 0, false, false, "TLeftMult.dml"});
+		tests.add(new Object[] {0, 0, 0, 0, 0, 0, 1, 0, false, false, "sum.dml", args});
+		tests.add(new Object[] {0, 0, 0, 0, 0, 0, 1, 0, false, false, "mean.dml", args});
+		tests.add(new Object[] {0, 0, 0, 0, 0, 0, 1, 1, false, false, "plus.dml", args});
+		tests.add(new Object[] {0, 1, 0, 0, 0, 0, 1, 0, false, false, "sliceCols.dml", args});
+		tests.add(new Object[] {0, 0, 0, 0, 0, 0, 2, 0, false, false, "sliceIndex.dml", args});
+		tests.add(new Object[] {0, 0, 0, 1, 0, 0, 0, 0, false, false, "leftMult.dml", args});
+		tests.add(new Object[] {0, 0, 0, 0, 1, 0, 1, 0, false, false, "rightMult.dml", args});
+		tests.add(new Object[] {0, 0, 0, 1, 0, 0, 0, 0, false, false, "TLeftMult.dml", args});
 
 		// https://issues.apache.org/jira/browse/SYSTEMDS-3025 Transposed layout.
 		// (the t right mult here would be much faster if a transposed layout is allowed.)
 		// Also the decompression is not detected.
-		tests.add(new Object[] {0, 0, 0, 0, 1, 0, 1, 0, false, false, "TRightMult.dml"});
+		// nr 8:
+		tests.add(new Object[] {0, 0, 0, 0, 1, 0, 1, 0, false, false, "TRightMult.dml", args});
 
 		// Loops:
-		tests.add(new Object[] {0, 0, 0, 10, 0, 0, 0, 0, true, false, "loop/leftMult.dml"});
-		tests.add(new Object[] {0, 0, 0, 100, 0, 0, 0, 0, true, false, "loop/leftMultStaticLoop.dml"});
-		tests.add(new Object[] {0, 0, 0, 10, 0, 0, 0, 0, true, false, "loop/leftMultWhile.dml"});
+		tests.add(new Object[] {0, 0, 0, 11, 0, 0, 0, 0, true, false, "loop/leftMult.dml", args});
+		tests.add(new Object[] {0, 0, 0, 101, 0, 0, 0, 0, true, false, "loop/leftMultStaticLoop.dml", args});
+		tests.add(new Object[] {0, 0, 0, 10, 0, 0, 0, 0, true, false, "loop/leftMultWhile.dml", args});
 
 		// functions:
 
 		// Builtins:
-		tests.add(new Object[] {0, 0, 0, 0, 0, 0, 7, 0, true, false, "functions/scale.dml"});
-		tests.add(new Object[] {0, 0, 0, 0, 0, 0, 5, 0, true, true, "functions/scale.dml"});
-		tests.add(new Object[] {0, 0, 0, 0, 0, 0, 8, 0, true, false, "functions/scale_continued.dml"});
-		tests.add(new Object[] {0, 0, 0, 0, 0, 0, 6, 0, true, true, "functions/scale_continued.dml"});
-		tests.add(new Object[] {0, 0, 0, 0, 0, 0, 2, 0, false, true, "functions/scale_onlySide.dml"});
-		tests.add(new Object[] {0, 0, 0, 0, 0, 0, 8, 0, true, false, "functions/scale_onlySide.dml"});
+		// nr 11:
+		tests.add(new Object[] {0, 0, 0, 0, 0, 0, 7, 0, true, false, "functions/scale.dml", args});
+		tests.add(new Object[] {0, 0, 0, 0, 0, 0, 5, 0, true, true, "functions/scale.dml", args});
+		tests.add(new Object[] {0, 0, 0, 0, 0, 0, 8, 0, true, false, "functions/scale_continued.dml", args});
+		tests.add(new Object[] {0, 0, 0, 0, 0, 0, 6, 0, true, true, "functions/scale_continued.dml", args});
+		tests.add(new Object[] {0, 0, 0, 0, 0, 0, 2, 0, false, true, "functions/scale_onlySide.dml", args});
+		tests.add(new Object[] {0, 0, 0, 0, 0, 0, 8, 0, true, false, "functions/scale_onlySide.dml", args});
 
-		tests.add(new Object[] {0, 0, 0, 0, 1, 1, 9, 0, true, false, "functions/pca.dml"});
-		tests.add(new Object[] {0, 0, 0, 0, 1, 1, 7, 0, true, true, "functions/pca.dml"});
+		tests.add(new Object[] {0, 0, 0, 0, 1, 1, 9, 0, true, false, "functions/pca.dml", args});
+		tests.add(new Object[] {0, 0, 0, 0, 1, 1, 7, 0, true, true, "functions/pca.dml", args});
 
-		tests.add(new Object[] {0, 0, 0, 1, 1, 2, 2, 0, true, true, "functions/lm.dml"});
-		tests.add(new Object[] {0, 0, 0, 1, 1, 1, 2, 0, true, true, "functions/lm_y.dml"});
+		args = new HashMap<>();
+		args.put("$1", testFile);
+		args.put("$2", "FALSE");
+		args.put("$3", "0");
+
+		tests.add(new Object[] {0, 0, 0, 1, 1, 1, 6, 0, true, false, "functions/lmDS.dml", args});
+		tests.add(new Object[] {0, 0, 0, 1, 0, 1, 0, 0, true, true, "functions/lmDS.dml", args});
+		tests.add(new Object[] {0, 0, 0, 1, 10, 10, 1, 0, true, true, "functions/lmCG.dml", args});
+
+		args = new HashMap<>();
+		args.put("$1", testFile);
+		args.put("$2", "TRUE");
+		args.put("$3", "0");
+		tests.add(new Object[] {0, 0, 1, 1, 1, 1, 0, 0, true, true, "functions/lmDS.dml", args});
+		tests.add(new Object[] {0, 0, 1, 1, 11, 10, 1, 0, true, true, "functions/lmCG.dml", args});
+
+		args = new HashMap<>();
+		args.put("$1", testFile);
+		args.put("$2", "TRUE");
+		args.put("$3", "1");
+		tests.add(new Object[] {0, 0, 1, 1, 1, 1, 1, 0, true, true, "functions/lmDS.dml", args});
+		tests.add(new Object[] {0, 0, 1, 1, 11, 10, 2, 0, true, true, "functions/lmCG.dml", args});
+
+		args = new HashMap<>();
+		args.put("$1", testFile);
+		args.put("$2", "TRUE");
+		args.put("$3", "2");
+		tests.add(new Object[] {0, 0, 1, 1, 1, 1, 3, 0, true, true, "functions/lmDS.dml", args});
+		tests.add(new Object[] {0, 0, 1, 1, 11, 10, 4, 0, true, true, "functions/lmCG.dml", args});
+
+		args = new HashMap<>();
+		args.put("$1", testFile);
+		args.put("$2", "FALSE");
+		// Currently l2svm detects that decompression is needed after right mult
+		tests.add(new Object[] {0, 0, 10, 11, 10, 0, 1, 0, true, true, "functions/l2svm.dml", args});
+
+		args = new HashMap<>();
+		args.put("$1", testFile);
+		args.put("$2", "100");
+		args.put("$3", "16");
+		tests.add(new Object[] {0, 0, 100, 0, 100, 0, 100, 0, true, true, "mmrbem+.dml", args});
 
 		return tests;
 	}
 
 	@Test
-	public void runWithoutRewrites() {
+	public void runWorkloadAnalysisTest() {
 		try {
 
 			DMLProgram prog = parse(scriptName);
@@ -151,7 +197,7 @@ public class WorkloadTest {
 			itc.getCompressedMultiplications());
 		Assert.assertEquals(errorString + "dictionaryOps", dictionaryOps, itc.getDictionaryOps());
 		Assert.assertEquals(errorString + "lookup", indexing, itc.getIndexing());
-		Assert.assertEquals(shouldCompress, ceb.create(1000000, 10).shouldTryToCompress());
+		Assert.assertEquals(shouldCompress, ceb.shouldTryToCompress());
 	}
 
 	private WTreeRoot getWorkloadTree(DMLProgram prog) {
@@ -167,9 +213,6 @@ public class WorkloadTest {
 			boolean isFile = true;
 			String filePath = basePath + name;
 			String dmlScript = DMLScript.readDMLScript(isFile, filePath);
-
-			Map<String, String> args = new HashMap<>();
-			args.put("$1", testFile);
 			return ParserFactory.createParser().parse(DMLOptions.defaultOptions.filePath, dmlScript, args);
 
 		}

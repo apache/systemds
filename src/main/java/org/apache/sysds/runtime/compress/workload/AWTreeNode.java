@@ -33,8 +33,8 @@ import org.apache.commons.logging.LogFactory;
  * away the rest of the DAG.
  * 
  */
-public abstract class AWTreeNode  {
-	
+public abstract class AWTreeNode {
+
 	protected static final Log LOG = LogFactory.getLog(AWTreeNode.class.getName());
 
 	public enum WTNodeType {
@@ -47,6 +47,7 @@ public abstract class AWTreeNode  {
 
 	private final WTNodeType _type;
 	private final List<WTreeNode> _children = new ArrayList<>();
+	private final List<Op> _ops = new ArrayList<>();
 
 	public AWTreeNode(WTNodeType type) {
 		_type = type;
@@ -64,6 +65,18 @@ public abstract class AWTreeNode  {
 		_children.add(node);
 	}
 
+	public List<Op> getOps() {
+		return _ops;
+	}
+
+	public void addOp(Op op) {
+		_ops.add(op);
+	}
+
+	public boolean isEmpty() {
+		return _ops.isEmpty() && _children.isEmpty();
+	}
+
 	protected String explain(int level) {
 		StringBuilder sb = new StringBuilder();
 		// append indentation
@@ -72,15 +85,17 @@ public abstract class AWTreeNode  {
 		// append node summary
 		sb.append(_type.name());
 		sb.append("\n");
+		for(Op hop : _ops) {
+			for(int i = 0; i < level + 1; i++)
+				sb.append("--");
+			sb.append(hop.toString());
+			sb.append("\n");
+		}
 		// append child nodes
 		if(!_children.isEmpty())
 			for(AWTreeNode n : _children)
 				sb.append(n.explain(level + 1));
 		return sb.toString();
-	}
-
-	public boolean isEmpty() {
-		return _children.isEmpty();
 	}
 
 	@Override

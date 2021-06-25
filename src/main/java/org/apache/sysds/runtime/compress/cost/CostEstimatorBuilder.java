@@ -28,6 +28,8 @@ import org.apache.sysds.hops.Hop;
 import org.apache.sysds.hops.IndexingOp;
 import org.apache.sysds.hops.ParameterizedBuiltinOp;
 import org.apache.sysds.runtime.compress.workload.Op;
+import org.apache.sysds.runtime.compress.workload.OpMetadata;
+import org.apache.sysds.runtime.compress.workload.OpOverlappingDecompress;
 import org.apache.sysds.runtime.compress.workload.OpSided;
 import org.apache.sysds.runtime.compress.workload.WTreeNode;
 import org.apache.sysds.runtime.compress.workload.WTreeRoot;
@@ -42,7 +44,8 @@ public final class CostEstimatorBuilder implements Serializable {
 
 	public CostEstimatorBuilder(WTreeRoot root) {
 		counter = new InstructionTypeCounter();
-
+		for(Op o : root.getOps())
+			addOp(1, o, counter);
 		for(WTreeNode n : root.getChildNodes())
 			addNode(1, n, counter);
 	}
@@ -66,20 +69,27 @@ public final class CostEstimatorBuilder implements Serializable {
 	}
 
 	private static void addOp(int count, Op o, InstructionTypeCounter counter) {
-		if(o.isDecompressing())
-			counter.decompressions += count;
 		if(o instanceof OpSided) {
 			OpSided os = (OpSided) o;
 			if(os.isLeftMM())
 				counter.leftMultiplications += count;
 			else if(os.isRightMM()) {
 				counter.rightMultiplications += count;
-				// counter.overlappingDecompressions += count;
+				if(os.isDecompressing())
+					counter.overlappingDecompressions += count;
 			}
 			else
 				counter.compressedMultiplications += count;
 		}
+		else if(o instanceof OpMetadata) {
+			// ignore it
+		}
+		else if(o instanceof OpOverlappingDecompress) {
+			counter.overlappingDecompressions += count;
+		}
 		else {
+			if(o.isDecompressing())
+				counter.decompressions += count;
 			Hop h = o.getHop();
 			if(h instanceof AggUnaryOp) {
 				AggUnaryOp agop = (AggUnaryOp) o.getHop();
@@ -101,13 +111,28 @@ public final class CostEstimatorBuilder implements Serializable {
 				else
 					counter.decompressions += count;
 			}
-			else if(h instanceof ParameterizedBuiltinOp){
+			else if(h instanceof ParameterizedBuiltinOp) {
 				// ParameterizedBuiltinOp pop = (ParameterizedBuiltinOp) h;
 				counter.decompressions += count;
 			}
 			else
 				counter.dictionaryOps += count;
 		}
+	}
+
+	public boolean shouldTryToCompress() {
+		int numberOps = 0;
+		numberOps += counter.scans + counter.leftMultiplications * 2 + counter.rightMultiplications +
+			counter.compressedMultiplications * 4 + counter.dictionaryOps;
+		numberOps -= counter.decompressions + counter.overlappingDecompressions;
+		return numberOps > 4;
+
+	}
+
+	public boolean shouldUseOverlap() {
+		final int decompressionsOverall = counter.overlappingDecompressions + counter.decompressions;
+		return decompressionsOverall == 0 ||
+			decompressionsOverall * 10 < counter.leftMultiplications * 9 + counter.dictionaryOps;
 	}
 
 	@Override

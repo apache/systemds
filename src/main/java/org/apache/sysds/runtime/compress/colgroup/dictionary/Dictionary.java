@@ -474,8 +474,9 @@ public class Dictionary extends ADictionary {
 	}
 
 	@Override
-	public void preaggValuesFromDense(int numVals, int[] colIndexes, int[] aggregateColumns, double[] b, double[] ret,
+	public Dictionary preaggValuesFromDense(int numVals, int[] colIndexes, int[] aggregateColumns, double[] b, 
 		int cut) {
+		double[] ret = new double[numVals * aggregateColumns.length];
 		for(int k = 0, off = 0;
 			k < numVals * colIndexes.length;
 			k += colIndexes.length, off += aggregateColumns.length) {
@@ -487,6 +488,7 @@ public class Dictionary extends ADictionary {
 						ret[off + i] += v * b[idb + aggregateColumns[i]];
 			}
 		}
+		return new Dictionary(ret);
 	}
 
 	@Override

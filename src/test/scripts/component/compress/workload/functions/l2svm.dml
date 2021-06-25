@@ -22,5 +22,5 @@
 A = read($1)
 b = rand(rows= nrow(A), cols = 1, min = 0, max =1)
 b = round(b)
-m = lm(X=b,y=A, verbose=TRUE)
+m = l2svm(X=A ,Y=b, verbose=$2)
 print(mean(m))

@@ -34,8 +34,10 @@ import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupValue;
 import org.apache.sysds.runtime.compress.utils.LinearAlgebraUtils;
+import org.apache.sysds.runtime.functionobjects.Plus;
 import org.apache.sysds.runtime.matrix.data.LibMatrixReorg;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysds.runtime.util.CommonThreadPool;
 
 public class CLALibLeftMultBy {
@@ -67,7 +69,7 @@ public class CLALibLeftMultBy {
 		prepareReturnMatrix(m1, m2, ret, false);
 		if(m2.isEmpty())
 			return ret;
-		ret = leftMultByMatrix(m1.getColGroups(), m2, ret, k, m1.getNumColumns(), m1.getMaxNumValues(),
+		ret = leftMultByMatrix(m1.getColGroups(), m2, ret, k, m1.getNumColumns(), m1.getMaxNumValues().getLeft(),
 			m1.isOverlapping());
 		ret.recomputeNonZeros();
 		return ret;
@@ -223,7 +225,7 @@ public class CLALibLeftMultBy {
 	}
 
 	private static MatrixBlock leftMultByMatrix(List<AColGroup> colGroups, MatrixBlock that, MatrixBlock ret, int k,
-		int numColumns, Pair<Integer, int[]> v, boolean overlapping) {
+		int numColumns, int maxNumValues, boolean overlapping) {
 
 		if(that.isEmpty()) {
 			ret.setNonZeros(0);
@@ -237,37 +239,36 @@ public class CLALibLeftMultBy {
 				colGroups.get(j).leftMultByMatrix(that, ret);
 		else {
 			try {
-				ExecutorService pool = CommonThreadPool.get(k);
-				// compute remaining compressed column groups in parallel
-				ArrayList<Callable<Object>> tasks = new ArrayList<>();
-				// int rowBlockSize = Math.min(that.getNumRows(), 16);
-				int rowBlockSize = 1;
+				final ExecutorService pool = CommonThreadPool.get(k);
+				final ArrayList<Callable<MatrixBlock>> tasks = new ArrayList<>();
+				final int rowBlockSize = that.getNumRows() < 8 ? 1 : Math.min(Math.max(that.getNumRows() / k, 1), 8);
+
 				if(overlapping) {
-					for(int blo = 0; blo < that.getNumRows(); blo += rowBlockSize) {
-						tasks.add(new LeftMatrixMatrixMultTask(colGroups, that, ret, blo,
-							Math.min(blo + rowBlockSize, that.getNumRows()), v));
+					for(AColGroup g : colGroups) {
+						MatrixBlock tmpRet = new MatrixBlock(ret.getNumRows(), ret.getNumColumns(), false);
+						tmpRet.allocateDenseBlock();
+						for(int blo = 0; blo < that.getNumRows(); blo += rowBlockSize)
+							tasks.add(new LeftMatrixColGroupMultTask(g, that, tmpRet, blo,
+								Math.min(blo + rowBlockSize, that.getNumRows()), maxNumValues));
+
 					}
+					List<Future<MatrixBlock>> futures = pool.invokeAll(tasks);
+					pool.shutdown();
+					BinaryOperator op = new BinaryOperator(Plus.getPlusFnObject());
+					for(Future<MatrixBlock> future : futures)
+						ret.binaryOperationsInPlace(op, future.get());
 				}
 				else {
-					for(AColGroup g : colGroups) {
-						// if(g instanceof ColGroupDDC) {
-						// tasks.add(new LeftMatrixColGroupMultTask(g, that, ret, 0, that.getNumRows(), v));
-						// }
-						// else {
-
-						for(int blo = 0; blo < that.getNumRows(); blo += rowBlockSize) {
+					for(AColGroup g : colGroups)
+						for(int blo = 0; blo < that.getNumRows(); blo += rowBlockSize)
 							tasks.add(new LeftMatrixColGroupMultTask(g, that, ret, blo,
-								Math.min(blo + rowBlockSize, that.getNumRows()), v));
-						}
-						// }
-					}
+								Math.min(blo + rowBlockSize, that.getNumRows()), maxNumValues));
+
+					List<Future<MatrixBlock>> futures = pool.invokeAll(tasks);
+					pool.shutdown();
+					for(Future<MatrixBlock> future : futures)
+						future.get();
 				}
-
-				List<Future<Object>> futures = pool.invokeAll(tasks);
-
-				pool.shutdown();
-				for(Future<Object> future : futures)
-					future.get();
 			}
 			catch(InterruptedException | ExecutionException e) {
 				throw new DMLRuntimeException(e);
@@ -277,74 +278,35 @@ public class CLALibLeftMultBy {
 		return ret;
 	}
 
-	private static class LeftMatrixMatrixMultTask implements Callable<Object> {
-		private final List<AColGroup> _group;
-		private final MatrixBlock _that;
-		private final MatrixBlock _ret;
-		private final int _rl;
-		private final int _ru;
-		private final Pair<Integer, int[]> _v;
-
-		protected LeftMatrixMatrixMultTask(List<AColGroup> group, MatrixBlock that, MatrixBlock ret, int rl, int ru,
-			Pair<Integer, int[]> v) {
-			_group = group;
-			_that = that;
-			_ret = ret;
-			_rl = rl;
-			_ru = ru;
-			_v = v;
-		}
-
-		@Override
-		public Object call() {
-			try {
-				ColGroupValue.setupThreadLocalMemory(_v.getLeft());
-				int maxNCol = 0;
-				for(AColGroup g : _group)
-					if(g.getNumCols() > maxNCol)
-						maxNCol = g.getNumCols();
-
-				ColGroupValue.setupLeftMultThreadLocalMemory(maxNCol * (_ru - _rl));
-				for(int j = 0; j < _group.size(); j++)
-					_group.get(j).leftMultByMatrix(_that, _ret, _rl, _ru);
-			}
-			catch(Exception e) {
-				throw new DMLRuntimeException(e);
-			}
-			return null;
-		}
-	}
-
-	private static class LeftMatrixColGroupMultTask implements Callable<Object> {
+	private static class LeftMatrixColGroupMultTask implements Callable<MatrixBlock> {
 		private final AColGroup _group;
 		private final MatrixBlock _that;
 		private final MatrixBlock _ret;
 		private final int _rl;
 		private final int _ru;
-		private final Pair<Integer, int[]> _v;
+		private final int _maxNrValues;
 
 		protected LeftMatrixColGroupMultTask(AColGroup group, MatrixBlock that, MatrixBlock ret, int rl, int ru,
-			Pair<Integer, int[]> v) {
+			int maxNrValues) {
 			_group = group;
 			_that = that;
 			_ret = ret;
 			_rl = rl;
 			_ru = ru;
-			_v = v;
+			_maxNrValues = maxNrValues;
 		}
 
 		@Override
-		public Object call() {
-
+		public MatrixBlock call() {
 			try {
-				ColGroupValue.setupThreadLocalMemory(_v.getLeft() * (_ru - _rl));
+				ColGroupValue.setupThreadLocalMemory(_maxNrValues * (_ru - _rl));
 				ColGroupValue.setupLeftMultThreadLocalMemory(_group.getNumCols() * (_ru - _rl));
 				_group.leftMultByMatrix(_that, _ret, _rl, _ru);
 			}
 			catch(Exception e) {
 				throw new DMLRuntimeException(e);
 			}
-			return null;
+			return _ret;
 		}
 	}
 }

@@ -52,7 +52,7 @@ public class WorkloadAlgorithmTest extends AutomatedTestBase {
 
 	@Test
 	public void testMLogRegCP() {
-		runWorkloadAnalysisTest(TEST_NAME1, ExecMode.HYBRID, 2);
+		runWorkloadAnalysisTest(TEST_NAME1, ExecMode.HYBRID, 1);
 	}
 
 	@Test

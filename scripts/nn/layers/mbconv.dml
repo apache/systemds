@@ -1,0 +1,215 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+/*
+ *  Implementation of a MBConv Layer (Inverted ResNet Layer)
+ *
+ *  1.) Expansion Phase (1x1 Convolution) & BN
+ *  2.) Depthwise Convolution
+ *  3.) BatchNorm
+ *  4.) SILU Activation
+ *  5.) Global Avg Pooling
+ *  5.) Squeeze and Excitation phase
+ *  7.) Output Phase (1x1 Convolution)
+ *  8.) BatchNorm
+ *  9.) Optional Skip Add layer
+ */
+
+
+source("nn/layers/batch_norm2d.dml") as batchnorm
+source("nn/layers/conv2d_builtin.dml") as conv2d
+source("nn/layers/conv2d_depthwise.dml") as depthwise
+source("nn/layers/global_avg_pool2d.dml") as global_avg_pool
+source("nn/layers/silu.dml") as silu
+source("nn/layers/upsample2d.dml") as upsample
+
+
+forward = function(matrix[double] X, list[unknown] model, int Fin, int Fout, int Hin, int Win, int filter_width, int filter_height,
+                   int strideh, int stridew, int padh, int padw, boolean SkipConnection, int ExpansionFactor, string BNMode, double squeeze_factor)
+    return (matrix[double] layer_out, list[unknown] intermediate_outputs, list[unknown] batchnorm_updates) {
+  /*
+   * Computes the forward pass for a Swish nonlinearity layer.
+   *
+   * Performs an element-wise evaluation of `f(input) = x * \sigmoid(x)`.
+   *
+   * Inputs:
+   *  - X: Inputs, of shape (any, any).
+   *
+   * Outputs:
+   *  - out: Outputs, of same shape as `X`.
+   */
+
+
+   # Unpack parameterlist
+   W_expansion = as.matrix(model[0])
+   b_expansion = as.matrix(model[1])
+   Gamma_expansion = as.matrix(model[2])
+   Beta_expansion = as.matrix(model[3])
+   EmaMean_expansion = as.matrix(model[4])
+   EmaVar_expansion = as.matrix(model[5])
+
+   W_depth = as.matrix(model[6])
+   b_depth = as.matrix(model[7])
+   Gamma_depth = as.matrix(model[8])
+   Beta_depth = as.matrix(model[9])
+   EmaMean_depth = as.matrix(model[10])
+   EmaVar_depth = as.matrix(model[11])
+   W_squeeze = as.matrix(model[12])
+   b_squeeze = as.matrix(model[13])
+   W_excite = as.matrix(model[14])
+   b_excite = as.matrix(model[15])
+
+   W_out = as.matrix(model[16])
+   b_out = as.matrix(model[17])
+   Gamma_out = as.matrix(model[18])
+   Beta_out = as.matrix(model[19])
+   EmaMean_out = as.matrix(model[20])
+   EmaVar_out = as.matrix(model[21])
+
+   # Either produce expanded input or use identity
+   if (ExpansionFactor > 1)
+   {
+     filter_expansion = Fin * ExpansionFactor
+     [out_expansion, dim_h_exp, dim_w_exp] = conv2d::forward(X, W_expansion, b_expansion, Fin, Hin, Win, 1, 1, 1, 1, 0, 0)
+     [out_bn_expansion, bn_ema_mean_expansion, bn_ema_var_expansion, cache_mean_expansion, cache_var_expansion] = batchnorm::forward(out_expansion, Gamma_expansion, Beta_expansion, filter_expansion, Hin, Win, BNMode, EmaMean_expansion, EmaVar_expansion, 0.9, 1e-5)
+     depthwise_in = silu::forward(out_bn_expansion)
+   }
+   else
+   {
+     # dummy variables so that indexing remains constant
+     out_expansion = matrix(0, 0, 0)
+     out_bn_expansion = matrix(0, 0, 0)
+     bn_ema_mean_expansion = matrix(0, 0, 0)
+     bn_ema_var_expansion = matrix(0, 0, 0)
+     cache_mean_expansion = matrix(0, 0, 0)
+     cache_var_expansion = matrix(0, 0, 0)
+
+     filter_expansion = Fin
+     depthwise_in = X
+   }
+
+    [depth_out, depth_dim_h, depth_dim_w] = depthwise::forward(depthwise_in, W_depth, b_depth, Hin, Win, 1, filter_height, filter_width, strideh, stridew, padh, padw)
+    [depth_bn_out, depth_bn_mean, depth_bn_var, depth_cache_mean, depth_cache_var] =
+       batchnorm::forward(depth_out, Gamma_depth, Beta_depth, filter_expansion, depth_dim_h, depth_dim_w, BNMode, EmaMean_depth, EmaVar_depth, 0.9, 1e-5)
+    depth_act_out = silu::forward(depth_bn_out)
+
+    # Squeeze and Expansion
+    squeeze_dim = round(filter_expansion * squeeze_factor)
+    [pooled_out, pool_h, pool_w] = global_avg_pool::forward(depth_act_out, filter_expansion, depth_dim_h, depth_dim_w)
+    [squeeze_out, dim_squeeze_h, dim_squeeze_w] = conv2d::forward(pooled_out, W_squeeze, b_squeeze, filter_expansion, pool_h, pool_w, 1, 1, 1, 1, 0, 0)
+    [expand_out, dim_squeeze_h, dim_squeeze_w] = conv2d::forward(squeeze_out, W_excite, b_excite, squeeze_dim, dim_squeeze_h, dim_squeeze_w, 1, 1, 1, 1, 0, 0)
+    upscaled_out = upsample(expand_out, filter_expansion, dim_squeeze_h, dim_squeeze_w, depth_dim_h, depth_dim_w)
+    multiplied_out = depth_act_out * upscaled_out
+
+
+    # Output Layer
+    [conv_out, conv_dim_h, conv_dim_w] = conv2d::forward(multiplied_out, W_out, b_out, filter_expansion, depth_dim_h, depth_dim_w, 1, 1, 0, 0)
+    [conv_bn_out, conv_bn_mean, conv_bn_var, conv_cache_mean, conv_cache_var] =
+           batchnorm::forward(depth_out, Gamma_depth, Beta_depth, filter_expansion, depth_dim_h, depth_dim_w, BNMode, EmaMean_depth, EmaVar_depth, 0.9, 1e-5)
+
+   if (SkipConnection)
+   {
+        layer_out = conv_bn_out + X
+   }
+   else
+   {
+        layer_out = conv_out
+   }
+
+    output = list(out_expansion, out_bn_expansion, depthwise_in, depth_out, depth_bn_out, depth_act_out, pooled_out, squeeze_out, expand_out,
+                  upscaled_out, multiplied_out, conv_out, conv_bn_out, layer_out)
+    batchnorm_updates = list(bn_ema_mean_expansion, bn_ema_var_expansion, cache_mean_expansion, cache_var_expansion,
+                             depth_bn_mean, depth_bn_var, depth_cache_mean, depth_cache_var,
+                             conv_bn_mean, conv_bn_var, conv_cache_mean, conv_cache_var)
+}
+
+backward = function(matrix[double] dout, matrix[double] X, list[unknown] model, list[unknown] model_outputs)
+    return (matrix[double] dX, list[unknown] gradients) {
+  /*
+   * Computes the backward pass for a Swish nonlinearity layer.
+   *
+   * Inputs:
+   *  - dout: Gradient wrt `out` from upstream, of same shape as `X`.
+   *  - X: Previous input data matrix, of shape (any, any).
+   *
+   * Outputs:
+   *  - dX: Gradient wrt `X`, of same shape as `X`.
+   */
+
+    dx = matrix(0, 0, 0)
+}
+
+init = function(int Fin, int Fout, int filter_width, int filter_height, int ExpansionFactor, double SqueezeFactor,  int seed = -1)
+    return (list[unknown] mbconv_params) {
+  /*
+   * Initialize the parameters of this MBConv layer.
+   *
+   * Note: This is just a convenience function, and parameters
+   * may be initialized manually if needed.
+   *
+   * Inputs:
+   *  - Fin: Number of filters incoming to the MBConv Block.
+   *  - Fout: Number of filters this MBconv Block produces.
+   *  - filter_width: Width of the depthwise convolution filter
+   *  - filter_height: Height of the depthwise convolution filter
+   *  - ExpansionFactor: Factor of expansion of the initial Filters coming into this block
+   *  - Squeeze_factor: Factor for the squeeze and excitation layer. This factor should be between 0 and 1
+   *  - seed: The seed to initialize the weights
+   *
+   * Outputs:
+   *  - W: Weights, of shape (F, C*Hf*Wf).
+   *  - b: Biases, of shape (F, 1).
+   */
+
+  # Expansion
+  if (Expansion_factor > 1)
+  {
+    expansion_dim = Fin * ExpansionFactor
+    [W_expansion, b_expansion] = conv2d::init(Fin, expansion_dim, 1, 1, seed)
+    [Gamma_expansion, Beta_expansion, EmaMean_expansion, EmaVar_expansion] = batchnorm::init(expansion_dim)
+  }
+  else
+  {
+    # Dummy variables so that the model list indices remain the same
+    W_expansion = matrix(0, 0, 0)
+    b_expansion = matrix(0, 0, 0)
+    Gamma_expansion = matrix(0, 0, 0)
+    Beta_expansion = matrix(0, 0, 0)
+    EmaMean_expansion = matrix(0, 0, 0)
+    EmaVar_expansion = matrix(0, 0, 0)
+    expansion_dim = Fin
+  }
+
+  [W_depth, b_depth] = depthwise::init(expansion_dim, 1, filter_width, filter_height)
+  [Gamma_depth, Beta_depth, EmaMean_depth, EmaVar_depth] = batchnorm::init(expansion_dim)
+
+  squeeze_dim = round(expansion_dim * SqueezeFactor)
+  [W_squeeze, b_squeeze] = conv2d::init(expansion_dim, squeeze_dim, 1, 1, seed)
+  [W_excite, b_excite] = conv2d::init(squeeze_dim, expansion_dim, 1, 1, seed)
+
+  [W_out, b_out] = conv2d::init(expansion_dim, Fout, 1, 1, seed)
+  [Gamma_out, Beta_out, EmaMean_out, EmaVar_out] = batchnorm::init(expansion_dim)
+
+  mbconv_params = list(W_expansion, b_expansion, Gamma_expansion, Beta_expansion, EmaMean_expansion, EmaVar_expansion,
+                       W_depth, b_depth, Gamma_depth, Beta_depth, EmaMean_depth, EmaVar_depth,
+                       W_squeeze, b_squeeze, W_excite, b_excite,
+                       W_out, b_out, Gamma_out, Beta_out, EmaMean_out, EmaVar_out)
+}

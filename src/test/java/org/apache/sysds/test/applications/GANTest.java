@@ -26,6 +26,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Random;
 
+import org.apache.sysds.test.TestConfiguration;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -61,7 +62,10 @@ public class GANTest extends AutomatedTestBase
     @Override
     public void setUp()
     {
-        addTestConfiguration(TEST_CLASS_DIR, TEST_NAME);
+        //String[] out = {"accuracy"};
+        //TestConfiguration config = new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, out);
+        addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[] {"accuracy.scalar"}));
+        //addTestConfiguration(TEST_CLASS_DIR, TEST_NAME);
     }
 
     @Test
@@ -72,12 +76,13 @@ public class GANTest extends AutomatedTestBase
         fullDMLScriptName = getScript();
         List<String> proArgs = new ArrayList<>();
         proArgs.add("-args");
-        //proArgs.add("cnn");
-        proArgs.add("simple");
+        proArgs.add("cnn");
+        //proArgs.add("simple");
+        proArgs.add(output(""));
         programArgs = proArgs.toArray(new String[proArgs.size()]);
         runTest(true, EXCEPTION_NOT_EXPECTED, null, -1);
 
-        writeExpectedScalar("target_accuracy", 0.5);
+        writeExpectedScalar("accuracy", 0.5);
         compareResults( 0.1);
     }
 }

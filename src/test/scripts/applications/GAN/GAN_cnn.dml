@@ -143,7 +143,7 @@ train = function(matrix[double] X, int iterations)
             fake = rbind(fake, fake_images[1])
         }
     }
-    out_dir = "src/test/scripts/applications/GAN"
+    out_dir = "target/testTemp/applications/GAN/GANTest/"
     fake = 0.5 * fake + 0.5
     write(fake, out_dir+"/evo")
     DW_1 = as.matrix(disc_model[1])

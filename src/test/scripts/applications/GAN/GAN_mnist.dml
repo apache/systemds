@@ -29,7 +29,7 @@ source("src/test/scripts/applications/GAN/GAN_simple.dml") as GANS
 
 train = read("scripts/nn/examples/data/mnist/mnist_train.csv", format="csv")
 test = read("scripts/nn/examples/data/mnist/mnist_test.csv", format="csv")
-out_dir = ifdef($out_dir, "src/test/scripts/applications/GAN")
+out_dir = $2
 
 X_train = train[,2:ncol(train)] / 127.5 - 1
 X_test = test[,2:ncol(test)] / 127.5 - 1
@@ -45,7 +45,7 @@ if($1 == 'cnn')
 }
 else if($1 == 'simple')
 {
-    [GW1, Gb1, GW2, Gb2, DW1, Db1, DW2, Db2] = GANS::train(X_train, 6000)
+    [GW1, Gb1, GW2, Gb2, DW1, Db1, DW2, Db2] = GANS::train(X_train, 5000)
     fake = GANS::generate(amount, GW1, Gb1, GW2, Gb2)
 }
 
@@ -79,7 +79,6 @@ print("accuracy: " + accuracy)
 
 fake = 0.5 * fake + 0.5
 
-acc = 0
-write(acc, out_dir+"/accuracy")
-write(fake, out_dir+"/generated")
-write(real, out_dir+"/compare")
+write(accuracy, out_dir+"/accuracy", format="text")
+#write(fake, out_dir+"/generated")
+#write(real, out_dir+"/compare")

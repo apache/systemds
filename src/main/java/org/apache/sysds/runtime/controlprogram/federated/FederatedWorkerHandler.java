@@ -21,6 +21,7 @@ package org.apache.sysds.runtime.controlprogram.federated;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
@@ -68,11 +69,13 @@ import org.apache.sysds.runtime.lineage.LineageItemUtils;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
+import org.apache.sysds.runtime.meta.MetaData;
 import org.apache.sysds.runtime.meta.MetaDataAll;
 import org.apache.sysds.runtime.meta.MetaDataFormat;
 import org.apache.sysds.runtime.privacy.DMLPrivacyException;
 import org.apache.sysds.runtime.privacy.PrivacyMonitor;
 import org.apache.sysds.utils.Statistics;
+import org.apache.wink.json4j.JSONException;
 
 public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 	protected static Logger log = Logger.getLogger(FederatedWorkerHandler.class);
@@ -166,7 +169,7 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 					return execUDF(request);
 				case CLEAR:
 					return execClear();
-				case PUT_FED_INPUT:
+				case PUT_FED_VAR:
 					return putFedInput(request);
 				default:
 					String message = String.format("Method %s is not supported.", method);
@@ -185,9 +188,12 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 	}
 
 	private FederatedResponse readData(FederatedRequest request) {
-		checkNumParams(request.getNumParams(), 2);
+		checkNumParams(request.getNumParams(), 2, 3);
 		String filename = (String) request.getParam(0);
 		DataType dt = DataType.valueOf((String) request.getParam(1));
+		if(request.getNumParams() == 3) {
+			return readData(filename, dt, request.getID(), request.getTID(), (MetaData) request.getParam(2));
+		}
 		return readData(filename, dt, request.getID(), request.getTID());
 	}
 
@@ -265,6 +271,55 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 		return new FederatedResponse(ResponseType.SUCCESS, new Object[] {id, mc});
 	}
 
+	private FederatedResponse readData(String filename, Types.DataType dataType, long id, long tid, MetaData mtd) {
+		MatrixCharacteristics mc = new MatrixCharacteristics();
+		mc.setBlocksize(ConfigurationManager.getBlocksize());
+		CacheableData<?> cd;
+		switch(dataType) {
+			case MATRIX:
+				cd = new MatrixObject(Types.ValueType.FP64, filename);
+				break;
+			case FRAME:
+				cd = new FrameObject(filename);
+				break;
+			default:
+				// should NEVER happen (if we keep request codes in sync with actual behavior)
+				return new FederatedResponse(ResponseType.ERROR,
+					new FederatedWorkerHandlerException("Could not recognize datatype"));
+		}
+
+		FileFormat fmt = null;
+		boolean header = false;
+		String delim = null;
+		mc.setRows(mtd.getDataCharacteristics().getRows());
+		mc.setCols(mtd.getDataCharacteristics().getCols());
+		mc.setNonZeros(mtd.getDataCharacteristics().getNonZeros());
+
+		fmt = FileFormat.MM;
+		delim = DataExpression.DEFAULT_DELIM_DELIMITER;
+
+		// put meta data object in symbol table, read on first operation
+		cd.setMetaData(new MetaDataFormat(mc, fmt));
+//		if(fmt == FileFormat.CSV)
+//			cd.setFileFormatProperties(new FileFormatPropertiesCSV(header, delim,
+//				DataExpression.DEFAULT_DELIM_SPARSE));
+		cd.enableCleanup(false); // guard against deletion
+		_ecm.get(tid).setVariable(String.valueOf(id), cd);
+
+		if (DMLScript.LINEAGE)
+			// create a literal type lineage item with the file name
+			_ecm.get(tid).getLineage().set(String.valueOf(id), new LineageItem(filename));
+
+		if(dataType == Types.DataType.FRAME) {
+			FrameObject frameObject = (FrameObject) cd;
+			frameObject.acquireRead();
+			frameObject.refreshMetaData(); // get block schema
+			frameObject.release();
+			return new FederatedResponse(ResponseType.SUCCESS, new Object[] {id, frameObject.getSchema(), mc});
+		}
+		return new FederatedResponse(ResponseType.SUCCESS, new Object[] {id, mc});
+	}
+
 	private FederatedResponse putVariable(FederatedRequest request) {
 		checkNumParams(request.getNumParams(), 1);
 		String varname = String.valueOf(request.getID());
@@ -294,7 +349,7 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 	}
 
 	private FederatedResponse putFedInput(FederatedRequest request) throws UnknownHostException {
-		checkNumParams(request.getNumParams(), 7);
+		checkNumParams(request.getNumParams(), 8);
 		String varname = String.valueOf(request.getID());
 		ExecutionContext ec = _ecm.get(request.getTID());
 		if(ec.containsVariable(varname)) {
@@ -310,6 +365,7 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 		int size = (int) request.getParam(3);
 		long rows =  (long) request.getParam(5);
 		long cols =  (long) request.getParam(6);
+		long nnz =  (long) request.getParam(7);
 		for(int i = 0; i < size; i ++) {
 			FederatedData federatedData;
 			if(request.getParam(4) == Types.ReplicationType.FULL) {
@@ -333,12 +389,14 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 		}
 
 		if(fedDataType == DataType.MATRIX) {
-			MatrixObject data = (MatrixObject) ExecutionContext.createCacheableData(new MatrixBlock());
+			MatrixObject data = (MatrixObject) ExecutionContext.createCacheableData(new MatrixBlock((int)rows, (int)cols, false));
 			ec.setVariable(varname, data);
+
+			MetaData mtd = new MetaData(new MatrixCharacteristics(rows, cols, nnz));
 
 			if(data != null)
 				data.getDataCharacteristics().setRows(rows).setCols(cols);
-			InitFEDInstruction.federateMatrix(data, feds);
+			InitFEDInstruction.federateMatrix(data, feds, mtd);
 		}
 		else if(fedDataType == DataType.FRAME) {
 			FrameObject data = (FrameObject) ExecutionContext.createCacheableData(new FrameBlock());

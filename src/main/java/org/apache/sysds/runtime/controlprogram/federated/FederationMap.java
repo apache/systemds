@@ -35,15 +35,12 @@ import java.util.stream.Stream;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.sysds.common.Types;
-import org.apache.sysds.lops.Federated;
+import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.CacheBlock;
 import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest.RequestType;
-import org.apache.sysds.runtime.DMLRuntimeException;
-import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.ScalarObject;
-import org.apache.sysds.runtime.instructions.cp.StringObject;
 import org.apache.sysds.runtime.instructions.cp.VariableCPInstruction;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
@@ -145,8 +142,8 @@ public class FederationMap {
 
 		int i = 0;
 		for(Entry<FederatedRange, FederatedData> e : _fedMap.entrySet()) {
-			ret[i++] = new FederatedRequest(RequestType.PUT_FED_INPUT, id, type, e.getValue().getAddress(), data.getFileName(),
-				_fedMap.size(), Types.ReplicationType.FULL, data.getNumRows(), data.getNumColumns());
+			ret[i++] = new FederatedRequest(RequestType.PUT_FED_VAR, id, type, e.getValue().getAddress(), data.getFileName(),
+				_fedMap.size(), Types.ReplicationType.FULL, data.getNumRows(), data.getNumColumns(), data.getMetaData().getDataCharacteristics().getNonZeros());
 		}
 
 		return ret;
@@ -203,7 +200,7 @@ public class FederationMap {
 			ix[pos] = _type == FType.ROW ?
 				new int[] {rl, ru, cl, cu} : new int[] {cl, cu, rl, ru};
 
-			ret[pos] = new FederatedRequest(RequestType.PUT_FED_INPUT, id, type, e.getValue().getAddress(), data.getFileName(),
+			ret[pos] = new FederatedRequest(RequestType.PUT_FED_VAR, id, type, e.getValue().getAddress(), data.getFileName(),
 				_fedMap.size(), Types.ReplicationType.NONE, data.getNumRows(), data.getNumColumns(),
 				cb.slice(ix[pos][0], ix[pos][1], ix[pos][2], ix[pos][3], new MatrixBlock()), ix[pos][0], ix[pos][1], ix[pos][2], ix[pos][3]);
 		}

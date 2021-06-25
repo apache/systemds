@@ -53,6 +53,8 @@ import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslContextBuilder;
 import io.netty.handler.ssl.util.InsecureTrustManagerFactory;
 import io.netty.util.concurrent.Promise;
+import org.apache.sysds.runtime.meta.MetaData;
+import org.apache.sysds.runtime.meta.MetaDataAll;
 
 public class FederatedData {
 	private static final Log LOG = LogFactory.getLog(FederatedData.class.getName());
@@ -147,6 +149,18 @@ public class FederatedData {
 			throw new DMLRuntimeException("Federated datatype \"" + _dataType.toString() + "\" is not supported.");
 		_varID = id;
 		FederatedRequest request = new FederatedRequest(RequestType.READ_VAR, id);
+		request.appendParam(_filepath);
+		request.appendParam(_dataType.name());
+		return executeFederatedOperation(request);
+	}
+
+	public synchronized Future<FederatedResponse> initFederatedData(long id, MetaData mtd) {
+		if(isInitialized())
+			throw new DMLRuntimeException("Tried to init already initialized data");
+		if(!_dataType.isMatrix() && !_dataType.isFrame())
+			throw new DMLRuntimeException("Federated datatype \"" + _dataType.toString() + "\" is not supported.");
+		_varID = id;
+		FederatedRequest request = new FederatedRequest(RequestType.READ_VAR, id, mtd);
 		request.appendParam(_filepath);
 		request.appendParam(_dataType.name());
 		return executeFederatedOperation(request);

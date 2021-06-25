@@ -34,6 +34,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.CompressionSettings;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
+import org.apache.sysds.runtime.compress.cocode.CoCoderFactory.PartitionerType;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup.CompressionType;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
@@ -288,8 +289,8 @@ public final class ColGroupFactory {
 	public static AColGroup compress(int[] colIndexes, int rlen, ABitmap ubm, CompressionType compType,
 		CompressionSettings cs, MatrixBlock rawMatrixBlock, double tupleSparsity) {
 
-		// if(compType == CompressionType.UNCOMPRESSED && PartitionerType.isCostBased(cs.columnPartitioner))
-		// compType = CompressionType.DDC;
+		if(compType == CompressionType.UNCOMPRESSED )
+			compType = CompressionType.DDC;
 
 		try {
 			final IntArrayList[] of = ubm.getOffsetList();

@@ -30,12 +30,15 @@ public class OpSided extends Op {
 	private final boolean _tLeft;
 	private final boolean _tRight;
 
+	private boolean _overlappingDecompression = false;
+
 	public OpSided(Hop op, boolean cLeft, boolean cRight, boolean tLeft, boolean tRight) {
 		super(op);
 		_cLeft = cLeft;
 		_cRight = cRight;
 		_tLeft = tLeft;
 		_tRight = tRight;
+
 	}
 
 	public boolean getLeft() {
@@ -56,7 +59,8 @@ public class OpSided extends Op {
 
 	@Override
 	public String toString() {
-		return super.toString() + " L:" + _cLeft + " R:" + _cRight + " tL:" + _tLeft + " tR:" + _tRight;
+		return super.toString() + " L:" + _cLeft + " R:" + _cRight + " tL:" + _tLeft + " tR:" + _tRight + " ";
+
 	}
 
 	public boolean isLeftMM() {
@@ -73,11 +77,15 @@ public class OpSided extends Op {
 
 	@Override
 	public boolean isCompressedOutput() {
-		return isRightMM();
+		return isRightMM() && !_overlappingDecompression;
+	}
+
+	protected void setOverlappingDecompression(boolean v) {
+		_overlappingDecompression = v;
 	}
 
 	@Override
 	public boolean isDecompressing() {
-		return false;
+		return _overlappingDecompression;
 	}
 }

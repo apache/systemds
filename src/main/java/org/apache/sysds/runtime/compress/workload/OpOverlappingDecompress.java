@@ -19,37 +19,20 @@
 
 package org.apache.sysds.runtime.compress.workload;
 
-import java.util.List;
-
 import org.apache.sysds.hops.Hop;
 
-/**
- * The root node of the tree, located at the top of the tree.
- * 
- * This represent a single Hop that have a result that is used on subsequent operations.
- */
-public class WTreeRoot extends AWTreeNode {
-
-	private final Hop _root;
-
-	private final List<Hop> _decompressList;
-
-	public WTreeRoot(Hop root, List<Hop> decompressList) {
-		super(WTNodeType.ROOT);
-		_root = root;
-		_decompressList = decompressList;
+public class OpOverlappingDecompress extends Op {
+	public OpOverlappingDecompress(Hop op) {
+		super(op);
 	}
 
-	/**
-	 * Get the Root hop instruction, that is producing a result used in the rest of the tree.
-	 * 
-	 * @return The root hop
-	 */
-	public Hop getRoot() {
-		return _root;
+	@Override
+	public boolean isCompressedOutput() {
+		return false;
 	}
 
-	public List<Hop> getDecompressList() {
-		return _decompressList;
+	@Override
+	public boolean isDecompressing() {
+		return true;
 	}
 }

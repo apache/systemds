@@ -68,7 +68,7 @@ public abstract class CompressBase extends AutomatedTestBase {
 			// programArgs = new String[] {"-stats", "100" , "-explain", "-nvargs", "A=" + input("A")};
 			programArgs = new String[] {"-stats", "100" ,  "-nvargs", "A=" + input("A")};
 
-			LOG.error(runTest(null));
+			LOG.debug(runTest(null));
 
 			int decompressCount = 0;
 			decompressCount += DMLCompressionStatistics.getDecompressionCount();

@@ -56,7 +56,9 @@ public class DistinctCostEstimator implements ICostEstimate {
 
 	@Override
 	public double getCostOfColumnGroup(CompressedSizeInfoColGroup g) {
-		int nVals = g.getNumVals();
+		if(g == null)
+			return Double.POSITIVE_INFINITY;
+		int nVals = Math.max(g.getNumVals(), toSmallForAnalysis);
 		return nVals < largestDistinct ? nVals : Double.POSITIVE_INFINITY;
 	}
 
@@ -96,10 +98,5 @@ public class DistinctCostEstimator implements ICostEstimate {
 	@Override
 	public boolean shouldTryJoin(CompressedSizeInfoColGroup g1, CompressedSizeInfoColGroup g2) {
 		return g1.getNumVals() * g2.getNumVals() < nRows;
-	}
-
-	@Override
-	public boolean shouldTryToCompress() {
-		return true;
 	}
 }

@@ -29,7 +29,7 @@ public class ComputationCostEstimator implements ICostEstimate {
 	private final boolean _isCompareAll;
 	
 	private final int _nRows;
-	private final int _nColsInMatrix;
+	// private final int _nColsInMatrix;
 
 	// Iteration through each row of decompressed.
 	private final int _scans;
@@ -49,7 +49,7 @@ public class ComputationCostEstimator implements ICostEstimate {
 	 */
 	protected ComputationCostEstimator(int nRows, int nCols, boolean compareAll, InstructionTypeCounter counts) {
 		_nRows = nRows;
-		_nColsInMatrix = nCols;
+		// _nColsInMatrix = nCols;
 		_isCompareAll = compareAll;
 		_scans = counts.scans;
 		_decompressions = counts.decompressions;
@@ -70,6 +70,8 @@ public class ComputationCostEstimator implements ICostEstimate {
 
 	@Override
 	public double getCostOfColumnGroup(CompressedSizeInfoColGroup g) {
+		if(g == null)
+			return Double.POSITIVE_INFINITY;
 		double cost = 0;
 		cost += _scans * scanCost(g);
 		cost += _decompressions * decompressionCost(g);
@@ -88,19 +90,21 @@ public class ComputationCostEstimator implements ICostEstimate {
 
 	private double leftMultCost(CompressedSizeInfoColGroup g) {
 		final int nCols = g.getColumns().length;
-		final double preAggregateCost = _nRows;
+		final double preAggregateCost = _nRows * 2.5;
 
 		final int numberTuples = g.getNumVals();
 		final double tupleSparsity = g.getTupleSparsity();
 		final double postScalingCost = (nCols > 1 && tupleSparsity > 0.4) ? numberTuples * nCols : numberTuples *
 			nCols * tupleSparsity;
-
+		if(numberTuples > 64000)
+			return preAggregateCost + postScalingCost * 2;
+			
 		return preAggregateCost + postScalingCost;
 	}
 
 	private double rightMultCost(CompressedSizeInfoColGroup g) {
 		final int nCols = g.getColumns().length;
-		final int numberTuples = g.getNumVals();
+		final int numberTuples = g.getNumVals() * 10;
 		final double tupleSparsity = g.getTupleSparsity();
 		final double postScalingCost = (nCols > 1 && tupleSparsity > 0.4) ? numberTuples * nCols : numberTuples *
 			nCols * tupleSparsity;
@@ -109,11 +113,13 @@ public class ComputationCostEstimator implements ICostEstimate {
 	}
 
 	private double decompressionCost(CompressedSizeInfoColGroup g) {
-		return _nRows * g.getColumns().length;
+		return _nRows * g.getColumns().length * (g.getNumVals() / 64000 + 1);
 	}
 
 	private double overlappingDecompressionCost(CompressedSizeInfoColGroup g) {
-		return _nRows * _nColsInMatrix;
+		// final int nVal = g.getNumVals();
+		// return nVal < 512 ? _nRows : _nRows * _nColsInMatrix * (nVal / 64000 + 1);
+		return  _nRows * 16 * (g.getNumVals() / 64000 + 1);
 	}
 
 	private double dictionaryOpsCost(CompressedSizeInfoColGroup g) {
@@ -199,15 +205,6 @@ public class ComputationCostEstimator implements ICostEstimate {
 	@Override
 	public boolean shouldTryJoin(CompressedSizeInfoColGroup g1, CompressedSizeInfoColGroup g2) {
 		return true;
-	}
-
-	@Override
-	public boolean shouldTryToCompress() {
-		int numberOps = 0;
-		numberOps += _scans + _leftMultiplications + _rightMultiplications + _compressedMultiplication + _dictionaryOps;
-		numberOps -= _decompressions + _overlappingDecompressions;
-
-		return numberOps > 4;
 	}
 
 	@Override

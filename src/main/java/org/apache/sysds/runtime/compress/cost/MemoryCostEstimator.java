@@ -70,9 +70,4 @@ public class MemoryCostEstimator implements ICostEstimate {
 	public boolean shouldTryJoin(CompressedSizeInfoColGroup g1, CompressedSizeInfoColGroup g2) {
 		return true;
 	}
-	
-	@Override
-	public boolean shouldTryToCompress() {
-		return true;
-	}
 }

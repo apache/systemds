@@ -543,13 +543,18 @@ public abstract class ColGroupValue extends ColGroupCompressed implements Clonea
 	 * @return The Pre aggregated values contained in a MatrixBlock
 	 */
 	protected final MatrixBlock preAggregate(MatrixBlock m, int rl, int ru) {
+		MatrixBlock preAgg = allocatePreAggregate(m, rl, ru);
+		preAggregate(m, preAgg, rl, ru);
+		preAgg.recomputeNonZeros();
+		return preAgg;
+	}
+
+	public final MatrixBlock allocatePreAggregate(MatrixBlock m, int rl, int ru) {
 		final int numVals = getNumValues();
 		final int lhsRows = ru - rl;
 		final double[] vals = allocDVector(lhsRows * numVals, true);
 		final DenseBlock retB = new DenseBlockFP64(new int[] {lhsRows, numVals}, vals);
 		MatrixBlock preAgg = new MatrixBlock(lhsRows, numVals, retB);
-		preAggregate(m, preAgg, rl, ru);
-		preAgg.recomputeNonZeros();
 		return preAgg;
 	}
 
@@ -561,7 +566,9 @@ public abstract class ColGroupValue extends ColGroupCompressed implements Clonea
 	 * @param rl     Start row
 	 * @param ru     End row
 	 */
-	protected abstract void preAggregate(MatrixBlock m, MatrixBlock preAgg, int rl, int ru);
+	public abstract void preAggregate(MatrixBlock m, MatrixBlock preAgg, int rl, int ru);
+
+	public abstract void preAggregateDense(MatrixBlock m, MatrixBlock preAgg, int rl, int ru, int vl, int vu);
 
 	/**
 	 * Pre aggregate into a dictionary. It is assumed that "that" have more distinct values than, "this".
@@ -1053,29 +1060,24 @@ public abstract class ColGroupValue extends ColGroupCompressed implements Clonea
 	@Override
 	public final void leftMultByMatrix(MatrixBlock matrix, MatrixBlock result, int rl, int ru) {
 		try {
-			if(matrix.isEmpty())
-				return;
-
-			MatrixBlock tmpRes = leftMultByMatrixIntermediateMatrix(matrix, rl, ru);
-
+			// Pre aggregate the matrix into same size as dictionary
+			MatrixBlock preAgg = preAggregate(matrix, rl, ru);
+			MatrixBlock tmpRes = leftMultByPreAggregateMatrix(preAgg);
 			addMatrixToResult(tmpRes, result, rl, ru);
-
 		}
 		catch(Exception e) {
 			throw new DMLCompressionException(this.getClass().getSimpleName() + " Failed to Left Matrix Multiply", e);
 		}
 	}
 
-	private MatrixBlock leftMultByMatrixIntermediateMatrix(MatrixBlock matrix, int rl, int ru) {
+	public final MatrixBlock leftMultByPreAggregateMatrix(MatrixBlock preAgg) {
+
 		// Get dictionary.
 		MatrixBlock dictM = forceMatrixBlockDictionary().getMatrixBlock();
 
-		// Pre aggregate the matrix into same size as dictionary
-		MatrixBlock preAgg = preAggregate(matrix, rl, ru);
-
 		// Allocate temporary matrix to multiply into.
 		final int tmpCol = _colIndexes.length;
-		final int tmpRow = ru - rl;
+		final int tmpRow = preAgg.getNumRows();
 		double[] tmpLeftMultRes = tmpLeftMultDoubleArray.get();
 
 		MatrixBlock tmpRes = null;
@@ -1093,9 +1095,8 @@ public abstract class ColGroupValue extends ColGroupCompressed implements Clonea
 
 	private void leftMultByMatrix(MatrixBlock matrix, MatrixBlock result, int[] outputRows) {
 		try {
-			if(matrix.isEmpty())
-				return;
-			MatrixBlock tmpRes = leftMultByMatrixIntermediateMatrix(matrix, 0, matrix.getNumRows());
+			MatrixBlock preAgg = preAggregate(matrix, 0, matrix.getNumRows());
+			MatrixBlock tmpRes = leftMultByPreAggregateMatrix(preAgg);
 			addMatrixToResult(tmpRes, result, outputRows);
 
 		}
@@ -1111,7 +1112,7 @@ public abstract class ColGroupValue extends ColGroupCompressed implements Clonea
 		return((MatrixBlockDictionary) _dict);
 	}
 
-	private void addMatrixToResult(MatrixBlock tmp, MatrixBlock result, int rl, int ru) {
+	public void addMatrixToResult(MatrixBlock tmp, MatrixBlock result, int rl, int ru) {
 		if(tmp.isEmpty())
 			return;
 		final double[] retV = result.getDenseBlockValues();
@@ -1180,25 +1181,23 @@ public abstract class ColGroupValue extends ColGroupCompressed implements Clonea
 		final int cut = right.getNumColumns();
 		final int nCol = right.getNumColumns();
 		final int numVals = getNumValues();
-		int[] agCols;
-		double[] ret;
 		if(right.isInSparseFormat()) {
 			final SparseBlock sb = right.getSparseBlock();
-			agCols = getAggregateColumnsSetSparse(sb, nCol);
+			final int[] agCols = getAggregateColumnsSetSparse(sb, nCol);
 			if(agCols.length == 0)
 				return null;
-			ret = preaggValuesFromSparse(numVals, sb, agCols, cl, cu, cut);
+			return copyAndSet(agCols, preaggValuesFromSparse(numVals, sb, agCols, cl, cu, cut));
 		}
 		else {
-			double[] rightV = right.getDenseBlockValues();
-			agCols = getAggregateColumnsSetDense(rightV, cl, cu, cut);
+			final double[] rightV = right.getDenseBlockValues();
+			final int[] agCols = getAggregateColumnsSetDense(rightV, cl, cu, cut);
 			if(agCols.length == 0)
 				return null;
-			ret = new double[numVals * agCols.length];
-			_dict.preaggValuesFromDense(numVals, _colIndexes, agCols, rightV, ret, cut);
+			ADictionary d = _dict.preaggValuesFromDense(numVals, _colIndexes, agCols, rightV, cut);
+			if(d == null)
+				return null;
+			return copyAndSet(agCols, d);
 		}
-
-		return copyAndSet(agCols, ret);
 	}
 
 	@Override

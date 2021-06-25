@@ -155,22 +155,92 @@ public class ColGroupDDC extends ColGroupValue {
 	}
 
 	@Override
-	protected void preAggregate(MatrixBlock m, MatrixBlock preAgg, int rl, int ru) {
+	public void preAggregate(final MatrixBlock m, final MatrixBlock preAgg, final int rl, final int ru) {
 		if(m.isInSparseFormat())
 			preAggregateSparse(m.getSparseBlock(), preAgg, rl, ru);
 		else
 			preAggregateDense(m, preAgg, rl, ru);
 	}
 
-	private void preAggregateDense(MatrixBlock m, MatrixBlock preAgg, int rl, int ru) {
+	private void preAggregateDense(final MatrixBlock m, final MatrixBlock preAgg, final int rl, final int ru) {
 		final double[] preAV = preAgg.getDenseBlockValues();
 		final double[] mV = m.getDenseBlockValues();
 		final int numVals = getNumValues();
-		for(int rowLeft = rl, offOut = 0; rowLeft < ru; rowLeft++, offOut += numVals) {
-			for(int rc = 0, offLeft = rowLeft * _numRows; rc < _numRows; rc++, offLeft++) {
-				preAV[offOut + _data.getIndex(rc)] += mV[offLeft];
+		// final int blockOutSize = (Math.min(numVals, 4000) / 1000) * 1000;
+		final int blockOutSize = Math.min(numVals, 2000);
+		// final int blockSize = (40000 - blockOutSize);
+		final int blockSize = 1000;
+		// L2 Sizes for all three sides. 3MB
+
+		// for each block in preAggregate
+		// for(int blockOut = 0; blockOut * blockOutSize < numVals; blockOut++) {
+		// 	final int idxStart = blockOut * blockOutSize;
+		// 	final int idxEnd = Math.min((blockOut + 1) * blockOutSize, numVals);
+			// for each block in left
+			for(int block = 0; block * blockSize < _numRows; block++) {
+				final int blockEnd = Math.min((block + 1) * blockSize, _numRows);
+				final int blockStart = block * blockSize;
+				// for each row in block:
+				
+				// for(int rc = blockStart; rc < blockEnd; rc++) {
+				// 	final int idx = _data.getIndex(rc);
+				// 	// if(idx >= idxStart && idx < idxEnd)
+				// 		for(int rowLeft = rl, offOut = 0; rowLeft < ru; rowLeft++, offOut += numVals) {
+				// 			final int offLeft = rowLeft * _numRows + rc;
+				// 			// for each col in block;
+				// 			preAV[offOut + idx] += mV[offLeft];
+				// 		}
+				// }
+				for(int rowLeft = rl, offOut = 0; rowLeft < ru; rowLeft++, offOut += numVals) {
+					final int offLeft = rowLeft * _numRows;
+					for(int rc = blockStart; rc < blockEnd; rc++) {
+						final int idx = _data.getIndex(rc);
+						// for each col in block;
+						preAV[offOut + idx] += mV[offLeft + rc];
+					}
+				}
+			}
+		// }
+	}
+
+	public void preAggregateDense(MatrixBlock m, MatrixBlock preAgg, int rl, int ru, int cl, int cu) {
+		final double[] preAV = preAgg.getDenseBlockValues();
+		final double[] mV = m.getDenseBlockValues();
+		final int numVals = getNumValues();
+		// final int blockOutSize = (Math.min(numVals, 4000) / 1000) * 1000;
+		final int blockSize = 1000;
+		// L2 Sizes for all three sides. 3MB
+
+		// for each block in preAggregate
+		// for(int blockOut = 0; blockOut * blockOutSize < numVals; blockOut++) {
+		// final int idxStart = blockOut * blockOutSize;
+		// final int idxEnd = Math.min((blockOut + 1) * blockOutSize, numVals);
+		// for each block in left
+		for(int block = cl; block< cu; block += blockSize) {
+			final int blockEnd = Math.min(block +  blockSize, _numRows);
+			// for each row in block:
+			// for(int rc = blockStart; rc < blockEnd; rc++) {
+			// 	final int idx = _data.getIndex(rc);
+
+			// 	if(idx >= vl && idx < vu)
+			// 		for(int rowLeft = rl, offOut = 0; rowLeft < ru; rowLeft++, offOut += numVals) {
+			// 			final int offLeft = rowLeft * _numRows + rc;
+			// 			// for each col in block;
+			// 			preAV[offOut + idx] += mV[offLeft];
+			// 		}
+			// }
+
+			for(int rowLeft = rl, offOut = 0; rowLeft < ru; rowLeft++, offOut += numVals) {
+				final int offLeft = rowLeft * _numRows;
+				for(int rc = block; rc < blockEnd; rc++) {
+					final int idx = _data.getIndex(rc);
+					// if(idx >= vl && idx < vu)
+					// for each col in block;
+					preAV[offOut + idx] += mV[offLeft + rc];
+				}
 			}
 		}
+		// }
 	}
 
 	private void preAggregateSparse(SparseBlock sb, MatrixBlock preAgg, int rl, int ru) {

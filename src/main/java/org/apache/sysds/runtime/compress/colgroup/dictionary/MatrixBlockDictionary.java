@@ -25,6 +25,7 @@ import java.io.IOException;
 
 import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
+import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.DenseBlockFP64;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.functionobjects.Builtin;
@@ -602,10 +603,12 @@ public class MatrixBlockDictionary extends ADictionary {
 	}
 
 	@Override
-	public void preaggValuesFromDense(final int numVals, final int[] colIndexes, final int[] aggregateColumns,
-		final double[] b, final double[] ret, final int cut) {
+	public MatrixBlockDictionary preaggValuesFromDense(final int numVals, final int[] colIndexes, final int[] aggregateColumns,
+		final double[] b, final int cut) {
+
+		double[] ret = new double[numVals * aggregateColumns.length];
 		if(_data.isEmpty())
-			return;
+			return null;
 		else if(_data.isInSparseFormat()) {
 			SparseBlock sb = _data.getSparseBlock();
 			for(int i = 0; i < _data.getNumRows(); i++) {
@@ -638,6 +641,13 @@ public class MatrixBlockDictionary extends ADictionary {
 				}
 			}
 		}
+		
+		DenseBlock dictV = new DenseBlockFP64(new int[] {numVals, aggregateColumns.length}, ret);
+		MatrixBlock dictM = new MatrixBlock(numVals, aggregateColumns.length, dictV);
+		dictM.getNonZeros();
+		dictM.examSparsity();
+		return new MatrixBlockDictionary(dictM);
+
 	}
 
 	@Override

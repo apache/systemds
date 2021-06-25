@@ -53,10 +53,9 @@ public class CoCodePriorityQue extends AColumnCoCoder {
 	}
 
 	private List<CompressedSizeInfoColGroup> join(List<CompressedSizeInfoColGroup> currentGroups) {
-		Comparator<CompressedSizeInfoColGroup> comp = Comparator.comparing(_cest::getCostOfColumnGroup);
+		Comparator<CompressedSizeInfoColGroup> comp = Comparator.comparing(x -> _cest.getCostOfColumnGroup(x));
 		Queue<CompressedSizeInfoColGroup> que = new PriorityQueue<>(currentGroups.size(), comp);
 		List<CompressedSizeInfoColGroup> ret = new ArrayList<>();
-
 		for(CompressedSizeInfoColGroup g : currentGroups)
 			if(g != null)
 				que.add(g);
@@ -80,7 +79,7 @@ public class CoCodePriorityQue extends AColumnCoCoder {
 						ret.add(l);
 					}
 				}
-				else{
+				else {
 					que.add(r);
 					ret.add(l);
 				}
@@ -92,29 +91,21 @@ public class CoCodePriorityQue extends AColumnCoCoder {
 			l = que.poll();
 			while(que.peek() != null) {
 				CompressedSizeInfoColGroup r = que.peek();
-
 				if(_cest.shouldTryJoin(l, r)) {
-					if(_cest.shouldAnalyze(l, r)) {
-						CompressedSizeInfoColGroup g = joinWithAnalysis(l, r);
-						if(g != null) {
-							double costOfJoin = _cest.getCostOfColumnGroup(g);
-							double costIndividual = _cest.getCostOfColumnGroup(l) + _cest.getCostOfColumnGroup(r);
+					CompressedSizeInfoColGroup g = joinWithAnalysis(l, r);
+					if(g != null) {
+						double costOfJoin = _cest.getCostOfColumnGroup(g);
+						double costIndividual = _cest.getCostOfColumnGroup(l) + _cest.getCostOfColumnGroup(r);
 
-							if(costOfJoin < costIndividual) {
-								que.poll();
-								que.add(g);
-							}
-							else
-								ret.add(l);
+						if(costOfJoin < costIndividual) {
+							que.poll();
+							que.add(g);
 						}
 						else
 							ret.add(l);
 					}
-					else {
-						// Quick join without analysis
-						que.poll();
-						que.add(joinWithoutAnalysis(l, r));
-					}
+					else
+						ret.add(l);
 				}
 				else
 					ret.add(l);

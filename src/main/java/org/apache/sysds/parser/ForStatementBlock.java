@@ -443,7 +443,7 @@ public class ForStatementBlock extends StatementBlock
 				long f = ((LiteralOp)fr.get(0)).getLongValue();
 				long t = ((LiteralOp)to.get(0)).getLongValue();
 				long i = ((LiteralOp)in.get(0)).getLongValue();
-				return (int)((t-f)/i);
+				return (int)((t-f)/i) + 1;
 			}
 		}
 		

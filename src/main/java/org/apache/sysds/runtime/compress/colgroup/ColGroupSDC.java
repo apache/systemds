@@ -270,6 +270,11 @@ public class ColGroupSDC extends ColGroupValue {
 			preAggregateDense(m, preAgg, rl, ru);
 	}
 
+	@Override
+	public void preAggregateDense(MatrixBlock m, MatrixBlock preAgg, int rl, int ru, int vl, int vu){
+		throw new NotImplementedException();
+	}
+
 	private void preAggregateDense(MatrixBlock m, MatrixBlock preAgg, int rl, int ru) {
 		final double[] preAV = preAgg.getDenseBlockValues();
 		final double[] mV = m.getDenseBlockValues();
@@ -283,10 +288,10 @@ public class ColGroupSDC extends ColGroupValue {
 				for(; it.value() > rc && rc < _numRows ; rc++, offLeft++){
 					preAV[def] += mV[offLeft];
 				}
-				if(it.value() == rc)
-					preAV[offOut + _data.getIndex(it.getDataIndexAndIncrement())] += mV[offLeft];
-				else
-					preAV[def] += mV[offLeft];
+				// if(it.value() == rc)
+				preAV[offOut + _data.getIndex(it.getDataIndexAndIncrement())] += mV[offLeft];
+				// else
+				// 	preAV[def] += mV[offLeft];
 			}
 
 			for(; rc < _numRows; rc++, offLeft++) {

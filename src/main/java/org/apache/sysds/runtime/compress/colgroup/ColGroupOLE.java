@@ -461,7 +461,12 @@ public class ColGroupOLE extends ColGroupOffset {
 	}
 
 	@Override
-	protected void preAggregate(MatrixBlock m, MatrixBlock preAgg, int rl, int ru){
+	public void preAggregate(MatrixBlock m, MatrixBlock preAgg, int rl, int ru){
+		throw new NotImplementedException();
+	}
+
+	@Override
+	public void preAggregateDense(MatrixBlock m, MatrixBlock preAgg, int rl, int ru, int vl, int vu){
 		throw new NotImplementedException();
 	}
 

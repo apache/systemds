@@ -53,6 +53,10 @@ public class DependencyTask<E> implements Callable<E> {
         return _rdy == 0;
     }
 
+    public Callable<E> getTask(){
+        return _task;
+    }
+
     private boolean decrease(){
         synchronized (this){
             _rdy -= 1;
@@ -68,7 +72,7 @@ public class DependencyTask<E> implements Callable<E> {
     @Override
     public E call() throws Exception {
         E ret = _task.call();
-
+        System.out.println(_task);
         _dependantTasks.forEach(t -> {
             if(t.decrease()){
                 if(_pool == null)

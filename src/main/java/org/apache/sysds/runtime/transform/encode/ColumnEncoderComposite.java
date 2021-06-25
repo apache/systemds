@@ -162,13 +162,7 @@ public class ColumnEncoderComposite extends ColumnEncoder {
 		}
 		List<List<? extends Callable<?>>> dep = new ArrayList<>(Collections.nCopies(tasks.size(), null));
 		tasks.add(DependencyThreadPool.createDependencyTask(new ColumnCompositeUpdateDCTask(this)));
-		if(depMap != null){
-			depMap.forEach((ti, di) -> {
-				for(int r = ti[0]; r < ti[1]; r++){
-					dep.set(r, tasks.subList(di[0], di[1]));
-				}
-			});
-		}
+		DependencyThreadPool.createDependencyList(tasks, depMap, dep);
 		if(tasks.size() > 1)
 			dep.add(tasks.subList(tasks.size()-2, tasks.size()-1));
 		else

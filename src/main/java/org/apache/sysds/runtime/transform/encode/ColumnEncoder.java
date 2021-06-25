@@ -29,17 +29,14 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.spark.sql.catalyst.expressions.In;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.transform.encode.tasks.ColumnApply;
 import org.apache.sysds.runtime.util.DependencyTask;
 import org.apache.sysds.runtime.util.DependencyThreadPool;
 
@@ -179,7 +176,7 @@ public abstract class ColumnEncoder implements Externalizable, Encoder, Comparab
 	public List<DependencyTask<?>> getBuildTasks(FrameBlock in, int blockSize){
 		List<Callable<Object>> tasks = new ArrayList<>();
 		List<List<? extends Callable<?>>> dep = null;
-		if(blockSize == -1 || blockSize >= in.getNumRows()){
+		if(blockSize <= 0 || blockSize >= in.getNumRows()){
 			tasks.add(getBuildTask(in));
 		}else{
 			HashMap<Integer, Object> ret = new HashMap<>();
@@ -225,13 +222,13 @@ public abstract class ColumnEncoder implements Externalizable, Encoder, Comparab
 		Recode, FeatureHash, PassThrough, Bin, Dummycode, Omit, MVImpute, Composite
 	}
 
-	private static class ColumnApplyTask implements Callable<Object> {
+	private static class ColumnApplyTask implements ColumnApply {
 
 		private final ColumnEncoder _encoder;
 		private final FrameBlock _inputF;
 		private final MatrixBlock _inputM;
 		private final MatrixBlock _out;
-		private final int _outputCol;
+		private int _outputCol;
 		private int _rowStart = 0;
 		private int _blk = -1;
 
@@ -265,9 +262,18 @@ public abstract class ColumnEncoder implements Externalizable, Encoder, Comparab
 			_blk = blk;
 		}
 
+		public void setOutputCol(int outputCol){
+			_outputCol = outputCol;
+		}
+
+		public int getOutputCol(){
+			return _outputCol;
+		}
+
 
 		@Override
 		public Void call() throws Exception {
+			assert _outputCol >= 0;
 			if(_inputF == null)
 				_encoder.apply(_inputM, _out, _outputCol, _rowStart, _blk);
 			else

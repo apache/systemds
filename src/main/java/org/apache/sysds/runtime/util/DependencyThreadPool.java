@@ -23,6 +23,7 @@ import org.apache.sysds.runtime.DMLRuntimeException;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -31,6 +32,8 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class DependencyThreadPool{
 
@@ -75,6 +78,27 @@ public class DependencyThreadPool{
 
     public static DependencyTask<?> createDependencyTask(Callable<?> task){
         return new DependencyTask<>(task, new ArrayList<>());
+    }
+
+    public static List<List<? extends Callable<?>>> createDependencyList(List<? extends Callable<?>> tasks,
+                                                                         Map<Integer[], Integer[]> depMap,
+                                                                         List<List<? extends Callable<?>>> dep){
+        if(depMap != null){
+            depMap.forEach((ti, di) -> {
+                ti[0] = ti[0] < 0 ? dep.size() + ti[0] + 1: ti[0];
+                ti[1] = ti[1] < 0 ? dep.size() + ti[1] + 1: ti[1];
+                di[0] = di[0] < 0 ? tasks.size() + di[0] + 1: di[0];
+                di[1] = di[1] < 0 ? tasks.size() + di[1] + 1: di[1];
+                for(int r = ti[0]; r < ti[1]; r++){
+                    if(dep.get(r) == null)
+                        dep.set(r, tasks.subList(di[0], di[1]));
+                    else
+                        dep.set(r, Stream.concat(dep.get(r).stream(),
+                                tasks.subList(di[0], di[1]).stream()).collect(Collectors.toList()));
+                }
+            });
+        }
+        return dep;
     }
 
     public static List<DependencyTask<?>> createDependencyTasks(List<? extends Callable<?>> tasks,

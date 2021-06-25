@@ -23,15 +23,15 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.sysds.api.DMLException;
+import org.apache.sysds.common.Types;
 import org.apache.sysds.hops.AggBinaryOp;
 import org.apache.sysds.hops.AggUnaryOp;
 import org.apache.sysds.hops.BinaryOp;
 import org.apache.sysds.hops.DataOp;
 import org.apache.sysds.hops.Hop;
 import org.apache.sysds.hops.LiteralOp;
-import org.apache.sysds.hops.NaryOp;
+import org.apache.sysds.hops.ReorgOp;
 import org.apache.sysds.hops.TernaryOp;
-import org.apache.sysds.hops.UnaryOp;
 import org.apache.sysds.parser.DataExpression;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
@@ -198,12 +198,12 @@ public class RewriteFederatedExecution extends HopRewriteRule {
 					child.setFedOut(strategy);
 			}
 
-			if ( ( strategy.isForcedFederated() ) && isFedInstSupportedHop(associatedHop)
-				|| ( strategy.isForcedLocal() && isFedInstSupportedHop(associatedHop)
+			if ( ( ( strategy.isForcedFederated() ) && isFedInstSupportedHop(this) )
+				|| ( strategy.isForcedLocal() && isFedInstSupportedHop(this)
 				&& (associatedHop.getPrivacy() == null
 				|| ( associatedHop.getPrivacy() != null && !associatedHop.getPrivacy().hasConstraints() ) )) )
 				federatedOutput = strategy;
-			else if ( strategy.isForcedLocal() && isFedInstSupportedHop(associatedHop)
+			else if ( strategy.isForcedLocal() && isFedInstSupportedHop(this)
 				&& ( associatedHop.getPrivacy() != null && associatedHop.getPrivacy().hasConstraints() ) )
 				federatedOutput = FEDInstruction.FederatedOutput.FOUT;
 			else
@@ -246,14 +246,25 @@ public class RewriteFederatedExecution extends HopRewriteRule {
 
 	/**
 	 * Hops with supporting federated instructions with parsing and processing based on FederatedOutput flags.
-	 * @param hop to check for supporting fed instructions
+	 * @param node to check for supporting fed instructions
 	 * @return true if the hop is supported by a federated instruction
 	 */
-	private boolean isFedInstSupportedHop(Hop hop){
-		//TODO: Add classes to this list and check the already added classes if they actually belong here
-		return ( hop instanceof AggBinaryOp || hop instanceof AggUnaryOp || hop instanceof BinaryOp
-			|| hop instanceof UnaryOp || hop instanceof DataOp || hop instanceof TernaryOp
-			|| hop instanceof NaryOp );
+	private boolean isFedInstSupportedHop(FedPlanNode node){
+		Hop hop = node.associatedHop;
+
+		// Check that some input is FOUT, otherwise none of the fed instructions will run unless it is fedinit
+		if ( (!(node.associatedHop instanceof DataOp && ((DataOp)node.associatedHop).getOp() == Types.OpOpData.FEDERATED) )
+			&& node.children.stream().noneMatch(c -> c.federatedOutput == FEDInstruction.FederatedOutput.FOUT) )
+			return false;
+
+		// If the output of AggUnaryOp is a scalar, the operation cannot be FOUT
+		// TODO: Can still be LOUT, so this check should be moved so that FOUT/LOUT strategy can be checked
+		if ( hop instanceof AggUnaryOp )
+			return hop.dimsKnown() && hop.getDim1() > 1 && hop.getDim2() > 1;
+
+		// The following operations are supported given that the above conditions have not returned already
+		return ( hop instanceof AggBinaryOp || hop instanceof BinaryOp || hop instanceof ReorgOp
+			 || hop instanceof TernaryOp || hop instanceof DataOp );
 	}
 	
 	private void visitHop(Hop hop){

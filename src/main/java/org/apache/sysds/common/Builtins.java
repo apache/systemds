@@ -289,10 +289,7 @@ public enum Builtins {
 	TRANSFORMMETA("transformmeta", false, true),
 	UPPER_TRI("upper.tri", false, true),
 	XDUMMY1("xdummy1", true), //error handling test
-	XDUMMY2("xdummy2", true), //error handling test
-	EFFICIENTNETINIT("efficientNetInit", true),
-	EFFICIENTNETTRAIN("efficientNetTrain", true),
-	EFFICIENTNETPREDICT("efficientNetPredict", true);
+	XDUMMY2("xdummy2", true); //error handling test
 
 	Builtins(String name, boolean script) {
 		this(name, null, script, false, ReturnType.SINGLE_RETURN);

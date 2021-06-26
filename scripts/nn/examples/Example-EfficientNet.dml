@@ -28,9 +28,17 @@
 * curl -O https://pjreddie.com/media/files/mnist_test.csv
 */
 
+# This script trains a minified version of the EfficientNet-B0 model
+# with a single MBConv layer. This model heavily overfits on a simple
+# MNist dataset since it was originally developed on the ImageNet dataset
+# Thus layer outputs and other factors are too large for normal MNist.
+# Therefore we only train once on the Mnist Train ds and print out its Accuracy
+# Import required methods
+source("nn/examples/efficientNet.dml") as eff
+
 # Read training data
-data = read("mnist_data/mnist_train.csv", format="csv")
-n = nrow(data)
+data = read("data/mnist/mnist_test.csv", format="csv")
+N = nrow(data)
 
 # Extract images and labels
 images = data[,2:ncol(data)]
@@ -38,19 +46,30 @@ labels = data[,1]
 
 # Scale images to [0,1], and one-hot encode the labels
 images = images / 255.0
-labels = table(seq(1, n), labels+1, n, 10)
+labels = table(seq(1, N), labels+1, N, 10)
 
-# Split into training (55,000 examples) and validation (5,000 examples)
-X = images[5001:nrow(images),]
-X_val = images[1:5000,]
-y = labels[5001:nrow(images),]
-y_val = labels[1:5000,]
-
-
-model =
+model = eff::initNetwork(1, 10, -1)
 
 # Train
 epochs = 1
-[W, b] = (X, y, X_val, y_val, epochs)
+batch_size = 256
+model = eff::netTrain(model, images, 1, 28, 28, labels, epochs, batch_size, 0.025, 0.9, TRUE)
 
-#rowIndexMax(X)
+
+# Also Predict in Batches since otherwise we can run into Memory Issues
+# Could be unnecessary on more powerful machines :)
+iters = ceil(N / batch_size)
+accuracy = 0.0
+for(i in 1:iters) {
+    beg = ((i-1) * batch_size) %% N + 1
+    end = min(N, beg + batch_size - 1)
+    X_batch = images[beg:end,]
+    y_batch = labels[beg:end,]
+
+    pred = eff::netPredict(X_batch, model, 1, 28, 28)
+    partial_acc = mean(rowIndexMax(pred) == rowIndexMax(y_batch))
+    accuracy = accuracy + partial_acc
+}
+
+print("Total Accuracy: " + (accuracy / iters))
+

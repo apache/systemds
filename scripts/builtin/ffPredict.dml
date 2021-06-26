@@ -1,0 +1,8 @@
+source("nn/layers/affineForwardPass.dml") as ff_pass
+
+s_ffPredict = function(List[unknown] model, Matrix[double] X) 
+    return (Matrix[double] prediction) {
+      out = ff_pass::affineForwardPass(X, model)
+      out_len = length(out)
+      prediction = as.matrix(out[out_len])
+    }

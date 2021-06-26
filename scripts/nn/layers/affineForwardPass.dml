@@ -2,42 +2,27 @@ source("nn/layers/sigmoid.dml") as sigmoid
 source("nn/layers/leaky_relu.dml") as lrelu
 source("nn/layers/relu.dml") as relu
 source("nn/layers/tanh.dml") as tanh
+source("nn/layers/affine.dml") as affine
+source("nn/layers/dropout.dml") as dropout
 source("nn/layers/softmax.dml") as softmax
 
-affineForwardPass = function(Matrix[double] X, List[Unknown] layers) 
-return(List[Unknown] fp_cache) {
-    layers_num = length(layers) / 3
-    
-    input = X
-    fp_cache = list()
-    for(i in 1:layers_num) {
-        W = as.matrix(layers[i * 3 - 2])
-        b = as.matrix(layers[i * 3 - 1])
-        activation = toString(layers[i * 3])
-    
-        input = forward(input, W, b)
-        fp_cache = append(fp_cache, input)
-        input = apply_activation(input, activation)
-        fp_cache = append(fp_cache, input)
-    }
-}
+affineForwardPass = function(Matrix[double] X, List[unknown] layers) 
+return(List[unknown] cache) {
+    p = 0.35 # dropout probability
 
-forward = function(Matrix[double] X, Matrix[double] W, Matrix[double] b)
-    return (Matrix[double] out) {
-  /*
-   * Computes the forward pass for an affine (fully-connected) layer
-   * with M neurons.  The input data has N examples, each with D
-   * features.
-   *
-   * Inputs:
-   *  - X: Inputs, of shape (N, D).
-   *  - W: Weights, of shape (D, M).
-   *  - b: Biases, of shape (1, M).
-   *
-   * Outputs:
-   *  - out: Outputs, of shape (N, M).
-   */
-  out = X %*% W + b
+    # layer 1
+    out1 = affine::forward(X, as.matrix(layers["W1"]), as.matrix(layers["b1"]))
+    outr1 = relu::forward(out1)
+    [outd1, maskd1] = dropout::forward(outr1, p, -1)
+    # layer 2
+    out2 = affine::forward(outd1, as.matrix(layers["W2"]), as.matrix(layers["b2"]))
+    
+    if (as.scalar(layers["activation"]) == "logits") {
+        cache = list(out1=out1, outr1=outr1, outd1=outd1, maskd1=maskd1, out2=out2)
+    } else {
+        outs2 = apply_activation(out2, as.scalar(layers["activation"]))
+        cache = list(out1=out1, outr1=outr1, outd1=outd1, maskd1=maskd1, out2=out2, outs2=outs2)
+    }
 }
 
 apply_activation = function(Matrix[double] input, String activation) 
@@ -53,7 +38,5 @@ return (Matrix[double] out) {
         out = tanh::forward(input)
     } else if (activation == "softmax") {
         out = softmax::forward(input)
-    } else {
-        out = input
     }
 }

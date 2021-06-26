@@ -21,14 +21,9 @@
 #-------------------------------------------------------------
 
 SELF=$(cd $(dirname $0) && pwd)
-# . "$SELF/release-utils.sh"
 
-#BASE_DIR=$(pwd)
-#BASE_DIR="/c/virtual\ D/SystemDS/systemds"
-# BASE_DIR="../.." #points to systemds directory
-# RELEASE_WORK_DIR=$BASE_DIR/target/release2
+# Release info
 RELEASE_VERSION=2.1.0
-# eval cd $RELEASE_WORK_DIR/systemds/src/main/python
 
 pushd src/main/python
 
@@ -48,14 +43,16 @@ python3 -m twine check dist/*
 #              use Edit->paste to paste the API token (https://pypi.org/help/#invalid-auth)
 #            else, use `right click` for paste in the terminal.
 
+# Dev:
 # Test upload to test.pypi.org
 # Credentials are
 # username: __token__ 
 # password: pypi-DU5y...
 
-#python -m twine upload --repository testpypi dist/*
+# python -m twine upload --repository testpypi dist/*
 
-#python twine upload dist/*
+# Production:
+# python twine upload dist/*
 
 popd
 

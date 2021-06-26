@@ -30,6 +30,8 @@ SELF=$(cd $(dirname $0) && pwd)
 RELEASE_VERSION=2.1.0
 # eval cd $RELEASE_WORK_DIR/systemds/src/main/python
 
+pushd src/main/python
+
 # Steps:
 # 1. update systemds/project_info.py with the new version
 sed -i "s/$RELEASE_VERSION-SNAPSHOT/$RELEASE_VERSION/" systemds/project_info.py
@@ -45,5 +47,7 @@ python3 create_python_dist.py
 
 #python -m twine upload --repository testpypi dist/* #Test
 #python twine upload dist/*  #Real
+
+popd
 
 exit

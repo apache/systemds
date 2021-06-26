@@ -17,7 +17,7 @@ limitations under the License.
 {% end comment %}
 -->
 
-# SystemDS
+# Apache SystemDS
 
 ![Python Test](https://github.com/apache/systemds/workflows/Python%20Test/badge.svg)
 

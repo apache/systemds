@@ -39,14 +39,23 @@ sed -i "s/$RELEASE_VERSION-SNAPSHOT/$RELEASE_VERSION/" systemds/project_info.py
 # 2. generate distribution archives
 python3 create_python_dist.py
 
+# 2a. check generated distribution files
+python3 -m twine check dist/*
+
 # 3. upload the distribution archives to testpypi/pypi
 #    - For testing follow https://packaging.python.org/tutorials/packaging-projects/
 #    - Note: for testing use command prompt in windows and 
 #              use Edit->paste to paste the API token (https://pypi.org/help/#invalid-auth)
 #            else, use `right click` for paste in the terminal.
 
-#python -m twine upload --repository testpypi dist/* #Test
-#python twine upload dist/*  #Real
+# Test upload to test.pypi.org
+# Credentials are
+# username: __token__ 
+# password: pypi-DU5y...
+
+#python -m twine upload --repository testpypi dist/*
+
+#python twine upload dist/*
 
 popd
 

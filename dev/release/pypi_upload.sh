@@ -20,12 +20,15 @@
 #
 #-------------------------------------------------------------
 
+SELF=$(cd $(dirname $0) && pwd)
+# . "$SELF/release-utils.sh"
+
 #BASE_DIR=$(pwd)
 #BASE_DIR="/c/virtual\ D/SystemDS/systemds"
-BASE_DIR="../.." #points to systemds directory
-RELEASE_WORK_DIR=$BASE_DIR/target/release2
-RELEASE_VERSION=2.0.0
-eval cd $RELEASE_WORK_DIR/systemds/src/main/python
+# BASE_DIR="../.." #points to systemds directory
+# RELEASE_WORK_DIR=$BASE_DIR/target/release2
+RELEASE_VERSION=2.1.0
+# eval cd $RELEASE_WORK_DIR/systemds/src/main/python
 
 # Steps:
 # 1. update systemds/project_info.py with the new version
@@ -36,8 +39,9 @@ python3 create_python_dist.py
 
 # 3. upload the distribution archives to testpypi/pypi
 #    - For testing follow https://packaging.python.org/tutorials/packaging-projects/
-#    - Note: for testing use command prompt in windows and use Edit->paste to paste 
-#      the API token (known issues)
+#    - Note: for testing use command prompt in windows and 
+#              use Edit->paste to paste the API token (https://pypi.org/help/#invalid-auth)
+#            else, use `right click` for paste in the terminal.
 
 #python -m twine upload --repository testpypi dist/* #Test
 #python twine upload dist/*  #Real

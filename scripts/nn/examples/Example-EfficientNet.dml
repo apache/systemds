@@ -1,0 +1,76 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+
+/*
+* The MNIST Data can be downloaded as follows:
+* mkdir -p data/mnist/
+* cd data/mnist/
+* curl -O https://pjreddie.com/media/files/mnist_train.csv
+* curl -O https://pjreddie.com/media/files/mnist_test.csv
+*/
+
+# TODO add tests in functions/builtin, applications/nn
+
+# This script trains a minified version of the EfficientNet-B0 model
+# with a single MBConv layer. This model heavily overfits on a simple
+# MNist dataset since it was originally developed on the ImageNet dataset
+# Thus layer outputs and other factors are too large for normal MNist.
+# Therefore we only train once on the Mnist Train ds and print out its Accuracy
+# Import required methods
+source("nn/examples/efficientNet.dml") as eff
+
+# Read training data
+data = read("data/mnist/mnist_test.csv", format="csv")
+N = nrow(data)
+
+# Extract images and labels
+images = data[,2:ncol(data)]
+labels = data[,1]
+
+# Scale images to [0,1], and one-hot encode the labels
+images = images / 255.0
+labels = table(seq(1, N), labels+1, N, 10)
+
+model = eff::initNetwork(1, 10, -1)
+
+# Train
+epochs = 1
+batch_size = 256
+model = eff::netTrain(model, images, 1, 28, 28, labels, epochs, batch_size, 0.025, 0.9, TRUE)
+
+
+# Also Predict in Batches since otherwise we can run into Memory Issues
+# Could be unnecessary on more powerful machines :)
+iters = ceil(N / batch_size)
+accuracy = 0.0
+for(i in 1:iters) {
+  beg = ((i-1) * batch_size) %% N + 1
+  end = min(N, beg + batch_size - 1)
+  X_batch = images[beg:end,]
+  y_batch = labels[beg:end,]
+
+  pred = eff::netPredict(X_batch, model, 1, 28, 28)
+  partial_acc = mean(rowIndexMax(pred) == rowIndexMax(y_batch))
+  accuracy = accuracy + partial_acc
+}
+
+print("Total Accuracy: " + (accuracy / iters))

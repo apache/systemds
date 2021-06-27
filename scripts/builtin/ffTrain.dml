@@ -13,12 +13,15 @@ source("nn/layers/relu.dml") as relu
 source("nn/layers/leaky_relu.dml") as lrelu
 source("nn/layers/tanh.dml") as tanh
 
+source("nn/optim/sgd_nesterov.dml") as sgd_nesterov
+
 
 m_ffTrain = function(Matrix[double] X, Matrix[double] Y, Integer batch_size=64, Integer epochs=20, 
     Double lr = 0.003, String out_activation = "sigmoid", String loss_fcn = "cel", Boolean param_server=FALSE, 
     Integer workers = 0, String utype = "ASP", String freq = "EPOCH", String mode = "LOCAL", Integer seed = -1) 
     return (List[unknown] model) {
     
+
     N = nrow(X) # number of samples, # y_rows = y_rows
     D = ncol(X) # number of features
     t = ncol(Y) # number of targets
@@ -27,6 +30,19 @@ m_ffTrain = function(Matrix[double] X, Matrix[double] Y, Integer batch_size=64, 
 
     [W1, b1] = affine::init(D, H1, seed)
     [W2, b2] = affine::init(H1, t, seed)
+
+
+    ####################################################
+    # Initialize SGD
+    lr = lr  # learning rate
+    mu = 0  # momentum
+    decay = 0.99  # learning rate decay constant
+    vW1 = sgd_nesterov::init(W1)  # optimizer momentum state for W_1
+    vb1 = sgd_nesterov::init(b1)  # optimizer momentum state for b_1
+    vW2 = sgd_nesterov::init(W2)  # optimizer momentum state for W_2
+    vb2 = sgd_nesterov::init(b2)  # optimizer momentum state for b_2
+    ##############################################################
+
 
     if (param_server) {
         model = list(W1=W1, b1=b1, W2=W2, b2=b2, activation=out_activation)
@@ -53,11 +69,24 @@ m_ffTrain = function(Matrix[double] X, Matrix[double] Y, Integer batch_size=64, 
 
                 [dW1, db1, dW2, db2] = feed_backward(Y_batch, X_batch, layers, cache, dout2)
 
-                W1 = sgd::update(W1, dW1, lr)
-                b1 = sgd::update(b1, db1, lr)
-                W2 = sgd::update(W2, dW2, lr)
-                b2 = sgd::update(b2, db2, lr)
+                # W1 = sgd::update(W1, dW1, lr)
+                # b1 = sgd::update(b1, db1, lr)
+                # W2 = sgd::update(W2, dW2, lr)
+                # b2 = sgd::update(b2, db2, lr)
+
+                ##############################################################
+                # Optimize with SGD
+                [W2, vW2] = sgd_nesterov::update(W2, dW2, lr, mu, vW2)
+                [b2, vb2] = sgd_nesterov::update(b2, db2, lr, mu, vb2)
+                [W1, vW1] = sgd_nesterov::update(W1, dW1, lr, mu, vW1)
+                [b1, vb1] = sgd_nesterov::update(b1, db1, lr, mu, vb1)
+                #######################################################
+
             }
+                # Anneal momentum towards 0.999
+                mu = mu + (0.999 - mu)/(1+epochs-e)
+                # Decay learning rate
+                lr = lr * decay
             print("Epoch: " + e + ", Loss: " + loss)
         }
         model = list(W1=W1, b1=b1, W2=W2, b2=b2, activation=out_activation)
@@ -169,22 +198,22 @@ Integer epochs, Integer batch_size, Double learning_rate, String loss_function, 
 String utype, String freq, String mode)
 return (list[unknown] model_trained) {
 
-    N = nrow(X)
-    iters = N / batch_size
-    for (e in 1:epochs) {
-        for(i in 1:iters) {
+    # N = nrow(X)
+    # iters = N / batch_size
+    # for (e in 1:epochs) {
+    #     for(i in 1:iters) {
 
-            X_batch = X[i:i+batch_size-1,]
-            Y_batch = y[i:i+batch_size-1,]
+    #         X_batch = X[i:i+batch_size-1,]
+    #         Y_batch = y[i:i+batch_size-1,]
 
-            params = list(lr=0.001, loss_fcn="cel")
-            grad = gradients(model, params, X_batch, Y_batch)
-            model = aggregation(model, params, grad)
-        }
-    }
-    model_trained = model   
+    #         params = list(lr=0.001, loss_fcn="cel")
+    #         grad = gradients(model, params, X_batch, Y_batch)
+    #         model = aggregation(model, params, grad)
+    #     }
+    # }
+    # model_trained = model   
     
-    # params = list(lr=0.001, loss_fcn="cel")
-    # model_trained = paramserv(model=model, features=X, labels=y, upd="gradients", agg="aggregation", epochs=1, hyperparams=params)
+    params = list(lr=0.001, loss_fcn="cel")
+    model_trained = paramserv(model=model, features=X, labels=y, upd="gradients", agg="aggregation", epochs=1, hyperparams=params)
     
 }

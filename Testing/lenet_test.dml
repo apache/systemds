@@ -1,6 +1,0 @@
-
-source("nn/layers/lenetForwardPass.dml") as lenet_fw
-
-m = matrix(0, rows=5, cols=3)
-lenetTrain(m, m, m, m, 1, 1, 1, 1)
-lenetPredict(m, 1, 1, 1, m, m, m, m, m, m, m, m)

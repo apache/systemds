@@ -24,8 +24,16 @@ SELF=$(cd $(dirname $0) && pwd)
 
 # Release info
 RELEASE_VERSION=2.1.0
+RELEASE_TAG=2.1.0-rc3
 
-pushd src/main/python
+BASE_DIR=$PWD # SystemDS top level folder
+
+# Checkout the voted commit and build the publish distribution
+git checkout $RELEASE_TAG
+
+mvn clean package -P distribution
+
+cd $BASE_DIR/src/main/python
 
 # Steps:
 # 1. update systemds/project_info.py with the new version
@@ -54,6 +62,6 @@ python3 -m twine check dist/*
 # Production:
 # python twine upload dist/*
 
-popd
+cd $BASE_DIR
 
 exit

@@ -26,7 +26,6 @@ import java.util.List;
 import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.hops.recompile.Recompiler;
-import org.apache.sysds.lops.LopProperties.ExecType;
 import org.apache.sysds.runtime.lineage.Lineage;
 import org.apache.sysds.runtime.lineage.LineageCacheConfig.ReuseCacheType;
 import org.apache.sysds.runtime.matrix.data.MatrixValue;
@@ -101,7 +100,7 @@ public class LineageReuseAlg extends LineageBase {
 	public void testLineageTrace(String testname, ReuseCacheType reuseType) {
 		boolean old_simplification = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
 		boolean old_sum_product = OptimizerUtils.ALLOW_SUM_PRODUCT_REWRITES;
-		ExecMode platformOld = setExecMode(ExecType.CP);
+		ExecMode platformOld = setExecMode(ExecMode.SINGLE_NODE);
 		
 		try {
 			LOG.debug("------------ BEGIN " + testname + "------------");

@@ -49,10 +49,10 @@ public class DMVUtils {
 
 		for (int idx = 0; idx < numCols; idx++) {
 			Object c = frame.getColumnData(idx);
-			String[] column = (String[]) c;
+			String[] attr = (String[]) c;
 			String key = "";
-			for (String attr : column) {
-				key = (attr.isEmpty()) ? "NULL": attr;
+			for (int i = 0;  i < numRows; i++) {
+				key = (attr[i] == null) ? "NULL": attr[i];
 				addDistinctValueOrIncrementCounter(table_Hist, key, idx);
 			}
 		}
@@ -278,36 +278,38 @@ public class DMVUtils {
 	{
 		int row_idx = -1;
 		String pattern = "";
-		String[] column = (String[]) col;
-		for (String attr : column) {
+		String[] attr = (String[]) col;
+		int numRows = frameBlock.getNumRows();
+		for (int i = 0; i < numRows; i++) {
+			String value = (attr[i] == null)? "NULL": attr[i];
 			switch (level){
 				case LEVEL1:
-					pattern = encodeRawString(attr);
+					pattern = encodeRawString(value);
 					break;
 				case LEVEL2:
-					pattern = encodeRawString(attr);
+					pattern = encodeRawString(value);
 					pattern = removeNumbers(pattern);
 					break;
 				case LEVEL3:
-					pattern = encodeRawString(attr);
+					pattern = encodeRawString(value);
 					pattern = removeNumbers(pattern);
 					pattern = removeUpperLowerCase(pattern);
 					break;
 				case LEVEL4:
-					pattern = encodeRawString(attr);
+					pattern = encodeRawString(value);
 					pattern = removeNumbers(pattern);
 					pattern = removeUpperLowerCase(pattern);
 					pattern = removeInnerCharacterInPattern(pattern, DIGIT, DOT);
 					break;
 				case LEVEL5:
-					pattern = encodeRawString(attr);
+					pattern = encodeRawString(value);
 					pattern = removeNumbers(pattern);
 					pattern = removeUpperLowerCase(pattern);
 					pattern = removeInnerCharacterInPattern(pattern, DIGIT, DOT);
 					pattern = removeInnerCharacterInPattern(pattern, ALPHA, SPACE);
 					break;
 				case LEVEL6:
-					pattern = encodeRawString(attr);
+					pattern = encodeRawString(value);
 					pattern = removeNumbers(pattern);
 					pattern = removeUpperLowerCase(pattern);
 					pattern = removeInnerCharacterInPattern(pattern, DIGIT, DOT);

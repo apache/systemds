@@ -38,7 +38,8 @@ import numpy as np
 import pandas as pd
 from py4j.java_gateway import GatewayParameters, JavaGateway
 from py4j.protocol import Py4JNetworkError
-from systemds.operator import Frame, Matrix, OperationNode, Scalar, Source
+from systemds.operator import (Frame, List, Matrix, OperationNode, Scalar,
+                               Source)
 from systemds.script_building import OutputType
 from systemds.utils.consts import VALID_INPUT_TYPES
 from systemds.utils.helpers import get_module_dir
@@ -46,7 +47,11 @@ from systemds.utils.helpers import get_module_dir
 
 class SystemDSContext(object):
     """A context with a connection to a java instance with which SystemDS operations are executed. 
-    The java process is started and is running using a random tcp port for instruction parsing."""
+    The java process is started and is running using a random tcp port for instruction parsing.
+
+    This class is used as the starting point for all SystemDS execution. It gives the ability to create
+    all the different objects and adding them to the exectution.
+    """
 
     java_gateway: JavaGateway
 
@@ -324,9 +329,9 @@ class SystemDSContext(object):
 
     def read(self, path: os.PathLike, **kwargs: Dict[str, VALID_INPUT_TYPES]) -> OperationNode:
         """ Read an file from disk. Supportted types include:
-        CSV, Matrix Market(coordinate), Text(i,j,v), SystemDS Binay
+        CSV, Matrix Market(coordinate), Text(i,j,v), SystemDS Binary, etc.
         See: http://apache.github.io/systemds/site/dml-language-reference#readwrite-built-in-functions for more details
-        :return: an Operation Node, containing the read data.
+        :return: an Operation Node, containing the read data the operationNode read can be of types, Matrix, Frame or Scalar.
         """
         mdt_filepath = path + ".mtd"
         if os.path.exists(mdt_filepath):
@@ -353,9 +358,9 @@ class SystemDSContext(object):
         print("WARNING: Unknown type read please add a mtd file, or specify in arguments")
         return OperationNode(self, "read", [f'"{path}"'], named_input_nodes=kwargs)
 
-    def scalar(self, v: Dict[str, VALID_INPUT_TYPES]) -> 'Scalar':
+    def scalar(self, v: Dict[str, VALID_INPUT_TYPES]) -> Scalar:
         """ Construct an scalar value, this can contain str, float, double, integers and booleans.
-        :return: An `OperationNode` containing the scalar value.
+        :return: A scalar containing the given value.
         """
         if type(v) is str:
             if not ((v[0] == '"' and v[-1] == '"') or (v[0] == "'" and v[-1] == "'")):
@@ -374,6 +379,7 @@ class SystemDSContext(object):
         :param mat: the numpy array
         :param args: unnamed parameters
         :param kwargs: named parameters
+        :return: A Matrix
         """
 
         unnamed_params = ['\'./tmp/{file_name}\'']
@@ -398,6 +404,7 @@ class SystemDSContext(object):
         :param df: the pandas dataframe
         :param args: unnamed parameters
         :param kwargs: named parameters
+        :return: A Frame
         """
         unnamed_params = ["'./tmp/{file_name}'"]
 
@@ -427,7 +434,7 @@ class SystemDSContext(object):
         :param ranges: for each federated worker a pair of begin and end index of their held matrix
         :param args: unnamed params
         :param kwargs: named params
-        :return: the OperationNode representing this operation
+        :return: The Matrix containing the Federated data.
         """
         addresses_str = 'list(' + \
             ','.join(map(lambda s: f'"{s}"', addresses)) + ')'
@@ -440,13 +447,13 @@ class SystemDSContext(object):
         named_params.update(kwargs)
         return Matrix(self, 'federated', args, named_params)
 
-    def source(self, path: str, name: str, print_imported_methods: bool = False):
+    def source(self, path: str, name: str, print_imported_methods: bool = False) -> Source:
         """Import methods from a given dml file.
 
         The importing is done thorugh the DML command source, and adds all defined methods from
         the script to the Source object returned in python. This gives the flexibility to call the methods 
         directly on the object returned.
-    
+
         In systemds a method called func_01 can then be imported using
 
         ```python
@@ -458,3 +465,33 @@ class SystemDSContext(object):
         :param print_imported_methods: boolean specifying if the imported methods should be printed.
         """
         return Source(self, path, name, print_imported_methods)
+
+    def list(self, *args: Sequence[VALID_INPUT_TYPES], **kwargs: Dict[str, VALID_INPUT_TYPES]) -> List:
+        """ Create a List object containing the given nodes.
+
+        Note that only a sequence is allowed, or a dictionary, not both at the same time.
+        :param args: A Sequence that will be inserted to a list
+        :param kwargs: A Dictionary that will return a dictionary, (internally handled as a list)
+        :return: A List 
+        """
+        return List(self, unnamed_input_nodes=args, named_input_nodes=kwargs)
+
+    def array(self, *args: Sequence[VALID_INPUT_TYPES]) -> List:
+        """ Create a List object containing the given nodes.
+
+        Note that only a sequence is allowed, or a dictionary, not both at the same time.
+        :param args: A Sequence that will be inserted to a list
+        :param kwargs: A Dictionary that will return a dictionary, (internally handled as a list)
+        :return: A List 
+        """
+        return List(self, unnamed_input_nodes=args)
+
+    def dict(self,  **kwargs: Dict[str, VALID_INPUT_TYPES]) -> List:
+        """ Create a List object containing the given nodes.
+
+        Note that only a sequence is allowed, or a dictionary, not both at the same time.
+        :param args: A Sequence that will be inserted to a list
+        :param kwargs: A Dictionary that will return a dictionary, (internally handled as a list)
+        :return: A List 
+        """
+        return List(self, named_input_nodes=kwargs)

@@ -24,21 +24,27 @@
 
 from typing import Dict, Iterable
 
-from systemds.operator import OperationNode, Matrix
+from systemds.operator import OperationNode, Matrix, Frame, List, MultiReturn, Scalar
 from systemds.script_building.dag import OutputType
 from systemds.utils.consts import VALID_INPUT_TYPES
 
-def msvmPredict(X: OperationNode, W: OperationNode) -> Matrix:
+
+def msvmPredict(X: Matrix,
+                W: Matrix):
     """
     :param X: matrix X of feature vectors to classify
     :param W: matrix of the trained variables
     :return: 'OperationNode' containing classification labels maxed to ones and zeros. 
     """
+    params_dict = {'X': X, 'W': W}
     
-    X._check_matrix_op()
-    W._check_matrix_op()
-    params_dict = {'X':X, 'W':W}
-    return OperationNode(X.sds_context, 'msvmPredict', named_input_nodes=params_dict, output_type=OutputType.LIST, number_of_outputs=2, output_types=[OutputType.MATRIX, OutputType.MATRIX])
+    vX_0 = Matrix(X.sds_context, '')
+    vX_1 = Matrix(X.sds_context, '')
+    output_nodes = [vX_0, vX_1, ]
 
+    op = MultiReturn(X.sds_context, 'msvmPredict', output_nodes, named_input_nodes=params_dict)
 
-    
+    vX_0._unnamed_input_nodes = [op]
+    vX_1._unnamed_input_nodes = [op]
+
+    return op

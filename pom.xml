@@ -25,7 +25,7 @@
 		<version>18</version>
 	</parent>
 	<groupId>org.apache.systemds</groupId>
-	<version>2.1.0-SNAPSHOT</version>
+	<version>2.2.0-SNAPSHOT</version>
 	<artifactId>systemds</artifactId>
 	<packaging>jar</packaging>
 	<name>SystemDS</name>
@@ -80,7 +80,10 @@
 				<excludes>
 					<exclude>algorithms/obsolete/*</exclude>
 					<exclude>datagen/obsolete/*</exclude>
-					<exclude>perftest/*</exclude>
+					<exclude>perftest/**/*</exclude>
+					<exclude>perftest</exclude>
+					<exclude>perftestDeprecated/*</exclude>
+					<exclude>perftestDeprecated</exclude>
 					<exclude>staging/**/*</exclude>
 					<exclude>nn/test/compare_backends/*</exclude>
 					<exclude>nn/test/compare_backends/*</exclude>
@@ -1112,5 +1115,12 @@
 			<artifactId>protobuf-java-util</artifactId>
 			<version>3.12.2</version>
 		</dependency>
+
+		<dependency>
+			<groupId>org.apache.maven.plugins</groupId>
+			<artifactId>maven-assembly-plugin</artifactId>
+			<version>3.3.0</version>
+		</dependency>
+
 	</dependencies>
 </project>

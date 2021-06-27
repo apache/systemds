@@ -25,8 +25,7 @@ import static org.junit.Assert.assertTrue;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.common.Types;
-import org.apache.sysds.lops.LopProperties;
-import org.apache.sysds.lops.LopProperties.ExecType;
+import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
@@ -73,7 +72,7 @@ public class compressScale extends AutomatedTestBase {
 	// compressTest(10, 200000, 0.2, ExecType.CP, 0, 5, 1, 0);
 	// }
 
-	public void compressTest(int cols, int rows, double sparsity, LopProperties.ExecType instType,
+	public void compressTest(int cols, int rows, double sparsity, ExecType instType,
 		int min, int max, int scale, int center) {
 
 		Types.ExecMode platformOld = setExecMode(instType);
@@ -92,11 +91,11 @@ public class compressScale extends AutomatedTestBase {
 			double outStd = Double.parseDouble(runTest(null).toString().split("\n")[0].split(" ")[0]);
 			LOG.debug("ULA : " + outStd);
 
-			programArgs[1] = configPath("SystemDS-config-compress-cost-RLE.xml");
-			double RLEoutC = Double.parseDouble(runTest(null).toString().split("\n")[0].split(" ")[0]);
-			assertTrue(DMLCompressionStatistics.haveCompressed());
-			DMLCompressionStatistics.reset();
-			LOG.debug("RLE : " + RLEoutC);
+			// programArgs[1] = configPath("SystemDS-config-compress-cost-RLE.xml");
+			// double RLEoutC = Double.parseDouble(runTest(null).toString().split("\n")[0].split(" ")[0]);
+			// assertTrue(DMLCompressionStatistics.haveCompressed());
+			// DMLCompressionStatistics.reset();
+			// LOG.debug("RLE : " + RLEoutC);
 			
 			programArgs[1] = configPath("SystemDS-config-compress-cost-OLE.xml");
 			double OLEOutC = Double.parseDouble(runTest(null).toString().split("\n")[0].split(" ")[0]);
@@ -117,7 +116,7 @@ public class compressScale extends AutomatedTestBase {
 			LOG.debug("CLA : " + ALLoutC);
 
 			assertEquals(outStd, OLEOutC, 0.1);
-			assertEquals(outStd, RLEoutC, 0.1);
+			// assertEquals(outStd, RLEoutC, 0.1);
 			assertEquals(outStd, DDCoutC, 0.1);
 			assertEquals(outStd, ALLoutC, 0.1);
 

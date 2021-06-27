@@ -25,7 +25,7 @@ import org.apache.sysds.common.Types.ReOrgOp;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.hops.rewrite.HopRewriteUtils;
 import org.apache.sysds.lops.Lop;
-import org.apache.sysds.lops.LopProperties.ExecType;
+import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.lops.Transform;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
@@ -162,7 +162,6 @@ public class ReorgOp extends MultiThreadedHop
 				else { //general case
 					int k = OptimizerUtils.getConstrainedNumThreads(_maxNumThreads);
 					Transform transform1 = new Transform(lin, _op, getDataType(), getValueType(), et, k);
-					setFederatedOutput(transform1);
 					setOutputDimensions(transform1);
 					setLineNumbers(transform1);
 					setLops(transform1);

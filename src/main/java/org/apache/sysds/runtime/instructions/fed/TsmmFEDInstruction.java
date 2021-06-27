@@ -19,34 +19,34 @@
 
 package org.apache.sysds.runtime.instructions.fed;
 
+import java.util.concurrent.Future;
+
 import org.apache.sysds.lops.MMTSJ.MMTSJType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest;
+import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest.RequestType;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse;
 import org.apache.sysds.runtime.controlprogram.federated.FederationMap;
 import org.apache.sysds.runtime.controlprogram.federated.FederationUtils;
-import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest.RequestType;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
-
-import java.util.concurrent.Future;
 
 public class TsmmFEDInstruction extends BinaryFEDInstruction {
 	private final MMTSJType _type;
 	@SuppressWarnings("unused")
 	private final int _numThreads;
 	
-	public TsmmFEDInstruction(CPOperand in, CPOperand out, MMTSJType type, int k, String opcode, String istr, boolean federatedOutput) {
-		super(FEDType.Tsmm, null, in, null, out, opcode, istr, federatedOutput);
+	public TsmmFEDInstruction(CPOperand in, CPOperand out, MMTSJType type, int k, String opcode, String istr, FederatedOutput fedOut) {
+		super(FEDType.Tsmm, null, in, null, out, opcode, istr, fedOut);
 		_type = type;
 		_numThreads = k;
 	}
 
 	public TsmmFEDInstruction(CPOperand in, CPOperand out, MMTSJType type, int k, String opcode, String istr) {
-		this(in, out, type, k, opcode, istr, false);
+		this(in, out, type, k, opcode, istr, FederatedOutput.NONE);
 	}
 	
 	public static TsmmFEDInstruction parseInstruction(String str) {

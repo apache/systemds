@@ -38,7 +38,7 @@ import org.apache.sysds.lops.Compression;
 import org.apache.sysds.lops.Data;
 import org.apache.sysds.lops.DeCompression;
 import org.apache.sysds.lops.Lop;
-import org.apache.sysds.lops.LopProperties.ExecType;
+import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.lops.LopsException;
 import org.apache.sysds.lops.ReBlock;
 import org.apache.sysds.lops.UnaryCP;
@@ -47,6 +47,7 @@ import org.apache.sysds.runtime.controlprogram.LocalVariableMap;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject.UpdateType;
 import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysds.runtime.controlprogram.parfor.util.IDSequence;
+import org.apache.sysds.runtime.instructions.fed.FEDInstruction.FederatedOutput;
 import org.apache.sysds.runtime.instructions.gpu.context.GPUContextPool;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
@@ -87,7 +88,7 @@ public abstract class Hop implements ParseInfo {
 	 * If it is true, the output should be kept at federated sites.
 	 * If it is false, the output should be retrieved by the coordinator.
 	 */
-	protected boolean _federatedOutput = false;
+	protected FederatedOutput _federatedOutput = FederatedOutput.NONE;
 	
 	// Estimated size for the output produced from this Hop
 	protected double _outputMemEstimate = OptimizerUtils.INVALID_SIZE;
@@ -288,6 +289,10 @@ public abstract class Hop implements ParseInfo {
 	}
 	
 	public void constructAndSetLopsDataFlowProperties() {
+		//propagate federated output configuration to lops
+		if( isFederated() )
+			getLops().setFederatedOutput(_federatedOutput);
+		
 		//Step 1: construct reblock lop if required (output of hop)
 		constructAndSetReblockLopIfRequired();
 		
@@ -751,28 +756,25 @@ public abstract class Hop implements ParseInfo {
 	}
 
 	/**
-	 * Returns true if any input has federated ExecType and configures such input to keep the output federated.
+	 * Returns true if any input has federated ExecType.
 	 * This method can only return true if FedDecision is activated.
 	 * @return true if any input has federated ExecType
 	 */
 	protected boolean inputIsFED(){
-		if ( !OptimizerUtils.FEDERATED_COMPILATION ) return false;
-		boolean fedFound = false;
-		for ( Hop input : _input ){
-			if ( input.isFederated() ){
-				input._federatedOutput = true;
-				fedFound = true;
-			}
-		}
-		return fedFound;
+		if ( !OptimizerUtils.FEDERATED_COMPILATION )
+			return false;
+		for ( Hop input : _input )
+			if ( input.isFederated() || input.isFederatedOutput() )
+				return true;
+		return false;
 	}
-
-	/**
-	 * Returns true if the execution is federated and/or if the output is federated.
-	 * @return true if federated
-	 */
+	
 	public boolean isFederated(){
-		return getExecType() == ExecType.FED || hasFederatedOutput();
+		return getExecType() == ExecType.FED;
+	}
+	
+	public boolean isFederatedOutput(){
+		return _federatedOutput == FederatedOutput.FOUT;
 	}
 
 	public ArrayList<Hop> getParent() {
@@ -822,7 +824,7 @@ public abstract class Hop implements ParseInfo {
 	}
 
 	public boolean hasFederatedOutput(){
-		return _federatedOutput;
+		return _federatedOutput == FederatedOutput.FOUT;
 	}
 
 	public void setUpdateType(UpdateType update){
@@ -1456,10 +1458,6 @@ public abstract class Hop implements ParseInfo {
 	
 	protected void setPrivacy(Lop lop) {
 		lop.setPrivacyConstraint(getPrivacy());
-	}
-
-	protected void setFederatedOutput(Lop lop){
-		lop.setFederatedOutput(_federatedOutput);
 	}
 
 	/**

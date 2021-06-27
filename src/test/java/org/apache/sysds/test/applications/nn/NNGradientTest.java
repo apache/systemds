@@ -21,7 +21,7 @@ package org.apache.sysds.test.applications.nn;
 
 import org.junit.Test;
 
-public class NNGradientTest extends BaseTest {
+public class NNGradientTest extends TestFolder {
 
 	@Test
 	public void testNNLibrary_Gradients() {

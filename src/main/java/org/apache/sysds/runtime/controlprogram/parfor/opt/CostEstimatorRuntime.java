@@ -20,7 +20,7 @@
 package org.apache.sysds.runtime.controlprogram.parfor.opt;
 
 import org.apache.sysds.hops.cost.CostEstimationWrapper;
-import org.apache.sysds.lops.LopProperties.ExecType;
+import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.runtime.controlprogram.LocalVariableMap;
 import org.apache.sysds.runtime.controlprogram.ProgramBlock;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;

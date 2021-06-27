@@ -24,21 +24,29 @@
 
 from typing import Dict, Iterable
 
-from systemds.operator import OperationNode, Matrix
+from systemds.operator import OperationNode, Matrix, Frame, List, MultiReturn, Scalar
 from systemds.script_building.dag import OutputType
 from systemds.utils.consts import VALID_INPUT_TYPES
 
-def hyperband(X_train: OperationNode, y_train: OperationNode, X_val: OperationNode, y_val: OperationNode, params: Iterable, paramRanges: OperationNode, **kwargs: Dict[str, VALID_INPUT_TYPES]) -> Matrix:
+
+def hyperband(X_train: Matrix,
+              y_train: Matrix,
+              X_val: Matrix,
+              y_val: Matrix,
+              params: Iterable,
+              paramRanges: Matrix,
+              **kwargs: Dict[str, VALID_INPUT_TYPES]):
     
-    
-    X_train._check_matrix_op()
-    y_train._check_matrix_op()
-    X_val._check_matrix_op()
-    y_val._check_matrix_op()
-    paramRanges._check_matrix_op()
-    params_dict = {'X_train':X_train, 'y_train':y_train, 'X_val':X_val, 'y_val':y_val, 'params':params, 'paramRanges':paramRanges}
+    params_dict = {'X_train': X_train, 'y_train': y_train, 'X_val': X_val, 'y_val': y_val, 'params': params, 'paramRanges': paramRanges}
     params_dict.update(kwargs)
-    return OperationNode(X_train.sds_context, 'hyperband', named_input_nodes=params_dict, output_type=OutputType.LIST, number_of_outputs=2, output_types=[OutputType.MATRIX, OutputType.FRAME])
-
-
     
+    vX_0 = Matrix(X_train.sds_context, '')
+    vX_1 = Frame(X_train.sds_context, '')
+    output_nodes = [vX_0, vX_1, ]
+
+    op = MultiReturn(X_train.sds_context, 'hyperband', output_nodes, named_input_nodes=params_dict)
+
+    vX_0._unnamed_input_nodes = [op]
+    vX_1._unnamed_input_nodes = [op]
+
+    return op

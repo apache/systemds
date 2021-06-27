@@ -107,14 +107,18 @@
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">
-<td class="colFirst"><a href="#org.apache.sysds.runtime.controlprogram">org.apache.sysds.runtime.controlprogram</a></td>
+<td class="colFirst"><a href="#org.apache.sysds.runtime.compress.workload">org.apache.sysds.runtime.compress.workload</a></td>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
-<td class="colFirst"><a href="#org.apache.sysds.runtime.controlprogram.parfor.opt">org.apache.sysds.runtime.controlprogram.parfor.opt</a></td>
+<td class="colFirst"><a href="#org.apache.sysds.runtime.controlprogram">org.apache.sysds.runtime.controlprogram</a></td>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">
+<td class="colFirst"><a href="#org.apache.sysds.runtime.controlprogram.parfor.opt">org.apache.sysds.runtime.controlprogram.parfor.opt</a></td>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
 <td class="colFirst"><a href="#org.apache.sysds.utils">org.apache.sysds.utils</a></td>
 <td class="colLast">&nbsp;</td>
 </tr>
@@ -236,6 +240,12 @@
               <a href="../../../../../org/apache/sysds/hops/ipa/FunctionCallSizeInfo.html" title="class in org.apache.sysds.hops.ipa">FunctionCallSizeInfo</a>&nbsp;fcallSizes)</code>&nbsp;</td>
 </tr>
 <tr class="altColor">
+<td class="colFirst"><code>boolean</code></td>
+<td class="colLast"><span class="typeNameLabel">IPAPassCompressionWorkloadAnalysis.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/hops/ipa/IPAPassCompressionWorkloadAnalysis.html#rewriteProgram-org.apache.sysds.parser.DMLProgram-org.apache.sysds.hops.ipa.FunctionCallGraph-org.apache.sysds.hops.ipa.FunctionCallSizeInfo-">rewriteProgram</a></span>(<a href="../../../../../org/apache/sysds/parser/DMLProgram.html" title="class in org.apache.sysds.parser">DMLProgram</a>&nbsp;prog,
+              <a href="../../../../../org/apache/sysds/hops/ipa/FunctionCallGraph.html" title="class in org.apache.sysds.hops.ipa">FunctionCallGraph</a>&nbsp;fgraph,
+              <a href="../../../../../org/apache/sysds/hops/ipa/FunctionCallSizeInfo.html" title="class in org.apache.sysds.hops.ipa">FunctionCallSizeInfo</a>&nbsp;fcallSizes)</code>&nbsp;</td>
+</tr>
+<tr class="rowColor">
 <td class="colFirst"><code>boolean</code></td>
 <td class="colLast"><span class="typeNameLabel">IPAPassRemoveUnusedFunctions.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/hops/ipa/IPAPassRemoveUnusedFunctions.html#rewriteProgram-org.apache.sysds.parser.DMLProgram-org.apache.sysds.hops.ipa.FunctionCallGraph-org.apache.sysds.hops.ipa.FunctionCallSizeInfo-">rewriteProgram</a></span>(<a href="../../../../../org/apache/sysds/parser/DMLProgram.html" title="class in org.apache.sysds.parser">DMLProgram</a>&nbsp;prog,
               <a href="../../../../../org/apache/sysds/hops/ipa/FunctionCallGraph.html" title="class in org.apache.sysds.hops.ipa">FunctionCallGraph</a>&nbsp;fgraph,
@@ -531,6 +541,33 @@
      <a href="https://docs.oracle.com/javase/8/docs/api/java/util/Map.html?is-external=true" title="class or interface in java.util">Map</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>,<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&gt;&nbsp;argVals)</code>
 <div class="block">Parses the passed file with command line parameters.</div>
 </td>
+</tr>
+</tbody>
+</table>
+</li>
+<li class="blockList"><a name="org.apache.sysds.runtime.compress.workload">
+<!--   -->
+</a>
+<h3>Uses of <a href="../../../../../org/apache/sysds/parser/DMLProgram.html" title="class in org.apache.sysds.parser">DMLProgram</a> in <a href="../../../../../org/apache/sysds/runtime/compress/workload/package-summary.html">org.apache.sysds.runtime.compress.workload</a></h3>
+<table class="useSummary" border="0" cellpadding="3" cellspacing="0" summary="Use table, listing methods, and an explanation">
+<caption><span>Methods in <a href="../../../../../org/apache/sysds/runtime/compress/workload/package-summary.html">org.apache.sysds.runtime.compress.workload</a> with parameters of type <a href="../../../../../org/apache/sysds/parser/DMLProgram.html" title="class in org.apache.sysds.parser">DMLProgram</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colLast" scope="col">Method and Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code>static <a href="../../../../../org/apache/sysds/runtime/compress/workload/WTreeNode.html" title="class in org.apache.sysds.runtime.compress.workload">WTreeNode</a></code></td>
+<td class="colLast"><span class="typeNameLabel">WorkloadAnalyzer.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/compress/workload/WorkloadAnalyzer.html#createWorkloadTree-org.apache.sysds.parser.DMLProgram-org.apache.sysds.hops.Hop-">createWorkloadTree</a></span>(<a href="../../../../../org/apache/sysds/parser/DMLProgram.html" title="class in org.apache.sysds.parser">DMLProgram</a>&nbsp;prog,
+                  <a href="../../../../../org/apache/sysds/hops/Hop.html" title="class in org.apache.sysds.hops">Hop</a>&nbsp;candidate)</code>&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>static <a href="https://docs.oracle.com/javase/8/docs/api/java/util/Map.html?is-external=true" title="class or interface in java.util">Map</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Long.html?is-external=true" title="class or interface in java.lang">Long</a>,<a href="../../../../../org/apache/sysds/runtime/compress/workload/WTreeNode.html" title="class in org.apache.sysds.runtime.compress.workload">WTreeNode</a>&gt;</code></td>
+<td class="colLast"><span class="typeNameLabel">WorkloadAnalyzer.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/compress/workload/WorkloadAnalyzer.html#getAllCandidateWorkloads-org.apache.sysds.parser.DMLProgram-">getAllCandidateWorkloads</a></span>(<a href="../../../../../org/apache/sysds/parser/DMLProgram.html" title="class in org.apache.sysds.parser">DMLProgram</a>&nbsp;prog)</code>&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>static <a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;<a href="../../../../../org/apache/sysds/hops/Hop.html" title="class in org.apache.sysds.hops">Hop</a>&gt;</code></td>
+<td class="colLast"><span class="typeNameLabel">WorkloadAnalyzer.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/compress/workload/WorkloadAnalyzer.html#getCandidates-org.apache.sysds.parser.DMLProgram-">getCandidates</a></span>(<a href="../../../../../org/apache/sysds/parser/DMLProgram.html" title="class in org.apache.sysds.parser">DMLProgram</a>&nbsp;prog)</code>&nbsp;</td>
 </tr>
 </tbody>
 </table>

@@ -35,9 +35,7 @@ import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
-import org.apache.sysds.runtime.instructions.spark.functions.ExtractBlockForBinaryReblock;
 import org.apache.sysds.runtime.instructions.spark.utils.FrameRDDConverterUtils;
-import org.apache.sysds.runtime.instructions.spark.utils.RDDAggregateUtils;
 import org.apache.sysds.runtime.instructions.spark.utils.RDDConverterUtils;
 import org.apache.sysds.runtime.io.FileFormatPropertiesCSV;
 import org.apache.sysds.runtime.io.FileFormatPropertiesLIBSVM;
@@ -170,16 +168,8 @@ public class ReblockSPInstruction extends UnarySPInstruction {
 		else if(fmt == FileFormat.BINARY) {
 			//BINARY BLOCK <- BINARY BLOCK (different sizes)
 			JavaPairRDD<MatrixIndexes, MatrixBlock> in1 = sec.getBinaryMatrixBlockRDDHandleForVariable(input1.getName());
-
-			boolean shuffleFreeReblock = mc.dimsKnown() && mcOut.dimsKnown()
-				&& (mc.getRows() < mcOut.getBlocksize() || mc.getBlocksize()%mcOut.getBlocksize() == 0)
-				&& (mc.getCols() < mcOut.getBlocksize() || mc.getBlocksize()%mcOut.getBlocksize() == 0);
-
-			JavaPairRDD<MatrixIndexes, MatrixBlock> out = in1
-				.flatMapToPair(new ExtractBlockForBinaryReblock(mc, mcOut));
-			if( !shuffleFreeReblock )
-				out = RDDAggregateUtils.mergeByKey(out, false);
-
+			JavaPairRDD<MatrixIndexes, MatrixBlock> out = RDDConverterUtils.binaryBlockToBinaryBlock(in1, mc, mcOut);
+			
 			//put output RDD handle into symbol table
 			sec.setRDDHandleForVariable(output.getName(), out);
 			sec.addLineageRDD(output.getName(), input1.getName());

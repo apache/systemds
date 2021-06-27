@@ -24,18 +24,24 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.util.BitSet;
 
+import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory.MAP_TYPE;
 import org.apache.sysds.utils.MemoryEstimates;
 
 public class MapToBit extends AMapToData {
 
 	private final BitSet _data;
+	private final int _size;
 
-	public MapToBit(int size) {
+	public MapToBit(int unique, int size) {
+		super(unique);
 		_data = new BitSet(size);
+		_size = size;
 	}
 
-	private MapToBit(BitSet d) {
+	private MapToBit(int unique, BitSet d, int size) {
+		super(unique);
 		_data = d;
+		_size = size;
 	}
 
 	@Override
@@ -45,8 +51,7 @@ public class MapToBit extends AMapToData {
 
 	@Override
 	public void fill(int v) {
-		if(v == 1)
-			_data.flip(0, _data.length());
+		_data.set(0, _size, true);
 	}
 
 	@Override
@@ -55,14 +60,18 @@ public class MapToBit extends AMapToData {
 	}
 
 	public static long getInMemorySize(int dataLength) {
-		long size = 16 + 8; // object header + object reference
+		long size = 16 + 8 + 4; // object header + object reference + int size
 		size += MemoryEstimates.bitSetCost(dataLength);
 		return size;
 	}
 
 	@Override
 	public long getExactSizeOnDisk() {
-		return 4 + _data.size() / 8 + (_data.size() % 8 > 1 ? 1 : 0);
+		final int dSize = _data.size();
+		long size = 1 + 4 +  4 + 4; // base variables
+		size += (dSize / 64) * 8; // all longs except last
+		size += (dSize % 64 == 0 ? 0 : 8); // last long
+		return size;
 	}
 
 	@Override
@@ -72,22 +81,27 @@ public class MapToBit extends AMapToData {
 
 	@Override
 	public int size() {
-		return _data.size();
+		return _size;
 	}
 
 	@Override
 	public void write(DataOutput out) throws IOException {
 		long[] internals = _data.toLongArray();
+		out.writeByte(MAP_TYPE.BIT.ordinal());
+		out.writeInt(getUnique());
+		out.writeInt(_size);
 		out.writeInt(internals.length);
 		for(int i = 0; i < internals.length; i++)
 			out.writeLong(internals[i]);
 	}
 
 	public static MapToBit readFields(DataInput in) throws IOException {
+		int unique = in.readInt();
+		int size = in.readInt();
 		long[] internalLong = new long[in.readInt()];
 		for(int i = 0; i < internalLong.length; i++)
 			internalLong[i] = in.readLong();
 
-		return new MapToBit(BitSet.valueOf(internalLong));
+		return new MapToBit(unique, BitSet.valueOf(internalLong), size);
 	}
 }

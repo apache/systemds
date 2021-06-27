@@ -61,9 +61,17 @@ public class ListObject extends Data implements Externalizable {
 	public ListObject(List<Data> data) {
 		this(data, null, null);
 	}
+	
+	public ListObject(Data[] data) {
+		this(Arrays.asList(data), null, null);
+	}
 
 	public ListObject(List<Data> data, List<String> names) {
 		this(data, names, null);
+	}
+	
+	public ListObject(Data[] data, String[] names) {
+		this(Arrays.asList(data), Arrays.asList(names), null);
 	}
 
 	public ListObject(List<Data> data, List<String> names, List<LineageItem> lineage) {
@@ -132,10 +140,21 @@ public class ListObject extends Data implements Externalizable {
 		return slice(name);
 	}
 	
+	public LineageItem getLineageItem(String name) {
+		//lookup position by name, incl error handling
+		int pos = getPosForName(name);
+		return getLineageItem(pos);
+	}
+	
 	public List<LineageItem> getLineageItems() {
 		return _lineage;
 	}
 
+	public boolean contains(Data d) {
+		return _data.stream().anyMatch(lo -> lo instanceof ListObject ?
+			(lo == d || ((ListObject)lo).contains(d)) : lo == d);
+	}
+	
 	public long getDataSize() {
 		return _data.stream().filter(data -> data instanceof CacheableData)
 			.mapToLong(data -> ((CacheableData<?>) data).getDataSize()).sum();
@@ -193,6 +212,12 @@ public class ListObject extends Data implements Externalizable {
 		_data.set(ix, data);
 		return this;
 	}
+
+	public ListObject set(int ix, Data data, LineageItem li) {
+		_data.set(ix, data);
+		if (li != null) _lineage.set(ix, li);
+		return this;
+	}
 	
 	public ListObject set(int ix1, int ix2, ListObject data) {
 		int range = ix2 - ix1 + 1;
@@ -227,6 +252,13 @@ public class ListObject extends Data implements Externalizable {
 		
 		//set entry into position
 		return set(pos, data);
+	}
+	
+	public Data set(String name, Data data, LineageItem li) {
+		//lookup position by name, incl error handling
+		int pos = getPosForName(name);
+		//set entry into position
+		return set(pos, data, li);
 	}
 	
 	public ListObject set(String name1, String name2, ListObject data) {

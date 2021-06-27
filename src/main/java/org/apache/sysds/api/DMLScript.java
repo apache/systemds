@@ -47,6 +47,7 @@ import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.conf.DMLConfig;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.hops.codegen.SpoofCompiler;
+import org.apache.sysds.hops.codegen.SpoofCompiler.GeneratorAPI;
 import org.apache.sysds.lops.Lop;
 import org.apache.sysds.parser.DMLProgram;
 import org.apache.sysds.parser.DMLTranslator;
@@ -99,6 +100,7 @@ public class DMLScript
 	public static ReuseCacheType LINEAGE_REUSE = DMLOptions.defaultOptions.linReuseType;   // whether lineage-based reuse
 	public static LineageCachePolicy LINEAGE_POLICY = DMLOptions.defaultOptions.linCachePolicy; // lineage cache eviction policy
 	public static boolean     LINEAGE_ESTIMATE = DMLOptions.defaultOptions.lineage_estimate; // whether estimate reuse benefits
+	public static boolean     LINEAGE_DEBUGGER = DMLOptions.defaultOptions.lineage_debugger; // whether enable lineage debugger
 	public static boolean     CHECK_PRIVACY = DMLOptions.defaultOptions.checkPrivacy;      // Check which privacy constraints are loaded and checked during federated execution
 
 	public static boolean           USE_ACCELERATOR     = DMLOptions.defaultOptions.gpu;
@@ -223,6 +225,7 @@ public class DMLScript
 			LINEAGE_POLICY      = dmlOptions.linCachePolicy;
 			LINEAGE_ESTIMATE    = dmlOptions.lineage_estimate;
 			CHECK_PRIVACY       = dmlOptions.checkPrivacy;
+			LINEAGE_DEBUGGER	= dmlOptions.lineage_debugger;
 
 			String fnameOptConfig = dmlOptions.configFile;
 			boolean isFile = dmlOptions.filePath != null;
@@ -602,7 +605,8 @@ public class DMLScript
 	private static void configureCodeGen() {
 		// load native codegen if configured
 		if(ConfigurationManager.isCodegenEnabled()) {
-			SpoofCompiler.GeneratorAPI configured_generator = SpoofCompiler.GeneratorAPI.valueOf(ConfigurationManager.getDMLConfig().getTextValue(DMLConfig.CODEGEN_API).toUpperCase());
+			GeneratorAPI configured_generator = GeneratorAPI.valueOf(
+				ConfigurationManager.getDMLConfig().getTextValue(DMLConfig.CODEGEN_API).toUpperCase());
 			try {
 				SpoofCompiler.loadNativeCodeGenerator(configured_generator);
 			}

@@ -26,7 +26,6 @@ import java.util.PriorityQueue;
 import java.util.Queue;
 
 import org.apache.sysds.runtime.compress.CompressionSettings;
-import org.apache.sysds.runtime.compress.colgroup.AColGroup.CompressionType;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeEstimator;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfo;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup;
@@ -50,9 +49,9 @@ public class CoCodeCost extends AColumnCoCoder {
 
 	private final static int toSmallForAnalysis = 64;
 
-	protected CoCodeCost(CompressedSizeEstimator sizeEstimator, CompressionSettings cs, int numRows) {
-		super(sizeEstimator, cs, numRows);
-		largestDistinct = Math.min(4096, Math.max(256, (int) (_numRows * 0.01)));
+	protected CoCodeCost(CompressedSizeEstimator sizeEstimator, CompressionSettings cs) {
+		super(sizeEstimator, cs);
+		largestDistinct = Math.min(4096, Math.max(256, (int) (sizeEstimator.getNumRows() * cs.coCodePercentage)));
 	}
 
 	@Override
@@ -62,52 +61,41 @@ public class CoCodeCost extends AColumnCoCoder {
 	}
 
 	private List<CompressedSizeInfoColGroup> join(List<CompressedSizeInfoColGroup> currentGroups) {
-
 		Comparator<CompressedSizeInfoColGroup> comp = Comparator.comparing(CompressedSizeInfoColGroup::getNumVals);
 		Queue<CompressedSizeInfoColGroup> que = new PriorityQueue<>(currentGroups.size(), comp);
 		List<CompressedSizeInfoColGroup> ret = new ArrayList<>();
 
-		for(CompressedSizeInfoColGroup g : currentGroups) {
-			if(g.getBestCompressionType() == CompressionType.CONST)
-				ret.add(g);
-			else
+		for(CompressedSizeInfoColGroup g : currentGroups)
+			if(g != null)
 				que.add(g);
-		}
+		
 
-		boolean finished = false;
-		while(!finished) {
-			if(que.peek() != null) {
-				CompressedSizeInfoColGroup l = que.poll();
-				if(que.peek() != null) {
-					CompressedSizeInfoColGroup r = que.poll();
-					int worstCaseJoinedSize = l.getNumVals() * r.getNumVals();
-					if(worstCaseJoinedSize < toSmallForAnalysis)
-						que.add(joinWithoutAnalysis(l, r));
-					else if(worstCaseJoinedSize < largestDistinct){
+		CompressedSizeInfoColGroup l = que.poll();
 
-						CompressedSizeInfoColGroup g = joinWithAnalysis(l, r);
-						if(g.getNumVals() < largestDistinct)
-							que.add(joinWithAnalysis(l, r));
-						else{
-							finished = true;
-							que.add(l);
-							que.add(r);
-						}
-					}
-					else {
-						finished = true;
-						que.add(l);
-						que.add(r);
-					}
+		while(que.peek() != null) {
+			CompressedSizeInfoColGroup r = que.peek();
+			int worstCaseJoinedSize = l.getNumVals() * r.getNumVals();
+			if(worstCaseJoinedSize < toSmallForAnalysis) {
+				que.poll();
+				que.add(joinWithoutAnalysis(l, r));
+			}
+			else if(worstCaseJoinedSize < largestDistinct) {
+				CompressedSizeInfoColGroup g = joinWithAnalysis(l, r);
+				if(g != null && g.getNumVals() < largestDistinct) {
+					que.poll();
+					que.add(g);
 				}
-				else {
-					que.add(l);
-					finished = true;
-				}
+				else
+					ret.add(l);
 			}
 			else
-				finished = true;
+				ret.add(l);
+
+			l = que.poll();
 		}
+		if(l != null)
+			ret.add(l);
+
 		for(CompressedSizeInfoColGroup g : que)
 			ret.add(g);
 

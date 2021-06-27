@@ -78,7 +78,7 @@ import org.apache.sysds.runtime.util.DataConverter;
 import org.apache.sysds.runtime.util.UtilFunctions;
 import org.junit.Assert;
 
-import jcuda.runtime.JCuda;
+//import jcuda.runtime.JCuda;
 
 
 /**
@@ -646,6 +646,22 @@ public class TestUtils
 		return Double.NaN;
 	}
 
+	public static double[][] readExpectedResource(String file, int rows, int cols) throws IOException {
+		String file2 = "src/test/resources/expected/" + file;
+		double[][] ret = new double[rows][cols];
+		try(BufferedReader br = new BufferedReader(new FileReader(file2))) {
+			String line = null;
+			int i = 0;
+			while((line = br.readLine()) != null) {
+				String[] tmp = line.trim().split(" ");
+				for (int j=0; j<tmp.length; j++)
+					ret[i][j] = Double.parseDouble(tmp[j]);
+				i++;
+			}
+		}
+		return ret;
+	}
+	
 	public static String processMultiPartCSVForR(String csvFile) throws IOException {
 		File csv = new File(csvFile);
 		if (csv.isDirectory()) {
@@ -809,11 +825,24 @@ public class TestUtils
 		long distance;
 		for (int i = 0; i < rows && countErrors < 20; i++) {
 			for (int j = 0; j < cols && countErrors < 20; j++) {
-				distance = compareScalarBits(expectedMatrix[i][j], actualMatrix[i][j]);
-				sumDistance += distance;
-				if(distance > maxUnitsOfLeastPrecision){
-					message += ("\n Expected:" + expectedMatrix[i][j] +" vs actual: "+actualMatrix[i][j]+" at "+i+" "+j + " Distance in bits: " + distance);
-					countErrors++;
+				double v1 = expectedMatrix[i][j];
+				double v2 = actualMatrix[i][j];
+				if(v1 == 0 && v2 == 0)
+					continue;
+				else if(v1 == 0 || v2 == 0){
+    				if( Math.abs(v1 - v2) > 1E-16){
+						message +=  ("\n Expected:" + v1 +" vs actual: "+v2+" at "+i+" "+j + " Not using Bit distance since one value is 0");
+						countErrors ++;
+					}
+				}
+				else{
+					distance = compareScalarBits(expectedMatrix[i][j], actualMatrix[i][j]);
+					sumDistance += distance;
+					if(distance > maxUnitsOfLeastPrecision){
+						message += ("\n Expected:" + v1 +" vs actual: "+v2+" at "+i+" "+j + " Distance in bits: " + distance);
+						countErrors++;
+					}
+
 				}
 			}
 		}
@@ -975,12 +1004,24 @@ public class TestUtils
 	}
 
 	public static void compareScalarBitsJUnit(double d1, double d2, long maxUnitsOfLeastPrecision){
+		compareScalarBitsJUnit(d1,d2,maxUnitsOfLeastPrecision, null);
+	}
 
+	public static void compareScalarBitsJUnit(double d1, double d2, long maxUnitsOfLeastPrecision, String errorMessage){
 		long distance = compareScalarBits(d1,d2);
-		assertTrue("Given scalars do not match: " + d1 + " != " + d2 + " with bitDistance: " + distance ,distance <= maxUnitsOfLeastPrecision);
+		boolean equal = distance <= maxUnitsOfLeastPrecision;
+
+		String message = "Given scalars do not match: " + d1 + " != " + d2 + " with bitDistance: " + distance;
+		if(errorMessage != null)
+			message = errorMessage + "\n" + message;
+		assertTrue(message, equal);
 	}
 
 	public static void compareScalars(String expected, String actual) {
+			assertEquals(expected, actual);
+	}
+	
+	public static void compareScalars(Boolean expected, Boolean actual) {
 			assertEquals(expected, actual);
 	}
 
@@ -1160,46 +1201,23 @@ public class TestUtils
 	 * @param matrix
 	 * @return
 	 */
-	public static double[][] convertHashMapToDoubleArray(HashMap <CellIndex, Double> matrix)
-	{
+	public static double[][] convertHashMapToDoubleArray(HashMap <CellIndex, Double> matrix) {
 		int max_rows = -1, max_cols= -1;
-		for(CellIndex ci :matrix.keySet())
-		{
-			if(ci.row > max_rows)
-			{
-				max_rows = ci.row;
-			}
-			if(ci.column > max_cols)
-			{
-				max_cols = ci.column;
-			}
+		for(CellIndex ix : matrix.keySet()) {
+			max_rows = Math.max(max_rows, ix.row);
+			max_cols = Math.max(max_cols, ix.column);
 		}
-
-		double [][] ret_arr = new double[max_rows][max_cols];
-
-		for(CellIndex ci:matrix.keySet())
-		{
-			int i = ci.row-1;
-			int j = ci.column-1;
-			ret_arr[i][j] = matrix.get(ci);
-		}
-
-		return ret_arr;
-
+		return convertHashMapToDoubleArray(matrix, max_rows, max_cols);
 	}
 
-	public static double[][] convertHashMapToDoubleArray(HashMap <CellIndex, Double> matrix, int rows, int cols)
-	{
+	public static double[][] convertHashMapToDoubleArray(HashMap<CellIndex, Double> matrix, int rows, int cols) {
 		double [][] ret_arr = new double[rows][cols];
-
-		for(CellIndex ci:matrix.keySet()) {
-			int i = ci.row-1;
-			int j = ci.column-1;
-			ret_arr[i][j] = matrix.get(ci);
+		for(Entry<CellIndex, Double> e : matrix.entrySet()) {
+			int i = e.getKey().row-1;
+			int j = e.getKey().column-1;
+			ret_arr[i][j] = e.getValue();
 		}
-
 		return ret_arr;
-
 	}
 
 	/**
@@ -3070,7 +3088,9 @@ public class TestUtils
 	
 	public static int isGPUAvailable() {
 		// returns cudaSuccess if at least one gpu is available
-		final int[] deviceCount = new int[1];
-		return JCuda.cudaGetDeviceCount(deviceCount);
+		//final int[] deviceCount = new int[1];
+		//return JCuda.cudaGetDeviceCount(deviceCount);
+		// FIXME: Fails to skip if gpu available but no libraries
+		return 1; //return false for now
 	}
 }

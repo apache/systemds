@@ -19,11 +19,48 @@
 #
 #-------------------------------------------------------------
 
+
+#-------------------------------------------------------------------------------
+# X            Input feature matrix
+# y            Input label vector (or matrix)
+# train        Name ft of the train function to call via ft(trainArgs)
+# predict      Name fp of the loss function to call via fp((predictArgs,B))
+# numB         Maximum number of parameters in model B (pass the maximum 
+#              because the size of B may vary with parameters like icpt
+# params       List of varied hyper-parameter names
+# paramValues  List of matrices providing the parameter values as 
+#              columnvectors for position-aligned hyper-parameters in 'params' 
+# trainArgs    named List of arguments to pass to the 'train' function, where 
+#              gridSearch replaces enumerated hyper-parameter by name, if 
+#              not provided or an empty list, the lm parameters are used
+# predictArgs  List of arguments to pass to the 'predict' function, where 
+#              gridSearch appends the trained models at the end, if 
+#              not provided or an empty list, list(X, y) is used instead
+# cv           flag enabling k-fold cross validation, otherwise training loss
+# cvk          if cv=TRUE, specifies the the number of folds, otherwise ignored
+# verbose      flag for verbose debug output 
+#-------------------------------------------------------------------------------
+# B            the trained model with minimal loss (by the 'predict' function) 
+# opt          one-row frame w/ optimal hyperparameters (by 'params' position)
+#-------------------------------------------------------------------------------
+
 m_gridSearch = function(Matrix[Double] X, Matrix[Double] y, String train, String predict,
-  List[String] params, List[Unknown] paramValues, Boolean verbose = TRUE) 
-  return (Matrix[Double] B, Frame[Unknown] opt) 
+    Integer numB=ncol(X), List[String] params, List[Unknown] paramValues,
+    List[Unknown] trainArgs = list(), List[Unknown] predictArgs = list(),
+    Boolean cv = FALSE, Integer cvk = 5, Boolean verbose = TRUE)
+  return (Matrix[Double] B, Frame[Unknown] opt)
 {
-  # Step 0) preparation of parameters, lengths, and values in convenient form
+  # Step 0) handling default arguments, which require access to passed data
+  if( length(trainArgs) == 0 )
+    trainArgs = list(X=X, y=y, icpt=0, reg=-1, tol=-1, maxi=-1, verbose=FALSE);
+  if( length(predictArgs) == 0 )
+    predictArgs = list(X, y);
+  if( cv & cvk <= 1 ) {
+    print("gridSearch: called with cv=TRUE but cvk="+cvk+", set to default cvk=5.")
+    cvk = 5;
+  }
+
+  # Step 1) preparation of parameters, lengths, and values in convenient form
   numParams = length(params);
   paramLens = matrix(0, numParams, 1);
   for( j in 1:numParams ) {
@@ -37,8 +74,8 @@ m_gridSearch = function(Matrix[Double] X, Matrix[Double] y, String train, String
   }
   cumLens = rev(cumprod(rev(paramLens))/rev(paramLens));
   numConfigs = prod(paramLens);
-  
-  # Step 1) materialize hyper-parameter combinations 
+
+  # Step 2) materialize hyper-parameter combinations
   # (simplify debugging and compared to compute negligible)
   HP = matrix(0, numConfigs, numParams);
   parfor( i in 1:nrow(HP) ) {
@@ -46,28 +83,63 @@ m_gridSearch = function(Matrix[Double] X, Matrix[Double] y, String train, String
       HP[i,j] = paramVals[j,as.scalar(((i-1)/cumLens[j,1])%%paramLens[j,1]+1)];
   }
 
-  if( verbose )
+  if( verbose ) {
+    print("GridSeach: Number of hyper-parameters: \n"+toString(paramLens));
     print("GridSeach: Hyper-parameter combinations: \n"+toString(HP));
-
-  # Step 2) training/scoring of parameter combinations
-  # TODO integrate cross validation
-  Rbeta = matrix(0, nrow(HP), ncol(X));
-  Rloss = matrix(0, nrow(HP), 1);
-  # TODO pass arguments for function call from outside
-  arguments = list(X=X, y=y, icpt=0, reg=-1, tol=-1, maxi=-1, verbose=FALSE);
-
-  parfor( i in 1:nrow(HP) ) {
-    # a) replace training arguments
-    largs = arguments;
-    for( j in 1:numParams )
-      largs[as.scalar(params[j])] = as.scalar(HP[i,j]);
-    # b) core training/scoring and write-back
-    # TODO investigate rmvar handling with explicit binding (lbeta)
-    Rbeta[i,] = t(eval(train, largs));
-    Rloss[i,] = eval(predict, list(X, y, t(Rbeta[i,])));
   }
 
-  # Step 3) select best parameter combination
+  # Step 3) training/scoring of parameter combinations
+  Rbeta = matrix(0, nrow(HP), numB);
+  Rloss = matrix(0, nrow(HP), 1);
+
+  # with cross-validation
+  if( cv ) {
+    # a) create folds
+    foldsX = list(); foldsY = list();
+    fs = ceil(nrow(X)/cvk);
+    for( k in 0:(cvk-1) ) {
+      foldsX = append(foldsX, X[(k*fs+1):min((cvk+1)*fs,nrow(X)),]);
+      foldsY = append(foldsY, y[(k*fs+1):min((cvk+1)*fs,nrow(y)),]);
+    }
+    parfor( i in 1:nrow(HP) ) {
+      # a) replace training arguments
+      ltrainArgs = trainArgs; 
+      lpredictArgs = predictArgs;
+      for( j in 1:numParams )
+        ltrainArgs[as.scalar(params[j])] = as.scalar(HP[i,j]);
+      # b) cross-validated training/scoring and write-back
+      cvbeta = matrix(0,1,numB);
+      cvloss = matrix(0,1,1);
+      for( k in 1:cvk ) {
+        [tmpX, testX] = remove(foldsX, k);
+        [tmpy, testy] = remove(foldsY, k);
+        ltrainArgs['X'] = rbind(tmpX);
+        ltrainArgs['y'] = rbind(tmpy);
+        lbeta = t(eval(train, ltrainArgs));
+        cvbeta[,1:ncol(lbeta)] = cvbeta[,1:ncol(lbeta)] + lbeta;
+        lpredictArgs[1] = as.matrix(testX);
+        lpredictArgs[2] = as.matrix(testy);
+        cvloss += eval(predict, append(lpredictArgs,t(lbeta)));
+      }
+      Rbeta[i,] = cvbeta / cvk; # model averaging
+      Rloss[i,] = cvloss / cvk;
+    }
+  }
+  # without cross-validation
+  else {
+    parfor( i in 1:nrow(HP) ) {
+      # a) replace training arguments
+      ltrainArgs = trainArgs;
+      for( j in 1:numParams )
+        ltrainArgs[as.scalar(params[j])] = as.scalar(HP[i,j]);
+      # b) core training/scoring and write-back
+      lbeta = t(eval(train, ltrainArgs))
+      Rbeta[i,1:ncol(lbeta)] = lbeta;
+      Rloss[i,] = eval(predict, append(predictArgs,t(lbeta)));
+    }
+  }
+
+  # Step 4) select best parameter combination
   ix = as.scalar(rowIndexMin(t(Rloss)));
   B = t(Rbeta[ix,]);       # optimal model
   opt = as.frame(HP[ix,]); # optimal hyper-parameters

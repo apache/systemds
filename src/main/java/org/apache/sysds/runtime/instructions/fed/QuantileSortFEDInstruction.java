@@ -76,34 +76,6 @@ public class QuantileSortFEDInstruction extends UnaryFEDInstruction{
 		}
 	}
 
-
-//	@Override
-//	public void processInstruction(ExecutionContext ec) {
-//		MatrixObject in = ec.getMatrixObject(input1.getName());
-//		FederationMap map = in.getFedMapping();
-//
-//		//create federated commands for aggregation
-//		FederatedRequest fr1 = FederationUtils
-//			.callInstruction(instString, output, new CPOperand[] {input1}, new long[] {in.getFedMapping().getID()});
-//		FederatedRequest fr2 = new FederatedRequest(FederatedRequest.RequestType.GET_VAR, fr1.getID());
-//		FederatedRequest fr3 = map.cleanup(getTID(), fr1.getID());
-//
-//		Future<FederatedResponse>[] tmp = map.execute(getTID(), fr1, fr2, fr3);
-//
-//		try {
-//			Object d = tmp[0].get().getData()[0];
-//			System.out.println(1);
-//		}
-//		catch(Exception e) {
-//			e.printStackTrace();
-//		}
-//
-//		MatrixObject out = ec.getMatrixObject(output);
-//		out.getDataCharacteristics().set(in.getDataCharacteristics());
-//		out.setFedMapping(in.getFedMapping().copyWithNewID(fr2.getID()));
-//	}
-
-
 	@Override
 	public void processInstruction(ExecutionContext ec) {
 		MatrixObject in = ec.getMatrixObject(input1);

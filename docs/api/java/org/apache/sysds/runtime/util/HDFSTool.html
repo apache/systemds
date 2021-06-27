@@ -18,7 +18,7 @@
     catch(err) {
     }
 //-->
-var methods = {"i0":9,"i1":9,"i2":9,"i3":9,"i4":9,"i5":9,"i6":9,"i7":9,"i8":9,"i9":9,"i10":9,"i11":9,"i12":9,"i13":9,"i14":9,"i15":9,"i16":9,"i17":9,"i18":9,"i19":9,"i20":9,"i21":9,"i22":9,"i23":9,"i24":9,"i25":9,"i26":9,"i27":9,"i28":9,"i29":9,"i30":9,"i31":9,"i32":9,"i33":9,"i34":9,"i35":9,"i36":9,"i37":9,"i38":9,"i39":9,"i40":9};
+var methods = {"i0":9,"i1":9,"i2":9,"i3":9,"i4":9,"i5":9,"i6":9,"i7":9,"i8":9,"i9":9,"i10":9,"i11":9,"i12":9,"i13":9,"i14":9,"i15":9,"i16":9,"i17":9,"i18":9,"i19":9,"i20":9,"i21":9,"i22":9,"i23":9,"i24":9,"i25":9,"i26":9,"i27":9,"i28":9,"i29":9,"i30":9,"i31":9,"i32":9,"i33":9,"i34":9,"i35":9,"i36":9,"i37":9,"i38":9,"i39":9,"i40":9,"i41":9};
 var tabs = {65535:["t0","All Methods"],1:["t1","Static Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -315,37 +315,42 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
                       <a href="../../../../../org/apache/sysds/common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>&nbsp;vt)</code>&nbsp;</td>
 </tr>
 <tr id="i24" class="altColor">
+<td class="colFirst"><code>static <a href="../../../../../org/apache/sysds/runtime/instructions/cp/ScalarObject.html" title="class in org.apache.sysds.runtime.instructions.cp">ScalarObject</a></code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/util/HDFSTool.html#readScalarObjectFromHDFSFile-java.lang.String-org.apache.sysds.common.Types.ValueType-">readScalarObjectFromHDFSFile</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;fname,
+                            <a href="../../../../../org/apache/sysds/common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>&nbsp;vt)</code>&nbsp;</td>
+</tr>
+<tr id="i25" class="rowColor">
 <td class="colFirst"><code>static <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/util/HDFSTool.html#readStringFromHDFSFile-java.lang.String-">readStringFromHDFSFile</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;filename)</code>&nbsp;</td>
 </tr>
-<tr id="i25" class="rowColor">
+<tr id="i26" class="altColor">
 <td class="colFirst"><code>static void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/util/HDFSTool.html#renameFileOnHDFS-java.lang.String-java.lang.String-">renameFileOnHDFS</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;originalDir,
                 <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;newDir)</code>&nbsp;</td>
 </tr>
-<tr id="i26" class="altColor">
+<tr id="i27" class="rowColor">
 <td class="colFirst"><code>static void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/util/HDFSTool.html#writeBooleanToHDFS-boolean-java.lang.String-">writeBooleanToHDFS</a></span>(boolean&nbsp;b,
                   <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;filename)</code>&nbsp;</td>
 </tr>
-<tr id="i27" class="rowColor">
+<tr id="i28" class="altColor">
 <td class="colFirst"><code>static void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/util/HDFSTool.html#writeDoubleToHDFS-double-java.lang.String-">writeDoubleToHDFS</a></span>(double&nbsp;d,
                  <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;filename)</code>&nbsp;</td>
 </tr>
-<tr id="i28" class="altColor">
+<tr id="i29" class="rowColor">
 <td class="colFirst"><code>static void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/util/HDFSTool.html#writeIntToHDFS-long-java.lang.String-">writeIntToHDFS</a></span>(long&nbsp;i,
               <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;filename)</code>&nbsp;</td>
 </tr>
-<tr id="i29" class="rowColor">
+<tr id="i30" class="altColor">
 <td class="colFirst"><code>static void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/util/HDFSTool.html#writeMetaDataFile-java.lang.String-org.apache.sysds.common.Types.ValueType-org.apache.sysds.runtime.meta.DataCharacteristics-org.apache.sysds.common.Types.FileFormat-">writeMetaDataFile</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;mtdfile,
                  <a href="../../../../../org/apache/sysds/common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>&nbsp;vt,
                  <a href="../../../../../org/apache/sysds/runtime/meta/DataCharacteristics.html" title="class in org.apache.sysds.runtime.meta">DataCharacteristics</a>&nbsp;mc,
                  <a href="../../../../../org/apache/sysds/common/Types.FileFormat.html" title="enum in org.apache.sysds.common">Types.FileFormat</a>&nbsp;fmt)</code>&nbsp;</td>
 </tr>
-<tr id="i30" class="altColor">
+<tr id="i31" class="rowColor">
 <td class="colFirst"><code>static void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/util/HDFSTool.html#writeMetaDataFile-java.lang.String-org.apache.sysds.common.Types.ValueType-org.apache.sysds.runtime.meta.DataCharacteristics-org.apache.sysds.common.Types.FileFormat-org.apache.sysds.runtime.io.FileFormatProperties-">writeMetaDataFile</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;mtdfile,
                  <a href="../../../../../org/apache/sysds/common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>&nbsp;vt,
@@ -353,7 +358,7 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
                  <a href="../../../../../org/apache/sysds/common/Types.FileFormat.html" title="enum in org.apache.sysds.common">Types.FileFormat</a>&nbsp;fmt,
                  <a href="../../../../../org/apache/sysds/runtime/io/FileFormatProperties.html" title="class in org.apache.sysds.runtime.io">FileFormatProperties</a>&nbsp;formatProperties)</code>&nbsp;</td>
 </tr>
-<tr id="i31" class="rowColor">
+<tr id="i32" class="altColor">
 <td class="colFirst"><code>static void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/util/HDFSTool.html#writeMetaDataFile-java.lang.String-org.apache.sysds.common.Types.ValueType-org.apache.sysds.runtime.meta.DataCharacteristics-org.apache.sysds.common.Types.FileFormat-org.apache.sysds.runtime.io.FileFormatProperties-org.apache.sysds.runtime.privacy.PrivacyConstraint-">writeMetaDataFile</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;mtdfile,
                  <a href="../../../../../org/apache/sysds/common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>&nbsp;vt,
@@ -362,7 +367,7 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
                  <a href="../../../../../org/apache/sysds/runtime/io/FileFormatProperties.html" title="class in org.apache.sysds.runtime.io">FileFormatProperties</a>&nbsp;formatProperties,
                  <a href="../../../../../org/apache/sysds/runtime/privacy/PrivacyConstraint.html" title="class in org.apache.sysds.runtime.privacy">PrivacyConstraint</a>&nbsp;privacyConstraint)</code>&nbsp;</td>
 </tr>
-<tr id="i32" class="altColor">
+<tr id="i33" class="rowColor">
 <td class="colFirst"><code>static void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/util/HDFSTool.html#writeMetaDataFile-java.lang.String-org.apache.sysds.common.Types.ValueType-org.apache.sysds.runtime.meta.DataCharacteristics-org.apache.sysds.common.Types.FileFormat-org.apache.sysds.runtime.privacy.PrivacyConstraint-">writeMetaDataFile</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;mtdfile,
                  <a href="../../../../../org/apache/sysds/common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>&nbsp;vt,
@@ -370,7 +375,7 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
                  <a href="../../../../../org/apache/sysds/common/Types.FileFormat.html" title="enum in org.apache.sysds.common">Types.FileFormat</a>&nbsp;fmt,
                  <a href="../../../../../org/apache/sysds/runtime/privacy/PrivacyConstraint.html" title="class in org.apache.sysds.runtime.privacy">PrivacyConstraint</a>&nbsp;privacyConstraint)</code>&nbsp;</td>
 </tr>
-<tr id="i33" class="rowColor">
+<tr id="i34" class="altColor">
 <td class="colFirst"><code>static void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/util/HDFSTool.html#writeMetaDataFile-java.lang.String-org.apache.sysds.common.Types.ValueType-org.apache.sysds.common.Types.ValueType:A-org.apache.sysds.common.Types.DataType-org.apache.sysds.runtime.meta.DataCharacteristics-org.apache.sysds.common.Types.FileFormat-">writeMetaDataFile</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;mtdfile,
                  <a href="../../../../../org/apache/sysds/common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>&nbsp;vt,
@@ -379,7 +384,7 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
                  <a href="../../../../../org/apache/sysds/runtime/meta/DataCharacteristics.html" title="class in org.apache.sysds.runtime.meta">DataCharacteristics</a>&nbsp;mc,
                  <a href="../../../../../org/apache/sysds/common/Types.FileFormat.html" title="enum in org.apache.sysds.common">Types.FileFormat</a>&nbsp;fmt)</code>&nbsp;</td>
 </tr>
-<tr id="i34" class="altColor">
+<tr id="i35" class="rowColor">
 <td class="colFirst"><code>static void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/util/HDFSTool.html#writeMetaDataFile-java.lang.String-org.apache.sysds.common.Types.ValueType-org.apache.sysds.common.Types.ValueType:A-org.apache.sysds.common.Types.DataType-org.apache.sysds.runtime.meta.DataCharacteristics-org.apache.sysds.common.Types.FileFormat-org.apache.sysds.runtime.io.FileFormatProperties-">writeMetaDataFile</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;mtdfile,
                  <a href="../../../../../org/apache/sysds/common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>&nbsp;vt,
@@ -389,7 +394,7 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
                  <a href="../../../../../org/apache/sysds/common/Types.FileFormat.html" title="enum in org.apache.sysds.common">Types.FileFormat</a>&nbsp;fmt,
                  <a href="../../../../../org/apache/sysds/runtime/io/FileFormatProperties.html" title="class in org.apache.sysds.runtime.io">FileFormatProperties</a>&nbsp;formatProperties)</code>&nbsp;</td>
 </tr>
-<tr id="i35" class="rowColor">
+<tr id="i36" class="altColor">
 <td class="colFirst"><code>static void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/util/HDFSTool.html#writeMetaDataFile-java.lang.String-org.apache.sysds.common.Types.ValueType-org.apache.sysds.common.Types.ValueType:A-org.apache.sysds.common.Types.DataType-org.apache.sysds.runtime.meta.DataCharacteristics-org.apache.sysds.common.Types.FileFormat-org.apache.sysds.runtime.io.FileFormatProperties-org.apache.sysds.runtime.privacy.PrivacyConstraint-">writeMetaDataFile</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;mtdfile,
                  <a href="../../../../../org/apache/sysds/common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>&nbsp;vt,
@@ -400,7 +405,7 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
                  <a href="../../../../../org/apache/sysds/runtime/io/FileFormatProperties.html" title="class in org.apache.sysds.runtime.io">FileFormatProperties</a>&nbsp;formatProperties,
                  <a href="../../../../../org/apache/sysds/runtime/privacy/PrivacyConstraint.html" title="class in org.apache.sysds.runtime.privacy">PrivacyConstraint</a>&nbsp;privacyConstraint)</code>&nbsp;</td>
 </tr>
-<tr id="i36" class="altColor">
+<tr id="i37" class="rowColor">
 <td class="colFirst"><code>static void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/util/HDFSTool.html#writeMetaDataFile-java.lang.String-org.apache.sysds.common.Types.ValueType-org.apache.sysds.common.Types.ValueType:A-org.apache.sysds.common.Types.DataType-org.apache.sysds.runtime.meta.DataCharacteristics-org.apache.sysds.common.Types.FileFormat-org.apache.sysds.runtime.privacy.PrivacyConstraint-">writeMetaDataFile</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;mtdfile,
                  <a href="../../../../../org/apache/sysds/common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>&nbsp;vt,
@@ -410,23 +415,23 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
                  <a href="../../../../../org/apache/sysds/common/Types.FileFormat.html" title="enum in org.apache.sysds.common">Types.FileFormat</a>&nbsp;fmt,
                  <a href="../../../../../org/apache/sysds/runtime/privacy/PrivacyConstraint.html" title="class in org.apache.sysds.runtime.privacy">PrivacyConstraint</a>&nbsp;privacyConstraint)</code>&nbsp;</td>
 </tr>
-<tr id="i37" class="rowColor">
+<tr id="i38" class="altColor">
 <td class="colFirst"><code>static void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/util/HDFSTool.html#writeObjectToHDFS-java.lang.Object-java.lang.String-">writeObjectToHDFS</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a>&nbsp;obj,
                  <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;filename)</code>&nbsp;</td>
 </tr>
-<tr id="i38" class="altColor">
+<tr id="i39" class="rowColor">
 <td class="colFirst"><code>static void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/util/HDFSTool.html#writeScalarMetaDataFile-java.lang.String-org.apache.sysds.common.Types.ValueType-">writeScalarMetaDataFile</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;mtdfile,
                        <a href="../../../../../org/apache/sysds/common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>&nbsp;vt)</code>&nbsp;</td>
 </tr>
-<tr id="i39" class="rowColor">
+<tr id="i40" class="altColor">
 <td class="colFirst"><code>static void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/util/HDFSTool.html#writeScalarMetaDataFile-java.lang.String-org.apache.sysds.common.Types.ValueType-org.apache.sysds.runtime.privacy.PrivacyConstraint-">writeScalarMetaDataFile</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;mtdfile,
                        <a href="../../../../../org/apache/sysds/common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>&nbsp;vt,
                        <a href="../../../../../org/apache/sysds/runtime/privacy/PrivacyConstraint.html" title="class in org.apache.sysds.runtime.privacy">PrivacyConstraint</a>&nbsp;privacyConstraint)</code>&nbsp;</td>
 </tr>
-<tr id="i40" class="altColor">
+<tr id="i41" class="rowColor">
 <td class="colFirst"><code>static void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/util/HDFSTool.html#writeStringToHDFS-java.lang.String-java.lang.String-">writeStringToHDFS</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;s,
                  <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;filename)</code>&nbsp;</td>
@@ -843,6 +848,16 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <dt><span class="throwsLabel">Throws:</span></dt>
 <dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io">IOException</a></code></dd>
 </dl>
+</li>
+</ul>
+<a name="readScalarObjectFromHDFSFile-java.lang.String-org.apache.sysds.common.Types.ValueType-">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>readScalarObjectFromHDFSFile</h4>
+<pre>public static&nbsp;<a href="../../../../../org/apache/sysds/runtime/instructions/cp/ScalarObject.html" title="class in org.apache.sysds.runtime.instructions.cp">ScalarObject</a>&nbsp;readScalarObjectFromHDFSFile(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;fname,
+                                                        <a href="../../../../../org/apache/sysds/common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>&nbsp;vt)</pre>
 </li>
 </ul>
 <a name="writeDoubleToHDFS-double-java.lang.String-">

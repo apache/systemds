@@ -35,9 +35,8 @@ import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.CompressionSettings;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupConst;
-import org.apache.sysds.runtime.compress.colgroup.ColGroupValue;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
-import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
+import org.apache.sysds.runtime.compress.colgroup.dictionary.MatrixBlockDictionary;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.functionobjects.Divide;
 import org.apache.sysds.runtime.functionobjects.Minus;
@@ -177,7 +176,7 @@ public class CLALibBinaryCellOp {
 		}
 
 		List<AColGroup> newColGroups = new ArrayList<>(oldColGroups.size());
-		int k = OptimizerUtils.getConstrainedNumThreads(-1);
+		int k = op.getNumThreads();
 		ExecutorService pool = CommonThreadPool.get(k);
 		ArrayList<BinaryMVRowTask> tasks = new ArrayList<>();
 		try {
@@ -231,29 +230,35 @@ public class CLALibBinaryCellOp {
 
 	protected static CompressedMatrixBlock binaryMVPlusStack(CompressedMatrixBlock m1, MatrixBlock m2,
 		CompressedMatrixBlock ret, BinaryOperator op, boolean left) {
+		if(m2.isEmpty())
+			return m1;
 		List<AColGroup> oldColGroups = m1.getColGroups();
-
-		List<AColGroup> newColGroups = (m2.isEmpty()) ? new ArrayList<>(oldColGroups.size()) : new ArrayList<>(
-			oldColGroups.size() + 1);
-		boolean foundConst = false;
-		for(AColGroup grp : m1.getColGroups()) {
-			if(!m2.isEmpty() && !foundConst && grp instanceof ColGroupConst) {
-				ADictionary newDict = ((ColGroupValue) grp).applyBinaryRowOp(op.fn, m2.getDenseBlockValues(), false,
-					left);
-				newColGroups.add(new ColGroupConst(grp.getColIndices(), m1.getNumRows(), newDict));
-				foundConst = true;
-			}
-			else {
-				newColGroups.add(grp);
+		final int size = oldColGroups.size();
+		List<AColGroup> newColGroups = new ArrayList<>(size);
+		int smallestIndex = 0;
+		int smallestSize = Integer.MAX_VALUE;
+		final int nCol = m1.getNumColumns();
+		for(int i = 0; i < size; i++) {
+			final AColGroup g = oldColGroups.get(i);
+			final int newSize = g.getNumValues();
+			newColGroups.add(g);
+			if(newSize < smallestSize && g.getNumCols() == nCol) {
+				smallestIndex = i;
+				smallestSize = newSize;
 			}
 		}
-		if(!m2.isEmpty() && !foundConst) {
-			int[] colIndexes = oldColGroups.get(0).getColIndices();
-			double[] v = m2.getDenseBlockValues();
-			ADictionary newDict = new Dictionary(new double[colIndexes.length]);
-			newDict = newDict.applyBinaryRowOp(op.fn, v, true, colIndexes, left);
+		if(smallestSize == Integer.MAX_VALUE) {
+			int[] colIndexes = new int[nCol];
+			for(int i = 0; i < nCol; i++)
+				colIndexes[i] = i;
+			ADictionary newDict = new MatrixBlockDictionary(m2);
 			newColGroups.add(new ColGroupConst(colIndexes, m1.getNumRows(), newDict));
 		}
+		else {
+			AColGroup g = newColGroups.get(smallestIndex).binaryRowOp(op, m2.getDenseBlockValues(), false, left);
+			newColGroups.set(smallestIndex, g);
+		}
+
 		ret.allocateColGroupList(newColGroups);
 		ret.setOverlapping(true);
 		ret.setNonZeros(-1);
@@ -354,7 +359,7 @@ public class CLALibBinaryCellOp {
 		public Integer call() {
 			// unsafe decompress, since we count nonzeros afterwards.
 			for(AColGroup g : _m1.getColGroups())
-				g.decompressToBlock(_ret, _rl, _ru, g.getValues(), false);
+				g.decompressToBlockUnSafe(_ret, _rl, _ru);
 
 			if(_m2.isInSparseFormat())
 				throw new NotImplementedException("Not Implemented sparse Format execution for MM.");
@@ -398,7 +403,7 @@ public class CLALibBinaryCellOp {
 		public Integer call() {
 			// unsafe decompress, since we count nonzeros afterwards.
 			for(AColGroup g : _m1.getColGroups())
-				g.decompressToBlock(_ret, _rl, _ru, g.getValues(), false);
+				g.decompressToBlockUnSafe(_ret, _rl, _ru);
 
 			if(_m2.isInSparseFormat())
 				throw new NotImplementedException("Not Implemented sparse Format execution for MM.");

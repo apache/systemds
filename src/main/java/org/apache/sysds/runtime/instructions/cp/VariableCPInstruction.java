@@ -51,9 +51,13 @@ import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.io.FileFormatProperties;
 import org.apache.sysds.runtime.io.FileFormatPropertiesCSV;
 import org.apache.sysds.runtime.io.FileFormatPropertiesLIBSVM;
+import org.apache.sysds.runtime.io.FileFormatPropertiesHDF5;
 import org.apache.sysds.runtime.io.IOUtilFunctions;
+import org.apache.sysds.runtime.io.ListReader;
+import org.apache.sysds.runtime.io.ListWriter;
 import org.apache.sysds.runtime.io.WriterMatrixMarket;
 import org.apache.sysds.runtime.io.WriterTextCSV;
+import org.apache.sysds.runtime.io.WriterHDF5;
 import org.apache.sysds.runtime.lineage.LineageItem;
 import org.apache.sysds.runtime.lineage.LineageItemUtils;
 import org.apache.sysds.runtime.lineage.LineageTraceable;
@@ -73,19 +77,19 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 	/*
 	 * Supported Operations
 	 * --------------------
-	 *	1) assignvar x:type y:type
-	 *	    assign value of y to x (both types should match)
-	 *	2) rmvar x
-	 *	    remove variable x
-	 *	3) cpvar x y
-	 *	    copy x to y (same as assignvar followed by rmvar, types are not required)
-	 *	4) rmfilevar x:type b:type
-	 *	    remove variable x, and if b=true then the file object associated with x (b's type should be boolean)
-	 *	5) assignvarwithfile FN x
-	 *	    assign x with the first value from the file whose name=FN
-	 *	6) attachfiletovar FP x
-	 *	    allocate a new file object with name FP, and associate it with variable x
-	 *     createvar x FP [dimensions] [formatinfo]
+	 *  1) assignvar x:type y:type
+	 *      assign value of y to x (both types should match)
+	 *  2) rmvar x
+	 *      remove variable x
+	 *  3) cpvar x y
+	 *      copy x to y (same as assignvar followed by rmvar, types are not required)
+	 *  4) rmfilevar x:type b:type
+	 *      remove variable x, and if b=true then the file object associated with x (b's type should be boolean)
+	 *  5) assignvarwithfile FN x
+	 *      assign x with the first value from the file whose name=FN
+	 *  6) attachfiletovar FP x
+	 *      allocate a new file object with name FP, and associate it with variable x
+	 *      createvar x FP [dimensions] [formatinfo]
 	 */
 
 	public enum VariableOperationCode
@@ -325,7 +329,7 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 			// Write instructions for csv files also include three additional parameters (hasHeader, delimiter, sparse)
 			// Write instructions for libsvm files also include one additional parameters (sparse)
 			// TODO - replace hardcoded numbers with more sophisticated code
-			if ( parts.length != 5 && parts.length != 6 && parts.length != 8 )
+			if ( parts.length != 6 && parts.length != 7 && parts.length != 9 )
 				throw new DMLRuntimeException("Invalid number of operands in write instruction: " + str);
 		}
 		else {
@@ -357,13 +361,18 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 				// 14 inputs: createvar corresponding to READ -- includes properties hasHeader, delim, fill, and fillValue
 				if ( parts.length < 14+extSchema || parts.length > 16+extSchema )
 					throw new DMLRuntimeException("Invalid number of operands in createvar instruction: " + str);
-        }
-        else if(fmt.equalsIgnoreCase("libsvm")) {
-          // 13 inputs: createvar corresponding to WRITE -- includes properties delim, index delim, and sparse
-          // 12 inputs: createvar corresponding to READ -- includes properties delim, index delim, and sparse
+			}
+			else if(fmt.equalsIgnoreCase("libsvm")) {
+				// 13 inputs: createvar corresponding to WRITE -- includes properties delim, index delim, and sparse
+				// 12 inputs: createvar corresponding to READ -- includes properties delim, index delim, and sparse
 
-          if(parts.length < 12 + extSchema)
-            throw new DMLRuntimeException("Invalid number of operands in createvar instruction: " + str);
+				if(parts.length < 12 + extSchema)
+					throw new DMLRuntimeException("Invalid number of operands in createvar instruction: " + str);
+			}
+			else if(fmt.equalsIgnoreCase("hdf5")) {
+				// 11 inputs: createvar corresponding to WRITE/READ -- includes properties dataset name
+				if(parts.length < 11 + extSchema)
+					throw new DMLRuntimeException("Invalid number of operands in createvar instruction: " + str);
 			}
 			else {
 				if ( parts.length != 6 && parts.length != 11+extSchema )
@@ -371,7 +380,7 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 			}
 
 			MetaDataFormat iimd = null;
-			if (dt == DataType.MATRIX || dt == DataType.FRAME) {
+			if (dt == DataType.MATRIX || dt == DataType.FRAME || dt == DataType.LIST) {
 				DataCharacteristics mc = new MatrixCharacteristics();
 				if (parts.length == 6) {
 					// do nothing
@@ -432,30 +441,41 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 						naStrings = parts[curPos+4];
 					fmtProperties = new FileFormatPropertiesCSV(hasHeader, delim, fill, fillValue, naStrings) ;
 				}
-          return new VariableCPInstruction(VariableOperationCode.CreateVariable, in1, in2, in3, iimd, updateType,
-            fmtProperties, schema, opcode, str);
-        }
-        else if(fmt.equalsIgnoreCase("libsvm")) {
-          // Cretevar instructions for LIBSVM format has 13.
-          // 13 inputs: createvar corresponding to WRITE -- includes properties delim, index delim and sparse
-          // 12 inputs: createvar corresponding to READ -- includes properties delim, index delim, and sparse
-          FileFormatProperties fmtProperties = null;
-          int curPos = 11;
-          if(parts.length == 12 + extSchema) {
-            String delim = parts[curPos];
-            String indexDelim = parts[curPos + 1];
-            fmtProperties = new FileFormatPropertiesLIBSVM(delim, indexDelim);
-          }
-          else {
-            String delim = parts[curPos];
-            String indexDelim = parts[curPos + 1];
-            boolean sparse = Boolean.parseBoolean(parts[curPos + 2]);
-            fmtProperties = new FileFormatPropertiesLIBSVM(delim, indexDelim, sparse);
-          }
-
-          return new VariableCPInstruction(VariableOperationCode.CreateVariable, in1, in2, in3, iimd, updateType,
-            fmtProperties, schema, opcode, str);
+				return new VariableCPInstruction(VariableOperationCode.CreateVariable,
+					in1, in2, in3, iimd, updateType, fmtProperties, schema, opcode, str);
 			}
+			else if(fmt.equalsIgnoreCase("libsvm")) {
+				// Cretevar instructions for LIBSVM format has 13.
+				// 13 inputs: createvar corresponding to WRITE -- includes properties delim, index delim and sparse
+				// 12 inputs: createvar corresponding to READ -- includes properties delim, index delim, and sparse
+				FileFormatProperties fmtProperties = null;
+				int curPos = 11;
+				if(parts.length == 12 + extSchema) {
+					String delim = parts[curPos];
+					String indexDelim = parts[curPos + 1];
+					fmtProperties = new FileFormatPropertiesLIBSVM(delim, indexDelim);
+				}
+				else {
+					String delim = parts[curPos];
+					String indexDelim = parts[curPos + 1];
+					boolean sparse = Boolean.parseBoolean(parts[curPos + 2]);
+					fmtProperties = new FileFormatPropertiesLIBSVM(delim, indexDelim, sparse);
+				}
+	
+				return new VariableCPInstruction(VariableOperationCode.CreateVariable,
+					in1, in2, in3, iimd, updateType, fmtProperties, schema, opcode, str);
+			}
+			else if(fmt.equalsIgnoreCase("hdf5")) {
+				// Cretevar instructions for HDF5 format has 13.
+				// 11 inputs: createvar corresponding to WRITE/READ -- includes properties dataset name
+				int curPos = 11;
+				String datasetName = parts[curPos];
+				FileFormatProperties fmtProperties = new FileFormatPropertiesHDF5(datasetName);
+
+				return new VariableCPInstruction(VariableOperationCode.CreateVariable,
+					in1, in2, in3, iimd, updateType, fmtProperties, schema, opcode, str);
+			}
+
 			else {
 				return new VariableCPInstruction(VariableOperationCode.CreateVariable, in1, in2, in3, iimd, updateType, schema, opcode, str);
 			}
@@ -517,14 +537,18 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 				in4 = new CPOperand(parts[7]); // description
 			}
 			else if ( in3.getName().equalsIgnoreCase("libsvm") ) {
-          String delim = parts[4];
-          String indexDelim = parts[5];
-          boolean sparse = Boolean.parseBoolean(parts[6]);
-          fprops = new FileFormatPropertiesLIBSVM(delim, indexDelim, sparse);
+				String delim = parts[4];
+				String indexDelim = parts[5];
+				boolean sparse = Boolean.parseBoolean(parts[6]);
+				fprops = new FileFormatPropertiesLIBSVM(delim, indexDelim, sparse);
+			}
+			else if(in3.getName().equalsIgnoreCase("hdf5") ){
+				String datasetName = parts[4];
+				fprops = new FileFormatPropertiesHDF5(datasetName);
 			}
 			else {
 				fprops = new FileFormatProperties();
-				in4 = new CPOperand(parts[4]); // description
+				in4 = new CPOperand(parts[5]); // blocksize in empty description
 			}
 			VariableCPInstruction inst = new VariableCPInstruction(
 				getVariableOperationCode(opcode), in1, in2, in3, out, null, fprops, null, null, opcode, str);
@@ -658,6 +682,12 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 				if( _schema != null )
 					fobj.setSchema(_schema); //after metadata
 				ec.setVariable(getInput1().getName(), fobj);
+				break;
+			}
+			case LIST: {
+				ListObject lo = ListReader.readListFromHDFS(getInput2().getName(),
+					((MetaDataFormat)metadata).getFileFormat().name(), _formatProperties);
+				ec.setVariable(getInput1().getName(), lo);
 				break;
 			}
 			case SCALAR: {
@@ -912,29 +942,8 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 	 * @param ec execution context
 	 */
 	private void processReadInstruction(ExecutionContext ec){
-		ScalarObject res = null;
-			try {
-				switch(getInput1().getValueType()) {
-					case FP64:
-						res = new DoubleObject(HDFSTool.readDoubleFromHDFSFile(getInput2().getName()));
-						break;
-					case INT64:
-						res = new IntObject(HDFSTool.readIntegerFromHDFSFile(getInput2().getName()));
-						break;
-					case BOOLEAN:
-						res = new BooleanObject(HDFSTool.readBooleanFromHDFSFile(getInput2().getName()));
-						break;
-					case STRING:
-						res = new StringObject(HDFSTool.readStringFromHDFSFile(getInput2().getName()));
-						break;
-					default:
-						throw new DMLRuntimeException("Invalid value type ("
-							+ getInput1().getValueType() + ") while processing readScalar instruction.");
-				}
-			} catch ( IOException e ) {
-				throw new DMLRuntimeException(e);
-			}
-			ec.setScalarOutput(getInput1().getName(), res);
+		ec.setScalarOutput(getInput1().getName(),
+			HDFSTool.readScalarObjectFromHDFSFile(getInput2().getName(), getInput1().getValueType()));
 	}
 
 	/**
@@ -975,7 +984,7 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 		String fname = ec.getScalarInput(getInput2().getName(), ValueType.STRING, getInput2().isLiteral()).getStringValue();
 		String fmtStr = getInput3().getName();
 		FileFormat fmt = FileFormat.safeValueOf(fmtStr);
-		if( fmt != FileFormat.LIBSVM ) {
+		if( fmt != FileFormat.LIBSVM  && fmt != FileFormat.HDF5) {
 			String desc = ec.getScalarInput(getInput4().getName(), ValueType.STRING, getInput4().isLiteral()).getStringValue();
 			_formatProperties.setDescription(desc);
 		}
@@ -988,11 +997,16 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 				writeMMFile(ec, fname);
 			else if( fmt == FileFormat.CSV )
 				writeCSVFile(ec, fname);
-			else if(fmt == FileFormat.LIBSVM)
-				writeLIBSVMFile(ec, fname);
+       		else if(fmt == FileFormat.LIBSVM)
+        		writeLIBSVMFile(ec, fname);
+			else if(fmt == FileFormat.HDF5)
+				writeHDF5File(ec, fname);
 			else {
 				// Default behavior
 				MatrixObject mo = ec.getMatrixObject(getInput1().getName());
+				int blen = Integer.parseInt(getInput4().getName());
+				if( mo.getBlocksize() != blen )
+					mo.getMetaData().getDataCharacteristics().setBlocksize(blen);
 				mo.exportData(fname, fmtStr, _formatProperties);
 			}
 			// Set privacy constraint of write instruction to the same as that of the input
@@ -1008,6 +1022,10 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 			TensorObject to = ec.getTensorObject(getInput1().getName());
 			setPrivacyConstraint(to.getPrivacyConstraint());
 			to.exportData(fname, fmtStr, _formatProperties);
+		}
+		else if( getInput1().getDataType() == DataType.LIST ) {
+			ListObject lo = ec.getListObject(getInput1().getName());
+			ListWriter.writeListToHDFS(lo, fname, fmtStr, _formatProperties);
 		}
 	}
 
@@ -1083,7 +1101,7 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 	/**
 	 * Helper function to write LIBSVM files to HDFS.
 	 *
-	 * @param ec    execution context
+	 * @param ec	execution context
 	 * @param fname file name
 	 */
 	private void writeLIBSVMFile(ExecutionContext ec, String fname) {
@@ -1101,6 +1119,42 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 				HDFSTool.writeMetaDataFile(fname + ".mtd", mo.getValueType(),
 					mo.getMetaData().getDataCharacteristics(), FileFormat.LIBSVM, _formatProperties,
 				mo.getPrivacyConstraint());
+			}
+			catch (IOException e) {
+				throw new DMLRuntimeException(e);
+			}
+		}
+	}
+
+	/**
+	 * Helper function to write HDF5 files to HDFS.
+	 *
+	 * @param ec    execution context
+	 * @param fname file name
+	 */
+	private void writeHDF5File(ExecutionContext ec, String fname) {
+		MatrixObject mo = ec.getMatrixObject(getInput1().getName());
+		String outFmt = "hdf5";
+
+		if(mo.isDirty()) {
+			// there exist data computed in CP that is not backed up on HDFS
+			// i.e., it is either in-memory or in evicted space
+			mo.exportData(fname, outFmt, _formatProperties);
+		}
+		else {
+			try {
+				FileFormat fmt = ((MetaDataFormat) mo.getMetaData()).getFileFormat();
+				DataCharacteristics dc = (mo.getMetaData()).getDataCharacteristics();
+				if(fmt == FileFormat.HDF5 && !getInput1().getName().startsWith(org.apache.sysds.lops.Data.PREAD_PREFIX)) {
+					//FIXME why is this writer never used?
+					@SuppressWarnings("unused")
+					WriterHDF5 writer = new WriterHDF5((FileFormatPropertiesHDF5) _formatProperties);
+				}
+				else {
+					mo.exportData(fname, outFmt, _formatProperties);
+				}
+				HDFSTool.writeMetaDataFile(fname + ".mtd", mo.getValueType(), dc, FileFormat.HDF5, _formatProperties,
+					mo.getPrivacyConstraint());
 			}
 			catch (IOException e) {
 				throw new DMLRuntimeException(e);
@@ -1159,8 +1213,8 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 				Path path = new Path(fname);
 				IOUtilFunctions.deleteCrcFilesFromLocalFileSystem(fs, path);
 			}
-
-		} catch ( IOException e ) {
+		}
+		catch ( IOException e ) {
 			throw new DMLRuntimeException(e);
 		}
 	}

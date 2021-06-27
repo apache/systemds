@@ -112,6 +112,9 @@ public class DataExpression extends DataIdentifier
 	public static final String DELIM_NA_STRING_SEP = "\u00b7";
 	// Parameter names relevant to reading/writing delimited index/libsvmv files
 	public static final String LIBSVM_INDEX_DELIM = "indSep";
+
+	// Parameter names relevant to reading/writing dataset name/hdf5 files
+	public static final String HDF5_DATASET_NAME = "dataset";
 	
 	public static final String DELIM_SPARSE = "sparse";  // applicable only for write
 	
@@ -140,6 +143,8 @@ public class DataExpression extends DataIdentifier
 			DELIM_FILL_VALUE, DELIM_DELIMITER, DELIM_FILL, DELIM_HAS_HEADER_ROW, DELIM_NA_STRINGS,
 			// Parameters related to delimited/libsvm files.
 			LIBSVM_INDEX_DELIM,
+			//Parameters related to dataset name/HDF4 files.
+			HDF5_DATASET_NAME,
 			// Parameters related to privacy
 			PRIVACY, FINE_GRAINED_PRIVACY));
 
@@ -150,7 +155,9 @@ public class DataExpression extends DataIdentifier
 			// Parameters related to delimited/csv files.
 			DELIM_FILL_VALUE, DELIM_DELIMITER, DELIM_FILL, DELIM_HAS_HEADER_ROW, DELIM_NA_STRINGS,
 			// Parameters related to delimited/libsvm files.
-			LIBSVM_INDEX_DELIM));
+			LIBSVM_INDEX_DELIM,
+			//Parameters related to dataset name/HDF4 files.
+			HDF5_DATASET_NAME));
 	
 	/* Default Values for delimited (CSV/LIBSVM) files */
 	public static final String  DEFAULT_DELIM_DELIMITER = ",";
@@ -1205,7 +1212,8 @@ public class DataExpression extends DataIdentifier
 					}
 				}
 			}
-			
+			boolean isHDF5 = (formatTypeString != null && formatTypeString.equalsIgnoreCase(FileFormat.HDF5.toString()));
+
 			dataTypeString = (getVarParam(DATATYPEPARAM) == null) ? null : getVarParam(DATATYPEPARAM).toString();
 			
 			if ( dataTypeString == null || dataTypeString.equalsIgnoreCase(Statement.MATRIX_DATA_TYPE) 
@@ -1232,7 +1240,7 @@ public class DataExpression extends DataIdentifier
 				// initialize size of target data identifier to UNKNOWN
 				getOutput().setDimensions(-1, -1);
 				
-				if (!isCSV && !isLIBSVM && ConfigurationManager.getCompilerConfig()
+				if (!isCSV && !isLIBSVM && !isHDF5 && ConfigurationManager.getCompilerConfig()
 						.getBool(ConfigType.REJECT_READ_WRITE_UNKNOWNS) //skip check for csv/libsvm format / jmlc api
 					&& (getVarParam(READROWPARAM) == null || getVarParam(READCOLPARAM) == null) ) {
 						raiseValidateError("Missing or incomplete dimension information in read statement: "
@@ -1298,8 +1306,14 @@ public class DataExpression extends DataIdentifier
 				getOutput().setNnz(-1L);
 				setPrivacy();
 			}
+			else if ( dataTypeString.equalsIgnoreCase(DataType.LIST.name())) {
+				getOutput().setDataType(DataType.LIST);
+				setPrivacy();
+			}
 			else{
-				raiseValidateError("Unknown Data Type " + dataTypeString + ". Valid  values: " + Statement.SCALAR_DATA_TYPE +", " + Statement.MATRIX_DATA_TYPE, conditional, LanguageErrorCodes.INVALID_PARAMETERS);
+				raiseValidateError("Unknown Data Type " + dataTypeString + ". Valid  values: " 
+					+ Statement.SCALAR_DATA_TYPE +", " + Statement.MATRIX_DATA_TYPE+", " + Statement.FRAME_DATA_TYPE
+					+", " + DataType.LIST.name().toLowerCase(), conditional, LanguageErrorCodes.INVALID_PARAMETERS);
 			}
 			
 			// handle value type parameter
@@ -1310,17 +1324,19 @@ public class DataExpression extends DataIdentifier
 			// Identify the value type (used only for read method)
 			String valueTypeString = getVarParam(VALUETYPEPARAM) == null ? null :  getVarParam(VALUETYPEPARAM).toString();
 			if (valueTypeString != null) {
-				if (valueTypeString.equalsIgnoreCase(Statement.DOUBLE_VALUE_TYPE)) {
+				if (valueTypeString.equalsIgnoreCase(Statement.DOUBLE_VALUE_TYPE))
 					getOutput().setValueType(ValueType.FP64);
-				} else if (valueTypeString.equalsIgnoreCase(Statement.STRING_VALUE_TYPE)) {
+				else if (valueTypeString.equalsIgnoreCase(Statement.STRING_VALUE_TYPE))
 					getOutput().setValueType(ValueType.STRING);
-				} else if (valueTypeString.equalsIgnoreCase(Statement.INT_VALUE_TYPE)) {
+				else if (valueTypeString.equalsIgnoreCase(Statement.INT_VALUE_TYPE))
 					getOutput().setValueType(ValueType.INT64);
-				} else if (valueTypeString.equalsIgnoreCase(Statement.BOOLEAN_VALUE_TYPE)) {
+				else if (valueTypeString.equalsIgnoreCase(Statement.BOOLEAN_VALUE_TYPE))
 					getOutput().setValueType(ValueType.BOOLEAN);
-				} else {
+				else if (valueTypeString.equalsIgnoreCase(ValueType.UNKNOWN.name()))
+					getOutput().setValueType(ValueType.UNKNOWN);
+				else {
 					raiseValidateError("Unknown Value Type " + valueTypeString
-							+ ". Valid values are: " + Statement.DOUBLE_VALUE_TYPE +", " + Statement.INT_VALUE_TYPE + ", " + Statement.BOOLEAN_VALUE_TYPE + ", " + Statement.STRING_VALUE_TYPE, conditional);
+						+ ". Valid values are: " + Statement.DOUBLE_VALUE_TYPE +", " + Statement.INT_VALUE_TYPE + ", " + Statement.BOOLEAN_VALUE_TYPE + ", " + Statement.STRING_VALUE_TYPE, conditional);
 				}
 			} else {
 				getOutput().setValueType(ValueType.FP64);
@@ -1355,39 +1371,16 @@ public class DataExpression extends DataIdentifier
 						addVarParam(DELIM_SPARSE, new BooleanIdentifier(DEFAULT_DELIM_SPARSE, this));
 					}
 				}
-
-			/* NOTE MB: disabled filename concatenation because we now support dynamic rewrite
-			if (getVarParam(IO_FILENAME) instanceof BinaryExpression){
-				BinaryExpression expr = (BinaryExpression)getVarParam(IO_FILENAME);
-								
-				if (expr.getKind()== Expression.Kind.BinaryOp){
-					Expression.BinaryOp op = expr.getOpCode();
-					switch (op){
-						case PLUS:
-							mtdFileName = "";
-							mtdFileName = fileNameCat(expr, currConstVars, mtdFileName);
-							// Since we have computed the value of filename, we update
-							// varParams with a const string value
-							StringIdentifier fileString = new StringIdentifier(mtdFileName, 
-									this.getFilename(), this.getBeginLine(), this.getBeginColumn(), 
-									this.getEndLine(), this.getEndColumn());
-							removeVarParam(IO_FILENAME);
-							addVarParam(IO_FILENAME, fileString);
-												
-							break;
-						default:
-							raiseValidateError("for OutputStatement, parameter " + IO_FILENAME 
-									+ " can only be a const string or const string concatenations. ", 
-									conditional);
-					}
-				}
-			}*/
 			
 			//validate read filename
 			if (getVarParam(FORMAT_TYPE) == null || FileFormat.isTextFormat(getVarParam(FORMAT_TYPE).toString()))
 				getOutput().setBlocksize(-1);
-			else if (getVarParam(FORMAT_TYPE).toString().equalsIgnoreCase(FileFormat.BINARY.toString()))
-				getOutput().setBlocksize(ConfigurationManager.getBlocksize());
+			else if (getVarParam(FORMAT_TYPE).toString().equalsIgnoreCase(FileFormat.BINARY.toString())) {
+				if( getVarParam(ROWBLOCKCOUNTPARAM)!=null )
+					getOutput().setBlocksize(Integer.parseInt(getVarParam(ROWBLOCKCOUNTPARAM).toString()));
+				else
+					getOutput().setBlocksize(ConfigurationManager.getBlocksize());
+			}
 			else
 				raiseValidateError("Invalid format " + getVarParam(FORMAT_TYPE)
 					+ " in statement: " + toString(), conditional);

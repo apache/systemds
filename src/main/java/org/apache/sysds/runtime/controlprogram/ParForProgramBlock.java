@@ -29,7 +29,7 @@ import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.hops.recompile.Recompiler;
 import org.apache.sysds.lops.Lop;
-import org.apache.sysds.lops.LopProperties.ExecType;
+import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.parser.DMLProgram;
 import org.apache.sysds.parser.DataIdentifier;
 import org.apache.sysds.parser.ParForStatementBlock;
@@ -37,6 +37,7 @@ import org.apache.sysds.parser.ParForStatementBlock.ResultVar;
 import org.apache.sysds.parser.StatementBlock;
 import org.apache.sysds.parser.VariableSet;
 import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
@@ -298,6 +299,7 @@ public class ParForProgramBlock extends ForProgramBlock
 	public static final boolean LIVEVAR_AWARE_EXPORT        = true; // export only read variables according to live variable analysis
 	public static final boolean RESET_RECOMPILATION_FLAGs   = true;
 	public static       boolean ALLOW_BROADCAST_INPUTS      = true; // enables to broadcast inputs for remote_spark
+	public static final boolean COPY_EVAL_FUNCTIONS         = true; // copy eval functions similar to normal parfor functions
 	
 	public static final String PARFOR_FNAME_PREFIX          = "/parfor/"; 
 	public static final String PARFOR_MR_TASKS_TMP_FNAME    = PARFOR_FNAME_PREFIX + "%ID%_MR_taskfile"; 
@@ -583,7 +585,7 @@ public class ParForProgramBlock extends ForProgramBlock
 		//OPTIMIZATION of ParFOR body (incl all child parfor PBs)
 		///////
 		if( _optMode != POptMode.NONE ) {
-			// OptimizationWrapper.setLogLevel(_optLogLevel); //set optimizer log level
+			OptimizationWrapper.setLogLevel(_optLogLevel); //set optimizer log level
 			OptimizationWrapper.optimize(_optMode, sb, this, ec, _monitor); //core optimize
 		}
 
@@ -842,9 +844,9 @@ public class ParForProgramBlock extends ForProgramBlock
 		if( FORCE_CP_ON_REMOTE_SPARK && (_optMode == POptMode.NONE 
 			|| (_optMode == POptMode.CONSTRAINED && _execMode==PExecMode.REMOTE_SPARK)) ) {
 			//tid = 0  because replaced in remote parworker
-			flagForced = checkMRAndRecompileToCP(0); 
+			flagForced = checkSparkAndRecompileToCP(0);
 		}
-			
+		
 		// Step 1) init parallel workers (serialize PBs)
 		// NOTES: each mapper changes filenames with regard to his ID as we submit a single 
 		// job, cannot reuse serialized string, since variables are serialized as well.
@@ -903,7 +905,7 @@ public class ParForProgramBlock extends ForProgramBlock
 		Timing time = ( _monitor ? new Timing(true) : null );
 		
 		// Step 0) check and compile to CP (if forced remote parfor)
-		boolean flagForced = checkMRAndRecompileToCP(0);
+		boolean flagForced = checkSparkAndRecompileToCP(0);
 		
 		// Step 1) prepare partitioned input matrix (needs to happen before serializing the program)
 		ParForStatementBlock sb = (ParForStatementBlock) getStatementBlock();
@@ -1143,8 +1145,8 @@ public class ParForProgramBlock extends ForProgramBlock
 			for (String key : ec.getVariables().keySet() ) {
 				if( varsRead.containsVariable(key) && !excludeNames.contains(key) ) {
 					Data d = ec.getVariable(key);
-					if( d.getDataType() == DataType.MATRIX )
-						((MatrixObject)d).exportData(_replicationExport);
+					if( d.getDataType().isMatrixOrFrame() )
+						((CacheableData<?>)d).exportData(_replicationExport);
 				}
 			}
 		}
@@ -1153,8 +1155,8 @@ public class ParForProgramBlock extends ForProgramBlock
 			for (String key : ec.getVariables().keySet() ) {
 				if( !excludeNames.contains(key) ) {
 					Data d = ec.getVariable(key);
-					if( d.getDataType() == DataType.MATRIX )
-						((MatrixObject)d).exportData(_replicationExport);
+					if( d.getDataType().isMatrixOrFrame() )
+						((CacheableData<?>)d).exportData(_replicationExport);
 				}
 			}
 		}
@@ -1344,10 +1346,10 @@ public class ParForProgramBlock extends ForProgramBlock
 	 * @param tid thread id
 	 * @return true if recompile was necessary and possible
 	 */
-	private boolean checkMRAndRecompileToCP(long tid) 
+	private boolean checkSparkAndRecompileToCP(long tid) 
 	{
-		//no MR instructions, ok
-		if( !OptTreeConverter.rContainsMRJobInstruction(this, true) )
+		//no Spark instructions, ok
+		if( !OptTreeConverter.rContainsSparkInstruction(this, true) )
 			return false;
 		
 		//no statement block, failed
@@ -1357,7 +1359,7 @@ public class ParForProgramBlock extends ForProgramBlock
 			return false;
 		}
 		
-		//try recompile MR instructions to CP
+		//try recompile Spark instructions to CP
 		HashSet<String> fnStack = new HashSet<>();
 		Recompiler.recompileProgramBlockHierarchy2Forced(_childBlocks, tid, fnStack, ExecType.CP);
 		return true;

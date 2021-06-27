@@ -66,9 +66,9 @@ public class ReadCSVTest4Nan extends ReadCSVTest {
 			CompilerConfig.FLAG_PARREADWRITE_TEXT = parallel;
 
 			TestConfiguration config = getTestConfiguration(getTestName());
-
 			loadTestConfiguration(config);
-
+			setOutputBuffering(true);
+			
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			String inputMatrixNameNoExtension = HOME + INPUT_DIR + getInputCSVFileName();
 			String inputMatrixNameWithExtension = inputMatrixNameNoExtension + ".csv";

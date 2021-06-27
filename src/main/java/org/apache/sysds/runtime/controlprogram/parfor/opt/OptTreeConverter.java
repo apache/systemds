@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.sysds.common.Types;
 import org.apache.sysds.hops.DataOp;
 import org.apache.sysds.hops.FunctionOp;
 import org.apache.sysds.hops.Hop;
@@ -32,7 +33,6 @@ import org.apache.sysds.hops.HopsException;
 import org.apache.sysds.hops.LiteralOp;
 import org.apache.sysds.hops.MultiThreadedHop;
 import org.apache.sysds.hops.OptimizerUtils;
-import org.apache.sysds.lops.LopProperties;
 import org.apache.sysds.parser.DMLProgram;
 import org.apache.sysds.parser.ForStatement;
 import org.apache.sysds.parser.ForStatementBlock;
@@ -61,6 +61,7 @@ import org.apache.sysds.runtime.controlprogram.parfor.opt.OptNode.NodeType;
 import org.apache.sysds.runtime.controlprogram.parfor.opt.OptNode.ParamType;
 import org.apache.sysds.runtime.controlprogram.parfor.opt.Optimizer.PlanInputType;
 import org.apache.sysds.runtime.instructions.Instruction;
+import org.apache.sysds.runtime.instructions.cp.EvalNaryCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.FunctionCallCPInstruction;
 import org.apache.sysds.runtime.instructions.cpfile.MatrixIndexingCPFileInstruction;
 import org.apache.sysds.runtime.instructions.spark.SPInstruction;
@@ -72,15 +73,14 @@ import org.apache.sysds.runtime.instructions.spark.SPInstruction;
  * NOTE: currently only one abstract and one runtime plan at a time.
  * This implies that only one parfor optimization can happen at a time.
  */
-public class OptTreeConverter 
-{		
-	
+public class OptTreeConverter
+{
 	//internal configuration flags
 	public static boolean INCLUDE_FUNCTIONS = true;
 	
 	//internal state
-	private static OptTreePlanMappingAbstract _hlMap = null; 
-	private static OptTreePlanMappingRuntime  _rtMap = null;	
+	private static OptTreePlanMappingAbstract _hlMap = null;
+	private static OptTreePlanMappingRuntime  _rtMap = null;
 	
 	static
 	{
@@ -470,8 +470,8 @@ public class OptTreeConverter
 			node.addParam(ParamType.OPSTRING,opstr);
 			
 			//handle execution type
-			LopProperties.ExecType et = (hop.getExecType()!=null) ? 
-					   hop.getExecType() : LopProperties.ExecType.CP;
+			Types.ExecType et = (hop.getExecType()!=null) ? 
+					   hop.getExecType() : Types.ExecType.CP;
 			switch( et ) {
 				case CP:case GPU:
 					node.setExecType(ExecType.CP); break;
@@ -482,7 +482,7 @@ public class OptTreeConverter
 			}
 			
 			//handle degree of parallelism
-			if( et == LopProperties.ExecType.CP && hop instanceof MultiThreadedHop ){
+			if( et == Types.ExecType.CP && hop instanceof MultiThreadedHop ){
 				MultiThreadedHop mtop = (MultiThreadedHop) hop;
 				node.setK( OptimizerUtils.getConstrainedNumThreads(mtop.getMaxNumThreads()) );
 			}
@@ -540,7 +540,7 @@ public class OptTreeConverter
 		return ret;
 	}
 
-	public static boolean rContainsMRJobInstruction( ProgramBlock pb, boolean inclFunctions )
+	public static boolean rContainsSparkInstruction( ProgramBlock pb, boolean inclFunctions )
 	{
 		boolean ret = false;
 		
@@ -550,7 +550,7 @@ public class OptTreeConverter
 			ret = containsSparkInstruction(tmp.getPredicate(), true);
 			if( ret ) return ret;
 			for (ProgramBlock pb2 : tmp.getChildBlocks()) {
-				ret = rContainsMRJobInstruction(pb2, inclFunctions);
+				ret = rContainsSparkInstruction(pb2, inclFunctions);
 				if( ret ) return ret;
 			}
 		}
@@ -559,11 +559,11 @@ public class OptTreeConverter
 			ret = containsSparkInstruction(tmp.getPredicate(), true);
 			if( ret ) return ret;
 			for( ProgramBlock pb2 : tmp.getChildBlocksIfBody() ){
-				ret = rContainsMRJobInstruction(pb2, inclFunctions);
+				ret = rContainsSparkInstruction(pb2, inclFunctions);
 				if( ret ) return ret;
 			}
 			for( ProgramBlock pb2 : tmp.getChildBlocksElseBody() ){
-				ret = rContainsMRJobInstruction(pb2, inclFunctions);
+				ret = rContainsSparkInstruction(pb2, inclFunctions);
 				if( ret ) return ret;
 			}
 		}
@@ -574,7 +574,7 @@ public class OptTreeConverter
 			ret |= containsSparkInstruction(tmp.getIncrementInstructions(), true);
 			if( ret ) return ret;
 			for( ProgramBlock pb2 : tmp.getChildBlocks() ){
-				ret = rContainsMRJobInstruction(pb2, inclFunctions);
+				ret = rContainsSparkInstruction(pb2, inclFunctions);
 				if( ret ) return ret;
 			}
 		}
@@ -601,17 +601,16 @@ public class OptTreeConverter
 
 	public static boolean containsFunctionCallInstruction( BasicProgramBlock pb ) {
 		return pb.getInstructions().stream()
-			.anyMatch(inst -> inst instanceof FunctionCallCPInstruction);
+			.anyMatch(inst -> inst instanceof FunctionCallCPInstruction
+					|| inst instanceof EvalNaryCPInstruction);
 	}
 
 	public static void replaceProgramBlock(OptNode parent, OptNode n, ProgramBlock pbOld, ProgramBlock pbNew, boolean rtMap) {
 		ProgramBlock pbParent = null;
 		if( rtMap )
 			pbParent = (ProgramBlock)_rtMap.getMappedObject( parent.getID() );
-		else
-		{
-			if( parent.getNodeType()==NodeType.FUNCCALL )
-			{
+		else {
+			if( parent.getNodeType()==NodeType.FUNCCALL ) {
 				FunctionOp fop = (FunctionOp) _hlMap.getMappedHop(parent.getID());
 				pbParent = ((Program)_hlMap.getRootProgram()[1]).getFunctionProgramBlock(fop.getFunctionNamespace(), fop.getFunctionName());
 			}
@@ -619,24 +618,20 @@ public class OptTreeConverter
 				pbParent = (ProgramBlock)_hlMap.getMappedProg( parent.getID() )[1];
 		}
 		
-		if( pbParent instanceof IfProgramBlock )
-		{
+		if( pbParent instanceof IfProgramBlock ) {
 			IfProgramBlock ipb = (IfProgramBlock) pbParent;
 			replaceProgramBlock( ipb.getChildBlocksIfBody(), pbOld, pbNew );
 			replaceProgramBlock( ipb.getChildBlocksElseBody(), pbOld, pbNew );
 		}
-		else if( pbParent instanceof WhileProgramBlock )
-		{
+		else if( pbParent instanceof WhileProgramBlock ) {
 			WhileProgramBlock wpb = (WhileProgramBlock) pbParent;
 			replaceProgramBlock( wpb.getChildBlocks(), pbOld, pbNew );
 		}
-		else if( pbParent instanceof ForProgramBlock || pbParent instanceof ParForProgramBlock )
-		{
+		else if( pbParent instanceof ForProgramBlock || pbParent instanceof ParForProgramBlock ) {
 			ForProgramBlock fpb = (ForProgramBlock) pbParent;
 			replaceProgramBlock( fpb.getChildBlocks(), pbOld, pbNew );
 		}
-		else if( pbParent instanceof FunctionProgramBlock )
-		{
+		else if( pbParent instanceof FunctionProgramBlock ) {
 			FunctionProgramBlock fpb = (FunctionProgramBlock) pbParent;
 			replaceProgramBlock( fpb.getChildBlocks(), pbOld, pbNew );
 		}

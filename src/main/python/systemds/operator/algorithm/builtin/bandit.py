@@ -24,18 +24,34 @@
 
 from typing import Dict, Iterable
 
-from systemds.operator import OperationNode, Matrix
+from systemds.operator import OperationNode, Matrix, Frame, List, MultiReturn, Scalar
 from systemds.script_building.dag import OutputType
 from systemds.utils.consts import VALID_INPUT_TYPES
 
-def bandit(X_train: OperationNode, Y_train: OperationNode, metaList: Iterable, targetList: Iterable, lp: OperationNode, primitives: OperationNode, param: OperationNode, **kwargs: Dict[str, VALID_INPUT_TYPES]) -> Matrix:
+
+def bandit(X_train: Matrix,
+           Y_train: Matrix,
+           metaList: Iterable,
+           targetList: Iterable,
+           lp: Frame,
+           primitives: Frame,
+           param: Frame,
+           **kwargs: Dict[str, VALID_INPUT_TYPES]):
     
-    
-    X_train._check_matrix_op()
-    Y_train._check_matrix_op()
-    params_dict = {'X_train':X_train, 'Y_train':Y_train, 'metaList':metaList, 'targetList':targetList, 'lp':lp, 'primitives':primitives, 'param':param}
+    params_dict = {'X_train': X_train, 'Y_train': Y_train, 'metaList': metaList, 'targetList': targetList, 'lp': lp, 'primitives': primitives, 'param': param}
     params_dict.update(kwargs)
-    return OperationNode(X_train.sds_context, 'bandit', named_input_nodes=params_dict, output_type=OutputType.LIST, number_of_outputs=4, output_types=[OutputType.FRAME, OutputType.MATRIX, OutputType.MATRIX, OutputType.FRAME])
-
-
     
+    vX_0 = Frame(X_train.sds_context, '')
+    vX_1 = Matrix(X_train.sds_context, '')
+    vX_2 = Matrix(X_train.sds_context, '')
+    vX_3 = Frame(X_train.sds_context, '')
+    output_nodes = [vX_0, vX_1, vX_2, vX_3, ]
+
+    op = MultiReturn(X_train.sds_context, 'bandit', output_nodes, named_input_nodes=params_dict)
+
+    vX_0._unnamed_input_nodes = [op]
+    vX_1._unnamed_input_nodes = [op]
+    vX_2._unnamed_input_nodes = [op]
+    vX_3._unnamed_input_nodes = [op]
+
+    return op

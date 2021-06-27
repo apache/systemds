@@ -24,7 +24,7 @@ import org.junit.Test;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.hops.OptimizerUtils;
-import org.apache.sysds.lops.LopProperties.ExecType;
+import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.runtime.instructions.Instruction;
 import org.apache.sysds.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysds.test.AutomatedTestBase;
@@ -206,7 +206,8 @@ public class SumSqTest extends AutomatedTestBase {
             // On CP and Spark modes, check that the rewrite actually
             // occurred for matrix cases and not for vector cases.
             if (rewrites && (platform == ExecType.SPARK || platform == ExecType.CP)) {
-                String prefix = (platform == ExecType.SPARK) ? Instruction.SP_INST_PREFIX : "";
+                String prefix = (platform == ExecType.SPARK) ? Instruction.SP_INST_PREFIX :
+                    (DMLScript.USE_ACCELERATOR ? "gpu_": "");
                 String opcode = prefix + op;
                 boolean rewriteApplied = Statistics.getCPHeavyHitterOpCodes().contains(opcode);
                 if (vector)

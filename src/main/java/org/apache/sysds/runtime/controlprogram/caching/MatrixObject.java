@@ -28,7 +28,6 @@ import org.apache.commons.lang.mutable.MutableBoolean;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.DataType;
-import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.conf.ConfigurationManager;
@@ -41,6 +40,7 @@ import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRange;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse;
 import org.apache.sysds.runtime.controlprogram.federated.FederationMap;
+import org.apache.sysds.runtime.controlprogram.federated.FederationUtils;
 import org.apache.sysds.runtime.instructions.fed.InitFEDInstruction;
 import org.apache.sysds.runtime.instructions.spark.data.RDDObject;
 import org.apache.sysds.runtime.io.FileFormatProperties;
@@ -461,9 +461,10 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 
 		// Read matrix and maintain meta data, 
 		// if the MatrixObject is federated there is nothing extra to read, and therefore only acquire read and release
+		int blen = mc.getBlocksize() <= 0 ? ConfigurationManager.getBlocksize() : mc.getBlocksize();
 		MatrixBlock newData = isFederated() ? acquireReadAndRelease() :
 			DataConverter.readMatrixFromHDFS(fname, iimd.getFileFormat(), rlen,
-			clen, mc.getBlocksize(), mc.getNonZeros(), getFileFormatProperties());
+			clen, blen, mc.getNonZeros(), getFileFormatProperties());
 		
 		if(iimd.getFileFormat() == FileFormat.CSV){
 			_metaData = _metaData instanceof MetaDataFormat ?
@@ -508,7 +509,8 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 			//obtain matrix block from RDD
 			int rlen = (int)mc.getRows();
 			int clen = (int)mc.getCols();
-			int blen = mc.getBlocksize();
+			int blen = mc.getBlocksize() > 0 ? mc.getBlocksize() : 
+				ConfigurationManager.getBlocksize();
 			long nnz = mc.getNonZerosBound();
 			
 			//guarded rdd collect 
@@ -548,28 +550,18 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 		throws IOException
 	{
 		// TODO sparse optimization
-		MatrixBlock ret = new MatrixBlock((int) dims[0], (int) dims[1], false);
 		List<Pair<FederatedRange, Future<FederatedResponse>>> readResponses = fedMap.requestFederatedData();
 		try {
-			for (Pair<FederatedRange, Future<FederatedResponse>> readResponse : readResponses) {
-				FederatedRange range = readResponse.getLeft();
-				FederatedResponse response = readResponse.getRight().get();
-				// add result
-				int[] beginDimsInt = range.getBeginDimsInt();
-				int[] endDimsInt = range.getEndDimsInt();
-				MatrixBlock multRes = (MatrixBlock) response.getData()[0];
-				ret.copy(beginDimsInt[0], endDimsInt[0] - 1,
-					beginDimsInt[1], endDimsInt[1] - 1, multRes, false);
-				ret.setNonZeros(ret.getNonZeros() + multRes.getNonZeros());
-			}
+			if ( fedMap.getType() == FederationMap.FType.PART )
+				return FederationUtils.aggregateResponses(readResponses);
+			else
+				return FederationUtils.bindResponses(readResponses, dims);
 		}
-		catch (Exception e) {
+		catch(Exception e) {
 			throw new DMLRuntimeException("Federated matrix read failed.", e);
 		}
-		
-		return ret;
 	}
-	
+
 	/**
 	 * Writes in-memory matrix to HDFS in a specified format.
 	 */
@@ -597,19 +589,10 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 			DataCharacteristics mc = iimd.getDataCharacteristics();
 			// Write the matrix to HDFS in requested format
 			FileFormat fmt = (ofmt != null ? FileFormat.safeValueOf(ofmt) : iimd.getFileFormat());
+			mc = (fmt == FileFormat.BINARY && mc.getBlocksize() > 0) ? mc :
+				new MatrixCharacteristics(mc).setBlocksize(ConfigurationManager.getBlocksize());
+			DataConverter.writeMatrixToHDFS(_data, fname, fmt, mc, rep, fprop, _diag);
 			
-			// when outputFormat is binaryblock, make sure that matrixCharacteristics has correct blocking dimensions
-			// note: this is only required if singlenode (due to binarycell default) 
-			if ( fmt == FileFormat.BINARY && DMLScript.getGlobalExecMode() == ExecMode.SINGLE_NODE
-				&& mc.getBlocksize() != ConfigurationManager.getBlocksize() )
-			{
-				DataConverter.writeMatrixToHDFS(_data, fname, fmt, new MatrixCharacteristics(mc.getRows(), mc.getCols(),
-					ConfigurationManager.getBlocksize(), mc.getNonZeros()), rep, fprop, _diag);
-			}
-			else {
-				DataConverter.writeMatrixToHDFS(_data, fname, fmt, mc, rep, fprop, _diag);
-			}
-
 			if( LOG.isTraceEnabled() )
 				LOG.trace("Writing matrix to HDFS ("+fname+") - COMPLETED... " + (System.currentTimeMillis()-begin) + " msec.");
 		}

@@ -23,8 +23,8 @@ import java.util.HashMap;
 
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types;
+import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.hops.OptimizerUtils;
-import org.apache.sysds.lops.LopProperties;
 import org.apache.sysds.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
@@ -51,11 +51,11 @@ public class BuiltinKmeansPredictTest extends AutomatedTestBase {
 
 	@Test
 	public void testKMeansDenseBinSingleRewritesCP() {
-		runKMeansTest(false, 2, 1, true, LopProperties.ExecType.CP);
+		runKMeansTest(false, 2, 1, true, ExecType.CP);
 	}
 
 	private void runKMeansTest(boolean sparse, int centroids, int runs, boolean rewrites,
-		LopProperties.ExecType instType) {
+		ExecType instType) {
 		Types.ExecMode platformOld = setExecMode(instType);
 
 		boolean oldFlag = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;

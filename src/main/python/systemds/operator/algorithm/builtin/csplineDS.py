@@ -24,17 +24,24 @@
 
 from typing import Dict, Iterable
 
-from systemds.operator import OperationNode, Matrix
+from systemds.operator import OperationNode, Matrix, Frame, List, MultiReturn, Scalar
 from systemds.script_building.dag import OutputType
 from systemds.utils.consts import VALID_INPUT_TYPES
 
-def csplineDS(X: OperationNode, Y: OperationNode, inp_x: float) -> Matrix:
-    
-    
-    X._check_matrix_op()
-    Y._check_matrix_op()
-    params_dict = {'X':X, 'Y':Y, 'inp_x':inp_x}
-    return OperationNode(X.sds_context, 'csplineDS', named_input_nodes=params_dict, output_type=OutputType.LIST, number_of_outputs=2, output_types=[OutputType.MATRIX, OutputType.MATRIX])
 
-
+def csplineDS(X: Matrix,
+              Y: Matrix,
+              inp_x: float):
     
+    params_dict = {'X': X, 'Y': Y, 'inp_x': inp_x}
+    
+    vX_0 = Matrix(X.sds_context, '')
+    vX_1 = Matrix(X.sds_context, '')
+    output_nodes = [vX_0, vX_1, ]
+
+    op = MultiReturn(X.sds_context, 'csplineDS', output_nodes, named_input_nodes=params_dict)
+
+    vX_0._unnamed_input_nodes = [op]
+    vX_1._unnamed_input_nodes = [op]
+
+    return op

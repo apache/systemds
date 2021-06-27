@@ -45,7 +45,9 @@ As an example the lm algorithm can be used as follows:
     weights = lm(sds.from_numpy(features), sds.from_numpy(y)).compute()
     print(weights)
 
-The output should be similar to::
+The output should be similar to
+
+.. code-block:: python
 
   [[-0.11538199]
   [-0.20386541]

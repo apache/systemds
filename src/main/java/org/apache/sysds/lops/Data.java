@@ -25,7 +25,7 @@ import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.common.Types.OpOpData;
 import org.apache.sysds.common.Types.ValueType;
-import org.apache.sysds.lops.LopProperties.ExecType;
+import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.parser.DataExpression;
 
 /**
@@ -348,6 +348,21 @@ public class Data extends Lop
 				}
 			}
 
+			if(oparams.getFormat() == FileFormat.HDF5) {
+				Data datasetNameLop = (Data) getNamedInputLop(DataExpression.HDF5_DATASET_NAME);
+				if(datasetNameLop.isVariable())
+					throw new LopsException(
+						this.printErrorLocation() + "Parameter " + DataExpression.HDF5_DATASET_NAME + " must be a literal for a seq operation.");
+
+				sb.append(OPERAND_DELIMITOR);
+				sb.append(datasetNameLop.getStringValue());
+
+				if(this.getExecType() == ExecType.SPARK) {
+					sb.append(OPERAND_DELIMITOR);
+					sb.append(true); //isInputMatrixBlock
+				}
+			}
+
 		}
 
 		if (_op.isWrite()) {
@@ -360,6 +375,8 @@ public class Data extends Lop
 			} else {
 				sb.append(prepOperand("", DataType.SCALAR, ValueType.STRING, true));
 			}
+			sb.append(OPERAND_DELIMITOR);
+			sb.append(oparams.getBlocksize());
 		}
 
 		return sb.toString();
@@ -380,7 +397,7 @@ public class Data extends Lop
 	}
 
 	public String getCreateVarInstructions(String outputFileName, String outputLabel) {
-		if ( getDataType() == DataType.MATRIX || getDataType() == DataType.FRAME ) {
+		if ( getDataType() == DataType.MATRIX || getDataType() == DataType.FRAME || getDataType() == DataType.LIST ) {
 
 			if ( _op.isTransient() )
 				throw new LopsException("getInstructions() should not be called for transient nodes.");
@@ -421,6 +438,12 @@ public class Data extends Lop
 			if ( oparams.getFormat() == FileFormat.LIBSVM ) {
 				sb.append(OPERAND_DELIMITOR);
 				sb.append( createVarLIBSVMHelper() );
+			}
+
+			// Format-specific properties
+			if ( oparams.getFormat() == FileFormat.HDF5 ) {
+				sb.append(OPERAND_DELIMITOR);
+				sb.append( createVarHDF5Helper() );
 			}
 
 			// Frame-specific properties
@@ -533,6 +556,25 @@ public class Data extends Lop
 			sb.append(indexDelimLop.getStringValue());
 			sb.append(OPERAND_DELIMITOR);
 			sb.append(sparseLop.getBooleanValue());
+		}
+		return sb.toString();
+	}
+
+	private String createVarHDF5Helper() {
+		StringBuilder sb = new StringBuilder();
+		if ( _op.isRead() ) {
+			Data datasetNameLop = (Data) getNamedInputLop(DataExpression.HDF5_DATASET_NAME);
+			sb.append(datasetNameLop.getStringValue());
+			sb.append(OPERAND_DELIMITOR);
+		}
+		else { // (operation == OperationTypes.WRITE)
+			Data datasetNameLop = (Data) getNamedInputLop(DataExpression.HDF5_DATASET_NAME);
+			if(datasetNameLop.isVariable())
+				throw new LopsException(
+					this.printErrorLocation() + "Parameter " + DataExpression.HDF5_DATASET_NAME + " must be a literal for a seq operation.");
+
+			sb.append(datasetNameLop.getStringValue());
+			sb.append(OPERAND_DELIMITOR);
 		}
 		return sb.toString();
 	}

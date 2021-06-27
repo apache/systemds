@@ -69,7 +69,7 @@ public class MMChainFEDInstruction extends UnaryFEDInstruction {
 			return new MMChainFEDInstruction(in1, in2, in3, out, type, k, opcode, str);
 		}
 	}
-	
+
 	@Override
 	public void processInstruction(ExecutionContext ec) {
 		MatrixObject mo1 = ec.getMatrixObject(input1);
@@ -104,7 +104,7 @@ public class MMChainFEDInstruction extends UnaryFEDInstruction {
 			FederatedRequest fr3 = new FederatedRequest(RequestType.GET_VAR, fr2.getID());
 			FederatedRequest fr4 = mo1.getFedMapping()
 				.cleanup(getTID(), fr0[0].getID(), fr1.getID(), fr2.getID());
-			
+
 			//execute federated operations and aggregate
 			Future<FederatedResponse>[] tmp = mo1.getFedMapping().execute(getTID(), fr0, fr1, fr2, fr3, fr4);
 			MatrixBlock ret = FederationUtils.aggAdd(tmp);

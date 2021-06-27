@@ -24,17 +24,15 @@
 
 from typing import Dict, Iterable
 
-from systemds.operator import OperationNode, Matrix
+from systemds.operator import OperationNode, Matrix, Frame, List, MultiReturn, Scalar
 from systemds.script_building.dag import OutputType
 from systemds.utils.consts import VALID_INPUT_TYPES
 
-def univar(X: OperationNode, types: OperationNode) -> Matrix:
-    
-    
-    X._check_matrix_op()
-    types._check_matrix_op()
-    params_dict = {'X':X, 'types':types}
-    return Matrix(X.sds_context, 'univar', named_input_nodes=params_dict)
 
-
+def univar(X: Matrix,
+           types: Matrix):
     
+    params_dict = {'X': X, 'types': types}
+    return Matrix(X.sds_context,
+        'univar',
+        named_input_nodes=params_dict)

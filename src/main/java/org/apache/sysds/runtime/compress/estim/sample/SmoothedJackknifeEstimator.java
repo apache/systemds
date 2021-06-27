@@ -19,22 +19,19 @@
 
 package org.apache.sysds.runtime.compress.estim.sample;
 
-import org.apache.sysds.runtime.compress.utils.Bitmap;
-
 public class SmoothedJackknifeEstimator {
 
 	/**
 	 * Peter J. Haas, Jeffrey F. Naughton, S. Seshadri, and Lynne Stokes. Sampling-Based Estimation of the Number of
 	 * Distinct Values of an Attribute. VLDB'95, Section 4.3.
 	 * 
-	 * @param ubm        The Uncompressed Bitmap containing the data from the sample
+	 * @param numVals    The number of unique values in the sample
+	 * @param freqCounts The inverse histogram of frequencies. counts extracted
 	 * @param nRows      The original number of rows in the entire input
 	 * @param sampleSize The number of rows in the sample
 	 * @return Estimate of the number of distinct values
 	 */
-	public static int get(Bitmap ubm, int nRows, int sampleSize) {
-		int numVals = ubm.getNumValues();
-		int[] freqCounts = FrequencyCount.get(ubm);
+	public static int distinctCount(int numVals, int[] freqCounts, int nRows, int sampleSize) {
 		// all values in the sample are zeros
 		if(freqCounts.length == 0)
 			return 0;

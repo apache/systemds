@@ -64,4 +64,4 @@ for (e in 1:nrow(y_train)) {
     }
 }
 acc = sum / nrow(y_train)
-print(toString(out_path))
+write(acc, out_path)

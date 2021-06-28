@@ -487,20 +487,75 @@ class Test_DMLScript(unittest.TestCase):
         # node = PROCESSING_split_package.m_split(X1,X1)
         # X,Y = node.compute()
 
+
+        features = X
+        labels = self.sds.from_numpy(Y)
+
         # Train data
-
+        """
+        SystemDS also supports feed-forward neural networks for classification tasks.
+        We use a neural network with 2 hidden layers, each consisting of 200 neurons.
+        First we need to source the dml-file for neural networks.
+        This file includes all the necessary functions for training, evaluating and storing the model.
+        The returned object of the source call is further used for calling the functions.
+        """
+        ################################################################################################################
         FFN_package = self.sds.source(self.neural_net_src_path, "fnn", print_imported_methods=True)
+        ################################################################################################################
+        """
+        Training a neural network in SystemDS using the train function is very straightforward.
+        The first two arguments are the training features and the target values we want to fit our model on.
+        Then we need set the hyperparameters of the model.
+        We choose to train for 1 epoch with a batch size of 16 and a learning rate of 0.01, which are common parameters for neural networks.
+        The seed argument ensures that running the code again yields the same results.
+        """
+        ################################################################################################################
+        epochs = 1
+        batch_size = 16
+        learning_rate = 0.01
+        seed = 42
 
-        network = FFN_package.train(X, self.sds.from_numpy(Y), 1, 16, 0.01, 1)
-
-        self.assertTrue(type(network) is not None)  # sourcing and training seems to works
-
+        network = FFN_package.train(features, labels, epochs, batch_size, learning_rate, seed)
+        ################################################################################################################
+        """
+        If more ressources are available, one can also choose to train the model using a parameter server.
+        Here we use the same parameters as before, however we need to specifiy a few more.
+        TODO get more information about the parameters
+        """
+        ################################################################################################################
+        workers = 1
+        utype = '"BSP"'
+        freq = '"EPOCH"'
+        mode = '"LOCAL"'
+        network = FFN_package.train_paramserv(features, labels, epochs,
+                                              batch_size, learning_rate, workers, utype, freq, mode,
+                                              seed)
+        ################################################################################################################
+        """
+        For later usage we can save the trained model.
+        We only need to specify the name of our model and the file-path.
+        This call stores the weights and biases of our model.
+        """
+        ################################################################################################################
         FFN_package.save_model(network, '"model/python_FFN/"').compute(verbose=True)
-
-        # TODO This does not work yet, not sure what the problem is
-        # FFN_package.eval(Yt, Yt).compute()"""
-
-
+        ################################################################################################################
+        """
+        Next we evaluate our network on the test set which was not used for training.
+        The predict function with the test features and our trained network returns a matrix of class probabilities.
+        This matrix contains for each test sample the probabilities for each class.
+        For predicting the most likely class of a sample, we choose the class with the highest probability.
+        """
+        ################################################################################################################
+        test_features = Xt
+        probs = FFN_package.predict(test_features, network).compute(True)
+        ################################################################################################################
+        """
+        To evaluate how well our model performed on the test set, we can use the probability matrix from the predict call and the real test labels
+        and compute the log-cosh loss.
+        """
+        ################################################################################################################
+        FFN_package.eval(probs, Yt).compute()
+        ################################################################################################################
 
 
 

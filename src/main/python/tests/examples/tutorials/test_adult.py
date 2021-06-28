@@ -214,7 +214,7 @@ class Test_DMLScript(unittest.TestCase):
         ################################################################################################################
         '''
         The multiLogRegPredict function has three return values:
-            -m, a matrix with the mean probaility of correctly classifying each label. We not use it further in this example.
+            -m, a matrix with the mean probability of correctly classifying each label. We not use it further in this example.
             -y_pred, is the predictions made using the model
             -acc, is the accuracy achieved by the model.
         '''
@@ -244,12 +244,12 @@ class Test_DMLScript(unittest.TestCase):
         )
 
     def test_level2(self):
-        #####################################################################################
+        ################################################################################################################
         """" 
         Level 2:
-        This part of the tutorial shows a more in depth overview for the preprocessing capabilites that systemds has to offer.
-        We will take a new and raw dataset using the csv format and read it with systemds. Then do the heavy lifting for the prerpocessing with systemds. We will also show how to 
-        switch from systemds to numpy and then back to systemds as this might be relevant for certain usecases.
+        This part of the tutorial shows a more in depth overview for the preprocessing capabilities that SystemDS has to offer.
+        We will take a new and raw dataset using the csv format and read it with SystemDS. Then do the heavy lifting for the preprocessing with SystemDS. We will also show how to 
+        switch from SystemDS to numpy and then back to SystemDS as this might be relevant for certain use cases.
         
         Step 1:
         First of all, we need to download the dataset and create a mtd-file for specifying different properties that the dataset has.
@@ -263,7 +263,7 @@ class Test_DMLScript(unittest.TestCase):
         In these files we can define certain properties that the file has and also specify which values are supposed to get treated like missing values.
         
         The content of the train_data.csv.mtd file is:
-        ### Content Start
+        ### Content start
         {
         "data_type": "frame",
         "format": "csv",
@@ -272,7 +272,7 @@ class Test_DMLScript(unittest.TestCase):
         "rows": 32561,
         "cols": 15
         }
-        ### Content END
+        ### Content end
         
         The "format" of the file is csv, and "header" is set to true because we added the feature names as headers to the csv files.
         "data_type" is set to frame as the preprocessing functions that we use require this datatype. 
@@ -281,7 +281,7 @@ class Test_DMLScript(unittest.TestCase):
         
          After these requirements are completed, we have to define a SystemDSContext for reading our dataset. We can do this in the following way.
         """""
-        ############################################################################################
+        ################################################################################################################
 
         #### General way to define SystemDSContext
         """"
@@ -291,15 +291,15 @@ class Test_DMLScript(unittest.TestCase):
         #### END
         train_count = 30000
         test_count = 10000
-        ####################################################################################
+        ################################################################################################################
         """""
         With this context we can now define a read operation using the path of the dataset and a schema.
-        The schema simply defines the datatypes for each colums.
+        The schema simply defines the data types for each column.
         
-        As already mentioned, systemds supports lazy execution by default, which means that the read operation is only executed after calling the compute() function.
+        As already mentioned, SystemDS supports lazy execution by default, which means that the read operation is only executed after calling the compute() function.
         """""
 
-        ################################################################################################
+        ################################################################################################################
 
         SCHEMA = '"DOUBLE,STRING,DOUBLE,STRING,DOUBLE,STRING,STRING,STRING,STRING,STRING,DOUBLE,DOUBLE,DOUBLE,STRING,STRING"'
 
@@ -312,16 +312,93 @@ class Test_DMLScript(unittest.TestCase):
             schema=SCHEMA
         )
 
-        ###################################################################################
+        ################################################################################################################
         """""
         Step 2:
-        Now that the datsets have been read we 
+        Now that the read operation has been declared, we can define an additional file for the further preprocessing of the dataset. 
+        For this we create a .json file that holds information about the operations that will be performed on individual columns. 
+        For the sake of this tutorial we will use the file "jspec.json" with the following content:
+        ### Content start
+        {
+        "impute":
+        [ { "name": "age", "method": "global_mean" }
+         ,{ "name": "workclass" , "method": "global_mode" }
+         ,{ "name": "fnlwgt", "method": "global_mean" }
+         ,{ "name": "education", "method": "global_mode"  }
+         ,{ "name": "education-num", "method": "global_mean" }
+         ,{ "name": "marital-status"      , "method": "global_mode" }
+         ,{ "name": "occupation"        , "method": "global_mode" }
+         ,{ "name": "relationship" , "method": "global_mode" }
+         ,{ "name": "race"        , "method": "global_mode" }
+         ,{ "name": "sex"        , "method": "global_mode" }
+         ,{ "name": "capital-gain", "method": "global_mean" }
+         ,{ "name": "capital-loss", "method": "global_mean" }
+         ,{ "name": "hours-per-week", "method": "global_mean" }
+         ,{ "name": "native-country"        , "method": "global_mode" }
+        ],
+        "bin": [ { "name": "age"  , "method": "equi-width", "numbins": 3 }],
+        "dummycode": ["age", "workclass", "education", "marital-status", "occupation", "relationship", "race", "sex", "native-country"],
+        "recode": ["income"]
+        }
+        ### Content end
+        Our dataset has missing values. An easy way to deal with that circumstance is to use the "impute" option that SystemDS supports.
+        We simply pass a list that holds all the relations between column names and the method of interpolation. A more specific example  is the "education" column.
+        In the dataset certain entries have missing values for this column. As this is a string feature,
+        we can simply define the method as "global_mode" and replace every missing value with the global mode inside this column. It is important to note that
+        we first had to define the values of the missing strings in our selected dataset using the .mtd files. 
+        
+        With the "bin" keyword we can discretize continuous values into a small number of bins. Here the column with age values
+        is discretized into three age intervals. The only method that is currently supported is equi-width binning.
+        
+        The column-level data transformation "dummycode" allows us to one-hot-encode a categorical column. We split a column into multiple 
+        columns of zeros and ones, which collectively capture the full information about the categorical variable.
+        In our example we first bin the "age" column into 3 different bins. This means that we now have one column where one entry can belong to one of 3 age groups. After using 
+        "dummycode", we transform this one column into 3 different columns, one for each bin.
+
+        
+        At last we make use of the "recode" transformation for categorical columns, it maps all distinct categories in 
+        the column into consecutive numbers, starting from 1. In our example we recode the "income" column, which 
+        transforms it from "<=$50K" and ">$50K" to "0" and "1" respectively.
+        
+        After defining the .jspec file we can read it by passing the filepath, data_type and value_type using the following command:
         """""
 
-        ####################################################################################
+        ################################################################################################################
         jspec = self.sds.read(self.dataset_jspec, data_type="scalar", value_type="string")
         # scaling does not have effect yet. We need to replace labels in test set with the same string as in train dataset
-        X1, M1 = F1.rbind(F2).transform_encode(spec=jspec).compute()
+
+        ################################################################################################################
+        """"
+        We now can combine the train and the test dataset by using the rbind() function. This function simply appends the Frame F2 at the end of Frame F1.
+        This is necessary to ensure that the encoding is identical between training and test dataset.
+        """""
+        ################################################################################################################
+        X1 = F1.rbind(F2)
+        ################################################################################################################
+        """"
+        In order to use our jspec file we can apply the transform_encode() function. We simply have to pass the read .json file from before.
+        Another good resource for further ways of processing is: https://apache.github.io/systemds/site/dml-language-reference.html
+        There we provide different examples for defining jspec's and what functionality is currently supported.
+        In our particular case we obtain the Matrix X1 and the Frame M1 from the operation. X1 holds all the encoded values and M1 holds a mapping between the encoded values
+        and all the initial values. Columns that have not been specified in the .json file were not altered. 
+        Finally, we call the compute() function to execute all the specified operations. In this particular case the Matrix X1 and the Frame M1 will be converted to a numpy
+        array and a pandas dataframe, as we need them for further preprocessing.
+
+        """""
+        ################################################################################################################
+        X1, M1 = X1.transform_encode(spec=jspec).compute()
+
+        ################################################################################################################
+        """"
+        First we re-split out data into a training and a test set with the corresponding labels. We can then simply transform
+        the numpy array of the training data back to SystemDS matrix by using "sds.from_numpy()". 
+        The SystemDS scale function takes a matrix as an input and returns three output parameters:
+            # Y            Matrix    ---      Output feature matrix with K columns
+            # ColMean      Matrix    ---      The column means of the input, subtracted if Center was TRUE
+            # ScaleFactor  Matrix    ---      The Scaling of the values, to make each dimension have similar value ranges
+        If we want to retransform a SystemDs Matrix to a Numpy array we can do so by using the np.array() function. 
+        """""
+        ################################################################################################################
         col_length = len(X1[0])
         X = X1[0:train_count, 0:col_length - 1]
         Y = X1[0:train_count, col_length - 1:col_length].flatten()
@@ -329,35 +406,20 @@ class Test_DMLScript(unittest.TestCase):
         Xt = X1[train_count:train_count + test_count, 0:col_length - 1]
         Yt = X1[train_count:train_count + test_count, col_length - 1:col_length].flatten()
 
-        _, mean, sigma = scale(self.sds.from_numpy(X), True, True).compute()
 
-        mean_copy = np.array(mean)
-        sigma_copy = np.array(sigma)
+        ################################################################################################################
+        """"
 
-        numerical_cols = []
-        for count, col in enumerate(np.transpose(X)):
-            for entry in col:
-                if entry > 1 or entry < 0 or entry > 0 and entry < 1:
-                    numerical_cols.append(count)
-                    break
-
-        for x in range(0, 105):
-            if not x in numerical_cols:
-                mean_copy[0][x] = 0
-                sigma_copy[0][x] = 1
-
-        mean = self.sds.from_numpy(mean_copy)
-        sigma = self.sds.from_numpy(sigma_copy)
+        """""
+        ################################################################################################################
         X = self.sds.from_numpy(X)
         Y = self.sds.from_numpy(Y)
         Xt = self.sds.from_numpy(Xt)
         Yt = self.sds.from_numpy(Yt)
-        X = scaleApply(winsorize(X, True), mean, sigma)
-        Xt = scaleApply(winsorize(Xt, True), mean, sigma)
-        # node = PROCESSING_split_package.m_split(X1,X1)
-        # X,Y = node.compute()
 
-        # Train data
+        X, mean, sigma = scale(X, True, True)
+        Xt = scaleApply(Xt, mean, sigma)
+
         betas = multiLogReg(X, Y)
 
         [_, y_pred, acc] = multiLogRegPredict(Xt, betas, Yt).compute()
@@ -367,8 +429,8 @@ class Test_DMLScript(unittest.TestCase):
         self.assertTrue(
             np.allclose(
                 confusion_matrix_abs,
-                np.array([[7073., 1011.],
-                          [ 542., 1374.]])
+                np.array([[7098., 951.],
+                          [ 517., 1434.]])
             )
         )
 

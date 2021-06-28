@@ -15,15 +15,9 @@
      ,{ "name": "hours-per-week", "method": "global_mean" }
      ,{ "name": "native-country"        , "method": "global_mode" }
     ],
-  "scale":
-    [ { "name": "age", "method": "mean-subtraction" }
-     ,{ "name": "fnlwgt", "method": "z-score" }
-     ,{ "name": "education-num", "method": "mean-subtraction" }
-     ,{ "name": "capital-gain", "method": "z-score" }
-     ,{ "name": "capital-loss", "method": "z-score" }
-     ,{ "name": "hours-per-week", "method": "mean-subtraction" }
-    ],
-   "dummycode": ["workclass", "education", "marital-status", "occupation", "relationship", "race", "sex", "native-country"],
+    "bin":
+    [ { "name": "age"  , "method": "equi-width", "numbins": 3 }],
+   "dummycode": ["age", "workclass", "education", "marital-status", "occupation", "relationship", "race", "sex", "native-country"],
    "recode": ["income"]
 
 

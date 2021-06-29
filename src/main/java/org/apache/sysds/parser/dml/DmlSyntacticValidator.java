@@ -158,6 +158,8 @@ public class DmlSyntacticValidator implements DmlListener {
 	protected Set<String> functions;
 	// DML-bodied builtin functions
 	protected FunctionDictionary<FunctionStatementBlock> builtinFuns;
+	// DML-bodied namespace functions (loaded via builtins)
+	protected HashMap<String, FunctionDictionary<FunctionStatementBlock>> builtinFunsNs;
 	
 	public DmlSyntacticValidator(CustomErrorListener errorListener, Map<String,String> argVals, String sourceNamespace, Set<String> prepFunctions) {
 		this.errorListener = errorListener;
@@ -167,6 +169,7 @@ public class DmlSyntacticValidator implements DmlListener {
 		sources = new HashMap<>();
 		functions = (null != prepFunctions) ? prepFunctions : new HashSet<>();
 		builtinFuns = new FunctionDictionary<>();
+		builtinFunsNs = new HashMap<>();
 	}
 
 
@@ -189,6 +192,10 @@ public class DmlSyntacticValidator implements DmlListener {
 	
 	public FunctionDictionary<FunctionStatementBlock> getParsedBuiltinFunctions() {
 		return builtinFuns;
+	}
+	
+	public Map<String, FunctionDictionary<FunctionStatementBlock>> getParsedBuiltinFunctionsNs() {
+		return builtinFunsNs;
 	}
 	
 	protected ArrayList<ParameterExpression> getParameterExpressionList(List<ParameterizedExpressionContext> paramExprs) {
@@ -610,11 +617,23 @@ public class DmlSyntacticValidator implements DmlListener {
 		{
 			//load and add builtin DML-bodied functions
 			String filePath = Builtins.getFilePath(functionName);
-			FunctionDictionary<FunctionStatementBlock> prog = 
-				parseAndAddImportedFunctions(namespace, filePath, ctx).getBuiltinFunctionDictionary();
-			if( prog != null ) //robustness for existing functions
+			DMLProgram tmpProg = parseAndAddImportedFunctions(namespace, filePath, ctx);
+			FunctionDictionary<FunctionStatementBlock> prog = tmpProg.getBuiltinFunctionDictionary();
+			if( prog != null ) { //robustness for existing functions
+				//add builtin functions
 				for( Entry<String,FunctionStatementBlock> f : prog.getFunctions().entrySet() )
 					builtinFuns.addFunction(f.getKey(), f.getValue());
+				//add namespaces loaded by builtin functions (via source)
+				tmpProg.getNamespaces().entrySet().stream()
+					.filter(e -> !e.getKey().equals(DMLProgram.BUILTIN_NAMESPACE))
+					.forEach(e -> {
+						String ns = getQualifiedNamespace(e.getKey());
+						if( builtinFunsNs.containsKey(ns) )
+							builtinFunsNs.get(ns).merge(e.getValue());
+						else
+							builtinFunsNs.put(ns, e.getValue());
+					});
+			}
 		}
 	}
 

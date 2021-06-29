@@ -32,14 +32,3 @@ staging:
   #   content/
   # or output/
   # outputdir: site
-
-# Official website publishing
-publish:
-  profile: ~
-  whoami:  asf-staging
-  # top level directory for serving index.html
-  # Refer: https://github.com/apache/struts-site
-  # Default directories are 
-  #   content/
-  # or output/
-  # outputdir: site

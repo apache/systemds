@@ -92,9 +92,12 @@ The tags can be used in combination to one another. These are the only tags avai
     > [`87bc3584`](https://github.com/apache/systemds/commit/87bc3584db2148cf78b2d46418639e88ca27ec64) - `[HOTFIX] Fix validation of scalar-scalar binary min/max operations`
     >
 
+> Protip:
+> Addressing multiple jira issues in a single commit, `[SYSTEMDS-123,SYSTEMDS-124]` or `[SYSTEMDS-123][SYSTEMDS-124]`
+
 ### Commit description
 
-> A commit or PR description is a public record of **what** change is being made and **why**.
+A commit or PR description is a public record of **what** change is being made and **why**.
 
 #### Structure of the description
 

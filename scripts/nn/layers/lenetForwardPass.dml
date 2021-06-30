@@ -8,18 +8,18 @@ source("nn/layers/softmax.dml") as softmax
 
 
 
-lenetForward = function(matrix[double] X, int C, int Hin, int Win,
-                        matrix[double] W1, matrix[double] b1,
-                        matrix[double] W2, matrix[double] b2,
-                        matrix[double] W3, matrix[double] b3,
-                        matrix[double] W4, matrix[double] b4) 
-return (matrix[double] outc1, int Houtc1, int Woutc1, matrix[double] outr1,
-        matrix[double] outp1, int Houtp1, int Woutp1,
-        matrix[double] outc2, int Houtc2, int Woutc2, matrix[double] outr2,
-        matrix[double] outp2, int Houtp2, int Woutp2,
-        matrix[double] outa3, matrix[double] outr3, 
-        matrix[double] outd3, matrix[double] maskd3,
-        matrix[double] outa4, matrix[double] probs) {
+lenetForward = function(Matrix[Double] X, Integer C, Integer Hin, Integer Win,
+                        Matrix[Double] W1, Matrix[Double] b1,
+                        Matrix[Double] W2, Matrix[Double] b2,
+                        Matrix[Double] W3, Matrix[Double] b3,
+                        Matrix[Double] W4, Matrix[Double] b4) 
+return (Matrix[Double] outc1, Integer Houtc1, Integer Woutc1, Matrix[Double] outr1,
+        Matrix[Double] outp1, Integer Houtp1, Integer Woutp1,
+        Matrix[Double] outc2, Integer Houtc2, Integer Woutc2, Matrix[Double] outr2,
+        Matrix[Double] outp2, Integer Houtp2, Integer Woutp2,
+        Matrix[Double] outa3, Matrix[Double] outr3, 
+        Matrix[Double] outd3, Matrix[Double] maskd3,
+        Matrix[Double] outa4, Matrix[Double] probs) {
 
     Hf = 5  # filter height
     Wf = 5  # filter width

@@ -12,14 +12,16 @@ source("nn/layers/softmax.dml") as softmax
 source("nn/optim/sgd_nesterov.dml") as sgd_nesterov
 source("nn/layers/lenetForwardPass.dml") as lenet_fw
 
-m_lenetTrain = function(matrix[double] X, matrix[double] Y,
-                 matrix[double] X_val, matrix[double] Y_val,
-                 int C, int Hin, int Win, int batch_size = 64, int epochs=20, 
-                 int lr=0.01, int mu=0.9, int decay=0.95, int seed=-1)
-    return (matrix[double] W1, matrix[double] b1,
-            matrix[double] W2, matrix[double] b2,
-            matrix[double] W3, matrix[double] b3,
-            matrix[double] W4, matrix[double] b4) {
+m_lenetTrain = function(Matrix[Double] X, Matrix[Double] Y,
+                 Matrix[Double] X_val, Matrix[Double] Y_val,
+                 Integer C, Integer Hin, Integer Win, Integer batch_size=64, Integer epochs=20, 
+                 Double lr=0.01, Double mu=0.9, Double decay=0.95, Double lambda=5e-04,
+                 Boolean param_server=FALSE, Integer workers=0, String utype="ASP", 
+                 String freq="EPOCH", String mode="LOCAL", Integer seed=-1)
+    return (Matrix[Double] W1, Matrix[Double] b1,
+            Matrix[Double] W2, Matrix[Double] b2,
+            Matrix[Double] W3, Matrix[Double] b3,
+            Matrix[Double] W4, Matrix[Double] b4) {
    /*
    * Trains a convolutional net using the "LeNet" architecture.
    *
@@ -74,26 +76,25 @@ m_lenetTrain = function(matrix[double] X, matrix[double] Y,
 
   # Initialize SGD w/ Nesterov momentum optimizer
   
-  # parameters now in function
-
-  # lr = 0.01  # learning rate
-  # mu = 0.9  #0.5  # momentum
-  # decay = 0.95  # learning rate decay constant
-  
-  
   vW1 = sgd_nesterov::init(W1); vb1 = sgd_nesterov::init(b1)
   vW2 = sgd_nesterov::init(W2); vb2 = sgd_nesterov::init(b2)
   vW3 = sgd_nesterov::init(W3); vb3 = sgd_nesterov::init(b3)
   vW4 = sgd_nesterov::init(W4); vb4 = sgd_nesterov::init(b4)
 
-  # Regularization
-  lambda = 5e-04
-
   # Optimize
    if(param_server) {
         model = list(C=C, Hin=Hin, Win=Win, W1=W1, b1=b1, W2=W2, b2=b2, W3=W3, b3=b3, W4=W4, b4=b4)
-        params = list(lr=0.001)
-        model_trained = paramserv(model=model, features=X, labels=y, upd="gradients", agg="aggregation", epochs=1, hyperparams=params)
+        params = list(lr=lr, lambda=lambda)
+        model_trained = paramserv(model=model, features=X, labels=Y, upd="gradients", agg="aggregation", mode=mode, utype=utype, freq=freq, epochs=epochs, batchsize=batch_size, k=workers, 
+        hyperparams=params)
+        W1 = as.matrix(model_trained["W1"])
+        b1 = as.matrix(model_trained["b1"])
+        W2 = as.matrix(model_trained["W2"])
+        b2 = as.matrix(model_trained["b2"])
+        W3 = as.matrix(model_trained["W3"])
+        b3 = as.matrix(model_trained["b3"])
+        W4 = as.matrix(model_trained["W4"])
+        b4 = as.matrix(model_trained["b4"])
     } else {  
         iters = ceil(N / batch_size)
         for (e in 1:epochs) {
@@ -109,45 +110,14 @@ m_lenetTrain = function(matrix[double] X, matrix[double] Y,
         outr2, outp2, Houtp2, Woutp2, 
         outa3, outr3, outd3, maskd3, outa4, probs] = lenet_fw::lenetForward(X_batch, C, Hin, Win, W1, b1, W2, b2, W3, b3, W4, b4)
 
-        # Compute loss & accuracy for training & validation data every 100 iterations.
-        if (i %% 100 == 0) {
-                # Compute training loss & accuracy
-                loss_data = cross_entropy_loss::forward(probs, y_batch)
-                loss_reg_W1 = l2_reg::forward(W1, lambda)
-                loss_reg_W2 = l2_reg::forward(W2, lambda)
-                loss_reg_W3 = l2_reg::forward(W3, lambda)
-                loss_reg_W4 = l2_reg::forward(W4, lambda)
-                loss = loss_data + loss_reg_W1 + loss_reg_W2 + loss_reg_W3 + loss_reg_W4
-                accuracy = mean(rowIndexMax(probs) == rowIndexMax(y_batch))
-
-                # Compute validation loss & accuracy
-                probs_val = predict(X_val, C, Hin, Win, W1, b1, W2, b2, W3, b3, W4, b4)
-                loss_val = cross_entropy_loss::forward(probs_val, Y_val)
-                accuracy_val = mean(rowIndexMax(probs_val) == rowIndexMax(Y_val))
-
-                # Output results
-                print("Epoch: " + e + ", Iter: " + i + ", Train Loss: " + loss + ", Train Accuracy: "
-                + accuracy + ", Val Loss: " + loss_val + ", Val Accuracy: " + accuracy_val)
-        }
-
         # Compute data backward pass
-        # call backward function here 
 
-        [dW1, db1, dW2, db2, dW3, db3, dW4, db4] = feed_backward(X_batch, y_batch, C, Hin, Win, W1, b1, W2, b2, W3, b3, W4, b4, outc1, 
+        [dW1, db1, dW2, db2, dW3, db3, dW4, db4] = feed_backward(X_batch, y_batch, C, Hin, Win, lambda, W1, b1, W2, b2, W3, b3, W4, b4, outc1, 
                                                                         Houtc1, Woutc1, outr1, outp1, 
                                                                         Houtp1, Woutp1, outc2, Houtc2, Woutc2, 
                                                                         outr2, outp2, Houtp2, Woutp2, 
                                                                         outa3, outr3, outd3, maskd3, outa4, probs)
 
-        # Compute regularization backward pass
-        dW1_reg = l2_reg::backward(W1, lambda)
-        dW2_reg = l2_reg::backward(W2, lambda)
-        dW3_reg = l2_reg::backward(W3, lambda)
-        dW4_reg = l2_reg::backward(W4, lambda)
-        dW1 = dW1 + dW1_reg
-        dW2 = dW2 + dW2_reg
-        dW3 = dW3 + dW3_reg
-        dW4 = dW4 + dW4_reg
 
         # Optimize with SGD w/ Nesterov momentum
         [W1, vW1] = sgd_nesterov::update(W1, dW1, lr, mu, vW1)
@@ -158,33 +128,32 @@ m_lenetTrain = function(matrix[double] X, matrix[double] Y,
         [b3, vb3] = sgd_nesterov::update(b3, db3, lr, mu, vb3)
         [W4, vW4] = sgd_nesterov::update(W4, dW4, lr, mu, vW4)
         [b4, vb4] = sgd_nesterov::update(b4, db4, lr, mu, vb4)
-        }
-        # Anneal momentum towards 0.999
-        mu = mu + (0.999 - mu)/(1+epochs-e)
-        # Decay learning rate
-        lr = lr * decay
-        }
+      }
+
+      # Anneal momentum towards 0.999
+      mu = mu + (0.999 - mu)/(1+epochs-e)
+      # Decay learning rate
+      lr = lr * decay
+     }
    }
-
-
 }
 
-feed_backward = function(matrix[double] X, matrix[double] y, int C, int Hin, int Win,
-                        matrix[double] W1, matrix[double] b1,
-                        matrix[double] W2, matrix[double] b2,
-                        matrix[double] W3, matrix[double] b3,
-                        matrix[double] W4, matrix[double] b4,
-                        matrix[double] outc1, int Houtc1, int Woutc1, matrix[double] outr1,
-                        matrix[double] outp1, int Houtp1, int Woutp1,
-                        matrix[double] outc2, int Houtc2, int Woutc2, matrix[double] outr2,
-                        matrix[double] outp2, int Houtp2, int Woutp2,
-                        matrix[double] outa3, matrix[double] outr3, 
-                        matrix[double] outd3, matrix[double] maskd3,
-                        matrix[double] outa4, matrix[double] probs)
-        return (matrix[double] dW1, matrix[double] db1,
-                matrix[double] dW2, matrix[double] db2,
-                matrix[double] dW3, matrix[double] db3,
-                matrix[double] dW4, matrix[double] db4) {
+feed_backward = function(Matrix[Double] X, Matrix[Double] y, Integer C, Integer Hin, Integer Win, Double lambda
+                        Matrix[Double] W1, Matrix[Double] b1,
+                        Matrix[Double] W2, Matrix[Double] b2,
+                        Matrix[Double] W3, Matrix[Double] b3,
+                        Matrix[Double] W4, Matrix[Double] b4,
+                        Matrix[Double] outc1, Integer Houtc1, Integer Woutc1, Matrix[Double] outr1,
+                        Matrix[Double] outp1, Integer Houtp1, Integer Woutp1,
+                        Matrix[Double] outc2, Integer Houtc2, Integer Woutc2, Matrix[Double] outr2,
+                        Matrix[Double] outp2, Integer Houtp2, Integer Woutp2,
+                        Matrix[Double] outa3, Matrix[Double] outr3, 
+                        Matrix[Double] outd3, Matrix[Double] maskd3,
+                        Matrix[Double] outa4, Matrix[Double] probs)
+        return (Matrix[Double] dW1, Matrix[Double] db1,
+                Matrix[Double] dW2, Matrix[Double] db2,
+                Matrix[Double] dW3, Matrix[Double] db3,
+                Matrix[Double] dW4, Matrix[Double] db4) {
 
         Hf = 5  # filter height
         Wf = 5  # filter width
@@ -217,25 +186,41 @@ feed_backward = function(matrix[double] X, matrix[double] y, int C, int Hin, int
         [dX_batch, dW1, db1] = conv2d::backward(doutc1, Houtc1, Woutc1, X, W1, b1, C, Hin, Win,
                                                 Hf, Wf, stride, stride, pad, pad)
 
+        # Compute regularization backward pass
+        dW1_reg = l2_reg::backward(W1, lambda)
+        dW2_reg = l2_reg::backward(W2, lambda)
+        dW3_reg = l2_reg::backward(W3, lambda)
+        dW4_reg = l2_reg::backward(W4, lambda)
+        dW1 = dW1 + dW1_reg
+        dW2 = dW2 + dW2_reg
+        dW3 = dW3 + dW3_reg
+        dW4 = dW4 + dW4_reg
+
 }
 
 
 gradients = function(list[unknown] model, list[unknown] hyperparams, 
-matrix[double] features, matrix[double] labels)
+Matrix[double] features, Matrix[double] labels)
     return (list[unknown] gradients) {
-        
-        loss_fcn = as.scalar(hyperparams["loss_fcn"])
-        out_activation = as.scalar(model["activation"])
-        cache = lenet_fw::lenetForwardPass(features, model)
 
 
         [outc1, Houtc1, Woutc1, outr1, outp1, 
         Houtp1, Woutp1, outc2, Houtc2, Woutc2, 
         outr2, outp2, Houtp2, Woutp2, 
-        outa3, outr3, outd3, maskd3, outa4, probs] = lenet_fw::lenetForward(X_batch, C, Hin, Win, W1, b1, W2, b2, W3, b3, W4, b4)
+        outa3, outr3, outd3, maskd3, outa4, probs] = lenet_fw::lenetForward(features, as.scalar(model["C"]), as.scalar(model["Hin"]), as.scalar(model["Win"]), 
+                                                                as.matrix(model["W1"]), as.matrix(model["b1"]), as.matrix(model["W2"]), as.matrix(model["b2"]), 
+                                                                as.matrix(model["W3"]), as.matrix(model["b3"]), as.matrix(model["W4"]), as.matrix(model["b4"]))
         
-        [dW1, db1, dW2, db2, dW3, db3, dW4, db4] = feed_backward(features, labels, model, cache, dout2)
-        gradients = list(dW1, db1, dW2, db2)
+        lambda = as.scalar(hyperparams["lambda"])
+
+        [dW1, db1, dW2, db2, dW3, db3, dW4, db4] = feed_backward(features, labels, as.scalar(model["C"]), as.scalar(model["Hin"]), as.scalar(model["Win"]), lambda
+                                                                as.matrix(model["W1"]), as.matrix(model["b1"]), as.matrix(model["W2"]), as.matrix(model["b2"]), 
+                                                                as.matrix(model["W3"]), as.matrix(model["b3"]), as.matrix(model["W4"]), as.matrix(model["b4"]),
+                                                                outc1, Houtc1, Woutc1, outr1, outp1, Houtp1, Woutp1, outc2, Houtc2, Woutc2, outr2, outp2, Houtp2, Woutp2, 
+                                                                outa3, outr3, outd3, maskd3, outa4, probs)
+        
+        
+        gradients = list(dW1, db1, dW2, db2, dW3, db3, dW4, db4)
     }
 
 aggregation = function(list[unknown] model, list[unknown] hyperparams, list[unknown] gradients)
@@ -245,6 +230,10 @@ return (list[unknown] modelResult) {
     db1 = as.matrix(gradients[2])
     dW2 = as.matrix(gradients[3])
     db2 = as.matrix(gradients[4])
+    dW3 = as.matrix(gradients[5])
+    db3 = as.matrix(gradients[6])
+    dW4 = as.matrix(gradients[7])
+    db4 = as.matrix(gradients[8])
 
     lr = as.scalar(hyperparams["lr"])
 
@@ -252,6 +241,10 @@ return (list[unknown] modelResult) {
     b1 = sgd::update(as.matrix(model["b1"]), db1, lr)
     W2 = sgd::update(as.matrix(model["W2"]), dW2, lr)
     b2 = sgd::update(as.matrix(model["b2"]), db2, lr)
+    W3 = sgd::update(as.matrix(model["W3"]), dW3, lr)
+    b3 = sgd::update(as.matrix(model["b3"]), db3, lr)
+    W4 = sgd::update(as.matrix(model["W4"]), dW4, lr)
+    b4 = sgd::update(as.matrix(model["b4"]), db4, lr)
 
-    modelResult = list(W1=W1, b1=b1, W2=W2, b2=b2, activation=as.scalar(model["activation"]))
+    modelResult = list(W1=W1, b1=b1, W2=W2, b2=b2, W3=W3, b3=b3, W4=W4, b4=b4)
 }

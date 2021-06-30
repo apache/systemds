@@ -1,12 +1,12 @@
 # Imports
 source("nn/layers/lenetForwardPass.dml") as lenet_fw
 
-m_lenetPredict = function(matrix[double] X, int C, int Hin, int Win,
-                   matrix[double] W1, matrix[double] b1,
-                   matrix[double] W2, matrix[double] b2,
-                   matrix[double] W3, matrix[double] b3,
-                   matrix[double] W4, matrix[double] b4)
-    return (matrix[double] probs) {
+m_lenetPredict = function(Matrix[Double] X, Integer C, Integer Hin, Integer Win,
+                   Matrix[Double] W1, Matrix[Double] b1,
+                   Matrix[Double] W2, Matrix[Double] b2,
+                   Matrix[Double] W3, Matrix[Double] b3,
+                   Matrix[Double] W4, Matrix[Double] b4)
+    return (Matrix[Double] probs) {
   /*
    * Computes the class probability predictions of a convolutional
    * net using the "LeNet" architecture.

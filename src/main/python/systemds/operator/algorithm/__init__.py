@@ -48,6 +48,7 @@ from .builtin.glm import glm
 from .builtin.gmm import gmm 
 from .builtin.gmmPredict import gmmPredict 
 from .builtin.gnmf import gnmf 
+from .builtin.hospitalResidencyMatch import hospitalResidencyMatch 
 from .builtin.hyperband import hyperband 
 from .builtin.img_brightness import img_brightness 
 from .builtin.img_crop import img_crop 
@@ -100,6 +101,7 @@ from .builtin.sherlockPredict import sherlockPredict
 from .builtin.sigmoid import sigmoid 
 from .builtin.slicefinder import slicefinder 
 from .builtin.smote import smote 
+from .builtin.softmax import softmax 
 from .builtin.split import split 
 from .builtin.splitBalanced import splitBalanced 
 from .builtin.stableMarriage import stableMarriage 
@@ -140,6 +142,7 @@ __all__ = ['abstain',
  'gmm',
  'gmmPredict',
  'gnmf',
+ 'hospitalResidencyMatch',
  'hyperband',
  'img_brightness',
  'img_crop',
@@ -192,6 +195,7 @@ __all__ = ['abstain',
  'sigmoid',
  'slicefinder',
  'smote',
+ 'softmax',
  'split',
  'splitBalanced',
  'stableMarriage',

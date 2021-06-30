@@ -235,6 +235,7 @@ public enum Builtins {
 	SINH("sinh", false),
 	SLICEFINDER("slicefinder", true),
 	SMOTE("smote", true),
+	SOFTMAX("softmax", true),
 	SOLVE("solve", false),
 	SPLIT("split", true),
 	SPLIT_BALANCED("splitBalanced", true),

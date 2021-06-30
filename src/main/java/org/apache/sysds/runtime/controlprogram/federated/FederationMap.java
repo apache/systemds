@@ -98,6 +98,29 @@ public class FederationMap {
 		}
 	}
 
+	// Alignment Check Type
+	public enum AlignType {
+		FULL, // exact matching dimensions of partitions on the same federated worker
+		ROW, // matching rows of partitions on the same federated worker
+		COL, // matching columns of partitions on the same federated worker
+		FULL_T, // matching dimensions with transposed dimensions of partitions on the same federated worker
+		ROW_T, // matching rows with columns of partitions on the same federated worker
+		COL_T; // matching columns with rows of partitions on the same federated worker
+
+		public boolean isTransposed() {
+			return (this == FULL_T || this == ROW_T || this == COL_T);
+		}
+		public boolean isFullType() {
+			return (this == FULL || this == FULL_T);
+		}
+		public boolean isRowType() {
+			return (this == ROW || this == ROW_T);
+		}
+		public boolean isColType() {
+			return (this == COL || this == COL_T);
+		}
+	}
+
 	private long _ID = -1;
 	private final List<Pair<FederatedRange, FederatedData>> _fedMap;
 	private FType _type;
@@ -228,6 +251,26 @@ public class FederationMap {
 		Arrays.setAll(ret,
 			i -> new FederatedRequest(RequestType.PUT_VAR, id,
 				cb.slice(ix[i][0], ix[i][1], ix[i][2], ix[i][3], isFrame ? new FrameBlock() : new MatrixBlock())));
+		return ret;
+	}
+
+
+	/**
+	 * helper function for checking multiple allowed alignment types
+	 * @param that FederationMap to check alignment with
+	 * @param alignTypes collection of alignment types which should be checked
+	 * @return true if this and that FederationMap are aligned according to at least one alignment type
+	 */
+	public boolean isAligned(FederationMap that, AlignType... alignTypes) {
+		boolean ret = false;
+		for(AlignType at : alignTypes) {
+			if(at.isFullType())
+				ret |= isAligned(that, at.isTransposed());
+			else
+				ret |= isAligned(that, at.isTransposed(), at.isRowType(), at.isColType());
+			if(ret) // early stopping - alignment already found
+				break;
+		}
 		return ret;
 	}
 

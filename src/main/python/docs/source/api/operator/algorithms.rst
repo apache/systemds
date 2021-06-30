@@ -28,7 +28,7 @@ As an example the lm algorithm can be used as follows:
 
 .. code-block:: python
 
-  # Import numpy and SystemDS matrix
+  # Import numpy and SystemDS
   import numpy as np
   from systemds.context import SystemDSContext
   from systemds.operator.algorithm import lm

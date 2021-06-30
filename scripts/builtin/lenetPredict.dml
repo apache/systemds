@@ -2,10 +2,7 @@
 source("nn/layers/lenetForwardPass.dml") as lenet_fw
 
 m_lenetPredict = function(Matrix[Double] X, Integer C, Integer Hin, Integer Win,
-                   Matrix[Double] W1, Matrix[Double] b1,
-                   Matrix[Double] W2, Matrix[Double] b2,
-                   Matrix[Double] W3, Matrix[Double] b3,
-                   Matrix[Double] W4, Matrix[Double] b4)
+                   list[unknown] model)
     return (Matrix[Double] probs) {
   /*
    * Computes the class probability predictions of a convolutional
@@ -40,7 +37,10 @@ m_lenetPredict = function(Matrix[Double] X, Integer C, Integer Hin, Integer Win,
   Wf = 5  # filter width
   stride = 1
   pad = 2  # For same dimensions, (Hf - stride) / 2
-
+  W1 = as.matrix(model["W1"])
+  W2 = as.matrix(model["W2"])
+  W3 = as.matrix(model["W3"])
+  W4 = as.matrix(model["W4"])
   F1 = nrow(W1)  # num conv filters in conv1
   F2 = nrow(W2)  # num conv filters in conv2
   N3 = ncol(W3)  # num nodes in affine3
@@ -59,7 +59,7 @@ m_lenetPredict = function(Matrix[Double] X, Integer C, Integer Hin, Integer Win,
     [outc1, Houtc1, Woutc1, outr1, outp1, 
       Houtp1, Woutp1, outc2, Houtc2, Woutc2, 
       outr2, outp2, Houtp2, Woutp2, 
-      outa3, outr3, outd3, maskd3, outa4, probs_batch] = lenet_fw::lenetForward(X_batch, C, Hin, Win, W1, b1, W2, b2, W3, b3, W4, b4)
+      outa3, outr3, outd3, maskd3, outa4, probs_batch] = lenet_fw::lenetForward(X_batch, C, Hin, Win, model)
 
     # Store predictions
     probs[beg:end,] = probs_batch

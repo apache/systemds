@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<!--[if lt IE 7]>      <html class="no-js lt-ie9 lt-ie8 lt-ie7"> <![endif]-->
+<!--[if IE 7]>         <html class="no-js lt-ie9 lt-ie8"> <![endif]-->
+<!--[if IE 8]>         <html class="no-js lt-ie9"> <![endif]-->
+<!--[if gt IE 8]><!-->
+<html class="no-js">
+<!--<![endif]-->
+<!--
+
+-->
+
+<head>
+    <title>Running SystemDS - SystemDS 2.1.0</title>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="description" content="">
+    <meta name="viewport" content="width=device-width">
+    <link rel="stylesheet" href="./../css/bootstrap.min.css">
+    <link rel="stylesheet" href="./../css/main.css">
+    <link rel="stylesheet" href="./../css/pygments-default.css">
+    <link rel="shortcut icon" href="./../img/favicon.png">
+    <script src="./../js/vendor/jquery-1.12.0.min.js"></script>
+    <script src="./../js/vendor/bootstrap.min.js"></script>
+    <script src="./../js/vendor/anchor.min.js"></script>
+    <script src="./../js/main.js"></script>
+</head>
+
+<body>
+    <!--
+
+-->
+<header class="navbar navbar-default navbar-fixed-top" id="topbar">
+    <div class="container">
+        <div class="navbar-header">
+            <div class="navbar-brand brand projectlogo">
+                <a href="https://systemds.apache.org/"><img class="logo" src="./../img/systemds-logo.png" alt="Apache SystemDS" title="Apache SystemDS" /></a>
+            </div>
+            <div class="navbar-brand brand projecttitle">
+                <a href="https://systemds.apache.org/">Apache SystemDS<sup id="trademark">™</sup></a><br />
+                <span class="version">2.1.0</span>
+            </div>
+            <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target=".navbar-collapse">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+        </div>
+        <nav class="navbar-collapse collapse">
+            <ul class="nav navbar-nav navbar-right">
+                <li class="dropdown">
+                    <a href="#" class="dropdown-toggle" data-toggle="dropdown">Overview<b class="caret"></b></a>
+                    <ul class="dropdown-menu" role="menu">
+                        <li><b>Home:</b></li>
+                        <li><a href="./../">Docs Home</a></li>
+                        <li class="divider"></li>
+                        <li><b>Running SystemDS:</b></li>
+                        <li><a href="./../site/run">Standalone Guide</a></li>
+                        <li><a href="./../site/gpu">GPU Guide</a></li>
+                        <li class="divider"></li>
+                        <li><b>Language Guides:</b></li>
+                        <li><a href="./../site/dml-language-reference.html">DML Language Reference</a></li>
+                        <li><a href="./../site/builtins-reference.html">Built-in Functions Reference</a></li>
+                        <li><a href="./../site/dml-vs-r-guide.html">DML vs R guide</a></li>
+                        <li class="divider"></li>
+                        <li><b>Algorithms:</b></li>
+                        <li><a href="./../site/algorithms-reference.html">ML Algorithms Reference</a></li>
+                        <li class="divider"></li>
+                        <li><b>Other:</b></li>
+                        <li><a href="https://github.com/apache/systemds/blob/master/CONTRIBUTING.md">Contributing to SystemDS 🡕</a></li>
+                    </ul>
+                </li>
+                <li><a href="https://github.com/apache/systemds">GitHub 🡕</a></li>
+                <li class="dropdown">
+                    <a href="#" class="dropdown-toggle" data-toggle="dropdown">API<b class="caret"></b></a>
+                    <ul class="dropdown-menu" role="menu">
+                        <li><a href="./../api/java/">Java</a></li>
+                        <li><a href="./../api/python/">Python</a></li>
+                    </ul>
+                </li>
+                <li><a href="https://issues.apache.org/jira/secure/Dashboard.jspa?selectPageId=12335852">Issues</a></li>
+            </ul>
+        </nav>
+    </div>
+</header>
+
+    <div class="container" id="content">
+        <h1 class="title">Running SystemDS</h1>
+        <!--
+
+-->
+
+<p>If you want to execute from source code follow the <a href="install">Install from source</a> guide first.</p>
+
+<h2 id="setting-systemds_root-environment-variable">Setting SYSTEMDS_ROOT environment variable</h2>
+
+<p>In order to run SystemDS it is highly recomended to setup SystemDS root on path.
+This works both from your development directory containing source code and if
+you download a release of SystemDS.</p>
+
+<p>The following example works if you open an terminal at the root of the downloaded release,
+or a cloned repository. (You can also change the <code class="language-plaintext highlighter-rouge">$(pwd)</code> with the full path to the folder.)</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nb">export </span><span class="nv">SYSTEMDS_ROOT</span><span class="o">=</span><span class="si">$(</span><span class="nb">pwd</span><span class="si">)</span>
+<span class="nb">export </span><span class="nv">PATH</span><span class="o">=</span><span class="nv">$SYSTEMDS_ROOT</span>/bin:<span class="nv">$PATH</span>
+</code></pre></div></div>
+
+<p>It can be beneficial to enter these into your <code class="language-plaintext highlighter-rouge">~/.profile</code> or <code class="language-plaintext highlighter-rouge">~/.bashrc</code> for linux,
+(but remember to change <code class="language-plaintext highlighter-rouge">$(pwd</code> to the full folder path)
+or your environment variables in windows to enable reuse between terminals and restarts.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nb">echo</span> <span class="s1">'export SYSTEMDS_ROOT='</span><span class="si">$(</span><span class="nb">pwd</span><span class="si">)</span> <span class="o">&gt;&gt;</span> ~/.bashrc
+<span class="nb">echo</span> <span class="s1">'export PATH=$SYSTEMDS_ROOT/bin:$PATH'</span> <span class="o">&gt;&gt;</span> ~/.bashrc
+</code></pre></div></div>
+
+<h2 id="hello-world-example">Hello, World! example</h2>
+
+<p>To quickly verify that the system is setup correctly.
+You can run a simple hello world, using the launch script.</p>
+
+<p>Open an terminal and go to an empty folder, then execute the following.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># Create a hello World script</span>
+<span class="nb">echo</span> <span class="s1">'print("Hello, World!")'</span> <span class="o">&gt;</span> hello.dml
+<span class="c"># Execute hello world Script</span>
+systemds hello.dml
+<span class="c"># Remove the hello.dml</span>
+<span class="nb">rm </span>hello.dml
+</code></pre></div></div>
+
+<h2 id="running-a-real-first-example">Running a real first example</h2>
+
+<p>To see SystemDS in action a simple example using the <code class="language-plaintext highlighter-rouge">Univar-stats.dml</code>
+script can be executed.
+The relevant commands to run this example with SystemDS is described in the DML Language reference guide at <a href="dml-language-reference.html">link</a>.
+See their documentation for further details.</p>
+
+<h3 id="example-preparations">Example preparations</h3>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># download test data</span>
+wget <span class="nt">-P</span> data/ http://archive.ics.uci.edu/ml/machine-learning-databases/haberman/haberman.data
+
+<span class="c"># generate a metadata file for the dataset</span>
+<span class="nb">echo</span> <span class="s1">'{"rows": 306, "cols": 4, "format": "csv"}'</span> <span class="o">&gt;</span> data/haberman.data.mtd
+
+<span class="c"># generate type description for the data</span>
+<span class="nb">echo</span> <span class="s1">'1,1,1,2'</span> <span class="o">&gt;</span> data/types.csv
+<span class="nb">echo</span> <span class="s1">'{"rows": 1, "cols": 4, "format": "csv"}'</span> <span class="o">&gt;</span> data/types.csv.mtd
+</code></pre></div></div>
+
+<h3 id="executing-the-dml-script">Executing the DML script</h3>
+
+<p><code class="language-plaintext highlighter-rouge">shell script
+bin/systemds Univar-Stats.dml -nvargs X=data/haberman.data TYPES=data/types.csv STATS=data/univarOut.mtx CONSOLE_OUTPUT=TRUE
+</code></p>
+
+<h2 id="using-intel-mkl-native-instructions">Using Intel MKL native instructions</h2>
+
+<p>To use the MKL acceleration download and install the latest supported MKL library (&lt;=2019.5) from <a href="https://software.intel.com/mkl" title="Intel Math Kernel Library">1</a>,
+set the environment variables with the MKL-provided script <code class="language-plaintext highlighter-rouge">. /opt/intel/bin/compilervars.sh intel64</code> (note the dot and
+the default install location) and set the option <code class="language-plaintext highlighter-rouge">sysds.native.blas</code> in <code class="language-plaintext highlighter-rouge">SystemDS-config.xml</code> to mkl.</p>
+
+
+    </div>
+    <!--
+
+-->
+
+
+<!-- MathJax Section -->
+<script type="text/x-mathjax-config">
+    MathJax.Hub.Config({ TeX: { equationNumbers: { autoNumber: "AMS" } } });
+</script>
+<script>
+    // Note that we load MathJax this way to work with local file (file://), HTTP and HTTPS.
+    // We could use "//cdn.mathjax...", but that won't support "file://".
+    (function(d, script) {
+        script = d.createElement('script');
+        script.type = 'text/javascript';
+        script.async = true;
+        script.onload = function() {
+            MathJax.Hub.Config({
+                tex2jax: {
+                    inlineMath: [
+                        ["$", "$"],
+                        ["\\\\(", "\\\\)"]
+                    ],
+                    displayMath: [
+                        ["$$", "$$"],
+                        ["\\[", "\\]"]
+                    ],
+                    processEscapes: true,
+                    skipTags: ['script', 'noscript', 'style', 'textarea', 'pre']
+                }
+            });
+        };
+        script.src = ('https:' == document.location.protocol ? 'https://' : 'http://') +
+            'cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML';
+        d.getElementsByTagName('head')[0].appendChild(script);
+    }(document));
+</script>
+
+</body>
+
+</html>

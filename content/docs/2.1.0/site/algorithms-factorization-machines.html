@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<!--[if lt IE 7]>      <html class="no-js lt-ie9 lt-ie8 lt-ie7"> <![endif]-->
+<!--[if IE 7]>         <html class="no-js lt-ie9 lt-ie8"> <![endif]-->
+<!--[if IE 8]>         <html class="no-js lt-ie9"> <![endif]-->
+<!--[if gt IE 8]><!-->
+<html class="no-js">
+<!--<![endif]-->
+<!--
+
+-->
+
+<head>
+    <title>Algorithms Reference Factorization Machines - SystemDS 2.1.0</title>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="description" content="">
+    <meta name="viewport" content="width=device-width">
+    <link rel="stylesheet" href="./../css/bootstrap.min.css">
+    <link rel="stylesheet" href="./../css/main.css">
+    <link rel="stylesheet" href="./../css/pygments-default.css">
+    <link rel="shortcut icon" href="./../img/favicon.png">
+    <script src="./../js/vendor/jquery-1.12.0.min.js"></script>
+    <script src="./../js/vendor/bootstrap.min.js"></script>
+    <script src="./../js/vendor/anchor.min.js"></script>
+    <script src="./../js/main.js"></script>
+</head>
+
+<body>
+    <!--
+
+-->
+<header class="navbar navbar-default navbar-fixed-top" id="topbar">
+    <div class="container">
+        <div class="navbar-header">
+            <div class="navbar-brand brand projectlogo">
+                <a href="https://systemds.apache.org/"><img class="logo" src="./../img/systemds-logo.png" alt="Apache SystemDS" title="Apache SystemDS" /></a>
+            </div>
+            <div class="navbar-brand brand projecttitle">
+                <a href="https://systemds.apache.org/">Apache SystemDS<sup id="trademark">™</sup></a><br />
+                <span class="version">2.1.0</span>
+            </div>
+            <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target=".navbar-collapse">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+        </div>
+        <nav class="navbar-collapse collapse">
+            <ul class="nav navbar-nav navbar-right">
+                <li class="dropdown">
+                    <a href="#" class="dropdown-toggle" data-toggle="dropdown">Overview<b class="caret"></b></a>
+                    <ul class="dropdown-menu" role="menu">
+                        <li><b>Home:</b></li>
+                        <li><a href="./../">Docs Home</a></li>
+                        <li class="divider"></li>
+                        <li><b>Running SystemDS:</b></li>
+                        <li><a href="./../site/run">Standalone Guide</a></li>
+                        <li><a href="./../site/gpu">GPU Guide</a></li>
+                        <li class="divider"></li>
+                        <li><b>Language Guides:</b></li>
+                        <li><a href="./../site/dml-language-reference.html">DML Language Reference</a></li>
+                        <li><a href="./../site/builtins-reference.html">Built-in Functions Reference</a></li>
+                        <li><a href="./../site/dml-vs-r-guide.html">DML vs R guide</a></li>
+                        <li class="divider"></li>
+                        <li><b>Algorithms:</b></li>
+                        <li><a href="./../site/algorithms-reference.html">ML Algorithms Reference</a></li>
+                        <li class="divider"></li>
+                        <li><b>Other:</b></li>
+                        <li><a href="https://github.com/apache/systemds/blob/master/CONTRIBUTING.md">Contributing to SystemDS 🡕</a></li>
+                    </ul>
+                </li>
+                <li><a href="https://github.com/apache/systemds">GitHub 🡕</a></li>
+                <li class="dropdown">
+                    <a href="#" class="dropdown-toggle" data-toggle="dropdown">API<b class="caret"></b></a>
+                    <ul class="dropdown-menu" role="menu">
+                        <li><a href="./../api/java/">Java</a></li>
+                        <li><a href="./../api/python/">Python</a></li>
+                    </ul>
+                </li>
+                <li><a href="https://issues.apache.org/jira/secure/Dashboard.jspa?selectPageId=12335852">Issues</a></li>
+            </ul>
+        </nav>
+    </div>
+</header>
+
+    <div class="container" id="content">
+        <h1 class="title">Algorithms Reference Factorization Machines</h1>
+        <!--
+
+-->
+
+<h3 id="factorization-description">Factorization Description</h3>
+
+<p>The Factorization Machine (FM), is a general predictor like SVMs but is also
+able to estimate reliable parameters under very high sparsity. The factorization machine
+models all nested variable interactions (compared to a polynomial kernel in SVM), but
+uses a factorized parameterization instead of a dense parameterisation like in SVMs.</p>
+
+<h2 id="core-model">Core Model</h2>
+
+<h3 id="model-equation">Model Equation</h3>
+
+\[\hat{y}(x) =
+w_0 +
+\sum_{i=1}^{n} w_i x_i +
+\sum_{i=1}^{n} \sum_{j=i+1}^{n} \left &lt;v_i, v_j \right &gt; x_i x_j\]
+
+<p>where the model parameters that have to be estimated are:</p>
+
+\[w_0 \in R,
+ W   \in R^n,
+ V   \in R^{n \times k}\]
+
+<p>and</p>
+
+\[\left &lt;\cdot, \cdot \right &gt;\]
+
+<p>is the dot product of two vectors of size $k$:</p>
+
+\[\left &lt;v_i, v_j \right &gt; = \sum_{f=1}^{k} v_{i,f} \cdot v_{j,f}\]
+
+<p>A row $v_i$ with in $V$ describes the $i$th variable with $k \in N_0^+$ 
+factors. $k$ is a hyperparameter, that defines the dimensionality of
+factorization.</p>
+
+<ul>
+  <li>$ w_0 $ : global bias</li>
+  <li>$ w_j $ : models the strength of the ith variable</li>
+  <li>$ w_{i,j} = \left &lt;v_i, v_j \right&gt; $ : models the interaction between
+the $i$th &amp; $j$th variable.</li>
+</ul>
+
+<p>Instead of using an own model parameter</p>
+
+\[w_{i,j} \in R\]
+
+<p>for each interaction, the FM models the interaction by factorizing it.</p>
+
+<h3 id="expressiveness">Expressiveness</h3>
+
+<p>It is well known that for any positive definite matrix $W$, there exists a 
+matrix $V$ such that $W = V \cdot V^t$ provided that $k$ is sufficiently
+large. This shows that an FM can express any interaction matrix $W$ if $k$
+is chosen large enough.</p>
+
+<h3 id="parameter-estimation-under-sparsity">Parameter Estimation Under Sparsity</h3>
+
+<p>In sparse settings, there is usually not enough data to estimate interaction
+between variables directly &amp; independently. FMs can estimate interactions even
+in these settings well because they break the independence of the interaction
+parameters by factorizing them.</p>
+
+<h3 id="computation">Computation</h3>
+
+<p>Due to factorization of pairwise interactions, there is not model parameter
+that directly depends on two variables ( e.g., a parameter with an index 
+$(i,j)$ ). So, the pairwise interactions can be reformulated as shown below.</p>
+
+\[\sum_{i=1}^n \sum_{j=i+1}^n \left &lt;v_i, v_j \right &gt; x_i x_j\]
+
+\[= {1 \over 2} \sum_{i=1}^n \sum_{j=1}^n x_i x_j - {1 \over 2} \sum_{i=1}^n \left &lt;v_i, v_j \right &gt; x_i x_i\]
+
+\[= {1 \over 2} \left ( \sum_{i=1}^n \sum_{j=1}^n \sum_{f=1}^k v_{i,f} v_{j,f} - \sum_{i=1}^n \sum_{f=1}^k v_{i,f}v_{i,f} x_i x_i \right )\]
+
+\[= {1 \over 2} \left ( \sum_{f=1}^k \right ) \left ( \left (\sum_{i=1}^n v_{i,f} x_i \right ) \left (\sum_{j=1}^n v_{j,f} x_j \right ) - \sum_{i=1}^n v_{i,f}^2 x_i^2 \right )\]
+
+\[{1 \over 2} \sum_{f=1}^k \left ( \left ( \sum_{i=1}^n v_{i,f} x_i \right )^2 - \sum_{i=1}^n v_{i,f}^2 x_i^2 \right )\]
+
+<h3 id="learning-factorization-machines">Learning Factorization Machines</h3>
+
+<p>The gradient vector taken for each of the weights, is</p>
+
+\[% &lt;![CDATA[
+{ \delta \over \delta \theta } \hat{y}(x) =
+\begin{cases}
+1 &amp; \text{if } \theta \text{ is } w_0 \\
+x_i &amp; \text{if } \theta \text{ is } w_i \\
+x_i \sum_{j=1}^{n} v_{j,f} \cdot x_j - v_{i,f} \cdot x_i^2 &amp; \text{if } \theta \text{ is } \theta_{i,f}
+\end{cases} %]]&gt;\]
+
+<h3 id="factorization-models-as-predictors">Factorization Models as Predictors</h3>
+
+<h3 id="regression">Regression</h3>
+
+<p>$\hat{y}(x)$ can be used directly as the predictor and the optimization
+criterion is the minimal least square error on $D$.</p>
+
+<h3 id="usage">Usage</h3>
+
+<p>The <code class="language-plaintext highlighter-rouge">train()</code> function in the <a href="https://github.com/apache/systemml/blob/master/scripts/staging/fm-regression.dml">fm-regression.dml</a> script, takes in the input variable matrix and the corresponding target vector with some input kept for validation during training.</p>
+
+<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">train</span> <span class="o">=</span> <span class="n">function</span><span class="o">(</span><span class="n">matrix</span><span class="o">[</span><span class="kt">double</span><span class="o">]</span> <span class="no">X</span><span class="o">,</span> <span class="n">matrix</span><span class="o">[</span><span class="kt">double</span><span class="o">]</span> <span class="n">y</span><span class="o">,</span> <span class="n">matrix</span><span class="o">[</span><span class="kt">double</span><span class="o">]</span> <span class="n">X_val</span><span class="o">,</span> <span class="n">matrix</span><span class="o">[</span><span class="kt">double</span><span class="o">]</span> <span class="n">y_val</span><span class="o">)</span>
+    <span class="k">return</span> <span class="o">(</span><span class="n">matrix</span><span class="o">[</span><span class="kt">double</span><span class="o">]</span> <span class="n">w0</span><span class="o">,</span> <span class="n">matrix</span><span class="o">[</span><span class="kt">double</span><span class="o">]</span> <span class="no">W</span><span class="o">,</span> <span class="n">matrix</span><span class="o">[</span><span class="kt">double</span><span class="o">]</span> <span class="no">V</span><span class="o">)</span> <span class="o">{</span>
+  <span class="cm">/*
+   * Trains the FM model.
+   *
+   * Inputs:
+   *  - X     : n examples with d features, of shape (n, d)
+   *  - y     : Target matrix, of shape (n, 1)
+   *  - X_val : Input validation data matrix, of shape (n, d)
+   *  - y_val : Target validation matrix, of shape (n, 1)
+   *
+   * Outputs:
+   *  - w0, W, V : updated model parameters.
+   *
+   * Network Architecture:
+   *
+   * X --&gt; [model] --&gt; out --&gt; l2_loss::backward(out, y) --&gt; dout
+   *
+   */</span>
+
+   <span class="o">...</span>
+   <span class="err">#</span> <span class="mi">7</span><span class="o">.</span><span class="na">Call</span> <span class="nl">adam:</span><span class="o">:</span><span class="n">update</span> <span class="k">for</span> <span class="n">all</span> <span class="n">parameters</span>
+   <span class="o">[</span><span class="n">w0</span><span class="o">,</span><span class="n">mw0</span><span class="o">,</span><span class="n">vw0</span><span class="o">]</span> <span class="o">=</span> <span class="nl">adam:</span><span class="o">:</span><span class="n">update</span><span class="o">(</span><span class="n">w0</span><span class="o">,</span> <span class="n">dw0</span><span class="o">,</span> <span class="n">lr</span><span class="o">,</span> <span class="n">beta1</span><span class="o">,</span> <span class="n">beta2</span><span class="o">,</span> <span class="n">epsilon</span><span class="o">,</span> <span class="n">t</span><span class="o">,</span> <span class="n">mw0</span><span class="o">,</span> <span class="n">vw0</span><span class="o">);</span>
+   <span class="o">[</span><span class="no">W</span><span class="o">,</span> <span class="n">mW</span><span class="o">,</span> <span class="n">vW</span><span class="o">]</span>  <span class="o">=</span> <span class="nl">adam:</span><span class="o">:</span><span class="n">update</span><span class="o">(</span><span class="no">W</span><span class="o">,</span> <span class="n">dW</span><span class="o">,</span> <span class="n">lr</span><span class="o">,</span> <span class="n">beta1</span><span class="o">,</span> <span class="n">beta2</span><span class="o">,</span> <span class="n">epsilon</span><span class="o">,</span> <span class="n">t</span><span class="o">,</span> <span class="n">mW</span><span class="o">,</span> <span class="n">vW</span> <span class="o">);</span>
+   <span class="o">[</span><span class="no">V</span><span class="o">,</span> <span class="n">mV</span><span class="o">,</span> <span class="n">vV</span><span class="o">]</span>  <span class="o">=</span> <span class="nl">adam:</span><span class="o">:</span><span class="n">update</span><span class="o">(</span><span class="no">V</span><span class="o">,</span> <span class="n">dV</span><span class="o">,</span> <span class="n">lr</span><span class="o">,</span> <span class="n">beta1</span><span class="o">,</span> <span class="n">beta2</span><span class="o">,</span> <span class="n">epsilon</span><span class="o">,</span> <span class="n">t</span><span class="o">,</span> <span class="n">mV</span><span class="o">,</span> <span class="n">vV</span> <span class="o">);</span>
+
+<span class="o">}</span>
+</code></pre></div></div>
+
+<p>Once the <code class="language-plaintext highlighter-rouge">train</code> function returns the  weights for the <code class="language-plaintext highlighter-rouge">fm</code> model, these are passed to the <code class="language-plaintext highlighter-rouge">predict</code> function.</p>
+
+<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">predict</span> <span class="o">=</span> <span class="n">function</span><span class="o">(</span><span class="n">matrix</span><span class="o">[</span><span class="kt">double</span><span class="o">]</span> <span class="no">X</span><span class="o">,</span> <span class="n">matrix</span><span class="o">[</span><span class="kt">double</span><span class="o">]</span> <span class="n">w0</span><span class="o">,</span> <span class="n">matrix</span><span class="o">[</span><span class="kt">double</span><span class="o">]</span> <span class="no">W</span><span class="o">,</span> <span class="n">matrix</span><span class="o">[</span><span class="kt">double</span><span class="o">]</span> <span class="no">V</span><span class="o">)</span>
+    <span class="k">return</span> <span class="o">(</span><span class="n">matrix</span><span class="o">[</span><span class="kt">double</span><span class="o">]</span> <span class="n">out</span><span class="o">)</span> <span class="o">{</span>
+  <span class="cm">/*
+   * Computes the predictions for the given inputs.
+   *
+   * Inputs:
+   *  - X : n examples with d features, of shape (n, d).
+   *  - w0, W, V : trained model parameters.
+   *
+   * Outputs:
+   *  - out : target vector, y.
+   */</span>
+
+    <span class="n">out</span> <span class="o">=</span> <span class="nl">fm:</span><span class="o">:</span><span class="n">forward</span><span class="o">(</span><span class="no">X</span><span class="o">,</span> <span class="n">w0</span><span class="o">,</span> <span class="no">W</span><span class="o">,</span> <span class="no">V</span><span class="o">);</span>
+
+<span class="o">}</span>
+</code></pre></div></div>
+
+<h3 id="binary-classification">Binary Classification</h3>
+
+<p>The sign of $\hat{y}(x)$ is used &amp; the parameters are optimized for the hinge
+loss or logit loss.</p>
+
+<h3 id="usage-1">Usage</h3>
+
+<p>The <code class="language-plaintext highlighter-rouge">train</code> function in the <a href="https://github.com/apache/systemml/blob/master/scripts/staging/fm-binclass.dml">fm-binclass.dml</a>
+script, takes in the input variable matrix and the corresponding target vector
+with some input kept for validation during training. This script also contain
+<code class="language-plaintext highlighter-rouge">train()</code> and <code class="language-plaintext highlighter-rouge">predict()</code> function as in the case of regression.</p>
+
+    </div>
+    <!--
+
+-->
+
+
+<!-- MathJax Section -->
+<script type="text/x-mathjax-config">
+    MathJax.Hub.Config({ TeX: { equationNumbers: { autoNumber: "AMS" } } });
+</script>
+<script>
+    // Note that we load MathJax this way to work with local file (file://), HTTP and HTTPS.
+    // We could use "//cdn.mathjax...", but that won't support "file://".
+    (function(d, script) {
+        script = d.createElement('script');
+        script.type = 'text/javascript';
+        script.async = true;
+        script.onload = function() {
+            MathJax.Hub.Config({
+                tex2jax: {
+                    inlineMath: [
+                        ["$", "$"],
+                        ["\\\\(", "\\\\)"]
+                    ],
+                    displayMath: [
+                        ["$$", "$$"],
+                        ["\\[", "\\]"]
+                    ],
+                    processEscapes: true,
+                    skipTags: ['script', 'noscript', 'style', 'textarea', 'pre']
+                }
+            });
+        };
+        script.src = ('https:' == document.location.protocol ? 'https://' : 'http://') +
+            'cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML';
+        d.getElementsByTagName('head')[0].appendChild(script);
+    }(document));
+</script>
+
+</body>
+
+</html>

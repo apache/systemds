@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<!--[if lt IE 7]>      <html class="no-js lt-ie9 lt-ie8 lt-ie7"> <![endif]-->
+<!--[if IE 7]>         <html class="no-js lt-ie9 lt-ie8"> <![endif]-->
+<!--[if IE 8]>         <html class="no-js lt-ie9"> <![endif]-->
+<!--[if gt IE 8]><!-->
+<html class="no-js">
+<!--<![endif]-->
+<!--
+
+-->
+
+<head>
+    <title>Algorithms Reference Survival Analysis - SystemDS 2.1.0</title>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="description" content="">
+    <meta name="viewport" content="width=device-width">
+    <link rel="stylesheet" href="./../css/bootstrap.min.css">
+    <link rel="stylesheet" href="./../css/main.css">
+    <link rel="stylesheet" href="./../css/pygments-default.css">
+    <link rel="shortcut icon" href="./../img/favicon.png">
+    <script src="./../js/vendor/jquery-1.12.0.min.js"></script>
+    <script src="./../js/vendor/bootstrap.min.js"></script>
+    <script src="./../js/vendor/anchor.min.js"></script>
+    <script src="./../js/main.js"></script>
+</head>
+
+<body>
+    <!--
+
+-->
+<header class="navbar navbar-default navbar-fixed-top" id="topbar">
+    <div class="container">
+        <div class="navbar-header">
+            <div class="navbar-brand brand projectlogo">
+                <a href="https://systemds.apache.org/"><img class="logo" src="./../img/systemds-logo.png" alt="Apache SystemDS" title="Apache SystemDS" /></a>
+            </div>
+            <div class="navbar-brand brand projecttitle">
+                <a href="https://systemds.apache.org/">Apache SystemDS<sup id="trademark">™</sup></a><br />
+                <span class="version">2.1.0</span>
+            </div>
+            <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target=".navbar-collapse">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+        </div>
+        <nav class="navbar-collapse collapse">
+            <ul class="nav navbar-nav navbar-right">
+                <li class="dropdown">
+                    <a href="#" class="dropdown-toggle" data-toggle="dropdown">Overview<b class="caret"></b></a>
+                    <ul class="dropdown-menu" role="menu">
+                        <li><b>Home:</b></li>
+                        <li><a href="./../">Docs Home</a></li>
+                        <li class="divider"></li>
+                        <li><b>Running SystemDS:</b></li>
+                        <li><a href="./../site/run">Standalone Guide</a></li>
+                        <li><a href="./../site/gpu">GPU Guide</a></li>
+                        <li class="divider"></li>
+                        <li><b>Language Guides:</b></li>
+                        <li><a href="./../site/dml-language-reference.html">DML Language Reference</a></li>
+                        <li><a href="./../site/builtins-reference.html">Built-in Functions Reference</a></li>
+                        <li><a href="./../site/dml-vs-r-guide.html">DML vs R guide</a></li>
+                        <li class="divider"></li>
+                        <li><b>Algorithms:</b></li>
+                        <li><a href="./../site/algorithms-reference.html">ML Algorithms Reference</a></li>
+                        <li class="divider"></li>
+                        <li><b>Other:</b></li>
+                        <li><a href="https://github.com/apache/systemds/blob/master/CONTRIBUTING.md">Contributing to SystemDS 🡕</a></li>
+                    </ul>
+                </li>
+                <li><a href="https://github.com/apache/systemds">GitHub 🡕</a></li>
+                <li class="dropdown">
+                    <a href="#" class="dropdown-toggle" data-toggle="dropdown">API<b class="caret"></b></a>
+                    <ul class="dropdown-menu" role="menu">
+                        <li><a href="./../api/java/">Java</a></li>
+                        <li><a href="./../api/python/">Python</a></li>
+                    </ul>
+                </li>
+                <li><a href="https://issues.apache.org/jira/secure/Dashboard.jspa?selectPageId=12335852">Issues</a></li>
+            </ul>
+        </nav>
+    </div>
+</header>
+
+    <div class="container" id="content">
+        <h1 class="title">Algorithms Reference Survival Analysis</h1>
+        <!--
+
+-->
+
+<h2 id="kaplan-meier-survival-analysis">Kaplan-Meier Survival Analysis</h2>
+
+<h3 id="kmsa-description">KMSA Description</h3>
+
+<p>Survival analysis examines the time needed for a particular event of
+interest to occur. In medical research, for example, the prototypical
+such event is the death of a patient but the methodology can be applied
+to other application areas, e.g., completing a task by an individual in
+a psychological experiment or the failure of electrical components in
+engineering. Kaplan-Meier or (product limit) method is a simple
+non-parametric approach for estimating survival probabilities from both
+censored and uncensored survival times.</p>
+
+<h3 id="kmsa-details">KMSA Details</h3>
+
+<p>The Kaplan-Meier estimate is a non-parametric maximum likelihood
+estimate (MLE) of the survival function $S(t)$, i.e., the probability of
+survival from the time origin to a given future time. As an illustration
+suppose that there are $n$ individuals with observed survival times
+$t_1,t_2,\ldots t_n$ out of which there are $r\leq n$ distinct death
+times $t_{(1)}\leq t_{(2)}\leq t_{(r)}$—since some of the observations
+may be censored, in the sense that the end-point of interest has not
+been observed for those individuals, and there may be more than one
+individual with the same survival time. Let $S(t_j)$ denote the
+probability of survival until time $t_j$, $d_j$ be the number of events
+at time $t_j$, and $n_j$ denote the number of individual at risk (i.e.,
+those who die at time $t_j$ or later). Assuming that the events occur
+independently, in Kaplan-Meier method the probability of surviving from
+$t_j$ to $t_{j+1}$ is estimated from $S(t_j)$ and given by</p>
+
+\[\hat{S}(t) = \prod_{j=1}^{k} \left( \frac{n_j-d_j}{n_j} \right)\]
+
+<p>for
+$t_k\leq t&lt;t_{k+1}$, $k=1,2,\ldots r$, $\hat{S}(t)=1$ for $t&lt;t_{(1)}$,
+and $t_{(r+1)}=\infty$. Note that the value of $\hat{S}(t)$ is constant
+between times of event and therefore the estimate is a step function
+with jumps at observed event times. If there are no censored data this
+estimator would simply reduce to the empirical survivor function defined
+as $\frac{n_j}{n}$. Thus, the Kaplan-Meier estimate can be seen as the
+generalization of the empirical survivor function that handles censored
+observations.</p>
+
+<p>The methodology used in our <code class="language-plaintext highlighter-rouge">KM.dml</code> script closely
+follows Section 2 of <a href="algorithms-bibliography.html">[Collett2003]</a>. For completeness we briefly
+discuss the equations used in our implementation.</p>
+
+<p><strong>Standard error of the survivor function.</strong> The standard error of the
+estimated survivor function (controlled by parameter <code class="language-plaintext highlighter-rouge">etype</code>)
+can be calculated as</p>
+
+\[\text{se} \{\hat{S}(t)\} \approx \hat{S}(t) {\bigg\{ \sum_{j=1}^{k} \frac{d_j}{n_j(n_j -   d_j)}\biggr\}}^2\]
+
+<p>for $t_{(k)}\leq t&lt;t_{(k+1)}$. This equation is known as the
+<em>Greenwood’s</em> formula. An alternative approach is to apply
+the <em>Petos’s</em> expression</p>
+
+\[\text{se}\{\hat{S}(t)\}=\frac{\hat{S}(t)\sqrt{1-\hat{S}(t)}}{\sqrt{n_k}}\]
+
+<p>for $t_{(k)}\leq t&lt;t_{(k+1)}$. Once the standard error of $\hat{S}$ has
+been found we compute the following types of confidence intervals
+(controlled by parameter <code class="language-plaintext highlighter-rouge">cctype</code>): The <code class="language-plaintext highlighter-rouge">plain</code>
+$100(1-\alpha)\%$ confidence interval for $S(t)$ is computed using</p>
+
+\[\hat{S}(t)\pm z_{\alpha/2} \text{se}\{\hat{S}(t)\}\]
+
+<p>where
+$z_{\alpha/2}$ is the upper $\alpha/2$-point of the standard normal
+distribution. Alternatively, we can apply the <code class="language-plaintext highlighter-rouge">log</code> transformation using</p>
+
+\[\hat{S}(t)^{\exp[\pm z_{\alpha/2} \text{se}\{\hat{S}(t)\}/\hat{S}(t)]}\]
+
+<p>or the <code class="language-plaintext highlighter-rouge">log-log</code> transformation using</p>
+
+\[\hat{S}(t)^{\exp [\pm z_{\alpha/2} \text{se} \{\log [-\log \hat{S}(t)]\}]}\]
+
+<p><strong>Median, its standard error and confidence interval.</strong> Denote by
+$\hat{t}(50)$ the estimated median of $\hat{S}$, i.e.,
+$\hat{t}(50)=\min { t_i \mid \hat{S}(t_i) &lt; 0.5}$, where $t_i$ is the
+observed survival time for individual \(i\). The standard error of
+$\hat{t}(50)$ is given by</p>
+
+\[\text{se}\{ \hat{t}(50) \} = \frac{1}{\hat{f}\{\hat{t}(50)\}} \text{se}[\hat{S}\{ \hat{t}(50) \}]\]
+
+<p>where $\hat{f}{ \hat{t}(50) }$ can be found from</p>
+
+\[\hat{f}\{ \hat{t}(50) \} = \frac{\hat{S}\{ \hat{u}(50) \} -\hat{S}\{ \hat{l}(50) \} }{\hat{l}(50) - \hat{u}(50)}\]
+
+<p>Above, $\hat{u}(50)$ is the largest survival time for which $\hat{S}$
+exceeds $0.5+\epsilon$, i.e.,</p>
+
+\[\hat{u}(50)=\max \bigl\{ t_{(j)} \mid \hat{S}(t_{(j)}) \geq 0.5+\epsilon \bigr\}\]
+
+<p>and $\hat{l}(50)$ is the smallest survivor time for which $\hat{S}$ is
+less than $0.5-\epsilon$, i.e.,</p>
+
+\[\hat{l}(50)=\min \bigl\{ t_{(j)} \mid \hat{S}(t_{(j)}) \leq 0.5+\epsilon \bigr\}\]
+
+<p>for small $\epsilon$.</p>
+
+<p><strong>Log-rank test and Wilcoxon test.</strong> Our implementation supports
+comparison of survival data from several groups using two non-parametric
+procedures (controlled by parameter <code class="language-plaintext highlighter-rouge">ttype</code>): the
+<em>log-rank test</em> and the <em>Wilcoxon test</em> (also
+known as the <em>Breslow test</em>). Assume that the survival
+times in $g\geq 2$ groups of survival data are to be compared. Consider
+the <em>null hypothesis</em> that there is no difference in the
+survival times of the individuals in different groups. One way to
+examine the null hypothesis is to consider the difference between the
+observed number of deaths with the numbers expected under the null
+hypothesis. In both tests we define the $U$-statistics ($U_{L}$ for the
+log-rank test and $U_{W}$ for the Wilcoxon test) to compare the observed
+and the expected number of deaths in $1,2,\ldots,g-1$ groups as follows:</p>
+
+\[\begin{aligned}
+U_{Lk} &amp;= \sum_{j=1}^{r}\left( d_{kj} - \frac{n_{kj}d_j}{n_j} \right) \\
+U_{Wk} &amp;= \sum_{j=1}^{r}n_j\left( d_{kj} - \frac{n_{kj}d_j}{n_j} \right) \\
+\end{aligned}\]
+
+<p>where $d_{kj}$ is the of number deaths at time $t_{(j)}$ in group $k$,
+$n_{kj}$ is the number of individuals at risk at time $t_{(j)}$ in group
+$k$, and $k=1,2,\ldots,g-1$ to form the vectors $U_L$ and $U_W$ with
+$(g-1)$ components. The covariance (variance) between $U_{Lk}$ and
+$U_{Lk&#8217;}$ (when $k=k&#8217;$) is computed as</p>
+
+\[V_{Lkk'}=\sum_{j=1}^{r} \frac{n_{kj}d_j(n_j-d_j)}{n_j(n_j-1)} \left( \delta_{kk'}-\frac{n_{k'j}}{n_j} \right)\]
+
+<p>for $k,k&#8217;=1,2,\ldots,g-1$, with</p>
+
+\[\delta_{kk'} =
+\begin{cases}
+1 &amp; \text{if } k=k'\\
+0 &amp; \text{otherwise}
+\end{cases}\]
+
+<p>These terms are combined in a
+<em>variance-covariance</em> matrix $V_L$ (referred to as the
+$V$-statistic). Similarly, the variance-covariance matrix for the
+Wilcoxon test $V_W$ is a matrix where the entry at position $(k,k&#8217;)$ is
+given by</p>
+
+\[V_{Wkk'}=\sum_{j=1}^{r} n_j^2 \frac{n_{kj}d_j(n_j-d_j)}{n_j(n_j-1)} \left( \delta_{kk'}-\frac{n_{k'j}}{n_j} \right)\]
+
+<p>Under the null hypothesis of no group differences, the test statistics
+$U_L^\top V_L^{-1} U_L$ for the log-rank test and
+$U_W^\top V_W^{-1} U_W$ for the Wilcoxon test have a Chi-squared
+distribution on $(g-1)$ degrees of freedom. Our <code class="language-plaintext highlighter-rouge">KM.dml</code>
+script also provides a stratified version of the log-rank or Wilcoxon
+test if requested. In this case, the values of the $U$- and $V$-
+statistics are computed for each stratum and then combined over all
+strata.</p>
+
+<h3 id="kmsa-returns">KMSA Returns</h3>
+
+<p>Below we list the results of the survival analysis computed by
+<code class="language-plaintext highlighter-rouge">KM.dml</code>. The calculated statistics are stored in matrix $KM$
+with the following schema:</p>
+
+<ul>
+  <li>Column 1: timestamps</li>
+  <li>Column 2: number of individuals at risk</li>
+  <li>Column 3: number of events</li>
+  <li>Column 4: Kaplan-Meier estimate of the survivor function $\hat{S}$</li>
+  <li>Column 5: standard error of $\hat{S}$</li>
+  <li>Column 6: lower bound of $100(1-\alpha)\%$ confidence interval for
+  $\hat{S}$</li>
+  <li>Column 7: upper bound of $100(1-\alpha)\%$ confidence interval for
+  $\hat{S}$</li>
+</ul>
+
+<p>Note that if survival data for multiple groups and/or strata is
+available, each collection of 7 columns in $KM$ stores the results per
+group and/or per stratum. In this case $KM$ has $7g+7s$ columns, where
+$g\geq 1$ and $s\geq 1$ denote the number of groups and strata,
+respectively.</p>
+
+<p>Additionally, <code class="language-plaintext highlighter-rouge">KM.dml</code> stores the following statistics in the
+1-row matrix $M$ whose number of columns depends on the number of groups
+($g$) and strata ($s$) in the data. Below $k$ denotes the number of
+factors used for grouping and $l$ denotes the number of factors used for
+stratifying.</p>
+
+<ul>
+  <li>Columns 1 to $k$: unique combination of values in the $k$ factors
+  used for grouping</li>
+  <li>Columns $k+1$ to $k+l$: unique combination of values in the $l$
+  factors used for stratifying</li>
+  <li>Column $k+l+1$: total number of records</li>
+  <li>Column $k+l+2$: total number of events</li>
+  <li>Column $k+l+3$: median of $\hat{S}$</li>
+  <li>Column $k+l+4$: lower bound of $100(1-\alpha)\%$ confidence interval
+  for the median of $\hat{S}$</li>
+  <li>Column $k+l+5$: upper bound of $100(1-\alpha)\%$ confidence interval
+  for the median of $\hat{S}$.</li>
+</ul>
+
+<p>If there is only 1 group and 1 stratum available $M$ will be a 1-row
+matrix with 5 columns where</p>
+
+<ul>
+  <li>Column 1: total number of records</li>
+  <li>Column 2: total number of events</li>
+  <li>Column 3: median of $\hat{S}$</li>
+  <li>Column 4: lower bound of $100(1-\alpha)\%$ confidence interval for
+  the median of $\hat{S}$</li>
+  <li>Column 5: upper bound of $100(1-\alpha)\%$ confidence interval for
+  the median of $\hat{S}$.</li>
+</ul>
+
+<p>If a comparison of the survival data across multiple groups needs to be
+performed, <code class="language-plaintext highlighter-rouge">KM.dml</code> computes two matrices $T$ and
+$T_GROUPS_OE$ that contain a summary of the test. The 1-row matrix $T$
+stores the following statistics:</p>
+
+<ul>
+  <li>Column 1: number of groups in the survival data</li>
+  <li>Column 2: degree of freedom for Chi-squared distributed test
+  statistic</li>
+  <li>Column 3: value of test statistic</li>
+  <li>Column 4: $P$-value.</li>
+</ul>
+
+<p>Matrix $T_GROUPS_OE$ contains the following statistics for each of $g$
+groups:</p>
+
+<ul>
+  <li>Column 1: number of events</li>
+  <li>Column 2: number of observed death times ($O$)</li>
+  <li>Column 3: number of expected death times ($E$)</li>
+  <li>Column 4: $(O-E)^2/E$</li>
+  <li>Column 5: $(O-E)^2/V$.</li>
+</ul>
+
+<h2 id="cox-proportional-hazard-regression-model">Cox Proportional Hazard Regression Model</h2>
+
+<h3 id="cphrm-description">CPHRM Description</h3>
+
+<p>The Cox (proportional hazard or PH) is a semi-parametric statistical
+approach commonly used for analyzing survival data. Unlike
+non-parametric approaches, e.g., the <a href="algorithms-survival-analysis.html#kaplan-meier-survival-analysis">Kaplan-Meier estimates</a>,
+which can be used to analyze single sample of
+survival data or to compare between groups of survival times, the Cox PH
+models the dependency of the survival times on the values of
+<em>explanatory variables</em> (i.e., covariates) recorded for
+each individual at the time origin. Our focus is on covariates that do
+not change value over time, i.e., time-independent covariates, and that
+may be categorical (ordinal or nominal) as well as continuous-valued.</p>
+
+<h3 id="cphrm-details">CPHRM Details</h3>
+
+<p>In the Cox PH regression model, the relationship between the hazard
+function — i.e., the probability of event occurrence at a given time — and
+the covariates is described as</p>
+
+\[\begin{equation}
+h_i(t)=h_0(t)\exp\Bigl\{ \sum_{j=1}^{p} \beta_jx_{ij} \Bigr\}
+\end{equation}\]
+
+<p>where the hazard function for the $i$th individual
+($i\in{1,2,\ldots,n}$) depends on a set of $p$ covariates
+$x_i=(x_{i1},x_{i2},\ldots,x_{ip})$, whose importance is measured by the
+magnitude of the corresponding coefficients
+$\beta=(\beta_1,\beta_2,\ldots,\beta_p)$. The term $h_0(t)$ is the
+baseline hazard and is related to a hazard value if all covariates equal</p>
+<ol>
+  <li>In the Cox PH model the hazard function for the individuals may vary
+over time, however the baseline hazard is estimated non-parametrically
+and can take any form. Note that re-writing (1) we have</li>
+</ol>
+
+\[\log\biggl\{ \frac{h_i(t)}{h_0(t)} \biggr\} = \sum_{j=1}^{p} \beta_jx_{ij}\]
+
+<p>Thus, the Cox PH model is essentially a linear model for the logarithm
+of the hazard ratio and the hazard of event for any individual is a
+constant multiple of the hazard of any other. We follow similar notation
+and methodology as in Section 3 of
+<a href="algorithms-bibliography.html">[Collett2003]</a>. For
+completeness we briefly discuss the equations used in our
+implementation.</p>
+
+<p><strong>Factors in the model.</strong> Note that if some of the feature variables are
+factors they need to <em>dummy code</em> as follows. Let $\alpha$
+be such a variable (i.e., a factor) with $a$ levels. We introduce $a-1$
+indicator (or dummy coded) variables $X_2,X_3\ldots,X_a$ with $X_j=1$ if
+$\alpha=j$ and 0 otherwise, for $j\in{ 2,3,\ldots,a}$. In particular,
+one of $a$ levels of $\alpha$ will be considered as the baseline and is
+not included in the model. In our implementation, user can specify a
+baseline level for each of the factor (as selecting the baseline level
+for each factor is arbitrary). On the other hand, if for a given factor
+$\alpha$ no baseline is specified by the user, the most frequent level
+of $\alpha$ will be considered as the baseline.</p>
+
+<p><strong>Fitting the model.</strong> We estimate the coefficients of the Cox model via
+negative log-likelihood method. In particular the Cox PH model is fitted
+by using trust region Newton method with conjugate
+gradient <a href="algorithms-bibliography.html">[Nocedal2006]</a>. Define the risk set $R(t_j)$ at time
+$t_j$ to be the set of individuals who die at time $t_i$ or later. The
+PH model assumes that survival times are distinct. In order to handle
+tied observations we use the <em>Breslow</em> approximation of the likelihood
+function</p>
+
+\[\mathcal{L}=\prod_{j=1}^{r} \frac{\exp(\beta^\top s_j)}{\biggl\{ \sum_{l\in R(t_j)} \exp(\beta^\top x_l) \biggr\}^{d_j} }\]
+
+<p>where $d_j$ is number individuals who die at time $t_j$ and $s_j$
+denotes the element-wise sum of the covariates for those individuals who
+die at time $t_j$, $j=1,2,\ldots,r$, i.e., the $h$th element of $s_j$ is
+given by $s_{hj}=\sum_{k=1}^{d_j}x_{hjk}$, where $x_{hjk}$ is the value
+of $h$th variable ($h\in {1,2,\ldots,p}$) for the $k$th of the $d_j$
+individuals ($k\in{ 1,2,\ldots,d_j }$) who die at the $j$th death time
+($j\in{ 1,2,\ldots,r }$).</p>
+
+<p><strong>Standard error and confidence interval for coefficients.</strong> Note that
+the variance-covariance matrix of the estimated coefficients
+$\hat{\beta}$ can be approximated by the inverse of the Hessian
+evaluated at $\hat{\beta}$. The square root of the diagonal elements of
+this matrix are the standard errors of estimated coefficients. Once the
+standard errors of the coefficients $se(\hat{\beta})$ is obtained we can
+compute a $100(1-\alpha)\%$ confidence interval using
+$\hat{\beta}\pm z_{\alpha/2}se(\hat{\beta})$, where $z_{\alpha/2}$ is
+the upper $\alpha/2$-point of the standard normal distribution. In
+<code class="language-plaintext highlighter-rouge">Cox.dml</code>, we utilize the built-in function
+<code class="language-plaintext highlighter-rouge">inv()</code> to compute the inverse of the Hessian. Note that this
+build-in function can be used only if the Hessian fits in the main
+memory of a single machine.</p>
+
+<p><strong>Wald test, likelihood ratio test, and log-rank test.</strong> In order to
+test the <em>null hypothesis</em> that all of the coefficients
+$\beta_j$s are 0, our implementation provides three statistical test:
+<em>Wald test</em>, <em>likelihood ratio test</em>, the
+<em>log-rank test</em> (also known as the <em>score
+test</em>). Let $p$ be the number of coefficients. The Wald test is
+based on the test statistic ${\hat{\beta}}^2/{se(\hat{\beta})}^2$, which
+is compared to percentage points of the Chi-squared distribution to
+obtain the $P$-value. The likelihood ratio test relies on the test
+statistic $-2\log{ {L}(\textbf{0})/{L}(\hat{\beta}) }$ ($\textbf{0}$
+denotes a zero vector of size $p$ ) which has an approximate Chi-squared
+distribution with $p$ degrees of freedom under the null hypothesis that
+all $\beta_j$s are 0. The Log-rank test is based on the test statistic
+$l=\nabla^\top L(\textbf{0}) {\mathcal{H}}^{-1}(\textbf{0}) \nabla L(\textbf{0})$,
+where $\nabla L(\textbf{0})$ is the gradient of $L$ and
+$\mathcal{H}(\textbf{0})$ is the Hessian of $L$ evaluated at <strong>0</strong>.
+Under the null hypothesis that $\beta=\textbf{0}$, $l$ has a Chi-squared
+distribution on $p$ degrees of freedom.</p>
+
+<p><strong>Prediction.</strong> Once the parameters of the model are fitted, we compute
+the following predictions together with their standard errors</p>
+
+<ul>
+  <li>linear predictors</li>
+  <li>risk</li>
+  <li>estimated cumulative hazard</li>
+</ul>
+
+<p>Given feature vector $X_i$ for individual $i$, we obtain the above
+predictions at time $t$ as follows. The linear predictors (denoted as
+$\mathcal{LP}$) as well as the risk (denoted as $\mathcal{R}$) are
+computed relative to a baseline whose feature values are the mean of the
+values in the corresponding features. Let $X_i^\text{rel} = X_i - \mu$,
+where $\mu$ is a row vector that contains the mean values for each
+feature. We have $\mathcal{LP}=X_i^\text{rel} \hat{\beta}$ and
+$\mathcal{R}=\exp{ X_i^\text{rel}\hat{\beta} }$. The standard errors
+of the linear predictors $se{\mathcal{LP} }$ are computed as the
+square root of ${(X_i^\text{rel})}^\top V(\hat{\beta}) X_i^\text{rel}$
+and the standard error of the risk $se{ \mathcal{R} }$ are given by
+the square root of
+${(X_i^\text{rel} \odot \mathcal{R})}^\top V(\hat{\beta}) (X_i^\text{rel} \odot \mathcal{R})$,
+where $V(\hat{\beta})$ is the variance-covariance matrix of the
+coefficients and $\odot$ is the element-wise multiplication.</p>
+
+<p>We estimate the cumulative hazard function for individual $i$ by</p>
+
+\[\hat{H}_i(t) = \exp(\hat{\beta}^\top X_i) \hat{H}_0(t)\]
+
+<p>where
+$\hat{H}_0(t)$ is the <em>Breslow estimate</em> of the cumulative baseline
+hazard given by</p>
+
+\[\hat{H}_0(t) = \sum_{j=1}^{k} \frac{d_j}{\sum_{l\in R(t_{(j)})} \exp(\hat{\beta}^\top X_l)}\]
+
+<p>In the equation above, as before, $d_j$ is the number of deaths, and
+$R(t_{(j)})$ is the risk set at time $t_{(j)}$, for
+$t_{(k)} \leq t \leq t_{(k+1)}$, $k=1,2,\ldots,r-1$. The standard error
+of $\hat{H}_i(t)$ is obtained using the estimation</p>
+
+\[se\{ \hat{H}_i(t) \} = \sum_{j=1}^{k} \frac{d_j}{ {\left[ \sum_{l\in R(t_{(j)})} \exp(X_l\hat{\beta}) \right]}^2 } + J_i^\top(t) V(\hat{\beta}) J_i(t)\]
+
+<p>where</p>
+
+\[J_i(t) = \sum_{j-1}^{k} d_j \frac{\sum_{l\in R(t_{(j)})} (X_l-X_i)\exp \{ (X_l-X_i)\hat{\beta} \}}{ {\left[ \sum_{l\in R(t_{(j)})} \exp\{(X_l-X_i)\hat{\beta}\} \right]}^2  }\]
+
+<p>for $t_{(k)} \leq t \leq t_{(k+1)}$, $k=1,2,\ldots,r-1$.</p>
+
+<h3 id="cphrm-returns">CPHRM Returns</h3>
+
+<p>Below we list the results of fitting a Cox regression model stored in
+matrix $M$ with the following schema:</p>
+
+<ul>
+  <li>Column 1: estimated regression coefficients $\hat{\beta}$</li>
+  <li>Column 2: $\exp(\hat{\beta})$</li>
+  <li>Column 3: standard error of the estimated coefficients
+  $se{\hat{\beta}}$</li>
+  <li>Column 4: ratio of $\hat{\beta}$ to $se{\hat{\beta}}$ denoted by
+  $Z$</li>
+  <li>Column 5: $P$-value of $Z$</li>
+  <li>Column 6: lower bound of $100(1-\alpha)\%$ confidence interval for
+  $\hat{\beta}$</li>
+  <li>Column 7: upper bound of $100(1-\alpha)\%$ confidence interval for
+  $\hat{\beta}$.</li>
+</ul>
+
+<p>Note that above $Z$ is the Wald test statistic which is asymptotically
+standard normal under the hypothesis that $\beta=\textbf{0}$.</p>
+
+<p>Moreover, <code class="language-plaintext highlighter-rouge">Cox.dml</code> outputs two log files <code class="language-plaintext highlighter-rouge">S</code> and
+<code class="language-plaintext highlighter-rouge">T</code> containing a summary statistics of the fitted model as
+follows. File <code class="language-plaintext highlighter-rouge">S</code> stores the following information</p>
+
+<ul>
+  <li>Line 1: total number of observations</li>
+  <li>Line 2: total number of events</li>
+  <li>Line 3: log-likelihood (of the fitted model)</li>
+  <li>Line 4: AIC</li>
+  <li>Line 5: Cox &amp; Snell Rsquare</li>
+  <li>Line 6: maximum possible Rsquare.</li>
+</ul>
+
+<p>Above, the AIC is computed as in <a href="algorithms-regression.html#stepwise-linear-regression">Stepwise Linear Regression</a>, the Cox &amp; Snell Rsquare
+is equal to $1-\exp{ -l/n }$, where $l$ is the log-rank test statistic
+as discussed above and $n$ is total number of observations, and the
+maximum possible Rsquare computed as $1-\exp{ -2 L(\textbf{0})/n }$,
+where $L(\textbf{0})$ denotes the initial likelihood.</p>
+
+<p>File <code class="language-plaintext highlighter-rouge">T</code> contains the following information</p>
+
+<ul>
+  <li>Line 1: Likelihood ratio test statistic, degree of freedom of the
+  corresponding Chi-squared distribution, $P$-value</li>
+  <li>Line 2: Wald test statistic, degree of freedom of the corresponding
+  Chi-squared distribution, $P$-value</li>
+  <li>Line 3: Score (log-rank) test statistic, degree of freedom of the
+  corresponding Chi-squared distribution, $P$-value.</li>
+</ul>
+
+<p>Additionally, the following matrices will be stored. Note that these
+matrices are required for prediction.</p>
+
+<ul>
+  <li>Order-preserving recoded timestamps $RT$, i.e., contiguously
+  numbered from 1 $\ldots$ #timestamps</li>
+  <li>Feature matrix ordered by the timestamps $XO$</li>
+  <li>Variance-covariance matrix of the coefficients $COV$</li>
+  <li>Column indices of the feature matrix with baseline factors removed
+  (if available) $MF$.</li>
+</ul>
+
+<p><strong>Prediction.</strong> Finally, the results of prediction is stored in Matrix
+$P$ with the following schema</p>
+
+<ul>
+  <li>Column 1: linear predictors</li>
+  <li>Column 2: standard error of the linear predictors</li>
+  <li>Column 3: risk</li>
+  <li>Column 4: standard error of the risk</li>
+  <li>Column 5: estimated cumulative hazard</li>
+  <li>Column 6: standard error of the estimated cumulative hazard.</li>
+</ul>
+
+    </div>
+    <!--
+
+-->
+
+
+<!-- MathJax Section -->
+<script type="text/x-mathjax-config">
+    MathJax.Hub.Config({ TeX: { equationNumbers: { autoNumber: "AMS" } } });
+</script>
+<script>
+    // Note that we load MathJax this way to work with local file (file://), HTTP and HTTPS.
+    // We could use "//cdn.mathjax...", but that won't support "file://".
+    (function(d, script) {
+        script = d.createElement('script');
+        script.type = 'text/javascript';
+        script.async = true;
+        script.onload = function() {
+            MathJax.Hub.Config({
+                tex2jax: {
+                    inlineMath: [
+                        ["$", "$"],
+                        ["\\\\(", "\\\\)"]
+                    ],
+                    displayMath: [
+                        ["$$", "$$"],
+                        ["\\[", "\\]"]
+                    ],
+                    processEscapes: true,
+                    skipTags: ['script', 'noscript', 'style', 'textarea', 'pre']
+                }
+            });
+        };
+        script.src = ('https:' == document.location.protocol ? 'https://' : 'http://') +
+            'cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML';
+        d.getElementsByTagName('head')[0].appendChild(script);
+    }(document));
+</script>
+
+</body>
+
+</html>

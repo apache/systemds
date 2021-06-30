@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<!--[if lt IE 7]>      <html class="no-js lt-ie9 lt-ie8 lt-ie7"> <![endif]-->
+<!--[if IE 7]>         <html class="no-js lt-ie9 lt-ie8"> <![endif]-->
+<!--[if IE 8]>         <html class="no-js lt-ie9"> <![endif]-->
+<!--[if gt IE 8]><!-->
+<html class="no-js">
+<!--<![endif]-->
+<!--
+
+-->
+
+<head>
+    <title>SystemDS Install from source - SystemDS 2.1.0</title>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="description" content="">
+    <meta name="viewport" content="width=device-width">
+    <link rel="stylesheet" href="./../css/bootstrap.min.css">
+    <link rel="stylesheet" href="./../css/main.css">
+    <link rel="stylesheet" href="./../css/pygments-default.css">
+    <link rel="shortcut icon" href="./../img/favicon.png">
+    <script src="./../js/vendor/jquery-1.12.0.min.js"></script>
+    <script src="./../js/vendor/bootstrap.min.js"></script>
+    <script src="./../js/vendor/anchor.min.js"></script>
+    <script src="./../js/main.js"></script>
+</head>
+
+<body>
+    <!--
+
+-->
+<header class="navbar navbar-default navbar-fixed-top" id="topbar">
+    <div class="container">
+        <div class="navbar-header">
+            <div class="navbar-brand brand projectlogo">
+                <a href="https://systemds.apache.org/"><img class="logo" src="./../img/systemds-logo.png" alt="Apache SystemDS" title="Apache SystemDS" /></a>
+            </div>
+            <div class="navbar-brand brand projecttitle">
+                <a href="https://systemds.apache.org/">Apache SystemDS<sup id="trademark">™</sup></a><br />
+                <span class="version">2.1.0</span>
+            </div>
+            <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target=".navbar-collapse">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+        </div>
+        <nav class="navbar-collapse collapse">
+            <ul class="nav navbar-nav navbar-right">
+                <li class="dropdown">
+                    <a href="#" class="dropdown-toggle" data-toggle="dropdown">Overview<b class="caret"></b></a>
+                    <ul class="dropdown-menu" role="menu">
+                        <li><b>Home:</b></li>
+                        <li><a href="./../">Docs Home</a></li>
+                        <li class="divider"></li>
+                        <li><b>Running SystemDS:</b></li>
+                        <li><a href="./../site/run">Standalone Guide</a></li>
+                        <li><a href="./../site/gpu">GPU Guide</a></li>
+                        <li class="divider"></li>
+                        <li><b>Language Guides:</b></li>
+                        <li><a href="./../site/dml-language-reference.html">DML Language Reference</a></li>
+                        <li><a href="./../site/builtins-reference.html">Built-in Functions Reference</a></li>
+                        <li><a href="./../site/dml-vs-r-guide.html">DML vs R guide</a></li>
+                        <li class="divider"></li>
+                        <li><b>Algorithms:</b></li>
+                        <li><a href="./../site/algorithms-reference.html">ML Algorithms Reference</a></li>
+                        <li class="divider"></li>
+                        <li><b>Other:</b></li>
+                        <li><a href="https://github.com/apache/systemds/blob/master/CONTRIBUTING.md">Contributing to SystemDS 🡕</a></li>
+                    </ul>
+                </li>
+                <li><a href="https://github.com/apache/systemds">GitHub 🡕</a></li>
+                <li class="dropdown">
+                    <a href="#" class="dropdown-toggle" data-toggle="dropdown">API<b class="caret"></b></a>
+                    <ul class="dropdown-menu" role="menu">
+                        <li><a href="./../api/java/">Java</a></li>
+                        <li><a href="./../api/python/">Python</a></li>
+                    </ul>
+                </li>
+                <li><a href="https://issues.apache.org/jira/secure/Dashboard.jspa?selectPageId=12335852">Issues</a></li>
+            </ul>
+        </nav>
+    </div>
+</header>
+
+    <div class="container" id="content">
+        <h1 class="title">SystemDS Install from source</h1>
+        <!--
+
+-->
+
+<h2 id="developing-apache-systemds-on-windows-platform">Developing Apache SystemDS on Windows Platform</h2>
+
+<p>These instructions will help you build Apache SystemDS from source code, which is the basis for the engine
+and algorithms development. The following conventions will be used to refer to directories on your machine:</p>
+
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">&lt;USER_HOME&gt;</code> is your home directory.</li>
+  <li><code class="language-plaintext highlighter-rouge">&lt;JDK_18_HOME&gt;</code> is the root directory for the 1.8 JDK.</li>
+  <li><code class="language-plaintext highlighter-rouge">&lt;MAVEN_HOME&gt;</code> is the root directory for the Apache Maven source code.</li>
+  <li><code class="language-plaintext highlighter-rouge">&lt;SYSTEMDS_HOME&gt;</code> is the root directory for the SystemDS source code.</li>
+  <li><code class="language-plaintext highlighter-rouge">&lt;SPARK_HOME&gt;</code> is the root directory for the Apache Spark source code.</li>
+  <li><code class="language-plaintext highlighter-rouge">&lt;HADOOP_HOME&gt;</code> is the root directory for</li>
+  <li><code class="language-plaintext highlighter-rouge">&lt;CUDA_HOME&gt;</code>,<code class="language-plaintext highlighter-rouge">&lt;CUDA_PATH&gt;</code> is the top directory for NVIDIA GPU Computing Toolkit.<br />
+Ex. For version <code class="language-plaintext highlighter-rouge">9.0</code>, it would like <code class="language-plaintext highlighter-rouge">C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v9.0</code>
+Also, make sure that <code class="language-plaintext highlighter-rouge">libnvvp</code>, <code class="language-plaintext highlighter-rouge">bin</code> folders are accessible to command line.</li>
+  <li><code class="language-plaintext highlighter-rouge">&lt;CUDNN_PATH&gt;</code> is the path
+Ex. Corresponding to the CUDA version, <code class="language-plaintext highlighter-rouge">C:\Program Files\cudnn-9.0-windows10-x64-v7.2.1.38\cuda</code></li>
+</ul>
+
+<h3 id="directory-structure-of-the-installation">Directory structure of the installation</h3>
+
+<div class="language-py highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">.</span>
+<span class="err">├──</span> <span class="n">MAVEN_HOME</span> <span class="o">=</span> <span class="s">'./maven'</span>
+<span class="o">|</span>   <span class="err">├──</span> <span class="nb">bin</span>
+<span class="o">|</span>       <span class="err">├──</span> <span class="n">mvn</span><span class="p">.</span><span class="n">exe</span> <span class="c1"># and other executables
+</span><span class="err">├──</span> <span class="n">SPARK_HOME</span> <span class="o">=</span> <span class="s">'./spark'</span>
+<span class="o">|</span>   <span class="err">├──</span> <span class="nb">bin</span>
+<span class="o">|</span>       <span class="err">├──</span> <span class="n">spark</span><span class="o">-</span><span class="n">shell</span> <span class="c1"># and other invocation commands
+</span><span class="err">├──</span> <span class="n">HADOOP_HOME</span> <span class="o">=</span> <span class="s">'./hadoop'</span>
+<span class="err">│</span>   <span class="err">├──</span> <span class="nb">bin</span>
+<span class="o">|</span>       <span class="err">├──</span> <span class="n">wintuils</span><span class="p">.</span><span class="n">exe</span> <span class="c1"># The Default content layout and html file.
+</span><span class="err">├──</span> <span class="n">SYSTEMDS_HOME</span>
+
+</code></pre></div></div>
+
+<h3 id="getting-apache-systemds-source-code">Getting Apache SystemDS Source Code</h3>
+
+<p>SystemDS source code is available from <a href="https://github.com/apache/systemds">github.com/apache/systemds</a> by either cloning or
+downloading a zip file (based on a branch) into <code class="language-plaintext highlighter-rouge">&lt;SYSTEMDS_HOME&gt;</code>. The default is the <em>master</em> branch.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>git clone https://github.com/apache/systemds systemds
+</code></pre></div></div>
+
+<p>The master branch contains the source code which will be used to create the next major version of Apache SystemDS.</p>
+
+<p><em><strong>Speed Tip:</strong></em> If the complete repository history isn&#8217;t needed then using a shallow clone (<code class="language-plaintext highlighter-rouge">git clone --depth 1</code>) will
+save significant time.</p>
+
+<h3 id="building-systemds-source-code">Building SystemDS source code</h3>
+
+<p><code class="language-plaintext highlighter-rouge">IntelliJ IDEA</code> or <code class="language-plaintext highlighter-rouge">Eclipse</code> is preferred for best developer experience.</p>
+
+<h4 id="opening-the-intellij-source-code-for-build">Opening the IntelliJ Source Code for Build</h4>
+
+<table>
+  <tbody>
+    <tr>
+      <td>Using IntelliJ IDEA **File</td>
+      <td>Open**, select the <code class="language-plaintext highlighter-rouge">&lt;SYSTEMDS_HOME&gt;</code> directory.</td>
+    </tr>
+  </tbody>
+</table>
+
+<ul>
+  <li>If IntelliJ IDEA displays an error about a missing or out of date required plugin (e.g. maven),
+<a href="https://www.jetbrains.com/help/idea/managing-plugins.html">enable, upgrade, or install that plugin</a> and restart IntelliJ IDEA.</li>
+</ul>
+
+<h4 id="intellij-build-configuration">IntelliJ Build Configuration</h4>
+
+<p>JDK version 1.8 (u151 or newer) is required for building and developing for SystemDS developement.</p>
+
+<ol>
+  <li>Using IntelliJ IDEA, <a href="https://www.jetbrains.com/help/idea/sdk.html">configure</a> a JDK named &#8220;<strong>1.8</strong>&#8221;, pointing to <code class="language-plaintext highlighter-rouge">&lt;JDK_18_HOME&gt;</code>.
+    <ul>
+      <li>If not already present, add <code class="language-plaintext highlighter-rouge">&lt;JDK_18_HOME&gt;/lib/tools.jar</code> <a href="https://www.jetbrains.com/help/idea/sdk.html#manage_sdks">to the Classpath</a> tab
+for the <strong>1.8</strong> JDK.</li>
+    </ul>
+  </li>
+  <li>If the <em>Maven Integration</em> plugin is disabled, <a href="https://www.jetbrains.com/help/idea/working-with-projects.html#path-variables">add the path variable</a>
+&#8220;<strong>MAVEN_REPOSITORY</strong>&#8221; pointing to <code class="language-plaintext highlighter-rouge">&lt;USER_HOME&gt;/.m2/repository</code> directory.</li>
+  <li><em><strong>Speed Tip:</strong></em> If you have enough RAM on your computer,
+<a href="https://www.jetbrains.com/help/idea/specifying-compilation-settings.html">configure the compiler settings</a>
+to enable the &#8220;Compile independent modules in parallel&#8221; option. Also set the &#8220;User-local build process VM options&#8221; to <code class="language-plaintext highlighter-rouge">-Xmx2G</code>.
+These changes will greatly reduce the compile time.</li>
+  <li>
+    <table>
+      <tbody>
+        <tr>
+          <td>Now, selecting the IntelliJ IDEA **Build</td>
+          <td>Build module &#8216;systemds&#8217;** option starts the maven build.</td>
+        </tr>
+      </tbody>
+    </table>
+  </li>
+  <li><strong>Speed Tip:</strong>_ If the development machine have enough RAM,
+<a href="https://www.jetbrains.com/help/idea/specifying-compilation-settings.html">configure the compiler settings</a>
+to enable the &#8220;Compile independent modules in parallel&#8221; option.</li>
+</ol>
+
+<h4 id="building-the-source-code">Building the Source Code</h4>
+
+<p>To build SystemDS from source, choose <strong>Build | Build Project</strong> from the main menu.
+OR
+To maven build, run the <code class="language-plaintext highlighter-rouge">mvn clean package</code> command in <code class="language-plaintext highlighter-rouge">&lt;SYSTEMDS_HOME&gt;</code> directory. See the <code class="language-plaintext highlighter-rouge">pom.xml</code> file for details.</p>
+
+<h3 id="testing">Testing</h3>
+
+<table>
+  <tbody>
+    <tr>
+      <td>To run the SystemDS built from source, choose **Run</td>
+      <td>Run** from the main menu.</td>
+    </tr>
+  </tbody>
+</table>
+
+<table>
+  <tbody>
+    <tr>
+      <td>To run tests on the build, apply these setting to the **Run</td>
+      <td>Edit Configurations&#8230;</td>
+      <td>Defaults</td>
+      <td>JUnit** configuration tab:</td>
+    </tr>
+  </tbody>
+</table>
+
+<ul>
+  <li>Working dir: <code class="language-plaintext highlighter-rouge">&lt;SYSTEMDS_HOME&gt;</code></li>
+  <li>VM options:
+    <ul>
+      <li><code class="language-plaintext highlighter-rouge">-ea</code></li>
+    </ul>
+  </li>
+</ul>
+
+    </div>
+    <!--
+
+-->
+
+
+<!-- MathJax Section -->
+<script type="text/x-mathjax-config">
+    MathJax.Hub.Config({ TeX: { equationNumbers: { autoNumber: "AMS" } } });
+</script>
+<script>
+    // Note that we load MathJax this way to work with local file (file://), HTTP and HTTPS.
+    // We could use "//cdn.mathjax...", but that won't support "file://".
+    (function(d, script) {
+        script = d.createElement('script');
+        script.type = 'text/javascript';
+        script.async = true;
+        script.onload = function() {
+            MathJax.Hub.Config({
+                tex2jax: {
+                    inlineMath: [
+                        ["$", "$"],
+                        ["\\\\(", "\\\\)"]
+                    ],
+                    displayMath: [
+                        ["$$", "$$"],
+                        ["\\[", "\\]"]
+                    ],
+                    processEscapes: true,
+                    skipTags: ['script', 'noscript', 'style', 'textarea', 'pre']
+                }
+            });
+        };
+        script.src = ('https:' == document.location.protocol ? 'https://' : 'http://') +
+            'cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML';
+        d.getElementsByTagName('head')[0].appendChild(script);
+    }(document));
+</script>
+
+</body>
+
+</html>

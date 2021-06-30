@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<!--[if lt IE 7]>      <html class="no-js lt-ie9 lt-ie8 lt-ie7"> <![endif]-->
+<!--[if IE 7]>         <html class="no-js lt-ie9 lt-ie8"> <![endif]-->
+<!--[if IE 8]>         <html class="no-js lt-ie9"> <![endif]-->
+<!--[if gt IE 8]><!-->
+<html class="no-js">
+<!--<![endif]-->
+<!--
+
+-->
+
+<head>
+    <title>Entity Resolution - SystemDS 2.1.0</title>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="description" content="">
+    <meta name="viewport" content="width=device-width">
+    <link rel="stylesheet" href="./../css/bootstrap.min.css">
+    <link rel="stylesheet" href="./../css/main.css">
+    <link rel="stylesheet" href="./../css/pygments-default.css">
+    <link rel="shortcut icon" href="./../img/favicon.png">
+    <script src="./../js/vendor/jquery-1.12.0.min.js"></script>
+    <script src="./../js/vendor/bootstrap.min.js"></script>
+    <script src="./../js/vendor/anchor.min.js"></script>
+    <script src="./../js/main.js"></script>
+</head>
+
+<body>
+    <!--
+
+-->
+<header class="navbar navbar-default navbar-fixed-top" id="topbar">
+    <div class="container">
+        <div class="navbar-header">
+            <div class="navbar-brand brand projectlogo">
+                <a href="https://systemds.apache.org/"><img class="logo" src="./../img/systemds-logo.png" alt="Apache SystemDS" title="Apache SystemDS" /></a>
+            </div>
+            <div class="navbar-brand brand projecttitle">
+                <a href="https://systemds.apache.org/">Apache SystemDS<sup id="trademark">™</sup></a><br />
+                <span class="version">2.1.0</span>
+            </div>
+            <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target=".navbar-collapse">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+        </div>
+        <nav class="navbar-collapse collapse">
+            <ul class="nav navbar-nav navbar-right">
+                <li class="dropdown">
+                    <a href="#" class="dropdown-toggle" data-toggle="dropdown">Overview<b class="caret"></b></a>
+                    <ul class="dropdown-menu" role="menu">
+                        <li><b>Home:</b></li>
+                        <li><a href="./../">Docs Home</a></li>
+                        <li class="divider"></li>
+                        <li><b>Running SystemDS:</b></li>
+                        <li><a href="./../site/run">Standalone Guide</a></li>
+                        <li><a href="./../site/gpu">GPU Guide</a></li>
+                        <li class="divider"></li>
+                        <li><b>Language Guides:</b></li>
+                        <li><a href="./../site/dml-language-reference.html">DML Language Reference</a></li>
+                        <li><a href="./../site/builtins-reference.html">Built-in Functions Reference</a></li>
+                        <li><a href="./../site/dml-vs-r-guide.html">DML vs R guide</a></li>
+                        <li class="divider"></li>
+                        <li><b>Algorithms:</b></li>
+                        <li><a href="./../site/algorithms-reference.html">ML Algorithms Reference</a></li>
+                        <li class="divider"></li>
+                        <li><b>Other:</b></li>
+                        <li><a href="https://github.com/apache/systemds/blob/master/CONTRIBUTING.md">Contributing to SystemDS 🡕</a></li>
+                    </ul>
+                </li>
+                <li><a href="https://github.com/apache/systemds">GitHub 🡕</a></li>
+                <li class="dropdown">
+                    <a href="#" class="dropdown-toggle" data-toggle="dropdown">API<b class="caret"></b></a>
+                    <ul class="dropdown-menu" role="menu">
+                        <li><a href="./../api/java/">Java</a></li>
+                        <li><a href="./../api/python/">Python</a></li>
+                    </ul>
+                </li>
+                <li><a href="https://issues.apache.org/jira/secure/Dashboard.jspa?selectPageId=12335852">Issues</a></li>
+            </ul>
+        </nav>
+    </div>
+</header>
+
+    <div class="container" id="content">
+        <h1 class="title">Entity Resolution</h1>
+        <!--
+
+-->
+
+<h2 id="pipeline-design-and-primitives">Pipeline design and primitives</h2>
+
+<p>We provide two example scripts, <code class="language-plaintext highlighter-rouge">entity-clustering.dml</code> and <code class="language-plaintext highlighter-rouge">binary-entity-resolution.dml</code>. These handle reading input 
+files and writing output files and call functions provided in <code class="language-plaintext highlighter-rouge">primitives/pipeline.dml</code>.</p>
+
+<p>The pipeline design is loosely based on the following paper, but does not use advanced features like multi-probe LSH,
+combining embeddings via LSTM or classification via machine learning.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Ebraheem, Muhammad, et al. "Distributed representations of tuples for entity resolution."
+Proceedings of the VLDB Endowment 11.11 (2018): 1454-1467.
+</code></pre></div></div>
+
+<h3 id="input-files">Input files</h3>
+
+<p>The provided scripts can read two types of input files. The token file is mandatory since it contains the row identifiers, 
+but the embedding file is optional. The actual use of tokens and/or embeddings can be configured via command line parameters 
+to the scripts.</p>
+
+<h5 id="token-files">Token files</h5>
+
+<p>This file type is a CSV file with 3 columns. The first column is the string or integer row identifier, the second is the 
+string token, and the third is the number of occurences. This simple format is used as a bag-of-words representation.</p>
+
+<h5 id="embedding-files">Embedding files</h5>
+
+<p>This file type is a CSV matrix file with each row containing arbitrary-dimensional embeddings. The order of row identifiers
+is assumed to be the same as in the token file. This saves some computation and storage time, but could be changed with 
+some modifications to the example scripts.</p>
+
+<h3 id="primitives">Primitives</h3>
+
+<p>While the example scripts may be sufficient for many simple use cases, we aim to provide a toolkit of composable functions
+to facilitate more complex tasks. The top-level pipelines are defined as a couple of functions in <code class="language-plaintext highlighter-rouge">primitives/pipeline.dml</code>.
+The goal is that it should be relatively easy to copy one of these pipelines and swap out the primitive functions used
+to create a custom pipeline.</p>
+
+<p>To convert the input token file into a bag-of-words contingency table representation, we provide the functions
+<code class="language-plaintext highlighter-rouge">convert_frame_tokens_to_matrix_bow</code> and <code class="language-plaintext highlighter-rouge">convert_frame_tokens_to_matrix_bow_2</code> in  <code class="language-plaintext highlighter-rouge">primitives/preprocessing.dml</code>.
+The latter is used to compute a compatible contigency table with matching vocabulary for binary entity resolution.</p>
+
+<p>We provide naive, constant-size blocking and locality-sensitive hashing (LSH) as functions in <code class="language-plaintext highlighter-rouge">primitives/blocking.dml</code>.</p>
+
+<p>For entity clustering, we only provide a simple clustering approach which makes all connected components in an adjacency
+matrix fully connected. This function is located in <code class="language-plaintext highlighter-rouge">primitives/clustering.dml</code>.</p>
+
+<p>To restore an adjacency matrix to a list of pairs, we provide the functions <code class="language-plaintext highlighter-rouge">untable</code> and <code class="language-plaintext highlighter-rouge">untable_offset</code> in 
+<code class="language-plaintext highlighter-rouge">primitives/postprocessing.dml</code>.</p>
+
+<p>Finally, <code class="language-plaintext highlighter-rouge">primitives/evaluation.dml</code> defines some metrics that can be used to evaluate the performance of the entity
+resolution pipelines. They are used in the script <code class="language-plaintext highlighter-rouge">eval-entity-resolution.dml</code>.</p>
+
+<h2 id="testing-and-examples">Testing and Examples</h2>
+
+<p>There is a test data repository that was used to develop these scripts at 
+<a href="https://github.com/skogler/systemds-amls-project-data">repo</a>. In the examples below, it is assumed that this repo is 
+cloned as <code class="language-plaintext highlighter-rouge">data</code> in the SystemDS root folder. The data in that repository is sourced from the Uni Leipzig entity resolution 
+<a href="https://dbs.uni-leipzig.de/research/projects/object_matching/benchmark_datasets_for_entity_resolution">benchmark</a>.</p>
+
+<h3 id="preprocessing">Preprocessing</h3>
+
+<p>Since there is no tokenization functionality in SystemDS yet, we provide a Python preprocessing script in the data repository
+that tokenizes the text columns and performs some simple embedding lookup using Glove embeddings.</p>
+
+<p>The tokens are written as CSV files to enable Bag-of-Words representations as well as matrices with combined embeddings. D
+epending on the type of data, one or the other or a combination of both may be better. The SystemDS DML scripts can be 
+called with different parameters to experiment with this.</p>
+
+<h3 id="entity-clustering">Entity Clustering</h3>
+
+<p>In this case we detect duplicates within one database. As an example, we use the benchmark dataset Affiliations from Uni Leipzig.
+For this dataset, embeddings do not work well since the data is mostly just names. Therefore, we encode it as Bag-of-Words vectors
+in the example below. This dataset would benefit from more preprocessing, as simply matching words for all the different kinds of
+abbreviations does not work particularly well.</p>
+
+<p>Example command to run on Affiliations dataset:</p>
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>./bin/systemds ./scripts/algorithms/entity-resolution/entity-clustering.dml -nvargs FX=data/affiliationstrings/affiliationstrings_tokens.csv OUT=data/affiliationstrings/affiliationstrings_res.csv store_mapping=FALSE MX=data/affiliationstrings/affiliationstrings_MX.csv use_embeddings=FALSE XE=data/affiliationstrings/affiliationstrings_embeddings.csv
+</code></pre></div></div>
+<p>Evaluation:</p>
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>./bin/systemds ./scripts/algorithms/entity-resolution/eval-entity-resolution.dml -nvargs FX=data/affiliationstrings/affiliationstrings_res.csv FY=data/affiliationstrings/affiliationstrings_mapping_fixed.csv
+</code></pre></div></div>
+
+<h3 id="binary-entity-resolution">Binary Entity Resolution</h3>
+
+<p>In this case we detect duplicate pairs of rows between two databases. As an example, we use the benchmark dataset DBLP-ACM from Uni Leipzig.
+Embeddings work really well for this dataset, so the results are quite good with an F1 score of 0.89.</p>
+
+<p>Example command to run on DBLP-ACM dataset with embeddings:</p>
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>./bin/systemds ./scripts/algorithms/entity-resolution/binary-entity-resolution.dml -nvargs FY=data/DBLP-ACM/ACM_tokens.csv FX=data/DBLP-ACM/DBLP2_tokens.csv MX=data/DBLP-ACM_MX.csv OUT=data/DBLP-ACM/DBLP-ACM_res.csv XE=data/DBLP-ACM/DBLP2_embeddings.csv YE=data/DBLP-ACM/ACM_embeddings.csv use_embeddings=TRUE
+</code></pre></div></div>
+<p>Evaluation:</p>
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>./bin/systemds ./scripts/algorithms/entity-resolution/eval-entity-resolution.dml -nvargs FX=data/DBLP-ACM/DBLP-ACM_res.csv FY=data/DBLP-ACM/DBLP-ACM_perfectMapping.csv
+</code></pre></div></div>
+
+<h2 id="future-work">Future Work</h2>
+
+<ol>
+  <li>Better clustering algorithms.
+    <ol>
+      <li>Correlation clustering.</li>
+      <li>Markov clustering.</li>
+      <li>See <a href="https://dbs.uni-leipzig.de/en/publication/title/comparative_evaluation_of_distributed_clustering_schemes_for_multi_source_entity_resolution">this link</a> for more approaches.</li>
+    </ol>
+  </li>
+  <li>Multi-Probe LSH to improve runtime performance.
+    <ol>
+      <li>Probably as a SystemDS built-in to be more efficient.</li>
+    </ol>
+  </li>
+  <li>Classifier-based matching.
+    <ol>
+      <li>Using an SVM classifier to decide if two tuple are duplicates instead of a threshold for similarity.</li>
+    </ol>
+  </li>
+  <li>Better/built-in tokenization.
+    <ol>
+      <li>Implement text tokenization as component of SystemDS.</li>
+      <li>Offer choice of different preprocessing and tokenization algorithms (e.g. stemming, word-piece tokenization).</li>
+    </ol>
+  </li>
+  <li>Better/built-in embeddings.
+    <ol>
+      <li>Implement embedding generation as component of SystemDS.</li>
+      <li>Use LSTM to compose embeddings.</li>
+    </ol>
+  </li>
+</ol>
+
+    </div>
+    <!--
+
+-->
+
+
+<!-- MathJax Section -->
+<script type="text/x-mathjax-config">
+    MathJax.Hub.Config({ TeX: { equationNumbers: { autoNumber: "AMS" } } });
+</script>
+<script>
+    // Note that we load MathJax this way to work with local file (file://), HTTP and HTTPS.
+    // We could use "//cdn.mathjax...", but that won't support "file://".
+    (function(d, script) {
+        script = d.createElement('script');
+        script.type = 'text/javascript';
+        script.async = true;
+        script.onload = function() {
+            MathJax.Hub.Config({
+                tex2jax: {
+                    inlineMath: [
+                        ["$", "$"],
+                        ["\\\\(", "\\\\)"]
+                    ],
+                    displayMath: [
+                        ["$$", "$$"],
+                        ["\\[", "\\]"]
+                    ],
+                    processEscapes: true,
+                    skipTags: ['script', 'noscript', 'style', 'textarea', 'pre']
+                }
+            });
+        };
+        script.src = ('https:' == document.location.protocol ? 'https://' : 'http://') +
+            'cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML';
+        d.getElementsByTagName('head')[0].appendChild(script);
+    }(document));
+</script>
+
+</body>
+
+</html>

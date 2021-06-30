@@ -1,0 +1,872 @@
+<!DOCTYPE html>
+<!--[if lt IE 7]>      <html class="no-js lt-ie9 lt-ie8 lt-ie7"> <![endif]-->
+<!--[if IE 7]>         <html class="no-js lt-ie9 lt-ie8"> <![endif]-->
+<!--[if IE 8]>         <html class="no-js lt-ie9"> <![endif]-->
+<!--[if gt IE 8]><!-->
+<html class="no-js">
+<!--<![endif]-->
+<!--
+
+-->
+
+<head>
+    <title>Algorithms Reference Classification - SystemDS 2.1.0</title>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="description" content="">
+    <meta name="viewport" content="width=device-width">
+    <link rel="stylesheet" href="./../css/bootstrap.min.css">
+    <link rel="stylesheet" href="./../css/main.css">
+    <link rel="stylesheet" href="./../css/pygments-default.css">
+    <link rel="shortcut icon" href="./../img/favicon.png">
+    <script src="./../js/vendor/jquery-1.12.0.min.js"></script>
+    <script src="./../js/vendor/bootstrap.min.js"></script>
+    <script src="./../js/vendor/anchor.min.js"></script>
+    <script src="./../js/main.js"></script>
+</head>
+
+<body>
+    <!--
+
+-->
+<header class="navbar navbar-default navbar-fixed-top" id="topbar">
+    <div class="container">
+        <div class="navbar-header">
+            <div class="navbar-brand brand projectlogo">
+                <a href="https://systemds.apache.org/"><img class="logo" src="./../img/systemds-logo.png" alt="Apache SystemDS" title="Apache SystemDS" /></a>
+            </div>
+            <div class="navbar-brand brand projecttitle">
+                <a href="https://systemds.apache.org/">Apache SystemDS<sup id="trademark">™</sup></a><br />
+                <span class="version">2.1.0</span>
+            </div>
+            <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target=".navbar-collapse">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+        </div>
+        <nav class="navbar-collapse collapse">
+            <ul class="nav navbar-nav navbar-right">
+                <li class="dropdown">
+                    <a href="#" class="dropdown-toggle" data-toggle="dropdown">Overview<b class="caret"></b></a>
+                    <ul class="dropdown-menu" role="menu">
+                        <li><b>Home:</b></li>
+                        <li><a href="./../">Docs Home</a></li>
+                        <li class="divider"></li>
+                        <li><b>Running SystemDS:</b></li>
+                        <li><a href="./../site/run">Standalone Guide</a></li>
+                        <li><a href="./../site/gpu">GPU Guide</a></li>
+                        <li class="divider"></li>
+                        <li><b>Language Guides:</b></li>
+                        <li><a href="./../site/dml-language-reference.html">DML Language Reference</a></li>
+                        <li><a href="./../site/builtins-reference.html">Built-in Functions Reference</a></li>
+                        <li><a href="./../site/dml-vs-r-guide.html">DML vs R guide</a></li>
+                        <li class="divider"></li>
+                        <li><b>Algorithms:</b></li>
+                        <li><a href="./../site/algorithms-reference.html">ML Algorithms Reference</a></li>
+                        <li class="divider"></li>
+                        <li><b>Other:</b></li>
+                        <li><a href="https://github.com/apache/systemds/blob/master/CONTRIBUTING.md">Contributing to SystemDS 🡕</a></li>
+                    </ul>
+                </li>
+                <li><a href="https://github.com/apache/systemds">GitHub 🡕</a></li>
+                <li class="dropdown">
+                    <a href="#" class="dropdown-toggle" data-toggle="dropdown">API<b class="caret"></b></a>
+                    <ul class="dropdown-menu" role="menu">
+                        <li><a href="./../api/java/">Java</a></li>
+                        <li><a href="./../api/python/">Python</a></li>
+                    </ul>
+                </li>
+                <li><a href="https://issues.apache.org/jira/secure/Dashboard.jspa?selectPageId=12335852">Issues</a></li>
+            </ul>
+        </nav>
+    </div>
+</header>
+
+    <div class="container" id="content">
+        <h1 class="title">Algorithms Reference Classification</h1>
+        <!--
+
+-->
+
+<h2 id="multinomial-logistic-regression">Multinomial Logistic Regression</h2>
+
+<h3 id="description">Description</h3>
+
+<p>The <code class="language-plaintext highlighter-rouge">MultiLogReg.dml</code> script performs both binomial and multinomial
+logistic regression. The script is given a dataset $(X, Y)$ where matrix
+$X$ has $m$ columns and matrix $Y$ has one column; both $X$ and $Y$ have
+$n$ rows. The rows of $X$ and $Y$ are viewed as a collection of records:
+$(X, Y) = (x_i, y_i)_{i=1}^n$ where $x_i$ is a numerical vector of
+explanatory (feature) variables and $y_i$ is a categorical response
+variable. Each row $x_i$ in $X$ has size $\dim x_i = m$, while its corresponding $y_i$
+is an integer that represents the observed response value for
+record $i$.</p>
+
+<p>The goal of logistic regression is to learn a linear model over the
+feature vector $x_i$ that can be used to predict how likely each
+categorical label is expected to be observed as the actual $y_i$. Note
+that logistic regression predicts more than a label: it predicts the
+probability for every possible label. The binomial case allows only two
+possible labels, the multinomial case has no such restriction.</p>
+
+<p>Just as linear regression estimates the mean value $\mu_i$ of a
+numerical response variable, logistic regression does the same for
+category label probabilities. In linear regression, the mean of $y_i$ is
+estimated as a linear combination of the features:
+$\mu_i = \beta_0 + \beta_1 x_{i,1} + \ldots + \beta_m x_{i,m} = \beta_0 + x_i\beta_{1:m}$.
+In logistic regression, the label probability has to lie between 0
+and 1, so a link function is applied to connect it to
+$\beta_0 + x_i\beta_{1:m}$. If there are just two possible category
+labels, for example 0 and 1, the logistic link looks as follows:</p>
+
+\[Prob[y_i\,{=}\,1\mid x_i; \beta] \,=\,
+\frac{e^{\,\beta_0 + x_i\beta_{1:m}}}{1 + e^{\,\beta_0 + x_i\beta_{1:m}}};
+\quad
+Prob[y_i\,{=}\,0\mid x_i; \beta] \,=\,
+\frac{1}{1 + e^{\,\beta_0 + x_i\beta_{1:m}}}\]
+
+<p>Here category label 0
+serves as the <em>baseline</em>, and function $\exp(\beta_0 + x_i\beta_{1:m})$
+shows how likely we expect to see &#8220;$y_i = 1$&#8221; in comparison to the
+baseline. Like in a loaded coin, the predicted odds of seeing 1 versus 0
+are $\exp(\beta_0 + x_i\beta_{1:m})$ to 1, with each feature $x_{i,j}$
+multiplying its own factor $\exp(\beta_j x_{i,j})$ to the odds. Given a
+large collection of pairs $(x_i, y_i)$, $i=1\ldots n$, logistic
+regression seeks to find the $\beta_j$’s that maximize the product of
+probabilities $Prob[y_i\mid x_i; \beta]$
+for actually observed $y_i$-labels (assuming no
+regularization).</p>
+
+<p>Multinomial logistic regression <a href="algorithms-bibliography.html">[Agresti2002]</a>
+extends this link to
+$k \geq 3$ possible categories. Again we identify one category as the
+baseline, for example the $k$-th category. Instead of a coin, here we
+have a loaded multisided die, one side per category. Each non-baseline
+category $l = 1\ldots k\,{-}\,1$ has its own vector
+$(\beta_{0,l}, \beta_{1,l}, \ldots, \beta_{m,l})$ of regression
+parameters with the intercept, making up a matrix $B$ of size
+$(m\,{+}\,1)\times(k\,{-}\,1)$. The predicted odds of seeing
+non-baseline category $l$ versus the baseline $k$ are
+$\exp\big(\beta_{0,l} + \sum\nolimits_{j=1}^m x_{i,j}\beta_{j,l}\big)$
+to 1, and the predicted probabilities are:</p>
+
+\[\begin{equation}
+l &lt; k: Prob [y_i {=} l \mid x_i; B] \,\,\,{=}\,\,\,
+\frac{\exp\big(\beta_{0,l} + \sum\nolimits_{j=1}^m x_{i,j}\beta_{j,l}\big)}{1 \,+\, \sum_{l'=1}^{k-1}\exp\big(\beta_{0,l'} + \sum\nolimits_{j=1}^m x_{i,j}\beta_{j,l'}\big)};
+\end{equation}\]
+
+\[\begin{equation}
+Prob [y_i {=} k \mid x_i; B] \,\,\,{=}\,\,\,
+\frac{1}{1 \,+\, \sum_{l'=1}^{k-1}\exp\big(\beta_{0,l'} + \sum\nolimits_{j=1}^m x_{i,j}\beta_{j,l'}\big)}.
+\end{equation}\]
+
+<p>The goal of the regression
+is to estimate the parameter matrix $B$ from the provided dataset
+$(X, Y) = (x_i, y_i)_{i=1}^n$ by maximizing the product of $Prob[y_i\mid x_i; B]$ over the
+observed labels $y_i$. Taking its logarithm, negating, and adding a
+regularization term gives us a minimization objective:</p>
+
+\[\begin{equation}
+f(B; X, Y) \,\,=\,\,
+-\sum_{i=1}^n \,\log Prob[y_i\mid x_i; B] \,+\,
+\frac{\lambda}{2} \sum_{j=1}^m \sum_{l=1}^{k-1} |\beta_{j,l}|^2
+\,\,\to\,\,\min
+\end{equation}\]
+
+<p>The optional regularization term is added to
+mitigate overfitting and degeneracy in the data; to reduce bias, the
+intercepts $\beta_{0,l}$ are not regularized. Once the $\beta_{j,l}$’s
+are accurately estimated, we can make predictions about the category
+label $y$ for a new feature vector $x$ using
+Eqs. (1) and (2).</p>
+
+<hr />
+
+<h4 id="table-5">Table 5</h4>
+
+<p>: The <code class="language-plaintext highlighter-rouge">Log</code> file for multinomial logistic regression
+contains the following iteration variables in <code class="language-plaintext highlighter-rouge">CSV</code> format, each line
+containing triple (<code class="language-plaintext highlighter-rouge">Name</code>, <code class="language-plaintext highlighter-rouge">Iteration#</code>, <code class="language-plaintext highlighter-rouge">Value</code>) with <code class="language-plaintext highlighter-rouge">Iteration#</code> being 0
+for initial values.</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Meaning</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>LINEAR_TERM_MIN</td>
+      <td>The minimum value of $X$ %*% $B$, used to check for overflows</td>
+    </tr>
+    <tr>
+      <td>LINEAR_TERM_MAX</td>
+      <td>The maximum value of $X$ %*% $B$, used to check for overflows</td>
+    </tr>
+    <tr>
+      <td>NUM_CG_ITERS</td>
+      <td>Number of inner (Conj. Gradient) iterations in this outer iteration</td>
+    </tr>
+    <tr>
+      <td>IS_TRUST_REACHED</td>
+      <td>$1 = {}$trust region boundary was reached, $0 = {}$otherwise</td>
+    </tr>
+    <tr>
+      <td>POINT_STEP_NORM</td>
+      <td>L2-norm of iteration step from old point (matrix $B$) to new point</td>
+    </tr>
+    <tr>
+      <td>OBJECTIVE</td>
+      <td>The loss function we minimize (negative regularized log-likelihood)</td>
+    </tr>
+    <tr>
+      <td>OBJ_DROP_REAL</td>
+      <td>Reduction in the objective during this iteration, actual value</td>
+    </tr>
+    <tr>
+      <td>OBJ_DROP_PRED</td>
+      <td>Reduction in the objective predicted by a quadratic approximation</td>
+    </tr>
+    <tr>
+      <td>OBJ_DROP_RATIO</td>
+      <td>Actual-to-predicted reduction ratio, used to update the trust region</td>
+    </tr>
+    <tr>
+      <td>IS_POINT_UPDATED</td>
+      <td>$1 = {}$new point accepted; $0 = {}$new point rejected, old point restored</td>
+    </tr>
+    <tr>
+      <td>GRADIENT_NORM</td>
+      <td>L2-norm of the loss function gradient (omitted if point is rejected)</td>
+    </tr>
+    <tr>
+      <td>RUST_DELTA</td>
+      <td>Updated trust region size, the &#8220;delta&#8221;</td>
+    </tr>
+  </tbody>
+</table>
+
+<hr />
+
+<h3 id="details">Details</h3>
+
+<p>We estimate the logistic regression parameters via L2-regularized
+negative log-likelihood minimization (3). The
+optimization method used in the script closely follows the trust region
+Newton method for logistic regression described in <a href="algorithms-bibliography.html">[Lin2008]</a>.
+For convenience, let us make some changes in notation:</p>
+
+<ul>
+  <li>Convert the input vector of observed category labels into an indicator
+matrix $Y$ of size $n \times k$ such that $Y_{i, l} = 1$ if the $i$-th
+category label is $l$ and $Y_{i, l} = 0$ otherwise.</li>
+  <li>Append an extra column of all ones, i.e. $(1, 1, \ldots, 1)^T$, as the
+$m\,{+}\,1$-st column to the feature matrix $X$ to represent the
+intercept.</li>
+  <li>Append an all-zero column as the $k$-th column to $B$, the matrix of
+regression parameters, to represent the baseline category.</li>
+  <li>Convert the regularization constant $\lambda$ into matrix $\Lambda$ of
+the same size as $B$, placing 0’s into the $m\,{+}\,1$-st row to disable
+intercept regularization, and placing $\lambda$’s everywhere else.</li>
+</ul>
+
+<p>Now the ($n\,{\times}\,k$)-matrix of predicted probabilities given by
+(1) and (2) and the
+objective function $f$ in (3) have the matrix form</p>
+
+\[\begin{aligned}
+P \,\,&amp;=\,\, \exp(XB) \,\,/\,\, \big(\exp(XB)\,1_{k\times k}\big)\\
+f \,\,&amp;=\,\, - \,\,{\textstyle\sum} \,\,Y \cdot (X B)\, + \,
+{\textstyle\sum}\,\log\big(\exp(XB)\,1_{k\times 1}\big) \,+ \,
+(1/2)\,\, {\textstyle\sum} \,\,\Lambda \cdot B \cdot B\end{aligned}\]
+
+<p>where operations $\cdot\,$, <code class="language-plaintext highlighter-rouge">/</code>, <code class="language-plaintext highlighter-rouge">exp</code>, and <code class="language-plaintext highlighter-rouge">log</code> are applied
+cellwise, and $\textstyle\sum$ denotes the sum of all cells in a matrix.
+The gradient of $f$ with respect to $B$ can be represented as a matrix
+too:</p>
+
+\[\nabla f \,\,=\,\, X^T (P - Y) \,+\, \Lambda \cdot B\]
+
+<p>The Hessian $\mathcal{H}$ of $f$ is a tensor, but, fortunately, the
+conjugate gradient inner loop of the trust region algorithm
+in <a href="algorithms-bibliography.html">[Lin2008]</a>
+does not need to instantiate it. We only need to
+multiply $\mathcal{H}$ by ordinary matrices of the same size as $B$ and
+$\nabla f$, and this can be done in matrix form:</p>
+
+\[\mathcal{H}V \,\,=\,\, X^T \big( Q \,-\, P \cdot (Q\,1_{k\times k}) \big) \,+\,
+\Lambda \cdot V, \,\,\,\,\textrm{where}\,\,\,\,Q \,=\, P \cdot (XV)\]
+
+<p>At each Newton iteration (the <em>outer</em> iteration) the minimization algorithm
+approximates the difference
+$\varDelta f(S; B) = f(B + S; X, Y) \,-\, f(B; X, Y)$ attained in the
+objective function after a step $B \mapsto B\,{+}\,S$ by a second-degree
+formula</p>
+
+\[\varDelta f(S; B) \,\,\,\approx\,\,\, (1/2)\,\,{\textstyle\sum}\,\,S \cdot \mathcal{H}S
+ \,+\, {\textstyle\sum}\,\,S\cdot \nabla f\]
+
+<p>This approximation is then
+minimized by trust-region conjugate gradient iterations (the <em>inner</em>
+iterations) subject to the constraint</p>
+
+\[\|S\|_2 \leq \delta\]
+
+<p>The trust
+region size $\delta$ is initialized as $0.5\sqrt{m}\,/ \max_i |x_i|_2$
+and updated as described in <a href="algorithms-bibliography.html">[Lin2008]</a>.
+Users can specify the maximum number of the outer
+and the inner iterations with input parameters <code class="language-plaintext highlighter-rouge">moi</code> and
+<code class="language-plaintext highlighter-rouge">mii</code>, respectively. The iterative minimizer terminates
+successfully if</p>
+
+\[\|\nabla f\|_2 &lt; \varepsilon \|\nabla f_{B=0} \|_2\]
+
+<p>, where ${\varepsilon}&gt; 0$ is a tolerance supplied by the user via input parameter <code class="language-plaintext highlighter-rouge">tol</code>.</p>
+
+<h3 id="returns">Returns</h3>
+
+<p>The estimated regression parameters (the \(.\hat{\beta}_{j, l}\) ) are
+populated into a matrix and written to an HDFS file whose path/name was
+provided as the <code class="language-plaintext highlighter-rouge">B</code> input argument. Only the non-baseline
+categories ($1\leq l \leq k\,{-}\,1$) have their $ \hat{\beta}<em>{j, l}$
+in the output; to add the baseline category, just append a column of zeros.
+If <code class="language-plaintext highlighter-rouge">icpt=0</code> in the input command line, no intercepts are used
+and <code class="language-plaintext highlighter-rouge">B</code> has size
+$m\times (k\,{-}\,1)$; otherwise
+<code class="language-plaintext highlighter-rouge">B</code> has size
+$(m\,{+}\,1)\times (k\,{-}\,1)$
+and the
+intercepts are in the
+$m\,{+}\,1$-st row. If icpt=2, then
+initially the feature columns in $X$ are shifted to mean${} = 0$ and
+rescaled to variance${} = 1$. After the iterations converge, the
+$\hat{\beta}</em>{j, l}$’s are rescaled and shifted to work with the
+original features.</p>
+
+<hr />
+
+<h2 id="support-vector-machines">Support Vector Machines</h2>
+
+<h3 id="binary-class-support-vector-machines">Binary-Class Support Vector Machines</h3>
+
+<h4 id="binary-svm-description">Binary SVM Description</h4>
+
+<p>Support Vector Machines are used to model the relationship between a
+categorical dependent variable <code class="language-plaintext highlighter-rouge">y</code> and one or more explanatory variables
+denoted <code class="language-plaintext highlighter-rouge">X</code>. This implementation learns (and predicts with) a binary class
+support vector machine (<code class="language-plaintext highlighter-rouge">y</code> with domain size <code class="language-plaintext highlighter-rouge">2</code>).</p>
+
+<h4 id="binary-svm-details">Binary SVM Details</h4>
+
+<p>Support vector machines learn a classification function by solving the
+following optimization problem ($L_2$-SVM):</p>
+
+\[\begin{aligned}
+&amp;\textrm{argmin}_w&amp; \frac{\lambda}{2} ||w||_2^2 + \sum_i \xi_i^2\\
+&amp;\textrm{subject to:}&amp; y_i w^{\top} x_i \geq 1 - \xi_i ~ \forall i\end{aligned}\]
+
+<p>where $x_i$ is an example from the training set with its label given by
+$y_i$, $w$ is the vector of parameters and $\lambda$ is the
+regularization constant specified by the user.</p>
+
+<p>To account for the missing bias term, one may augment the data with a
+column of constants which is achieved by setting the intercept argument to <code class="language-plaintext highlighter-rouge">1</code>
+<a href="algorithms-bibliography.html">[Hsieh2008]</a>.</p>
+
+<p>This implementation optimizes the primal directly
+<a href="algorithms-bibliography.html">[Chapelle2007]</a>. It
+uses nonlinear conjugate gradient descent to minimize the objective
+function coupled with choosing step-sizes by performing one-dimensional
+Newton minimization in the direction of the gradient.</p>
+
+<h4 id="binary-svm-returns">Binary SVM Returns</h4>
+
+<p>The learnt weights produced by <code class="language-plaintext highlighter-rouge">l2-svm.dml</code> are populated into a single
+column matrix and written to file on HDFS (see model in section
+Arguments). The number of rows in this matrix is <code class="language-plaintext highlighter-rouge">ncol(X)</code> if intercept
+was set to <code class="language-plaintext highlighter-rouge">0</code> during invocation and <code class="language-plaintext highlighter-rouge">ncol(X) + 1</code> otherwise. The bias term,
+if used, is placed in the last row. Depending on what arguments are
+provided during invocation, <code class="language-plaintext highlighter-rouge">l2-svm-predict.dml</code> may compute one or more
+of scores, accuracy and confusion matrix in the output format
+specified.</p>
+
+<hr />
+
+<h3 id="multi-class-support-vector-machines">Multi-Class Support Vector Machines</h3>
+
+<h4 id="multi-svm-description">Multi SVM Description</h4>
+
+<p>Support Vector Machines are used to model the relationship between a
+categorical dependent variable <code class="language-plaintext highlighter-rouge">y</code> and one or more explanatory variables
+denoted <code class="language-plaintext highlighter-rouge">X</code>. This implementation supports dependent variables that have
+domain size greater or equal to <code class="language-plaintext highlighter-rouge">2</code> and hence is not restricted to binary
+class labels.</p>
+
+<h4 id="multi-svm-details">Multi SVM Details</h4>
+
+<p>Support vector machines learn a classification function by solving the
+following optimization problem ($L_2$-SVM):</p>
+
+\[\begin{aligned}
+&amp;\textrm{argmin}_w&amp; \frac{\lambda}{2} ||w||_2^2 + \sum_i \xi_i^2\\
+&amp;\textrm{subject to:}&amp; y_i w^{\top} x_i \geq 1 - \xi_i ~ \forall i\end{aligned}\]
+
+<p>where $x_i$ is an example from the training set with its label given by
+$y_i$, $w$ is the vector of parameters and $\lambda$ is the
+regularization constant specified by the user.</p>
+
+<p>To extend the above formulation (binary class SVM) to the multiclass
+setting, one standard approach is to learn one binary class SVM per
+class that separates data belonging to that class from the rest of the
+training data (one-against-the-rest SVM, see
+<a href="algorithms-bibliography.html">[Scholkopf1995]</a>).</p>
+
+<p>To account for the missing bias term, one may augment the data with a
+column of constants which is achieved by setting intercept argument to 1
+<a href="algorithms-bibliography.html">[Hsieh2008]</a>.</p>
+
+<p>This implementation optimizes the primal directly
+<a href="algorithms-bibliography.html">[Chapelle2007]</a>. It
+uses nonlinear conjugate gradient descent to minimize the objective
+function coupled with choosing step-sizes by performing one-dimensional
+Newton minimization in the direction of the gradient.</p>
+
+<h4 id="multi-svm-returns">Multi SVM Returns</h4>
+
+<p>The learnt weights produced by <code class="language-plaintext highlighter-rouge">m-svm.dml</code> are populated into a matrix
+that has as many columns as there are classes in the training data, and
+written to file provided on HDFS (see model in section Arguments). The
+number of rows in this matrix is <code class="language-plaintext highlighter-rouge">ncol(X)</code> if intercept was set to <code class="language-plaintext highlighter-rouge">0</code>
+during invocation and <code class="language-plaintext highlighter-rouge">ncol(X) + 1</code> otherwise. The bias terms, if used,
+are placed in the last row. Depending on what arguments are provided
+during invocation, <code class="language-plaintext highlighter-rouge">m-svm-predict.dml</code> may compute one or more of scores,
+accuracy and confusion matrix in the output format specified.</p>
+
+<hr />
+
+<h2 id="naive-bayes">Naive Bayes</h2>
+
+<h3 id="naive-bayes-description">Naive Bayes Description</h3>
+
+<p>Naive Bayes is very simple generative model used for classifying data.
+This implementation learns a multinomial naive Bayes classifier which is
+applicable when all features are counts of categorical values.</p>
+
+<h3 id="naive-bayes-details">Naive Bayes Details</h3>
+
+<p>Naive Bayes is a very simple generative classification model. It posits
+that given the class label, features can be generated independently of
+each other. More precisely, the (multinomial) naive Bayes model uses the
+following equation to estimate the joint probability of a feature vector
+$x$ belonging to class $y$:</p>
+
+\[\text{Prob}(y, x) = \pi_y \prod_{i \in x} \theta_{iy}^{n(i,x)}\]
+
+<p>where $\pi_y$ denotes the prior probability of class $y$, $i$ denotes a
+feature present in $x$ with $n(i,x)$ denoting its count and
+$\theta_{iy}$ denotes the class conditional probability of feature $i$
+in class $y$. The usual constraints hold on $\pi$ and $\theta$:</p>
+
+\[\begin{aligned}
+&amp;&amp; \pi_y \geq 0, ~ \sum_{y \in \mathcal{C}} \pi_y = 1\\
+\forall y \in \mathcal{C}: &amp;&amp; \theta_{iy} \geq 0, ~ \sum_i \theta_{iy} = 1\end{aligned}\]
+
+<p>where $\mathcal{C}$ is the set of classes.</p>
+
+<p>Given a fully labeled training dataset, it is possible to learn a naive
+Bayes model using simple counting (group-by aggregates). To compute the
+class conditional probabilities, it is usually advisable to avoid
+setting $\theta_{iy}$ to <code class="language-plaintext highlighter-rouge">0</code>. One way to achieve this is using additive
+smoothing or Laplace smoothing. Some authors have argued that this
+should in fact be add-one smoothing. This implementation uses add-one
+smoothing by default but lets the user specify her/his own constant, if
+required.</p>
+
+<p>This implementation is sometimes referred to as <em>multinomial</em> naive
+Bayes. Other flavours of naive Bayes are also popular.</p>
+
+<h3 id="naive-bayes-returns">Naive Bayes Returns</h3>
+
+<p>The learnt model produced by <code class="language-plaintext highlighter-rouge">naive-bayes.dml</code> is stored in two separate
+files. The first file stores the class prior (a single-column matrix).
+The second file stores the class conditional probabilities organized
+into a matrix with as many rows as there are class labels and as many
+columns as there are features. Depending on what arguments are provided
+during invocation, <code class="language-plaintext highlighter-rouge">naive-bayes-predict.dml</code> may compute one or more of
+probabilities, accuracy and confusion matrix in the output format
+specified.</p>
+
+<hr />
+
+<h2 id="decision-trees">Decision Trees</h2>
+
+<h3 id="decision-trees-description">Decision Trees Description</h3>
+
+<p>Decision tree (for classification) is a classifier that is considered
+more interpretable than other statistical classifiers. This
+implementation is well-suited to handle large-scale data and builds a
+(binary) decision tree in parallel.</p>
+
+<h3 id="decision-trees-details">Decision Trees Details</h3>
+
+<p>Decision trees <a href="algorithms-bibliography.html">[BreimanFOS1984]</a> are simple models of classification
+that, due to their structure, are easy to interpret. Given an example
+feature vector, each node in the learned tree runs a simple test on it.
+Based on the result of the test, the example is either diverted to the
+left subtree or to the right subtree. Once the example reaches a leaf,
+then the label stored at the leaf is returned as the prediction for the
+example.</p>
+
+<p>Building a decision tree from a fully labeled training set entails
+choosing appropriate splitting tests for each internal node in the tree
+and this is usually performed in a top-down manner. The splitting test
+(denoted by $s$) requires first choosing a feature $j$ and depending on
+the type of $j$, either a threshold $\sigma$, in case $j$ is
+continuous-valued, or a subset of values $S \subseteq \text{Dom}(j)$
+where $\text{Dom}(j)$ denotes domain of $j$, in case it is categorical.
+For continuous-valued features the test is thus of form $x_j &lt; \sigma$
+and for categorical features it is of form $x_j \in S$, where $x_j$
+denotes the $j$th feature value of feature vector $x$. One way to
+determine which test to include, is to compare impurities of the tree
+nodes induced by the test. The <em>node impurity</em> measures the
+homogeneity of the labels at the node. This implementation supports two
+commonly used impurity measures (denoted by $\mathcal{I}$):
+<em>Entropy</em> 
+$\mathcal{E}=\sum_{i=1}^{C}-f_i \log f_i$, as
+well as <em>Gini impurity</em>
+$\mathcal{G}=\sum_{i=1}^{C}f_i (1-f_i)$, where $C$ denotes the number of
+unique labels and $f_i$ is the frequency of label $i$. Once the impurity
+at the tree nodes has been obtained, the <em>best split</em> is
+chosen from a set of possible splits that maximizes the
+<em>information gain</em> at the node, i.e.,
+$\arg\max_{s}\mathcal{IG}(X,s)$, where $\mathcal{IG}(X,s)$ denotes the
+information gain when the splitting test $s$ partitions the feature
+matrix $X$. Assuming that $s$ partitions $X$ that contains $N$ feature
+vectors into $X_\text{left}$ and $X_\text{right}$ each including
+$N_\text{left}$ and $N_\text{right}$ feature vectors, respectively,
+$\mathcal{IG}(X,s)$ is given by</p>
+
+\[\mathcal{IG}(X,s)=\mathcal{I}(X)-\frac{N_\text{left}}{N}\mathcal{I}(X_\text{left})-\frac{N_\text{right}}{N}\mathcal{I}(X_\text{right})\]
+
+<p>where $\mathcal{I}\in{\mathcal{E},\mathcal{G}}$. In the following we
+discuss the implementation details specific to
+<code class="language-plaintext highlighter-rouge">decision-tree.dml</code>.</p>
+
+<p><strong>Input format.</strong> In general implementations of the decision tree
+algorithm do not require categorical features to be dummy coded. For
+improved efficiency and reducing the training time, our implementation
+however assumes dummy coded categorical features and dummy coded class
+labels.</p>
+
+<p><strong>Tree construction.</strong> Learning a decision tree on large-scale data has
+received some attention in the literature. The current implementation
+includes logic for choosing tests for multiple nodes that belong to the
+same level in the decision tree in parallel (breadth-first expansion)
+and for building entire subtrees under multiple nodes in parallel
+(depth-first subtree building). Empirically it has been demonstrated
+that it is advantageous to perform breadth-first expansion for the nodes
+belonging to the top levels of the tree and to perform depth-first
+subtree building for nodes belonging to the lower levels of the
+tree <a href="algorithms-bibliography.html">[PandaHBB2009]</a>. The parameter <code class="language-plaintext highlighter-rouge">num_samples</code> controls
+when we switch to depth-first subtree building. Any node in the decision
+tree that receives $\leq$ <code class="language-plaintext highlighter-rouge">num_samples</code> training examples,
+the subtree under it is built in its entirety in one shot.</p>
+
+<p><strong>Stopping rule and pruning.</strong> The splitting of data at the internal
+nodes stops when at least one the following criteria is satisfied:</p>
+
+<ul>
+  <li>the depth of the internal node reaches the input parameter
+  <code class="language-plaintext highlighter-rouge">depth</code> controlling the maximum depth of the learned
+  tree, or</li>
+  <li>no candidate split achieves information gain.</li>
+</ul>
+
+<p>This implementation also allows for some automated pruning via the
+argument <code class="language-plaintext highlighter-rouge">num_leaf</code>. If a node receives $\leq$
+<code class="language-plaintext highlighter-rouge">num_leaf</code> training examples, then a leaf is built in its
+place.</p>
+
+<p><strong>Continuous-valued features.</strong> For a continuous-valued feature $j$ the
+number of candidate thresholds $\sigma$ to choose from is of the order
+of the number of examples present in the training set. Since for
+large-scale data this can result in a large number of candidate
+thresholds, the user can limit this number via the arguments
+<code class="language-plaintext highlighter-rouge">bins</code> which controls the number of candidate thresholds
+considered for each continuous-valued feature. For each
+continuous-valued feature, the implementation computes an equi-height
+histogram to generate one candidate threshold per equi-height bin.</p>
+
+<p><strong>Categorical features.</strong> In order to determine the best value subset to
+split on in the case of categorical features, this implementation
+greedily includes values from the feature’s domain until the information
+gain stops improving. In particular, for a categorical feature $j$ the
+$|Dom(j)|$ feature values are sorted by impurity and the resulting split
+candidates $|Dom(j)|-1$ are examined; the sequence of feature values
+which results in the maximum information gain is then selected.</p>
+
+<p><strong>Description of the model.</strong> The learned decision tree is represented
+in a matrix $M$ that contains at least 6 rows. Each column in the matrix
+contains the parameters relevant to a single node in the tree. Note that
+for building the tree model, our implementation splits the feature
+matrix $X$ into $X_\text{cont}$ containing continuous-valued features
+and $X_\text{cat}$ containing categorical features. In the following,
+the continuous-valued (resp. categorical) feature-ids correspond to the
+indices of the features in $X_\text{cont}$ (resp. $X_\text{cat}$).
+Moreover, we refer to an internal node as a continuous-valued
+(categorical) node if the feature that this nodes looks at is
+continuous-valued (categorical). Below is a description of what each row
+in the matrix contains.</p>
+
+<ul>
+  <li>Row 1: stores the node-ids. These ids correspond to the node-ids in
+  a complete binary tree.</li>
+  <li>Row 2: for internal nodes stores the offsets (the number of columns)
+  in $M$ to the left child, and otherwise <code class="language-plaintext highlighter-rouge">0</code>.</li>
+  <li>Row 3: stores the feature index of the feature (id of a
+  continuous-valued feature in $X_\text{cont}$ if the feature is
+  continuous-valued or id of a categorical feature in $X_\text{cat}$
+  if the feature is categorical) that this node looks at if the node
+  is an internal node, otherwise <code class="language-plaintext highlighter-rouge">0</code>.</li>
+  <li>Row 4: store the type of the feature that this node looks at if the
+  node is an internal node: <code class="language-plaintext highlighter-rouge">1</code> for continuous-valued and <code class="language-plaintext highlighter-rouge">2</code> for
+  categorical features, otherwise the label this leaf node is supposed
+  to predict.</li>
+  <li>Row 5: for the internal nodes contains <code class="language-plaintext highlighter-rouge">1</code> if the feature chosen for
+  the node is continuous-valued, or the size of the subset of values
+  used for splitting at the node stored in rows 6,7,$\ldots$ if the
+  feature chosen for the node is categorical. For the leaf nodes, Row
+  5 contains the number of misclassified training examples reaching at
+  this node.</li>
+  <li>Row 6,7,$\ldots$: for the internal nodes, row 6 stores the threshold
+  to which the example’s feature value is compared if the feature
+  chosen for this node is continuous-valued, otherwise if the feature
+  chosen for this node is categorical rows 6,7,$\ldots$ store the
+  value subset chosen for the node. For the leaf nodes, row 6 contains
+  <code class="language-plaintext highlighter-rouge">1</code> if the node is impure and the number of training examples at the
+  node is greater than <code class="language-plaintext highlighter-rouge">num_leaf</code>, otherwise <code class="language-plaintext highlighter-rouge">0</code>.</li>
+</ul>
+
+<p>As an example, <a href="figure-2"><strong>Figure 2</strong></a> shows a decision tree with $5$ nodes and
+its matrix representation.</p>
+
+<hr />
+
+<h4 id="figure-2">Figure 2</h4>
+
+<p><strong>Figure 2</strong>: (a) An example tree and its (b) matrix representation. $x$ denotes an example and $x_j$ is the value of the $j$th continuous-valued (resp. categorical) feature in $X_\text{cont}$ (resp. $X_\text{cat}$). In this example all leaf nodes are pure and no training example is misclassified.</p>
+
+<p>(a) <img src="../img/algorithms-reference/example-tree.png" alt="Figure 2" title="Figure 2" /></p>
+
+<p>(b)</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>&#160;</th>
+      <th>Col 1</th>
+      <th>Col 2</th>
+      <th>Col 3</th>
+      <th>Col 4</th>
+      <th>Col 5</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Row 1</td>
+      <td>1</td>
+      <td>2</td>
+      <td>3</td>
+      <td>6</td>
+      <td>7</td>
+    </tr>
+    <tr>
+      <td>Row 2</td>
+      <td>1</td>
+      <td>0</td>
+      <td>1</td>
+      <td>0</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <td>Row 3</td>
+      <td>3</td>
+      <td>0</td>
+      <td>5</td>
+      <td>0</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <td>Row 4</td>
+      <td>1</td>
+      <td>1</td>
+      <td>2</td>
+      <td>2</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <td>Row 5</td>
+      <td>1</td>
+      <td>0</td>
+      <td>2</td>
+      <td>0</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <td>Row 6</td>
+      <td>0.45</td>
+      <td>0</td>
+      <td>2</td>
+      <td>0</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <td>Row 7</td>
+      <td>&#160;</td>
+      <td>&#160;</td>
+      <td>3</td>
+      <td>&#160;</td>
+      <td>&#160;</td>
+    </tr>
+  </tbody>
+</table>
+
+<hr />
+
+<h3 id="decision-trees-returns">Decision Trees Returns</h3>
+
+<p>The matrix corresponding to the learned model as well as the training
+accuracy (if requested) is written to a file in the format specified.
+See details where the structure of the model matrix is described. Recall
+that in our implementation $X$ is split into $X_\text{cont}$ and
+$X_\text{cat}$. If requested, the mappings of the continuous-valued
+feature-ids in $X_\text{cont}$ (stored at <code class="language-plaintext highlighter-rouge">S_map</code>) and the
+categorical feature-ids in $X_\text{cat}$ (stored at
+<code class="language-plaintext highlighter-rouge">C_map</code>) to the global feature-ids in $X$ will be provided.
+Depending on what arguments are provided during invocation, the
+<code class="language-plaintext highlighter-rouge">decision-tree-predict.dml</code> script may compute one or more of
+predictions, accuracy and confusion matrix in the requested output
+format.</p>
+
+<h2 id="random-forests">Random Forests</h2>
+
+<h3 id="random-forests-description">Random Forests Description</h3>
+
+<p>Random forest is one of the most successful machine learning methods for
+classification and regression. It is an ensemble learning method that
+creates a model composed of a set of tree models. This implementation is
+well-suited to handle large-scale data and builds a random forest model
+for classification in parallel.</p>
+
+<h3 id="random-forests-details">Random Forests Details</h3>
+
+<p>Random forests <a href="algorithms-bibliography.html">[Breiman2001]</a>
+are learning algorithms for ensembles
+of decision trees. The main idea is to build a number of decision trees
+on bootstrapped training samples, i.e., by taking repeatedly samples
+from a (single) training set. Moreover, instead of considering all the
+features when building the trees only a random subset of the
+features—typically $\approx \sqrt{D}$, where $D$ is the number of
+features—is chosen each time a split test at a tree node is performed.
+This procedure <em>decorrelates</em> the trees and makes it less
+prone to overfitting. To build decision trees we utilize the techniques
+discussed in <a href="algorithms-classification.html#decision-trees">Decision Trees</a> and proposed
+in <a href="algorithms-bibliography.html">[PandaHBB2009]</a>; the implementation details are similar to those of
+the decision trees script. Below we review some features of our
+implementation which differ from <code class="language-plaintext highlighter-rouge">decision-tree.dml</code>.</p>
+
+<p><strong>Bootstrapped sampling.</strong> Each decision tree is fitted to a
+bootstrapped training set sampled with replacement (WR). To improve
+efficiency, we generate $N$ sample counts according to a Poisson
+distribution with parameter <code class="language-plaintext highlighter-rouge">subsamp_rate</code>, where $N$
+denotes the total number of training points. These sample counts
+approximate WR sampling when $N$ is large enough and are generated
+upfront for each decision tree.</p>
+
+<p><strong>Bagging.</strong> Decision trees suffer from <em>high variance</em>
+resulting in different models whenever trained on a random subsets of
+the data points. <em>Bagging</em> is a general-purpose method to
+reduce the variance of a statistical learning method like decision
+trees. In the context of decision trees (for classification), for a
+given test feature vector the prediction is computed by taking a
+<em>majority vote</em>: the overall prediction is the most
+commonly occurring class among all the tree predictions.</p>
+
+<p><strong>Out-Of-Bag error estimation.</strong> Note that each bagged tree in a random
+forest model is trained on a subset (around $\frac{2}{3}$) of the
+observations (i.e., feature vectors). The remaining ($\frac{1}{3}$ of
+the) observations not used for training is called the
+<em>Out-Of-Bag</em> (<code class="language-plaintext highlighter-rouge">OOB</code>) observations. This gives us a
+straightforward way to estimate the test error: to predict the class
+label of each test observation $i$ we use the trees in which $i$ was
+<code class="language-plaintext highlighter-rouge">OOB</code>. Our <code class="language-plaintext highlighter-rouge">random-forest-predict.dml</code> script provides the <code class="language-plaintext highlighter-rouge">OOB</code>
+error estimate for a given training set if requested.</p>
+
+<p><strong>Description of the model.</strong> Similar to decision trees, the learned
+random forest model is presented in a matrix $M$ with at least <code class="language-plaintext highlighter-rouge">7</code> rows.
+The information stored in the model is similar to that of decision trees
+with the difference that the tree-ids are stored in the second row and
+rows $2,3,\ldots$ from the decision tree model are shifted by one. See
+<a href="algorithms-classification.html#decision-trees">Decision Trees</a> for a description of the model.</p>
+
+<h3 id="random-forests-returns">Random Forests Returns</h3>
+
+<p>The matrix corresponding to the learned model is written to a file in
+the format specified. See <a href="algorithms-classification.html#decision-trees">Decision Trees</a> where the
+details about the structure of the model matrix is described. Similar to
+<code class="language-plaintext highlighter-rouge">decision-tree.dml</code>, $X$ is split into $X_\text{cont}$ and
+$X_\text{cat}$. If requested, the mappings of the continuous feature-ids
+in $X_\text{cont}$ (stored at <code class="language-plaintext highlighter-rouge">S_map</code>) as well as the
+categorical feature-ids in $X_\text{cat}$ (stored at
+<code class="language-plaintext highlighter-rouge">C_map</code>) to the global feature-ids in $X$ will be provided.
+The <code class="language-plaintext highlighter-rouge">random-forest-predict.dml</code> script may compute one or
+more of predictions, accuracy, confusion matrix, and <code class="language-plaintext highlighter-rouge">OOB</code> error estimate
+in the requested output format depending on the input arguments used.</p>
+
+    </div>
+    <!--
+
+-->
+
+
+<!-- MathJax Section -->
+<script type="text/x-mathjax-config">
+    MathJax.Hub.Config({ TeX: { equationNumbers: { autoNumber: "AMS" } } });
+</script>
+<script>
+    // Note that we load MathJax this way to work with local file (file://), HTTP and HTTPS.
+    // We could use "//cdn.mathjax...", but that won't support "file://".
+    (function(d, script) {
+        script = d.createElement('script');
+        script.type = 'text/javascript';
+        script.async = true;
+        script.onload = function() {
+            MathJax.Hub.Config({
+                tex2jax: {
+                    inlineMath: [
+                        ["$", "$"],
+                        ["\\\\(", "\\\\)"]
+                    ],
+                    displayMath: [
+                        ["$$", "$$"],
+                        ["\\[", "\\]"]
+                    ],
+                    processEscapes: true,
+                    skipTags: ['script', 'noscript', 'style', 'textarea', 'pre']
+                }
+            });
+        };
+        script.src = ('https:' == document.location.protocol ? 'https://' : 'http://') +
+            'cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML';
+        d.getElementsByTagName('head')[0].appendChild(script);
+    }(document));
+</script>
+
+</body>
+
+</html>

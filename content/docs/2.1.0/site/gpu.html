@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<!--[if lt IE 7]>      <html class="no-js lt-ie9 lt-ie8 lt-ie7"> <![endif]-->
+<!--[if IE 7]>         <html class="no-js lt-ie9 lt-ie8"> <![endif]-->
+<!--[if IE 8]>         <html class="no-js lt-ie9"> <![endif]-->
+<!--[if gt IE 8]><!-->
+<html class="no-js">
+<!--<![endif]-->
+<!--
+
+-->
+
+<head>
+    <title>Run SystemDS with GPU - SystemDS 2.1.0</title>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="description" content="">
+    <meta name="viewport" content="width=device-width">
+    <link rel="stylesheet" href="./../css/bootstrap.min.css">
+    <link rel="stylesheet" href="./../css/main.css">
+    <link rel="stylesheet" href="./../css/pygments-default.css">
+    <link rel="shortcut icon" href="./../img/favicon.png">
+    <script src="./../js/vendor/jquery-1.12.0.min.js"></script>
+    <script src="./../js/vendor/bootstrap.min.js"></script>
+    <script src="./../js/vendor/anchor.min.js"></script>
+    <script src="./../js/main.js"></script>
+</head>
+
+<body>
+    <!--
+
+-->
+<header class="navbar navbar-default navbar-fixed-top" id="topbar">
+    <div class="container">
+        <div class="navbar-header">
+            <div class="navbar-brand brand projectlogo">
+                <a href="https://systemds.apache.org/"><img class="logo" src="./../img/systemds-logo.png" alt="Apache SystemDS" title="Apache SystemDS" /></a>
+            </div>
+            <div class="navbar-brand brand projecttitle">
+                <a href="https://systemds.apache.org/">Apache SystemDS<sup id="trademark">™</sup></a><br />
+                <span class="version">2.1.0</span>
+            </div>
+            <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target=".navbar-collapse">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+        </div>
+        <nav class="navbar-collapse collapse">
+            <ul class="nav navbar-nav navbar-right">
+                <li class="dropdown">
+                    <a href="#" class="dropdown-toggle" data-toggle="dropdown">Overview<b class="caret"></b></a>
+                    <ul class="dropdown-menu" role="menu">
+                        <li><b>Home:</b></li>
+                        <li><a href="./../">Docs Home</a></li>
+                        <li class="divider"></li>
+                        <li><b>Running SystemDS:</b></li>
+                        <li><a href="./../site/run">Standalone Guide</a></li>
+                        <li><a href="./../site/gpu">GPU Guide</a></li>
+                        <li class="divider"></li>
+                        <li><b>Language Guides:</b></li>
+                        <li><a href="./../site/dml-language-reference.html">DML Language Reference</a></li>
+                        <li><a href="./../site/builtins-reference.html">Built-in Functions Reference</a></li>
+                        <li><a href="./../site/dml-vs-r-guide.html">DML vs R guide</a></li>
+                        <li class="divider"></li>
+                        <li><b>Algorithms:</b></li>
+                        <li><a href="./../site/algorithms-reference.html">ML Algorithms Reference</a></li>
+                        <li class="divider"></li>
+                        <li><b>Other:</b></li>
+                        <li><a href="https://github.com/apache/systemds/blob/master/CONTRIBUTING.md">Contributing to SystemDS 🡕</a></li>
+                    </ul>
+                </li>
+                <li><a href="https://github.com/apache/systemds">GitHub 🡕</a></li>
+                <li class="dropdown">
+                    <a href="#" class="dropdown-toggle" data-toggle="dropdown">API<b class="caret"></b></a>
+                    <ul class="dropdown-menu" role="menu">
+                        <li><a href="./../api/java/">Java</a></li>
+                        <li><a href="./../api/python/">Python</a></li>
+                    </ul>
+                </li>
+                <li><a href="https://issues.apache.org/jira/secure/Dashboard.jspa?selectPageId=12335852">Issues</a></li>
+            </ul>
+        </nav>
+    </div>
+</header>
+
+    <div class="container" id="content">
+        <h1 class="title">Run SystemDS with GPU</h1>
+        <!--
+
+-->
+
+<p>This guide covers the GPU hardware and software setup for using SystemDS <code class="language-plaintext highlighter-rouge">gpu</code> mode.</p>
+
+<ul>
+  <li><a href="#requirements">Requirements</a></li>
+  <li><a href="#linux">Linux</a></li>
+  <li><a href="#windows">Windows</a></li>
+  <li><a href="#command-line-users">Command-line users</a></li>
+  <li><a href="#scala-users">Scala Users</a></li>
+  <li><a href="#advanced-configuration">Advanced Configuration</a>
+    <ul>
+      <li><a href="#using-single-precision">Using single precision</a></li>
+    </ul>
+  </li>
+  <li><a href="#training-very-deep-network">Training very deep network</a>
+    <ul>
+      <li><a href="#shadow-buffer">Shadow buffer</a></li>
+      <li><a href="#unified-memory-allocator">Unified memory allocator</a></li>
+    </ul>
+  </li>
+</ul>
+
+<h2 id="requirements">Requirements</h2>
+
+<h3 id="hardware">Hardware</h3>
+
+<p>The following GPUs are supported:</p>
+
+<ul>
+  <li>NVIDIA GPU cards with CUDA architectures 5.0, 6.0, 7.0, 7.5, 8.0 and higher than 8.0.
+For CUDA enabled gpu cards at <a href="https://developer.nvidia.com/cuda-gpus">CUDA GPUs</a></li>
+  <li>For GPUs with unsupported CUDA architectures, or to avoid JIT compilation from PTX, or to
+use difference versions of the NVIDIA libraries, build on Linux from source code.</li>
+  <li>
+    <p>Release artifacts contain PTX code for the latest supported CUDA architecture. In case your
+architecture specific PTX is not available enable JIT PTX with instructions compiler driver <code class="language-plaintext highlighter-rouge">nvcc</code>
+<a href="https://docs.nvidia.com/cuda/cuda-compiler-driver-nvcc/index.html#gpu-compilation">GPU Compilation</a>.</p>
+
+    <blockquote>
+      <p>For example, with <code class="language-plaintext highlighter-rouge">--gpu-code</code> use actual gpu names, <code class="language-plaintext highlighter-rouge">--gpu-architecture</code> is the name of virtual
+compute architecture</p>
+
+      <div class="language-sh highlighter-rouge"><div class="highlight"><pre class="highlight"><code>nvcc SystemDS.cu <span class="nt">--gpu-architecture</span><span class="o">=</span>compute_50 <span class="nt">--gpu-code</span><span class="o">=</span>sm_50,sm_52
+</code></pre></div>      </div>
+    </blockquote>
+  </li>
+</ul>
+
+<p>Note: A disk of minimum size 30 GB is recommended.</p>
+
+<p>A minimum version of 10.2 CUDA toolkit version is recommended, for the following GPUs.</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>GPU type</th>
+      <th>Status</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>NVIDIA T4</td>
+      <td>Experimental</td>
+    </tr>
+    <tr>
+      <td>NVIDIA V100</td>
+      <td>Experimental</td>
+    </tr>
+    <tr>
+      <td>NVIDIA P100</td>
+      <td>Experimental</td>
+    </tr>
+    <tr>
+      <td>NVIDIA P4</td>
+      <td>Experimental</td>
+    </tr>
+    <tr>
+      <td>NVIDIA K80</td>
+      <td>Tested</td>
+    </tr>
+    <tr>
+      <td>NVIDIA A100</td>
+      <td>Not supported</td>
+    </tr>
+  </tbody>
+</table>
+
+<h3 id="software">Software</h3>
+
+<p>The following NVIDIA software is required to be installed in your system:</p>
+
+<p>CUDA toolkit</p>
+
+<ol>
+  <li><a href="https://www.nvidia.com/drivers">NVIDIA GPU drivers</a> - CUDA 10.2 requires &gt;= 440.33 driver. see
+<a href="https://docs.nvidia.com/deploy/cuda-compatibility/index.html">CUDA compatibility</a>.</li>
+  <li><a href="https://developer.nvidia.com/cuda-10.2-download-archive">CUDA 10.2</a></li>
+  <li><a href="https://developer.nvidia.com/cudnn">CUDNN 7.x</a></li>
+</ol>
+
+<h2 id="linux">Linux</h2>
+
+<p>One easiest way to install the NVIDIA software is with <code class="language-plaintext highlighter-rouge">apt</code> on Ubuntu. For other distributions
+refer to the <a href="https://docs.nvidia.com/cuda/cuda-installation-guide-linux/index.html">CUDA install Linux</a>.</p>
+
+<p>Note: All linux distributions may not support this. you might encounter some problems with driver
+installations.</p>
+
+<p>To check the CUDA compatible driver version:</p>
+
+<p>Install <a href="http://docs.nvidia.com/cuda/cupti/">CUPTI</a> which ships with CUDA toolkit for profiling.</p>
+
+<div class="language-sh highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nb">export </span><span class="nv">LD_LIBRARY_PATH</span><span class="o">=</span><span class="nv">$LD_LIBRARY_PATH</span>:/usr/local/cuda/extras/CUPTI/lib64
+</code></pre></div></div>
+
+<h3 id="install-cuda-with-apt">Install CUDA with apt</h3>
+
+<p>The following instructions are for installing CUDA 10.2 on Ubuntu 18.04. These instructions
+might work for other Debian-based distros.</p>
+
+<p>Note: <a href="https://wiki.ubuntu.com/UEFI/SecureBoot">Secure Boot</a> tends to complication installation.
+These instructions may not address this.</p>
+
+<h4 id="ubuntu-1804-cuda-102">Ubuntu 18.04 (CUDA 10.2)</h4>
+
+<div class="language-sh highlighter-rouge"><div class="highlight"><pre class="highlight"><code>
+<span class="c"># Add NVIDIA package repositories</span>
+<span class="c"># 1. Download the Ubuntu 18.04 driver repository</span>
+wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/cuda-ubuntu1804.pin
+<span class="c"># 2. Move the repository to preferences</span>
+<span class="nb">sudo mv </span>cuda-ubuntu1804.pin /etc/apt/preferences.d/cuda-repository-pin-600
+<span class="c"># 3. Fetch keys</span>
+<span class="nb">sudo </span>apt-key adv <span class="nt">--fetch-keys</span> https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/7fa2af80.pub
+<span class="c"># 4. add repository</span>
+<span class="nb">sudo </span>add-apt-repository <span class="s2">"deb https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/ /"</span>
+<span class="c"># 5. Update package lists</span>
+<span class="nb">sudo </span>apt-get update
+
+<span class="c"># ---</span>
+<span class="c"># 6. get the machine-learning repo</span>
+<span class="c"># this downloads the repository package but not the actual installation package</span>
+wget http://developer.download.nvidia.com/compute/machine-learning/repos/ubuntu1804/x86_64/nvidia-machine-learning-repo-ubuntu1804_1.0.0-1_amd64.deb
+
+<span class="nb">sudo </span>apt <span class="nb">install</span> ./nvidia-machine-learning-repo-ubuntu1804_1.0.0-1_amd64.deb
+<span class="nb">sudo </span>apt-get update
+
+wget http://developer.download.nvidia.com/compute/machine-learning/repos/ubuntu1804/x86_64/libcudnn7_7.6.5.32-1+cuda10.2_amd64.deb
+<span class="nb">sudo </span>apt <span class="nb">install</span> ./libcudnn7_7.6.5.32-1+cuda10.2_amd64.deb
+<span class="nb">sudo </span>apt-get update
+
+wget http://developer.download.nvidia.com/compute/machine-learning/repos/ubuntu1804/x86_64/libcudnn7-dev_7.6.5.32-1+cuda10.2_amd64.deb
+<span class="nb">sudo </span>apt <span class="nb">install</span> ./libcudnn7-dev_7.6.5.32-1+cuda10.2_amd64.deb
+<span class="nb">sudo </span>apt-get update
+
+<span class="c"># ---</span>
+
+<span class="c"># 7. Install development and runtime libraries (~4GB)</span>
+<span class="nb">sudo </span>apt-get <span class="nb">install</span> <span class="nt">--no-install-recommends</span> <span class="se">\</span>
+    cuda-10-2 <span class="se">\</span>
+    <span class="nv">libcudnn7</span><span class="o">=</span>7.6.5.32-1+cuda10.2 <span class="se">\</span>
+    libcudnn7-dev<span class="o">=</span>7.6.5.32-1+cuda10.2
+    
+<span class="c"># Reboot the system. And run `nvidia-smi` for GPU check.</span>
+</code></pre></div></div>
+
+<h4 id="installation-check">Installation check</h4>
+
+<div class="language-sh highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">$ </span>nvidia-smi
+Thu May 13 04:19:11 2021
++-----------------------------------------------------------------------------+
+| NVIDIA-SMI 465.19.01    Driver Version: 465.19.01    CUDA Version: 11.3     |
+|-------------------------------+----------------------+----------------------+
+| GPU  Name        Persistence-M| Bus-Id        Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp  Perf  Pwr:Usage/Cap|         Memory-Usage | GPU-Util  Compute M. |
+|                               |                      |               MIG M. |
+|<span class="o">===============================</span>+<span class="o">======================</span>+<span class="o">======================</span>|
+|   0  NVIDIA Tesla K80    Off  | 00000000:00:1E.0 Off |                    0 |
+| N/A   38C    P0    58W / 149W |      0MiB / 11441MiB |     98%      Default |
+|                               |                      |                  N/A |
++-------------------------------+----------------------+----------------------+
+
++-----------------------------------------------------------------------------+
+| Processes:                                                                  |
+|  GPU   GI   CI        PID   Type   Process name                  GPU Memory |
+|        ID   ID                                                   Usage      |
+|<span class="o">=============================================================================</span>|
+|  No running processes found                                                 |
++-----------------------------------------------------------------------------+
+</code></pre></div></div>
+
+<h4 id="to-run-systemds-with-cuda">To run SystemDS with CUDA</h4>
+
+<p>Pass <code class="language-plaintext highlighter-rouge">.dml</code> file with <code class="language-plaintext highlighter-rouge">-f</code> flag</p>
+
+<div class="language-sh highlighter-rouge"><div class="highlight"><pre class="highlight"><code>java <span class="nt">-Xmx4g</span> <span class="nt">-Xms4g</span> <span class="nt">-Xmn400m</span> <span class="nt">-cp</span> target/SystemDS.jar:target/lib/<span class="k">*</span>:target/SystemDS-<span class="k">*</span>.jar org.apache.sysds.api.DMLScript <span class="nt">-f</span> ../main.dml <span class="nt">-exec</span> singlenode <span class="nt">-gpu</span>
+</code></pre></div></div>
+
+<pre><code class="language-output">[ INFO] BEGIN DML run 05/14/2021 02:37:26
+[ INFO] Initializing CUDA
+[ INFO] GPU memory - Total: 11996.954624 MB, Available: 11750.539264 MB on GPUContext{deviceNum=0}
+[ INFO] Total number of GPUs on the machine: 1
+[ INFO] GPUs being used: -1
+[ INFO] Initial GPU memory: 10575485337
+
+This is SystemDS!
+
+SystemDS Statistics:
+Total execution time:           0.020 sec.
+</code></pre>
+
+<h2 id="windows">Windows</h2>
+
+<p>Install the hardware and software requirements.</p>
+
+<p>Add CUDA, CUPTI, and cuDNN installation directories to <code class="language-plaintext highlighter-rouge">%PATH%</code> environmental
+variable. Neural networks won&#8217;t run without cuDNN <code class="language-plaintext highlighter-rouge">cuDNN64_7*.dll</code>.
+See <a href="windows-source-installation">Windows install from source guide</a>.</p>
+
+<div class="language-sh highlighter-rouge"><div class="highlight"><pre class="highlight"><code>SET <span class="nv">PATH</span><span class="o">=</span>C:<span class="se">\P</span>rogram Files<span class="se">\N</span>VIDIA GPU Computing Toolkit<span class="se">\C</span>UDA<span class="se">\v</span>10.2<span class="se">\b</span><span class="k">in</span><span class="p">;</span>%PATH%
+SET <span class="nv">PATH</span><span class="o">=</span>C:<span class="se">\P</span>rogram Files<span class="se">\N</span>VIDIA GPU Computing Toolkit<span class="se">\C</span>UDA<span class="se">\v</span>10.2<span class="se">\e</span>xtras<span class="se">\C</span>UPTI<span class="se">\l</span>ib64<span class="p">;</span>%PATH%
+SET <span class="nv">PATH</span><span class="o">=</span>C:<span class="se">\P</span>rogram Files<span class="se">\N</span>VIDIA GPU Computing Toolkit<span class="se">\C</span>UDA<span class="se">\v</span>10.2<span class="se">\i</span>nclude<span class="p">;</span>%PATH%
+SET <span class="nv">PATH</span><span class="o">=</span>C:<span class="se">\t</span>ools<span class="se">\c</span>uda<span class="se">\b</span><span class="k">in</span><span class="p">;</span>%PATH%
+</code></pre></div></div>
+
+<h2 id="command-line-users">Command-line users</h2>
+
+<p>To enable the GPU backend via command-line, please provide <code class="language-plaintext highlighter-rouge">systemds-*-extra.jar</code> in the classpath and <code class="language-plaintext highlighter-rouge">-gpu</code> flag.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>spark-submit --jars systemds-*-extra.jar SystemDS.jar -f myDML.dml -gpu
+</code></pre></div></div>
+
+<p>To skip memory-checking and force all GPU-enabled operations on the GPU, please provide <code class="language-plaintext highlighter-rouge">force</code> option to the <code class="language-plaintext highlighter-rouge">-gpu</code> flag.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>spark-submit --jars systemds-*-extra.jar SystemDS.jar -f myDML.dml -gpu force
+</code></pre></div></div>
+
+<h2 id="scala-users">Scala users</h2>
+
+<p>To enable the GPU backend via command-line, please provide <code class="language-plaintext highlighter-rouge">systemds-*-extra.jar</code> in the classpath and use 
+the <code class="language-plaintext highlighter-rouge">setGPU(True)</code> method of MLContext API to enable the GPU usage.</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>spark-shell --jars systemds-*-extra.jar,SystemDS.jar
+</code></pre></div></div>
+
+<h2 id="advanced-configuration">Advanced Configuration</h2>
+
+<h3 id="using-single-precision">Using single precision</h3>
+
+<p>By default, SystemDS uses double precision to store its matrices in the GPU memory.
+To use single precision, the user needs to set the configuration property <code class="language-plaintext highlighter-rouge">sysds.floating.point.precision</code>
+to <code class="language-plaintext highlighter-rouge">single</code>. However, with exception of BLAS operations, SystemDS always performs all CPU operations
+in double precision.</p>
+
+<h3 id="training-very-deep-network">Training very deep network</h3>
+
+<h4 id="shadow-buffer">Shadow buffer</h4>
+
+<p>To train very deep network with double precision, no additional configurations are necessary.
+But to train very deep network with single precision, the user can speed up the eviction by 
+using shadow buffer. The fraction of the driver memory to be allocated to the shadow buffer can<br />
+be set by using the configuration property <code class="language-plaintext highlighter-rouge">sysds.gpu.eviction.shadow.bufferSize</code>.
+In the current version, the shadow buffer is currently not guarded by SystemDS
+and can potentially lead to OOM if the network is deep as well as wide.</p>
+
+<h4 id="unified-memory-allocator">Unified memory allocator</h4>
+
+<p>SystemDS uses CUDA&#8217;s memory allocator and performs on-demand eviction using only
+the Least Recently Used (LRU) eviction policy as per <code class="language-plaintext highlighter-rouge">sysds.gpu.eviction.policy</code>.
+To use CUDA&#8217;s unified memory allocator that performs page-level eviction instead,
+please set the configuration property <code class="language-plaintext highlighter-rouge">sysml.gpu.memory.allocator</code> to <code class="language-plaintext highlighter-rouge">unified_memory</code>.</p>
+
+    </div>
+    <!--
+
+-->
+
+
+<!-- MathJax Section -->
+<script type="text/x-mathjax-config">
+    MathJax.Hub.Config({ TeX: { equationNumbers: { autoNumber: "AMS" } } });
+</script>
+<script>
+    // Note that we load MathJax this way to work with local file (file://), HTTP and HTTPS.
+    // We could use "//cdn.mathjax...", but that won't support "file://".
+    (function(d, script) {
+        script = d.createElement('script');
+        script.type = 'text/javascript';
+        script.async = true;
+        script.onload = function() {
+            MathJax.Hub.Config({
+                tex2jax: {
+                    inlineMath: [
+                        ["$", "$"],
+                        ["\\\\(", "\\\\)"]
+                    ],
+                    displayMath: [
+                        ["$$", "$$"],
+                        ["\\[", "\\]"]
+                    ],
+                    processEscapes: true,
+                    skipTags: ['script', 'noscript', 'style', 'textarea', 'pre']
+                }
+            });
+        };
+        script.src = ('https:' == document.location.protocol ? 'https://' : 'http://') +
+            'cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML';
+        d.getElementsByTagName('head')[0].appendChild(script);
+    }(document));
+</script>
+
+</body>
+
+</html>

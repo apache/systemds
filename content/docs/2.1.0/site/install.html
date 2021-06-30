@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<!--[if lt IE 7]>      <html class="no-js lt-ie9 lt-ie8 lt-ie7"> <![endif]-->
+<!--[if IE 7]>         <html class="no-js lt-ie9 lt-ie8"> <![endif]-->
+<!--[if IE 8]>         <html class="no-js lt-ie9"> <![endif]-->
+<!--[if gt IE 8]><!-->
+<html class="no-js">
+<!--<![endif]-->
+<!--
+
+-->
+
+<head>
+    <title>SystemDS Install from source - SystemDS 2.1.0</title>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="description" content="">
+    <meta name="viewport" content="width=device-width">
+    <link rel="stylesheet" href="./../css/bootstrap.min.css">
+    <link rel="stylesheet" href="./../css/main.css">
+    <link rel="stylesheet" href="./../css/pygments-default.css">
+    <link rel="shortcut icon" href="./../img/favicon.png">
+    <script src="./../js/vendor/jquery-1.12.0.min.js"></script>
+    <script src="./../js/vendor/bootstrap.min.js"></script>
+    <script src="./../js/vendor/anchor.min.js"></script>
+    <script src="./../js/main.js"></script>
+</head>
+
+<body>
+    <!--
+
+-->
+<header class="navbar navbar-default navbar-fixed-top" id="topbar">
+    <div class="container">
+        <div class="navbar-header">
+            <div class="navbar-brand brand projectlogo">
+                <a href="https://systemds.apache.org/"><img class="logo" src="./../img/systemds-logo.png" alt="Apache SystemDS" title="Apache SystemDS" /></a>
+            </div>
+            <div class="navbar-brand brand projecttitle">
+                <a href="https://systemds.apache.org/">Apache SystemDS<sup id="trademark">™</sup></a><br />
+                <span class="version">2.1.0</span>
+            </div>
+            <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target=".navbar-collapse">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+        </div>
+        <nav class="navbar-collapse collapse">
+            <ul class="nav navbar-nav navbar-right">
+                <li class="dropdown">
+                    <a href="#" class="dropdown-toggle" data-toggle="dropdown">Overview<b class="caret"></b></a>
+                    <ul class="dropdown-menu" role="menu">
+                        <li><b>Home:</b></li>
+                        <li><a href="./../">Docs Home</a></li>
+                        <li class="divider"></li>
+                        <li><b>Running SystemDS:</b></li>
+                        <li><a href="./../site/run">Standalone Guide</a></li>
+                        <li><a href="./../site/gpu">GPU Guide</a></li>
+                        <li class="divider"></li>
+                        <li><b>Language Guides:</b></li>
+                        <li><a href="./../site/dml-language-reference.html">DML Language Reference</a></li>
+                        <li><a href="./../site/builtins-reference.html">Built-in Functions Reference</a></li>
+                        <li><a href="./../site/dml-vs-r-guide.html">DML vs R guide</a></li>
+                        <li class="divider"></li>
+                        <li><b>Algorithms:</b></li>
+                        <li><a href="./../site/algorithms-reference.html">ML Algorithms Reference</a></li>
+                        <li class="divider"></li>
+                        <li><b>Other:</b></li>
+                        <li><a href="https://github.com/apache/systemds/blob/master/CONTRIBUTING.md">Contributing to SystemDS 🡕</a></li>
+                    </ul>
+                </li>
+                <li><a href="https://github.com/apache/systemds">GitHub 🡕</a></li>
+                <li class="dropdown">
+                    <a href="#" class="dropdown-toggle" data-toggle="dropdown">API<b class="caret"></b></a>
+                    <ul class="dropdown-menu" role="menu">
+                        <li><a href="./../api/java/">Java</a></li>
+                        <li><a href="./../api/python/">Python</a></li>
+                    </ul>
+                </li>
+                <li><a href="https://issues.apache.org/jira/secure/Dashboard.jspa?selectPageId=12335852">Issues</a></li>
+            </ul>
+        </nav>
+    </div>
+</header>
+
+    <div class="container" id="content">
+        <h1 class="title">SystemDS Install from source</h1>
+        <!--
+
+-->
+
+<p>This guide helps in the install and setup of SystemDS from source code.</p>
+
+<ul>
+  <li><a href="#windows">Windows Guide</a></li>
+  <li><a href="#ubuntu-2004">Ubuntu/Linux Guide</a></li>
+  <li><a href="#mac">Mac Guide</a></li>
+</ul>
+
+<h2 id="windows">Windows</h2>
+
+<p><a href="windows-source-installation">Developer Guide</a></p>
+
+<hr />
+
+<h2 id="ubuntu-2004">Ubuntu 20.04</h2>
+
+<h3 id="java-and-maven">Java and Maven</h3>
+
+<p>First setup java and maven to compile the system note that the java version is 1.8.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nb">sudo </span>apt <span class="nb">install </span>openjdk-8-jdk-headless
+<span class="nb">sudo </span>apt <span class="nb">install </span>maven
+</code></pre></div></div>
+
+<p>Note: To update the <code class="language-plaintext highlighter-rouge">java</code> command to <code class="language-plaintext highlighter-rouge">openjdk-8</code> run:</p>
+<div class="language-sh highlighter-rouge"><div class="highlight"><pre class="highlight"><code>update-alternatives <span class="nt">--set</span> java /usr/lib/jvm/java-8-openjdk-amd64/jre/bin/java
+</code></pre></div></div>
+
+<p>Verify the install with:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>java <span class="nt">-version</span>
+mvn <span class="nt">-version</span>
+</code></pre></div></div>
+
+<p>This should return something like:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>openjdk version <span class="s2">"1.8.0_252"</span>
+OpenJDK Runtime Environment <span class="o">(</span>build 1.8.0_252-8u252-b09-1ubuntu1-b09<span class="o">)</span>
+OpenJDK 64-Bit Server VM <span class="o">(</span>build 25.252-b09, mixed mode<span class="o">)</span>
+Apache Maven 3.6.3
+Maven home: /usr/share/maven
+Java version: 1.8.0_252, vendor: Private Build, runtime: /usr/lib/jvm/java-8-openjdk-amd64/jre
+Default locale: en_US, platform encoding: UTF-8
+OS name: <span class="s2">"linux"</span>, version: <span class="s2">"5.4.0-37-generic"</span>, <span class="nb">arch</span>: <span class="s2">"amd64"</span>, family: <span class="s2">"unix"</span>
+</code></pre></div></div>
+
+<h3 id="testing">Testing</h3>
+
+<p>R is required to be install to run the test suite, since many tests are constructed to comprare output with common R packages.
+One option to install this is to follow the guide on the following link: <a href="https://linuxize.com/post/how-to-install-r-on-ubuntu-20-04/">https://linuxize.com/post/how-to-install-r-on-ubuntu-20-04/</a></p>
+
+<p>At the time of writing the commands to install R 4.0.2 are:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nb">sudo </span>apt <span class="nb">install </span>dirmngr gnupg apt-transport-https ca-certificates software-properties-common
+<span class="nb">sudo </span>apt-key adv <span class="nt">--keyserver</span> keyserver.ubuntu.com <span class="nt">--recv-keys</span> E298A3A825C0D65DFD57CBB651716619E084DAB9
+<span class="nb">sudo </span>add-apt-repository <span class="s1">'deb https://cloud.r-project.org/bin/linux/ubuntu focal-cran40/'</span>
+<span class="nb">sudo </span>apt <span class="nb">install </span>r-base
+</code></pre></div></div>
+
+<p>See <a href="#Build%20the%20project">Build the project</a> to compile the code from here.</p>
+
+<hr />
+
+<h2 id="mac">MAC</h2>
+
+<p>Prerequisite install homebrew on the device.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># To allow relative paths:</span>
+brew <span class="nb">install </span>coreutils
+<span class="c"># To install open jdk 8.</span>
+brew tap adoptopenjdk/openjdk
+brew cask <span class="nb">install </span>adoptopenjdk8
+<span class="c"># Install maven to enable compilation of SystemDS.</span>
+brew <span class="nb">install </span>maven
+</code></pre></div></div>
+
+<p>Then afterwards verify the install:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>java <span class="nt">--version</span>
+mvn <span class="nt">--version</span>
+</code></pre></div></div>
+
+<p>This should print something like:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Java version: 1.8.0_242, vendor: AdoptOpenJDK, runtime: /Library/Java/JavaVirtualMachines/adoptopenjdk-8.jdk/Contents/Home/jre
+Default locale: ru_UA, platform encoding: UTF-8
+OS name: <span class="s2">"mac os x"</span>, version: <span class="s2">"10.15.5"</span>, <span class="nb">arch</span>: <span class="s2">"x86_64"</span>, family: <span class="s2">"mac"</span>
+
+Apache Maven 3.6.3 <span class="o">(</span>cecedd343002696d0abb50b32b541b8a6ba2883f<span class="o">)</span>
+Maven home: /usr/local/Cellar/maven/3.6.3_1/libexec
+</code></pre></div></div>
+
+<p>Note that if you have multiple <strong>java</strong> versions installed then you have to change the used version to 8, on <strong>both java and javadoc</strong>. This is done by setting the environment variable JAVA_HOME to the install path of open JDK 8 :</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nb">export </span><span class="nv">JAVA_HOME</span><span class="o">=</span><span class="sb">`</span>/usr/libexec/java_home <span class="nt">-v</span> 1.8<span class="sb">`</span>
+</code></pre></div></div>
+
+<p>For running all tests <a href="https://cran.r-project.org/bin/macosx/">r-base</a> has to be installed as well since this is used as a secondary system to verify the correctness of our code, but it is not a requirement to enable building the project.</p>
+
+<p>See <a href="#Build%20the%20project">Build the project</a> to compile the code from here.</p>
+
+<hr />
+
+<h2 id="build-the-project">Build the project</h2>
+
+<p>To compile the project use:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>mvn package <span class="nt">-P</span> distribution
+</code></pre></div></div>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">[</span>INFO] <span class="nt">------------------------------------------------------------------------</span>
+<span class="o">[</span>INFO] BUILD SUCCESS
+<span class="o">[</span>INFO] <span class="nt">------------------------------------------------------------------------</span>
+<span class="o">[</span>INFO] Total <span class="nb">time</span>:  31.730 s
+<span class="o">[</span>INFO] Finished at: 2020-06-18T11:00:29+02:00
+<span class="o">[</span>INFO] <span class="nt">------------------------------------------------------------------------</span>
+</code></pre></div></div>
+
+<p>The first time you package the system it will take longer since maven will download the dependencies.
+But successive compiles should become faster.</p>
+
+<p>Now everything is setup and ready to go!
+To execute dml scripts look at <a href="run">Execute SystemDS</a></p>
+
+    </div>
+    <!--
+
+-->
+
+
+<!-- MathJax Section -->
+<script type="text/x-mathjax-config">
+    MathJax.Hub.Config({ TeX: { equationNumbers: { autoNumber: "AMS" } } });
+</script>
+<script>
+    // Note that we load MathJax this way to work with local file (file://), HTTP and HTTPS.
+    // We could use "//cdn.mathjax...", but that won't support "file://".
+    (function(d, script) {
+        script = d.createElement('script');
+        script.type = 'text/javascript';
+        script.async = true;
+        script.onload = function() {
+            MathJax.Hub.Config({
+                tex2jax: {
+                    inlineMath: [
+                        ["$", "$"],
+                        ["\\\\(", "\\\\)"]
+                    ],
+                    displayMath: [
+                        ["$$", "$$"],
+                        ["\\[", "\\]"]
+                    ],
+                    processEscapes: true,
+                    skipTags: ['script', 'noscript', 'style', 'textarea', 'pre']
+                }
+            });
+        };
+        script.src = ('https:' == document.location.protocol ? 'https://' : 'http://') +
+            'cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML';
+        d.getElementsByTagName('head')[0].appendChild(script);
+    }(document));
+</script>
+
+</body>
+
+</html>

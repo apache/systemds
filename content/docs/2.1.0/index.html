@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<!--[if lt IE 7]>      <html class="no-js lt-ie9 lt-ie8 lt-ie7"> <![endif]-->
+<!--[if IE 7]>         <html class="no-js lt-ie9 lt-ie8"> <![endif]-->
+<!--[if IE 8]>         <html class="no-js lt-ie9"> <![endif]-->
+<!--[if gt IE 8]><!-->
+<html class="no-js">
+<!--<![endif]-->
+<!--
+
+-->
+
+<head>
+    <title>SystemDS Documentation - SystemDS 2.1.0</title>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="description" content="">
+    <meta name="viewport" content="width=device-width">
+    <link rel="stylesheet" href="./css/bootstrap.min.css">
+    <link rel="stylesheet" href="./css/main.css">
+    <link rel="stylesheet" href="./css/pygments-default.css">
+    <link rel="shortcut icon" href="./img/favicon.png">
+    <script src="./js/vendor/jquery-1.12.0.min.js"></script>
+    <script src="./js/vendor/bootstrap.min.js"></script>
+    <script src="./js/vendor/anchor.min.js"></script>
+    <script src="./js/main.js"></script>
+</head>
+
+<body>
+    <!--
+
+-->
+<header class="navbar navbar-default navbar-fixed-top" id="topbar">
+    <div class="container">
+        <div class="navbar-header">
+            <div class="navbar-brand brand projectlogo">
+                <a href="https://systemds.apache.org/"><img class="logo" src="./img/systemds-logo.png" alt="Apache SystemDS" title="Apache SystemDS" /></a>
+            </div>
+            <div class="navbar-brand brand projecttitle">
+                <a href="https://systemds.apache.org/">Apache SystemDS<sup id="trademark">™</sup></a><br />
+                <span class="version">2.1.0</span>
+            </div>
+            <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target=".navbar-collapse">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+        </div>
+        <nav class="navbar-collapse collapse">
+            <ul class="nav navbar-nav navbar-right">
+                <li class="dropdown">
+                    <a href="#" class="dropdown-toggle" data-toggle="dropdown">Overview<b class="caret"></b></a>
+                    <ul class="dropdown-menu" role="menu">
+                        <li><b>Home:</b></li>
+                        <li><a href="./">Docs Home</a></li>
+                        <li class="divider"></li>
+                        <li><b>Running SystemDS:</b></li>
+                        <li><a href="./site/run">Standalone Guide</a></li>
+                        <li><a href="./site/gpu">GPU Guide</a></li>
+                        <li class="divider"></li>
+                        <li><b>Language Guides:</b></li>
+                        <li><a href="./site/dml-language-reference.html">DML Language Reference</a></li>
+                        <li><a href="./site/builtins-reference.html">Built-in Functions Reference</a></li>
+                        <li><a href="./site/dml-vs-r-guide.html">DML vs R guide</a></li>
+                        <li class="divider"></li>
+                        <li><b>Algorithms:</b></li>
+                        <li><a href="./site/algorithms-reference.html">ML Algorithms Reference</a></li>
+                        <li class="divider"></li>
+                        <li><b>Other:</b></li>
+                        <li><a href="https://github.com/apache/systemds/blob/master/CONTRIBUTING.md">Contributing to SystemDS 🡕</a></li>
+                    </ul>
+                </li>
+                <li><a href="https://github.com/apache/systemds">GitHub 🡕</a></li>
+                <li class="dropdown">
+                    <a href="#" class="dropdown-toggle" data-toggle="dropdown">API<b class="caret"></b></a>
+                    <ul class="dropdown-menu" role="menu">
+                        <li><a href="./api/java/">Java</a></li>
+                        <li><a href="./api/python/">Python</a></li>
+                    </ul>
+                </li>
+                <li><a href="https://issues.apache.org/jira/secure/Dashboard.jspa?selectPageId=12335852">Issues</a></li>
+            </ul>
+        </nav>
+    </div>
+</header>
+
+    <div class="container" id="content">
+        <h1 class="title">SystemDS Documentation</h1>
+        <!--
+
+-->
+
+<p>SystemDS is a flexible, scalable machine learning system.
+SystemDS&#8217;s distinguishing characteristics are:</p>
+
+<ol>
+  <li><strong>Algorithm customizability via R-like and Python-like languages</strong>.</li>
+  <li><strong>Multiple execution modes</strong>, including Spark MLContext, Spark Batch, Standalone, and JMLC.</li>
+  <li><strong>Automatic optimization</strong> based on data and cluster characteristics to ensure both efficiency and scalability.</li>
+</ol>
+
+<p>This version of SystemDS supports: Java 8+,  Python 3.5+, Hadoop 2.6+ (Not 3.X), and Spark 2.1+ (Not 3.X) Nvidia CUDA 10.2
+ (CuDNN 7.x) Intel MKL (&lt;=2019.x).</p>
+
+<h2 id="links">Links</h2>
+
+<p>Various forms of documentation for SystemDS are available.</p>
+
+<ul>
+  <li>a <a href="./site/dml-language-reference">DML Language Reference</a> for an list of operations possible inside SystemDS.</li>
+  <li><a href="./site/builtins-reference">Builtin Functions</a> contains a collection of builtin functions providing an high level abstraction on complex machine learning algorithms.</li>
+  <li><a href="./site/algorithms-reference">Algorithm Reference</a> contains specifics on algorithms supported in systemds.</li>
+  <li><a href="./site/entity-resolution">Entity Resolution</a> provides a collection of customizable entity resolution primitives and pipelines.</li>
+  <li><a href="./site/run">Run SystemDS</a> contains an Helloworld example along with an environment setup guide.</li>
+  <li>Instructions on python can be found at <a href="./api/python/index">Python Documentation</a></li>
+  <li>The <a href="./api/java/index">JavaDOC</a> contains internal documentation of the system source code.</li>
+  <li><a href="./site/install">Install from Source</a> guides through setup from git download to running system.</li>
+  <li>If you want to contribute take a look at <a href="https://github.com/apache/systemds/blob/master/CONTRIBUTING.md">Contributing</a></li>
+  <li><a href="./site/dml-vs-r-guide">R to DML</a> walks through the basics of converting a script from R to dml.</li>
+</ul>
+
+    </div>
+    <!--
+
+-->
+
+
+<!-- MathJax Section -->
+<script type="text/x-mathjax-config">
+    MathJax.Hub.Config({ TeX: { equationNumbers: { autoNumber: "AMS" } } });
+</script>
+<script>
+    // Note that we load MathJax this way to work with local file (file://), HTTP and HTTPS.
+    // We could use "//cdn.mathjax...", but that won't support "file://".
+    (function(d, script) {
+        script = d.createElement('script');
+        script.type = 'text/javascript';
+        script.async = true;
+        script.onload = function() {
+            MathJax.Hub.Config({
+                tex2jax: {
+                    inlineMath: [
+                        ["$", "$"],
+                        ["\\\\(", "\\\\)"]
+                    ],
+                    displayMath: [
+                        ["$$", "$$"],
+                        ["\\[", "\\]"]
+                    ],
+                    processEscapes: true,
+                    skipTags: ['script', 'noscript', 'style', 'textarea', 'pre']
+                }
+            });
+        };
+        script.src = ('https:' == document.location.protocol ? 'https://' : 'http://') +
+            'cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML';
+        d.getElementsByTagName('head')[0].appendChild(script);
+    }(document));
+</script>
+
+</body>
+
+</html>

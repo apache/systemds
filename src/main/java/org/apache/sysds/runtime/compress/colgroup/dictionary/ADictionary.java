@@ -381,9 +381,10 @@ public abstract class ADictionary {
 	 *                         columns
 	 * @param b                The values in the right hand side matrix
 	 * @param cut              The number of columns in b.
+	 * @return A new dictionary with the pre aggregated values.
 	 */
-	public abstract ADictionary preaggValuesFromDense(final int numVals, final int[] colIndexes, final int[] aggregateColumns,
-		final double[] b, final int cut);
+	public abstract ADictionary preaggValuesFromDense(final int numVals, final int[] colIndexes,
+		final int[] aggregateColumns, final double[] b, final int cut);
 
 	/**
 	 * Make a copy of the values, and replace all values that match pattern with replacement value. If needed add a new

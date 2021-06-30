@@ -27,9 +27,22 @@ import org.apache.commons.logging.LogFactory;
 public abstract class AIterator {
 	protected static final Log LOG = LogFactory.getLog(AIterator.class.getName());
 
-	protected int index = 0;
-	protected int dataIndex = 0;
-	protected int offset = 0;
+	protected int index;
+	protected int dataIndex;
+	protected int offset;
+
+	/**
+	 * Main Constructor
+	 * 
+	 * @param index     The current index that correspond to an actual value in the dictionary.
+	 * @param dataIndex The current index int the offset.
+	 * @param offset    The current index in the uncompressed representation.
+	 */
+	protected AIterator(int index, int dataIndex, int offset) {
+		this.index = index;
+		this.dataIndex = dataIndex;
+		this.offset = offset;
+	}
 
 	/**
 	 * Increment the pointers such that the both index and dataIndex is incremented to the next entry.
@@ -95,4 +108,8 @@ public abstract class AIterator {
 		return offset;
 	}
 
+	/**
+	 * Copy the iterator with the current values.
+	 */
+	public abstract AIterator clone();
 }

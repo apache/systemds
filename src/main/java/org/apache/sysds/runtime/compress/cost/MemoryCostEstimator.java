@@ -37,6 +37,8 @@ public class MemoryCostEstimator implements ICostEstimate {
 
 	@Override
 	public double getCostOfColumnGroup(CompressedSizeInfoColGroup g) {
+		if(g == null)
+			return Double.POSITIVE_INFINITY;
 		return g.getMinSize();
 	}
 

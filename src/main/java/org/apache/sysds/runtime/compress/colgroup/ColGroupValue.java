@@ -534,23 +534,7 @@ public abstract class ColGroupValue extends ColGroupCompressed implements Clonea
 		return ret;
 	}
 
-	/**
-	 * Pre aggregate for left Multiplication
-	 * 
-	 * @param m  The matrixBlock to pre aggregate
-	 * @param rl Start row
-	 * @param ru End row
-	 * @return The Pre aggregated values contained in a MatrixBlock
-	 */
-	protected final MatrixBlock preAggregate(MatrixBlock m, int rl, int ru) {
-		MatrixBlock preAgg = allocatePreAggregate(m, rl, ru);
-		preAggregate(m, preAgg, rl, ru);
-		preAgg.recomputeNonZeros();
-		return preAgg;
-	}
-
-	public final MatrixBlock allocatePreAggregate(MatrixBlock m, int rl, int ru) {
-		final int numVals = getNumValues();
+	public static final MatrixBlock allocatePreAggregate(MatrixBlock m, int numVals, int rl, int ru) {
 		final int lhsRows = ru - rl;
 		final double[] vals = allocDVector(lhsRows * numVals, true);
 		final DenseBlock retB = new DenseBlockFP64(new int[] {lhsRows, numVals}, vals);
@@ -1060,8 +1044,11 @@ public abstract class ColGroupValue extends ColGroupCompressed implements Clonea
 	@Override
 	public final void leftMultByMatrix(MatrixBlock matrix, MatrixBlock result, int rl, int ru) {
 		try {
+			final int numVals = getNumValues();
 			// Pre aggregate the matrix into same size as dictionary
-			MatrixBlock preAgg = preAggregate(matrix, rl, ru);
+			MatrixBlock preAgg  = allocatePreAggregate(matrix,numVals, rl, ru);
+			preAggregate(matrix, preAgg, rl, ru);
+			preAgg.recomputeNonZeros();
 			MatrixBlock tmpRes = leftMultByPreAggregateMatrix(preAgg);
 			addMatrixToResult(tmpRes, result, rl, ru);
 		}
@@ -1072,8 +1059,6 @@ public abstract class ColGroupValue extends ColGroupCompressed implements Clonea
 
 	public final MatrixBlock leftMultByPreAggregateMatrix(MatrixBlock preAgg) {
 
-		// Get dictionary.
-		MatrixBlock dictM = forceMatrixBlockDictionary().getMatrixBlock();
 
 		// Allocate temporary matrix to multiply into.
 		final int tmpCol = _colIndexes.length;
@@ -1089,13 +1074,23 @@ public abstract class ColGroupValue extends ColGroupCompressed implements Clonea
 			tmpRes = new MatrixBlock(tmpRow, tmpCol, false);
 		}
 
+		return leftMultByPreAggregateMatrix(preAgg, tmpRes);
+	}
+
+
+	public final MatrixBlock leftMultByPreAggregateMatrix(MatrixBlock preAgg, MatrixBlock tmpRes){
+		// Get dictionary.
+		MatrixBlock dictM = forceMatrixBlockDictionary().getMatrixBlock();
 		LibMatrixMult.matrixMult(preAgg, dictM, tmpRes);
 		return tmpRes;
 	}
 
 	private void leftMultByMatrix(MatrixBlock matrix, MatrixBlock result, int[] outputRows) {
 		try {
-			MatrixBlock preAgg = preAggregate(matrix, 0, matrix.getNumRows());
+			final int numVals = getNumValues();
+			MatrixBlock preAgg  = allocatePreAggregate(matrix, numVals, 0, matrix.getNumRows());
+			preAggregate(matrix, preAgg, 0, matrix.getNumRows());
+			preAgg.recomputeNonZeros();
 			MatrixBlock tmpRes = leftMultByPreAggregateMatrix(preAgg);
 			addMatrixToResult(tmpRes, result, outputRows);
 

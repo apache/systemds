@@ -94,4 +94,8 @@ public class MapToInt extends AMapToData {
 			data[i] = in.readInt();
 		return new MapToInt(unique, data);
 	}
+
+	public int[] getInts(){
+		return _data;
+	}
 }

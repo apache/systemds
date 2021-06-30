@@ -20,6 +20,9 @@ package org.apache.sysds.runtime.compress.colgroup.offset;
 
 import java.io.DataOutput;
 import java.io.IOException;
+import java.lang.ref.SoftReference;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -36,6 +39,7 @@ import org.apache.commons.logging.LogFactory;
 public abstract class AOffset {
 
 	protected static final Log LOG = LogFactory.getLog(AOffset.class.getName());
+	protected SoftReference<Map<Integer, AIterator>> skipIterators;
 
 	/**
 	 * Get an iterator of the offsets.
@@ -51,8 +55,24 @@ public abstract class AOffset {
 	 * @return AIterator that iterate through index and dictionary offset values.
 	 */
 	public AIterator getIterator(int row) {
+		if(skipIterators != null) {
+			Map<Integer, AIterator> sk = skipIterators.get();
+			if(sk != null && sk.containsKey(row))
+				return sk.get(row).clone();
+		}
+
 		AIterator it = getIterator();
 		it.skipTo(row);
+
+		if(skipIterators != null && skipIterators.get() != null) {
+			Map<Integer, AIterator> sk = skipIterators.get();
+			sk.put(row, it.clone());
+		}
+		else {
+			Map<Integer, AIterator> nsk = new HashMap<Integer, AIterator>();
+			nsk.put(row, it.clone());
+			skipIterators = new SoftReference<>(nsk);
+		}
 		return it;
 	}
 

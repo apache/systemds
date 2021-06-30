@@ -19,11 +19,25 @@
 #
 #-------------------------------------------------------------
 
-source("nn/layers/affineForwardPass.dml") as ff_pass
+# This builtin function makes prediction given data and trained feedforward neural network model
+#
+# INPUT PARAMETERS:
+# --------------------------------------------------------------------------------------------
+# NAME      TYPE           DEFAULT   MEANING
+# --------------------------------------------------------------------------------------------
+# Model     List[unknown]   ---      Trained ff neural network model
+# X         Matrix[Double]  ---      Data used for making predictions
+# --------------------------------------------------------------------------------------------
+# OUTPUT: 
+# pred      Matrix[Double]  ---      Predicted value
+#
+
+
+source("nn/layers/feedForward.dml") as ff_pass
 
 s_ffPredict = function(List[unknown] model, Matrix[double] X) 
-    return (Matrix[double] prediction) {
-      out = ff_pass::affineForwardPass(X, model)
-      out_len = length(out)
-      prediction = as.matrix(out[out_len])
-    }
+  return (Matrix[double] pred) {
+  out = ff_pass::feedForward(X, model)
+  out_len = length(out)
+  pred = as.matrix(out[out_len])
+}

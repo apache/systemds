@@ -96,7 +96,6 @@ Then setup the data
 
 .. code-block:: python
 
-    from systemds.operator import Matrix
     X_ds = sds.from_numpy(X)
     Y_ds = sds.from_numpy( Y)
 
@@ -210,12 +209,12 @@ this makes SystemDS responsible for adding the 1 to each value.
 
     with SystemDSContext() as sds:
         # Train Data
-        X = Matrix(sds, d.get_train_data().reshape((60000, 28*28)))
-        Y = Matrix(sds, d.get_train_labels()) + 1.0
+        X = sds.from_numpy(d.get_train_data().reshape((60000, 28*28)))
+        Y = sds.from_numpy(d.get_train_labels()) + 1.0
         bias = multiLogReg(X, Y, maxi=30)
         # Test data
-        Xt = Matrix(sds, d.get_test_data().reshape((10000, 28*28)))
-        Yt = Matrix(sds, d.get_test_labels()) + 1.0
+        Xt = sds.from_numpy(d.get_test_data().reshape((10000, 28*28)))
+        Yt = sds.from_numpy(d.get_test_labels()) + 1.0
         [m, y_pred, acc] = multiLogRegPredict(Xt, bias, Yt).compute()
 
     print(acc)

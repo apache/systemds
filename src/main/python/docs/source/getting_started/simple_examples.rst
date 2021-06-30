@@ -90,7 +90,7 @@ One example of this is l2SVM, a high level functions for Data-Scientists. Let's 
 
 .. code-block:: python
 
-  # Import numpy and SystemDS matrix
+  # Import numpy and SystemDS
   import numpy as np
   from systemds.context import SystemDSContext
   from systemds.operator.algorithm import l2svm

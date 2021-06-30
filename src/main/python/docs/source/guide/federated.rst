@@ -67,9 +67,8 @@ The aggregated sum using federated instructions in python SystemDS is done as fo
 
 .. code-block:: python
 
-  # Import numpy and SystemDS federated
+  # Import numpy and SystemDS
   import numpy as np
-  from systemds.matrix import Federated
   from systemds.context import SystemDSContext
 
   # Create a federated matrix
@@ -83,7 +82,7 @@ The aggregated sum using federated instructions in python SystemDS is done as fo
   address = "localhost:8001/temp/test.csv"
 
   with SystemDSContext() as sds:
-    fed_a = Federated(sds, [address], [dims])
+    fed_a = sds.federated(sds, [address], [dims])
     # Sum the federated matrix and call compute to execute
     print(fed_a.sum().compute())
     # Result should be 45.
@@ -107,7 +106,6 @@ Once all three workers are up and running we can leverage all three in the follo
 
 .. code-block:: python
 
-  # Import numpy and SystemDS federated
   import numpy as np
   from systemds.context import SystemDSContext
 

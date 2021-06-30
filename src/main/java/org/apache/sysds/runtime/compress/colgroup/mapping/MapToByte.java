@@ -94,4 +94,8 @@ public class MapToByte extends AMapToData {
 			data[i] = in.readByte();
 		return new MapToByte(unique, data);
 	}
+
+	public byte[] getBytes(){
+		return _data;
+	}
 }

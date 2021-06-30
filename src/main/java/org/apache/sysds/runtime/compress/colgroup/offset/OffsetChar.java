@@ -124,7 +124,11 @@ public class OffsetChar extends AOffset {
 	private class IterateCharOffset extends AIterator {
 
 		private IterateCharOffset() {
-			offset = offsetToFirst;
+			super(0, 0, offsetToFirst);
+		}
+
+		private IterateCharOffset(int index, int dataIndex, int offset) {
+			super(index, dataIndex, offset);
 		}
 
 		@Override
@@ -150,6 +154,11 @@ public class OffsetChar extends AOffset {
 			return index <= offsets.length;
 		}
 
+
+		@Override
+		public IterateCharOffset clone() {
+			return new IterateCharOffset(index, dataIndex, offset);
+		}
 	}
 
 }

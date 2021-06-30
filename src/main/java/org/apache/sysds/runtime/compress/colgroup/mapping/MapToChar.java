@@ -95,4 +95,8 @@ public class MapToChar extends AMapToData {
 		return new MapToChar(unique, data);
 	}
 
+	public char[] getChars(){
+		return _data;
+	}
+
 }

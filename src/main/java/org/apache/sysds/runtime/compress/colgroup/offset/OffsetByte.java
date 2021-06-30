@@ -123,7 +123,11 @@ public class OffsetByte extends AOffset {
 	private class IterateByteOffset extends AIterator {
 
 		private IterateByteOffset() {
-			offset = offsetToFirst;
+			super(0, 0, offsetToFirst);
+		}
+
+		private IterateByteOffset(int index, int dataIndex, int offset) {
+			super(index, dataIndex, offset);
 		}
 
 		@Override
@@ -148,6 +152,11 @@ public class OffsetByte extends AOffset {
 		@Override
 		public boolean hasNext() {
 			return index <= offsets.length;
+		}
+
+		@Override
+		public IterateByteOffset clone() {
+			return new IterateByteOffset(index, dataIndex, offset);
 		}
 	}
 }

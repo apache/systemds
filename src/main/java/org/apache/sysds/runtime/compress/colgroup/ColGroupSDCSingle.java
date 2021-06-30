@@ -217,8 +217,34 @@ public class ColGroupSDCSingle extends ColGroupValue {
 	}
 
 	@Override
-	public void preAggregateDense(MatrixBlock m, MatrixBlock preAgg, int rl, int ru, int vl, int vu){
-		throw new NotImplementedException();
+	public void preAggregateDense(MatrixBlock m, MatrixBlock preAgg, int rl, int ru, int cl, int cu){
+		final double[] mV = m.getDenseBlockValues();
+		final double[] preAV = preAgg.getDenseBlockValues();
+		final int numVals = getNumValues();
+
+		final int blockSize = 2000;
+		for(int block = cl; block < cu; block += blockSize) {
+			final int blockEnd = Math.min(block + blockSize, cu);
+			final AIterator itStart = _indexes.getIterator(block);
+			for(int rowLeft = rl, offOut = 0; rowLeft < ru; rowLeft++, offOut += numVals) {
+				final int offLeft = rowLeft * _numRows;
+				final int def = offOut + numVals - 1;
+				final AIterator it = itStart.clone();
+				int rc = 0;
+				for(; rc < blockEnd && it.value() < blockEnd && it.hasNext(); rc++) {
+					final int pointer = it.value();
+					for(; rc < pointer && rc < blockEnd; rc++) {
+						preAV[def] += mV[offLeft + rc];
+					}
+					preAV[offOut] += mV[offLeft + rc];
+					it.next();
+				}
+
+				for(; rc < blockEnd; rc++) {
+					preAV[def] += mV[offLeft + rc];
+				}
+			}
+		}
 	}
 
 	private void preAggregateDense(MatrixBlock m, MatrixBlock preAgg, int rl, int ru) {

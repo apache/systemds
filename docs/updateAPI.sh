@@ -20,6 +20,9 @@
 #
 #-------------------------------------------------------------
 
+# stop the script at first error
+set -e
+
 curFolder=${PWD##*/}
 
 if [ $curFolder != "docs" ]; then
@@ -49,7 +52,15 @@ else
     find . -type f -exec sed -i 's/_static/static/g' {} +
     mv _sources sources
     find . -type f -exec sed -i 's/_sources/sources/g' {} +
-    [[ -f "_images" ]] && mv _images images
-    find . -type f -exec sed -i 's/_images/images/g' {} +
+    
+    if [[ -d "_images" ]]
+    then
+      mv _images images
+      find . -type f -exec sed -i 's/_images/images/g' {} +
+    fi
+    
     cd ../../
 fi
+
+exit 0
+

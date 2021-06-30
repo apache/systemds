@@ -10,10 +10,10 @@ source("nn/layers/max_pool2d_builtin.dml") as max_pool2d
 source("nn/layers/relu.dml") as relu
 source("nn/layers/softmax.dml") as softmax
 source("nn/optim/sgd_nesterov.dml") as sgd_nesterov
+source("nn/optim/sgd.dml") as sgd
 source("nn/layers/lenetForwardPass.dml") as lenet_fw
 
 m_lenetTrain = function(Matrix[Double] X, Matrix[Double] Y,
-                 Matrix[Double] X_val, Matrix[Double] Y_val,
                  Integer C, Integer Hin, Integer Win, Integer batch_size=64, Integer epochs=20, 
                  Double lr=0.01, Double mu=0.9, Double decay=0.95, Double lambda=5e-04,
                  Boolean param_server=FALSE, Integer workers=0, String utype="ASP", 
@@ -138,7 +138,7 @@ m_lenetTrain = function(Matrix[Double] X, Matrix[Double] Y,
    }
 }
 
-feed_backward = function(Matrix[Double] X, Matrix[Double] y, Integer C, Integer Hin, Integer Win, Double lambda
+feed_backward = function(Matrix[Double] X, Matrix[Double] y, Integer C, Integer Hin, Integer Win, Double lambda,
                         Matrix[Double] W1, Matrix[Double] b1,
                         Matrix[Double] W2, Matrix[Double] b2,
                         Matrix[Double] W3, Matrix[Double] b3,
@@ -213,7 +213,7 @@ Matrix[double] features, Matrix[double] labels)
         
         lambda = as.scalar(hyperparams["lambda"])
 
-        [dW1, db1, dW2, db2, dW3, db3, dW4, db4] = feed_backward(features, labels, as.scalar(model["C"]), as.scalar(model["Hin"]), as.scalar(model["Win"]), lambda
+        [dW1, db1, dW2, db2, dW3, db3, dW4, db4] = feed_backward(features, labels, as.scalar(model["C"]), as.scalar(model["Hin"]), as.scalar(model["Win"]), lambda,
                                                                 as.matrix(model["W1"]), as.matrix(model["b1"]), as.matrix(model["W2"]), as.matrix(model["b2"]), 
                                                                 as.matrix(model["W3"]), as.matrix(model["b3"]), as.matrix(model["W4"]), as.matrix(model["b4"]),
                                                                 outc1, Houtc1, Woutc1, outr1, outp1, Houtp1, Woutp1, outc2, Houtc2, Woutc2, outr2, outp2, Houtp2, Woutp2, 

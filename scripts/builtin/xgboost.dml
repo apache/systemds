@@ -95,26 +95,27 @@ calculateNewPredictions = function(Matrix[Double] X, Matrix[Double] current_pred
 getOutputValueForEntry = function(Matrix[Double] row_vector, Matrix[Double] new_M, Matrix[Double] current_node)
     return (Double output_value) {
     assert(nrow(row_vector) == 1)
+    assert(as.scalar(current_node[1,]) == 1)
 
     printMatrix(row_vector, "rowvector")
-    printMatrix(current_node, "root node for the current tree ")
+    cur_node_index = 1 # cant take the node id because its diff to the index
 
     # go over one tree and finde output value
     while(as.scalar(current_node[5,]) != 0.0) # until leaf
     {
-
-      cur_node_id = as.scalar(current_node[1,])
       used_feature = as.scalar(current_node[4,])
       feature_is_scalar = as.scalar(current_node[5,]) == 1
       if(feature_is_scalar) #SCALAR values
       {
         if(as.scalar(row_vector[,used_feature]) < as.scalar(current_node[6,])) # go left
         {
-          current_node = new_M[,cur_node_id + as.scalar(current_node[3,])]
+          cur_node_index = (cur_node_index + as.scalar(current_node[3,]))
+          current_node = new_M[,cur_node_index]
         }
         else #  go right
         {
-          current_node = new_M[,cur_node_id + as.scalar(current_node[3,]) + 1]
+          cur_node_index = cur_node_index + as.scalar(current_node[3,]) + 1
+          current_node = new_M[,cur_node_index]
         }
       }
       else # CATEGORICAL values # todo maybe vereinfachen
@@ -122,15 +123,16 @@ getOutputValueForEntry = function(Matrix[Double] row_vector, Matrix[Double] new_
         assert(as.scalar(current_node[5,]) == 2)
         if(as.scalar(row_vector[,used_feature]) == 1) # go left
         {
-            current_node = new_M[, cur_node_id + as.scalar(current_node[3,])]
+            cur_node_index = (cur_node_index + as.scalar(current_node[3,]))
+            current_node = new_M[,cur_node_index]
         }
         else # go right
         {
             assert(as.scalar(row_vector[,used_feature]) == 0)
-            current_node = new_M[,cur_node_id + as.scalar(current_node[3,]) + 1]
+            cur_node_index = cur_node_index + as.scalar(current_node[3,]) + 1
+            current_node = new_M[,cur_node_index]
         }
       }
-
     }
 
     output_value = as.scalar(current_node[6,])

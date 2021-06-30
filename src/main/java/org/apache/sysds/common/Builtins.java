@@ -165,6 +165,8 @@ public enum Builtins {
 	L2SVMPREDICT("l2svmPredict", true),
 	LASSO("lasso", true),
 	LENGTH("length", false),
+	LENET_TRAIN("lenetTrain", true),
+	LENET_PREDICT("lenetPredict", true),
 	LINEAGE("lineage", false),
 	LIST("list", false),  //note: builtin and parbuiltin
 	LM("lm", true),

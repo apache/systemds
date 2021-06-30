@@ -49,7 +49,7 @@ else
     find . -type f -exec sed -i 's/_static/static/g' {} +
     mv _sources sources
     find . -type f -exec sed -i 's/_sources/sources/g' {} +
-    mv _images images
+    [[ -f "_images" ]] && mv _images images
     find . -type f -exec sed -i 's/_images/images/g' {} +
     cd ../../
 fi

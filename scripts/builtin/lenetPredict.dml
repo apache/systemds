@@ -1,3 +1,4 @@
+# Imports
 source("nn/layers/lenetForwardPass.dml") as lenet_fw
 
 m_lenetPredict = function(matrix[double] X, int C, int Hin, int Win,
@@ -31,7 +32,36 @@ m_lenetPredict = function(matrix[double] X, int C, int Hin, int Win,
    *  - probs: Class probabilities, of shape (N, K).
    */
 
-    print("LeNet Predict")
-    ret = lenet_fw::lenetForward(5)
-    probs = matrix(0, rows=5, cols=3)
+   N = nrow(X)
+
+  # Network:
+  # conv1 -> relu1 -> pool1 -> conv2 -> relu2 -> pool2 -> affine3 -> relu3 -> affine4 -> softmax
+  Hf = 5  # filter height
+  Wf = 5  # filter width
+  stride = 1
+  pad = 2  # For same dimensions, (Hf - stride) / 2
+
+  F1 = nrow(W1)  # num conv filters in conv1
+  F2 = nrow(W2)  # num conv filters in conv2
+  N3 = ncol(W3)  # num nodes in affine3
+  K = ncol(W4)  # num nodes in affine4, equal to number of target dimensions (num classes)
+
+  # Compute predictions over mini-batches
+  probs = matrix(0, rows=N, cols=K)
+  batch_size = 64
+  iters = ceil(N / batch_size)
+  for(i in 1:iters) {
+    # Get next batch
+    beg = ((i-1) * batch_size) %% N + 1
+    end = min(N, beg + batch_size - 1)
+    X_batch = X[beg:end,]
+
+    [outc1, Houtc1, Woutc1, outr1, outp1, 
+      Houtp1, Woutp1, outc2, Houtc2, Woutc2, 
+      outr2, outp2, Houtp2, Woutp2, 
+      outa3, outr3, outd3, maskd3, outa4, probs_batch] = lenet_fw::lenetForward(X_batch, C, Hin, Win, W1, b1, W2, b2, W3, b3, W4, b4)
+
+    # Store predictions
+    probs[beg:end,] = probs_batch
+  }
 }

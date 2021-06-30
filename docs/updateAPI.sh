@@ -39,7 +39,7 @@ else
     rm -r api/python
     mkdir api/python
     cd ../src/main/python/docs
-    rm -r build
+    rm -f -r build
     make html
     cd ../../../../
     cp -r src/main/python/docs/build/html/* docs/api/python

@@ -1,16 +1,16 @@
 # INPUT         PARAMETERS:
 # ---------------------------------------------------------------------------------------------
-# NAME          TYPE     DEFAULT      MEANING
+# NAME          TYPE             DEFAULT      MEANING
 # ---------------------------------------------------------------------------------------------
-# X             String   ---          Location to read feature matrix X; note that X needs to be both recoded and dummy coded
-# Y 			String   ---		  Location to read label matrix Y; note that Y needs to be both recoded and dummy coded
-# R   	  		String   " "	      Location to read the matrix R(nx1) which for each feature in X contains the following information
-#										- R[,2]: 1 (scalar feature)
-#										- R[,1]: 2 (categorical feature)
-# num_trees     Integer  10           Number of trees to be created in the xgboost model
-# learning_rate Double   0.3          alias: eta. After each boosting step the learning rate controls the weights of the new predictions
-# max_depth     Integer  6            Maximum depth of a tree. Increasing this value will make the model more complex and more likely to overfit
-# lambda        Double   0.0
+# X             Matrix[Double]   ---          Location to read feature matrix X; note that X needs to be both recoded and dummy coded
+# Y 			Matrix[Double]   ---		  Location to read label matrix Y; note that Y needs to be both recoded and dummy coded
+# R   	  		Matrix[Double]   " "	      Location to read the matrix R(nx1) which for each feature in X contains the following information
+#										        - R[,2]: 1 (scalar feature)
+#										        - R[,1]: 2 (categorical feature)
+# num_trees     Integer          10           Number of trees to be created in the xgboost model
+# learning_rate Double            0.3         alias: eta. After each boosting step the learning rate controls the weights of the new predictions
+# max_depth     Integer           6           Maximum depth of a tree. Increasing this value will make the model more complex and more likely to overfit
+# lambda        Double            0.0         L2 regularization term on weights. Increasing this value will make model more conservative and reduce amount of leaves of a tree
 # ---------------------------------------------------------------------------------------------
 
 # ---------------------------------------------------------------------------------------------

@@ -198,10 +198,10 @@ public class RewriteFederatedExecution extends HopRewriteRule {
 					child.setFedOut(strategy);
 			}
 
-			if ( ( ( strategy.isForcedFederated() ) && isFedInstSupportedHop(this) )
+			if ( ( ( strategy.isForcedFederated() ) && isFedInstSupportedHop(this) && isFOUTSupported(associatedHop) )
 				|| ( strategy.isForcedLocal() && isFedInstSupportedHop(this)
 				&& (associatedHop.getPrivacy() == null
-				|| ( associatedHop.getPrivacy() != null && !associatedHop.getPrivacy().hasConstraints() ) )) )
+				|| ( associatedHop.getPrivacy() != null && !associatedHop.getPrivacy().hasConstraints() ) ) ) )
 				federatedOutput = strategy;
 			else if ( strategy.isForcedLocal() && isFedInstSupportedHop(this)
 				&& ( associatedHop.getPrivacy() != null && associatedHop.getPrivacy().hasConstraints() ) )
@@ -239,9 +239,24 @@ public class RewriteFederatedExecution extends HopRewriteRule {
 			//Quick version by adding one if it is FOUT:
 			if ( federatedOutput == FEDInstruction.FederatedOutput.FOUT)
 				return 1;
-			else
-				return 0;
+			else if ( federatedOutput == FEDInstruction.FederatedOutput.LOUT ){
+				long cellCount = associatedHop.getDim1()*associatedHop.getDim2();
+				System.out.println(-cellCount);
+				return -cellCount;
+			} else return 0;
 		}
+	}
+
+	/**
+	 * Checks to see if the associatedHop supports FOUT.
+	 * @param associatedHop for which FOUT support is checked
+	 * @return true if FOUT is supported by the associatedHop
+	 */
+	private boolean isFOUTSupported(Hop associatedHop){
+		// If the output of AggUnaryOp is a scalar, the operation cannot be FOUT
+		if ( associatedHop instanceof AggUnaryOp )
+			return !associatedHop.isScalar();
+		return true;
 	}
 
 	/**
@@ -257,14 +272,9 @@ public class RewriteFederatedExecution extends HopRewriteRule {
 			&& node.children.stream().noneMatch(c -> c.federatedOutput == FEDInstruction.FederatedOutput.FOUT) )
 			return false;
 
-		// If the output of AggUnaryOp is a scalar, the operation cannot be FOUT
-		// TODO: Can still be LOUT, so this check should be moved so that FOUT/LOUT strategy can be checked
-		if ( hop instanceof AggUnaryOp )
-			return hop.dimsKnown() && hop.getDim1() > 1 && hop.getDim2() > 1;
-
 		// The following operations are supported given that the above conditions have not returned already
 		return ( hop instanceof AggBinaryOp || hop instanceof BinaryOp || hop instanceof ReorgOp
-			 || hop instanceof TernaryOp || hop instanceof DataOp );
+			 || hop instanceof AggUnaryOp || hop instanceof TernaryOp || hop instanceof DataOp );
 	}
 	
 	private void visitHop(Hop hop){

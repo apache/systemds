@@ -10,6 +10,7 @@
 # num_trees     Integer  10           Number of trees to be created in the xgboost model
 # learning_rate Double   0.3          alias: eta. After each boosting step the learning rate controls the weights of the new predictions
 # max_depth     Integer  6            Maximum depth of a tree. Increasing this value will make the model more complex and more likely to overfit
+# lambda        Double   0.0
 # ---------------------------------------------------------------------------------------------
 
 # ---------------------------------------------------------------------------------------------
@@ -27,7 +28,7 @@
 # -------------------------------------------------------------------------------------------
 
 m_xgboost = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] R,
-  Integer num_trees = 2, Double learning_rate = 0.3, Integer max_depth = 6)
+  Integer num_trees = 2, Double learning_rate = 0.3, Integer max_depth = 6, Double lambda = 0.0)
   return (Matrix[Double] M) {
   print("[DEBUG] inside xgboost")
 
@@ -42,7 +43,7 @@ m_xgboost = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] R,
   tree_id = 1
   while(tree_id < num_trees) # todo maybe implement early stopping
   {
-    new_M = buildOneTree(X, y, R, max_depth, current_prediction, tree_id)
+    new_M = buildOneTree(X, y, R, max_depth, current_prediction, tree_id, lambda)
 
     # in current prediction all previous trees are considered, so we only add the current tree to calculate new predictions
     current_prediction = calculateNewPredictions(X, current_prediction, learning_rate, new_M)
@@ -129,7 +130,7 @@ getOutputValueForEntry = function(Matrix[Double] row_vector, Matrix[Double] new_
 # INPUT:    prediction: nx1 vector, my current predictions for my target value y
 # INPUT:    tree_id: The current tree id, starting at 1
 # OUTPUT:   M: the current M matrix of this tree
-buildOneTree = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] R, Integer max_depth, Matrix[Double] prediction, Double tree_id)
+buildOneTree = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] R, Integer max_depth, Matrix[Double] prediction, Double tree_id, Double lambda)
   return (Matrix[Double] M) {
 
   M = matrix(0,rows=6,cols=0)
@@ -174,9 +175,9 @@ buildOneTree = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] R, In
 
       if(type == 1.0) # SCALAR
       {
-        similarity_score = calculateSimilarityScore(residual_matrix)
+        similarity_score = calculateSimilarityScore(residual_matrix, lambda)
 
-        [best_split_threshold, best_gain] = findBestSplit(curr_X[,best_feature_index], similarity_score)
+        [best_split_threshold, best_gain] = findBestSplit(curr_X[,best_feature_index], similarity_score, lambda)
         has_child = best_gain > 0 # if the gain is < 0, the split is worse than the current node
         print("gain at this split " + best_gain)
       }
@@ -433,7 +434,7 @@ findBestFeature = function(Matrix[Double] X, Matrix[Double] y, boolean verbose =
 #-----------------------------------------------------------------------------------------------------------------------
 # INPUT:    one_featureX: a 1xn matrix (one feature with all values)
 # OUTPUT:   best_split: the best split (highest gain indicates best splitting of datasets)
-findBestSplit = function(Matrix[Double] one_featureX, Double sim_score_parent)
+findBestSplit = function(Matrix[Double] one_featureX, Double sim_score_parent, Double lambda)
   return (Double best_split, Double best_gain)
 {
     assert(ncol(one_featureX) == 1)
@@ -457,8 +458,8 @@ findBestSplit = function(Matrix[Double] one_featureX, Double sim_score_parent)
         # printMatrix(right, "right matrix")
 
         # calculate similarity score for that split and calculate gain
-        sim_score_left = calculateSimilarityScore(left)
-        sim_score_right = calculateSimilarityScore(right)
+        sim_score_left = calculateSimilarityScore(left, lambda)
+        sim_score_right = calculateSimilarityScore(right, lambda)
         # printDebug("sim score left " + toString(sim_score_left) + "   sim score right " + toString(sim_score_right))
         current_gain = sim_score_left + sim_score_right - sim_score_parent
         # printDebug("current gain " + toString(current_gain))
@@ -565,8 +566,8 @@ splitMatrixByCategory = function(Matrix[Double] curr_X, Matrix[Double] X) return
 #-----------------------------------------------------------------------------------------------------------------------
 # INPUT:    row_vector: a 1xn matrix (one feature with all residuals)
 # OUTPUT:   similarity_score: the similarity score of the residuals
-calculateSimilarityScore = function (matrix[Double] row_vector) return (Double similarity_score) {
-  lambda = 0.0; # TODO
+calculateSimilarityScore = function (matrix[Double] row_vector, Double lambda) return (Double similarity_score) {
+  # lambda = 0.0; # TODO
   similarity_score = (sum(row_vector)^2) / (nrow(row_vector) + lambda);
   #printDebug("Calculated similarity score: " + similarity_score);
 }

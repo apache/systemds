@@ -66,6 +66,37 @@ The Documentation is separated into different parts by sub folders.
 To update the API documentation run the `updateAPI.sh` file.
 Note that you have to install both the Java and Python -doc dependencies.
 
+#### Linux
+
+1. Install [Sphinx](https://pypi.org/project/Sphinx/) and [sphinx_rtd_theme](https://pypi.org/project/sphinx-rtd-theme/).
+
+```bash
+pip install Sphinx
+pip install sphinx-rtd-theme
+```
+
+2. After that, install Python dependencies.
+
+```bash
+pip install numpy pandas py4j
+```
+
+and install any other missing packages.
+
+3. Make sure Maven and Java 8 are installed.
+
+```bash
+mvn --version
+```
+
+Note: After Java 8, `jdk.tools:jdk.tools:jar` are [removed from jdk](https://openjdk.java.net/jeps/220#:~:text=rt.jar%20and%20tools.jar)
+
+Now, update the API docs with
+
+```bash
+./updateAPI.sh
+```
+
 ## Mac Install
 
 Jekyll (and optionally Pygments) can be installed on the Mac OS in the following manner.

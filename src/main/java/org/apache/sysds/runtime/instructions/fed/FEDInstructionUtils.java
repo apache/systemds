@@ -232,12 +232,12 @@ public class FEDInstructionUtils {
 				fedinst = QuaternaryFEDInstruction.parseInstruction(instruction.getInstructionString());
 		}
 		else if(inst instanceof SpoofCPInstruction) {
-			SpoofCPInstruction instruction = (SpoofCPInstruction) inst;
-			Class<?> scla = instruction.getOperatorClass().getSuperclass();
-			if(((scla == SpoofCellwise.class || scla == SpoofMultiAggregate.class
-				|| scla == SpoofOuterProduct.class) && instruction.isFederated(ec))
-				|| (scla == SpoofRowwise.class && instruction.isFederated(ec, FType.ROW))) {
-				fedinst = SpoofFEDInstruction.parseInstruction(instruction.getInstructionString());
+			SpoofCPInstruction ins = (SpoofCPInstruction) inst;
+			Class<?> scla = ins.getOperatorClass().getSuperclass();
+			if(((scla == SpoofCellwise.class || scla == SpoofMultiAggregate.class || scla == SpoofOuterProduct.class)
+					&& SpoofFEDInstruction.isFederated(ec, ins.getInputs(), scla))
+				|| (scla == SpoofRowwise.class && SpoofFEDInstruction.isFederated(ec, FType.ROW, ins.getInputs(), scla))) {
+				fedinst = SpoofFEDInstruction.parseInstruction(ins.getInstructionString());
 			}
 		}
 		else if(inst instanceof CtableCPInstruction) {
@@ -342,11 +342,11 @@ public class FEDInstructionUtils {
 				fedinst = QuaternaryFEDInstruction.parseInstruction(instruction.getInstructionString());
 		}
 		else if(inst instanceof SpoofSPInstruction) {
-			SpoofSPInstruction instruction = (SpoofSPInstruction) inst;
-			Class<?> scla = instruction.getOperatorClass().getSuperclass();
-			if(((scla == SpoofCellwise.class || scla == SpoofMultiAggregate.class
-						|| scla == SpoofOuterProduct.class) && instruction.isFederated(ec))
-				|| (scla == SpoofRowwise.class && instruction.isFederated(ec, FType.ROW))) {
+			SpoofSPInstruction ins = (SpoofSPInstruction) inst;
+			Class<?> scla = ins.getOperatorClass().getSuperclass();
+			if(((scla == SpoofCellwise.class || scla == SpoofMultiAggregate.class || scla == SpoofOuterProduct.class)
+					&& SpoofFEDInstruction.isFederated(ec, ins.getInputs(), scla))
+				|| (scla == SpoofRowwise.class && SpoofFEDInstruction.isFederated(ec, FType.ROW, ins.getInputs(), scla))) {
 				fedinst = SpoofFEDInstruction.parseInstruction(inst.getInstructionString());
 			}
 		}

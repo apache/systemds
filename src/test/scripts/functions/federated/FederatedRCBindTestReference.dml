@@ -19,8 +19,15 @@
 #
 #-------------------------------------------------------------
 
-A = read($in1)
-B = read($in2)
+if($in_partitioned) {
+  A = rbind(read($in_A1), read($in_A2));
+  B = rbind(read($in_B1), read($in_B2));
+}
+else {
+  A = read($in_A1);
+  B = read($in_B1);
+}
+
 R = rbind(A, B)
 C = cbind(A, B)
 R_LF = rbind(B, A)

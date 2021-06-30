@@ -58,6 +58,8 @@ org.apache.sysds.runtime.instructions.spark.data
 org.apache.sysds.runtime.instructions.spark.functions
 org.apache.sysds.runtime.instructions.spark.utils
 org.apache.sysds.runtime.io
+org.apache.sysds.runtime.io.hdf5
+org.apache.sysds.runtime.io.hdf5.message
 org.apache.sysds.runtime.lineage
 org.apache.sysds.runtime.matrix.data
 org.apache.sysds.runtime.matrix.operators

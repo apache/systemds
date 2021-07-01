@@ -20,9 +20,27 @@
 #-------------------------------------------------------------
 
 X = read($1);
-y = read($2);
+Y = read($2);
+
+
+print("")
+print("MLogReg")
 
 X = scale(X=X, scale=TRUE, center=TRUE);
-B = multiLogReg(X=X, Y=y, verbose=TRUE);
+B = multiLogReg(X=X, Y=Y, verbose=TRUE, maxi = 10, maxii=10);
 
-print(sum(B))
+[nn, P, acc] = multiLogRegPredict(X=X, B=B, Y=Y)
+
+[nn, C] = confusionMatrix(P, Y)
+print("Confusion: ")
+print(toString(C))
+
+print(acc)
+
+if(acc < 50){
+    print("")
+    print("--------------------------------------------")
+    print("ERROR: Accuracy achieved is not high enough.")
+    print("--------------------------------------------")
+    print("")
+}

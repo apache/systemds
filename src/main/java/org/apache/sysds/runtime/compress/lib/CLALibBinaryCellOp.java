@@ -19,6 +19,7 @@
 
 package org.apache.sysds.runtime.compress.lib;
 
+import java.lang.ref.SoftReference;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Callable;
@@ -78,8 +79,8 @@ public class CLALibBinaryCellOp {
 	}
 
 	private static MatrixBlock selectProcessingBasedOnAccessType(BinaryOperator op, CompressedMatrixBlock m1,
-		 MatrixValue thatValue, MatrixValue result, BinaryAccessType atype, boolean left) {
-		MatrixBlock that = (MatrixBlock)thatValue;
+		MatrixValue thatValue, MatrixValue result, BinaryAccessType atype, boolean left) {
+		MatrixBlock that = (MatrixBlock) thatValue;
 		if(atype == BinaryAccessType.MATRIX_COL_VECTOR)
 			return binaryMVCol(m1, that, op, left);
 		else if(atype == BinaryAccessType.MATRIX_MATRIX) {
@@ -89,8 +90,25 @@ public class CLALibBinaryCellOp {
 				return CLALibScalar.scalarOperations(sop, m1, result);
 			}
 			else {
-				MatrixBlock d_compressed = m1.decompress(op.getNumThreads());
-				LibMatrixBincell.bincellOpInPlace(d_compressed, that, op);
+				SoftReference<MatrixBlock> msf = m1.getSoftReferenceToDecompressed();
+				MatrixBlock d_compressed;
+				if(msf != null && msf.get() != null) {
+					// copy the decompressed matrix if there is a decompressed matrix already.
+					d_compressed = new MatrixBlock(m1.getNumRows(), m1.getNumColumns(), false);
+					d_compressed.copy(msf.get());
+				}
+				else {
+					// decompress the matrix if it is not already decompressed
+					d_compressed = m1.decompress(op.getNumThreads());
+					// clear the cached decompressed matrix since we intend to update it inplace.
+					m1.clearSoftReferenceToDecompressed();
+				}
+
+				if(left) 
+					LibMatrixBincell.bincellOpInPlaceLeft(d_compressed,that, op);
+				else 
+					LibMatrixBincell.bincellOpInPlaceRight(d_compressed, that, op);
+				
 				return d_compressed;
 			}
 		}

@@ -27,6 +27,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
+import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.SparseBlock;
@@ -36,6 +37,7 @@ import org.apache.sysds.runtime.data.SparseBlockMCSR;
 import org.apache.sysds.runtime.data.SparseRow;
 import org.apache.sysds.runtime.data.SparseRowVector;
 import org.apache.sysds.runtime.functionobjects.Builtin;
+import org.apache.sysds.runtime.functionobjects.Builtin.BuiltinCode;
 import org.apache.sysds.runtime.functionobjects.Divide;
 import org.apache.sysds.runtime.functionobjects.Equals;
 import org.apache.sysds.runtime.functionobjects.GreaterThan;
@@ -51,7 +53,6 @@ import org.apache.sysds.runtime.functionobjects.Plus;
 import org.apache.sysds.runtime.functionobjects.PlusMultiply;
 import org.apache.sysds.runtime.functionobjects.Power2;
 import org.apache.sysds.runtime.functionobjects.ValueFunction;
-import org.apache.sysds.runtime.functionobjects.Builtin.BuiltinCode;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
 import org.apache.sysds.runtime.util.CommonThreadPool;
@@ -236,11 +237,29 @@ public class LibMatrixBincell
 	/**
 	 * NOTE: operations in place always require m1 and m2 to be of equal dimensions
 	 * 
-	 * @param m1ret result matrix
-	 * @param m2 matrix block
-	 * @param op binary operator
+	 * defaults to right side operations, updating the m1 matrix with like:
+	 * 
+	 *  m1ret op m2
+	 * 
+	 * @param m1ret result matrix updated in place
+	 * @param m2 matrix block the other matrix to take values from
+	 * @param op binary operator the operator that is placed in the middle of m1ret and m2
 	 */
 	public static void bincellOpInPlace(MatrixBlock m1ret, MatrixBlock m2, BinaryOperator op) {
+		bincellOpInPlaceRight(m1ret, m2, op);
+	}
+
+	/**
+	 * 
+	 * right side operations, updating the m1 matrix with like:
+	 * 
+	 * m1ret op m2
+	 * 
+	 * @param m1ret result matrix updated in place
+	 * @param m2 matrix block the other matrix to take values from
+	 * @param op binary operator the operator that is placed in the middle of m1ret and m2
+	 */
+	public static void bincellOpInPlaceRight(MatrixBlock m1ret, MatrixBlock m2, BinaryOperator op) {
 		//execute binary cell operations
 		if(op.sparseSafe || isSparseSafeDivide(op, m2))
 			safeBinaryInPlace(m1ret, m2, op);
@@ -249,6 +268,33 @@ public class LibMatrixBincell
 		
 		//ensure empty results sparse representation 
 		//(no additional memory requirements)
+		if( m1ret.isEmptyBlock(false) )
+			m1ret.examSparsity();
+	}
+
+	/**
+	 * 
+	 * right side operations, updating the m1 matrix with like:
+	 * 
+	 * m2 op m1ret
+	 * 
+	 * @param m1ret result matrix updated in place
+	 * @param m2 matrix block the other matrix to take values from
+	 * @param op binary operator the operator that is placed in the middle of m1ret and m2
+	 */
+	public static void bincellOpInPlaceLeft(MatrixBlock m1ret, MatrixBlock m2, BinaryOperator op) {
+		if(m1ret.isInSparseFormat() || m2.isInSparseFormat())
+			throw new NotImplementedException("Not implemented sparse inplace left binaryOperator for matrixBlocks");
+		
+		final double[] retV = m1ret.getDenseBlockValues();
+		final double[] m2V = m2.getDenseBlockValues();
+
+		final int size = m2.getNumColumns() * m2.getNumRows();
+		final ValueFunction f = op.fn;
+		for(int i = 0; i < size; i++ ){
+			retV[i] = f.execute(m2V[i], retV[i]);
+		}
+		
 		if( m1ret.isEmptyBlock(false) )
 			m1ret.examSparsity();
 	}

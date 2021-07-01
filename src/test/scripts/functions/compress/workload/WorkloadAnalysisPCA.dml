@@ -21,6 +21,9 @@
 
 X = read($1);
 
+print("")
+print("PCA")
+
 [Xm,pc,S,C] = pca(X=X, K=3);
 
 print(sum(Xm))

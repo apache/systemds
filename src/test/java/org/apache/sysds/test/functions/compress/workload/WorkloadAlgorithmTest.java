@@ -19,10 +19,10 @@
 
 package org.apache.sysds.test.functions.compress.workload;
 
+import static org.junit.Assert.fail;
+
 import java.io.File;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
@@ -33,9 +33,9 @@ import org.junit.Test;
 
 public class WorkloadAlgorithmTest extends AutomatedTestBase {
 
-	private static final Log LOG = LogFactory.getLog(WorkloadAnalysisTest.class.getName());
+	// private static final Log LOG = LogFactory.getLog(WorkloadAnalysisTest.class.getName());
 
-	private final static String TEST_NAME1 = "WorkloadAnalysisMlogreg";
+	private final static String TEST_NAME1 = "WorkloadAnalysisMLogReg";
 	private final static String TEST_NAME2 = "WorkloadAnalysisLm";
 	private final static String TEST_NAME3 = "WorkloadAnalysisPCA";
 	private final static String TEST_DIR = "functions/compress/workload/";
@@ -74,14 +74,20 @@ public class WorkloadAlgorithmTest extends AutomatedTestBase {
 
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + testname + ".dml";
-			programArgs = new String[] {"-stats", "40", "-args", input("X"), input("y"), output("B")};
+			programArgs = new String[] {"-stats", "20", "-args", input("X"), input("y"), output("B")};
 
-			double[][] X = TestUtils.round(getRandomMatrix(10000, 20, 0, 1, 1.0, 7));
+			double[][] X = TestUtils.round(getRandomMatrix(10000, 20, 0, 10, 1.0, 7));
 			writeInputMatrixWithMTD("X", X, false);
-			double[][] y = TestUtils.round(getRandomMatrix(10000, 1, 1, 2, 1.0, 3));
+			double[][] y = getRandomMatrix(10000, 1, 1, 1, 1.0, 3);
+			for(int i = 0; i < X.length; i++) {
+				y[i][0] = Math.max(X[i][0], 1);
+			}
 			writeInputMatrixWithMTD("y", y, false);
 
-			LOG.debug(runTest(true, false, null, -1));
+			String ret = runTest(null).toString();
+
+			if(ret.contains("ERROR:"))
+				fail(ret);
 
 			// check various additional expectations
 			long actualCompressionCount = Statistics.getCPHeavyHitterCount("compress");
@@ -89,6 +95,10 @@ public class WorkloadAlgorithmTest extends AutomatedTestBase {
 			Assert.assertTrue(heavyHittersContainsString("compress"));
 			Assert.assertFalse(heavyHittersContainsString("m_scale"));
 
+		}
+		catch(Exception e){
+			resetExecMode(oldPlatform);
+			fail("Failed workload test");
 		}
 		finally {
 			resetExecMode(oldPlatform);

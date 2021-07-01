@@ -22,6 +22,9 @@
 X = read($1);
 y = read($2);
 
+print("")
+print("LM")
+
 X = scale(X=X, scale=TRUE, center=TRUE);
 B = lm(X=X, y=y, verbose=TRUE);
 

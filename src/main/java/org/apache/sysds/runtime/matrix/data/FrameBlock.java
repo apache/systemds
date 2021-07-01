@@ -2212,6 +2212,7 @@ public class FrameBlock implements CacheBlock, Externalizable  {
 
 		// construct class code
 		sb.append("import org.apache.sysds.runtime.util.UtilFunctions;\n");
+		sb.append("import org.apache.sysds.runtime.util.PorterStemmer;\n");
 		sb.append("import org.apache.sysds.runtime.matrix.data.FrameBlock.FrameMapFunction;\n");
 		sb.append("public class " + cname + " extends FrameMapFunction {\n");
 		if(varname.length == 1) {

@@ -32,7 +32,6 @@
 # pred      Matrix[Double]  ---      Predicted value
 #
 
-
 source("nn/layers/feedForward.dml") as ff_pass
 
 s_ffPredict = function(List[unknown] model, Matrix[double] X) 

@@ -1354,4 +1354,11 @@ public class CompressedMatrixBlock extends MatrixBlock {
 		overlappingColGroups = that.overlappingColGroups;
 	}
 
+	public SoftReference<MatrixBlock> getSoftReferenceToDecompressed(){
+		return decompressedVersion;
+	}
+
+	public void clearSoftReferenceToDecompressed(){
+		decompressedVersion = null;
+	}
 }

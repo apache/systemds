@@ -3,7 +3,7 @@
 full_path_d = "/home/d/Desktop/TU-UNI/8.SEMESTER/AMLS/systemds/"
 full_path_p = "/home/arch/Desktop/Studium/Master/2_Semester/AMLS/systemds/"
 
-file_to_test = "./ownscripts/tests/test1"
+file_to_test = "./ownscripts/tests/test5"
 
 
 
@@ -15,7 +15,7 @@ R = read(file_to_test + "_R.csv", format="csv");
 #printMatrix(X, "training set")
 #printMatrix(Y, "testing set")
 print("[DEBUG] calling xgboost")
-M = xgboost(X = X, y = y, R = R);
+M = xgboost(X = X, y = y, R = R, sml_type=2);
 
 
 

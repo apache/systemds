@@ -84,7 +84,7 @@ The Documentation is separated into different parts by sub folders.
   
 ## Mac Install
 
-Jekyll (and optionally Pygments) can be installed on the Mac OS in the following manner.
+1. Jekyll (and optionally Pygments) can be installed on the Mac OS in the following manner.
 
 ```bash
 brew install ruby
@@ -92,9 +92,16 @@ gem install jekyll
 gem install jekyll-redirect-from
 gem install bundler
 brew install python
-pip install Pygments
 gem install pygments.rb
 ```
+
+2. Python depedencies
+
+```bash
+pip install Sphinx sphinx-rtd-theme Pygments numpy pandas py4j
+```
+
+and install any missing Python packages.
 
 To generate SystemDS documentation in HTML, navigate to the ```docs``` folder, the root directory of the
 documentation. From there, you can have Jekyll convert the markdown files to HTML. If you run in server mode,

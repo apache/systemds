@@ -22,6 +22,7 @@ package org.apache.sysds.runtime.compress.colgroup;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
+import java.lang.ref.SoftReference;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
@@ -78,7 +79,7 @@ public abstract class ColGroupValue extends ColGroupCompressed implements Clonea
 	protected ADictionary _dict;
 
 	/** The count of each distinct value contained in the dictionary */
-	private int[] counts;
+	private SoftReference<int[]> counts;
 
 	protected ColGroupValue(int numRows) {
 		super(numRows);
@@ -92,7 +93,7 @@ public abstract class ColGroupValue extends ColGroupCompressed implements Clonea
 	protected ColGroupValue(int[] colIndices, int numRows, ADictionary dict, int[] cachedCounts) {
 		super(colIndices, numRows);
 		_dict = dict;
-		counts = cachedCounts;
+		counts = new SoftReference<>(cachedCounts);
 	}
 
 	@Override
@@ -183,18 +184,29 @@ public abstract class ColGroupValue extends ColGroupCompressed implements Clonea
 	 * @return the count of each value in the MatrixBlock.
 	 */
 	public final int[] getCounts() {
+		int[] countsActual = null;
+		if(_dict != null) {
+			if(counts == null || counts.get() == null) {
+				countsActual = getCounts(new int[getNumValues() + (_zeros ? 1 : 0)]);
+				counts = new SoftReference<>(countsActual);
+			}
+			else
+				countsActual = counts.get();
 
-		if(counts == null && _dict != null) {
-			counts = getCounts(new int[getNumValues() + (_zeros ? 1 : 0)]);
-			return counts;
 		}
-		else
-			return counts;
+
+		return countsActual;
 
 	}
 
+	/**
+	 * Get the cached counts. If they are not materialized or the garbage collector have removed them, then null is
+	 * returned
+	 * 
+	 * @return the counts or null.
+	 */
 	public final int[] getCachedCounts() {
-		return counts;
+		return counts != null ? counts.get() : null;
 	}
 
 	/**
@@ -1046,7 +1058,7 @@ public abstract class ColGroupValue extends ColGroupCompressed implements Clonea
 		try {
 			final int numVals = getNumValues();
 			// Pre aggregate the matrix into same size as dictionary
-			MatrixBlock preAgg  = allocatePreAggregate(matrix,numVals, rl, ru);
+			MatrixBlock preAgg = allocatePreAggregate(matrix, numVals, rl, ru);
 			preAggregate(matrix, preAgg, rl, ru);
 			preAgg.recomputeNonZeros();
 			MatrixBlock tmpRes = leftMultByPreAggregateMatrix(preAgg);
@@ -1058,7 +1070,6 @@ public abstract class ColGroupValue extends ColGroupCompressed implements Clonea
 	}
 
 	public final MatrixBlock leftMultByPreAggregateMatrix(MatrixBlock preAgg) {
-
 
 		// Allocate temporary matrix to multiply into.
 		final int tmpCol = _colIndexes.length;
@@ -1077,8 +1088,7 @@ public abstract class ColGroupValue extends ColGroupCompressed implements Clonea
 		return leftMultByPreAggregateMatrix(preAgg, tmpRes);
 	}
 
-
-	public final MatrixBlock leftMultByPreAggregateMatrix(MatrixBlock preAgg, MatrixBlock tmpRes){
+	public final MatrixBlock leftMultByPreAggregateMatrix(MatrixBlock preAgg, MatrixBlock tmpRes) {
 		// Get dictionary.
 		MatrixBlock dictM = forceMatrixBlockDictionary().getMatrixBlock();
 		LibMatrixMult.matrixMult(preAgg, dictM, tmpRes);
@@ -1088,7 +1098,7 @@ public abstract class ColGroupValue extends ColGroupCompressed implements Clonea
 	private void leftMultByMatrix(MatrixBlock matrix, MatrixBlock result, int[] outputRows) {
 		try {
 			final int numVals = getNumValues();
-			MatrixBlock preAgg  = allocatePreAggregate(matrix, numVals, 0, matrix.getNumRows());
+			MatrixBlock preAgg = allocatePreAggregate(matrix, numVals, 0, matrix.getNumRows());
 			preAggregate(matrix, preAgg, 0, matrix.getNumRows());
 			preAgg.recomputeNonZeros();
 			MatrixBlock tmpRes = leftMultByPreAggregateMatrix(preAgg);

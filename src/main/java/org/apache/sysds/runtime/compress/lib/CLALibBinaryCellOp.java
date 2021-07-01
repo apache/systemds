@@ -92,17 +92,7 @@ public class CLALibBinaryCellOp {
 				MatrixBlock d_compressed = m1.decompress(op.getNumThreads());
 				LibMatrixBincell.bincellOpInPlace(d_compressed, that, op);
 				return d_compressed;
-				// if(left) {
-				// 	return that.binaryOperations(op, d_compressed, result);
-				// }
-				// else {
-				// 	return d_compressed.binaryOperations(op, that, result);
-				// }
 			}
-			// else if(that.isInSparseFormat())
-			// return binaryMMSparse(m1, that, op, left);
-			// else
-			// return binaryMMDense(m1, that, op, left);
 		}
 		else if(isSupportedBinaryCellOp(op.fn))
 			return bincellOp(m1, that, setupCompressedReturnMatrixBlock(m1, result), op, left);

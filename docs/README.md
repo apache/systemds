@@ -53,50 +53,37 @@ The Documentation is separated into different parts by sub folders.
 
 3. Install python dependencies (Optionally).
 
-   - `pip install Pygments`
+   - Install [Sphinx](https://pypi.org/project/Sphinx/) and [sphinx_rtd_theme](https://pypi.org/project/sphinx-rtd-theme/).
 
-4. Launch the Documentation locally
+   ```bash
+   pip install Sphinx
+   pip install sphinx-rtd-theme
+   ```
+   - `pip install Pygments`
+   - `pip install numpy pandas py4j`
+   
+   and install any other missing packages
+
+4. Make sure Maven and Java 8 are installed.
+
+   ```bash
+   mvn --version
+   ```
+
+   Note: After Java 8, `jdk.tools:jdk.tools:jar` are [removed from jdk](https://openjdk.java.net/jeps/220#:~:text=rt.jar%20and%20tools.jar)
+
+5. Now, update the API docs (Optional)
+
+   ```bash
+   ./updateAPI.sh
+   ```
+
+6. Launch the Documentation locally
 
    - `jekyll serve -w`
-   - This is done from the root of the gh-pages branch of the system.
    - The serving will per default be on localhost port 4000 [Link](http://localhost:4000)
-
-### Update API
-
-To update the API documentation run the `updateAPI.sh` file.
-Note that you have to install both the Java and Python -doc dependencies.
-
-#### Linux
-
-1. Install [Sphinx](https://pypi.org/project/Sphinx/) and [sphinx_rtd_theme](https://pypi.org/project/sphinx-rtd-theme/).
-
-```bash
-pip install Sphinx
-pip install sphinx-rtd-theme
-```
-
-2. After that, install Python dependencies.
-
-```bash
-pip install numpy pandas py4j
-```
-
-and install any other missing packages.
-
-3. Make sure Maven and Java 8 are installed.
-
-```bash
-mvn --version
-```
-
-Note: After Java 8, `jdk.tools:jdk.tools:jar` are [removed from jdk](https://openjdk.java.net/jeps/220#:~:text=rt.jar%20and%20tools.jar)
-
-Now, update the API docs with
-
-```bash
-./updateAPI.sh
-```
-
+  
+  
 ## Mac Install
 
 Jekyll (and optionally Pygments) can be installed on the Mac OS in the following manner.

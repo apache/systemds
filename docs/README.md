@@ -56,11 +56,9 @@ The Documentation is separated into different parts by sub folders.
    - Install [Sphinx](https://pypi.org/project/Sphinx/) and [sphinx_rtd_theme](https://pypi.org/project/sphinx-rtd-theme/).
 
    ```bash
-   pip install Sphinx
-   pip install sphinx-rtd-theme
+   pip install Sphinx sphinx-rtd-theme
    ```
-   - `pip install Pygments`
-   - `pip install numpy pandas py4j`
+   - `pip install Pygments numpy pandas py4j`
    
    and install any other missing packages
 

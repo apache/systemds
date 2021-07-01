@@ -24,6 +24,7 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
+import java.lang.ref.SoftReference;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -120,6 +121,11 @@ public class CompressedMatrixBlock extends MatrixBlock {
 	protected boolean overlappingColGroups = false;
 
 	/**
+	 * Soft reference to a decompressed version of this matrix block.
+	 */
+	protected SoftReference<MatrixBlock> decompressedVersion;
+
+	/**
 	 * Constructor for building an empty Compressed Matrix block object.
 	 * 
 	 * OBS! Only to be used for serialization.
@@ -195,6 +201,16 @@ public class CompressedMatrixBlock extends MatrixBlock {
 
 		Timing time = new Timing(true);
 
+		if(decompressedVersion != null && decompressedVersion.get() != null){
+			if(DMLScript.STATISTICS || LOG.isDebugEnabled()) {
+				double t = time.stop();
+				LOG.debug("decompressed block was in soft reference.");
+				DMLCompressionStatistics.addDecompressTime(t, 1);
+			}
+			return decompressedVersion.get();
+		}
+		
+
 		long nnz = getNonZeros() == -1 ? recomputeNonZeros() : nonZeros;
 		if(isEmpty())
 			return new MatrixBlock(rlen, clen, true, 0);
@@ -215,6 +231,8 @@ public class CompressedMatrixBlock extends MatrixBlock {
 			LOG.debug("decompressed block w/ k=" + 1 + " in " + t + "ms.");
 			DMLCompressionStatistics.addDecompressTime(t, 1);
 		}
+
+		decompressedVersion = new SoftReference<>(ret);
 		return ret;
 	}
 
@@ -245,6 +263,16 @@ public class CompressedMatrixBlock extends MatrixBlock {
 			return decompress();
 
 		Timing time = new Timing(true);
+
+		if(decompressedVersion != null && decompressedVersion.get() != null){
+			if(DMLScript.STATISTICS || LOG.isDebugEnabled()) {
+				double t = time.stop();
+				LOG.debug("decompressed block was in soft reference.");
+				DMLCompressionStatistics.addDecompressTime(t, k);
+			}
+			return decompressedVersion.get();
+		}
+
 		MatrixBlock ret = getUncompressedColGroupAndRemoveFromListOfColGroups();
 		if(ret != null && getColGroups().size() == 0)
 			return ret;
@@ -260,6 +288,7 @@ public class CompressedMatrixBlock extends MatrixBlock {
 			DMLCompressionStatistics.addDecompressTime(t, k);
 		}
 
+		decompressedVersion = new SoftReference<>(ret);
 		return ret;
 	}
 

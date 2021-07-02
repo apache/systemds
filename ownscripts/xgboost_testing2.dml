@@ -3,8 +3,7 @@
 full_path_d = "/home/d/Desktop/TU-UNI/8.SEMESTER/AMLS/systemds/"
 full_path_p = "/home/arch/Desktop/Studium/Master/2_Semester/AMLS/systemds/"
 
-file_to_test = "./ownscripts/tests/test6"
-
+file_to_test = "./ownscripts/tests/test3"
 
 
 print("[DEBUG] starting script calling xgboost")
@@ -12,14 +11,9 @@ X = read(file_to_test + "_X.csv", format="csv");
 y = read(file_to_test + "_y.csv", format="csv");
 R = read(file_to_test + "_R.csv", format="csv");
 
-#printMatrix(X, "training set")
-#printMatrix(Y, "testing set")
 print("[DEBUG] calling xgboost")
 
-#X_onehot = toOneHot(X[,1],2)
-#X = cbind(X_onehot, X[,2])
-#printMatrix(X, "x one hot")
-classification = 2 # 2 = calssification, 1 = scalar
+classification = 1 # 2 = calssification, 1 = scalar
 M = xgboost(X = X, y = y, R=R, sml_type=classification, num_trees=3);
 print("[DEBUG] calling xgboostPredict")
 y_pred = xgboostPredict(X=X, M=M, sml_type=classification)

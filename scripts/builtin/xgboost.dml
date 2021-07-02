@@ -33,8 +33,6 @@
 m_xgboost = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] R = matrix(1,rows=1,cols=nrow(X)),
   Integer sml_type = 1, Integer num_trees = 3, Double learning_rate = 0.3, Integer max_depth = 6, Double lambda = 0.0)
   return (Matrix[Double] M) {
-#  print("[DEBUG] inside xgboost with " + num_trees + " trees")
-
   # test if input correct
   assert(nrow(X) == nrow(y))
   assert(ncol(y) == 1)
@@ -59,8 +57,6 @@ m_xgboost = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] R = matr
     tree_id = tree_id + 1
     M = cbind(M, curr_M) # concat the new tree to the existing one (forest-ing)
   }
-  printMMatrix(M)
-  print("[DEBUG] Return xgboost")
 }
 
 
@@ -76,24 +72,19 @@ calculateNewPredictions = function(Matrix[Double] X, Integer sml_type, Matrix[Do
   assert(ncol(current_prediction) == 1)
   assert(nrow(current_prediction) == nrow(X)) # each Entry should have an own initial prediction
   new_prediction = matrix(0, rows=nrow(current_prediction), cols=1)
-
-  print("start with new_prediction by using init prediction and trees ")
-  printMatrix(current_prediction, "current_prediction")
-
-
   start_node_current_tree = curr_M[,1]
 
-    if(sml_type == 1) # Regression
+  if(sml_type == 1) # Regression
+  {
+    for(entry in 1:nrow(X)) # go though each entry in X and calculate the new prediction
     {
-      for(entry in 1:nrow(X)) # go though each entry in X and calculate the new prediction
-      {
-        output_values = matrix(0, rows=1, cols=0)
+      output_values = matrix(0, rows=1, cols=0)
 
-          output_value = getOutputValueForEntry(X[entry,], curr_M, start_node_current_tree)
-          output_values = cbind(output_values, as.matrix(output_value))
-          new_prediction[entry,] = current_prediction[entry,] + learning_rate * sum(output_values)
-      }
+      output_value = getOutputValueForEntry(X[entry,], curr_M, start_node_current_tree)
+      output_values = cbind(output_values, as.matrix(output_value))
+      new_prediction[entry,] = current_prediction[entry,] + learning_rate * sum(output_values)
     }
+  }
   else # Classification
   {
     assert(sml_type == 2)
@@ -112,7 +103,6 @@ calculateNewPredictions = function(Matrix[Double] X, Integer sml_type, Matrix[Do
       new_prediction[entry,] = e^x / (1 + e^x)
     }
   }
-  printMatrix(new_prediction, "all  new_prediction for y fresh calculated")
 }
 
 
@@ -126,10 +116,9 @@ getOutputValueForEntry = function(Matrix[Double] row_vector, Matrix[Double] curr
     assert(nrow(row_vector) == 1)
     assert(as.scalar(current_node[1,]) == 1)
 
-    #printMatrix(row_vector, "rowvector")
     cur_node_index = 1 # cant take the node id because its diff to the index
 
-    # go over one tree and finde output value
+    # iterate over one tree and find output value
     while(as.scalar(current_node[5,]) != 0.0) # until leaf
     {
       used_feature = as.scalar(current_node[4,])
@@ -163,10 +152,7 @@ getOutputValueForEntry = function(Matrix[Double] row_vector, Matrix[Double] curr
         }
       }
     }
-
     output_value = as.scalar(current_node[6,])
-    #print("output value found " + output_value)
-
 }
 
 #-----------------------------------------------------------------------------------------------------------------------
@@ -179,7 +165,8 @@ getOutputValueForEntry = function(Matrix[Double] row_vector, Matrix[Double] curr
 # INPUT:    prediction: nx1 vector, my current predictions for my target value y
 # INPUT:    tree_id: The current tree id, starting at 1
 # OUTPUT:   M: the current M matrix of this tree
-buildOneTree = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] R, Integer sml_type, Integer max_depth, Matrix[Double] prediction, Double tree_id, Double lambda)
+buildOneTree = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] R, Integer sml_type, Integer max_depth,
+  Matrix[Double] prediction, Double tree_id, Double lambda)
   return (Matrix[Double] M) {
 
   M = matrix(0,rows=6,cols=0)
@@ -195,30 +182,17 @@ buildOneTree = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] R, In
     [node_queue, node] = dataQueuePop(node_queue)
     [curr_rows_queue, curr_rows_vector] = dataQueuePop(curr_rows_queue)
 
-    printMatrix(node_queue, "Node Queue")
-    print("Node - bei welcher node sind wir gerade? " + as.scalar(node[1:1]))
-    printMatrix(curr_rows_queue, "curr_rows_queue (1 = left child, 0 = right child)")
-    printMatrix(curr_rows_vector, "curr_rows_vector - welche rows sollen wir jz in betracht ziehen? (1 = left child, 0 = right child, NaN is a row we ignore (if categorical)")
-
     level = log(as.scalar(node), 2) + 1
     available_rows = calcAvailableRows(curr_rows_vector) # check if leaf
-    print("avaliable rows " + toString(available_rows))
 
     if(available_rows == 0)
     {
-        residual_matrix = matrix(0, rows=0, cols=0)
+      residual_matrix = matrix(0, rows=0, cols=0)
     }
     else
     {
-        [curr_X, curr_y, curr_X_full, curr_prediction] = updateMatrices(X, y, prediction, curr_rows_vector)
-
-        #printMatrix(curr_X, "curr_X - alle rows die jz für mich relevant sind")
-        #printMatrix(curr_y, "curr_y - y zu rows die relevant sind")
-        #printMatrix(curr_prediction, "curr_prediction - y prediction zu rows die relevant sind")
-        #printMatrix(curr_X_full, "curr_X_full - gleich wie X, aber die nicht relevanten rows sind NaN")
-
-        residual_matrix = calculateResiduals(curr_y, curr_prediction) # we need residuals calculated also for leafs for output value
-        printMatrix(residual_matrix, "the calculated residuals")
+      [curr_X, curr_y, curr_X_full, curr_prediction] = updateMatrices(X, y, prediction, curr_rows_vector)
+      residual_matrix = calculateResiduals(curr_y, curr_prediction) # we need residuals calculated also for leafs for output value
     }
 
     best_feature_index = 0.00
@@ -234,9 +208,7 @@ buildOneTree = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] R, In
 
     if(available_rows > 1 & max_depth > level & done == FALSE) # leaf check or max depth check
     {
-      best_feature_index = findBestFeature(X=curr_X, y=curr_y, sml_type=sml_type, verbose=FALSE)
-      # maybe for forest change here prediction?
-
+      best_feature_index = findBestFeature(X=curr_X, y=curr_y, sml_type=sml_type)
       type = getTypeOfFeature(R, best_feature_index)
 
       if(type == 1.0) # SCALAR
@@ -253,7 +225,6 @@ buildOneTree = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] R, In
 
         [best_split_threshold, best_gain] = findBestSplit(sml_type, curr_X[,best_feature_index], similarity_score, curr_prediction, lambda)
         has_child = best_gain > 0 # if the gain is < 0, the split is worse than the current node
-        print("gain at this split " + best_gain)
       }
       else # CATEGORICAL
       {
@@ -269,46 +240,36 @@ buildOneTree = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] R, In
 
       if (type == 1.0) # SCALAR
       {
-          # print("[DEBUG] SCALAR:")
-          [left_row_vec, right_row_vec] = splitMatrixByValueLoop(curr_X_full[,best_feature_index], X[,best_feature_index], best_split_threshold)
-          curr_rows_queue = dataQueuePush(left_row_vec, right_row_vec, curr_rows_queue)
-          offset = ncol(node_queue) - 1
-          M = addOutputRow(M, node, tree_id, R, offset, best_feature_index, best_split_threshold, 0.0)
-
+        [left_row_vec, right_row_vec] = splitMatrixByValueLoop(curr_X_full[,best_feature_index], X[,best_feature_index], best_split_threshold)
+        curr_rows_queue = dataQueuePush(left_row_vec, right_row_vec, curr_rows_queue)
+        offset = ncol(node_queue) - 1
+        M = addOutputRow(M, node, tree_id, R, offset, best_feature_index, best_split_threshold, 0.0)
       }
       else # CATEGORICAL
       {
-          assert(type == 2.0)
-          print("[DEBUG] CATEGORY:")
-          [left_row_vec, right_row_vec] = splitMatrixByCategory(curr_X_full[,best_feature_index], X[,best_feature_index])
-          printMatrix(left_row_vec, "left row vector after categorical split (1 = left child, 0 = right child, NaN is a row we ignore)")
-          printMatrix(right_row_vec, "right row vector after categorical split (1 = left child, 0 = right child, NaN is a row we ignore)")
-          curr_rows_queue = dataQueuePush(left_row_vec, right_row_vec, curr_rows_queue)
-          offset = ncol(node_queue) - 1
-          M = addOutputRow(M, node, tree_id, R, offset, best_feature_index, 0.0, 0.0)
-
+        assert(type == 2.0)
+        [left_row_vec, right_row_vec] = splitMatrixByCategory(curr_X_full[,best_feature_index], X[,best_feature_index])
+        curr_rows_queue = dataQueuePush(left_row_vec, right_row_vec, curr_rows_queue)
+        offset = ncol(node_queue) - 1
+        M = addOutputRow(M, node, tree_id, R, offset, best_feature_index, 0.0, 0.0)
       }
     }
     else # has no child => must be leaf
     {
-      printMatrix(residual_matrix, "residuals matrix for a leaf")
       if(sml_type == 1) # Regression
       {
-        output_value = calculateOutputValue(residual_matrix)
+        output_value = calculateOutputValue(residual_matrix, lambda)
       }
       else # Classification
       {
         assert(sml_type == 2)
-        output_value = calculateOutputValueClassification(residual_matrix, curr_prediction)
+        output_value = calculateOutputValueClassification(residual_matrix, curr_prediction, lambda)
       }
-      print("We have a leaf with output value " + output_value)
                                     # offset, best_feature_idx, threshold
       M = addOutputRow(M, node, tree_id, R, 0.0, 0.0, 0.0, output_value)
     }
     node_queue_len = ncol(node_queue)
-    printMMatrix(M)
   }
-  print("[DEBUG] we successfully created one tree")
 }
 
 
@@ -349,7 +310,6 @@ addOutputRow = function(
       current_node[2,1] = tree_id
       current_node[3,1] = offset # offset to left child
       current_node[4,1] = used_col # features used
-      # change here to different stuff if it is classification
 
       if(used_col == 0.0) { # is a single value or max depth reached => leaf
          current_node[5,1] = 0 #  0 if leaf node
@@ -396,7 +356,7 @@ getTypeOfFeature = function(Matrix[Double] R, Double col)  return(Double type) {
 # OUTPUT:   new_prediction: the current prediction containing only the relevant rows
 updateMatrices = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] prediction, Matrix[Double] vector)
   return(Matrix[Double] new_X, Matrix[Double] new_y, Matrix[Double] new_X_full, Matrix[Double] new_prediction) {
-  # change here to have the full matrices but not to cut it from 4x4 to 2x2 rather 4x4 but with 0 in the unused fields and then we gucci
+
   assert(ncol(vector) == 1)
   assert(nrow(vector) == nrow(X))
 
@@ -485,41 +445,32 @@ dataQueuePush = function(Matrix[Double] left, Matrix[Double] right, Matrix[Doubl
 # INPUT:    X: a nxn matrix (the current samples with all features we observe)
 # INPUT:    y: a 1xn matrix (the current y to all observed samples)
 # OUTPUT:   lowest_residuals_index: the feature index with the lowest residuals
-findBestFeature = function(Matrix[Double] X, Matrix[Double] y, Integer sml_type, boolean verbose = FALSE) return (Integer lowest_residuals_index) {
-   printDebug("Finding Best feature")
-   lowest_residuals = 0
-   lowest_residuals_index = 1
+findBestFeature = function(Matrix[Double] X, Matrix[Double] y, Integer sml_type) return (Integer lowest_residuals_index) {
 
-   for(i in 1: ncol(X)) {
-        current_feature = X[,i]
+  lowest_residuals = 0
+  lowest_residuals_index = 1
 
-        if(sml_type == 1) # Regression
-        {
-          weights = glm(X=current_feature, Y=y, dfam=1, verbose=FALSE)
-        }
-        else # Classification
-        {
-          assert(sml_type == 2)
-          weights = glm(X=current_feature, Y=y, dfam=2, verbose=FALSE)
-        }
+  for(i in 1: ncol(X)) {
+    current_feature = X[,i]
 
-        y_residual = y - current_feature %*% weights
-        res = sum(y_residual ^ 2)                # sum of least square calculation
-        # res = abs(sum (y_residual) / nrow (X)); # average calculation
+    if(sml_type == 1) # Regression
+    {
+      weights = glm(X=current_feature, Y=y, dfam=1, verbose=FALSE)
+    }
+    else # Classification
+    {
+      assert(sml_type == 2)
+      weights = glm(X=current_feature, Y=y, dfam=2, verbose=FALSE)
+    }
+    y_residual = y - current_feature %*% weights
+    res = sum(y_residual ^ 2) # sum of least square calculation
 
-        if(verbose) {
-            printDebug("currentFeature col " + toString(i))
-            printDebug("weights of lm " + toString(weights))
-            printDebug("feature residuals: " + res)
-            print("--------------------------------------")
-        }
-
-        if(i == 1 | res < lowest_residuals) {
-            lowest_residuals = res
-            lowest_residuals_index = i
-        }
-   }
-   printDebug("best feature for current node is: " + toString(lowest_residuals_index) + " with residuals: " + toString(lowest_residuals))
+    if(i == 1 | res < lowest_residuals)
+    {
+      lowest_residuals = res
+      lowest_residuals_index = i
+    }
+  }
 }
 
 
@@ -529,54 +480,40 @@ findBestFeature = function(Matrix[Double] X, Matrix[Double] y, Integer sml_type,
 findBestSplit = function(Integer sml_type, Matrix[Double] one_featureX, Double sim_score_parent, Matrix[Double] predictions, Double lambda)
   return (Double best_split, Double best_gain)
 {
-    assert(ncol(one_featureX) == 1)
-    best_split = 0
-    best_gain = 0
-    best_sim_score_left = 0
-    best_sim_score_right = 0
-    # printDebug("inside find best split")
+  assert(ncol(one_featureX) == 1)
+  best_split = 0
+  best_gain = 0
+  best_sim_score_left = 0
+  best_sim_score_right = 0
 
-    # order entries by feature value
-    ordered_X = orderFeature(one_featureX)
-    # printMatrix(ordered_X, "ordered X")
+  ordered_X = orderFeature(one_featureX) # order entries by feature value
 
-    # iterate over all averages between 2 points
-    for(i in 1: (nrow(ordered_X)-1)) {
+  # iterate over all averages between 2 points
+  for(i in 1: (nrow(ordered_X)-1)) {
+    current_split = average(ordered_X[i,], ordered_X[i+1,])
+    [left, right] = splitMatrixByValue(one_featureX, current_split)
 
-        current_split = average(ordered_X[i,], ordered_X[i+1,])
-        # printDebug("first average = " + toString(current_split))
-        [left, right] = splitMatrixByValue(one_featureX, current_split)
-        # printMatrix(left, "left matrix")
-        # printMatrix(right, "right matrix")
-
-        # calculate similarity score for that split and calculate gain
-
-        if(sml_type == 1) # Regression
-        {
-          sim_score_left = calculateSimilarityScore(left, lambda)
-          sim_score_right = calculateSimilarityScore(right, lambda)
-
-        }
-        else # Classification
-        {
-          assert(sml_type == 2)
-          sim_score_left = calculateSimilarityScoreClassification(left, predictions, lambda)
-          sim_score_right = calculateSimilarityScoreClassification(right, predictions, lambda)
-        }
-
-        # printDebug("sim score left " + toString(sim_score_left) + "   sim score right " + toString(sim_score_right))
-        current_gain = sim_score_left + sim_score_right - sim_score_parent
-        # printDebug("current gain " + toString(current_gain))
-
-        if(current_gain > best_gain)
-        {
-            best_gain = current_gain
-            best_split = current_split
-            best_sim_score_left = sim_score_left
-            best_sim_score_right = sim_score_right
-            # printDebug("best gain changed to  " + toString(best_gain) + " at value " + toString(best_split))
-        }
+    if(sml_type == 1) # Regression
+    {
+      sim_score_left = calculateSimilarityScore(left, lambda)
+      sim_score_right = calculateSimilarityScore(right, lambda)
     }
+    else # Classification
+    {
+      assert(sml_type == 2)
+      sim_score_left = calculateSimilarityScoreClassification(left, predictions, lambda)
+      sim_score_right = calculateSimilarityScoreClassification(right, predictions, lambda)
+    }
+    current_gain = sim_score_left + sim_score_right - sim_score_parent
+
+    if(current_gain > best_gain)
+    {
+      best_gain = current_gain
+      best_split = current_split
+      best_sim_score_left = sim_score_left
+      best_sim_score_right = sim_score_right
+    }
+  }
 }
 
 #-----------------------------------------------------------------------------------------------------------------------
@@ -587,17 +524,16 @@ findBestSplit = function(Integer sml_type, Matrix[Double] one_featureX, Double s
 #           right: a 1xn matrix with all values larger than "value"
 splitMatrixByValue = function(Matrix[Double] X, Double value) return (Matrix[Double] left, Matrix[Double] right) {
   assert(ncol(X) == 1)
-  # printDebug("in splitMatrixByValue")
-  # printDebug("split at " + value)
   left = matrix(0, rows=0, cols=1)
   right = matrix(0, rows=0, cols=1)
 
   for(i in 1:nrow(X)) {
-    # printDebug("current to look " + as.scalar(X[i,]))
-    if(as.scalar(X[i,]) < value) {
+    if(as.scalar(X[i,]) < value)
+    {
       left = rbind(left,X[i,])
     }
-    else {
+    else
+    {
       right = rbind(right, X[i,])
     }
   }
@@ -618,15 +554,19 @@ splitMatrixByValueLoop = function(Matrix[Double] curr_X, Matrix[Double] X, Doubl
   for(i in 1:nrow(X)) {
     if (as.scalar(X[i,]) == as.scalar(curr_X[i,]))  # if same row in curr_X and X
     {
-      if (as.scalar(X[i,]) < value) {
+      if (as.scalar(X[i,]) < value)
+      {
         left = rbind(left, one_vec[1,]) # add 1 to left and 0 to right vector
         right = rbind(right, zero_vec[1,])
       }
-      else {
+      else
+      {
         right = rbind(right, one_vec[1,]) # add 1 to right and 0 to left vector
         left = rbind(left, zero_vec[1,])
       }
-    } else {
+    }
+    else
+    {
       left = rbind(left, zero_vec[1,]) # add 0 to both vectors
       right = rbind(right, zero_vec[1,])
     }
@@ -645,26 +585,25 @@ splitMatrixByCategory = function(Matrix[Double] curr_X, Matrix[Double] X) return
   left = matrix(0, rows=0, cols=1)
   right = matrix(0, rows=0, cols=1)
 
-  printMatrix(curr_X, "curr x in split matrix by cat")
-  printMatrix(X, "x in split matrix by cat")
   for(i in 1:nrow(curr_X))
   {
-      if (as.scalar(curr_X[i,]) == 1) # categorical true
-      {
-        left = rbind(left, curr_X[i,])
-        right = rbind(right, matrix(0, rows=1, cols=1))
-      }
-      else if(as.scalar(curr_X[i,]) == 0) { # categorical false
-        left = rbind(left, curr_X[i,])
-        right = rbind(right, matrix(1, rows=1, cols=1))
-      }
-      else { # if we ignore this line because it is not in an other branch of the tree
-        assert(as.scalar(curr_X[i,]) == 'NaN')
-        left = rbind(left, curr_X[i,])
-        right = rbind(right, curr_X[i,])
-      }
+    if (as.scalar(curr_X[i,]) == 1) # categorical true
+    {
+      left = rbind(left, curr_X[i,])
+      right = rbind(right, matrix(0, rows=1, cols=1))
+    }
+    else if(as.scalar(curr_X[i,]) == 0)  # categorical false
+    {
+      left = rbind(left, curr_X[i,])
+      right = rbind(right, matrix(1, rows=1, cols=1))
+    }
+    else  # replace with NaN if not used for the current samples
+    {
+      assert(as.scalar(curr_X[i,]) == 'NaN')
+      left = rbind(left, curr_X[i,])
+      right = rbind(right, curr_X[i,])
+    }
   }
-
 }
 
 #-----------------------------------------------------------------------------------------------------------------------
@@ -672,7 +611,6 @@ splitMatrixByCategory = function(Matrix[Double] curr_X, Matrix[Double] X) return
 # OUTPUT:   similarity_score: the similarity score of the residuals
 calculateSimilarityScore = function (matrix[Double] row_vector, Double lambda) return (Double similarity_score) {
   similarity_score = (sum(row_vector)^2) / (nrow(row_vector) + lambda);
-  #printDebug("Calculated similarity score: " + similarity_score);
 }
 
 #-----------------------------------------------------------------------------------------------------------------------
@@ -683,25 +621,21 @@ calculateSimilarityScoreClassification = function (matrix[Double] row_vector, ma
   d =  predictions * (1 - predictions)
   denominator = sum(d) + lambda
   similarity_score = nominator / denominator;
-  #printDebug("Calculated similarity score: " + similarity_score);
 }
 
 #-----------------------------------------------------------------------------------------------------------------------
 # INPUT:    residuals_vector: a 1xn matrix (one feature with all residuals)
 # OUTPUT:   similarity_score: the similarity score of the residuals
-calculateOutputValue = function (matrix[Double] residuals_vector) return (Double output_value) {
-  lambda = 0.0; # TODO
+calculateOutputValue = function (matrix[Double] residuals_vector, Double lambda) return (Double output_value) {
   output_value = (sum(residuals_vector)) / (nrow(residuals_vector) + lambda);
   if(output_value == 'NaN') # just in case we have a node with no sample inside
     output_value = 0.0
-  #printDebug("Calculated similarity score: " + similarity_score);
 }
 
 #-----------------------------------------------------------------------------------------------------------------------
 # INPUT:    residuals_vector: a 1xn matrix (one feature with all residuals)
 # OUTPUT:   similarity_score: the similarity score of the residuals
-calculateOutputValueClassification = function (matrix[Double] residuals_vector, matrix[Double] predictions) return (Double output_value) {
-    lambda = 0.0; # TODO
+calculateOutputValueClassification = function (matrix[Double] residuals_vector, matrix[Double] predictions, Double lambda) return (Double output_value) {
     nominator = (sum(residuals_vector))
     d =  predictions * (1 - predictions)
     denominator = sum(d) + lambda
@@ -734,25 +668,26 @@ orderFeature = function (matrix[double] row_vector) return (matrix[double] row_v
 # INPUT:    m: a nxn matrix which should be set to NaN's in each cell
 # OUTPUT:   new_m: matrix with same dimensions with all NaNs inside
 fillMatrixWithNaN = function(Matrix[Double] m) return (Matrix[Double] new_m) {
-    new_m = matrix(0, rows=nrow(m), cols=ncol(m))
-    for(i in 1:ncol(m))
-    {
-        for(j in 1:nrow(m))
-            new_m[i,j] = 'NaN'
-    }
+  new_m = matrix(0, rows=nrow(m), cols=ncol(m))
+  for(i in 1:ncol(m))
+  {
+    for(j in 1:nrow(m))
+      new_m[i,j] = 'NaN'
+  }
 }
 
 
 average = function(Matrix[Double] x, Matrix[Double] y) return (Double avg) {
-    assert(ncol(x) == 1 & nrow(x) == 1)
-    assert(ncol(y) == 1 & nrow(y) == 1)
-    avg = (as.scalar(x) + as.scalar(y)) / 2
+  assert(ncol(x) == 1 & nrow(x) == 1)
+  assert(ncol(y) == 1 & nrow(y) == 1)
+  avg = (as.scalar(x) + as.scalar(y)) / 2
 }
 
-printDebug = function(string variable) return() {
-    print("[DEBUG] " + variable)
-}
 
+
+# -------------------------------------------------------------------------------------------
+# DEBUG
+#
 printMatrix = function(Matrix[Double] m, string name) return() {
     print("--------------------------------------")
     print(":: [MATRIX] " + name + "  (col:" + ncol(m) + ",row:" + nrow(m) + ")")
@@ -820,7 +755,6 @@ printMMatrix = function(Matrix[Double] m) return() {
                 print_string = " leaf=0/scal=1/cat=2 (" + row + ")  "
             if(row == 6)
                 print_string = "   scalar=splitvalue (" + row + ")  "
-
 
             for(col in 1:ncol(m)) {
                 curr_value = m[row,col]

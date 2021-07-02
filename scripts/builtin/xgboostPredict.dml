@@ -23,55 +23,54 @@ m_xgboostPredict = function(Matrix[Double] X, Matrix[Double] M, Integer sml_type
   trees_M_offset = calculateTreesOffset(M)
   if(sml_type == 1) # Regression
   {
-      for(entry in 1:nrow(X)) # go though each entry in X and calculate the new prediction
-      {
-        output_values = matrix(0, rows=1, cols=0)
+    for(entry in 1:nrow(X)) # go though each entry in X and calculate the new prediction
+    {
+      output_values = matrix(0, rows=1, cols=0)
 
-        for(i in 1:nr_trees) # go through all trees
-        {
-            begin_cur_tree = as.scalar(trees_M_offset[i,])
-            if(i == nr_trees)
-                end_cur_tree = ncol(M)
-            else
-                end_cur_tree =  as.scalar(trees_M_offset[i+1,]) - 1
-            output_value = getOutputValueForEntryPredict(X[entry,], M[, begin_cur_tree:end_cur_tree])
-            output_values = cbind(output_values, as.matrix(output_value))
-        }
-        P[entry,] = initial_prediction + learning_rate * sum(output_values)
+      for(i in 1:nr_trees) # go through all trees
+      {
+        begin_cur_tree = as.scalar(trees_M_offset[i,])
+        if(i == nr_trees)
+            end_cur_tree = ncol(M)
+        else
+            end_cur_tree =  as.scalar(trees_M_offset[i+1,]) - 1
+        output_value = getOutputValueForEntryPredict(X[entry,], M[, begin_cur_tree:end_cur_tree])
+        output_values = cbind(output_values, as.matrix(output_value))
       }
+      P[entry,] = initial_prediction + learning_rate * sum(output_values)
+    }
   }
   else # Classification
   {
     assert(sml_type == 2)
     for(entry in 1:nrow(X)) # go though each entry in X and calculate the new prediction
     {
-        # classification prediction is dependent of the previous prediction, diff to regression
-        current_prediction = matrix(as.scalar(initial_prediction), rows=nrow(X), cols=1)
-        for(i in 1:nr_trees) # go through all trees
-        {
-            begin_cur_tree = as.scalar(trees_M_offset[i,])
-            if(i == nr_trees)
-                end_cur_tree = ncol(M)
-            else
-                end_cur_tree =  as.scalar(trees_M_offset[i+1,]) - 1
-            output_values = matrix(0, rows=1, cols=0)
-            output_value = getOutputValueForEntryPredict(X[entry,], M[, begin_cur_tree:end_cur_tree])
-            output_values = cbind(output_values, as.matrix(output_value))
-            odds = as.scalar(current_prediction[entry,])
-            if((1 - odds) == 0)
-              log_odds = 0
-            else
-              log_odds = log(odds / (1 - odds))
-            x = (log_odds + learning_rate * sum(output_values))
-            e = 2.7182818284
-            current_prediction[entry,] = e^x / (1 + e^x)
-        }
-        P[entry,] = current_prediction[entry,]
+      # classification prediction is dependent of the previous prediction, diff to regression
+      current_prediction = matrix(as.scalar(initial_prediction), rows=nrow(X), cols=1)
+      for(i in 1:nr_trees) # go through all trees
+      {
+        begin_cur_tree = as.scalar(trees_M_offset[i,])
+        if(i == nr_trees)
+            end_cur_tree = ncol(M)
+        else
+            end_cur_tree =  as.scalar(trees_M_offset[i+1,]) - 1
+        output_values = matrix(0, rows=1, cols=0)
+        output_value = getOutputValueForEntryPredict(X[entry,], M[, begin_cur_tree:end_cur_tree])
+        output_values = cbind(output_values, as.matrix(output_value))
+
+        odds = as.scalar(current_prediction[entry,])
+        if((1 - odds) == 0)
+          log_odds = 0
+        else
+          log_odds = log(odds / (1 - odds))
+        x = (log_odds + learning_rate * sum(output_values))
+        e = 2.7182818284
+
+        current_prediction[entry,] = e^x / (1 + e^x)
+      }
+      P[entry,] = current_prediction[entry,]
     }
   }
-
-#   printMatrix(P, "Final predictions are")
-   print("[DEBUG] Return xgboostPredict")
 }
 
 
@@ -81,46 +80,44 @@ m_xgboostPredict = function(Matrix[Double] X, Matrix[Double] M, Integer sml_type
 # OUTPUT:   output_value: the prediction for the current sample at the current tree
 getOutputValueForEntryPredict = function(Matrix[Double] row_vector, Matrix[Double] M)
     return (Double output_value) {
-    assert(nrow(row_vector) == 1)
-    current_node = M[,1]
-    assert(as.scalar(current_node[1,]) == 1)
-    cur_node_index = 1 # cant take the node id because its diff to the index
-    while(as.scalar(current_node[5,]) != 0.0) # until leaf
+  assert(nrow(row_vector) == 1)
+  current_node = M[,1]
+  assert(as.scalar(current_node[1,]) == 1)
+  cur_node_index = 1 # cant take the node id because its diff to the index
+  while(as.scalar(current_node[5,]) != 0.0) # until leaf
+  {
+    used_feature = as.scalar(current_node[4,])
+    feature_is_scalar = as.scalar(current_node[5,]) == 1
+    if(feature_is_scalar) #SCALAR values
     {
-      used_feature = as.scalar(current_node[4,])
-      feature_is_scalar = as.scalar(current_node[5,]) == 1
-      if(feature_is_scalar) #SCALAR values
+      if(as.scalar(row_vector[,used_feature]) < as.scalar(current_node[6,])) # go left
       {
-        if(as.scalar(row_vector[,used_feature]) < as.scalar(current_node[6,])) # go left
-        {
-          cur_node_index = (cur_node_index + as.scalar(current_node[3,]))
-          current_node = M[,cur_node_index]
-        }
-        else #  go right
-        {
-          cur_node_index = cur_node_index + as.scalar(current_node[3,]) + 1
-          current_node = M[,cur_node_index]
-        }
+        cur_node_index = (cur_node_index + as.scalar(current_node[3,]))
+        current_node = M[,cur_node_index]
       }
-      else # CATEGORICAL values
+      else #  go right
       {
-        assert(as.scalar(current_node[5,]) == 2)
-        if(as.scalar(row_vector[,used_feature]) == 1) # go left
-        {
-            cur_node_index = (cur_node_index + as.scalar(current_node[3,]))
-            current_node = M[,cur_node_index]
-        }
-        else # go right
-        {
-            assert(as.scalar(row_vector[,used_feature]) == 0)
-            cur_node_index = cur_node_index + as.scalar(current_node[3,]) + 1
-            current_node = M[,cur_node_index]
-        }
+        cur_node_index = cur_node_index + as.scalar(current_node[3,]) + 1
+        current_node = M[,cur_node_index]
       }
     }
-
-    output_value = as.scalar(current_node[6,])
-#    print("output value found " + output_value)
+    else # CATEGORICAL values
+    {
+      assert(as.scalar(current_node[5,]) == 2)
+      if(as.scalar(row_vector[,used_feature]) == 1) # go left
+      {
+        cur_node_index = (cur_node_index + as.scalar(current_node[3,]))
+        current_node = M[,cur_node_index]
+      }
+      else # go right
+      {
+        assert(as.scalar(row_vector[,used_feature]) == 0)
+        cur_node_index = cur_node_index + as.scalar(current_node[3,]) + 1
+        current_node = M[,cur_node_index]
+      }
+    }
+  }
+  output_value = as.scalar(current_node[6,])
 }
 
 
@@ -146,6 +143,5 @@ calculateTreesOffset = function(Matrix[Double] M) return (Matrix[Double] offset_
     }
     i = i + 1
   }
-#  printMatrix(offset_vector, "offset vector of all trees")
 }
 

@@ -90,43 +90,50 @@ public class BuiltinXgBoostTest_regression extends AutomatedTestBase {
             // root node of first tree
             TestUtils.compareScalars(actual_M.get(new MatrixValue.CellIndex(1,2)), 1.0, eps);
             TestUtils.compareScalars(actual_M.get(new MatrixValue.CellIndex(2,2)), 1.0, eps);
-            TestUtils.compareScalars(String.valueOf(actual_M.get(new MatrixValue.CellIndex(3, 2))), "null");
-            TestUtils.compareScalars(String.valueOf(actual_M.get(new MatrixValue.CellIndex(4, 2))), "null");
-            TestUtils.compareScalars(String.valueOf(actual_M.get(new MatrixValue.CellIndex(5, 2))), "null");
-            TestUtils.compareScalars(actual_M.get(new MatrixValue.CellIndex(6,2)), 4.120, eps);
+            TestUtils.compareScalars(actual_M.get(new MatrixValue.CellIndex(3,2)), 1.0, eps);
+            TestUtils.compareScalars(actual_M.get(new MatrixValue.CellIndex(4,2)), 4.0, eps);
+            TestUtils.compareScalars(actual_M.get(new MatrixValue.CellIndex(5,2)), 1.0, eps);
+            TestUtils.compareScalars(actual_M.get(new MatrixValue.CellIndex(6,2)), 2.10, eps);
+
+            // random leaf node of first tree
+            TestUtils.compareScalars(actual_M.get(new MatrixValue.CellIndex(1,8)), 7.0, eps);
+            TestUtils.compareScalars(actual_M.get(new MatrixValue.CellIndex(2,8)), 1.0, eps);
+            TestUtils.compareScalars(String.valueOf(actual_M.get(new MatrixValue.CellIndex(3, 8))), "null");
+            TestUtils.compareScalars(String.valueOf(actual_M.get(new MatrixValue.CellIndex(4, 8))), "null");
+            TestUtils.compareScalars(String.valueOf(actual_M.get(new MatrixValue.CellIndex(5, 8))), "null");
+            TestUtils.compareScalars(actual_M.get(new MatrixValue.CellIndex(6,8)), 5.0, eps);
+
+            // last node in first tree
+            TestUtils.compareScalars(actual_M.get(new MatrixValue.CellIndex(1,10)), 13.0, eps);
+            TestUtils.compareScalars(actual_M.get(new MatrixValue.CellIndex(2,10)), 1.0, eps);
+            TestUtils.compareScalars(String.valueOf(actual_M.get(new MatrixValue.CellIndex(3, 10))), "null");
+            TestUtils.compareScalars(String.valueOf(actual_M.get(new MatrixValue.CellIndex(4, 10))), "null");
+            TestUtils.compareScalars(String.valueOf(actual_M.get(new MatrixValue.CellIndex(5, 10))), "null");
+            TestUtils.compareScalars(String.valueOf(actual_M.get(new MatrixValue.CellIndex(6, 10))), "null");
 
             // root node of second tree
-            TestUtils.compareScalars(actual_M.get(new MatrixValue.CellIndex(1,3)), 1.0, eps);
-            TestUtils.compareScalars(actual_M.get(new MatrixValue.CellIndex(2,3)), 2.0, eps);
-            TestUtils.compareScalars(actual_M.get(new MatrixValue.CellIndex(3,3)), 1.0, eps);
-            TestUtils.compareScalars(actual_M.get(new MatrixValue.CellIndex(4,3)), 4.0, eps);
-            TestUtils.compareScalars(actual_M.get(new MatrixValue.CellIndex(5,3)), 1.0, eps);
-            TestUtils.compareScalars(actual_M.get(new MatrixValue.CellIndex(6,3)), 2.10, eps);
-
-            // random leaf node of second tree
-            TestUtils.compareScalars(actual_M.get(new MatrixValue.CellIndex(1,6)), 4.0, eps);
-            TestUtils.compareScalars(actual_M.get(new MatrixValue.CellIndex(2,6)), 2.0, eps);
-            TestUtils.compareScalars(String.valueOf(actual_M.get(new MatrixValue.CellIndex(3, 6))), "null");
-            TestUtils.compareScalars(String.valueOf(actual_M.get(new MatrixValue.CellIndex(4, 6))), "null");
-            TestUtils.compareScalars(String.valueOf(actual_M.get(new MatrixValue.CellIndex(5, 6))), "null");
-            TestUtils.compareScalars(actual_M.get(new MatrixValue.CellIndex(6,6)), -1.536, eps);
-
-            // random leaf node of second tree
-            TestUtils.compareScalars(actual_M.get(new MatrixValue.CellIndex(1,7)), 5.0, eps);
-            TestUtils.compareScalars(actual_M.get(new MatrixValue.CellIndex(2,7)), 2.0, eps);
-            TestUtils.compareScalars(String.valueOf(actual_M.get(new MatrixValue.CellIndex(3, 7))), "null");
-            TestUtils.compareScalars(String.valueOf(actual_M.get(new MatrixValue.CellIndex(4, 7))), "null");
-            TestUtils.compareScalars(String.valueOf(actual_M.get(new MatrixValue.CellIndex(5, 7))), "null");
-            TestUtils.compareScalars(actual_M.get(new MatrixValue.CellIndex(6,7)), 5.764, eps);
-
-            // last node in matrix
-            TestUtils.compareScalars(actual_M.get(new MatrixValue.CellIndex(1,11)), 13.0, eps);
+            TestUtils.compareScalars(actual_M.get(new MatrixValue.CellIndex(1,11)), 1.0, eps);
             TestUtils.compareScalars(actual_M.get(new MatrixValue.CellIndex(2,11)), 2.0, eps);
-            TestUtils.compareScalars(String.valueOf(actual_M.get(new MatrixValue.CellIndex(3, 11))), "null");
-            TestUtils.compareScalars(String.valueOf(actual_M.get(new MatrixValue.CellIndex(4, 11))), "null");
-            TestUtils.compareScalars(String.valueOf(actual_M.get(new MatrixValue.CellIndex(5, 11))), "null");
-            TestUtils.compareScalars(actual_M.get(new MatrixValue.CellIndex(6,11)), 2.764, eps);
+            TestUtils.compareScalars(actual_M.get(new MatrixValue.CellIndex(3,11)), 1.0, eps);
+            TestUtils.compareScalars(actual_M.get(new MatrixValue.CellIndex(4,11)), 4.0, eps);
+            TestUtils.compareScalars(actual_M.get(new MatrixValue.CellIndex(5,11)), 1.0, eps);
+            TestUtils.compareScalars(actual_M.get(new MatrixValue.CellIndex(6,11)), 2.10, eps);
 
+            // random leaf node of second tree
+            TestUtils.compareScalars(actual_M.get(new MatrixValue.CellIndex(1,15)), 5.0, eps);
+            TestUtils.compareScalars(actual_M.get(new MatrixValue.CellIndex(2,15)), 2.0, eps);
+            TestUtils.compareScalars(String.valueOf(actual_M.get(new MatrixValue.CellIndex(3, 15))), "null");
+            TestUtils.compareScalars(String.valueOf(actual_M.get(new MatrixValue.CellIndex(4, 15))), "null");
+            TestUtils.compareScalars(String.valueOf(actual_M.get(new MatrixValue.CellIndex(5, 15))), "null");
+            TestUtils.compareScalars(actual_M.get(new MatrixValue.CellIndex(6,15)), 2.10, eps);
+
+            // last node in matrix and second tree
+            TestUtils.compareScalars(actual_M.get(new MatrixValue.CellIndex(1,19)), 13.0, eps);
+            TestUtils.compareScalars(actual_M.get(new MatrixValue.CellIndex(2,19)), 2.0, eps);
+            TestUtils.compareScalars(String.valueOf(actual_M.get(new MatrixValue.CellIndex(3, 19))), "null");
+            TestUtils.compareScalars(String.valueOf(actual_M.get(new MatrixValue.CellIndex(4, 19))), "null");
+            TestUtils.compareScalars(String.valueOf(actual_M.get(new MatrixValue.CellIndex(5, 19))), "null");
+            TestUtils.compareScalars(String.valueOf(actual_M.get(new MatrixValue.CellIndex(6, 19))), "null");
 
 
         } catch (Exception ex) {

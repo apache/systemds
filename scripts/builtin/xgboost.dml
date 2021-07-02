@@ -2,11 +2,13 @@
 # ---------------------------------------------------------------------------------------------
 # NAME          TYPE     DEFAULT      MEANING
 # ---------------------------------------------------------------------------------------------
-# X             String   ---          Location to read feature matrix X; note that X needs to be both recoded and dummy coded
-# Y 			String   ---		  Location to read label matrix Y; note that Y needs to be both recoded and dummy coded
-# R   	  		String   " "	      Location to read the matrix R(nx1) which for each feature in X contains the following information
-#										- R[,2]: 1 (scalar feature)
-#										- R[,1]: 2 (categorical feature)
+# X             Matrix   ---          Feature matrix X; note that X needs to be both recoded and dummy coded
+# Y             Matrix   ---          Label matrix Y; note that Y needs to be both recoded and dummy coded
+# R   	  		Matrix   1, 1xn	      Matrix R; 1xn vector which for each feature in X contains the following information
+#										- R[,1]: 1 (scalar feature)
+#										- R[,2]: 2 (categorical feature)
+#                                     Feature 1 is a scalar feature and features 2 is a categorical feature
+#                                     If R is not provided by default all variables are assumed to be scale (1)
 # num_trees     Integer  10           Number of trees to be created in the xgboost model
 # learning_rate Double   0.3          alias: eta. After each boosting step the learning rate controls the weights of the new predictions
 # max_depth     Integer  6            Maximum depth of a tree. Increasing this value will make the model more complex and more likely to overfit
@@ -14,7 +16,7 @@
 
 # ---------------------------------------------------------------------------------------------
 # OUTPUT:
-# Matrix M where each column corresponds to a node in the learned tree and each row contains the following information:
+# Matrix M where each column corresponds to a node in the learned tree (the first node is the init prediction) and each row contains the following information:
 #  M[1,j]: id of node j (in a complete binary tree)
 #  M[2,j]: tree id to which node j belongs
 #  M[3,j]: Offset (no. of columns) to left child of j if j is an internal node, otherwise 0
@@ -26,8 +28,8 @@
 #     If j is a leaf node 1 if j is impure and the number of samples at j > threshold, otherwise 0
 # -------------------------------------------------------------------------------------------
 
-m_xgboost = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] R,
-  Integer num_trees = 3, Double learning_rate = 0.3, Integer max_depth = 6)
+m_xgboost = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] R = matrix(1,rows=1,cols=nrow(X)),
+  Integer num_trees = 10, Double learning_rate = 0.3, Integer max_depth = 6)
   return (Matrix[Double] M) {
   print("[DEBUG] inside xgboost with " + num_trees + " trees")
 
@@ -37,26 +39,25 @@ m_xgboost = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] R,
   assert(nrow(R) == 1)
 
   M = matrix(0,rows=6,cols=0)
-  current_prediction = matrix(median(y), rows=nrow(y), cols=1)
+  # set the init prediction at first col in M
+  init_prediction_matrix = matrix("0 0 0 0 0 0",rows=nrow(M),cols=1)
+  init_prediction_matrix[6,1] = median(y)
+  M = cbind(M, init_prediction_matrix)
 
+  current_prediction = matrix(median(y), rows=nrow(y), cols=1)
   tree_id = 1
   while(tree_id <= num_trees) # todo maybe implement early stopping
   {
-    new_M = buildOneTree(X, y, R, max_depth, current_prediction, tree_id)
+    curr_M = buildOneTree(X, y, R, max_depth, current_prediction, tree_id)
 
     # in current prediction all previous trees are considered, so we only add the current tree to calculate new predictions
-    current_prediction = calculateNewPredictions(X, current_prediction, learning_rate, new_M)
+    current_prediction = calculateNewPredictions(X, current_prediction, learning_rate, curr_M)
     print("we callculated new predictions and start with next tree")
 
     tree_id = tree_id + 1
-    M = cbind(M, new_M) # concat the new tree to the existing one (forest-ing)
+    M = cbind(M, curr_M) # concat the new tree to the existing one (forest-ing)
   }
-
-
-  print("[DEBUG] Complete XGBoostTree")
   printMMatrix(M)
-
-
   print("[DEBUG] Return xgboost")
 }
 
@@ -65,10 +66,10 @@ m_xgboost = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] R,
 # INPUT:    X: nxn matrix, original input matrix
 # INPUT:    current_prediction: nx1 vector of the current prediction for my target features y (1st run is init prediction)
 # INPUT:    learning_rate: set by user
-# INPUT:    M: The current M matrix of all trees created until here
+# INPUT:    curr_M: The current M matrix with the current tree
 # OUTPUT:   new_prediction: x1 vector of new new_prediction for my target features y
 calculateNewPredictions = function(Matrix[Double] X, Matrix[Double] current_prediction,
-    Double learning_rate, Matrix[Double] new_M)
+    Double learning_rate, Matrix[Double] curr_M)
     return (Matrix[Double] new_prediction) {
   assert(ncol(current_prediction) == 1)
   assert(nrow(current_prediction) == nrow(X)) # each Entry should have an own initial prediction
@@ -77,21 +78,26 @@ calculateNewPredictions = function(Matrix[Double] X, Matrix[Double] current_pred
   print("start with new_prediction by using init prediction and trees ")
   printMatrix(current_prediction, "current_prediction")
 
-
-  start_node_current_tree = new_M[,1]
+  start_node_current_tree = curr_M[,1]
 
   for(entry in 1:nrow(X)) # go though each entry in X and calculate the new prediction
   {
     output_values = matrix(0, rows=1, cols=0)
 
-      output_value = getOutputValueForEntry(X[entry,], new_M, start_node_current_tree)
+      output_value = getOutputValueForEntry(X[entry,], curr_M, start_node_current_tree)
       output_values = cbind(output_values, as.matrix(output_value))
       new_prediction[entry,] = current_prediction[entry,] + sum(learning_rate * output_values)
   }
   printMatrix(new_prediction, "all  new_prediction for y fresh calculated")
 }
 
-getOutputValueForEntry = function(Matrix[Double] row_vector, Matrix[Double] new_M, Matrix[Double] current_node)
+
+#-----------------------------------------------------------------------------------------------------------------------
+# INPUT:    row_vector: nx1 vector, one sample with n features
+# INPUT:    curr_M: The current M matrix with the current tree
+# INPUT:    current_node: the start node of the current tree
+# OUTPUT:   output_value: the prediction for the current sample at the current tree
+getOutputValueForEntry = function(Matrix[Double] row_vector, Matrix[Double] curr_M, Matrix[Double] current_node)
     return (Double output_value) {
     assert(nrow(row_vector) == 1)
     assert(as.scalar(current_node[1,]) == 1)
@@ -109,34 +115,33 @@ getOutputValueForEntry = function(Matrix[Double] row_vector, Matrix[Double] new_
         if(as.scalar(row_vector[,used_feature]) < as.scalar(current_node[6,])) # go left
         {
           cur_node_index = (cur_node_index + as.scalar(current_node[3,]))
-          current_node = new_M[,cur_node_index]
+          current_node = curr_M[,cur_node_index]
         }
         else #  go right
         {
           cur_node_index = cur_node_index + as.scalar(current_node[3,]) + 1
-          current_node = new_M[,cur_node_index]
+          current_node = curr_M[,cur_node_index]
         }
       }
-      else # CATEGORICAL values # todo maybe vereinfachen
+      else # CATEGORICAL values
       {
         assert(as.scalar(current_node[5,]) == 2)
         if(as.scalar(row_vector[,used_feature]) == 1) # go left
         {
             cur_node_index = (cur_node_index + as.scalar(current_node[3,]))
-            current_node = new_M[,cur_node_index]
+            current_node = curr_M[,cur_node_index]
         }
         else # go right
         {
             assert(as.scalar(row_vector[,used_feature]) == 0)
             cur_node_index = cur_node_index + as.scalar(current_node[3,]) + 1
-            current_node = new_M[,cur_node_index]
+            current_node = curr_M[,cur_node_index]
         }
       }
     }
 
     output_value = as.scalar(current_node[6,])
     print("output value found " + output_value)
-
 }
 
 #-----------------------------------------------------------------------------------------------------------------------
@@ -209,7 +214,6 @@ buildOneTree = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] R, In
       }
       else # CATEGORICAL
       {
-        # TODO: always true? maybe if a split would create a empty child we do not need to split
         assert(type == 2.0)
         has_child = TRUE
       }
@@ -253,7 +257,6 @@ buildOneTree = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] R, In
     node_queue_len = ncol(node_queue)
     printMMatrix(M)
   }
-    # todo pruning
   print("[DEBUG] we successfully created one tree")
 }
 
@@ -427,12 +430,14 @@ dataQueuePush = function(Matrix[Double] left, Matrix[Double] right, Matrix[Doubl
 }
 
 
+#-----------------------------------------------------------------------------------------------------------------------
+# INPUT:    X: a nxn matrix (the current samples with all features we observe)
+# INPUT:    y: a 1xn matrix (the current y to all observed samples)
+# OUTPUT:   lowest_residuals_index: the feature index with the lowest residuals
 findBestFeature = function(Matrix[Double] X, Matrix[Double] y, boolean verbose = FALSE) return (Integer lowest_residuals_index) {
-
    printDebug("Finding Best feature")
    lowest_residuals = 0
    lowest_residuals_index = 1
-
    for(i in 1: ncol(X)) {
         current_feature = X[,i]
         weights = lm(X=current_feature, y=y, verbose=verbose) # todo GLM statt lm für classification

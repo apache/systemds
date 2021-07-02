@@ -167,7 +167,7 @@ confusionMatrix(P, Y)
 | P    | Matrix[Double] | ---     | vector of prediction |
 | Y    | Matrix[Double] | ---     | vector of Golden standard One Hot Encoded |
 
-### Returns
+### Returns 
 
 | Name         | Type           | Description |
 | :----------- | :------------- | :---------- |

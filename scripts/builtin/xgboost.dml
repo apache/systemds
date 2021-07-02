@@ -2,15 +2,15 @@
 # ---------------------------------------------------------------------------------------------
 # NAME          TYPE             DEFAULT      MEANING
 # ---------------------------------------------------------------------------------------------
-# X             Matrix[Double]    ---          Feature matrix X; note that X needs to be both recoded and dummy coded
-# Y             Matrix[Double]    ---          Label matrix Y; note that Y needs to be both recoded and dummy coded
-# R   	  		Matrix[Double]    1, 1xn	   Matrix R; 1xn vector which for each feature in X contains the following information
-#										        - R[,1]: 1 (scalar feature)
-#										        - R[,2]: 2 (categorical feature)
+# X             Matrix[Double]    ---         Feature matrix X; note that X needs to be both recoded and dummy coded
+# Y             Matrix[Double]    ---         Label matrix Y; note that Y needs to be both recoded and dummy coded
+# R   	  		  Matrix[Double]    1, 1xn	    Matrix R; 1xn vector which for each feature in X contains the following information
+#										                          - R[,1]: 1 (scalar feature)
+#										                          - R[,2]: 2 (categorical feature)
 #                                             Feature 1 is a scalar feature and features 2 is a categorical feature
 #                                             If R is not provided by default all variables are assumed to be scale (1)
 # sml_type      Integer           1           Supervised machine learning type: 1 = Regression(default), 2 = Classification
-# num_trees     Integer           10          Number of trees to be created in the xgboost model
+# num_trees     Integer           7           Number of trees to be created in the xgboost model
 # learning_rate Double            0.3         Alias: eta. After each boosting step the learning rate controls the weights of the new predictions
 # max_depth     Integer           6           Maximum depth of a tree. Increasing this value will make the model more complex and more likely to overfit
 # lambda        Double            0.0         L2 regularization term on weights. Increasing this value will make model more conservative and reduce amount of leaves of a tree
@@ -31,7 +31,7 @@
 # -------------------------------------------------------------------------------------------
 
 m_xgboost = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] R = matrix(1,rows=1,cols=nrow(X)),
-  Integer sml_type = 1, Integer num_trees = 3, Double learning_rate = 0.3, Integer max_depth = 6, Double lambda = 0.0)
+  Integer sml_type = 1, Integer num_trees = 7, Double learning_rate = 0.3, Integer max_depth = 6, Double lambda = 0.0)
   return (Matrix[Double] M) {
   # test if input correct
   assert(nrow(X) == nrow(y))

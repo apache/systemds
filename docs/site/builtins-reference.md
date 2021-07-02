@@ -168,14 +168,14 @@ confusionMatrix(P, Y)
 | Y    | Matrix[Double] | ---     | vector of Golden standard One Hot Encoded |
 
 ### Returns
- 
+
 | Name         | Type           | Description |
 | :----------- | :------------- | :---------- |
 | ConfusionSum | Matrix[Double] | The Confusion Matrix Sums of classifications |
 | ConfusionAvg | Matrix[Double] | The Confusion Matrix averages of each true class |
 
 ### Example
- 
+
 ```r
 numClasses = 1
 z = rand(rows = 5, cols = 1, min = 1, max = 9)
@@ -712,7 +712,7 @@ is called internally and parameters `tol` and `maxi` are ignored.
 ##### `icpt`-Argument
 
 The *icpt-argument* can be set to 3 modes:
- 
+
   * 0 = no intercept, no shifting, no rescaling
   * 1 = add intercept, but neither shift nor rescale X
   * 2 = add intercept, shift & rescale X columns to mean = 0, variance = 1
@@ -739,7 +739,7 @@ intersect(X, Y)
 | Name | Type   | Default  | Description |
 | :--- | :----- | -------- | :---------- |
 | X    | Double | --       | matrix X, set A |
-| Y    | Double | --       | matrix Y, set B | 
+| Y    | Double | --       | matrix Y, set B |
 
 ### Returns
 
@@ -1217,7 +1217,7 @@ steplm(X, y, icpt);
 ##### `icpt`-Argument
 
 The *icpt-arg* can be set to 2 modes:
- 
+
   * 0 = no intercept, no shifting, no rescaling
   * 1 = add intercept, but neither shift nor rescale X
 
@@ -1628,32 +1628,33 @@ A_corrected = correctTypos(A, 0.02, 3, FALSE, TRUE)
 
 ## `xgboost`-Function
 
-The `xgboost` - function implements the regression and classification model with scale and categorical features.
+XGBoost is a decision-tree-based ensemble Machine Learning algorithm that uses a gradient boosting. This `xgboost` implementation supports classification and regression and is capable of working with categorical and scalar features.
 
 ### Usage
 
 ```r
-xgboost(X = X, y = y, R = R, num_trees = 3, learning_rate = 0.3, max_depth = 6, lambda = 0.0)
+M = xgboost(X = X, y = y, R = R, sml_type = 1, num_trees = 3, learning_rate = 0.3, max_depth = 6, lambda = 0.0)
 ```
 
 ### Arguments
 
 | NAME                  | TYPE           | DEFAULT  | Description |
 | :------               | :------------- | -------- | :---------- |
-| X                     | Matrix[Double] |   ---    |   Location to read feature matrix X; note that X needs to be both recoded and dummy coded |
-| Y                     | Matrix[Double] |   ---    |   Location to read label matrix Y; note that Y needs to be both recoded and dummy coded |
-| R                     | Matrix[Double] |   ---    |   Location to read the matrix R(nx1) which for each feature in X contains the following information |
+| X                     | Matrix[Double] |   ---    | Feature matrix X; categorical features needs to be one-hot-encoded |
+| Y                     | Matrix[Double] |   ---    | Label matrix Y |
+| R                     | Matrix[Double] |   ---    | Matrix R; 1xn vector which for each feature in X contains the following information |
 |                       |                |          |   - R[,2]: 1 (scalar feature) |
 |                       |                |          |   - R[,1]: 2 (categorical feature) |
+| sml_type              | Integer        |   1      |   Supervised machine learning type: 1 = Regression(default), 2 = Classification |
 | num_trees             | Integer        |   10     |   Number of trees to be created in the xgboost model |
 | learning_rate         | Double         |    0.3   |   alias: eta. After each boosting step the learning rate controls the weights of the new predictions |
 | max_depth             | Integer        |    6     |   Maximum depth of a tree. Increasing this value will make the model more complex and more likely to overfit |
 | lambda                | Double         |    0.0   |   L2 regularization term on weights. Increasing this value will make model more conservative and reduce amount of leaves of a tree |
 
 ### Returns
-| Name    | Type           | Default  | Description |
-| :------ | :------------- | -------- | :---------- |
-| M       | Matrix[Double] | ---      |Each column of the matrix corresponds to a node in the learned model|
+| Name | Type           | Default | Description                                                  |
+| :--- | :------------- | ------- | :----------------------------------------------------------- |
+| M    | Matrix[Double] | ---     | Each column of the matrix corresponds to a node in the learned model <br />Detailed description can be found in `xgboost.dml` |
 
 
 ### Example
@@ -1664,10 +1665,56 @@ X = matrix("4.5 3.0 3.0 2.8 3.5
             2.3 2.0 2.0 1.4 1.8
             2.1 1.0 3.0 1.0 1.9", rows=5, cols=5)
 Y = matrix("1.0
-            0.0
-            0.0
-            1.0
-            0.0", rows=5, cols=1)
-R = matrix("1.0 3.0 3.0 1.0 1.0", rows=1, cols=5)
+            4.0
+            4.0
+            7.0
+            8.0", rows=5, cols=1)
+R = matrix("1.0 1.0 1.0 1.0 1.0", rows=1, cols=5)
 M = xgboost(X = X, Y = Y, R = R)
 ```
+
+
+
+## `xgboostPredict`-Function
+
+In order to calculate a prediction, XGBoost sums predictions of all its trees. Each tree is not a great predictor on it’s own, but by summing across all trees, XGBoost is able to provide a robust prediction in many cases.
+
+### Usage
+
+```r
+y_pred = xgboostPredict(X = X, M = M, sml_type=1)
+```
+
+### Arguments
+
+| NAME          | TYPE           | DEFAULT | Description                                                  |
+| :------------ | :------------- | ------- | :----------------------------------------------------------- |
+| X             | Matrix[Double] | ---     | Feature matrix X; categorical features needs to be one-hot-encoded |
+| M             | Matrix[Double] | ---     | Trained model returned from `xgboost`. Each column of the matrix corresponds to a node in the learned model <br />Detailed description can be found in `xgboost.dml` |
+| sml_type      | Integer        | 1       | Supervised machine learning type: 1 = Regression(default), 2 = Classification |
+| learning_rate | Double         | 0.3     | alias: eta. After each boosting step the learning rate controls the weights of the new predictions. Should be the same as at `xgboost`-function call |
+
+### Returns
+
+| Name | Type           | Default | Description                                                  |
+| :--- | :------------- | ------- | :----------------------------------------------------------- |
+| P    | Matrix[Double] | ---     | The predictions of the samples using the xgboost model. (y_prediction) |
+
+### Example
+
+```r
+X = matrix("4.5 3.0 3.0 2.8 3.5
+            1.9 2.0 1.0 3.4 2.9
+            2.0 1.0 1.0 4.9 3.4
+            2.3 2.0 2.0 1.4 1.8
+            2.1 1.0 3.0 1.0 1.9", rows=5, cols=5)
+Y = matrix("1.0
+            4.0
+            4.0
+            7.0
+            8.0", rows=5, cols=1)
+R = matrix("1.0 1.0 1.0 1.0 1.0", rows=1, cols=5)
+M = xgboost(X = X, Y = Y, R = R, num_trees = 10, learning_rate = 0.4)
+P = xgboostPredict(X = X, M = M, learning_rate = 0.4)
+```
+

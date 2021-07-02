@@ -67,6 +67,7 @@ limitations under the License.
     * [`winsorize`-Function](#winsorize-function)
     * [`gmm`-Function](#gmm-function)
     * [`correctTypos`-Function](#correcttypos-function)
+    * [`xgboost`-Function](#xgboost-function)
     
 # Introduction
 
@@ -1623,4 +1624,50 @@ correctTypos(strings, frequency_threshold, distance_threshold, decapitalize, cor
 ```r
 A = read(“file1”, data_type=”frame”, rows=2000, cols=1, format=”binary”)
 A_corrected = correctTypos(A, 0.02, 3, FALSE, TRUE)
+```
+
+## `xgboost`-Function
+
+The `xgboost` - function implements the regression and classification model with scale and categorical features.
+
+### Usage
+
+```r
+xgboost(X = X, y = y, R = R, num_trees = 3, learning_rate = 0.3, max_depth = 6, lambda = 0.0)
+```
+
+### Arguments
+
+| NAME                  | TYPE           | DEFAULT  | Description |
+| :------               | :------------- | -------- | :---------- |
+| X                     | Matrix[Double] |   ---    |   Location to read feature matrix X; note that X needs to be both recoded and dummy coded |
+| Y                     | Matrix[Double] |   ---    |   Location to read label matrix Y; note that Y needs to be both recoded and dummy coded |
+| R                     | Matrix[Double] |   ---    |   Location to read the matrix R(nx1) which for each feature in X contains the following information |
+|                       |                |          |   - R[,2]: 1 (scalar feature) |
+|                       |                |          |   - R[,1]: 2 (categorical feature) |
+| num_trees             | Integer        |   10     |   Number of trees to be created in the xgboost model |
+| learning_rate         | Double         |    0.3   |   alias: eta. After each boosting step the learning rate controls the weights of the new predictions |
+| max_depth             | Integer        |    6     |   Maximum depth of a tree. Increasing this value will make the model more complex and more likely to overfit |
+| lambda                | Double         |    0.0   |   L2 regularization term on weights. Increasing this value will make model more conservative and reduce amount of leaves of a tree |
+
+### Returns
+| Name    | Type           | Default  | Description |
+| :------ | :------------- | -------- | :---------- |
+| M       | Matrix[Double] | ---      |Each column of the matrix corresponds to a node in the learned model|
+
+
+### Example
+```r
+X = matrix("4.5 3.0 3.0 2.8 3.5
+            1.9 2.0 1.0 3.4 2.9
+            2.0 1.0 1.0 4.9 3.4
+            2.3 2.0 2.0 1.4 1.8
+            2.1 1.0 3.0 1.0 1.9", rows=5, cols=5)
+Y = matrix("1.0
+            0.0
+            0.0
+            1.0
+            0.0", rows=5, cols=1)
+R = matrix("1.0 3.0 3.0 1.0 1.0", rows=1, cols=5)
+M = xgboost(X = X, Y = Y, R = R)
 ```

@@ -109,7 +109,6 @@ m_decisionTree = function(
       use_cols_queue = dataQueuePush(new_use_cols_vector, new_use_cols_vector, use_cols_queue)
       impurity_queue = dataQueuePush(matrix(impurity, rows = 1, cols = 1), matrix(impurity, rows = 1, cols = 1), impurity_queue)
       offset = dataQueueLength(node_queue) - 1
-      # not so sure about 5
       M = outputMatrixBind(M, node, offset, used_col, R, threshold)
     } else {
       M = outputMatrixBind(M, node, 0.0, used_col, R, matrix(0, rows = 1, cols = 1))
@@ -122,16 +121,6 @@ m_decisionTree = function(
     }
   }
 }
-
-printMatrix = function(Matrix[Double] m, string name) return() {
-    print("--------------------------------------")
-    print(":: [MATRIX] " + name + "  (col:" + ncol(m) + ",row:" + nrow(m) + ")")
-    for(i in 1:nrow(m)) {
-        print(":(" + i + ")   " + toString(m[i,], linesep=" ", sep="    "))
-    }
-    print("--------------------------------------")
-}
-
 dataQueueLength = function(Matrix[Double] queue)  return (Double len) {
   len = ncol(queue)
 }

@@ -167,15 +167,15 @@ confusionMatrix(P, Y)
 | P    | Matrix[Double] | ---     | vector of prediction |
 | Y    | Matrix[Double] | ---     | vector of Golden standard One Hot Encoded |
 
-### Returns 
-
+### Returns
+ 
 | Name         | Type           | Description |
 | :----------- | :------------- | :---------- |
 | ConfusionSum | Matrix[Double] | The Confusion Matrix Sums of classifications |
 | ConfusionAvg | Matrix[Double] | The Confusion Matrix averages of each true class |
 
 ### Example
-
+ 
 ```r
 numClasses = 1
 z = rand(rows = 5, cols = 1, min = 1, max = 9)
@@ -712,7 +712,7 @@ is called internally and parameters `tol` and `maxi` are ignored.
 ##### `icpt`-Argument
 
 The *icpt-argument* can be set to 3 modes:
-
+ 
   * 0 = no intercept, no shifting, no rescaling
   * 1 = add intercept, but neither shift nor rescale X
   * 2 = add intercept, shift & rescale X columns to mean = 0, variance = 1
@@ -1217,7 +1217,7 @@ steplm(X, y, icpt);
 ##### `icpt`-Argument
 
 The *icpt-arg* can be set to 2 modes:
-
+ 
   * 0 = no intercept, no shifting, no rescaling
   * 1 = add intercept, but neither shift nor rescale X
 

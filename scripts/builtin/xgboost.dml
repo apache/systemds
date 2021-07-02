@@ -33,7 +33,7 @@
 m_xgboost = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] R = matrix(1,rows=1,cols=nrow(X)),
   Integer sml_type = 1, Integer num_trees = 3, Double learning_rate = 0.3, Integer max_depth = 6, Double lambda = 0.0)
   return (Matrix[Double] M) {
-  print("[DEBUG] inside xgboost with " + num_trees + " trees")
+#  print("[DEBUG] inside xgboost with " + num_trees + " trees")
 
   # test if input correct
   assert(nrow(X) == nrow(y))
@@ -47,14 +47,14 @@ m_xgboost = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] R = matr
   M = cbind(M, init_prediction_matrix)
 
   current_prediction = matrix(median(y), rows=nrow(y), cols=1)
+
   tree_id = 1
-  while(tree_id <= num_trees) # todo maybe implement early stopping
+  while(tree_id <= num_trees)
   {
     curr_M = buildOneTree(X, y, R, sml_type, max_depth, current_prediction, tree_id, lambda)
 
     # in current prediction all previous trees are considered, so we only add the current tree to calculate new predictions
     current_prediction = calculateNewPredictions(X, sml_type,current_prediction, learning_rate, curr_M)
-    print("we callculated new predictions and start with next tree")
 
     tree_id = tree_id + 1
     M = cbind(M, curr_M) # concat the new tree to the existing one (forest-ing)
@@ -71,7 +71,7 @@ m_xgboost = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] R = matr
 # INPUT:    curr_M: The current M matrix with the current tree
 # OUTPUT:   new_prediction: x1 vector of new new_prediction for my target features y
 calculateNewPredictions = function(Matrix[Double] X, Integer sml_type, Matrix[Double] current_prediction,
-    Double learning_rate, Matrix[Double] new_M)
+    Double learning_rate, Matrix[Double] curr_M)
     return (Matrix[Double] new_prediction) {
   assert(ncol(current_prediction) == 1)
   assert(nrow(current_prediction) == nrow(X)) # each Entry should have an own initial prediction
@@ -81,7 +81,7 @@ calculateNewPredictions = function(Matrix[Double] X, Integer sml_type, Matrix[Do
   printMatrix(current_prediction, "current_prediction")
 
 
-  start_node_current_tree = new_M[,1]
+  start_node_current_tree = curr_M[,1]
 
     if(sml_type == 1) # Regression
     {
@@ -89,9 +89,9 @@ calculateNewPredictions = function(Matrix[Double] X, Integer sml_type, Matrix[Do
       {
         output_values = matrix(0, rows=1, cols=0)
 
-          output_value = getOutputValueForEntry(X[entry,], new_M, start_node_current_tree)
+          output_value = getOutputValueForEntry(X[entry,], curr_M, start_node_current_tree)
           output_values = cbind(output_values, as.matrix(output_value))
-          new_prediction[entry,] = current_prediction[entry,] + sum(learning_rate * output_values)
+          new_prediction[entry,] = current_prediction[entry,] + learning_rate * sum(output_values)
       }
     }
   else # Classification
@@ -100,14 +100,14 @@ calculateNewPredictions = function(Matrix[Double] X, Integer sml_type, Matrix[Do
     for(entry in 1:nrow(X)) # go though each entry in X and calculate the new prediction
     {
       output_values = matrix(0, rows=1, cols=0)
-      output_value = getOutputValueForEntry(X[entry,], new_M, start_node_current_tree)
+      output_value = getOutputValueForEntry(X[entry,], curr_M, start_node_current_tree)
       output_values = cbind(output_values, as.matrix(output_value))
       odds = as.scalar(current_prediction[entry,])
       if((1 - odds) == 0)
         log_odds = 0
       else
         log_odds = log(odds / (1 - odds))
-      x = (log_odds + sum(learning_rate * output_values))
+      x = (log_odds + learning_rate * sum(output_values))
       e = 2.7182818284
       new_prediction[entry,] = e^x / (1 + e^x)
     }

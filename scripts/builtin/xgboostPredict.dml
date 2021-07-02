@@ -1,12 +1,10 @@
-
-
-
 # INPUT PARAMETERS:
 # ----------------------------------------------------------------------------
 # NAME                              TYPE      DEFAULT  MEANING
 # ----------------------------------------------------------------------------
 # X                                 Matrix    ---      Matrix of feature vectors we want to predict (X_test)
 # M                                 Matrix    ---      The model created at xgboost
+# sml_type                          Integer   1        Supervised machine learning type: 1 = Regression(default), 2 = Classification
 # learning_rate                     Double    0.3     the learning rate used in the model
 
 # RETURN VALUES
@@ -16,27 +14,60 @@
 # P        Matrix    ---     The predictions of the samples using the given xgboost model. (y_prediction)
 # ----------------------------------------------------------------------------
 
-m_xgboostPredict = function(Matrix[Double] X, Matrix[Double] M, Double learning_rate = 0.3
+m_xgboostPredict = function(Matrix[Double] X, Matrix[Double] M, Integer sml_type = 1, Double learning_rate = 0.3
 ) return (Matrix[Double] P) {
 
   nr_trees = max(M[2,])
   P = matrix(0, rows=nrow(X), cols=1)
   initial_prediction = M[6,1]
   trees_M_offset = calculateTreesOffset(M)
-  for(entry in 1:nrow(X)) # go though each entry in X and calculate the new prediction
+  if(sml_type == 1) # Regression
   {
-    output_values = matrix(0, rows=1, cols=0)
-    for(i in 1:nr_trees) # go through all trees
+      for(entry in 1:nrow(X)) # go though each entry in X and calculate the new prediction
+      {
+        output_values = matrix(0, rows=1, cols=0)
+
+        for(i in 1:nr_trees) # go through all trees
+        {
+            begin_cur_tree = as.scalar(trees_M_offset[i,])
+            if(i == nr_trees)
+                end_cur_tree = ncol(M)
+            else
+                end_cur_tree =  as.scalar(trees_M_offset[i+1,]) - 1
+            output_value = getOutputValueForEntryPredict(X[entry,], M[, begin_cur_tree:end_cur_tree])
+            output_values = cbind(output_values, as.matrix(output_value))
+        }
+        P[entry,] = initial_prediction + learning_rate * sum(output_values)
+      }
+  }
+  else # Classification
+  {
+    assert(sml_type == 2)
+    for(entry in 1:nrow(X)) # go though each entry in X and calculate the new prediction
     {
-        begin_cur_tree = as.scalar(trees_M_offset[i,])
-        if(i == nr_trees)
-            end_cur_tree = ncol(M)
-        else
-            end_cur_tree =  as.scalar(trees_M_offset[i+1,]) - 1
-        output_value = getOutputValueForEntryPredict(X[entry,], M[, begin_cur_tree:end_cur_tree])
-        output_values = cbind(output_values, as.matrix(output_value))
+        # classification prediction is dependent of the previous prediction, diff to regression
+        current_prediction = matrix(as.scalar(initial_prediction), rows=nrow(X), cols=1)
+        for(i in 1:nr_trees) # go through all trees
+        {
+            begin_cur_tree = as.scalar(trees_M_offset[i,])
+            if(i == nr_trees)
+                end_cur_tree = ncol(M)
+            else
+                end_cur_tree =  as.scalar(trees_M_offset[i+1,]) - 1
+            output_values = matrix(0, rows=1, cols=0)
+            output_value = getOutputValueForEntryPredict(X[entry,], M[, begin_cur_tree:end_cur_tree])
+            output_values = cbind(output_values, as.matrix(output_value))
+            odds = as.scalar(current_prediction[entry,])
+            if((1 - odds) == 0)
+              log_odds = 0
+            else
+              log_odds = log(odds / (1 - odds))
+            x = (log_odds + learning_rate * sum(output_values))
+            e = 2.7182818284
+            current_prediction[entry,] = e^x / (1 + e^x)
+        }
+        P[entry,] = current_prediction[entry,]
     }
-    P[entry,] = initial_prediction + learning_rate * sum(output_values)
   }
 
 #   printMatrix(P, "Final predictions are")

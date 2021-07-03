@@ -24,7 +24,7 @@ import unittest
 import numpy as np
 from systemds.context import SystemDSContext
 from systemds.examples.tutorials.adult import DataManager
-from systemds.operator import OperationNode
+from systemds.operator import OperationNode, Matrix
 from systemds.operator.algorithm import kmeans, multiLogReg, multiLogRegPredict, l2svm, confusionMatrix, scale, scaleApply, split, winsorize
 from systemds.script_building import DMLScript
 
@@ -36,7 +36,8 @@ class Test_DMLScript(unittest.TestCase):
 
     sds: SystemDSContext = None
     d: DataManager = None
-    neural_net_src_path: str = "../../tests/examples/tutorials/neural_net_source.dml"
+    neural_net_src_path: str = "./tests/examples/tutorials/neural_net_source.dml"
+    preprocess_src_path: str = "./tests/examples/tutorials/preprocess.dml"
     dataset_path_train: str = "../../test/resources/datasets/adult/train_data.csv"
     dataset_path_train_mtd: str = "../../test/resources/datasets/adult/train_data.csv.mtd"
     dataset_path_test: str = "../../test/resources/datasets/adult/test_data.csv"
@@ -290,7 +291,6 @@ class Test_DMLScript(unittest.TestCase):
         """""
         #### END
         train_count = 30000
-        test_count = 10000
         ################################################################################################################
         """""
         With this context we can now define a read operation using the path of the dataset and a schema.
@@ -386,51 +386,35 @@ class Test_DMLScript(unittest.TestCase):
 
         """""
         ################################################################################################################
-        X1, M1 = X1.transform_encode(spec=jspec).compute()
+        X1, M1 = X1.transform_encode(spec=jspec)
 
         ################################################################################################################
         """"
-        First we re-split out data into a training and a test set with the corresponding labels. We can then simply transform
-        the numpy array of the training data back to SystemDS matrix by using "sds.from_numpy()". 
-        The SystemDS scale function takes a matrix as an input and returns three output parameters:
-            # Y            Matrix    ---      Output feature matrix with K columns
-            # ColMean      Matrix    ---      The column means of the input, subtracted if Center was TRUE
-            # ScaleFactor  Matrix    ---      The Scaling of the values, to make each dimension have similar value ranges
-        If we want to retransform a SystemDs Matrix to a Numpy array we can do so by using the np.array() function. 
+        First we re-split out data into a training and a test set with the corresponding labels. 
         """""
         ################################################################################################################
-        col_length = len(X1[0])
-        X = X1[0:train_count, 0:col_length - 1]
-        Y = X1[0:train_count, col_length - 1:col_length].flatten()
-        # Test data
-        Xt = X1[train_count:train_count + test_count, 0:col_length - 1]
-        Yt = X1[train_count:train_count + test_count, col_length - 1:col_length].flatten()
+        PREPROCESS_package = self.sds.source(self.preprocess_src_path, "preprocess", print_imported_methods=True)
 
+        X = PREPROCESS_package.get_X(X1, train_count)
+        Y = PREPROCESS_package.get_Y(X1, train_count)
+        #We lose the column count information after using the Preprocess Package. This triggers an error on multilogregpredict. Otherwise its working
+        Xt = self.sds.from_numpy(np.array(PREPROCESS_package.get_Xt(X1, train_count).compute()))
+        Yt = PREPROCESS_package.get_Yt(X1, train_count)
 
-        ################################################################################################################
-        """"
-
-        """""
-        ################################################################################################################
-        X = self.sds.from_numpy(X)
-        Y = self.sds.from_numpy(Y)
-        Xt = self.sds.from_numpy(Xt)
-        Yt = self.sds.from_numpy(Yt)
 
         X, mean, sigma = scale(X, True, True)
         Xt = scaleApply(Xt, mean, sigma)
 
         betas = multiLogReg(X, Y)
 
-        [_, y_pred, acc] = multiLogRegPredict(Xt, betas, Yt).compute()
+        [_, y_pred, acc] = multiLogRegPredict(Xt, betas, Yt)
 
-        self.assertGreater(acc, 80)
-        confusion_matrix_abs, _ = confusionMatrix(self.sds.from_numpy(y_pred), Yt).compute()
+        confusion_matrix_abs, _ = confusionMatrix(y_pred, Yt).compute()
         self.assertTrue(
             np.allclose(
                 confusion_matrix_abs,
-                np.array([[7098., 951.],
-                          [ 517., 1434.]])
+                np.array([[13375,  1788],
+                          [979., 2700]])
             )
         )
 
@@ -453,43 +437,20 @@ class Test_DMLScript(unittest.TestCase):
         )
         jspec = self.sds.read(self.dataset_jspec, data_type="scalar", value_type="string")
         # scaling does not have effect yet. We need to replace labels in test set with the same string as in train dataset
-        X1, M1 = F1.rbind(F2).transform_encode(spec=jspec).compute()
-        col_length = len(X1[0])
-        X = X1[0:train_count, 0:col_length - 1]
-        Y = X1[0:train_count, col_length - 1:col_length].flatten() - 1
-        # Test data
-        Xt = X1[train_count:train_count + test_count, 0:col_length - 1]
-        Yt = X1[train_count:train_count + test_count, col_length - 1:col_length].flatten() - 1
+        X1, M1 = F1.rbind(F2).transform_encode(spec=jspec)
 
-        _, mean, sigma = scale(self.sds.from_numpy(X), True, True).compute()
+        PREPROCESS_package = self.sds.source(self.preprocess_src_path, "preprocess", print_imported_methods=True)
 
-        mean_copy = np.array(mean)
-        sigma_copy = np.array(sigma)
+        X = PREPROCESS_package.get_X(X1, train_count)
+        Y = PREPROCESS_package.get_Y(X1, train_count)
+        Xt = PREPROCESS_package.get_Xt(X1, train_count)
+        Yt = PREPROCESS_package.get_Yt(X1, train_count)
 
-        numerical_cols = []
-        for count, col in enumerate(np.transpose(X)):
-            for entry in col:
-                if entry > 1 or entry < 0 or entry > 0 and entry < 1:
-                    numerical_cols.append(count)
-                    break
-
-        for x in range(0, 105):
-            if not x in numerical_cols:
-                mean_copy[0][x] = 0
-                sigma_copy[0][x] = 1
-
-        mean = self.sds.from_numpy(mean_copy)
-        sigma = self.sds.from_numpy(sigma_copy)
-        X = self.sds.from_numpy(X)
-        Xt = self.sds.from_numpy(Xt)
-        X = scaleApply(winsorize(X, True), mean, sigma)
-        Xt = scaleApply(winsorize(Xt, True), mean, sigma)
-        # node = PROCESSING_split_package.m_split(X1,X1)
-        # X,Y = node.compute()
-
+        X, mean, sigma = scale(X, True, True)
+        Xt = scaleApply(Xt, mean, sigma)
 
         features = X
-        labels = self.sds.from_numpy(Y)
+        labels = Y
 
         # Train data
         """
@@ -547,14 +508,14 @@ class Test_DMLScript(unittest.TestCase):
         """
         ################################################################################################################
         test_features = Xt
-        probs = FFN_package.predict(test_features, network).compute(True)
+        probs = FFN_package.predict(test_features, network)
         ################################################################################################################
         """
         To evaluate how well our model performed on the test set, we can use the probability matrix from the predict call and the real test labels
         and compute the log-cosh loss.
         """
         ################################################################################################################
-        FFN_package.eval(probs, Yt).compute()
+        FFN_package.eval(probs, Yt).compute(True)
         ################################################################################################################
 
 

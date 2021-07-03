@@ -1,0 +1,57 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+# Split input data X and Y into contiguous or samples train/test sets
+# ------------------------------------------------------------------------------
+# NAME   TYPE    DEFAULT  MEANING
+# ------------------------------------------------------------------------------
+# X      Matrix  ---      Input feature matrix
+# Y      Matrix  ---      Input Labels
+# f      Double  0.7      Train set fraction [0,1]
+# cont   Boolean TRUE     contiuous splits, otherwise sampled
+# seed   Integer -1       The seed to reandomly select rows in sampled mode
+# ------------------------------------------------------------------------------
+# Xtrain Matrix  ---      Train split of feature matrix
+# Xtest  Matrix  ---      Test split of feature matrix
+# ytrain Matrix  ---      Train split of label matrix
+# ytest  Matrix  ---      Test split of label matrix
+# ------------------------------------------------------------------------------
+
+get_X = function(matrix[double] X,
+                 int train_samples)
+    return (matrix[double] returnVal) {
+  returnVal = X[1:train_samples,1:ncol(X)-1]
+}
+get_Y = function(matrix[double] X,
+                 int train_samples)
+    return (matrix[double] returnVal) {
+  returnVal = X[1:train_samples,ncol(X):ncol(X)]
+}
+get_Xt = function(matrix[double] X,
+                 int train_samples)
+    return (matrix[double] returnVal) {
+  returnVal = X[train_samples+1:nrow(X),1:ncol(X)-1]
+}
+get_Yt = function(matrix[double] X,
+                 int train_samples)
+    return (matrix[double] returnVal) {
+  returnVal = X[train_samples+1:nrow(X),ncol(X):ncol(X)]
+}

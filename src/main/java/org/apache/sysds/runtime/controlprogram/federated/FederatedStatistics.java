@@ -48,16 +48,16 @@ import org.apache.sysds.runtime.lineage.LineageItem;
 import org.apache.sysds.utils.Statistics;
 
 public class FederatedStatistics {
-	private static Set<Pair<String, Integer>> _fedWorkerAdresses = new HashSet<>();
+	private static Set<Pair<String, Integer>> _fedWorkerAddresses = new HashSet<>();
 
 	public static void registerFedWorker(String host, int port) {
-		_fedWorkerAdresses.add(new ImmutablePair<String, Integer>(host, new Integer(port)));
+		_fedWorkerAddresses.add(new ImmutablePair<String, Integer>(host, new Integer(port)));
 	}
 
 	public static String displayFedWorkers() {
 		StringBuilder sb = new StringBuilder();
 		sb.append("Federated Worker Addresses:\n");
-		for(Pair<String, Integer> fedAddr : _fedWorkerAdresses) {
+		for(Pair<String, Integer> fedAddr : _fedWorkerAddresses) {
 			sb.append(String.format("  %s:%d", fedAddr.getLeft(), fedAddr.getRight().intValue()));
 			sb.append("\n");
 		}
@@ -178,7 +178,7 @@ public class FederatedStatistics {
 
 	private static Future<FederatedResponse>[] getFederatedResponses() {
 		List<Future<FederatedResponse>> ret = new ArrayList<>();
-		for(Pair<String, Integer> fedAddr : _fedWorkerAdresses) {
+		for(Pair<String, Integer> fedAddr : _fedWorkerAddresses) {
 			InetSocketAddress isa = new InetSocketAddress(fedAddr.getLeft(), fedAddr.getRight());
 			FederatedRequest frUDF = new FederatedRequest(RequestType.EXEC_UDF, -1, 
 				new FedStatsCollectFunction());

@@ -36,7 +36,6 @@ import org.apache.sysds.utils.MemoryEstimates;
  * difficult to support both data layouts at the same time (distributed/local as well as w/ and w/o low-level opt)
  */
 public abstract class ColGroupOffset extends ColGroupValue {
-	private static final long serialVersionUID = -1635828933479403125L;
 
 	/** Bitmaps, one per uncompressed value tuple in {@link #_dict}. */
 	protected int[] _ptr;

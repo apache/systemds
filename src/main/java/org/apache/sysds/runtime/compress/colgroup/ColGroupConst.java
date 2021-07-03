@@ -31,8 +31,6 @@ import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
 
 public class ColGroupConst extends ColGroupValue {
 
-	private static final long serialVersionUID = 3204391661346504L;
-
 	/**
 	 * Constructor for serialization
 	 * 
@@ -111,20 +109,36 @@ public class ColGroupConst extends ColGroupValue {
 	}
 
 	@Override
-	protected void preAggregate(MatrixBlock m, MatrixBlock preAgg, int rl, int ru) {
+	public void preAggregate(MatrixBlock m, MatrixBlock preAgg, int rl, int ru) {
 		if(m.isInSparseFormat())
 			preAggregateSparse(m.getSparseBlock(), preAgg, rl, ru);
 		else
 			preAggregateDense(m, preAgg, rl, ru);
 	}
 
+	@Override
+	public void preAggregateDense(MatrixBlock m, MatrixBlock preAgg, int rl, int ru, int cl, int cu) {
+		final double[] preAV = preAgg.getDenseBlockValues();
+		final double[] mV = m.getDenseBlockValues();
+		final int blockSize = 2000;
+		for(int block = cl; block < cu; block += blockSize) {
+			final int blockEnd = Math.min(block + blockSize, cu);
+			for(int rowLeft = rl; rowLeft < ru; rowLeft++) {
+				final int outIdx = rowLeft - rl;
+				for(int rc = block, offLeft = rowLeft * _numRows; rc < blockEnd; rc++, offLeft++) {
+					preAV[outIdx] += mV[offLeft];
+				}
+			}
+		}
+	}
+
 	private void preAggregateDense(MatrixBlock m, MatrixBlock preAgg, int rl, int ru) {
 		final double[] preAV = preAgg.getDenseBlockValues();
 		final double[] mV = m.getDenseBlockValues();
-		final int numVals = getNumValues();
-		for(int rowLeft = rl, offOut = 0; rowLeft < ru; rowLeft++, offOut += numVals) {
+		for(int rowLeft = rl; rowLeft < ru; rowLeft++) {
+			final int outIdx = rowLeft - rl;
 			for(int rc = 0, offLeft = rowLeft * _numRows; rc < _numRows; rc++, offLeft++) {
-				preAV[offOut] += mV[offLeft];
+				preAV[outIdx] += mV[offLeft];
 			}
 		}
 	}

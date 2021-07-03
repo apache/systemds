@@ -27,9 +27,18 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.apache.sysds.common.Types.OpOp1;
+import org.apache.sysds.common.Types.OpOp2;
 import org.apache.sysds.common.Types.OpOpData;
+import org.apache.sysds.common.Types.ReOrgOp;
+import org.apache.sysds.hops.AggBinaryOp;
 import org.apache.sysds.hops.FunctionOp;
 import org.apache.sysds.hops.Hop;
+import org.apache.sysds.hops.IndexingOp;
+import org.apache.sysds.hops.LiteralOp;
+import org.apache.sysds.hops.ReorgOp;
 import org.apache.sysds.hops.rewrite.HopRewriteUtils;
 import org.apache.sysds.hops.rewrite.RewriteCompressedReblock;
 import org.apache.sysds.parser.DMLProgram;
@@ -44,85 +53,132 @@ import org.apache.sysds.parser.ParForStatementBlock;
 import org.apache.sysds.parser.StatementBlock;
 import org.apache.sysds.parser.WhileStatement;
 import org.apache.sysds.parser.WhileStatementBlock;
-import org.apache.sysds.runtime.compress.workload.WTreeNode.WTNodeType;
+import org.apache.sysds.runtime.compress.cost.CostEstimatorBuilder;
+import org.apache.sysds.runtime.compress.workload.AWTreeNode.WTNodeType;
 
 public class WorkloadAnalyzer {
-	
-	public static Map<Long, WTreeNode> getAllCandidateWorkloads(DMLProgram prog) {
+	private static final Log LOG = LogFactory.getLog(WorkloadAnalyzer.class.getName());
+
+	private final Set<Hop> visited;
+	private final Set<Long> compressed;
+	private final Set<Long> transposed;
+	private final Set<String> transientCompressed;
+	private final Set<Long> overlapping;
+	private final Set<String> transientOverlapping;
+	private final DMLProgram prog;
+	private final List<Hop> decompressHops;
+
+	public static Map<Long, WTreeRoot> getAllCandidateWorkloads(DMLProgram prog) {
 		// extract all compression candidates from program
 		List<Hop> candidates = getCandidates(prog);
-		
+
 		// for each candidate, create pruned workload tree
 		// TODO memoization of processed subtree if overlap
-		Map<Long, WTreeNode> map = new HashMap<>();
-		for( Hop cand : candidates ) {
-			WTreeNode tree = createWorkloadTree(prog, cand);
-			pruneWorkloadTree(tree);
+		Map<Long, WTreeRoot> map = new HashMap<>();
+		for(Hop cand : candidates) {
+			WTreeRoot tree = new WorkloadAnalyzer(prog).createWorkloadTree(cand);
+
 			map.put(cand.getHopID(), tree);
 		}
-		
+
 		return map;
 	}
-	
-	public static List<Hop> getCandidates(DMLProgram prog) {
-		List<Hop> candidates = new ArrayList<>();
-		for( StatementBlock sb : prog.getStatementBlocks() )
-			getCandidates(sb, prog, candidates, new HashSet<>());
-		return candidates;
+
+	protected WorkloadAnalyzer(DMLProgram prog) {
+		this.prog = prog;
+		this.visited = new HashSet<>();
+		this.compressed = new HashSet<>();
+		this.transposed = new HashSet<>();
+		this.transientCompressed = new HashSet<>();
+		this.overlapping = new HashSet<>();
+		this.transientOverlapping = new HashSet<>();
+		this.decompressHops = new ArrayList<>();
 	}
-	
-	public static WTreeNode createWorkloadTree(DMLProgram prog, Hop candidate) {
-		WTreeNode main = new WTreeNode(WTNodeType.MAIN);
-		//TODO generalize, below line assumes only pread candidates (at bottom on DAGs)
-		Set<String> compressed = new HashSet<>();
-		compressed.add(candidate.getName());
-		for( StatementBlock sb : prog.getStatementBlocks() )
-			main.addChild(createWorkloadTree(sb, prog, compressed, new HashSet<>()));
+
+	protected WorkloadAnalyzer(DMLProgram prog, Set<Long> overlapping) {
+		this.prog = prog;
+		this.visited = new HashSet<>();
+		this.compressed = new HashSet<>();
+		this.transposed = new HashSet<>();
+		this.transientCompressed = new HashSet<>();
+		this.overlapping = overlapping;
+		this.transientOverlapping = new HashSet<>();
+		this.decompressHops = new ArrayList<>();
+	}
+
+	protected WorkloadAnalyzer(DMLProgram prog, Set<Long> compressed, Set<String> transientCompressed,
+		Set<Long> transposed, Set<Long> overlapping, Set<String> transientOverlapping) {
+		this.prog = prog;
+		this.visited = new HashSet<>();
+		this.compressed = compressed;
+		this.transposed = transposed;
+		this.transientCompressed = transientCompressed;
+		this.overlapping = overlapping;
+		this.transientOverlapping = transientOverlapping;
+		this.decompressHops = new ArrayList<>();
+	}
+
+	protected WTreeRoot createWorkloadTree(Hop candidate) {
+		WTreeRoot main = new WTreeRoot(candidate, decompressHops);
+		compressed.add(candidate.getHopID());
+		transientCompressed.add(candidate.getName());
+		for(StatementBlock sb : prog.getStatementBlocks())
+			createWorkloadTree(main, sb, prog, new HashSet<>());
+		pruneWorkloadTree(main);
 		return main;
 	}
-	
-	public static boolean pruneWorkloadTree(WTreeNode node) {
-		//recursively process sub trees
+
+	private static List<Hop> getCandidates(DMLProgram prog) {
+		List<Hop> candidates = new ArrayList<>();
+		for(StatementBlock sb : prog.getStatementBlocks()) {
+			getCandidates(sb, prog, candidates, new HashSet<>());
+		}
+		return candidates;
+	}
+
+	private static boolean pruneWorkloadTree(AWTreeNode node) {
+		// recursively process sub trees
 		Iterator<WTreeNode> iter = node.getChildNodes().iterator();
-		while( iter.hasNext() ) {
-			if( pruneWorkloadTree(iter.next()) )
+		while(iter.hasNext()) {
+			if(pruneWorkloadTree(iter.next()))
 				iter.remove();
 		}
-		
-		//indicate that node can be removed
-		return node.getChildNodes().isEmpty()
-			&& node.getCompressedOps().isEmpty();
+
+		// indicate that node can be removed
+		return node.isEmpty();
 	}
-	
+
 	private static void getCandidates(StatementBlock sb, DMLProgram prog, List<Hop> cands, Set<String> fStack) {
-		if(sb instanceof FunctionStatementBlock) {
-			FunctionStatementBlock fsb = (FunctionStatementBlock)sb;
-			FunctionStatement fstmt = (FunctionStatement)fsb.getStatement(0);
+		if(sb == null)
+			return;
+		else if(sb instanceof FunctionStatementBlock) {
+			FunctionStatementBlock fsb = (FunctionStatementBlock) sb;
+			FunctionStatement fstmt = (FunctionStatement) fsb.getStatement(0);
 			for(StatementBlock csb : fstmt.getBody())
 				getCandidates(csb, prog, cands, fStack);
 		}
 		else if(sb instanceof WhileStatementBlock) {
 			WhileStatementBlock wsb = (WhileStatementBlock) sb;
-			WhileStatement wstmt = (WhileStatement)wsb.getStatement(0);
+			WhileStatement wstmt = (WhileStatement) wsb.getStatement(0);
 			for(StatementBlock csb : wstmt.getBody())
 				getCandidates(csb, prog, cands, fStack);
 		}
 		else if(sb instanceof IfStatementBlock) {
 			IfStatementBlock isb = (IfStatementBlock) sb;
-			IfStatement istmt = (IfStatement)isb.getStatement(0);
+			IfStatement istmt = (IfStatement) isb.getStatement(0);
 			for(StatementBlock csb : istmt.getIfBody())
 				getCandidates(csb, prog, cands, fStack);
 			for(StatementBlock csb : istmt.getElseBody())
 				getCandidates(csb, prog, cands, fStack);
 		}
-		else if(sb instanceof ForStatementBlock) { //incl parfor
+		else if(sb instanceof ForStatementBlock) { // incl parfor
 			ForStatementBlock fsb = (ForStatementBlock) sb;
-			ForStatement fstmt = (ForStatement)fsb.getStatement(0);
+			ForStatement fstmt = (ForStatement) fsb.getStatement(0);
 			for(StatementBlock csb : fstmt.getBody())
 				getCandidates(csb, prog, cands, fStack);
 		}
-		else { //generic (last-level)
-			if( sb.getHops() == null )
+		else { // generic (last-level)
+			if(sb.getHops() == null)
 				return;
 			Hop.resetVisitStatus(sb.getHops());
 			for(Hop hop : sb.getHops())
@@ -130,150 +186,269 @@ public class WorkloadAnalyzer {
 			Hop.resetVisitStatus(sb.getHops());
 		}
 	}
-	
+
 	private static void getCandidates(Hop hop, DMLProgram prog, List<Hop> cands, Set<String> fStack) {
-		if( hop.isVisited() )
+		if(hop.isVisited())
 			return;
-		
-		//evaluate and add candidates (type and size)
-		if( RewriteCompressedReblock.satisfiesCompressionCondition(hop) )
+		// evaluate and add candidates (type and size)
+		if(RewriteCompressedReblock.satisfiesCompressionCondition(hop))
 			cands.add(hop);
-		
-		//recursively process children (inputs)
-		for( Hop c : hop.getInput() )
+
+		// recursively process children (inputs)
+		for(Hop c : hop.getInput())
 			getCandidates(c, prog, cands, fStack);
-		
-		//process function calls with awareness of the current
-		//call stack to avoid endless loops in recursive functions
-		if( hop instanceof FunctionOp ) {
+
+		// process function calls with awareness of the current
+		// call stack to avoid endless loops in recursive functions
+		if(hop instanceof FunctionOp) {
 			FunctionOp fop = (FunctionOp) hop;
-			if( !fStack.contains(fop.getFunctionKey()) ) {
+			if(!fStack.contains(fop.getFunctionKey())) {
 				fStack.add(fop.getFunctionKey());
 				getCandidates(prog.getFunctionStatementBlock(fop.getFunctionKey()), prog, cands, fStack);
 				fStack.remove(fop.getFunctionKey());
 			}
 		}
-		
 		hop.setVisited();
 	}
-	
-	private static WTreeNode createWorkloadTree(StatementBlock sb, DMLProgram prog, Set<String> compressed, Set<String> fStack) {
-		WTreeNode node = null;
+
+	private void createWorkloadTree(AWTreeNode n, StatementBlock sb, DMLProgram prog, Set<String> fStack) {
+		WTreeNode node;
 		if(sb instanceof FunctionStatementBlock) {
-			FunctionStatementBlock fsb = (FunctionStatementBlock)sb;
-			FunctionStatement fstmt = (FunctionStatement)fsb.getStatement(0);
-			node = new WTreeNode(WTNodeType.FCALL);
+			FunctionStatementBlock fsb = (FunctionStatementBlock) sb;
+			FunctionStatement fstmt = (FunctionStatement) fsb.getStatement(0);
+			node = new WTreeNode(WTNodeType.FCALL, 1);
 			for(StatementBlock csb : fstmt.getBody())
-				node.addChild(createWorkloadTree(csb, prog, compressed, fStack));
+				createWorkloadTree(node, csb, prog, fStack);
 		}
 		else if(sb instanceof WhileStatementBlock) {
 			WhileStatementBlock wsb = (WhileStatementBlock) sb;
-			WhileStatement wstmt = (WhileStatement)wsb.getStatement(0);
-			node = new WTreeNode(WTNodeType.WHILE);
-			createWorkloadTree(wsb.getPredicateHops(), prog, node, compressed, fStack);
+			WhileStatement wstmt = (WhileStatement) wsb.getStatement(0);
+			node = new WTreeNode(WTNodeType.WHILE, 10);
+			createWorkloadTree(wsb.getPredicateHops(), prog, node, fStack);
+
 			for(StatementBlock csb : wstmt.getBody())
-				node.addChild(createWorkloadTree(csb, prog, compressed, fStack));
+				createWorkloadTree(node, csb, prog, fStack);
 		}
 		else if(sb instanceof IfStatementBlock) {
 			IfStatementBlock isb = (IfStatementBlock) sb;
-			IfStatement istmt = (IfStatement)isb.getStatement(0);
-			node = new WTreeNode(WTNodeType.IF);
-			createWorkloadTree(isb.getPredicateHops(), prog, node, compressed, fStack);
+			IfStatement istmt = (IfStatement) isb.getStatement(0);
+			node = new WTreeNode(WTNodeType.IF, 1);
+			createWorkloadTree(isb.getPredicateHops(), prog, node, fStack);
+
 			for(StatementBlock csb : istmt.getIfBody())
-				node.addChild(createWorkloadTree(csb, prog, compressed, fStack));
+				createWorkloadTree(node, csb, prog, fStack);
 			for(StatementBlock csb : istmt.getElseBody())
-				node.addChild(createWorkloadTree(csb, prog, compressed, fStack));
+				createWorkloadTree(node, csb, prog, fStack);
 		}
-		else if(sb instanceof ForStatementBlock) { //incl parfor
+		else if(sb instanceof ForStatementBlock) { // incl parfor
 			ForStatementBlock fsb = (ForStatementBlock) sb;
-			ForStatement fstmt = (ForStatement)fsb.getStatement(0);
-			node = new WTreeNode(sb instanceof ParForStatementBlock ? WTNodeType.PARFOR:WTNodeType.FOR);
-			createWorkloadTree(fsb.getFromHops(), prog, node, compressed, fStack);
-			createWorkloadTree(fsb.getToHops(), prog, node, compressed, fStack);
-			createWorkloadTree(fsb.getIncrementHops(), prog, node, compressed, fStack);
+			ForStatement fstmt = (ForStatement) fsb.getStatement(0);
+			node = new WTreeNode(sb instanceof ParForStatementBlock ? WTNodeType.PARFOR : WTNodeType.FOR,
+				fsb.getEstimateReps());
+			createWorkloadTree(fsb.getFromHops(), prog, node, fStack);
+			createWorkloadTree(fsb.getToHops(), prog, node, fStack);
+			createWorkloadTree(fsb.getIncrementHops(), prog, node, fStack);
 			for(StatementBlock csb : fstmt.getBody())
-				node.addChild(createWorkloadTree(csb, prog, compressed, fStack));
+				createWorkloadTree(node, csb, prog, fStack);
+
 		}
-		else { //generic (last-level)
-			node = new WTreeNode(WTNodeType.BASIC_BLOCK);
-			if( sb.getHops() != null ) {
-				Hop.resetVisitStatus(sb.getHops());
-				//process hop DAG to collect operations
-				Set<Long> compressed2 = new HashSet<>();
-				for(Hop hop : sb.getHops()) 
-					createWorkloadTree(hop, prog, node, compressed, compressed2, fStack);
-				//maintain hop DAG outputs (compressed or not compressed)
+		else { // generic (last-level)
+			if(sb.getHops() != null) {
+
+				// process hop DAG to collect operations that are compressed.
+				for(Hop hop : sb.getHops())
+					createWorkloadTree(hop, prog, n, fStack);
+
+				// maintain hop DAG outputs (compressed or not compressed)
 				for(Hop hop : sb.getHops()) {
-					if( hop instanceof FunctionOp ) {
+					if(hop instanceof FunctionOp) {
 						FunctionOp fop = (FunctionOp) hop;
-						if( !fStack.contains(fop.getFunctionKey()) ) {
+						if(!fStack.contains(fop.getFunctionKey())) {
 							fStack.add(fop.getFunctionKey());
 							FunctionStatementBlock fsb = prog.getFunctionStatementBlock(fop.getFunctionKey());
+							if(fsb == null)
+								continue;
 							FunctionStatement fstmt = (FunctionStatement) fsb.getStatement(0);
 							Set<String> fCompressed = new HashSet<>();
-							//handle propagation of compressed intermediates into functions
+							// handle propagation of compressed intermediates into functions
 							List<DataIdentifier> fArgs = fstmt.getInputParams();
-							for( int i=0; i<fArgs.size(); i++ )
-								if( compressed2.contains(fop.getInput(i).getHopID()) )
+							for(int i = 0; i < fArgs.size(); i++)
+								if(compressed.contains(fop.getInput(i).getHopID()) ||
+									transientCompressed.contains(fop.getInput(i).getName()))
 									fCompressed.add(fArgs.get(i).getName());
-							node.addChild(createWorkloadTree(fsb, prog, fCompressed, fStack));
+							WorkloadAnalyzer fa = new WorkloadAnalyzer(prog, compressed, fCompressed, transposed,
+								overlapping, transientOverlapping);
+							fa.createWorkloadTree(n, fsb, prog, fStack);
+							List<DataIdentifier> fOut = fstmt.getOutputParams();
+							String[] outs = fop.getOutputVariableNames();
+							for(int i = 0; i < outs.length; i++)
+								if(fCompressed.contains(fOut.get(i).getName())) {
+									transientCompressed.add(outs[i]);
+								}
 							fStack.remove(fop.getFunctionKey());
 						}
 					}
-					else if( HopRewriteUtils.isData(hop, OpOpData.TRANSIENTWRITE) ) {
-						//handle propagation of compressed intermediates across blocks
-						if( compressed.contains(hop.getName()) && !compressed2.contains(hop.getHopID()) )
-							compressed.remove(hop.getName());
-						if( !compressed.contains(hop.getName()) && compressed2.contains(hop.getHopID()) )
-							compressed.add(hop.getName());
+
+				}
+			}
+			return;
+		}
+		n.addChild(node);
+	}
+
+	private void createWorkloadTree(Hop hop, DMLProgram prog, AWTreeNode parent, Set<String> fStack) {
+		if(hop == null || visited.contains(hop) || isNoOp(hop))
+			return;
+
+		// DFS: recursively process children (inputs first for propagation of compression status)
+		for(Hop c : hop.getInput())
+			createWorkloadTree(c, prog, parent, fStack);
+
+		// map statement block propagation to hop propagation
+		if(HopRewriteUtils.isData(hop, OpOpData.PERSISTENTREAD, OpOpData.TRANSIENTREAD) &&
+			transientCompressed.contains(hop.getName())) {
+			compressed.add(hop.getHopID());
+			if(transientOverlapping.contains(hop.getName()))
+				overlapping.add(hop.getHopID());
+		}
+
+		if(LOG.isTraceEnabled()) {
+			LOG.trace("\n" + compressed + "\n" + transientCompressed + "\n" + getHopIds(hop.getInput()) + "\n"
+				+ hop.getInput() + "\n\n");
+		}
+
+		// collect operations on compressed intermediates or inputs
+		// if any input is compressed we collect this hop as a compressed operation
+		if(hop.getInput().stream().anyMatch(h -> compressed.contains(h.getHopID()))) {
+
+			if(isCompressedOp(hop)) {
+				Op o = createOp(hop);
+				parent.addOp(o);
+				if(o.isCompressedOutput())
+					compressed.add(hop.getHopID());
+			}
+			else if(HopRewriteUtils.isData(hop, OpOpData.TRANSIENTWRITE)) {
+				Hop in = hop.getInput().get(0);
+				if(compressed.contains(hop.getHopID()) || compressed.contains(in.getHopID()) ||
+					transientCompressed.contains(in.getName())) {
+					transientCompressed.add(hop.getName());
+				}
+				if(overlapping.contains(hop.getHopID()) || overlapping.contains(in.getHopID()) ||
+					transientOverlapping.contains(in.getName())) {
+					transientOverlapping.add(hop.getName());
+				}
+			}
+		}
+
+		visited.add(hop);
+	}
+
+	private Op createOp(Hop hop) {
+		if(hop.getDataType().isMatrix()) {
+			if(hop instanceof ReorgOp && ((ReorgOp) hop).getOp() == ReOrgOp.TRANS) {
+				transposed.add(hop.getHopID());
+				compressed.add(hop.getHopID());
+				transientCompressed.add(hop.getName());
+				return new OpMetadata(hop);
+			}
+			else if(hop instanceof AggBinaryOp) {
+				AggBinaryOp agbhop = (AggBinaryOp) hop;
+				List<Hop> in = agbhop.getInput();
+				boolean transposedLeft = transposed.contains(in.get(0).getHopID());
+				boolean transposedRight = transposed.contains(in.get(1).getHopID());
+				boolean left = compressed.contains(in.get(0).getHopID()) ||
+					transientCompressed.contains(in.get(0).getName());
+				boolean right = compressed.contains(in.get(1).getHopID()) ||
+					transientCompressed.contains(in.get(1).getName());
+				OpSided ret = new OpSided(hop, left, right, transposedLeft, transposedRight);
+				if(ret.isRightMM()) {
+					HashSet<Long> overlapping2 = new HashSet<>();
+					overlapping2.add(hop.getHopID());
+					WorkloadAnalyzer overlappingAnalysis = new WorkloadAnalyzer(prog, overlapping2);
+					WTreeRoot r = overlappingAnalysis.createWorkloadTree(hop);
+
+					CostEstimatorBuilder b = new CostEstimatorBuilder(r);
+					if(LOG.isTraceEnabled())
+						LOG.trace("Workload for overlapping: " + r + "\n" + b);
+
+					if(b.shouldUseOverlap())
+						overlapping.add(hop.getHopID());
+					else {
+						decompressHops.add(hop);
+						ret.setOverlappingDecompression(true);
 					}
 				}
-				Hop.resetVisitStatus(sb.getHops());
+
+				return ret;
 			}
+			else if(HopRewriteUtils.isBinary(hop, OpOp2.CBIND)) {
+				ArrayList<Hop> in = hop.getInput();
+				if(isOverlapping(in.get(0)) || isOverlapping(in.get(1)))
+					overlapping.add(hop.getHopID());
+				return new OpNormal(hop, true);
+			}
+			else if(HopRewriteUtils.isBinary(hop, OpOp2.RBIND)) {
+				ArrayList<Hop> in = hop.getInput();
+				if(isOverlapping(in.get(0)) || isOverlapping(in.get(1)))
+					return new OpOverlappingDecompress(hop);
+				else
+					return new OpDecompressing(hop);
+			}
+			else if(HopRewriteUtils.isBinaryMatrixScalarOperation(hop) ||
+				HopRewriteUtils.isBinaryMatrixRowVectorOperation(hop)) {
+				ArrayList<Hop> in = hop.getInput();
+				if(isOverlapping(in.get(0)) || isOverlapping(in.get(1)))
+					overlapping.add(hop.getHopID());
+
+				return new OpNormal(hop, true);
+			}
+			else if(hop instanceof IndexingOp) {
+				IndexingOp idx = (IndexingOp) hop;
+				final boolean isOverlapping = isOverlapping(hop.getInput(0));
+				final boolean fullColumn = HopRewriteUtils.isFullColumnIndexing(idx);
+				if(fullColumn && isOverlapping)
+					overlapping.add(hop.getHopID());
+
+				if(fullColumn)
+					return new OpNormal(hop, RewriteCompressedReblock.satisfiesSizeConstraintsForCompression(hop));
+				else
+					return new OpDecompressing(hop);
+			}
+			else if(HopRewriteUtils.isBinaryMatrixMatrixOperation(hop) ||
+				HopRewriteUtils.isBinaryMatrixColVectorOperation(hop)) {
+				ArrayList<Hop> in = hop.getInput();
+				if(isOverlapping(in.get(0)) || isOverlapping(in.get(1)))
+					return new OpOverlappingDecompress(hop);
+
+				return new OpDecompressing(hop);
+			}
+
+			// if the output size also qualifies for compression, we propagate this status
+			// return new OpNormal(hop, RewriteCompressedReblock.satisfiesSizeConstraintsForCompression(hop));
+			return new OpNormal(hop, RewriteCompressedReblock.satisfiesSizeConstraintsForCompression(hop));
 		}
-		node.setLineNumbers(sb.getBeginLine(), sb.getEndLine());
-		return node;
+		else
+			return new OpNormal(hop, false);
 	}
-	
-	private static void createWorkloadTree(Hop hop, DMLProgram prog, WTreeNode parent, Set<String> compressed, Set<String> fStack) {
-		if( hop == null )
-			return;
-		hop.resetVisitStatus();
-		createWorkloadTree(hop, prog, parent, compressed, new HashSet<>(), fStack); //see below
-		hop.resetVisitStatus();
+
+	private boolean isOverlapping(Hop hop) {
+		return overlapping.contains(hop.getHopID()) || transientOverlapping.contains(hop.getName());
 	}
-	
-	private static void createWorkloadTree(Hop hop, DMLProgram prog, WTreeNode parent, Set<String> compressed, Set<Long> compressed2, Set<String> fStack) {
-		if( hop == null || hop.isVisited() )
-			return;
-		
-		//recursively process children (inputs first for propagation of compression status)
-		for( Hop c : hop.getInput() )
-			createWorkloadTree(c, prog, parent, compressed, compressed2, fStack);
-		
-		//map statement block propagation to hop propagation
-		if( HopRewriteUtils.isData(hop, OpOpData.PERSISTENTREAD, OpOpData.TRANSIENTREAD)
-			&& compressed.contains(hop.getName()) ) {
-			compressed2.add(hop.getHopID());
+
+	private static boolean isCompressedOp(Hop hop) {
+		return !(HopRewriteUtils.isData(hop, OpOpData.PERSISTENTREAD, // all, but data ops
+			OpOpData.TRANSIENTREAD, OpOpData.TRANSIENTWRITE));
+	}
+
+	private static boolean isNoOp(Hop hop) {
+		return hop instanceof LiteralOp || HopRewriteUtils.isUnary(hop, OpOp1.NROW, OpOp1.NCOL);
+	}
+
+	private static String getHopIds(List<Hop> hops) {
+		StringBuilder sb = new StringBuilder();
+		for(Hop h : hops) {
+			sb.append(h.getHopID() + " , ");
 		}
-		
-		//collect operations on compressed intermediates or inputs
-		//if any input is compressed we collect this hop as a compressed operation
-		if( hop.getInput().stream().anyMatch(h -> compressed2.contains(h.getHopID())) ) {
-			if(!HopRewriteUtils.isData(hop, OpOpData.PERSISTENTREAD, //all, but data ops
-				OpOpData.TRANSIENTREAD, OpOpData.TRANSIENTWRITE) )
-			{
-				parent.addCompressedOp(hop);
-			}
-			
-			//if the output size also qualifies for compression, we propagate this status
-			if( RewriteCompressedReblock.satisfiesSizeConstraintsForCompression(hop)
-				&& hop.getDataType().isMatrix() )
-			{
-				compressed2.add(hop.getHopID());
-			}
-		}
-		
-		hop.setVisited();
+		return sb.toString();
 	}
 }

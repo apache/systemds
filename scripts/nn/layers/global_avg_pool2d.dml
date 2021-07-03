@@ -1,0 +1,89 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+/*
+ * Global Average Pooling 2D layer.
+ *
+ * This implementation uses a built-in operator for higher performance.
+ */
+
+forward = function(matrix[double] X, int C, int Hin, int Win)
+    return (matrix[double] out, int Hout, int Wout) {
+  /*
+   * Computes the forward pass for a 2D Global average pooling layer.
+   * The input data has N examples, each represented as a 3D volume
+   * unrolled into a single vector. The output dimension for Hout and Wout is always 1.
+   *
+   * This implementation uses a built-in operator for higher
+   * performance.
+   *
+   * Inputs:
+   *  - X: Inputs, of shape (N, C*Hin*Win).
+   *  - C: Number of input channels (dimensionality of input depth).
+   *  - Hin: Input height.
+   *  - Win: Input width.
+   *
+   * Outputs:
+   *  - out: Outputs, of shape (N, C*Hout*Wout).
+   *  - Hout: Output height.
+   *  - Wout: Output width.
+   */
+
+  # Max pooling - built-in implementation
+  N = nrow(X)
+  Hout = 1
+  Wout = 1
+  out = avg_pool(X, input_shape=[N,C,Hin,Win],
+    pool_size=[Hin,Win], stride=[1,1], padding=[0, 0])
+}
+
+backward = function(matrix[double] dout, matrix[double] X, int C, int Hin, int Win)
+  return (matrix[double] dX)
+{
+  /*
+   * Computes the backward pass for a 2D spatial average pooling layer.
+   * The input data has N examples, each represented as a 3D volume
+   * unrolled into a single vector.
+   *
+   * Inputs:
+   *  - dout: Gradient wrt `out` from upstream, of
+   *      shape (N, C*Hout*Wout).
+   *  - X: Inputs, of shape (N, C*Hin*Win).
+   *  - C: Number of input channels (dimensionality of input depth).
+   *  - Hin: Input height.
+   *  - Win: Input width.
+   *  - Hf: Filter height.
+   *  - Wf: Filter width.
+   *  - strideh: Stride over height.
+   *  - stridew: Stride over width.
+   *  - padh: Padding for top and bottom sides.
+   *      A typical value is 0.
+   *  - padw: Padding for left and right sides.
+   *      A typical value is 0.
+   *
+   * Outputs:
+   *  - dX: Gradient wrt `X`, of shape (N, C*Hin*Win).
+   */
+  N = nrow(X)
+  # Gradient of average pooling
+  dX = avg_pool_backward(X, dout, input_shape=[N,C,Hin,Win],
+    pool_size=[Hin,Win], stride=[1, 1], padding=[0, 0])
+}

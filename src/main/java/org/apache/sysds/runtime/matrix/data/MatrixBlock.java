@@ -37,6 +37,8 @@ import java.util.stream.IntStream;
 
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.concurrent.ConcurrentUtils;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.commons.math3.random.Well1024a;
 import org.apache.hadoop.io.DataInputBuffer;
 import org.apache.sysds.common.Types.BlockType;
@@ -114,8 +116,9 @@ import org.apache.sysds.runtime.util.UtilFunctions;
 import org.apache.sysds.utils.NativeHelper;
 
 
-public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizable
-{
+public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizable {
+	private static final Log LOG = LogFactory.getLog(MatrixBlock.class.getName());
+	
 	private static final long serialVersionUID = 7319972089143154056L;
 	
 	//sparsity nnz threshold, based on practical experiments on space consumption and performance
@@ -4554,7 +4557,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	{
 		//determine number of rows/cols to be removed
 		int step = correctionLocation.getNumRemovedRowsColumns();
-		if( step <= 0 )
+		if( step <= 0)
 			return; 
 		
 		//e.g., colSums, colMeans, colMaxs, colMeans, colVars
@@ -4965,10 +4968,9 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		}
 		return sum_wt;
 	}
-	
-	public MatrixBlock aggregateBinaryOperations(MatrixIndexes m1Index, MatrixBlock m1, MatrixIndexes m2Index, MatrixBlock m2, 
-		MatrixBlock ret, AggregateBinaryOperator op ) {
-		return aggregateBinaryOperations(m1, m2, ret, op);
+
+	public MatrixBlock aggregateBinaryOperations(MatrixBlock m1, MatrixBlock m2, AggregateBinaryOperator op){
+		return aggregateBinaryOperations(m1, m2, null, op);
 	}
 
 	public MatrixBlock aggregateBinaryOperations(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, AggregateBinaryOperator op) {

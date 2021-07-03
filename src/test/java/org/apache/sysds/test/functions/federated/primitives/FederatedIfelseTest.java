@@ -79,14 +79,14 @@ public class FederatedIfelseTest extends AutomatedTestBase {
 		runTernaryTest(ExecMode.SINGLE_NODE, true);
 	}
 
-	private void runTernaryTest(ExecMode execMode, boolean alligned) {
+	private void runTernaryTest(ExecMode execMode, boolean aligned) {
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
 		ExecMode platformOld = rtplatform;
 
 		if(rtplatform == ExecMode.SPARK)
 			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 
-		String TEST_NAME = alligned ? TEST_NAME2 : TEST_NAME1;
+		String TEST_NAME = aligned ? TEST_NAME2 : TEST_NAME1;
 
 		getAndLoadTestConfiguration(TEST_NAME);
 		String HOME = SCRIPT_DIR + TEST_DIR;
@@ -138,7 +138,7 @@ public class FederatedIfelseTest extends AutomatedTestBase {
 		TestConfiguration config = availableTestConfigurations.get(TEST_NAME);
 		loadTestConfiguration(config);
 
-		if(alligned)
+		if(aligned)
 			runAlignedTernary(HOME, TEST_NAME, r, c, port1, port2, port3, port4);
 		else
 			runTernary(HOME, TEST_NAME, port1, port2, port3, port4);
@@ -153,7 +153,7 @@ public class FederatedIfelseTest extends AutomatedTestBase {
 		Assert.assertTrue(HDFSTool.existsFileOnHDFS(input("X3")));
 		Assert.assertTrue(HDFSTool.existsFileOnHDFS(input("X4")));
 
-		if(alligned) {
+		if(aligned) {
 			Assert.assertTrue(HDFSTool.existsFileOnHDFS(input("Y1")));
 			Assert.assertTrue(HDFSTool.existsFileOnHDFS(input("Y2")));
 			Assert.assertTrue(HDFSTool.existsFileOnHDFS(input("Y3")));

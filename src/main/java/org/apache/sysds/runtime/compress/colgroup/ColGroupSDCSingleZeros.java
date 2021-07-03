@@ -45,7 +45,6 @@ import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
  * would be materialized in the group without any overhead.
  */
 public class ColGroupSDCSingleZeros extends ColGroupValue {
-	private static final long serialVersionUID = -32043916423425004L;
 
 	/**
 	 * Sparse row indexes for the data
@@ -59,6 +58,12 @@ public class ColGroupSDCSingleZeros extends ColGroupValue {
 	 */
 	protected ColGroupSDCSingleZeros(int numRows) {
 		super(numRows);
+	}
+
+	protected ColGroupSDCSingleZeros(int[] colIndices, int numRows, ADictionary dict, int[] indexes) {
+		super(colIndices, numRows, dict);
+		_indexes = OffsetFactory.create(indexes, numRows);
+		_zeros = true;
 	}
 
 	protected ColGroupSDCSingleZeros(int[] colIndices, int numRows, ADictionary dict, int[] indexes,
@@ -186,11 +191,34 @@ public class ColGroupSDCSingleZeros extends ColGroupValue {
 	}
 
 	@Override
-	protected void preAggregate(MatrixBlock m, MatrixBlock preAgg, int rl, int ru) {
+	public void preAggregate(MatrixBlock m, MatrixBlock preAgg, int rl, int ru) {
 		if(m.isInSparseFormat())
 			preAggregateSparse(m.getSparseBlock(), preAgg, rl, ru);
 		else
 			preAggregateDense(m, preAgg, rl, ru);
+	}
+
+	@Override
+	public void preAggregateDense(MatrixBlock m, MatrixBlock preAgg, int rl, int ru, int cl, int cu){
+		final double[] mV = m.getDenseBlockValues();
+		final double[] preAV = preAgg.getDenseBlockValues();
+		final int numVals = getNumValues();
+
+		final int blockSize = 2000;
+		for(int block = cl; block < cu; block += blockSize) {
+			final int blockEnd = Math.min(block + blockSize, cu);
+			final AIterator itStart = _indexes.getIterator(block);
+			AIterator it;
+			for(int rowLeft = rl, offOut = 0; rowLeft < ru; rowLeft++, offOut += numVals) {
+				final int offLeft = rowLeft * _numRows;
+				it = itStart.clone();
+				while(it.value() < blockEnd && it.hasNext()) {
+					final int i = it.value();
+					preAV[offOut] += mV[offLeft + i];
+					it.next();
+				}
+			}
+		}
 	}
 
 	private void preAggregateDense(MatrixBlock m, MatrixBlock preAgg, int rl, int ru) {
@@ -225,7 +253,7 @@ public class ColGroupSDCSingleZeros extends ColGroupValue {
 				final int v = it.value();
 				if(index < v)
 					j++;
-				else if(index == v){
+				else if(index == v) {
 					preAV[offOut] += avals[j++];
 					it.next();
 				}
@@ -317,7 +345,7 @@ public class ColGroupSDCSingleZeros extends ColGroupValue {
 	@Override
 	public Dictionary preAggregateThatSDCZerosStructure(ColGroupSDCZeros that, Dictionary ret) {
 		final AIterator itThat = that._indexes.getIterator();
-		final AIterator itThis = that._indexes.getIterator();
+		final AIterator itThis = _indexes.getIterator();
 		final int nCol = that._colIndexes.length;
 
 		while(itThat.hasNext() && itThis.hasNext()) {
@@ -334,9 +362,8 @@ public class ColGroupSDCSingleZeros extends ColGroupValue {
 	@Override
 	public Dictionary preAggregateThatSDCSingleZerosStructure(ColGroupSDCSingleZeros that, Dictionary ret) {
 		final AIterator itThat = that._indexes.getIterator();
-		final AIterator itThis = that._indexes.getIterator();
+		final AIterator itThis = _indexes.getIterator();
 		final int nCol = that._colIndexes.length;
-
 		while(itThat.hasNext()) {
 			final int v = itThat.value();
 			if(v == itThis.skipTo(v))
@@ -349,7 +376,22 @@ public class ColGroupSDCSingleZeros extends ColGroupValue {
 
 	@Override
 	public Dictionary preAggregateThatSDCSingleStructure(ColGroupSDCSingle that, Dictionary ret, boolean preModified) {
-		throw new NotImplementedException();
+		final AIterator itThat = that._indexes.getIterator();
+		final AIterator itThis = _indexes.getIterator();
+		final int nCol = that._colIndexes.length;
+		if(preModified) {
+			while(itThat.hasNext()) {
+				final int thatV = itThat.value();
+				if(thatV == itThis.skipTo(thatV))
+					that._dict.addToEntry(ret, 0, 0, nCol);
+				itThat.next();
+			}
+
+			return ret;
+		}
+		else {
+			throw new NotImplementedException();
+		}
 	}
 
 }

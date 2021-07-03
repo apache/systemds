@@ -33,7 +33,7 @@ import java.util.Arrays;
 import java.util.Collection;
 
 import org.apache.commons.lang.NotImplementedException;
-import org.apache.sysds.runtime.DMLCompressionException;
+import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.offset.AIterator;
 import org.apache.sysds.runtime.compress.colgroup.offset.AOffset;
 import org.apache.sysds.runtime.compress.colgroup.offset.OffsetByte;
@@ -87,7 +87,6 @@ public class OffsetTests {
 			tests.add(new Object[] {new int[] {0, 1, 2, 3, 4, 5}, t});
 			tests.add(new Object[] {new int[] {2458248, 2458249, 2458253, 2458254, 2458256, 2458257, 2458258, 2458262,
 				2458264, 2458266, 2458267, 2458271, 2458272, 2458275, 2458276, 2458281}, t});
-
 		}
 		return tests;
 	}

@@ -36,7 +36,6 @@ import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
 
 /** A group of columns compressed with a single run-length encoded bitmap. */
 public class ColGroupRLE extends ColGroupOffset {
-	private static final long serialVersionUID = 7450232907594748177L;
 
 	/**
 	 * Constructor for serialization
@@ -469,6 +468,11 @@ public class ColGroupRLE extends ColGroupOffset {
 	
 	@Override
 	public void preAggregate(MatrixBlock m, MatrixBlock preAgg, int rl, int ru){
+		throw new NotImplementedException();
+	}
+
+	@Override
+	public void preAggregateDense(MatrixBlock m, MatrixBlock preAgg, int rl, int ru, int vl, int vu){
 		throw new NotImplementedException();
 	}
 

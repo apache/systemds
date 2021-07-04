@@ -26,6 +26,8 @@ import org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup;
 
 public class ComputationCostEstimator implements ICostEstimate {
 
+	private static final long serialVersionUID = -1205636215389161815L;
+
 	private final boolean _isCompareAll;
 	
 	private final int _nRows;
@@ -103,7 +105,7 @@ public class ComputationCostEstimator implements ICostEstimate {
 		return preAggregateCost + postScalingCost;
 	}
 
-	private double rightMultCost(CompressedSizeInfoColGroup g) {
+	private static double rightMultCost(CompressedSizeInfoColGroup g) {
 		final int nCols = g.getColumns().length;
 		final int numberTuples = g.getNumVals() * 10;
 		final double tupleSparsity = g.getTupleSparsity();
@@ -123,7 +125,7 @@ public class ComputationCostEstimator implements ICostEstimate {
 		return  _nRows * 16 * (g.getNumVals() / 64000 + 1);
 	}
 
-	private double dictionaryOpsCost(CompressedSizeInfoColGroup g) {
+	private static double dictionaryOpsCost(CompressedSizeInfoColGroup g) {
 		return g.getColumns().length * g.getNumVals();
 	}
 
@@ -186,7 +188,7 @@ public class ComputationCostEstimator implements ICostEstimate {
 		return Math.min(costLeft, costRight);
 	}
 
-	private double getCostOfSelfMultiplication(CompressedSizeInfoColGroup g) {
+	private static double getCostOfSelfMultiplication(CompressedSizeInfoColGroup g) {
 		final int nv = g.getNumVals();
 		final int nCols = g.getColumns().length;
 		final double ts = g.getTupleSparsity();

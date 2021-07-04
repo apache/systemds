@@ -72,8 +72,6 @@ public class QuaternaryWUMMFEDInstruction extends QuaternaryFEDInstruction {
 
 			if(X.isFederated(FType.ROW)) { // row partitioned X
 				if(U.isFederated(FType.ROW) && fedMap.isAligned(U.getFedMapping(), AlignType.ROW)) {
-					System.out.println("QuaternaryWUMMFEDInstruction.java:75 - U federated and aligned");
-					// U federated and aligned
 					varNewIn[1] = U.getFedMapping().getID();
 				}
 				else {
@@ -87,8 +85,6 @@ public class QuaternaryWUMMFEDInstruction extends QuaternaryFEDInstruction {
 				frB = fedMap.broadcast(U);
 				varNewIn[1] = frB.getID();
 				if(V.isFederated() && fedMap.isAligned(V.getFedMapping(), AlignType.COL, AlignType.COL_T)) {
-					System.out.println("QuaternaryWUMMFEDInstruction.java:90 - V federated and aligned");
-					// V federated and aligned
 					varNewIn[2] = V.getFedMapping().getID();
 				}
 				else {

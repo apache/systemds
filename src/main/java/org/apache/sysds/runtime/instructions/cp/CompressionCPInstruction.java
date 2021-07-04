@@ -21,8 +21,8 @@ package org.apache.sysds.runtime.instructions.cp;
 
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlockFactory;
+import org.apache.sysds.runtime.compress.SingletonLookupHashMap;
 import org.apache.sysds.runtime.compress.workload.WTreeRoot;
-import org.apache.sysds.runtime.controlprogram.SingletonLookupHashMap;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;

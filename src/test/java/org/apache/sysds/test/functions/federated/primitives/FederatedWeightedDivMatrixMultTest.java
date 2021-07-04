@@ -28,6 +28,7 @@ import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
 import org.junit.Assert;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -95,7 +96,7 @@ public class FederatedWeightedDivMatrixMultTest extends AutomatedTestBase
 		// rows must be even
 		return Arrays.asList(new Object[][] {
 			// {rows, cols, rank, epsilon, sparsity}
-			{1202, 1003, 5, 1.321, 0.001},
+			// {1202, 1003, 5, 1.321, 0.001},
 			{1202, 1003, 5, 1.321, 0.45}
 		});
 	}
@@ -111,11 +112,13 @@ public class FederatedWeightedDivMatrixMultTest extends AutomatedTestBase
 	}
 
 	@Test
+	@Ignore
 	public void federatedWeightedDivMatrixMultLeftSpark() {
 		federatedWeightedDivMatrixMult(LEFT_TEST_NAME, ExecMode.SPARK);
 	}
 
 	@Test
+	@Ignore
 	public void federatedWeightedDivMatrixMultRightSingleNode() {
 		federatedWeightedDivMatrixMult(RIGHT_TEST_NAME, ExecMode.SINGLE_NODE);
 	}
@@ -126,6 +129,7 @@ public class FederatedWeightedDivMatrixMultTest extends AutomatedTestBase
 	}
 
 	@Test
+	@Ignore
 	public void federatedWeightedDivMatrixMultLeftEpsSingleNode() {
 		federatedWeightedDivMatrixMult(LEFT_EPS_TEST_NAME, ExecMode.SINGLE_NODE);
 	}
@@ -141,11 +145,13 @@ public class FederatedWeightedDivMatrixMultTest extends AutomatedTestBase
 	}
 
 	@Test
+	@Ignore
 	public void federatedWeightedDivMatrixMultLeftEps2Spark() {
 		federatedWeightedDivMatrixMult(LEFT_EPS_2_TEST_NAME, ExecMode.SPARK);
 	}
 
 	@Test
+	@Ignore
 	public void federatedWeightedDivMatrixMultLeftEps3SingleNode() {
 		federatedWeightedDivMatrixMult(LEFT_EPS_3_TEST_NAME, ExecMode.SINGLE_NODE);
 	}
@@ -161,6 +167,7 @@ public class FederatedWeightedDivMatrixMultTest extends AutomatedTestBase
 	}
 
 	@Test
+	@Ignore
 	public void federatedWeightedDivMatrixMultRightEpsSpark() {
 		federatedWeightedDivMatrixMult(RIGHT_EPS_TEST_NAME, ExecMode.SPARK);
 	}
@@ -186,6 +193,7 @@ public class FederatedWeightedDivMatrixMultTest extends AutomatedTestBase
 	}
 
 	@Test
+	@Ignore
 	public void federatedWeightedDivMatrixMultRightMultSingleNode() {
 		federatedWeightedDivMatrixMult(RIGHT_MULT_TEST_NAME, ExecMode.SINGLE_NODE);
 	}
@@ -201,6 +209,7 @@ public class FederatedWeightedDivMatrixMultTest extends AutomatedTestBase
 	}
 
 	@Test
+	@Ignore
 	public void federatedWeightedDivMatrixMultLeftMultMinusSpark() {
 		federatedWeightedDivMatrixMult(LEFT_MULT_MINUS_TEST_NAME, ExecMode.SPARK);
 	}
@@ -211,16 +220,19 @@ public class FederatedWeightedDivMatrixMultTest extends AutomatedTestBase
 	}
 
 	@Test
+	@Ignore
 	public void federatedWeightedDivMatrixMultRightMultMinusSpark() {
 		federatedWeightedDivMatrixMult(RIGHT_MULT_MINUS_TEST_NAME, ExecMode.SPARK);
 	}
 
 	@Test
+	@Ignore
 	public void federatedWeightedDivMatrixMultLeftMultMinus4SingleNode() {
 		federatedWeightedDivMatrixMult(LEFT_MULT_MINUS_4_TEST_NAME, ExecMode.SINGLE_NODE);
 	}
 
 	@Test
+	@Ignore
 	public void federatedWeightedDivMatrixMultLeftMultMinus4Spark() {
 		federatedWeightedDivMatrixMult(LEFT_MULT_MINUS_4_TEST_NAME, ExecMode.SPARK);
 	}

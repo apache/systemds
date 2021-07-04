@@ -25,6 +25,19 @@ X = federated(addresses=list($in_X1, $in_X2),
 U = read($in_U)
 V = read($in_V)
 
-Z = X * (U %*% t(V));
+Z1 = X * (U %*% t(V));
+
+U = X[ , 1:ncol(U)]; # row partitioned federated U
+while(FALSE) { }
+
+Z2 = X * (U %*% t(V));
+
+X = t(X); # col partitioned X
+while(FALSE) { }
+
+Z3 = X * (V %*% t(U));
+while(FALSE) { }
+
+Z = (Z1 + Z2) + sum(Z3);
 
 write(Z, $out_Z)

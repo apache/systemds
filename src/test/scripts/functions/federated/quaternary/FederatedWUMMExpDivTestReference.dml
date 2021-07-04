@@ -19,10 +19,20 @@
 #
 #-------------------------------------------------------------
 
-X = rbind(read($in_X1), read($in_X2))
-U = read($in_U)
-V = read($in_V)
+X = rbind(read($in_X1), read($in_X2));
+U = read($in_U);
+V = read($in_V);
 
-Z = X / exp(U %*% t(V));
+Z1 = X / exp(U %*% t(V));
 
-write(Z, $out_Z)
+U = X[ , 1:ncol(U)] - 1.5;
+
+Z2 = X / exp(U %*% t(V));
+
+X = t(X);
+
+Z3 = X / exp(V %*% t(U));
+
+Z = Z1 + Z2 + mean(Z3);
+
+write(Z, $out_Z);

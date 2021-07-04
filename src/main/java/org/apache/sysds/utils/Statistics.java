@@ -742,7 +742,7 @@ public class Statistics
 			InstStats val = _instStats.get(opcode);
 			long count = val.count.longValue();
 			double time = val.time.longValue() / 1000000000d; // in sec
-			heavyHitters.put(opcode, new ImmutablePair<Long, Double>(new Long(count), new Double(time)));
+			heavyHitters.put(opcode, new ImmutablePair<>(new Long(count), new Double(time)));
 		}
 		return heavyHitters;
 	}

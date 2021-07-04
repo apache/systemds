@@ -36,6 +36,7 @@ import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
 
 /** A group of columns compressed with a single run-length encoded bitmap. */
 public class ColGroupRLE extends ColGroupOffset {
+	private static final long serialVersionUID = -1560710477952862791L;
 
 	/**
 	 * Constructor for serialization

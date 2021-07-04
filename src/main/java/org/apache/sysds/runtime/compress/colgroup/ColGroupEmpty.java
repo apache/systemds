@@ -26,6 +26,7 @@ import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
 
 public class ColGroupEmpty extends ColGroupCompressed {
+	private static final long serialVersionUID = -2307677253622099958L;
 
 	/**
 	 * Constructor for serialization

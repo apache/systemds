@@ -22,7 +22,7 @@ import org.apache.commons.lang3.StringUtils;
 
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.Map;
+import java.util.Map.Entry;
 
 /**
  * Stemmer, implementing the Porter Stemming Algorithm
@@ -122,13 +122,13 @@ public class PorterStemmer
 		return true;
 	}
 	// process the collection of tuples to find which prefix matches the case.
-	private static String processMatched(String word, HashMap suffixAndfix, int mCount)
+	private static String processMatched(String word, HashMap<String,String> suffixAndfix, int mCount)
 	{
 		String stemmed = null;
-		Iterator it = suffixAndfix.entrySet().iterator();
+		Iterator<Entry<String,String>> it = suffixAndfix.entrySet().iterator();
 		while (it.hasNext() && (stemmed == null)) {
-			Map.Entry pair = (Map.Entry)it.next();
-			stemmed = replacer(word, pair.getKey().toString(), pair.getValue().toString(), mCount);
+			Entry<String,String> pair = it.next();
+			stemmed = replacer(word, pair.getKey().toString(), pair.getValue(), mCount);
 			it.remove();
 		}
 		return stemmed;
@@ -220,35 +220,33 @@ public class PorterStemmer
 	private static String step2(String word) {
 		int len = word .length();
 		if (len == 0) return word;
-		HashMap<String, String> suffixAndfix = new HashMap<String, String>()
-		{{
-			put("ational", "ate");
-			put("tional","tion");
-			put("enci","ence");
-			put("anci","ance");
-			put("izer","ize");
-			put("bli","ble");
-			put("alli", "al");
-			put("entli","ent");
-			put("eli","e");
-			put("ousli","ous");
-			put("ization","ize");
-			put("ation","ate");
-			put("ator","ate");
-			put("alism","al");
-			put("iveness", "ive");
-			put("fulness","ful");
-			put("ousness", "ous");
-			put("aliti", "al");
-			put("iviti","ive");
-			put("biliti", "ble");
-			put("log", "logi");
-			put("icate", "ic");
-			put("ative","");
-			put("alize","al");
-			put("iciti","ic");
-			put("ical","ic");
-		}};
+		HashMap<String, String> suffixAndfix = new HashMap<>();
+		suffixAndfix.put("ational", "ate");
+		suffixAndfix.put("tional","tion");
+		suffixAndfix.put("enci","ence");
+		suffixAndfix.put("anci","ance");
+		suffixAndfix.put("izer","ize");
+		suffixAndfix.put("bli","ble");
+		suffixAndfix.put("alli", "al");
+		suffixAndfix.put("entli","ent");
+		suffixAndfix.put("eli","e");
+		suffixAndfix.put("ousli","ous");
+		suffixAndfix.put("ization","ize");
+		suffixAndfix.put("ation","ate");
+		suffixAndfix.put("ator","ate");
+		suffixAndfix.put("alism","al");
+		suffixAndfix.put("iveness", "ive");
+		suffixAndfix.put("fulness","ful");
+		suffixAndfix.put("ousness", "ous");
+		suffixAndfix.put("aliti", "al");
+		suffixAndfix.put("iviti","ive");
+		suffixAndfix.put("biliti", "ble");
+		suffixAndfix.put("log", "logi");
+		suffixAndfix.put("icate", "ic");
+		suffixAndfix.put("ative","");
+		suffixAndfix.put("alize","al");
+		suffixAndfix.put("iciti","ic");
+		suffixAndfix.put("ical","ic");
 
 		String stemmed = processMatched(word, suffixAndfix, 0);
 		return (stemmed != null)? stemmed: word;
@@ -257,16 +255,14 @@ public class PorterStemmer
 	private static String step3(String word) {
 		int len = word .length();
 		if (len == 0) return word;
-		HashMap<String, String> suffixAndfix = new HashMap<String, String>()
-		{{
-			put("icate", "ic");
-			put("ative","");
-			put("alize","al");
-			put("iciti","ic");
-			put("ical","ic");
-			put("ful","");
-			put("ness","");
-		}};
+		HashMap<String, String> suffixAndfix = new HashMap<>();
+		suffixAndfix.put("icate", "ic");
+		suffixAndfix.put("ative","");
+		suffixAndfix.put("alize","al");
+		suffixAndfix.put("iciti","ic");
+		suffixAndfix.put("ical","ic");
+		suffixAndfix.put("ful","");
+		suffixAndfix.put("ness","");
 
 		String stemmed = processMatched(word, suffixAndfix, 0);
 		return (stemmed != null)? stemmed: word;

@@ -48,6 +48,7 @@ import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
  * This column group is handy in cases where sparse unsafe operations is executed on very sparse columns.
  */
 public class ColGroupSDCZeros extends ColGroupValue {
+	private static final long serialVersionUID = -3703199743391937991L;
 
 	/**
 	 * Sparse row indexes for the data

@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.apache.sysds.runtime.controlprogram;
+package org.apache.sysds.runtime.compress;
 
 import java.util.HashMap;
 

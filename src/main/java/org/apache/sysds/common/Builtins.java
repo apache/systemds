@@ -227,6 +227,7 @@ public enum Builtins {
 	SEQ("seq", false),
 	SHERLOCK("sherlock", true),
 	SHERLOCKPREDICT("sherlockPredict", true),
+	SHORTESTPATH("shortestPath", true),
 	SIGMOID("sigmoid", true),   // 1 / (1 + exp(-X))
 	SIGN("sign", false),
 	SIN("sin", false),

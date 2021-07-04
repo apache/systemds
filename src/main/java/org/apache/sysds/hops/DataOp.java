@@ -355,6 +355,10 @@ public class DataOp extends Hop {
 		return( _op == OpOpData.PERSISTENTREAD || _op == OpOpData.PERSISTENTWRITE );
 	}
 
+	public boolean isFederatedData(){
+		return _op == OpOpData.FEDERATED;
+	}
+
 	@Override
 	public String getOpString() {
 		String s = new String("");

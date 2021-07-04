@@ -136,4 +136,13 @@ public class SqlCPInstruction extends CPInstruction {
 	public CPOperand getOutput(){
 		return _output;
 	}
+
+	/**
+	 * Returns the inputs of the instruction.
+	 * Inputs are conn, user, pass, and query.
+	 * @return inputs of the instruction
+	 */
+	public CPOperand[] getInputs(){
+		return new CPOperand[]{_conn, _user, _pass, _query};
+	}
 }

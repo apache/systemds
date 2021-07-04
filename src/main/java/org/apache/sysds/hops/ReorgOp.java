@@ -61,8 +61,7 @@ public class ReorgOp extends MultiThreadedHop
 		_op = o;
 		getInput().add(0, inp);
 		inp.getParent().add(this);
-		updateETFed();
-		
+
 		//compute unknown dims and nnz
 		refreshSizeInformation();
 	}
@@ -78,8 +77,6 @@ public class ReorgOp extends MultiThreadedHop
 			in.getParent().add(this);
 		}
 
-		updateETFed();
-		
 		//compute unknown dims and nnz
 		refreshSizeInformation();
 	}

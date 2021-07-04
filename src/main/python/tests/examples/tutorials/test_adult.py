@@ -311,7 +311,6 @@ class Test_DMLScript(unittest.TestCase):
             self.dataset_path_test,
             schema=SCHEMA
         )
-
         ################################################################################################################
         """""
         Step 2:
@@ -395,12 +394,16 @@ class Test_DMLScript(unittest.TestCase):
         ################################################################################################################
         PREPROCESS_package = self.sds.source(self.preprocess_src_path, "preprocess", print_imported_methods=True)
 
+
         X = PREPROCESS_package.get_X(X1, train_count)
         Y = PREPROCESS_package.get_Y(X1, train_count)
+
         #We lose the column count information after using the Preprocess Package. This triggers an error on multilogregpredict. Otherwise its working
         Xt = self.sds.from_numpy(np.array(PREPROCESS_package.get_Xt(X1, train_count).compute()))
         Yt = PREPROCESS_package.get_Yt(X1, train_count)
-
+        # since the test set contains dots in the income column and the training set does not we need to make sure that they are labled as the same value
+        Yt = PREPROCESS_package.replace_value (Yt, 3.0, 1.0)
+        Yt = PREPROCESS_package.replace_value (Yt, 4.0, 2.0)
 
         X, mean, sigma = scale(X, True, True)
         Xt = scaleApply(Xt, mean, sigma)

@@ -55,3 +55,9 @@ get_Yt = function(matrix[double] X,
     return (matrix[double] returnVal) {
   returnVal = X[train_samples+1:nrow(X),ncol(X):ncol(X)]
 }
+
+replace_value = function(matrix[double] X,
+                 double pattern , double replacement)
+    return (matrix[double] returnVal) {
+  returnVal = replace(target=X, pattern=pattern, replacement=replacement)
+}

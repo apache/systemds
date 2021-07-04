@@ -203,7 +203,7 @@ public class AvgModelFederatedParamservTest extends AutomatedTestBase {
 					"hin=" + Hin,
 					"win=" + Win,
 					"seed=" + _seed,
-			        "modelAvg="+ _modelAvg));
+			        "modelAvg="+ modelAvg));
 
 			programArgs = programArgsList.toArray(new String[0]);
 

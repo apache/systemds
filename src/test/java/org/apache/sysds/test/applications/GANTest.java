@@ -62,10 +62,7 @@ public class GANTest extends AutomatedTestBase
     @Override
     public void setUp()
     {
-        //String[] out = {"accuracy"};
-        //TestConfiguration config = new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, out);
         addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[] {"accuracy.scalar"}));
-        //addTestConfiguration(TEST_CLASS_DIR, TEST_NAME);
     }
 
     @Test
@@ -83,6 +80,6 @@ public class GANTest extends AutomatedTestBase
         runTest(true, EXCEPTION_NOT_EXPECTED, null, -1);
 
         writeExpectedScalar("accuracy", 0.5);
-        compareResults( 0.1);
+        compareResults( 0.15);
     }
 }

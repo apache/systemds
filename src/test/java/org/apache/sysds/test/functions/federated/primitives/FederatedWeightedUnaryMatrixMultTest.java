@@ -49,7 +49,7 @@ public class FederatedWeightedUnaryMatrixMultTest extends AutomatedTestBase
 
 	private final static String OUTPUT_NAME = "Z";
 
-	private final static double TOLERANCE = 0;
+	private final static double TOLERANCE = 1e-14;
 
 	private final static int BLOCKSIZE = 1024;
 
@@ -111,10 +111,10 @@ public class FederatedWeightedUnaryMatrixMultTest extends AutomatedTestBase
 		federatedWeightedUnaryMatrixMult(POW_2_TEST_NAME, ExecMode.SINGLE_NODE);
 	}
 
-	@Test
-	public void federatedWeightedUnaryMatrixMultPow2Spark() {
-		federatedWeightedUnaryMatrixMult(POW_2_TEST_NAME, ExecMode.SPARK);
-	}
+	// @Test
+	// public void federatedWeightedUnaryMatrixMultPow2Spark() {
+	// 	federatedWeightedUnaryMatrixMult(POW_2_TEST_NAME, ExecMode.SPARK);
+	// }
 
 	@Test
 	public void federatedWeightedUnaryMatrixMultMult2SingleNode() {
@@ -186,7 +186,7 @@ public class FederatedWeightedUnaryMatrixMultTest extends AutomatedTestBase
 			TestUtils.compareMatrices(fedResults, refResults, TOLERANCE, "Fed", "Ref");
 
 			// check for federated operations
-			Assert.assertTrue(heavyHittersContainsString("fed_wumm"));
+			Assert.assertTrue(heavyHittersContainsString("fed_wumm", 1, exec_mode == ExecMode.SPARK ? 2 : 3));
 
 			// check that federated input files are still existing
 			Assert.assertTrue(HDFSTool.existsFileOnHDFS(input("X1")));

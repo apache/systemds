@@ -37,8 +37,6 @@ import java.util.stream.IntStream;
 
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.concurrent.ConcurrentUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.commons.math3.random.Well1024a;
 import org.apache.hadoop.io.DataInputBuffer;
 import org.apache.sysds.common.Types.BlockType;
@@ -117,7 +115,6 @@ import org.apache.sysds.utils.NativeHelper;
 
 
 public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizable {
-	private static final Log LOG = LogFactory.getLog(MatrixBlock.class.getName());
 	
 	private static final long serialVersionUID = 7319972089143154056L;
 	

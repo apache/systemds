@@ -184,11 +184,13 @@ public class FederatedStatistics {
 			try {
 				ret.add(FederatedData.executeFederatedOperation(isa, frUDF));
 			} catch(SSLException ssle) {
-				throw new DMLRuntimeException("SSLException while getting the federated stats from "
-					+ isa.toString() + ": ", ssle);
+				System.out.println("SSLException while getting the federated stats from "
+					+ isa.toString() + ": " + ssle.getMessage());
+			} catch(DMLRuntimeException dre) {
+				// silently ignore this exception --> caused by offline federated workers
 			} catch (Exception e) {
-				throw new DMLRuntimeException("Exeption of type " + e.getClass().getName() 
-					+ " thrown while getting stats from federated worker: ", e);
+				System.out.println("Exeption of type " + e.getClass().getName() 
+					+ " thrown while getting stats from federated worker: " + e.getMessage());
 			}
 		}
 		@SuppressWarnings("unchecked")

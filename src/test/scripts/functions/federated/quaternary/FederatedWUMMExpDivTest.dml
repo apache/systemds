@@ -20,11 +20,24 @@
 #-------------------------------------------------------------
 
 X = federated(addresses=list($in_X1, $in_X2),
-  ranges=list(list(0, 0), list($rows, $cols), list($rows, 0), list($rows * 2, $cols)))
+  ranges=list(list(0, 0), list($rows, $cols), list($rows, 0), list($rows * 2, $cols)));
 
-U = read($in_U)
-V = read($in_V)
+U = read($in_U);
+V = read($in_V);
 
-Z = X / exp(U %*% t(V));
+Z1 = X / exp(U %*% t(V));
 
-write(Z, $out_Z)
+U = X[ , 1:ncol(U)] - 1.5; # row partitioned federated U
+while(FALSE) { }
+
+Z2 = X / exp(U %*% t(V));
+
+X = t(X); # col partitioned X
+while(FALSE) { }
+
+Z3 = X / exp(V %*% t(U));
+while(FALSE) { }
+
+Z = Z1 + Z2 + mean(Z3);
+
+write(Z, $out_Z);

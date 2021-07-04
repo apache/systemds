@@ -71,10 +71,10 @@ public class FederatedWeightedCrossEntropyTest extends AutomatedTestBase
 		// rows must be even
 		return Arrays.asList(new Object[][] {
 			// {rows, cols, rank, epsilon, sparsity}
-			{2000, 50, 10, 0.01, 0.01},
+			// {2000, 50, 10, 0.01, 0.01},
 			{2000, 50, 10, 0.01, 0.9},
 			{2000, 50, 10, 6.45, 0.01},
-			{2000, 50, 10, 6.45, 0.9}
+			// {2000, 50, 10, 6.45, 0.9}
 		});
 	}
 
@@ -165,7 +165,7 @@ public class FederatedWeightedCrossEntropyTest extends AutomatedTestBase
 		TestUtils.shutdownThreads(thread1, thread2);
 
 		// check for federated operations
-		Assert.assertTrue(heavyHittersContainsString("fed_wcemm"));
+		Assert.assertTrue(heavyHittersContainsString("fed_wcemm", 1, execMode == ExecMode.SPARK ? 2 : 3));
 
 		// check that federated input files are still existing
 		Assert.assertTrue(HDFSTool.existsFileOnHDFS(input("X1")));

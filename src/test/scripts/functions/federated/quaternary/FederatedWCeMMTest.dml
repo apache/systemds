@@ -20,11 +20,25 @@
 #-------------------------------------------------------------
 
 X = federated(addresses=list($in_X1, $in_X2),
-  ranges=list(list(0, 0), list($rows, $cols), list($rows, 0), list($rows * 2, $cols)))
+  ranges=list(list(0, 0), list($rows, $cols), list($rows, 0), list($rows * 2, $cols)));
 
-U = read($in_U)
-V = read($in_V)
+U = read($in_U);
+V = read($in_V);
 
-Z = as.matrix(sum(X * log(U %*% t(V))))
+Z1 = as.matrix(sum(X * log(U %*% t(V))));
 
-write(Z, $out_Z)
+U = X[ , 1:ncol(U)]; # row partitined U
+while(FALSE) { }
+
+Z2 = as.matrix(sum(X * log(U %*% t(V))));
+
+X = t(X); # col paritined X
+while(FALSE) { }
+
+Z3 = as.matrix(sum(X * log(V %*% t(U))));
+
+while(FALSE) { }
+
+Z = Z1 + Z2 + Z3;
+
+write(Z, $out_Z);

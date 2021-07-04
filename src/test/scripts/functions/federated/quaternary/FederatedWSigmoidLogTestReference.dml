@@ -24,6 +24,18 @@ U = read($in_U);
 V = read($in_V);
 
 UV = U %*% t(V);
-Z = X * log(1 / (1 + exp(-UV)));
+Z1 = X * log(1 / (1 + exp(-UV)));
+
+U = X[ , 1:ncol(U)];
+
+UV = U %*% t(V);
+Z2 = X * log(1 / (1 + exp(-UV)));
+
+X = t(X);
+
+UV = V %*% t(U);
+Z3 = X * log(1 / (1 + exp(-UV)));
+
+Z = Z1 + Z2 + mean(Z3);
 
 write(Z, $out_Z);

@@ -20,11 +20,24 @@
 #-------------------------------------------------------------
 
 X = federated(addresses=list($in_X1, $in_X2),
-  ranges=list(list(0, 0), list($rows, $cols), list($rows, 0), list($rows * 2, $cols)))
+  ranges=list(list(0, 0), list($rows, $cols), list($rows, 0), list($rows * 2, $cols)));
 
-U = read($in_U)
-V = read($in_V)
+U = read($in_U);
+V = read($in_V);
 
-Z = as.matrix(sum((X - (U %*% t(V))) ^ 2))
+Z1 = as.matrix(sum((X - (U %*% t(V))) ^ 2));
 
-write(Z, $out_Z)
+U = X[ , 1:ncol(U)] - 1.5; # row paritioned federated U
+while(FALSE) { }
+
+Z2 = as.matrix(sum((X - (U %*% t(V))) ^ 2));
+
+X = t(X); # col paritioned X
+while(FALSE) { }
+
+Z3 = as.matrix(sum((X - (V %*% t(U))) ^ 2));
+while(FALSE) { }
+
+Z = Z1 + Z2 + mean(Z3);
+
+write(Z, $out_Z);

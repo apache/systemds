@@ -24,6 +24,18 @@ U = read($in_U)
 V = read($in_V)
 W = read($in_W)
 
-Z = as.matrix(sum(W * (X - (U %*% t(V))) ^ 2))
+Z1 = as.matrix(sum(W * (X - (U %*% t(V))) ^ 2));
 
-write(Z, $out_Z)
+U = X[ , 1:ncol(U)] - 1.5;
+W = X * 2.5;
+
+Z2 = as.matrix(sum(W * (X - (U %*% t(V))) ^ 2));
+
+X = t(X);
+W = t(W);
+
+Z3 = as.matrix(sum(W * (X - (V %*% t(U))) ^ 2));
+
+Z = Z1 + Z2 + mean(Z3);
+
+write(Z, $out_Z);

@@ -47,6 +47,7 @@ import org.apache.sysds.runtime.controlprogram.federated.FederatedRange;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse;
 import org.apache.sysds.runtime.controlprogram.federated.FederationMap;
 import org.apache.sysds.runtime.controlprogram.federated.FederationMap.FType;
+import org.apache.sysds.runtime.controlprogram.federated.FederatedStatistics;
 import org.apache.sysds.runtime.controlprogram.federated.FederationUtils;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
@@ -120,6 +121,10 @@ public class InitFEDInstruction extends FEDInstruction implements LineageTraceab
 				String host = parsedValues[0];
 				int port = Integer.parseInt(parsedValues[1]);
 				String filePath = parsedValues[2];
+
+				// register the federated worker for federated statistics creation
+				FederatedStatistics.registerFedWorker(host, port);
+
 				// get beginning and end of data ranges
 				List<Data> rangesData = ranges.getData();
 				Data beginData = rangesData.get(i * 2);

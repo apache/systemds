@@ -139,7 +139,7 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 		//recursively process children
 		for( int i=0; i<hop.getInput().size(); i++)
 		{
-			Hop hi = hop.getInput().get(i);
+			Hop hi = hop.getInput(i);
 			
 			//process childs recursively first (to allow roll-up)
 			if( descendFirst )

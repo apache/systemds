@@ -59,7 +59,6 @@ public class AvgModelFederatedParamservTest extends AutomatedTestBase {
 	private final String _weighting;
 	private final String _data_distribution;
 	private final int _seed;
-	private final boolean _modelAvg;
 
 	// parameters
 	@Parameterized.Parameters
@@ -112,7 +111,6 @@ public class AvgModelFederatedParamservTest extends AutomatedTestBase {
 		_weighting = weighting;
 		_data_distribution = data_distribution;
 		_seed = seed;
-		_modelAvg = modelAvg;
 	}
 
 	@Override

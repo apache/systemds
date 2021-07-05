@@ -53,13 +53,12 @@
 
 # TODO: future: add parameter for list of words that are sure to be correct
 
-s_correctTypos = function(Frame[String] strings, Double frequency_threshold=0.05, Integer distance_threshold=2,
+s_correctTypos = function(Frame[String] strings, Matrix[Double] nullMask, Double frequency_threshold=0.05, Integer distance_threshold=2,
     Boolean decapitalize=TRUE, Boolean correct=TRUE, Boolean is_verbose=FALSE)
   return (Frame[String] Y)
 {
   if(is_verbose)
     print ("BEGIN CORRECT-TYPOS SCRIPT");
-
   num_strings = length(strings);
 
   if(is_verbose)
@@ -67,16 +66,21 @@ s_correctTypos = function(Frame[String] strings, Double frequency_threshold=0.05
 
   if (decapitalize)
     strings = map(strings, "s -> s.toLowerCase()");
+    
+  if(nrow(strings) != nrow(nullMask) | ncol(strings) != ncol(nullMask))
+    stop("Dimension mismatch: data dimensions do not match with mask dimensions")
   Y = strings
 
   # build dictionary
   current_string = as.scalar(strings[1]);
-  dict = cbind(as.frame(current_string), as.frame(1));
+  dict = cbind(as.frame(""), as.frame(1));
 
-  for (i in 2:num_strings) {
+  for (i in 1:num_strings) {
     current_string = as.scalar(strings[i]);
-    dict = insertOrIncrement(current_string, dict);
+    if(as.scalar(nullMask[i]) == 0)
+      dict = insertOrIncrement(current_string, dict);
   }
+  dict = dict[2:nrow(dict),]
   strings = dict[,1];
   frequencies = as.matrix(dict[,2]) / num_strings;
   lengths = as.matrix(map(strings, "s -> s.length()"));

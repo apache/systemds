@@ -29,7 +29,7 @@ F = read($dirtyData, data_type="frame", format="csv", header=TRUE,
 metaInfo = read($metaData, data_type="frame", format="csv", header=FALSE);
 primitives = read($primitives, data_type = "frame", format="csv", header= TRUE)
 param = read($parameters, data_type = "frame", format="csv", header= TRUE)
-logical = read($logical, data_type = "frame", format="csv", header= FALSE)
+logical = frame(["MVI", "DUMMY"], rows=1, cols=2)
 sample = $sampleSize
 topK = $topk
 resources = $rv
@@ -80,7 +80,8 @@ getSchema = getSchema[, 1:ncol(getSchema) - 1] # strip the mask of class label
 
 # 5. find the best hyper parameters for classification algorithm
 # for now only find the best values for intercept and maximum outer iteration
-opt = utils::getOpByTarget(eX, eY, getMask, targetApplicaton)
+opt = matrix("0 0 100", rows=1, cols=3)
+
 
 # 6. get the cross validated accuracy on dirty dataset (only on training set)
 d_accuracy = 0

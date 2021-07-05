@@ -40,7 +40,6 @@ public class CleaningTestClassification extends AutomatedTestBase {
 	private final static String CLEAN = DATA_DIR+ "clean.csv";
 	private final static String META = RESOURCE+ "meta/meta_census.csv";
 	private final static String OUTPUT = RESOURCE+"intermediates/";
-	private final static String LOGICAL = RESOURCE+"intermediates/logical.csv";
 
 	private static final String PARAM_DIR = "./scripts/pipelines/properties/";
 	private final static String PARAM = PARAM_DIR + "param.csv";
@@ -79,7 +78,7 @@ public class CleaningTestClassification extends AutomatedTestBase {
 			loadTestConfiguration(getTestConfiguration(TEST_NAME1));
 			fullDMLScriptName = HOME + TEST_NAME1 + ".dml";
 			programArgs = new String[] {"-stats", "-exec", "singlenode", "-nvargs", "dirtyData="+DIRTY,
-				"metaData="+META, "primitives="+PRIMITIVES, "parameters="+PARAM, "logical="+LOGICAL,
+				"metaData="+META, "primitives="+PRIMITIVES, "parameters="+PARAM,
 				"sampleSize="+ sample, "topk="+ topk, "rv="+ resources, "cv="+ crossfold,
 				"weighted="+ weightedAccuracy, "output="+OUTPUT, "target="+target, "cleanData="+CLEAN,
 				"O="+output("O")};

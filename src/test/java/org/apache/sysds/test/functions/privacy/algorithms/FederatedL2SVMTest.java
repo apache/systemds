@@ -286,8 +286,7 @@ public class FederatedL2SVMTest extends AutomatedTestBase {
 		rows = 1000; cols = 1;
 		Map<String, PrivacyConstraint> privacyConstraints = new HashMap<>();
 		privacyConstraints.put("X1", new PrivacyConstraint(PrivacyLevel.PrivateAggregation));
-		federatedL2SVM(Types.ExecMode.SINGLE_NODE, privacyConstraints, null, PrivacyLevel.PrivateAggregation,
-			false, null, true, DMLRuntimeException.class);
+		federatedL2SVMNoException(Types.ExecMode.SINGLE_NODE, privacyConstraints, null, PrivacyLevel.PrivateAggregation);
 	}
 
 	@Test
@@ -295,8 +294,7 @@ public class FederatedL2SVMTest extends AutomatedTestBase {
 		rows = 1000; cols = 1;
 		Map<String, PrivacyConstraint> privacyConstraints = new HashMap<>();
 		privacyConstraints.put("X2", new PrivacyConstraint(PrivacyLevel.PrivateAggregation));
-		federatedL2SVM(Types.ExecMode.SINGLE_NODE, privacyConstraints, null, PrivacyLevel.PrivateAggregation,
-			false, null, true, DMLRuntimeException.class);
+		federatedL2SVMNoException(Types.ExecMode.SINGLE_NODE, privacyConstraints, null, PrivacyLevel.PrivateAggregation);
 	}
 
 	@Test

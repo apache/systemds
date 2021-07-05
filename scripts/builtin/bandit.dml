@@ -95,7 +95,7 @@ m_bandit = function(Matrix[Double] X_train, Matrix[Double] Y_train, List[Unknown
 
       # sort the configurations for successive halving
       avergae_perf =  getMaxPerConf(outPip, nrow(configurations)) 
-      configurations = frameSort(cbind(avergae_perf, configurations))
+      configurations = frameSort(cbind(avergae_perf, configurations), TRUE)
       configurations = configurations[, 2:ncol(configurations)]
     }
     bracket_pipel = removeEmpty(target=bracket_pipel, margin="rows")
@@ -405,7 +405,7 @@ extractTopK = function(Frame[Unknown] pipeline, Matrix[Double] hyperparam,
 
   # sort results
   hyperparam = order(target = hyperparam, by = 1, decreasing=TRUE, index.return=FALSE)
-  pipeline = frameSort(pipeline)
+  pipeline = frameSort(pipeline, TRUE)
 
 
   # remove the row with accuracy less than test accuracy 

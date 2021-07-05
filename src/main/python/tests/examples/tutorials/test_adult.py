@@ -387,6 +387,11 @@ class Test_DMLScript(unittest.TestCase):
         ################################################################################################################
         X1, M1 = X1.transform_encode(spec=jspec)
 
+        # better alternative for encoding
+        # X1, M = F1.transform_encode(spec=jspec)
+        # X2 = F2.transform_apply(spec=jspec, meta=M)
+        # testX2 = X2.compute(True)
+
         ################################################################################################################
         """"
         First we re-split out data into a training and a test set with the corresponding labels. 

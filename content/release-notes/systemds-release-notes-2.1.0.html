@@ -14,9 +14,9 @@
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
 
-  <title>Documentation</title>
+  <title>SystemDS 2.1.0 Release Notes</title>
   
-  <meta name="description" content="Project Documentation Page"> 
+  <meta name="description" content="Project Release Notes"> 
   <meta name="author" content="Apache SystemDS">
 
   <!-- Enable responsive viewport -->
@@ -27,7 +27,7 @@
   Learn more: https://developers.facebook.com/docs/sharing/webmasters -->
   <meta property="og:url" content="https://systemds.apache.org/" />
   <meta property="og:type" content="website" />
-  <meta property="og:title" content="Documentation" />
+  <meta property="og:title" content="SystemDS 2.1.0 Release Notes" />
   <meta property="og:description" content="Apache SystemDS provides an optimal workplace for Machine Learning using big data" />
   <meta property="og:image" content="" />
 
@@ -135,39 +135,53 @@
 
 -->
 
-<!-- Hero  -->
 <section class="full-stripe full-stripe--subpage-header clear-header">
   <div class="ml-container ml-container--horizontally-center">
     <div class="col col-12 content-group content-group--center-content content-group--center-align">
-      <h1>Apache SystemDS<sup id="trademark">&trade;</sup> Documentation</h1>
+      <h1>Apache SystemDS<sup id="trademark">&trade;</sup> 2.1.0 Release Notes</h1>
     </div>
   </div>
 </section>
-<!-- Publish website test -->
-<section class="full-stripe full-stripe--alternate hero">
-  <div class="ml-container ml-container--three-column">
-    <div class="col col-4">
-      <p>Documentation such as programming guides, reference guides, and API docs is available for SystemDS below:</p>
-      <a class="button button-primary" href="https://apache.github.io/systemds/">Latest</a>
-      <p></p>
-      <a class="button button-primary" href="docs/2.1.0/index">2.1.0</a>
-      <a class="button button-primary" href="release-notes/systemds-release-notes-2.1.0">ReleaseNotes</a>
-    </div>
-    <div class="col col-4">
-      <p>each released version of SystemML/DS:</p>
+
+<section class="full-stripe full-stripe--alternate">
+  <div class="ml-container">
+    <div class="col col-12 content-group content-group--medium-bottom-margin">
+
+      <h2 id="release-notes-for-systemds-210">Release notes for SystemDS 2.1.0</h2>
+
+      <p>SystemDS 2.1 is a minor release. This release contains major improvements
+to existing features, a large number of fixes, and some experimental
+features to better support the end-to-end data science lifecycle.
+In addition to that, this is the last release with Java 8 and Spark 2.x.</p>
+
+      <p>The major changes (compared to SystemDS 2.0) include</p>
+
       <ul>
-        <li><a href="docs/2.0.0/index">2.0.0</a>, <a href="release-notes/systemds-release-notes-2.0.0">ReleaseNotes</a></li>
-        <li><a href="docs/1.2.0/index">1.2.0</a>, <a href="release-notes/systemml-release-notes-1.2.0">ReleaseNotes</a></li>
-        <li><a href="docs/1.1.0/index">1.1.0</a>, <a href="release-notes/systemml-release-notes-1.1.0">ReleaseNotes</a></li>
-        <li><a href="docs/1.0.0/index">1.0.0</a>, <a href="release-notes/systemml-release-notes-1.0.0">ReleaseNotes</a></li>
-        <li><a href="docs/0.15.0/index">0.15.0</a>, <a href="release-notes/systemml-release-notes-0.15.0">ReleaseNotes</a></li>
-        <li><a href="docs/0.14.0/index">0.14.0</a>, <a href="release-notes/systemml-release-notes-0.14.0-incubating">ReleaseNotes</a></li>
-        <li><a href="docs/0.13.0/index">0.13.0</a>, <a href="release-notes/systemml-release-notes-0.13.0-incubating">ReleaseNotes</a></li>
-        <li><a href="docs/0.12.0/index">0.12.0</a>, <a href="release-notes/systemml-release-notes-0.12.0-incubating">ReleaseNotes</a></li>
+        <li>Federated Backend: Extended operations and built-ins to support various
+workflows and algorithms. Extended parameter server for federated training
+of Neural Networks.</li>
+        <li>A wealth of new and improved built-in functions including support for
+string operations, time-series analysis, data cleaning, grid search
+hyperparameter tuning, multi-threaded feature transformations.</li>
+        <li>Better support for Eval and list data structure.</li>
+        <li>Various performance improvements in SystemDS’ local, distributed, and
+native runtimes.</li>
+        <li>Python API: Source functionality to allow arbitrary DML script,
+auto-generated Python API for all built-in functions,  list support
+allowing Pytonic access and manipulation of lazily evaluated DML elements,
+multi return continuation, allowing continued execution past calls to
+builtin functions.</li>
+        <li>GPU Backend: Various performance improvements and fixes, cuda code
+refactor, cuda code generation [experimental].</li>
+        <li>Lineage Tracing and Reuse: Initial support for federated and GPU
+backends, new hybrid lineage deduplication and reuse of compressed lineage
+DAGs, lineage cache benefits estimator, improved cache eviction logic.</li>
+        <li>Usability: Better Log4j integration, debug flag to reduce error logging,
+support for remote debugging.</li>
+        <li>Miscellaneous Improvements: Improved documentation, better testing,
+streamlined release process.</li>
       </ul>
-    </div>
-  </div>
-</section>
+    </div></div></section>
 
 </div>
 

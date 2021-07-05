@@ -85,9 +85,9 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 
 	public FederatedPSControlThread(int workerID, String updFunc, Statement.PSFrequency freq,
 		PSRuntimeBalancing runtimeBalancing, boolean weighting, int epochs, long batchSize,
-		int numBatchesPerGlobalEpoch, ExecutionContext ec, ParamServer ps,boolean modelAvg)
+		int numBatchesPerGlobalEpoch, ExecutionContext ec, ParamServer ps)
 	{
-		super(workerID, updFunc, freq, epochs, batchSize, ec, ps,modelAvg);
+		super(workerID, updFunc, freq, epochs, batchSize, ec, ps,false);
 
 		_numBatchesPerEpoch = numBatchesPerGlobalEpoch;
 		_runtimeBalancing = runtimeBalancing;

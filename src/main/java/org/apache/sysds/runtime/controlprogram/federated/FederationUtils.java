@@ -19,6 +19,7 @@
 
 package org.apache.sysds.runtime.controlprogram.federated;
 
+import java.net.InetSocketAddress;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -26,6 +27,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.Future;
 
+import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.log4j.Logger;
 import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.lops.Lop;
@@ -57,7 +59,8 @@ import org.apache.sysds.runtime.matrix.operators.SimpleOperator;
 public class FederationUtils {
 	protected static Logger log = Logger.getLogger(FederationUtils.class);
 	private static final IDSequence _idSeq = new IDSequence();
-	public static Map<Pair<Long, Long>, Long> _broadcastMap = new HashMap<>();
+	// <old id, worker> : <type, new id>
+	public static Map<ImmutablePair<Long, InetSocketAddress>, ImmutablePair<FederationMap.FType, Long>> _broadcastMap = new HashMap<>();
 
 	public static void resetFedDataID() {
 		_idSeq.reset();
@@ -67,16 +70,16 @@ public class FederationUtils {
 		return _idSeq.getNextID();
 	}
 
-	public static long getNextFedDataID(long workerId, long broadcastId) {
-		long id;
-		if(_broadcastMap.containsKey(new Pair<>(workerId, broadcastId)))
-			id = _broadcastMap.get(new Pair<>(workerId, broadcastId));
-		else {
-			id = _idSeq.getNextID();
-			_broadcastMap.put(new Pair<>(workerId, broadcastId), id);
-		}
-		return id;
-	}
+//	public static long getNextFedDataID(long workerId, long broadcastId) {
+//		long id;
+//		if(_broadcastMap.containsKey(new Pair<>(workerId, broadcastId)))
+//			id = _broadcastMap.get(new Pair<>(workerId, broadcastId));
+//		else {
+//			id = _idSeq.getNextID();
+//			_broadcastMap.put(new Pair<>(workerId, broadcastId), id);
+//		}
+//		return id;
+//	}
 
 	public static FederatedRequest callInstruction(String inst, CPOperand varOldOut, CPOperand[] varOldIn, long[] varNewIn, boolean federatedOutput){
 		long id = getNextFedDataID();

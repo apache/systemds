@@ -33,7 +33,6 @@ import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import org.apache.commons.lang3.tuple.ImmutablePair;
-import org.apache.commons.lang3.tuple.Pair;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.log4j.Logger;
@@ -68,6 +67,7 @@ import org.apache.sysds.runtime.lineage.LineageItem;
 import org.apache.sysds.runtime.lineage.LineageItemUtils;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.matrix.data.Pair;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.meta.MetaData;
 import org.apache.sysds.runtime.meta.MetaDataAll;
@@ -122,7 +122,8 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 			PrivacyMonitor.clearCheckedConstraints();
 
 			// execute command and handle privacy constraints
-			FederatedResponse tmp = executeCommand(request);
+			FederatedResponse tmp = executeCommand(request); //TODO possible modification
+//			FederationUtils.callInstruction()
 			conditionalAddCheckedConstraints(request, tmp);
 
 			// select the response for the entire batch of requests
@@ -169,8 +170,6 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 					return execUDF(request);
 				case CLEAR:
 					return execClear();
-				case PUT_FED_VAR:
-					return putFedInput(request);
 				default:
 					String message = String.format("Method %s is not supported.", method);
 					return new FederatedResponse(ResponseType.ERROR, new FederatedWorkerHandlerException(message));
@@ -191,9 +190,6 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 		checkNumParams(request.getNumParams(), 2, 3);
 		String filename = (String) request.getParam(0);
 		DataType dt = DataType.valueOf((String) request.getParam(1));
-		if(request.getNumParams() == 3) {
-			return readData(filename, dt, request.getID(), request.getTID(), (MetaData) request.getParam(2));
-		}
 		return readData(filename, dt, request.getID(), request.getTID());
 	}
 
@@ -271,61 +267,32 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 		return new FederatedResponse(ResponseType.SUCCESS, new Object[] {id, mc});
 	}
 
-	private FederatedResponse readData(String filename, Types.DataType dataType, long id, long tid, MetaData mtd) {
-		MatrixCharacteristics mc = new MatrixCharacteristics();
-		mc.setBlocksize(ConfigurationManager.getBlocksize());
-		CacheableData<?> cd;
-		switch(dataType) {
-			case MATRIX:
-				cd = new MatrixObject(Types.ValueType.FP64, filename);
-				break;
-			case FRAME:
-				cd = new FrameObject(filename);
-				break;
-			default:
-				// should NEVER happen (if we keep request codes in sync with actual behavior)
-				return new FederatedResponse(ResponseType.ERROR,
-					new FederatedWorkerHandlerException("Could not recognize datatype"));
-		}
-
-		FileFormat fmt = null;
-		boolean header = false;
-		String delim = null;
-		mc.setRows(mtd.getDataCharacteristics().getRows());
-		mc.setCols(mtd.getDataCharacteristics().getCols());
-		mc.setNonZeros(mtd.getDataCharacteristics().getNonZeros());
-
-		fmt = FileFormat.MM;
-		delim = DataExpression.DEFAULT_DELIM_DELIMITER;
-
-		// put meta data object in symbol table, read on first operation
-		cd.setMetaData(new MetaDataFormat(mc, fmt));
-//		if(fmt == FileFormat.CSV)
-//			cd.setFileFormatProperties(new FileFormatPropertiesCSV(header, delim,
-//				DataExpression.DEFAULT_DELIM_SPARSE));
-		cd.enableCleanup(false); // guard against deletion
-		_ecm.get(tid).setVariable(String.valueOf(id), cd);
-
-		if (DMLScript.LINEAGE)
-			// create a literal type lineage item with the file name
-			_ecm.get(tid).getLineage().set(String.valueOf(id), new LineageItem(filename));
-
-		if(dataType == Types.DataType.FRAME) {
-			FrameObject frameObject = (FrameObject) cd;
-			frameObject.acquireRead();
-			frameObject.refreshMetaData(); // get block schema
-			frameObject.release();
-			return new FederatedResponse(ResponseType.SUCCESS, new Object[] {id, frameObject.getSchema(), mc});
-		}
-		return new FederatedResponse(ResponseType.SUCCESS, new Object[] {id, mc});
-	}
-
 	private FederatedResponse putVariable(FederatedRequest request) {
-		checkNumParams(request.getNumParams(), 1);
+		checkNumParams(request.getNumParams(), 1, 2, 3);
 		String varname = String.valueOf(request.getID());
 		ExecutionContext ec = _ecm.get(request.getTID());
 		if(ec.containsVariable(varname)) {
 			return new FederatedResponse(ResponseType.ERROR, "Variable " + request.getID() + " already existing.");
+		}
+
+		// check if broadcast already exists, otherwise put
+		FederationMap.FType type;
+		long dataID;
+		if (request.getNumParams() == 2) {
+			dataID = (long) request.getParam(0);
+			type = (FederationMap.FType) request.getParam(1);
+			if(request.getNumParams() == 2 && _federatedWorker._broadcastMap.containsKey(new ImmutablePair<>(dataID, type)) &&
+				_federatedWorker._broadcastMap.get(new ImmutablePair<>(Long.valueOf(varname), type)).equals(dataID)) {
+				return new FederatedResponse(ResponseType.SUCCESS_EMPTY);
+			}
+		} else if (request.getNumParams() == 3) {
+			dataID = (long) request.getParam(1);
+			type = (FederationMap.FType) request.getParam(2);
+			if(_federatedWorker._broadcastMap.containsKey(new ImmutablePair<>(Long.valueOf(varname), type)) &&
+				_federatedWorker._broadcastMap.get(new ImmutablePair<>(Long.valueOf(varname), type)).equals(dataID)) {
+				return new FederatedResponse(ResponseType.SUCCESS);
+			}
+			_federatedWorker._broadcastMap.putIfAbsent(new ImmutablePair<>(Long.valueOf(varname), type), dataID);
 		}
 
 		// wrap transferred cache block into cacheable data
@@ -344,68 +311,6 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 		ec.setVariable(varname, data);
 		if (DMLScript.LINEAGE)
 			ec.getLineage().set(varname, new LineageItem(String.valueOf(request.getChecksum(0))));
-
-		return new FederatedResponse(ResponseType.SUCCESS_EMPTY);
-	}
-
-	private FederatedResponse putFedInput(FederatedRequest request) throws UnknownHostException {
-		checkNumParams(request.getNumParams(), 8);
-		String varname = String.valueOf(request.getID());
-		ExecutionContext ec = _ecm.get(request.getTID());
-		if(ec.containsVariable(varname)) {
-			return new FederatedResponse(ResponseType.ERROR, "Variable " + request.getID() + " already existing.");
-		}
-
-		Types.DataType fedDataType = (DataType) request.getParam(0); // matrix or frame
-		InetSocketAddress inetSocketAddress = (InetSocketAddress) request.getParam(1); // address
-		String filePath = (String) request.getParam(2);
-
-		List<Pair<FederatedRange, FederatedData>> feds = new ArrayList<>();
-
-		int size = (int) request.getParam(3);
-		long rows =  (long) request.getParam(5);
-		long cols =  (long) request.getParam(6);
-		long nnz =  (long) request.getParam(7);
-		for(int i = 0; i < size; i ++) {
-			FederatedData federatedData;
-			if(request.getParam(4) == Types.ReplicationType.FULL) {
-				federatedData = new FederatedData(fedDataType, inetSocketAddress,
-					filePath, Types.ReplicationType.FULL);
-				feds.add(new ImmutablePair<>(new FederatedRange(new long[] {0, 0}, new long[] {rows, cols}), federatedData));
-				_federatedWorker._broadcasts.add(new ImmutablePair<>(request.getID(), Types.ReplicationType.FULL));
-			} else if (request.getParam(4) == Types.ReplicationType.NONE) {
-				// set new variable with slice
-				Data data = ExecutionContext.createCacheableData((CacheBlock) request.getParam(7));
-				String id = String.valueOf(FederationUtils.getNextFedDataID());
-				ec.setVariable(id, data);
-
-				//FIXME
-				federatedData = new FederatedData(fedDataType, inetSocketAddress, ec.getMatrixObject(id).getFileName(), Types.ReplicationType.NONE);
-				feds.add(new ImmutablePair<>(new FederatedRange(new long[] {(long) request.getParam(8), (long) request.getParam(9)},
-					new long[] {(long) request.getParam(10), (long) request.getParam(11)}), federatedData));
-
-				_federatedWorker._broadcasts.add(new ImmutablePair<>(request.getID(), Types.ReplicationType.NONE));
-			}
-		}
-
-		if(fedDataType == DataType.MATRIX) {
-			MatrixObject data = (MatrixObject) ExecutionContext.createCacheableData(new MatrixBlock((int)rows, (int)cols, false));
-			ec.setVariable(varname, data);
-
-			MetaData mtd = new MetaData(new MatrixCharacteristics(rows, cols, nnz));
-
-			if(data != null)
-				data.getDataCharacteristics().setRows(rows).setCols(cols);
-			InitFEDInstruction.federateMatrix(data, feds, mtd);
-		}
-		else if(fedDataType == DataType.FRAME) {
-			FrameObject data = (FrameObject) ExecutionContext.createCacheableData(new FrameBlock());
-			ec.setVariable(varname, data);
-
-			if(data != null)
-				data.getDataCharacteristics().setRows(rows).setCols(cols);
-			InitFEDInstruction.federateFrame(data, feds);
-		}
 
 		return new FederatedResponse(ResponseType.SUCCESS_EMPTY);
 	}
@@ -445,8 +350,8 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 
 		long id = Long.parseLong(InstructionUtils.getInstructionParts(receivedInstruction.getInstructionString())[1]);
 		if(receivedInstruction.getOpcode().equals("rmvar") &&
-			_federatedWorker._broadcasts.contains(new ImmutablePair<>(id, Types.ReplicationType.NONE)) ||
-			_federatedWorker._broadcasts.contains(new ImmutablePair<>(id, Types.ReplicationType.FULL)))
+			_federatedWorker._broadcastMap.containsKey(new ImmutablePair<>(id, FederationMap.FType.BROADCAST)) ||
+			_federatedWorker._broadcastMap.containsKey(new ImmutablePair<>(id, FederationMap.FType.PART)))
 			return new FederatedResponse(ResponseType.SUCCESS_EMPTY);
 
 

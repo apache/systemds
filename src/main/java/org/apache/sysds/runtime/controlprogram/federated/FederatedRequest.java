@@ -47,7 +47,6 @@ public class FederatedRequest implements Serializable {
 		EXEC_INST, // execute arbitrary instruction over
 		EXEC_UDF,  // execute arbitrary user-defined function
 		CLEAR,     // clear all variables and execution contexts (i.e., rmvar ALL)
-		PUT_FED_VAR
 	}
 
 	private RequestType _method;

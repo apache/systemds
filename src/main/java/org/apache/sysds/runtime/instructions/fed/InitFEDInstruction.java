@@ -59,8 +59,6 @@ import org.apache.sysds.runtime.instructions.cp.StringObject;
 import org.apache.sysds.runtime.lineage.LineageItem;
 import org.apache.sysds.runtime.lineage.LineageTraceable;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
-import org.apache.sysds.runtime.meta.MetaData;
-import org.apache.sysds.runtime.meta.MetaDataAll;
 
 public class InitFEDInstruction extends FEDInstruction implements LineageTraceable {
 
@@ -70,8 +68,6 @@ public class InitFEDInstruction extends FEDInstruction implements LineageTraceab
 	public static final String FED_FRAME_IDENTIFIER = "frame";
 
 	private CPOperand _type, _addresses, _ranges, _output;
-
-//	private int[] _rangesList; // replica after broadcast
 
 	public InitFEDInstruction(CPOperand type, CPOperand addresses, CPOperand ranges, CPOperand out, String opcode,
 		String instr) {
@@ -236,62 +232,6 @@ public class InitFEDInstruction extends FEDInstruction implements LineageTraceab
 				for(int i = 0; i < dims.length; i++)
 					dims[i] = endDims[i] - beginDims[i];
 				idResponses.add(new ImmutablePair<>(value, value.initFederatedData(id)));
-			}
-			rowPartitioned &= (range.getSize(1) == output.getNumColumns());
-			colPartitioned &= (range.getSize(0) == output.getNumRows());
-		}
-		try {
-			int timeout = ConfigurationManager.getDMLConfig()
-				.getIntValue(DMLConfig.DEFAULT_FEDERATED_INITIALIZATION_TIMEOUT);
-			if( LOG.isDebugEnabled() )
-				LOG.debug("Federated Initialization with timeout: " + timeout);
-			for(Pair<FederatedData, Future<FederatedResponse>> idResponse : idResponses) {
-				// wait for initialization and check dimensions
-				FederatedResponse re = idResponse.getRight().get(timeout, TimeUnit.SECONDS);
-				DataCharacteristics dc = (DataCharacteristics) re.getData()[1];
-				if( dc.getRows() > output.getNumRows() || dc.getCols() > output.getNumColumns() )
-					throw new DMLRuntimeException("Invalid federated meta data: "
-						+ output.getDataCharacteristics()+" vs federated response: "+dc);
-			}
-		}
-		catch(TimeoutException e) {
-			throw new DMLRuntimeException("Federated Initialization timeout exceeded", e);
-		}
-		catch(Exception e) {
-			throw new DMLRuntimeException("Federation initialization failed", e);
-		}
-		output.getDataCharacteristics().setNonZeros(-1);
-		output.getDataCharacteristics().setBlocksize(ConfigurationManager.getBlocksize());
-		output.setFedMapping(new FederationMap(id, fedMapping));
-
-		output.getFedMapping().setType(rowPartitioned &&
-			colPartitioned ? FType.FULL : rowPartitioned ? FType.ROW : colPartitioned ? FType.COL : FType.OTHER);
-
-		if(LOG.isDebugEnabled())
-			LOG.debug("Fed map Inited:" + output.getFedMapping());
-	}
-
-	public static void federateMatrix(CacheableData<?> output, List<Pair<FederatedRange, FederatedData>> workers,
-		MetaData mtd) {
-
-		Map<FederatedRange, FederatedData> fedMapping = new TreeMap<>();
-		for(Pair<FederatedRange, FederatedData> t : workers) {
-			fedMapping.put(t.getLeft(), t.getRight());
-		}
-		List<Pair<FederatedData, Future<FederatedResponse>>> idResponses = new ArrayList<>();
-		long id = FederationUtils.getNextFedDataID();
-		boolean rowPartitioned = true;
-		boolean colPartitioned = true;
-		for(Map.Entry<FederatedRange, FederatedData> entry : fedMapping.entrySet()) {
-			FederatedRange range = entry.getKey();
-			FederatedData value = entry.getValue();
-			if(!value.isInitialized()) {
-				long[] beginDims = range.getBeginDims();
-				long[] endDims = range.getEndDims();
-				long[] dims = output.getDataCharacteristics().getDims();
-				for(int i = 0; i < dims.length; i++)
-					dims[i] = endDims[i] - beginDims[i];
-				idResponses.add(new ImmutablePair<>(value, value.initFederatedData(id, mtd)));
 			}
 			rowPartitioned &= (range.getSize(1) == output.getNumColumns());
 			colPartitioned &= (range.getSize(0) == output.getNumRows());

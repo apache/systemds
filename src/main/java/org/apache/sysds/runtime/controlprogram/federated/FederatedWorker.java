@@ -21,7 +21,9 @@ package org.apache.sysds.runtime.controlprogram.federated;
 
 import java.security.cert.CertificateException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import javax.net.ssl.SSLException;
 
@@ -52,7 +54,7 @@ public class FederatedWorker {
 
 	private int _port;
 	private final ExecutionContextMap _ecm;
-	public List<ImmutablePair<Long, Types.ReplicationType>> _broadcasts = new ArrayList<>();
+	protected Map<ImmutablePair<Long, FederationMap.FType>, Long> _broadcastMap = new HashMap<>();
 
 	public FederatedWorker(int port) {
 		_ecm = new ExecutionContextMap();

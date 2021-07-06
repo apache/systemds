@@ -360,13 +360,13 @@ public class ParameterizedBuiltinFEDInstruction extends ComputationFEDInstructio
 		}
 		else {
 			// construct commands: broadcast , fed rmempty, clean broadcast
-			FederatedRequest[] fr1 = mo.getFedMapping().broadcast(select);
+			FederatedRequest fr1 = mo.getFedMapping().broadcast(select);
 			FederatedRequest fr2 = FederationUtils.callInstruction(instString,
 				output,
 				new CPOperand[] {getTargetOperand(),
 					new CPOperand(params.get("select"), ValueType.FP64, DataType.MATRIX)},
-				new long[] {mo.getFedMapping().getID(), fr1[0].getID()});
-			FederatedRequest fr3 = mo.getFedMapping().cleanup(getTID(), fr1[0].getID());
+				new long[] {mo.getFedMapping().getID(), fr1.getID()});
+			FederatedRequest fr3 = mo.getFedMapping().cleanup(getTID(), fr1.getID());
 
 			// execute federated operations and set output
 			mo.getFedMapping().execute(getTID(), true, fr1, fr2, fr3);

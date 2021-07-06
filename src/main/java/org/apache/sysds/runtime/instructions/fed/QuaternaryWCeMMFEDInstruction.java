@@ -70,7 +70,7 @@ public class QuaternaryWCeMMFEDInstruction extends QuaternaryFEDInstruction
 		if(X.isFederated(FType.ROW) && !U.isFederated() && !V.isFederated()) {
 			FederationMap fedMap = X.getFedMapping();
 			FederatedRequest[] fr1 = fedMap.broadcastSliced(U, false);
-			FederatedRequest[] fr2 = fedMap.broadcast(V);
+			FederatedRequest fr2 = fedMap.broadcast(V);
 			FederatedRequest fr3 = null;
 			FederatedRequest frComp = null;
 
@@ -81,18 +81,18 @@ public class QuaternaryWCeMMFEDInstruction extends QuaternaryFEDInstruction
 				instString = instString.replace("true", "false");
 				frComp = FederationUtils.callInstruction(instString, output,
 					new CPOperand[]{input1, input2, input3, _input4},
-					new long[]{fedMap.getID(), fr1[0].getID(), fr2[0].getID(), fr3.getID()});
+					new long[]{fedMap.getID(), fr1[0].getID(), fr2.getID(), fr3.getID()});
 			}
 			else {
 				frComp = FederationUtils.callInstruction(instString, output,
 				new CPOperand[]{input1, input2, input3},
-				new long[]{fedMap.getID(), fr1[0].getID(), fr2[0].getID()});
+				new long[]{fedMap.getID(), fr1[0].getID(), fr2.getID()});
 			}
 
 			FederatedRequest frGet = new FederatedRequest(RequestType.GET_VAR, frComp.getID());
 			FederatedRequest frClean1 = fedMap.cleanup(getTID(), frComp.getID());
 			FederatedRequest frClean2 = fedMap.cleanup(getTID(), fr1[0].getID());
-			FederatedRequest frClean3 = fedMap.cleanup(getTID(), fr2[0].getID());
+			FederatedRequest frClean3 = fedMap.cleanup(getTID(), fr2.getID());
 
 			Future<FederatedResponse>[] response;
 			if(fr3 != null) {

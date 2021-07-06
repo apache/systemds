@@ -21,8 +21,14 @@
 
 name: Build
 
-on: [push, pull_request]
-
+on: 
+  push:
+  
+  pull_request:
+    paths-ignore:
+      - 'docs/**'
+      - '*.md'
+    
 jobs:
   build:
     runs-on: ${{ matrix.os }}

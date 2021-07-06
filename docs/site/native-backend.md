@@ -105,6 +105,6 @@ Set `sysds.native.blas property` to `mkl`, `openblas` as shown.
 
 If there are issues loading libs because the gcc ABI changed from gcc 4.x to 5 and above.
 In this case,
-  - fiddle with the patchelf utility or
+  - fiddle with the [patchelf](https://github.com/NixOS/patchelf) utility or
   - Compile a recent gcc and adjust your env vars (`PATH`, `LD_LIBRARY_PATH`)
 

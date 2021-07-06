@@ -52,31 +52,56 @@ INTEL MKL
 OpenBLAS
   
   Install [OpenBLAS](https://www.openblas.net/). Installation instructions on [GitHub](https://github.com/xianyi/OpenBLAS#installation-from-source).
+  
+  Note: In Ubuntu 20.04, remove `libopenblas0-pthread` package and install `libopenblas0-openmp` 
+  instead. So that OpenBLAS will be installed with [OpenMP](https://www.openmp.org/) support.
 
 
 ### Add library to the System path
 
-For Intel MKL
+#### Intel MKL
+
 [Scripts to set environmental variables](https://software.intel.com/content/www/us/en/develop/documentation/onemkl-linux-developer-guide/top/getting-started/setting-environment-variables/scripts-to-set-environment-variables.html)
 
-
-## Linux
-
-
-
-Note: All linux distributions may not support this. you might encounter some problems with driver
-installations.
-
-To check the CUDA compatible driver version:
-
-Install [CUPTI](http://docs.nvidia.com/cuda/cupti/) which ships with CUDA toolkit for profiling.
+For example, to set Intel MKL libraries in the Path:
 
 ```sh
-export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/cuda/extras/CUPTI/lib64
+# path adjustments to that script according to your installation
+source /opt/intel/bin/compilervars.sh intel64
 ```
 
-#### Installation check
+#### OpenBLAS
+
+Via commandline:
+
+Java:
 
 ```sh
-$ nvidia-smi
+-Djava.library.path=/path/to/blas-n-other-dependencies
 ```
+
+Spark:
+
+```sh
+spark.executorEnv.LD_LIBRARY_PATH=/path/to/blas-n-other-dependencies
+```
+
+Note: This property can also be set with `sysds.native.blas.directory`.
+
+
+### Enable Native BLAS in SystemDS
+
+Set `sysds.native.blas property` to `mkl`, `openblas` as shown.
+
+```xml
+<!-- enables native blas for matrix multiplication and convolution, experimental feature (options: auto, mkl, openblas, none) -->
+    <sysds.native.blas>mkl</sysds.native.blas>
+```
+
+### Troubleshooting
+
+If there are issues loading libs because the gcc ABI changed from gcc 4.x to 5 and above.
+In this case,
+  - fiddle with the patchelf utility or
+  - Compile a recent gcc and adjust your env vars (`PATH`, `LD_LIBRARY_PATH`)
+

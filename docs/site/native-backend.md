@@ -34,6 +34,19 @@ This guide covers the Native BLAS optimizations and software setup for using Sys
   - [Troubleshooting](#troubleshooting)
 
 
+# Native BLAS mode
+
+SystemDS implements all the matrix operations in Java. This simplifies deployment especially in
+a distributed environment.
+
+In Some cases (such as Deep Neural Networks), to take advantage of native BLAS instead of SystemDS
+internal Java library for performing single node operations such as matrix multiplication, convolution etc.
+
+By default, SystemDS will first attempt to use Intel MKL (if installed), and then OpenBLAS (if installed).
+If none of the libraries are available, SystemDS falls back to its internal java library.
+
+> Note: Current SystemDS version only supported on **Linux** platform.
+
 ## Requirements
 
 ### Hardware

@@ -41,10 +41,10 @@ import java.util.List;
 @RunWith(value = Parameterized.class)
 @net.jcip.annotations.NotThreadSafe
 public class FederatedParamservTest extends AutomatedTestBase {
-	private static final Log LOG = LogFactory.getLog(AvgModelFederatedParamservTest.class.getName());
+	private static final Log LOG = LogFactory.getLog(FederatedParamservTest.class.getName());
 	private final static String TEST_DIR = "functions/federated/paramserv/";
 	private final static String TEST_NAME = "FederatedParamservTest";
-	private final static String TEST_CLASS_DIR = TEST_DIR + AvgModelFederatedParamservTest.class.getSimpleName() + "/";
+	private final static String TEST_CLASS_DIR = TEST_DIR + FederatedParamservTest.class.getSimpleName() + "/";
 
 	private final String _networkType;
 	private final int _numFederatedWorkers;

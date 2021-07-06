@@ -24,38 +24,41 @@ limitations under the License.
 This guide covers the Native BLAS optimizations and software setup for using SystemDS `native` mode.
 
 - [Requirements](#requirements)
-- [Linux](#linux)
-- [Windows](#windows)
-- [Command-line users](#command-line-users)
-- [Scala Users](#scala-users)
-- [Advanced Configuration](#advanced-configuration)
-  - [Using single precision](#using-single-precision)
-- [Training very deep network](#training-very-deep-network)
-  - [Shadow buffer](#shadow-buffer)
-  - [Unified memory allocator](#unified-memory-allocator)
+  - [Hardware](#hardware)
+  - [Software](#software)
+    - [INTEL MKL](#intel-mkl)
+    - [OpenBLAS](#openblas)
+- [Native BLAS setup](#native-blas-setup)
+  - [Add library to the System path](#add-library-to-the-system-path)
+  - [Enable Native BLAS in SystemDS](#enable-native-blas-in-systemds)
+  - [Troubleshooting](#troubleshooting)
+
 
 ## Requirements
 
 ### Hardware
 
+To know Intel MKL system requirements, see
+[Intel® oneAPI Math Kernel Library System Requirements](https://software.intel.com/content/www/us/en/develop/articles/oneapi-math-kernel-library-system-requirements.html)
 
 
 ### Software
 
 Either of the following software is required to be installed in your system:
 
-INTEL MKL
+#### INTEL MKL
 
   Download [Intel MKL](https://software.intel.com/content/www/us/en/develop/tools/oneapi/components/onemkl.html).
      Supported MKL version is `2017` to `2019.5`.
 
-OpenBLAS
+#### OpenBLAS
   
   Install [OpenBLAS](https://www.openblas.net/). Installation instructions on [GitHub](https://github.com/xianyi/OpenBLAS#installation-from-source).
   
   Note: In Ubuntu 20.04, remove `libopenblas0-pthread` package and install `libopenblas0-openmp` 
   instead. So that OpenBLAS will be installed with [OpenMP](https://www.openmp.org/) support.
 
+## Native BLAS setup
 
 ### Add library to the System path
 

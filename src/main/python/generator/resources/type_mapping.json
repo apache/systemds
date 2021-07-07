@@ -1,8 +1,8 @@
 {
     "__comment__": "insert type_mapping from dml to python here",
     "type": {
-            "matrix": "OperationNode",
-            "frame": "OperationNode",
+            "matrix": "Matrix",
+            "frame": "Frame",
             "boolean": "bool",
             "integer": "int",
             "double": "float",

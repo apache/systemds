@@ -1120,6 +1120,13 @@ public class HopRewriteUtils
 		return ret;
 	}
 	
+	public static boolean isData(Hop hop, OpOpData... types) {
+		boolean ret = false;
+		for( OpOpData type : types )
+			ret |= isData(hop, type);
+		return ret;
+	}
+	
 	public static boolean isData(Hop hop, OpOpData type) {
 		return hop instanceof DataOp && ((DataOp)hop).getOp()==type;
 	}
@@ -1588,6 +1595,11 @@ public class HopRewriteUtils
 	
 	public static boolean hasValidInputNnz(DataCharacteristics[] mc, boolean worstcase) {
 		return Arrays.stream(mc).allMatch(h -> h.nnzKnown() || (worstcase && h.dimsKnown()));
+	}
+	
+	public static boolean hasListInputs(Hop hop) {
+		return hop.getInput()!= null 
+			&& hop.getInput().stream().anyMatch(h -> h.getDataType().isList());
 	}
 	
 	public static boolean containsSecondOrderBuiltin(ArrayList<Hop> roots) {

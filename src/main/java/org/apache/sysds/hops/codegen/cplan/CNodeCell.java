@@ -31,6 +31,25 @@ import org.apache.sysds.runtime.util.UtilFunctions;
 
 public class CNodeCell extends CNodeTpl 
 {
+	protected static final String JAVA_TEMPLATE = 
+		  "package codegen;\n"
+		+ "import org.apache.sysds.runtime.codegen.LibSpoofPrimitives;\n"
+		+ "import org.apache.sysds.runtime.codegen.SpoofCellwise;\n"
+		+ "import org.apache.sysds.runtime.codegen.SpoofCellwise.AggOp;\n"
+		+ "import org.apache.sysds.runtime.codegen.SpoofCellwise.CellType;\n"
+		+ "import org.apache.sysds.runtime.codegen.SpoofOperator.SideInput;\n"
+		+ "import org.apache.commons.math3.util.FastMath;\n"
+		+ "\n"
+		+ "public final class %TMP% extends SpoofCellwise {\n" 
+		+ "  public %TMP%() {\n"
+		+ "    super(CellType.%TYPE%, %SPARSE_SAFE%, %SEQ%, %AGG_OP_NAME%);\n"
+		+ "  }\n"
+		+ "  protected double genexec(double a, SideInput[] b, double[] scalars, int m, int n, long grix, int rix, int cix) { \n"
+		+ "%BODY_dense%"
+		+ "    return %OUT%;\n"
+		+ "  }\n"
+		+ "}\n";
+	
 	private CellType _type = null;
 	private AggOp _aggOp = null;
 	private boolean _sparseSafe = false;
@@ -143,8 +162,9 @@ public class CNodeCell extends CNodeTpl
 		
 		tmp = tmp.replace("%BODY_dense%", tmpDense);
 		
-		//return last TMP
-		tmp = tmp.replaceAll("%OUT%", _output.getVarname());
+		//Return last TMP. Square it for CUDA+SUM_SQ
+		tmp = (api.isJava() || _aggOp != AggOp.SUM_SQ) ? tmp.replaceAll("%OUT%", _output.getVarname()) :
+			tmp.replaceAll("%OUT%", _output.getVarname() + " * " + _output.getVarname());
 
 		//replace meta data information
 		tmp = tmp.replaceAll("%TYPE%", getCellType().name());
@@ -162,11 +182,8 @@ public class CNodeCell extends CNodeTpl
 			if(_aggOp != null)
 			switch(_aggOp) {
 				case SUM:
-					agg_op = "SumOp";
-					initial_value = "(T)0.0";
-					break;
 				case SUM_SQ:
-					agg_op = "SumSqOp";
+					agg_op = "SumOp";
 					initial_value = "(T)0.0";
 					break;
 				case MIN:
@@ -256,8 +273,7 @@ public class CNodeCell extends CNodeTpl
 	}
 	@Override
 	public boolean isSupported(GeneratorAPI api) {
-		return (api == GeneratorAPI.CUDA || api == GeneratorAPI.JAVA) && _output.isSupported(api) &&
-			!(getSpoofAggOp() == SpoofCellwise.AggOp.SUM_SQ);
+		return (api == GeneratorAPI.CUDA || api == GeneratorAPI.JAVA) && _output.isSupported(api);
 	}
 	
 	public int compile(GeneratorAPI api, String src) {

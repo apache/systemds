@@ -39,7 +39,6 @@ import org.apache.sysds.runtime.codegen.SpoofOuterProduct.OutProdType;
 import org.apache.sysds.runtime.codegen.SpoofRowwise;
 import org.apache.sysds.runtime.codegen.SpoofRowwise.RowType;
 import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
-import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysds.runtime.functionobjects.Builtin;
@@ -47,7 +46,6 @@ import org.apache.sysds.runtime.functionobjects.Builtin.BuiltinCode;
 import org.apache.sysds.runtime.functionobjects.KahanPlus;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
-import org.apache.sysds.runtime.instructions.cp.Data;
 import org.apache.sysds.runtime.instructions.cp.DoubleObject;
 import org.apache.sysds.runtime.instructions.cp.ScalarObject;
 import org.apache.sysds.runtime.instructions.spark.data.PartitionedBroadcast;
@@ -75,8 +73,7 @@ public class SpoofSPInstruction extends SPInstruction {
 	private final CPOperand[] _in;
 	private final CPOperand _out;
 
-	private SpoofSPInstruction(Class<?> cls, byte[] classBytes, CPOperand[] in, CPOperand out, String opcode,
-			String str) {
+	private SpoofSPInstruction(Class<?> cls, byte[] classBytes, CPOperand[] in, CPOperand out, String opcode, String str) {
 		super(SPType.SpoofFused, opcode, str);
 		_class = cls;
 		_classBytes = classBytes;
@@ -679,12 +676,7 @@ public class SpoofSPInstruction extends SPInstruction {
 		return null;
 	}
 
-	public boolean isFederated(ExecutionContext ec) {
-		for(CPOperand input : _in) {
-			Data data = ec.getVariable(input);
-			if(data instanceof MatrixObject && ((MatrixObject) data).isFederated())
-				return true;
-		}
-		return false;
+	public CPOperand[] getInputs() {
+		return _in;
 	}
 }

@@ -52,6 +52,8 @@ public class DMLOptions {
 	public boolean              clean         = false;            // Whether to clean up all SystemDS working directories (FS, DFS)
 	public boolean              stats         = false;            // Whether to record and print the statistics
 	public int                  statsCount    = 10;               // Default statistics count
+	public boolean              fedStats      = false;            // Whether to record and print the federated statistics
+	public int                  fedStatsCount = 10;               // Default federated statistics count
 	public boolean              memStats      = false;            // max memory statistics
 	public Explain.ExplainType  explainType   = Explain.ExplainType.NONE;  // Whether to print the "Explain" and if so, what type
 	public ExecMode             execMode      = OptimizerUtils.getDefaultExecutionMode();  // Execution mode standalone, MR, Spark or a hybrid
@@ -66,6 +68,7 @@ public class DMLOptions {
 	public ReuseCacheType       linReuseType  = ReuseCacheType.NONE; // reuse type (full, partial, hybrid)
 	public LineageCachePolicy   linCachePolicy= LineageCachePolicy.COSTNSIZE; // lineage cache eviction policy
 	public boolean              lineage_estimate = false;         // whether estimate reuse benefits
+	public boolean              lineage_debugger = false;         // whether enable lineage debugger
 	public boolean              fedWorker     = false;
 	public int                  fedWorkerPort = -1;
 	public boolean              checkPrivacy  = false;            // Check which privacy constraints are loaded and checked during federated execution 
@@ -84,6 +87,8 @@ public class DMLOptions {
 			", clean=" + clean +
 			", stats=" + stats +
 			", statsCount=" + statsCount +
+			", fedStats=" + fedStats +
+			", fedStatsCount=" + fedStatsCount +
 			", memStats=" + memStats +
 			", explainType=" + explainType +
 			", execMode=" + execMode +
@@ -140,6 +145,8 @@ public class DMLOptions {
 							dmlOptions.linCachePolicy = LineageCachePolicy.DAGHEIGHT;
 						else if (lineageType.equalsIgnoreCase("estimate"))
 							dmlOptions.lineage_estimate = lineageType.equalsIgnoreCase("estimate");
+						else if (lineageType.equalsIgnoreCase("debugger"))
+							dmlOptions.lineage_debugger = lineageType.equalsIgnoreCase("debugger");							
 						else
 							throw new org.apache.commons.cli.ParseException(
 								"Invalid argument specified for -lineage option: " + lineageType);
@@ -187,6 +194,17 @@ public class DMLOptions {
 					dmlOptions.statsCount = Integer.parseInt(statsCount);
 				} catch (NumberFormatException e) {
 					throw new org.apache.commons.cli.ParseException("Invalid argument specified for -stats option, must be a valid integer");
+				}
+			}
+		}
+		dmlOptions.fedStats = line.hasOption("fedStats");
+		if (dmlOptions.fedStats) {
+			String fedStatsCount = line.getOptionValue("fedStats");
+			if(fedStatsCount != null) {
+				try {
+					dmlOptions.fedStatsCount = Integer.parseInt(fedStatsCount);
+				} catch (NumberFormatException e) {
+					throw new org.apache.commons.cli.ParseException("Invalid argument specified for -fedStats option, must be a valid integer");
 				}
 			}
 		}
@@ -262,6 +280,9 @@ public class DMLOptions {
 		Option statsOpt = OptionBuilder.withArgName("count")
 			.withDescription("monitors and reports summary execution statistics; heavy hitter <count> is 10 unless overridden; default off")
 			.hasOptionalArg().create("stats");
+		Option fedStatsOpt = OptionBuilder.withArgName("count")
+			.withDescription("monitors and reports summary execution statistics of federated workers; heavy hitter <count> is 10 unless overridden; default off")
+			.hasOptionalArg().create("fedStats");
 		Option memOpt = OptionBuilder.withDescription("monitors and reports max memory consumption in CP; default off")
 			.create("mem");
 		Option explainOpt = OptionBuilder.withArgName("level")
@@ -296,6 +317,7 @@ public class DMLOptions {
 		options.addOption(configOpt);
 		options.addOption(cleanOpt);
 		options.addOption(statsOpt);
+		options.addOption(fedStatsOpt);
 		options.addOption(memOpt);
 		options.addOption(explainOpt);
 		options.addOption(execOpt);

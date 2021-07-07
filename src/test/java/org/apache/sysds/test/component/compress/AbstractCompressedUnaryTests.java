@@ -21,9 +21,12 @@ package org.apache.sysds.test.component.compress;
 
 import static org.junit.Assert.assertTrue;
 
+import java.util.Collection;
+
 import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.CompressionSettingsBuilder;
+import org.apache.sysds.runtime.compress.colgroup.AColGroup.CompressionType;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator;
@@ -39,8 +42,9 @@ import org.junit.Test;
 public abstract class AbstractCompressedUnaryTests extends CompressedTestBase {
 
 	public AbstractCompressedUnaryTests(SparsityType sparType, ValueType valType, ValueRange valRange,
-		CompressionSettingsBuilder compSettings, MatrixTypology matrixTypology, OverLapping ov, int parallelism) {
-		super(sparType, valType, valRange, compSettings, matrixTypology, ov, parallelism);
+		CompressionSettingsBuilder compSettings, MatrixTypology matrixTypology, OverLapping ov, int parallelism,
+		Collection<CompressionType> ct) {
+		super(sparType, valType, valRange, compSettings, matrixTypology, ov, parallelism, ct);
 	}
 
 	enum AggType {
@@ -49,78 +53,153 @@ public abstract class AbstractCompressedUnaryTests extends CompressedTestBase {
 	}
 
 	@Test
-	public void testUnaryOperator_ROWSUMS() {
-		testUnaryOperators(AggType.ROWSUMS);
+	public void testUnaryOperator_ROWSUMS_CP() {
+		testUnaryOperators(AggType.ROWSUMS, true);
 	}
 
 	@Test
-	public void testUnaryOperator_COLSUMS() {
-		testUnaryOperators(AggType.COLSUMS);
+	public void testUnaryOperator_COLSUMS_CP() {
+		testUnaryOperators(AggType.COLSUMS, true);
 	}
 
 	@Test
-	public void testUnaryOperator_SUM() {
-		testUnaryOperators(AggType.SUM);
+	public void testUnaryOperator_SUM_CP() {
+		testUnaryOperators(AggType.SUM, true);
 	}
 
 	@Test
-	public void testUnaryOperator_ROWSUMSSQ() {
-		testUnaryOperators(AggType.ROWSUMSSQ);
+	public void testUnaryOperator_ROWSUMSSQ_CP() {
+		testUnaryOperators(AggType.ROWSUMSSQ, true);
 	}
 
 	@Test
-	public void testUnaryOperator_COLSUMSSQ() {
-		testUnaryOperators(AggType.COLSUMSSQ);
+	public void testUnaryOperator_COLSUMSSQ_CP() {
+		testUnaryOperators(AggType.COLSUMSSQ, true);
 	}
 
 	@Test
-	public void testUnaryOperator_SUMSQ() {
-		testUnaryOperators(AggType.SUMSQ);
+	public void testUnaryOperator_SUMSQ_CP() {
+		testUnaryOperators(AggType.SUMSQ, true);
 	}
 
 	@Test
-	public void testUnaryOperator_ROWMAXS() {
-		testUnaryOperators(AggType.ROWMAXS);
+	public void testUnaryOperator_ROWMAXS_CP() {
+		testUnaryOperators(AggType.ROWMAXS, true);
 	}
 
 	@Test
-	public void testUnaryOperator_COLMAXS() {
-		testUnaryOperators(AggType.COLMAXS);
+	public void testUnaryOperator_COLMAXS_CP() {
+		testUnaryOperators(AggType.COLMAXS, true);
 	}
 
 	@Test
-	public void testUnaryOperator_MAX() {
-		testUnaryOperators(AggType.MAX);
+	public void testUnaryOperator_MAX_CP() {
+		testUnaryOperators(AggType.MAX, true);
 	}
 
 	@Test
-	public void testUnaryOperator_ROWMINS() {
-		testUnaryOperators(AggType.ROWMINS);
+	public void testUnaryOperator_ROWMINS_CP() {
+		testUnaryOperators(AggType.ROWMINS, true);
 	}
 
 	@Test
-	public void testUnaryOperator_COLMINS() {
-		testUnaryOperators(AggType.COLMINS);
+	public void testUnaryOperator_COLMINS_CP() {
+		testUnaryOperators(AggType.COLMINS, true);
 	}
 
 	@Test
-	public void testUnaryOperator_MIN() {
-		testUnaryOperators(AggType.MIN);
+	public void testUnaryOperator_MIN_CP() {
+		testUnaryOperators(AggType.MIN, true);
 	}
 
 	@Test
-	public void testUnaryOperator_MEAN() {
-		testUnaryOperators(AggType.MEAN);
+	public void testUnaryOperator_MEAN_CP() {
+		testUnaryOperators(AggType.MEAN, true);
 	}
 
 	@Test
-	public void testUnaryOperator_COLMEAN() {
-		testUnaryOperators(AggType.COLMEAN);
+	public void testUnaryOperator_COLMEAN_CP() {
+		testUnaryOperators(AggType.COLMEAN, true);
 	}
 
 	@Test
-	public void testUnaryOperator_ROWMEAN() {
-		testUnaryOperators(AggType.ROWMEAN);
+	public void testUnaryOperator_ROWMEAN_CP() {
+		testUnaryOperators(AggType.ROWMEAN, true);
+	}
+
+	@Test
+	public void testUnaryOperator_ROWSUMS_SP() {
+		testUnaryOperators(AggType.ROWSUMS, false);
+	}
+
+	@Test
+	public void testUnaryOperator_COLSUMS_SP() {
+		testUnaryOperators(AggType.COLSUMS, false);
+	}
+
+	@Test
+	public void testUnaryOperator_SUM_SP() {
+		testUnaryOperators(AggType.SUM, false);
+	}
+
+	@Test
+	public void testUnaryOperator_ROWSUMSSQ_SP() {
+		testUnaryOperators(AggType.ROWSUMSSQ, false);
+	}
+
+	@Test
+	public void testUnaryOperator_COLSUMSSQ_SP() {
+		testUnaryOperators(AggType.COLSUMSSQ, false);
+	}
+
+	@Test
+	public void testUnaryOperator_SUMSQ_SP() {
+		testUnaryOperators(AggType.SUMSQ, false);
+	}
+
+	@Test
+	public void testUnaryOperator_ROWMAXS_SP() {
+		testUnaryOperators(AggType.ROWMAXS, false);
+	}
+
+	@Test
+	public void testUnaryOperator_COLMAXS_SP() {
+		testUnaryOperators(AggType.COLMAXS, false);
+	}
+
+	@Test
+	public void testUnaryOperator_MAX_SP() {
+		testUnaryOperators(AggType.MAX, false);
+	}
+
+	@Test
+	public void testUnaryOperator_ROWMINS_SP() {
+		testUnaryOperators(AggType.ROWMINS, false);
+	}
+
+	@Test
+	public void testUnaryOperator_COLMINS_SP() {
+		testUnaryOperators(AggType.COLMINS, false);
+	}
+
+	@Test
+	public void testUnaryOperator_MIN_SP() {
+		testUnaryOperators(AggType.MIN, false);
+	}
+
+	@Test
+	public void testUnaryOperator_MEAN_SP() {
+		testUnaryOperators(AggType.MEAN, false);
+	}
+
+	@Test
+	public void testUnaryOperator_COLMEAN_SP() {
+		testUnaryOperators(AggType.COLMEAN, false);
+	}
+
+	@Test
+	public void testUnaryOperator_ROWMEAN_SP() {
+		testUnaryOperators(AggType.ROWMEAN, false);
 	}
 
 	protected AggregateUnaryOperator getUnaryOperator(AggType aggType, int threads) {
@@ -160,60 +239,49 @@ public abstract class AbstractCompressedUnaryTests extends CompressedTestBase {
 		}
 	}
 
-	public abstract void testUnaryOperators(AggType aggType);
+	public abstract void testUnaryOperators(AggType aggType, boolean inCP);
 
-	public void testUnaryOperators(AggType aggType, AggregateUnaryOperator auop) {
+	public void testUnaryOperators(AggType aggType, AggregateUnaryOperator auop, boolean inCP) {
 		try {
 			if(!(cmb instanceof CompressedMatrixBlock))
 				return; // Input was not compressed then just pass test
 			// matrix-vector uncompressed
-			MatrixBlock ret1 = mb.aggregateUnaryOperations(auop, new MatrixBlock(), Math.max(rows, cols), null, true);
+			MatrixBlock ret1 = mb.aggregateUnaryOperations(auop, new MatrixBlock(), Math.max(rows, cols), null, inCP);
 			// matrix-vector compressed
-			MatrixBlock ret2 = cmb.aggregateUnaryOperations(auop, new MatrixBlock(), Math.max(rows, cols), null, true);
-			// LOG.error(ret1 + "vs" + ret2);
+			MatrixBlock ret2 = cmb.aggregateUnaryOperations(auop, new MatrixBlock(), Math.max(rows, cols), null, inCP);
+			// LOG.error(ret1 + "\nvs\n" + ret2);
+			// LOG.error(cmb);
 			// compare result with input
+
+			assertTrue("dim 1 is not equal in compressed res  should be : " + ret1.getNumRows() + "  but is: "
+				+ ret2.getNumRows(), ret1.getNumRows() == ret2.getNumRows());
+
+			assertTrue("dim 2 is not equal in compressed res  should be : " + ret1.getNumColumns() + "  but is: "
+				+ ret2.getNumColumns(), ret1.getNumColumns() == ret2.getNumColumns());
+			if(!inCP){
+				ret1.dropLastRowsOrColumns(auop.aggOp.correction);
+				ret2.dropLastRowsOrColumns(auop.aggOp.correction);
+			}
+
 			double[][] d1 = DataConverter.convertToDoubleMatrix(ret1);
 			double[][] d2 = DataConverter.convertToDoubleMatrix(ret2);
-
-			int dim1 = (aggType == AggType.ROWSUMS || aggType == AggType.ROWSUMSSQ || aggType == AggType.ROWMAXS ||
-				aggType == AggType.ROWMINS || aggType == AggType.ROWMEAN) ? rows : 1;
-			int dim2 = (aggType == AggType.COLSUMS || aggType == AggType.COLSUMSSQ || aggType == AggType.COLMAXS ||
-				aggType == AggType.COLMINS || aggType == AggType.COLMEAN) ? cols : 1;
-
-			// LOG.error(ret1);
-			// LOG.error(ret2);
-			assertTrue("dim 1 is not equal in non compressed res  is: " + d1.length + "  Should be: " + dim1,
-				d1.length == dim1);
-			assertTrue("dim 1 is not equal in compressed res      is: " + d2.length + "  Should be: " + dim1,
-				d2.length == dim1);
-			assertTrue("dim 2 is not equal in non compressed res  is: " + d1[0].length + "  Should be: " + dim2,
-				d1[0].length == dim2);
-			assertTrue("dim 2 is not equal in compressed res      is: " + d2[0].length + "  Should be: " + dim2,
-				d2[0].length == dim2);
-
 			String css = this.toString();
-			if(compressionSettings.lossy) {
-				if(aggType == AggType.COLSUMS) {
+			if(_cs != null && _cs.lossy) {
+				if(aggType == AggType.COLSUMS)
 					TestUtils.compareMatrices(d1, d2, lossyTolerance * 10 * rows, css);
-				}
-				else if(aggType == AggType.ROWSUMS) {
+				else if(aggType == AggType.ROWSUMS)
 					TestUtils.compareMatrices(d1, d2, lossyTolerance * 16 * cols, css);
-				}
-				else if(aggType == AggType.ROWSUMSSQ) {
+				else if(aggType == AggType.ROWSUMSSQ)
 					TestUtils.compareMatricesPercentageDistance(d1, d2, 0.5, 0.9, css, true);
-				}
-				else if(aggType == AggType.SUM) {
+				else if(aggType == AggType.SUM)
 					TestUtils.compareMatrices(d1, d2, lossyTolerance * 10 * cols * rows, css);
-				}
-				else if(aggType == AggType.MEAN) {
+				else if(aggType == AggType.MEAN)
 					TestUtils.compareMatrices(d1, d2, lossyTolerance * cols * rows, css);
-				}
-				else if(aggType == AggType.ROWMEAN) {
+				else if(aggType == AggType.ROWMEAN)
 					TestUtils.compareMatrices(d1, d2, lossyTolerance, css);
-				}
-				else {
+				else
 					TestUtils.compareMatricesPercentageDistance(d1, d2, 0.8, 0.9, css, true);
-				}
+
 			}
 			else if(overlappingType == OverLapping.SQUASH) {
 				// TODO make better assumptions on range...
@@ -223,13 +291,9 @@ public abstract class AbstractCompressedUnaryTests extends CompressedTestBase {
 				TestUtils.compareMatrices(d1, d2, 0.0001, css);
 			else if(OverLapping.effectOnOutput(overlappingType))
 				TestUtils.compareMatricesPercentageDistance(d1, d2, 0.95, 0.98, css);
-			else {
+			else
 				TestUtils.compareMatricesBitAvgDistance(d1, d2, 2048, 128, css);
-			}
 
-		}
-		catch(NotImplementedException e) {
-			throw e;
 		}
 		catch(Exception e) {
 			e.printStackTrace();

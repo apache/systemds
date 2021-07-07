@@ -24,23 +24,30 @@
 
 from typing import Dict, Iterable
 
-from systemds.operator import OperationNode, Matrix
+from systemds.operator import OperationNode, Matrix, Frame, List, MultiReturn, Scalar
 from systemds.script_building.dag import OutputType
 from systemds.utils.consts import VALID_INPUT_TYPES
 
-def l2svmPredict(X: OperationNode, W: OperationNode, **kwargs: Dict[str, VALID_INPUT_TYPES]) -> Matrix:
+
+def l2svmPredict(X: Matrix,
+                 W: Matrix,
+                 **kwargs: Dict[str, VALID_INPUT_TYPES]):
     """
     :param X: matrix X of feature vectors to classify
     :param W: matrix of the trained variables
     :param verbose: Set to true if one wants print statements.
     :return: 'OperationNode' containing classification labels maxed to ones and zeros. 
     """
-    
-    X._check_matrix_op()
-    W._check_matrix_op()
-    params_dict = {'X':X, 'W':W}
+    params_dict = {'X': X, 'W': W}
     params_dict.update(kwargs)
-    return OperationNode(X.sds_context, 'l2svmPredict', named_input_nodes=params_dict, output_type=OutputType.LIST, number_of_outputs=2, output_types=[OutputType.MATRIX, OutputType.MATRIX])
-
-
     
+    vX_0 = Matrix(X.sds_context, '')
+    vX_1 = Matrix(X.sds_context, '')
+    output_nodes = [vX_0, vX_1, ]
+
+    op = MultiReturn(X.sds_context, 'l2svmPredict', output_nodes, named_input_nodes=params_dict)
+
+    vX_0._unnamed_input_nodes = [op]
+    vX_1._unnamed_input_nodes = [op]
+
+    return op

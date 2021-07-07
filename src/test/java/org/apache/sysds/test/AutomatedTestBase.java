@@ -40,6 +40,7 @@ import java.util.stream.Collectors;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
@@ -56,7 +57,7 @@ import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.conf.DMLConfig;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.lops.Lop;
-import org.apache.sysds.lops.LopProperties.ExecType;
+import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.lops.compile.Dag;
 import org.apache.sysds.parser.DataExpression;
 import org.apache.sysds.parser.ParseException;
@@ -643,7 +644,7 @@ public abstract class AutomatedTestBase {
 			new MatrixCharacteristics(nrows, ncol), Types.FileFormat.BINARY));
 
 		// write parts and generate FederationMap
-		HashMap<FederatedRange, FederatedData> fedHashMap = new HashMap<>();
+		List<Pair<FederatedRange, FederatedData>> fedHashMap = new ArrayList<>();
 		for(int i = 0; i < numFederatedWorkers; i++) {
 			double lowerBound = ranges[i][0];
 			double upperBound = ranges[i][1];
@@ -658,7 +659,7 @@ public abstract class AutomatedTestBase {
 			// generate fedmap entry
 			FederatedRange range = new FederatedRange(new long[]{(long) lowerBound, 0}, new long[]{(long) upperBound, ncol});
 			FederatedData data = new FederatedData(DataType.MATRIX, new InetSocketAddress(ports.get(i)), input(path));
-			fedHashMap.put(range, data);
+			fedHashMap.add(Pair.of(range, data));
 		}
 		
 		federatedMatrixObject.setFedMapping(new FederationMap(FederationUtils.getNextFedDataID(), fedHashMap));
@@ -906,10 +907,9 @@ public abstract class AutomatedTestBase {
 
 	public static MatrixCharacteristics readDMLMetaDataFile(String fileName) {
 		try {
-			MetaDataAll metaDataAll = getMetaData(fileName);
-			long rlen = metaDataAll.getDim1();
-			long clen = metaDataAll.getDim2();
-			return new MatrixCharacteristics(rlen, clen, -1, -1);
+			MetaDataAll meta = getMetaData(fileName);
+			return new MatrixCharacteristics(
+				meta.getDim1(), meta.getDim2(), meta.getBlocksize(), -1);
 		}
 		catch(Exception ex) {
 			throw new RuntimeException(ex);
@@ -2079,6 +2079,20 @@ public abstract class AutomatedTestBase {
 		return(count >= minCount);
 	}
 
+	protected boolean heavyHittersContainsString(String str, int minCount, long minCallCount) {
+		int count = 0;
+		long callCount = Long.MAX_VALUE;
+		for(String opcode : Statistics.getCPHeavyHitterOpCodes()) {
+			if(opcode.equals(str)) {
+				count++;
+				long tmpCallCount = Statistics.getCPHeavyHitterCount(opcode);
+				if(tmpCallCount < callCount)
+					callCount = tmpCallCount;
+			}
+		}
+		return (count >= minCount && callCount >= minCallCount);
+	}
+
 	protected boolean heavyHittersContainsSubString(String... str) {
 		for(String opcode : Statistics.getCPHeavyHitterOpCodes())
 			for(String s : str)
@@ -2092,6 +2106,20 @@ public abstract class AutomatedTestBase {
 		for(String opcode : Statistics.getCPHeavyHitterOpCodes())
 			count += opcode.contains(str) ? 1 : 0;
 		return(count >= minCount);
+	}
+
+	protected boolean heavyHittersContainsSubString(String str, int minCount, long minCallCount) {
+		int count = 0;
+		long callCount = Long.MAX_VALUE;
+		for(String opcode : Statistics.getCPHeavyHitterOpCodes()) {
+			if(opcode.contains(str)) {
+				count++;
+				long tmpCallCount = Statistics.getCPHeavyHitterCount(opcode);
+				if(tmpCallCount < callCount)
+					callCount = tmpCallCount;
+			}
+		}
+		return (count >= minCount && callCount >= minCallCount);
 	}
 
 	protected boolean checkedPrivacyConstraintsContains(PrivacyLevel... levels) {

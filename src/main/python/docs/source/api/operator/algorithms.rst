@@ -28,7 +28,7 @@ As an example the lm algorithm can be used as follows:
 
 .. code-block:: python
 
-  # Import numpy and SystemDS matrix
+  # Import numpy and SystemDS
   import numpy as np
   from systemds.context import SystemDSContext
   from systemds.operator.algorithm import lm
@@ -45,7 +45,9 @@ As an example the lm algorithm can be used as follows:
     weights = lm(sds.from_numpy(features), sds.from_numpy(y)).compute()
     print(weights)
 
-The output should be similar to::
+The output should be similar to
+
+.. code-block:: python
 
   [[-0.11538199]
   [-0.20386541]

@@ -302,6 +302,10 @@ public abstract class Expression implements ParseInfo
 	public static ValueType computeValueType(Expression expr1, ValueType v1, ValueType v2, boolean cast) {
 		if (v1 == v2)
 			return v1;
+		if (v1 == ValueType.UNKNOWN && v2 != ValueType.UNKNOWN)
+			return v2;
+		if (v1 != ValueType.UNKNOWN && v2 == ValueType.UNKNOWN)
+			return v1;
 
 		if (cast) {
 			if (v1 == ValueType.FP64 && v2 == ValueType.INT64)

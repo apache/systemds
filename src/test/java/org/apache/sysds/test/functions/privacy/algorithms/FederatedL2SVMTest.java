@@ -20,6 +20,8 @@
 package org.apache.sysds.test.functions.privacy.algorithms;
 
 import org.apache.sysds.runtime.DMLRuntimeException;
+import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types;
@@ -54,6 +56,7 @@ public class FederatedL2SVMTest extends AutomatedTestBase {
 	// PrivateAggregation Single Input
 
 	@Test
+	@Ignore
 	public void federatedL2SVMCPPrivateAggregationX1() throws JSONException {
 		Map<String, PrivacyConstraint> privacyConstraints = new HashMap<>();
 		privacyConstraints.put("X1", new PrivacyConstraint(PrivacyLevel.PrivateAggregation));
@@ -61,6 +64,7 @@ public class FederatedL2SVMTest extends AutomatedTestBase {
 	}
 
 	@Test
+	@Ignore
 	public void federatedL2SVMCPPrivateAggregationX2() throws JSONException {
 		Map<String, PrivacyConstraint> privacyConstraints = new HashMap<>();
 		privacyConstraints.put("X2", new PrivacyConstraint(PrivacyLevel.PrivateAggregation));
@@ -282,8 +286,7 @@ public class FederatedL2SVMTest extends AutomatedTestBase {
 		rows = 1000; cols = 1;
 		Map<String, PrivacyConstraint> privacyConstraints = new HashMap<>();
 		privacyConstraints.put("X1", new PrivacyConstraint(PrivacyLevel.PrivateAggregation));
-		federatedL2SVM(Types.ExecMode.SINGLE_NODE, privacyConstraints, null, PrivacyLevel.PrivateAggregation,
-			false, null, true, DMLRuntimeException.class);
+		federatedL2SVMNoException(Types.ExecMode.SINGLE_NODE, privacyConstraints, null, PrivacyLevel.PrivateAggregation);
 	}
 
 	@Test
@@ -291,8 +294,7 @@ public class FederatedL2SVMTest extends AutomatedTestBase {
 		rows = 1000; cols = 1;
 		Map<String, PrivacyConstraint> privacyConstraints = new HashMap<>();
 		privacyConstraints.put("X2", new PrivacyConstraint(PrivacyLevel.PrivateAggregation));
-		federatedL2SVM(Types.ExecMode.SINGLE_NODE, privacyConstraints, null, PrivacyLevel.PrivateAggregation,
-			false, null, true, DMLRuntimeException.class);
+		federatedL2SVMNoException(Types.ExecMode.SINGLE_NODE, privacyConstraints, null, PrivacyLevel.PrivateAggregation);
 	}
 
 	@Test
@@ -399,7 +401,7 @@ public class FederatedL2SVMTest extends AutomatedTestBase {
 			}
 
 			if ( expectedPrivacyLevel != null)
-				assert(checkedPrivacyConstraintsContains(expectedPrivacyLevel));
+				Assert.assertTrue(checkedPrivacyConstraintsContains(expectedPrivacyLevel));
 		}
 		finally {
 			TestUtils.shutdownThreads(t1, t2);

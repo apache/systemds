@@ -28,7 +28,7 @@ import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.hops.rewrite.HopRewriteUtils;
 import org.apache.sysds.lops.DataGen;
 import org.apache.sysds.lops.Lop;
-import org.apache.sysds.lops.LopProperties.ExecType;
+import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.parser.DataExpression;
 import org.apache.sysds.parser.DataIdentifier;
 import org.apache.sysds.parser.Statement;
@@ -332,7 +332,7 @@ public class DataGenOp extends MultiThreadedHop
 		Hop input2;
 		Hop input3;
 
-		if ( _op == OpOpDG.RAND || _op == OpOpDG.SINIT ) 
+		if ( _op == OpOpDG.RAND || _op == OpOpDG.SINIT || _op == OpOpDG.FRAMEINIT )
 		{
 			if (_dataType != DataType.TENSOR) {
 				input1 = getInput().get(_paramIndexMap.get(DataExpression.RAND_ROWS)); //rows

@@ -24,18 +24,29 @@
 
 from typing import Dict, Iterable
 
-from systemds.operator import OperationNode, Matrix
+from systemds.operator import OperationNode, Matrix, Frame, List, MultiReturn, Scalar
 from systemds.script_building.dag import OutputType
 from systemds.utils.consts import VALID_INPUT_TYPES
 
-def split(X: OperationNode, Y: OperationNode, **kwargs: Dict[str, VALID_INPUT_TYPES]) -> Matrix:
+
+def split(X: Matrix,
+          Y: Matrix,
+          **kwargs: Dict[str, VALID_INPUT_TYPES]):
     
-    
-    X._check_matrix_op()
-    Y._check_matrix_op()
-    params_dict = {'X':X, 'Y':Y}
+    params_dict = {'X': X, 'Y': Y}
     params_dict.update(kwargs)
-    return OperationNode(X.sds_context, 'split', named_input_nodes=params_dict, output_type=OutputType.LIST, number_of_outputs=4, output_types=[OutputType.MATRIX, OutputType.MATRIX, OutputType.MATRIX, OutputType.MATRIX])
-
-
     
+    vX_0 = Matrix(X.sds_context, '')
+    vX_1 = Matrix(X.sds_context, '')
+    vX_2 = Matrix(X.sds_context, '')
+    vX_3 = Matrix(X.sds_context, '')
+    output_nodes = [vX_0, vX_1, vX_2, vX_3, ]
+
+    op = MultiReturn(X.sds_context, 'split', output_nodes, named_input_nodes=params_dict)
+
+    vX_0._unnamed_input_nodes = [op]
+    vX_1._unnamed_input_nodes = [op]
+    vX_2._unnamed_input_nodes = [op]
+    vX_3._unnamed_input_nodes = [op]
+
+    return op

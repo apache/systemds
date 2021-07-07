@@ -35,7 +35,9 @@ A simple guide to do this is in the SystemDS Repository_.
 .. _Repository: https://github.com/apache/systemds/tree/master/bin/
 
 If that is setup correctly simply start a worker using the following command.
-Here the ``8001`` refer to the port used by the worker.::
+Here the ``8001`` refer to the port used by the worker.
+
+.. code-block:: python
 
   systemds WORKER 8001
 
@@ -45,7 +47,9 @@ Simple Aggregation Example
 In this example we use a single federated worker, and aggregate the sum of its data.
 
 First we need to create some data for our federated worker to use.
-In this example we simply use Numpy to create a ``test.csv`` file::
+In this example we simply use Numpy to create a ``test.csv`` file
+
+.. code-block:: python
 
   # Import numpy
   import numpy as np
@@ -59,11 +63,12 @@ To make this simply execute the following::
   echo '{ "format":"csv", "header":false, "rows":3, "cols":3 }' > temp/test.csv.mtd
 
 After creating our data we the federated worker becomes able to execute federated instructions.
-The aggregated sum using federated instructions in python SystemDS is done as follows::
+The aggregated sum using federated instructions in python SystemDS is done as follows
 
-  # Import numpy and SystemDS federated
+.. code-block:: python
+
+  # Import numpy and SystemDS
   import numpy as np
-  from systemds.matrix import Federated
   from systemds.context import SystemDSContext
 
   # Create a federated matrix
@@ -77,7 +82,7 @@ The aggregated sum using federated instructions in python SystemDS is done as fo
   address = "localhost:8001/temp/test.csv"
 
   with SystemDSContext() as sds:
-    fed_a = Federated(sds, [address], [dims])
+    fed_a = sds.federated(sds, [address], [dims])
     # Sum the federated matrix and call compute to execute
     print(fed_a.sum().compute())
     # Result should be 45.
@@ -89,15 +94,18 @@ In this example we multiply matrices that are located in different federated env
 
 Using the data created from the last example we can simulate
 multiple federated workers by starting multiple ones on different ports.
-Start with 3 different terminals, and run one federated environment in each.::
+Start with 3 different terminals, and run one federated environment in each.
+
+.. code-block:: python
 
   systemds WORKER 8001
   systemds WORKER 8002
   systemds WORKER 8003
 
-Once all three workers are up and running we can leverage all three in the following example::
+Once all three workers are up and running we can leverage all three in the following example
 
-  # Import numpy and SystemDS federated
+.. code-block:: python
+
   import numpy as np
   from systemds.context import SystemDSContext
 
@@ -122,7 +130,9 @@ Once all three workers are up and running we can leverage all three in the follo
 
   print(res)
 
-The print should look like::
+The print should look like
+
+.. code-block:: python
 
   [[ 1.  4.  9.  1.  4.  9.]
    [16. 25. 36. 16. 25. 36.]

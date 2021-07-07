@@ -24,11 +24,16 @@
 
 from typing import Dict, Iterable
 
-from systemds.operator import OperationNode, Matrix
+from systemds.operator import OperationNode, Matrix, Frame, List, MultiReturn, Scalar
 from systemds.script_building.dag import OutputType
 from systemds.utils.consts import VALID_INPUT_TYPES
 
-def gmmPredict(X: OperationNode, weight: OperationNode, mu: OperationNode, precisions_cholesky: OperationNode, model: str) -> Matrix:
+
+def gmmPredict(X: Matrix,
+               weight: Matrix,
+               mu: Matrix,
+               precisions_cholesky: Matrix,
+               model: str):
     """
     :param X: Matrix X (instances to be clustered)
     :param weight: Weight of learned model
@@ -37,13 +42,15 @@ def gmmPredict(X: OperationNode, weight: OperationNode, mu: OperationNode, preci
     :param model: fitted model
     :return: 'OperationNode' containing predicted cluster labels & probabilities of belongingness & for new instances given the variance and mean of fitted data 
     """
+    params_dict = {'X': X, 'weight': weight, 'mu': mu, 'precisions_cholesky': precisions_cholesky, 'model': model}
     
-    X._check_matrix_op()
-    weight._check_matrix_op()
-    mu._check_matrix_op()
-    precisions_cholesky._check_matrix_op()
-    params_dict = {'X':X, 'weight':weight, 'mu':mu, 'precisions_cholesky':precisions_cholesky, 'model':model}
-    return OperationNode(X.sds_context, 'gmmPredict', named_input_nodes=params_dict, output_type=OutputType.LIST, number_of_outputs=2, output_types=[OutputType.MATRIX, OutputType.MATRIX])
+    vX_0 = Matrix(X.sds_context, '')
+    vX_1 = Matrix(X.sds_context, '')
+    output_nodes = [vX_0, vX_1, ]
 
+    op = MultiReturn(X.sds_context, 'gmmPredict', output_nodes, named_input_nodes=params_dict)
 
-    
+    vX_0._unnamed_input_nodes = [op]
+    vX_1._unnamed_input_nodes = [op]
+
+    return op

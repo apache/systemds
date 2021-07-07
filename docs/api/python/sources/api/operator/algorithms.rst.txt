@@ -28,10 +28,9 @@ As an example the lm algorithm can be used as follows:
 
 .. code-block:: python
 
-  # Import numpy and SystemDS matrix
+  # Import numpy and SystemDS
   import numpy as np
   from systemds.context import SystemDSContext
-  from systemds.matrix import Matrix
   from systemds.operator.algorithm import lm
 
   # Set a seed
@@ -43,10 +42,12 @@ As an example the lm algorithm can be used as follows:
 
   # compute the weights
   with SystemDSContext() as sds:
-    weights = lm(Matrix(sds, features), Matrix(sds, y)).compute()
+    weights = lm(sds.from_numpy(features), sds.from_numpy(y)).compute()
     print(weights)
 
-The output should be similar to::
+The output should be similar to
+
+.. code-block:: python
 
   [[-0.11538199]
   [-0.20386541]

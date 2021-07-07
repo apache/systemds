@@ -21,7 +21,7 @@ package org.apache.sysds.test.functions.builtin;
 
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.sysds.common.Types;
-import org.apache.sysds.lops.LopProperties;
+import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.runtime.lineage.LineageCacheConfig.ReuseCacheType;
 import org.apache.sysds.runtime.matrix.data.MatrixValue;
 import org.apache.sysds.test.AutomatedTestBase;
@@ -49,25 +49,25 @@ public class BuiltinMiceTest extends AutomatedTestBase {
 	@Test
 	public void testMiceMixCP() {
 		double[][] mask = {{ 0.0, 0.0, 1.0, 1.0, 0.0}};
-		runMiceNominalTest(mask, 1, false, LopProperties.ExecType.CP);
+		runMiceNominalTest(mask, 1, false, ExecType.CP);
 	}
 
 	@Test
 	public void testMiceNumberCP() {
 		double[][] mask = {{ 0.0, 0.0, 0.0, 0.0, 0.0}};
-		runMiceNominalTest(mask, 2, false, LopProperties.ExecType.CP);
+		runMiceNominalTest(mask, 2, false, ExecType.CP);
 	}
 
 	@Test
 	public void testMiceCategoricalCP() {
 		double[][] mask = {{ 1.0, 1.0, 1.0, 1.0, 1.0}};
-		runMiceNominalTest(mask, 3, false, LopProperties.ExecType.CP);
+		runMiceNominalTest(mask, 3, false, ExecType.CP);
 	}
 
 	@Test
 	public void testMiceMixLineageReuseCP() {
 		double[][] mask = {{ 0.0, 0.0, 1.0, 1.0, 0.0}};
-		runMiceNominalTest(mask, 1, true, LopProperties.ExecType.CP);
+		runMiceNominalTest(mask, 1, true, ExecType.CP);
 	}
 
 	//added a single, relatively-fast spark test, others seem infeasible
@@ -77,10 +77,10 @@ public class BuiltinMiceTest extends AutomatedTestBase {
 	@Test
 	public void testMiceNumberSpark() {
 		double[][] mask = {{ 0.0, 0.0, 0.0, 0.0, 0.0}};
-		runMiceNominalTest(mask, 2, false, LopProperties.ExecType.SPARK);
+		runMiceNominalTest(mask, 2, false, ExecType.SPARK);
 	}
 	
-	private void runMiceNominalTest(double[][] mask, int testType, boolean lineage, LopProperties.ExecType instType) {
+	private void runMiceNominalTest(double[][] mask, int testType, boolean lineage, ExecType instType) {
 		Types.ExecMode platformOld = setExecMode(instType);
 		try {
 			System.out.println("Dataset "+DATASET);

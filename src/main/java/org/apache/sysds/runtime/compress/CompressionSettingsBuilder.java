@@ -23,9 +23,10 @@ import java.util.EnumSet;
 
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.conf.DMLConfig;
-import org.apache.sysds.runtime.DMLCompressionException;
-import org.apache.sysds.runtime.compress.cocode.PlanningCoCoder.PartitionerType;
+import org.apache.sysds.runtime.compress.cocode.CoCoderFactory.PartitionerType;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup.CompressionType;
+import org.apache.sysds.runtime.compress.cost.CostEstimatorFactory.CostType;
+import org.apache.sysds.runtime.compress.estim.sample.SampleEstimatorFactory.EstimationType;
 
 /**
  * Builder pattern for Compression Settings. See CompressionSettings for details on values.
@@ -36,12 +37,15 @@ public class CompressionSettingsBuilder {
 	private String transposeInput;
 	private boolean skipList = true;
 	private int seed = -1;
-	private boolean investigateEstimate = true;
 	private boolean lossy = false;
 	private EnumSet<CompressionType> validCompressions;
-	private boolean sortValuesByLength = false;
+	private boolean sortValuesByLength = true;
+	private int maxColGroupCoCode = 10000;
+	private double coCodePercentage = 0.01;
+	private int minimumSampleSize = 2000;
+	private EstimationType estimationType = EstimationType.HassAndStokes;
 	private PartitionerType columnPartitioner;
-	private int maxStaticColGroupCoCode = 10;
+	private CostType costType;
 
 	public CompressionSettingsBuilder() {
 
@@ -49,12 +53,11 @@ public class CompressionSettingsBuilder {
 		this.lossy = conf.getBooleanValue(DMLConfig.COMPRESSED_LOSSY);
 		this.validCompressions = EnumSet.of(CompressionType.UNCOMPRESSED, CompressionType.CONST);
 		String[] validCompressionsString = conf.getTextValue(DMLConfig.COMPRESSED_VALID_COMPRESSIONS).split(",");
-		for(String comp : validCompressionsString) {
+		for(String comp : validCompressionsString)
 			validCompressions.add(CompressionType.valueOf(comp));
-		}
 		samplingRatio = conf.getDoubleValue(DMLConfig.COMPRESSED_SAMPLING_RATIO);
 		columnPartitioner = PartitionerType.valueOf(conf.getTextValue(DMLConfig.COMPRESSED_COCODE));
-
+		costType = CostType.valueOf(conf.getTextValue(DMLConfig.COMPRESSED_COST_MODEL));
 		transposeInput = conf.getTextValue(DMLConfig.COMPRESSED_TRANSPOSE);
 	}
 
@@ -68,9 +71,15 @@ public class CompressionSettingsBuilder {
 		this.samplingRatio = that.samplingRatio;
 		this.allowSharedDictionary = that.allowSharedDictionary;
 		this.transposeInput = that.transposeInput;
+		this.skipList = that.skipList;
 		this.seed = that.seed;
-		this.investigateEstimate = that.investigateEstimate;
+		this.lossy = that.lossy;
 		this.validCompressions = EnumSet.copyOf(that.validCompressions);
+		this.sortValuesByLength = that.sortValuesByLength;
+		this.columnPartitioner = that.columnPartitioner;
+		this.maxColGroupCoCode = that.maxColGroupCoCode;
+		this.coCodePercentage = that.coCodePercentage;
+		this.minimumSampleSize = that.minimumSampleSize;
 		return this;
 	}
 
@@ -164,17 +173,6 @@ public class CompressionSettingsBuilder {
 	}
 
 	/**
-	 * Set if the compression should be investigated while compressing.
-	 * 
-	 * @param investigateEstimate A boolean specifying it the input should be estimated.
-	 * @return The CompressionSettingsBuilder
-	 */
-	public CompressionSettingsBuilder setInvestigateEstimate(boolean investigateEstimate) {
-		this.investigateEstimate = investigateEstimate;
-		return this;
-	}
-
-	/**
 	 * Set the valid compression strategies used for the compression.
 	 * 
 	 * @param validCompressions An EnumSet of CompressionTypes to use in the compression
@@ -224,14 +222,62 @@ public class CompressionSettingsBuilder {
 	}
 
 	/**
-	 * Set the maximum number of columns to CoCode together in the static CoCoding strategy. Compression time increase
-	 * with higher numbers.
+	 * Set the maximum number of columns to CoCode together in the CoCoding strategy. Compression time increase with
+	 * higher numbers.
 	 * 
-	 * @param maxStaticColGroupCoCode The max selected.
+	 * @param maxColGroupCoCode The max selected.
 	 * @return The CompressionSettingsBuilder
 	 */
-	public CompressionSettingsBuilder setmaxStaticColGroupCoCode(int maxStaticColGroupCoCode) {
-		this.maxStaticColGroupCoCode = maxStaticColGroupCoCode;
+	public CompressionSettingsBuilder setMaxColGroupCoCode(int maxColGroupCoCode) {
+		this.maxColGroupCoCode = maxColGroupCoCode;
+		return this;
+	}
+
+	/**
+	 * Set the coCode percentage, the effect is different based on the coCoding strategy, but the general effect is that
+	 * higher values results in more coCoding while lower values result in less.
+	 * 
+	 * Note that with high coCoding the compression ratio would possibly be lower.
+	 * 
+	 * @param coCodePercentage The percentage to set.
+	 * @return The CompressionSettingsBuilder
+	 */
+	public CompressionSettingsBuilder setCoCodePercentage(double coCodePercentage) {
+		this.coCodePercentage = coCodePercentage;
+		return this;
+	}
+
+	/**
+	 * Set the minimum sample size to extract from a given matrix, this overrules the sample percentage if the sample
+	 * percentage extracted is lower than this minimum bound.
+	 * 
+	 * @param minimumSampleSize The minimum sample size to extract
+	 * @return The CompressionSettingsBuilder
+	 */
+	public CompressionSettingsBuilder setMinimumSampleSize(int minimumSampleSize) {
+		this.minimumSampleSize = minimumSampleSize;
+		return this;
+	}
+
+	/**
+	 * Set the estimation type used for the sampled estimates.
+	 * 
+	 * @param estimationType the estimation type in used.
+	 * @return The CompressionSettingsBuilder
+	 */
+	public CompressionSettingsBuilder setEstimationType(EstimationType estimationType) {
+		this.estimationType = estimationType;
+		return this;
+	}
+
+	/**
+	 * Set the cost type used for estimating the cost of column groups default is memory based.
+	 * 
+	 * @param costType The Cost type wanted
+	 * @return The CompressionSettingsBuilder
+	 */
+	public CompressionSettingsBuilder setCostType(CostType costType) {
+		this.costType = costType;
 		return this;
 	}
 
@@ -241,8 +287,8 @@ public class CompressionSettingsBuilder {
 	 * @return The CompressionSettings
 	 */
 	public CompressionSettings create() {
-		return new CompressionSettings(samplingRatio, allowSharedDictionary, transposeInput, skipList, seed,
-			investigateEstimate, lossy, validCompressions, sortValuesByLength, columnPartitioner,
-			maxStaticColGroupCoCode);
+		return new CompressionSettings(samplingRatio, allowSharedDictionary, transposeInput, skipList, seed, lossy,
+			validCompressions, sortValuesByLength, columnPartitioner, maxColGroupCoCode, coCodePercentage,
+			minimumSampleSize, estimationType, costType);
 	}
 }

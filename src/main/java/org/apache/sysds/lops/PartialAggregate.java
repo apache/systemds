@@ -26,7 +26,7 @@ import org.apache.sysds.common.Types.Direction;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.hops.AggBinaryOp.SparkAggType;
 import org.apache.sysds.hops.HopsException;
-import org.apache.sysds.lops.LopProperties.ExecType;
+import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 
 /**
@@ -217,22 +217,22 @@ public class PartialAggregate extends Lop
 	@Override
 	public String getInstructions(String input1, String output) 
 	{
-		InstructionUtils.concatBaseOperands(
-			getExecType().name(),
-			getOpcode(),
+		String ret = InstructionUtils.concatOperands(
+			getExecType().name(), getOpcode(),
 			getInputs().get(0).prepInputOperand(input1),
 			prepOutputOperand(output));
 
 		if ( getExecType() == ExecType.SPARK )
-			InstructionUtils.concatAdditionalOperand(_aggtype.toString());
+			ret = InstructionUtils.concatOperands(ret, _aggtype.name());
 		else if ( getExecType() == ExecType.CP || getExecType() == ExecType.FED ){
-			InstructionUtils.concatAdditionalOperand(Integer.toString(_numThreads));
+			ret = InstructionUtils.concatOperands(ret, Integer.toString(_numThreads));
 			if ( getOpcode().equalsIgnoreCase("uarimin") || getOpcode().equalsIgnoreCase("uarimax") )
-				InstructionUtils.concatAdditionalOperand("1");
-			if ( getExecType() == ExecType.FED && operation != AggOp.VAR )
-				InstructionUtils.concatAdditionalOperand(String.valueOf(federatedOutput));
+				ret = InstructionUtils.concatOperands(ret, "1");
+			if ( getExecType() == ExecType.FED )
+				ret = InstructionUtils.concatOperands(ret, _fedOutput.name());
 		}
-		return InstructionUtils.getInstructionString();
+		
+		return ret;
 	}
 
 	public static String getOpcode(AggOp op, Direction dir)

@@ -19,7 +19,7 @@
 
 package org.apache.sysds.runtime.compress.readers;
 
-import org.apache.sysds.runtime.DMLCompressionException;
+import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.utils.DblArray;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
@@ -27,7 +27,6 @@ public class ReaderColumnSelectionDenseSingleBlock extends ReaderColumnSelection
 	private double[] _data;
 	private int indexOff;
 	private int _numCols;
-
 
 	public ReaderColumnSelectionDenseSingleBlock(MatrixBlock data, int[] colIndices) {
 		super(colIndices, data.getNumRows());
@@ -43,10 +42,16 @@ public class ReaderColumnSelectionDenseSingleBlock extends ReaderColumnSelection
 		if(_lastRow == _numRows - 1)
 			return null;
 		_lastRow++;
+		boolean empty = true;
 		for(int i = 0; i < _colIndexes.length; i++) {
-			reusableArr[i] = _data[indexOff + _colIndexes[i]];
+			double v = _data[indexOff + _colIndexes[i]];
+			if(v != 0)
+				empty = false;
+			reusableArr[i] = v;
 		}
+
 		indexOff += _numCols;
-		return reusableReturn;
+
+		return empty ? emptyReturn : reusableReturn;
 	}
 }

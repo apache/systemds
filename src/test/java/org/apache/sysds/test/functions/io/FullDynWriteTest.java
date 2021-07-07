@@ -25,7 +25,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.common.Types.FileFormat;
-import org.apache.sysds.lops.LopProperties.ExecType;
+import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
@@ -107,7 +107,7 @@ public class FullDynWriteTest extends AutomatedTestBase
 		programArgs = new String[]{ "-explain","-args",
 			input("A"), fmt.toString(), outputDir()};
 		
-		try 
+		try
 		{
 			long seed1 = System.nanoTime();
 			double[][] A = getRandomMatrix(rows, cols, 0, 1, 1.0, seed1);

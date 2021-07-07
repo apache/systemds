@@ -36,7 +36,7 @@
     
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="Algorithms" href="../api/operator/algorithms.html" />
+    <link rel="next" title="SystemDSContext" href="../api/context/systemds_context.html" />
     <link rel="prev" title="Federated Environment" href="federated.html" /> 
 </head>
 
@@ -102,14 +102,17 @@
 </ul>
 <p class="caption"><span class="caption-text">API</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../api/operator/algorithms.html">Algorithms</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../api/context/systemds_context.html">SystemDSContext</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../api/matrix/matrix.html">Matrix</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../api/matrix/federated.html">Federated</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../api/operator/operation_node.html">Operation Node</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/operator/algorithms.html">Algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/operator/node/matrix.html">Matrix</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/operator/node/frame.html">Frame</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/operator/node/list.html">List</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/operator/node/scalar.html">Scalar</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api/operator/node/source.html">Source</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Internals API</span></p>
 <ul>
+<li class="toctree-l1"><a class="reference internal" href="../api/operator/operation_node.html">Operation Node</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../api/script_building/dag.html">Dag</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../api/script_building/script.html">Script</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../api/utils/converters.html">Converters</a></li>
@@ -192,8 +195,8 @@ since it is commonly known and explored.</p>
 <div class="section" id="step-1-get-dataset">
 <h2>Step 1: Get Dataset<a class="headerlink" href="#step-1-get-dataset" title="Permalink to this headline">¶</a></h2>
 <p>SystemDS provides builtin for downloading and setup of the MNIST dataset.
-To setup this simply use:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">systemds.examples.tutorials.mnist</span> <span class="kn">import</span> <span class="n">DataManager</span>
+To setup this simply use</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">systemds.examples.tutorials.mnist</span> <span class="kn">import</span> <span class="n">DataManager</span>
 <span class="n">d</span> <span class="o">=</span> <span class="n">DataManager</span><span class="p">()</span>
 <span class="n">X</span> <span class="o">=</span> <span class="n">d</span><span class="o">.</span><span class="n">get_train_data</span><span class="p">()</span>
 <span class="n">Y</span> <span class="o">=</span> <span class="n">d</span><span class="o">.</span><span class="n">get_train_labels</span><span class="p">()</span>
@@ -212,48 +215,46 @@ and finally the column pixels, 28.</p>
 The input X is the training data.
 It require the data to have two dimensions, the first resemble the
 number of inputs, and the other the number of features.</p>
-<p>Therefore to make the data fit the algorithm we reshape the X dataset, like so:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">X</span> <span class="o">=</span> <span class="n">X</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="mi">60000</span><span class="p">,</span> <span class="mi">28</span><span class="o">*</span><span class="mi">28</span><span class="p">))</span>
+<p>Therefore to make the data fit the algorithm we reshape the X dataset, like so</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">X</span> <span class="o">=</span> <span class="n">X</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="mi">60000</span><span class="p">,</span> <span class="mi">28</span><span class="o">*</span><span class="mi">28</span><span class="p">))</span>
 </pre></div>
 </div>
 <p>This takes each row of pixels and append to each other making a single feature vector per image.</p>
 <p>The Y dataset also does not perfectly fit the logistic regression algorithm, this is because the labels
 for this dataset is values ranging from 0, to 9, each label correspond to the integer shown in the image.
 unfortunately the algorithm require the labels to be distinct integers from 1 and upwards.</p>
-<p>Therefore we add 1 to each label such that the labels go from 1 to 10, like this:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Y</span> <span class="o">=</span> <span class="n">Y</span> <span class="o">+</span> <span class="mi">1</span>
+<p>Therefore we add 1 to each label such that the labels go from 1 to 10, like this</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">Y</span> <span class="o">=</span> <span class="n">Y</span> <span class="o">+</span> <span class="mi">1</span>
 </pre></div>
 </div>
 <p>With these steps we are now ready to train a simple model.</p>
 </div>
 <div class="section" id="step-3-training">
 <h2>Step 3: Training<a class="headerlink" href="#step-3-training" title="Permalink to this headline">¶</a></h2>
-<p>To start with, we setup a SystemDS context:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">systemds.context</span> <span class="kn">import</span> <span class="n">SystemDSContext</span>
+<p>To start with, we setup a SystemDS context</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">systemds.context</span> <span class="kn">import</span> <span class="n">SystemDSContext</span>
 <span class="n">sds</span> <span class="o">=</span> <span class="n">SystemDSContext</span><span class="p">()</span>
 </pre></div>
 </div>
-<p>Then setup the data:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">systemds.matrix</span> <span class="kn">import</span> <span class="n">Matrix</span>
-<span class="n">X_ds</span> <span class="o">=</span> <span class="n">Matrix</span><span class="p">(</span><span class="n">sds</span><span class="p">,</span> <span class="n">X</span><span class="p">)</span>
-<span class="n">Y_ds</span> <span class="o">=</span> <span class="n">Matrix</span><span class="p">(</span><span class="n">sds</span><span class="p">,</span> <span class="n">Y</span><span class="p">)</span>
+<p>Then setup the data</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">X_ds</span> <span class="o">=</span> <span class="n">sds</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
+<span class="n">Y_ds</span> <span class="o">=</span> <span class="n">sds</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">(</span> <span class="n">Y</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>to reduce the training time and verify everything works, it is usually good to reduce the amount of data,
-to train on a smaller sample to start with:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">sample_size</span> <span class="o">=</span> <span class="mi">1000</span>
-<span class="n">X_ds</span> <span class="o">=</span> <span class="n">Matrix</span><span class="p">(</span><span class="n">sds</span><span class="p">,</span> <span class="n">X</span><span class="p">[:</span><span class="n">sample_size</span><span class="p">])</span>
-<span class="n">Y_ds</span> <span class="o">=</span> <span class="n">Matrix</span><span class="p">(</span><span class="n">sds</span><span class="p">,</span> <span class="n">Y</span><span class="p">[:</span><span class="n">sample_size</span><span class="p">])</span>
+to train on a smaller sample to start with</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">sample_size</span> <span class="o">=</span> <span class="mi">1000</span>
+<span class="n">X_ds</span> <span class="o">=</span> <span class="n">sds</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">(</span><span class="n">X</span><span class="p">[:</span><span class="n">sample_size</span><span class="p">])</span>
+<span class="n">Y_ds</span> <span class="o">=</span> <span class="n">sds</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">(</span><span class="n">Y</span><span class="p">[:</span><span class="n">sample_size</span><span class="p">])</span>
 </pre></div>
 </div>
-<p>And now everything is ready for our algorithm:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">systemds.operator.algorithm</span> <span class="kn">import</span> <span class="n">multiLogReg</span>
-
+<p>And now everything is ready for our algorithm</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">systemds.operator.algorithm</span> <span class="kn">import</span> <span class="n">multiLogReg</span>
 <span class="n">bias</span> <span class="o">=</span> <span class="n">multiLogReg</span><span class="p">(</span><span class="n">X_ds</span><span class="p">,</span> <span class="n">Y_ds</span><span class="p">)</span>
 </pre></div>
 </div>
-<p>Note that nothing has been calculated yet, in SystemDS, since it only happens when you call compute:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">bias_r</span> <span class="o">=</span> <span class="n">bias</span><span class="o">.</span><span class="n">compute</span><span class="p">()</span>
+<p>Note that nothing has been calculated yet, in SystemDS, since it only happens when you call compute</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">bias_r</span> <span class="o">=</span> <span class="n">bias</span><span class="o">.</span><span class="n">compute</span><span class="p">()</span>
 </pre></div>
 </div>
 <p>bias is a matrix, that if matrix multiplied with an instance returns a value distribution where, the highest value is the predicted type.
@@ -262,14 +263,14 @@ This is the matrix that could be saved and used for predicting labels later.</p>
 <div class="section" id="step-3-validate">
 <h2>Step 3: Validate<a class="headerlink" href="#step-3-validate" title="Permalink to this headline">¶</a></h2>
 <p>To see what accuracy the model achieves, we have to load in the test dataset as well.</p>
-<p>this can also be extracted from our builtin MNIST loader, to keep the tutorial short the operations are combined:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Xt</span> <span class="o">=</span> <span class="n">Matrix</span><span class="p">(</span><span class="n">sds</span><span class="p">,</span> <span class="n">d</span><span class="o">.</span><span class="n">get_test_data</span><span class="p">()</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="mi">10000</span><span class="p">,</span> <span class="mi">28</span><span class="o">*</span><span class="mi">28</span><span class="p">)))</span>
-<span class="n">Yt</span> <span class="o">=</span> <span class="n">Matrix</span><span class="p">(</span><span class="n">sds</span><span class="p">,</span> <span class="n">d</span><span class="o">.</span><span class="n">get_test_labels</span><span class="p">())</span> <span class="o">+</span> <span class="mi">1</span>
+<p>this can also be extracted from our builtin MNIST loader, to keep the tutorial short the operations are combined</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">Xt</span> <span class="o">=</span> <span class="n">sds</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">(</span><span class="n">d</span><span class="o">.</span><span class="n">get_test_data</span><span class="p">()</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="mi">10000</span><span class="p">,</span> <span class="mi">28</span><span class="o">*</span><span class="mi">28</span><span class="p">)))</span>
+<span class="n">Yt</span> <span class="o">=</span> <span class="n">sds</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">(</span><span class="n">d</span><span class="o">.</span><span class="n">get_test_labels</span><span class="p">())</span> <span class="o">+</span> <span class="mi">1</span>
 </pre></div>
 </div>
 <p>The above loads the test data, and reshapes the X data the same way the training data was reshaped.</p>
-<p>Finally we verify the accuracy by calling:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">systemds.operator.algorithm</span> <span class="kn">import</span> <span class="n">multiLogRegPredict</span>
+<p>Finally we verify the accuracy by calling</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">systemds.operator.algorithm</span> <span class="kn">import</span> <span class="n">multiLogRegPredict</span>
 <span class="p">[</span><span class="n">m</span><span class="p">,</span> <span class="n">y_pred</span><span class="p">,</span> <span class="n">acc</span><span class="p">]</span> <span class="o">=</span> <span class="n">multiLogRegPredict</span><span class="p">(</span><span class="n">Xt</span><span class="p">,</span> <span class="n">bias</span><span class="p">,</span> <span class="n">Yt</span><span class="p">)</span><span class="o">.</span><span class="n">compute</span><span class="p">()</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">acc</span><span class="p">)</span>
 </pre></div>
@@ -288,8 +289,8 @@ using 1000 pictures of the training data.</p>
 <p>Now that we have a working baseline we can start tuning parameters.</p>
 <p>But first it is valuable to know how much of a difference in performance there is on the training data, vs the test data.
 This gives an indication of if we have exhausted the learning potential of the training data.</p>
-<p>To see how our accuracy is on the training data we use the Predict function again, but with our training data:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">[</span><span class="n">m</span><span class="p">,</span> <span class="n">y_pred</span><span class="p">,</span> <span class="n">acc</span><span class="p">]</span> <span class="o">=</span> <span class="n">multiLogRegPredict</span><span class="p">(</span><span class="n">X_ds</span><span class="p">,</span> <span class="n">bias</span><span class="p">,</span> <span class="n">Y_ds</span><span class="p">)</span><span class="o">.</span><span class="n">compute</span><span class="p">()</span>
+<p>To see how our accuracy is on the training data we use the Predict function again, but with our training data</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="p">[</span><span class="n">m</span><span class="p">,</span> <span class="n">y_pred</span><span class="p">,</span> <span class="n">acc</span><span class="p">]</span> <span class="o">=</span> <span class="n">multiLogRegPredict</span><span class="p">(</span><span class="n">X_ds</span><span class="p">,</span> <span class="n">bias</span><span class="p">,</span> <span class="n">Y_ds</span><span class="p">)</span><span class="o">.</span><span class="n">compute</span><span class="p">()</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">acc</span><span class="p">)</span>
 </pre></div>
 </div>
@@ -297,9 +298,9 @@ This gives an indication of if we have exhausted the learning potential of the t
 and have nothing more to learn from the data as it is now.</p>
 <p>To improve further we have to increase the training data, here for example we increase it
 from our sample of 1k to the full training dataset of 60k, in this example the maxi is set to reduce the number of iterations the algorithm takes,
-to again reduce training time:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">X_ds</span> <span class="o">=</span> <span class="n">Matrix</span><span class="p">(</span><span class="n">sds</span><span class="p">,</span> <span class="n">X</span><span class="p">)</span>
-<span class="n">Y_ds</span> <span class="o">=</span> <span class="n">Matrix</span><span class="p">(</span><span class="n">sds</span><span class="p">,</span> <span class="n">Y</span><span class="p">)</span>
+to again reduce training time</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">X_ds</span> <span class="o">=</span> <span class="n">sds</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
+<span class="n">Y_ds</span> <span class="o">=</span> <span class="n">sds</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">(</span><span class="n">Y</span><span class="p">)</span>
 
 <span class="n">bias</span> <span class="o">=</span> <span class="n">multiLogReg</span><span class="p">(</span><span class="n">X_ds</span><span class="p">,</span> <span class="n">Y_ds</span><span class="p">,</span> <span class="n">maxi</span><span class="o">=</span><span class="mi">30</span><span class="p">)</span>
 
@@ -315,9 +316,8 @@ But this is a basic implementation that can be replaced by a variety of algorith
 <h2>Full Script<a class="headerlink" href="#full-script" title="Permalink to this headline">¶</a></h2>
 <p>The full script, some steps are combined to reduce the overall script.
 One noteworthy change is the + 1 is done on the matrix ready for SystemDS,
-this makes SystemDS responsible for adding the 1 to each value.:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">systemds.context</span> <span class="kn">import</span> <span class="n">SystemDSContext</span>
-<span class="kn">from</span> <span class="nn">systemds.matrix</span> <span class="kn">import</span> <span class="n">Matrix</span>
+this makes SystemDS responsible for adding the 1 to each value.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">systemds.context</span> <span class="kn">import</span> <span class="n">SystemDSContext</span>
 <span class="kn">from</span> <span class="nn">systemds.operator.algorithm</span> <span class="kn">import</span> <span class="n">multiLogReg</span><span class="p">,</span> <span class="n">multiLogRegPredict</span>
 <span class="kn">from</span> <span class="nn">systemds.examples.tutorials.mnist</span> <span class="kn">import</span> <span class="n">DataManager</span>
 
@@ -325,12 +325,12 @@ this makes SystemDS responsible for adding the 1 to each value.:</p>
 
 <span class="k">with</span> <span class="n">SystemDSContext</span><span class="p">()</span> <span class="k">as</span> <span class="n">sds</span><span class="p">:</span>
     <span class="c1"># Train Data</span>
-    <span class="n">X</span> <span class="o">=</span> <span class="n">Matrix</span><span class="p">(</span><span class="n">sds</span><span class="p">,</span> <span class="n">d</span><span class="o">.</span><span class="n">get_train_data</span><span class="p">()</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="mi">60000</span><span class="p">,</span> <span class="mi">28</span><span class="o">*</span><span class="mi">28</span><span class="p">)))</span>
-    <span class="n">Y</span> <span class="o">=</span> <span class="n">Matrix</span><span class="p">(</span><span class="n">sds</span><span class="p">,</span> <span class="n">d</span><span class="o">.</span><span class="n">get_train_labels</span><span class="p">())</span> <span class="o">+</span> <span class="mf">1.0</span>
+    <span class="n">X</span> <span class="o">=</span> <span class="n">sds</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">(</span><span class="n">d</span><span class="o">.</span><span class="n">get_train_data</span><span class="p">()</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="mi">60000</span><span class="p">,</span> <span class="mi">28</span><span class="o">*</span><span class="mi">28</span><span class="p">)))</span>
+    <span class="n">Y</span> <span class="o">=</span> <span class="n">sds</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">(</span><span class="n">d</span><span class="o">.</span><span class="n">get_train_labels</span><span class="p">())</span> <span class="o">+</span> <span class="mf">1.0</span>
     <span class="n">bias</span> <span class="o">=</span> <span class="n">multiLogReg</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="n">maxi</span><span class="o">=</span><span class="mi">30</span><span class="p">)</span>
     <span class="c1"># Test data</span>
-    <span class="n">Xt</span> <span class="o">=</span> <span class="n">Matrix</span><span class="p">(</span><span class="n">sds</span><span class="p">,</span> <span class="n">d</span><span class="o">.</span><span class="n">get_test_data</span><span class="p">()</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="mi">10000</span><span class="p">,</span> <span class="mi">28</span><span class="o">*</span><span class="mi">28</span><span class="p">)))</span>
-    <span class="n">Yt</span> <span class="o">=</span> <span class="n">Matrix</span><span class="p">(</span><span class="n">sds</span><span class="p">,</span> <span class="n">d</span><span class="o">.</span><span class="n">get_test_labels</span><span class="p">())</span> <span class="o">+</span> <span class="mf">1.0</span>
+    <span class="n">Xt</span> <span class="o">=</span> <span class="n">sds</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">(</span><span class="n">d</span><span class="o">.</span><span class="n">get_test_data</span><span class="p">()</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="mi">10000</span><span class="p">,</span> <span class="mi">28</span><span class="o">*</span><span class="mi">28</span><span class="p">)))</span>
+    <span class="n">Yt</span> <span class="o">=</span> <span class="n">sds</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">(</span><span class="n">d</span><span class="o">.</span><span class="n">get_test_labels</span><span class="p">())</span> <span class="o">+</span> <span class="mf">1.0</span>
     <span class="p">[</span><span class="n">m</span><span class="p">,</span> <span class="n">y_pred</span><span class="p">,</span> <span class="n">acc</span><span class="p">]</span> <span class="o">=</span> <span class="n">multiLogRegPredict</span><span class="p">(</span><span class="n">Xt</span><span class="p">,</span> <span class="n">bias</span><span class="p">,</span> <span class="n">Yt</span><span class="p">)</span><span class="o">.</span><span class="n">compute</span><span class="p">()</span>
 
 <span class="nb">print</span><span class="p">(</span><span class="n">acc</span><span class="p">)</span>
@@ -347,7 +347,7 @@ this makes SystemDS responsible for adding the 1 to each value.:</p>
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="../api/operator/algorithms.html" class="btn btn-neutral float-right" title="Algorithms" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+        <a href="../api/context/systemds_context.html" class="btn btn-neutral float-right" title="SystemDSContext" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
         <a href="federated.html" class="btn btn-neutral float-left" title="Federated Environment" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
@@ -360,7 +360,7 @@ this makes SystemDS responsible for adding the 1 to each value.:</p>
   <div role="contentinfo">
     <p>
         
-        &copy; Copyright 2020, Apache SystemDS
+        &copy; Copyright 2021, Apache SystemDS
 
     </p>
   </div>

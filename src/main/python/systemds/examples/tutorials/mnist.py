@@ -29,6 +29,9 @@ import struct
 import numpy as np
 import requests
 
+__all__ = ["DataManager"]
+
+
 class DataManager:
 
     _train_data_url: str
@@ -42,10 +45,10 @@ class DataManager:
     _test_labels_loc: str
 
     def __init__(self):
-        self._train_data_url = "http://yann.lecun.com/exdb/mnist/train-images-idx3-ubyte.gz"
-        self._train_labels_url = "http://yann.lecun.com/exdb/mnist/train-labels-idx1-ubyte.gz"
-        self._test_data_url = "http://yann.lecun.com/exdb/mnist/t10k-images-idx3-ubyte.gz"
-        self._test_labels_url = "http://yann.lecun.com/exdb/mnist/t10k-labels-idx1-ubyte.gz"
+        self._train_data_url = "https://systemds.apache.org/assets/datasets/mnist/train-images-idx3-ubyte.gz"
+        self._train_labels_url = "https://systemds.apache.org/assets/datasets/mnist/train-labels-idx1-ubyte.gz"
+        self._test_data_url = "https://systemds.apache.org/assets/datasets/mnist/t10k-images-idx3-ubyte.gz"
+        self._test_labels_url = "https://systemds.apache.org/assets/datasets/mnist/t10k-labels-idx1-ubyte.gz"
 
         self._train_data_loc = "systemds/examples/tutorials/mnist/train_data.gz"
         self._train_labels_loc = "systemds/examples/tutorials/mnist/train_labels.gz"

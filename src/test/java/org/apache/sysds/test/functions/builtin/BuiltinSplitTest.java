@@ -20,8 +20,7 @@
 package org.apache.sysds.test.functions.builtin;
 
 import org.apache.sysds.common.Types.ExecMode;
-import org.apache.sysds.lops.LopProperties;
-import org.apache.sysds.lops.LopProperties.ExecType;
+import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
@@ -46,13 +45,13 @@ public class BuiltinSplitTest extends AutomatedTestBase {
 	@Test
 	public void test_CP() {
 
-		runSplitTest(LopProperties.ExecType.CP);
+		runSplitTest(ExecType.CP);
 
 	}
 
 	@Test
 	public void test_Spark() {
-		runSplitTest(LopProperties.ExecType.SPARK);
+		runSplitTest(ExecType.SPARK);
 	}
 
 	private void runSplitTest(ExecType instType) {

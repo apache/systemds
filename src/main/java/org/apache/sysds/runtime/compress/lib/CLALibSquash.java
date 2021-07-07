@@ -26,25 +26,22 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.apache.sysds.runtime.DMLCompressionException;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.CompressionSettings;
 import org.apache.sysds.runtime.compress.CompressionSettingsBuilder;
+import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup.CompressionType;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupFactory;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupValue;
 import org.apache.sysds.runtime.compress.readers.ReaderColumnSelection;
 import org.apache.sysds.runtime.compress.utils.ABitmap;
-import org.apache.sysds.runtime.compress.utils.Bitmap;
 import org.apache.sysds.runtime.util.CommonThreadPool;
 
 public class CLALibSquash {
 
-	private static final Log LOG = LogFactory.getLog(CLALibSquash.class.getName());
+	// private static final Log LOG = LogFactory.getLog(CLALibSquash.class.getName());
 
 	public static CompressedMatrixBlock squash(CompressedMatrixBlock m, int k) {
 
@@ -117,24 +114,15 @@ public class CLALibSquash {
 	private static AColGroup extractNewGroup(CompressedMatrixBlock m, CompressionSettings cs, int[] columnIds,
 		double[] minMaxes) {
 
-		ABitmap map;
-		if(columnIds.length > 1) {
-			LOG.error("Not Optimized Extraction...");
-			map = extractBitmap(columnIds, m);
-		}
-		else
-			map = BitmapLossyEncoder.extractMapFromCompressedSingleColumn(m,
-				columnIds[0],
-				minMaxes[columnIds[0] * 2],
-				minMaxes[columnIds[0] * 2 + 1], m.getNumRows());
+		ABitmap map = extractBitmap(columnIds, m);
 
-		AColGroup newGroup = ColGroupFactory.compress(columnIds, m.getNumRows(), map, CompressionType.DDC, cs, m);
+		AColGroup newGroup = ColGroupFactory.compress(columnIds, m.getNumRows(), map, CompressionType.DDC, cs, m, 1);
 		return newGroup;
 	}
 
 	private static ABitmap extractBitmap(int[] colIndices, CompressedMatrixBlock compressedBlock) {
-		Bitmap x = BitmapEncoder.extractBitmap(colIndices,
-			ReaderColumnSelection.createCompressedReader(compressedBlock, colIndices),  compressedBlock.getNumRows());
+		ABitmap x = BitmapEncoder.extractBitmap(colIndices,
+			ReaderColumnSelection.createCompressedReader(compressedBlock, colIndices), compressedBlock.getNumRows());
 		return BitmapLossyEncoder.makeBitmapLossy(x, compressedBlock.getNumRows());
 	}
 

@@ -19,8 +19,18 @@
 
 package org.apache.sysds.runtime.privacy.propagation;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
+import org.apache.sysds.hops.AggBinaryOp;
+import org.apache.sysds.hops.AggUnaryOp;
+import org.apache.sysds.hops.BinaryOp;
+import org.apache.sysds.hops.Hop;
+import org.apache.sysds.hops.ReorgOp;
+import org.apache.sysds.hops.TernaryOp;
+import org.apache.sysds.hops.UnaryOp;
 import org.apache.sysds.parser.DataExpression;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.instructions.Instruction;
@@ -39,15 +49,39 @@ import org.apache.wink.json4j.JSONObject;
  */
 public class PrivacyPropagator
 {
+	/**
+	 * Parses the privacy constraint of the given metadata object
+	 * and sets the field of the given Data if the privacy constraint is not null.
+	 * @param cd data for which privacy constraint is set
+	 * @param mtd metadata object
+	 * @return data object with privacy constraint set
+	 * @throws JSONException during parsing of metadata
+	 */
 	public static Data parseAndSetPrivacyConstraint(Data cd, JSONObject mtd)
+		throws JSONException
+	{
+		PrivacyConstraint mtdPrivConstraint = parseAndReturnPrivacyConstraint(mtd);
+		if ( mtdPrivConstraint != null )
+			cd.setPrivacyConstraints(mtdPrivConstraint);
+		return cd;
+	}
+
+	/**
+	 * Parses the privacy constraint of the given metadata object
+	 * or returns null if no privacy constraint is set in the metadata.
+	 * @param mtd metadata
+	 * @return privacy constraint parsed from metadata object
+	 * @throws JSONException during parsing of metadata
+	 */
+	public static PrivacyConstraint parseAndReturnPrivacyConstraint(JSONObject mtd)
 		throws JSONException
 	{
 		if ( mtd.containsKey(DataExpression.PRIVACY) ) {
 			String privacyLevel = mtd.getString(DataExpression.PRIVACY);
 			if ( privacyLevel != null )
-				cd.setPrivacyConstraints(new PrivacyConstraint(PrivacyLevel.valueOf(privacyLevel)));
+				return new PrivacyConstraint(PrivacyLevel.valueOf(privacyLevel));
 		}
-		return cd;
+		return null;
 	}
 
 	private static boolean anyInputHasLevel(PrivacyLevel[] inputLevels, PrivacyLevel targetLevel){
@@ -92,7 +126,13 @@ public class PrivacyPropagator
 		return PrivacyLevel.None;
 	}
 
-	public static PrivacyConstraint mergeNary(PrivacyConstraint[] privacyConstraints, OperatorType operatorType){
+	/**
+	 * Merges the given privacy constraints with the core propagation using the given operator type.
+	 * @param privacyConstraints array of privacy constraints to merge
+	 * @param operatorType type of operation to use when merging with the core propagation
+	 * @return merged privacy constraint
+	 */
+	private static PrivacyConstraint mergeNary(PrivacyConstraint[] privacyConstraints, OperatorType operatorType){
 		PrivacyLevel[] privacyLevels = Arrays.stream(privacyConstraints)
 			.map(constraint -> {
 				if (constraint != null)
@@ -104,21 +144,17 @@ public class PrivacyPropagator
 		return new PrivacyConstraint(outputPrivacyLevel);
 	}
 
+	/**
+	 * Merges the input privacy constraints using the core propagation with NonAggregate operator type.
+	 * @param privacyConstraint1 first privacy constraint
+	 * @param privacyConstraint2 second privacy constraint
+	 * @return merged privacy constraint
+	 */
 	public static PrivacyConstraint mergeBinary(PrivacyConstraint privacyConstraint1, PrivacyConstraint privacyConstraint2) {
 		if (privacyConstraint1 != null && privacyConstraint2 != null){
-			PrivacyLevel privacyLevel1 = privacyConstraint1.getPrivacyLevel();
-			PrivacyLevel privacyLevel2 = privacyConstraint2.getPrivacyLevel();
-
-			// One of the inputs are private, hence the output must be private.
-			if (privacyLevel1 == PrivacyLevel.Private || privacyLevel2 == PrivacyLevel.Private)
-				return new PrivacyConstraint(PrivacyLevel.Private);
-			// One of the inputs are private with aggregation allowed, but none of the inputs are completely private,
-			// hence the output must be private with aggregation.
-			else if (privacyLevel1 == PrivacyLevel.PrivateAggregation || privacyLevel2 == PrivacyLevel.PrivateAggregation)
-				return new PrivacyConstraint(PrivacyLevel.PrivateAggregation);
-			// Both inputs have privacy level "None", hence the privacy constraint can be removed.
-			else  
-				return null;
+			PrivacyLevel[] privacyLevels = new PrivacyLevel[]{
+				privacyConstraint1.getPrivacyLevel(),privacyConstraint2.getPrivacyLevel()};
+			return new PrivacyConstraint(corePropagation(privacyLevels, OperatorType.NonAggregate));
 		}
 		else if (privacyConstraint1 != null)
 			return privacyConstraint1;
@@ -127,12 +163,36 @@ public class PrivacyPropagator
 		return null;
 	}
 
-	public static PrivacyConstraint mergeNary(PrivacyConstraint[] privacyConstraints){
-		PrivacyConstraint mergedPrivacyConstraint = privacyConstraints[0];
-		for ( int i = 1; i < privacyConstraints.length; i++ ){
-			mergedPrivacyConstraint = mergeBinary(mergedPrivacyConstraint, privacyConstraints[i]);
+	/**
+	 * Propagate privacy constraints from input hops to given hop.
+	 * @param hop which the privacy constraints are propagated to
+	 */
+	public static void hopPropagation(Hop hop){
+		PrivacyConstraint[] inputConstraints = hop.getInput().stream()
+			.map(Hop::getPrivacy).toArray(PrivacyConstraint[]::new);
+		if ( hop instanceof TernaryOp || hop instanceof BinaryOp || hop instanceof ReorgOp )
+			hop.setPrivacy(mergeNary(inputConstraints, OperatorType.NonAggregate));
+		else if ( hop instanceof AggBinaryOp || hop instanceof AggUnaryOp  || hop instanceof UnaryOp )
+			hop.setPrivacy(mergeNary(inputConstraints, OperatorType.Aggregate));
+	}
+
+	/**
+	 * Propagate privacy constraints to output variables
+	 * based on privacy constraint of CPOperand output in instruction
+	 * which has been set during privacy propagation preprocessing.
+	 * @param inst instruction for which privacy constraints are propagated
+	 * @param ec execution context
+	 */
+	public static void postProcessInstruction(Instruction inst, ExecutionContext ec){
+		// if inst has output
+		List<CPOperand> instOutputs = getOutputOperands(inst);
+		if (!instOutputs.isEmpty()){
+			for ( CPOperand output : instOutputs ){
+				PrivacyConstraint outputPrivacyConstraint = output.getPrivacyConstraint();
+				if ( PrivacyUtils.someConstraintSetUnary(outputPrivacyConstraint) )
+					setOutputPrivacyConstraint(ec, outputPrivacyConstraint, output.getName());
+			}
 		}
-		return mergedPrivacyConstraint;
 	}
 
 	/**
@@ -145,127 +205,88 @@ public class PrivacyPropagator
 	public static Instruction preprocessInstruction(Instruction inst, ExecutionContext ec){
 		switch ( inst.getType() ){
 			case CONTROL_PROGRAM:
-				return preprocessCPInstructionFineGrained( (CPInstruction) inst, ec );
+				return preprocessCPInstruction( (CPInstruction) inst, ec );
 			case BREAKPOINT:
 			case SPARK:
 			case GPU:
 			case FEDERATED:
 				return inst;
 			default:
-				throwExceptionIfPrivacyActivated(inst);
-				return inst;
+				return throwExceptionIfInputOrInstPrivacy(inst, ec);
 		}
 	}
 
-	public static Instruction preprocessCPInstructionFineGrained(CPInstruction inst, ExecutionContext ec){
-		switch ( inst.getCPInstructionType() ){
-			case AggregateBinary:
-				if ( inst instanceof AggregateBinaryCPInstruction ){
-					// This can only be a matrix multiplication and it does not count as an aggregation in terms of privacy.
-					return preprocessAggregateBinaryCPInstruction((AggregateBinaryCPInstruction)inst, ec);
-				} else if ( inst instanceof CovarianceCPInstruction ){
-					return preprocessCovarianceCPInstruction((CovarianceCPInstruction)inst, ec);
-				} else preprocessInstructionSimple(inst, ec);
-			case AggregateTernary:
-				//TODO: Support propagation of fine-grained privacy constraints
-				return preprocessTernaryCPInstruction((ComputationCPInstruction) inst, ec);
-			case AggregateUnary:
-				// Assumption: aggregates in one or several dimensions, number of dimensions may change, only certain slices of the data may be aggregated upon, elements do not change position
-				return preprocessAggregateUnaryCPInstruction((AggregateUnaryCPInstruction)inst, ec);
-			case Append:
-				return preprocessAppendCPInstruction((AppendCPInstruction) inst, ec);
+	private static Instruction preprocessCPInstruction(CPInstruction inst, ExecutionContext ec){
+		switch(inst.getCPInstructionType()){
 			case Binary:
-				// TODO: Support propagation of fine-grained privacy constraints
-				return preprocessBinaryCPInstruction((BinaryCPInstruction) inst, ec);
 			case Builtin:
 			case BuiltinNary:
-				//TODO: Support propagation of fine-grained privacy constraints
-				return preprocessBuiltinNary((BuiltinNaryCPInstruction) inst, ec);
-			/*case CentralMoment:
-				break;
-			case Compression:
-				break;
-			case Covariance:
-				break;
-			case Ctable:
-				break;
-			case Dnn:
-				break;
-			 */
 			case FCall:
-				//TODO: Support propagation of fine-grained privacy constraints
-				return preprocessExternal((FunctionCallCPInstruction) inst, ec);
-			/*
-			case MMChain:
-				break;
-			case MMTSJ:
-				break;
-			case MatrixIndexing:
-				break;*/
+			case ParameterizedBuiltin:
+			case Quaternary:
+			case Reorg:
+			case Ternary:
+			case Unary:
 			case MultiReturnBuiltin:
 			case MultiReturnParameterizedBuiltin:
-				// TODO: Support propagation of fine-grained privacy constraints
-				return preprocessMultiReturn((ComputationCPInstruction)inst, ec);
-			/*case PMMJ:
-				break;*/
-			case ParameterizedBuiltin:
-				// TODO: Support propagation of fine-grained privacy constraints
-				return preprocessParameterizedBuiltin((ParameterizedBuiltinCPInstruction) inst, ec);
-			/*case Partition:
-				break;
-			case QPick:
-				break;
-			case QSort:
-				break;*/
-			case Quaternary:
-				// TODO: Support propagation of fine-grained privacy constraints
-				return preprocessQuaternary((QuaternaryCPInstruction) inst, ec);
-			/*case Rand:
-				break;*/
-			case Reorg:
-				// TODO: Support propagation of fine-grained privacy constraints
-				return preprocessUnaryCPInstruction((UnaryCPInstruction) inst, ec);
-			/*case Reshape:
-				break;
-			case SpoofFused:
-				break;
-			case Sql:
-				break;
-			case StringInit:
-				break;*/
-			case Ternary:
-				// TODO: Support propagation of fine-grained privacy constraints
-				return preprocessTernaryCPInstruction((ComputationCPInstruction) inst, ec);
-			/*case UaggOuterChain:
-				break;*/
-			case Unary:
-				// Assumption: No aggregation, elements do not change position, no change of dimensions
-				return preprocessUnaryCPInstruction((UnaryCPInstruction) inst, ec);
+			case MatrixIndexing:
+				return mergePrivacyConstraintsFromInput( inst, ec, OperatorType.NonAggregate );
+			case AggregateTernary:
+			case AggregateUnary:
+				return mergePrivacyConstraintsFromInput(inst, ec, OperatorType.Aggregate);
+			case Append:
+				return preprocessAppendCPInstruction((AppendCPInstruction) inst, ec);
+			case AggregateBinary:
+				if ( inst instanceof AggregateBinaryCPInstruction )
+					return preprocessAggregateBinaryCPInstruction((AggregateBinaryCPInstruction)inst, ec);
+				else return throwExceptionIfInputOrInstPrivacy(inst, ec);
+			case MMTSJ:
+				OperatorType mmtsjOpType = OperatorType.getAggregationType((MMTSJCPInstruction) inst, ec);
+				return mergePrivacyConstraintsFromInput(inst, ec, mmtsjOpType);
+			case MMChain:
+				OperatorType mmChainOpType = OperatorType.getAggregationType((MMChainCPInstruction) inst, ec);
+				return mergePrivacyConstraintsFromInput(inst, ec, mmChainOpType);
 			case Variable:
 				return preprocessVariableCPInstruction((VariableCPInstruction) inst, ec);
 			default:
-				return preprocessInstructionSimple(inst, ec);
-			
+				return throwExceptionIfInputOrInstPrivacy(inst, ec);
+		}
+	}
+
+	private static Instruction preprocessVariableCPInstruction(VariableCPInstruction inst, ExecutionContext ec){
+		switch ( inst.getVariableOpcode() ) {
+			case CopyVariable:
+			case MoveVariable:
+			case RemoveVariableAndFile:
+			case CastAsMatrixVariable:
+			case CastAsFrameVariable:
+			case Write:
+			case SetFileName:
+			case CastAsScalarVariable:
+			case CastAsDoubleVariable:
+			case CastAsIntegerVariable:
+			case CastAsBooleanVariable:
+				return propagateFirstInputPrivacy(inst, ec);
+			case CreateVariable:
+				return propagateSecondInputPrivacy(inst, ec);
+			case AssignVariable:
+			case RemoveVariable:
+				return mergePrivacyConstraintsFromInput( inst, ec, OperatorType.NonAggregate );
+			case Read:
+				// Adds scalar object to variable map, hence input (data type and filename) privacy should not be propagated
+				return inst;
+			default:
+				return throwExceptionIfInputOrInstPrivacy(inst, ec);
 		}
 	}
 
 	/**
-	 * Throw exception if privacy constraint activated for instruction or for input to instruction.
-	 * @param inst covariance instruction
+	 * Propagates fine-grained constraints if input has fine-grained constraints,
+	 * otherwise it propagates general constraints.
+	 * @param inst aggregate binary instruction for which constraints are propagated
 	 * @param ec execution context
-	 * @return input instruction if privacy constraints are not activated
+	 * @return instruction with merged privacy constraints propagated to it and output CPOperand
 	 */
-	private static Instruction preprocessCovarianceCPInstruction(CovarianceCPInstruction inst, ExecutionContext ec){
-		throwExceptionIfPrivacyActivated(inst);
-		for ( CPOperand input : inst.getInputs() ){
-			PrivacyConstraint privacyConstraint = getInputPrivacyConstraint(ec, input);
-			if ( privacyConstraint != null){
-				throw new DMLPrivacyException("Input of instruction " + inst + " has privacy constraints activated, but the constraints are not propagated during preprocessing of instruction.");
-			}
-		}
-		return inst;
-	}
-
 	private static Instruction preprocessAggregateBinaryCPInstruction(AggregateBinaryCPInstruction inst, ExecutionContext ec){
 		PrivacyConstraint[] privacyConstraints = getInputPrivacyConstraints(ec, inst.getInputs());
 		if ( PrivacyUtils.someConstraintSetBinary(privacyConstraints) ){
@@ -279,7 +300,7 @@ public class PrivacyPropagator
 				ec.releaseMatrixInput(inst.input1.getName(), inst.input2.getName());
 			}
 			else {
-				mergedPrivacyConstraint = mergeNary(privacyConstraints, OperatorType.Aggregate);
+				mergedPrivacyConstraint = mergeNary(privacyConstraints, OperatorType.getAggregationType(inst, ec));
 				inst.setPrivacyConstraint(mergedPrivacyConstraint);
 			}
 			inst.output.setPrivacyConstraint(mergedPrivacyConstraint);
@@ -287,7 +308,13 @@ public class PrivacyPropagator
 		return inst;
 	}
 
-	public static Instruction preprocessAppendCPInstruction(AppendCPInstruction inst, ExecutionContext ec){
+	/**
+	 * Propagates input privacy constraints using general and fine-grained constraints depending on the AppendType.
+	 * @param inst append instruction for which constraints are propagated
+	 * @param ec execution context
+	 * @return instruction with merged privacy constraints propagated to it and output CPOperand
+	 */
+	private static Instruction preprocessAppendCPInstruction(AppendCPInstruction inst, ExecutionContext ec){
 		PrivacyConstraint[] privacyConstraints = getInputPrivacyConstraints(ec, inst.getInputs());
 		if ( PrivacyUtils.someConstraintSetBinary(privacyConstraints) ){
 			if ( inst.getAppendType() == AppendCPInstruction.AppendType.STRING ){
@@ -327,92 +354,35 @@ public class PrivacyPropagator
 		return inst;
 	}
 
-	public static Instruction preprocessBinaryCPInstruction(BinaryCPInstruction inst, ExecutionContext ec){
-		PrivacyConstraint privacyConstraint1 = getInputPrivacyConstraint(ec, inst.input1);
-		PrivacyConstraint privacyConstraint2 = getInputPrivacyConstraint(ec, inst.input2);
-		if ( privacyConstraint1 != null || privacyConstraint2 != null) {
-			PrivacyConstraint mergedPrivacyConstraint = mergeBinary(privacyConstraint1, privacyConstraint2);
-			inst.setPrivacyConstraint(mergedPrivacyConstraint);
-			inst.output.setPrivacyConstraint(mergedPrivacyConstraint);
-		}
-		return inst;
+	/**
+	 * Propagates privacy constraints from input to instruction and output CPOperand based on given operator type.
+	 * The propagation is done through the core propagation.
+	 * @param inst instruction for which privacy is propagated
+	 * @param ec execution context
+	 * @param operatorType defining whether the instruction is aggregating the input
+	 * @return instruction with the merged privacy constraint propagated to it and output CPOperand
+	 */
+	private static Instruction mergePrivacyConstraintsFromInput(Instruction inst, ExecutionContext ec,
+		OperatorType operatorType){
+		return mergePrivacyConstraintsFromInput(inst, ec, getInputOperands(inst), getOutputOperands(inst), operatorType);
 	}
 
 	/**
-	 * Propagate privacy constraint to output if any of the elements are private.
-	 * Privacy constraint is always propagated to instruction.
-	 * @param inst aggregate instruction
+	 * Propagates privacy constraints from input to instruction and output CPOperand based on given operator type.
+	 * The propagation is done through the core propagation.
+	 * @param inst instruction for which privacy is propagated
 	 * @param ec execution context
-	 * @return updated instruction with propagated privacy constraints
+	 * @param inputs to instruction
+	 * @param outputs of instruction
+	 * @param operatorType defining whether the instruction is aggregating the input
+	 * @return instruction with the merged privacy constraint propagated to it and output CPOperand
 	 */
-	private static Instruction preprocessAggregateUnaryCPInstruction(AggregateUnaryCPInstruction inst, ExecutionContext ec){
-		PrivacyConstraint privacyConstraint = getInputPrivacyConstraint(ec, inst.input1);
-		if ( privacyConstraint != null ) {
-			inst.setPrivacyConstraint(privacyConstraint);
-			if ( inst.output != null){
-				//Only propagate to output if any of the elements are private. 
-				//It is an aggregation, hence the constraint can be removed in case of any other privacy level.
-				if(privacyConstraint.hasPrivateElements())
-					inst.output.setPrivacyConstraint(new PrivacyConstraint(PrivacyLevel.Private));
-			}
-		}
-		return inst;
-	}
-
-	/**
-	 * Throw exception if privacy constraints are activated or return instruction if privacy is not activated
-	 * @param inst instruction
-	 * @param ec execution context
-	 * @return instruction
-	 */
-	public static Instruction preprocessInstructionSimple(Instruction inst, ExecutionContext ec){
-		throwExceptionIfPrivacyActivated(inst);
-		return inst;
-	}
-
-
-	public static Instruction preprocessExternal(FunctionCallCPInstruction inst, ExecutionContext ec){
-		return mergePrivacyConstraintsFromInput(
-			inst, 
-			ec, 
-			inst.getInputs(), 
-			inst.getBoundOutputParamNames().toArray(new String[0])
-		);
-	}
-
-	public static Instruction preprocessMultiReturn(ComputationCPInstruction inst, ExecutionContext ec){
-		List<CPOperand> outputs = getOutputOperands(inst);
-		return mergePrivacyConstraintsFromInput(inst, ec, inst.getInputs(), outputs);
-	}
-
-	public static Instruction preprocessParameterizedBuiltin(ParameterizedBuiltinCPInstruction inst, ExecutionContext ec){
-		return mergePrivacyConstraintsFromInput(inst, ec, inst.getInputs(), inst.getOutput() );
-	}
-
-	private static Instruction mergePrivacyConstraintsFromInput(Instruction inst, ExecutionContext ec, CPOperand[] inputs, String[] outputNames){
+	private static Instruction mergePrivacyConstraintsFromInput(Instruction inst, ExecutionContext ec,
+		CPOperand[] inputs, List<CPOperand> outputs, OperatorType operatorType){
 		if ( inputs != null && inputs.length > 0 ){
 			PrivacyConstraint[] privacyConstraints = getInputPrivacyConstraints(ec, inputs);
 			if ( privacyConstraints != null ){
-				PrivacyConstraint mergedPrivacyConstraint = mergeNary(privacyConstraints);
-				inst.setPrivacyConstraint(mergedPrivacyConstraint);
-				if ( outputNames != null ){
-					for (String outputName : outputNames)
-						setOutputPrivacyConstraint(ec, mergedPrivacyConstraint, outputName);
-				}
-			}
-		}
-		return inst;
-	}
-
-	private static Instruction mergePrivacyConstraintsFromInput(Instruction inst, ExecutionContext ec, CPOperand[] inputs, CPOperand output){
-		return mergePrivacyConstraintsFromInput(inst, ec, inputs, getSingletonList(output));
-	}
-
-	private static Instruction mergePrivacyConstraintsFromInput(Instruction inst, ExecutionContext ec, CPOperand[] inputs, List<CPOperand> outputs){
-		if ( inputs != null && inputs.length > 0 ){
-			PrivacyConstraint[] privacyConstraints = getInputPrivacyConstraints(ec, inputs);
-			if ( privacyConstraints != null ){
-				PrivacyConstraint mergedPrivacyConstraint = mergeNary(privacyConstraints);
+				PrivacyConstraint mergedPrivacyConstraint = mergeNary(privacyConstraints, operatorType);
 				inst.setPrivacyConstraint(mergedPrivacyConstraint);
 				for ( CPOperand output : outputs ){
 					if ( output != null ) {
@@ -424,82 +394,30 @@ public class PrivacyPropagator
 		return inst;
 	}
 
-	public static Instruction preprocessBuiltinNary(BuiltinNaryCPInstruction inst, ExecutionContext ec){
-		return mergePrivacyConstraintsFromInput(inst, ec, inst.getInputs(), inst.getOutput() );
-	}
-
-	public static Instruction preprocessQuaternary(QuaternaryCPInstruction inst, ExecutionContext ec){
-		return mergePrivacyConstraintsFromInput(
-			inst, 
-			ec, 
-			new CPOperand[] {inst.input1,inst.input2,inst.input3,inst.getInput4()},
-			inst.output
-		);
-	}
-
-	public static Instruction preprocessTernaryCPInstruction(ComputationCPInstruction inst, ExecutionContext ec){
-		return mergePrivacyConstraintsFromInput(inst, ec, inst.getInputs(), inst.output);
-	}
-
-	public static Instruction preprocessUnaryCPInstruction(UnaryCPInstruction inst, ExecutionContext ec){
-		return propagateInputPrivacy(inst, ec, inst.input1, inst.output);
-	}
-
-	public static Instruction preprocessVariableCPInstruction(VariableCPInstruction inst, ExecutionContext ec){
-		switch ( inst.getVariableOpcode() ) {
-			case CreateVariable:
-				return propagateSecondInputPrivacy(inst, ec);
-			case AssignVariable:
-				return propagateInputPrivacy(inst, ec, inst.getInput1(), inst.getInput2());
-			case CopyVariable:
-			case MoveVariable:
-			case RemoveVariableAndFile:
-			case CastAsMatrixVariable:
-			case CastAsFrameVariable:
-			case Write:
-			case SetFileName:
-				return propagateFirstInputPrivacy(inst, ec);
-			case RemoveVariable:
-				return propagateAllInputPrivacy(inst, ec);
-			case CastAsScalarVariable:
-			case CastAsDoubleVariable:
-			case CastAsIntegerVariable:
-			case CastAsBooleanVariable:
-				return propagateCastAsScalarVariablePrivacy(inst, ec);
-			case Read:
-				return inst;
-			default:
-				throwExceptionIfPrivacyActivated(inst);
-				return inst;
+	/**
+	 * Throw exception if privacy constraint activated for instruction or for input to instruction.
+	 * @param inst covariance instruction
+	 * @param ec execution context
+	 * @return input instruction if privacy constraints are not activated
+	 */
+	private static Instruction throwExceptionIfInputOrInstPrivacy(Instruction inst, ExecutionContext ec){
+		throwExceptionIfPrivacyActivated(inst);
+		CPOperand[] inputOperands = getInputOperands(inst);
+		if (inputOperands != null){
+			for ( CPOperand input : inputOperands ){
+				PrivacyConstraint privacyConstraint = getInputPrivacyConstraint(ec, input);
+				if ( privacyConstraint != null){
+					throw new DMLPrivacyException("Input of instruction " + inst + " has privacy constraints activated, but the constraints are not propagated during preprocessing of instruction.");
+				}
+			}
 		}
+		return inst;
 	}
 
 	private static void throwExceptionIfPrivacyActivated(Instruction inst){
 		if ( inst.getPrivacyConstraint() != null && inst.getPrivacyConstraint().hasConstraints() ) {
 			throw new DMLPrivacyException("Instruction " + inst + " has privacy constraints activated, but the constraints are not propagated during preprocessing of instruction.");
 		}
-	}
-
-	/**
-	 * Propagate privacy from first input.
-	 * @param inst Instruction
-	 * @param ec execution context
-	 * @return instruction with or without privacy constraints
-	 */
-	private static Instruction propagateCastAsScalarVariablePrivacy(VariableCPInstruction inst, ExecutionContext ec){
-		inst = (VariableCPInstruction) propagateFirstInputPrivacy(inst, ec); 
-		return inst;
-	}
-
-	/**
-	 * Propagate privacy constraints from all inputs if privacy constraints are set.
-	 * @param inst instruction
-	 * @param ec execution context
-	 * @return instruction with or without privacy constraints
-	 */
-	private static Instruction propagateAllInputPrivacy(VariableCPInstruction inst, ExecutionContext ec){
-		return mergePrivacyConstraintsFromInput(
-			inst, ec, inst.getInputs().toArray(new CPOperand[0]), inst.getOutput());
 	}
 
 	/**
@@ -561,7 +479,12 @@ public class PrivacyPropagator
 		return null;
 	}
 
-
+	/**
+	 * Returns input privacy constraints as array or returns null if no privacy constraints are found in the inputs.
+	 * @param ec execution context
+	 * @param inputs from which privacy constraints are retrieved
+	 * @return array of privacy constraints from inputs
+	 */
 	private static PrivacyConstraint[] getInputPrivacyConstraints(ExecutionContext ec, CPOperand[] inputs){
 		if ( inputs != null && inputs.length > 0){
 			boolean privacyFound = false;
@@ -595,41 +518,29 @@ public class PrivacyPropagator
 	}
 
 	/**
-	 * Propagate privacy constraints to output variables
-	 * based on privacy constraint of CPOperand output in instruction
-	 * which has been set during privacy propagation preprocessing.
-	 * @param inst instruction for which privacy constraints are propagated
-	 * @param ec execution context
+	 * Returns input CPOperands of instruction or returns null if instruction type is not supported by this method.
+	 * @param inst instruction from which the inputs are retrieved
+	 * @return array of input CPOperands or null
 	 */
-	public static void postProcessInstruction(Instruction inst, ExecutionContext ec){
-		// if inst has output
-		List<CPOperand> instOutputs = getOutputOperands(inst);
-		if (!instOutputs.isEmpty()){
-			for ( CPOperand output : instOutputs ){
-				PrivacyConstraint outputPrivacyConstraint = output.getPrivacyConstraint();
-				if ( PrivacyUtils.someConstraintSetUnary(outputPrivacyConstraint) )
-					setOutputPrivacyConstraint(ec, outputPrivacyConstraint, output.getName());
-			}
-		}
+	private static CPOperand[] getInputOperands(Instruction inst){
+		if ( inst instanceof ComputationCPInstruction )
+			return ((ComputationCPInstruction)inst).getInputs();
+		if ( inst instanceof BuiltinNaryCPInstruction )
+			return ((BuiltinNaryCPInstruction)inst).getInputs();
+		if ( inst instanceof FunctionCallCPInstruction )
+			return ((FunctionCallCPInstruction)inst).getInputs();
+		if ( inst instanceof SqlCPInstruction )
+			return ((SqlCPInstruction)inst).getInputs();
+		else return null;
 	}
 
-	@SuppressWarnings("unused")
-	private static String[] getOutputVariableName(Instruction inst){
-		String[] instructionOutputNames = null;
-		// The order of the following statements is important
-		if ( inst instanceof MultiReturnParameterizedBuiltinCPInstruction )
-			instructionOutputNames = ((MultiReturnParameterizedBuiltinCPInstruction) inst).getOutputNames();
-		else if ( inst instanceof MultiReturnBuiltinCPInstruction )
-			instructionOutputNames = ((MultiReturnBuiltinCPInstruction) inst).getOutputNames();
-		else if ( inst instanceof ComputationCPInstruction )
-			instructionOutputNames = new String[]{((ComputationCPInstruction) inst).getOutputVariableName()};
-		else if ( inst instanceof VariableCPInstruction )
-			instructionOutputNames = new String[]{((VariableCPInstruction) inst).getOutputVariableName()};
-		else if ( inst instanceof SqlCPInstruction )
-			instructionOutputNames = new String[]{((SqlCPInstruction) inst).getOutputVariableName()};
-		return instructionOutputNames;
-	}
-
+	/**
+	 * Returns a list of output CPOperands of instruction or an empty list if the instruction has no outputs.
+	 * Note that this method needs to be extended as new instruction types are added, otherwise it will
+	 * return an empty list for instructions that may have outputs.
+	 * @param inst instruction from which the outputs are retrieved
+	 * @return list of outputs
+	 */
 	private static List<CPOperand> getOutputOperands(Instruction inst){
 		// The order of the following statements is important
 		if ( inst instanceof MultiReturnParameterizedBuiltinCPInstruction )

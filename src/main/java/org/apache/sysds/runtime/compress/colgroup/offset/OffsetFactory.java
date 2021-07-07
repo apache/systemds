@@ -22,11 +22,15 @@ package org.apache.sysds.runtime.compress.colgroup.offset;
 import java.io.DataInput;
 import java.io.IOException;
 
-import org.apache.sysds.runtime.DMLCompressionException;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.apache.sysds.runtime.compress.DMLCompressionException;
 
 public class OffsetFactory {
 
-	protected enum Types {
+	protected static final Log LOG = LogFactory.getLog(OffsetFactory.class.getName());
+
+	public enum OFF_TYPE {
 		BYTE, CHAR
 	}
 
@@ -38,7 +42,9 @@ public class OffsetFactory {
 	 * @return AOffset object containing offsets to the next value.
 	 */
 	public static AOffset create(int[] indexes, int nRows) {
-		if((float) nRows / (float) indexes.length < 256)
+		if(nRows < 0)
+			throw new DMLCompressionException("Invalid sizes given");
+		else if((float) nRows / indexes.length < 256)
 			return new OffsetByte(indexes);
 		else
 			return new OffsetChar(indexes);
@@ -52,7 +58,7 @@ public class OffsetFactory {
 	 * @throws IOException If the DataInput fails reading in the variables
 	 */
 	public static AOffset readIn(DataInput in) throws IOException {
-		Types t = Types.values()[in.readByte()];
+		OFF_TYPE t = OFF_TYPE.values()[in.readByte()];
 		switch(t) {
 			case BYTE:
 				return OffsetByte.readFields(in);
@@ -76,12 +82,16 @@ public class OffsetFactory {
 	 * @return The estimated size of an offset given the number of offsets and rows.
 	 */
 	public static long estimateInMemorySize(int size, int nRows) {
-		if(size == 0)
-			return 8; // size of null reference.
-		final int avgDiff = nRows / size;
-		if(avgDiff < 256)
-			return OffsetByte.getInMemorySize(size);
-		else
-			return OffsetChar.getInMemorySize(size);
+		if(size < 0 || nRows < 0)
+			throw new DMLCompressionException("Invalid sizes given: " + size + "  " + nRows);
+		else if(size == 0)
+			return 8; // If this is the case, then the compression results in constant col groups
+		else {
+			final int avgDiff = nRows / size;
+			if(avgDiff < 256)
+				return OffsetByte.getInMemorySize(size - 1);
+			else
+				return OffsetChar.getInMemorySize(size - 1);
+		}
 	}
 }

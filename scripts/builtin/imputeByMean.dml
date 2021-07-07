@@ -58,5 +58,5 @@ return(Matrix[Double] X)
   q = table(seq(1, ncol(cX)), removeEmpty(target=seq(1, ncol(mask)), margin="rows", 
     select=t(mask)), ncol(cX), ncol(X))
   X = (X_n %*% p) + (X_c %*% q)
-
+  print("imputeByMean: no of NaNs "+sum(is.na(X)))
 }

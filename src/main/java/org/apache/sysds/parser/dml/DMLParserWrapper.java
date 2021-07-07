@@ -220,7 +220,9 @@ public class DMLParserWrapper extends ParserWrapper
 			dmlPgm.createNamespace(DMLProgram.BUILTIN_NAMESPACE);
 		for( Entry<String, FunctionStatementBlock> e : fbuiltins.getFunctions().entrySet() )
 			dmlPgm.addFunctionStatementBlock(DMLProgram.BUILTIN_NAMESPACE, e.getKey(), e.getValue());
-
+		for( Entry<String, FunctionDictionary<FunctionStatementBlock>> e : validator.getParsedBuiltinFunctionsNs().entrySet() )
+			addFunctions(dmlPgm, e.getKey(), e.getValue());
+		
 		// add statements from main script file, as well as 
 		// functions from imports and dml-bodied builtin functions
 		for(StatementContext stmtCtx : ast.blocks) {
@@ -235,7 +237,7 @@ public class DMLParserWrapper extends ParserWrapper
 				// Handle import statements separately
 				if(stmtCtx.info.namespaces != null) {
 					// Add the DMLProgram entries into current program
-					for(Map.Entry<String, FunctionDictionary<FunctionStatementBlock>> e : stmtCtx.info.namespaces.entrySet()) {
+					for(Entry<String, FunctionDictionary<FunctionStatementBlock>> e : stmtCtx.info.namespaces.entrySet()) {
 						addFunctions(dmlPgm, e.getKey(), e.getValue());
 					}
 				}

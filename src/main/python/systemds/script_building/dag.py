@@ -24,6 +24,8 @@ from enum import Enum, auto
 from typing import TYPE_CHECKING, Any, Dict, Sequence, Union, Optional
 
 from py4j.java_gateway import JavaObject, JVMView
+
+import systemds.operator
 from systemds.utils.consts import VALID_INPUT_TYPES
 
 if TYPE_CHECKING:
@@ -36,11 +38,13 @@ class OutputType(Enum):
     DOUBLE = auto()
     FRAME = auto()
     LIST = auto()
+    MULTI_RETURN = auto()
     MATRIX = auto()
     NONE = auto()
     SCALAR = auto()
     STRING = auto()
     IMPORT = auto()
+    UNKNOWN = auto()
 
     @staticmethod
     def from_str(label: Union[str, VALID_INPUT_TYPES]):
@@ -68,18 +72,36 @@ class OutputType(Enum):
 
         return OutputType.NONE
 
+    @staticmethod
+    def from_type(obj):
+        if obj is not None:
+            if isinstance(obj, systemds.operator.Matrix):
+                return OutputType.MATRIX
+            elif isinstance(obj, systemds.operator.Frame):
+                return OutputType.FRAME
+            elif isinstance(obj, systemds.operator.Scalar):
+                return OutputType.SCALAR
+            elif isinstance(obj, float):  # TODO is this correct?
+                return OutputType.DOUBLE
+            elif isinstance(obj, str):
+                return OutputType.STRING
+            elif isinstance(obj, systemds.operator.List):
+                return OutputType.LIST
+
+        return OutputType.NONE
+
 
 class DAGNode(ABC):
     """A Node in the directed-acyclic-graph (DAG) defining all operations."""
     sds_context: 'SystemDSContext'
     _unnamed_input_nodes: Sequence[Union['DAGNode', str, int, float, bool]]
     _named_input_nodes: Dict[str, Union['DAGNode', str, int, float, bool]]
+    _named_output_nodes: Dict[str, Union['DAGNode', str, int, float, bool]]
     _source_node: Optional["DAGNode"]
     _output_type: OutputType
     _script: Optional["DMLScript"]
     _is_python_local_data: bool
-    _number_of_outputs: int
-    _already_added: bool
+    _dml_name: str
 
     def compute(self, verbose: bool = False, lineage: bool = False) -> Any:
         """Get result of this operation. Builds the dml script and executes it in SystemDS, before this method is called
@@ -126,20 +148,16 @@ class DAGNode(ABC):
         return self._named_input_nodes
 
     @property
+    def named_output_nodes(self):
+        return self._named_output_nodes
+
+    @property
     def is_python_local_data(self):
         return self._is_python_local_data
 
     @property
-    def number_of_outputs(self):
-        return self._number_of_outputs
-
-    @property
     def output_type(self):
         return self._output_type
-    
-    @property
-    def already_added(self):
-        return self._already_added
 
     @property
     def script(self):
@@ -148,3 +166,11 @@ class DAGNode(ABC):
     @property
     def script_str(self):
         return self._script.dml_script
+
+    @property
+    def dml_name(self):
+        return self._dml_name
+
+    @dml_name.setter
+    def dml_name(self, value):
+        self._dml_name = value

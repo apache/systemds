@@ -24,17 +24,20 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.util.Arrays;
 
+import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory.MAP_TYPE;
 import org.apache.sysds.utils.MemoryEstimates;
 
 public class MapToByte extends AMapToData {
 
 	private final byte[] _data;
 
-	public MapToByte(int size) {
+	public MapToByte(int unique, int size) {
+		super(unique);
 		_data = new byte[size];
 	}
 
-	private MapToByte(byte[] data) {
+	private MapToByte(int unique, byte[] data) {
+		super(unique);
 		_data = data;
 	}
 
@@ -61,7 +64,7 @@ public class MapToByte extends AMapToData {
 
 	@Override
 	public long getExactSizeOnDisk() {
-		return 4 + _data.length;
+		return 1 + 4 + 4 + _data.length;
 	}
 
 	@Override
@@ -76,16 +79,23 @@ public class MapToByte extends AMapToData {
 
 	@Override
 	public void write(DataOutput out) throws IOException {
+		out.writeByte(MAP_TYPE.BYTE.ordinal());
+		out.writeInt(getUnique());
 		out.writeInt(_data.length);
 		for(int i = 0; i < _data.length; i++)
 			out.writeByte(_data[i]);
 	}
 
 	public static MapToByte readFields(DataInput in) throws IOException {
+		int unique = in.readInt();
 		final int length = in.readInt();
 		final byte[] data = new byte[length];
 		for(int i = 0; i < length; i++)
 			data[i] = in.readByte();
-		return new MapToByte(data);
+		return new MapToByte(unique, data);
+	}
+
+	public byte[] getBytes(){
+		return _data;
 	}
 }

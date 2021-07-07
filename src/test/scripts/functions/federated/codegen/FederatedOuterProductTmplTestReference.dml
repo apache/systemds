@@ -1,0 +1,106 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+test_num = $in_test_num;
+row_part = $in_rp;
+
+if(row_part) {
+  X = rbind(read($in_X1), read($in_X2));
+}
+else {
+  X = cbind(read($in_X1), read($in_X2));
+}
+
+if(test_num == 1) { # wcemm
+  # X ... 2000x2000 matrix
+
+  U = matrix(seq(1, 20000), rows=2000, cols=10);
+  V = matrix(seq(20001, 40000), rows=2000, cols=10);
+  eps = 0.1;
+  Z = as.matrix(sum(X * log(U %*% t(V) + eps)));
+}
+else if(test_num == 2) { # wdivmm
+  # X ... 4000x2000 matrix
+  
+  U = matrix(seq(1, 40000), rows=4000, cols=10);
+  V = matrix(seq(51, 20050), rows=2000, cols=10);
+  eps = 0.1;
+  Z = t(t(U) %*% (X / (U %*% t(V) + eps)));
+}
+else if(test_num == 3) { # wdivmmbasic
+  # X 1000x1000 matrix
+
+  U = matrix(seq(1, 10000), rows=1000, cols=10);
+  V = matrix(seq(-7499, 2500), rows=1000, cols=10);
+  eps = 0.1;
+  Z = X / ((U %*% t(V)) + eps);
+}
+else if(test_num == 4) { # wdivmmNeq
+  # X ...4000x2000 matrix
+  
+  U = matrix(seq(1, 40000), rows=4000, cols=10) / 1000;
+  V = matrix(seq(501, 20500), rows=2000, cols=10) / 1000;
+  eps = 0.1;
+  Z = ((X!=0) * (U %*% t(V) + eps)) %*% V;
+}
+else if(test_num == 5) { # wdivmmRight
+  # X ... 4000x2000 matrix
+
+  U = matrix(seq(1, 40000), rows=4000, cols=10);
+  V = matrix(seq(1, 20000), rows=2000, cols=10);
+  eps = 0.1;
+  Z = (X / (U %*% t(V))) %*% V;
+}
+else if(test_num == 6) { # wdivmmRightNotranspose
+  # X ... 4000x2000 matrix
+  
+  U = matrix(seq(1, 40000), rows=4000, cols=10);
+  V = matrix(seq(-1, 19998), rows=10, cols=2000);
+  eps = 0.1;
+  Z = (X / ((U %*% V) + eps)) %*% t(V);
+}
+else if(test_num == 7) { # wdivmmTransposeOut
+  # X ... 2000x2000 matrix
+
+  U = matrix(seq(600, 20599), rows=2000, cols=10);
+  V = matrix(seq(0, 19999), rows=10, cols=2000);
+  eps = 0.1;
+  Z = (t(U) %*% (X / ((U %*% V) + eps)));
+}
+else if(test_num == 8) { # wsigmoid
+  # X ... 1000x2000 matrix
+
+  U = matrix(seq(1, 10000), rows=1000, cols=10);
+  V = matrix(seq(1, 20000), rows=2000, cols=10);
+  eps = 0.1;
+  Z = X * (1 / (1 + exp(-(U %*% t(V)))));
+}
+else if(test_num == 9) { #wdivmmLeftEps
+  # X ... 1000x2000 matrix
+
+  U = matrix(seq(1, 10000), rows=1000, cols=10);
+  V = matrix(seq(1, 20000), rows=2000, cols=10);
+  eps = 0.4;
+
+  Z = t(t(U) %*% (X / (U %*% t(V) + eps)));
+}
+
+write(Z, $out_Z);

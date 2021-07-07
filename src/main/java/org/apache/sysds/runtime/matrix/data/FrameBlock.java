@@ -651,6 +651,20 @@ public class FrameBlock implements CacheBlock, Externalizable  {
 	}
 
 	/**
+	 * Get a row iterator over the frame where all selected fields are
+	 * encoded as strings independent of their value types.
+	 *
+	 * @param rl lower row index
+	 * @param ru upper row index
+	 * @param colID columnID, 1-based
+	 * @return string array iterator
+	 */
+	public Iterator<String[]> getStringRowIterator(int rl, int ru, int colID) {
+		return new StringRowIterator(rl, ru, new int[] {colID});
+	}
+
+
+	/**
 	 * Get a row iterator over the frame where all fields are encoded
 	 * as boxed objects according to their value types.
 	 *
@@ -726,14 +740,18 @@ public class FrameBlock implements CacheBlock, Externalizable  {
 		out.writeBoolean(isDefaultMeta);
 		//write columns (value type, data)
 		for( int j=0; j<getNumColumns(); j++ ) {
-			out.writeByte(_schema[j].ordinal());
+			byte type = (byte)_schema[j].ordinal();
+			if( _coldata == null || _coldata[j] == null )
+				type *= -1; //negative to indicate non-existence
+			out.writeByte(type);
 			if( !isDefaultMeta ) {
 				out.writeUTF(getColumnName(j));
 				out.writeLong(_colmeta[j].getNumDistinct());
 				out.writeUTF( (_colmeta[j].getMvValue()!=null) ?
-						_colmeta[j].getMvValue() : "" );
+					_colmeta[j].getMvValue() : "" );
 			}
-			_coldata[j].write(out);
+			if( type >= 0 )
+				_coldata[j].write(out);
 		}
 	}
 
@@ -745,34 +763,37 @@ public class FrameBlock implements CacheBlock, Externalizable  {
 		boolean isDefaultMeta = in.readBoolean();
 		//allocate schema/meta data arrays
 		_schema = (_schema!=null && _schema.length==numCols) ?
-				_schema : new ValueType[numCols];
+			_schema : new ValueType[numCols];
 		_colnames = (_colnames != null && _colnames.length==numCols) ?
-				_colnames : new String[numCols];
+			_colnames : new String[numCols];
 		_colmeta = (_colmeta != null && _colmeta.length==numCols) ?
-				_colmeta : new ColumnMetadata[numCols];
+			_colmeta : new ColumnMetadata[numCols];
 		_coldata = (_coldata!=null && _coldata.length==numCols) ?
-				_coldata : new Array[numCols];
+			_coldata : new Array[numCols];
 		//read columns (value type, meta, data)
 		for( int j=0; j<numCols; j++ ) {
-			ValueType vt = ValueType.values()[in.readByte()];
+			byte type = in.readByte();
+			ValueType vt = ValueType.values()[Math.abs(type)];
 			String name = isDefaultMeta ? createColName(j) : in.readUTF();
 			long ndistinct = isDefaultMeta ? 0 : in.readLong();
 			String mvvalue = isDefaultMeta ? null : in.readUTF();
 			Array arr = null;
-			switch( vt ) {
-				case STRING:  arr = new StringArray(new String[_numRows]); break;
-				case BOOLEAN: arr = new BooleanArray(new boolean[_numRows]); break;
-				case INT64:     arr = new LongArray(new long[_numRows]); break;
-				case FP64:  arr = new DoubleArray(new double[_numRows]); break;
-				case INT32: arr = new IntegerArray(new int[_numRows]); break;
-				case FP32:  arr = new FloatArray(new float[_numRows]); break;
-				default: throw new IOException("Unsupported value type: "+vt);
+			if( type > 0 ) { //non-empty column
+				switch( vt ) {
+					case STRING:  arr = new StringArray(new String[_numRows]); break;
+					case BOOLEAN: arr = new BooleanArray(new boolean[_numRows]); break;
+					case INT64:     arr = new LongArray(new long[_numRows]); break;
+					case FP64:  arr = new DoubleArray(new double[_numRows]); break;
+					case INT32: arr = new IntegerArray(new int[_numRows]); break;
+					case FP32:  arr = new FloatArray(new float[_numRows]); break;
+					default: throw new IOException("Unsupported value type: "+vt);
+				}
+				arr.readFields(in);
 			}
-			arr.readFields(in);
 			_schema[j] = vt;
 			_colnames[j] = name;
 			_colmeta[j] = new ColumnMetadata(ndistinct,
-					(mvvalue==null || mvvalue.isEmpty()) ? null : mvvalue);
+				(mvvalue==null || mvvalue.isEmpty()) ? null : mvvalue);
 			_coldata[j] = arr;
 		}
 		_msize = -1;
@@ -2191,6 +2212,7 @@ public class FrameBlock implements CacheBlock, Externalizable  {
 
 		// construct class code
 		sb.append("import org.apache.sysds.runtime.util.UtilFunctions;\n");
+		sb.append("import org.apache.sysds.runtime.util.PorterStemmer;\n");
 		sb.append("import org.apache.sysds.runtime.matrix.data.FrameBlock.FrameMapFunction;\n");
 		sb.append("public class " + cname + " extends FrameMapFunction {\n");
 		if(varname.length == 1) {

@@ -22,22 +22,25 @@ package org.apache.sysds.runtime.compress.cocode;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.CompressionSettings;
+import org.apache.sysds.runtime.compress.cost.ICostEstimate;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeEstimator;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfo;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup;
+import org.apache.sysds.runtime.compress.utils.Util;
 
 public abstract class AColumnCoCoder {
 
 	protected static final Log LOG = LogFactory.getLog(AColumnCoCoder.class.getName());
 
-	protected CompressedSizeEstimator _est;
-	protected CompressionSettings _cs;
-	protected int _numRows;
+	final protected CompressedSizeEstimator _sest;
+	final protected ICostEstimate _cest;
+	final protected CompressionSettings _cs;
 
-	protected AColumnCoCoder(CompressedSizeEstimator sizeEstimator, CompressionSettings cs, int numRows) {
-		_est = sizeEstimator;
+	protected AColumnCoCoder(CompressedSizeEstimator sizeEstimator, ICostEstimate costEstimator,
+		CompressionSettings cs) {
+		_sest = sizeEstimator;
+		_cest = costEstimator;
 		_cs = cs;
-		_numRows = numRows;
 	}
 
 	/**
@@ -56,20 +59,22 @@ public abstract class AColumnCoCoder {
 
 	protected CompressedSizeInfoColGroup joinWithAnalysis(CompressedSizeInfoColGroup lhs,
 		CompressedSizeInfoColGroup rhs) {
-		int[] joined = Util.join(lhs.getColumns(), rhs.getColumns());
-		return _est.estimateCompressedColGroupSize(joined);
+		return _sest.estimateJoinCompressedSize(lhs, rhs);
 	}
 
 	protected CompressedSizeInfoColGroup joinWithoutAnalysis(CompressedSizeInfoColGroup lhs,
 		CompressedSizeInfoColGroup rhs) {
 		int[] joined = Util.join(lhs.getColumns(), rhs.getColumns());
 		int numVals = lhs.getNumVals() + rhs.getNumVals();
-		return new CompressedSizeInfoColGroup(joined, numVals, _numRows);
+		if(numVals < 0 || numVals > _sest.getNumRows())
+			return null;
+		else
+			return new CompressedSizeInfoColGroup(joined, numVals, _sest.getNumRows());
 	}
 
 	protected CompressedSizeInfoColGroup analyze(CompressedSizeInfoColGroup g) {
 		if(g.getBestCompressionType() == null)
-			return _est.estimateCompressedColGroupSize(g.getColumns());
+			return _sest.estimateCompressedColGroupSize(g.getColumns());
 		else
 			return g;
 	}

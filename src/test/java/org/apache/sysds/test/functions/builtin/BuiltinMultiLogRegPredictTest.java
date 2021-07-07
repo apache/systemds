@@ -21,7 +21,7 @@ package org.apache.sysds.test.functions.builtin;
 
 import org.junit.Test;
 import org.apache.sysds.common.Types;
-import org.apache.sysds.lops.LopProperties;
+import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.runtime.matrix.data.MatrixValue;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
@@ -47,16 +47,16 @@ public class BuiltinMultiLogRegPredictTest extends AutomatedTestBase {
 
 	@Test
 	public void testLmPredictMatrixDenseCP() {
-		runPredictionTest(false, LopProperties.ExecType.CP);
+		runPredictionTest(false, ExecType.CP);
 	}
 
 	@Test
 	public void testLmPredictMatrixSparseCP() {
-		runPredictionTest(true, LopProperties.ExecType.CP);
+		runPredictionTest(true, ExecType.CP);
 	}
 
 
-	private void runPredictionTest(boolean sparse, LopProperties.ExecType instType)
+	private void runPredictionTest(boolean sparse, ExecType instType)
 	{
 		Types.ExecMode platformOld = setExecMode(instType);
 

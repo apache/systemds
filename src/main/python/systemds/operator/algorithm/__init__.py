@@ -41,17 +41,26 @@ from .builtin.dbscan import dbscan
 from .builtin.decisionTree import decisionTree 
 from .builtin.discoverFD import discoverFD 
 from .builtin.dist import dist 
+from .builtin.executePipeline import executePipeline 
 from .builtin.gaussianClassifier import gaussianClassifier 
 from .builtin.getAccuracy import getAccuracy 
 from .builtin.glm import glm 
 from .builtin.gmm import gmm 
 from .builtin.gmmPredict import gmmPredict 
 from .builtin.gnmf import gnmf 
-from .builtin.gridSearch import gridSearch 
+from .builtin.hospitalResidencyMatch import hospitalResidencyMatch 
 from .builtin.hyperband import hyperband 
 from .builtin.img_brightness import img_brightness 
 from .builtin.img_crop import img_crop 
+from .builtin.img_cutout import img_cutout 
+from .builtin.img_invert import img_invert 
 from .builtin.img_mirror import img_mirror 
+from .builtin.img_posterize import img_posterize 
+from .builtin.img_rotate import img_rotate 
+from .builtin.img_sample_pairing import img_sample_pairing 
+from .builtin.img_shear import img_shear 
+from .builtin.img_transform import img_transform 
+from .builtin.img_translate import img_translate 
 from .builtin.imputeByFD import imputeByFD 
 from .builtin.imputeByMean import imputeByMean 
 from .builtin.imputeByMedian import imputeByMedian 
@@ -74,7 +83,8 @@ from .builtin.msvmPredict import msvmPredict
 from .builtin.multiLogReg import multiLogReg 
 from .builtin.multiLogRegPredict import multiLogRegPredict 
 from .builtin.na_locf import na_locf 
-from .builtin.naivebayes import naivebayes 
+from .builtin.naiveBayes import naiveBayes 
+from .builtin.naiveBayesPredict import naiveBayesPredict 
 from .builtin.normalize import normalize 
 from .builtin.outlier import outlier 
 from .builtin.outlierByArima import outlierByArima 
@@ -91,8 +101,10 @@ from .builtin.sherlockPredict import sherlockPredict
 from .builtin.sigmoid import sigmoid 
 from .builtin.slicefinder import slicefinder 
 from .builtin.smote import smote 
+from .builtin.softmax import softmax 
 from .builtin.split import split 
 from .builtin.splitBalanced import splitBalanced 
+from .builtin.stableMarriage import stableMarriage 
 from .builtin.statsNA import statsNA 
 from .builtin.steplm import steplm 
 from .builtin.toOneHot import toOneHot 
@@ -103,4 +115,96 @@ from .builtin.winsorize import winsorize
 from .builtin.xdummy1 import xdummy1 
 from .builtin.xdummy2 import xdummy2 
 
-__all__ = [abstain, als, alsCG, alsDS, alsPredict, alsTopkPredict, arima, bandit, bivar, components, confusionMatrix, cor, cox, cspline, csplineDS, cvlm, dbscan, decisionTree, discoverFD, dist, gaussianClassifier, getAccuracy, glm, gmm, gmmPredict, gnmf, gridSearch, hyperband, img_brightness, img_crop, img_mirror, imputeByFD, imputeByMean, imputeByMedian, imputeByMode, intersect, km, kmeans, kmeansPredict, knnbf, l2svm, l2svmPredict, lasso, lm, lmCG, lmDS, lmPredict, logSumExp, msvm, msvmPredict, multiLogReg, multiLogRegPredict, na_locf, naivebayes, normalize, outlier, outlierByArima, outlierByIQR, outlierBySd, pca, pnmf, ppca, randomForest, scale, scaleApply, sherlock, sherlockPredict, sigmoid, slicefinder, smote, split, splitBalanced, statsNA, steplm, toOneHot, tomeklink, univar, vectorToCsv, winsorize, xdummy1, xdummy2] 
+__all__ = ['abstain',
+ 'als',
+ 'alsCG',
+ 'alsDS',
+ 'alsPredict',
+ 'alsTopkPredict',
+ 'arima',
+ 'bandit',
+ 'bivar',
+ 'components',
+ 'confusionMatrix',
+ 'cor',
+ 'cox',
+ 'cspline',
+ 'csplineDS',
+ 'cvlm',
+ 'dbscan',
+ 'decisionTree',
+ 'discoverFD',
+ 'dist',
+ 'executePipeline',
+ 'gaussianClassifier',
+ 'getAccuracy',
+ 'glm',
+ 'gmm',
+ 'gmmPredict',
+ 'gnmf',
+ 'hospitalResidencyMatch',
+ 'hyperband',
+ 'img_brightness',
+ 'img_crop',
+ 'img_cutout',
+ 'img_invert',
+ 'img_mirror',
+ 'img_posterize',
+ 'img_rotate',
+ 'img_sample_pairing',
+ 'img_shear',
+ 'img_transform',
+ 'img_translate',
+ 'imputeByFD',
+ 'imputeByMean',
+ 'imputeByMedian',
+ 'imputeByMode',
+ 'intersect',
+ 'km',
+ 'kmeans',
+ 'kmeansPredict',
+ 'knnbf',
+ 'l2svm',
+ 'l2svmPredict',
+ 'lasso',
+ 'lm',
+ 'lmCG',
+ 'lmDS',
+ 'lmPredict',
+ 'logSumExp',
+ 'msvm',
+ 'msvmPredict',
+ 'multiLogReg',
+ 'multiLogRegPredict',
+ 'na_locf',
+ 'naiveBayes',
+ 'naiveBayesPredict',
+ 'normalize',
+ 'outlier',
+ 'outlierByArima',
+ 'outlierByIQR',
+ 'outlierBySd',
+ 'pca',
+ 'pnmf',
+ 'ppca',
+ 'randomForest',
+ 'scale',
+ 'scaleApply',
+ 'sherlock',
+ 'sherlockPredict',
+ 'sigmoid',
+ 'slicefinder',
+ 'smote',
+ 'softmax',
+ 'split',
+ 'splitBalanced',
+ 'stableMarriage',
+ 'statsNA',
+ 'steplm',
+ 'toOneHot',
+ 'tomeklink',
+ 'univar',
+ 'vectorToCsv',
+ 'winsorize',
+ 'xdummy1',
+ 'xdummy2'] 

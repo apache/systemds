@@ -23,10 +23,6 @@ package org.apache.sysds.test.component.compress;
  * Class Containing Testing Constants, for easy enumeration of typical Parameters classes
  */
 public class TestConstants {
-	private static final double[] sparsityValues = {1.0, 0.1, 0.01, 0.0, 1.0};
-
-	private static final int[] mins = {-4, -127 * 2};
-	private static final int[] maxs = {5, 127};
 
 	public enum SparsityType {
 		DENSE, SPARSE, ULTRA_SPARSE, EMPTY, FULL
@@ -38,6 +34,7 @@ public class TestConstants {
 		RAND_ROUND, // Values rounded to nearest whole numbers.
 		OLE_COMPRESSIBLE, // Ideal inputs for OLE Compression.
 		RLE_COMPRESSIBLE, // Ideal inputs for RLE Compression.
+		ONE_HOT_ENCODED,
 	}
 
 	public enum MatrixTypology {
@@ -53,11 +50,11 @@ public class TestConstants {
 	}
 
 	public enum ValueRange {
-		SMALL, LARGE, BYTE, BOOLEAN, NEGATIVE
+		SMALL, LARGE, BYTE, BOOLEAN, NEGATIVE, POSITIVE
 	}
 
 	public enum OverLapping {
-		COL, MATRIX, NONE, MATRIX_PLUS, MATRIX_MULT_NEGATIVE, SQUASH, PLUS;
+		COL, MATRIX, NONE, MATRIX_PLUS, MATRIX_MULT_NEGATIVE, SQUASH, PLUS, APPEND_EMPTY, APPEND_CONST;
 
 		public static boolean effectOnOutput(OverLapping opcode) {
 			switch(opcode) {
@@ -76,15 +73,15 @@ public class TestConstants {
 	public static double getSparsityValue(SparsityType sparsityType) {
 		switch(sparsityType) {
 			case DENSE:
-				return sparsityValues[0];
+				return 0.8;
 			case SPARSE:
-				return sparsityValues[1];
+				return 0.1;
 			case ULTRA_SPARSE:
-				return sparsityValues[2];
+				return 0.01;
 			case EMPTY:
-				return sparsityValues[3];
+				return 0.0;
 			case FULL:
-				return sparsityValues[4];
+				return 1.0;
 			default:
 				throw new RuntimeException("Invalid Sparsity type");
 		}
@@ -93,9 +90,9 @@ public class TestConstants {
 	public static int getMinRangeValue(ValueRange valueRange) {
 		switch(valueRange) {
 			case SMALL:
-				return mins[0];
+				return -1;
 			case LARGE:
-				return mins[1];
+				return -127 * 2;
 			case BYTE:
 				return -127;
 			case BOOLEAN:
@@ -110,9 +107,9 @@ public class TestConstants {
 	public static int getMaxRangeValue(ValueRange valueRange) {
 		switch(valueRange) {
 			case SMALL:
-				return maxs[0];
+				return 5;
 			case LARGE:
-				return maxs[1];
+				return -127;
 			case BYTE:
 				return 127;
 			case BOOLEAN:
@@ -154,11 +151,11 @@ public class TestConstants {
 			case SMALL:
 				return 20;
 			case LARGE:
-				return 20;
+				return 8;
 			case FEW_ROW:
 				return 13;
 			case FEW_COL:
-				return 1;
+				return 3;
 			case SINGLE_ROW:
 				return 321;
 			case SINGLE_COL:

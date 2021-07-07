@@ -21,4 +21,4 @@
 
 A = read($A)
 r = rowMins(A)
-print(toString(r, rows = 1, cols = 1))
+print(sum(r))

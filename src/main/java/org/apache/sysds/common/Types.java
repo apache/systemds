@@ -39,7 +39,7 @@ public class Types
 	 * Execution type of individual operations.
 	 */
 	public enum ExecType { CP, CP_FILE, SPARK, GPU, FED, INVALID }
-	
+
 	/**
 	 * Data types (tensor, matrix, scalar, frame, object, unknown).
 	 */
@@ -54,6 +54,9 @@ public class Types
 		}
 		public boolean isFrame() {
 			return this == FRAME;
+		}
+		public boolean isMatrixOrFrame() {
+			return isMatrix() | isFrame();
 		}
 		public boolean isScalar() {
 			return this == SCALAR;
@@ -106,6 +109,7 @@ public class Types
 				case "INT":      return INT64;
 				case "BOOLEAN":  return BOOLEAN;
 				case "STRING":   return STRING;
+				case "UNKNOWN":  return UNKNOWN;
 				default:
 					throw new DMLRuntimeException("Unknown value type: "+value);
 			}
@@ -524,7 +528,8 @@ public class Types
 		JSONL,  // text nested JSON (Line) representation
 		BINARY, // binary block representation (dense/sparse/ultra-sparse)
 		FEDERATED, // A federated matrix
-		PROTO;  // protocol buffer representation
+		PROTO,  // protocol buffer representation
+		HDF5; // Hierarchical Data Format (HDF)
 		
 		public boolean isIJV() {
 			return this == TEXT || this == MM;

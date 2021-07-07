@@ -95,6 +95,8 @@ public class LineageCacheConfig
 	public static double FSREAD_SPARSE = 400;
 	public static double FSWRITE_DENSE = 450;
 	public static double FSWRITE_SPARSE = 225;
+	public static double D2HCOPY = 1500;
+	public static double D2HMAXBANDWIDTH = 8192;
 	
 	private enum CachedItemHead {
 		TSMM,
@@ -113,6 +115,8 @@ public class LineageCacheConfig
 	private static LineageCachePolicy _cachepolicy = null;
 	// Weights for scoring components (computeTime/size, LRU timestamp, DAG height)
 	protected static double[] WEIGHTS = {1, 0, 0};
+	public static boolean CONCURRENTGPUEVICTION = false;
+	public static volatile boolean STOPBACKGROUNDEVICTION = false;
 
 	protected enum LineageCacheStatus {
 		EMPTY,     //Placeholder with no data. Cannot be evicted.
@@ -191,9 +195,9 @@ public class LineageCacheConfig
 	}
 
 	public static boolean isReusable (Instruction inst, ExecutionContext ec) {
-		boolean insttype = inst instanceof ComputationCPInstruction 
+		boolean insttype = (inst instanceof ComputationCPInstruction 
 			|| inst instanceof ComputationFEDInstruction
-			|| inst instanceof GPUInstruction
+			|| inst instanceof GPUInstruction)
 			&& !(inst instanceof ListIndexingCPInstruction);
 		boolean rightop = (ArrayUtils.contains(REUSE_OPCODES, inst.getOpcode())
 			|| (inst.getOpcode().equals("append") && isVectorAppend(inst, ec))

@@ -77,7 +77,7 @@ public class RewriteCompressedReblock extends StatementBlockRewriteRule {
 		// parse compression config
 		DMLConfig conf = ConfigurationManager.getDMLConfig();
 		CompressConfig compress = CompressConfig.valueOf(conf.getTextValue(DMLConfig.COMPRESSED_LINALG).toUpperCase());
-
+		
 		// perform compressed reblock rewrite
 		if(compress.isEnabled()) {
 			Hop.resetVisitStatus(sb.getHops());
@@ -105,35 +105,35 @@ public class RewriteCompressedReblock extends StatementBlockRewriteRule {
 		switch(compress) {
 			case TRUE:
 				if(satisfiesCompressionCondition(hop))
-					hop.setRequiresCompression(true);
+					hop.setRequiresCompression();
 				break;
 			case AUTO:
 				if(OptimizerUtils.isSparkExecutionMode() && satisfiesAutoCompressionCondition(hop, prog))
-					hop.setRequiresCompression(true);
+					hop.setRequiresCompression();
 				break;
 			case COST:
 				if(satisfiesCostCompressionCondition(hop, prog))
-					hop.setRequiresCompression(true);
+					hop.setRequiresCompression();
 				break;
 			default:
 				break;
 		}
 
 		if(satisfiesDeCompressionCondition(hop)) {
-			hop.setRequiresDeCompression(true);
+			hop.setRequiresDeCompression();
 		}
 
 		hop.setVisited();
 	}
 
-	private static boolean satisfiesSizeConstraintsForCompression(Hop hop) {
+	public static boolean satisfiesSizeConstraintsForCompression(Hop hop) {
 		if(hop.getDim2() >= 1) {
 			return (hop.getDim1() >= 1000 && hop.getDim2() < 100) || hop.getDim1() / hop.getDim2() >= 75;
 		}
 		return false;
 	}
 
-	private static boolean satisfiesCompressionCondition(Hop hop) {
+	public static boolean satisfiesCompressionCondition(Hop hop) {
 		boolean satisfies = false;
 		if(satisfiesSizeConstraintsForCompression(hop))
 			satisfies |= HopRewriteUtils.isData(hop, OpOpData.PERSISTENTREAD);

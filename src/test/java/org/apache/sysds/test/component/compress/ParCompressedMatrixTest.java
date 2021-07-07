@@ -19,10 +19,17 @@
 
 package org.apache.sysds.test.component.compress;
 
+import java.util.Collection;
+
+import org.apache.commons.math3.random.Well1024a;
+import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.CompressionSettingsBuilder;
+import org.apache.sysds.runtime.compress.colgroup.AColGroup.CompressionType;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
+import org.apache.sysds.runtime.matrix.data.LibMatrixDatagen;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.matrix.data.RandomMatrixGenerator;
 import org.apache.sysds.runtime.matrix.operators.AggregateBinaryOperator;
 import org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator;
 import org.apache.sysds.runtime.util.DataConverter;
@@ -40,16 +47,17 @@ import org.junit.runners.Parameterized;
 public class ParCompressedMatrixTest extends AbstractCompressedUnaryTests {
 
 	public ParCompressedMatrixTest(SparsityType sparType, ValueType valType, ValueRange valRange,
-		CompressionSettingsBuilder compressionSettings, MatrixTypology matrixTypology, OverLapping ov) {
-		super(sparType, valType, valRange, compressionSettings, matrixTypology, ov, 2);
+		CompressionSettingsBuilder compressionSettings, MatrixTypology matrixTypology, OverLapping ov,
+		Collection<CompressionType> ct) {
+		super(sparType, valType, valRange, compressionSettings, matrixTypology, ov, 2, ct);
 		// super(sparType, valType, valRange, compressionSettings, matrixTypology, ov,
 		// InfrastructureAnalyzer.getLocalParallelism());
 	}
 
 	@Override
-	public void testUnaryOperators(AggType aggType) {
+	public void testUnaryOperators(AggType aggType, boolean inCP) {
 		AggregateUnaryOperator auop = super.getUnaryOperator(aggType, _k);
-		testUnaryOperators(aggType, auop);
+		testUnaryOperators(aggType, auop, inCP);
 	}
 
 	@Test
@@ -77,6 +85,24 @@ public class ParCompressedMatrixTest extends AbstractCompressedUnaryTests {
 			e.printStackTrace();
 			throw new RuntimeException(this.toString() + "\n" + e.getMessage(), e);
 		}
+	}
+
+	@Test
+	public void testRandOperationsInPlace() {
+		if(!(cmb instanceof CompressedMatrixBlock) && rows * cols > 10000)
+			return;
+		RandomMatrixGenerator rgen = new RandomMatrixGenerator("uniform", rows, cols,
+			ConfigurationManager.getBlocksize(), sparsity, min, max);
+		Well1024a bigrand = null;
+		if(!LibMatrixDatagen.isShortcutRandOperation(min, max, sparsity, RandomMatrixGenerator.PDF.UNIFORM))
+			bigrand = LibMatrixDatagen.setupSeedsForRand(seed);
+		MatrixBlock ret1 = cmb.randOperationsInPlace(rgen, bigrand, 1342, _k);
+		if(!LibMatrixDatagen.isShortcutRandOperation(min, max, sparsity, RandomMatrixGenerator.PDF.UNIFORM))
+			bigrand = LibMatrixDatagen.setupSeedsForRand(seed);
+		MatrixBlock ret2 = mb.randOperationsInPlace(rgen, bigrand, 1342, _k);
+
+		compareResultMatrices(ret1, ret2, 1);
+
 	}
 
 }

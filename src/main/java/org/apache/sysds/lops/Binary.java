@@ -19,7 +19,7 @@
 
 package org.apache.sysds.lops;
 
-import org.apache.sysds.lops.LopProperties.ExecType;
+import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.OpOp2;
@@ -81,19 +81,17 @@ public class Binary extends Lop
 
 	@Override
 	public String getInstructions(String input1, String input2, String output) {
-		InstructionUtils.concatBaseOperands(
+		String ret = InstructionUtils.concatOperands(
 			getExecType().name(), getOpcode(),
 			getInputs().get(0).prepInputOperand(input1),
 			getInputs().get(1).prepInputOperand(input2),
-			prepOutputOperand(output)
-		);
+			prepOutputOperand(output));
 
-		if ( getExecType() == ExecType.CP || getExecType() == ExecType.FED){
-			InstructionUtils.concatAdditionalOperand(String.valueOf(_numThreads));
-			if ( federatedOutput )
-				InstructionUtils.concatAdditionalOperand(String.valueOf(federatedOutput));
-		}
+		if ( getExecType() == ExecType.CP )
+			ret = InstructionUtils.concatOperands(ret, String.valueOf(_numThreads));
+		else if( getExecType() == ExecType.FED )
+			ret = InstructionUtils.concatOperands(ret, String.valueOf(_numThreads), _fedOutput.name());
 
-		return InstructionUtils.getInstructionString();
+		return ret;
 	}
 }

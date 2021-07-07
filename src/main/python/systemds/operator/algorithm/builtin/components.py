@@ -24,17 +24,16 @@
 
 from typing import Dict, Iterable
 
-from systemds.operator import OperationNode, Matrix
+from systemds.operator import OperationNode, Matrix, Frame, List, MultiReturn, Scalar
 from systemds.script_building.dag import OutputType
 from systemds.utils.consts import VALID_INPUT_TYPES
 
-def components(G: OperationNode, **kwargs: Dict[str, VALID_INPUT_TYPES]) -> Matrix:
+
+def components(G: Matrix,
+               **kwargs: Dict[str, VALID_INPUT_TYPES]):
     
-    
-    G._check_matrix_op()
-    params_dict = {'G':G}
+    params_dict = {'G': G}
     params_dict.update(kwargs)
-    return Matrix(G.sds_context, 'components', named_input_nodes=params_dict)
-
-
-    
+    return Matrix(G.sds_context,
+        'components',
+        named_input_nodes=params_dict)

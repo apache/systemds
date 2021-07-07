@@ -44,6 +44,11 @@ sudo apt install openjdk-8-jdk-headless
 sudo apt install maven
 ```
 
+Note: To update the `java` command to `openjdk-8` run:
+```sh
+update-alternatives --set java /usr/lib/jvm/java-8-openjdk-amd64/jre/bin/java
+```
+
 Verify the install with:
 
 ```bash

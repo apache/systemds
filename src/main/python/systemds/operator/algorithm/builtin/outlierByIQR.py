@@ -24,17 +24,18 @@
 
 from typing import Dict, Iterable
 
-from systemds.operator import OperationNode, Matrix
+from systemds.operator import OperationNode, Matrix, Frame, List, MultiReturn, Scalar
 from systemds.script_building.dag import OutputType
 from systemds.utils.consts import VALID_INPUT_TYPES
 
-def outlierByIQR(X: OperationNode, k: float, max_iterations: int, **kwargs: Dict[str, VALID_INPUT_TYPES]) -> Matrix:
+
+def outlierByIQR(X: Matrix,
+                 k: float,
+                 max_iterations: int,
+                 **kwargs: Dict[str, VALID_INPUT_TYPES]):
     
-    
-    X._check_matrix_op()
-    params_dict = {'X':X, 'k':k, 'max_iterations':max_iterations}
+    params_dict = {'X': X, 'k': k, 'max_iterations': max_iterations}
     params_dict.update(kwargs)
-    return Matrix(X.sds_context, 'outlierByIQR', named_input_nodes=params_dict)
-
-
-    
+    return Matrix(X.sds_context,
+        'outlierByIQR',
+        named_input_nodes=params_dict)

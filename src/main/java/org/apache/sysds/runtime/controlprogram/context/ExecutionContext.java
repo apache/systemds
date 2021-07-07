@@ -36,6 +36,7 @@ import org.apache.sysds.runtime.controlprogram.caching.FrameObject;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject.UpdateType;
 import org.apache.sysds.runtime.controlprogram.caching.TensorObject;
+import org.apache.sysds.runtime.controlprogram.federated.FederationMap.FType;
 import org.apache.sysds.runtime.data.TensorBlock;
 import org.apache.sysds.runtime.instructions.Instruction;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
@@ -47,6 +48,7 @@ import org.apache.sysds.runtime.instructions.gpu.context.CSRPointer;
 import org.apache.sysds.runtime.instructions.gpu.context.GPUContext;
 import org.apache.sysds.runtime.instructions.gpu.context.GPUObject;
 import org.apache.sysds.runtime.lineage.Lineage;
+import org.apache.sysds.runtime.lineage.LineageDebugger;
 import org.apache.sysds.runtime.lineage.LineageItem;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
@@ -763,8 +765,7 @@ public class ExecutionContext {
 			cleanupCacheableData( (CacheableData<?>)dat );
 		else if( dat instanceof ListObject )
 			for( Data dat2 : ((ListObject)dat).getData() )
-				if( dat2 instanceof CacheableData<?> )
-					cleanupCacheableData( (CacheableData<?>)dat2 );
+				cleanupDataObject(dat2);
 	}
 	
 	public void cleanupCacheableData(CacheableData<?> mo) {
@@ -789,13 +790,34 @@ public class ExecutionContext {
 			throw new DMLRuntimeException(ex);
 		}
 	}
+	
+	public boolean isFederated(CPOperand input) {
+		Data data = getVariable(input);
+		if(data instanceof CacheableData && ((CacheableData<?>) data).isFederated())
+			return true;
+		return false;
+	}
+	
+	public boolean isFederated(CPOperand input, FType type) {
+		Data data = getVariable(input);
+		if(data instanceof CacheableData && ((CacheableData<?>) data).isFederated(type))
+			return true;
+		return false;
+	}
 
 	public void traceLineage(Instruction inst) {
 		if( _lineage == null )
 			throw new DMLRuntimeException("Lineage Trace unavailable.");
+		// TODO bra: store all newly created lis in active list
 		_lineage.trace(inst, this);
 	}
-
+	
+	public void maintainLineageDebuggerInfo(Instruction inst) {
+		if( _lineage == null )
+			throw new DMLRuntimeException("Lineage Trace unavailable.");
+		LineageDebugger.maintainSpecialValueBits(_lineage, inst, this);
+	}
+	
 	public LineageItem getLineageItem(CPOperand input) {
 		if( _lineage == null )
 			throw new DMLRuntimeException("Lineage Trace unavailable.");

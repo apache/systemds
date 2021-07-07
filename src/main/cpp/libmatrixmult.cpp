@@ -54,6 +54,6 @@ void tsmm(double *m1Ptr, double *retPtr, int m1rlen, int m1clen, bool leftTrans,
     int n = leftTrans ? m1clen : m1rlen;
     int k = leftTrans ? m1rlen : m1clen;
     cblas_dsyrk(CblasRowMajor, CblasUpper,
-      leftTrans ? CblasTrans : CblasNoTrans, n, k, 1, m1Ptr, n, 0, retPtr, n);
+      leftTrans ? CblasTrans : CblasNoTrans, n, k, 1, m1Ptr, m1clen, 0, retPtr, n);
   }
 }

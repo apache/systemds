@@ -21,14 +21,19 @@ package org.apache.sysds.runtime.compress;
 
 import java.util.EnumSet;
 
-import org.apache.sysds.runtime.compress.cocode.PlanningCoCoder.PartitionerType;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.apache.sysds.runtime.compress.cocode.CoCoderFactory.PartitionerType;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup.CompressionType;
+import org.apache.sysds.runtime.compress.cost.CostEstimatorFactory.CostType;
+import org.apache.sysds.runtime.compress.estim.sample.SampleEstimatorFactory.EstimationType;
 
 /**
  * Compression Settings class, used as a bundle of parameters inside the Compression framework. See
  * CompressionSettingsBuilder for default non static parameters.
  */
 public class CompressionSettings {
+	private static final Log LOG = LogFactory.getLog(CompressionSettings.class.getName());
 
 	/**
 	 * Size of the blocks used in a blocked bitmap representation. Note it is exactly Character.MAX_VALUE. This is not
@@ -56,12 +61,6 @@ public class CompressionSettings {
 	public final String transposeInput;
 
 	/**
-	 * Transpose input matrix, to optimize access when extracting bitmaps. This setting is changed inside the script
-	 * based on the transposeInput setting.
-	 */
-	public boolean transposed = false;
-
-	/**
 	 * Boolean specifying if the OLE and RLE should construct skip to enable skipping large amounts of rows.
 	 * (Optimization)
 	 */
@@ -70,17 +69,23 @@ public class CompressionSettings {
 	/** If the seed is -1 then the system used system millisecond time and class hash for seeding. */
 	public final int seed;
 
-	/** Boolean specifying if the compression strategy should be investigated and monitored. */
-	public final boolean investigateEstimate;
-
 	/** True if lossy compression is enabled */
 	public final boolean lossy;
 
 	/** The selected method for column partitioning used in CoCoding compressed columns */
 	public final PartitionerType columnPartitioner;
 
-	/** The maximum number of columns CoCoded if the Static CoCoding strategy is selected */
-	public final int maxStaticColGroupCoCode;
+	/** The cost computation type for the compression */
+	public final CostType costComputationType;
+
+	/** The maximum number of columns CoCoded allowed */
+	public final int maxColGroupCoCode;
+
+	/**
+	 * A Cocode parameter that differ in behavior based on compression method, in general it is a value that reflects
+	 * aggressively likely coCoding is used.
+	 */
+	public final double coCodePercentage;
 
 	/**
 	 * Valid Compressions List, containing the ColGroup CompressionTypes that are allowed to be used for the compression
@@ -88,21 +93,42 @@ public class CompressionSettings {
 	 */
 	public final EnumSet<CompressionType> validCompressions;
 
+	/**
+	 * The minimum size of the sample extracted.
+	 */
+	public final int minimumSampleSize;
+
+	/** The sample type used for sampling */
+	public final EstimationType estimationType;
+
+	/**
+	 * Transpose input matrix, to optimize access when extracting bitmaps. This setting is changed inside the script
+	 * based on the transposeInput setting.
+	 * 
+	 * This is intentionally left as a mutable value, since the transposition of the input matrix is decided in phase 3.
+	 */
+	public boolean transposed = false;
+
 	protected CompressionSettings(double samplingRatio, boolean allowSharedDictionary, String transposeInput,
-		boolean skipList, int seed, boolean investigateEstimate, boolean lossy,
-		EnumSet<CompressionType> validCompressions, boolean sortValuesByLength, PartitionerType columnPartitioner,
-		int maxStaticColGroupCoCode) {
+		boolean skipList, int seed, boolean lossy, EnumSet<CompressionType> validCompressions,
+		boolean sortValuesByLength, PartitionerType columnPartitioner, int maxColGroupCoCode, double coCodePercentage,
+		int minimumSampleSize, EstimationType estimationType, CostType costComputationType) {
 		this.samplingRatio = samplingRatio;
 		this.allowSharedDictionary = allowSharedDictionary;
 		this.transposeInput = transposeInput;
 		this.skipList = skipList;
 		this.seed = seed;
-		this.investigateEstimate = investigateEstimate;
 		this.validCompressions = validCompressions;
 		this.lossy = lossy;
 		this.sortValuesByLength = sortValuesByLength;
 		this.columnPartitioner = columnPartitioner;
-		this.maxStaticColGroupCoCode = maxStaticColGroupCoCode;
+		this.maxColGroupCoCode = maxColGroupCoCode;
+		this.coCodePercentage = coCodePercentage;
+		this.minimumSampleSize = minimumSampleSize;
+		this.estimationType = estimationType;
+		this.costComputationType = costComputationType;
+		if(LOG.isDebugEnabled())
+			LOG.debug(this);
 	}
 
 	@Override
@@ -113,6 +139,14 @@ public class CompressionSettings {
 		sb.append("\n DDC1 share dict: " + allowSharedDictionary);
 		sb.append("\n Partitioner: " + columnPartitioner);
 		sb.append("\n Lossy: " + lossy);
+		sb.append("\n sortValuesByLength: " + sortValuesByLength);
+		sb.append("\n column Partitioner: " + columnPartitioner);
+		sb.append("\n Max Static ColGroup CoCode: " + maxColGroupCoCode);
+		sb.append("\n Max cocodePercentage: " + coCodePercentage);
+		sb.append("\n Sample Percentage: " + samplingRatio);
+		sb.append("\n Cost Computation Type" + costComputationType);
+		if(samplingRatio < 1.0)
+			sb.append("\n Estimation Type: " + estimationType);
 		// If needed for debugging add more fields to the printing.
 		return sb.toString();
 	}

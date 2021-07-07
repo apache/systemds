@@ -20,25 +20,23 @@
 package org.apache.sysds.runtime.compress.colgroup;
 
 import org.apache.sysds.runtime.DMLScriptException;
-import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.functionobjects.Builtin.BuiltinCode;
 import org.apache.sysds.runtime.functionobjects.KahanPlus;
 import org.apache.sysds.runtime.functionobjects.KahanPlusSq;
-import org.apache.sysds.runtime.functionobjects.Mean;
 import org.apache.sysds.runtime.functionobjects.Plus;
 import org.apache.sysds.runtime.functionobjects.ReduceAll;
 import org.apache.sysds.runtime.functionobjects.ReduceCol;
 import org.apache.sysds.runtime.functionobjects.ReduceRow;
-import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator;
 
 /**
  * Base class for column groups encoded Encoded in a compressed manner.
  */
 public abstract class ColGroupCompressed extends AColGroup {
-	private static final long serialVersionUID = 3786247536054353658L;
 
+	private static final long serialVersionUID = 6219835795420081223L;
+	
 	final protected int _numRows;
 
 	protected ColGroupCompressed(int numRows) {
@@ -60,20 +58,11 @@ public abstract class ColGroupCompressed extends AColGroup {
 		_numRows = numRows;
 	}
 
-	public abstract int getNumValues();
-
 	public abstract double[] getValues();
 
 	public abstract void addMinMax(double[] ret);
 
 	public abstract boolean isLossy();
-
-	/**
-	 * if -1 is returned it means false, otherwise it returns an index where the zero tuple can be found.
-	 * 
-	 * @return A Index where the zero tuple can be found.
-	 */
-	protected abstract int containsAllZeroTuple();
 
 	protected abstract double computeMxx(double c, Builtin builtin);
 
@@ -81,7 +70,7 @@ public abstract class ColGroupCompressed extends AColGroup {
 
 	protected abstract void computeSum(double[] c, boolean square);
 
-	protected abstract void computeRowSums(double[] c, boolean square, int rl, int ru, boolean mean);
+	protected abstract void computeRowSums(double[] c, boolean square, int rl, int ru);
 
 	protected abstract void computeColSums(double[] c, boolean square);
 
@@ -89,82 +78,48 @@ public abstract class ColGroupCompressed extends AColGroup {
 
 	protected abstract boolean sameIndexStructure(ColGroupCompressed that);
 
-	public void leftMultByMatrix(MatrixBlock matrix, double[] result, int numCols, int rl, int ru) {
-		if(matrix.isEmpty())
-			return;
-		else if(matrix.isInSparseFormat())
-			leftMultBySparseMatrix(matrix.getSparseBlock(), result, matrix.getNumRows(), numCols, rl, ru);
-		else {
-			leftMultByMatrix(matrix.getDenseBlockValues(), result, matrix.getNumRows(), numCols, rl, ru);
-		}
-	}
-
-	/**
-	 * Multiply with a matrix on the left.
-	 * 
-	 * @param matrix  matrix to left multiply
-	 * @param result  matrix block result
-	 * @param numRows The number of rows in the matrix input
-	 * @param numCols The number of columns in the colGroups parent matrix.
-	 * @param rl      The row to start the matrix multiplication from
-	 * @param ru      The row to stop the matrix multiplication at.
-	 */
-	public abstract void leftMultByMatrix(double[] matrix, double[] result, int numRows, int numCols, int rl, int ru);
-
-	/**
-	 * Multiply with a sparse matrix on the left hand side, and add the values to the output result
-	 * 
-	 * @param sb      The sparse block to multiply with
-	 * @param result  The linearized output matrix
-	 * @param numRows The number of rows in the left hand side input matrix (the sparse one)
-	 * @param numCols The number of columns in the compression.
-	 * @param rl      The row to start the matrix multiplication from
-	 * @param ru      The row to stop the matrix multiplication at.
-	 */
-	public abstract void leftMultBySparseMatrix(SparseBlock sb, double[] result, int numRows, int numCols, int rl,
-		int ru);
-
 	@Override
-	public double getMin() {
+	public final double getMin() {
 		return computeMxx(Double.POSITIVE_INFINITY, Builtin.getBuiltinFnObject(BuiltinCode.MIN));
 	}
 
 	@Override
-	public double getMax() {
+	public final double getMax() {
 		return computeMxx(Double.NEGATIVE_INFINITY, Builtin.getBuiltinFnObject(BuiltinCode.MAX));
 	}
 
 	@Override
-	public void unaryAggregateOperations(AggregateUnaryOperator op, double[] c) {
+	public final void unaryAggregateOperations(AggregateUnaryOperator op, double[] c) {
 		unaryAggregateOperations(op, c, 0, _numRows);
 	}
 
 	@Override
-	public void unaryAggregateOperations(AggregateUnaryOperator op, double[] c, int rl, int ru) {
-		// sum and sumsq (reduceall/reducerow over tuples and counts)
+	public final void unaryAggregateOperations(AggregateUnaryOperator op, double[] c, int rl, int ru) {
 		if(op.aggOp.increOp.fn instanceof Plus || op.aggOp.increOp.fn instanceof KahanPlus ||
 			op.aggOp.increOp.fn instanceof KahanPlusSq) {
 			boolean square = op.aggOp.increOp.fn instanceof KahanPlusSq;
-			boolean mean = op.aggOp.increOp.fn instanceof Mean;
 			if(op.indexFn instanceof ReduceAll)
 				computeSum(c, square);
 			else if(op.indexFn instanceof ReduceCol)
-				computeRowSums(c, square, rl, ru, mean);
+				computeRowSums(c, square, rl, ru);
 			else if(op.indexFn instanceof ReduceRow)
 				computeColSums(c, square);
 		}
-		// min and max (reduceall/reducerow over tuples only)
-		else if(op.aggOp.increOp.fn instanceof Builtin &&
-			(((Builtin) op.aggOp.increOp.fn).getBuiltinCode() == BuiltinCode.MAX ||
-				((Builtin) op.aggOp.increOp.fn).getBuiltinCode() == BuiltinCode.MIN)) {
-			Builtin builtin = (Builtin) op.aggOp.increOp.fn;
+		else if(op.aggOp.increOp.fn instanceof Builtin) {
+			Builtin bop = (Builtin) op.aggOp.increOp.fn;
+			BuiltinCode bopC = bop.getBuiltinCode();
+			if(bopC == BuiltinCode.MAX || bopC == BuiltinCode.MIN) {
+				if(op.indexFn instanceof ReduceAll)
+					c[0] = computeMxx(c[0], bop);
+				else if(op.indexFn instanceof ReduceCol)
+					computeRowMxx(c, bop, rl, ru);
+				else if(op.indexFn instanceof ReduceRow)
+					computeColMxx(c, bop);
+			}
+			else {
+				throw new DMLScriptException("unsupported builtin type: " + bop);
+			}
 
-			if(op.indexFn instanceof ReduceAll)
-				c[0] = computeMxx(c[0], builtin);
-			else if(op.indexFn instanceof ReduceCol)
-				computeRowMxx(c, builtin, rl, ru);
-			else if(op.indexFn instanceof ReduceRow)
-				computeColMxx(c, builtin);
 		}
 		else {
 			throw new DMLScriptException("Unknown UnaryAggregate operator on CompressedMatrixBlock");
@@ -174,14 +129,20 @@ public abstract class ColGroupCompressed extends AColGroup {
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
+		sb.append(" num Rows: " + getNumRows());
 		sb.append(super.toString());
-		sb.append("num Rows: " + getNumRows());
 		return sb.toString();
 	}
 
 	@Override
-	public int getNumRows() {
+	public final int getNumRows() {
 		return _numRows;
 	}
 
+	@Override
+	public long estimateInMemorySize() {
+		long size = super.estimateInMemorySize();
+		size += 4;
+		return size;
+	}
 }

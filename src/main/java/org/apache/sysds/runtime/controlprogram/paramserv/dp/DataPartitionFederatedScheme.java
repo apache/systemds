@@ -19,6 +19,7 @@
 
 package org.apache.sysds.runtime.controlprogram.paramserv.dp;
 
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.lops.compile.Dag;
 import org.apache.sysds.runtime.DMLRuntimeException;
@@ -35,7 +36,6 @@ import org.apache.sysds.runtime.meta.MetaDataFormat;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 
 public abstract class DataPartitionFederatedScheme {
@@ -88,8 +88,8 @@ public abstract class DataPartitionFederatedScheme {
 				);
 
 				// Create new federation map
-				HashMap<FederatedRange, FederatedData> newFedHashMap = new HashMap<>();
-				newFedHashMap.put(range, data);
+				List<Pair<FederatedRange, FederatedData>> newFedHashMap = new ArrayList<>();
+				newFedHashMap.add(Pair.of(range, data));
 				slice.setFedMapping(new FederationMap(fedMatrix.getFedMapping().getID(), newFedHashMap));
 				slice.getFedMapping().setType(FederationMap.FType.ROW);
 

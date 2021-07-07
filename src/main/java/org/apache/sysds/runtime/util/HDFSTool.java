@@ -41,6 +41,8 @@ import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.parser.DataExpression;
 import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.instructions.cp.ScalarObject;
+import org.apache.sysds.runtime.instructions.cp.ScalarObjectFactory;
 import org.apache.sysds.runtime.io.BinaryBlockSerialization;
 import org.apache.sysds.runtime.io.FileFormatProperties;
 import org.apache.sysds.runtime.io.IOUtilFunctions;
@@ -308,11 +310,28 @@ public class HDFSTool
 			default: return line;
 		}
 	}
-		
+	
+	public static ScalarObject readScalarObjectFromHDFSFile(String fname, ValueType vt) {
+		try {
+			Object obj = null;
+			switch( vt ) {
+				case INT64:   obj = readIntegerFromHDFSFile(fname); break;
+				case FP64:    obj = readDoubleFromHDFSFile(fname); break;
+				case BOOLEAN: obj = readBooleanFromHDFSFile(fname); break;
+				case STRING:
+				default:      obj = readStringFromHDFSFile(fname);
+			}
+			return ScalarObjectFactory.createScalarObject(vt, obj);
+		}
+		catch(Exception ex) {
+			throw new DMLRuntimeException(ex);
+		}
+	}
+	
 	private static BufferedWriter setupOutputFile ( String filename ) throws IOException {
 		Path path = new Path(filename);
 		FileSystem fs = IOUtilFunctions.getFileSystem(path);
-		BufferedWriter br=new BufferedWriter(new OutputStreamWriter(fs.create(path,true)));		
+		BufferedWriter br=new BufferedWriter(new OutputStreamWriter(fs.create(path,true)));
 		return br;
 	}
 	

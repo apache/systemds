@@ -23,6 +23,16 @@ X = rbind(read($in_X1), read($in_X2))
 U = read($in_U)
 V = read($in_V)
 
-Z = X * (U %*% t(V));
+Z1 = X * (U %*% t(V));
+
+U = X[ , 1:ncol(U)];
+
+Z2 = X * (U %*% t(V));
+
+X = t(X);
+
+Z3 = X * (V %*% t(U));
+
+Z = (Z1 + Z2) + sum(Z3);
 
 write(Z, $out_Z)

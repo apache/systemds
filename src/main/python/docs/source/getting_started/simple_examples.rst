@@ -46,7 +46,9 @@ Making use of SystemDS, let us multiply an Matrix with an scalar:
       print(m_res.compute())
   # context will automatically be closed and process stopped
 
-As output we get::
+As output we get
+
+.. code-block:: python
 
   [[ 13.02  13.02  13.02  13.02  13.02  13.02  13.02  13.02  13.02  13.02]
    [ 13.02  13.02  13.02  13.02  13.02  13.02  13.02  13.02  13.02  13.02]
@@ -88,7 +90,7 @@ One example of this is l2SVM, a high level functions for Data-Scientists. Let's 
 
 .. code-block:: python
 
-  # Import numpy and SystemDS matrix
+  # Import numpy and SystemDS
   import numpy as np
   from systemds.context import SystemDSContext
   from systemds.operator.algorithm import l2svm
@@ -111,7 +113,9 @@ One example of this is l2SVM, a high level functions for Data-Scientists. Let's 
       model = l2svm(sds.from_numpy(features), sds.from_numpy(labels)).compute()
       print(model)
 
-The output should be similar to::
+The output should be similar to
+
+.. code-block:: python
 
   [[ 0.02033445]
    [-0.00324092]

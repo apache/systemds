@@ -80,7 +80,8 @@ public class FederatedWeightedSigmoidTest extends AutomatedTestBase {
 			// {rows, cols, rank, sparsity}
 			// {2000, 50, 10, 0.01},
 			// {2000, 50, 10, 0.9},
-			{150, 230, 75, 0.01}, {150, 230, 75, 0.9}});
+			// {150, 230, 75, 0.01},
+			{150, 230, 75, 0.9}});
 	}
 
 	@BeforeClass
@@ -190,7 +191,7 @@ public class FederatedWeightedSigmoidTest extends AutomatedTestBase {
 		TestUtils.shutdownThreads(thread1, thread2);
 
 		// check for federated operations
-		Assert.assertTrue(heavyHittersContainsString("fed_wsigmoid"));
+		Assert.assertTrue(heavyHittersContainsString("fed_wsigmoid", 1, exec_mode == ExecMode.SPARK ? 2 : 3));
 
 		// check that federated input files are still existing
 		Assert.assertTrue(HDFSTool.existsFileOnHDFS(input("X1")));

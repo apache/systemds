@@ -19,9 +19,11 @@
 
 package org.apache.sysds.runtime.instructions;
 
+import org.apache.sysds.lops.Append;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.instructions.fed.AggregateBinaryFEDInstruction;
 import org.apache.sysds.runtime.instructions.fed.AggregateUnaryFEDInstruction;
+import org.apache.sysds.runtime.instructions.fed.AppendFEDInstruction;
 import org.apache.sysds.runtime.instructions.fed.BinaryFEDInstruction;
 import org.apache.sysds.runtime.instructions.fed.FEDInstruction;
 import org.apache.sysds.runtime.instructions.fed.FEDInstruction.FEDType;
@@ -66,6 +68,8 @@ public class FEDInstructionParser extends InstructionParser
 		// Ternary Instruction Opcodes
 		String2FEDInstructionType.put( "+*" , FEDType.Ternary);
 		String2FEDInstructionType.put( "-*" , FEDType.Ternary);
+
+		String2FEDInstructionType.put(Append.OPCODE, FEDType.Append);
 	}
 
 	public static FEDInstruction parseSingleInstruction (String str ) {
@@ -98,6 +102,8 @@ public class FEDInstructionParser extends InstructionParser
 				return TernaryFEDInstruction.parseInstruction(str);
 			case Reorg:
 				return ReorgFEDInstruction.parseInstruction(str);
+			case Append:
+				return AppendFEDInstruction.parseInstruction(str);
 			default:
 				throw new DMLRuntimeException("Invalid FEDERATED Instruction Type: " + fedtype );
 		}

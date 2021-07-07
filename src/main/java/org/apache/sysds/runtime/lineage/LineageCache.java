@@ -142,6 +142,7 @@ public class LineageCache
 			reuse = reuseAll;
 			
 			if(reuse) { //reuse
+				boolean gpuReuse = false;
 				//put reuse value into symbol table (w/ blocking on placeholders)
 				for (MutablePair<LineageItem, LineageCacheEntry> entry : liList) {
 					e = entry.getValue();
@@ -174,8 +175,9 @@ public class LineageCache
 						//shallow copy the cached GPUObj to the output MatrixObject
 						ec.getMatrixObject(outName).setGPUObject(ec.getGPUContext(0), 
 								ec.getGPUContext(0).shallowCopyGPUObject(e._gpuObject, ec.getMatrixObject(outName)));
-						//Set dirty to true, so that it is later copied to the host
+						//Set dirty to true, so that it is later copied to the host for write
 						ec.getMatrixObject(outName).getGPUObject(ec.getGPUContext(0)).setDirty(true);
+						gpuReuse = true;
 					}
 
 					reuse = true;
@@ -183,8 +185,12 @@ public class LineageCache
 					if (DMLScript.STATISTICS) //increment saved time
 						LineageCacheStatistics.incrementSavedComputeTime(e._computeTime);
 				}
-				if (DMLScript.STATISTICS)
-					LineageCacheStatistics.incrementInstHits();
+				if (DMLScript.STATISTICS) {
+					if (gpuReuse)
+						LineageCacheStatistics.incrementGpuHits();
+					else
+						LineageCacheStatistics.incrementInstHits();
+				}
 			}
 		}
 		
@@ -228,6 +234,9 @@ public class LineageCache
 				Data boundValue = null;
 				//convert to matrix object
 				if (e.isMatrixValue()) {
+					MatrixBlock mb = e.getMBValue();
+					if (mb == null && e.getCacheStatus() == LineageCacheStatus.NOTCACHED)
+						return false;  //the executing thread removed this entry from cache
 					MetaDataFormat md = new MetaDataFormat(
 						e.getMBValue().getDataCharacteristics(),FileFormat.BINARY);
 					boundValue = new MatrixObject(ValueType.FP64, boundVarName, md);
@@ -236,6 +245,8 @@ public class LineageCache
 				}
 				else {
 					boundValue = e.getSOValue();
+					if (boundValue == null && e.getCacheStatus() == LineageCacheStatus.NOTCACHED)
+						return false;  //the executing thread removed this entry from cache
 				}
 
 				funcOutputs.put(boundVarName, boundValue);
@@ -304,6 +315,11 @@ public class LineageCache
 			Data outValue = null;
 			//convert to matrix object
 			if (e.isMatrixValue()) {
+				MatrixBlock mb = e.getMBValue();
+				if (mb == null && e.getCacheStatus() == LineageCacheStatus.NOTCACHED)
+					//the executing thread removed this entry from cache
+					return new FederatedResponse(FederatedResponse.ResponseType.ERROR);
+
 				MetaDataFormat md = new MetaDataFormat(
 					e.getMBValue().getDataCharacteristics(),FileFormat.BINARY);
 				outValue = new MatrixObject(ValueType.FP64, outName, md);
@@ -312,6 +328,9 @@ public class LineageCache
 			}
 			else {
 				outValue = e.getSOValue();
+				if (outValue == null && e.getCacheStatus() == LineageCacheStatus.NOTCACHED)
+					//the executing thread removed this entry from cache
+					return new FederatedResponse(FederatedResponse.ResponseType.ERROR);
 			}
 			udfOutputs.put(outName, outValue);
 			savedComputeTime = e._computeTime;

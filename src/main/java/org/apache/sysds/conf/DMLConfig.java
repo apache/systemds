@@ -67,13 +67,14 @@ public class DMLConfig
 	public static final String DEFAULT_BLOCK_SIZE   = "sysds.defaultblocksize";
 	public static final String CP_PARALLEL_OPS      = "sysds.cp.parallel.ops";
 	public static final String CP_PARALLEL_IO       = "sysds.cp.parallel.io";
-	public static final String COMPRESSED_LINALG    = "sysds.compressed.linalg"; // auto, cost, true, false
+	public static final String COMPRESSED_LINALG    = "sysds.compressed.linalg";
 	public static final String COMPRESSED_LOSSY     = "sysds.compressed.lossy";
 	public static final String COMPRESSED_VALID_COMPRESSIONS = "sysds.compressed.valid.compressions";
-	public static final String COMPRESSED_OVERLAPPING = "sysds.compressed.overlapping"; // true, false
+	public static final String COMPRESSED_OVERLAPPING = "sysds.compressed.overlapping"; 
 	public static final String COMPRESSED_SAMPLING_RATIO = "sysds.compressed.sampling.ratio"; 
-	public static final String COMPRESSED_COCODE    = "sysds.compressed.cocode"; // COST
-	public static final String COMPRESSED_TRANSPOSE = "sysds.compressed.transpose"; // true, false, auto.
+	public static final String COMPRESSED_COCODE    = "sysds.compressed.cocode"; 
+	public static final String COMPRESSED_COST_MODEL= "sysds.compressed.costmodel";
+	public static final String COMPRESSED_TRANSPOSE = "sysds.compressed.transpose";
 	public static final String NATIVE_BLAS          = "sysds.native.blas";
 	public static final String NATIVE_BLAS_DIR      = "sysds.native.blas.directory";
 	public static final String CODEGEN              = "sysds.codegen.enabled"; //boolean
@@ -129,7 +130,8 @@ public class DMLConfig
 		_defaultVals.put(COMPRESSED_VALID_COMPRESSIONS, "SDC,DDC");
 		_defaultVals.put(COMPRESSED_OVERLAPPING, "true" );
 		_defaultVals.put(COMPRESSED_SAMPLING_RATIO, "0.01");
-		_defaultVals.put(COMPRESSED_COCODE,      "COST");
+		_defaultVals.put(COMPRESSED_COCODE,      "AUTO");
+		_defaultVals.put(COMPRESSED_COST_MODEL,  "AUTO");
 		_defaultVals.put(COMPRESSED_TRANSPOSE,   "auto");
 		_defaultVals.put(CODEGEN,                "false" );
 		_defaultVals.put(CODEGEN_API,            GeneratorAPI.JAVA.name() );

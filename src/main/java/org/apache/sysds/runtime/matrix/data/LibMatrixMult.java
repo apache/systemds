@@ -1230,7 +1230,7 @@ public class LibMatrixMult
 				if( a.isEmpty(i) ) continue; 
 				int apos = a.pos(i);
 				int alen = a.size(i);
-				int[] aix = a.indexes(i);
+				// int[] aix = a.indexes(i);
 				double[] avals = a.values(i);
 				double[] cvals = c.values(i);
 				int cix = c.pos(i);
@@ -3880,10 +3880,11 @@ public class LibMatrixMult
 	
 	private static boolean checkParMatrixMultRightInputRows( MatrixBlock m1, MatrixBlock m2, int k ) {
 		//parallelize over rows in rhs matrix if number of rows in lhs/output is very small
+		double jvmMem = InfrastructureAnalyzer.getLocalMaxMemory();
 		return (m1.rlen==1 && LOW_LEVEL_OPTIMIZATION && m2.clen>1 && !(m1.isUltraSparse()||m2.isUltraSparse()))
 			|| (m1.rlen<=16 && LOW_LEVEL_OPTIMIZATION && m2.clen>1 && m2.rlen > m1.rlen 
 			   && ( !m1.isUltraSparse() && !m2.sparse ) //dense-dense / sparse/dense
-			   && (long)k * 8 * m1.rlen * m2.clen < MEM_OVERHEAD_THRESHOLD ); 
+			   && (long)k * 8 * m1.rlen * m2.clen < Math.max(MEM_OVERHEAD_THRESHOLD,0.01*jvmMem) );
 	}
 
 	private static boolean checkParMatrixMultRightInputCols( MatrixBlock m1, MatrixBlock m2, int k, boolean pm2r ) {

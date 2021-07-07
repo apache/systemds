@@ -27,8 +27,6 @@ import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -49,6 +47,7 @@ import org.apache.sysds.runtime.controlprogram.federated.FederatedRange;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse;
 import org.apache.sysds.runtime.controlprogram.federated.FederationMap;
 import org.apache.sysds.runtime.controlprogram.federated.FederationMap.FType;
+import org.apache.sysds.runtime.controlprogram.federated.FederatedStatistics;
 import org.apache.sysds.runtime.controlprogram.federated.FederationUtils;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
@@ -122,6 +121,10 @@ public class InitFEDInstruction extends FEDInstruction implements LineageTraceab
 				String host = parsedValues[0];
 				int port = Integer.parseInt(parsedValues[1]);
 				String filePath = parsedValues[2];
+
+				// register the federated worker for federated statistics creation
+				FederatedStatistics.registerFedWorker(host, port);
+
 				// get beginning and end of data ranges
 				List<Data> rangesData = ranges.getData();
 				Data beginData = rangesData.get(i * 2);
@@ -214,15 +217,14 @@ public class InitFEDInstruction extends FEDInstruction implements LineageTraceab
 
 	public static void federateMatrix(CacheableData<?> output, List<Pair<FederatedRange, FederatedData>> workers) {
 
-		Map<FederatedRange, FederatedData> fedMapping = new TreeMap<>();
-		for(Pair<FederatedRange, FederatedData> t : workers) {
-			fedMapping.put(t.getLeft(), t.getRight());
-		}
+		List<Pair<FederatedRange, FederatedData>> fedMapping = new ArrayList<>();
+		for(Pair<FederatedRange, FederatedData> e : workers)
+			fedMapping.add(e);
 		List<Pair<FederatedData, Future<FederatedResponse>>> idResponses = new ArrayList<>();
 		long id = FederationUtils.getNextFedDataID();
 		boolean rowPartitioned = true;
 		boolean colPartitioned = true;
-		for(Map.Entry<FederatedRange, FederatedData> entry : fedMapping.entrySet()) {
+		for(Pair<FederatedRange, FederatedData> entry : fedMapping) {
 			FederatedRange range = entry.getKey();
 			FederatedData value = entry.getValue();
 			if(!value.isInitialized()) {
@@ -268,10 +270,9 @@ public class InitFEDInstruction extends FEDInstruction implements LineageTraceab
 	}
 
 	public static void federateFrame(FrameObject output, List<Pair<FederatedRange, FederatedData>> workers) {
-		Map<FederatedRange, FederatedData> fedMapping = new TreeMap<>();
-		for(Pair<FederatedRange, FederatedData> t : workers) {
-			fedMapping.put(t.getLeft(), t.getRight());
-		}
+		List<Pair<FederatedRange, FederatedData>> fedMapping = new ArrayList<>();
+		for(Pair<FederatedRange, FederatedData> e : workers)
+			fedMapping.add(e);
 		// we want to wait for the futures with the response containing varIDs and the schemas of the frames
 		// on the distributed workers. We need the FederatedData, the starting column of the sub frame (for the schema)
 		// and the future for the response
@@ -279,7 +280,7 @@ public class InitFEDInstruction extends FEDInstruction implements LineageTraceab
 		long id = FederationUtils.getNextFedDataID();
 		boolean rowPartitioned = true;
 		boolean colPartitioned = true;
-		for(Map.Entry<FederatedRange, FederatedData> entry : fedMapping.entrySet()) {
+		for(Pair<FederatedRange, FederatedData> entry : fedMapping) {
 			FederatedRange range = entry.getKey();
 			FederatedData value = entry.getValue();
 			if(!value.isInitialized()) {

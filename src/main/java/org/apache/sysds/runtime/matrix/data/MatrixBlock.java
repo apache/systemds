@@ -114,8 +114,8 @@ import org.apache.sysds.runtime.util.UtilFunctions;
 import org.apache.sysds.utils.NativeHelper;
 
 
-public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizable
-{
+public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizable {
+	
 	private static final long serialVersionUID = 7319972089143154056L;
 	
 	//sparsity nnz threshold, based on practical experiments on space consumption and performance
@@ -643,7 +643,36 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 				nonZeros--;
 		}
 	}
-	
+
+	/*
+		Thread save set.
+		Blocks need to be allocated, and in case of MCSR sparse, all rows 
+		that are going to be accessed need to be allocated as well.
+	 */
+	public void quickSetValueThreadSafe(int r, int c, double v) {
+		if(sparse) {
+			if(!(sparseBlock instanceof SparseBlockMCSR))
+				throw new RuntimeException("Only MCSR Blocks are supported for Multithreaded sparse set.");
+			synchronized (sparseBlock.get(r)) {
+				sparseBlock.set(r,c,v);
+			}
+		}
+		else
+			denseBlock.set(r,c,v);
+	}
+
+	public double quickGetValueThreadSafe(int r, int c) {
+		if(sparse) {
+			if(!(sparseBlock instanceof SparseBlockMCSR))
+				throw new RuntimeException("Only MCSR Blocks are supported for Multithreaded sparse get.");
+			synchronized (sparseBlock.get(r)) {
+				return sparseBlock.get(r,c);
+			}
+		}
+		else
+			return denseBlock.get(r,c);
+	}
+
 	public double getValueDenseUnsafe(int r, int c) {
 		if(denseBlock==null)
 			return 0;
@@ -1049,6 +1078,16 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		return evalSparseFormatOnDisk(rlen, clen, nonZeros);
 	}
 	
+	/**
+	 * Evaluates if this matrix block should be in sparse format in
+	 * memory. Depending on the current representation, the state of the
+	 * matrix block is changed to the right representation if necessary. 
+	 * Note that this consumes for the time of execution memory for both 
+	 * representations.
+	 * 
+	 * Allowing CSR format is default for this operation.
+	 * 
+	 */
 	public void examSparsity() {
 		examSparsity(true);
 	}
@@ -3742,18 +3781,8 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	}
 
 	public MatrixBlock chainMatrixMultOperations( MatrixBlock v, MatrixBlock w, MatrixBlock out, ChainType ctype, int k ) {
-		//check for transpose type
-		if( !(ctype == ChainType.XtXv || ctype == ChainType.XtwXv || ctype == ChainType.XtXvy) )
-			throw new DMLRuntimeException("Invalid mmchain type '"+ctype.toString()+"'.");
-		
-		//check for matching dimensions
-		if( this.getNumColumns() != v.getNumRows() )
-			throw new DMLRuntimeException("Dimensions mismatch on mmchain operation ("+this.getNumColumns()+" != "+v.getNumRows()+")");
-		if( v.getNumColumns() != 1 )
-			throw new DMLRuntimeException("Invalid input vector (column vector expected, but ncol="+v.getNumColumns()+")");
-		if( w!=null && w.getNumColumns() != 1 )
-			throw new DMLRuntimeException("Invalid weight vector (column vector expected, but ncol="+w.getNumColumns()+")");
-		
+		checkMMChain(ctype, v, w);
+
 		//prepare result
 		if( out != null )
 			out.reset(clen, 1, false);
@@ -3767,6 +3796,21 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 			LibMatrixMult.matrixMultChain(this, v, w, out, ctype);
 		
 		return out;
+	}
+
+	protected void checkMMChain(ChainType ctype, MatrixBlock v, MatrixBlock w){
+		//check for transpose type
+		if( !(ctype == ChainType.XtXv || ctype == ChainType.XtwXv || ctype == ChainType.XtXvy) )
+			throw new DMLRuntimeException("Invalid mmchain type '"+ctype.toString()+"'.");
+
+		//check for matching dimensions
+		if( this.getNumColumns() != v.getNumRows() )
+			throw new DMLRuntimeException("Dimensions mismatch on mmchain operation ("+this.getNumColumns()+" != "+v.getNumRows()+")");
+		if( v.getNumColumns() != 1 )
+			throw new DMLRuntimeException("Invalid input vector (column vector expected, but ncol="+v.getNumColumns()+")");
+		if( w!=null && w.getNumColumns() != 1 )
+			throw new DMLRuntimeException("Invalid weight vector (column vector expected, but ncol="+w.getNumColumns()+")");
+			
 	}
 
 	public void permutationMatrixMultOperations( MatrixValue m2Val, MatrixValue out1Val, MatrixValue out2Val ) {
@@ -4510,7 +4554,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	{
 		//determine number of rows/cols to be removed
 		int step = correctionLocation.getNumRemovedRowsColumns();
-		if( step <= 0 )
+		if( step <= 0)
 			return; 
 		
 		//e.g., colSums, colMeans, colMaxs, colMeans, colVars
@@ -4921,10 +4965,9 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		}
 		return sum_wt;
 	}
-	
-	public MatrixBlock aggregateBinaryOperations(MatrixIndexes m1Index, MatrixBlock m1, MatrixIndexes m2Index, MatrixBlock m2, 
-		MatrixBlock ret, AggregateBinaryOperator op ) {
-		return aggregateBinaryOperations(m1, m2, ret, op);
+
+	public MatrixBlock aggregateBinaryOperations(MatrixBlock m1, MatrixBlock m2, AggregateBinaryOperator op){
+		return aggregateBinaryOperations(m1, m2, null, op);
 	}
 
 	public MatrixBlock aggregateBinaryOperations(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, AggregateBinaryOperator op) {

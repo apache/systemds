@@ -26,6 +26,7 @@ import java.util.Collection;
 
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.CompressionSettingsBuilder;
+import org.apache.sysds.runtime.compress.colgroup.AColGroup.CompressionType;
 import org.apache.sysds.runtime.functionobjects.CM;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.CMOperator;
@@ -58,14 +59,14 @@ public class CompressedVectorTest extends CompressedTestBase {
 					for(CompressionSettingsBuilder cs : usedCompressionSettings)
 						for(MatrixTypology mt : usedMatrixTypologyLocal)
 							for(OverLapping ov : overLapping)
-								tests.add(new Object[] {st, vt, vr, cs, mt, ov});
+								tests.add(new Object[] {st, vt, vr, cs, mt, ov, null});
 
 		return tests;
 	}
 
 	public CompressedVectorTest(SparsityType sparType, ValueType valType, ValueRange valRange,
-		CompressionSettingsBuilder compSettings, MatrixTypology matrixTypology, OverLapping ov) {
-		super(sparType, valType, valRange, compSettings, matrixTypology, ov, 1);
+		CompressionSettingsBuilder compSettings, MatrixTypology matrixTypology, OverLapping ov, Collection<CompressionType> ct) {
+		super(sparType, valType, valRange, compSettings, matrixTypology, ov, 1, ct);
 	}
 
 	@Test
@@ -76,11 +77,10 @@ public class CompressedVectorTest extends CompressedTestBase {
 
 			AggregateOperationTypes opType = CMOperator.getCMAggOpType(2);
 			CMOperator cm = new CMOperator(CM.getCMFnObject(opType), opType);
-
 			double ret1 = mb.cmOperations(cm).getRequiredResult(opType);
 			double ret2 = cmb.cmOperations(cm).getRequiredResult(opType);
 
-			if(compressionSettings.lossy) {
+			if(_cs.lossy) {
 				double tol = lossyTolerance * 10;
 				assertTrue(
 					this.toString() + ": values uncomprssed: " + ret1 + "vs compressed: " + ret2 + " tolerance " + tol,
@@ -106,7 +106,7 @@ public class CompressedVectorTest extends CompressedTestBase {
 			double ret1 = mb.sortOperations(null, new MatrixBlock()).pickValue(0.95);
 			double ret2 = cmb.sortOperations(null, new MatrixBlock()).pickValue(0.95);
 
-			if(compressionSettings.lossy)
+			if(_cs.lossy)
 				TestUtils.compareCellValue(ret1, ret2, lossyTolerance, false);
 			else
 				assertTrue(this.toString(), TestUtils.compareScalarBits(ret1, ret2, 0));

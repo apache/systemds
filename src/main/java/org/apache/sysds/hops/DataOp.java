@@ -34,7 +34,7 @@ import org.apache.sysds.hops.rewrite.HopRewriteUtils;
 import org.apache.sysds.lops.Data;
 import org.apache.sysds.lops.Federated;
 import org.apache.sysds.lops.Lop;
-import org.apache.sysds.lops.LopProperties.ExecType;
+import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.lops.LopsException;
 import org.apache.sysds.lops.Sql;
 import org.apache.sysds.parser.DataExpression;
@@ -353,6 +353,10 @@ public class DataOp extends Hop {
 	
 	public boolean isPersistentReadWrite() {
 		return( _op == OpOpData.PERSISTENTREAD || _op == OpOpData.PERSISTENTWRITE );
+	}
+
+	public boolean isFederatedData(){
+		return _op == OpOpData.FEDERATED;
 	}
 
 	@Override

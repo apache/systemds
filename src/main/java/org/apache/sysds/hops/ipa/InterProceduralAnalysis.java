@@ -57,7 +57,9 @@ import org.apache.sysds.runtime.meta.MetaDataFormat;
 import org.apache.sysds.utils.Explain;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -235,11 +237,14 @@ public class InterProceduralAnalysis
 				_fgraph = new FunctionCallGraph(_prog);
 		}
 		
-		//cleanup pass: remove unused functions
+		//cleanup passes: remove unused functions, CLA workload extraction
 		FunctionCallGraph graph2 = new FunctionCallGraph(_prog);
-		IPAPass rmFuns = new IPAPassRemoveUnusedFunctions();
-		if( rmFuns.isApplicable(graph2) )
-			rmFuns.rewriteProgram(_prog, graph2, null);
+		List<IPAPass> fpasses = Arrays.asList(
+			new IPAPassRemoveUnusedFunctions(),
+			new IPAPassCompressionWorkloadAnalysis());
+		for(IPAPass pass : fpasses)
+			if( pass.isApplicable(graph2) )
+				pass.rewriteProgram(_prog, graph2, null);
 	}
 	
 	public Set<String> analyzeSubProgram() {
@@ -541,6 +546,9 @@ public class InterProceduralAnalysis
 		for( int i=0; i<Math.min(inputOps.size(), funArgNames.length); i++ ) {
 			//create mapping between input hops and vars
 			DataIdentifier dat = fstmt.getInputParam(funArgNames[i]);
+			if( dat == null )
+				throw new HopsException("Failed IPA: function argument '"+funArgNames[i]+"' "
+					+ "does not exist in function signature of "+fop.getFunctionKey()+".");
 			Hop input = inputOps.get(i);
 			
 			if( input.getDataType()==DataType.MATRIX )

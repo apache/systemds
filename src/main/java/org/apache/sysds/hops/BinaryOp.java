@@ -43,7 +43,7 @@ import org.apache.sysds.lops.CoVariance;
 import org.apache.sysds.lops.Data;
 import org.apache.sysds.lops.DnnTransform;
 import org.apache.sysds.lops.Lop;
-import org.apache.sysds.lops.LopProperties.ExecType;
+import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.lops.PickByCount;
 import org.apache.sysds.lops.SortKeys;
 import org.apache.sysds.lops.Unary;
@@ -97,7 +97,6 @@ public class BinaryOp extends MultiThreadedHop
 		op = o;
 		getInput().add(0, inp1);
 		getInput().add(1, inp2);
-		updateETFed();
 
 		inp1.getParent().add(this);
 		inp2.getParent().add(this);
@@ -223,8 +222,6 @@ public class BinaryOp extends MultiThreadedHop
 			default:
 				constructLopsBinaryDefault();
 		}
-
-		setFederatedOutput(getLops());
 
 		//add reblock/checkpoint lops if necessary
 		constructAndSetLopsDataFlowProperties();
@@ -418,7 +415,8 @@ public class BinaryOp extends MultiThreadedHop
 			Lop tmp = null;
 			if( ot != null ) {
 				tmp = new Unary(getInput(0).constructLops(), getInput(1).constructLops(),
-					ot, getDataType(), getValueType(), et);
+					ot, getDataType(), getValueType(), et,
+					OptimizerUtils.getConstrainedNumThreads(_maxNumThreads));
 			}
 			else { //general case
 				tmp = new Binary(getInput(0).constructLops(), getInput(1).constructLops(),

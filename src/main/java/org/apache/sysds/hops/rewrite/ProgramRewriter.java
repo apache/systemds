@@ -107,7 +107,8 @@ public class ProgramRewriter
 				_sbRuleSet.add(  new RewriteRemoveForLoopEmptySequence()         ); //dependency: constant folding
 			if( OptimizerUtils.ALLOW_BRANCH_REMOVAL || OptimizerUtils.ALLOW_FOR_LOOP_REMOVAL )
 				_sbRuleSet.add(  new RewriteMergeBlockSequence()                 ); //dependency: remove branches, remove for-loops
-			_sbRuleSet.add(      new RewriteCompressedReblock()                  ); // Compression Rewrite
+			if(OptimizerUtils.ALLOW_COMPRESSION_REWRITE)
+				_sbRuleSet.add(      new RewriteCompressedReblock()              ); // Compression Rewrite
  			if( OptimizerUtils.ALLOW_SPLIT_HOP_DAGS )
  				_sbRuleSet.add(  new RewriteSplitDagUnknownCSVRead()             ); //dependency: reblock, merge blocks
  			if( ConfigurationManager.getCompilerConfigFlag(ConfigType.ALLOW_INDIVIDUAL_SB_SPECIFIC_OPS) )
@@ -136,6 +137,9 @@ public class ProgramRewriter
 			if( OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION ) {
 				_dagRuleSet.add( new RewriteAlgebraicSimplificationDynamic()      ); //dependencies: cse
 				_dagRuleSet.add( new RewriteAlgebraicSimplificationStatic()       ); //dependencies: cse
+			}
+			if ( OptimizerUtils.FEDERATED_COMPILATION ) {
+				_dagRuleSet.add( new RewriteFederatedExecution() );
 			}
 		}
 		

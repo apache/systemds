@@ -23,16 +23,13 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.Map.Entry;
-import java.util.TreeMap;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.function.BiFunction;
 import java.util.stream.Stream;
 
-import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.CacheBlock;
@@ -189,12 +186,12 @@ public class FederationMap {
 
 	public FederatedRequest broadcast(CacheableData<?> data) {
 		long id;
-		boolean exists = Arrays.stream(_fedMap.stream().map(e -> new ImmutablePair<>(data.getUniqueID(), e.getRight().getAddress())).toArray())
+		boolean exists = Arrays.stream(_fedMap.stream().map(e -> Pair.of(data.getUniqueID(), e.getRight().getAddress())).toArray())
 			.allMatch(e -> FederationUtils._broadcastMap.containsKey(e) && FederationUtils._broadcastMap.get(e).getLeft() == FType.BROADCAST);
 
 
 		if(exists) {
-			id = FederationUtils._broadcastMap.get(new ImmutablePair<>(data.getUniqueID(),
+			id = FederationUtils._broadcastMap.get(Pair.of(data.getUniqueID(),
 				((Pair<FederatedRange, FederatedData>) _fedMap.toArray()[0]).getRight().getAddress())).getRight();
 			return new FederatedRequest(RequestType.PUT_VAR, id, data.getUniqueID(), FType.BROADCAST);
 		}
@@ -202,8 +199,8 @@ public class FederationMap {
 		id = FederationUtils.getNextFedDataID();
 		CacheBlock cb = data.acquireReadAndRelease();
 		for(Pair<FederatedRange, FederatedData> e : _fedMap) {
-			FederationUtils._broadcastMap.putIfAbsent(new ImmutablePair<>(data.getUniqueID(), e.getValue().getAddress()),
-				new ImmutablePair<>(FType.BROADCAST, id));
+			FederationUtils._broadcastMap.putIfAbsent(Pair.of(data.getUniqueID(), e.getValue().getAddress()),
+				Pair.of(FType.BROADCAST, id));
 		}
 		return new FederatedRequest(RequestType.PUT_VAR, id, cb, data.getUniqueID(), FType.BROADCAST);
 	}
@@ -228,11 +225,11 @@ public class FederationMap {
 
 		long id;
 		FederatedRequest[] ret = new FederatedRequest[_fedMap.size()];
-		boolean exists = Arrays.stream(_fedMap.stream().map(e -> new ImmutablePair<>(data.getUniqueID(), e.getRight().getAddress())).toArray())
+		boolean exists = Arrays.stream(_fedMap.stream().map(e -> Pair.of(data.getUniqueID(), e.getRight().getAddress())).toArray())
 			.allMatch(e -> FederationUtils._broadcastMap.containsKey(e) && FederationUtils._broadcastMap.get(e).getLeft() == FType.PART);
 
 		if(exists) {
-			id = FederationUtils._broadcastMap.get(new ImmutablePair<>(data.getUniqueID(),
+			id = FederationUtils._broadcastMap.get(Pair.of(data.getUniqueID(),
 				((Pair<FederatedRange, FederatedData>) _fedMap.toArray()[0]).getRight().getAddress())).getRight();
 			Arrays.fill(ret, new FederatedRequest(RequestType.PUT_VAR, id, data.getUniqueID(), FType.PART));
 		} else {
@@ -255,13 +252,13 @@ public class FederationMap {
 				int cu = transposed ? end - 1 : nc - 1;
 				ix[pos++] = _type == FType.ROW ? new int[] {rl, ru, cl, cu} : new int[] {cl, cu, rl, ru};
 
-				FederationUtils._broadcastMap.putIfAbsent(new ImmutablePair<>(data.getUniqueID(), e.getValue().getAddress()),
-					new ImmutablePair<>(FType.PART, id));
+				FederationUtils._broadcastMap.putIfAbsent(Pair.of(data.getUniqueID(), e.getValue().getAddress()),
+					Pair.of(FType.PART, id));
 			}
 
 			// multi-threaded block slicing and federation request creation
 			Arrays.parallelSetAll(ret,i -> new FederatedRequest(RequestType.PUT_VAR, id, cb.slice(ix[i][0], ix[i][1], ix[i][2], ix[i][3],
-				new MatrixBlock()), data.getUniqueID(), FType.PART)); //FIXME sliced frame flag
+				new MatrixBlock()), data.getUniqueID(), FType.PART));
 		}
 		return ret;
 	}
@@ -442,7 +439,7 @@ public class FederationMap {
 		List<Pair<FederatedRange, Future<FederatedResponse>>> readResponses = new ArrayList<>();
 		FederatedRequest request = new FederatedRequest(RequestType.GET_VAR, _ID);
 		for(Pair<FederatedRange, FederatedData> e : _fedMap)
-			readResponses.add(new ImmutablePair<>(e.getKey(), e.getValue().executeFederatedOperation(request)));
+			readResponses.add(Pair.of(e.getKey(), e.getValue().executeFederatedOperation(request)));
 		return readResponses;
 	}
 

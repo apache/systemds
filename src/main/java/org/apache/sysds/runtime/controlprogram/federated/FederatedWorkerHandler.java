@@ -27,7 +27,7 @@ import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
-import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.log4j.Logger;
@@ -259,9 +259,6 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 		checkNumParams(request.getNumParams(), 1, 2, 3);
 		String varname = String.valueOf(request.getID());
 		ExecutionContext ec = _ecm.get(request.getTID());
-		if(ec.containsVariable(varname)) {
-			return new FederatedResponse(ResponseType.ERROR, "Variable " + request.getID() + " already existing.");
-		}
 
 		// check if broadcast already exists, otherwise put
 		FederationMap.FType type;
@@ -269,18 +266,22 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 		if (request.getNumParams() == 2) {
 			dataID = (long) request.getParam(0);
 			type = (FederationMap.FType) request.getParam(1);
-			if(request.getNumParams() == 2 && _federatedWorker._broadcastMap.containsKey(new ImmutablePair<>(dataID, type)) &&
-				_federatedWorker._broadcastMap.get(new ImmutablePair<>(Long.valueOf(varname), type)).equals(dataID)) {
+			if(_federatedWorker._broadcastMap.containsKey(Pair.of(Long.valueOf(varname), type)) &&
+				_federatedWorker._broadcastMap.get(Pair.of(Long.valueOf(varname), type)).equals(dataID)) {
 				return new FederatedResponse(ResponseType.SUCCESS_EMPTY);
 			}
 		} else if (request.getNumParams() == 3) {
 			dataID = (long) request.getParam(1);
 			type = (FederationMap.FType) request.getParam(2);
-			if(_federatedWorker._broadcastMap.containsKey(new ImmutablePair<>(Long.valueOf(varname), type)) &&
-				_federatedWorker._broadcastMap.get(new ImmutablePair<>(Long.valueOf(varname), type)).equals(dataID)) {
+			if(_federatedWorker._broadcastMap.containsKey(Pair.of(Long.valueOf(varname), type)) &&
+				_federatedWorker._broadcastMap.get(Pair.of(Long.valueOf(varname), type)).equals(dataID)) {
 				return new FederatedResponse(ResponseType.SUCCESS_EMPTY);
 			}
-			_federatedWorker._broadcastMap.putIfAbsent(new ImmutablePair<>(Long.valueOf(varname), type), dataID);
+			_federatedWorker._broadcastMap.putIfAbsent(Pair.of(Long.valueOf(varname), type), dataID);
+		}
+
+		if(ec.containsVariable(varname)) {
+			return new FederatedResponse(ResponseType.ERROR, "Variable " + request.getID() + " already existing.");
 		}
 
 		// wrap transferred cache block into cacheable data
@@ -336,11 +337,13 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 		Instruction receivedInstruction = InstructionParser.parseSingleInstruction((String) request.getParam(0));
 		pb.getInstructions().add(receivedInstruction);
 
-		long id = Long.parseLong(InstructionUtils.getInstructionParts(receivedInstruction.getInstructionString())[1]);
-		if(receivedInstruction.getOpcode().equals("rmvar") &&
-			(_federatedWorker._broadcastMap.containsKey(new ImmutablePair<>(id, FederationMap.FType.BROADCAST)) ||
-			_federatedWorker._broadcastMap.containsKey(new ImmutablePair<>(id, FederationMap.FType.PART))))
-			return new FederatedResponse(ResponseType.SUCCESS_EMPTY);
+
+		if(receivedInstruction.getOpcode().equals("rmvar")) {
+			long id = Long.parseLong(InstructionUtils.getInstructionParts(receivedInstruction.getInstructionString())[1]);
+			if(_federatedWorker._broadcastMap.containsKey(Pair.of(id, FederationMap.FType.BROADCAST)) ||
+			_federatedWorker._broadcastMap.containsKey(Pair.of(id, FederationMap.FType.PART)))
+				return new FederatedResponse(ResponseType.SUCCESS_EMPTY);
+		}
 
 
 		if (DMLScript.LINEAGE)

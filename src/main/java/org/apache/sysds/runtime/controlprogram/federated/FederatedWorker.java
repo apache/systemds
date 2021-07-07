@@ -20,18 +20,10 @@
 package org.apache.sysds.runtime.controlprogram.federated;
 
 import java.security.cert.CertificateException;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import javax.net.ssl.SSLException;
-
-import org.apache.commons.lang3.tuple.ImmutablePair;
-import org.apache.log4j.Logger;
-import org.apache.sysds.common.Types;
-import org.apache.sysds.conf.ConfigurationManager;
-import org.apache.sysds.conf.DMLConfig;
 
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.ChannelFuture;
@@ -48,6 +40,10 @@ import io.netty.handler.codec.serialization.ObjectEncoder;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslContextBuilder;
 import io.netty.handler.ssl.util.SelfSignedCertificate;
+import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.log4j.Logger;
+import org.apache.sysds.conf.ConfigurationManager;
+import org.apache.sysds.conf.DMLConfig;
 
 public class FederatedWorker {
 	protected static Logger log = Logger.getLogger(FederatedWorker.class);

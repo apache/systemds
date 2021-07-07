@@ -21,7 +21,6 @@ package org.apache.sysds.runtime.controlprogram.federated;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -35,17 +34,14 @@ import java.util.stream.Stream;
 
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
-import org.apache.sysds.common.Types;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.CacheBlock;
 import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
-import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest.RequestType;
 import org.apache.sysds.runtime.instructions.cp.ScalarObject;
 import org.apache.sysds.runtime.instructions.cp.VariableCPInstruction;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
-import org.apache.sysds.runtime.transform.encode.Encoder;
 import org.apache.sysds.runtime.util.CommonThreadPool;
 import org.apache.sysds.runtime.util.IndexRange;
 
@@ -106,8 +102,6 @@ public class FederationMap {
 
 	private long _ID = -1;
 	private final Map<FederatedRange, FederatedData> _fedMap;
-	// <id, replication type>, new id
-//	public Map<ImmutablePair<Long, FType>, Long> _broadcastMap = new HashMap<>();
 	private FType _type;
 
 	public FederationMap(Map<FederatedRange, FederatedData> fedMap) {
@@ -188,112 +182,72 @@ public class FederationMap {
 	 * @return array of federated requests corresponding to federated data
 	 */
 
-//	public FederatedRequest[] broadcastSliced(CacheableData<?> data, boolean transposed) {
-//		if( _type == FType.FULL )
-//			return broadcast(data);
-//
-//		// prepare broadcast id and pin input
-//		long id;
-//		FederatedRequest[] ret = new FederatedRequest[_fedMap.size()];
-//		if(FederationUtils._broadcastMap.containsKey(new org.apache.sysds.runtime.matrix.data.Pair<>(_ID, data.getUniqueID()))) {
-//			id = FederationUtils._broadcastMap.get(new org.apache.sysds.runtime.matrix.data.Pair<>(_ID, data.getUniqueID()));
-//			Arrays.parallelSetAll(ret,
-//				i -> new FederatedRequest(RequestType.GET_VAR, id));
-//			return ret;
-//		}
-//		else {
-//			id = FederationUtils.getNextFedDataID();
-//			FederationUtils._broadcastMap.put(new org.apache.sysds.runtime.matrix.data.Pair<>(_ID, data.getUniqueID()), id);
-//		}
-//
-//		Types.DataType type =  data instanceof MatrixObject ? Types.DataType.MATRIX : Types.DataType.FRAME;
-//
-//		CacheBlock cb = data.acquireReadAndRelease();
-//
-//		// prepare indexing ranges
-//		int[][] ix = new int[_fedMap.size()][];
-//		int pos = 0;
-//		for(Entry<FederatedRange, FederatedData> e : _fedMap.entrySet()) {
-//			int beg = e.getKey().getBeginDimsInt()[(_type == FType.ROW ? 0 : 1)];
-//			int end = e.getKey().getEndDimsInt()[(_type == FType.ROW ? 0 : 1)];
-//			int nr = _type == FType.ROW ? cb.getNumRows() : cb.getNumColumns();
-//			int nc = _type == FType.ROW ? cb.getNumColumns() : cb.getNumRows();
-//			int rl = transposed ? 0 : beg;
-//			int ru = transposed ? nr - 1 : end - 1;
-//			int cl = transposed ? beg : 0;
-//			int cu = transposed ? end - 1 : nc - 1;
-//			ix[pos] = _type == FType.ROW ?
-//				new int[] {rl, ru, cl, cu} : new int[] {cl, cu, rl, ru};
-//
-//			ret[pos] = new FederatedRequest(RequestType.PUT_FED_VAR, id, type, e.getValue().getAddress(), data.getFileName(),
-//				_fedMap.size(), Types.ReplicationType.NONE, data.getNumRows(), data.getNumColumns(),
-//				cb.slice(ix[pos][0], ix[pos][1], ix[pos][2], ix[pos][3], new MatrixBlock()), ix[pos][0], ix[pos][1], ix[pos][2], ix[pos][3]);
-//		}
-//		return ret;
-//	}
-
 	public FederatedRequest[] broadcastSliced(CacheableData<?> data, boolean transposed) {
 		if( _type == FType.FULL )
 			return new FederatedRequest[]{broadcast(data)};
 
-		// prepare broadcast id and pin input
-		long id = FederationUtils.getNextFedDataID();
-		CacheBlock cb = data.acquireReadAndRelease();
+		long id;
+		FederatedRequest[] ret = new FederatedRequest[_fedMap.size()];
+		boolean exists = Arrays.stream(_fedMap.values().stream()
+			.map(e -> new ImmutablePair<>(data.getUniqueID(), e.getAddress())).toArray())
+			.allMatch(e -> FederationUtils._broadcastMap.containsKey(e) && FederationUtils._broadcastMap.get(e).left == FType.PART);
 
-		// prepare indexing ranges
-		int[][] ix = new int[_fedMap.size()][];
-		int pos = 0;
-		for(Entry<FederatedRange, FederatedData> e : _fedMap.entrySet()) {
-			int beg = e.getKey().getBeginDimsInt()[(_type == FType.ROW ? 0 : 1)];
-			int end = e.getKey().getEndDimsInt()[(_type == FType.ROW ? 0 : 1)];
-			int nr = _type == FType.ROW ? cb.getNumRows() : cb.getNumColumns();
-			int nc = _type == FType.ROW ? cb.getNumColumns() : cb.getNumRows();
-			int rl = transposed ? 0 : beg;
-			int ru = transposed ? nr - 1 : end - 1;
-			int cl = transposed ? beg : 0;
-			int cu = transposed ? end - 1 : nc - 1;
-			ix[pos++] = _type == FType.ROW ?
-				new int[] {rl, ru, cl, cu} : new int[] {cl, cu, rl, ru};
+		if(exists) {
+			id = FederationUtils._broadcastMap.get(new ImmutablePair<>(data.getUniqueID(), ((FederatedData) _fedMap.values().toArray()[0]).getAddress())).right;
+			Arrays.fill(ret, new FederatedRequest(RequestType.PUT_VAR, id, data.getUniqueID(), FType.PART));
+		} else {
+
+			// prepare broadcast id and pin input
+			id = FederationUtils.getNextFedDataID();
+			CacheBlock cb = data.acquireReadAndRelease();
+
+			// prepare indexing ranges
+			int[][] ix = new int[_fedMap.size()][];
+			int pos = 0;
+			for(Entry<FederatedRange, FederatedData> e : _fedMap.entrySet()) {
+				int beg = e.getKey().getBeginDimsInt()[(_type == FType.ROW ? 0 : 1)];
+				int end = e.getKey().getEndDimsInt()[(_type == FType.ROW ? 0 : 1)];
+				int nr = _type == FType.ROW ? cb.getNumRows() : cb.getNumColumns();
+				int nc = _type == FType.ROW ? cb.getNumColumns() : cb.getNumRows();
+				int rl = transposed ? 0 : beg;
+				int ru = transposed ? nr - 1 : end - 1;
+				int cl = transposed ? beg : 0;
+				int cu = transposed ? end - 1 : nc - 1;
+				ix[pos++] = _type == FType.ROW ? new int[] {rl, ru, cl, cu} : new int[] {cl, cu, rl, ru};
+
+				FederationUtils._broadcastMap.putIfAbsent(new ImmutablePair<>(data.getUniqueID(), e.getValue().getAddress()),
+					new ImmutablePair<>(FType.PART, id));
+			}
+
+			// multi-threaded block slicing and federation request creation
+			Arrays.parallelSetAll(ret,i -> new FederatedRequest(RequestType.PUT_VAR, id, cb.slice(ix[i][0], ix[i][1], ix[i][2], ix[i][3],
+				new MatrixBlock()), data.getUniqueID(), FType.PART)); //FIXME sliced frame flag
 		}
-
-		// multi-threaded block slicing and federation request creation
-		FederatedRequest[] ret = new FederatedRequest[ix.length];
-		Arrays.parallelSetAll(ret,
-			i -> new FederatedRequest(RequestType.PUT_VAR, id,
-				cb.slice(ix[i][0], ix[i][1], ix[i][2], ix[i][3], new MatrixBlock())));
 		return ret;
 	}
-
-//	// leftIndex only, no need to create federated
-//	public FederatedRequest[] broadcastSliced(CacheableData<?> data, boolean isFrame, int[][] ix) {
-//		if( _type == FType.FULL )
-//			return broadcast(data);
-//
-//		// prepare broadcast id and pin input
-//		long id = FederationUtils.getNextFedDataID();
-//		CacheBlock cb = data.acquireReadAndRelease();
-//
-//		// multi-threaded block slicing and federation request creation
-//		FederatedRequest[] ret = new FederatedRequest[ix.length];
-//		Arrays.setAll(ret,
-//			i -> new FederatedRequest(RequestType.PUT_VAR, id,
-//				cb.slice(ix[i][0], ix[i][1], ix[i][2], ix[i][3], isFrame ? new FrameBlock() : new MatrixBlock())));
-//		return ret;
-//	}
 
 	public FederatedRequest[] broadcastSliced(CacheableData<?> data, boolean isFrame, int[][] ix) {
 		if( _type == FType.FULL )
 			return new FederatedRequest[]{broadcast(data)};
 
-		// prepare broadcast id and pin input
-		long id = FederationUtils.getNextFedDataID();
-		CacheBlock cb = data.acquireReadAndRelease();
-
-		// multi-threaded block slicing and federation request creation
+		long id;
 		FederatedRequest[] ret = new FederatedRequest[ix.length];
-		Arrays.setAll(ret,
-			i -> new FederatedRequest(RequestType.PUT_VAR, id,
-				cb.slice(ix[i][0], ix[i][1], ix[i][2], ix[i][3], isFrame ? new FrameBlock() : new MatrixBlock())));
+		boolean exists = Arrays.stream(_fedMap.values().stream()
+			.map(e -> new ImmutablePair<>(data.getUniqueID(), e.getAddress())).toArray())
+			.allMatch(e -> FederationUtils._broadcastMap.containsKey(e) && FederationUtils._broadcastMap.get(e).left == FType.PART);
+
+		if(exists) {
+			id = FederationUtils._broadcastMap.get(new ImmutablePair<>(data.getUniqueID(), ((FederatedData) _fedMap.values().toArray()[0]).getAddress())).right;
+			Arrays.fill(ret, new FederatedRequest(RequestType.PUT_VAR, id, data.getUniqueID(), FType.PART));
+		} else {
+			// prepare broadcast id and pin input
+			id = FederationUtils.getNextFedDataID();
+			CacheBlock cb = data.acquireReadAndRelease();
+
+			// multi-threaded block slicing and federation request creation
+			Arrays.setAll(ret, i -> new FederatedRequest(RequestType.PUT_VAR, id, cb.slice(ix[i][0], ix[i][1], ix[i][2], ix[i][3],
+				isFrame ? new FrameBlock() : new MatrixBlock()), data.getUniqueID(), FType.PART));
+		}
 		return ret;
 	}
 

@@ -21,12 +21,7 @@ package org.apache.sysds.runtime.controlprogram.federated;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.net.UnknownHostException;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
@@ -57,7 +52,6 @@ import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.Data;
 import org.apache.sysds.runtime.instructions.cp.ListObject;
 import org.apache.sysds.runtime.instructions.cp.ScalarObject;
-import org.apache.sysds.runtime.instructions.fed.InitFEDInstruction;
 import org.apache.sysds.runtime.io.FileFormatPropertiesCSV;
 import org.apache.sysds.runtime.io.IOUtilFunctions;
 import org.apache.sysds.runtime.lineage.LineageCache;
@@ -65,17 +59,12 @@ import org.apache.sysds.runtime.lineage.LineageCacheConfig;
 import org.apache.sysds.runtime.lineage.LineageCacheConfig.ReuseCacheType;
 import org.apache.sysds.runtime.lineage.LineageItem;
 import org.apache.sysds.runtime.lineage.LineageItemUtils;
-import org.apache.sysds.runtime.matrix.data.FrameBlock;
-import org.apache.sysds.runtime.matrix.data.MatrixBlock;
-import org.apache.sysds.runtime.matrix.data.Pair;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
-import org.apache.sysds.runtime.meta.MetaData;
 import org.apache.sysds.runtime.meta.MetaDataAll;
 import org.apache.sysds.runtime.meta.MetaDataFormat;
 import org.apache.sysds.runtime.privacy.DMLPrivacyException;
 import org.apache.sysds.runtime.privacy.PrivacyMonitor;
 import org.apache.sysds.utils.Statistics;
-import org.apache.wink.json4j.JSONException;
 
 public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 	protected static Logger log = Logger.getLogger(FederatedWorkerHandler.class);
@@ -122,8 +111,7 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 			PrivacyMonitor.clearCheckedConstraints();
 
 			// execute command and handle privacy constraints
-			FederatedResponse tmp = executeCommand(request); //TODO possible modification
-//			FederationUtils.callInstruction()
+			FederatedResponse tmp = executeCommand(request);
 			conditionalAddCheckedConstraints(request, tmp);
 
 			// select the response for the entire batch of requests
@@ -187,7 +175,7 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 	}
 
 	private FederatedResponse readData(FederatedRequest request) {
-		checkNumParams(request.getNumParams(), 2, 3);
+		checkNumParams(request.getNumParams(), 2);
 		String filename = (String) request.getParam(0);
 		DataType dt = DataType.valueOf((String) request.getParam(1));
 		return readData(filename, dt, request.getID(), request.getTID());
@@ -290,7 +278,7 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 			type = (FederationMap.FType) request.getParam(2);
 			if(_federatedWorker._broadcastMap.containsKey(new ImmutablePair<>(Long.valueOf(varname), type)) &&
 				_federatedWorker._broadcastMap.get(new ImmutablePair<>(Long.valueOf(varname), type)).equals(dataID)) {
-				return new FederatedResponse(ResponseType.SUCCESS);
+				return new FederatedResponse(ResponseType.SUCCESS_EMPTY);
 			}
 			_federatedWorker._broadcastMap.putIfAbsent(new ImmutablePair<>(Long.valueOf(varname), type), dataID);
 		}
@@ -350,8 +338,8 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 
 		long id = Long.parseLong(InstructionUtils.getInstructionParts(receivedInstruction.getInstructionString())[1]);
 		if(receivedInstruction.getOpcode().equals("rmvar") &&
-			_federatedWorker._broadcastMap.containsKey(new ImmutablePair<>(id, FederationMap.FType.BROADCAST)) ||
-			_federatedWorker._broadcastMap.containsKey(new ImmutablePair<>(id, FederationMap.FType.PART)))
+			(_federatedWorker._broadcastMap.containsKey(new ImmutablePair<>(id, FederationMap.FType.BROADCAST)) ||
+			_federatedWorker._broadcastMap.containsKey(new ImmutablePair<>(id, FederationMap.FType.PART))))
 			return new FederatedResponse(ResponseType.SUCCESS_EMPTY);
 
 

@@ -280,7 +280,7 @@ class Test_DMLScript(unittest.TestCase):
         The value of "naStrings" is a list of all the String values that should be treated as unknown values during the preprocessing.
         Also, "rows" in our example is set to 32561, as we have this many entries and "cols" is set to 15 as we have this many features in our datasets.
         
-         After these requirements are completed, we have to define a SystemDSContext for reading our dataset. We can do this in the following way.
+        After these requirements are completed, we have to define a SystemDSContext for reading our dataset. We can do this in the following way.
         """""
         ################################################################################################################
 
@@ -290,7 +290,8 @@ class Test_DMLScript(unittest.TestCase):
         with SystemDSContext() as sds:
         """""
         #### END
-        train_count = 30000
+        train_count = 32561
+        test_count = 16281
         ################################################################################################################
         """""
         With this context we can now define a read operation using the path of the dataset and a schema.
@@ -380,9 +381,6 @@ class Test_DMLScript(unittest.TestCase):
         There we provide different examples for defining jspec's and what functionality is currently supported.
         In our particular case we obtain the Matrix X1 and the Frame M1 from the operation. X1 holds all the encoded values and M1 holds a mapping between the encoded values
         and all the initial values. Columns that have not been specified in the .json file were not altered. 
-        Finally, we call the compute() function to execute all the specified operations. In this particular case the Matrix X1 and the Frame M1 will be converted to a numpy
-        array and a pandas dataframe, as we need them for further preprocessing.
-
         """""
         ################################################################################################################
         X1, M1 = X1.transform_encode(spec=jspec)
@@ -399,30 +397,31 @@ class Test_DMLScript(unittest.TestCase):
         ################################################################################################################
         PREPROCESS_package = self.sds.source(self.preprocess_src_path, "preprocess", print_imported_methods=True)
 
-
-        X = PREPROCESS_package.get_X(X1, train_count)
-        Y = PREPROCESS_package.get_Y(X1, train_count)
+        X = PREPROCESS_package.get_X(X1, 1, train_count)
+        Y = PREPROCESS_package.get_Y(X1, 1, train_count)
 
         #We lose the column count information after using the Preprocess Package. This triggers an error on multilogregpredict. Otherwise its working
-        Xt = self.sds.from_numpy(np.array(PREPROCESS_package.get_Xt(X1, train_count).compute()))
-        Yt = PREPROCESS_package.get_Yt(X1, train_count)
+        Xt = PREPROCESS_package.get_X(X1, train_count, train_count+test_count)
+        Yt = PREPROCESS_package.get_Y(X1, train_count, train_count+test_count)
         # since the test set contains dots in the income column and the training set does not we need to make sure that they are labled as the same value
-        Yt = PREPROCESS_package.replace_value (Yt, 3.0, 1.0)
-        Yt = PREPROCESS_package.replace_value (Yt, 4.0, 2.0)
+        Yt = PREPROCESS_package.replace_value(Yt, 3.0, 1.0)
+        Yt = PREPROCESS_package.replace_value(Yt, 4.0, 2.0)
 
-        X, mean, sigma = scale(X, True, True)
-        Xt = scaleApply(Xt, mean, sigma)
+        # TODO somehow throws error at predict with this included
+        #X, mean, sigma = scale(X, True, True)
+        #Xt = scaleApply(Xt, mean, sigma)
 
         betas = multiLogReg(X, Y)
 
         [_, y_pred, acc] = multiLogRegPredict(Xt, betas, Yt)
 
         confusion_matrix_abs, _ = confusionMatrix(y_pred, Yt).compute()
+        print(confusion_matrix_abs)
         self.assertTrue(
             np.allclose(
                 confusion_matrix_abs,
-                np.array([[13375,  1788],
-                          [979., 2700]])
+                np.array([[11593.,  1545.],
+                          [842., 2302.]])
             )
         )
 

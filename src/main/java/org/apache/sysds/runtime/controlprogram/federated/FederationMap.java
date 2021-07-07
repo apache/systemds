@@ -198,10 +198,14 @@ public class FederationMap {
 
 		id = FederationUtils.getNextFedDataID();
 		CacheBlock cb = data.acquireReadAndRelease();
+		List<Pair<FederatedRange, FederatedData>> newFedMap = new ArrayList<>();
+
 		for(Pair<FederatedRange, FederatedData> e : _fedMap) {
 			FederationUtils._broadcastMap.putIfAbsent(Pair.of(data.getUniqueID(), e.getValue().getAddress()),
 				Pair.of(FType.BROADCAST, id));
+			newFedMap.add(Pair.of(e.getLeft(), new FederatedData(data.getDataType(), e.getRight().getAddress(), data.getFileName())));
 		}
+		data.setFedMapping(new FederationMap(id, newFedMap, FType.BROADCAST));
 		return new FederatedRequest(RequestType.PUT_VAR, id, cb, data.getUniqueID(), FType.BROADCAST);
 	}
 
@@ -233,10 +237,10 @@ public class FederationMap {
 				((Pair<FederatedRange, FederatedData>) _fedMap.toArray()[0]).getRight().getAddress())).getRight();
 			Arrays.fill(ret, new FederatedRequest(RequestType.PUT_VAR, id, data.getUniqueID(), FType.PART));
 		} else {
-
 			// prepare broadcast id and pin input
 			id = FederationUtils.getNextFedDataID();
 			CacheBlock cb = data.acquireReadAndRelease();
+			List<Pair<FederatedRange, FederatedData>> newFedMap = new ArrayList<>();
 
 			// prepare indexing ranges
 			int[][] ix = new int[_fedMap.size()][];
@@ -254,11 +258,14 @@ public class FederationMap {
 
 				FederationUtils._broadcastMap.putIfAbsent(Pair.of(data.getUniqueID(), e.getValue().getAddress()),
 					Pair.of(FType.PART, id));
+
+				newFedMap.add(Pair.of(e.getLeft(), new FederatedData(data.getDataType(), e.getRight().getAddress(), data.getFileName())));
 			}
 
 			// multi-threaded block slicing and federation request creation
 			Arrays.parallelSetAll(ret,i -> new FederatedRequest(RequestType.PUT_VAR, id, cb.slice(ix[i][0], ix[i][1], ix[i][2], ix[i][3],
 				new MatrixBlock()), data.getUniqueID(), FType.PART));
+			data.setFedMapping(new FederationMap(id, newFedMap, FType.PART));
 		}
 		return ret;
 	}

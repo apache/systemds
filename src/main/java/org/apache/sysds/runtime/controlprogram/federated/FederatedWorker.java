@@ -40,7 +40,7 @@ import io.netty.handler.codec.serialization.ObjectEncoder;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslContextBuilder;
 import io.netty.handler.ssl.util.SelfSignedCertificate;
-import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.log4j.Logger;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.conf.DMLConfig;
@@ -50,7 +50,7 @@ public class FederatedWorker {
 
 	private int _port;
 	private final ExecutionContextMap _ecm;
-	protected Map<ImmutablePair<Long, FederationMap.FType>, Long> _broadcastMap = new HashMap<>();
+	protected Map<Pair<Long, FederationMap.FType>, Long> _broadcastMap = new HashMap<>();
 
 	public FederatedWorker(int port) {
 		_ecm = new ExecutionContextMap();

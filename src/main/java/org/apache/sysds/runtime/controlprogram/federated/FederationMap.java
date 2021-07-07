@@ -189,19 +189,19 @@ public class FederationMap {
 
 	public FederatedRequest broadcast(CacheableData<?> data) {
 		long id;
-		boolean exists = Arrays.stream(_fedMap.values().stream()
-			.map(e -> new ImmutablePair<>(data.getUniqueID(), e.getAddress())).toArray())
-			.allMatch(e -> FederationUtils._broadcastMap.containsKey(e) && FederationUtils._broadcastMap.get(e).left == FType.BROADCAST);
+		boolean exists = Arrays.stream(_fedMap.stream().map(e -> new ImmutablePair<>(data.getUniqueID(), e.getRight().getAddress())).toArray())
+			.allMatch(e -> FederationUtils._broadcastMap.containsKey(e) && FederationUtils._broadcastMap.get(e).getLeft() == FType.BROADCAST);
 
 
 		if(exists) {
-			id = FederationUtils._broadcastMap.get(new ImmutablePair<>(data.getUniqueID(), ((FederatedData) _fedMap.values().toArray()[0]).getAddress())).right;
+			id = FederationUtils._broadcastMap.get(new ImmutablePair<>(data.getUniqueID(),
+				((Pair<FederatedRange, FederatedData>) _fedMap.toArray()[0]).getRight().getAddress())).getRight();
 			return new FederatedRequest(RequestType.PUT_VAR, id, data.getUniqueID(), FType.BROADCAST);
 		}
 
 		id = FederationUtils.getNextFedDataID();
 		CacheBlock cb = data.acquireReadAndRelease();
-		for(Entry<FederatedRange, FederatedData> e : _fedMap.entrySet()) {
+		for(Pair<FederatedRange, FederatedData> e : _fedMap) {
 			FederationUtils._broadcastMap.putIfAbsent(new ImmutablePair<>(data.getUniqueID(), e.getValue().getAddress()),
 				new ImmutablePair<>(FType.BROADCAST, id));
 		}
@@ -228,12 +228,12 @@ public class FederationMap {
 
 		long id;
 		FederatedRequest[] ret = new FederatedRequest[_fedMap.size()];
-		boolean exists = Arrays.stream(_fedMap.values().stream()
-			.map(e -> new ImmutablePair<>(data.getUniqueID(), e.getAddress())).toArray())
-			.allMatch(e -> FederationUtils._broadcastMap.containsKey(e) && FederationUtils._broadcastMap.get(e).left == FType.PART);
+		boolean exists = Arrays.stream(_fedMap.stream().map(e -> new ImmutablePair<>(data.getUniqueID(), e.getRight().getAddress())).toArray())
+			.allMatch(e -> FederationUtils._broadcastMap.containsKey(e) && FederationUtils._broadcastMap.get(e).getLeft() == FType.PART);
 
 		if(exists) {
-			id = FederationUtils._broadcastMap.get(new ImmutablePair<>(data.getUniqueID(), ((FederatedData) _fedMap.values().toArray()[0]).getAddress())).right;
+			id = FederationUtils._broadcastMap.get(new ImmutablePair<>(data.getUniqueID(),
+				((Pair<FederatedRange, FederatedData>) _fedMap.toArray()[0]).getRight().getAddress())).getRight();
 			Arrays.fill(ret, new FederatedRequest(RequestType.PUT_VAR, id, data.getUniqueID(), FType.PART));
 		} else {
 

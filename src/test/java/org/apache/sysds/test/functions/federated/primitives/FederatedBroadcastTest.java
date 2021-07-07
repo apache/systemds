@@ -34,11 +34,11 @@ import org.junit.runners.Parameterized;
 
 @RunWith(value = Parameterized.class)
 @net.jcip.annotations.NotThreadSafe
-public class FederatedBroadcastCleanTest extends AutomatedTestBase {
+public class FederatedBroadcastTest extends AutomatedTestBase {
 
 	private final static String TEST_DIR = "functions/federated/";
-	private final static String TEST_NAME = "FederatedBroadcastCleanTest";
-	private final static String TEST_CLASS_DIR = TEST_DIR + FederatedBroadcastCleanTest.class.getSimpleName() + "/";
+	private final static String TEST_NAME = "FederatedBroadcastTest";
+	private final static String TEST_CLASS_DIR = TEST_DIR + FederatedBroadcastTest.class.getSimpleName() + "/";
 
 	private final static int blocksize = 1024;
 	@Parameterized.Parameter()
@@ -56,19 +56,19 @@ public class FederatedBroadcastCleanTest extends AutomatedTestBase {
 	public static Collection<Object[]> data() {
 		// rows have to be even and > 1
 		return Arrays.asList(new Object[][] {
-			// {2, 1000}, 
+			// {2, 1000},
 			{10, 100},
-			// {100, 10}, {1000, 1}, 
+			// {100, 10}, {1000, 1},
 			// {10, 2000}, {2000, 10}
 		});
 	}
 
 	@Test
-	public void federatedMultiplyCP() {
-		federatedMultiply(Types.ExecMode.SINGLE_NODE);
+	public void federatedBroadcastCP() {
+		federatedBroadcast(Types.ExecMode.SINGLE_NODE);
 	}
 
-	public void federatedMultiply(Types.ExecMode execMode) {
+	public void federatedBroadcast(Types.ExecMode execMode) {
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
 		Types.ExecMode platformOld = rtplatform;
 		rtplatform = execMode;
@@ -96,10 +96,10 @@ public class FederatedBroadcastCleanTest extends AutomatedTestBase {
 		TestConfiguration config = availableTestConfigurations.get(TEST_NAME);
 		loadTestConfiguration(config);
 
-		//		// Run reference dml script with normal matrix
-		//		fullDMLScriptName = HOME + TEST_NAME + "Reference.dml";
-		//		programArgs = new String[] {"-args", input("X1"), input("X2"), expected("Z")};
-		//		runTest(null);
+		// Run reference dml script with normal matrix
+		fullDMLScriptName = HOME + TEST_NAME + "Reference.dml";
+		programArgs = new String[] {"-args", input("X1"), input("X2"), expected("Z")};
+		runTest(null);
 
 		// Run actual dml script with federated matrix
 		fullDMLScriptName = HOME + TEST_NAME + ".dml";
@@ -108,7 +108,7 @@ public class FederatedBroadcastCleanTest extends AutomatedTestBase {
 		runTest(null);
 
 		// compare via files
-		//		compareResults(1e-1);
+		compareResults(1e-1);
 
 		TestUtils.shutdownThreads(t1, t2);
 

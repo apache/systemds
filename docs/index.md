@@ -22,7 +22,7 @@ limitations under the License.
 -->
 
 SystemDS is a flexible, scalable machine learning system.
-SystemDS's distinguishing characteristics are:
+SystemDS's distinguishing characteristics are: 
 
   1. **Algorithm customizability via R-like and Python-like languages**.
   2. **Multiple execution modes**, including Spark MLContext, Spark Batch, Standalone, and JMLC.

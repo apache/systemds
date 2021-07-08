@@ -29,7 +29,8 @@ on:
     paths-ignore:
       - 'docs/**'
       - '*.md'
-    
+    branches:
+      - master
 jobs:
   build:
     runs-on: ${{ matrix.os }}

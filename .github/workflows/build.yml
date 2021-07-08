@@ -21,9 +21,10 @@
 
 name: Build
 
-on: 
+on:
   push:
-  
+    branches:
+      - master
   pull_request:
     paths-ignore:
       - 'docs/**'

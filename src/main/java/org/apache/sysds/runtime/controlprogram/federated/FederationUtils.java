@@ -29,6 +29,7 @@ import java.util.Optional;
 import java.util.concurrent.Future;
 
 import org.apache.commons.lang3.tuple.Pair;
+import org.apache.commons.lang3.tuple.Triple;
 import org.apache.log4j.Logger;
 import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.lops.Lop;
@@ -59,7 +60,7 @@ import org.apache.sysds.runtime.matrix.operators.SimpleOperator;
 public class FederationUtils {
 	protected static Logger log = Logger.getLogger(FederationUtils.class);
 	private static final IDSequence _idSeq = new IDSequence();
-	public static Map<Pair<Long, InetSocketAddress>, Pair<FederationMap.FType, Long>> _broadcastMap = new HashMap<>();
+	public static Map<Pair<Long, InetSocketAddress>, Triple<FederationMap.FType, Long, Boolean>> _broadcastMap = new HashMap<>();
 
 	public static void resetFedDataID() {
 		_idSeq.reset();

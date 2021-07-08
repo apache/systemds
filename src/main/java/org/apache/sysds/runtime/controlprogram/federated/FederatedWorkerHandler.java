@@ -340,8 +340,8 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 
 		if(receivedInstruction.getOpcode().equals("rmvar")) {
 			long id = Long.parseLong(InstructionUtils.getInstructionParts(receivedInstruction.getInstructionString())[1]);
-			if(_federatedWorker._broadcastMap.containsKey(Pair.of(id, FederationMap.FType.BROADCAST)) ||
-			_federatedWorker._broadcastMap.containsKey(Pair.of(id, FederationMap.FType.PART)))
+			if( _federatedWorker == null || (_federatedWorker._broadcastMap.containsKey(Pair.of(id, FederationMap.FType.BROADCAST)) ||
+			_federatedWorker._broadcastMap.containsKey(Pair.of(id, FederationMap.FType.PART))))
 				return new FederatedResponse(ResponseType.SUCCESS_EMPTY);
 		}
 

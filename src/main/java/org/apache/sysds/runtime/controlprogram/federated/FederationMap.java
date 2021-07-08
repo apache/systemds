@@ -203,7 +203,8 @@ public class FederationMap {
 		for(Pair<FederatedRange, FederatedData> e : _fedMap) {
 			FederationUtils._broadcastMap.putIfAbsent(Pair.of(data.getUniqueID(), e.getValue().getAddress()),
 				Pair.of(FType.BROADCAST, id));
-			newFedMap.add(Pair.of(e.getLeft(), new FederatedData(data.getDataType(), e.getRight().getAddress(), data.getFileName())));
+			newFedMap.add(Pair.of(new FederatedRange(new long[] {0, 0}, new long[] {data.getNumRows(), data.getNumColumns()}),
+				new FederatedData(data.getDataType(), e.getRight().getAddress(), data.getFileName())));
 		}
 		data.setFedMapping(new FederationMap(id, newFedMap, FType.BROADCAST));
 		return new FederatedRequest(RequestType.PUT_VAR, id, cb, data.getUniqueID(), FType.BROADCAST);
@@ -259,13 +260,16 @@ public class FederationMap {
 				FederationUtils._broadcastMap.putIfAbsent(Pair.of(data.getUniqueID(), e.getValue().getAddress()),
 					Pair.of(FType.PART, id));
 
-				newFedMap.add(Pair.of(e.getLeft(), new FederatedData(data.getDataType(), e.getRight().getAddress(), data.getFileName())));
+				newFedMap.add(Pair.of(transposed ? e.getLeft().transpose() : e.getLeft(), new FederatedData(data.getDataType(), e.getRight().getAddress(), data.getFileName())));
+//				newFedMap.add(Pair.of(new FederatedRange(new long[] {0, 0}, new long[] {data.getNumRows(), data.getNumColumns()}),
+//					new FederatedData(data.getDataType(), e.getRight().getAddress(), data.getFileName())));
 			}
 
 			// multi-threaded block slicing and federation request creation
 			Arrays.parallelSetAll(ret,i -> new FederatedRequest(RequestType.PUT_VAR, id, cb.slice(ix[i][0], ix[i][1], ix[i][2], ix[i][3],
 				new MatrixBlock()), data.getUniqueID(), FType.PART));
-			data.setFedMapping(new FederationMap(id, newFedMap, FType.PART));
+			if(!data.isFederated())
+				data.setFedMapping(new FederationMap(id, newFedMap, FType.PART));
 		}
 		return ret;
 	}

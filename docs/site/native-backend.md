@@ -45,7 +45,7 @@ internal Java library for performing single node operations such as matrix multi
 By default, SystemDS will first attempt to use Intel MKL (if installed), and then OpenBLAS (if installed).
 If none of the libraries are available, SystemDS falls back to its internal java library.
 
-> Note: Current SystemDS version only supported on **Linux** platform.
+> Note: Current SystemDS version supported on **Linux**, **Windows** x86-64 platform.
 
 ## Requirements
 
@@ -79,7 +79,7 @@ Either of the following software is required to be installed in your system:
 
 [Scripts to set environmental variables](https://software.intel.com/content/www/us/en/develop/documentation/onemkl-linux-developer-guide/top/getting-started/setting-environment-variables/scripts-to-set-environment-variables.html)
 
-For example, to set Intel MKL libraries in the Path:
+For example, in Linux to set Intel MKL libraries in the Path:
 
 ```sh
 # path adjustments to that script according to your installation
@@ -94,12 +94,6 @@ Java:
 
 ```sh
 -Djava.library.path=/path/to/blas-n-other-dependencies
-```
-
-Spark:
-
-```sh
-spark.executorEnv.LD_LIBRARY_PATH=/path/to/blas-n-other-dependencies
 ```
 
 Note: This property can also be set with `sysds.native.blas.directory`.

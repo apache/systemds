@@ -24,31 +24,85 @@
 
 X = read($INPUT)
 
-ndim = ifdef($NDIM, 2)
-perplexity = ifdef($PERPLEXITY, 30)
-lr = ifdef($LR, 300.)
-momentum = ifdef($M, 0.9)
-iter = ifdef($ITERS, 1000)
+#ndim = ifdef($NDIM, 2)
+#perplexity = ifdef($PERPLEXITY, 30)
+#lr = ifdef($LR, 300.)
+#momentum = ifdef($M, 0.9)
+#iter = ifdef($ITERS, 1000)
 
-output = ifdef($OUT, "/user/iyounus/data/Y.csv")
+#output = ifdef($OUT, "/user/iyounus/data/Y.csv")
 
-print("starting....")
+
+m_tsne = function(Matrix[Double] X, Integer reduced_dims = 2, Integer perplexity = 30,
+  Double lr = 300., Double momentum = 0.9, Integer max_iter = 1000, Boolean is_verbose = FALSE)
+  return(Matrix[Double] Y, Matrix[Double] C)
+{
+  if(is_verbose)
+    print("tsne....")
+  d = reduced_dims
+  n = nrow(X)
+  if(is_verbose)
+    print(n)
+
+  P = x2p(X, perplexity)
+  P = P*4
+  Y = rand(rows=n, cols=d, pdf="normal")
+  dY = matrix(0, rows=n, cols=d)
+  C = matrix(0, rows=max_iter/100, cols=1)
+  ZERODIAG = (diag(matrix(-1, rows=n, cols=1)) + 1)
+
+  D = matrix(0, rows=n, cols=n)
+  Z = matrix(0, rows=n, cols=n)
+  Q = matrix(0, rows=n, cols=n)
+  W = matrix(0, rows=n, cols=n)
+
+  if(is_verbose)
+    print("starting loop....")
+
+  for (itr in 1:max_iter) {
+    if (itr %% 10 == 0) {
+      if(is_verbose)
+        print(itr)
+    }
+    D = distance_matrix(Y)
+    Z = 1/(D + 1)
+    Z = Z * ZERODIAG
+    Q = Z/sum(Z)
+    W = (P - Q)*Z
+    sumW = rowSums(W)
+    g = Y * sumW - W %*% Y
+    dY = momentum*dY - lr*g
+    Y = Y + dY
+    Y = Y - colMeans(Y)
+
+    if (itr%%100 == 0) {
+      C[itr/100,] = sum(P * log(pmax(P, 1e-12) / pmax(Q, 1e-12)))
+    }
+    if (itr == 100) {
+      P = P/4
+    }
+  }
+}
 
 distance_matrix = function(matrix[double] X)
-  return (matrix[double] out) {
-    n = nrow(X)
-    s = rowSums(X * X)
-    out = - 2*X %*% t(X) + s + t(s)
-  }
+  return (matrix[double] out)
+{
+  n = nrow(X)
+  s = rowSums(X * X)
+  out = - 2*X %*% t(X) + s + t(s)
+}
 
 
 x2p = function(matrix[double] X, double perplexity)
-return(matrix[double] P) {
-  print("x2p....")
+return(matrix[double] P)
+{
+  if(is_verbose)
+    print("x2p....")
   tol = 1.0e-5
   INF = 1.0e20
   n = nrow(X)
-  print(n)
+  if(is_verbose)
+    print(n)
   D = distance_matrix(X)
 
   P = matrix(0, rows=n, cols=n)
@@ -83,59 +137,16 @@ return(matrix[double] P) {
 
   P = P + t(P)
   P = P / sum(P)
-  print("x2p finishing....")
+  if(is_verbose)
+    print("x2p finishing....")
 }
 
-tsne = function(matrix[double] X, int reduced_dims, int perplexity,
-  double lr, double momentum, int max_iter)
-  return(matrix[double] Y, matrix[double] C) {
-    print("tsne....")
-    d = reduced_dims
-    n = nrow(X)
-    print(n)
 
-    P = x2p(X, perplexity)
-    P = P*4
-    Y = rand(rows=n, cols=d, pdf="normal")
-    dY = matrix(0, rows=n, cols=d)
-    C = matrix(0, rows=max_iter/100, cols=1)
-    ZERODIAG = (diag(matrix(-1, rows=n, cols=1)) + 1)
-
-    D = matrix(0, rows=n, cols=n)
-    Z = matrix(0, rows=n, cols=n)
-    Q = matrix(0, rows=n, cols=n)
-    W = matrix(0, rows=n, cols=n)
-
-    print("starting loop....")
-
-    for (itr in 1:max_iter) {
-      if (itr %% 10 == 0) {
-        print(itr)
-      }
-      D = distance_matrix(Y)
-      Z = 1/(D + 1)
-      Z = Z * ZERODIAG
-      Q = Z/sum(Z)
-      W = (P - Q)*Z
-      sumW = rowSums(W)
-      g = Y * sumW - W %*% Y
-      dY = momentum*dY - lr*g
-      Y = Y + dY
-      Y = Y - colMeans(Y)
-
-      if (itr%%100 == 0) {
-        C[itr/100,] = sum(P * log(pmax(P, 1e-12) / pmax(Q, 1e-12)))
-      }
-      if (itr == 100) {
-        P = P/4
-      }
-    }
-  }
 
 # [Y, C] = tsne(X, ndim, perplexity, lr, momentum, iter)
 
-X = X/(pmax(X) - pmin(X))
-P = x2p(X, perplexity)
+#X = X/(pmax(X) - pmin(X))
+#P = x2p(X, perplexity)
 
-write(P, output)
+#write(P, output)
 # write(C, "")

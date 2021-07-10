@@ -251,6 +251,7 @@ public enum Builtins {
 	TOMEKLINK("tomeklink", true),
 	TRACE("trace", false),
 	TRANS("t", false),
+	TSNE("tsne", true),
 	TYPEOF("typeof", false),
 	UNIVAR("univar", true),
 	VAR("var", false),

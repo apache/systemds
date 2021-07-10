@@ -36,8 +36,8 @@ import org.apache.sysds.utils.Statistics;
 import org.junit.Assert;
 import org.junit.Test;
 
-public class compressInstructionRewrite extends AutomatedTestBase {
-	private static final Log LOG = LogFactory.getLog(compressInstructionRewrite.class.getName());
+public class CompressInstructionRewrite extends AutomatedTestBase {
+	private static final Log LOG = LogFactory.getLog(CompressInstructionRewrite.class.getName());
 
 	private String TEST_CONF = "SystemDS-config-compress-cost.xml";
 	private File TEST_CONF_FILE = new File(SCRIPT_DIR + getTestDir(), TEST_CONF);

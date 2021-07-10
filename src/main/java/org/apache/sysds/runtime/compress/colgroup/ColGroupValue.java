@@ -22,6 +22,7 @@ package org.apache.sysds.runtime.compress.colgroup;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
+import java.lang.ref.SoftReference;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
@@ -29,7 +30,7 @@ import java.util.Set;
 import org.apache.commons.lang.NotImplementedException;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
-import org.apache.sysds.runtime.DMLCompressionException;
+import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.DictionaryFactory;
@@ -52,12 +53,18 @@ import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
  * 
  */
 public abstract class ColGroupValue extends ColGroupCompressed implements Cloneable {
-	private static final long serialVersionUID = 3786247536054353658L;
 
 	/** Thread-local pairs of reusable temporary vectors for positions and values */
 	private static ThreadLocal<Pair<int[], double[]>> memPool = new ThreadLocal<Pair<int[], double[]>>() {
 		@Override
 		protected Pair<int[], double[]> initialValue() {
+			return null;
+		}
+	};
+
+	private static ThreadLocal<double[]> tmpLeftMultDoubleArray = new ThreadLocal<double[]>() {
+		@Override
+		protected double[] initialValue() {
 			return null;
 		}
 	};
@@ -72,16 +79,21 @@ public abstract class ColGroupValue extends ColGroupCompressed implements Clonea
 	protected ADictionary _dict;
 
 	/** The count of each distinct value contained in the dictionary */
-	private int[] counts;
+	private SoftReference<int[]> counts;
 
 	protected ColGroupValue(int numRows) {
 		super(numRows);
 	}
 
+	protected ColGroupValue(int[] colIndices, int numRows, ADictionary dict) {
+		super(colIndices, numRows);
+		_dict = dict;
+	}
+
 	protected ColGroupValue(int[] colIndices, int numRows, ADictionary dict, int[] cachedCounts) {
 		super(colIndices, numRows);
 		_dict = dict;
-		counts = cachedCounts;
+		counts = new SoftReference<>(cachedCounts);
 	}
 
 	@Override
@@ -172,18 +184,29 @@ public abstract class ColGroupValue extends ColGroupCompressed implements Clonea
 	 * @return the count of each value in the MatrixBlock.
 	 */
 	public final int[] getCounts() {
+		int[] countsActual = null;
+		if(_dict != null) {
+			if(counts == null || counts.get() == null) {
+				countsActual = getCounts(new int[getNumValues() + (_zeros ? 1 : 0)]);
+				counts = new SoftReference<>(countsActual);
+			}
+			else
+				countsActual = counts.get();
 
-		if(counts == null && _dict != null) {
-			counts = getCounts(new int[getNumValues() + (_zeros ? 1 : 0)]);
-			return counts;
 		}
-		else
-			return counts;
+
+		return countsActual;
 
 	}
 
+	/**
+	 * Get the cached counts. If they are not materialized or the garbage collector have removed them, then null is
+	 * returned
+	 * 
+	 * @return the counts or null.
+	 */
 	public final int[] getCachedCounts() {
-		return counts;
+		return counts != null ? counts.get() : null;
 	}
 
 	/**
@@ -359,6 +382,11 @@ public abstract class ColGroupValue extends ColGroupCompressed implements Clonea
 		}
 	}
 
+	public static void setupLeftMultThreadLocalMemory(int len) {
+		if(tmpLeftMultDoubleArray.get() == null || tmpLeftMultDoubleArray.get().length < len)
+			tmpLeftMultDoubleArray.set(new double[len]);
+	}
+
 	public static void cleanupThreadLocalMemory() {
 		memPool.remove();
 	}
@@ -518,22 +546,11 @@ public abstract class ColGroupValue extends ColGroupCompressed implements Clonea
 		return ret;
 	}
 
-	/**
-	 * Pre aggregate for left Multiplication
-	 * 
-	 * @param m  The matrixBlock to pre aggregate
-	 * @param rl Start row
-	 * @param ru End row
-	 * @return The Pre aggregated values contained in a MatrixBlock
-	 */
-	protected final MatrixBlock preAggregate(MatrixBlock m, int rl, int ru) {
-		final int numVals = getNumValues();
+	public static final MatrixBlock allocatePreAggregate(MatrixBlock m, int numVals, int rl, int ru) {
 		final int lhsRows = ru - rl;
 		final double[] vals = allocDVector(lhsRows * numVals, true);
 		final DenseBlock retB = new DenseBlockFP64(new int[] {lhsRows, numVals}, vals);
 		MatrixBlock preAgg = new MatrixBlock(lhsRows, numVals, retB);
-		preAggregate(m, preAgg, rl, ru);
-		preAgg.recomputeNonZeros();
 		return preAgg;
 	}
 
@@ -545,7 +562,9 @@ public abstract class ColGroupValue extends ColGroupCompressed implements Clonea
 	 * @param rl     Start row
 	 * @param ru     End row
 	 */
-	protected abstract void preAggregate(MatrixBlock m, MatrixBlock preAgg, int rl, int ru);
+	public abstract void preAggregate(MatrixBlock m, MatrixBlock preAgg, int rl, int ru);
+
+	public abstract void preAggregateDense(MatrixBlock m, MatrixBlock preAgg, int rl, int ru, int vl, int vu);
 
 	/**
 	 * Pre aggregate into a dictionary. It is assumed that "that" have more distinct values than, "this".
@@ -628,7 +647,7 @@ public abstract class ColGroupValue extends ColGroupCompressed implements Clonea
 		final double[] resV = result.getDenseBlockValues();
 		final int numCols = result.getNumColumns();
 
-		final double threshold = 0.2;
+		final double CommonElementThreshold = 0.4;
 
 		if(sameIndexStructure(lhs)) {
 			if(this._dict == lhs._dict) {
@@ -646,28 +665,35 @@ public abstract class ColGroupValue extends ColGroupCompressed implements Clonea
 			matrixMultDictionariesAndOutputToColIndexes(l, r, lhs._colIndexes, this._colIndexes, result);
 		}
 		else {
-			int[] countsRight = getCounts();
-			int mostFrequentRight = Math.max(countsRight[0], countsRight[countsRight.length - 1]);
-			double percentageRight = (double) mostFrequentRight / this._numRows;
-			double skipRight = percentageRight * rCol;
-			int[] countsLeft = lhs.getCounts();
-			int mostFrequentLeft = Math.max(countsLeft[0], countsLeft[countsLeft.length - 1]);
-			double percentageLeft = (double) mostFrequentLeft / this._numRows;
-			double skipLeft = percentageLeft * lCol;
+			final int[] countsRight = getCounts();
+			final int mostFrequentRight = Math.max(countsRight[0], countsRight[countsRight.length - 1]);
+			final double percentageRight = (double) mostFrequentRight / this._numRows;
+			final int[] countsLeft = lhs.getCounts();
+			final int mostFrequentLeft = Math.max(countsLeft[0], countsLeft[countsLeft.length - 1]);
+			final double percentageLeft = (double) mostFrequentLeft / this._numRows;
 
-			if(skipRight > threshold && percentageRight > percentageLeft && !(this instanceof ColGroupDDC)) {
+			// If exploiting common elements
+			final double costRightSkipping = percentageRight * nvR * rCol;
+			final double costLeftSkipping = percentageLeft * nvL * lCol;
+
+			// If dense iteration
+			final double costRightDense = nvR * rCol;
+			final double costLeftDense = nvL * lCol;
+
+			if(percentageRight > CommonElementThreshold && costRightSkipping < costLeftSkipping &&
+				!(this instanceof ColGroupDDC)) {
 				double[] mct = this._dict.getMostCommonTuple(this.getCounts(), rCol);
 				double[] lhsSum = lhs._dict.colSum(lhs.getCounts(), lCol);
 				if(mct != null)
 					outerProduct(lhsSum, lhs._colIndexes, mct, this._colIndexes, resV, numCols);
-
 				ColGroupValue thisM = (mct != null) ? (ColGroupValue) this
 					.copyAndSet(this._dict.subtractTuple(mct)) : this;
 				Dictionary preAgg = lhs.preAggregateThatIndexStructure(thisM, true);
 				matrixMultDictionariesAndOutputToColIndexes(lhs._dict, preAgg, lhs._colIndexes, this._colIndexes,
 					result);
 			}
-			else if(skipLeft > threshold && !(lhs instanceof ColGroupDDC)) {
+			else if(percentageLeft > CommonElementThreshold && costLeftSkipping < costRightDense &&
+				!(lhs instanceof ColGroupDDC)) {
 				double[] mct = lhs._dict.getMostCommonTuple(lhs.getCounts(), lCol);
 				double[] thisColSum = this._dict.colSum(getCounts(), rCol);
 				if(mct != null)
@@ -678,7 +704,7 @@ public abstract class ColGroupValue extends ColGroupCompressed implements Clonea
 				matrixMultDictionariesAndOutputToColIndexes(preAgg, this._dict, lhs._colIndexes, this._colIndexes,
 					result);
 			}
-			else if(nvR * rCol < nvL * lCol) {
+			else if(costRightDense < costLeftDense) {
 				Dictionary preAgg = lhs.preAggregateThatIndexStructure(this, false);
 				matrixMultDictionariesAndOutputToColIndexes(lhs._dict, preAgg, lhs._colIndexes, this._colIndexes,
 					result);
@@ -711,7 +737,13 @@ public abstract class ColGroupValue extends ColGroupCompressed implements Clonea
 	}
 
 	@Override
-	public final void tsmm(double[] result, int numColumns) {
+	public final void tsmm(MatrixBlock ret) {
+		double[] result = ret.getDenseBlockValues();
+		int numColumns = ret.getNumColumns();
+		tsmm(result, numColumns);
+	}
+
+	private final void tsmm(double[] result, int numColumns) {
 
 		final int[] counts = getCounts();
 
@@ -729,11 +761,6 @@ public abstract class ColGroupValue extends ColGroupCompressed implements Clonea
 		else
 			tsmmDense(result, numColumns, getValues(), counts);
 
-	}
-
-	@Override
-	public final void tsmm(double[] result, int numColumns, int idxStart, int idxEnd) {
-		throw new NotImplementedException();
 	}
 
 	private void tsmmDense(double[] result, int numColumns, double[] values, int[] counts) {
@@ -774,6 +801,8 @@ public abstract class ColGroupValue extends ColGroupCompressed implements Clonea
 
 	@Override
 	public final boolean containsValue(double pattern) {
+		if(pattern == 0 && _zeros)
+			return true;
 		return _dict.containsValue(pattern);
 	}
 
@@ -880,7 +909,6 @@ public abstract class ColGroupValue extends ColGroupCompressed implements Clonea
 				MatrixBlockDictionary leftD = left.getAsMatrixBlockDictionary(rowsLeft.length);
 				MatrixBlock leftMB = leftD.getMatrixBlock();
 				if(leftMB.isEmpty()) {
-					LOG.error("Left is empty: " + leftMB);
 					return;
 				}
 				else if(right instanceof MatrixBlockDictionary) {
@@ -919,7 +947,6 @@ public abstract class ColGroupValue extends ColGroupCompressed implements Clonea
 				MatrixBlock rightMB = rightD.getMatrixBlock();
 
 				if(rightMB.isEmpty()) {
-					LOG.error("Right is empty: " + rightMB);
 					return;
 				}
 				else if(rightMB.isInSparseFormat()) {
@@ -1029,40 +1056,52 @@ public abstract class ColGroupValue extends ColGroupCompressed implements Clonea
 	@Override
 	public final void leftMultByMatrix(MatrixBlock matrix, MatrixBlock result, int rl, int ru) {
 		try {
-			if(matrix.isEmpty())
-				return;
-
-			MatrixBlock tmpRes = leftMultByMatrixIntermediateMatrix(matrix, rl, ru);
-
+			final int numVals = getNumValues();
+			// Pre aggregate the matrix into same size as dictionary
+			MatrixBlock preAgg = allocatePreAggregate(matrix, numVals, rl, ru);
+			preAggregate(matrix, preAgg, rl, ru);
+			preAgg.recomputeNonZeros();
+			MatrixBlock tmpRes = leftMultByPreAggregateMatrix(preAgg);
 			addMatrixToResult(tmpRes, result, rl, ru);
-
 		}
 		catch(Exception e) {
 			throw new DMLCompressionException(this.getClass().getSimpleName() + " Failed to Left Matrix Multiply", e);
 		}
 	}
 
-	private MatrixBlock leftMultByMatrixIntermediateMatrix(MatrixBlock matrix, int rl, int ru) {
-		// Get dictionary.
-		MatrixBlock dictM = forceMatrixBlockDictionary().getMatrixBlock();
+	public final MatrixBlock leftMultByPreAggregateMatrix(MatrixBlock preAgg) {
 
 		// Allocate temporary matrix to multiply into.
 		final int tmpCol = _colIndexes.length;
-		final int tmpRow = matrix.getNumRows();
-		MatrixBlock tmpRes = new MatrixBlock(tmpRow, tmpCol, false);
-		
-		// Pre aggregate the matrix into same size as dictionary
-		MatrixBlock preAgg = preAggregate(matrix, rl, ru);
+		final int tmpRow = preAgg.getNumRows();
+		double[] tmpLeftMultRes = tmpLeftMultDoubleArray.get();
 
+		MatrixBlock tmpRes = null;
+		if(tmpLeftMultRes != null && tmpLeftMultRes.length >= tmpCol * tmpRow) {
+			tmpRes = new MatrixBlock(tmpRow, tmpCol, new DenseBlockFP64(new int[] {tmpRow, tmpCol}, tmpLeftMultRes));
+			tmpRes.reset();
+		}
+		else {
+			tmpRes = new MatrixBlock(tmpRow, tmpCol, false);
+		}
+
+		return leftMultByPreAggregateMatrix(preAgg, tmpRes);
+	}
+
+	public final MatrixBlock leftMultByPreAggregateMatrix(MatrixBlock preAgg, MatrixBlock tmpRes) {
+		// Get dictionary.
+		MatrixBlock dictM = forceMatrixBlockDictionary().getMatrixBlock();
 		LibMatrixMult.matrixMult(preAgg, dictM, tmpRes);
 		return tmpRes;
 	}
 
 	private void leftMultByMatrix(MatrixBlock matrix, MatrixBlock result, int[] outputRows) {
 		try {
-			if(matrix.isEmpty())
-				return;
-			MatrixBlock tmpRes = leftMultByMatrixIntermediateMatrix(matrix, 0, matrix.getNumRows());
+			final int numVals = getNumValues();
+			MatrixBlock preAgg = allocatePreAggregate(matrix, numVals, 0, matrix.getNumRows());
+			preAggregate(matrix, preAgg, 0, matrix.getNumRows());
+			preAgg.recomputeNonZeros();
+			MatrixBlock tmpRes = leftMultByPreAggregateMatrix(preAgg);
 			addMatrixToResult(tmpRes, result, outputRows);
 
 		}
@@ -1078,7 +1117,7 @@ public abstract class ColGroupValue extends ColGroupCompressed implements Clonea
 		return((MatrixBlockDictionary) _dict);
 	}
 
-	private void addMatrixToResult(MatrixBlock tmp, MatrixBlock result, int rl, int ru) {
+	public void addMatrixToResult(MatrixBlock tmp, MatrixBlock result, int rl, int ru) {
 		if(tmp.isEmpty())
 			return;
 		final double[] retV = result.getDenseBlockValues();
@@ -1147,25 +1186,23 @@ public abstract class ColGroupValue extends ColGroupCompressed implements Clonea
 		final int cut = right.getNumColumns();
 		final int nCol = right.getNumColumns();
 		final int numVals = getNumValues();
-		int[] agCols;
-		double[] ret;
 		if(right.isInSparseFormat()) {
 			final SparseBlock sb = right.getSparseBlock();
-			agCols = getAggregateColumnsSetSparse(sb, nCol);
+			final int[] agCols = getAggregateColumnsSetSparse(sb, nCol);
 			if(agCols.length == 0)
 				return null;
-			ret = preaggValuesFromSparse(numVals, sb, agCols, cl, cu, cut);
+			return copyAndSet(agCols, preaggValuesFromSparse(numVals, sb, agCols, cl, cu, cut));
 		}
 		else {
-			double[] rightV = right.getDenseBlockValues();
-			agCols = getAggregateColumnsSetDense(rightV, cl, cu, cut);
+			final double[] rightV = right.getDenseBlockValues();
+			final int[] agCols = getAggregateColumnsSetDense(rightV, cl, cu, cut);
 			if(agCols.length == 0)
 				return null;
-			ret = new double[numVals * agCols.length];
-			_dict.preaggValuesFromDense(numVals, _colIndexes, agCols, rightV, ret, cut);
+			ADictionary d = _dict.preaggValuesFromDense(numVals, _colIndexes, agCols, rightV, cut);
+			if(d == null)
+				return null;
+			return copyAndSet(agCols, d);
 		}
-
-		return copyAndSet(agCols, ret);
 	}
 
 	@Override

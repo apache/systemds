@@ -27,7 +27,10 @@ import java.util.Arrays;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
 import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
+import org.apache.sysds.runtime.compress.colgroup.mapping.MapToByte;
+import org.apache.sysds.runtime.compress.colgroup.mapping.MapToChar;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory;
+import org.apache.sysds.runtime.compress.colgroup.mapping.MapToInt;
 import org.apache.sysds.runtime.compress.colgroup.offset.AIterator;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.functionobjects.Builtin;
@@ -40,7 +43,6 @@ import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
  * 
  */
 public class ColGroupDDC extends ColGroupValue {
-	private static final long serialVersionUID = -3204391646123465004L;
 
 	protected AMapToData _data;
 
@@ -156,20 +158,83 @@ public class ColGroupDDC extends ColGroupValue {
 	}
 
 	@Override
-	protected void preAggregate(MatrixBlock m, MatrixBlock preAgg, int rl, int ru) {
+	public void preAggregate(final MatrixBlock m, final MatrixBlock preAgg, final int rl, final int ru) {
 		if(m.isInSparseFormat())
 			preAggregateSparse(m.getSparseBlock(), preAgg, rl, ru);
 		else
 			preAggregateDense(m, preAgg, rl, ru);
 	}
 
-	private void preAggregateDense(MatrixBlock m, MatrixBlock preAgg, int rl, int ru) {
-		final double[] preAV = preAgg.getDenseBlockValues();
+	private void preAggregateDense(final MatrixBlock m, final MatrixBlock preAgg, final int rl, final int ru) {
+		preAggregateDense(m, preAgg, rl, ru, 0, _numRows);
+	}
+
+	public void preAggregateDense(MatrixBlock m, MatrixBlock preAgg, int rl, int ru, int cl, int cu) {
 		final double[] mV = m.getDenseBlockValues();
+		final double[] preAV = preAgg.getDenseBlockValues();
 		final int numVals = getNumValues();
-		for(int rowLeft = rl, offOut = 0; rowLeft < ru; rowLeft++, offOut += numVals) {
-			for(int rc = 0, offLeft = rowLeft * _numRows; rc < _numRows; rc++, offLeft++) {
-				preAV[offOut + _data.getIndex(rc)] += mV[offLeft];
+		if(_data instanceof MapToByte)
+			preAggregateDenseByte(mV, preAV, ((MapToByte) _data).getBytes(), rl, ru, cl, cu, _numRows, numVals);
+		else if(_data instanceof MapToChar)
+			preAggregateDenseChar(mV, preAV, ((MapToChar) _data).getChars(), rl, ru, cl, cu, _numRows, numVals);
+		else if(_data instanceof MapToInt)
+			preAggregateDenseInt(mV, preAV, ((MapToInt) _data).getInts(), rl, ru, cl, cu, _numRows, numVals);
+		else {
+			final int blockSize = 2000;
+			for(int block = cl; block < cu; block += blockSize) {
+				final int blockEnd = Math.min(block + blockSize, cu);
+				for(int rowLeft = rl, offOut = 0; rowLeft < ru; rowLeft++, offOut += numVals) {
+					final int offLeft = rowLeft * _numRows;
+					for(int rc = block; rc < blockEnd; rc++) {
+						final int idx = _data.getIndex(rc);
+						preAV[offOut + idx] += mV[offLeft + rc];
+					}
+				}
+			}
+		}
+	}
+
+	private static void preAggregateDenseByte(final double[] mV, final double[] preAV, final byte[] d, final int rl,
+		final int ru, final int cl, final int cu, final int nRow, final int nVal) {
+		final int blockSize = 4000;
+		for(int block = cl; block < cu; block += blockSize) {
+			final int blockEnd = Math.min(block + blockSize, nRow);
+			for(int rowLeft = rl, offOut = 0; rowLeft < ru; rowLeft++, offOut += nVal) {
+				final int offLeft = rowLeft * nRow;
+				for(int rc = block; rc < blockEnd; rc++) {
+					final int idx = d[rc] & 0xFF;
+					preAV[offOut + idx] += mV[offLeft + rc];
+				}
+			}
+		}
+	}
+
+	private static void preAggregateDenseChar(final double[] mV, final double[] preAV, final char[] d, final int rl,
+		final int ru, final int cl, final int cu, final int nRow, final int nVal) {
+		final int blockSize = 4000;
+		for(int block = cl; block < cu; block += blockSize) {
+			final int blockEnd = Math.min(block + blockSize, nRow);
+			for(int rowLeft = rl, offOut = 0; rowLeft < ru; rowLeft++, offOut += nVal) {
+				final int offLeft = rowLeft * nRow;
+				for(int rc = block; rc < blockEnd; rc++) {
+					final int idx = d[rc];
+					preAV[offOut + idx] += mV[offLeft + rc];
+				}
+			}
+		}
+	}
+
+	private static void preAggregateDenseInt(final double[] mV, final double[] preAV, final int[] d, final int rl,
+		final int ru, final int cl, final int cu, final int nRow, final int nVal) {
+		final int blockSize = 2000;
+		for(int block = cl; block < cu; block += blockSize) {
+			final int blockEnd = Math.min(block + blockSize, nRow);
+			for(int rowLeft = rl, offOut = 0; rowLeft < ru; rowLeft++, offOut += nVal) {
+				final int offLeft = rowLeft * nRow;
+				for(int rc = block; rc < blockEnd; rc++) {
+					final int idx = d[rc];
+					preAV[offOut + idx] += mV[offLeft + rc];
+				}
 			}
 		}
 	}
@@ -245,11 +310,10 @@ public class ColGroupDDC extends ColGroupValue {
 	public Dictionary preAggregateThatSDCSingleZerosStructure(ColGroupSDCSingleZeros that, Dictionary ret) {
 		final AIterator itThat = that._indexes.getIterator();
 		final int nCol = that._colIndexes.length;
-
 		while(itThat.hasNext()) {
 			final int to = _data.getIndex(itThat.value());
-			itThat.next();
 			that._dict.addToEntry(ret, 0, to, nCol);
+			itThat.next();
 		}
 
 		return ret;
@@ -262,8 +326,8 @@ public class ColGroupDDC extends ColGroupValue {
 		if(preModified) {
 			while(itThat.hasNext()) {
 				final int to = _data.getIndex(itThat.value());
-				itThat.next();
 				that._dict.addToEntry(ret, 0, to, nCol);
+				itThat.next();
 			}
 		}
 		else {

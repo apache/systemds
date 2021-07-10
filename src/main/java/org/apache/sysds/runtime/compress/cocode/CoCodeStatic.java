@@ -20,17 +20,17 @@
 package org.apache.sysds.runtime.compress.cocode;
 
 import org.apache.sysds.runtime.compress.CompressionSettings;
+import org.apache.sysds.runtime.compress.cost.ICostEstimate;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeEstimator;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfo;
 
 /**
  * Column group co coding with static distribution heuristic.
- * 
  */
 public class CoCodeStatic extends AColumnCoCoder {
 
-	protected CoCodeStatic(CompressedSizeEstimator sizeEstimator, CompressionSettings cs) {
-		super(sizeEstimator, cs);
+	protected CoCodeStatic(CompressedSizeEstimator sizeEstimator, ICostEstimate costEstimator, CompressionSettings cs) {
+		super(sizeEstimator, costEstimator, cs);
 	}
 
 	@Override

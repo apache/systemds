@@ -41,13 +41,12 @@ public class TestInsertionSorters {
 
     public final int[][] data;
     public final SORT_TYPE st;
-    public final int knownMax;
+    public final int numRows;
 
     public final int[] expectedIndexes;
     public final int[] expectedData;
 
     private final IntArrayList[] offsets;
-    private final int numOffsets;
     private final int negativeIndex;
 
     @Parameters
@@ -74,38 +73,41 @@ public class TestInsertionSorters {
 
             tests.add(new Object[] {4, new int[][] {new int[] {1}, new int[] {0}, new int[] {2}, new int[] {3}}, t, 0,
                 new int[] {0, 2, 3}, new int[] {0, 1, 2}});
+
+            tests.add(new Object[]{10, new int[][]{new int[] {2},new int[]{6}, new int[]{0,1,3,4,7,8,9}}, t, 2, new int[]{2,5,6}, new int[]{0,2,1}});
+            tests.add(new Object[]{10, new int[][]{new int[] {5},new int[]{6}, new int[]{0,1,3,4,7,8,9}}, t, 2, new int[]{2,5,6}, new int[]{2,0,1}});
+            tests.add(new Object[]{10, new int[][]{new int[] {5},new int[]{2}, new int[]{0,1,3,4,7,8,9}}, t, 2, new int[]{2,5,6}, new int[]{1,0,2}});
+            tests.add(new Object[]{10, new int[][]{new int[] {5},new int[]{2}, new int[]{0,1,3,4,7,8}}, t, 2, new int[]{2,5,6,9}, new int[]{1,0,2,2}});
+            tests.add(new Object[]{10, new int[][]{new int[] {5},new int[]{2}, new int[]{0,1,3,4,7}}, t, 2, new int[]{2,5,6,8,9}, new int[]{1,0,2,2,2}});
+            tests.add(new Object[]{10, new int[][]{new int[] {5,8},new int[]{2}, new int[]{0,1,3,4,7}}, t, 2, new int[]{2,5,6,8,9}, new int[]{1,0,2,0,2}});
+
+            tests.add(new Object[]{10, new int[][]{new int[]{0,1,3,4,7}, new int[] {5,8}, new int[]{2}}, t, 0, new int[]{2,5,6,8,9}, new int[]{1,0,2,0,2}});
+            tests.add(new Object[]{10, new int[][]{new int[]{0,1,3,4,7}, new int[] {5,8}, new int[]{2}}, t, -1, new int[]{0,1,2,3,4,5,7,8}, new int[]{0,0,2,0,0,1,0,1}});
+
+            tests.add(new Object[]{10, new int[][]{new int[]{0,1,3,4,7}, new int[] {5,8}, new int[]{2,9}}, t, 0, new int[]{2,5,6,8,9}, new int[]{1,0,2,0,1}});
         }
         return tests;
     }
 
-    public TestInsertionSorters(int knownMax, int[][] data, SORT_TYPE st, int negativeIndex, int[] expectedIndexes,
+    public TestInsertionSorters(int numRows, int[][] data, SORT_TYPE st, int negativeIndex, int[] expectedIndexes,
         int[] expectedData) {
         this.data = data;
         this.st = st;
         this.expectedIndexes = expectedIndexes;
         this.expectedData = expectedData;
-        this.knownMax = knownMax;
+        this.numRows = numRows;
         this.negativeIndex = negativeIndex;
 
         offsets = new IntArrayList[data.length];
         for(int i = 0; i < data.length; i++)
             offsets[i] = new IntArrayList(data[i]);
 
-        if(negativeIndex != -1)
-            numOffsets = knownMax - data[negativeIndex].length;
-        else {
-            int numOffsetsCount = 0;
-            for(int i = 0; i < data.length; i++)
-                numOffsetsCount += data[i].length;
-            numOffsets = numOffsetsCount;
-
-        }
     }
 
     @Test
     public void testInsertionSingle() {
         try {
-            AInsertionSorter res = InsertionSorterFactory.create(numOffsets, knownMax, offsets, negativeIndex, st);
+            AInsertionSorter res = InsertionSorterFactory.create(numRows, offsets, negativeIndex, st);
             assertArrayEquals(st.toString() + "\n\t" + Arrays.toString(expectedIndexes) + "\n\t"
                 + Arrays.toString(res.getIndexes()) + "\n", expectedIndexes, res.getIndexes());
             compareData(res.getData());

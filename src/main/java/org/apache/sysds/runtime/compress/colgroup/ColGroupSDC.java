@@ -47,7 +47,6 @@ import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
  * would be materialized in the group without any overhead.
  */
 public class ColGroupSDC extends ColGroupValue {
-	private static final long serialVersionUID = -12043916423465004L;
 
 	/**
 	 * Sparse row indexes for the data
@@ -65,6 +64,13 @@ public class ColGroupSDC extends ColGroupValue {
 	 */
 	protected ColGroupSDC(int numRows) {
 		super(numRows);
+	}
+
+	protected ColGroupSDC(int[] colIndices, int numRows, ADictionary dict, int[] indexes, AMapToData data) {
+		super(colIndices, numRows, dict);
+		_indexes = OffsetFactory.create(indexes, numRows);
+		_data = data;
+		_zeros = false;
 	}
 
 	protected ColGroupSDC(int[] colIndices, int numRows, ADictionary dict, int[] indexes, AMapToData data,
@@ -264,6 +270,38 @@ public class ColGroupSDC extends ColGroupValue {
 			preAggregateDense(m, preAgg, rl, ru);
 	}
 
+	@Override
+	public void preAggregateDense(MatrixBlock m, MatrixBlock preAgg, int rl, int ru, int cl, int cu) {
+		final double[] mV = m.getDenseBlockValues();
+		final double[] preAV = preAgg.getDenseBlockValues();
+		final int numVals = getNumValues();
+
+		final int blockSize = 2000;
+		for(int block = cl; block < cu; block += blockSize) {
+			final int blockEnd = Math.min(block + blockSize, cu);
+			final AIterator itStart = _indexes.getIterator(block);
+			for(int rowLeft = rl, offOut = 0; rowLeft < ru; rowLeft++, offOut += numVals) {
+				final int offLeft = rowLeft * _numRows;
+				final int def = offOut + numVals - 1;
+				final AIterator it = itStart.clone();
+				int rc = 0;
+				int pointer = it.value();
+				for(; rc < blockEnd && pointer < blockEnd && it.hasNext(); rc++) {
+					for(; rc < pointer && rc < blockEnd; rc++) {
+						preAV[def] += mV[offLeft + rc];
+					}
+					preAV[offOut + _data.getIndex(it.getDataIndexAndIncrement())] += mV[offLeft + rc];
+					pointer = it.value();
+				}
+
+				for(; rc < blockEnd; rc++) {
+					preAV[def] += mV[offLeft + rc];
+				}
+			}
+		}
+
+	}
+
 	private void preAggregateDense(MatrixBlock m, MatrixBlock preAgg, int rl, int ru) {
 		final double[] preAV = preAgg.getDenseBlockValues();
 		final double[] mV = m.getDenseBlockValues();
@@ -274,10 +312,13 @@ public class ColGroupSDC extends ColGroupValue {
 			int rc = 0;
 			int offLeft = rowLeft * _numRows;
 			for(; rc < _numRows && it.hasNext(); rc++, offLeft++) {
-				if(it.value() == rc)
-					preAV[offOut + _data.getIndex(it.getDataIndexAndIncrement())] += mV[offLeft];
-				else
+				for(; it.value() > rc && rc < _numRows; rc++, offLeft++) {
 					preAV[def] += mV[offLeft];
+				}
+				// if(it.value() == rc)
+				preAV[offOut + _data.getIndex(it.getDataIndexAndIncrement())] += mV[offLeft];
+				// else
+				// preAV[def] += mV[offLeft];
 			}
 
 			for(; rc < _numRows; rc++, offLeft++) {
@@ -430,8 +471,10 @@ public class ColGroupSDC extends ColGroupValue {
 			int i = 0;
 
 			for(; i < _numRows && itThat.hasNext() && itThis.hasNext(); i++) {
-				int to = (itThis.value() == i) ? getIndex(itThis.getDataIndexAndIncrement()) : offsetToDefaultThis;
-				int fr = (itThat.value() == i) ? that.getIndex(itThat.getDataIndexAndIncrement()) : offsetToDefaultThat;
+				final int to = (itThis.value() == i) ? getIndex(
+					itThis.getDataIndexAndIncrement()) : offsetToDefaultThis;
+				final int fr = (itThat.value() == i) ? that
+					.getIndex(itThat.getDataIndexAndIncrement()) : offsetToDefaultThat;
 				that._dict.addToEntry(ret, fr, to, nCol);
 			}
 
@@ -465,23 +508,15 @@ public class ColGroupSDC extends ColGroupValue {
 		final int nCol = that._colIndexes.length;
 		final int defThis = this.getNumValues() * nCol - nCol;
 
-		while(itThat.hasNext() && itThis.hasNext()) {
-			if(itThat.value() == itThis.value()) {
-				final int fr = that.getIndex(itThat.getDataIndexAndIncrement());
+		while(itThat.hasNext()) {
+			final int thatV = itThat.value();
+			final int fr = that.getIndex(itThat.getDataIndexAndIncrement());
+			if(thatV == itThis.skipTo(thatV)) {
 				final int to = getIndex(itThis.getDataIndexAndIncrement());
 				that._dict.addToEntry(ret, fr, to, nCol);
 			}
-			else if(itThat.value() < itThis.value()) {
-				final int fr = that.getIndex(itThat.getDataIndexAndIncrement());
-				that._dict.addToEntry(ret, fr, defThis, nCol);
-			}
 			else
-				itThis.next();
-		}
-
-		while(itThat.hasNext()) {
-			final int fr = that.getIndex(itThat.getDataIndexAndIncrement());
-			that._dict.addToEntry(ret, fr, defThis, nCol);
+				that._dict.addToEntry(ret, fr, defThis, nCol);
 		}
 		return ret;
 
@@ -497,28 +532,23 @@ public class ColGroupSDC extends ColGroupValue {
 		final AIterator itThat = that._indexes.getIterator();
 		final AIterator itThis = _indexes.getIterator();
 		final int nCol = that._colIndexes.length;
-		final int defThis = this.getNumValues() * nCol - nCol;
+		final int defThis = this.getNumValues() - 1;
 
 		if(preModified) {
-			while(itThat.hasNext() && itThis.hasNext()) {
-				if(itThat.value() == itThis.value()) {
-					itThat.next();
-					final int to = getIndex(itThis.getDataIndexAndIncrement());
-					that._dict.addToEntry(ret, 0, to, nCol);
-				}
-				else if(itThat.value() < itThis.value()) {
-					itThat.next();
-					that._dict.addToEntry(ret, 0, defThis, nCol);
-				}
+			while(itThat.hasNext()) {
+				final int thatV = itThat.value();
+				if(thatV == itThis.skipTo(thatV))
+					that._dict.addToEntry(ret, 0, getIndex(itThis.getDataIndexAndIncrement()), nCol);
 				else
-					itThis.next();
+					that._dict.addToEntry(ret, 0, defThis, nCol);
+				itThat.next();
 			}
+
+			return ret;
 		}
 		else {
 			throw new NotImplementedException();
 		}
-
-		return ret;
 	}
 
 }

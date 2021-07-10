@@ -25,8 +25,8 @@ public class MergeSort extends AInsertionSorter {
 
 	private int currentFill = 0;
 
-	public MergeSort(int endLength, int knownMax, IntArrayList[] offsets, int negativeIndex) {
-		super(endLength, knownMax, offsets, negativeIndex);
+	public MergeSort(int endLength, int numRows, IntArrayList[] offsets, int negativeIndex) {
+		super(endLength, numRows, offsets, negativeIndex);
 		if(_negativeIndex == -1)
 			insert();
 		else
@@ -94,7 +94,7 @@ public class MergeSort extends AInsertionSorter {
 		int pN = _indexes.length - 1; // Pointer new
 		int vA = a.get(pA);
 		// Pointer to last index
-		int vM = _knownMax - 1;
+		int vM = _numRows - 1;
 
 		// While both old indexes have to be added and a have to be ignored.
 		while(pP >= 0 && pA >= 0 && pN >= 0) {

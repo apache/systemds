@@ -26,6 +26,7 @@ import java.util.PriorityQueue;
 import java.util.Queue;
 
 import org.apache.sysds.runtime.compress.CompressionSettings;
+import org.apache.sysds.runtime.compress.cost.ICostEstimate;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeEstimator;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfo;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup;
@@ -38,20 +39,11 @@ import org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup;
  * This method allows us to compress many more columns than the BinPacking
  * 
  */
-public class CoCodeCost extends AColumnCoCoder {
+public class CoCodePriorityQue extends AColumnCoCoder {
 
-	/**
-	 * This value specifies the maximum distinct count allowed int a coCoded group. Note that this value is the number
-	 * of distinct tuples not the total number of values. That value can be calculated by multiplying the number of
-	 * tuples with columns in the coCoded group.
-	 */
-	private final int largestDistinct;
-
-	private final static int toSmallForAnalysis = 64;
-
-	protected CoCodeCost(CompressedSizeEstimator sizeEstimator, CompressionSettings cs) {
-		super(sizeEstimator, cs);
-		largestDistinct = Math.min(4096, Math.max(256, (int) (sizeEstimator.getNumRows() * cs.coCodePercentage)));
+	protected CoCodePriorityQue(CompressedSizeEstimator sizeEstimator, ICostEstimate costEstimator,
+		CompressionSettings cs) {
+		super(sizeEstimator, costEstimator, cs);
 	}
 
 	@Override
@@ -61,37 +53,65 @@ public class CoCodeCost extends AColumnCoCoder {
 	}
 
 	private List<CompressedSizeInfoColGroup> join(List<CompressedSizeInfoColGroup> currentGroups) {
-		Comparator<CompressedSizeInfoColGroup> comp = Comparator.comparing(CompressedSizeInfoColGroup::getNumVals);
+		Comparator<CompressedSizeInfoColGroup> comp = Comparator.comparing(x -> _cest.getCostOfColumnGroup(x));
 		Queue<CompressedSizeInfoColGroup> que = new PriorityQueue<>(currentGroups.size(), comp);
 		List<CompressedSizeInfoColGroup> ret = new ArrayList<>();
-
 		for(CompressedSizeInfoColGroup g : currentGroups)
 			if(g != null)
 				que.add(g);
-		
 
-		CompressedSizeInfoColGroup l = que.poll();
+		CompressedSizeInfoColGroup l = null;
+		if(_cest.isCompareAll()) {
+			double costBeforeJoin = _cest.getCostOfCollectionOfGroups(que);
+			l = que.poll();
+			while(que.peek() != null) {
 
-		while(que.peek() != null) {
-			CompressedSizeInfoColGroup r = que.peek();
-			int worstCaseJoinedSize = l.getNumVals() * r.getNumVals();
-			if(worstCaseJoinedSize < toSmallForAnalysis) {
-				que.poll();
-				que.add(joinWithoutAnalysis(l, r));
+				CompressedSizeInfoColGroup r = que.poll();
+				final CompressedSizeInfoColGroup g = joinWithAnalysis(l, r);
+				if(g != null) {
+					final double costOfJoin = _cest.getCostOfCollectionOfGroups(que, g);
+					if(costOfJoin < costBeforeJoin) {
+						costBeforeJoin = costOfJoin;
+						que.add(g);
+					}
+					else {
+						que.add(r);
+						ret.add(l);
+					}
+				}
+				else {
+					que.add(r);
+					ret.add(l);
+				}
+
+				l = que.poll();
 			}
-			else if(worstCaseJoinedSize < largestDistinct) {
-				CompressedSizeInfoColGroup g = joinWithAnalysis(l, r);
-				if(g != null && g.getNumVals() < largestDistinct) {
-					que.poll();
-					que.add(g);
+		}
+		else {
+			l = que.poll();
+			while(que.peek() != null) {
+				CompressedSizeInfoColGroup r = que.peek();
+				if(_cest.shouldTryJoin(l, r)) {
+					CompressedSizeInfoColGroup g = joinWithAnalysis(l, r);
+					if(g != null) {
+						double costOfJoin = _cest.getCostOfColumnGroup(g);
+						double costIndividual = _cest.getCostOfColumnGroup(l) + _cest.getCostOfColumnGroup(r);
+
+						if(costOfJoin < costIndividual) {
+							que.poll();
+							que.add(g);
+						}
+						else
+							ret.add(l);
+					}
+					else
+						ret.add(l);
 				}
 				else
 					ret.add(l);
-			}
-			else
-				ret.add(l);
 
-			l = que.poll();
+				l = que.poll();
+			}
 		}
 		if(l != null)
 			ret.add(l);

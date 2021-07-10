@@ -27,8 +27,6 @@ import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
 
 public class ColGroupEmpty extends ColGroupCompressed {
 
-	private static final long serialVersionUID = 3204391661346504L;
-
 	/**
 	 * Constructor for serialization
 	 * 
@@ -171,13 +169,8 @@ public class ColGroupEmpty extends ColGroupCompressed {
 	}
 
 	@Override
-	public void tsmm(double[] result, int numColumns) {
+	public void tsmm(MatrixBlock ret) {
 		// do nothing
-	}
-
-	@Override
-	public void tsmm(double[] result, int numColumns, int idxStart, int idxEnd) {
-		// do nothing.
 	}
 
 	@Override

@@ -48,7 +48,6 @@ import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
  * This column group is handy in cases where sparse unsafe operations is executed on very sparse columns.
  */
 public class ColGroupSDCZeros extends ColGroupValue {
-	private static final long serialVersionUID = -32143916423465004L;
 
 	/**
 	 * Sparse row indexes for the data
@@ -67,6 +66,13 @@ public class ColGroupSDCZeros extends ColGroupValue {
 	 */
 	protected ColGroupSDCZeros(int numRows) {
 		super(numRows);
+	}
+
+	protected ColGroupSDCZeros(int[] colIndices, int numRows, ADictionary dict, int[] indexes, AMapToData data) {
+		super(colIndices, numRows, dict);
+		_indexes = OffsetFactory.create(indexes, numRows);
+		_data = data;
+		_zeros = true;
 	}
 
 	protected ColGroupSDCZeros(int[] colIndices, int numRows, ADictionary dict, int[] indexes, AMapToData data,
@@ -215,11 +221,33 @@ public class ColGroupSDCZeros extends ColGroupValue {
 	}
 
 	@Override
-	protected void preAggregate(MatrixBlock m, MatrixBlock preAgg, int rl, int ru) {
+	public void preAggregate(MatrixBlock m, MatrixBlock preAgg, int rl, int ru) {
 		if(m.isInSparseFormat())
 			preAggregateSparse(m.getSparseBlock(), preAgg, rl, ru);
 		else
 			preAggregateDense(m, preAgg, rl, ru);
+	}
+
+	@Override
+	public void preAggregateDense(MatrixBlock m, MatrixBlock preAgg, int rl, int ru, int cl, int cu){
+		final double[] mV = m.getDenseBlockValues();
+		final double[] preAV = preAgg.getDenseBlockValues();
+		final int numVals = getNumValues();
+
+		final int blockSize = 2000;
+		for(int block = cl; block < cu; block += blockSize) {
+			final int blockEnd = Math.min(block + blockSize, cu);
+			final AIterator itStart = _indexes.getIterator(block);
+			AIterator it;
+			for(int rowLeft = rl, offOut = 0; rowLeft < ru; rowLeft++, offOut += numVals) {
+				final int offLeft = rowLeft * _numRows;
+				it = itStart.clone();
+				while(it.value() < blockEnd && it.hasNext()) {
+					final int i = it.value();
+					preAV[offOut + getIndex(it.getDataIndexAndIncrement())] += mV[offLeft + i];
+				}
+			}
+		}
 	}
 
 	private void preAggregateDense(MatrixBlock m, MatrixBlock preAgg, int rl, int ru) {

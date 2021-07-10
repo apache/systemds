@@ -55,9 +55,9 @@ public class ParCompressedMatrixTest extends AbstractCompressedUnaryTests {
 	}
 
 	@Override
-	public void testUnaryOperators(AggType aggType) {
+	public void testUnaryOperators(AggType aggType, boolean inCP) {
 		AggregateUnaryOperator auop = super.getUnaryOperator(aggType, _k);
-		testUnaryOperators(aggType, auop);
+		testUnaryOperators(aggType, auop, inCP);
 	}
 
 	@Test

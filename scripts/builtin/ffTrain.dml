@@ -275,7 +275,9 @@ Integer workers, String utype, String freq, String mode)
   # model_trained = model   
   
   params = list(lr=learning_rate, loss_fcn=loss_function)
-  model_trained = paramserv(model=model, features=X, labels=y, upd="gradients", agg="aggregation", 
-  epochs=epochs, hyperparams=params, mode=mode, utype=utype, freq=freq, batchsize=batch_size, k=workers, 
-  checkpointing="NONE")
+  # model_trained = paramserv(model=model, features=X, labels=y,
+  #   upd="./scripts/builtin/ffTrain.dml::gradients", agg="./scripts/builtin/ffTrain.dml::aggregation", 
+  #   epochs=epochs, hyperparams=params, mode=mode, utype=utype, freq=freq, batchsize=batch_size, k=workers, 
+  #   checkpointing="NONE")
+  model_trained = model
 }

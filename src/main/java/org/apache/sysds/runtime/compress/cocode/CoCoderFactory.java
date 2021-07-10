@@ -19,31 +19,18 @@
 
 package org.apache.sysds.runtime.compress.cocode;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.CompressionSettings;
+import org.apache.sysds.runtime.compress.cost.ICostEstimate;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeEstimator;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfo;
 
-public class PlanningCoCoder {
-
-	protected static final Log LOG = LogFactory.getLog(PlanningCoCoder.class.getName());
+public class CoCoderFactory {
 
 	/**
 	 * The Valid coCoding techniques
 	 */
 	public enum PartitionerType {
-		BIN_PACKING, STATIC, COST, COST_MATRIX_MULT, COST_TSMM;
-
-		public static boolean isCostBased( PartitionerType pt) {
-			switch(pt) {
-				case COST_MATRIX_MULT:
-				case COST_TSMM:
-					return true;
-				default:
-					return false;
-			}
-		}
+		BIN_PACKING, STATIC, PRIORITY_QUE, GREEDY, AUTO;
 	}
 
 	/**
@@ -51,36 +38,39 @@ public class PlanningCoCoder {
 	 * 
 	 * This package groups together ColGroups across columns, to improve compression further,
 	 * 
-	 * @param est      The size estimator used for estimating ColGroups potential sizes.
-	 * @param colInfos The information already gathered on the individual ColGroups of columns.
-	 * @param numRows  The number of rows in the input matrix.
-	 * @param k        The concurrency degree allowed for this operation.
-	 * @param cs       The compression settings used in the compression.
+	 * @param est           The size estimator used for estimating ColGroups potential sizes and construct compression
+	 *                      info objects
+	 * @param colInfos      The information already gathered on the individual ColGroups of columns.
+	 * @param k             The concurrency degree allowed for this operation.
+	 * @param costEstimator The Cost estimator to estimate the cost of the compression
+	 * @param cs            The compression settings used in the compression.
 	 * @return The estimated (hopefully) best groups of ColGroups.
 	 */
 	public static CompressedSizeInfo findCoCodesByPartitioning(CompressedSizeEstimator est, CompressedSizeInfo colInfos,
-		int numRows, int k, CompressionSettings cs) {
+		int k, ICostEstimate costEstimator, CompressionSettings cs) {
 
 		// Use column group partitioner to create partitions of columns
-		CompressedSizeInfo bins = createColumnGroupPartitioner(cs.columnPartitioner, est, cs, numRows)
+		CompressedSizeInfo bins = createColumnGroupPartitioner(cs.columnPartitioner, est, costEstimator, cs)
 			.coCodeColumns(colInfos, k);
 
 		return bins;
 	}
 
 	private static AColumnCoCoder createColumnGroupPartitioner(PartitionerType type, CompressedSizeEstimator est,
-		CompressionSettings cs, int numRows) {
+		ICostEstimate costEstimator, CompressionSettings cs) {
 		switch(type) {
+			case AUTO:
+				// TODO make decision better depending on how much time is allocated for the compression
+				// for instance if the compressed object is used for a million instructions, it might be good to
+				// search for a really good compression even if it take longer.
+			case GREEDY:
+				return new CoCodeGreedy(est,costEstimator, cs);
 			case BIN_PACKING:
-				return new CoCodeBinPacking(est, cs);
+				return new CoCodeBinPacking(est, costEstimator, cs);
 			case STATIC:
-				return new CoCodeStatic(est, cs);
-			case COST:
-				return new CoCodeCost(est, cs);
-			case COST_MATRIX_MULT:
-				return new CoCodeCostMatrixMult(est, cs);
-			case COST_TSMM:
-				return new CoCodeCostTSMM(est, cs);
+				return new CoCodeStatic(est, costEstimator, cs);
+			case PRIORITY_QUE:
+				return new CoCodePriorityQue(est, costEstimator, cs);
 			default:
 				throw new RuntimeException("Unsupported column group partitioner: " + type.toString());
 		}

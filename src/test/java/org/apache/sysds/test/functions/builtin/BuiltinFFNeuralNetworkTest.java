@@ -47,13 +47,11 @@ public class BuiltinFFNeuralNetworkTest extends AutomatedTestBase {
 	private final String dataset_path;
 	private final double least_expected_acc;
 	private final String out_path;
-	private final boolean parameter_server;
 
-	public BuiltinFFNeuralNetworkTest(String dataset_path, double least_expected_acc, String out_path, boolean parameter_server) {
+	public BuiltinFFNeuralNetworkTest(String dataset_path, double least_expected_acc, String out_path) {
 		this.dataset_path = dataset_path;
 		this.least_expected_acc = least_expected_acc;
 		this.out_path = out_path;
-		this.parameter_server = parameter_server;
 	}
 
 	@Parameters
@@ -62,7 +60,7 @@ public class BuiltinFFNeuralNetworkTest extends AutomatedTestBase {
 		double least_expected_acc = 0.50;
 		String out_path = "accuracy";
 		List<Object[]> tests = new ArrayList<>();
-		tests.add(new Object[]{path, least_expected_acc, out_path, false});
+		tests.add(new Object[]{path, least_expected_acc, out_path});
 
 		return tests;
 	}
@@ -81,7 +79,6 @@ public class BuiltinFFNeuralNetworkTest extends AutomatedTestBase {
 		proArgs.add("-args");
 		proArgs.add(this.dataset_path);
 		proArgs.add(output(this.out_path));
-		proArgs.add(parameter_server ? "1" : "0");
 
 		programArgs = proArgs.toArray(new String[proArgs.size()]);
 

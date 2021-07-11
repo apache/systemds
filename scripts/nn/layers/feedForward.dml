@@ -29,6 +29,7 @@
 # --------------------------------------------------------------------------------------------
 # X         Matrix[double]    ---       Training data
 # layers    List[unknown]     ---       List of layers and output layer activation function
+# predict   Boolean           FALSE     Flag used to avoid dropout when predicting
 # --------------------------------------------------------------------------------------------
 # OUTPUT: 
 # cache     List[unknown]     ---       Caches all intermediate steps of forward pass
@@ -42,7 +43,7 @@ source("nn/layers/affine.dml") as affine
 source("nn/layers/dropout.dml") as dropout
 source("nn/layers/softmax.dml") as softmax
 
-feedForward = function(Matrix[double] X, List[unknown] layers) 
+feedForward = function(Matrix[double] X, List[unknown] layers, Boolean predict = FALSE) 
   return(List[unknown] cache) {
   p = 0.35 # dropout probability
 
@@ -50,6 +51,9 @@ feedForward = function(Matrix[double] X, List[unknown] layers)
   out1 = affine::forward(X, as.matrix(layers["W1"]), as.matrix(layers["b1"]))
   outr1 = relu::forward(out1)
   [outd1, maskd1] = dropout::forward(outr1, p, -1)
+  if(predict) {
+    outd1 = outr1
+  }
   # layer 2
   out2 = affine::forward(outd1, as.matrix(layers["W2"]), as.matrix(layers["b2"]))
   

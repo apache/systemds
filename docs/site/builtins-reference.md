@@ -570,10 +570,11 @@ prediction = ffPredict(model, x_test)
 
 ### Arguments
 
-| Name | Type           | Default  | Description |
-| :--- | :------------- | :------- | :---------- |
-| Model| List[unknown]  | required | ffTrain model |
-| X    | Matrix[Double] | required | Data for making prediction |
+| Name        | Type           | Default  | Description |
+| :---        | :------------- | :------- | :---------- |
+| Model       | List[unknown]  | required | ffTrain model |
+| X           | Matrix[Double] | required | Data for making prediction |
+| batch_size  | Integer        | 128      | Batch Size |
 
 ### Returns
 
@@ -606,28 +607,27 @@ model = ffTrain(X=x_train, Y=y_train, out_activation="sigmoid", loss_fcn="cel")
 
 ### Arguments
 
-| Name          | Type           | Default  | Description |
-| :---          | :------------- | :------- | :---------- |
-| X             | Matrix[Double] | required | Training data |
-| Y             | Matrix[Double] | required | Labels/Target values |
-| batch_size    | Integer        | 64       | Batch size |
-| epochs        | Integer        | 20       | Number of epochs |
-| learning_rate | Double         | 0.003    | Learning rate |
-| out_activation| String         | required | User specified ouptut layer activation |
-| loss_fcn      | String         | required | User specified loss function |
-| param_server  | Boolean        | FALSE    | Flag that indicates if paramserv is to be used |
-| workers       | Integer        | 0        | paramserv number of workers |
-| utype         | String         | "ASP"    | paramserv update strategy |
-| freq          | String         | "EPOCH"  | paramserv model updating frequency |
-| mode          | String         | "LOCAL"  | paramserv execution backend for data partitioning and param exec |
-| seed          | Integer        | -1       | Seed for model initialization |
-| verbose       | Boolean        | False    | Flag that indicates if function should print to stdout |
+| Name             | Type           | Default  | Description |
+| :---             | :------------- | :------- | :---------- |
+| X                | Matrix[Double] | required | Training data |
+| Y                | Matrix[Double] | required | Labels/Target values |
+| batch_size       | Integer        | 64       | Batch size |
+| epochs           | Integer        | 20       | Number of epochs |
+| learning_rate    | Double         | 0.003    | Learning rate |
+| out_activation   | String         | required | User specified ouptut layer activation |
+| loss_fcn         | String         | required | User specified loss function |
+| shuffle          | Boolean        | False    | Shuffle dataset|
+| validation_split | Double         | 0.0      | Fraction of dataset to be used as validation set|
+| seed             | Integer        | -1       | Seed for model initialization |
+| verbose          | Boolean        | False    | Flag that indicates if function should print to stdout |
 
 User can specify following output layer activations:
 `sigmoid`, `relu`, `lrelu`, `tanh`, `softmax`, `logits` (no activation).
 
 User can specify following loss functions:
 `l1`, `l2`, `log_loss`, `logcosh_loss`, `cel` (cross-entropy loss).
+
+When validation set is used function outputs validation loss to the stdout after each epoch.
 
 
 ### Returns
@@ -640,7 +640,7 @@ User can specify following loss functions:
 
 ```r
 
-model = ffTrain(X=x_train, Y=y_train, batch_size=128, epochs=10, learning_rate=0.001, out_activation="sigmoid", loss_fcn="cel", verbose=TRUE)
+model = ffTrain(X=x_train, Y=y_train, batch_size=128, epochs=10, learning_rate=0.001, out_activation="sigmoid", loss_fcn="cel", shuffle=TRUE, validation_split=0.2, verbose=TRUE)
 
 prediction = ffPredict(model, x_train)
 ```

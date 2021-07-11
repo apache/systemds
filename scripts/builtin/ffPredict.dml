@@ -27,7 +27,7 @@
 # --------------------------------------------------------------------------------------------
 # Model       List[unknown]   ---      Trained ff neural network model
 # X           Matrix[Double]  ---      Data used for making predictions
-# batch_size  Integer         ---      Batch size
+# batch_size  Integer         128      Batch size
 # --------------------------------------------------------------------------------------------
 # OUTPUT: 
 # pred      Matrix[Double]  ---      Predicted value

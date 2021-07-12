@@ -83,9 +83,6 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
         architecture: 'x64'
-
-    - name: Install Protobuf
-      run: sudo apt-get install protobuf-compiler libprotoc-dev 
   
     - name: Install pip Dependencies
       run: pip install numpy py4j wheel scipy sklearn requests pandas

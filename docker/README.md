@@ -36,22 +36,31 @@ To execute any given DML script follow the step Run.
 
 ## Run
 
-Running SystemDS in a docker container is as simple as constructing any DML script
-Then Download the docker image `systemds/sysds:latest` or build your own.
+Running SystemDS in a docker container is as simple as constructing any DML script.
+Then download the docker image `systemds/sysds:latest` or build your own.
 
 ```bash
 docker pull systemds/sysds:latest
 ```
 
-Verify that the docker image correctly works simply by running it, make sure that your terminal is pointing at the root of you systemds git clone.
+Verify that the docker image correctly works simply by running it.
 
 ```bash
-./docker/runDocker.sh
+docker run --rm systemds/sysds:latest
 ```
 
-This above command will mount the folder `docker/mountFolder`, and execute the script named main.dml inside the folder using the docker container.
+It should respond with something like:
 
-You can mount any such folder and execute systemds on by changing the first part of the -v argument of the following command:
+```txt
+Hello, World!
+SystemDS Statistics:
+Total execution time:  0.010 sec.
+```
+
+To run specific scripts mount a folder(s) containing the scripts and data,
+and execute the script inside the folder using the docker container.
+
+You can mount any such folder and execute systemds by changing the first part of the -v argument of the following command:
 
 ```bash
 docker run \
@@ -59,27 +68,54 @@ docker run \
   --rm systemds/sysds:latest
 ```
 
+Default behavior is to run the script located at /input/main.dml.
+To run any other script use:
+
+```bash
+docker run \
+  -v $(pwd)/folder/to/share:/any/path/in/docker/instance \
+  --rm systemds/sysds:latest \
+  systemds /any/path/to/a/script.dml
+```
+
 ### Docker run worker node
 
 To run a federated worker in a docker container simply use:
 
-This port forwards the worker to port 8000 on the host.
-
 ```bash
-docker run -p 8000:8000 --rm systemds/sysds:latest  systemds WORKER 8000
+docker run -p 8000:8000 --rm systemds/sysds:latest systemds WORKER 8000
 ```
 
-Note that the worker does not have any data, since no data is mounted to the worker.
-To add a mount folder containing the data needed in the worker do the following:
+This port forwards the worker to port 8000 on the host and starts a worker in the instance on port 8000.
+
+Note that the worker does not have any data, since no data is mounted in the worker image.
+To add a folder containing the data needed in the worker do the following:
 
 ```bash
 docker run \
   -p 8000:8000 \
   -v $(pwd)/data/folder/path/locally:/data/folder/path/in/container \
-  --rm systemds/sysds:latest  systemds WORKER 8000
+  --rm systemds/sysds:latest systemds WORKER 8000
 ```
 
-## Testing
+### Docker run python script
+
+To run a python script the `pythonsysds` image is used.
+
+```bash
+docker run --rm systemds/pythonsysds:latest
+```
+
+User provided scripts have to be mounted into the image.
+
+```bash
+docker run \
+  -v $(pwd)/data/folder/path/locally:/data/folder/path/in/container \
+  --rm systemds/pythonsystds:latest \
+  python3 path/to/script/to/execute.py
+```
+
+## Testing image
 
 We also have a docker image for execution of tests.
 This enables faster test execution on the github actions.
@@ -103,5 +139,5 @@ Test your testing image locally by running the following command:
 docker run \
   -v $(pwd):/github/workspace \
   systemds/testingsysds:latest \
-  org.apache.sysds.test.component.*.**
+  org.apache.sysds.test.component.**
 ```

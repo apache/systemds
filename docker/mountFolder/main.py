@@ -27,5 +27,5 @@ with SystemDSContext() as sds:
     # Compute script to execute:
     script.compute()
     # Print the stdout from the context:
-    print(sds.get_stdout())
+    print(sds.get_stdout()[0])
     

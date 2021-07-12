@@ -19,42 +19,57 @@
 #
 #-------------------------------------------------------------
 
-# Use Alpine OpenJDK 8 base
-FROM openjdk:8-alpine
+FROM ubuntu:20.04
 
 WORKDIR /usr/src/
 
-# Install Maven
-# Credit https://github.com/Zenika/alpine-maven/blob/master/jdk8/Dockerfile
-
+# Maven
 ENV MAVEN_VERSION 3.6.3
 ENV MAVEN_HOME /usr/lib/mvn
 ENV PATH $MAVEN_HOME/bin:$PATH
+# Java
+ENV JAVA_HOME /usr/lib/jvm/java-8-openjdk-amd64
+ENV PATH $JAVA_HOME/bin:$MAVEN_HOME/bin:$PATH
 
-RUN wget http://archive.apache.org/dist/maven/maven-3/$MAVEN_VERSION/binaries/apache-maven-$MAVEN_VERSION-bin.tar.gz && \
-	tar -zxvf apache-maven-$MAVEN_VERSION-bin.tar.gz && \
-	rm apache-maven-$MAVEN_VERSION-bin.tar.gz && \
-	mv apache-maven-$MAVEN_VERSION /usr/lib/mvn
+RUN apt-get update -qq \
+	&& apt-get upgrade -y
 
-# Install Extras
-RUN apk add --no-cache git bash
+RUN apt-get install -y --no-install-recommends \
+		wget \
+		git \
+		ca-certificates \ 
+	&& apt-get clean
 
-RUN git clone https://github.com/apache/systemds.git systemds
+# Maven and Java
+RUN mkdir -p /usr/lib/jvm \
+	&& wget -qO- \
+https://github.com/AdoptOpenJDK/openjdk8-binaries/releases/download/jdk8u282-b08/OpenJDK8U-jdk_x64_linux_hotspot_8u282b08.tar.gz | tar xzf - \
+	&& mv jdk8u282-b08 /usr/lib/jvm/java-8-openjdk-amd64 \
+	&& wget -qO- \
+http://archive.apache.org/dist/maven/maven-3/$MAVEN_VERSION/binaries/apache-maven-$MAVEN_VERSION-bin.tar.gz | tar xzf - \ 
+	&& mv apache-maven-$MAVEN_VERSION /usr/lib/mvn
+
+RUN git clone --depth 1 https://github.com/apache/systemds.git systemds
 
 WORKDIR /usr/src/systemds/
 
 RUN mvn clean package -P distribution
-
-# Remove Maven since it is not needed for running the system
-RUN rm -r /usr/lib/mvn
-
 ENV SYSTEMDS_ROOT=/usr/src/systemds
 ENV PATH $SYSTEMDS_ROOT/bin:$PATH
 
 # Remove extra files.
-RUN rm -r src/ && \
-	rm -r .git
+RUN rm -r docker && \
+	rm -r docs && \
+	rm -r src && \
+    rm -r /usr/lib/mvn && \
+	rm -r .git && \
+	rm -r CONTRIBUTING.md && \
+	rm -r conf && \
+	rm -r pom.xml && \ 
+	rm -r ~/.m2
 
 COPY docker/mountFolder/main.dml /input/main.dml
+COPY conf/log4j.properties ./log4j.properties
+COPY conf/SystemDS-config-defaults.xml ./SystemDS-config.xml
 
 CMD ["systemds", "/input/main.dml"]

@@ -59,6 +59,26 @@ docker run \
   --rm systemds/sysds:latest
 ```
 
+### Docker run worker node
+
+To run a federated worker in a docker container simply use:
+
+This port forwards the worker to port 8000 on the host.
+
+```bash
+docker run -p 8000:8000 --rm systemds/sysds:latest  systemds WORKER 8000
+```
+
+Note that the worker does not have any data, since no data is mounted to the worker.
+To add a mount folder containing the data needed in the worker do the following:
+
+```bash
+docker run \
+  -p 8000:8000 \
+  -v $(pwd)/data/folder/path/locally:/data/folder/path/in/container \
+  --rm systemds/sysds:latest  systemds WORKER 8000
+```
+
 ## Testing
 
 We also have a docker image for execution of tests.

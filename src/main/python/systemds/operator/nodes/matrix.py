@@ -348,3 +348,15 @@ class Matrix(OperationNode):
         """
         return Matrix(self.sds_context, 'rev', [self])
 
+    def round(self) -> 'Matrix':
+        """ round all values to nearest natural number
+
+        :return: The Matrix representing the result of this operation
+        """
+        return Matrix(self.sds_context, "round", [self])
+    
+    def replace(self, pattern:VALID_INPUT_TYPES, replacement:VALID_INPUT_TYPES) -> 'Matrix':
+        """
+        Replace all values with replacement value
+        """
+        return Matrix(self.sds_context, "replace", named_input_nodes={"target": self, "pattern": pattern, "replacement":replacement})

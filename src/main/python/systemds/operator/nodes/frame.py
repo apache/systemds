@@ -120,7 +120,15 @@ class Frame(OperationNode):
         """
         Column-wise frame concatenation, by concatenating the second frame as additional columns to the first frame. 
         :param: The other frame to bind to the right hand side.
-        :return: The OperationNode containing the concatenated frames.
+        :return: The Frame containing the concatenated frames.
         """
         return Frame(self.sds_context, "cbind", [self, other])
 
+    def replace(self, pattern:str, replacement:str) -> 'Frame':
+        """
+        Replace all instances of string with replacement string
+        :param: pattern the string to replace
+        :param: replacement the string to replace with
+        :return: The Frame containing the replaced values 
+        """
+        return Frame(self.sds_context, "replace", named_input_nodes={"target": self, "pattern": f"'{pattern}'", "replacement":f"'{replacement}'"})

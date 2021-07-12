@@ -323,6 +323,8 @@ public class FederationMap {
 	 */
 	public boolean isAligned(FederationMap that, boolean transposed) {
 		boolean ret = true;
+		if (_type == FederationMap.FType.BROADCAST)
+			return false;
 		for(Pair<FederatedRange, FederatedData> e : _fedMap) {
 			FederatedRange range = !transposed ? e.getKey() : new FederatedRange(e.getKey()).transpose();
 			FederatedData dat2 = that.getFederatedData(range);

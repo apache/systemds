@@ -152,8 +152,10 @@ public class FEDInstructionUtils {
 		}
 		else if (inst instanceof BinaryCPInstruction) {
 			BinaryCPInstruction instruction = (BinaryCPInstruction) inst;
-			if( (instruction.input1.isMatrix() && ec.getMatrixObject(instruction.input1).isFederated())
-				|| (instruction.input2.isMatrix() && ec.getMatrixObject(instruction.input2).isFederated()) ) {
+			if( (instruction.input1.isMatrix() && ec.getMatrixObject(instruction.input1).isFederated()
+				&& !ec.getMatrixObject(instruction.input1).isFederated(FType.BROADCAST))
+				|| (instruction.input2.isMatrix() && ec.getMatrixObject(instruction.input2).isFederated()
+				&& !ec.getMatrixObject(instruction.input2).isFederated(FType.BROADCAST))) {
 				if(instruction.getOpcode().equals("append") )
 					fedinst = AppendFEDInstruction.parseInstruction(inst.getInstructionString());
 				else if(instruction.getOpcode().equals("qpick"))
@@ -194,9 +196,12 @@ public class FEDInstructionUtils {
 		}
 		else if(inst instanceof TernaryCPInstruction) {
 			TernaryCPInstruction tinst = (TernaryCPInstruction) inst;
-			if((tinst.input1.isMatrix() && ec.getCacheableData(tinst.input1).isFederated())
-				|| (tinst.input2.isMatrix() && ec.getCacheableData(tinst.input2).isFederated())
-				|| (tinst.input3.isMatrix() && ec.getCacheableData(tinst.input3).isFederated())) {
+			if((tinst.input1.isMatrix() && ec.getCacheableData(tinst.input1).isFederated()
+				&& !ec.getCacheableData(tinst.input1).isFederated(FType.BROADCAST))
+				|| (tinst.input2.isMatrix() && ec.getCacheableData(tinst.input2).isFederated()
+				&& !ec.getCacheableData(tinst.input2).isFederated(FType.BROADCAST))
+				|| (tinst.input3.isMatrix() && ec.getCacheableData(tinst.input3).isFederated()
+				&& !ec.getCacheableData(tinst.input3).isFederated(FType.BROADCAST))) {
 				fedinst = TernaryFEDInstruction.parseInstruction(tinst.getInstructionString());
 			}
 		}

@@ -65,7 +65,7 @@ public class FederationMap {
 		PART(FPartitioning.NONE, FReplication.OVERLAP),
 		OTHER(FPartitioning.MIXED, FReplication.NONE);
 
-		private final FPartitioning _partType;
+		private FPartitioning _partType;
 		@SuppressWarnings("unused") //not yet
 		private final FReplication _repType;
 
@@ -82,6 +82,14 @@ public class FederationMap {
 		public boolean isColPartitioned() {
 			return _partType == FPartitioning.COL
 				|| _partType == FPartitioning.NONE;
+		}
+
+		public FPartitioning getPartType() {
+			return this._partType;
+		}
+
+		public void setPartType(FPartitioning _partType) {
+			this._partType = _partType;
 		}
 
 		public boolean isType(FType t) {
@@ -225,6 +233,7 @@ public class FederationMap {
 	 *
 	 * @param data       input data object (matrix, tensor, frame)
 	 * @param transposed false: slice according to federated data, true: slice according to transposed federated data
+	 * @param oldId id of the marix object that calls broadcast
 	 * @return array of federated requests corresponding to federated data
 	 */
 	public FederatedRequest[] broadcastSliced(CacheableData<?> data, boolean transposed, long oldId) {
@@ -264,16 +273,23 @@ public class FederationMap {
 				FederationUtils._broadcastMap.putIfAbsent(Pair.of(data.getUniqueID(), e.getValue().getAddress()),
 					Triple.of(FType.PART, id, transposed));
 
-				newFedMap.add(Pair.of(transposed ? e.getLeft().transpose() : e.getLeft(), new FederatedData(data.getDataType(), e.getRight().getAddress(), data.getFileName())));
+				FederatedRange fr = transposed ? new FederatedRange(e.getLeft()).transpose() : new FederatedRange(e.getLeft());
+				newFedMap.add(Pair.of(fr,
+					new FederatedData(data.getDataType(), e.getRight().getAddress(), data.getFileName())));
 			}
 
 			// multi-threaded block slicing and federation request creation
 			Arrays.parallelSetAll(ret,i -> new FederatedRequest(RequestType.PUT_VAR, id, cb.slice(ix[i][0], ix[i][1], ix[i][2], ix[i][3],
 				new MatrixBlock()), data.getUniqueID(), FType.PART));
 
-			if(!data.isFederated())
-				data.setFedMapping(new FederationMap(id, newFedMap,
-					((transposed && getType() == FType.ROW) || (!transposed && getType() == FType.COL)) ? FType.COL : FType.ROW));
+			if(!data.isFederated()) {
+				data.setFedMapping(new FederationMap(id, newFedMap, FType.PART));
+				data.getFedMapping()._type.setPartType((transposed && getType() == FType.ROW) ||
+					(!transposed && getType() == FType.COL) ? FPartitioning.COL : FPartitioning.ROW);
+				data.getDataCharacteristics().setDimension(cb.getNumRows(), cb.getNumColumns());
+			}
+//				data.setFedMapping(new FederationMap(id, newFedMap,
+//					((transposed && getType() == FType.ROW) || (!transposed && getType() == FType.COL)) ? FType.COL : FType.ROW));
 		}
 		return ret;
 	}

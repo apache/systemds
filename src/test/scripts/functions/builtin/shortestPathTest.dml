@@ -1,3 +1,4 @@
+
 #-------------------------------------------------------------
 #
 # Licensed to the Apache Software Foundation (ASF) under one
@@ -19,23 +20,7 @@
 #
 #-------------------------------------------------------------
 
-X = rbind(read($in_X1), read($in_X2));
-U = read($in_U);
-V = read($in_V);
+X = read($1)
+C = shortestPath(G=X,sourceNode = $2)
 
-MX = X / 0.3;
-
-Z1 = (X * (U %*% t(V) - MX)) %*% V;
-
-U = X[ , 1:ncol(U)];
-
-Z2 = (X * (U %*% t(V) - MX)) %*% V;
-
-X = t(X);
-MX = t(MX);
-
-Z3 = (X * (V %*% t(U) - MX)) %*% U;
-
-Z = Z1 + Z2 + sum(Z3);
-
-write(Z, $out_Z);
+write(C, $3)

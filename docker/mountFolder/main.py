@@ -19,23 +19,13 @@
 #
 #-------------------------------------------------------------
 
-X = rbind(read($in_X1), read($in_X2));
-U = read($in_U);
-V = read($in_V);
+from systemds.context import SystemDSContext
 
-MX = X / 0.3;
-
-Z1 = (X * (U %*% t(V) - MX)) %*% V;
-
-U = X[ , 1:ncol(U)];
-
-Z2 = (X * (U %*% t(V) - MX)) %*% V;
-
-X = t(X);
-MX = t(MX);
-
-Z3 = (X * (V %*% t(U) - MX)) %*% U;
-
-Z = Z1 + Z2 + sum(Z3);
-
-write(Z, $out_Z);
+with SystemDSContext() as sds:
+    # Make a script (lazy evaluation nothing happens):
+    script = sds.scalar("Hello World").print()
+    # Compute script to execute:
+    script.compute()
+    # Print the stdout from the context:
+    print(sds.get_stdout()[0])
+    

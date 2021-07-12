@@ -33,7 +33,7 @@ import org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup;
  * values.
  */
 public class DistinctCostEstimator implements ICostEstimate {
-
+	private static final long serialVersionUID = 4784682182584508597L;
 	private final static int toSmallForAnalysis = 64;
 	private final int nRows;
 

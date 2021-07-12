@@ -48,9 +48,9 @@ import org.apache.sysds.lops.LopsException;
 import org.apache.sysds.lops.ReBlock;
 import org.apache.sysds.lops.UnaryCP;
 import org.apache.sysds.parser.ParseInfo;
+import org.apache.sysds.runtime.compress.SingletonLookupHashMap;
 import org.apache.sysds.runtime.compress.workload.AWTreeNode;
 import org.apache.sysds.runtime.controlprogram.LocalVariableMap;
-import org.apache.sysds.runtime.controlprogram.SingletonLookupHashMap;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject.UpdateType;
 import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysds.runtime.controlprogram.parfor.util.IDSequence;
@@ -86,9 +86,9 @@ public abstract class Hop implements ParseInfo {
 	protected ExecType _etypeForced = null; //exec type forced via platform or external optimizer
 
 	/**
-	 * Boolean defining if the output of the operation should be federated.
-	 * If it is true, the output should be kept at federated sites.
-	 * If it is false, the output should be retrieved by the coordinator.
+	 * Field defining if the output of the operation should be federated.
+	 * If it is fout, the output should be kept at federated sites.
+	 * If it is lout, the output should be retrieved by the coordinator.
 	 */
 	protected FederatedOutput _federatedOutput = FederatedOutput.NONE;
 	
@@ -172,6 +172,14 @@ public abstract class Hop implements ParseInfo {
 	public ExecType getExecType()
 	{
 		return _etype;
+	}
+
+	public void setExecType(ExecType execType){
+		_etype = execType;
+	}
+
+	public void setFederatedOutput(FederatedOutput federatedOutput){
+		_federatedOutput = federatedOutput;
 	}
 	
 	public void resetExecType()
@@ -770,24 +778,11 @@ public abstract class Hop implements ParseInfo {
 	/**
 	 * Update the execution type if input is federated and federated compilation is activated.
 	 * Federated compilation is activated in OptimizerUtils.
+	 * This method only has an effect if FEDERATED_COMPILATION is activated.
 	 */
 	protected void updateETFed(){
-		if ( inputIsFED() )
+		if ( _federatedOutput == FederatedOutput.FOUT || _federatedOutput == FederatedOutput.LOUT )
 			_etype = ExecType.FED;
-	}
-
-	/**
-	 * Returns true if any input has federated ExecType.
-	 * This method can only return true if FedDecision is activated.
-	 * @return true if any input has federated ExecType
-	 */
-	protected boolean inputIsFED(){
-		if ( !OptimizerUtils.FEDERATED_COMPILATION )
-			return false;
-		for ( Hop input : _input )
-			if ( input.isFederated() || input.isFederatedOutput() )
-				return true;
-		return false;
 	}
 	
 	public boolean isFederated(){
@@ -796,6 +791,10 @@ public abstract class Hop implements ParseInfo {
 	
 	public boolean isFederatedOutput(){
 		return _federatedOutput == FederatedOutput.FOUT;
+	}
+
+	public boolean someInputFederated(){
+		return getInput().stream().anyMatch(Hop::hasFederatedOutput);
 	}
 
 	public ArrayList<Hop> getParent() {

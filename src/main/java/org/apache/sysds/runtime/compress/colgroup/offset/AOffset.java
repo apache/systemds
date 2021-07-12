@@ -69,7 +69,7 @@ public abstract class AOffset {
 			sk.put(row, it.clone());
 		}
 		else {
-			Map<Integer, AIterator> nsk = new HashMap<Integer, AIterator>();
+			Map<Integer, AIterator> nsk = new HashMap<>();
 			nsk.put(row, it.clone());
 			skipIterators = new SoftReference<>(nsk);
 		}

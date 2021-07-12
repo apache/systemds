@@ -1,5 +1,2 @@
-imputeByMean,scale,dummycoding,m_pca
-imputeByMean,scale,dummycoding,m_pca
-imputeByMedian,scale,dummycoding,m_pca
-imputeByMedian,scale,dummycoding,m_pca
-imputeByMean,scale,dummycoding,m_pca
+imputeByMean,dummycoding
+imputeByMedian,dummycoding

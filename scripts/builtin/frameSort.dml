@@ -38,7 +38,7 @@
 
 
 
-s_frameSort = function(Frame[String] F)
+s_frameSort = function(Frame[String] F, Boolean orderDesc = TRUE )
 return (Frame[String] f_odered)
 {
   idx = matrix(1, 1, ncol(F))
@@ -47,6 +47,6 @@ return (Frame[String] f_odered)
   # recode logical pipelines for easy handling
   jspecR = "{ids:true, recode:["+index+"]}";
   [X, M] = transformencode(target=F, spec=jspecR);
-  ordered = order(target = X, by = 1, decreasing=TRUE, index.return=FALSE)
+  ordered = order(target = X, by = 1, decreasing=orderDesc, index.return=FALSE)
   f_odered = transformdecode(target=ordered, spec=jspecR, meta=M);
 }

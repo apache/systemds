@@ -25,6 +25,7 @@ import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup;
 
 public class MemoryCostEstimator implements ICostEstimate {
+	private static final long serialVersionUID = -1264988969161809465L;
 
 	public MemoryCostEstimator() {
 

@@ -200,7 +200,7 @@ public class WorkloadTest {
 		Assert.assertEquals(shouldCompress, ceb.shouldTryToCompress());
 	}
 
-	private WTreeRoot getWorkloadTree(DMLProgram prog) {
+	private static WTreeRoot getWorkloadTree(DMLProgram prog) {
 		Map<Long, WTreeRoot> c = WorkloadAnalyzer.getAllCandidateWorkloads(prog);
 		Assert.assertEquals(c.size(), 1);
 		for(long k : c.keySet())

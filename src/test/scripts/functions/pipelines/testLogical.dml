@@ -68,7 +68,7 @@ getMask = getMask[, 1:ncol(getMask) - 1] # strip the mask of class label
 getFdMask = getFdMask[, 1:ncol(getFdMask) - 1] # strip the mask of class label
 getSchema = getSchema[, 1:ncol(getSchema) - 1] # strip the mask of class label
 # hyperparam for classifier
-opt = utils::getOpByTarget(eX, eY, getMask, targetApplicaton)
+opt = matrix("0 0 100", rows=1, cols=3)
 print("opt "+toString(opt))
 # get the cross validated accuracy on dirty dataset (only on training set)
 d_accuracy = 0

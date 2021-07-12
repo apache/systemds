@@ -98,6 +98,7 @@ from .builtin.scale import scale
 from .builtin.scaleApply import scaleApply 
 from .builtin.sherlock import sherlock 
 from .builtin.sherlockPredict import sherlockPredict 
+from .builtin.shortestPath import shortestPath 
 from .builtin.sigmoid import sigmoid 
 from .builtin.slicefinder import slicefinder 
 from .builtin.smote import smote 
@@ -192,6 +193,7 @@ __all__ = ['abstain',
  'scaleApply',
  'sherlock',
  'sherlockPredict',
+ 'shortestPath',
  'sigmoid',
  'slicefinder',
  'smote',

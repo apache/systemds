@@ -1,4 +1,3 @@
-#/bin/bash 
 #-------------------------------------------------------------
 #
 # Licensed to the Apache Software Foundation (ASF) under one
@@ -20,12 +19,13 @@
 #
 #-------------------------------------------------------------
 
-# The image is on docker so it is posible to run from here.
-# Execute the docker container
-# docker run \
-#   -v $(pwd)/docker/mountFolder:/input \
-#   --rm systemds/sysds:latest
+from systemds.context import SystemDSContext
 
-docker run \
-  -v $(pwd)/docker/mountFolder:/input \
-  --rm systemds/pythonsysds:latest
+with SystemDSContext() as sds:
+    # Make a script (lazy evaluation nothing happens):
+    script = sds.scalar("Hello World").print()
+    # Compute script to execute:
+    script.compute()
+    # Print the stdout from the context:
+    print(sds.get_stdout())
+    

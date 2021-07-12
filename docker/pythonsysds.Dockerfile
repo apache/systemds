@@ -57,6 +57,20 @@ RUN mvn clean package -P distribution
 ENV SYSTEMDS_ROOT=/usr/src/systemds
 ENV PATH $SYSTEMDS_ROOT/bin:$PATH
 
+WORKDIR /usr/src/systemds/src/main/python
+
+RUN apt-get install -y --no-install-recommends \
+	python3 python3-pip && \
+	apt-get clean && \
+	python3 -m pip install --upgrade pip && \
+	pip3 install numpy py4j wheel requests pandas && \
+	python3 create_python_dist.py && \
+	pip3 install .
+	
+ENV SYSDS_QUIET=1
+
+WORKDIR /usr/src/systemds/
+
 # Remove extra files.
 RUN rm -r docker && \
 	rm -r docs && \
@@ -64,12 +78,9 @@ RUN rm -r docker && \
     rm -r /usr/lib/mvn && \
 	rm -r .git && \
 	rm -r CONTRIBUTING.md && \
-	rm -r conf && \
 	rm -r pom.xml && \ 
 	rm -r ~/.m2
 
 COPY docker/mountFolder/main.dml /input/main.dml
-COPY conf/log4j.properties ./log4j.properties
-COPY conf/SystemDS-config-defaults.xml ./SystemDS-config.xml
 
-CMD ["systemds", "/input/main.dml"]
+CMD ["python3", "/input/main.py"]

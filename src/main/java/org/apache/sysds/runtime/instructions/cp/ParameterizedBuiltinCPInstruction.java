@@ -225,12 +225,22 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction 
 				ec.releaseMatrixInput(params.get("select"));
 		}
 		else if(opcode.equalsIgnoreCase("replace")) {
-			MatrixBlock target = ec.getMatrixInput(params.get("target"));
-			double pattern = Double.parseDouble(params.get("pattern"));
-			double replacement = Double.parseDouble(params.get("replacement"));
-			MatrixBlock ret = target.replaceOperations(new MatrixBlock(), pattern, replacement);
-			ec.setMatrixOutput(output.getName(), ret);
-			ec.releaseMatrixInput(params.get("target"));
+			if(ec.isFrameObject(params.get("target"))){
+				FrameBlock target = ec.getFrameInput(params.get("target"));
+				String pattern = params.get("pattern");
+				String replacement = params.get("replacement");
+				FrameBlock ret = target.replaceOperations(pattern, replacement);
+				ec.setFrameOutput(output.getName(), ret);
+				ec.releaseFrameInput(params.get("target"));
+			}else{
+				MatrixBlock target = ec.getMatrixInput(params.get("target"));
+				double pattern = Double.parseDouble(params.get("pattern"));
+				double replacement = Double.parseDouble(params.get("replacement"));
+				MatrixBlock ret = target.replaceOperations(new MatrixBlock(), pattern, replacement);
+				ec.setMatrixOutput(output.getName(), ret);
+				ec.releaseMatrixInput(params.get("target"));
+			}
+			
 		}
 		else if(opcode.equals("lowertri") || opcode.equals("uppertri")) {
 			MatrixBlock target = ec.getMatrixInput(params.get("target"));

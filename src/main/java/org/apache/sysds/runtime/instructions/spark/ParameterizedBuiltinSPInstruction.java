@@ -358,25 +358,38 @@ public class ParameterizedBuiltinSPInstruction extends ComputationSPInstruction 
 			}
 		}
 		else if(opcode.equalsIgnoreCase("replace")) {
-			JavaPairRDD<MatrixIndexes, MatrixBlock> in1 = sec
-				.getBinaryMatrixBlockRDDHandleForVariable(params.get("target"));
-			DataCharacteristics mcIn = sec.getDataCharacteristics(params.get("target"));
+			if(sec.isFrameObject(params.get("target"))){
+				params.get("target");
+				JavaPairRDD<Long, FrameBlock> in1 = sec.getFrameBinaryBlockRDDHandleForVariable(params.get("target"));
+				DataCharacteristics mcIn = sec.getDataCharacteristics(params.get("target"));
 
-			// execute replace operation
-			double pattern = Double.parseDouble(params.get("pattern"));
-			double replacement = Double.parseDouble(params.get("replacement"));
-			JavaPairRDD<MatrixIndexes, MatrixBlock> out = in1.mapValues(new RDDReplaceFunction(pattern, replacement));
+				String pattern = params.get("pattern");
+				String replacement = params.get("replacement");
+				JavaPairRDD<Long, FrameBlock> out = in1.mapValues(new RDDFrameReplaceFunction(pattern, replacement));
+				sec.setRDDHandleForVariable(output.getName(), out);
+				sec.getDataCharacteristics(output.getName()).set(mcIn.getRows(), mcIn.getCols(), mcIn.getBlocksize(), mcIn.getNonZeros());
 
-			// store output rdd handle
-			sec.setRDDHandleForVariable(output.getName(), out);
-			sec.addLineageRDD(output.getName(), params.get("target"));
+			}else{
+				JavaPairRDD<MatrixIndexes, MatrixBlock> in1 = sec
+					.getBinaryMatrixBlockRDDHandleForVariable(params.get("target"));
+				DataCharacteristics mcIn = sec.getDataCharacteristics(params.get("target"));
+	
+				// execute replace operation
+				double pattern = Double.parseDouble(params.get("pattern"));
+				double replacement = Double.parseDouble(params.get("replacement"));
+				JavaPairRDD<MatrixIndexes, MatrixBlock> out = in1.mapValues(new RDDReplaceFunction(pattern, replacement));
+	
+				// store output rdd handle
+				sec.setRDDHandleForVariable(output.getName(), out);
+				sec.addLineageRDD(output.getName(), params.get("target"));
+	
+				// update output statistics (required for correctness)
+				sec.getDataCharacteristics(output.getName()).set(mcIn.getRows(),
+					mcIn.getCols(),
+					mcIn.getBlocksize(),
+					(pattern != 0 && replacement != 0) ? mcIn.getNonZeros() : -1);
+			}
 
-			// update output statistics (required for correctness)
-			DataCharacteristics mcOut = sec.getDataCharacteristics(output.getName());
-			mcOut.set(mcIn.getRows(),
-				mcIn.getCols(),
-				mcIn.getBlocksize(),
-				(pattern != 0 && replacement != 0) ? mcIn.getNonZeros() : -1);
 		}
 		else if(opcode.equalsIgnoreCase("lowertri") || opcode.equalsIgnoreCase("uppertri")) {
 			JavaPairRDD<MatrixIndexes, MatrixBlock> in1 = sec
@@ -542,6 +555,23 @@ public class ParameterizedBuiltinSPInstruction extends ComputationSPInstruction 
 		public MatrixBlock call(MatrixBlock arg0) {
 			return arg0.replaceOperations(new MatrixBlock(), _pattern, _replacement);
 		}
+	}
+
+	public static class RDDFrameReplaceFunction implements Function<FrameBlock, FrameBlock>{
+		private static final long serialVersionUID = 6576713401901671660L;
+		private final String _pattern;
+		private final String _replacement;
+
+		public RDDFrameReplaceFunction(String pattern, String replacement){
+			_pattern = pattern;
+			_replacement = replacement;
+		}
+
+		@Override 
+		public FrameBlock call(FrameBlock arg0){
+			return arg0.replaceOperations(_pattern, _replacement);
+		}
+
 	}
 
 	private static class RDDExtractTriangularFunction

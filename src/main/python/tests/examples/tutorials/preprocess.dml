@@ -34,3 +34,13 @@ replace_value = function(matrix[double] X,
     return (matrix[double] returnVal) {
   returnVal = replace(target=X, pattern=pattern, replacement=replacement)
 }
+
+#replace_target_frame = function(String replacement, String to_replace, Frame[Unknown] X)
+#  return(Frame[Unknown] X)
+#{
+#  for (i in 1:nrow(X)) {
+#    if (as.scalar(X[i, ncol(X)]) == to_replace) {
+#      X[i, ncol(X)] = replacement;
+#    }
+#  }
+#}

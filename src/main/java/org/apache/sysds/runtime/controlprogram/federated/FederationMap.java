@@ -208,17 +208,17 @@ public class FederationMap {
 
 		id = FederationUtils.getNextFedDataID();
 		CacheBlock cb = data.acquireReadAndRelease();
-		List<Pair<FederatedRange, FederatedData>> newFedMap = new ArrayList<>();
+//		List<Pair<FederatedRange, FederatedData>> newFedMap = new ArrayList<>();
 
 		for(Pair<FederatedRange, FederatedData> e : _fedMap) {
 			FederationUtils._broadcastMap.putIfAbsent(Triple.of(data.getUniqueID(), FType.BROADCAST, e.getValue().getAddress()),
 				Pair.of(id, false));
 			FederationUtils._broadcastMap.putIfAbsent(Triple.of(oldId, _type, e.getValue().getAddress()),
 				Pair.of(_ID, false));
-			newFedMap.add(Pair.of(new FederatedRange(new long[] {0, 0}, new long[] {data.getNumRows(), data.getNumColumns()}),
-				new FederatedData(data.getDataType(), e.getRight().getAddress(), data.getFileName())));
+//			newFedMap.add(Pair.of(new FederatedRange(new long[] {0, 0}, new long[] {data.getNumRows(), data.getNumColumns()}),
+//				new FederatedData(data.getDataType(), e.getRight().getAddress(), data.getFileName())));
 		}
-		data.setFedMapping(new FederationMap(id, newFedMap, FType.BROADCAST));
+//		data.setFedMapping(new FederationMap(id, newFedMap, FType.BROADCAST)); // TODO is really necessary to modify since it can not be reused as normal fed matrix without cutting
 		return new FederatedRequest(RequestType.PUT_VAR, id, cb, data.getUniqueID(), FType.BROADCAST);
 	}
 
@@ -294,8 +294,10 @@ public class FederationMap {
 				new MatrixBlock()), data.getUniqueID(), FType.PART, getID(), oldId));
 
 			if(!data.isFederated()) {
+				data.cleanData();
+
 				data.setFedMapping(new FederationMap(id, newFedMap, FType.PART));
-				data.getFedMapping()._type.setPartType(getType() == FType.COL ? FPartitioning.COL : FPartitioning.ROW);
+				data.getFedMapping()._type.setPartType(type.getPartType());
 				data.getDataCharacteristics().setDimension(cb.getNumRows(), cb.getNumColumns());
 			}
 		}

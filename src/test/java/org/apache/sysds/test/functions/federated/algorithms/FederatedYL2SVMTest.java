@@ -138,7 +138,7 @@ public class FederatedYL2SVMTest extends AutomatedTestBase {
 		LOG.debug(runTest(null));
 
 		// compare via files
-		compareResults(1e-6);
+		compareResults(1e-9);
 
 		TestUtils.shutdownThreads(t1, t2);
 

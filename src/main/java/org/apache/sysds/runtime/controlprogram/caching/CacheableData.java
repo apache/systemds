@@ -693,6 +693,11 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 	public void clearData() {
 		clearData(-1);
 	}
+
+	public void cleanData() {
+		createCache();
+		_data = null;
+	}
 	
 	/**
 	 * Sets the cache block reference to <code>null</code>, abandons the old block.

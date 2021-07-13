@@ -19,13 +19,10 @@
 
 package org.apache.sysds.test.functions.builtin;
 
-import org.apache.sysds.common.Types;
 import org.apache.sysds.common.Types.ExecMode;
-import org.apache.sysds.common.Types.FileFormat;
+// import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.common.Types.ExecType;
-import org.apache.sysds.runtime.io.FrameWriter;
-import org.apache.sysds.runtime.io.FrameWriterFactory;
-import org.apache.sysds.runtime.matrix.data.FrameBlock;
+import org.apache.sysds.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.junit.Assert;
@@ -33,10 +30,14 @@ import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.IOException;
-// import java.util.ArrayList;
-// import java.util.Collections;
-// import java.util.List;
-// import java.util.Random;
+import java.lang.Math;
+import java.util.Random;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 
 public class BuiltinMatrixProfileTest extends AutomatedTestBase 
 {
@@ -44,20 +45,8 @@ public class BuiltinMatrixProfileTest extends AutomatedTestBase
 	private final static String TEST_DIR = "functions/builtin/";
 	private static final String TEST_CLASS_DIR = TEST_DIR + BuiltinMatrixProfileTest.class.getSimpleName() + "/";
 	
-	private final static Types.ValueType[] schema = {Types.ValueType.STRING};
-
-	// private final static int numberDataPoints = 500;
-	// private final static int maxFrequencyErrors = 10;
-	// private final static boolean corruptData = true;
-	// // for every error number below between (1 and maxFrequencyErrors) identical errors are made
-	// // errors can still overlap though
-	// private final static int numberCharSwaps = 5;
-	// private final static int numberCharChanges = 5;
-	// private final static int numberCharAdds = 5;
-	// private final static int numberCharDeletions = 5;
-	// private final static int numberWrongCapitalizations = 10;
-
-	// private static Random generator;
+  private static Random generator;
+  private final static int seed = 42;
 
 	@Override
 	public void setUp() {
@@ -66,8 +55,13 @@ public class BuiltinMatrixProfileTest extends AutomatedTestBase
 
 	 @Test
 	 public void testMatrixProfileCP() throws IOException {
-		 runMatrixProfileTest(4, "TRUE", ExecType.CP); // ExecType.SPARK
+		 runMatrixProfileTest(4, "TRUE", ExecType.CP);
 	 }
+
+   // @Test
+	 // public void testMatrixProfileSPARK() throws IOException {
+		 // runMatrixProfileTest(4, "TRUE", ExecType.SPARK);
+	 // }
 
 	
 	private void runMatrixProfileTest(Integer window_size, String is_verbose, ExecType instType) throws IOException
@@ -88,31 +82,34 @@ public class BuiltinMatrixProfileTest extends AutomatedTestBase
 				"window_size=" + window_size,
 				"is_verbose=" + is_verbose};
 
-      /*
-			generator = (seed != null)? new Random(seed): new Random();
+			generator = new Random(seed);
 
-			FrameBlock frame = new FrameBlock(schema);
-			FrameBlock verificationFrame = new FrameBlock(schema);
-			FrameWriter writer = FrameWriterFactory.createFrameWriter(FileFormat.CSV);
-			initFrameData(frame, verificationFrame, decapitalize);
-			verificationFrame = verificationFrame.slice(0, numberDataPoints-1, 0, 0, new FrameBlock());
-			writer.writeFrameToHDFS(frame.slice(0, numberDataPoints-1, 0, 0, new FrameBlock()),
-				input("X"), frame.getNumRows(), 1);
-      */
-      double[][] ts = initTimeSeries(10);
+      int len = 50;
+      // double[][] ts = initTimeSeries(10);
+      double[][] ts = genSineWave(len, 0.05, 1, 1);
+      int[] noise_idxs = addNoise(1, len, ts);
       writeInputMatrixWithMTD("TS", ts, false);
 
 			System.out.println("Run test");
 			runTest(true, false, null, -1);
 			System.out.println("DONE");
-			// FrameBlock outputFrame = readDMLFrameFromHDFS("Y", FileFormat.CSV);
-			// if(runVerify)
-				// verifyFrameData(verificationFrame, outputFrame);
+
+			HashMap<CellIndex, Double> MP = readDMLMatrixFromOutputDir("MP");
+			HashMap<CellIndex, Double> MPI = readDMLMatrixFromOutputDir("MPI");
+
+      List sortedList = sortByValues(MP);
+			// System.out.println(sortedList);
+      Map.Entry entry = (Map.Entry)sortedList.get(0);
+      System.out.println(entry);
+      int highest_dist_idx = ((CellIndex)entry.getKey()).row;
+      System.out.println(highest_dist_idx);
+
+      int noise_idx = noise_idxs[0];
+      Assert.assertTrue(highest_dist_idx>noise_idx-window_size || highest_dist_idx<noise_idx+window_size);
 		}
 		finally {
 			rtplatform = platformOld;
 		}
-    
 	}
 
   private static double[][] initTimeSeries(Integer n) {
@@ -123,181 +120,39 @@ public class BuiltinMatrixProfileTest extends AutomatedTestBase
     return ts;
   }
 
-/*
-	private static void initFrameData(FrameBlock frame, FrameBlock verificationFrame, String decapitalize) {
-		List<Integer> bins = new ArrayList<>();
-		String[] correctStrings = getCorrectData(numberDataPoints, bins);
-		String[] corruptedStrings;
-		if (corruptData) {
-			corruptedStrings = getCorruptedData(correctStrings, bins, maxFrequencyErrors, numberCharSwaps,
-				numberCharChanges, numberCharAdds, numberCharDeletions, numberWrongCapitalizations);
-		} else {
-			corruptedStrings = correctStrings;
-		}
-		if (decapitalize.equals("TRUE")) {
-			for (int i=0; i<correctStrings.length; ++i) {
-				correctStrings[i] = correctStrings[i].toLowerCase();
-			}
-		}
-		frame.appendColumn(corruptedStrings);
-		verificationFrame.appendColumn(correctStrings);
-	}
+  private static double[][] genSineWave(Integer n, double sampling_rate, float p, float amp) {
+    double[][] ts = new double[n][1];
+    for (int i=0; i<n; ++i) {
+      ts[i][0] = p*Math.sin(amp*sampling_rate*i);
+    }
+    return ts;
+  }
+  
+  private static int[] addNoise(Integer n, Integer len, double[][] ts) {
+    int[] idxs = new int[n];
+    for (int i=0; i<n; ++i) {
+      int idx = generator.nextInt(len);
+      System.out.println("Add noise to idx: " + idx);
+      ts[idx][0] += 1;
+      idxs[i] = idx;
+    }
+    return idxs;
+  }
 
+  private static boolean verifyResult(double[][] matrix_profile, 
+      int[][] matrix_profile_index, int[] perturbation_idxs) {
 
-	private static String[] getCorrectData(int numberDataPoints, List<Integer> bins) {
+    return true;
+  }
 
-		String[] allCountries = new String[] {"Austria", "Belarus", "Denmark", "Germany", "Italy", "Liechtenstein"};
-
-		List<String> chosenCountries = new ArrayList<>();
-		int remainingDataPoints = numberDataPoints;
-		bins.add(0);
-		for (int i = 0; i < allCountries.length-1; i++) {
-			int rand = generator.nextInt((int)(remainingDataPoints/Math.sqrt(allCountries.length)));
-			for (int j = 0; j < rand; j++) {
-				chosenCountries.add(allCountries[i]);
-			}
-			remainingDataPoints -= rand;
-			bins.add(numberDataPoints - remainingDataPoints);
-		}
-		for (int i = 0; i < remainingDataPoints; i++) {
-			chosenCountries.add(allCountries[allCountries.length - 1]);
-		}
-		bins.add(numberDataPoints);
-		String[] string_array = new String[chosenCountries.size()];
-		chosenCountries.toArray(string_array);
-		return string_array;
-	}
-
-	private static String[] getCorruptedData(String[] correctStrings, List<Integer> bins, int maxFrequencyErrors,
-		int numberSwaps, int numberChanges, int numberAdds, int numberDeletions, int numberWrongCapitalizations) {
-		String[] data = correctStrings.clone();
-		for (int i = 0; i < numberSwaps; i++) {
-			makeSwapErrors(data, bins, maxFrequencyErrors);
-		}
-		for (int i = 0; i < numberChanges; i++) {
-			makeChangeErrors(data, bins, maxFrequencyErrors);
-		}
-		for (int i = 0; i < numberAdds; i++) {
-			makeAddErrors(data, bins, maxFrequencyErrors);
-		}
-		for (int i = 0; i < numberDeletions; i++) {
-			makeDeletionErrors(data, bins, maxFrequencyErrors);
-		}
-		for (int i = 0; i < numberWrongCapitalizations; i++) {
-			makeCapitalizationErrors(data, bins, maxFrequencyErrors);
-		}
-		return data;
-	}
-
-
-
-	private static void makeSwapErrors(String[] data, List<Integer> bins, int maxFrequencyErrors){
-		int randIndex = generator.nextInt(data.length);
-		int leftBinIndex = Integer.max(0, (-Collections.binarySearch(bins, randIndex) - 2));
-		int rightBinIndex = Integer.max(1, (-Collections.binarySearch(bins, randIndex) - 1));
-		int leftIndex = bins.get(leftBinIndex);
-		int rightIndex = bins.get(rightBinIndex) - 1;
-
-		int charPos = generator.nextInt(data[randIndex].length() - 1) + 1;
-		for (int j = 0; j < generator.nextInt(maxFrequencyErrors) + 1; j++) {
-			int randErrorIndex = generator.nextInt(rightIndex + 1 - leftIndex) + leftIndex;
-			String str = data[randErrorIndex];
-			if (str.length() > 1 && charPos < str.length()) {
-				data[randErrorIndex] = str.substring(0, charPos - 1) + str.charAt(charPos) + str.charAt(charPos - 1) +
-					str.substring(charPos + 1);
-			}
-		}
-	}
-
-	private static void makeChangeErrors(String[] data, List<Integer> bins, int maxFrequencyErrors){
-		int randIndex = generator.nextInt(data.length);
-		int leftBinIndex = Integer.max(0, (-Collections.binarySearch(bins, randIndex) - 2));
-		int rightBinIndex = Integer.max(1, (-Collections.binarySearch(bins, randIndex) - 1));
-		int leftIndex = bins.get(leftBinIndex);
-		int rightIndex = bins.get(rightBinIndex) - 1;
-
-		int charPos = generator.nextInt(data[randIndex].length());
-		String newChar = Character.toString((char)(generator.nextInt('z' + 1 - 'a') + 'a'));
-		for (int j = 0; j < generator.nextInt(maxFrequencyErrors) + 1; j++) {
-			int randErrorIndex = generator.nextInt(rightIndex + 1 - leftIndex) + leftIndex;
-			String str = data[randErrorIndex];
-			if (str.length() > 0 && charPos < str.length()) {
-				data[randErrorIndex] =  str.substring(0, charPos) + newChar + str.substring(charPos + 1);
-			}
-		}
-	}
-
-	private static void makeAddErrors(String[] data, List<Integer> bins, int maxFrequencyErrors){
-		int randIndex = generator.nextInt(data.length);
-		int leftBinIndex = Integer.max(0, (-Collections.binarySearch(bins, randIndex) - 2));
-		int rightBinIndex = Integer.max(1, (-Collections.binarySearch(bins, randIndex) - 1));
-		int leftIndex = bins.get(leftBinIndex);
-		int rightIndex = bins.get(rightBinIndex) - 1;
-
-		int charPos = generator.nextInt(data[randIndex].length() + 1);
-		String newChar = Character.toString((char)(generator.nextInt('z' + 1 - 'a') + 'a'));
-		for (int j = 0; j < generator.nextInt(maxFrequencyErrors) + 1; j++) {
-			int randErrorIndex = generator.nextInt(rightIndex + 1 - leftIndex) + leftIndex;
-			String str = data[randErrorIndex];
-			if (str.length() > 0 && charPos < str.length() + 1) {
-				data[randErrorIndex] =  str.substring(0, charPos) + newChar + str.substring(charPos);
-			}
-		}
-	}
-
-	private static void makeDeletionErrors(String[] data, List<Integer> bins, int maxFrequencyErrors){
-		int randIndex = generator.nextInt(data.length);
-		int leftBinIndex = Integer.max(0, (-Collections.binarySearch(bins, randIndex) - 2));
-		int rightBinIndex = Integer.max(1, (-Collections.binarySearch(bins, randIndex) - 1));
-		int leftIndex = bins.get(leftBinIndex);
-		int rightIndex = bins.get(rightBinIndex) - 1;
-
-		int charPos = generator.nextInt(data[randIndex].length());
-		for (int j = 0; j < generator.nextInt(maxFrequencyErrors) + 1; j++) {
-			int randErrorIndex = generator.nextInt(rightIndex + 1 - leftIndex) + leftIndex;
-			String str = data[randErrorIndex];
-			if (str.length() > 1 && charPos < str.length()) {
-				data[randErrorIndex] =  str.substring(0, charPos) + str.substring(charPos + 1);
-			}
-		}
-	}
-
-	private static void makeCapitalizationErrors(String[] data, List<Integer> bins, int maxFrequencyErrors){
-		int randIndex = generator.nextInt(data.length);
-		int leftBinIndex = Integer.max(0, (-Collections.binarySearch(bins, randIndex) - 2));
-		int rightBinIndex = Integer.max(1, (-Collections.binarySearch(bins, randIndex) - 1));
-		int leftIndex = bins.get(leftBinIndex);
-		int rightIndex = bins.get(rightBinIndex) - 1;
-
-		for (int j = 0; j < generator.nextInt(maxFrequencyErrors) + 1; j++) {
-			int randErrorIndex = generator.nextInt(rightIndex + 1 - leftIndex) + leftIndex;
-			String str = data[randErrorIndex];
-			if (str.length() > 0) {
-				if (Character.isUpperCase(str.charAt(0))) {
-					data[randErrorIndex] = str.substring(0, 1).toLowerCase() + str.substring(1);
-				}
-				else {
-					data[randErrorIndex] = str.substring(0, 1).toUpperCase() + str.substring(1);
-				}
-			}
-		}
-	}
-
-	private static void verifyFrameData(FrameBlock verificationFrame, FrameBlock frame2) {
-
-		for (int i = 0; i < verificationFrame.getNumRows(); i++) {
-			for (int j = 0; j < verificationFrame.getNumColumns(); j++) {
-				String s1 = frame2.get(i, j).toString();
-				String s2 = verificationFrame.get(i, j).toString();
-				if (!s1.equals(s2)) {
-					System.out.println("The DML data for cell (" + i + "," + j + ") '" + s1 + "' i" +
-						"s not equal to the expected value '" + s2 + "'");
-					Assert.fail("The DML data for cell (" + i + "," + j + ") '" + s1 + "' is not equal " +
-						"to the expected value '" + s2 + "'");
-				}
-			}
-		}
-
-	}
-  */
+  private static List sortByValues(HashMap map) {
+    List list = new LinkedList(map.entrySet());
+    Collections.sort(list, new Comparator() {
+      public int compare(Object o1, Object o2) {
+        return ((Comparable) ((Map.Entry) (o2)).getValue())
+          .compareTo(((Map.Entry) (o1)).getValue());
+      }
+    });
+    return list;
+  }
 }

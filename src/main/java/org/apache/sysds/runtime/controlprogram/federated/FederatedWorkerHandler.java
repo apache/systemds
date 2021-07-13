@@ -27,7 +27,7 @@ import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
-import org.apache.commons.lang3.tuple.Pair;
+import org.apache.commons.lang3.tuple.Triple;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.log4j.Logger;
@@ -256,7 +256,7 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 	}
 
 	private FederatedResponse putVariable(FederatedRequest request) {
-		checkNumParams(request.getNumParams(), 1, 2, 3);
+		checkNumParams(request.getNumParams(), 1, 2, 3, 5);
 		String varname = String.valueOf(request.getID());
 		ExecutionContext ec = _ecm.get(request.getTID());
 
@@ -266,18 +266,21 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 		if (request.getNumParams() == 2) {
 			dataID = (long) request.getParam(0);
 			type = (FederationMap.FType) request.getParam(1);
-			if(_federatedWorker._broadcastMap.containsKey(Pair.of(Long.valueOf(varname), type)) &&
-				_federatedWorker._broadcastMap.get(Pair.of(Long.valueOf(varname), type)).equals(dataID)) {
+			if(_federatedWorker._broadcastSet.contains(Triple.of(Long.valueOf(varname), type, dataID))) {
 				return new FederatedResponse(ResponseType.SUCCESS_EMPTY);
 			}
-		} else if (request.getNumParams() == 3) {
+		} else if (request.getNumParams() >= 3) {
 			dataID = (long) request.getParam(1);
 			type = (FederationMap.FType) request.getParam(2);
-			if(_federatedWorker._broadcastMap.containsKey(Pair.of(Long.valueOf(varname), type)) &&
-				_federatedWorker._broadcastMap.get(Pair.of(Long.valueOf(varname), type)).equals(dataID)) {
+			if(_federatedWorker._broadcastSet.contains(Triple.of(Long.valueOf(varname), type, dataID))) {
 				return new FederatedResponse(ResponseType.SUCCESS_EMPTY);
 			}
-			_federatedWorker._broadcastMap.putIfAbsent(Pair.of(Long.valueOf(varname), type), dataID);
+			_federatedWorker._broadcastSet.add(Triple.of(Long.valueOf(varname), type, dataID));
+			if(request.getNumParams() == 5) {
+				long dataID2 = (long) request.getParam(3);
+				long dataID3 = (long) request.getParam(4);
+				_federatedWorker._broadcastSet.add(Triple.of(dataID2, type, dataID3));
+			}
 		}
 
 		if(ec.containsVariable(varname)) {
@@ -340,8 +343,8 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 
 		if(receivedInstruction.getOpcode().equals("rmvar")) {
 			long id = Long.parseLong(InstructionUtils.getInstructionParts(receivedInstruction.getInstructionString())[1]);
-			if( _federatedWorker == null || (_federatedWorker._broadcastMap.containsKey(Pair.of(id, FederationMap.FType.BROADCAST)) ||
-			_federatedWorker._broadcastMap.containsKey(Pair.of(id, FederationMap.FType.PART))))
+			if( _federatedWorker == null || (_federatedWorker._broadcastSet
+				.stream().anyMatch(e -> e.getLeft() == id)))
 				return new FederatedResponse(ResponseType.SUCCESS_EMPTY);
 		}
 

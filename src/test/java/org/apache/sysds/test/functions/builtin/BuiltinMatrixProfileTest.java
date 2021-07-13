@@ -99,9 +99,8 @@ public class BuiltinMatrixProfileTest extends AutomatedTestBase
 			writer.writeFrameToHDFS(frame.slice(0, numberDataPoints-1, 0, 0, new FrameBlock()),
 				input("X"), frame.getNumRows(), 1);
       */
-      double[][] ts = new double[1][5];
+      double[][] ts = initTimeSeries(10);
       writeInputMatrixWithMTD("TS", ts, false);
-      
 
 			System.out.println("Run test");
 			runTest(true, false, null, -1);
@@ -115,6 +114,14 @@ public class BuiltinMatrixProfileTest extends AutomatedTestBase
 		}
     
 	}
+
+  private static double[][] initTimeSeries(Integer n) {
+    double[][] ts = new double[n][1];
+    for (int i=0; i<n; ++i) {
+      ts[i][0] = i;
+    }
+    return ts;
+  }
 
 /*
 	private static void initFrameData(FrameBlock frame, FrameBlock verificationFrame, String decapitalize) {

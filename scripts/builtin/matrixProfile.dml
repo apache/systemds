@@ -52,84 +52,96 @@ m_matrixProfile = function(Matrix[Double] ts, Integer window_size=4, Boolean is_
   if (is_verbose)
     print ("##############################\n# MATRIXPROFILE SCRIPT ENTRY #\n##############################");
 
+  # TODO: preSCRIMP
+
   n = length(ts);
-  if (is_verbose)
+  if (is_verbose) {
     print("n: " + n + "\n")
+    print("window_size: " + window_size + "\n")
+  }
 
   [mu,sig] = moving_avg(ts, n, window_size);
+  if (is_verbose) {
+    print_ts(ts);
+    print_ts(mu);
+    print_ts(sig);
+  }
 
   # initialize
   infty = 1.7e308;
   profile_len = n-window_size+1;
-  profile = matrix(infty, rows=1, cols=profile_len);
-  profile_index = matrix(1, rows=1, cols=profile_len);
+  profile = matrix(infty, cols=1, rows=profile_len);
+  profile_index = matrix(1, cols=1, rows=profile_len);
 
-  profile[1,1] = 2
-  profile_index[1,1] = 2
+  # TODO: random permutation
+  for (k in as.integer(window_size/4)+1 : n-window_size) { # n-window_size+1
+    q = 0;
+    for (i in 1:n-window_size+2-k) {
+      # q_test = as.scalar(t(ts[i:i+window_size-1]) %*% ts[i+k-1:i+k+window_size-2]);
+      # print(q_test);
+      if (i==1) {
+        q = as.scalar(t(ts[1:window_size]) %*% ts[k:k+window_size-1]);
+      }
+      else {
+        # print("sub: " + as.scalar(ts[i-1]%*%ts[i+k-2]) + " - add: " + as.scalar(ts[i+window_size-1]%*%ts[i+k+window_size-2]));
+        q = as.scalar(q - ts[i-1]%*%ts[i+k-2] + ts[i+window_size-1]%*%ts[i+k+window_size-2]);
+      }
+      # d = (q - window_size*as.scalar(mu[i]*mu[i+k-1])) / (window_size*as.scalar(sig[i]*sig[i+k-1]));
+      d = sqrt(2*window_size*(1-(q - window_size*as.scalar(mu[i]*mu[i+k-1])) / (window_size*as.scalar(sig[i]*sig[i+k-1]))));
+      # print("q: " + q + " - d: " + d);
 
+      if (d < as.scalar(profile[i])) {
+        profile[i] = d;
+        profile_index[i] = as.matrix(i+k-1);
+      }
+      if (d < as.scalar(profile[i+k-1])) {
+        profile[i+k-1] = d;
+        profile_index[i+k-1] = i;
+      }
+    }
+  }
 
-  # orders = RandPerm(m/4+1 : n-m+1) # randomize evaluation order
-  # for k in Orders           //evaluating diagonals in random order
-    # for i ← 1 to n-m+2-k
-      # if i=1 do q ← DotProduct(T1,m, Tk,m)
-      # else q ← q - ti-1 ti+k-2 + ti+m-1 ti+k+m-2      // see (2)
-      # end if
-      # d ← CalculateDistance(q, μi, σi , μi+k-1, σi+k-1) // see (1)
-      # if d < Pido Pi← d, Ii← i+k-1 end if
-      # if d < Pi+k-1 do Pi+k-1← d, Ii+k-1← i end if
-    # end for
-  # end for
-  # return P, I
+  print_ts(profile);
+  print_ts(profile_index);
 }
 
 moving_avg = function(Matrix[Double] array, Integer n, Integer window_size)
   return(Matrix[Double] mu, Matrix[Double] sig)
 {
-
-  #  cdef Py_ssize_t i
-  #  cdef Py_ssize_t n = a.shape[0]
-  #  cdef Py_ssize_t ws = w
-  #  cdef Py_ssize_t profile_len = n - w + 1
-  #  cdef double[:] cumsum = np.empty(n, dtype='d')
-  #  cdef double[:] sq_cumsum = np.empty(n, dtype='d')
-  #  cdef double[:] sums = np.empty(profile_len, dtype='d')
-  #  cdef double[:] sq_sums = np.empty(profile_len, dtype='d')
-  #  cdef double[:] mu = np.empty(profile_len, dtype='d')
-  #  cdef double[:] sig_sq = np.empty(profile_len, dtype='d')
-  #  cdef double[:] sig = np.empty(profile_len, dtype='d')
-
-
   profile_len = n - window_size + 1;
-  cumsum = matrix(0, rows=1, cols=n);
-  sq_cumsum = matrix(0, rows=1, cols=n);
-  sums = matrix(0, rows=1, cols=profile_len);
-  sq_sums = matrix(0, rows=1, cols=profile_len);
-  mu = matrix(0, rows=1, cols=profile_len);
-  sig_sq = matrix(0, rows=1, cols=profile_len);
-  sig = matrix(0, rows=1, cols=profile_len);
+  cum_sum = matrix(0, cols=1, rows=n);
+  sq_cum_sum = matrix(0, cols=1, rows=n);
+  sums = matrix(0, cols=1, rows=profile_len);
+  sq_sums = matrix(0, cols=1, rows=profile_len);
+  mu = matrix(0, cols=1, rows=profile_len);
+  sig_sq = matrix(0, cols=1, rows=profile_len);
+  sig = matrix(0, cols=1, rows=profile_len);
 
-  cumsum[1,1] = array[1,1]
-  sq_cumsum[1,1] = array[1,1] * array[1,1]
+  cum_sum = cumsum(array);
+  sq_cum_sum = cumsum(array*array);
+  # print_ts(cum_sum);
+  # print_ts(sq_cum_sum);
 
-  mu[1,1] = 2;
-  sig[1,1] = 2;
+  sums[1] = cum_sum[window_size];
+  sq_sums[1] = sq_cum_sum[window_size];
+  for (i in 1:n-window_size) {
+    sums[i+1]    = cum_sum[window_size + i] - cum_sum[i];
+    sq_sums[i+1] = sq_cum_sum[window_size + i] - sq_cum_sum[i];
+  }
+  # print_ts(sums);
+  # print_ts(sq_sums);
 
-  #  for i in range(1, n):
-    #  cumsum[i] = a[i] + cumsum[i - 1]
-    #  sq_cumsum[i] = a[i] * a[i] + sq_cumsum[i - 1]
+  for (i in 1:profile_len) {
+    mu[i] = sums[i] / window_size;
+    sig_sq[i] = sq_sums[i] / window_size - mu[i] * mu[i];
 
-  #  sums[0] = cumsum[w - 1]
-  #  sq_sums[0] = sq_cumsum[w - 1]
-  #  for i in range(n - w):
-    #  sums[i + 1] = cumsum[w + i] - cumsum[i]
-    #  sq_sums[i + 1] = sq_cumsum[w + i] - sq_cumsum[i]
+    if (as.scalar(sig_sq[i]) < 0)
+      sig[i] = 0;
+    else
+      sig[i] = sqrt(sig_sq[i]);
+  }
+}
 
-  #  for i in range(profile_len):
-    #  mu[i] = sums[i] / w
-    #  sig_sq[i] = sq_sums[i] / w - mu[i] * mu[i]
-
-    #  if sig_sq[i] < 0:
-      #  sig[i] = 0
-    #  else:
-      #  sig[i] = sqrt(sig_sq[i])
+print_ts = function(Matrix[Double] ts) {
+  print(toString(t(ts)));
 }

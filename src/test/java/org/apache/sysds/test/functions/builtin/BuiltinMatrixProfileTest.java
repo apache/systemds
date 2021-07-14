@@ -55,16 +55,21 @@ public class BuiltinMatrixProfileTest extends AutomatedTestBase
 
 	 @Test
 	 public void testMatrixProfileCP() throws IOException {
-		 runMatrixProfileTest(4, "TRUE", ExecType.CP);
+		 runMatrixProfileTest(4, 1.0, "TRUE", ExecType.CP);
+	 }
+
+	 @Test
+	 public void testMatrixProfileApproxCP() throws IOException {
+		 runMatrixProfileTest(4, 0.6, "TRUE", ExecType.CP);
 	 }
 
    // @Test
 	 // public void testMatrixProfileSPARK() throws IOException {
-		 // runMatrixProfileTest(4, "TRUE", ExecType.SPARK);
+		 // runMatrixProfileTest(4, 1.0, "TRUE", ExecType.SPARK);
 	 // }
 
 	
-	private void runMatrixProfileTest(Integer window_size, String is_verbose, ExecType instType) throws IOException
+	private void runMatrixProfileTest(Integer window_size, Double sample_percent, String is_verbose, ExecType instType) throws IOException
 	{
 		ExecMode platformOld = setExecMode(instType);
 
@@ -80,6 +85,7 @@ public class BuiltinMatrixProfileTest extends AutomatedTestBase
 				"-nvargs", "TS=" + input("TS"), "MP=" + output("MP"),
         "MPI=" + output("MPI"),
 				"window_size=" + window_size,
+        "sample_percent=" + sample_percent,
 				"is_verbose=" + is_verbose};
 
 			generator = new Random(seed);

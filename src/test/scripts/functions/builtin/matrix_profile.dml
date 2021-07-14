@@ -20,6 +20,6 @@
 #-------------------------------------------------------------
 
 timeSeries = read($TS)
-[MP,MPI] = matrixProfile(timeSeries, $window_size, $is_verbose)
+[MP,MPI] = matrixProfile(timeSeries, $window_size, $sample_percent, $is_verbose)
 write(MP, $MP)
 write(MPI, $MPI)

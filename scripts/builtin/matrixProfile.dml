@@ -25,6 +25,7 @@
 #   Matrix Profile XI: SCRIMP++: Time Series Motif Discovery at Interactive Speeds.
 #   2018 IEEE International Conference on Data Mining (ICDM), 2018, pp. 837-846.
 #   DOI: 10.1109/ICDM.2018.00099.
+#   https://www.cs.ucr.edu/~eamonn/SCRIMP_ICDM_camera_ready_updated.pdf
 # ----------------------------------------------------------------------------
 
 # Builtin function that computes the MatrixProfile of a time series efficiently
@@ -36,30 +37,27 @@
 # ----------------------------------------------------------------------------
 # ts                                Matrix    ---      Time series to profile
 # window_size                       Integer   4        Sliding window size
+# sample_percent                    Double    1.0      Degree of approximation between zero and one (1 computes the exact solution)
 # is_verbose                        Boolean   False    Print debug information
 #
 #
 # RETURN VALUES
 # ----------------------------------------------------------------------------
 # NAME                              TYPE      DEFAULT  MEANING
-# profile                           Matrix    ---      The computed matrix profile distances
+# profile                           Matrix    ---      The computed matrix profile
 # profile_index                     Matrix    ---      Indices of least distances
 
 
-m_matrixProfile = function(Matrix[Double] ts, Integer window_size=4, Boolean is_verbose=FALSE)
+m_matrixProfile = function(Matrix[Double] ts, Integer window_size=4, Double sample_percent=1.0, Boolean is_verbose=FALSE)
   return(Matrix[Double] profile, Matrix[Double] profile_index)
 {
   if (is_verbose)
     print ("##############################\n# MATRIXPROFILE SCRIPT ENTRY #\n##############################");
 
-  # TODO: preSCRIMP
+  # TODO: preSCRIMP 
+  # requires: MASS: Mueen's Algorithm for Similarity Search
 
   n = length(ts);
-  if (is_verbose) {
-    print("n: " + n + "\n")
-    print("window_size: " + window_size + "\n")
-  }
-
   [mu,sig] = moving_avg(ts, n, window_size);
   if (is_verbose) {
     print_ts(ts);
@@ -73,8 +71,26 @@ m_matrixProfile = function(Matrix[Double] ts, Integer window_size=4, Boolean is_
   profile = matrix(infty, cols=1, rows=profile_len);
   profile_index = matrix(1, cols=1, rows=profile_len);
 
-  # TODO: random permutation
-  for (k in as.integer(window_size/4)+1 : n-window_size) { # n-window_size+1
+  # random permutation
+  exclusion_zone = as.integer(ceil(window_size/4)) + 1;
+  sample_size = profile_len-exclusion_zone;
+  if (sample_percent < 1.0 & sample_percent >= 0.0) {
+    sample_size = ceil(sample_size*sample_percent);
+  }
+  s = sample(sample_size, sample_size, FALSE);
+  s = s + exclusion_zone;
+
+  if (is_verbose) {
+    print("n: " + n);
+    print("window_size: " + window_size);
+    print("profile_len: " + profile_len);
+    print("exclusion_zone: " + exclusion_zone);
+    print("sample_size: " + sample_size);
+  }
+  k_idx = 1;
+  while (k_idx <= sample_size) {
+    k = as.scalar(s[k_idx]);
+    k_idx += 1;
     q = 0;
     for (i in 1:n-window_size+2-k) {
       # q_test = as.scalar(t(ts[i:i+window_size-1]) %*% ts[i+k-1:i+k+window_size-2]);
@@ -86,7 +102,6 @@ m_matrixProfile = function(Matrix[Double] ts, Integer window_size=4, Boolean is_
         # print("sub: " + as.scalar(ts[i-1]%*%ts[i+k-2]) + " - add: " + as.scalar(ts[i+window_size-1]%*%ts[i+k+window_size-2]));
         q = as.scalar(q - ts[i-1]%*%ts[i+k-2] + ts[i+window_size-1]%*%ts[i+k+window_size-2]);
       }
-      # d = (q - window_size*as.scalar(mu[i]*mu[i+k-1])) / (window_size*as.scalar(sig[i]*sig[i+k-1]));
       d = sqrt(2*window_size*(1-(q - window_size*as.scalar(mu[i]*mu[i+k-1])) / (window_size*as.scalar(sig[i]*sig[i+k-1]))));
       # print("q: " + q + " - d: " + d);
 

@@ -1,6 +1,6 @@
 name,param_no,maskFlag,FDFlag,yFlag,verboseFlag,dataFlag,dataType,ranges,st1,en1,st2,en1,en2,st3,en3
 outlierByIQR,3,0,0,0,1,0,FP,INT,INT,1,5,1,2,1,10
-outlierBySd,3,0,0,0,1,0,FP,INT,INT,1,5,2,2,1,10
+outlierBySd,3,0,0,0,1,0,FP,INT,INT,1,5,1,2,1,10
 winsorize,0,0,0,0,1,0,,,,,,,,,
 imputeByMean,0,1,0,0,0,2,,,,,,,,,
 imputeByMedian,0,1,0,0,0,2,,,,,,,,,
@@ -12,5 +12,5 @@ m_pca,3,0,0,0,0,2,INT,BOOL,BOOL,100,200,0,1,0,0
 fillDefault,0,0,0,0,0,2,,,,,,,,,
 dummycoding,0,1,0,0,0,2,,,,,,,,,
 scale,2,0,0,0,0,0,BOOL,BOOL,0,1,0,1,,,
-forward_fill,1,0,0,0,1,0,BOOL,0,1,,,,,,
+forward_fill,1,0,0,0,1,2,BOOL,0,1,,,,,,
 imputeByFd,1,0,1,0,0,2,FP,0.55,1,,,,,,

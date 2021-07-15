@@ -1,0 +1,149 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+# Generate the logical pipelines for data cleaning
+
+source("scripts/pipelines/scripts/utils.dml") as utils;
+
+# read the inputs
+F = read($dirtyData, data_type="frame", format="csv", header=TRUE, 
+  naStrings= ["NA", "null","  ","NaN", "nan", "", "?", "99999"]);
+
+metaInfo = read($metaData, data_type="frame", format="csv", header=FALSE);
+primitives = read($primitives, data_type = "frame", format="csv", header= TRUE)
+param = read($parameters, data_type = "frame", format="csv", header= TRUE)
+topK = $topk
+resources = $rv
+sample=$sample
+
+if(nrow(metaInfo) < 2)
+  stop("incomplete meta info")
+
+metaInfo = metaInfo[, 2:ncol(metaInfo)-1]
+
+[topKPipelines, topKHyperParams, topKScores, features, dirtyScore] = handsOffCleaning(F, metaInfo, primitives, param, 
+  matrix("4 0.7 1", rows=1, cols=3), "evalClassification", as.matrix("0"), 5, 20, sample, TRUE)
+  
+print("this is accuracies "+toString(topKScores))
+result = dirtyScore < as.scalar(topKScores[1, 1]) 
+write(result, $O)
+
+
+
+# UDF for evaluation  
+# choice of parameters provided by API, X, Y, clone_X, evalFunHp (hyper-param), trainML (boolean for optimizing hp internally or passed by externally )
+evalClassification = function(Matrix[Double] X, Matrix[Double] Y, Matrix[Double] Xorig, List[Unknown] metaList,
+  Matrix[Double] evalFunHp, Integer trainML=0)
+  
+return(Matrix[Double] output)
+{
+  cv = 2
+  mask = as.matrix(metaList['mask'])
+
+  if(max(Y) == min(Y)) {
+    print("Y contains only one class")
+    accuracy = as.double(0)
+  }
+  else {
+    if(trainML == 1)
+    {
+      # do the gridsearch for hyper-parameters
+      params = list("icpt", "reg", "tol", "maxii")
+      paramRanges = list(seq(0, 2, 1), 10^seq(1,-4), 10^seq(1,-6), 10^seq(1,3));
+
+      if(sum(mask) > 0)
+        X = utils::dummycoding(replace(target = X, pattern = NaN, replacement=0), mask)
+      trainArgs = list(X=X, Y=Y, icpt=-1, reg=-1, tol=-1, maxi=100, maxii=-1, verbose=FALSE);
+      [B1, opt] = gridSearch(X=X, y=Y, train="multiLogReg", predict="W", numB=ncol(X)+1, cv=TRUE, cvk=cv,
+        params=params, paramValues=paramRanges, trainArgs=trainArgs, verbose=TRUE);
+      evalFunHp = as.matrix(opt)  
+    }
+
+    # do the k = 3 cross validations
+    # evalFunHpM = as.matrix(evalFunHp)
+    [accuracyMatrix] = crossV(X, Y, cv, evalFunHp, FALSE)
+    accuracyMatrix = removeEmpty(target=accuracyMatrix, margin="rows")
+    score = mean(accuracyMatrix)
+    print(cv +" validation accuracy "+score)
+  }
+  output = cbind(as.matrix(score), evalFunHp)
+
+}
+
+# # ######################################################################
+# # # # Function for cross validation using hold out method
+# # # # Inputs: The input dataset X, Y and the value of k validation, mask of the 
+# # # # dataset for OHE of categorical columns, vector of ML hyper-parameters identified 
+# # # # via gridsearch and a boolean value of (un)weighted accuracy.
+# # # # Output: It return a matrix having the accuracy of each fold.
+# # ######################################################################
+
+crossV = function(Matrix[double] X, Matrix[double] y, Integer k, Matrix[Double] MLhp, Boolean isWeighted) 
+return (Matrix[Double] accuracyMatrix)
+{
+  accuracyMatrix = matrix(0, k, 1)
+  print("ML HP in CV "+toString(MLhp))
+  dataList = list()
+  testL = list()
+  data = order(target = cbind(y, X),  by = 1, decreasing=FALSE, index.return=FALSE)
+  classes = table(data[, 1], 1)
+  ins_per_fold = classes/k
+  start_fold = matrix(1, rows=nrow(ins_per_fold), cols=1)
+  fold_idxes = cbind(start_fold, ins_per_fold)
+
+  start_i = 0; end_i = 0; idx_fold = 1;;
+  for(i in 1:k)
+  {
+    fold_i = matrix(0, 0, ncol(data))
+    start=0; end=0; 
+    for(j in 1:nrow(classes))
+    {
+      idx = as.scalar(classes[j, 1])
+      start = end + 1;
+      end = end + idx
+      class_j =  data[start:end, ]
+      start_i = as.scalar(fold_idxes[j, 1]);
+      end_i = as.scalar(fold_idxes[j, 2])
+      fold_i = rbind(fold_i, class_j[start_i:end_i, ])
+    }
+    dataList = append(dataList, fold_i)
+    fold_idxes[, 1] = fold_idxes[, 2] + 1
+    fold_idxes[, 2] += ins_per_fold
+  }
+
+  for(i in seq(1,k))
+  {
+    [trainList, hold_out] = remove(dataList, i)
+    trainset = rbind(trainList)
+    testset = as.matrix(hold_out)
+    trainX = trainset[, 2:ncol(trainset)]
+    trainy = trainset[, 1]
+    testX = testset[, 2:ncol(testset)]
+    testy = testset[, 1]
+    beta = multiLogReg(X=trainX, Y=trainy, icpt=as.scalar(MLhp[1,1]), reg=as.scalar(MLhp[1,2]), tol=as.scalar(MLhp[1,3]), 
+    maxi=as.scalar(MLhp[1,4]), maxii=50, verbose=FALSE);
+    [prob, yhat, a] = multiLogRegPredict(testX, beta, testy, FALSE)
+    accuracy = getAccuracy(testy, yhat, isWeighted)
+    accuracyMatrix[i] = accuracy
+  }
+
+}
+
+ 

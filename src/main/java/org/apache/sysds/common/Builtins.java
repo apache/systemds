@@ -129,6 +129,7 @@ public enum Builtins {
 	GMM_PREDICT("gmmPredict", true),
 	GNMF("gnmf", true),
 	GRID_SEARCH("gridSearch", true),
+	TOPK_CLEANING("topk_cleaning", true),
 	HOSPITAL_RESIDENCY_MATCH("hospitalResidencyMatch", true),
 	HYPERBAND("hyperband", true),
 	IFELSE("ifelse", false),

@@ -51,7 +51,7 @@ return(Matrix[Double] X)
   cols = ncol(nX)
   #  median imputation
   colMedian = matrix(0, 1, cols)
-  for(i in 1:cols, check=0)
+  parfor(i in 1:cols, check=0)
     colMedian[1, i] = median(X[,i])
   X_n = nX + (Mask_n * colMedian)
   # mode imputation

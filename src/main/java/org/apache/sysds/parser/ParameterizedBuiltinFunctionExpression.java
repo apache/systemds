@@ -478,7 +478,9 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 	private void validateReplace(DataIdentifier output, boolean conditional) {
 		//check existence and correctness of arguments
 		Expression target = getVarParam("target");
-		checkTargetParam(target, conditional);
+		if( target.getOutput().getDataType() != DataType.FRAME ){
+			checkTargetParam(target, conditional);
+		}
 		
 		Expression pattern = getVarParam("pattern");
 		if( pattern==null ) {
@@ -497,8 +499,11 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 		}	
 		
 		// Output is a matrix with same dims as input
-		output.setDataType(DataType.MATRIX);
-		output.setValueType(ValueType.FP64);
+		output.setDataType(target.getOutput().getDataType());
+		if(target.getOutput().getDataType() == DataType.FRAME)
+			output.setValueType(ValueType.STRING);
+		else
+			output.setValueType(ValueType.FP64);
 		output.setDimensions(target.getOutput().getDim1(), target.getOutput().getDim2());
 	}
 

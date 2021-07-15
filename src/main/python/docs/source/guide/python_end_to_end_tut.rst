@@ -27,9 +27,9 @@ For this we want to use the Adult dataset (see: https://archive.ics.uci.edu/ml/d
 contains attributes like age, workclass, education, marital-status, occupation, race, [...] and the labels >50K or <=50K.
 Most of these features are categorical string values, but the dataset also includes continuous features.
 For this we define three different levels with a increasing level of detail with regard to features provided by SystemDS.
-In the first level we simply get an already preprocessed dataset from a Datasetmanager.
+In the first level we simply get an already preprocessed dataset from a DatasetManager.
 The second levels shows the builtin preprocessing capabilities of SystemDS.
-With the third level we want to show how we can integrate custom built networks or algorithms into our python programm.
+With the third level we want to show how we can integrate custom built networks or algorithms into our Python program.
 
 Prerequisite: 
 
@@ -165,8 +165,9 @@ Level 2
 This part of the tutorial shows a in-depth overview of the preprocessing capabilities that SystemDS has to offer.
 We will take a new and raw dataset using the csv format and read it with SystemDS. Then do the heavy lifting for the preprocessing with SystemDS.
 As mentioned before we want to use the Adult dataset (see: https://archive.ics.uci.edu/ml/datasets/adult).
+If one wants to skip the explanation then the full script is available at the bottom of this page.
 
-Step 1: datapreparation and reading
+Step 1: metadata and reading
 ~~~~~~~~~~
 
 First of all, we need to download the dataset and create a mtd-file for specifying different properties that the dataset has.
@@ -174,7 +175,7 @@ We downloaded the train and test dataset from: https://archive.ics.uci.edu/ml/da
 The downloaded dataset has been slightly modified for convenience. These modifications entail removing unnecessary newlines at the end of the files,
 adding column names at the top of the files such that the first line looks like:
 
-.. code-block:: python
+.. code-block::
 
     age,workclass,fnlwgt,education,education-num,marital-status,occupation,relationship,race,sex,capital-gain,capital-loss,hours-per-week,native-country,income
 We also deleted the line holding the string value "|1x3 Cross validator" inside the test dataset.
@@ -186,7 +187,7 @@ In these files, we can define certain properties that the file has and also spec
 
 The content of the train_data.csv.mtd file is:
 
-.. code-block:: python
+.. code-block::
 
     {
     "data_type": "frame",
@@ -286,25 +287,21 @@ After defining the .jspec file we can read it by passing the filepath, data_type
 
     dataset_jspec = "adult/jspec.json"
     jspec = sds.read(dataset_jspec, data_type="scalar", value_type="string")
-
 Finally, we need to define a custom dml file to split the features from the labels and replace certain values, which we will need later.
 We will call this file preprocess.dml:
-.. code-block:: dml
+.. code-block::
 
-    get_X = function(matrix[double] X,
-                     int start, int stop)
-        return (matrix[double] returnVal) {
-     returnVal = X[start:stop,1:ncol(X)-1]
+    get_X = function(matrix[double] X, int start, int stop)
+    return (matrix[double] returnVal) {
+    returnVal = X[start:stop,1:ncol(X)-1]
     }
-    get_Y = function(matrix[double] X,
-                     int start, int stop)
-        return (matrix[double] returnVal) {
-     returnVal = X[start:stop,ncol(X):ncol(X)]
+    get_Y = function(matrix[double] X, int start, int stop)
+    return (matrix[double] returnVal) {
+    returnVal = X[start:stop,ncol(X):ncol(X)]
     }
-    replace_value = function(matrix[double] X,
-                   double pattern , double replacement)
-        return (matrix[double] returnVal) {
-     returnVal = replace(target=X, pattern=pattern, replacement=replacement)
+    replace_value = function(matrix[double] X, double pattern , double replacement)
+    return (matrix[double] returnVal) {
+    returnVal = replace(target=X, pattern=pattern, replacement=replacement)
     }
 
 The get_X function simply extracts every column except the last one and can also be used to pick certain slices from the dataset.
@@ -332,7 +329,8 @@ and all the initial values. Columns that have not been specified in the .json fi
 .. code-block:: python
 
     X1, M1 = X1.transform_encode(spec=jspec)
-We now can use the previously defined dml file for splitting the dataset and unifying the inconsistent labels.
+We now can use the previously parsed dml file for splitting the dataset and unifying the inconsistent labels. It is noteworthy that the
+file gets parsed such that we can directly call the function names from the Python API.
 
 .. code-block:: python
 
@@ -348,7 +346,7 @@ Step 4: training and confusion matrix
 ~~~~~~~~~~
 
 Now that we prepared the data we can use the multiLogReg function.
-These steps are identical to the steps that have been already described inside level1.
+These steps are identical to step 2 and 3 that have already been described inside level 1.
 
 .. code-block:: python
 
@@ -359,15 +357,13 @@ These steps are identical to the steps that have been already described inside l
     [_, y_pred, acc] = multiLogRegPredict(Xt, betas, Yt)
     confusion_matrix_abs, _ = confusionMatrix(y_pred, Yt).compute()
     print(confusion_matrix_abs)
-
 Full Script
 ~~~~~~~~~~
-
+The complete script now can be seen here:
 .. code-block:: python
 
     import numpy as np
     from systemds.context import SystemDSContext
-    from systemds.examples.tutorials.adult import DataManager
     from systemds.operator.algorithm import multiLogReg, multiLogRegPredict, confusionMatrix
 
     train_count = 32561
@@ -414,4 +410,57 @@ Full Script
     print(confusion_matrix_abs)
 Level 3
 -------------------
+In this level we want to show how we can integrate a custom built algorithm using the Python API.
+For this we will introduce another dml file, which can be used to train a basic feed forward network using a parameter server.
+Step 1: obtain data
+~~~~~~~~~~
+We will simply use the same preprocessing steps as in level 2:
+.. code-block:: python
+
+    import numpy as np
+    from systemds.context import SystemDSContext
+    from systemds.operator.algorithm import confusionMatrix
+
+    train_count = 32561
+    test_count = 16281
+
+    dataset_path_train = "adult/train_data.csv"
+    dataset_path_test = "adult/test_data.csv"
+    dataset_jspec = "adult/jspec.json"
+    preprocess_src_path = "preprocess.dml"
+
+    sds = SystemDSContext()
+
+    SCHEMA = '"DOUBLE,STRING,DOUBLE,STRING,DOUBLE,STRING,STRING,STRING,STRING,STRING,DOUBLE,DOUBLE,DOUBLE,STRING,STRING"'
+
+    F1 = sds.read(
+        dataset_path_train,
+        schema=SCHEMA
+    )
+    F2 = sds.read(
+        dataset_path_test,
+        schema=SCHEMA
+    )
+
+    jspec = sds.read(dataset_jspec, data_type="scalar", value_type="string")
+    PREPROCESS_package = sds.source(preprocess_src_path, "preprocess", print_imported_methods=True)
+
+    X1 = F1.rbind(F2)
+    X1, M1 = X1.transform_encode(spec=jspec)
+
+    X = PREPROCESS_package.get_X(X1, 1, train_count)
+    Y = PREPROCESS_package.get_Y(X1, 1, train_count)
+
+    Xt = PREPROCESS_package.get_X(X1, train_count, train_count+test_count)
+    Yt = PREPROCESS_package.get_Y(X1, train_count, train_count+test_count)
+
+    Yt = PREPROCESS_package.replace_value(Yt, 3.0, 1.0)
+    Yt = PREPROCESS_package.replace_value(Yt, 4.0, 2.0)
+
+Step 2: load the algorithm
+~~~~~~~~~~
+We use a neural network with 2 hidden layers, each consisting of 200 neurons.
+First we need to source the dml-file for neural networks.
+This file includes all the necessary functions for training, evaluating and storing the model.
+The returned object of the source call is further used for calling the functions.
 

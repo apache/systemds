@@ -36,8 +36,8 @@ class Test_DMLScript(unittest.TestCase):
 
     sds: SystemDSContext = None
     d: DataManager = None
-    neural_net_src_path: str = "../..//tests/examples/tutorials/neural_net_source.dml"
-    preprocess_src_path: str = "../../tests/examples/tutorials/preprocess.dml"
+    neural_net_src_path: str = "tests/examples/tutorials/neural_net_source.dml"
+    preprocess_src_path: str = "tests/examples/tutorials/preprocess.dml"
     dataset_path_train: str = "../../test/resources/datasets/adult/train_data.csv"
     dataset_path_train_mtd: str = "../../test/resources/datasets/adult/train_data.csv.mtd"
     dataset_path_test: str = "../../test/resources/datasets/adult/test_data.csv"

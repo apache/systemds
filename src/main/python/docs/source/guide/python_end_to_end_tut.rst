@@ -19,8 +19,17 @@
 .. 
 .. ------------------------------------------------------------
 
-Python end to end
+Python end-to-end
 ===================
+
+The goal of this tutorial is to showcase different features of the SystemDS framework that can be accessed with the Python API.
+For this we want to use the Adult dataset (see: https://archive.ics.uci.edu/ml/datasets/adult) and predict whether the income of a person exceeds $50K/yr based on census data. The Adult Dataset
+contains attributes like age, workclass, education, marital-status, occupation, race, [...] and the labels >50K or <=50K.
+Most of these features are categorical string values, but the dataset also includes continuous features.
+For this we define three different levels with a increasing level of detail with regard to features provided by SystemDS.
+In the first level we simply get an already preprocessed dataset from a Datasetmanager.
+The second levels shows the builtin preprocessing capabilities of SystemDS.
+With the third level we want to show how we can integrate custom built networks or algorithms into our python programm.
 
 Prerequisite: 
 
@@ -30,13 +39,11 @@ Prerequisite:
 Level 1
 -------------------
 
-This example shows how one can work with NumPy data within the SystemDs framework. More precisely we will make use of the
+This example shows how one can work with NumPy data within the SystemDS framework. More precisely, we will make use of the
 built-in DataManager, Multinomial Logistic Regression function, and the Confusion Matrix function. The dataset used in this
-tutorial is a preprocessed version of the "UCI Adult Data Set". If you are interested in data preprocessing there is a
-separate tutorial on this topic. If one wants to skip the explanation then the full script is available at the bottom of this page.
+tutorial is a preprocessed version of the "UCI Adult Data Set". If you are interested in data preprocessing, take a look at level 2.
+If one wants to skip the explanation then the full script is available at the bottom of this page.
 
-Our goal will be to predict whether the income of a person exceeds $50K/yr based on census data. The Adult Dataset
-contains attributes like age, workclass, education, marital-status, occupation, race, [...] and the labels >50K or <=50K.
 We will train a Multinomial Logistic Regression model on the training dataset and subsequently we will use the test dataset
 to assess how well our model can predict if the income is above or below $50K/yr based on the attributes.
 
@@ -115,8 +122,6 @@ for the predictions and the confusion matrix averages of each true class.
     confusion_matrix_abs, _ = confusionMatrix(y_pred, Yt).compute()
     print(confusion_matrix_abs)
 
-
-
 Full Script
 ~~~~~~~~~~
 
@@ -154,18 +159,25 @@ In the full script, some steps are combined to reduce the overall script.
     confusion_matrix_abs, _ = confusionMatrix(y_pred, Yt).compute()
     print(confusion_matrix_abs)
 
+
 Level 2
 -------------------
 This part of the tutorial shows a in-depth overview of the preprocessing capabilities that SystemDS has to offer.
 We will take a new and raw dataset using the csv format and read it with SystemDS. Then do the heavy lifting for the preprocessing with SystemDS.
+As mentioned before we want to use the Adult dataset (see: https://archive.ics.uci.edu/ml/datasets/adult).
 
-Step 1:
+Step 1: datapreparation and reading
 ~~~~~~~~~~
 
 First of all, we need to download the dataset and create a mtd-file for specifying different properties that the dataset has.
 We downloaded the train and test dataset from: https://archive.ics.uci.edu/ml/datasets/adult
 The downloaded dataset has been slightly modified for convenience. These modifications entail removing unnecessary newlines at the end of the files,
-adding column names at the top of the file.
+adding column names at the top of the files such that the first line looks like:
+
+.. code-block:: python
+
+    age,workclass,fnlwgt,education,education-num,marital-status,occupation,relationship,race,sex,capital-gain,capital-loss,hours-per-week,native-country,income
+We also deleted the line holding the string value "|1x3 Cross validator" inside the test dataset.
 
 After these modifications, we have to define a mtd-file for each file we want to read. This mtd file has to be in the same directory as the dataset.
 In this particular example, the dataset is split into two files "train_data.csv" and "test_data.csv". We want to read both, which means that we will define a mtd-file for
@@ -174,7 +186,7 @@ In these files, we can define certain properties that the file has and also spec
 
 The content of the train_data.csv.mtd file is:
 
-.. code-block:: json
+.. code-block:: python
 
     {
     "data_type": "frame",
@@ -184,11 +196,10 @@ The content of the train_data.csv.mtd file is:
     "rows": 32561,
     "cols": 15
     }
-
 The "format" of the file is csv, and "header" is set to true because we added the feature names as headers to the csv files.
-"data_type" is set to frame as the preprocessing functions that we use require this datatype.
-The value of "naStrings" is a list of all the String values that should be treated as unknown values during the preprocessing.
-Also, "rows" in our example is set to 32561, as we have this many entries and "cols" is set to 15 as we have this many features in our datasets.
+The value "data_type" is set to frame as the preprocessing functions that we use require this datatype.
+The value of "naStrings" is a list of all the string values that should be treated as unknown values during the preprocessing.
+Also, "rows" in our example is set to 32561, as we have this many entries and "cols" is set to 15 as we have 14 features and one label inside the files. We will later show how we can split them.
 
 After these requirements are completed, we have to define a SystemDSContext for reading our dataset. We can do this in the following way:
 
@@ -198,7 +209,6 @@ After these requirements are completed, we have to define a SystemDSContext for 
 
     train_count = 32561
     test_count = 16281
-
 With this context we can now define a read operation using the path of the dataset and a schema.
 The schema simply defines the data types for each column.
 
@@ -219,8 +229,7 @@ As already mentioned, SystemDS supports lazy execution by default, which means t
         dataset_path_test,
         schema=SCHEMA
     )
-
-Step 2:
+Step 2: defining preprocess operations
 ~~~~~~~~~~
 
 Now that the read operation has been declared, we can define an additional file for the further preprocessing of the dataset.
@@ -260,14 +269,16 @@ we first had to define the values of the missing strings in our selected dataset
 With the "bin" keyword we can discretize continuous values into a small number of bins. Here the column with age values
 is discretized into three age intervals. The only method that is currently supported is equi-width binning.
 
-The column-level data transformation "dummycode" allows us to one-hot-encode a categorical column. We split a column into multiple
-columns of zeros and ones, which collectively capture the full information about the categorical variable.
+The column-level data transformation "dummycode" allows us to one-hot-encode a column.
 In our example we first bin the "age" column into 3 different bins. This means that we now have one column where one entry can belong to one of 3 age groups. After using
 "dummycode", we transform this one column into 3 different columns, one for each bin.
 
 At last we make use of the "recode" transformation for categorical columns, it maps all distinct categories in
 the column into consecutive numbers, starting from 1. In our example we recode the "income" column, which
-transforms it from "<=$50K" and ">$50K" to "0" and "1" respectively.
+transforms it from "<=$50K" and ">$50K" to "1" and "2" respectively.
+
+Another good resource for further ways of processing is: https://apache.github.io/systemds/site/dml-language-reference.html
+There we provide different examples for defining jspec's and what functionality is currently supported.
 
 After defining the .jspec file we can read it by passing the filepath, data_type and value_type using the following command:
 
@@ -276,31 +287,54 @@ After defining the .jspec file we can read it by passing the filepath, data_type
     dataset_jspec = "adult/jspec.json"
     jspec = sds.read(dataset_jspec, data_type="scalar", value_type="string")
 
-Step 3:
-~~~~~~~~~~
+Finally, we need to define a custom dml file to split the features from the labels and replace certain values, which we will need later.
+We will call this file preprocess.dml:
+.. code-block:: dml
 
-We now can combine the train and the test dataset by using the rbind() function. This function simply appends the Frame F2 at the end of Frame F1.
+    get_X = function(matrix[double] X,
+                     int start, int stop)
+        return (matrix[double] returnVal) {
+     returnVal = X[start:stop,1:ncol(X)-1]
+    }
+    get_Y = function(matrix[double] X,
+                     int start, int stop)
+        return (matrix[double] returnVal) {
+     returnVal = X[start:stop,ncol(X):ncol(X)]
+    }
+    replace_value = function(matrix[double] X,
+                   double pattern , double replacement)
+        return (matrix[double] returnVal) {
+     returnVal = replace(target=X, pattern=pattern, replacement=replacement)
+    }
+
+The get_X function simply extracts every column except the last one and can also be used to pick certain slices from the dataset.
+The get_Y function only extracts the last column, which in our case holds the labels. Replace_value is used to replace a double value with another double.
+The preprocess.dml file can be read with the following command:
+.. code-block:: python
+
+    preprocess_src_path = "preprocess.dml"
+    PREPROCESS_package = sds.source(preprocess_src_path, "preprocess", print_imported_methods=True)
+The print_imported_methods flag can be used to verify whether every method has been parsed correctly.
+Step 3: applying the preprocessing steps
+~~~~~~~~~~
+Generally speaking we would use the transform_encode function on the train dataset and with the returned encoding call the transform_apply function on the test dataset.
+In the case of the Adult dataset, we have inconsistent label names inside the test dataset and the train dataset, which is why we will show how we can deal with that using SystemDS.
+First of all, we combine the train and the test dataset by using the rbind() function. This function simply appends the Frame F2 at the end of Frame F1.
 This is necessary to ensure that the encoding is identical between training and test dataset.
 
 .. code-block:: python
 
     X1 = F1.rbind(F2)
-
 In order to use our jspec file we can apply the transform_encode() function. We simply have to pass the read .json file from before.
-Another good resource for further ways of processing is: https://apache.github.io/systemds/site/dml-language-reference.html
-There we provide different examples for defining jspec's and what functionality is currently supported.
 In our particular case we obtain the Matrix X1 and the Frame M1 from the operation. X1 holds all the encoded values and M1 holds a mapping between the encoded values
 and all the initial values. Columns that have not been specified in the .json file were not altered.
 
 .. code-block:: python
 
     X1, M1 = X1.transform_encode(spec=jspec)
-
-First we re-split out data into a training and a test set with the corresponding labels.
+We now can use the previously defined dml file for splitting the dataset and unifying the inconsistent labels.
 
 .. code-block:: python
-    preprocess_src_path = "preprocess.dml"
-    PREPROCESS_package = sds.source(preprocess_src_path, "preprocess", print_imported_methods=True)
 
     X = PREPROCESS_package.get_X(X1, 1, train_count)
     Y = PREPROCESS_package.get_Y(X1, 1, train_count)
@@ -310,46 +344,19 @@ First we re-split out data into a training and a test set with the corresponding
 
     Yt = PREPROCESS_package.replace_value(Yt, 3.0, 1.0)
     Yt = PREPROCESS_package.replace_value(Yt, 4.0, 2.0)
-Step 4: Training
+Step 4: training and confusion matrix
 ~~~~~~~~~~
 
-Now that we prepared the data we can use the multiLogReg function. First we will train the model on our
-training data. Afterwards we can make predictions on the test data and asses the performance of the model.
+Now that we prepared the data we can use the multiLogReg function.
+These steps are identical to the steps that have been already described inside level1.
 
 .. code-block:: python
 
     from systemds.operator.algorithm import multiLogReg
-    betas = multiLogReg(X, Y)
-
-Note that nothing has been calculated yet. In SystemDS the calculation is executed once .compute() is called.
-E.g. betas_res = betas.compute().
-
-
-We can now use the trained model to make predictions on the test data.
-
-.. code-block:: python
-
-    from systemds.operator.algorithm import multiLogRegPredict
-    [_, y_pred, acc] = multiLogRegPredict(Xt, betas, Yt)
-
-The multiLogRegPredict function has three return values:
-    - m, a matrix with the mean probability of correctly classifying each label. We not use it further in this example.
-    - y_pred, is the predictions made using the model
-    - acc, is the accuracy achieved by the model.
-
-Step 5: Confusion Matrix
-~~~~~~~~~~
-
-A confusion matrix is a useful tool to analyze the performance of the model and to obtain a better understanding
-which classes the model has difficulties to separate.
-The confusionMatrix function takes the predicted labels and the true labels. It then returns the confusion matrix
-for the predictions and the confusion matrix averages of each true class.
-
-If you followed the tutorial you should be able to verify the results with the provided assertTrue function call.
-
-.. code-block:: python
-
     from systemds.operator.algorithm import confusionMatrix
+    from systemds.operator.algorithm import multiLogRegPredict
+    betas = multiLogReg(X, Y)
+    [_, y_pred, acc] = multiLogRegPredict(Xt, betas, Yt)
     confusion_matrix_abs, _ = confusionMatrix(y_pred, Yt).compute()
     print(confusion_matrix_abs)
 
@@ -385,12 +392,10 @@ Full Script
     )
 
     jspec = sds.read(dataset_jspec, data_type="scalar", value_type="string")
+    PREPROCESS_package = sds.source(preprocess_src_path, "preprocess", print_imported_methods=True)
 
     X1 = F1.rbind(F2)
-
     X1, M1 = X1.transform_encode(spec=jspec)
-
-    PREPROCESS_package = sds.source(preprocess_src_path, "preprocess", print_imported_methods=True)
 
     X = PREPROCESS_package.get_X(X1, 1, train_count)
     Y = PREPROCESS_package.get_Y(X1, 1, train_count)
@@ -407,8 +412,6 @@ Full Script
 
     confusion_matrix_abs, _ = confusionMatrix(y_pred, Yt).compute()
     print(confusion_matrix_abs)
-
-
 Level 3
 -------------------
 

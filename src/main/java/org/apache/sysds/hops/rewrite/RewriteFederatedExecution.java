@@ -23,7 +23,6 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.sysds.api.DMLException;
-import org.apache.sysds.common.Types;
 import org.apache.sysds.hops.AggBinaryOp;
 import org.apache.sysds.hops.AggUnaryOp;
 import org.apache.sysds.hops.BinaryOp;
@@ -42,6 +41,7 @@ import org.apache.sysds.runtime.controlprogram.federated.FederatedUDF;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedWorkerHandlerException;
 import org.apache.sysds.runtime.instructions.cp.Data;
 import org.apache.sysds.runtime.instructions.fed.FEDInstruction;
+import org.apache.sysds.runtime.instructions.fed.FEDInstruction.FederatedOutput;
 import org.apache.sysds.runtime.instructions.fed.InitFEDInstruction;
 import org.apache.sysds.runtime.io.IOUtilFunctions;
 import org.apache.sysds.runtime.lineage.LineageItem;
@@ -58,8 +58,8 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
+import java.util.Collections;
+import java.util.EnumMap;
 import java.util.Map;
 import java.util.concurrent.Future;
 
@@ -74,177 +74,94 @@ public class RewriteFederatedExecution extends HopRewriteRule {
 		return selectFederatedExecutionPlan(roots);
 	}
 
-	private ArrayList<Hop> selectFederatedExecutionPlan(ArrayList<Hop> roots){
-		List<FedPlan> fedPlans = generateFedPlans(roots);
-		FedPlan selectedPlan = selectFedPlan(fedPlans);
-		selectedPlan.updateHops();
+	@Override public Hop rewriteHopDAG(Hop root, ProgramRewriteStatus state) {
+		return null;
+	}
 
+	/**
+	 * Select federated execution plan for every Hop in the DAG starting from given roots.
+	 * @param roots starting point for going through the Hop DAG to update the FederatedOutput fields.
+	 * @return the list of roots with updated FederatedOutput fields.
+	 */
+	private ArrayList<Hop> selectFederatedExecutionPlan(ArrayList<Hop> roots){
+		for (Hop root : roots){
+			root.resetVisitStatus();
+		}
+		for ( Hop root : roots ){
+			// Depth first to get to the input
+			for ( Hop input : root.getInput() )
+				visitFedPlanHop(input);
+		}
 		return roots;
 	}
 
-	@Override
-	public Hop rewriteHopDAG(Hop root, ProgramRewriteStatus state) {
-		if( root == null )
-			return null;
-		visitHop(root);
-		return root;
+	/**
+	 * Go through the Hop DAG and set the FederatedOutput field for each Hop from leaf to given currentHop.
+	 * @param currentHop the Hop from which the DAG is visited
+	 */
+	private void visitFedPlanHop(Hop currentHop){
+		if ( currentHop.getInput() != null && currentHop.getInput().size() > 0 && !isFederatedDataOp(currentHop) ){
+			// Depth first to get to the input
+			for ( Hop input : currentHop.getInput() )
+				visitFedPlanHop(input);
+		} else if ( isFederatedDataOp(currentHop) ) {
+			// leaf federated node
+			currentHop.setFederatedOutput(FederatedOutput.FOUT);
+		}
+
+		if ( ( isFedInstSupportedHop(currentHop) ) ){
+			// The Hop can be FOUT or LOUT or None. Check utility of FOUT vs LOUT vs None.
+			currentHop.setFederatedOutput(getHighestUtilFedOut(currentHop));
+		}
+		else
+			currentHop.setFederatedOutput(FEDInstruction.FederatedOutput.NONE);
 	}
 
-	private FedPlan selectFedPlan(List<FedPlan> fedPlans){
-		//TODO: Different selection algorithm (instead of linear)
-		FedPlan bestPlan = fedPlans.get(0);
-		if ( fedPlans.size() > 1 ){
-			for ( FedPlan planUtility : fedPlans )
-				if (planUtility.utility > bestPlan.utility)
-					bestPlan = planUtility;
-		}
-		return bestPlan;
+	/**
+	 * Returns the FederatedOutput with the highest utility out of the valid FederatedOutput values.
+	 * @param hop for which the utility is found
+	 * @return the FederatedOutput value with highest utility for the given Hop
+	 */
+	private FederatedOutput getHighestUtilFedOut(Hop hop){
+		Map<FederatedOutput,Long> fedOutUtilMap = new EnumMap<>(FederatedOutput.class);
+		if ( isFOUTSupported(hop) )
+			fedOutUtilMap.put(FederatedOutput.FOUT, getUtilFout());
+		if ( hop.getPrivacy() == null || (hop.getPrivacy() != null && !hop.getPrivacy().hasConstraints()) )
+			fedOutUtilMap.put(FederatedOutput.LOUT, getUtilLout(hop));
+		fedOutUtilMap.put(FederatedOutput.NONE, 0L);
+
+		Map.Entry<FederatedOutput, Long> fedOutMax = Collections.max(fedOutUtilMap.entrySet(), Map.Entry.comparingByValue());
+		return fedOutMax.getKey();
 	}
 
-	private List<FedPlan> generateFedPlans(List<Hop> roots){
-		List<FedPlan> fedPlans = new ArrayList<>();
-
-		// Create two extreme fed plans
-		fedPlans.add(new FedPlan(roots, FEDInstruction.FederatedOutput.FOUT));
-		fedPlans.add(new FedPlan(roots, FEDInstruction.FederatedOutput.LOUT));
-
-		return fedPlans;
+	/**
+	 * Utility if hop is FOUT. This is a simple version where it always returns 1.
+	 * @return utility if hop is FOUT
+	 */
+	private long getUtilFout(){
+		//TODO: Make better utility estimation
+		return 1;
 	}
 
-	class FedPlan {
-		private final List<FedPlanRoot> fedPlanRoots = new ArrayList<>();
-		private long utility;
-
-		public FedPlan (List<Hop> roots){
-			Map<Hop,FedPlanNode> hopToNode = new HashMap<>();
-			for ( Hop root : roots ){
-				fedPlanRoots.add(new FedPlanRoot(root, hopToNode));
-			}
-		}
-
-		public FedPlan (List<Hop> roots, FEDInstruction.FederatedOutput strategy){
-			this(roots);
-			setFedOut(strategy);
-			setUtility();
-		}
-
-		public void setFedOut(FEDInstruction.FederatedOutput fedOut){
-			for ( FedPlanRoot fedPlanRoot : fedPlanRoots ){
-				fedPlanRoot.setFedOut(fedOut);
-			}
-		}
-
-		public long setUtility(){
-			fedPlanRoots.forEach(root -> utility += root.getUtility());
-			return utility;
-		}
-
-		public void updateHops(){
-			for ( FedPlanRoot fedPlanRoot : fedPlanRoots )
-				fedPlanRoot.updateHops();
-		}
+	/**
+	 * Utility if hop is LOUT. This is a simple version only based on dimensions.
+	 * @param hop for which utility is calculated
+	 * @return utility if hop is LOUT
+	 */
+	private long getUtilLout(Hop hop){
+		//TODO: Make better utility estimation
+		return -hop.getDim1()*hop.getDim2();
 	}
 
-	class FedPlanRoot extends FedPlanNode {
-		public FedPlanRoot(Hop root, Map<Hop,FedPlanNode> hopToNode){
-			super(root, hopToNode);
-		}
-	}
+	private boolean isFedInstSupportedHop(Hop hop){
 
-	class FedPlanChild extends FedPlanNode {
-		private final List<FedPlanNode> parents = new ArrayList<>();
+		// Check that some input is FOUT, otherwise none of the fed instructions will run unless it is fedinit
+		if ( (!isFederatedDataOp(hop)) && hop.getInput().stream().noneMatch(Hop::isFederatedOutput) )
+			return false;
 
-		public FedPlanChild(Hop currentHop, Map<Hop,FedPlanNode> hopToNode){
-			super(currentHop, hopToNode);
-		}
-
-		public void addParent(FedPlanNode parent){
-			parents.add(parent);
-		}
-	}
-
-	abstract class FedPlanNode {
-		protected final List<FedPlanNode> children = new ArrayList<>();
-		protected Hop associatedHop;
-		protected FEDInstruction.FederatedOutput federatedOutput;
-		protected Map<Hop,FedPlanNode> hopToNode;
-		protected boolean fedOutputVisited = false;
-		protected boolean utilityVisited = false;
-		protected long utility = 0;
-
-		public FedPlanNode(Hop currentHop, Map<Hop,FedPlanNode> hopToNode){
-			this.hopToNode = hopToNode;
-			addChildren(currentHop);
-			associatedHop = currentHop;
-		}
-
-		private void addChildren(Hop currentHop){
-			for ( Hop child : currentHop.getInput() ){
-				FedPlanChild fedPlanChild;
-				if ( !(hopToNode.containsKey(child)) ){
-					fedPlanChild = new FedPlanChild(child, hopToNode);
-					hopToNode.put(currentHop, fedPlanChild);
-				}
-				else
-					fedPlanChild = (FedPlanChild) hopToNode.get(child);
-				fedPlanChild.addParent(this);
-				children.add(fedPlanChild);
-			}
-		}
-
-		protected void setFedOut(FEDInstruction.FederatedOutput strategy){
-			for ( FedPlanNode child : children ){
-				if ( !child.fedOutputVisited )
-					child.setFedOut(strategy);
-			}
-
-			if ( ( ( strategy.isForcedFederated() ) && isFedInstSupportedHop(this) && isFOUTSupported(associatedHop) )
-				|| ( strategy.isForcedLocal() && isFedInstSupportedHop(this)
-				&& (associatedHop.getPrivacy() == null
-				|| ( associatedHop.getPrivacy() != null && !associatedHop.getPrivacy().hasConstraints() ) ) ) )
-				federatedOutput = strategy;
-			else if ( strategy.isForcedLocal() && isFedInstSupportedHop(this)
-				&& ( associatedHop.getPrivacy() != null && associatedHop.getPrivacy().hasConstraints() ) )
-				federatedOutput = FEDInstruction.FederatedOutput.FOUT;
-			else
-				federatedOutput = FEDInstruction.FederatedOutput.NONE;
-
-			fedOutputVisited = true;
-		}
-
-		public void updateHops(){
-			associatedHop.setFederatedOutput(federatedOutput);
-			for ( FedPlanNode child : children )
-				child.updateHops();
-		}
-
-		public long getUtility(){
-			//Add utility from children
-			for ( FedPlanNode child : children ){
-				if ( !child.utilityVisited )
-					utility += child.getUtility();
-			}
-
-			//Add utility from current node
-			utility += estimateUtility();
-
-			utilityVisited = true;
-
-			return utility;
-		}
-
-		private long estimateUtility(){
-			//TODO: Make better utility estimation
-			//Possibly make a class for utility estimators.
-			//Quick version by adding one if it is FOUT:
-			if ( federatedOutput == FEDInstruction.FederatedOutput.FOUT)
-				return 1;
-			else if ( federatedOutput == FEDInstruction.FederatedOutput.LOUT ){
-				long cellCount = associatedHop.getDim1()*associatedHop.getDim2();
-				System.out.println(-cellCount);
-				return -cellCount;
-			} else return 0;
-		}
+		// The following operations are supported given that the above conditions have not returned already
+		return ( hop instanceof AggBinaryOp || hop instanceof BinaryOp || hop instanceof ReorgOp
+			|| hop instanceof AggUnaryOp || hop instanceof TernaryOp || hop instanceof DataOp );
 	}
 
 	/**
@@ -259,24 +176,6 @@ public class RewriteFederatedExecution extends HopRewriteRule {
 		return true;
 	}
 
-	/**
-	 * Hops with supporting federated instructions with parsing and processing based on FederatedOutput flags.
-	 * @param node to check for supporting fed instructions
-	 * @return true if the hop is supported by a federated instruction
-	 */
-	private boolean isFedInstSupportedHop(FedPlanNode node){
-		Hop hop = node.associatedHop;
-
-		// Check that some input is FOUT, otherwise none of the fed instructions will run unless it is fedinit
-		if ( (!(node.associatedHop instanceof DataOp && ((DataOp)node.associatedHop).getOp() == Types.OpOpData.FEDERATED) )
-			&& node.children.stream().noneMatch(c -> c.federatedOutput == FEDInstruction.FederatedOutput.FOUT) )
-			return false;
-
-		// The following operations are supported given that the above conditions have not returned already
-		return ( hop instanceof AggBinaryOp || hop instanceof BinaryOp || hop instanceof ReorgOp
-			 || hop instanceof AggUnaryOp || hop instanceof TernaryOp || hop instanceof DataOp );
-	}
-	
 	private void visitHop(Hop hop){
 		if (hop.isVisited())
 			return;

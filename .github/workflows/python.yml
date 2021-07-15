@@ -38,7 +38,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: [3.6, 3.7, 3.8]
+        python-version: [3.8]
         os: [ubuntu-latest]
         java: [ 1.8 ]
     name:  Python Test
@@ -106,3 +106,10 @@ jobs:
         cd src/main/python
         python -m unittest discover -s tests -p 'test_*.py'
         echo "Exit Status: " $?
+
+    - name: Run Federated Python Tests
+      run: |
+        export SYSTEMDS_ROOT=$(pwd)
+        export PATH=$SYSTEMDS_ROOT/bin:$PATH
+        cd src/main/python
+        ./tests/federated/runFedTest.sh

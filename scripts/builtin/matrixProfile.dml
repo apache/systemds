@@ -55,7 +55,7 @@ m_matrixProfile = function(Matrix[Double] ts, Integer window_size=4, Double samp
     print ("##############################\n# MATRIXPROFILE SCRIPT ENTRY #\n##############################");
 
   # TODO: preSCRIMP 
-  # requires: MASS: Mueen's Algorithm for Similarity Search
+  # requires a similarity search algorithm e.g.: MASS (Mueen's Algorithm for Similarity Search)
 
   n = length(ts);
   [mu,sig] = moving_avg(ts, n, window_size);

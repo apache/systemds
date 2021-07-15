@@ -1,0 +1,148 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+# metaData[3, ncol(X)] : metaData[1] stores mask, metaData[2] stores schema, metaData[3] stores FD mask
+source("scripts/pipelines/scripts/utils.dml") as utils;
+source("scripts/pipelines/scripts/enumerateLogical.dml") as lg;
+
+
+s_topk_cleaning = function(Frame[Unknown] data, Frame[Unknown] metaData = as.frame("NULL"), Frame[Unknown] primitives, Frame[Unknown] parameters, 
+  Matrix[Double] cmr = matrix("4 0.7 1", rows=1, cols=3), String evaluationFunc, Matrix[Double] evalFunHp, Integer topK = 5, 
+  Integer resource_val = 20, Double sample = 0.1, Boolean isLastLabel = TRUE)
+  return (Frame[Unknown] topKPipelines, Matrix[Double] topKHyperParams, Matrix[Double] topKScores, Frame[Unknown] bestLogical, Frame[Unknown] features, Double dirtyScore)
+{
+  print("starting topk_cleaning")
+  dirtyScore = 100
+  if(as.scalar(metaData[1, 1]) == "NULL")
+  {
+    print("creating meta data")
+    r1 = detectSchema(data)
+    r2 = matrix(0, rows=1, cols=ncol(data))
+    for(i in 1 : ncol(r1))
+    {
+      if(as.scalar(r1[1, i]) == "STRING" | as.scalar(r1[1, i]) == "BOOLEAN")
+        r2[1, i] = 1
+    }
+    schema = r1[, 1:ncol(r1) - 1]
+    mask = r2[, 1:ncol(r2) - 1]
+    fdMask = r2[, 1:ncol(r2) - 1]
+    maskY = as.scalar(r2[,ncol(r2)])
+  }
+  else {
+    schema = metaData[1, 1:ncol(metaData) - 1]
+    mask = as.matrix(metaData[2, 1:ncol(metaData) - 1])
+    fdMask = as.matrix(metaData[3, 1:ncol(metaData) - 1])
+    maskY = as.scalar(metaData[2, ncol(metaData)])
+  }
+  # # keeping the meta list format if we decide to add more stuff in metadata
+  metaList = list(mask=mask, schema=schema, fd=fdMask)
+  
+  # separate the label
+  if(isLastLabel ) {
+    X = data[, 1:ncol(data) - 1]
+    label = data[, ncol(data)]
+    # always recode the label
+    if(maskY == 1)
+      [Y, M] = transformencode(target=label, spec= "{ids:true, recode:[1]}");
+    else Y = as.matrix(label)
+  }
+  else 
+  {
+    X = data
+    Y = as.matrix(0)
+  }
+  
+  
+  # # do the string processing
+  X_dirty = X
+  X = utils::stringProcessing(data=X, mask=mask, schema=schema, CorrectTypos=FALSE)
+  
+  # # if mask has 1s then there are categorical features
+  if(sum(mask) > 0)
+  {
+    index = vectorToCsv(mask)
+    jspecR = "{ids:true, recode:["+index+"]}"
+    [eX, X_meta] = transformencode(target=X, spec=jspecR);
+    [eX_dirty, X_meta_dirty] = transformencode(target=X_dirty, spec=jspecR);
+    
+  } 
+  # if no categorical value exist then just cast the frame into matrix
+  else {
+    eX = as.matrix(X)
+    eX_dirty = as.matrix(X_dirty)
+  }
+  # take the sample
+  [eX, Y] = utils::doSample(eX, Y, sample, TRUE)
+  [eX_dirty, Y] = utils::doSample(eX_dirty, Y, sample, FALSE)
+  eX_dirty = utils::dummycoding(eX_dirty, mask)
+  # get the dirty score
+  scoreAndHp = eval(evaluationFunc, list(X=eX_dirty, Y=Y, Xorig=as.matrix(0), metaList=metaList, evalFunHp=evalFunHp, trainML=1))
+  dirtyScore = as.scalar(scoreAndHp[1, 1])
+  print("dirty score: "+dirtyScore)
+  evalFunHp = scoreAndHp[1, 2:ncol(scoreAndHp)]
+
+  logicalSeedCI =  frame([
+                   "4", "MVI", "OTLR", "CI", "SCALE", "0",
+                   "1", "MVI", "0", "0", "0", "0", 
+                   "1", "OTLR", "0", "0", "0", "0", 
+                   "1", "CI", "0", "0", "0", "0", 
+                   "2", "MVI", "CI", "0", "0", "0", 
+                   "2", "MVI", "OTLR", "0", "0", "0",
+                   "2", "MVI", "SCALE", "0", "0", "0", 
+                   "3", "MVI", "SCALE", "OTLR", "0", "0", 
+                   "4", "OTLR", "MVI", "CI", "SCALE", "0",
+                   "5", "MVI", "OTLR", "MVI", "CI", "SCALE"
+                   ], rows=10, cols=6)  
+                   
+  logicalSeedNoCI =  frame([
+                   "3", "MVI", "OTLR", "SCALE", "0", 
+                   "1", "MVI", "0", "0", "0", 
+                   "1", "OTLR", "0", "0", "0", 
+                   "2", "MVI", "OTLR", "0", "0",
+                   "2", "MVI", "SCALE", "0", "0", 
+                   "3", "MVI", "SCALE", "OTLR", "0",
+                   "3", "OTLR", "MVI", "SCALE", "0",
+                   "4", "MVI", "OTLR", "MVI", "SCALE"
+                   ], rows=8, cols=5) 
+                   
+
+  if((nrow(Y) > 0 & countDistinct(Y) < 10))
+    logical = logicalSeedCI
+  else 
+    logical = logicalSeedNoCI
+
+  # category = frame(["MVI", "OTLR"], rows=1, cols=2)
+  idx = as.integer(as.scalar(logical[1, 1])) + 1
+
+  category = logical[1, 2:idx]
+
+  [bestLogical, score, T] = lg::enumerateLogical(X=eX, y=Y, cmr=cmr, cat=category, population=logical,
+    max_iter=ceil(resource_val/topK), metaList = metaList, evaluationFunc=evaluationFunc, evalFunHp=evalFunHp, 
+    primitives=primitives, param=parameters, num_inst = nrow(primitives), num_exec = topK, isTailed=TRUE, verbose=TRUE)
+  
+  # # logical = frame(["MVI", "DUMMY"], rows=1, cols=2)
+  print("best logical pipeline: "+toString(bestLogical))
+  topKPipelines = as.frame("NULL"); topKHyperParams = matrix(0,0,0); topKScores = matrix(0,0,0); features = as.frame("NULL")
+  
+  [topKPipelines, topKHyperParams, topKScores, features] = bandit(X_train=eX, Y_train=Y,  metaList=metaList,
+    evaluationFunc=evaluationFunc, evalFunHp=evalFunHp, lp=bestLogical, primitives=primitives, param=parameters, baseLineScore=dirtyScore,
+    k=topK, R=resource_val, verbose=TRUE);
+}
+

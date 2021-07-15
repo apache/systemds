@@ -16,7 +16,6 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-
 package org.apache.sysds.test.functions.pipelines;
 
 import org.apache.sysds.common.Types;
@@ -24,59 +23,52 @@ import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 
-public class CleaningTestLogical extends AutomatedTestBase {
-	private final static String TEST_NAME = "testLogical";
-	private final static String TEST_CLASS_DIR = SCRIPT_DIR + CleaningTestLogical.class.getSimpleName() + "/";
+public class BuiltinTopkCleaningRegressionTest extends AutomatedTestBase{
+	private final static String TEST_NAME1 = "topkcleaningRegressionTest";
+	private final static String TEST_CLASS_DIR = SCRIPT_DIR + BuiltinTopkCleaningRegressionTest.class.getSimpleName() + "/";
 
 	private static final String RESOURCE = SCRIPT_DIR+"functions/pipelines/";
-	private static final String DATA_DIR = DATASET_DIR+ "pipelines/";
+	//	private static final String DATA_DIR = DATASET_DIR+ "pipelines/";
 
-	private final static String DIRTY = DATA_DIR+ "dirty.csv";
-	private final static String META = RESOURCE+ "meta/meta_census.csv";
-
+	private final static String DIRTY = DATASET_DIR+ "Salaries.csv";
+	private final static String OUTPUT = RESOURCE+"intermediates/";
 	private static final String PARAM_DIR = "./scripts/pipelines/properties/";
 	private final static String PARAM = PARAM_DIR + "param.csv";
-	private final static String PRIMITIVES = PARAM_DIR + "testPrimitives.csv";
-	private final static String OUTPUT = RESOURCE+"intermediates/logical.csv";
+	private final static String PRIMITIVES = PARAM_DIR + "primitives.csv";
 
 	@Override
 	public void setUp() {
-		addTestConfiguration(TEST_NAME,new TestConfiguration(TEST_CLASS_DIR, TEST_NAME,new String[]{"R"}));
+		addTestConfiguration(TEST_NAME1,new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1,new String[]{"R"}));
 	}
 
 	@Test
-	public void testLogical1() {
-		runTestLogical(10,  4, 2, 2,
-			"multiLogReg", Types.ExecMode.SINGLE_NODE);
+	public void testRegressionPipelinesCP() {
+		runFindPipelineTest(1.0, 5,20, 10,
+			"lm", Types.ExecMode.SINGLE_NODE);
 	}
 
-	@Test
-	public void testLogical2() {
-		runTestLogical(2,  3, 3, 2,
-			"multiLogReg", Types.ExecMode.SINGLE_NODE);
+	@Ignore
+	public void testRegressionPipelinesHybrid() {
+		runFindPipelineTest(1.0, 5,5, 2,
+			"lm", Types.ExecMode.HYBRID);
 	}
 
-	@Test
-	public void testLogicalHybrid() {
-		runTestLogical(3,  3, 2, 2,
-			"multiLogReg", Types.ExecMode.HYBRID);
-	}
 
-	private void runTestLogical(int max_iter, int crossfold,
-		int num_inst, int num_exec,  String target, Types.ExecMode et) {
+	private void runFindPipelineTest(Double sample, int topk, int resources, int crossfold,
+		String target, Types.ExecMode et) {
 
 		//		setOutputBuffering(true);
 		String HOME = SCRIPT_DIR+"functions/pipelines/" ;
 		Types.ExecMode modeOld = setExecMode(et);
 		try {
-			loadTestConfiguration(getTestConfiguration(TEST_NAME));
-			fullDMLScriptName = HOME + TEST_NAME + ".dml";
+			loadTestConfiguration(getTestConfiguration(TEST_NAME1));
+			fullDMLScriptName = HOME + TEST_NAME1 + ".dml";
 			programArgs = new String[] {"-stats", "-exec", "singlenode", "-nvargs", "dirtyData="+DIRTY,
-				"metaData="+META, "primitives="+PRIMITIVES, "parameters="+PARAM, "max_iter="+ max_iter,
-				 "cv="+ crossfold, "num_inst="+ num_inst, "num_exec="+ num_exec,
-				"target="+target, "output="+OUTPUT, "O="+output("O")};
+				"primitives="+PRIMITIVES, "parameters="+PARAM, "sampleSize="+ sample, "topk="+ topk,
+				"rv="+ resources, "sample="+ sample, "output="+OUTPUT, "target="+target, "O="+output("O")};
 
 			runTest(true, EXCEPTION_NOT_EXPECTED, null, -1);
 
@@ -87,4 +79,5 @@ public class CleaningTestLogical extends AutomatedTestBase {
 			resetExecMode(modeOld);
 		}
 	}
+
 }

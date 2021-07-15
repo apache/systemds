@@ -45,17 +45,18 @@ public class GANTest extends AutomatedTestBase
     protected final static String TEST_NAME = "GAN_mnist";
     protected String TEST_CLASS_DIR = TEST_DIR + GANTest.class.getSimpleName() + "/";
 
-    protected int a_, b_;
+    protected String model;
 
-    public GANTest(int a, int b)
+    // m can either be "simple" or "cnn"
+    public GANTest(String m)
     {
-
+        model = m;
     }
 
     @Parameters
     public static Collection<Object[]> data()
     {
-        Object[][] data = new Object[][] { { 0, 0}};
+        Object[][] data = new Object[][] { { "simple"}, { "cnn"}};
         return Arrays.asList(data);
     }
 
@@ -68,18 +69,24 @@ public class GANTest extends AutomatedTestBase
     @Test
     public void testGAN()
     {
-        System.out.println("Running GAN test");
+        System.out.println("Running GAN test with " + model + " model");
         getAndLoadTestConfiguration(TEST_NAME);
         fullDMLScriptName = getScript();
         List<String> proArgs = new ArrayList<>();
         proArgs.add("-args");
-        proArgs.add("cnn");
-        //proArgs.add("simple");
+        proArgs.add(model);
         proArgs.add(output(""));
         programArgs = proArgs.toArray(new String[proArgs.size()]);
         runTest(true, EXCEPTION_NOT_EXPECTED, null, -1);
 
-        writeExpectedScalar("accuracy", 0.5);
+        if(model.equals("simple"))
+        {
+            writeExpectedScalar("accuracy", 0.85);
+        }
+        else
+        {
+            writeExpectedScalar("accuracy", 0.5);
+        }
         compareResults( 0.15);
     }
 }

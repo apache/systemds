@@ -95,7 +95,6 @@ s_topk_cleaning = function(Frame[Unknown] data, Frame[Unknown] metaData = as.fra
   # get the dirty score
   scoreAndHp = eval(evaluationFunc, list(X=eX_dirty, Y=Y, Xorig=as.matrix(0), metaList=metaList, evalFunHp=evalFunHp, trainML=1))
   dirtyScore = as.scalar(scoreAndHp[1, 1])
-  print("dirty score: "+dirtyScore)
   evalFunHp = scoreAndHp[1, 2:ncol(scoreAndHp)]
 
   logicalSeedCI =  frame([
@@ -136,13 +135,11 @@ s_topk_cleaning = function(Frame[Unknown] data, Frame[Unknown] metaData = as.fra
   [bestLogical, score, T] = lg::enumerateLogical(X=eX, y=Y, cmr=cmr, cat=category, population=logical,
     max_iter=ceil(resource_val/topK), metaList = metaList, evaluationFunc=evaluationFunc, evalFunHp=evalFunHp, 
     primitives=primitives, param=parameters, num_inst = nrow(primitives), num_exec = topK, isTailed=TRUE, verbose=TRUE)
-  
-  # # logical = frame(["MVI", "DUMMY"], rows=1, cols=2)
-  print("best logical pipeline: "+toString(bestLogical))
+
   topKPipelines = as.frame("NULL"); topKHyperParams = matrix(0,0,0); topKScores = matrix(0,0,0); features = as.frame("NULL")
   
   [topKPipelines, topKHyperParams, topKScores, features] = bandit(X_train=eX, Y_train=Y,  metaList=metaList,
     evaluationFunc=evaluationFunc, evalFunHp=evalFunHp, lp=bestLogical, primitives=primitives, param=parameters, baseLineScore=dirtyScore,
-    k=topK, R=resource_val, verbose=TRUE);
+    k=topK, R=resource_val, verbose=FALSE);
 }
 

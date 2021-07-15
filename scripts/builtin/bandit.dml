@@ -27,7 +27,6 @@ m_bandit = function(Matrix[Double] X_train, Matrix[Double] Y_train, List[Unknown
   print("Starting optimizer")
   NUM_FEATURES = 14
   HYPERPARAM_LENGTH = 110
-  print("null in data "+sum(is.na(X_train)))
   bestPipeline = frame("", rows=1, cols=1)
   bestHyperparams = as.matrix(0)
   bestAccuracy = as.matrix(0)

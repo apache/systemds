@@ -47,7 +47,6 @@ print("best logical pipelines "+toString(bestLogical))
 print("topk pipelines "+toString(topKPipelines))
 print("topk hyper params "+toString(topKHyperParams))
 print("topk  scores: \n"+toString(topKScores))
-while(FALSE){}
 perf = as.double(as.scalar(topKScores[1, 1])) - as.double(dirtyScore)
 print("performce improvemnet "+ perf)
 result = dirtyScore < as.scalar(topKScores[1, 1]) 
@@ -107,7 +106,6 @@ crossV = function(Matrix[double] X, Matrix[double] y, Integer k, Matrix[Double] 
 return (Matrix[Double] accuracyMatrix)
 {
   accuracyMatrix = matrix(0, k, 1)
-  print("ML HP in CV "+toString(MLhp))
   dataList = list()
   testL = list()
   data = order(target = cbind(y, X),  by = 1, decreasing=FALSE, index.return=FALSE)

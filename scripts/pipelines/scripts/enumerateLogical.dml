@@ -48,11 +48,10 @@
 # Repeat the process max_iter time. Converge in between if the best_score of previous generation is better then
 # best_score of new generation.
 
-source("scripts/builtin/bandit.dml") as bandit;
-source("scripts/pipelines/scripts/utils.dml") as utils;
 
-enumerateLogical = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] cmr, Matrix[Double] cat, Frame[Unknown] population,
-  Integer max_iter=10, List[Unknown] metaList, List[Unknown] targetList, Frame[Unknown] primitives, Frame[Unknown] param,
+source("scripts/builtin/bandit.dml") as bandit;
+enumerateLogical = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] cmr, Frame[Unknown] cat, Frame[Unknown] population,
+  Integer max_iter=10, List[Unknown] metaList, String evaluationFunc, Matrix[Double] evalFunHp, Frame[Unknown] primitives, Frame[Unknown] param,
   Integer num_inst, Integer num_exec, Boolean isTailed = TRUE, Boolean verbose)
 return (Frame[Unknown] bestLg, Double pre_best, Double T)
 { 
@@ -63,6 +62,7 @@ return (Frame[Unknown] bestLg, Double pre_best, Double T)
   feaFrameOuter = as.frame("NULL")
   iter = 1
   convergedOuter = FALSE
+
   while(iter <= max_iter & !convergedOuter)
   {
     physicalPipList = list()
@@ -90,7 +90,7 @@ return (Frame[Unknown] bestLg, Double pre_best, Double T)
       }
       # # execute the physical instances and store the minimum scores, each pipeline is executed num_exec times
       [outPip,outHp, feaFrameOuter] = bandit::run_with_hyperparam(physicalConf, num_exec, X, y, metaList,
-        targetList, param, as.frame(""), verbose)
+        evaluationFunc, evalFunHp, param, as.frame(""), verbose)
       # # sort the configurations groupwise
       max_perf =  bandit::getMaxPerConf(outPip, nrow(physicalConf)) 
       scores[i] = as.matrix(max_perf[1, 1])
@@ -100,15 +100,9 @@ return (Frame[Unknown] bestLg, Double pre_best, Double T)
     selected = order(target = scores, by = 1, decreasing=TRUE, index.return=TRUE)
     idxR = as.scalar(selected[1, 1])
     best_score = as.scalar(scores[idxR])
-    if(verbose)
-    {
-      print("best score " + best_score)
-      print("previous score " + pre_best)
-      print("bestLg " + toString(bestLg))
-    }
-    converged = pre_best > best_score
+    converged =  pre_best > best_score
     convergedOuter = converged
-    if(converged)
+    if(converged & (iter > 1))
     {
       if(isTailed)
       {
@@ -135,7 +129,6 @@ return (Frame[Unknown] bestLg, Double pre_best, Double T)
 
       length_top = as.integer(as.scalar(top[1, 1]))
       top = top[, 2:(length_top+1)]
-      print("top 1 "+toString(top))
       
       # generate children from crossover
       c1 = addition(top, cat, as.scalar(cmr[1,1]))
@@ -155,6 +148,15 @@ return (Frame[Unknown] bestLg, Double pre_best, Double T)
     }
     population = children
     iter  = iter + 1
+  }
+  if(pre_best == best_score) {
+    print("LogicalENumerator: did not converge after "+max_iter+" iterations")
+    if(isTailed)
+    {
+     lg_tail = frame(["DUMMY", "DIM"], rows=1, cols=2)
+     bestLg = cbind(bestLg, lg_tail)
+    }
+  
   }
 
   T = floor((time() - t1) / 1e+6)
@@ -190,14 +192,12 @@ return (Frame [Unknown] mChild)
   random = as.scalar(rand(rows=1, cols=1))
   if(random > mutationRate & ncol(child) >= 2)
   {
-    print("before mutation "+toString(child))
     r = sample(ncol(child), 2)
     r1 = as.scalar(r[1,1])
     r2 = as.scalar(r[2,1])
     temp = child[1, r1]
     child[1, r1] = child[1, r2]
     child[1, r2] = temp
-    print("after mutation "+toString(child))
   }
   mChild = child
 }
@@ -223,4 +223,3 @@ return (Frame[Unknown] output)
   output = child
   print("Starting removal on "+toString(output))
 }
-

@@ -1265,7 +1265,7 @@ The `matrixProfile`-function implements the SCRIMP algorithm for efficient time-
 
 ### Usage
 ```r
-matrixProfile(ts, window_size, is_verbose)
+matrixProfile(ts, window_size, sample_percent, is_verbose)
 ```
 
 ### Arguments
@@ -1273,6 +1273,7 @@ matrixProfile(ts, window_size, is_verbose)
 | :------       | :-------------   | --------   | :---------- |
 | ts            | Matrix           | ---        | Input Frame X |
 | window_size   | Integer          | 4          | Sliding window size |
+| sample_percent| Double           | 1.0        | Degree of approximation between zero and one (1 computes the exact solution) |
 | verbose       | Boolean          | False      | Print debug information |
 
 ### Returns

@@ -23,9 +23,9 @@ import java.util.EnumSet;
 
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.conf.DMLConfig;
-import org.apache.sysds.runtime.DMLCompressionException;
-import org.apache.sysds.runtime.compress.cocode.PlanningCoCoder.PartitionerType;
+import org.apache.sysds.runtime.compress.cocode.CoCoderFactory.PartitionerType;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup.CompressionType;
+import org.apache.sysds.runtime.compress.cost.CostEstimatorFactory.CostType;
 import org.apache.sysds.runtime.compress.estim.sample.SampleEstimatorFactory.EstimationType;
 
 /**
@@ -40,13 +40,12 @@ public class CompressionSettingsBuilder {
 	private boolean lossy = false;
 	private EnumSet<CompressionType> validCompressions;
 	private boolean sortValuesByLength = true;
-	private PartitionerType columnPartitioner;
 	private int maxColGroupCoCode = 10000;
 	private double coCodePercentage = 0.01;
 	private int minimumSampleSize = 2000;
 	private EstimationType estimationType = EstimationType.HassAndStokes;
-
-	private final static double defaultSampleRate = 0.01;
+	private PartitionerType columnPartitioner;
+	private CostType costType;
 
 	public CompressionSettingsBuilder() {
 
@@ -54,14 +53,11 @@ public class CompressionSettingsBuilder {
 		this.lossy = conf.getBooleanValue(DMLConfig.COMPRESSED_LOSSY);
 		this.validCompressions = EnumSet.of(CompressionType.UNCOMPRESSED, CompressionType.CONST);
 		String[] validCompressionsString = conf.getTextValue(DMLConfig.COMPRESSED_VALID_COMPRESSIONS).split(",");
-		for(String comp : validCompressionsString) {
+		for(String comp : validCompressionsString)
 			validCompressions.add(CompressionType.valueOf(comp));
-		}
 		samplingRatio = conf.getDoubleValue(DMLConfig.COMPRESSED_SAMPLING_RATIO);
-		if(Double.isNaN(samplingRatio))
-			samplingRatio = defaultSampleRate;
 		columnPartitioner = PartitionerType.valueOf(conf.getTextValue(DMLConfig.COMPRESSED_COCODE));
-
+		costType = CostType.valueOf(conf.getTextValue(DMLConfig.COMPRESSED_COST_MODEL));
 		transposeInput = conf.getTextValue(DMLConfig.COMPRESSED_TRANSPOSE);
 	}
 
@@ -263,8 +259,25 @@ public class CompressionSettingsBuilder {
 		return this;
 	}
 
-	public CompressionSettingsBuilder setEstimationType(EstimationType estimationType){
+	/**
+	 * Set the estimation type used for the sampled estimates.
+	 * 
+	 * @param estimationType the estimation type in used.
+	 * @return The CompressionSettingsBuilder
+	 */
+	public CompressionSettingsBuilder setEstimationType(EstimationType estimationType) {
 		this.estimationType = estimationType;
+		return this;
+	}
+
+	/**
+	 * Set the cost type used for estimating the cost of column groups default is memory based.
+	 * 
+	 * @param costType The Cost type wanted
+	 * @return The CompressionSettingsBuilder
+	 */
+	public CompressionSettingsBuilder setCostType(CostType costType) {
+		this.costType = costType;
 		return this;
 	}
 
@@ -276,6 +289,6 @@ public class CompressionSettingsBuilder {
 	public CompressionSettings create() {
 		return new CompressionSettings(samplingRatio, allowSharedDictionary, transposeInput, skipList, seed, lossy,
 			validCompressions, sortValuesByLength, columnPartitioner, maxColGroupCoCode, coCodePercentage,
-			minimumSampleSize, estimationType);
+			minimumSampleSize, estimationType, costType);
 	}
 }

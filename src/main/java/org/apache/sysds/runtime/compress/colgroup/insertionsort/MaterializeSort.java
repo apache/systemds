@@ -28,10 +28,10 @@ public class MaterializeSort extends AInsertionSorter {
 	/** a dense mapToData, that have a value for each row in the input. */
 	AMapToData md;
 
-	public MaterializeSort(int endLength, int knownMax, IntArrayList[] offsets, int negativeIndex) {
-		super(endLength, knownMax, offsets, negativeIndex);
+	public MaterializeSort(int endLength, int numRows, IntArrayList[] offsets, int negativeIndex) {
+		super(endLength, numRows, offsets, negativeIndex);
 
-		md = MapToFactory.create(_knownMax, _numLabels);
+		md = MapToFactory.create(_numRows, _numLabels);
 		md.fill(_numLabels);
 		if(_negativeIndex == -1)
 			insert();
@@ -48,7 +48,7 @@ public class MaterializeSort extends AInsertionSorter {
 		}
 
 		int off = 0;
-		for(int i = 0; i < _knownMax; i++) {
+		for(int i = 0; i < _numRows; i++) {
 			int idx = md.getIndex(i);
 			if(idx != _numLabels)
 				set(off++, i, idx);
@@ -63,7 +63,7 @@ public class MaterializeSort extends AInsertionSorter {
 				md.set(of.get(k), i);
 		}
 		int off = 0;
-		for(int i = 0; i < _knownMax; i++) {
+		for(int i = 0; i < _numRows; i++) {
 			int idx = md.getIndex(i);
 			if(idx < _negativeIndex)
 				set(off++, i, idx);

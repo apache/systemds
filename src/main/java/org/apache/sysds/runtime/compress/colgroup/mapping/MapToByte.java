@@ -64,7 +64,7 @@ public class MapToByte extends AMapToData {
 
 	@Override
 	public long getExactSizeOnDisk() {
-		return 1 + 4+ 4 + _data.length;
+		return 1 + 4 + 4 + _data.length;
 	}
 
 	@Override
@@ -93,5 +93,9 @@ public class MapToByte extends AMapToData {
 		for(int i = 0; i < length; i++)
 			data[i] = in.readByte();
 		return new MapToByte(unique, data);
+	}
+
+	public byte[] getBytes(){
+		return _data;
 	}
 }

@@ -20,12 +20,20 @@
 #
 #-------------------------------------------------------------
 
-#BASE_DIR=$(pwd)
-#BASE_DIR="/c/virtual\ D/SystemDS/systemds"
-BASE_DIR="../.." #points to systemds directory
-RELEASE_WORK_DIR=$BASE_DIR/target/release2
-RELEASE_VERSION=2.0.0
-eval cd $RELEASE_WORK_DIR/systemds/src/main/python
+SELF=$(cd $(dirname $0) && pwd)
+
+# Release info
+RELEASE_VERSION=2.1.0
+RELEASE_TAG=2.1.0-rc3
+
+BASE_DIR=$PWD # SystemDS top level folder
+
+# Checkout the voted commit and build the publish distribution
+git checkout $RELEASE_TAG
+
+mvn clean package -P distribution
+
+cd $BASE_DIR/src/main/python
 
 # Steps:
 # 1. update systemds/project_info.py with the new version
@@ -34,12 +42,26 @@ sed -i "s/$RELEASE_VERSION-SNAPSHOT/$RELEASE_VERSION/" systemds/project_info.py
 # 2. generate distribution archives
 python3 create_python_dist.py
 
+# 2a. check generated distribution files
+python3 -m twine check dist/*
+
 # 3. upload the distribution archives to testpypi/pypi
 #    - For testing follow https://packaging.python.org/tutorials/packaging-projects/
-#    - Note: for testing use command prompt in windows and use Edit->paste to paste 
-#      the API token (known issues)
+#    - Note: for testing use command prompt in windows and 
+#              use Edit->paste to paste the API token (https://pypi.org/help/#invalid-auth)
+#            else, use `right click` for paste in the terminal.
 
-#python -m twine upload --repository testpypi dist/* #Test
-#python twine upload dist/*  #Real
+# Dev:
+# Test upload to test.pypi.org
+# Credentials are
+# username: __token__ 
+# password: pypi-DU5y...
+
+# python -m twine upload --repository testpypi dist/*
+
+# Production:
+# python twine upload dist/*
+
+cd $BASE_DIR
 
 exit

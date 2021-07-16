@@ -213,9 +213,8 @@ To make this simply execute the following:</p>
 </div>
 <p>After creating our data we the federated worker becomes able to execute federated instructions.
 The aggregated sum using federated instructions in python SystemDS is done as follows</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Import numpy and SystemDS federated</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Import numpy and SystemDS</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">from</span> <span class="nn">systemds.matrix</span> <span class="kn">import</span> <span class="n">Federated</span>
 <span class="kn">from</span> <span class="nn">systemds.context</span> <span class="kn">import</span> <span class="n">SystemDSContext</span>
 
 <span class="c1"># Create a federated matrix</span>
@@ -229,7 +228,7 @@ The aggregated sum using federated instructions in python SystemDS is done as fo
 <span class="n">address</span> <span class="o">=</span> <span class="s2">&quot;localhost:8001/temp/test.csv&quot;</span>
 
 <span class="k">with</span> <span class="n">SystemDSContext</span><span class="p">()</span> <span class="k">as</span> <span class="n">sds</span><span class="p">:</span>
-  <span class="n">fed_a</span> <span class="o">=</span> <span class="n">Federated</span><span class="p">(</span><span class="n">sds</span><span class="p">,</span> <span class="p">[</span><span class="n">address</span><span class="p">],</span> <span class="p">[</span><span class="n">dims</span><span class="p">])</span>
+  <span class="n">fed_a</span> <span class="o">=</span> <span class="n">sds</span><span class="o">.</span><span class="n">federated</span><span class="p">(</span><span class="n">sds</span><span class="p">,</span> <span class="p">[</span><span class="n">address</span><span class="p">],</span> <span class="p">[</span><span class="n">dims</span><span class="p">])</span>
   <span class="c1"># Sum the federated matrix and call compute to execute</span>
   <span class="nb">print</span><span class="p">(</span><span class="n">fed_a</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="o">.</span><span class="n">compute</span><span class="p">())</span>
   <span class="c1"># Result should be 45.</span>
@@ -248,8 +247,7 @@ Start with 3 different terminals, and run one federated environment in each.</p>
 </pre></div>
 </div>
 <p>Once all three workers are up and running we can leverage all three in the following example</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Import numpy and SystemDS federated</span>
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">from</span> <span class="nn">systemds.context</span> <span class="kn">import</span> <span class="n">SystemDSContext</span>
 
 <span class="n">addr1</span> <span class="o">=</span> <span class="s2">&quot;localhost:8001/temp/test.csv&quot;</span>

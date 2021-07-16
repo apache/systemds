@@ -28,10 +28,10 @@ import java.util.concurrent.Future;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.sysds.runtime.DMLCompressionException;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.CompressionSettings;
+import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.functionobjects.Builtin.BuiltinCode;
@@ -49,6 +49,8 @@ import org.apache.sysds.runtime.matrix.data.LibMatrixAgg;
 import org.apache.sysds.runtime.matrix.data.LibMatrixBincell;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
+import org.apache.sysds.runtime.matrix.data.MatrixValue;
+import org.apache.sysds.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysds.runtime.matrix.operators.AggregateOperator;
 import org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
@@ -68,24 +70,93 @@ public class CLALibCompAgg {
 		}
 	};
 
-	public static MatrixBlock aggregateUnary(CompressedMatrixBlock inputMatrix, MatrixBlock outputMatrix,
+	public static MatrixBlock aggregateUnary(CompressedMatrixBlock inputMatrix, MatrixValue result,
 		AggregateUnaryOperator op, int blen, MatrixIndexes indexesIn, boolean inCP) {
-		op = replaceKahnOperations(op);
+
+		// prepare output dimensions
+		CellIndex tempCellIndex = new CellIndex(-1, -1);
+		op.indexFn.computeDimension(inputMatrix.getNumRows(), inputMatrix.getNumColumns(), tempCellIndex);
+
+		// initialize and allocate the result
+		if(result == null)
+			result = new MatrixBlock(tempCellIndex.row, tempCellIndex.column, false);
+		else
+			result.reset(tempCellIndex.row, tempCellIndex.column, false);
+		MatrixBlock ret = (MatrixBlock) result;
+
+		ret.allocateDenseBlock();
+
+		AggregateUnaryOperator opm = replaceKahnOperations(op);
 
 		if(inputMatrix.getColGroups() != null) {
-			fillStart(outputMatrix, op);
+			fillStart(ret, opm);
 
 			if(inputMatrix.isOverlapping() &&
-				(op.aggOp.increOp.fn instanceof KahanPlusSq || (op.aggOp.increOp.fn instanceof Builtin &&
-					(((Builtin) op.aggOp.increOp.fn).getBuiltinCode() == BuiltinCode.MIN ||
-						((Builtin) op.aggOp.increOp.fn).getBuiltinCode() == BuiltinCode.MAX))))
-				aggregateUnaryOverlapping(inputMatrix, outputMatrix, op, indexesIn, inCP);
+				(opm.aggOp.increOp.fn instanceof KahanPlusSq || (opm.aggOp.increOp.fn instanceof Builtin &&
+					(((Builtin) opm.aggOp.increOp.fn).getBuiltinCode() == BuiltinCode.MIN ||
+						((Builtin) opm.aggOp.increOp.fn).getBuiltinCode() == BuiltinCode.MAX))))
+				aggregateUnaryOverlapping(inputMatrix, ret, opm, indexesIn, inCP);
 			else
-				aggregateUnaryNormalCompressedMatrixBlock(inputMatrix, outputMatrix, op, blen, indexesIn, inCP);
+				aggregateUnaryNormalCompressedMatrixBlock(inputMatrix, ret, opm, blen, indexesIn, inCP);
 		}
-		outputMatrix.recomputeNonZeros();
+		ret.recomputeNonZeros();
+		if(!inCP) {
+			ret = addCorrection(ret, op);
+			if(op.aggOp.increOp.fn instanceof Mean)
+				ret = addCellCount(ret, op, inputMatrix.getNumRows(), inputMatrix.getNumColumns());
+		}
+		return ret;
 
-		return outputMatrix;
+	}
+
+	private static MatrixBlock addCorrection(MatrixBlock ret, AggregateUnaryOperator op) {
+		MatrixBlock resWithCorrection;
+		switch(op.aggOp.correction) {
+			case LASTCOLUMN:
+				resWithCorrection = new MatrixBlock(ret.getNumRows(), ret.getNumColumns() + 1, false);
+				resWithCorrection.allocateDenseBlock();
+				for(int i = 0; i < ret.getNumRows(); i++)
+					resWithCorrection.setValue(i, 0, ret.quickGetValue(i, 0));
+				break;
+			case LASTROW:
+				resWithCorrection = new MatrixBlock(ret.getNumRows() + 1, ret.getNumColumns(), false);
+				resWithCorrection.allocateDenseBlock();
+				for(int i = 0; i < ret.getNumColumns(); i++)
+					resWithCorrection.setValue(0, i, ret.quickGetValue(0, i));
+				break;
+			case LASTFOURCOLUMNS:
+			case LASTFOURROWS:
+			case LASTTWOCOLUMNS:
+				resWithCorrection = new MatrixBlock(ret.getNumRows(), ret.getNumColumns() + 2, false);
+				resWithCorrection.allocateDenseBlock();
+				for(int i = 0; i < ret.getNumRows(); i++)
+					resWithCorrection.setValue(i, 0, ret.quickGetValue(i, 0));
+				break;
+			case LASTTWOROWS:
+				resWithCorrection = new MatrixBlock(ret.getNumRows() + 2, ret.getNumColumns(), false);
+				resWithCorrection.allocateDenseBlock();
+				for(int i = 0; i < ret.getNumColumns(); i++)
+					resWithCorrection.setValue(0, i, ret.quickGetValue(0, i));
+				break;
+			case INVALID:
+			case NONE:
+			default:
+				resWithCorrection = ret;
+		}
+
+		return resWithCorrection;
+	}
+
+	private static MatrixBlock addCellCount(MatrixBlock ret, AggregateUnaryOperator op, int nRow, int nCol) {
+		if(op.indexFn instanceof ReduceAll)
+			ret.setValue(0, 1, nRow * nCol);
+		else if(op.indexFn instanceof ReduceCol)
+			for(int i = 0; i < nRow; i++)
+				ret.setValue(i, 1, nCol);
+		else if(op.indexFn instanceof ReduceRow)
+			for(int i = 0; i < nCol; i++)
+				ret.setValue(1, i, nRow);
+		return ret;
 	}
 
 	private static AggregateUnaryOperator replaceKahnOperations(AggregateUnaryOperator op) {

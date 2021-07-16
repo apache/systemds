@@ -24,6 +24,7 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
+import java.lang.ref.SoftReference;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -44,7 +45,6 @@ import org.apache.sysds.conf.DMLConfig;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.lops.MMTSJ.MMTSJType;
 import org.apache.sysds.lops.MapMultChain.ChainType;
-import org.apache.sysds.runtime.DMLCompressionException;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup.CompressionType;
@@ -119,6 +119,11 @@ public class CompressedMatrixBlock extends MatrixBlock {
 	 * Boolean specifying if the colGroups are overlapping each other. This happens after a right matrix multiplication.
 	 */
 	protected boolean overlappingColGroups = false;
+
+	/**
+	 * Soft reference to a decompressed version of this matrix block.
+	 */
+	protected SoftReference<MatrixBlock> decompressedVersion;
 
 	/**
 	 * Constructor for building an empty Compressed Matrix block object.
@@ -196,6 +201,16 @@ public class CompressedMatrixBlock extends MatrixBlock {
 
 		Timing time = new Timing(true);
 
+		if(decompressedVersion != null && decompressedVersion.get() != null){
+			if(DMLScript.STATISTICS || LOG.isDebugEnabled()) {
+				double t = time.stop();
+				LOG.debug("decompressed block was in soft reference.");
+				DMLCompressionStatistics.addDecompressTime(t, 1);
+			}
+			return decompressedVersion.get();
+		}
+		
+
 		long nnz = getNonZeros() == -1 ? recomputeNonZeros() : nonZeros;
 		if(isEmpty())
 			return new MatrixBlock(rlen, clen, true, 0);
@@ -216,6 +231,8 @@ public class CompressedMatrixBlock extends MatrixBlock {
 			LOG.debug("decompressed block w/ k=" + 1 + " in " + t + "ms.");
 			DMLCompressionStatistics.addDecompressTime(t, 1);
 		}
+
+		decompressedVersion = new SoftReference<>(ret);
 		return ret;
 	}
 
@@ -242,11 +259,20 @@ public class CompressedMatrixBlock extends MatrixBlock {
 	 * @return a new uncompressed matrix block containing the contents of this block
 	 */
 	public MatrixBlock decompress(int k) {
-
 		if(k <= 1)
 			return decompress();
 
 		Timing time = new Timing(true);
+
+		if(decompressedVersion != null && decompressedVersion.get() != null){
+			if(DMLScript.STATISTICS || LOG.isDebugEnabled()) {
+				double t = time.stop();
+				LOG.debug("decompressed block was in soft reference.");
+				DMLCompressionStatistics.addDecompressTime(t, k);
+			}
+			return decompressedVersion.get();
+		}
+
 		MatrixBlock ret = getUncompressedColGroupAndRemoveFromListOfColGroups();
 		if(ret != null && getColGroups().size() == 0)
 			return ret;
@@ -262,6 +288,7 @@ public class CompressedMatrixBlock extends MatrixBlock {
 			DMLCompressionStatistics.addDecompressTime(t, k);
 		}
 
+		decompressedVersion = new SoftReference<>(ret);
 		return ret;
 	}
 
@@ -330,6 +357,12 @@ public class CompressedMatrixBlock extends MatrixBlock {
 				nnz += g.getNumberNonZeros();
 			nonZeros = nnz;
 		}
+
+		if(nonZeros == 0) {
+			ColGroupEmpty cg = ColGroupEmpty.generate(getNumColumns(), getNumRows());
+			allocateColGroup(cg);
+		}
+
 		return nonZeros;
 
 	}
@@ -508,9 +541,16 @@ public class CompressedMatrixBlock extends MatrixBlock {
 		else
 			CLALibLeftMultBy.leftMultByMatrixTransposed(this, tmp, out, k);
 
-		out = LibMatrixReorg.transposeInPlace(out, k);
+		if(out.getNumColumns() != 1)
+			out = LibMatrixReorg.transposeInPlace(out, k);
+
 		out.recomputeNonZeros();
 		return out;
+	}
+
+	@Override
+	public MatrixBlock aggregateBinaryOperations(MatrixBlock m1, MatrixBlock m2, AggregateBinaryOperator op) {
+		return aggregateBinaryOperations(m1, m2, null, op);
 	}
 
 	@Override
@@ -521,6 +561,9 @@ public class CompressedMatrixBlock extends MatrixBlock {
 
 	public MatrixBlock aggregateBinaryOperations(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret,
 		AggregateBinaryOperator op, boolean transposeLeft, boolean transposeRight) {
+
+		Timing time = new Timing(true);
+
 		if(m1 instanceof CompressedMatrixBlock && m2 instanceof CompressedMatrixBlock) {
 			return doubleCompressedAggregateBinaryOperations((CompressedMatrixBlock) m1, (CompressedMatrixBlock) m2,
 				ret, op, transposeLeft, transposeRight);
@@ -570,6 +613,12 @@ public class CompressedMatrixBlock extends MatrixBlock {
 			ret = CLALibLeftMultBy.leftMultByMatrix(this, that, ret, op.getNumThreads());
 		}
 
+		if(LOG.isDebugEnabled()){
+			double t = time.stop();
+			LOG.debug("MM: Time block w/ sharedDim: " + m1.getNumColumns() + " rowLeft: " + m1.getNumRows() + " colRight:"
+				+ m2.getNumColumns() + " in " + t + "ms.");
+		}
+
 		if(transposeOutput) {
 			ReorgOperator r_op = new ReorgOperator(SwapIndex.getSwapIndexFnObject(), op.getNumThreads());
 			return ret.reorgOperations(r_op, new MatrixBlock(), 0, 0, 0);
@@ -612,12 +661,6 @@ public class CompressedMatrixBlock extends MatrixBlock {
 
 	@Override
 	public MatrixBlock aggregateUnaryOperations(AggregateUnaryOperator op, MatrixValue result, int blen,
-		MatrixIndexes indexesIn) {
-		return aggregateUnaryOperations(op, result, blen, indexesIn, false);
-	}
-
-	@Override
-	public MatrixBlock aggregateUnaryOperations(AggregateUnaryOperator op, MatrixValue result, int blen,
 		MatrixIndexes indexesIn, boolean inCP) {
 
 		// check for supported operations
@@ -629,19 +672,7 @@ public class CompressedMatrixBlock extends MatrixBlock {
 			throw new NotImplementedException("Unary aggregate " + op.aggOp.increOp.fn + " not supported yet.");
 		}
 
-		// prepare output dimensions
-		CellIndex tempCellIndex = new CellIndex(-1, -1);
-		op.indexFn.computeDimension(rlen, clen, tempCellIndex);
-
-		// initialize and allocate the result
-		if(result == null)
-			result = new MatrixBlock(tempCellIndex.row, tempCellIndex.column, false);
-		else
-			result.reset(tempCellIndex.row, tempCellIndex.column, false);
-		MatrixBlock ret = (MatrixBlock) result;
-		ret.allocateDenseBlock();
-
-		return CLALibCompAgg.aggregateUnary(this, ret, op, blen, indexesIn, inCP);
+		return CLALibCompAgg.aggregateUnary(this, result, op, blen, indexesIn, inCP);
 	}
 
 	@Override
@@ -696,8 +727,9 @@ public class CompressedMatrixBlock extends MatrixBlock {
 
 	@Override
 	public MatrixBlock reorgOperations(ReorgOperator op, MatrixValue ret, int startRow, int startColumn, int length) {
+		// Allow transpose to be compressed output. In general we need to have a transposed flag on
+		// the compressed matrix. https://issues.apache.org/jira/browse/SYSTEMDS-3025
 		printDecompressWarning(op.getClass().getSimpleName() + " -- " + op.fn.getClass().getSimpleName());
-		// TODO make transposed decompress.
 		MatrixBlock tmp = decompress(op.getNumThreads());
 		return tmp.reorgOperations(op, ret, startRow, startColumn, length);
 	}
@@ -922,7 +954,7 @@ public class CompressedMatrixBlock extends MatrixBlock {
 
 	@Override
 	public boolean isEmptyBlock(boolean safe) {
-		return _colGroups == null || nonZeros == 0;
+		return _colGroups == null || getNonZeros() == 0 || (getNonZeros() == -1 && recomputeNonZeros() == 0);
 	}
 
 	@Override
@@ -1077,14 +1109,14 @@ public class CompressedMatrixBlock extends MatrixBlock {
 		}
 	}
 
-	@Override
-	public MatrixBlock aggregateBinaryOperations(MatrixIndexes m1Index, MatrixBlock m1Value, MatrixIndexes m2Index,
-		MatrixBlock m2Value, MatrixBlock result, AggregateBinaryOperator op) {
-		printDecompressWarning("aggregateBinaryOperations");
-		MatrixBlock left = getUncompressed();
-		MatrixBlock right = getUncompressed(m2Value);
-		return left.aggregateBinaryOperations(m1Index, left, m2Index, right, result, op);
-	}
+	// @Override
+	// public MatrixBlock aggregateBinaryOperations(MatrixIndexes m1Index, MatrixBlock m1Value, MatrixIndexes m2Index,
+	// MatrixBlock m2Value, MatrixBlock result, AggregateBinaryOperator op) {
+	// if(m2Value == this )
+	// return m2Value.aggregateBinaryOperations(m1Value, m2Value, op);
+	// else
+	// return m1Value.aggregateBinaryOperations(m1Value, m2Value, op);
+	// }
 
 	@Override
 	public MatrixBlock aggregateTernaryOperations(MatrixBlock m1, MatrixBlock m2, MatrixBlock m3, MatrixBlock ret,

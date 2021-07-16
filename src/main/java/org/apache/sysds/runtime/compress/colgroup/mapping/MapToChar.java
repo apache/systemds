@@ -64,7 +64,7 @@ public class MapToChar extends AMapToData {
 
 	@Override
 	public long getExactSizeOnDisk() {
-		return 1 + 4 + _data.length * 2;
+		return 1 + 4 + 4 + _data.length * 2;
 	}
 
 	@Override
@@ -93,6 +93,10 @@ public class MapToChar extends AMapToData {
 		for(int i = 0; i < length; i++)
 			data[i] = in.readChar();
 		return new MapToChar(unique, data);
+	}
+
+	public char[] getChars(){
+		return _data;
 	}
 
 }

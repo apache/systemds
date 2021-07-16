@@ -24,34 +24,48 @@ import java.util.Map.Entry;
 
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.conf.DMLConfig;
+import org.apache.sysds.hops.Hop;
+import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.lops.Compression.CompressConfig;
 import org.apache.sysds.parser.DMLProgram;
-import org.apache.sysds.runtime.compress.workload.WTreeNode;
+import org.apache.sysds.runtime.compress.cost.CostEstimatorBuilder;
+import org.apache.sysds.runtime.compress.workload.WTreeRoot;
 import org.apache.sysds.runtime.compress.workload.WorkloadAnalyzer;
 
 /**
- * This rewrite obtains workload summaries for all hops candidates amenable
- * for compression as a basis for workload-aware compression planning.
- * 
+ * This rewrite obtains workload summaries for all hops candidates amenable for compression as a basis for
+ * workload-aware compression planning.
  */
-public class IPAPassCompressionWorkloadAnalysis extends IPAPass
-{
+public class IPAPassCompressionWorkloadAnalysis extends IPAPass {
+
 	@Override
 	public boolean isApplicable(FunctionCallGraph fgraph) {
-		return InterProceduralAnalysis.CLA_WORKLOAD_ANALYSIS
-			&& CompressConfig.valueOf(ConfigurationManager.getDMLConfig()
-				.getTextValue(DMLConfig.COMPRESSED_LINALG).toUpperCase()).isEnabled();
+		return CompressConfig.valueOf(ConfigurationManager.getDMLConfig().getTextValue(DMLConfig.COMPRESSED_LINALG)
+			.toUpperCase()) == CompressConfig.WORKLOAD;
 	}
-	
+
 	@Override
 	public boolean rewriteProgram(DMLProgram prog, FunctionCallGraph fgraph, FunctionCallSizeInfo fcallSizes) {
-		//obtain CLA workload analysis for all applicable operators
-		Map<Long, WTreeNode> map = WorkloadAnalyzer.getAllCandidateWorkloads(prog);
-		
-		//TODO influence compression planning, for now just printing
-		for( Entry<Long, WTreeNode> e : map.entrySet() )
-			System.out.println(e.getValue());
+
+		// Set rewrite rule for CLA to false, since we are using workload based planning.
+		OptimizerUtils.ALLOW_COMPRESSION_REWRITE = false;
+
+		// Obtain CLA workload analysis for all applicable operators
+		Map<Long, WTreeRoot> map = WorkloadAnalyzer.getAllCandidateWorkloads(prog);
+
+		// Add compression instruction to all remaining locations
+		for(Entry<Long, WTreeRoot> e : map.entrySet()){
+			WTreeRoot tree = e.getValue();
+			CostEstimatorBuilder b = new CostEstimatorBuilder(tree);
+			// filter out compression plans that is known bad
+			if(b.shouldTryToCompress()){
+				tree.getRoot().setRequiresCompression(e.getValue());
+				for(Hop h : tree.getDecompressList())
+					h.setRequiresDeCompression();
+			}
+		}
 		
 		return map != null;
+
 	}
 }

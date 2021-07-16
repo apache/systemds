@@ -16,32 +16,34 @@
  * specific language governing permissions and limitations
  * under the License.
  */
- 
+
 package org.apache.sysds.test.functions.builtin;
 
+import static org.junit.Assert.assertTrue;
+
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.List;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.apache.sysds.test.AutomatedTestBase;
+import org.apache.sysds.test.TestUtils;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 
-import org.apache.sysds.test.AutomatedTestBase;
-import org.apache.sysds.runtime.matrix.data.MatrixValue;
-import org.apache.sysds.test.TestUtils;
-import static org.junit.Assert.assertTrue;
-
 @RunWith(value = Parameterized.class)
 @net.jcip.annotations.NotThreadSafe
 public class BuiltinFFNeuralNetworkTest extends AutomatedTestBase {
+
+	private static final Log LOG = LogFactory.getLog(BuiltinFFNeuralNetworkTest.class.getName());
+
 	protected final static String TEST_NAME = "ffNeuralNetwork";
 	protected final static String TEST_DIR = "functions/builtin/";
 	protected String TEST_CLASS_DIR = TEST_DIR + BuiltinFFNeuralNetworkTest.class.getSimpleName() + "/";
-	
+
 	private final String dataset_path;
 	private final double least_expected_acc;
 	private final String out_path;
@@ -55,12 +57,12 @@ public class BuiltinFFNeuralNetworkTest extends AutomatedTestBase {
 	@Parameters
 	public static Collection<Object[]> data() {
 		String path = "src/test/resources/datasets/synthetic_classification.csv";
-		int feature_last_col = 6;
 		double least_expected_acc = 0.50;
 		String out_path = "accuracy";
-		
-		Object[][] data = new Object[][] {{path, least_expected_acc, out_path}};
-		return Arrays.asList(data);
+		List<Object[]> tests = new ArrayList<>();
+		tests.add(new Object[]{path, least_expected_acc, out_path});
+
+		return tests;
 	}
 
 	@Override
@@ -69,7 +71,7 @@ public class BuiltinFFNeuralNetworkTest extends AutomatedTestBase {
 	}
 
 	@Test
-	public void testClassificationFit() {	
+	public void testClassificationFit() {
 
 		getAndLoadTestConfiguration(TEST_NAME);
 
@@ -77,16 +79,15 @@ public class BuiltinFFNeuralNetworkTest extends AutomatedTestBase {
 		proArgs.add("-args");
 		proArgs.add(this.dataset_path);
 		proArgs.add(output(this.out_path));
-	
+
 		programArgs = proArgs.toArray(new String[proArgs.size()]);
-		
+
 		fullDMLScriptName = getScript();
 
-		runTest(true, EXCEPTION_NOT_EXPECTED, null, -1);
+		LOG.error(runTest(null));
 
 		double[][] from_DML = TestUtils.convertHashMapToDoubleArray(readDMLScalarFromOutputDir(this.out_path));
 		double accuracy = from_DML[0][0];
-		System.out.println(accuracy + "");
 		assertTrue("Accuracy lower than expected", accuracy > this.least_expected_acc);
 	}
 }

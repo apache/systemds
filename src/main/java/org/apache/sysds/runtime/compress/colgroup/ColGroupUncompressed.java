@@ -25,7 +25,7 @@ import java.io.IOException;
 import java.util.Arrays;
 
 import org.apache.commons.lang.NotImplementedException;
-import org.apache.sysds.runtime.DMLCompressionException;
+import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.DenseBlockFP64;
@@ -48,7 +48,6 @@ import org.apache.sysds.runtime.util.SortUtils;
  * 
  */
 public class ColGroupUncompressed extends AColGroup {
-	private static final long serialVersionUID = 4870546053280378891L;
 
 	/**
 	 * We store the contents of the columns as a MatrixBlock to take advantage of high-performance routines available
@@ -412,7 +411,13 @@ public class ColGroupUncompressed extends AColGroup {
 	}
 
 	@Override
-	public void tsmm(double[] result, int numColumns) {
+	public final void tsmm(MatrixBlock ret) {
+		double[] result = ret.getDenseBlockValues();
+		int numColumns = ret.getNumColumns();
+		tsmm(result, numColumns);
+	}
+
+	private void tsmm(double[] result, int numColumns) {
 		final int tCol = _colIndexes.length;
 		MatrixBlock tmp = new MatrixBlock(tCol, tCol, true);
 		LibMatrixMult.matrixMultTransposeSelf(_data, tmp, true, false);
@@ -429,11 +434,6 @@ public class ColGroupUncompressed extends AColGroup {
 					result[offRet + _colIndexes[col]] += tmpV[offTmp + col];
 			}
 		}
-	}
-
-	@Override
-	public void tsmm(double[] result, int numColumns, int idxStart, int idxEnd) {
-		throw new NotImplementedException();
 	}
 
 	@Override

@@ -328,7 +328,7 @@ public abstract class ADictionary {
 		int maxIndex = 0;
 		int maxCount = 0;
 		for(int i = 0; i < counts.length; i++) {
-			if(counts[i] > maxCount) {
+			if(counts[i] >= maxCount) {
 				maxCount = counts[i];
 				maxIndex = i;
 			}
@@ -380,11 +380,11 @@ public abstract class ADictionary {
 	 * @param aggregateColumns The column to aggregate, this is preprocessed, to find remove consideration for empty
 	 *                         columns
 	 * @param b                The values in the right hand side matrix
-	 * @param ret              The double array to put in the aggregate.
 	 * @param cut              The number of columns in b.
+	 * @return A new dictionary with the pre aggregated values.
 	 */
-	public abstract void preaggValuesFromDense(final int numVals, final int[] colIndexes, final int[] aggregateColumns,
-		final double[] b, final double[] ret, final int cut);
+	public abstract ADictionary preaggValuesFromDense(final int numVals, final int[] colIndexes,
+		final int[] aggregateColumns, final double[] b, final int cut);
 
 	/**
 	 * Make a copy of the values, and replace all values that match pattern with replacement value. If needed add a new

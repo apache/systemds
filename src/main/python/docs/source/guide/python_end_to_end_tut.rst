@@ -23,13 +23,13 @@ Python end-to-end tutorial
 ==========================
 
 The goal of this tutorial is to showcase different features of the SystemDS framework that can be accessed with the Python API.
-For this we want to use the `Adult <https://archive.ics.uci.edu/ml/datasets/adult/>`_ dataset and predict whether the income of a person exceeds $50K/yr based on census data. The Adult Dataset
-contains attributes like age, workclass, education, marital-status, occupation, race, [...] and the labels >50K or <=50K.
+For this, we want to use the `Adult <https://archive.ics.uci.edu/ml/datasets/adult/>`_ dataset and predict whether the income of a person exceeds $50K/yr based on census data.
+The Adult dataset contains attributes like age, workclass, education, marital-status, occupation, race, [...] and the labels >50K or <=50K.
 Most of these features are categorical string values, but the dataset also includes continuous features.
-For this we define three different levels with a increasing level of detail with regard to features provided by SystemDS.
-In the first level we simply get an already preprocessed dataset from a DatasetManager.
-The second levels shows the builtin preprocessing capabilities of SystemDS.
-With the third level we want to show how we can integrate custom built networks or algorithms into our Python program.
+For this, we define three different levels with an increasing level of detail with regard to features provided by SystemDS.
+In the first level, we simply get an already preprocessed dataset from a DatasetManager.
+The second level, shows the built-in preprocessing capabilities of SystemDS.
+With the third level, we want to show how we can integrate custom-built networks or algorithms into our Python program.
 
 Prerequisite: 
 
@@ -41,10 +41,10 @@ Level 1
 This example shows how one can work with NumPy data within the SystemDS framework. More precisely, we will make use of the
 built-in DataManager, Multinomial Logistic Regression function, and the Confusion Matrix function. The dataset used in this
 tutorial is a preprocessed version of the "UCI Adult Data Set". If you are interested in data preprocessing, take a look at level 2.
-If one wants to skip the explanation then the full script is available at the bottom of this page.
+If one wants to skip the explanation then the full script is available at the end of this level.
 
 We will train a Multinomial Logistic Regression model on the training dataset and subsequently we will use the test dataset
-to assess how well our model can predict if the income is above or below $50K/yr based on the attributes.
+to assess how well our model can predict if the income is above or below $50K/yr based on the features.
 
 Step 1: Load and prepare data
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -77,12 +77,12 @@ a fraction of the training and test set into account to speed up the execution.
     Yt = Yt + 1.0
 
 Here the DataManager contains the code for downloading and setting up NumPy arrays containing the data.
-It is noteworthy that the function get_preprocessed_dataset has options for basic standardization, interpolation and combining categorical features inside one column whose occurrences are below a certain threshold.
+It is noteworthy that the function get_preprocessed_dataset has options for basic standardization, interpolation, and combining categorical features inside one column whose occurrences are below a certain threshold.
 
 Step 2: Training
 ~~~~~~~~~~~~~~~~
 
-Now that we prepared the data we can use the multiLogReg function. First, we will train the model on our
+Now that we prepared the data, we can use the multiLogReg function. First, we will train the model on our
 training data. Afterward, we can make predictions on the test data and assess the performance of the model.
 
 .. code-block:: python
@@ -159,18 +159,18 @@ In the full script, some steps are combined to reduce the overall script.
 Level 2
 -------
 
-This part of the tutorial shows a in-depth overview of the preprocessing capabilities that SystemDS has to offer.
-We will take a new and raw dataset using the csv format and read it with SystemDS. Then do the heavy lifting for the preprocessing with SystemDS.
-As mentioned before we want to use the Adult dataset for this task.
-If one wants to skip the explanation then the full script is available at the bottom of this page.
+This part of the tutorial shows an overview of the preprocessing capabilities that SystemDS has to offer.
+We will take an unprocessed dataset using the csv format and read it with SystemDS. Then do the heavy lifting for the preprocessing with SystemDS.
+As mentioned before, we want to use the Adult dataset for this task.
+If one wants to skip the explanation, then the full script is available at the end of this level.
 
 Step 1: Metadata and reading
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-First of all, we need to download the dataset and create a mtd-file for specifying different properties that the dataset has.
+First of all, we need to download the dataset and create a mtd-file for specifying different metadata about the dataset.
 We download the train and test dataset from: https://archive.ics.uci.edu/ml/datasets/adult
 
-The downloaded dataset will be slightly modified for convenience. These modifications entail removing unnecessary newlines at the end of the files,
+The downloaded dataset will be slightly modified for convenience. These modifications entail removing unnecessary newlines at the end of the files and
 adding column names at the top of the files such that the first line looks like:
 
 .. code-block::
@@ -179,8 +179,8 @@ adding column names at the top of the files such that the first line looks like:
 
 We also delete the line holding the string value |1x3 Cross validator inside the test dataset.
 
-After these modifications, we have to define a mtd-file for each file we want to read. This mtd file has to be in the same directory as the dataset.
-In this particular example, the dataset is split into two files "train_data.csv" and "test_data.csv". We want to read both, which means that we will define a mtd-file for
+After these modifications, we have to define a mtd file for each file we want to read. This mtd file has to be in the same directory as the dataset.
+In this particular example, the dataset is split into two files "train_data.csv" and "test_data.csv". We want to read both, which means that we will define a mtd file for
 each of them. Those files will be called "train_data.csv.mtd" and "test_data.csv.mtd".
 In these files, we can define certain properties that the file has and also specify which values are supposed to get treated like missing values.
 
@@ -198,9 +198,9 @@ The content of the train_data.csv.mtd file is:
     }
 
 The "format" of the file is csv, and "header" is set to true because we added the feature names as headers to the csv files.
-The value "data_type" is set to frame as the preprocessing functions that we use require this datatype.
+The value "data_type" is set to frame, as the preprocessing functions that we use require this datatype.
 The value of "naStrings" is a list of all the string values that should be treated as unknown values during the preprocessing.
-Also, "rows" in our example is set to 32561, as we have this many entries and "cols" is set to 15 as we have 14 features and one label inside the files. We will later show how we can split them.
+Also, "rows" in our example is set to 32561, as we have this many entries and "cols" is set to 15 as we have 14 features, and one label column inside the files. We will later show how we can split them.
 
 After these requirements are completed, we have to define a SystemDSContext for reading our dataset. We can do this in the following way:
 
@@ -236,7 +236,7 @@ Step 2: Defining preprocess operations
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Now that the read operation has been declared, we can define an additional file for the further preprocessing of the dataset.
-For this we create a .json file that holds information about the operations that will be performed on individual columns.
+For this, we create a .json file that holds information about the operations that will be performed on individual columns.
 For the sake of this tutorial we will use the file "jspec.json" with the following content:
 
 .. code-block::
@@ -276,7 +276,7 @@ The column-level data transformation "dummycode" allows us to one-hot-encode a c
 In our example we first bin the "age" column into 3 different bins. This means that we now have one column where one entry can belong to one of 3 age groups. After using
 "dummycode", we transform this one column into 3 different columns, one for each bin.
 
-At last we make use of the "recode" transformation for categorical columns, it maps all distinct categories in
+At last, we make use of the "recode" transformation for categorical columns, it maps all distinct categories in
 the column into consecutive numbers, starting from 1. In our example we recode the "income" column, which
 transforms it from "<=$50K" and ">$50K" to "1" and "2" respectively.
 
@@ -292,7 +292,8 @@ After defining the .jspec file we can read it by passing the filepath, data_type
     jspec = sds.read(dataset_jspec, data_type="scalar", value_type="string")
 
 Finally, we need to define a custom dml file to split the features from the labels and replace certain values, which we will need later.
-We will call this file preprocess.dml:
+We will call this file "preprocess.dml":
+
 .. code-block::
 
     get_X = function(matrix[double] X, int start, int stop)
@@ -311,6 +312,7 @@ We will call this file preprocess.dml:
 The get_X function simply extracts every column except the last one and can also be used to pick certain slices from the dataset.
 The get_Y function only extracts the last column, which in our case holds the labels. Replace_value is used to replace a double value with another double.
 The preprocess.dml file can be read with the following command:
+
 .. code-block:: python
 
     preprocess_src_path = "preprocess.dml"
@@ -321,10 +323,10 @@ The print_imported_methods flag can be used to verify whether every method has b
 Step 3: Applying the preprocessing steps
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Generally speaking we would use the transform_encode function on the train dataset and with the returned encoding call the transform_apply function on the test dataset.
+Generally speaking, we would use the transform_encode function on the train dataset and with the returned encoding call the transform_apply function on the test dataset.
 In the case of the Adult dataset, we have inconsistent label names inside the test dataset and the train dataset, which is why we will show how we can deal with that using SystemDS.
 First of all, we combine the train and the test dataset by using the rbind() function. This function simply appends the Frame F2 at the end of Frame F1.
-This is necessary to ensure that the encoding is identical between training and test dataset.
+This is necessary to ensure that the encoding is identical between train and test dataset.
 
 .. code-block:: python
 
@@ -339,7 +341,7 @@ and all the initial values. Columns that have not been specified in the .json fi
     X1, M1 = X1.transform_encode(spec=jspec)
 
 We now can use the previously parsed dml file for splitting the dataset and unifying the inconsistent labels. It is noteworthy that the
-file gets parsed such that we can directly call the function names from the Python API.
+file is parsed such that we can directly call the function names from the Python API.
 
 .. code-block:: python
 
@@ -356,7 +358,7 @@ Step 4: Training and confusion matrix
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Now that we prepared the data we can use the multiLogReg function.
-These steps are identical to step 2 and 3 that have already been described inside level 1.
+These steps are identical to step 2 and 3 that have already been described in level 1 of this tutorial.
 
 .. code-block:: python
 
@@ -372,6 +374,7 @@ Full Script
 ~~~~~~~~~~~
 
 The complete script now can be seen here:
+
 .. code-block:: python
 
     import numpy as np
@@ -419,12 +422,13 @@ Level 3
 -------
 
 In this level we want to show how we can integrate a custom built algorithm using the Python API.
-For this we will introduce another dml file, which can be used to train a basic feed forward network using a parameter server.
+For this we will introduce another dml file, which can be used to train a basic feed forward network.
 
 Step 1: Obtain data
 ~~~~~~~~~~~~~~~~~~~
 
-For the whole setup please refer to level 2, Step 1 to 3.
+For the whole data setup please refer to level 2, Step 1 to 3, as these steps are identical.
+
 .. code-block:: python
 
     import numpy as np
@@ -464,19 +468,23 @@ Step 2: Load the algorithm
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 We use a neural network with 2 hidden layers, each consisting of 200 neurons.
-First we need to source the dml-file for neural networks.
-This file includes all the necessary functions for training, evaluating and storing the model.
+First, we need to source the dml file for neural networks.
+This file includes all the necessary functions for training, evaluating, and storing the model.
 The returned object of the source call is further used for calling the functions.
+The file can be found here:
+
+    - :doc:tests/examples/tutorials/neural_net_source.dml
 
 .. code-block:: python
+
     FFN_package = sds.source(neural_net_src_path, "fnn", print_imported_methods=True))
 
 Step 3: Training the neural network
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Training a neural network in SystemDS using the train function is very straightforward.
+Training a neural network in SystemDS using the train function is straightforward.
 The first two arguments are the training features and the target values we want to fit our model on.
-Then we need set the hyperparameters of the model.
+Then we need to set the hyperparameters of the model.
 We choose to train for 1 epoch with a batch size of 16 and a learning rate of 0.01, which are common parameters for neural networks.
 The seed argument ensures that running the code again yields the same results.
 
@@ -492,23 +500,23 @@ The seed argument ensures that running the code again yields the same results.
 Step 4: Saving the model
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-For later usage we can save the trained model.
-We only need to specify the name of our model and the file-path.
+For later usage, we can save the trained model.
+We only need to specify the name of our model and the file path.
 This call stores the weights and biases of our model.
 
 .. code-block:: python
-    FFN_package.save_model(network, '"model/python_FFN/"').compute(verbose=True)
 
+    FFN_package.save_model(network, '"model/python_FFN/"').compute(verbose=True)
 
 Full Script
 ~~~~~~~~~~~
 
 The complete script now can be seen here:
+
 .. code-block:: python
 
     import numpy as np
     from systemds.context import SystemDSContext
-    from systemds.operator.algorithm import multiLogReg, multiLogRegPredict, confusionMatrix
 
     train_count = 32561
     test_count = 16281

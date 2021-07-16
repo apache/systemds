@@ -19,7 +19,7 @@
 #
 #-------------------------------------------------------------
 #
-#-------------------------------------------------------------
+
 #
 # This script performs forward pass through ff neural network in ffTrain and ffPredict builtins
 #

@@ -138,7 +138,7 @@ Integer seed=-1, Boolean verbose=FALSE)
         dout2 = loss_backward(as.matrix(cache["out2"]), Y_batch, loss_fcn)
       }
 
-      [dW1, db1, dW2, db2] = feed_backward(Y_batch, X_batch, layers, cache, dout2)
+      [dW1, db1, dW2, db2] = feed_backward(X_batch, layers, cache, dout2)
 
       [W2, vW2] = sgd_nesterov::update(W2, dW2, lr, mu, vW2)
       [b2, vb2] = sgd_nesterov::update(b2, db2, lr, mu, vb2)
@@ -168,7 +168,7 @@ Integer seed=-1, Boolean verbose=FALSE)
 }
 
 
-feed_backward = function(Matrix[double] Y, Matrix[double] X, List[unknown] layers, List[unknown] cache, Matrix[double] dout) 
+feed_backward = function(Matrix[double] X, List[unknown] layers, List[unknown] cache, Matrix[double] dout) 
   return(Matrix[double] dW1, Matrix[double] db1, Matrix[double] dW2, Matrix[double] db2){
   p = 0.35 # dropout probability
   
@@ -179,7 +179,7 @@ feed_backward = function(Matrix[double] Y, Matrix[double] X, List[unknown] layer
   [doutd1, dW2, db2] = affine::backward(dout, as.matrix(cache["outd1"]), as.matrix(layers["W2"]), as.matrix(layers["b2"]))
   # Layer 1
   doutr1 = dropout::backward(doutd1, as.matrix(cache["outr1"]), p, as.matrix(cache["maskd1"]))
-  dout1 = sigmoid::backward(doutr1, as.matrix(cache["out1"]))
+  dout1 = relu::backward(doutr1, as.matrix(cache["out1"]))
   [dx, dW1, db1] = affine::backward(dout1, X, as.matrix(layers["W1"]), as.matrix(layers["b1"]))
 }
 

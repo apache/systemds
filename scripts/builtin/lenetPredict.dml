@@ -16,39 +16,31 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-#
 #-------------------------------------------------------------
+
+# This builtin function makes prediction given data and trained LeNet Model
+#
+# INPUT PARAMETERS:
+# --------------------------------------------------------------------------------------------
+# NAME        TYPE           DEFAULT   MEANING
+# --------------------------------------------------------------------------------------------
+# Model       List[unknown]   ---      Trained LeNet model
+# X           Matrix[Double]  ---      Input data matrix, of shape (N, C*Hin*Win)
+# C           Integer         ---      Number of input channels
+# Hin         Integer         ---      Input height
+# Win         Integer         ---      Input width
+# batch_size  Integer         ---      Batch size
+# --------------------------------------------------------------------------------------------
+# OUTPUT: 
+# pred      Matrix[Double]  ---      Predicted value
+#
 source("nn/layers/lenetForwardPass.dml") as lenet_fw
 
-m_lenetPredict = function(Matrix[Double] X, Integer C, Integer Hin, Integer Win,
-                   list[unknown] model)
-    return (Matrix[Double] probs) {
-  /*
-   * Computes the class probability predictions of a convolutional
-   * net using the "LeNet" architecture.
-   *
-   * The input matrix, X, has N examples, each represented as a 3D
-   * volume unrolled into a single vector.
-   *
-   * Inputs:
-   *  - X: Input data matrix, of shape (N, C*Hin*Win).
-   *  - C: Number of input channels (dimensionality of input depth).
-   *  - Hin: Input height.
-   *  - Win: Input width.
-   *  - W1: 1st layer weights (parameters) matrix, of shape (F1, C*Hf*Wf).
-   *  - b1: 1st layer biases vector, of shape (F1, 1).
-   *  - W2: 2nd layer weights (parameters) matrix, of shape (F2, F1*Hf*Wf).
-   *  - b2: 2nd layer biases vector, of shape (F2, 1).
-   *  - W3: 3rd layer weights (parameters) matrix, of shape (F2*(Hin/4)*(Win/4), N3).
-   *  - b3: 3rd layer biases vector, of shape (1, N3).
-   *  - W4: 4th layer weights (parameters) matrix, of shape (N3, K).
-   *  - b4: 4th layer biases vector, of shape (1, K).
-   *
-   * Outputs:
-   *  - probs: Class probabilities, of shape (N, K).
-   */
-
-   N = nrow(X)
+s_lenetPredict = function(list[unknown] model, Matrix[Double] X, Integer C, 
+Integer Hin, Integer Win, Integer batch_size = 128)
+  return (Matrix[Double] probs) {
+  
+  N = nrow(X)
 
   # Network:
   # conv1 -> relu1 -> pool1 -> conv2 -> relu2 -> pool2 -> affine3 -> relu3 -> affine4 -> softmax
@@ -67,7 +59,6 @@ m_lenetPredict = function(Matrix[Double] X, Integer C, Integer Hin, Integer Win,
 
   # Compute predictions over mini-batches
   probs = matrix(0, rows=N, cols=K)
-  batch_size = 64
   iters = ceil(N / batch_size)
   for(i in 1:iters) {
     # Get next batch
@@ -75,12 +66,9 @@ m_lenetPredict = function(Matrix[Double] X, Integer C, Integer Hin, Integer Win,
     end = min(N, beg + batch_size - 1)
     X_batch = X[beg:end,]
 
-    [outc1, Houtc1, Woutc1, outr1, outp1, 
-      Houtp1, Woutp1, outc2, Houtc2, Woutc2, 
-      outr2, outp2, Houtp2, Woutp2, 
-      outa3, outr3, outd3, maskd3, outa4, probs_batch] = lenet_fw::lenetForward(X_batch, C, Hin, Win, model)
+    pred = lenet_fw::lenetForward(X_batch, C, Hin, Win, model, TRUE)
 
     # Store predictions
-    probs[beg:end,] = probs_batch
+    probs[beg:end,] = as.matrix(pred["probs"])
   }
 }

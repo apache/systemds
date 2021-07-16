@@ -49,7 +49,17 @@ m_xgboost = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] R = matr
   tree_id = 1
   while(tree_id <= num_trees)
   {
-    curr_M = buildOneTree(X, y, R, sml_type, max_depth, current_prediction, tree_id, lambda)
+    if(sml_type == 1) # Regression
+    {
+      curr_M = buildOneTreeRegression(X, y, R, max_depth, current_prediction, tree_id, lambda)
+    }
+    else # classification
+    {
+      assert(sml_type == 2)
+      curr_M = buildOneTreeClassification(X, y, R, max_depth, current_prediction, tree_id, lambda)
+    }
+
+
 
     # in current prediction all previous trees are considered, so we only add the current tree to calculate new predictions
     current_prediction = calculateNewPredictions(X, sml_type,current_prediction, learning_rate, curr_M)
@@ -161,13 +171,15 @@ getOutputValueForEntry = function(Matrix[Double] row_vector, Matrix[Double] curr
 # INPUT:    R The matrix R which for each feature in X contains the following information
 #					- R[,2]: 1 (scalar feature)
 #				    - R[,1]: 2 (categorical feature)
-# INPUT:    M: the nxn output matrix
+# INPUT:    max_depth: the max depth of a tree
 # INPUT:    prediction: nx1 vector, my current predictions for my target value y
 # INPUT:    tree_id: The current tree id, starting at 1
+# INPUT:    lambda: the regularization parameter lambda
 # OUTPUT:   M: the current M matrix of this tree
-buildOneTree = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] R, Integer sml_type, Integer max_depth,
+buildOneTreeRegression = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] R, Integer max_depth,
   Matrix[Double] prediction, Double tree_id, Double lambda)
   return (Matrix[Double] M) {
+  sml_type = 1 # regression
 
   M = matrix(0,rows=6,cols=0)
   node_queue = matrix(1, rows=1, cols=1)     # Add first Node
@@ -197,14 +209,6 @@ buildOneTree = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] R, In
 
     best_feature_index = 0.00
     done = FALSE
-    if(sml_type == 2)
-    {
-      count = sum(curr_y)
-      if(count == 0)
-        done = TRUE
-      if(count == nrow(curr_y))
-        done = TRUE
-    }
 
     if(available_rows > 1 & max_depth > level & done == FALSE) # leaf check or max depth check
     {
@@ -213,15 +217,109 @@ buildOneTree = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] R, In
 
       if(type == 1.0) # SCALAR
       {
-        if(sml_type == 1) # Regression
-        {
-          similarity_score = calculateSimilarityScore(residual_matrix, lambda)
-        }
-        else # Classification
-        {
-          assert(sml_type == 2)
-          similarity_score = calculateSimilarityScoreClassification(residual_matrix, curr_prediction, lambda)
-        }
+        similarity_score = calculateSimilarityScore(residual_matrix, lambda)
+        [best_split_threshold, best_gain] = findBestSplit(sml_type, curr_X[,best_feature_index], similarity_score, curr_prediction, lambda)
+        has_child = best_gain > 0 # if the gain is < 0, the split is worse than the current node
+      }
+      else # CATEGORICAL
+      {
+        assert(type == 2.0)
+        has_child = TRUE
+      }
+    }
+
+    if (has_child)
+    {
+      [left, right] = calculateChildNodeIDs(node)
+      node_queue = dataQueuePush(left, right, node_queue)
+
+      if (type == 1.0) # SCALAR
+      {
+        [left_row_vec, right_row_vec] = splitMatrixByValueLoop(curr_X_full[,best_feature_index], X[,best_feature_index], best_split_threshold)
+        curr_rows_queue = dataQueuePush(left_row_vec, right_row_vec, curr_rows_queue)
+        offset = ncol(node_queue) - 1
+        M = addOutputRow(M, node, tree_id, R, offset, best_feature_index, best_split_threshold, 0.0)
+      }
+      else # CATEGORICAL
+      {
+        assert(type == 2.0)
+        [left_row_vec, right_row_vec] = splitMatrixByCategory(curr_X_full[,best_feature_index], X[,best_feature_index])
+        curr_rows_queue = dataQueuePush(left_row_vec, right_row_vec, curr_rows_queue)
+        offset = ncol(node_queue) - 1
+        M = addOutputRow(M, node, tree_id, R, offset, best_feature_index, 0.0, 0.0)
+      }
+    }
+    else # has no child => must be leaf
+    {
+      output_value = calculateOutputValue(residual_matrix, lambda)
+                                    # offset, best_feature_idx, threshold
+      M = addOutputRow(M, node, tree_id, R, 0.0, 0.0, 0.0, output_value)
+    }
+    node_queue_len = ncol(node_queue)
+  }
+}
+
+
+#-----------------------------------------------------------------------------------------------------------------------
+# INPUT:    X: nxn matrix, original input matrix
+# INPUT:    y: nx1 vector of my target values
+# INPUT:    R The matrix R which for each feature in X contains the following information
+#					- R[,2]: 1 (scalar feature)
+#				    - R[,1]: 2 (categorical feature)
+# INPUT:    max_depth: the max depth of a tree
+# INPUT:    prediction: nx1 vector, my current predictions for my target value y
+# INPUT:    tree_id: The current tree id, starting at 1
+# INPUT:    lambda: the regularization parameter lambda
+# OUTPUT:   M: the current M matrix of this tree
+buildOneTreeClassification = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] R, Integer max_depth,
+  Matrix[Double] prediction, Double tree_id, Double lambda)
+  return (Matrix[Double] M) {
+  sml_type = 2 # classification
+
+  M = matrix(0,rows=6,cols=0)
+  node_queue = matrix(1, rows=1, cols=1)     # Add first Node
+  curr_rows_queue = matrix(1, rows=nrow(X), cols=1)
+  node_queue_len = 1
+  depth = 0.0
+  level = 0
+
+  # adjust this here if we create more trees to create new prediction values
+  while (node_queue_len > 0) {
+    has_child = FALSE
+    [node_queue, node] = dataQueuePop(node_queue)
+    [curr_rows_queue, curr_rows_vector] = dataQueuePop(curr_rows_queue)
+
+    level = log(as.scalar(node), 2) + 1
+    available_rows = calcAvailableRows(curr_rows_vector) # check if leaf
+
+    if(available_rows == 0)
+    {
+      residual_matrix = matrix(0, rows=0, cols=0)
+    }
+    else
+    {
+      [curr_X, curr_y, curr_X_full, curr_prediction] = updateMatrices(X, y, prediction, curr_rows_vector)
+      residual_matrix = calculateResiduals(curr_y, curr_prediction) # we need residuals calculated also for leafs for output value
+    }
+
+    best_feature_index = 0.00
+    done = FALSE
+
+    count = sum(curr_y)
+    if(count == 0)
+      done = TRUE
+    if(count == nrow(curr_y))
+      done = TRUE
+
+
+    if(available_rows > 1 & max_depth > level & done == FALSE) # leaf check or max depth check
+    {
+      best_feature_index = findBestFeature(X=curr_X, y=curr_y, sml_type=sml_type)
+      type = getTypeOfFeature(R, best_feature_index)
+
+      if(type == 1.0) # SCALAR
+      {
+        similarity_score = calculateSimilarityScoreClassification(residual_matrix, curr_prediction, lambda)
 
         [best_split_threshold, best_gain] = findBestSplit(sml_type, curr_X[,best_feature_index], similarity_score, curr_prediction, lambda)
         has_child = best_gain > 0 # if the gain is < 0, the split is worse than the current node
@@ -256,22 +354,13 @@ buildOneTree = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] R, In
     }
     else # has no child => must be leaf
     {
-      if(sml_type == 1) # Regression
-      {
-        output_value = calculateOutputValue(residual_matrix, lambda)
-      }
-      else # Classification
-      {
-        assert(sml_type == 2)
-        output_value = calculateOutputValueClassification(residual_matrix, curr_prediction, lambda)
-      }
+      output_value = calculateOutputValueClassification(residual_matrix, curr_prediction, lambda)
                                     # offset, best_feature_idx, threshold
       M = addOutputRow(M, node, tree_id, R, 0.0, 0.0, 0.0, output_value)
     }
     node_queue_len = ncol(node_queue)
   }
 }
-
 
 
 #-----------------------------------------------------------------------------------------------------------------------

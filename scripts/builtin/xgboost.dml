@@ -59,8 +59,6 @@ m_xgboost = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] R = matr
       curr_M = buildOneTreeClassification(X, y, R, max_depth, current_prediction, tree_id, lambda)
     }
 
-
-
     # in current prediction all previous trees are considered, so we only add the current tree to calculate new predictions
     current_prediction = calculateNewPredictions(X, sml_type,current_prediction, learning_rate, curr_M)
 
@@ -79,8 +77,6 @@ m_xgboost = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] R = matr
 calculateNewPredictions = function(Matrix[Double] X, Integer sml_type, Matrix[Double] current_prediction,
     Double learning_rate, Matrix[Double] curr_M)
     return (Matrix[Double] new_prediction) {
-  assert(ncol(current_prediction) == 1)
-  assert(nrow(current_prediction) == nrow(X)) # each Entry should have an own initial prediction
   new_prediction = matrix(0, rows=nrow(current_prediction), cols=1)
   start_node_current_tree = curr_M[,1]
 
@@ -97,7 +93,6 @@ calculateNewPredictions = function(Matrix[Double] X, Integer sml_type, Matrix[Do
   }
   else # Classification
   {
-    assert(sml_type == 2)
     for(entry in 1:nrow(X)) # go though each entry in X and calculate the new prediction
     {
       output_values = matrix(0, rows=1, cols=0)
@@ -123,9 +118,6 @@ calculateNewPredictions = function(Matrix[Double] X, Integer sml_type, Matrix[Do
 # OUTPUT:   output_value: the prediction for the current sample at the current tree
 getOutputValueForEntry = function(Matrix[Double] row_vector, Matrix[Double] curr_M, Matrix[Double] current_node)
     return (Double output_value) {
-    assert(nrow(row_vector) == 1)
-    assert(as.scalar(current_node[1,]) == 1)
-
     cur_node_index = 1 # cant take the node id because its diff to the index
 
     # iterate over one tree and find output value
@@ -223,7 +215,6 @@ buildOneTreeRegression = function(Matrix[Double] X, Matrix[Double] y, Matrix[Dou
       }
       else # CATEGORICAL
       {
-        assert(type == 2.0)
         has_child = TRUE
       }
     }
@@ -242,7 +233,6 @@ buildOneTreeRegression = function(Matrix[Double] X, Matrix[Double] y, Matrix[Dou
       }
       else # CATEGORICAL
       {
-        assert(type == 2.0)
         [left_row_vec, right_row_vec] = splitMatrixByCategory(curr_X_full[,best_feature_index], X[,best_feature_index])
         curr_rows_queue = dataQueuePush(left_row_vec, right_row_vec, curr_rows_queue)
         offset = ncol(node_queue) - 1
@@ -326,7 +316,6 @@ buildOneTreeClassification = function(Matrix[Double] X, Matrix[Double] y, Matrix
       }
       else # CATEGORICAL
       {
-        assert(type == 2.0)
         has_child = TRUE
       }
     }
@@ -345,7 +334,6 @@ buildOneTreeClassification = function(Matrix[Double] X, Matrix[Double] y, Matrix
       }
       else # CATEGORICAL
       {
-        assert(type == 2.0)
         [left_row_vec, right_row_vec] = splitMatrixByCategory(curr_X_full[,best_feature_index], X[,best_feature_index])
         curr_rows_queue = dataQueuePush(left_row_vec, right_row_vec, curr_rows_queue)
         offset = ncol(node_queue) - 1
@@ -544,7 +532,6 @@ findBestFeature = function(Matrix[Double] X, Matrix[Double] y, Integer sml_type)
     }
     else # Classification
     {
-      assert(sml_type == 2)
       weights = glm(X=current_feature, Y=y, dfam=2, verbose=FALSE)
     }
     y_residual = y - current_feature %*% weights
@@ -585,7 +572,6 @@ findBestSplit = function(Integer sml_type, Matrix[Double] one_featureX, Double s
     }
     else # Classification
     {
-      assert(sml_type == 2)
       sim_score_left = calculateSimilarityScoreClassification(left, predictions, lambda)
       sim_score_right = calculateSimilarityScoreClassification(right, predictions, lambda)
     }
@@ -736,7 +722,6 @@ calculateOutputValueClassification = function (matrix[Double] residuals_vector, 
 #           prediction: a 1xn matrix, the current prediction value of each row
 # OUTPUT:   the residuals from the "prediction" as 1xn matrix
 calculateResiduals = function (matrix[Double] row_vector, matrix[Double] prediction) return (matrix[Double] residuals_row) {
-   assert(ncol(row_vector) == 1)
    residuals_row = row_vector - prediction;
 }
 
@@ -751,8 +736,6 @@ orderFeature = function (matrix[double] row_vector) return (matrix[double] row_v
 
 
 average = function(Matrix[Double] x, Matrix[Double] y) return (Double avg) {
-  assert(ncol(x) == 1 & nrow(x) == 1)
-  assert(ncol(y) == 1 & nrow(y) == 1)
   avg = as.scalar((x + y) / 2)
 }
 

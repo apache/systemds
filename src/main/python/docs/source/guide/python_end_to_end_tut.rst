@@ -177,7 +177,7 @@ adding column names at the top of the files such that the first line looks like:
 
     age,workclass,fnlwgt,education,education-num,marital-status,occupation,relationship,race,sex,capital-gain,capital-loss,hours-per-week,native-country,income
 
-We also delete the line holding the string value "|1x3 Cross validator" inside the test dataset.
+We also delete the line holding the string value |1x3 Cross validator inside the test dataset.
 
 After these modifications, we have to define a mtd-file for each file we want to read. This mtd file has to be in the same directory as the dataset.
 In this particular example, the dataset is split into two files "train_data.csv" and "test_data.csv". We want to read both, which means that we will define a mtd-file for
@@ -390,14 +390,8 @@ The complete script now can be seen here:
 
     SCHEMA = '"DOUBLE,STRING,DOUBLE,STRING,DOUBLE,STRING,STRING,STRING,STRING,STRING,DOUBLE,DOUBLE,DOUBLE,STRING,STRING"'
 
-    F1 = sds.read(
-        dataset_path_train,
-        schema=SCHEMA
-    )
-    F2 = sds.read(
-        dataset_path_test,
-        schema=SCHEMA
-    )
+    F1 = sds.read(dataset_path_train, schema=SCHEMA)
+    F2 = sds.read(dataset_path_test,  schema=SCHEMA)
 
     jspec = sds.read(dataset_jspec, data_type="scalar", value_type="string")
     PREPROCESS_package = sds.source(preprocess_src_path, "preprocess", print_imported_methods=True)
@@ -448,14 +442,8 @@ For the whole setup please refer to level 2, Step 1 to 3.
 
     SCHEMA = '"DOUBLE,STRING,DOUBLE,STRING,DOUBLE,STRING,STRING,STRING,STRING,STRING,DOUBLE,DOUBLE,DOUBLE,STRING,STRING"'
 
-    F1 = sds.read(
-        dataset_path_train,
-        schema=SCHEMA
-    )
-    F2 = sds.read(
-        dataset_path_test,
-        schema=SCHEMA
-    )
+    F1 = sds.read(dataset_path_train, schema=SCHEMA)
+    F2 = sds.read(dataset_path_test,  schema=SCHEMA)
 
     jspec = sds.read(dataset_jspec, data_type="scalar", value_type="string")
     PREPROCESS_package = sds.source(preprocess_src_path, "preprocess", print_imported_methods=True)

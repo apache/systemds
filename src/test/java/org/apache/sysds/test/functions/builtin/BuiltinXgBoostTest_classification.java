@@ -10,7 +10,6 @@ import org.apache.sysds.test.TestUtils;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -28,28 +27,6 @@ public class BuiltinXgBoostTest_classification extends AutomatedTestBase {
         addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[]{"C"}));
     }
 
-    @Parameterized.Parameter()
-    public int rows;
-    @Parameterized.Parameter(1)
-    public int cols;
-    @Parameterized.Parameter(2)
-    public int sml_type;
-    @Parameterized.Parameter(3)
-    public int num_trees;
-    @Parameterized.Parameter(4)
-    public double learning_rate;
-    @Parameterized.Parameter(5)
-    public int max_depth;
-    @Parameterized.Parameter(6)
-    public double lambda;
-
-    @Parameterized.Parameters
-    public static Collection<Object[]> data() {
-        return Arrays.asList(new Object[][] {
-                {8, 2, 1, 2, 0.3, 6, 1.0},
-        });
-    }
-
     @Test
     public void testXgBoost() {
         executeXgBoost(Types.ExecMode.SINGLE_NODE);
@@ -62,8 +39,8 @@ public class BuiltinXgBoostTest_classification extends AutomatedTestBase {
 
             String HOME = SCRIPT_DIR + TEST_DIR;
             fullDMLScriptName = HOME + TEST_NAME + ".dml";
-            programArgs = new String[]{"-args", input("X"), input("y"), input("R"), String.valueOf(sml_type),
-                    String.valueOf(num_trees), output("M")};
+            programArgs = new String[]{"-args", input("X"), input("y"), input("R"), input("sml_type"),
+                    input("num_trees"), output("M")};
 
             double[][] y = {
                     {1.0},

@@ -40,7 +40,7 @@ m_xgboost = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] R = matr
 
   M = matrix(0,rows=6,cols=0)
   # set the init prediction at first col in M
-  init_prediction_matrix = matrix("0 0 0 0 0 0",rows=nrow(M),cols=1)
+  init_prediction_matrix = matrix(0,rows=nrow(M),cols=1)
   init_prediction_matrix[6,1] = median(y)
   M = cbind(M, init_prediction_matrix)
 
@@ -326,11 +326,7 @@ addOutputRow = function(
         current_node[6,1] = threshold # split value ( 0 if leaf or categorical)
       }
 
-      if (ncol(M) == 0 & nrow(M) == 0) { # first node
-        new_M = current_node
-      } else {
-        new_M = cbind(M, current_node)
-      }
+      new_M = cbind(M, current_node)
 }
 
 
@@ -362,8 +358,7 @@ updateMatrices = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] pre
 
   new_X = matrix(0, rows = 0, cols = 0)
   new_y = matrix(0, rows = 0, cols = 0)
-  zero_vec = matrix(0, rows=nrow(vector), cols=ncol(X))
-  nan_vec = fillMatrixWithNaN(zero_vec) # could not directly set to NaN
+  nan_vec = matrix(NaN, rows=nrow(vector), cols=ncol(X))
   new_X_full = matrix(0, rows = 0, cols=0)
   new_prediction = matrix(0, rows=0, cols=0)
   for(i in 1:nrow(vector)) {
@@ -664,23 +659,11 @@ orderFeature = function (matrix[double] row_vector) return (matrix[double] row_v
 }
 
 
-#-----------------------------------------------------------------------------------------------------------------------
-# INPUT:    m: a nxn matrix which should be set to NaN's in each cell
-# OUTPUT:   new_m: matrix with same dimensions with all NaNs inside
-fillMatrixWithNaN = function(Matrix[Double] m) return (Matrix[Double] new_m) {
-  new_m = matrix(0, rows=nrow(m), cols=ncol(m))
-  for(i in 1:ncol(m))
-  {
-    for(j in 1:nrow(m))
-      new_m[i,j] = 'NaN'
-  }
-}
-
 
 average = function(Matrix[Double] x, Matrix[Double] y) return (Double avg) {
   assert(ncol(x) == 1 & nrow(x) == 1)
   assert(ncol(y) == 1 & nrow(y) == 1)
-  avg = (as.scalar(x) + as.scalar(y)) / 2
+  avg = as.scalar((x + y) / 2)
 }
 
 

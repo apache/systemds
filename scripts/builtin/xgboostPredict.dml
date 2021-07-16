@@ -23,7 +23,7 @@ m_xgboostPredict = function(Matrix[Double] X, Matrix[Double] M, Integer sml_type
   trees_M_offset = calculateTreesOffset(M)
   if(sml_type == 1) # Regression
   {
-    for(entry in 1:nrow(X)) # go though each entry in X and calculate the new prediction
+    parfor(entry in 1:nrow(X)) # go though each entry in X and calculate the new prediction
     {
       output_values = matrix(0, rows=1, cols=0)
 
@@ -43,7 +43,7 @@ m_xgboostPredict = function(Matrix[Double] X, Matrix[Double] M, Integer sml_type
   else # Classification
   {
     assert(sml_type == 2)
-    for(entry in 1:nrow(X)) # go though each entry in X and calculate the new prediction
+    parfor(entry in 1:nrow(X)) # go though each entry in X and calculate the new prediction
     {
       # classification prediction is dependent of the previous prediction, diff to regression
       current_prediction = matrix(as.scalar(initial_prediction), rows=nrow(X), cols=1)

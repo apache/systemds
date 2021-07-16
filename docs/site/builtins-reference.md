@@ -168,14 +168,14 @@ confusionMatrix(P, Y)
 | Y    | Matrix[Double] | ---     | vector of Golden standard One Hot Encoded |
 
 ### Returns
- 
+
 | Name         | Type           | Description |
 | :----------- | :------------- | :---------- |
 | ConfusionSum | Matrix[Double] | The Confusion Matrix Sums of classifications |
 | ConfusionAvg | Matrix[Double] | The Confusion Matrix averages of each true class |
 
 ### Example
- 
+
 ```r
 numClasses = 1
 z = rand(rows = 5, cols = 1, min = 1, max = 9)
@@ -1677,13 +1677,21 @@ M = xgboost(X = X, Y = Y, R = R)
 
 ## `xgboostPredict`-Function
 
-In order to calculate a prediction, XGBoost sums predictions of all its trees. Each tree is not a great predictor on it’s own, but by summing across all trees, XGBoost is able to provide a robust prediction in many cases.
+In order to calculate a prediction, XGBoost sums predictions of all its trees. Each tree is not a great predictor on it’s own, but by summing across all trees, XGBoost is able to provide a robust prediction in many cases. Depending on our supervised machine learning type use `xgboostPredictRegression()` or `xgboostPredictClassification()` to predict the labels. 
 
 ### Usage
 
 ```r
-y_pred = xgboostPredict(X = X, M = M, sml_type=1)
+y_pred = xgboostPredictRegression(X = X, M = M)
 ```
+
+or
+
+```
+y_pred = xgboostPredictClassification(X = X, M = M)
+```
+
+
 
 ### Arguments
 
@@ -1691,14 +1699,13 @@ y_pred = xgboostPredict(X = X, M = M, sml_type=1)
 | :------------ | :------------- | ------- | :----------------------------------------------------------- |
 | X             | Matrix[Double] | ---     | Feature matrix X; categorical features needs to be one-hot-encoded |
 | M             | Matrix[Double] | ---     | Trained model returned from `xgboost`. Each column of the matrix corresponds to a node in the learned model <br />Detailed description can be found in `xgboost.dml` |
-| sml_type      | Integer        | 1       | Supervised machine learning type: 1 = Regression(default), 2 = Classification |
 | learning_rate | Double         | 0.3     | alias: eta. After each boosting step the learning rate controls the weights of the new predictions. Should be the same as at `xgboost`-function call |
 
 ### Returns
 
 | Name | Type           | Default | Description                                                  |
 | :--- | :------------- | ------- | :----------------------------------------------------------- |
-| P    | Matrix[Double] | ---     | The predictions of the samples using the xgboost model. (y_prediction) |
+| P    | Matrix[Double] | ---     | xgboostPredictRegression: The prediction of the samples using the xgboost model. (y_prediction)<br />xgboostPredictClassification: The probability of the samples being 1 (like XGBClassifier.predict_proba() in Python) |
 
 ### Example
 
@@ -1715,6 +1722,6 @@ Y = matrix("1.0
             8.0", rows=5, cols=1)
 R = matrix("1.0 1.0 1.0 1.0 1.0", rows=1, cols=5)
 M = xgboost(X = X, Y = Y, R = R, num_trees = 10, learning_rate = 0.4)
-P = xgboostPredict(X = X, M = M, learning_rate = 0.4)
+P = xgboostPredictRegression(X = X, M = M, learning_rate = 0.4)
 ```
 

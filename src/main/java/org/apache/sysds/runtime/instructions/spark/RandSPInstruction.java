@@ -756,7 +756,8 @@ public class RandSPInstruction extends UnarySPInstruction {
 		JavaPairRDD<MatrixIndexes, MatrixBlock> mbRDD = 
 				RDDConverterUtils.binaryCellToBinaryBlock(sec.getSparkContext(), miRDD, mcOut, true);
 		
-		sec.getDataCharacteristics(output.getName()).setNonZeros(lrows);
+		//step 5: output handling, incl meta data
+		sec.getDataCharacteristics(output.getName()).set(mcOut);
 		sec.setRDDHandleForVariable(output.getName(), mbRDD);
 	}
 	

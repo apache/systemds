@@ -61,10 +61,10 @@ public class BuiltinMatrixProfileTest extends AutomatedTestBase
 		runMatrixProfileTest(4, 0.6, "TRUE", ExecType.CP);
 	}
 
-//	@Test
-//	public void testMatrixProfileSPARK() throws IOException {
-//		runMatrixProfileTest(4, 1.0, "FALSE", ExecType.SPARK);
-//	}
+	@Test
+	public void testMatrixProfileSPARK() throws IOException {
+		runMatrixProfileTest(4, 0.02, "FALSE", ExecType.SPARK);
+	}
 
 	
 	private void runMatrixProfileTest(Integer window_size, Double sample_percent, String is_verbose, ExecType instType) throws IOException

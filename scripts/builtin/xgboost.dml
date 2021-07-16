@@ -79,8 +79,7 @@ m_xgboost = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] R = matr
 calculateNewPredictions = function(Matrix[Double] X, Integer sml_type, Matrix[Double] current_prediction,
     Double learning_rate, Matrix[Double] curr_M)
     return (Matrix[Double] new_prediction) {
-  assert(ncol(current_prediction) == 1)
-  assert(nrow(current_prediction) == nrow(X)) # each Entry should have an own initial prediction
+
   new_prediction = matrix(0, rows=nrow(current_prediction), cols=1)
   start_node_current_tree = curr_M[,1]
 
@@ -631,29 +630,26 @@ splitMatrixByValue = function(Matrix[Double] X, Double value) return (Matrix[Dou
 # OUTPUT:   left: a 1xn matrix with 1.0 if the value is smaller or 0.0 if it is bigger
 #           right: a 1xn matrix with 1.0 if the value is bigger or 0.0 if it is smaller
 splitMatrixByValueLoop = function(Matrix[Double] curr_X, Matrix[Double] X, Double value) return (Matrix[Double] left, Matrix[Double] right) {
-  left = matrix(0, rows=0, cols=1)
-  right = matrix(0, rows=0, cols=1)
-  one_vec = matrix(1, rows=1, cols=1)
-  zero_vec = matrix(0, rows=1, cols=1)
+  left = matrix(0, rows=nrow(X), cols=1)
+  right = matrix(0, rows=nrow(X), cols=1)
 
-  for(i in 1:nrow(X)) {
+  for(i in 1:nrow(X))
+  {
     if (as.scalar(X[i,]) == as.scalar(curr_X[i,]))  # if same row in curr_X and X
     {
       if (as.scalar(X[i,]) < value)
       {
-        left = rbind(left, one_vec[1,]) # add 1 to left and 0 to right vector
-        right = rbind(right, zero_vec[1,])
+        left[i,1] = 1
       }
       else
       {
-        right = rbind(right, one_vec[1,]) # add 1 to right and 0 to left vector
-        left = rbind(left, zero_vec[1,])
+        right[i,1] = 1
       }
     }
-    else
+    else # 0 in left and right if not used in this node
     {
-      left = rbind(left, zero_vec[1,]) # add 0 to both vectors
-      right = rbind(right, zero_vec[1,])
+      left[i,1] = 0
+      right[i,1] = 0
     }
   }
 }
@@ -666,27 +662,23 @@ splitMatrixByValueLoop = function(Matrix[Double] curr_X, Matrix[Double] X, Doubl
 splitMatrixByCategory = function(Matrix[Double] curr_X, Matrix[Double] X) return (Matrix[Double] left, Matrix[Double] right) {
   assert(ncol(curr_X) == 1)
   assert(ncol(X) == 1)
-
-  left = matrix(0, rows=0, cols=1)
-  right = matrix(0, rows=0, cols=1)
+  left = matrix(0, rows=nrow(X), cols=1)
+  right = matrix(0, rows=nrow(X), cols=1)
 
   for(i in 1:nrow(curr_X))
   {
     if (as.scalar(curr_X[i,]) == 1) # categorical true
     {
-      left = rbind(left, curr_X[i,])
-      right = rbind(right, matrix(0, rows=1, cols=1))
+      left[i,1] = 1
     }
     else if(as.scalar(curr_X[i,]) == 0)  # categorical false
     {
-      left = rbind(left, curr_X[i,])
-      right = rbind(right, matrix(1, rows=1, cols=1))
+      right[i,1] = 1
     }
     else  # replace with NaN if not used for the current samples
     {
-      assert(as.scalar(curr_X[i,]) == 'NaN')
-      left = rbind(left, curr_X[i,])
-      right = rbind(right, curr_X[i,])
+      left[i,1] = 'NaN'
+      right[i,1] = 'NaN'
     }
   }
 }

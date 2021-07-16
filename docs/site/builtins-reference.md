@@ -565,7 +565,7 @@ It takes the list of layers returned by the `ffTrain`-function.
 ### Usage
 
 ```r
-prediction = ffPredict(model, x_test)
+prediction = ffPredict(model, x_test, 128)
 ```
 
 ### Arguments
@@ -588,7 +588,7 @@ prediction = ffPredict(model, x_test)
 
 model = ffTrain(x_train, y_train, 128, 10, 0.001, ...)
 
-prediction = ffPredict(model, x_test)
+prediction = ffPredict(model=model, X=x_test)
 ```
 
 ## `ffTrain`-Function
@@ -642,7 +642,7 @@ When validation set is used function outputs validation loss to the stdout after
 
 model = ffTrain(X=x_train, Y=y_train, batch_size=128, epochs=10, learning_rate=0.001, out_activation="sigmoid", loss_fcn="cel", shuffle=TRUE, validation_split=0.2, verbose=TRUE)
 
-prediction = ffPredict(model, x_train)
+prediction = ffPredict(model=model, X=x_train)
 ```
 
 

@@ -111,7 +111,22 @@ public class BlocksizeTest extends AutomatedTestBase
 	public void testSpark2000() {
 		runBlocksizeTest(1000, 2000, ExecMode.SPARK);
 	}
-
+	
+	@Test
+	public void testSingleNode2xRowsCols() {
+		runBlocksizeTest(1000, 7000, ExecMode.SINGLE_NODE);
+	}
+	
+	@Test
+	public void testHybrid2xRowsCols() {
+		runBlocksizeTest(1000, 7000, ExecMode.HYBRID);
+	}
+	
+	@Test
+	public void testSpark2xRowsCols() {
+		//test for invalid shuffle-free reblock
+		runBlocksizeTest(1000, 7000, ExecMode.SPARK);
+	}
 	
 	private void runBlocksizeTest(int inBlksize, int outBlksize, ExecMode mode)
 	{

@@ -35,6 +35,8 @@ import org.apache.sysds.lops.WeightedSquaredLoss.WeightsType;
 import org.apache.sysds.lops.WeightedUnaryMM;
 import org.apache.sysds.lops.WeightedUnaryMM.WUMMType;
 import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
+import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
 import org.apache.sysds.runtime.matrix.operators.Operator;
@@ -164,5 +166,13 @@ public abstract class QuaternaryFEDInstruction extends ComputationFEDInstruction
 		inst_str += Lop.OPERAND_DELIMITOR + "1"; // num threads
 
 		return inst_str;
+	}
+	
+	protected void setOutputDataCharacteristics(MatrixObject X, MatrixObject U, MatrixObject V, ExecutionContext ec) {
+		long rows = X.getNumRows() > 1 ? X.getNumRows() : U.getNumRows();
+		long cols = X.getNumColumns() > 1 ? X.getNumColumns()
+			: (U.getNumColumns() == V.getNumRows() ? V.getNumColumns() : V.getNumRows());
+		MatrixObject out = ec.getMatrixObject(output);
+		out.getDataCharacteristics().set(rows, cols, (int) X.getBlocksize());
 	}
 }

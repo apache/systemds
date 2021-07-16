@@ -54,6 +54,8 @@ limitations under the License.
     * [`intersect`-Function](#intersect-function)
     * [`KMeans`-Function](#KMeans-function)
     * [`KNN`-function](#KNN-function)
+    * [`lenetTrain`-Function](#lenetTrain-function)
+    * [`lenetPredict`-Function](#lenetPredict-function)
     * [`lm`-Function](#lm-function)
     * [`lmCG`-Function](#lmcg-function)
     * [`lmDS`-Function](#lmds-function)
@@ -585,7 +587,6 @@ prediction = ffPredict(model, x_test, 128)
 ### Example
 
 ```r
-
 model = ffTrain(x_train, y_train, 128, 10, 0.001, ...)
 
 prediction = ffPredict(model=model, X=x_test)
@@ -618,8 +619,8 @@ model = ffTrain(X=x_train, Y=y_train, out_activation="sigmoid", loss_fcn="cel")
 | loss_fcn         | String         | required | User specified loss function |
 | shuffle          | Boolean        | False    | Shuffle dataset|
 | validation_split | Double         | 0.0      | Fraction of dataset to be used as validation set|
-| seed             | Integer        | -1       | Seed for model initialization |
-| verbose          | Boolean        | False    | Flag that indicates if function should print to stdout |
+| seed             | Integer        | -1       | Seed for model initialization. Seed value of -1 will generate random seed |
+| verbose          | Boolean        | False    | Flag indicates if function should print to stdout |
 
 User can specify following output layer activations:
 `sigmoid`, `relu`, `lrelu`, `tanh`, `softmax`, `logits` (no activation).
@@ -639,7 +640,6 @@ When validation set is used function outputs validation loss to the stdout after
 ### Example
 
 ```r
-
 model = ffTrain(X=x_train, Y=y_train, batch_size=128, epochs=10, learning_rate=0.001, out_activation="sigmoid", loss_fcn="cel", shuffle=TRUE, validation_split=0.2, verbose=TRUE)
 
 prediction = ffPredict(model=model, X=x_train)
@@ -1165,6 +1165,97 @@ T = rand(rows= 3, cols = 20) # query rows, and columns
 CL = matrix(seq(1,100), 100, 1)
 k = 3
 [NNR, PR, FI] = knn(Train=X, Test=T, CL=CL, k_value=k, predict_con_tg=1)
+```
+
+
+## `lenetTrain`-Function
+
+The `lenetTrain`-function trains LeNet CNN. The architecture of the
+networks is: conv1 -> relu1 -> pool1 -> conv2 -> relu2 -> pool2 -> affine3 -> relu3 -> affine4 -> softmax
+### Usage
+
+```r
+model = lenetTrain(images, labels, images_val, labels_val, C, Hin, Win, 128, 3, 0.007, 0.9, 0.95, 5e-04, TRUE, -1)
+```
+
+### Arguments
+
+| Name        | Type           | Default  | Description |
+| :---------- | :------------- | -------- | :---------- |
+| X           | Matrix[Double] | required | Input data matrix, of shape (N, C\*Hin\*Win) |
+| Y           | Matrix[Double] | required | Target matrix, of shape (N, K.) |
+| X_val       | Matrix[Double] | required | Validation data matrix, of shape (N, C\*Hin\*Win) |
+| Y_val       | Matrix[Double] | required | Validation target matrix, of shape (N, K) |
+| C           | Integer        | required | Number of input channels (dimensionality of input depth) |
+| Win         | Integer        | required | Input width |
+| Hin         | Integer        | required | Input height |
+| batch_size  | Integer        | 64       | Batch size |
+| epochs      | Integer        | 20       | Number of epochs |
+| lr          | Double         | 0.01     | Learning rate |
+| mu          | Double         | 0.9      | Momentum value |
+| decay       | Double         | 0.95     | Learning rate decay |
+| lambda      | Double         | 5e-04    | Regularization strength |
+| seed        | Integer        | -1       | Seed for model initialization. Seed value of -1 will generate random seed. |
+| verbose     | Boolean        | FALSE    | Flag indicates if function should print to stdout |
+
+
+### Returns
+
+| Type           | Description |
+| :------------- | :---------- |
+| list[unknown] | Trained model which can be used in lenetPredict. |
+
+### Example
+
+```r
+data = read(path, format="csv")
+images = images = train_data[,2:ncol(data)]
+labels_int = data[,1]
+C = 1
+Hin = 28
+Win = 28
+
+# Scale images to [-1,1], and one-hot encode the labels
+n = nrow(train_data)
+images = (images / 255.0) * 2 - 1
+labels = table(seq(1, n), labels_int+1, n, 10)
+
+model = lenetTrain(images, labels, images_val, labels_val, C, Hin, Win, 128, 3, 0.007, 0.9, 0.95, 5e-04, TRUE, -1)
+```
+
+
+## `lenetPredict`-Function
+
+The `lenetPredict`-function makes prediction given the data and trained LeNet model.
+### Usage
+
+```r
+probs = lenetPredict(model=model, X=images, C=C, Hin=Hin, Win=Win)
+```
+
+### Arguments
+
+| Name        | Type           | Default  | Description |
+| :---------- | :------------- | -------- | :---------- |
+| model       | list[unknown]  | required | Trained LeNet model |
+| X           | Matrix[Double] | required | Input data matrix, of shape (N, C\*Hin\*Win) |
+| C           | Integer        | required | Number of input channels (dimensionality of input depth) |
+| Win         | Integer        | required | Input width |
+| Hin         | Integer        | required | Input height |
+| batch_size  | Integer        | 64       | Batch size |
+
+
+### Returns
+
+| Type           | Description |
+| :------------- | :---------- |
+| Matrix[Double] | Predicted values |
+
+### Example
+
+```r
+model = lenetTrain(images, labels, images_val, labels_val, C, Hin, Win, 128, 3, 0.007, 0.9, 0.95, 5e-04, TRUE, -1)
+probs = lenetPredict(model=model, X=images_test, C=C, Hin=Hin, Win=Win)
 ```
 
 

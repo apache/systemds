@@ -18,13 +18,13 @@
 # under the License.
 #-------------------------------------------------------------
 
-# This builtin function makes prediction given data and trained LeNet Model
+# This builtin function makes prediction given data and trained LeNet model
 #
 # INPUT PARAMETERS:
 # --------------------------------------------------------------------------------------------
 # NAME        TYPE           DEFAULT   MEANING
 # --------------------------------------------------------------------------------------------
-# Model       List[unknown]   ---      Trained LeNet model
+# model       List[unknown]   ---      Trained LeNet model
 # X           Matrix[Double]  ---      Input data matrix, of shape (N, C*Hin*Win)
 # C           Integer         ---      Number of input channels
 # Hin         Integer         ---      Input height
@@ -32,7 +32,7 @@
 # batch_size  Integer         ---      Batch size
 # --------------------------------------------------------------------------------------------
 # OUTPUT: 
-# pred      Matrix[Double]  ---      Predicted value
+# pred      Matrix[Double]  ---      Predicted values
 #
 source("nn/layers/lenetForwardPass.dml") as lenet_fw
 

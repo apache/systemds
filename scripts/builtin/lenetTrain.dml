@@ -20,7 +20,7 @@
 #-------------------------------------------------------------
 
 #
-# This builtin function trains LeNet ANN. The architecture of the
+# This builtin function trains LeNet CNN. The architecture of the
 # networks is:conv1 -> relu1 -> pool1 -> conv2 -> relu2 -> pool2 -> 
 # affine3 -> relu3 -> affine4 -> softmax
 #
@@ -30,6 +30,8 @@
 # --------------------------------------------------------------------------------------------
 # X                 Matrix[double]    ---       Input data matrix, of shape (N, C*Hin*Win)
 # Y                 Matrix[Double]    ---       Target matrix, of shape (N, K)
+# X_val             Matrix[double]    ---       Validation data matrix, of shape (N, C*Hin*Win)
+# Y_val             Matrix[Double]    ---       Validation target matrix, of shape (N, K)
 # C                 Integer           ---       Number of input channels (dimensionality of input depth)
 # Hin               Integer           ---       Input width
 # Win               Integer           ---       Input height
@@ -40,7 +42,7 @@
 # decay             Double            0.95      Learning rate decay
 # lambda            Double            5e-04     Regularization strength
 # seed              Integer           -1        Seed for model initialization
-# verbose           Boolean           FALSE     Flag which indicates if function should print to stdout
+# verbose           Boolean           FALSE     Flag indicates if function should print to stdout
 # --------------------------------------------------------------------------------------------
 # OUTPUT: 
 # model           List[unknown]     ---       Trained model which can be used in lenetPredict

@@ -56,6 +56,7 @@ limitations under the License.
     * [`lmCG`-Function](#lmcg-function)
     * [`lmDS`-Function](#lmds-function)
     * [`lmPredict`-Function](#lmPredict-function)
+    * [`matrixProfile`-Function](#matrixProfile-function)
     * [`mdedup`-Function](#mdedup-function)
     * [`mice`-Function](#mice-function)
     * [`msvm`-Function](#msvm-function)
@@ -197,7 +198,7 @@ y = toOneHot(X, numClasses)
 
 ## `correctTypos`-Function
 
-The `correctTypos` - function tries to correct typos in a given frame. This algorithm operates on the assumption that most strings are correct and simply swaps strings that do not occur often with similar strings that occur more often. If correct is set to FALSE only prints suggested corrections without effecting the frame.
+The `correctTypos` - function tries to correct typos in a given frame. This algorithm operates on the assumption that most strings are correct and simply swaps strings that do not occur often with similar strings that occur more often. If correct is set to FALSE only prints suggested corrections without affecting the frame.
 
 ### Usage
 
@@ -1256,6 +1257,32 @@ y = X %*% rand(rows = ncol(X), cols = 1)
 w = lm(X = X, y = y)
 yp = lmPredict(X = X, B = w, ytest=matrix(0,1,1))
 ```
+
+
+## `matrixProfile`-Function
+
+The `matrixProfile`-function implements the SCRIMP algorithm for efficient time-series analysis. 
+
+### Usage
+```r
+matrixProfile(ts, window_size, sample_percent, is_verbose)
+```
+
+### Arguments
+| Name          | Type             | Default    | Description |
+| :------       | :-------------   | --------   | :---------- |
+| ts            | Matrix           | ---        | Input Frame X |
+| window_size   | Integer          | 4          | Sliding window size |
+| sample_percent| Double           | 1.0        | Degree of approximation between zero and one (1 computes the exact solution) |
+| verbose       | Boolean          | False      | Print debug information |
+
+### Returns
+
+| Type            | Default  | Description |
+| :-------------- | -------- | :---------- |
+| Matrix[Double]  | ---      | The computed matrix profile distances |
+| Matrix[Integer] | ---      | Indices of least distances |
+
 
 
 ## `mdedup`-Function

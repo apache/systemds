@@ -177,6 +177,7 @@ public enum Builtins {
 	LSTM_BACKWARD("lstm_backward", false, ReturnType.MULTI_RETURN),
 	LU("lu", false, ReturnType.MULTI_RETURN),
 	MAP("map", false),
+	MATRIXPROFILE("matrixProfile", true),
 	MAX("max", "pmax", false),
 	MAX_POOL("max_pool", false),
 	MAX_POOL_BACKWARD("max_pool_backward", false),

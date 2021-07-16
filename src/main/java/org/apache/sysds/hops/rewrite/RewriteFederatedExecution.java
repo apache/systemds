@@ -88,9 +88,7 @@ public class RewriteFederatedExecution extends HopRewriteRule {
 			root.resetVisitStatus();
 		}
 		for ( Hop root : roots ){
-			// Depth first to get to the input
-			for ( Hop input : root.getInput() )
-				visitFedPlanHop(input);
+			visitFedPlanHop(root);
 		}
 		return roots;
 	}
@@ -100,21 +98,25 @@ public class RewriteFederatedExecution extends HopRewriteRule {
 	 * @param currentHop the Hop from which the DAG is visited
 	 */
 	private void visitFedPlanHop(Hop currentHop){
+		if ( currentHop.isVisited() )
+			return;
 		if ( currentHop.getInput() != null && currentHop.getInput().size() > 0 && !isFederatedDataOp(currentHop) ){
 			// Depth first to get to the input
 			for ( Hop input : currentHop.getInput() )
 				visitFedPlanHop(input);
 		} else if ( isFederatedDataOp(currentHop) ) {
 			// leaf federated node
+			//TODO: This will block the cases where the federated DataOp is based on input that are also federated.
+			// This means that the actual federated leaf nodes will never be reached.
 			currentHop.setFederatedOutput(FederatedOutput.FOUT);
 		}
-
 		if ( ( isFedInstSupportedHop(currentHop) ) ){
 			// The Hop can be FOUT or LOUT or None. Check utility of FOUT vs LOUT vs None.
 			currentHop.setFederatedOutput(getHighestUtilFedOut(currentHop));
 		}
 		else
 			currentHop.setFederatedOutput(FEDInstruction.FederatedOutput.NONE);
+		currentHop.setVisited();
 	}
 
 	/**

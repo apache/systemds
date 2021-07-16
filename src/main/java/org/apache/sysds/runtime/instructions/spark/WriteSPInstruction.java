@@ -178,9 +178,9 @@ public class WriteSPInstruction extends SPInstruction implements LineageTraceabl
 		//get input rdd
 		JavaPairRDD<MatrixIndexes,MatrixBlock> in1 = sec.getBinaryMatrixBlockRDDHandleForVariable( input1.getName() );
 		DataCharacteristics mc = sec.getDataCharacteristics(input1.getName());
-
-		if( fmt == FileFormat.MM || fmt == FileFormat.TEXT )
-		{
+		DataCharacteristics mcOut = mc; //by reference
+		
+		if( fmt == FileFormat.MM || fmt == FileFormat.TEXT ) {
 			//piggyback nnz maintenance on write
 			LongAccumulator aNnz = null;
 			if( !mc.nnzKnown() ) {
@@ -208,16 +208,14 @@ public class WriteSPInstruction extends SPInstruction implements LineageTraceabl
 			if( !mc.nnzKnown() )
 				mc.setNonZeros( aNnz.value() );
 		}
-		else if( fmt == FileFormat.CSV )
-		{
+		else if( fmt == FileFormat.CSV ) {
 			if( mc.getRows() == 0 || mc.getCols() == 0 ) {
 				throw new IOException("Write of matrices with zero rows or columns"
 					+ " not supported ("+mc.getRows()+"x"+mc.getCols()+").");
 			}
 
-			LongAccumulator aNnz = null;
-
 			//piggyback nnz computation on actual write
+			LongAccumulator aNnz = null;
 			if( !mc.nnzKnown() ) {
 				aNnz = sec.getSparkContext().sc().longAccumulator("nnz");
 				in1 = in1.mapValues(new ComputeBinaryBlockNnzFunction(aNnz));
@@ -234,9 +232,10 @@ public class WriteSPInstruction extends SPInstruction implements LineageTraceabl
 		else if( fmt == FileFormat.BINARY ) {
 			//reblock output if needed
 			int blen = Integer.parseInt(input4.getName());
-			DataCharacteristics mcOut = new MatrixCharacteristics(mc).setBlocksize(blen);
-			if( ConfigurationManager.getBlocksize() != blen )
-				in1 = RDDConverterUtils.binaryBlockToBinaryBlock(in1, mc, mcOut);
+			boolean nonDefaultBlen = ConfigurationManager.getBlocksize() != blen;
+			if( nonDefaultBlen )
+				in1 = RDDConverterUtils.binaryBlockToBinaryBlock(in1, mc,
+					new MatrixCharacteristics(mc).setBlocksize(blen));
 			
 			//piggyback nnz computation on actual write
 			LongAccumulator aNnz = null;
@@ -248,8 +247,10 @@ public class WriteSPInstruction extends SPInstruction implements LineageTraceabl
 			//save binary block rdd on hdfs
 			in1.saveAsHadoopFile(fname, MatrixIndexes.class, MatrixBlock.class, SequenceFileOutputFormat.class);
 
-			if(!mc.nnzKnown())
+			if( !mc.nnzKnown() ) //update nnz
 				mc.setNonZeros(aNnz.value().longValue());
+			if( nonDefaultBlen )
+				mcOut = new MatrixCharacteristics(mc).setBlocksize(blen);
 		}
 		else if(fmt == FileFormat.LIBSVM) {
 			if(mc.getRows() == 0 || mc.getCols() == 0) {
@@ -257,17 +258,16 @@ public class WriteSPInstruction extends SPInstruction implements LineageTraceabl
 					"Write of matrices with zero rows or columns" + " not supported (" + mc.getRows() + "x" + mc
 					.getCols() + ").");
 			}
-
-			LongAccumulator aNnz = null;
-
+			
 			//piggyback nnz computation on actual write
+			LongAccumulator aNnz = null;
 			if(!mc.nnzKnown()) {
 				aNnz = sec.getSparkContext().sc().longAccumulator("nnz");
 				in1 = in1.mapValues(new ComputeBinaryBlockNnzFunction(aNnz));
 			}
 
 			JavaRDD<String> out = RDDConverterUtils.binaryBlockToLibsvm(in1, 
-					mc, (FileFormatPropertiesLIBSVM) formatProperties, true);
+				mc, (FileFormatPropertiesLIBSVM) formatProperties, true);
 
 			customSaveTextFile(out, fname, false);
 
@@ -280,7 +280,7 @@ public class WriteSPInstruction extends SPInstruction implements LineageTraceabl
 		}
 
 		// write meta data file
-		HDFSTool.writeMetaDataFile (fname + ".mtd", ValueType.FP64, mc, fmt, formatProperties);
+		HDFSTool.writeMetaDataFile(fname + ".mtd", ValueType.FP64, mcOut, fmt, formatProperties);
 	}
 
 	protected void processFrameWriteInstruction(SparkExecutionContext sec, String fname, FileFormat fmt, ValueType[] schema)

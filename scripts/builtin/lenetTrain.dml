@@ -58,9 +58,10 @@ source("nn/layers/softmax.dml") as softmax
 source("nn/optim/sgd_nesterov.dml") as sgd_nesterov
 source("nn/layers/lenetForwardPass.dml") as lenet_fw
 
-m_lenetTrain = function(Matrix[Double] X, Matrix[Double] Y, Integer C, Integer Hin, Integer Win, 
-Integer batch_size=64, Integer epochs=20, Double lr=0.01, Double mu=0.9, Double decay=0.95, 
-Double lambda=5e-04, Boolean verbose=FALSE, Integer seed=-1)
+m_lenetTrain = function(Matrix[Double] X, Matrix[Double] Y, Matrix[Double] X_val, 
+Matrix[Double] Y_val, Integer C, Integer Hin, Integer Win, Integer batch_size=64, 
+Integer epochs=20, Double lr=0.01, Double mu=0.9, Double decay=0.95, Double lambda=5e-04, 
+Boolean verbose=FALSE, Integer seed=-1)
   return (List[unknown] model) {
 
   N = nrow(X)
@@ -95,6 +96,8 @@ Double lambda=5e-04, Boolean verbose=FALSE, Integer seed=-1)
   iters = ceil(N / batch_size)
   for (e in 1:epochs) {
     loss = 0
+    val_loss = 0
+    val_acc = 0
     for(i in 1:iters) {
       # Get next batch
       beg = ((i-1) * batch_size) %% N + 1
@@ -107,7 +110,12 @@ Double lambda=5e-04, Boolean verbose=FALSE, Integer seed=-1)
       cache = lenet_fw::lenetForward(X=X_batch, C=C, Hin=Hin, Win=Win, model=model)
       
       # loss
-      loss = loss + cross_entropy_loss::forward(as.matrix(cache["probs"]), y_batch)
+      if(verbose){
+        loss = loss + cross_entropy_loss::forward(as.matrix(cache["probs"]), y_batch)
+        val_cache = lenet_fw::lenetForward(X=X_val, C=C, Hin=Hin, Win=Win, model=model)
+        val_loss = val_loss + cross_entropy_loss::forward(as.matrix(val_cache["probs"]), Y_val)
+        val_acc = val_acc + mean(rowIndexMax(as.matrix(val_cache["probs"])) == rowIndexMax(Y_val))
+      }
       
       dprobs = cross_entropy_loss::backward(as.matrix(cache["probs"]), y_batch)
 
@@ -127,7 +135,8 @@ Double lambda=5e-04, Boolean verbose=FALSE, Integer seed=-1)
     }
     
     if(verbose) {
-      print("Epoch: " + e + ", Train loss: " + loss/iters)
+      print("Epoch: " + e + ", Train loss: " + loss/iters + ", Validation loss: " + 
+      val_loss/iters + ", Validation accuracy: " + val_acc/iters)
     }
     # Anneal momentum towards 0.999
     mu = mu + (0.999 - mu)/(1+epochs-e)

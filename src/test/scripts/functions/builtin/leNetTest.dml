@@ -23,24 +23,34 @@ path = $1
 out_path = $2
 # Load data and take first 100 images
 data = read(path, format="csv")
-data = data[1:500,]
+train_data = data[1:500,]
+val_data = data[501:550,]
 C = 1
 Hin = 28
 Win = 28
 epochs = 10
 
 # Extract images and labels
-images = data[,2:ncol(data)]
-labels_int = data[,1]
+images = train_data[,2:ncol(train_data)]
+labels_int = train_data[,1]
+
+images_val = val_data[,2:ncol(val_data)]
+labels_int_val = val_data[,1]
 
 
 # Scale images to [-1,1], and one-hot encode the labels
-n = nrow(data)
+n = nrow(train_data)
 images = (images / 255.0) * 2 - 1
 labels = table(seq(1, n), labels_int+1, n, 10)
 
+n = nrow(val_data)
+images_val = (images_val / 255.0) * 2 - 1
+labels_val = table(seq(1, n), labels_int_val+1, n, 10)
+
+
 # Train
-model = lenetTrain(images, labels, C, Hin, Win, 128, 3, 0.007, 0.9, 0.95, 5e-04, TRUE, -1)
+model = lenetTrain(images, labels, images_val, labels_val, C, Hin, Win, 128, 3, 
+                                                0.007, 0.9, 0.95, 5e-04, TRUE, -1)
 
 # Predict on the training set to test capacity of the network
 probs = lenetPredict(model=model, X=images, C=C, Hin=Hin, Win=Win)

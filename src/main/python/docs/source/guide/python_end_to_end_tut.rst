@@ -164,7 +164,7 @@ We will take a new and raw dataset using the csv format and read it with SystemD
 As mentioned before we want to use the Adult dataset for this task.
 If one wants to skip the explanation then the full script is available at the bottom of this page.
 
-Step 1: metadata and reading
+Step 1: Metadata and reading
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 First of all, we need to download the dataset and create a mtd-file for specifying different properties that the dataset has.
@@ -232,7 +232,7 @@ As already mentioned, SystemDS supports lazy execution by default, which means t
         schema=SCHEMA
     )
 
-Step 2: defining preprocess operations
+Step 2: Defining preprocess operations
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Now that the read operation has been declared, we can define an additional file for the further preprocessing of the dataset.
@@ -318,7 +318,7 @@ The preprocess.dml file can be read with the following command:
 
 The print_imported_methods flag can be used to verify whether every method has been parsed correctly.
 
-Step 3: applying the preprocessing steps
+Step 3: Applying the preprocessing steps
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Generally speaking we would use the transform_encode function on the train dataset and with the returned encoding call the transform_apply function on the test dataset.
@@ -352,7 +352,7 @@ file gets parsed such that we can directly call the function names from the Pyth
     Yt = PREPROCESS_package.replace_value(Yt, 3.0, 1.0)
     Yt = PREPROCESS_package.replace_value(Yt, 4.0, 2.0)
 
-Step 4: training and confusion matrix
+Step 4: Training and confusion matrix
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Now that we prepared the data we can use the multiLogReg function.
@@ -421,7 +421,7 @@ Level 3
 In this level we want to show how we can integrate a custom built algorithm using the Python API.
 For this we will introduce another dml file, which can be used to train a basic feed forward network using a parameter server.
 
-Step 1: obtain data
+Step 1: Obtain data
 ~~~~~~~~~~~~~~~~~~~
 
 For the whole setup please refer to level 2, Step 1 to 3.
@@ -460,7 +460,7 @@ For the whole setup please refer to level 2, Step 1 to 3.
     Yt = PREPROCESS_package.replace_value(Yt, 3.0, 1.0)
     Yt = PREPROCESS_package.replace_value(Yt, 4.0, 2.0)
 
-Step 2: load the algorithm
+Step 2: Load the algorithm
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 We use a neural network with 2 hidden layers, each consisting of 200 neurons.
@@ -468,3 +468,86 @@ First we need to source the dml-file for neural networks.
 This file includes all the necessary functions for training, evaluating and storing the model.
 The returned object of the source call is further used for calling the functions.
 
+.. code-block:: python
+    FFN_package = sds.source(neural_net_src_path, "fnn", print_imported_methods=True))
+
+Step 3: Training the neural network
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Training a neural network in SystemDS using the train function is very straightforward.
+The first two arguments are the training features and the target values we want to fit our model on.
+Then we need set the hyperparameters of the model.
+We choose to train for 1 epoch with a batch size of 16 and a learning rate of 0.01, which are common parameters for neural networks.
+The seed argument ensures that running the code again yields the same results.
+
+.. code-block:: python
+
+    epochs = 1
+    batch_size = 16
+    learning_rate = 0.01
+    seed = 42
+
+    network = FFN_package.train(X, Y, epochs, batch_size, learning_rate, seed)
+
+Step 4: Saving the model
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+For later usage we can save the trained model.
+We only need to specify the name of our model and the file-path.
+This call stores the weights and biases of our model.
+
+.. code-block:: python
+    FFN_package.save_model(network, '"model/python_FFN/"').compute(verbose=True)
+
+
+Full Script
+~~~~~~~~~~~
+
+The complete script now can be seen here:
+.. code-block:: python
+
+    import numpy as np
+    from systemds.context import SystemDSContext
+    from systemds.operator.algorithm import multiLogReg, multiLogRegPredict, confusionMatrix
+
+    train_count = 32561
+    test_count = 16281
+
+    dataset_path_train = "adult/train_data.csv"
+    dataset_path_test = "adult/test_data.csv"
+    dataset_jspec = "adult/jspec.json"
+    preprocess_src_path = "preprocess.dml"
+    neural_net_src_path = "neural_net_source.dml"
+
+    sds = SystemDSContext()
+
+    SCHEMA = '"DOUBLE,STRING,DOUBLE,STRING,DOUBLE,STRING,STRING,STRING,STRING,STRING,DOUBLE,DOUBLE,DOUBLE,STRING,STRING"'
+
+    F1 = sds.read(dataset_path_train, schema=SCHEMA)
+    F2 = sds.read(dataset_path_test,  schema=SCHEMA)
+
+    jspec = sds.read(dataset_jspec, data_type="scalar", value_type="string")
+    PREPROCESS_package = sds.source(preprocess_src_path, "preprocess", print_imported_methods=True)
+
+    X1 = F1.rbind(F2)
+    X1, M1 = X1.transform_encode(spec=jspec)
+
+    X = PREPROCESS_package.get_X(X1, 1, train_count)
+    Y = PREPROCESS_package.get_Y(X1, 1, train_count)
+
+    Xt = PREPROCESS_package.get_X(X1, train_count, train_count+test_count)
+    Yt = PREPROCESS_package.get_Y(X1, train_count, train_count+test_count)
+
+    Yt = PREPROCESS_package.replace_value(Yt, 3.0, 1.0)
+    Yt = PREPROCESS_package.replace_value(Yt, 4.0, 2.0)
+
+    FFN_package = sds.source(neural_net_src_path, "fnn", print_imported_methods=True)
+
+    epochs = 1
+    batch_size = 16
+    learning_rate = 0.01
+    seed = 42
+
+    network = FFN_package.train(X, Y, epochs, batch_size, learning_rate, seed)
+
+    FFN_package.save_model(network, '"model/python_FFN/"').compute(verbose=True)

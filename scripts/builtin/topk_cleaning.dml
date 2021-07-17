@@ -121,8 +121,9 @@ s_topk_cleaning = function(Frame[Unknown] data, Frame[Unknown] metaData = as.fra
                    "4", "MVI", "OTLR", "MVI", "SCALE"
                    ], rows=8, cols=5) 
                    
-
-  if((nrow(Y) > 0 & countDistinct(Y) < 10))
+  tab = table(Y, 1)
+  dist = nrow(tab)
+  if((nrow(Y) > 0 & dist < 10))
     logical = logicalSeedCI
   else 
     logical = logicalSeedNoCI

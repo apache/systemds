@@ -19,6 +19,10 @@
 
 package org.apache.sysds.runtime.instructions.spark;
 
+import java.util.List;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.function.Function;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlockFactory;
@@ -35,7 +39,10 @@ import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysds.runtime.matrix.operators.Operator;
 
+import scala.Tuple2;
+
 public class CompressionSPInstruction extends UnarySPInstruction {
+	private static final Log LOG = LogFactory.getLog(CompressionSPInstruction.class.getName());
 
 	private final int _singletonLookupID;
 
@@ -79,6 +86,11 @@ public class CompressionSPInstruction extends UnarySPInstruction {
 
 		// execute compression
 		JavaPairRDD<MatrixIndexes, MatrixBlock> out = in.mapValues(mappingFunction);
+		if(LOG.isTraceEnabled()) {
+			out.checkpoint();
+			LOG.trace("\nSpark compressed    : " + reduceSizes(out.mapValues(new SizeFunction()).collect())
+				+ "\nSpark uncompressed  : " + reduceSizes(in.mapValues(new SizeFunction()).collect()));
+		}
 
 		// set outputs
 		sec.setRDDHandleForVariable(output.getName(), out);
@@ -109,5 +121,27 @@ public class CompressionSPInstruction extends UnarySPInstruction {
 			return CompressedMatrixBlockFactory.compress(arg0, InfrastructureAnalyzer.getLocalParallelism(), a)
 				.getLeft();
 		}
+	}
+
+	public static class SizeFunction implements Function<MatrixBlock, Double> {
+		private static final long serialVersionUID = 1L;
+
+		public SizeFunction() {
+
+		}
+
+		@Override
+		public Double call(MatrixBlock arg0) throws Exception {
+			return (double) arg0.getInMemorySize();
+		}
+	}
+
+	public static String reduceSizes(List<Tuple2<MatrixIndexes, Double>> in) {
+		double sum = 0;
+		for(Tuple2<MatrixIndexes, Double> e : in) {
+			sum += e._2();
+		}
+
+		return "sum: " + sum + " mean: " + (sum / in.size());
 	}
 }

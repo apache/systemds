@@ -381,9 +381,9 @@ extractTopK = function(Frame[Unknown] pipeline, Matrix[Double] hyperparam,
     # remove the zero rows, identifiers of unique records
     dup =  removeEmpty(target = dup, margin="rows")
     # get the counts of duplicate tuples with their tuple id
-    countDist = table(dup, 1) > 0
-    countDist = countDist * seq(1, nrow(countDist))
-    countsVal = removeEmpty(target= countDist, margin="rows")
+    dist = table(dup, 1) > 0
+    dist = dist * seq(1, nrow(dist))
+    countsVal = removeEmpty(target= dist, margin="rows")
     indexes = table(seq(1, nrow(countsVal)),countsVal,1,nrow(countsVal), cols=nrow(forDedup))
 
     # for each duplicate record just take the one reocrd and strip the others
@@ -476,7 +476,8 @@ return (Matrix[Double] features)
   # OHE features 
   OHE = sum(colMaxs(X) * mask)
   features[1, 10] = OHE
-  distVal = countDistinct(Y)
+  tab = table(Y, 1)
+  distVal = nrow(tab)
   if(nrow(Y) > 1 &  distVal <= 10)
   {
     ctab = table(Y, 1)

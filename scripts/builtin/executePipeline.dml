@@ -19,8 +19,8 @@
 #
 #-------------------------------------------------------------
 
-s_executePipeline = function(Frame[String] pipeline, Matrix[Double] X,  Matrix[Double] Y, Matrix[Double] mask,
-  Matrix[Double] FD, Matrix[Double] hyperParameters, Integer flagsCount, Boolean verbose)
+s_executePipeline = function(Frame[String] logical = as.frame("NULL"), Frame[String] pipeline, Matrix[Double] X,  Matrix[Double] Y, Matrix[Double] mask,
+  Matrix[Double] FD, Matrix[Double] hyperParameters, Integer flagsCount, Boolean test = FALSE, Boolean verbose)
   return (Matrix[Double] X, Matrix[Double] Y, Double t2)
 {
   t1 = time();
@@ -33,18 +33,24 @@ s_executePipeline = function(Frame[String] pipeline, Matrix[Double] X,  Matrix[D
   }
   for(i in 1:ncol(pipeline)) {
     op = as.scalar(pipeline[1,i])
-    [hp, withClass, dataFlag] = matrixToList(X, Y, mask, FD, hyperParameters[i], flagsCount, op)
-    Xclone = X
-    X = eval(op, hp)
-    # dataFlag 0 = only on numeric, 1 = on whole data
-    X = confirmData(X, Xclone, mask, dataFlag)
-    if(withClass)
-    {
-      Y = X[, ncol(X)]
-      X = X[, 1:ncol(X) - 1]
-    }
+    lgOp = as.scalar(logical[1,i])
+    if(test == FALSE | lgOp != "CI") {    
+      [hp, withClass, dataFlag] = matrixToList(X, Y, mask, FD, hyperParameters[i], flagsCount, op)
+      Xclone = X
+      X = eval(op, hp)
+      # dataFlag 0 = only on numeric, 1 = on whole data
+      X = confirmData(X, Xclone, mask, dataFlag)
+      if(withClass)
+      {
+        Y = X[, ncol(X)]
+        X = X[, 1:ncol(X) - 1]
+      }
 
-    X = confirmMeta(X, mask)
+      X = confirmMeta(X, mask)
+    }
+    else{
+      print("not applying "+lgOp+" "+op+" on data test flag: "+test)
+    }
   }
   t2 = floor((time() - t1) / 1e+6)
   print("PIPELINE EXECUTION ENDED: "+t2+" ms")
@@ -197,7 +203,7 @@ return (Matrix[Double] X)
 # Output: OHEd matrix X
 #######################################################################
 
-dummycoding = function(Matrix[Double] X, Matrix[Double] mask)
+dummycoding = function(Matrix[Double] X,  Matrix[Double] mask)
 return (Matrix[Double] dX_train) {
 
   if(sum(mask) > 0)

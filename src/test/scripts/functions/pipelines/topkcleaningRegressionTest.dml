@@ -32,7 +32,11 @@ topK = $topk
 resources = $rv
 sample=$sample
 
-[topKPipelines, topKHyperParams, topKScores, bestLogical, features, dirtyScore] = topk_cleaning(data=F,  primitives=primitives, parameters=param, 
+split = nrow(F) * 0.7
+trainData = F[1:split,]
+testData = F[split+1:nrow(F),]
+
+[topKPipelines, topKHyperParams, topKScores, bestLogical, features, dirtyScore] = topk_cleaning(dataTrain=trainData, dataTest=testData,  primitives=primitives, parameters=param, 
   cmr=matrix("4 0.7 1", rows=1, cols=3), evaluationFunc="evalRegression", evalFunHp=as.matrix("0"), topK=topK, resource_val=resources, sample=sample, isLastLabel=TRUE)
   
      
@@ -50,13 +54,16 @@ write(result, $O)
 
 # UDF for evaluation  
 # choice of parameters provided by API, X, Y, clone_X, evalFunHp (hyper-param), trainML (boolean for optimizing hp internally or passed by externally )
-evalRegression = function(Matrix[Double] X, Matrix[Double] Y, Matrix[Double] Xorig, List[Unknown] metaList,
+evalRegression = function(Matrix[Double] X, Matrix[Double] Y, Matrix[Double] Xtest, Matrix[Double] Ytest, Matrix[Double] Xorig, List[Unknown] metaList,
   Matrix[Double] evalFunHp, Integer trainML=0)
   
 return(Matrix[Double] output)
 {
   cv = 2
   mask = as.matrix(metaList['mask'])
+
+  X = utils::dummycoding(replace(target = rbind(X, Xtest), pattern = NaN, replacement=1), mask)
+  Y = rbind(Y, Ytest)
 
   if(max(Y) == min(Y)) {
     print("Y contains only one class")
@@ -69,7 +76,7 @@ return(Matrix[Double] output)
       params = list("icpt","reg", "tol", "maxi");
       paramRanges = list(seq(0,2),10^seq(0,-4), 10^seq(-6,-12), 10^seq(1,3));
       [B1, opt] = utils::topk_gridSearch(X=X, y=Y, train="lm", predict="wmape",
-        numB=ncol(X)+1, cv=TRUE, params=params, paramValues=paramRanges);
+        numB=ncol(X)+1, cv=TRUE, params=params, paramValues=paramRanges, verbose=FALSE);
       evalFunHp = as.matrix(opt)  
     }
 

@@ -31,7 +31,6 @@ public class BuiltinTopkCleaningRegressionTest extends AutomatedTestBase{
 	private final static String TEST_CLASS_DIR = SCRIPT_DIR + BuiltinTopkCleaningRegressionTest.class.getSimpleName() + "/";
 
 	private static final String RESOURCE = SCRIPT_DIR+"functions/pipelines/";
-	//	private static final String DATA_DIR = DATASET_DIR+ "pipelines/";
 
 	private final static String DIRTY = DATASET_DIR+ "Salaries.csv";
 	private final static String OUTPUT = RESOURCE+"intermediates/";
@@ -50,7 +49,7 @@ public class BuiltinTopkCleaningRegressionTest extends AutomatedTestBase{
 			"lm", Types.ExecMode.SINGLE_NODE);
 	}
 
-	@Ignore
+	@Test
 	public void testRegressionPipelinesHybrid() {
 		runFindPipelineTest(1.0, 5,5, 2,
 			"lm", Types.ExecMode.HYBRID);
@@ -60,7 +59,7 @@ public class BuiltinTopkCleaningRegressionTest extends AutomatedTestBase{
 	private void runFindPipelineTest(Double sample, int topk, int resources, int crossfold,
 		String target, Types.ExecMode et) {
 
-		//		setOutputBuffering(true);
+		setOutputBuffering(true);
 		String HOME = SCRIPT_DIR+"functions/pipelines/" ;
 		Types.ExecMode modeOld = setExecMode(et);
 		try {

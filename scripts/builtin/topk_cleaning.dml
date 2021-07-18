@@ -23,7 +23,7 @@ source("scripts/pipelines/scripts/utils.dml") as utils;
 source("scripts/pipelines/scripts/enumerateLogical.dml") as lg;
 
 
-s_topk_cleaning = function(Frame[Unknown] data, Frame[Unknown] metaData = as.frame("NULL"), Frame[Unknown] primitives, Frame[Unknown] parameters, 
+s_topk_cleaning = function(Frame[Unknown] dataTrain, Frame[Unknown] dataTest, Frame[Unknown] metaData = as.frame("NULL"), Frame[Unknown] primitives, Frame[Unknown] parameters, 
   Matrix[Double] cmr = matrix("4 0.7 1", rows=1, cols=3), String evaluationFunc, Matrix[Double] evalFunHp, Integer topK = 5, 
   Integer resource_val = 20, Double sample = 0.1, Boolean isLastLabel = TRUE)
   return (Frame[Unknown] topKPipelines, Matrix[Double] topKHyperParams, Matrix[Double] topKScores, Frame[Unknown] bestLogical, Frame[Unknown] features, Double dirtyScore)
@@ -33,8 +33,8 @@ s_topk_cleaning = function(Frame[Unknown] data, Frame[Unknown] metaData = as.fra
   if(as.scalar(metaData[1, 1]) == "NULL")
   {
     print("creating meta data")
-    r1 = detectSchema(data)
-    r2 = matrix(0, rows=1, cols=ncol(data))
+    r1 = detectSchema(dataTrain)
+    r2 = matrix(0, rows=1, cols=ncol(dataTrain))
     for(i in 1 : ncol(r1))
     {
       if(as.scalar(r1[1, i]) == "STRING" | as.scalar(r1[1, i]) == "BOOLEAN")
@@ -55,45 +55,63 @@ s_topk_cleaning = function(Frame[Unknown] data, Frame[Unknown] metaData = as.fra
   metaList = list(mask=mask, schema=schema, fd=fdMask)
   
   # separate the label
-  if(isLastLabel ) {
-    X = data[, 1:ncol(data) - 1]
-    label = data[, ncol(data)]
+  if(isLastLabel) {
+    Xtrain = dataTrain[, 1:ncol(dataTrain) - 1]
+    labeltrain = dataTrain[, ncol(dataTrain)]
+    Xtest = dataTest[, 1:ncol(dataTest) - 1]
+    labeltest = dataTest[, ncol(dataTest)]
     # always recode the label
-    if(maskY == 1)
-      [Y, M] = transformencode(target=label, spec= "{ids:true, recode:[1]}");
-    else Y = as.matrix(label)
+    if(maskY == 1) {
+      [Ytrain, M] = transformencode(target=labeltrain, spec= "{ids:true, recode:[1]}");
+      Ytest = transformapply(target=labeltest, spec= "{ids:true, recode:[1]}", meta=M);
+    }
+    else
+    {
+      Ytrain = as.matrix(labeltrain)
+      Ytest = as.matrix(labeltest)
+    }
   }
   else 
   {
-    X = data
-    Y = as.matrix(0)
+    Xtrain = dataTrain
+    Ytrain = as.matrix(0)
+    Xtest = dataTest
+    Ytest = as.matrix(0)
   }
   
   
   # # do the string processing
-  X_dirty = X
-  X = utils::stringProcessing(data=X, mask=mask, schema=schema, CorrectTypos=FALSE)
+  X_train_dirty = Xtrain
+  X_test_dirty = Xtest
+  Xtrain = utils::stringProcessing(data=Xtrain, mask=mask, schema=schema, CorrectTypos=FALSE)
+  Xtest = utils::stringProcessing(data=Xtest, mask=mask, schema=schema, CorrectTypos=FALSE)
   
   # # if mask has 1s then there are categorical features
   if(sum(mask) > 0)
   {
     index = vectorToCsv(mask)
     jspecR = "{ids:true, recode:["+index+"]}"
-    [eX, X_meta] = transformencode(target=X, spec=jspecR);
-    [eX_dirty, X_meta_dirty] = transformencode(target=X_dirty, spec=jspecR);
+    [eXtrain, X_meta] = transformencode(target=Xtrain, spec=jspecR);
+    eXtest = transformapply(target=Xtest, spec=jspecR, meta=X_meta);
+    [eX_train_dirty, X_meta_dirty] = transformencode(target=X_train_dirty, spec=jspecR);
+    eX_test_dirty = transformapply(target=X_test_dirty, spec=jspecR, meta=X_meta_dirty);
     
   } 
   # if no categorical value exist then just cast the frame into matrix
   else {
-    eX = as.matrix(X)
-    eX_dirty = as.matrix(X_dirty)
+    eXtrain = as.matrix(Xtrain)
+    eX_train_dirty = as.matrix(X_train_dirty)
+    eXtest = as.matrix(Xtest)
+    eX_test_dirty = as.matrix(X_test_dirty)
   }
   # take the sample
-  [eX, Y] = utils::doSample(eX, Y, sample, TRUE)
-  [eX_dirty, Y] = utils::doSample(eX_dirty, Y, sample, FALSE)
-  eX_dirty = utils::dummycoding(eX_dirty, mask)
+  [eXtrain, Ytrain] = utils::doSample(eXtrain, Ytrain, sample, TRUE)
+  [eX_train_dirty, Ytrain] = utils::doSample(eX_train_dirty, Ytrain, sample, FALSE)
+  # # allData = rbind(eX_train_dirty)
+  # # eX_train_dirty = utils::dummycoding(eX_train_dirty, mask)
+  # # eX_test_dirty = utils::dummycoding(eX_test_dirty, mask)
   # get the dirty score
-  scoreAndHp = eval(evaluationFunc, list(X=eX_dirty, Y=Y, Xorig=as.matrix(0), metaList=metaList, evalFunHp=evalFunHp, trainML=1))
+  scoreAndHp = eval(evaluationFunc, list(X=eX_train_dirty, Y=Ytrain, Xtest=eX_test_dirty, Ytest=Ytest, Xorig=as.matrix(0), metaList=metaList, evalFunHp=evalFunHp, trainML=1))
   dirtyScore = as.scalar(scoreAndHp[1, 1])
   evalFunHp = scoreAndHp[1, 2:ncol(scoreAndHp)]
 
@@ -121,9 +139,9 @@ s_topk_cleaning = function(Frame[Unknown] data, Frame[Unknown] metaData = as.fra
                    "4", "MVI", "OTLR", "MVI", "SCALE"
                    ], rows=8, cols=5) 
                    
-  tab = table(Y, 1)
+  tab = table(Ytrain, 1)
   dist = nrow(tab)
-  if((nrow(Y) > 0 & dist < 10))
+  if((nrow(Ytrain) > 0 & dist < 10))
     logical = logicalSeedCI
   else 
     logical = logicalSeedNoCI
@@ -132,15 +150,18 @@ s_topk_cleaning = function(Frame[Unknown] data, Frame[Unknown] metaData = as.fra
   idx = as.integer(as.scalar(logical[1, 1])) + 1
 
   category = logical[1, 2:idx]
+  print("sending ytest in enumLog: \n"+toString(Ytest, rows=5))
 
-  [bestLogical, score, T] = lg::enumerateLogical(X=eX, y=Y, cmr=cmr, cat=category, population=logical,
+  [bestLogical, score, T] = lg::enumerateLogical(X=eXtrain, y=Ytrain, Xtest=eXtest, ytest=Ytest, cmr=cmr, cat=category, population=logical,
     max_iter=ceil(resource_val/topK), metaList = metaList, evaluationFunc=evaluationFunc, evalFunHp=evalFunHp, 
-    primitives=primitives, param=parameters, num_inst = nrow(primitives), num_exec = topK, isTailed=TRUE, verbose=TRUE)
+    primitives=primitives, param=parameters, num_inst = nrow(primitives), num_exec = topK, verbose=TRUE)
 
   topKPipelines = as.frame("NULL"); topKHyperParams = matrix(0,0,0); topKScores = matrix(0,0,0); features = as.frame("NULL")
   
-  [topKPipelines, topKHyperParams, topKScores, features] = bandit(X_train=eX, Y_train=Y,  metaList=metaList,
+  [topKPipelines, topKHyperParams, topKScores, features] = bandit(X_train=eXtrain, Y_train=Ytrain, X_test=eXtest, Y_test=Ytest,  metaList=metaList,
     evaluationFunc=evaluationFunc, evalFunHp=evalFunHp, lp=bestLogical, primitives=primitives, param=parameters, baseLineScore=dirtyScore,
     k=topK, R=resource_val, verbose=FALSE);
 }
+
+
 

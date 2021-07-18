@@ -120,6 +120,8 @@ public enum Builtins {
 	EXECUTE_PIPELINE("executePipeline", true),
 	EXP("exp", false),
 	EVAL("eval", false),
+	FF_TRAIN("ffTrain", true),
+	FF_PREDICT("ffPredict", true),
 	FLOOR("floor", false),
 	FRAME_SORT("frameSort", true),
 	GARCH("garch", true),
@@ -164,6 +166,8 @@ public enum Builtins {
 	L2SVM("l2svm", true),
 	L2SVMPREDICT("l2svmPredict", true),
 	LASSO("lasso", true),
+	LENET_TRAIN("lenetTrain", true),
+	LENET_PREDICT("lenetPredict", true),
 	LENGTH("length", false),
 	LINEAGE("lineage", false),
 	LIST("list", false),  //note: builtin and parbuiltin

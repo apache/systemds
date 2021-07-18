@@ -19,7 +19,7 @@
 #
 #-------------------------------------------------------------
 
-m_bandit = function(Matrix[Double] X_train, Matrix[Double] Y_train, List[Unknown] metaList, String evaluationFunc, Matrix[Double] evalFunHp,
+m_bandit = function(Matrix[Double] X_train, Matrix[Double] Y_train, Matrix[Double] X_test, Matrix[Double] Y_test, List[Unknown] metaList, String evaluationFunc, Matrix[Double] evalFunHp,
   Frame[Unknown] lp, Frame[Unknown] primitives, Frame[Unknown] param, Integer k = 3, Integer R=50, Double baseLineScore,
   Boolean verbose = TRUE)
   return (Frame[Unknown] bestPipeline, Matrix[Double] bestHyperparams, Matrix[Double] bestAccuracy, Frame[String] feaFrameOuter) 
@@ -79,7 +79,7 @@ m_bandit = function(Matrix[Double] X_train, Matrix[Double] Y_train, List[Unknown
       }
       
       configurations = configurations[1:n_i, ]
-      [outPip,outHp, feaFrameOuter] = run_with_hyperparam(configurations, r_i, X_train, Y_train, metaList,
+      [outPip,outHp, feaFrameOuter] = run_with_hyperparam(lp, configurations, r_i, X_train, Y_train, X_test, Y_test, metaList,
         evaluationFunc, evalFunHp, param, feaFrameOuter, verbose)
       # sort the pipelines by order of accuracy decreasing
       a = order(target = outPip, by = 1, decreasing=TRUE, index.return=FALSE)
@@ -195,7 +195,7 @@ get_physical_configurations = function(Frame[String] logical, Scalar[int] numCon
 }
 
 # this method will call the execute pipelines with their hyper-parameters
-run_with_hyperparam = function(Frame[Unknown] ph_pip, Integer r_i, Matrix[Double] X, Matrix[Double] Y,
+run_with_hyperparam = function(Frame[Unknown] lp, Frame[Unknown] ph_pip, Integer r_i, Matrix[Double] X, Matrix[Double] Y, Matrix[Double] Xtest, Matrix[Double] Ytest, 
   List[Unknown] metaList, String evaluationFunc, Matrix[Double] evalFunHp, Frame[Unknown] param, Frame[Unknown] featureFrameOuter,
   Boolean verbose)
   return (Matrix[Double] output_operator, Matrix[Double] output_hyperparam, Frame[Unknown] featureFrameOuter) {
@@ -207,6 +207,8 @@ run_with_hyperparam = function(Frame[Unknown] ph_pip, Integer r_i, Matrix[Double
   # rows in validation set
   clone_X = X
   clone_Y = Y
+  clone_Xtest = Xtest
+  clone_Ytest = Ytest
   index = 1
   id = as.matrix(ph_pip[, 1])
   ph_pip = ph_pip[, 2:ncol(ph_pip)]
@@ -229,9 +231,13 @@ run_with_hyperparam = function(Frame[Unknown] ph_pip, Integer r_i, Matrix[Double
       indexes = cumsum(indexes)
       indexes = table(indexes, 1, 1, nrow(hp), 1)
       hp_matrix = removeEmpty(target = hp, margin="rows", select = indexes)
-      [X, Y, T] = executePipeline(ph_pip[i], X, Y, as.matrix(metaList['mask']), as.matrix(metaList['fd']),
-        hp_matrix, no_of_flag_vars, FALSE)
-      argList = list(X=X, Y=Y, Xorig=clone_X, metaList=metaList, evalFunHp=evalFunHp, trainML=0)
+      # # # clean the train data
+      [X, Y, Tr] = executePipeline(lp, ph_pip[i], X, Y, as.matrix(metaList['mask']), as.matrix(metaList['fd']),
+        hp_matrix, no_of_flag_vars, FALSE, FALSE)
+      # # # clean the test data
+      [Xtest, Ytest, T] = executePipeline(lp, ph_pip[i], Xtest, Ytest, as.matrix(metaList['mask']), as.matrix(metaList['fd']),
+        hp_matrix, no_of_flag_vars, TRUE, FALSE)
+      argList = list(X=X, Y=Y, Xtest=Xtest, Ytest=Ytest, Xorig=clone_X, metaList=metaList, evalFunHp=evalFunHp, trainML=0)
       t1 = time()
       evalFunOutput = eval(evaluationFunc, argList)  
       accT = floor((time() - t1) / 1e+6)  
@@ -242,24 +248,28 @@ run_with_hyperparam = function(Frame[Unknown] ph_pip, Integer r_i, Matrix[Double
       output_pipelines[index, ] = cbind(as.matrix(index), id[i,1])
       X = clone_X
       Y = clone_Y
+      Xtest = clone_Xtest
+      Ytest = clone_Ytest
       index = index + 1
       
       if(ncol(featureFrameOuter) > 1) {
         feaFrame[r, 1:ncol(feaVec)] = as.frame(feaVec)
         feaFrame[r, (ncol(feaVec)+1)] = pip_toString
         feaFrame[r, (ncol(feaVec)+2)] = as.scalar(evalFunOutput[1, 1])
-        feaFrame[r, (ncol(feaVec)+3)] = T
+        feaFrame[r, (ncol(feaVec)+3)] = Tr
         feaFrame[r, (ncol(feaVec)+4)] = accT
       }
     }
     
     X = clone_X
     Y = clone_Y
+    Xtest = clone_Xtest
+    Ytest = clone_Ytest
     if(ncol(featureFrameOuter) > 1)
       featureFrameOuter = rbind(featureFrameOuter, feaFrame)
   }
   output_hyperparam = removeEmpty(target=cbind(output_accuracy, output_hp), margin="rows")
-  output_operator = removeEmpty(target=cbind(output_accuracy, output_pipelines) ,margin="rows")
+  output_operator = removeEmpty(target=cbind(output_accuracy, output_pipelines), margin="rows")
 }
 
 # extract the hyper-parameters for pipelines

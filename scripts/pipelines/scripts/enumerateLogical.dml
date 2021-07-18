@@ -50,9 +50,9 @@
 
 
 source("scripts/builtin/bandit.dml") as bandit;
-enumerateLogical = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] cmr, Frame[Unknown] cat, Frame[Unknown] population,
+enumerateLogical = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] Xtest, Matrix[Double] ytest, Matrix[Double] cmr, Frame[Unknown] cat, Frame[Unknown] population,
   Integer max_iter=10, List[Unknown] metaList, String evaluationFunc, Matrix[Double] evalFunHp, Frame[Unknown] primitives, Frame[Unknown] param,
-  Integer num_inst, Integer num_exec, Boolean isTailed = TRUE, Boolean verbose)
+  Integer num_inst, Integer num_exec, Boolean verbose)
 return (Frame[Unknown] bestLg, Double pre_best, Double T)
 { 
   t1 = time()
@@ -66,6 +66,7 @@ return (Frame[Unknown] bestLg, Double pre_best, Double T)
   while(iter <= max_iter & !convergedOuter)
   {
     physicalPipList = list()
+    logicalPipList = list()
     # # # get the physical instances from logical ones
     for(i in 1:nrow(population))
     { 
@@ -73,6 +74,7 @@ return (Frame[Unknown] bestLg, Double pre_best, Double T)
       lp = population[i, 2:lv]
       physicalConf = bandit::get_physical_configurations(lp, num_inst, primitives)
       physicalPipList = append(physicalPipList, physicalConf)
+      logicalPipList = append(logicalPipList, lp)
     }
     
     scores = matrix(0, rows=length(physicalPipList), cols=1)
@@ -81,15 +83,13 @@ return (Frame[Unknown] bestLg, Double pre_best, Double T)
     for(i in 1:length(physicalPipList))
     {
       physicalConf = as.frame(physicalPipList[i])
+      lp = as.frame(logicalPipList[i])
       # # append configuration keys for extracting the pipeline later on
       id = seq(1, nrow(physicalConf))
       physicalConf = cbind(as.frame(id), physicalConf)
-      if(isTailed) {
-        tail = frame(["dummycoding", "m_pca"], rows=nrow(physicalConf), cols=2)
-        physicalConf = cbind(physicalConf, tail)
-      }
+
       # # execute the physical instances and store the minimum scores, each pipeline is executed num_exec times
-      [outPip,outHp, feaFrameOuter] = bandit::run_with_hyperparam(physicalConf, num_exec, X, y, metaList,
+      [outPip,outHp, feaFrameOuter] = bandit::run_with_hyperparam(lp, physicalConf, num_exec, X, y, Xtest, ytest, metaList,
         evaluationFunc, evalFunHp, param, as.frame(""), verbose)
       # # sort the configurations groupwise
       max_perf =  bandit::getMaxPerConf(outPip, nrow(physicalConf)) 
@@ -104,11 +104,6 @@ return (Frame[Unknown] bestLg, Double pre_best, Double T)
     convergedOuter = converged
     if(converged & (iter > 1))
     {
-      if(isTailed)
-      {
-        lg_tail = frame(["DUMMY", "DIM"], rows=1, cols=2)
-        bestLg = cbind(bestLg, lg_tail)
-      }
       print("converged after "+iter+" iteration(s)")
       print("best score " + pre_best)
       print("best pipeline " + toString(bestLg))
@@ -151,11 +146,6 @@ return (Frame[Unknown] bestLg, Double pre_best, Double T)
   }
   if(pre_best == best_score) {
     print("LogicalENumerator: did not converge after "+max_iter+" iterations")
-    if(isTailed)
-    {
-     lg_tail = frame(["DUMMY", "DIM"], rows=1, cols=2)
-     bestLg = cbind(bestLg, lg_tail)
-    }
   
   }
 

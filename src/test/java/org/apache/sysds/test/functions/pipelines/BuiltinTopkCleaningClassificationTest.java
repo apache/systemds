@@ -23,11 +23,10 @@ import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
 import org.junit.Assert;
-import org.junit.Ignore;
 import org.junit.Test;
 
 public class BuiltinTopkCleaningClassificationTest extends AutomatedTestBase {
-	private final static String TEST_NAME1 = "topkcleaningClassificationTest";
+	private final static String TEST_NAME = "topkcleaningClassificationTest";
 	private final static String TEST_CLASS_DIR = SCRIPT_DIR + BuiltinTopkCleaningClassificationTest.class.getSimpleName() + "/";
 
 	private final static String TEST_DIR = "functions/pipelines/";
@@ -43,33 +42,39 @@ public class BuiltinTopkCleaningClassificationTest extends AutomatedTestBase {
 
 	@Override
 	public void setUp() {
-		addTestConfiguration(TEST_NAME1,new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1,new String[]{"R"}));
+		addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[]{"R"}));
 	}
 
 	@Test
-	public void testFindBestPipeline() {
+	public void testFindBestPipeline1() {
 		runtopkCleaning(0.1, 3,5,
-			TEST_NAME1, Types.ExecMode.SINGLE_NODE);
+			"FALSE", Types.ExecMode.SINGLE_NODE);
 	}
 
-	@Ignore
+	@Test
+	public void testFindBestPipeline2() {
+		runtopkCleaning(0.1, 3,5,
+			"TRUE", Types.ExecMode.SINGLE_NODE);
+	}
+
+	@Test
 	public void testFindBestPipelineHybrid() {
 		runtopkCleaning(0.1, 3,5,
-			TEST_NAME1, Types.ExecMode.HYBRID);
+			"FALSE", Types.ExecMode.HYBRID);
 	}
 
 
-	private void runtopkCleaning(Double sample, int topk, int resources, String testName, Types.ExecMode et) {
+	private void runtopkCleaning(Double sample, int topk, int resources,  String cv, Types.ExecMode et) {
 
 		setOutputBuffering(true);
 		Types.ExecMode modeOld = setExecMode(et);
 		String HOME = SCRIPT_DIR + TEST_DIR;
 		try {
-			loadTestConfiguration(getTestConfiguration(testName));
-			fullDMLScriptName = HOME + testName + ".dml";
+			loadTestConfiguration(getTestConfiguration(TEST_NAME));
+			fullDMLScriptName = HOME + TEST_NAME + ".dml";
 			programArgs = new String[] {"-stats", "-exec", "singlenode", "-nvargs", "dirtyData="+DIRTY,
 				"metaData="+META, "primitives="+PRIMITIVES, "parameters="+PARAM, "topk="+ topk, "rv="+ resources,
-				"sample="+sample, "O="+output("O")};
+				"sample="+sample, "testCV="+cv, "O="+output("O")};
 
 			runTest(true, EXCEPTION_NOT_EXPECTED, null, -1);
 
@@ -80,6 +85,5 @@ public class BuiltinTopkCleaningClassificationTest extends AutomatedTestBase {
 			resetExecMode(modeOld);
 		}
 	}
-
 
 }

@@ -267,7 +267,7 @@ return(Frame[Unknown] processedData)
 
 
 
-topk_gridSearch = function(Matrix[Double] X, Matrix[Double] y, String train, String predict,
+topk_gridSearch = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] Xtest=as.matrix(0), Matrix[Double] ytest=as.matrix(0), String train, String predict,
     Integer numB=ncol(X), List[String] params, List[Unknown] paramValues,
     List[Unknown] trainArgs = list(), List[Unknown] predictArgs = list(),
     Boolean cv = FALSE, Integer cvk = 5, Boolean verbose = TRUE)
@@ -277,7 +277,7 @@ topk_gridSearch = function(Matrix[Double] X, Matrix[Double] y, String train, Str
   if( length(trainArgs) == 0 )
     trainArgs = list(X=X, y=y, icpt=0, reg=-1, tol=-1, maxi=-1, verbose=FALSE);
   if( length(predictArgs) == 0 )
-    predictArgs = list(X, y);
+    predictArgs = list(Xtest, ytest);
   if( cv & cvk <= 1 ) {
     print("gridSearch: called with cv=TRUE but cvk="+cvk+", set to default cvk=5.")
     cvk = 5;

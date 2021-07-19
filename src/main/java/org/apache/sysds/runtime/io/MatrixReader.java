@@ -23,7 +23,9 @@ import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -165,5 +167,43 @@ public abstract class MatrixReader
 						sblock.sort(i);
 			return null;
 		}
+	}
+
+	public static MatrixBlock update(FileFormatProperties format, MatrixBlock source, MatrixBlock sample){
+		int rows = source.getNumRows();
+		int cols = source.getNumColumns();
+		int srows = sample.getNumRows();
+		int scols = sample.getNumColumns();
+
+		boolean isLIBSVM = format instanceof FileFormatPropertiesLIBSVM;
+		if(isLIBSVM){
+			cols--;
+			scols--;
+		}
+
+		for(int r = 0; r < rows; r++){
+			for(int sr = 0; sr < srows; sr++){
+				Set<Integer> matchSet = new HashSet<>();
+				if(isLIBSVM){
+					if(source.getValue(r,cols)!=sample.getValue(sr,scols))
+						continue;
+				}
+				for(int i = 0; i < cols; i++){
+					for(int j = 0; j < scols; j++){
+						if(source.getValue(r,i) == sample.getValue(sr,j) && !matchSet.contains(j)){
+							matchSet.add(j);
+							break;
+						}
+					}
+				}
+				if(matchSet.size() == cols){
+					for(int i=0;i<cols;i++){
+						source.setValue(r,i,sample.getValue(sr,i));
+					}
+					break;
+				}
+			}
+		}
+		return source;
 	}
 }

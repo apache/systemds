@@ -19,22 +19,27 @@
 
 package org.apache.sysds.test.functions.io.generateReader;
 
+import com.google.gson.Gson;
 import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.hops.OptimizerUtils;
-import org.apache.sysds.runtime.io.GenerateReader;
+import org.apache.sysds.runtime.io.*;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.DataConverter;
+import org.apache.sysds.runtime.util.UtilFunctions;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
 import org.junit.Test;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 
 public class GenerateReaderTest extends AutomatedTestBase {
 
-	private final static String TEST_NAME = "WriteCSVTest";
-	private final static String TEST_DIR = "functions/io/csv/";
+	private final static String TEST_NAME = "GenerateReaderTest";
+	private final static String TEST_DIR = "functions/io/GenerateReaderTest/";
 	private final static String TEST_CLASS_DIR = TEST_DIR + GenerateReaderTest.class.getSimpleName() + "/";
 
 	private final static double eps = 1e-9;
@@ -46,84 +51,108 @@ public class GenerateReaderTest extends AutomatedTestBase {
 		addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[] {"Rout"}));
 	}
 
-	private void getCSV_Data1() {
-		stream = "a,b,c,d,e\n" +
-				 "1,2,3,4,5\n" +
-				 "6,7,8,9,10\n" +
-				 "11,12,13,14,15";
+	//1. Generate CSV Test Data
+	//1.a. The Data include Header and Unique Values
+	@Test public void testCSV1_CP_CSV_Data_With_Header() throws IOException, InstantiationException, IllegalAccessException {
+		stream = "a,b,c,d,e,f\n" +
+			"1,2,3,4,5,6\n" +
+			"7,8,9,10,11,12\n" +
+			"2,3,1,5,4,6\n"+
+			"1,5,3,4,2,6\n"+
+			"8,9,10,11,12,7";
 
-		double[][] sampleData = {{1, 2, 3, 4, 5}, {6, 7, 8, 9, 10}};
-		sample = DataConverter.convertToMatrixBlock(sampleData);
+		double[][] sample = {{1, 2, 3, 4, 5, 6}, {7, 8, 9, 10, 11, 12}};
+		MatrixReader reader = GenerateReader.generateReader(stream, DataConverter.convertToMatrixBlock(sample));
+		TestReaderCSV(reader, stream, ",", true,"testCSV1_CP_CSV_Data_With_Header");
+	}
+	//1.b: The Data Don't have Header and Unique Values
+	@Test public void testCSV2_CP_CSV_Data_With_Header() throws IOException, InstantiationException, IllegalAccessException {
+		stream = "1,2,3,4,5,6\n" +
+			"7,8,9,10,11,12\n" +
+			"2,3,1,5,4,6\n"+
+			"1,5,3,4,2,6\n"+
+			"8,9,10,11,12,7";
+
+		double[][] sample = {{1, 2, 3, 4, 5, 6}, {7, 8, 9, 10, 11, 12}};
+		MatrixReader reader = GenerateReader.generateReader(stream, DataConverter.convertToMatrixBlock(sample));
+		TestReaderCSV(reader, stream, ",", false,"testCSV2_CP_CSV_Data_With_Header");
 	}
 
-	private void getCSV_Data2() {
-		stream = "1,2,3,4,5\n" +
-				 "6,7,8,9,10\n" +
-				 "11,12,13,14,15";
+	//1.c: The Data Header and Duplicated Values
+	@Test public void testCSV3_CP_CSV_Data_With_Header() throws IOException, InstantiationException, IllegalAccessException {
+		stream = "1,2,3,3,1,2\n" +
+			"7,8,7,9,8,8\n" +
+			"2,3,3,2,1,1\n"+
+			"3,3,2,2,1,1\n"+
+			"8,7,8,7,8,9";
 
-		double[][] sampleData = {{1, 2, 4, 3, 5}, {6, 7, 9, 8, 10}};
-		sample = DataConverter.convertToMatrixBlock(sampleData);
+		double[][] sample = {{1, 2, 3, 1, 2, 3}, {7, 7, 9, 8, 8, 8}};
+		MatrixReader reader = GenerateReader.generateReader(stream, DataConverter.convertToMatrixBlock(sample));
+		TestReaderCSV(reader, stream, ",", false,"testCSV3_CP_CSV_Data_With_Header");
 	}
 
-	private void getLIBSVM_Data1() {
-		stream = "1 1:1 2:2 5:5\n" +
-				 "2 3:3 4:4 6:6 7:7";
+	//2. Generate LIBSVM Test Data
+	//2.a: The Data are Unique Values
+	@Test public void testLIBSVM1_CP_CSV_Data_With_Header() throws IOException, InstantiationException, IllegalAccessException {
+		stream = "1 1:1 2:2 6:3\n" +
+				 "2 3:1 4:2 5:3\n" +
+				 "1 1:2 2:3 6:1\n" +
+				 "2 3:3 4:1 5:2\n" +
+				 "1 1:3 2:4 6:5";
+		double[][] sample = {{1,2,0,0,0,3,1}, {4,5,0,0,0,3,1},{0,0,1,2,3,0,2}};
+		MatrixReader reader = GenerateReader.generateReader(stream, DataConverter.convertToMatrixBlock(sample));
+		TestReaderLIBSVM(reader, stream, " ", ":","testLIBSVM1_CP_LIBSVM_Data_Unique");
+	}
+	private void TestReaderCSV(MatrixReader reader, String stream, String delim, boolean hasheader,String fileName) throws IOException {
 
-		double[][] sampleData = {{1, 2, 0, 0, 5, 0, 0}, {0, 0, 3, 4, 0, 6, 7}};
-		sample = DataConverter.convertToMatrixBlock(sampleData);
+		InputStream is = IOUtilFunctions.toInputStream(stream);
+		BufferedReader br = new BufferedReader(new InputStreamReader(is));
+		String value;
+		int rlen = 0, clen = 0;
+		while((value = br.readLine()) != null) //foreach line
+		{
+			if(rlen ==0)
+				clen = IOUtilFunctions.splitCSV(value, delim).length;
+			rlen++;
+		}
+		if(hasheader)
+			rlen--;
+
+		is = IOUtilFunctions.toInputStream(stream);
+		MatrixBlock mbStream = reader.readMatrixFromInputStream(is, rlen, clen, -1, -1);
+
+		FileFormatPropertiesCSV format = new FileFormatPropertiesCSV(hasheader, delim, false);
+		WriterTextCSV writer = new WriterTextCSV(format);
+		writer.writeMatrixToHDFS(mbStream,"/home/sfathollahzadeh/GernerateReaderTests/"+fileName+".csv",rlen,clen,
+			-1,-1,false);
 	}
 
-	@Test public void testCSV1_CP() throws IOException, InstantiationException, IllegalAccessException {
-		getCSV_Data1();
-		//GenerateReader.generateReader(stream, sample);
-	}
 
-	@Test public void testCSV2_CP() throws IOException, InstantiationException, IllegalAccessException {
-		getCSV_Data2();
+	private void TestReaderLIBSVM(MatrixReader reader, String stream, String delim, String delimIndex,String fileName) throws IOException {
 
-		OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = true;
-		GenerateReader.generateReader(stream, sample);
-	}
+		InputStream is = IOUtilFunctions.toInputStream(stream);
+		BufferedReader br = new BufferedReader(new InputStreamReader(is));
+		String value;
+		int rlen = 0, clen = 0;
+		FileFormatPropertiesLIBSVM format = new FileFormatPropertiesLIBSVM(delim, delimIndex);
+		while((value = br.readLine()) != null) //foreach line
+		{
+			String items[] = IOUtilFunctions.splitCSV(value, format.getDelim());
+			for(int i = 1; i < items.length; i++) {
+				String cell = IOUtilFunctions.splitCSV(items[i], format.getIndexDelim())[0];
+				int ci = UtilFunctions.parseToInt(cell);
+				if(clen < ci) {
+					clen = ci;
+				}
+			}
+		rlen++;
+		}
+		clen++;
+		is = IOUtilFunctions.toInputStream(stream);
+		MatrixBlock mbStream = reader.readMatrixFromInputStream(is, rlen, clen, -1, -1);
 
-	@Test public void testLIBSVM1_CP() throws IOException, InstantiationException, IllegalAccessException {
-		getLIBSVM_Data1();
-		//GenerateReader.generateReader(stream, sample);
-	}
-
-	private void runCSVWriteTest(ExecMode platform, boolean header, String sep, boolean sparse) throws IOException {
-
-		ExecMode oldPlatform = rtplatform;
-		rtplatform = platform;
-
-		TestConfiguration config = getTestConfiguration(TEST_NAME);
-		loadTestConfiguration(config);
-
-		String HOME = SCRIPT_DIR + TEST_DIR;
-		String inputMatrixName = HOME + INPUT_DIR + "transfusion_1"; // always read the same data, independent of
-		// testNumber
-		String dmlOutput = output("dml.scalar");
-		String csvOutputName = output("transfusion_dml.data");
-		String rOutput = output("R.scalar");
-
-		fullDMLScriptName = HOME + TEST_NAME + ".dml";
-		programArgs = new String[] {"-args", inputMatrixName, dmlOutput, csvOutputName, Boolean.toString(header), sep,
-			Boolean.toString(sparse)};
-
-		runTest(true, false, null, -1);
-
-		// Verify produced CSV file w/ R
-		csvOutputName = TestUtils.processMultiPartCSVForR(csvOutputName);
-
-		fullRScriptName = HOME + "writecsv_verify.R";
-		rCmd = "Rscript" + " " + fullRScriptName + " " + csvOutputName + " " + Boolean.toString(header)
-			.toUpperCase() + " " + sep + " " + rOutput;
-		runRScript(true);
-
-		double dmlScalar = TestUtils.readDMLScalar(dmlOutput);
-		double rScalar = TestUtils.readRScalar(rOutput);
-
-		TestUtils.compareScalars(dmlScalar, rScalar, eps);
-
-		rtplatform = oldPlatform;
+		WriterTextLIBSVM writer = new WriterTextLIBSVM(format);
+		writer.writeMatrixToHDFS(mbStream,"/home/sfathollahzadeh/GernerateReaderTests/"+fileName+".libsvm",rlen,clen,
+			-1,-1,false);
 	}
 }

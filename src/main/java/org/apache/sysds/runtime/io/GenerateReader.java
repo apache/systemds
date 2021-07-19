@@ -19,6 +19,7 @@
 
 package org.apache.sysds.runtime.io;
 
+import com.google.gson.Gson;
 import org.apache.sysds.parser.DataExpression;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.codegen.CodegenUtils;
@@ -50,45 +51,71 @@ public class GenerateReader {
 		}
 		else if(ffp instanceof FileFormatPropertiesLIBSVM) {
 			FileFormatPropertiesLIBSVM ffpLIBSVM = (FileFormatPropertiesLIBSVM) ffp;
+			Gson gson=new Gson();
+			reader = new ReaderTextLIBSVM(ffpLIBSVM);
+			fileFormatPropertiesString += "FileFormatPropertiesLIBSVM(\"" + ffpLIBSVM.getDelim() + "\",\"" + ffpLIBSVM
+				.getIndexDelim() + "\")";
+		}
+		String baseClassName = reader.getClass().getSimpleName();
+		String fileFormatProperties = ffp.getClass().getSimpleName();
+		reader = generate(baseClassName, fileFormatProperties, fileFormatPropertiesString, sample);
+
+		return reader;
+	}
+
+	public static MatrixReader generateReader2(String stream, MatrixBlock sample) throws IOException {
+
+		MatrixReader reader = null;
+		FileFormatProperties ffp = formatInference(stream);
+		String fileFormatPropertiesString = "new ";
+
+		if(ffp instanceof FileFormatPropertiesCSV) {
+			FileFormatPropertiesCSV ffpCSV = (FileFormatPropertiesCSV) ffp;
+			reader = new ReaderTextCSV(ffpCSV);
+			fileFormatPropertiesString += "FileFormatPropertiesCSV(" + ffpCSV.hasHeader() + ",\"" + ffpCSV
+				.getDelim() + "\"," + ffpCSV.isSparse() + ")";
+		}
+		else if(ffp instanceof FileFormatPropertiesLIBSVM) {
+			FileFormatPropertiesLIBSVM ffpLIBSVM = (FileFormatPropertiesLIBSVM) ffp;
 			reader = new ReaderTextLIBSVM(ffpLIBSVM);
 			fileFormatPropertiesString += "FileFormatPropertiesLIBSVM(" + ffpLIBSVM.getDelim() + "," + ffpLIBSVM
 				.getIndexDelim() + ")";
 		}
 
-		int rlen = 0, clen = 0;
-		String value;
-		InputStream is = IOUtilFunctions.toInputStream(stream);
-		BufferedReader br = new BufferedReader(new InputStreamReader(is));
-		while((value = br.readLine()) != null) //foreach line
-		{
-			if(ffp instanceof FileFormatPropertiesCSV) {
-				if(clen == 0) {
-					clen = IOUtilFunctions.splitCSV(value, ((FileFormatPropertiesCSV) ffp).getDelim()).length;
-					if(((FileFormatPropertiesCSV) ffp).hasHeader()) {
-						rlen--;
+				int rlen = 0, clen = 0;
+				String value;
+				InputStream is = IOUtilFunctions.toInputStream(stream);
+				BufferedReader br = new BufferedReader(new InputStreamReader(is));
+				while((value = br.readLine()) != null) //foreach line
+				{
+					if(ffp instanceof FileFormatPropertiesCSV) {
+						if(clen == 0) {
+							clen = IOUtilFunctions.splitCSV(value, ((FileFormatPropertiesCSV) ffp).getDelim()).length;
+							if(((FileFormatPropertiesCSV) ffp).hasHeader()) {
+								rlen--;
+							}
+						}
 					}
-				}
-			}
-			else if(ffp instanceof FileFormatPropertiesLIBSVM) {
-				String items[] = IOUtilFunctions.splitCSV(value, ((FileFormatPropertiesCSV) ffp).getDelim());
-				for(int i = 1; i < items.length; i++) {
-					String cell = IOUtilFunctions
-						.splitCSV(items[i], ((FileFormatPropertiesLIBSVM) ffp).getIndexDelim())[0];
-					int ci = UtilFunctions.parseToInt(cell);
-					if(clen < ci) {
-						clen = ci;
+					else if(ffp instanceof FileFormatPropertiesLIBSVM) {
+						String items[] = IOUtilFunctions.splitCSV(value, ((FileFormatPropertiesCSV) ffp).getDelim());
+						for(int i = 1; i < items.length; i++) {
+							String cell = IOUtilFunctions
+								.splitCSV(items[i], ((FileFormatPropertiesLIBSVM) ffp).getIndexDelim())[0];
+							int ci = UtilFunctions.parseToInt(cell);
+							if(clen < ci) {
+								clen = ci;
+							}
+						}
 					}
+					rlen++;
 				}
-			}
-			rlen++;
-		}
-		is = IOUtilFunctions.toInputStream(stream);
-		MatrixBlock mbStream = reader.readMatrixFromInputStream(is, rlen, clen, -1, -1);
+				is = IOUtilFunctions.toInputStream(stream);
+				MatrixBlock mbStream = reader.readMatrixFromInputStream(is, rlen, clen, -1, -1);
 
-		Map<Integer, Integer> match = match(mbStream, sample);
-		String baseClassName = reader.getClass().getSimpleName();
-		String fileFormatProperties = ffp.getClass().getSimpleName();
-		reader = generate(baseClassName, fileFormatProperties, fileFormatPropertiesString, match);
+				Map<Integer, Integer> match = match(mbStream, sample);
+				String baseClassName = reader.getClass().getSimpleName();
+				String fileFormatProperties = ffp.getClass().getSimpleName();
+				reader = generate(baseClassName, fileFormatProperties, fileFormatPropertiesString, match);
 
 		return reader;
 	}
@@ -250,6 +277,61 @@ public class GenerateReader {
 				break;
 		}
 		return ffp;
+	}
+
+	// Generate Matrix Reader Class
+	public static MatrixReader generate(String baseClassName, String fileFormatProperties,
+		String fileFormatPropertiesString, MatrixBlock sample) throws IOException {
+		String cname = "MatrixReader" + CLASS_ID.getNextID();
+
+		int rlen = sample.getNumRows();
+		int clen = sample.getNumColumns();
+		String sampleMB="private static final MatrixBlock sample = new MatrixBlock("+rlen+","+clen+",false,-1);";
+		StringBuilder sampleMBValues= new StringBuilder();
+		for(int r=0;r<rlen;r++)
+			for(int c=0;c<clen;c++)
+				sampleMBValues.append("sample.setValue("+r+","+c+","+sample.getValue(r,c)+");\n");
+
+
+		StringBuilder sb = new StringBuilder();
+		sb.append("import org.apache.sysds.runtime.io." + baseClassName + ";\n");
+		sb.append("import org.apache.sysds.runtime.io." + fileFormatProperties + ";\n");
+		sb.append("import org.apache.sysds.runtime.DMLRuntimeException;\n");
+		sb.append("import org.apache.sysds.runtime.matrix.data.MatrixBlock;\n");
+		sb.append("import java.io.IOException;\n");
+		sb.append("import java.io.InputStream;\n");
+		sb.append("public class " + cname + " extends " + baseClassName + "{\n");
+		sb.append(sampleMB+"\n");
+
+		sb.append("public " + cname + "() {\n" +
+											"super(" + fileFormatPropertiesString + ");\n"+
+											sampleMBValues+"\n}"
+											);
+		sb.append("	public " + cname + "(" + fileFormatProperties + " props) {\n");
+		sb.append("		super(props);\n");
+		sb.append("	}\n");
+
+		sb.append(
+			"	@Override public MatrixBlock readMatrixFromHDFS(String fname, long rlen, long clen, int blen, long estnnz)\n");
+		sb.append("		throws IOException, DMLRuntimeException {\n");
+		sb.append("MatrixBlock mb = super.readMatrixFromHDFS(fname, rlen, clen, blen, estnnz);\n");
+		sb.append("		return update("+fileFormatPropertiesString+",super.readMatrixFromHDFS(fname, rlen, clen, blen, estnnz), sample);\n");
+		sb.append("	}\n");
+		sb.append(
+			"	@Override public MatrixBlock readMatrixFromInputStream(InputStream is, long rlen, long clen, int blen, long estnnz)\n");
+		sb.append("		throws IOException, DMLRuntimeException {\n");
+		sb.append("		return update("+fileFormatPropertiesString+",super.readMatrixFromInputStream(is, rlen, clen, blen, estnnz), sample);\n");
+		sb.append("	}\n");
+		sb.append("}\n");
+
+		// compile class, and create MatrixReader object
+		try {
+			MatrixReader mr = (MatrixReader) CodegenUtils.compileClass(cname, sb.toString()).newInstance();
+			return mr;
+		}
+		catch(Exception e) {
+			throw new DMLRuntimeException("Failed to compile MatrixReader.", e);
+		}
 	}
 
 	public static MatrixReader generate(String baseClassName, String fileFormatProperties,

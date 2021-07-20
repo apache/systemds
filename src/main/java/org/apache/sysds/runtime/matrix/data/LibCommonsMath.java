@@ -19,6 +19,9 @@
 
 package org.apache.sysds.runtime.matrix.data;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.apache.commons.math3.exception.MaxCountExceededException;
 import org.apache.commons.math3.linear.Array2DRowRealMatrix;
 import org.apache.commons.math3.linear.BlockRealMatrix;
 import org.apache.commons.math3.linear.CholeskyDecomposition;
@@ -29,6 +32,7 @@ import org.apache.commons.math3.linear.QRDecomposition;
 import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.linear.SingularValueDecomposition;
 import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.util.DataConverter;
 
 /**
@@ -40,9 +44,9 @@ import org.apache.sysds.runtime.util.DataConverter;
  */
 public class LibCommonsMath 
 {
-	// private static final Log LOG = LogFactory.getLog(LibCommonsMath.class.getName());
-
-	static final double RELATIVE_SYMMETRY_THRESHOLD = 1e-6;
+	private static final Log LOG = LogFactory.getLog(LibCommonsMath.class.getName());
+	private static final double RELATIVE_SYMMETRY_THRESHOLD = 1e-6;
+	private static final double EIGEN_LAMBDA = 1e-8;
 
 	private LibCommonsMath() {
 		//prevent instantiation via private constructor
@@ -173,12 +177,20 @@ public class LibCommonsMath
 	 */
 	private static MatrixBlock[] computeEigen(MatrixBlock in) {
 		if ( in.getNumRows() != in.getNumColumns() ) {
-			throw new DMLRuntimeException("Eigen Decomposition can only be done on a square matrix. Input matrix is rectangular (rows=" + in.getNumRows() + ", cols="+ in.getNumColumns() +")");
+			throw new DMLRuntimeException("Eigen Decomposition can only be done on a square matrix. "
+				+ "Input matrix is rectangular (rows=" + in.getNumRows() + ", cols="+ in.getNumColumns() +")");
 		}
 		
-		Array2DRowRealMatrix matrixInput = DataConverter.convertToArray2DRowRealMatrix(in);
+		EigenDecomposition eigendecompose = null;
+		try {
+			Array2DRowRealMatrix matrixInput = DataConverter.convertToArray2DRowRealMatrix(in);
+			eigendecompose = new EigenDecomposition(matrixInput);
+		}
+		catch(MaxCountExceededException ex) {
+			LOG.warn("Eigen: "+ ex.getMessage()+". Falling back to regularized eigen factorization.");
+			eigendecompose = computeEigenRegularized(in);
+		}
 		
-		EigenDecomposition eigendecompose = new EigenDecomposition(matrixInput);
 		RealMatrix eVectorsMatrix = eigendecompose.getV();
 		double[][] eVectors = eVectorsMatrix.getData();
 		double[] eValues = eigendecompose.getRealEigenvalues();
@@ -209,6 +221,27 @@ public class LibCommonsMath
 		MatrixBlock mbVectors = DataConverter.convertToMatrixBlock(eVectors);
 
 		return new MatrixBlock[] { mbValues, mbVectors };
+	}
+	
+	private static EigenDecomposition computeEigenRegularized(MatrixBlock in) {
+		if( in == null || in.isEmptyBlock(false) )
+			throw new DMLRuntimeException("Invalid empty block");
+		
+		//slightly modify input for regularization (pos/neg)
+		MatrixBlock in2 = new MatrixBlock(in, false);
+		DenseBlock a = in2.getDenseBlock();
+		for( int i=0; i<in2.rlen; i++ ) {
+			double[] avals = a.values(i);
+			int apos = a.pos(i);
+			for( int j=0; j<in2.clen; j++ ) {
+				double v = avals[apos+j];
+				avals[apos+j] += Math.signum(v) * EIGEN_LAMBDA;
+			}
+		}
+		
+		//run eigen decomposition
+		return new EigenDecomposition(
+			DataConverter.convertToArray2DRowRealMatrix(in2));
 	}
 
 

@@ -172,6 +172,10 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		copy(that);
 	}
 	
+	public MatrixBlock(MatrixBlock that, boolean sp) {
+		copy(that, sp);
+	}
+	
 	public MatrixBlock(double val) {
 		reset(1, 1, false, 1, val);
 	}
@@ -1390,15 +1394,15 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		if( this == that ) //prevent data loss (e.g., on sparse-dense conversion)
 			throw new RuntimeException( "Copy must not overwrite itself!" );
 		
-		this.rlen=that.rlen;
-		this.clen=that.clen;
-		this.sparse=sp;
+		rlen=that.rlen;
+		clen=that.clen;
+		sparse=sp;
 		estimatedNNzsPerRow=(int)Math.ceil((double)thatValue.getNonZeros()/(double)rlen);
-		if(this.sparse && that.sparse)
+		if(sparse && that.sparse)
 			copySparseToSparse(that);
-		else if(this.sparse && !that.sparse)
+		else if(sparse && !that.sparse)
 			copyDenseToSparse(that);
-		else if(!this.sparse && that.sparse)
+		else if(!sparse && that.sparse)
 			copySparseToDense(that);
 		else
 			copyDenseToDense(that);

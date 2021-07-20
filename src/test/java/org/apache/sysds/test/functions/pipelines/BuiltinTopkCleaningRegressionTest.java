@@ -23,7 +23,6 @@ import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
 import org.junit.Assert;
-import org.junit.Ignore;
 import org.junit.Test;
 
 public class BuiltinTopkCleaningRegressionTest extends AutomatedTestBase{
@@ -55,7 +54,6 @@ public class BuiltinTopkCleaningRegressionTest extends AutomatedTestBase{
 			"lm", Types.ExecMode.HYBRID);
 	}
 
-
 	private void runFindPipelineTest(Double sample, int topk, int resources, int crossfold,
 		String target, Types.ExecMode et) {
 
@@ -78,5 +76,4 @@ public class BuiltinTopkCleaningRegressionTest extends AutomatedTestBase{
 			resetExecMode(modeOld);
 		}
 	}
-
 }

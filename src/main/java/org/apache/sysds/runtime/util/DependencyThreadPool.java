@@ -94,6 +94,12 @@ public class DependencyThreadPool{
         return new DependencyTask<>(task, new ArrayList<>());
     }
 
+    /*
+    Creates the Dependency list from a map and the tasks.
+    The map specifies which tasks should have a Dependency on which other task.
+    e.g. ([0, 3], [4, 6]) means the first 3 tasks in the tasks list are dependent on tasks at index 4 and 5
+         ([-2, -1], [0, 5]) means the last task has a Dependency on the first 5 tasks.
+     */
     public static List<List<? extends Callable<?>>> createDependencyList(List<? extends Callable<?>> tasks,
                                                                          Map<Integer[], Integer[]> depMap,
                                                                          List<List<? extends Callable<?>>> dep){

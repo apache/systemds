@@ -20,17 +20,26 @@
 package org.apache.sysds.runtime.util;
 
 import org.apache.sysds.runtime.DMLRuntimeException;
+import org.barfuin.texttree.api.Node;
+import org.barfuin.texttree.api.TextTree;
+import org.barfuin.texttree.api.TreeOptions;
+import org.barfuin.texttree.api.color.NodeColor;
+import org.barfuin.texttree.api.style.TreeStyles;
 
+import javax.annotation.CheckForNull;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
-public class DependencyTask<E> implements Callable<E> {
+public class DependencyTask<E> implements Callable<E>, Node {
+    public static final boolean ENABLE_DEBUG_DATA = false;
+    private static boolean PRINT_DEPENDENCIES = false;
 
     private final Callable<E> _task;
     private final List<DependencyTask<?>> _dependantTasks;
+    public List<DependencyTask<?>> _dependencyTasks = null;   // only for debugging
     private CompletableFuture<Future<?>> _future;
     private int _rdy = 0;
     private ExecutorService _pool;
@@ -72,7 +81,6 @@ public class DependencyTask<E> implements Callable<E> {
     @Override
     public E call() throws Exception {
         E ret = _task.call();
-        System.out.println(_task);
         _dependantTasks.forEach(t -> {
             if(t.decrease()){
                 if(_pool == null)
@@ -82,6 +90,30 @@ public class DependencyTask<E> implements Callable<E> {
         });
 
         return ret;
+    }
+
+    @CheckForNull
+    @Override
+    public String getText() {
+        return _task.toString();
+    }
+
+    @CheckForNull
+    @Override
+    public Iterable<? extends Node> getChildren() {
+        if(PRINT_DEPENDENCIES){
+            return _dependencyTasks;
+        }
+        return _dependantTasks;
+    }
+
+    public void printHierarchy(boolean dependencies){
+        boolean tmp = PRINT_DEPENDENCIES;
+        PRINT_DEPENDENCIES = dependencies;
+        TreeOptions options = new TreeOptions();
+        options.setStyle(TreeStyles.UNICODE_ROUNDED);
+        System.out.println(TextTree.newInstance(options).render(this));
+        PRINT_DEPENDENCIES = tmp;
     }
 
 }

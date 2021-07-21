@@ -33,6 +33,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
 import org.apache.commons.lang.NotImplementedException;
+import org.apache.hadoop.yarn.webapp.hamlet.Hamlet;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
@@ -160,13 +161,13 @@ public class ColumnEncoderComposite extends ColumnEncoder {
 			}
 			tasks.addAll(t);
 		}
+		// TODO Do not add ColumnCompositeUpdateDCTask if there is no DC present
 		List<List<? extends Callable<?>>> dep = new ArrayList<>(Collections.nCopies(tasks.size(), null));
-		tasks.add(DependencyThreadPool.createDependencyTask(new ColumnCompositeUpdateDCTask(this)));
 		DependencyThreadPool.createDependencyList(tasks, depMap, dep);
-		if(tasks.size() > 1)
+		if(hasEncoder(ColumnEncoderDummycode.class)){
+			tasks.add(DependencyThreadPool.createDependencyTask(new ColumnCompositeUpdateDCTask(this)));
 			dep.add(tasks.subList(tasks.size()-2, tasks.size()-1));
-		else
-			dep.add(null);
+		}
 		return DependencyThreadPool.createDependencyTasks(tasks, dep);
 	}
 
@@ -371,6 +372,13 @@ public class ColumnEncoderComposite extends ColumnEncoder {
 			_encoder.updateAllDCEncoders();
 			return null;
 		}
+
+		@Override
+		public String toString() {
+			return getClass().getSimpleName() + "<ColId: " + _encoder._colID + ">";
+		}
+
+
 	}
 
 

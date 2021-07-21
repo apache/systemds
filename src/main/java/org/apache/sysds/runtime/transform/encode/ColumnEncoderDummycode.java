@@ -33,7 +33,6 @@ import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.data.SparseRowVector;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
-import org.apache.sysds.runtime.transform.encode.tasks.ColumnApply;
 import org.apache.sysds.runtime.util.DependencyTask;
 import org.apache.sysds.runtime.util.DependencyThreadPool;
 
@@ -192,11 +191,11 @@ public class ColumnEncoderDummycode extends ColumnEncoder {
 
 
 
-	private static class DummycodeSparseApplyTask implements ColumnApply {
+	private static class DummycodeSparseApplyTask implements Callable<Object> {
 		private final ColumnEncoderDummycode _encoder;
 		private final MatrixBlock _input;
 		private final MatrixBlock _out;
-		private int _outputCol;
+		private final int _outputCol;
 
 
 		private DummycodeSparseApplyTask(ColumnEncoderDummycode encoder, MatrixBlock input, MatrixBlock out, int outputCol) {
@@ -206,9 +205,10 @@ public class ColumnEncoderDummycode extends ColumnEncoder {
 			_outputCol = outputCol;
 		}
 
-		@Override
 		public Object call() throws Exception {
 			for(int r = 0; r < _input.getNumRows(); r++) {
+				if(_out.getSparseBlock() == null)
+					return null;
 				synchronized (_out.getSparseBlock().get(r)){
 					// Since the recoded values are already offset in the output matrix (same as input at this point)
 					// the dummycoding only needs to offset them within their column domain. Which means that the
@@ -237,14 +237,10 @@ public class ColumnEncoderDummycode extends ColumnEncoder {
 		}
 
 		@Override
-		public void setOutputCol(int outputCol) {
-			_outputCol = outputCol;
+		public String toString() {
+			return getClass().getSimpleName() + "<ColId: " + _encoder._colID + ">";
 		}
 
-		@Override
-		public int getOutputCol() {
-			return _outputCol;
-		}
 	}
 
 

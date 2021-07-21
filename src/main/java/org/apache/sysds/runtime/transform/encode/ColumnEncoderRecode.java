@@ -346,6 +346,12 @@ public class ColumnEncoderRecode extends ColumnEncoder {
 			}
 			return null;
 		}
+
+		@Override
+		public String toString() {
+			return getClass().getSimpleName() + "<Start row: " + _startRow + "; Block size: " + _blockSize + ">";
+		}
+
 	}
 
 	private static class RecodeMergePartialBuildTask implements Callable<Object>{
@@ -370,6 +376,12 @@ public class ColumnEncoderRecode extends ColumnEncoder {
 			_encoder._rcdMap = rcdMap;
 			return null;
 		}
+
+		@Override
+		public String toString() {
+			return getClass().getSimpleName() + "<ColId: " + _encoder._colID + ">";
+		}
+
 	}
 
 
@@ -388,6 +400,12 @@ public class ColumnEncoderRecode extends ColumnEncoder {
 			_encoder.build(_input);
 			return null;
 		}
+
+		@Override
+		public String toString() {
+			return getClass().getSimpleName() + "<ColId: " + _encoder._colID + ">";
+		}
+
 	}
 	
 }

@@ -36,7 +36,6 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
-import org.apache.sysds.runtime.transform.encode.tasks.ColumnApply;
 import org.apache.sysds.runtime.util.DependencyTask;
 import org.apache.sysds.runtime.util.DependencyThreadPool;
 
@@ -222,13 +221,13 @@ public abstract class ColumnEncoder implements Externalizable, Encoder, Comparab
 		Recode, FeatureHash, PassThrough, Bin, Dummycode, Omit, MVImpute, Composite
 	}
 
-	private static class ColumnApplyTask implements ColumnApply {
+	private static class ColumnApplyTask implements Callable<Object> {
 
 		private final ColumnEncoder _encoder;
 		private final FrameBlock _inputF;
 		private final MatrixBlock _inputM;
 		private final MatrixBlock _out;
-		private int _outputCol;
+		private final int _outputCol;
 		private int _rowStart = 0;
 		private int _blk = -1;
 
@@ -262,15 +261,6 @@ public abstract class ColumnEncoder implements Externalizable, Encoder, Comparab
 			_blk = blk;
 		}
 
-		public void setOutputCol(int outputCol){
-			_outputCol = outputCol;
-		}
-
-		public int getOutputCol(){
-			return _outputCol;
-		}
-
-
 		@Override
 		public Void call() throws Exception {
 			assert _outputCol >= 0;
@@ -280,5 +270,11 @@ public abstract class ColumnEncoder implements Externalizable, Encoder, Comparab
 				_encoder.apply(_inputF, _out, _outputCol, _rowStart, _blk);
 			return null;
 		}
+
+		@Override
+		public String toString() {
+			return getClass().getSimpleName() + "<Encoder: " + _encoder.getClass().getSimpleName() + "; ColId: " + _encoder._colID + ">";
+		}
+
 	}
 }

@@ -294,6 +294,13 @@ public class ColumnEncoderBin extends ColumnEncoder {
 			_partialMinMax.put(_startRow, getMinMaxOfCol(_input, _colID, _startRow, _blockSize));
 			return null;
 		}
+
+		@Override
+		public String toString() {
+			return getClass().getSimpleName() + "<Start row: " + _startRow + "; Block size: " + _blockSize + ">";
+		}
+
+
 	}
 
 	private static class BinMergePartialBuildTask implements Callable<Object>{
@@ -317,6 +324,12 @@ public class ColumnEncoderBin extends ColumnEncoder {
 			_encoder.computeBins(min, max);
 			return null;
 		}
+
+		@Override
+		public String toString() {
+			return getClass().getSimpleName() + "<ColId: " + _encoder._colID + ">";
+		}
+
 	}
 
 
@@ -336,6 +349,12 @@ public class ColumnEncoderBin extends ColumnEncoder {
 			_encoder.build(_input);
 			return null;
 		}
+
+		@Override
+		public String toString() {
+			return getClass().getSimpleName() + "<ColId: " + _encoder._colID + ">";
+		}
+
 	}
 
 }

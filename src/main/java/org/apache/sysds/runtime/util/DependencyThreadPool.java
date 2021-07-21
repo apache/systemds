@@ -20,6 +20,9 @@
 package org.apache.sysds.runtime.util;
 
 import org.apache.sysds.runtime.DMLRuntimeException;
+import org.barfuin.texttree.api.TextTree;
+import org.barfuin.texttree.api.TreeOptions;
+import org.barfuin.texttree.api.style.TreeStyles;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -45,16 +48,26 @@ public class DependencyThreadPool{
 
     public List<Future<Future<?>>> submitAll(List<DependencyTask<?>> dtasks) {
         List<Future<Future<?>>> futures = new ArrayList<>();
+        List<Integer> rdyTasks = new ArrayList<>();
+        int i = 0;
         for(DependencyTask<?> t : dtasks){
             CompletableFuture<Future<?>> f = new CompletableFuture<>();
             t.addPool(_pool);
-            if(t.isReady()){
-                f.complete(_pool.submit(t));
-                futures.add(f);
-            }else{
+            if(!t.isReady()){
                 t.assignFuture(f);
-                futures.add(f);
+            }else {
+                // need to save rdy tasks before execution begins otherwise tasks may start 2 times
+                rdyTasks.add(i);
             }
+            futures.add(f);
+            i++;
+        }
+        // Two stages to avoid race condition!
+        for(Integer index : rdyTasks){
+            synchronized (_pool){
+                ((CompletableFuture<Future<?>>)futures.get(index)).complete(_pool.submit(dtasks.get(index)));
+            }
+
         }
         return futures;
     }
@@ -69,6 +82,7 @@ public class DependencyThreadPool{
     public List<Object> submitAllAndWait(List<DependencyTask<?>> dtasks)
             throws ExecutionException, InterruptedException {
         List<Object> res = new ArrayList<>();
+        // printDependencyGraph(dtasks);
         List<Future<Future<?>>> futures = submitAll(dtasks);
         for(Future<Future<?>> ff: futures){
             res.add(ff.get().get());
@@ -127,10 +141,27 @@ public class DependencyThreadPool{
             DependencyTask<?> t = ret.get(i);
             for(Callable<?> dep : deps){
                 DependencyTask<?> dt = map.get(dep);
+                if(DependencyTask.ENABLE_DEBUG_DATA){
+                    t._dependencyTasks = t._dependencyTasks == null ? new ArrayList<>(): t._dependencyTasks;
+                    t._dependencyTasks.add(dt);
+                }
                 if (dt != null)
                     dt.addDependent(t);
             }
         }
         return ret;
     }
+
+
+    public static void printDependencyGraph(List<DependencyTask<?>> tasks){
+        TreeOptions options = new TreeOptions();
+        options.setStyle(TreeStyles.UNICODE_ROUNDED);
+        for(DependencyTask<?> t : tasks){
+            if(t.isReady()){
+                System.out.println(TextTree.newInstance(options).render(t));
+            }
+        }
+    }
+
+
 }

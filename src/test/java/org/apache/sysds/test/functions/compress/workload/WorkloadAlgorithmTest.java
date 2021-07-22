@@ -33,8 +33,6 @@ import org.junit.Test;
 
 public class WorkloadAlgorithmTest extends AutomatedTestBase {
 
-	// private static final Log LOG = LogFactory.getLog(WorkloadAnalysisTest.class.getName());
-
 	private final static String TEST_NAME1 = "WorkloadAnalysisMLogReg";
 	private final static String TEST_NAME2 = "WorkloadAnalysisLm";
 	private final static String TEST_NAME3 = "WorkloadAnalysisPCA";
@@ -54,7 +52,6 @@ public class WorkloadAlgorithmTest extends AutomatedTestBase {
 	public void testMLogRegCP() {
 		runWorkloadAnalysisTest(TEST_NAME1, ExecMode.HYBRID, 2);
 	}
-
 
 	@Test
 	public void testLmSP() {
@@ -80,12 +77,12 @@ public class WorkloadAlgorithmTest extends AutomatedTestBase {
 		ExecMode oldPlatform = setExecMode(mode);
 
 		try {
-
 			loadTestConfiguration(getTestConfiguration(testname));
 
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + testname + ".dml";
-			programArgs = new String[] {"-stats", "20", "-args", input("X"), input("y"), output("B")};
+			programArgs = new String[] {"-explain","-stats",
+				"20", "-args", input("X"), input("y"), output("B")};
 
 			double[][] X = TestUtils.round(getRandomMatrix(10000, 20, 0, 10, 1.0, 7));
 			writeInputMatrixWithMTD("X", X, false);
@@ -95,9 +92,7 @@ public class WorkloadAlgorithmTest extends AutomatedTestBase {
 			}
 			writeInputMatrixWithMTD("y", y, false);
 
-			String ret = runTest(null).toString();
-			if(ret.contains("ERROR:"))
-				fail(ret);
+			runTest(null);
 
 			// check various additional expectations
 			long actualCompressionCount = mode == ExecMode.HYBRID ? Statistics

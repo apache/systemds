@@ -34,6 +34,7 @@ import org.apache.sysds.common.Types.OpOpN;
 import org.apache.sysds.common.Types.ParamBuiltinOp;
 import org.apache.sysds.common.Types.ReOrgOp;
 import org.apache.sysds.conf.ConfigurationManager;
+import org.apache.sysds.conf.DMLConfig;
 import org.apache.sysds.hops.AggBinaryOp;
 import org.apache.sysds.hops.DataOp;
 import org.apache.sysds.hops.Hop;
@@ -42,6 +43,7 @@ import org.apache.sysds.hops.LiteralOp;
 import org.apache.sysds.hops.ParameterizedBuiltinOp;
 import org.apache.sysds.hops.TernaryOp;
 import org.apache.sysds.hops.recompile.Recompiler;
+import org.apache.sysds.lops.Compression.CompressConfig;
 import org.apache.sysds.parser.DataIdentifier;
 import org.apache.sysds.parser.StatementBlock;
 import org.apache.sysds.parser.VariableSet;
@@ -75,7 +77,10 @@ public class RewriteSplitDagDataDependentOperators extends StatementBlockRewrite
 	public List<StatementBlock> rewriteStatementBlock(StatementBlock sb, ProgramRewriteStatus state)
 	{
 		//DAG splits not required for forced single node
-		if( DMLScript.getGlobalExecMode() == ExecMode.SINGLE_NODE
+		CompressConfig compress = CompressConfig.valueOf(ConfigurationManager
+			.getDMLConfig().getTextValue(DMLConfig.COMPRESSED_LINALG).toUpperCase());
+		if( (DMLScript.getGlobalExecMode() == ExecMode.SINGLE_NODE
+			&& !(compress != CompressConfig.FALSE) )
 			|| !HopRewriteUtils.isLastLevelStatementBlock(sb) )
 			return Arrays.asList(sb);
 		
@@ -225,7 +230,8 @@ public class RewriteSplitDagDataDependentOperators extends StatementBlockRewrite
 			return;
 		
 		//prevent unnecessary dag split (dims known or no consumer operations)
-		boolean noSplitRequired = ( hop.dimsKnown() || HopRewriteUtils.hasOnlyWriteParents(hop, true, true) );
+		boolean noSplitRequired = (HopRewriteUtils.hasOnlyWriteParents(hop, true, true)
+			|| hop.dimsKnown() || DMLScript.getGlobalExecMode() == ExecMode.SINGLE_NODE);
 		boolean investigateChilds = true;
 		
 		//collect data dependent operations (to be extended as necessary)
@@ -294,14 +300,8 @@ public class RewriteSplitDagDataDependentOperators extends StatementBlockRewrite
 			}
 		}
 		
-		//#4 second-order eval function
-		if( HopRewriteUtils.isNary(hop, OpOpN.EVAL) && !noSplitRequired ) {
-			cand.add(hop);
-			investigateChilds = false;
-		}
-		
-		//#5 sql
-		if( hop instanceof DataOp && ((DataOp) hop).getOp() == OpOpData.SQLREAD && !noSplitRequired) {
+		//#4 other data dependent operators (default handling)
+		if( isBasicDataDependentOperator(hop, noSplitRequired) ) {
 			cand.add(hop);
 			investigateChilds = false;
 		}
@@ -313,6 +313,14 @@ public class RewriteSplitDagDataDependentOperators extends StatementBlockRewrite
 				rCollectDataDependentOperators(c, cand);
 		
 		hop.setVisited();
+	}
+	
+	private static boolean isBasicDataDependentOperator(Hop hop, boolean noSplitRequired) {
+		return (HopRewriteUtils.isNary(hop, OpOpN.EVAL) & !noSplitRequired)
+			|| (HopRewriteUtils.isData(hop, OpOpData.SQLREAD) & !noSplitRequired)
+			|| (hop.requiresCompression() & !HopRewriteUtils.hasOnlyWriteParents(hop, true, true));
+		//note: for compression we probe for write parents (part of noSplitRequired) directly
+		// because we want to split even if the dimensions are known 
 	}
 
 	private static boolean hasTransientWriteParents( Hop hop ) {
@@ -393,7 +401,7 @@ public class RewriteSplitDagDataDependentOperators extends StatementBlockRewrite
 			for( Hop c : hop.getInput() )
 				rAddHopsToProbeSet(c, probeSet);
 	
-		hop.setVisited();	
+		hop.setVisited();
 	}
 	
 	/**
@@ -417,11 +425,11 @@ public class RewriteSplitDagDataDependentOperators extends StatementBlockRewrite
 					rProbeAndAddHopsToCandidateSet(c, probeSet, candSet);
 				else
 				{
-					candSet.add(new Pair<>(hop,c)); 
+					candSet.add(new Pair<>(hop,c));
 				}
 			}
 		
-		hop.setVisited();	
+		hop.setVisited();
 	}
 	
 	private void collectCandidateChildOperators( ArrayList<Hop> cand, HashSet<Hop> candChilds )

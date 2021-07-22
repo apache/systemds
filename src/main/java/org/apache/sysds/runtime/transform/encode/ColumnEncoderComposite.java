@@ -161,7 +161,6 @@ public class ColumnEncoderComposite extends ColumnEncoder {
 			}
 			tasks.addAll(t);
 		}
-		// TODO Do not add ColumnCompositeUpdateDCTask if there is no DC present
 		List<List<? extends Callable<?>>> dep = new ArrayList<>(Collections.nCopies(tasks.size(), null));
 		DependencyThreadPool.createDependencyList(tasks, depMap, dep);
 		if(hasEncoder(ColumnEncoderDummycode.class)){

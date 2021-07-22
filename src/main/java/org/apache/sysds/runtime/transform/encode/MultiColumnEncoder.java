@@ -136,19 +136,24 @@ public class MultiColumnEncoder implements Encoder {
 
 			DependencyTask<?> applyTaskWrapper = DependencyThreadPool.createDependencyTask(new ApplyTasksWrapperTask(e, in, out, pool));
 
+			if(e.hasEncoder(ColumnEncoderDummycode.class)) {
+				// InitMatrix dependency to build of recode if a DC is present
+				// Since they are the only ones that change the domain size which would influence the Matrix creation
+				depMap.put(new Integer[]{0, 1},  // InitMatrix Task first in list
+						   new Integer[]{tasks.size() - 1, tasks.size()});
+				// output col update task dependent on Build completion only for Recode and binning since they can
+				// change dummycode domain size
+				// colUpdateTask can start when all domain sizes, because it can now calculate the offsets for
+				// each column
+				depMap.put(new Integer[]{-2, -1},
+						   new Integer[]{tasks.size() - 1, tasks.size()});
+			}
+
 			if(hasDC){
-				//InitMatrix dependency to build of recode if a DC is present
-				if(e.hasEncoder(ColumnEncoderRecode.class) || e.hasEncoder(ColumnEncoderBin.class)){
-					depMap.put(new Integer[]{0, 1},  // InitMatrix Task first in list
-							new Integer[]{tasks.size()-1, tasks.size()});
-					// output col update task dependent on Build completion only for Recode and binning since they can
-					// change dummycode domain size
-					depMap.put(new Integer[]{-2, -1},
-							new Integer[]{tasks.size()-1, tasks.size()});
-				}
 				// Apply Task dependency to output col update task (is last in list)
+				// All ApplyTasks need to wait for this task so they all have the correct offsets.
 				depMap.put(new Integer[]{tasks.size(), tasks.size() + 1},
-						new Integer[]{-2, -1});
+						   new Integer[]{-2, -1});
 
 				applyTAgg = applyTAgg == null ? new ArrayList<>(): applyTAgg;
 				applyTAgg.add(applyTaskWrapper);

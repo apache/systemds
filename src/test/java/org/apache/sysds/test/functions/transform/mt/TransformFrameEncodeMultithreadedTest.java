@@ -46,24 +46,17 @@ public class TransformFrameEncodeMultithreadedTest extends AutomatedTestBase {
 	//dataset and transform tasks without missing values
 	private final static String DATASET1 = "homes3/homes.csv";
 	private final static String SPEC1    = "homes3/homes.tfspec_recode.json";
-	private final static String SPEC1b   = "homes3/homes.tfspec_recode2.json";
 	private final static String SPEC2    = "homes3/homes.tfspec_dummy.json";
 	private final static String SPEC2all = "homes3/homes.tfspec_dummy_all.json";
-	private final static String SPEC2b   = "homes3/homes.tfspec_dummy2.json";
 	private final static String SPEC3    = "homes3/homes.tfspec_bin.json"; //recode
-	private final static String SPEC3b   = "homes3/homes.tfspec_bin2.json"; //recode
 	private final static String SPEC6    = "homes3/homes.tfspec_recode_dummy.json";
-	private final static String SPEC6b   = "homes3/homes.tfspec_recode_dummy2.json";
 	private final static String SPEC7    = "homes3/homes.tfspec_binDummy.json"; //recode+dummy
-	private final static String SPEC7b   = "homes3/homes.tfspec_binDummy2.json"; //recode+dummy
 	private final static String SPEC8    = "homes3/homes.tfspec_hash.json";
-	private final static String SPEC8b   = "homes3/homes.tfspec_hash2.json";
 	private final static String SPEC9    = "homes3/homes.tfspec_hash_recode.json";
-	private final static String SPEC9b   = "homes3/homes.tfspec_hash_recode2.json";
-	
+
 	private static final int[] BIN_col3 = new int[]{1,4,2,3,3,2,4};
 	private static final int[] BIN_col8 = new int[]{1,2,2,2,2,2,3};
-	
+
 	public enum TransformType {
 		RECODE,
 		DUMMY,
@@ -80,61 +73,102 @@ public class TransformFrameEncodeMultithreadedTest extends AutomatedTestBase {
 		TestUtils.clearAssertionInformation();
 		addTestConfiguration(TEST_NAME1, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] { "y" }) );
 	}
-	
+
 	@Test
-	public void testHomesRecodeIDsSingleNodeCSV() {
+	public void testHomesRecodeNonStaged() {
 		runTransformTest(ExecMode.SINGLE_NODE, "csv", TransformType.RECODE, false);
 	}
 
 	@Test
-	public void testHomesDummyCodeIDsSingleNodeCSV() {
+	public void testHomesDummyCodeNonStaged() {
 		runTransformTest(ExecMode.SINGLE_NODE, "csv", TransformType.DUMMY, false);
 	}
 
 	@Test
-	public void testHomesDummyAllCodeIDsSingleNodeCSV() {
+	public void testHomesDummyAllCodeNonStaged() {
 		runTransformTest(ExecMode.SINGLE_NODE, "csv", TransformType.DUMMY_ALL, false);
 	}
 
 
 	@Test
-	public void testHomesRecodeDummyCodeIDsSingleNodeCSV() {
+	public void testHomesRecodeDummyCodeNonStaged() {
 		runTransformTest(ExecMode.SINGLE_NODE, "csv", TransformType.RECODE_DUMMY, false);
 	}
 
 	@Test
-	public void testHomesBinIDsSingleNodeCSV() {
+	public void testHomesBinNonStaged() {
 		runTransformTest(ExecMode.SINGLE_NODE, "csv", TransformType.BIN, false);
 	}
 
 	@Test
-	public void testHomesBinDummyIDsSingleNodeCSV() {
+	public void testHomesBinDummyNonStaged() {
 		runTransformTest(ExecMode.SINGLE_NODE, "csv", TransformType.BIN_DUMMY, false);
 	}
 
 	@Test
-	public void testHomesHashIDsSingleNodeCSV() {
+	public void testHomesHashNonStaged() {
 		runTransformTest(ExecMode.SINGLE_NODE, "csv", TransformType.HASH, false);
 	}
 
 	@Test
-	public void testHomesHashRecodeIDsSingleNodeCSV() {
+	public void testHomesHashRecodeNonStaged() {
 		runTransformTest(ExecMode.SINGLE_NODE, "csv", TransformType.HASH_RECODE, false);
 	}
+
+	@Test
+	public void testHomesRecodeStaged() {
+		runTransformTest(ExecMode.SINGLE_NODE, "csv", TransformType.RECODE,true);
+	}
+
+	@Test
+	public void testHomesDummyCodeStaged() {
+		runTransformTest(ExecMode.SINGLE_NODE, "csv", TransformType.DUMMY,true);
+	}
+
+	@Test
+	public void testHomesDummyAllCodeStaged() {
+		runTransformTest(ExecMode.SINGLE_NODE, "csv", TransformType.DUMMY_ALL,true);
+	}
+
+
+	@Test
+	public void testHomesRecodeDummyCodeStaged() {
+		runTransformTest(ExecMode.SINGLE_NODE, "csv", TransformType.RECODE_DUMMY,true);
+	}
+
+	@Test
+	public void testHomesBinStaged() {
+		runTransformTest(ExecMode.SINGLE_NODE, "csv", TransformType.BIN,true);
+	}
+
+	@Test
+	public void testHomesBinDummyStaged() {
+		runTransformTest(ExecMode.SINGLE_NODE, "csv", TransformType.BIN_DUMMY,true);
+	}
+
+	@Test
+	public void testHomesHashStaged() {
+		runTransformTest(ExecMode.SINGLE_NODE, "csv", TransformType.HASH,true);
+	}
+
+	@Test
+	public void testHomesHashRecodeStaged() {
+		runTransformTest(ExecMode.SINGLE_NODE, "csv", TransformType.HASH_RECODE,true);
+	}
 	
-	private void runTransformTest( ExecMode rt, String ofmt, TransformType type, boolean colnames)	{
+	private void runTransformTest( ExecMode rt, String ofmt, TransformType type, boolean staged)	{
 
 		//set transform specification
 		String SPEC = null; String DATASET = null;
 		switch( type ) {
-			case RECODE: SPEC = colnames?SPEC1b:SPEC1; DATASET = DATASET1; break;
-			case DUMMY:  SPEC = colnames?SPEC2b:SPEC2; DATASET = DATASET1; break;
+			case RECODE: SPEC = SPEC1; DATASET = DATASET1; break;
+			case DUMMY:  SPEC = SPEC2; DATASET = DATASET1; break;
 			case DUMMY_ALL:  SPEC = SPEC2all; DATASET = DATASET1; break;
-			case BIN:    SPEC = colnames?SPEC3b:SPEC3; DATASET = DATASET1; break;
-			case RECODE_DUMMY: SPEC = colnames?SPEC6b:SPEC6; DATASET = DATASET1; break;
-			case BIN_DUMMY: SPEC = colnames?SPEC7b:SPEC7; DATASET = DATASET1; break;
-			case HASH:	 SPEC = colnames?SPEC8b:SPEC8; DATASET = DATASET1; break;
-			case HASH_RECODE: SPEC = colnames?SPEC9b:SPEC9; DATASET = DATASET1; break;
+			case BIN:    SPEC = SPEC3; DATASET = DATASET1; break;
+			case RECODE_DUMMY: SPEC = SPEC6; DATASET = DATASET1; break;
+			case BIN_DUMMY: SPEC = SPEC7; DATASET = DATASET1; break;
+			case HASH:	 SPEC = SPEC8; DATASET = DATASET1; break;
+			case HASH_RECODE: SPEC = SPEC9; DATASET = DATASET1; break;
 		}
 
 		if( !ofmt.equals("csv") )
@@ -154,6 +188,7 @@ public class TransformFrameEncodeMultithreadedTest extends AutomatedTestBase {
 			StringBuilder specSb = new StringBuilder();
 			Files.readAllLines(Paths.get(SPEC)).forEach(s -> specSb.append(s).append("\n"));
 			MultiColumnEncoder encoder = EncoderFactory.createEncoder(specSb.toString(), input.getColumnNames(), input.getNumColumns(), null);
+			MultiColumnEncoder.MULTI_THREADED_STAGES = staged;
 
 			MatrixBlock outputS = encoder.encode(input, 1);
 			MatrixBlock outputM = encoder.encode(input, 12);

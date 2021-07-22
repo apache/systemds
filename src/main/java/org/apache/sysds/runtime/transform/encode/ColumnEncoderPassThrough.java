@@ -79,8 +79,10 @@ public class ColumnEncoderPassThrough extends ColumnEncoder {
 	@Override
 	public MatrixBlock apply(MatrixBlock in, MatrixBlock out, int outputCol, int rowStart, int blk) {
 		// only transfer from in to out
-		int end = (blk <= 0) ? in.getNumRows() : in.getNumRows() < rowStart + blk ? in.getNumRows() : rowStart + blk;
+        if(in == out)
+            return out;
 		int col = _colID - 1; // 1-based
+        int end = getEndIndex(in.getNumRows(), rowStart, blk);
 		for(int i = rowStart; i < end; i++) {
 			double val = in.quickGetValueThreadSafe(i, col);
 			out.quickSetValueThreadSafe(i, outputCol, val);

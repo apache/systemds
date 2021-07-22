@@ -97,7 +97,7 @@ public class ColumnEncoderFeatureHash extends ColumnEncoder {
 
 	@Override
 	public MatrixBlock apply(MatrixBlock in, MatrixBlock out, int outputCol, int rowStart, int blk) {
-		int end = (blk <= 0) ? in.getNumRows() : in.getNumRows() < rowStart + blk ? in.getNumRows() : rowStart + blk;
+		int end = getEndIndex(in.getNumRows(), rowStart, blk);
 		// apply feature hashing column wise
 		for(int i = rowStart; i < end; i++) {
 			Object okey = in.quickGetValueThreadSafe(i, _colID - 1);

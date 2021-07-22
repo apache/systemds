@@ -72,82 +72,87 @@ public class TransformFrameBuildMultithreadedTest  extends AutomatedTestBase {
 	}
 
 	@Test
-	public void testHomesRecodeIDsSingleNodeCSV() {
-		runTransformTest(Types.ExecMode.SINGLE_NODE, "csv", TransformType.RECODE, false);
+	public void testHomesBuildRecodeSingleNodeCSV() {
+		runTransformTest(Types.ExecMode.SINGLE_NODE, "csv", TransformType.RECODE, 0);
 	}
 
 	@Test
-	public void testHomesDummyCodeIDsSingleNodeCSV() {
-		runTransformTest(Types.ExecMode.SINGLE_NODE, "csv", TransformType.DUMMY, false);
+	public void testHomesBuild50RecodeSingleNodeCSV() {
+		runTransformTest(Types.ExecMode.SINGLE_NODE, "csv", TransformType.RECODE, 50);
 	}
 
 	@Test
-	public void testHomesRecodeDummyCodeIDsSingleNodeCSV() {
-		runTransformTest(Types.ExecMode.SINGLE_NODE, "csv", TransformType.RECODE_DUMMY, false);
+	public void testHomesBuildDummyCodeSingleNodeCSV() {
+		runTransformTest(Types.ExecMode.SINGLE_NODE, "csv", TransformType.DUMMY,0);
 	}
 
 	@Test
-	public void testHomesRecodeBinningIDsSingleNodeCSV() {
-		runTransformTest(Types.ExecMode.SINGLE_NODE, "csv", TransformType.RECODE_BIN, false);
+	public void testHomesBuildRecodeDummyCodeSingleNodeCSV() {
+		runTransformTest(Types.ExecMode.SINGLE_NODE, "csv", TransformType.RECODE_DUMMY, 0);
 	}
 
 	@Test
-	public void testHomesBinIDsSingleNodeCSV() {
-		runTransformTest(Types.ExecMode.SINGLE_NODE, "csv", TransformType.BIN, false);
+	public void testHomesBuildRecodeBinningSingleNodeCSV() {
+		runTransformTest(Types.ExecMode.SINGLE_NODE, "csv", TransformType.RECODE_BIN,0);
 	}
 
 	@Test
-	public void testHomesBinDummyIDsSingleNodeCSV() {
-		runTransformTest(Types.ExecMode.SINGLE_NODE, "csv", TransformType.BIN_DUMMY, false);
+	public void testHomesBuildBinSingleNodeCSV() {
+		runTransformTest(Types.ExecMode.SINGLE_NODE, "csv", TransformType.BIN, 0);
 	}
 
 	@Test
-	public void testHomesHashIDsSingleNodeCSV() {
-		runTransformTest(Types.ExecMode.SINGLE_NODE, "csv", TransformType.HASH, false);
+	public void testHomesBuild50BinSingleNodeCSV() {
+		runTransformTest(Types.ExecMode.SINGLE_NODE, "csv", TransformType.BIN, 50);
 	}
 
 	@Test
-	public void testHomesHashRecodeIDsSingleNodeCSV() {
-		runTransformTest(Types.ExecMode.SINGLE_NODE, "csv", TransformType.HASH_RECODE, false);
+	public void testHomesBuildBinDummySingleNodeCSV() {
+		runTransformTest(Types.ExecMode.SINGLE_NODE, "csv", TransformType.BIN_DUMMY,0);
+	}
+
+	@Test
+	public void testHomesBuildHashRecodeSingleNodeCSV() {
+		runTransformTest(Types.ExecMode.SINGLE_NODE, "csv", TransformType.HASH_RECODE, 0);
 	}
 
 
-	private void runTransformTest(Types.ExecMode rt, String ofmt, TransformType type, boolean colnames) 
+	private void runTransformTest(Types.ExecMode rt, String ofmt, TransformType type, int blockSize)
 	{
 		// set transform specification
 		String SPEC = null;
 		String DATASET = null;
 		switch (type) {
 			case RECODE:
-				SPEC = colnames ? SPEC1b : SPEC1;
+				SPEC = SPEC1;
 				DATASET = DATASET1;
 				break;
 			case DUMMY:
-				SPEC = colnames ? SPEC2b : SPEC2;
+				SPEC = SPEC2;
 				DATASET = DATASET1;
 				break;
 			case BIN:
-				SPEC = colnames ? SPEC3b : SPEC3;
+				SPEC = SPEC3;
 				DATASET = DATASET1;
 				break;
 			case RECODE_DUMMY:
-				SPEC = colnames ? SPEC6b : SPEC6;
+				SPEC = SPEC6;
 				DATASET = DATASET1;
 				break;
 			case BIN_DUMMY:
-				SPEC = colnames ? SPEC7b : SPEC7;
+				SPEC = SPEC7;
 				DATASET = DATASET1;
 				break;
 			case HASH:
-				SPEC = colnames ? SPEC8b : SPEC8;
+				SPEC =  SPEC8;
 				DATASET = DATASET1;
 				break;
 			case HASH_RECODE:
-				SPEC = colnames ? SPEC9b : SPEC9;
+				SPEC =  SPEC9;
 				DATASET = DATASET1;
 				break;
 			case RECODE_BIN:
-				SPEC = colnames ? SPEC10 : SPEC10;
+				SPEC = SPEC10;
 				DATASET = DATASET1;
 				break;
 		}
@@ -170,10 +175,9 @@ public class TransformFrameBuildMultithreadedTest  extends AutomatedTestBase {
 			Files.readAllLines(Paths.get(SPEC)).forEach(s -> specSb.append(s).append("\n"));
 			MultiColumnEncoder encoderS = EncoderFactory.createEncoder(specSb.toString(), 
 					input.getColumnNames(), input.getNumColumns(), null);
-			MultiColumnEncoder encoderM = EncoderFactory.createEncoder(specSb.toString(), 
+			MultiColumnEncoder encoderM = EncoderFactory.createEncoder(specSb.toString(),
 					input.getColumnNames(), input.getNumColumns(), null);
 
-			MultiColumnEncoder.BUILD_BLOCKSIZE = 10;
 			encoderS.build(input, 1);
 			encoderM.build(input, 12);
 

@@ -50,7 +50,7 @@ public class MultiColumnEncoder implements Encoder {
 
 	protected static final Log LOG = LogFactory.getLog(MultiColumnEncoder.class.getName());
 	private static final boolean MULTI_THREADED = true;
-	private static final boolean MULTI_THREADED_STAGES = true;
+	public static boolean MULTI_THREADED_STAGES = true;
 
 	private List<ColumnEncoderComposite> _columnEncoders;
 	// These encoders are deprecated and will be fazed out soon.

@@ -20,13 +20,7 @@
 package org.apache.sysds.runtime.util;
 
 import org.apache.sysds.runtime.DMLRuntimeException;
-import org.barfuin.texttree.api.TextTree;
-import org.barfuin.texttree.api.TreeOptions;
-import org.barfuin.texttree.api.style.TreeStyles;
-
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -38,11 +32,11 @@ import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public class DependencyThreadPool{
+public class DependencyThreadPool {
 
     private final ExecutorService _pool;
 
-    public DependencyThreadPool(int k){
+    public DependencyThreadPool(int k) {
         _pool = CommonThreadPool.get(k);
     }
 
@@ -50,12 +44,12 @@ public class DependencyThreadPool{
         List<Future<Future<?>>> futures = new ArrayList<>();
         List<Integer> rdyTasks = new ArrayList<>();
         int i = 0;
-        for(DependencyTask<?> t : dtasks){
+        for (DependencyTask<?> t : dtasks) {
             CompletableFuture<Future<?>> f = new CompletableFuture<>();
             t.addPool(_pool);
-            if(!t.isReady()){
+            if (!t.isReady()) {
                 t.assignFuture(f);
-            }else {
+            } else {
                 // need to save rdy tasks before execution begins otherwise tasks may start 2 times
                 rdyTasks.add(i);
             }
@@ -63,9 +57,9 @@ public class DependencyThreadPool{
             i++;
         }
         // Two stages to avoid race condition!
-        for(Integer index : rdyTasks){
-            synchronized (_pool){
-                ((CompletableFuture<Future<?>>)futures.get(index)).complete(_pool.submit(dtasks.get(index)));
+        for (Integer index : rdyTasks) {
+            synchronized (_pool) {
+                ((CompletableFuture<Future<?>>) futures.get(index)).complete(_pool.submit(dtasks.get(index)));
             }
 
         }
@@ -84,13 +78,13 @@ public class DependencyThreadPool{
         List<Object> res = new ArrayList<>();
         // printDependencyGraph(dtasks);
         List<Future<Future<?>>> futures = submitAll(dtasks);
-        for(Future<Future<?>> ff: futures){
+        for (Future<Future<?>> ff : futures) {
             res.add(ff.get().get());
         }
         return res;
     }
 
-    public static DependencyTask<?> createDependencyTask(Callable<?> task){
+    public static DependencyTask<?> createDependencyTask(Callable<?> task) {
         return new DependencyTask<>(task, new ArrayList<>());
     }
 
@@ -102,15 +96,15 @@ public class DependencyThreadPool{
      */
     public static List<List<? extends Callable<?>>> createDependencyList(List<? extends Callable<?>> tasks,
                                                                          Map<Integer[], Integer[]> depMap,
-                                                                         List<List<? extends Callable<?>>> dep){
-        if(depMap != null){
+                                                                         List<List<? extends Callable<?>>> dep) {
+        if (depMap != null) {
             depMap.forEach((ti, di) -> {
-                ti[0] = ti[0] < 0 ? dep.size() + ti[0] + 1: ti[0];
-                ti[1] = ti[1] < 0 ? dep.size() + ti[1] + 1: ti[1];
-                di[0] = di[0] < 0 ? tasks.size() + di[0] + 1: di[0];
-                di[1] = di[1] < 0 ? tasks.size() + di[1] + 1: di[1];
-                for(int r = ti[0]; r < ti[1]; r++){
-                    if(dep.get(r) == null)
+                ti[0] = ti[0] < 0 ? dep.size() + ti[0] + 1 : ti[0];
+                ti[1] = ti[1] < 0 ? dep.size() + ti[1] + 1 : ti[1];
+                di[0] = di[0] < 0 ? tasks.size() + di[0] + 1 : di[0];
+                di[1] = di[1] < 0 ? tasks.size() + di[1] + 1 : di[1];
+                for (int r = ti[0]; r < ti[1]; r++) {
+                    if (dep.get(r) == null)
                         dep.set(r, tasks.subList(di[0], di[1]));
                     else
                         dep.set(r, Stream.concat(dep.get(r).stream(),
@@ -122,33 +116,33 @@ public class DependencyThreadPool{
     }
 
     public static List<DependencyTask<?>> createDependencyTasks(List<? extends Callable<?>> tasks,
-                                                                    List<List<? extends Callable<?>>> dependencies){
-        if(dependencies != null && tasks.size() != dependencies.size())
+                                                                List<List<? extends Callable<?>>> dependencies) {
+        if (dependencies != null && tasks.size() != dependencies.size())
             throw new DMLRuntimeException("Could not create DependencyTasks since the input array sizes are where mismatched");
         List<DependencyTask<?>> ret = new ArrayList<>();
         Map<Callable<?>, DependencyTask<?>> map = new HashMap<>();
         for (Callable<?> task : tasks) {
             DependencyTask<?> dt;
-            if (task instanceof  DependencyTask){
+            if (task instanceof DependencyTask) {
                 dt = (DependencyTask<?>) task;
-            }else{
+            } else {
                 dt = new DependencyTask<>(task, new ArrayList<>());
             }
             ret.add(dt);
             map.put(task, dt);
         }
-        if(dependencies == null)
+        if (dependencies == null)
             return ret;
 
-        for(int i = 0; i < tasks.size(); i++){
+        for (int i = 0; i < tasks.size(); i++) {
             List<? extends Callable<?>> deps = dependencies.get(i);
-            if(deps == null)
+            if (deps == null)
                 continue;
             DependencyTask<?> t = ret.get(i);
-            for(Callable<?> dep : deps){
+            for (Callable<?> dep : deps) {
                 DependencyTask<?> dt = map.get(dep);
-                if(DependencyTask.ENABLE_DEBUG_DATA){
-                    t._dependencyTasks = t._dependencyTasks == null ? new ArrayList<>(): t._dependencyTasks;
+                if (DependencyTask.ENABLE_DEBUG_DATA) {
+                    t._dependencyTasks = t._dependencyTasks == null ? new ArrayList<>() : t._dependencyTasks;
                     t._dependencyTasks.add(dt);
                 }
                 if (dt != null)
@@ -157,17 +151,4 @@ public class DependencyThreadPool{
         }
         return ret;
     }
-
-
-    public static void printDependencyGraph(List<DependencyTask<?>> tasks){
-        TreeOptions options = new TreeOptions();
-        options.setStyle(TreeStyles.UNICODE_ROUNDED);
-        for(DependencyTask<?> t : tasks){
-            if(t.isReady()){
-                System.out.println(TextTree.newInstance(options).render(t));
-            }
-        }
-    }
-
-
 }

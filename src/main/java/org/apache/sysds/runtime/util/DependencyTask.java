@@ -20,12 +20,6 @@
 package org.apache.sysds.runtime.util;
 
 import org.apache.sysds.runtime.DMLRuntimeException;
-import org.barfuin.texttree.api.Node;
-import org.barfuin.texttree.api.TextTree;
-import org.barfuin.texttree.api.TreeOptions;
-import org.barfuin.texttree.api.color.NodeColor;
-import org.barfuin.texttree.api.style.TreeStyles;
-
 import javax.annotation.CheckForNull;
 import java.util.List;
 import java.util.concurrent.Callable;
@@ -33,9 +27,8 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
-public class DependencyTask<E> implements Callable<E>, Node {
+public class DependencyTask<E> implements Callable<E> {
     public static final boolean ENABLE_DEBUG_DATA = false;
-    private static boolean PRINT_DEPENDENCIES = false;
 
     private final Callable<E> _task;
     private final List<DependencyTask<?>> _dependantTasks;
@@ -45,12 +38,12 @@ public class DependencyTask<E> implements Callable<E>, Node {
     private ExecutorService _pool;
 
 
-    public DependencyTask(Callable<E> task, List<DependencyTask<?>> dependantTasks){
+    public DependencyTask(Callable<E> task, List<DependencyTask<?>> dependantTasks) {
         _dependantTasks = dependantTasks;
         _task = task;
     }
 
-    public void addPool(ExecutorService pool){
+    public void addPool(ExecutorService pool) {
         _pool = pool;
     }
 
@@ -62,12 +55,12 @@ public class DependencyTask<E> implements Callable<E>, Node {
         return _rdy == 0;
     }
 
-    public Callable<E> getTask(){
+    public Callable<E> getTask() {
         return _task;
     }
 
-    private boolean decrease(){
-        synchronized (this){
+    private boolean decrease() {
+        synchronized (this) {
             _rdy -= 1;
             return isReady();
         }
@@ -82,8 +75,8 @@ public class DependencyTask<E> implements Callable<E>, Node {
     public E call() throws Exception {
         E ret = _task.call();
         _dependantTasks.forEach(t -> {
-            if(t.decrease()){
-                if(_pool == null)
+            if (t.decrease()) {
+                if (_pool == null)
                     throw new DMLRuntimeException("ExecutorService was not set for DependencyTask");
                 t._future.complete(_pool.submit(t));
             }
@@ -91,29 +84,4 @@ public class DependencyTask<E> implements Callable<E>, Node {
 
         return ret;
     }
-
-    @CheckForNull
-    @Override
-    public String getText() {
-        return _task.toString();
-    }
-
-    @CheckForNull
-    @Override
-    public Iterable<? extends Node> getChildren() {
-        if(PRINT_DEPENDENCIES){
-            return _dependencyTasks;
-        }
-        return _dependantTasks;
-    }
-
-    public void printHierarchy(boolean dependencies){
-        boolean tmp = PRINT_DEPENDENCIES;
-        PRINT_DEPENDENCIES = dependencies;
-        TreeOptions options = new TreeOptions();
-        options.setStyle(TreeStyles.UNICODE_ROUNDED);
-        System.out.println(TextTree.newInstance(options).render(this));
-        PRINT_DEPENDENCIES = tmp;
-    }
-
 }

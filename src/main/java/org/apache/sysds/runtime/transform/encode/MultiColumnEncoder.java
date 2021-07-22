@@ -127,13 +127,15 @@ public class MultiColumnEncoder implements Encoder {
 			List<DependencyTask<?>> buildTasks = e.getBuildTasks(in, BUILD_BLOCKSIZE);
 
 			tasks.addAll(buildTasks);
-			// Apply Task dependency to build completion task
-			depMap.put(new Integer[]{tasks.size(), tasks.size() + 1},
-					new Integer[]{tasks.size()-1, tasks.size()});
+			if(buildTasks.size() > 0){
+				// Apply Task dependency to build completion task
+				depMap.put(new Integer[]{tasks.size(), tasks.size() + 1},
+						new Integer[]{tasks.size()-1, tasks.size()});
+			}
+
 			// Apply Task dependency to InitOutputMatrixTask
 			depMap.put(new Integer[]{tasks.size(), tasks.size() + 1},
 					new Integer[]{0, 1});
-
 			DependencyTask<?> applyTaskWrapper = DependencyThreadPool.createDependencyTask(new ApplyTasksWrapperTask(e, in, out, pool));
 
 			if(e.hasEncoder(ColumnEncoderDummycode.class)) {

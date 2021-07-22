@@ -31,10 +31,14 @@ import org.apache.sysds.utils.GPUStatistics;
 
 public class GPUMemoryEviction implements Runnable 
 {
-	int numEvicts = 0;
+	int numEvicts;
 	
 	public GPUMemoryEviction(int num) {
 		numEvicts = num;
+	}
+	
+	public GPUMemoryEviction() {
+		numEvicts = 0;
 	}
 
 	@Override
@@ -46,9 +50,15 @@ public class GPUMemoryEviction implements Runnable
 		// Stop if 1) Evicted the request number of entries, 2) The parallel
 		// CPU instruction is ended, and 3) No non-live entries left in the cache.
 		long t0 =  DMLScript.STATISTICS ? System.nanoTime() : 0;
-		while (!LineageGPUCacheEviction.isGPUCacheEmpty() && count < numEvicts) 
+		while (!LineageGPUCacheEviction.isGPUCacheEmpty()) 
 		{
 			if (LineageCacheConfig.STOPBACKGROUNDEVICTION)
+				// This logic reduces #evictions if the cpu instructions is so small
+				// that it ends before the background thread reaches this condition.
+				// However, this check decreases race conditions.
+				break;
+			
+			if (numEvicts > 0 && count > numEvicts)
 				break;
 			
 			LineageCacheEntry le = LineageGPUCacheEviction.pollFirstEntry();
@@ -91,23 +101,22 @@ public class GPUMemoryEviction implements Runnable
 			nextgpuObj = headGpuObj;
 			boolean freed = false;
 			synchronized (nextgpuObj.getGPUContext().getMemoryManager().getGPUMatrixMemoryManager().gpuObjects) {
-
-			while (nextgpuObj!= null) {
-				// If not live or live but not dirty
-				if (nextgpuObj.isrmVarPending() || !nextgpuObj.isDirty()) {
-					if (!freed) {
-						nextgpuObj.clearData(null, true);
-						//FIXME: adding to rmVar cache causes multiple failures due to concurrent
-						//access to the rmVar cache and other data structures. VariableCP instruction
-						//and other instruction free memory and add to rmVar cache in parallel to
-						//the background eviction task, which needs to be synchronized.
-						freed = true;
+				while (nextgpuObj!= null) {
+					// If not live or live but not dirty
+					if (nextgpuObj.isrmVarPending() || !nextgpuObj.isDirty()) {
+						if (!freed) {
+							nextgpuObj.clearData(null, true);
+							//FIXME: adding to rmVar cache causes multiple failures due to concurrent
+							//access to the rmVar cache and other data structures. VariableCP instruction
+							//and other instruction free memory and add to rmVar cache in parallel to
+							//the background eviction task, which needs to be synchronized.
+							freed = true;
+						}
+						else
+							nextgpuObj.clearGPUObject();
 					}
-					else
-						nextgpuObj.clearGPUObject();
+					nextgpuObj = nextgpuObj.nextLineageCachedEntry;
 				}
-				nextgpuObj = nextgpuObj.nextLineageCachedEntry;
-			}
 			}
 			// Clear the GPUOjects chain
 			GPUObject currgpuObj = headGpuObj;

@@ -37,7 +37,6 @@ import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
 import org.apache.sysds.runtime.instructions.cp.DoubleObject;
 import org.apache.sysds.runtime.instructions.cp.ScalarObject;
-import org.apache.sysds.runtime.matrix.operators.Operator;
 import org.apache.sysds.runtime.matrix.operators.QuaternaryOperator;
 
 import java.util.ArrayList;
@@ -60,25 +59,28 @@ public class QuaternaryWDivMMFEDInstruction extends QuaternaryFEDInstruction
 	 * @param out             The Federated Result Z
 	 * @param opcode          ...
 	 * @param instruction_str ...
-	 */
-	protected QuaternaryWDivMMFEDInstruction(Operator operator,
+	*/
+
+	private QuaternaryOperator _qop;
+
+	protected QuaternaryWDivMMFEDInstruction(QuaternaryOperator operator,
 		CPOperand in1, CPOperand in2, CPOperand in3, CPOperand in4, CPOperand out, String opcode, String instruction_str)
 	{
 		super(FEDType.Quaternary, operator, in1, in2, in3, in4, out, opcode, instruction_str);
+		_qop = operator;
 	}
 
 	@Override
 	public void processInstruction(ExecutionContext ec)
 	{
-		QuaternaryOperator qop = (QuaternaryOperator) _optr;
-		final WDivMMType wdivmm_type = qop.wtype3;
+		final WDivMMType wdivmm_type = _qop.wtype3;
 		MatrixObject X = ec.getMatrixObject(input1);
 		MatrixObject U = ec.getMatrixObject(input2);
 		MatrixObject V = ec.getMatrixObject(input3);
 		ScalarObject eps = null;
 		MatrixObject MX = null;
 
-		if(qop.hasFourInputs()) {
+		if(_qop.hasFourInputs()) {
 			if(wdivmm_type == WDivMMType.MULT_MINUS_4_LEFT || wdivmm_type == WDivMMType.MULT_MINUS_4_RIGHT) {
 				MX = ec.getMatrixObject(_input4);
 			}
@@ -93,7 +95,7 @@ public class QuaternaryWDivMMFEDInstruction extends QuaternaryFEDInstruction
 			FederationMap fedMap = X.getFedMapping();
 			ArrayList<FederatedRequest[]> frSliced = new ArrayList<>();
 			ArrayList<FederatedRequest> frB = new ArrayList<>(); // FederatedRequests of broadcasts
-			long[] varNewIn = new long[qop.hasFourInputs() ? 4 : 3];
+			long[] varNewIn = new long[_qop.hasFourInputs() ? 4 : 3];
 			varNewIn[0] = fedMap.getID();
 
 			if(X.isFederated(FType.ROW)) { // row partitioned X
@@ -151,18 +153,21 @@ public class QuaternaryWDivMMFEDInstruction extends QuaternaryFEDInstruction
 			}
 
 			FederatedRequest frComp = FederationUtils.callInstruction(instString, output,
-				qop.hasFourInputs() ? new CPOperand[]{input1, input2, input3, _input4}
+				_qop.hasFourInputs() ? new CPOperand[]{input1, input2, input3, _input4}
 				: new CPOperand[]{input1, input2, input3}, varNewIn);
 
-			// get partial results from federated workers
-			FederatedRequest frGet = new FederatedRequest(RequestType.GET_VAR, frComp.getID());
+			FederatedRequest frGet = null;
+			FederatedRequest frC = null;
+			if(X.isFederated(FType.ROW) || (wdivmm_type.isRight() && X.isFederated(FType.COL))) { // output aggregated locally
+				// get partial results from federated workers
+				frGet = new FederatedRequest(RequestType.GET_VAR, frComp.getID());
+				// cleanup the federated request of the instruction call
+				frC = fedMap.cleanup(getTID(), frComp.getID());
+			}
 
-			ArrayList<FederatedRequest> frC = new ArrayList<>();
-			frC.add(fedMap.cleanup(getTID(), frComp.getID()));
-			
-			FederatedRequest[] frAll = ArrayUtils.addAll(ArrayUtils.addAll(
-				frB.toArray(new FederatedRequest[0]), frComp, frGet),
-				frC.toArray(new FederatedRequest[0]));
+			FederatedRequest[] frAll = (frGet == null ?
+					ArrayUtils.addAll(frB.toArray(new FederatedRequest[0]), frComp)
+					: ArrayUtils.addAll(frB.toArray(new FederatedRequest[0]), frComp, frGet, frC));
 
 			// execute federated instructions
 			Future<FederatedResponse>[] response = frSliced.isEmpty() ?
@@ -177,7 +182,15 @@ public class QuaternaryWDivMMFEDInstruction extends QuaternaryFEDInstruction
 			}
 			else if(wdivmm_type.isLeft() || wdivmm_type.isRight() || wdivmm_type.isBasic()) {
 				// bind partial results from federated responses
-				ec.setMatrixOutput(output.getName(), FederationUtils.bind(response, false));
+				if(X.isFederated(FType.ROW)) {
+					ec.setMatrixOutput(output.getName(), FederationUtils.bind(response, false));
+				}
+				else {
+					// derive output federated mapping
+					MatrixObject out = ec.getMatrixObject(output);
+					out.setFedMapping(fedMap.copyWithNewID(frComp.getID()));
+					setOutputDataCharacteristics(X, U, V, ec);
+				}
 			}
 			else {
 				throw new DMLRuntimeException("Federated WDivMM only supported for BASIC, LEFT or RIGHT variants.");
@@ -187,6 +200,25 @@ public class QuaternaryWDivMMFEDInstruction extends QuaternaryFEDInstruction
 			throw new DMLRuntimeException("Unsupported federated inputs (X, U, V) = ("
 				+ X.isFederated() + ", " + U.isFederated() + ", " + V.isFederated() + ")");
 		}
+	}
+
+	protected void setOutputDataCharacteristics(MatrixObject X, MatrixObject U, MatrixObject V, ExecutionContext ec) {
+		long rows = -1;
+		long cols = -1;
+		if(_qop.wtype3.isBasic()) {
+			rows = X.getNumRows();
+			cols = X.getNumColumns();
+		}
+		else if(_qop.wtype3.isLeft()) {
+			rows = X.getNumColumns();
+			cols = U.getNumColumns();
+		}
+		else if(_qop.wtype3.isRight()) {
+			rows = X.getNumRows();
+			cols = V.getNumColumns();
+		}
+		MatrixObject out = ec.getMatrixObject(output);
+		out.getDataCharacteristics().set(rows, cols, (int) X.getBlocksize());
 	}
 }
 

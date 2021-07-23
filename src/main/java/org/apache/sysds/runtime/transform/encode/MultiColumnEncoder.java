@@ -95,6 +95,7 @@ public class MultiColumnEncoder implements Encoder {
 					LOG.error("MT Column encode failed");
 					e.printStackTrace();
 				}
+				pool.shutdown();
 				out.recomputeNonZeros();
 				return out;
 			}else{
@@ -206,6 +207,7 @@ public class MultiColumnEncoder implements Encoder {
 			LOG.error("MT Column build failed");
 			e.printStackTrace();
 		}
+		pool.shutdown();
 	}
 
 
@@ -282,6 +284,7 @@ public class MultiColumnEncoder implements Encoder {
 			LOG.error("MT Column encode failed");
 			e.printStackTrace();
 		}
+		pool.shutdown();
 	}
 
 	private static void outputMatrixPreProcessing(MatrixBlock output, FrameBlock input) {

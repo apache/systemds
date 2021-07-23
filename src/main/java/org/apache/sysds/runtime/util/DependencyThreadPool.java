@@ -40,6 +40,10 @@ public class DependencyThreadPool {
         _pool = CommonThreadPool.get(k);
     }
 
+    public void shutdown(){
+        _pool.shutdown();
+    }
+
     public List<Future<Future<?>>> submitAll(List<DependencyTask<?>> dtasks) {
         List<Future<Future<?>>> futures = new ArrayList<>();
         List<Integer> rdyTasks = new ArrayList<>();

@@ -29,7 +29,9 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -44,6 +46,7 @@ import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.DependencyTask;
 import org.apache.sysds.runtime.util.DependencyThreadPool;
+import org.apache.sysds.runtime.util.DependencyWrapperTask;
 import org.apache.sysds.runtime.util.IndexRange;
 
 public class MultiColumnEncoder implements Encoder {
@@ -90,7 +93,8 @@ public class MultiColumnEncoder implements Encoder {
 				out = new MatrixBlock();
 				DependencyThreadPool pool = new DependencyThreadPool(k);
 				try {
-					pool.submitAllAndWait(getEncodeTasks(in, out, pool));
+					List<Object> ret = pool.submitAllAndWait(getEncodeTasks(in, out, pool));
+
 				} catch (ExecutionException | InterruptedException e) {
 					LOG.error("MT Column encode failed");
 					e.printStackTrace();
@@ -137,7 +141,7 @@ public class MultiColumnEncoder implements Encoder {
 			// Apply Task dependency to InitOutputMatrixTask
 			depMap.put(new Integer[]{tasks.size(), tasks.size() + 1},
 					new Integer[]{0, 1});
-			DependencyTask<?> applyTaskWrapper = DependencyThreadPool.createDependencyTask(new ApplyTasksWrapperTask(e, in, out, pool));
+			DependencyTask<?> applyTaskWrapper = new ApplyTasksWrapperTask(e, in, out, pool);
 
 			if(e.hasEncoder(ColumnEncoderDummycode.class)) {
 				// InitMatrix dependency to build of recode if a DC is present
@@ -161,7 +165,7 @@ public class MultiColumnEncoder implements Encoder {
 				applyTAgg = applyTAgg == null ? new ArrayList<>(): applyTAgg;
 				applyTAgg.add(applyTaskWrapper);
 			}else{
-				((ApplyTasksWrapperTask)applyTaskWrapper.getTask()).setOffset(0);
+				((ApplyTasksWrapperTask)applyTaskWrapper).setOffset(0);
 			}
 			tasks.add(applyTaskWrapper);
 		}
@@ -721,20 +725,24 @@ public class MultiColumnEncoder implements Encoder {
 
 	}
 
-	private static class ApplyTasksWrapperTask implements Callable<Object> {
+	private static class ApplyTasksWrapperTask extends DependencyWrapperTask<Object> {
 		private final ColumnEncoder _encoder;
 		private final MatrixBlock _out;
 		private final FrameBlock _in;
 		private int _offset = -1;  // offset dude to dummycoding in
 		                           // previous columns needs to be updated by external task!
-		private final DependencyThreadPool _pool;
 
 
 		private ApplyTasksWrapperTask(ColumnEncoder encoder, FrameBlock in, MatrixBlock out, DependencyThreadPool pool) {
+			super(pool);
 			_encoder = encoder;
 			_out = out;
 			_in = in;
-			_pool = pool;
+		}
+
+		@Override
+		public List<DependencyTask<?>> getWrappedTasks() {
+			return _encoder.getApplyTasks(_in, _out, _encoder._colID -1 + _offset);
 		}
 
 		@Override
@@ -744,7 +752,7 @@ public class MultiColumnEncoder implements Encoder {
 			if(_offset == -1)
 				throw new DMLRuntimeException("OutputCol for apply task wrapper has not been updated!, Most likely some " +
 						"concurrency issues");
-			return _pool.submitAllAndWait(_encoder.getApplyTasks(_in, _out, _encoder._colID - 1 + _offset));
+			return super.call();
 		}
 		public void setOffset(int offset) {
 			_offset = offset;
@@ -776,7 +784,7 @@ public class MultiColumnEncoder implements Encoder {
 			int currentCol = -1;
 			int currentOffset = 0;
 			for(DependencyTask<?> dtask: _applyTasksWrappers){
-				int nonOffsetCol = ((ApplyTasksWrapperTask)dtask.getTask())._encoder._colID - 1;
+				int nonOffsetCol = ((ApplyTasksWrapperTask)dtask)._encoder._colID - 1;
 				if(nonOffsetCol > currentCol){
 					currentCol = nonOffsetCol;
 					currentOffset = _encoder._columnEncoders.subList(0, nonOffsetCol).stream().mapToInt( e -> {
@@ -786,7 +794,7 @@ public class MultiColumnEncoder implements Encoder {
 						return dc._domainSize - 1;
 					}).sum();
 				}
-				((ApplyTasksWrapperTask)dtask.getTask()).setOffset(currentOffset);
+				((ApplyTasksWrapperTask)dtask).setOffset(currentOffset);
 
 			}
 			return null;

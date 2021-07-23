@@ -31,7 +31,7 @@ public class DependencyTask<E> implements Callable<E> {
     public static final boolean ENABLE_DEBUG_DATA = false;
 
     private final Callable<E> _task;
-    private final List<DependencyTask<?>> _dependantTasks;
+    protected final List<DependencyTask<?>> _dependantTasks;
     public List<DependencyTask<?>> _dependencyTasks = null;   // only for debugging
     private CompletableFuture<Future<?>> _future;
     private int _rdy = 0;
@@ -53,10 +53,6 @@ public class DependencyTask<E> implements Callable<E> {
 
     public boolean isReady() {
         return _rdy == 0;
-    }
-
-    public Callable<E> getTask() {
-        return _task;
     }
 
     private boolean decrease() {

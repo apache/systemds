@@ -82,8 +82,16 @@ public class DependencyThreadPool {
         List<Object> res = new ArrayList<>();
         // printDependencyGraph(dtasks);
         List<Future<Future<?>>> futures = submitAll(dtasks);
+        int i = 0;
         for (Future<Future<?>> ff : futures) {
-            res.add(ff.get().get());
+            if(dtasks.get(i) instanceof DependencyWrapperTask){
+                for(Future<Future<?>> f : ((DependencyWrapperTask<?>) dtasks.get(i)).getWrappedTaskFuture()){
+                    res.add(f.get().get());
+                }
+            }else{
+                res.add(ff.get().get());
+            }
+            i++;
         }
         return res;
     }

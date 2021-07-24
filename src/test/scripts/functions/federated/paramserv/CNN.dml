@@ -165,7 +165,6 @@ train_paramserv = function(matrix[double] X, matrix[double] y,
   return (list[unknown] model)
 {
 
-
   N = nrow(X)
   K = ncol(y)
 

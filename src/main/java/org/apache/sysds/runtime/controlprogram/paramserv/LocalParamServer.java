@@ -33,31 +33,23 @@ public class LocalParamServer extends ParamServer {
 
 	public static LocalParamServer create(ListObject model, String aggFunc, Statement.PSUpdateType updateType,
 		Statement.PSFrequency freq, ExecutionContext ec, int workerNum, String valFunc, int numBatchesPerEpoch,
-		MatrixObject valFeatures, MatrixObject valLabels,boolean modelAvg)
+		MatrixObject valFeatures, MatrixObject valLabels, int nBatches, boolean modelAvg)
 	{
 		return new LocalParamServer(model, aggFunc, updateType, freq, ec,
-			workerNum, valFunc, numBatchesPerEpoch, valFeatures, valLabels,modelAvg);
+			workerNum, valFunc, numBatchesPerEpoch, valFeatures, valLabels, nBatches, modelAvg);
 	}
 
 	private LocalParamServer(ListObject model, String aggFunc, Statement.PSUpdateType updateType,
 		Statement.PSFrequency freq, ExecutionContext ec, int workerNum, String valFunc, int numBatchesPerEpoch,
-		MatrixObject valFeatures, MatrixObject valLabels,boolean modelAvg)
+		MatrixObject valFeatures, MatrixObject valLabels, int nBatches, boolean modelAvg)
 	{
-		super(model, aggFunc, updateType, freq, ec, workerNum, valFunc, numBatchesPerEpoch, valFeatures, valLabels,modelAvg);
+		super(model, aggFunc, updateType, freq, ec, workerNum, valFunc, numBatchesPerEpoch, valFeatures, valLabels, nBatches, modelAvg);
 	}
 
 	@Override
 	public void push(int workerID, ListObject gradients) {
 		updModel_avgModel(workerID, gradients);
-	}
-
-	/*
-	public void push(int workerID, ListObject values) {
-		updateGlobalModel(workerID, values);
-		updateAverageModel( workerID, values);
-	}
-
-	 */
+		}
 
 	@Override
 	public ListObject pull(int workerID) {

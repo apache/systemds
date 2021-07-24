@@ -66,8 +66,6 @@ import org.apache.sysds.runtime.controlprogram.parfor.stat.Timing;
 import org.apache.sysds.runtime.matrix.operators.Operator;
 import org.apache.sysds.runtime.util.ProgramConverter;
 import org.apache.sysds.utils.Statistics;
-
-import static java.lang.Boolean.parseBoolean;
 import static org.apache.sysds.parser.Statement.*;
 
 public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruction {
@@ -91,15 +89,14 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 		// check if the input is federated
 		if(ec.getMatrixObject(getParam(PS_FEATURES)).isFederated() ||
 				ec.getMatrixObject(getParam(PS_LABELS)).isFederated()) {
-			runFederated(ec);
-
+						runFederated(ec);
 		}
 		// if not federated check mode
 		else {
 			PSModeType mode = getPSMode();
 			switch (mode) {
 				case LOCAL:
-					runLocally(ec, mode);
+				runLocally(ec, mode);
 					break;
 				case REMOTE_SPARK:
 					runOnSpark((SparkExecutionContext) ec, mode);
@@ -127,6 +124,7 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 		PSRuntimeBalancing runtimeBalancing = getRuntimeBalancing();
 		boolean weighting = getWeighting();
 		int seed = getSeed();
+		int nBatches = getnBatches();
 
 		if( LOG.isInfoEnabled() ) {
 			LOG.info("[+] Update Type: " + updateType);
@@ -135,6 +133,7 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 			LOG.info("[+] Runtime Balancing: " + runtimeBalancing);
 			LOG.info("[+] Weighting: " + weighting);
 			LOG.info("[+] Seed: " + seed);
+			LOG.info("[+] nBatches: " + nBatches);
 			LOG.info("[+] modelAvg: " + modelAvg);
 		}
 		if (tSetup != null)
@@ -169,13 +168,13 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 		MatrixObject val_labels = (getParam(PS_VAL_LABELS) != null) ? ec.getMatrixObject(getParam(PS_VAL_LABELS)) : null;
 
 		ParamServer ps = createPS(PSModeType.FEDERATED, aggFunc, updateType, freq, workerNum, model, aggServiceEC, getValFunction(),
-				getNumBatchesPerEpoch(runtimeBalancing, result._balanceMetrics), val_features, val_labels,parseBoolean(modelAvg));
+				getNumBatchesPerEpoch(runtimeBalancing, result._balanceMetrics), val_features, val_labels, nBatches, Boolean.parseBoolean(modelAvg));
 
 		// Create the local workers
 		int finalNumBatchesPerEpoch = getNumBatchesPerEpoch(runtimeBalancing, result._balanceMetrics);
 		List<FederatedPSControlThread> threads = IntStream.range(0, workerNum)
 			.mapToObj(i -> new FederatedPSControlThread(i, updFunc, freq, runtimeBalancing, weighting,
-				getEpochs(), getBatchSize(), finalNumBatchesPerEpoch, federatedWorkerECs.get(i), ps))
+				getEpochs(), getBatchSize(), finalNumBatchesPerEpoch, federatedWorkerECs.get(i), ps, nBatches))
 			.collect(Collectors.toList());
 		if(workerNum != threads.size()) {
 			throw new DMLRuntimeException("ParamservBuiltinCPInstruction: Federated data partitioning does not match threads!");
@@ -212,7 +211,7 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 		String updFunc = getParam(PS_UPDATE_FUN);
 		String aggFunc = getParam(PS_AGGREGATION_FUN);
 		String modelAvg = getParam(PS_MODELAVG);
-
+		int nBatches = getnBatches();
 
 		// Get the compiled execution context
 		LocalVariableMap newVarsMap = createVarsMap(sec);
@@ -224,7 +223,7 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 
 		// Create the parameter server
 		ListObject model = sec.getListObject(getParam(PS_MODEL));
-		ParamServer ps = createPS(mode, aggFunc, getUpdateType(), getFrequency(), workerNum, model, aggServiceEC, parseBoolean(getParam(modelAvg)));
+		ParamServer ps = createPS(mode, aggFunc, getUpdateType(), getFrequency(), workerNum, model, aggServiceEC, nBatches, Boolean.parseBoolean(getParam(modelAvg)));
 
 		// Get driver host
 		String host = sec.getSparkContext().getConf().get("spark.driver.host");
@@ -288,6 +287,7 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 		if(DMLScript.STATISTICS)
 			Statistics.getPSExecutionTimer().start();
 		String modelAvg = getParam(PS_MODELAVG);
+		int nBatches =getnBatches();
 		Timing tSetup = DMLScript.STATISTICS ? new Timing(true) : null;
 		int workerNum = getWorkerNum(mode);
 		BasicThreadFactory factory = new BasicThreadFactory.Builder()
@@ -317,12 +317,11 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 		MatrixObject val_features = (getParam(PS_VAL_FEATURES) != null) ? ec.getMatrixObject(getParam(PS_VAL_FEATURES)) : null;
 		MatrixObject val_labels = (getParam(PS_VAL_LABELS) != null) ? ec.getMatrixObject(getParam(PS_VAL_LABELS)) : null;
 		ParamServer ps = createPS(mode, aggFunc, updateType, freq, workerNum, model, aggServiceEC, getValFunction(),
-				num_batches_per_epoch, val_features, val_labels,parseBoolean(modelAvg));
-
+				num_batches_per_epoch, val_features, val_labels, nBatches, Boolean.parseBoolean(modelAvg));
 		// Create the local workers
 		List<LocalPSWorker> workers = IntStream.range(0, workerNum)
 			.mapToObj(i -> new LocalPSWorker(i, updFunc, freq,
-				getEpochs(), getBatchSize(), workerECs.get(i), ps,parseBoolean(modelAvg)))
+				getEpochs(), getBatchSize(), workerECs.get(i), ps, nBatches, Boolean.parseBoolean(modelAvg)))
 			.collect(Collectors.toList());
 
 		// Do data partition
@@ -338,7 +337,6 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 				+ "\nstrategy: %s \ndata partitioner: %s",
 				mode, workerNum, freq, updateType, scheme));
 		}
-
 		try {
 			// Launch the worker threads and wait for completion
 			for (Future<Void> ret : es.invokeAll(workers))
@@ -458,21 +456,21 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 	 * @return parameter server
 	 */
 	private static ParamServer createPS(PSModeType mode, String aggFunc, PSUpdateType updateType,
-		PSFrequency freq, int workerNum, ListObject model, ExecutionContext ec,boolean modelAvg)
+		PSFrequency freq, int workerNum, ListObject model, ExecutionContext ec, int nBatches, boolean modelAvg)
 	{
-		return createPS(mode, aggFunc, updateType, freq, workerNum, model, ec, null, -1, null, null,modelAvg );
+		return createPS(mode, aggFunc, updateType, freq, workerNum, model, ec, null, -1, null, null, nBatches, modelAvg );
 	}
 
 	// When this creation is used the parameter server is able to validate after each epoch
 	private static ParamServer createPS(PSModeType mode, String aggFunc, PSUpdateType updateType,
 		PSFrequency freq, int workerNum, ListObject model, ExecutionContext ec, String valFunc,
-		int numBatchesPerEpoch, MatrixObject valFeatures, MatrixObject valLabels,boolean modelAvg)
+		int numBatchesPerEpoch, MatrixObject valFeatures, MatrixObject valLabels, int nBatches, boolean modelAvg)
 	{
-			switch (mode) {
+		switch (mode) {
 			case FEDERATED:
 			case LOCAL:
 			case REMOTE_SPARK:
-				return LocalParamServer.create(model, aggFunc, updateType, freq, ec, workerNum, valFunc, numBatchesPerEpoch, valFeatures, valLabels,modelAvg);
+				return LocalParamServer.create(model, aggFunc, updateType, freq, ec, workerNum, valFunc, numBatchesPerEpoch, valFeatures, valLabels, nBatches, modelAvg);
 			default:
 				throw new DMLRuntimeException("Unsupported parameter server: " + mode.name());
 		}
@@ -565,7 +563,7 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 	}
 
 	private boolean getWeighting() {
-		return getParameterMap().containsKey(PS_FED_WEIGHTING) && parseBoolean(getParam(PS_FED_WEIGHTING));
+		return getParameterMap().containsKey(PS_FED_WEIGHTING) && Boolean.parseBoolean(getParam(PS_FED_WEIGHTING));
 	}
 
 	private String getValFunction() {
@@ -578,8 +576,10 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 	private int getSeed() {
 		return (getParameterMap().containsKey(PS_SEED)) ? Integer.parseInt(getParam(PS_SEED)) : (int) System.currentTimeMillis();
 	}
-	private boolean getModelAvg() {
-		return getParameterMap().containsKey(PS_MODELAVG) && parseBoolean(getParam(PS_MODELAVG));
+	private int getnBatches() {
+		return (getParameterMap().containsKey(PS_NBATCHES)) ? Integer.parseInt(getParam(PS_NBATCHES)) : (int) System.currentTimeMillis();
 	}
-
+	private boolean getModelAvg() {
+		return getParameterMap().containsKey(PS_MODELAVG) && Boolean.parseBoolean(getParam(PS_MODELAVG));
+	}
 }

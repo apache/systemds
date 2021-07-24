@@ -19,24 +19,22 @@
 
 package org.apache.sysds.test.functions.federated.paramserv;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.apache.sysds.common.Types.ExecMode;
-import org.apache.sysds.hops.codegen.SpoofFusedOp;
-import org.apache.sysds.test.AutomatedTestBase;
-import org.apache.sysds.test.TestConfiguration;
-import org.apache.sysds.test.TestUtils;
-import org.apache.sysds.utils.Statistics;
-import org.dmg.pmml.True;
-import org.junit.Assert;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.apache.sysds.common.Types.ExecMode;
+import org.apache.sysds.test.AutomatedTestBase;
+import org.apache.sysds.test.TestConfiguration;
+import org.apache.sysds.test.TestUtils;
+import org.apache.sysds.utils.Statistics;
+import org.junit.Assert;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
 @RunWith(value = Parameterized.class)
 @net.jcip.annotations.NotThreadSafe
@@ -59,6 +57,7 @@ public class FederatedParamservTest extends AutomatedTestBase {
 	private final String _weighting;
 	private final String _data_distribution;
 	private final int _seed;
+	private final int _nBatches;
 
 	// parameters
 	@Parameterized.Parameters
@@ -68,11 +67,11 @@ public class FederatedParamservTest extends AutomatedTestBase {
 				// basic functionality
 				//{"TwoNN",	4, 60000, 32, 4, 0.01, 	"BSP", "BATCH", "KEEP_DATA_ON_WORKER", 	"NONE" ,		"false","BALANCED",		200},
 
-				{"TwoNN",	2, 4, 1, 4, 0.01, 		"BSP", "BATCH", "SHUFFLE", 	"BASELINE",		"true",	"BALANCED",	200, true},
-				{"CNN", 	2, 4, 1, 4, 0.01, 		"BSP", "EPOCH", "SHUFFLE", 				"CYCLE_MIN", 		"true",	"IMBALANCED", 	200,true},
-				{"CNN",		2, 4, 1, 4, 0.01, 		"BSP", "BATCH", "REPLICATE_TO_MAX", 	"CYCLE_MIN", 	"true",	"IMBALANCED",	200,true},
-				{"TwoNN", 	2, 4, 1, 4, 0.01, 		"BSP", "EPOCH", "BALANCE_TO_AVG", 		"CYCLE_MAX", 	"true",	"IMBALANCED",	200,true},
-				{"TwoNN", 	5, 10, 1, 2, 0.01, 	"BSP", "BATCH", "KEEP_DATA_ON_WORKER", 	"NONE", 		"true",	"BALANCED",		200,true},
+				{"TwoNN",	2, 4, 1, 4, 0.01, 		"BSP", "BATCH", "KEEP_DATA_ON_WORKER", 	"BASELINE",		"true",	"IMBALANCED",200,1},
+				{"TwoNN", 	2, 4, 1, 4, 0.01, 		"BSP", "EPOCH", "SHUFFLE", 				"NONE", 		"true",	"IMBALANCED",	200,1},
+				{"TwoNN",		2, 4, 100, 4, 0.01, "BSP", "NBATCH", "REPLICATE_TO_MAX", 	"CYCLE_MIN", 	"true",	"IMBALANCED",	200,16},
+				{"CNN", 	2, 4, 1, 4, 0.01, 		"ASP", "BATCH", "REPLICATE_TO_MAX", 		"CYCLE_MAX", 	"true",	"IMBALANCED",200,1},
+				{"TwoNN", 	5, 1000, 100, 2, 0.01, 	"BSP", "NBATCH", "KEEP_DATA_ON_WORKER", 	"NONE", 		"true",	"BALANCED",200,4},
 
 				/*
                     // runtime balancing
@@ -96,7 +95,7 @@ public class FederatedParamservTest extends AutomatedTestBase {
 	}
 
 	public FederatedParamservTest(String networkType, int numFederatedWorkers, int dataSetSize, int batch_size,
-										  int epochs, double eta, String utype, String freq, String scheme, String runtime_balancing, String weighting, String data_distribution, int seed,boolean modelAvg) {
+			int epochs, double eta, String utype, String freq, String scheme, String runtime_balancing, String weighting, String data_distribution, int seed, int nBatches) {
 
 		_networkType = networkType;
 		_numFederatedWorkers = numFederatedWorkers;
@@ -111,6 +110,7 @@ public class FederatedParamservTest extends AutomatedTestBase {
 		_weighting = weighting;
 		_data_distribution = data_distribution;
 		_seed = seed;
+		_nBatches = nBatches;
 	}
 
 	@Override
@@ -121,16 +121,15 @@ public class FederatedParamservTest extends AutomatedTestBase {
 
 	@Test
 	public void federatedParamservSingleNode() {
-		federatedParamserv(ExecMode.SINGLE_NODE, true);
+		federatedParamserv(ExecMode.SINGLE_NODE, false);
 	}
 
 	@Test
 	public void federatedParamservHybrid() {
-
-		federatedParamserv(ExecMode.HYBRID, true);
+		federatedParamserv(ExecMode.HYBRID, false);
 	}
 
-	private void federatedParamserv(ExecMode mode,boolean modelAvg) {
+	private void federatedParamserv(ExecMode mode, boolean modelAvg) {
 		// Warning Statistics accumulate in unit test
 		// config
 		getAndLoadTestConfiguration(TEST_NAME);
@@ -148,7 +147,7 @@ public class FederatedParamservTest extends AutomatedTestBase {
 			List<Thread> threads = new ArrayList<>();
 			for(int i = 0; i < _numFederatedWorkers; i++) {
 				ports.add(getRandomAvailablePort());
-				threads.add(startLocalFedWorkerThread(ports.get(i), FED_WORKER_WAIT));
+				threads.add(startLocalFedWorkerThread(ports.get(i), FED_WORKER_WAIT_S));
 			}
 
 			// generate test data
@@ -201,13 +200,12 @@ public class FederatedParamservTest extends AutomatedTestBase {
 					"hin=" + Hin,
 					"win=" + Win,
 					"seed=" + _seed,
-					"modelAvg="+ modelAvg));
+					"nBatches=" + _nBatches,
+					"modelAvg=" + modelAvg));
 
 			programArgs = programArgsList.toArray(new String[0]);
-
-			runTest(true, EXCEPTION_NOT_EXPECTED, null, -1);
-
-			//	Assert.assertEquals(0, Statistics.getNoOfExecutedSPInst());
+			LOG.debug(runTest(null));
+			Assert.assertEquals(0, Statistics.getNoOfExecutedSPInst());
 
 			// shut down threads
 			for(int i = 0; i < _numFederatedWorkers; i++) {

@@ -112,6 +112,7 @@ public class ParamservUtils {
 	public static void cleanupListObject(ExecutionContext ec, String lName) {
 		ListObject lo = (ListObject) ec.removeVariable(lName);
 		cleanupListObject(ec, lo, lo.getStatus());
+
 	}
 
 	/**
@@ -515,15 +516,4 @@ public class ParamservUtils {
 			ParamservUtils.cleanupListObject(models);
 		return accModels;
 	}
-
-
-	//*******************************************   ATEFEH ********************************************************
-
-
-
-
-
-
-
-
 }

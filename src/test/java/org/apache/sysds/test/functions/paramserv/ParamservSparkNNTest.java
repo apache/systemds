@@ -48,36 +48,41 @@ public class ParamservSparkNNTest extends AutomatedTestBase {
 
 	@Test
 	public void testParamservBSPBatchDisjointContiguous() {
-		runDMLTest(2, 2, Statement.PSUpdateType.BSP, Statement.PSFrequency.BATCH, 16, Statement.PSScheme.DISJOINT_CONTIGUOUS);
+		runDMLTest(2, 2, Statement.PSUpdateType.BSP, Statement.PSFrequency.BATCH, 16, Statement.PSScheme.DISJOINT_CONTIGUOUS, 1, false);
 	}
 
 	@Test
 	public void testParamservASPBatchDisjointContiguous() {
-		runDMLTest(2, 2, Statement.PSUpdateType.ASP, Statement.PSFrequency.BATCH, 16, Statement.PSScheme.DISJOINT_CONTIGUOUS);
+		runDMLTest(2, 2, Statement.PSUpdateType.ASP, Statement.PSFrequency.BATCH, 16, Statement.PSScheme.DISJOINT_CONTIGUOUS,1, false);
 	}
 
 	@Test
 	public void testParamservBSPEpochDisjointContiguous() {
-		runDMLTest(5, 2, Statement.PSUpdateType.BSP, Statement.PSFrequency.EPOCH, 16, Statement.PSScheme.DISJOINT_CONTIGUOUS);
+		runDMLTest(5, 2, Statement.PSUpdateType.BSP, Statement.PSFrequency.EPOCH, 16, Statement.PSScheme.DISJOINT_CONTIGUOUS, 1, false);
 	}
 
 	@Test
 	public void testParamservASPEpochDisjointContiguous() {
-		runDMLTest(5, 2, Statement.PSUpdateType.ASP, Statement.PSFrequency.EPOCH, 16, Statement.PSScheme.DISJOINT_CONTIGUOUS);
+		runDMLTest(5, 2, Statement.PSUpdateType.ASP, Statement.PSFrequency.EPOCH, 16, Statement.PSScheme.DISJOINT_CONTIGUOUS, 1, false);
+	}
+
+	@Test
+	public void testParamservBSPNBatchesDisjointContiguous() {
+		runDMLTest(5, 2, Statement.PSUpdateType.BSP, Statement.PSFrequency.NBATCHES, 16, Statement.PSScheme.DISJOINT_CONTIGUOUS, 16, false);
 	}
 
 	@Test
 	public void testParamservWorkerFailed() {
-		runDMLTest(TEST_NAME2, true, DMLRuntimeException.class, "Invalid indexing by name in unnamed list: worker_err.");
+		runDMLTest(TEST_NAME2, true, DMLRuntimeException.class, "Invalid indexing by name in unnamed list: worker_err.", false);
 	}
 
 	@Test
 	public void testParamservAggServiceFailed() {
-		runDMLTest(TEST_NAME3, true, DMLRuntimeException.class, "Invalid indexing by name in unnamed list: agg_service_err.");
+		runDMLTest(TEST_NAME3, true, DMLRuntimeException.class, "Invalid indexing by name in unnamed list: agg_service_err.", false);
 	}
 
-	private void runDMLTest(String testname, boolean exceptionExpected, Class<?> expectedException, String errMessage) {
-		programArgs = new String[] {};
+	private void runDMLTest(String testname, boolean exceptionExpected, Class<?> expectedException, String errMessage, boolean modelAvg) {
+		programArgs = new String[]{ "-explain","-args", Boolean.toString(modelAvg)};
 		internalRunDMLTest(testname, exceptionExpected, expectedException, errMessage);
 	}
 
@@ -100,8 +105,8 @@ public class ParamservSparkNNTest extends AutomatedTestBase {
 		}
 	}
 
-	private void runDMLTest(int epochs, int workers, Statement.PSUpdateType utype, Statement.PSFrequency freq, int batchsize, Statement.PSScheme scheme) {
-		programArgs = new String[] { "-nvargs", "mode=REMOTE_SPARK", "epochs=" + epochs, "workers=" + workers, "utype=" + utype, "freq=" + freq, "batchsize=" + batchsize, "scheme=" + scheme};
+	private void runDMLTest(int epochs, int workers, Statement.PSUpdateType utype, Statement.PSFrequency freq, int batchsize, Statement.PSScheme scheme, int nBatches, boolean modelAvg) {
+		programArgs = new String[] { "-nvargs", "mode=REMOTE_SPARK", "epochs=" + epochs, "workers=" + workers, "utype=" + utype, "freq=" + freq, "batchsize=" + batchsize, "scheme=" + scheme, "nBatches" + nBatches, "modelAvg" + modelAvg };
 		internalRunDMLTest(TEST_NAME1, false, null, null);
 	}
 }

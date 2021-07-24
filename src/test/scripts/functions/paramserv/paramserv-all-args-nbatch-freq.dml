@@ -19,7 +19,8 @@
 #
 #-------------------------------------------------------------
 
-modelList = matrix(3, rows=1, cols=2)
+e1 = "element1"
+paramsList = list(e1=e1)
 X = matrix(1, rows=2, cols=3)
 Y = matrix(2, rows=2, cols=3)
 X_val = matrix(3, rows=2, cols=3)
@@ -34,8 +35,9 @@ aggregation = function (matrix[double] input) return (matrix[double] output) {
 }
 
 e2 = "element2"
-params = list(e2)
+hps = list(e2=e2)
 modelAvg = as.logical($1)
 
 # Use paramserv function
-modelList2 = paramserv(model=modelList, labels=Y, val_features=X_val, val_labels=Y_val, upd="gradients", agg="aggregation", mode="LOCAL", utype="BSP", freq="EPOCH", epochs=100, batchsize=64, k=7, scheme="DISJOINT_CONTIGUOUS", hyperparams=params, checkpointing="NONE", nBatches=1, modelAvg=modelAvg)
+paramsList2 = paramserv(model=paramsList, features=X, labels=Y, val_features=X_val, val_labels=Y_val, upd="gradients", agg="aggregation", mode="LOCAL", utype="BSP", freq="NBATCHES", epochs=100, batchsize=64, k=7, scheme="DISJOINT_CONTIGUOUS", hyperparams=hps, checkpointing="NONE", nBatches=16, modelAvg=modelAvg)
+print(length(paramsList2))

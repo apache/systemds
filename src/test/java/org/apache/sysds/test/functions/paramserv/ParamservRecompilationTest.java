@@ -39,13 +39,13 @@ public class ParamservRecompilationTest extends AutomatedTestBase {
 
 	@Test
 	public void testParamservLargeParallelism() {
-		runDMLTest(TEST_NAME1, false, null, null);
+		runDMLTest(TEST_NAME1, false, null, null, false);
 	}
 
-	private void runDMLTest(String testname, boolean exceptionExpected, Class<?> exceptionClass, String errmsg) {
+	private void runDMLTest(String testname, boolean exceptionExpected, Class<?> exceptionClass, String errmsg, boolean modelAvg) {
 		TestConfiguration config = getTestConfiguration(testname);
 		loadTestConfiguration(config);
-		programArgs = new String[] { "-explain", "-stats" };
+		programArgs = new String[] { "-explain", "-stats","-args",  Boolean.toString(modelAvg) };
 		fullDMLScriptName = HOME + testname + ".dml";
 		runTest(true, exceptionExpected, exceptionClass, errmsg, -1);
 	}

@@ -36,7 +36,8 @@ aggregation = function (matrix[double] input) return (matrix[double] output) {
 
 e2 = "element2"
 params = list(e2)
+modelAvg = as.logical($1)
 
 # Use paramserv function
 # Miss "model" parameterized argument and another wrongly named argument
-modelList = paramserv(modelList, features=X, labels=Y, val_featur=X_val, val_labels=Y_val, upd="gradients", agg="aggregation", mode="LOCAL", utype="BSP", freq="EPOCH", epochs=100, batchsize=64, k=7, scheme="DISJOINT_CONTIGUOUS", hyperparams=params, checkpointing="NONE")
+modelList = paramserv(modelList, features=X, labels=Y, val_featur=X_val, val_labels=Y_val, upd="gradients", agg="aggregation", mode="LOCAL", utype="BSP", freq="EPOCH", epochs=100, batchsize=64, k=7, scheme="DISJOINT_CONTIGUOUS", hyperparams=params, checkpointing="NONE", nBatches=1, modelAvg=modelAvg)

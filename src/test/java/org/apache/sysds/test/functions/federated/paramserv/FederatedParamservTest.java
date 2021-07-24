@@ -69,9 +69,9 @@ public class FederatedParamservTest extends AutomatedTestBase {
 
 				{"TwoNN",	2, 4, 1, 4, 0.01, 		"BSP", "BATCH", "KEEP_DATA_ON_WORKER", 	"BASELINE",		"true",	"IMBALANCED",200,1},
 				{"TwoNN", 	2, 4, 1, 4, 0.01, 		"BSP", "EPOCH", "SHUFFLE", 				"NONE", 		"true",	"IMBALANCED",	200,1},
-				{"TwoNN",		2, 4, 100, 4, 0.01, "BSP", "NBATCH", "REPLICATE_TO_MAX", 	"CYCLE_MIN", 	"true",	"IMBALANCED",	200,16},
+				{"TwoNN",		2, 4, 100, 4, 0.01, "BSP", "NBATCHES", "REPLICATE_TO_MAX", 	"CYCLE_MIN", 	"true",	"IMBALANCED",	200,16},
 				{"CNN", 	2, 4, 1, 4, 0.01, 		"ASP", "BATCH", "REPLICATE_TO_MAX", 		"CYCLE_MAX", 	"true",	"IMBALANCED",200,1},
-				{"TwoNN", 	5, 1000, 100, 2, 0.01, 	"BSP", "NBATCH", "KEEP_DATA_ON_WORKER", 	"NONE", 		"true",	"BALANCED",200,4},
+				{"TwoNN", 	5, 1000, 100, 2, 0.01, 	"BSP", "NBATCHES", "KEEP_DATA_ON_WORKER", 	"NONE", 		"true",	"BALANCED",200,4},
 
 				/*
                     // runtime balancing
@@ -121,7 +121,7 @@ public class FederatedParamservTest extends AutomatedTestBase {
 
 	@Test
 	public void federatedParamservSingleNode() {
-		federatedParamserv(ExecMode.SINGLE_NODE, false);
+		federatedParamserv(ExecMode.SINGLE_NODE, true);
 	}
 
 	@Test

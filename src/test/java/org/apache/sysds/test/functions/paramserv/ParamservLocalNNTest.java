@@ -39,45 +39,55 @@ public class ParamservLocalNNTest extends AutomatedTestBase {
 
 	@Test
 	public void testParamservBSPBatchDisjointContiguous() {
-		runDMLTest(10, 2, Statement.PSUpdateType.BSP, Statement.PSFrequency.BATCH, 32, Statement.PSScheme.DISJOINT_CONTIGUOUS);
+		runDMLTest(10, 2, Statement.PSUpdateType.BSP, Statement.PSFrequency.BATCH, 32, Statement.PSScheme.DISJOINT_CONTIGUOUS, 1, true);
+	}
+
+	@Test
+	public void testParamservBSPNBatchDisjointContiguous() {
+		runDMLTest(10, 2, Statement.PSUpdateType.BSP, Statement.PSFrequency.NBATCHES, 32, Statement.PSScheme.DISJOINT_CONTIGUOUS, 8, false);
 	}
 
 	@Test
 	public void testParamservASPBatch() {
-		runDMLTest(10, 2, Statement.PSUpdateType.ASP, Statement.PSFrequency.BATCH, 32, Statement.PSScheme.DISJOINT_CONTIGUOUS);
+		runDMLTest(10, 2, Statement.PSUpdateType.ASP, Statement.PSFrequency.BATCH, 32, Statement.PSScheme.DISJOINT_CONTIGUOUS,1, false);
 	}
 
 	@Test
 	public void testParamservBSPEpoch() {
-		runDMLTest(10, 2, Statement.PSUpdateType.BSP, Statement.PSFrequency.EPOCH, 32, Statement.PSScheme.DISJOINT_CONTIGUOUS);
+		runDMLTest(10, 2, Statement.PSUpdateType.BSP, Statement.PSFrequency.EPOCH, 32, Statement.PSScheme.DISJOINT_CONTIGUOUS, 1, false);
 	}
 
 	@Test
 	public void testParamservASPEpoch() {
-		runDMLTest(10, 2, Statement.PSUpdateType.ASP, Statement.PSFrequency.EPOCH, 32, Statement.PSScheme.DISJOINT_CONTIGUOUS);
+		runDMLTest(10, 2, Statement.PSUpdateType.ASP, Statement.PSFrequency.EPOCH, 32, Statement.PSScheme.DISJOINT_CONTIGUOUS, 1, false);
 	}
 
 	@Test
 	public void testParamservBSPBatchDisjointRoundRobin() {
-		runDMLTest(10, 2, Statement.PSUpdateType.BSP, Statement.PSFrequency.BATCH, 32, Statement.PSScheme.DISJOINT_ROUND_ROBIN);
+		runDMLTest(10, 2, Statement.PSUpdateType.BSP, Statement.PSFrequency.BATCH, 32, Statement.PSScheme.DISJOINT_ROUND_ROBIN, 1, false);
+	}
+
+	@Test
+	public void testParamservBSPNBatchDisjointRoundRobin() {
+		runDMLTest(10, 2, Statement.PSUpdateType.BSP, Statement.PSFrequency.NBATCHES, 32, Statement.PSScheme.DISJOINT_ROUND_ROBIN, 16, false);
 	}
 
 	@Test
 	public void testParamservBSPBatchDisjointRandom() {
-		runDMLTest(10, 2, Statement.PSUpdateType.BSP, Statement.PSFrequency.BATCH, 32, Statement.PSScheme.DISJOINT_RANDOM);
+		runDMLTest(10, 2, Statement.PSUpdateType.BSP, Statement.PSFrequency.BATCH, 32, Statement.PSScheme.DISJOINT_RANDOM, 1, false);
 	}
 
 	@Test
 	public void testParamservBSPBatchOverlapReshuffle() {
-		runDMLTest(10, 2, Statement.PSUpdateType.BSP, Statement.PSFrequency.BATCH, 32, Statement.PSScheme.OVERLAP_RESHUFFLE);
+		runDMLTest(10, 2, Statement.PSUpdateType.BSP, Statement.PSFrequency.BATCH, 32, Statement.PSScheme.OVERLAP_RESHUFFLE, 1, false);
 	}
 
-	private void runDMLTest(int epochs, int workers, Statement.PSUpdateType utype, Statement.PSFrequency freq, int batchsize, Statement.PSScheme scheme) {
+	private void runDMLTest(int epochs, int workers, Statement.PSUpdateType utype, Statement.PSFrequency freq, int batchsize, Statement.PSScheme scheme, int nBatches, boolean modelAvg) {
 		TestConfiguration config = getTestConfiguration(ParamservLocalNNTest.TEST_NAME);
 		loadTestConfiguration(config);
 		programArgs = new String[] { "-stats", "-nvargs", "mode=LOCAL", "epochs=" + epochs,
 			"workers=" + workers, "utype=" + utype, "freq=" + freq, "batchsize=" + batchsize,
-			"scheme=" + scheme };
+			"scheme=" + scheme, "nBatches=" + nBatches, "modelAvg=" + modelAvg,};
 		String HOME = SCRIPT_DIR + TEST_DIR;
 		fullDMLScriptName = HOME + ParamservLocalNNTest.TEST_NAME + ".dml";
 		runTest(true, false, null, null, -1);

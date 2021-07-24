@@ -40,9 +40,11 @@ Y_val = labels[1:val_size,]
 epochs = 10
 workers = 10
 batchsize = 64
+nBatches = 1
+modelAvg = as.logical($1)
 
 # Train
-[W1, b1, W2, b2, W3, b3, W4, b4] = mnist_lenet::train(X, Y, X_val, Y_val, C, Hin, Win, epochs, workers)
+[W1, b1, W2, b2, W3, b3, W4, b4] = mnist_lenet::train(X, Y, X_val, Y_val, C, Hin, Win, epochs, workers, nBatches, modelAvg)
 
 # Compute validation loss & accuracy
 probs_val = mnist_lenet::predict(X_val, C, Hin, Win, batchsize, W1, b1, W2, b2, W3, b3, W4, b4)

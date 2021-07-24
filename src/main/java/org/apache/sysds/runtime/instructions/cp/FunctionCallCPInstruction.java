@@ -118,9 +118,7 @@ public class FunctionCallCPInstruction extends CPInstruction {
 	}
 
 	@Override
-	public void
-
-	processInstruction(ExecutionContext ec) {
+	public void	processInstruction(ExecutionContext ec) {
 		if( LOG.isTraceEnabled() ){
 			LOG.trace("Executing instruction : " + toString());
 		}
@@ -128,7 +126,6 @@ public class FunctionCallCPInstruction extends CPInstruction {
 		FunctionProgramBlock fpb = ec.getProgram().getFunctionProgramBlock(_namespace, _functionName, _opt);
 		// sanity check number of function parameters
 		if( _boundInputs.length < fpb.getInputParams().size() ) {
-
 			throw new DMLRuntimeException("fcall "+_functionName+": "
 				+ "Number of bound input parameters does not match the function signature "
 				+ "("+_boundInputs.length+", but "+fpb.getInputParams().size()+" expected)");

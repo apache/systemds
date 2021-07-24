@@ -36,6 +36,7 @@ aggregation = function (matrix[double] input) return (matrix[double] output) {
 
 e2 = "element2"
 params = list(e2)
+modelAvg = as.logical($1)
 
 # Use paramserv function
-model2 = paramserv(model, labels=Y, val_features=X_val, val_label=Y_val, upd="gradients", agg="aggregation", mode="LOCAL", utype="BSP", freq="EPOCH", epochs=100, batchsize=64, k=7, scheme="disjoint_contiguous", hyperparams=params, checkpointing="NONE")
+model2 = paramserv(model, labels=Y, val_features=X_val, val_label=Y_val, upd="gradients", agg="aggregation", mode="LOCAL", utype="BSP", freq="EPOCH", epochs=100, batchsize=64, k=7, scheme="disjoint_contiguous", hyperparams=params, checkpointing="NONE", nBatches=1, modelAvg=modelAvg)

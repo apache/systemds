@@ -44,8 +44,9 @@ aggregation = function(list[unknown] model,
 
 e2 = matrix(2, rows=100, cols=10)
 params = list(e2)
+modelAvg = as.logical($1)
 
 # Use paramserv function
-modelList2 = paramserv(model=modelList, features=X, labels=Y, val_features=X_val, val_labels=Y_val, upd="gradients", agg="aggregation", mode="REMOTE_SPARK", utype="BSP", epochs=10, hyperparams=params, k=1)
+modelList2 = paramserv(model=modelList, features=X, labels=Y, val_features=X_val, val_labels=Y_val, upd="gradients", agg="aggregation", mode="REMOTE_SPARK", utype="BSP", epochs=10, hyperparams=params, k=1, nBatches=1, modelaAvg=modelAvg)
 
 print(toString(as.matrix(modelList2[1])))

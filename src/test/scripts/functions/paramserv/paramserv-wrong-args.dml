@@ -43,8 +43,10 @@ aggregation = function(list[unknown] model,
 
 e2 = "element2"
 params = list(e2)
+modelAvg = as.logical($1)
+
 
 # Use paramserv function
-modelList2 = paramserv(model=modelList, features=X, labels=Y, val_features=X_val, val_labels=Y_val, upd="gradients", agg="aggregation", mode="LOCAL", utype="NSP", epochs=10, hyperparams=params)
+modelList2 = paramserv(model=modelList, features=X, labels=Y, val_features=X_val, val_labels=Y_val, upd="gradients", agg="aggregation", mode="LOCAL", utype="NSP", epochs=10, hyperparams=params, nBatches=1, modelAvg=modelAvg)
 
 print(toString(as.matrix(modelList2[1])))

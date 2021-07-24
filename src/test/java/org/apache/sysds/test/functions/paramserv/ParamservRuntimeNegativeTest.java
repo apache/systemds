@@ -46,23 +46,24 @@ public class ParamservRuntimeNegativeTest extends AutomatedTestBase {
 
 	@Test
 	public void testParamservWorkerFailed() {
-		runDMLTest(TEST_NAME1, "Invalid indexing by name in unnamed list: worker_err.");
+		runDMLTest(TEST_NAME1, "Invalid indexing by name in unnamed list: worker_err.", true);
 	}
 
 	@Test
 	public void testParamservAggServiceFailed() {
-		runDMLTest(TEST_NAME2, "Invalid indexing by name in unnamed list: agg_service_err");
+		runDMLTest(TEST_NAME2, "Invalid indexing by name in unnamed list: agg_service_err", false);
 	}
 
 	@Test
 	public void testParamservWrongAggregateFunc() {
-		runDMLTest(TEST_NAME3, "The 'gradients' function should provide an input of 'MATRIX' type named 'labels'.");
+		runDMLTest(TEST_NAME3, "The 'gradients' function should provide an input of 'MATRIX' type named 'labels'.", true);
 	}
 
-	private void runDMLTest(String testname, String errmsg) {
+	private void runDMLTest(String testname, String errmsg, boolean modelAvg) {
 		TestConfiguration config = getTestConfiguration(testname);
 		loadTestConfiguration(config);
-		programArgs = new String[] { };
+		programArgs = new String[] { "-explain", "-stats","-args",  Boolean.toString(modelAvg) };
+		//	programArgs = new String[] { };
 		fullDMLScriptName = HOME + testname + ".dml";
 		runTest(true, true, DMLRuntimeException.class, errmsg, -1);
 	}

@@ -25,6 +25,10 @@ import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.junit.Test;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
 public class ParamservSyntaxTest extends AutomatedTestBase {
 
 	private static final String TEST_NAME1 = "paramserv-all-args";
@@ -53,47 +57,52 @@ public class ParamservSyntaxTest extends AutomatedTestBase {
 
 	@Test
 	public void testParamservWithAllArgs() {
-		runDMLTest(TEST_NAME1, false, null, null);
+		runDMLTest(TEST_NAME1, false, null, null, false);
 	}
 
 	@Test
 	public void testParamservWithoutOptionalArgs() {
-		runDMLTest(TEST_NAME2, false, null, null);
+		runDMLTest(TEST_NAME2, false, null, null, false);
 	}
 
 	@Test
 	public void testParamservMissArgs() {
 		final String errmsg = "Named parameter 'features' missing. Please specify the input.";
-		runDMLTest(TEST_NAME3, true, LanguageException.class, errmsg);
+		runDMLTest(TEST_NAME3, true, LanguageException.class, errmsg, false);
 	}
 
 	@Test
 	public void testParamservWrongTypeArgs() {
 		final String errmsg = "Input to PARAMSERV::model must be of type 'LIST'. It should not be of type 'MATRIX'";
-		runDMLTest(TEST_NAME4, true, LanguageException.class, errmsg);
+		runDMLTest(TEST_NAME4, true, LanguageException.class, errmsg, false);
 	}
 
 	@Test
 	public void testParamservWrongArgs() {
 		final String errmsg = "Paramserv function: not support update type 'NSP'.";
-		runDMLTest(TEST_NAME5, true, DMLRuntimeException.class, errmsg);
+		runDMLTest(TEST_NAME5, true, DMLRuntimeException.class, errmsg, false);
 	}
 
 	@Test
 	public void testParamservWrongArgs2() {
 		final String errmsg = "Invalid parameters for PARAMSERV: [modelList, val_featur=X_val]";
-		runDMLTest(TEST_NAME6, true, LanguageException.class, errmsg);
+		runDMLTest(TEST_NAME6, true, LanguageException.class, errmsg, false);
 	}
 
 	@Test
 	public void testParamservMinimumVersion() {
-		runDMLTest(TEST_NAME7, false, null, null);
+		runDMLTest(TEST_NAME7, false, null, null,false);
 	}
 
-	private void runDMLTest(String testname, boolean exceptionExpected, Class<?> exceptionClass, String errmsg) {
+	@Test
+	public void testParamservWithAllArgsNBatchesFreq() {
+		runDMLTest(TEST_NAME1, false, null, null,false);
+	}
+
+	private void runDMLTest(String testname, boolean exceptionExpected, Class<?> exceptionClass, String errmsg, boolean modelAvg) {
 		TestConfiguration config = getTestConfiguration(testname);
 		loadTestConfiguration(config);
-		programArgs = new String[] { "-explain" };
+		programArgs = new String[]{ "-explain","-args", Boolean.toString(modelAvg)};
 		fullDMLScriptName = HOME + testname + ".dml";
 		runTest(true, exceptionExpected, exceptionClass, errmsg, -1);
 	}

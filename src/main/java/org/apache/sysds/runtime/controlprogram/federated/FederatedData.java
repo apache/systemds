@@ -64,7 +64,6 @@ public class FederatedData {
 	private final Types.DataType _dataType;
 	private final InetSocketAddress _address;
 	private final String _filepath;
-
 	/**
 	 * The ID of default matrix/tensor on which operations get executed if no other ID is given.
 	 */
@@ -78,7 +77,7 @@ public class FederatedData {
 			_allFedSites.add(_address);
 	}
 
-	public FederatedData(Types.DataType dataType, InetSocketAddress address, String filepath, long varID) {
+	public FederatedData(Types.DataType dataType, InetSocketAddress address, String filepath,  long varID) {
 		_dataType = dataType;
 		_address = address;
 		_filepath = filepath;

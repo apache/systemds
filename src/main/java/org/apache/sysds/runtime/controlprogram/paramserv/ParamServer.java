@@ -18,7 +18,7 @@
  */
 
 package org.apache.sysds.runtime.controlprogram.paramserv;
-
+import org.apache.commons.lang.NotImplementedException;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -35,27 +35,13 @@ import org.apache.sysds.runtime.controlprogram.FunctionProgramBlock;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.parfor.stat.Timing;
-import org.apache.sysds.runtime.data.DenseBlock;
-import org.apache.sysds.runtime.functionobjects.Divide;
-import org.apache.sysds.runtime.functionobjects.Multiply;
 import org.apache.sysds.runtime.functionobjects.Plus;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.*;
-import org.apache.sysds.runtime.lineage.Lineage;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
-import org.apache.sysds.runtime.matrix.data.MatrixValue;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
-import org.apache.sysds.runtime.functionobjects.Plus;
-import org.apache.sysds.runtime.matrix.operators.RightScalarOperator;
 import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
-import org.apache.sysds.runtime.util.IndexRange;
 import org.apache.sysds.utils.Statistics;
-
-import org.dmg.pmml.Model;
-import scala.tools.nsc.doc.model.Object;
-
-
-import java.io.ObjectInput;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -64,7 +50,6 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import java.lang.Math;
 
 
 public abstract class ParamServer
@@ -94,20 +79,18 @@ public abstract class ParamServer
 	private int _syncCounter = 0;
 	private int _epochCounter = 0 ;
 	private int _numBatchesPerEpoch;
+	private int _nBatches ;
 	private boolean _modelAvg;
 
 	private int _numWorkers;
 	private ListObject _accModel = null;
-	private Object sum;
-	private BinaryOperator _op2;
-	private MatrixObject AvgModel;
 
 
 	protected ParamServer() {}
 
 	protected ParamServer(ListObject model, String aggFunc, Statement.PSUpdateType updateType,
-						  Statement.PSFrequency freq, ExecutionContext ec, int workerNum, String valFunc,
-						  int numBatchesPerEpoch, MatrixObject valFeatures, MatrixObject valLabels, boolean modelAvg)
+			Statement.PSFrequency freq, ExecutionContext ec, int workerNum, String valFunc,
+			int numBatchesPerEpoch, MatrixObject valFeatures, MatrixObject valLabels, int nBatches, boolean modelAvg)
 	{
 
 		// init worker queues and global model
@@ -118,9 +101,12 @@ public abstract class ParamServer
 		});
 		_model = model;
 		_modelAvg = modelAvg;
-
 		// init aggregation service
 		_ec = ec;
+		if (modelAvg)
+			if (updateType.isASP()) {
+				updateType = Statement.PSUpdateType.BSP;
+		}
 		_updateType = updateType;
 		_freq = freq;
 		_finishedStates = new boolean[workerNum];
@@ -131,7 +117,7 @@ public abstract class ParamServer
 		}
 		_numBatchesPerEpoch = numBatchesPerEpoch;
 		_numWorkers = workerNum;
-
+     	_nBatches = nBatches;
 		// broadcast initial model
 		broadcastModel(true);
 	}
@@ -208,13 +194,12 @@ public abstract class ParamServer
 	}
 
 	protected synchronized void updModel_avgModel(int workerID, ListObject params){
-		if (_modelAvg == true){
-			updateAverageModel(workerID, params);}
-		else if (_modelAvg == false)
+		if (_modelAvg)
+			updateAverageModel(workerID, params);
+		else
 			updateGlobalModel(workerID, params);
-
 }
-	protected  void updateAverageModel(int workerID, ListObject models) {
+	protected void updateAverageModel(int workerID, ListObject models) {
 		try {
 			if (LOG.isDebugEnabled()) {
 				LOG.debug(String.format("Successfully pulled the gradients [size:%d kb] of worker_%d.",
@@ -235,7 +220,8 @@ public abstract class ParamServer
 						// BSP epoch case every time
 						if (_numBatchesPerEpoch != -1 &&
 								(_freq == Statement.PSFrequency.EPOCH ||
-										(_freq == Statement.PSFrequency.BATCH && ++_syncCounter % _numBatchesPerEpoch == 0))) {
+										(_freq == Statement.PSFrequency.BATCH && ++_syncCounter % _numBatchesPerEpoch == 0)
+										||(_freq == Statement.PSFrequency.NBATCHES && _numBatchesPerEpoch % _nBatches == 0))) {
 
 							if(LOG.isInfoEnabled())
 								LOG.info("[+] PARAMSERV: completed EPOCH " + _epochCounter);
@@ -245,19 +231,19 @@ public abstract class ParamServer
 								validate();
 							_epochCounter++;
 							_syncCounter = 0;
-
 						}
 						// Broadcast the updated model
 						resetFinishedStates();
 
 						broadcastModel(true);
 						if (LOG.isDebugEnabled())
-							LOG.debug("Global Averaging parameter is broadcasted successfully ");
+							LOG.debug("Global parameter is broadcasted successfully ");
 					}
 					break;
 				}
 				case ASP:
-					throw new DMLRuntimeException("Unsupported update: " + _updateType.name()+"in the case of averaging model");
+					throw new NotImplementedException();
+
 				default:
 					throw new DMLRuntimeException("Unsupported update: " + _updateType.name());
 			}
@@ -273,50 +259,38 @@ public abstract class ParamServer
 		if (DMLScript.STATISTICS && tAgg != null)
 			Statistics.accPSAggregationTime((long) tAgg.stop());
 	}
-	/*********************************************************************************************************************
-	 * A service method for averaging model with models
+	/* A service method for averaging model with models
 	 *
 	 * @param ec execution context
 	 * @param accModels list of models
 	 * @param model old model
 	 * @return new model (accModel)
 	 */
-
 	public static  ListObject averageModel(ExecutionContext ec, ListObject accModels,ListObject model) {
-
 		Timing tAgg = DMLScript.STATISTICS ? new Timing(true) : null;
-
 		ec.setVariable(Statement.PS_MODEL, model);
 		ec.setVariable(Statement.PS_MODELS, accModels);
 		boolean par = true;
 		// first we accumulate all the models
 		if (accModels == null)
 			return ParamservUtils.copyList(model, true);
-			IntStream range = IntStream.range(0, accModels.getLength());
+		IntStream range = IntStream.range(0, accModels.getLength());
 		(par ? range.parallel() : range).forEach(i -> {
-
 			MatrixBlock mb1 = ((MatrixObject) model.getData().get(i)).acquireReadAndRelease();
 			MatrixBlock mb2 = ((MatrixObject) accModels.getData().get(i)).acquireReadAndRelease();
 			mb2.binaryOperationsInPlace(new BinaryOperator(Plus.getPlusFnObject()), mb1);
-
-
 		});
-
-
 		ListObject tempModel = accModels;
 		IntStream range1 = IntStream.range(0, tempModel.getLength());
 		ListObject finalTempModel = tempModel;
-
 		//second we calculate the averaging model
 		(par ? range1.parallel() : range1).forEach(i -> {
 					MatrixBlock mbTemp = ((MatrixObject) finalTempModel.getData().get(i)).acquireReadAndRelease();
 		         	ScalarOperator sop = InstructionUtils.parseScalarBinaryOperator("/", false);
 			        sop = sop.setConstant(accModels.getLength());// division would be done for averaging
 					mbTemp.scalarOperations(sop, new MatrixBlock());
-
 		});
 	//	ParamservUtils.cleanupListObject(model);
-
 		return accModels;
 	}
 
@@ -339,10 +313,8 @@ public abstract class ParamServer
 		// Populate the variables table with the gradients and model
 		ec.setVariable(Statement.PS_GRADIENTS, gradients);
 		ec.setVariable(Statement.PS_MODEL, model);
-
 		// Invoke the aggregate function
 		_inst.processInstruction(ec);
-
 		// Get the new model
 		ListObject newModel = ec.getListObject(_outputName);
 
@@ -462,7 +434,8 @@ public abstract class ParamServer
 						// BSP epoch case every time
 						if (_numBatchesPerEpoch != -1 &&
 								(_freq == Statement.PSFrequency.EPOCH ||
-										(_freq == Statement.PSFrequency.BATCH && ++_syncCounter % _numBatchesPerEpoch == 0))) {
+										(_freq == Statement.PSFrequency.BATCH && ++_syncCounter % _numBatchesPerEpoch == 0)
+										|| (_freq == Statement.PSFrequency.NBATCHES))) {
 
 							if(LOG.isInfoEnabled())
 								LOG.info("[+] PARAMSERV: completed EPOCH " + _epochCounter);
@@ -490,16 +463,14 @@ public abstract class ParamServer
 					// the number of workers, creating "Pseudo Epochs"
 					if (_numBatchesPerEpoch != -1 &&
 							((_freq == Statement.PSFrequency.EPOCH && ((float) ++_syncCounter % _numWorkers) == 0) ||
-									(_freq == Statement.PSFrequency.BATCH && ((float) ++_syncCounter / _numWorkers) % (float) _numBatchesPerEpoch == 0))) {
-
+									(_freq == Statement.PSFrequency.BATCH && ((float) ++_syncCounter / _numWorkers) % (float) _numBatchesPerEpoch == 0)
+									|| (_freq == Statement.PSFrequency.NBATCHES && _numBatchesPerEpoch % _nBatches == 0))) {
 						if(LOG.isInfoEnabled())
 							LOG.info("[+] PARAMSERV: completed PSEUDO EPOCH (ASP) " + _epochCounter);
 
 						time_epoch();
-
 						if(_validationPossible)
 							validate();
-
 						_epochCounter++;
 						_syncCounter = 0;
 					}

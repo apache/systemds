@@ -169,15 +169,18 @@ public class LibMatrixReorg {
 			out.allocateDenseBlock(false);
 	
 		//execute transpose operation
+		boolean ultraSparse = (in.sparse && out.sparse && in.nonZeros < Math.max(in.rlen, in.clen));
 		if( !in.sparse && !out.sparse )
-			transposeDenseToDense( in, out, 0, in.rlen, 0, in.clen );
+			transposeDenseToDense(in, out, 0, in.rlen, 0, in.clen);
+		else if( ultraSparse )
+			transposeUltraSparse(in, out);
 		else if( in.sparse && out.sparse )
-			transposeSparseToSparse( in, out, 0, in.rlen, 0, in.clen, 
+			transposeSparseToSparse(in, out, 0, in.rlen, 0, in.clen, 
 				countNnzPerColumn(in, 0, in.rlen));
 		else if( in.sparse )
-			transposeSparseToDense( in, out, 0, in.rlen, 0, in.clen );
+			transposeSparseToDense(in, out, 0, in.rlen, 0, in.clen);
 		else
-			transposeDenseToSparse( in, out );
+			transposeDenseToSparse(in, out);
 		
 		// System.out.println("r' ("+in.rlen+", "+in.clen+", "+in.sparse+", "+out.sparse+") in "+time.stop()+" ms.");
 		
@@ -190,10 +193,11 @@ public class LibMatrixReorg {
 	
 	public static MatrixBlock transpose(MatrixBlock in, MatrixBlock out, int k, boolean allowCSR) {
 		// redirect small or special cases to sequential execution
-		if(in.isEmptyBlock(false) || ((long) in.rlen * (long) in.clen < PAR_NUMCELL_THRESHOLD) || k == 1 ||
-			(SHALLOW_COPY_REORG && !in.sparse && !out.sparse && (in.rlen == 1 || in.clen == 1)) ||
-			(in.sparse && !out.sparse && in.rlen == 1) || (!in.sparse && out.sparse && in.rlen == 1) ||
-			(!in.sparse && out.sparse)) {
+		if(in.isEmptyBlock(false) || ((long) in.rlen * (long) in.clen < PAR_NUMCELL_THRESHOLD) || k == 1
+			|| (SHALLOW_COPY_REORG && !in.sparse && !out.sparse && (in.rlen == 1 || in.clen == 1))
+			|| (in.sparse && !out.sparse && in.rlen == 1) || (!in.sparse && out.sparse && in.rlen == 1)
+			|| (in.sparse && out.sparse && in.nonZeros < Math.max(in.rlen, in.clen)) //ultra-sparse
+			|| (!in.sparse && out.sparse) ) {
 			return transpose(in, out);
 		}
 		// set meta data and allocate output arrays (if required)
@@ -901,6 +905,18 @@ public class LibMatrixReorg {
 		}
 	}
 
+	private static void transposeUltraSparse(MatrixBlock in, MatrixBlock out) {
+		//note: applied if nnz < max(rlen, clen) - so no cache blocking
+		// but basic, naive transposition in a single-threaded context
+		Iterator<IJV> iter = in.getSparseBlockIterator();
+		SparseBlock b = out.getSparseBlock();
+		while( iter.hasNext() ) {
+			IJV cell = iter.next();
+			b.append(cell.getJ(), cell.getI(), cell.getV());
+		}
+		out.setNonZeros(in.getNonZeros());
+	}
+	
 	private static void transposeSparseToSparse(MatrixBlock in, MatrixBlock out, int rl, int ru, int cl, int cu, int[] cnt)
 	{
 		//NOTE: called only in sequential or column-wise parallel execution

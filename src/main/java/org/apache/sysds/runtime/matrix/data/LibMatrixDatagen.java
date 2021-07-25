@@ -533,15 +533,17 @@ public class LibMatrixDatagen
 	{
 		// Prob [k-1 zeros before a nonzero] = Prob [k-1 < log(uniform)/log(1-p) < k] = p*(1-p)^(k-1), where p=sparsity
 		double log1mp = Math.log(1-sparsity);
-		int idx = 0;  // takes values in range [1, blen*blen] (both ends including)
+		long idx = 0;  // takes values in range [1, blen*blen] (both ends including)
 		long blocksize = blockrows*blockcols;
 		while(idx < blocksize) {
 			//compute skip to next index
-			idx = idx + (int) Math.ceil(Math.log(nnzPRNG.nextDouble())/log1mp);
-			if ( idx > blocksize) break;
+			idx = idx + (long) Math.ceil(Math.log(nnzPRNG.nextDouble())/log1mp);
+			//check blocksize and save int casts
+			if ( idx > blocksize)
+				break;
 			// translate idx into (r,c) within the block
-			int rix = (idx-1)/blockcols;
-			int cix = (idx-1)%blockcols;
+			int rix = (int)(idx-1)/blockcols;
+			int cix = (int)(idx-1)%blockcols;
 			double val = min + (range * valuePRNG.nextDouble());
 			c.allocate(rowoffset+rix, estnnzRow, clen);
 			c.append(rowoffset+rix, coloffset+cix, val);

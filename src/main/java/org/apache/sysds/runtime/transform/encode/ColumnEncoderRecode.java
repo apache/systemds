@@ -24,26 +24,19 @@ import static org.apache.sysds.runtime.util.UtilFunctions.getEndIndex;
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
 
 import org.apache.sysds.lops.Lop;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
-import org.apache.sysds.runtime.util.DependencyTask;
-import org.apache.sysds.runtime.util.DependencyThreadPool;
 
 public class ColumnEncoderRecode extends ColumnEncoder {
 	private static final long serialVersionUID = 8213163881283341874L;
@@ -146,17 +139,18 @@ public class ColumnEncoderRecode extends ColumnEncoder {
 	}
 
 	@Override
-	public Callable<Object> getBuildTask(FrameBlock in){
+	public Callable<Object> getBuildTask(FrameBlock in) {
 		return new ColumnRecodeBuildTask(this, in);
 	}
 
 	@Override
-	public Callable<Object> getPartialBuildTask(FrameBlock in, int startRow, int blockSize, HashMap<Integer, Object> ret){
+	public Callable<Object> getPartialBuildTask(FrameBlock in, int startRow, int blockSize,
+		HashMap<Integer, Object> ret) {
 		return new RecodePartialBuildTask(in, _colID, startRow, blockSize, ret);
 	}
 
 	@Override
-	public Callable<Object> getPartialMergeBuildTask(HashMap<Integer, ?> ret){
+	public Callable<Object> getPartialMergeBuildTask(HashMap<Integer, ?> ret) {
 		return new RecodeMergePartialBuildTask(this, ret);
 	}
 
@@ -328,7 +322,7 @@ public class ColumnEncoderRecode extends ColumnEncoder {
 		private final HashMap<Integer, Object> _partialMaps;
 
 		protected RecodePartialBuildTask(FrameBlock input, int colID, int startRow, int blocksize,
-											HashMap<Integer, Object> partialMaps) {
+			HashMap<Integer, Object> partialMaps) {
 			_input = input;
 			_blockSize = blocksize;
 			_colID = colID;
@@ -336,12 +330,11 @@ public class ColumnEncoderRecode extends ColumnEncoder {
 			_partialMaps = partialMaps;
 		}
 
-
 		@Override
 		public HashMap<String, Long> call() throws Exception {
 			HashMap<String, Long> partialMap = new HashMap<>();
 			makeRcdMap(_input, partialMap, _colID, _startRow, _blockSize);
-			synchronized (_partialMaps){
+			synchronized(_partialMaps) {
 				_partialMaps.put(_startRow, partialMap);
 			}
 			return null;
@@ -354,12 +347,11 @@ public class ColumnEncoderRecode extends ColumnEncoder {
 
 	}
 
-	private static class RecodeMergePartialBuildTask implements Callable<Object>{
+	private static class RecodeMergePartialBuildTask implements Callable<Object> {
 		private final HashMap<Integer, ?> _partialMaps;
 		private final ColumnEncoderRecode _encoder;
 
-		private RecodeMergePartialBuildTask(ColumnEncoderRecode encoderRecode,
-											HashMap<Integer, ?> partialMaps) {
+		private RecodeMergePartialBuildTask(ColumnEncoderRecode encoderRecode, HashMap<Integer, ?> partialMaps) {
 			_partialMaps = partialMaps;
 			_encoder = encoderRecode;
 		}
@@ -368,7 +360,7 @@ public class ColumnEncoderRecode extends ColumnEncoder {
 		public Object call() throws Exception {
 			HashMap<String, Long> rcdMap = _encoder.getRcdMap();
 			_partialMaps.forEach((start_row, map) -> {
-				((HashMap<?, ?>)map).forEach((k, v) -> {
+				((HashMap<?, ?>) map).forEach((k, v) -> {
 					if(!rcdMap.containsKey((String) k))
 						putCode(rcdMap, (String) k);
 				});
@@ -384,12 +376,11 @@ public class ColumnEncoderRecode extends ColumnEncoder {
 
 	}
 
-
 	private static class ColumnRecodeBuildTask implements Callable<Object> {
 
 		private final ColumnEncoderRecode _encoder;
 		private final FrameBlock _input;
-		
+
 		protected ColumnRecodeBuildTask(ColumnEncoderRecode encoder, FrameBlock input) {
 			_encoder = encoder;
 			_input = input;
@@ -407,5 +398,5 @@ public class ColumnEncoderRecode extends ColumnEncoder {
 		}
 
 	}
-	
+
 }

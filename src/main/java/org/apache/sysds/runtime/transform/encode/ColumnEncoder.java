@@ -168,40 +168,42 @@ public abstract class ColumnEncoder implements Externalizable, Encoder, Comparab
 	}
 
 	/*
-	Returns a Dependency Task List such that if executed the encoder is built.
-	Last Task in the list shall only complete if all previous tasks are done.
-	This is so that we can use the last task as a dependency for the whole build, reducing unnecessary dependencies.
+	 * Returns a Dependency Task List such that if executed the encoder is built. Last Task in the list shall only
+	 * complete if all previous tasks are done. This is so that we can use the last task as a dependency for the whole
+	 * build, reducing unnecessary dependencies.
 	 */
-	public List<DependencyTask<?>> getBuildTasks(FrameBlock in, int blockSize){
+	public List<DependencyTask<?>> getBuildTasks(FrameBlock in, int blockSize) {
 		List<Callable<Object>> tasks = new ArrayList<>();
 		List<List<? extends Callable<?>>> dep = null;
-		if(blockSize <= 0 || blockSize >= in.getNumRows()){
+		if(blockSize <= 0 || blockSize >= in.getNumRows()) {
 			tasks.add(getBuildTask(in));
-		}else{
+		}
+		else {
 			HashMap<Integer, Object> ret = new HashMap<>();
 			for(int i = 0; i < in.getNumRows(); i = i + blockSize)
 				tasks.add(getPartialBuildTask(in, i, blockSize, ret));
 			if(in.getNumRows() % blockSize != 0)
-				tasks.add(getPartialBuildTask(in, in.getNumRows() - in.getNumRows() % blockSize,-1, ret));
+				tasks.add(getPartialBuildTask(in, in.getNumRows() - in.getNumRows() % blockSize, -1, ret));
 			tasks.add(getPartialMergeBuildTask(ret));
-			dep = new ArrayList<>(Collections.nCopies(tasks.size()-1, null));
-			dep.add(tasks.subList(0, tasks.size()-1));
+			dep = new ArrayList<>(Collections.nCopies(tasks.size() - 1, null));
+			dep.add(tasks.subList(0, tasks.size() - 1));
 		}
 		return DependencyThreadPool.createDependencyTasks(tasks, dep);
 	}
 
-	public Callable<Object> getBuildTask(FrameBlock in){
+	public Callable<Object> getBuildTask(FrameBlock in) {
 		throw new DMLRuntimeException("Trying to get the Build task of an Encoder which does not require building");
 	}
 
-	public Callable<Object> getPartialBuildTask(FrameBlock in, int startRow, int blockSize, HashMap<Integer, Object> ret){
-		throw new DMLRuntimeException("Trying to get the PartialBuild task of an Encoder which does not support  " +
-				"partial building");
+	public Callable<Object> getPartialBuildTask(FrameBlock in, int startRow, int blockSize,
+		HashMap<Integer, Object> ret) {
+		throw new DMLRuntimeException(
+			"Trying to get the PartialBuild task of an Encoder which does not support  " + "partial building");
 	}
 
-	public Callable<Object> getPartialMergeBuildTask(HashMap<Integer, ?> ret){
-		throw new DMLRuntimeException("Trying to get the BuildMergeTask task of an Encoder which does not support " +
-				"partial building");
+	public Callable<Object> getPartialMergeBuildTask(HashMap<Integer, ?> ret) {
+		throw new DMLRuntimeException(
+			"Trying to get the BuildMergeTask task of an Encoder which does not support " + "partial building");
 	}
 
 	public List<DependencyTask<?>> getApplyTasks(FrameBlock in, MatrixBlock out, int outputCol) {
@@ -216,11 +218,14 @@ public abstract class ColumnEncoder implements Externalizable, Encoder, Comparab
 		return DependencyThreadPool.createDependencyTasks(tasks, null);
 	}
 
-
 	public enum EncoderType {
 		Recode, FeatureHash, PassThrough, Bin, Dummycode, Omit, MVImpute, Composite
 	}
 
+	/*
+	 * This is the base Task for each column apply. If no custom "getApplyTasks" is implemented in an Encoder this task
+	 * will be used.
+	 */
 	private static class ColumnApplyTask implements Callable<Object> {
 
 		private final ColumnEncoder _encoder;
@@ -228,8 +233,6 @@ public abstract class ColumnEncoder implements Externalizable, Encoder, Comparab
 		private final MatrixBlock _inputM;
 		private final MatrixBlock _out;
 		private final int _outputCol;
-		private int _rowStart = 0;
-		private int _blk = -1;
 
 		protected ColumnApplyTask(ColumnEncoder encoder, FrameBlock input, MatrixBlock out, int outputCol) {
 			_encoder = encoder;
@@ -247,23 +250,11 @@ public abstract class ColumnEncoder implements Externalizable, Encoder, Comparab
 			_outputCol = outputCol;
 		}
 
-		protected ColumnApplyTask(ColumnEncoder encoder, MatrixBlock input, MatrixBlock out, int outputCol,
-								  int rowStart, int blk) {
-			this(encoder, input, out, outputCol);
-			_rowStart = rowStart;
-			_blk = blk;
-		}
-
-		protected ColumnApplyTask(ColumnEncoder encoder, FrameBlock input, MatrixBlock out, int outputCol,
-								  int rowStart, int blk) {
-			this(encoder, input, out, outputCol);
-			_rowStart = rowStart;
-			_blk = blk;
-		}
-
 		@Override
 		public Void call() throws Exception {
 			assert _outputCol >= 0;
+			int _rowStart = 0;
+			int _blk = -1;
 			if(_inputF == null)
 				_encoder.apply(_inputM, _out, _outputCol, _rowStart, _blk);
 			else
@@ -273,7 +264,8 @@ public abstract class ColumnEncoder implements Externalizable, Encoder, Comparab
 
 		@Override
 		public String toString() {
-			return getClass().getSimpleName() + "<Encoder: " + _encoder.getClass().getSimpleName() + "; ColId: " + _encoder._colID + ">";
+			return getClass().getSimpleName() + "<Encoder: " + _encoder.getClass().getSimpleName() + "; ColId: "
+				+ _encoder._colID + ">";
 		}
 
 	}

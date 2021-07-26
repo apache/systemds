@@ -29,17 +29,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
 
 import org.apache.commons.lang.NotImplementedException;
-import org.apache.hadoop.yarn.webapp.hamlet.Hamlet;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.DependencyTask;
 import org.apache.sysds.runtime.util.DependencyThreadPool;
-import org.apache.sysds.runtime.util.IndexRange;
 
 /**
  * Simple composite encoder that applies a list of encoders in specified order. By implementing the default encoder API
@@ -127,9 +123,9 @@ public class ColumnEncoderComposite extends ColumnEncoder {
 
 		List<List<? extends Callable<?>>> dep = new ArrayList<>(Collections.nCopies(tasks.size(), null));
 
-		for(int c = 0, i = sizes.get(c); i < tasks.size(); c++, i+=sizes.get(c)){
-			for(int k = i; k < i + sizes.get(c+1); k++){
-				dep.set(k, tasks.subList(i-1, i));
+		for(int c = 0, i = sizes.get(c); i < tasks.size(); c++, i += sizes.get(c)) {
+			for(int k = i; k < i + sizes.get(c + 1); k++) {
+				dep.set(k, tasks.subList(i - 1, i));
 			}
 		}
 
@@ -143,29 +139,29 @@ public class ColumnEncoderComposite extends ColumnEncoder {
 	}
 
 	@Override
-	public List<DependencyTask<?>> getBuildTasks(FrameBlock in, int blockSize){
+	public List<DependencyTask<?>> getBuildTasks(FrameBlock in, int blockSize) {
 		List<DependencyTask<?>> tasks = new ArrayList<>();
 		Map<Integer[], Integer[]> depMap = null;
-		for(ColumnEncoder columnEncoder: _columnEncoders){
+		for(ColumnEncoder columnEncoder : _columnEncoders) {
 			List<DependencyTask<?>> t = columnEncoder.getBuildTasks(in, blockSize);
 			if(t == null)
 				continue;
 			// Linear execution between encoders so they can't be built in parallel
-			if(tasks.size() != 0){
+			if(tasks.size() != 0) {
 				// avoid unnecessary map initialization
 				depMap = (depMap == null) ? new HashMap<>() : depMap;
 				// This workaround is needed since sublist is only valid for effective final lists,
 				// otherwise the view breaks
-				depMap.put(new Integer[]{tasks.size(), tasks.size() + t.size()},
-						new Integer[]{tasks.size()-1, tasks.size()});
+				depMap.put(new Integer[] {tasks.size(), tasks.size() + t.size()},
+					new Integer[] {tasks.size() - 1, tasks.size()});
 			}
 			tasks.addAll(t);
 		}
 		List<List<? extends Callable<?>>> dep = new ArrayList<>(Collections.nCopies(tasks.size(), null));
 		DependencyThreadPool.createDependencyList(tasks, depMap, dep);
-		if(hasEncoder(ColumnEncoderDummycode.class)){
+		if(hasEncoder(ColumnEncoderDummycode.class)) {
 			tasks.add(DependencyThreadPool.createDependencyTask(new ColumnCompositeUpdateDCTask(this)));
-			dep.add(tasks.subList(tasks.size()-2, tasks.size()-1));
+			dep.add(tasks.subList(tasks.size() - 2, tasks.size() - 1));
 		}
 		return DependencyThreadPool.createDependencyTasks(tasks, dep);
 	}
@@ -263,7 +259,7 @@ public class ColumnEncoderComposite extends ColumnEncoder {
 		updateAllDCEncoders();
 	}
 
-	public void updateAllDCEncoders(){
+	public void updateAllDCEncoders() {
 		// update dummycode encoder domain sizes based on distinctness information from other encoders
 		ColumnEncoderDummycode dc = getEncoder(ColumnEncoderDummycode.class);
 		if(dc != null)
@@ -377,8 +373,6 @@ public class ColumnEncoderComposite extends ColumnEncoder {
 			return getClass().getSimpleName() + "<ColId: " + _encoder._colID + ">";
 		}
 
-
 	}
-
 
 }

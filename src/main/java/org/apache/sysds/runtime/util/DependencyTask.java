@@ -19,65 +19,64 @@
 
 package org.apache.sysds.runtime.util;
 
-import org.apache.sysds.runtime.DMLRuntimeException;
-import javax.annotation.CheckForNull;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
+import org.apache.sysds.runtime.DMLRuntimeException;
+
 public class DependencyTask<E> implements Callable<E> {
-    public static final boolean ENABLE_DEBUG_DATA = false;
+	public static final boolean ENABLE_DEBUG_DATA = false;
 
-    private final Callable<E> _task;
-    protected final List<DependencyTask<?>> _dependantTasks;
-    public List<DependencyTask<?>> _dependencyTasks = null;   // only for debugging
-    private CompletableFuture<Future<?>> _future;
-    private int _rdy = 0;
-    private ExecutorService _pool;
+	private final Callable<E> _task;
+	protected final List<DependencyTask<?>> _dependantTasks;
+	public List<DependencyTask<?>> _dependencyTasks = null; // only for debugging
+	private CompletableFuture<Future<?>> _future;
+	private int _rdy = 0;
+	private ExecutorService _pool;
 
+	public DependencyTask(Callable<E> task, List<DependencyTask<?>> dependantTasks) {
+		_dependantTasks = dependantTasks;
+		_task = task;
+	}
 
-    public DependencyTask(Callable<E> task, List<DependencyTask<?>> dependantTasks) {
-        _dependantTasks = dependantTasks;
-        _task = task;
-    }
+	public void addPool(ExecutorService pool) {
+		_pool = pool;
+	}
 
-    public void addPool(ExecutorService pool) {
-        _pool = pool;
-    }
+	public void assignFuture(CompletableFuture<Future<?>> f) {
+		_future = f;
+	}
 
-    public void assignFuture(CompletableFuture<Future<?>> f) {
-        _future = f;
-    }
+	public boolean isReady() {
+		return _rdy == 0;
+	}
 
-    public boolean isReady() {
-        return _rdy == 0;
-    }
+	private boolean decrease() {
+		synchronized(this) {
+			_rdy -= 1;
+			return isReady();
+		}
+	}
 
-    private boolean decrease() {
-        synchronized (this) {
-            _rdy -= 1;
-            return isReady();
-        }
-    }
+	public void addDependent(DependencyTask<?> dependencyTask) {
+		_dependantTasks.add(dependencyTask);
+		dependencyTask._rdy += 1;
+	}
 
-    public void addDependent(DependencyTask<?> dependencyTask) {
-        _dependantTasks.add(dependencyTask);
-        dependencyTask._rdy += 1;
-    }
+	@Override
+	public E call() throws Exception {
+		E ret = _task.call();
+		_dependantTasks.forEach(t -> {
+			if(t.decrease()) {
+				if(_pool == null)
+					throw new DMLRuntimeException("ExecutorService was not set for DependencyTask");
+				t._future.complete(_pool.submit(t));
+			}
+		});
 
-    @Override
-    public E call() throws Exception {
-        E ret = _task.call();
-        _dependantTasks.forEach(t -> {
-            if (t.decrease()) {
-                if (_pool == null)
-                    throw new DMLRuntimeException("ExecutorService was not set for DependencyTask");
-                t._future.complete(_pool.submit(t));
-            }
-        });
-
-        return ret;
-    }
+		return ret;
+	}
 }

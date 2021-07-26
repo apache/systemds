@@ -19,6 +19,13 @@
 
 package org.apache.sysds.test.functions.transform.mt;
 
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.List;
+
 import org.apache.sysds.common.Types;
 import org.apache.sysds.runtime.io.FileFormatPropertiesCSV;
 import org.apache.sysds.runtime.io.FrameReaderFactory;
@@ -32,16 +39,11 @@ import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
 import org.junit.Test;
 
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.util.List;
-
-import static org.junit.Assert.*;
-
-public class TransformFrameBuildMultithreadedTest  extends AutomatedTestBase {
+public class TransformFrameBuildMultithreadedTest extends AutomatedTestBase {
 	private final static String TEST_NAME1 = "TransformFrameBuildMultithreadedTest";
 	private final static String TEST_DIR = "functions/transform/";
-	private final static String TEST_CLASS_DIR = TEST_DIR + TransformFrameBuildMultithreadedTest.class.getSimpleName() + "/";
+	private final static String TEST_CLASS_DIR = TEST_DIR + TransformFrameBuildMultithreadedTest.class.getSimpleName()
+		+ "/";
 
 	// dataset and transform tasks without missing values
 	private final static String DATASET1 = "homes3/homes.csv";
@@ -83,7 +85,7 @@ public class TransformFrameBuildMultithreadedTest  extends AutomatedTestBase {
 
 	@Test
 	public void testHomesBuildDummyCodeSingleNodeCSV() {
-		runTransformTest(Types.ExecMode.SINGLE_NODE, "csv", TransformType.DUMMY,0);
+		runTransformTest(Types.ExecMode.SINGLE_NODE, "csv", TransformType.DUMMY, 0);
 	}
 
 	@Test
@@ -93,7 +95,7 @@ public class TransformFrameBuildMultithreadedTest  extends AutomatedTestBase {
 
 	@Test
 	public void testHomesBuildRecodeBinningSingleNodeCSV() {
-		runTransformTest(Types.ExecMode.SINGLE_NODE, "csv", TransformType.RECODE_BIN,0);
+		runTransformTest(Types.ExecMode.SINGLE_NODE, "csv", TransformType.RECODE_BIN, 0);
 	}
 
 	@Test
@@ -108,7 +110,7 @@ public class TransformFrameBuildMultithreadedTest  extends AutomatedTestBase {
 
 	@Test
 	public void testHomesBuildBinDummySingleNodeCSV() {
-		runTransformTest(Types.ExecMode.SINGLE_NODE, "csv", TransformType.BIN_DUMMY,0);
+		runTransformTest(Types.ExecMode.SINGLE_NODE, "csv", TransformType.BIN_DUMMY, 0);
 	}
 
 	@Test
@@ -116,13 +118,11 @@ public class TransformFrameBuildMultithreadedTest  extends AutomatedTestBase {
 		runTransformTest(Types.ExecMode.SINGLE_NODE, "csv", TransformType.HASH_RECODE, 0);
 	}
 
-
-	private void runTransformTest(Types.ExecMode rt, String ofmt, TransformType type, int blockSize)
-	{
+	private void runTransformTest(Types.ExecMode rt, String ofmt, TransformType type, int blockSize) {
 		// set transform specification
 		String SPEC = null;
 		String DATASET = null;
-		switch (type) {
+		switch(type) {
 			case RECODE:
 				SPEC = SPEC1;
 				DATASET = DATASET1;
@@ -144,11 +144,11 @@ public class TransformFrameBuildMultithreadedTest  extends AutomatedTestBase {
 				DATASET = DATASET1;
 				break;
 			case HASH:
-				SPEC =  SPEC8;
+				SPEC = SPEC8;
 				DATASET = DATASET1;
 				break;
 			case HASH_RECODE:
-				SPEC =  SPEC9;
+				SPEC = SPEC9;
 				DATASET = DATASET1;
 				break;
 			case RECODE_BIN:
@@ -157,49 +157,49 @@ public class TransformFrameBuildMultithreadedTest  extends AutomatedTestBase {
 				break;
 		}
 
-		if (!ofmt.equals("csv"))
+		if(!ofmt.equals("csv"))
 			throw new RuntimeException("Unsupported test output format");
 
 		try {
 			getAndLoadTestConfiguration(TEST_NAME1);
 
-			//String HOME = SCRIPT_DIR + TEST_DIR;
+			// String HOME = SCRIPT_DIR + TEST_DIR;
 			DATASET = DATASET_DIR + DATASET;
 			SPEC = DATASET_DIR + SPEC;
 
 			FileFormatPropertiesCSV props = new FileFormatPropertiesCSV();
 			props.setHeader(true);
 			FrameBlock input = FrameReaderFactory.createFrameReader(Types.FileFormat.CSV, props)
-					.readFrameFromHDFS(DATASET, -1L, -1L);
+				.readFrameFromHDFS(DATASET, -1L, -1L);
 			StringBuilder specSb = new StringBuilder();
 			Files.readAllLines(Paths.get(SPEC)).forEach(s -> specSb.append(s).append("\n"));
-			MultiColumnEncoder encoderS = EncoderFactory.createEncoder(specSb.toString(), 
-					input.getColumnNames(), input.getNumColumns(), null);
-			MultiColumnEncoder encoderM = EncoderFactory.createEncoder(specSb.toString(),
-					input.getColumnNames(), input.getNumColumns(), null);
+			MultiColumnEncoder encoderS = EncoderFactory.createEncoder(specSb.toString(), input.getColumnNames(),
+				input.getNumColumns(), null);
+			MultiColumnEncoder encoderM = EncoderFactory.createEncoder(specSb.toString(), input.getColumnNames(),
+				input.getNumColumns(), null);
 
 			encoderS.build(input, 1);
 			encoderM.build(input, 12);
 
-			if (type == TransformType.RECODE) {
+			if(type == TransformType.RECODE) {
 				List<ColumnEncoderRecode> encodersS = encoderS.getColumnEncoders(ColumnEncoderRecode.class);
 				List<ColumnEncoderRecode> encodersM = encoderM.getColumnEncoders(ColumnEncoderRecode.class);
 				assertEquals(encodersS.size(), encodersM.size());
-				for (int i = 0; i < encodersS.size(); i++) {
+				for(int i = 0; i < encodersS.size(); i++) {
 					assertEquals(encodersS.get(i).getRcdMap().keySet(), encodersM.get(i).getRcdMap().keySet());
 				}
 			}
-			else if (type == TransformType.BIN) {
+			else if(type == TransformType.BIN) {
 				List<ColumnEncoderBin> encodersS = encoderS.getColumnEncoders(ColumnEncoderBin.class);
 				List<ColumnEncoderBin> encodersM = encoderM.getColumnEncoders(ColumnEncoderBin.class);
 				assertEquals(encodersS.size(), encodersM.size());
-				for (int i = 0; i < encodersS.size(); i++) {
+				for(int i = 0; i < encodersS.size(); i++) {
 					assertArrayEquals(encodersS.get(i).getBinMins(), encodersM.get(i).getBinMins(), 0);
 					assertArrayEquals(encodersS.get(i).getBinMaxs(), encodersM.get(i).getBinMaxs(), 0);
 				}
 			}
 		}
-		catch (Exception ex) {
+		catch(Exception ex) {
 			throw new RuntimeException(ex);
 		}
 	}

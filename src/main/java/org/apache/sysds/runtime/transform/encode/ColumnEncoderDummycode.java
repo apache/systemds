@@ -105,7 +105,6 @@ public class ColumnEncoderDummycode extends ColumnEncoder {
 		return DependencyThreadPool.createDependencyTasks(tasks, null);
 	}
 
-
 	@Override
 	public void mergeAt(ColumnEncoder other) {
 		if(other instanceof ColumnEncoderDummycode) {
@@ -189,16 +188,14 @@ public class ColumnEncoderDummycode extends ColumnEncoder {
 		return _domainSize;
 	}
 
-
-
 	private static class DummycodeSparseApplyTask implements Callable<Object> {
 		private final ColumnEncoderDummycode _encoder;
 		private final MatrixBlock _input;
 		private final MatrixBlock _out;
 		private final int _outputCol;
 
-
-		private DummycodeSparseApplyTask(ColumnEncoderDummycode encoder, MatrixBlock input, MatrixBlock out, int outputCol) {
+		private DummycodeSparseApplyTask(ColumnEncoderDummycode encoder, MatrixBlock input, MatrixBlock out,
+			int outputCol) {
 			_encoder = encoder;
 			_input = input;
 			_out = out;
@@ -209,23 +206,23 @@ public class ColumnEncoderDummycode extends ColumnEncoder {
 			for(int r = 0; r < _input.getNumRows(); r++) {
 				if(_out.getSparseBlock() == null)
 					return null;
-				synchronized (_out.getSparseBlock().get(r)){
+				synchronized(_out.getSparseBlock().get(r)) {
 					// Since the recoded values are already offset in the output matrix (same as input at this point)
 					// the dummycoding only needs to offset them within their column domain. Which means that the
 					// indexes in the SparseRowVector do not need to be sorted anymore and can be updated directly.
 					//
-					// Input:                                Output:
+					// Input: Output:
 					//
-					//   1  |  0  |  2  |  0               1  |  0  |  0  |  1
-					//   2  |  0  |  1  |  0     ===>      0  |  1  |  1  |  0
-					//   1  |  0  |  2  |  0               1  |  0  |  0  |  1
-					//   1  |  0  |  1  |  0               1  |  0  |  1  |  0
+					// 1 | 0 | 2 | 0 1 | 0 | 0 | 1
+					// 2 | 0 | 1 | 0 ===> 0 | 1 | 1 | 0
+					// 1 | 0 | 2 | 0 1 | 0 | 0 | 1
+					// 1 | 0 | 1 | 0 1 | 0 | 1 | 0
 					//
-					//  Example SparseRowVector Internals (1. row):
+					// Example SparseRowVector Internals (1. row):
 					//
-					//  indexes = [0,2]         ===>      indexes = [0,3]
-					//  values = [1,2]                    values = [1,1]
-					int index = ((SparseRowVector)_out.getSparseBlock().get(r)).getIndex(_outputCol);
+					// indexes = [0,2] ===> indexes = [0,3]
+					// values = [1,2] values = [1,1]
+					int index = ((SparseRowVector) _out.getSparseBlock().get(r)).getIndex(_outputCol);
 					double val = _out.getSparseBlock().get(r).values()[index];
 					int nCol = _outputCol + (int) val - 1;
 
@@ -242,6 +239,5 @@ public class ColumnEncoderDummycode extends ColumnEncoder {
 		}
 
 	}
-
 
 }

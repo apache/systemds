@@ -26,39 +26,40 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
 /*
-Abstract class for wrapping dependency tasks
+* Abstract class for wrapping dependency tasks.
+* Decedents need to implement the "getWrappedTasks" function which returns the tasks that should be run.
+* Tasks that are set to have a dependant on this task are going to have a dependency on all child tasks.
  */
-public abstract class DependencyWrapperTask<E> extends DependencyTask<E>{
+public abstract class DependencyWrapperTask<E> extends DependencyTask<E> {
 
-    private final List<Future<Future<?>>> _wrappedTaskFutures = new ArrayList<>();
-    private final CompletableFuture<Void> _submitted = new CompletableFuture<>();
-    private final DependencyThreadPool _pool;
+	private final List<Future<Future<?>>> _wrappedTaskFutures = new ArrayList<>();
+	private final CompletableFuture<Void> _submitted = new CompletableFuture<>();
+	private final DependencyThreadPool _pool;
 
-    public DependencyWrapperTask(DependencyThreadPool pool) {
-        super(() -> null, new ArrayList<>());
-        _pool = pool;
-    }
+	public DependencyWrapperTask(DependencyThreadPool pool) {
+		super(() -> null, new ArrayList<>());
+		_pool = pool;
+	}
 
-    public void addWrappedTaskFuture(Future<Future<?>> future) {
-        _wrappedTaskFutures.add(future);
-    }
+	public void addWrappedTaskFuture(Future<Future<?>> future) {
+		_wrappedTaskFutures.add(future);
+	}
 
-    public List<Future<Future<?>>> getWrappedTaskFuture() throws ExecutionException, InterruptedException {
-        _submitted.get();
-        return _wrappedTaskFutures;
-    }
+	public List<Future<Future<?>>> getWrappedTaskFuture() throws ExecutionException, InterruptedException {
+		_submitted.get();
+		return _wrappedTaskFutures;
+	}
 
-    public abstract List<DependencyTask<?>> getWrappedTasks();
+	public abstract List<DependencyTask<?>> getWrappedTasks();
 
-    @Override
-    public E call() throws Exception{
-        List<DependencyTask<?>> wrappedTasks = getWrappedTasks();
-        // passing the dependency to the wrapped tasks.
-        _dependantTasks.forEach(t -> wrappedTasks.forEach(w -> w.addDependent(t)));
-        _pool.submitAll(wrappedTasks)
-                .forEach(this::addWrappedTaskFuture);
-        _submitted.complete(null);
-        return super.call();
-    }
+	@Override
+	public E call() throws Exception {
+		List<DependencyTask<?>> wrappedTasks = getWrappedTasks();
+		// passing the dependency to the wrapped tasks.
+		_dependantTasks.forEach(t -> wrappedTasks.forEach(w -> w.addDependent(t)));
+		_pool.submitAll(wrappedTasks).forEach(this::addWrappedTaskFuture);
+		_submitted.complete(null);
+		return super.call();
+	}
 
 }

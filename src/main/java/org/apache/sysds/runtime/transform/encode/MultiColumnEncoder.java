@@ -29,9 +29,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -93,21 +91,23 @@ public class MultiColumnEncoder implements Encoder {
 				out = new MatrixBlock();
 				DependencyThreadPool pool = new DependencyThreadPool(k);
 				try {
-					List<Object> ret = pool.submitAllAndWait(getEncodeTasks(in, out, pool));
-
-				} catch (ExecutionException | InterruptedException e) {
+					pool.submitAllAndWait(getEncodeTasks(in, out, pool));
+				}
+				catch(ExecutionException | InterruptedException e) {
 					LOG.error("MT Column encode failed");
 					e.printStackTrace();
 				}
 				pool.shutdown();
 				out.recomputeNonZeros();
 				return out;
-			}else{
+			}
+			else {
 				build(in, k);
-				if(_legacyMVImpute != null){
-					// These operations are redundant for every encoder excluding the legacyMVImpute, the workaround to fix
-					// it for this encoder would be very dirty. This will only have a performance impact if there is a lot of
-					// recoding in combination with the legacyMVImpute. But since it is legacy this should be fine
+				if(_legacyMVImpute != null) {
+					// These operations are redundant for every encoder excluding the legacyMVImpute, the workaround to
+					// fix it for this encoder would be very dirty. This will only have a performance impact if there
+					// is a lot of recoding in combination with the legacyMVImpute.
+					// But since it is legacy this should be fine
 					_meta = getMetaData(new FrameBlock(in.getNumColumns(), Types.ValueType.STRING));
 					initMetaData(_meta);
 				}
@@ -122,7 +122,7 @@ public class MultiColumnEncoder implements Encoder {
 		return out;
 	}
 
-	private List<DependencyTask<?>> getEncodeTasks(FrameBlock in, MatrixBlock out, DependencyThreadPool pool){
+	private List<DependencyTask<?>> getEncodeTasks(FrameBlock in, MatrixBlock out, DependencyThreadPool pool) {
 		List<DependencyTask<?>> tasks = new ArrayList<>();
 		List<DependencyTask<?>> applyTAgg = null;
 		Map<Integer[], Integer[]> depMap = new HashMap<>();
@@ -132,40 +132,38 @@ public class MultiColumnEncoder implements Encoder {
 			List<DependencyTask<?>> buildTasks = e.getBuildTasks(in, BUILD_BLOCKSIZE);
 
 			tasks.addAll(buildTasks);
-			if(buildTasks.size() > 0){
+			if(buildTasks.size() > 0) {
 				// Apply Task dependency to build completion task
-				depMap.put(new Integer[]{tasks.size(), tasks.size() + 1},
-						new Integer[]{tasks.size()-1, tasks.size()});
+				depMap.put(new Integer[] {tasks.size(), tasks.size() + 1},
+					new Integer[] {tasks.size() - 1, tasks.size()});
 			}
 
 			// Apply Task dependency to InitOutputMatrixTask
-			depMap.put(new Integer[]{tasks.size(), tasks.size() + 1},
-					new Integer[]{0, 1});
-			DependencyTask<?> applyTaskWrapper = new ApplyTasksWrapperTask(e, in, out, pool);
+			depMap.put(new Integer[] {tasks.size(), tasks.size() + 1}, new Integer[] {0, 1});
+			ApplyTasksWrapperTask applyTaskWrapper = new ApplyTasksWrapperTask(e, in, out, pool);
 
 			if(e.hasEncoder(ColumnEncoderDummycode.class)) {
 				// InitMatrix dependency to build of recode if a DC is present
 				// Since they are the only ones that change the domain size which would influence the Matrix creation
-				depMap.put(new Integer[]{0, 1},  // InitMatrix Task first in list
-						   new Integer[]{tasks.size() - 1, tasks.size()});
+				depMap.put(new Integer[] {0, 1}, // InitMatrix Task first in list
+					new Integer[] {tasks.size() - 1, tasks.size()});
 				// output col update task dependent on Build completion only for Recode and binning since they can
 				// change dummycode domain size
 				// colUpdateTask can start when all domain sizes, because it can now calculate the offsets for
 				// each column
-				depMap.put(new Integer[]{-2, -1},
-						   new Integer[]{tasks.size() - 1, tasks.size()});
+				depMap.put(new Integer[] {-2, -1}, new Integer[] {tasks.size() - 1, tasks.size()});
 			}
 
-			if(hasDC){
+			if(hasDC) {
 				// Apply Task dependency to output col update task (is last in list)
 				// All ApplyTasks need to wait for this task so they all have the correct offsets.
-				depMap.put(new Integer[]{tasks.size(), tasks.size() + 1},
-						   new Integer[]{-2, -1});
+				depMap.put(new Integer[] {tasks.size(), tasks.size() + 1}, new Integer[] {-2, -1});
 
-				applyTAgg = applyTAgg == null ? new ArrayList<>(): applyTAgg;
+				applyTAgg = applyTAgg == null ? new ArrayList<>() : applyTAgg;
 				applyTAgg.add(applyTaskWrapper);
-			}else{
-				((ApplyTasksWrapperTask)applyTaskWrapper).setOffset(0);
+			}
+			else {
+				applyTaskWrapper.setOffset(0);
 			}
 			tasks.add(applyTaskWrapper);
 		}
@@ -177,7 +175,6 @@ public class MultiColumnEncoder implements Encoder {
 		return DependencyThreadPool.createDependencyTasks(tasks, deps);
 	}
 
-
 	public void build(FrameBlock in) {
 		build(in, 1);
 	}
@@ -187,7 +184,7 @@ public class MultiColumnEncoder implements Encoder {
 			buildMT(in, k);
 		}
 		else {
-			for(ColumnEncoderComposite columnEncoder : _columnEncoders){
+			for(ColumnEncoderComposite columnEncoder : _columnEncoders) {
 				columnEncoder.build(in);
 				columnEncoder.updateAllDCEncoders();
 			}
@@ -195,25 +192,25 @@ public class MultiColumnEncoder implements Encoder {
 		legacyBuild(in);
 	}
 
-	private List<DependencyTask<?>> getBuildTasks(FrameBlock in){
+	private List<DependencyTask<?>> getBuildTasks(FrameBlock in) {
 		List<DependencyTask<?>> tasks = new ArrayList<>();
-		for(ColumnEncoderComposite columnEncoder : _columnEncoders){
+		for(ColumnEncoderComposite columnEncoder : _columnEncoders) {
 			tasks.addAll(columnEncoder.getBuildTasks(in, BUILD_BLOCKSIZE));
 		}
 		return tasks;
 	}
 
-	private void buildMT(FrameBlock in, int k){
+	private void buildMT(FrameBlock in, int k) {
 		DependencyThreadPool pool = new DependencyThreadPool(k);
 		try {
 			pool.submitAllAndWait(getBuildTasks(in));
-		} catch (ExecutionException | InterruptedException e) {
+		}
+		catch(ExecutionException | InterruptedException e) {
 			LOG.error("MT Column build failed");
 			e.printStackTrace();
 		}
 		pool.shutdown();
 	}
-
 
 	public void legacyBuild(FrameBlock in) {
 		if(_legacyOmit != null)
@@ -269,7 +266,7 @@ public class MultiColumnEncoder implements Encoder {
 		return out;
 	}
 
-	private List<DependencyTask<?>> getApplyTasks(FrameBlock in, MatrixBlock out, int outputCol){
+	private List<DependencyTask<?>> getApplyTasks(FrameBlock in, MatrixBlock out, int outputCol) {
 		List<DependencyTask<?>> tasks = new ArrayList<>();
 		int offset = outputCol;
 		for(ColumnEncoderComposite e : _columnEncoders) {
@@ -280,11 +277,12 @@ public class MultiColumnEncoder implements Encoder {
 		return tasks;
 	}
 
-	private void applyMT(FrameBlock in, MatrixBlock out, int outputCol, int k){
+	private void applyMT(FrameBlock in, MatrixBlock out, int outputCol, int k) {
 		DependencyThreadPool pool = new DependencyThreadPool(k);
 		try {
 			pool.submitAllAndWait(getApplyTasks(in, out, outputCol));
-		} catch (ExecutionException | InterruptedException e) {
+		}
+		catch(ExecutionException | InterruptedException e) {
 			LOG.error("MT Column encode failed");
 			e.printStackTrace();
 		}
@@ -297,7 +295,7 @@ public class MultiColumnEncoder implements Encoder {
 			SparseBlock block = output.getSparseBlock();
 			if(!(block instanceof SparseBlockMCSR))
 				throw new RuntimeException(
-						"Transform apply currently only supported for MCSR sparse and dense output Matrices");
+					"Transform apply currently only supported for MCSR sparse and dense output Matrices");
 			for(int r = 0; r < output.getNumRows(); r++) {
 				// allocate all sparse rows so MT sync can be done.
 				// should be rare that rows have only 0
@@ -305,7 +303,6 @@ public class MultiColumnEncoder implements Encoder {
 			}
 		}
 	}
-
 
 	@Override
 	public FrameBlock getMetaData(FrameBlock meta) {
@@ -494,7 +491,7 @@ public class MultiColumnEncoder implements Encoder {
 		if(dc.isEmpty()) {
 			return 0;
 		}
-		if(dc.stream().anyMatch(e -> e.getDomainSize() < 0)){
+		if(dc.stream().anyMatch(e -> e.getDomainSize() < 0)) {
 			throw new DMLRuntimeException("Trying to get extra columns when DC encoders are not ready");
 		}
 		return dc.stream().map(ColumnEncoderDummycode::getDomainSize).mapToInt(i -> i).sum() - dc.size();
@@ -629,7 +626,7 @@ public class MultiColumnEncoder implements Encoder {
 		}
 	}
 
-	public <T extends LegacyEncoder> boolean hasLegacyEncoder(){
+	public <T extends LegacyEncoder> boolean hasLegacyEncoder() {
 		return hasLegacyEncoder(EncoderMVImpute.class) || hasLegacyEncoder(EncoderOmit.class);
 	}
 
@@ -662,6 +659,9 @@ public class MultiColumnEncoder implements Encoder {
 			_legacyMVImpute.shiftCols(_colOffset);
 	}
 
+	/*
+	 * Currently not in use will be integrated in the future
+	 */
 	private static class MultiColumnLegacyBuildTask implements Callable<Object> {
 
 		private final MultiColumnEncoder _encoder;
@@ -697,7 +697,7 @@ public class MultiColumnEncoder implements Encoder {
 		}
 	}
 
-	private static class InitOutputMatrixTask implements Callable<Object>{
+	private static class InitOutputMatrixTask implements Callable<Object> {
 		private final MultiColumnEncoder _encoder;
 		private final FrameBlock _input;
 		private final MatrixBlock _output;
@@ -729,11 +729,11 @@ public class MultiColumnEncoder implements Encoder {
 		private final ColumnEncoder _encoder;
 		private final MatrixBlock _out;
 		private final FrameBlock _in;
-		private int _offset = -1;  // offset dude to dummycoding in
-		                           // previous columns needs to be updated by external task!
+		private int _offset = -1; // offset dude to dummycoding in
+									// previous columns needs to be updated by external task!
 
-
-		private ApplyTasksWrapperTask(ColumnEncoder encoder, FrameBlock in, MatrixBlock out, DependencyThreadPool pool) {
+		private ApplyTasksWrapperTask(ColumnEncoder encoder, FrameBlock in, MatrixBlock out,
+			DependencyThreadPool pool) {
 			super(pool);
 			_encoder = encoder;
 			_out = out;
@@ -742,7 +742,7 @@ public class MultiColumnEncoder implements Encoder {
 
 		@Override
 		public List<DependencyTask<?>> getWrappedTasks() {
-			return _encoder.getApplyTasks(_in, _out, _encoder._colID -1 + _offset);
+			return _encoder.getApplyTasks(_in, _out, _encoder._colID - 1 + _offset);
 		}
 
 		@Override
@@ -750,10 +750,11 @@ public class MultiColumnEncoder implements Encoder {
 			// Is called only when building of encoder is done, Output Matrix is allocated
 			// and _outputCol has been updated!
 			if(_offset == -1)
-				throw new DMLRuntimeException("OutputCol for apply task wrapper has not been updated!, Most likely some " +
-						"concurrency issues");
+				throw new DMLRuntimeException(
+					"OutputCol for apply task wrapper has not been updated!, Most likely some " + "concurrency issues");
 			return super.call();
 		}
+
 		public void setOffset(int offset) {
 			_offset = offset;
 		}
@@ -764,8 +765,11 @@ public class MultiColumnEncoder implements Encoder {
 		}
 	}
 
-
-	private static class UpdateOutputColTask implements Callable<Object>{
+	/*
+	 * Task responsible for updating the output column of the apply tasks after the building of the DC recoders. So the
+	 * offsets in the output are correct.
+	 */
+	private static class UpdateOutputColTask implements Callable<Object> {
 		private final MultiColumnEncoder _encoder;
 		private final List<DependencyTask<?>> _applyTasksWrappers;
 
@@ -783,18 +787,18 @@ public class MultiColumnEncoder implements Encoder {
 		public Object call() throws Exception {
 			int currentCol = -1;
 			int currentOffset = 0;
-			for(DependencyTask<?> dtask: _applyTasksWrappers){
-				int nonOffsetCol = ((ApplyTasksWrapperTask)dtask)._encoder._colID - 1;
-				if(nonOffsetCol > currentCol){
+			for(DependencyTask<?> dtask : _applyTasksWrappers) {
+				int nonOffsetCol = ((ApplyTasksWrapperTask) dtask)._encoder._colID - 1;
+				if(nonOffsetCol > currentCol) {
 					currentCol = nonOffsetCol;
-					currentOffset = _encoder._columnEncoders.subList(0, nonOffsetCol).stream().mapToInt( e -> {
+					currentOffset = _encoder._columnEncoders.subList(0, nonOffsetCol).stream().mapToInt(e -> {
 						ColumnEncoderDummycode dc = e.getEncoder(ColumnEncoderDummycode.class);
 						if(dc == null)
 							return 0;
 						return dc._domainSize - 1;
 					}).sum();
 				}
-				((ApplyTasksWrapperTask)dtask).setOffset(currentOffset);
+				((ApplyTasksWrapperTask) dtask).setOffset(currentOffset);
 
 			}
 			return null;

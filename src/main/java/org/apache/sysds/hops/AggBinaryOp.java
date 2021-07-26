@@ -380,7 +380,7 @@ public class AggBinaryOp extends MultiThreadedHop
 	}
 	
 	@Override
-	protected ExecType optFindExecType()
+	protected ExecType optFindExecType(boolean transitive)
 	{
 		checkAndSetForcedPlatform();
 		
@@ -407,7 +407,8 @@ public class AggBinaryOp extends MultiThreadedHop
 			}
 			
 			//check for valid CP mmchain, send invalid memory requirements to remote
-			if( _etype == ExecType.CP && checkMapMultChain() != ChainType.NONE
+			if( _etype == ExecType.CP
+				&& checkMapMultChain() != ChainType.NONE
 				&& OptimizerUtils.getLocalMemBudget() < 
 				getInput().get(0).getInput().get(0).getOutputMemEstimate() )
 				_etype = ExecType.SPARK;
@@ -418,7 +419,7 @@ public class AggBinaryOp extends MultiThreadedHop
 		
 		//spark-specific decision refinement (execute binary aggregate w/ left or right spark input and 
 		//single parent also in spark because it's likely cheap and reduces data transfer)
-		if( _etype == ExecType.CP && _etypeForced != ExecType.CP 
+		if( transitive && _etype == ExecType.CP && _etypeForced != ExecType.CP 
 			&& (isApplicableForTransitiveSparkExecType(true) 
 			|| isApplicableForTransitiveSparkExecType(false)) )
 		{

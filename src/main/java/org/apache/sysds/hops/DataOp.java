@@ -434,7 +434,7 @@ public class DataOp extends Hop {
 	}
 	
 	@Override
-	protected ExecType optFindExecType() 
+	protected ExecType optFindExecType(boolean transitive) 
 	{
 		//MB: find exec type has two meanings here: (1) for write it means the actual
 		//exec type, while (2) for read it affects the recompilation decision as needed

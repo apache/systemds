@@ -294,7 +294,7 @@ public class DataGenOp extends MultiThreadedHop
 	}
 
 	@Override
-	protected ExecType optFindExecType() {
+	protected ExecType optFindExecType(boolean transitive) {
 		checkAndSetForcedPlatform();
 		
 		if( _etypeForced != null )

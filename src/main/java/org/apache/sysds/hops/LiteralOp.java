@@ -185,7 +185,7 @@ public class LiteralOp extends Hop
 	}
 	
 	@Override
-	protected ExecType optFindExecType() {
+	protected ExecType optFindExecType(boolean transitive) {
 		// Since a Literal hop does not represent any computation,
 		// this function is not applicable.
 		return null;

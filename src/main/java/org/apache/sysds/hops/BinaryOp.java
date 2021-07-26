@@ -688,7 +688,7 @@ public class BinaryOp extends MultiThreadedHop
 	}
 	
 	@Override
-	protected ExecType optFindExecType() {
+	protected ExecType optFindExecType(boolean transitive) {
 		
 		checkAndSetForcedPlatform();
 		
@@ -746,7 +746,7 @@ public class BinaryOp extends MultiThreadedHop
 			
 		//spark-specific decision refinement (execute unary scalar w/ spark input and 
 		//single parent also in spark because it's likely cheap and reduces intermediates)
-		if( _etype == ExecType.CP && _etypeForced != ExecType.CP
+		if( transitive && _etype == ExecType.CP && _etypeForced != ExecType.CP
 			&& getDataType().isMatrix() && (dt1.isScalar() || dt2.isScalar()) 
 			&& supportsMatrixScalarOperations()                          //scalar operations
 			&& !(getInput().get(dt1.isScalar()?1:0) instanceof DataOp)   //input is not checkpoint

@@ -339,7 +339,7 @@ public class ReorgOp extends MultiThreadedHop
 	}
 	
 	@Override
-	protected ExecType optFindExecType() {
+	protected ExecType optFindExecType(boolean transitive) {
 		
 		checkAndSetForcedPlatform();
 		

@@ -729,7 +729,7 @@ public class QuaternaryOp extends MultiThreadedHop
 	}
 	
 	@Override
-	protected ExecType optFindExecType() 
+	protected ExecType optFindExecType(boolean transitive)
 	{
 		checkAndSetForcedPlatform();
 		

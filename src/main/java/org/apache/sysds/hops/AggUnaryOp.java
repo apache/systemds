@@ -372,10 +372,13 @@ public class AggUnaryOp extends MultiThreadedHop
 
 		//spark-specific decision refinement (execute unary aggregate w/ spark input and 
 		//single parent also in spark because it's likely cheap and reduces data transfer)
+		//we also allow multiple parents, if all other parents are already in Spark mode
 		if( _etype == ExecType.CP && _etypeForced != ExecType.CP
 			&& !(getInput().get(0) instanceof DataOp)  //input is not checkpoint
 			&& (getInput().get(0).getParent().size()==1 //uagg is only parent, or 
-			   || !requiresAggregation(getInput().get(0), _direction)) //w/o agg
+				|| getInput().get(0).getParent().stream().filter(h -> h != this)
+					.allMatch(h -> h.optFindExecType() == ExecType.SPARK)
+				|| !requiresAggregation(getInput().get(0), _direction)) //w/o agg
 			&& getInput().get(0).optFindExecType() == ExecType.SPARK )
 		{
 			//pull unary aggregate into spark 

@@ -949,7 +949,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			output.setBlocksize(0);
 			output.setValueType(ValueType.STRING);
 			break;
-			
+
 		case LIST:
 			output.setDataType(DataType.LIST);
 			output.setValueType(ValueType.UNKNOWN);

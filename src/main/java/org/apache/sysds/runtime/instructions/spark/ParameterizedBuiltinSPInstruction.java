@@ -19,10 +19,7 @@
 
 package org.apache.sysds.runtime.instructions.spark;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Iterator;
+import java.util.*;
 
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
@@ -45,6 +42,7 @@ import org.apache.sysds.runtime.functionobjects.ParameterizedBuiltin;
 import org.apache.sysds.runtime.functionobjects.ValueFunction;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
+import org.apache.sysds.runtime.instructions.cp.ListObject;
 import org.apache.sysds.runtime.instructions.spark.data.IndexedMatrixValue;
 import org.apache.sysds.runtime.instructions.spark.data.LazyIterableIterator;
 import org.apache.sysds.runtime.instructions.spark.data.PartitionedBroadcast;
@@ -80,6 +78,7 @@ import org.apache.sysds.runtime.transform.meta.TfMetaUtils;
 import org.apache.sysds.runtime.transform.meta.TfOffsetMap;
 import org.apache.sysds.runtime.transform.tokenize.Tokenizer;
 import org.apache.sysds.runtime.transform.tokenize.TokenizerFactory;
+import org.apache.sysds.runtime.util.AutoDiff;
 import org.apache.sysds.runtime.util.DataConverter;
 import org.apache.sysds.runtime.util.UtilFunctions;
 
@@ -163,6 +162,8 @@ public class ParameterizedBuiltinSPInstruction extends ComputationSPInstruction 
 				func = ParameterizedBuiltin.getParameterizedBuiltinFnObject(opcode);
 				return new ParameterizedBuiltinSPInstruction(new SimpleOperator(func), paramsMap, out, opcode, str);
 			}
+			else if(opcode.equalsIgnoreCase("autoDiff"))
+				return new ParameterizedBuiltinSPInstruction(null, paramsMap, out, opcode, str);
 			else {
 				throw new DMLRuntimeException("Unknown opcode (" + opcode + ") for ParameterizedBuiltin Instruction.");
 			}
@@ -535,9 +536,6 @@ public class ParameterizedBuiltinSPInstruction extends ComputationSPInstruction 
 			ec.releaseFrameInput(params.get("meta"));
 			sec.getDataCharacteristics(output.getName()).set(mc.getRows(), meta.getNumColumns(), mc.getBlocksize(), -1);
 			sec.getFrameObject(output.getName()).setSchema(decoder.getSchema());
-		}
-		else {
-			throw new DMLRuntimeException("Unknown parameterized builtin opcode: " + opcode);
 		}
 	}
 

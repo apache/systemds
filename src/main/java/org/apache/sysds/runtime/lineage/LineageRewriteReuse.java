@@ -1256,7 +1256,7 @@ public class LineageRewriteReuse
 
 	/*-------------------------------UTILITY METHODS----------------------------------*/
 	
-	private static MatrixObject toMatrixObject(MatrixBlock mb) {
+	public static MatrixObject toMatrixObject(MatrixBlock mb) {
 		MetaData md = new MetaData(mb.getDataCharacteristics());
 		MatrixObject mo = new MatrixObject(ValueType.FP64, null, md);
 		mo.acquireModify(mb);

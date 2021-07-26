@@ -19,14 +19,6 @@
 
 package org.apache.sysds.runtime.instructions.cp;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
-
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -37,11 +29,7 @@ import org.apache.sysds.lops.Lop;
 import org.apache.sysds.parser.ParameterizedBuiltinFunctionExpression;
 import org.apache.sysds.parser.Statement;
 import org.apache.sysds.runtime.DMLRuntimeException;
-import org.apache.sysds.runtime.controlprogram.caching.CacheBlock;
-import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
-import org.apache.sysds.runtime.controlprogram.caching.FrameObject;
-import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
-import org.apache.sysds.runtime.controlprogram.caching.TensorObject;
+import org.apache.sysds.runtime.controlprogram.caching.*;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.data.TensorBlock;
 import org.apache.sysds.runtime.functionobjects.ParameterizedBuiltin;
@@ -61,7 +49,12 @@ import org.apache.sysds.runtime.transform.encode.MultiColumnEncoder;
 import org.apache.sysds.runtime.transform.meta.TfMetaUtils;
 import org.apache.sysds.runtime.transform.tokenize.Tokenizer;
 import org.apache.sysds.runtime.transform.tokenize.TokenizerFactory;
+import org.apache.sysds.runtime.util.AutoDiff;
 import org.apache.sysds.runtime.util.DataConverter;
+
+import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction {
 	private static final Log LOG = LogFactory.getLog(ParameterizedBuiltinCPInstruction.class.getName());
@@ -91,7 +84,6 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction 
 	public static LinkedHashMap<String, String> constructParameterMap(String[] params) {
 		// process all elements in "params" except first(opcode) and last(output)
 		LinkedHashMap<String, String> paramMap = new LinkedHashMap<>();
-
 		// all parameters are of form <name=value>
 		String[] parts;
 		for(int i = 1; i <= params.length - 2; i++) {
@@ -150,7 +142,7 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction 
 		}
 		else if(opcode.equals("transformapply") || opcode.equals("transformdecode") ||
 			opcode.equals("transformcolmap") || opcode.equals("transformmeta") || opcode.equals("tokenize") ||
-			opcode.equals("toString") || opcode.equals("nvlist")) {
+			opcode.equals("toString") || opcode.equals("nvlist") || opcode.equals("autoDiff"))  {
 			return new ParameterizedBuiltinCPInstruction(null, paramsMap, out, opcode, str);
 		}
 		else if("paramserv".equals(opcode)) {
@@ -177,6 +169,17 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction 
 			double result = op.fn.execute(params);
 			sores = new DoubleObject(result);
 			ec.setScalarOutput(output.getName(), sores);
+		}
+		else if(opcode.equalsIgnoreCase("autoDiff"))
+		{
+			String name = params.get("name");
+			ListObject diffs = null;
+			if(name.equals("affine"))
+				diffs = AutoDiff.getAffineBackward(params, ec);
+
+			ec.setVariable(output.getName(), diffs);
+			ec.releaseMatrixInput(params.get("X"));
+			ec.releaseMatrixInput(params.get("dout"));
 		}
 		else if(opcode.equalsIgnoreCase("groupedagg")) {
 			// acquire locks
@@ -501,7 +504,7 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction 
 			return Pair.of(output.getName(),
 				new LineageItem(getOpcode(), LineageItemUtils.getLineage(ec, target, meta, spec)));
 		}
-		else if (opcode.equalsIgnoreCase("nvlist")) {
+		else if (opcode.equalsIgnoreCase("nvlist") || opcode.equalsIgnoreCase("autoDiff")) {
 			List<String> names = new ArrayList<>(params.keySet());
 			CPOperand[] listOperands = names.stream().map(n -> ec.containsVariable(params.get(n)) 
 					? new CPOperand(n, ec.getVariable(params.get(n))) 

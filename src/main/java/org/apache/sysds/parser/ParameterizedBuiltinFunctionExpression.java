@@ -48,12 +48,14 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 	public static final String TF_FN_PARAM_DATA = "target";
 	public static final String TF_FN_PARAM_MTD2 = "meta";
 	public static final String TF_FN_PARAM_SPEC = "spec";
+	public static final String LINEAGE_TRACE = "lineage";
 	public static final String TF_FN_PARAM_MTD = "transformPath"; //NOTE MB: for backwards compatibility
 	
 	public static HashMap<Builtins, ParamBuiltinOp> pbHopMap;
 	static {
 		pbHopMap = new HashMap<>();
 		
+		pbHopMap.put(Builtins.AUTODIFF, ParamBuiltinOp.AUTODIFF);
 		pbHopMap.put(Builtins.GROUPEDAGG, ParamBuiltinOp.GROUPEDAGG);
 		pbHopMap.put(Builtins.RMEMPTY, ParamBuiltinOp.RMEMPTY);
 		pbHopMap.put(Builtins.REPLACE, ParamBuiltinOp.REPLACE);
@@ -231,7 +233,10 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 		case TOSTRING:
 			validateCastAsString(output, conditional);
 			break;
-		
+
+		case AUTODIFF:
+			validateAutoDiff(output, conditional);
+			break;
 		case LISTNV:
 			validateNamedList(output, conditional);
 			break;
@@ -249,6 +254,21 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 				raiseValidateError("Unsupported parameterized function "+ getOpCode(), 
 						false, LanguageErrorCodes.UNSUPPORTED_EXPRESSION);
 		}
+	}
+
+	private void validateAutoDiff(DataIdentifier output, boolean conditional) {
+		//validate data / metadata (recode maps)
+		checkDataType("lineage", LINEAGE_TRACE, DataType.SCALAR, conditional);
+
+		//validate specification
+		checkDataValueType(false, "lineage", LINEAGE_TRACE, DataType.SCALAR, ValueType.STRING, conditional);
+		HashMap<String, Expression> varParams = getVarParams();
+
+		// set output characteristics
+		output.setDataType(DataType.LIST);
+		output.setValueType(ValueType.UNKNOWN);
+		output.setDimensions(varParams.size(), 1);
+		output.setBlocksize(-1);
 	}
 
 	@Override

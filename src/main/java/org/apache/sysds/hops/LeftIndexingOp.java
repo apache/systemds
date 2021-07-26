@@ -289,7 +289,7 @@ public class LeftIndexingOp  extends Hop
 	
 	
 	@Override
-	protected ExecType optFindExecType() {
+	protected ExecType optFindExecType(boolean transitive) {
 		
 		checkAndSetForcedPlatform();
 		

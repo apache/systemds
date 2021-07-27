@@ -246,7 +246,7 @@ public class FederationMap {
 		long id;
 		FederatedRequest[] ret = new FederatedRequest[_fedMap.size()];
 		FType type = FType.PART;
-		type.setPartType(_type._partType);
+		type.setPartType(!transposed ? _type._partType : (_type.getPartType() == FPartitioning.ROW ? FPartitioning.COL : FPartitioning.ROW));
 
 		boolean exists = Arrays.stream(_fedMap.stream().map(e -> Triple.of(data.getUniqueID(), type, e.getRight().getAddress())).toArray())
 			.allMatch(e -> FederationUtils._broadcastMap.containsKey(e) && ((Triple<Long, FType, InetSocketAddress>) e).getMiddle()._partType == _type._partType
@@ -284,6 +284,12 @@ public class FederationMap {
 				fr.setEndDim(_type == FType.ROW || (_type == FType.PART && _type.getPartType() == FPartitioning.ROW) ? 1 : 0,
 					_type == FType.ROW || (_type == FType.PART && _type.getPartType() == FPartitioning.ROW) ? data.getNumColumns() : data.getNumRows());
 				newFedMap.add(Pair.of(fr, new FederatedData(data.getDataType(), e.getRight().getAddress(), data.getFileName())));
+
+				if(transposed) {
+					fr.transpose();
+					fr.setEndDim(_type == FType.ROW || (_type == FType.PART && _type.getPartType() == FPartitioning.ROW) ? 0 : 1,
+						_type == FType.ROW || (_type == FType.PART && _type.getPartType() == FPartitioning.ROW) ? data.getNumRows() : data.getNumColumns());
+				}
 			}
 
 			// multi-threaded block slicing and federation request creation

@@ -53,7 +53,7 @@ public class BinaryMatrixMatrixFEDInstruction extends BinaryFEDInstruction
 
 		//execute federated operation on mo1 or mo2
 		FederatedRequest fr2 = null;
-		if( mo2.isFederated() && !mo2.isFederated(FType.BROADCAST)) {
+		if( mo2.isFederated() ) {
 			if(mo1.isFederated() && mo1.getFedMapping().isAligned(mo2.getFedMapping(),
 					mo1.isFederated(FType.ROW) ? AlignType.ROW : AlignType.COL)) {
 				fr2 = FederationUtils.callInstruction(instString, output,

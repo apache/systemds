@@ -379,7 +379,7 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 	
 	public boolean isFederated(FType type) {
 		return isFederated() && (type == null || _fedMapping.getType().isType(type)
-			|| (_fedMapping.getType().isType(FType.PART) && _fedMapping.getType().getPartType().equals(type.getPartType()))
+//			|| (_fedMapping.getType().isType(FType.PART) && _fedMapping.getType().getPartType().equals(type.getPartType()))
 		);
 	}
 	
@@ -569,6 +569,10 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 		//cache status maintenance
 		acquire( false, _data==null );
 		return _data;
+	}
+
+	public boolean isDataEmpty() {
+		return _data == null;
 	}
 	
 	/**

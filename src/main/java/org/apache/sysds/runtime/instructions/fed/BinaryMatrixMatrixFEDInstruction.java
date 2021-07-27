@@ -61,7 +61,7 @@ public class BinaryMatrixMatrixFEDInstruction extends BinaryFEDInstruction
 					new long[]{mo1.getFedMapping().getID(), mo2.getFedMapping().getID()}, true);
 				mo1.getFedMapping().execute(getTID(), true, fr2);
 			}
-			else if ( !mo1.isFederated() ){
+			else if ( !mo1.isFederated() || (mo1.isFederated(FType.PART) && !mo1.isDataEmpty())){
 				FederatedRequest[] fr1 = mo2.getFedMapping().broadcastSliced(mo1, false, mo2.getUniqueID());
 				fr2 = FederationUtils.callInstruction(instString, output,
 					new CPOperand[]{input1, input2},

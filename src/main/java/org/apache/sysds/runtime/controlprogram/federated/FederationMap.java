@@ -22,8 +22,10 @@ package org.apache.sysds.runtime.controlprogram.federated;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
@@ -241,8 +243,8 @@ public class FederationMap {
 		if( _type == FType.FULL )
 			return new FederatedRequest[]{broadcast(data, oldId)};
 
-		FederationUtils._broadcastMap.values().removeIf(e -> !e.getRight());
-
+ 		//FederationUtils._broadcastMap.values().removeIf(e -> !e.getRight());
+        //cleanMap();
 		long id;
 		FederatedRequest[] ret = new FederatedRequest[_fedMap.size()];
 		FType type = FType.PART;
@@ -698,6 +700,16 @@ public class FederationMap {
 		return ret;
 	}
 
+	private void cleanMap() {
+		Iterator<Map.Entry<Triple<Long, FederationMap.FType, InetSocketAddress>, Triple<Long, Boolean, Boolean>>> itr = FederationUtils._broadcastMap.entrySet().iterator();
+		while(itr.hasNext()) {
+			Map.Entry<Triple<Long, FederationMap.FType, InetSocketAddress>, Triple<Long, Boolean, Boolean>> entry = itr.next();
+			if(!entry.getValue().getRight())
+			{
+				itr.remove();
+			}
+		}
+	}
 	private static void setThreadID(long tid, FederatedRequest[]... frsets) {
 		for(FederatedRequest[] frset : frsets)
 			if(frset != null)

@@ -403,6 +403,16 @@ public class LineageRecomputeUtils {
 								operands.put(item.getId(), operands.get(item.getInputs()[0].getId()));
 							break;
 						}
+						case StringInit: {
+							HashMap<String, Hop> params = new HashMap<>();
+							params.put(DataExpression.RAND_ROWS, operands.get(item.getInputs()[0].getId()));
+							params.put(DataExpression.RAND_COLS, operands.get(item.getInputs()[1].getId()));
+							params.put(DataExpression.RAND_MIN, operands.get(item.getInputs()[2].getId()));
+							params.put(DataExpression.RAND_MAX, operands.get(item.getInputs()[2].getId()));
+							Hop datagen = new DataGenOp(OpOpDG.SINIT, new DataIdentifier("tmp"), params);
+							operands.put(item.getId(), datagen);
+							break;
+						}
 						default:
 							throw new DMLRuntimeException("Unsupported instruction "
 								+ "type: " + ctype.name() + " (" + item.getOpcode() + ").");

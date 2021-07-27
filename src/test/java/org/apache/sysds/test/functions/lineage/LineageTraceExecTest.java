@@ -43,6 +43,7 @@ public class LineageTraceExecTest extends LineageBase {
 	protected static final String TEST_NAME4 = "LineageTraceExec4"; //rand - matrix result - unspecified seed
 	protected static final String TEST_NAME5 = "LineageTraceExec5"; //rand - scalar result - unspecified seed
 	protected static final String TEST_NAME6 = "LineageTraceExec6"; //nary rbind
+	protected static final String TEST_NAME7 = "LineageTraceExec7"; //sinit
 	
 	protected String TEST_CLASS_DIR = TEST_DIR + LineageTraceExecTest.class.getSimpleName() + "/";
 	
@@ -62,6 +63,7 @@ public class LineageTraceExecTest extends LineageBase {
 		addTestConfiguration( TEST_NAME4, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME4, new String[] {"R"}) );
 		addTestConfiguration( TEST_NAME5, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME5, new String[] {"R"}) );
 		addTestConfiguration( TEST_NAME6, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME6, new String[] {"R"}) );
+		addTestConfiguration( TEST_NAME7, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME7, new String[] {"R"}) );
 	}
 	
 	@Test
@@ -92,6 +94,11 @@ public class LineageTraceExecTest extends LineageBase {
 	@Test
 	public void testLineageTraceExec6() {
 		testLineageTraceExec(TEST_NAME6);
+	}
+
+	@Test
+	public void testLineageTraceExec7() {
+		testLineageTraceExec(TEST_NAME7);
 	}
 	
 	private void testLineageTraceExec(String testname) {

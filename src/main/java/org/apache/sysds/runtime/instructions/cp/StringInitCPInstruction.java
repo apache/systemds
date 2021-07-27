@@ -21,11 +21,16 @@ package org.apache.sysds.runtime.instructions.cp;
 
 import java.util.StringTokenizer;
 
+import org.apache.commons.lang3.tuple.Pair;
+import org.apache.sysds.common.Types.DataType;
+import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.lops.DataGen;
 import org.apache.sysds.lops.Lop;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
+import org.apache.sysds.runtime.lineage.LineageItem;
+import org.apache.sysds.runtime.lineage.LineageItemUtils;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.Operator;
 
@@ -96,5 +101,15 @@ public class StringInitCPInstruction extends UnaryCPInstruction {
 		
 		//put output into symbol table
 		ec.setMatrixOutput(outName, outBlk);
+	}
+
+	@Override
+	public Pair<String, LineageItem> getLineageItem(ExecutionContext ec) {
+		CPOperand rlen = new CPOperand(String.valueOf(getRows()), ValueType.INT64, DataType.SCALAR, true);
+		CPOperand clen = new CPOperand(String.valueOf(getCols()), ValueType.INT64, DataType.SCALAR, true);
+		CPOperand data = new CPOperand(_data, ValueType.STRING, DataType.SCALAR, true);
+		return Pair.of(output.getName(), 
+				new LineageItem(getOpcode(), LineageItemUtils.getLineage(ec, rlen, clen, data)));
+
 	}
 }

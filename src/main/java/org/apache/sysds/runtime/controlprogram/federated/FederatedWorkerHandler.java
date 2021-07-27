@@ -256,7 +256,7 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 	}
 
 	private FederatedResponse putVariable(FederatedRequest request) {
-		checkNumParams(request.getNumParams(), 1, 2, 3, 5);
+		checkNumParams(request.getNumParams(), 1, 2, 4, 6);
 		String varname = String.valueOf(request.getID());
 		ExecutionContext ec = _ecm.get(request.getTID());
 
@@ -266,23 +266,26 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 		if (request.getNumParams() == 2) {
 			dataID = (long) request.getParam(0);
 			type = (FederationMap.FType) request.getParam(1);
-			if(_federatedWorker._broadcastSet.contains(Triple.of(Long.valueOf(varname), type, dataID))) {
+			if(_federatedWorker._broadcastSet.contains(Triple.of(request.getID(), type, dataID))) {
 				return new FederatedResponse(ResponseType.SUCCESS_EMPTY);
 			}
 		} else if (request.getNumParams() >= 3) {
 			dataID = (long) request.getParam(1);
 			type = (FederationMap.FType) request.getParam(2);
-			if(_federatedWorker._broadcastSet.contains(Triple.of(Long.valueOf(varname), type, dataID))) {
+			if(_federatedWorker._broadcastSet.contains(Triple.of(request.getID(), type, dataID))) {
 				return new FederatedResponse(ResponseType.SUCCESS_EMPTY);
 			}
-			_federatedWorker._broadcastSet.add(Triple.of(Long.valueOf(varname), type, dataID));
-			if(request.getNumParams() == 5) {
-				long dataID2 = (long) request.getParam(3);
-				long dataID3 = (long) request.getParam(4);
-				_federatedWorker._broadcastSet.add(Triple.of(dataID2, type, dataID3));
-			}
-		}
 
+			long dataID2 = (long) request.getParam(3);
+			long dataID3 = (long) request.getParam(4);
+
+			//put into map existing and broadcasted variables
+			_federatedWorker._broadcastSet.add(Triple.of(request.getID(), type, dataID));
+			FederationMap.FType type2 = (FederationMap.FType) request.getParam(5);
+			_federatedWorker._broadcastSet.add(Triple.of(dataID2, type2, dataID3));
+			FederationUtils._broadcastMap.values().stream().filter(e -> !e.getRight() && e.getLeft() == request.getID())
+				.forEach(e -> e = Triple.of(e.getLeft(), e.getMiddle(), true));
+		}
 		if(ec.containsVariable(varname)) {
 			return new FederatedResponse(ResponseType.ERROR, "Variable " + request.getID() + " already existing.");
 		}
@@ -343,9 +346,10 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 
 		if(receivedInstruction.getOpcode().equals("rmvar")) {
 			long id = Long.parseLong(InstructionUtils.getInstructionParts(receivedInstruction.getInstructionString())[1]);
-			if( _federatedWorker == null || (_federatedWorker._broadcastSet
-				.stream().anyMatch(e -> e.getLeft() == id)))
+			if( _federatedWorker != null && _federatedWorker._broadcastSet
+				.stream().anyMatch(e -> e.getLeft() == id)) {
 				return new FederatedResponse(ResponseType.SUCCESS_EMPTY);
+			}
 		}
 
 

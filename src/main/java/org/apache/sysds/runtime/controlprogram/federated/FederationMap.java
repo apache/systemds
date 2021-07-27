@@ -196,30 +196,30 @@ public class FederationMap {
 
 	public FederatedRequest broadcast(CacheableData<?> data, long oldId) {
 		long id;
+
+		// check if already broadcasted
 		boolean exists = Arrays.stream(_fedMap.stream().map(e -> Triple.of(data.getUniqueID(), FType.BROADCAST, e.getRight().getAddress())).toArray())
-			.allMatch(e -> FederationUtils._broadcastMap.containsKey(e));
-
-
+			.allMatch(e -> FederationUtils._broadcastMap.containsKey(e) &&  FederationUtils._broadcastMap.get(e).getRight());
 		if(exists) {
 			id = FederationUtils._broadcastMap.get(Triple.of(data.getUniqueID(), FType.BROADCAST,
 				((Pair<FederatedRange, FederatedData>) _fedMap.toArray()[0]).getRight().getAddress())).getLeft();
 			return new FederatedRequest(RequestType.PUT_VAR, id, data.getUniqueID(), FType.BROADCAST);
 		}
 
+		FType type = FType.PART;
+		type.setPartType(_type._partType);
 		id = FederationUtils.getNextFedDataID();
 		CacheBlock cb = data.acquireReadAndRelease();
-//		List<Pair<FederatedRange, FederatedData>> newFedMap = new ArrayList<>();
 
+		// put new broadcasts
 		for(Pair<FederatedRange, FederatedData> e : _fedMap) {
 			FederationUtils._broadcastMap.putIfAbsent(Triple.of(data.getUniqueID(), FType.BROADCAST, e.getValue().getAddress()),
-				Pair.of(id, false));
+				Triple.of(id, false, false));
 			FederationUtils._broadcastMap.putIfAbsent(Triple.of(oldId, _type, e.getValue().getAddress()),
-				Pair.of(_ID, false));
-//			newFedMap.add(Pair.of(new FederatedRange(new long[] {0, 0}, new long[] {data.getNumRows(), data.getNumColumns()}),
-//				new FederatedData(data.getDataType(), e.getRight().getAddress(), data.getFileName())));
+				Triple.of(_ID, false, true));
 		}
-//		data.setFedMapping(new FederationMap(id, newFedMap, FType.BROADCAST)); // TODO is really necessary to modify since it can not be reused as normal fed matrix without cutting
-		return new FederatedRequest(RequestType.PUT_VAR, id, cb, data.getUniqueID(), FType.BROADCAST);
+
+		return new FederatedRequest(RequestType.PUT_VAR, id, cb, data.getUniqueID(), FType.BROADCAST, _ID, oldId, type);
 	}
 
 	public FederatedRequest broadcast(ScalarObject scalar) {
@@ -241,16 +241,16 @@ public class FederationMap {
 		if( _type == FType.FULL )
 			return new FederatedRequest[]{broadcast(data, oldId)};
 
+		FederationUtils._broadcastMap.values().removeIf(e -> !e.getRight());
+
 		long id;
 		FederatedRequest[] ret = new FederatedRequest[_fedMap.size()];
-
 		FType type = FType.PART;
 		type.setPartType(_type._partType);
 
 		boolean exists = Arrays.stream(_fedMap.stream().map(e -> Triple.of(data.getUniqueID(), type, e.getRight().getAddress())).toArray())
 			.allMatch(e -> FederationUtils._broadcastMap.containsKey(e) && ((Triple<Long, FType, InetSocketAddress>) e).getMiddle()._partType == _type._partType
-				&& FederationUtils._broadcastMap.get(e).getRight() == transposed);
-
+				&& FederationUtils._broadcastMap.get(e).getMiddle() == transposed && FederationUtils._broadcastMap.get(e).getRight());
 		if(exists) {
 			id = FederationUtils._broadcastMap.get(Triple.of(data.getUniqueID(), FType.PART,
 				((Pair<FederatedRange, FederatedData>) _fedMap.toArray()[0]).getRight().getAddress())).getLeft();
@@ -276,31 +276,27 @@ public class FederationMap {
 				ix[pos++] = _type == FType.ROW || _type.getPartType() == FPartitioning.ROW ? new int[] {rl, ru, cl, cu} : new int[] {cl, cu, rl, ru};
 
 				FederationUtils._broadcastMap.putIfAbsent(Triple.of(data.getUniqueID(), type, e.getValue().getAddress()),
-					Pair.of(id, transposed));
-
-				FederationUtils._broadcastMap.putIfAbsent(Triple.of(oldId, type, e.getValue().getAddress()),
-					Pair.of(getID(), transposed));
+					Triple.of(id, transposed, false));
+				FederationUtils._broadcastMap.putIfAbsent(Triple.of(oldId, _type, e.getValue().getAddress()),
+					Triple.of(getID(), false, true));
 
 				FederatedRange fr = new FederatedRange(e.getLeft());
 				fr.setEndDim(_type == FType.ROW || (_type == FType.PART && _type.getPartType() == FPartitioning.ROW) ? 1 : 0,
-					_type == FType.ROW || (_type == FType.PART && _type.getPartType() == FPartitioning.ROW) ?
-						data.getNumColumns() : data.getNumRows());
-				newFedMap.add(Pair.of(fr,
-					new FederatedData(data.getDataType(), e.getRight().getAddress(), data.getFileName())));
+					_type == FType.ROW || (_type == FType.PART && _type.getPartType() == FPartitioning.ROW) ? data.getNumColumns() : data.getNumRows());
+				newFedMap.add(Pair.of(fr, new FederatedData(data.getDataType(), e.getRight().getAddress(), data.getFileName())));
 			}
 
 			// multi-threaded block slicing and federation request creation
 			Arrays.parallelSetAll(ret,i -> new FederatedRequest(RequestType.PUT_VAR, id, cb.slice(ix[i][0], ix[i][1], ix[i][2], ix[i][3],
-				new MatrixBlock()), data.getUniqueID(), FType.PART, getID(), oldId));
+				new MatrixBlock()), data.getUniqueID(), FType.PART, getID(), oldId, type));
 
 			if(!data.isFederated()) {
-				data.cleanData();
-
 				data.setFedMapping(new FederationMap(id, newFedMap, FType.PART));
 				data.getFedMapping()._type.setPartType(type.getPartType());
 				data.getDataCharacteristics().setDimension(cb.getNumRows(), cb.getNumColumns());
 			}
 		}
+
 		return ret;
 	}
 

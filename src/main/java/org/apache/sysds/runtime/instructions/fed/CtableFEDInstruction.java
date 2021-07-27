@@ -190,6 +190,9 @@ public class CtableFEDInstruction extends ComputationFEDInstruction {
 				curr = (MatrixBlock) ffr[i].get().getData()[0];
 				MatrixBlock sliced = curr.slice((int) (curr.getNumRows() - fedSize), curr.getNumRows() - 1);
 
+				if(curr.getNumColumns() != prev.getNumColumns())
+					return false;
+
 				// no intersection
 				if(curr.getNumRows() == (i+1) * prev.getNumRows() && curr.getNonZeros() <= prev.getLength()
 					&& (curr.getNumRows() - sliced.getNumRows()) == i * prev.getNumRows()

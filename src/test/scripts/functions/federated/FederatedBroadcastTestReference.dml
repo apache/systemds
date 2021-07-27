@@ -20,10 +20,11 @@
 #-------------------------------------------------------------
 
 X = rbind(read($1), read($2))
-B = matrix(1, rows=1, cols = ncol(X))
+B = matrix(1, rows=nrow(X), cols=1)
+B = cumsum(B)
 
-K = X + B
-M = X * B
+K = X * B
+M = (2*X) * B
 
 C = K + M
 write(C, $3)

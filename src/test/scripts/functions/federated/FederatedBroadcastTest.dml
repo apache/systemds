@@ -22,10 +22,11 @@
 X = federated(addresses=list($in_X1, $in_X2),
  ranges=list(list(0, 0), list($rows / 2, $cols), list($rows / 2, 0), list($rows, $cols)))
 
-B = matrix(1, rows=1, cols = ncol(X))
+B = matrix(1, rows=nrow(X), cols=1)
+B = cumsum(B)
 
-K = X + B
-M = X * B
+K = X * B
+M = (2*X) * B
 
 C = K + M
 write(C, $out)

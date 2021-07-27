@@ -89,7 +89,7 @@ public class AppendFEDInstruction extends BinaryFEDInstruction {
 		
 		// federated/federated
 		if( mo1.isFederated() && mo2.isFederated() 
-			&& mo1.getFedMapping().getType()==mo2.getFedMapping().getType() ) 
+			&& mo1.getFedMapping().getType()==mo2.getFedMapping().getType() && !mo1.isFederated(FType.PART))
 		{
 			long id = FederationUtils.getNextFedDataID();
 			long roff = _cbind ? 0 : dc1.getRows();
@@ -99,13 +99,14 @@ public class AppendFEDInstruction extends BinaryFEDInstruction {
 		}
 		// federated/local, local/federated cbind
 		else if( (mo1.isFederated(FType.ROW) || mo2.isFederated(FType.ROW)) && _cbind ) {
-			MatrixObject moFed = mo1.isFederated(FType.ROW) ? mo1 : mo2;
-			MatrixObject moLoc = mo1.isFederated(FType.ROW) ? mo2 : mo1;
+			boolean isFed = mo1.isFederated(FType.ROW);
+			MatrixObject moFed = isFed ? mo1 : mo2;
+			MatrixObject moLoc = isFed ? mo2 : mo1;
 			
 			//construct commands: broadcast lhs, fed append, clean broadcast
 			FederatedRequest[] fr1 = moFed.getFedMapping().broadcastSliced(moLoc, false, moFed.getUniqueID());
 			FederatedRequest fr2 = FederationUtils.callInstruction(instString, output,
-				new CPOperand[]{input1, input2}, mo1.isFederated(FType.ROW) ?
+				new CPOperand[]{input1, input2}, isFed ?
 				new long[]{ moFed.getFedMapping().getID(), fr1[0].getID()} :
 				new long[]{ fr1[0].getID(), moFed.getFedMapping().getID()});
 			FederatedRequest fr3 = moFed.getFedMapping().cleanup(getTID(), fr1[0].getID());
@@ -119,9 +120,9 @@ public class AppendFEDInstruction extends BinaryFEDInstruction {
 			long id = FederationUtils.getNextFedDataID();
 			long roff = _cbind ? 0 : dc1.getRows();
 			long coff = _cbind ? dc1.getCols() : 0;
-			FederationMap fed1 = mo1.isFederated(FType.ROW) ?
+			FederationMap fed1 = mo1.isFederated(FType.ROW) && mo1.getFedMapping().getType() != FType.PART ?
 				mo1.getFedMapping() : FederationUtils.federateLocalData(mo1);
-			FederationMap fed2 = mo2.isFederated(FType.ROW) ?
+			FederationMap fed2 = mo2.isFederated(FType.ROW) && mo2.getFedMapping().getType() != FType.PART ?
 				mo2.getFedMapping() : FederationUtils.federateLocalData(mo2);
 			out.setFedMapping(fed1.identCopy(getTID(), id)
 				.bind(roff, coff, fed2.identCopy(getTID(), id)));

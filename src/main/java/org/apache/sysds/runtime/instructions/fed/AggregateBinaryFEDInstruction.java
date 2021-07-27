@@ -125,10 +125,10 @@ public class AggregateBinaryFEDInstruction extends BinaryFEDInstruction {
 				if ( !_fedOut.isForcedLocal() ){
 					FederatedRequest fr3 = mo1.getFedMapping().cleanup(getTID(), fr1.getID());
 					mo1.getFedMapping().execute(getTID(), true, fr1, fr2, fr3);
-					if ( mo1.isFederated(FType.PART) || mo2.isFederated(FType.PART) )
-						setPartialOutput(mo1.getFedMapping(), mo1, mo2, fr2.getID(), ec);
-					else
-						setOutputFedMapping(mo1.getFedMapping(), mo1, mo2, fr2.getID(), ec);
+//					if ( mo1.isFederated(FType.PART) || mo2.isFederated(FType.PART) )
+//						setPartialOutput(mo1.getFedMapping(), mo1, mo2, fr2.getID(), ec);
+//					else
+					setOutputFedMapping(mo1.getFedMapping(), mo1, mo2, fr2.getID(), ec);
 				}
 				else {
 					FederatedRequest fr3 = new FederatedRequest(RequestType.GET_VAR, fr2.getID());

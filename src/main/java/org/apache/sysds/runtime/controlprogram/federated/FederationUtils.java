@@ -60,7 +60,7 @@ import org.apache.sysds.runtime.matrix.operators.SimpleOperator;
 public class FederationUtils {
 	protected static Logger log = Logger.getLogger(FederationUtils.class);
 	private static final IDSequence _idSeq = new IDSequence();
-	public static Map<Triple<Long, FederationMap.FType, InetSocketAddress>, Pair<Long, Boolean>> _broadcastMap = new HashMap<>();
+	public static Map<Triple<Long, FederationMap.FType, InetSocketAddress>, Triple<Long, Boolean, Boolean>> _broadcastMap = new HashMap<>();
 
 	public static void resetFedDataID() {
 		_idSeq.reset();

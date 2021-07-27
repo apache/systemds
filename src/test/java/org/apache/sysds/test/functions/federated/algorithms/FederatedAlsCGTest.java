@@ -136,7 +136,7 @@ public class FederatedAlsCGTest extends AutomatedTestBase
 
 		// Run actual dml script with federated matrix
 		fullDMLScriptName = HOME + testname + ".dml";
-		programArgs = new String[] {"-stats", "-nvargs",
+		programArgs = new String[] {"-explain", "-stats", "-nvargs",
 			"in_X1=" + TestUtils.federatedAddress(port1, input("X1")),
 			"in_X2=" + TestUtils.federatedAddress(port2, input("X2")),
 			"in_rank=" + Integer.toString(rank),

@@ -76,7 +76,6 @@ public class FederatedYL2SVMTest extends AutomatedTestBase {
 		// This test is equal to the first tests, just with one worker location used instead.
 		// making all federated matrices FULL type.
 		federatedL2SVM(Types.ExecMode.SINGLE_NODE, TEST_NAME_2);
-
 	}
 
 	@Test

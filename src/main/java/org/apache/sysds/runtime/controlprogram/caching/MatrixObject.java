@@ -552,10 +552,10 @@ public class MatrixObject extends CacheableData<MatrixBlock>
 		// TODO sparse optimization
 		List<Pair<FederatedRange, Future<FederatedResponse>>> readResponses = fedMap.requestFederatedData();
 		try {
-			if ( fedMap.getType() == FederationMap.FType.PART )
-				return FederationUtils.aggregateResponses(readResponses);
-			else
-				return FederationUtils.bindResponses(readResponses, dims);
+//			if ( fedMap.getType() == FederationMap.FType.PART )
+//				return FederationUtils.aggregateResponses(readResponses);
+//			else
+			return FederationUtils.bindResponses(readResponses, dims);
 		}
 		catch(Exception e) {
 			throw new DMLRuntimeException("Federated matrix read failed.", e);

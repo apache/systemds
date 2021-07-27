@@ -122,9 +122,7 @@ public class BinaryMatrixMatrixFEDInstruction extends BinaryFEDInstruction
 			}
 		}
 
-		if ( mo1.isFederated(FType.PART) && !mo2.isFederated() )
-			setOutputFedMappingPart(mo1, mo2, fr2.getID(), ec);
-		else if ( mo1.isFederated() )
+		if ( mo1.isFederated() )
 			setOutputFedMapping(mo1, fr2.getID(), ec);
 		else if ( mo2.isFederated() )
 			setOutputFedMapping(mo2, fr2.getID(), ec);

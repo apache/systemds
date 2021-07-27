@@ -179,7 +179,7 @@ public class AggregateBinaryFEDInstruction extends BinaryFEDInstruction {
 					FederatedRequest fr3 = new FederatedRequest(RequestType.GET_VAR, fr2.getID());
 					FederatedRequest fr4 = mo2.getFedMapping().cleanup(getTID(), fr1[0].getID(), fr2.getID());
 					//execute federated operations and aggregate
-					Future<FederatedResponse>[] tmp = mo2.getFedMapping().execute(getTID(), fr1, fr2, fr3, fr4);
+					Future<FederatedResponse>[] tmp = mo2.getFedMapping().execute(getTID(), true, fr1, fr2, fr3, fr4);
 					MatrixBlock ret = FederationUtils.aggAdd(tmp);
 					ec.setMatrixOutput(output.getName(), ret);
 				}

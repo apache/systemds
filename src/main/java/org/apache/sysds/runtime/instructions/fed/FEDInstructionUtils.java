@@ -31,6 +31,7 @@ import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.caching.TensorObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.federated.FederationMap.FType;
+import org.apache.sysds.runtime.controlprogram.federated.FederationUtils;
 import org.apache.sysds.runtime.instructions.Instruction;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.AggregateBinaryCPInstruction;
@@ -271,9 +272,13 @@ public class FEDInstructionUtils {
 			MapmmSPInstruction instruction = (MapmmSPInstruction) inst;
 			Data data = ec.getVariable(instruction.input1);
 			if (data instanceof MatrixObject && ((MatrixObject) data).isFederated()) {
-				// TODO correct FED instruction string
-				fedinst = new AggregateBinaryFEDInstruction(instruction.getOperator(),
-					instruction.input1, instruction.input2, instruction.output, "ba+*", "FED...");
+				String[] instParts = inst.getInstructionString().split(Instruction.OPERAND_DELIM);
+				instParts[1] = "ba+*";
+				instParts[5] = "16";
+				instParts[6] = instParts[7];
+				String instString = InstructionUtils.concatOperands(instParts[0], instParts[1], instParts[2],
+					instParts[3], instParts[4], instParts[5], instParts[6]);
+				fedinst = AggregateBinaryFEDInstruction.parseInstruction(instString);
 			}
 		}
 		else if (inst instanceof UnarySPInstruction) {

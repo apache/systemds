@@ -241,8 +241,6 @@ public class FederationMap {
 		if( _type == FType.FULL )
 			return new FederatedRequest[]{broadcast(data, oldId)};
 
- 		//FederationUtils._broadcastMap.values().removeIf(e -> !e.getRight());
-        //cleanMap();
 		long id;
 		FederatedRequest[] ret = new FederatedRequest[_fedMap.size()];
 		FType type = FType.PART;

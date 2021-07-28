@@ -54,9 +54,11 @@ import org.apache.sysds.runtime.instructions.cp.UnaryMatrixCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.VariableCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.VariableCPInstruction.VariableOperationCode;
 import org.apache.sysds.runtime.instructions.fed.FEDInstruction.FederatedOutput;
+import org.apache.sysds.runtime.instructions.spark.AggregateTernarySPInstruction;
 import org.apache.sysds.runtime.instructions.spark.AggregateUnarySPInstruction;
 import org.apache.sysds.runtime.instructions.spark.AppendGAlignedSPInstruction;
 import org.apache.sysds.runtime.instructions.spark.AppendGSPInstruction;
+import org.apache.sysds.runtime.instructions.spark.BinaryFrameScalarSPInstruction;
 import org.apache.sysds.runtime.instructions.spark.BinaryMatrixBVectorSPInstruction;
 import org.apache.sysds.runtime.instructions.spark.BinaryMatrixMatrixSPInstruction;
 import org.apache.sysds.runtime.instructions.spark.BinaryMatrixScalarSPInstruction;
@@ -64,11 +66,18 @@ import org.apache.sysds.runtime.instructions.spark.BinarySPInstruction;
 import org.apache.sysds.runtime.instructions.spark.BinaryTensorTensorBroadcastSPInstruction;
 import org.apache.sysds.runtime.instructions.spark.BinaryTensorTensorSPInstruction;
 import org.apache.sysds.runtime.instructions.spark.CentralMomentSPInstruction;
+import org.apache.sysds.runtime.instructions.spark.CtableSPInstruction;
+import org.apache.sysds.runtime.instructions.spark.IndexingSPInstruction;
 import org.apache.sysds.runtime.instructions.spark.MapmmSPInstruction;
+import org.apache.sysds.runtime.instructions.spark.MultiReturnParameterizedBuiltinSPInstruction;
+import org.apache.sysds.runtime.instructions.spark.ParameterizedBuiltinSPInstruction;
 import org.apache.sysds.runtime.instructions.spark.QuantilePickSPInstruction;
 import org.apache.sysds.runtime.instructions.spark.QuantileSortSPInstruction;
 import org.apache.sysds.runtime.instructions.spark.QuaternarySPInstruction;
+import org.apache.sysds.runtime.instructions.spark.ReorgSPInstruction;
 import org.apache.sysds.runtime.instructions.spark.SpoofSPInstruction;
+import org.apache.sysds.runtime.instructions.spark.TernarySPInstruction;
+import org.apache.sysds.runtime.instructions.spark.UnaryMatrixSPInstruction;
 import org.apache.sysds.runtime.instructions.spark.UnarySPInstruction;
 import org.apache.sysds.runtime.instructions.spark.WriteSPInstruction;
 
@@ -270,62 +279,6 @@ public class FEDInstructionUtils {
 					instruction.input1, instruction.input2, instruction.output, "ba+*", "FED...");
 			}
 		}
-		else if (inst instanceof UnarySPInstruction) {
-			if (inst instanceof CentralMomentSPInstruction) {
-				CentralMomentSPInstruction instruction = (CentralMomentSPInstruction) inst;
-				Data data = ec.getVariable(instruction.input1);
-				if (data instanceof MatrixObject && ((MatrixObject) data).isFederated())
-					fedinst = CentralMomentFEDInstruction.parseInstruction(inst.getInstructionString());
-			} else if (inst instanceof QuantileSortSPInstruction) {
-				QuantileSortSPInstruction instruction = (QuantileSortSPInstruction) inst;
-				Data data = ec.getVariable(instruction.input1);
-				if (data instanceof MatrixObject && ((MatrixObject) data).isFederated())
-					fedinst = QuantileSortFEDInstruction.parseInstruction(inst.getInstructionString());
-			}
-			else if (inst instanceof AggregateUnarySPInstruction) {
-				AggregateUnarySPInstruction instruction = (AggregateUnarySPInstruction) inst;
-				Data data = ec.getVariable(instruction.input1);
-				if(data instanceof MatrixObject && ((MatrixObject) data).isFederated())
-					fedinst = AggregateUnaryFEDInstruction.parseInstruction(
-						InstructionUtils.concatOperands(inst.getInstructionString(),FederatedOutput.NONE.name()));
-			}
-		}
-		else if(inst instanceof BinarySPInstruction) {
-			if(inst instanceof QuantilePickSPInstruction) {
-				QuantilePickSPInstruction instruction = (QuantilePickSPInstruction) inst;
-				Data data = ec.getVariable(instruction.input1);
-				if(data instanceof MatrixObject && ((MatrixObject) data).isFederated())
-					fedinst = QuantilePickFEDInstruction.parseInstruction(inst.getInstructionString());
-			}
-			else if (inst instanceof AppendGAlignedSPInstruction) {
-				// TODO other Append Spark instructions
-				AppendGAlignedSPInstruction instruction = (AppendGAlignedSPInstruction) inst;
-				Data data = ec.getVariable(instruction.input1);
-				if (data instanceof MatrixObject && ((MatrixObject) data).isFederated()) {
-					fedinst = AppendFEDInstruction.parseInstruction(instruction.getInstructionString());
-				}
-			}
-			else if (inst instanceof AppendGSPInstruction) {
-				AppendGSPInstruction instruction = (AppendGSPInstruction) inst;
-				Data data = ec.getVariable(instruction.input1);
-				if(data instanceof MatrixObject && ((MatrixObject) data).isFederated()) {
-					fedinst = AppendFEDInstruction.parseInstruction(instruction.getInstructionString());
-				}
-			}
-			else if (inst instanceof BinaryMatrixScalarSPInstruction
-				|| inst instanceof BinaryMatrixMatrixSPInstruction
-				|| inst instanceof BinaryMatrixBVectorSPInstruction
-				|| inst instanceof BinaryTensorTensorSPInstruction
-				|| inst instanceof BinaryTensorTensorBroadcastSPInstruction) {
-				BinarySPInstruction instruction = (BinarySPInstruction) inst;
-				Data data = ec.getVariable(instruction.input1);
-				if((data instanceof MatrixObject && ((MatrixObject)data).isFederated())
-					|| (data instanceof TensorObject && ((TensorObject)data).isFederated())) {
-					fedinst = BinaryFEDInstruction.parseInstruction(
-						InstructionUtils.concatOperands(inst.getInstructionString(),FederatedOutput.NONE.name()));
-				}
-			}
-		}
 		else if (inst instanceof WriteSPInstruction) {
 			WriteSPInstruction instruction = (WriteSPInstruction) inst;
 			Data data = ec.getVariable(instruction.input1);
@@ -350,6 +303,155 @@ public class FEDInstructionUtils {
 				fedinst = SpoofFEDInstruction.parseInstruction(inst.getInstructionString());
 			}
 		}
+
+		else if (inst instanceof UnarySPInstruction && ! (inst instanceof IndexingSPInstruction)) {
+			UnarySPInstruction instruction = (UnarySPInstruction) inst;
+			if (inst instanceof CentralMomentSPInstruction) {
+				CentralMomentSPInstruction cinstruction = (CentralMomentSPInstruction) inst;
+				Data data = ec.getVariable(cinstruction.input1);
+				if (data instanceof MatrixObject && ((MatrixObject) data).isFederated())
+					fedinst = CentralMomentFEDInstruction.parseInstruction(inst.getInstructionString());
+			} else if (inst instanceof QuantileSortSPInstruction) {
+				QuantileSortSPInstruction qinstruction = (QuantileSortSPInstruction) inst;
+				Data data = ec.getVariable(qinstruction.input1);
+				if (data instanceof MatrixObject && ((MatrixObject) data).isFederated())
+					fedinst = QuantileSortFEDInstruction.parseInstruction(inst.getInstructionString());
+			}
+			else if (inst instanceof AggregateUnarySPInstruction) {
+				AggregateUnarySPInstruction auinstruction = (AggregateUnarySPInstruction) inst;
+				Data data = ec.getVariable(auinstruction.input1);
+				if(data instanceof MatrixObject && ((MatrixObject) data).isFederated())
+					fedinst = AggregateUnaryFEDInstruction.parseInstruction(
+						InstructionUtils.concatOperands(inst.getInstructionString(),FederatedOutput.NONE.name()));
+			}
+			else if(inst instanceof ReorgSPInstruction && (inst.getOpcode().equals("r'") || inst.getOpcode().equals("rdiag")
+				|| inst.getOpcode().equals("rev"))) {
+				ReorgSPInstruction rinst = (ReorgSPInstruction) inst;
+				CacheableData<?> mo = ec.getCacheableData(rinst.input1);
+
+				if((mo instanceof MatrixObject || mo instanceof FrameObject) && mo.isFederated() )
+					fedinst = ReorgFEDInstruction.parseInstruction(
+						InstructionUtils.concatOperands(rinst.getInstructionString(), FederatedOutput.NONE.name()));
+			}
+			else if(instruction.input1 != null && instruction.input1.isMatrix()
+				&& ec.containsVariable(instruction.input1)) {
+
+				MatrixObject mo1 = ec.getMatrixObject(instruction.input1);
+				if(instruction.getOpcode().equalsIgnoreCase("cm") && mo1.isFederated())
+					fedinst = CentralMomentFEDInstruction.parseInstruction(inst.getInstructionString());
+				else if(inst.getOpcode().equalsIgnoreCase("qsort") && mo1.isFederated()) {
+					if(mo1.getFedMapping().getFederatedRanges().length == 1)
+						fedinst = QuantileSortFEDInstruction.parseInstruction(inst.getInstructionString());
+				}
+				else if(inst.getOpcode().equalsIgnoreCase("rshape") && mo1.isFederated())
+					fedinst = ReshapeFEDInstruction.parseInstruction(inst.getInstructionString());
+				else if(inst instanceof UnaryMatrixSPInstruction && mo1.isFederated()) {
+					if(UnaryMatrixFEDInstruction.isValidOpcode(inst.getOpcode()) &&
+						!(inst.getOpcode().equalsIgnoreCase("ucumk+*") && mo1.isFederated(FType.COL)))
+						fedinst = UnaryMatrixFEDInstruction.parseInstruction(inst.getInstructionString());
+				}
+			}
+		}
+		else if (inst instanceof BinarySPInstruction) {
+			BinarySPInstruction instruction = (BinarySPInstruction) inst;
+			if(instruction instanceof QuantilePickSPInstruction) {
+				QuantilePickSPInstruction binst = (QuantilePickSPInstruction) inst;
+				Data data = ec.getVariable(binst.input1);
+				if(data instanceof MatrixObject && ((MatrixObject) data).isFederated())
+					fedinst = QuantilePickFEDInstruction.parseInstruction(binst.getInstructionString());
+			}
+			else if (instruction instanceof AppendGAlignedSPInstruction) {
+				// TODO other Append Spark instructions
+				AppendGAlignedSPInstruction ainst = (AppendGAlignedSPInstruction) inst;
+				Data data = ec.getVariable(ainst.input1);
+				if (data instanceof MatrixObject && ((MatrixObject) data).isFederated()) {
+					fedinst = AppendFEDInstruction.parseInstruction(ainst.getInstructionString());
+				}
+			}
+			else if (instruction instanceof AppendGSPInstruction) {
+				AppendGSPInstruction aginst = (AppendGSPInstruction) inst;
+				Data data = ec.getVariable(aginst.input1);
+				if(data instanceof MatrixObject && ((MatrixObject) data).isFederated()) {
+					fedinst = AppendFEDInstruction.parseInstruction(aginst.getInstructionString());
+				}
+			}
+			else if (instruction instanceof BinaryMatrixScalarSPInstruction
+				|| instruction instanceof BinaryMatrixMatrixSPInstruction
+				|| instruction instanceof BinaryMatrixBVectorSPInstruction
+				|| instruction instanceof BinaryTensorTensorSPInstruction
+				|| instruction instanceof BinaryTensorTensorBroadcastSPInstruction) {
+				BinarySPInstruction binst = (BinarySPInstruction) inst;
+				Data data = ec.getVariable(binst.input1);
+				if((data instanceof MatrixObject && ((MatrixObject)data).isFederated())
+					|| (data instanceof TensorObject && ((TensorObject)data).isFederated())) {
+					fedinst = BinaryFEDInstruction.parseInstruction(
+						InstructionUtils.concatOperands(binst.getInstructionString(),FederatedOutput.NONE.name()));
+				}
+			}
+			else if( (instruction.input1.isMatrix() && ec.getMatrixObject(instruction.input1).isFederated())
+				|| (instruction.input2.isMatrix() && ec.getMatrixObject(instruction.input2).isFederated()) ) {
+				if(instruction.getOpcode().equals("append") )
+					fedinst = AppendFEDInstruction.parseInstruction(inst.getInstructionString());
+				else if(instruction.getOpcode().equals("qpick"))
+					fedinst = QuantilePickFEDInstruction.parseInstruction(inst.getInstructionString());
+				else if("cov".equals(instruction.getOpcode()) && (ec.getMatrixObject(instruction.input1).isFederated(FType.ROW) ||
+					ec.getMatrixObject(instruction.input2).isFederated(FType.ROW)))
+					fedinst = CovarianceFEDInstruction.parseInstruction(inst.getInstructionString());
+				else
+					fedinst = BinaryFEDInstruction.parseInstruction(
+						InstructionUtils.concatOperands(inst.getInstructionString(),FederatedOutput.NONE.name()));
+			} else if(inst.getOpcode().equals("_map") && inst instanceof BinaryFrameScalarSPInstruction && !inst.getInstructionString().contains("UtilFunctions")
+				&& instruction.input1.isFrame() && ec.getFrameObject(instruction.input1).isFederated()) {
+				fedinst = BinaryFrameScalarFEDInstruction.parseInstruction(InstructionUtils.concatOperands(inst.getInstructionString(),FederatedOutput.NONE.name()));
+			}
+		}
+		else if( inst instanceof ParameterizedBuiltinSPInstruction) {
+			ParameterizedBuiltinSPInstruction pinst = (ParameterizedBuiltinSPInstruction) inst;
+			if( ArrayUtils.contains(PARAM_BUILTINS, pinst.getOpcode()) && pinst.getTarget(ec).isFederated() )
+				fedinst = ParameterizedBuiltinFEDInstruction.parseInstruction(pinst.getInstructionString());
+		}
+		else if (inst instanceof MultiReturnParameterizedBuiltinSPInstruction) {
+			MultiReturnParameterizedBuiltinSPInstruction minst = (MultiReturnParameterizedBuiltinSPInstruction) inst;
+			if(minst.getOpcode().equals("transformencode") && minst.input1.isFrame()) {
+				CacheableData<?> fo = ec.getCacheableData(minst.input1);
+				if(fo.isFederated()) {
+					fedinst = MultiReturnParameterizedBuiltinFEDInstruction
+						.parseInstruction(minst.getInstructionString());
+				}
+			}
+		}
+		else if(inst instanceof IndexingSPInstruction) {
+			// matrix and frame indexing
+			IndexingSPInstruction minst = (IndexingSPInstruction) inst;
+			if((minst.input1.isMatrix() || minst.input1.isFrame())
+				&& ec.getCacheableData(minst.input1).isFederated()) {
+				fedinst = IndexingFEDInstruction.parseInstruction(minst.getInstructionString());
+			}
+		}
+		else if(inst instanceof TernarySPInstruction) {
+			TernarySPInstruction tinst = (TernarySPInstruction) inst;
+			if((tinst.input1.isMatrix() && ec.getCacheableData(tinst.input1).isFederated())
+				|| (tinst.input2.isMatrix() && ec.getCacheableData(tinst.input2).isFederated())
+				|| (tinst.input3.isMatrix() && ec.getCacheableData(tinst.input3).isFederated())) {
+				fedinst = TernaryFEDInstruction.parseInstruction(tinst.getInstructionString());
+			}
+		}
+		else if(inst instanceof AggregateTernarySPInstruction){
+			AggregateTernarySPInstruction ins = (AggregateTernarySPInstruction) inst;
+			if(ins.input1.isMatrix() && ec.getCacheableData(ins.input1).isFederated() && ins.input2.isMatrix() &&
+				ec.getCacheableData(ins.input2).isFederated()) {
+				fedinst = AggregateTernaryFEDInstruction.parseInstruction(ins);
+			}
+		}
+		else if(inst instanceof CtableSPInstruction) {
+			CtableSPInstruction cinst = (CtableSPInstruction) inst;
+			if(inst.getOpcode().equalsIgnoreCase("ctable")
+				&& ( ec.getCacheableData(cinst.input1).isFederated(FType.ROW)
+				|| (cinst.input2.isMatrix() && ec.getCacheableData(cinst.input2).isFederated(FType.ROW))
+				|| (cinst.input3.isMatrix() && ec.getCacheableData(cinst.input3).isFederated(FType.ROW))))
+				fedinst = CtableFEDInstruction.parseInstruction(cinst.getInstructionString());
+		}
+
 		//set thread id for federated context management
 		if( fedinst != null ) {
 			fedinst.setTID(ec.getTID());

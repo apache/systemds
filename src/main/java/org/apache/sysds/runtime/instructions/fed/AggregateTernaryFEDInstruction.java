@@ -30,24 +30,41 @@ import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest.RequestType;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse;
 import org.apache.sysds.runtime.controlprogram.federated.FederationUtils;
+import org.apache.sysds.runtime.instructions.Instruction;
 import org.apache.sysds.runtime.instructions.cp.AggregateTernaryCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
 import org.apache.sysds.runtime.instructions.cp.DoubleObject;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.ScalarObject;
+import org.apache.sysds.runtime.instructions.spark.AggregateTernarySPInstruction;
 import org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator;
 
 public class AggregateTernaryFEDInstruction extends FEDInstruction {
 	// private static final Log LOG = LogFactory.getLog(AggregateTernaryFEDInstruction.class.getName());
-
-	public final AggregateTernaryCPInstruction _ins;
+// FIXME
+	public final AggregateTernaryCPInstruction _insCP;
+	public final AggregateTernarySPInstruction _insSPARK;
+	public final Instruction _ins;
 
 	protected AggregateTernaryFEDInstruction(AggregateTernaryCPInstruction ins) {
 		super(FEDType.AggregateTernary, ins.getOperator(), ins.getOpcode(), ins.getInstructionString());
-		_ins = ins;
+		_insCP = ins;
+		_insSPARK = null;
+		_ins = _insCP;
+	}
+
+	protected AggregateTernaryFEDInstruction(AggregateTernarySPInstruction ins) {
+		super(FEDType.AggregateTernary, ins.getOperator(), ins.getOpcode(), ins.getInstructionString());
+		_insSPARK = ins;
+		_insCP = null;
+		_ins = _insSPARK;
 	}
 
 	public static AggregateTernaryFEDInstruction parseInstruction(AggregateTernaryCPInstruction ins) {
+		return new AggregateTernaryFEDInstruction(ins);
+	}
+
+	public static AggregateTernaryFEDInstruction parseInstruction(AggregateTernarySPInstruction ins) {
 		return new AggregateTernaryFEDInstruction(ins);
 	}
 

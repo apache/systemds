@@ -1,0 +1,186 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+# This script performs DeepWalk on a given graph (https://arxiv.org/pdf/1403.6652.pdf)
+# INPUT PARAMETERS:
+# ---------------------------------------------------------------------------------------------
+# NAME      TYPE        DEFAULT     MEANING
+# ---------------------------------------------------------------------------------------------
+# Graph     Matrix      ---         adjacency matrix of a graph (n x n)
+# w         Integer     ---         window size
+# d         Integer     ---         embedding size
+# gamma     Integer     ---         walks per vertex
+# t         Integer     ---         walk length
+# alpha     Double      0.025       learning rate
+# beta      Double      0.9         factor for decreasing learning rate
+# ---------------------------------------------------------------------------------------------
+# OUTPUT PARAMETERS:
+# ---------------------------------------------------------------------------------------------
+# NAME      TYPE        DEFAULT     MEANING
+# ---------------------------------------------------------------------------------------------
+# Phi       Matrix      ---         matrix of vertex/word representation (n x d)
+
+source("scripts/staging/entity-resolution/primitives/postprocessing.dml") as post;
+
+m_deepWalk = function(Matrix[Double] Graph, Integer w, Integer d,
+  Integer gamma, Integer t, Double alpha=0.025, Double beta=0.9)
+  return(Matrix[Double] Phi)
+{
+  word_count = nrow(Graph)
+  tree_depth = ceil(log(word_count, 2))
+
+  # build binary tree from vocabulary
+  # TODO: currently we make a full binary tree with a depth depending on the word count e.g.:
+  # TODO: for a word count of 5, we create a binary tree with 8 leaves and 7 nodes
+  T = createBinaryTreeMatrix(word_count)
+
+  # initialize the the node vectors and the representation matrix Phi with random values [0, 1]
+  # TODO: we initialize full binary tree -> not necessary if we have less leaves
+  Theta = rand(rows=2^tree_depth-1, cols=d)
+  Phi = rand(rows=word_count, cols=d)
+
+  for (i in 1:gamma) {
+    vocab_shuffled = sample(word_count, word_count, FALSE)
+    for (node_idx in 1:length(vocab_shuffled)) {
+      random_walk = randomWalk(Graph, as.scalar(vocab_shuffled[node_idx]), t)
+      [Phi, Theta] = skipGram(Phi, Theta, T, random_walk, w, alpha)
+    }
+    # decreasing learning rate
+    alpha = alpha * beta
+  }
+}
+
+# binary tree as adjacency matrix
+createBinaryTreeMatrix = function(Integer word_count)
+  return(Matrix[Double] Tree)
+{
+  rix = matrix(seq(1,word_count-1) %*% matrix(1,1,2), 2*(word_count-1), 1)
+  cix = 1+seq(1,2*(word_count-1));
+  Tree = table(rix, cix); # place 1s into output
+}
+
+randomWalk = function(Matrix[Double] Graph, Integer start_vertex, Integer walk_length)
+  return(Matrix[Double] random_walk)
+{
+  random_walk = matrix(0, rows=walk_length+1, cols=1)
+  random_walk[1] = start_vertex
+
+  current_vertex = start_vertex
+  for (i in 1:walk_length) {
+    neighbors_untable = post::untable(Graph[current_vertex, ])
+    neighbors = neighbors_untable[, 2]
+    index = as.scalar(sample(nrow(neighbors), 1))
+    current_vertex = as.scalar(neighbors[index])
+    random_walk[i+1] = current_vertex
+  }
+}
+
+skipGram = function(Matrix[double] Phi, Matrix[double] Theta,
+  Matrix[double] Tree, Matrix[double] walk, Integer window_size, Double alpha)
+  return(Matrix[double] Phi_new, Matrix[double] Theta_new)
+{
+  Phi_new = Phi
+  Theta_new = Theta
+  tree_depth = ceil(log(nrow(Phi), 2))
+
+  # TODO: check if parallelizable for different datasets; works for current test -> sparsity, updates
+  parfor (w_i in 1:nrow(walk), check=0) {
+    # calculate furthest left/right node in the window
+    min_val = max(1, w_i-window_size)
+    max_val = min(nrow(walk), w_i+window_size)
+
+    if (w_i != 1) {
+      left_neighbors = walk[min_val:(w_i-1)]
+      for (u_k in 1:nrow(left_neighbors)) {
+        [Phi_new, Theta_new] = update(Phi_new, Theta_new,
+          Tree, tree_depth, as.scalar(left_neighbors[u_k]), as.scalar(walk[w_i]), alpha)
+      }
+    }
+    if (w_i != nrow(walk)) {
+      right_neighbors = walk[(w_i+1):max_val]
+      for (u_k in 1:nrow(right_neighbors)) {
+        [Phi_new, Theta_new] = update(Phi_new, Theta_new,
+          Tree, tree_depth, as.scalar(right_neighbors[u_k]), as.scalar(walk[w_i]), alpha)
+      }
+    }
+  }
+}
+
+update = function(Matrix[double] Phi, Matrix[double] Theta,
+  Matrix[double] Tree, Integer tree_depth, Integer u, Integer v, Double alpha)
+  return (Matrix[double] Phi_new, Matrix[double] Theta_new)
+{
+  Phi_new = Phi
+  Theta_new = Theta
+
+  u_binary = toBinaryArray(u, tree_depth)
+  path_to_u = getNodeIds(Tree, u_binary)
+
+  gradients = computeGradients(u, v, Theta, path_to_u, Phi, tree_depth)
+
+  # compute negative gradient for Theta update
+  neg_gradient = gradients * Phi[v]
+  for (i in 1:nrow(gradients))
+    Theta_new[as.scalar(path_to_u[i])] = Theta_new[as.scalar(path_to_u[i])] + alpha * neg_gradient[i]
+
+  # compute negative gradient for Phi update
+  P = table(seq(1,tree_depth), path_to_u[1:tree_depth], tree_depth, nrow(Theta));
+  target_theta = P %*% Theta;
+  neg_gradient = t(gradients) %*% target_theta
+  Phi_new[v] = Phi_new[v] + alpha * neg_gradient
+}
+
+computeGradients = function(Integer u, Integer v, Matrix[double] Theta,
+  Matrix[double] path, Matrix[double] Phi, Integer tree_depth)
+  return(Matrix[Double] gradients)
+{
+  u_binary = toBinaryArray(u, tree_depth)
+  P = table(seq(1,tree_depth), path, tree_depth, nrow(Theta));
+  u_dot_v = P %*% Theta %*% t(Phi[v]);
+  gradients = u_binary - sigmoid(u_dot_v);
+}
+
+toBinaryArray = function(Integer node_id, Integer tree_depth)
+  return(Matrix[double] binary_array)
+{
+  binary_array = matrix(0, rows=tree_depth, cols=1)
+  for (i in 1:tree_depth) {
+    binary_array[i] =  node_id %% 2
+    node_id = node_id %/% 2
+  }
+}
+
+# based on a binary sequence get the correct path in the tree
+# return a list of node ids on the path to the leaf without the leaf node itself
+getNodeIds = function(Matrix[double] Tree, Matrix[double] binary_array)
+  return(Matrix[double] node_id_array)
+{
+  seq_len = nrow(binary_array)
+  node_id_array = matrix(0, rows=seq_len, cols=1)
+  cur_node_id = 1
+  node_id_array[1] = cur_node_id
+  for (i in 1:(seq_len-1)) {
+    neighbors_untable = post::untable(Tree[cur_node_id, ])
+    neighbors = neighbors_untable[, 2]
+    node_id_array[i+1] = as.scalar(neighbors[1 + as.scalar(binary_array[i])])
+    cur_node_id = as.scalar(node_id_array[i+1])
+  }
+}

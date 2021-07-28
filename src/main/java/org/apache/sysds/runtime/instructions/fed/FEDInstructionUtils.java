@@ -405,11 +405,11 @@ public class FEDInstructionUtils {
 				fedinst = BinaryFrameScalarFEDInstruction.parseInstruction(InstructionUtils.concatOperands(inst.getInstructionString(),FederatedOutput.NONE.name()));
 			}
 		}
-		else if( inst instanceof ParameterizedBuiltinSPInstruction) {
-			ParameterizedBuiltinSPInstruction pinst = (ParameterizedBuiltinSPInstruction) inst;
-			if( ArrayUtils.contains(PARAM_BUILTINS, pinst.getOpcode()) && pinst.getTarget(ec).isFederated() )
-				fedinst = ParameterizedBuiltinFEDInstruction.parseInstruction(pinst.getInstructionString());
-		}
+//		else if( inst instanceof ParameterizedBuiltinSPInstruction) {
+//			ParameterizedBuiltinSPInstruction pinst = (ParameterizedBuiltinSPInstruction) inst;
+//			if( ArrayUtils.contains(PARAM_BUILTINS, pinst.getOpcode()) && pinst.getTarget(ec).isFederated() )
+//				fedinst = ParameterizedBuiltinFEDInstruction.parseInstruction(pinst.getInstructionString());
+//		}
 		else if (inst instanceof MultiReturnParameterizedBuiltinSPInstruction) {
 			MultiReturnParameterizedBuiltinSPInstruction minst = (MultiReturnParameterizedBuiltinSPInstruction) inst;
 			if(minst.getOpcode().equals("transformencode") && minst.input1.isFrame()) {
@@ -436,13 +436,13 @@ public class FEDInstructionUtils {
 				fedinst = TernaryFEDInstruction.parseInstruction(tinst.getInstructionString());
 			}
 		}
-		else if(inst instanceof AggregateTernarySPInstruction){
-			AggregateTernarySPInstruction ins = (AggregateTernarySPInstruction) inst;
-			if(ins.input1.isMatrix() && ec.getCacheableData(ins.input1).isFederated() && ins.input2.isMatrix() &&
-				ec.getCacheableData(ins.input2).isFederated()) {
-				fedinst = AggregateTernaryFEDInstruction.parseInstruction(ins);
-			}
-		}
+//		else if(inst instanceof AggregateTernarySPInstruction){
+//			AggregateTernarySPInstruction ins = (AggregateTernarySPInstruction) inst;
+//			if(ins.input1.isMatrix() && ec.getCacheableData(ins.input1).isFederated() && ins.input2.isMatrix() &&
+//				ec.getCacheableData(ins.input2).isFederated()) {
+//				fedinst = AggregateTernaryFEDInstruction.parseInstruction(ins);
+//			}
+//		}
 		else if(inst instanceof CtableSPInstruction) {
 			CtableSPInstruction cinst = (CtableSPInstruction) inst;
 			if(inst.getOpcode().equalsIgnoreCase("ctable")

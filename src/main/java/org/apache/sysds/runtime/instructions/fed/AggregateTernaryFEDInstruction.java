@@ -42,31 +42,31 @@ import org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator;
 public class AggregateTernaryFEDInstruction extends FEDInstruction {
 	// private static final Log LOG = LogFactory.getLog(AggregateTernaryFEDInstruction.class.getName());
 // FIXME
-	public final AggregateTernaryCPInstruction _insCP;
-	public final AggregateTernarySPInstruction _insSPARK;
-	public final Instruction _ins;
+	public final AggregateTernaryCPInstruction _ins;
+//	public final AggregateTernarySPInstruction _insSPARK;
+//	public final Instruction _ins;
 
 	protected AggregateTernaryFEDInstruction(AggregateTernaryCPInstruction ins) {
 		super(FEDType.AggregateTernary, ins.getOperator(), ins.getOpcode(), ins.getInstructionString());
-		_insCP = ins;
-		_insSPARK = null;
-		_ins = _insCP;
+		_ins = ins;
+//		_insSPARK = null;
+//		_ins = _insCP;
 	}
 
-	protected AggregateTernaryFEDInstruction(AggregateTernarySPInstruction ins) {
-		super(FEDType.AggregateTernary, ins.getOperator(), ins.getOpcode(), ins.getInstructionString());
-		_insSPARK = ins;
-		_insCP = null;
-		_ins = _insSPARK;
-	}
+//	protected AggregateTernaryFEDInstruction(AggregateTernarySPInstruction ins) {
+//		super(FEDType.AggregateTernary, ins.getOperator(), ins.getOpcode(), ins.getInstructionString());
+//		_insSPARK = ins;
+//		_insCP = null;
+//		_ins = _insSPARK;
+//	}
 
 	public static AggregateTernaryFEDInstruction parseInstruction(AggregateTernaryCPInstruction ins) {
 		return new AggregateTernaryFEDInstruction(ins);
 	}
 
-	public static AggregateTernaryFEDInstruction parseInstruction(AggregateTernarySPInstruction ins) {
-		return new AggregateTernaryFEDInstruction(ins);
-	}
+//	public static AggregateTernaryFEDInstruction parseInstruction(AggregateTernarySPInstruction ins) {
+//		return new AggregateTernaryFEDInstruction(ins);
+//	}
 
 	@Override
 	public void processInstruction(ExecutionContext ec) {

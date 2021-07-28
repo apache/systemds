@@ -24,6 +24,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.FileFormat;
+import org.apache.sysds.common.Types.OpOp1;
 import org.apache.sysds.common.Types.OpOpData;
 import org.apache.sysds.conf.DMLConfig;
 import org.apache.sysds.lops.Data;
@@ -33,6 +34,7 @@ import org.apache.sysds.lops.Lop.Type;
 import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.lops.LopsException;
 import org.apache.sysds.lops.OutputParameters;
+import org.apache.sysds.lops.UnaryCP;
 import org.apache.sysds.parser.DataExpression;
 import org.apache.sysds.parser.StatementBlock;
 import org.apache.sysds.runtime.DMLRuntimeException;
@@ -181,10 +183,13 @@ public class Dag<N extends Lop>
 			//doTopologicalSortStrictOrder(nodes) :
 			doTopologicalSortTwoLevelOrder(nodes);
 		
+		// add Prefetch lops to the list, if necessary
+		List<Lop> node_pf = addPrefetchLop(node_v);
+		
 		// do greedy grouping of operations
 		ArrayList<Instruction> inst =
 			//doGreedyGrouping(sb, node_v) :
-			doPlainInstructionGen(sb, node_v);
+			doPlainInstructionGen(sb, node_pf);
 		
 		// cleanup instruction (e.g., create packed rmvar instructions)
 		return cleanupInstructions(inst);
@@ -202,6 +207,29 @@ public class Dag<N extends Lop>
 		//NOTE: in contrast to hadoop execution modes, we avoid computing the transitive
 		//closure here to ensure linear time complexity because its unnecessary for CP and Spark
 		return nodes;
+	}
+	
+	private static List<Lop> addPrefetchLop(List<Lop> nodes) {
+		List<Lop> nodesWithPrefetch = new ArrayList<>(nodes);
+		
+		//Find the Spark nodes with all CP outputs
+		for (Lop l : nodes) {
+			if (l.getExecType() == ExecType.SPARK && l.isAllOutputsCP()) {
+				int index = nodesWithPrefetch.indexOf(l);
+				List<Lop> oldOuts = new ArrayList<>(l.getOutputs());
+				for (Lop outCP : oldOuts) {
+					//Construct a prefetch lop that takes this Spark node as a input
+					UnaryCP prefetch = new UnaryCP(l, OpOp1.PREFETCH, outCP.getDataType(), outCP.getValueType(), ExecType.CP);
+					//Replace this Spark node with the Prefetch node in the inputs to the parent CP node
+					prefetch.addOutput(outCP);
+					outCP.replaceInput(l, prefetch);
+					//Place it immediately after the Spark lop in the node list
+					nodesWithPrefetch.add(index+1, prefetch);
+					//TODO: Sort Prefetch nodes by distance from their outputs.
+				}
+			}
+		}
+		return nodesWithPrefetch;
 	}
 	
 	private ArrayList<Instruction> doPlainInstructionGen(StatementBlock sb, List<Lop> nodes)

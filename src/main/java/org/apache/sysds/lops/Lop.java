@@ -272,6 +272,13 @@ public abstract class Lop
 	public void addInput(Lop op) {
 		inputs.add(op);
 	}
+	
+	public void replaceInput(Lop oldInp, Lop newInp) {
+		if (inputs.contains(oldInp)) {
+			int index = inputs.indexOf(oldInp);
+			inputs.set(index, newInp);
+		}
+	}
 
 	/**
 	 * Method to add output to Lop
@@ -564,7 +571,16 @@ public abstract class Lop
 				 || !isDataExecLocation() );
 	}
 	
-	
+	public boolean isAllOutputsCP() {
+		boolean outCP = true;
+		for (Lop out : getOutputs()) {
+			if (out.getExecType() != ExecType.CP) {
+				outCP = false;
+				break;
+			}
+		}
+		return outCP;
+	}
 	
 	/**
 	 * Method to prepare instruction operand with given parameters.

@@ -75,9 +75,13 @@ public class FederatedSumTest extends AutomatedTestBase {
 	}
 
 	@Test
-	@Ignore
 	public void federatedSumSP() {
 		federatedSum(Types.ExecMode.SPARK);
+	}
+
+	@Test
+	public void federatedSumSPToFED() {
+		federatedSum(Types.ExecMode.SPARK, true);
 	}
 
 	public void federatedSum(Types.ExecMode execMode){

@@ -116,6 +116,41 @@ public class FederatedRowAggregateTest extends AutomatedTestBase {
 		runAggregateOperationTest(OpType.MM, ExecMode.SINGLE_NODE);
 	}
 
+	@Test
+	public void testRowSumDenseMatrixSP() {
+		runAggregateOperationTest(OpType.SUM, ExecMode.SPARK);
+	}
+
+	@Test
+	public void testRowMeanDenseMatrixSP() {
+		runAggregateOperationTest(OpType.MEAN, ExecMode.SPARK);
+	}
+
+	@Test
+	public void testRowMaxDenseMatrixSP() {
+		runAggregateOperationTest(OpType.MAX, ExecMode.SPARK);
+	}
+
+	@Test
+	public void testRowMinDenseMatrixSP() {
+		runAggregateOperationTest(OpType.MIN, ExecMode.SPARK);
+	}
+
+	@Test
+	public void testRowVarDenseMatrixSP() {
+		runAggregateOperationTest(OpType.VAR, ExecMode.SPARK);
+	}
+
+	@Test
+	public void testRowProdDenseMatrixSP() {
+		runAggregateOperationTest(OpType.PROD, ExecMode.SPARK);
+	}
+
+	@Test
+	public void testMMDenseMatrixSP() {
+		runAggregateOperationTest(OpType.MM, ExecMode.SPARK);
+	}
+
 	private void runAggregateOperationTest(OpType type, ExecMode execMode) {
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
 		ExecMode platformOld = rtplatform;

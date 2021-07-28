@@ -68,6 +68,9 @@ public class FederatedTriTest extends AutomatedTestBase {
 	@Test
 	public void testTriCP() { runTriTest(ExecMode.SINGLE_NODE); }
 
+	@Test
+	public void testTriSP() { runTriTest(ExecMode.SPARK); }
+
 	private void runTriTest(ExecMode execMode) {
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
 		ExecMode platformOld = rtplatform;

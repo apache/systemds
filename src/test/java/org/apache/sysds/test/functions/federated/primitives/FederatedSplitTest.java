@@ -70,6 +70,11 @@ public class FederatedSplitTest extends AutomatedTestBase {
 		federatedSplit(Types.ExecMode.SINGLE_NODE);
 	}
 
+	@Test
+	public void federatedSplitSP() {
+		federatedSplit(Types.ExecMode.SPARK);
+	}
+
 	public void federatedSplit(Types.ExecMode execMode) {
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
 		Types.ExecMode platformOld = rtplatform;

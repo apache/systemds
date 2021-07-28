@@ -79,6 +79,14 @@ public class FederatedIfelseTest extends AutomatedTestBase {
 		runTernaryTest(ExecMode.SINGLE_NODE, true);
 	}
 
+	@Test
+	public void testIfelseDiffWorkersSP() {
+		runTernaryTest(ExecMode.SPARK, false);
+	}
+
+	@Test
+	public void testIfelseAlignedSP() { runTernaryTest(ExecMode.SPARK, true); }
+
 	private void runTernaryTest(ExecMode execMode, boolean aligned) {
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
 		ExecMode platformOld = rtplatform;

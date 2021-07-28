@@ -75,6 +75,12 @@ public class FederatedMMChainTest extends AutomatedTestBase {
 	public void testMMChainWeightsCP() { runMMChainTest(ExecMode.SINGLE_NODE, TEST_NAME2); }
 	@Test
 	public void testMMChainWeights2CP() { runMMChainTest(ExecMode.SINGLE_NODE, TEST_NAME3); }
+	@Test
+	public void testMMChainSP() { runMMChainTest(ExecMode.SPARK, TEST_NAME1); }
+	@Test
+	public void testMMChainWeightsSP() { runMMChainTest(ExecMode.SPARK, TEST_NAME2); }
+	@Test
+	public void testMMChainWeights2SP() { runMMChainTest(ExecMode.SPARK, TEST_NAME3); }
 
 	private void runMMChainTest(ExecMode execMode, String TEST_NAME) {
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;

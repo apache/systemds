@@ -68,7 +68,7 @@ public class FederatedRdiagTest extends AutomatedTestBase {
 	public void federatedRdiagCP() { federatedRdiag(Types.ExecMode.SINGLE_NODE); }
 
 	@Test
-	@Ignore
+//	@Ignore
 	public void federatedRdiagSP() { federatedRdiag(Types.ExecMode.SPARK); }
 
 	public void federatedRdiag(Types.ExecMode execMode) {

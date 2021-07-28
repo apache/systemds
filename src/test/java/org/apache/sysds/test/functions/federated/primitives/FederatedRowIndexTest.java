@@ -71,6 +71,11 @@ public class FederatedRowIndexTest extends AutomatedTestBase {
 		runRowIndexTest(ExecMode.SINGLE_NODE);
 	}
 
+	@Test
+	public void testRowIndexSP() {
+		runRowIndexTest(ExecMode.SPARK);
+	}
+
 	private void runRowIndexTest(ExecMode execMode) {
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
 		ExecMode platformOld = rtplatform;

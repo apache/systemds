@@ -76,7 +76,7 @@ public class FederatedReshapeTest extends AutomatedTestBase {
 	}
 
 	@Test
-	@Ignore
+//	@Ignore
 	public void federatedReshapeSP() {
 		federatedReshape(Types.ExecMode.SPARK);
 	}

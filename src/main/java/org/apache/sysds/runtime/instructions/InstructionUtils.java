@@ -1115,7 +1115,8 @@ public class InstructionUtils
 	}
 
 	private static String replaceExecTypeWithCP(String inst){
-		return inst.replace(Types.ExecType.SPARK.name(), Types.ExecType.CP.name())
+		return inst
+//			.replace(Types.ExecType.SPARK.name(), Types.ExecType.CP.name())
 			.replace(Types.ExecType.FED.name(), Types.ExecType.CP.name());
 	}
 

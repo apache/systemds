@@ -96,6 +96,16 @@ public class FederatedFullCumulativeTest extends AutomatedTestBase {
 		runCumOperationTest(OpType.MIN, ExecType.CP);
 	}
 
+	@Test
+	public void testMaxDenseMatrixSP() {
+		runCumOperationTest(OpType.MAX, ExecType.SPARK);
+	}
+
+	@Test
+	public void testMinDenseMatrixSP() {
+		runCumOperationTest(OpType.MIN, ExecType.SPARK);
+	}
+
 // FIXME offset handling has some remaining issues
 //	@Test
 //	public void testSumprodDenseMatrixCP() {

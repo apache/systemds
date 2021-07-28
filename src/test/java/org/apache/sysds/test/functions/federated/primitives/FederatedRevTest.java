@@ -72,6 +72,11 @@ public class FederatedRevTest extends AutomatedTestBase {
 		runRevTest(ExecMode.SINGLE_NODE);
 	}
 
+	@Test
+	public void testRevSP() {
+		runRevTest(ExecMode.SPARK);
+	}
+
 	private void runRevTest(ExecMode execMode) {
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
 		ExecMode platformOld = rtplatform;

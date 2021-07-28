@@ -74,11 +74,14 @@ public class FederatedMultiplyTest extends AutomatedTestBase {
 		federatedMultiply(Types.ExecMode.SINGLE_NODE, true);
 	}
 
-	@Test 
-	@Ignore
+	@Test
 	public void federatedMultiplySP() {
-		// TODO Fix me Spark execution error
 		federatedMultiply(Types.ExecMode.SPARK);
+	}
+
+	@Test
+	public void federatedMultiplySPCompileToFED() {
+		federatedMultiply(Types.ExecMode.SPARK, true);
 	}
 
 	private void federatedMultiply(Types.ExecMode execMode){

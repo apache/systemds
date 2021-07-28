@@ -22,6 +22,7 @@ package org.apache.sysds.runtime.instructions.fed;
 import java.util.concurrent.Future;
 
 import org.apache.sysds.common.Types.ExecType;
+import org.apache.sysds.hops.AggBinaryOp;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
@@ -73,8 +74,9 @@ public class AggregateUnaryFEDInstruction extends UnaryFEDInstruction {
 		else
 			aggun = InstructionUtils.parseBasicAggregateUnaryOperator(opcode);
 
-		if(InstructionUtils.getExecType(str) == ExecType.SPARK)
-			str = InstructionUtils.replaceOperand(str, 4, "-1");
+//		FIXME why replace -1
+//		if(InstructionUtils.getExecType(str) == ExecType.SPARK)
+//			str = InstructionUtils.replaceOperand(str, 4, AggBinaryOp.SparkAggType.NONE.name());
 
 		FederatedOutput fedOut = null;
 		if ( parts.length == 5 && !parts[4].equals("uarimin") && !parts[4].equals("uarimax") )

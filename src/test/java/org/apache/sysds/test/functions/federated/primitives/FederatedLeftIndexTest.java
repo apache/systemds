@@ -101,6 +101,14 @@ public class FederatedLeftIndexTest extends AutomatedTestBase {
 		runAggregateOperationTest(DataType.FRAME, ExecMode.SINGLE_NODE);
 	}
 
+	@Test
+	public void testLeftIndexFullDenseMatrixSP() { runAggregateOperationTest(DataType.MATRIX, ExecMode.SPARK); }
+
+	@Test
+	public void testLeftIndexFullDenseFrameSP() {
+		runAggregateOperationTest(DataType.FRAME, ExecMode.SPARK);
+	}
+
 	private void runAggregateOperationTest(DataType dataType, ExecMode execMode) {
 		setExecMode(execMode);
 

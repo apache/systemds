@@ -80,7 +80,7 @@ public class FederatedRCBindTest extends AutomatedTestBase {
 	}
 
 	@Test
-	@Ignore
+//	@Ignore
 	public void federatedRCBindSP() {
 		federatedRCBind(Types.ExecMode.SPARK);
 	}

@@ -279,12 +279,13 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 			long dataID2 = (long) request.getParam(3);
 			long dataID3 = (long) request.getParam(4);
 
-			//put into map existing and broadcasted variables
+			// put into map existing and broadcasted variables
 			_federatedWorker._broadcastSet.add(Triple.of(request.getID(), type, dataID));
 			FederationMap.FType type2 = (FederationMap.FType) request.getParam(5);
 			_federatedWorker._broadcastSet.add(Triple.of(dataID2, type2, dataID3));
-			FederationUtils._broadcastMap.values().stream().filter(e -> !e.getRight() && e.getLeft() == request.getID())
-				.forEach(e -> e = Triple.of(e.getLeft(), e.getMiddle(), true));
+
+			// remove invalid broadcasts
+			FederationUtils.cleanBroadcasts(request.getID());
 		}
 		if(ec.containsVariable(varname)) {
 			return new FederatedResponse(ResponseType.ERROR, "Variable " + request.getID() + " already existing.");

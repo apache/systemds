@@ -23,9 +23,11 @@ import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Future;
 
 import org.apache.commons.lang3.tuple.Pair;
@@ -60,7 +62,7 @@ import org.apache.sysds.runtime.matrix.operators.SimpleOperator;
 public class FederationUtils {
 	protected static Logger log = Logger.getLogger(FederationUtils.class);
 	private static final IDSequence _idSeq = new IDSequence();
-	public static Map<Triple<Long, FederationMap.FType, InetSocketAddress>, Triple<Long, Boolean, Boolean>> _broadcastMap = new HashMap<>();
+	public static Map<Triple<Long, FederationMap.FType, InetSocketAddress>, Triple<Long, Boolean, Boolean>> _broadcastMap = new ConcurrentHashMap<>();
 
 	public static void resetFedDataID() {
 		_idSeq.reset();
@@ -68,6 +70,20 @@ public class FederationUtils {
 
 	public static long getNextFedDataID() {
 		return _idSeq.getNextID();
+	}
+
+	public static void cleanBroadcasts(long id) {
+		Iterator<Map.Entry<Triple<Long, FederationMap.FType, InetSocketAddress>, Triple<Long, Boolean, Boolean>>> itr = FederationUtils._broadcastMap.entrySet().iterator();
+		while(itr.hasNext()) {
+			Map.Entry<Triple<Long, FederationMap.FType, InetSocketAddress>, Triple<Long, Boolean, Boolean>> entry = itr.next();
+			if(!entry.getValue().getRight())
+			{
+				if(entry.getValue().getLeft() == id)
+					entry.setValue(Triple.of(entry.getValue().getLeft(), entry.getValue().getMiddle(), true));
+				else
+					itr.remove();
+			}
+		}
 	}
 
 	//TODO remove rmFedOutFlag, once all federated instructions have this flag, then unconditionally remove

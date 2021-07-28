@@ -26,6 +26,7 @@ import org.apache.sysds.runtime.matrix.data.MatrixValue;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.HashMap;
@@ -46,6 +47,11 @@ public class AutoDiffTest extends AutomatedTestBase
 		runAutoDiffTest(TEST_NAME1, true, Types.ExecType.CP);
 	}
 
+	@Ignore
+	public void testAutoDiffSP() {
+		runAutoDiffTest(TEST_NAME1, true, Types.ExecType.SPARK);
+	}
+
 
 	private void runAutoDiffTest(String testname, boolean defaultProb, Types.ExecType instType)
 	{
@@ -63,7 +69,6 @@ public class AutoDiffTest extends AutomatedTestBase
 			HashMap<MatrixValue.CellIndex, Double> dml_dX = readDMLMatrixFromOutputDir("dX");
 			HashMap<MatrixValue.CellIndex, Double> autoDiff_dX = readDMLMatrixFromOutputDir("ad_dX");
 			TestUtils.compareMatrices(dml_dX, autoDiff_dX, 1e-6, "Stat-DML", "Stat-AutoDiff");
-
 		}
 		finally {
 			rtplatform = platformOld;

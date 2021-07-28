@@ -258,16 +258,17 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 
 	private void validateAutoDiff(DataIdentifier output, boolean conditional) {
 		//validate data / metadata (recode maps)
-		checkDataType("lineage", LINEAGE_TRACE, DataType.SCALAR, conditional);
+		checkDataType("lineage", LINEAGE_TRACE, DataType.LIST, conditional);
 
 		//validate specification
-		checkDataValueType(false, "lineage", LINEAGE_TRACE, DataType.SCALAR, ValueType.STRING, conditional);
+		checkDataValueType(false, "lineage", LINEAGE_TRACE, DataType.LIST, ValueType.UNKNOWN, conditional);
 		HashMap<String, Expression> varParams = getVarParams();
-
 		// set output characteristics
 		output.setDataType(DataType.LIST);
 		output.setValueType(ValueType.UNKNOWN);
+		// TODO dimension should be set to -1 but could not set due to lineage parsing error in Spark contetx
 		output.setDimensions(varParams.size(), 1);
+		// output.setDimensions(-1, 1);
 		output.setBlocksize(-1);
 	}
 

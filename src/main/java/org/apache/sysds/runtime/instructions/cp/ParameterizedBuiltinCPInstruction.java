@@ -31,6 +31,7 @@ import org.apache.sysds.parser.Statement;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.*;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
+import org.apache.sysds.runtime.controlprogram.context.ExecutionContextFactory;
 import org.apache.sysds.runtime.data.TensorBlock;
 import org.apache.sysds.runtime.functionobjects.ParameterizedBuiltin;
 import org.apache.sysds.runtime.functionobjects.ValueFunction;
@@ -172,14 +173,10 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction 
 		}
 		else if(opcode.equalsIgnoreCase("autoDiff"))
 		{
-			String name = params.get("name");
-			ListObject diffs = null;
-			if(name.equals("affine"))
-				diffs = AutoDiff.getAffineBackward(params, ec);
-
+			ArrayList<Data> forwardLayers = (ArrayList)ec.getListObject(params.get("name")).getData();
+			ArrayList<Data> lineage = (ArrayList)ec.getListObject(params.get("lineage")).getData();
+			ListObject diffs = AutoDiff.getBackward(forwardLayers, lineage, ExecutionContextFactory.createContext());
 			ec.setVariable(output.getName(), diffs);
-			ec.releaseMatrixInput(params.get("X"));
-			ec.releaseMatrixInput(params.get("dout"));
 		}
 		else if(opcode.equalsIgnoreCase("groupedagg")) {
 			// acquire locks

@@ -40,7 +40,8 @@ for i in 0 1; do
 
    #predict
    tstart=$(date +%s.%N)
-   systemds -f scripts/algorithms/m-svm-predict.dml \
+   #systemds -f scripts/algorithms/m-svm-predict.dml \
+   systemds -f ${PERFTESTPATH}/scripts/m-svm-predict.dml \
       -config ${PERFTESTPATH}/conf/SystemDS-config.xml \
       -stats \
       -nvargs X=$1_test Y=$2_test icpt=$i model=${BASE}/w fmt="csv"

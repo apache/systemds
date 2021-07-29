@@ -29,6 +29,8 @@ BASE=$4
 for i in 0 1; do
    #training
    tstart=$(date +%s.%N)
+
+   # /algorithms/l2-svm.dml already calls a built-in function for the l2 svm.
    systemds -f scripts/algorithms/l2-svm.dml \
       -config ${PERFTESTPATH}/conf/SystemDS-config.xml \
       -stats \
@@ -39,10 +41,11 @@ for i in 0 1; do
 
    #predict
    tstart=$(date +%s.%N)
-   systemds -f scripts/algorithms/l2-svm-predict.dml \
+   #systemds -f scripts/algorithms/l2-svm-predict.dml \
+   systemds -f ${PERFTESTPATH}/scripts/l2-svm-predict.dml \
       -config ${PERFTESTPATH}/conf/SystemDS-config.xml \
       -stats \
-      -nvargs X=$1_test Y=$2_test icpt=$i model=${BASE}/b fmt="csv"
+      -nvargs X=$1_test Y=$2_test icpt=$i model=${BASE}/b fmt="csv" scores=${BASE}/scores
 
    tpredict=$(echo "$(date +%s.%N) - $tstart" | bc)
    echo "L2SVM predict ict="$i" on "$1": "$tpredict >> ${PERFTESTPATH}/results/times.txt

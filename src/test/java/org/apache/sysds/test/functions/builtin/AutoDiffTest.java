@@ -34,17 +34,24 @@ import java.util.HashMap;
 public class AutoDiffTest extends AutomatedTestBase
 {
 	private final static String TEST_NAME1 = "autoDiff";
+	private final static String TEST_NAME2 = "autoDiff2";
 	private final static String TEST_DIR = "functions/builtin/";
 	private static final String TEST_CLASS_DIR = TEST_DIR + AutoDiffTest.class.getSimpleName() + "/";
 
 	@Override
 	public void setUp() {
 		addTestConfiguration(TEST_NAME1,new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1,new String[]{"B"}));
+		addTestConfiguration(TEST_NAME2,new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1,new String[]{"B"}));
 	}
 
 	@Test
-	public void testAutoDiffCP() {
+	public void testAutoDiffCP1() {
 		runAutoDiffTest(TEST_NAME1, true, Types.ExecType.CP);
+	}
+
+	@Test
+	public void testAutoDiffCP2() {
+		runAutoDiffTest(TEST_NAME2, true, Types.ExecType.CP);
 	}
 
 	@Ignore

@@ -173,9 +173,17 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction 
 		}
 		else if(opcode.equalsIgnoreCase("autoDiff"))
 		{
-			ArrayList<Data> forwardLayers = (ArrayList)ec.getListObject(params.get("name")).getData();
-			ArrayList<Data> lineage = (ArrayList)ec.getListObject(params.get("lineage")).getData();
-			ListObject diffs = AutoDiff.getBackward(forwardLayers, lineage, ExecutionContextFactory.createContext());
+			ListObject diffs = null;
+			ArrayList<Data> lineage = (ArrayList) ec.getListObject(params.get("lineage")).getData();
+			if(params.get("name") != null) { // case for named layers
+				ArrayList<Data> forwardLayers = (ArrayList) ec.getListObject(params.get("name")).getData();
+				diffs = AutoDiff.getBackward(forwardLayers, lineage, ExecutionContextFactory.createContext());
+			}
+			else // case for differentiation by parsing the lineage instructions and creating the HOPs for derivations
+			{
+				MatrixObject mo = ec.getMatrixObject(params.get("output"));
+				diffs = AutoDiff.getBackward(mo, lineage, ExecutionContextFactory.createContext());
+			}
 			ec.setVariable(output.getName(), diffs);
 		}
 		else if(opcode.equalsIgnoreCase("groupedagg")) {

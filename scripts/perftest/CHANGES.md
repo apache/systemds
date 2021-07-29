@@ -21,7 +21,6 @@ Most of the new DML scripts were copied from scripts/algorithms to scripts/perft
 - perftest/runNaiveBayes.sh -> perftest/scripts/naive-bayes.dml
 - perftest/runNaiveBayes.sh -> perftest/scripts/naive-bayes-predict.dml
 - perftest/runMultiLogReg.sh -> perftest/scripts/MultiLogReg.dml
-- perftest/runMSVM.sh -> perftest/scripts/m-svm.dml
 - perftest/runLinearRegCG.sh -> perftest/scripts/LinearRegCG.dml
 - perftest/runLinearRegDS.sh -> perftest/scripts/LinearRegDS.dml
 - perftest/runGLM_poisson_log.sh -> perftest/scripts/GLM.dml
@@ -32,8 +31,6 @@ Most of the new DML scripts were copied from scripts/algorithms to scripts/perft
 ### Bash scripts still calling old DML scripts, which fully implement algorithms
 - perftest/runMultiLogReg.sh -> algorithms/GLM-predict.dml
 - perftest/runL2SVM.sh -> algorithms/l2-svm-predict.dml
-- perftest/runMSVM.sh -> algorithms/m-svm-predict.dml
-- perftest/runMultiLogReg.sh -> algorithms/GLM-predict.dml
 - perftest/runMSVM.sh -> algorithms/m-svm-predict.dml
 - perftest/runLinearRegCG.sh -> algorithms/GLM-predict.dml
 - perftest/runLinearRegDS.sh -> algorithms/GLM-predict.dml

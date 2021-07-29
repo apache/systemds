@@ -1,0 +1,118 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+# THIS SCRIPT SOLVES GLM REGRESSION USING NEWTON/FISHER SCORING WITH TRUST REGIONS
+# Script makes use of a built-in function, see documentation for more information:
+# https://apache.github.io/systemds/site/builtins-reference#glm-function
+#
+# INPUT PARAMETERS:
+# ---------------------------------------------------------------------------------------------
+# NAME  TYPE   DEFAULT  MEANING
+# ---------------------------------------------------------------------------------------------
+# X     String  ---     Location to read the matrix X of feature vectors
+# Y     String  ---     Location to read response matrix Y with either 1 or 2 columns:
+#                       if dfam = 2, Y is 1-column Bernoulli or 2-column Binomial (#pos, #neg)
+# B     String  ---     Location to store estimated regression parameters (the betas)
+# fmt   String "text"   The betas matrix output format, such as "text" or "csv"
+# dfam  Int     1       Distribution family code: 1 = Power, 2 = Binomial
+# vpow  Double  0.0     Power for Variance defined as (mean)^power (ignored if dfam != 1):
+#                       0.0 = Gaussian, 1.0 = Poisson, 2.0 = Gamma, 3.0 = Inverse Gaussian
+# link  Int     0       Link function code: 0 = canonical (depends on distribution),
+#                       1 = Power, 2 = Logit, 3 = Probit, 4 = Cloglog, 5 = Cauchit
+# lpow  Double  1.0     Power for Link function defined as (mean)^power (ignored if link != 1):
+#                       -2.0 = 1/mu^2, -1.0 = reciprocal, 0.0 = log, 0.5 = sqrt, 1.0 = identity
+# yneg  Double  0.0     Response value for Bernoulli "No" label, usually 0.0 or -1.0
+# icpt  Int     0       Intercept presence, X columns shifting and rescaling:
+#                       0 = no intercept, no shifting, no rescaling;
+#                       1 = add intercept, but neither shift nor rescale X;
+#                       2 = add intercept, shift & rescale X columns to mean = 0, variance = 1
+# reg   Double  0.0     Regularization parameter (lambda) for L2 regularization
+# tol   Double 0.000001 Tolerance (epsilon)
+# disp  Double  0.0     (Over-)dispersion value, or 0.0 to estimate it from data
+# moi   Int     200     Maximum number of outer (Newton / Fisher Scoring) iterations
+# mii   Int     0       Maximum number of inner (Conjugate Gradient) iterations, 0 = no maximum
+# ---------------------------------------------------------------------------------------------
+# OUTPUT: Matrix beta, whose size depends on icpt:
+#     icpt=0: ncol(X) x 1;  icpt=1: (ncol(X) + 1) x 1;  icpt=2: (ncol(X) + 1) x 2
+#
+# ---------------------------------------------------------------------------------------------
+# Example with distribution = "Binomial.logit":
+# systemds -f GLM_HOME/GLM.dml -nvargs dfam=2 link=2 yneg=-1.0 icpt=2 reg=0.001
+#     tol=0.00000001 disp=1.0 moi=100 mii=10 X=INPUT_DIR/X Y=INPUT_DIR/Y B=OUTPUT_DIR/betas 
+#     fmt=csv O=OUTPUT_DIR/stats Log=OUTPUT_DIR/log
+#
+# SOME OF THE SUPPORTED GLM DISTRIBUTION FAMILIES
+# AND LINK FUNCTIONS:
+# -----------------------------------------------
+# INPUT PARAMETERS:    MEANING:            Cano-
+# dfam vpow link lpow  Distribution.link   nical?
+# -----------------------------------------------
+#  1   0.0   1  -1.0   Gaussian.inverse
+#  1   0.0   1   0.0   Gaussian.log
+#  1   0.0   1   1.0   Gaussian.id          Yes
+#  1   1.0   1   0.0   Poisson.log          Yes
+#  1   1.0   1   0.5   Poisson.sqrt
+#  1   1.0   1   1.0   Poisson.id
+#  1   2.0   1  -1.0   Gamma.inverse        Yes
+#  1   2.0   1   0.0   Gamma.log
+#  1   2.0   1   1.0   Gamma.id
+#  1   3.0   1  -2.0   InvGaussian.1/mu^2   Yes
+#  1   3.0   1  -1.0   InvGaussian.inverse
+#  1   3.0   1   0.0   InvGaussian.log
+#  1   3.0   1   1.0   InvGaussian.id
+#  1    *    1    *    AnyVariance.AnyLink
+# -----------------------------------------------
+#  2    *    1   0.0   Binomial.log
+#  2    *    1   0.5   Binomial.sqrt
+#  2    *    2    *    Binomial.logit       Yes
+#  2    *    3    *    Binomial.probit
+#  2    *    4    *    Binomial.cloglog
+#  2    *    5    *    Binomial.cauchit
+# -----------------------------------------------
+
+X = read($X);
+Y = read($Y);
+fileB = $B;
+fmtB = ifdef ($fmt, "text");
+
+distribution_type = ifdef ($dfam, 1);                # $dfam = 1;
+variance_as_power_of_the_mean = ifdef ($vpow, 0.0);  # $vpow = 0.0;
+link_type = ifdef ($link, 0);                        # $link = 0;
+link_as_power_of_the_mean = ifdef ($lpow, 1.0);      # $lpow = 1.0;
+bernoulli_No_label = ifdef ($yneg, 0.0);             # $yneg = 0.0;
+intercept_status = ifdef ($icpt, 0);                 # $icpt = 0;
+dispersion = ifdef ($disp, 0.0);                     # $disp = 0.0;
+regularization = ifdef ($reg, 0.0);                  # $reg  = 0.0;
+eps = ifdef ($tol, 0.000001);                        # $tol  = 0.000001;
+max_iteration_IRLS = ifdef ($moi, 200);              # $moi  = 200;
+max_iteration_CG = ifdef ($mii, 0);                  # $mii  = 0;
+
+variance_as_power_of_the_mean = as.double (variance_as_power_of_the_mean);
+link_as_power_of_the_mean = as.double (link_as_power_of_the_mean);
+bernoulli_No_label = as.double (bernoulli_No_label);
+dispersion = as.double (dispersion);
+eps = as.double (eps);
+
+beta = glm(X=X,Y=Y, dfam=distribution_type, vpow=variance_as_power_of_the_mean,
+        link=link_type, lpow=link_as_power_of_the_mean, yneg=bernoulli_No_label,
+        icpt=intercept_status, reg=regularization, tol=eps, moi=max_iteration_IRLS, mii=max_iteration_CG)
+
+write (beta, fileB, format=fmtB);

@@ -19,9 +19,27 @@
 #
 #-------------------------------------------------------------
 
-x = rand(rows=$1, cols=$2, min= 0.0, max= 1.0, sparsity=$4, seed= 12)
-v = rand(rows=ncol(x), cols=$3, min=0.0, max=1.0, sparsity=$5, seed= 13)
-for(i in 1:$6) {
-    res = x %*% v
-}
-print(sum(res))
+# Implements multinomial naive Bayes classifier with Laplace correction
+# See documentation for more information:
+# https://apache.github.io/systemds/site/builtins-reference#naivebayes-function
+#
+# Example Usage:
+# systemds -f naive-bayes.dml -nvargs X=<Data> Y=<labels> laplace=<Laplace Correction> prior=<Model file1> conditionals=<Model file2> accuracy=<accuracy file> fmt="text"
+
+
+# defaults
+laplaceCorrection = ifdef($laplace, 1)
+fmt = ifdef($fmt, "text")
+
+# reading input args
+D = read($X)
+C = read($Y)
+
+[prior, classConditionals] = naiveBayes(D=D, C=C, laplace=laplaceCorrection, verbose = TRUE)
+
+#extraModelParams = as.matrix(ncol(D))
+#prior = rbind(prior, extraModelParams)
+
+# write out the model
+write(prior, $prior, format=fmt);
+write(classConditionals, $conditionals, format=fmt);

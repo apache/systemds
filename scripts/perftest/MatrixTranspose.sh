@@ -26,7 +26,8 @@ export SYSDS_QUIET=1
 export SYSTEMDS_ROOT=$(pwd)
 export PATH=$SYSTEMDS_ROOT/bin:$PATH
 
-export SYSTEMDS_STANDALONE_OPTS="-Xmx20g -Xms20g -Xmn2000m"
+# export SYSTEMDS_STANDALONE_OPTS="-Xmx20g -Xms20g -Xmn2000m"
+export SYSTEMDS_STANDALONE_OPTS="-Xmx10g -Xms10g -Xmn2000m"
 
 mkdir -p 'scripts/perftest/results'
 

@@ -20,11 +20,57 @@
 #
 #-------------------------------------------------------------
 
+# if [ "$1" == "" -o "$2" == "" ]; then  echo "Usage: $0 <hdfsDataDir> <MR | SPARK | ECHO>   e.g. $0 perftest SPARK" ; exit 1 ; fi
+# if [ "$1" == "" ]; then echo "Usage: $0 <hdfsDataDir>  e.g. $0 perftest" ; exit 1 ; fi
+TEMPFOLDER=$1
+if [ "$TEMPFOLDER" == "" ]; then TEMPFOLDER=temp ; fi
 
-# Micro Benchmarks:
+# Set properties
+export LOG4JPROP='scripts/perftest/conf/log4j-off.properties'
+export SYSDS_QUIET=1
+#export SYSTEMDS_ROOT=$(pwd)
+#export PATH=$SYSTEMDS_ROOT/bin:$PATH
 
-./scripts/perftest/MatrixMult.sh
-./scripts/perftest/MatrixTranspose.sh
+# Import MKL
+if [ -d ~/intel ] && [ -d ~/intel/bin ] && [ -f ~/intel/bin/compilervars.sh ]; then
+    . ~/intel/bin/compilervars.sh intel64
+elif [ -d ~/intel ] && [ -d ~/intel/oneapi ] && [ -f ~/intel/oneapi/setvars.sh ]; then
+	# For the new intel oneAPI
+    . ~/intel/oneapi/setvars.sh intel64
+else
+    . /opt/intel/bin/compilervars.sh intel64
+fi
 
-# Algorithms Benchmarks:
+PERFTESTPATH=scripts/perftest
+
+### Micro Benchmarks:
+
+./${PERFTESTPATH}/MatrixMult.sh
+./${PERFTESTPATH}/MatrixTranspose.sh
+
+
+### Algorithms Benchmarks:
+
+# init time measurement
+if [ ! -d ${PERFTESTPATH}/results ]; then mkdir -p ${PERFTESTPATH}/results ; fi
+date >> ${PERFTESTPATH}/results/times.txt
+
+./${PERFTESTPATH}/runAllBinomial.sh $TEMPFOLDER
+./${PERFTESTPATH}/runAllMultinomial.sh $TEMPFOLDER
+./${PERFTESTPATH}/runAllRegression.sh $TEMPFOLDER
+
+## TODO Refactor the following performance tests
+#./${PERFTESTPATH}/runAllStats.sh $TEMPFOLDER
+#./${PERFTESTPATH}/runAllClustering.sh $TEMPFOLDER
+
+# add stepwise Linear 
+# add stepwise GLM
+#./${PERFTESTPATH}/runAllTrees $TEMPFOLDER
+# add randomForest
+#./${PERFTESTPATH}/runAllDimensionReduction $TEMPFOLDER
+#./${PERFTESTPATH}/runAllMatrixFactorization $TEMPFOLDER
+#ALS
+#./${PERFTESTPATH}/runAllSurvival $TEMPFOLDER
+#KaplanMeier
+#Cox
 

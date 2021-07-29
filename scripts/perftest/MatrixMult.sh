@@ -23,6 +23,9 @@
 # Import MKL
 if [ -d ~/intel ] && [ -d ~/intel/bin ] && [ -f ~/intel/bin/compilervars.sh ]; then
     . ~/intel/bin/compilervars.sh intel64
+elif [ -d ~/intel ] && [ -d ~/intel/oneapi ] && [ -f ~/intel/oneapi/setvars.sh ]; then
+	# For the new intel oneAPI
+    . ~/intel/oneapi/setvars.sh intel64
 else
     . /opt/intel/bin/compilervars.sh intel64
 fi

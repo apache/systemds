@@ -1,0 +1,61 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+# THIS SCRIPT SOLVES LINEAR REGRESSION USING A DIRECT SOLVER FOR (X^T X + lambda) beta = X^T y
+# It uses a built-in function, see documentation for more information:
+# https://apache.github.io/systemds/site/builtins-reference#lmds-function
+#
+# INPUT PARAMETERS:
+# --------------------------------------------------------------------------------------------
+# NAME  TYPE   DEFAULT  MEANING
+# --------------------------------------------------------------------------------------------
+# X     String  ---     Location (on HDFS) to read the matrix X of feature vectors
+# Y     String  ---     Location (on HDFS) to read the 1-column matrix Y of response values
+# B     String  ---     Location to store estimated regression parameters (the betas)
+# icpt  Int      0      Intercept presence, shifting and rescaling the columns of X:
+#                       0 = no intercept, no shifting, no rescaling;
+#                       1 = add intercept, but neither shift nor rescale X;
+#                       2 = add intercept, shift & rescale X columns to mean = 0, variance = 1
+# reg   Double 0.000001 Regularization constant (lambda) for L2-regularization; set to nonzero
+#                       for highly dependend/sparse/numerous features
+# fmt   String "text"   Matrix output format for B (the betas) only, usually "text" or "csv"
+# --------------------------------------------------------------------------------------------
+# OUTPUT: 1-column matrix of regression parameters (the betas)
+#
+# -------------------------------------------------------------------------------------
+#
+# Script invokation example:
+# systemds -f LinearRegDS.dml -nvargs X=INPUT_DIR/X Y=INPUT_DIR/Y B=OUTPUT_DIR/B icpt=2 reg=1.0 fmt=csv
+
+fileX = $X;
+fileY = $Y;
+fileB = $B;
+fmtB  = ifdef ($fmt, "text");
+
+intercept_status = ifdef ($icpt, 0);     # $icpt=0;
+regularization = ifdef ($reg, 0.000001); # $reg=0.000001;
+
+X = read (fileX);
+y = read (fileY);
+
+beta_out = lmDS(X = X, y = y, icpt = intercept_status, reg = regularization, verbose = TRUE)
+
+write (beta_out, fileB, format=fmtB);

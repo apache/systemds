@@ -1,0 +1,66 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+# Calls the SystemDS built-in function to solve a Multinomial Logistic Regression problem.
+# For further information, see:
+# https://apache.github.io/systemds/site/builtins-reference#multilogreg-function
+
+# INPUT PARAMETERS:
+# --------------------------------------------------------------------------------------------
+# NAME  TYPE   DEFAULT  MEANING
+# --------------------------------------------------------------------------------------------
+# X     String  ---     Location to read the matrix of feature vectors
+# Y     String  ---     Location to read the matrix with category labels
+# B     String  ---     Location to store estimated regression parameters (the betas)
+# icpt  Int      0      Intercept presence, shifting and rescaling X columns:
+#                       0 = no intercept, no shifting, no rescaling;
+#                       1 = add intercept, but neither shift nor rescale X;
+#                       2 = add intercept, shift & rescale X columns to mean = 0, variance = 1
+# reg   Double  0.0     regularization parameter (lambda = 1/C); intercept is not regularized
+# tol   Double 0.000001 tolerance ("epsilon")
+# moi   Int     100     max. number of outer (Newton) iterations
+# mii   Int      0      max. number of inner (conjugate gradient) iterations, 0 = no max
+# fmt   String "text"   Matrix output format, usually "text" or "csv" (for matrices only)
+# --------------------------------------------------------------------------------------------
+# The largest label represents the baseline category; if label -1 or 0 is present, then it is
+# the baseline label (and it is converted to the largest label).
+#
+# Script invocation example:
+# systemds -f MultiLogReg.dml -nvargs icpt=2 reg=1.0 tol=0.000001 moi=100 mii=20
+#     X=INPUT_DIR/X123 Y=INPUT_DIR/Y123 B=OUTPUT_DIR/B123 fmt=csv
+
+fileX = $X;
+fileY = $Y;
+fileB = $B;
+fmtB = ifdef ($fmt, "text");
+
+intercept_status = ifdef ($icpt, 0); # $icpt = 0;
+regularization = ifdef ($reg, 0.0);  # $reg  = 0.0;
+tol = ifdef ($tol, 0.000001);        # $tol  = 0.000001;
+maxiter = ifdef ($moi, 100);         # $moi  = 100;
+maxinneriter = ifdef ($mii, 0);      # $mii  = 0;
+
+tol = as.double ($tol);
+X = read (fileX);
+Y_vec = read (fileY);
+
+B_out = multiLogReg(X = X, Y = Y_vec, icpt = intercept_status, tol = tol, reg = regularization, maxi = maxiter, maxii = maxinneriter, verbose = TRUE)
+write (B_out, fileB, format=fmtB);

@@ -55,6 +55,7 @@ public class PartialAggregate extends Lop
 	public PartialAggregate( Lop input, AggOp op, Direction direct, DataType dt, ValueType vt, SparkAggType aggtype, ExecType et)
 	{
 		super(Lop.Type.PartialAggregate, dt, vt);
+		et = ExecType.CP; //For testing. TODO: remove
 		init(input, op, direct, dt, vt, et);
 		_aggtype = aggtype;
 	}

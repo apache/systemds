@@ -44,7 +44,7 @@ public class AlgorithmAutoEncoder extends AutomatedTestBase
 	
 	private final static double sparsity1 = 0.7; //dense
 	private final static double sparsity2 = 0.1; //sparse
-	private final static double eps       = 1e-5;
+	private final static double eps       = 3e-4;
 	
 	private final static int H1 = 500;
 	private final static int H2 = 2;

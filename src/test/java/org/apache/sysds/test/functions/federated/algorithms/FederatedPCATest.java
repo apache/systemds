@@ -131,7 +131,6 @@ public class FederatedPCATest extends AutomatedTestBase {
 
 		// check for federated operations
 		Assert.assertTrue(heavyHittersContainsString("fed_ba+*"));
-		Assert.assertTrue(heavyHittersContainsString("fed_uack+"));
 		Assert.assertTrue(heavyHittersContainsString("fed_tsmm"));
 		if(scaleAndShift) {
 			Assert.assertTrue(heavyHittersContainsString("fed_uacsqk+"));

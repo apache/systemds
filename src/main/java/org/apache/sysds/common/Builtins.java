@@ -248,6 +248,7 @@ public enum Builtins {
 	SPLIT_BALANCED("splitBalanced", true),
 	STABLE_MARRIAGE("stableMarriage", true),
 	STATSNA("statsNA", true),
+	STRATSTATS("stratstats", true),
 	STEPLM("steplm",true, ReturnType.MULTI_RETURN),
 	SQRT("sqrt", false),
 	SUM("sum", false),

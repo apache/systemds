@@ -298,7 +298,7 @@ public class TemplateRow extends TemplateBase
 		if(hop instanceof AggUnaryOp)
 		{
 			CNode cdata1 = tmp.get(hop.getInput().get(0).getHopID());
-			if( ((AggUnaryOp)hop).getDirection() == Direction.Row && HopRewriteUtils.isAggUnaryOp(hop, SUPPORTED_ROW_AGG) ) {
+			if( ((AggUnaryOp)hop).getDirection().isRow() && HopRewriteUtils.isAggUnaryOp(hop, SUPPORTED_ROW_AGG) ) {
 				if(hop.getInput().get(0).getDim2()==1)
 					out = (cdata1.getDataType()==DataType.SCALAR) ? cdata1 : new CNodeUnary(cdata1,UnaryType.LOOKUP_R);
 				else {
@@ -308,7 +308,8 @@ public class TemplateRow extends TemplateBase
 						inHops2.put("X", hop.getInput().get(0));
 				}
 			}
-			else if (((AggUnaryOp)hop).getDirection() == Direction.Col && ((AggUnaryOp)hop).getOp() == AggOp.SUM ) {
+			else if ( HopRewriteUtils.isAggUnaryOp(hop, AggOp.SUM, AggOp.MEAN) 
+				&& ((AggUnaryOp)hop).getDirection().isCol() ) { //closes row template
 				//vector add without temporary copy
 				if( cdata1 instanceof CNodeBinary && ((CNodeBinary)cdata1).getType().isVectorScalarPrimitive() )
 					out = new CNodeBinary(cdata1.getInput().get(0), cdata1.getInput().get(1),

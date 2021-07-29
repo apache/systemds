@@ -20,7 +20,6 @@ Most of the new DML scripts were copied from scripts/algorithms to scripts/perft
 - perftest/runMSVM.sh -> perftest/scripts/m-svm.dml
 - perftest/runNaiveBayes.sh -> perftest/scripts/naive-bayes.dml
 - perftest/runNaiveBayes.sh -> perftest/scripts/naive-bayes-predict.dml
-- perftest/runMultiLogReg.sh -> perftest/scripts/MultiLogReg.dml
 - perftest/runLinearRegCG.sh -> perftest/scripts/LinearRegCG.dml
 - perftest/runLinearRegDS.sh -> perftest/scripts/LinearRegDS.dml
 - perftest/runGLM_poisson_log.sh -> perftest/scripts/GLM.dml

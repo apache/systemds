@@ -900,9 +900,15 @@ public abstract class AutomatedTestBase {
 	}
 
 	public static void checkDMLMetaDataFile(String fileName, MatrixCharacteristics mc) {
+		checkDMLMetaDataFile(fileName, mc, false);
+	}
+	
+	public static void checkDMLMetaDataFile(String fileName, MatrixCharacteristics mc, boolean checkBlocksize) {
 		MatrixCharacteristics rmc = readDMLMetaDataFile(fileName);
 		Assert.assertEquals(mc.getRows(), rmc.getRows());
 		Assert.assertEquals(mc.getCols(), rmc.getCols());
+		if( checkBlocksize )
+			Assert.assertEquals(mc.getBlocksize(), rmc.getBlocksize());
 	}
 
 	public static MatrixCharacteristics readDMLMetaDataFile(String fileName) {

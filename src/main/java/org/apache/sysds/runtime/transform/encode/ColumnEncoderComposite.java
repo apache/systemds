@@ -23,17 +23,19 @@ import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
 
+import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.util.DependencyTask;
+import org.apache.sysds.runtime.util.DependencyThreadPool;
 
 /**
  * Simple composite encoder that applies a list of encoders in specified order. By implementing the default encoder API
@@ -48,7 +50,7 @@ public class ColumnEncoderComposite extends ColumnEncoder {
 	private FrameBlock _meta = null;
 
 	// map to keep track of which encoder has how many build tasks
-	private Map<ColumnEncoder, Integer> _partialBuildTaskMap;
+	//private Map<ColumnEncoder, Integer> _partialBuildTaskMap;
 
 	public ColumnEncoderComposite() {
 		super(-1);
@@ -101,29 +103,67 @@ public class ColumnEncoderComposite extends ColumnEncoder {
 	}
 
 	@Override
-	public List<Callable<Object>> getPartialBuildTasks(FrameBlock in, int blockSize) {
-		List<Callable<Object>> tasks = new ArrayList<>();
-		_partialBuildTaskMap = new HashMap<>();
-		for(ColumnEncoder columnEncoder : _columnEncoders) {
-			List<Callable<Object>> _tasks = columnEncoder.getPartialBuildTasks(in, blockSize);
-			if(_tasks != null)
-				tasks.addAll(_tasks);
-			_partialBuildTaskMap.put(columnEncoder, _tasks != null ? _tasks.size() : 0);
+	public List<DependencyTask<?>> getApplyTasks(FrameBlock in, MatrixBlock out, int outputCol) {
+		List<DependencyTask<?>> tasks = new ArrayList<>();
+		List<Integer> sizes = new ArrayList<>();
+		for(int i = 0; i < _columnEncoders.size(); i++) {
+			List<DependencyTask<?>> t;
+			if(i == 0) {
+				// 1. encoder writes data into MatrixBlock Column all others use this column for further encoding
+				t = _columnEncoders.get(i).getApplyTasks(in, out, outputCol);
+			}
+			else {
+				t = _columnEncoders.get(i).getApplyTasks(out, out, outputCol);
+			}
+			if(t == null)
+				continue;
+			sizes.add(t.size());
+			tasks.addAll(t);
 		}
-		return tasks.size() == 0 ? null : tasks;
+
+		List<List<? extends Callable<?>>> dep = new ArrayList<>(Collections.nCopies(tasks.size(), null));
+
+		for(int c = 0, i = sizes.get(c); i < tasks.size(); c++, i += sizes.get(c)) {
+			for(int k = i; k < i + sizes.get(c + 1); k++) {
+				dep.set(k, tasks.subList(i - 1, i));
+			}
+		}
+
+		tasks = DependencyThreadPool.createDependencyTasks(tasks, dep);
+		return tasks;
 	}
 
 	@Override
-	public void mergeBuildPartial(List<Future<Object>> futurePartials, int start, int end)
-		throws ExecutionException, InterruptedException {
-		int endLocal;
+	public List<DependencyTask<?>> getApplyTasks(MatrixBlock in, MatrixBlock out, int outputCol) {
+		throw new NotImplementedException();
+	}
+
+	@Override
+	public List<DependencyTask<?>> getBuildTasks(FrameBlock in, int blockSize) {
+		List<DependencyTask<?>> tasks = new ArrayList<>();
+		Map<Integer[], Integer[]> depMap = null;
 		for(ColumnEncoder columnEncoder : _columnEncoders) {
-			endLocal = start + _partialBuildTaskMap.get(columnEncoder);
-			columnEncoder.mergeBuildPartial(futurePartials, start, endLocal);
-			start = endLocal;
-			if(start >= end)
-				break;
+			List<DependencyTask<?>> t = columnEncoder.getBuildTasks(in, blockSize);
+			if(t == null)
+				continue;
+			// Linear execution between encoders so they can't be built in parallel
+			if(tasks.size() != 0) {
+				// avoid unnecessary map initialization
+				depMap = (depMap == null) ? new HashMap<>() : depMap;
+				// This workaround is needed since sublist is only valid for effective final lists,
+				// otherwise the view breaks
+				depMap.put(new Integer[] {tasks.size(), tasks.size() + t.size()},
+					new Integer[] {tasks.size() - 1, tasks.size()});
+			}
+			tasks.addAll(t);
 		}
+		List<List<? extends Callable<?>>> dep = new ArrayList<>(Collections.nCopies(tasks.size(), null));
+		DependencyThreadPool.createDependencyList(tasks, depMap, dep);
+		if(hasEncoder(ColumnEncoderDummycode.class)) {
+			tasks.add(DependencyThreadPool.createDependencyTask(new ColumnCompositeUpdateDCTask(this)));
+			dep.add(tasks.subList(tasks.size() - 2, tasks.size() - 1));
+		}
+		return DependencyThreadPool.createDependencyTasks(tasks, dep);
 	}
 
 	@Override
@@ -219,7 +259,7 @@ public class ColumnEncoderComposite extends ColumnEncoder {
 		updateAllDCEncoders();
 	}
 
-	public void updateAllDCEncoders(){
+	public void updateAllDCEncoders() {
 		// update dummycode encoder domain sizes based on distinctness information from other encoders
 		ColumnEncoderDummycode dc = getEncoder(ColumnEncoderDummycode.class);
 		if(dc != null)
@@ -313,4 +353,26 @@ public class ColumnEncoderComposite extends ColumnEncoder {
 		super.shiftCol(columnOffset);
 		_columnEncoders.forEach(e -> e.shiftCol(columnOffset));
 	}
+
+	private static class ColumnCompositeUpdateDCTask implements Callable<Object> {
+
+		private final ColumnEncoderComposite _encoder;
+
+		protected ColumnCompositeUpdateDCTask(ColumnEncoderComposite encoder) {
+			_encoder = encoder;
+		}
+
+		@Override
+		public Void call() throws Exception {
+			_encoder.updateAllDCEncoders();
+			return null;
+		}
+
+		@Override
+		public String toString() {
+			return getClass().getSimpleName() + "<ColId: " + _encoder._colID + ">";
+		}
+
+	}
+
 }

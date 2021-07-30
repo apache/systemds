@@ -242,6 +242,12 @@ public final class SparseRowVector extends SparseRow implements Serializable
 		return (index >= 0) ? values[index] : 0;
 	}
 
+	public int getIndex(int col) {
+		//search for existing col index
+		int index = Arrays.binarySearch(indexes, 0, size, col);
+		return (index >= 0) ? index : -1;
+	}
+
 	public int searchIndexesFirstLTE(int col) {
 		if( size == 0 ) return -1;
 		

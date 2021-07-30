@@ -1,0 +1,2 @@
+{
+ "ids": true, "recode": [ 2, 1, 7 ], "bin": [ { "id": 1  , "method": "equi-width", "numbins": 3 }, { "id": 3  , "method": "equi-width", "numbins": 5 } ] }

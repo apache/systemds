@@ -24,12 +24,9 @@ import static org.apache.sysds.runtime.util.UtilFunctions.getEndIndex;
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
+import java.util.HashMap;
 import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
 
 import org.apache.commons.lang3.tuple.MutableTriple;
 import org.apache.sysds.lops.Lop;
@@ -93,7 +90,7 @@ public class ColumnEncoderBin extends ColumnEncoder {
 		computeBins(pairMinMax[0], pairMinMax[1]);
 	}
 
-	private static double[] getMinMaxOfCol(FrameBlock in, int colID, int startRow, int blockSize){
+	private static double[] getMinMaxOfCol(FrameBlock in, int colID, int startRow, int blockSize) {
 		// derive bin boundaries from min/max per column
 		double min = Double.POSITIVE_INFINITY;
 		double max = Double.NEGATIVE_INFINITY;
@@ -102,30 +99,23 @@ public class ColumnEncoderBin extends ColumnEncoder {
 			min = Math.min(min, inVal);
 			max = Math.max(max, inVal);
 		}
-		return new double[]{min, max};
+		return new double[] {min, max};
 	}
 
 	@Override
-	public List<Callable<Object>> getPartialBuildTasks(FrameBlock in, int blockSize){
-		List<Callable<Object>> tasks = new ArrayList<>();
-		for(int i = 0; i < in.getNumRows(); i=i+blockSize)
-			tasks.add(new BinPartialBuildTask(in, _colID, i, blockSize));
-		if(in.getNumRows() % blockSize != 0)
-			tasks.add(new BinPartialBuildTask(in, _colID,
-					in.getNumRows()-in.getNumRows()%blockSize, -1));
-		return tasks;
+	public Callable<Object> getBuildTask(FrameBlock in) {
+		return new ColumnBinBuildTask(this, in);
 	}
 
 	@Override
-	public void mergeBuildPartial(List<Future<Object>> futurePartials, int start, int end) throws ExecutionException, InterruptedException {
-		double min = Double.POSITIVE_INFINITY;
-		double max = Double.NEGATIVE_INFINITY;
-		for(int i = start; i < end; i++){
-			double[] pairMinMax = (double[]) futurePartials.get(i).get();
-			min = Math.min(min, pairMinMax[0]);
-			max = Math.max(max, pairMinMax[1]);
-		}
-		computeBins(min, max);
+	public Callable<Object> getPartialBuildTask(FrameBlock in, int startRow, int blockSize,
+		HashMap<Integer, Object> ret) {
+		return new BinPartialBuildTask(in, _colID, startRow, blockSize, ret);
+	}
+
+	@Override
+	public Callable<Object> getPartialMergeBuildTask(HashMap<Integer, ?> ret) {
+		return new BinMergePartialBuildTask(this, ret);
 	}
 
 	public void computeBins(double min, double max) {
@@ -150,7 +140,7 @@ public class ColumnEncoderBin extends ColumnEncoder {
 		if(!isApplicable())
 			return;
 		// derive bin boundaries from min/max per column
-		double[] pairMinMax = getMinMaxOfCol(in, _colID, 0 ,-1);
+		double[] pairMinMax = getMinMaxOfCol(in, _colID, 0, -1);
 		_colMins = pairMinMax[0];
 		_colMaxs = pairMinMax[1];
 	}
@@ -178,7 +168,7 @@ public class ColumnEncoderBin extends ColumnEncoder {
 
 	@Override
 	public MatrixBlock apply(MatrixBlock in, MatrixBlock out, int outputCol, int rowStart, int blk) {
-		int end = (blk <= 0)? in.getNumRows(): in.getNumRows() < rowStart + blk ? in.getNumRows() : rowStart + blk;
+		int end = getEndIndex(in.getNumRows(), rowStart, blk);
 		for(int i = rowStart; i < end; i++) {
 			double inVal = in.quickGetValueThreadSafe(i, _colID - 1);
 			int ix = Arrays.binarySearch(_binMaxs, inVal);
@@ -224,9 +214,7 @@ public class ColumnEncoderBin extends ColumnEncoder {
 		// serialize the internal state into frame meta data
 		meta.getColumnMetadata(_colID - 1).setNumDistinct(_numBin);
 		for(int i = 0; i < _binMaxs.length; i++) {
-			String sb = _binMins[i] +
-					Lop.DATATYPE_PREFIX +
-					_binMaxs[i];
+			String sb = _binMins[i] + Lop.DATATYPE_PREFIX + _binMaxs[i];
 			meta.set(i, _colID - 1, sb);
 		}
 		return meta;
@@ -282,19 +270,80 @@ public class ColumnEncoderBin extends ColumnEncoder {
 		private final int _blockSize;
 		private final int _startRow;
 		private final int _colID;
+		private final HashMap<Integer, Object> _partialMinMax;
 
 		// if a pool is passed the task may be split up into multiple smaller tasks.
-		protected BinPartialBuildTask(FrameBlock input, int colID, int startRow, int blocksize){
+		protected BinPartialBuildTask(FrameBlock input, int colID, int startRow, int blocksize,
+			HashMap<Integer, Object> partialMinMax) {
 			_input = input;
 			_blockSize = blocksize;
 			_colID = colID;
 			_startRow = startRow;
+			_partialMinMax = partialMinMax;
 		}
 
 		@Override
 		public double[] call() throws Exception {
-			return getMinMaxOfCol(_input, _colID, _startRow, _blockSize);
+			_partialMinMax.put(_startRow, getMinMaxOfCol(_input, _colID, _startRow, _blockSize));
+			return null;
 		}
+
+		@Override
+		public String toString() {
+			return getClass().getSimpleName() + "<Start row: " + _startRow + "; Block size: " + _blockSize + ">";
+		}
+
+	}
+
+	private static class BinMergePartialBuildTask implements Callable<Object> {
+		private final HashMap<Integer, ?> _partialMaps;
+		private final ColumnEncoderBin _encoder;
+
+		private BinMergePartialBuildTask(ColumnEncoderBin encoderBin, HashMap<Integer, ?> partialMaps) {
+			_partialMaps = partialMaps;
+			_encoder = encoderBin;
+		}
+
+		@Override
+		public Object call() throws Exception {
+			double min = Double.POSITIVE_INFINITY;
+			double max = Double.NEGATIVE_INFINITY;
+			for(Object minMax : _partialMaps.values()) {
+				min = Math.min(min, ((double[]) minMax)[0]);
+				max = Math.max(max, ((double[]) minMax)[1]);
+			}
+			_encoder.computeBins(min, max);
+			return null;
+		}
+
+		@Override
+		public String toString() {
+			return getClass().getSimpleName() + "<ColId: " + _encoder._colID + ">";
+		}
+
+	}
+
+	private static class ColumnBinBuildTask implements Callable<Object> {
+
+		private final ColumnEncoderBin _encoder;
+		private final FrameBlock _input;
+
+		protected ColumnBinBuildTask(ColumnEncoderBin encoder, FrameBlock input) {
+			_encoder = encoder;
+			_input = input;
+		}
+
+		@Override
+		public Void call() throws Exception {
+			_encoder.build(_input);
+			return null;
+		}
+
+		@Override
+		public String toString() {
+			return getClass().getSimpleName() + "<ColId: " + _encoder._colID + ">";
+		}
+
 	}
 
 }

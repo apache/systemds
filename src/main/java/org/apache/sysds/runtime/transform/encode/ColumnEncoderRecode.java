@@ -24,18 +24,14 @@ import static org.apache.sysds.runtime.util.UtilFunctions.getEndIndex;
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
 
 import org.apache.sysds.lops.Lop;
 import org.apache.sysds.runtime.DMLRuntimeException;
@@ -143,30 +139,19 @@ public class ColumnEncoderRecode extends ColumnEncoder {
 	}
 
 	@Override
-	public List<Callable<Object>> getPartialBuildTasks(FrameBlock in, int blockSize) {
-		List<Callable<Object>> tasks = new ArrayList<>();
-		for(int i = 0; i < in.getNumRows(); i = i + blockSize)
-			tasks.add(new RecodePartialBuildTask(in, _colID, i, blockSize));
-		if(in.getNumRows() % blockSize != 0)
-			tasks.add(new RecodePartialBuildTask(in, _colID, in.getNumRows() - in.getNumRows() % blockSize, -1));
-		return tasks;
+	public Callable<Object> getBuildTask(FrameBlock in) {
+		return new ColumnRecodeBuildTask(this, in);
 	}
 
 	@Override
-	public void mergeBuildPartial(List<Future<Object>> futurePartials, int start, int end)
-		throws ExecutionException, InterruptedException {
-		for(int i = start; i < end; i++) {
-			Object partial = futurePartials.get(i).get();
-			if(!(partial instanceof HashMap)) {
-				throw new DMLRuntimeException(
-					"Tried to merge " + partial.getClass() + " object into RecodeEncoder. " + "HashMap was expected.");
-			}
-			HashMap<?, ?> partialMap = (HashMap<?, ?>) partial;
-			partialMap.forEach((k, v) -> {
-				if(!_rcdMap.containsKey((String) k))
-					putCode(_rcdMap, (String) k);
-			});
-		}
+	public Callable<Object> getPartialBuildTask(FrameBlock in, int startRow, int blockSize,
+		HashMap<Integer, Object> ret) {
+		return new RecodePartialBuildTask(in, _colID, startRow, blockSize, ret);
+	}
+
+	@Override
+	public Callable<Object> getPartialMergeBuildTask(HashMap<Integer, ?> ret) {
+		return new RecodeMergePartialBuildTask(this, ret);
 	}
 
 	/**
@@ -334,21 +319,84 @@ public class ColumnEncoderRecode extends ColumnEncoder {
 		private final int _blockSize;
 		private final int _startRow;
 		private final int _colID;
+		private final HashMap<Integer, Object> _partialMaps;
 
-		// if a pool is passed the task may be split up into multiple smaller tasks.
-		protected RecodePartialBuildTask(FrameBlock input, int colID, int startRow, int blocksize) {
+		protected RecodePartialBuildTask(FrameBlock input, int colID, int startRow, int blocksize,
+			HashMap<Integer, Object> partialMaps) {
 			_input = input;
 			_blockSize = blocksize;
 			_colID = colID;
 			_startRow = startRow;
+			_partialMaps = partialMaps;
 		}
 
 		@Override
 		public HashMap<String, Long> call() throws Exception {
 			HashMap<String, Long> partialMap = new HashMap<>();
 			makeRcdMap(_input, partialMap, _colID, _startRow, _blockSize);
-			return partialMap;
+			synchronized(_partialMaps) {
+				_partialMaps.put(_startRow, partialMap);
+			}
+			return null;
 		}
+
+		@Override
+		public String toString() {
+			return getClass().getSimpleName() + "<Start row: " + _startRow + "; Block size: " + _blockSize + ">";
+		}
+
+	}
+
+	private static class RecodeMergePartialBuildTask implements Callable<Object> {
+		private final HashMap<Integer, ?> _partialMaps;
+		private final ColumnEncoderRecode _encoder;
+
+		private RecodeMergePartialBuildTask(ColumnEncoderRecode encoderRecode, HashMap<Integer, ?> partialMaps) {
+			_partialMaps = partialMaps;
+			_encoder = encoderRecode;
+		}
+
+		@Override
+		public Object call() throws Exception {
+			HashMap<String, Long> rcdMap = _encoder.getRcdMap();
+			_partialMaps.forEach((start_row, map) -> {
+				((HashMap<?, ?>) map).forEach((k, v) -> {
+					if(!rcdMap.containsKey((String) k))
+						putCode(rcdMap, (String) k);
+				});
+			});
+			_encoder._rcdMap = rcdMap;
+			return null;
+		}
+
+		@Override
+		public String toString() {
+			return getClass().getSimpleName() + "<ColId: " + _encoder._colID + ">";
+		}
+
+	}
+
+	private static class ColumnRecodeBuildTask implements Callable<Object> {
+
+		private final ColumnEncoderRecode _encoder;
+		private final FrameBlock _input;
+
+		protected ColumnRecodeBuildTask(ColumnEncoderRecode encoder, FrameBlock input) {
+			_encoder = encoder;
+			_input = input;
+		}
+
+		@Override
+		public Void call() throws Exception {
+			_encoder.build(_input);
+			return null;
+		}
+
+		@Override
+		public String toString() {
+			return getClass().getSimpleName() + "<ColId: " + _encoder._colID + ">";
+		}
+
 	}
 
 }

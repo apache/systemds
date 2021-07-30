@@ -25,12 +25,11 @@ import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.util.List;
-import java.util.concurrent.Callable;
-import java.util.concurrent.Future;
 
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.util.DependencyTask;
 import org.apache.sysds.runtime.util.UtilFunctions;
 
 /**
@@ -66,14 +65,8 @@ public class ColumnEncoderFeatureHash extends ColumnEncoder {
 	}
 
 	@Override
-	public List<Callable<Object>> getPartialBuildTasks(FrameBlock in, int blockSize) {
-		// do nothing
+	public List<DependencyTask<?>> getBuildTasks(FrameBlock in, int blockSize) {
 		return null;
-	}
-
-	@Override
-	public void mergeBuildPartial(List<Future<Object>> futurePartials, int start, int end) {
-
 	}
 
 	@Override
@@ -102,7 +95,7 @@ public class ColumnEncoderFeatureHash extends ColumnEncoder {
 
 	@Override
 	public MatrixBlock apply(MatrixBlock in, MatrixBlock out, int outputCol, int rowStart, int blk) {
-		int end = (blk <= 0) ? in.getNumRows() : in.getNumRows() < rowStart + blk ? in.getNumRows() : rowStart + blk;
+		int end = getEndIndex(in.getNumRows(), rowStart, blk);
 		// apply feature hashing column wise
 		for(int i = rowStart; i < end; i++) {
 			Object okey = in.quickGetValueThreadSafe(i, _colID - 1);

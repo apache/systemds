@@ -99,6 +99,21 @@ public interface CacheBlock extends Writable
 	public CacheBlock slice(int rl, int ru, int cl, int cu, CacheBlock block);
 	
 	/**
+	 * Slice a sub block out of the current block and write into the given output block.
+	 * This method returns the passed instance if not null.
+	 * 
+	 * @param rl row lower
+	 * @param ru row upper
+	 * @param cl column lower
+	 * @param cu column upper
+	 * @param deep enforce deep-copy
+	 * @param block cache block
+	 * @return sub-block of cache block
+	 */
+	public CacheBlock slice(int rl, int ru, int cl, int cu, boolean deep, CacheBlock block);
+	
+	
+	/**
 	 * Merge the given block into the current block. Both blocks needs to be of equal 
 	 * dimensions and contain disjoint non-zero cells.
 	 * 

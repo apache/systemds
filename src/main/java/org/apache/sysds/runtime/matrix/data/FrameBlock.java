@@ -1060,6 +1060,11 @@ public class FrameBlock implements CacheBlock, Externalizable  {
 				(int)ixrange.colStart, (int)ixrange.colEnd, ret);
 	}
 
+	@Override
+	public FrameBlock slice(int rl, int ru, int cl, int cu, CacheBlock retCache) {
+		return slice(rl, ru, cl, cu, false, retCache);
+	}
+	
 	/**
 	 * Right indexing operations to slice a subframe out of this frame block.
 	 * Note that the existing column value types are preserved.
@@ -1068,11 +1073,12 @@ public class FrameBlock implements CacheBlock, Externalizable  {
 	 * @param ru row upper index, inclusive, 0-based
 	 * @param cl column lower index, inclusive, 0-based
 	 * @param cu column upper index, inclusive, 0-based
+	 * @param deep enforce deep-copy
 	 * @param retCache cache block
 	 * @return frame block
 	 */
 	@Override
-	public FrameBlock slice(int rl, int ru, int cl, int cu, CacheBlock retCache) {
+	public FrameBlock slice(int rl, int ru, int cl, int cu, boolean deep, CacheBlock retCache) {
 		FrameBlock ret = (FrameBlock)retCache;
 		// check the validity of bounds
 		if (   rl < 0 || rl >= getNumRows() || ru < rl || ru >= getNumRows()
@@ -1105,7 +1111,7 @@ public class FrameBlock implements CacheBlock, Externalizable  {
 			ret._coldata = new Array[numCols];
 
 		//fast-path: shallow copy column indexing
-		if( ret._numRows == _numRows ) {
+		if( ret._numRows == _numRows && !deep ) {
 			//this shallow copy does not only avoid an array copy, but
 			//also allows for bi-directional reuses of recodemaps
 			for( int j=cl; j<=cu; j++ )

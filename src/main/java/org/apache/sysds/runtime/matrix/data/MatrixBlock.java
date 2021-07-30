@@ -4012,6 +4012,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	 * @param ret output sliced out matrix block
 	 * @return matrix block output matrix block
 	 */
+	@Override
 	public MatrixBlock slice(int rl, int ru, int cl, int cu, boolean deep, CacheBlock ret) {
 		validateSliceArgument(rl, ru, cl, cu);
 		

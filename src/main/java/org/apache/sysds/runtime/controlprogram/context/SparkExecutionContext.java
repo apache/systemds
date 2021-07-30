@@ -937,7 +937,7 @@ public class SparkExecutionContext extends ExecutionContext
 			int row_offset = (int)blockRow*mc.getBlocksize();
 			int col_offset = (int)blockCol*mc.getBlocksize();
 			block = mb.slice( row_offset, row_offset+maxRow-1,
-				col_offset, col_offset+maxCol-1, block );
+				col_offset, col_offset+maxCol-1, false, block );
 			//create key-value pair
 			return new Tuple2<>(new MatrixIndexes(blockRow+1, blockCol+1), block);
 		}

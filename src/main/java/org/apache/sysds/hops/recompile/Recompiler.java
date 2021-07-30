@@ -1341,6 +1341,10 @@ public class Recompiler
 					d.setDim2(to.getNumColumns());
 					d.setNnz(to.getNnz());
 				}
+				if( dat instanceof CacheableData<?> ) {
+					CacheableData<?> cd = (CacheableData<?>) dat;
+					d.setOnlyRDD(!cd.isCached(true) &&cd.getRDDHandle()!=null);
+				}
 			}
 		}
 		//special case for persistent reads with unknown size (read-after-write)

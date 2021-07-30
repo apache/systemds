@@ -76,7 +76,7 @@ public class PartitionedBlock<T extends CacheBlock> implements Externalizable
 				int j = index % ncblks;
 				T tmp = (T) CacheBlockFactory.newInstance(code);
 				return block.slice(i * _blen, Math.min((i + 1) * _blen, rlen) - 1,
-					j * _blen, Math.min((j + 1) * _blen, clen) - 1, tmp);
+					j * _blen, Math.min((j + 1) * _blen, clen) - 1, false, tmp);
 			});
 		} catch(Exception ex) {
 			throw new RuntimeException("Failed partitioning of broadcast variable input.", ex);

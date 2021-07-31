@@ -285,6 +285,11 @@ public class TensorBlock implements CacheBlock, Externalizable {
 
 	@Override
 	public CacheBlock slice(int rl, int ru, int cl, int cu, CacheBlock block) {
+		return slice(rl, ru, cl, cu, false, block);
+	}
+	
+	@Override
+	public CacheBlock slice(int rl, int ru, int cl, int cu, boolean deep, CacheBlock block) {
 		if( !(block instanceof TensorBlock) )
 			throw new RuntimeException("TensorBlock.slice(int,int,int,int,CacheBlock) CacheBlock was no TensorBlock");
 		TensorBlock tb = (TensorBlock) block;

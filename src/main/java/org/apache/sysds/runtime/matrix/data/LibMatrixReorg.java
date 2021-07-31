@@ -202,7 +202,8 @@ public class LibMatrixReorg {
 		}
 		// set meta data and allocate output arrays (if required)
 		out.nonZeros = in.nonZeros;
-		allowCSR = allowCSR && out.nonZeros < (long) Integer.MAX_VALUE;
+		// CSR is only allowed in the transposed output if the number of non zeros is counted in the columns
+		allowCSR = allowCSR && out.nonZeros < (long) Integer.MAX_VALUE && in.clen <= 4096;
 		// Timing time = new Timing(true);
 
 		if(out.sparse && allowCSR) {
@@ -219,7 +220,10 @@ public class LibMatrixReorg {
 			ExecutorService pool = CommonThreadPool.get(k);
 			// pre-processing (compute nnz per column once for sparse)
 			int[] cnt = null;
-			if(in.sparse && out.sparse) {
+			// filter matrices with many columns since the CountNnzTask would return
+			// null if the number of columns is larger than threshold
+			if(in.sparse && out.sparse && in.clen <= 4096) {
+				
 				ArrayList<CountNnzTask> tasks = new ArrayList<>();
 				int blklen = (int) (Math.ceil((double) in.rlen / k));
 				for(int i = 0; i < k & i * blklen < in.rlen; i++)
@@ -227,18 +231,18 @@ public class LibMatrixReorg {
 				List<Future<int[]>> rtasks = pool.invokeAll(tasks);
 				for(Future<int[]> rtask : rtasks)
 					cnt = mergeNnzCounts(cnt, rtask.get());
-			}
 
-			if(out.sparse && allowCSR) {
-				int[] outPtr = ((SparseBlockCSR) out.sparseBlock).rowPointers();
-				for(int i = 0; i < cnt.length; i++) {
-					// set out pointers to correct start of rows.
-					outPtr[i + 1] = outPtr[i] + cnt[i];
-					// set the cnt value to the new pointer to start of row in CSR
-					cnt[i] = outPtr[i];
+				if(allowCSR) {
+					int[] outPtr = ((SparseBlockCSR) out.sparseBlock).rowPointers();
+					for(int i = 0; i < cnt.length; i++) {
+						// set out pointers to correct start of rows.
+						outPtr[i + 1] = outPtr[i] + cnt[i];
+						// set the cnt value to the new pointer to start of row in CSR
+						cnt[i] = outPtr[i];
+					}
 				}
-
 			}
+
 			// compute actual transpose and check for errors
 			ArrayList<TransposeTask> tasks = new ArrayList<>();
 			boolean row = (in.sparse || in.rlen >= in.clen) && !out.sparse;

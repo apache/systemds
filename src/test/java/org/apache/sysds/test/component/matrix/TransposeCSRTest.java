@@ -65,6 +65,9 @@ public class TransposeCSRTest {
 			DataConverter.convertToMatrixBlock(TestUtils.generateTestMatrix(1000, 15, 0.5, 1.5, 0.01, 6)), 3});
 		tests.add(new Object[] {
 			DataConverter.convertToMatrixBlock(TestUtils.generateTestMatrix(13, 1444, 0.5, 1.5, 0.01, 6)), 3});
+		// pass the threshold
+		tests.add(new Object[] {
+			DataConverter.convertToMatrixBlock(TestUtils.generateTestMatrix(4100, 4100, 0.5, 1.5, 0.01, 6)), 3});
 		return tests;
 	}
 

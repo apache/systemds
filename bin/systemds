@@ -55,6 +55,22 @@ print_out()
   fi
 }
 
+# when using find, look in the directories in this order
+DIR_SEARCH_ORDER=". $SYSTEMDS_ROOT $SYSTEMDS_ROOT/conf  $SYSTEMDS_ROOT/lib $SYSTEMDS_ROOT/src $SYSTEMDS_ROOT/target"
+ordered_find() {
+  result=""
+  for dir in $(echo "$DIR_SEARCH_ORDER" | tr ' ' '\n') ; do
+    if [[ $dir == "$SYSTEMDS_ROOT" ]] || [[ $dir == "." ]]; then
+      result=$(find "$dir" -maxdepth 1 -iname "$1" -print -quit)
+      if [[ $result != "" ]]; then break; fi
+    else
+      result=$(find "$dir" -iname "$1" -print -quit 2> /dev/null)
+      if [[ $result != "" ]]; then break; fi
+    fi
+  done
+  echo "$result"
+}
+
 if [ -n "$SYSTEMDS_STANDALONE_OPTS" ]; then
 	print_out "Overriding SYSTEMDS_STANDALONE_OPTS with env var: $SYSTEMDS_STANDALONE_OPTS"
 else
@@ -71,17 +87,41 @@ else
   SYSTEMDS_REMOTE_DEBUGGING=" -agentlib:jdwp=transport=dt_socket,suspend=y,address=8787,server=y "
 fi
 
+# check if log4j config file exists, otherwise unset
+# to run with a non fatal complaint by SystemDS
+if [ -z "$LOG4JPROP" ] ; then
+  LOG4JPROP=$(ordered_find "log4j*properties")
+
+  if [ -z "${LOG4JPROP}" ]; then
+    LOG4JPROP=""
+  else
+    LOG4JPROP="-Dlog4j.configuration=file:$LOG4JPROP"
+  fi
+else
+  # L4J was set by env var. Unset if that setting is wrong
+  LOG4JPROP2=$(find "$LOG4JPROP")
+  if [ -z "${LOG4JPROP2}" ]; then
+    LOG4JPROP=""
+  else
+    LOG4JPROP="-Dlog4j.configuration=file:$LOG4JPROP2"
+  fi
+fi
+
 if [ -n "${SYSTEMDS_DISTRIBUTED_OPTS}" ]; then
   print_out "Overriding SYSTEMDS_DISTRIBUTED_OPTS with env var $SYSTEMDS_DISTRIBUTED_OPTS"
 else
   # specify parameters to pass to spark-submit when running on spark here
   SYSTEMDS_DISTRIBUTED_OPTS="\
       --master yarn \
-      --deploy-mode client\
-      --driver-memory 96g \
-      --conf spark.ui.showConsoleProgress=true \
+      --deploy-mode client \
+      --driver-memory 100g \
+      --conf spark.driver.extraJavaOptions=\"-Xms100g -Xmn10g -Dlog4j.configuration=file:$LOG4JPROP\" \
+      --conf spark.executor.extraJavaOptions=\"-Dlog4j.configuration=file:$LOG4JPROP\" \
+      --conf spark.executor.heartbeatInterval=100s \
+      --files $LOG4JPROP \
+      --conf spark.network.timeout=512s \
       --num-executors 4 \
-      --executor-memory 64g \
+      --executor-memory 64 \
       --executor-cores 16 "
 fi
 
@@ -232,22 +272,6 @@ else
   SYSTEMDS_ROOT=$(realpath --relative-to=. ${SYSTEMDS_ROOT})
 fi;
 
-# when using find, look in the directories in this order
-DIR_SEARCH_ORDER=". $SYSTEMDS_ROOT $SYSTEMDS_ROOT/conf  $SYSTEMDS_ROOT/lib $SYSTEMDS_ROOT/src $SYSTEMDS_ROOT/target"
-ordered_find() {
-  result=""
-  for dir in $(echo "$DIR_SEARCH_ORDER" | tr ' ' '\n') ; do
-    if [[ $dir == "$SYSTEMDS_ROOT" ]] || [[ $dir == "." ]]; then
-      result=$(find "$dir" -maxdepth 1 -iname "$1" -print -quit)
-      if [[ $result != "" ]]; then break; fi
-    else
-      result=$(find "$dir" -iname "$1" -print -quit 2> /dev/null)
-      if [[ $result != "" ]]; then break; fi
-    fi
-  done
-  echo "$result"
-}
-
 # find me a SystemDS jar file to run
 if [ -z "$SYSTEMDS_JAR_FILE" ];then
   SYSTEMDS_JAR_FILE=$(ordered_find "systemds.jar")
@@ -259,29 +283,6 @@ if [ -z "$SYSTEMDS_JAR_FILE" ];then
   fi
 else
   print_out "Using user supplied systemds jar file $SYSTEMDS_JAR_FILE"
-fi
-
-# check if log4j config file exists, otherwise unset
-# to run with a non fatal complaint by SystemDS
-if [ -z "$LOG4JPROP" ] ; then
-  LOG4JPROP=$(ordered_find "log4j*properties")
-
-  if [ -z "${LOG4JPROP}" ]; then
-    LOG4JPROP=""
-  else
-    SPARK_LOG4J_PATH="$LOG4JPROP"
-    LOG4JPROP="-Dlog4j.configuration=file:$LOG4JPROP"
-  fi
-else
-  # L4J was set by env var. Unset if that setting is wrong
-  LOG4JPROP2=$(find "$LOG4JPROP")
-  if [ -z "${LOG4JPROP2}" ]; then
-    LOG4JPROP=""
-  else
-    SPARK_LOG4J_PATH="$LOG4JPROP2"
-    LOG4JPROP="-Dlog4j.configuration=file:$LOG4JPROP2"
-  fi
-
 fi
 
 if [[ "$*" == *-config* ]]; then
@@ -438,9 +439,6 @@ else
   export SPARK_MAJOR_VERSION=2
   CMD=" \
   spark-submit $SYSTEMDS_DISTRIBUTED_OPTS \
-  --conf spark.driver.extraJavaOptions=-Dlog4j.configuration=file:$SPARK_LOG4J_PATH \
-  --conf spark.executor.extraJavaOptions=-Dlog4j.configuration=file:$SPARK_LOG4J_PATH \
-  --files $SPARK_LOG4J_PATH \
   $SYSTEMDS_JAR_FILE \
   -f $SCRIPT_FILE \
   -exec $SYSDS_EXEC_MODE \
@@ -451,4 +449,4 @@ else
 fi
 
 # run
-$CMD
+eval "$CMD"

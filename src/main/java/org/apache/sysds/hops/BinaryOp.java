@@ -23,6 +23,7 @@ import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.AggOp;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.Direction;
+import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.common.Types.OpOp1;
 import org.apache.sysds.common.Types.OpOp2;
 import org.apache.sysds.common.Types.OpOpDnn;
@@ -43,7 +44,6 @@ import org.apache.sysds.lops.CoVariance;
 import org.apache.sysds.lops.Data;
 import org.apache.sysds.lops.DnnTransform;
 import org.apache.sysds.lops.Lop;
-import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.lops.PickByCount;
 import org.apache.sysds.lops.SortKeys;
 import org.apache.sysds.lops.Unary;
@@ -59,8 +59,9 @@ import org.apache.sysds.runtime.meta.MatrixCharacteristics;
  * 		Semantic: align indices (sort), then perform operation
  */
 
-public class BinaryOp extends MultiThreadedHop
-{
+public class BinaryOp extends MultiThreadedHop{
+	// private static final Log LOG =  LogFactory.getLog(BinaryOp.class.getName());
+
 	//we use the full remote memory budget (but reduced by sort buffer), 
 	public static final double APPEND_MEM_MULTIPLIER = 1.0;
 
@@ -390,8 +391,10 @@ public class BinaryOp extends MultiThreadedHop
 	{
 		/* Default behavior for BinaryOp */
 		// it depends on input data types
-		DataType dt1 = getInput().get(0).getDataType();
-		DataType dt2 = getInput().get(1).getDataType();
+		final Hop left = getInput().get(0);
+		final Hop right = getInput().get(1);
+		final DataType dt1 = left.getDataType();
+		final DataType dt2 = right.getDataType();
 		
 		if (dt1 == dt2 && dt1 == DataType.SCALAR) {
 			// Both operands scalar
@@ -400,18 +403,20 @@ public class BinaryOp extends MultiThreadedHop
 			binScalar1.getOutputParameters().setDimensions(0, 0, 0, -1);
 			setLineNumbers(binScalar1);
 			setLops(binScalar1);
-
+			return;
 		} 
-		else if ((dt1 == DataType.MATRIX && dt2 == DataType.SCALAR)
+		
+		if ((dt1 == DataType.MATRIX && dt2 == DataType.SCALAR)
 				   || (dt1 == DataType.SCALAR && dt2 == DataType.MATRIX)) {
-
+			
 			// One operand is Matrix and the other is scalar
 			ExecType et = optFindExecType();
 			
 			//select specific operator implementations
-			Hop right = getInput().get(1);
 			OpOp1 ot = (op==OpOp2.POW && HopRewriteUtils.isLiteralOfValue(right, 2d)) ? OpOp1.POW2 : 
 				(op==OpOp2.MULT && HopRewriteUtils.isLiteralOfValue(right, 2d)) ? OpOp1.MULT2 : null;
+
+
 			Lop tmp = null;
 			if( ot != null ) {
 				tmp = new Unary(getInput(0).constructLops(), getInput(1).constructLops(),
@@ -423,6 +428,7 @@ public class BinaryOp extends MultiThreadedHop
 					op, getDataType(), getValueType(), et,
 					OptimizerUtils.getConstrainedNumThreads(_maxNumThreads));
 			}
+			
 			setOutputDimensions(tmp);
 			setLineNumbers(tmp);
 			setLops(tmp);
@@ -470,8 +476,6 @@ public class BinaryOp extends MultiThreadedHop
 			}
 			else if(et == ExecType.SPARK)
 			{
-				Hop left = getInput().get(0);
-				Hop right = getInput().get(1);
 				MMBinaryMethod mbin = optFindMMBinaryMethodSpark(left, right);
 				if (FORCED_BINARY_METHOD != null)
 					mbin = FORCED_BINARY_METHOD;
@@ -493,7 +497,7 @@ public class BinaryOp extends MultiThreadedHop
 					binary = new Binary(left.constructLops(), right.constructLops(), 
 						op, getDataType(), getValueType(), et);
 				}
-				
+
 				setOutputDimensions(binary);
 				setLineNumbers(binary);
 				setLops(binary);
@@ -511,10 +515,12 @@ public class BinaryOp extends MultiThreadedHop
 	{		
 		double ret = 0;
 		
+
 		//preprocessing step (recognize unknowns)
 		if( dimsKnown() && getNnz()<0 ) //never after inference
 			nnz = -1; 
 		
+
 		if((op==OpOp2.CBIND || op==OpOp2.RBIND) && !ConfigurationManager.isDynamicRecompilation() && !(getDataType()==DataType.SCALAR) ) {	
 			ret = OptimizerUtils.DEFAULT_SIZE;
 		}
@@ -543,10 +549,8 @@ public class BinaryOp extends MultiThreadedHop
 			else //e.g., for append,pow or after inference
 				sparsity = OptimizerUtils.getSparsity(dim1, dim2, nnz);
 			
-			ret = OptimizerUtils.estimateSizeExactSparsity(dim1, dim2, sparsity);	
+			ret = OptimizerUtils.estimateSizeExactSparsity(dim1, dim2, sparsity);
 		}
-		
-		
 		return ret;
 	}
 	
@@ -987,6 +991,12 @@ public class BinaryOp extends MultiThreadedHop
 			}
 			else //general case
 			{
+				Hop comp = null;
+				if(input1._compressedOutput)
+					comp = input1;
+				else if(input2._compressedOutput)
+					comp = input2;
+
 				long ldim1, ldim2, lnnz1 = -1;
 				
 				if( dt1 == DataType.MATRIX && dt2 == DataType.SCALAR )
@@ -1018,6 +1028,11 @@ public class BinaryOp extends MultiThreadedHop
 						lnnz1 = input1.getNnz();
 					}
 				}
+
+				if(comp != null){
+					setCompressedOutput(true);
+					setCompressedSize(comp.compressedSize());
+				}
 				
 				setDim1( ldim1 );
 				setDim2( ldim2 );
@@ -1031,7 +1046,7 @@ public class BinaryOp extends MultiThreadedHop
 				}
 				else if( (op == OpOp2.PLUS || op == OpOp2.MINUS) 
 					&& ((input1.getNnz()==0 && input2.getNnz()>=0)
-					|| (input1.getNnz()>=0 && input2.getNnz()==0)) )
+					|| (input1.getNnz()>=0 && input2.getNnz()==0)))
 					setNnz(input1.getNnz() + input2.getNnz());
 			}
 		}

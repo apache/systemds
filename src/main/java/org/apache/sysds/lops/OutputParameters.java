@@ -40,6 +40,7 @@ public class OutputParameters
 	private String _file_name = null;
 	private String _file_label = null;
 	private boolean _linCacheCandidate = true;
+	private long _compressedSize = -1;
 
 	FileFormat matrix_format = FileFormat.BINARY;
 	
@@ -64,10 +65,15 @@ public class OutputParameters
 	}
 
 	public void setDimensions(long rows, long cols, long blen, long nnz) {
+		setDimensions(rows, cols, blen, nnz, -1);
+	}
+
+	public void setDimensions(long rows, long cols, long blen, long nnz, long compressedSize){
 		_num_rows = rows;
 		_num_cols = cols;
 		_nnz = nnz;
 		_blocksize = blen;
+		_compressedSize = compressedSize;
 
 		if ( _blocksize == 0 || _blocksize == -1) {
 			_blocked = false;
@@ -83,6 +89,11 @@ public class OutputParameters
 	public void setDimensions(long rows, long cols, long blen, long nnz, UpdateType update) {
 		_updateType = update;
 		setDimensions(rows, cols, blen, nnz);
+	}
+
+	public void setDimensions(long rows, long cols, long blen, long nnz, UpdateType update, long compressedSize) {
+		_updateType = update;
+		setDimensions(rows, cols, blen, nnz, compressedSize);
 	}
 
 	public void setDimensions(long rows, long cols, long blen, long nnz, boolean linCacheCand) {
@@ -128,12 +139,20 @@ public class OutputParameters
 		_num_cols = cols;
 	}
 	
-	public Long getNnz() {
+	public long getNnz() {
 		return _nnz;
 	}
 	
 	public void setNnz(long nnz) {
 		_nnz = nnz;
+	}
+
+	public long getCompressedSize(){
+		return _compressedSize;
+	}
+
+	public void setCompressedSize(long size){
+		_compressedSize = size;
 	}
 	
 	public UpdateType getUpdateType() {
@@ -167,7 +186,8 @@ public class OutputParameters
 		sb.append("isBlockedRepresentation=" + isBlocked() + Lop.VALUETYPE_PREFIX);
 		sb.append("format=" + getFormat() + Lop.VALUETYPE_PREFIX);
 		sb.append("label=" + getLabel() + Lop.VALUETYPE_PREFIX);
-		sb.append("filename=" + getFile_name());
+		sb.append("filename=" + getFile_name() + Lop.VALUETYPE_PREFIX);
+		sb.append("compressedSize=" + getCompressedSize());
 		return sb.toString();
 	}
 }

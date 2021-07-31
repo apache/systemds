@@ -94,7 +94,7 @@ public class RewriteCompressedReblock extends StatementBlockRewriteRule {
 	}
 
 	private static void injectCompressionDirective(Hop hop, CompressConfig compress, DMLProgram prog) {
-		if(hop.isVisited() || hop.requiresCompression())
+		if(hop.isVisited() || hop.requiresCompression() || hop.hasCompressedInput())
 			return;
 
 		// recursively process children

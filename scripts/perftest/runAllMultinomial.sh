@@ -23,9 +23,10 @@
 TEMPFOLDER=$1
 if [ "$TEMPFOLDER" == "" ]; then TEMPFOLDER=temp ; fi
 
-PERFTESTPATH=scripts/perftest
-BASE=${PERFTESTPATH}/${TEMPFOLDER}/multinomial
-BASE0=${PERFTESTPATH}/${TEMPFOLDER}/binomial
+COMMAND=$2
+
+BASE=${TEMPFOLDER}/multinomial
+BASE0=${TEMPFOLDER}/binomial
 MAXITR=20
 
 FILENAME=$0
@@ -34,32 +35,32 @@ err_report() {
 }
 trap 'err_report $LINENO' ERR
 
-if [ ! -d ${PERFTESTPATH}/logs ]; then mkdir -p ${PERFTESTPATH}/logs ; fi
+if [ ! -d logs ]; then mkdir -p logs ; fi
 
-echo " RUN MULTINOMIAL EXPERIMENTS: "$(date) >> ${PERFTESTPATH}/results/times.txt;
+echo " RUN MULTINOMIAL EXPERIMENTS: "$(date) >> results/times.txt;
 
 # data generation
-echo "-- Generating multinomial data." >> ${PERFTESTPATH}/results/times.txt;
-./${PERFTESTPATH}/genMultinomialData.sh ${PERFTESTPATH}/${TEMPFOLDER} &>> ${PERFTESTPATH}/logs/genMultinomialData.out
+echo "-- Generating multinomial data." >> results/times.txt;
+./genMultinomialData.sh ${TEMPFOLDER} &>> logs/genMultinomialData.out
 
 # run all classifiers with binomial labels on all datasets
 for d in "10k_1k_dense" "10k_1k_sparse" # "100k_1k_dense" "100k_1k_sparse" "1M_1k_dense" "1M_1k_sparse" "10M_1k_dense" "10M_1k_sparse" "100M_1k_dense" "100M_1k_sparse" 
 do 
    for f in "runNaiveBayes"
    do
-      echo "-- Running "$f" on "$d" (all configs)" >> ${PERFTESTPATH}/results/times.txt;
-      ./${PERFTESTPATH}/${f}.sh ${BASE}/X${d}_k5 ${BASE}/y${d}_k5 5 ${BASE} &> ${PERFTESTPATH}/logs/${f}_${d}_k5.out;
+      echo "-- Running "$f" on "$d" (all configs)" >> results/times.txt;
+      ./${f}.sh ${BASE}/X${d}_k5 ${BASE}/y${d}_k5 5 ${BASE} ${COMMAND} &> logs/${f}_${d}_k5.out;
    done
 
    # run with the parameter setting maximum of iterations
    for f in "runMultiLogReg" "runMSVM"
    do
-      echo "-- Running "$f" on "$d" (all configs)" >> ${PERFTESTPATH}/results/times.txt;
-      ./${PERFTESTPATH}/${f}.sh ${BASE}/X${d}_k5 ${BASE}/y${d}_k5 5 ${BASE} ${MAXITR} &> ${PERFTESTPATH}/logs/${f}_${d}_k5.out;
+      echo "-- Running "$f" on "$d" (all configs)" >> results/times.txt;
+      ./${f}.sh ${BASE}/X${d}_k5 ${BASE}/y${d}_k5 5 ${BASE} ${MAXITR} ${COMMAND} &> logs/${f}_${d}_k5.out;
    done
 done
 
 #run KDD only on naive bayes (see binomial for the others)
-#./${PERFTESTPATH}/runNaiveBayes.sh ${BASE0}/X_KDD_k5 ${BASE}/y_KDD_k5 5 &> logs/runNaiveBayes__KDD_k5.out;
-#./${PERFTESTPATH}/runNaiveBayes.sh ${BASE0}/X_KDD ${BASE}/y_KDD 5 &> logs/runNaiveBayes__KDD_k5.out;
+#./runNaiveBayes.sh ${BASE0}/X_KDD_k5 ${BASE}/y_KDD_k5 5 &> logs/runNaiveBayes__KDD_k5.out;
+#./runNaiveBayes.sh ${BASE0}/X_KDD ${BASE}/y_KDD 5 &> logs/runNaiveBayes__KDD_k5.out;
    

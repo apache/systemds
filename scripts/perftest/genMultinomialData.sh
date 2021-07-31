@@ -23,8 +23,6 @@
 TEMPFOLDER=$1
 if [ "$TEMPFOLDER" == "" ]; then TEMPFOLDER=perftest ; fi
 
-PERFTESTPATH=scripts/perftest
-DATAGENPATH=scripts/datagen
 BASE=$1/multinomial
 
 FORMAT="binary" 
@@ -32,31 +30,31 @@ DENSE_SP=0.9
 SPARSE_SP=0.01
 
 #generate XS scenarios (80MB)
-systemds -f ${DATAGENPATH}/genRandData4Multinomial.dml $DASH-args 10000 1000 $DENSE_SP 5 0 $BASE/X10k_1k_dense_k5 $BASE/y10k_1k_dense_k5 $FORMAT 1
-systemds -f ${DATAGENPATH}/genRandData4Multinomial.dml $DASH-args 10000 1000 $SPARSE_SP 5 0 $BASE/X10k_1k_sparse_k5 $BASE/y10k_1k_sparse_k5 $FORMAT 1
-systemds -f ${PERFTESTPATH}/scripts/extractTestData.dml $DASH-args $BASE/X10k_1k_dense_k5 $BASE/y10k_1k_dense_k5 $BASE/X10k_1k_dense_k5_test $BASE/y10k_1k_dense_k5_test $FORMAT
-systemds -f ${PERFTESTPATH}/scripts/extractTestData.dml $DASH-args $BASE/X10k_1k_sparse_k5 $BASE/y10k_1k_sparse_k5 $BASE/X10k_1k_sparse_k5_test $BASE/y10k_1k_sparse_k5_test $FORMAT
+systemds -f ../datagen/genRandData4Multinomial.dml $DASH-args 10000 1000 $DENSE_SP 5 0 $BASE/X10k_1k_dense_k5 $BASE/y10k_1k_dense_k5 $FORMAT 1
+systemds -f ../datagen/genRandData4Multinomial.dml $DASH-args 10000 1000 $SPARSE_SP 5 0 $BASE/X10k_1k_sparse_k5 $BASE/y10k_1k_sparse_k5 $FORMAT 1
+systemds -f scripts/extractTestData.dml $DASH-args $BASE/X10k_1k_dense_k5 $BASE/y10k_1k_dense_k5 $BASE/X10k_1k_dense_k5_test $BASE/y10k_1k_dense_k5_test $FORMAT
+systemds -f scripts/extractTestData.dml $DASH-args $BASE/X10k_1k_sparse_k5 $BASE/y10k_1k_sparse_k5 $BASE/X10k_1k_sparse_k5_test $BASE/y10k_1k_sparse_k5_test $FORMAT
 
 ##generate S scenarios (80MB)
-#systemds -f ${DATAGENPATH}/genRandData4Multinomial.dml $DASH-args 100000 1000 $DENSE_SP 5 0 $BASE/X100k_1k_dense_k5 $BASE/y100k_1k_dense_k5 $FORMAT 1
-#systemds -f ${DATAGENPATH}/genRandData4Multinomial.dml $DASH-args 100000 1000 $SPARSE_SP 5 0 $BASE/X100k_1k_sparse_k5 $BASE/y100k_1k_sparse_k5 $FORMAT 1
-#systemds -f ${PERFTESTPATH}/scripts/extractTestData.dml $DASH-args $BASE/X100k_1k_dense_k5 $BASE/y100k_1k_dense_k5 $BASE/X100k_1k_dense_k5_test $BASE/y100k_1k_dense_k5_test $FORMAT
-#systemds -f ${PERFTESTPATH}/scripts/extractTestData.dml $DASH-args $BASE/X100k_1k_sparse_k5 $BASE/y100k_1k_sparse_k5 $BASE/X100k_1k_sparse_k5_test $BASE/y100k_1k_sparse_k5_test $FORMAT
+#systemds -f ../datagen/genRandData4Multinomial.dml $DASH-args 100000 1000 $DENSE_SP 5 0 $BASE/X100k_1k_dense_k5 $BASE/y100k_1k_dense_k5 $FORMAT 1
+#systemds -f ../datagen/genRandData4Multinomial.dml $DASH-args 100000 1000 $SPARSE_SP 5 0 $BASE/X100k_1k_sparse_k5 $BASE/y100k_1k_sparse_k5 $FORMAT 1
+#systemds -f scripts/extractTestData.dml $DASH-args $BASE/X100k_1k_dense_k5 $BASE/y100k_1k_dense_k5 $BASE/X100k_1k_dense_k5_test $BASE/y100k_1k_dense_k5_test $FORMAT
+#systemds -f scripts/extractTestData.dml $DASH-args $BASE/X100k_1k_sparse_k5 $BASE/y100k_1k_sparse_k5 $BASE/X100k_1k_sparse_k5_test $BASE/y100k_1k_sparse_k5_test $FORMAT
 #
 ##generate M scenarios (8GB)
-#systemds -f ${DATAGENPATH}/genRandData4Multinomial.dml $DASH-args 1000000 1000 $DENSE_SP 5 0 $BASE/X1M_1k_dense_k5 $BASE/y1M_1k_dense_k5 $FORMAT 1
-#systemds -f ${DATAGENPATH}/genRandData4Multinomial.dml $DASH-args 1000000 1000 $SPARSE_SP 5 0 $BASE/X1M_1k_sparse_k5 $BASE/y1M_1k_sparse_k5 $FORMAT 1
-#systemds -f ${PERFTESTPATH}/scripts/extractTestData.dml $DASH-args $BASE/X1M_1k_dense_k5 $BASE/y1M_1k_dense_k5 $BASE/X1M_1k_dense_k5_test $BASE/y1M_1k_dense_k5_test $FORMAT
-#systemds -f ${PERFTESTPATH}/scripts/extractTestData.dml $DASH-args $BASE/X1M_1k_sparse_k5 $BASE/y1M_1k_sparse_k5 $BASE/X1M_1k_sparse_k5_test $BASE/y1M_1k_sparse_k5_test $FORMAT
+#systemds -f ../datagen/genRandData4Multinomial.dml $DASH-args 1000000 1000 $DENSE_SP 5 0 $BASE/X1M_1k_dense_k5 $BASE/y1M_1k_dense_k5 $FORMAT 1
+#systemds -f ../datagen/genRandData4Multinomial.dml $DASH-args 1000000 1000 $SPARSE_SP 5 0 $BASE/X1M_1k_sparse_k5 $BASE/y1M_1k_sparse_k5 $FORMAT 1
+#systemds -f scripts/extractTestData.dml $DASH-args $BASE/X1M_1k_dense_k5 $BASE/y1M_1k_dense_k5 $BASE/X1M_1k_dense_k5_test $BASE/y1M_1k_dense_k5_test $FORMAT
+#systemds -f scripts/extractTestData.dml $DASH-args $BASE/X1M_1k_sparse_k5 $BASE/y1M_1k_sparse_k5 $BASE/X1M_1k_sparse_k5_test $BASE/y1M_1k_sparse_k5_test $FORMAT
 #
 ##generate L scenarios (80GB)
-#systemds -f ${DATAGENPATH}/genRandData4Multinomial.dml $DASH-args 10000000 1000 $DENSE_SP 5 0 $BASE/X10M_1k_dense_k5 $BASE/y10M_1k_dense_k5 $FORMAT 1
-#systemds -f ${DATAGENPATH}/genRandData4Multinomial.dml $DASH-args 10000000 1000 $SPARSE_SP 5 0 $BASE/X10M_1k_sparse_k5 $BASE/y10M_1k_sparse_k5 $FORMAT 1
-#systemds -f ${PERFTESTPATH}/scripts/extractTestData.dml $DASH-args $BASE/X10M_1k_dense_k5 $BASE/y10M_1k_dense_k5 $BASE/X10M_1k_dense_k5_test $BASE/y10M_1k_dense_k5_test $FORMAT
-#systemds -f ${PERFTESTPATH}/scripts/extractTestData.dml $DASH-args $BASE/X10M_1k_sparse_k5 $BASE/y10M_1k_sparse_k5 $BASE/X10M_1k_sparse_k5_test $BASE/y10M_1k_sparse_k5_test $FORMAT
+#systemds -f ../datagen/genRandData4Multinomial.dml $DASH-args 10000000 1000 $DENSE_SP 5 0 $BASE/X10M_1k_dense_k5 $BASE/y10M_1k_dense_k5 $FORMAT 1
+#systemds -f ../datagen/genRandData4Multinomial.dml $DASH-args 10000000 1000 $SPARSE_SP 5 0 $BASE/X10M_1k_sparse_k5 $BASE/y10M_1k_sparse_k5 $FORMAT 1
+#systemds -f scripts/extractTestData.dml $DASH-args $BASE/X10M_1k_dense_k5 $BASE/y10M_1k_dense_k5 $BASE/X10M_1k_dense_k5_test $BASE/y10M_1k_dense_k5_test $FORMAT
+#systemds -f scripts/extractTestData.dml $DASH-args $BASE/X10M_1k_sparse_k5 $BASE/y10M_1k_sparse_k5 $BASE/X10M_1k_sparse_k5_test $BASE/y10M_1k_sparse_k5_test $FORMAT
 #
 ##generate LARGE scenarios (800GB)
-#systemds -f ${DATAGENPATH}/genRandData4Multinomial.dml $DASH-args 100000000 1000 $DENSE_SP 5 0 $BASE/X100M_1k_dense_k5 $BASE/y100M_1k_dense_k5 $FORMAT 1
-#systemds -f ${DATAGENPATH}/genRandData4Multinomial.dml $DASH-args 100000000 1000 $SPARSE_SP 5 0 $BASE/X100M_1k_sparse_k5 $BASE/y100M_1k_sparse_k5 $FORMAT 1
-#systemds -f ${PERFTESTPATH}/scripts/extractTestData.dml $DASH-args $BASE/X100M_1k_dense_k5 $BASE/y100M_1k_dense_k5 $BASE/X100M_1k_dense_k5_test $BASE/y100M_1k_dense_k5_test $FORMAT
-#systemds -f ${PERFTESTPATH}/scripts/extractTestData.dml $DASH-args $BASE/X100M_1k_sparse_k5 $BASE/y100M_1k_sparse_k5 $BASE/X100M_1k_sparse_k5_test $BASE/y100M_1k_sparse_k5_test $FORMAT
+#systemds -f ../datagen/genRandData4Multinomial.dml $DASH-args 100000000 1000 $DENSE_SP 5 0 $BASE/X100M_1k_dense_k5 $BASE/y100M_1k_dense_k5 $FORMAT 1
+#systemds -f ../datagen/genRandData4Multinomial.dml $DASH-args 100000000 1000 $SPARSE_SP 5 0 $BASE/X100M_1k_sparse_k5 $BASE/y100M_1k_sparse_k5 $FORMAT 1
+#systemds -f scripts/extractTestData.dml $DASH-args $BASE/X100M_1k_dense_k5 $BASE/y100M_1k_dense_k5 $BASE/X100M_1k_dense_k5_test $BASE/y100M_1k_dense_k5_test $FORMAT
+#systemds -f scripts/extractTestData.dml $DASH-args $BASE/X100M_1k_sparse_k5 $BASE/y100M_1k_sparse_k5 $BASE/X100M_1k_sparse_k5_test $BASE/y100M_1k_sparse_k5_test $FORMAT

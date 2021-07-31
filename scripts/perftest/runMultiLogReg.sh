@@ -21,7 +21,7 @@
 #-------------------------------------------------------------
 set -e
 
-PERFTESTPATH=scripts/perftest
+if [ "$6" == "SPARK" ]; then CMD="./sparkDML.sh "; DASH="-"; elif [ "$6" == "MR" ]; then CMD="systemds " ; else CMD="echo " ; fi
 
 BASE=$4
 
@@ -32,22 +32,22 @@ if [ $3 -gt 2 ]; then DFAM=3; fi
 for i in 0 1 2; do
    #training
    tstart=$(date +%s.%N)
-   # systemds -f scripts/algorithms/MultiLogReg.dml \
-   systemds -f ${PERFTESTPATH}/scripts/MultiLogReg.dml \
-      -config ${PERFTESTPATH}/conf/SystemDS-config.xml \
-      -stats \
-      -nvargs icpt=$i reg=0.01 tol=0.0001 moi=$5 mii=5 X=$1 Y=$2 B=${BASE}/b
+   # ${CMD} -f ../algorithms/MultiLogReg.dml \
+   ${CMD} -f scripts/MultiLogReg.dml \
+      ${DASH}-config conf/SystemDS-config.xml \
+      ${DASH}-stats \
+      ${DASH}-nvargs icpt=$i reg=0.01 tol=0.0001 moi=$5 mii=5 X=$1 Y=$2 B=${BASE}/b
 
-   ttrain=$(echo "$(date +%s.%N) - $tstart" | bc)
-   echo "MultiLogReg train ict="$i" on "$1": "$ttrain >> ${PERFTESTPATH}/results/times.txt
+   ttrain=$(echo "$(date +%s.%N) - $tstart - .4" | bc)
+   echo "MultiLogReg train ict="$i" on "$1": "$ttrain >> results/times.txt
 
    #predict
    tstart=$(date +%s.%N)
-   systemds -f scripts/algorithms/GLM-predict.dml \
-      -config ${PERFTESTPATH}/conf/SystemDS-config.xml \
-      -stats \
-      -nvargs dfam=$DFAM vpow=-1 link=2 lpow=-1 fmt=csv X=$1_test B=${BASE}/b Y=$2_test M=${BASE}/m O=${BASE}/out.csv
+   ${CMD} -f ../algorithms/GLM-predict.dml \
+      ${DASH}-config conf/SystemDS-config.xml \
+      ${DASH}-stats \
+      ${DASH}-nvargs dfam=$DFAM vpow=-1 link=2 lpow=-1 fmt=csv X=$1_test B=${BASE}/b Y=$2_test M=${BASE}/m O=${BASE}/out.csv
 
-   tpredict=$(echo "$(date +%s.%N) - $tstart" | bc)
-   echo "MultiLogReg predict ict="$i" on "$1": "$tpredict >> ${PERFTESTPATH}/results/times.txt
+   tpredict=$(echo "$(date +%s.%N) - $tstart - .4" | bc)
+   echo "MultiLogReg predict ict="$i" on "$1": "$tpredict >> results/times.txt
 done

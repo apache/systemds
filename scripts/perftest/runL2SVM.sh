@@ -21,7 +21,7 @@
 #-------------------------------------------------------------
 set -e
 
-PERFTESTPATH=scripts/perftest
+if [ "$6" == "SPARK" ]; then CMD="./sparkDML.sh "; DASH="-"; elif [ "$6" == "MR" ]; then CMD="systemds " ; else CMD="echo " ; fi
 
 BASE=$4
 
@@ -31,22 +31,22 @@ for i in 0 1; do
    tstart=$(date +%s.%N)
 
    # /algorithms/l2-svm.dml already calls a built-in function for the l2 svm.
-   systemds -f scripts/algorithms/l2-svm.dml \
-      -config ${PERFTESTPATH}/conf/SystemDS-config.xml \
-      -stats \
-      -nvargs X=$1 Y=$2 icpt=$i tol=0.0001 reg=0.01 maxiter=$5 model=${BASE}/b fmt="csv"
+   ${CMD} -f ../algorithms/l2-svm.dml \
+      ${DASH}-config conf/SystemDS-config.xml \
+      ${DASH}-stats \
+      ${DASH}-nvargs X=$1 Y=$2 icpt=$i tol=0.0001 reg=0.01 maxiter=$5 model=${BASE}/b fmt="csv"
 
-   ttrain=$(echo "$(date +%s.%N) - $tstart" | bc)
-   echo "L2SVM train ict="$i" on "$1": "$ttrain >> ${PERFTESTPATH}/results/times.txt
+   ttrain=$(echo "$(date +%s.%N) - $tstart - .4" | bc)
+   echo "L2SVM train ict="$i" on "$1": "$ttrain >> results/times.txt
 
    #predict
    tstart=$(date +%s.%N)
-   #systemds -f scripts/algorithms/l2-svm-predict.dml \
-   systemds -f ${PERFTESTPATH}/scripts/l2-svm-predict.dml \
-      -config ${PERFTESTPATH}/conf/SystemDS-config.xml \
-      -stats \
-      -nvargs X=$1_test Y=$2_test icpt=$i model=${BASE}/b fmt="csv" scores=${BASE}/scores
+   #${CMD} -f ../algorithms/l2-svm-predict.dml \
+   ${CMD} -f scripts/l2-svm-predict.dml \
+      ${DASH}-config conf/SystemDS-config.xml \
+      ${DASH}-stats \
+      ${DASH}-nvargs X=$1_test Y=$2_test icpt=$i model=${BASE}/b fmt="csv" scores=${BASE}/scores
 
-   tpredict=$(echo "$(date +%s.%N) - $tstart" | bc)
-   echo "L2SVM predict ict="$i" on "$1": "$tpredict >> ${PERFTESTPATH}/results/times.txt
+   tpredict=$(echo "$(date +%s.%N) - $tstart - .4" | bc)
+   echo "L2SVM predict ict="$i" on "$1": "$tpredict >> results/times.txt
 done

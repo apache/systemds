@@ -20,57 +20,66 @@
 #
 #-------------------------------------------------------------
 
-# if [ "$1" == "" -o "$2" == "" ]; then  echo "Usage: $0 <hdfsDataDir> <MR | SPARK | ECHO>   e.g. $0 perftest SPARK" ; exit 1 ; fi
-# if [ "$1" == "" ]; then echo "Usage: $0 <hdfsDataDir>  e.g. $0 perftest" ; exit 1 ; fi
+# Example usage:
+# ./runAll.sh temp MR
+
+
+# First argument is optional, but can be
 TEMPFOLDER=$1
 if [ "$TEMPFOLDER" == "" ]; then TEMPFOLDER=temp ; fi
 
+# Second argument is optional, but can be MR | SPARK | ECHO
+COMMAND=$2
+if [ "$COMMAND" == "" ]; then COMMAND=MR ; fi
+
 # Set properties
-export LOG4JPROP='scripts/perftest/conf/log4j-off.properties'
+export LOG4JPROP='conf/log4j-off.properties'
 export SYSDS_QUIET=1
 #export SYSTEMDS_ROOT=$(pwd)
 #export PATH=$SYSTEMDS_ROOT/bin:$PATH
 
-# Import MKL
-if [ -d ~/intel ] && [ -d ~/intel/bin ] && [ -f ~/intel/bin/compilervars.sh ]; then
-    . ~/intel/bin/compilervars.sh intel64
-elif [ -d ~/intel ] && [ -d ~/intel/oneapi ] && [ -f ~/intel/oneapi/setvars.sh ]; then
-	# For the new intel oneAPI
-    . ~/intel/oneapi/setvars.sh intel64
-else
-    . /opt/intel/bin/compilervars.sh intel64
-fi
 
-PERFTESTPATH=scripts/perftest
+# Initialize Intel MKL
+#if [ -d ~/intel ] && [ -d ~/intel/bin ] && [ -f ~/intel/bin/compilervars.sh ]; then
+#    . ~/intel/bin/compilervars.sh intel64
+#elif [ -d ~/intel ] && [ -d ~/intel/oneapi ] && [ -f ~/intel/oneapi/setvars.sh ]; then
+#	# For the new intel oneAPI
+#    . ~/intel/oneapi/setvars.sh intel64
+#else
+#    . /opt/intel/bin/compilervars.sh intel64
+#fi
+
 
 ### Micro Benchmarks:
 
-./${PERFTESTPATH}/MatrixMult.sh
-./${PERFTESTPATH}/MatrixTranspose.sh
+#./MatrixMult.sh
+#./MatrixTranspose.sh
 
 
 ### Algorithms Benchmarks:
 
 # init time measurement
-if [ ! -d ${PERFTESTPATH}/results ]; then mkdir -p ${PERFTESTPATH}/results ; fi
-date >> ${PERFTESTPATH}/results/times.txt
+if [ ! -d results ]; then mkdir -p results ; fi
+date >> results/times.txt
 
-./${PERFTESTPATH}/runAllBinomial.sh $TEMPFOLDER
-./${PERFTESTPATH}/runAllMultinomial.sh $TEMPFOLDER
-./${PERFTESTPATH}/runAllRegression.sh $TEMPFOLDER
 
-## TODO Refactor the following performance tests
-#./${PERFTESTPATH}/runAllStats.sh $TEMPFOLDER
-#./${PERFTESTPATH}/runAllClustering.sh $TEMPFOLDER
+# TODO Use the built-in function lmPredict instead of the GLM-predict.dml script, for linear regression.
+./runAllBinomial.sh $TEMPFOLDER $COMMAND
+./runAllMultinomial.sh $TEMPFOLDER $COMMAND
+./runAllRegression.sh $TEMPFOLDER $COMMAND
+
+# TODO The following commented benchmarks have yet to be cleaned up and ported from perftestDeprecated to perftest
+#./runAllStats.sh $TEMPFOLDER $COMMAND
+#./runAllClustering.sh $TEMPFOLDER $COMMAND
 
 # add stepwise Linear 
 # add stepwise GLM
-#./${PERFTESTPATH}/runAllTrees $TEMPFOLDER
+#./runAllTrees $TEMPFOLDER $COMMAND
 # add randomForest
-#./${PERFTESTPATH}/runAllDimensionReduction $TEMPFOLDER
-#./${PERFTESTPATH}/runAllMatrixFactorization $TEMPFOLDER
+#./runAllDimensionReduction $TEMPFOLDER $COMMAND
+#./runAllMatrixFactorization $TEMPFOLDER $COMMAND
 #ALS
-#./${PERFTESTPATH}/runAllSurvival $TEMPFOLDER
+#./runAllSurvival $TEMPFOLDER $COMMAND
 #KaplanMeier
 #Cox
 

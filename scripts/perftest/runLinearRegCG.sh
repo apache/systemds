@@ -21,7 +21,7 @@
 #-------------------------------------------------------------
 set -e
 
-PERFTESTPATH=scripts/perftest
+if [ "$5" == "SPARK" ]; then CMD="./sparkDML.sh "; DASH="-"; elif [ "$5" == "MR" ]; then CMD="systemds " ; else CMD="echo " ; fi
 
 BASE=$3
 
@@ -32,22 +32,22 @@ do
    
    #training
    tstart=$(date +%s.%N)
-   #systemds -f scripts/algorithms/LinearRegCG.dml \
-   systemds -f ${PERFTESTPATH}/scripts/LinearRegCG.dml \
-      -config ${PERFTESTPATH}/conf/SystemDS-config.xml \
-      -stats \
-      -nvargs X=$1 Y=$2 B=${BASE}/b icpt=${i} fmt="csv" maxi=$4 tol=0.0001 reg=0.01
+   #${CMD} -f ../algorithms/LinearRegCG.dml \
+   ${CMD} -f scripts/LinearRegCG.dml \
+      ${DASH}-config conf/SystemDS-config.xml \
+      ${DASH}-stats \
+      ${DASH}-nvargs X=$1 Y=$2 B=${BASE}/b icpt=${i} fmt="csv" maxi=$4 tol=0.0001 reg=0.01
 
-   ttrain=$(echo "$(date +%s.%N) - $tstart" | bc)
-   echo "LinRegCG train ict="$i" on "$1": "$ttrain >> ${PERFTESTPATH}/results/times.txt
+   ttrain=$(echo "$(date +%s.%N) - $tstart - .4" | bc)
+   echo "LinRegCG train ict="$i" on "$1": "$ttrain >> results/times.txt
 
    #predict
    tstart=$(date +%s.%N)
-   systemds -f scripts/algorithms/GLM-predict.dml \
-      -config ${PERFTESTPATH}/conf/SystemDS-config.xml \
-      -stats \
-      -nvargs dfam=1 link=1 vpow=0.0 lpow=1.0 fmt=csv X=$1_test B=${BASE}/b Y=$2_test M=${BASE}/m O=${BASE}/out.csv
+   ${CMD} -f ../algorithms/GLM-predict.dml \
+      ${DASH}-config conf/SystemDS-config.xml \
+      ${DASH}-stats \
+      ${DASH}-nvargs dfam=1 link=1 vpow=0.0 lpow=1.0 fmt=csv X=$1_test B=${BASE}/b Y=$2_test M=${BASE}/m O=${BASE}/out.csv
 
-   tpredict=$(echo "$(date +%s.%N) - $tstart" | bc)
-   echo "LinRegCG predict ict="$i" on "$1": "$tpredict >> ${PERFTESTPATH}/results/times.txt
+   tpredict=$(echo "$(date +%s.%N) - $tstart - .4" | bc)
+   echo "LinRegCG predict ict="$i" on "$1": "$tpredict >> results/times.txt
 done

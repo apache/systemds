@@ -23,8 +23,9 @@
 TEMPFOLDER=$1
 if [ "$TEMPFOLDER" == "" ]; then TEMPFOLDER=temp ; fi
 
-PERFTESTPATH=scripts/perftest
-BASE=${PERFTESTPATH}/${TEMPFOLDER}/binomial
+COMMAND=$2
+
+BASE=${TEMPFOLDER}/binomial
 MAXITR=20
 
 FILENAME=$0
@@ -33,27 +34,33 @@ err_report() {
 }
 trap 'err_report $LINENO' ERR
 
-if [ ! -d ${PERFTESTPATH}/logs ]; then mkdir -p ${PERFTESTPATH}/logs ; fi
+if [ ! -d logs ]; then mkdir -p logs ; fi
 
-echo "RUN REGRESSION EXPERIMENTS" $(date) >> ${PERFTESTPATH}/results/times.txt;
+echo "RUN REGRESSION EXPERIMENTS" $(date) >> results/times.txt;
 
 # data generation
-echo "-- Generating binomial data: " >> ${PERFTESTPATH}/results/times.txt;
-./${PERFTESTPATH}/genBinomialData.sh ${PERFTESTPATH}/${TEMPFOLDER} &>> ${PERFTESTPATH}/logs/genBinomialData.out
+echo "-- Generating binomial data: " >> results/times.txt;
+./genBinomialData.sh ${TEMPFOLDER} &>> logs/genBinomialData.out
 
 # run all regression algorithms with binomial labels on all datasets
 for d in "10k_1k_dense" "10k_1k_sparse" # "100k_1k_dense" "100k_1k_sparse" "1M_1k_dense" "1M_1k_sparse" "10M_1k_dense" "10M_1k_sparse" #"_KDD" "100M_1k_dense" "100M_1k_sparse" 
 do
+
+   # -------------------------------------------------------------------------------------------------------------------
+   # TODO return an additional output to preserve the internal scaling from training (for the built-in functions lmCG and lmDS).
+   # The original scripts algorithms/LinearRegCG.dml and algorithms/LinearRegDS.dml do have that additional output column, but the respective built-in functions do not.
+   # -------------------------------------------------------------------------------------------------------------------
+
    for f in "runLinearRegDS"
    do
-       echo "-- Running "$f" on "$d" (all configs)" >> ${PERFTESTPATH}/results/times.txt;
-       ./${PERFTESTPATH}/${f}.sh ${BASE}/X${d} ${BASE}/y${d} ${BASE} &> ${PERFTESTPATH}/logs/${f}_${d}.out;
+       echo "-- Running "$f" on "$d" (all configs)" >> results/times.txt;
+       ./${f}.sh ${BASE}/X${d} ${BASE}/y${d} ${BASE} ${COMMAND} &> logs/${f}_${d}.out;
    done
 
    # run with the parameter setting maximum of iterations
    for f in "runLinearRegCG" "runGLM_poisson_log" "runGLM_gamma_log" "runGLM_binomial_probit"
    do
-      echo "-- Running "$f" on "$d" (all configs)" >> ${PERFTESTPATH}/results/times.txt;
-      ./${PERFTESTPATH}/${f}.sh ${BASE}/X${d} ${BASE}/y${d} ${BASE} ${MAXITR} &> ${PERFTESTPATH}/logs/${f}_${d}.out;
+      echo "-- Running "$f" on "$d" (all configs)" >> results/times.txt;
+      ./${f}.sh ${BASE}/X${d} ${BASE}/y${d} ${BASE} ${MAXITR} ${COMMAND} &> logs/${f}_${d}.out;
    done
 done

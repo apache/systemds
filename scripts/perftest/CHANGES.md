@@ -3,17 +3,14 @@ Most of the new files were copied from the deprecated performance test suite (sc
 Most of the new DML scripts were copied from scripts/algorithms to scripts/perftest/scripts and then adapted to use built-in functions, if available.
 
 ### General changes of perftest and the refactored files moved from perftestDeprecated to perftest
-- Removed the expected "<MR | SPARK | ECHO>" argument from copied scripts from the deprecated test suite.
-- Added line for intel oneapi MKL system variable initialization in the matrixmult script.
-- MKL system variables are now initialized once in the runAll.sh, not in subsequent microbenchmark scripts.
-- By default, shell scripts can now be invoked without any additional parameters, but an optional folder path can be specified for outputs.
+- Added line for intel oneapi MKL system variable initialization in the matrixmult script. The initialization is commented for now, as it would be executed by the runAll.sh.
+- Added commented initialization for MKL system variables in the runAll.sh. 
+- By default, shell scripts can now be invoked without any additional parameters, but an optional folder path can be specified for outputs or for the command to be ultimately ran (local, spark, "debug").
 - Added SystemDS-config.xml in the perftest/conf folder, which is used by all refactored perftest scripts.
-- Refactored all scripts so they must be ran from the SystemDS root, as described in the README.
 - times.txt was moved to the "results" folder in perftest.
-- Time measurements appended to results/times.txt are now additionally measured in microseconds instead of just seconds.
+- Time measurements appended to results/times.txt are now additionally measured in microseconds instead of just seconds, for the smaller data benchmarks.
 - All DML scripts, that are ultimately called by the microbenchmarks, can be found in perftest/scripts. This excludes the original algorithmic scripts that are still in use, if there was no corresponding built-in function.
 - Removed the -explain flag from all systemds calls.
-
 
 ### Bash scripts that now call a new DML script that makes use of a built-in function, instead of a fully implemented algorithm
 - perftest/runMultiLogReg.sh -> perftest/scripts/MultiLogReg.dml
@@ -38,12 +35,9 @@ Most of the new DML scripts were copied from scripts/algorithms to scripts/perft
 - perftest/runGLM_binomial_probit.sh -> algorithms/GLM-predict.dml
 
 ### Bash scripts that already did call a DML script with a single built-in functions (only needed some refactoring)
-- perftest/runL2SVM.sh -> algorithms/l2-svm.dml (This already uses the built-in functopn l2svm!)
+- perftest/runL2SVM.sh -> algorithms/l2-svm.dml (This already uses the built-in function l2svm!)
 
 
-### Notes/Peculiarities
-- Built-in MSVM is ~80% slower than the fully implemented MSVM DML script in /algorithms. I wonder why? (This was tested with MKL)
-- perftest/scripts/naive-bayes-predict.dml only had a small part replaced with the built-in function. 
 
 	
 	

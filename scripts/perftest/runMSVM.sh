@@ -21,7 +21,7 @@
 #-------------------------------------------------------------
 set -e
 
-PERFTESTPATH=scripts/perftest
+if [ "$6" == "SPARK" ]; then CMD="./sparkDML.sh "; DASH="-"; elif [ "$6" == "MR" ]; then CMD="systemds " ; else CMD="echo " ; fi
 
 BASE=$4
 
@@ -29,23 +29,23 @@ BASE=$4
 for i in 0 1; do
    #training
    tstart=$(date +%s.%N)
-   # systemds -f scripts/algorithms/m-svm.dml \
-   systemds -f ${PERFTESTPATH}/scripts/m-svm.dml \
-      -config ${PERFTESTPATH}/conf/SystemDS-config.xml \
-      -stats \
-      -nvargs X=$1 Y=$2 icpt=$i classes=$3 tol=0.0001 reg=0.01 maxiter=$5 model=${BASE}/w fmt="csv"
+   # ${CMD} -f ../algorithms/m-svm.dml \
+   ${CMD} -f scripts/m-svm.dml \
+      ${DASH}-config conf/SystemDS-config.xml \
+      ${DASH}-stats \
+      ${DASH}-nvargs X=$1 Y=$2 icpt=$i classes=$3 tol=0.0001 reg=0.01 maxiter=$5 model=${BASE}/w fmt="csv"
 
-   ttrain=$(echo "$(date +%s.%N) - $tstart" | bc)
-   echo "MSVM train ict="$i" on "$1": "$ttrain >> ${PERFTESTPATH}/results/times.txt
+   ttrain=$(echo "$(date +%s.%N) - $tstart - .4" | bc)
+   echo "MSVM train ict="$i" on "$1": "$ttrain >> results/times.txt
 
    #predict
    tstart=$(date +%s.%N)
-   #systemds -f scripts/algorithms/m-svm-predict.dml \
-   systemds -f ${PERFTESTPATH}/scripts/m-svm-predict.dml \
-      -config ${PERFTESTPATH}/conf/SystemDS-config.xml \
-      -stats \
-      -nvargs X=$1_test Y=$2_test icpt=$i model=${BASE}/w fmt="csv"
+   #${CMD} -f ../algorithms/m-svm-predict.dml \
+   ${CMD} -f scripts/m-svm-predict.dml \
+      ${DASH}-config conf/SystemDS-config.xml \
+      ${DASH}-stats \
+      ${DASH}-nvargs X=$1_test Y=$2_test icpt=$i model=${BASE}/w fmt="csv"
 
-   tpredict=$(echo "$(date +%s.%N) - $tstart" | bc)
-   echo "MSVM predict ict="$i" on "$1": "$tpredict >> ${PERFTESTPATH}/results/times.txt
+   tpredict=$(echo "$(date +%s.%N) - $tstart - .4" | bc)
+   echo "MSVM predict ict="$i" on "$1": "$tpredict >> results/times.txt
 done

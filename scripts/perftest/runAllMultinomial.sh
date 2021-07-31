@@ -20,6 +20,8 @@
 #
 #-------------------------------------------------------------
 
+#if [ "$1" == "" -o "$2" == "" ]; then echo "Usage: $0 <hdfsDataDir> <MR | SPARK | ECHO>   e.g. $0 perftest SPARK" ; exit 1 ; fi
+
 TEMPFOLDER=$1
 if [ "$TEMPFOLDER" == "" ]; then TEMPFOLDER=temp ; fi
 
@@ -43,7 +45,7 @@ echo " RUN MULTINOMIAL EXPERIMENTS: "$(date) >> results/times.txt;
 
 # data generation
 echo "-- Generating multinomial data." >> results/times.txt;
-./genMultinomialData.sh ${TEMPFOLDER} &>> logs/genMultinomialData.out
+./genMultinomialData.sh ${TEMPFOLDER} ${COMMAND} &>> logs/genMultinomialData.out
 
 # run all classifiers with binomial labels on all datasets
 for d in "10k_1k_dense" "10k_1k_sparse" # "100k_1k_dense" "100k_1k_sparse" "1M_1k_dense" "1M_1k_sparse" "10M_1k_dense" "10M_1k_sparse" "100M_1k_dense" "100M_1k_sparse" 

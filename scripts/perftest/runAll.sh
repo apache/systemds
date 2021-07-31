@@ -20,11 +20,12 @@
 #
 #-------------------------------------------------------------
 
+#if [ "$1" == "" -o "$2" == "" ]; then echo "Usage: $0 <hdfsDataDir> <MR | SPARK | ECHO>   e.g. $0 perftest SPARK" ; exit 1 ; fi
+
 # Example usage:
 # ./runAll.sh temp MR
 
-
-# First argument is optional, but can be
+# First argument is optional, but can be e.g. perftestTemp
 TEMPFOLDER=$1
 if [ "$TEMPFOLDER" == "" ]; then TEMPFOLDER=temp ; fi
 

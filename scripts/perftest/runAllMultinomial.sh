@@ -24,6 +24,7 @@ TEMPFOLDER=$1
 if [ "$TEMPFOLDER" == "" ]; then TEMPFOLDER=temp ; fi
 
 COMMAND=$2
+if [ "$COMMAND" == "" ]; then COMMAND=MR ; fi
 
 BASE=${TEMPFOLDER}/multinomial
 BASE0=${TEMPFOLDER}/binomial
@@ -36,6 +37,7 @@ err_report() {
 trap 'err_report $LINENO' ERR
 
 if [ ! -d logs ]; then mkdir -p logs ; fi
+if [ ! -d results ]; then mkdir -p results ; fi
 
 echo " RUN MULTINOMIAL EXPERIMENTS: "$(date) >> results/times.txt;
 

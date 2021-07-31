@@ -24,6 +24,7 @@ TEMPFOLDER=$1
 if [ "$TEMPFOLDER" == "" ]; then TEMPFOLDER=temp ; fi
 
 COMMAND=$2
+if [ "$COMMAND" == "" ]; then COMMAND=MR ; fi
 
 BASE=${TEMPFOLDER}/binomial
 MAXITR=20
@@ -35,6 +36,7 @@ err_report() {
 trap 'err_report $LINENO' ERR
 
 if [ ! -d logs ]; then mkdir -p logs ; fi
+if [ ! -d results ]; then mkdir -p results ; fi
 
 echo "RUN REGRESSION EXPERIMENTS" $(date) >> results/times.txt;
 

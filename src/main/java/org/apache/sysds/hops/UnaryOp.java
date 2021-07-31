@@ -402,7 +402,7 @@ public class UnaryOp extends MultiThreadedHop
 				|| _op==OpOp1.ACOS || _op==OpOp1.ASIN || _op==OpOp1.ATAN  
 				|| _op==OpOp1.COSH || _op==OpOp1.SINH || _op==OpOp1.TANH 
 				|| _op==OpOp1.SQRT || _op==OpOp1.ROUND  
-				|| _op==OpOp1.SPROP ) //sparsity preserving
+				|| _op==OpOp1.SPROP || _op== OpOp1.COMPRESS || _op== OpOp1.DECOMPRESS) //sparsity preserving
 			{
 				ret = new MatrixCharacteristics(dc.getRows(), dc.getCols(), -1, dc.getNonZeros());
 			}
@@ -559,7 +559,8 @@ public class UnaryOp extends MultiThreadedHop
 			if( _op==OpOp1.ABS || _op==OpOp1.SIN || _op==OpOp1.TAN  
 				|| _op==OpOp1.SINH || _op==OpOp1.TANH
 				|| _op==OpOp1.ASIN || _op==OpOp1.ATAN
-				|| _op==OpOp1.SQRT || _op==OpOp1.ROUND || _op==OpOp1.SPROP ) //sparsity preserving
+				|| _op==OpOp1.SQRT || _op==OpOp1.ROUND || _op==OpOp1.SPROP
+				|| _op==OpOp1.COMPRESS || _op==OpOp1.DECOMPRESS) //sparsity preserving
 			{
 				setNnz( input.getNnz() );
 			}

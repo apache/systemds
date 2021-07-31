@@ -438,13 +438,14 @@ public class AggBinaryOp extends MultiThreadedHop
 	private boolean isApplicableForTransitiveSparkExecType(boolean left) 
 	{
 		int index = left ? 0 : 1;
-		return !(getInput().get(index) instanceof DataOp && ((DataOp)getInput().get(index)).requiresCheckpoint())
-			&& (!HopRewriteUtils.isTransposeOperation(getInput().get(index))
+		return !(getInput(index) instanceof DataOp && ((DataOp)getInput(index)).requiresCheckpoint())
+			&& (!HopRewriteUtils.isTransposeOperation(getInput(index))
 				|| (left && !isLeftTransposeRewriteApplicable(true)))
-			&& getInput().get(index).getParent().size()==1 //bagg is only parent
-			&& !getInput().get(index).areDimsBelowThreshold() 
-			&& getInput().get(index).optFindExecType() == ExecType.SPARK
-			&& getInput().get(index).getOutputMemEstimate()>getOutputMemEstimate();
+			&& getInput(index).getParent().size()==1 //bagg is only parent
+			&& !getInput(index).areDimsBelowThreshold() 
+			&& (getInput(index).optFindExecType() == ExecType.SPARK
+				|| (getInput(index) instanceof DataOp && ((DataOp)getInput(index)).hasOnlyRDD()))
+			&& getInput(index).getOutputMemEstimate()>getOutputMemEstimate();
 	}
 	
 	/**

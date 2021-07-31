@@ -38,7 +38,7 @@ public class BuiltinAutoencoder2LayerTest extends AutomatedTestBase
 	private final static int cols = 784;
 	private final static double sparse = 0.1;
 	private final static double dense = 0.7;
-	private final static double tolerance = 1e-3;
+	private final static double tolerance = 2e-3;
 
 	private static int batchSize = 256;
 	private static double step = 1e-5;

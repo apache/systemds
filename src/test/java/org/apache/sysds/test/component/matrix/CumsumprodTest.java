@@ -62,4 +62,13 @@ public class CumsumprodTest {
 		MatrixBlock B = A.unaryOperations(uop, new MatrixBlock());
 		assertEquals(1000, B.getNumRows());
 	}
+
+	@Test
+	public void testCumsumprodEmpty() {
+		MatrixBlock A = MatrixBlock.randOperations(1000, 2, 0.00, 0, 10, "uniform", 7);
+		A = new MatrixBlock(A, SparseBlock.Type.MCSR, true);
+		UnaryOperator uop = new UnaryOperator(Builtin.getBuiltinFnObject("ucumk+*"), 1, false);
+		MatrixBlock B = A.unaryOperations(uop, new MatrixBlock());
+		assertEquals(1000, B.getNumRows());
+	}
 }

@@ -24,13 +24,13 @@ import org.apache.sysds.common.Types.AggOp;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.Direction;
 import org.apache.sysds.common.Types.ExecMode;
+import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.common.Types.OpOp2;
 import org.apache.sysds.common.Types.ReOrgOp;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.hops.rewrite.HopRewriteUtils;
 import org.apache.sysds.lops.Lop;
-import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.lops.MMCJ;
 import org.apache.sysds.lops.MMRJ;
 import org.apache.sysds.lops.MMTSJ;
@@ -58,8 +58,9 @@ import org.apache.sysds.runtime.util.UtilFunctions;
  * 	
  * 		Semantic: generate indices, align, cross-operate, generate indices, align, aggregate
  */
-public class AggBinaryOp extends MultiThreadedHop
-{
+public class AggBinaryOp extends MultiThreadedHop {
+	// private static final Log LOG =  LogFactory.getLog(BinaryOp.class.getName());
+
 	public static final double MAPMULT_MEM_MULTIPLIER = 1.0;
 	public static MMultMethod FORCED_MMULT_METHOD = null;
 
@@ -178,6 +179,11 @@ public class AggBinaryOp extends MultiThreadedHop
 			MMTSJType mmtsj = checkTransposeSelf(); //determine tsmm pattern
 			ChainType chain = checkMapMultChain(); //determine mmchain pattern
 
+			if(mmtsj == MMTSJType.LEFT && input2.isCompressedOutput()){
+				// if tsmm and input is compressed. (using input2, since input1 is transposed and therefore not compressed.)
+				et = ExecType.CP;
+			}
+
 			if( et == ExecType.CP || et == ExecType.GPU || et == ExecType.FED )
 			{
 				//matrix mult operation selection part 3 (CP type)
@@ -210,7 +216,6 @@ public class AggBinaryOp extends MultiThreadedHop
 						input1.getDim1(), input1.getDim2(), input1.getBlocksize(), input1.getNnz(),
 						input2.getDim1(), input2.getDim2(), input2.getBlocksize(), input2.getNnz(),
 						mmtsj, chain, _hasLeftPMInput, tmmRewrite );
-			
 				//dispatch SPARK lops construction 
 				switch( _method )
 				{
@@ -290,6 +295,7 @@ public class AggBinaryOp extends MultiThreadedHop
 		//   This is reflected in our conservative memory estimate. However, we additionally need 
 		//   to account for potential final dense/sparse transformations via processing mem estimates.
 		double sparsity = (nnz == 0) ? 0 : 1;
+		double ret;
 		/*
 		if( isMatrixMultiply() ) {	
 			if( nnz < 0 ){
@@ -306,9 +312,9 @@ public class AggBinaryOp extends MultiThreadedHop
 				sparsity = OptimizerUtils.getSparsity(dim1, dim2, nnz);
 		}
 		*/
-		//currently always estimated as dense in order to account for dense intermediate without unnecessary overestimation 
-		double ret = OptimizerUtils.estimateSizeExactSparsity(dim1, dim2, sparsity);
-		
+		// estimated as dense in order to account for dense intermediate without unnecessary overestimation
+		ret = OptimizerUtils.estimateSizeExactSparsity(dim1, dim2, sparsity);
+
 		return ret;
 	}
 	
@@ -1281,6 +1287,14 @@ public class AggBinaryOp extends MultiThreadedHop
 			setNnz(-1); // for reset on recompile w/ unknowns 
 			if( input1.getNnz() == 0 || input2.getNnz() == 0 )
 				setNnz(0);
+			if(hasCompressedInput() && !isRequiredDecompression() && input1.isCompressedOutput()) {
+
+				// right matrix multiplication ... compressed output
+				setCompressedOutput(true);
+				// conservatively set the size to a multiplication of the compression size
+				// multiplied with the number of columns.
+				setCompressedSize(input1._compressedSize * input2.getDim2());
+			}
 		}
 	}
 	

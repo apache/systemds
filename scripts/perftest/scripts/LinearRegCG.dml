@@ -19,35 +19,6 @@
 #
 #-------------------------------------------------------------
 
-# THIS SCRIPT SOLVES LINEAR REGRESSION USING THE CONJUGATE GRADIENT ALGORITHM
-# It uses a built-in function, see documentation for more information:
-# https://apache.github.io/systemds/site/builtins-reference#lmcg-function
-#
-# INPUT PARAMETERS:
-# --------------------------------------------------------------------------------------------
-# NAME  TYPE   DEFAULT  MEANING
-# --------------------------------------------------------------------------------------------
-# X     String  ---     Location (on HDFS) to read the matrix X of feature vectors
-# Y     String  ---     Location (on HDFS) to read the 1-column matrix Y of response values
-# B     String  ---     Location to store estimated regression parameters (the betas)
-# icpt  Int      0      Intercept presence, shifting and rescaling the columns of X:
-#                       0 = no intercept, no shifting, no rescaling;
-#                       1 = add intercept, but neither shift nor rescale X;
-#                       2 = add intercept, shift & rescale X columns to mean = 0, variance = 1
-# reg   Double 0.000001 Regularization constant (lambda) for L2-regularization; set to nonzero
-#                       for highly dependend/sparse/numerous features
-# tol   Double 0.000001 Tolerance (epsilon); conjugate graduent procedure terminates early if
-#                       L2 norm of the beta-residual is less than tolerance * its initial norm
-# maxi  Int      0      Maximum number of conjugate gradient iterations, 0 = no maximum
-# fmt   String "text"   Matrix output format for B (the betas) only, usually "text" or "csv"
-# --------------------------------------------------------------------------------------------
-# OUTPUT: 1-column matrix of regression parameters (the betas)
-#
-# -------------------------------------------------------------------------------------
-#
-# Script invokation example:
-# systemds -f LinearRegCG.dml -nvargs X=INPUT_DIR/X Y=INPUT_DIR/Y B=OUTPUT_DIR/B icpt=2 reg=1.0 tol=0.001 maxi=100 fmt=csv
-
 fileX = $X;
 fileY = $Y;
 fileB = $B;

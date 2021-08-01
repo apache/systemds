@@ -22,10 +22,6 @@
 # Implements multinomial naive Bayes classifier with Laplace correction
 # See documentation for more information:
 # https://apache.github.io/systemds/site/builtins-reference#naivebayes-function
-#
-# Example Usage:
-# systemds -f naive-bayes.dml -nvargs X=<Data> Y=<labels> laplace=<Laplace Correction> prior=<Model file1> conditionals=<Model file2> accuracy=<accuracy file> fmt="text"
-
 
 # defaults
 laplaceCorrection = ifdef($laplace, 1)

@@ -21,8 +21,7 @@
 #-------------------------------------------------------------
 set -e
 
-if [ "$6" == "SPARK" ]; then CMD="./sparkDML.sh "; DASH="-"; elif [ "$6" == "MR" ]; then CMD="systemds " ; else CMD="echo " ; fi
-
+CMD=$6
 BASE=$4
 
 #for all intercept values
@@ -31,9 +30,9 @@ for i in 0 1; do
    tstart=$(date +%s.%N)
    # ${CMD} -f ../algorithms/m-svm.dml \
    ${CMD} -f scripts/m-svm.dml \
-      ${DASH}-config conf/SystemDS-config.xml \
-      ${DASH}-stats \
-      ${DASH}-nvargs X=$1 Y=$2 icpt=$i classes=$3 tol=0.0001 reg=0.01 maxiter=$5 model=${BASE}/w fmt="csv"
+      --config conf/SystemDS-config.xml \
+      --stats \
+      --nvargs X=$1 Y=$2 icpt=$i classes=$3 tol=0.0001 reg=0.01 maxiter=$5 model=${BASE}/w fmt="csv"
 
    ttrain=$(echo "$(date +%s.%N) - $tstart - .4" | bc)
    echo "MSVM train ict="$i" on "$1": "$ttrain >> results/times.txt
@@ -42,9 +41,9 @@ for i in 0 1; do
    tstart=$(date +%s.%N)
    #${CMD} -f ../algorithms/m-svm-predict.dml \
    ${CMD} -f scripts/m-svm-predict.dml \
-      ${DASH}-config conf/SystemDS-config.xml \
-      ${DASH}-stats \
-      ${DASH}-nvargs X=$1_test Y=$2_test icpt=$i model=${BASE}/w fmt="csv"
+      --config conf/SystemDS-config.xml \
+      --stats \
+      --nvargs X=$1_test Y=$2_test icpt=$i model=${BASE}/w fmt="csv"
 
    tpredict=$(echo "$(date +%s.%N) - $tstart - .4" | bc)
    echo "MSVM predict ict="$i" on "$1": "$tpredict >> results/times.txt

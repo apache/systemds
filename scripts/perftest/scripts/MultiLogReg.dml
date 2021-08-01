@@ -42,10 +42,6 @@
 # --------------------------------------------------------------------------------------------
 # The largest label represents the baseline category; if label -1 or 0 is present, then it is
 # the baseline label (and it is converted to the largest label).
-#
-# Script invocation example:
-# systemds -f MultiLogReg.dml -nvargs icpt=2 reg=1.0 tol=0.000001 moi=100 mii=20
-#     X=INPUT_DIR/X123 Y=INPUT_DIR/Y123 B=OUTPUT_DIR/B123 fmt=csv
 
 fileX = $X;
 fileY = $Y;

@@ -21,8 +21,7 @@
 #-------------------------------------------------------------
 set -e
 
-if [ "$6" == "SPARK" ]; then CMD="./sparkDML.sh "; DASH="-"; elif [ "$6" == "MR" ]; then CMD="systemds " ; else CMD="echo " ; fi
-
+CMD=$6
 BASE=$4
 
 #for all intercept values
@@ -32,9 +31,9 @@ for i in 0 1; do
 
    # /algorithms/l2-svm.dml already calls a built-in function for the l2 svm.
    ${CMD} -f ../algorithms/l2-svm.dml \
-      ${DASH}-config conf/SystemDS-config.xml \
-      ${DASH}-stats \
-      ${DASH}-nvargs X=$1 Y=$2 icpt=$i tol=0.0001 reg=0.01 maxiter=$5 model=${BASE}/b fmt="csv"
+      --config conf/SystemDS-config.xml \
+      --stats \
+      --nvargs X=$1 Y=$2 icpt=$i tol=0.0001 reg=0.01 maxiter=$5 model=${BASE}/b fmt="csv"
 
    ttrain=$(echo "$(date +%s.%N) - $tstart - .4" | bc)
    echo "L2SVM train ict="$i" on "$1": "$ttrain >> results/times.txt
@@ -43,9 +42,9 @@ for i in 0 1; do
    tstart=$(date +%s.%N)
    #${CMD} -f ../algorithms/l2-svm-predict.dml \
    ${CMD} -f scripts/l2-svm-predict.dml \
-      ${DASH}-config conf/SystemDS-config.xml \
-      ${DASH}-stats \
-      ${DASH}-nvargs X=$1_test Y=$2_test icpt=$i model=${BASE}/b fmt="csv" scores=${BASE}/scores
+      --config conf/SystemDS-config.xml \
+      --stats \
+      --nvargs X=$1_test Y=$2_test icpt=$i model=${BASE}/b fmt="csv" scores=${BASE}/scores
 
    tpredict=$(echo "$(date +%s.%N) - $tstart - .4" | bc)
    echo "L2SVM predict ict="$i" on "$1": "$tpredict >> results/times.txt

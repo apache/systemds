@@ -21,17 +21,16 @@
 #-------------------------------------------------------------
 set -e
 
-if [ "$5" == "SPARK" ]; then CMD="./sparkDML.sh "; DASH="-"; elif [ "$5" == "MR" ]; then CMD="systemds " ; else CMD="echo " ; fi
-
+CMD=$5
 BASE=$4
 
 #training
 tstart=$(date +%s.%N)
 #${CMD} -f ../algorithms/naive-bayes.dml \
 ${CMD} -f scripts/naive-bayes.dml \
-   ${DASH}-config conf/SystemDS-config.xml \
-   ${DASH}-stats \
-   ${DASH}-nvargs X=$1 Y=$2 prior=${BASE}/prior conditionals=${BASE}/conditionals fmt="csv"
+   --config conf/SystemDS-config.xml \
+   --stats \
+   --nvargs X=$1 Y=$2 prior=${BASE}/prior conditionals=${BASE}/conditionals fmt="csv"
 
 ttrain=$(echo "$(date +%s.%N) - $tstart - .4" | bc)
 echo "NaiveBayes train on "$1": "$ttrain >> results/times.txt
@@ -40,9 +39,9 @@ echo "NaiveBayes train on "$1": "$ttrain >> results/times.txt
 tstart=$(date +%s.%N)
 #${CMD} -f ../algorithms/naive-bayes-predict.dml \
 ${CMD} -f scripts/naive-bayes-predict.dml \
-   ${DASH}-config conf/SystemDS-config.xml \
-   ${DASH}-stats \
-   ${DASH}-nvargs X=$1_test Y=$2_test prior=${BASE}/prior conditionals=${BASE}/conditionals fmt="csv" probabilities=${BASE}/probabilities #accuracy=${BASE}/accuracy confusion=${BASE}/confusion
+   --config conf/SystemDS-config.xml \
+   --stats \
+   --nvargs X=$1_test Y=$2_test prior=${BASE}/prior conditionals=${BASE}/conditionals fmt="csv" probabilities=${BASE}/probabilities #accuracy=${BASE}/accuracy confusion=${BASE}/confusion
 
 tpredict=$(echo "$(date +%s.%N) - $tstart - .4" | bc)
 echo "NaiveBayes predict on "$1": "$tpredict >> results/times.txt

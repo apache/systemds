@@ -20,10 +20,8 @@
 #
 #-------------------------------------------------------------
 
-if [ "$1" == "" -o "$2" == "" ]; then echo "Usage: $0 <hdfsDataDir> <MR | SPARK | ECHO>   e.g. $0 perftest SPARK" ; exit 1 ; fi
-if [ "$2" == "SPARK" ]; then CMD="./sparkDML.sh "; DASH="-"; elif [ "$2" == "MR" ]; then CMD="systemds " ; else CMD="echo " ; fi
-
-BASE=$1/multinomial
+CMD=$1
+BASE=$2/multinomial
 
 FORMAT="binary" 
 DENSE_SP=0.9

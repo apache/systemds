@@ -1,3 +1,22 @@
+<!--
+{% comment %}
+Licensed to the Apache Software Foundation (ASF) under one or more
+contributor license agreements.  See the NOTICE file distributed with
+this work for additional information regarding copyright ownership.
+The ASF licenses this file to you under the Apache License, Version 2.0
+(the "License"); you may not use this file except in compliance with
+the License.  You may obtain a copy of the License at
+
+http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+{% end comment %}
+-->
+
 # New additions to the performance test suite
 Most of the new files were copied from the deprecated performance test suite (scripts/perftestDeprecated) and refactored to call SystemDS with additional configuration.
 Most of the new DML scripts were copied from scripts/algorithms to scripts/perftest/scripts and then adapted to use built-in functions, if available.
@@ -36,13 +55,3 @@ Most of the new DML scripts were copied from scripts/algorithms to scripts/perft
 
 ### Bash scripts that already did call a DML script with a single built-in functions (only needed some refactoring)
 - perftest/runL2SVM.sh -> algorithms/l2-svm.dml (This already uses the built-in function l2svm!)
-
-
-
-	
-	
-	
-	
-	
-	
-

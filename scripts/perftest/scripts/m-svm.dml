@@ -21,7 +21,7 @@
 
 # Call of built-in multiclass SVM. Check documentation for more information:
 # https://apache.github.io/systemds/site/builtins-reference#msvm-function
-# 
+#
 # Example Usage:
 # Assume SVM_HOME is set to the home of the dml script
 # Assume input and output directories are on hdfs as INPUT_DIR and OUTPUT_DIR
@@ -42,9 +42,6 @@
 # model     String  ---         Location to write model
 # fmt       String  "text"      The output format of the output, such as "text" or "csv"
 # ---------------------------------------------------------------------------------------------
-#
-# Script invocation example:
-# systemds -f m-svm.dml -nvargs X=$INPUT_DIR/X Y=$INPUT_DIR/y icpt=1 tol=.001 reg=1.0 maxiter=100 model=$OUTPUT_DIR/w fmt="text"
 
 fmt = ifdef($fmt, "text")
 icpt = ifdef($icpt, 0)

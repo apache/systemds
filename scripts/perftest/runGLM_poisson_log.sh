@@ -21,8 +21,7 @@
 #-------------------------------------------------------------
 set -e
 
-if [ "$5" == "SPARK" ]; then CMD="./sparkDML.sh "; DASH="-"; elif [ "$5" == "MR" ]; then CMD="systemds " ; else CMD="echo " ; fi
-
+CMD=$5
 BASE=$3
 
 # run all intercepts
@@ -33,9 +32,9 @@ for i in 0 1 2; do
    tstart=$(date +%s.%N)
    #${CMD} -f ../algorithms/GLM.dml \
    ${CMD} -f scripts/GLM.dml \
-      ${DASH}-config conf/SystemDS-config.xml \
-      ${DASH}-stats \
-      ${DASH}-nvargs X=$1 Y=$2 B=${BASE}/b icpt=${i} fmt="csv" moi=$4 mii=5 dfam=1 vpow=1.0 link=1 lpow=0.0 tol=0.0001 reg=0.01
+      --config conf/SystemDS-config.xml \
+      --stats \
+      --nvargs X=$1 Y=$2 B=${BASE}/b icpt=${i} fmt="csv" moi=$4 mii=5 dfam=1 vpow=1.0 link=1 lpow=0.0 tol=0.0001 reg=0.01
 
    ttrain=$(echo "$(date +%s.%N) - $tstart - .4" | bc)
    echo "GLM_poisson_log train ict="$i" on "$1": "$ttrain >> results/times.txt
@@ -43,9 +42,9 @@ for i in 0 1 2; do
    #predict
    tstart=$(date +%s.%N)
    ${CMD} -f ../algorithms/GLM-predict.dml \
-      ${DASH}-config conf/SystemDS-config.xml \
-      ${DASH}-stats \
-      ${DASH}-nvargs dfam=1 vpow=1.0 link=1 lpow=0.0 fmt=csv X=$1_test B=${BASE}/b Y=$2_test M=${BASE}/m O=${BASE}/out.csv
+      --config conf/SystemDS-config.xml \
+      --stats \
+      --nvargs dfam=1 vpow=1.0 link=1 lpow=0.0 fmt=csv X=$1_test B=${BASE}/b Y=$2_test M=${BASE}/m O=${BASE}/out.csv
 
    tpredict=$(echo "$(date +%s.%N) - $tstart - .4" | bc)
    echo "GLM_poisson_log predict ict="$i" on "$1": "$tpredict >> results/times.txt

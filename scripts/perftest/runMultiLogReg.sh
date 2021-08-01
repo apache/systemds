@@ -21,8 +21,7 @@
 #-------------------------------------------------------------
 set -e
 
-if [ "$6" == "SPARK" ]; then CMD="./sparkDML.sh "; DASH="-"; elif [ "$6" == "MR" ]; then CMD="systemds " ; else CMD="echo " ; fi
-
+CMD=$6
 BASE=$4
 
 DFAM=2
@@ -34,9 +33,9 @@ for i in 0 1 2; do
    tstart=$(date +%s.%N)
    # ${CMD} -f ../algorithms/MultiLogReg.dml \
    ${CMD} -f scripts/MultiLogReg.dml \
-      ${DASH}-config conf/SystemDS-config.xml \
-      ${DASH}-stats \
-      ${DASH}-nvargs icpt=$i reg=0.01 tol=0.0001 moi=$5 mii=5 X=$1 Y=$2 B=${BASE}/b
+      --config conf/SystemDS-config.xml \
+      --stats \
+      --nvargs icpt=$i reg=0.01 tol=0.0001 moi=$5 mii=5 X=$1 Y=$2 B=${BASE}/b
 
    ttrain=$(echo "$(date +%s.%N) - $tstart - .4" | bc)
    echo "MultiLogReg train ict="$i" on "$1": "$ttrain >> results/times.txt
@@ -44,9 +43,9 @@ for i in 0 1 2; do
    #predict
    tstart=$(date +%s.%N)
    ${CMD} -f ../algorithms/GLM-predict.dml \
-      ${DASH}-config conf/SystemDS-config.xml \
-      ${DASH}-stats \
-      ${DASH}-nvargs dfam=$DFAM vpow=-1 link=2 lpow=-1 fmt=csv X=$1_test B=${BASE}/b Y=$2_test M=${BASE}/m O=${BASE}/out.csv
+      --config conf/SystemDS-config.xml \
+      --stats \
+      --nvargs dfam=$DFAM vpow=-1 link=2 lpow=-1 fmt=csv X=$1_test B=${BASE}/b Y=$2_test M=${BASE}/m O=${BASE}/out.csv
 
    tpredict=$(echo "$(date +%s.%N) - $tstart - .4" | bc)
    echo "MultiLogReg predict ict="$i" on "$1": "$tpredict >> results/times.txt

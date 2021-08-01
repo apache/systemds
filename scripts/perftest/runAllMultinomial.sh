@@ -20,13 +20,11 @@
 #
 #-------------------------------------------------------------
 
-#if [ "$1" == "" -o "$2" == "" ]; then echo "Usage: $0 <hdfsDataDir> <MR | SPARK | ECHO>   e.g. $0 perftest SPARK" ; exit 1 ; fi
+COMMAND=$1
+if [ "$COMMAND" == "" ]; then COMMAND="systemds" ; fi
 
-TEMPFOLDER=$1
+TEMPFOLDER=$2
 if [ "$TEMPFOLDER" == "" ]; then TEMPFOLDER=temp ; fi
-
-COMMAND=$2
-if [ "$COMMAND" == "" ]; then COMMAND=MR ; fi
 
 BASE=${TEMPFOLDER}/multinomial
 BASE0=${TEMPFOLDER}/binomial
@@ -45,7 +43,7 @@ echo " RUN MULTINOMIAL EXPERIMENTS: "$(date) >> results/times.txt;
 
 # data generation
 echo "-- Generating multinomial data." >> results/times.txt;
-./genMultinomialData.sh ${TEMPFOLDER} ${COMMAND} &>> logs/genMultinomialData.out
+./genMultinomialData.sh ${COMMAND} ${TEMPFOLDER} &>> logs/genMultinomialData.out
 
 # run all classifiers with binomial labels on all datasets
 for d in "10k_1k_dense" "10k_1k_sparse" # "100k_1k_dense" "100k_1k_sparse" "1M_1k_dense" "1M_1k_sparse" "10M_1k_dense" "10M_1k_sparse" "100M_1k_dense" "100M_1k_sparse" 
@@ -63,8 +61,3 @@ do
       ./${f}.sh ${BASE}/X${d}_k5 ${BASE}/y${d}_k5 5 ${BASE} ${MAXITR} ${COMMAND} &> logs/${f}_${d}_k5.out;
    done
 done
-
-#run KDD only on naive bayes (see binomial for the others)
-#./runNaiveBayes.sh ${BASE0}/X_KDD_k5 ${BASE}/y_KDD_k5 5 &> logs/runNaiveBayes__KDD_k5.out;
-#./runNaiveBayes.sh ${BASE0}/X_KDD ${BASE}/y_KDD 5 &> logs/runNaiveBayes__KDD_k5.out;
-   

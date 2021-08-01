@@ -41,9 +41,6 @@
 # OUTPUT: 1-column matrix of regression parameters (the betas)
 #
 # -------------------------------------------------------------------------------------
-#
-# Script invokation example:
-# systemds -f LinearRegDS.dml -nvargs X=INPUT_DIR/X Y=INPUT_DIR/Y B=OUTPUT_DIR/B icpt=2 reg=1.0 fmt=csv
 
 fileX = $X;
 fileY = $Y;

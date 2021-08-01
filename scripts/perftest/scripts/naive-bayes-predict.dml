@@ -21,9 +21,6 @@
 
 # Implements scoring with a naive Bayes model learnt using
 # naive-bayes.dml
-#
-# systemds -f naive-bayes-predict.dml -nvargs X=data prior=model_file1 conditionals=model_file2 probabilities=probabilities accuracy=accuracy confusion=confusion fmt="text"
-#
 
 cmdLine_Y = ifdef($Y, " ")
 cmdLine_accuracy = ifdef($accuracy, " ")

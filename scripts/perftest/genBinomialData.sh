@@ -20,10 +20,8 @@
 #
 #-------------------------------------------------------------
 
-if [ "$1" == "" -o "$2" == "" ]; then echo "Usage: $0 <hdfsDataDir> <MR | SPARK | ECHO>   e.g. $0 perftest SPARK" ; exit 1 ; fi
-if [ "$2" == "SPARK" ]; then CMD="./sparkDML.sh "; DASH="-"; elif [ "$2" == "MR" ]; then CMD="systemds " ; else CMD="echo " ; fi
-
-BASE=$1/binomial
+CMD=$1
+BASE=$2/binomial
 
 FORMAT="binary" # can be csv, mm, text, binary
 DENSE_SP=0.9
@@ -59,10 +57,3 @@ ${CMD} -f scripts/extractTestData.dml --args ${BASE}/X10k_1k_sparse ${BASE}/y10k
 #${CMD} -f ../datagen/genRandData4LogisticRegression.dml --args 100000000 1000 5 5 ${BASE}/w100M_1k_sparse ${BASE}/X100M_1k_sparse ${BASE}/y100M_1k_sparse 1 0 $SPARSE_SP $FORMAT 1
 #${CMD} -f scripts/extractTestData.dml --args ${BASE}/X100M_1k_dense ${BASE}/y100M_1k_dense ${BASE}/X100M_1k_dense_test ${BASE}/y100M_1k_dense_test $FORMAT
 #${CMD} -f scripts/extractTestData.dml --args ${BASE}/X100M_1k_sparse ${BASE}/y100M_1k_sparse ${BASE}/X100M_1k_sparse_test ${BASE}/y100M_1k_sparse_test $FORMAT
-#
-###generate KDD scenario (csv would be infeasible)
-##${CMD} -f scripts/changeFormat.dml $DASH-args mboehm/data/rdata_kdd2010/X mboehm/data/rdata_kdd2010/y 1 ${BASE}/X_KDD ${BASE}/y_KDD "text"
-##${CMD} -f scripts/extractTestData.dml $DASH-args ${BASE}/X_KDD ${BASE}/y_KDD ${BASE}/X_KDD_test ${BASE}/y_KDD_test "text"
-##${CMD} -f scripts/changeFormat.dml $DASH-args /user/biadmin/statiko/rdata_kdd2010/X /user/biadmin/statiko/rdata_kdd2010/y 150 ${BASE}/X_KDD ${BASE}/y_KDD "text"
-##${CMD} -f scripts/extractTestData.dml $DASH-args ${BASE}/X_KDD ${BASE}/y_KDD ${BASE}/X_KDD_test ${BASE}/y_KDD_test "text"
-

@@ -20,25 +20,17 @@
 #
 #-------------------------------------------------------------
 
-#if [ "$1" == "" -o "$2" == "" ]; then echo "Usage: $0 <hdfsDataDir> <MR | SPARK | ECHO>   e.g. $0 perftest SPARK" ; exit 1 ; fi
+# First argument is optional, but can be the command that is ultimately invoked
+COMMAND=$1
+if [ "$COMMAND" == "" ]; then COMMAND="systemds" ; fi
 
-# Example usage:
-# ./runAll.sh temp MR
-
-# First argument is optional, but can be e.g. perftestTemp
-TEMPFOLDER=$1
+# Second argument is optional, but can be a folder name for where generated data is stored
+TEMPFOLDER=$2
 if [ "$TEMPFOLDER" == "" ]; then TEMPFOLDER=temp ; fi
-
-# Second argument is optional, but can be MR | SPARK | ECHO
-COMMAND=$2
-if [ "$COMMAND" == "" ]; then COMMAND=MR ; fi
 
 # Set properties
 export LOG4JPROP='conf/log4j-off.properties'
 export SYSDS_QUIET=1
-#export SYSTEMDS_ROOT=$(pwd)
-#export PATH=$SYSTEMDS_ROOT/bin:$PATH
-
 
 # Initialize Intel MKL
 #if [ -d ~/intel ] && [ -d ~/intel/bin ] && [ -f ~/intel/bin/compilervars.sh ]; then
@@ -52,7 +44,6 @@ export SYSDS_QUIET=1
 
 
 ### Micro Benchmarks:
-
 #./MatrixMult.sh
 #./MatrixTranspose.sh
 
@@ -63,24 +54,23 @@ export SYSDS_QUIET=1
 if [ ! -d results ]; then mkdir -p results ; fi
 date >> results/times.txt
 
-
 # TODO Use the built-in function lmPredict instead of the GLM-predict.dml script, for linear regression.
-./runAllBinomial.sh $TEMPFOLDER $COMMAND
-./runAllMultinomial.sh $TEMPFOLDER $COMMAND
-./runAllRegression.sh $TEMPFOLDER $COMMAND
+./runAllBinomial.sh $COMMAND $TEMPFOLDER
+./runAllMultinomial.sh $COMMAND $TEMPFOLDER
+./runAllRegression.sh $COMMAND $TEMPFOLDER
 
 # TODO The following commented benchmarks have yet to be cleaned up and ported from perftestDeprecated to perftest
-#./runAllStats.sh $TEMPFOLDER $COMMAND
-#./runAllClustering.sh $TEMPFOLDER $COMMAND
+#./runAllStats.sh $COMMAND $TEMPFOLDER
+#./runAllClustering.sh $COMMAND $TEMPFOLDER
 
 # add stepwise Linear 
 # add stepwise GLM
-#./runAllTrees $TEMPFOLDER $COMMAND
+#./runAllTrees $COMMAND $TEMPFOLDER
 # add randomForest
-#./runAllDimensionReduction $TEMPFOLDER $COMMAND
-#./runAllMatrixFactorization $TEMPFOLDER $COMMAND
+#./runAllDimensionReduction $COMMAND $TEMPFOLDER
+#./runAllMatrixFactorization $COMMAND $TEMPFOLDER
 #ALS
-#./runAllSurvival $TEMPFOLDER $COMMAND
+#./runAllSurvival $COMMAND $TEMPFOLDER
 #KaplanMeier
 #Cox
 

@@ -74,8 +74,7 @@ public class LocalPSWorker extends PSWorker implements Callable<Void> {
 			if(LOG.isDebugEnabled()) {
 				LOG.debug(String.format("%s: job finished.", getWorkerName()));
 			}
-		}
-		catch(Exception e) {
+		} catch(Exception e) {
 			throw new DMLRuntimeException(String.format("%s failed", getWorkerName()), e);
 		}
 		return null;

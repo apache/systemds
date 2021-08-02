@@ -97,6 +97,7 @@ public abstract class ParamServer
 			_modelMap.put(i, new ArrayBlockingQueue<>(1));
 		});
 		_model = model;
+
 		if (modelAvg)
 			if (updateType.isASP()) {
 				updateType = Statement.PSUpdateType.BSP;
@@ -208,6 +209,7 @@ public abstract class ParamServer
 			switch(_updateType) {
 				case BSP: {
 					setFinishedState(workerID);
+
 					// Accumulate the intermediate gradients
 					if( ACCRUE_BSP_GRADIENTS )
 						_accGradients = ParamservUtils.accrueGradients(_accGradients, gradients, true);

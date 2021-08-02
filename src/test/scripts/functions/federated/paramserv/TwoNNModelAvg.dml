@@ -153,7 +153,6 @@ train_paramserv = function(matrix[double] X, matrix[double] y,
   hyperparams = list(learning_rate=eta)
 
   # Use paramserv function
-  print("---------in TwoNN AVG-------------------"+modelAvg)
   model = paramserv(model=model, features=X, labels=y, val_features=X_val, val_labels=y_val,
     upd="./src/test/scripts/functions/federated/paramserv/TwoNNModelAvg.dml::gradients",
     agg="./src/test/scripts/functions/federated/paramserv/TwoNNModelAvg.dml::aggregation",

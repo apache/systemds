@@ -38,7 +38,7 @@ import java.util.*;
 
 public class BuiltinTSNETest extends AutomatedTestBase
 {
-	private final static String TEST_NAME = "tsne";
+	private final static String TEST_NAME = "tSNE";
 	private final static String TEST_DIR = "functions/builtin/";
 	private static final String TEST_CLASS_DIR = TEST_DIR + BuiltinTSNETest.class.getSimpleName() + "/";
 	

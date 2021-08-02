@@ -550,6 +550,7 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 					// clean up gradients and result
 					ParamservUtils.cleanupListObject(ec, aggregationOutput.getName());
 				}
+
 				// clean up
 				ParamservUtils.cleanupData(ec, Statement.PS_FEATURES);
 				ParamservUtils.cleanupData(ec, Statement.PS_LABELS);

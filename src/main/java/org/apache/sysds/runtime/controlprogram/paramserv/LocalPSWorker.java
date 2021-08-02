@@ -42,8 +42,8 @@ public class LocalPSWorker extends PSWorker implements Callable<Void> {
 
 	protected LocalPSWorker() {}
 
-	public LocalPSWorker(int workerID, String updFunc, Statement.PSFrequency freq, int epochs, long batchSize,
-		ExecutionContext ec, ParamServer ps, boolean modelAvg)
+	public LocalPSWorker(int workerID, String updFunc, Statement.PSFrequency freq,
+		int epochs, long batchSize, ExecutionContext ec, ParamServer ps, boolean modelAvg)
 	{
 		super(workerID, updFunc, freq, epochs, batchSize, ec, ps, modelAvg);
 	}
@@ -71,10 +71,10 @@ public class LocalPSWorker extends PSWorker implements Callable<Void> {
 					throw new DMLRuntimeException(String.format("%s not support update frequency %s", getWorkerName(), _freq));
 			}
 
-			if(LOG.isDebugEnabled()) {
+			if (LOG.isDebugEnabled()) {
 				LOG.debug(String.format("%s: job finished.", getWorkerName()));
 			}
-		} catch(Exception e) {
+		} catch (Exception e) {
 			throw new DMLRuntimeException(String.format("%s failed", getWorkerName()), e);
 		}
 		return null;
@@ -123,7 +123,7 @@ public class LocalPSWorker extends PSWorker implements Callable<Void> {
 			}
 
 			accNumEpochs(1);
-			if(LOG.isDebugEnabled()) {
+			if (LOG.isDebugEnabled()) {
 				LOG.debug(String.format("%s: finished %d epoch.", getWorkerName(), i + 1));
 			}
 		}
@@ -164,7 +164,7 @@ public class LocalPSWorker extends PSWorker implements Callable<Void> {
 			}
 
 			accNumEpochs(1);
-			if(LOG.isDebugEnabled()) {
+			if (LOG.isDebugEnabled()) {
 				LOG.debug(String.format("%s: finished %d epoch.", getWorkerName(), i + 1));
 			}
 		}
@@ -174,7 +174,8 @@ public class LocalPSWorker extends PSWorker implements Callable<Void> {
 		// Pull the global parameters from ps
 		ListObject globalParams = _ps.pull(_workerID);
 		if(LOG.isDebugEnabled()) {
-			LOG.debug(String.format("%s: successfully pull the global parameters " + "[size:%d kb] from ps.", getWorkerName(),
+			LOG.debug(String.format("%s: successfully pull the global parameters " +
+					"[size:%d kb] from ps.", getWorkerName(),
 				globalParams.getDataSize() / 1024));
 		}
 		return globalParams;
@@ -184,7 +185,8 @@ public class LocalPSWorker extends PSWorker implements Callable<Void> {
 		// Push the gradients to ps
 		_ps.push(_workerID, gradients);
 		if(LOG.isDebugEnabled()) {
-			LOG.debug(String.format("%s: successfully push the gradients " + "[size:%d kb] to ps.", getWorkerName(),
+			LOG.debug(String.format("%s: successfully push the gradients " +
+					"[size:%d kb] to ps.", getWorkerName(),
 				gradients.getDataSize() / 1024));
 		}
 	}
@@ -222,22 +224,26 @@ public class LocalPSWorker extends PSWorker implements Callable<Void> {
 		return gradients;
 	}
 
-	@Override protected void incWorkerNumber() {
+	@Override
+	protected void incWorkerNumber() {
 		if(DMLScript.STATISTICS)
 			Statistics.incWorkerNumber();
 	}
 
-	@Override protected void accLocalModelUpdateTime(Timing time) {
+	@Override
+	protected void accLocalModelUpdateTime(Timing time) {
 		if(DMLScript.STATISTICS)
 			Statistics.accPSLocalModelUpdateTime((long) time.stop());
 	}
 
-	@Override protected void accBatchIndexingTime(Timing time) {
+	@Override
+	protected void accBatchIndexingTime(Timing time) {
 		if(DMLScript.STATISTICS)
 			Statistics.accPSBatchIndexingTime((long) time.stop());
 	}
 
-	@Override protected void accGradientComputeTime(Timing time) {
+	@Override
+	protected void accGradientComputeTime(Timing time) {
 		if(DMLScript.STATISTICS)
 			Statistics.accPSGradientComputeTime((long) time.stop());
 	}

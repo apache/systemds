@@ -16,6 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+
 package org.apache.sysds.test.functions.pipelines;
 
 import org.apache.sysds.common.Types;
@@ -26,56 +27,38 @@ import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
 
-public class BuiltinTopkCleaningClassificationTest extends AutomatedTestBase {
-	private final static String TEST_NAME = "topkcleaningClassificationTest";
-	private final static String TEST_CLASS_DIR = SCRIPT_DIR + BuiltinTopkCleaningClassificationTest.class.getSimpleName() + "/";
+public class BuiltinTopkEvaluateTest extends AutomatedTestBase {
+	//	private final static String TEST_NAME1 = "prioritized";
+	private final static String TEST_NAME1 = "applyEvaluateTest";
+	private final static String TEST_CLASS_DIR = SCRIPT_DIR + BuiltinTopkEvaluateTest.class.getSimpleName() + "/";
 
-	private final static String TEST_DIR = "functions/pipelines/";
 	private static final String RESOURCE = SCRIPT_DIR+"functions/pipelines/";
 	private static final String DATA_DIR = DATASET_DIR+ "pipelines/";
 
 	private final static String DIRTY = DATA_DIR+ "dirty.csv";
 	private final static String META = RESOURCE+ "meta/meta_census.csv";
-	private final static String OUTPUT = RESOURCE+ "intermediates/classification/";
-
-	private static final String PARAM_DIR = "./scripts/pipelines/properties/";
-	private final static String PARAM = PARAM_DIR + "param.csv";
-	private final static String PRIMITIVES = PARAM_DIR + "testPrimitives.csv";
+	private final static String INPUT = RESOURCE+"intermediates/";
 
 	@Override
 	public void setUp() {
-		addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[]{"R"}));
+		addTestConfiguration(TEST_NAME1,new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1,new String[]{"R"}));
 	}
 
 	@Test
-	public void testFindBestPipeline1() {
-		runtopkCleaning(0.5, 3,5,
-			"FALSE", 0,0.8, Types.ExecMode.SINGLE_NODE);
+	public void testEvalPipClass() {
+		evalPip(0.8, "FALSE", INPUT+"/classification/", Types.ExecMode.SINGLE_NODE);
 	}
 
-	@Ignore
-	public void testFindBestPipeline2() {
-		runtopkCleaning(0.1, 3,5,
-			"TRUE", 3,0.8,  Types.ExecMode.SINGLE_NODE);
-	}
-
-	@Test
-	public void testFindBestPipelineHybrid() {
-		runtopkCleaning(0.1, 3,5,
-			"FALSE", 0,0.8,  Types.ExecMode.HYBRID);
-	}
-
-	private void runtopkCleaning(Double sample, int topk, int resources,  String cv, int cvk , double split, Types.ExecMode et) {
+	private void evalPip(double split, String cv, String path, Types.ExecMode et) {
 
 		setOutputBuffering(true);
+		String HOME = SCRIPT_DIR+"functions/pipelines/" ;
 		Types.ExecMode modeOld = setExecMode(et);
-		String HOME = SCRIPT_DIR + TEST_DIR;
 		try {
-			loadTestConfiguration(getTestConfiguration(TEST_NAME));
-			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[] { "-stats", "-exec", "singlenode", "-nvargs", "dirtyData="+DIRTY,
-				"metaData="+META, "primitives="+PRIMITIVES, "parameters="+PARAM, "topk="+ topk, "rv="+ resources,
-				"sample="+sample, "testCV="+cv, "cvk="+cvk, "split="+split, "output="+OUTPUT, "O="+output("O")};
+			loadTestConfiguration(getTestConfiguration(TEST_NAME1));
+			fullDMLScriptName = HOME + TEST_NAME1 + ".dml";
+			programArgs = new String[] {"-stats", "-exec", "singlenode", "-args", DIRTY, META, path, cv,
+				String.valueOf(split), output("O")};
 
 			runTest(true, EXCEPTION_NOT_EXPECTED, null, -1);
 
@@ -86,5 +69,4 @@ public class BuiltinTopkCleaningClassificationTest extends AutomatedTestBase {
 			resetExecMode(modeOld);
 		}
 	}
-
 }

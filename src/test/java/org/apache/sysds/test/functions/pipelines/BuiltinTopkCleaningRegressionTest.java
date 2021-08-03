@@ -32,7 +32,7 @@ public class BuiltinTopkCleaningRegressionTest extends AutomatedTestBase{
 	private static final String RESOURCE = SCRIPT_DIR+"functions/pipelines/";
 
 	private final static String DIRTY = DATASET_DIR+ "Salaries.csv";
-	private final static String OUTPUT = RESOURCE+"intermediates/";
+	private final static String OUTPUT = RESOURCE+"intermediates/regression/";
 	private static final String PARAM_DIR = "./scripts/pipelines/properties/";
 	private final static String PARAM = PARAM_DIR + "param.csv";
 	private final static String PRIMITIVES = PARAM_DIR + "primitives.csv";
@@ -42,20 +42,21 @@ public class BuiltinTopkCleaningRegressionTest extends AutomatedTestBase{
 		addTestConfiguration(TEST_NAME1,new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1,new String[]{"R"}));
 	}
 
+// TODO: support CV for regression
 	@Test
-	public void testRegressionPipelinesCP() {
-		runFindPipelineTest(1.0, 5,20, 10,
-			"lm", Types.ExecMode.SINGLE_NODE);
+	public void testRegressionPipelinesCP1() {
+		runFindPipelineTest(1.0, 5,20, "FALSE", 3,
+			0.8, Types.ExecMode.SINGLE_NODE);
 	}
 
 	@Test
 	public void testRegressionPipelinesHybrid() {
-		runFindPipelineTest(1.0, 5,5, 2,
-			"lm", Types.ExecMode.HYBRID);
+		runFindPipelineTest(1.0, 5,5, "FALSE", 3,
+			0.8, Types.ExecMode.HYBRID);
 	}
 
-	private void runFindPipelineTest(Double sample, int topk, int resources, int crossfold,
-		String target, Types.ExecMode et) {
+	private void runFindPipelineTest(Double sample, int topk, int resources, String crossfold,
+		int cvk, double split,  Types.ExecMode et) {
 
 		setOutputBuffering(true);
 		String HOME = SCRIPT_DIR+"functions/pipelines/" ;
@@ -64,8 +65,8 @@ public class BuiltinTopkCleaningRegressionTest extends AutomatedTestBase{
 			loadTestConfiguration(getTestConfiguration(TEST_NAME1));
 			fullDMLScriptName = HOME + TEST_NAME1 + ".dml";
 			programArgs = new String[] {"-stats", "-exec", "singlenode", "-nvargs", "dirtyData="+DIRTY,
-				"primitives="+PRIMITIVES, "parameters="+PARAM, "sampleSize="+ sample, "topk="+ topk,
-				"rv="+ resources, "sample="+ sample, "output="+OUTPUT, "target="+target, "O="+output("O")};
+				"primitives="+PRIMITIVES, "parameters="+PARAM, "sample="+ sample, "topk="+ topk,
+				"rv="+ resources, "testCV="+ crossfold, "cvk="+cvk, "output="+OUTPUT, "split="+ split, "O="+output("O")};
 
 			runTest(true, EXCEPTION_NOT_EXPECTED, null, -1);
 

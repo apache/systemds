@@ -19,11 +19,23 @@
 #
 #-------------------------------------------------------------
 
-s_executePipeline = function(Frame[String] logical = as.frame("NULL"), Frame[String] pipeline, Matrix[Double] X,  Matrix[Double] Y, Matrix[Double] mask,
-  Matrix[Double] FD, Matrix[Double] hyperParameters, Integer flagsCount, Boolean test = FALSE, Boolean verbose)
-  return (Matrix[Double] X, Matrix[Double] Y, Double t2)
+s_executePipeline = function(Frame[String] logical = as.frame("NULL"), Frame[String] pipeline, Matrix[Double] X,  Matrix[Double] Y, 
+  Matrix[Double] Xtest,  Matrix[Double] Ytest, List[Unknown] metaList, Matrix[Double] hyperParameters, Matrix[Double] hpForPruning = as.matrix(0),
+  Matrix[Double] changesByOp = as.matrix(0), Integer flagsCount, Boolean test = FALSE, Boolean verbose)
+  return (Matrix[Double] X, Matrix[Double] Y, Matrix[Double] Xtest, Matrix[Double] Ytest, Double t2, Matrix[Double] hpForPruning, Matrix[Double] changesByOp)
 {
-  t1 = time();
+  mask=as.matrix(metaList['mask'])
+  FD = as.matrix(metaList['fd'])
+
+  cloneY = Y
+  Xorig = X
+  # # combine X and Y
+  n = nrow(X)
+  d = ncol(Xorig)
+  X = rbind(X, Xtest)
+  Y = rbind(Y, Ytest)
+  testRow = nrow(Xtest)
+  t1 = time()
   print("PIPELINE EXECUTION START ... "+toString(pipeline))
 
   if(verbose) {
@@ -32,41 +44,76 @@ s_executePipeline = function(Frame[String] logical = as.frame("NULL"), Frame[Str
     print("pipeline hps "+toString(hyperParameters))
   }
   for(i in 1:ncol(pipeline)) {
+    trainEndIdx = (nrow(X) - nrow(Xtest))
+    testStIdx = trainEndIdx + 1
     op = as.scalar(pipeline[1,i])
     lgOp = as.scalar(logical[1,i])
-    if(test == FALSE | lgOp != "CI") {    
-      [hp, withClass, dataFlag] = matrixToList(X, Y, mask, FD, hyperParameters[i], flagsCount, op)
-      Xclone = X
+    
+    if(test == FALSE | lgOp != "CI") {
+       Xclone = X 
+      [hp, dataFlag, yFlag] = matrixToList(X, Y, mask, FD, hyperParameters[i], flagsCount, op)
       X = eval(op, hp)
+      Xout = X
+      
+      X = confirmData(X, Xclone, mask, dataFlag, yFlag)
       # dataFlag 0 = only on numeric, 1 = on whole data
-      X = confirmData(X, Xclone, mask, dataFlag)
-      if(withClass)
+      if(yFlag)
       {
         Y = X[, ncol(X)]
         X = X[, 1:ncol(X) - 1]
       }
-
       X = confirmMeta(X, mask)
     }
-    else{
+    else {
+      Xclone = X 
       print("not applying "+lgOp+" "+op+" on data test flag: "+test)
+      Xtest = X[testStIdx:nrow(X), ]
+      Ytest = Y[testStIdx:nrow(X), ]
+      X = X[1:trainEndIdx, ]
+      Y = Y[1:trainEndIdx, ]
+      [hp, dataFlag, yFlag] = matrixToList(X, Y, mask, FD, hyperParameters[i], flagsCount, op)
+      X = eval(op, hp)
+      X = confirmData(X, Xclone, mask, dataFlag, yFlag)
+      # dataFlag 0 = only on numeric, 1 = on whole data
+      if(yFlag)
+      {
+        Y = X[, ncol(X)]
+        X = X[, 1:ncol(X) - 1]
+      }
+      X = confirmMeta(X, mask)
+      X = rbind(X, Xtest)
+      Y = rbind(Y, Ytest)
     }
+    if(as.scalar(pipeline[1, i]) == "outlierBySd" | as.scalar(pipeline[1, i]) == "outlierByIQR" | as.scalar(pipeline[1, i]) == "imputeByFd") {
+      changes = sum(abs(replace(target=Xout, pattern=NaN, replacement=0) - replace(target=as.matrix(hp[1]), pattern=NaN, replacement=0))  > 0.001 )
+      [hpForPruning, changesByOp] = storeDataForPrunning(pipeline, hyperParameters, hpForPruning,  changesByOp, changes, i)
+      print("ended "+op+" number of changes "+changes)
+      # print("ended "+op+" number of changes "+sum(abs(replace(target=X, pattern=NaN, replacement=0) - replace(target=Xclone, pattern=NaN, replacement=0))  > 0.001 ))
+    }
+
+    print("min max of Y: "+min(Y)+" "+max(Y))
   }
+  Xtest = X[testStIdx:nrow(X), ]
+  Ytest = Y[testStIdx:nrow(X), ]
+  X = X[1:trainEndIdx]
+  Y = Y[1:trainEndIdx]
+  # # # do a quick validation check
+  if(nrow(Xtest) != testRow)
+    stop("executePipeline: test rows altered")
   t2 = floor((time() - t1) / 1e+6)
+
   print("PIPELINE EXECUTION ENDED: "+t2+" ms")
 }
 
 # This function will convert the matrix row-vector into list
 matrixToList = function(Matrix[Double] X,  Matrix[Double] Y, Matrix[Double] mask, Matrix[Double] FD,
   Matrix[Double] p, Integer flagsCount, String op)
-  return (List[Unknown] l, Boolean hasY, Integer dataFlag)
+  return (List[Unknown] l, Integer dataFlag, Integer yFlag)
 {
   NUM_META_FLAGS = flagsCount;
-  hasY = FALSE
-
   dataFlag = as.integer(as.scalar(p[1, ncol(p)]))
-  hasVerbose = as.scalar(p[1, ncol(p) - 1])
-  yFlag = as.scalar(p[1, ncol(p) - 2])
+  hasVerbose = as.integer(as.scalar(p[1, ncol(p) - 1]))
+  yFlag = as.integer(as.scalar(p[1, ncol(p) - 2]))
   fDFlag = as.integer(as.scalar(p[1, ncol(p)-3]))
   maskFlag = as.integer(as.scalar(p[1, ncol(p)-4]))
   
@@ -91,7 +138,6 @@ matrixToList = function(Matrix[Double] X,  Matrix[Double] Y, Matrix[Double] mask
  
   if(yFlag == 1) {
     l = append(l, Y)
-    hasY = TRUE
   }
   ######################################################
   # CHECK FOR FD APPEND FLAG
@@ -148,12 +194,15 @@ return (Matrix[Double] X)
 }
 
 
-confirmData = function(Matrix[Double] nX, Matrix[Double] originalX, Matrix[Double] mask, Integer dataFlag)
+confirmData = function(Matrix[Double] nX, Matrix[Double] originalX, Matrix[Double] mask, Integer dataFlag, Integer yFlag)
 return (Matrix[Double] X)
 {
-  # print("changes data \n"+toString(nX, rows=10))
+  if(yFlag == 1)
+  {
+    Y = nX[, ncol(nX)]
+    nX = nX[, 1: ncol(nX) - 1]
   
-  while(FALSE){}
+  }
   if(dataFlag == 0 & (sum(mask) > 0))
   {
     maxDummy = max(nX) + 1
@@ -194,6 +243,10 @@ return (Matrix[Double] X)
   }
   else X = nX
     # print("recreated data \n"+toString(X, rows = 20))
+    
+  if(yFlag == 1)
+    X = cbind(X, Y)
+  
 }
 
 
@@ -225,20 +278,27 @@ return (Matrix[Double] dX_train) {
 # Output: filled matrix X
 #######################################################################
 
-imputeByFd = function(Matrix[Double] X, Matrix[Double] FD,  Double threshold)
+imputeByFd = function(Matrix[Double] X, Matrix[Double] fdMask,  Double threshold)
 return (Matrix[Double] X_filled)
 {
-  if(sum(FD) > 0)
+  if(sum(fdMask) > 0)
   {
-    for(i in 1: nrow(FD))
+    FD = discoverFD(X=replace(target=X, pattern=NaN, replacement=1), Mask=fdMask, threshold=threshold)
+    FD = (diag(matrix(1, rows=nrow(FD), cols=1)) ==0) * FD 
+    FD = FD > 0
+    if(sum(FD) > 0)
     {
-      for(j in 1:ncol(FD)) {
-        if(as.scalar(FD[i, j]) > 0 & (min(X[, i]) != 0) & (min(X[, j]) != 0) & (sum(FD[, j]) != nrow(FD)))
-          X = imputeByFD(X, i, j, threshold, FALSE)
+      for(i in 1: nrow(FD))
+      {
+        for(j in 1:ncol(FD)) {
+          if(as.scalar(FD[i, j]) > 0 & (min(X[, i]) != 0) & (min(X[, j]) != 0) & (sum(FD[, j]) != nrow(FD)))
+            X = imputeByFD(X, i, j, threshold, FALSE)
+        }
       }
     }
   }
   X_filled = X
+  print("imputeByFd: record changes: "+sum(X_filled != X))
 }
 
 #######################################################################
@@ -251,6 +311,7 @@ return (Matrix[Double] X_filled)
 { 
   option = ifelse(op, "locf", "nocb")
   X_filled = na_locf(X=X, option=option, verbose=verbose)
+  print("nulls after forward_fill: "+sum(is.na(X_filled)))
 }
 
 
@@ -259,34 +320,46 @@ return (Matrix[Double] X_filled)
 SMOTE  = function(Matrix[Double] X, Matrix[Double] Y, Matrix[Double] mask, Integer remainingRatio, Boolean verbose)
 return (Matrix[Double] XY)
 {
-  XY = order(target = cbind(Y, X),  by = 1, decreasing=FALSE, index.return=FALSE)
-  synthesized = matrix(0,0,0) # initialize variable
   # get the class count 
-  classes = table(XY[, 1], 1)
-  start_class = 1
-  end_class = 0
-  k = table(XY[, 1], 1)
-  getMax = max(k)
-  maxKIndex = as.scalar(rowIndexMax(t(k)))
-  outSet = matrix(0, 0, ncol(XY))
-  remainingRatio = ifelse((remainingRatio%%100) >= 50, remainingRatio+(100 - (remainingRatio%%100)),
-  remainingRatio-(remainingRatio%%100))
-  for(i in 1: nrow(k)) {
-    end_class = end_class + as.scalar(classes[i])
-    class_t = XY[start_class:end_class, ]
-    if((i != maxKIndex)) {
-      synthesized = smote(class_t[, 2:ncol(XY)], mask, remainingRatio, 1, FALSE)
-      synthesized = cbind(matrix(as.scalar(class_t[2,1]), nrow(synthesized), 1), synthesized)
-      outSet = rbind(outSet, synthesized)
+  classes = table(Y[, 1], 1)
+  minClass = min(classes)
+  maxClass = max(classes)
+  diff = (maxClass - minClass)/sum(classes)
+  if(diff > 0.5)
+  {
+    print("initiating oversampling")
+    XY = order(target = cbind(Y, X),  by = 1, decreasing=FALSE, index.return=FALSE)
+    synthesized = matrix(0,0,0) # initialize variable
+    start_class = 1
+    end_class = 0
+    k = table(XY[, 1], 1)
+    getMax = max(k)
+    maxKIndex = as.scalar(rowIndexMax(t(k)))
+    outSet = matrix(0, 0, ncol(XY))
+    remainingRatio = ifelse((remainingRatio%%100) >= 50, remainingRatio+(100 - (remainingRatio%%100)),
+    remainingRatio-(remainingRatio%%100))
+    print("remaining ratio: "+remainingRatio)
+    for(i in 1: nrow(k), check=0) {
+      end_class = end_class + as.scalar(classes[i])
+      class_t = XY[start_class:end_class, ]
+      if((i != maxKIndex)) {
+        synthesized = smote(class_t[, 2:ncol(XY)], mask, remainingRatio, 1, FALSE)
+        synthesized = cbind(matrix(as.scalar(class_t[2,1]), nrow(synthesized), 1), synthesized)
+        outSet = rbind(outSet, synthesized)
+      }
+      start_class = end_class + 1
     }
-    start_class = end_class + 1
-  }
   
-  XY = rbind(XY, synthesized)
-  Y = XY[, 1]
-  X = XY[, 2:ncol(XY)]
-  XY = cbind(X,Y)
-  classes = table(Y, 1)
+    XY = rbind(XY, synthesized)
+    Y = XY[, 1]
+    X = XY[, 2:ncol(XY)]
+    XY = cbind(X,Y)
+    classes = table(Y, 1)
+  }
+  else { 
+    print("smote not applicable")
+    XY = cbind(X, Y)
+  }
 }
 
 
@@ -341,8 +414,21 @@ m_pca = function(Matrix[Double] X, Integer K=2, Boolean center=TRUE, Boolean sca
     else Xout = X # these elses could be removed via initiating Xout = X for now they are here for readability
   }
   else Xout = X
-
+  Xout = replace(target=Xout, pattern=1/0, replacement=0);
 }
 
+wtomeklink = function(Matrix[Double] X, Matrix[Double] y)
+return (Matrix[Double] XY) {
+  [Xunder, Yunder, rmv] = tomeklink(X, y)
+  XY = cbind(Xunder, Yunder)
+}
 
+storeDataForPrunning = function(Frame[Unknown] pipeline, Matrix[Double] hp, Matrix[Double] hpForPruning, Matrix[Double] changesByOp, Integer changes, Integer i)
+return(Matrix[Double] hpForPruning, Matrix[Double] changesByOp)
+{
+  if(ncol(hpForPruning) > 1) {
+    hpForPruning[1, i] = hp[i, 2]
+    changesByOp[1, i] = changes
+  }
+}
 

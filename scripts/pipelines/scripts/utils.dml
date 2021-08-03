@@ -135,9 +135,6 @@ return (Matrix[Double] dX_train) {
 }
 
 
-
-
-
 #####################################
 # The function will check if the pipeline have zero hyper-parameters
 # then it should not use more resource iterations and should be executed once
@@ -155,67 +152,6 @@ return(Boolean validForResources)
       count += 1
   }
   validForResources = count > 0
-}
-
-
-
-
-
-# # ######################################################################
-# # # # Function for cross validation using hold out method
-# # # # Inputs: The input dataset X, Y and the value of k validation, mask of the 
-# # # # dataset for OHE of categorical columns, vector of ML hyper-parameters identified 
-# # # # via gridsearch and a boolean value of (un)weighted accuracy.
-# # # # Output: It return a matrix having the accuracy of each fold.
-# # ######################################################################
-
-crossVML = function(Matrix[double] X, Matrix[double] y, Integer k, Matrix[Double] MLhp) 
-return (Matrix[Double] accuracyMatrix)
-{
-  accuracyMatrix = matrix(0, k, 1)
-  dataList = list()
-  testL = list()
-  data = order(target = cbind(y, X),  by = 1, decreasing=FALSE, index.return=FALSE)
-  classes = table(data[, 1], 1)
-  ins_per_fold = classes/k
-  start_fold = matrix(1, rows=nrow(ins_per_fold), cols=1)
-  fold_idxes = cbind(start_fold, ins_per_fold)
-
-  start_i = 0; end_i = 0; idx_fold = 1;;
-  for(i in 1:k)
-  {
-    fold_i = matrix(0, 0, ncol(data))
-    start=0; end=0; 
-    for(j in 1:nrow(classes))
-    {
-      idx = as.scalar(classes[j, 1])
-      start = end + 1;
-      end = end + idx
-      class_j =  data[start:end, ]
-      start_i = as.scalar(fold_idxes[j, 1]);
-      end_i = as.scalar(fold_idxes[j, 2])
-      fold_i = rbind(fold_i, class_j[start_i:end_i, ])
-    }
-    dataList = append(dataList, fold_i)
-    fold_idxes[, 1] = fold_idxes[, 2] + 1
-    fold_idxes[, 2] += ins_per_fold
-  }
-
-  for(i in seq(1,k))
-  {
-    [trainList, hold_out] = remove(dataList, i)
-    trainset = rbind(trainList)
-    testset = as.matrix(hold_out)
-    trainX = trainset[, 2:ncol(trainset)]
-    trainy = trainset[, 1]
-    testX = testset[, 2:ncol(testset)]
-    testy = testset[, 1]
-    beta = multiLogReg(X=trainX, Y=trainy, icpt=as.scalar(MLhp[1,1]), reg=as.scalar(MLhp[1,2]), tol=as.scalar(MLhp[1,3]), 
-    maxi=as.scalar(MLhp[1,4]), maxii=50, verbose=FALSE);
-    [prob, yhat, accuracy] = multiLogRegPredict(testX, beta, testy, FALSE)
-    accuracyMatrix[i] = accuracy
-  }
-
 }
 
 stringProcessing = function(Frame[Unknown] data, Matrix[Double] mask, Frame[String] schema, Boolean CorrectTypos)
@@ -260,6 +196,7 @@ return(Frame[Unknown] processedData)
     # print("after correctTypos "+toString(data, rows=5))
   }
   
+  data = map(data, "x -> PorterStemmer.stem(x)")
   # TODO add deduplication
   processedData = data
 }
@@ -398,8 +335,7 @@ topk_gridSearch = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] Xt
       }
       
       Rloss[i,] = mean(accuracyMatrix)
-    }
-  
+    }  
   }
   # without cross-validation
   else {

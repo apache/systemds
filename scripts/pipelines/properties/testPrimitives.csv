@@ -1,3 +1,3 @@
-OTLR,MVI,NR,CI,DIM,DUMMY,SCALE
-winsorize,imputeByMean,abstain,SMOTE,m_pca,dummycoding,scale
-outlierBySd,imputeByMedian,,,,,
+ED,MVI,OTLR,EC,SCALE,CI,DUMMY,DIM
+outlierBySd,imputeByMean,winsorize,imputeByMean,scale,SMOTE,dummycoding,m_pca
+outlierByIQR,imputeByMedian,outlierBySd,imputeByMedian,,wtomeklink,,ppca

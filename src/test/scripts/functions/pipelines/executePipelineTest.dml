@@ -1,0 +1,101 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+source("scripts/pipelines/scripts/utils.dml") as utils;
+
+F = read($1, data_type="frame", format="csv", header=FALSE, 
+  naStrings= ["NA", "null","  ","NaN", "nan", "", "?", "99999"]);
+metaData = read($2, data_type="frame", format="csv", header=FALSE);  
+trainTestSplit = 0.7
+metaData = metaData[, 2:ncol(metaData)]
+F = F[1:100]
+split = nrow(F) * trainTestSplit
+trainData = F[1:split,]
+testData = F[split+1:nrow(F),]
+
+flagsCount = 5
+schema = metaData[1, 1:ncol(metaData) - 1]
+mask = as.matrix(metaData[2, 1:ncol(metaData) - 1])
+FD = as.matrix(metaData[3, 1:ncol(metaData) - 1])
+maskY = as.integer(as.scalar(metaData[2, ncol(metaData)]))
+metaList = list(mask=mask, schema=schema, fd=FD)
+
+# separate the label
+[Xtrain, Ytrain] = getLabel(trainData, TRUE)
+[Xtest, Ytest] = getLabel(testData, TRUE)
+    
+# always recode the label 
+[eYtrain, M] = transformencode(target=Ytrain, spec= "{ids:true, recode:[1]}");
+eYtest = transformapply(target=Ytest, spec= "{ids:true, recode:[1]}", meta=M);
+[eXtrain, eXtest] = recodeData(Xtrain, Xtest, mask, FALSE, "recode")
+
+
+lp = frame(["MVI", "CI"], rows=1, cols=2)
+pip = frame(["imputeByMean", "abstain"], rows=1, cols=2)
+hp = matrix("0.000 0.000 1.000 0.000 0.000 0.000 2.000
+            1.000 0.786 0.000 0.000 1.000 1.000 2.000", rows=2, cols=7)
+print("X unchanged "+sum(eXtrain))
+[eX, Y, Xtest, Ytest, tr] = executePipeline(lp, pip, eXtrain, eYtrain, eXtest, eYtest, metaList, hp,
+  as.matrix(0), as.matrix(0), flagsCount, TRUE, FALSE)
+
+trainEndIdx = (nrow(rbind(eXtrain, eXtest)) - nrow(eXtest))
+testStIdx = trainEndIdx + 1
+X = imputeByMean(rbind(eXtrain, eXtest), mask)
+eXtrain = X[1:trainEndIdx,]
+eXtest = X[testStIdx:nrow(X),]
+hX = abstain(eXtrain, eYtrain, 0.786, FALSE)
+
+equalX = (abs(eX - eXtrain) > 0.0001)
+result = sum(equalX) == 0
+write(result, $3)
+
+recodeData = function(Frame[Unknown] Xtrain, Frame[Unknown] Xtest, Matrix[Double] mask, Boolean cv, String code)
+return(Matrix[Double] eXtrain, Matrix[Double] eXtest)
+{
+  if(sum(mask) > 0)
+  {
+    index = vectorToCsv(mask)
+    jspecR = "{ids:true, "+code+":["+index+"]}"
+    [eXtrain, X_meta] = transformencode(target=Xtrain, spec=jspecR);
+    if(!cv)
+      eXtest = transformapply(target=Xtest, spec=jspecR, meta=X_meta);
+    else eXtest = as.matrix(Xtest)
+  } 
+  # if no categorical value exist then just cast the frame into matrix
+  else {
+    eXtrain = as.matrix(Xtrain)
+    eXtest = as.matrix(Xtest)
+  }
+}
+
+getLabel = function(Frame[Unknown] data, Boolean isLastLabel)
+return(Frame[Unknown] X, Frame[Unknown] Y)
+{
+  if(isLastLabel) {
+    X = data[, 1:ncol(data) - 1]
+    Y = data[, ncol(data)]
+  }
+  else 
+  {
+    X = data
+    Y = as.frame("0")
+  }
+}

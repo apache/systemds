@@ -49,11 +49,20 @@ return (Matrix[Double] X_under, Matrix[Double] y_under, Matrix[Double] drop_idx)
 
   tomek_links = get_links(X, y, majority_label)
   drop_idx = tomek_links * seq(1, nrow(X)) 
-  X_under = removeEmpty(target=X, margin="rows", select = (tomek_links == 0))
-  y_under = removeEmpty(target=y, margin="rows", select = (tomek_links == 0))
-  drop_idx = removeEmpty(target=drop_idx, margin="rows", select = tomek_links)
-  if(ymin)
-    y = y - 1
+  if(sum(tomek_links == 0) > 0)
+  {
+    X_under = removeEmpty(target=X, margin="rows", select = (tomek_links == 0))
+    y_under = removeEmpty(target=y, margin="rows", select = (tomek_links == 0))
+    drop_idx = removeEmpty(target=drop_idx, margin="rows", select = tomek_links)
+  }
+  else
+  {
+    X_under = X
+    y_under = y
+    drop_idx = as.matrix(NaN)
+  }
+  if(ymin == 0)
+    y_under = y_under - 1
 }
 
 # get the nearest neighbour index
@@ -61,7 +70,7 @@ get_nn = function(Matrix[Double] X)
 return (Matrix[Double] nn) {
   # TODO exchange manhatten by euclidean dist()?
   nn = matrix(0, rows = nrow(X), cols = 1)
-  parfor (i in 1:nrow(X)) {
+  for (i in 1:nrow(X)) {
     dists = rowSums((X - X[i,])^2) 
     dists[i,] = NaN; # mask out self-ref
     nn[i, 1] = rowIndexMin(t(dists))

@@ -69,37 +69,31 @@ getSchema = getSchema[, 1:ncol(getSchema) - 1] # strip the mask of class label
 metaList = list(mask=getMask, schema=getSchema, fd=as.matrix(0))
 
 logical =  frame([
-                   "1", "MVI", "0", "0", "0", "0", 
-                   # "1", "OTLR", "0", "0", "0", "0", 
-                   # "1", "CI", "0", "0", "0", "0", 
-                   # "2", "MVI", "CI", "0", "0", "0", 
-                   # "2", "MVI", "OTLR", "0", "0", "0",
-                   # "2", "MVI", "SCALE", "0", "0", "0", 
-                   # "3", "MVI", "SCALE", "OTLR", "0", "0",
-                   # "4", "MVI", "OTLR", "CI", "SCALE", "0", 
-                   # "4", "OTLR", "MVI", "CI", "SCALE", "0",
-                   "5", "MVI", "OTLR", "MVI", "CI", "SCALE"
-                   ], rows=2, cols=6)
+                 "7", "MVI", "OTLR", "ED", "EC", "CI", "DUMMY", "DIM", 
+                 "5", "ED",  "MVI",  "CI", "DUMMY", "DIM", "0", "0"
+                 ], rows=2, cols=8) 
 
 
-categories = frame(["MVI", "OTLR", "SCALE"], rows=1, cols=3)
+
+categories = frame(["ED", "MVI", "OTLR", "EC"], rows=1, cols=4)
 cmr = matrix("4 0.7 1", rows=1, cols=3)
 
 # doing holdout evaluation
-split = nrow(eX) * trainTestSplit
-trainX = eX[1:split,]
-trainY = eY[1:split,]
-testX = eX[split+1:nrow(eX),]
-testY = eY[split+1:nrow(eY),]
+
+[trainX, trainY, testX, testY] = splitBalanced(eX, eY, trainTestSplit, FALSE)
+# split = nrow(eX) * trainTestSplit
+# trainX = eX[1:split,]
+# trainY = eY[1:split,]
+# testX = eX[split+1:nrow(eX),]
+# testY = eY[split+1:nrow(eY),]
 
 
 [bestLogical, score, T] = lg::enumerateLogical(X=trainX, y=trainY, Xtest=testX, ytest=testY,  cmr=cmr, cat=categories, population=logical,
-    max_iter=max_iter, metaList = metaList, evaluationFunc="evalClassification", evalFunHp=matrix("1 1e-3 1e-9 100", rows=1, cols=4), 
-    primitives=primitives, param=param , num_inst=num_inst, num_exec=num_exec, verbose=TRUE)
+    max_iter=max_iter, metaList = metaList, evaluationFunc="evalML", evalFunHp=matrix("1 1e-3 1e-9 100", rows=1, cols=4), 
+    primitives=primitives, param=param , num_inst=num_inst, num_exec=num_exec, cv=FALSE, verbose=TRUE)
 
 print("score of pipeline: "+toString(score)+" in "+(T/60000)+" mins")
 print("bestLogical "+toString(bestLogical))
-
 result = dirtyScore < score  
 print("result satisfied ------------"+result)
 
@@ -109,38 +103,22 @@ write(result , $O)
 
 # UDF for evaluation  
 # choice of parameters provided by API, X, Y, clone_X, evalFunHp (hyper-param), trainML (boolean for optimizing hp internally or passed by externally )
-evalClassification = function(Matrix[Double] X, Matrix[Double] Y, Matrix[Double] Xtest, Matrix[Double] Ytest, Matrix[Double] Xorig, List[Unknown] metaList,
-  Matrix[Double] evalFunHp, Integer trainML=0)
+# UDF for evaluation  
+# choice of parameters provided by API, X, Y, clone_X, evalFunHp (hyper-param), trainML (boolean for optimizing hp internally or passed by externally )
+evalML = function(Matrix[Double] X, Matrix[Double] Y, Matrix[Double] Xtest, Matrix[Double] Ytest, Matrix[Double] Xorig=as.matrix(0),
+  Matrix[Double] evalFunHp, Boolean trainML = FALSE)
   
-return(Matrix[Double] output)
+return(Matrix[Double] accuracy)
 {
-  cv = 2
-  mask = as.matrix(metaList['mask'])
-  print("min and max of y in eval: "+min(Y)+" "+max(Y))
-  if(max(Y) == min(Y)) {
-    print("Y contains only one class")
-    accuracy = as.double(0)
-  }
-  else {
-    if(trainML == 1)
-    {
-      # do the gridsearch for hyper-parameters
-      params = list("icpt", "reg", "tol", "maxii")
-      paramRanges = list(seq(0, 2, 1), 10^seq(1,-4), 10^seq(1,-6), 10^seq(1,3));
 
-      trainArgs = list(X=X, Y=Y, icpt=-1, reg=-1, tol=-1, maxi=100, maxii=-1, verbose=FALSE);
-      [B1, opt] = utils::topk_gridSearch(X=X, y=Y, Xtest=Xtest, ytest=Ytest, train="multiLogReg", predict="accuracy", numB=ncol(X)+1, cv=FALSE, cvk=cv,
-        params=params, paramValues=paramRanges, trainArgs=trainArgs, verbose=FALSE);
-      evalFunHp = as.matrix(opt)  
-    }
-
-     beta =  multiLogReg(X=X, Y=Y, icpt=as.scalar(evalFunHp[1,1]), reg=as.scalar(evalFunHp[1,2]), tol=as.scalar(evalFunHp[1,3]),
-     maxi=as.scalar(evalFunHp[1,4]), maxii=50, verbose=FALSE);
-    [prob, yhat, score] = multiLogRegPredict(Xtest, beta, Ytest, FALSE)
-
-  }
-  output = cbind(as.matrix(score), evalFunHp)
+  beta = multiLogReg(X=X, Y=Y, icpt=as.scalar(evalFunHp[1,1]), reg=as.scalar(evalFunHp[1,2]), tol=as.scalar(evalFunHp[1,3]), 
+    maxi=as.scalar(evalFunHp[1,4]), maxii=50, verbose=FALSE);
+  [prob, yhat, a] = multiLogRegPredict(Xtest, beta, Ytest, FALSE)
+  accuracy = getAccuracy(Ytest, yhat, TRUE)
+  print("accuracy weighted: "+accuracy)
+  accuracy = as.matrix(accuracy)
 }
+
 accuracy = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] B) return (Matrix[Double] err) {
   [M,yhat,acc] = multiLogRegPredict(X=X, B=B, Y=y, verbose=TRUE);
   err = as.matrix(1-(acc/100));

@@ -135,9 +135,6 @@ return (Matrix[Double] dX_train) {
 }
 
 
-
-
-
 #####################################
 # The function will check if the pipeline have zero hyper-parameters
 # then it should not use more resource iterations and should be executed once
@@ -156,9 +153,6 @@ return(Boolean validForResources)
   }
   validForResources = count > 0
 }
-
-
-
 
 
 # # ######################################################################
@@ -398,8 +392,7 @@ topk_gridSearch = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] Xt
       }
       
       Rloss[i,] = mean(accuracyMatrix)
-    }
-  
+    }  
   }
   # without cross-validation
   else {

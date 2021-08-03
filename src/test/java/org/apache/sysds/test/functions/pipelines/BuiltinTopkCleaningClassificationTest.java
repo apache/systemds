@@ -23,6 +23,7 @@ import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 
 public class BuiltinTopkCleaningClassificationTest extends AutomatedTestBase {
@@ -35,6 +36,7 @@ public class BuiltinTopkCleaningClassificationTest extends AutomatedTestBase {
 
 	private final static String DIRTY = DATA_DIR+ "dirty.csv";
 	private final static String META = RESOURCE+ "meta/meta_census.csv";
+	private final static String OUTPUT = RESOURCE+ "intermediates/classification/";
 
 	private static final String PARAM_DIR = "./scripts/pipelines/properties/";
 	private final static String PARAM = PARAM_DIR + "param.csv";
@@ -47,34 +49,33 @@ public class BuiltinTopkCleaningClassificationTest extends AutomatedTestBase {
 
 	@Test
 	public void testFindBestPipeline1() {
-		runtopkCleaning(0.1, 3,5,
-			"FALSE", Types.ExecMode.SINGLE_NODE);
+		runtopkCleaning(0.5, 3,5,
+			"FALSE", 0,0.8, Types.ExecMode.SINGLE_NODE);
 	}
 
-	@Test
+	@Ignore
 	public void testFindBestPipeline2() {
 		runtopkCleaning(0.1, 3,5,
-			"TRUE", Types.ExecMode.SINGLE_NODE);
+			"TRUE", 3,0.8,  Types.ExecMode.SINGLE_NODE);
 	}
 
 	@Test
 	public void testFindBestPipelineHybrid() {
 		runtopkCleaning(0.1, 3,5,
-			"FALSE", Types.ExecMode.HYBRID);
+			"FALSE", 0,0.8,  Types.ExecMode.HYBRID);
 	}
 
+	private void runtopkCleaning(Double sample, int topk, int resources,  String cv, int cvk , double split, Types.ExecMode et) {
 
-	private void runtopkCleaning(Double sample, int topk, int resources,  String cv, Types.ExecMode et) {
-
-		setOutputBuffering(true);
+		// setOutputBuffering(true);
 		Types.ExecMode modeOld = setExecMode(et);
 		String HOME = SCRIPT_DIR + TEST_DIR;
 		try {
 			loadTestConfiguration(getTestConfiguration(TEST_NAME));
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[] {"-stats", "-exec", "singlenode", "-nvargs", "dirtyData="+DIRTY,
+			programArgs = new String[] { "-stats", "-exec", "singlenode", "-nvargs", "dirtyData="+DIRTY,
 				"metaData="+META, "primitives="+PRIMITIVES, "parameters="+PARAM, "topk="+ topk, "rv="+ resources,
-				"sample="+sample, "testCV="+cv, "O="+output("O")};
+				"sample="+sample, "testCV="+cv, "cvk="+cvk, "split="+split, "output="+OUTPUT, "O="+output("O")};
 
 			runTest(true, EXCEPTION_NOT_EXPECTED, null, -1);
 

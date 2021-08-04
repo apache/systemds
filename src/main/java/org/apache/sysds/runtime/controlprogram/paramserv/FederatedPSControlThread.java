@@ -507,8 +507,8 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 					.toArray(CPOperand[]::new);
 				outputNames = outputs.stream().map(DataIdentifier::getName)
 					.collect(Collectors.toCollection(ArrayList::new));
-				aggregationInstruction = new FunctionCallCPInstruction(namespace, aggFunc, opt,
-						boundInputs, func.getInputParamNames(), outputNames, "aggregation function");
+				aggregationInstruction = new FunctionCallCPInstruction(namespace, aggFunc,
+					opt, boundInputs, func.getInputParamNames(), outputNames, "aggregation function");
 				aggregationOutput = outputs.get(0);
 			}
 
@@ -546,10 +546,10 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 					model = ec.getListObject(aggregationOutput.getName());
 					// Set new model in execution context
 					ec.setVariable(Statement.PS_MODEL, model);
-
 					// clean up gradients and result
 					ParamservUtils.cleanupListObject(ec, aggregationOutput.getName());
 				}
+
 				// clean up
 				ParamservUtils.cleanupData(ec, Statement.PS_FEATURES);
 				ParamservUtils.cleanupData(ec, Statement.PS_LABELS);

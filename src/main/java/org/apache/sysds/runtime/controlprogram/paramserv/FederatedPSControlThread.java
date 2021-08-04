@@ -326,7 +326,7 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 		return _ps.pull(_workerID);
 	}
 
-	protected void weighAndPushGradients(ListObject gradients) {
+	protected void weightAndPushGradients(ListObject gradients) {
 		// scale gradients - must only include MatrixObjects
 		if(_weighting && _weightingFactor != 1) {
 			Timing tWeighting = DMLScript.STATISTICS ? new Timing(true) : null;
@@ -361,10 +361,10 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 				ListObject gradients = computeGradientsForNBatches(model, 1, localStartBatchNum);
 				if (_modelAvg) {
 					model = _ps.updateLocalModel(_ec, gradients, model);
-					weighAndPushGradients(model);
+					weightAndPushGradients(model);
 				}
 				else
-					weighAndPushGradients(gradients);
+					weightAndPushGradients(gradients);
 				ParamservUtils.cleanupListObject(model);
 				ParamservUtils.cleanupListObject(gradients);
 			}
@@ -388,7 +388,7 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 			// Pull the global parameters from ps
 			ListObject model = pullModel();
 			ListObject gradients = computeGradientsForNBatches(model, _numBatchesPerEpoch, localStartBatchNum, true);
-			weighAndPushGradients(gradients);
+			weightAndPushGradients(gradients);
 			ParamservUtils.cleanupListObject(model);
 			ParamservUtils.cleanupListObject(gradients);
 		}

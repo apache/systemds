@@ -19,30 +19,6 @@
 #
 #-------------------------------------------------------------
 
-# Calls the SystemDS built-in function to solve a Multinomial Logistic Regression problem.
-# For further information, see:
-# https://apache.github.io/systemds/site/builtins-reference#multilogreg-function
-
-# INPUT PARAMETERS:
-# --------------------------------------------------------------------------------------------
-# NAME  TYPE   DEFAULT  MEANING
-# --------------------------------------------------------------------------------------------
-# X     String  ---     Location to read the matrix of feature vectors
-# Y     String  ---     Location to read the matrix with category labels
-# B     String  ---     Location to store estimated regression parameters (the betas)
-# icpt  Int      0      Intercept presence, shifting and rescaling X columns:
-#                       0 = no intercept, no shifting, no rescaling;
-#                       1 = add intercept, but neither shift nor rescale X;
-#                       2 = add intercept, shift & rescale X columns to mean = 0, variance = 1
-# reg   Double  0.0     regularization parameter (lambda = 1/C); intercept is not regularized
-# tol   Double 0.000001 tolerance ("epsilon")
-# moi   Int     100     max. number of outer (Newton) iterations
-# mii   Int      0      max. number of inner (conjugate gradient) iterations, 0 = no max
-# fmt   String "text"   Matrix output format, usually "text" or "csv" (for matrices only)
-# --------------------------------------------------------------------------------------------
-# The largest label represents the baseline category; if label -1 or 0 is present, then it is
-# the baseline label (and it is converted to the largest label).
-
 fileX = $X;
 fileY = $Y;
 fileB = $B;

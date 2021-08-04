@@ -19,13 +19,6 @@
 #
 #-------------------------------------------------------------
 
-# This script can be used to compute label predictions
-# Meant for use with an SVM model (learnt using m-svm.dml) on a held out test set
-#
-# Given ground truth labels, the script will compute an 
-# accuracy (%) for the predictions
-
-
 cmdLine_Y = ifdef($Y, " ")
 cmdLine_confusion = ifdef($confusion, " ")
 cmdLine_accuracy = ifdef($accuracy, " ")

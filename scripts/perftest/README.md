@@ -33,9 +33,6 @@ NOTE THE SCRIPT HAS TO BE RUN FROM THE PERFTEST FOLDER.
 Examples:
 ```bash
 ./runAll.sh
-./runAll.sh systemds
-./runAll.sh ./sparkDML.sh
-./runAll.sh systemds perftestTemp
 ```
 
 Look inside the runAll script to see how to run individual tests.

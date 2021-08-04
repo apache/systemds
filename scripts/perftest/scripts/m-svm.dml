@@ -19,30 +19,6 @@
 #
 #-------------------------------------------------------------
 
-# Call of built-in multiclass SVM. Check documentation for more information:
-# https://apache.github.io/systemds/site/builtins-reference#msvm-function
-#
-# Example Usage:
-# Assume SVM_HOME is set to the home of the dml script
-# Assume input and output directories are on hdfs as INPUT_DIR and OUTPUT_DIR
-# Assume epsilon = 0.001, lambda=1.0, maxiterations = 100
-#
-# INPUT PARAMETERS:
-# ---------------------------------------------------------------------------------------------
-# NAME      TYPE    DEFAULT     MEANING
-# ---------------------------------------------------------------------------------------------
-# X         String  ---         Location to read the matrix X of feature vectors
-# Y         String  ---         Location to read response matrix Y
-# icpt      Int     0           Intercept presence
-#                               0 = no intercept
-#                               1 = add intercept;
-# tol       Double  0.001       Tolerance (epsilon);
-# reg       Double  1.0         Regularization parameter (lambda)
-# maxiter   Int     100         Maximum number of conjugate gradient iterations
-# model     String  ---         Location to write model
-# fmt       String  "text"      The output format of the output, such as "text" or "csv"
-# ---------------------------------------------------------------------------------------------
-
 fmt = ifdef($fmt, "text")
 icpt = ifdef($icpt, 0)
 tol = ifdef($tol, 0.001)

@@ -20,27 +20,22 @@
 #
 #-------------------------------------------------------------
 
-# First argument is optional, but can be the command that is ultimately invoked
-COMMAND=$1
-if [ "$COMMAND" == "" ]; then COMMAND="systemds" ; fi
-
-# Second argument is optional, but can be a folder name for where generated data is stored
-TEMPFOLDER=$2
+# Optional argument that can be a folder name for where generated data is stored
+TEMPFOLDER=$1
 if [ "$TEMPFOLDER" == "" ]; then TEMPFOLDER=temp ; fi
 
 # Set properties
 export LOG4JPROP='conf/log4j-off.properties'
 export SYSDS_QUIET=1
 
-# Initialize Intel MKL
-#if [ -d ~/intel ] && [ -d ~/intel/bin ] && [ -f ~/intel/bin/compilervars.sh ]; then
+# Command to be executed
+CMD="systemds"
+#CMD="./sparkDML.sh"
+
+# Possible lines to initialize Intel MKL, depending on version and install location
 #    . ~/intel/bin/compilervars.sh intel64
-#elif [ -d ~/intel ] && [ -d ~/intel/oneapi ] && [ -f ~/intel/oneapi/setvars.sh ]; then
-#	# For the new intel oneAPI
 #    . ~/intel/oneapi/setvars.sh intel64
-#else
 #    . /opt/intel/bin/compilervars.sh intel64
-#fi
 
 
 ### Micro Benchmarks:
@@ -55,22 +50,22 @@ if [ ! -d results ]; then mkdir -p results ; fi
 date >> results/times.txt
 
 # TODO Use the built-in function lmPredict instead of the GLM-predict.dml script, for linear regression.
-./runAllBinomial.sh $COMMAND $TEMPFOLDER
-./runAllMultinomial.sh $COMMAND $TEMPFOLDER
-./runAllRegression.sh $COMMAND $TEMPFOLDER
+./runAllBinomial.sh $CMD $TEMPFOLDER
+./runAllMultinomial.sh $CMD $TEMPFOLDER
+./runAllRegression.sh $CMD $TEMPFOLDER
 
 # TODO The following commented benchmarks have yet to be cleaned up and ported from perftestDeprecated to perftest
-#./runAllStats.sh $COMMAND $TEMPFOLDER
-#./runAllClustering.sh $COMMAND $TEMPFOLDER
+#./runAllStats.sh $CMD $TEMPFOLDER
+#./runAllClustering.sh $CMD $TEMPFOLDER
 
 # add stepwise Linear 
 # add stepwise GLM
-#./runAllTrees $COMMAND $TEMPFOLDER
+#./runAllTrees $CMD $TEMPFOLDER
 # add randomForest
-#./runAllDimensionReduction $COMMAND $TEMPFOLDER
-#./runAllMatrixFactorization $COMMAND $TEMPFOLDER
+#./runAllDimensionReduction $CMD $TEMPFOLDER
+#./runAllMatrixFactorization $CMD $TEMPFOLDER
 #ALS
-#./runAllSurvival $COMMAND $TEMPFOLDER
+#./runAllSurvival $CMD $TEMPFOLDER
 #KaplanMeier
 #Cox
 

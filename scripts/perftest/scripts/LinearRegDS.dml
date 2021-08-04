@@ -19,29 +19,6 @@
 #
 #-------------------------------------------------------------
 
-# THIS SCRIPT SOLVES LINEAR REGRESSION USING A DIRECT SOLVER FOR (X^T X + lambda) beta = X^T y
-# It uses a built-in function, see documentation for more information:
-# https://apache.github.io/systemds/site/builtins-reference#lmds-function
-#
-# INPUT PARAMETERS:
-# --------------------------------------------------------------------------------------------
-# NAME  TYPE   DEFAULT  MEANING
-# --------------------------------------------------------------------------------------------
-# X     String  ---     Location (on HDFS) to read the matrix X of feature vectors
-# Y     String  ---     Location (on HDFS) to read the 1-column matrix Y of response values
-# B     String  ---     Location to store estimated regression parameters (the betas)
-# icpt  Int      0      Intercept presence, shifting and rescaling the columns of X:
-#                       0 = no intercept, no shifting, no rescaling;
-#                       1 = add intercept, but neither shift nor rescale X;
-#                       2 = add intercept, shift & rescale X columns to mean = 0, variance = 1
-# reg   Double 0.000001 Regularization constant (lambda) for L2-regularization; set to nonzero
-#                       for highly dependend/sparse/numerous features
-# fmt   String "text"   Matrix output format for B (the betas) only, usually "text" or "csv"
-# --------------------------------------------------------------------------------------------
-# OUTPUT: 1-column matrix of regression parameters (the betas)
-#
-# -------------------------------------------------------------------------------------
-
 fileX = $X;
 fileY = $Y;
 fileB = $B;

@@ -19,10 +19,6 @@
 #
 #-------------------------------------------------------------
 
-# Implements multinomial naive Bayes classifier with Laplace correction
-# See documentation for more information:
-# https://apache.github.io/systemds/site/builtins-reference#naivebayes-function
-
 # defaults
 laplaceCorrection = ifdef($laplace, 1)
 fmt = ifdef($fmt, "text")

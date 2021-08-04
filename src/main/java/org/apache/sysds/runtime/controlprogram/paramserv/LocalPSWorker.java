@@ -83,13 +83,13 @@ public class LocalPSWorker extends PSWorker implements Callable<Void> {
 	private void computeEpoch(long dataSize, int batchIter) {
 		ListObject updateModel;
 		ListObject gradients = null;
-		for (int i = 0; i < _epochs; i++) {
+		for(int i = 0; i < _epochs; i++) {
 			// Pull the global parameters from ps
 			ListObject params = pullModel();
 			Future<ListObject> accGradients = ConcurrentUtils.constantFuture(null);
 
 			try {
-				for (int j = 0; j < batchIter; j++) {
+				for(int j = 0; j < batchIter; j++) {
 					gradients = computeGradients(params, dataSize, batchIter, i, j);
 
 					boolean localUpdate = j < batchIter - 1;
@@ -123,7 +123,7 @@ public class LocalPSWorker extends PSWorker implements Callable<Void> {
 			}
 
 			accNumEpochs(1);
-			if (LOG.isDebugEnabled()) {
+			if(LOG.isDebugEnabled()) {
 				LOG.debug(String.format("%s: finished %d epoch.", getWorkerName(), i + 1));
 			}
 		}

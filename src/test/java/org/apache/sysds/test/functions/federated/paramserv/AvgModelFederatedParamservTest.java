@@ -67,10 +67,11 @@ public class AvgModelFederatedParamservTest extends AutomatedTestBase {
 			// basic functionality
 			//{"TwoNN",	4, 60000, 32, 4, 0.01, 	"BSP", "BATCH", "KEEP_DATA_ON_WORKER", 	"NONE" ,		"false","BALANCED",		200},
 
-			{"TwoNN",	2, 4, 1, 4, 0.01, 		"BSP", "BATCH", "KEEP_DATA_ON_WORKER", 	"BASELINE",		"true",	"IMBALANCED",	200},
-			{"CNN", 	2, 4, 1, 4, 0.01, 		"BSP", "EPOCH", "SHUFFLE", 				"NONE", 		"true",	"IMBALANCED", 	200},
-			{"CNN",		2, 4, 1, 4, 0.01, 		"ASP", "BATCH", "REPLICATE_TO_MAX", 	"CYCLE_MIN", 	"true",	"IMBALANCED",	200},
-			{"TwoNN", 	2, 4, 1, 4, 0.01, 		"ASP", "EPOCH", "BALANCE_TO_AVG", 		"CYCLE_MAX", 	"true",	"IMBALANCED",	200},
+			// One important point is that we do the model averaging in the case of BSP
+			{"TwoNN",	2, 4, 1, 4, 0.01, 		"BSP", "EPOCH", "KEEP_DATA_ON_WORKER", 	"BASELINE",		"true",	"IMBALANCED",	200},
+		//	{"CNN",		2, 4, 1, 4, 0.01, 		"ASP", "BATCH", "REPLICATE_TO_MAX", 	"CYCLE_MIN", 	"true",	"IMBALANCED",	200},
+			{"CNN", 	2, 4, 1, 4, 0.01, 		"BSP", "EPOCH", "SHUFFLE", 				"BASELINE", 		"true",	"IMBALANCED", 	200},
+		//	{"TwoNN", 	2, 4, 1, 4, 0.01, 		"ASP", "EPOCH", "BALANCE_TO_AVG", 		"CYCLE_MAX", 	"true",	"IMBALANCED",	200},
 			{"TwoNN", 	5, 1000, 100, 2, 0.01, 	"BSP", "BATCH", "KEEP_DATA_ON_WORKER", 	"NONE", 		"true",	"BALANCED",		200},
 
 			/*

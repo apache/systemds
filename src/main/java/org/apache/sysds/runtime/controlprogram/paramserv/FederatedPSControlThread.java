@@ -135,7 +135,7 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 		if( LOG.isInfoEnabled() ) {
 			LOG.info("Setup config for worker " + this.getWorkerName());
 			LOG.info("Batch size: " + _batchSize + " possible batches: " + _possibleBatchesPerLocalEpoch
-					+ " batches to run: " + _numBatchesPerEpoch + " weighting factor: " + _weightingFactor);
+				+ " batches to run: " + _numBatchesPerEpoch + " weighting factor: " + _weightingFactor);
 		}
 
 		// serialize program
@@ -157,7 +157,6 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 			PROG_BEGIN, NEWLINE,
 			ProgramConverter.serializeProgram(_ec.getProgram(), pbs, new HashMap<>()),
 			PROG_END);
-
 		// write program and meta data to worker
 		Future<FederatedResponse> udfResponse = _featuresData.executeFederatedOperation(
 			new FederatedRequest(RequestType.EXEC_UDF, _featuresData.getVarID(),
@@ -172,7 +171,7 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 					_modelVarID,
 					_modelAvg
 				)
-		));
+			));
 
 		try {
 			FederatedResponse response = udfResponse.get();
@@ -249,8 +248,8 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 		// write program and meta data to worker
 		Future<FederatedResponse> udfResponse = _featuresData.executeFederatedOperation(
 			new FederatedRequest(RequestType.EXEC_UDF, _featuresData.getVarID(),
-			new TeardownFederatedWorker()
-		));
+				new TeardownFederatedWorker()
+			));
 
 		try {
 			FederatedResponse response = udfResponse.get();
@@ -429,8 +428,8 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 		Future<FederatedResponse> udfResponse = _featuresData.executeFederatedOperation(
 			new FederatedRequest(RequestType.EXEC_UDF, _featuresData.getVarID(),
 				new federatedComputeGradientsForNBatches(new long[]{_featuresData.getVarID(), _labelsData.getVarID(),
-				_modelVarID}, numBatchesToCompute, localUpdate, localStartBatchNum)
-		));
+					_modelVarID}, numBatchesToCompute, localUpdate, localStartBatchNum)
+			));
 
 		try {
 			Object[] responseData = udfResponse.get().getData();
@@ -492,8 +491,7 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 				.toArray(CPOperand[]::new);
 			ArrayList<String> outputNames = outputs.stream().map(DataIdentifier::getName)
 				.collect(Collectors.toCollection(ArrayList::new));
-			Instruction gradientsInstruction = new FunctionCallCPInstruction(namespace, gradientsFunc,
-				opt, boundInputs, func.getInputParamNames(), outputNames, "gradient function");
+			Instruction gradientsInstruction = new FunctionCallCPInstruction(namespace, gradientsFunc, opt, boundInputs, func.getInputParamNames(), outputNames, "gradient function");
 			DataIdentifier gradientsOutput = outputs.get(0);
 
 			// recreate aggregation instruction and output if needed
@@ -508,8 +506,7 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 					.toArray(CPOperand[]::new);
 				outputNames = outputs.stream().map(DataIdentifier::getName)
 					.collect(Collectors.toCollection(ArrayList::new));
-				aggregationInstruction = new FunctionCallCPInstruction(namespace, aggFunc,
-					opt, boundInputs, func.getInputParamNames(), outputNames, "aggregation function");
+				aggregationInstruction = new FunctionCallCPInstruction(namespace, aggFunc, opt, boundInputs, func.getInputParamNames(), outputNames, "aggregation function");
 				aggregationOutput = outputs.get(0);
 			}
 
@@ -550,7 +547,6 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 					// clean up gradients and result
 					ParamservUtils.cleanupListObject(ec, aggregationOutput.getName());
 				}
-
 				// clean up
 				ParamservUtils.cleanupData(ec, Statement.PS_FEATURES);
 				ParamservUtils.cleanupData(ec, Statement.PS_LABELS);
@@ -560,17 +556,14 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 			ParamservUtils.cleanupListObject(ec, ec.getVariable(Statement.PS_FED_MODEL_VARID).toString());
 			// stop timing
 			DoubleObject gradientsTime = new DoubleObject(tGradients.stop());
-			// if modelAvg is true we ignore to do accGradients.
 			if(!modelAvg) {
 				return new FederatedResponse(FederatedResponse.ResponseType.SUCCESS, new Object[]{accGradients, gradientsTime});
 			}
 			else {
 				if(_numBatchesToCompute == 1)
-					return new FederatedResponse(FederatedResponse.ResponseType.SUCCESS,
-						new Object[]{gradients, gradientsTime});
+					return new FederatedResponse(FederatedResponse.ResponseType.SUCCESS, new Object[] {gradients, gradientsTime});
 				else
-					return new FederatedResponse(FederatedResponse.ResponseType.SUCCESS,
-						new Object[]{model, gradientsTime});
+					return new FederatedResponse(FederatedResponse.ResponseType.SUCCESS, new Object[] {model, gradientsTime});
 			}
 		}
 

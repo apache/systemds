@@ -107,9 +107,9 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 	@Override
 	public void processInstruction(ExecutionContext ec) {
 		// check if the input is federated
-		if(ec.getMatrixObject(getParam(PS_FEATURES)).isFederated() ||
-					ec.getMatrixObject(getParam(PS_LABELS)).isFederated()) {
-			runFederated(ec);
+			if(ec.getMatrixObject(getParam(PS_FEATURES)).isFederated() ||
+							ec.getMatrixObject(getParam(PS_LABELS)).isFederated()) {
+					runFederated(ec);
 		}
 		// if not federated check mode
 		else {
@@ -268,7 +268,7 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 		// Create remote workers
 		SparkPSWorker worker = new SparkPSWorker(getParam(PS_UPDATE_FUN), getParam(PS_AGGREGATION_FUN),
 			getFrequency(), getEpochs(), getBatchSize(), program, clsMap, sec.getSparkContext().getConf(),
-			server.getPort(), aSetup, aWorker, aUpdate, aIndex, aGrad, aRPC, aBatch, aEpoch,modelAvg);
+			server.getPort(), aSetup, aWorker, aUpdate, aIndex, aGrad, aRPC, aBatch, aEpoch, modelAvg);
 
 		if (DMLScript.STATISTICS)
 			Statistics.accPSSetupTime((long) tSetup.stop());
@@ -594,10 +594,8 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 		return (getParameterMap().containsKey(PS_SEED)) ? Integer.parseInt(getParam(PS_SEED)) : (int) System.currentTimeMillis();
 	}
 	private boolean getModelAvg() {
-		if (!getParameterMap().containsKey(PS_MODELAVG)) {
+		if(!getParameterMap().containsKey(PS_MODELAVG))
 			return DEFAULT_MODELAVG;
-		}
-		else
-			return getParameterMap().containsKey(PS_MODELAVG) && Boolean.parseBoolean(getParam(PS_MODELAVG));
+		return Boolean.parseBoolean(getParam(PS_MODELAVG));
 	}
 }

@@ -19,9 +19,6 @@
 #
 #-------------------------------------------------------------
 
-# Implements scoring with a naive Bayes model learnt using
-# naive-bayes.dml
-
 cmdLine_Y = ifdef($Y, " ")
 cmdLine_accuracy = ifdef($accuracy, " ")
 cmdLine_confusion = ifdef($confusion, " ")

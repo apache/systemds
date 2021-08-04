@@ -45,7 +45,7 @@ import org.apache.sysds.runtime.util.CommonThreadPool;
 import org.apache.sysds.runtime.util.IndexRange;
 
 public class FederationMap {
-	public enum FPartitioning{
+	public enum FPartitioning {
 		ROW,   //row partitioned, groups of entire rows
 		COL,   //column partitioned, groups of entire columns
 		MIXED, //arbitrary rectangles
@@ -55,6 +55,7 @@ public class FederationMap {
 	public enum FReplication {
 		NONE,    //every data item in a separate location
 		FULL,    //every data item at every location
+//		PARTIAL, //every data item partially at every location without overlapping
 		OVERLAP, //every data item partially at every location, w/ addition as aggregation method
 	}
 
@@ -206,20 +207,28 @@ public class FederationMap {
 			return new FederatedRequest(RequestType.PUT_VAR, id, data.getUniqueID(), FType.BROADCAST);
 		}
 
-		FType type = FType.PART;
-		type.setPartType(_type._partType);
 		id = FederationUtils.getNextFedDataID();
 		CacheBlock cb = data.acquireReadAndRelease();
+		List<Pair<FederatedRange, FederatedData>> newFedMap = new ArrayList<>();
+		FederatedRange fr = new FederatedRange(new long[] {0, 0}, new long[] {cb.getNumRows(), cb.getNumColumns()});
 
-		// put new broadcasts
+		// put new broadcasts and create new federation map
 		for(Pair<FederatedRange, FederatedData> e : _fedMap) {
 			FederationUtils._broadcastMap.putIfAbsent(Triple.of(data.getUniqueID(), FType.BROADCAST, e.getValue().getAddress()),
 				Triple.of(id, false, false));
 			FederationUtils._broadcastMap.putIfAbsent(Triple.of(oldId, _type, e.getValue().getAddress()),
 				Triple.of(_ID, false, true));
+
+			newFedMap.add(Pair.of(fr, new FederatedData(data.getDataType(), e.getRight().getAddress(), data.getFileName())));
 		}
 
-		return new FederatedRequest(RequestType.PUT_VAR, id, cb, data.getUniqueID(), FType.BROADCAST, _ID, oldId, type);
+		// set new federation map
+		if(!data.isFederated()) {
+			data.setFedMapping(new FederationMap(id, newFedMap, FType.BROADCAST));
+			data.getDataCharacteristics().setDimension(cb.getNumRows(), cb.getNumColumns());
+		}
+
+		return new FederatedRequest(RequestType.PUT_VAR, id, cb, data.getUniqueID(), FType.BROADCAST, _ID, oldId, _type);
 	}
 
 	public FederatedRequest broadcast(ScalarObject scalar) {
@@ -243,17 +252,17 @@ public class FederationMap {
 
 		long id;
 		FederatedRequest[] ret = new FederatedRequest[_fedMap.size()];
-		FType type = FType.PART;
-		type.setPartType(!transposed ? _type._partType : (_type.getPartType() == FPartitioning.ROW ? FPartitioning.COL : FPartitioning.ROW));
+		FType type = !transposed ? _type : (_type == FType.ROW ? FType.ROW.COL : FType.ROW);
 
 		boolean exists = Arrays.stream(_fedMap.stream().map(e -> Triple.of(data.getUniqueID(), type, e.getRight().getAddress())).toArray())
 			.allMatch(e -> FederationUtils._broadcastMap.containsKey(e) && ((Triple<Long, FType, InetSocketAddress>) e).getMiddle()._partType == _type._partType
 				&& FederationUtils._broadcastMap.get(e).getMiddle() == transposed && FederationUtils._broadcastMap.get(e).getRight());
 		if(exists) {
-			id = FederationUtils._broadcastMap.get(Triple.of(data.getUniqueID(), FType.PART,
+			id = FederationUtils._broadcastMap.get(Triple.of(data.getUniqueID(), type,
 				((Pair<FederatedRange, FederatedData>) _fedMap.toArray()[0]).getRight().getAddress())).getLeft();
-			Arrays.fill(ret, new FederatedRequest(RequestType.PUT_VAR, id, data.getUniqueID(), FType.PART));
-		} else {
+			Arrays.fill(ret, new FederatedRequest(RequestType.PUT_VAR, id, data.getUniqueID(), type));
+		}
+		else {
 			// prepare broadcast id and pin input
 			id = FederationUtils.getNextFedDataID();
 			CacheBlock cb = data.acquireReadAndRelease();
@@ -263,15 +272,16 @@ public class FederationMap {
 			int[][] ix = new int[_fedMap.size()][];
 			int pos = 0;
 			for(Pair<FederatedRange, FederatedData> e : _fedMap) {
-				int beg = e.getKey().getBeginDimsInt()[(_type == FType.ROW || _type.getPartType() == FPartitioning.ROW ? 0 : 1)];
-				int end = e.getKey().getEndDimsInt()[(_type == FType.ROW || _type.getPartType() == FPartitioning.ROW ? 0 : 1)];
-				int nr = _type == FType.ROW || _type.getPartType() == FPartitioning.ROW ? cb.getNumRows() : cb.getNumColumns();
-				int nc = _type == FType.ROW || _type.getPartType() == FPartitioning.ROW ? cb.getNumColumns() : cb.getNumRows();
+				int beg = e.getKey().getBeginDimsInt()[(_type == FType.ROW ? 0 : 1)];
+				int end = e.getKey().getEndDimsInt()[(_type == FType.ROW ? 0 : 1)];
+				int nr = _type == FType.ROW ? cb.getNumRows() : cb.getNumColumns();
+				int nc = _type == FType.ROW ? cb.getNumColumns() : cb.getNumRows();
 				int rl = transposed ? 0 : beg;
 				int ru = transposed ? nr - 1 : end - 1;
 				int cl = transposed ? beg : 0;
 				int cu = transposed ? end - 1 : nc - 1;
-				ix[pos++] = _type == FType.ROW || _type.getPartType() == FPartitioning.ROW ? new int[] {rl, ru, cl, cu} : new int[] {cl, cu, rl, ru};
+				ix[pos++] = _type == FType.ROW ?
+					new int[] {rl, ru, cl, cu} : new int[] {cl, cu, rl, ru};
 
 				FederationUtils._broadcastMap.putIfAbsent(Triple.of(data.getUniqueID(), type, e.getValue().getAddress()),
 					Triple.of(id, transposed, false));
@@ -279,24 +289,21 @@ public class FederationMap {
 					Triple.of(getID(), false, true));
 
 				FederatedRange fr = new FederatedRange(e.getLeft());
-				fr.setEndDim(_type == FType.ROW || (_type == FType.PART && _type.getPartType() == FPartitioning.ROW) ? 1 : 0,
-					_type == FType.ROW || (_type == FType.PART && _type.getPartType() == FPartitioning.ROW) ? data.getNumColumns() : data.getNumRows());
+				fr.setEndDim(_type == FType.ROW ? 1 : 0, _type == FType.ROW ? data.getNumColumns() : data.getNumRows());
 				newFedMap.add(Pair.of(fr, new FederatedData(data.getDataType(), e.getRight().getAddress(), data.getFileName())));
-
 				if(transposed) {
 					fr.transpose();
-					fr.setEndDim(_type == FType.ROW || (_type == FType.PART && _type.getPartType() == FPartitioning.ROW) ? 0 : 1,
-						_type == FType.ROW || (_type == FType.PART && _type.getPartType() == FPartitioning.ROW) ? data.getNumRows() : data.getNumColumns());
+					fr.setEndDim(_type == FType.ROW ? 0 : 1, _type == FType.ROW ? data.getNumRows() : data.getNumColumns());
 				}
 			}
 
 			// multi-threaded block slicing and federation request creation
 			Arrays.parallelSetAll(ret,i -> new FederatedRequest(RequestType.PUT_VAR, id, cb.slice(ix[i][0], ix[i][1], ix[i][2], ix[i][3],
-				new MatrixBlock()), data.getUniqueID(), FType.PART, getID(), oldId, type));
+				new MatrixBlock()), data.getUniqueID(), type, getID(), oldId, _type));
 
 			if(!data.isFederated()) {
-				data.setFedMapping(new FederationMap(id, newFedMap, FType.PART));
-				data.getFedMapping()._type.setPartType(type.getPartType());
+				data.setFedMapping(new FederationMap(id, newFedMap, type));
+//				data.getFedMapping()._type.setPartType(type.getPartType());
 				data.getDataCharacteristics().setDimension(cb.getNumRows(), cb.getNumColumns());
 			}
 		}

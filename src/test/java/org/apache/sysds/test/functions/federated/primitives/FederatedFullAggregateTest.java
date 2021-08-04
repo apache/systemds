@@ -225,7 +225,7 @@ public class FederatedFullAggregateTest extends AutomatedTestBase {
 		// Run actual dml script with federated matrix
 
 		fullDMLScriptName = HOME + TEST_NAME + ".dml";
-		programArgs = new String[] {"-stats", "100", "-nvargs",
+		programArgs = new String[] {"-explain","-stats", "100", "-nvargs",
 			"in_X1=" + TestUtils.federatedAddress(port1, input("X1")),
 			"in_X2=" + TestUtils.federatedAddress(port2, input("X2")),
 			"in_X3=" + TestUtils.federatedAddress(port3, input("X3")),

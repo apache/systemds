@@ -43,18 +43,8 @@ public class ParamservLocalNNAveragingTest extends AutomatedTestBase {
 	}
 
 	@Test
-	public void testParamservASPBatch() {
-		runDMLTest(10, 2, Statement.PSUpdateType.ASP, Statement.PSFrequency.BATCH, 32, Statement.PSScheme.DISJOINT_CONTIGUOUS, true);
-	}
-
-	@Test
 	public void testParamservBSPEpoch() {
 		runDMLTest(10, 2, Statement.PSUpdateType.BSP, Statement.PSFrequency.EPOCH, 32, Statement.PSScheme.DISJOINT_CONTIGUOUS, true);
-	}
-
-	@Test
-	public void testParamservASPEpoch() {
-		runDMLTest(10, 2, Statement.PSUpdateType.ASP, Statement.PSFrequency.EPOCH, 32, Statement.PSScheme.DISJOINT_CONTIGUOUS, true);
 	}
 
 	@Test

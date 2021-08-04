@@ -51,7 +51,6 @@ import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysds.runtime.matrix.operators.RightScalarOperator;
 import org.apache.sysds.utils.Statistics;
-import sun.awt.windows.WPrinterJob;
 import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 public abstract class ParamServer

@@ -113,4 +113,7 @@ src/main/cpp/bin
 
 # Performance Test artifacts
 scripts/perftest/results
+scripts/perftest/logs
 scripts/perftest/in
+scripts/perftest/scratch_space
+scripts/perftest/temp

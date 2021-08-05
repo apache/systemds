@@ -1,3 +1,4 @@
+#!/bin/bash
 #-------------------------------------------------------------
 #
 # Licensed to the Apache Software Foundation (ASF) under one
@@ -18,14 +19,29 @@
 # under the License.
 #
 #-------------------------------------------------------------
+set -e
 
-n = 5000;
+CMD=$5
+BASE=$4
 
-X = read($1);
-y = read($2);
+#training
+tstart=$(date +%s.%N)
+#${CMD} -f ../algorithms/naive-bayes.dml \
+${CMD} -f scripts/naive-bayes.dml \
+   --config conf/SystemDS-config.xml \
+   --stats \
+   --nvargs X=$1 Y=$2 prior=${BASE}/prior conditionals=${BASE}/conditionals fmt="csv"
 
-X = X[1:n,];
-y = y[1:n,];
+ttrain=$(echo "$(date +%s.%N) - $tstart - .4" | bc)
+echo "NaiveBayes train on "$1": "$ttrain >> results/times.txt
 
-write(X, $3, format=$5);
-write(y, $4, format=$5);
+#predict
+tstart=$(date +%s.%N)
+#${CMD} -f ../algorithms/naive-bayes-predict.dml \
+${CMD} -f scripts/naive-bayes-predict.dml \
+   --config conf/SystemDS-config.xml \
+   --stats \
+   --nvargs X=$1_test Y=$2_test prior=${BASE}/prior conditionals=${BASE}/conditionals fmt="csv" probabilities=${BASE}/probabilities #accuracy=${BASE}/accuracy confusion=${BASE}/confusion
+
+tpredict=$(echo "$(date +%s.%N) - $tstart - .4" | bc)
+echo "NaiveBayes predict on "$1": "$tpredict >> results/times.txt

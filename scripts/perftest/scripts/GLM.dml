@@ -1,0 +1,49 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+X = read($X);
+Y = read($Y);
+fileB = $B;
+fmtB = ifdef ($fmt, "text");
+
+distribution_type = ifdef ($dfam, 1);                # $dfam = 1;
+variance_as_power_of_the_mean = ifdef ($vpow, 0.0);  # $vpow = 0.0;
+link_type = ifdef ($link, 0);                        # $link = 0;
+link_as_power_of_the_mean = ifdef ($lpow, 1.0);      # $lpow = 1.0;
+bernoulli_No_label = ifdef ($yneg, 0.0);             # $yneg = 0.0;
+intercept_status = ifdef ($icpt, 0);                 # $icpt = 0;
+dispersion = ifdef ($disp, 0.0);                     # $disp = 0.0;
+regularization = ifdef ($reg, 0.0);                  # $reg  = 0.0;
+eps = ifdef ($tol, 0.000001);                        # $tol  = 0.000001;
+max_iteration_IRLS = ifdef ($moi, 200);              # $moi  = 200;
+max_iteration_CG = ifdef ($mii, 0);                  # $mii  = 0;
+
+variance_as_power_of_the_mean = as.double (variance_as_power_of_the_mean);
+link_as_power_of_the_mean = as.double (link_as_power_of_the_mean);
+bernoulli_No_label = as.double (bernoulli_No_label);
+dispersion = as.double (dispersion);
+eps = as.double (eps);
+
+beta = glm(X=X,Y=Y, dfam=distribution_type, vpow=variance_as_power_of_the_mean,
+        link=link_type, lpow=link_as_power_of_the_mean, yneg=bernoulli_No_label,
+        icpt=intercept_status, reg=regularization, tol=eps, moi=max_iteration_IRLS, mii=max_iteration_CG)
+
+write (beta, fileB, format=fmtB);

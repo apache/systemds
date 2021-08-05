@@ -1,4 +1,3 @@
-#!/bin/bash
 #-------------------------------------------------------------
 #
 # Licensed to the Apache Software Foundation (ASF) under one
@@ -19,26 +18,16 @@
 # under the License.
 #
 #-------------------------------------------------------------
-set -e
 
-if [ "$5" == "SPARK" ]; then CMD="./sparkDML.sh "; DASH="-"; elif [ "$5" == "MR" ]; then CMD="hadoop jar SystemDS.jar " ; else CMD="echo " ; fi
+X = read($1);
+y = read($2);
 
-BASE=$4
+Percent_test = .2
+N_x = as.integer(nrow(X) * Percent_test);
+N_y = as.integer(nrow(y) * Percent_test);
 
-export HADOOP_CLIENT_OPTS="-Xmx2048m -Xms2048m -Xmn256m"
+X = X[1:N_x,];
+y = y[1:N_y,];
 
-#for all intercept values
-for i in 0 1
-do
-   #training
-   tstart=$SECONDS
-   ${CMD} -f ../algorithms/l2-svm.dml $DASH-explain $DASH-stats $DASH-nvargs X=$1 Y=$2 icpt=$i tol=0.0001 reg=0.01 maxiter=$6 model=${BASE}/b Log=${BASE}/debug_output fmt="csv"
-   ttrain=$(($SECONDS - $tstart - 3))
-   echo "L2SVM train ict="$i" on "$1": "$ttrain >> times.txt
-
-   #predict
-   tstart=$SECONDS
-   ${CMD} -f ../algorithms/l2-svm-predict.dml $DASH-explain $DASH-stats $DASH-nvargs X=$1_test Y=$2_test icpt=$i model=${BASE}/b fmt="csv"
-   tpredict=$(($SECONDS - $tstart - 3))
-   echo "L2SVM predict ict="$i" on "$1": "$tpredict >> times.txt
-done
+write(X, $3, format=$5);
+write(y, $4, format=$5);

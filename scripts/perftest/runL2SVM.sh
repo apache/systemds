@@ -21,26 +21,31 @@
 #-------------------------------------------------------------
 set -e
 
-if [ "$4" == "SPARK" ]; then CMD="./sparkDML.sh "; DASH="-"; elif [ "$4" == "MR" ]; then CMD="hadoop jar SystemDS.jar " ; else CMD="echo " ; fi
+CMD=$6
+BASE=$4
 
-BASE=$3
-
-export HADOOP_CLIENT_OPTS="-Xmx2048m -Xms2048m -Xmn256m"
-
-# run all intercepts
-for i in 0 1 2
-do
-   echo "running linear regression DS on ict="$i
-
+#for all intercept values
+for i in 0 1; do
    #training
-   tstart=$SECONDS
-   ${CMD} -f ../algorithms/LinearRegDS.dml $DASH-explain $DASH-stats $DASH-nvargs X=$1 Y=$2 B=${BASE}/b icpt=${i} fmt="csv" reg=0.01
-   ttrain=$(($SECONDS - $tstart - 3))
-   echo "LinRegDS train ict="$i" on "$1": "$ttrain >> times.txt
+   tstart=$(date +%s.%N)
+
+   # /algorithms/l2-svm.dml already calls a built-in function for the l2 svm.
+   ${CMD} -f ../algorithms/l2-svm.dml \
+      --config conf/SystemDS-config.xml \
+      --stats \
+      --nvargs X=$1 Y=$2 icpt=$i tol=0.0001 reg=0.01 maxiter=$5 model=${BASE}/b fmt="csv"
+
+   ttrain=$(echo "$(date +%s.%N) - $tstart - .4" | bc)
+   echo "L2SVM train ict="$i" on "$1": "$ttrain >> results/times.txt
 
    #predict
-   tstart=$SECONDS
-   ${CMD} -f ../algorithms/GLM-predict.dml $DASH-explain $DASH-stats $DASH-nvargs dfam=1 link=1 vpow=0.0 lpow=1.0 fmt=csv X=$1_test B=${BASE}/b Y=$2_test M=${BASE}/m O=${BASE}/out.csv
-   tpredict=$(($SECONDS - $tstart - 3))
-   echo "LinRegDS predict ict="$i" on "$1": "$tpredict >> times.txt
+   tstart=$(date +%s.%N)
+   #${CMD} -f ../algorithms/l2-svm-predict.dml \
+   ${CMD} -f scripts/l2-svm-predict.dml \
+      --config conf/SystemDS-config.xml \
+      --stats \
+      --nvargs X=$1_test Y=$2_test icpt=$i model=${BASE}/b fmt="csv" scores=${BASE}/scores
+
+   tpredict=$(echo "$(date +%s.%N) - $tstart - .4" | bc)
+   echo "L2SVM predict ict="$i" on "$1": "$tpredict >> results/times.txt
 done

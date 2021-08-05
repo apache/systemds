@@ -1,4 +1,3 @@
-#!/bin/bash
 #-------------------------------------------------------------
 #
 # Licensed to the Apache Software Foundation (ASF) under one
@@ -8,9 +7,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -19,22 +18,23 @@
 # under the License.
 #
 #-------------------------------------------------------------
-set -e
 
-if [ "$5" == "SPARK" ]; then CMD="./sparkDML.sh "; DASH="-"; elif [ "$5" == "MR" ]; then CMD="hadoop jar SystemDS.jar " ; else CMD="echo " ; fi
+fmt = ifdef($fmt, "text")
+icpt = ifdef($icpt, 0)
+tol = ifdef($tol, 0.001)
+reg = ifdef($reg, 1.0)
+maxiter = ifdef($maxiter, 100)
 
-BASE=$4
+tol = as.double ($tol);
+X = read($X)
+Y = read($Y)
 
-export HADOOP_CLIENT_OPTS="-Xmx2048m -Xms2048m -Xmn256m"
+model = msvm(X = X, Y = Y, intercept = icpt, epsilon = tol, lambda = reg, maxIterations = maxiter, verbose = FALSE)
 
-#training
-tstart=$SECONDS
-${CMD} -f ../algorithms/naive-bayes.dml $DASH-explain $DASH-stats $DASH-nvargs X=$1 Y=$2 classes=$3 prior=${BASE}/prior conditionals=${BASE}/conditionals accuracy=${BASE}/debug_output fmt="csv"
-ttrain=$(($SECONDS - $tstart - 3))
-echo "NaiveBayes train on "$1": "$ttrain >> times.txt
+extra_model_params = matrix(0, rows=2, cols=ncol(model))
+extra_model_params[1, 1] = icpt
+extra_model_params[2, 1] = ncol(X)
 
-#predict
-tstart=$SECONDS
-${CMD} -f ../algorithms/naive-bayes-predict.dml $DASH-explain $DASH-stats $DASH-nvargs X=$1_test Y=$2_test prior=${BASE}/prior conditionals=${BASE}/conditionals fmt="csv" probabilities=${BASE}/probabilities
-tpredict=$(($SECONDS - $tstart - 3))
-echo "NaiveBayes predict on "$1": "$tpredict >> times.txt
+w = t(cbind(t(model), t(extra_model_params)))
+
+write(w, $model, format=fmt)

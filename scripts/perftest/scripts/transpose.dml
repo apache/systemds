@@ -21,6 +21,6 @@
 
 x = rand(rows=$1, cols=$2, min= 0.0, max= 1.0, sparsity=$3, seed= 12)
 for(i in 1:$4) {
-    res = t(x) 
+  res = t(x) 
 }
 print(sum(res))

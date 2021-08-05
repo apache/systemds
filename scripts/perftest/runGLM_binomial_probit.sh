@@ -21,30 +21,31 @@
 #-------------------------------------------------------------
 set -e
 
-if [ "$5" == "SPARK" ]; then CMD="./sparkDML.sh "; DASH="-"; elif [ "$5" == "MR" ]; then CMD="hadoop jar SystemDS.jar " ; else CMD="echo " ; fi
+CMD=$5
+BASE=$3
 
-BASE=$4
+# run all intercepts
+for i in 0 1 2; do
+   echo "running GLM binomial probit on ict="$i
 
-export HADOOP_CLIENT_OPTS="-Xmx2048m -Xms2048m -Xmn256m"
-
-DFAM=2
-if [ $3 -gt 2 ] 
-then
-   DFAM=3
-fi
-
-#for all intercept values
-for i in 0 1 2
-do
    #training
-   tstart=$SECONDS
-   ${CMD} -f ../algorithms/MultiLogReg.dml $DASH-explain $DASH-stats $DASH-nvargs icpt=$i reg=0.01 tol=0.0001 moi=$6 mii=5 X=$1 Y=$2 B=${BASE}/b
-   ttrain=$(($SECONDS - $tstart - 3))
-   echo "MultiLogReg train ict="$i" on "$1": "$ttrain >> times.txt
-   
+   tstart=$(date +%s.%N)
+   # ${CMD} -f ../algorithms/GLM.dml \
+   ${CMD} -f scripts/GLM.dml \
+      --config conf/SystemDS-config.xml \
+      --stats \
+      --nvargs X=$1 Y=$2 B=${BASE}/b icpt=${i} fmt="csv" moi=$4 mii=5 dfam=2 link=3 yneg=2 tol=0.0001 reg=0.01
+
+   ttrain=$(echo "$(date +%s.%N) - $tstart - .4" | bc)
+   echo "GLM_binomial_probit train ict="$i" on "$1": "$ttrain >> results/times.txt
+
    #predict
-   tstart=$SECONDS   
-   ${CMD} -f ../algorithms/GLM-predict.dml $DASH-explain $DASH-stats $DASH-nvargs dfam=$DFAM vpow=-1 link=2 lpow=-1 fmt=csv X=$1_test B=${BASE}/b Y=$2_test M=${BASE}/m O=${BASE}/out.csv
-   tpredict=$(($SECONDS - $tstart - 3))
-   echo "MultiLogReg predict ict="$i" on "$1": "$tpredict >> times.txt
+   tstart=$(date +%s.%N)
+   ${CMD} -f ../algorithms/GLM-predict.dml \
+      --config conf/SystemDS-config.xml \
+      --stats \
+      --nvargs dfam=2 link=3 fmt=csv X=$1_test B=${BASE}/b Y=$2_test M=${BASE}/m O=${BASE}/out.csv
+
+   tpredict=$(echo "$(date +%s.%N) - $tstart - .4" | bc)
+   echo "GLM_binomial_probit predict ict="$i" on "$1": "$tpredict >> results/times.txt
 done

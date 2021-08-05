@@ -19,9 +19,17 @@
 #
 #-------------------------------------------------------------
 
-x = rand(rows=$1, cols=$2, min= 0.0, max= 1.0, sparsity=$4, seed= 12)
-v = rand(rows=ncol(x), cols=$3, min=0.0, max=1.0, sparsity=$5, seed= 13)
-for(i in 1:$6) {
-    res = x %*% v
-}
-print(sum(res))
+fileX = $X;
+fileY = $Y;
+fileB = $B;
+fmtB  = ifdef ($fmt, "text");
+
+intercept_status = ifdef ($icpt, 0);     # $icpt=0;
+regularization = ifdef ($reg, 0.000001); # $reg=0.000001;
+
+X = read (fileX);
+y = read (fileY);
+
+beta_out = lmDS(X = X, y = y, icpt = intercept_status, reg = regularization, verbose = TRUE)
+
+write (beta_out, fileB, format=fmtB);

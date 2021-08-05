@@ -51,7 +51,7 @@ public class LocalPSWorker extends PSWorker implements Callable<Void> {
 	@Override
 	public String getWorkerName() {
 		return String.format("Local worker_%d", _workerID);
-	}
+		}
 
 	@Override
 	public Void call() throws Exception {
@@ -89,7 +89,7 @@ public class LocalPSWorker extends PSWorker implements Callable<Void> {
 			Future<ListObject> accGradients = ConcurrentUtils.constantFuture(null);
 
 			try {
-				for(int j = 0; j < batchIter; j++) {
+				for (int j = 0; j < batchIter; j++) {
 					gradients = computeGradients(params, dataSize, batchIter, i, j);
 
 					boolean localUpdate = j < batchIter - 1;
@@ -226,25 +226,25 @@ public class LocalPSWorker extends PSWorker implements Callable<Void> {
 
 	@Override
 	protected void incWorkerNumber() {
-		if(DMLScript.STATISTICS)
+		if (DMLScript.STATISTICS)
 			Statistics.incWorkerNumber();
 	}
 
 	@Override
 	protected void accLocalModelUpdateTime(Timing time) {
-		if(DMLScript.STATISTICS)
+		if (DMLScript.STATISTICS)
 			Statistics.accPSLocalModelUpdateTime((long) time.stop());
 	}
 
 	@Override
 	protected void accBatchIndexingTime(Timing time) {
-		if(DMLScript.STATISTICS)
+		if (DMLScript.STATISTICS)
 			Statistics.accPSBatchIndexingTime((long) time.stop());
 	}
 
 	@Override
 	protected void accGradientComputeTime(Timing time) {
-		if(DMLScript.STATISTICS)
+		if (DMLScript.STATISTICS)
 			Statistics.accPSGradientComputeTime((long) time.stop());
 	}
 }

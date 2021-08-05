@@ -18,11 +18,11 @@
 # under the License.
 #
 #-------------------------------------------------------------
-
 source("nn/layers/affine.dml") as affine
 
+
 # # # initializing the matrix by hand parsing issues in rand command within lineage
-M = 20; N = 20
+M = 5; N = 5
 X_batch = rand(rows=M, cols=N, sparsity=1)
                   
 W_1 = rand(rows=M, cols=N, sparsity=1)
@@ -36,11 +36,10 @@ lin = lineage(prob)
 if(sum(prob) > 0)
   lin = lin+"foo"
 
-
-# # # compute the derivatives from the autoDiff
-# idea is to pass the name of forward passes along with the lineage and the backward 
-# will be computed internally
-diffs = autoDiff(name=list("affine"), lineage=list(lin));
+# # The lineage is passed as a list item because even after adding "foo" string the 
+# # compiler keep parsing the lineage instruction so it is passed as a list item to avoid parsing
+# # # create autodiff by parsing the lineage instructions
+diffs = autoDiff(output=prob, lineage=list(lin));
 
 ad_dX = as.matrix(diffs['dX'])
 ad_dW = as.matrix(diffs['dW'])

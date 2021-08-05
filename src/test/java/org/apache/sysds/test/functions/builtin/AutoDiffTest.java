@@ -26,51 +26,37 @@ import org.apache.sysds.runtime.matrix.data.MatrixValue;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.HashMap;
 
 public class AutoDiffTest extends AutomatedTestBase
 {
-	private final static String TEST_NAME1 = "autoDiff";
-	private final static String TEST_NAME2 = "autoDiff2";
+	private final static String TEST_NAME = "autoDiff";
 	private final static String TEST_DIR = "functions/builtin/";
 	private static final String TEST_CLASS_DIR = TEST_DIR + AutoDiffTest.class.getSimpleName() + "/";
 
 	@Override
 	public void setUp() {
-		addTestConfiguration(TEST_NAME1,new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1,new String[]{"B"}));
-		addTestConfiguration(TEST_NAME2,new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1,new String[]{"B"}));
+		addTestConfiguration(TEST_NAME,new TestConfiguration(TEST_CLASS_DIR, TEST_NAME,new String[]{"B"}));
 	}
 
 	@Test
 	public void testAutoDiffCP1() {
-		runAutoDiffTest(TEST_NAME1, true, Types.ExecType.CP);
+		runAutoDiffTest(Types.ExecType.CP);
 	}
 
-	@Test
-	public void testAutoDiffCP2() {
-		runAutoDiffTest(TEST_NAME2, true, Types.ExecType.CP);
-	}
-
-	@Ignore
-	public void testAutoDiffSP() {
-		runAutoDiffTest(TEST_NAME1, true, Types.ExecType.SPARK);
-	}
-
-
-	private void runAutoDiffTest(String testname, boolean defaultProb, Types.ExecType instType)
+	private void runAutoDiffTest(Types.ExecType instType)
 	{
 		ExecMode platformOld = setExecMode(instType);
 
 		try
 		{
 			OptimizerUtils.ALLOW_INTER_PROCEDURAL_ANALYSIS = false;
-			loadTestConfiguration(getTestConfiguration(testname));
+			loadTestConfiguration(getTestConfiguration(TEST_NAME));
 
 			String HOME = SCRIPT_DIR + TEST_DIR;
-			fullDMLScriptName = HOME + testname + ".dml";
+			fullDMLScriptName = HOME + TEST_NAME + ".dml";
 			programArgs = new String[]{"-lineage", "-args", output("dX"), output("ad_dX")};
 			runTest(true, false, null, -1);
 			HashMap<MatrixValue.CellIndex, Double> dml_dX = readDMLMatrixFromOutputDir("dX");

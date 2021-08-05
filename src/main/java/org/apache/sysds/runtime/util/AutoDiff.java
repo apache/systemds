@@ -46,97 +46,6 @@ import java.util.*;
 public class AutoDiff {
 	private static final String ADVARPREFIX = "adVar";
 
-	private static List<Data> getAffineBackward( MatrixObject dout, MatrixObject X, MatrixObject W,
-		ExecutionContext adec) {
-
-		final String AD_VARDX = "__adx";
-		final String AD_VARDW = "__adw";
-		final String AD_VARDB = "__adb";
-
-		adec.setVariable("X", X);
-		adec.setVariable("dout", dout);
-		adec.setVariable("W", W);
-		DataOp input = HopRewriteUtils.createTransientRead("X", X);
-		DataOp output = HopRewriteUtils.createTransientRead("dout", dout);
-		DataOp w = HopRewriteUtils.createTransientRead("W", W);
-
-		//dx = dout %*% t(w1)
-		ReorgOp trasnW = HopRewriteUtils.createTranspose(w);
-		AggBinaryOp matMulX = HopRewriteUtils.createMatrixMultiply(output, trasnW);
-		DataOp dX = HopRewriteUtils.createTransientWrite(AD_VARDX, matMulX);
-		//dw = t(X) %*% dout
-		ReorgOp trasnX = HopRewriteUtils.createTranspose(input);
-		AggBinaryOp matMulW = HopRewriteUtils.createMatrixMultiply(trasnX, output);
-		DataOp dW = HopRewriteUtils.createTransientWrite(AD_VARDW, matMulW);
-		// db = colSums(bias)
-		AggUnaryOp colSum = HopRewriteUtils.createAggUnaryOp(output, Types.AggOp.SUM, Types.Direction.Col);
-		DataOp dB = HopRewriteUtils.createTransientWrite(AD_VARDB, colSum);
-		// create dX instruction
-		ArrayList<Instruction> dXInst = Recompiler
-			.recompileHopsDag(dX, adec.getVariables(), null, true, true, 0);
-		// create dW instruction
-		ArrayList<Instruction> dWInst = Recompiler
-			.recompileHopsDag(dW, adec.getVariables(), null, true, true, 0);
-		// create db instruction
-		ArrayList<Instruction> dBInst = Recompiler
-			.recompileHopsDag(dB, adec.getVariables(), null, true, true, 0);
-		executeInst(dXInst, adec);
-		executeInst(dWInst, adec);
-		executeInst(dBInst, adec);
-
-		List<Data> outputList = new ArrayList<>();
-		outputList.add(adec.getVariable(AD_VARDX));
-		outputList.add(adec.getVariable(AD_VARDW));
-		outputList.add(adec.getVariable(AD_VARDB));
-
-		return outputList;
-	}
-
-	private static void executeInst(ArrayList<Instruction> newInst, ExecutionContext lrwec)
-	{
-		try {
-			//execute instructions
-			BasicProgramBlock pb = new BasicProgramBlock(new Program());
-			pb.setInstructions(newInst);
-			pb.execute(lrwec);
-		}
-		catch (Exception e) {
-			throw new DMLRuntimeException("Error executing autoDiff instruction" , e);
-		}
-	}
-
-	public static ListObject getBackward(ArrayList<Data> forwardLayers, ArrayList<Data> lineage, ExecutionContext adec) {
-		List<Data> data = new ArrayList<Data>();
-		List<String> names = new ArrayList<String>();
-		// reverse the list to start from the last layer
-		Collections.reverse(forwardLayers);
-		Collections.reverse(lineage);
-		for(int i=0; i<forwardLayers.size(); i++)
-		{
-			// get the name
-			String layer = forwardLayers.get(i).toString();
-			if(layer.equals("affine"))
-			{
-				// get the lineage
-				String lin = lineage.get(i).toString();
-				// get rid of foo flag
-				lin = lin.replace("foo", "");
-
-				// get lineage of X, Y, W and dout for affine backward
-				String[] linInst = lin.split("\n");
-				// assumption first line in the lineage is X and second is weight
-				MatrixObject dout = (MatrixObject)LineageRecomputeUtils.parseNComputeLineageTrace(lin, null);
-				MatrixObject X =  (MatrixObject)LineageRecomputeUtils.parseNComputeLineageTrace(linInst[0], null);
-				MatrixObject W =  (MatrixObject)LineageRecomputeUtils.parseNComputeLineageTrace(linInst[1], null);
-				// prepare the named list
-				names.add("dX");
-				names.add("dW");
-				names.add("dB");
-				data = getAffineBackward(dout, X, W, adec);
-			}
-		}
-		return new ListObject(data, names);
-	}
 	public static ListObject getBackward(MatrixObject mo, ArrayList<Data> lineage, ExecutionContext adec) {
 
 		ArrayList<String> names = new ArrayList<String>();
@@ -173,7 +82,6 @@ public class AutoDiff {
 		return results;
 	}
 
-
 	public static ArrayList<Hop> constructHopsNR(LineageItem item, Map<Long, Hop> operands,	Hop mo, ArrayList<String> names)
 	{
 
@@ -206,7 +114,8 @@ public class AutoDiff {
 		return allHops;
 	}
 
-	private static void constructSingleHop(LineageItem item, Map<Long, Hop> operands, Hop mo, ArrayList<Hop> allHops, ArrayList<String> names)
+	private static void constructSingleHop(LineageItem item, Map<Long, Hop> operands, Hop mo,
+		ArrayList<Hop> allHops, ArrayList<String> names)
 	{
 		//process current lineage item
 		switch (item.getType()) {
@@ -316,6 +225,18 @@ public class AutoDiff {
 					}
 				}
 			}
+		}
+	}
+	private static void executeInst(ArrayList<Instruction> newInst, ExecutionContext lrwec)
+	{
+		try {
+			//execute instructions
+			BasicProgramBlock pb = new BasicProgramBlock(new Program());
+			pb.setInstructions(newInst);
+			pb.execute(lrwec);
+		}
+		catch (Exception e) {
+			throw new DMLRuntimeException("Error executing autoDiff instruction" , e);
 		}
 	}
 }

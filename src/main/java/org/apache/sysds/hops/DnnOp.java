@@ -562,7 +562,7 @@ public class DnnOp extends MultiThreadedHop {
 	}
 	
 	@Override
-	protected ExecType optFindExecType() {
+	protected ExecType optFindExecType(boolean transitive) {
 		
 		checkAndSetForcedPlatform();
 		

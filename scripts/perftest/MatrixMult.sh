@@ -21,45 +21,48 @@
 #-------------------------------------------------------------
 
 # Import MKL
-if [ -d ~/intel ] && [ -d ~/intel/bin ] && [ -f ~/intel/bin/compilervars.sh ]; then
-    . ~/intel/bin/compilervars.sh intel64
-else
-    . /opt/intel/bin/compilervars.sh intel64
-fi
+#if [ -d ~/intel ] && [ -d ~/intel/bin ] && [ -f ~/intel/bin/compilervars.sh ]; then
+#    . ~/intel/bin/compilervars.sh intel64
+#elif [ -d ~/intel ] && [ -d ~/intel/oneapi ] && [ -f ~/intel/oneapi/setvars.sh ]; then
+#	# For the new intel oneAPI
+#    . ~/intel/oneapi/setvars.sh intel64
+#else
+#    . /opt/intel/bin/compilervars.sh intel64
+#fi
 
 # Set properties
-export LOG4JPROP='scripts/perftest/conf/log4j-off.properties'
-export SYSDS_QUIET=1
-export SYSTEMDS_ROOT=$(pwd)
-export PATH=$SYSTEMDS_ROOT/bin:$PATH
+#export LOG4JPROP='scripts/perftest/conf/log4j-off.properties'
+#export SYSDS_QUIET=1
+#export SYSTEMDS_ROOT=$(pwd)
+#export PATH=$SYSTEMDS_ROOT/bin:$PATH
 
 
 
 # Logging output
-LogName='scripts/perftest/results/MM.log'
-mkdir -p 'scripts/perftest/results'
+LogName='results/MM.log'
+mkdir -p 'results'
 rm -f $LogName
 
 # Baseline
 perf stat -d -d -d -r 5 \
-    systemds scripts/perftest/scripts/MM.dml \
-    -config scripts/perftest/conf/std.xml \
+    systemds scripts/MM.dml \
+    -config conf/std.xml \
     -stats \
     -args 5000 5000 5000 1.0 1.0 3 \
     >>$LogName 2>&1
 
 # MKL
 perf stat -d -d -d -r 5 \
-    systemds scripts/perftest/scripts/MM.dml \
-    -config scripts/perftest/conf/mkl.xml \
+    systemds scripts/MM.dml \
+    -config conf/mkl.xml \
     -stats \
     -args 5000 5000 5000 1.0 1.0 3 \
     >>$LogName 2>&1
 
 # Open Blas
 perf stat -d -d -d -r 5 \
-    systemds scripts/perftest/scripts/MM.dml \
-    -config scripts/perftest/conf/openblas.xml \
+    systemds scripts/MM.dml \
+    -config conf/openblas.xml \
     -stats \
     -args 5000 5000 5000 1.0 1.0 3 \
     >>$LogName 2>&1

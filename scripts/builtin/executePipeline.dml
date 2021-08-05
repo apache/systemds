@@ -19,8 +19,8 @@
 #
 #-------------------------------------------------------------
 
-s_executePipeline = function(Frame[String] pipeline, Matrix[Double] X,  Matrix[Double] Y, Matrix[Double] mask,
-  Matrix[Double] FD, Matrix[Double] hyperParameters, Integer flagsCount, Boolean verbose)
+s_executePipeline = function(Frame[String] logical = as.frame("NULL"), Frame[String] pipeline, Matrix[Double] X,  Matrix[Double] Y, Matrix[Double] mask,
+  Matrix[Double] FD, Matrix[Double] hyperParameters, Integer flagsCount, Boolean test = FALSE, Boolean verbose)
   return (Matrix[Double] X, Matrix[Double] Y, Double t2)
 {
   t1 = time();
@@ -30,22 +30,27 @@ s_executePipeline = function(Frame[String] pipeline, Matrix[Double] X,  Matrix[D
     print("checks   rows in X = "+nrow(X)+" rows in Y = "+nrow(Y)+" cols in X = "+ncol(X)+" col in Y = "+ncol(Y))
     print("pipeline in execution "+toString(pipeline))
     print("pipeline hps "+toString(hyperParameters))
-    while(FALSE){}
   }
   for(i in 1:ncol(pipeline)) {
     op = as.scalar(pipeline[1,i])
-    [hp, withClass, dataFlag] = matrixToList(X, Y, mask, FD, hyperParameters[i], flagsCount, op)
-    Xclone = X
-    X = eval(op, hp)
-    # dataFlag 0 = only on numeric, 1 = on whole data
-    X = confirmData(X, Xclone, mask, dataFlag)
-    if(withClass)
-    {
-      Y = X[, ncol(X)]
-      X = X[, 1:ncol(X) - 1]
-    }
+    lgOp = as.scalar(logical[1,i])
+    if(test == FALSE | lgOp != "CI") {    
+      [hp, withClass, dataFlag] = matrixToList(X, Y, mask, FD, hyperParameters[i], flagsCount, op)
+      Xclone = X
+      X = eval(op, hp)
+      # dataFlag 0 = only on numeric, 1 = on whole data
+      X = confirmData(X, Xclone, mask, dataFlag)
+      if(withClass)
+      {
+        Y = X[, ncol(X)]
+        X = X[, 1:ncol(X) - 1]
+      }
 
-    X = confirmMeta(X, mask)
+      X = confirmMeta(X, mask)
+    }
+    else{
+      print("not applying "+lgOp+" "+op+" on data test flag: "+test)
+    }
   }
   t2 = floor((time() - t1) / 1e+6)
   print("PIPELINE EXECUTION ENDED: "+t2+" ms")
@@ -106,11 +111,6 @@ matrixToList = function(Matrix[Double] X,  Matrix[Double] Y, Matrix[Double] mask
   # get the number of hyper-parameters and loop till that
   no_of_hyperparam = as.scalar(p[1,1])
   if(no_of_hyperparam > 0) {
-    # if(op == "pca") {
-      # # convert the number parameters to a ration related to OHE columns
-      # ratio = as.scalar(p[resource_index,1])
-      # p[resource_index, 1] = as.integer(ncol(X) - ratio)
-    # }
     for(i in 1:no_of_hyperparam)
       l = append(l, as.scalar(p[1,(i+1)]))
   }
@@ -203,16 +203,19 @@ return (Matrix[Double] X)
 # Output: OHEd matrix X
 #######################################################################
 
-dummycoding = function(Matrix[Double] X, Matrix[Double] mask)
+dummycoding = function(Matrix[Double] X,  Matrix[Double] mask)
 return (Matrix[Double] dX_train) {
-  X = replace(target=X, pattern=NaN, replacement=0)
-  idx = vectorToCsv(mask)
-  
-  # specifications for one-hot encoding of categorical features
-  jspecDC = "{ids:true, dummycode:["+idx+"]}";
-  # OHE of categorical features
-  [dX_train, dM] = transformencode(target=as.frame(X), spec=jspecDC);
 
+  if(sum(mask) > 0)
+  {
+    X = replace(target=X, pattern=NaN, replacement=1)
+    idx = vectorToCsv(mask)
+    # specifications for one-hot encoding of categorical features
+    jspecDC = "{ids:true, dummycode:["+idx+"]}";
+    # OHE of categorical features
+    [dX_train, dM] = transformencode(target=as.frame(X), spec=jspecDC);
+  }
+  else dX_train = X
 }
 
 
@@ -306,7 +309,8 @@ return(Matrix[Double] X){
 m_pca = function(Matrix[Double] X, Integer K=2, Boolean center=TRUE, Boolean scale=TRUE)
   return (Matrix[Double] Xout) 
 {
-  if(K < ncol(X)) {
+
+  if(K < ncol(X) - 1) {
     N = nrow(X);
     D = ncol(X);
 
@@ -316,23 +320,25 @@ m_pca = function(Matrix[Double] X, Integer K=2, Boolean center=TRUE, Boolean sca
     # co-variance matrix
     mu = colSums(X)/N;
     C = (t(X) %*% X)/(N-1) - (N/(N-1))*t(mu) %*% mu;
-
     # compute eigen vectors and values
     [evalues, evectors] = eigen(C);
+    if(nrow(evalues) > 1 & nrow(evectors) > 1)
+    {
+      decreasing_Idx = order(target=evalues,by=1,decreasing=TRUE,index.return=TRUE);
+      diagmat = table(seq(1,D),decreasing_Idx);
+      # sorts eigenvalues by decreasing order
+      evalues = diagmat %*% evalues;
+      # sorts eigenvectors column-wise in the order of decreasing eigenvalues
+      evectors = evectors %*% diagmat;
 
-    decreasing_Idx = order(target=evalues,by=1,decreasing=TRUE,index.return=TRUE);
-    diagmat = table(seq(1,D),decreasing_Idx);
-    # sorts eigenvalues by decreasing order
-    evalues = diagmat %*% evalues;
-    # sorts eigenvectors column-wise in the order of decreasing eigenvalues
-    evectors = evectors %*% diagmat;
+      eval_dominant = evalues[1:K, 1];
+      evec_dominant = evectors[,1:K];
 
-    eval_dominant = evalues[1:K, 1];
-    evec_dominant = evectors[,1:K];
-
-    # Construct new data set by treating computed dominant eigenvectors as the basis vectors
-    Xout = X %*% evec_dominant;
-    Mout = evec_dominant;
+      # Construct new data set by treating computed dominant eigenvectors as the basis vectors
+      Xout = X %*% evec_dominant;
+      Mout = evec_dominant;
+    }
+    else Xout = X # these elses could be removed via initiating Xout = X for now they are here for readability
   }
   else Xout = X
 

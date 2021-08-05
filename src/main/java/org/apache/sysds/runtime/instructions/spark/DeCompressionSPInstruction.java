@@ -27,10 +27,10 @@ import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
-import org.apache.sysds.runtime.instructions.spark.CompressionSPInstruction.CompressionFunction;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysds.runtime.matrix.operators.Operator;
+import org.apache.sysds.utils.DMLCompressionStatistics;
 
 public class DeCompressionSPInstruction extends UnarySPInstruction {
 
@@ -51,9 +51,10 @@ public class DeCompressionSPInstruction extends UnarySPInstruction {
 		// get input rdd handle
 		JavaPairRDD<MatrixIndexes, MatrixBlock> in = sec.getBinaryMatrixBlockRDDHandleForVariable(input1.getName());
 
-		// execute compression
-		JavaPairRDD<MatrixIndexes, MatrixBlock> out = in.mapValues(new CompressionFunction());
+		// execute decompression
+		JavaPairRDD<MatrixIndexes, MatrixBlock> out = in.mapValues(new DeCompressionFunction());
 
+		DMLCompressionStatistics.addDecompressSparkCount();
 		// set outputs
 		sec.setRDDHandleForVariable(output.getName(), out);
 		sec.addLineageRDD(input1.getName(), output.getName());
@@ -64,11 +65,10 @@ public class DeCompressionSPInstruction extends UnarySPInstruction {
 
 		@Override
 		public MatrixBlock call(MatrixBlock arg0) throws Exception {
-			if(arg0 instanceof CompressedMatrixBlock){
+			if(arg0 instanceof CompressedMatrixBlock) 
 				return ((CompressedMatrixBlock) arg0).decompress(OptimizerUtils.getConstrainedNumThreads(-1));
-			}else{
+			else 
 				return arg0;
-			}
 		}
 	}
 }

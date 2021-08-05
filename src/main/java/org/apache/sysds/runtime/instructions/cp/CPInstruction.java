@@ -31,6 +31,7 @@ import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.instructions.CPInstructionParser;
 import org.apache.sysds.runtime.instructions.Instruction;
 import org.apache.sysds.runtime.instructions.fed.FEDInstructionUtils;
+import org.apache.sysds.runtime.instructions.gpu.context.GPUContextPool;
 import org.apache.sysds.runtime.instructions.gpu.context.GPUMemoryEviction;
 import org.apache.sysds.runtime.lineage.LineageCacheConfig;
 import org.apache.sysds.runtime.lineage.LineageGPUCacheEviction;
@@ -109,11 +110,17 @@ public abstract class CPInstruction extends Instruction
 		//eviction count and STOPBACKGROUNDEVICTION flag. STOPBACKGROUNDEVICTION flag
 		//is set to true in the post processing of CPU instruction to stop eviction.
 		if (!LineageCacheConfig.ReuseCacheType.isNone() && DMLScript.USE_ACCELERATOR
-			&& LineageCacheConfig.CONCURRENTGPUEVICTION && !(tmp instanceof VariableCPInstruction)) {
-			if (LineageGPUCacheEviction.gpuEvictionThread == null)
-				LineageGPUCacheEviction.gpuEvictionThread = Executors.newSingleThreadExecutor();
-			LineageCacheConfig.STOPBACKGROUNDEVICTION = false;
-			LineageGPUCacheEviction.gpuEvictionThread.submit(new GPUMemoryEviction(1));
+			&& LineageCacheConfig.CONCURRENTGPUEVICTION && ec.getNumGPUContexts()>0 
+			&& !(tmp instanceof VariableCPInstruction) && !(tmp instanceof FunctionCallCPInstruction)) {
+			long availableMem = ec.getGPUContext(0).getAvailableMemory(); //TODO: multi-gpu
+			long almostFull = (long) (0.2 * GPUContextPool.initialGPUMemBudget());
+
+			if (availableMem < almostFull) { //80% full
+				if (LineageGPUCacheEviction.gpuEvictionThread == null)
+					LineageGPUCacheEviction.gpuEvictionThread = Executors.newSingleThreadExecutor();
+				LineageCacheConfig.STOPBACKGROUNDEVICTION = false;
+				LineageGPUCacheEviction.gpuEvictionThread.submit(new GPUMemoryEviction());
+			}
 		}
 		
 		return tmp;

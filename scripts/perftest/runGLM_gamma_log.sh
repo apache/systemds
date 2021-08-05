@@ -21,26 +21,31 @@
 #-------------------------------------------------------------
 set -e
 
-if [ "$4" == "SPARK" ]; then CMD="./sparkDML.sh "; DASH="-"; elif [ "$4" == "MR" ]; then CMD="hadoop jar SystemDS.jar " ; else CMD="echo " ; fi
-
+CMD=$5
 BASE=$3
 
-export HADOOP_CLIENT_OPTS="-Xmx2048m -Xms2048m -Xmn256m"
-
 # run all intercepts
-for i in 0 1 2
-do
-   echo "running GLM poisson log on ict="$i
+for i in 0 1 2; do
+   echo "running GLM gamma log on ict="$i
    
    #training
-   tstart=$SECONDS
-   ${CMD} -f ../algorithms/GLM.dml $DASH-explain $DASH-stats $DASH-nvargs X=$1 Y=$2 B=${BASE}/b icpt=${i} fmt="csv" moi=$5 mii=5 dfam=1 vpow=1.0 link=1 lpow=0.0 tol=0.0001 reg=0.01
-   ttrain=$(($SECONDS - $tstart - 3))
-   echo "GLM_poisson_log train ict="$i" on "$1": "$ttrain >> times.txt
-   
+   tstart=$(date +%s.%N)
+   #${CMD} -f ../algorithms/GLM.dml \
+   ${CMD} -f scripts/GLM.dml \
+      --config conf/SystemDS-config.xml \
+      --stats \
+      --nvargs X=$1 Y=$2 B=${BASE}/b icpt=${i} fmt="csv" moi=$4 mii=5 dfam=1 vpow=2.0 link=1 lpow=0.0 tol=0.0001 reg=0.01
+
+   ttrain=$(echo "$(date +%s.%N) - $tstart - .4" | bc)
+   echo "GLM_gamma_log train ict="$i" on "$1": "$ttrain >> results/times.txt
+
    #predict
-   tstart=$SECONDS   
-   ${CMD} -f ../algorithms/GLM-predict.dml $DASH-explain $DASH-stats $DASH-nvargs dfam=1 vpow=1.0 link=1 lpow=0.0 fmt=csv X=$1_test B=${BASE}/b Y=$2_test M=${BASE}/m O=${BASE}/out.csv
-   tpredict=$(($SECONDS - $tstart - 3))
-   echo "GLM_poisson_log predict ict="$i" on "$1": "$tpredict >> times.txt
+   tstart=$(date +%s.%N)
+   ${CMD} -f ../algorithms/GLM-predict.dml \
+      --config conf/SystemDS-config.xml \
+      --stats \
+      --nvargs dfam=1 vpow=2.0 link=1 lpow=0.0 fmt=csv X=$1_test B=${BASE}/b Y=$2_test M=${BASE}/m O=${BASE}/out.csv
+
+   tpredict=$(echo "$(date +%s.%N) - $tstart - .4" | bc)
+   echo "GLM_gamma_log predict ict="$i" on "$1": "$tpredict >> results/times.txt
 done

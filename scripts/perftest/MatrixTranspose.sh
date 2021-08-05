@@ -21,14 +21,15 @@
 #-------------------------------------------------------------
 
 # Set properties
-export LOG4JPROP='scripts/perftest/conf/log4j-off.properties'
-export SYSDS_QUIET=1
-export SYSTEMDS_ROOT=$(pwd)
-export PATH=$SYSTEMDS_ROOT/bin:$PATH
+#export LOG4JPROP='scripts/perftest/conf/log4j-off.properties'
+#export SYSDS_QUIET=1
+#export SYSTEMDS_ROOT=$(pwd)
+#export PATH=$SYSTEMDS_ROOT/bin:$PATH
 
-export SYSTEMDS_STANDALONE_OPTS="-Xmx20g -Xms20g -Xmn2000m"
+# export SYSTEMDS_STANDALONE_OPTS="-Xmx20g -Xms20g -Xmn2000m"
+export SYSTEMDS_STANDALONE_OPTS="-Xmx10g -Xms10g -Xmn2000m"
 
-mkdir -p 'scripts/perftest/results'
+mkdir -p 'results'
 
 repeatScript=5
 methodRepeat=5
@@ -36,13 +37,13 @@ sparsities=("1.0 0.1")
 
 for s in $sparsities; do
 
-    LogName="scripts/perftest/results/transpose-skinny-$s.log"
+    LogName="results/transpose-skinny-$s.log"
     rm -f $LogName
 
     # Baseline
     perf stat -d -d -d -r $repeatScript \
-        systemds scripts/perftest/scripts/transpose.dml \
-        -config scripts/perftest/conf/std.xml \
+        systemds scripts/transpose.dml \
+        -config conf/std.xml \
         -stats \
         -args 2500000 50 $s $methodRepeat \
         >>$LogName 2>&1
@@ -50,13 +51,13 @@ for s in $sparsities; do
     echo $LogName
     cat $LogName | grep -E '  r. |Total elapsed time|-----------| instructions |  cycles | CPUs utilized ' | tee $LogName.log
 
-    LogName="scripts/perftest/results/transpose-wide-$s.log"
+    LogName="results/transpose-wide-$s.log"
     rm -f $LogName
 
     # Baseline
     perf stat -d -d -d -r $repeatScript \
-        systemds scripts/perftest/scripts/transpose.dml \
-        -config scripts/perftest/conf/std.xml \
+        systemds scripts/transpose.dml \
+        -config conf/std.xml \
         -stats \
         -args 50 2500000 $s $methodRepeat \
         >>$LogName 2>&1
@@ -64,13 +65,13 @@ for s in $sparsities; do
     echo $LogName
     cat $LogName | grep -E '  r. |Total elapsed time|-----------| instructions |  cycles | CPUs utilized ' | tee $LogName.log
 
-    LogName="scripts/perftest/results/transpose-full-$s.log"
+    LogName="results/transpose-full-$s.log"
     rm -f $LogName
 
     # Baseline
     perf stat -d -d -d -r $repeatScript \
-        systemds scripts/perftest/scripts/transpose.dml \
-        -config scripts/perftest/conf/std.xml \
+        systemds scripts/transpose.dml \
+        -config conf/std.xml \
         -stats \
         -args 20000 5000 $s $methodRepeat \
         >>$LogName 2>&1
@@ -79,12 +80,12 @@ for s in $sparsities; do
     cat $LogName | grep -E '  r. |Total elapsed time|-----------| instructions |  cycles | CPUs utilized ' | tee $LogName.log
 done
 
-LogName="scripts/perftest/results/transpose-large.log"
+LogName="results/transpose-large.log"
 rm -f $LogName
 # Baseline
 perf stat -d -d -d -r $repeatScript \
-    systemds scripts/perftest/scripts/transpose.dml \
-    -config scripts/perftest/conf/std.xml \
+    systemds scripts/transpose.dml \
+    -config conf/std.xml \
     -stats \
     -args 15000000 30 0.8 $methodRepeat \
     >>$LogName 2>&1

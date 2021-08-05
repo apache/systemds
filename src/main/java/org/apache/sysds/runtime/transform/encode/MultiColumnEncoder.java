@@ -127,6 +127,7 @@ public class MultiColumnEncoder implements Encoder {
 		List<DependencyTask<?>> applyTAgg = null;
 		Map<Integer[], Integer[]> depMap = new HashMap<>();
 		boolean hasDC = getColumnEncoders(ColumnEncoderDummycode.class).size() > 0;
+		boolean applyOffsetDep = false;
 		tasks.add(DependencyThreadPool.createDependencyTask(new InitOutputMatrixTask(this, in, out)));
 		for(ColumnEncoderComposite e : _columnEncoders) {
 			List<DependencyTask<?>> buildTasks = e.getBuildTasks(in, BUILD_BLOCKSIZE);
@@ -152,11 +153,14 @@ public class MultiColumnEncoder implements Encoder {
 				// colUpdateTask can start when all domain sizes, because it can now calculate the offsets for
 				// each column
 				depMap.put(new Integer[] {-2, -1}, new Integer[] {tasks.size() - 1, tasks.size()});
+				buildTasks.forEach(t -> t.setPriority(5));
+				applyOffsetDep = true;
 			}
 
-			if(hasDC) {
+			if(hasDC && applyOffsetDep) {
 				// Apply Task dependency to output col update task (is last in list)
-				// All ApplyTasks need to wait for this task so they all have the correct offsets.
+				// All ApplyTasks need to wait for this task, so they all have the correct offsets.
+				// But only for the columns that come after the first DC coder since they don't have an offset
 				depMap.put(new Integer[] {tasks.size(), tasks.size() + 1}, new Integer[] {-2, -1});
 
 				applyTAgg = applyTAgg == null ? new ArrayList<>() : applyTAgg;
@@ -660,7 +664,7 @@ public class MultiColumnEncoder implements Encoder {
 	}
 
 	/*
-	 * Currently not in use will be integrated in the future
+	 * Currently, not in use will be integrated in the future
 	 */
 	@SuppressWarnings("unused")
 	private static class MultiColumnLegacyBuildTask implements Callable<Object> {

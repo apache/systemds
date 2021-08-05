@@ -27,7 +27,7 @@ import java.util.concurrent.Future;
 
 import org.apache.sysds.runtime.DMLRuntimeException;
 
-public class DependencyTask<E> implements Callable<E> {
+public class DependencyTask<E> implements Comparable<DependencyTask<?>>, Callable<E> {
 	public static final boolean ENABLE_DEBUG_DATA = false;
 
 	private final Callable<E> _task;
@@ -35,6 +35,7 @@ public class DependencyTask<E> implements Callable<E> {
 	public List<DependencyTask<?>> _dependencyTasks = null; // only for debugging
 	private CompletableFuture<Future<?>> _future;
 	private int _rdy = 0;
+	private Integer _priority = 0;
 	private ExecutorService _pool;
 
 	public DependencyTask(Callable<E> task, List<DependencyTask<?>> dependantTasks) {
@@ -52,6 +53,10 @@ public class DependencyTask<E> implements Callable<E> {
 
 	public boolean isReady() {
 		return _rdy == 0;
+	}
+
+	public void setPriority(int priority) {
+		_priority = priority;
 	}
 
 	private boolean decrease() {
@@ -78,5 +83,10 @@ public class DependencyTask<E> implements Callable<E> {
 		});
 
 		return ret;
+	}
+
+	@Override
+	public int compareTo(DependencyTask task) {
+		return -1 * this._priority.compareTo(task._priority);
 	}
 }

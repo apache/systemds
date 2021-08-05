@@ -20,6 +20,7 @@
 package org.apache.sysds.runtime.util;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -50,6 +51,8 @@ public class DependencyThreadPool {
 		List<Future<Future<?>>> futures = new ArrayList<>();
 		List<Integer> rdyTasks = new ArrayList<>();
 		int i = 0;
+		// sort by priority
+		Collections.sort(dtasks);
 		for(DependencyTask<?> t : dtasks) {
 			CompletableFuture<Future<?>> f = new CompletableFuture<>();
 			t.addPool(_pool);

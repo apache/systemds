@@ -25,6 +25,7 @@ import java.util.List;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.ValueType;
+import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
@@ -85,7 +86,7 @@ public class MultiReturnParameterizedBuiltinCPInstruction extends ComputationCPI
 
 		// execute block transform encode
 		MultiColumnEncoder encoder = EncoderFactory.createEncoder(spec, colnames, fin.getNumColumns(), null);
-		MatrixBlock data = encoder.encode(fin); // build and apply
+		MatrixBlock data = encoder.encode(fin, OptimizerUtils.getConstrainedNumThreads(-1)); // build and apply
 		FrameBlock meta = encoder.getMetaData(new FrameBlock(fin.getNumColumns(), ValueType.STRING));
 		meta.setColumnNames(colnames);
 

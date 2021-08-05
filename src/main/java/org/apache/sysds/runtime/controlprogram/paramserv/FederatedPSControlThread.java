@@ -157,6 +157,7 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 			PROG_BEGIN, NEWLINE,
 			ProgramConverter.serializeProgram(_ec.getProgram(), pbs, new HashMap<>()),
 			PROG_END);
+
 		// write program and meta data to worker
 		Future<FederatedResponse> udfResponse = _featuresData.executeFederatedOperation(
 			new FederatedRequest(RequestType.EXEC_UDF, _featuresData.getVarID(),

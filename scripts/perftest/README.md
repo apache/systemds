@@ -17,9 +17,9 @@ limitations under the License.
 {% end comment %}
 -->
 
-# Perf tests SystemDS
+# Performance tests SystemDS
 
-to run all performance tests for SystemDS, simply download systemds, install the prerequisites and execute.
+To run all performance tests for SystemDS, simply download systemds, install the prerequisites and execute.
 
 There are a few prerequisites:
 
@@ -28,10 +28,14 @@ There are a few prerequisites:
 - Setup OpenBlas: <https://github.com/xianyi/OpenBLAS/wiki/Precompiled-installation-packages>
 - Install Perf stat: <https://linoxide.com/linux-how-to/install-perf-tool-centos-ubuntu/>
 
-NOTE THE SCRIPT HAS TO BE RUN FROM THE ROOT OF THE REPOSITORY.
+NOTE THE SCRIPT HAS TO BE RUN FROM THE PERFTEST FOLDER.
 
+Examples:
 ```bash
-./scripts/perftest/runAll.sh
+./runAll.sh
 ```
 
-look inside the runAll script to see how to run individual tests.
+Look inside the runAll script to see how to run individual tests.
+
+Time calculations in the bash scripts additionally subtract a number, e.g. ".4". 
+This is done to accommodate for time lost by shell script and JVM startup overheads, to match the actual application runtime of SystemML.

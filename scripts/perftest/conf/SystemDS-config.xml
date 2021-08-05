@@ -16,7 +16,8 @@
  * specific language governing permissions and limitations
  * under the License.
 -->
+
 <root>
-    <sysds.cp.parallel.ops>true</sysds.cp.parallel.ops>
-    <sysds.native.blas>openblas</sysds.native.blas>
+    <!-- enables native blas for matrix multiplication and convolution, experimental feature (options: auto, mkl, openblas, none) -->
+    <sysds.native.blas>mkl</sysds.native.blas>
 </root>

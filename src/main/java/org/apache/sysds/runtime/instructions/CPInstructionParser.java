@@ -160,7 +160,7 @@ public class CPInstructionParser extends InstructionParser
 		String2CPInstructionType.put( "nmax", CPType.BuiltinNary);
 		String2CPInstructionType.put( "nmin", CPType.BuiltinNary);
 		String2CPInstructionType.put( "n+"  , CPType.BuiltinNary);
-		
+
 		String2CPInstructionType.put( "exp"   , CPType.Unary);
 		String2CPInstructionType.put( "abs"   , CPType.Unary);
 		String2CPInstructionType.put( "sin"   , CPType.Unary);
@@ -203,6 +203,7 @@ public class CPInstructionParser extends InstructionParser
 		String2CPInstructionType.put( "list",   CPType.BuiltinNary);
 		
 		// Parameterized Builtin Functions
+		String2CPInstructionType.put( "autoDiff" , CPType.ParameterizedBuiltin);
 		String2CPInstructionType.put("paramserv",       CPType.ParameterizedBuiltin);
 		String2CPInstructionType.put( "nvlist",         CPType.ParameterizedBuiltin);
 		String2CPInstructionType.put( "cdf",            CPType.ParameterizedBuiltin);

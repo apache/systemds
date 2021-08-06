@@ -171,7 +171,7 @@ public class ParameterizedBuiltin extends Lop
 					
 					sb.append(OPERAND_DELIMITOR);
 				}
-				
+
 				break;
 
 			case TOKENIZE:
@@ -180,6 +180,12 @@ public class ParameterizedBuiltin extends Lop
 			case TRANSFORMCOLMAP:
 			case TRANSFORMMETA:{ 
 				sb.append(_operation.name().toLowerCase()); //opcode
+				sb.append(OPERAND_DELIMITOR);
+				sb.append(compileGenericParamMap(_inputParams));
+				break;
+			}
+			case AUTODIFF: {
+				sb.append("autoDiff"); //opcode
 				sb.append(OPERAND_DELIMITOR);
 				sb.append(compileGenericParamMap(_inputParams));
 				break;

@@ -41,6 +41,7 @@ import org.apache.sysds.runtime.matrix.operators.QuaternaryOperator;
 
 import java.util.ArrayList;
 import java.util.concurrent.Future;
+import java.util.stream.IntStream;
 
 public class QuaternaryWDivMMFEDInstruction extends QuaternaryFEDInstruction
 {
@@ -157,9 +158,10 @@ public class QuaternaryWDivMMFEDInstruction extends QuaternaryFEDInstruction
 				: new CPOperand[]{input1, input2, input3}, varNewIn);
 
 			FederatedRequest frGet = null;
+
 			FederatedRequest frC = null;
-			if(X.isFederated(FType.ROW) || (wdivmm_type.isRight() && X.isFederated(FType.COL))) { // output aggregated locally
-				// get partial results from federated workers
+			if((wdivmm_type.isLeft() && X.isFederated(FType.ROW))
+				|| (wdivmm_type.isRight() && X.isFederated(FType.COL))) { // output aggregated locally
 				frGet = new FederatedRequest(RequestType.GET_VAR, frComp.getID());
 				// cleanup the federated request of the instruction call
 				frC = fedMap.cleanup(getTID(), frComp.getID());
@@ -181,16 +183,7 @@ public class QuaternaryWDivMMFEDInstruction extends QuaternaryFEDInstruction
 				ec.setMatrixOutput(output.getName(), FederationUtils.aggMatrix(aop, response, fedMap));
 			}
 			else if(wdivmm_type.isLeft() || wdivmm_type.isRight() || wdivmm_type.isBasic()) {
-				// bind partial results from federated responses
-				if(X.isFederated(FType.ROW)) {
-					ec.setMatrixOutput(output.getName(), FederationUtils.bind(response, false));
-				}
-				else {
-					// derive output federated mapping
-					MatrixObject out = ec.getMatrixObject(output);
-					out.setFedMapping(fedMap.copyWithNewID(frComp.getID()));
-					setOutputDataCharacteristics(X, U, V, ec);
-				}
+				setFederatedOutput(X, U, V, ec, frComp.getID());
 			}
 			else {
 				throw new DMLRuntimeException("Federated WDivMM only supported for BASIC, LEFT or RIGHT variants.");
@@ -202,23 +195,49 @@ public class QuaternaryWDivMMFEDInstruction extends QuaternaryFEDInstruction
 		}
 	}
 
-	protected void setOutputDataCharacteristics(MatrixObject X, MatrixObject U, MatrixObject V, ExecutionContext ec) {
+	/**
+	 * Set the federated output according to the output data charactersitics of
+	 * the different wdivmm types
+	 */
+	private void setFederatedOutput(MatrixObject X, MatrixObject U, MatrixObject V, ExecutionContext ec, long fedMapID) {
+		final WDivMMType wdivmm_type = _qop.wtype3;
+		MatrixObject out = ec.getMatrixObject(output);
+		FederationMap outFedMap = X.getFedMapping().copyWithNewID(fedMapID);
+
 		long rows = -1;
 		long cols = -1;
-		if(_qop.wtype3.isBasic()) {
+		if(wdivmm_type.isBasic()) {
 			rows = X.getNumRows();
 			cols = X.getNumColumns();
 		}
-		else if(_qop.wtype3.isLeft()) {
+		else if(wdivmm_type.isLeft()) {
 			rows = X.getNumColumns();
 			cols = U.getNumColumns();
+			outFedMap = modifyFedRanges(outFedMap.transpose(), cols, 1);
 		}
-		else if(_qop.wtype3.isRight()) {
+		else if(wdivmm_type.isRight()) {
 			rows = X.getNumRows();
 			cols = V.getNumColumns();
+			outFedMap = modifyFedRanges(outFedMap, cols, 1);
 		}
-		MatrixObject out = ec.getMatrixObject(output);
+		out.setFedMapping(outFedMap);
 		out.getDataCharacteristics().set(rows, cols, (int) X.getBlocksize());
 	}
-}
 
+	/**
+	 * Takes the federated mapping and sets one dimension of all federated ranges
+	 * to the value specified by dim.
+	 *
+	 * @param fedMap     the original federated mapping
+	 * @param value      long value for setting the dimension
+	 * @param dim        indicates if the row or column dimension should be set to dim
+	 * @return FederationMap with the modified federated ranges
+	 */
+	private static FederationMap modifyFedRanges(FederationMap fedMap, long value, int dim) {
+		IntStream.range(0, fedMap.getFederatedRanges().length).forEach(i -> {
+			fedMap.getFederatedRanges()[i].setBeginDim(dim, 0);
+			fedMap.getFederatedRanges()[i].setEndDim(dim, value);
+		});
+		return fedMap;
+	}
+}

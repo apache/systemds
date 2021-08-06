@@ -19,14 +19,14 @@
 #
 #-------------------------------------------------------------
 
-# This script performs dimensionality reduction using tSNE algorithm based on
+# This function performs dimensionality reduction using tSNE algorithm based on
 # the paper: Visualizing Data using t-SNE, Maaten et. al.
 
 # INPUT PARAMETERS:
 # ----------------------------------------------------------------------------
 # NAME                              TYPE      DEFAULT  MEANING
 # ----------------------------------------------------------------------------
-# X                                 Double    ---      Data Matrix of size (number of data points) x (input dimensionality)
+# X                                 Double    ---      Data Matrix of shape (number of data points, input dimensionality)
 # reduced_dims                      Integer   2        Output dimensionality
 # perplexity                        Integer   30       Perplexity Parameter
 # lr                                Double    300.     Learning rate
@@ -40,7 +40,7 @@
 # ----------------------------------------------------------------------------
 # NAME     TYPE      DEFAULT  MEANING
 # ----------------------------------------------------------------------------
-# Y        Matrix    ---      Data Matrix of size (number of data points) x (reduced_dims)
+# Y        Matrix    ---      Data Matrix of shape (number of data points, reduced_dims)
 # ----------------------------------------------------------------------------
 
 

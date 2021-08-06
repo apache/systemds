@@ -2008,6 +2008,7 @@ public class DMLTranslator
 			case TRANSFORMCOLMAP:
 			case TRANSFORMMETA:
 			case PARAMSERV:
+			case AUTODIFF:
 				currBuiltinOp = new ParameterizedBuiltinOp(target.getName(), target.getDataType(),
 					target.getValueType(), ParamBuiltinOp.valueOf(source.getOpCode().name()), paramHops);
 				break;
@@ -2029,7 +2030,6 @@ public class DMLTranslator
 						target.getValueType(), ParamBuiltinOp.TOSTRING, paramHops) :
 					HopRewriteUtils.createBinary(paramHops.get("target"), new LiteralOp(""), OpOp2.PLUS);
 				break;
-			
 			case LISTNV:
 				currBuiltinOp = new ParameterizedBuiltinOp(target.getName(), target.getDataType(),
 					target.getValueType(), ParamBuiltinOp.LIST, paramHops);

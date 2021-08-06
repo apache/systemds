@@ -196,7 +196,8 @@ public class ParameterizedBuiltinOp extends MultiThreadedHop {
 			case TRANSFORMMETA:
 			case TOSTRING:
 			case PARAMSERV:
-			case LIST: {
+			case LIST:
+			case AUTODIFF:{
 				ExecType et = optFindExecType();
 				ParameterizedBuiltin pbilop = new ParameterizedBuiltin(
 					inputlops, _op, getDataType(), getValueType(), et);

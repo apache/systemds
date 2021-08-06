@@ -272,6 +272,7 @@ public enum Builtins {
 	XOR("xor", false),
 
 	//parameterized builtin functions
+	AUTODIFF("autoDiff", false, true),
 	CDF("cdf", false, true),
 	CVLM("cvlm", true, false),
 	GROUPEDAGG("aggregate", "groupedAggregate", false, true),

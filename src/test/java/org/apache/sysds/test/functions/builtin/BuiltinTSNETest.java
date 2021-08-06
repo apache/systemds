@@ -55,7 +55,7 @@ public class BuiltinTSNETest extends AutomatedTestBase
 				 0.9, 1000, 42, "FALSE", ExecType.CP);
 	 }
 
-	@Ignore
+	@Test
 	public void testTSNESP() throws IOException {
 		runTSNETest(2, 30, 300.,
 				0.9, 1000, 42, "FALSE", ExecType.SPARK);

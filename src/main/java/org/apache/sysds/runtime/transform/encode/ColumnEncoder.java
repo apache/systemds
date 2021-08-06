@@ -31,6 +31,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.Callable;
 
+import org.apache.commons.lang.NotImplementedException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.DMLRuntimeException;
@@ -208,15 +209,32 @@ public abstract class ColumnEncoder implements Externalizable, Encoder, Comparab
 
 	public List<DependencyTask<?>> getApplyTasks(FrameBlock in, MatrixBlock out, int outputCol) {
 		List<Callable<Object>> tasks = new ArrayList<>();
-		tasks.add(new ColumnApplyTask(this, in, out, outputCol));
-		return DependencyThreadPool.createDependencyTasks(tasks, null);
+		if(out.isInSparseFormat())
+			return getSparseTasks(in, out, outputCol);
+		else
+			tasks.add(new ColumnApplyTask(this, in, out, outputCol));
+			return DependencyThreadPool.createDependencyTasks(tasks, null);
+
 	}
 
 	public List<DependencyTask<?>> getApplyTasks(MatrixBlock in, MatrixBlock out, int outputCol) {
 		List<Callable<Object>> tasks = new ArrayList<>();
-		tasks.add(new ColumnApplyTask(this, in, out, outputCol));
+		if(out.isInSparseFormat())
+			return getSparseTasks(in, out, outputCol);
+		else
+			tasks.add(new ColumnApplyTask(this, in, out, outputCol));
 		return DependencyThreadPool.createDependencyTasks(tasks, null);
 	}
+
+
+	protected List<DependencyTask<?>> getSparseTasks(FrameBlock in, MatrixBlock out, int outputCol){
+		throw new NotImplementedException();
+	}
+
+	protected List<DependencyTask<?>> getSparseTasks(MatrixBlock in, MatrixBlock out, int outputCol){
+		throw new NotImplementedException();
+	}
+
 
 	public enum EncoderType {
 		Recode, FeatureHash, PassThrough, Bin, Dummycode, Omit, MVImpute, Composite
@@ -255,6 +273,11 @@ public abstract class ColumnEncoder implements Externalizable, Encoder, Comparab
 			assert _outputCol >= 0;
 			int _rowStart = 0;
 			int _blk = -1;
+			if(_out.isInSparseFormat()){
+				// this is an issue since most sparse Tasks modify the sparse structure so normal get and set calls are
+				// not possible.
+				throw new DMLRuntimeException("ColumnApplyTask called although output is in sparse format.");
+			}
 			if(_inputF == null)
 				_encoder.apply(_inputM, _out, _outputCol, _rowStart, _blk);
 			else

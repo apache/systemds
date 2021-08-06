@@ -24,10 +24,12 @@ import static org.apache.sysds.runtime.util.UtilFunctions.getEndIndex;
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
@@ -35,8 +37,11 @@ import java.util.concurrent.Callable;
 
 import org.apache.sysds.lops.Lop;
 import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.data.SparseRowVector;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.util.DependencyTask;
+import org.apache.sysds.runtime.util.DependencyThreadPool;
 
 public class ColumnEncoderRecode extends ColumnEncoder {
 	private static final long serialVersionUID = 8213163881283341874L;
@@ -215,6 +220,13 @@ public class ColumnEncoderRecode extends ColumnEncoder {
 	}
 
 	@Override
+	public List<DependencyTask<?>> getSparseTasks(FrameBlock in, MatrixBlock out, int outputCol) {
+		List<Callable<Object>> tasks = new ArrayList<>();
+		tasks.add(new RecodeSparseApplyTask(this, in, out, outputCol));
+		return DependencyThreadPool.createDependencyTasks(tasks, null);
+	}
+
+	@Override
 	public void mergeAt(ColumnEncoder other) {
 		if(!(other instanceof ColumnEncoderRecode)) {
 			super.mergeAt(other);
@@ -313,6 +325,46 @@ public class ColumnEncoderRecode extends ColumnEncoder {
 		return _rcdMap;
 	}
 
+	private static class RecodeSparseApplyTask implements Callable<Object> {
+		private final ColumnEncoderRecode _encoder;
+		private final FrameBlock _input;
+		private final MatrixBlock _out;
+		private final int _outputCol;
+
+		private RecodeSparseApplyTask(ColumnEncoderRecode encoder, FrameBlock input, MatrixBlock out,
+										 int outputCol) {
+			_encoder = encoder;
+			_input = input;
+			_out = out;
+			_outputCol = outputCol;
+		}
+
+		public Object call() throws Exception {
+			for(int r = 0; r < _input.getNumRows(); r++) {
+				if(_out.getSparseBlock() == null)
+					return null;
+				SparseRowVector row = (SparseRowVector) _out.getSparseBlock().get(r);
+				synchronized(row) {
+					Object okey = _input.get(r, _encoder._colID - 1);
+					String key = (okey != null) ? okey.toString() : null;
+					long code = _encoder.lookupRCDMap(key);
+					double val = (code < 0) ? Double.NaN : code;
+					int index = _encoder._colID - 1;
+					row.values()[index] = val;
+					row.indexes()[index] = _outputCol;
+					if (val != 0)
+						row.setSize(row.size() + 1);
+				}
+			}
+			return null;
+		}
+
+		@Override
+		public String toString() {
+			return getClass().getSimpleName() + "<ColId: " + _encoder._colID + ">";
+		}
+
+	}
 	private static class RecodePartialBuildTask implements Callable<Object> {
 
 		private final FrameBlock _input;

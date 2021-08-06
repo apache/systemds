@@ -30,7 +30,6 @@ import java.util.Objects;
 import java.util.concurrent.Callable;
 
 import org.apache.sysds.runtime.DMLRuntimeException;
-import org.apache.sysds.runtime.data.SparseRowVector;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.DependencyTask;
@@ -95,13 +94,11 @@ public class ColumnEncoderDummycode extends ColumnEncoder {
 		return out;
 	}
 
+
 	@Override
-	public List<DependencyTask<?>> getApplyTasks(MatrixBlock in, MatrixBlock out, int outputCol) {
+	public List<DependencyTask<?>> getSparseTasks(MatrixBlock in, MatrixBlock out, int outputCol) {
 		List<Callable<Object>> tasks = new ArrayList<>();
-		if(out.isInSparseFormat())
-			tasks.add(new DummycodeSparseApplyTask(this, in, out, outputCol));
-		else
-			return super.getApplyTasks(in, out, outputCol);
+		tasks.add(new DummycodeSparseApplyTask(this, in, out, outputCol));
 		return DependencyThreadPool.createDependencyTasks(tasks, null);
 	}
 
@@ -213,16 +210,17 @@ public class ColumnEncoderDummycode extends ColumnEncoder {
 					//
 					// Input: Output:
 					//
-					// 1 | 0 | 2 | 0 1 | 0 | 0 | 1
-					// 2 | 0 | 1 | 0 ===> 0 | 1 | 1 | 0
-					// 1 | 0 | 2 | 0 1 | 0 | 0 | 1
-					// 1 | 0 | 1 | 0 1 | 0 | 1 | 0
+					// 1 | 0 | 2 | 0 		1 | 0 | 0 | 1
+					// 2 | 0 | 1 | 0 ===> 	0 | 1 | 1 | 0
+					// 1 | 0 | 2 | 0 		1 | 0 | 0 | 1
+					// 1 | 0 | 1 | 0 		1 | 0 | 1 | 0
 					//
 					// Example SparseRowVector Internals (1. row):
 					//
 					// indexes = [0,2] ===> indexes = [0,3]
 					// values = [1,2] values = [1,1]
-					int index = ((SparseRowVector) _out.getSparseBlock().get(r)).getIndex(_outputCol);
+					// int index = ((SparseRowVector) _out.getSparseBlock().get(r)).getIndex(_outputCol);
+					int index = _encoder._colID - 1;
 					double val = _out.getSparseBlock().get(r).values()[index];
 					int nCol = _outputCol + (int) val - 1;
 

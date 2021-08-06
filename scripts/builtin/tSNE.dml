@@ -22,7 +22,7 @@
 # This script performs dimensionality reduction using tSNE algorithm based on
 # the paper: Visualizing Data using t-SNE, Maaten et. al.
 
-X = read($INPUT)
+#X = read($INPUT)
 
 #ndim = ifdef($NDIM, 2)
 #perplexity = ifdef($PERPLEXITY, 30)
@@ -33,7 +33,7 @@ X = read($INPUT)
 #output = ifdef($OUT, "/user/iyounus/data/Y.csv")
 
 
-m_tsne = function(Matrix[Double] X, Integer reduced_dims = 2, Integer perplexity = 30,
+m_tSNE = function(Matrix[Double] X, Integer reduced_dims = 2, Integer perplexity = 30,
   Double lr = 300., Double momentum = 0.9, Integer max_iter = 1000, Boolean is_verbose = FALSE)
   return(Matrix[Double] Y, Matrix[Double] C)
 {
@@ -44,7 +44,7 @@ m_tsne = function(Matrix[Double] X, Integer reduced_dims = 2, Integer perplexity
   if(is_verbose)
     print(n)
 
-  P = x2p(X, perplexity)
+  P = x2p(X, perplexity, is_verbose)
   P = P*4
   Y = rand(rows=n, cols=d, pdf="normal")
   dY = matrix(0, rows=n, cols=d)
@@ -93,7 +93,7 @@ distance_matrix = function(matrix[double] X)
 }
 
 
-x2p = function(matrix[double] X, double perplexity)
+x2p = function(matrix[double] X, double perplexity, Boolean is_verbose = FALSE)
 return(matrix[double] P)
 {
   if(is_verbose)

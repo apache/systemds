@@ -20,6 +20,6 @@
 #-------------------------------------------------------------
 
 X = read($X);
-[Y, C] = tsne(X, $reduced_dims, $perplexity, $lr, $momentum, $max_iter, $is_verbose)
+[Y, C] = tSNE(X, $reduced_dims, $perplexity, $lr, $momentum, $max_iter, $is_verbose)
 write(Y, $Y)
 write(C, $C)

@@ -22,31 +22,38 @@
 # This script performs dimensionality reduction using tSNE algorithm based on
 # the paper: Visualizing Data using t-SNE, Maaten et. al.
 
-#X = read($INPUT)
-
-#ndim = ifdef($NDIM, 2)
-#perplexity = ifdef($PERPLEXITY, 30)
-#lr = ifdef($LR, 300.)
-#momentum = ifdef($M, 0.9)
-#iter = ifdef($ITERS, 1000)
-
-#output = ifdef($OUT, "/user/iyounus/data/Y.csv")
+# INPUT PARAMETERS:
+# ----------------------------------------------------------------------------
+# NAME                              TYPE      DEFAULT  MEANING
+# ----------------------------------------------------------------------------
+# X                                 Double    ---      Data Matrix of size (number of data points) x (input dimensionality)
+# reduced_dims                      Integer   2        Output dimensionality
+# perplexity                        Integer   30       Perplexity Parameter
+# lr                                Double    300.     Learning rate
+# momentum                          Double    0.9      Momentum Parameter
+# max_iter                          Integer   1000     Number of iterations
+# seed                              Integer   -1       The seed used for initial values. If set to -1 random seeds are selected.
+# is_verbose                        Boolean   FALSE    Print debug information
+#
+#
+# RETURN VALUES
+# ----------------------------------------------------------------------------
+# NAME     TYPE      DEFAULT  MEANING
+# ----------------------------------------------------------------------------
+# Y        Matrix    ---      Data Matrix of size (number of data points) x (reduced_dims)
+# ----------------------------------------------------------------------------
 
 
 m_tSNE = function(Matrix[Double] X, Integer reduced_dims = 2, Integer perplexity = 30,
-  Double lr = 300., Double momentum = 0.9, Integer max_iter = 1000, Boolean is_verbose = FALSE)
-  return(Matrix[Double] Y, Matrix[Double] C)
+  Double lr = 300., Double momentum = 0.9, Integer max_iter = 1000, Integer seed = -1, Boolean is_verbose = FALSE)
+  return(Matrix[Double] Y)
 {
-  if(is_verbose)
-    print("tsne....")
   d = reduced_dims
   n = nrow(X)
-  if(is_verbose)
-    print(n)
 
   P = x2p(X, perplexity, is_verbose)
   P = P*4
-  Y = rand(rows=n, cols=d, pdf="normal")
+  Y = rand(rows=n, cols=d, pdf="normal", seed=seed)
   dY = matrix(0, rows=n, cols=d)
   C = matrix(0, rows=max_iter/100, cols=1)
   ZERODIAG = (diag(matrix(-1, rows=n, cols=1)) + 1)
@@ -60,10 +67,6 @@ m_tSNE = function(Matrix[Double] X, Integer reduced_dims = 2, Integer perplexity
     print("starting loop....")
 
   for (itr in 1:max_iter) {
-    if (itr %% 10 == 0) {
-      if(is_verbose)
-        print(itr)
-    }
     D = distance_matrix(Y)
     Z = 1/(D + 1)
     Z = Z * ZERODIAG
@@ -140,13 +143,3 @@ return(matrix[double] P)
   if(is_verbose)
     print("x2p finishing....")
 }
-
-
-
-# [Y, C] = tsne(X, ndim, perplexity, lr, momentum, iter)
-
-#X = X/(pmax(X) - pmin(X))
-#P = x2p(X, perplexity)
-
-#write(P, output)
-# write(C, "")

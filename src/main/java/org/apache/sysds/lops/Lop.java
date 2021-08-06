@@ -23,6 +23,7 @@ import java.util.ArrayList;
 
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.ValueType;
+import org.apache.sysds.hops.AggBinaryOp.SparkAggType;
 import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.lops.compile.Dag;
 import org.apache.sysds.runtime.instructions.fed.FEDInstruction.FederatedOutput;
@@ -144,8 +145,8 @@ public abstract class Lop
 	 * Constructor to be invoked by base class.
 	 * 
 	 * @param t lop type
-	 * @param dt data type
-	 * @param vt value type
+	 * @param dt data type of the output
+	 * @param vt value type of the output
 	 */
 	public Lop(Type t, DataType dt, ValueType vt) {
 		type = t;
@@ -289,6 +290,10 @@ public abstract class Lop
 	public void addOutput(Lop op) {
 		outputs.add(op);
 	}
+	
+	public void removeOutput(Lop op) {
+		outputs.remove(op);
+	}
 
 	/**
 	 * Method to set privacy constraint of Lop.
@@ -400,6 +405,10 @@ public abstract class Lop
 
 	public OutputParameters getOutputParameters() {
 		return outParams;
+	}
+	
+	public SparkAggType getAggType() {
+		return SparkAggType.NONE;
 	}
 	
 

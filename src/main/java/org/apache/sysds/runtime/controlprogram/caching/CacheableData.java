@@ -1215,7 +1215,7 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 	}
 	
 	public boolean isPendingRDDOps() {
-		return isEmpty(true) && _data == null && _rddHandle != null;
+		return isEmpty(true) && _data == null && (_rddHandle != null && _rddHandle.hasBackReference());
 	}
 	
 	protected void setEmpty() {

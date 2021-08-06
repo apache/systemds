@@ -27,13 +27,24 @@ import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.common.Types.OpOp1;
 import org.apache.sysds.common.Types.OpOpData;
 import org.apache.sysds.conf.DMLConfig;
+import org.apache.sysds.hops.AggBinaryOp.SparkAggType;
+import org.apache.sysds.hops.OptimizerUtils;
+import org.apache.sysds.lops.CentralMoment;
+import org.apache.sysds.lops.CoVariance;
 import org.apache.sysds.lops.Data;
 import org.apache.sysds.lops.FunctionCallCP;
 import org.apache.sysds.lops.Lop;
 import org.apache.sysds.lops.Lop.Type;
 import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.lops.LopsException;
+import org.apache.sysds.lops.MMTSJ;
+import org.apache.sysds.lops.MMZip;
+import org.apache.sysds.lops.MapMultChain;
 import org.apache.sysds.lops.OutputParameters;
+import org.apache.sysds.lops.ParameterizedBuiltin;
+import org.apache.sysds.lops.PickByCount;
+import org.apache.sysds.lops.SpoofFused;
+import org.apache.sysds.lops.UAggOuterChain;
 import org.apache.sysds.lops.UnaryCP;
 import org.apache.sysds.parser.DataExpression;
 import org.apache.sysds.parser.StatementBlock;
@@ -184,7 +195,8 @@ public class Dag<N extends Lop>
 			doTopologicalSortTwoLevelOrder(nodes);
 		
 		// add Prefetch lops to the list, if necessary
-		List<Lop> node_pf = addPrefetchLop(node_v);
+		//List<Lop> node_pf = addPrefetchLop(node_v);
+		List<Lop> node_pf = OptimizerUtils.ASYNC_TRIGGER_RDD_OPERATIONS ? addPrefetchLop(node_v) : node_v;
 		
 		// do greedy grouping of operations
 		ArrayList<Instruction> inst =
@@ -210,23 +222,23 @@ public class Dag<N extends Lop>
 	}
 	
 	private static List<Lop> addPrefetchLop(List<Lop> nodes) {
-		List<Lop> nodesWithPrefetch = new ArrayList<>(nodes);
+		List<Lop> nodesWithPrefetch = new ArrayList<>();
 		
 		//Find the Spark nodes with all CP outputs
 		for (Lop l : nodes) {
-			if (l.getExecType() == ExecType.SPARK && l.isAllOutputsCP()) {
-				int index = nodesWithPrefetch.indexOf(l);
+			nodesWithPrefetch.add(l);
+			if (isPrefetchNeeded(l)) {
 				List<Lop> oldOuts = new ArrayList<>(l.getOutputs());
+				//Construct a Prefetch lop that takes this Spark node as a input
+				UnaryCP prefetch = new UnaryCP(l, OpOp1.PREFETCH, l.getDataType(), l.getValueType(), ExecType.CP);
 				for (Lop outCP : oldOuts) {
-					//Construct a prefetch lop that takes this Spark node as a input
-					UnaryCP prefetch = new UnaryCP(l, OpOp1.PREFETCH, outCP.getDataType(), outCP.getValueType(), ExecType.CP);
-					//Replace this Spark node with the Prefetch node in the inputs to the parent CP node
+					//Rewire l -> outCP to l -> Prefetch -> outCP
 					prefetch.addOutput(outCP);
 					outCP.replaceInput(l, prefetch);
-					//Place it immediately after the Spark lop in the node list
-					nodesWithPrefetch.add(index+1, prefetch);
-					//TODO: Sort Prefetch nodes by distance from their outputs.
+					l.removeOutput(outCP);
 				}
+				//Place it immediately after the Spark lop in the node list
+				nodesWithPrefetch.add(prefetch);
 			}
 		}
 		return nodesWithPrefetch;
@@ -264,6 +276,20 @@ public class Dag<N extends Lop>
 			&& dnode.getOutputParameters().getLabel().equals(input.getOutputParameters().getLabel());
 	}
 	
+	private static boolean isPrefetchNeeded(Lop lop) {
+		// Run Prefetch for a Spark instruction if the instruction is a Transformation
+		// and the output is consumed by only CP instructions.
+		boolean transformOP = lop.getExecType() == ExecType.SPARK && lop.getAggType() != SparkAggType.SINGLE_BLOCK
+				// Always Action operations
+				&& !(lop instanceof MapMultChain) && !(lop instanceof PickByCount)
+				&& !(lop instanceof MMZip) && !(lop instanceof CentralMoment)
+				&& !(lop instanceof CoVariance)
+				// Cannot filter Transformation cases from Actions (FIXME)
+				&& !(lop instanceof MMTSJ) && !(lop instanceof UAggOuterChain)
+				&& !(lop instanceof ParameterizedBuiltin) && !(lop instanceof SpoofFused);
+		return transformOP && lop.isAllOutputsCP();
+	}
+
 	private static List<Instruction> deleteUpdatedTransientReadVariables(StatementBlock sb, List<Lop> nodeV) {
 		List<Instruction> insts = new ArrayList<>();
 		if ( sb == null ) //return modifiable list

@@ -27,10 +27,9 @@ sp2 = sp1 %*% v; #output fits in local
 
 # CP instructions
 v = ((v + v) * 1 - v) / (1+1);
-#v = ((v + v) * 2 - v) / (2+1);
-#v = ((v + v) * 3 - v) / (3+1);
+v = ((v + v) * 2 - v) / (2+1);
 
-# CP uak+ triggers the DAG of SP operations
-R = sum(sp2) + sum(v);
-#R = max(sp2) + sum(v);
+# CP binary triggers the DAG of SP operations
+cp = sp2 + sum(v);
+R = sum(cp);
 write(R, $1, format="text");

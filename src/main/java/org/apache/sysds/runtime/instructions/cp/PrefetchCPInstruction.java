@@ -42,6 +42,6 @@ public class PrefetchCPInstruction extends UnaryCPInstruction {
 	@Override
 	public void processInstruction(ExecutionContext ec) {
 		ec.setVariable(output.getName(), ec.getMatrixObject(input1));
-		Executors.newSingleThreadExecutor().submit(new TriggerRDDOperationsTask(ec, input1.getName()));
+		Executors.newSingleThreadExecutor().submit(new TriggerRDDOperationsTask(ec.getMatrixObject(output)));
 	}
 }

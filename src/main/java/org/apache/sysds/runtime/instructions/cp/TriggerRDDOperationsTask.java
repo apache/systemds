@@ -19,31 +19,30 @@
 
 package org.apache.sysds.runtime.instructions.cp;
 
-import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
-import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
+import org.apache.sysds.utils.Statistics;
 
 public class TriggerRDDOperationsTask implements Runnable {
-	ExecutionContext ec;
-	String _prefetchVar;
+	MatrixObject _prefetchMO;
 
-	public TriggerRDDOperationsTask(ExecutionContext ec, String var) {
-		this.ec = ec;
-		_prefetchVar = var;
+	public TriggerRDDOperationsTask(MatrixObject mo) {
+		_prefetchMO = mo;
 	}
 
 	@Override
 	public void run() {
-		MatrixObject mo = ec.getMatrixObject(_prefetchVar);
-		//TODO: handle non-matrix objects
-		if (!mo.isPendingRDDOps())
-			throw new DMLRuntimeException("Variable to prefetch, " + _prefetchVar 
-					+ " is either not empty or not a SPARK operation");
-
-		synchronized (mo) {
-				// Execute and bring those to local
-				mo.acquireReadAndRelease();
+		boolean prefetched = false;
+		synchronized (_prefetchMO) { //TODO: not needed. Think.
+			//TODO: handle non-matrix objects
+			if (_prefetchMO.isPendingRDDOps()) {
+				// Execute and bring the result to local
+				_prefetchMO.acquireReadAndRelease();
+				prefetched = true;
+			}
 		}
+		if (DMLScript.STATISTICS && prefetched)
+			Statistics.incSparkAsyncPrefetchCount(1);
 	}
 
 }

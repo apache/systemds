@@ -86,6 +86,11 @@ public class RightIndex extends Lop
 		else
 			return OPCODE;
 	}
+
+	@Override
+	public SparkAggType getAggType() {
+		return _aggtype;
+	}
 	
 	@Override
 	public String getInstructions(String input, String rowl, String rowu, String coll, String colu, String leftRowDim, String leftColDim, String output) {

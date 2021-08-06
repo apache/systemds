@@ -31,6 +31,8 @@ import org.apache.sysds.runtime.matrix.data.MatrixValue;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
+import org.apache.sysds.utils.Statistics;
+import org.junit.Assert;
 import org.junit.Test;
 
 public class PrefetchRDDTest extends AutomatedTestBase {
@@ -55,6 +57,7 @@ public class PrefetchRDDTest extends AutomatedTestBase {
 	public void runTest(String testname) {
 		boolean old_simplification = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
 		boolean old_sum_product = OptimizerUtils.ALLOW_SUM_PRODUCT_REWRITES;
+		boolean old_trans_exec_type = OptimizerUtils.ALLOW_TRANSITIVE_SPARK_EXEC_TYPE;
 		ExecMode oldPlatform = setExecMode(ExecMode.HYBRID);
 		
 		long oldmem = InfrastructureAnalyzer.getLocalMaxMemory();
@@ -62,8 +65,9 @@ public class PrefetchRDDTest extends AutomatedTestBase {
 		InfrastructureAnalyzer.setLocalMaxMemory(mem);
 		
 		try {
-			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = false;
-			OptimizerUtils.ALLOW_SUM_PRODUCT_REWRITES = false;
+			//OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = false;
+			//OptimizerUtils.ALLOW_SUM_PRODUCT_REWRITES = false;
+			OptimizerUtils.ALLOW_TRANSITIVE_SPARK_EXEC_TYPE = false;
 			getAndLoadTestConfiguration(testname);
 			fullDMLScriptName = getScript();
 			
@@ -71,17 +75,31 @@ public class PrefetchRDDTest extends AutomatedTestBase {
 			
 			proArgs.add("-stats");
 			proArgs.add("-explain");
-			//proArgs.add("RECOMPILE_RUNTIME");
 			proArgs.add("-args");
 			proArgs.add(output("R"));
 			programArgs = proArgs.toArray(new String[proArgs.size()]);
 
 			runTest(true, EXCEPTION_NOT_EXPECTED, null, -1);
 			HashMap<MatrixValue.CellIndex, Double> R = readDMLScalarFromOutputDir("R");
-			System.out.println(R);
+			//HashMap<MatrixValue.CellIndex, Double> R = readDMLMatrixFromOutputDir("R");
+
+			OptimizerUtils.ASYNC_TRIGGER_RDD_OPERATIONS = true;
+			runTest(true, EXCEPTION_NOT_EXPECTED, null, -1);
+			OptimizerUtils.ASYNC_TRIGGER_RDD_OPERATIONS = false;
+			HashMap<MatrixValue.CellIndex, Double> R_pf = readDMLScalarFromOutputDir("R");
+			//HashMap<MatrixValue.CellIndex, Double> R_pf = readDMLMatrixFromOutputDir("R");
+
+			//compare matrices
+			TestUtils.compareMatrices(R, R_pf, 1e-6, "Origin", "Reused");
+			//assert Prefetch instructions and number of success.
+			long numPF = Statistics.getCPHeavyHitterCount("prefetch");
+			Assert.assertTrue("Violated Prefetch instruction count: "+numPF, numPF > 0);
+			long successPF = Statistics.getAsyncPrefetchCount();
+			Assert.assertTrue("Violated successful Prefetch count: "+successPF, successPF > 0);
 		} finally {
 			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = old_simplification;
 			OptimizerUtils.ALLOW_SUM_PRODUCT_REWRITES = old_sum_product;
+			OptimizerUtils.ALLOW_TRANSITIVE_SPARK_EXEC_TYPE = old_trans_exec_type;
 			resetExecMode(oldPlatform);
 			InfrastructureAnalyzer.setLocalMaxMemory(oldmem);
 			Recompiler.reinitRecompiler();

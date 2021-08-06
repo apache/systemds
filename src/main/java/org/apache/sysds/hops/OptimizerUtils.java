@@ -231,6 +231,10 @@ public class OptimizerUtils
 	 * is activated.
 	 */
 	public static boolean ALLOW_COMPRESSION_REWRITE = true;
+	
+	public static boolean ALLOW_TRANSITIVE_SPARK_EXEC_TYPE = true;
+
+	public static boolean ASYNC_TRIGGER_RDD_OPERATIONS = false; 
 
 	//////////////////////
 	// Optimizer levels //

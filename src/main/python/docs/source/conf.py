@@ -38,7 +38,7 @@ copyright = '2021, Apache SystemDS'
 author = 'Apache SystemDS'
 
 # The full version, including alpha/beta/rc tags
-release = '2.0.0'
+release = '2.2.0-SNAPSHOT'
 
 # -- General configuration ---------------------------------------------------
 # Add any Sphinx extension module names here, as strings.

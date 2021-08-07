@@ -188,8 +188,8 @@ public class RDDConverterUtils {
 		JavaPairRDD<MatrixIndexes, MatrixBlock> in, DataCharacteristics mcIn, DataCharacteristics mcOut)
 	{
 		boolean shuffleFreeReblock = mcIn.dimsKnown() && mcOut.dimsKnown()
-			&& (mcIn.getRows() < mcOut.getBlocksize() || mcIn.getBlocksize()%mcOut.getBlocksize() == 0)
-			&& (mcIn.getCols() < mcOut.getBlocksize() || mcIn.getBlocksize()%mcOut.getBlocksize() == 0);
+			&& (mcIn.getRows() < mcIn.getBlocksize() || mcIn.getBlocksize()%mcOut.getBlocksize() == 0)
+			&& (mcIn.getCols() < mcIn.getBlocksize() || mcIn.getBlocksize()%mcOut.getBlocksize() == 0);
 
 		JavaPairRDD<MatrixIndexes, MatrixBlock> out = in
 			.flatMapToPair(new ExtractBlockForBinaryReblock(mcIn, mcOut));

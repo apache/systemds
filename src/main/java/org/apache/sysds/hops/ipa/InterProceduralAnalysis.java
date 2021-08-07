@@ -241,7 +241,8 @@ public class InterProceduralAnalysis
 		FunctionCallGraph graph2 = new FunctionCallGraph(_prog);
 		List<IPAPass> fpasses = Arrays.asList(
 			new IPAPassRemoveUnusedFunctions(),
-			new IPAPassCompressionWorkloadAnalysis());
+			new IPAPassCompressionWorkloadAnalysis(), // workload-aware compression
+			new IPAPassApplyStaticAndDynamicHopRewrites());  //split after compress
 		for(IPAPass pass : fpasses)
 			if( pass.isApplicable(graph2) )
 				pass.rewriteProgram(_prog, graph2, null);

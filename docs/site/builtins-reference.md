@@ -39,6 +39,8 @@ limitations under the License.
     * [`dist`-Function](#dist-function)
     * [`dmv`-Function](#dmv-function)
     * [`ema`-Function](#ema-function)
+    * [`ffPredict`-Function](#ffPredict-function)
+    * [`ffTrain`-Function](#ffTrain-function)
     * [`gaussianClassifier`-Function](#gaussianClassifier-function)
     * [`glm`-Function](#glm-function)
     * [`gmm`-Function](#gmm-function)
@@ -52,10 +54,13 @@ limitations under the License.
     * [`intersect`-Function](#intersect-function)
     * [`KMeans`-Function](#KMeans-function)
     * [`KNN`-function](#KNN-function)
+    * [`lenetTrain`-Function](#lenetTrain-function)
+    * [`lenetPredict`-Function](#lenetPredict-function)
     * [`lm`-Function](#lm-function)
     * [`lmCG`-Function](#lmcg-function)
     * [`lmDS`-Function](#lmds-function)
     * [`lmPredict`-Function](#lmPredict-function)
+    * [`matrixProfile`-Function](#matrixProfile-function)
     * [`mdedup`-Function](#mdedup-function)
     * [`mice`-Function](#mice-function)
     * [`msvm`-Function](#msvm-function)
@@ -76,6 +81,7 @@ limitations under the License.
     * [`toOneHot`-Function](#toOneHOt-function)
     * [`tSNE`-Function](#tSNE-function)
     * [`winsorize`-Function](#winsorize-function)
+    * [`xgboost`-Function](#xgboost-function)
 
 
 # Introduction
@@ -198,7 +204,7 @@ y = toOneHot(X, numClasses)
 
 ## `correctTypos`-Function
 
-The `correctTypos` - function tries to correct typos in a given frame. This algorithm operates on the assumption that most strings are correct and simply swaps strings that do not occur often with similar strings that occur more often. If correct is set to FALSE only prints suggested corrections without effecting the frame.
+The `correctTypos` - function tries to correct typos in a given frame. This algorithm operates on the assumption that most strings are correct and simply swaps strings that do not occur often with similar strings that occur more often. If correct is set to FALSE only prints suggested corrections without affecting the frame.
 
 ### Usage
 
@@ -554,6 +560,94 @@ Z = dmv(X=A)
 Z = dmv(X=A, threshold=0.9)
 Z = dmv(X=A, threshold=0.9, replace="NaN")
 ```
+
+## `ffPredict`-Function
+
+The `ffPredict`-function computes prediction of the given thata using trained model.
+
+It takes the list of layers returned by the `ffTrain`-function.
+
+### Usage
+
+```r
+prediction = ffPredict(model, x_test, 128)
+```
+
+### Arguments
+
+| Name        | Type           | Default  | Description |
+| :---        | :------------- | :------- | :---------- |
+| Model       | List[unknown]  | required | ffTrain model |
+| X           | Matrix[Double] | required | Data for making prediction |
+| batch_size  | Integer        | 128      | Batch Size |
+
+### Returns
+
+| Name | Type           | Description      |
+| :--- | :------------- | :--------------- |
+| pred | Matrix[Double] | Predictions |
+
+### Example
+
+```r
+model = ffTrain(x_train, y_train, 128, 10, 0.001, ...)
+
+prediction = ffPredict(model=model, X=x_test)
+```
+
+## `ffTrain`-Function
+
+The `ffTrain`-function trains simple feed-forward neural network.
+
+Neural network trained has the following architecture:
+```r
+affine1 -> relu -> dropout -> affine2 -> configurable output layer activation
+```
+Hidden layer has 128 neurons. Dropout rate is 0.35. Input and ouptut sizes are inferred from X and Y.
+### Usage
+```r
+model = ffTrain(X=x_train, Y=y_train, out_activation="sigmoid", loss_fcn="cel")
+```
+
+### Arguments
+
+| Name             | Type           | Default  | Description |
+| :---             | :------------- | :------- | :---------- |
+| X                | Matrix[Double] | required | Training data |
+| Y                | Matrix[Double] | required | Labels/Target values |
+| batch_size       | Integer        | 64       | Batch size |
+| epochs           | Integer        | 20       | Number of epochs |
+| learning_rate    | Double         | 0.003    | Learning rate |
+| out_activation   | String         | required | User specified ouptut layer activation |
+| loss_fcn         | String         | required | User specified loss function |
+| shuffle          | Boolean        | False    | Shuffle dataset|
+| validation_split | Double         | 0.0      | Fraction of dataset to be used as validation set|
+| seed             | Integer        | -1       | Seed for model initialization. Seed value of -1 will generate random seed |
+| verbose          | Boolean        | False    | Flag indicates if function should print to stdout |
+
+User can specify following output layer activations:
+`sigmoid`, `relu`, `lrelu`, `tanh`, `softmax`, `logits` (no activation).
+
+User can specify following loss functions:
+`l1`, `l2`, `log_loss`, `logcosh_loss`, `cel` (cross-entropy loss).
+
+When validation set is used function outputs validation loss to the stdout after each epoch.
+
+
+### Returns
+
+| Name | Type           | Description      |
+| :--- | :------------- | :--------------- |
+| model| List[unknown] | Trained model containing weights of affine layers and activation of output layer |
+
+### Example
+
+```r
+model = ffTrain(X=x_train, Y=y_train, batch_size=128, epochs=10, learning_rate=0.001, out_activation="sigmoid", loss_fcn="cel", shuffle=TRUE, validation_split=0.2, verbose=TRUE)
+
+prediction = ffPredict(model=model, X=x_train)
+```
+
 
 
 ## `gaussianClassifier`-Function
@@ -1077,6 +1171,97 @@ k = 3
 ```
 
 
+## `lenetTrain`-Function
+
+The `lenetTrain`-function trains LeNet CNN. The architecture of the
+networks is: conv1 -> relu1 -> pool1 -> conv2 -> relu2 -> pool2 -> affine3 -> relu3 -> affine4 -> softmax
+### Usage
+
+```r
+model = lenetTrain(images, labels, images_val, labels_val, C, Hin, Win, 128, 3, 0.007, 0.9, 0.95, 5e-04, TRUE, -1)
+```
+
+### Arguments
+
+| Name        | Type           | Default  | Description |
+| :---------- | :------------- | -------- | :---------- |
+| X           | Matrix[Double] | required | Input data matrix, of shape (N, C\*Hin\*Win) |
+| Y           | Matrix[Double] | required | Target matrix, of shape (N, K.) |
+| X_val       | Matrix[Double] | required | Validation data matrix, of shape (N, C\*Hin\*Win) |
+| Y_val       | Matrix[Double] | required | Validation target matrix, of shape (N, K) |
+| C           | Integer        | required | Number of input channels (dimensionality of input depth) |
+| Win         | Integer        | required | Input width |
+| Hin         | Integer        | required | Input height |
+| batch_size  | Integer        | 64       | Batch size |
+| epochs      | Integer        | 20       | Number of epochs |
+| lr          | Double         | 0.01     | Learning rate |
+| mu          | Double         | 0.9      | Momentum value |
+| decay       | Double         | 0.95     | Learning rate decay |
+| lambda      | Double         | 5e-04    | Regularization strength |
+| seed        | Integer        | -1       | Seed for model initialization. Seed value of -1 will generate random seed. |
+| verbose     | Boolean        | FALSE    | Flag indicates if function should print to stdout |
+
+
+### Returns
+
+| Type           | Description |
+| :------------- | :---------- |
+| list[unknown] | Trained model which can be used in lenetPredict. |
+
+### Example
+
+```r
+data = read(path, format="csv")
+images = images = train_data[,2:ncol(data)]
+labels_int = data[,1]
+C = 1
+Hin = 28
+Win = 28
+
+# Scale images to [-1,1], and one-hot encode the labels
+n = nrow(train_data)
+images = (images / 255.0) * 2 - 1
+labels = table(seq(1, n), labels_int+1, n, 10)
+
+model = lenetTrain(images, labels, images_val, labels_val, C, Hin, Win, 128, 3, 0.007, 0.9, 0.95, 5e-04, TRUE, -1)
+```
+
+
+## `lenetPredict`-Function
+
+The `lenetPredict`-function makes prediction given the data and trained LeNet model.
+### Usage
+
+```r
+probs = lenetPredict(model=model, X=images, C=C, Hin=Hin, Win=Win)
+```
+
+### Arguments
+
+| Name        | Type           | Default  | Description |
+| :---------- | :------------- | -------- | :---------- |
+| model       | list[unknown]  | required | Trained LeNet model |
+| X           | Matrix[Double] | required | Input data matrix, of shape (N, C\*Hin\*Win) |
+| C           | Integer        | required | Number of input channels (dimensionality of input depth) |
+| Win         | Integer        | required | Input width |
+| Hin         | Integer        | required | Input height |
+| batch_size  | Integer        | 64       | Batch size |
+
+
+### Returns
+
+| Type           | Description |
+| :------------- | :---------- |
+| Matrix[Double] | Predicted values |
+
+### Example
+
+```r
+model = lenetTrain(images, labels, images_val, labels_val, C, Hin, Win, 128, 3, 0.007, 0.9, 0.95, 5e-04, TRUE, -1)
+probs = lenetPredict(model=model, X=images_test, C=C, Hin=Hin, Win=Win)
+```
+
+
 ## `lm`-Function
 
 The `lm`-function solves linear regression using either the **direct solve method** or the **conjugate gradient algorithm**
@@ -1257,6 +1442,32 @@ y = X %*% rand(rows = ncol(X), cols = 1)
 w = lm(X = X, y = y)
 yp = lmPredict(X = X, B = w, ytest=matrix(0,1,1))
 ```
+
+
+## `matrixProfile`-Function
+
+The `matrixProfile`-function implements the SCRIMP algorithm for efficient time-series analysis. 
+
+### Usage
+```r
+matrixProfile(ts, window_size, sample_percent, is_verbose)
+```
+
+### Arguments
+| Name          | Type             | Default    | Description |
+| :------       | :-------------   | --------   | :---------- |
+| ts            | Matrix           | ---        | Input Frame X |
+| window_size   | Integer          | 4          | Sliding window size |
+| sample_percent| Double           | 1.0        | Degree of approximation between zero and one (1 computes the exact solution) |
+| verbose       | Boolean          | False      | Print debug information |
+
+### Returns
+
+| Type            | Default  | Description |
+| :-------------- | -------- | :---------- |
+| Matrix[Double]  | ---      | The computed matrix profile distances |
+| Matrix[Integer] | ---      | Indices of least distances |
+
 
 
 ## `mdedup`-Function
@@ -2032,3 +2243,101 @@ X = rand(rows=10, cols=10,min = 1, max=9)
 Y = winsorize(X=X)
 ```
 
+## `xgboost`-Function
+
+XGBoost is a decision-tree-based ensemble Machine Learning algorithm that uses a gradient boosting. This `xgboost` implementation supports classification and regression and is capable of working with categorical and scalar features.
+
+### Usage
+
+```r
+M = xgboost(X = X, y = y, R = R, sml_type = 1, num_trees = 3, learning_rate = 0.3, max_depth = 6, lambda = 0.0)
+```
+
+### Arguments
+
+| NAME                  | TYPE           | DEFAULT  | Description |
+| :------               | :------------- | -------- | :---------- |
+| X                     | Matrix[Double] |   ---    | Feature matrix X; categorical features needs to be one-hot-encoded |
+| Y                     | Matrix[Double] |   ---    | Label matrix Y |
+| R                     | Matrix[Double] |   ---    | Matrix R; 1xn vector which for each feature in X contains the following information |
+|                       |                |          |   - R[,2]: 1 (scalar feature) |
+|                       |                |          |   - R[,1]: 2 (categorical feature) |
+| sml_type              | Integer        |   1      |   Supervised machine learning type: 1 = Regression(default), 2 = Classification |
+| num_trees             | Integer        |   10     |   Number of trees to be created in the xgboost model |
+| learning_rate         | Double         |    0.3   |   alias: eta. After each boosting step the learning rate controls the weights of the new predictions |
+| max_depth             | Integer        |    6     |   Maximum depth of a tree. Increasing this value will make the model more complex and more likely to overfit |
+| lambda                | Double         |    0.0   |   L2 regularization term on weights. Increasing this value will make model more conservative and reduce amount of leaves of a tree |
+
+### Returns
+| Name | Type           | Default | Description                                                  |
+| :--- | :------------- | ------- | :----------------------------------------------------------- |
+| M    | Matrix[Double] | ---     | Each column of the matrix corresponds to a node in the learned model <br />Detailed description can be found in `xgboost.dml` |
+
+
+### Example
+```r
+X = matrix("4.5 3.0 3.0 2.8 3.5
+            1.9 2.0 1.0 3.4 2.9
+            2.0 1.0 1.0 4.9 3.4
+            2.3 2.0 2.0 1.4 1.8
+            2.1 1.0 3.0 1.0 1.9", rows=5, cols=5)
+Y = matrix("1.0
+            4.0
+            4.0
+            7.0
+            8.0", rows=5, cols=1)
+R = matrix("1.0 1.0 1.0 1.0 1.0", rows=1, cols=5)
+M = xgboost(X = X, Y = Y, R = R)
+```
+
+
+
+## `xgboostPredict`-Function
+
+In order to calculate a prediction, XGBoost sums predictions of all its trees. Each tree is not a great predictor on it’s own, but by summing across all trees, XGBoost is able to provide a robust prediction in many cases. Depending on our supervised machine learning type use `xgboostPredictRegression()` or `xgboostPredictClassification()` to predict the labels. 
+
+### Usage
+
+```r
+y_pred = xgboostPredictRegression(X = X, M = M)
+```
+
+or
+
+```
+y_pred = xgboostPredictClassification(X = X, M = M)
+```
+
+
+
+### Arguments
+
+| NAME          | TYPE           | DEFAULT | Description                                                  |
+| :------------ | :------------- | ------- | :----------------------------------------------------------- |
+| X             | Matrix[Double] | ---     | Feature matrix X; categorical features needs to be one-hot-encoded |
+| M             | Matrix[Double] | ---     | Trained model returned from `xgboost`. Each column of the matrix corresponds to a node in the learned model <br />Detailed description can be found in `xgboost.dml` |
+| learning_rate | Double         | 0.3     | alias: eta. After each boosting step the learning rate controls the weights of the new predictions. Should be the same as at `xgboost`-function call |
+
+### Returns
+
+| Name | Type           | Default | Description                                                  |
+| :--- | :------------- | ------- | :----------------------------------------------------------- |
+| P    | Matrix[Double] | ---     | xgboostPredictRegression: The prediction of the samples using the xgboost model. (y_prediction)<br />xgboostPredictClassification: The probability of the samples being 1 (like XGBClassifier.predict_proba() in Python) |
+
+### Example
+
+```r
+X = matrix("4.5 3.0 3.0 2.8 3.5
+            1.9 2.0 1.0 3.4 2.9
+            2.0 1.0 1.0 4.9 3.4
+            2.3 2.0 2.0 1.4 1.8
+            2.1 1.0 3.0 1.0 1.9", rows=5, cols=5)
+Y = matrix("1.0
+            4.0
+            4.0
+            7.0
+            8.0", rows=5, cols=1)
+R = matrix("1.0 1.0 1.0 1.0 1.0", rows=1, cols=5)
+M = xgboost(X = X, Y = Y, R = R, num_trees = 10, learning_rate = 0.4)
+P = xgboostPredictRegression(X = X, M = M, learning_rate = 0.4)
+```

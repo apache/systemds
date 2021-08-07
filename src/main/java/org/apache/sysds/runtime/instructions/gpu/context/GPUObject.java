@@ -786,6 +786,23 @@ public class GPUObject {
 		setSparseMatrixCudaPointer(tmp);
 	}
 
+	void allocateSparseMatrixOnDevice(long numVals) {
+		// This method is called when #values > nnz
+		if(LOG.isTraceEnabled()) {
+			LOG.trace("GPU : allocateSparseMatrixOnDevice, on " + this + ", GPUContext=" + getGPUContext());
+		}
+		if(isAllocated()) 
+			throw new DMLRuntimeException("Internal error - trying to allocated sparse matrix to a GPUObject that is already allocated");
+		long rows = mat.getNumRows();
+		long nnz = mat.getNnz();
+		if(rows <= 0)
+			throw new DMLRuntimeException("Internal error - invalid number of rows when allocating sparse matrix");
+		if(nnz < 0)
+			throw new DMLRuntimeException("Internal error - invalid number of non zeroes when allocating a sparse matrix");
+		CSRPointer tmp = CSRPointer.allocateEmpty(getGPUContext(), numVals, rows);
+		setSparseMatrixCudaPointer(tmp);
+	}
+
 	public long getSizeOnDevice() {
 		long GPUSize = 0;
 		long rlen = mat.getNumRows();
@@ -863,7 +880,10 @@ public class GPUObject {
 				values = csrBlock.values();
 			}
 
-			allocateSparseMatrixOnDevice();
+			if (values.length > tmp.getNonZeros())
+				allocateSparseMatrixOnDevice(values.length);
+			else
+				allocateSparseMatrixOnDevice();
 
 			if (copyToDevice) {
 				CSRPointer.copyToDevice(getGPUContext(), getJcudaSparseMatrixPtr(),
@@ -1037,7 +1057,7 @@ public class GPUObject {
 	 * @param eager whether to be done synchronously or asynchronously
 	 * @throws DMLRuntimeException if error occurs
 	 */
-	public void clearData(String opcode, boolean eager) throws DMLRuntimeException {
+	synchronized public void clearData(String opcode, boolean eager) throws DMLRuntimeException {
 		if (isLineageCached)
 			return;
 

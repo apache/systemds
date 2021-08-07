@@ -339,7 +339,7 @@ public class AggUnaryOp extends MultiThreadedHop
 	
 
 	@Override
-	protected ExecType optFindExecType() {
+	protected ExecType optFindExecType(boolean transitive) {
 		
 		checkAndSetForcedPlatform();
 		
@@ -372,11 +372,15 @@ public class AggUnaryOp extends MultiThreadedHop
 
 		//spark-specific decision refinement (execute unary aggregate w/ spark input and 
 		//single parent also in spark because it's likely cheap and reduces data transfer)
-		if( _etype == ExecType.CP && _etypeForced != ExecType.CP
-			&& !(getInput().get(0) instanceof DataOp)  //input is not checkpoint
-			&& (getInput().get(0).getParent().size()==1 //uagg is only parent, or 
-			   || !requiresAggregation(getInput().get(0), _direction)) //w/o agg
-			&& getInput().get(0).optFindExecType() == ExecType.SPARK )
+		//we also allow multiple parents, if all other parents are already in Spark mode
+		if( transitive && _etype == ExecType.CP && _etypeForced != ExecType.CP
+			&& ((!(getInput(0) instanceof DataOp)  //input is not checkpoint
+				&& getInput(0).optFindExecType() == ExecType.SPARK)
+				|| (getInput(0) instanceof DataOp && ((DataOp)getInput(0)).hasOnlyRDD()))
+			&& (getInput(0).getParent().size()==1 //uagg is only parent, or 
+				|| getInput(0).getParent().stream().filter(h -> h != this)
+					.allMatch(h -> h.optFindExecType(false) == ExecType.SPARK)
+				|| !requiresAggregation(getInput(0), _direction)) ) //w/o agg
 		{
 			//pull unary aggregate into spark 
 			_etype = ExecType.SPARK;

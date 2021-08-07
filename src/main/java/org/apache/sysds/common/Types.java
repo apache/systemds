@@ -144,7 +144,12 @@ public class Types
 		RowCol, // full aggregate
 		Row,    // row aggregate (e.g., rowSums)
 		Col;    // column aggregate (e.g., colSums)
-		
+		public boolean isRow() {
+			return this == Row;
+		}
+		public boolean isCol() {
+			return this == Col;
+		}
 		@Override
 		public String toString() {
 			switch(this) {
@@ -461,7 +466,7 @@ public class Types
 	}
 	
 	public enum ParamBuiltinOp {
-		INVALID, CDF, INVCDF, GROUPEDAGG, RMEMPTY, REPLACE, REXPAND,
+		AUTODIFF, INVALID, CDF, INVCDF, GROUPEDAGG, RMEMPTY, REPLACE, REXPAND,
 		LOWER_TRI, UPPER_TRI,
 		TRANSFORMAPPLY, TRANSFORMDECODE, TRANSFORMCOLMAP, TRANSFORMMETA,
 		TOKENIZE, TOSTRING, LIST, PARAMSERV

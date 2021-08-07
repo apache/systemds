@@ -59,6 +59,7 @@ import org.apache.sysds.runtime.instructions.spark.CpmmSPInstruction;
 import org.apache.sysds.runtime.instructions.spark.CtableSPInstruction;
 import org.apache.sysds.runtime.instructions.spark.CumulativeAggregateSPInstruction;
 import org.apache.sysds.runtime.instructions.spark.CumulativeOffsetSPInstruction;
+import org.apache.sysds.runtime.instructions.spark.DeCompressionSPInstruction;
 import org.apache.sysds.runtime.instructions.spark.DnnSPInstruction;
 import org.apache.sysds.runtime.instructions.spark.IndexingSPInstruction;
 import org.apache.sysds.runtime.instructions.spark.MapmmChainSPInstruction;
@@ -261,6 +262,7 @@ public class SPInstructionParser extends InstructionParser
 		String2SPInstructionType.put( "isinf", SPType.Unary);
 
 		// Parameterized Builtin Functions
+		String2SPInstructionType.put( "autoDiff"   , SPType.ParameterizedBuiltin);
 		String2SPInstructionType.put( "groupedagg",     SPType.ParameterizedBuiltin);
 		String2SPInstructionType.put( "mapgroupedagg",  SPType.ParameterizedBuiltin);
 		String2SPInstructionType.put( "rmempty",        SPType.ParameterizedBuiltin);
@@ -499,6 +501,9 @@ public class SPInstructionParser extends InstructionParser
 
 			case Compression:
 				return CompressionSPInstruction.parseInstruction(str);
+
+			case DeCompression:
+				return DeCompressionSPInstruction.parseInstruction(str);
 
 			case SpoofFused:
 				return SpoofSPInstruction.parseInstruction(str);

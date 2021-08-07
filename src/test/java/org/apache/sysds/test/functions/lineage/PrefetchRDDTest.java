@@ -39,7 +39,7 @@ public class PrefetchRDDTest extends AutomatedTestBase {
 	
 	protected static final String TEST_DIR = "functions/lineage/";
 	protected static final String TEST_NAME = "PrefetchRDD";
-	protected static final int TEST_VARIANTS = 1;
+	protected static final int TEST_VARIANTS = 3;
 	protected static String TEST_CLASS_DIR = TEST_DIR + PrefetchRDDTest.class.getSimpleName() + "/";
 	
 	@Override
@@ -51,7 +51,20 @@ public class PrefetchRDDTest extends AutomatedTestBase {
 	
 	@Test
 	public void testAsyncSparkOPs1() {
+		//Single CP consumer. Prefetch Lop has one output.
 		runTest(TEST_NAME+"1");
+	}
+
+	@Test
+	public void testAsyncSparkOPs2() {
+		//Two CP consumers. Prefetch Lop has two outputs.
+		runTest(TEST_NAME+"2");
+	}
+
+	@Test
+	public void testAsyncSparkOPs3() {
+		//SP action type consumer. No Prefetch.
+		runTest(TEST_NAME+"3");
 	}
 	
 	public void runTest(String testname) {
@@ -92,10 +105,12 @@ public class PrefetchRDDTest extends AutomatedTestBase {
 			//compare matrices
 			TestUtils.compareMatrices(R, R_pf, 1e-6, "Origin", "Reused");
 			//assert Prefetch instructions and number of success.
+			long expected_numPF = !testname.equalsIgnoreCase(TEST_NAME+"3") ? 1 : 0;
+			long expected_successPF = !testname.equalsIgnoreCase(TEST_NAME+"3") ? 1 : 0;
 			long numPF = Statistics.getCPHeavyHitterCount("prefetch");
-			Assert.assertTrue("Violated Prefetch instruction count: "+numPF, numPF > 0);
+			Assert.assertTrue("Violated Prefetch instruction count: "+numPF, numPF == expected_numPF);
 			long successPF = Statistics.getAsyncPrefetchCount();
-			Assert.assertTrue("Violated successful Prefetch count: "+successPF, successPF > 0);
+			Assert.assertTrue("Violated successful Prefetch count: "+successPF, successPF == expected_successPF);
 		} finally {
 			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = old_simplification;
 			OptimizerUtils.ALLOW_SUM_PRODUCT_REWRITES = old_sum_product;

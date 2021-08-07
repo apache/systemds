@@ -30,6 +30,7 @@ import org.apache.sysds.conf.DMLConfig;
 import org.apache.sysds.hops.AggBinaryOp.SparkAggType;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.lops.CentralMoment;
+import org.apache.sysds.lops.Checkpoint;
 import org.apache.sysds.lops.CoVariance;
 import org.apache.sysds.lops.Data;
 import org.apache.sysds.lops.FunctionCallCP;
@@ -281,9 +282,10 @@ public class Dag<N extends Lop>
 		// and the output is consumed by only CP instructions.
 		boolean transformOP = lop.getExecType() == ExecType.SPARK && lop.getAggType() != SparkAggType.SINGLE_BLOCK
 				// Always Action operations
+				&& !(lop.getDataType() == DataType.SCALAR)
 				&& !(lop instanceof MapMultChain) && !(lop instanceof PickByCount)
 				&& !(lop instanceof MMZip) && !(lop instanceof CentralMoment)
-				&& !(lop instanceof CoVariance)
+				&& !(lop instanceof CoVariance) && !(lop instanceof Checkpoint)
 				// Cannot filter Transformation cases from Actions (FIXME)
 				&& !(lop instanceof MMTSJ) && !(lop instanceof UAggOuterChain)
 				&& !(lop instanceof ParameterizedBuiltin) && !(lop instanceof SpoofFused);

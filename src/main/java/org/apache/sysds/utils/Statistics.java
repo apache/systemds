@@ -489,6 +489,7 @@ public class Statistics
 		parforMergeTime = 0;
 		
 		sparkCtxCreateTime = 0;
+		sparkAsyncPrefetchCount.reset();
 		
 		lTotalLix.reset();
 		lTotalLixUIP.reset();

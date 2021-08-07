@@ -581,6 +581,9 @@ public abstract class Lop
 	}
 	
 	public boolean isAllOutputsCP() {
+		if (outputs.isEmpty())
+			return false;
+
 		boolean outCP = true;
 		for (Lop out : getOutputs()) {
 			if (out.getExecType() != ExecType.CP) {

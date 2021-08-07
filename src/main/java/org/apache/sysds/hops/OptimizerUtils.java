@@ -234,7 +234,7 @@ public class OptimizerUtils
 	
 	public static boolean ALLOW_TRANSITIVE_SPARK_EXEC_TYPE = true;
 
-	public static boolean ASYNC_TRIGGER_RDD_OPERATIONS = false; 
+	public static boolean ASYNC_TRIGGER_RDD_OPERATIONS = true; 
 
 	//////////////////////
 	// Optimizer levels //

@@ -29,11 +29,14 @@ import org.apache.sysds.common.Types.OpOpData;
 import org.apache.sysds.conf.DMLConfig;
 import org.apache.sysds.hops.AggBinaryOp.SparkAggType;
 import org.apache.sysds.hops.OptimizerUtils;
+import org.apache.sysds.lops.CSVReBlock;
 import org.apache.sysds.lops.CentralMoment;
 import org.apache.sysds.lops.Checkpoint;
 import org.apache.sysds.lops.CoVariance;
 import org.apache.sysds.lops.Data;
 import org.apache.sysds.lops.FunctionCallCP;
+import org.apache.sysds.lops.GroupedAggregate;
+import org.apache.sysds.lops.GroupedAggregateM;
 import org.apache.sysds.lops.Lop;
 import org.apache.sysds.lops.Lop.Type;
 import org.apache.sysds.common.Types.ExecType;
@@ -44,6 +47,7 @@ import org.apache.sysds.lops.MapMultChain;
 import org.apache.sysds.lops.OutputParameters;
 import org.apache.sysds.lops.ParameterizedBuiltin;
 import org.apache.sysds.lops.PickByCount;
+import org.apache.sysds.lops.ReBlock;
 import org.apache.sysds.lops.SpoofFused;
 import org.apache.sysds.lops.UAggOuterChain;
 import org.apache.sysds.lops.UnaryCP;
@@ -237,6 +241,7 @@ public class Dag<N extends Lop>
 					prefetch.addOutput(outCP);
 					outCP.replaceInput(l, prefetch);
 					l.removeOutput(outCP);
+					//FIXME: Rewire _inputParams when needed (e.g. GroupedAggregate)
 				}
 				//Place it immediately after the Spark lop in the node list
 				nodesWithPrefetch.add(prefetch);
@@ -285,11 +290,23 @@ public class Dag<N extends Lop>
 				&& !(lop.getDataType() == DataType.SCALAR)
 				&& !(lop instanceof MapMultChain) && !(lop instanceof PickByCount)
 				&& !(lop instanceof MMZip) && !(lop instanceof CentralMoment)
-				&& !(lop instanceof CoVariance) && !(lop instanceof Checkpoint)
+				&& !(lop instanceof CoVariance) 
+				// Not qualified for prefetching
+				&& !(lop instanceof Checkpoint) && !(lop instanceof ReBlock)
+				&& !(lop instanceof CSVReBlock)
 				// Cannot filter Transformation cases from Actions (FIXME)
 				&& !(lop instanceof MMTSJ) && !(lop instanceof UAggOuterChain)
 				&& !(lop instanceof ParameterizedBuiltin) && !(lop instanceof SpoofFused);
-		return transformOP && lop.isAllOutputsCP();
+
+		//FIXME: Rewire _inputParams when needed (e.g. GroupedAggregate)
+		List<Lop> parameterizedOut = lop.getOutputs().stream()
+				.filter(out -> ((out instanceof ParameterizedBuiltin) 
+					|| (out instanceof GroupedAggregate)
+					|| (out instanceof GroupedAggregateM)))
+				.collect(Collectors.toList());
+		//TODO: support non-matrix outputs
+		return transformOP && parameterizedOut.isEmpty() 
+				&& lop.isAllOutputsCP() && lop.getDataType() == DataType.MATRIX;
 	}
 
 	private static List<Instruction> deleteUpdatedTransientReadVariables(StatementBlock sb, List<Lop> nodeV) {

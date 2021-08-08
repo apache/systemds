@@ -21,6 +21,7 @@ package org.apache.sysds.runtime.instructions.cp;
 
 import java.util.concurrent.Executors;
 
+import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.matrix.operators.Operator;
@@ -43,5 +44,11 @@ public class PrefetchCPInstruction extends UnaryCPInstruction {
 	public void processInstruction(ExecutionContext ec) {
 		ec.setVariable(output.getName(), ec.getMatrixObject(input1));
 		Executors.newSingleThreadExecutor().submit(new TriggerRDDOperationsTask(ec.getMatrixObject(output)));
+		try {
+			Thread.sleep(5000);
+		}
+		catch (InterruptedException e) {
+			throw new DMLRuntimeException("Error in thread sleep ",e);
+		}
 	}
 }

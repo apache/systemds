@@ -299,13 +299,12 @@ public class Dag<N extends Lop>
 				&& !(lop instanceof ParameterizedBuiltin) && !(lop instanceof SpoofFused);
 
 		//FIXME: Rewire _inputParams when needed (e.g. GroupedAggregate)
-		List<Lop> parameterizedOut = lop.getOutputs().stream()
-				.filter(out -> ((out instanceof ParameterizedBuiltin) 
+		boolean hasParameterizedOut = lop.getOutputs().stream()
+				.anyMatch(out -> ((out instanceof ParameterizedBuiltin) 
 					|| (out instanceof GroupedAggregate)
-					|| (out instanceof GroupedAggregateM)))
-				.collect(Collectors.toList());
+					|| (out instanceof GroupedAggregateM)));
 		//TODO: support non-matrix outputs
-		return transformOP && parameterizedOut.isEmpty() 
+		return transformOP && !hasParameterizedOut 
 				&& lop.isAllOutputsCP() && lop.getDataType() == DataType.MATRIX;
 	}
 

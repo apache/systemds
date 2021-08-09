@@ -181,6 +181,11 @@ public class PartialAggregate extends Lop
 		}
 		return loc;
 	}
+	
+	@Override
+	public SparkAggType getAggType() {
+		return _aggtype;
+	}
 
 	public void setDimensionsBasedOnDirection(long dim1, long dim2, long blen) {
 		setDimensionsBasedOnDirection(this, dim1, dim2, blen, direction);

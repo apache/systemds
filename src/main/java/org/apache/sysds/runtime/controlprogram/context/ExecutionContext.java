@@ -305,6 +305,10 @@ public class ExecutionContext {
 	public MatrixBlock getMatrixInput(String varName) {
 		return getMatrixObject(varName).acquireRead();
 	}
+	
+	public MatrixBlock getMatrixInput(CPOperand input) {
+		return getMatrixObject(input.getName()).acquireRead();
+	}
 
 	/**
 	 * Pins a matrix variable into memory and returns the internal matrix block.

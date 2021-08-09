@@ -67,7 +67,7 @@ public class QuaternaryWCeMMFEDInstruction extends QuaternaryFEDInstruction
 		if(qop.hasFourInputs()) {
 			eps = (_input4.getDataType() == DataType.SCALAR) ?
 				ec.getScalarInput(_input4) :
-				new DoubleObject(ec.getMatrixInput(_input4.getName()).quickGetValue(0, 0));
+				new DoubleObject(ec.getMatrixInput(_input4).quickGetValue(0, 0));
 		}
 
 		if(X.isFederated()) {

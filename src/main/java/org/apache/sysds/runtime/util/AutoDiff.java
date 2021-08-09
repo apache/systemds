@@ -48,7 +48,7 @@ public class AutoDiff {
 
 	public static ListObject getBackward(MatrixObject mo, ArrayList<Data> lineage, ExecutionContext adec) {
 
-		ArrayList<String> names = new ArrayList<String>();
+		ArrayList<String> names = new ArrayList<>();
 		// parse the lineage and take the number of instructions as for each instruction there is separate hop DAG
 		String lin = lineage.get(0).toString();
 		// get rid of foo flag

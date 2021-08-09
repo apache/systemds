@@ -79,6 +79,7 @@ limitations under the License.
     * [`steplm`-Function](#steplm-function)
     * [`tomekLink`-Function](#tomekLink-function)
     * [`toOneHot`-Function](#toOneHOt-function)
+    * [`tSNE`-Function](#tSNE-function)
     * [`winsorize`-Function](#winsorize-function)
     * [`xgboost`-Function](#xgboost-function)
 
@@ -2176,6 +2177,40 @@ X = round(rand(rows = 10, cols = 10, min = 1, max = numClasses))
 y = toOneHot(X,numClasses)
 ```
 
+## `tSNE`-Function
+
+The `tSNE`-function performs dimensionality reduction using tSNE algorithm based on the paper: Visualizing Data using t-SNE, Maaten et. al.
+
+### Usage
+
+```r
+tSNE(X, reduced_dims, perplexity, lr, momentum, max_iter, seed, is_verbose)
+```
+
+### Arguments
+
+| Name         | Type           | Default  | Description |
+| :----------- | :------------- | -------- | :---------- |
+| X            | Matrix[Double] | required | Data Matrix of shape (number of data points, input dimensionality) |
+| reduced_dims | Integer        | 2        | Output dimensionality |
+| perplexity   | Integer        | 30       | Perplexity Parameter |
+| lr           | Double         | 300.     | Learning rate |
+| momentum     | Double         | 0.9      | Momentum Parameter |
+| max_iter     | Integer        | 1000     | Number of iterations |
+| seed         | Integer        | -1       | The seed used for initial values. If set to -1 random seeds are selected. |
+| is_verbose   | Boolean        | FALSE    | Print debug information |
+### Returns
+
+| Type           | Description |
+| :------------- | :---------- |
+| Matrix[Double] | Data Matrix of shape (number of data points, reduced_dims) |
+
+### Example
+
+```r
+X = rand(rows = 100, cols = 10, min = -10, max = 10))
+Y = tSNE(X)
+```
 
 ## `winsorize`-Function
 

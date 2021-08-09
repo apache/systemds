@@ -218,10 +218,10 @@ public class FederationMap {
 		}
 
 		// set new federation map
-		if(!data.isFederated()) {
-			data.setFedMapping(new FederationMap(id, newFedMap, FType.BROADCAST));
-			data.getDataCharacteristics().setDimension(cb.getNumRows(), cb.getNumColumns());
-		}
+//		if(!data.isFederated()) {
+//			data.setFedMapping(new FederationMap(id, newFedMap, FType.BROADCAST));
+//			data.getDataCharacteristics().setDimension(cb.getNumRows(), cb.getNumColumns());
+//		}
 
 		return new FederatedRequest(RequestType.PUT_VAR, id, cb, data.getUniqueID(), FType.BROADCAST, _ID, oldId, _type);
 	}
@@ -298,7 +298,6 @@ public class FederationMap {
 
 			if(!data.isFederated()) {
 				data.setFedMapping(new FederationMap(id, newFedMap, type));
-//				data.getFedMapping()._type.setPartType(type.getPartType());
 				data.getDataCharacteristics().setDimension(cb.getNumRows(), cb.getNumColumns());
 			}
 		}

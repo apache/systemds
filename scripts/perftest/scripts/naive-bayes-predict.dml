@@ -1,0 +1,71 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+cmdLine_Y = ifdef($Y, " ")
+cmdLine_accuracy = ifdef($accuracy, " ")
+cmdLine_confusion = ifdef($confusion, " ")
+cmdLine_fmt = ifdef($fmt, "text")
+
+D = read($X)
+prior = read($prior)
+conditionals = read($conditionals)
+
+min_feature_val = min(D)
+if(min_feature_val < 0)
+  stop("Stopping due to invalid argument: Multinomial naive Bayes is meant for count-based feature values, minimum value in X is negative")
+
+# Depending on the algorithm used (built-in or one of the algorithm dml scripts), the prior has a additional row that needs to be removed
+num_rows_prior = nrow(prior)
+if(num_rows_prior == (nrow(conditionals) + 1))
+  prior = prior[1:num_rows_prior - 1]
+
+[log_probs, Y] = naiveBayesPredict(X=D, P=prior, C=conditionals)
+
+mx = rowMaxs(log_probs)
+ones = matrix(1, rows=1, cols=nrow(prior))
+probs = log_probs - mx %*% ones
+probs = exp(probs)/(rowSums(exp(probs)) %*% ones)
+write(probs, $probabilities, format=cmdLine_fmt)
+
+if(cmdLine_Y != " "){
+  C = read(cmdLine_Y)
+  if(min(C) < 1)
+    stop("Stopping due to invalid argument: Label vector (Y) must be recoded")
+
+  pred = rowIndexMax(log_probs)
+  numRows = nrow(D)
+  acc = sum(pred == C) / numRows * 100
+
+  acc_str = "Accuracy (%): " + acc
+  print(acc_str)
+  if(cmdLine_accuracy != " ")
+    write(acc, cmdLine_accuracy)
+
+  num_classes = nrow(prior)
+  num_classes_ground_truth = max(C)
+  if(num_classes < num_classes_ground_truth)
+    num_classes = num_classes_ground_truth
+
+  if(cmdLine_confusion != " "){
+    confusion_mat = table(pred, C, num_classes, num_classes)
+    write(confusion_mat, cmdLine_confusion, format="csv")
+  }
+}

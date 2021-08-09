@@ -28,6 +28,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
 import org.apache.commons.lang.NotImplementedException;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.SparseBlock;
@@ -67,8 +69,9 @@ import org.apache.sysds.runtime.util.UtilFunctions;
  * and sparse-unsafe operations.
  * 
  */
-public class LibMatrixBincell 
-{
+public class LibMatrixBincell {
+
+	private static final Log LOG = LogFactory.getLog(LibMatrixBincell.class.getName());
 	private static final long PAR_NUMCELL_THRESHOLD2 = 16*1024;   //Min 16K elements
 
 	public enum BinaryAccessType {
@@ -239,27 +242,28 @@ public class LibMatrixBincell
 	 * 
 	 * defaults to right side operations, updating the m1 matrix with like:
 	 * 
-	 *  m1ret op m2
+	 * m1ret op m2
 	 * 
 	 * @param m1ret result matrix updated in place
 	 * @param m2 matrix block the other matrix to take values from
 	 * @param op binary operator the operator that is placed in the middle of m1ret and m2
+	 * @return The same pointer to m1ret argument, and the updated result.
 	 */
-	public static void bincellOpInPlace(MatrixBlock m1ret, MatrixBlock m2, BinaryOperator op) {
-		bincellOpInPlaceRight(m1ret, m2, op);
+	public static MatrixBlock bincellOpInPlace(MatrixBlock m1ret, MatrixBlock m2, BinaryOperator op) {
+		return bincellOpInPlaceRight(m1ret, m2, op);
 	}
 
 	/**
-	 * 
-	 * right side operations, updating the m1 matrix with like:
+	 * Right side operations, updating the m1 matrix like:
 	 * 
 	 * m1ret op m2
 	 * 
 	 * @param m1ret result matrix updated in place
 	 * @param m2 matrix block the other matrix to take values from
 	 * @param op binary operator the operator that is placed in the middle of m1ret and m2
+	 * @return The result MatrixBlock (same object pointer to m1ret argument)
 	 */
-	public static void bincellOpInPlaceRight(MatrixBlock m1ret, MatrixBlock m2, BinaryOperator op) {
+	public static MatrixBlock bincellOpInPlaceRight(MatrixBlock m1ret, MatrixBlock m2, BinaryOperator op) {
 		//execute binary cell operations
 		if(op.sparseSafe || isSparseSafeDivide(op, m2))
 			safeBinaryInPlace(m1ret, m2, op);
@@ -270,33 +274,68 @@ public class LibMatrixBincell
 		//(no additional memory requirements)
 		if( m1ret.isEmptyBlock(false) )
 			m1ret.examSparsity();
+		return m1ret;
 	}
 
 	/**
-	 * 
-	 * right side operations, updating the m1 matrix with like:
+	 * Left side operations, updating the m1 matrix like:
 	 * 
 	 * m2 op m1ret
 	 * 
 	 * @param m1ret result matrix updated in place
 	 * @param m2 matrix block the other matrix to take values from
 	 * @param op binary operator the operator that is placed in the middle of m1ret and m2
+	 * @return The result MatrixBlock (same object pointer to m1ret argument)
 	 */
-	public static void bincellOpInPlaceLeft(MatrixBlock m1ret, MatrixBlock m2, BinaryOperator op) {
-		if(m1ret.isInSparseFormat() || m2.isInSparseFormat())
-			throw new NotImplementedException("Not implemented sparse inplace left binaryOperator for matrixBlocks");
-		
-		final double[] retV = m1ret.getDenseBlockValues();
-		final double[] m2V = m2.getDenseBlockValues();
-
-		final int size = m2.getNumColumns() * m2.getNumRows();
-		final ValueFunction f = op.fn;
-		for(int i = 0; i < size; i++ ){
-			retV[i] = f.execute(m2V[i], retV[i]);
+	public static MatrixBlock bincellOpInPlaceLeft(MatrixBlock m1ret, MatrixBlock m2, BinaryOperator op) {
+		final int nRows = m1ret.getNumRows();
+		final int nCols = m1ret.getNumColumns();
+		if(m1ret.isInSparseFormat()){
+			// not doing in place, since the m1ret is in sparse format, and m2 might make it dense.
+			// this is not ideal either, but makes it work
+			LOG.warn("Inefficient bincell op in place left, because output is materialized in new matrix");
+			MatrixBlock right = new MatrixBlock(nRows, nCols, true);
+			right.copyShallow(m1ret);
+			m1ret.cleanupBlock(true, true);
+			bincellOp(m2, right, m1ret, op);
+			return m1ret;
 		}
+
+		// m1ret is dense:
+		final double[] retV = m1ret.getDenseBlockValues();
+		final ValueFunction f = op.fn;
 		
-		if( m1ret.isEmptyBlock(false) )
-			m1ret.examSparsity();
+		if(m2.isInSparseFormat() && op.sparseSafe) {
+			final SparseBlock sb = m2.getSparseBlock();
+			for(int row = 0; row < nRows; row++){
+				if(sb.isEmpty(row)){
+					continue;
+				}
+				final int apos = sb.pos(row);
+				final int alen = sb.size(row) + apos;
+				final int[] aix = sb.indexes(row);
+				final double[] aval = sb.values(row);
+				final int offsetV = row * nCols;
+				for(int j = apos; j < alen; j++){
+					final int idx = offsetV + aix[j];
+					retV[idx] =  f.execute(aval[j], retV[idx]);
+				}
+			}
+		}
+		else if(m2.isInSparseFormat()){
+			throw new NotImplementedException("Not implemented left bincell in place unsafe operations");
+		}
+		else{
+			final double[] m2V = m2.getDenseBlockValues();
+			final int size = nRows * nCols;
+			for(int i = 0; i < size; i++ ){
+				retV[i] = f.execute(m2V[i], retV[i]);
+			}
+			
+			if( m1ret.isEmptyBlock(false) )
+				m1ret.examSparsity();
+		}
+		return m1ret;
 	}
 
 	public static BinaryAccessType getBinaryAccessType(MatrixBlock m1, MatrixBlock m2)

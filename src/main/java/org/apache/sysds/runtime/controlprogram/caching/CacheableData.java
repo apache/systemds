@@ -38,6 +38,7 @@ import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.controlprogram.caching.LazyWriteBuffer.RPolicy;
 import org.apache.sysds.runtime.controlprogram.federated.FederationMap;
 import org.apache.sysds.runtime.controlprogram.federated.FederationMap.FType;
@@ -178,6 +179,10 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 	protected MetaData _metaData = null;
 	
 	protected FederationMap _fedMapping = null;
+
+	protected boolean _compressed = false;
+
+	protected long _compressedSize = -1;
 	
 	/** The name of HDFS file in which the data is backed up. */
 	protected String _hdfsFileName = null; // file name and path
@@ -243,8 +248,10 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 		_gpuObjects = that._gpuObjects;
 		_privacyConstraint = that._privacyConstraint;
 		_dirtyFlag = that._dirtyFlag;
+		_compressed = that._compressed;
+		_compressedSize = that._compressedSize;
+		_fedMapping = that._fedMapping;
 	}
-
 	
 	/**
 	 * Enables or disables the cleanup of the associated 
@@ -320,7 +327,20 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 	public void setMetaData(MetaData md) {
 		_metaData = md;
 	}
+
+	public void setCompressedSize(long size){
+		_compressed = true;
+		_compressedSize = size;
+	}
+
+	public boolean isCompressed(){
+		return _compressed;
+	}
 	
+	public long getCompressedSize(){
+		return _compressedSize;
+	}
+
 	@Override
 	public MetaData getMetaData() {
 		return _metaData;
@@ -602,6 +622,10 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 				Statistics.addCPMemObject(System.identityHashCode(this), getDataSize());
 		}
 		
+		if(newData instanceof CompressedMatrixBlock) {
+			setCompressedSize(newData.getInMemorySize());
+		}
+
 		return ret;
 	}
 	
@@ -1456,10 +1480,13 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 				str.append("null, null");
 			}
 		} catch (Exception ex) {
-			LOG.error(ex);
+			throw new DMLRuntimeException(ex);
 		}
 		str.append(", ");
 		str.append(isDirty() ? "dirty" : "not-dirty");
+
+		if(isCompressed())
+			str.append( ", Compressed " + _compressedSize );
 
 		return str.toString();
 	}

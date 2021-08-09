@@ -1,0 +1,130 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+# 
+#   http://www.apache.org/licenses/LICENSE-2.0
+# 
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+
+# INPUT PARAMETERS:
+# ----------------------------------------------------------------------------
+# NAME                              TYPE      DEFAULT  MEANING
+# ----------------------------------------------------------------------------
+# X                                 Matrix    ---      Matrix of feature vectors we want to predict (X_test)
+# M                                 Matrix    ---      The model created at xgboost
+# learning_rate                     Double    0.3     the learning rate used in the model
+
+# RETURN VALUES
+# ----------------------------------------------------------------------------
+# NAME     TYPE      DEFAULT  MEANING
+# ----------------------------------------------------------------------------
+# P        Matrix    ---     The predictions of the samples using the given xgboost model. (y_prediction)
+# ----------------------------------------------------------------------------
+
+m_xgboostPredictRegression = function(Matrix[Double] X, Matrix[Double] M, Double learning_rate = 0.3)
+  return (Matrix[Double] P)
+{
+  nr_trees = max(M[2,])
+  P = matrix(0, rows=nrow(X), cols=1)
+  initial_prediction = M[6,1]
+  trees_M_offset = calculateTreesOffset(M)
+
+  parfor(entry in 1:nrow(X)) # go though each entry in X and calculate the new prediction
+  {
+    output_values = matrix(0, rows=1, cols=0)
+
+    for(i in 1:nr_trees) # go through all trees
+    {
+      begin_cur_tree = as.scalar(trees_M_offset[i,])
+      if(i == nr_trees)
+        end_cur_tree = ncol(M)
+      else
+        end_cur_tree =  as.scalar(trees_M_offset[i+1,]) - 1
+      output_value = getOutputValueForEntryPredict(X[entry,], M[, begin_cur_tree:end_cur_tree])
+      output_values = cbind(output_values, as.matrix(output_value))
+    }
+    P[entry,] = initial_prediction + learning_rate * sum(output_values)
+  }
+}
+
+#-----------------------------------------------------------------------------------------------------------------------
+# INPUT:    row_vector: nx1 vector, one sample with n features
+# INPUT:    M: The current M matrix with the current tree
+# OUTPUT:   output_value: the prediction for the current sample at the current tree
+getOutputValueForEntryPredict = function(Matrix[Double] row_vector, Matrix[Double] M)
+  return (Double output_value)
+{
+  assert(nrow(row_vector) == 1)
+  current_node = M[,1]
+  assert(as.scalar(current_node[1,]) == 1)
+  cur_node_index = 1 # cant take the node id because its diff to the index
+  while(as.scalar(current_node[5,]) != 0.0) # until leaf
+  {
+    used_feature = as.scalar(current_node[4,])
+    feature_is_scalar = as.scalar(current_node[5,]) == 1
+    if(feature_is_scalar) #SCALAR values
+    {
+      if(as.scalar(row_vector[,used_feature]) < as.scalar(current_node[6,])) # go left
+      {
+        cur_node_index = (cur_node_index + as.scalar(current_node[3,]))
+        current_node = M[,cur_node_index]
+      }
+      else #  go right
+      {
+        cur_node_index = cur_node_index + as.scalar(current_node[3,]) + 1
+        current_node = M[,cur_node_index]
+      }
+    }
+    else # CATEGORICAL values
+    {
+      assert(as.scalar(current_node[5,]) == 2)
+      if(as.scalar(row_vector[,used_feature]) == 1) # go left
+      {
+        cur_node_index = (cur_node_index + as.scalar(current_node[3,]))
+        current_node = M[,cur_node_index]
+      }
+      else # go right
+      {
+        assert(as.scalar(row_vector[,used_feature]) == 0)
+        cur_node_index = cur_node_index + as.scalar(current_node[3,]) + 1
+        current_node = M[,cur_node_index]
+      }
+    }
+  }
+  output_value = as.scalar(current_node[6,])
+}
+
+#-----------------------------------------------------------------------------------------------------------------------
+# calculate the offset in M, where each new tree starts
+# INPUT:    M: The full M matrix calculated at xgboost model creation
+# OUTPUT:   offset_vector: nx1 vector indicates the start index of each tree in M
+calculateTreesOffset = function(Matrix[Double] M) return (Matrix[Double] offset_vector)
+{
+  nr_trees = max(M[2,])
+  last_tree_id = 1
+  curr_tree_id = 1
+  offset_vector = matrix(2,rows=1,cols=1) # start at second index, first index is initial prediction
+  i = 2
+  while(curr_tree_id < nr_trees) {
+    curr_tree_id = as.scalar(M[2,i])
+    if(curr_tree_id > last_tree_id) {
+      offset_vector = rbind(offset_vector, as.matrix(i))
+      last_tree_id = curr_tree_id
+    }
+    i = i + 1
+  }
+}

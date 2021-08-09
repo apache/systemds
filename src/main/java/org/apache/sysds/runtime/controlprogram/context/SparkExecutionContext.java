@@ -19,9 +19,22 @@
 
 package org.apache.sysds.runtime.controlprogram.context;
 
+import java.io.IOException;
+import java.io.OutputStream;
+import java.io.PrintStream;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.concurrent.Future;
+import java.util.stream.Collectors;
+import java.util.stream.LongStream;
+
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaSparkContext;
@@ -49,8 +62,8 @@ import org.apache.sysds.runtime.controlprogram.caching.FrameObject;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.caching.TensorObject;
 import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
-import org.apache.sysds.runtime.data.TensorBlock;
 import org.apache.sysds.runtime.data.SparseBlock;
+import org.apache.sysds.runtime.data.TensorBlock;
 import org.apache.sysds.runtime.data.TensorIndexes;
 import org.apache.sysds.runtime.instructions.cp.Data;
 import org.apache.sysds.runtime.instructions.spark.data.BroadcastObject;
@@ -78,16 +91,8 @@ import org.apache.sysds.runtime.util.HDFSTool;
 import org.apache.sysds.runtime.util.UtilFunctions;
 import org.apache.sysds.utils.MLContextProxy;
 import org.apache.sysds.utils.Statistics;
-import scala.Tuple2;
 
-import java.io.IOException;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.concurrent.Future;
-import java.util.stream.Collectors;
-import java.util.stream.LongStream;
+import scala.Tuple2;
 
 
 public class SparkExecutionContext extends ExecutionContext
@@ -161,12 +166,24 @@ public class SparkExecutionContext extends ExecutionContext
 	}
 
 	public void close() {
-		synchronized( SparkExecutionContext.class ) {
-			if( _spctx != null ) {
-				//stop the spark context if existing
+		synchronized( SparkExecutionContext.class) {
+			if(_spctx != null) {
+				Logger spL = Logger.getLogger("org.apache.spark.network.client.TransportResponseHandler");
+				spL.setLevel(Level.FATAL);
+				OutputStream buff = new OutputStream() {
+					@Override
+					public void write(int b) {
+						// do Nothing
+					}
+				};
+				PrintStream old = System.err;
+				System.setErr(new PrintStream(buff));
+				// stop the spark context if existing
 				_spctx.stop();
-				//make sure stopped context is never used again
+				// make sure stopped context is never used again
 				_spctx = null;
+				System.setErr(old);
+				spL.setLevel(Level.ERROR);
 			}
 		}
 	}
@@ -920,7 +937,7 @@ public class SparkExecutionContext extends ExecutionContext
 			int row_offset = (int)blockRow*mc.getBlocksize();
 			int col_offset = (int)blockCol*mc.getBlocksize();
 			block = mb.slice( row_offset, row_offset+maxRow-1,
-				col_offset, col_offset+maxCol-1, block );
+				col_offset, col_offset+maxCol-1, false, block );
 			//create key-value pair
 			return new Tuple2<>(new MatrixIndexes(blockRow+1, blockCol+1), block);
 		}
@@ -1018,7 +1035,7 @@ public class SparkExecutionContext extends ExecutionContext
 			List<Tuple2<MatrixIndexes,MatrixBlock>> list = rdd.collect();
 
 			if( list.size()>1 )
-				throw new DMLRuntimeException("Expecting no more than one result block.");
+				throw new DMLRuntimeException("Expecting no more than one result block but got: " + list.size());
 			else if( list.size()==1 )
 				out = list.get(0)._2();
 			else //empty (e.g., after ops w/ outputEmpty=false)

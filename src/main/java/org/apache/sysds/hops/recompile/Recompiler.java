@@ -33,6 +33,7 @@ import org.apache.hadoop.fs.Path;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.api.jmlc.JMLCUtils;
 import org.apache.sysds.common.Types.DataType;
+import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.common.Types.OpOp1;
 import org.apache.sysds.common.Types.OpOpDG;
@@ -57,7 +58,6 @@ import org.apache.sysds.hops.codegen.SpoofCompiler;
 import org.apache.sysds.hops.rewrite.HopRewriteUtils;
 import org.apache.sysds.hops.rewrite.ProgramRewriter;
 import org.apache.sysds.lops.Lop;
-import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.lops.compile.Dag;
 import org.apache.sysds.parser.DMLProgram;
 import org.apache.sysds.parser.DataExpression;
@@ -114,8 +114,9 @@ import org.apache.sysds.utils.Explain.ExplainType;
  * 
  * 
  */
-public class Recompiler 
-{
+public class Recompiler {
+	// private static final Log LOG =  LogFactory.getLog(Recompiler.class.getName());
+
 	//Max threshold for in-memory reblock of text input [in bytes]
 	//reason: single-threaded text read at 20MB/s, 1GB input -> 50s (should exploit parallelism)
 	//note that we scale this threshold up by the degree of available parallelism
@@ -1323,6 +1324,10 @@ public class Recompiler
 					d.setDim1(mo.getNumRows());
 					d.setDim2(mo.getNumColumns());
 					d.setNnz(mo.getNnz());
+					if(mo.isCompressed()){
+						d.setCompressedSize(mo.getCompressedSize());
+						d.setCompressedOutput(true);	
+					}
 				}
 				else if( dat instanceof FrameObject ) {
 					FrameObject fo = (FrameObject) dat;
@@ -1340,6 +1345,10 @@ public class Recompiler
 					d.setDim1(to.getNumRows());
 					d.setDim2(to.getNumColumns());
 					d.setNnz(to.getNnz());
+				}
+				if( dat instanceof CacheableData<?> ) {
+					CacheableData<?> cd = (CacheableData<?>) dat;
+					d.setOnlyRDD(!cd.isCached(true) &&cd.getRDDHandle()!=null);
 				}
 			}
 		}

@@ -111,7 +111,22 @@ public class BlocksizeTest extends AutomatedTestBase
 	public void testSpark2000() {
 		runBlocksizeTest(1000, 2000, ExecMode.SPARK);
 	}
-
+	
+	@Test
+	public void testSingleNode2xRowsCols() {
+		runBlocksizeTest(1000, 7000, ExecMode.SINGLE_NODE);
+	}
+	
+	@Test
+	public void testHybrid2xRowsCols() {
+		runBlocksizeTest(1000, 7000, ExecMode.HYBRID);
+	}
+	
+	@Test
+	public void testSpark2xRowsCols() {
+		//test for invalid shuffle-free reblock
+		runBlocksizeTest(1000, 7000, ExecMode.SPARK);
+	}
 	
 	private void runBlocksizeTest(int inBlksize, int outBlksize, ExecMode mode)
 	{
@@ -129,16 +144,16 @@ public class BlocksizeTest extends AutomatedTestBase
 			//generate actual dataset 
 			double[][] X = getRandomMatrix(rows, cols, -1.0, 1.0, sparsity, 7); 
 			MatrixBlock mb = DataConverter.convertToMatrixBlock(X);
-			MatrixCharacteristics mc = new MatrixCharacteristics(rows, cols, inBlksize, inBlksize);
+			MatrixCharacteristics mc = new MatrixCharacteristics(rows, cols, inBlksize);
 			DataConverter.writeMatrixToHDFS(mb, input("X"), FileFormat.BINARY, mc);
 			HDFSTool.writeMetaDataFile(input("X.mtd"), ValueType.FP64, mc, FileFormat.BINARY);
 			
 			runTest(true, false, null, -1); //mult 7
 			
 			//compare matrices 
-			checkDMLMetaDataFile("X", new MatrixCharacteristics(rows, cols, outBlksize, outBlksize));
+			checkDMLMetaDataFile("X", new MatrixCharacteristics(rows, cols, outBlksize), true);
 			MatrixBlock mb2 = DataConverter.readMatrixFromHDFS(
-				output("X"), FileFormat.BINARY, rows, cols, outBlksize, outBlksize);
+				output("X"), FileFormat.BINARY, rows, cols, outBlksize, -1);
 			for( int i=0; i<mb.getNumRows(); i++ )
 				for( int j=0; j<mb.getNumColumns(); j++ ) {
 					double val1 = mb.quickGetValue(i, j) * 7;

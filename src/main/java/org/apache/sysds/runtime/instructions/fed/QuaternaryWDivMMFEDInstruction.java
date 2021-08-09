@@ -161,7 +161,7 @@ public class QuaternaryWDivMMFEDInstruction extends QuaternaryFEDInstruction
 
 			FederatedRequest frC = null;
 			if((wdivmm_type.isLeft() && X.isFederated(FType.ROW))
-				|| (wdivmm_type.isRight() && X.isFederated(FType.COL))) { // output aggregated locally
+				|| (wdivmm_type.isRight() && X.isFederated(FType.COL))) { // output needs local aggregation
 				frGet = new FederatedRequest(RequestType.GET_VAR, frComp.getID());
 				// cleanup the federated request of the instruction call
 				frC = fedMap.cleanup(getTID(), frComp.getID());
@@ -177,7 +177,7 @@ public class QuaternaryWDivMMFEDInstruction extends QuaternaryFEDInstruction
 					getTID(), true, frSliced.toArray(new FederatedRequest[0][]), frAll);
 
 			if((wdivmm_type.isLeft() && X.isFederated(FType.ROW))
-				|| (wdivmm_type.isRight() && X.isFederated(FType.COL))) {
+				|| (wdivmm_type.isRight() && X.isFederated(FType.COL))) { // local aggregation
 				// aggregate partial results from federated responses
 				AggregateUnaryOperator aop = InstructionUtils.parseBasicAggregateUnaryOperator("uak+");
 				ec.setMatrixOutput(output.getName(), FederationUtils.aggMatrix(aop, response, fedMap));
@@ -207,15 +207,18 @@ public class QuaternaryWDivMMFEDInstruction extends QuaternaryFEDInstruction
 		long rows = -1;
 		long cols = -1;
 		if(wdivmm_type.isBasic()) {
+			// BASIC: preserve dimensions of X
 			rows = X.getNumRows();
 			cols = X.getNumColumns();
 		}
 		else if(wdivmm_type.isLeft()) {
+			// LEFT: nrows of transposed X, ncols of U
 			rows = X.getNumColumns();
 			cols = U.getNumColumns();
 			outFedMap = modifyFedRanges(outFedMap.transpose(), cols, 1);
 		}
 		else if(wdivmm_type.isRight()) {
+			// RIGHT: nrows of X, ncols of V
 			rows = X.getNumRows();
 			cols = V.getNumColumns();
 			outFedMap = modifyFedRanges(outFedMap, cols, 1);
@@ -226,11 +229,11 @@ public class QuaternaryWDivMMFEDInstruction extends QuaternaryFEDInstruction
 
 	/**
 	 * Takes the federated mapping and sets one dimension of all federated ranges
-	 * to the value specified by dim.
+	 * to the specified value.
 	 *
 	 * @param fedMap     the original federated mapping
 	 * @param value      long value for setting the dimension
-	 * @param dim        indicates if the row or column dimension should be set to dim
+	 * @param dim        indicates if the row (0) or column (1) dimension should be set to value
 	 * @return FederationMap with the modified federated ranges
 	 */
 	private static FederationMap modifyFedRanges(FederationMap fedMap, long value, int dim) {

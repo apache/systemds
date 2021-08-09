@@ -1238,6 +1238,10 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 		return (_cacheStatus == CacheStatus.MODIFY);
 	}
 	
+	public boolean isPendingRDDOps() {
+		return isEmpty(true) && _data == null && (_rddHandle != null && _rddHandle.hasBackReference());
+	}
+	
 	protected void setEmpty() {
 		_cacheStatus = CacheStatus.EMPTY;
 	}

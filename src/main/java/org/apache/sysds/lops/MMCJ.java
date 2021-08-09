@@ -71,6 +71,11 @@ public class MMCJ extends Lop
 		_outputEmptyBlocks = outputEmptyBlocks;
 		_aggtype = aggtype;
 	}
+
+	@Override
+	public SparkAggType getAggType() {
+		return _aggtype;
+	}
 	
 	@Override
 	public String toString() {

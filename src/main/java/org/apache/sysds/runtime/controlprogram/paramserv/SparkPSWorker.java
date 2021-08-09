@@ -53,8 +53,8 @@ public class SparkPSWorker extends LocalPSWorker implements VoidFunction<Tuple2<
 	private final LongAccumulator _aRPC; // accumulator for rpc request
 	private final LongAccumulator _nBatches; //number of executed batches
 	private final LongAccumulator _nEpochs; //number of executed epoches
-	
-	public SparkPSWorker(String updFunc, String aggFunc, Statement.PSFrequency freq, int epochs, long batchSize, String program, HashMap<String, byte[]> clsMap, SparkConf conf, int port, LongAccumulator aSetup, LongAccumulator aWorker, LongAccumulator aUpdate, LongAccumulator aIndex, LongAccumulator aGrad, LongAccumulator aRPC, LongAccumulator aBatches, LongAccumulator aEpochs) {
+
+	public SparkPSWorker(String updFunc, String aggFunc, Statement.PSFrequency freq, int epochs, long batchSize, String program, HashMap<String, byte[]> clsMap, SparkConf conf, int port, LongAccumulator aSetup, LongAccumulator aWorker, LongAccumulator aUpdate, LongAccumulator aIndex, LongAccumulator aGrad, LongAccumulator aRPC, LongAccumulator aBatches, LongAccumulator aEpochs, int nbatches) {
 		_updFunc = updFunc;
 		_aggFunc = aggFunc;
 		_freq = freq;
@@ -72,13 +72,14 @@ public class SparkPSWorker extends LocalPSWorker implements VoidFunction<Tuple2<
 		_aRPC = aRPC;
 		_nBatches = aBatches;
 		_nEpochs = aEpochs;
+		_nbatches = nbatches;
 	}
 
 	@Override
 	public String getWorkerName() {
 		return String.format("Spark worker_%d", _workerID);
 	}
-	
+
 	@Override
 	public void call(Tuple2<Integer, Tuple2<MatrixBlock, MatrixBlock>> input) throws Exception {
 		Timing tSetup = new Timing(true);
@@ -116,13 +117,13 @@ public class SparkPSWorker extends LocalPSWorker implements VoidFunction<Tuple2<
 		setFeatures(ParamservUtils.newMatrixObject(input._2._1, false));
 		setLabels(ParamservUtils.newMatrixObject(input._2._2, false));
 	}
-	
+
 
 	@Override
 	protected void incWorkerNumber() {
 		_aWorker.add(1);
 	}
-	
+
 	@Override
 	protected void accLocalModelUpdateTime(Timing time) {
 		if( time != null )
@@ -140,17 +141,17 @@ public class SparkPSWorker extends LocalPSWorker implements VoidFunction<Tuple2<
 		if( time != null )
 			_aGrad.add((long) time.stop());
 	}
-	
+
 	@Override
 	protected void accNumEpochs(int n) {
 		_nEpochs.add(n);
 	}
-	
+
 	@Override
 	protected void accNumBatches(int n) {
 		_nBatches.add(n);
 	}
-	
+
 	private void accSetupTime(Timing time) {
 		if( time != null )
 			_aSetup.add((long) time.stop());

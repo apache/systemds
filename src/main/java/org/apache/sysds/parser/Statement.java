@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -27,26 +27,26 @@ import org.apache.commons.logging.LogFactory;
 public abstract class Statement implements ParseInfo
 {
 	protected static final Log LOG = LogFactory.getLog(Statement.class.getName());
-	
+
 	public static final String OUTPUTSTATEMENT = "WRITE";
-	
+
 	// parameter names for seq()
-	public static final String SEQ_FROM = "from"; 
+	public static final String SEQ_FROM = "from";
 	public static final String SEQ_TO   = "to";
 	public static final String SEQ_INCR	= "incr";
-	
+
 	public static final String SOURCE  	= "source";
 	public static final String SETWD 	= "setwd";
 
 	public static final String MATRIX_DATA_TYPE = "matrix";
 	public static final String FRAME_DATA_TYPE = "frame";
 	public static final String SCALAR_DATA_TYPE = "scalar";
-	
+
 	public static final String DOUBLE_VALUE_TYPE = "double";
 	public static final String BOOLEAN_VALUE_TYPE = "boolean";
 	public static final String INT_VALUE_TYPE = "int";
 	public static final String STRING_VALUE_TYPE = "string";
-	
+
 	// String constants related to Grouped Aggregate parameters
 	public static final String GAGG_TARGET  = "target";
 	public static final String GAGG_GROUPS  = "groups";
@@ -72,6 +72,7 @@ public abstract class Statement implements ParseInfo
 	public static final String PS_MODE = "mode";
 	public static final String PS_GRADIENTS = "gradients";
 	public static final String PS_SEED = "seed";
+	public static final String PS_NBATCHES = "nbatches";
 	public enum PSModeType {
 		FEDERATED, LOCAL, REMOTE_SPARK
 	}
@@ -87,7 +88,7 @@ public abstract class Statement implements ParseInfo
 	}
 	public static final String PS_FREQUENCY = "freq";
 	public enum PSFrequency {
-		BATCH, EPOCH
+		BATCH, EPOCH, NBATCHES
 	}
 	public static final String PS_FED_WEIGHTING = "weighting";
 	public static final String PS_FED_RUNTIME_BALANCING = "runtime_balancing";
@@ -122,34 +123,34 @@ public abstract class Statement implements ParseInfo
 
 
 	public abstract boolean controlStatement();
-	
+
 	public abstract VariableSet variablesRead();
 	public abstract VariableSet variablesUpdated();
- 
+
 	public abstract void initializeforwardLV(VariableSet activeIn);
 	public abstract VariableSet initializebackwardLV(VariableSet lo);
-	
+
 	public abstract Statement rewriteStatement(String prefix);
-	
+
 	// Used only insider python parser to allow for ignoring newline logic
 	private boolean isEmptyNewLineStatement = false;
 	public boolean isEmptyNewLineStatement() {
 		return isEmptyNewLineStatement;
-	}	
+	}
 	public void setEmptyNewLineStatement(boolean isEmptyNewLineStatement) {
 		this.isEmptyNewLineStatement = isEmptyNewLineStatement;
 	}
-	
+
 	///////////////////////////////////////////////////////////////////////////
 	// store exception info + position information for statements
 	///////////////////////////////////////////////////////////////////////////
-	
-	
+
+
 	private String _filename;
 	private int _beginLine, _beginColumn;
 	private int _endLine,   _endColumn;
 	private String _text;
-	
+
 	@Override
 	public void setFilename(String passed)  { _filename = passed;	}
 	@Override
@@ -175,10 +176,10 @@ public abstract class Statement implements ParseInfo
 		setEndColumn(ctx.stop.getCharPositionInLine());
 		// preserve whitespace if possible
 		if ((ctx.start != null) && (ctx.stop != null) && (ctx.start.getStartIndex() != -1)
-				&& (ctx.stop.getStopIndex() != -1) && (ctx.start.getStartIndex() <= ctx.stop.getStopIndex())
-				&& (ctx.start.getInputStream() != null)) {
+			&& (ctx.stop.getStopIndex() != -1) && (ctx.start.getStartIndex() <= ctx.stop.getStopIndex())
+			&& (ctx.start.getInputStream() != null)) {
 			String text = ctx.start.getInputStream()
-					.getText(Interval.of(ctx.start.getStartIndex(), ctx.stop.getStopIndex()));
+				.getText(Interval.of(ctx.start.getStartIndex(), ctx.stop.getStopIndex()));
 			if (text != null) {
 				text = text.trim();
 			}

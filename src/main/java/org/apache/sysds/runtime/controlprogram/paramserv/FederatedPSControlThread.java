@@ -77,6 +77,7 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 	// runtime balancing
 	private final PSRuntimeBalancing _runtimeBalancing;
 	private int _numBatchesPerEpoch;
+	private int _numBatchesPerNbatch ;
 	private int _possibleBatchesPerLocalEpoch;
 	private final boolean _weighting;
 	private double _weightingFactor = 1;
@@ -84,13 +85,14 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 
 	public FederatedPSControlThread(int workerID, String updFunc, Statement.PSFrequency freq,
 		PSRuntimeBalancing runtimeBalancing, boolean weighting, int epochs, long batchSize,
-		int numBatchesPerGlobalEpoch, ExecutionContext ec, ParamServer ps)
+		int numBatchesPerGlobalEpoch, ExecutionContext ec, ParamServer ps, int nbatches)
 	{
-		super(workerID, updFunc, freq, epochs, batchSize, ec, ps);
+		super(workerID, updFunc, freq, epochs, batchSize, ec, ps, nbatches);
 
 		_numBatchesPerEpoch = numBatchesPerGlobalEpoch;
 		_runtimeBalancing = runtimeBalancing;
 		_weighting = weighting;
+		_numBatchesPerNbatch = nbatches;
 		// generate the ID for the model
 		_modelVarID = FederationUtils.getNextFedDataID();
 	}
@@ -150,7 +152,7 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 			aggProgramBlock.setInstructions(new ArrayList<>(Collections.singletonList(_ps.getAggInst())));
 			pbs.add(aggProgramBlock);
 		}
-		
+
 		programSerialized = InstructionUtils.concatStrings(
 			PROG_BEGIN, NEWLINE,
 			ProgramConverter.serializeProgram(_ec.getProgram(), pbs, new HashMap<>()),
@@ -167,7 +169,8 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 					_inst.getFunctionName(),
 					_ps.getAggInst().getFunctionName(),
 					_ec.getListObject("hyperparams"),
-					_modelVarID
+					_modelVarID,
+					_nbatches
 				)
 		));
 
@@ -195,10 +198,11 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 		private final String _aggregationFunctionName;
 		private final ListObject _hyperParams;
 		private final long _modelVarID;
+		private final int _nbatches;
 
 		protected SetupFederatedWorker(long batchSize, long dataSize, int possibleBatchesPerLocalEpoch,
 			String programString, String namespace, String gradientsFunctionName, String aggregationFunctionName,
-			ListObject hyperParams, long modelVarID)
+			ListObject hyperParams, long modelVarID, int nbatches)
 		{
 			super(new long[]{});
 			_batchSize = batchSize;
@@ -210,6 +214,7 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 			_aggregationFunctionName = aggregationFunctionName;
 			_hyperParams = hyperParams;
 			_modelVarID = modelVarID;
+			_nbatches = nbatches;
 		}
 
 		@Override
@@ -226,6 +231,7 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 			ec.setVariable(Statement.PS_FED_AGGREGATION_FNAME, new StringObject(_aggregationFunctionName));
 			ec.setVariable(Statement.PS_HYPER_PARAMS, _hyperParams);
 			ec.setVariable(Statement.PS_FED_MODEL_VARID, new IntObject(_modelVarID));
+			ec.setVariable(Statement.PS_NBATCHES, new IntObject(_nbatches));
 
 			return new FederatedResponse(FederatedResponse.ResponseType.SUCCESS);
 		}
@@ -277,7 +283,7 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 			ec.removeVariable(Statement.PS_FED_AGGREGATION_FNAME);
 			ec.removeVariable(Statement.PS_FED_MODEL_VARID);
 			ParamservUtils.cleanupListObject(ec, Statement.PS_HYPER_PARAMS);
-			
+
 			return new FederatedResponse(FederatedResponse.ResponseType.SUCCESS);
 		}
 
@@ -300,9 +306,9 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 				case BATCH:
 					computeWithBatchUpdates();
 					break;
-				/*case NBATCH:
+				case NBATCHES:
 					computeWithNBatchUpdates();
-					break; */
+					break;
 				case EPOCH:
 					computeWithEpochUpdates();
 					break;
@@ -344,7 +350,7 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 	}
 
 	/**
-	 * Computes all epochs and updates after each batch 
+	 * Computes all epochs and updates after each batch
 	 */
 	protected void computeWithBatchUpdates() {
 		for (int epochCounter = 0; epochCounter < _epochs; epochCounter++) {
@@ -365,7 +371,20 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 	 * Computes all epochs and updates after N batches
 	 */
 	protected void computeWithNBatchUpdates() {
-		throw new NotImplementedException();
+		int  numSetsPerEpocNbatches = (int) Math.ceil(_batchSize / _numBatchesPerNbatch);
+		for (int epochCounter = 0; epochCounter < _epochs; epochCounter++) {
+			int currentLocalBatchNumber = (_cycleStartAt0) ? 0 : _numBatchesPerEpoch * epochCounter % _possibleBatchesPerLocalEpoch;
+
+			for (int batchCounter = 0; batchCounter < numSetsPerEpocNbatches; batchCounter++) {
+				int localStartBatchNum = getNextLocalBatchNum(currentLocalBatchNumber, numSetsPerEpocNbatches);
+				currentLocalBatchNumber = currentLocalBatchNumber + _numBatchesPerNbatch;
+				ListObject model = pullModel();
+				ListObject gradients = computeGradientsForNBatches(model, _numBatchesPerNbatch, localStartBatchNum);
+				weightAndPushGradients(gradients);
+				ParamservUtils.cleanupListObject(model);
+				ParamservUtils.cleanupListObject(gradients);
+			}
+		}
 	}
 
 	/**

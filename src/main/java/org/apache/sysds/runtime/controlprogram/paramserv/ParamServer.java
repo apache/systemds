@@ -47,19 +47,14 @@ import org.apache.sysds.runtime.instructions.cp.FunctionCallCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.ListObject;
 import org.apache.sysds.utils.Statistics;
 
-public abstract class ParamServer 
+public abstract class ParamServer
 {
 	protected static final Log LOG = LogFactory.getLog(ParamServer.class.getName());
 	protected static final boolean ACCRUE_BSP_GRADIENTS = true;
-	
+
 	// worker input queues and global model
 	protected Map<Integer, BlockingQueue<ListObject>> _modelMap;
 	private ListObject _model;
-
-
-
-
-
 
 	//aggregation service
 	protected ExecutionContext _ec;
@@ -81,12 +76,13 @@ public abstract class ParamServer
 	private int _numBatchesPerEpoch;
 
 	private int _numWorkers;
+	private int _nbatches;
 
 	protected ParamServer() {}
 
 	protected ParamServer(ListObject model, String aggFunc, Statement.PSUpdateType updateType,
 		Statement.PSFrequency freq, ExecutionContext ec, int workerNum, String valFunc,
-		int numBatchesPerEpoch, MatrixObject valFeatures, MatrixObject valLabels)
+		int numBatchesPerEpoch, MatrixObject valFeatures, MatrixObject valLabels, int nbatches)
 	{
 		// init worker queues and global model
 		_modelMap = new HashMap<>(workerNum);
@@ -95,7 +91,7 @@ public abstract class ParamServer
 			_modelMap.put(i, new ArrayBlockingQueue<>(1));
 		});
 		_model = model;
-		
+
 		// init aggregation service
 		_ec = ec;
 		_updateType = updateType;
@@ -108,7 +104,8 @@ public abstract class ParamServer
 		}
 		_numBatchesPerEpoch = numBatchesPerEpoch;
 		_numWorkers = workerNum;
-		
+		_nbatches = nbatches;
+
 		// broadcast initial model
 		broadcastModel(true);
 	}
@@ -213,7 +210,8 @@ public abstract class ParamServer
 						// BSP epoch case every time
 						if (_numBatchesPerEpoch != -1 &&
 							(_freq == Statement.PSFrequency.EPOCH ||
-							(_freq == Statement.PSFrequency.BATCH && ++_syncCounter % _numBatchesPerEpoch == 0))) {
+							(_freq == Statement.PSFrequency.BATCH && ++_syncCounter % _numBatchesPerEpoch == 0))||
+							(_freq == Statement.PSFrequency.NBATCHES && _numBatchesPerEpoch % _nbatches == 0)) {
 
 							if(LOG.isInfoEnabled())
 								LOG.info("[+] PARAMSERV: completed EPOCH " + _epochCounter);
@@ -226,7 +224,7 @@ public abstract class ParamServer
 							_epochCounter++;
 							_syncCounter = 0;
 						}
-						
+
 						// Broadcast the updated model
 						resetFinishedStates();
 						broadcastModel(true);
@@ -241,7 +239,8 @@ public abstract class ParamServer
 					// the number of workers, creating "Pseudo Epochs"
 					if (_numBatchesPerEpoch != -1 &&
 						((_freq == Statement.PSFrequency.EPOCH && ((float) ++_syncCounter % _numWorkers) == 0) ||
-						(_freq == Statement.PSFrequency.BATCH && ((float) ++_syncCounter / _numWorkers) % (float) _numBatchesPerEpoch == 0))) {
+						(_freq == Statement.PSFrequency.BATCH && ((float) ++_syncCounter / _numWorkers) % (float) _numBatchesPerEpoch == 0)) ||
+						(_freq == Statement.PSFrequency.NBATCHES && _numBatchesPerEpoch % _nbatches == 0)) {
 
 						if(LOG.isInfoEnabled())
 							LOG.info("[+] PARAMSERV: completed PSEUDO EPOCH (ASP) " + _epochCounter);
@@ -261,7 +260,7 @@ public abstract class ParamServer
 				default:
 					throw new DMLRuntimeException("Unsupported update: " + _updateType.name());
 			}
-		} 
+		}
 		catch (Exception e) {
 			throw new DMLRuntimeException("Aggregation or validation service failed: ", e);
 		}
@@ -298,7 +297,7 @@ public abstract class ParamServer
 		ParamservUtils.cleanupListObject(ec, Statement.PS_GRADIENTS);
 		return newModel;
 	}
-	
+
 	private boolean allFinished() {
 		return !ArrayUtils.contains(_finishedStates, false);
 	}

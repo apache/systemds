@@ -204,24 +204,14 @@ public class FederationMap {
 
 		id = FederationUtils.getNextFedDataID();
 		CacheBlock cb = data.acquireReadAndRelease();
-		List<Pair<FederatedRange, FederatedData>> newFedMap = new ArrayList<>();
-		FederatedRange fr = new FederatedRange(new long[] {0, 0}, new long[] {cb.getNumRows(), cb.getNumColumns()});
 
-		// put new broadcasts and create new federation map
+		// put new broadcasts
 		for(Pair<FederatedRange, FederatedData> e : _fedMap) {
 			FederationUtils._broadcastMap.putIfAbsent(Triple.of(data.getUniqueID(), FType.BROADCAST, e.getValue().getAddress()),
 				Triple.of(id, false, false));
 			FederationUtils._broadcastMap.putIfAbsent(Triple.of(oldId, _type, e.getValue().getAddress()),
 				Triple.of(_ID, false, true));
-
-			newFedMap.add(Pair.of(fr, new FederatedData(data.getDataType(), e.getRight().getAddress(), data.getFileName())));
 		}
-
-		// set new federation map
-//		if(!data.isFederated()) {
-//			data.setFedMapping(new FederationMap(id, newFedMap, FType.BROADCAST));
-//			data.getDataCharacteristics().setDimension(cb.getNumRows(), cb.getNumColumns());
-//		}
 
 		return new FederatedRequest(RequestType.PUT_VAR, id, cb, data.getUniqueID(), FType.BROADCAST, _ID, oldId, _type);
 	}

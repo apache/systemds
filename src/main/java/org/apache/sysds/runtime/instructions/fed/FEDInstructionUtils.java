@@ -31,7 +31,6 @@ import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.caching.TensorObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.federated.FederationMap.FType;
-import org.apache.sysds.runtime.controlprogram.federated.FederationUtils;
 import org.apache.sysds.runtime.instructions.Instruction;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.AggregateBinaryCPInstruction;
@@ -95,7 +94,7 @@ public class FEDInstructionUtils {
 		FEDInstruction fedinst = null;
 		if (inst instanceof AggregateBinaryCPInstruction) {
 			AggregateBinaryCPInstruction instruction = (AggregateBinaryCPInstruction) inst;
-			if( instruction.input1.isMatrix() && instruction.input2.isMatrix()) {
+			if( instruction.input1.isMatrix() && instruction.input2.isMatrix() ) {
 				MatrixObject mo1 = ec.getMatrixObject(instruction.input1);
 				MatrixObject mo2 = ec.getMatrixObject(instruction.input2);
 				if (mo1.isFederated(FType.ROW) || mo2.isFederated(FType.ROW) || mo1.isFederated(FType.COL)) {
@@ -153,10 +152,8 @@ public class FEDInstructionUtils {
 		}
 		else if (inst instanceof BinaryCPInstruction) {
 			BinaryCPInstruction instruction = (BinaryCPInstruction) inst;
-			if( (instruction.input1.isMatrix() && ec.getMatrixObject(instruction.input1).isFederated()
-				&& !ec.getMatrixObject(instruction.input1).isFederated(FType.BROADCAST))
-				|| (instruction.input2.isMatrix() && ec.getMatrixObject(instruction.input2).isFederated()
-				&& !ec.getMatrixObject(instruction.input2).isFederated(FType.BROADCAST))) {
+			if( (instruction.input1.isMatrix() && ec.getMatrixObject(instruction.input1).isFederated())
+				|| (instruction.input2.isMatrix() && ec.getMatrixObject(instruction.input2).isFederated()) ) {
 				if(instruction.getOpcode().equals("append") )
 					fedinst = AppendFEDInstruction.parseInstruction(inst.getInstructionString());
 				else if(instruction.getOpcode().equals("qpick"))
@@ -197,12 +194,9 @@ public class FEDInstructionUtils {
 		}
 		else if(inst instanceof TernaryCPInstruction) {
 			TernaryCPInstruction tinst = (TernaryCPInstruction) inst;
-			if((tinst.input1.isMatrix() && ec.getCacheableData(tinst.input1).isFederated()
-				&& !ec.getCacheableData(tinst.input1).isFederated(FType.BROADCAST))
-				|| (tinst.input2.isMatrix() && ec.getCacheableData(tinst.input2).isFederated()
-				&& !ec.getCacheableData(tinst.input2).isFederated(FType.BROADCAST))
-				|| (tinst.input3.isMatrix() && ec.getCacheableData(tinst.input3).isFederated()
-				&& !ec.getCacheableData(tinst.input3).isFederated(FType.BROADCAST))) {
+			if((tinst.input1.isMatrix() && ec.getCacheableData(tinst.input1).isFederated())
+				|| (tinst.input2.isMatrix() && ec.getCacheableData(tinst.input2).isFederated())
+				|| (tinst.input3.isMatrix() && ec.getCacheableData(tinst.input3).isFederated())) {
 				fedinst = TernaryFEDInstruction.parseInstruction(tinst.getInstructionString());
 			}
 		}

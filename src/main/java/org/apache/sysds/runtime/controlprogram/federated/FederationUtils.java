@@ -36,7 +36,6 @@ import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.lops.Lop;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
-import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest.RequestType;
 import org.apache.sysds.runtime.controlprogram.parfor.util.IDSequence;
 import org.apache.sysds.runtime.functionobjects.Builtin;
@@ -84,24 +83,6 @@ public class FederationUtils {
 					itr.remove();
 			}
 		}
-	}
-
-	public static void checkFedMapType(MatrixObject mo) {
-		FederationMap fedMap = mo.getFedMapping();
-		FederationMap.FType oldType = fedMap.getType();
-
-		boolean isRow = true;
-		long prev = 0;
-		for(FederatedRange e : fedMap.getFederatedRanges()) {
-			if(e.getBeginDims()[0] < e.getEndDims()[0] && e.getBeginDims()[0] == prev && isRow)
-				prev = e.getEndDims()[0];
-			else
-				isRow = false;
-		}
-		if(isRow && oldType.getPartType() == FederationMap.FPartitioning.COL)
-			fedMap.setType(FederationMap.FType.ROW);
-		else if(!isRow && oldType.getPartType() == FederationMap.FPartitioning.ROW)
-			fedMap.setType(FederationMap.FType.COL);
 	}
 
 	//TODO remove rmFedOutFlag, once all federated instructions have this flag, then unconditionally remove

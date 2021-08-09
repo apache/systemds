@@ -21,9 +21,7 @@
 # Returns Euclidian distance matrix (distances between N n-dimensional points)
 
 m_dist = function(Matrix[Double] X) return (Matrix[Double] Y) {
-    G = X %*% t(X);
-    I = matrix(1, rows = nrow(G), cols = ncol(G));
-    Y = -2 * (G) + (diag(G) * I) + (I * t(diag(G)));
-    Y = sqrt(Y);
-    Y = replace(target = Y, pattern=0/0, replacement = 0);
+  G = X %*% t(X);
+  Y = sqrt(-2 * G + outer(diag(G), t(diag(G)), "+"));
+  Y = replace(target = Y, pattern=0/0, replacement = 0);
 }

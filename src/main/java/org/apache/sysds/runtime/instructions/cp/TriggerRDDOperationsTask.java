@@ -33,8 +33,9 @@ public class TriggerRDDOperationsTask implements Runnable {
 	@Override
 	public void run() {
 		boolean prefetched = false;
-		synchronized (_prefetchMO) { //TODO: not needed. Think.
-			//TODO: handle non-matrix objects
+		synchronized (_prefetchMO) {
+			// Having this check if operations are pending inside the 
+			// critical section safeguards against concurrent rmVar.
 			if (_prefetchMO.isPendingRDDOps()) {
 				// Execute and bring the result to local
 				_prefetchMO.acquireReadAndRelease();

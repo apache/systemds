@@ -55,11 +55,14 @@ import scala.Tuple2;
 
 import java.util.Iterator;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
 
 public class SparkUtils 
 {	
+	public static ExecutorService triggerRDDThread = null;
+
 	//internal configuration
 	public static final StorageLevel DEFAULT_TMP = Checkpoint.DEFAULT_STORAGE_LEVEL;
 

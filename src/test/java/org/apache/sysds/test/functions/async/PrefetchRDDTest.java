@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.apache.sysds.test.functions.lineage;
+package org.apache.sysds.test.functions.async;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -37,7 +37,7 @@ import org.junit.Test;
 
 public class PrefetchRDDTest extends AutomatedTestBase {
 	
-	protected static final String TEST_DIR = "functions/lineage/";
+	protected static final String TEST_DIR = "functions/async/";
 	protected static final String TEST_NAME = "PrefetchRDD";
 	protected static final int TEST_VARIANTS = 3;
 	protected static String TEST_CLASS_DIR = TEST_DIR + PrefetchRDDTest.class.getSimpleName() + "/";
@@ -87,20 +87,17 @@ public class PrefetchRDDTest extends AutomatedTestBase {
 			List<String> proArgs = new ArrayList<>();
 			
 			proArgs.add("-stats");
-			proArgs.add("-explain");
 			proArgs.add("-args");
 			proArgs.add(output("R"));
 			programArgs = proArgs.toArray(new String[proArgs.size()]);
 
 			runTest(true, EXCEPTION_NOT_EXPECTED, null, -1);
 			HashMap<MatrixValue.CellIndex, Double> R = readDMLScalarFromOutputDir("R");
-			//HashMap<MatrixValue.CellIndex, Double> R = readDMLMatrixFromOutputDir("R");
 
 			OptimizerUtils.ASYNC_TRIGGER_RDD_OPERATIONS = true;
 			runTest(true, EXCEPTION_NOT_EXPECTED, null, -1);
 			OptimizerUtils.ASYNC_TRIGGER_RDD_OPERATIONS = false;
 			HashMap<MatrixValue.CellIndex, Double> R_pf = readDMLScalarFromOutputDir("R");
-			//HashMap<MatrixValue.CellIndex, Double> R_pf = readDMLMatrixFromOutputDir("R");
 
 			//compare matrices
 			TestUtils.compareMatrices(R, R_pf, 1e-6, "Origin", "Reused");

@@ -274,6 +274,11 @@ public abstract class Lop
 		inputs.add(op);
 	}
 	
+	/**
+	 * Method to replace an input to a Lop
+	 * @param oldInp old input Lop
+	 * @param newInp new input Lop
+	 */
 	public void replaceInput(Lop oldInp, Lop newInp) {
 		if (inputs.contains(oldInp)) {
 			int index = inputs.indexOf(oldInp);
@@ -291,6 +296,10 @@ public abstract class Lop
 		outputs.add(op);
 	}
 	
+	/**
+	 * Method to remove output from Lop
+	 * @param op Lop to remove
+	 */
 	public void removeOutput(Lop op) {
 		outputs.remove(op);
 	}
@@ -407,6 +416,11 @@ public abstract class Lop
 		return outParams;
 	}
 	
+	/**
+	 * Method to get aggregate type if applicable.
+	 * This method is overridden by the Lops with aggregate types (e.g. MapMult)
+	 * @return SparkAggType
+	 */
 	public SparkAggType getAggType() {
 		return SparkAggType.NONE;
 	}
@@ -580,6 +594,11 @@ public abstract class Lop
 				 || !isDataExecLocation() );
 	}
 	
+	/**
+	 * Function that determines if all the outputs of a LOP are of CP execution types
+	 * 
+	 * @return true if all outputs are CP
+	 */
 	public boolean isAllOutputsCP() {
 		if (outputs.isEmpty())
 			return false;
@@ -593,7 +612,7 @@ public abstract class Lop
 		}
 		return outCP;
 	}
-	
+
 	/**
 	 * Method to prepare instruction operand with given parameters.
 	 * 

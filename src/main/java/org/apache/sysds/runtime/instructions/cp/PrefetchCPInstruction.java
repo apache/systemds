@@ -21,9 +21,9 @@ package org.apache.sysds.runtime.instructions.cp;
 
 import java.util.concurrent.Executors;
 
-import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
+import org.apache.sysds.runtime.instructions.spark.utils.SparkUtils;
 import org.apache.sysds.runtime.matrix.operators.Operator;
 
 public class PrefetchCPInstruction extends UnaryCPInstruction {
@@ -42,13 +42,15 @@ public class PrefetchCPInstruction extends UnaryCPInstruction {
 
 	@Override
 	public void processInstruction(ExecutionContext ec) {
+		//TODO: handle non-matrix objects
 		ec.setVariable(output.getName(), ec.getMatrixObject(input1));
-		Executors.newSingleThreadExecutor().submit(new TriggerRDDOperationsTask(ec.getMatrixObject(output)));
-		try {
-			Thread.sleep(5000);
-		}
-		catch (InterruptedException e) {
-			throw new DMLRuntimeException("Error in thread sleep ",e);
-		}
+
+		// Note, a Prefetch instruction doesn't guarantee an asynchronous execution.
+		// If the next instruction which takes this output as an input comes before
+		// the prefetch thread triggers, that instruction will start the operations.
+		// In that case this Prefetch instruction will act like a NOOP. 
+		if (SparkUtils.triggerRDDThread == null)
+			SparkUtils.triggerRDDThread = Executors.newSingleThreadExecutor();
+		SparkUtils.triggerRDDThread.submit(new TriggerRDDOperationsTask(ec.getMatrixObject(output)));
 	}
 }

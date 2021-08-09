@@ -42,8 +42,8 @@ public class UnaryCP extends Lop
 	 * 
 	 * @param input low-level operator 1
 	 * @param op operation type
-	 * @param dt data type
-	 * @param vt value type
+	 * @param dt data type of the output
+	 * @param vt value type of the output
 	 * @param et exec type
 	 */
 	public UnaryCP(Lop input, OpOp1 op, DataType dt, ValueType vt, ExecType et) {

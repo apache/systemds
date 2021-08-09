@@ -231,6 +231,19 @@ public class OptimizerUtils
 	 * is activated.
 	 */
 	public static boolean ALLOW_COMPRESSION_REWRITE = true;
+	
+	/**
+	 * Enable transitive spark execution type selection. This refines the exec-type selection logic of unary aggregates 
+	 * by pushing * the unary aggregates, whose inputs are created by spark instructions, to spark execution type as well.
+	 */
+	public static boolean ALLOW_TRANSITIVE_SPARK_EXEC_TYPE = true;
+
+	/**
+	 * Enable prefetch and broadcast. Prefetch asynchronously calls acquireReadAndRelease() to trigger a chain of spark
+	 * transformations, which would would otherwise make the next instruction wait till completion. Broadcast allows
+	 * asynchronously transferring the data to all the nodes.
+	 */
+	public static boolean ASYNC_TRIGGER_RDD_OPERATIONS = false; 
 
 	//////////////////////
 	// Optimizer levels //

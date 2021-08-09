@@ -89,6 +89,11 @@ public class MapMult extends Lop
 	}
 
 	@Override
+	public SparkAggType getAggType() {
+		return _aggtype;
+	}
+
+	@Override
 	public String toString() {
 		return "Operation = MapMM";
 	}

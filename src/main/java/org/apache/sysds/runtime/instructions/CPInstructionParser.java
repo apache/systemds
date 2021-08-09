@@ -53,6 +53,7 @@ import org.apache.sysds.runtime.instructions.cp.MultiReturnBuiltinCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.MultiReturnParameterizedBuiltinCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.PMMJCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.ParameterizedBuiltinCPInstruction;
+import org.apache.sysds.runtime.instructions.cp.PrefetchCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.QuantilePickCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.QuantileSortCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.QuaternaryCPInstruction;
@@ -315,6 +316,7 @@ public class CPInstructionParser extends InstructionParser
 		String2CPInstructionType.put( "compress",  CPType.Compression);
 		String2CPInstructionType.put( "decompress", CPType.DeCompression);
 		String2CPInstructionType.put( "spoof",     CPType.SpoofFused);
+		String2CPInstructionType.put( "prefetch",  CPType.Prefetch);
 		
 		String2CPInstructionType.put( "sql", CPType.Sql);
 	}
@@ -454,6 +456,9 @@ public class CPInstructionParser extends InstructionParser
 				
 			case Sql:
 				return SqlCPInstruction.parseInstruction(str);
+				
+			case Prefetch:
+				return PrefetchCPInstruction.parseInstruction(str);
 			
 			default:
 				throw new DMLRuntimeException("Invalid CP Instruction Type: " + cptype );

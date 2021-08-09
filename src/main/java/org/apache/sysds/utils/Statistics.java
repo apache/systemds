@@ -119,6 +119,7 @@ public class Statistics
 	private static final LongAdder sparkCollectCount = new LongAdder();
 	private static final LongAdder sparkBroadcast = new LongAdder();
 	private static final LongAdder sparkBroadcastCount = new LongAdder();
+	private static final LongAdder sparkAsyncPrefetchCount = new LongAdder();
 
 	// Paramserv function stats (time is in milli sec)
 	private static final Timing psExecutionTimer = new Timing(false);
@@ -488,6 +489,7 @@ public class Statistics
 		parforMergeTime = 0;
 		
 		sparkCtxCreateTime = 0;
+		sparkAsyncPrefetchCount.reset();
 		
 		lTotalLix.reset();
 		lTotalLixUIP.reset();
@@ -565,6 +567,10 @@ public class Statistics
 
 	public static void incSparkBroadcastCount(long c) {
 		sparkBroadcastCount.add(c);
+	}
+
+	public static void incSparkAsyncPrefetchCount(long c) {
+		sparkAsyncPrefetchCount.add(c);
 	}
 
 	public static void incWorkerNumber() {
@@ -961,6 +967,10 @@ public class Statistics
 	public static long getNumPinnedObjects() { return maxNumPinnedObjects; }
 
 	public static double getSizeofPinnedObjects() { return maxSizeofPinnedObjects; }
+	
+	public static long getAsyncPrefetchCount() {
+		return sparkAsyncPrefetchCount.longValue();
+	}
 
 	/**
 	 * Returns statistics of the DML program that was recently completed as a string
@@ -1067,6 +1077,9 @@ public class Statistics
 								sparkParallelize.longValue()*1e-9,
 								sparkBroadcast.longValue()*1e-9,
 								sparkCollect.longValue()*1e-9));
+				if (OptimizerUtils.ASYNC_TRIGGER_RDD_OPERATIONS)
+					sb.append("Spark async. prefetch count: \t" + 
+							String.format("%d.\n", sparkAsyncPrefetchCount.longValue()));
 			}
 			if (psNumWorkers.longValue() > 0) {
 				sb.append(String.format("Paramserv total execution time:\t%.3f secs.\n", psExecutionTime.doubleValue() / 1000));

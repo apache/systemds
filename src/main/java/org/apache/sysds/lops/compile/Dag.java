@@ -24,15 +24,33 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.FileFormat;
+import org.apache.sysds.common.Types.OpOp1;
 import org.apache.sysds.common.Types.OpOpData;
 import org.apache.sysds.conf.DMLConfig;
+import org.apache.sysds.hops.AggBinaryOp.SparkAggType;
+import org.apache.sysds.hops.OptimizerUtils;
+import org.apache.sysds.lops.CSVReBlock;
+import org.apache.sysds.lops.CentralMoment;
+import org.apache.sysds.lops.Checkpoint;
+import org.apache.sysds.lops.CoVariance;
 import org.apache.sysds.lops.Data;
 import org.apache.sysds.lops.FunctionCallCP;
+import org.apache.sysds.lops.GroupedAggregate;
+import org.apache.sysds.lops.GroupedAggregateM;
 import org.apache.sysds.lops.Lop;
 import org.apache.sysds.lops.Lop.Type;
 import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.lops.LopsException;
+import org.apache.sysds.lops.MMTSJ;
+import org.apache.sysds.lops.MMZip;
+import org.apache.sysds.lops.MapMultChain;
 import org.apache.sysds.lops.OutputParameters;
+import org.apache.sysds.lops.ParameterizedBuiltin;
+import org.apache.sysds.lops.PickByCount;
+import org.apache.sysds.lops.ReBlock;
+import org.apache.sysds.lops.SpoofFused;
+import org.apache.sysds.lops.UAggOuterChain;
+import org.apache.sysds.lops.UnaryCP;
 import org.apache.sysds.parser.DataExpression;
 import org.apache.sysds.parser.StatementBlock;
 import org.apache.sysds.runtime.DMLRuntimeException;
@@ -181,10 +199,14 @@ public class Dag<N extends Lop>
 			//doTopologicalSortStrictOrder(nodes) :
 			doTopologicalSortTwoLevelOrder(nodes);
 		
+		// add Prefetch lops to the list, if necessary
+		//List<Lop> node_pf = addPrefetchLop(node_v);
+		List<Lop> node_pf = OptimizerUtils.ASYNC_TRIGGER_RDD_OPERATIONS ? addPrefetchLop(node_v) : node_v;
+		
 		// do greedy grouping of operations
 		ArrayList<Instruction> inst =
 			//doGreedyGrouping(sb, node_v) :
-			doPlainInstructionGen(sb, node_v);
+			doPlainInstructionGen(sb, node_pf);
 		
 		// cleanup instruction (e.g., create packed rmvar instructions)
 		return cleanupInstructions(inst);
@@ -202,6 +224,30 @@ public class Dag<N extends Lop>
 		//NOTE: in contrast to hadoop execution modes, we avoid computing the transitive
 		//closure here to ensure linear time complexity because its unnecessary for CP and Spark
 		return nodes;
+	}
+	
+	private static List<Lop> addPrefetchLop(List<Lop> nodes) {
+		List<Lop> nodesWithPrefetch = new ArrayList<>();
+		
+		//Find the Spark nodes with all CP outputs
+		for (Lop l : nodes) {
+			nodesWithPrefetch.add(l);
+			if (isPrefetchNeeded(l)) {
+				List<Lop> oldOuts = new ArrayList<>(l.getOutputs());
+				//Construct a Prefetch lop that takes this Spark node as a input
+				UnaryCP prefetch = new UnaryCP(l, OpOp1.PREFETCH, l.getDataType(), l.getValueType(), ExecType.CP);
+				for (Lop outCP : oldOuts) {
+					//Rewire l -> outCP to l -> Prefetch -> outCP
+					prefetch.addOutput(outCP);
+					outCP.replaceInput(l, prefetch);
+					l.removeOutput(outCP);
+					//FIXME: Rewire _inputParams when needed (e.g. GroupedAggregate)
+				}
+				//Place it immediately after the Spark lop in the node list
+				nodesWithPrefetch.add(prefetch);
+			}
+		}
+		return nodesWithPrefetch;
 	}
 	
 	private ArrayList<Instruction> doPlainInstructionGen(StatementBlock sb, List<Lop> nodes)
@@ -236,6 +282,32 @@ public class Dag<N extends Lop>
 			&& dnode.getOutputParameters().getLabel().equals(input.getOutputParameters().getLabel());
 	}
 	
+	private static boolean isPrefetchNeeded(Lop lop) {
+		// Run Prefetch for a Spark instruction if the instruction is a Transformation
+		// and the output is consumed by only CP instructions.
+		boolean transformOP = lop.getExecType() == ExecType.SPARK && lop.getAggType() != SparkAggType.SINGLE_BLOCK
+				// Always Action operations
+				&& !(lop.getDataType() == DataType.SCALAR)
+				&& !(lop instanceof MapMultChain) && !(lop instanceof PickByCount)
+				&& !(lop instanceof MMZip) && !(lop instanceof CentralMoment)
+				&& !(lop instanceof CoVariance) 
+				// Not qualified for prefetching
+				&& !(lop instanceof Checkpoint) && !(lop instanceof ReBlock)
+				&& !(lop instanceof CSVReBlock)
+				// Cannot filter Transformation cases from Actions (FIXME)
+				&& !(lop instanceof MMTSJ) && !(lop instanceof UAggOuterChain)
+				&& !(lop instanceof ParameterizedBuiltin) && !(lop instanceof SpoofFused);
+
+		//FIXME: Rewire _inputParams when needed (e.g. GroupedAggregate)
+		boolean hasParameterizedOut = lop.getOutputs().stream()
+				.anyMatch(out -> ((out instanceof ParameterizedBuiltin) 
+					|| (out instanceof GroupedAggregate)
+					|| (out instanceof GroupedAggregateM)));
+		//TODO: support non-matrix outputs
+		return transformOP && !hasParameterizedOut 
+				&& lop.isAllOutputsCP() && lop.getDataType() == DataType.MATRIX;
+	}
+
 	private static List<Instruction> deleteUpdatedTransientReadVariables(StatementBlock sb, List<Lop> nodeV) {
 		List<Instruction> insts = new ArrayList<>();
 		if ( sb == null ) //return modifiable list

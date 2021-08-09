@@ -55,7 +55,6 @@ public class FederationMap {
 	public enum FReplication {
 		NONE,    //every data item in a separate location
 		FULL,    //every data item at every location
-//		PARTIAL, //every data item partially at every location without overlapping
 		OVERLAP, //every data item partially at every location, w/ addition as aggregation method
 	}
 
@@ -67,7 +66,7 @@ public class FederationMap {
 		PART(FPartitioning.NONE, FReplication.OVERLAP),
 		OTHER(FPartitioning.MIXED, FReplication.NONE);
 
-		private FPartitioning _partType;
+		private final FPartitioning _partType;
 		@SuppressWarnings("unused") //not yet
 		private final FReplication _repType;
 
@@ -88,10 +87,6 @@ public class FederationMap {
 
 		public FPartitioning getPartType() {
 			return this._partType;
-		}
-
-		public void setPartType(FPartitioning _partType) {
-			this._partType = _partType;
 		}
 
 		public boolean isType(FType t) {

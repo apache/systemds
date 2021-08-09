@@ -98,9 +98,9 @@ public class FEDInstructionUtils {
 			if( instruction.input1.isMatrix() && instruction.input2.isMatrix()) {
 				MatrixObject mo1 = ec.getMatrixObject(instruction.input1);
 				MatrixObject mo2 = ec.getMatrixObject(instruction.input2);
-				if (mo1.isFederated(FType.ROW) || mo1.isFederated(FType.COL) || mo2.isFederated(FType.ROW)) {
-					fedinst = AggregateBinaryFEDInstruction.parseInstruction(InstructionUtils
-						.concatOperands(inst.getInstructionString(), FederatedOutput.NONE.name()));
+				if (mo1.isFederated(FType.ROW) || mo2.isFederated(FType.ROW) || mo1.isFederated(FType.COL)) {
+					fedinst = AggregateBinaryFEDInstruction.parseInstruction(
+						InstructionUtils.concatOperands(inst.getInstructionString(), FederatedOutput.NONE.name()));
 				}
 			}
 		}

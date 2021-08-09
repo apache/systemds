@@ -89,13 +89,15 @@ public class AppendFEDInstruction extends BinaryFEDInstruction {
 		
 		// federated/federated
 		if( mo1.isFederated() && mo2.isFederated() 
-			&& mo1.getFedMapping().getType()==mo2.getFedMapping().getType() && !mo1.isFederated(FType.PART))
+			&& mo1.getFedMapping().getType()==mo2.getFedMapping().getType()
+			&& !mo1.getFedMapping().isAligned(mo2.getFedMapping(), FederationMap.AlignType.valueOf(mo1.getFedMapping().getType().name()))
+		)
 		{
 			long id = FederationUtils.getNextFedDataID();
 			long roff = _cbind ? 0 : dc1.getRows();
 			long coff = _cbind ? dc1.getCols() : 0;
-			out.setFedMapping(mo1.getFedMapping().identCopy(getTID(), id)
-				.bind(roff, coff, mo2.getFedMapping().identCopy(getTID(), id)));
+
+			out.setFedMapping(mo1.getFedMapping().identCopy(getTID(), id).bind(roff, coff, mo2.getFedMapping().identCopy(getTID(), id)));
 		}
 		// federated/local, local/federated cbind
 		else if( (mo1.isFederated(FType.ROW) || mo2.isFederated(FType.ROW)) && _cbind ) {
@@ -120,9 +122,9 @@ public class AppendFEDInstruction extends BinaryFEDInstruction {
 			long id = FederationUtils.getNextFedDataID();
 			long roff = _cbind ? 0 : dc1.getRows();
 			long coff = _cbind ? dc1.getCols() : 0;
-			FederationMap fed1 = mo1.isFederated(FType.ROW) && mo1.getFedMapping().getType() != FType.PART ?
+			FederationMap fed1 = mo1.isFederated(FType.ROW) ?
 				mo1.getFedMapping() : FederationUtils.federateLocalData(mo1);
-			FederationMap fed2 = mo2.isFederated(FType.ROW) && mo2.getFedMapping().getType() != FType.PART ?
+			FederationMap fed2 = mo2.isFederated(FType.ROW) ?
 				mo2.getFedMapping() : FederationUtils.federateLocalData(mo2);
 			out.setFedMapping(fed1.identCopy(getTID(), id)
 				.bind(roff, coff, fed2.identCopy(getTID(), id)));

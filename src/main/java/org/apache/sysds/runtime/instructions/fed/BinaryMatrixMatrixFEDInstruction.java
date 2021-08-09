@@ -51,24 +51,25 @@ public class BinaryMatrixMatrixFEDInstruction extends BinaryFEDInstruction
 			mo2 = ec.getMatrixObject(input1);
 		}
 
-		if(mo1.isFederated(FType.PART)) {
-			FederationUtils.checkFedMapType(mo1);
-		}
-		if(mo2.isFederated(FType.PART)) {
-			FederationUtils.checkFedMapType(mo2);
-		}
+//		if(mo1.isFederated(FType.PART)) {
+//			FederationUtils.checkFedMapType(mo1);
+//		}
+//		if(mo2.isFederated(FType.PART)) {
+//			FederationUtils.checkFedMapType(mo2);
+//		}
 
 		//execute federated operation on mo1 or mo2
 		FederatedRequest fr2 = null;
 		if( mo2.isFederated() ) {
-			if((mo1.isFederated() && mo1.getFedMapping().isAligned(mo2.getFedMapping(),
-					mo1.isFederated(FType.ROW) ? AlignType.ROW : AlignType.COL))) {
+			if(mo1.isFederated() && mo1.getFedMapping().isAligned(mo2.getFedMapping(),
+					mo1.isFederated(FType.ROW) ? AlignType.ROW : AlignType.COL)) {
 				fr2 = FederationUtils.callInstruction(instString, output,
 					new CPOperand[]{input1, input2},
 					new long[]{mo1.getFedMapping().getID(), mo2.getFedMapping().getID()}, true);
 				mo1.getFedMapping().execute(getTID(), true, fr2);
 			}
-			else if ( !mo1.isFederated() || (mo1.isFederated(FType.PART) && !mo1.isDataEmpty())){
+			else if ( !mo1.isFederated() ) {
+//				|| (mo1.isFederated(FType.PART) && !mo1.isDataEmpty())
 				FederatedRequest[] fr1 = mo2.getFedMapping().broadcastSliced(mo1, false, mo2.getUniqueID());
 				fr2 = FederationUtils.callInstruction(instString, output,
 					new CPOperand[]{input1, input2},
@@ -129,7 +130,9 @@ public class BinaryMatrixMatrixFEDInstruction extends BinaryFEDInstruction
 			}
 		}
 
-		if ( mo1.isFederated() )
+		if ( mo1.isFederated(FType.PART) && !mo2.isFederated() )
+			setOutputFedMappingPart(mo1, mo2, fr2.getID(), ec);
+		else if ( mo1.isFederated() )
 			setOutputFedMapping(mo1, fr2.getID(), ec);
 		else if ( mo2.isFederated() )
 			setOutputFedMapping(mo2, fr2.getID(), ec);

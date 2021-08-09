@@ -99,9 +99,9 @@ public class FederationUtils {
 				isRow = false;
 		}
 		if(isRow && oldType.getPartType() == FederationMap.FPartitioning.COL)
-			fedMap.getType().setPartType(FederationMap.FPartitioning.ROW);
+			fedMap.setType(FederationMap.FType.ROW);
 		else if(!isRow && oldType.getPartType() == FederationMap.FPartitioning.ROW)
-			fedMap.getType().setPartType(FederationMap.FPartitioning.COL);
+			fedMap.setType(FederationMap.FType.COL);
 	}
 
 	//TODO remove rmFedOutFlag, once all federated instructions have this flag, then unconditionally remove

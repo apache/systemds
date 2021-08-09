@@ -56,6 +56,11 @@ public abstract class ParamServer
 	protected Map<Integer, BlockingQueue<ListObject>> _modelMap;
 	private ListObject _model;
 
+
+
+
+
+
 	//aggregation service
 	protected ExecutionContext _ec;
 	private Statement.PSUpdateType _updateType;

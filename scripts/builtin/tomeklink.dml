@@ -23,13 +23,13 @@
 # COMPUTES TOMEK LINKS AND DROPS THEM FROM DATA MATRIX AND LABEL VECTOR
 # DROPS ONLY THE MAJORITY LABEL AND CORRESPONDING POINT OF TOMEK LINKS
 #
-# INPUT   				PARAMETERS:
-# ---------------------------------------------------------------------------------------------
-# NAME    				TYPE     DEFAULT  MEANING
-# ---------------------------------------------------------------------------------------------
-# X       				MATRIX   ---      Data Matrix (nxm)
-# y      				MATRIX   ---      Label Matrix (nx1), greater than zero
-# ---------------------------------------------------------------------------------------------
+# INPUT  PARAMETERS:
+# ------------------------------------------------------------
+# NAME   TYPE    DEFAULT  MEANING
+# ------------------------------------------------------------
+# X      MATRIX  ---      Data Matrix (nxm)
+# y      MATRIX  ---      Label Matrix (nx1), greater than zero
+# ------------------------------------------------------------
 # OUTPUT:
 # X_under  - Data Matrix without Tomek links
 # y_under  - Labels corresponding to undersampled data
@@ -37,12 +37,12 @@
 
 
 m_tomeklink = function(Matrix[Double] X, Matrix[Double] y)
-return (Matrix[Double] X_under, Matrix[Double] y_under, Matrix[Double] drop_idx) {
- 
+return (Matrix[Double] X_under, Matrix[Double] y_under, Matrix[Double] drop_idx)
+{
   ymin = min(y)
   if(ymin == 0)
     y = y + 1
-    
+
   # # find the majority labels
   label = table(y, 1)
   majority_label = as.scalar(rowIndexMax(t(label)))
@@ -54,18 +54,17 @@ return (Matrix[Double] X_under, Matrix[Double] y_under, Matrix[Double] drop_idx)
   drop_idx = removeEmpty(target=drop_idx, margin="rows", select = tomek_links)
   if(ymin)
     y = y - 1
-
 }
-
 
 # get the nearest neighbour index
 get_nn = function(Matrix[Double] X)
 return (Matrix[Double] nn) {
+  # TODO exchange manhatten by euclidean dist()?
   nn = matrix(0, rows = nrow(X), cols = 1)
-  for (i in 1:nrow(X)) {
-    dists = rowSums((X - X[i,])^2)
-    sort_dists = order(target = dists, by = 1, decreasing = FALSE, index.return = TRUE)
-    nn[i, 1] = as.scalar(sort_dists[2, 1])  # nearest, not self
+  parfor (i in 1:nrow(X)) {
+    dists = rowSums((X - X[i,])^2) 
+    dists[i,] = NaN; # mask out self-ref
+    nn[i, 1] = rowIndexMin(t(dists))
   }
 }
 
@@ -78,4 +77,3 @@ return (Matrix[Double] tomek_links) {
   links = (y != majority_label) & (nn_labels == majority_label)
   tomek_links = (table(nn, 1, links, nrow(y), 1) > 0)
 }
-

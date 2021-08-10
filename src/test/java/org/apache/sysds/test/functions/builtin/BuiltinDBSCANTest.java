@@ -67,7 +67,8 @@ public class BuiltinDBSCANTest extends AutomatedTestBase
 			String HOME = SCRIPT_DIR + TEST_DIR;
 
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[]{"-nvargs", "X=" + input("A"), "Y=" + output("B"), "eps=" + epsDBSCAN, "minPts=" + minPts};
+			programArgs = new String[]{"-explain","-nvargs",
+				"X=" + input("A"), "Y=" + output("B"), "eps=" + epsDBSCAN, "minPts=" + minPts};
 			fullRScriptName = HOME + TEST_NAME + ".R";
 			rCmd = getRCmd(inputDir(), Double.toString(epsDBSCAN), Integer.toString(minPts), expectedDir());
 

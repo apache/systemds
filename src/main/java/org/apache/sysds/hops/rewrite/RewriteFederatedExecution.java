@@ -152,7 +152,7 @@ public class RewriteFederatedExecution extends HopRewriteRule {
 	 */
 	private long getUtilLout(Hop hop){
 		//TODO: Make better utility estimation
-		return -hop.getDim1()*hop.getDim2();
+		return -(long)hop.getMemEstimate();
 	}
 
 	private boolean isFedInstSupportedHop(Hop hop){

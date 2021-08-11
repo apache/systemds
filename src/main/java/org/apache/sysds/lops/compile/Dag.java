@@ -233,6 +233,7 @@ public class Dag<N extends Lop>
 		for (Lop l : nodes) {
 			nodesWithPrefetch.add(l);
 			if (isPrefetchNeeded(l)) {
+				//TODO: No prefetch if the parent is placed right after the spark OP
 				List<Lop> oldOuts = new ArrayList<>(l.getOutputs());
 				//Construct a Prefetch lop that takes this Spark node as a input
 				UnaryCP prefetch = new UnaryCP(l, OpOp1.PREFETCH, l.getDataType(), l.getValueType(), ExecType.CP);

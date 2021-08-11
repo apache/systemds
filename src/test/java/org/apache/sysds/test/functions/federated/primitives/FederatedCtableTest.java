@@ -85,6 +85,9 @@ public class FederatedCtableTest extends AutomatedTestBase {
 	@Test
 	public void federatedCtableMatrixInputSinglenode() { runCtable(Types.ExecMode.SINGLE_NODE, false, true); }
 
+	@Test
+	public void federatedCtableMatrixInputFedOutputSingleNode() { runCtable(Types.ExecMode.SINGLE_NODE, true, true); }
+
 
 	public void runCtable(Types.ExecMode execMode, boolean fedOutput, boolean matrixInput) {
 		String TEST_NAME = fedOutput ? TEST_NAME2 : TEST_NAME1;
@@ -108,7 +111,7 @@ public class FederatedCtableTest extends AutomatedTestBase {
 		loadTestConfiguration(config);
 
 		if(fedOutput)
-			runFedCtable(HOME, TEST_NAME, port1, port2, port3, port4);
+			runFedCtable(HOME, TEST_NAME, matrixInput, port1, port2, port3, port4);
 		else
 			runNonFedCtable(HOME, TEST_NAME, matrixInput, port1, port2, port3, port4);
 		checkResults();
@@ -155,7 +158,7 @@ public class FederatedCtableTest extends AutomatedTestBase {
 		runTest(true, false, null, -1);
 	}
 
-	private void runFedCtable(String HOME, String TEST_NAME, int port1, int port2, int port3, int port4) {
+	private void runFedCtable(String HOME, String TEST_NAME, boolean matrixInput, int port1, int port2, int port3, int port4) {
 		int r = rows / 4;
 		int c = cols;
 
@@ -174,7 +177,8 @@ public class FederatedCtableTest extends AutomatedTestBase {
 		fullDMLScriptName = HOME + TEST_NAME2 + "Reference.dml";
 		programArgs = new String[]{"-stats", "100", "-args",
 			input("X1"), input("X2"), input("X3"), input("X4"), Boolean.toString(reversedInputs).toUpperCase(),
-			Boolean.toString(weighted).toUpperCase(), expected("F")};
+			Boolean.toString(weighted).toUpperCase(), Boolean.toString(matrixInput).toUpperCase(),
+			expected("F")};
 		runTest(true, false, null, -1);
 
 		// Run actual dml script with federated matrix
@@ -185,6 +189,7 @@ public class FederatedCtableTest extends AutomatedTestBase {
 			"in_X3=" + TestUtils.federatedAddress(port3, input("X3")),
 			"in_X4=" + TestUtils.federatedAddress(port4, input("X4")),
 			"rows=" + rows, "cols=" + cols, "revIn=" + Boolean.toString(reversedInputs).toUpperCase(),
+			"matrixInput=" + Boolean.toString(matrixInput).toUpperCase(),
 			"weighted=" + Boolean.toString(weighted).toUpperCase(), "out=" + output("F")
 		};
 		runTest(true, false, null, -1);

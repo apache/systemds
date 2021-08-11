@@ -190,7 +190,7 @@ public class FederationMap {
 		return _fedMap;
 	}
 
-	public FederatedRequest broadcast(CacheableData<?> data, long oldId) {
+	public FederatedRequest broadcast(CacheableData<?> data, long thisID) {
 		long id;
 
 		// check if already broadcasted
@@ -209,11 +209,11 @@ public class FederationMap {
 		for(Pair<FederatedRange, FederatedData> e : _fedMap) {
 			FederationUtils._broadcastMap.putIfAbsent(Triple.of(data.getUniqueID(), FType.BROADCAST, e.getValue().getAddress()),
 				Triple.of(id, false, false));
-			FederationUtils._broadcastMap.putIfAbsent(Triple.of(oldId, _type, e.getValue().getAddress()),
+			FederationUtils._broadcastMap.putIfAbsent(Triple.of(thisID, _type, e.getValue().getAddress()),
 				Triple.of(_ID, false, true));
 		}
 
-		return new FederatedRequest(RequestType.PUT_VAR, id, cb, data.getUniqueID(), FType.BROADCAST, _ID, oldId, _type);
+		return new FederatedRequest(RequestType.PUT_VAR, id, cb, data.getUniqueID(), FType.BROADCAST, _ID, thisID, _type);
 	}
 
 	public FederatedRequest broadcast(ScalarObject scalar) {
@@ -228,12 +228,12 @@ public class FederationMap {
 	 *
 	 * @param data       input data object (matrix, tensor, frame)
 	 * @param transposed false: slice according to federated data, true: slice according to transposed federated data
-	 * @param oldId id of the marix object that calls broadcast
+	 * @param thisID id of the marix object that calls broadcast
 	 * @return array of federated requests corresponding to federated data
 	 */
-	public FederatedRequest[] broadcastSliced(CacheableData<?> data, boolean transposed, long oldId) {
+	public FederatedRequest[] broadcastSliced(CacheableData<?> data, boolean transposed, long thisID) {
 		if( _type == FType.FULL )
-			return new FederatedRequest[]{broadcast(data, oldId)};
+			return new FederatedRequest[]{broadcast(data, thisID)};
 
 		long id;
 		FederatedRequest[] ret = new FederatedRequest[_fedMap.size()];
@@ -270,7 +270,7 @@ public class FederationMap {
 
 				FederationUtils._broadcastMap.putIfAbsent(Triple.of(data.getUniqueID(), type, e.getValue().getAddress()),
 					Triple.of(id, transposed, false));
-				FederationUtils._broadcastMap.putIfAbsent(Triple.of(oldId, _type, e.getValue().getAddress()),
+				FederationUtils._broadcastMap.putIfAbsent(Triple.of(thisID, _type, e.getValue().getAddress()),
 					Triple.of(getID(), false, true));
 
 				FederatedRange fr = new FederatedRange(e.getLeft());
@@ -284,7 +284,7 @@ public class FederationMap {
 
 			// multi-threaded block slicing and federation request creation
 			Arrays.parallelSetAll(ret,i -> new FederatedRequest(RequestType.PUT_VAR, id, cb.slice(ix[i][0], ix[i][1], ix[i][2], ix[i][3],
-				new MatrixBlock()), data.getUniqueID(), type, getID(), oldId, _type));
+				new MatrixBlock()), data.getUniqueID(), type, getID(), thisID, _type));
 
 			if(!data.isFederated()) {
 				data.setFedMapping(new FederationMap(id, newFedMap, type));

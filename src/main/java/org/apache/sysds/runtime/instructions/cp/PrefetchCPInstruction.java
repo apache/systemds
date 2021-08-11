@@ -49,8 +49,8 @@ public class PrefetchCPInstruction extends UnaryCPInstruction {
 		// If the next instruction which takes this output as an input comes before
 		// the prefetch thread triggers, that instruction will start the operations.
 		// In that case this Prefetch instruction will act like a NOOP. 
-		if (SparkUtils.triggerRDDThread == null)
-			SparkUtils.triggerRDDThread = Executors.newSingleThreadExecutor();
-		SparkUtils.triggerRDDThread.submit(new TriggerRDDOperationsTask(ec.getMatrixObject(output)));
+		if (SparkUtils.triggerRDDPool == null)
+			SparkUtils.triggerRDDPool = Executors.newCachedThreadPool();
+		SparkUtils.triggerRDDPool.submit(new TriggerRDDOperationsTask(ec.getMatrixObject(output)));
 	}
 }

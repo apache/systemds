@@ -82,7 +82,7 @@ public class LocalPSWorker extends PSWorker implements Callable<Void> {
 
 	private void computeEpoch(long dataSize, int batchIter) {
 		ListObject updateModel;
-		ListObject gradients = null;
+		ListObject gradients;
 		for(int i = 0; i < _epochs; i++) {
 			// Pull the global parameters from ps
 			ListObject params = pullModel();
@@ -102,21 +102,14 @@ public class LocalPSWorker extends PSWorker implements Callable<Void> {
 						accGradients = _tpool.submit(() -> ParamservUtils.accrueGradients(accGradientsPrev, finalGradients, false, !localUpdate));
 					}
 					// Update the local model with gradients
-					if(localUpdate)
+					if(localUpdate | _modelAvg)
 						params = updateModel(params, gradients, i, j, batchIter);
 
 					accNumBatches(1);
 				}
-				if(_modelAvg) {
-					// First update the model locally, Then push the model to ps
-					updateModel = _ps.updateLocalModel(_ec, gradients, params);
-					pushGradients(updateModel);
-				}
-				else {
-					// Push the gradients to ps
-					pushGradients(accGradients.get());
+				pushGradients(_modelAvg ? params : accGradients.get());
+				if (!_modelAvg)
 					ParamservUtils.cleanupListObject(_ec, Statement.PS_MODEL);
-				}
 			}
 			catch(ExecutionException | InterruptedException ex) {
 				throw new DMLRuntimeException(ex);
@@ -148,7 +141,6 @@ public class LocalPSWorker extends PSWorker implements Callable<Void> {
 		for(int i = 0; i < _epochs; i++) {
 			for(int j = 0; j < totalIter; j++) {
 				ListObject globalParams = pullModel();
-
 				ListObject gradients = computeGradients(globalParams, dataSize, totalIter, i, j);
 				if(_modelAvg) {
 					// Update locally  & Push the local update model to ps

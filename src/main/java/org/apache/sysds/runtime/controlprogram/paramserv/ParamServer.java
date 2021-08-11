@@ -310,9 +310,9 @@ public abstract class ParamServer
 		return newModel;
 	}
 
-	private void averageGlobalModel(ListObject updateModel) {
+	private void averageGlobalModel(ListObject updateModel, int numWorkers) {
 		Timing tAgg = DMLScript.STATISTICS ? new Timing(true) : null;
-		_model = averageModel(_ec,updateModel, _model);
+		_model = averageModel(_ec, updateModel, _model, numWorkers);
 
 		if (DMLScript.STATISTICS && tAgg != null)
 			Statistics.accPSAggregationTime((long) tAgg.stop());
@@ -325,27 +325,18 @@ public abstract class ParamServer
 	 * @param model old model
 	 * @return new model (accModel)
 	 */
-	public static  ListObject averageModel(ExecutionContext ec, ListObject updateModels, ListObject model) {
-		Timing tAgg = DMLScript.STATISTICS ? new Timing(true) : null;
-		ec.setVariable(Statement.PS_MODEL, model);
-		boolean par = true;
-		// first we accumulate all the models
+	public static ListObject averageModel(ExecutionContext ec, ListObject updateModels, ListObject model, int numWorkers) {
+		ec.setVariable(Statement.PS_MODEL, updateModels);
+
 		if (updateModels == null)
 			return ParamservUtils.copyList(model, true);
-		IntStream range = IntStream.range(0, updateModels.getLength());
-		(par ? range.parallel() : range).forEach(i -> {
-			MatrixBlock mb1 = ((MatrixObject) model.getData().get(i)).acquireReadAndRelease();
-			MatrixBlock mb2 = ((MatrixObject) updateModels.getData().get(i)).acquireReadAndRelease();
-			mb2.binaryOperationsInPlace(new BinaryOperator(Plus.getPlusFnObject()), mb1);
-		});
-		//second we calculate the averaging model
-		double _weightingFactor = 1/(updateModels.getLength());
-		updateModels.getData().parallelStream().forEach((matrix) -> {
-			MatrixObject matrixObj = (MatrixObject) matrix;
-			MatrixBlock input = matrixObj.acquireReadAndRelease().scalarOperations(
-				new RightScalarOperator(Multiply.getMultiplyFnObject(), _weightingFactor), new MatrixBlock());
-			matrixObj.acquireModify(input);
-			matrixObj.release();
+		double _averagingFactor = ((1.0)/numWorkers);
+		updateModels.getData().parallelStream().forEach((updMatrix) -> {
+			MatrixObject matrixObj = (MatrixObject) updMatrix;
+			MatrixBlock inputTemp = matrixObj.acquireReadAndRelease().scalarOperations(
+				new RightScalarOperator(Multiply.getMultiplyFnObject(), _averagingFactor), new MatrixBlock());
+			((MatrixObject) updMatrix).acquireModify(inputTemp);
+			((MatrixObject) updMatrix).release();
 		});
 		return updateModels;
 	}
@@ -362,7 +353,7 @@ public abstract class ParamServer
 					setFinishedState(workerID);
 					_accModels = ParamservUtils.accrueModels(_accModels, model, true);
 					if (allFinished()) {
-						averageGlobalModel(_accModels);
+						averageGlobalModel(_accModels, _numWorkers);
 						_accModels = null;
 						// This if has grown to be quite complex its function is rather simple. Validate at the end of each epoch
 						// In the BSP batch case that occurs after the sync counter reaches the number of batches and in the
@@ -373,7 +364,6 @@ public abstract class ParamServer
 
 							if(LOG.isInfoEnabled())
 								LOG.info("[+] PARAMSERV: completed EPOCH " + _epochCounter);
-
 							time_epoch();
 							if(_validationPossible)
 								validate();

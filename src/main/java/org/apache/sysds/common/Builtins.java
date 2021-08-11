@@ -232,6 +232,7 @@ public enum Builtins {
 	ROWVAR("rowVars", false),
 	SAMPLE("sample", false),
 	SD("sd", false),
+	SELVARTHRESH("selectByVarThresh", true),
 	SEQ("seq", false),
 	SHERLOCK("sherlock", true),
 	SHERLOCKPREDICT("sherlockPredict", true),

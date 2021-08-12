@@ -1088,7 +1088,7 @@ public class Statistics
 								sparkBroadcast.longValue()*1e-9,
 								sparkCollect.longValue()*1e-9));
 				if (OptimizerUtils.ASYNC_TRIGGER_RDD_OPERATIONS)
-					sb.append("Spark async. count (pf, bc): \t" + 
+					sb.append("Spark async. count (pf,bc): \t" + 
 							String.format("%d/%d.\n", getAsyncPrefetchCount(), getAsyncBroadcastCount()));
 			}
 			if (psNumWorkers.longValue() > 0) {

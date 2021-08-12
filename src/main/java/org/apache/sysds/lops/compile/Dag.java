@@ -203,7 +203,8 @@ public class Dag<N extends Lop>
 			doTopologicalSortTwoLevelOrder(nodes);
 		
 		// add Prefetch lops to the list, if necessary
-		List<Lop> node_pf = OptimizerUtils.ASYNC_TRIGGER_RDD_OPERATIONS ? addPrefetchLop(node_v) : node_v;
+		//List<Lop> node_pf = OptimizerUtils.ASYNC_TRIGGER_RDD_OPERATIONS ? addPrefetchLop(node_v) : node_v;
+		List<Lop> node_pf = node_v;
 		List<Lop> node_bc = OptimizerUtils.ASYNC_TRIGGER_RDD_OPERATIONS ? addBroadcastLop(node_pf) : node_pf;
 		// TODO: Merge together via a single traversal of the nodes
 		

@@ -425,6 +425,10 @@ public abstract class Lop
 		return SparkAggType.NONE;
 	}
 	
+	public Lop getBroadcastInput() {
+		return null;
+	}
+	
 
 	/** Method should be overridden if needed
 	 * 

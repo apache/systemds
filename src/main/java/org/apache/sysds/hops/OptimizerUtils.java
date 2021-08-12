@@ -243,7 +243,7 @@ public class OptimizerUtils
 	 * transformations, which would would otherwise make the next instruction wait till completion. Broadcast allows
 	 * asynchronously transferring the data to all the nodes.
 	 */
-	public static boolean ASYNC_TRIGGER_RDD_OPERATIONS = false; 
+	public static boolean ASYNC_TRIGGER_RDD_OPERATIONS = true; 
 
 	//////////////////////
 	// Optimizer levels //

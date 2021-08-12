@@ -57,6 +57,7 @@ public class FunctionPotpourriTest extends AutomatedTestBase
 		"FunPotpourriEvalList2Arg",
 		"FunPotpourriEvalNamespace",
 		"FunPotpourriBuiltinPrecedence",
+		"FunPotpourriParforEvalBuiltin",
 	};
 	
 	private final static String TEST_DIR = "functions/misc/";
@@ -197,6 +198,11 @@ public class FunctionPotpourriTest extends AutomatedTestBase
 	@Test
 	public void testFunctionBuiltinPrecedence() {
 		runFunctionTest( TEST_NAMES[25], null );
+	}
+	
+	@Test
+	public void testFunctionParforEvalBuiltin() {
+		runFunctionTest( TEST_NAMES[26], null );
 	}
 	
 	private void runFunctionTest(String testName, Class<?> error) {

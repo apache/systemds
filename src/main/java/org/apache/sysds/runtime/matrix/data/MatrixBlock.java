@@ -182,7 +182,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	}
 	
 	public MatrixBlock(int rl, int cl, double val) {
-		reset(rl, cl, true, val == 0 ? 0 : (long)rl*cl, val);
+		reset(rl, cl, false, (long)rl*cl, val);
 	}
 	
 	/**
@@ -264,7 +264,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	 * 
 	 * @param rl      number of rows
 	 * @param cl      number of columns
-	 * @param sp      sparse representation (only considered if val is 0)
+	 * @param sp      sparse representation
 	 * @param estnnz  estimated number of non-zeros
 	 * @param val     initialization value
 	 */
@@ -5951,20 +5951,5 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 			estimatedNonZeros=nnzs;
 		}
 		public SparsityEstimate(){}
-
-		@Override
-		public String toString() {
-			StringBuilder sb = new StringBuilder();
-
-			sb.append("Sparse? = ");
-			sb.append(sparse);
-			sb.append("\n");
-
-			sb.append("Estimated NNZ: ");
-			sb.append(estimatedNonZeros);
-			sb.append("\n");
-
-			return sb.toString();
-		}
 	}
 }

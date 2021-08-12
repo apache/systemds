@@ -25,6 +25,7 @@ import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
+import org.apache.sysds.runtime.controlprogram.federated.FederatedRange;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest.RequestType;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse;
@@ -124,9 +125,54 @@ public class AggregateUnaryFEDInstruction extends UnaryFEDInstruction {
 			new CPOperand[]{input1}, new long[]{in.getFedMapping().getID()}, true);
 		map.execute(getTID(), fr1);
 
-		// derive new fed mapping for output
 		MatrixObject out = ec.getMatrixObject(output);
-		out.setFedMapping(in.getFedMapping().copyWithNewID(fr1.getID()));
+		deriveNewOutputFedMapping(in, out, fr1);
+	}
+
+	private void deriveNewOutputFedMapping(MatrixObject in, MatrixObject out, FederatedRequest fr1){
+		//Get agg type
+		if ( !(instOpcode.equals("uack+") || instOpcode.equals("uark+")) )
+			throw new DMLRuntimeException("Operation " + instOpcode + " is unknown to FOUT processing");
+		boolean isColAgg = instOpcode.equals("uack+");
+		//Get partition type
+		FederationMap.FType inFtype = in.getFedMapping().getType();
+		//Get fedmap from in
+		FederationMap inputFedMapCopy = in.getFedMapping().copyWithNewID(fr1.getID());
+
+		//if partition type is row and aggregation type is row
+		//   then get row dim split from input and use as row dimension and get col dimension from output col dimension
+		//   and set FType to ROW
+		if ( inFtype.isRowPartitioned() && !isColAgg ){
+			for ( FederatedRange range : inputFedMapCopy.getFederatedRanges() )
+				range.setEndDim(1,out.getNumColumns());
+			inputFedMapCopy.setType(FederationMap.FType.ROW);
+		}
+		//if partition type is row and aggregation type is col
+		//   then get row and col dimension from out and use those dimensions for both federated workers
+		//   and set FType to PART
+		//if partition type is col and aggregation type is row
+		//   then set row and col dimension from out and use those dimensions for both federated workers
+		//   and set FType to PART
+		if ( (inFtype.isRowPartitioned() && isColAgg) || (inFtype.isColPartitioned() && !isColAgg) ){
+			for ( FederatedRange range : inputFedMapCopy.getFederatedRanges() ){
+				range.setBeginDim(0,0);
+				range.setBeginDim(1,0);
+				range.setEndDim(0,out.getNumRows());
+				range.setEndDim(1,out.getNumColumns());
+			}
+			inputFedMapCopy.setType(FederationMap.FType.PART);
+		}
+		//if partition type is col and aggregation type is col
+		//   then set row dimension to output and col dimension to in col split
+		//   and set FType to COL
+		if ( inFtype.isColPartitioned() && isColAgg ){
+			for ( FederatedRange range : inputFedMapCopy.getFederatedRanges() )
+				range.setEndDim(0,out.getNumRows());
+			inputFedMapCopy.setType(FederationMap.FType.COL);
+		}
+
+		//set out fedmap in the end
+		out.setFedMapping(inputFedMapCopy);
 	}
 
 	/**

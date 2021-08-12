@@ -21,6 +21,8 @@ package org.apache.sysds.runtime.instructions.spark;
 
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.function.PairFlatMapFunction;
+import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
+import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
@@ -33,6 +35,7 @@ import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysds.runtime.matrix.data.OperationsOnMatrixValues;
 import org.apache.sysds.runtime.matrix.operators.Operator;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
+import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import scala.Tuple2;
 
 import java.util.ArrayList;
@@ -68,7 +71,14 @@ public class MatrixAppendMSPInstruction extends AppendMSPInstruction {
 			out = in1.flatMapToPair(
 				new MapSideAppendFunction(in2, _cbind, off, blen));
 		}
-		
+
+		if (!sec.containsVariable(output)) {
+			DataCharacteristics outMc = new MatrixCharacteristics(_cbind ?
+				mc1.getRows() : mc1.getRows() + mc2.getRows(), _cbind ? mc1.getCols() : mc1.getCols() + mc2.getCols());
+			CacheableData cd = ExecutionContext.createMatrixObject(outMc);
+			sec.setVariable(output.getName(), cd);
+		}
+
 		//put output RDD handle into symbol table
 		updateBinaryAppendOutputDataCharacteristics(sec, _cbind);
 		sec.setRDDHandleForVariable(output.getName(), out);

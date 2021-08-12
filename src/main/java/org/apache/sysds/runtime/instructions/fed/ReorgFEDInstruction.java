@@ -39,6 +39,7 @@ import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedUDF;
 import org.apache.sysds.runtime.controlprogram.federated.FederationMap;
 import org.apache.sysds.runtime.controlprogram.federated.FederationUtils;
+import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.functionobjects.DiagIndex;
 import org.apache.sysds.runtime.functionobjects.RevIndex;
 import org.apache.sysds.runtime.functionobjects.SwapIndex;
@@ -71,8 +72,9 @@ public class ReorgFEDInstruction extends UnaryFEDInstruction {
 			InstructionUtils.checkNumFields(str, 2, 3, 4);
 			in.split(parts[1]);
 			out.split(parts[2]);
-			int k = Integer.parseInt(parts[3]);
-			FederatedOutput fedOut = FederatedOutput.valueOf(parts[4]);
+			int k = str.startsWith(Types.ExecMode.SPARK.name()) ? 0 : Integer.parseInt(parts[3]);
+			FederatedOutput fedOut = str.startsWith(Types.ExecMode.SPARK.name()) ?  FederatedOutput.valueOf(parts[3]) :
+				FederatedOutput.valueOf(parts[4]);
 			return new ReorgFEDInstruction(new ReorgOperator(SwapIndex.getSwapIndexFnObject(), k), in, out, opcode, str, fedOut);
 		}
 		else if ( opcode.equalsIgnoreCase("rdiag") ) {

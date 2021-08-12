@@ -20,6 +20,7 @@
 package org.apache.sysds.runtime.instructions.fed;
 
 import org.apache.commons.lang3.ArrayUtils;
+import org.apache.sysds.common.Types;
 import org.apache.sysds.runtime.codegen.SpoofCellwise;
 import org.apache.sysds.runtime.codegen.SpoofMultiAggregate;
 import org.apache.sysds.runtime.codegen.SpoofOuterProduct;
@@ -276,7 +277,7 @@ public class FEDInstructionUtils {
 			if (data instanceof MatrixObject && ((MatrixObject) data).isFederated()) {
 				String[] instParts = inst.getInstructionString().split(Instruction.OPERAND_DELIM);
 				instParts[6] = instParts[7];
-				String instString = InstructionUtils.concatOperands(instParts[0], "ba+*", instParts[2],
+				String instString = InstructionUtils.concatOperands(Types.ExecType.CP.name(), "ba+*", instParts[2],
 					instParts[3], instParts[4], "16", instParts[6]);
 				fedinst = AggregateBinaryFEDInstruction.parseInstruction(instString);
 			}
@@ -394,7 +395,7 @@ public class FEDInstructionUtils {
 			}
 			else if( (instruction.input1.isMatrix() && ec.getMatrixObject(instruction.input1).isFederated())
 				|| (instruction.input2.isMatrix() && ec.getMatrixObject(instruction.input2).isFederated()) ) {
-				if(instruction.getOpcode().equals("append") )
+				if(instruction.getOpcode().equals("append") || instruction.getOpcode().equals("mappend"))
 					fedinst = AppendFEDInstruction.parseInstruction(inst.getInstructionString());
 				else if(instruction.getOpcode().equals("qpick"))
 					fedinst = QuantilePickFEDInstruction.parseInstruction(inst.getInstructionString());
@@ -412,7 +413,7 @@ public class FEDInstructionUtils {
 		}
 		else if( inst instanceof ParameterizedBuiltinSPInstruction) {
 			ParameterizedBuiltinSPInstruction pinst = (ParameterizedBuiltinSPInstruction) inst;
-			if( ArrayUtils.contains(PARAM_BUILTINS, pinst.getOpcode()) && ec.getCacheableData(pinst.input1).isFederated() )
+			if( ArrayUtils.contains(PARAM_BUILTINS, pinst.getOpcode()) && pinst.getTarget(ec).isFederated() )
 				fedinst = ParameterizedBuiltinFEDInstruction.parseInstruction(pinst.getInstructionString());
 		}
 		else if (inst instanceof MultiReturnParameterizedBuiltinSPInstruction) {

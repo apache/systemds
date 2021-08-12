@@ -79,7 +79,7 @@ public final class IndexingFEDInstruction extends UnaryFEDInstruction {
 		String opcode = parts[0];
 
 		if(opcode.equalsIgnoreCase(RightIndex.OPCODE)) {
-			if(parts.length == 7) {
+			if(parts.length == 7 || parts.length == 8) {
 				CPOperand in, rl, ru, cl, cu, out;
 				in = new CPOperand(parts[1]);
 				rl = new CPOperand(parts[2]);

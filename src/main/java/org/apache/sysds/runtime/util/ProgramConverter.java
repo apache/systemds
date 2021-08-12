@@ -372,7 +372,9 @@ public class ProgramConverter
 	public static void createDeepCopyFunctionProgramBlock(String namespace, String oldName, long pid, int IDPrefix, Program prog, Set<String> fnStack, Set<String> fnCreated, boolean plain) 
 	{
 		//fpb guaranteed to be non-null (checked inside getFunctionProgramBlock)
-		FunctionProgramBlock fpb = prog.getFunctionProgramBlock(namespace, oldName);
+		FunctionProgramBlock fpb1 = prog.getFunctionProgramBlock(namespace, oldName, true);
+		FunctionProgramBlock fpb2 = prog.containsFunctionProgramBlock(namespace, oldName, false) ?
+			prog.getFunctionProgramBlock(namespace, oldName, false) : null;
 		String fnameNew = (plain)? oldName :(oldName+Lop.CP_CHILD_THREAD+pid); 
 		String fnameNewKey = DMLProgram.constructFunctionKey(namespace,fnameNew);
 
@@ -380,37 +382,35 @@ public class ProgramConverter
 			return; //prevent redundant deep copy if already existent
 		
 		//create deep copy
-		FunctionProgramBlock copy = null;
-		ArrayList<DataIdentifier> tmp1 = new ArrayList<>();
-		ArrayList<DataIdentifier> tmp2 = new ArrayList<>();
-		if( fpb.getInputParams()!= null )
-			tmp1.addAll(fpb.getInputParams());
-		if( fpb.getOutputParams()!= null )
-			tmp2.addAll(fpb.getOutputParams());
-		
-		
+		FunctionProgramBlock copy1 = null;
 		if( !fnStack.contains(fnameNewKey) ) {
 			fnStack.add(fnameNewKey);
-			copy = new FunctionProgramBlock(prog, tmp1, tmp2);
-			copy.setChildBlocks( rcreateDeepCopyProgramBlocks(fpb.getChildBlocks(), pid, IDPrefix, fnStack, fnCreated, plain, fpb.isRecompileOnce()) );
-			copy.setRecompileOnce( fpb.isRecompileOnce() );
-			copy.setThreadID(pid);
+			copy1 = createDeepCopyFunctionProgramBlock(fpb1, fnStack, fnCreated, pid, IDPrefix, plain);
 			fnStack.remove(fnameNewKey);
 		}
 		else //stop deep copy for recursive function calls
-			copy = fpb;
+			copy1 = fpb1;
 		
 		//copy.setVariables( (LocalVariableMap) fpb.getVariables() ); //implicit cloning
 		//note: instructions not used by function program block
 		
 		//put if not existing (recursive processing might have added it)
 		if( !prog.getFunctionProgramBlocks().containsKey(fnameNewKey) ) {
-			prog.addFunctionProgramBlock(namespace, fnameNew, copy);
+			prog.addFunctionProgramBlock(namespace, fnameNew, copy1, true);
+			if( fpb2 != null ) {
+				FunctionProgramBlock copy2 = createDeepCopyFunctionProgramBlock(
+					fpb2, fnStack, fnCreated, pid, IDPrefix, plain);
+				prog.addFunctionProgramBlock(namespace, fnameNew, copy2, false);
+			}
 			fnCreated.add(DMLProgram.constructFunctionKey(namespace, fnameNew));
 		}
 	}
 
-	public static FunctionProgramBlock createDeepCopyFunctionProgramBlock(FunctionProgramBlock fpb, Set<String> fnStack, Set<String> fnCreated) 
+	public static FunctionProgramBlock createDeepCopyFunctionProgramBlock(FunctionProgramBlock fpb, Set<String> fnStack, Set<String> fnCreated) {
+		return createDeepCopyFunctionProgramBlock(fpb, fnStack, fnCreated, 0, -1, true);
+	}
+	
+	public static FunctionProgramBlock createDeepCopyFunctionProgramBlock(FunctionProgramBlock fpb, Set<String> fnStack, Set<String> fnCreated, long pid, int IDPrefix, boolean plain) 
 	{
 		if( fpb == null )
 			throw new DMLRuntimeException("Unable to create a deep copy of a non-existing FunctionProgramBlock.");
@@ -425,15 +425,13 @@ public class ProgramConverter
 			tmp2.addAll(fpb.getOutputParams());
 		
 		copy = new FunctionProgramBlock(fpb.getProgram(), tmp1, tmp2);
-		copy.setChildBlocks( rcreateDeepCopyProgramBlocks(fpb.getChildBlocks(), 0, -1, fnStack, fnCreated, true, fpb.isRecompileOnce()) );
+		copy.setChildBlocks( rcreateDeepCopyProgramBlocks(fpb.getChildBlocks(), pid, IDPrefix, fnStack, fnCreated, plain, fpb.isRecompileOnce()) );
 		copy.setStatementBlock( fpb.getStatementBlock() );
 		copy.setRecompileOnce(fpb.isRecompileOnce());
-		//copy.setVariables( (LocalVariableMap) fpb.getVariables() ); //implicit cloning
-		//note: instructions not used by function program block
-	
+		copy.setThreadID(pid);
+		
 		return copy;
 	}
-
 	
 	/**
 	 * Creates a deep copy of an array of instructions and replaces the placeholders of parworker

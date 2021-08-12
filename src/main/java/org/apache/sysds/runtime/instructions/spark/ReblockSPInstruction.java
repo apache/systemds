@@ -142,7 +142,6 @@ public class ReblockSPInstruction extends UnarySPInstruction {
 			//put output RDD handle into symbol table
 			sec.setRDDHandleForVariable(output.getName(), out);
 			sec.addLineageRDD(output.getName(), input1.getName());
-//			out.collect().forEach(System.out::println);
 		}
 		else if(fmt == FileFormat.CSV) {
 			// HACK ALERT: Until we introduces the rewrite to insert csvrblock for non-persistent read

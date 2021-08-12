@@ -21,7 +21,10 @@ package org.apache.sysds.runtime.instructions;
 
 import java.util.Arrays;
 import java.util.StringTokenizer;
+import java.util.stream.IntStream;
 
+import com.sun.tools.javac.util.List;
+import org.apache.commons.lang.ArrayUtils;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.common.Types.AggOp;
 import org.apache.sysds.common.Types.CorrectionLocationType;
@@ -1027,6 +1030,16 @@ public class InstructionUtils
 		//replace and reconstruct string
 		parts[operand] = newValue;
 		return concatOperands(parts);
+	}
+
+	public static String removeOperand(String instStr, int operand) {
+		//split instruction and check for correctness
+		String[] parts = instStr.split(Lop.OPERAND_DELIMITOR);
+		if( operand >= parts.length )
+			throw new DMLRuntimeException("Operand position "
+				+ operand + " exceeds the length of the instruction.");
+		//remove and reconstruct string
+		return concatOperands((String[]) ArrayUtils.remove(parts, operand));
 	}
 
 	public static String replaceOperandName(String instStr) {

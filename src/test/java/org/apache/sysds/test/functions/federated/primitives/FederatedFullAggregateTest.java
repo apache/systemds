@@ -31,7 +31,6 @@ import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
 import org.junit.Assert;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -84,62 +83,57 @@ public class FederatedFullAggregateTest extends AutomatedTestBase {
 		addTestConfiguration(TEST_NAME6, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME6, new String[] {"S.scalar"}));
 	}
 
-//	@Test
-//	public void testSumDenseMatrixCP() {
-//		runAggregateOperationTest(OpType.SUM, ExecType.CP);
-//	}
-//
-//	@Test
-//	public void testMeanDenseMatrixCP() {
-//		runAggregateOperationTest(OpType.MEAN, ExecType.CP);
-//	}
-//
-//	@Test
-//	public void testMaxDenseMatrixCP() {
-//		runAggregateOperationTest(OpType.MAX, ExecType.CP);
-//	}
-//
-//	@Test
-//	public void testMinDenseMatrixCP() {
-//		runAggregateOperationTest(OpType.MIN, ExecType.CP);
-//	}
-//
-//	@Test
-//	public void testVarDenseMatrixCP() {
-//		runAggregateOperationTest(OpType.VAR, ExecType.CP);
-//	}
-//
-//	@Test
-//	public void testTernarySumDenseMatrixCP() {
-//		runAggregateOperationTest(OpType.TERNARY_SUM, ExecType.CP);
-//	}
+	@Test
+	public void testSumDenseMatrixCP() {
+		runAggregateOperationTest(OpType.SUM, ExecType.CP);
+	}
 
 	@Test
-//	@Ignore
+	public void testMeanDenseMatrixCP() {
+		runAggregateOperationTest(OpType.MEAN, ExecType.CP);
+	}
+
+	@Test
+	public void testMaxDenseMatrixCP() {
+		runAggregateOperationTest(OpType.MAX, ExecType.CP);
+	}
+
+	@Test
+	public void testMinDenseMatrixCP() {
+		runAggregateOperationTest(OpType.MIN, ExecType.CP);
+	}
+
+	@Test
+	public void testVarDenseMatrixCP() {
+		runAggregateOperationTest(OpType.VAR, ExecType.CP);
+	}
+
+	@Test
+	public void testTernarySumDenseMatrixCP() {
+		runAggregateOperationTest(OpType.TERNARY_SUM, ExecType.CP);
+	}
+
+	@Test
 	public void testSumDenseMatrixSP() {
 		runAggregateOperationTest(OpType.SUM, ExecType.SPARK);
 	}
 
 	@Test
-//	@Ignore
 	public void testMeanDenseMatrixSP() {
 		runAggregateOperationTest(OpType.MEAN, ExecType.SPARK);
 	}
 
 	@Test
-//	@Ignore
 	public void testMaxDenseMatrixSP() {
 		runAggregateOperationTest(OpType.MAX, ExecType.SPARK);
 	}
 
 	@Test
-//	@Ignore
 	public void testMinDenseMatrixSP() {
 		runAggregateOperationTest(OpType.MIN, ExecType.SPARK);
 	}
 
 	@Test
-//	@Ignore
 	public void testVarDenseMatrixSP() {
 		runAggregateOperationTest(OpType.VAR, ExecType.SPARK);
 	}
@@ -149,6 +143,9 @@ public class FederatedFullAggregateTest extends AutomatedTestBase {
 		switch(instType) {
 			case SPARK:
 				rtplatform = ExecMode.SPARK;
+				break;
+			case CP:
+				rtplatform = ExecMode.SINGLE_NODE;
 				break;
 			default:
 				rtplatform = ExecMode.HYBRID;

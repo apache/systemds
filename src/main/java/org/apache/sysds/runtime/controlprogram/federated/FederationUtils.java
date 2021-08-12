@@ -100,7 +100,11 @@ public class FederationUtils {
 	}
 
 	public static FederatedRequest callInstruction(String inst, CPOperand varOldOut, long outputId, CPOperand[] varOldIn, long[] varNewIn) {
-		String linst = InstructionUtils.replaceOperand(inst, 0, ExecType.CP.name());
+		return callInstruction(inst, varOldOut, outputId, varOldIn, varNewIn, ExecType.CP);
+	}
+
+	public static FederatedRequest callInstruction(String inst, CPOperand varOldOut, long outputId, CPOperand[] varOldIn, long[] varNewIn, ExecType type) {
+		String linst = InstructionUtils.replaceOperand(inst, 0, type.name());
 		linst = linst.replace(Lop.OPERAND_DELIMITOR+varOldOut.getName()+Lop.DATATYPE_PREFIX, Lop.OPERAND_DELIMITOR+outputId+Lop.DATATYPE_PREFIX);
 		for(int i=0; i<varOldIn.length; i++)
 			if( varOldIn[i] != null ) {

@@ -602,6 +602,25 @@ public class ExecutionContext {
 		return ret;
 	}
 
+	public static MatrixObject createMatrixObject(DataCharacteristics dc) {
+		MatrixObject ret = new MatrixObject(Types.ValueType.FP64,
+			OptimizerUtils.getUniqueTempFileName());
+		ret.setMetaData(new MetaDataFormat(new MatrixCharacteristics(
+			dc.getRows(), dc.getCols()), FileFormat.BINARY));
+		ret.getMetaData().getDataCharacteristics()
+			.setBlocksize(ConfigurationManager.getBlocksize());
+		return ret;
+	}
+
+	public static FrameObject createFrameObject(DataCharacteristics dc) {
+		FrameObject ret = new FrameObject(OptimizerUtils.getUniqueTempFileName());
+		ret.setMetaData(new MetaDataFormat(new MatrixCharacteristics(
+			dc.getRows(), dc.getCols()), FileFormat.BINARY));
+		ret.getMetaData().getDataCharacteristics()
+			.setBlocksize(ConfigurationManager.getBlocksize());
+		return ret;
+	}
+
 	public static FrameObject createFrameObject(FrameBlock fb) {
 		FrameObject ret = new FrameObject(OptimizerUtils.getUniqueTempFileName());
 		ret.acquireModify(fb);

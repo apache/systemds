@@ -197,7 +197,7 @@ public class CtableFEDInstruction extends ComputationFEDInstruction {
 					continue;
 
 				// check intersect with AND and compare number of nnz
-				MatrixBlock prevExtend = new MatrixBlock(curr.getNumRows(), curr.getNumColumns(), 0.0);
+				MatrixBlock prevExtend = new MatrixBlock(curr.getNumRows(), curr.getNumColumns(), true, 0);
 				prevExtend.copy(0, prev.getNumRows()-1, 0, prev.getNumColumns()-1, prev, true);
 
 				MatrixBlock  intersect = curr.binaryOperationsInPlace(new BinaryOperator(And.getAndFnObject()), prevExtend);
@@ -240,7 +240,7 @@ public class CtableFEDInstruction extends ComputationFEDInstruction {
 	}
 
 	private static MatrixBlock aggResult(Future<FederatedResponse>[] ffr) {
-		MatrixBlock resultBlock = new MatrixBlock(1, 1, 0);
+		MatrixBlock resultBlock = new MatrixBlock(1, 1, true, 0);
 		int dim1 = 0, dim2 = 0;
 		for(int i = 0; i < ffr.length; i++) {
 			try {
@@ -249,10 +249,10 @@ public class CtableFEDInstruction extends ComputationFEDInstruction {
 				dim2 = mb.getNumColumns()  > dim2 ? mb.getNumColumns() : dim2;
 
 				// set next and prev to same output dimensions
-				MatrixBlock prev = new MatrixBlock(dim1, dim2, 0.0);
+				MatrixBlock prev = new MatrixBlock(dim1, dim2, true, 0);
 				prev.copy(0, resultBlock.getNumRows()-1, 0, resultBlock.getNumColumns()-1, resultBlock, true);
 
-				MatrixBlock next = new MatrixBlock(dim1, dim2, 0.0);
+				MatrixBlock next = new MatrixBlock(dim1, dim2, true, 0);
 				next.copy(0, mb.getNumRows()-1, 0, mb.getNumColumns()-1, mb, true);
 
 				// add worker results

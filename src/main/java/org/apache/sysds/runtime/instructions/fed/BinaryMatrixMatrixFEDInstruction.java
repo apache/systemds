@@ -53,7 +53,7 @@ public class BinaryMatrixMatrixFEDInstruction extends BinaryFEDInstruction
 
 		//execute federated operation on mo1 or mo2
 		FederatedRequest fr2 = null;
-		if( mo2.isFederated() ) {
+		if( mo2.isFederatedExcept(FType.BROADCAST) ) {
 			if(mo1.isFederated() && mo1.getFedMapping().isAligned(mo2.getFedMapping(),
 					mo1.isFederated(FType.ROW) ? AlignType.ROW : AlignType.COL)) {
 				fr2 = FederationUtils.callInstruction(instString, output,
@@ -61,7 +61,7 @@ public class BinaryMatrixMatrixFEDInstruction extends BinaryFEDInstruction
 					new long[]{mo1.getFedMapping().getID(), mo2.getFedMapping().getID()}, true);
 				mo1.getFedMapping().execute(getTID(), true, fr2);
 			}
-			else if ( !mo1.isFederated() ){
+			else if ( !mo1.isFederated() ) {
 				FederatedRequest[] fr1 = mo2.getFedMapping().broadcastSliced(mo1, false);
 				fr2 = FederationUtils.callInstruction(instString, output,
 					new CPOperand[]{input1, input2},
@@ -74,16 +74,14 @@ public class BinaryMatrixMatrixFEDInstruction extends BinaryFEDInstruction
 			}
 		}
 		else { // matrix-matrix binary operations -> lhs fed input -> fed output
-			if(mo1.isFederated(FType.FULL)) {
+			if(mo1.isFederated(FType.FULL) ) {
 				// full federated (row and col)
 				if(mo1.getFedMapping().getSize() == 1) {
 					// only one partition (MM on a single fed worker)
 					FederatedRequest fr1 = mo1.getFedMapping().broadcast(mo2);
 					fr2 = FederationUtils.callInstruction(instString, output, new CPOperand[]{input1, input2},
 					new long[]{mo1.getFedMapping().getID(), fr1.getID()}, true);
-					FederatedRequest fr3 = mo1.getFedMapping().cleanup(getTID(), fr1.getID());
-					//execute federated instruction and cleanup intermediates
-					mo1.getFedMapping().execute(getTID(), true, fr1, fr2, fr3);
+					mo1.getFedMapping().execute(getTID(), true, fr1, fr2);
 				}
 				else {
 					throw new DMLRuntimeException("Matrix-matrix binary operations with a full partitioned federated input with multiple partitions are not supported yet.");
@@ -95,9 +93,7 @@ public class BinaryMatrixMatrixFEDInstruction extends BinaryFEDInstruction
 				FederatedRequest fr1 = mo1.getFedMapping().broadcast(mo2);
 				fr2 = FederationUtils.callInstruction(instString, output, new CPOperand[]{input1, input2},
 				new long[]{mo1.getFedMapping().getID(), fr1.getID()}, true);
-				FederatedRequest fr3 = mo1.getFedMapping().cleanup(getTID(), fr1.getID());
-				//execute federated instruction and cleanup intermediates
-				mo1.getFedMapping().execute(getTID(), true, fr1, fr2, fr3);
+				mo1.getFedMapping().execute(getTID(), true, fr1, fr2);
 			}
 			else if((mo1.isFederated(FType.ROW) ^ mo1.isFederated(FType.COL))
 			 	|| (mo1.isFederated(FType.FULL) && mo1.getFedMapping().getSize() == 1)) {
@@ -105,17 +101,13 @@ public class BinaryMatrixMatrixFEDInstruction extends BinaryFEDInstruction
 				FederatedRequest[] fr1 = mo1.getFedMapping().broadcastSliced(mo2, false);
 				fr2 = FederationUtils.callInstruction(instString, output, new CPOperand[]{input1, input2},
 					new long[]{mo1.getFedMapping().getID(), fr1[0].getID()}, true);
-				FederatedRequest fr3 = mo1.getFedMapping().cleanup(getTID(), fr1[0].getID());
-				//execute federated instruction and cleanup intermediates
-				mo1.getFedMapping().execute(getTID(), true, fr1, fr2, fr3);
+				mo1.getFedMapping().execute(getTID(), true, fr1, fr2);
 			}
 			else if ( mo1.isFederated(FType.PART) && !mo2.isFederated() ){
 				FederatedRequest fr1 = mo1.getFedMapping().broadcast(mo2);
 				fr2 = FederationUtils.callInstruction(instString, output, new CPOperand[]{input1, input2},
 					new long[]{mo1.getFedMapping().getID(), fr1.getID()}, true);
-				FederatedRequest fr3 = mo1.getFedMapping().cleanup(getTID(), fr1.getID());
-				//execute federated instruction and cleanup intermediates
-				mo1.getFedMapping().execute(getTID(), true, fr1, fr2, fr3);
+				mo1.getFedMapping().execute(getTID(), true, fr1, fr2);
 			}
 			else {
 				throw new DMLRuntimeException("Matrix-matrix binary operations are only supported with a row partitioned or column partitioned federated input yet.");

@@ -30,12 +30,11 @@ import java.util.concurrent.Future;
 import java.util.function.BiFunction;
 import java.util.stream.Stream;
 
-import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
+import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.CacheBlock;
 import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest.RequestType;
-import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.instructions.cp.ScalarObject;
 import org.apache.sysds.runtime.instructions.cp.VariableCPInstruction;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
@@ -44,19 +43,19 @@ import org.apache.sysds.runtime.util.CommonThreadPool;
 import org.apache.sysds.runtime.util.IndexRange;
 
 public class FederationMap {
-	public enum FPartitioning{
+	public enum FPartitioning {
 		ROW,   //row partitioned, groups of entire rows
 		COL,   //column partitioned, groups of entire columns
 		MIXED, //arbitrary rectangles
 		NONE,  //entire data in a location
 	}
-	
+
 	public enum FReplication {
 		NONE,    //every data item in a separate location
 		FULL,    //every data item at every location
 		OVERLAP, //every data item partially at every location, w/ addition as aggregation method
 	}
-	
+
 	public enum FType {
 		ROW(FPartitioning.ROW, FReplication.NONE),
 		COL(FPartitioning.COL, FReplication.NONE),
@@ -68,12 +67,12 @@ public class FederationMap {
 		private final FPartitioning _partType;
 		@SuppressWarnings("unused") //not yet
 		private final FReplication _repType;
-		
+
 		private FType(FPartitioning ptype, FReplication rtype) {
 			_partType = ptype;
 			_repType = rtype;
 		}
-		
+
 		public boolean isRowPartitioned() {
 			return _partType == FPartitioning.ROW
 				|| _partType == FPartitioning.NONE;
@@ -82,6 +81,10 @@ public class FederationMap {
 		public boolean isColPartitioned() {
 			return _partType == FPartitioning.COL
 				|| _partType == FPartitioning.NONE;
+		}
+
+		public FPartitioning getPartType() {
+			return this._partType;
 		}
 
 		public boolean isType(FType t) {
@@ -162,18 +165,18 @@ public class FederationMap {
 	public FederatedRange[] getFederatedRanges() {
 		return _fedMap.stream().map(e -> e.getKey()).toArray(FederatedRange[]::new);
 	}
-	
+
 	public FederatedData[] getFederatedData() {
 		return _fedMap.stream().map(e -> e.getValue()).toArray(FederatedData[]::new);
 	}
-	
+
 	private FederatedData getFederatedData(FederatedRange range) {
 		for( Pair<FederatedRange, FederatedData> e : _fedMap )
 			if( e.getKey().equals(range) )
 				return e.getValue();
 		return null;
 	}
-	
+
 	private void removeFederatedData(FederatedRange range) {
 		Iterator<Pair<FederatedRange, FederatedData>> iter = _fedMap.iterator();
 		while( iter.hasNext() )
@@ -184,11 +187,18 @@ public class FederationMap {
 	public List<Pair<FederatedRange, FederatedData>> getMap() {
 		return _fedMap;
 	}
-	
+
 	public FederatedRequest broadcast(CacheableData<?> data) {
+		// reuse existing broadcast variable
+		if( data.isFederated(FType.BROADCAST) )
+			return new FederatedRequest(RequestType.NOOP, data.getFedMapping().getID());
 		// prepare single request for all federated data
 		long id = FederationUtils.getNextFedDataID();
 		CacheBlock cb = data.acquireReadAndRelease();
+		// create new fed mapping for broadcast (a potential overwrite
+		// is fine, because with broadcast all data on all workers)
+		data.setFedMapping(copyWithNewIDAndRange(
+			cb.getNumRows(), cb.getNumColumns(), id, FType.BROADCAST));
 		return new FederatedRequest(RequestType.PUT_VAR, id, cb);
 	}
 
@@ -229,12 +239,23 @@ public class FederationMap {
 			ix[pos++] = _type == FType.ROW ?
 				new int[] {rl, ru, cl, cu} : new int[] {cl, cu, rl, ru};
 		}
-
-		// multi-threaded block slicing and federation request creation
+		
+		// created federated range
+		FederationMap bmap = copyWithNewIDAndRange(ix, id,
+			(_type == FType.ROW || (_type == FType.COL & transposed)) ? FType.ROW : FType.COL);
+		
+		// check for existing broadcast
 		FederatedRequest[] ret = new FederatedRequest[ix.length];
-		Arrays.parallelSetAll(ret,
-			i -> new FederatedRequest(RequestType.PUT_VAR, id,
+		if( data.isFederated(bmap.getType()) && data.getFedMapping().isAligned(bmap, false) ) {
+			Arrays.setAll(ret, i -> new FederatedRequest(RequestType.NOOP, data.getFedMapping().getID()));
+			data.setFedMapping(bmap); // reuse
+		}
+		// multi-threaded block slicing and federation request creation
+		else {
+			Arrays.parallelSetAll(ret,
+				i -> new FederatedRequest(RequestType.PUT_VAR, id,
 				cb.slice(ix[i][0], ix[i][1], ix[i][2], ix[i][3], new MatrixBlock())));
+		}
 		return ret;
 	}
 
@@ -253,7 +274,6 @@ public class FederationMap {
 				cb.slice(ix[i][0], ix[i][1], ix[i][2], ix[i][3], isFrame ? new FrameBlock() : new MatrixBlock())));
 		return ret;
 	}
-
 
 	/**
 	 * helper function for checking multiple allowed alignment types
@@ -283,6 +303,9 @@ public class FederationMap {
 	 */
 	public boolean isAligned(FederationMap that, boolean transposed) {
 		boolean ret = true;
+		//TODO support operations with fully broadcast objects
+		if (_type == FederationMap.FType.BROADCAST)
+			return false;
 		for(Pair<FederatedRange, FederatedData> e : _fedMap) {
 			FederatedRange range = !transposed ? e.getKey() : new FederatedRange(e.getKey()).transpose();
 			FederatedData dat2 = that.getFederatedData(range);
@@ -414,7 +437,7 @@ public class FederationMap {
 		List<Pair<FederatedRange, Future<FederatedResponse>>> readResponses = new ArrayList<>();
 		FederatedRequest request = new FederatedRequest(RequestType.GET_VAR, _ID);
 		for(Pair<FederatedRange, FederatedData> e : _fedMap)
-			readResponses.add(new ImmutablePair<>(e.getKey(), e.getValue().executeFederatedOperation(request)));
+			readResponses.add(Pair.of(e.getKey(), e.getValue().executeFederatedOperation(request)));
 		return readResponses;
 	}
 
@@ -527,6 +550,10 @@ public class FederationMap {
 	 * @return new federation map with overlapping ranges with partially aggregated values
 	 */
 	public FederationMap copyWithNewIDAndRange(long rowRangeEnd, long colRangeEnd, long outputID){
+		return copyWithNewIDAndRange(rowRangeEnd, colRangeEnd, outputID, FType.PART);
+	}
+	
+	public FederationMap copyWithNewIDAndRange(long rowRangeEnd, long colRangeEnd, long outputID, FType type){
 		List<Pair<FederatedRange, FederatedData>> outputMap = new ArrayList<>();
 		for(Pair<FederatedRange, FederatedData> e : _fedMap) {
 			if(e.getKey().getSize() != 0)
@@ -534,7 +561,19 @@ public class FederationMap {
 					new FederatedRange(new long[]{0,0}, new long[]{rowRangeEnd, colRangeEnd}),
 					e.getValue().copyWithNewID(outputID)));
 		}
-		return new FederationMap(outputID, outputMap, FType.PART);
+		return new FederationMap(outputID, outputMap, type);
+	}
+	
+	public FederationMap copyWithNewIDAndRange(int[][] ix, long outputID, FType type){
+		List<Pair<FederatedRange, FederatedData>> outputMap = new ArrayList<>();
+		int pos = 0;
+		for(Pair<FederatedRange, FederatedData> e : _fedMap) {
+			outputMap.add(Pair.of(
+				new FederatedRange(new long[]{ix[pos][0],ix[pos][1]}, new long[]{ix[pos][2], ix[pos][3]}),
+				e.getValue().copyWithNewID(outputID)));
+			pos++;
+		}
+		return new FederationMap(outputID, outputMap, type);
 	}
 
 	public FederationMap bind(long rOffset, long cOffset, FederationMap that) {

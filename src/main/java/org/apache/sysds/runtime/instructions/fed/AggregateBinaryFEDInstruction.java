@@ -98,10 +98,9 @@ public class AggregateBinaryFEDInstruction extends BinaryFEDInstruction {
 			FederatedRequest fr2 = FederationUtils.callInstruction(instString, output,
 				new CPOperand[]{input1, input2},
 				new long[]{mo1.getFedMapping().getID(), fr1.getID()}, true);
-			if( mo2.getNumColumns() == 1 && mo2.getNumRows() != mo1.getNumColumns()) { //MV
+			if( mo2.getNumColumns() == 1 ) { //MV
 				if ( _fedOut.isForcedFederated() ){
-					FederatedRequest fr3 = mo1.getFedMapping().cleanup(getTID(), fr1.getID());
-					mo1.getFedMapping().execute(getTID(), fr1, fr2, fr3);
+					mo1.getFedMapping().execute(getTID(), fr1, fr2);
 					if ( mo1.isFederated(FType.PART) )
 						setPartialOutput(mo1.getFedMapping(), mo1, mo2, fr2.getID(), ec);
 					else
@@ -109,7 +108,7 @@ public class AggregateBinaryFEDInstruction extends BinaryFEDInstruction {
 				}
 				else {
 					FederatedRequest fr3 = new FederatedRequest(RequestType.GET_VAR, fr2.getID());
-					FederatedRequest fr4 = mo1.getFedMapping().cleanup(getTID(), fr1.getID(), fr2.getID());
+					FederatedRequest fr4 = mo1.getFedMapping().cleanup(getTID(), fr2.getID());
 					//execute federated operations and aggregate
 					Future<FederatedResponse>[] tmp = mo1.getFedMapping().execute(getTID(), fr1, fr2, fr3, fr4);
 					MatrixBlock ret;
@@ -123,8 +122,7 @@ public class AggregateBinaryFEDInstruction extends BinaryFEDInstruction {
 			else { //MM
 				//execute federated operations and aggregate
 				if ( !_fedOut.isForcedLocal() ){
-					FederatedRequest fr3 = mo1.getFedMapping().cleanup(getTID(), fr1.getID());
-					mo1.getFedMapping().execute(getTID(), true, fr1, fr2, fr3);
+					mo1.getFedMapping().execute(getTID(), true, fr1, fr2);
 					if ( mo1.isFederated(FType.PART) || mo2.isFederated(FType.PART) )
 						setPartialOutput(mo1.getFedMapping(), mo1, mo2, fr2.getID(), ec);
 					else
@@ -132,7 +130,7 @@ public class AggregateBinaryFEDInstruction extends BinaryFEDInstruction {
 				}
 				else {
 					FederatedRequest fr3 = new FederatedRequest(RequestType.GET_VAR, fr2.getID());
-					FederatedRequest fr4 = mo1.getFedMapping().cleanup(getTID(), fr1.getID(), fr2.getID());
+					FederatedRequest fr4 = mo1.getFedMapping().cleanup(getTID(), fr2.getID());
 					//execute federated operations and aggregate
 					Future<FederatedResponse>[] tmp = mo1.getFedMapping().execute(getTID(), fr1, fr2, fr3, fr4);
 					MatrixBlock ret;
@@ -171,15 +169,14 @@ public class AggregateBinaryFEDInstruction extends BinaryFEDInstruction {
 					new long[]{fr1[0].getID(), mo2.getFedMapping().getID()}, true);
 				if ( _fedOut.isForcedFederated() ){
 					// Partial aggregates (set fedmapping to the partial aggs)
-					FederatedRequest fr3 = mo2.getFedMapping().cleanup(getTID(), fr1[0].getID());
-					mo2.getFedMapping().execute(getTID(), true, fr1, fr2, fr3);
+					mo2.getFedMapping().execute(getTID(), true, fr1, fr2);
 					setPartialOutput(mo2.getFedMapping(), mo1, mo2, fr2.getID(), ec);
 				}
 				else {
 					FederatedRequest fr3 = new FederatedRequest(RequestType.GET_VAR, fr2.getID());
-					FederatedRequest fr4 = mo2.getFedMapping().cleanup(getTID(), fr1[0].getID(), fr2.getID());
+					FederatedRequest fr4 = mo2.getFedMapping().cleanup(getTID(), fr2.getID());
 					//execute federated operations and aggregate
-					Future<FederatedResponse>[] tmp = mo2.getFedMapping().execute(getTID(), fr1, fr2, fr3, fr4);
+					Future<FederatedResponse>[] tmp = mo2.getFedMapping().execute(getTID(), true, fr1, fr2, fr3, fr4);
 					MatrixBlock ret = FederationUtils.aggAdd(tmp);
 					ec.setMatrixOutput(output.getName(), ret);
 				}
@@ -194,13 +191,12 @@ public class AggregateBinaryFEDInstruction extends BinaryFEDInstruction {
 				new long[]{mo1.getFedMapping().getID(), fr1[0].getID()}, true);
 			if ( _fedOut.isForcedFederated() ){
 				// Partial aggregates (set fedmapping to the partial aggs)
-				FederatedRequest fr3 = mo1.getFedMapping().cleanup(getTID(), fr1[0].getID());
-				mo1.getFedMapping().execute(getTID(), true, fr1, fr2, fr3);
+				mo1.getFedMapping().execute(getTID(), true, fr1, fr2);
 				setPartialOutput(mo1.getFedMapping(), mo1, mo2, fr2.getID(), ec);
 			}
 			else {
 				FederatedRequest fr3 = new FederatedRequest(RequestType.GET_VAR, fr2.getID());
-				FederatedRequest fr4 = mo1.getFedMapping().cleanup(getTID(), fr1[0].getID(), fr2.getID());
+				FederatedRequest fr4 = mo1.getFedMapping().cleanup(getTID(), fr2.getID());
 				//execute federated operations and aggregate
 				Future<FederatedResponse>[] tmp = mo1.getFedMapping().execute(getTID(), fr1, fr2, fr3, fr4);
 				MatrixBlock ret = FederationUtils.aggAdd(tmp);

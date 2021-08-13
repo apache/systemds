@@ -518,7 +518,6 @@ public class Types
 			}
 		}
 	}
-	
 
 	public enum FileFormat {
 		TEXT,   // text cell IJV representation (mm w/o header)

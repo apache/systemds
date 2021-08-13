@@ -91,8 +91,7 @@ public class MMChainFEDInstruction extends UnaryFEDInstruction {
 					new CPOperand[]{input1, input2, input3},
 					new long[]{mo1.getFedMapping().getID(), fr1.getID(), mo3.getFedMapping().getID()});
 				FederatedRequest fr3 = new FederatedRequest(RequestType.GET_VAR, fr2.getID());
-				FederatedRequest fr4 = mo1.getFedMapping()
-					.cleanup(getTID(), fr1.getID(), fr2.getID());
+				FederatedRequest fr4 = mo1.getFedMapping().cleanup(getTID(), fr2.getID());
 
 				//execute federated operations and aggregate
 				Future<FederatedResponse>[] tmp = mo1.getFedMapping().execute(getTID(), fr1, fr2, fr3, fr4);
@@ -104,8 +103,7 @@ public class MMChainFEDInstruction extends UnaryFEDInstruction {
 			FederatedRequest fr2 = FederationUtils.callInstruction(instString, output,
 				new CPOperand[]{input1, input2}, new long[]{mo1.getFedMapping().getID(), fr1.getID()});
 			FederatedRequest fr3 = new FederatedRequest(RequestType.GET_VAR, fr2.getID());
-			FederatedRequest fr4 = mo1.getFedMapping()
-				.cleanup(getTID(), fr1.getID(), fr2.getID());
+			FederatedRequest fr4 = mo1.getFedMapping().cleanup(getTID(), fr2.getID());
 			
 			//execute federated operations and aggregate
 			Future<FederatedResponse>[] tmp = mo1.getFedMapping().execute(getTID(), fr1, fr2, fr3, fr4);
@@ -120,7 +118,7 @@ public class MMChainFEDInstruction extends UnaryFEDInstruction {
 				new long[]{mo1.getFedMapping().getID(), fr1.getID(), fr0[0].getID()});
 			FederatedRequest fr3 = new FederatedRequest(RequestType.GET_VAR, fr2.getID());
 			FederatedRequest fr4 = mo1.getFedMapping()
-				.cleanup(getTID(), fr0[0].getID(), fr1.getID(), fr2.getID());
+				.cleanup(getTID(), fr1.getID(), fr2.getID());
 
 			//execute federated operations and aggregate
 			Future<FederatedResponse>[] tmp = mo1.getFedMapping().execute(getTID(), fr0, fr1, fr2, fr3, fr4);

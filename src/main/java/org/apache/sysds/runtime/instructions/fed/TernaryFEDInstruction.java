@@ -99,7 +99,6 @@ public class TernaryFEDInstruction extends ComputationFEDInstruction {
 	private void process2MatrixScalarInput(ExecutionContext ec, MatrixObject mo1, MatrixObject mo2, CPOperand in1, CPOperand in2) {
 		FederatedRequest[] fr1 = null;
 		CPOperand[] varOldIn;
-		boolean cleanupIn = true;
 		long[] varNewIn;
 		varOldIn = new CPOperand[] {in1, in2};
 		if(mo1.isFederated()) {
@@ -110,7 +109,6 @@ public class TernaryFEDInstruction extends ComputationFEDInstruction {
 				varNewIn = new long[]{mo1.getFedMapping().getID(), fr1[0].getID()};
 			}
 		} else {
-			cleanupIn = false;
 			mo1 = ec.getMatrixObject(in2);
 			fr1 = mo1.getFedMapping().broadcastSliced(ec.getMatrixObject(in1), false);
 			varNewIn = new long[]{fr1[0].getID(), mo1.getFedMapping().getID()};
@@ -118,16 +116,10 @@ public class TernaryFEDInstruction extends ComputationFEDInstruction {
 		FederatedRequest fr2 = FederationUtils.callInstruction(instString, output, varOldIn, varNewIn);
 
 		// 2 aligned inputs
-		if(fr1 == null) {
+		if(fr1 == null)
 			sendFederatedRequests(ec, mo1, fr2.getID(), fr2);
-		} else {
-			if(cleanupIn) {
-				FederatedRequest fr3 = mo1.getFedMapping().cleanup(getTID(), fr1[0].getID());
-				sendFederatedRequests(ec, mo1, fr2.getID(), fr1, fr2, fr3);
-			}
-			else
-				sendFederatedRequests(ec, mo1, fr2.getID(), fr1, fr2);
-		}
+		else
+			sendFederatedRequests(ec, mo1, fr2.getID(), fr1, fr2);
 	}
 
 	/**
@@ -248,8 +240,7 @@ public class TernaryFEDInstruction extends ComputationFEDInstruction {
 					mo1.getFedMapping().getID()};
 
 			fr3 = FederationUtils.callInstruction(instString, output, new CPOperand[] {input1, input2, input3}, vars);
-			fr4 = mo1.getFedMapping().cleanup(getTID(), fr1[0].getID(), fr2[0].getID());
-			sendFederatedRequests(ec, mo1, fr3.getID(), fr1, fr2, fr3, fr4);
+			sendFederatedRequests(ec, mo1, fr3.getID(), fr1, fr2, fr3);
 		}
 	}
 
@@ -264,19 +255,20 @@ public class TernaryFEDInstruction extends ComputationFEDInstruction {
 	private RetAlignedValues getAlignedInputs(ExecutionContext ec, MatrixObject mo1, MatrixObject mo2, MatrixObject mo3) {
 		long[] vars = new long[0];
 		FederatedRequest[] fr = new FederatedRequest[0];
-		boolean twoAligned = false, allAligned = false;
-		if(mo1.isFederated() && mo2.isFederated() && mo1.getFedMapping().isAligned(mo2.getFedMapping(), false)) {
+		boolean allAligned = mo1.isFederated() && mo2.isFederated() && mo3.isFederated() && mo1.getFedMapping().isAligned(mo2.getFedMapping(), false) &&
+			mo1.getFedMapping().isAligned(mo3.getFedMapping(), false);
+		boolean twoAligned = false;
+		if(!allAligned && mo1.isFederated() && !mo1.isFederated(FederationMap.FType.BROADCAST) && mo2.isFederated() &&
+			mo1.getFedMapping().isAligned(mo2.getFedMapping(), false)) {
 			twoAligned = true;
 			fr = mo1.getFedMapping().broadcastSliced(mo3, false);
 			vars = new long[] {mo1.getFedMapping().getID(), mo2.getFedMapping().getID(), fr[0].getID()};
-		}
-		if(mo1.isFederated() && mo3.isFederated() && mo1.getFedMapping().isAligned(mo3.getFedMapping(), false)) {
-			allAligned = twoAligned;
+		} else if(!allAligned && mo1.isFederated() && !mo1.isFederated(FederationMap.FType.BROADCAST) &&
+			mo3.isFederated() && mo1.getFedMapping().isAligned(mo3.getFedMapping(), false)) {
 			twoAligned = true;
 			fr = mo1.getFedMapping().broadcastSliced(mo2, false);
 			vars = new long[] {mo1.getFedMapping().getID(), fr[0].getID(), mo3.getFedMapping().getID()};
-		}
-		if(mo2.isFederated() && mo3.isFederated() && mo2.getFedMapping().isAligned(mo3.getFedMapping(), false) && !allAligned) {
+		} else if(!mo1.isFederated(FederationMap.FType.BROADCAST) && mo2.isFederated() && mo3.isFederated() && mo2.getFedMapping().isAligned(mo3.getFedMapping(), false) && !allAligned) {
 			twoAligned = true;
 			mo1 = mo2;
 			mo2 = mo3;

@@ -89,29 +89,31 @@ public class AppendFEDInstruction extends BinaryFEDInstruction {
 		
 		// federated/federated
 		if( mo1.isFederated() && mo2.isFederated() 
-			&& mo1.getFedMapping().getType()==mo2.getFedMapping().getType() ) 
+			&& mo1.getFedMapping().getType()==mo2.getFedMapping().getType()
+			&& !mo1.getFedMapping().isAligned(mo2.getFedMapping(), FederationMap.AlignType.valueOf(mo1.getFedMapping().getType().name()))
+		)
 		{
 			long id = FederationUtils.getNextFedDataID();
 			long roff = _cbind ? 0 : dc1.getRows();
 			long coff = _cbind ? dc1.getCols() : 0;
-			out.setFedMapping(mo1.getFedMapping().identCopy(getTID(), id)
-				.bind(roff, coff, mo2.getFedMapping().identCopy(getTID(), id)));
+
+			out.setFedMapping(mo1.getFedMapping().identCopy(getTID(), id).bind(roff, coff, mo2.getFedMapping().identCopy(getTID(), id)));
 		}
 		// federated/local, local/federated cbind
 		else if( (mo1.isFederated(FType.ROW) || mo2.isFederated(FType.ROW)) && _cbind ) {
-			MatrixObject moFed = mo1.isFederated(FType.ROW) ? mo1 : mo2;
-			MatrixObject moLoc = mo1.isFederated(FType.ROW) ? mo2 : mo1;
+			boolean isFed = mo1.isFederated(FType.ROW);
+			MatrixObject moFed = isFed ? mo1 : mo2;
+			MatrixObject moLoc = isFed ? mo2 : mo1;
 			
 			//construct commands: broadcast lhs, fed append, clean broadcast
 			FederatedRequest[] fr1 = moFed.getFedMapping().broadcastSliced(moLoc, false);
 			FederatedRequest fr2 = FederationUtils.callInstruction(instString, output,
-				new CPOperand[]{input1, input2}, mo1.isFederated(FType.ROW) ?
+				new CPOperand[]{input1, input2}, isFed ?
 				new long[]{ moFed.getFedMapping().getID(), fr1[0].getID()} :
 				new long[]{ fr1[0].getID(), moFed.getFedMapping().getID()});
-			FederatedRequest fr3 = moFed.getFedMapping().cleanup(getTID(), fr1[0].getID());
 			
 			//execute federated operations and set output
-			moFed.getFedMapping().execute(getTID(), true, fr1, fr2, fr3);
+			moFed.getFedMapping().execute(getTID(), true, fr1, fr2);
 			out.setFedMapping(moFed.getFedMapping().copyWithNewID(fr2.getID(), out.getNumColumns()));
 		}
 		// federated/local, local/federated rbind

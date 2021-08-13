@@ -67,7 +67,7 @@ public class QuaternaryWCeMMFEDInstruction extends QuaternaryFEDInstruction
 		if(qop.hasFourInputs()) {
 			eps = (_input4.getDataType() == DataType.SCALAR) ?
 				ec.getScalarInput(_input4) :
-				new DoubleObject(ec.getMatrixInput(_input4).quickGetValue(0, 0));
+				new DoubleObject(ec.getMatrixInput(_input4.getName()).quickGetValue(0, 0));
 		}
 
 		if(X.isFederated()) {
@@ -123,11 +123,7 @@ public class QuaternaryWCeMMFEDInstruction extends QuaternaryFEDInstruction
 			
 			ArrayList<FederatedRequest> frC = new ArrayList<>(); // FederatedRequests for cleanup
 			frC.add(fedMap.cleanup(getTID(), frComp.getID()));
-			if(frSliced != null)
-				frC.add(fedMap.cleanup(getTID(), frSliced[0].getID()));
-			for(FederatedRequest fr : frB)
-				frC.add(fedMap.cleanup(getTID(), fr.getID()));
-
+			
 			FederatedRequest[] frAll = ArrayUtils.addAll(ArrayUtils.addAll(
 				frB.toArray(new FederatedRequest[0]), frComp, frGet),
 				frC.toArray(new FederatedRequest[0]));

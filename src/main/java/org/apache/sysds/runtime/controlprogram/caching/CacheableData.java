@@ -401,6 +401,10 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 		return isFederated() && (type == null || _fedMapping.getType().isType(type));
 	}
 	
+	public boolean isFederatedExcept(FType type) {
+		return isFederated() && !isFederated(type);
+	}
+	
 	/**
 	 * Gets the mapping of indices ranges to federated objects.
 	 * @return fedMapping mapping

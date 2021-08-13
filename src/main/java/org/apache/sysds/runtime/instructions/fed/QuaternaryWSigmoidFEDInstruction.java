@@ -99,10 +99,6 @@ public class QuaternaryWSigmoidFEDInstruction extends QuaternaryFEDInstruction {
 				output, new CPOperand[] {input1, input2, input3}, varNewIn);
 
 			ArrayList<FederatedRequest> frC = new ArrayList<>();
-			if(frSliced != null)
-				frC.add(fedMap.cleanup(getTID(), frSliced[0].getID()));
-			frC.add(fedMap.cleanup(getTID(), frB.getID()));
-
 			FederatedRequest[] frAll = ArrayUtils.addAll(new FederatedRequest[]{frB, frComp},
 				frC.toArray(new FederatedRequest[0]));
 

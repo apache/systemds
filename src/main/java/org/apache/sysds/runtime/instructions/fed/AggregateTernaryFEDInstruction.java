@@ -93,10 +93,9 @@ public class AggregateTernaryFEDInstruction extends ComputationFEDInstruction {
 		}
 		else if(mo1.isFederated() && mo2.isFederated()
 			&& mo1.getFedMapping().isAligned(mo2.getFedMapping(), false) && mo3 == null) {
-			FederatedRequest fr1 = mo1.getFedMapping().broadcast(ec.getScalarInput(_ins.input3));
-			FederatedRequest fr2 = FederationUtils.callInstruction(_ins.getInstructionString(),
-				_ins.getOutput(),
-				new CPOperand[] {_ins.input1, _ins.input2, _ins.input3},
+			FederatedRequest fr1 = mo1.getFedMapping().broadcast(ec.getScalarInput(input3));
+			FederatedRequest fr2 = FederationUtils.callInstruction(instString, output,
+				new CPOperand[] {input1, input2, input3},
 				new long[] {mo1.getFedMapping().getID(), mo2.getFedMapping().getID(), fr1.getID()});
 			FederatedRequest fr3 = new FederatedRequest(RequestType.GET_VAR, fr2.getID());
 			FederatedRequest fr4 = mo2.getFedMapping().cleanup(getTID(), fr1.getID(), fr2.getID());
@@ -117,7 +116,7 @@ public class AggregateTernaryFEDInstruction extends ComputationFEDInstruction {
 			else {
 				throw new DMLRuntimeException("Not Implemented Federated Ternary Variation");
 			}
-		} else if(mo1.isFederatedExcept(FType.BROADCAST) && _ins.input3.isMatrix() && mo3 != null) {
+		} else if(mo1.isFederatedExcept(FType.BROADCAST) && input3.isMatrix() && mo3 != null) {
 			FederatedRequest[] fr1 = mo1.getFedMapping().broadcastSliced(mo3, false);
 			FederatedRequest[] fr2 = mo1.getFedMapping().broadcastSliced(mo2, false);
 			FederatedRequest fr3 = FederationUtils.callInstruction(getInstructionString(), output,

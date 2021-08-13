@@ -57,6 +57,7 @@ import org.apache.sysds.runtime.lineage.LineageCacheConfig;
 import org.apache.sysds.runtime.lineage.LineageCacheConfig.ReuseCacheType;
 import org.apache.sysds.runtime.lineage.LineageItem;
 import org.apache.sysds.runtime.lineage.LineageItemUtils;
+import org.apache.sysds.runtime.meta.DataCharacteristics;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.meta.MetaDataAll;
 import org.apache.sysds.runtime.meta.MetaDataFormat;
@@ -248,7 +249,7 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 	}
 
 	private FederatedResponse putVariable(FederatedRequest request) {
-		checkNumParams(request.getNumParams(), 1);
+		checkNumParams(request.getNumParams(), 1, 2);
 		String varname = String.valueOf(request.getID());
 		ExecutionContext ec = _ecm.get(request.getTID());
 		if(ec.containsVariable(varname)) {
@@ -263,6 +264,10 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 			data = (ScalarObject) request.getParam(0);
 		else if(request.getParam(0) instanceof ListObject)
 			data = (ListObject) request.getParam(0);
+		else if(request.getNumParams() == 2)
+			data = request.getParam(1) == DataType.MATRIX ?
+				ExecutionContext.createMatrixObject((MatrixCharacteristics) request.getParam(0)) :
+				ExecutionContext.createFrameObject((MatrixCharacteristics) request.getParam(0));
 		else
 			throw new DMLRuntimeException(
 				"FederatedWorkerHandler: Unsupported object type, has to be of type CacheBlock or ScalarObject");

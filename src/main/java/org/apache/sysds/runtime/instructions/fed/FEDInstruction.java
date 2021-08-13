@@ -33,6 +33,7 @@ public abstract class FEDInstruction extends Instruction {
 		Append,
 		Binary,
 		Checkpoint,
+		CSVReblock,
 		Ctable,
 		CumulativeAggregate,
 		Init,

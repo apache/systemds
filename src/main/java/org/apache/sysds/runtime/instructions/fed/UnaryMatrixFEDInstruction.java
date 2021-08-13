@@ -22,6 +22,7 @@ package org.apache.sysds.runtime.instructions.fed;
 import java.util.Arrays;
 import java.util.concurrent.Future;
 
+import org.apache.sysds.common.Types;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
@@ -131,7 +132,7 @@ public class UnaryMatrixFEDInstruction extends UnaryFEDInstruction {
 		String modifiedInstString = InstructionUtils.replaceOperand(instString, 2, InstructionUtils.createOperand(output));
 
 		FederatedRequest fr4 = FederationUtils.callInstruction(modifiedInstString, output, out.getFedMapping().getID(),
-			new CPOperand[] {output}, new long[] {out.getFedMapping().getID()});
+			new CPOperand[] {output}, new long[] {out.getFedMapping().getID()}, Types.ExecType.CP, false);
 		out.getFedMapping().execute(getTID(), true, fr4);
 
 		out.setFedMapping(out.getFedMapping().copyWithNewID(fr4.getID()));

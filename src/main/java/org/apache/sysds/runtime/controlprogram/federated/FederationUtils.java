@@ -82,7 +82,6 @@ public class FederationUtils {
 		FederatedRequest[] fr = new FederatedRequest[inst.length];
 		for(int j=0; j<inst.length; j++) {
 			for(int i = 0; i < varOldIn.length; i++) {
-//				linst[j] = linst[j].replace(ExecType.SPARK.name(), ExecType.CP.name());
 				linst[j] = linst[j].replace(
 					Lop.OPERAND_DELIMITOR + varOldOut.getName() + Lop.DATATYPE_PREFIX,
 					Lop.OPERAND_DELIMITOR + String.valueOf(id) + Lop.DATATYPE_PREFIX);
@@ -99,11 +98,7 @@ public class FederationUtils {
 		return fr;
 	}
 
-	public static FederatedRequest callInstruction(String inst, CPOperand varOldOut, long outputId, CPOperand[] varOldIn, long[] varNewIn) {
-		return callInstruction(inst, varOldOut, outputId, varOldIn, varNewIn, ExecType.CP);
-	}
-
-	public static FederatedRequest callInstruction(String inst, CPOperand varOldOut, long outputId, CPOperand[] varOldIn, long[] varNewIn, ExecType type) {
+	public static FederatedRequest callInstruction(String inst, CPOperand varOldOut, long outputId, CPOperand[] varOldIn, long[] varNewIn, ExecType type, boolean rmFedOutputFlag) {
 		String linst = InstructionUtils.replaceOperand(inst, 0, type.name());
 		linst = linst.replace(Lop.OPERAND_DELIMITOR+varOldOut.getName()+Lop.DATATYPE_PREFIX, Lop.OPERAND_DELIMITOR+outputId+Lop.DATATYPE_PREFIX);
 		for(int i=0; i<varOldIn.length; i++)
@@ -113,6 +108,8 @@ public class FederationUtils {
 					Lop.OPERAND_DELIMITOR+(varNewIn[i])+Lop.DATATYPE_PREFIX);
 				linst = linst.replace("="+varOldIn[i].getName(), "="+(varNewIn[i])); //parameterized
 			}
+		if(rmFedOutputFlag)
+			linst = InstructionUtils.removeFEDOutputFlag(linst);
 		return new FederatedRequest(RequestType.EXEC_INST, outputId, linst);
 	}
 

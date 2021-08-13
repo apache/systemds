@@ -53,15 +53,13 @@ import org.apache.sysds.utils.Statistics;
 public class ReblockSPInstruction extends UnarySPInstruction {
 	private int blen;
 	private boolean outputEmptyBlocks;
-	private boolean addMissingOutput;
 
-	private ReblockSPInstruction(Operator op, CPOperand in, CPOperand out, int br, int bc, boolean emptyBlocks, boolean addOutput,
+	private ReblockSPInstruction(Operator op, CPOperand in, CPOperand out, int br, int bc, boolean emptyBlocks,
 			String opcode, String instr) {
 		super(SPType.Reblock, op, in, out, opcode, instr);
 		blen = br;
 		blen = bc;
 		outputEmptyBlocks = emptyBlocks;
-		addMissingOutput = addOutput;
 	}
 
 	public static ReblockSPInstruction parseInstruction(String str) {
@@ -76,10 +74,9 @@ public class ReblockSPInstruction extends UnarySPInstruction {
 		CPOperand out = new CPOperand(parts[2]);
 		int blen=Integer.parseInt(parts[3]);
 		boolean outputEmptyBlocks = Boolean.parseBoolean(parts[4]);
-		boolean addOutput = parts.length == 6 && Boolean.parseBoolean(parts[5]);
 
 		Operator op = null; // no operator for ReblockSPInstruction
-		return new ReblockSPInstruction(op, in, out, blen, blen, outputEmptyBlocks, addOutput, opcode, str);
+		return new ReblockSPInstruction(op, in, out, blen, blen, outputEmptyBlocks, opcode, str);
 	}
 
 	@Override
@@ -89,14 +86,6 @@ public class ReblockSPInstruction extends UnarySPInstruction {
 		//set the output characteristics
 		CacheableData<?> obj = sec.getCacheableData(input1.getName());
 		DataCharacteristics mc = sec.getDataCharacteristics(input1.getName());
-
-		if (addMissingOutput && !sec.containsVariable(output)) {
-			CacheableData cd = obj instanceof MatrixObject ? ExecutionContext.createMatrixObject(mc) :
-				ExecutionContext.createFrameObject(mc);
-			sec.setVariable(output.getName(), cd);
-		}
-
-		//set the output characteristics
 		DataCharacteristics mcOut = sec.getDataCharacteristics(output.getName());
 		mcOut.set(mc.getRows(), mc.getCols(), blen, mc.getNonZeros());
 

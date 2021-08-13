@@ -19,7 +19,11 @@
 
 package org.apache.sysds.runtime.instructions.fed;
 
+import java.util.HashSet;
+import java.util.Set;
+
 import org.apache.sysds.common.Types;
+import org.apache.sysds.parser.DataExpression;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
@@ -31,33 +35,52 @@ import org.apache.sysds.runtime.matrix.operators.Operator;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
 import org.apache.sysds.runtime.meta.MetaDataFormat;
 
-public class ReblockFEDInstruction extends UnaryFEDInstruction {
-	private int blen;
-	private boolean outputEmptyBlocks;
+public class CSVReblockFEDInstruction extends UnaryFEDInstruction {
+	private int _blen;
+	private boolean _hasHeader;
+	private String _delim;
+	private boolean _fill;
+	private double _fillValue;
+	private Set<String> _naStrings;
 
-	private ReblockFEDInstruction(Operator op, CPOperand in, CPOperand out, int br, int bc, boolean emptyBlocks,
-		String opcode, String instr) {
-		super(FEDInstruction.FEDType.Reblock, op, in, out, opcode, instr);
-		blen = br;
-		blen = bc;
-		outputEmptyBlocks = emptyBlocks;
+	protected CSVReblockFEDInstruction(Operator op, CPOperand in, CPOperand out, int br, int bc, boolean hasHeader,
+		String delim, boolean fill, double fillValue, String opcode, String instr, Set<String> naStrings) {
+		super(FEDType.CSVReblock, op, in, out, opcode, instr);
+		_blen = br;
+		_blen = bc;
+		_hasHeader = hasHeader;
+		_delim = delim;
+		_fill = fill;
+		_fillValue = fillValue;
+		_naStrings = naStrings;
 	}
 
-	public static ReblockFEDInstruction parseInstruction(String str) {
-		String parts[] = InstructionUtils.getInstructionPartsWithValueType(str);
-		String opcode = parts[0];
+	public static CSVReblockFEDInstruction parseInstruction(String str) {
+		String opcode = InstructionUtils.getOpCode(str);
+		if( !opcode.equals("csvrblk") )
+			throw new DMLRuntimeException("Incorrect opcode for CSVReblockSPInstruction:" + opcode);
 
-		if(!opcode.equals("rblk")) {
-			throw new DMLRuntimeException("Incorrect opcode for ReblockFEDInstruction:" + opcode);
-		}
+		String parts[] = InstructionUtils.getInstructionPartsWithValueType(str);
 
 		CPOperand in = new CPOperand(parts[1]);
 		CPOperand out = new CPOperand(parts[2]);
-		int blen=Integer.parseInt(parts[3]);
-		boolean outputEmptyBlocks = Boolean.parseBoolean(parts[4]);
+		int blen = Integer.parseInt(parts[3]);
+		boolean hasHeader = Boolean.parseBoolean(parts[4]);
+		String delim = parts[5];
+		boolean fill = Boolean.parseBoolean(parts[6]);
+		double fillValue = Double.parseDouble(parts[7]);
+		Set<String> naStrings = null;
 
-		Operator op = null; // no operator for ReblockFEDInstruction
-		return new ReblockFEDInstruction(op, in, out, blen, blen, outputEmptyBlocks, opcode, str);
+		String[] naS = parts[8].split(DataExpression.DELIM_NA_STRING_SEP);
+
+		if(naS.length > 0  && !(naS.length ==1 && naS[0].isEmpty())){
+			naStrings = new HashSet<>();
+			for(String s: naS)
+				naStrings.add(s);
+		}
+
+		return new CSVReblockFEDInstruction(null, in, out, blen, blen,
+			hasHeader, delim, fill, fillValue, opcode, str, naStrings);
 	}
 
 	@Override
@@ -66,12 +89,14 @@ public class ReblockFEDInstruction extends UnaryFEDInstruction {
 		CacheableData<?> obj = ec.getCacheableData(input1.getName());
 		DataCharacteristics mc = ec.getDataCharacteristics(input1.getName());
 		DataCharacteristics mcOut = ec.getDataCharacteristics(output.getName());
-		mcOut.set(mc.getRows(), mc.getCols(), blen, mc.getNonZeros());
+		mcOut.set(mc.getRows(), mc.getCols(), _blen);
 
 		//get the source format from the meta data
 		MetaDataFormat iimd = (MetaDataFormat) obj.getMetaData();
-		if(iimd == null)
-			throw new DMLRuntimeException("Error ReblockFEDInstruction: Metadata not found");
+		if (iimd.getFileFormat() != Types.FileFormat.CSV) {
+			throw new DMLRuntimeException("The given format is not implemented for "
+				+ "CSVReblockFEDInstruction:" + iimd.getFileFormat().toString());
+		}
 
 		long id = FederationUtils.getNextFedDataID();
 		FederatedRequest fr1 = new FederatedRequest(FederatedRequest.RequestType.PUT_VAR, id, mcOut, obj.getDataType());

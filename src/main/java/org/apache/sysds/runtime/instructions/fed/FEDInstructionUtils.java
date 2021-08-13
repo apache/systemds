@@ -65,6 +65,7 @@ import org.apache.sysds.runtime.instructions.spark.BinaryMatrixScalarSPInstructi
 import org.apache.sysds.runtime.instructions.spark.BinarySPInstruction;
 import org.apache.sysds.runtime.instructions.spark.BinaryTensorTensorBroadcastSPInstruction;
 import org.apache.sysds.runtime.instructions.spark.BinaryTensorTensorSPInstruction;
+import org.apache.sysds.runtime.instructions.spark.CSVReblockSPInstruction;
 import org.apache.sysds.runtime.instructions.spark.CentralMomentSPInstruction;
 import org.apache.sysds.runtime.instructions.spark.CtableSPInstruction;
 import org.apache.sysds.runtime.instructions.spark.IndexingSPInstruction;
@@ -352,6 +353,9 @@ public class FEDInstructionUtils {
 						!(inst.getOpcode().equalsIgnoreCase("ucumk+*") && mo1.isFederated(FType.COL)))
 						fedinst = UnaryMatrixFEDInstruction.parseInstruction(inst.getInstructionString());
 				}
+				else if (inst instanceof CSVReblockSPInstruction && mo1.isFederated()) {
+					fedinst = CSVReblockFEDInstruction.parseInstruction(inst.getInstructionString());
+				}
 				else if (inst instanceof ReblockSPInstruction && mo1.isFederated()) {
 					fedinst = ReblockFEDInstruction.parseInstruction(inst.getInstructionString());
 				}
@@ -413,8 +417,11 @@ public class FEDInstructionUtils {
 		}
 		else if( inst instanceof ParameterizedBuiltinSPInstruction) {
 			ParameterizedBuiltinSPInstruction pinst = (ParameterizedBuiltinSPInstruction) inst;
-			if( ArrayUtils.contains(PARAM_BUILTINS, pinst.getOpcode()) && pinst.getTarget(ec).isFederated() )
+			if( pinst.getOpcode().equalsIgnoreCase("replace") && pinst.getTarget(ec).isFederated() )
 				fedinst = ParameterizedBuiltinFEDInstruction.parseInstruction(pinst.getInstructionString());
+			// TODO replace with CP
+//			else if(ArrayUtils.contains(PARAM_BUILTINS, pinst.getOpcode()) && pinst.getTarget(ec).isFederated())
+
 		}
 		else if (inst instanceof MultiReturnParameterizedBuiltinSPInstruction) {
 			MultiReturnParameterizedBuiltinSPInstruction minst = (MultiReturnParameterizedBuiltinSPInstruction) inst;

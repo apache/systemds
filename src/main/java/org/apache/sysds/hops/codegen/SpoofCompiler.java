@@ -25,13 +25,17 @@ import org.apache.commons.lang3.SystemUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.api.DMLScript;
+import org.apache.sysds.common.Types.AggOp;
 import org.apache.sysds.common.Types.DataType;
+import org.apache.sysds.common.Types.Direction;
 import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.common.Types.OpOp1;
+import org.apache.sysds.common.Types.OpOp2;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.conf.DMLConfig;
 import org.apache.sysds.hops.AggUnaryOp;
 import org.apache.sysds.hops.Hop;
+import org.apache.sysds.hops.LiteralOp;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.hops.codegen.cplan.CNode;
 import org.apache.sysds.hops.codegen.cplan.CNodeCell;
@@ -828,8 +832,12 @@ public class SpoofCompiler {
 				hnew = HopRewriteUtils.createUnary(hnew, OpOp1.CAST_AS_MATRIX);
 			}
 			else if( tmpCNode instanceof CNodeRow && (((CNodeRow)tmpCNode).getRowType()==RowType.NO_AGG_CONST
-				|| ((CNodeRow)tmpCNode).getRowType()==RowType.COL_AGG_CONST) )
+				|| ((CNodeRow)tmpCNode).getRowType()==RowType.COL_AGG_CONST) ) {
 				((SpoofFusedOp)hnew).setConstDim2(((CNodeRow)tmpCNode).getConstDim2());
+			}
+			else if( tmpCNode instanceof CNodeRow && HopRewriteUtils.isAggUnaryOp(hop, AggOp.MEAN, Direction.Col) ) {
+				hnew = HopRewriteUtils.createBinary(hnew, new LiteralOp(hop.getInput(0).getDim1()), OpOp2.DIV);
+			}
 			
 			if( !(tmpCNode instanceof CNodeMultiAgg) )
 				HopRewriteUtils.rewireAllParentChildReferences(hop, hnew);

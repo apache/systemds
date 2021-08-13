@@ -1153,16 +1153,14 @@ public class LibMatrixAgg
 		
 		double[] a = in.getDenseBlockValues();
 
-		if(aggVal.isEmpty()){
+		if(aggVal.isEmpty()) {
 			aggVal.allocateDenseBlock();
-			aggVal.setNonZeros(in.getNonZeros());
 		}
 		else if(aggVal.isInSparseFormat()){
 			// If for some reason the agg Val is sparse then force it to dence,
 			// since the values that are going to be added
 			// will make it dense anyway.
 			aggVal.sparseToDense();
-			aggVal.setNonZeros(in.getNonZeros()); 
 			if(aggVal.denseBlock == null)
 				aggVal.allocateDenseBlock();
 		}
@@ -1170,8 +1168,6 @@ public class LibMatrixAgg
 		double[] t = aggVal.getDenseBlockValues();
 		KahanObject buffer = new KahanObject(0, 0);
 		KahanPlus akplus = KahanPlus.getKahanPlusFnObject();
-		
-		// Don't include nnz maintenence since this function most likely aggregate more than one matrixblock.
 		
 		// j is the pointer to column.
 		// c is the pointer to correction. 
@@ -1182,6 +1178,8 @@ public class LibMatrixAgg
 			t[j] =  buffer._sum;
 			t[c] = buffer._correction;
 		}
+		
+		aggVal.recomputeNonZeros();
 	}
 
 	private static void aggregateBinaryMatrixLastRowSparseGeneric(MatrixBlock in, MatrixBlock aggVal) {
@@ -1197,30 +1195,26 @@ public class LibMatrixAgg
 		final int m = in.rlen;
 		final int rlen = Math.min(a.numRows(), m);
 		
-		if(aggVal.isEmpty()){
+		if(aggVal.isEmpty())
 			aggVal.allocateSparseRowsBlock();
-			aggVal.setNonZeros(in.getNonZeros());
-		}
-
-		for( int i=0; i<rlen-1; i++ )
-		{
-			if( !a.isEmpty(i) )
-			{
-				int apos = a.pos(i);
-				int alen = a.size(i);
-				int[] aix = a.indexes(i);
-				double[] avals = a.values(i);
-				
-				for( int j=apos; j<apos+alen; j++ )
-				{
-					int jix = aix[j];
-					double corr = in.quickGetValue(m-1, jix);
-					buffer1._sum        = aggVal.quickGetValue(i, jix);
-					buffer1._correction = aggVal.quickGetValue(m-1, jix);
-					akplus.execute(buffer1, avals[j], corr);
-					aggVal.quickSetValue(i, jix, buffer1._sum);
-					aggVal.quickSetValue(m-1, jix, buffer1._correction);
-				}
+		
+		// add to aggVal with implicit nnz maintenance
+		for( int i=0; i<rlen-1; i++ ) {
+			if( a.isEmpty(i) )
+				continue;
+			int apos = a.pos(i);
+			int alen = a.size(i);
+			int[] aix = a.indexes(i);
+			double[] avals = a.values(i);
+			
+			for( int j=apos; j<apos+alen; j++ ) {
+				int jix = aix[j];
+				double corr = in.quickGetValue(m-1, jix);
+				buffer1._sum        = aggVal.quickGetValue(i, jix);
+				buffer1._correction = aggVal.quickGetValue(m-1, jix);
+				akplus.execute(buffer1, avals[j], corr);
+				aggVal.quickSetValue(i, jix, buffer1._sum);
+				aggVal.quickSetValue(m-1, jix, buffer1._correction);
 			}
 		}
 	}
@@ -1639,7 +1633,9 @@ public class LibMatrixAgg
 						out.quickSetValue(2, j, in.rlen); //count
 				break;
 			}
-
+			case CUM_SUM_PROD:{
+				break;
+			}
 			default:
 				throw new DMLRuntimeException("Unsupported aggregation type: "+optype);
 		}

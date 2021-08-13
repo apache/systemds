@@ -151,6 +151,8 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 					return execUDF(request);
 				case CLEAR:
 					return execClear();
+				case NOOP:
+					return execNoop();
 				default:
 					String message = String.format("Method %s is not supported.", method);
 					return new FederatedResponse(ResponseType.ERROR, new FederatedWorkerHandlerException(message));
@@ -252,6 +254,7 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 		checkNumParams(request.getNumParams(), 1, 2);
 		String varname = String.valueOf(request.getID());
 		ExecutionContext ec = _ecm.get(request.getTID());
+
 		if(ec.containsVariable(varname)) {
 			return new FederatedResponse(ResponseType.ERROR, "Variable " + request.getID() + " already existing.");
 		}
@@ -385,6 +388,10 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 			log.error(msg, ex);
 			return new FederatedResponse(ResponseType.ERROR, new FederatedWorkerHandlerException(msg));
 		}
+		return new FederatedResponse(ResponseType.SUCCESS_EMPTY);
+	}
+	
+	private static FederatedResponse execNoop() {
 		return new FederatedResponse(ResponseType.SUCCESS_EMPTY);
 	}
 

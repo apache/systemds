@@ -115,9 +115,13 @@ public abstract class Hop implements ParseInfo {
 	*/
 	protected boolean _requiresCompression = false;
 
-	/**
-	 * A WTree for this hop instruction in case the compression 
-	 */
+	/** Boolean specifying if the output of this hop is compressed */
+	protected boolean _compressedOutput = false;
+
+	/** Compressed Size of this hop */
+	protected long _compressedSize = 0;
+
+	/** A WTree for this hop instruction in case the compression */
 	protected AWTreeNode _compressedWorkloadTree = null;
 
 	/** Boolean specifying if decompression is required.*/
@@ -297,9 +301,41 @@ public abstract class Hop implements ParseInfo {
 	public void setRequiresDeCompression(){
 		_requiresDeCompression = true;
 	}
+
+	public boolean isRequiredDecompression(){
+		return _requiresDeCompression;
+	}
 	
 	public boolean requiresCompression() {
 		return _requiresCompression;
+	}
+
+	public void setCompressedOutput(boolean value){
+		_compressedOutput = value;
+	}
+
+	public void setCompressedSize(long size){
+		_compressedSize = size;
+	}
+
+	public long getCompressedSize(){
+		return _compressedSize;
+	}
+
+	public boolean isCompressedOutput(){
+		return _compressedOutput;
+	}
+
+	public boolean hasCompressedInput(){
+		for(Hop h : getInput()){
+			if(h.isCompressedOutput())
+				return true;
+		}
+		return false;
+	}
+
+	public long compressedSize(){
+		return _compressedSize;
 	}
 	
 	public void setRequiresLineageCaching(boolean flag) {
@@ -412,21 +448,24 @@ public abstract class Hop implements ParseInfo {
 	}
 
 	private void constructAndSetCompressionLopIfRequired() {
-		if(_requiresCompression ^ _requiresDeCompression){ // xor
+		if((requiresCompression() && ! hasCompressedInput()) ^ _requiresDeCompression){ // xor
 			ExecType et = getExecutionModeForCompression();
+
 			Lop compressionInstruction = null;
 			try{
-				if( _requiresCompression ){
+				if( requiresCompression() ){
 					if(_compressedWorkloadTree != null){
-						int singletonID = SingletonLookupHashMap.getMap().put(_compressedWorkloadTree);
+						SingletonLookupHashMap m = SingletonLookupHashMap.getMap();
+						int singletonID = m.put(_compressedWorkloadTree);
 						compressionInstruction = new Compression(getLops(), getDataType(), getValueType(), et, singletonID);
 					}
-					else {
+					else
 						compressionInstruction = new Compression(getLops(), getDataType(), getValueType(), et, 0);
-					}
 				}
-				else if( _requiresDeCompression )
+				else if( _requiresDeCompression && et != ExecType.SPARK ) // Disabled spark decompression instruction.
 					compressionInstruction = new DeCompression(getLops(), getDataType(), getValueType(), et);
+				else
+					return;
 			}
 			catch (LopsException ex) {
 				throw new HopsException(ex);
@@ -636,8 +675,11 @@ public abstract class Hop implements ParseInfo {
 			case TENSOR:
 			case LIST:
 			{
+				if(isCompressedOutput() && _compressedSize >= 0){
+					_outputMemEstimate =  _compressedSize;
+				}
 				//1a) mem estimate based on exactly known dimensions and sparsity
-				if( dimsKnown(true) ) { 
+				else if( dimsKnown(true) ) { 
 					//nnz always exactly known (see dimsKnown(true))
 					_outputMemEstimate = computeOutputMemEstimate(getDim1(), getDim2(), getNnz());
 				}
@@ -739,7 +781,7 @@ public abstract class Hop implements ParseInfo {
 	}
 
 	/**
-	 * This method determines the execution type (CP, MR) based ONLY on the 
+	 * This method determines the execution type (CP, SP) based ONLY on the 
 	 * estimated memory footprint required for this operation, which includes 
 	 * memory for all inputs and the output represented by this Hop.
 	 * 
@@ -858,7 +900,7 @@ public abstract class Hop implements ParseInfo {
 	public abstract Lop constructLops();
 
 	protected final ExecType optFindExecType() {
-		return optFindExecType(true);
+		return optFindExecType(OptimizerUtils.ALLOW_TRANSITIVE_SPARK_EXEC_TYPE ? true : false);
 	}
 	
 	protected abstract ExecType optFindExecType(boolean transitive);
@@ -1060,6 +1102,11 @@ public abstract class Hop implements ParseInfo {
 		lop.getOutputParameters().setDimensions(
 			getDim1(), getDim2(), getBlocksize(), getNnz(), getUpdateType());
 	}
+
+	protected void setOutputDimensionsIncludeCompressedSize(Lop lop) {
+		lop.getOutputParameters().setDimensions(
+			getDim1(), getDim2(), getBlocksize(), getNnz(), getUpdateType(), getCompressedSize());
+	}
 	
 	public Lop getLops() {
 		return _lops;
@@ -1193,22 +1240,19 @@ public abstract class Hop implements ParseInfo {
 		setDim2( size );
 	}
 
-	public static long computeSizeInformation( Hop input )
-	{
+	public static long computeSizeInformation(Hop input) {
 		long ret = -1;
-		
-		try 
-		{
-			long tmp = OptimizerUtils.rEvalSimpleLongExpression(input, new HashMap<Long,Long>());
-			if( tmp!=Long.MAX_VALUE )
+
+		try {
+			long tmp = OptimizerUtils.rEvalSimpleLongExpression(input, new HashMap<Long, Long>());
+			if(tmp != Long.MAX_VALUE)
 				ret = tmp;
 		}
-		catch(Exception ex)
-		{
+		catch(Exception ex) {
 			LOG.error("Failed to compute size information.", ex);
 			ret = -1;
 		}
-		
+
 		return ret;
 	}
 	
@@ -1414,6 +1458,7 @@ public abstract class Hop implements ParseInfo {
 		_requiresReblock = that._requiresReblock;
 		_requiresCheckpoint = that._requiresCheckpoint;
 		_requiresCompression = that._requiresCompression;
+		_requiresDeCompression = that._requiresDeCompression;
 		_requiresLineageCaching = that._requiresLineageCaching;
 		_outputEmptyBlocks = that._outputEmptyBlocks;
 		

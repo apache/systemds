@@ -206,7 +206,7 @@ public class InstructionUtils
 	
 	/**
 	 * Given an instruction string, this function strips-off the 
-	 * execution type (CP or MR) and returns the remaining parts, 
+	 * execution type (CP or SPARK) and returns the remaining parts, 
 	 * which include the opcode as well as the input and output operands.
 	 * Each returned part will have the datatype and valuetype associated
 	 * with the operand.

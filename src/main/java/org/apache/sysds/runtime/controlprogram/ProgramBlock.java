@@ -24,6 +24,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.api.jmlc.JMLCUtils;
+import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.hops.Hop;
@@ -46,9 +47,12 @@ import org.apache.sysds.runtime.instructions.cp.DoubleObject;
 import org.apache.sysds.runtime.instructions.cp.IntObject;
 import org.apache.sysds.runtime.instructions.cp.ScalarObject;
 import org.apache.sysds.runtime.instructions.cp.StringObject;
+import org.apache.sysds.runtime.instructions.spark.utils.SparkUtils;
 import org.apache.sysds.runtime.lineage.LineageCache;
 import org.apache.sysds.runtime.lineage.LineageCacheConfig.ReuseCacheType;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.meta.MetaData;
+import org.apache.sysds.runtime.meta.MetaDataFormat;
 import org.apache.sysds.runtime.privacy.propagation.PrivacyPropagator;
 import org.apache.sysds.utils.Statistics;
 
@@ -274,7 +278,7 @@ public abstract class ProgramBlock implements ParseInfo {
 			// optional check for correct nnz and sparse/dense representation of all
 			// variables in symbol table (for tracking source of wrong representation)
 			if(CHECK_MATRIX_PROPERTIES) {
-				checkSparsity(tmp, ec.getVariables());
+				checkSparsity(tmp, ec.getVariables(), ec);
 				checkFederated(tmp, ec.getVariables());
 			}
 		}
@@ -333,7 +337,7 @@ public abstract class ProgramBlock implements ParseInfo {
 			}
 	}
 
-	private static void checkSparsity(Instruction lastInst, LocalVariableMap vars) {
+	private static void checkSparsity(Instruction lastInst, LocalVariableMap vars, ExecutionContext ec) {
 		for(String varname : vars.keySet()) {
 			Data dat = vars.get(varname);
 			if(dat instanceof MatrixObject) {
@@ -363,6 +367,11 @@ public abstract class ProgramBlock implements ParseInfo {
 						throw new DMLRuntimeException("Matrix was in wrong data representation: (" + varname
 							+ ", actual=" + sparse1 + ", expected=" + sparse2 + ", nrow=" + mb.getNumRows() + ", ncol="
 							+ mb.getNumColumns() + ", nnz=" + nnz1 + ", inst=" + lastInst + ")");
+				}
+				MetaData meta = mo.getMetaData();
+				if( mo.getRDDHandle() != null && !(meta instanceof MetaDataFormat 
+					&& ((MetaDataFormat)meta).getFileFormat() != FileFormat.BINARY) ) {
+					SparkUtils.checkSparsity(varname, ec);
 				}
 			}
 		}

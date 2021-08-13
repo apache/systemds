@@ -55,9 +55,10 @@ public class DataOp extends Hop {
 	//read dataop properties
 	private FileFormat _inFormat = FileFormat.TEXT;
 	private long _inBlocksize = -1;
+	private boolean _hasOnlyRDD = false;
 	
 	private boolean _recompileRead = true;
-	
+
 	/**
 	 * List of "named" input parameters. They are maintained as a hashmap:
 	 * parameter names (String) are mapped as indices (Integer) into getInput()
@@ -254,6 +255,14 @@ public class DataOp extends Hop {
 		return _paramIndexMap.get(name);
 	}
 	
+	public void setOnlyRDD(boolean flag) {
+		_hasOnlyRDD = flag;
+	}
+	
+	public boolean hasOnlyRDD() {
+		return _hasOnlyRDD;
+	}
+	
 	@Override
 	public boolean isGPUEnabled() {
 		return false;
@@ -407,7 +416,6 @@ public class DataOp extends Hop {
 			}
 			// output memory estimate is not required for "write" nodes (just input)
 		}
-		
 		return ret;
 	}
 	

@@ -25,10 +25,12 @@ import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.api.java.function.Function;
 import org.apache.spark.api.java.function.Function2;
 import org.apache.spark.api.java.function.PairFlatMapFunction;
+import org.apache.spark.api.java.function.VoidFunction;
 import org.apache.spark.storage.StorageLevel;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.lops.Checkpoint;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
+import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysds.runtime.data.IndexedTensorBlock;
@@ -55,11 +57,14 @@ import scala.Tuple2;
 
 import java.util.Iterator;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
 
 public class SparkUtils 
 {	
+	public static ExecutorService triggerRDDPool = null;
+
 	//internal configuration
 	public static final StorageLevel DEFAULT_TMP = Checkpoint.DEFAULT_STORAGE_LEVEL;
 
@@ -197,6 +202,12 @@ public class SparkUtils
 		else //requires key access, so use mappartitions
 			return in.mapPartitionsToPair(new CopyTensorBlockPairFunction(deep), true);
 	}
+	
+	public static void checkSparsity(String varname, ExecutionContext ec) {
+		SparkExecutionContext sec = (SparkExecutionContext) ec;
+		sec.getBinaryMatrixBlockRDDHandleForVariable(varname)
+			.foreach(new CheckSparsityFunction());
+	}
 
 	// This returns RDD with identifier as well as location
 	public static String getStartLineFromSparkDebugInfo(String line) {
@@ -283,6 +294,25 @@ public class SparkUtils
 		if( !OptimizerUtils.exceedsCachingThreshold(mcOut.getCols(), memUB) //< mem budget
 			&& memUB < OptimizerUtils.estimateSizeExactSparsity(mcOut))
 			mo.acquireReadAndRelease();
+	}
+	
+	public static void shutdownPool() {
+		if (triggerRDDPool != null) {
+			//shutdown prefetch/broadcast thread pool
+			triggerRDDPool.shutdown();
+			triggerRDDPool = null;
+		}
+	}
+	
+	private static class CheckSparsityFunction implements VoidFunction<Tuple2<MatrixIndexes,MatrixBlock>>
+	{
+		private static final long serialVersionUID = 4150132775681848807L;
+
+		@Override
+		public void call(Tuple2<MatrixIndexes, MatrixBlock> arg) throws Exception {
+			arg._2.checkNonZeros();
+			arg._2.checkSparseRows();
+		}
 	}
 	
 	private static class AnalyzeCellDataCharacteristics implements Function<Tuple2<MatrixIndexes,MatrixCell>, DataCharacteristics>

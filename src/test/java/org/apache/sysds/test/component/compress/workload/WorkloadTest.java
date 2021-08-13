@@ -112,7 +112,7 @@ public class WorkloadTest {
 		tests.add(new Object[] {0, 0, 0, 0, 0, 0, 8, 0, true, false, "functions/scale_onlySide.dml", args});
 
 		tests.add(new Object[] {0, 0, 0, 0, 1, 1, 9, 0, true, false, "functions/pca.dml", args});
-		tests.add(new Object[] {0, 0, 0, 0, 1, 1, 7, 0, true, true, "functions/pca.dml", args});
+		tests.add(new Object[] {0, 0, 0, 0, 1, 1, 6, 0, true, true, "functions/pca.dml", args});
 
 		args = new HashMap<>();
 		args.put("$1", testFile);
@@ -220,5 +220,4 @@ public class WorkloadTest {
 			throw new DMLRuntimeException("Error in parsing", e);
 		}
 	}
-
 }

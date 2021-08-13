@@ -1,0 +1,149 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+# This function performs dimensionality reduction using tSNE algorithm based on
+# the paper: Visualizing Data using t-SNE, Maaten et. al.
+
+# INPUT PARAMETERS:
+# ----------------------------------------------------------------------------
+# NAME           TYPE      DEFAULT  MEANING
+# ----------------------------------------------------------------------------
+# X              Double    ---      Data Matrix of shape
+#                                   (number of data points, input dimensionality)
+# reduced_dims   Integer   2        Output dimensionality
+# perplexity     Integer   30       Perplexity Parameter
+# lr             Double    300.     Learning rate
+# momentum       Double    0.9      Momentum Parameter
+# max_iter       Integer   1000     Number of iterations
+# seed           Integer   -1       The seed used for initial values.
+#                                   If set to -1 random seeds are selected.
+# is_verbose     Boolean   FALSE    Print debug information
+#
+#
+# RETURN VALUES
+# ----------------------------------------------------------------------------
+# NAME     TYPE      DEFAULT  MEANING
+# ----------------------------------------------------------------------------
+# Y        Matrix    ---      Data Matrix of shape (number of data points, reduced_dims)
+# ----------------------------------------------------------------------------
+
+
+m_tSNE = function(Matrix[Double] X, Integer reduced_dims = 2, Integer perplexity = 30,
+  Double lr = 300., Double momentum = 0.9, Integer max_iter = 1000, Integer seed = -1, Boolean is_verbose = FALSE)
+  return(Matrix[Double] Y)
+{
+  d = reduced_dims
+  n = nrow(X)
+
+  P = x2p(X, perplexity, is_verbose)
+  P = P*4
+  Y = rand(rows=n, cols=d, pdf="normal", seed=seed)
+  dY = matrix(0, rows=n, cols=d)
+  C = matrix(0, rows=max_iter/100, cols=1)
+  ZERODIAG = (diag(matrix(-1, rows=n, cols=1)) + 1)
+
+  D = matrix(0, rows=n, cols=n)
+  Z = matrix(0, rows=n, cols=n)
+  Q = matrix(0, rows=n, cols=n)
+  W = matrix(0, rows=n, cols=n)
+
+  if(is_verbose)
+    print("starting loop....")
+
+  for (itr in 1:max_iter) {
+    D = distance_matrix(Y)
+    Z = 1/(D + 1)
+    Z = Z * ZERODIAG
+    Q = Z/sum(Z)
+    W = (P - Q)*Z
+    sumW = rowSums(W)
+    g = Y * sumW - W %*% Y
+    dY = momentum*dY - lr*g
+    Y = Y + dY
+    Y = Y - colMeans(Y)
+
+    if (itr%%100 == 0) {
+      C[itr/100,] = sum(P * log(pmax(P, 1e-12) / pmax(Q, 1e-12)))
+    }
+    if (itr == 100) {
+      P = P/4
+    }
+  }
+}
+
+distance_matrix = function(matrix[double] X)
+  return (matrix[double] out)
+{
+  # TODO consolidate with dist() builtin, but with
+  # better way of obtaining the diag from 
+  n = nrow(X)
+  s = rowSums(X * X)
+  out = - 2*X %*% t(X) + s + t(s)
+}
+
+
+x2p = function(matrix[double] X, double perplexity, Boolean is_verbose = FALSE)
+return(matrix[double] P)
+{
+  if(is_verbose)
+    print("x2p....")
+  tol = 1.0e-5
+  INF = 1.0e20
+  n = nrow(X)
+  if(is_verbose)
+    print(n)
+  D = distance_matrix(X)
+
+  P = matrix(0, rows=n, cols=n)
+  beta = matrix(1, rows=n, cols=1)
+  betamax = matrix(INF, rows=n, cols=1)
+  betamin = matrix(0, rows=n, cols=1)
+  Hdiff = matrix(INF, rows=n, cols=1)
+  logU = log(perplexity)
+
+  ZERODIAG = (diag(matrix(-1, rows=n, cols=1)) + 1)
+  itr = 1
+  while (mean(abs(Hdiff)) > tol & itr < 50) {
+    P = exp(-D * beta)
+    P = P * ZERODIAG
+    sum_Pi = rowSums(P)
+    W = rowSums(P * D)
+    Ws = W/sum_Pi
+    H = log(sum_Pi) + beta * Ws
+    P = P/sum_Pi
+    Hdiff = H - logU
+
+    Hpos = (Hdiff >= 0)
+    Hneg = (Hdiff <  0)
+    betamin = Hneg*betamin + Hpos*beta
+    betamax = Hpos*betamax + Hneg*beta
+    beta = 2*Hpos*(betamax == INF)*beta +
+             Hpos*(betamax != INF)*(beta + betamax)/2 +
+             Hneg*(beta + betamin)/2
+
+    itr = itr + 1
+  }
+
+  P = P + t(P)
+  P = P / sum(P)
+  if(is_verbose)
+    print("x2p finishing....")
+}

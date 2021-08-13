@@ -138,8 +138,7 @@ public class CtableFEDInstruction extends ComputationFEDInstruction {
 					new long[] {fr1[0].getID(), mo1.getFedMapping().getID(), mo3.getFedMapping().getID()});
 
 			fr3 = new FederatedRequest(FederatedRequest.RequestType.GET_VAR, fr2.getID());
-			FederatedRequest fr4 = mo1.getFedMapping().cleanup(getTID(), fr1[0].getID());
-			ffr = mo1.getFedMapping().execute(getTID(), true, fr1, fr2, fr3, fr4);
+			ffr = mo1.getFedMapping().execute(getTID(), true, fr1, fr2, fr3);
 		}
 		else if(mo3 == null) {
 			if(!reversed)
@@ -150,8 +149,7 @@ public class CtableFEDInstruction extends ComputationFEDInstruction {
 					new long[] {fr1[0].getID(), mo1.getFedMapping().getID()});
 
 			fr3 = new FederatedRequest(FederatedRequest.RequestType.GET_VAR, fr2.getID());
-			FederatedRequest fr4 = mo1.getFedMapping().cleanup(getTID(), fr1[0].getID());
-			ffr = mo1.getFedMapping().execute(getTID(), true, fr1, fr2, fr3, fr4);
+			ffr = mo1.getFedMapping().execute(getTID(), true, fr1, fr2, fr3);
 
 		} else {
 			FederatedRequest[] fr4 = mo1.getFedMapping().broadcastSliced(mo3, false);
@@ -166,8 +164,7 @@ public class CtableFEDInstruction extends ComputationFEDInstruction {
 					new long[] {fr1[0].getID(), fr4[0].getID(), mo1.getFedMapping().getID()});
 
 			fr3 = new FederatedRequest(FederatedRequest.RequestType.GET_VAR, fr2.getID());
-			FederatedRequest fr5 = mo1.getFedMapping().cleanup(getTID(), fr1[0].getID(), fr4[0].getID());
-			ffr = mo1.getFedMapping().execute(getTID(), true, fr1, fr4, fr2, fr3, fr5);
+			ffr = mo1.getFedMapping().execute(getTID(), true, fr1, fr4, fr2, fr3);
 		}
 
 		if(fedOutput && isFedOutput(ffr, dims1)) {
@@ -189,6 +186,9 @@ public class CtableFEDInstruction extends ComputationFEDInstruction {
 			for(int i = 1; i < ffr.length && fedOutput; i++) {
 				curr = (MatrixBlock) ffr[i].get().getData()[0];
 				MatrixBlock sliced = curr.slice((int) (curr.getNumRows() - fedSize), curr.getNumRows() - 1);
+
+				if(curr.getNumColumns() != prev.getNumColumns())
+					return false;
 
 				// no intersection
 				if(curr.getNumRows() == (i+1) * prev.getNumRows() && curr.getNonZeros() <= prev.getLength()

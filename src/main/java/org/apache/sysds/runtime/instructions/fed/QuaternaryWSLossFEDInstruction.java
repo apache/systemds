@@ -133,9 +133,6 @@ public class QuaternaryWSLossFEDInstruction extends QuaternaryFEDInstruction {
 
 			ArrayList<FederatedRequest> frC = new ArrayList<>();
 			frC.add(fedMap.cleanup(getTID(), frComp.getID()));
-			for(FederatedRequest[] frS : frSliced)
-				frC.add(fedMap.cleanup(getTID(), frS[0].getID()));
-			frC.add(fedMap.cleanup(getTID(), frB.getID()));
 
 			FederatedRequest[] frAll = ArrayUtils.addAll(new FederatedRequest[]{frB, frComp, frGet},
 				frC.toArray(new FederatedRequest[0]));

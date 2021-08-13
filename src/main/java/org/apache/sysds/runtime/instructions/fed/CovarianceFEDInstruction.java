@@ -140,7 +140,7 @@ public class CovarianceFEDInstruction extends BinaryFEDInstruction {
 		FederatedRequest fr1 = FederationUtils.callInstruction(instString, output,
 			new CPOperand[]{input1, input2}, new long[]{mo1.getFedMapping().getID(), mo2.getFedMapping().getID()});
 		FederatedRequest fr3 = new FederatedRequest(FederatedRequest.RequestType.GET_VAR, fr1.getID());
-		FederatedRequest fr4 = mo1.getFedMapping().cleanup(getTID(), fr1.getID(), fr2[0].getID());
+		FederatedRequest fr4 = mo1.getFedMapping().cleanup(getTID(), fr1.getID());
 		Future<FederatedResponse>[] covTmp = mo1.getFedMapping().execute(getTID(), fr1, fr2[0], fr3, fr4);
 
 		//means

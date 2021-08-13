@@ -159,6 +159,10 @@ public class EvalNaryCPInstruction extends BuiltinNaryCPInstruction {
 				mb = DataConverter.convertToMatrixBlock(((FrameObject) newOutput).acquireRead());
 				ec.cleanupCacheableData((FrameObject) newOutput);
 			}
+			else {
+				throw new DMLRuntimeException("Invalid eval return type: "+newOutput.getDataType().name()
+					+ " (valid: matrix/frame/scalar; where frames or scalars are converted to output matrices)");
+			}
 			outputMO.acquireModify(mb);
 			outputMO.release();
 			ec.setVariable(output.getName(), outputMO);

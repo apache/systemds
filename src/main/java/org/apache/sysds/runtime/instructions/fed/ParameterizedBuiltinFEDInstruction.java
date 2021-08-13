@@ -400,10 +400,9 @@ public class ParameterizedBuiltinFEDInstruction extends ComputationFEDInstructio
 				new CPOperand[] {getTargetOperand(),
 					new CPOperand(params.get("select"), ValueType.FP64, DataType.MATRIX)},
 				new long[] {mo.getFedMapping().getID(), fr1[0].getID()});
-			FederatedRequest fr3 = mo.getFedMapping().cleanup(getTID(), fr1[0].getID());
 
 			// execute federated operations and set output
-			mo.getFedMapping().execute(getTID(), true, fr1, fr2, fr3);
+			mo.getFedMapping().execute(getTID(), true, fr1, fr2);
 			out.setFedMapping(mo.getFedMapping().copyWithNewID(fr2.getID()));
 		}
 		else {
@@ -414,10 +413,9 @@ public class ParameterizedBuiltinFEDInstruction extends ComputationFEDInstructio
 				new CPOperand[] {getTargetOperand(),
 					new CPOperand(params.get("select"), ValueType.FP64, DataType.MATRIX)},
 				new long[] {mo.getFedMapping().getID(), fr1.getID()});
-			FederatedRequest fr3 = mo.getFedMapping().cleanup(getTID(), fr1.getID());
 
 			// execute federated operations and set output
-			mo.getFedMapping().execute(getTID(), true, fr1, fr2, fr3);
+			mo.getFedMapping().execute(getTID(), true, fr1, fr2);
 			out.setFedMapping(mo.getFedMapping().copyWithNewID(fr2.getID()));
 		}
 

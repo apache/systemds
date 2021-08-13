@@ -98,10 +98,12 @@ public class SpoofFEDInstruction extends FEDInstruction
 
 
 		FederationMap fedMap = null;
+		long id = 0;
 		for(CPOperand cpo : _inputs) { // searching for the first federated matrix to obtain the federation map
 			Data tmpData = ec.getVariable(cpo);
-			if(tmpData instanceof MatrixObject && ((MatrixObject)tmpData).isFederated()) {
+			if(tmpData instanceof MatrixObject && ((MatrixObject)tmpData).isFederatedExcept(FType.BROADCAST)) {
 				fedMap = ((MatrixObject)tmpData).getFedMapping();
+				id = ((MatrixObject)tmpData).getUniqueID();
 				break;
 			}
 		}
@@ -115,11 +117,11 @@ public class SpoofFEDInstruction extends FEDInstruction
 			Data tmpData = ec.getVariable(cpo);
 			if(tmpData instanceof MatrixObject) {
 				MatrixObject mo = (MatrixObject) tmpData;
-				if(mo.isFederated()) {
+				if(mo.isFederatedExcept(FType.BROADCAST)) {
 					frIds[index++] = mo.getFedMapping().getID();
 				}
 				else if(spoofType.needsBroadcastSliced(fedMap, mo.getNumRows(), mo.getNumColumns(), index)) {
-					FederatedRequest[] tmpFr = spoofType.broadcastSliced(mo, fedMap);
+					FederatedRequest[] tmpFr = spoofType.broadcastSliced(mo, fedMap, id);
 					frIds[index++] = tmpFr[0].getID();
 					frBroadcastSliced.add(tmpFr);
 				}
@@ -147,8 +149,6 @@ public class SpoofFEDInstruction extends FEDInstruction
 
 		ArrayList<FederatedRequest> frCleanup = new ArrayList<>();
 		frCleanup.add(fedMap.cleanup(getTID(), frCompute.getID()));
-		for(FederatedRequest fr : frBroadcast)
-			frCleanup.add(fedMap.cleanup(getTID(), fr.getID()));
 		for(FederatedRequest[] fr : frBroadcastSliced)
 			frCleanup.add(fedMap.cleanup(getTID(), fr[0].getID()));
 
@@ -171,13 +171,14 @@ public class SpoofFEDInstruction extends FEDInstruction
 			_output = out;
 		}
 		
-		protected FederatedRequest[] broadcastSliced(MatrixObject mo, FederationMap fedMap) {
+		protected FederatedRequest[] broadcastSliced(MatrixObject mo, FederationMap fedMap, long id) {
 			return fedMap.broadcastSliced(mo, false);
 		}
 
 		protected boolean needsBroadcastSliced(FederationMap fedMap, long rowNum, long colNum, int inputIndex) {
 			FType fedType = fedMap.getType();
 
+			//TODO fix check by num rows/cols
 			boolean retVal = (rowNum == fedMap.getMaxIndexInRange(0) && colNum == fedMap.getMaxIndexInRange(1));
 			if(fedType == FType.ROW)
 				retVal |= (rowNum == fedMap.getMaxIndexInRange(0) 
@@ -351,10 +352,6 @@ public class SpoofFEDInstruction extends FEDInstruction
 			_op = (SpoofOuterProduct)op;
 		}
 
-		protected FederatedRequest[] broadcastSliced(MatrixObject mo, FederationMap fedMap) {
-			return fedMap.broadcastSliced(mo, (fedMap.getType() == FType.COL));
-		}
-
 		protected boolean needsBroadcastSliced(FederationMap fedMap, long rowNum, long colNum, int inputIndex) {
 			boolean retVal = false;
 			FType fedType = fedMap.getType();
@@ -442,7 +439,8 @@ public class SpoofFEDInstruction extends FEDInstruction
 
 		for(CPOperand input : inputs) {
 			Data data = ec.getVariable(input);
-			if(data instanceof MatrixObject && ((MatrixObject) data).isFederated(type)) {
+			if(data instanceof MatrixObject && ((MatrixObject) data).isFederated(type)
+				&& !((MatrixObject) data).isFederated(FType.BROADCAST)) {
 				MatrixObject mo = ((MatrixObject) data);
 				if(fedMap == null) { // first federated matrix
 					fedMap = mo.getFedMapping();

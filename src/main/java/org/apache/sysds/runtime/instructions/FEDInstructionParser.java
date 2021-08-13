@@ -64,6 +64,7 @@ public class FEDInstructionParser extends InstructionParser
 		String2FEDInstructionType.put( "r'"     , FEDType.Reorg );
 		String2FEDInstructionType.put( "rdiag"  , FEDType.Reorg );
 		String2FEDInstructionType.put( "rshape" , FEDType.Reorg );
+		String2FEDInstructionType.put( "rev"    , FEDType.Reorg );
 
 		// Ternary Instruction Opcodes
 		String2FEDInstructionType.put( "+*" , FEDType.Ternary);

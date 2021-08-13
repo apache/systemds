@@ -92,7 +92,7 @@ public class LeftIndex extends Lop
 	public Lop getBroadcastInput() {
 		if (getExecType() != ExecType.SPARK || _type == LixCacheType.NONE)
 			return null;
-		return _type == LixCacheType.LEFT ? getInputs().get(1) : null;
+		return _type == LixCacheType.LEFT ? getInputs().get(0) : null;
 	}
 	
 	private String getOpcode() {

@@ -345,7 +345,8 @@ public class Dag<N extends Lop>
 		boolean isBc = lop.getOutputs().stream()
 				.anyMatch(out -> (out.getBroadcastInput() == lop));
 		//TODO: Early broadcast only if bigger than a single block
-		return isCP && isBc;
+		//return isCP && isBc;
+		return isBc;
 	}
 	
 	private static List<Instruction> deleteUpdatedTransientReadVariables(StatementBlock sb, List<Lop> nodeV) {

@@ -38,6 +38,12 @@ public class TriggerBroadcastTask implements Runnable {
 
 	@Override
 	public void run() {
+		if (_broadcastMO.getBroadcastHandle() == null
+			|| (_broadcastMO.getBroadcastHandle() != null 
+			&& !_broadcastMO.getBroadcastHandle().isPartitionedBroadcastValid())) {
+			if (DMLScript.STATISTICS)
+				Statistics.incSparkAsyncBroadcastCount(1);
+		}
 		try {
 			SparkExecutionContext sec = (SparkExecutionContext)_ec;
 			PartitionedBroadcast<MatrixBlock> tmp =  sec.getBroadcastForMatrixObject(_broadcastMO);
@@ -46,7 +52,5 @@ public class TriggerBroadcastTask implements Runnable {
 			e.printStackTrace();
 		}
 		
-		if (DMLScript.STATISTICS)
-			Statistics.incSparkAsyncBroadcastCount(1);
 	}
 }

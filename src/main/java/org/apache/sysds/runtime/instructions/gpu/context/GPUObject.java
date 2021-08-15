@@ -845,7 +845,8 @@ public class GPUObject {
 				copyToDevice = false;
 			} else if (block == null && tmp.getNonZeros() != 0) {
 				throw new DMLRuntimeException("Expected CP sparse block to be not null.");
-			} else {
+			}
+			else {
 				// CSR is the preferred format for cuSparse GEMM
 				// Converts MCSR and COO to CSR
 				SparseBlockCSR csrBlock = null;
@@ -880,8 +881,11 @@ public class GPUObject {
 				values = csrBlock.values();
 			}
 
-			if (values.length > tmp.getNonZeros())
-				allocateSparseMatrixOnDevice(values.length);
+			if (values != null)
+				if(values.length > tmp.getNonZeros())
+					allocateSparseMatrixOnDevice(values.length);
+				else
+					allocateSparseMatrixOnDevice();
 			else
 				allocateSparseMatrixOnDevice();
 

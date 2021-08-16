@@ -213,7 +213,6 @@ public class LocalPSWorker extends PSWorker implements Callable<Void> {
 	}
 
 	private void computeNBatches(long dataSize, int batchIter) {
-		_nbatches = 8;
 		Future<ListObject> accGradients = ConcurrentUtils.constantFuture(null);
 
 		for(int i = 0; i < _epochs; i++) {

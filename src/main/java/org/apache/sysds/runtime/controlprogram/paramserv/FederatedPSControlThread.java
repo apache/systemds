@@ -372,6 +372,7 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 	 */
 	protected void computeWithNBatchUpdates() {
 		int  numSetsPerEpocNbatches = (int) Math.ceil(_batchSize / _numBatchesPerNbatch);
+
 		for (int epochCounter = 0; epochCounter < _epochs; epochCounter++) {
 			int currentLocalBatchNumber = (_cycleStartAt0) ? 0 : _numBatchesPerEpoch * epochCounter % _possibleBatchesPerLocalEpoch;
 
@@ -393,7 +394,6 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 	protected void computeWithEpochUpdates() {
 		for (int epochCounter = 0; epochCounter < _epochs; epochCounter++) {
 			int localStartBatchNum = (_cycleStartAt0) ? 0 : _numBatchesPerEpoch * epochCounter % _possibleBatchesPerLocalEpoch;
-
 			// Pull the global parameters from ps
 			ListObject model = pullModel();
 			ListObject gradients = computeGradientsForNBatches(model, _numBatchesPerEpoch, localStartBatchNum, true);
@@ -526,7 +526,6 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 			ec.setVariable(Statement.PS_MODEL, model);
 			for (int batchCounter = 0; batchCounter < _numBatchesToCompute; batchCounter++) {
 				int localBatchNum = getNextLocalBatchNum(currentLocalBatchNumber++, possibleBatchesPerLocalEpoch);
-
 				// slice batch from feature and label matrix
 				long begin = localBatchNum * batchSize + 1;
 				long end = Math.min((localBatchNum + 1) * batchSize, dataSize);

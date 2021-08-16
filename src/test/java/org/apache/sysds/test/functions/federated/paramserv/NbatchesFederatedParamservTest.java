@@ -63,13 +63,13 @@ public class NbatchesFederatedParamservTest extends AutomatedTestBase {
 	@Parameterized.Parameters
 	public static Collection<Object[]> parameters() {
 		return Arrays.asList(new Object[][] {
-			// Network type, number of federated workers, data set size, batch size, epochs, learning rate, update type, update frequency
+			// Network type, number of federated workers, data set size, batch size, epochs, learning rate, update type, update frequency, number of batches per nbatches
 			// basic functionality
 
-			{"TwoNN",	2, 4, 1, 4, 0.01, 		"BSP", "NBATCHES", "KEEP_DATA_ON_WORKER", 	"BASELINE",		"true",	"IMBALANCED",	200, 16},
-			{"CNN", 	2, 4, 1, 4, 0.01, 		"BSP", "NBATCHES", "SHUFFLE", 				"NONE", 		"true",	"IMBALANCED", 	200, 16},
-			{"CNN",		2, 4, 1, 4, 0.01, 		"ASP", "NBATCHES", "REPLICATE_TO_MAX", 	"CYCLE_MIN", 	"true",	"IMBALANCED",	200, 16},
-			{"TwoNN", 	2, 4, 1, 4, 0.01, 		"ASP", "NBATCHES", "BALANCE_TO_AVG", 		"CYCLE_MAX", 	"true",	"IMBALANCED",	200, 16},
+			{"TwoNN",	2, 4, 32, 4, 0.01, 		"BSP", "NBATCHES", "KEEP_DATA_ON_WORKER", 	"BASELINE",		"true",	"IMBALANCED",	200, 8},
+			{"CNN", 	2, 4, 32, 4, 0.01, 		"BSP", "NBATCHES", "SHUFFLE", 				"NONE", 		"true",	"IMBALANCED", 	200, 8},
+			{"CNN",		2, 4, 32, 4, 0.01, 		"ASP", "NBATCHES", "REPLICATE_TO_MAX", 	"CYCLE_MIN", 	"true",	"IMBALANCED",	200, 16},
+			{"TwoNN", 	2, 4, 32, 4, 0.01, 		"ASP", "NBATCHES", "BALANCE_TO_AVG", 		"CYCLE_MAX", 	"true",	"IMBALANCED",	200, 16},
 			{"TwoNN", 	5, 1000, 100, 2, 0.01, 	"BSP", "NBATCHES", "KEEP_DATA_ON_WORKER", 	"NONE", 		"true",	"BALANCED",		200, 16},
 
 			/*

@@ -38,12 +38,12 @@ public class ParamservLocalNNTestwithNbatches extends AutomatedTestBase {
 	}
 
 	@Test
-	public void testParamservBSPBatchDisjointContiguous() {
+	public void testParamservBSPNBatchesDisjointContiguous() {
 		runDMLTest(10, 2, Statement.PSUpdateType.BSP, Statement.PSFrequency.NBATCHES, 32, Statement.PSScheme.DISJOINT_CONTIGUOUS, 8);
 	}
 
 	@Test
-	public void testParamservASPBatch() {
+	public void testParamservASPNBatches() {
 		runDMLTest(10, 2, Statement.PSUpdateType.ASP, Statement.PSFrequency.NBATCHES, 32, Statement.PSScheme.DISJOINT_CONTIGUOUS, 8);
 	}
 

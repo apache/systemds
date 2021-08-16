@@ -112,7 +112,7 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 	}
 
 	public ParameterizedBuiltinFunctionExpression(Builtins op,
-			LinkedHashMap<String, Expression> varParams, ParseInfo parseInfo) {
+		LinkedHashMap<String, Expression> varParams, ParseInfo parseInfo) {
 		_opcode = op;
 		_varParams = varParams;
 		setParseInfo(parseInfo);
@@ -174,28 +174,28 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 
 		switch (this.getOpCode()) {
 
-		case GROUPEDAGG:
-			validateGroupedAgg(output, conditional);
-			break;
+			case GROUPEDAGG:
+				validateGroupedAgg(output, conditional);
+				break;
 
-		case CDF:
-		case INVCDF:
-		case PNORM:
-		case QNORM:
-		case PT:
-		case QT:
-		case PF:
-		case QF:
-		case PCHISQ:
-		case QCHISQ:
-		case PEXP:
-		case QEXP:
-			validateDistributionFunctions(output, conditional);
-			break;
+			case CDF:
+			case INVCDF:
+			case PNORM:
+			case QNORM:
+			case PT:
+			case QT:
+			case PF:
+			case QF:
+			case PCHISQ:
+			case QCHISQ:
+			case PEXP:
+			case QEXP:
+				validateDistributionFunctions(output, conditional);
+				break;
 
-		case RMEMPTY:
-			validateRemoveEmpty(output, conditional);
-			break;
+			case RMEMPTY:
+				validateRemoveEmpty(output, conditional);
+				break;
 
 			case REPLACE:
 				validateReplace(output, conditional);
@@ -357,8 +357,8 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 		}
 		if (!(param.getOutput().getDataType().isScalar() && param.getOutput().getValueType().equals(ValueType.STRING))) {
 			raiseValidateError(
-					String.format("Function %s should provide a string value for %s parameter.", fname, pname),
-					conditional);
+				String.format("Function %s should provide a string value for %s parameter.", fname, pname),
+				conditional);
 		}
 	}
 
@@ -396,7 +396,7 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 
 	private void validateTransformDecode(DataIdentifier output, boolean conditional)
 	{
-		//validate data / metadata (recode maps) 
+		//validate data / metadata (recode maps)
 		checkDataType("transformdecode", TF_FN_PARAM_DATA, DataType.MATRIX, conditional);
 		checkDataType("transformdecode", TF_FN_PARAM_MTD2, DataType.FRAME, conditional);
 
@@ -412,7 +412,7 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 
 	private void validateTransformColmap(DataIdentifier output, boolean conditional)
 	{
-		//validate data / metadata (recode maps) 
+		//validate data / metadata (recode maps)
 		Expression exprTarget = getVarParam(Statement.GAGG_TARGET);
 		checkDataType("transformcolmap", TF_FN_PARAM_DATA, DataType.FRAME, conditional);
 
@@ -432,7 +432,7 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 		checkDataValueType(false,"transformmeta", TF_FN_PARAM_SPEC, DataType.SCALAR, ValueType.STRING, conditional);
 		validateTransformSpec(TF_FN_PARAM_SPEC, conditional);
 
-		//validate meta data path 
+		//validate meta data path
 		checkDataValueType(false,"transformmeta", TF_FN_PARAM_MTD, DataType.SCALAR, ValueType.STRING, conditional);
 
 		//set output dimensions
@@ -443,14 +443,14 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 
 	private void validateTransformEncode(DataIdentifier output1, DataIdentifier output2, boolean conditional)
 	{
-		//validate data / metadata (recode maps) 
+		//validate data / metadata (recode maps)
 		checkDataType("transformencode", TF_FN_PARAM_DATA, DataType.FRAME, conditional);
 
 		//validate specification
 		checkDataValueType(false, "transformencode", TF_FN_PARAM_SPEC, DataType.SCALAR, ValueType.STRING, conditional);
 		validateTransformSpec(TF_FN_PARAM_SPEC, conditional);
 
-		//set output dimensions 
+		//set output dimensions
 		output1.setDataType(DataType.MATRIX);
 		output1.setValueType(ValueType.FP64);
 		output1.setDimensions(-1, -1);
@@ -537,7 +537,7 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 		for(String param : getVarParams().keySet())
 			if( !(param.equals("target") || param.equals("by") || param.equals("decreasing") || param.equals("index.return")) )
 				raiseValidateError("Unsupported order parameter: '"+param+"'", false);
-		
+
 		Expression orderby = getVarParam("by"); //[OPTIONAL] BY
 		if( orderby == null ) { //default first column, good fit for vectors
 			orderby = new IntIdentifier(1);
@@ -678,7 +678,7 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 			// standardize to lowercase and dequote fname
 			String fnameStr = functParam.toString();
 
-			// check that IF fname="centralmoment" THEN order=m is defined, where m=2,3,4 
+			// check that IF fname="centralmoment" THEN order=m is defined, where m=2,3,4
 			// check ELSE IF fname is allowed
 			if(fnameStr.equals(Statement.GAGG_FN_CM)){
 				String orderStr = getVarParam(Statement.GAGG_FN_CM_ORDER) == null ? null : getVarParam(Statement.GAGG_FN_CM_ORDER).toString();
@@ -748,7 +748,7 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 	}
 
 	private void validateDistributionFunctions(DataIdentifier output, boolean conditional) {
-		// CDF and INVCDF expects one unnamed parameter, it must be renamed as "quantile" 
+		// CDF and INVCDF expects one unnamed parameter, it must be renamed as "quantile"
 		// (i.e., we must compute P(X <= x) where x is called as "quantile" )
 
 		Builtins op = this.getOpCode();

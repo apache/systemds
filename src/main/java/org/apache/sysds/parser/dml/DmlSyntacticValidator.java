@@ -558,11 +558,12 @@ public class DmlSyntacticValidator implements DmlListener {
 	}
 
 	@Override
-	public void exitFunctionCallMultiAssignmentStatement(
-			FunctionCallMultiAssignmentStatementContext ctx) {
+	public void exitFunctionCallMultiAssignmentStatement(FunctionCallMultiAssignmentStatementContext ctx) {
+		if( ctx.name == null )
+			throw new ParseException("Missing name of multi-assignment function call (see parser issues above).");
 		String[] names = getQualifiedNames(ctx.name.getText());
 		if(names == null) {
-			notifyErrorListeners("incorrect function name (only namespace.functionName allowed. Hint: If you are trying to use builtin functions, you can skip the namespace)", ctx.name);
+			notifyErrorListeners("incorrect function name (only namespace::functionName allowed. Hint: If you are trying to use builtin functions, you can skip the namespace)", ctx.name);
 			return;
 		}
 		String namespace = names[0];

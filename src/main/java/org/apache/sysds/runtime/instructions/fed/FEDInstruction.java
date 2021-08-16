@@ -39,6 +39,7 @@ public abstract class FEDInstruction extends Instruction {
 		Init,
 		MultiReturnParameterizedBuiltin,
 		MMChain,
+		MAPMM,
 		MatrixIndexing,
 		Ternary,
 		Tsmm,

@@ -101,7 +101,7 @@ public class AppendFEDInstruction extends BinaryFEDInstruction {
 		}
 		// federated/local, local/federated cbind
 		else if( (mo1.isFederated(FType.ROW) || mo2.isFederated(FType.ROW)) && _cbind ) {
-			boolean isFed = mo1.isFederated(FType.ROW);
+			boolean isFed = mo1.isFederated(FType.ROW) && mo1.isFederatedExcept(FType.BROADCAST);
 			MatrixObject moFed = isFed ? mo1 : mo2;
 			MatrixObject moLoc = isFed ? mo2 : mo1;
 			

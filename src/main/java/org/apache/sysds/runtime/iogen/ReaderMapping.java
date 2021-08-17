@@ -530,6 +530,11 @@ public class ReaderMapping {
 
 							if(!nmiIndex.mapped)
 								break;
+
+							nmiIndex.size += mergeDelimiters(ntfColIndex.actualValue,
+								subChunk.substring(nmiIndex.index, nmiIndex.index + nmiIndex.size),
+								subChunk.substring(nmiIndex.index + nmiIndex.size));
+
 							subChunk = subChunk.substring(nmiIndex.index + nmiIndex.size);
 
 							// check the delimiter text
@@ -555,6 +560,10 @@ public class ReaderMapping {
 
 						// check the value text
 						NumberMappingInfo nmiValue = ntfColValue.getMappingInfo(subChunk);
+						nmiValue.size += mergeDelimiters(ntfColValue.actualValue,
+							subChunk.substring(nmiValue.index, nmiValue.index + nmiValue.size),
+							subChunk.substring(nmiValue.index + nmiValue.size));
+
 						if(nmiValue.mapped) {
 							itemVerify = true;
 							nmiIndex.index += sPosition;
@@ -830,15 +839,22 @@ public class ReaderMapping {
 				if(!nmiIndex.mapped) {
 					break;
 				}
-
 				nmiIndex.index += sPosition;
+
+				nmiIndex.size += mergeDelimiters(ntfColIndex.actualValue,
+					row.substring(+nmiIndex.index, nmiIndex.index + nmiIndex.size),
+					row.substring(nmiIndex.index + nmiIndex.size));
 
 				NumberMappingInfo nmiValue = ntfColValue.getMappingInfo(row.substring(nmiIndex.index + nmiIndex.size));
 				if(!nmiValue.mapped) {
 					break;
 				}
-
 				nmiValue.index += nmiIndex.index + nmiIndex.size;
+
+				nmiValue.size += mergeDelimiters(ntfColValue.actualValue,
+					row.substring(nmiValue.index, nmiValue.index + nmiValue.size),
+					row.substring(nmiValue.index + nmiValue.size));
+
 				String t = row.substring(nmiIndex.index + nmiIndex.size, nmiValue.index);
 				if(t.length() > 0)
 					tokens.add(t);

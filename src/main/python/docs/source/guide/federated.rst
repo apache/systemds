@@ -82,7 +82,7 @@ The aggregated sum using federated instructions in python SystemDS is done as fo
   address = "localhost:8001/temp/test.csv"
 
   with SystemDSContext() as sds:
-    fed_a = sds.federated(sds, [address], [dims])
+    fed_a = sds.federated([address], [dims])
     # Sum the federated matrix and call compute to execute
     print(fed_a.sum().compute())
     # Result should be 45.

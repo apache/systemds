@@ -54,13 +54,13 @@ In this example we simply use Numpy to create a ``test.csv`` file
   # Import numpy
   import numpy as np
   a = np.asarray([[1,2,3], [4,5,6], [7,8,9]])
-  np.savetxt("temp/test.csv", a, delimiter=",")
+  np.savetxt("temp/test.csv", a, delimiter=",", header=" ")
 
 Currently we also require a metadata file for the federated worker.
 This should be located next to the ``test.csv`` file called ``test.csv.mtd``.
 To make this simply execute the following::
 
-  echo '{ "format":"csv", "header":false, "rows":3, "cols":3 }' > temp/test.csv.mtd
+  echo '{ "format":"csv", "header":true, "rows":3, "cols":3 }' > temp/test.csv.mtd
 
 After creating our data we the federated worker becomes able to execute federated instructions.
 The aggregated sum using federated instructions in python SystemDS is done as follows
@@ -82,7 +82,7 @@ The aggregated sum using federated instructions in python SystemDS is done as fo
   address = "localhost:8001/temp/test.csv"
 
   with SystemDSContext() as sds:
-    fed_a = sds.federated(sds, [address], [dims])
+    fed_a = sds.federated([address], [dims])
     # Sum the federated matrix and call compute to execute
     print(fed_a.sum().compute())
     # Result should be 45.

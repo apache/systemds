@@ -211,7 +211,7 @@ public abstract class ParamServer
 						if (_numBatchesPerEpoch != -1 &&
 							(_freq == Statement.PSFrequency.EPOCH ||
 							(_freq == Statement.PSFrequency.BATCH && ++_syncCounter % _numBatchesPerEpoch == 0))||
-							(_freq == Statement.PSFrequency.NBATCHES && _numBatchesPerEpoch % _nbatches == 0)) {
+							(_freq == Statement.PSFrequency.NBATCHES)) {
 
 							if(LOG.isInfoEnabled())
 								LOG.info("[+] PARAMSERV: completed EPOCH " + _epochCounter);
@@ -240,7 +240,7 @@ public abstract class ParamServer
 					if (_numBatchesPerEpoch != -1 &&
 						((_freq == Statement.PSFrequency.EPOCH && ((float) ++_syncCounter % _numWorkers) == 0) ||
 						(_freq == Statement.PSFrequency.BATCH && ((float) ++_syncCounter / _numWorkers) % (float) _numBatchesPerEpoch == 0)) ||
-						(_freq == Statement.PSFrequency.NBATCHES && _numBatchesPerEpoch % _nbatches == 0)) {
+						(_freq == Statement.PSFrequency.NBATCHES)) {
 
 						if(LOG.isInfoEnabled())
 							LOG.info("[+] PARAMSERV: completed PSEUDO EPOCH (ASP) " + _epochCounter);

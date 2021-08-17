@@ -19,8 +19,6 @@
 
 package org.apache.sysds.test.functions.iogen;
 
-import org.apache.sysds.runtime.io.GenerateReader2;
-import org.apache.sysds.runtime.io.GenerateReader3;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.DataConverter;
 import org.apache.sysds.test.AutomatedTestBase;
@@ -50,7 +48,7 @@ public class GenerateReaderCSVTest1 extends AutomatedTestBase {
 		stream = "a,b,c,d,e,f\n" + "1,2,3,4,5,6\n" + "7,8,9,10,11,12\n" + "2,3,1,5,4,6\n" + "1,5,3,4,2,6\n" + "8,9,10,11,12,7\n" + "1,2,3,4,5,6\n" + "7,8,9,10,11,12";
 
 		double[][] sample = {{1, 2, 3, 4, 5, 6}, {7, 8, 9, 10, 11, 12}};
-		GenerateReader2.generateReader(stream, DataConverter.convertToMatrixBlock(sample));
+		//GenerateReader2.generateReader(stream, DataConverter.convertToMatrixBlock(sample));
 	}
 
 

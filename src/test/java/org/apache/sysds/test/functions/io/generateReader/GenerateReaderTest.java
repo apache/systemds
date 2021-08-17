@@ -19,16 +19,12 @@
 
 package org.apache.sysds.test.functions.io.generateReader;
 
-import com.google.gson.Gson;
-import org.apache.sysds.common.Types.ExecMode;
-import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.runtime.io.*;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.DataConverter;
 import org.apache.sysds.runtime.util.UtilFunctions;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
-import org.apache.sysds.test.TestUtils;
 import org.junit.Test;
 
 import java.io.BufferedReader;
@@ -51,6 +47,22 @@ public class GenerateReaderTest extends AutomatedTestBase {
 		addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[] {"Rout"}));
 	}
 
+	@Test public void tmyTest() throws IOException{
+		String sv1 = "19.0";
+		String sv2="";
+		if(sv1.length()-2>0 && sv1.substring(sv1.length()-2).equals(".0")){ // check for: ".0"
+			sv2 = sv1.substring(0, sv1.length()-2);
+		}
+		String s="19.0,19,20,19.0,19.0E";
+		String s1 = s.replaceAll(sv1,"");
+		String s2 = s1.replaceAll(sv2,"");
+
+		System.out.println(sv1.substring(1));
+		//System.out.println(s1);
+		//System.out.println(s2);
+	}
+
+
 	//1. Generate CSV Test Data
 	//1.a. The Data include Header and Unique Values
 	@Test public void testCSV1_CP_CSV_Data_With_Header() throws IOException{
@@ -62,9 +74,57 @@ public class GenerateReaderTest extends AutomatedTestBase {
 			"8,9,10,11,12,7";
 
 		double[][] sample = {{1, 2, 3, 4, 5, 6}, {7, 8, 9, 10, 11, 12}};
-		MatrixReader reader = GenerateReader.generateReader(stream, DataConverter.convertToMatrixBlock(sample));
-		TestReaderCSV(reader, stream, ",", true,"testCSV1_CP_CSV_Data_With_Header");
+		//GenerateReader.generateReader3(stream, DataConverter.convertToMatrixBlock(sample));
 	}
+
+	@Test public void testCSV1_CP_CSV_Data_With_Header2() throws IOException{
+		stream = "a,b,c,d,e,f\n" +
+			"1.0,2.0,3.0,4.0,5.0,6.0\n" +
+			"7,8,9,10,11,12\n" +
+			"2,3,1,5,4,6\n"+
+			"1,5,3,4,2,6\n"+
+			"8,9,10,11,12,7";
+
+		double[][] sample = {{1,2,3,4,5,6}, {7,8,9,10,11,12}};
+		//GenerateReader.generateReader3(stream, DataConverter.convertToMatrixBlock(sample));
+	}
+	@Test public void testCSV1_CP_CSV_Data_With_Header3() throws IOException{
+		stream = "a,b,c,d,e,f\n" +
+			"1.01,2.01,3.01,4.01,5.01,6.01\n" +
+			"7,8,9,10,11,12\n" +
+			"2,3,1,5,4,6\n"+
+			"1,5,3,4,2,6\n"+
+			"8,9,10,11,12,7";
+
+		double[][] sample = {{1,2,3,4,5,6}, {7,8,9,10,11,12}};
+		//GenerateReader.generateReader3(stream, DataConverter.convertToMatrixBlock(sample));
+	}
+
+	@Test public void testCSV1_CP_CSV_Data_With_Header4() throws IOException{
+		stream = "a,b,c,d,e,f\n" +
+			"11.01,12.01,13.01,14.01,15.01,16.01\n" +
+			"17,18,19,110,111,112\n" +
+			"2,3,1,5,4,6\n"+
+			"1,5,3,4,2,6\n"+
+			"8,9,10,11,12,7";
+
+		double[][] sample = {{1,2,3,4,5,6}, {7,8,9,10,11,12}};
+		//GenerateReader.generateReader3(stream, DataConverter.convertToMatrixBlock(sample));
+	}
+
+	@Test public void testCSV1_CP_CSV_Data_With_Header5() throws IOException{
+		stream = "a,b,c,d,e,f\n" +
+			"11.01,12.01,13.01,14.01,15.01,16.01\n" +
+			"17,18,19,110,111,112\n" +
+			"2,3,1,5,4,6\n"+
+			"1,5,3,4,2,6\n"+
+			"8,9,10,11,12,7";
+
+		double[][] sample = {{1,2,3,4,5,6}, {7,8,9,10,11,12}};
+		//GenerateReader.generateReader3(stream, DataConverter.convertToMatrixBlock(sample));
+	}
+
+	//-----------------------------------------------------------------------------------
 	//1.b: The Data Don't have Header and Unique Values
 	@Test public void testCSV2_CP_CSV_Data_With_Header() throws IOException{
 		stream = "1,2,3,4,5,6\n" +
@@ -74,8 +134,10 @@ public class GenerateReaderTest extends AutomatedTestBase {
 			"8,9,10,11,12,7";
 
 		double[][] sample = {{1, 2, 3, 4, 5, 6}, {7, 8, 9, 10, 11, 12}};
-		MatrixReader reader = GenerateReader.generateReader(stream, DataConverter.convertToMatrixBlock(sample));
-		TestReaderCSV(reader, stream, ",", false,"testCSV2_CP_CSV_Data_With_Header");
+		//MatrixReader reader = GenerateReader.generateReader(stream, DataConverter.convertToMatrixBlock(sample));
+		//TestReaderCSV(reader, stream, ",", false,"testCSV2_CP_CSV_Data_With_Header");
+
+
 	}
 
 	//1.c: The Data Header and Duplicated Values
@@ -87,8 +149,8 @@ public class GenerateReaderTest extends AutomatedTestBase {
 			"8,7,8,7,8,9";
 
 		double[][] sample = {{1, 2, 3, 1, 2, 3}, {7, 7, 9, 8, 8, 8}};
-		MatrixReader reader = GenerateReader.generateReader(stream, DataConverter.convertToMatrixBlock(sample));
-		TestReaderCSV(reader, stream, ",", false,"testCSV3_CP_CSV_Data_With_Header");
+		//MatrixReader reader = GenerateReader.generateReader(stream, DataConverter.convertToMatrixBlock(sample));
+		//TestReaderCSV(reader, stream, ",", false,"testCSV3_CP_CSV_Data_With_Header");
 	}
 
 	//2. Generate LIBSVM Test Data
@@ -100,8 +162,8 @@ public class GenerateReaderTest extends AutomatedTestBase {
 				 "2 3:3 4:1 5:2\n" +
 				 "1 1:3 2:4 6:5";
 		double[][] sample = {{1,2,0,0,0,3,1}, {4,5,0,0,0,3,1},{0,0,1,2,3,0,2}};
-		MatrixReader reader = GenerateReader.generateReader(stream, DataConverter.convertToMatrixBlock(sample));
-		TestReaderLIBSVM(reader, stream, " ", ":","testLIBSVM1_CP_LIBSVM_Data_Unique");
+		//MatrixReader reader = GenerateReader.generateReader(stream, DataConverter.convertToMatrixBlock(sample));
+		//TestReaderLIBSVM(reader, stream, " ", ":","testLIBSVM1_CP_LIBSVM_Data_Unique");
 	}
 
 	//2.a: The Data are Duplicate Values
@@ -112,8 +174,8 @@ public class GenerateReaderTest extends AutomatedTestBase {
 			"2 3:3 4:1 5:2 8:2 10:5\n" +
 			"1 1:3 2:4 6:5 7:3 9:5";
 		double[][] sample = {{1,2,0,0,0,3,3,0,1,0,1}, {4,5,0,0,0,3,3,0,5,0,1},{0,0,1,2,3,0,0,5,0,5,2}};
-		MatrixReader reader = GenerateReader.generateReader(stream, DataConverter.convertToMatrixBlock(sample));
-		TestReaderLIBSVM(reader, stream, " ", ":","testLIBSVM2_CP_LIBSVM_Data_Duplicate");
+		//MatrixReader reader = GenerateReader.generateReader(stream, DataConverter.convertToMatrixBlock(sample));
+		//TestReaderLIBSVM(reader, stream, " ", ":","testLIBSVM2_CP_LIBSVM_Data_Duplicate");
 	}
 	private void TestReaderCSV(MatrixReader reader, String stream, String delim, boolean hasheader,String fileName) throws IOException {
 

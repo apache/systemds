@@ -19,7 +19,7 @@
 
 package org.apache.sysds.test.functions.iogen;
 
-import org.apache.sysds.runtime.iogen.GenerateReaderm;
+import org.apache.sysds.runtime.iogen.GenerateReader;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.DataConverter;
 import org.apache.sysds.test.AutomatedTestBase;
@@ -48,6 +48,14 @@ public class GenerateReaderLibSVMTest1 extends AutomatedTestBase {
 			  "-1 3:4 4:5 5:8\n";
 
 		double[][] sample = {{1, 2, 0, 0, 0,1}, {0, 0, 4, 5, 8,-1}};
-		GenerateReaderm.generateReader(raw, DataConverter.convertToMatrixBlock(sample));
+		GenerateReader.generateReader(raw, DataConverter.convertToMatrixBlock(sample));
+	}
+
+	@Test public void testLibSVM2() throws Exception {
+		raw = "1 1.0:1.0 2.0:2.0\n"+
+			"-1.0 3:4 4:5.0 5:8.0\n";
+
+		double[][] sample = {{1, 2, 0, 0, 0,1}, {0, 0, 4, 5, 8,-1}};
+		GenerateReader.generateReader(raw, DataConverter.convertToMatrixBlock(sample));
 	}
 }

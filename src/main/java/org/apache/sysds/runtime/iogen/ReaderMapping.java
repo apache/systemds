@@ -20,7 +20,7 @@
 package org.apache.sysds.runtime.iogen;
 
 import com.google.gson.Gson;
-import org.apache.sysds.runtime.io.IOUtilFunctions;
+import org.apache.sysds.runtime.io.*;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
 import java.io.BufferedReader;
@@ -35,15 +35,18 @@ public class ReaderMapping {
 	private int[][] mapCol;
 	private int[][] mapSize;
 	private boolean symmetric;
+	private boolean skewSymmetric;
+	private boolean isUpperTriangular;
+	private int skewCoefficient;
 
 	private final ArrayList<String> sampleRawRows;
-	private final MatrixBlock sampleMatrix;
+	private MatrixBlock sampleMatrix;
 	private final boolean mapped;
 	private final int nrows;
 	private final int ncols;
-	private final long nnz;
+	private long nnz;
 
-	public ReaderMapping(String raw, MatrixBlock matrix) throws IOException {
+	public ReaderMapping(String raw, MatrixBlock matrix) throws Exception {
 
 		sampleMatrix = matrix;
 		InputStream is = IOUtilFunctions.toInputStream(raw);
@@ -63,23 +66,81 @@ public class ReaderMapping {
 			nlines++;
 		}
 
-		// First check for UnSymmetric Mapping
-		symmetric = false;
-		boolean isMapped = findMapping(nlines, NTF, false);
+		// First Check for General Mapping
+		boolean isMapped = findMapping(nlines, NTF);
 
 		if(!isMapped) {
-			symmetric = nrows == ncols;
-			for(int r = 0; r < nrows && symmetric; r++)
-				for(int c = 0; c < ncols && symmetric; c++)
-					symmetric = matrix.getValue(r, c) == matrix.getValue(r, c);
 
-			if(symmetric)
-				isMapped = findMapping(nlines, NTF, true);
+			// Symmetric and Skew-Symmetric check:
+			symmetric = nrows == ncols;
+			skewSymmetric = nrows == ncols;
+
+			for(int r = 0; r < nrows; r++) {
+				for(int c = 0; c < ncols; c++) {
+					if(symmetric)
+						symmetric = sampleMatrix.getValue(r, c) == sampleMatrix.getValue(r, c);
+					if(symmetric) {
+						if(r != c)
+							skewSymmetric = sampleMatrix.getValue(r, c) == sampleMatrix.getValue(r, c) * (-1);
+						else
+							skewSymmetric = sampleMatrix.getValue(r, c) == 0;
+					}
+				}
+			}
+
+			if(symmetric) {
+
+				// Lower Triangular
+				isUpperTriangular = false;
+				transferSampleMatrixTriangular(isUpperTriangular);
+				isMapped = findMapping(nlines, NTF);
+
+				// Upper Triangular
+				if(!isMapped) {
+					isUpperTriangular = true;
+					sampleMatrix = matrix;
+					transferSampleMatrixTriangular(isUpperTriangular);
+					isMapped = findMapping(nlines, NTF);
+				}
+			}
+			// Skew-Symmetric check:
+			else if(skewSymmetric) {
+				// Lower Triangular
+				isUpperTriangular = false;
+				skewCoefficient = 1;
+				transferSampleMatrixTriangular(isUpperTriangular);
+				isMapped = findMapping(nlines, NTF);
+
+				// Lower Triangular Skew
+				if(!isMapped) {
+					skewCoefficient = -1;
+					skewSampleMatrix(skewCoefficient);
+					NTF = convertMatrixTONumberTrimFormat(sampleMatrix);
+					isMapped = findMapping(nlines, NTF);
+				}
+
+				// Upper Triangular
+				if(!isMapped) {
+					isUpperTriangular = true;
+					skewCoefficient = 1;
+					sampleMatrix = matrix;
+					transferSampleMatrixTriangular(isUpperTriangular);
+					NTF = convertMatrixTONumberTrimFormat(sampleMatrix);
+					isMapped = findMapping(nlines, NTF);
+				}
+				// Upper Triangular Skew
+				if(!isMapped) {
+					skewCoefficient = -1;
+					skewSampleMatrix(skewCoefficient);
+					NTF = convertMatrixTONumberTrimFormat(sampleMatrix);
+					isMapped = findMapping(nlines, NTF);
+				}
+			}
 		}
 		mapped = isMapped;
 	}
 
-	private boolean findMapping(int nlines, NumberTrimFormat[][] NTF, boolean isSymmetric) {
+	private boolean findMapping(int nlines, NumberTrimFormat[][] NTF) {
 
 		mapRow = new int[nrows][ncols];
 		mapCol = new int[nrows][ncols];
@@ -94,13 +155,7 @@ public class ReaderMapping {
 		ArrayList<Integer> colIndexes = new ArrayList<>();
 		ArrayList<Integer> colIndexSizes = new ArrayList<>();
 		for(int r = 0; r < nrows; r++) {
-			int sc;
-			if(isSymmetric) {
-				sc = r + 1;
-			}
-			else
-				sc = ncols;
-			for(int c = 0; c < sc; c++) {
+			for(int c = 0; c < ncols; c++) {
 				NumberTrimFormat ntf = NTF[r][c];
 				if(ntf.actualValue == 0) {
 					continue;
@@ -124,16 +179,44 @@ public class ReaderMapping {
 				}
 			}
 		}
-
-		boolean flagMapp = true;
+		boolean flagMap = true;
 		for(int r = 0; r < nrows; r++)
 			for(int c = 0; c < ncols; c++)
 				if(mapRow[r][c] == -1 && NTF[r][c].actualValue != 0)
-					flagMapp = false;
+					flagMap = false;
 
 		Gson gson = new Gson();
 		System.out.println(gson.toJson(mapRow));
-		return flagMapp;
+		return flagMap;
+	}
+
+	private void transferSampleMatrixTriangular(boolean isUpper) throws Exception {
+		if(nrows != ncols)
+			throw new Exception("For upper triangular matrix both row and col should be same!");
+
+		for(int r = 0; r < nrows; r++) {
+			if(isUpper) {
+				for(int c = 0; c < r - 1; c++) {
+					sampleMatrix.setValue(r, c, 0);
+				}
+			}
+			else {
+				for(int c = r + 1; c < ncols; c++) {
+					sampleMatrix.setValue(r, c, 0);
+				}
+			}
+		}
+		nnz = sampleMatrix.getNonZeros();
+	}
+
+	private void skewSampleMatrix(int coefficient) throws Exception {
+
+		if(coefficient != 1 && coefficient != -1)
+			throw new Exception("The value of Coefficient have to be 1 or -1!");
+
+		for(int r = 0; r < nrows; r++)
+			for(int c = 0; c < ncols; c++)
+				sampleMatrix.setValue(r, r, sampleMatrix.getValue(r, c) * coefficient);
 	}
 
 	// Convert: convert each value of a sample matrix to NumberTrimFormat
@@ -208,6 +291,51 @@ public class ReaderMapping {
 		return result;
 	}
 
+	public final FileFormatProperties getFormatProperties() throws Exception {
+		FileFormatProperties ffp;
+		if(isRowRegular()) {
+			ffp = getFileFormatPropertiesOfRRCRMapping();
+			if(ffp == null) {
+				ffp = getFileFormatPropertiesOfRRCIMapping();
+			}
+			return ffp;
+		}
+		else {
+
+			FileFormatPropertiesMM.MMFormat format;
+			if(sampleRawRows.size() == nnz) {
+				format = FileFormatPropertiesMM.MMFormat.COORDINATE;
+			}
+			else
+				format = FileFormatPropertiesMM.MMFormat.ARRAY;
+
+			FileFormatPropertiesMM.MMField field = FileFormatPropertiesMM.MMField.REAL;
+			for(int r = 0; r < nrows && field == FileFormatPropertiesMM.MMField.REAL; r++) {
+				for(int c = 0; c < ncols; c++) {
+					if(sampleMatrix.getValue(r, c) != (int) sampleMatrix.getValue(r, c)) {
+						field = FileFormatPropertiesMM.MMField.INTEGER;
+						break;
+					}
+				}
+			}
+			FileFormatPropertiesMM.MMSymmetry symmetry;
+			if(symmetric)
+				symmetry = FileFormatPropertiesMM.MMSymmetry.SYMMETRIC;
+			else if(skewSymmetric)
+				symmetry = FileFormatPropertiesMM.MMSymmetry.SKEW_SYMMETRIC;
+			else
+				symmetry = FileFormatPropertiesMM.MMSymmetry.GENERAL;
+
+			String delim = getDelimsOfRIMapping();
+			if(delim != null) {
+				ffp = new FileFormatPropertiesMM(format, field, symmetry);
+				return ffp;
+			}
+			else
+				return null;
+		}
+	}
+
 	public final boolean isRowRegular() {
 		int nrows = mapRow.length;
 		int ncols = mapRow[0].length;
@@ -237,7 +365,7 @@ public class ReaderMapping {
 		 Map Col:       [0 2 4 6 8 ]
 		 result:        ["," "," "," "," ","]
 		*/
-	public final String[][] getDelimsOfRRCRMapping() {
+	public final FileFormatProperties getFileFormatPropertiesOfRRCRMapping() {
 
 		int nrows = mapRow.length;
 		int ncols = mapRow[0].length;
@@ -309,7 +437,67 @@ public class ReaderMapping {
 				delims[r][c] = d;
 			}
 		}
-		return delims;
+
+		ArrayList<String> rowDelims = new ArrayList<>();
+		HashSet<String> naString = new HashSet<>();
+		int maxSizeOfToken = 0;
+
+		// append all delimiters as a string and then tokenize it
+		for(int r = 0; r < nrows; r++) {
+			StringBuilder sbRow = new StringBuilder();
+			for(int c = 0; c < ncols + 1; c++) {
+				sbRow.append(delims[r][c]);
+				if(maxSizeOfToken == 0 || (delims[r][c].length() > 0 && delims[r][c].length() < maxSizeOfToken)) {
+					maxSizeOfToken = delims[r][c].length();
+				}
+			}
+			rowDelims.add(sbRow.toString());
+		}
+
+		String uniqueDelimiter = null;
+		StringBuilder token = new StringBuilder();
+		token.append(rowDelims.get(0).charAt(0));
+
+		while(token.length() <= maxSizeOfToken) {
+			boolean flagCurrToken = true;
+			HashSet<String> ns = new HashSet<>();
+			for(int r = 0; r < nrows; r++) {
+				int rowDelimCount = 0;
+				String row = rowDelims.get(r);
+				int sPos = 0;
+				do {
+					int index = row.substring(sPos).indexOf(token.toString());
+					if(index != -1) {
+						rowDelimCount++;
+						String nv = row.substring(sPos, sPos + index);
+						if(nv.length() > 0)
+							ns.add(nv);
+						sPos += index + token.length();
+					}
+					else
+						break;
+				}
+				while(sPos <= row.length());
+
+				if(rowDelimCount != ncols - 1) {
+					flagCurrToken = false;
+					break;
+				}
+			}
+			if(flagCurrToken) {
+				uniqueDelimiter = token.toString();
+				naString = ns;
+			}
+			token.append(rowDelims.get(0).charAt(token.length()));
+		}
+		if(uniqueDelimiter != null) {
+			FileFormatPropertiesCSV ffpcsv = new FileFormatPropertiesCSV(false, uniqueDelimiter, false);
+			ffpcsv.setNAStrings(naString);
+			return ffpcsv;
+		}
+		else
+			return null;
+
 	}
 
 	/*
@@ -357,10 +545,10 @@ public class ReaderMapping {
 		return mergeCount;
 	}
 
-	public final RowColValue[] getDelimsOfRIMapping() throws Exception {
+	private String getDelimsOfRIMapping() throws Exception {
 
 		// FirstRowIndex = 0, FirstColIndex = 0
-		RowColValue[] delims = getDelimsOfMapping(0, 0);
+		String delims = getDelimsOfMapping(0, 0);
 		// FirstRowIndex = 1, FirstColIndex = 1
 		if(delims == null)
 			delims = getDelimsOfMapping(1, 1);
@@ -374,7 +562,7 @@ public class ReaderMapping {
 		return delims;
 	}
 
-	private RowColValue[] getDelimsOfMapping(int firstRowIndex, int firstColIndex) throws Exception {
+	private String getDelimsOfMapping(int firstRowIndex, int firstColIndex) throws Exception {
 
 		int nLines = sampleRawRows.size();
 		int nrows = sampleMatrix.getNumRows();
@@ -411,27 +599,60 @@ public class ReaderMapping {
 			return null;
 		}
 		else {
-			for(int i = 0; i < nnz; i++)
+			HashSet<String> delims = new HashSet<>();
+			mapRCV[0].findDelims();
+			delims.add(mapRCV[0].v1Delim);
+			delims.add(mapRCV[0].v2Delim);
+			int minDelimLength = Math.min(mapRCV[0].v1Delim.length(), mapRCV[0].v2Delim.length());
+			for(int i = 1; i < nnz; i++) {
 				mapRCV[i].findDelims();
+				delims.add(mapRCV[i].v1Delim);
+				delims.add(mapRCV[i].v2Delim);
+			}
+
+			HashSet<String> token = null;
+			for(int l = 1; l < minDelimLength; l++) {
+				boolean flagToken = true;
+				token = new HashSet<>();
+				while(delims.iterator().hasNext()) {
+					String delim = delims.iterator().next();
+					if(delim.length() % l != 0) {
+						flagToken = false;
+						break;
+					}
+					for(int i = 0; i < delim.length() - l; i += l)
+						token.add(delim.substring(i, i + l));
+					if(token.size() > 1) {
+						flagToken = false;
+						break;
+					}
+				}
+				if(flagToken)
+					break;
+			}
+			if(token != null) {
+				return token.iterator().next();
+			}
+			else
+				return null;
 		}
-		return mapRCV;
 	}
 
-	public ColIndexValue[][] getDelimsOfRRCIMapping() throws Exception {
+	public FileFormatPropertiesLIBSVM getFileFormatPropertiesOfRRCIMapping() {
 
+		FileFormatPropertiesLIBSVM ffplibsvm;
 		//FirstColIndex = 0
-		ColIndexValue[][] delims = getDelimsOfRRCIMapping(1);
+		ffplibsvm = getDelimsOfRRCIMapping(0);
 
-		//		//FirstColIndex = 1
-		//		if(delims == null)
-		//			delims = getDelimsOfRRCIMapping(1);
+		//FirstColIndex = 1
+		if(ffplibsvm == null)
+			ffplibsvm = getDelimsOfRRCIMapping(1);
 
-		return delims;
+		return ffplibsvm;
 	}
 
-	private ColIndexValue[][] getDelimsOfRRCIMapping(int firstColIndex) {
+	private FileFormatPropertiesLIBSVM getDelimsOfRRCIMapping(int firstColIndex) {
 
-		ColIndexValue[][] mapCIV = new ColIndexValue[nrows][ncols];
 		Map<String, Set<String>> tokens = new HashMap<>();
 		Set<String> allTokens = new HashSet<>();
 
@@ -453,10 +674,6 @@ public class ReaderMapping {
 			token.addAll(civ.getMappedTokens(row));
 			allTokens.addAll(token);
 		}
-		//		System.out.println("===========================================");
-		//		Gson gson = new Gson();
-		//		System.out.println("Tokens = " + gson.toJson(tokens));
-		//		System.out.println("All tokens = " + gson.toJson(allTokens));
 
 		ArrayList<String> missedKeys = new ArrayList<>();
 		ArrayList<Integer> labelIndex = new ArrayList<>();
@@ -483,29 +700,34 @@ public class ReaderMapping {
 				}
 			}
 		}
+		String separator = null;
+		String indexSeparator = null;
+
 		boolean isVerify = false;
 		for(int i = 0; i < selectedTokens.size() && !isVerify; i++) {
 			isVerify = true;
 			for(int r = 0; r < nrows; r++) {
-				mapCIV[r] = verifyRowWithIndexDelim(r, selectedTokens.get(i), labelIndex.get(i), firstColIndex);
-				if(mapCIV[r] == null) {
+				separator = verifyRowWithIndexDelim(r, selectedTokens.get(i), labelIndex.get(i), firstColIndex);
+				if(separator == null) {
 					isVerify = false;
 					break;
 				}
 			}
 		}
-		//System.out.println(gson.toJson(mapCIV));
-		return mapCIV;
+		if(isVerify) {
+			return new FileFormatPropertiesLIBSVM(separator, indexSeparator);
+		}
+		else
+			return null;
 	}
 
-	private ColIndexValue[] verifyRowWithIndexDelim(int rowID, String indexDelim, int labelIndex, int firstColIndex) {
+	private String verifyRowWithIndexDelim(int rowID, String indexDelim, int labelIndex, int firstColIndex) {
 
 		String row = sampleRawRows.get(rowID);
 		int length = row.length();
 		BitSet bitSet = new BitSet(length);
 		ArrayList<String> stringChunks = new ArrayList<>();
 		ArrayList<Integer> baseIndexes = new ArrayList<>();
-		ColIndexValue[] result = new ColIndexValue[ncols];
 
 		for(int c = ncols - 1; c >= 0; c--) {
 			if(mapRow[rowID][c] != -1) {
@@ -572,7 +794,6 @@ public class ReaderMapping {
 								nmiValue.index += indexDelim.length();
 							}
 							bitSet.set(nmiIndex.index, nmiValue.index + nmiValue.size);
-							result[c] = new ColIndexValue(ntfColIndex, ntfColValue, nmiIndex, nmiValue, indexDelim);
 							break;
 						}
 						sPosition++;
@@ -594,11 +815,7 @@ public class ReaderMapping {
 		if(separator == null)
 			return null;
 
-		for(ColIndexValue civ : result) {
-			if(civ != null)
-				civ.separator = separator;
-		}
-		return result;
+		return separator;
 	}
 
 	private void getChunksOFString(String row, BitSet bitSet, ArrayList<String> stringChunks,
@@ -778,8 +995,16 @@ public class ReaderMapping {
 				throw new Exception("The values didn't match !!");
 
 			v0Delim = rowString.substring(0, nmiV0.index);
+			nmiV0.size += mergeDelimiters(ntfV0.actualValue, rowString.substring(nmiV0.index, nmiV0.index + nmiV0.size),
+				rowString.substring(nmiV0.index + nmiV0.size));
+
 			v1Delim = rowString.substring(nmiV0.index + nmiV0.size, nmiV1.index);
+			nmiV1.size += mergeDelimiters(ntfV1.actualValue, rowString.substring(nmiV1.index, nmiV1.index + nmiV1.size),
+				rowString.substring(nmiV1.index + nmiV1.size));
+
 			v2Delim = rowString.substring(nmiV1.index + nmiV1.size, nmiV2.index);
+			nmiV2.size += mergeDelimiters(ntfV2.actualValue, rowString.substring(nmiV2.index, nmiV2.index + nmiV2.size),
+				rowString.substring(nmiV2.index + nmiV2.size));
 		}
 
 		public NumberMappingInfo getNmiV0() {

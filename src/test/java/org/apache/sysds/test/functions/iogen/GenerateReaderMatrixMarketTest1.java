@@ -19,15 +19,11 @@
 
 package org.apache.sysds.test.functions.iogen;
 
-import org.apache.sysds.runtime.io.GenerateReader2;
-import org.apache.sysds.runtime.io.GenerateReader3;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.DataConverter;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.junit.Test;
-
-import java.io.IOException;
 
 public class GenerateReaderMatrixMarketTest1 extends AutomatedTestBase {
 
@@ -55,7 +51,7 @@ public class GenerateReaderMatrixMarketTest1 extends AutomatedTestBase {
 			"2,3,9";
 
 		double[][] sample = {{4, 5, 6}, {7, 8, 9}};
-		GenerateReader3.generateReader(raw, DataConverter.convertToMatrixBlock(sample));
+		//GenerateReader3.generateReader(raw, DataConverter.convertToMatrixBlock(sample));
 	}
 	//Type 0: Row, Col, Value
 	@Test public void testMM11() throws Exception {
@@ -67,7 +63,7 @@ public class GenerateReaderMatrixMarketTest1 extends AutomatedTestBase {
 			"1,2,9";
 
 		double[][] sample = {{4, 5, 6}, {7, 8, 9}};
-		GenerateReader3.generateReader(raw, DataConverter.convertToMatrixBlock(sample));
+		//GenerateReader3.generateReader(raw, DataConverter.convertToMatrixBlock(sample));
 	}
 
 	//Type 1: Col, Row, Value
@@ -80,7 +76,7 @@ public class GenerateReaderMatrixMarketTest1 extends AutomatedTestBase {
 			"3,2,9";
 
 		double[][] sample = {{4, 5, 6}, {7, 8, 9}};
-		GenerateReader3.generateReader(raw, DataConverter.convertToMatrixBlock(sample));
+		//GenerateReader3.generateReader(raw, DataConverter.convertToMatrixBlock(sample));
 	}
 	//Type 2: Value, Row, Col
 	@Test public void testMM3() throws Exception {
@@ -92,7 +88,7 @@ public class GenerateReaderMatrixMarketTest1 extends AutomatedTestBase {
 			"9,2,3";
 
 		double[][] sample = {{4, 5, 6}, {7, 8, 9}};
-		GenerateReader3.generateReader(raw, DataConverter.convertToMatrixBlock(sample));
+		//GenerateReader3.generateReader(raw, DataConverter.convertToMatrixBlock(sample));
 	}
 
 	//Type 3: Value, Col, Row
@@ -104,7 +100,7 @@ public class GenerateReaderMatrixMarketTest1 extends AutomatedTestBase {
 			"8,2,2\n" +
 			"9,3,2";
 		double[][] sample = {{4, 5, 6}, {7, 8, 9}};
-		GenerateReader3.generateReader(raw, DataConverter.convertToMatrixBlock(sample));
+		//GenerateReader3.generateReader(raw, DataConverter.convertToMatrixBlock(sample));
 	}
 
 	@Test public void testMM5() throws Exception {
@@ -115,7 +111,7 @@ public class GenerateReaderMatrixMarketTest1 extends AutomatedTestBase {
 			"4,4,4\n";
 
 		double[][] sample = {{4, 5, 6}, {7, 8, 9}};
-		GenerateReader3.generateReader(raw, DataConverter.convertToMatrixBlock(sample));
+		//GenerateReader3.generateReader(raw, DataConverter.convertToMatrixBlock(sample));
 	}
 
 

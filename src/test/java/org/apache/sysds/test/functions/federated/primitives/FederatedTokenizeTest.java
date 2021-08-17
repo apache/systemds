@@ -132,8 +132,8 @@ public class FederatedTokenizeTest extends AutomatedTestBase {
 		fullDMLScriptName = HOME + TEST_NAME + "Reference.dml";
 		programArgs = new String[] {"-explain", "-args", DATASET_DIR + DATASET, HOME + TEST_NAME + ".json", expected("S")};
 		runTest(null);
-		// Run actual dml script with federated matrix
 
+		// Run actual dml script with federated matrix
 		fullDMLScriptName = HOME + TEST_NAME + ".dml";
 		programArgs = new String[] {"-stats", "100", "-nvargs",
 			"in_X1=" + TestUtils.federatedAddress(port1, input("AH")),

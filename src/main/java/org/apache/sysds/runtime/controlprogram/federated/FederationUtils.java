@@ -227,12 +227,15 @@ public class FederationUtils {
 	public static MatrixBlock aggProd(Future<FederatedResponse>[] ffr, FederationMap fedMap, AggregateUnaryOperator aop) {
 		try {
 			boolean rowFed = fedMap.getType() == FederationMap.FType.ROW;
-			MatrixBlock ret = rowFed ?
+			MatrixBlock ret = aop.isFullAggregate() ? (rowFed ?
+				new MatrixBlock(ffr.length, 1, 1.0) : new MatrixBlock(1, ffr.length, 1.0)) :
+				(rowFed ?
 				new MatrixBlock(ffr.length, (int) fedMap.getFederatedRanges()[0].getEndDims()[1], 1.0) :
-				new MatrixBlock((int) fedMap.getFederatedRanges()[0].getEndDims()[0], ffr.length, 1.0);
-			MatrixBlock res = rowFed ?
+				new MatrixBlock((int) fedMap.getFederatedRanges()[0].getEndDims()[0], ffr.length, 1.0));
+			MatrixBlock res = aop.isFullAggregate() ? new MatrixBlock(1, 1, 1.0) :
+				(rowFed ?
 				new MatrixBlock(1, (int) fedMap.getFederatedRanges()[0].getEndDims()[1], 1.0) :
-				new MatrixBlock((int) fedMap.getFederatedRanges()[0].getEndDims()[0], 1, 1.0);
+				new MatrixBlock((int) fedMap.getFederatedRanges()[0].getEndDims()[0], 1, 1.0));
 
 			for(int i = 0; i < ffr.length; i++) {
 				MatrixBlock tmp = (MatrixBlock) ffr[i].get().getData()[0];

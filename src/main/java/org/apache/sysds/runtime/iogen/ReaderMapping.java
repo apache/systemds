@@ -422,11 +422,11 @@ public class ReaderMapping {
 		//FirstColIndex = 0
 		ColIndexValue[][] delims = getDelimsOfRRCIMapping(1);
 
-		//FirstColIndex = 1
+		//		//FirstColIndex = 1
 		//		if(delims == null)
 		//			delims = getDelimsOfRRCIMapping(1);
 
-		return null;
+		return delims;
 	}
 
 	private ColIndexValue[][] getDelimsOfRRCIMapping(int firstColIndex) {
@@ -453,10 +453,10 @@ public class ReaderMapping {
 			token.addAll(civ.getMappedTokens(row));
 			allTokens.addAll(token);
 		}
-		System.out.println("===========================================");
-		Gson gson = new Gson();
-		System.out.println("Tokens = " + gson.toJson(tokens));
-		System.out.println("All tokens = " + gson.toJson(allTokens));
+		//		System.out.println("===========================================");
+		//		Gson gson = new Gson();
+		//		System.out.println("Tokens = " + gson.toJson(tokens));
+		//		System.out.println("All tokens = " + gson.toJson(allTokens));
 
 		ArrayList<String> missedKeys = new ArrayList<>();
 		ArrayList<Integer> labelIndex = new ArrayList<>();
@@ -494,7 +494,7 @@ public class ReaderMapping {
 				}
 			}
 		}
-		System.out.println(gson.toJson(mapCIV));
+		//System.out.println(gson.toJson(mapCIV));
 		return mapCIV;
 	}
 
@@ -572,7 +572,7 @@ public class ReaderMapping {
 								nmiValue.index += indexDelim.length();
 							}
 							bitSet.set(nmiIndex.index, nmiValue.index + nmiValue.size);
-							result[c] = new ColIndexValue(ntfColIndex, ntfColValue, nmiIndex, nmiValue);
+							result[c] = new ColIndexValue(ntfColIndex, ntfColValue, nmiIndex, nmiValue, indexDelim);
 							break;
 						}
 						sPosition++;
@@ -582,6 +582,21 @@ public class ReaderMapping {
 				if(!itemVerify)
 					return null;
 			}
+		}
+
+		stringChunks = new ArrayList<>();
+		baseIndexes = new ArrayList<>();
+		getChunksOFString(row, bitSet, stringChunks, baseIndexes);
+		Set<String> separators = new HashSet<>();
+		separators.addAll(stringChunks);
+		String separator = separators.size() == 1 ? separators.iterator().next() : null;
+
+		if(separator == null)
+			return null;
+
+		for(ColIndexValue civ : result) {
+			if(civ != null)
+				civ.separator = separator;
 		}
 		return result;
 	}
@@ -802,14 +817,12 @@ public class ReaderMapping {
 		private NumberMappingInfo nmiColIndex;
 		private NumberMappingInfo nmiColValue;
 		private boolean mapped;
-		private String rowString;
 		private String indSep;
 		private String separator;
 
 		public ColIndexValue(int col, double value) {
 			ntfColIndex = new NumberTrimFormat(col);
 			ntfColValue = new NumberTrimFormat(value);
-			rowString = null;
 			indSep = null;
 			separator = null;
 			mapped = false;
@@ -818,11 +831,12 @@ public class ReaderMapping {
 		}
 
 		public ColIndexValue(NumberTrimFormat ntfColIndex, NumberTrimFormat ntfColValue, NumberMappingInfo nmiColIndex,
-			NumberMappingInfo nmiColValue) {
+			NumberMappingInfo nmiColValue, String indSep) {
 			this.ntfColIndex = ntfColIndex;
 			this.ntfColValue = ntfColValue;
 			this.nmiColIndex = nmiColIndex;
 			this.nmiColValue = nmiColValue;
+			this.indSep = indSep;
 		}
 
 		public Set<String> getMappedTokens(String row) {
@@ -863,110 +877,12 @@ public class ReaderMapping {
 			return tokens;
 		}
 
-		//		public boolean isMapped(String row, ArrayList<Integer> reservedIndex, ArrayList<Integer> reservedSize) {
-		//
-		//			ArrayList<String> rowChunks = new ArrayList<>();
-		//			ArrayList<Integer> baseIndexes = new ArrayList<>();
-		//
-		//			if(reservedIndex.size() > 0) {
-		//				int length = row.length();
-		//				BitSet bitSet = new BitSet();
-		//				for(int i = 0; i < reservedIndex.size(); i++) {
-		//					bitSet.set(reservedIndex.get(i), reservedIndex.get(i) + reservedSize.get(i));
-		//				}
-		//
-		//				int sIndex = 0;
-		//				for(int i = 0; i < length; i++) {
-		//					if(bitSet.get(i)) {
-		//						String subRow = row.substring(sIndex, i);
-		//						if(subRow.length() > 0) {
-		//							rowChunks.add(subRow);
-		//							baseIndexes.add(sIndex);
-		//						}
-		//						for(int j = i; j < length; j++) {
-		//							if(bitSet.get(j))
-		//								i++;
-		//							else
-		//								break;
-		//						}
-		//						sIndex = i;
-		//					}
-		//				}
-		//
-		//				String subRow = row.substring(sIndex);
-		//				if(subRow.length() > 0) {
-		//					rowChunks.add(subRow);
-		//					baseIndexes.add(sIndex);
-		//				}
-		//			}
-		//			else {
-		//				rowChunks.add(row);
-		//				baseIndexes.add(0);
-		//			}
-		//
-		//			int rci = 0;
-		//			int distance = 0;
-		//
-		//			for(String rc : rowChunks) {
-		//				int sPosition = 0;
-		//				while(sPosition < rc.length()) {
-		//					NumberMappingInfo nmiIndex;
-		//					if(ntfColIndex.actualValue == -1) {
-		//						nmiIndex = new NumberMappingInfo();
-		//						nmiIndex.size = 0;
-		//						nmiIndex.index = 0;
-		//						nmiIndex.mapped = true;
-		//					}
-		//					else {
-		//						nmiIndex = ntfColIndex.actualValue == 0 ? ntfColIndex
-		//							.getMappingInfoIncludeZero(rc.substring(sPosition)) : ntfColIndex
-		//							.getMappingInfo(rc.substring(sPosition));
-		//						if(!nmiIndex.mapped) {
-		//							System.out.println(ntfColIndex.actualValue+" >>>  "+ rc.substring(sPosition) + "  RC="+rc);
-		//							break;
-		//						}
-		//					}
-		//
-		//					nmiIndex.index += sPosition;
-		//
-		//					NumberMappingInfo nmiValue = ntfColValue
-		//						.getMappingInfo(rc.substring(nmiIndex.index + nmiIndex.size));
-		//					if(!nmiValue.mapped) {
-		//						System.out.println(ntfColValue.actualValue+" >>>  "+ rc.substring(nmiIndex.index + nmiIndex.size)+ "  RC="+rc);
-		//						break;
-		//					}
-		//
-		//					nmiValue.index += nmiIndex.index + nmiIndex.size;
-		//					int d = nmiValue.index - nmiIndex.index - nmiIndex.size;
-		//					if(distance == 0 || distance > d) {
-		//						distance = d;
-		//						nmiColIndex = nmiIndex;
-		//						nmiColIndex.index += baseIndexes.get(rci);
-		//						nmiColValue = nmiValue;
-		//						nmiColValue.index += baseIndexes.get(rci);
-		//
-		//						System.out.println("DDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD");
-		//						System.out.println("("+ntfColIndex.actualValue+","+ntfColValue.actualValue+") >> distance = "+ distance+" ");
-		//
-		//						System.out.println("DDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD");
-		//					}
-		//					sPosition = nmiValue.index + 1;//nmiValue.size;
-		//				}
-		//				rci++;
-		//			}
-		//			if(nmiColValue != null && nmiColIndex != null) {
-		//				mapped = true;
-		//				reservedIndex.add(nmiColIndex.index);
-		//				reservedSize.add(nmiColValue.index + nmiColValue.size - nmiColIndex.index);
-		//				return true;
-		//			}
-		//			else
-		//				return false;
-		//		}
+		public void setIndSep(String indSep) {
+			this.indSep = indSep;
+		}
 
-		public void findDelim(int previousIndex, String row) {
-			indSep = row.substring(nmiColIndex.index + nmiColIndex.size, nmiColValue.index);
-			separator = row.substring(previousIndex, nmiColIndex.index);
+		public void setSeparator(String separator) {
+			this.separator = separator;
 		}
 
 		public String getIndSep() {

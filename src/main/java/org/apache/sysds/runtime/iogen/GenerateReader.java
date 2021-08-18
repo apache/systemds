@@ -41,9 +41,9 @@ public class GenerateReader {
 		//////////////////////////////////////////////////
 		System.out.println("Mapped !!!!!!!!!!!!");
 		Gson gson = new Gson();
-//		System.out.println("Map Row >> " + gson.toJson(rp.getMapRow()));
-//		System.out.println("Map Col >> " + gson.toJson(rp.getMapCol()));
-//		System.out.println("Map Size >> " + gson.toJson(rp.getMapSize()));
+		System.out.println("Map Row >> " + gson.toJson(rp.getMapRow()));
+		System.out.println("Map Col >> " + gson.toJson(rp.getMapCol()));
+		System.out.println("Map Size >> " + gson.toJson(rp.getMapSize()));
 
 		FileFormatProperties ffp =rp.getFormatProperties();
 		if(ffp!=null){

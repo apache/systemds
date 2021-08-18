@@ -19,19 +19,14 @@
 
 package org.apache.sysds.test.functions.iogen;
 
-import com.google.gson.Gson;
-import org.apache.sysds.runtime.matrix.data.MatrixBlock;
-import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.junit.Test;
 
-import java.io.IOException;
-
-public class GenerateReaderLibSVMUniqueTest extends GenerateReaderTest {
+public class GenerateReaderLibSVMTest extends GenerateReaderTest {
 
 	private final static String TEST_NAME = "GenerateReaderLibSVMUniqueTest";
 	private final static String TEST_DIR = "functions/io/GenerateReaderLibSVMUniqueTest/";
-	private final static String TEST_CLASS_DIR = TEST_DIR + GenerateReaderLibSVMUniqueTest.class.getSimpleName() + "/";
+	private final static String TEST_CLASS_DIR = TEST_DIR + GenerateReaderLibSVMTest.class.getSimpleName() + "/";
 
 	@Override public void setUp() {
 		addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[] {"Rout"}));
@@ -80,7 +75,7 @@ public class GenerateReaderLibSVMUniqueTest extends GenerateReaderTest {
 				sb.append("\n");
 		}
 		sampleRaw = sb.toString();
-		System.out.println(sampleRaw);
+		//System.out.println(sampleRaw);
 
 	}
 

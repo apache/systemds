@@ -414,6 +414,7 @@ public class ReaderMapping {
 		ArrayList<String> rowDelims = new ArrayList<>();
 		HashSet<String> naString = new HashSet<>();
 		int maxSizeOfToken = 0;
+		String stringToken = null;
 
 		// append all delimiters as a string and then tokenize it
 		for(int r = 0; r < nrows; r++) {
@@ -422,6 +423,7 @@ public class ReaderMapping {
 				sbRow.append(delims[r][c]);
 				if(maxSizeOfToken == 0 || (delims[r][c].length() > 0 && delims[r][c].length() < maxSizeOfToken)) {
 					maxSizeOfToken = delims[r][c].length();
+					stringToken = delims[r][c];
 				}
 			}
 			rowDelims.add(sbRow.toString());
@@ -429,9 +431,10 @@ public class ReaderMapping {
 
 		String uniqueDelimiter = null;
 		StringBuilder token = new StringBuilder();
-		token.append(rowDelims.get(0).charAt(0));
 
-		while(token.length() <= maxSizeOfToken) {
+		while(token.length() < maxSizeOfToken) {
+			token.append(stringToken.charAt(token.length()));
+
 			boolean flagCurrToken = true;
 			HashSet<String> ns = new HashSet<>();
 			for(int r = 0; r < nrows; r++) {
@@ -461,11 +464,12 @@ public class ReaderMapping {
 				uniqueDelimiter = token.toString();
 				naString = ns;
 			}
-			token.append(rowDelims.get(0).charAt(token.length()));
+
 		}
 		if(uniqueDelimiter != null) {
 			FileFormatPropertiesCSV ffpcsv = new FileFormatPropertiesCSV(false, uniqueDelimiter, false);
 			ffpcsv.setNAStrings(naString);
+			ffpcsv.setDescription("CSV Format Recognized");
 			return ffpcsv;
 		}
 		else
@@ -507,8 +511,8 @@ public class ReaderMapping {
 					if(Double.parseDouble(sb.toString()) == value) {
 						mergeCount = sb.length() - stringValue.length();
 					}
-					else
-						break;
+//					else
+//						break;
 				}
 			}
 			else

@@ -24,12 +24,10 @@ public class NumberTrimFormat implements Comparable {
 	public char S;
 	public char[] N;
 	public double actualValue;
-	public int r;
 	public int c;
 
-	public NumberTrimFormat(int r, int c, double value) {
+	public NumberTrimFormat(int c, double value) {
 		this(value);
-		this.r = r;
 		this.c = c;
 	}
 
@@ -265,19 +263,8 @@ public class NumberTrimFormat implements Comparable {
 		return s.toString();
 	}
 
-	//	public int compareTo(NumberTrimFormat ntf) {
-	//		return Double.compare(actualValue,ntf.actualValue);
-	//		//double d = ntf.actualValue - actualValue;
-	////		if(d>0)
-	////			return 1;
-	////		else if(d<0)
-	////			return -1;
-	////		else
-	////			return 0;
-	//	}
-
 	public NumberTrimFormat getACopy() {
-		NumberTrimFormat copy = new NumberTrimFormat(r, c, actualValue);
+		NumberTrimFormat copy = new NumberTrimFormat(c, actualValue);
 		copy.S = S;
 		copy.N = N;
 		return copy;

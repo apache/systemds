@@ -235,7 +235,7 @@ public class ReaderMapping {
 		NumberTrimFormat[][] result = new NumberTrimFormat[nrows][ncols];
 		for(int r = 0; r < nrows; r++)
 			for(int c = 0; c < ncols; c++) {
-				result[r][c] = new NumberTrimFormat(r,c,matrix.getValue(r, c));
+				result[r][c] = new NumberTrimFormat(c,matrix.getValue(r, c));
 			}
 		return result;
 	}

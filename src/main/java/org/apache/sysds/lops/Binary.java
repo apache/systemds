@@ -21,6 +21,9 @@ package org.apache.sysds.lops;
 
 import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
+
+import java.util.ArrayList;
+
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.OpOp2;
 import org.apache.sysds.common.Types.ValueType;
@@ -69,6 +72,21 @@ public class Binary extends Lop
 	@Override
 	public String toString() {
 		return " Operation: " + operation;
+	}
+	
+	@Override
+	public Lop getBroadcastInput() {
+		if (getExecType() != ExecType.SPARK)
+			return null;
+
+		ArrayList<Lop> inputs = getInputs();
+		if (operation == OpOp2.MAP && inputs.get(0).getDataType() == DataType.MATRIX 
+				&& inputs.get(1).getDataType() == DataType.MATRIX)
+			return inputs.get(1);
+		else if (inputs.get(0).getDataType() == DataType.FRAME && inputs.get(1).getDataType() == DataType.MATRIX)
+			return inputs.get(1);
+		else
+			return null;
 	}
 	
 	public OpOp2 getOperationType() {

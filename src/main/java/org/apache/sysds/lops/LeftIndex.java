@@ -87,6 +87,13 @@ public class LeftIndex extends Lop
 		colU.addOutput(this);
 		lps.setProperties(inputs, et);
 	}
+
+	@Override
+	public Lop getBroadcastInput() {
+		if (getExecType() != ExecType.SPARK || _type == LixCacheType.NONE)
+			return null;
+		return _type == LixCacheType.LEFT ? getInputs().get(0) : null;
+	}
 	
 	private String getOpcode() {
 		if( _type != LixCacheType.NONE )

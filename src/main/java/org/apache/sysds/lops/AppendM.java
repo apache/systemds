@@ -54,6 +54,13 @@ public class AppendM extends Lop
 		input3.addOutput(this);
 		lps.setProperties(inputs, ExecType.SPARK);
 	}
+
+	@Override
+	public Lop getBroadcastInput() {
+		if (getExecType() != ExecType.SPARK)
+			return null;
+		return getInputs().get(1); //frame or matrix
+	}
 	
 	@Override
 	public String toString() {

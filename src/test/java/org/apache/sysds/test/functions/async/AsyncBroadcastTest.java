@@ -35,12 +35,12 @@ import org.apache.sysds.utils.Statistics;
 import org.junit.Assert;
 import org.junit.Test;
 
-public class PrefetchRDDTest extends AutomatedTestBase {
+public class AsyncBroadcastTest extends AutomatedTestBase {
 	
 	protected static final String TEST_DIR = "functions/async/";
-	protected static final String TEST_NAME = "PrefetchRDD";
-	protected static final int TEST_VARIANTS = 3;
-	protected static String TEST_CLASS_DIR = TEST_DIR + PrefetchRDDTest.class.getSimpleName() + "/";
+	protected static final String TEST_NAME = "BroadcastVar";
+	protected static final int TEST_VARIANTS = 2;
+	protected static String TEST_CLASS_DIR = TEST_DIR + AsyncBroadcastTest.class.getSimpleName() + "/";
 	
 	@Override
 	public void setUp() {
@@ -50,23 +50,15 @@ public class PrefetchRDDTest extends AutomatedTestBase {
 	}
 	
 	@Test
-	public void testAsyncSparkOPs1() {
-		//Single CP consumer. Prefetch Lop has one output.
+	public void testAsyncBroadcast1() {
 		runTest(TEST_NAME+"1");
 	}
 
 	@Test
-	public void testAsyncSparkOPs2() {
-		//Two CP consumers. Prefetch Lop has two outputs.
+	public void testAsyncBroadcast2() {
 		runTest(TEST_NAME+"2");
 	}
 
-	@Test
-	public void testAsyncSparkOPs3() {
-		//SP action type consumer. No Prefetch.
-		runTest(TEST_NAME+"3");
-	}
-	
 	public void runTest(String testname) {
 		boolean old_simplification = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
 		boolean old_sum_product = OptimizerUtils.ALLOW_SUM_PRODUCT_REWRITES;
@@ -86,7 +78,7 @@ public class PrefetchRDDTest extends AutomatedTestBase {
 			
 			List<String> proArgs = new ArrayList<>();
 			
-			proArgs.add("-explain");
+			//proArgs.add("-explain");
 			proArgs.add("-stats");
 			proArgs.add("-args");
 			proArgs.add(output("R"));
@@ -98,17 +90,18 @@ public class PrefetchRDDTest extends AutomatedTestBase {
 			OptimizerUtils.ASYNC_TRIGGER_RDD_OPERATIONS = true;
 			runTest(true, EXCEPTION_NOT_EXPECTED, null, -1);
 			OptimizerUtils.ASYNC_TRIGGER_RDD_OPERATIONS = false;
-			HashMap<MatrixValue.CellIndex, Double> R_pf = readDMLScalarFromOutputDir("R");
+			HashMap<MatrixValue.CellIndex, Double> R_bc = readDMLScalarFromOutputDir("R");
 
 			//compare matrices
-			TestUtils.compareMatrices(R, R_pf, 1e-6, "Origin", "withPrefetch");
-			//assert Prefetch instructions and number of success.
-			long expected_numPF = !testname.equalsIgnoreCase(TEST_NAME+"3") ? 1 : 0;
-			long expected_successPF = !testname.equalsIgnoreCase(TEST_NAME+"3") ? 1 : 0;
-			long numPF = Statistics.getCPHeavyHitterCount("prefetch");
-			Assert.assertTrue("Violated Prefetch instruction count: "+numPF, numPF == expected_numPF);
-			long successPF = Statistics.getAsyncPrefetchCount();
-			Assert.assertTrue("Violated successful Prefetch count: "+successPF, successPF == expected_successPF);
+			TestUtils.compareMatrices(R, R_bc, 1e-6, "Origin", "withBroadcast");
+
+			//assert called and successful early broadcast counts
+			long expected_numBC = 1;
+			long expected_successBC = 1;
+			long numBC = Statistics.getCPHeavyHitterCount("broadcast");
+			Assert.assertTrue("Violated Broadcast instruction count: "+numBC, numBC == expected_numBC);
+			long successBC = Statistics.getAsyncBroadcastCount();
+			Assert.assertTrue("Violated successful Broadcast count: "+successBC, successBC == expected_successBC);
 		} finally {
 			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = old_simplification;
 			OptimizerUtils.ALLOW_SUM_PRODUCT_REWRITES = old_sum_product;

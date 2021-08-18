@@ -701,6 +701,10 @@ public class SparkExecutionContext extends ExecutionContext
 
 		return bret;
 	}
+	
+	public void setBroadcastHandle(MatrixObject mo) {
+		getBroadcastForMatrixObject(mo);
+	}
 
 	@SuppressWarnings("unchecked")
 	public PartitionedBroadcast<TensorBlock> getBroadcastForTensorObject(TensorObject to) {

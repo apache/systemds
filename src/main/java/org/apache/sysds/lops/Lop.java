@@ -425,6 +425,15 @@ public abstract class Lop
 		return SparkAggType.NONE;
 	}
 	
+	/**
+	 * Method to get the input to be broadcast.
+	 * This method is overridden by the Lops which require broadcasts (e.g. AppendM)
+	 * @return An input Lop or Null
+	 */
+	public Lop getBroadcastInput() {
+		return null;
+	}
+	
 
 	/** Method should be overridden if needed
 	 * 

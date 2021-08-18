@@ -153,6 +153,7 @@ public class ReaderMapping {
 		ArrayList<Integer> colIndexes = new ArrayList<>();
 		ArrayList<Integer> colIndexSizes = new ArrayList<>();
 		for(int r = 0; r < nrows; r++) {
+
 			NumberTrimFormat[] ntfRow = new NumberTrimFormat[ncols];
 			for(int i = 0; i < ncols; i++) {
 				ntfRow[i] = NTF[r][i].getACopy();
@@ -233,48 +234,18 @@ public class ReaderMapping {
 	}
 
 	// Looking for a double(Number Trim Format) on a String
-	public static NumberMappingInfo getCellMapping(String row, NumberTrimFormat ntf, ArrayList<Integer> reservedIndex,
+	public NumberMappingInfo getCellMapping(String row, NumberTrimFormat ntf, ArrayList<Integer> reservedIndex,
 		ArrayList<Integer> reservedSize) {
 
 		NumberMappingInfo result = null;
 		ArrayList<String> rowChunks = new ArrayList<>();
 		ArrayList<Integer> baseIndexes = new ArrayList<>();
 
-		if(reservedIndex.size() > 0) {
-			int length = row.length();
-			BitSet bitSet = new BitSet();
-			for(int i = 0; i < reservedIndex.size(); i++) {
-				bitSet.set(reservedIndex.get(i), reservedIndex.get(i) + reservedSize.get(i));
-			}
-
-			int sIndex = 0;
-			for(int i = 0; i < length; i++) {
-				if(bitSet.get(i)) {
-					String subRow = row.substring(sIndex, i);
-					if(subRow.length() > 0) {
-						rowChunks.add(subRow);
-						baseIndexes.add(sIndex);
-					}
-					for(int j = i; j < length; j++) {
-						if(bitSet.get(j))
-							i++;
-						else
-							break;
-					}
-					sIndex = i;
-				}
-			}
-
-			String subRow = row.substring(sIndex);
-			if(subRow.length() > 0) {
-				rowChunks.add(subRow);
-				baseIndexes.add(sIndex);
-			}
+		BitSet bitSet=new BitSet(row.length());
+		for(int i=0;i<reservedIndex.size();i++) {
+			bitSet.set(reservedIndex.get(i), reservedIndex.get(i)+reservedSize.get(i));
 		}
-		else {
-			rowChunks.add(row);
-			baseIndexes.add(0);
-		}
+		getChunksOFString(row,bitSet,rowChunks,baseIndexes);
 
 		int rci = -1;
 		for(String rc : rowChunks) {
@@ -734,7 +705,6 @@ public class ReaderMapping {
 	}
 
 	private String verifyRowWithIndexDelim(int rowID, String indexDelim, int labelIndex, int firstColIndex) {
-
 		String row = sampleRawRows.get(rowID);
 		int length = row.length();
 		BitSet bitSet = new BitSet(length);
@@ -748,6 +718,9 @@ public class ReaderMapping {
 
 				getChunksOFString(row, bitSet, stringChunks, baseIndexes);
 				boolean itemVerify = false;
+
+
+
 
 				for(int i = 0; i < stringChunks.size() && !itemVerify; i++) {
 					String chunk = stringChunks.get(i);
@@ -801,7 +774,7 @@ public class ReaderMapping {
 						if(nmiValue.mapped) {
 							itemVerify = true;
 							nmiIndex.index += sPosition;
-							nmiValue.index += sPosition + nmiIndex.index + nmiIndex.size;
+							nmiValue.index += nmiIndex.index + nmiIndex.size;
 							if(labelIndex - firstColIndex != c) {
 								nmiValue.index += indexDelim.length();
 							}

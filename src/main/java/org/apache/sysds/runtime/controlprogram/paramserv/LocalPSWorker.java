@@ -222,11 +222,12 @@ public class LocalPSWorker extends PSWorker implements Callable<Void> {
 			try {
 				for(int j = 0; j < batchIter; j++) {
 					boolean localUpdate = j < batchIter;
-					boolean localPull = (step % (_nbatches-1)) == 0;
+					boolean localPull = (step % (_nbatches-1) == 0);
 					if(localPull && check) {
 						// Pull the global parameters from ps
 						params = pullModel();
 						check = false;
+						localPull = false;
 					}
 					ListObject gradients = computeGradients(params, dataSize, batchIter, i, j);
 					// Accumulate the intermediate gradients (async for overlap w/ model updates
@@ -239,14 +240,14 @@ public class LocalPSWorker extends PSWorker implements Callable<Void> {
 						params = updateModel(params, gradients, i, j, batchIter);
 					}
 					accNumBatches(1);
-					if(localPull & j > 0) {
+					step++;
+					if((localPull & j > 0) || (j == batchIter-1)) {
 						// Push the gradients to ps
 						pushGradients(accGradients.get());
 						accGradients = ConcurrentUtils.constantFuture(null);
 						check = true;
 						step = 0;
 					}
-					step++;
 					accNumBatches(1);
 				}
 			}

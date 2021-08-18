@@ -38,6 +38,49 @@ public class GenerateReaderLibSVMUniqueTest extends GenerateReaderTest {
 	@Override public void setUp() {
 		addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[] {"Rout"}));
 	}
+	private void generateRandomLIBSVM(int firstIndex, int nrows, int ncols, double min, double max, double sparsity){
+
+		double[][] random = getRandomMatrix(nrows, ncols, min, max, sparsity, 714);
+		sampleMatrix = new double[2 * nrows][ncols];
+
+		StringBuilder sb = new StringBuilder();
+		int indexRow = 0;
+		for(int r = 0; r < nrows; r ++) {
+			StringBuilder row1 = new StringBuilder();
+			StringBuilder row2 = new StringBuilder();
+			row1.append("+1");
+
+			for(int c = 0; c < ncols-1; c++) {
+				if(random[r][c] > 0) {
+					sampleMatrix[indexRow][c] = random[r][c];
+					row1.append(" ").append(c + firstIndex).append(":").append(random[r][c]);
+				}
+				else {
+					sampleMatrix[indexRow][c] = 0;
+				}
+			}
+			sampleMatrix[indexRow++][ncols - 1] = 1;
+
+			row2.append("-1");
+			for(int c = 0; c < ncols-1; c++) {
+				if(random[r][c] < 0) {
+					sampleMatrix[indexRow][c] = random[r][c];
+					row2.append(" ").append(c + firstIndex).append(":").append(random[r][c]);
+				}
+				else {
+					sampleMatrix[indexRow][c] = 0;
+				}
+			}
+
+			sampleMatrix[indexRow++][ncols - 1] = -1;
+
+			sb.append(row1).append("\n");
+			sb.append(row2).append("\n");
+		}
+		sampleRaw = sb.toString();
+		System.out.println(sampleRaw);
+
+	}
 
 	// Index start from 0
 	@Test
@@ -51,65 +94,9 @@ public class GenerateReaderLibSVMUniqueTest extends GenerateReaderTest {
 	}
 	@Test
 	public void test0_2() throws Exception {
-		int nrows = 100;
-		int ncols = 51;
-		double[][] random = getRandomMatrix(nrows, ncols, -100, 100, 1, 714);
-		sampleMatrix = new double[2 * nrows][ncols];
-
-		StringBuilder sb = new StringBuilder();
-		int indexRow = 0;
-		for(int r = 0; r < nrows; r ++) {
-			StringBuilder row1 = new StringBuilder();
-			StringBuilder row2 = new StringBuilder();
-			row1.append("+1");
-
-			for(int c = 0; c < ncols-1; c++) {
-				if(random[r][c] > 0) {
-					sampleMatrix[indexRow][c] = random[r][c];
-					row1.append(" "+c + ":" + random[r][c]);
-				}
-				else {
-					sampleMatrix[indexRow][c] = 0;
-				}
-			}
-			sampleMatrix[indexRow++][ncols - 1] = 1;
-
-			row2.append("-1");
-			for(int c = 0; c < ncols-1; c++) {
-				if(random[r][c] < 0) {
-					sampleMatrix[indexRow][c] = random[r][c];
-					row2.append(" "+c + ":" + random[r][c]);
-				}
-				else {
-					sampleMatrix[indexRow][c] = 0;
-				}
-			}
-
-			sampleMatrix[indexRow++][ncols - 1] = -1;
-
-			sb.append(row1 + "\n");
-			sb.append(row2 + "\n");
-		}
-
-		sampleRaw = sb.toString();
-		System.out.println(sampleRaw);
-
-		//Gson gson= new Gson();
-		//System.out.println(gson.toJson(sampleMatrix));
+		generateRandomLIBSVM(1, 10,10,-1,1,1);
 		runGenerateReaderTest();
 	}
-
-	// Index start from 1
-	@Test
-	public void test0_3() throws Exception {
-
-		sampleRaw = "0:-57.26153462146186 4:-90.11715823359168 5:-23.443753578851386 6:-16.661596780916284 -1";
-
-		sampleMatrix = new double[][] {{-57.26153462146186,0,0,0,-90.11715823359168,-23.443753578851386,-16.661596780916284,-1}};
-		runGenerateReaderTest();
-	}
-
-
 
 	// Index start from 1
 	@Test
@@ -121,7 +108,5 @@ public class GenerateReaderLibSVMUniqueTest extends GenerateReaderTest {
 		sampleMatrix = new double[][] {{0,3,0,5,0,7,0,0,0,0,+1}, {0,0,0,0,0,0,0,9,0,11,-1}};
 		runGenerateReaderTest();
 	}
-
-	//0:-57.26153462146186 4:-90.11715823359168 5:-23.443753578851386 6:-16.661596780916284 -1
 
 }

@@ -717,8 +717,9 @@ public class ReaderMapping {
 		boolean isVerify = false;
 		for(int i = 0; i < selectedTokens.size() && !isVerify; i++) {
 			isVerify = true;
+			indexSeparator = selectedTokens.get(i);
 			for(int r = 0; r < nrows; r++) {
-				separator = verifyRowWithIndexDelim(r, selectedTokens.get(i), labelIndex.get(i), firstColIndex);
+				separator = verifyRowWithIndexDelim(r, indexSeparator , labelIndex.get(i), firstColIndex);
 				if(separator == null) {
 					isVerify = false;
 					break;

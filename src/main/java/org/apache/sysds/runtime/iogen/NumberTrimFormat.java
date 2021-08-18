@@ -19,11 +19,19 @@
 
 package org.apache.sysds.runtime.iogen;
 
-public class NumberTrimFormat {
+public class NumberTrimFormat implements Comparable {
 
 	public char S;
 	public char[] N;
 	public double actualValue;
+	public int r;
+	public int c;
+
+	public NumberTrimFormat(int r, int c, double value) {
+		this(value);
+		this.r = r;
+		this.c = c;
+	}
 
 	public NumberTrimFormat(double value) {
 		actualValue = value;
@@ -94,8 +102,10 @@ public class NumberTrimFormat {
 		while(currentIndex < chunkChars.length && !result.mapped) {
 
 			StringBuilder actualValueChars = new StringBuilder();
+			int skip = -1;
 			// 1. Choose the signe
 			for(int i = currentIndex; i < chunkChars.length; i++) {
+				skip++;
 				if(S == '-') {
 					if(chunkChars[i] == '-') {
 						actualValueChars.append('-');
@@ -132,7 +142,7 @@ public class NumberTrimFormat {
 				if(enableZero) {
 					result.size = chunkChars.length;
 					result.mapped = true;
-					result.index = currentIndex;
+					result.index = currentIndex + skip;
 					break;
 				}
 				else
@@ -141,12 +151,12 @@ public class NumberTrimFormat {
 			if(actualValueChars.length() > 1 && enableZero && isEqual(actualValueChars, actualValue)) {
 				result.size = firstNZIndex - currentIndex;
 				result.mapped = true;
-				result.index = currentIndex;
+				result.index = currentIndex + skip;
 				break;
 			}
 
-			// look for NM char list
-			result.size = firstNZIndex - currentIndex;
+			// look for N char list
+			result.size = firstNZIndex - currentIndex - skip;
 			int currentPos = firstNZIndex;
 			boolean NFlag = false;
 			for(int i = currentPos, j = 0; i < chunkChars.length && j < N.length; i++) {
@@ -177,10 +187,11 @@ public class NumberTrimFormat {
 			if(NFlag) {
 				if(isEqual(actualValueChars, actualValue)) {
 					result.mapped = true;
-					result.index = currentIndex;
+					result.index = currentIndex + skip;
 					break;
 				}
-
+				else if(currentPos == chunkChars.length)
+					break;
 				else {
 					boolean eFlag = false;
 					for(int i = currentPos; i < chunkChars.length; i++) {
@@ -195,7 +206,7 @@ public class NumberTrimFormat {
 								result.size++;
 								if(isEqual(actualValueChars, actualValue)) {
 									result.mapped = true;
-									result.index = currentIndex;
+									result.index = currentIndex + skip;
 									break;
 								}
 							}
@@ -212,6 +223,10 @@ public class NumberTrimFormat {
 									result.size++;
 								}
 							}
+							else {
+								currentIndex++;
+								break;
+							}
 						}
 						else {
 							if(Character.isDigit(vChar)) {
@@ -219,12 +234,13 @@ public class NumberTrimFormat {
 								result.size++;
 								if(isEqual(actualValueChars, actualValue)) {
 									result.mapped = true;
-									result.index = currentIndex;
+									result.index = currentIndex + skip;
 									break;
 								}
 							}
-							else
+							else {
 								break;
+							}
 						}
 					}
 				}
@@ -247,5 +263,42 @@ public class NumberTrimFormat {
 		for(Character c : N)
 			s.append(c);
 		return s.toString();
+	}
+
+	//	public int compareTo(NumberTrimFormat ntf) {
+	//		return Double.compare(actualValue,ntf.actualValue);
+	//		//double d = ntf.actualValue - actualValue;
+	////		if(d>0)
+	////			return 1;
+	////		else if(d<0)
+	////			return -1;
+	////		else
+	////			return 0;
+	//	}
+
+	public NumberTrimFormat getACopy() {
+		NumberTrimFormat copy = new NumberTrimFormat(r, c, actualValue);
+		copy.S = S;
+		copy.N = N;
+		return copy;
+	}
+
+	@Override public int compareTo(Object ntf) {
+		int vc = Double.compare(Math.abs(((NumberTrimFormat) ntf).actualValue), Math.abs(actualValue));
+		int nc = Integer.compare(((NumberTrimFormat) ntf).N.length, N.length);
+		int r;
+
+		if(vc == 0)
+			return 0;
+
+		if(nc == 1) {
+			return 1;
+		}
+		else if(nc == 0) {
+			return vc >= 0 ? 1 : -1;
+		}
+		else {
+			return -1;
+		}
 	}
 }

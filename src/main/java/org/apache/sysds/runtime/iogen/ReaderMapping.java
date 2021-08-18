@@ -155,11 +155,20 @@ public class ReaderMapping {
 		ArrayList<Integer> colIndexes = new ArrayList<>();
 		ArrayList<Integer> colIndexSizes = new ArrayList<>();
 		for(int r = 0; r < nrows; r++) {
-			for(int c = 0; c < ncols; c++) {
-				NumberTrimFormat ntf = NTF[r][c];
+			NumberTrimFormat[] ntfRow = new NumberTrimFormat[ncols];
+			for(int i=0;i<ncols;i++){
+				ntfRow[i] = NTF[r][i].getACopy();
+			}
+			Arrays.sort(ntfRow);
+
+			//for(int c = 0; c < ncols; c++) {
+			for(NumberTrimFormat ntf: ntfRow){
+
+				//NumberTrimFormat ntf = NTF[r][c];
 				if(ntf.actualValue == 0) {
 					continue;
 				}
+				int c = ntf.c;
 				while(itRow < nlines) {
 					String row = sampleRawRows.get(itRow);
 					NumberMappingInfo nmi = getCellMapping(row, ntf, colIndexes, colIndexSizes);
@@ -184,9 +193,9 @@ public class ReaderMapping {
 			for(int c = 0; c < ncols; c++)
 				if(mapRow[r][c] == -1 && NTF[r][c].actualValue != 0)
 					flagMap = false;
-
-		Gson gson = new Gson();
-		System.out.println(gson.toJson(mapRow));
+//
+//		Gson gson = new Gson();
+//		System.out.println(gson.toJson(mapRow));
 		return flagMap;
 	}
 
@@ -226,7 +235,7 @@ public class ReaderMapping {
 		NumberTrimFormat[][] result = new NumberTrimFormat[nrows][ncols];
 		for(int r = 0; r < nrows; r++)
 			for(int c = 0; c < ncols; c++) {
-				result[r][c] = new NumberTrimFormat(matrix.getValue(r, c));
+				result[r][c] = new NumberTrimFormat(r,c,matrix.getValue(r, c));
 			}
 		return result;
 	}
@@ -295,6 +304,7 @@ public class ReaderMapping {
 		FileFormatProperties ffp;
 		if(isRowRegular()) {
 			ffp = getFileFormatPropertiesOfRRCRMapping();
+
 			if(ffp == null) {
 				ffp = getFileFormatPropertiesOfRRCIMapping();
 			}
@@ -415,7 +425,9 @@ public class ReaderMapping {
 
 				colIndex = icMap.get(i);
 				sValue = row.substring(mapCol[r][colIndex], mapCol[r][colIndex] + mapSize[r][colIndex]).toLowerCase();
-				value = Double.parseDouble(sValue);
+				//System.out.println("Row = "+ row);
+				//System.out.println("sValue="+sValue+"  >> " + mapCol[r][colIndex]+ " value = "+ value);
+				value = Double.parseDouble(sValue);// sampleMatrix.getValue(r,colIndex);
 				idMap.put(i, subRow);
 				sIndex = eIndex + mapSize[r][colIndex];
 			}
@@ -497,7 +509,6 @@ public class ReaderMapping {
 		}
 		else
 			return null;
-
 	}
 
 	/*
@@ -641,12 +652,19 @@ public class ReaderMapping {
 	public FileFormatPropertiesLIBSVM getFileFormatPropertiesOfRRCIMapping() {
 
 		FileFormatPropertiesLIBSVM ffplibsvm;
+		int firstColIndex = 0;
+
 		//FirstColIndex = 0
-		ffplibsvm = getDelimsOfRRCIMapping(0);
+		ffplibsvm = getDelimsOfRRCIMapping(firstColIndex);
 
 		//FirstColIndex = 1
-		if(ffplibsvm == null)
-			ffplibsvm = getDelimsOfRRCIMapping(1);
+		if(ffplibsvm == null) {
+			firstColIndex = 1;
+			ffplibsvm = getDelimsOfRRCIMapping(firstColIndex);
+		}
+
+		if(ffplibsvm!= null)
+			ffplibsvm.setDescription("LibSVM Format Recognized: First Index Started From "+ firstColIndex);
 
 		return ffplibsvm;
 	}
@@ -1097,6 +1115,7 @@ public class ReaderMapping {
 				String t = row.substring(nmiIndex.index + nmiIndex.size, nmiValue.index);
 				if(t.length() > 0)
 					tokens.add(t);
+
 				sPosition = nmiIndex.index + 1;
 			}
 			return tokens;

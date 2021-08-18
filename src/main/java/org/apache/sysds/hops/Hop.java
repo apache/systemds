@@ -91,6 +91,7 @@ public abstract class Hop implements ParseInfo {
 	 * If it is lout, the output should be retrieved by the coordinator.
 	 */
 	protected FederatedOutput _federatedOutput = FederatedOutput.NONE;
+	protected double _federatedCost = 0;
 	
 	// Estimated size for the output produced from this Hop
 	protected double _outputMemEstimate = OptimizerUtils.INVALID_SIZE;
@@ -830,10 +831,6 @@ public abstract class Hop implements ParseInfo {
 	public boolean isFederated(){
 		return getExecType() == ExecType.FED;
 	}
-	
-	public boolean isFederatedOutput(){
-		return _federatedOutput == FederatedOutput.FOUT;
-	}
 
 	public boolean someInputFederated(){
 		return getInput().stream().anyMatch(Hop::hasFederatedOutput);
@@ -887,6 +884,22 @@ public abstract class Hop implements ParseInfo {
 
 	public boolean hasFederatedOutput(){
 		return _federatedOutput == FederatedOutput.FOUT;
+	}
+
+	public boolean hasLocalOutput(){
+		return _federatedOutput == FederatedOutput.LOUT;
+	}
+
+	public boolean federatedCostInitialized(){
+		return _federatedCost > 0;
+	}
+
+	public double getFederatedCost(){
+		return _federatedCost;
+	}
+
+	public void setFederatedCost(double cost){
+		_federatedCost = cost;
 	}
 
 	public void setUpdateType(UpdateType update){

@@ -31,6 +31,7 @@ import org.apache.sysds.hops.Hop;
 import org.apache.sysds.hops.LiteralOp;
 import org.apache.sysds.hops.ReorgOp;
 import org.apache.sysds.hops.TernaryOp;
+import org.apache.sysds.hops.cost.ComputeCost;
 import org.apache.sysds.parser.DataExpression;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
@@ -120,6 +121,40 @@ public class RewriteFederatedExecution extends HopRewriteRule {
 	}
 
 	/**
+	 * Return cost estimate of Hop DAG starting from given root.
+	 * @param root of Hop DAG for which cost is estimated
+	 * @return cost estimation of Hop DAG starting from given root
+	 */
+	private double costEstimate(Hop root){
+		if ( root.federatedCostInitialized() )
+			return root.getFederatedCost();
+		else {
+			// If no input has FOUT, the root will be processed by the coordinator
+			boolean hasFederatedInput = root.someInputFederated();
+			double inputCosts = root.getInput().stream()
+				.mapToDouble( in -> in.federatedCostInitialized() ? in.getFederatedCost() : costEstimate(in) )
+				.sum();
+			double inputTransferCost = hasFederatedInput ? root.getInput().stream()
+				.filter(Hop::hasLocalOutput)
+				.mapToDouble(Hop::getOutputMemEstimate)
+				.sum() : 0;
+			double computingCost = ComputeCost.getHOPComputeCost(root);;
+			if ( hasFederatedInput ){
+				//Find the number of inputs that has FOUT set.
+				int numWorkers = (int)root.getInput().stream().filter(Hop::hasFederatedOutput).count();
+				//divide memory usage by the number of workers the computation would be split to
+				computingCost = computingCost / numWorkers;
+			}
+			//Calculate output transfer cost if the operation is computed at federated workers and the output is forced to the coordinator
+			double outputTransferCost = ( root.hasLocalOutput() && hasFederatedInput ) ? root.getOutputMemEstimate() : 0;
+
+			double totalCost = inputCosts + inputTransferCost + computingCost + outputTransferCost;
+			root.setFederatedCost(totalCost);
+			return totalCost;
+		}
+	}
+
+	/**
 	 * Returns the FederatedOutput with the highest utility out of the valid FederatedOutput values.
 	 * @param hop for which the utility is found
 	 * @return the FederatedOutput value with highest utility for the given Hop
@@ -158,7 +193,7 @@ public class RewriteFederatedExecution extends HopRewriteRule {
 	private boolean isFedInstSupportedHop(Hop hop){
 
 		// Check that some input is FOUT, otherwise none of the fed instructions will run unless it is fedinit
-		if ( (!isFederatedDataOp(hop)) && hop.getInput().stream().noneMatch(Hop::isFederatedOutput) )
+		if ( (!isFederatedDataOp(hop)) && hop.getInput().stream().noneMatch(Hop::hasFederatedOutput) )
 			return false;
 
 		// The following operations are supported given that the above conditions have not returned already

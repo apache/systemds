@@ -46,17 +46,8 @@ import org.apache.sysds.common.Types.OpOpData;
 import org.apache.sysds.common.Types.OpOpN;
 import org.apache.sysds.hops.AggBinaryOp;
 import org.apache.sysds.hops.AggUnaryOp;
-import org.apache.sysds.hops.BinaryOp;
-import org.apache.sysds.hops.DnnOp;
 import org.apache.sysds.hops.Hop;
-import org.apache.sysds.hops.IndexingOp;
-import org.apache.sysds.hops.LiteralOp;
-import org.apache.sysds.hops.NaryOp;
 import org.apache.sysds.hops.OptimizerUtils;
-import org.apache.sysds.hops.ParameterizedBuiltinOp;
-import org.apache.sysds.hops.ReorgOp;
-import org.apache.sysds.hops.TernaryOp;
-import org.apache.sysds.hops.UnaryOp;
 import org.apache.sysds.hops.codegen.opt.ReachabilityGraph.SubProblem;
 import org.apache.sysds.hops.codegen.template.CPlanMemoTable;
 import org.apache.sysds.hops.codegen.template.TemplateOuterProduct;
@@ -64,6 +55,7 @@ import org.apache.sysds.hops.codegen.template.TemplateRow;
 import org.apache.sysds.hops.codegen.template.TemplateUtils;
 import org.apache.sysds.hops.codegen.template.CPlanMemoTable.MemoTableEntry;
 import org.apache.sysds.hops.codegen.template.TemplateBase.TemplateType;
+import org.apache.sysds.hops.cost.ComputeCost;
 import org.apache.sysds.hops.rewrite.HopRewriteUtils;
 import org.apache.sysds.runtime.codegen.LibSpoofPrimitives;
 import org.apache.sysds.runtime.controlprogram.caching.LazyWriteBuffer;
@@ -175,8 +167,8 @@ public class PlanSelectionFuseCostBasedV2 extends PlanSelection
 			//obtain hop compute costs per cell once
 			HashMap<Long, Double> computeCosts = new HashMap<>();
 			for( Long hopID : part.getPartition() )
-				getComputeCosts(memo.getHopRefs().get(hopID), computeCosts);
-			
+				computeCosts.put(hopID, ComputeCost.getHOPComputeCost(memo.getHopRefs().get(hopID)));
+
 			//prepare pruning helpers and prune memo table w/ determined mat points
 			StaticCosts costs = new StaticCosts(computeCosts, sumComputeCost(computeCosts),
 				getReadCost(part, memo), getWriteCost(part.getRoots(), memo), minOuterSparsity(part, memo));
@@ -1009,174 +1001,6 @@ public class PlanSelectionFuseCostBasedV2 extends PlanSelection
 			throw new RuntimeException("Wrong cost estimate: "+costs);
 		
 		return costs;
-	}
-	
-	private static void getComputeCosts(Hop current, HashMap<Long, Double> computeCosts) 
-	{
-		//get costs for given hop
-		double costs = 1;
-		if( current instanceof UnaryOp ) {
-			switch( ((UnaryOp)current).getOp() ) {
-				case ABS:
-				case ROUND:
-				case CEIL:
-				case FLOOR:
-				case SIGN:    costs = 1; break; 
-				case SPROP:
-				case SQRT:    costs = 2; break;
-				case EXP:     costs = 18; break;
-				case SIGMOID: costs = 21; break;
-				case LOG:
-				case LOG_NZ:  costs = 32; break;
-				case NCOL:
-				case NROW:
-				case PRINT:
-				case ASSERT:
-				case CAST_AS_BOOLEAN:
-				case CAST_AS_DOUBLE:
-				case CAST_AS_INT:
-				case CAST_AS_MATRIX:
-				case CAST_AS_SCALAR: costs = 1; break;
-				case SIN:     costs = 18; break;
-				case COS:     costs = 22; break;
-				case TAN:     costs = 42; break;
-				case ASIN:    costs = 93; break;
-				case ACOS:    costs = 103; break;
-				case ATAN:    costs = 40; break;
-				case SINH:    costs = 93; break; // TODO:
-				case COSH:    costs = 103; break;
-				case TANH:    costs = 40; break;
-				case CUMSUM:
-				case CUMMIN:
-				case CUMMAX:
-				case CUMPROD: costs = 1; break;
-				case CUMSUMPROD: costs = 2; break;
-				default:
-					LOG.warn("Cost model not "
-						+ "implemented yet for: "+((UnaryOp)current).getOp());
-			}
-		}
-		else if( current instanceof BinaryOp ) {
-			switch( ((BinaryOp)current).getOp() ) {
-				case MULT: 
-				case PLUS:
-				case MINUS:
-				case MIN:
-				case MAX: 
-				case AND:
-				case OR:
-				case EQUAL:
-				case NOTEQUAL:
-				case LESS:
-				case LESSEQUAL:
-				case GREATER:
-				case GREATEREQUAL: 
-				case CBIND:
-				case RBIND:   costs = 1; break;
-				case INTDIV:  costs = 6; break;
-				case MODULUS: costs = 8; break;
-				case DIV:     costs = 22; break;
-				case LOG:
-				case LOG_NZ:  costs = 32; break;
-				case POW:     costs = (HopRewriteUtils.isLiteralOfValue(
-						current.getInput().get(1), 2) ? 1 : 16); break;
-				case MINUS_NZ:
-				case MINUS1_MULT: costs = 2; break;
-				case MOMENT:
-					int type = (int) (current.getInput().get(1) instanceof LiteralOp ? 
-						HopRewriteUtils.getIntValueSafe((LiteralOp)current.getInput().get(1)) : 2);
-					switch( type ) {
-						case 0: costs = 1; break; //count
-						case 1: costs = 8; break; //mean
-						case 2: costs = 16; break; //cm2
-						case 3: costs = 31; break; //cm3
-						case 4: costs = 51; break; //cm4
-						case 5: costs = 16; break; //variance
-					}
-					break;
-				case COV: costs = 23; break;
-				default:
-					LOG.warn("Cost model not "
-						+ "implemented yet for: "+((BinaryOp)current).getOp());
-			}
-		}
-		else if( current instanceof TernaryOp ) {
-			switch( ((TernaryOp)current).getOp() ) {
-				case IFELSE:
-				case PLUS_MULT: 
-				case MINUS_MULT: costs = 2; break;
-				case CTABLE:     costs = 3; break;
-				case MOMENT:
-					int type = (int) (current.getInput().get(1) instanceof LiteralOp ? 
-						HopRewriteUtils.getIntValueSafe((LiteralOp)current.getInput().get(1)) : 2);
-					switch( type ) {
-						case 0: costs = 2; break; //count
-						case 1: costs = 9; break; //mean
-						case 2: costs = 17; break; //cm2
-						case 3: costs = 32; break; //cm3
-						case 4: costs = 52; break; //cm4
-						case 5: costs = 17; break; //variance
-					}
-					break;
-				case COV: costs = 23; break;
-				default:
-					LOG.warn("Cost model not "
-						+ "implemented yet for: "+((TernaryOp)current).getOp());
-			}
-		}
-		else if( current instanceof NaryOp ) {
-			costs = HopRewriteUtils.isNary(current, OpOpN.MIN, OpOpN.MAX, OpOpN.PLUS) ?
-				current.getInput().size() : 1;
-		}
-		else if( current instanceof ParameterizedBuiltinOp ) {
-			costs = 1;
-		}
-		else if( current instanceof IndexingOp ) {
-			costs = 1;
-		}
-		else if( current instanceof ReorgOp ) {
-			costs = 1;
-		}
-		else if( current instanceof DnnOp ) {
-			switch( ((DnnOp)current).getOp() ) {
-				case BIASADD:
-				case BIASMULT:
-					costs = 2;
-				default:
-					LOG.warn("Cost model not "
-						+ "implemented yet for: "+((DnnOp)current).getOp());
-			}
-		}
-		else if( current instanceof AggBinaryOp ) {
-			//outer product template w/ matrix-matrix 
-			//or row template w/ matrix-vector or matrix-matrix
-			costs = 2 * current.getInput().get(0).getDim2();
-			if( current.getInput().get(0).dimsKnown(true) )
-				costs *= current.getInput().get(0).getSparsity();
-		}
-		else if( current instanceof AggUnaryOp) {
-			switch(((AggUnaryOp)current).getOp()) {
-				case SUM:    costs = 4; break; 
-				case SUM_SQ: costs = 5; break;
-				case MIN:
-				case MAX:    costs = 1; break;
-				default:
-					LOG.warn("Cost model not "
-						+ "implemented yet for: "+((AggUnaryOp)current).getOp());
-			}
-			switch(((AggUnaryOp)current).getDirection()) {
-				case Col: costs *= Math.max(current.getInput().get(0).getDim1(),1); break;
-				case Row: costs *= Math.max(current.getInput().get(0).getDim2(),1); break;
-				case RowCol: costs *= getSize(current.getInput().get(0)); break;
-			}
-		}
-		
-		//scale by current output size in order to correctly reflect
-		//a mix of row and cell operations in the same fused operator
-		//(e.g., row template with fused column vector operations)
-		costs *= getSize(current);
-		
-		computeCosts.put(current.getHopID(), costs);
 	}
 	
 	private static boolean hasNoRefToMatPoint(long hopID, 

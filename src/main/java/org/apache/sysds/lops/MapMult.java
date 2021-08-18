@@ -92,6 +92,15 @@ public class MapMult extends Lop
 	public SparkAggType getAggType() {
 		return _aggtype;
 	}
+	
+	@Override
+	public Lop getBroadcastInput() {
+		if (getExecType() != ExecType.SPARK)
+			return null;
+		
+		return _cacheType.isRight() ? getInputs().get(1) : getInputs().get(0);
+		//Note: rdd and broadcast inputs can flip during runtime
+	}
 
 	@Override
 	public String toString() {

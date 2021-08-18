@@ -34,6 +34,7 @@ import org.apache.sysds.runtime.instructions.cp.AggregateTernaryCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.AggregateUnaryCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.AppendCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.BinaryCPInstruction;
+import org.apache.sysds.runtime.instructions.cp.BroadcastCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.BuiltinNaryCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.CPInstruction;
 import org.apache.sysds.runtime.instructions.cp.CPInstruction.CPType;
@@ -317,6 +318,7 @@ public class CPInstructionParser extends InstructionParser
 		String2CPInstructionType.put( "decompress", CPType.DeCompression);
 		String2CPInstructionType.put( "spoof",     CPType.SpoofFused);
 		String2CPInstructionType.put( "prefetch",  CPType.Prefetch);
+		String2CPInstructionType.put( "broadcast",  CPType.Broadcast);
 		
 		String2CPInstructionType.put( "sql", CPType.Sql);
 	}
@@ -459,6 +461,9 @@ public class CPInstructionParser extends InstructionParser
 				
 			case Prefetch:
 				return PrefetchCPInstruction.parseInstruction(str);
+				
+			case Broadcast:
+				return BroadcastCPInstruction.parseInstruction(str);
 			
 			default:
 				throw new DMLRuntimeException("Invalid CP Instruction Type: " + cptype );

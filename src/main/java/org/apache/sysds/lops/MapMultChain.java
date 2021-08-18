@@ -100,6 +100,13 @@ public class MapMultChain extends Lop
 	}
 
 	@Override
+	public Lop getBroadcastInput() {
+		if (getExecType() != ExecType.SPARK)
+			return null;
+		return getInputs().get(1);
+	}
+
+	@Override
 	public String getInstructions(String input1, String input2, String output) {
 		return getInstructions(input1, input2, null, output);
 	}

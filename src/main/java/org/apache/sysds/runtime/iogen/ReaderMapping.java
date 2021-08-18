@@ -19,12 +19,10 @@
 
 package org.apache.sysds.runtime.iogen;
 
-import com.google.gson.Gson;
 import org.apache.sysds.runtime.io.*;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
 import java.io.BufferedReader;
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.*;
@@ -156,15 +154,12 @@ public class ReaderMapping {
 		ArrayList<Integer> colIndexSizes = new ArrayList<>();
 		for(int r = 0; r < nrows; r++) {
 			NumberTrimFormat[] ntfRow = new NumberTrimFormat[ncols];
-			for(int i=0;i<ncols;i++){
+			for(int i = 0; i < ncols; i++) {
 				ntfRow[i] = NTF[r][i].getACopy();
 			}
 			Arrays.sort(ntfRow);
 
-			//for(int c = 0; c < ncols; c++) {
-			for(NumberTrimFormat ntf: ntfRow){
-
-				//NumberTrimFormat ntf = NTF[r][c];
+			for(NumberTrimFormat ntf : ntfRow) {
 				if(ntf.actualValue == 0) {
 					continue;
 				}
@@ -193,9 +188,6 @@ public class ReaderMapping {
 			for(int c = 0; c < ncols; c++)
 				if(mapRow[r][c] == -1 && NTF[r][c].actualValue != 0)
 					flagMap = false;
-//
-//		Gson gson = new Gson();
-//		System.out.println(gson.toJson(mapRow));
 		return flagMap;
 	}
 
@@ -235,7 +227,7 @@ public class ReaderMapping {
 		NumberTrimFormat[][] result = new NumberTrimFormat[nrows][ncols];
 		for(int r = 0; r < nrows; r++)
 			for(int c = 0; c < ncols; c++) {
-				result[r][c] = new NumberTrimFormat(c,matrix.getValue(r, c));
+				result[r][c] = new NumberTrimFormat(c, matrix.getValue(r, c));
 			}
 		return result;
 	}
@@ -425,9 +417,7 @@ public class ReaderMapping {
 
 				colIndex = icMap.get(i);
 				sValue = row.substring(mapCol[r][colIndex], mapCol[r][colIndex] + mapSize[r][colIndex]).toLowerCase();
-				//System.out.println("Row = "+ row);
-				//System.out.println("sValue="+sValue+"  >> " + mapCol[r][colIndex]+ " value = "+ value);
-				value = Double.parseDouble(sValue);// sampleMatrix.getValue(r,colIndex);
+				value = Double.parseDouble(sValue);
 				idMap.put(i, subRow);
 				sIndex = eIndex + mapSize[r][colIndex];
 			}
@@ -560,12 +550,15 @@ public class ReaderMapping {
 
 		// FirstRowIndex = 0, FirstColIndex = 0
 		String delims = getDelimsOfMapping(0, 0);
+
 		// FirstRowIndex = 1, FirstColIndex = 1
 		if(delims == null)
 			delims = getDelimsOfMapping(1, 1);
+
 		// FirstRowIndex = 1, FirstColIndex = 0
 		if(delims == null)
 			delims = getDelimsOfMapping(1, 0);
+
 		// FirstRowIndex = 0, FirstColIndex = 1
 		if(delims == null)
 			delims = getDelimsOfMapping(0, 1);
@@ -663,8 +656,8 @@ public class ReaderMapping {
 			ffplibsvm = getDelimsOfRRCIMapping(firstColIndex);
 		}
 
-		if(ffplibsvm!= null)
-			ffplibsvm.setDescription("LibSVM Format Recognized: First Index Started From "+ firstColIndex);
+		if(ffplibsvm != null)
+			ffplibsvm.setDescription("LibSVM Format Recognized: First Index Started From " + firstColIndex);
 
 		return ffplibsvm;
 	}

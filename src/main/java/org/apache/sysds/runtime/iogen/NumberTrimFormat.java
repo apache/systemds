@@ -273,19 +273,19 @@ public class NumberTrimFormat implements Comparable {
 	@Override public int compareTo(Object ntf) {
 		int vc = Double.compare(Math.abs(((NumberTrimFormat) ntf).actualValue), Math.abs(actualValue));
 		int nc = Integer.compare(((NumberTrimFormat) ntf).N.length, N.length);
-		int r;
 
 		if(vc == 0)
 			return 0;
 
-		if(nc == 1) {
-			return 1;
-		}
-		else if(nc == 0) {
-			return vc >= 0 ? 1 : -1;
-		}
-		else {
-			return -1;
-		}
+		return nc;
+//		if(nc == 1) {
+//			return 1;
+//		}
+//		else if(nc == 0) {
+//			return vc >= 0 ? 1 : -1;
+//		}
+//		else {
+//			return -1;
+//		}
 	}
 }

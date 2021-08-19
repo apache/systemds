@@ -241,11 +241,11 @@ public class ReaderMapping {
 		ArrayList<String> rowChunks = new ArrayList<>();
 		ArrayList<Integer> baseIndexes = new ArrayList<>();
 
-		BitSet bitSet=new BitSet(row.length());
-		for(int i=0;i<reservedIndex.size();i++) {
-			bitSet.set(reservedIndex.get(i), reservedIndex.get(i)+reservedSize.get(i));
+		BitSet bitSet = new BitSet(row.length());
+		for(int i = 0; i < reservedIndex.size(); i++) {
+			bitSet.set(reservedIndex.get(i), reservedIndex.get(i) + reservedSize.get(i));
 		}
-		getChunksOFString(row,bitSet,rowChunks,baseIndexes);
+		getChunksOFString(row, bitSet, rowChunks, baseIndexes);
 
 		int rci = -1;
 		for(String rc : rowChunks) {
@@ -511,8 +511,8 @@ public class ReaderMapping {
 					if(Double.parseDouble(sb.toString()) == value) {
 						mergeCount = sb.length() - stringValue.length();
 					}
-//					else
-//						break;
+					//					else
+					//						break;
 				}
 			}
 			else
@@ -556,6 +556,8 @@ public class ReaderMapping {
 			rcvMapped = true;
 			for(int r = nrows - 1; r >= 0 && rcvMapped; r--) {
 				for(int c = ncols - 1; c >= 0 && rcvMapped; c--) {
+					if(sampleMatrix.getValue(r, c) == 0)
+						continue;
 					RowColValue rcv = new RowColValue(p, r + firstRowIndex, c + firstColIndex,
 						sampleMatrix.getValue(r, c));
 					int index = 0;
@@ -566,6 +568,9 @@ public class ReaderMapping {
 						if(rcv.isMapped(row)) {
 							checkedRow.add(index);
 							mapRCV[nzIndex++] = rcv;
+						}
+						else {
+							int bbb = 0;
 						}
 					}
 					while(++index < nLines && !rcv.isMapped());
@@ -589,31 +594,33 @@ public class ReaderMapping {
 				delims.add(mapRCV[i].v2Delim);
 			}
 
-			HashSet<String> token = null;
-			for(int l = 1; l < minDelimLength; l++) {
+			String uniqueDelim = null;
+
+			for(int l = 1; l < minDelimLength + 1; l++) {
 				boolean flagToken = true;
-				token = new HashSet<>();
-				while(delims.iterator().hasNext()) {
-					String delim = delims.iterator().next();
+				HashSet<String> token = new HashSet<>();
+				Iterator<String> it = delims.iterator();
+				while(it.hasNext()) {
+					String delim = it.next();
 					if(delim.length() % l != 0) {
 						flagToken = false;
 						break;
 					}
-					for(int i = 0; i < delim.length() - l; i += l)
+					for(int i = 0; i <= delim.length() - l; i += l)
 						token.add(delim.substring(i, i + l));
 					if(token.size() > 1) {
 						flagToken = false;
 						break;
 					}
 				}
-				if(flagToken)
+				if(flagToken) {
+					if(token.size()>0)
+						uniqueDelim = token.iterator().next();
 					break;
+				}
 			}
-			if(token != null) {
-				return token.iterator().next();
-			}
-			else
-				return null;
+			
+			return uniqueDelim;
 		}
 	}
 
@@ -694,7 +701,7 @@ public class ReaderMapping {
 			isVerify = true;
 			indexSeparator = selectedTokens.get(i);
 			for(int r = 0; r < nrows; r++) {
-				separator = verifyRowWithIndexDelim(r, indexSeparator , labelIndex.get(i), firstColIndex);
+				separator = verifyRowWithIndexDelim(r, indexSeparator, labelIndex.get(i), firstColIndex);
 				if(separator == null) {
 					isVerify = false;
 					break;
@@ -811,7 +818,7 @@ public class ReaderMapping {
 
 		int length = row.length();
 		int sIndex, eIndex;
-		for(int i = 0; i < length;) {
+		for(int i = 0; i < length; ) {
 			// skip all reserved indexes
 			for(int j = i; j < length; j++) {
 				if(bitSet.get(j))
@@ -910,7 +917,7 @@ public class ReaderMapping {
 						return false;
 					nmiV2.index += nmiV0.index + nmiV0.size;
 
-					nmiV1 = ntfV1.getMappingInfo(row.substring(nmiV0.index + nmiV0.size, nmiV2.index));
+					nmiV1 = ntfV1.getMappingInfoIncludeZero(row.substring(nmiV0.index + nmiV0.size, nmiV2.index));
 					if(!nmiV1.mapped)
 						return false;
 					nmiV1.index += nmiV0.index + nmiV0.size;

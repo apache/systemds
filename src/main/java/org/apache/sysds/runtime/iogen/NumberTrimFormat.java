@@ -120,14 +120,21 @@ public class NumberTrimFormat implements Comparable {
 					break;
 				}
 			}
+			if(actualValueChars.length() == 0)
+				actualValueChars.append("+");
 
 			// 2. Skip all zero and '.' until to find a none-zero value
 			int dotPos = -1;
 			int firstNZIndex = -1;
 			for(int i = ccIndex; i < chunkChars.length; i++) {
 				if(chunkChars[i] == '0' || chunkChars[i] == '.') {
-					if(chunkChars[i] == '.')
+					if(chunkChars[i] == '.') {
 						dotPos = i;
+						if(actualValueChars.charAt(actualValueChars.length() - 1) == '+' ||
+							actualValueChars.charAt(actualValueChars.length() - 1) == '-') {
+							actualValueChars.append('0');
+						}
+					}
 					actualValueChars.append(chunkChars[i]);
 				}
 				else {
@@ -278,14 +285,14 @@ public class NumberTrimFormat implements Comparable {
 			return 0;
 
 		return nc;
-//		if(nc == 1) {
-//			return 1;
-//		}
-//		else if(nc == 0) {
-//			return vc >= 0 ? 1 : -1;
-//		}
-//		else {
-//			return -1;
-//		}
+		//		if(nc == 1) {
+		//			return 1;
+		//		}
+		//		else if(nc == 0) {
+		//			return vc >= 0 ? 1 : -1;
+		//		}
+		//		else {
+		//			return -1;
+		//		}
 	}
 }

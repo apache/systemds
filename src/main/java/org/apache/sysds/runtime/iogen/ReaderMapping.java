@@ -152,6 +152,7 @@ public class ReaderMapping {
 		int itRow = 0;
 		ArrayList<Integer> colIndexes = new ArrayList<>();
 		ArrayList<Integer> colIndexSizes = new ArrayList<>();
+
 		for(int r = 0; r < nrows; r++) {
 
 			NumberTrimFormat[] ntfRow = new NumberTrimFormat[ncols];
@@ -165,7 +166,8 @@ public class ReaderMapping {
 					continue;
 				}
 				int c = ntf.c;
-				while(itRow < nlines) {
+				HashSet<Integer> checkedLines = new HashSet<>();
+				while(checkedLines.size() < nlines) {
 					String row = sampleRawRows.get(itRow);
 					NumberMappingInfo nmi = getCellMapping(row, ntf, colIndexes, colIndexSizes);
 					if(nmi.mapped) {
@@ -177,7 +179,10 @@ public class ReaderMapping {
 						break;
 					}
 					else {
+						checkedLines.add(itRow);
 						itRow++;
+						if(itRow == nlines)
+							itRow = 0;
 						colIndexes.clear();
 						colIndexSizes.clear();
 					}

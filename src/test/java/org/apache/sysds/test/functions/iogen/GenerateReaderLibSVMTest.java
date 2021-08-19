@@ -112,6 +112,35 @@ public class GenerateReaderLibSVMTest extends GenerateReaderTest {
 		runGenerateReaderTest();
 	}
 
+	@Test public void test0_5() throws Exception {
+		generateRandomLIBSVM(0, 10, 10, -100, 100, 1,",,,,", "::");
+		runGenerateReaderTest();
+	}
+
+	@Test public void test0_6() throws Exception {
+
+		sampleRaw = "+1 2.0:3.0 4:5. 6.:7\n" + "-1 8.0:9.0E0 10.0:11e0";
+
+		sampleMatrix = new double[][] {{0, 0, 3, 0, 5, 0, 7, 0, 0, 0, 0, +1}, {0, 0, 0, 0, 0, 0, 0, 0, 9, 0, 11, -1}};
+		runGenerateReaderTest();
+	}
+
+	@Test public void test0_7() throws Exception {
+
+		sampleRaw = "+10000e-4     2:3     4:5     6:7\n" + "-1     8:9     10:11";
+
+		sampleMatrix = new double[][] {{0, 0, 3, 0, 5, 0, 7, 0, 0, 0, 0, +1}, {0, 0, 0, 0, 0, 0, 0, 0, 9, 0, 11, -1}};
+		runGenerateReaderTest();
+	}
+
+	@Test public void test0_8() throws Exception {
+
+		sampleRaw = "+10000e-4     2:3     4:5     6:7\n" + "-0.00001e5     8:9     10:11";
+
+		sampleMatrix = new double[][] {{0, 0, 3, 0, 5, 0, 7, 0, 0, 0, 0, +1}, {0, 0, 0, 0, 0, 0, 0, 0, 9, 0, 11, -1}};
+		runGenerateReaderTest();
+	}
+
 	// Index start from 1
 	@Test public void test2() throws Exception {
 
@@ -133,6 +162,11 @@ public class GenerateReaderLibSVMTest extends GenerateReaderTest {
 
 	@Test public void test1_4() throws Exception {
 		generateRandomLIBSVM(1, 1000, 100, -100, 100, 1," ", ":");
+		runGenerateReaderTest();
+	}
+
+	@Test public void test1_5() throws Exception {
+		generateRandomLIBSVM(1, 10, 10, -100, 100, 1,",,,,", "::");
 		runGenerateReaderTest();
 	}
 

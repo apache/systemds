@@ -720,11 +720,10 @@ public class ReaderMapping {
 				NumberTrimFormat ntfColIndex = new NumberTrimFormat(c + firstColIndex);
 				NumberTrimFormat ntfColValue = new NumberTrimFormat(sampleMatrix.getValue(rowID, c));
 
+				stringChunks.clear();
+				baseIndexes.clear();
 				getChunksOFString(row, bitSet, stringChunks, baseIndexes);
 				boolean itemVerify = false;
-
-
-
 
 				for(int i = 0; i < stringChunks.size() && !itemVerify; i++) {
 					String chunk = stringChunks.get(i);
@@ -777,11 +776,11 @@ public class ReaderMapping {
 
 						if(nmiValue.mapped) {
 							itemVerify = true;
-							nmiIndex.index += sPosition;
-							nmiValue.index += nmiIndex.index + nmiIndex.size;
+							nmiIndex.index += sPosition + baseIndexes.get(i);
 							if(labelIndex - firstColIndex != c) {
 								nmiValue.index += indexDelim.length();
 							}
+							nmiValue.index += nmiIndex.index + nmiIndex.size;
 							bitSet.set(nmiIndex.index, nmiValue.index + nmiValue.size);
 							break;
 						}
@@ -794,8 +793,8 @@ public class ReaderMapping {
 			}
 		}
 
-		stringChunks = new ArrayList<>();
-		baseIndexes = new ArrayList<>();
+		stringChunks.clear();
+		baseIndexes.clear();
 		getChunksOFString(row, bitSet, stringChunks, baseIndexes);
 		Set<String> separators = new HashSet<>();
 		separators.addAll(stringChunks);
@@ -812,7 +811,7 @@ public class ReaderMapping {
 
 		int length = row.length();
 		int sIndex, eIndex;
-		for(int i = 0; i < length; i++) {
+		for(int i = 0; i < length;) {
 			// skip all reserved indexes
 			for(int j = i; j < length; j++) {
 				if(bitSet.get(j))

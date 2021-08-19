@@ -24,8 +24,6 @@ import org.apache.sysds.runtime.io.FileFormatProperties;
 import org.apache.sysds.runtime.io.MatrixReader;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
-import java.util.*;
-
 public class GenerateReader {
 
 	public static MatrixReader generateReader(String sampleRaw, MatrixBlock sampleMatrix) throws Exception {

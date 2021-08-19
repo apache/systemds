@@ -57,7 +57,6 @@ public class GenerateReaderCSVTest extends GenerateReaderTest {
 				else {
 					Random rn = new Random();
 					int rni =  rn.nextInt(naString.length);
-					//System.out.println(">>>>  "+rni);
 					row.append(naString[rni]).append(separator);
 				}
 			}

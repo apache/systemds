@@ -68,7 +68,7 @@ public class AvgModelFederatedParamservTest extends AutomatedTestBase {
 			//{"TwoNN",	4, 60000, 32, 4, 0.01, 	"BSP", "BATCH", "KEEP_DATA_ON_WORKER", 	"NONE" ,		"false","BALANCED",		200},
 
 			// One important point is that we do the model averaging in the case of BSP
-			{"TwoNN",	2, 4, 1, 4, 0.01, 		"BSP", "EPOCH", "KEEP_DATA_ON_WORKER", 	"BASELINE",		"true",	"IMBALANCED",	200},
+			{"TwoNN",	2, 4, 1, 4, 0.01, 		"BSP", "BATCH", "KEEP_DATA_ON_WORKER", 	"BASELINE",		"true",	"IMBALANCED",	200},
 			{"CNN", 	2, 4, 1, 4, 0.01, 		"BSP", "EPOCH", "SHUFFLE", 				"BASELINE",		"true",	"IMBALANCED", 	200},
 			{"TwoNN", 	5, 1000, 100, 2, 0.01, 	"BSP", "BATCH", "KEEP_DATA_ON_WORKER", 	"NONE",			"true",	"BALANCED",		200},
 
@@ -118,16 +118,16 @@ public class AvgModelFederatedParamservTest extends AutomatedTestBase {
 	}
 
 	@Test
-	public void federatedParamservSingleNode() {
-		federatedParamserv(ExecMode.SINGLE_NODE, true);
+	public void AvgmodelfederatedParamservSingleNode() {
+		AvgmodelfederatedParamserv(ExecMode.SINGLE_NODE, true);
 	}
 
 	@Test
-	public void federatedParamservHybrid() {
-		federatedParamserv(ExecMode.HYBRID, true);
+	public void AvgmodelfederatedParamservHybrid() {
+		AvgmodelfederatedParamserv(ExecMode.HYBRID, true);
 	}
 
-	private void federatedParamserv(ExecMode mode, boolean modelAvg) {
+	private void AvgmodelfederatedParamserv(ExecMode mode, boolean modelAvg) {
 		// Warning Statistics accumulate in unit test
 		// config
 		getAndLoadTestConfiguration(TEST_NAME);

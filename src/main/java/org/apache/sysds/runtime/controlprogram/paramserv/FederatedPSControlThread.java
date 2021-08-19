@@ -340,7 +340,6 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 			});
 			accFedPSGradientWeightingTime(tWeighting);
 		}
-
 		// Push the gradients to ps
 		_ps.push(_workerID, gradients);
 	}
@@ -353,20 +352,21 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 	 * Computes all epochs and updates after each batch
 	 */
 	protected void computeWithBatchUpdates() {
+		ListObject param;
 		for (int epochCounter = 0; epochCounter < _epochs; epochCounter++) {
 			int currentLocalBatchNumber = (_cycleStartAt0) ? 0 : _numBatchesPerEpoch * epochCounter % _possibleBatchesPerLocalEpoch;
-
-			for (int batchCounter = 0; batchCounter < _numBatchesPerEpoch; batchCounter++) {
+				for (int batchCounter = 0; batchCounter < _numBatchesPerEpoch; batchCounter++) {
 				int localStartBatchNum = getNextLocalBatchNum(currentLocalBatchNumber++, _possibleBatchesPerLocalEpoch);
-				ListObject model = pullModel();
-				ListObject gradients = computeGradientsForNBatches(model, 1, localStartBatchNum);
+				param = pullModel();
+				ListObject gradients = computeGradientsForNBatches(param, 1, localStartBatchNum);
 				if (_modelAvg) {
-					model = _ps.updateLocalModel(_ec, gradients, model);
-					weightAndPushGradients(model);
+					param = _ps.updateLocalModel(_ec, gradients, param);
+					weightAndPushGradients(param);
 				}
-				else
+				else {
 					weightAndPushGradients(gradients);
-				ParamservUtils.cleanupListObject(model);
+					ParamservUtils.cleanupListObject(param);
+				}
 				ParamservUtils.cleanupListObject(gradients);
 			}
 		}

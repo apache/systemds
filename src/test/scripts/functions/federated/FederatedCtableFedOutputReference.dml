@@ -27,8 +27,14 @@ n = ncol(X);
 # prepare offset vectors and one-hot encoded X
 maxs = colMaxs(X);
 
-rix = matrix(seq(1,m)%*%matrix(1,1,n), m*n, 1)
-cix = matrix(X + (t(cumsum(t(maxs))) - maxs), m*n, 1);
+if($7) { # matrix input
+  rix = matrix(seq(1,m)%*%matrix(1,1,n), m, n);
+  cix = matrix(X + (t(cumsum(t(maxs))) - maxs), m, n);
+}
+else {
+  rix = matrix(seq(1,m)%*%matrix(1,1,n), m*n, 1);
+  cix = matrix(X + (t(cumsum(t(maxs))) - maxs), m*n, 1);
+}
 
 W = rix + cix;
 
@@ -43,4 +49,4 @@ else
   else
     X2 = table(rix, cix);
 
-write(X2, $7);
+write(X2, $8);

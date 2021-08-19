@@ -268,50 +268,18 @@ public class ReaderMapping {
 		return result;
 	}
 
-	public final FileFormatProperties getFormatProperties() throws Exception {
-		FileFormatProperties ffp;
+	public final FileFormatPropertiesGR getFormatProperties() throws Exception {
+		FileFormatPropertiesGR ffp = null;
 		if(isRowRegular()) {
 			ffp = getFileFormatPropertiesOfRRCRMapping();
-
 			if(ffp == null) {
 				ffp = getFileFormatPropertiesOfRRCIMapping();
 			}
-			return ffp;
 		}
 		else {
-
-			FileFormatPropertiesMM.MMFormat format;
-			if(sampleRawRows.size() == nnz) {
-				format = FileFormatPropertiesMM.MMFormat.COORDINATE;
-			}
-			else
-				format = FileFormatPropertiesMM.MMFormat.ARRAY;
-
-			FileFormatPropertiesMM.MMField field = FileFormatPropertiesMM.MMField.REAL;
-			for(int r = 0; r < nrows && field == FileFormatPropertiesMM.MMField.REAL; r++) {
-				for(int c = 0; c < ncols; c++) {
-					if(sampleMatrix.getValue(r, c) != (int) sampleMatrix.getValue(r, c)) {
-						field = FileFormatPropertiesMM.MMField.INTEGER;
-						break;
-					}
-				}
-			}
-			FileFormatPropertiesMM.MMSymmetry symmetry;
-			if(symmetric)
-				symmetry = FileFormatPropertiesMM.MMSymmetry.SYMMETRIC;
-			else if(skewSymmetric)
-				symmetry = FileFormatPropertiesMM.MMSymmetry.SKEW_SYMMETRIC;
-			else
-				symmetry = FileFormatPropertiesMM.MMSymmetry.GENERAL;
-
-			String delim = getDelimsOfRIMapping();
-			if(delim != null) {
-				ffp = new FileFormatPropertiesMM(format, field, symmetry);
-				return ffp;
-			}
-			else
-				return null;
+			ffp = getFileFormatPropertiesOfRIMapping();
 		}
+		return ffp;
 	}
 
 	public final boolean isRowRegular() {
@@ -343,7 +311,7 @@ public class ReaderMapping {
 		 Map Col:       [0 2 4 6 8 ]
 		 result:        ["," "," "," "," ","]
 		*/
-	public final FileFormatProperties getFileFormatPropertiesOfRRCRMapping() {
+	public final FileFormatPropertiesGR getFileFormatPropertiesOfRRCRMapping() {
 
 		int nrows = mapRow.length;
 		int ncols = mapRow[0].length;
@@ -472,10 +440,10 @@ public class ReaderMapping {
 
 		}
 		if(uniqueDelimiter != null) {
-			FileFormatPropertiesCSV ffpcsv = new FileFormatPropertiesCSV(false, uniqueDelimiter, false);
-			ffpcsv.setNAStrings(naString);
-			ffpcsv.setDescription("CSV Format Recognized");
-			return ffpcsv;
+			FileFormatPropertiesGR ffpgr = new FileFormatPropertiesGR(FileFormatPropertiesGR.GRPattern.Regular,
+				uniqueDelimiter, naString);
+			ffpgr.setDescription("CSV Format Recognized");
+			return ffpgr;
 		}
 		else
 			return null;
@@ -526,27 +494,27 @@ public class ReaderMapping {
 		return mergeCount;
 	}
 
-	private String getDelimsOfRIMapping() throws Exception {
+	private FileFormatPropertiesGR getFileFormatPropertiesOfRIMapping() throws Exception {
 
 		// FirstRowIndex = 0, FirstColIndex = 0
-		String delims = getDelimsOfMapping(0, 0);
+		FileFormatPropertiesGR ffp = getDelimsOfMapping(0, 0);
 
 		// FirstRowIndex = 1, FirstColIndex = 1
-		if(delims == null)
-			delims = getDelimsOfMapping(1, 1);
+		if(ffp == null)
+			ffp = getDelimsOfMapping(1, 1);
 
 		// FirstRowIndex = 1, FirstColIndex = 0
-		if(delims == null)
-			delims = getDelimsOfMapping(1, 0);
+		if(ffp == null)
+			ffp = getDelimsOfMapping(1, 0);
 
 		// FirstRowIndex = 0, FirstColIndex = 1
-		if(delims == null)
-			delims = getDelimsOfMapping(0, 1);
+		if(ffp == null)
+			ffp = getDelimsOfMapping(0, 1);
 
-		return delims;
+		return ffp;
 	}
 
-	private String getDelimsOfMapping(int firstRowIndex, int firstColIndex) throws Exception {
+	private FileFormatPropertiesGR getDelimsOfMapping(int firstRowIndex, int firstColIndex) throws Exception {
 
 		int nLines = sampleRawRows.size();
 		int nrows = sampleMatrix.getNumRows();
@@ -619,19 +587,31 @@ public class ReaderMapping {
 					}
 				}
 				if(flagToken) {
-					if(token.size()>0)
+					if(token.size() > 0)
 						uniqueDelim = token.iterator().next();
 					break;
 				}
 			}
-			
-			return uniqueDelim;
+			//
+			if(uniqueDelim != null) {
+				FileFormatPropertiesGR.GRSymmetry symmetry;
+				if(symmetric)
+					symmetry = FileFormatPropertiesGR.GRSymmetry.SYMMETRIC;
+				else if(skewSymmetric)
+					symmetry = FileFormatPropertiesGR.GRSymmetry.SKEW_SYMMETRIC;
+				else
+					symmetry = FileFormatPropertiesGR.GRSymmetry.GENERAL;
+
+				return new FileFormatPropertiesGR(symmetry, uniqueDelim);
+			}
+			else
+				return null;
 		}
 	}
 
-	public FileFormatPropertiesLIBSVM getFileFormatPropertiesOfRRCIMapping() {
+	public FileFormatPropertiesGR getFileFormatPropertiesOfRRCIMapping() {
 
-		FileFormatPropertiesLIBSVM ffplibsvm;
+		FileFormatPropertiesGR ffplibsvm;
 		int firstColIndex = 0;
 
 		//FirstColIndex = 0
@@ -649,7 +629,7 @@ public class ReaderMapping {
 		return ffplibsvm;
 	}
 
-	private FileFormatPropertiesLIBSVM getDelimsOfRRCIMapping(int firstColIndex) {
+	private FileFormatPropertiesGR getDelimsOfRRCIMapping(int firstColIndex) {
 
 		Map<String, Set<String>> tokens = new HashMap<>();
 		Set<String> allTokens = new HashSet<>();
@@ -714,7 +694,7 @@ public class ReaderMapping {
 			}
 		}
 		if(isVerify) {
-			return new FileFormatPropertiesLIBSVM(separator, indexSeparator);
+			return new FileFormatPropertiesGR(FileFormatPropertiesGR.GRPattern.Regular, separator, indexSeparator);
 		}
 		else
 			return null;

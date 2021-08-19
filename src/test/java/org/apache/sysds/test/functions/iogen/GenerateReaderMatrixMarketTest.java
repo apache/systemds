@@ -53,7 +53,6 @@ public class GenerateReaderMatrixMarketTest extends GenerateReaderTest {
 		}
 		sampleRaw = sb.toString();
 		//System.out.println(sampleRaw);
-
 	}
 
 	// Index from 0

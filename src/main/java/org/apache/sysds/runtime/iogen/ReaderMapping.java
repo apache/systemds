@@ -18,8 +18,7 @@
  */
 
 package org.apache.sysds.runtime.iogen;
-
-import org.apache.sysds.runtime.io.*;
+import org.apache.sysds.runtime.io.IOUtilFunctions;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
 import java.io.BufferedReader;
@@ -154,7 +153,6 @@ public class ReaderMapping {
 		ArrayList<Integer> colIndexSizes = new ArrayList<>();
 
 		for(int r = 0; r < nrows; r++) {
-
 			NumberTrimFormat[] ntfRow = new NumberTrimFormat[ncols];
 			for(int i = 0; i < ncols; i++) {
 				ntfRow[i] = NTF[r][i].getACopy();
@@ -217,7 +215,6 @@ public class ReaderMapping {
 	}
 
 	private void skewSampleMatrix(int coefficient) throws Exception {
-
 		if(coefficient != 1 && coefficient != -1)
 			throw new Exception("The value of Coefficient have to be 1 or -1!");
 
@@ -279,6 +276,9 @@ public class ReaderMapping {
 		else {
 			ffp = getFileFormatPropertiesOfRIMapping();
 		}
+		if(ffp != null)
+			ffp.setNcols(ncols);
+
 		return ffp;
 	}
 
@@ -484,8 +484,6 @@ public class ReaderMapping {
 					if(Double.parseDouble(sb.toString()) == value) {
 						mergeCount = sb.length() - stringValue.length();
 					}
-					//					else
-					//						break;
 				}
 			}
 			else
@@ -542,9 +540,6 @@ public class ReaderMapping {
 							checkedRow.add(index);
 							mapRCV[nzIndex++] = rcv;
 						}
-						else {
-							int bbb = 0;
-						}
 					}
 					while(++index < nLines && !rcv.isMapped());
 					rcvMapped = rcv.isMapped();
@@ -592,7 +587,7 @@ public class ReaderMapping {
 					break;
 				}
 			}
-			//
+
 			if(uniqueDelim != null) {
 				FileFormatPropertiesGR.GRSymmetry symmetry;
 				if(symmetric)
@@ -630,7 +625,6 @@ public class ReaderMapping {
 	}
 
 	private FileFormatPropertiesGR getDelimsOfRRCIMapping(int firstColIndex) {
-
 		Map<String, Set<String>> tokens = new HashMap<>();
 		Set<String> allTokens = new HashSet<>();
 
@@ -891,7 +885,7 @@ public class ReaderMapping {
 				hasZero |= 0b001;
 
 			switch(hasZero) {
-				//010
+				//010 > R,0,V
 				case 2:
 					nmiV0 = ntfV0.getMappingInfo(row);
 					if(!nmiV0.mapped)
@@ -908,7 +902,7 @@ public class ReaderMapping {
 					nmiV1.index += nmiV0.index + nmiV0.size;
 					break;
 
-				//100 , 101
+				//100 , 101  > 0, C, V  or 0, C, 0
 				case 4:
 				case 5:
 					nmiV1 = ntfV1.getMappingInfo(row);
@@ -925,7 +919,7 @@ public class ReaderMapping {
 						return false;
 					break;
 
-				// 110
+				// 110 > 0, 0, V
 				case 6:
 					nmiV2 = ntfV2.getMappingInfo(row);
 					if(!nmiV2.mapped)

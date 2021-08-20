@@ -19,37 +19,36 @@
 
 package org.apache.sysds.runtime.iogen;
 
-import com.google.gson.Gson;
-import org.apache.sysds.runtime.io.FileFormatProperties;
-import org.apache.sysds.runtime.io.MatrixReader;
+import org.apache.sysds.runtime.io.*;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
 public class GenerateReader {
 
-	public static MatrixReader generateReader(String sampleRaw, MatrixBlock sampleMatrix) throws Exception {
-		MatrixReader reader = null;
+	/*
+	Generate Reader has two steps:
+		1. Identify file format and extract the properties of it based on the Sample Matrix.
+		 The ReaderMapping class tries to map the Sample Matrix on the Sample Raw Matrix.
+		 The result of a ReaderMapping is a FileFormatProperties object.
 
+		2. Generate a reader based on inferred properties.
+	 */
+	public static MatrixReader generateReader(String sampleRaw, MatrixBlock sampleMatrix) throws Exception {
+
+		// 1. Identify file format properties:
 		ReaderMapping rp = new ReaderMapping(sampleRaw, sampleMatrix);
 
 		boolean isMapped = rp.isMapped();
 		if(!isMapped) {
 			throw new Exception("Sample raw data and sample matrix don't match !!");
 		}
-
-		//////////////////////////////////////////////////
-		System.out.println("Mapped !!!!!!!!!!!!");
-		Gson gson = new Gson();
-		System.out.println("Map Row >> " + gson.toJson(rp.getMapRow()));
-		System.out.println("Map Col >> " + gson.toJson(rp.getMapCol()));
-		System.out.println("Map Size >> " + gson.toJson(rp.getMapSize()));
-
-		FileFormatProperties ffp =rp.getFormatProperties();
-		if(ffp!=null){
-			System.out.println(gson.toJson(ffp));
-		}
-		else
+		FileFormatProperties ffp = rp.getFormatProperties();
+		if(ffp == null) {
 			throw new Exception("The file format couldn't recognize!!");
+		}
 
+		// 2. Generate a Matrix Reader:
+		MatrixReader reader = null;
+		//TODO: after identify file format properties we have to return a Matrix Reader
 		return reader;
 	}
 }

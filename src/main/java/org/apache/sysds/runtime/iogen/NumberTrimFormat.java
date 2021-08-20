@@ -21,9 +21,12 @@ package org.apache.sysds.runtime.iogen;
 
 public class NumberTrimFormat implements Comparable {
 
-	public char S;
-	public char[] N;
-	public double actualValue;
+	public char S; // signe of value "+" or "-"
+	public char[] N; // array of none zero chars. Example: value = 0.00012345, N = [1,2,3,4,5]
+	public double actualValue; // save the actual value
+
+	// save the col index of the value on the Matrix.
+	// We need this value when we want to reorder matrix cols
 	public int c;
 
 	public NumberTrimFormat(int c, double value) {
@@ -130,8 +133,8 @@ public class NumberTrimFormat implements Comparable {
 				if(chunkChars[i] == '0' || chunkChars[i] == '.') {
 					if(chunkChars[i] == '.') {
 						dotPos = i;
-						if(actualValueChars.charAt(actualValueChars.length() - 1) == '+' ||
-							actualValueChars.charAt(actualValueChars.length() - 1) == '-') {
+						if(actualValueChars.charAt(actualValueChars.length() - 1) == '+' || actualValueChars
+							.charAt(actualValueChars.length() - 1) == '-') {
 							actualValueChars.append('0');
 						}
 					}
@@ -188,7 +191,7 @@ public class NumberTrimFormat implements Comparable {
 					NFlag = true;
 			}
 
-			// NM char list matched, So, look for science values or "0" values
+			// N char list matched, So, look for science values or "0" values
 			if(NFlag) {
 				if(isEqual(actualValueChars, actualValue)) {
 					result.mapped = true;
@@ -285,14 +288,5 @@ public class NumberTrimFormat implements Comparable {
 			return 0;
 
 		return nc;
-		//		if(nc == 1) {
-		//			return 1;
-		//		}
-		//		else if(nc == 0) {
-		//			return vc >= 0 ? 1 : -1;
-		//		}
-		//		else {
-		//			return -1;
-		//		}
 	}
 }

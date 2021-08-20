@@ -131,8 +131,10 @@ public class RewriteFederatedExecution extends HopRewriteRule {
 		else {
 			// If no input has FOUT, the root will be processed by the coordinator
 			boolean hasFederatedInput = root.someInputFederated();
+			//the input cost is included the first time the input hop is used
+			//for additional usage, the additional cost is zero (disregarding potential read cost)
 			double inputCosts = root.getInput().stream()
-				.mapToDouble( in -> in.federatedCostInitialized() ? in.getFederatedCost() : costEstimate(in) )
+				.mapToDouble( in -> in.federatedCostInitialized() ? 0 : costEstimate(in) )
 				.sum();
 			double inputTransferCost = hasFederatedInput ? root.getInput().stream()
 				.filter(Hop::hasLocalOutput)
@@ -223,15 +225,6 @@ public class RewriteFederatedExecution extends HopRewriteRule {
 
 		privacyBasedHopDecisionWithFedCall(hop);
 		hop.setVisited();
-	}
-
-	private static void privacyBasedHopDecision(Hop hop){
-		PrivacyPropagator.hopPropagation(hop);
-		PrivacyConstraint privacyConstraint = hop.getPrivacy();
-		if ( privacyConstraint != null && privacyConstraint.hasConstraints() )
-			hop.setFederatedOutput(FEDInstruction.FederatedOutput.FOUT);
-		else if ( hop.someInputFederated() )
-			hop.setFederatedOutput(FEDInstruction.FederatedOutput.LOUT);
 	}
 
 	/**

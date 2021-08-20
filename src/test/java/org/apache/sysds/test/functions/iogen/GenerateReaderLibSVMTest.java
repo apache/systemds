@@ -24,8 +24,8 @@ import org.junit.Test;
 
 public class GenerateReaderLibSVMTest extends GenerateReaderTest {
 
-	private final static String TEST_NAME = "GenerateReaderLibSVMUniqueTest";
-	private final static String TEST_DIR = "functions/io/GenerateReaderLibSVMUniqueTest/";
+	private final static String TEST_NAME = "GenerateReaderLibSVMTest";
+	private final static String TEST_DIR = "functions/iogen/GenerateReaderLibSVMTest/";
 	private final static String TEST_CLASS_DIR = TEST_DIR + GenerateReaderLibSVMTest.class.getSimpleName() + "/";
 
 	@Override public void setUp() {
@@ -75,7 +75,6 @@ public class GenerateReaderLibSVMTest extends GenerateReaderTest {
 				sb.append("\n");
 		}
 		sampleRaw = sb.toString();
-		//System.out.println(sampleRaw);
 
 	}
 
@@ -88,7 +87,6 @@ public class GenerateReaderLibSVMTest extends GenerateReaderTest {
 		runGenerateReaderTest();
 	}
 
-	// Index start from 0
 	@Test public void test00_1() throws Exception {
 
 		sampleRaw = "+1     2:3     4:5     6:7\n" + "-1     8:9     10:11";

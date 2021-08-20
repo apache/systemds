@@ -19,24 +19,15 @@
 
 package org.apache.sysds.test.functions.iogen;
 
-import com.google.gson.Gson;
-import org.apache.sysds.runtime.matrix.data.MatrixBlock;
-import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.junit.Test;
-
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.Random;
 
 public class GenerateReaderCSVTest extends GenerateReaderTest {
 
 	private final static String TEST_NAME = "GenerateReaderCSVTest";
-	private final static String TEST_DIR = "functions/io/GenerateReaderCSVTest1/";
+	private final static String TEST_DIR = "functions/iogen/GenerateReaderCSVTest/";
 	private final static String TEST_CLASS_DIR = TEST_DIR + GenerateReaderCSVTest.class.getSimpleName() + "/";
-
-	private final static double eps = 1e-9;
 
 	@Override public void setUp() {
 		addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[] {"Rout"}));

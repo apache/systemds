@@ -22,12 +22,10 @@ package org.apache.sysds.test.functions.iogen;
 import org.apache.sysds.test.TestConfiguration;
 import org.junit.Test;
 
-import java.util.Random;
-
 public class GenerateReaderMatrixMarketTest extends GenerateReaderTest {
 
 	private final static String TEST_NAME = "GenerateReaderMatrixMarketTest";
-	private final static String TEST_DIR = "functions/io/GenerateReaderMatrixMarketTest/";
+	private final static String TEST_DIR = "functions/iogen/GenerateReaderMatrixMarketTest/";
 	private final static String TEST_CLASS_DIR = TEST_DIR + GenerateReaderMatrixMarketTest.class.getSimpleName() + "/";
 
 	private final static double eps = 1e-9;
@@ -52,7 +50,6 @@ public class GenerateReaderMatrixMarketTest extends GenerateReaderTest {
 			}
 		}
 		sampleRaw = sb.toString();
-		//System.out.println(sampleRaw);
 	}
 
 	// Index from 0

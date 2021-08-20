@@ -19,8 +19,6 @@
 
 package org.apache.sysds.test.functions.iogen;
 
-import org.apache.sysds.common.Types;
-import org.apache.sysds.runtime.io.FileFormatProperties;
 import org.apache.sysds.runtime.io.MatrixReader;
 import org.apache.sysds.runtime.iogen.GenerateReader;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;

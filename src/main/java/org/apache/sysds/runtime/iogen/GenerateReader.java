@@ -19,6 +19,7 @@
 
 package org.apache.sysds.runtime.iogen;
 
+import com.google.gson.Gson;
 import org.apache.sysds.runtime.io.*;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
@@ -45,6 +46,8 @@ public class GenerateReader {
 		if(ffp == null) {
 			throw new Exception("The file format couldn't recognize!!");
 		}
+		Gson gson=new Gson();
+		System.out.println(gson.toJson(ffp));
 
 		// 2. Generate a Matrix Reader:
 		MatrixReader reader = null;

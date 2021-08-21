@@ -61,61 +61,71 @@ public class GenerateReaderCSVTest extends GenerateReaderTest {
 
 	}
 
-	@Test public void test1() throws Exception {
+	@Test
+	public void test1() throws Exception {
 		sampleRaw = "1,2,3,4,5\n" + "6,7,8,9,10\n" + "11,12,13,14,15";
 		sampleMatrix = new double[][] {{1, 2, 3, 4, 5}, {6, 7, 8, 9, 10}, {11, 12, 13, 14, 15}};
 		runGenerateReaderTest();
 	}
 
-	@Test public void test2() throws Exception {
+	@Test
+	public void test2() throws Exception {
 		String[] naString = {"NaN"};
 		generateRandomCSV(5,5,-10,10,1,",",naString);
 		runGenerateReaderTest();
 	}
 
-	@Test public void test3() throws Exception {
+	@Test
+	public void test3() throws Exception {
 		String[] naString = {"NaN"};
 		generateRandomCSV(5,5,-10,10,1,",,,",naString);
 		runGenerateReaderTest();
 	}
 
-	@Test public void test4() throws Exception {
+	@Test
+	public void test4() throws Exception {
 		String[] naString = {"Nan", "NAN", "", "inf","null","NULL"};
 		generateRandomCSV(5,5,-10,10,0.5,",,",naString);
 		runGenerateReaderTest();
 	}
 
-	@Test public void test5() throws Exception {
+	@Test
+	public void test5() throws Exception {
 		sampleRaw = "1.0,2.0,3.0,4.0,5.0\n" + "6.,7.,8.,9.,10.\n" + "11,12,13,14,15";
 		sampleMatrix = new double[][] {{1, 2, 3, 4, 5}, {6, 7, 8, 9, 10}, {11, 12, 13, 14, 15}};
 		runGenerateReaderTest();
 	}
 
-	@Test public void test6() throws Exception {
+	@Test
+	public void test6() throws Exception {
 		sampleRaw = "1.0,2.0,3.0,4.0,5.0\n" + "6.,7.,8.,9.,10.\n" + "11E0,12E0,13,14E0,15";
 		sampleMatrix = new double[][] {{1, 2, 3, 4, 5}, {6, 7, 8, 9, 10}, {11, 12, 13, 14, 15}};
 		runGenerateReaderTest();
 	}
 
-	@Test public void test7() throws Exception {
+	@Test
+	public void test7() throws Exception {
 		sampleRaw = "1.0,2.0,3.0,4.0,5.0\n" + "6.,7.,8.,9.,10.\n" + "1.1E1,1.2E1,13,1.4E1,15";
 		sampleMatrix = new double[][] {{1, 2, 3, 4, 5}, {6, 7, 8, 9, 10}, {11, 12, 13, 14, 15}};
 		runGenerateReaderTest();
 	}
 
-	@Test public void test8() throws Exception {
+	@Test
+	public void test8() throws Exception {
 		sampleRaw = "1.0,2.0,3.0,4.0,5.0\n" + "60.0E-1,7.,80.0E-1,9.,100.0E-1\n" + "1.1E1,1.2E1,13,1.4E1,15";
 		sampleMatrix = new double[][] {{1, 2, 3, 4, 5}, {6, 7, 8, 9, 10}, {11, 12, 13, 14, 15}};
 		runGenerateReaderTest();
 	}
 
-	@Test public void test9() throws Exception {
+	@Test
+	public void test9() throws Exception {
 		sampleRaw = ".1E1,.2E1,3.0,4.0,0.5E1\n" + "60.0E-1,7.,80.0E-1,9.,100.0E-1\n" + "1.1E1,1.2E1,13,1.4E1,15";
 		sampleMatrix = new double[][] {{1, 2, 3, 4, 5}, {6, 7, 8, 9, 10}, {11, 12, 13, 14, 15}};
 		runGenerateReaderTest();
 	}
 
-	@Test public void test10() throws Exception {
+	@Test
+	public void test10() throws Exception {
 		sampleRaw = "0.000001e6,2,3,4,5\n" + "6,7,8,9,10\n" + "11,12,13,14,15";
 		sampleMatrix = new double[][] {{1, 2, 3, 4, 5}, {6, 7, 8, 9, 10}, {11, 12, 13, 14, 15}};
 		runGenerateReaderTest();

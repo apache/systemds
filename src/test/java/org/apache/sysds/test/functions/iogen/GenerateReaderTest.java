@@ -31,7 +31,6 @@ public abstract class GenerateReaderTest extends AutomatedTestBase{
 	protected final static String TEST_DIR = "functions/iogen/";
 	protected final static String TEST_CLASS_DIR = TEST_DIR + GenerateReaderTest.class.getSimpleName() + "/";
 
-
 	protected String sampleRaw;
 	protected double[][] sampleMatrix;
 
@@ -40,11 +39,17 @@ public abstract class GenerateReaderTest extends AutomatedTestBase{
 		TestUtils.clearAssertionInformation();
 	}
 
-	protected void runGenerateReaderTest() throws Exception {
-
-		MatrixBlock sampleMatrixMB = DataConverter.convertToMatrixBlock(sampleMatrix);
-		MatrixReader reader = GenerateReader.generateReader(sampleRaw, sampleMatrixMB);
-
+	protected void generateRandomSymmetric(int size, double min, double max, double sparsity){
+		sampleMatrix = getRandomMatrix(size, size, min, max, sparsity, 714);
+		for(int i=0;i<size;i++) {
+			for(int j = 0; j <= i; j++) {
+				sampleMatrix[i][j] = sampleMatrix[j][i];
+			}
+		}
 	}
 
+	protected void runGenerateReaderTest() throws Exception {
+		MatrixBlock sampleMatrixMB = DataConverter.convertToMatrixBlock(sampleMatrix);
+		MatrixReader reader = GenerateReader.generateReader(sampleRaw, sampleMatrixMB);
+	}
 }

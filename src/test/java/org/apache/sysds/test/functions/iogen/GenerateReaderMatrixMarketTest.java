@@ -34,7 +34,8 @@ public class GenerateReaderMatrixMarketTest extends GenerateReaderTest {
 		addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[] {"Rout"}));
 	}
 
-	private void generateRandomMM(int firstIndex,int nrows, int ncols, double min, double max, double sparsity, String separator) {
+	private void generateRandomMM(int firstIndex, int nrows, int ncols, double min, double max, double sparsity,
+		String separator) {
 
 		sampleMatrix = getRandomMatrix(nrows, ncols, min, max, sparsity, 714);
 		StringBuilder sb = new StringBuilder();
@@ -42,9 +43,9 @@ public class GenerateReaderMatrixMarketTest extends GenerateReaderTest {
 		for(int r = 0; r < nrows; r++) {
 			for(int c = 0; c < ncols; c++) {
 				if(sampleMatrix[r][c] != 0) {
-					String rs = (r+firstIndex)+separator+(c+firstIndex)+separator+sampleMatrix[r][c];
+					String rs = (r + firstIndex) + separator + (c + firstIndex) + separator + sampleMatrix[r][c];
 					sb.append(rs);
-					if(r!=nrows-1 || c!=ncols-1)
+					if(r != nrows - 1 || c != ncols - 1)
 						sb.append("\n");
 				}
 			}
@@ -52,60 +53,166 @@ public class GenerateReaderMatrixMarketTest extends GenerateReaderTest {
 		sampleRaw = sb.toString();
 	}
 
+	private void generateRandomSymmetricMM(int firstIndex, int size, double min, double max, double sparsity,
+		String separator, boolean isUpperTriangular) {
+
+		generateRandomSymmetric(size, min, max, sparsity);
+
+		int start, end;
+		StringBuilder sb = new StringBuilder();
+
+		for(int r = 0; r < size; r++) {
+			if(isUpperTriangular){
+				start = r;
+				end = size;
+			}
+			else {
+				start = 0;
+				end = r+1;
+			}
+			for(int c = start; c < end; c++) {
+				String rs = (r + firstIndex) + separator + (c + firstIndex) + separator + sampleMatrix[r][c];
+				sb.append(rs);
+				if(r != size - 1 || c != size - 1)
+					sb.append("\n");
+			}
+		}
+		sampleRaw = sb.toString();
+	}
+
+
 	// Index from 0
-	@Test public void test0_1() throws Exception {
+	@Test
+	public void test0_1() throws Exception {
 		sampleRaw = "1,1,1\n" + "1,2,4\n" + "2,2,2\n" + "3,3,3";
 		sampleMatrix = new double[][] {{0, 1, 4, 0}, {0, 0, 2, 0}, {0, 0, 0, 3}};
 		runGenerateReaderTest();
 	}
 
-	@Test public void test0_2() throws Exception {
+	@Test
+	public void test0_2() throws Exception {
 		sampleRaw = "0,0,-1\n" + "0,1,1\n" + "0,2,2\n" + "0,3,3\n" + "1,0,4\n" + "1,1,5\n" + "1,2,6\n" + "1,3,7";
-		sampleMatrix = new double[][] {{-1, 1, 2, 3}, {4,5,6,7}};
+		sampleMatrix = new double[][] {{-1, 1, 2, 3}, {4, 5, 6, 7}};
 		runGenerateReaderTest();
 	}
 
-	@Test public void test0_3() throws Exception {
+	@Test
+	public void test0_3() throws Exception {
 		sampleRaw = "0,0,-1\n" + "0,1,1\n" + "0,2,2.0\n" + "0,3,3.\n" + "1,0,4e0\n" + "1,1,5\n" + "1,2,6\n" + "1,3,7";
-		sampleMatrix = new double[][] {{-1, 1, 2, 3}, {4,5,6,7}};
+		sampleMatrix = new double[][] {{-1, 1, 2, 3}, {4, 5, 6, 7}};
 		runGenerateReaderTest();
 	}
 
-	@Test public void test0_4() throws Exception {
+	@Test
+	public void test0_4() throws Exception {
 		sampleRaw = "0,0,-1\n" + "0,1,0.00001e5\n" + "0,2,2.\n" + "0,3,3\n" + "1,0,4e0\n" + "1,1,5\n" + "1,2,6\n" + "1,3,7";
-		sampleMatrix = new double[][] {{-1, 1, 2, 3}, {4,5,6,7}};
+		sampleMatrix = new double[][] {{-1, 1, 2, 3}, {4, 5, 6, 7}};
 		runGenerateReaderTest();
 	}
 
-	@Test public void test0_5() throws Exception {
-		generateRandomMM(0,5,10,-100,100,1,",");
+	@Test
+	public void test0_5() throws Exception {
+		generateRandomMM(0, 5, 10, -100, 100, 1, ",");
 		runGenerateReaderTest();
 	}
 
-	@Test public void test0_6() throws Exception {
-		generateRandomMM(0,100,100,-100,100,1,",");
+	@Test
+	public void test0_6() throws Exception {
+		generateRandomMM(0, 100, 100, -100, 100, 1, ",");
 		runGenerateReaderTest();
 	}
 
-	@Test public void test0_7() throws Exception {
-		generateRandomMM(0,10,10,-100,100,1,"   ,");
+	@Test
+	public void test0_7() throws Exception {
+		generateRandomMM(0, 10, 10, -100, 100, 1, "   ,");
 		runGenerateReaderTest();
 	}
 
-	@Test public void test0_8() throws Exception {
-		generateRandomMM(0,10,10,-100,100,0.5,",");
+	@Test
+	public void test0_8() throws Exception {
+		generateRandomMM(0, 10, 10, -100, 100, 0.5, ",");
 		runGenerateReaderTest();
 	}
 
 	// Index from 1
-	@Test public void test1() throws Exception {
+	@Test
+	public void test1() throws Exception {
 		sampleRaw = "1,1,1\n" + "1,2,4\n" + "2,2,2\n" + "3,3,3";
 		sampleMatrix = new double[][] {{1, 4, 0}, {0, 2, 0}, {0, 0, 3}};
 		runGenerateReaderTest();
 	}
 
-	@Test public void test1_2() throws Exception {
-		generateRandomMM(1,5,10,-100,100,1,",,,,,");
+	@Test
+	public void test1_2() throws Exception {
+		generateRandomMM(1, 5, 10, -100, 100, 1, ",,,,,");
+		runGenerateReaderTest();
+	}
+
+	// Symmetric Tests:
+	// Symmetric Index from 0
+	@Test
+	public void SymmetricTest0_1() throws Exception {
+		sampleRaw = "0,0,1\n" + "1,0,2\n" + "1,1,3\n" + "2,0,4\n" + "2,1,5\n" + "2,2,6\n" + "3,0,7\n" + "3,1,8\n" + "3,2,9\n" + "3,3,10\n";
+		System.out.println(sampleRaw);
+		sampleMatrix = new double[][] {{1, 0, 0, 0}, {2, 3, 0, 0}, {4, 5, 6, 0}, {7, 8, 9, 10}};
+		runGenerateReaderTest();
+	}
+
+	@Test
+	public void SymmetricTest0_2() throws Exception {
+		sampleRaw = "0,0,1\n" +"0,1,2\n" + "0,2,3\n" + "0,0,1\n" +
+			",0,2\n" + "1,1,3\n" + "2,0,4\n" + "2,1,5\n" + "2,2,6\n" + "3,0,7\n" + "3,1,8\n" + "3,2,9\n" + "3,3,10\n";
+		System.out.println(sampleRaw);
+		sampleMatrix = new double[][] {{1, 0, 0, 0}, {2, 3, 0, 0}, {4, 5, 6, 0}, {7, 8, 9, 10}};
+		runGenerateReaderTest();
+	}
+
+	@Test
+	public void SymmetricTest0_3() throws Exception {
+		generateRandomSymmetricMM(0,5,-5,5,1,",",true);
+		runGenerateReaderTest();
+	}
+
+	@Test
+	public void SymmetricTest0_4() throws Exception {
+		generateRandomSymmetricMM(0,50,-100,100,1,"  ",true);
+		runGenerateReaderTest();
+	}
+
+	@Test
+	public void SymmetricTest0_5() throws Exception {
+		generateRandomSymmetricMM(0,5,-5,5,1,",",false);
+		runGenerateReaderTest();
+	}
+
+	@Test
+	public void SymmetricTest0_6() throws Exception {
+		generateRandomSymmetricMM(0,50,-100,100,1,"  ",false);
+		runGenerateReaderTest();
+	}
+
+	// Symmetric Index from 1
+	@Test
+	public void SymmetricTest1_1() throws Exception {
+		generateRandomSymmetricMM(1,5,-5,5,1,",",true);
+		runGenerateReaderTest();
+	}
+
+	@Test
+	public void SymmetricTest1_2() throws Exception {
+		generateRandomSymmetricMM(1,50,-100,100,1,"  ",true);
+		runGenerateReaderTest();
+	}
+
+	@Test
+	public void SymmetricTest1_3() throws Exception {
+		generateRandomSymmetricMM(1,5,-5,5,1,",",false);
+		runGenerateReaderTest();
+	}
+
+	@Test
+	public void SymmetricTest1_4() throws Exception {
+		generateRandomSymmetricMM(1,50,-100,100,1,"  ",false);
 		runGenerateReaderTest();
 	}
 }

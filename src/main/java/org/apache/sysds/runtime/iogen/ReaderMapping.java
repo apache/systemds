@@ -18,6 +18,7 @@
  */
 
 package org.apache.sysds.runtime.iogen;
+
 import org.apache.sysds.runtime.io.IOUtilFunctions;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
@@ -67,6 +68,11 @@ public class ReaderMapping {
 		boolean isMapped = findMapping(nlines, NTF);
 
 		if(!isMapped) {
+			// Clone Sample Matrix
+			MatrixBlock sampleMatrixClone = new MatrixBlock(nrows,ncols,false);
+			for(int r= 0;r<nrows;r++)
+				for(int c=0;c<ncols;c++)
+					sampleMatrixClone.setValue(r,c, sampleMatrix.getValue(r,c));
 
 			// Symmetric and Skew-Symmetric check:
 			symmetric = nrows == ncols;
@@ -76,7 +82,8 @@ public class ReaderMapping {
 				for(int c = 0; c < ncols; c++) {
 					if(symmetric)
 						symmetric = sampleMatrix.getValue(r, c) == sampleMatrix.getValue(r, c);
-					if(symmetric) {
+
+					if(skewSymmetric) {
 						if(r != c)
 							skewSymmetric = sampleMatrix.getValue(r, c) == sampleMatrix.getValue(r, c) * (-1);
 						else
@@ -95,7 +102,7 @@ public class ReaderMapping {
 				// Upper Triangular
 				if(!isMapped) {
 					isUpperTriangular = true;
-					sampleMatrix = matrix;
+					sampleMatrix = sampleMatrixClone;
 					transferSampleMatrixTriangular(isUpperTriangular);
 					isMapped = findMapping(nlines, NTF);
 				}
@@ -120,7 +127,7 @@ public class ReaderMapping {
 				if(!isMapped) {
 					isUpperTriangular = true;
 					skewCoefficient = 1;
-					sampleMatrix = matrix;
+					sampleMatrix = sampleMatrixClone;
 					transferSampleMatrixTriangular(isUpperTriangular);
 					NTF = convertMatrixTONumberTrimFormat(sampleMatrix);
 					isMapped = findMapping(nlines, NTF);
@@ -183,6 +190,15 @@ public class ReaderMapping {
 							itRow = 0;
 						colIndexes.clear();
 						colIndexSizes.clear();
+
+						for(int i = 0; i < nrows; i++) {
+							for(int j = 0; j < ncols; j++) {
+								if(mapRow[i][j] == itRow) {
+									colIndexes.add(mapCol[i][j]);
+									colIndexSizes.add(mapSize[i][j]);
+								}
+							}
+						}
 					}
 				}
 			}
@@ -190,7 +206,7 @@ public class ReaderMapping {
 		boolean flagMap = true;
 		for(int r = 0; r < nrows; r++)
 			for(int c = 0; c < ncols; c++)
-				if(mapRow[r][c] == -1 && NTF[r][c].actualValue != 0)
+				if(mapRow[r][c] == -1 && sampleMatrix.getValue(r, c) != 0)
 					flagMap = false;
 		return flagMap;
 	}
@@ -201,7 +217,7 @@ public class ReaderMapping {
 
 		for(int r = 0; r < nrows; r++) {
 			if(isUpper) {
-				for(int c = 0; c < r - 1; c++) {
+				for(int c = 0; c < r; c++) {
 					sampleMatrix.setValue(r, c, 0);
 				}
 			}
@@ -494,20 +510,36 @@ public class ReaderMapping {
 
 	private FileFormatPropertiesGR getFileFormatPropertiesOfRIMapping() throws Exception {
 
-		// FirstRowIndex = 0, FirstColIndex = 0
-		FileFormatPropertiesGR ffp = getDelimsOfMapping(0, 0);
+		int firstRowIndex = 0;
+		int firstColIndex = 0;
+
+		FileFormatPropertiesGR ffp = getDelimsOfMapping(firstRowIndex, firstColIndex);
 
 		// FirstRowIndex = 1, FirstColIndex = 1
-		if(ffp == null)
-			ffp = getDelimsOfMapping(1, 1);
+		if(ffp == null) {
+			firstRowIndex = 1;
+			firstColIndex = 1;
+			ffp = getDelimsOfMapping(firstRowIndex, firstColIndex);
+		}
 
 		// FirstRowIndex = 1, FirstColIndex = 0
-		if(ffp == null)
-			ffp = getDelimsOfMapping(1, 0);
+		if(ffp == null) {
+			firstRowIndex = 1;
+			firstColIndex = 0;
+			ffp = getDelimsOfMapping(firstRowIndex, firstColIndex);
+		}
 
 		// FirstRowIndex = 0, FirstColIndex = 1
-		if(ffp == null)
-			ffp = getDelimsOfMapping(0, 1);
+		if(ffp == null) {
+			firstRowIndex = 0;
+			firstColIndex = 1;
+			ffp = getDelimsOfMapping(firstRowIndex, firstColIndex);
+		}
+
+		if(ffp != null) {
+			ffp.setDescription(
+				"Market Matrix Format Recognized: FirstRowIndex: " + firstRowIndex + " and  FirstColIndex: " + firstColIndex);
+		}
 
 		return ffp;
 	}

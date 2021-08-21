@@ -39,15 +39,19 @@ public abstract class GenerateReaderTest extends AutomatedTestBase{
 		TestUtils.clearAssertionInformation();
 	}
 
-	protected void generateRandomSymmetric(int size, double min, double max, double sparsity){
+	protected void generateRandomSymmetric(int size, double min, double max, double sparsity, boolean isSkew){
 		sampleMatrix = getRandomMatrix(size, size, min, max, sparsity, 714);
+		int conf = isSkew ? -1 : 1;
 		for(int i=0;i<size;i++) {
 			for(int j = 0; j <= i; j++) {
-				sampleMatrix[i][j] = sampleMatrix[j][i];
+
+				if(i != j)
+					sampleMatrix[i][j] = sampleMatrix[j][i] * conf;
+				else
+				sampleMatrix[i][j] =0;
 			}
 		}
 	}
-
 	protected void runGenerateReaderTest() throws Exception {
 		MatrixBlock sampleMatrixMB = DataConverter.convertToMatrixBlock(sampleMatrix);
 		MatrixReader reader = GenerateReader.generateReader(sampleRaw, sampleMatrixMB);

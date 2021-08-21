@@ -19,6 +19,7 @@
 
 package org.apache.sysds.test.functions.iogen;
 
+import com.google.gson.Gson;
 import org.apache.sysds.test.TestConfiguration;
 import org.junit.Test;
 
@@ -54,9 +55,9 @@ public class GenerateReaderMatrixMarketTest extends GenerateReaderTest {
 	}
 
 	private void generateRandomSymmetricMM(int firstIndex, int size, double min, double max, double sparsity,
-		String separator, boolean isUpperTriangular) {
+		String separator, boolean isUpperTriangular, boolean isSkew) {
 
-		generateRandomSymmetric(size, min, max, sparsity);
+		generateRandomSymmetric(size, min, max, sparsity, isSkew);
 
 		int start, end;
 		StringBuilder sb = new StringBuilder();
@@ -71,13 +72,18 @@ public class GenerateReaderMatrixMarketTest extends GenerateReaderTest {
 				end = r+1;
 			}
 			for(int c = start; c < end; c++) {
-				String rs = (r + firstIndex) + separator + (c + firstIndex) + separator + sampleMatrix[r][c];
-				sb.append(rs);
-				if(r != size - 1 || c != size - 1)
-					sb.append("\n");
+				if(sampleMatrix[r][c]!=0) {
+					String rs = (r + firstIndex) + separator + (c + firstIndex) + separator + sampleMatrix[r][c];
+					sb.append(rs);
+					if(r != size - 1 || c != size - 1)
+						sb.append("\n");
+				}
 			}
 		}
 		sampleRaw = sb.toString();
+		System.out.println(sampleRaw);
+//		Gson gson= new Gson();
+//		System.out.println(gson.toJson(sampleMatrix));
 	}
 
 
@@ -161,58 +167,86 @@ public class GenerateReaderMatrixMarketTest extends GenerateReaderTest {
 	@Test
 	public void SymmetricTest0_2() throws Exception {
 		sampleRaw = "0,0,1\n" +"0,1,2\n" + "0,2,3\n" + "0,0,1\n" +
-			",0,2\n" + "1,1,3\n" + "2,0,4\n" + "2,1,5\n" + "2,2,6\n" + "3,0,7\n" + "3,1,8\n" + "3,2,9\n" + "3,3,10\n";
-		System.out.println(sampleRaw);
+			"1,0,2\n" + "1,1,3\n" + "2,0,4\n" + "2,1,5\n" + "2,2,6\n" + "3,0,7\n" + "3,1,8\n" + "3,2,9\n" + "3,3,10\n";
 		sampleMatrix = new double[][] {{1, 0, 0, 0}, {2, 3, 0, 0}, {4, 5, 6, 0}, {7, 8, 9, 10}};
 		runGenerateReaderTest();
 	}
 
 	@Test
 	public void SymmetricTest0_3() throws Exception {
-		generateRandomSymmetricMM(0,5,-5,5,1,",",true);
+		generateRandomSymmetricMM(0,5,-5,5,1,",",true, false);
 		runGenerateReaderTest();
 	}
 
 	@Test
 	public void SymmetricTest0_4() throws Exception {
-		generateRandomSymmetricMM(0,50,-100,100,1,"  ",true);
+		generateRandomSymmetricMM(0,50,-100,100,1,"  ",true, false);
 		runGenerateReaderTest();
 	}
 
 	@Test
 	public void SymmetricTest0_5() throws Exception {
-		generateRandomSymmetricMM(0,5,-5,5,1,",",false);
+		generateRandomSymmetricMM(0,5,-5,5,1,",",false, false);
 		runGenerateReaderTest();
 	}
 
 	@Test
 	public void SymmetricTest0_6() throws Exception {
-		generateRandomSymmetricMM(0,50,-100,100,1,"  ",false);
+		generateRandomSymmetricMM(0,50,-100,100,1,"  ",false, false);
 		runGenerateReaderTest();
 	}
 
 	// Symmetric Index from 1
 	@Test
 	public void SymmetricTest1_1() throws Exception {
-		generateRandomSymmetricMM(1,5,-5,5,1,",",true);
+		generateRandomSymmetricMM(1,5,-5,5,1,",",true, false);
 		runGenerateReaderTest();
 	}
 
 	@Test
 	public void SymmetricTest1_2() throws Exception {
-		generateRandomSymmetricMM(1,50,-100,100,1,"  ",true);
+		generateRandomSymmetricMM(1,50,-100,100,1,"  ",true, false);
 		runGenerateReaderTest();
 	}
 
 	@Test
 	public void SymmetricTest1_3() throws Exception {
-		generateRandomSymmetricMM(1,5,-5,5,1,",",false);
+		generateRandomSymmetricMM(1,5,-5,5,1,",",false, false);
 		runGenerateReaderTest();
 	}
 
 	@Test
 	public void SymmetricTest1_4() throws Exception {
-		generateRandomSymmetricMM(1,50,-100,100,1,"  ",false);
+		generateRandomSymmetricMM(1,50,-100,100,1,"  ",false, false);
 		runGenerateReaderTest();
 	}
+
+	// Skew-Symmetric Tests:
+	// Skew-Symmetric Index from 0
+	@Test
+	public void SkewSymmetricTest0_1() throws Exception {
+		generateRandomSymmetricMM(0,5,-100,100,1,",",false, true);
+		runGenerateReaderTest();
+	}
+
+	@Test
+	public void SkewSymmetricTest0_2() throws Exception {
+		generateRandomSymmetricMM(0,5,-100,100,1,"   ",true, true);
+		runGenerateReaderTest();
+	}
+
+	// Skew-Symmetric Index from 1
+	@Test
+	public void SkewSymmetricTest0_3() throws Exception {
+		generateRandomSymmetricMM(1,5,-100,100,1,",",false, true);
+		runGenerateReaderTest();
+	}
+
+	@Test
+	public void SkewSymmetricTest0_4() throws Exception {
+		generateRandomSymmetricMM(1,5,-100,100,1,"   ",true, true);
+		runGenerateReaderTest();
+	}
+
+
 }

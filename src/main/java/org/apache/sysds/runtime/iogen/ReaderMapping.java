@@ -81,11 +81,11 @@ public class ReaderMapping {
 			for(int r = 0; r < nrows; r++) {
 				for(int c = 0; c < ncols; c++) {
 					if(symmetric)
-						symmetric = sampleMatrix.getValue(r, c) == sampleMatrix.getValue(r, c);
+						symmetric = sampleMatrix.getValue(r, c) == sampleMatrix.getValue(c, r);
 
 					if(skewSymmetric) {
 						if(r != c)
-							skewSymmetric = sampleMatrix.getValue(r, c) == sampleMatrix.getValue(r, c) * (-1);
+							skewSymmetric = sampleMatrix.getValue(r, c) == sampleMatrix.getValue(c, r) * (-1);
 						else
 							skewSymmetric = sampleMatrix.getValue(r, c) == 0;
 					}
@@ -138,6 +138,7 @@ public class ReaderMapping {
 					skewSampleMatrix(skewCoefficient);
 					NTF = convertMatrixTONumberTrimFormat(sampleMatrix);
 					isMapped = findMapping(nlines, NTF);
+					int aa=100;
 				}
 			}
 		}
@@ -236,7 +237,7 @@ public class ReaderMapping {
 
 		for(int r = 0; r < nrows; r++)
 			for(int c = 0; c < ncols; c++)
-				sampleMatrix.setValue(r, r, sampleMatrix.getValue(r, c) * coefficient);
+				sampleMatrix.setValue(r, c, sampleMatrix.getValue(r, c) * coefficient);
 	}
 
 	// Convert: convert each value of a sample matrix to NumberTrimFormat

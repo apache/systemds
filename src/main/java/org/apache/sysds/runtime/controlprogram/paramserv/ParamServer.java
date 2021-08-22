@@ -189,8 +189,7 @@ public abstract class ParamServer
 
 	protected synchronized void updateGlobalModel(int workerID, ListObject params) {
 		if(_modelAvg) {
-			ListObject weightParams = weightModels(params, _numWorkers);
-			updateAverageModel(workerID, weightParams);
+			updateAverageModel(workerID, params);
 		}
 		else
 			updateGlobalGradients(workerID, params);
@@ -312,19 +311,28 @@ public abstract class ParamServer
 	}
 
 	protected synchronized void updateAverageModel(int workerID, ListObject model) {
+
 		try {
 			if(LOG.isDebugEnabled()) {
 				LOG.debug(String
 					.format("Successfully pulled the models [size:%d kb] of worker_%d.", model.getDataSize() / 1024,
 						workerID));
 			}
+			Timing tAgg = DMLScript.STATISTICS ? new Timing(true) : null;
+
+			//first weight the models based on number of workers
+			ListObject weightParams = weightModels(model, _numWorkers);
 			switch(_updateType) {
 				case BSP: {
 					setFinishedState(workerID);
-					_accModels = ParamservUtils.accrueGradients(_accModels, model, true);
+					// second Accumulate the given weightModels into the accrued models
+					_accModels = ParamservUtils.accrueGradients(_accModels, weightParams, true);
 
 					if(allFinished()) {
-						averageGlobalModel(_accModels);
+
+						_model = setParams(_ec, _accModels, _model);
+						if (DMLScript.STATISTICS && tAgg != null)
+							Statistics.accPSAggregationTime((long) tAgg.stop());
 						_accModels = null;
 
 						// This if has grown to be quite complex its function is rather simple. Validate at the end of each epoch
@@ -361,14 +369,6 @@ public abstract class ParamServer
 		}
 	}
 
-	private void averageGlobalModel(ListObject accModels) {
-		Timing tAgg = DMLScript.STATISTICS ? new Timing(true) : null;
-		_model = averageModel(_ec, accModels, _model);
-
-		if (DMLScript.STATISTICS && tAgg != null)
-			Statistics.accPSAggregationTime((long) tAgg.stop());
-	}
-
 	protected  ListObject weightModels(ListObject params, int numWorkers) {
 		double _averagingFactor =(1.0)/numWorkers;
 
@@ -392,7 +392,7 @@ public abstract class ParamServer
 	 * @param model old model
 	 * @return new model (accModels)
 	 */
-	protected  ListObject averageModel(ExecutionContext ec, ListObject accModels, ListObject model) {
+	protected  ListObject setParams(ExecutionContext ec, ListObject accModels, ListObject model) {
 		ec.setVariable(Statement.PS_MODEL, model);
 		ec.setVariable(Statement.PS_GRADIENTS, accModels);
 		return accModels;

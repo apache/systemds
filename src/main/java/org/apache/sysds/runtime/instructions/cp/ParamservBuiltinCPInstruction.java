@@ -108,7 +108,7 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 	public void processInstruction(ExecutionContext ec) {
 		// check if the input is federated
 		if(ec.getMatrixObject(getParam(PS_FEATURES)).isFederated() ||
-					ec.getMatrixObject(getParam(PS_LABELS)).isFederated()) {
+			ec.getMatrixObject(getParam(PS_LABELS)).isFederated()) {
 			runFederated(ec);
 		}
 		// if not federated check mode
@@ -185,7 +185,7 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 		MatrixObject val_labels = (getParam(PS_VAL_LABELS) != null) ? ec.getMatrixObject(getParam(PS_VAL_LABELS)) : null;
 		boolean modelAvg = Boolean.parseBoolean(getParam(PS_MODELAVG));
 		ParamServer ps = createPS(PSModeType.FEDERATED, aggFunc, updateType, freq, workerNum, model, aggServiceEC, getValFunction(),
-						getNumBatchesPerEpoch(runtimeBalancing, result._balanceMetrics), val_features, val_labels, modelAvg);
+			getNumBatchesPerEpoch(runtimeBalancing, result._balanceMetrics), val_features, val_labels, modelAvg);
 		// Create the local workers
 		int finalNumBatchesPerEpoch = getNumBatchesPerEpoch(runtimeBalancing, result._balanceMetrics);
 		List<FederatedPSControlThread> threads = IntStream.range(0, workerNum)
@@ -332,7 +332,7 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 		MatrixObject val_labels = (getParam(PS_VAL_LABELS) != null) ? ec.getMatrixObject(getParam(PS_VAL_LABELS)) : null;
 		boolean modelAvg = Boolean.parseBoolean(getParam(PS_MODELAVG));
 		ParamServer ps = createPS(mode, aggFunc, updateType, freq, workerNum, model, aggServiceEC, getValFunction(),
-						num_batches_per_epoch, val_features, val_labels, modelAvg);
+			num_batches_per_epoch, val_features, val_labels, modelAvg);
 
 		// Create the local workers
 		List<LocalPSWorker> workers = IntStream.range(0, workerNum)

@@ -311,7 +311,6 @@ public abstract class ParamServer
 	}
 
 	protected synchronized void updateAverageModel(int workerID, ListObject model) {
-
 		try {
 			if(LOG.isDebugEnabled()) {
 				LOG.debug(String
@@ -329,7 +328,6 @@ public abstract class ParamServer
 					_accModels = ParamservUtils.accrueGradients(_accModels, weightParams, true);
 
 					if(allFinished()) {
-
 						_model = setParams(_ec, _accModels, _model);
 						if (DMLScript.STATISTICS && tAgg != null)
 							Statistics.accPSAggregationTime((long) tAgg.stop());

@@ -127,11 +127,11 @@ public class FederatedSplitTest extends AutomatedTestBase {
 		LOG.debug(out);
 		LOG.debug(fedOut);
 		// compare via files
-		compareResults(1e-9);
+		compareResults(1e-9, "Stat-DML1", "Stat-DML2");
 
 		if(cont.equals("TRUE"))
 			Assert.assertTrue(heavyHittersContainsString("fed_rightIndex"));
-		else {
+		else if(execMode != Types.ExecMode.SPARK){
 			Assert.assertTrue(heavyHittersContainsString("fed_rmempty"));
 		}
 		

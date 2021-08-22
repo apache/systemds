@@ -72,7 +72,10 @@ public class AggregateUnaryFEDInstruction extends UnaryFEDInstruction {
 
 		AggregateUnaryOperator aggun = null;
 		if(opcode.equalsIgnoreCase("uarimax") || opcode.equalsIgnoreCase("uarimin"))
-			aggun = InstructionUtils.parseAggregateUnaryRowIndexOperator(opcode, Integer.parseInt(parts[4]), 1);
+			if(InstructionUtils.getExecType(str) == ExecType.SPARK)
+				aggun = InstructionUtils.parseAggregateUnaryRowIndexOperator(opcode, 1, 1);
+			else
+				aggun = InstructionUtils.parseAggregateUnaryRowIndexOperator(opcode, Integer.parseInt(parts[4]), 1);
 		else
 			aggun = InstructionUtils.parseBasicAggregateUnaryOperator(opcode);
 
@@ -91,7 +94,7 @@ public class AggregateUnaryFEDInstruction extends UnaryFEDInstruction {
 	public void processInstruction(ExecutionContext ec) {
 		if (getOpcode().contains("var")) {
 			processVar(ec);
-		}else{
+		} else {
 			processDefault(ec);
 		}
 
@@ -165,30 +168,51 @@ public class AggregateUnaryFEDInstruction extends UnaryFEDInstruction {
 			throw new DMLRuntimeException("Output of " + toString() + " should not be federated "
 				+ "since the instruction requires consolidation of partial results to be computed.");
 		}
+
+		boolean isSpark = instString.startsWith("SPARK");
+
 		AggregateUnaryOperator aop = (AggregateUnaryOperator) _optr;
 		MatrixObject in = ec.getMatrixObject(input1);
 		FederationMap map = in.getFedMapping();
+
+		long id = FederationUtils.getNextFedDataID();;
+		FederatedRequest tmpRequest = null;
+		DataCharacteristics dc = ec.getDataCharacteristics(output.getName());
+		if(isSpark) {
+			if ( output.isScalar() ) {
+				ScalarObject scalarOut = ec.getScalarInput(output);
+				tmpRequest = map.broadcast(scalarOut);
+				id = tmpRequest.getID();
+			}
+			else {
+				if((map.getType() == FederationMap.FType.COL && aop.isColAggregate()) || (map.getType() == FederationMap.FType.ROW && aop.isRowAggregate()))
+					tmpRequest = new FederatedRequest(RequestType.PUT_VAR, id, new MatrixCharacteristics(-1, -1), in.getDataType());
+				else
+					tmpRequest = new FederatedRequest(RequestType.PUT_VAR, id, dc, in.getDataType());
+			}
+		}
 
 		// federated ranges mean for variance
 		Future<FederatedResponse>[] meanTmp = null;
 		if (getOpcode().contains("var")) {
 			String meanInstr = instString.replace(getOpcode(), getOpcode().replace("var", "mean"));
 			//create federated commands for aggregation
-			FederatedRequest meanFr1 = FederationUtils.callInstruction(meanInstr, output,
-				new CPOperand[]{input1}, new long[]{in.getFedMapping().getID()});
+
+			FederatedRequest meanFr1 =  FederationUtils.callInstruction(meanInstr, output, id,
+				new CPOperand[]{input1}, new long[]{in.getFedMapping().getID()}, isSpark ? ExecType.SPARK : ExecType.CP, isSpark);
 			FederatedRequest meanFr2 = new FederatedRequest(RequestType.GET_VAR, meanFr1.getID());
 			FederatedRequest meanFr3 = map.cleanup(getTID(), meanFr1.getID());
-			meanTmp = map.execute(getTID(), meanFr1, meanFr2, meanFr3);
+			meanTmp = map.execute(getTID(), isSpark ? new FederatedRequest[] {tmpRequest, meanFr1, meanFr2, meanFr3} : new FederatedRequest[] {meanFr1, meanFr2, meanFr3});
 		}
 
 		//create federated commands for aggregation
-		FederatedRequest fr1 = FederationUtils.callInstruction(instString, output,
-			new CPOperand[]{input1}, new long[]{in.getFedMapping().getID()});
+		FederatedRequest fr1 = FederationUtils.callInstruction(instString, output, id,
+			new CPOperand[]{input1}, new long[]{in.getFedMapping().getID()}, isSpark ? ExecType.SPARK : ExecType.CP, isSpark);
 		FederatedRequest fr2 = new FederatedRequest(RequestType.GET_VAR, fr1.getID());
 		FederatedRequest fr3 = map.cleanup(getTID(), fr1.getID());
 		
 		//execute federated commands and cleanups
-		Future<FederatedResponse>[] tmp = map.execute(getTID(), fr1, fr2, fr3);
+		Future<FederatedResponse>[] tmp = map.execute(getTID(), isSpark ? new FederatedRequest[] {tmpRequest,  fr1, fr2, fr3} : new FederatedRequest[] { fr1, fr2, fr3});
 		if( output.isScalar() )
 			ec.setVariable(output.getName(), FederationUtils.aggScalar(aop, tmp, meanTmp, map));
 		else

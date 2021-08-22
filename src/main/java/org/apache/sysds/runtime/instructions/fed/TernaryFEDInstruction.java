@@ -33,6 +33,7 @@ import org.apache.sysds.runtime.controlprogram.federated.FederationUtils;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
 import org.apache.sysds.runtime.matrix.operators.TernaryOperator;
+import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 
 public class TernaryFEDInstruction extends ComputationFEDInstruction {
 
@@ -92,8 +93,12 @@ public class TernaryFEDInstruction extends ComputationFEDInstruction {
 	}
 
 	private void processMatrixScalarInput(ExecutionContext ec, MatrixObject mo1, CPOperand in) {
-		FederatedRequest fr1 = FederationUtils.callInstruction(instString, output, new CPOperand[] {in}, new long[] {mo1.getFedMapping().getID()});
-		sendFederatedRequests(ec, mo1, fr1.getID(), fr1);
+		long id = FederationUtils.getNextFedDataID();
+		FederatedRequest fr1 = new FederatedRequest(FederatedRequest.RequestType.PUT_VAR, id, new MatrixCharacteristics(-1, -1), mo1.getDataType());
+
+		FederatedRequest fr2 = FederationUtils.callInstruction(instString, output, id, new CPOperand[] {in}, new long[] {mo1.getFedMapping().getID()},
+			InstructionUtils.getExecType(instString), false);
+		sendFederatedRequests(ec, mo1, fr1.getID(), fr1, fr2);
 	}
 
 	private void process2MatrixScalarInput(ExecutionContext ec, MatrixObject mo1, MatrixObject mo2, CPOperand in1, CPOperand in2) {
@@ -113,13 +118,15 @@ public class TernaryFEDInstruction extends ComputationFEDInstruction {
 			fr1 = mo1.getFedMapping().broadcastSliced(ec.getMatrixObject(in1), false);
 			varNewIn = new long[]{fr1[0].getID(), mo1.getFedMapping().getID()};
 		}
-		FederatedRequest fr2 = FederationUtils.callInstruction(instString, output, varOldIn, varNewIn);
+		long id = FederationUtils.getNextFedDataID();
+		FederatedRequest fr3 = new FederatedRequest(FederatedRequest.RequestType.PUT_VAR, id, new MatrixCharacteristics(-1, -1), mo1.getDataType());
+		FederatedRequest fr2 = FederationUtils.callInstruction(instString, output, id, varOldIn, varNewIn, InstructionUtils.getExecType(instString), false);
 
 		// 2 aligned inputs
 		if(fr1 == null)
-			sendFederatedRequests(ec, mo1, fr2.getID(), fr2);
+			sendFederatedRequests(ec, mo1, fr2.getID(), fr3, fr2);
 		else
-			sendFederatedRequests(ec, mo1, fr2.getID(), fr1, fr2);
+			sendFederatedRequests(ec, mo1, fr2.getID(), fr3, fr1[0], fr2);
 	}
 
 	/**
@@ -207,17 +214,21 @@ public class TernaryFEDInstruction extends ComputationFEDInstruction {
 		FederatedRequest[] fr2;
 		FederatedRequest fr3, fr4;
 
+		long id = FederationUtils.getNextFedDataID();
+		FederatedRequest fr5 = new FederatedRequest(FederatedRequest.RequestType.PUT_VAR, id, new MatrixCharacteristics(-1, -1), mo1.getDataType());
+		Types.ExecType execType = InstructionUtils.getExecType(instString);
+
 		// all 3 inputs fed aligned on the one worker
 		if(retAlignedValues._allAligned) {
-			fr3 = FederationUtils.callInstruction(instString, output, new CPOperand[] {input1, input2, input3},
-				new long[] {mo1.getFedMapping().getID(), mo2.getFedMapping().getID(), mo3.getFedMapping().getID()});
-			sendFederatedRequests(ec, mo1, fr3.getID(), fr3);
+			fr3 = FederationUtils.callInstruction(instString, output, id, new CPOperand[] {input1, input2, input3},
+				new long[] {mo1.getFedMapping().getID(), mo2.getFedMapping().getID(), mo3.getFedMapping().getID()}, execType, false);
+			sendFederatedRequests(ec, mo1, fr3.getID(), fr5, fr3);
 		}
 		// 2 fed aligned inputs
 		else if(retAlignedValues._twoAligned) {
-			fr3 = FederationUtils.callInstruction(instString, output, new CPOperand[] {input1, input2, input3}, retAlignedValues._vars);
+			fr3 = FederationUtils.callInstruction(instString, output, id, new CPOperand[] {input1, input2, input3}, retAlignedValues._vars, execType, false);
 			fr4 = mo1.getFedMapping().cleanup(getTID(), retAlignedValues._fr[0].getID());
-			sendFederatedRequests(ec, mo1, fr3.getID(), retAlignedValues._fr, fr3, fr4);
+			sendFederatedRequests(ec, mo1, fr3.getID(), retAlignedValues._fr, fr5, fr3, fr4);
 		}
 		// 1 fed input or not aligned
 		else {
@@ -239,8 +250,8 @@ public class TernaryFEDInstruction extends ComputationFEDInstruction {
 				vars = ec.getMatrixObject(input2).isFederated() ? new long[] {fr1[0].getID(), mo1.getFedMapping().getID(), fr2[0].getID()} : new long[] {fr1[0].getID(), fr2[0].getID(),
 					mo1.getFedMapping().getID()};
 
-			fr3 = FederationUtils.callInstruction(instString, output, new CPOperand[] {input1, input2, input3}, vars);
-			sendFederatedRequests(ec, mo1, fr3.getID(), fr1, fr2, fr3);
+			fr3 = FederationUtils.callInstruction(instString, output, id, new CPOperand[] {input1, input2, input3}, vars, execType, false);
+			sendFederatedRequests(ec, mo1, fr3.getID(), fr5, fr1[0], fr2[0], fr3);
 		}
 	}
 

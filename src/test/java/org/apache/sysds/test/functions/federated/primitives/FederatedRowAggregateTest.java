@@ -243,7 +243,7 @@ public class FederatedRowAggregateTest extends AutomatedTestBase {
 		runTest(true, false, null, -1);
 
 		// compare via files
-		compareResults(type == FederatedRowAggregateTest.OpType.VAR ? 1e-2 : 1e-9);
+		compareResults(type == FederatedRowAggregateTest.OpType.VAR ? 1e-2 : 1e-9, "Stat-DML1", "Stat-DML2");
 
 		String fedInst = "fed_uar";
 
@@ -267,7 +267,7 @@ public class FederatedRowAggregateTest extends AutomatedTestBase {
 				Assert.assertTrue(heavyHittersContainsString(fedInst.concat("*")));
 				break;
 			case MM:
-				Assert.assertTrue(heavyHittersContainsString("fed_ba+*"));
+				Assert.assertTrue(heavyHittersContainsString(rtplatform == ExecMode.SPARK ? "fed_mapmm" : "fed_ba+*"));
 				break;
 		}
 

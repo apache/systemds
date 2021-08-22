@@ -146,7 +146,7 @@ public class FederatedRevTest extends AutomatedTestBase {
 		runTest(null);
 
 		// compare via files
-		compareResults(0.01);
+		compareResults(0.01, "Stat-DML1", "Stat-DML2");
 
 		Assert.assertTrue(heavyHittersContainsString("fed_rev"));
 

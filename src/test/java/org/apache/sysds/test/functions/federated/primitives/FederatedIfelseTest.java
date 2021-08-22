@@ -152,7 +152,7 @@ public class FederatedIfelseTest extends AutomatedTestBase {
 			runTernary(HOME, TEST_NAME, port1, port2, port3, port4);
 
 		// compare via files
-		compareResults(1e-9);
+		compareResults(1e-9, "DML1", "DML2");
 		Assert.assertTrue(heavyHittersContainsString("fed_ifelse"));
 
 		// check that federated input files are still existing

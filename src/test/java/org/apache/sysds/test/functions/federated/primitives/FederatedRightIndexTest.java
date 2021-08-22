@@ -210,7 +210,7 @@ public class FederatedRightIndexTest extends AutomatedTestBase {
 		LOG.debug(runTest(null));
 
 		// compare via files
-		compareResults(1e-9);
+		compareResults(1e-9, "Stat-DML1", "Stat-DML2");
 
 		Assert.assertTrue(heavyHittersContainsString("fed_rightIndex"));
 

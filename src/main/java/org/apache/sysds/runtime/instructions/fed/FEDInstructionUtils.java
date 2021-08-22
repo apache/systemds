@@ -20,6 +20,7 @@
 package org.apache.sysds.runtime.instructions.fed;
 
 import org.apache.commons.lang3.ArrayUtils;
+import org.apache.sysds.lops.UnaryCP;
 import org.apache.sysds.runtime.codegen.SpoofCellwise;
 import org.apache.sysds.runtime.codegen.SpoofMultiAggregate;
 import org.apache.sysds.runtime.codegen.SpoofOuterProduct;
@@ -64,8 +65,10 @@ import org.apache.sysds.runtime.instructions.spark.BinaryMatrixScalarSPInstructi
 import org.apache.sysds.runtime.instructions.spark.BinarySPInstruction;
 import org.apache.sysds.runtime.instructions.spark.BinaryTensorTensorBroadcastSPInstruction;
 import org.apache.sysds.runtime.instructions.spark.BinaryTensorTensorSPInstruction;
+import org.apache.sysds.runtime.instructions.spark.CastSPInstruction;
 import org.apache.sysds.runtime.instructions.spark.CentralMomentSPInstruction;
 import org.apache.sysds.runtime.instructions.spark.CtableSPInstruction;
+import org.apache.sysds.runtime.instructions.spark.CumulativeOffsetSPInstruction;
 import org.apache.sysds.runtime.instructions.spark.IndexingSPInstruction;
 import org.apache.sysds.runtime.instructions.spark.MapmmSPInstruction;
 import org.apache.sysds.runtime.instructions.spark.MultiReturnParameterizedBuiltinSPInstruction;
@@ -281,7 +284,14 @@ public class FEDInstructionUtils {
 				fedinst = MapmmFEDInstruction.parseInstruction(instruction.getInstructionString());
 			}
 		}
-		else if (inst instanceof WriteSPInstruction) { //FIXME
+		else if(inst instanceof CastSPInstruction){
+			CastSPInstruction ins = (CastSPInstruction) inst;
+			if((ins.getOpcode().equalsIgnoreCase(UnaryCP.CAST_AS_FRAME_OPCODE) || ins.getOpcode().equalsIgnoreCase(UnaryCP.CAST_AS_MATRIX_OPCODE))
+				&& ins.input1.isMatrix() && ec.getCacheableData(ins.input1).isFederatedExcept(FType.BROADCAST)){
+				fedinst = CastFEDInstruction.parseInstruction(ins.getInstructionString());
+			}
+		}
+		else if (inst instanceof WriteSPInstruction) {
 			WriteSPInstruction instruction = (WriteSPInstruction) inst;
 			Data data = ec.getVariable(instruction.input1);
 			if (data instanceof MatrixObject && ((MatrixObject) data).isFederated()) {
@@ -323,8 +333,13 @@ public class FEDInstructionUtils {
 				AggregateUnarySPInstruction auinstruction = (AggregateUnarySPInstruction) inst;
 				Data data = ec.getVariable(auinstruction.input1);
 				if(data instanceof MatrixObject && ((MatrixObject) data).isFederated() && ((MatrixObject) data).isFederatedExcept(FType.BROADCAST))
-					fedinst = AggregateUnaryFEDInstruction.parseInstruction(
-						InstructionUtils.concatOperands(inst.getInstructionString(),FederatedOutput.NONE.name()));
+					if(ArrayUtils.contains(new String[]{"uarimin", "uarimax"}, auinstruction.getOpcode())) {
+						if(((MatrixObject) data).getFedMapping().getType() == FType.ROW)
+							fedinst = AggregateUnaryFEDInstruction.parseInstruction(
+								InstructionUtils.concatOperands(inst.getInstructionString(),FederatedOutput.NONE.name()));
+					}
+					else
+						fedinst = AggregateUnaryFEDInstruction.parseInstruction(InstructionUtils.concatOperands(inst.getInstructionString(),FederatedOutput.NONE.name()));
 			}
 			else if(inst instanceof ReorgSPInstruction && (inst.getOpcode().equals("r'") || inst.getOpcode().equals("rdiag")
 				|| inst.getOpcode().equals("rev"))) {
@@ -353,7 +368,7 @@ public class FEDInstructionUtils {
 						fedinst = ReshapeFEDInstruction.parseInstruction(inst.getInstructionString());
 					}
 					else if(inst instanceof UnaryMatrixSPInstruction) {
-						if(UnaryMatrixFEDInstruction.isValidOpcode(inst.getOpcode()) && !(inst.getOpcode().equalsIgnoreCase("ucumk+*") && mo1.isFederated(FType.COL)))
+						if(UnaryMatrixFEDInstruction.isValidOpcode(inst.getOpcode()))
 							fedinst = UnaryMatrixFEDInstruction.parseInstruction(inst.getInstructionString());
 					}
 				}
@@ -407,7 +422,11 @@ public class FEDInstructionUtils {
 				else if("cov".equals(instruction.getOpcode()) && (ec.getMatrixObject(instruction.input1)
 					.isFederated(FType.ROW) || ec.getMatrixObject(instruction.input2).isFederated(FType.ROW)))
 					fedinst = CovarianceFEDInstruction.parseInstruction(inst.getInstructionString());
-				else
+				// FIXME
+//				else if(inst instanceof CumulativeOffsetSPInstruction) {
+//					fedinst = CumulativeOffsetFEDInstruction.parseInstruction(inst.getInstructionString());
+//				}
+				else if (! (inst instanceof  CumulativeOffsetSPInstruction))
 					fedinst = BinaryFEDInstruction.parseInstruction(InstructionUtils.concatOperands(inst.getInstructionString(), FederatedOutput.NONE.name()));
 			}
 		}

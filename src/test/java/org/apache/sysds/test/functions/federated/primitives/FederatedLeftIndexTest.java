@@ -194,9 +194,9 @@ public class FederatedLeftIndexTest extends AutomatedTestBase {
 		runTest(null);
 
 		// compare via files
-		compareResults(1e-9);
+		compareResults(1e-9, "Stat-DML1", "Stat-DML2");
 
-		Assert.assertTrue(heavyHittersContainsString("fed_leftIndex"));
+		Assert.assertTrue(rtplatform ==ExecMode.SPARK ? heavyHittersContainsString("fed_mapLeftIndex") : heavyHittersContainsString("fed_leftIndex"));
 
 		// check that federated input files are still existing
 		Assert.assertTrue(HDFSTool.existsFileOnHDFS(input("X1")));

@@ -137,7 +137,7 @@ public class FederatedMultiplyTest extends AutomatedTestBase {
 		runTest(true, false, null, -1);
 
 		// compare via files
-		compareResults(1e-9);
+		compareResults(1e-9, "Stat-DML1", "Stat-DML2");
 
 		TestUtils.shutdownThreads(t1, t2);
 

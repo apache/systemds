@@ -97,8 +97,8 @@ public final class IndexingFEDInstruction extends UnaryFEDInstruction {
 				throw new DMLRuntimeException("Invalid number of operands in instruction: " + str);
 			}
 		}
-		else if(opcode.equalsIgnoreCase(LeftIndex.OPCODE)) {
-			if ( parts.length == 8 ) {
+		else if(opcode.equalsIgnoreCase(LeftIndex.OPCODE) || opcode.equalsIgnoreCase("mapLeftIndex")) {
+			if ( parts.length == 8 || parts.length == 9) {
 				CPOperand lhsInput, rhsInput, rl, ru, cl, cu, out;
 				lhsInput = new CPOperand(parts[1]);
 				rhsInput = new CPOperand(parts[2]);
@@ -175,8 +175,13 @@ public final class IndexingFEDInstruction extends UnaryFEDInstruction {
 			}
 			i++;
 		}
-		FederatedRequest[] fr1 = FederationUtils.callInstruction(instStrings,
-			output, new CPOperand[] {input1}, new long[] {fedMap.getID()});
+
+		long id = FederationUtils.getNextFedDataID();
+		FederatedRequest tmp = new FederatedRequest(FederatedRequest.RequestType.PUT_VAR, id, in.getMetaData().getDataCharacteristics(), in.getDataType());
+
+		FederatedRequest[] fr1 = FederationUtils.callInstruction(instStrings, output, id,
+			new CPOperand[] {input1}, new long[] {fedMap.getID()}, InstructionUtils.getExecType(instString));
+		fedMap.execute(getTID(), true, tmp);
 		fedMap.execute(getTID(), true, fr1, new FederatedRequest[0]);
 
 		if(input1.isFrame()) {
@@ -260,14 +265,21 @@ public final class IndexingFEDInstruction extends UnaryFEDInstruction {
 
 		sliceIxs = Arrays.stream(sliceIxs).filter(Objects::nonNull).toArray(int[][] :: new);
 
+		long id = FederationUtils.getNextFedDataID();
+		FederatedRequest tmp = new FederatedRequest(FederatedRequest.RequestType.PUT_VAR, id, in1.getMetaData().getDataCharacteristics(), in1.getDataType());
+
 		FederatedRequest[] fr1 = fedMap.broadcastSliced(in2, input2.isFrame(), sliceIxs);
 		FederatedRequest[] fr2 = FederationUtils.callInstruction(instStrings, output, new CPOperand[]{input1, input2},
 			new long[]{fedMap.getID(), fr1[0].getID()});
 		FederatedRequest fr3 = fedMap.cleanup(getTID(), fr1[0].getID());
 
 		//execute federated instruction and cleanup intermediates
-		if(sliceIxs.length == fedMap.getSize())
+		FederatedRequest[] frs = new FederatedRequest[fedMap.getSize()];
+		Arrays.fill(frs, tmp);
+		if(sliceIxs.length == fedMap.getSize()) {
+			fedMap.execute(getTID(), true, tmp);
 			fedMap.execute(getTID(), true, fr2, fr1, fr3);
+		}
 		else {
 			// get index of cpvar request
 			for(i = 0; i < fr2.length; i++)

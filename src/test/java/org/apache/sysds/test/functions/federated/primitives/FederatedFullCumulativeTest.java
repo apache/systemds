@@ -58,8 +58,8 @@ public class FederatedFullCumulativeTest extends AutomatedTestBase {
 	public static Collection<Object[]> data() {
 		return Arrays.asList(
 			new Object[][] {
-				{240, 4, true},
-				{240, 4, false},
+				{10, 4, true},
+				{10, 4, false},
 			});
 	}
 
@@ -189,7 +189,7 @@ public class FederatedFullCumulativeTest extends AutomatedTestBase {
 		runTest(true, false, null, -1);
 
 		// compare via files
-		compareResults(1e-6);
+		compareResults(1e-6, "DML1", "DML2");
 
 		switch(type) {
 			case SUM:

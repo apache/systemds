@@ -142,9 +142,9 @@ public class FederatedRowIndexTest extends AutomatedTestBase {
 		runTest(null);
 
 //		 compare via files
-		compareResults(1e-9);
+		compareResults(1e-9, "Stat-DML1", "Stat-DML2");
 
-		Assert.assertTrue(heavyHittersContainsString("fed_uarimax"));
+		Assert.assertTrue(heavyHittersContainsString("fed_uarimax") || (!rowPartitioned && execMode == ExecMode.SPARK));
 
 		// check that federated input files are still existing
 		Assert.assertTrue(HDFSTool.existsFileOnHDFS(input("X1")));

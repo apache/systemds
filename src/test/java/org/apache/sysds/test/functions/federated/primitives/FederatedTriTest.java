@@ -136,7 +136,7 @@ public class FederatedTriTest extends AutomatedTestBase {
 		runTest(null);
 
 		// compare via files
-		compareResults(1e-9);
+		compareResults(1e-9, "Stat-DML1", "Stat-DML2");
 
 		// check that federated input files are still existing
 		Assert.assertTrue(HDFSTool.existsFileOnHDFS(input("X1")));

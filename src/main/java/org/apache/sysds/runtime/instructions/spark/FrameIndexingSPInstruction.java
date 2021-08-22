@@ -19,6 +19,9 @@
 
 package org.apache.sysds.runtime.instructions.spark;
 
+import java.util.ArrayList;
+import java.util.Iterator;
+
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.function.PairFlatMapFunction;
 import org.apache.spark.api.java.function.PairFunction;
@@ -42,9 +45,6 @@ import org.apache.sysds.runtime.meta.DataCharacteristics;
 import org.apache.sysds.runtime.util.IndexRange;
 import org.apache.sysds.runtime.util.UtilFunctions;
 import scala.Tuple2;
-
-import java.util.ArrayList;
-import java.util.Iterator;
 
 /**
  * This class implements the frame indexing functionality inside Spark.

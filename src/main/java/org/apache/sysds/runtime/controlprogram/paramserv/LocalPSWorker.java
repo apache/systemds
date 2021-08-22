@@ -51,7 +51,7 @@ public class LocalPSWorker extends PSWorker implements Callable<Void> {
 	@Override
 	public String getWorkerName() {
 		return String.format("Local worker_%d", _workerID);
-		}
+	}
 
 	@Override
 	public Void call() throws Exception {

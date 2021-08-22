@@ -98,7 +98,7 @@ public abstract class ParamServer
 		});
 		_model = model;
 
-			// init aggregation service
+		// init aggregation service
 		_ec = ec;
 		_updateType = updateType;
 		_freq = freq;
@@ -416,7 +416,7 @@ public abstract class ParamServer
 		(par ? stream.parallel() : stream).forEach(workerID -> {
 			try {
 				broadcastModel(workerID);
-			}catch(InterruptedException e) {
+			} catch (InterruptedException e) {
 				throw new DMLRuntimeException("Paramserv func: some error occurred when broadcasting model", e);
 			}
 		});

@@ -170,7 +170,7 @@ public class UnaryOp extends MultiThreadedHop
 					//check if inplace
 					if(this._parent.size()==1 )
 					{
-						if(!(input instanceof DataOp))
+						if((input instanceof DataOp))
 						{
 							if(!((DataOp)input).isRead())
 								inplace = true;

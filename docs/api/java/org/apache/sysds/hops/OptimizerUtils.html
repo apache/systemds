@@ -191,11 +191,17 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code>static boolean</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/hops/OptimizerUtils.html#ALLOW_COMPRESSION_REWRITE">ALLOW_COMPRESSION_REWRITE</a></span></code>
+<div class="block">Boolean specifying if compression rewrites is allowed.</div>
+</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>static boolean</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/hops/OptimizerUtils.html#ALLOW_CONSTANT_FOLDING">ALLOW_CONSTANT_FOLDING</a></span></code>
 <div class="block">Enables constant folding in dags.</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>static boolean</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/hops/OptimizerUtils.html#ALLOW_FOR_LOOP_REMOVAL">ALLOW_FOR_LOOP_REMOVAL</a></span></code>
 <div class="block">Enables the removal of (par)for-loops when from, to, and increment are constants
@@ -203,58 +209,64 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
  i.e., (par)for-loops without a single iteration.</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>static boolean</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/hops/OptimizerUtils.html#ALLOW_INTER_PROCEDURAL_ANALYSIS">ALLOW_INTER_PROCEDURAL_ANALYSIS</a></span></code>
 <div class="block">Enables interprocedural analysis between main script and functions as well as functions
  and other functions.</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>static boolean</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/hops/OptimizerUtils.html#ALLOW_LOOP_UPDATE_IN_PLACE">ALLOW_LOOP_UPDATE_IN_PLACE</a></span></code>
 <div class="block">Enables a specific rewrite that enables update in place for loop variables that are
  only read/updated via cp leftindexing.</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>static boolean</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/hops/OptimizerUtils.html#ALLOW_OPERATOR_FUSION">ALLOW_OPERATOR_FUSION</a></span></code>&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>static boolean</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/hops/OptimizerUtils.html#ALLOW_RAND_JOB_RECOMPILE">ALLOW_RAND_JOB_RECOMPILE</a></span></code>&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>static boolean</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/hops/OptimizerUtils.html#ALLOW_RUNTIME_PIGGYBACKING">ALLOW_RUNTIME_PIGGYBACKING</a></span></code>
 <div class="block">Enables parfor runtime piggybacking of MR jobs into the packed jobs for
  scan sharing.</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>static boolean</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/hops/OptimizerUtils.html#ALLOW_SCRIPT_LEVEL_COMPRESS_COMMAND">ALLOW_SCRIPT_LEVEL_COMPRESS_COMMAND</a></span></code>
 <div class="block">This variable allows for insertion of Compress and decompress in the dml script from the user.</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>static boolean</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/hops/OptimizerUtils.html#ALLOW_SIZE_EXPRESSION_EVALUATION">ALLOW_SIZE_EXPRESSION_EVALUATION</a></span></code>
 <div class="block">Enables simple expression evaluation for datagen parameters 'rows', 'cols'.</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>static boolean</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/hops/OptimizerUtils.html#ALLOW_SPLIT_HOP_DAGS">ALLOW_SPLIT_HOP_DAGS</a></span></code>
 <div class="block">Enables a specific hop dag rewrite that splits hop dags after csv persistent reads with 
  unknown size in order to allow for recompile.</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>static boolean</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/hops/OptimizerUtils.html#ALLOW_SUM_PRODUCT_REWRITES">ALLOW_SUM_PRODUCT_REWRITES</a></span></code>
 <div class="block">Enables sum product rewrites such as mapmultchains.</div>
+</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>static boolean</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/hops/OptimizerUtils.html#ALLOW_TRANSITIVE_SPARK_EXEC_TYPE">ALLOW_TRANSITIVE_SPARK_EXEC_TYPE</a></span></code>
+<div class="block">Enable transitive spark execution type selection.</div>
 </td>
 </tr>
 <tr class="rowColor">
@@ -264,88 +276,94 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 </td>
 </tr>
 <tr class="altColor">
-<td class="colFirst"><code>static long</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/hops/OptimizerUtils.html#BOOLEAN_SIZE">BOOLEAN_SIZE</a></span></code>&nbsp;</td>
+<td class="colFirst"><code>static boolean</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/hops/OptimizerUtils.html#ASYNC_TRIGGER_RDD_OPERATIONS">ASYNC_TRIGGER_RDD_OPERATIONS</a></span></code>
+<div class="block">Enable prefetch and broadcast.</div>
+</td>
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code>static long</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/hops/OptimizerUtils.html#CHAR_SIZE">CHAR_SIZE</a></span></code>&nbsp;</td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/hops/OptimizerUtils.html#BOOLEAN_SIZE">BOOLEAN_SIZE</a></span></code>&nbsp;</td>
 </tr>
 <tr class="altColor">
+<td class="colFirst"><code>static long</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/hops/OptimizerUtils.html#CHAR_SIZE">CHAR_SIZE</a></span></code>&nbsp;</td>
+</tr>
+<tr class="rowColor">
 <td class="colFirst"><code>static int</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/hops/OptimizerUtils.html#DEFAULT_BLOCKSIZE">DEFAULT_BLOCKSIZE</a></span></code>
 <div class="block">Default blocksize if unspecified or for testing purposes</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>static int</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/hops/OptimizerUtils.html#DEFAULT_FRAME_BLOCKSIZE">DEFAULT_FRAME_BLOCKSIZE</a></span></code>
 <div class="block">Default frame blocksize</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>static <a href="../../../../org/apache/sysds/hops/OptimizerUtils.OptimizationLevel.html" title="enum in org.apache.sysds.hops">OptimizerUtils.OptimizationLevel</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/hops/OptimizerUtils.html#DEFAULT_OPTLEVEL">DEFAULT_OPTLEVEL</a></span></code>
 <div class="block">Default optimization level if unspecified</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>static double</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/hops/OptimizerUtils.html#DEFAULT_SIZE">DEFAULT_SIZE</a></span></code>
 <div class="block">Default memory size, which is used if the actual estimate can not be computed 
  e.g., when input/output dimensions are unknown.</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>static long</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/hops/OptimizerUtils.html#DOUBLE_SIZE">DOUBLE_SIZE</a></span></code>&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>static boolean</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/hops/OptimizerUtils.html#FEDERATED_COMPILATION">FEDERATED_COMPILATION</a></span></code>
 <div class="block">Compile federated instructions based on input federation state and privacy constraints.</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>static long</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/hops/OptimizerUtils.html#INT_SIZE">INT_SIZE</a></span></code>&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>static double</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/hops/OptimizerUtils.html#INVALID_SIZE">INVALID_SIZE</a></span></code>&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>static int</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/hops/OptimizerUtils.html#IPA_NUM_REPETITIONS">IPA_NUM_REPETITIONS</a></span></code>
 <div class="block">Number of inter-procedural analysis (IPA) repetitions.</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>static long</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/hops/OptimizerUtils.html#MAX_NNZ_CP_SPARSE">MAX_NNZ_CP_SPARSE</a></span></code>&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>static long</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/hops/OptimizerUtils.html#MAX_NUMCELLS_CP_DENSE">MAX_NUMCELLS_CP_DENSE</a></span></code>&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>static double</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/hops/OptimizerUtils.html#MEM_UTIL_FACTOR">MEM_UTIL_FACTOR</a></span></code>
 <div class="block">Utilization factor used in deciding whether an operation to be scheduled on CP or MR.</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>static double</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/hops/OptimizerUtils.html#PARALLEL_CP_READ_PARALLELISM_MULTIPLIER">PARALLEL_CP_READ_PARALLELISM_MULTIPLIER</a></span></code>
 <div class="block">Specifies a multiplier computing the degree of parallelism of parallel
  text read/write out of the available degree of parallelism.</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>static double</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/hops/OptimizerUtils.html#PARALLEL_CP_WRITE_PARALLELISM_MULTIPLIER">PARALLEL_CP_WRITE_PARALLELISM_MULTIPLIER</a></span></code>&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>static long</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/hops/OptimizerUtils.html#SAFE_REP_CHANGE_THRES">SAFE_REP_CHANGE_THRES</a></span></code>&nbsp;</td>
 </tr>
@@ -1253,7 +1271,7 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <a name="ALLOW_SCRIPT_LEVEL_COMPRESS_COMMAND">
 <!--   -->
 </a>
-<ul class="blockListLast">
+<ul class="blockList">
 <li class="blockList">
 <h4>ALLOW_SCRIPT_LEVEL_COMPRESS_COMMAND</h4>
 <pre>public static final&nbsp;boolean ALLOW_SCRIPT_LEVEL_COMPRESS_COMMAND</pre>
@@ -1263,6 +1281,40 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <dt><span class="seeLabel">See Also:</span></dt>
 <dd><a href="../../../../constant-values.html#org.apache.sysds.hops.OptimizerUtils.ALLOW_SCRIPT_LEVEL_COMPRESS_COMMAND">Constant Field Values</a></dd>
 </dl>
+</li>
+</ul>
+<a name="ALLOW_COMPRESSION_REWRITE">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>ALLOW_COMPRESSION_REWRITE</h4>
+<pre>public static&nbsp;boolean ALLOW_COMPRESSION_REWRITE</pre>
+<div class="block">Boolean specifying if compression rewrites is allowed. This is disabled at run time if the IPA for Workload aware compression
+ is activated.</div>
+</li>
+</ul>
+<a name="ALLOW_TRANSITIVE_SPARK_EXEC_TYPE">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>ALLOW_TRANSITIVE_SPARK_EXEC_TYPE</h4>
+<pre>public static&nbsp;boolean ALLOW_TRANSITIVE_SPARK_EXEC_TYPE</pre>
+<div class="block">Enable transitive spark execution type selection. This refines the exec-type selection logic of unary aggregates 
+ by pushing * the unary aggregates, whose inputs are created by spark instructions, to spark execution type as well.</div>
+</li>
+</ul>
+<a name="ASYNC_TRIGGER_RDD_OPERATIONS">
+<!--   -->
+</a>
+<ul class="blockListLast">
+<li class="blockList">
+<h4>ASYNC_TRIGGER_RDD_OPERATIONS</h4>
+<pre>public static&nbsp;boolean ASYNC_TRIGGER_RDD_OPERATIONS</pre>
+<div class="block">Enable prefetch and broadcast. Prefetch asynchronously calls acquireReadAndRelease() to trigger a chain of spark
+ transformations, which would would otherwise make the next instruction wait till completion. Broadcast allows
+ asynchronously transferring the data to all the nodes.</div>
 </li>
 </ul>
 </li>

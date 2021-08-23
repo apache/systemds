@@ -570,13 +570,43 @@
 <tbody>
 <tr class="altColor">
 <td class="colFirst"><code><a href="../../../../../org/apache/sysds/lops/Lop.html" title="class in org.apache.sysds.lops">Lop</a></code></td>
-<td class="colLast"><span class="typeNameLabel">ParameterizedBuiltin.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/lops/ParameterizedBuiltin.html#getNamedInput-java.lang.String-">getNamedInput</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;name)</code>&nbsp;</td>
+<td class="colLast"><span class="typeNameLabel">AppendM.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/lops/AppendM.html#getBroadcastInput--">getBroadcastInput</a></span>()</code>&nbsp;</td>
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code><a href="../../../../../org/apache/sysds/lops/Lop.html" title="class in org.apache.sysds.lops">Lop</a></code></td>
-<td class="colLast"><span class="typeNameLabel">Data.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/lops/Data.html#getNamedInputLop-java.lang.String-">getNamedInputLop</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;name)</code>&nbsp;</td>
+<td class="colLast"><span class="typeNameLabel">MapMultChain.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/lops/MapMultChain.html#getBroadcastInput--">getBroadcastInput</a></span>()</code>&nbsp;</td>
 </tr>
 <tr class="altColor">
+<td class="colFirst"><code><a href="../../../../../org/apache/sysds/lops/Lop.html" title="class in org.apache.sysds.lops">Lop</a></code></td>
+<td class="colLast"><span class="typeNameLabel">Binary.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/lops/Binary.html#getBroadcastInput--">getBroadcastInput</a></span>()</code>&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="../../../../../org/apache/sysds/lops/Lop.html" title="class in org.apache.sysds.lops">Lop</a></code></td>
+<td class="colLast"><span class="typeNameLabel">LeftIndex.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/lops/LeftIndex.html#getBroadcastInput--">getBroadcastInput</a></span>()</code>&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../../../../../org/apache/sysds/lops/Lop.html" title="class in org.apache.sysds.lops">Lop</a></code></td>
+<td class="colLast"><span class="typeNameLabel">MapMult.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/lops/MapMult.html#getBroadcastInput--">getBroadcastInput</a></span>()</code>&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="../../../../../org/apache/sysds/lops/Lop.html" title="class in org.apache.sysds.lops">Lop</a></code></td>
+<td class="colLast"><span class="typeNameLabel">Lop.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/lops/Lop.html#getBroadcastInput--">getBroadcastInput</a></span>()</code>
+<div class="block">Method to get the input to be broadcast.</div>
+</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../../../../../org/apache/sysds/lops/Lop.html" title="class in org.apache.sysds.lops">Lop</a></code></td>
+<td class="colLast"><span class="typeNameLabel">PMMJ.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/lops/PMMJ.html#getBroadcastInput--">getBroadcastInput</a></span>()</code>&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code><a href="../../../../../org/apache/sysds/lops/Lop.html" title="class in org.apache.sysds.lops">Lop</a></code></td>
+<td class="colLast"><span class="typeNameLabel">ParameterizedBuiltin.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/lops/ParameterizedBuiltin.html#getNamedInput-java.lang.String-">getNamedInput</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;name)</code>&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../../../../../org/apache/sysds/lops/Lop.html" title="class in org.apache.sysds.lops">Lop</a></code></td>
+<td class="colLast"><span class="typeNameLabel">Data.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/lops/Data.html#getNamedInputLop-java.lang.String-">getNamedInputLop</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;name)</code>&nbsp;</td>
+</tr>
+<tr class="rowColor">
 <td class="colFirst"><code><a href="../../../../../org/apache/sysds/lops/Lop.html" title="class in org.apache.sysds.lops">Lop</a></code></td>
 <td class="colLast"><span class="typeNameLabel">Data.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/lops/Data.html#getNamedInputLop-java.lang.String-java.lang.String-">getNamedInputLop</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;name,
                 <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;defaultVal)</code>&nbsp;</td>
@@ -692,6 +722,19 @@
     <a href="../../../../../org/apache/sysds/common/Types.DataType.html" title="enum in org.apache.sysds.common">Types.DataType</a>&nbsp;dt,
     <a href="../../../../../org/apache/sysds/common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>&nbsp;vt,
     <a href="../../../../../org/apache/sysds/common/Types.ExecType.html" title="enum in org.apache.sysds.common">Types.ExecType</a>&nbsp;et)</code>&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>void</code></td>
+<td class="colLast"><span class="typeNameLabel">Lop.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/lops/Lop.html#removeOutput-org.apache.sysds.lops.Lop-">removeOutput</a></span>(<a href="../../../../../org/apache/sysds/lops/Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;op)</code>
+<div class="block">Method to remove output from Lop</div>
+</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>void</code></td>
+<td class="colLast"><span class="typeNameLabel">Lop.</span><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/lops/Lop.html#replaceInput-org.apache.sysds.lops.Lop-org.apache.sysds.lops.Lop-">replaceInput</a></span>(<a href="../../../../../org/apache/sysds/lops/Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;oldInp,
+            <a href="../../../../../org/apache/sysds/lops/Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;newInp)</code>
+<div class="block">Method to replace an input to a Lop</div>
+</td>
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code>static void</code></td>
@@ -853,10 +896,11 @@
 </td>
 </tr>
 <tr class="rowColor">
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/lops/Compression.html#Compression-org.apache.sysds.lops.Lop-org.apache.sysds.common.Types.DataType-org.apache.sysds.common.Types.ValueType-org.apache.sysds.common.Types.ExecType-">Compression</a></span>(<a href="../../../../../org/apache/sysds/lops/Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input,
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/lops/Compression.html#Compression-org.apache.sysds.lops.Lop-org.apache.sysds.common.Types.DataType-org.apache.sysds.common.Types.ValueType-org.apache.sysds.common.Types.ExecType-int-">Compression</a></span>(<a href="../../../../../org/apache/sysds/lops/Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input,
            <a href="../../../../../org/apache/sysds/common/Types.DataType.html" title="enum in org.apache.sysds.common">Types.DataType</a>&nbsp;dt,
            <a href="../../../../../org/apache/sysds/common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>&nbsp;vt,
-           <a href="../../../../../org/apache/sysds/common/Types.ExecType.html" title="enum in org.apache.sysds.common">Types.ExecType</a>&nbsp;et)</code>&nbsp;</td>
+           <a href="../../../../../org/apache/sysds/common/Types.ExecType.html" title="enum in org.apache.sysds.common">Types.ExecType</a>&nbsp;et,
+           int&nbsp;singletonLookupKey)</code>&nbsp;</td>
 </tr>
 <tr class="altColor">
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/lops/CoVariance.html#CoVariance-org.apache.sysds.lops.Lop-org.apache.sysds.lops.Lop-org.apache.sysds.lops.Lop-org.apache.sysds.common.Types.DataType-org.apache.sysds.common.Types.ValueType-org.apache.sysds.common.Types.ExecType-">CoVariance</a></span>(<a href="../../../../../org/apache/sysds/lops/Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;input1,

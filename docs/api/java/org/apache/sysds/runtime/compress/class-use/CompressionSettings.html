@@ -95,10 +95,14 @@
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
-<td class="colFirst"><a href="#org.apache.sysds.runtime.compress.estim">org.apache.sysds.runtime.compress.estim</a></td>
+<td class="colFirst"><a href="#org.apache.sysds.runtime.compress.cost">org.apache.sysds.runtime.compress.cost</a></td>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">
+<td class="colFirst"><a href="#org.apache.sysds.runtime.compress.estim">org.apache.sysds.runtime.compress.estim</a></td>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
 <td class="colFirst"><a href="#org.apache.sysds.runtime.compress.lib">org.apache.sysds.runtime.compress.lib</a></td>
 <td class="colLast">&nbsp;</td>
 </tr>
@@ -142,7 +146,21 @@
 <td class="colFirst"><code>static org.apache.commons.lang3.tuple.Pair&lt;<a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>,<a href="../../../../../../org/apache/sysds/runtime/compress/CompressionStatistics.html" title="class in org.apache.sysds.runtime.compress">CompressionStatistics</a>&gt;</code></td>
 <td class="colLast"><span class="typeNameLabel">CompressedMatrixBlockFactory.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/CompressedMatrixBlockFactory.html#compress-org.apache.sysds.runtime.matrix.data.MatrixBlock-int-org.apache.sysds.runtime.compress.CompressionSettings-">compress</a></span>(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;mb,
         int&nbsp;k,
-        <a href="../../../../../../org/apache/sysds/runtime/compress/CompressionSettings.html" title="class in org.apache.sysds.runtime.compress">CompressionSettings</a>&nbsp;compSettings)</code>
+        <a href="../../../../../../org/apache/sysds/runtime/compress/CompressionSettings.html" title="class in org.apache.sysds.runtime.compress">CompressionSettings</a>&nbsp;compSettings)</code>&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>static org.apache.commons.lang3.tuple.Pair&lt;<a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>,<a href="../../../../../../org/apache/sysds/runtime/compress/CompressionStatistics.html" title="class in org.apache.sysds.runtime.compress">CompressionStatistics</a>&gt;</code></td>
+<td class="colLast"><span class="typeNameLabel">CompressedMatrixBlockFactory.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/CompressedMatrixBlockFactory.html#compress-org.apache.sysds.runtime.matrix.data.MatrixBlock-int-org.apache.sysds.runtime.compress.CompressionSettings-org.apache.sysds.runtime.compress.cost.ICostEstimate-">compress</a></span>(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;mb,
+        int&nbsp;k,
+        <a href="../../../../../../org/apache/sysds/runtime/compress/CompressionSettings.html" title="class in org.apache.sysds.runtime.compress">CompressionSettings</a>&nbsp;compSettings,
+        <a href="../../../../../../org/apache/sysds/runtime/compress/cost/ICostEstimate.html" title="interface in org.apache.sysds.runtime.compress.cost">ICostEstimate</a>&nbsp;costEstimator)</code>&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>static org.apache.commons.lang3.tuple.Pair&lt;<a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>,<a href="../../../../../../org/apache/sysds/runtime/compress/CompressionStatistics.html" title="class in org.apache.sysds.runtime.compress">CompressionStatistics</a>&gt;</code></td>
+<td class="colLast"><span class="typeNameLabel">CompressedMatrixBlockFactory.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/CompressedMatrixBlockFactory.html#compress-org.apache.sysds.runtime.matrix.data.MatrixBlock-int-org.apache.sysds.runtime.compress.CompressionSettings-org.apache.sysds.runtime.compress.workload.WTreeRoot-">compress</a></span>(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;mb,
+        int&nbsp;k,
+        <a href="../../../../../../org/apache/sysds/runtime/compress/CompressionSettings.html" title="class in org.apache.sysds.runtime.compress">CompressionSettings</a>&nbsp;compSettings,
+        <a href="../../../../../../org/apache/sysds/runtime/compress/workload/WTreeRoot.html" title="class in org.apache.sysds.runtime.compress.workload">WTreeRoot</a>&nbsp;root)</code>
 <div class="block">The main method for compressing the input matrix.</div>
 </td>
 </tr>
@@ -168,10 +186,10 @@
 <tbody>
 <tr class="altColor">
 <td class="colFirst"><code>static <a href="../../../../../../org/apache/sysds/runtime/compress/estim/CompressedSizeInfo.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeInfo</a></code></td>
-<td class="colLast"><span class="typeNameLabel">PlanningCoCoder.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/cocode/PlanningCoCoder.html#findCoCodesByPartitioning-org.apache.sysds.runtime.compress.estim.CompressedSizeEstimator-org.apache.sysds.runtime.compress.estim.CompressedSizeInfo-int-int-org.apache.sysds.runtime.compress.CompressionSettings-">findCoCodesByPartitioning</a></span>(<a href="../../../../../../org/apache/sysds/runtime/compress/estim/CompressedSizeEstimator.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeEstimator</a>&nbsp;est,
+<td class="colLast"><span class="typeNameLabel">CoCoderFactory.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/cocode/CoCoderFactory.html#findCoCodesByPartitioning-org.apache.sysds.runtime.compress.estim.CompressedSizeEstimator-org.apache.sysds.runtime.compress.estim.CompressedSizeInfo-int-org.apache.sysds.runtime.compress.cost.ICostEstimate-org.apache.sysds.runtime.compress.CompressionSettings-">findCoCodesByPartitioning</a></span>(<a href="../../../../../../org/apache/sysds/runtime/compress/estim/CompressedSizeEstimator.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeEstimator</a>&nbsp;est,
                          <a href="../../../../../../org/apache/sysds/runtime/compress/estim/CompressedSizeInfo.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeInfo</a>&nbsp;colInfos,
-                         int&nbsp;numRows,
                          int&nbsp;k,
+                         <a href="../../../../../../org/apache/sysds/runtime/compress/cost/ICostEstimate.html" title="interface in org.apache.sysds.runtime.compress.cost">ICostEstimate</a>&nbsp;costEstimator,
                          <a href="../../../../../../org/apache/sysds/runtime/compress/CompressionSettings.html" title="class in org.apache.sysds.runtime.compress">CompressionSettings</a>&nbsp;cs)</code>
 <div class="block">Main entry point of CoCode.</div>
 </td>
@@ -210,6 +228,39 @@
                  int&nbsp;k)</code>
 <div class="block">The actual compression method, that handles the logic of compressing multiple columns together.</div>
 </td>
+</tr>
+</tbody>
+</table>
+</li>
+<li class="blockList"><a name="org.apache.sysds.runtime.compress.cost">
+<!--   -->
+</a>
+<h3>Uses of <a href="../../../../../../org/apache/sysds/runtime/compress/CompressionSettings.html" title="class in org.apache.sysds.runtime.compress">CompressionSettings</a> in <a href="../../../../../../org/apache/sysds/runtime/compress/cost/package-summary.html">org.apache.sysds.runtime.compress.cost</a></h3>
+<table class="useSummary" border="0" cellpadding="3" cellspacing="0" summary="Use table, listing methods, and an explanation">
+<caption><span>Methods in <a href="../../../../../../org/apache/sysds/runtime/compress/cost/package-summary.html">org.apache.sysds.runtime.compress.cost</a> with parameters of type <a href="../../../../../../org/apache/sysds/runtime/compress/CompressionSettings.html" title="class in org.apache.sysds.runtime.compress">CompressionSettings</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colLast" scope="col">Method and Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code>static <a href="../../../../../../org/apache/sysds/runtime/compress/cost/ICostEstimate.html" title="interface in org.apache.sysds.runtime.compress.cost">ICostEstimate</a></code></td>
+<td class="colLast"><span class="typeNameLabel">CostEstimatorFactory.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/cost/CostEstimatorFactory.html#create-org.apache.sysds.runtime.compress.CompressionSettings-org.apache.sysds.runtime.compress.workload.WTreeRoot-int-int-">create</a></span>(<a href="../../../../../../org/apache/sysds/runtime/compress/CompressionSettings.html" title="class in org.apache.sysds.runtime.compress">CompressionSettings</a>&nbsp;cs,
+      <a href="../../../../../../org/apache/sysds/runtime/compress/workload/WTreeRoot.html" title="class in org.apache.sysds.runtime.compress.workload">WTreeRoot</a>&nbsp;root,
+      int&nbsp;nRows,
+      int&nbsp;nCols)</code>&nbsp;</td>
+</tr>
+</tbody>
+</table>
+<table class="useSummary" border="0" cellpadding="3" cellspacing="0" summary="Use table, listing constructors, and an explanation">
+<caption><span>Constructors in <a href="../../../../../../org/apache/sysds/runtime/compress/cost/package-summary.html">org.apache.sysds.runtime.compress.cost</a> with parameters of type <a href="../../../../../../org/apache/sysds/runtime/compress/CompressionSettings.html" title="class in org.apache.sysds.runtime.compress">CompressionSettings</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colOne" scope="col">Constructor and Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/cost/DistinctCostEstimator.html#DistinctCostEstimator-int-org.apache.sysds.runtime.compress.CompressionSettings-">DistinctCostEstimator</a></span>(int&nbsp;nRows,
+                     <a href="../../../../../../org/apache/sysds/runtime/compress/CompressionSettings.html" title="class in org.apache.sysds.runtime.compress">CompressionSettings</a>&nbsp;cs)</code>&nbsp;</td>
 </tr>
 </tbody>
 </table>

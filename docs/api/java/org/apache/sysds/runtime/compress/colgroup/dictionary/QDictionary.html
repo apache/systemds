@@ -342,12 +342,11 @@ extends <a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/dictionary/QDictionary.html#makeDoubleDictionary--">makeDoubleDictionary</a></span>()</code>&nbsp;</td>
 </tr>
 <tr id="i29" class="rowColor">
-<td class="colFirst"><code>void</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/dictionary/QDictionary.html#preaggValuesFromDense-int-int:A-int:A-double:A-double:A-int-">preaggValuesFromDense</a></span>(int&nbsp;numVals,
+<td class="colFirst"><code><a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/dictionary/ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/dictionary/QDictionary.html#preaggValuesFromDense-int-int:A-int:A-double:A-int-">preaggValuesFromDense</a></span>(int&nbsp;numVals,
                      int[]&nbsp;colIndexes,
                      int[]&nbsp;aggregateColumns,
                      double[]&nbsp;b,
-                     double[]&nbsp;ret,
                      int&nbsp;cut)</code>
 <div class="block">Pre Aggregate values for right Matrix Multiplication.</div>
 </td>
@@ -1214,31 +1213,31 @@ extends <a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup
 </dl>
 </li>
 </ul>
-<a name="preaggValuesFromDense-int-int:A-int:A-double:A-double:A-int-">
+<a name="preaggValuesFromDense-int-int:A-int:A-double:A-int-">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
 <h4>preaggValuesFromDense</h4>
-<pre>public&nbsp;void&nbsp;preaggValuesFromDense(int&nbsp;numVals,
-                                  int[]&nbsp;colIndexes,
-                                  int[]&nbsp;aggregateColumns,
-                                  double[]&nbsp;b,
-                                  double[]&nbsp;ret,
-                                  int&nbsp;cut)</pre>
-<div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/dictionary/ADictionary.html#preaggValuesFromDense-int-int:A-int:A-double:A-double:A-int-">ADictionary</a></code></span></div>
+<pre>public&nbsp;<a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/dictionary/ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a>&nbsp;preaggValuesFromDense(int&nbsp;numVals,
+                                         int[]&nbsp;colIndexes,
+                                         int[]&nbsp;aggregateColumns,
+                                         double[]&nbsp;b,
+                                         int&nbsp;cut)</pre>
+<div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/dictionary/ADictionary.html#preaggValuesFromDense-int-int:A-int:A-double:A-int-">ADictionary</a></code></span></div>
 <div class="block">Pre Aggregate values for right Matrix Multiplication.</div>
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
-<dd><code><a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/dictionary/ADictionary.html#preaggValuesFromDense-int-int:A-int:A-double:A-double:A-int-">preaggValuesFromDense</a></code>&nbsp;in class&nbsp;<code><a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/dictionary/ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></dd>
+<dd><code><a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/dictionary/ADictionary.html#preaggValuesFromDense-int-int:A-int:A-double:A-int-">preaggValuesFromDense</a></code>&nbsp;in class&nbsp;<code><a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/dictionary/ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></dd>
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>numVals</code> - The number of values contained in this dictionary</dd>
 <dd><code>colIndexes</code> - The column indexes that is associated with the parent column group</dd>
 <dd><code>aggregateColumns</code> - The column to aggregate, this is preprocessed, to find remove consideration for empty
                          columns</dd>
 <dd><code>b</code> - The values in the right hand side matrix</dd>
-<dd><code>ret</code> - The double array to put in the aggregate.</dd>
 <dd><code>cut</code> - The number of columns in b.</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>A new dictionary with the pre aggregated values.</dd>
 </dl>
 </li>
 </ul>

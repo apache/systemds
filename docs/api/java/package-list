@@ -28,6 +28,7 @@ org.apache.sysds.runtime.compress.colgroup.dictionary
 org.apache.sysds.runtime.compress.colgroup.insertionsort
 org.apache.sysds.runtime.compress.colgroup.mapping
 org.apache.sysds.runtime.compress.colgroup.offset
+org.apache.sysds.runtime.compress.cost
 org.apache.sysds.runtime.compress.estim
 org.apache.sysds.runtime.compress.estim.sample
 org.apache.sysds.runtime.compress.lib

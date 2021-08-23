@@ -191,6 +191,11 @@ extends <a href="../../../../../org/apache/sysds/runtime/data/SparseBlock.html" 
 </td>
 </tr>
 <tr class="altColor">
+<td class="colOne"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/data/SparseBlockCSR.html#SparseBlockCSR-int-int-int-">SparseBlockCSR</a></span>(int&nbsp;rlen,
+              int&nbsp;capacity,
+              int&nbsp;size)</code>&nbsp;</td>
+</tr>
+<tr class="rowColor">
 <td class="colOne"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/data/SparseBlockCSR.html#SparseBlockCSR-int-int-int:A-">SparseBlockCSR</a></span>(int&nbsp;rows,
               int&nbsp;nnz,
               int[]&nbsp;colInd)</code>
@@ -198,12 +203,12 @@ extends <a href="../../../../../org/apache/sysds/runtime/data/SparseBlock.html" 
  identifies rows by position and implies values of 1.</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colOne"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/data/SparseBlockCSR.html#SparseBlockCSR-org.apache.sysds.runtime.data.SparseBlock-">SparseBlockCSR</a></span>(<a href="../../../../../org/apache/sysds/runtime/data/SparseBlock.html" title="class in org.apache.sysds.runtime.data">SparseBlock</a>&nbsp;sblock)</code>
 <div class="block">Copy constructor sparse block abstraction.</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colOne"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/data/SparseBlockCSR.html#SparseBlockCSR-org.apache.sysds.runtime.data.SparseRow:A-int-">SparseBlockCSR</a></span>(<a href="../../../../../org/apache/sysds/runtime/data/SparseRow.html" title="class in org.apache.sysds.runtime.data">SparseRow</a>[]&nbsp;rows,
               int&nbsp;nnz)</code>
 <div class="block">Copy constructor old sparse row representation.</div>
@@ -606,6 +611,17 @@ extends <a href="../../../../../org/apache/sysds/runtime/data/SparseBlock.html" 
 <h4>SparseBlockCSR</h4>
 <pre>public&nbsp;SparseBlockCSR(int&nbsp;rlen,
                       int&nbsp;capacity)</pre>
+</li>
+</ul>
+<a name="SparseBlockCSR-int-int-int-">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>SparseBlockCSR</h4>
+<pre>public&nbsp;SparseBlockCSR(int&nbsp;rlen,
+                      int&nbsp;capacity,
+                      int&nbsp;size)</pre>
 </li>
 </ul>
 <a name="SparseBlockCSR-int:A-int:A-double:A-int-">

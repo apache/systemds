@@ -96,20 +96,6 @@
 </a>
 <h3>Uses of <a href="../../../../../../../org/apache/sysds/runtime/compress/workload/WTreeNode.html" title="class in org.apache.sysds.runtime.compress.workload">WTreeNode</a> in <a href="../../../../../../../org/apache/sysds/runtime/compress/workload/package-summary.html">org.apache.sysds.runtime.compress.workload</a></h3>
 <table class="useSummary" border="0" cellpadding="3" cellspacing="0" summary="Use table, listing methods, and an explanation">
-<caption><span>Methods in <a href="../../../../../../../org/apache/sysds/runtime/compress/workload/package-summary.html">org.apache.sysds.runtime.compress.workload</a> that return <a href="../../../../../../../org/apache/sysds/runtime/compress/workload/WTreeNode.html" title="class in org.apache.sysds.runtime.compress.workload">WTreeNode</a></span><span class="tabEnd">&nbsp;</span></caption>
-<tr>
-<th class="colFirst" scope="col">Modifier and Type</th>
-<th class="colLast" scope="col">Method and Description</th>
-</tr>
-<tbody>
-<tr class="altColor">
-<td class="colFirst"><code>static <a href="../../../../../../../org/apache/sysds/runtime/compress/workload/WTreeNode.html" title="class in org.apache.sysds.runtime.compress.workload">WTreeNode</a></code></td>
-<td class="colLast"><span class="typeNameLabel">WorkloadAnalyzer.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/compress/workload/WorkloadAnalyzer.html#createWorkloadTree-org.apache.sysds.parser.DMLProgram-org.apache.sysds.hops.Hop-">createWorkloadTree</a></span>(<a href="../../../../../../../org/apache/sysds/parser/DMLProgram.html" title="class in org.apache.sysds.parser">DMLProgram</a>&nbsp;prog,
-                  <a href="../../../../../../../org/apache/sysds/hops/Hop.html" title="class in org.apache.sysds.hops">Hop</a>&nbsp;candidate)</code>&nbsp;</td>
-</tr>
-</tbody>
-</table>
-<table class="useSummary" border="0" cellpadding="3" cellspacing="0" summary="Use table, listing methods, and an explanation">
 <caption><span>Methods in <a href="../../../../../../../org/apache/sysds/runtime/compress/workload/package-summary.html">org.apache.sysds.runtime.compress.workload</a> that return types with arguments of type <a href="../../../../../../../org/apache/sysds/runtime/compress/workload/WTreeNode.html" title="class in org.apache.sysds.runtime.compress.workload">WTreeNode</a></span><span class="tabEnd">&nbsp;</span></caption>
 <tr>
 <th class="colFirst" scope="col">Modifier and Type</th>
@@ -117,12 +103,8 @@
 </tr>
 <tbody>
 <tr class="altColor">
-<td class="colFirst"><code>static <a href="https://docs.oracle.com/javase/8/docs/api/java/util/Map.html?is-external=true" title="class or interface in java.util">Map</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Long.html?is-external=true" title="class or interface in java.lang">Long</a>,<a href="../../../../../../../org/apache/sysds/runtime/compress/workload/WTreeNode.html" title="class in org.apache.sysds.runtime.compress.workload">WTreeNode</a>&gt;</code></td>
-<td class="colLast"><span class="typeNameLabel">WorkloadAnalyzer.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/compress/workload/WorkloadAnalyzer.html#getAllCandidateWorkloads-org.apache.sysds.parser.DMLProgram-">getAllCandidateWorkloads</a></span>(<a href="../../../../../../../org/apache/sysds/parser/DMLProgram.html" title="class in org.apache.sysds.parser">DMLProgram</a>&nbsp;prog)</code>&nbsp;</td>
-</tr>
-<tr class="rowColor">
 <td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;<a href="../../../../../../../org/apache/sysds/runtime/compress/workload/WTreeNode.html" title="class in org.apache.sysds.runtime.compress.workload">WTreeNode</a>&gt;</code></td>
-<td class="colLast"><span class="typeNameLabel">WTreeNode.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/compress/workload/WTreeNode.html#getChildNodes--">getChildNodes</a></span>()</code>&nbsp;</td>
+<td class="colLast"><span class="typeNameLabel">AWTreeNode.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/compress/workload/AWTreeNode.html#getChildNodes--">getChildNodes</a></span>()</code>&nbsp;</td>
 </tr>
 </tbody>
 </table>
@@ -135,11 +117,7 @@
 <tbody>
 <tr class="altColor">
 <td class="colFirst"><code>void</code></td>
-<td class="colLast"><span class="typeNameLabel">WTreeNode.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/compress/workload/WTreeNode.html#addChild-org.apache.sysds.runtime.compress.workload.WTreeNode-">addChild</a></span>(<a href="../../../../../../../org/apache/sysds/runtime/compress/workload/WTreeNode.html" title="class in org.apache.sysds.runtime.compress.workload">WTreeNode</a>&nbsp;node)</code>&nbsp;</td>
-</tr>
-<tr class="rowColor">
-<td class="colFirst"><code>static boolean</code></td>
-<td class="colLast"><span class="typeNameLabel">WorkloadAnalyzer.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/compress/workload/WorkloadAnalyzer.html#pruneWorkloadTree-org.apache.sysds.runtime.compress.workload.WTreeNode-">pruneWorkloadTree</a></span>(<a href="../../../../../../../org/apache/sysds/runtime/compress/workload/WTreeNode.html" title="class in org.apache.sysds.runtime.compress.workload">WTreeNode</a>&nbsp;node)</code>&nbsp;</td>
+<td class="colLast"><span class="typeNameLabel">AWTreeNode.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/compress/workload/AWTreeNode.html#addChild-org.apache.sysds.runtime.compress.workload.WTreeNode-">addChild</a></span>(<a href="../../../../../../../org/apache/sysds/runtime/compress/workload/WTreeNode.html" title="class in org.apache.sysds.runtime.compress.workload">WTreeNode</a>&nbsp;node)</code>&nbsp;</td>
 </tr>
 </tbody>
 </table>

@@ -18,8 +18,6 @@
  */
 
 package org.apache.sysds.runtime.iogen;
-
-import com.google.gson.Gson;
 import org.apache.commons.lang.mutable.MutableInt;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.mapred.JobConf;
@@ -32,8 +30,15 @@ import org.apache.sysds.runtime.io.IOUtilFunctions;
 import org.apache.sysds.runtime.io.MatrixReader;
 import org.apache.sysds.runtime.util.UtilFunctions;
 
-import java.io.*;
-import java.util.*;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.HashSet;
+import java.io.Serializable;
 
 public class GenerateReader {
 
@@ -60,9 +65,6 @@ public class GenerateReader {
 		if(ffp == null) {
 			throw new Exception("The file format couldn't recognize!!");
 		}
-		Gson gson = new Gson();
-		System.out.println(gson.toJson(ffp));
-
 		// 2. Generate a Matrix Reader:
 		if(ffp.getRowPattern().equals(FileFormatPropertiesGR.GRPattern.Regular)) {
 			if(ffp.getColPattern().equals(FileFormatPropertiesGR.GRPattern.Regular)) {

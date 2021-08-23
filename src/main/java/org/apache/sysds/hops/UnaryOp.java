@@ -57,7 +57,7 @@ public class UnaryOp extends MultiThreadedHop
 	private UnaryOp() {
 		//default constructor for clone
 	}
-	
+
 	public UnaryOp(String l, DataType dt, ValueType vt, OpOp1 o, Hop inp) {
 		super(l, dt, vt);
 
@@ -130,7 +130,7 @@ public class UnaryOp extends MultiThreadedHop
 		try 
 		{
 			Hop input = getInput().get(0);
-			
+
 			if(    getDataType() == DataType.SCALAR //value type casts or matrix to scalar
 				|| (_op == OpOp1.CAST_AS_MATRIX && getInput().get(0).getDataType()==DataType.SCALAR)
 				|| (_op == OpOp1.CAST_AS_FRAME && getInput().get(0).getDataType()==DataType.SCALAR))
@@ -165,10 +165,26 @@ public class UnaryOp extends MultiThreadedHop
 				}
 				else //default unary 
 				{
+					Boolean inplace = false;
+
+					//check if inplace
+					if(this._parent.size()==1 )
+					{
+						if(!(input instanceof DataOp))
+						{
+							if(!((DataOp)input).isRead())
+								inplace = true;
+						}
+						else
+						{
+							inplace = true;
+						}
+					}
+
 					int k = isCumulativeUnaryOperation() || isExpensiveUnaryOperation() ?
 						OptimizerUtils.getConstrainedNumThreads( _maxNumThreads ) : 1;
 					Unary unary1 = new Unary(input.constructLops(),
-						_op, getDataType(), getValueType(), et, k, false);
+						_op, getDataType(), getValueType(), et, k, inplace);
 					setOutputDimensions(unary1);
 					setLineNumbers(unary1);
 					setLops(unary1);

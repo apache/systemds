@@ -19,24 +19,30 @@
 #
 #-------------------------------------------------------------
 
-X = read($1);
+X = read($1) + 1;
 Y = read($2);
 
 
 print("")
 print("MLogReg")
 
-X = scale(X=X, scale=TRUE, center=TRUE);
-B = multiLogReg(X=X, Y=Y, verbose=FALSE, maxi=3, maxii=2);
+[X_s,s,c] = scale(X=X, scale=TRUE, center=TRUE);
+B = multiLogReg(X=X_s, Y=Y, verbose=FALSE, maxi=2, maxii=2);
+[nn, P, acc] = multiLogRegPredict(X=X_s, B=B, Y=Y)
 
-[nn, P, acc] = multiLogRegPredict(X=X, B=B, Y=Y)
 
 [nn, C] = confusionMatrix(P, Y)
 print("Confusion: ")
 print(toString(C))
 
-print(acc)
 
-if(acc < 50){
-    stop("MLogReg Accuracy achieved is not high enough")
-}
+print("")
+print("SliceFinder")
+
+e = Y == P
+
+[tk,tkc,d] = slicefinder(X=X, e=e, maxL = 2, verbose=TRUE)
+
+print("tk          :\n" + toString(tk))
+print("tkc         :\n" + toString(tkc))
+print("Debug matrix:\n" + toString(d))

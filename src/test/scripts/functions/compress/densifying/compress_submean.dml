@@ -19,24 +19,14 @@
 #
 #-------------------------------------------------------------
 
-X = read($1);
-Y = read($2);
+# make one value
+x = read($1)
 
+y = compress(x)
 
-print("")
-print("MLogReg")
+cm = colMeans(y)
 
-X = scale(X=X, scale=TRUE, center=TRUE);
-B = multiLogReg(X=X, Y=Y, verbose=FALSE, maxi=3, maxii=2);
+z = y - cm
 
-[nn, P, acc] = multiLogRegPredict(X=X, B=B, Y=Y)
+print(sum(z))
 
-[nn, C] = confusionMatrix(P, Y)
-print("Confusion: ")
-print(toString(C))
-
-print(acc)
-
-if(acc < 50){
-    stop("MLogReg Accuracy achieved is not high enough")
-}

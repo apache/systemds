@@ -67,13 +67,11 @@ public class FederatedReaderTest extends AutomatedTestBase {
 
 	@Test
 	public void federatedSingleNodeReadOneWorker() {
-		LOG.debug("1Federated");
 		federatedRead(Types.ExecMode.SINGLE_NODE, 1);
 	}
 
 	@Test
 	public void federatedSingleNodeReadTwoWorker() {
-		LOG.debug("2Federated");
 		federatedRead(Types.ExecMode.SINGLE_NODE, 2);
 	}
 
@@ -124,6 +122,8 @@ public class FederatedReaderTest extends AutomatedTestBase {
 
 			String refOut = runTest(null).toString();
 
+			LOG.debug(refOut);
+			
 			// Run federated
 			fullDMLScriptName = SCRIPT_DIR + "functions/federated/io/" + TEST_NAME + ".dml";
 			programArgs = new String[] {"-stats", "-args", input("X.json")};

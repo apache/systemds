@@ -31,26 +31,25 @@ from systemds.context import SystemDSContext
 
 os.environ['SYSDS_QUIET'] = "1"
 
-dim = 5
-np.random.seed(132)
-m1 = np.array(np.random.randint(100, size=dim * dim) + 1.01, dtype=np.double)
-m1.shape = (dim, dim)
-m2 = np.array(np.random.randint(5, size=dim * dim) + 1, dtype=np.double)
-m2.shape = (dim, dim)
+dim = 3
 
-tempdir = "./tests/federated/tmp/test_federated_aggregations/"
-mtd = {"format": "csv", "header": False, "rows": dim, "cols": dim, "data_type": "matrix", "value_type": "double" }
+m1 = np.asarray([[1, 2, 3], [4, 5, 6], [7, 8, 9]], dtype=np.int16)
+m2 = np.asarray([[2, 2, 2], [3, 3, 3], [4, 4, 4]], dtype=np.int16)
+
+tempdir = "./tests/federated/tmp/test_federated_aggregations_noHeader/"
+mtd = {"format": "csv", "header": False, "rows": dim,
+       "cols": dim, "data_type": "matrix", "value_type": "double"}
 
 # Create the testing directory if it does not exist.
 if not os.path.exists(tempdir):
     os.makedirs(tempdir)
 
 # Save data files for the Federated workers.
-np.savetxt(tempdir + "m1.csv", m1, delimiter=",")
+np.savetxt(tempdir + "m1.csv", m1, delimiter=",",fmt='%d')
 with io.open(tempdir + "m1.csv.mtd", "w", encoding="utf-8") as f:
     f.write(json.dumps(mtd, ensure_ascii=False))
 
-np.savetxt(tempdir + "m2.csv", m2, delimiter=",")
+np.savetxt(tempdir + "m2.csv", m2, delimiter=",",fmt='%d')
 with io.open(tempdir + "m2.csv.mtd", "w", encoding="utf-8") as f:
     f.write(json.dumps(mtd, ensure_ascii=False))
 
@@ -70,6 +69,15 @@ class TestFederatedAggFn(unittest.TestCase):
     @classmethod
     def tearDownClass(cls):
         cls.sds.close()
+
+    def test_equals(self):
+        f_m = (
+            self.sds.federated(
+                [fed1],
+                [([0, 0], [dim, dim])])
+            .compute()
+        )
+        self.assertTrue(np.allclose(f_m, m1))
 
     def test_sum3(self):
         #   [[m1,m1,m1,m1,m1,m2,m2,m2,m2,m2]
@@ -139,7 +147,7 @@ class TestFederatedAggFn(unittest.TestCase):
         #    [m2,m2,m2,m2,m2]
         #    [m2,m2,m2,m2,m2]]
         f_m1_m2 = (
-            self.sds.federated( 
+            self.sds.federated(
                 [fed1, fed2],
                 [([0, 0], [dim, dim]), ([dim, 0], [dim * 2, dim])])
             .sum()
@@ -162,7 +170,7 @@ class TestFederatedAggFn(unittest.TestCase):
         #    [ 0, 0, 0, 0, 0,m2,m2,m2,m2,m2]
         #    [ 0, 0, 0, 0, 0,m2,m2,m2,m2,m2]]
         f_m_a = (
-            self.sds.federated( 
+            self.sds.federated(
                 [fed1, fed2],
                 [([0, 0], [dim, dim]), ([2, dim], [dim + 2, dim * 2])])
             .sum()
@@ -180,7 +188,7 @@ class TestFederatedAggFn(unittest.TestCase):
         #    [ 0, 0, 0,m1,m1,m1,m1,m1]
         #    [ 0, 0, 0,m1,m1,m1,m1,m1]]
         f_m_a = (
-            self.sds.federated( 
+            self.sds.federated(
                 [fed1],
                 [([2, 3], [dim + 2, dim + 3])])
             .sum()

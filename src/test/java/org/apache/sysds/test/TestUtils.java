@@ -2040,6 +2040,34 @@ public class TestUtils
 		}
 	}
 
+
+	protected static void writeCSV(String completePath, double[][] matrix, boolean header){
+		try{
+			DataOutputStream out =  new DataOutputStream(new FileOutputStream(completePath));
+			try( BufferedWriter pw = new BufferedWriter(new OutputStreamWriter(out))) {
+
+				if(header){
+					pw.append("d0");
+					for(int i = 1; i < matrix[0].length; i++){
+						pw.append(",d" + i);
+					}
+					pw.append("\n");
+				}
+				for(int j = 0; j < matrix.length; j++){
+					pw.append("" + matrix[j][0]);
+					for(int i = 1; i < matrix[j].length; i++){
+						pw.append(","+matrix[j][i]);
+					}
+					pw.append("\n");
+				}
+			}
+		}
+		catch (IOException e){
+			fail("unable to write test matrix (" + completePath + "): " + e.getMessage());
+		}
+	}
+
+
 	/**
 	 * <p>
 	 * Writes a matrix to a file using the text format.

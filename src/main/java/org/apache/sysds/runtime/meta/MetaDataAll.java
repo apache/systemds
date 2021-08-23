@@ -39,6 +39,7 @@ import org.apache.sysds.parser.Expression;
 import org.apache.sysds.parser.LanguageException;
 import org.apache.sysds.parser.ParseException;
 import org.apache.sysds.parser.StringIdentifier;
+import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysds.runtime.io.IOUtilFunctions;
 import org.apache.sysds.runtime.privacy.PrivacyConstraint;
@@ -50,6 +51,7 @@ import org.apache.wink.json4j.JSONException;
 import org.apache.wink.json4j.JSONObject;
 
 public class MetaDataAll extends DataIdentifier {
+	// private static final Log LOG = LogFactory.getLog(MetaDataAll.class.getName());
 
 	private JSONObject _metaObj;
 
@@ -79,8 +81,8 @@ public class MetaDataAll extends DataIdentifier {
 		try {
 			_metaObj = JSONHelper.parse(br);
 		}
-		catch(IOException e) {
-			e.printStackTrace();
+		catch(Exception e) {
+			throw new DMLRuntimeException(e);
 		}
 		setPrivacy(PrivacyConstraint.PrivacyLevel.None);
 		parseMetaDataParams();
@@ -174,7 +176,14 @@ public class MetaDataAll extends DataIdentifier {
 			case DataExpression.FINE_GRAINED_PRIVACY:  setFineGrainedPrivacy(val.toString()); break;
 			case DataExpression.DELIM_DELIMITER: setDelim(val.toString()); break;
 			case DataExpression.SCHEMAPARAM: setSchema(val.toString()); break;
-			case DataExpression.DELIM_HAS_HEADER_ROW: setHasHeader(true);
+			case DataExpression.DELIM_HAS_HEADER_ROW:
+				if(val instanceof Boolean){
+					boolean valB = (Boolean) val;
+					setHasHeader(valB);
+					break;
+				}
+				else
+					throw new DMLRuntimeException("Invalid type of value for header" + val.getClass());
 			case DataExpression.DELIM_SPARSE: setSparseDelim((boolean) val);
 		}
 	}
@@ -401,5 +410,10 @@ public class MetaDataAll extends DataIdentifier {
 			}
 		}
 		return false;
+	}
+
+	@Override
+	public String toString() {
+		return "MetaDataAll\n" + _metaObj + "\n" + super.toString();
 	}
 }

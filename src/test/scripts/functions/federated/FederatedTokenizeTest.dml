@@ -20,8 +20,8 @@
 #-------------------------------------------------------------
 
 F1 = federated(type="frame", addresses=list($in_X1, $in_X2, $in_X3),
-  ranges=list(list(0, 0), list(2, $cols), list(2, 0), list(4, $cols),
-  list(4, 0), list(6, $cols)));
+ ranges=list(list(0, 0), list(3, $cols), list(3, 0), list(6, $cols),
+  list(6, 0), list(9, $cols)));
 
 max_token = 2000;
 

@@ -19,7 +19,8 @@
 #
 #-------------------------------------------------------------
 
-F = read($1);
+F = read($1, data_type="frame", format="csv", sep=",");
+F = F[2:3, 1:4];
 F = rbind(F, rbind(F, F));
 
 max_token = 2000;

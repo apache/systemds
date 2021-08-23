@@ -20,23 +20,22 @@
 #-------------------------------------------------------------
 
 X = read($1);
-Y = read($2);
+y = read($2);
 
+# Limit to one classification
+y = y == min(y)
 
 print("")
-print("MLogReg")
+print("LMCG")
 
 X = scale(X=X, scale=TRUE, center=TRUE);
-B = multiLogReg(X=X, Y=Y, verbose=FALSE, maxi=3, maxii=2);
+B = lmCG(X=X, y=y, verbose=TRUE);
+p = lmPredict(X=X, B=B, ytest=y, verbose=TRUE);
 
-[nn, P, acc] = multiLogRegPredict(X=X, B=B, Y=Y)
+classifications = (p > 0.1)
 
-[nn, C] = confusionMatrix(P, Y)
-print("Confusion: ")
-print(toString(C))
+acc = sum(classifications == y)  / nrow(y)
 
+if(acc < 0.80)
+    stop("ERROR: to low accuracy achieved")
 print(acc)
-
-if(acc < 50){
-    stop("MLogReg Accuracy achieved is not high enough")
-}

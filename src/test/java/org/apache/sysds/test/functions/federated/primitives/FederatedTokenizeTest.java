@@ -137,12 +137,6 @@ public class FederatedTokenizeTest extends AutomatedTestBase {
 			"in_S=" + input(HOME + TEST_NAME + ".json"), "rows=" + rows, "cols=" + cols,
 			"out_R=" + output("S")};
 		runTest(null);
-		try{
-			Thread.sleep(10000);
-		}
-		catch(Exception e){
-			throw new RuntimeException(e);
-		}
 		compareResults(1e-9);
 		Assert.assertTrue(heavyHittersContainsString("fed_tokenize"));
 		TestUtils.shutdownThreads(t1, t2, t3, t4);

@@ -28,7 +28,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
-import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.DMLRuntimeException;
@@ -43,20 +42,20 @@ public class CLALibRightMultBy {
 
 	public static MatrixBlock rightMultByMatrix(CompressedMatrixBlock m1, MatrixBlock m2, MatrixBlock ret, int k,
 		boolean allowOverlap) {
-		ret = rightMultByMatrix(m1.getColGroups(), m2, ret, k, m1.getMaxNumValues(), allowOverlap);
+		ret = rightMultByMatrix(m1.getColGroups(), m2, ret, k, allowOverlap);
 		ret.recomputeNonZeros();
 		return ret;
 	}
 
 	private static MatrixBlock rightMultByMatrix(List<AColGroup> colGroups, MatrixBlock that, MatrixBlock ret, int k,
-		Pair<Integer, int[]> v, boolean allowOverlap) {
+		boolean allowOverlap) {
 
 		if(that instanceof CompressedMatrixBlock)
 			LOG.warn("Decompression Right matrix");
 
 		that = that instanceof CompressedMatrixBlock ? ((CompressedMatrixBlock) that).decompress(k) : that;
 
-		MatrixBlock m = rightMultByMatrixOverlapping(colGroups, that, ret, k, v);
+		MatrixBlock m = rightMultByMatrixOverlapping(colGroups, that, ret, k);
 
 		if(m instanceof CompressedMatrixBlock)
 			if(allowOverlappingOutput(colGroups, allowOverlap))
@@ -94,18 +93,18 @@ public class CLALibRightMultBy {
 	}
 
 	private static MatrixBlock rightMultByMatrixOverlapping(List<AColGroup> colGroups, MatrixBlock that,
-		MatrixBlock ret, int k, Pair<Integer, int[]> v) {
+		MatrixBlock ret, int k) {
 		int rl = colGroups.get(0).getNumRows();
 		int cl = that.getNumColumns();
 		// Create an overlapping compressed Matrix Block.
 		ret = new CompressedMatrixBlock(rl, cl);
 		CompressedMatrixBlock retC = (CompressedMatrixBlock) ret;
-		ret = rightMultByMatrixCompressed(colGroups, that, retC, k, v);
+		ret = rightMultByMatrixCompressed(colGroups, that, retC, k);
 		return ret;
 	}
 
 	private static MatrixBlock rightMultByMatrixCompressed(List<AColGroup> colGroups, MatrixBlock that,
-		CompressedMatrixBlock ret, int k, Pair<Integer, int[]> v) {
+		CompressedMatrixBlock ret, int k) {
 
 		List<AColGroup> retCg = new ArrayList<>();
 		boolean containsNull = false;

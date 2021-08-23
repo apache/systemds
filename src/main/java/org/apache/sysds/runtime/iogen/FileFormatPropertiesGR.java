@@ -53,7 +53,6 @@ public class FileFormatPropertiesGR extends FileFormatProperties implements Seri
 	private final GRPattern rowPattern;
 	private final GRPattern colPattern;
 	private final GRSymmetry grSymmetry;
-	private int ncols;
 
 	// CSV format
 	public FileFormatPropertiesGR(GRPattern rowPattern, String delim, HashSet<String> naStrings) {
@@ -79,14 +78,6 @@ public class FileFormatPropertiesGR extends FileFormatProperties implements Seri
 		this.grSymmetry = grSymmetry;
 		this.colPattern = GRPattern.Regular;
 		this.rowPattern = GRPattern.Irregular;
-	}
-
-	public int getNcols() {
-		return ncols;
-	}
-
-	public void setNcols(int ncols) {
-		this.ncols = ncols;
 	}
 
 	public String getDelim() {

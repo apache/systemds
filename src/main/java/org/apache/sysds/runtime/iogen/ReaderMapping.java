@@ -293,8 +293,6 @@ public class ReaderMapping {
 		else {
 			ffp = getFileFormatPropertiesOfRIMapping();
 		}
-		if(ffp != null)
-			ffp.setNcols(ncols);
 
 		return ffp;
 	}

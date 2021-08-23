@@ -19,14 +19,19 @@
 
 package org.apache.sysds.test.functions.iogen;
 
+import org.apache.sysds.runtime.io.FileFormatPropertiesCSV;
 import org.apache.sysds.runtime.io.MatrixReader;
+import org.apache.sysds.runtime.io.WriterTextCSV;
 import org.apache.sysds.runtime.iogen.GenerateReader;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.DataConverter;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestUtils;
 
-public abstract class GenerateReaderTest extends AutomatedTestBase{
+import java.io.BufferedWriter;
+import java.io.FileWriter;
+
+public abstract class GenerateReaderTest extends AutomatedTestBase {
 
 	protected final static String TEST_DIR = "functions/iogen/";
 	protected final static String TEST_CLASS_DIR = TEST_DIR + GenerateReaderTest.class.getSimpleName() + "/";
@@ -34,26 +39,45 @@ public abstract class GenerateReaderTest extends AutomatedTestBase{
 	protected String sampleRaw;
 	protected double[][] sampleMatrix;
 
-	@Override
-	public void setUp() {
+	@Override public void setUp() {
 		TestUtils.clearAssertionInformation();
 	}
 
-	protected void generateRandomSymmetric(int size, double min, double max, double sparsity, boolean isSkew){
+	protected void generateRandomSymmetric(int size, double min, double max, double sparsity, boolean isSkew) {
 		sampleMatrix = getRandomMatrix(size, size, min, max, sparsity, 714);
 		int conf = isSkew ? -1 : 1;
-		for(int i=0;i<size;i++) {
+		for(int i = 0; i < size; i++) {
 			for(int j = 0; j <= i; j++) {
 
 				if(i != j)
 					sampleMatrix[i][j] = sampleMatrix[j][i] * conf;
 				else
-				sampleMatrix[i][j] =0;
+					sampleMatrix[i][j] = 0;
 			}
 		}
 	}
+
 	protected void runGenerateReaderTest() throws Exception {
 		MatrixBlock sampleMatrixMB = DataConverter.convertToMatrixBlock(sampleMatrix);
 		MatrixReader reader = GenerateReader.generateReader(sampleRaw, sampleMatrixMB);
+
+		// Write SampleRawMatrix data into a file
+		String fileNameSampleRaw = "/home/sfathollahzadeh/GRTest/SampleRaw.txt";
+		String fileNameSampleRawOut = "/home/sfathollahzadeh/GRTest/SampleRawOut.txt";
+		BufferedWriter writer = new BufferedWriter(new FileWriter(fileNameSampleRaw));
+		writer.write(sampleRaw);
+		writer.close();
+
+		// Read the data with Generated Reader
+		MatrixBlock src = reader
+			.readMatrixFromHDFS(fileNameSampleRaw, sampleMatrixMB.getNumRows(), sampleMatrixMB.getNumColumns(), -1, -1);
+
+		if(this instanceof GenerateReaderCSVTest) {
+			FileFormatPropertiesCSV csv = new FileFormatPropertiesCSV(false, ",", false);
+			WriterTextCSV writerTextCSV = new WriterTextCSV(csv);
+			writerTextCSV.writeMatrixToHDFS(src, fileNameSampleRawOut, src.getNumRows(), src.getNumColumns(), -1,
+				src.getNonZeros(), false);
+		}
+
 	}
 }

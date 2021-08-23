@@ -199,12 +199,17 @@ public class GenerateReader {
 			public void reset(String string) {
 				_string = string;
 				_pos = 0;
+				_index = 0;
 			}
 
 			public String nextToken() {
 				int len = _string.length();
 				int start = _pos;
 
+				if(_pos == -1) {
+					_index = -1;
+					return "0";
+				}
 				//find start (skip over leading delimiters)
 				while(start < len && _del.equals(_string.substring(start, start + _del.length()))) {
 					start += _del.length();
@@ -220,8 +225,6 @@ public class GenerateReader {
 						return _string.substring(start);
 				}
 				//no next token
-				//throw new NoSuchElementException();
-				_index = -1;
 				return null;
 			}
 

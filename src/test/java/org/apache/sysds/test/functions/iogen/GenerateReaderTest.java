@@ -60,8 +60,10 @@ public abstract class GenerateReaderTest extends AutomatedTestBase {
 		MatrixReader reader = GenerateReader.generateReader(sampleRaw, sampleMatrixMB);
 
 		// Write SampleRawMatrix data into a file
-		String fileNameSampleRaw = "/home/sfathollahzadeh/GRTest/SampleRaw.txt";
-		String fileNameSampleRawOut = "/home/sfathollahzadeh/GRTest/SampleRawOut.txt";
+		String HOME = SCRIPT_DIR + TEST_DIR;
+		String outName = HOME + OUTPUT_DIR ;
+		String fileNameSampleRaw = outName+"/SampleRaw.txt";
+		String fileNameSampleRawOut = outName+"/SampleRawOut.txt";
 		BufferedWriter writer = new BufferedWriter(new FileWriter(fileNameSampleRaw));
 		writer.write(sampleRaw);
 		writer.close();

@@ -30,8 +30,8 @@
 workerdir="tests/federated/worker/"
 outputdir="tests/federated/output/"
 tmpfiledir="tests/federated/tmp/"
-mkdir $workerdir
-mkdir $outputdir
+mkdir -p $workerdir
+mkdir -p $outputdir
 w1_Output="$workerdir/w1"
 w2_Output="$workerdir/w2"
 log="$outputdir/out.log"
@@ -55,13 +55,16 @@ echo -e "\nWorker 1:"
 cat $w1_Output
 echo -e "\nWorker 2:"
 cat $w2_Output
-rm -r $workerdir
 echo -e "\n------------\nTest output:\n------------"
 cat $log
 grepvals="$(tail -n 10 $log | grep OK)"
+echo -e "------------\n"
+
+# Cleanup
+rm -r $workerdir
 rm -r $outputdir
 rm -r $tmpfiledir
-echo -e "------------\n"
+
 if [[ $grepvals == *"OK"* ]]; then
 	exit 0
 else

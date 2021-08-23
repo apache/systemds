@@ -64,6 +64,7 @@ import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.io.SequenceFile.Writer;
 import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.common.Types.ValueType;
+import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.data.TensorBlock;
 import org.apache.sysds.runtime.io.FrameWriter;
 import org.apache.sysds.runtime.io.FrameWriterFactory;
@@ -2039,6 +2040,31 @@ public class TestUtils
 			fail("unable to write test matrix (" + file + "): " + e.getMessage());
 		}
 	}
+
+
+	protected static void writeCSV(String completePath, double[][] matrix, boolean header) throws IOException{
+		Path path = new Path(completePath);
+		FileSystem fs = IOUtilFunctions.getFileSystem(path, conf);
+		DataOutputStream out = fs.create(path, true);
+		try(BufferedWriter pw = new BufferedWriter(new OutputStreamWriter(out))) {
+
+			if(header) {
+				pw.append("d0");
+				for(int i = 1; i < matrix[0].length; i++) {
+					pw.append(",d" + i);
+				}
+				pw.append("\n");
+			}
+			for(int j = 0; j < matrix.length; j++) {
+				pw.append("" + matrix[j][0]);
+				for(int i = 1; i < matrix[j].length; i++) {
+					pw.append("," + matrix[j][i]);
+				}
+				pw.append("\n");
+			}
+		}
+	}
+
 
 	/**
 	 * <p>

@@ -43,16 +43,16 @@ public class LocalPSWorker extends PSWorker implements Callable<Void> {
 	protected LocalPSWorker() {}
 
 	public LocalPSWorker(int workerID, String updFunc, Statement.PSFrequency freq,
-		int epochs, long batchSize, ExecutionContext ec, ParamServer ps)
+		int epochs, long batchSize, ExecutionContext ec, ParamServer ps, boolean modelAvg)
 	{
-		super(workerID, updFunc, freq, epochs, batchSize, ec, ps);
+		super(workerID, updFunc, freq, epochs, batchSize, ec, ps, modelAvg);
 	}
 
 	@Override
 	public String getWorkerName() {
 		return String.format("Local worker_%d", _workerID);
 	}
-	
+
 	@Override
 	public Void call() throws Exception {
 		incWorkerNumber();
@@ -81,7 +81,7 @@ public class LocalPSWorker extends PSWorker implements Callable<Void> {
 	}
 
 	private void computeEpoch(long dataSize, int batchIter) {
-		for (int i = 0; i < _epochs; i++) {
+		for(int i = 0; i < _epochs; i++) {
 			// Pull the global parameters from ps
 			ListObject params = pullModel();
 			Future<ListObject> accGradients = ConcurrentUtils.constantFuture(null);
@@ -89,32 +89,32 @@ public class LocalPSWorker extends PSWorker implements Callable<Void> {
 			try {
 				for (int j = 0; j < batchIter; j++) {
 					ListObject gradients = computeGradients(params, dataSize, batchIter, i, j);
-	
+
 					boolean localUpdate = j < batchIter - 1;
-					
-					// Accumulate the intermediate gradients (async for overlap w/ model updates 
+
+					// Accumulate the intermediate gradients (async for overlap w/ model updates
 					// and gradient computation, sequential over gradient matrices to avoid deadlocks)
 					ListObject accGradientsPrev = accGradients.get();
-					accGradients = _tpool.submit(() -> ParamservUtils.accrueGradients(
-						accGradientsPrev, gradients, false, !localUpdate));
-	
+					accGradients = _modelAvg ? ConcurrentUtils.constantFuture(null) :
+						_tpool.submit(() -> ParamservUtils.accrueGradients(
+							accGradientsPrev, gradients, false, !localUpdate));
+					
 					// Update the local model with gradients
-					if(localUpdate)
+					if(localUpdate | _modelAvg)
 						params = updateModel(params, gradients, i, j, batchIter);
-	
+
 					accNumBatches(1);
 				}
-
-				// Push the gradients to ps
-				pushGradients(accGradients.get());
-				ParamservUtils.cleanupListObject(_ec, Statement.PS_MODEL);
+				pushGradients(_modelAvg ? params : accGradients.get());
+				if (!_modelAvg)
+					ParamservUtils.cleanupListObject(_ec, Statement.PS_MODEL);
 			}
 			catch(ExecutionException | InterruptedException ex) {
 				throw new DMLRuntimeException(ex);
 			}
-			
+
 			accNumEpochs(1);
-			if (LOG.isDebugEnabled()) {
+			if(LOG.isDebugEnabled()) {
 				LOG.debug(String.format("%s: finished %d epoch.", getWorkerName(), i + 1));
 			}
 		}
@@ -126,9 +126,9 @@ public class LocalPSWorker extends PSWorker implements Callable<Void> {
 		globalParams = _ps.updateLocalModel(_ec, gradients, globalParams);
 
 		accLocalModelUpdateTime(tUpd);
-		
-		if (LOG.isDebugEnabled()) {
-			LOG.debug(String.format("%s: local global parameter [size:%d kb] updated. "
+
+		if(LOG.isDebugEnabled()) {
+			LOG.debug(String.format("%s: local global parameter [size:%d kb] updated. " 
 				+ "[Epoch:%d  Total epoch:%d  Iteration:%d  Total iteration:%d]",
 				getWorkerName(), globalParams.getDataSize(), i + 1, _epochs, j + 1, batchIter));
 		}
@@ -136,19 +136,24 @@ public class LocalPSWorker extends PSWorker implements Callable<Void> {
 	}
 
 	private void computeBatch(long dataSize, int totalIter) {
-		for (int i = 0; i < _epochs; i++) {
-			for (int j = 0; j < totalIter; j++) {
+		for(int i = 0; i < _epochs; i++) {
+			for(int j = 0; j < totalIter; j++) {
 				ListObject globalParams = pullModel();
-
 				ListObject gradients = computeGradients(globalParams, dataSize, totalIter, i, j);
-
-				// Push the gradients to ps
-				pushGradients(gradients);
-				ParamservUtils.cleanupListObject(_ec, Statement.PS_MODEL);
 				
+				if(_modelAvg) {
+					// Update locally  & Push the local update model to ps
+					ListObject model = updateModel(globalParams, gradients, i, j, totalIter);
+					pushGradients(model);
+				}
+				else {
+					// Push the gradients to ps
+					pushGradients(gradients);
+					ParamservUtils.cleanupListObject(_ec, Statement.PS_MODEL);
+				}
 				accNumBatches(1);
 			}
-			
+
 			accNumEpochs(1);
 			if (LOG.isDebugEnabled()) {
 				LOG.debug(String.format("%s: finished %d epoch.", getWorkerName(), i + 1));
@@ -159,7 +164,7 @@ public class LocalPSWorker extends PSWorker implements Callable<Void> {
 	private ListObject pullModel() {
 		// Pull the global parameters from ps
 		ListObject globalParams = _ps.pull(_workerID);
-		if (LOG.isDebugEnabled()) {
+		if(LOG.isDebugEnabled()) {
 			LOG.debug(String.format("%s: successfully pull the global parameters "
 				+ "[size:%d kb] from ps.", getWorkerName(), globalParams.getDataSize() / 1024));
 		}
@@ -169,7 +174,7 @@ public class LocalPSWorker extends PSWorker implements Callable<Void> {
 	private void pushGradients(ListObject gradients) {
 		// Push the gradients to ps
 		_ps.push(_workerID, gradients);
-		if (LOG.isDebugEnabled()) {
+		if(LOG.isDebugEnabled()) {
 			LOG.debug(String.format("%s: successfully push the gradients "
 				+ "[size:%d kb] to ps.", getWorkerName(), gradients.getDataSize() / 1024));
 		}
@@ -189,11 +194,11 @@ public class LocalPSWorker extends PSWorker implements Callable<Void> {
 		_ec.setVariable(Statement.PS_FEATURES, bFeatures);
 		_ec.setVariable(Statement.PS_LABELS, bLabels);
 
-		if (LOG.isDebugEnabled()) {
+		if(LOG.isDebugEnabled()) {
 			LOG.debug(String.format("%s: got batch data [size:%d kb] of index from %d to %d [last index: %d]. "
 				+ "[Epoch:%d  Total epoch:%d  Iteration:%d  Total iteration:%d]", getWorkerName(),
-				bFeatures.getDataSize() / 1024 + bLabels.getDataSize() / 1024, begin, end, dataSize, i + 1, _epochs,
-				j + 1, batchIter));
+				bFeatures.getDataSize() / 1024 + bLabels.getDataSize() / 1024, begin, end, dataSize,
+				i + 1, _epochs, j + 1, batchIter));
 		}
 
 		// Invoke the update function
@@ -208,7 +213,7 @@ public class LocalPSWorker extends PSWorker implements Callable<Void> {
 		ParamservUtils.cleanupData(_ec, Statement.PS_LABELS);
 		return gradients;
 	}
-	
+
 	@Override
 	protected void incWorkerNumber() {
 		if (DMLScript.STATISTICS)

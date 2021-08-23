@@ -1224,11 +1224,11 @@ public class CompressedMatrixBlock extends MatrixBlock {
 		return getUncompressed();
 	}
 
-	private void printDecompressWarning(String operation) {
+	private static void printDecompressWarning(String operation) {
 		LOG.warn("Operation '" + operation + "' not supported yet - decompressing for ULA operations.");
 	}
 
-	private void printDecompressWarning(String operation, MatrixBlock m2) {
+	private static void printDecompressWarning(String operation, MatrixBlock m2) {
 		if(isCompressed(m2))
 			LOG.warn("Operation '" + operation + "' not supported yet - decompressing for ULA operations.");
 		else

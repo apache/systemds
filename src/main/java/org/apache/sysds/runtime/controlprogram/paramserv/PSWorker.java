@@ -37,7 +37,7 @@ import org.apache.sysds.runtime.controlprogram.parfor.stat.Timing;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
 import org.apache.sysds.runtime.instructions.cp.FunctionCallCPInstruction;
 
-public abstract class PSWorker implements Serializable 
+public abstract class PSWorker implements Serializable
 {
 	private static final long serialVersionUID = -3510485051178200118L;
 
@@ -45,7 +45,7 @@ public abstract class PSWorker implements Serializable
 	// Note: we use a non-static variable to obtain the live maintenance thread pool
 	// which is important in scenarios w/ multiple scripts in a single JVM (e.g., tests)
 	protected ExecutorService _tpool = LazyWriteBuffer.getUtilThreadPool();
-	
+
 	protected int _workerID;
 	protected int _epochs;
 	protected long _batchSize;
@@ -57,10 +57,11 @@ public abstract class PSWorker implements Serializable
 	protected MatrixObject _labels;
 	protected String _updFunc;
 	protected Statement.PSFrequency _freq;
+	protected boolean _modelAvg;
 
 	protected PSWorker() {}
 
-	protected PSWorker(int workerID, String updFunc, Statement.PSFrequency freq, int epochs, long batchSize, ExecutionContext ec, ParamServer ps) {
+	protected PSWorker(int workerID, String updFunc, Statement.PSFrequency freq, int epochs, long batchSize, ExecutionContext ec, ParamServer ps, boolean modelAvg) {
 		_workerID = workerID;
 		_updFunc = updFunc;
 		_freq = freq;
@@ -68,6 +69,7 @@ public abstract class PSWorker implements Serializable
 		_batchSize = batchSize;
 		_ec = ec;
 		_ps = ps;
+		_modelAvg = modelAvg;
 		setupUpdateFunction(updFunc, ec);
 	}
 
@@ -148,7 +150,7 @@ public abstract class PSWorker implements Serializable
 	protected void accNumEpochs(int n) {
 		//do nothing
 	}
-	
+
 	protected void accNumBatches(int n) {
 		//do nothing
 	}

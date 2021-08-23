@@ -33,10 +33,10 @@ public abstract class Statement implements ParseInfo
 	// parameter names for seq()
 	public static final String SEQ_FROM = "from"; 
 	public static final String SEQ_TO   = "to";
-	public static final String SEQ_INCR	= "incr";
+	public static final String SEQ_INCR = "incr";
 	
-	public static final String SOURCE  	= "source";
-	public static final String SETWD 	= "setwd";
+	public static final String SOURCE   = "source";
+	public static final String SETWD    = "setwd";
 
 	public static final String MATRIX_DATA_TYPE = "matrix";
 	public static final String FRAME_DATA_TYPE = "frame";
@@ -72,6 +72,7 @@ public abstract class Statement implements ParseInfo
 	public static final String PS_MODE = "mode";
 	public static final String PS_GRADIENTS = "gradients";
 	public static final String PS_SEED = "seed";
+	public static final String PS_MODELAVG = "modelAvg";
 	public enum PSModeType {
 		FEDERATED, LOCAL, REMOTE_SPARK
 	}

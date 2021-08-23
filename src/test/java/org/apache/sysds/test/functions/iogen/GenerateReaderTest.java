@@ -19,9 +19,7 @@
 
 package org.apache.sysds.test.functions.iogen;
 
-import org.apache.sysds.runtime.io.FileFormatPropertiesCSV;
-import org.apache.sysds.runtime.io.MatrixReader;
-import org.apache.sysds.runtime.io.WriterTextCSV;
+import org.apache.sysds.runtime.io.*;
 import org.apache.sysds.runtime.iogen.GenerateReader;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.DataConverter;
@@ -78,6 +76,13 @@ public abstract class GenerateReaderTest extends AutomatedTestBase {
 			writerTextCSV.writeMatrixToHDFS(src, fileNameSampleRawOut, src.getNumRows(), src.getNumColumns(), -1,
 				src.getNonZeros(), false);
 		}
+		else if(this instanceof GenerateReaderLibSVMTest){
+			FileFormatPropertiesLIBSVM libsvm = new FileFormatPropertiesLIBSVM(" ", ":", false);
+			WriterTextLIBSVM writerTextLIBSVM = new WriterTextLIBSVM(libsvm);
+			writerTextLIBSVM.writeMatrixToHDFS(src, fileNameSampleRawOut, src.getNumRows(), src.getNumColumns(), -1,
+				src.getNonZeros(), false);
+		}
+
 
 	}
 }

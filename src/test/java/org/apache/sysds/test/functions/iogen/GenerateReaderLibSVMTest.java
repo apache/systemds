@@ -81,18 +81,7 @@ public class GenerateReaderLibSVMTest extends GenerateReaderTest {
 	// Index start from 0
 	@Test
 	public void test0_1() throws Exception {
-
 		sampleRaw = "+1 2:3 4:5 6:7\n" + "-1 8:9 10:11";
-
-		sampleMatrix = new double[][] {{0, 0, 3, 0, 5, 0, 7, 0, 0, 0, 0, +1}, {0, 0, 0, 0, 0, 0, 0, 0, 9, 0, 11, -1}};
-		runGenerateReaderTest();
-	}
-
-	@Test
-	public void test00_1() throws Exception {
-
-		sampleRaw = "+1     2:3     4:5     6:7\n" + "-1     8:9     10:11";
-
 		sampleMatrix = new double[][] {{0, 0, 3, 0, 5, 0, 7, 0, 0, 0, 0, +1}, {0, 0, 0, 0, 0, 0, 0, 0, 9, 0, 11, -1}};
 		runGenerateReaderTest();
 	}

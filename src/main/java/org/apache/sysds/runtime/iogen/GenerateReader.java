@@ -47,6 +47,8 @@ public class GenerateReader {
 	 */
 	public static MatrixReader generateReader(String sampleRaw, MatrixBlock sampleMatrix) throws Exception {
 
+		// TODO: 1. The Reader Mapping can't recognize na String when it is at the end of row
+		//       2. Empty NA string should be add to naStrings list
 		// 1. Identify file format properties:
 		ReaderMapping rp = new ReaderMapping(sampleRaw, sampleMatrix);
 
@@ -238,7 +240,7 @@ public class GenerateReader {
 
 			public double nextDouble() {
 				String nt = nextToken();
-				if(naStrings != null && naStrings.contains(nt))
+				if((naStrings != null && naStrings.contains(nt)))
 					return 0;
 				else
 					return Double.parseDouble(nt);
@@ -332,7 +334,10 @@ public class GenerateReader {
 					dest.appendValue(row, (int) clen, cellValue);
 
 					while(col != -1) {
-						fastStringTokenizerIndexDelim.reset(fastStringTokenizerDelim.nextToken());
+						String nt = fastStringTokenizerDelim.nextToken();
+						if(fastStringTokenizerDelim.getIndex() == -1)
+							break;
+						fastStringTokenizerIndexDelim.reset(nt);
 						col = fastStringTokenizerIndexDelim.nextInt();
 						cellValue = fastStringTokenizerIndexDelim.nextDouble();
 						if(cellValue != 0) {

@@ -373,6 +373,7 @@ public class GenerateReader {
 			int col = 0;
 			long lnnz = 0;
 
+
 			BufferedReader br = new BufferedReader(new InputStreamReader(is));
 
 			//TODO: separate implementation for Sparse and Dens Matrix Blocks

@@ -23,11 +23,11 @@ import org.apache.sysds.test.TestConfiguration;
 import org.junit.Test;
 import java.util.Random;
 
-public class GenerateReaderCSVTest extends GenerateReaderTest {
+public class MatrixGenerateReaderCSVTest extends GenerateReaderTest {
 
 	private final static String TEST_NAME = "GenerateReaderCSVTest";
 	private final static String TEST_DIR = "functions/iogen/GenerateReaderCSVTest/";
-	private final static String TEST_CLASS_DIR = TEST_DIR + GenerateReaderCSVTest.class.getSimpleName() + "/";
+	private final static String TEST_CLASS_DIR = TEST_DIR + MatrixGenerateReaderCSVTest.class.getSimpleName() + "/";
 
 	@Override public void setUp() {
 		addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[] {"Rout"}));

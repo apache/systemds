@@ -19,15 +19,14 @@
 
 package org.apache.sysds.test.functions.iogen;
 
-import com.google.gson.Gson;
 import org.apache.sysds.test.TestConfiguration;
 import org.junit.Test;
 
-public class GenerateReaderMatrixMarketTest extends GenerateReaderTest {
+public class MatrixMatrixGenerateReaderMarketTest extends GenerateReaderTest {
 
 	private final static String TEST_NAME = "GenerateReaderMatrixMarketTest";
 	private final static String TEST_DIR = "functions/iogen/GenerateReaderMatrixMarketTest/";
-	private final static String TEST_CLASS_DIR = TEST_DIR + GenerateReaderMatrixMarketTest.class.getSimpleName() + "/";
+	private final static String TEST_CLASS_DIR = TEST_DIR + MatrixMatrixGenerateReaderMarketTest.class.getSimpleName() + "/";
 
 	private final static double eps = 1e-9;
 

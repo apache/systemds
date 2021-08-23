@@ -19,5 +19,5 @@
 
 package org.apache.sysds.runtime.iogen;
 
-public abstract class GenerateReader {
+public class FrameGenerateReader extends GenerateReader{
 }

@@ -22,11 +22,11 @@ package org.apache.sysds.test.functions.iogen;
 import org.apache.sysds.test.TestConfiguration;
 import org.junit.Test;
 
-public class GenerateReaderLibSVMTest extends GenerateReaderTest {
+public class MatrixGenerateReaderLibSVMTest extends GenerateReaderTest {
 
 	private final static String TEST_NAME = "GenerateReaderLibSVMTest";
 	private final static String TEST_DIR = "functions/iogen/GenerateReaderLibSVMTest/";
-	private final static String TEST_CLASS_DIR = TEST_DIR + GenerateReaderLibSVMTest.class.getSimpleName() + "/";
+	private final static String TEST_CLASS_DIR = TEST_DIR + MatrixGenerateReaderLibSVMTest.class.getSimpleName() + "/";
 
 	@Override public void setUp() {
 		addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[] {"Rout"}));

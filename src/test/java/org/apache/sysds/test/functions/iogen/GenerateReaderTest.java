@@ -20,7 +20,7 @@
 package org.apache.sysds.test.functions.iogen;
 
 import org.apache.sysds.runtime.io.*;
-import org.apache.sysds.runtime.iogen.GenerateReader;
+import org.apache.sysds.runtime.iogen.MatrixGenerateReader;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.DataConverter;
 import org.apache.sysds.test.AutomatedTestBase;
@@ -57,7 +57,7 @@ public abstract class GenerateReaderTest extends AutomatedTestBase {
 
 	protected void runGenerateReaderTest() throws Exception {
 		MatrixBlock sampleMatrixMB = DataConverter.convertToMatrixBlock(sampleMatrix);
-		MatrixReader reader = GenerateReader.generateReader(sampleRaw, sampleMatrixMB);
+		MatrixReader reader = MatrixGenerateReader.generateReader(sampleRaw, sampleMatrixMB);
 
 		// Write SampleRawMatrix data into a file
 		String HOME = SCRIPT_DIR + TEST_DIR;
@@ -72,19 +72,19 @@ public abstract class GenerateReaderTest extends AutomatedTestBase {
 		MatrixBlock src = reader
 			.readMatrixFromHDFS(fileNameSampleRaw, sampleMatrixMB.getNumRows(), sampleMatrixMB.getNumColumns(), -1, -1);
 
-		if(this instanceof GenerateReaderCSVTest) {
+		if(this instanceof MatrixGenerateReaderCSVTest) {
 			FileFormatPropertiesCSV csv = new FileFormatPropertiesCSV(false, ",", false);
 			WriterTextCSV writerTextCSV = new WriterTextCSV(csv);
 			writerTextCSV.writeMatrixToHDFS(src, fileNameSampleRawOut, src.getNumRows(), src.getNumColumns(), -1,
 				src.getNonZeros(), false);
 		}
-		else if(this instanceof GenerateReaderLibSVMTest){
+		else if(this instanceof MatrixGenerateReaderLibSVMTest){
 			FileFormatPropertiesLIBSVM libsvm = new FileFormatPropertiesLIBSVM(" ", ":", false);
 			WriterTextLIBSVM writerTextLIBSVM = new WriterTextLIBSVM(libsvm);
 			writerTextLIBSVM.writeMatrixToHDFS(src, fileNameSampleRawOut, src.getNumRows(), src.getNumColumns(), -1,
 				src.getNonZeros(), false);
 		}
-		else if(this instanceof GenerateReaderMatrixMarketTest){
+		else if(this instanceof MatrixMatrixGenerateReaderMarketTest){
 			WriterTextCell writerTextCell = new WriterTextCell();
 			writerTextCell.writeMatrixToHDFS(src, fileNameSampleRawOut, src.getNumRows(), src.getNumColumns(), -1,
 				src.getNonZeros(), false);

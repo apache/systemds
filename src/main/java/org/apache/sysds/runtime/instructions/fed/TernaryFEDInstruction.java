@@ -119,14 +119,15 @@ public class TernaryFEDInstruction extends ComputationFEDInstruction {
 			varNewIn = new long[]{fr1[0].getID(), mo1.getFedMapping().getID()};
 		}
 		long id = FederationUtils.getNextFedDataID();
-		FederatedRequest fr3 = new FederatedRequest(FederatedRequest.RequestType.PUT_VAR, id, new MatrixCharacteristics(-1, -1), mo1.getDataType());
-		FederatedRequest fr2 = FederationUtils.callInstruction(instString, output, id, varOldIn, varNewIn, InstructionUtils.getExecType(instString), false);
+		Types.ExecType execType = InstructionUtils.getExecType(instString) == Types.ExecType.SPARK ? Types.ExecType.SPARK : Types.ExecType.CP;
+		FederatedRequest fr2 = new FederatedRequest(FederatedRequest.RequestType.PUT_VAR, id, new MatrixCharacteristics(-1, -1), mo1.getDataType());
+		FederatedRequest fr3 = FederationUtils.callInstruction(instString, output, id, varOldIn, varNewIn, execType, false);
 
 		// 2 aligned inputs
 		if(fr1 == null)
-			sendFederatedRequests(ec, mo1, fr2.getID(), fr3, fr2);
+			sendFederatedRequests(ec, mo1, fr3.getID(), fr2, fr3);
 		else
-			sendFederatedRequests(ec, mo1, fr2.getID(), fr3, fr1[0], fr2);
+			sendFederatedRequests(ec, mo1, fr3.getID(), fr1, fr2, fr3);
 	}
 
 	/**

@@ -58,6 +58,8 @@ import org.apache.sysds.runtime.instructions.spark.AggregateTernarySPInstruction
 import org.apache.sysds.runtime.instructions.spark.AggregateUnarySPInstruction;
 import org.apache.sysds.runtime.instructions.spark.AppendGAlignedSPInstruction;
 import org.apache.sysds.runtime.instructions.spark.AppendGSPInstruction;
+import org.apache.sysds.runtime.instructions.spark.AppendMSPInstruction;
+import org.apache.sysds.runtime.instructions.spark.AppendRSPInstruction;
 import org.apache.sysds.runtime.instructions.spark.BinaryFrameScalarSPInstruction;
 import org.apache.sysds.runtime.instructions.spark.BinaryMatrixBVectorSPInstruction;
 import org.apache.sysds.runtime.instructions.spark.BinaryMatrixMatrixSPInstruction;
@@ -69,6 +71,8 @@ import org.apache.sysds.runtime.instructions.spark.CastSPInstruction;
 import org.apache.sysds.runtime.instructions.spark.CentralMomentSPInstruction;
 import org.apache.sysds.runtime.instructions.spark.CtableSPInstruction;
 import org.apache.sysds.runtime.instructions.spark.CumulativeOffsetSPInstruction;
+import org.apache.sysds.runtime.instructions.spark.FrameAppendMSPInstruction;
+import org.apache.sysds.runtime.instructions.spark.FrameAppendRSPInstruction;
 import org.apache.sysds.runtime.instructions.spark.IndexingSPInstruction;
 import org.apache.sysds.runtime.instructions.spark.MapmmSPInstruction;
 import org.apache.sysds.runtime.instructions.spark.MultiReturnParameterizedBuiltinSPInstruction;
@@ -315,7 +319,6 @@ public class FEDInstructionUtils {
 				fedinst = SpoofFEDInstruction.parseInstruction(inst.getInstructionString());
 			}
 		}
-
 		else if (inst instanceof UnarySPInstruction && ! (inst instanceof IndexingSPInstruction)) {
 			UnarySPInstruction instruction = (UnarySPInstruction) inst;
 			if (inst instanceof CentralMomentSPInstruction) {
@@ -384,17 +387,38 @@ public class FEDInstructionUtils {
 					fedinst = QuantilePickFEDInstruction.parseInstruction(inst.getInstructionString());
 			}
 			else if (inst instanceof AppendGAlignedSPInstruction) {
-				// TODO other Append Spark instructions
 				AppendGAlignedSPInstruction ainstruction = (AppendGAlignedSPInstruction) inst;
-				Data data = ec.getVariable(ainstruction.input1);
-				if (data instanceof MatrixObject && ((MatrixObject) data).isFederatedExcept(FType.BROADCAST)) {
+				Data data1 = ec.getVariable(ainstruction.input1);
+				Data data2 = ec.getVariable(ainstruction.input2);
+				if (data1 instanceof MatrixObject && ((MatrixObject) data1).isFederatedExcept(FType.BROADCAST)
+					&& (! ((CacheableData)data2).isFederated() || ((CacheableData)data2).isFederatedExcept(FType.BROADCAST))) {
 					fedinst = AppendFEDInstruction.parseInstruction(instruction.getInstructionString());
 				}
 			}
 			else if (inst instanceof AppendGSPInstruction) {
 				AppendGSPInstruction ainstruction = (AppendGSPInstruction) inst;
-				Data data = ec.getVariable(ainstruction.input1);
-				if(data instanceof MatrixObject && ((MatrixObject) data).isFederated()) {
+				Data data1 = ec.getVariable(ainstruction.input1);
+				Data data2 = ec.getVariable(ainstruction.input2);
+				if(data1 instanceof MatrixObject && ((MatrixObject) data1).isFederatedExcept(FType.BROADCAST)
+					&& (! ((CacheableData)data2).isFederated() || ((CacheableData)data2).isFederatedExcept(FType.BROADCAST))) {
+					fedinst = AppendFEDInstruction.parseInstruction(ainstruction.getInstructionString());
+				}
+			}
+			else  if (inst instanceof AppendMSPInstruction) {
+				AppendMSPInstruction ainstruction = (AppendMSPInstruction) inst;
+				Data data1 = ec.getVariable(ainstruction.input1);
+				Data data2 = ec.getVariable(ainstruction.input2);
+				if(((CacheableData) data1).isFederatedExcept(FType.BROADCAST) && (! ((CacheableData)data2).isFederated()
+					|| ((CacheableData)data2).isFederatedExcept(FType.BROADCAST))) {
+					fedinst = AppendFEDInstruction.parseInstruction(ainstruction.getInstructionString());
+				}
+			}
+			else  if (inst instanceof AppendRSPInstruction) {
+				AppendRSPInstruction ainstruction = (AppendRSPInstruction) inst;
+				Data data1 = ec.getVariable(ainstruction.input1);
+				Data data2 = ec.getVariable(ainstruction.input2);
+				if(((CacheableData) data1).isFederatedExcept(FType.BROADCAST) && (! ((CacheableData)data2).isFederated()
+					|| ((CacheableData)data2).isFederatedExcept(FType.BROADCAST))) {
 					fedinst = AppendFEDInstruction.parseInstruction(ainstruction.getInstructionString());
 				}
 			}
@@ -417,9 +441,7 @@ public class FEDInstructionUtils {
 			}
 			else if( (instruction.input1.isMatrix() && ec.getCacheableData(instruction.input1).isFederatedExcept(FType.BROADCAST))
 				|| (instruction.input2.isMatrix() && ec.getMatrixObject(instruction.input2).isFederatedExcept(FType.BROADCAST))) {
-				if(instruction.getOpcode().equals("append") || instruction.getOpcode().equals("mappend")) //FIXME
-					fedinst = AppendFEDInstruction.parseInstruction(inst.getInstructionString());
-				else if("cov".equals(instruction.getOpcode()) && (ec.getMatrixObject(instruction.input1)
+				if("cov".equals(instruction.getOpcode()) && (ec.getMatrixObject(instruction.input1)
 					.isFederated(FType.ROW) || ec.getMatrixObject(instruction.input2).isFederated(FType.ROW)))
 					fedinst = CovarianceFEDInstruction.parseInstruction(inst.getInstructionString());
 				// FIXME

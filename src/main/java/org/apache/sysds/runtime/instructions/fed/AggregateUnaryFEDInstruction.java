@@ -177,7 +177,6 @@ public class AggregateUnaryFEDInstruction extends UnaryFEDInstruction {
 
 		long id = FederationUtils.getNextFedDataID();;
 		FederatedRequest tmpRequest = null;
-		DataCharacteristics dc = ec.getDataCharacteristics(output.getName());
 		if(isSpark) {
 			if ( output.isScalar() ) {
 				ScalarObject scalarOut = ec.getScalarInput(output);
@@ -187,8 +186,10 @@ public class AggregateUnaryFEDInstruction extends UnaryFEDInstruction {
 			else {
 				if((map.getType() == FederationMap.FType.COL && aop.isColAggregate()) || (map.getType() == FederationMap.FType.ROW && aop.isRowAggregate()))
 					tmpRequest = new FederatedRequest(RequestType.PUT_VAR, id, new MatrixCharacteristics(-1, -1), in.getDataType());
-				else
+				else {
+					DataCharacteristics dc = ec.getDataCharacteristics(output.getName());
 					tmpRequest = new FederatedRequest(RequestType.PUT_VAR, id, dc, in.getDataType());
+				}
 			}
 		}
 

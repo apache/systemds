@@ -120,17 +120,31 @@ public class CtableFEDInstruction extends ComputationFEDInstruction {
 			mo1 = ec.getMatrixObject(input3);
 		}
 
-		boolean fedOutput = isFedOutput(mo1.getFedMapping(), mo2);
-
-		processRequest(ec, mo1, mo2, mo3, reversed, reversedWeights, fedOutput, dims1, dims2);
-	}
-
-	private void processRequest(ExecutionContext ec, MatrixObject mo1, MatrixObject mo2, MatrixObject mo3,
-		boolean reversed, boolean reversedWeights, boolean fedOutput, Long[] dims1, Long[] dims2) {
-
-		FederationMap fedMap = mo1.getFedMapping();
 		// static non-partitioned output dimension (same for all federated partitions)
 		long staticDim = Collections.max(Arrays.asList(dims1), Long::compare);
+		boolean fedOutput = isFedOutput(mo1.getFedMapping(), mo2);
+
+		processRequest(ec, mo1, mo2, mo3, reversed, reversedWeights, fedOutput, staticDim, dims2);
+	}
+
+	/**
+	 * Broadcast, execute, and finalize the federated instruction according to
+	 * the specified inputs.
+	 *
+	 * @param ec execution context
+	 * @param mo1 input matrix object 1
+	 * @param mo2 input matrix object 2
+	 * @param mo3 input matrix object 3 or null
+	 * @param reversed boolean indicating if inputs mo1 and mo2 are reversed
+	 * @param reversedWeights boolean indicating if inputs mo1 and mo3 are reversed
+	 * @param fedOutput boolean indicating if output can be kept federated
+	 * @param staticDim static non-partitioned dimension of the output
+	 * @param dims2 dimensions of the partial outputs along the federated partitioning
+	 */
+	private void processRequest(ExecutionContext ec, MatrixObject mo1, MatrixObject mo2, MatrixObject mo3,
+		boolean reversed, boolean reversedWeights, boolean fedOutput, long staticDim, Long[] dims2) {
+
+		FederationMap fedMap = mo1.getFedMapping();
 
 		FederatedRequest[] fr1 = fedMap.broadcastSliced(mo2, false);
 		FederatedRequest[] fr2 = null;
@@ -184,7 +198,7 @@ public class CtableFEDInstruction extends ComputationFEDInstruction {
 			MatrixObject out = ec.getMatrixObject(output);
 			FederationMap newFedMap = modifyFedRanges(fedMap.copyWithNewID(fr3.getID()),
 				staticDim, dims2, reversed);
-			setFedOutput(mo1, out, newFedMap, staticDim, dims2, fr3.getID(), reversed);
+			setFedOutput(mo1, out, newFedMap, staticDim, dims2, reversed);
 		} else {
 			fr4 = new FederatedRequest(FederatedRequest.RequestType.GET_VAR, fr3.getID());
 			fr7 = fedMap.cleanup(getTID(), fr3.getID());
@@ -197,6 +211,15 @@ public class CtableFEDInstruction extends ComputationFEDInstruction {
 		}
 	}
 
+	/**
+	 * Evaluate if the output can be kept federated on the different federated
+	 * sites or if the output needs to be aggregated on the coordinator, based
+	 * on the output ranges of mo2.
+	 *
+	 * @param fedMap the federation map of the federated matrix input mo1
+	 * @param mo2 input matrix object mo2
+	 * @return boolean indicating if the output can be kept on the federated sites
+	 */
 	private boolean isFedOutput(FederationMap fedMap, MatrixObject mo2) {
 		MatrixBlock mb = mo2.acquireReadAndRelease();
 		FederatedRange[] fedRanges = fedMap.getFederatedRanges(); // federated ranges of mo1
@@ -225,8 +248,19 @@ public class CtableFEDInstruction extends ComputationFEDInstruction {
 		return retVal;
 	}
 
+	/**
+	 * Set the output and its data characteristics on the federated sites.
+	 *
+	 * @param mo1 input matrix object mo1
+	 * @param out input matrix object of the output
+	 * @param fedMap the federation map of the federated matrix input mo1
+	 * @param staticDim static non-partitioned dimension of the output
+	 * @param dims2 dimensions of the partial outputs along the federated partitioning
+	 * @param reversed boolean indicating if inputs mo1 and mo2 are reversed
+	 * @return boolean indicating if the output can be kept on the federated sites
+	 */
 	private static void setFedOutput(MatrixObject mo1, MatrixObject out, FederationMap fedMap,
-		long staticDim, Long[] dims2, long outId, boolean reversed) {
+		long staticDim, Long[] dims2, boolean reversed) {
 		// get the final output dimensions
 		final long d1 = (reversed ? Collections.max(Arrays.asList(dims2)) : staticDim);
 		final long d2 = (reversed ? staticDim : Collections.max(Arrays.asList(dims2)));
@@ -251,6 +285,9 @@ public class CtableFEDInstruction extends ComputationFEDInstruction {
 		});
 	}
 
+	/**
+	 * Aggregate the partial outputs locally.
+	 */
 	private static MatrixBlock aggResult(Future<FederatedResponse>[] ffr) {
 		MatrixBlock resultBlock = new MatrixBlock(1, 1, true, 0);
 		int dim1 = 0, dim2 = 0;
@@ -278,6 +315,16 @@ public class CtableFEDInstruction extends ComputationFEDInstruction {
 		return resultBlock;
 	}
 
+	/**
+	 * Set the ranges of the federation map according to the static dimension and
+	 * the individual dimensions of the partial output matrices.
+	 *
+	 * @param fedMap the federation map of the federated matrix input mo1
+	 * @param staticDim static non-partitioned dimension of the output
+	 * @param dims2 dimensions of the partial outputs along the federated partitioning
+	 * @param reversed boolean indicating if inputs mo1 and mo2 are reversed
+	 * @return FederationMap the modified federation map
+	 */
 	private static FederationMap modifyFedRanges(FederationMap fedMap, long staticDim,
 		Long[] dims2, boolean reversed) {
 		// set the federated ranges to the individual partition sizes
@@ -291,7 +338,12 @@ public class CtableFEDInstruction extends ComputationFEDInstruction {
 		return fedMap;
 	}
 
-	private Long[] getOutputDimension(MatrixObject in, CPOperand inOp, CPOperand outOp, FederatedRange[] federatedRanges) {
+	/**
+	 * Compute the output dimensions of the partial outputs according to the
+	 * federated ranges.
+	 */
+	private Long[] getOutputDimension(MatrixObject in, CPOperand inOp, CPOperand outOp,
+		FederatedRange[] federatedRanges) {
 		Long[] fedDims = new Long[federatedRanges.length];
 
 		if(!in.isFederated()) {
@@ -340,6 +392,11 @@ public class CtableFEDInstruction extends ComputationFEDInstruction {
 		return String.join(Lop.OPERAND_DELIMITOR, maxInstParts);
 	}
 
+	/**
+	 * Static class which extends FederatedUDF to modify the partial outputs on
+	 * the federated sites such that they can be bound without any local
+	 * aggregation.
+	 */
 	private static class SliceOutput extends FederatedUDF {
 
 		private static final long serialVersionUID = -2808597461054603816L;
@@ -354,6 +411,15 @@ public class CtableFEDInstruction extends ComputationFEDInstruction {
 			_reversed = reversed;
 		}
 
+		/**
+		 * Find the dimensions of the partial output matrix and expand it to the
+		 * global static dimension along the non-partitioned axis and crop it
+		 * along the paritioned axis.
+		 *
+		 * @param ec the execution context
+		 * @param data
+		 * @return FederatedResponse with status SUCCESS and an empty object
+		 */
 		public FederatedResponse execute(ExecutionContext ec, Data... data) {
 			MatrixObject mo = (MatrixObject) data[0];
 			MatrixBlock mb = mo.acquireReadAndRelease();
@@ -379,6 +445,13 @@ public class CtableFEDInstruction extends ComputationFEDInstruction {
 			return new FederatedResponse(FederatedResponse.ResponseType.SUCCESS, new Object[] {});
 		}
 
+		/**
+		 * Expand the matrix with zeros up to the specified static dimension.
+		 *
+		 * @param mb the matrix block of the partial output
+		 * @param localStaticDim the static dimension of the output matrix block
+		 * @return MatrixBlock the output matrix block expanded to the global static dimension
+		 */
 		private MatrixBlock expandMatrix(MatrixBlock mb, int localStaticDim) {
 			int diff = _staticDim - localStaticDim;
 			if(diff > 0) {

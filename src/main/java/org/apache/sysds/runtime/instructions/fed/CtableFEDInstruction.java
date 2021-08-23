@@ -148,8 +148,8 @@ public class CtableFEDInstruction extends ComputationFEDInstruction {
 
 		FederatedRequest[] fr1 = fedMap.broadcastSliced(mo2, false);
 		FederatedRequest[] fr2 = null;
-		FederatedRequest fr3, fr4, fr5, fr6, fr7;
-		fr3 = fr4 = fr5 = fr6 = fr7 = null;
+		FederatedRequest fr3, fr4, fr5;
+		fr3 = fr4 = fr5 = null;
 		Future<FederatedResponse>[] ffr = null;
 
 		if(mo3 != null && mo1.isFederated() && mo3.isFederated()
@@ -160,8 +160,6 @@ public class CtableFEDInstruction extends ComputationFEDInstruction {
 			else
 				fr3 = FederationUtils.callInstruction(instString, output, new CPOperand[] {input1, input2, input3},
 					new long[] {fr1[0].getID(), fedMap.getID(), mo3.getFedMapping().getID()});
-
-			fr5 = fedMap.cleanup(getTID(), fr1[0].getID());
 		}
 		else if(mo3 == null) {
 			if(!reversed)
@@ -170,8 +168,6 @@ public class CtableFEDInstruction extends ComputationFEDInstruction {
 			else
 				fr3 = FederationUtils.callInstruction(instString, output, new CPOperand[] {input1, input2},
 					new long[] {fr1[0].getID(), fedMap.getID()});
-
-			fr5 = fedMap.cleanup(getTID(), fr1[0].getID());
 		}
 		else {
 			fr2 = fedMap.broadcastSliced(mo3, false);
@@ -184,16 +180,13 @@ public class CtableFEDInstruction extends ComputationFEDInstruction {
 			else
 				fr3 = FederationUtils.callInstruction(instString, output, new CPOperand[] {input1, input2, input3},
 					new long[] {fr1[0].getID(), fr2[0].getID(), fedMap.getID()});
-
-			fr5 = fedMap.cleanup(getTID(), fr1[0].getID());
-			fr6 = fedMap.cleanup(getTID(), fr2[0].getID());
 		}
 
 		if(fedOutput) {
-			if(fr2 != null && fr6 != null) // broadcasted mo3
-				fedMap.execute(getTID(), true, fr1, fr2, fr3, fr5, fr6);
+			if(fr2 != null) // broadcasted mo3
+				fedMap.execute(getTID(), true, fr1, fr2, fr3);
 			else
-				fedMap.execute(getTID(), true, fr1, fr3, fr5);
+				fedMap.execute(getTID(), true, fr1, fr3);
 
 			MatrixObject out = ec.getMatrixObject(output);
 			FederationMap newFedMap = modifyFedRanges(fedMap.copyWithNewID(fr3.getID()),
@@ -201,11 +194,11 @@ public class CtableFEDInstruction extends ComputationFEDInstruction {
 			setFedOutput(mo1, out, newFedMap, staticDim, dims2, reversed);
 		} else {
 			fr4 = new FederatedRequest(FederatedRequest.RequestType.GET_VAR, fr3.getID());
-			fr7 = fedMap.cleanup(getTID(), fr3.getID());
-			if(fr2 != null && fr6 != null) // broadcasted mo3
-				ffr = fedMap.execute(getTID(), true, fr1, fr2, fr3, fr4, fr5, fr6, fr7);
+			fr5 = fedMap.cleanup(getTID(), fr3.getID());
+			if(fr2 != null) // broadcasted mo3
+				ffr = fedMap.execute(getTID(), true, fr1, fr2, fr3, fr4, fr5);
 			else
-				ffr = fedMap.execute(getTID(), true, fr1, fr3, fr4, fr5, fr7);
+				ffr = fedMap.execute(getTID(), true, fr1, fr3, fr4, fr5);
 
 			ec.setMatrixOutput(output.getName(), aggResult(ffr));
 		}

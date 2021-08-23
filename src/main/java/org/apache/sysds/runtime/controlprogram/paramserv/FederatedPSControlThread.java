@@ -522,7 +522,9 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 					ParamservUtils.accrueGradients(accGradients, gradients, false);
 				
 				// update the local model with gradients if needed
-				if((_localUpdate && batchCounter < _numBatchesToCompute - 1) | modelAvg) {
+				// FIXME ensure that with modelAvg we always update the model
+				// (current fails due to missing aggregation instruction)
+				if(_localUpdate && batchCounter < _numBatchesToCompute - 1) {
 					// Invoke the aggregate function
 					assert aggregationInstruction != null;
 					aggregationInstruction.processInstruction(ec);

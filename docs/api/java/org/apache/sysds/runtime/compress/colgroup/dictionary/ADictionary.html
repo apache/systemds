@@ -338,12 +338,11 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 </td>
 </tr>
 <tr id="i26" class="altColor">
-<td class="colFirst"><code>abstract void</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/dictionary/ADictionary.html#preaggValuesFromDense-int-int:A-int:A-double:A-double:A-int-">preaggValuesFromDense</a></span>(int&nbsp;numVals,
+<td class="colFirst"><code>abstract <a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/dictionary/ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a></code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/dictionary/ADictionary.html#preaggValuesFromDense-int-int:A-int:A-double:A-int-">preaggValuesFromDense</a></span>(int&nbsp;numVals,
                      int[]&nbsp;colIndexes,
                      int[]&nbsp;aggregateColumns,
                      double[]&nbsp;b,
-                     double[]&nbsp;ret,
                      int&nbsp;cut)</code>
 <div class="block">Pre Aggregate values for right Matrix Multiplication.</div>
 </td>
@@ -1088,18 +1087,17 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 </dl>
 </li>
 </ul>
-<a name="preaggValuesFromDense-int-int:A-int:A-double:A-double:A-int-">
+<a name="preaggValuesFromDense-int-int:A-int:A-double:A-int-">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
 <h4>preaggValuesFromDense</h4>
-<pre>public abstract&nbsp;void&nbsp;preaggValuesFromDense(int&nbsp;numVals,
-                                           int[]&nbsp;colIndexes,
-                                           int[]&nbsp;aggregateColumns,
-                                           double[]&nbsp;b,
-                                           double[]&nbsp;ret,
-                                           int&nbsp;cut)</pre>
+<pre>public abstract&nbsp;<a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/dictionary/ADictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">ADictionary</a>&nbsp;preaggValuesFromDense(int&nbsp;numVals,
+                                                  int[]&nbsp;colIndexes,
+                                                  int[]&nbsp;aggregateColumns,
+                                                  double[]&nbsp;b,
+                                                  int&nbsp;cut)</pre>
 <div class="block">Pre Aggregate values for right Matrix Multiplication.</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
@@ -1108,8 +1106,9 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <dd><code>aggregateColumns</code> - The column to aggregate, this is preprocessed, to find remove consideration for empty
                          columns</dd>
 <dd><code>b</code> - The values in the right hand side matrix</dd>
-<dd><code>ret</code> - The double array to put in the aggregate.</dd>
 <dd><code>cut</code> - The number of columns in b.</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>A new dictionary with the pre aggregated values.</dd>
 </dl>
 </li>
 </ul>

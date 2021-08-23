@@ -64,6 +64,9 @@
 <li><a href="org/apache/sysds/runtime/instructions/spark/AppendRSPInstruction.html" title="class in org.apache.sysds.runtime.instructions.spark">AppendRSPInstruction</a></li>
 <li><a href="org/apache/sysds/runtime/instructions/gpu/ArithmeticBinaryGPUInstruction.html" title="class in org.apache.sysds.runtime.instructions.gpu">ArithmeticBinaryGPUInstruction</a></li>
 <li><a href="org/apache/sysds/parser/AssignmentStatement.html" title="class in org.apache.sysds.parser">AssignmentStatement</a></li>
+<li><a href="org/apache/sysds/runtime/util/AutoDiff.html" title="class in org.apache.sysds.runtime.util">AutoDiff</a></li>
+<li><a href="org/apache/sysds/runtime/compress/workload/AWTreeNode.html" title="class in org.apache.sysds.runtime.compress.workload">AWTreeNode</a></li>
+<li><a href="org/apache/sysds/runtime/compress/workload/AWTreeNode.WTNodeType.html" title="enum in org.apache.sysds.runtime.compress.workload">AWTreeNode.WTNodeType</a></li>
 <li><a href="org/apache/sysds/runtime/controlprogram/paramserv/dp/BalanceToAvgFederatedScheme.html" title="class in org.apache.sysds.runtime.controlprogram.paramserv.dp">BalanceToAvgFederatedScheme</a></li>
 <li><a href="org/apache/sysds/runtime/controlprogram/BasicProgramBlock.html" title="class in org.apache.sysds.runtime.controlprogram">BasicProgramBlock</a></li>
 <li><a href="org/apache/sysds/runtime/data/BasicTensorBlock.html" title="class in org.apache.sysds.runtime.data">BasicTensorBlock</a></li>
@@ -122,6 +125,7 @@
 <li><a href="org/apache/sysds/parser/BooleanExpression.html" title="class in org.apache.sysds.parser">BooleanExpression</a></li>
 <li><a href="org/apache/sysds/parser/BooleanIdentifier.html" title="class in org.apache.sysds.parser">BooleanIdentifier</a></li>
 <li><a href="org/apache/sysds/runtime/instructions/cp/BooleanObject.html" title="class in org.apache.sysds.runtime.instructions.cp">BooleanObject</a></li>
+<li><a href="org/apache/sysds/runtime/instructions/cp/BroadcastCPInstruction.html" title="class in org.apache.sysds.runtime.instructions.cp">BroadcastCPInstruction</a></li>
 <li><a href="org/apache/sysds/runtime/instructions/spark/data/BroadcastObject.html" title="class in org.apache.sysds.runtime.instructions.spark.data">BroadcastObject</a></li>
 <li><a href="org/apache/sysds/runtime/functionobjects/Builtin.html" title="class in org.apache.sysds.runtime.functionobjects">Builtin</a></li>
 <li><a href="org/apache/sysds/runtime/functionobjects/Builtin.BuiltinCode.html" title="enum in org.apache.sysds.runtime.functionobjects">Builtin.BuiltinCode</a></li>
@@ -185,9 +189,10 @@
 <li><a href="org/apache/sysds/hops/codegen/cplan/CNodeUnary.html" title="class in org.apache.sysds.hops.codegen.cplan">CNodeUnary</a></li>
 <li><a href="org/apache/sysds/hops/codegen/cplan/CNodeUnary.UnaryType.html" title="enum in org.apache.sysds.hops.codegen.cplan">CNodeUnary.UnaryType</a></li>
 <li><a href="org/apache/sysds/runtime/compress/cocode/CoCodeBinPacking.html" title="class in org.apache.sysds.runtime.compress.cocode">CoCodeBinPacking</a></li>
-<li><a href="org/apache/sysds/runtime/compress/cocode/CoCodeCost.html" title="class in org.apache.sysds.runtime.compress.cocode">CoCodeCost</a></li>
-<li><a href="org/apache/sysds/runtime/compress/cocode/CoCodeCostMatrixMult.html" title="class in org.apache.sysds.runtime.compress.cocode">CoCodeCostMatrixMult</a></li>
-<li><a href="org/apache/sysds/runtime/compress/cocode/CoCodeCostTSMM.html" title="class in org.apache.sysds.runtime.compress.cocode">CoCodeCostTSMM</a></li>
+<li><a href="org/apache/sysds/runtime/compress/cocode/CoCodeGreedy.html" title="class in org.apache.sysds.runtime.compress.cocode">CoCodeGreedy</a></li>
+<li><a href="org/apache/sysds/runtime/compress/cocode/CoCodePriorityQue.html" title="class in org.apache.sysds.runtime.compress.cocode">CoCodePriorityQue</a></li>
+<li><a href="org/apache/sysds/runtime/compress/cocode/CoCoderFactory.html" title="class in org.apache.sysds.runtime.compress.cocode">CoCoderFactory</a></li>
+<li><a href="org/apache/sysds/runtime/compress/cocode/CoCoderFactory.PartitionerType.html" title="enum in org.apache.sysds.runtime.compress.cocode">CoCoderFactory.PartitionerType</a></li>
 <li><a href="org/apache/sysds/runtime/compress/cocode/CoCodeStatic.html" title="class in org.apache.sysds.runtime.compress.cocode">CoCodeStatic</a></li>
 <li><a href="org/apache/sysds/runtime/codegen/CodegenUtils.html" title="class in org.apache.sysds.runtime.codegen">CodegenUtils</a></li>
 <li><a href="org/apache/sysds/hops/codegen/cplan/CodeTemplate.html" title="class in org.apache.sysds.hops.codegen.cplan">CodeTemplate</a></li>
@@ -234,7 +239,10 @@
 <li><a href="org/apache/sysds/runtime/compress/CompressionSettingsBuilder.html" title="class in org.apache.sysds.runtime.compress">CompressionSettingsBuilder</a></li>
 <li><a href="org/apache/sysds/runtime/instructions/spark/CompressionSPInstruction.html" title="class in org.apache.sysds.runtime.instructions.spark">CompressionSPInstruction</a></li>
 <li><a href="org/apache/sysds/runtime/instructions/spark/CompressionSPInstruction.CompressionFunction.html" title="class in org.apache.sysds.runtime.instructions.spark">CompressionSPInstruction.CompressionFunction</a></li>
+<li><a href="org/apache/sysds/runtime/instructions/spark/CompressionSPInstruction.CompressionWorkloadFunction.html" title="class in org.apache.sysds.runtime.instructions.spark">CompressionSPInstruction.CompressionWorkloadFunction</a></li>
+<li><a href="org/apache/sysds/runtime/instructions/spark/CompressionSPInstruction.SizeFunction.html" title="class in org.apache.sysds.runtime.instructions.spark">CompressionSPInstruction.SizeFunction</a></li>
 <li><a href="org/apache/sysds/runtime/compress/CompressionStatistics.html" title="class in org.apache.sysds.runtime.compress">CompressionStatistics</a></li>
+<li><a href="org/apache/sysds/runtime/compress/cost/ComputationCostEstimator.html" title="class in org.apache.sysds.runtime.compress.cost">ComputationCostEstimator</a></li>
 <li><a href="org/apache/sysds/runtime/instructions/cp/ComputationCPInstruction.html" title="class in org.apache.sysds.runtime.instructions.cp">ComputationCPInstruction</a></li>
 <li><a href="org/apache/sysds/runtime/instructions/fed/ComputationFEDInstruction.html" title="class in org.apache.sysds.runtime.instructions.fed">ComputationFEDInstruction</a></li>
 <li><a href="org/apache/sysds/runtime/instructions/spark/ComputationSPInstruction.html" title="class in org.apache.sysds.runtime.instructions.spark">ComputationSPInstruction</a></li>
@@ -264,6 +272,9 @@
 <li><a href="org/apache/sysds/runtime/controlprogram/parfor/opt/CostEstimator.DataFormat.html" title="enum in org.apache.sysds.runtime.controlprogram.parfor.opt">CostEstimator.DataFormat</a></li>
 <li><a href="org/apache/sysds/runtime/controlprogram/parfor/opt/CostEstimator.ExcludeType.html" title="enum in org.apache.sysds.runtime.controlprogram.parfor.opt">CostEstimator.ExcludeType</a></li>
 <li><a href="org/apache/sysds/runtime/controlprogram/parfor/opt/CostEstimator.TestMeasure.html" title="enum in org.apache.sysds.runtime.controlprogram.parfor.opt">CostEstimator.TestMeasure</a></li>
+<li><a href="org/apache/sysds/runtime/compress/cost/CostEstimatorBuilder.html" title="class in org.apache.sysds.runtime.compress.cost">CostEstimatorBuilder</a></li>
+<li><a href="org/apache/sysds/runtime/compress/cost/CostEstimatorFactory.html" title="class in org.apache.sysds.runtime.compress.cost">CostEstimatorFactory</a></li>
+<li><a href="org/apache/sysds/runtime/compress/cost/CostEstimatorFactory.CostType.html" title="enum in org.apache.sysds.runtime.compress.cost">CostEstimatorFactory.CostType</a></li>
 <li><a href="org/apache/sysds/runtime/controlprogram/parfor/opt/CostEstimatorHops.html" title="class in org.apache.sysds.runtime.controlprogram.parfor.opt">CostEstimatorHops</a></li>
 <li><a href="org/apache/sysds/runtime/controlprogram/parfor/opt/CostEstimatorRuntime.html" title="class in org.apache.sysds.runtime.controlprogram.parfor.opt">CostEstimatorRuntime</a></li>
 <li><a href="org/apache/sysds/hops/cost/CostEstimatorStaticRuntime.html" title="class in org.apache.sysds.hops.cost">CostEstimatorStaticRuntime</a></li>
@@ -368,13 +379,17 @@
 <li><a href="org/apache/sysds/runtime/data/DenseBlockLInt64.html" title="class in org.apache.sysds.runtime.data">DenseBlockLInt64</a></li>
 <li><a href="org/apache/sysds/runtime/data/DenseBlockLString.html" title="class in org.apache.sysds.runtime.data">DenseBlockLString</a></li>
 <li><a href="org/apache/sysds/runtime/data/DenseBlockString.html" title="class in org.apache.sysds.runtime.data">DenseBlockString</a></li>
+<li><a href="org/apache/sysds/runtime/util/DependencyTask.html" title="class in org.apache.sysds.runtime.util">DependencyTask</a></li>
+<li><a href="org/apache/sysds/runtime/util/DependencyThreadPool.html" title="class in org.apache.sysds.runtime.util">DependencyThreadPool</a></li>
+<li><a href="org/apache/sysds/runtime/util/DependencyWrapperTask.html" title="class in org.apache.sysds.runtime.util">DependencyWrapperTask</a></li>
 <li><a href="org/apache/sysds/runtime/functionobjects/DiagIndex.html" title="class in org.apache.sysds.runtime.functionobjects">DiagIndex</a></li>
 <li><a href="org/apache/sysds/runtime/compress/colgroup/dictionary/Dictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">Dictionary</a></li>
 <li><a href="org/apache/sysds/runtime/compress/colgroup/dictionary/DictionaryFactory.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">DictionaryFactory</a></li>
 <li><a href="org/apache/sysds/runtime/compress/colgroup/dictionary/DictionaryFactory.Type.html" title="enum in org.apache.sysds.runtime.compress.colgroup.dictionary">DictionaryFactory.Type</a></li>
+<li><a href="org/apache/sysds/runtime/compress/cost/DistinctCostEstimator.html" title="class in org.apache.sysds.runtime.compress.cost">DistinctCostEstimator</a></li>
 <li><a href="org/apache/sysds/runtime/functionobjects/Divide.html" title="class in org.apache.sysds.runtime.functionobjects">Divide</a></li>
 <li><a href="org/apache/sysds/parser/dml/DmlBaseListener.html" title="class in org.apache.sysds.parser.dml">DmlBaseListener</a></li>
-<li><a href="org/apache/sysds/runtime/DMLCompressionException.html" title="class in org.apache.sysds.runtime">DMLCompressionException</a></li>
+<li><a href="org/apache/sysds/runtime/compress/DMLCompressionException.html" title="class in org.apache.sysds.runtime.compress">DMLCompressionException</a></li>
 <li><a href="org/apache/sysds/utils/DMLCompressionStatistics.html" title="class in org.apache.sysds.utils">DMLCompressionStatistics</a></li>
 <li><a href="org/apache/sysds/conf/DMLConfig.html" title="class in org.apache.sysds.conf">DMLConfig</a></li>
 <li><a href="org/apache/sysds/api/DMLException.html" title="class in org.apache.sysds.api">DMLException</a></li>
@@ -520,11 +535,13 @@
 <li><a href="org/apache/sysds/runtime/controlprogram/federated/FederatedRequest.RequestType.html" title="enum in org.apache.sysds.runtime.controlprogram.federated">FederatedRequest.RequestType</a></li>
 <li><a href="org/apache/sysds/runtime/controlprogram/federated/FederatedResponse.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedResponse</a></li>
 <li><a href="org/apache/sysds/runtime/controlprogram/federated/FederatedResponse.ResponseType.html" title="enum in org.apache.sysds.runtime.controlprogram.federated">FederatedResponse.ResponseType</a></li>
+<li><a href="org/apache/sysds/runtime/controlprogram/federated/FederatedStatistics.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedStatistics</a></li>
 <li><a href="org/apache/sysds/runtime/controlprogram/federated/FederatedUDF.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedUDF</a></li>
 <li><a href="org/apache/sysds/runtime/controlprogram/federated/FederatedWorker.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedWorker</a></li>
 <li><a href="org/apache/sysds/runtime/controlprogram/federated/FederatedWorkerHandler.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedWorkerHandler</a></li>
 <li><a href="org/apache/sysds/runtime/controlprogram/federated/FederatedWorkerHandlerException.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedWorkerHandlerException</a></li>
 <li><a href="org/apache/sysds/runtime/controlprogram/federated/FederationMap.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederationMap</a></li>
+<li><a href="org/apache/sysds/runtime/controlprogram/federated/FederationMap.AlignType.html" title="enum in org.apache.sysds.runtime.controlprogram.federated">FederationMap.AlignType</a></li>
 <li><a href="org/apache/sysds/runtime/controlprogram/federated/FederationMap.FPartitioning.html" title="enum in org.apache.sysds.runtime.controlprogram.federated">FederationMap.FPartitioning</a></li>
 <li><a href="org/apache/sysds/runtime/controlprogram/federated/FederationMap.FReplication.html" title="enum in org.apache.sysds.runtime.controlprogram.federated">FederationMap.FReplication</a></li>
 <li><a href="org/apache/sysds/runtime/controlprogram/federated/FederationMap.FType.html" title="enum in org.apache.sysds.runtime.controlprogram.federated">FederationMap.FType</a></li>
@@ -655,6 +672,7 @@
 <li><a href="org/apache/sysds/hops/rewrite/HopRewriteRule.html" title="class in org.apache.sysds.hops.rewrite">HopRewriteRule</a></li>
 <li><a href="org/apache/sysds/hops/rewrite/HopRewriteUtils.html" title="class in org.apache.sysds.hops.rewrite">HopRewriteUtils</a></li>
 <li><a href="org/apache/sysds/hops/HopsException.html" title="class in org.apache.sysds.hops">HopsException</a></li>
+<li><a href="org/apache/sysds/runtime/compress/cost/ICostEstimate.html" title="interface in org.apache.sysds.runtime.compress.cost"><span class="interfaceName">ICostEstimate</span></a></li>
 <li><a href="org/apache/sysds/parser/Identifier.html" title="class in org.apache.sysds.parser">Identifier</a></li>
 <li><a href="org/apache/sysds/runtime/controlprogram/parfor/util/IDHandler.html" title="class in org.apache.sysds.runtime.controlprogram.parfor.util">IDHandler</a></li>
 <li><a href="org/apache/sysds/runtime/controlprogram/parfor/util/IDSequence.html" title="class in org.apache.sysds.runtime.controlprogram.parfor.util">IDSequence</a></li>
@@ -683,6 +701,7 @@
 <li><a href="org/apache/sysds/runtime/instructions/Instruction.html" title="class in org.apache.sysds.runtime.instructions">Instruction</a></li>
 <li><a href="org/apache/sysds/runtime/instructions/Instruction.IType.html" title="enum in org.apache.sysds.runtime.instructions">Instruction.IType</a></li>
 <li><a href="org/apache/sysds/runtime/instructions/InstructionParser.html" title="class in org.apache.sysds.runtime.instructions">InstructionParser</a></li>
+<li><a href="org/apache/sysds/runtime/compress/cost/InstructionTypeCounter.html" title="class in org.apache.sysds.runtime.compress.cost">InstructionTypeCounter</a></li>
 <li><a href="org/apache/sysds/runtime/instructions/InstructionUtils.html" title="class in org.apache.sysds.runtime.instructions">InstructionUtils</a></li>
 <li><a href="org/apache/sysds/runtime/compress/utils/IntArrayList.html" title="class in org.apache.sysds.runtime.compress.utils">IntArrayList</a></li>
 <li><a href="org/apache/sysds/runtime/functionobjects/IntegerDivide.html" title="class in org.apache.sysds.runtime.functionobjects">IntegerDivide</a></li>
@@ -877,6 +896,7 @@
 <li><a href="org/apache/sysds/runtime/io/MatrixWriter.html" title="class in org.apache.sysds.runtime.io">MatrixWriter</a></li>
 <li><a href="org/apache/sysds/runtime/io/MatrixWriterFactory.html" title="class in org.apache.sysds.runtime.io">MatrixWriterFactory</a></li>
 <li><a href="org/apache/sysds/runtime/functionobjects/Mean.html" title="class in org.apache.sysds.runtime.functionobjects">Mean</a></li>
+<li><a href="org/apache/sysds/runtime/compress/cost/MemoryCostEstimator.html" title="class in org.apache.sysds.runtime.compress.cost">MemoryCostEstimator</a></li>
 <li><a href="org/apache/sysds/utils/MemoryEstimates.html" title="class in org.apache.sysds.utils">MemoryEstimates</a></li>
 <li><a href="org/apache/sysds/hops/MemoTable.html" title="class in org.apache.sysds.hops">MemoTable</a></li>
 <li><a href="org/apache/sysds/runtime/compress/colgroup/insertionsort/MergeSort.html" title="class in org.apache.sysds.runtime.compress.colgroup.insertionsort">MergeSort</a></li>
@@ -937,9 +957,15 @@
 <li><a href="org/apache/sysds/runtime/functionobjects/OffsetColumnIndex.html" title="class in org.apache.sysds.runtime.functionobjects">OffsetColumnIndex</a></li>
 <li><a href="org/apache/sysds/runtime/compress/colgroup/offset/OffsetFactory.html" title="class in org.apache.sysds.runtime.compress.colgroup.offset">OffsetFactory</a></li>
 <li><a href="org/apache/sysds/runtime/compress/colgroup/offset/OffsetFactory.OFF_TYPE.html" title="enum in org.apache.sysds.runtime.compress.colgroup.offset">OffsetFactory.OFF_TYPE</a></li>
+<li><a href="org/apache/sysds/runtime/compress/workload/Op.html" title="class in org.apache.sysds.runtime.compress.workload">Op</a></li>
+<li><a href="org/apache/sysds/runtime/compress/workload/OpDecompressing.html" title="class in org.apache.sysds.runtime.compress.workload">OpDecompressing</a></li>
 <li><a href="org/apache/sysds/runtime/matrix/data/OperationsOnMatrixValues.html" title="class in org.apache.sysds.runtime.matrix.data">OperationsOnMatrixValues</a></li>
 <li><a href="org/apache/sysds/runtime/matrix/operators/Operator.html" title="class in org.apache.sysds.runtime.matrix.operators">Operator</a></li>
 <li><a href="org/apache/sysds/runtime/privacy/propagation/OperatorType.html" title="enum in org.apache.sysds.runtime.privacy.propagation">OperatorType</a></li>
+<li><a href="org/apache/sysds/runtime/compress/workload/OpMetadata.html" title="class in org.apache.sysds.runtime.compress.workload">OpMetadata</a></li>
+<li><a href="org/apache/sysds/runtime/compress/workload/OpNormal.html" title="class in org.apache.sysds.runtime.compress.workload">OpNormal</a></li>
+<li><a href="org/apache/sysds/runtime/compress/workload/OpOverlappingDecompress.html" title="class in org.apache.sysds.runtime.compress.workload">OpOverlappingDecompress</a></li>
+<li><a href="org/apache/sysds/runtime/compress/workload/OpSided.html" title="class in org.apache.sysds.runtime.compress.workload">OpSided</a></li>
 <li><a href="org/apache/sysds/runtime/controlprogram/parfor/opt/OptimizationWrapper.html" title="class in org.apache.sysds.runtime.controlprogram.parfor.opt">OptimizationWrapper</a></li>
 <li><a href="org/apache/sysds/runtime/controlprogram/parfor/opt/Optimizer.html" title="class in org.apache.sysds.runtime.controlprogram.parfor.opt">Optimizer</a></li>
 <li><a href="org/apache/sysds/runtime/controlprogram/parfor/opt/Optimizer.CostModelType.html" title="enum in org.apache.sysds.runtime.controlprogram.parfor.opt">Optimizer.CostModelType</a></li>
@@ -983,6 +1009,7 @@
 <li><a href="org/apache/sysds/hops/ParameterizedBuiltinOp.html" title="class in org.apache.sysds.hops">ParameterizedBuiltinOp</a></li>
 <li><a href="org/apache/sysds/runtime/instructions/spark/ParameterizedBuiltinSPInstruction.html" title="class in org.apache.sysds.runtime.instructions.spark">ParameterizedBuiltinSPInstruction</a></li>
 <li><a href="org/apache/sysds/runtime/instructions/spark/ParameterizedBuiltinSPInstruction.CreateMatrixCell.html" title="class in org.apache.sysds.runtime.instructions.spark">ParameterizedBuiltinSPInstruction.CreateMatrixCell</a></li>
+<li><a href="org/apache/sysds/runtime/instructions/spark/ParameterizedBuiltinSPInstruction.RDDFrameReplaceFunction.html" title="class in org.apache.sysds.runtime.instructions.spark">ParameterizedBuiltinSPInstruction.RDDFrameReplaceFunction</a></li>
 <li><a href="org/apache/sysds/runtime/instructions/spark/ParameterizedBuiltinSPInstruction.RDDMapGroupedAggFunction.html" title="class in org.apache.sysds.runtime.instructions.spark">ParameterizedBuiltinSPInstruction.RDDMapGroupedAggFunction</a></li>
 <li><a href="org/apache/sysds/runtime/instructions/spark/ParameterizedBuiltinSPInstruction.RDDMapGroupedAggFunction2.html" title="class in org.apache.sysds.runtime.instructions.spark">ParameterizedBuiltinSPInstruction.RDDMapGroupedAggFunction2</a></li>
 <li><a href="org/apache/sysds/runtime/instructions/spark/ParameterizedBuiltinSPInstruction.RDDRemoveEmptyFunction.html" title="class in org.apache.sysds.runtime.instructions.spark">ParameterizedBuiltinSPInstruction.RDDRemoveEmptyFunction</a></li>
@@ -1023,8 +1050,6 @@
 <li><a href="org/apache/sysds/lops/PickByCount.html" title="class in org.apache.sysds.lops">PickByCount</a></li>
 <li><a href="org/apache/sysds/lops/PickByCount.OperationTypes.html" title="enum in org.apache.sysds.lops">PickByCount.OperationTypes</a></li>
 <li><a href="org/apache/sysds/hops/codegen/opt/PlanAnalyzer.html" title="class in org.apache.sysds.hops.codegen.opt">PlanAnalyzer</a></li>
-<li><a href="org/apache/sysds/runtime/compress/cocode/PlanningCoCoder.html" title="class in org.apache.sysds.runtime.compress.cocode">PlanningCoCoder</a></li>
-<li><a href="org/apache/sysds/runtime/compress/cocode/PlanningCoCoder.PartitionerType.html" title="enum in org.apache.sysds.runtime.compress.cocode">PlanningCoCoder.PartitionerType</a></li>
 <li><a href="org/apache/sysds/hops/codegen/opt/PlanPartition.html" title="class in org.apache.sysds.hops.codegen.opt">PlanPartition</a></li>
 <li><a href="org/apache/sysds/hops/codegen/opt/PlanSelection.html" title="class in org.apache.sysds.hops.codegen.opt">PlanSelection</a></li>
 <li><a href="org/apache/sysds/hops/codegen/opt/PlanSelection.VisitMarkCost.html" title="class in org.apache.sysds.hops.codegen.opt">PlanSelection.VisitMarkCost</a></li>
@@ -1041,8 +1066,10 @@
 <li><a href="org/apache/sysds/runtime/instructions/cp/PMMJCPInstruction.html" title="class in org.apache.sysds.runtime.instructions.cp">PMMJCPInstruction</a></li>
 <li><a href="org/apache/sysds/runtime/instructions/spark/PmmSPInstruction.html" title="class in org.apache.sysds.runtime.instructions.spark">PmmSPInstruction</a></li>
 <li><a href="org/apache/sysds/runtime/util/PoissonPRNGenerator.html" title="class in org.apache.sysds.runtime.util">PoissonPRNGenerator</a></li>
+<li><a href="org/apache/sysds/runtime/util/PorterStemmer.html" title="class in org.apache.sysds.runtime.util">PorterStemmer</a></li>
 <li><a href="org/apache/sysds/runtime/functionobjects/Power.html" title="class in org.apache.sysds.runtime.functionobjects">Power</a></li>
 <li><a href="org/apache/sysds/runtime/functionobjects/Power2.html" title="class in org.apache.sysds.runtime.functionobjects">Power2</a></li>
+<li><a href="org/apache/sysds/runtime/instructions/cp/PrefetchCPInstruction.html" title="class in org.apache.sysds.runtime.instructions.cp">PrefetchCPInstruction</a></li>
 <li><a href="org/apache/sysds/api/jmlc/PreparedScript.html" title="class in org.apache.sysds.api.jmlc">PreparedScript</a></li>
 <li><a href="org/apache/sysds/parser/PrintStatement.html" title="class in org.apache.sysds.parser">PrintStatement</a></li>
 <li><a href="org/apache/sysds/parser/PrintStatement.PRINTTYPE.html" title="enum in org.apache.sysds.parser">PrintStatement.PRINTTYPE</a></li>
@@ -1183,6 +1210,8 @@
 <li><a href="org/apache/sysds/hops/rewrite/RewriteCompressedReblock.html" title="class in org.apache.sysds.hops.rewrite">RewriteCompressedReblock</a></li>
 <li><a href="org/apache/sysds/hops/rewrite/RewriteConstantFolding.html" title="class in org.apache.sysds.hops.rewrite">RewriteConstantFolding</a></li>
 <li><a href="org/apache/sysds/hops/rewrite/RewriteElementwiseMultChainOptimization.html" title="class in org.apache.sysds.hops.rewrite">RewriteElementwiseMultChainOptimization</a></li>
+<li><a href="org/apache/sysds/hops/rewrite/RewriteFederatedExecution.html" title="class in org.apache.sysds.hops.rewrite">RewriteFederatedExecution</a></li>
+<li><a href="org/apache/sysds/hops/rewrite/RewriteFederatedExecution.PrivacyConstraintRetriever.html" title="class in org.apache.sysds.hops.rewrite">RewriteFederatedExecution.PrivacyConstraintRetriever</a></li>
 <li><a href="org/apache/sysds/hops/rewrite/RewriteForLoopVectorization.html" title="class in org.apache.sysds.hops.rewrite">RewriteForLoopVectorization</a></li>
 <li><a href="org/apache/sysds/hops/rewrite/RewriteGPUSpecificOps.html" title="class in org.apache.sysds.hops.rewrite">RewriteGPUSpecificOps</a></li>
 <li><a href="org/apache/sysds/hops/rewrite/RewriteHoistLoopInvariantOperations.html" title="class in org.apache.sysds.hops.rewrite">RewriteHoistLoopInvariantOperations</a></li>
@@ -1229,6 +1258,7 @@
 <li><a href="org/apache/sysds/runtime/controlprogram/paramserv/dp/ShuffleFederatedScheme.html" title="class in org.apache.sysds.runtime.controlprogram.paramserv.dp">ShuffleFederatedScheme</a></li>
 <li><a href="org/apache/sysds/runtime/matrix/operators/SimpleOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">SimpleOperator</a></li>
 <li><a href="org/apache/sysds/runtime/matrix/data/SinglePrecisionCudaSupportFunctions.html" title="class in org.apache.sysds.runtime.matrix.data">SinglePrecisionCudaSupportFunctions</a></li>
+<li><a href="org/apache/sysds/runtime/compress/SingletonLookupHashMap.html" title="class in org.apache.sysds.runtime.compress">SingletonLookupHashMap</a></li>
 <li><a href="org/apache/sysds/runtime/compress/estim/sample/SmoothedJackknifeEstimator.html" title="class in org.apache.sysds.runtime.compress.estim.sample">SmoothedJackknifeEstimator</a></li>
 <li><a href="org/apache/sysds/runtime/functionobjects/SortIndex.html" title="class in org.apache.sysds.runtime.functionobjects">SortIndex</a></li>
 <li><a href="org/apache/sysds/lops/SortKeys.html" title="class in org.apache.sysds.lops">SortKeys</a></li>
@@ -1376,6 +1406,8 @@
 <li><a href="org/apache/sysds/runtime/transform/tokenize/TokenizerPreNgram.html" title="class in org.apache.sysds.runtime.transform.tokenize">TokenizerPreNgram</a></li>
 <li><a href="org/apache/sysds/runtime/transform/tokenize/TokenizerPreWhitespaceSplit.html" title="class in org.apache.sysds.runtime.transform.tokenize">TokenizerPreWhitespaceSplit</a></li>
 <li><a href="org/apache/sysds/lops/Transform.html" title="class in org.apache.sysds.lops">Transform</a></li>
+<li><a href="org/apache/sysds/runtime/instructions/cp/TriggerBroadcastTask.html" title="class in org.apache.sysds.runtime.instructions.cp">TriggerBroadcastTask</a></li>
+<li><a href="org/apache/sysds/runtime/instructions/cp/TriggerRDDOperationsTask.html" title="class in org.apache.sysds.runtime.instructions.cp">TriggerRDDOperationsTask</a></li>
 <li><a href="org/apache/sysds/runtime/matrix/data/TripleIndexes.html" title="class in org.apache.sysds.runtime.matrix.data">TripleIndexes</a></li>
 <li><a href="org/apache/sysds/runtime/matrix/data/TripleIndexes.Comparator.html" title="class in org.apache.sysds.runtime.matrix.data">TripleIndexes.Comparator</a></li>
 <li><a href="org/apache/sysds/runtime/instructions/spark/Tsmm2SPInstruction.html" title="class in org.apache.sysds.runtime.instructions.spark">Tsmm2SPInstruction</a></li>
@@ -1470,7 +1502,7 @@
 <li><a href="org/apache/sysds/runtime/io/WriterTextLIBSVMParallel.html" title="class in org.apache.sysds.runtime.io">WriterTextLIBSVMParallel</a></li>
 <li><a href="org/apache/sysds/runtime/instructions/spark/WriteSPInstruction.html" title="class in org.apache.sysds.runtime.instructions.spark">WriteSPInstruction</a></li>
 <li><a href="org/apache/sysds/runtime/compress/workload/WTreeNode.html" title="class in org.apache.sysds.runtime.compress.workload">WTreeNode</a></li>
-<li><a href="org/apache/sysds/runtime/compress/workload/WTreeNode.WTNodeType.html" title="enum in org.apache.sysds.runtime.compress.workload">WTreeNode.WTNodeType</a></li>
+<li><a href="org/apache/sysds/runtime/compress/workload/WTreeRoot.html" title="class in org.apache.sysds.runtime.compress.workload">WTreeRoot</a></li>
 <li><a href="org/apache/sysds/runtime/functionobjects/Xor.html" title="class in org.apache.sysds.runtime.functionobjects">Xor</a></li>
 <li><a href="org/apache/sysds/runtime/instructions/spark/ZipmmSPInstruction.html" title="class in org.apache.sysds.runtime.instructions.spark">ZipmmSPInstruction</a></li>
 </ul>

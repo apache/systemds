@@ -7,7 +7,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Federated Environment &mdash; SystemDS 2.0.0 documentation</title>
+  <title>Federated Environment &mdash; SystemDS 2.2.0-SNAPSHOT documentation</title>
   
 
   
@@ -228,7 +228,7 @@ The aggregated sum using federated instructions in python SystemDS is done as fo
 <span class="n">address</span> <span class="o">=</span> <span class="s2">&quot;localhost:8001/temp/test.csv&quot;</span>
 
 <span class="k">with</span> <span class="n">SystemDSContext</span><span class="p">()</span> <span class="k">as</span> <span class="n">sds</span><span class="p">:</span>
-  <span class="n">fed_a</span> <span class="o">=</span> <span class="n">sds</span><span class="o">.</span><span class="n">federated</span><span class="p">(</span><span class="n">sds</span><span class="p">,</span> <span class="p">[</span><span class="n">address</span><span class="p">],</span> <span class="p">[</span><span class="n">dims</span><span class="p">])</span>
+  <span class="n">fed_a</span> <span class="o">=</span> <span class="n">sds</span><span class="o">.</span><span class="n">federated</span><span class="p">([</span><span class="n">address</span><span class="p">],</span> <span class="p">[</span><span class="n">dims</span><span class="p">])</span>
   <span class="c1"># Sum the federated matrix and call compute to execute</span>
   <span class="nb">print</span><span class="p">(</span><span class="n">fed_a</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="o">.</span><span class="n">compute</span><span class="p">())</span>
   <span class="c1"># Result should be 45.</span>

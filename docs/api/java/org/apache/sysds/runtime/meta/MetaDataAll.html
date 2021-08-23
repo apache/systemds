@@ -18,7 +18,7 @@
     catch(err) {
     }
 //-->
-var methods = {"i0":10,"i1":9,"i2":9,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10,"i8":10,"i9":10,"i10":10,"i11":10,"i12":10,"i13":10,"i14":10,"i15":10,"i16":10,"i17":10,"i18":10,"i19":10};
+var methods = {"i0":10,"i1":9,"i2":9,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10,"i8":10,"i9":10,"i10":10,"i11":10,"i12":10,"i13":10,"i14":10,"i15":10,"i16":10,"i17":10,"i18":10,"i19":10,"i20":10};
 var tabs = {65535:["t0","All Methods"],1:["t1","Static Methods"],2:["t2","Instance Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -279,13 +279,17 @@ extends <a href="../../../../../org/apache/sysds/parser/DataIdentifier.html" tit
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/meta/MetaDataAll.html#setSparseDelim-boolean-">setSparseDelim</a></span>(boolean&nbsp;sparseDelim)</code>&nbsp;</td>
 </tr>
+<tr id="i20" class="altColor">
+<td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a></code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/meta/MetaDataAll.html#toString--">toString</a></span>()</code>&nbsp;</td>
+</tr>
 </table>
 <ul class="blockList">
 <li class="blockList"><a name="methods.inherited.from.class.org.apache.sysds.parser.DataIdentifier">
 <!--   -->
 </a>
 <h3>Methods inherited from class&nbsp;org.apache.sysds.parser.<a href="../../../../../org/apache/sysds/parser/DataIdentifier.html" title="class in org.apache.sysds.parser">DataIdentifier</a></h3>
-<code><a href="../../../../../org/apache/sysds/parser/DataIdentifier.html#equals-java.lang.Object-">equals</a>, <a href="../../../../../org/apache/sysds/parser/DataIdentifier.html#getName--">getName</a>, <a href="../../../../../org/apache/sysds/parser/DataIdentifier.html#hashCode--">hashCode</a>, <a href="../../../../../org/apache/sysds/parser/DataIdentifier.html#multipleReturns--">multipleReturns</a>, <a href="../../../../../org/apache/sysds/parser/DataIdentifier.html#rewriteExpression-java.lang.String-">rewriteExpression</a>, <a href="../../../../../org/apache/sysds/parser/DataIdentifier.html#setName-java.lang.String-">setName</a>, <a href="../../../../../org/apache/sysds/parser/DataIdentifier.html#toString--">toString</a>, <a href="../../../../../org/apache/sysds/parser/DataIdentifier.html#variablesRead--">variablesRead</a>, <a href="../../../../../org/apache/sysds/parser/DataIdentifier.html#variablesUpdated--">variablesUpdated</a></code></li>
+<code><a href="../../../../../org/apache/sysds/parser/DataIdentifier.html#equals-java.lang.Object-">equals</a>, <a href="../../../../../org/apache/sysds/parser/DataIdentifier.html#getName--">getName</a>, <a href="../../../../../org/apache/sysds/parser/DataIdentifier.html#hashCode--">hashCode</a>, <a href="../../../../../org/apache/sysds/parser/DataIdentifier.html#multipleReturns--">multipleReturns</a>, <a href="../../../../../org/apache/sysds/parser/DataIdentifier.html#rewriteExpression-java.lang.String-">rewriteExpression</a>, <a href="../../../../../org/apache/sysds/parser/DataIdentifier.html#setName-java.lang.String-">setName</a>, <a href="../../../../../org/apache/sysds/parser/DataIdentifier.html#variablesRead--">variablesRead</a>, <a href="../../../../../org/apache/sysds/parser/DataIdentifier.html#variablesUpdated--">variablesUpdated</a></code></li>
 </ul>
 <ul class="blockList">
 <li class="blockList"><a name="methods.inherited.from.class.org.apache.sysds.parser.Identifier">
@@ -560,12 +564,25 @@ extends <a href="../../../../../org/apache/sysds/parser/DataIdentifier.html" tit
 <a name="checkHasMatrixMarketFormat-java.lang.String-java.lang.String-boolean-">
 <!--   -->
 </a>
-<ul class="blockListLast">
+<ul class="blockList">
 <li class="blockList">
 <h4>checkHasMatrixMarketFormat</h4>
 <pre>public static&nbsp;boolean&nbsp;checkHasMatrixMarketFormat(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;inputFileName,
                                                  <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;mtdFileName,
                                                  boolean&nbsp;conditional)</pre>
+</li>
+</ul>
+<a name="toString--">
+<!--   -->
+</a>
+<ul class="blockListLast">
+<li class="blockList">
+<h4>toString</h4>
+<pre>public&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;toString()</pre>
+<dl>
+<dt><span class="overrideSpecifyLabel">Overrides:</span></dt>
+<dd><code><a href="../../../../../org/apache/sysds/parser/DataIdentifier.html#toString--">toString</a></code>&nbsp;in class&nbsp;<code><a href="../../../../../org/apache/sysds/parser/DataIdentifier.html" title="class in org.apache.sysds.parser">DataIdentifier</a></code></dd>
+</dl>
 </li>
 </ul>
 </li>

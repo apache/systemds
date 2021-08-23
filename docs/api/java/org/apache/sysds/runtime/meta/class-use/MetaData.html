@@ -91,14 +91,18 @@
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">
-<td class="colFirst"><a href="#org.apache.sysds.runtime.instructions.cp">org.apache.sysds.runtime.instructions.cp</a></td>
+<td class="colFirst"><a href="#org.apache.sysds.runtime.controlprogram.federated">org.apache.sysds.runtime.controlprogram.federated</a></td>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
-<td class="colFirst"><a href="#org.apache.sysds.runtime.io">org.apache.sysds.runtime.io</a></td>
+<td class="colFirst"><a href="#org.apache.sysds.runtime.instructions.cp">org.apache.sysds.runtime.instructions.cp</a></td>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">
+<td class="colFirst"><a href="#org.apache.sysds.runtime.io">org.apache.sysds.runtime.io</a></td>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
 <td class="colFirst"><a href="#org.apache.sysds.runtime.meta">org.apache.sysds.runtime.meta</a></td>
 <td class="colLast">&nbsp;</td>
 </tr>
@@ -164,8 +168,8 @@
             <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;file,
             <a href="../../../../../../org/apache/sysds/runtime/meta/MetaData.html" title="class in org.apache.sysds.runtime.meta">MetaData</a>&nbsp;mtd,
             <a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;data)</code>
-<div class="block">Constructor that takes the value type, HDFS filename and associated metadata and a MatrixBlock
- used for creation after serialization</div>
+<div class="block">Constructor that takes the value type, HDFS filename and associated metadata and a MatrixBlock used for creation
+ after serialization</div>
 </td>
 </tr>
 <tr class="altColor">
@@ -203,6 +207,25 @@
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><span class="typeNameLabel">ExecutionContext.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/controlprogram/context/ExecutionContext.html#setMetaData-java.lang.String-org.apache.sysds.runtime.meta.MetaData-">setMetaData</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;fname,
            <a href="../../../../../../org/apache/sysds/runtime/meta/MetaData.html" title="class in org.apache.sysds.runtime.meta">MetaData</a>&nbsp;md)</code>&nbsp;</td>
+</tr>
+</tbody>
+</table>
+</li>
+<li class="blockList"><a name="org.apache.sysds.runtime.controlprogram.federated">
+<!--   -->
+</a>
+<h3>Uses of <a href="../../../../../../org/apache/sysds/runtime/meta/MetaData.html" title="class in org.apache.sysds.runtime.meta">MetaData</a> in <a href="../../../../../../org/apache/sysds/runtime/controlprogram/federated/package-summary.html">org.apache.sysds.runtime.controlprogram.federated</a></h3>
+<table class="useSummary" border="0" cellpadding="3" cellspacing="0" summary="Use table, listing methods, and an explanation">
+<caption><span>Methods in <a href="../../../../../../org/apache/sysds/runtime/controlprogram/federated/package-summary.html">org.apache.sysds.runtime.controlprogram.federated</a> with parameters of type <a href="../../../../../../org/apache/sysds/runtime/meta/MetaData.html" title="class in org.apache.sysds.runtime.meta">MetaData</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colLast" scope="col">Method and Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/Future.html?is-external=true" title="class or interface in java.util.concurrent">Future</a>&lt;<a href="../../../../../../org/apache/sysds/runtime/controlprogram/federated/FederatedResponse.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedResponse</a>&gt;</code></td>
+<td class="colLast"><span class="typeNameLabel">FederatedData.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/controlprogram/federated/FederatedData.html#initFederatedData-long-org.apache.sysds.runtime.meta.MetaData-">initFederatedData</a></span>(long&nbsp;id,
+                 <a href="../../../../../../org/apache/sysds/runtime/meta/MetaData.html" title="class in org.apache.sysds.runtime.meta">MetaData</a>&nbsp;mtd)</code>&nbsp;</td>
 </tr>
 </tbody>
 </table>

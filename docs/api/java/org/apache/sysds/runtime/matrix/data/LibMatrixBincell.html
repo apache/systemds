@@ -18,7 +18,7 @@
     catch(err) {
     }
 //-->
-var methods = {"i0":9,"i1":9,"i2":9,"i3":9,"i4":9,"i5":9,"i6":9,"i7":9,"i8":9};
+var methods = {"i0":9,"i1":9,"i2":9,"i3":9,"i4":9,"i5":9,"i6":9,"i7":9,"i8":9,"i9":9,"i10":9};
 var tabs = {65535:["t0","All Methods"],1:["t1","Static Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -185,28 +185,52 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
          int&nbsp;k)</code>&nbsp;</td>
 </tr>
 <tr id="i4" class="altColor">
-<td class="colFirst"><code>static void</code></td>
+<td class="colFirst"><code>static <a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/matrix/data/LibMatrixBincell.html#bincellOpInPlace-org.apache.sysds.runtime.matrix.data.MatrixBlock-org.apache.sysds.runtime.matrix.data.MatrixBlock-org.apache.sysds.runtime.matrix.operators.BinaryOperator-">bincellOpInPlace</a></span>(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;m1ret,
                 <a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;m2,
                 <a href="../../../../../../org/apache/sysds/runtime/matrix/operators/BinaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">BinaryOperator</a>&nbsp;op)</code>
-<div class="block">NOTE: operations in place always require m1 and m2 to be of equal dimensions</div>
+<div class="block">NOTE: operations in place always require m1 and m2 to be of equal dimensions
+ 
+ defaults to right side operations, updating the m1 matrix with like:
+ 
+ m1ret op m2</div>
 </td>
 </tr>
 <tr id="i5" class="rowColor">
+<td class="colFirst"><code>static <a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/matrix/data/LibMatrixBincell.html#bincellOpInPlaceLeft-org.apache.sysds.runtime.matrix.data.MatrixBlock-org.apache.sysds.runtime.matrix.data.MatrixBlock-org.apache.sysds.runtime.matrix.operators.BinaryOperator-">bincellOpInPlaceLeft</a></span>(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;m1ret,
+                    <a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;m2,
+                    <a href="../../../../../../org/apache/sysds/runtime/matrix/operators/BinaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">BinaryOperator</a>&nbsp;op)</code>
+<div class="block">Left side operations, updating the m1 matrix like:
+ 
+ m2 op m1ret</div>
+</td>
+</tr>
+<tr id="i6" class="altColor">
+<td class="colFirst"><code>static <a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/matrix/data/LibMatrixBincell.html#bincellOpInPlaceRight-org.apache.sysds.runtime.matrix.data.MatrixBlock-org.apache.sysds.runtime.matrix.data.MatrixBlock-org.apache.sysds.runtime.matrix.operators.BinaryOperator-">bincellOpInPlaceRight</a></span>(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;m1ret,
+                     <a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;m2,
+                     <a href="../../../../../../org/apache/sysds/runtime/matrix/operators/BinaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">BinaryOperator</a>&nbsp;op)</code>
+<div class="block">Right side operations, updating the m1 matrix like:
+ 
+ m1ret op m2</div>
+</td>
+</tr>
+<tr id="i7" class="rowColor">
 <td class="colFirst"><code>static <a href="../../../../../../org/apache/sysds/runtime/matrix/data/LibMatrixBincell.BinaryAccessType.html" title="enum in org.apache.sysds.runtime.matrix.data">LibMatrixBincell.BinaryAccessType</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/matrix/data/LibMatrixBincell.html#getBinaryAccessType-org.apache.sysds.runtime.matrix.data.MatrixBlock-org.apache.sysds.runtime.matrix.data.MatrixBlock-">getBinaryAccessType</a></span>(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;m1,
                    <a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;m2)</code>&nbsp;</td>
 </tr>
-<tr id="i6" class="altColor">
+<tr id="i8" class="altColor">
 <td class="colFirst"><code>static boolean</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/matrix/data/LibMatrixBincell.html#isAllDense-org.apache.sysds.runtime.matrix.data.MatrixBlock...-">isAllDense</a></span>(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>...&nbsp;mb)</code>&nbsp;</td>
 </tr>
-<tr id="i7" class="rowColor">
+<tr id="i9" class="rowColor">
 <td class="colFirst"><code>static boolean</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/matrix/data/LibMatrixBincell.html#isSparseSafeDivide-org.apache.sysds.runtime.matrix.operators.BinaryOperator-org.apache.sysds.runtime.matrix.data.MatrixBlock-">isSparseSafeDivide</a></span>(<a href="../../../../../../org/apache/sysds/runtime/matrix/operators/BinaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">BinaryOperator</a>&nbsp;op,
                   <a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;rhs)</code>&nbsp;</td>
 </tr>
-<tr id="i8" class="altColor">
+<tr id="i10" class="altColor">
 <td class="colFirst"><code>static void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/matrix/data/LibMatrixBincell.html#isValidDimensionsBinary-org.apache.sysds.runtime.matrix.data.MatrixBlock-org.apache.sysds.runtime.matrix.data.MatrixBlock-">isValidDimensionsBinary</a></span>(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;m1,
                        <a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;m2)</code>&nbsp;</td>
@@ -302,15 +326,65 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <ul class="blockList">
 <li class="blockList">
 <h4>bincellOpInPlace</h4>
-<pre>public static&nbsp;void&nbsp;bincellOpInPlace(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;m1ret,
-                                    <a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;m2,
-                                    <a href="../../../../../../org/apache/sysds/runtime/matrix/operators/BinaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">BinaryOperator</a>&nbsp;op)</pre>
-<div class="block">NOTE: operations in place always require m1 and m2 to be of equal dimensions</div>
+<pre>public static&nbsp;<a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;bincellOpInPlace(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;m1ret,
+                                           <a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;m2,
+                                           <a href="../../../../../../org/apache/sysds/runtime/matrix/operators/BinaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">BinaryOperator</a>&nbsp;op)</pre>
+<div class="block">NOTE: operations in place always require m1 and m2 to be of equal dimensions
+ 
+ defaults to right side operations, updating the m1 matrix with like:
+ 
+ m1ret op m2</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>m1ret</code> - result matrix</dd>
-<dd><code>m2</code> - matrix block</dd>
-<dd><code>op</code> - binary operator</dd>
+<dd><code>m1ret</code> - result matrix updated in place</dd>
+<dd><code>m2</code> - matrix block the other matrix to take values from</dd>
+<dd><code>op</code> - binary operator the operator that is placed in the middle of m1ret and m2</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>The same pointer to m1ret argument, and the updated result.</dd>
+</dl>
+</li>
+</ul>
+<a name="bincellOpInPlaceRight-org.apache.sysds.runtime.matrix.data.MatrixBlock-org.apache.sysds.runtime.matrix.data.MatrixBlock-org.apache.sysds.runtime.matrix.operators.BinaryOperator-">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>bincellOpInPlaceRight</h4>
+<pre>public static&nbsp;<a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;bincellOpInPlaceRight(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;m1ret,
+                                                <a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;m2,
+                                                <a href="../../../../../../org/apache/sysds/runtime/matrix/operators/BinaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">BinaryOperator</a>&nbsp;op)</pre>
+<div class="block">Right side operations, updating the m1 matrix like:
+ 
+ m1ret op m2</div>
+<dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>m1ret</code> - result matrix updated in place</dd>
+<dd><code>m2</code> - matrix block the other matrix to take values from</dd>
+<dd><code>op</code> - binary operator the operator that is placed in the middle of m1ret and m2</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>The result MatrixBlock (same object pointer to m1ret argument)</dd>
+</dl>
+</li>
+</ul>
+<a name="bincellOpInPlaceLeft-org.apache.sysds.runtime.matrix.data.MatrixBlock-org.apache.sysds.runtime.matrix.data.MatrixBlock-org.apache.sysds.runtime.matrix.operators.BinaryOperator-">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>bincellOpInPlaceLeft</h4>
+<pre>public static&nbsp;<a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;bincellOpInPlaceLeft(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;m1ret,
+                                               <a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;m2,
+                                               <a href="../../../../../../org/apache/sysds/runtime/matrix/operators/BinaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">BinaryOperator</a>&nbsp;op)</pre>
+<div class="block">Left side operations, updating the m1 matrix like:
+ 
+ m2 op m1ret</div>
+<dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>m1ret</code> - result matrix updated in place</dd>
+<dd><code>m2</code> - matrix block the other matrix to take values from</dd>
+<dd><code>op</code> - binary operator the operator that is placed in the middle of m1ret and m2</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>The result MatrixBlock (same object pointer to m1ret argument)</dd>
 </dl>
 </li>
 </ul>

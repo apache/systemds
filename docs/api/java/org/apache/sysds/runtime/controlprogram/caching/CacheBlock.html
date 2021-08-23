@@ -18,7 +18,7 @@
     catch(err) {
     }
 //-->
-var methods = {"i0":6,"i1":6,"i2":6,"i3":6,"i4":6,"i5":6,"i6":6,"i7":6,"i8":6,"i9":6,"i10":6};
+var methods = {"i0":6,"i1":6,"i2":6,"i3":6,"i4":6,"i5":6,"i6":6,"i7":6,"i8":6,"i9":6,"i10":6,"i11":6};
 var tabs = {65535:["t0","All Methods"],2:["t2","Instance Methods"],4:["t3","Abstract Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -186,6 +186,17 @@ extends org.apache.hadoop.io.Writable</pre>
 </tr>
 <tr id="i9" class="rowColor">
 <td class="colFirst"><code><a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheBlock.html" title="interface in org.apache.sysds.runtime.controlprogram.caching">CacheBlock</a></code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheBlock.html#slice-int-int-int-int-boolean-org.apache.sysds.runtime.controlprogram.caching.CacheBlock-">slice</a></span>(int&nbsp;rl,
+     int&nbsp;ru,
+     int&nbsp;cl,
+     int&nbsp;cu,
+     boolean&nbsp;deep,
+     <a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheBlock.html" title="interface in org.apache.sysds.runtime.controlprogram.caching">CacheBlock</a>&nbsp;block)</code>
+<div class="block">Slice a sub block out of the current block and write into the given output block.</div>
+</td>
+</tr>
+<tr id="i10" class="altColor">
+<td class="colFirst"><code><a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheBlock.html" title="interface in org.apache.sysds.runtime.controlprogram.caching">CacheBlock</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheBlock.html#slice-int-int-int-int-org.apache.sysds.runtime.controlprogram.caching.CacheBlock-">slice</a></span>(int&nbsp;rl,
      int&nbsp;ru,
      int&nbsp;cl,
@@ -194,7 +205,7 @@ extends org.apache.hadoop.io.Writable</pre>
 <div class="block">Slice a sub block out of the current block and write into the given output block.</div>
 </td>
 </tr>
-<tr id="i10" class="altColor">
+<tr id="i11" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheBlock.html#toShallowSerializeBlock--">toShallowSerializeBlock</a></span>()</code>
 <div class="block">Converts a cache block that is not shallow serializable into
@@ -355,6 +366,33 @@ extends org.apache.hadoop.io.Writable</pre>
 <dd><code>ru</code> - row upper</dd>
 <dd><code>cl</code> - column lower</dd>
 <dd><code>cu</code> - column upper</dd>
+<dd><code>block</code> - cache block</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>sub-block of cache block</dd>
+</dl>
+</li>
+</ul>
+<a name="slice-int-int-int-int-boolean-org.apache.sysds.runtime.controlprogram.caching.CacheBlock-">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>slice</h4>
+<pre><a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheBlock.html" title="interface in org.apache.sysds.runtime.controlprogram.caching">CacheBlock</a>&nbsp;slice(int&nbsp;rl,
+                 int&nbsp;ru,
+                 int&nbsp;cl,
+                 int&nbsp;cu,
+                 boolean&nbsp;deep,
+                 <a href="../../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheBlock.html" title="interface in org.apache.sysds.runtime.controlprogram.caching">CacheBlock</a>&nbsp;block)</pre>
+<div class="block">Slice a sub block out of the current block and write into the given output block.
+ This method returns the passed instance if not null.</div>
+<dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>rl</code> - row lower</dd>
+<dd><code>ru</code> - row upper</dd>
+<dd><code>cl</code> - column lower</dd>
+<dd><code>cu</code> - column upper</dd>
+<dd><code>deep</code> - enforce deep-copy</dd>
 <dd><code>block</code> - cache block</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>sub-block of cache block</dd>

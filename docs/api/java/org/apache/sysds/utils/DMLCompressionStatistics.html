@@ -18,7 +18,7 @@
     catch(err) {
     }
 //-->
-var methods = {"i0":9,"i1":9,"i2":9,"i3":9,"i4":9,"i5":9,"i6":9};
+var methods = {"i0":9,"i1":9,"i2":9,"i3":9,"i4":9,"i5":9,"i6":9,"i7":9};
 var tabs = {65535:["t0","All Methods"],1:["t1","Static Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -153,26 +153,30 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 </tr>
 <tr id="i1" class="rowColor">
 <td class="colFirst"><code>static void</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/utils/DMLCompressionStatistics.html#addDecompressTime-double-int-">addDecompressTime</a></span>(double&nbsp;time,
-                 int&nbsp;threads)</code>&nbsp;</td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/utils/DMLCompressionStatistics.html#addDecompressCacheCount--">addDecompressCacheCount</a></span>()</code>&nbsp;</td>
 </tr>
 <tr id="i2" class="altColor">
 <td class="colFirst"><code>static void</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/utils/DMLCompressionStatistics.html#display-java.lang.StringBuilder-">display</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/StringBuilder.html?is-external=true" title="class or interface in java.lang">StringBuilder</a>&nbsp;sb)</code>&nbsp;</td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/utils/DMLCompressionStatistics.html#addDecompressSparkCount--">addDecompressSparkCount</a></span>()</code>&nbsp;</td>
 </tr>
 <tr id="i3" class="rowColor">
+<td class="colFirst"><code>static void</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/utils/DMLCompressionStatistics.html#addDecompressTime-double-int-">addDecompressTime</a></span>(double&nbsp;time,
+                 int&nbsp;threads)</code>&nbsp;</td>
+</tr>
+<tr id="i4" class="altColor">
+<td class="colFirst"><code>static void</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/utils/DMLCompressionStatistics.html#display-java.lang.StringBuilder-">display</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/StringBuilder.html?is-external=true" title="class or interface in java.lang">StringBuilder</a>&nbsp;sb)</code>&nbsp;</td>
+</tr>
+<tr id="i5" class="rowColor">
 <td class="colFirst"><code>static int</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/utils/DMLCompressionStatistics.html#getDecompressionCount--">getDecompressionCount</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i4" class="altColor">
-<td class="colFirst"><code>static int</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/utils/DMLCompressionStatistics.html#getDecompressionSTCount--">getDecompressionSTCount</a></span>()</code>&nbsp;</td>
-</tr>
-<tr id="i5" class="rowColor">
+<tr id="i6" class="altColor">
 <td class="colFirst"><code>static boolean</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/utils/DMLCompressionStatistics.html#haveCompressed--">haveCompressed</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i6" class="altColor">
+<tr id="i7" class="rowColor">
 <td class="colFirst"><code>static void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/utils/DMLCompressionStatistics.html#reset--">reset</a></span>()</code>&nbsp;</td>
 </tr>
@@ -253,6 +257,24 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
                                      int&nbsp;threads)</pre>
 </li>
 </ul>
+<a name="addDecompressSparkCount--">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>addDecompressSparkCount</h4>
+<pre>public static&nbsp;void&nbsp;addDecompressSparkCount()</pre>
+</li>
+</ul>
+<a name="addDecompressCacheCount--">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>addDecompressCacheCount</h4>
+<pre>public static&nbsp;void&nbsp;addDecompressCacheCount()</pre>
+</li>
+</ul>
 <a name="getDecompressionCount--">
 <!--   -->
 </a>
@@ -260,15 +282,6 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <li class="blockList">
 <h4>getDecompressionCount</h4>
 <pre>public static&nbsp;int&nbsp;getDecompressionCount()</pre>
-</li>
-</ul>
-<a name="getDecompressionSTCount--">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>getDecompressionSTCount</h4>
-<pre>public static&nbsp;int&nbsp;getDecompressionSTCount()</pre>
 </li>
 </ul>
 <a name="display-java.lang.StringBuilder-">

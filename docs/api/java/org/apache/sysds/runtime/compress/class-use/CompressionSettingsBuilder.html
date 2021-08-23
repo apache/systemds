@@ -135,64 +135,72 @@
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code><a href="../../../../../../org/apache/sysds/runtime/compress/CompressionSettingsBuilder.html" title="class in org.apache.sysds.runtime.compress">CompressionSettingsBuilder</a></code></td>
-<td class="colLast"><span class="typeNameLabel">CompressionSettingsBuilder.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/CompressionSettingsBuilder.html#setColumnPartitioner-org.apache.sysds.runtime.compress.cocode.PlanningCoCoder.PartitionerType-">setColumnPartitioner</a></span>(<a href="../../../../../../org/apache/sysds/runtime/compress/cocode/PlanningCoCoder.PartitionerType.html" title="enum in org.apache.sysds.runtime.compress.cocode">PlanningCoCoder.PartitionerType</a>&nbsp;columnPartitioner)</code>
+<td class="colLast"><span class="typeNameLabel">CompressionSettingsBuilder.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/CompressionSettingsBuilder.html#setColumnPartitioner-org.apache.sysds.runtime.compress.cocode.CoCoderFactory.PartitionerType-">setColumnPartitioner</a></span>(<a href="../../../../../../org/apache/sysds/runtime/compress/cocode/CoCoderFactory.PartitionerType.html" title="enum in org.apache.sysds.runtime.compress.cocode">CoCoderFactory.PartitionerType</a>&nbsp;columnPartitioner)</code>
 <div class="block">Set the type of CoCoding Partitioner type to use for combining columns together.</div>
 </td>
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code><a href="../../../../../../org/apache/sysds/runtime/compress/CompressionSettingsBuilder.html" title="class in org.apache.sysds.runtime.compress">CompressionSettingsBuilder</a></code></td>
-<td class="colLast"><span class="typeNameLabel">CompressionSettingsBuilder.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/CompressionSettingsBuilder.html#setEstimationType-org.apache.sysds.runtime.compress.estim.sample.SampleEstimatorFactory.EstimationType-">setEstimationType</a></span>(<a href="../../../../../../org/apache/sysds/runtime/compress/estim/sample/SampleEstimatorFactory.EstimationType.html" title="enum in org.apache.sysds.runtime.compress.estim.sample">SampleEstimatorFactory.EstimationType</a>&nbsp;estimationType)</code>&nbsp;</td>
+<td class="colLast"><span class="typeNameLabel">CompressionSettingsBuilder.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/CompressionSettingsBuilder.html#setCostType-org.apache.sysds.runtime.compress.cost.CostEstimatorFactory.CostType-">setCostType</a></span>(<a href="../../../../../../org/apache/sysds/runtime/compress/cost/CostEstimatorFactory.CostType.html" title="enum in org.apache.sysds.runtime.compress.cost">CostEstimatorFactory.CostType</a>&nbsp;costType)</code>
+<div class="block">Set the cost type used for estimating the cost of column groups default is memory based.</div>
+</td>
 </tr>
 <tr class="rowColor">
+<td class="colFirst"><code><a href="../../../../../../org/apache/sysds/runtime/compress/CompressionSettingsBuilder.html" title="class in org.apache.sysds.runtime.compress">CompressionSettingsBuilder</a></code></td>
+<td class="colLast"><span class="typeNameLabel">CompressionSettingsBuilder.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/CompressionSettingsBuilder.html#setEstimationType-org.apache.sysds.runtime.compress.estim.sample.SampleEstimatorFactory.EstimationType-">setEstimationType</a></span>(<a href="../../../../../../org/apache/sysds/runtime/compress/estim/sample/SampleEstimatorFactory.EstimationType.html" title="enum in org.apache.sysds.runtime.compress.estim.sample">SampleEstimatorFactory.EstimationType</a>&nbsp;estimationType)</code>
+<div class="block">Set the estimation type used for the sampled estimates.</div>
+</td>
+</tr>
+<tr class="altColor">
 <td class="colFirst"><code><a href="../../../../../../org/apache/sysds/runtime/compress/CompressionSettingsBuilder.html" title="class in org.apache.sysds.runtime.compress">CompressionSettingsBuilder</a></code></td>
 <td class="colLast"><span class="typeNameLabel">CompressionSettingsBuilder.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/CompressionSettingsBuilder.html#setLossy-boolean-">setLossy</a></span>(boolean&nbsp;lossy)</code>
 <div class="block">Set the Compression to use Lossy compression.</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code><a href="../../../../../../org/apache/sysds/runtime/compress/CompressionSettingsBuilder.html" title="class in org.apache.sysds.runtime.compress">CompressionSettingsBuilder</a></code></td>
 <td class="colLast"><span class="typeNameLabel">CompressionSettingsBuilder.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/CompressionSettingsBuilder.html#setMaxColGroupCoCode-int-">setMaxColGroupCoCode</a></span>(int&nbsp;maxColGroupCoCode)</code>
 <div class="block">Set the maximum number of columns to CoCode together in the CoCoding strategy.</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code><a href="../../../../../../org/apache/sysds/runtime/compress/CompressionSettingsBuilder.html" title="class in org.apache.sysds.runtime.compress">CompressionSettingsBuilder</a></code></td>
 <td class="colLast"><span class="typeNameLabel">CompressionSettingsBuilder.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/CompressionSettingsBuilder.html#setMinimumSampleSize-int-">setMinimumSampleSize</a></span>(int&nbsp;minimumSampleSize)</code>
 <div class="block">Set the minimum sample size to extract from a given matrix, this overrules the sample percentage if the sample
  percentage extracted is lower than this minimum bound.</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code><a href="../../../../../../org/apache/sysds/runtime/compress/CompressionSettingsBuilder.html" title="class in org.apache.sysds.runtime.compress">CompressionSettingsBuilder</a></code></td>
 <td class="colLast"><span class="typeNameLabel">CompressionSettingsBuilder.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/CompressionSettingsBuilder.html#setSamplingRatio-double-">setSamplingRatio</a></span>(double&nbsp;samplingRatio)</code>
 <div class="block">Set the sampling ratio in percent to sample the input matrix.</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code><a href="../../../../../../org/apache/sysds/runtime/compress/CompressionSettingsBuilder.html" title="class in org.apache.sysds.runtime.compress">CompressionSettingsBuilder</a></code></td>
 <td class="colLast"><span class="typeNameLabel">CompressionSettingsBuilder.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/CompressionSettingsBuilder.html#setSeed-int-">setSeed</a></span>(int&nbsp;seed)</code>
 <div class="block">Set the seed for the compression operation.</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code><a href="../../../../../../org/apache/sysds/runtime/compress/CompressionSettingsBuilder.html" title="class in org.apache.sysds.runtime.compress">CompressionSettingsBuilder</a></code></td>
 <td class="colLast"><span class="typeNameLabel">CompressionSettingsBuilder.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/CompressionSettingsBuilder.html#setSkipList-boolean-">setSkipList</a></span>(boolean&nbsp;skipList)</code>
 <div class="block">Specify if the Offset list encoding should utilize skip lists.</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code><a href="../../../../../../org/apache/sysds/runtime/compress/CompressionSettingsBuilder.html" title="class in org.apache.sysds.runtime.compress">CompressionSettingsBuilder</a></code></td>
 <td class="colLast"><span class="typeNameLabel">CompressionSettingsBuilder.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/CompressionSettingsBuilder.html#setSortValuesByLength-boolean-">setSortValuesByLength</a></span>(boolean&nbsp;sortValuesByLength)</code>
 <div class="block">Set the sortValuesByLength flag.</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code><a href="../../../../../../org/apache/sysds/runtime/compress/CompressionSettingsBuilder.html" title="class in org.apache.sysds.runtime.compress">CompressionSettingsBuilder</a></code></td>
 <td class="colLast"><span class="typeNameLabel">CompressionSettingsBuilder.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/CompressionSettingsBuilder.html#setTransposeInput-java.lang.String-">setTransposeInput</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;transposeInput)</code>
 <div class="block">Specify if the input matrix should be transposed before compression.</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code><a href="../../../../../../org/apache/sysds/runtime/compress/CompressionSettingsBuilder.html" title="class in org.apache.sysds.runtime.compress">CompressionSettingsBuilder</a></code></td>
 <td class="colLast"><span class="typeNameLabel">CompressionSettingsBuilder.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/CompressionSettingsBuilder.html#setValidCompressions-java.util.EnumSet-">setValidCompressions</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/EnumSet.html?is-external=true" title="class or interface in java.util">EnumSet</a>&lt;<a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.CompressionType.html" title="enum in org.apache.sysds.runtime.compress.colgroup">AColGroup.CompressionType</a>&gt;&nbsp;validCompressions)</code>
 <div class="block">Set the valid compression strategies used for the compression.</div>

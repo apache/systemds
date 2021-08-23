@@ -18,7 +18,7 @@
     catch(err) {
     }
 //-->
-var methods = {"i0":9,"i1":9,"i2":9,"i3":9,"i4":9,"i5":9,"i6":9,"i7":9,"i8":9,"i9":9,"i10":9,"i11":9,"i12":9,"i13":9,"i14":9,"i15":9,"i16":9,"i17":9,"i18":9,"i19":9,"i20":9,"i21":9,"i22":9};
+var methods = {"i0":9,"i1":9,"i2":9,"i3":9,"i4":9,"i5":9,"i6":9,"i7":9,"i8":9,"i9":9,"i10":9,"i11":9,"i12":9,"i13":9,"i14":9,"i15":9,"i16":9,"i17":9,"i18":9,"i19":9,"i20":9,"i21":9,"i22":9,"i23":9};
 var tabs = {65535:["t0","All Methods"],1:["t1","Static Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -165,12 +165,18 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 </tr>
 <tr id="i2" class="altColor">
 <td class="colFirst"><code>static <a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/matrix/data/OperationsOnMatrixValues.html#matMult-org.apache.sysds.runtime.matrix.data.MatrixBlock-org.apache.sysds.runtime.matrix.data.MatrixBlock-org.apache.sysds.runtime.matrix.operators.AggregateBinaryOperator-">matMult</a></span>(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;value1,
+       <a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;value2,
+       <a href="../../../../../../org/apache/sysds/runtime/matrix/operators/AggregateBinaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">AggregateBinaryOperator</a>&nbsp;op)</code>&nbsp;</td>
+</tr>
+<tr id="i3" class="rowColor">
+<td class="colFirst"><code>static <a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/matrix/data/OperationsOnMatrixValues.html#matMult-org.apache.sysds.runtime.matrix.data.MatrixBlock-org.apache.sysds.runtime.matrix.data.MatrixBlock-org.apache.sysds.runtime.matrix.data.MatrixBlock-org.apache.sysds.runtime.matrix.operators.AggregateBinaryOperator-">matMult</a></span>(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;value1,
        <a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;value2,
        <a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;valueOut,
        <a href="../../../../../../org/apache/sysds/runtime/matrix/operators/AggregateBinaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">AggregateBinaryOperator</a>&nbsp;op)</code>&nbsp;</td>
 </tr>
-<tr id="i3" class="rowColor">
+<tr id="i4" class="altColor">
 <td class="colFirst"><code>static <a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/matrix/data/OperationsOnMatrixValues.html#matMult-org.apache.sysds.runtime.matrix.data.MatrixIndexes-org.apache.sysds.runtime.matrix.data.MatrixBlock-org.apache.sysds.runtime.matrix.data.MatrixIndexes-org.apache.sysds.runtime.matrix.data.MatrixBlock-org.apache.sysds.runtime.matrix.data.MatrixIndexes-org.apache.sysds.runtime.matrix.data.MatrixBlock-org.apache.sysds.runtime.matrix.operators.AggregateBinaryOperator-">matMult</a></span>(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixIndexes.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixIndexes</a>&nbsp;indexes1,
        <a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;value1,
@@ -180,7 +186,7 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
        <a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;valueOut,
        <a href="../../../../../../org/apache/sysds/runtime/matrix/operators/AggregateBinaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">AggregateBinaryOperator</a>&nbsp;op)</code>&nbsp;</td>
 </tr>
-<tr id="i4" class="altColor">
+<tr id="i5" class="rowColor">
 <td class="colFirst"><code>static void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/matrix/data/OperationsOnMatrixValues.html#performAggregateUnary-org.apache.sysds.runtime.matrix.data.MatrixIndexes-org.apache.sysds.runtime.matrix.data.MatrixValue-org.apache.sysds.runtime.matrix.data.MatrixIndexes-org.apache.sysds.runtime.matrix.data.MatrixValue-org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator-int-">performAggregateUnary</a></span>(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixIndexes.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixIndexes</a>&nbsp;indexesIn,
                      <a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixValue.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixValue</a>&nbsp;valueIn,
@@ -189,7 +195,7 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
                      <a href="../../../../../../org/apache/sysds/runtime/matrix/operators/AggregateUnaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">AggregateUnaryOperator</a>&nbsp;op,
                      int&nbsp;blen)</code>&nbsp;</td>
 </tr>
-<tr id="i5" class="rowColor">
+<tr id="i6" class="altColor">
 <td class="colFirst"><code>static void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/matrix/data/OperationsOnMatrixValues.html#performAppend-org.apache.sysds.runtime.matrix.data.MatrixValue-org.apache.sysds.runtime.matrix.data.MatrixValue-java.util.ArrayList-int-boolean-boolean-int-">performAppend</a></span>(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixValue.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixValue</a>&nbsp;valueIn1,
              <a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixValue.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixValue</a>&nbsp;valueIn2,
@@ -199,14 +205,14 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
              boolean&nbsp;m2IsLast,
              int&nbsp;nextNCol)</code>&nbsp;</td>
 </tr>
-<tr id="i6" class="altColor">
+<tr id="i7" class="rowColor">
 <td class="colFirst"><code>static void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/matrix/data/OperationsOnMatrixValues.html#performBinaryIgnoreIndexes-org.apache.sysds.runtime.matrix.data.MatrixValue-org.apache.sysds.runtime.matrix.data.MatrixValue-org.apache.sysds.runtime.matrix.data.MatrixValue-org.apache.sysds.runtime.matrix.operators.BinaryOperator-">performBinaryIgnoreIndexes</a></span>(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixValue.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixValue</a>&nbsp;value1,
                           <a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixValue.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixValue</a>&nbsp;value2,
                           <a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixValue.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixValue</a>&nbsp;valueOut,
                           <a href="../../../../../../org/apache/sysds/runtime/matrix/operators/BinaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">BinaryOperator</a>&nbsp;op)</code>&nbsp;</td>
 </tr>
-<tr id="i7" class="rowColor">
+<tr id="i8" class="altColor">
 <td class="colFirst"><code>static void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/matrix/data/OperationsOnMatrixValues.html#performCtable-org.apache.sysds.runtime.matrix.data.MatrixIndexes-org.apache.sysds.runtime.matrix.data.MatrixValue-double-boolean-int-org.apache.sysds.runtime.matrix.data.CTableMap-org.apache.sysds.runtime.matrix.data.MatrixBlock-org.apache.sysds.runtime.matrix.operators.Operator-">performCtable</a></span>(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixIndexes.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixIndexes</a>&nbsp;indexesIn1,
              <a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixValue.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixValue</a>&nbsp;valueIn1,
@@ -217,7 +223,7 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
              <a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;resultBlock,
              <a href="../../../../../../org/apache/sysds/runtime/matrix/operators/Operator.html" title="class in org.apache.sysds.runtime.matrix.operators">Operator</a>&nbsp;op)</code>&nbsp;</td>
 </tr>
-<tr id="i8" class="altColor">
+<tr id="i9" class="rowColor">
 <td class="colFirst"><code>static void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/matrix/data/OperationsOnMatrixValues.html#performCtable-org.apache.sysds.runtime.matrix.data.MatrixIndexes-org.apache.sysds.runtime.matrix.data.MatrixValue-double-double-org.apache.sysds.runtime.matrix.data.CTableMap-org.apache.sysds.runtime.matrix.data.MatrixBlock-org.apache.sysds.runtime.matrix.operators.Operator-">performCtable</a></span>(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixIndexes.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixIndexes</a>&nbsp;indexesIn1,
              <a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixValue.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixValue</a>&nbsp;valueIn1,
@@ -227,7 +233,7 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
              <a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;resultBlock,
              <a href="../../../../../../org/apache/sysds/runtime/matrix/operators/Operator.html" title="class in org.apache.sysds.runtime.matrix.operators">Operator</a>&nbsp;op)</code>&nbsp;</td>
 </tr>
-<tr id="i9" class="rowColor">
+<tr id="i10" class="altColor">
 <td class="colFirst"><code>static void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/matrix/data/OperationsOnMatrixValues.html#performCtable-org.apache.sysds.runtime.matrix.data.MatrixIndexes-org.apache.sysds.runtime.matrix.data.MatrixValue-double-org.apache.sysds.runtime.matrix.data.MatrixIndexes-org.apache.sysds.runtime.matrix.data.MatrixValue-org.apache.sysds.runtime.matrix.data.CTableMap-org.apache.sysds.runtime.matrix.data.MatrixBlock-org.apache.sysds.runtime.matrix.operators.Operator-">performCtable</a></span>(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixIndexes.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixIndexes</a>&nbsp;indexesIn1,
              <a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixValue.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixValue</a>&nbsp;valueIn1,
@@ -238,7 +244,7 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
              <a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;resultBlock,
              <a href="../../../../../../org/apache/sysds/runtime/matrix/operators/Operator.html" title="class in org.apache.sysds.runtime.matrix.operators">Operator</a>&nbsp;op)</code>&nbsp;</td>
 </tr>
-<tr id="i10" class="altColor">
+<tr id="i11" class="rowColor">
 <td class="colFirst"><code>static void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/matrix/data/OperationsOnMatrixValues.html#performCtable-org.apache.sysds.runtime.matrix.data.MatrixIndexes-org.apache.sysds.runtime.matrix.data.MatrixValue-org.apache.sysds.runtime.matrix.data.MatrixIndexes-org.apache.sysds.runtime.matrix.data.MatrixValue-double-org.apache.sysds.runtime.matrix.data.CTableMap-org.apache.sysds.runtime.matrix.data.MatrixBlock-org.apache.sysds.runtime.matrix.operators.Operator-">performCtable</a></span>(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixIndexes.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixIndexes</a>&nbsp;indexesIn1,
              <a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixValue.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixValue</a>&nbsp;valueIn1,
@@ -249,7 +255,7 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
              <a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;resultBlock,
              <a href="../../../../../../org/apache/sysds/runtime/matrix/operators/Operator.html" title="class in org.apache.sysds.runtime.matrix.operators">Operator</a>&nbsp;op)</code>&nbsp;</td>
 </tr>
-<tr id="i11" class="rowColor">
+<tr id="i12" class="altColor">
 <td class="colFirst"><code>static void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/matrix/data/OperationsOnMatrixValues.html#performCtable-org.apache.sysds.runtime.matrix.data.MatrixIndexes-org.apache.sysds.runtime.matrix.data.MatrixValue-org.apache.sysds.runtime.matrix.data.MatrixIndexes-org.apache.sysds.runtime.matrix.data.MatrixValue-org.apache.sysds.runtime.matrix.data.MatrixIndexes-org.apache.sysds.runtime.matrix.data.MatrixValue-org.apache.sysds.runtime.matrix.data.CTableMap-org.apache.sysds.runtime.matrix.data.MatrixBlock-org.apache.sysds.runtime.matrix.operators.Operator-">performCtable</a></span>(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixIndexes.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixIndexes</a>&nbsp;indexesIn1,
              <a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixValue.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixValue</a>&nbsp;valueIn1,
@@ -261,7 +267,7 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
              <a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;resultBlock,
              <a href="../../../../../../org/apache/sysds/runtime/matrix/operators/Operator.html" title="class in org.apache.sysds.runtime.matrix.operators">Operator</a>&nbsp;op)</code>&nbsp;</td>
 </tr>
-<tr id="i12" class="altColor">
+<tr id="i13" class="rowColor">
 <td class="colFirst"><code>static void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/matrix/data/OperationsOnMatrixValues.html#performMapGroupedAggregate-org.apache.sysds.runtime.matrix.operators.Operator-org.apache.sysds.runtime.instructions.spark.data.IndexedMatrixValue-org.apache.sysds.runtime.matrix.data.MatrixBlock-int-int-java.util.ArrayList-">performMapGroupedAggregate</a></span>(<a href="../../../../../../org/apache/sysds/runtime/matrix/operators/Operator.html" title="class in org.apache.sysds.runtime.matrix.operators">Operator</a>&nbsp;op,
                           <a href="../../../../../../org/apache/sysds/runtime/instructions/spark/data/IndexedMatrixValue.html" title="class in org.apache.sysds.runtime.instructions.spark.data">IndexedMatrixValue</a>&nbsp;inTarget,
@@ -270,7 +276,7 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
                           int&nbsp;blen,
                           <a href="https://docs.oracle.com/javase/8/docs/api/java/util/ArrayList.html?is-external=true" title="class or interface in java.util">ArrayList</a>&lt;<a href="../../../../../../org/apache/sysds/runtime/instructions/spark/data/IndexedMatrixValue.html" title="class in org.apache.sysds.runtime.instructions.spark.data">IndexedMatrixValue</a>&gt;&nbsp;outlist)</code>&nbsp;</td>
 </tr>
-<tr id="i13" class="rowColor">
+<tr id="i14" class="altColor">
 <td class="colFirst"><code>static void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/matrix/data/OperationsOnMatrixValues.html#performReorg-org.apache.sysds.runtime.matrix.data.MatrixIndexes-org.apache.sysds.runtime.matrix.data.MatrixValue-org.apache.sysds.runtime.matrix.data.MatrixIndexes-org.apache.sysds.runtime.matrix.data.MatrixValue-org.apache.sysds.runtime.matrix.operators.ReorgOperator-int-int-int-">performReorg</a></span>(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixIndexes.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixIndexes</a>&nbsp;indexesIn,
             <a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixValue.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixValue</a>&nbsp;valueIn,
@@ -281,7 +287,7 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
             int&nbsp;startColumn,
             int&nbsp;length)</code>&nbsp;</td>
 </tr>
-<tr id="i14" class="altColor">
+<tr id="i15" class="rowColor">
 <td class="colFirst"><code>static void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/matrix/data/OperationsOnMatrixValues.html#performShift-org.apache.sysds.runtime.instructions.spark.data.IndexedMatrixValue-org.apache.sysds.runtime.util.IndexRange-int-long-long-java.util.ArrayList-">performShift</a></span>(<a href="../../../../../../org/apache/sysds/runtime/instructions/spark/data/IndexedMatrixValue.html" title="class in org.apache.sysds.runtime.instructions.spark.data">IndexedMatrixValue</a>&nbsp;in,
             <a href="../../../../../../org/apache/sysds/runtime/util/IndexRange.html" title="class in org.apache.sysds.runtime.util">IndexRange</a>&nbsp;ixrange,
@@ -290,7 +296,7 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
             long&nbsp;clen,
             <a href="https://docs.oracle.com/javase/8/docs/api/java/util/ArrayList.html?is-external=true" title="class or interface in java.util">ArrayList</a>&lt;<a href="../../../../../../org/apache/sysds/runtime/instructions/spark/data/IndexedMatrixValue.html" title="class in org.apache.sysds.runtime.instructions.spark.data">IndexedMatrixValue</a>&gt;&nbsp;outlist)</code>&nbsp;</td>
 </tr>
-<tr id="i15" class="rowColor">
+<tr id="i16" class="altColor">
 <td class="colFirst"><code>static void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/matrix/data/OperationsOnMatrixValues.html#performShift-org.apache.sysds.runtime.matrix.data.Pair-org.apache.sysds.runtime.util.IndexRange-int-long-long-java.util.ArrayList-">performShift</a></span>(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/Pair.html" title="class in org.apache.sysds.runtime.matrix.data">Pair</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Long.html?is-external=true" title="class or interface in java.lang">Long</a>,<a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&gt;&nbsp;in,
             <a href="../../../../../../org/apache/sysds/runtime/util/IndexRange.html" title="class in org.apache.sysds.runtime.util">IndexRange</a>&nbsp;ixrange,
@@ -299,13 +305,13 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
             long&nbsp;clen,
             <a href="https://docs.oracle.com/javase/8/docs/api/java/util/ArrayList.html?is-external=true" title="class or interface in java.util">ArrayList</a>&lt;<a href="../../../../../../org/apache/sysds/runtime/matrix/data/Pair.html" title="class in org.apache.sysds.runtime.matrix.data">Pair</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Long.html?is-external=true" title="class or interface in java.lang">Long</a>,<a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&gt;&gt;&nbsp;outlist)</code>&nbsp;</td>
 </tr>
-<tr id="i16" class="altColor">
+<tr id="i17" class="rowColor">
 <td class="colFirst"><code>static <a href="https://docs.oracle.com/javase/8/docs/api/java/util/ArrayList.html?is-external=true" title="class or interface in java.util">ArrayList</a>&lt;<a href="../../../../../../org/apache/sysds/runtime/instructions/spark/data/IndexedMatrixValue.html" title="class in org.apache.sysds.runtime.instructions.spark.data">IndexedMatrixValue</a>&gt;</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/matrix/data/OperationsOnMatrixValues.html#performSlice-org.apache.sysds.runtime.instructions.spark.data.IndexedMatrixValue-org.apache.sysds.runtime.util.IndexRange-int-">performSlice</a></span>(<a href="../../../../../../org/apache/sysds/runtime/instructions/spark/data/IndexedMatrixValue.html" title="class in org.apache.sysds.runtime.instructions.spark.data">IndexedMatrixValue</a>&nbsp;in,
             <a href="../../../../../../org/apache/sysds/runtime/util/IndexRange.html" title="class in org.apache.sysds.runtime.util">IndexRange</a>&nbsp;ixrange,
             int&nbsp;blen)</code>&nbsp;</td>
 </tr>
-<tr id="i17" class="rowColor">
+<tr id="i18" class="altColor">
 <td class="colFirst"><code>static <a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/matrix/data/OperationsOnMatrixValues.html#performSlice-org.apache.sysds.runtime.util.IndexRange-int-int-int-org.apache.sysds.runtime.controlprogram.caching.CacheBlock-">performSlice</a></span>(<a href="../../../../../../org/apache/sysds/runtime/util/IndexRange.html" title="class in org.apache.sysds.runtime.util">IndexRange</a>&nbsp;ixrange,
             int&nbsp;blen,
@@ -316,7 +322,7 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
  into blocks.</div>
 </td>
 </tr>
-<tr id="i18" class="altColor">
+<tr id="i19" class="rowColor">
 <td class="colFirst"><code>static <a href="https://docs.oracle.com/javase/8/docs/api/java/util/ArrayList.html?is-external=true" title="class or interface in java.util">ArrayList</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/matrix/data/OperationsOnMatrixValues.html#performSlice-org.apache.sysds.runtime.util.IndexRange-int-int-int-org.apache.sysds.runtime.matrix.data.FrameBlock-">performSlice</a></span>(<a href="../../../../../../org/apache/sysds/runtime/util/IndexRange.html" title="class in org.apache.sysds.runtime.util">IndexRange</a>&nbsp;ixrange,
             int&nbsp;blen,
@@ -324,7 +330,7 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
             int&nbsp;jix,
             <a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;in)</code>&nbsp;</td>
 </tr>
-<tr id="i19" class="rowColor">
+<tr id="i20" class="altColor">
 <td class="colFirst"><code>static <a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/matrix/data/OperationsOnMatrixValues.html#performSlice-org.apache.sysds.runtime.util.IndexRange-int-int-int-org.apache.sysds.runtime.matrix.data.MatrixBlock-">performSlice</a></span>(<a href="../../../../../../org/apache/sysds/runtime/util/IndexRange.html" title="class in org.apache.sysds.runtime.util">IndexRange</a>&nbsp;ixrange,
             int&nbsp;blen,
@@ -332,7 +338,7 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
             int&nbsp;jix,
             <a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;in)</code>&nbsp;</td>
 </tr>
-<tr id="i20" class="altColor">
+<tr id="i21" class="rowColor">
 <td class="colFirst"><code>static <a href="https://docs.oracle.com/javase/8/docs/api/java/util/ArrayList.html?is-external=true" title="class or interface in java.util">ArrayList</a>&lt;<a href="../../../../../../org/apache/sysds/runtime/matrix/data/Pair.html" title="class in org.apache.sysds.runtime.matrix.data">Pair</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Long.html?is-external=true" title="class or interface in java.lang">Long</a>,<a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&gt;&gt;</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/matrix/data/OperationsOnMatrixValues.html#performSlice-org.apache.sysds.runtime.matrix.data.Pair-org.apache.sysds.runtime.util.IndexRange-int-">performSlice</a></span>(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/Pair.html" title="class in org.apache.sysds.runtime.matrix.data">Pair</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Long.html?is-external=true" title="class or interface in java.lang">Long</a>,<a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&gt;&nbsp;in,
             <a href="../../../../../../org/apache/sysds/runtime/util/IndexRange.html" title="class in org.apache.sysds.runtime.util">IndexRange</a>&nbsp;ixrange,
@@ -340,7 +346,7 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <div class="block">This function will get slice of the input frame block overlapping in overall slice(Range), slice has requested for.</div>
 </td>
 </tr>
-<tr id="i21" class="rowColor">
+<tr id="i22" class="altColor">
 <td class="colFirst"><code>static void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/matrix/data/OperationsOnMatrixValues.html#performZeroOut-org.apache.sysds.runtime.matrix.data.MatrixIndexes-org.apache.sysds.runtime.matrix.data.MatrixValue-org.apache.sysds.runtime.matrix.data.MatrixIndexes-org.apache.sysds.runtime.matrix.data.MatrixValue-org.apache.sysds.runtime.util.IndexRange-boolean-">performZeroOut</a></span>(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixIndexes.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixIndexes</a>&nbsp;indexesIn,
               <a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixValue.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixValue</a>&nbsp;valueIn,
@@ -349,7 +355,7 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
               <a href="../../../../../../org/apache/sysds/runtime/util/IndexRange.html" title="class in org.apache.sysds.runtime.util">IndexRange</a>&nbsp;range,
               boolean&nbsp;complementary)</code>&nbsp;</td>
 </tr>
-<tr id="i22" class="altColor">
+<tr id="i23" class="rowColor">
 <td class="colFirst"><code>static void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/matrix/data/OperationsOnMatrixValues.html#startAggregation-org.apache.sysds.runtime.matrix.data.MatrixValue-org.apache.sysds.runtime.matrix.data.MatrixValue-org.apache.sysds.runtime.matrix.operators.AggregateOperator-int-int-boolean-boolean-">startAggregation</a></span>(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixValue.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixValue</a>&nbsp;valueOut,
                 <a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixValue.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixValue</a>&nbsp;correction,
@@ -603,6 +609,17 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
                                   <a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;value2,
                                   <a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixIndexes.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixIndexes</a>&nbsp;indexesOut,
                                   <a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;valueOut,
+                                  <a href="../../../../../../org/apache/sysds/runtime/matrix/operators/AggregateBinaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">AggregateBinaryOperator</a>&nbsp;op)</pre>
+</li>
+</ul>
+<a name="matMult-org.apache.sysds.runtime.matrix.data.MatrixBlock-org.apache.sysds.runtime.matrix.data.MatrixBlock-org.apache.sysds.runtime.matrix.operators.AggregateBinaryOperator-">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>matMult</h4>
+<pre>public static&nbsp;<a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;matMult(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;value1,
+                                  <a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;value2,
                                   <a href="../../../../../../org/apache/sysds/runtime/matrix/operators/AggregateBinaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">AggregateBinaryOperator</a>&nbsp;op)</pre>
 </li>
 </ul>

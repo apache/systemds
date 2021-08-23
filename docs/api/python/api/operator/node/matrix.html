@@ -7,7 +7,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Matrix &mdash; SystemDS 2.0.0 documentation</title>
+  <title>Matrix &mdash; SystemDS 2.2.0-SNAPSHOT documentation</title>
   
 
   
@@ -386,12 +386,29 @@ all operations are only building the DAG without actually executing (lazy evalua
 </dd></dl>
 
 <dl class="py method">
+<dt id="systemds.operator.Matrix.replace">
+<code class="sig-name descname">replace</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">pattern</span><span class="p">:</span> <span class="n">Union<span class="p">[</span>DAGNode<span class="p">, </span>str<span class="p">, </span>int<span class="p">, </span>float<span class="p">, </span>bool<span class="p">]</span></span></em>, <em class="sig-param"><span class="n">replacement</span><span class="p">:</span> <span class="n">Union<span class="p">[</span>DAGNode<span class="p">, </span>str<span class="p">, </span>int<span class="p">, </span>float<span class="p">, </span>bool<span class="p">]</span></span></em><span class="sig-paren">)</span> &#x2192; <a class="reference internal" href="#systemds.operator.Matrix" title="systemds.operator.Matrix">Matrix</a><a class="headerlink" href="#systemds.operator.Matrix.replace" title="Permalink to this definition">¶</a></dt>
+<dd><p>Replace all values with replacement value</p>
+</dd></dl>
+
+<dl class="py method">
 <dt id="systemds.operator.Matrix.rev">
 <code class="sig-name descname">rev</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; systemds.operator.nodes.matrix.Matrix<a class="headerlink" href="#systemds.operator.Matrix.rev" title="Permalink to this definition">¶</a></dt>
 <dd><p>Reverses the rows</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns</dt>
 <dd class="field-odd"><p>the OperationNode representing this operation</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="systemds.operator.Matrix.round">
+<code class="sig-name descname">round</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; systemds.operator.nodes.matrix.Matrix<a class="headerlink" href="#systemds.operator.Matrix.round" title="Permalink to this definition">¶</a></dt>
+<dd><p>round all values to nearest natural number</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The Matrix representing the result of this operation</p>
 </dd>
 </dl>
 </dd></dl>

@@ -7,7 +7,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Frame &mdash; SystemDS 2.0.0 documentation</title>
+  <title>Frame &mdash; SystemDS 2.2.0-SNAPSHOT documentation</title>
   
 
   
@@ -209,7 +209,7 @@ Default is None, and means every multi output is a matrix.</p></li>
 <code class="sig-name descname">cbind</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">other</span></em><span class="sig-paren">)</span> &#x2192; systemds.operator.nodes.frame.Frame<a class="headerlink" href="#systemds.operator.Frame.cbind" title="Permalink to this definition">¶</a></dt>
 <dd><p>Column-wise frame concatenation, by concatenating the second frame as additional columns to the first frame. 
 :param: The other frame to bind to the right hand side.
-:return: The OperationNode containing the concatenated frames.</p>
+:return: The Frame containing the concatenated frames.</p>
 </dd></dl>
 
 <dl class="py method">
@@ -269,6 +269,15 @@ all operations are only building the DAG without actually executing (lazy evalua
 <dd><p>Row-wise frame concatenation, by concatenating the second frame as additional rows to the first frame. 
 :param: The other frame to bind to the right hand side
 :return: The OperationNode containing the concatenated frames.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="systemds.operator.Frame.replace">
+<code class="sig-name descname">replace</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">pattern</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">replacement</span><span class="p">:</span> <span class="n">str</span></em><span class="sig-paren">)</span> &#x2192; systemds.operator.nodes.frame.Frame<a class="headerlink" href="#systemds.operator.Frame.replace" title="Permalink to this definition">¶</a></dt>
+<dd><p>Replace all instances of string with replacement string
+:param: pattern the string to replace
+:param: replacement the string to replace with
+:return: The Frame containing the replaced values</p>
 </dd></dl>
 
 </dd></dl>

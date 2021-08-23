@@ -18,7 +18,7 @@
     catch(err) {
     }
 //-->
-var methods = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":9,"i8":10,"i9":10,"i10":10,"i11":10,"i12":10,"i13":10,"i14":10,"i15":10,"i16":10,"i17":10,"i18":10,"i19":10,"i20":10,"i21":10,"i22":10,"i23":10};
+var methods = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":9,"i8":10,"i9":10,"i10":10,"i11":10,"i12":10,"i13":10,"i14":10,"i15":10,"i16":10,"i17":10,"i18":10,"i19":10,"i20":10,"i21":10,"i22":10};
 var tabs = {65535:["t0","All Methods"],1:["t1","Static Methods"],2:["t2","Instance Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -333,17 +333,7 @@ extends <a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/Co
 </tr>
 <tr id="i22" class="altColor">
 <td class="colFirst"><code>void</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupEmpty.html#tsmm-double:A-int-">tsmm</a></span>(double[]&nbsp;result,
-    int&nbsp;numColumns)</code>
-<div class="block">Do a transposed self matrix multiplication on the left side t(x) %*% x.</div>
-</td>
-</tr>
-<tr id="i23" class="rowColor">
-<td class="colFirst"><code>void</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupEmpty.html#tsmm-double:A-int-int-int-">tsmm</a></span>(double[]&nbsp;result,
-    int&nbsp;numColumns,
-    int&nbsp;idxStart,
-    int&nbsp;idxEnd)</code>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupEmpty.html#tsmm-org.apache.sysds.runtime.matrix.data.MatrixBlock-">tsmm</a></span>(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;ret)</code>
 <div class="block">Do a transposed self matrix multiplication on the left side t(x) %*% x.</div>
 </td>
 </tr>
@@ -693,15 +683,14 @@ extends <a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/Co
 </dl>
 </li>
 </ul>
-<a name="tsmm-double:A-int-">
+<a name="tsmm-org.apache.sysds.runtime.matrix.data.MatrixBlock-">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
 <h4>tsmm</h4>
-<pre>public&nbsp;void&nbsp;tsmm(double[]&nbsp;result,
-                 int&nbsp;numColumns)</pre>
-<div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.html#tsmm-double:A-int-">AColGroup</a></code></span></div>
+<pre>public&nbsp;void&nbsp;tsmm(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;ret)</pre>
+<div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.html#tsmm-org.apache.sysds.runtime.matrix.data.MatrixBlock-">AColGroup</a></code></span></div>
 <div class="block">Do a transposed self matrix multiplication on the left side t(x) %*% x. but only with this column group.
  
  This gives better performance since there is no need to iterate through all the rows of the matrix, but the
@@ -710,39 +699,9 @@ extends <a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/Co
  Note it only calculate the upper triangle</div>
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
-<dd><code><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.html#tsmm-double:A-int-">tsmm</a></code>&nbsp;in class&nbsp;<code><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a></code></dd>
+<dd><code><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.html#tsmm-org.apache.sysds.runtime.matrix.data.MatrixBlock-">tsmm</a></code>&nbsp;in class&nbsp;<code><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a></code></dd>
 <dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>result</code> - A row major dense allocation of a matrixBlock, of size [numColumns x numColumns]</dd>
-<dd><code>numColumns</code> - The number of columns in the row major result matrix.</dd>
-</dl>
-</li>
-</ul>
-<a name="tsmm-double:A-int-int-int-">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>tsmm</h4>
-<pre>public&nbsp;void&nbsp;tsmm(double[]&nbsp;result,
-                 int&nbsp;numColumns,
-                 int&nbsp;idxStart,
-                 int&nbsp;idxEnd)</pre>
-<div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.html#tsmm-double:A-int-int-int-">AColGroup</a></code></span></div>
-<div class="block">Do a transposed self matrix multiplication on the left side t(x) %*% x. but only with this column group, and only
- on a subset of the columns contained in this columnGroup.
- 
- This gives better performance since there is no need to iterate through all the rows of the matrix, but the
- execution can be limited to its number of distinct values.
- 
- Note it only calculate the upper triangle</div>
-<dl>
-<dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
-<dd><code><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.html#tsmm-double:A-int-int-int-">tsmm</a></code>&nbsp;in class&nbsp;<code><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a></code></dd>
-<dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>result</code> - A row major dense allocation of a matrixBlock, of size [numColumns x numColumns]</dd>
-<dd><code>numColumns</code> - The number of columns in the row major result matrix.</dd>
-<dd><code>idxStart</code> - The starting index in the _colIndexes.</dd>
-<dd><code>idxEnd</code> - The ending index in the _colIndexes.</dd>
+<dd><code>ret</code> - The return matrix block [numColumns x numColumns]</dd>
 </dl>
 </li>
 </ul>

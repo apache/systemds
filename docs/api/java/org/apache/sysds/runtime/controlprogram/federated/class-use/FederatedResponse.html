@@ -83,14 +83,18 @@
 </tr>
 <tbody>
 <tr class="altColor">
-<td class="colFirst"><a href="#org.apache.sysds.runtime.controlprogram.federated">org.apache.sysds.runtime.controlprogram.federated</a></td>
+<td class="colFirst"><a href="#org.apache.sysds.hops.rewrite">org.apache.sysds.hops.rewrite</a></td>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
-<td class="colFirst"><a href="#org.apache.sysds.runtime.instructions.fed">org.apache.sysds.runtime.instructions.fed</a></td>
+<td class="colFirst"><a href="#org.apache.sysds.runtime.controlprogram.federated">org.apache.sysds.runtime.controlprogram.federated</a></td>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="altColor">
+<td class="colFirst"><a href="#org.apache.sysds.runtime.instructions.fed">org.apache.sysds.runtime.instructions.fed</a></td>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
 <td class="colFirst"><a href="#org.apache.sysds.runtime.lineage">org.apache.sysds.runtime.lineage</a></td>
 <td class="colLast">&nbsp;</td>
 </tr>
@@ -99,6 +103,27 @@
 </li>
 <li class="blockList">
 <ul class="blockList">
+<li class="blockList"><a name="org.apache.sysds.hops.rewrite">
+<!--   -->
+</a>
+<h3>Uses of <a href="../../../../../../../org/apache/sysds/runtime/controlprogram/federated/FederatedResponse.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedResponse</a> in <a href="../../../../../../../org/apache/sysds/hops/rewrite/package-summary.html">org.apache.sysds.hops.rewrite</a></h3>
+<table class="useSummary" border="0" cellpadding="3" cellspacing="0" summary="Use table, listing methods, and an explanation">
+<caption><span>Methods in <a href="../../../../../../../org/apache/sysds/hops/rewrite/package-summary.html">org.apache.sysds.hops.rewrite</a> that return <a href="../../../../../../../org/apache/sysds/runtime/controlprogram/federated/FederatedResponse.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedResponse</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colLast" scope="col">Method and Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code><a href="../../../../../../../org/apache/sysds/runtime/controlprogram/federated/FederatedResponse.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedResponse</a></code></td>
+<td class="colLast"><span class="typeNameLabel">RewriteFederatedExecution.PrivacyConstraintRetriever.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/hops/rewrite/RewriteFederatedExecution.PrivacyConstraintRetriever.html#execute-org.apache.sysds.runtime.controlprogram.context.ExecutionContext-org.apache.sysds.runtime.instructions.cp.Data...-">execute</a></span>(<a href="../../../../../../../org/apache/sysds/runtime/controlprogram/context/ExecutionContext.html" title="class in org.apache.sysds.runtime.controlprogram.context">ExecutionContext</a>&nbsp;ec,
+       <a href="../../../../../../../org/apache/sysds/runtime/instructions/cp/Data.html" title="class in org.apache.sysds.runtime.instructions.cp">Data</a>...&nbsp;data)</code>
+<div class="block">Reads metadata JSON object, parses privacy constraint and returns the constraint in FederatedResponse.</div>
+</td>
+</tr>
+</tbody>
+</table>
+</li>
 <li class="blockList"><a name="org.apache.sysds.runtime.controlprogram.federated">
 <!--   -->
 </a>
@@ -152,6 +177,11 @@
 <td class="colLast"><span class="typeNameLabel">FederatedData.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/controlprogram/federated/FederatedData.html#initFederatedData-long-">initFederatedData</a></span>(long&nbsp;id)</code>&nbsp;</td>
 </tr>
 <tr class="altColor">
+<td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/Future.html?is-external=true" title="class or interface in java.util.concurrent">Future</a>&lt;<a href="../../../../../../../org/apache/sysds/runtime/controlprogram/federated/FederatedResponse.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedResponse</a>&gt;</code></td>
+<td class="colLast"><span class="typeNameLabel">FederatedData.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/controlprogram/federated/FederatedData.html#initFederatedData-long-org.apache.sysds.runtime.meta.MetaData-">initFederatedData</a></span>(long&nbsp;id,
+                 <a href="../../../../../../../org/apache/sysds/runtime/meta/MetaData.html" title="class in org.apache.sysds.runtime.meta">MetaData</a>&nbsp;mtd)</code>&nbsp;</td>
+</tr>
+<tr class="rowColor">
 <td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;org.apache.commons.lang3.tuple.Pair&lt;<a href="../../../../../../../org/apache/sysds/runtime/controlprogram/federated/FederatedRange.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedRange</a>,<a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/Future.html?is-external=true" title="class or interface in java.util.concurrent">Future</a>&lt;<a href="../../../../../../../org/apache/sysds/runtime/controlprogram/federated/FederatedResponse.html" title="class in org.apache.sysds.runtime.controlprogram.federated">FederatedResponse</a>&gt;&gt;&gt;</code></td>
 <td class="colLast"><span class="typeNameLabel">FederationMap.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/controlprogram/federated/FederationMap.html#requestFederatedData--">requestFederatedData</a></span>()</code>&nbsp;</td>
 </tr>

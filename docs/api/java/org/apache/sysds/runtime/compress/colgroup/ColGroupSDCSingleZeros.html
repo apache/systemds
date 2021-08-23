@@ -18,7 +18,7 @@
     catch(err) {
     }
 //-->
-var methods = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10,"i8":10,"i9":10,"i10":10,"i11":10,"i12":10,"i13":10,"i14":10,"i15":10,"i16":10,"i17":10,"i18":10,"i19":10};
+var methods = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10,"i8":10,"i9":10,"i10":10,"i11":10,"i12":10,"i13":10,"i14":10,"i15":10,"i16":10,"i17":10,"i18":10,"i19":10,"i20":10,"i21":10};
 var tabs = {65535:["t0","All Methods"],2:["t2","Instance Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -237,54 +237,72 @@ extends <a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/Co
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupSDCSingleZeros.html#getIndexStructureHash--">getIndexStructureHash</a></span>()</code>&nbsp;</td>
 </tr>
 <tr id="i10" class="altColor">
+<td class="colFirst"><code>void</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupSDCSingleZeros.html#preAggregate-org.apache.sysds.runtime.matrix.data.MatrixBlock-org.apache.sysds.runtime.matrix.data.MatrixBlock-int-int-">preAggregate</a></span>(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;m,
+            <a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;preAgg,
+            int&nbsp;rl,
+            int&nbsp;ru)</code>
+<div class="block">Pre aggregate for left Multiplication.</div>
+</td>
+</tr>
+<tr id="i11" class="rowColor">
+<td class="colFirst"><code>void</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupSDCSingleZeros.html#preAggregateDense-org.apache.sysds.runtime.matrix.data.MatrixBlock-org.apache.sysds.runtime.matrix.data.MatrixBlock-int-int-int-int-">preAggregateDense</a></span>(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;m,
+                 <a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;preAgg,
+                 int&nbsp;rl,
+                 int&nbsp;ru,
+                 int&nbsp;cl,
+                 int&nbsp;cu)</code>&nbsp;</td>
+</tr>
+<tr id="i12" class="altColor">
 <td class="colFirst"><code><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/dictionary/Dictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">Dictionary</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupSDCSingleZeros.html#preAggregateThatDDCStructure-org.apache.sysds.runtime.compress.colgroup.ColGroupDDC-org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary-">preAggregateThatDDCStructure</a></span>(<a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupDDC.html" title="class in org.apache.sysds.runtime.compress.colgroup">ColGroupDDC</a>&nbsp;that,
                             <a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/dictionary/Dictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">Dictionary</a>&nbsp;ret)</code>&nbsp;</td>
 </tr>
-<tr id="i11" class="rowColor">
+<tr id="i13" class="rowColor">
 <td class="colFirst"><code><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/dictionary/Dictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">Dictionary</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupSDCSingleZeros.html#preAggregateThatSDCSingleStructure-org.apache.sysds.runtime.compress.colgroup.ColGroupSDCSingle-org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary-boolean-">preAggregateThatSDCSingleStructure</a></span>(<a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupSDCSingle.html" title="class in org.apache.sysds.runtime.compress.colgroup">ColGroupSDCSingle</a>&nbsp;that,
                                   <a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/dictionary/Dictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">Dictionary</a>&nbsp;ret,
                                   boolean&nbsp;preModified)</code>&nbsp;</td>
 </tr>
-<tr id="i12" class="altColor">
+<tr id="i14" class="altColor">
 <td class="colFirst"><code><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/dictionary/Dictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">Dictionary</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupSDCSingleZeros.html#preAggregateThatSDCSingleZerosStructure-org.apache.sysds.runtime.compress.colgroup.ColGroupSDCSingleZeros-org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary-">preAggregateThatSDCSingleZerosStructure</a></span>(<a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupSDCSingleZeros.html" title="class in org.apache.sysds.runtime.compress.colgroup">ColGroupSDCSingleZeros</a>&nbsp;that,
                                        <a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/dictionary/Dictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">Dictionary</a>&nbsp;ret)</code>&nbsp;</td>
 </tr>
-<tr id="i13" class="rowColor">
+<tr id="i15" class="rowColor">
 <td class="colFirst"><code><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/dictionary/Dictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">Dictionary</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupSDCSingleZeros.html#preAggregateThatSDCStructure-org.apache.sysds.runtime.compress.colgroup.ColGroupSDC-org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary-boolean-">preAggregateThatSDCStructure</a></span>(<a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupSDC.html" title="class in org.apache.sysds.runtime.compress.colgroup">ColGroupSDC</a>&nbsp;that,
                             <a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/dictionary/Dictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">Dictionary</a>&nbsp;ret,
                             boolean&nbsp;preModified)</code>&nbsp;</td>
 </tr>
-<tr id="i14" class="altColor">
+<tr id="i16" class="altColor">
 <td class="colFirst"><code><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/dictionary/Dictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">Dictionary</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupSDCSingleZeros.html#preAggregateThatSDCZerosStructure-org.apache.sysds.runtime.compress.colgroup.ColGroupSDCZeros-org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary-">preAggregateThatSDCZerosStructure</a></span>(<a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupSDCZeros.html" title="class in org.apache.sysds.runtime.compress.colgroup">ColGroupSDCZeros</a>&nbsp;that,
                                  <a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/dictionary/Dictionary.html" title="class in org.apache.sysds.runtime.compress.colgroup.dictionary">Dictionary</a>&nbsp;ret)</code>&nbsp;</td>
 </tr>
-<tr id="i15" class="rowColor">
+<tr id="i17" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupSDCSingleZeros.html#readFields-java.io.DataInput-">readFields</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/io/DataInput.html?is-external=true" title="class or interface in java.io">DataInput</a>&nbsp;in)</code>
 <div class="block">Deserialize column group from data input.</div>
 </td>
 </tr>
-<tr id="i16" class="altColor">
+<tr id="i18" class="altColor">
 <td class="colFirst"><code>boolean</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupSDCSingleZeros.html#sameIndexStructure-org.apache.sysds.runtime.compress.colgroup.ColGroupCompressed-">sameIndexStructure</a></span>(<a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupCompressed.html" title="class in org.apache.sysds.runtime.compress.colgroup">ColGroupCompressed</a>&nbsp;that)</code>&nbsp;</td>
 </tr>
-<tr id="i17" class="rowColor">
+<tr id="i19" class="rowColor">
 <td class="colFirst"><code><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.html" title="class in org.apache.sysds.runtime.compress.colgroup">AColGroup</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupSDCSingleZeros.html#scalarOperation-org.apache.sysds.runtime.matrix.operators.ScalarOperator-">scalarOperation</a></span>(<a href="../../../../../../org/apache/sysds/runtime/matrix/operators/ScalarOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">ScalarOperator</a>&nbsp;op)</code>
 <div class="block">Perform the specified scalar operation directly on the compressed column group, without decompressing individual
  cells if possible.</div>
 </td>
 </tr>
-<tr id="i18" class="altColor">
+<tr id="i20" class="altColor">
 <td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupSDCSingleZeros.html#toString--">toString</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i19" class="rowColor">
+<tr id="i21" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupSDCSingleZeros.html#write-java.io.DataOutput-">write</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/io/DataOutput.html?is-external=true" title="class or interface in java.io">DataOutput</a>&nbsp;out)</code>
 <div class="block">Serializes column group to data output.</div>
@@ -296,7 +314,7 @@ extends <a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/Co
 <!--   -->
 </a>
 <h3>Methods inherited from class&nbsp;org.apache.sysds.runtime.compress.colgroup.<a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupValue.html" title="class in org.apache.sysds.runtime.compress.colgroup">ColGroupValue</a></h3>
-<code><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupValue.html#addMinMax-double:A-">addMinMax</a>, <a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupValue.html#cleanupThreadLocalMemory--">cleanupThreadLocalMemory</a>, <a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupValue.html#containsValue-double-">containsValue</a>, <a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupValue.html#copy--">copy</a>, <a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupValue.html#copyAndSet-org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary-">copyAndSet</a>, <a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupValue.html#copyAndSet-double:A-">copyAndSet</a>, <a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupValue.html#copyAndSet-int:A-org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary-">copyAndSet</a>, <a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupValue.html#copyAndSet-int:A-double:A-">copyAndSet</a>, <a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupValue.html#decompressToBlockSafe-org.apache.sysds.runtime.matrix.data.MatrixBlock-int-int-int-">decompressToBlockSafe</a>, <a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupValue.html#decompressToBlockUnSafe-org.apache.sysds.runtime.matrix.data.MatrixBlock-int-int-int-">decompressToBlockUnSafe</a>, <a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupValue.html#getCachedCounts--">getCachedCounts</a>, <a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupValue.html#getCounts--">getCounts</a>, <a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupValue.html#getCounts-int-int-">getCounts</a>, <a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupValue.html#getDictionary--">getDictionary</a>, <a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupValue.html#getIfCountsType--">getIfCountsType</a>, <a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupValue.html#getNumberNonZeros--">getNumberNonZeros</a>, <a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupValue.html#getNumValues--">getNumValues</a>, <a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupValue.html#getValues--">getValues</a>, <a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupValue.html#getValuesAsBlock--">getValuesAsBlock</a>, <a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupValue.html#isDense--">isDense</a>, <a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupValue.html#isLossy--">isLossy</a>, <a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupValue.html#leftMultByAColGroup-org.apache.sysds.runtime.compress.colgroup.AColGroup-org.apache.sysds.runtime.matrix.data.MatrixBlock-">leftMultByAColGroup</a>, <a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupValue.html#leftMultByMatrix-org.apache.sysds.runtime.matrix.data.MatrixBlock-org.apache.sysds.runtime.matrix.data.MatrixBlock-int-int-">leftMultByMatrix</a>, <a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupValue.html#preAggregateThatIndexStructure-org.apache.sysds.runtime.compress.colgroup.ColGroupValue-boolean-">preAggregateThatIndexStructure</a>, <a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupValue.html#replace-double-double-">replace</a>, <a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupValue.html#rightMultByMatrix-org.apache.sysds.runtime.matrix.data.MatrixBlock-">rightMultByMatrix</a>, <a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupValue.html#setupThreadLocalMemory-int-">setupThreadLocalMemory</a>, <a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupValue.html#tsmm-double:A-int-">tsmm</a>, <a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupValue.html#tsmm-double:A-int-int-int-">tsmm</a></code></li>
+<code><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupValue.html#addMatrixToResult-org.apache.sysds.runtime.matrix.data.MatrixBlock-org.apache.sysds.runtime.matrix.data.MatrixBlock-int-int-">addMatrixToResult</a>, <a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupValue.html#addMinMax-double:A-">addMinMax</a>, <a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupValue.html#allocatePreAggregate-org.apache.sysds.runtime.matrix.data.MatrixBlock-int-int-int-">allocatePreAggregate</a>, <a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupValue.html#cleanupThreadLocalMemory--">cleanupThreadLocalMemory</a>, <a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupValue.html#containsValue-double-">containsValue</a>, <a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupValue.html#copy--">copy</a>, <a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupValue.html#copyAndSet-org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary-">copyAndSet</a>, <a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupValue.html#copyAndSet-double:A-">copyAndSet</a>, <a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupValue.html#copyAndSet-int:A-org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary-">copyAndSet</a>, <a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupValue.html#copyAndSet-int:A-double:A-">copyAndSet</a>, <a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupValue.html#decompressToBlockSafe-org.apache.sysds.runtime.matrix.data.MatrixBlock-int-int-int-">decompressToBlockSafe</a>, <a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupValue.html#decompressToBlockUnSafe-org.apache.sysds.runtime.matrix.data.MatrixBlock-int-int-int-">decompressToBlockUnSafe</a>, <a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupValue.html#getCachedCounts--">getCachedCounts</a>, <a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupValue.html#getCounts--">getCounts</a>, <a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupValue.html#getCounts-int-int-">getCounts</a>, <a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupValue.html#getDictionary--">getDictionary</a>, <a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupValue.html#getIfCountsType--">getIfCountsType</a>, <a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupValue.html#getNumberNonZeros--">getNumberNonZeros</a>, <a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupValue.html#getNumValues--">getNumValues</a>, <a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupValue.html#getValues--">getValues</a>, <a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupValue.html#getValuesAsBlock--">getValuesAsBlock</a>, <a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupValue.html#isDense--">isDense</a>, <a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupValue.html#isLossy--">isLossy</a>, <a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupValue.html#leftMultByAColGroup-org.apache.sysds.runtime.compress.colgroup.AColGroup-org.apache.sysds.runtime.matrix.data.MatrixBlock-">leftMultByAColGroup</a>, <a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupValue.html#leftMultByMatrix-org.apache.sysds.runtime.matrix.data.MatrixBlock-org.apache.sysds.runtime.matrix.data.MatrixBlock-int-int-">leftMultByMatrix</a>, <a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupValue.html#leftMultByPreAggregateMatrix-org.apache.sysds.runtime.matrix.data.MatrixBlock-">leftMultByPreAggregateMatrix</a>, <a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupValue.html#leftMultByPreAggregateMatrix-org.apache.sysds.runtime.matrix.data.MatrixBlock-org.apache.sysds.runtime.matrix.data.MatrixBlock-">leftMultByPreAggregateMatrix</a>, <a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupValue.html#preAggregateThatIndexStructure-org.apache.sysds.runtime.compress.colgroup.ColGroupValue-boolean-">preAggregateThatIndexStructure</a>, <a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupValue.html#replace-double-double-">replace</a>, <a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupValue.html#rightMultByMatrix-org.apache.sysds.runtime.matrix.data.MatrixBlock-">rightMultByMatrix</a>, <a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupValue.html#setupLeftMultThreadLocalMemory-int-">setupLeftMultThreadLocalMemory</a>, <a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupValue.html#setupThreadLocalMemory-int-">setupThreadLocalMemory</a>, <a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupValue.html#tsmm-org.apache.sysds.runtime.matrix.data.MatrixBlock-">tsmm</a></code></li>
 </ul>
 <ul class="blockList">
 <li class="blockList"><a name="methods.inherited.from.class.org.apache.sysds.runtime.compress.colgroup.ColGroupCompressed">
@@ -433,6 +451,47 @@ extends <a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/Co
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
 <dd><code><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupValue.html#getCounts-int-int-int:A-">getCounts</a></code>&nbsp;in class&nbsp;<code><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupValue.html" title="class in org.apache.sysds.runtime.compress.colgroup">ColGroupValue</a></code></dd>
+</dl>
+</li>
+</ul>
+<a name="preAggregate-org.apache.sysds.runtime.matrix.data.MatrixBlock-org.apache.sysds.runtime.matrix.data.MatrixBlock-int-int-">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>preAggregate</h4>
+<pre>public&nbsp;void&nbsp;preAggregate(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;m,
+                         <a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;preAgg,
+                         int&nbsp;rl,
+                         int&nbsp;ru)</pre>
+<div class="block"><span class="descfrmTypeLabel">Description copied from class:&nbsp;<code><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupValue.html#preAggregate-org.apache.sysds.runtime.matrix.data.MatrixBlock-org.apache.sysds.runtime.matrix.data.MatrixBlock-int-int-">ColGroupValue</a></code></span></div>
+<div class="block">Pre aggregate for left Multiplication.</div>
+<dl>
+<dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
+<dd><code><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupValue.html#preAggregate-org.apache.sysds.runtime.matrix.data.MatrixBlock-org.apache.sysds.runtime.matrix.data.MatrixBlock-int-int-">preAggregate</a></code>&nbsp;in class&nbsp;<code><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupValue.html" title="class in org.apache.sysds.runtime.compress.colgroup">ColGroupValue</a></code></dd>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>m</code> - Matrix to preAggregate</dd>
+<dd><code>preAgg</code> - Matrix to preAggregate into</dd>
+<dd><code>rl</code> - Start row</dd>
+<dd><code>ru</code> - End row</dd>
+</dl>
+</li>
+</ul>
+<a name="preAggregateDense-org.apache.sysds.runtime.matrix.data.MatrixBlock-org.apache.sysds.runtime.matrix.data.MatrixBlock-int-int-int-int-">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>preAggregateDense</h4>
+<pre>public&nbsp;void&nbsp;preAggregateDense(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;m,
+                              <a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;preAgg,
+                              int&nbsp;rl,
+                              int&nbsp;ru,
+                              int&nbsp;cl,
+                              int&nbsp;cu)</pre>
+<dl>
+<dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
+<dd><code><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupValue.html#preAggregateDense-org.apache.sysds.runtime.matrix.data.MatrixBlock-org.apache.sysds.runtime.matrix.data.MatrixBlock-int-int-int-int-">preAggregateDense</a></code>&nbsp;in class&nbsp;<code><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/ColGroupValue.html" title="class in org.apache.sysds.runtime.compress.colgroup">ColGroupValue</a></code></dd>
 </dl>
 </li>
 </ul>

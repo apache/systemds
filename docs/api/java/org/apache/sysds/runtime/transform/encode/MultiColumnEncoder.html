@@ -142,6 +142,10 @@ implements <a href="../../../../../../org/apache/sysds/runtime/transform/encode/
 <td class="colFirst"><code>static int</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/transform/encode/MultiColumnEncoder.html#BUILD_BLOCKSIZE">BUILD_BLOCKSIZE</a></span></code>&nbsp;</td>
 </tr>
+<tr class="rowColor">
+<td class="colFirst"><code>static boolean</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/transform/encode/MultiColumnEncoder.html#MULTI_THREADED_STAGES">MULTI_THREADED_STAGES</a></span></code>&nbsp;</td>
+</tr>
 </table>
 </li>
 </ul>
@@ -315,41 +319,41 @@ implements <a href="../../../../../../org/apache/sysds/runtime/transform/encode/
 </tr>
 <tr id="i28" class="altColor">
 <td class="colFirst"><code>&lt;T extends <a href="../../../../../../org/apache/sysds/runtime/transform/encode/LegacyEncoder.html" title="class in org.apache.sysds.runtime.transform.encode">LegacyEncoder</a>&gt;<br>boolean</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/transform/encode/MultiColumnEncoder.html#hasLegacyEncoder-java.lang.Class-">hasLegacyEncoder</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Class.html?is-external=true" title="class or interface in java.lang">Class</a>&lt;T&gt;&nbsp;type)</code>&nbsp;</td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/transform/encode/MultiColumnEncoder.html#hasLegacyEncoder--">hasLegacyEncoder</a></span>()</code>&nbsp;</td>
 </tr>
 <tr id="i29" class="rowColor">
+<td class="colFirst"><code>&lt;T extends <a href="../../../../../../org/apache/sysds/runtime/transform/encode/LegacyEncoder.html" title="class in org.apache.sysds.runtime.transform.encode">LegacyEncoder</a>&gt;<br>boolean</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/transform/encode/MultiColumnEncoder.html#hasLegacyEncoder-java.lang.Class-">hasLegacyEncoder</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Class.html?is-external=true" title="class or interface in java.lang">Class</a>&lt;T&gt;&nbsp;type)</code>&nbsp;</td>
+</tr>
+<tr id="i30" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/transform/encode/MultiColumnEncoder.html#initMetaData-org.apache.sysds.runtime.matrix.data.FrameBlock-">initMetaData</a></span>(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;meta)</code>
 <div class="block">Sets up the required meta data for a subsequent call to apply.</div>
 </td>
 </tr>
-<tr id="i30" class="altColor">
+<tr id="i31" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/transform/encode/MultiColumnEncoder.html#legacyBuild-org.apache.sysds.runtime.matrix.data.FrameBlock-">legacyBuild</a></span>(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;in)</code>&nbsp;</td>
 </tr>
-<tr id="i31" class="rowColor">
+<tr id="i32" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/transform/encode/MultiColumnEncoder.html#mergeAt-org.apache.sysds.runtime.transform.encode.Encoder-int-int-">mergeAt</a></span>(<a href="../../../../../../org/apache/sysds/runtime/transform/encode/Encoder.html" title="interface in org.apache.sysds.runtime.transform.encode">Encoder</a>&nbsp;other,
        int&nbsp;columnOffset,
        int&nbsp;row)</code>&nbsp;</td>
 </tr>
-<tr id="i32" class="altColor">
+<tr id="i33" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/transform/encode/MultiColumnEncoder.html#mergeReplace-org.apache.sysds.runtime.transform.encode.MultiColumnEncoder-">mergeReplace</a></span>(<a href="../../../../../../org/apache/sysds/runtime/transform/encode/MultiColumnEncoder.html" title="class in org.apache.sysds.runtime.transform.encode">MultiColumnEncoder</a>&nbsp;multiEncoder)</code>&nbsp;</td>
 </tr>
-<tr id="i33" class="rowColor">
+<tr id="i34" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/transform/encode/MultiColumnEncoder.html#prepareBuildPartial--">prepareBuildPartial</a></span>()</code>
 <div class="block">Allocates internal data structures for partial build.</div>
 </td>
 </tr>
-<tr id="i34" class="altColor">
-<td class="colFirst"><code>void</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/transform/encode/MultiColumnEncoder.html#readExternal-java.io.ObjectInput-">readExternal</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/io/ObjectInput.html?is-external=true" title="class or interface in java.io">ObjectInput</a>&nbsp;in)</code>&nbsp;</td>
-</tr>
 <tr id="i35" class="rowColor">
 <td class="colFirst"><code>void</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/transform/encode/MultiColumnEncoder.html#setApplyBlockSize-int-">setApplyBlockSize</a></span>(int&nbsp;blk)</code>&nbsp;</td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/transform/encode/MultiColumnEncoder.html#readExternal-java.io.ObjectInput-">readExternal</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/io/ObjectInput.html?is-external=true" title="class or interface in java.io">ObjectInput</a>&nbsp;in)</code>&nbsp;</td>
 </tr>
 <tr id="i36" class="altColor">
 <td class="colFirst"><code>void</code></td>
@@ -398,6 +402,15 @@ implements <a href="../../../../../../org/apache/sysds/runtime/transform/encode/
 <!--   -->
 </a>
 <h3>Field Detail</h3>
+<a name="MULTI_THREADED_STAGES">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>MULTI_THREADED_STAGES</h4>
+<pre>public static&nbsp;boolean MULTI_THREADED_STAGES</pre>
+</li>
+</ul>
 <a name="BUILD_BLOCKSIZE">
 <!--   -->
 </a>
@@ -441,15 +454,6 @@ implements <a href="../../../../../../org/apache/sysds/runtime/transform/encode/
 <!--   -->
 </a>
 <h3>Method Detail</h3>
-<a name="setApplyBlockSize-int-">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>setApplyBlockSize</h4>
-<pre>public&nbsp;void&nbsp;setApplyBlockSize(int&nbsp;blk)</pre>
-</li>
-</ul>
 <a name="setBuildBlockSize-int-">
 <!--   -->
 </a>
@@ -887,6 +891,15 @@ implements <a href="../../../../../../org/apache/sysds/runtime/transform/encode/
 <li class="blockList">
 <h4>addReplaceLegacyEncoder</h4>
 <pre>public&nbsp;&lt;T extends <a href="../../../../../../org/apache/sysds/runtime/transform/encode/LegacyEncoder.html" title="class in org.apache.sysds.runtime.transform.encode">LegacyEncoder</a>&gt;&nbsp;void&nbsp;addReplaceLegacyEncoder(T&nbsp;encoder)</pre>
+</li>
+</ul>
+<a name="hasLegacyEncoder--">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>hasLegacyEncoder</h4>
+<pre>public&nbsp;&lt;T extends <a href="../../../../../../org/apache/sysds/runtime/transform/encode/LegacyEncoder.html" title="class in org.apache.sysds.runtime.transform.encode">LegacyEncoder</a>&gt;&nbsp;boolean&nbsp;hasLegacyEncoder()</pre>
 </li>
 </ul>
 <a name="hasLegacyEncoder-java.lang.Class-">

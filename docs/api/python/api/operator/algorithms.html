@@ -7,7 +7,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Algorithms &mdash; SystemDS 2.0.0 documentation</title>
+  <title>Algorithms &mdash; SystemDS 2.2.0-SNAPSHOT documentation</title>
   
 
   
@@ -446,6 +446,27 @@
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><p>‘OperationNode’ containing predicted cluster labels &amp; probabilities of belongingness &amp; for new instances given the variance and mean of fitted data</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="systemds.operator.algorithm.hospitalResidencyMatch">
+<code class="sig-prename descclassname">systemds.operator.algorithm.</code><code class="sig-name descname">hospitalResidencyMatch</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">R</span><span class="p">:</span> <span class="n">systemds.operator.nodes.matrix.Matrix</span></em>, <em class="sig-param"><span class="n">H</span><span class="p">:</span> <span class="n">systemds.operator.nodes.matrix.Matrix</span></em>, <em class="sig-param"><span class="n">capacity</span><span class="p">:</span> <span class="n">systemds.operator.nodes.matrix.Matrix</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Dict<span class="p">[</span>str<span class="p">, </span>Union<span class="p">[</span>DAGNode<span class="p">, </span>str<span class="p">, </span>int<span class="p">, </span>float<span class="p">, </span>bool<span class="p">]</span><span class="p">]</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#systemds.operator.algorithm.hospitalResidencyMatch" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>R</strong> – Residents matrix R.</p></li>
+<li><p><strong>It</strong> – an ORDERED  matrix.</p></li>
+<li><p><strong>H</strong> – Hospitals matrix H.</p></li>
+<li><p><strong>It</strong> – an UNORDRED matrix.</p></li>
+<li><p><strong>capacity</strong> – capacity of Hospitals matrix C.</p></li>
+<li><p><strong>It</strong> – a [n*1] matrix with non zero values.</p></li>
+<li><p><strong>with</strong> – and vice-versa (higher is better).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>‘OperationNode’ containing result matrix &amp; result matrix &amp; an ordered  matrix, this means that resident 1 (row 1) likes hospital 2 the most, followed by hospital 1 and hospital 3. &amp; unordered, this would mean that resident 1 (row 1) likes hospital 3 the most (since the value at [1,3] is the row max), &amp; 1 (2.0 preference value) and hospital 2 (1.0 preference value). &amp; an unordered matrix this means that hospital 1 (row 1) likes resident 1 the most (since the value at [1,1] is the row max). &amp; matched with hospital 3 (since [1,3] is non-zero) at a preference level of 2.0. &amp; matched with hospital 1 (since [2,1] is non-zero) at a preference level of 1.0. &amp; matched with hospital 2 (since [3,2] is non-zero) at a preference level of 2.0.</p>
 </dd>
 </dl>
 </dd></dl>

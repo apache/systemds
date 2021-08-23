@@ -82,6 +82,11 @@ public abstract class GenerateReaderTest extends AutomatedTestBase {
 			writerTextLIBSVM.writeMatrixToHDFS(src, fileNameSampleRawOut, src.getNumRows(), src.getNumColumns(), -1,
 				src.getNonZeros(), false);
 		}
+		else if(this instanceof GenerateReaderMatrixMarketTest){
+			WriterTextCell writerTextCell = new WriterTextCell();
+			writerTextCell.writeMatrixToHDFS(src, fileNameSampleRawOut, src.getNumRows(), src.getNumColumns(), -1,
+				src.getNonZeros(), false);
+		}
 
 
 	}

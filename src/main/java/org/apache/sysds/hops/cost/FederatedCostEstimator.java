@@ -33,6 +33,8 @@ import org.apache.sysds.parser.WhileStatement;
 import org.apache.sysds.parser.WhileStatementBlock;
 
 import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Cost estimator for federated executions with methods and constants for going through DML programs to estimate costs.
@@ -41,7 +43,7 @@ public class FederatedCostEstimator {
 	public int DEFAULT_MEMORY_ESTIMATE = 8;
 	public int DEFAULT_ITERATION_NUMBER = 15;
 	public double WORKER_NETWORK_BANDWIDTH_BYTES_PS = 1024*1024*1024; //Default network bandwidth in bytes per second
-	public double WORKER_COMPUTE_BANDWITH_FLOPS = 2.5*1024*1024*1024; //Default compute bandwidth in FLOPS
+	public double WORKER_COMPUTE_BANDWIDTH_FLOPS = 2.5*1024*1024*1024; //Default compute bandwidth in FLOPS
 	public double WORKER_DEGREE_OF_PARALLELISM = 8; //Default number of parallel processes for workers
 	public double WORKER_READ_BANDWIDTH_BYTES_PS = 3.5*1024*1024*1024; //Default read bandwidth in bytes per second
 
@@ -154,34 +156,30 @@ public class FederatedCostEstimator {
 	 * @param root of Hop DAG for which cost is estimated
 	 * @return cost estimation of Hop DAG starting from given root
 	 */
-	private FederatedCost costEstimate(Hop root){
+	public FederatedCost costEstimate(Hop root){
 		if ( root.federatedCostInitialized() )
 			return root.getFederatedCost();
 		else {
 			// If no input has FOUT, the root will be processed by the coordinator
 			boolean hasFederatedInput = root.someInputFederated();
-			//the input cost is included the first time the input hop is used
-			//for additional usage, the additional cost is zero (disregarding potential read cost)
+			// The input cost is included the first time the input hop is used.
+			// For additional usage, the additional cost is zero (disregarding potential read cost).
 			double inputCosts = root.getInput().stream()
 				.mapToDouble( in -> in.federatedCostInitialized() ? 0 : costEstimate(in).getTotal() )
 				.sum();
-			double inputTransferCost = hasFederatedInput ? root.getInput().stream()
-				.filter(Hop::hasLocalOutput)
-				.mapToDouble(in -> in.getOutputMemEstimate(DEFAULT_MEMORY_ESTIMATE))
-				.map(inMem -> inMem/ WORKER_NETWORK_BANDWIDTH_BYTES_PS)
-				.sum() : 0;
+			double inputTransferCost = inputTransferCostEstimate(hasFederatedInput, root);
 			double computingCost = ComputeCost.getHOPComputeCost(root);
 			if ( hasFederatedInput ){
-				//Find the number of inputs that has FOUT set.
+				// Find the number of inputs that has FOUT set.
 				int numWorkers = (int)root.getInput().stream().filter(Hop::hasFederatedOutput).count();
-				//divide memory usage by the number of workers the computation would be split to multiplied by
-				//the number of parallel processes at each worker multiplied by the FLOPS of each process
-				//This assumes uniform workload among the workers with FOUT data involved in the operation
-				//and assumes that the degree of parallelism and compute bandwidth are equal for all workers
-				computingCost = computingCost / (numWorkers*WORKER_DEGREE_OF_PARALLELISM*WORKER_COMPUTE_BANDWITH_FLOPS);
-			} else computingCost = computingCost / (WORKER_DEGREE_OF_PARALLELISM*WORKER_COMPUTE_BANDWITH_FLOPS);
-			//Calculate output transfer cost if the operation is computed at federated workers and the output is forced to the coordinator
-			double outputTransferCost = ( root.hasLocalOutput() && hasFederatedInput ) ?
+				// Divide memory usage by the number of workers the computation would be split to multiplied by
+				// the number of parallel processes at each worker multiplied by the FLOPS of each process.
+				// This assumes uniform workload among the workers with FOUT data involved in the operation
+				// and assumes that the degree of parallelism and compute bandwidth are equal for all workers
+				computingCost = computingCost / (numWorkers*WORKER_DEGREE_OF_PARALLELISM* WORKER_COMPUTE_BANDWIDTH_FLOPS);
+			} else computingCost = computingCost / (WORKER_DEGREE_OF_PARALLELISM* WORKER_COMPUTE_BANDWIDTH_FLOPS);
+			// Calculate output transfer cost if the operation is computed at federated workers and the output is forced to the coordinator
+			double outputTransferCost = ( root.hasLocalOutput() && (hasFederatedInput || root.isFederatedDataOp()) ) ?
 				root.getOutputMemEstimate(DEFAULT_MEMORY_ESTIMATE) / WORKER_NETWORK_BANDWIDTH_BYTES_PS : 0;
 			double readCost = root.getInputMemEstimate(DEFAULT_MEMORY_ESTIMATE) / WORKER_READ_BANDWIDTH_BYTES_PS;
 
@@ -194,6 +192,88 @@ public class FederatedCostEstimator {
 
 			return rootFedCost;
 		}
+	}
+
+	/**
+	 * Return cost estimate in bytes of Hop DAG starting from given root HopRel.
+	 * @param root HopRel of Hop DAG for which cost is estimated
+	 * @param hopRelMemo memo table of HopRels for calculating input costs
+	 * @return cost estimation of Hop DAG starting from given root HopRel
+	 */
+	public FederatedCost costEstimate(HopRel root, Map<Long, List<HopRel>> hopRelMemo){
+		// Check if root is in memo table.
+		if ( hopRelMemo.containsKey(root.hopRef.getHopID())
+			&& hopRelMemo.get(root.hopRef.getHopID()).stream().anyMatch(h -> h.fedOut == root.fedOut) ){
+			return root.getCostObject();
+		}
+		else {
+			// If no input has FOUT, the root will be processed by the coordinator
+			boolean hasFederatedInput = root.inputDependency.stream().anyMatch(in -> in.hopRef.hasFederatedOutput());
+			// The input cost is included the first time the input hop is used.
+			// For additional usage, the additional cost is zero (disregarding potential read cost).
+			double inputCosts = root.inputDependency.stream()
+				.mapToDouble( in -> {
+					double inCost = in.existingCostPointer(root.hopRef.getHopID()) ?
+						0 : costEstimate(in, hopRelMemo).getTotal();
+					in.addCostPointer(root.hopRef.getHopID());
+					return inCost;
+				} )
+				.sum();
+			double inputTransferCost = inputTransferCostEstimate(hasFederatedInput, root);
+			double computingCost = ComputeCost.getHOPComputeCost(root.hopRef);
+			if ( hasFederatedInput ){
+				// Find the number of inputs that has FOUT set.
+				int numWorkers = (int)root.inputDependency.stream().filter(HopRel::hasFederatedOutput).count();
+				// Divide memory usage by the number of workers the computation would be split to multiplied by
+				// the number of parallel processes at each worker multiplied by the FLOPS of each process
+				// This assumes uniform workload among the workers with FOUT data involved in the operation
+				// and assumes that the degree of parallelism and compute bandwidth are equal for all workers
+				computingCost = computingCost / (numWorkers*WORKER_DEGREE_OF_PARALLELISM* WORKER_COMPUTE_BANDWIDTH_FLOPS);
+			} else computingCost = computingCost / (WORKER_DEGREE_OF_PARALLELISM* WORKER_COMPUTE_BANDWIDTH_FLOPS);
+			// Calculate output transfer cost if the operation is computed at federated workers and the output is forced to the coordinator
+			// If the root is a federated DataOp, the data is forced to the coordinator even if no input is LOUT
+			double outputTransferCost = ( root.hasLocalOutput() && (hasFederatedInput || root.hopRef.isFederatedDataOp()) ) ?
+				root.hopRef.getOutputMemEstimate(DEFAULT_MEMORY_ESTIMATE) / WORKER_NETWORK_BANDWIDTH_BYTES_PS : 0;
+			double readCost = root.hopRef.getInputMemEstimate(DEFAULT_MEMORY_ESTIMATE) / WORKER_READ_BANDWIDTH_BYTES_PS;
+
+			return new FederatedCost(readCost, inputTransferCost, outputTransferCost, computingCost, inputCosts);
+		}
+	}
+
+	/**
+	 * Returns input transfer cost estimate.
+	 * The input transfer cost estimate is based on the memory estimate of LOUT when some input is FOUT
+	 * except if root is a federated DataOp, since all input for this has to be at the coordinator.
+	 * When no input is FOUT, the input transfer cost is always 0.
+	 * @param hasFederatedInput true if root has any FOUT input
+	 * @param root hopRel for which cost is estimated
+	 * @return input transfer cost estimate
+	 */
+	private double inputTransferCostEstimate(boolean hasFederatedInput, HopRel root){
+		if ( hasFederatedInput )
+			return root.inputDependency.stream()
+				.filter(input -> (root.hopRef.isFederatedDataOp()) ? input.hasFederatedOutput() : input.hasLocalOutput() )
+				.mapToDouble(in -> in.hopRef.getOutputMemEstimate(DEFAULT_MEMORY_ESTIMATE))
+				.sum() / WORKER_NETWORK_BANDWIDTH_BYTES_PS;
+		else return 0;
+	}
+
+	/**
+	 * Returns input transfer cost estimate.
+	 * The input transfer cost estimate is based on the memory estimate of LOUT when some input is FOUT
+	 * except if root is a federated DataOp, since all input for this has to be at the coordinator.
+	 * When no input is FOUT, the input transfer cost is always 0.
+	 * @param hasFederatedInput true if root has any FOUT input
+	 * @param root hop for which cost is estimated
+	 * @return input transfer cost estimate
+	 */
+	private double inputTransferCostEstimate(boolean hasFederatedInput, Hop root){
+		if ( hasFederatedInput )
+			return root.getInput().stream()
+				.filter(input -> (root.isFederatedDataOp()) ? input.hasFederatedOutput() : input.hasLocalOutput() )
+				.mapToDouble(in -> in.getOutputMemEstimate(DEFAULT_MEMORY_ESTIMATE))
+				.sum() / WORKER_NETWORK_BANDWIDTH_BYTES_PS;
+		else return 0;
 	}
 
 	/**

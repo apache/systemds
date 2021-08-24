@@ -80,7 +80,7 @@ public class ReblockFEDInstruction extends UnaryFEDInstruction {
 
 		//execute federated operations and set output
 		obj.getFedMapping().execute(getTID(), true, fr1, fr2);
-		CacheableData<?> out = ec.getMatrixObject(output);
+		CacheableData<?> out = ec.getCacheableData(output);
 		out.setFedMapping(obj.getFedMapping().copyWithNewID(fr2.getID()));
 		out.getDataCharacteristics().set(mcOut);
 	}

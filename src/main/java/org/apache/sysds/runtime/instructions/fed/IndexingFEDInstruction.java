@@ -267,19 +267,16 @@ public final class IndexingFEDInstruction extends UnaryFEDInstruction {
 
 		long id = FederationUtils.getNextFedDataID();
 		FederatedRequest tmp = new FederatedRequest(FederatedRequest.RequestType.PUT_VAR, id, in1.getMetaData().getDataCharacteristics(), in1.getDataType());
+		fedMap.execute(getTID(), true, tmp);
 
 		FederatedRequest[] fr1 = fedMap.broadcastSliced(in2, input2.isFrame(), sliceIxs);
-		FederatedRequest[] fr2 = FederationUtils.callInstruction(instStrings, output, new CPOperand[]{input1, input2},
-			new long[]{fedMap.getID(), fr1[0].getID()});
+		FederatedRequest[] fr2 = FederationUtils.callInstruction(instStrings, output, id, new CPOperand[]{input1, input2},
+			new long[]{fedMap.getID(), fr1[0].getID()}, instString.startsWith("SPARK") ? Types.ExecType.SPARK : Types.ExecType.CP);
 		FederatedRequest fr3 = fedMap.cleanup(getTID(), fr1[0].getID());
 
 		//execute federated instruction and cleanup intermediates
-		FederatedRequest[] frs = new FederatedRequest[fedMap.getSize()];
-		Arrays.fill(frs, tmp);
-		if(sliceIxs.length == fedMap.getSize()) {
-			fedMap.execute(getTID(), true, tmp);
+		if(sliceIxs.length == fedMap.getSize())
 			fedMap.execute(getTID(), true, fr2, fr1, fr3);
-		}
 		else {
 			// get index of cpvar request
 			for(i = 0; i < fr2.length; i++)

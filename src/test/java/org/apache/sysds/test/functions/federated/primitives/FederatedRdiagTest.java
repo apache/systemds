@@ -128,7 +128,7 @@ public class FederatedRdiagTest extends AutomatedTestBase {
 		runTest(null);
 
 		// compare all sums via files
-		compareResults(0.01);
+		compareResults(0.01, "DML1", "DML2");
 
 		Assert.assertTrue(heavyHittersContainsString("fed_rdiag"));
 

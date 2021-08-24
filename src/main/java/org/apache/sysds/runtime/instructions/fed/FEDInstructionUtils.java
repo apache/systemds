@@ -298,7 +298,7 @@ public class FEDInstructionUtils {
 		else if (inst instanceof WriteSPInstruction) {
 			WriteSPInstruction instruction = (WriteSPInstruction) inst;
 			Data data = ec.getVariable(instruction.input1);
-			if (data instanceof MatrixObject && ((MatrixObject) data).isFederated()) {
+			if (data instanceof CacheableData && ((CacheableData) data).isFederated()) {
 				// Write spark instruction can not be executed for federated matrix objects (tries to get rdds which do
 				// not exist), therefore we replace the instruction with the VariableCPInstruction.
 				return VariableCPInstruction.parseInstruction(instruction.getInstructionString());

@@ -139,6 +139,16 @@ public class ColumnEncoderComposite extends ColumnEncoder {
 	}
 
 	@Override
+	protected List<DependencyTask<?>> getSparseTasks(MatrixBlock in, MatrixBlock out, int outputCol) {
+		throw new NotImplementedException();
+	}
+
+	@Override
+	protected List<DependencyTask<?>> getSparseTasks(FrameBlock in, MatrixBlock out, int outputCol) {
+		throw new NotImplementedException();
+	}
+
+	@Override
 	public List<DependencyTask<?>> getBuildTasks(FrameBlock in, int blockSize) {
 		List<DependencyTask<?>> tasks = new ArrayList<>();
 		Map<Integer[], Integer[]> depMap = null;

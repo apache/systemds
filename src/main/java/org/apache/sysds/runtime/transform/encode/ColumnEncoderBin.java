@@ -24,14 +24,20 @@ import static org.apache.sysds.runtime.util.UtilFunctions.getEndIndex;
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.concurrent.Callable;
 
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.tuple.MutableTriple;
 import org.apache.sysds.lops.Lop;
+import org.apache.sysds.runtime.data.SparseRowVector;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.util.DependencyTask;
+import org.apache.sysds.runtime.util.DependencyThreadPool;
 import org.apache.sysds.runtime.util.UtilFunctions;
 
 public class ColumnEncoderBin extends ColumnEncoder {
@@ -118,6 +124,8 @@ public class ColumnEncoderBin extends ColumnEncoder {
 		return new BinMergePartialBuildTask(this, ret);
 	}
 
+
+
 	public void computeBins(double min, double max) {
 		// ensure allocated internal transformation metadata
 		if(_binMins == null || _binMaxs == null) {
@@ -176,6 +184,18 @@ public class ColumnEncoderBin extends ColumnEncoder {
 			out.quickSetValueThreadSafe(i, outputCol, binID);
 		}
 		return out;
+	}
+
+	@Override
+	protected List<DependencyTask<?>> getSparseTasks(FrameBlock in, MatrixBlock out, int outputCol) {
+		List<Callable<Object>> tasks = new ArrayList<>();
+		tasks.add(new BinSparseApplyTask(this, in, out, outputCol));
+		return DependencyThreadPool.createDependencyTasks(tasks, null);
+	}
+
+	@Override
+	protected List<DependencyTask<?>> getSparseTasks(MatrixBlock in, MatrixBlock out, int outputCol) {
+		throw new NotImplementedException("Sparse Binning for MatrixBlocks not jet implemented");
 	}
 
 	@Override
@@ -262,6 +282,47 @@ public class ColumnEncoderBin extends ColumnEncoder {
 			_binMaxs[j] = in.readDouble();
 			_binMins[j] = in.readDouble();
 		}
+	}
+
+	private static class BinSparseApplyTask implements Callable<Object> {
+		private final ColumnEncoderBin _encoder;
+		private final FrameBlock _input;
+		private final MatrixBlock _out;
+		private final int _outputCol;
+
+		private BinSparseApplyTask(ColumnEncoderBin encoder, FrameBlock input, MatrixBlock out,
+									  int outputCol) {
+			_encoder = encoder;
+			_input = input;
+			_out = out;
+			_outputCol = outputCol;
+		}
+
+		public Object call() throws Exception {
+			for(int r = 0; r < _input.getNumRows(); r++) {
+				if(_out.getSparseBlock() == null)
+					return null;
+				SparseRowVector row = (SparseRowVector) _out.getSparseBlock().get(r);
+				synchronized(row) {
+					double inVal = UtilFunctions.objectToDouble(_input.getSchema()[_encoder._colID - 1],
+							_input.get(r, _encoder._colID - 1));
+					int ix = Arrays.binarySearch(_encoder._binMaxs, inVal);
+					int binID = ((ix < 0) ? Math.abs(ix + 1) : ix) + 1;
+					int index = _encoder._colID - 1;
+					row.values()[index] = binID;
+					row.indexes()[index] = _outputCol;
+					// sync maybe only here needed
+					row.setSize(row.size() + 1);
+				}
+			}
+			return null;
+		}
+
+		@Override
+		public String toString() {
+			return getClass().getSimpleName() + "<ColId: " + _encoder._colID + ">";
+		}
+
 	}
 
 	private static class BinPartialBuildTask implements Callable<Object> {

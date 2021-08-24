@@ -31,7 +31,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.Callable;
 
-import org.apache.commons.lang.NotImplementedException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.DMLRuntimeException;
@@ -227,14 +226,9 @@ public abstract class ColumnEncoder implements Externalizable, Encoder, Comparab
 	}
 
 
-	protected List<DependencyTask<?>> getSparseTasks(FrameBlock in, MatrixBlock out, int outputCol){
-		throw new NotImplementedException();
-	}
+	protected abstract List<DependencyTask<?>> getSparseTasks(FrameBlock in, MatrixBlock out, int outputCol);
 
-	protected List<DependencyTask<?>> getSparseTasks(MatrixBlock in, MatrixBlock out, int outputCol){
-		throw new NotImplementedException();
-	}
-
+	protected abstract List<DependencyTask<?>> getSparseTasks(MatrixBlock in, MatrixBlock out, int outputCol);
 
 	public enum EncoderType {
 		Recode, FeatureHash, PassThrough, Bin, Dummycode, Omit, MVImpute, Composite

@@ -220,10 +220,16 @@ public class ColumnEncoderRecode extends ColumnEncoder {
 	}
 
 	@Override
-	public List<DependencyTask<?>> getSparseTasks(FrameBlock in, MatrixBlock out, int outputCol) {
+	protected List<DependencyTask<?>> getSparseTasks(FrameBlock in, MatrixBlock out, int outputCol) {
 		List<Callable<Object>> tasks = new ArrayList<>();
 		tasks.add(new RecodeSparseApplyTask(this, in, out, outputCol));
 		return DependencyThreadPool.createDependencyTasks(tasks, null);
+	}
+
+	@Override
+	protected List<DependencyTask<?>> getSparseTasks(MatrixBlock in, MatrixBlock out, int outputCol) {
+		throw new DMLRuntimeException("Recode called with MatrixBlock. Should not happen since Recode is the first " +
+				"encoder in the Stack");
 	}
 
 	@Override

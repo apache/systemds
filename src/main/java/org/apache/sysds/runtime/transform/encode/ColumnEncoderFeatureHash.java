@@ -56,7 +56,7 @@ public class ColumnEncoderFeatureHash extends ColumnEncoder {
 	}
 
 	private long getCode(String key) {
-		return key.hashCode() % _K;
+		return (key.hashCode() % _K) + 1;
 	}
 
 	@Override

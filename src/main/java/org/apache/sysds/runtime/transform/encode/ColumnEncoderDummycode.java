@@ -96,10 +96,15 @@ public class ColumnEncoderDummycode extends ColumnEncoder {
 
 
 	@Override
-	public List<DependencyTask<?>> getSparseTasks(MatrixBlock in, MatrixBlock out, int outputCol) {
+	protected List<DependencyTask<?>> getSparseTasks(MatrixBlock in, MatrixBlock out, int outputCol) {
 		List<Callable<Object>> tasks = new ArrayList<>();
 		tasks.add(new DummycodeSparseApplyTask(this, in, out, outputCol));
 		return DependencyThreadPool.createDependencyTasks(tasks, null);
+	}
+
+	@Override
+	protected List<DependencyTask<?>> getSparseTasks(FrameBlock in, MatrixBlock out, int outputCol) {
+		throw new DMLRuntimeException("Called DummyCoder with FrameBlock");
 	}
 
 	@Override

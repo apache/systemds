@@ -23,14 +23,8 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.sysds.api.DMLException;
-import org.apache.sysds.hops.AggBinaryOp;
-import org.apache.sysds.hops.AggUnaryOp;
-import org.apache.sysds.hops.BinaryOp;
-import org.apache.sysds.hops.DataOp;
 import org.apache.sysds.hops.Hop;
 import org.apache.sysds.hops.LiteralOp;
-import org.apache.sysds.hops.ReorgOp;
-import org.apache.sysds.hops.TernaryOp;
 import org.apache.sysds.parser.DataExpression;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
@@ -40,8 +34,6 @@ import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedUDF;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedWorkerHandlerException;
 import org.apache.sysds.runtime.instructions.cp.Data;
-import org.apache.sysds.runtime.instructions.fed.FEDInstruction;
-import org.apache.sysds.runtime.instructions.fed.FEDInstruction.FederatedOutput;
 import org.apache.sysds.runtime.instructions.fed.InitFEDInstruction;
 import org.apache.sysds.runtime.io.IOUtilFunctions;
 import org.apache.sysds.runtime.lineage.LineageItem;
@@ -58,127 +50,24 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.EnumMap;
-import java.util.Map;
 import java.util.concurrent.Future;
 
 public class RewriteFederatedExecution extends HopRewriteRule {
+
 	@Override
 	public ArrayList<Hop> rewriteHopDAGs(ArrayList<Hop> roots, ProgramRewriteStatus state) {
 		if ( roots == null )
 			return null;
 		for ( Hop root : roots )
 			visitHop(root);
-
-		return selectFederatedExecutionPlan(roots);
+		return roots;
 	}
 
 	@Override public Hop rewriteHopDAG(Hop root, ProgramRewriteStatus state) {
 		return null;
 	}
 
-	/**
-	 * Select federated execution plan for every Hop in the DAG starting from given roots.
-	 * @param roots starting point for going through the Hop DAG to update the FederatedOutput fields.
-	 * @return the list of roots with updated FederatedOutput fields.
-	 */
-	private static ArrayList<Hop> selectFederatedExecutionPlan(ArrayList<Hop> roots){
-		for (Hop root : roots){
-			root.resetVisitStatus();
-		}
-		for ( Hop root : roots ){
-			visitFedPlanHop(root);
-		}
-		return roots;
-	}
-
-	/**
-	 * Go through the Hop DAG and set the FederatedOutput field for each Hop from leaf to given currentHop.
-	 * @param currentHop the Hop from which the DAG is visited
-	 */
-	private static void visitFedPlanHop(Hop currentHop){
-		if ( currentHop.isVisited() )
-			return;
-		if ( currentHop.getInput() != null && currentHop.getInput().size() > 0 && !isFederatedDataOp(currentHop) ){
-			// Depth first to get to the input
-			for ( Hop input : currentHop.getInput() )
-				visitFedPlanHop(input);
-		} else if ( isFederatedDataOp(currentHop) ) {
-			// leaf federated node
-			//TODO: This will block the cases where the federated DataOp is based on input that are also federated.
-			// This means that the actual federated leaf nodes will never be reached.
-			currentHop.setFederatedOutput(FederatedOutput.FOUT);
-		}
-		if ( ( isFedInstSupportedHop(currentHop) ) ){
-			// The Hop can be FOUT or LOUT or None. Check utility of FOUT vs LOUT vs None.
-			currentHop.setFederatedOutput(getHighestUtilFedOut(currentHop));
-		}
-		else
-			currentHop.setFederatedOutput(FEDInstruction.FederatedOutput.NONE);
-		currentHop.setVisited();
-	}
-
-	/**
-	 * Returns the FederatedOutput with the highest utility out of the valid FederatedOutput values.
-	 * @param hop for which the utility is found
-	 * @return the FederatedOutput value with highest utility for the given Hop
-	 */
-	private static FederatedOutput getHighestUtilFedOut(Hop hop){
-		Map<FederatedOutput,Long> fedOutUtilMap = new EnumMap<>(FederatedOutput.class);
-		if ( isFOUTSupported(hop) )
-			fedOutUtilMap.put(FederatedOutput.FOUT, getUtilFout());
-		if ( hop.getPrivacy() == null || (hop.getPrivacy() != null && !hop.getPrivacy().hasConstraints()) )
-			fedOutUtilMap.put(FederatedOutput.LOUT, getUtilLout(hop));
-		fedOutUtilMap.put(FederatedOutput.NONE, 0L);
-
-		Map.Entry<FederatedOutput, Long> fedOutMax = Collections.max(fedOutUtilMap.entrySet(), Map.Entry.comparingByValue());
-		return fedOutMax.getKey();
-	}
-
-	/**
-	 * Utility if hop is FOUT. This is a simple version where it always returns 1.
-	 * @return utility if hop is FOUT
-	 */
-	private static long getUtilFout(){
-		//TODO: Make better utility estimation
-		return 1;
-	}
-
-	/**
-	 * Utility if hop is LOUT. This is a simple version only based on dimensions.
-	 * @param hop for which utility is calculated
-	 * @return utility if hop is LOUT
-	 */
-	private static long getUtilLout(Hop hop){
-		//TODO: Make better utility estimation
-		return -(long)hop.getMemEstimate();
-	}
-
-	private static boolean isFedInstSupportedHop(Hop hop){
-
-		// Check that some input is FOUT, otherwise none of the fed instructions will run unless it is fedinit
-		if ( (!isFederatedDataOp(hop)) && hop.getInput().stream().noneMatch(Hop::hasFederatedOutput) )
-			return false;
-
-		// The following operations are supported given that the above conditions have not returned already
-		return ( hop instanceof AggBinaryOp || hop instanceof BinaryOp || hop instanceof ReorgOp
-			|| hop instanceof AggUnaryOp || hop instanceof TernaryOp || hop instanceof DataOp );
-	}
-
-	/**
-	 * Checks to see if the associatedHop supports FOUT.
-	 * @param associatedHop for which FOUT support is checked
-	 * @return true if FOUT is supported by the associatedHop
-	 */
-	private static boolean isFOUTSupported(Hop associatedHop){
-		// If the output of AggUnaryOp is a scalar, the operation cannot be FOUT
-		if ( associatedHop instanceof AggUnaryOp )
-			return !associatedHop.isScalar();
-		return true;
-	}
-
-	private static void visitHop(Hop hop){
+	private void visitHop(Hop hop){
 		if (hop.isVisited())
 			return;
 
@@ -206,7 +95,7 @@ public class RewriteFederatedExecution extends HopRewriteRule {
 	 * @hop hop for which privacy constraints are loaded
 	 */
 	private static void loadFederatedPrivacyConstraints(Hop hop){
-		if ( isFederatedDataOp(hop) && hop.getPrivacy() == null){
+		if ( hop.isFederatedDataOp() && hop.getPrivacy() == null){
 			try {
 				PrivacyConstraint privConstraint = unwrapPrivConstraint(sendPrivConstraintRequest(hop));
 				hop.setPrivacy(privConstraint);
@@ -236,10 +125,6 @@ public class RewriteFederatedExecution extends HopRewriteRule {
 	{
 		FederatedResponse privConstraintResponse = privConstraintFuture.get();
 		return (PrivacyConstraint) privConstraintResponse.getData()[0];
-	}
-
-	private static boolean isFederatedDataOp(Hop hop){
-		return hop instanceof DataOp && ((DataOp) hop).isFederatedData();
 	}
 
 	/**

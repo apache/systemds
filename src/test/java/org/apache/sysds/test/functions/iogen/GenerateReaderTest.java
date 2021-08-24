@@ -20,6 +20,7 @@
 package org.apache.sysds.test.functions.iogen;
 
 import org.apache.sysds.runtime.io.*;
+import org.apache.sysds.runtime.iogen.GenerateReader;
 import org.apache.sysds.runtime.iogen.MatrixGenerateReader;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.DataConverter;
@@ -57,7 +58,8 @@ public abstract class GenerateReaderTest extends AutomatedTestBase {
 
 	protected void runGenerateReaderTest() throws Exception {
 		MatrixBlock sampleMatrixMB = DataConverter.convertToMatrixBlock(sampleMatrix);
-		MatrixReader reader = MatrixGenerateReader.generateReader(sampleRaw, sampleMatrixMB);
+		GenerateReader gr = new GenerateReader(sampleRaw, sampleMatrixMB);
+		MatrixReader reader=gr.getMatrixReader();
 
 		// Write SampleRawMatrix data into a file
 		String HOME = SCRIPT_DIR + TEST_DIR;

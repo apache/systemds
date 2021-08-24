@@ -19,5 +19,22 @@
 
 package org.apache.sysds.runtime.iogen;
 
-public class FrameGenerateReader extends GenerateReader{
+import org.apache.sysds.common.Types;
+import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.io.FrameReader;
+import org.apache.sysds.runtime.matrix.data.FrameBlock;
+
+import java.io.IOException;
+import java.io.InputStream;
+
+public class FrameGenerateReader extends FrameReader {
+	@Override public FrameBlock readFrameFromHDFS(String fname, Types.ValueType[] schema, String[] names, long rlen,
+		long clen) throws IOException, DMLRuntimeException {
+		return null;
+	}
+
+	@Override public FrameBlock readFrameFromInputStream(InputStream is, Types.ValueType[] schema, String[] names,
+		long rlen, long clen) throws IOException, DMLRuntimeException {
+		return null;
+	}
 }

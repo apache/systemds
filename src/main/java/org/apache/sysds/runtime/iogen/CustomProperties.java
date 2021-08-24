@@ -26,8 +26,8 @@ import org.apache.sysds.runtime.io.FileFormatProperties;
 import java.io.Serializable;
 import java.util.HashSet;
 
-public class FileFormatPropertiesGR extends FileFormatProperties implements Serializable {
-	protected static final Log LOG = LogFactory.getLog(FileFormatPropertiesGR.class.getName());
+public class CustomProperties extends FileFormatProperties implements Serializable {
+	protected static final Log LOG = LogFactory.getLog(CustomProperties.class.getName());
 	private static final long serialVersionUID = -4447926749068752721L;
 
 	private String delim;
@@ -55,7 +55,7 @@ public class FileFormatPropertiesGR extends FileFormatProperties implements Seri
 	private final GRSymmetry grSymmetry;
 
 	// CSV format
-	public FileFormatPropertiesGR(GRPattern rowPattern, String delim, HashSet<String> naStrings) {
+	public CustomProperties(GRPattern rowPattern, String delim, HashSet<String> naStrings) {
 		this.delim = delim;
 		this.naStrings = naStrings;
 		this.rowPattern = rowPattern;
@@ -64,7 +64,7 @@ public class FileFormatPropertiesGR extends FileFormatProperties implements Seri
 	}
 
 	// LIBSVM format
-	public FileFormatPropertiesGR(GRPattern rowPattern, String delim, String indexDelim) {
+	public CustomProperties(GRPattern rowPattern, String delim, String indexDelim) {
 		this.delim = delim;
 		this.indexDelim = indexDelim;
 		this.rowPattern = rowPattern;
@@ -73,7 +73,7 @@ public class FileFormatPropertiesGR extends FileFormatProperties implements Seri
 	}
 
 	// Matrix Market format
-	public FileFormatPropertiesGR(GRSymmetry grSymmetry, String delim) {
+	public CustomProperties(GRSymmetry grSymmetry, String delim) {
 		this.delim = delim;
 		this.grSymmetry = grSymmetry;
 		this.colPattern = GRPattern.Regular;

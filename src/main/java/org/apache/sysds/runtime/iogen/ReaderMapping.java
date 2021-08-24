@@ -18,14 +18,18 @@
  */
 
 package org.apache.sysds.runtime.iogen;
-
 import org.apache.sysds.runtime.io.IOUtilFunctions;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.BitSet;
+import java.util.HashSet;
+import java.util.HashMap;
+import java.util.Arrays;
+import java.util.Iterator;
 
 public class ReaderMapping {
 
@@ -282,8 +286,8 @@ public class ReaderMapping {
 		return result;
 	}
 
-	public final FileFormatPropertiesGR getFormatProperties() throws Exception {
-		FileFormatPropertiesGR ffp = null;
+	public final CustomProperties getFormatProperties() throws Exception {
+		CustomProperties ffp = null;
 		if(isRowRegular()) {
 			ffp = getFileFormatPropertiesOfRRCRMapping();
 			if(ffp == null) {
@@ -326,7 +330,7 @@ public class ReaderMapping {
 		 Map Col:       [0 2 4 6 8 ]
 		 result:        ["," "," "," "," ","]
 		*/
-	public final FileFormatPropertiesGR getFileFormatPropertiesOfRRCRMapping() {
+	public final CustomProperties getFileFormatPropertiesOfRRCRMapping() {
 
 		int nrows = mapRow.length;
 		int ncols = mapRow[0].length;
@@ -337,9 +341,9 @@ public class ReaderMapping {
 			System.arraycopy(mapCol[r], 0, rCol, 0, ncols);
 			String row = sampleRawRows.get(r);
 
-			Map<Integer, Integer> ciMap = new HashMap<>();
-			Map<Integer, Integer> icMap = new HashMap<>();
-			Map<Integer, String> idMap = new HashMap<>();
+			HashMap<Integer, Integer> ciMap = new HashMap<>();
+			HashMap<Integer, Integer> icMap = new HashMap<>();
+			HashMap<Integer, String> idMap = new HashMap<>();
 			for(int i = 0; i < ncols; i++) {
 				if(rCol[i] == -1)
 					continue;
@@ -455,7 +459,7 @@ public class ReaderMapping {
 
 		}
 		if(uniqueDelimiter != null) {
-			FileFormatPropertiesGR ffpgr = new FileFormatPropertiesGR(FileFormatPropertiesGR.GRPattern.Regular,
+			CustomProperties ffpgr = new CustomProperties(CustomProperties.GRPattern.Regular,
 				uniqueDelimiter, naString);
 			ffpgr.setDescription("CSV Format Recognized");
 			return ffpgr;
@@ -507,12 +511,12 @@ public class ReaderMapping {
 		return mergeCount;
 	}
 
-	private FileFormatPropertiesGR getFileFormatPropertiesOfRIMapping() throws Exception {
+	private CustomProperties getFileFormatPropertiesOfRIMapping() throws Exception {
 
 		int firstRowIndex = 0;
 		int firstColIndex = 0;
 
-		FileFormatPropertiesGR ffp = getDelimsOfMapping(firstRowIndex, firstColIndex);
+		CustomProperties ffp = getDelimsOfMapping(firstRowIndex, firstColIndex);
 
 		// FirstRowIndex = 1, FirstColIndex = 1
 		if(ffp == null) {
@@ -543,12 +547,12 @@ public class ReaderMapping {
 		return ffp;
 	}
 
-	private FileFormatPropertiesGR getDelimsOfMapping(int firstRowIndex, int firstColIndex) throws Exception {
+	private CustomProperties getDelimsOfMapping(int firstRowIndex, int firstColIndex) throws Exception {
 
 		int nLines = sampleRawRows.size();
 		int nrows = sampleMatrix.getNumRows();
 		int ncols = sampleMatrix.getNumColumns();
-		Set<Integer> checkedRow = new HashSet<>();
+		HashSet<Integer> checkedRow = new HashSet<>();
 		RowColValue[] mapRCV = new RowColValue[(int) nnz];
 
 		boolean rcvMapped = false;
@@ -620,24 +624,24 @@ public class ReaderMapping {
 			}
 
 			if(uniqueDelim != null) {
-				FileFormatPropertiesGR.GRSymmetry symmetry;
+				CustomProperties.GRSymmetry symmetry;
 				if(symmetric)
-					symmetry = FileFormatPropertiesGR.GRSymmetry.SYMMETRIC;
+					symmetry = CustomProperties.GRSymmetry.SYMMETRIC;
 				else if(skewSymmetric)
-					symmetry = FileFormatPropertiesGR.GRSymmetry.SKEW_SYMMETRIC;
+					symmetry = CustomProperties.GRSymmetry.SKEW_SYMMETRIC;
 				else
-					symmetry = FileFormatPropertiesGR.GRSymmetry.GENERAL;
+					symmetry = CustomProperties.GRSymmetry.GENERAL;
 
-				return new FileFormatPropertiesGR(symmetry, uniqueDelim);
+				return new CustomProperties(symmetry, uniqueDelim);
 			}
 			else
 				return null;
 		}
 	}
 
-	public FileFormatPropertiesGR getFileFormatPropertiesOfRRCIMapping() {
+	public CustomProperties getFileFormatPropertiesOfRRCIMapping() {
 
-		FileFormatPropertiesGR ffplibsvm;
+		CustomProperties ffplibsvm;
 		int firstColIndex = 0;
 
 		//FirstColIndex = 0
@@ -655,9 +659,9 @@ public class ReaderMapping {
 		return ffplibsvm;
 	}
 
-	private FileFormatPropertiesGR getDelimsOfRRCIMapping(int firstColIndex) {
-		Map<String, Set<String>> tokens = new HashMap<>();
-		Set<String> allTokens = new HashSet<>();
+	private CustomProperties getDelimsOfRRCIMapping(int firstColIndex) {
+		HashMap<String, HashSet<String>> tokens = new HashMap<>();
+		HashSet<String> allTokens = new HashSet<>();
 
 		for(int c = ncols - 1; c >= 0; c--) {
 			double v = sampleMatrix.getValue(0, c);
@@ -665,7 +669,7 @@ public class ReaderMapping {
 				continue;
 
 			String key = (c + firstColIndex) + "," + v;
-			Set<String> token = tokens.get(key);
+			HashSet<String> token = tokens.get(key);
 
 			ColIndexValue civ = new ColIndexValue(c + firstColIndex, v);
 			String row = sampleRawRows.get(mapRow[0][c]);
@@ -719,7 +723,7 @@ public class ReaderMapping {
 			}
 		}
 		if(isVerify) {
-			return new FileFormatPropertiesGR(FileFormatPropertiesGR.GRPattern.Regular, separator, indexSeparator);
+			return new CustomProperties(CustomProperties.GRPattern.Regular, separator, indexSeparator);
 		}
 		else
 			return null;
@@ -813,7 +817,7 @@ public class ReaderMapping {
 		stringChunks.clear();
 		baseIndexes.clear();
 		getChunksOFString(row, bitSet, stringChunks, baseIndexes);
-		Set<String> separators = new HashSet<>();
+		HashSet<String> separators = new HashSet<>();
 		separators.addAll(stringChunks);
 		String separator = separators.size() == 1 ? separators.iterator().next() : null;
 
@@ -1069,10 +1073,10 @@ public class ReaderMapping {
 			this.indSep = indSep;
 		}
 
-		public Set<String> getMappedTokens(String row) {
+		public HashSet<String> getMappedTokens(String row) {
 
 			int sPosition = 0;
-			Set<String> tokens = new HashSet<>();
+			HashSet<String> tokens = new HashSet<>();
 
 			while(sPosition < row.length()) {
 				NumberMappingInfo nmiIndex;

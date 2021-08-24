@@ -40,7 +40,6 @@ import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedUDF;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedWorkerHandlerException;
 import org.apache.sysds.runtime.instructions.cp.Data;
-import org.apache.sysds.runtime.instructions.fed.FEDInstruction;
 import org.apache.sysds.runtime.instructions.fed.FEDInstruction.FederatedOutput;
 import org.apache.sysds.runtime.instructions.fed.InitFEDInstruction;
 import org.apache.sysds.runtime.io.IOUtilFunctions;
@@ -59,11 +58,17 @@ import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.EnumMap;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Future;
 
 public class RewriteFederatedExecution extends HopRewriteRule {
+
+	private final static Map<Long, List<HopRel>> hopRelMemo = new HashMap<>();
+
 	@Override
 	public ArrayList<Hop> rewriteHopDAGs(ArrayList<Hop> roots, ProgramRewriteStatus state) {
 		if ( roots == null )
@@ -93,6 +98,29 @@ public class RewriteFederatedExecution extends HopRewriteRule {
 		return roots;
 	}
 
+	class HopRel {
+		protected Hop hopRef;
+		protected FederatedOutput fedOut;
+		protected double cost;
+		protected List<HopRel> inputDependency = new ArrayList<>();
+
+		public HopRel(Hop associatedHop, FederatedOutput fedOut){
+			hopRef = associatedHop;
+			this.fedOut = fedOut;
+			cost = costEstimate(hopRef);
+			//TODO: Set inputDependency depending on which inputs are valid and optimal.
+			//TODO: The hopRelMemo may not contain Hop
+			if (hopRef.getInput() != null && hopRef.getInput().size() > 0)
+				for ( Hop input : hopRef.getInput() )
+					inputDependency.add(
+						hopRelMemo.get(input.getHopID()).stream().min(Comparator.comparingDouble(a -> a.cost)).get());
+		}
+
+		public double getCost(){
+			return cost;
+		}
+	}
+
 	/**
 	 * Go through the Hop DAG and set the FederatedOutput field for each Hop from leaf to given currentHop.
 	 * @param currentHop the Hop from which the DAG is visited
@@ -110,12 +138,28 @@ public class RewriteFederatedExecution extends HopRewriteRule {
 			// This means that the actual federated leaf nodes will never be reached.
 			currentHop.setFederatedOutput(FederatedOutput.FOUT);
 		}
+		if ( isFedInstSupportedHop(currentHop) ){
+			ArrayList<HopRel> hopRels = new ArrayList<>();
+			for ( FederatedOutput fedoutValue : FederatedOutput.values() )
+				if ( isFedOutSupported(currentHop, fedoutValue) )
+					hopRels.add(new HopRel(currentHop,fedoutValue));
+			if (hopRelMemo.containsKey(currentHop.getHopID()))
+				hopRelMemo.get(currentHop.getHopID()).addAll(hopRels);
+			else
+				hopRelMemo.put(currentHop.getHopID(), hopRels);
+		} else {
+			List<HopRel> noneList = new ArrayList<>();
+			noneList.add(new HopRel(currentHop, FederatedOutput.NONE));
+			hopRelMemo.put(currentHop.getHopID(), noneList);
+		}
+
+		/*
 		if ( ( isFedInstSupportedHop(currentHop) ) ){
 			// The Hop can be FOUT or LOUT or None. Check utility of FOUT vs LOUT vs None.
 			currentHop.setFederatedOutput(getHighestUtilFedOut(currentHop));
 		}
 		else
-			currentHop.setFederatedOutput(FEDInstruction.FederatedOutput.NONE);
+			currentHop.setFederatedOutput(FEDInstruction.FederatedOutput.NONE);*/
 		currentHop.setVisited();
 	}
 
@@ -128,7 +172,7 @@ public class RewriteFederatedExecution extends HopRewriteRule {
 		Map<FederatedOutput,Long> fedOutUtilMap = new EnumMap<>(FederatedOutput.class);
 		if ( isFOUTSupported(hop) )
 			fedOutUtilMap.put(FederatedOutput.FOUT, getUtilFout());
-		if ( hop.getPrivacy() == null || (hop.getPrivacy() != null && !hop.getPrivacy().hasConstraints()) )
+		if ( isLOUTSupported(hop) )
 			fedOutUtilMap.put(FederatedOutput.LOUT, getUtilLout(hop));
 		fedOutUtilMap.put(FederatedOutput.NONE, 0L);
 
@@ -166,6 +210,17 @@ public class RewriteFederatedExecution extends HopRewriteRule {
 			|| hop instanceof AggUnaryOp || hop instanceof TernaryOp || hop instanceof DataOp );
 	}
 
+	private boolean isFedOutSupported(Hop associatedHop, FederatedOutput fedOut){
+		switch(fedOut){
+			case FOUT:
+				return isFOUTSupported(associatedHop);
+			case LOUT:
+				return isLOUTSupported(associatedHop);
+			default:
+				return true;
+		}
+	}
+
 	/**
 	 * Checks to see if the associatedHop supports FOUT.
 	 * @param associatedHop for which FOUT support is checked
@@ -178,7 +233,18 @@ public class RewriteFederatedExecution extends HopRewriteRule {
 		return true;
 	}
 
-	private static void visitHop(Hop hop){
+	/**
+	 * Checks to see if the associatedHop supports LOUT.
+	 * It supports LOUT if the output has no privacy constraints.
+	 * @param associatedHop for which LOUT support is checked.
+	 * @return true if LOUT is supported by the associatedHop
+	 */
+	private static boolean isLOUTSupported(Hop associatedHop){
+		return associatedHop.getPrivacy() == null
+			|| (associatedHop.getPrivacy() != null && !associatedHop.getPrivacy().hasConstraints());
+	}
+
+	private void visitHop(Hop hop){
 		if (hop.isVisited())
 			return;
 

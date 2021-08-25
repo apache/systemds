@@ -87,11 +87,7 @@ s_executePipeline = function(Frame[String] logical = as.frame("NULL"), Frame[Str
     if(as.scalar(pipeline[1, i]) == "outlierBySd" | as.scalar(pipeline[1, i]) == "outlierByIQR" | as.scalar(pipeline[1, i]) == "imputeByFd") {
       changes = sum(abs(replace(target=Xout, pattern=NaN, replacement=0) - replace(target=as.matrix(hp[1]), pattern=NaN, replacement=0))  > 0.001 )
       [hpForPruning, changesByOp] = storeDataForPrunning(pipeline, hyperParameters, hpForPruning,  changesByOp, changes, i)
-      print("ended "+op+" number of changes "+changes)
-      # print("ended "+op+" number of changes "+sum(abs(replace(target=X, pattern=NaN, replacement=0) - replace(target=Xclone, pattern=NaN, replacement=0))  > 0.001 ))
     }
-
-    print("min max of Y: "+min(Y)+" "+max(Y))
   }
   Xtest = X[testStIdx:nrow(X), ]
   Ytest = Y[testStIdx:nrow(X), ]
@@ -298,7 +294,6 @@ return (Matrix[Double] X_filled)
     }
   }
   X_filled = X
-  print("imputeByFd: record changes: "+sum(X_filled != X))
 }
 
 #######################################################################
@@ -311,7 +306,6 @@ return (Matrix[Double] X_filled)
 { 
   option = ifelse(op, "locf", "nocb")
   X_filled = na_locf(X=X, option=option, verbose=verbose)
-  print("nulls after forward_fill: "+sum(is.na(X_filled)))
 }
 
 

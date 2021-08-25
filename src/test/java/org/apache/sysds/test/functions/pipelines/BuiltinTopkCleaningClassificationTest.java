@@ -67,7 +67,6 @@ public class BuiltinTopkCleaningClassificationTest extends AutomatedTestBase {
 
 	private void runtopkCleaning(Double sample, int topk, int resources,  String cv, int cvk , double split, Types.ExecMode et) {
 
-		setOutputBuffering(true);
 		Types.ExecMode modeOld = setExecMode(et);
 		String HOME = SCRIPT_DIR + TEST_DIR;
 		try {

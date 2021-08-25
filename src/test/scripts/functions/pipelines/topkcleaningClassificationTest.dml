@@ -70,10 +70,8 @@ evalClassification = function(Matrix[Double] X, Matrix[Double] Y, Matrix[Double]
   
 return(Matrix[Double] output)
 {
-  print("trainML: "+as.integer(trainML))
   if(trainML == 1)
   {
-    print("training")
     params = list("icpt", "reg", "tol", "maxii")
     paramRanges = list(seq(0, 2, 1), 10^seq(1,-3), 10^seq(1,-5), 10^seq(1,3));
     trainArgs = list(X=X, Y=Y, icpt=-1, reg=-1, tol=-1, maxi=100, maxii=-1, verbose=FALSE);
@@ -84,63 +82,13 @@ return(Matrix[Double] output)
   beta = multiLogReg(X=X, Y=Y, icpt=as.scalar(evalFunHp[1,1]), reg=as.scalar(evalFunHp[1,2]), tol=as.scalar(evalFunHp[1,3]), 
     maxi=as.scalar(evalFunHp[1,4]), maxii=50, verbose=FALSE);
   [prob, yhat, accuracy] = multiLogRegPredict(Xtest, beta, Ytest, FALSE)
-  print("accuracy a: "+toString(accuracy))
   a = getAccuracy(Ytest, yhat, TRUE)
-  print("accuracy weighted: "+a)
+  print("accuracy: "+toString(accuracy)+" weighted accuracy: "+a)
   accuracy = as.matrix(accuracy)
   output = cbind(accuracy, evalFunHp)
-  print("output: "+toString(output))
-}
-
-# UDF for evaluation  
-# choice of parameters provided by API, X, Y, clone_X, evalFunHp (hyper-param), trainML (boolean for optimizing hp internally or passed by externally )
-evalClassificationOLd = function(Matrix[Double] X, Matrix[Double] Y, Matrix[Double] Xtest, Matrix[Double] Ytest, Matrix[Double] Xorig, List[Unknown] pipList, List[Unknown] metaList,
-  Matrix[Double] evalFunHp, Integer trainML=0) 
-return(Matrix[Double] output)
-{
-  score = as.double(0)
-  mask = as.matrix(metaList['mask'])
-  cv = FALSE
-  print("cols in X and Xtest: "+ncol(X)+" "+ncol(Xtest))
-  if(ncol(X) != ncol(Xtest))
-    stop("Dimension mismatch: number of columns and train and test are not equal")
-
-  if(trainML == 1)
-  {
-    # do the gridsearch for hyper-parameters
-    params = list("icpt", "reg", "tol", "maxii")
-    paramRanges = list(seq(0, 2, 1), 10^seq(1,-3), 10^seq(1,-5), 10^seq(1,3));
-    trainArgs = list(X=X, Y=Y, icpt=-1, reg=-1, tol=-1, maxi=100, maxii=-1, verbose=FALSE);
-    [B1, opt] = utils::topk_gridSearch(X=X, y=Y, Xtest=Xtest, ytest=Ytest, train="multiLogReg", predict="accuracy", numB=ncol(X)+1, cv=FALSE, cvk=0,
-      params=params, paramValues=paramRanges, trainArgs=trainArgs, verbose=FALSE);
-    evalFunHp = as.matrix(opt)  
-  }
-  # do the hold out train/test
-  # evalFunHpM = as.matrix(evalFunHp)
-  if(as.scalar(pipList['flags']) != 0)
-  {
-    [X, Y, Xtest, Ytest, Tr] = executePipeline(as.frame(pipList['lp']), as.frame(pipList['ph']), X, Y, Xtest, Ytest, as.matrix(metaList['mask']), as.matrix(metaList['fd']),
-      as.matrix(pipList['hp']), as.scalar(pipList['flags']), TRUE, FALSE)
-  }
-  print("min and max of y in eval: "+min(Y)+" "+max(Y))
-  if(max(Y) == min(Y)) {
-    print("Y contains only one class")
-  }
-  else {
-    beta =  multiLogReg(X=X, Y=Y, icpt=as.scalar(evalFunHp[1,1]), reg=as.scalar(evalFunHp[1,2]), tol=as.scalar(evalFunHp[1,3]),
-      maxi=as.scalar(evalFunHp[1,4]), maxii=50, verbose=FALSE);
-
-    [prob, yhat, acc] = multiLogRegPredict(Xtest, beta, Ytest, FALSE)
-    score = getAccuracy(Ytest, yhat, TRUE)
-  }
-
-  output = cbind(as.matrix(acc), evalFunHp)
-  print("hold out accuracy: "+acc)
-  print("hold out waccuracy: "+score)
-
 }
 
 accuracy = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] B) return (Matrix[Double] err) {
-  [M,yhat,acc] = multiLogRegPredict(X=X, B=B, Y=y, verbose=TRUE);
+  [M,yhat,acc] = multiLogRegPredict(X=X, B=B, Y=y, verbose=FALSE);
   err = as.matrix(1-(acc/100));
 }

@@ -94,7 +94,6 @@ return (Frame[Unknown] bestLg, Double pre_best, Double T)
       # # sort the configurations groupwise
       max_perf =  bandit::getMaxPerConf(outPip, nrow(physicalConf)) 
       scores[i] = as.matrix(max_perf[1, 1])
-      print("scores: \n"+toString(scores))
     }
     
     # # select parents and best score
@@ -119,8 +118,7 @@ return (Frame[Unknown] bestLg, Double pre_best, Double T)
     # # # if new best is not better than pre_best then no need od generating new population
     children = frame(0, rows=ceil(nrow(scores)/2), cols=pipLength)
     i = 1
-    print(i <= ceil(nrow(scores)/2))
-    print(converged)
+
     while(i <= ceil(nrow(scores)/2) & !converged)
     {
       top = population[as.scalar(selected[i]), ]
@@ -140,7 +138,6 @@ return (Frame[Unknown] bestLg, Double pre_best, Double T)
 
       # # # append length of pipeline and pipeline in frame
       # # 
-      print("problem kia he apka")
       children[i, 1] = ncol(c1)
       children[i, 2:(ncol(c1) + 1)] = c1
       i = i + 1
@@ -161,7 +158,6 @@ return (Frame[Unknown] bestLg, Double pre_best, Double T)
 addition = function(Frame[Unknown] top, Frame[Unknown] allOps, Integer addCount)
 return (Frame [Unknown] child)
 {
-  print("Starting addition")
   for(i in 1:addCount)
   {
     c = as.scalar(sample(ncol(allOps), 1))
@@ -182,7 +178,6 @@ return (Frame [Unknown] child)
 mutation = function(Frame[Unknown] child, Double mutationRate)
 return (Frame [Unknown] mChild)
 {
-  print("Starting mutation on "+toString(child))
   random = as.scalar(rand(rows=1, cols=1))
   if(random > mutationRate & ncol(child) >= 3)
   {
@@ -201,7 +196,6 @@ return (Frame[Unknown] output)
 {
   if(ncol(child) > 2 & (ncol(child)-2) > removal & removal > 0)
   {
-    print("Starting removal on "+toString(child))
     for(i in 1:removal)
     {
       idx = as.scalar(sample(ncol(child)-3, 1))
@@ -215,5 +209,4 @@ return (Frame[Unknown] output)
     }
   }
   output = child
-  print("ended removal on "+toString(output))
 }

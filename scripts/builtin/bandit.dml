@@ -273,7 +273,6 @@ run_with_hyperparam = function(Frame[Unknown] lp, Frame[Unknown] ph_pip, Integer
           pipList = list(lp = lp, ph = ph_pip[i], hp = hp_matrix, flags = no_of_flag_vars)
           [evalFunOutput, hpForPruning, changesByOp] = crossV(X=X, y=Y, cvk=cvk, evalFunHp=evalFunHp, pipList=pipList, metaList=metaList, hpForPruning=hpForPruning, 
           changesByOp=changesByOp, evalFunc=evaluationFunc, trainML = FALSE)
-          print(cvk+" cross validations acc: "+toString(evalFunOutput))
       
         }
         else 
@@ -284,7 +283,6 @@ run_with_hyperparam = function(Frame[Unknown] lp, Frame[Unknown] ph_pip, Integer
             print("Y contains only one class")
           else 
             evalFunOutput = eval(evaluationFunc, list(X=eXtrain, Y=eYtrain, Xtest=eXtest, Ytest=eYtest, Xorig=as.matrix(0), evalFunHp=evalFunHp, trainML = 0))
-          print("holdout acc: "+toString(evalFunOutput))
         }
 
         # evalFunOutput = eval(evaluationFunc, argList)  
@@ -646,7 +644,7 @@ return (Matrix[Double] accuracy, Matrix[Double] hpForPruning, Matrix[Double] cha
     trainy = trainset[, 1]
     testX = testset[, 2:ncol(testset)]
     testy = testset[, 1]
-    # print("test in: "+nrow(testy))
+
     if(as.scalar(pipList['flags']) != 0)
     {
       [trainX, trainy, testX, testy, Tr, hpForPruning, changesByOp] = executePipeline(logical=as.frame(pipList['lp']), pipeline=as.frame(pipList['ph']),
@@ -657,8 +655,6 @@ return (Matrix[Double] accuracy, Matrix[Double] hpForPruning, Matrix[Double] cha
     res = eval(evalFunc, list(X=trainX, Y=trainy, Xtest=testX, Ytest=testy, Xorig=as.matrix(0), evalFunHp=evalFunHp, trainML = 0))
     accuracyMatrix[i] = res
   }
-  print(cvk+" CV: accuracy matrix: \n"+toString(accuracyMatrix))
-  print(cvk+" CV: average accuracy: "+mean(accuracyMatrix))
   accuracy = as.matrix(mean(accuracyMatrix))
 }
 
@@ -674,7 +670,6 @@ return(Boolean execute)
     # get the non-zero index of hpForPruning
     idx = (hpForPruning > 0) * t(seq(1, ncol(hpForPruning)))
     idx = removeEmpty(target=idx, margin="cols")
-    print("idx: "+toString(idx))
     for(i in 1:ncol(idx)) {
       index = as.scalar(idx[1, i])
       inProcessHp = as.scalar(hp_matrix[index, 2])

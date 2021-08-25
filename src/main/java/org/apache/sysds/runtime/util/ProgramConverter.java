@@ -708,6 +708,8 @@ public class ProgramConverter
 				
 				ret.updatePredicateRecompilationFlags();
 				ret.setNondeterministic(sb.isNondeterministic());
+				if( sb instanceof ParForStatementBlock )
+					((ParForStatementBlock)ret).setResultVariables(((ParForStatementBlock)sb).getResultVariables());
 			}
 			else {
 				ret = sb;

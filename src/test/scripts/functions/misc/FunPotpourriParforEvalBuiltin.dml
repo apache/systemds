@@ -58,7 +58,7 @@ crossV = function(Matrix[double] X, Matrix[double] y, Integer k, Matrix[Double] 
     testX = testset[, 2:ncol(testset)]
     testy = testset[, 1]
     beta = multiLogReg(X=trainX, Y=trainy, icpt=as.scalar(MLhp[1,1]), reg=as.scalar(MLhp[1,2]), tol=as.scalar(MLhp[1,3]), 
-    maxi=as.scalar(MLhp[1,4]), maxii=50, verbose=FALSE);
+      maxi=as.scalar(MLhp[1,4]), maxii=50, verbose=FALSE);
     [prob, yhat, acc] = multiLogRegPredict(testX, beta, testy, FALSE)
     accuracy = getAccuracy(testy, yhat, isWeighted)
     accuracyMatrix[i] = accuracy
@@ -69,5 +69,10 @@ X = rand(rows=100, cols=100)
 Y = sample(2, 100, TRUE)
 hp = matrix("1 1e-4 1e-6 100", rows=1, cols=4)
 
+#acc = crossV(X=X, y=Y, k=3, MLhp=hp, isWeighted=FALSE)
 acc = eval("crossV", list(X=X, y=Y, k=3, MLhp=hp, isWeighted=FALSE))
-print("CV accuracy: "+mean(acc))
+
+macc = mean(acc)
+if( macc <= 0 ) # fail test if empty
+  stop("Invalid accuracy: "+macc);
+print("CV accuracy: "+macc)

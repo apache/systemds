@@ -20,6 +20,7 @@ package org.apache.sysds.runtime.compress.colgroup.offset;
 
 import java.io.DataOutput;
 import java.io.IOException;
+import java.io.Serializable;
 import java.lang.ref.SoftReference;
 import java.util.HashMap;
 import java.util.Map;
@@ -36,7 +37,7 @@ import org.apache.commons.logging.LogFactory;
  * gives the ability to encode data, where the offsets are greater than the available highest value that can be
  * represented size.
  */
-public abstract class AOffset {
+public abstract class AOffset implements Serializable {
 
 	protected static final Log LOG = LogFactory.getLog(AOffset.class.getName());
 	protected SoftReference<Map<Integer, AIterator>> skipIterators;
@@ -74,6 +75,24 @@ public abstract class AOffset {
 			skipIterators = new SoftReference<>(nsk);
 		}
 		return it;
+	}
+
+	/**
+	 * Cache a iterator in use, note that there is no check for if the iterator is correctly positioned at the given row
+	 * 
+	 * @param it  The Iterator to cache
+	 * @param row The row index to cache the iterator as.
+	 */
+	public void cacheIterator(AIterator it, int row) {
+		if(skipIterators != null) {
+			Map<Integer, AIterator> sk = skipIterators.get();
+			sk.put(row, it);
+		}
+		else {
+			Map<Integer, AIterator> nsk = new HashMap<Integer, AIterator>();
+			nsk.put(row, it.clone());
+			skipIterators = new SoftReference<>(nsk);
+		}
 	}
 
 	/**

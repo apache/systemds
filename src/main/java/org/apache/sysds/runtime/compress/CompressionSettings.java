@@ -60,12 +60,6 @@ public class CompressionSettings {
 	/** Boolean specifying which transpose setting is used, can be auto, true or false */
 	public final String transposeInput;
 
-	/**
-	 * Boolean specifying if the OLE and RLE should construct skip to enable skipping large amounts of rows.
-	 * (Optimization)
-	 */
-	public final boolean skipList;
-
 	/** If the seed is -1 then the system used system millisecond time and class hash for seeding. */
 	public final int seed;
 
@@ -110,13 +104,12 @@ public class CompressionSettings {
 	public boolean transposed = false;
 
 	protected CompressionSettings(double samplingRatio, boolean allowSharedDictionary, String transposeInput,
-		boolean skipList, int seed, boolean lossy, EnumSet<CompressionType> validCompressions,
+		 int seed, boolean lossy, EnumSet<CompressionType> validCompressions,
 		boolean sortValuesByLength, PartitionerType columnPartitioner, int maxColGroupCoCode, double coCodePercentage,
 		int minimumSampleSize, EstimationType estimationType, CostType costComputationType) {
 		this.samplingRatio = samplingRatio;
 		this.allowSharedDictionary = allowSharedDictionary;
 		this.transposeInput = transposeInput;
-		this.skipList = skipList;
 		this.seed = seed;
 		this.validCompressions = validCompressions;
 		this.lossy = lossy;
@@ -136,18 +129,16 @@ public class CompressionSettings {
 		StringBuilder sb = new StringBuilder();
 		sb.append("\n" + super.toString());
 		sb.append("\n Valid Compressions: " + validCompressions);
-		sb.append("\n DDC1 share dict: " + allowSharedDictionary);
+		sb.append("\n Share dict: " + allowSharedDictionary);
 		sb.append("\n Partitioner: " + columnPartitioner);
 		sb.append("\n Lossy: " + lossy);
 		sb.append("\n sortValuesByLength: " + sortValuesByLength);
-		sb.append("\n column Partitioner: " + columnPartitioner);
 		sb.append("\n Max Static ColGroup CoCode: " + maxColGroupCoCode);
 		sb.append("\n Max cocodePercentage: " + coCodePercentage);
 		sb.append("\n Sample Percentage: " + samplingRatio);
 		sb.append("\n Cost Computation Type" + costComputationType);
 		if(samplingRatio < 1.0)
 			sb.append("\n Estimation Type: " + estimationType);
-		// If needed for debugging add more fields to the printing.
 		return sb.toString();
 	}
 }

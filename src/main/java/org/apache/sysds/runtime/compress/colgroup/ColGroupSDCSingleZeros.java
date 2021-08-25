@@ -30,6 +30,7 @@ import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
 import org.apache.sysds.runtime.compress.colgroup.offset.AIterator;
 import org.apache.sysds.runtime.compress.colgroup.offset.AOffset;
 import org.apache.sysds.runtime.compress.colgroup.offset.OffsetFactory;
+import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
@@ -49,7 +50,7 @@ public class ColGroupSDCSingleZeros extends ColGroupValue {
 	/**
 	 * Sparse row indexes for the data
 	 */
-	protected AOffset _indexes;
+	protected transient AOffset _indexes;
 
 	/**
 	 * Constructor for serialization
@@ -94,19 +95,21 @@ public class ColGroupSDCSingleZeros extends ColGroupValue {
 	protected void decompressToBlockUnSafeDenseDictionary(MatrixBlock target, int rl, int ru, int offT,
 		double[] values) {
 		final int nCol = _colIndexes.length;
-		final int tCol = target.getNumColumns();
-		final int offTCorrected = offT - rl;
-		final double[] c = target.getDenseBlockValues();
-
+		final int offTCorr = offT - rl;
+		final DenseBlock db = target.getDenseBlock();
+		
 		AIterator it = _indexes.getIterator(rl);
-
 		while(it.hasNext() && it.value() < ru) {
-			int rc = (offTCorrected + it.value()) * tCol;
-			for(int j = 0; j < nCol; j++) {
-				c[rc + _colIndexes[j]] += values[j];
-			}
+			final int idx = offTCorr + it.value();
+			final double[] c = db.values( idx);
+			final int off = db.pos( idx);
+			for(int j = 0; j < nCol; j++)
+				c[off + _colIndexes[j]] += values[j];
+			
 			it.next();
 		}
+
+		_indexes.cacheIterator(it, ru);
 	}
 
 	@Override

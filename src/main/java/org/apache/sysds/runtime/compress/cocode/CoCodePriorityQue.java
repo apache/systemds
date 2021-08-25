@@ -56,6 +56,7 @@ public class CoCodePriorityQue extends AColumnCoCoder {
 		Comparator<CompressedSizeInfoColGroup> comp = Comparator.comparing(x -> _cest.getCostOfColumnGroup(x));
 		Queue<CompressedSizeInfoColGroup> que = new PriorityQueue<>(currentGroups.size(), comp);
 		List<CompressedSizeInfoColGroup> ret = new ArrayList<>();
+
 		for(CompressedSizeInfoColGroup g : currentGroups)
 			if(g != null)
 				que.add(g);

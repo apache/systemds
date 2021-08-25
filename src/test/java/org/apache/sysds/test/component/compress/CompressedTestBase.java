@@ -31,6 +31,7 @@ import java.util.List;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.sysds.common.Types.CorrectionLocationType;
 import org.apache.sysds.lops.MMTSJ.MMTSJType;
 import org.apache.sysds.lops.MapMultChain.ChainType;
 import org.apache.sysds.runtime.DMLRuntimeException;
@@ -49,27 +50,33 @@ import org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup;
 import org.apache.sysds.runtime.compress.estim.EstimationFactors;
 import org.apache.sysds.runtime.compress.lib.BitmapEncoder;
 import org.apache.sysds.runtime.compress.utils.ABitmap;
+import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.functionobjects.Divide;
 import org.apache.sysds.runtime.functionobjects.Equals;
 import org.apache.sysds.runtime.functionobjects.GreaterThan;
 import org.apache.sysds.runtime.functionobjects.GreaterThanEquals;
+import org.apache.sysds.runtime.functionobjects.KahanPlus;
 import org.apache.sysds.runtime.functionobjects.LessThan;
 import org.apache.sysds.runtime.functionobjects.LessThanEquals;
 import org.apache.sysds.runtime.functionobjects.Minus;
 import org.apache.sysds.runtime.functionobjects.Multiply;
 import org.apache.sysds.runtime.functionobjects.Plus;
 import org.apache.sysds.runtime.functionobjects.Power2;
+import org.apache.sysds.runtime.functionobjects.ReduceAll;
 import org.apache.sysds.runtime.functionobjects.SwapIndex;
 import org.apache.sysds.runtime.functionobjects.ValueFunction;
 import org.apache.sysds.runtime.functionobjects.Xor;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.AggregateBinaryOperator;
+import org.apache.sysds.runtime.matrix.operators.AggregateOperator;
+import org.apache.sysds.runtime.matrix.operators.AggregateTernaryOperator;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysds.runtime.matrix.operators.LeftScalarOperator;
 import org.apache.sysds.runtime.matrix.operators.ReorgOperator;
 import org.apache.sysds.runtime.matrix.operators.RightScalarOperator;
 import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
+import org.apache.sysds.runtime.matrix.operators.UnaryOperator;
 import org.apache.sysds.runtime.util.DataConverter;
 import org.apache.sysds.test.TestUtils;
 import org.apache.sysds.test.component.compress.TestConstants.MatrixTypology;
@@ -95,7 +102,7 @@ public abstract class CompressedTestBase extends TestBase {
 
 	protected static OverLapping[] overLapping = new OverLapping[] {
 		// OverLapping.COL,
-		OverLapping.PLUS,
+		OverLapping.PLUS, OverLapping.PLUS_LARGE,
 		// OverLapping.MATRIX,
 		OverLapping.NONE, OverLapping.APPEND_CONST, OverLapping.APPEND_EMPTY
 		// OverLapping.MATRIX_PLUS,
@@ -229,7 +236,7 @@ public abstract class CompressedTestBase extends TestBase {
 							colIndexes[x] = y;
 						}
 						// columns += Arrays.toString(colIndexes);
-						ABitmap ubm = BitmapEncoder.extractBitmap(colIndexes, mb, false);
+						ABitmap ubm = BitmapEncoder.extractBitmap(colIndexes, mb, false, 8);
 
 						EstimationFactors ef = CompressedSizeEstimator.estimateCompressedColGroupSize(ubm, colIndexes,
 							mb.getNumRows(), cs);
@@ -264,7 +271,7 @@ public abstract class CompressedTestBase extends TestBase {
 					}
 				}
 				else {
-					Pair<MatrixBlock, CompressionStatistics> pair = CompressedMatrixBlockFactory.compress(mb, _k, _cs);
+					Pair<MatrixBlock, CompressionStatistics> pair = CompressedMatrixBlockFactory.compress(mb, _k, _csb);
 					cmb = pair.getLeft();
 					cmbStats = pair.getRight();
 				}
@@ -325,8 +332,9 @@ public abstract class CompressedTestBase extends TestBase {
 							cmb = ((CompressedMatrixBlock) cmb).squash(_k);
 					}
 				}
-				if(ov == OverLapping.PLUS) {
-					ScalarOperator sop = new LeftScalarOperator(Plus.getPlusFnObject(), 5);
+				if(ov == OverLapping.PLUS || ov == OverLapping.PLUS_LARGE) {
+					ScalarOperator sop = ov == OverLapping.PLUS_LARGE ? new LeftScalarOperator(Plus.getPlusFnObject(),
+						-3142151) : new LeftScalarOperator(Plus.getPlusFnObject(), 5);
 					mb = mb.scalarOperations(sop, new MatrixBlock());
 					cmb = cmb.scalarOperations(sop, new MatrixBlock());
 				}
@@ -411,6 +419,7 @@ public abstract class CompressedTestBase extends TestBase {
 
 			MatrixBlock decompressedMatrixBlock = ((CompressedMatrixBlock) cmb).decompress(_k);
 			compareResultMatrices(mb, decompressedMatrixBlock, 1);
+
 			assertEquals(this.toString() + " number of non zeros should be equal after decompression", mb.getNonZeros(),
 				decompressedMatrixBlock.getNonZeros());
 		}
@@ -676,13 +685,13 @@ public abstract class CompressedTestBase extends TestBase {
 	// // testLeftMatrixMatrixMultiplicationTransposed(matrix, false, true, true);
 	// // }
 
-	// @Test
-	// public void testLeftMatrixMatrixMultDoubleCompressedTransposedBothSides() {
-	// if(rows < 1000) {
-	// MatrixBlock matrix = CompressibleInputGenerator.getInput(1, rows, CompressionType.OLE, 5, 1.0, 3);
-	// testLeftMatrixMatrixMultiplicationTransposed(matrix, true, true, true);
-	// }
-	// }
+	@Test
+	public void testLeftMatrixMatrixMultDoubleCompressedTransposedBothSides() {
+		if(rows < 500) {
+			MatrixBlock matrix = CompressibleInputGenerator.getInput(1, rows, CompressionType.OLE, 5, 1.0, 3);
+			testLeftMatrixMatrixMultiplicationTransposed(matrix, true, true, true, true);
+		}
+	}
 
 	public void testLeftMatrixMatrixMultiplicationTransposed(MatrixBlock matrix, boolean transposeLeft,
 		boolean transposeRight, boolean compressMatrix, boolean comparePercent) {
@@ -690,8 +699,8 @@ public abstract class CompressedTestBase extends TestBase {
 			if(!(cmb instanceof CompressedMatrixBlock))
 				return; // Input was not compressed then just pass test
 			// vector-matrix compressed
-			CompressionSettings cs = new CompressionSettingsBuilder()
-				.setValidCompressions(EnumSet.of(CompressionType.DDC)).create();
+			CompressionSettingsBuilder cs = new CompressionSettingsBuilder()
+				.setValidCompressions(EnumSet.of(CompressionType.DDC));
 			MatrixBlock compMatrix = compressMatrix ? CompressedMatrixBlockFactory.compress(matrix, cs)
 				.getLeft() : matrix;
 			if(compressMatrix && !(compMatrix instanceof CompressedMatrixBlock))
@@ -803,7 +812,7 @@ public abstract class CompressedTestBase extends TestBase {
 	}
 
 	public void testTransposeSelfMatrixMult(MMTSJType mType) {
-		if(!(cmb instanceof CompressedMatrixBlock))
+		if(!(cmb instanceof CompressedMatrixBlock) || rows > 10000)
 			return; // Input was not compressed then just pass test
 		if(_k != 1) {
 			// matrix-vector compressed
@@ -1027,24 +1036,6 @@ public abstract class CompressedTestBase extends TestBase {
 		testBinaryMV(vf, vector);
 	}
 
-	// Currently not supporting left hand side operations on Binary operations
-	@Test
-	@Ignore
-	public void testBinaryMVDivideROWLeft() {
-		ValueFunction vf = Divide.getDivideFnObject();
-		MatrixBlock vector = DataConverter
-			.convertToMatrixBlock(TestUtils.generateTestMatrix(1, cols, -1.0, 1.5, 1.0, 3));
-		testBinaryMV(vf, vector, false);
-	}
-
-	@Test
-	public void testBinaryMVMultiplyCOL() {
-		ValueFunction vf = Multiply.getMultiplyFnObject();
-		MatrixBlock vector = DataConverter
-			.convertToMatrixBlock(TestUtils.generateTestMatrix(rows, 1, -1.0, 1.5, 1.0, 3));
-		testBinaryMV(vf, vector);
-	}
-
 	@Test
 	public void testBinaryMVMinusROW() {
 		ValueFunction vf = Minus.getMinusFnObject();
@@ -1061,24 +1052,57 @@ public abstract class CompressedTestBase extends TestBase {
 		testBinaryMV(vf, vector);
 	}
 
-	public void testBinaryMV(ValueFunction vf, MatrixBlock vector) {
-		testBinaryMV(vf, vector, true);
+	@Test
+	public void testBinaryMMDivideLeft_Dense() {
+		ValueFunction vf = Divide.getDivideFnObject();
+		MatrixBlock vector = DataConverter
+			.convertToMatrixBlock(TestUtils.generateTestMatrix(rows, cols, -1.0, 1.5, 1.0, 3));
+		testBinaryMV(vf, vector, false);
 	}
 
-	public void testBinaryMV(ValueFunction vf, MatrixBlock vector, boolean right) {
+	@Test
+	public void testBinaryMMDivideLeft_Sparse() {
+		ValueFunction vf = Divide.getDivideFnObject();
+		MatrixBlock vector = DataConverter
+			.convertToMatrixBlock(TestUtils.generateTestMatrix(rows, cols, -1.0, 1.5, 0.1, 3));
+		testBinaryMV(vf, vector, false);
+	}
+
+	@Test
+	public void testBinaryMMMinusLeft_Dense() {
+		ValueFunction vf = Minus.getMinusFnObject();
+		MatrixBlock vector = DataConverter
+			.convertToMatrixBlock(TestUtils.generateTestMatrix(rows, cols, -1.0, 1.5, 1.0, 3));
+		testBinaryMV(vf, vector, false);
+	}
+
+	@Test
+	public void testBinaryMMMinusLeft_Sparse() {
+		ValueFunction vf = Minus.getMinusFnObject();
+		MatrixBlock vector = DataConverter
+			.convertToMatrixBlock(TestUtils.generateTestMatrix(rows, cols, -1.0, 1.5, 0.1, 3));
+		testBinaryMV(vf, vector, false);
+	}
+
+	public void testBinaryMV(ValueFunction vf, MatrixBlock matrix) {
+		testBinaryMV(vf, matrix, true);
+	}
+
+	public void testBinaryMV(ValueFunction vf, MatrixBlock matrix, boolean right) {
 		try {
-			if(!(cmb instanceof CompressedMatrixBlock))
+			if(!(cmb instanceof CompressedMatrixBlock) ||
+				(rows * cols > 10000 && matrix.getNumRows() == rows && matrix.getNumColumns() == cols))
 				return; // Input was not compressed then just pass test
 
 			BinaryOperator bop = new BinaryOperator(vf);
 			MatrixBlock ret1, ret2;
 			if(right) {
-				ret1 = mb.binaryOperations(bop, vector, new MatrixBlock());
-				ret2 = cmb.binaryOperations(bop, vector, new MatrixBlock());
+				ret1 = mb.binaryOperations(bop, matrix, new MatrixBlock());
+				ret2 = cmb.binaryOperations(bop, matrix, new MatrixBlock());
 			}
 			else {
-				ret1 = vector.binaryOperations(bop, mb, new MatrixBlock());
-				ret2 = vector.binaryOperations(bop, cmb, new MatrixBlock());
+				ret1 = matrix.binaryOperations(bop, mb, new MatrixBlock());
+				ret2 = matrix.binaryOperations(bop, cmb, new MatrixBlock());
 			}
 
 			compareResultMatrices(ret1, ret2, 2);
@@ -1129,7 +1153,7 @@ public abstract class CompressedTestBase extends TestBase {
 	public void testSlice(int rl, int ru, int cl, int cu) {
 		try {
 
-			if(!(cmb instanceof CompressedMatrixBlock))
+			if(!(cmb instanceof CompressedMatrixBlock) || rows * cols > 10000)
 				return;
 			MatrixBlock ret2 = cmb.slice(rl, ru, cl, cu);
 			MatrixBlock ret1 = mb.slice(rl, ru, cl, cu);
@@ -1210,7 +1234,7 @@ public abstract class CompressedTestBase extends TestBase {
 
 	@Test
 	public void appendCBindTrue() {
-		if(!(cmb instanceof CompressedMatrixBlock))
+		if(!(cmb instanceof CompressedMatrixBlock) || rows * cols > 10000)
 			return;
 		MatrixBlock ap = new MatrixBlock(mb.getNumRows(), 1, false, 132);
 		MatrixBlock ret1 = mb.append(ap, new MatrixBlock(), true);
@@ -1220,12 +1244,53 @@ public abstract class CompressedTestBase extends TestBase {
 
 	@Test
 	public void appendCBindFalse() {
-		if(!(cmb instanceof CompressedMatrixBlock))
+		if(!(cmb instanceof CompressedMatrixBlock) || rows * cols > 10000)
 			return;
 		MatrixBlock ap = new MatrixBlock(1, mb.getNumColumns(), false, 132);
 		MatrixBlock ret1 = mb.append(ap, new MatrixBlock(), false);
 		MatrixBlock ret2 = cmb.append(ap, new MatrixBlock(), false);
 		compareResultMatrices(ret1, ret2, 1);
+	}
+
+	@Test
+	public void aggregateTernaryOperations() {
+		if(!(cmb instanceof CompressedMatrixBlock) || rows * cols > 10000)
+			return;
+
+		MatrixBlock m1 = new MatrixBlock();
+		MatrixBlock m2 = new MatrixBlock();
+		MatrixBlock m3 = null;
+		CorrectionLocationType corr = CorrectionLocationType.LASTCOLUMN;
+		AggregateOperator agg = new AggregateOperator(0, KahanPlus.getKahanPlusFnObject(), corr);
+		AggregateTernaryOperator op = new AggregateTernaryOperator(Multiply.getMultiplyFnObject(), agg,
+			ReduceAll.getReduceAllFnObject(), _k);
+
+		boolean inCP = true;
+
+		MatrixBlock ret1 = mb.aggregateTernaryOperations(m1, m2, m3, null, op, inCP);
+		MatrixBlock ret2 = cmb.aggregateTernaryOperations(m1, m2, m3, null, op, inCP);
+
+		compareResultMatrices(ret1, ret2, 1);
+
+	}
+
+	@Test
+	public void unaryOperations() {
+		if(!(cmb instanceof CompressedMatrixBlock) || cmb.getNumColumns() < 2)
+			return;
+		try {
+
+			UnaryOperator op = new UnaryOperator(Builtin.getBuiltinFnObject("ucumk+*"), _k, false);
+			MatrixBlock ret1 = mb.slice(0, rows - 1, 0, 1).unaryOperations(op, null);
+			MatrixBlock ret2 = cmb.slice(0, rows - 1, 0, 1).unaryOperations(op, null);
+
+			compareResultMatrices(ret1, ret2, 1);
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			throw e;
+		}
+
 	}
 
 	protected void compareResultMatrices(double[][] expected, double[][] result, double toleranceMultiplier) {

@@ -54,7 +54,7 @@ public class TestConstants {
 	}
 
 	public enum OverLapping {
-		COL, MATRIX, NONE, MATRIX_PLUS, MATRIX_MULT_NEGATIVE, SQUASH, PLUS, APPEND_EMPTY, APPEND_CONST;
+		COL, MATRIX, NONE, MATRIX_PLUS, MATRIX_MULT_NEGATIVE, SQUASH, PLUS, APPEND_EMPTY, APPEND_CONST, PLUS_LARGE;
 
 		public static boolean effectOnOutput(OverLapping opcode) {
 			switch(opcode) {

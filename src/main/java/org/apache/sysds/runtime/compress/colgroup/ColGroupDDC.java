@@ -32,6 +32,7 @@ import org.apache.sysds.runtime.compress.colgroup.mapping.MapToChar;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToInt;
 import org.apache.sysds.runtime.compress.colgroup.offset.AIterator;
+import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
@@ -44,8 +45,8 @@ import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
  */
 public class ColGroupDDC extends ColGroupValue {
 	private static final long serialVersionUID = -5769772089913918987L;
-	
-	protected AMapToData _data;
+
+	protected transient AMapToData _data;
 
 	protected ColGroupDDC(int numRows) {
 		super(numRows);
@@ -64,19 +65,19 @@ public class ColGroupDDC extends ColGroupValue {
 	@Override
 	protected void decompressToBlockUnSafeSparseDictionary(MatrixBlock target, int rl, int ru, int offT,
 		SparseBlock sb) {
-		final int tCol = target.getNumColumns();
-		final double[] c = target.getDenseBlockValues();
-		offT = offT * tCol;
-		for(int i = rl; i < ru; i++, offT += tCol) {
+		final DenseBlock db = target.getDenseBlock();
+		for(int i = rl; i < ru; i++, offT++) {
 			final int rowIndex = _data.getIndex(i);
 			if(sb.isEmpty(rowIndex))
 				continue;
+			final double[] c = db.values(offT);
+			final int off = db.pos(offT);
 			final int apos = sb.pos(rowIndex);
 			final int alen = sb.size(rowIndex) + apos;
 			final double[] avals = sb.values(rowIndex);
 			final int[] aix = sb.indexes(rowIndex);
 			for(int j = apos; j < alen; j++)
-				c[offT + _colIndexes[aix[j]]] += avals[j];
+				c[off + _colIndexes[aix[j]]] += avals[j];
 
 		}
 	}
@@ -85,14 +86,13 @@ public class ColGroupDDC extends ColGroupValue {
 	protected void decompressToBlockUnSafeDenseDictionary(MatrixBlock target, int rl, int ru, int offT,
 		double[] values) {
 		final int nCol = _colIndexes.length;
-		final int tCol = target.getNumColumns();
-		final double[] c = target.getDenseBlockValues();
-		offT = offT * tCol;
-
-		for(int i = rl; i < ru; i++, offT += tCol) {
+		final DenseBlock db = target.getDenseBlock();
+		for(int i = rl; i < ru; i++, offT++) {
+			final double[] c = db.values(offT);
+			final int off = db.pos(offT);
 			final int rowIndex = _data.getIndex(i) * nCol;
 			for(int j = 0; j < nCol; j++)
-				c[offT + _colIndexes[j]] += values[rowIndex + j];
+				c[off + _colIndexes[j]] += values[rowIndex + j];
 		}
 	}
 

@@ -265,6 +265,7 @@ public abstract class AbstractCompressedUnaryTests extends CompressedTestBase {
 
 			double[][] d1 = DataConverter.convertToDoubleMatrix(ret1);
 			double[][] d2 = DataConverter.convertToDoubleMatrix(ret2);
+
 			String css = this.toString();
 			if(_cs != null && _cs.lossy) {
 				if(aggType == AggType.COLSUMS)
@@ -283,16 +284,16 @@ public abstract class AbstractCompressedUnaryTests extends CompressedTestBase {
 					TestUtils.compareMatricesPercentageDistance(d1, d2, 0.8, 0.9, css, true);
 
 			}
-			else if(overlappingType == OverLapping.SQUASH) {
-				// TODO make better assumptions on range...
-				TestUtils.compareMatricesPercentageDistance(d1, d2, 0.0, 0.90, css);
+			else{
+				if(overlappingType == OverLapping.SQUASH) 
+					TestUtils.compareMatricesPercentageDistance(d1, d2, 0.0, 0.90, css);
+				else if(aggType == AggType.ROWMEAN)
+					TestUtils.compareMatrices(d1, d2, 0.0001, css);
+				else if(OverLapping.effectOnOutput(overlappingType))
+					TestUtils.compareMatricesPercentageDistance(d1, d2, 0.95, 0.98, css);
+				else
+					TestUtils.compareMatricesBitAvgDistance(d1, d2, 2048, 128, css);
 			}
-			else if(aggType == AggType.ROWMEAN)
-				TestUtils.compareMatrices(d1, d2, 0.0001, css);
-			else if(OverLapping.effectOnOutput(overlappingType))
-				TestUtils.compareMatricesPercentageDistance(d1, d2, 0.95, 0.98, css);
-			else
-				TestUtils.compareMatricesBitAvgDistance(d1, d2, 2048, 128, css);
 
 		}
 		catch(Exception e) {

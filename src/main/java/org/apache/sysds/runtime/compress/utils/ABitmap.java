@@ -51,7 +51,8 @@ public abstract class ABitmap {
 
 			_numZeros = rows - offsetsTotal;
 			if(_numZeros < 0)
-				throw new DMLCompressionException("Error in constructing bitmap");
+				throw new DMLCompressionException(
+					"Error in constructing bitmap:" + rows + "," + numCols + "\n" + Arrays.toString(offsetsLists));
 		}
 		else
 			_numZeros = rows;
@@ -63,11 +64,11 @@ public abstract class ABitmap {
 		return _numCols;
 	}
 
-	public int getNumRows(){
+	public int getNumRows() {
 		return _numRows;
 	}
 
-	public boolean isEmpty(){
+	public boolean isEmpty() {
 		return _offsetsLists == null;
 	}
 

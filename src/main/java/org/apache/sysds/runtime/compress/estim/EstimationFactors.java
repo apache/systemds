@@ -133,8 +133,8 @@ public class EstimationFactors {
 			int numOffs = 0;
 			int numSingle = 0;
 			int largestOffs = 0;
-			int tupleNonZeroCount = 0;
-			int overallNonZeroCount = 0;
+			long tupleNonZeroCount = 0;
+			long overallNonZeroCount = 0;
 			// compute size estimation factors
 			for(int i = 0; i < numVals; i++) {
 				final int listSize = ubm.getNumOffsets(i);
@@ -169,7 +169,7 @@ public class EstimationFactors {
 			if(zerosLargestOffset)
 				largestOffs = zerosOffs;
 
-			double overAllSparsity = (double) overallNonZeroCount / (numRows * cols.length);
+			double overAllSparsity = (double) overallNonZeroCount / ((long)numRows * (long)cols.length);
 			double tupleSparsity = (double) tupleNonZeroCount / (numVals * cols.length);
 
 			return new EstimationFactors(cols, numVals, numOffs, largestOffs, frequencies, numRuns, numSingle, numRows,

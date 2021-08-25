@@ -65,10 +65,4 @@ public class BuiltinExecutePipelineTest extends AutomatedTestBase {
 			resetExecMode(modeOld);
 		}
 	}
-
-
-	public static void main(String[] args) {
-		String s = null;
-		System.out.println("length is "+s.length());
-	}
 }

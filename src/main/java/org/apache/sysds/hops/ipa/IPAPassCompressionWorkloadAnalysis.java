@@ -66,6 +66,5 @@ public class IPAPassCompressionWorkloadAnalysis extends IPAPass {
 		}
 		
 		return map != null;
-
 	}
 }

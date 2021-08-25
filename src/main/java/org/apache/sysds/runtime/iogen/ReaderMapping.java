@@ -18,12 +18,16 @@
  */
 
 package org.apache.sysds.runtime.iogen;
+
+import com.google.gson.Gson;
 import org.apache.sysds.runtime.io.IOUtilFunctions;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.Serializable;
+import java.security.GeneralSecurityException;
 import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.HashSet;
@@ -73,10 +77,10 @@ public class ReaderMapping {
 
 		if(!isMapped) {
 			// Clone Sample Matrix
-			MatrixBlock sampleMatrixClone = new MatrixBlock(nrows,ncols,false);
-			for(int r= 0;r<nrows;r++)
-				for(int c=0;c<ncols;c++)
-					sampleMatrixClone.setValue(r,c, sampleMatrix.getValue(r,c));
+			MatrixBlock sampleMatrixClone = new MatrixBlock(nrows, ncols, false);
+			for(int r = 0; r < nrows; r++)
+				for(int c = 0; c < ncols; c++)
+					sampleMatrixClone.setValue(r, c, sampleMatrix.getValue(r, c));
 
 			// Symmetric and Skew-Symmetric check:
 			symmetric = nrows == ncols;
@@ -142,7 +146,7 @@ public class ReaderMapping {
 					skewSampleMatrix(skewCoefficient);
 					NTF = convertMatrixTONumberTrimFormat(sampleMatrix);
 					isMapped = findMapping(nlines, NTF);
-					int aa=100;
+					int aa = 100;
 				}
 			}
 		}
@@ -370,7 +374,7 @@ public class ReaderMapping {
 				eIndex = i;
 				String subRow = row.substring(sIndex, eIndex);
 
-				if(sIndex != 0 && subRow.length() > 1) {
+				if(sIndex != 0 && subRow.length() >= 1) {
 					int mergeCount = mergeDelimiters(value, sValue, subRow);
 					if(mergeCount > 0) {
 						mapSize[r][colIndex] += mergeCount;
@@ -424,30 +428,19 @@ public class ReaderMapping {
 		String uniqueDelimiter = null;
 		StringBuilder token = new StringBuilder();
 
+		FastStringTokenizer fastStringTokenizer;
 		while(token.length() < maxSizeOfToken) {
 			token.append(stringToken.charAt(token.length()));
 
 			boolean flagCurrToken = true;
 			HashSet<String> ns = new HashSet<>();
 			for(int r = 0; r < nrows; r++) {
-				int rowDelimCount = 0;
 				String row = rowDelims.get(r);
-				int sPos = 0;
-				do {
-					int index = row.substring(sPos).indexOf(token.toString());
-					if(index != -1) {
-						rowDelimCount++;
-						String nv = row.substring(sPos, sPos + index);
-						if(nv.length() > 0)
-							ns.add(nv);
-						sPos += index + token.length();
-					}
-					else
-						break;
-				}
-				while(sPos <= row.length());
-
-				if(rowDelimCount != ncols - 1) {
+				fastStringTokenizer = new FastStringTokenizer(token.toString());
+				fastStringTokenizer.reset(row);
+				ArrayList<String> delimsOfToken = fastStringTokenizer.getTokens();
+				ns.addAll(delimsOfToken);
+				if(fastStringTokenizer._count != ncols-1) {
 					flagCurrToken = false;
 					break;
 				}
@@ -456,16 +449,72 @@ public class ReaderMapping {
 				uniqueDelimiter = token.toString();
 				naString = ns;
 			}
-
 		}
 		if(uniqueDelimiter != null) {
-			CustomProperties ffpgr = new CustomProperties(CustomProperties.GRPattern.Regular,
-				uniqueDelimiter, naString);
+			CustomProperties ffpgr = new CustomProperties(CustomProperties.GRPattern.Regular, uniqueDelimiter,
+				naString);
 			ffpgr.setDescription("CSV Format Recognized");
 			return ffpgr;
 		}
 		else
 			return null;
+	}
+
+	private static class FastStringTokenizer implements Serializable {
+		private static final long serialVersionUID = -4698672725609750097L;
+		private String _string = null;
+		private String _del = "";
+		private int _pos = -1;
+		private int _count = 0;
+
+		public FastStringTokenizer(String delimiter) {
+			_del = delimiter;
+			reset(null);
+		}
+
+		public void reset(String string) {
+			_string = string;
+			_pos = 0;
+			_count = 0;
+		}
+
+		private String nextToken() {
+			int len = _string.length();
+			int start = _pos;
+
+			//find start (skip over leading delimiters)
+			while(start!=-1 && start < len && _del.equals(_string.substring(start, start + _del.length()))) {
+				start += _del.length();
+				_count++;
+			}
+
+
+			//find end (next delimiter) and return
+			if(start < len && start != -1) {
+				_pos = _string.indexOf(_del, start);
+				if(start < _pos && _pos < len) {
+					return _string.substring(start, _pos );
+				}
+				else
+					return _string.substring(start);
+			}
+			//no next token
+			return null;
+		}
+
+		public ArrayList<String> getTokens() {
+			ArrayList<String> tokens = new ArrayList<>();
+			tokens.add("");
+			String token;
+			do {
+				token = nextToken();
+				if(token != null) {
+					tokens.add(token);
+				}
+			}
+			while(token != null);
+			return tokens;
+		}
 	}
 
 	/*

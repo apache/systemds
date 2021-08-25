@@ -190,6 +190,7 @@ public abstract class MatrixGenerateReader extends MatrixReader {
 					return _string.substring(start);
 			}
 			//no next token
+			_index = -1;
 			return null;
 		}
 
@@ -203,7 +204,7 @@ public abstract class MatrixGenerateReader extends MatrixReader {
 
 		public double nextDouble() {
 			String nt = nextToken();
-			if((naStrings != null && naStrings.contains(nt)))
+			if((naStrings != null && naStrings.contains(nt)) || nt == null)
 				return 0;
 			else
 				return Double.parseDouble(nt);

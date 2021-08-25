@@ -45,11 +45,11 @@ public class GenerateReader {
 
 
 	public GenerateReader(String sampleRaw, MatrixBlock sampleMatrix) throws Exception {
-		// TODO: 1. The Reader Mapping can't recognize na String when it is at the end of row
+		// TODO: 1. The Reader Mapping can't recognize NA String when it is at the end of row
 		//       2. Empty NA string should be add to naStrings list
-		// 1. Identify file format properties:
-		readerMapping = new ReaderMapping(sampleRaw, sampleMatrix);
 
+		// Identify file format properties:
+		readerMapping = new ReaderMapping(sampleRaw, sampleMatrix);
 	}
 
 	public GenerateReader(String sampleRaw, FrameBlock sampleFrame) {

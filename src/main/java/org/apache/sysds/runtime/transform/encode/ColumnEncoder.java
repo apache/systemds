@@ -19,7 +19,13 @@
 
 package org.apache.sysds.runtime.transform.encode;
 
-import static org.apache.sysds.runtime.transform.encode.EncoderFactory.getEncoderType;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.matrix.data.FrameBlock;
+import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.util.DependencyTask;
+import org.apache.sysds.runtime.util.DependencyThreadPool;
 
 import java.io.Externalizable;
 import java.io.IOException;
@@ -31,13 +37,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.Callable;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.apache.sysds.runtime.DMLRuntimeException;
-import org.apache.sysds.runtime.matrix.data.FrameBlock;
-import org.apache.sysds.runtime.matrix.data.MatrixBlock;
-import org.apache.sysds.runtime.util.DependencyTask;
-import org.apache.sysds.runtime.util.DependencyThreadPool;
+import static org.apache.sysds.runtime.transform.encode.EncoderFactory.getEncoderType;
 
 /**
  * Base class for all transform encoders providing both a row and block interface for decoding frames to matrices.
@@ -52,6 +52,10 @@ public abstract class ColumnEncoder implements Externalizable, Encoder, Comparab
 		_colID = colID;
 	}
 
+	/**
+	 * Apply Functions are only used in Single Threaded or Multi-Threaded Dense context.
+	 * That's why there is no regard for MT sparse!
+	 */
 	public abstract MatrixBlock apply(MatrixBlock in, MatrixBlock out, int outputCol);
 
 	public abstract MatrixBlock apply(MatrixBlock in, MatrixBlock out, int outputCol, int rowStart, int blk);

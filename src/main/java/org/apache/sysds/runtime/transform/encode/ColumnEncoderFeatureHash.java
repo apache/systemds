@@ -24,12 +24,17 @@ import static org.apache.sysds.runtime.util.UtilFunctions.getEndIndex;
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Callable;
 
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.data.SparseRowVector;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.DependencyTask;
+import org.apache.sysds.runtime.util.DependencyThreadPool;
 import org.apache.sysds.runtime.util.UtilFunctions;
 
 /**
@@ -70,6 +75,19 @@ public class ColumnEncoderFeatureHash extends ColumnEncoder {
 	}
 
 	@Override
+	protected List<DependencyTask<?>> getSparseTasks(FrameBlock in, MatrixBlock out, int outputCol) {
+		List<Callable<Object>> tasks = new ArrayList<>();
+		tasks.add(new FeatureHashSparseApplyTask(this, in, out, outputCol));
+		return DependencyThreadPool.createDependencyTasks(tasks, null);
+
+	}
+
+	@Override
+	protected List<DependencyTask<?>> getSparseTasks(MatrixBlock in, MatrixBlock out, int outputCol) {
+		throw new NotImplementedException("Sparse FeatureHashing for MatrixBlocks not jet implemented");
+	}
+
+	@Override
 	public MatrixBlock apply(FrameBlock in, MatrixBlock out, int outputCol) {
 		return apply(in, out, outputCol, 0, -1);
 	}
@@ -88,7 +106,7 @@ public class ColumnEncoderFeatureHash extends ColumnEncoder {
 			if(key == null)
 				throw new DMLRuntimeException("Missing Value encountered in input Frame for FeatureHash");
 			long code = getCode(key);
-			out.quickSetValueThreadSafe(i, outputCol, (code >= 0) ? code : Double.NaN);
+			out.quickSetValue(i, outputCol, (code >= 0) ? code : Double.NaN);
 		}
 		return out;
 	}
@@ -101,7 +119,7 @@ public class ColumnEncoderFeatureHash extends ColumnEncoder {
 			Object okey = in.quickGetValueThreadSafe(i, _colID - 1);
 			String key = okey.toString();
 			long code = getCode(key);
-			out.quickSetValueThreadSafe(i, outputCol, (code >= 0) ? code : Double.NaN);
+			out.quickSetValue(i, outputCol, (code >= 0) ? code : Double.NaN);
 		}
 		return out;
 	}
@@ -145,4 +163,37 @@ public class ColumnEncoderFeatureHash extends ColumnEncoder {
 		super.readExternal(in);
 		_K = in.readLong();
 	}
+
+	public static class FeatureHashSparseApplyTask implements Callable<Object>{
+		private final ColumnEncoderFeatureHash _encoder;
+		private final FrameBlock _input;
+		private final MatrixBlock _out;
+		private final int _outputCol;
+
+		public FeatureHashSparseApplyTask(ColumnEncoderFeatureHash encoder, FrameBlock input, MatrixBlock out, int outputCol) {
+			_encoder = encoder;
+			_input = input;
+			_out = out;
+			_outputCol = outputCol;
+		}
+
+		@Override
+		public Object call() throws Exception {
+			if(_out.getSparseBlock() == null)
+				return null;
+			int index = _encoder._colID - 1;
+			for(int r = 0; r < _input.getNumRows(); r++){
+				SparseRowVector row = (SparseRowVector) _out.getSparseBlock().get(r);
+				Object okey = _input.get(r, index);
+				String key = (okey != null) ? okey.toString() : null;
+				if(key == null)
+					throw new DMLRuntimeException("Missing Value encountered in input Frame for FeatureHash");
+				long code = _encoder.getCode(key);
+				row.values()[index] = code;
+				row.indexes()[index] = _outputCol;
+			}
+			return null;
+		}
+	}
+
 }

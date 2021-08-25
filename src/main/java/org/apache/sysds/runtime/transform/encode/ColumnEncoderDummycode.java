@@ -19,7 +19,11 @@
 
 package org.apache.sysds.runtime.transform.encode;
 
-import static org.apache.sysds.runtime.util.UtilFunctions.getEndIndex;
+import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.matrix.data.FrameBlock;
+import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.util.DependencyTask;
+import org.apache.sysds.runtime.util.DependencyThreadPool;
 
 import java.io.IOException;
 import java.io.ObjectInput;
@@ -29,11 +33,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.Callable;
 
-import org.apache.sysds.runtime.DMLRuntimeException;
-import org.apache.sysds.runtime.matrix.data.FrameBlock;
-import org.apache.sysds.runtime.matrix.data.MatrixBlock;
-import org.apache.sysds.runtime.util.DependencyTask;
-import org.apache.sysds.runtime.util.DependencyThreadPool;
+import static org.apache.sysds.runtime.util.UtilFunctions.getEndIndex;
 
 public class ColumnEncoderDummycode extends ColumnEncoder {
 	private static final long serialVersionUID = 5832130477659116489L;
@@ -88,8 +88,8 @@ public class ColumnEncoderDummycode extends ColumnEncoder {
 			int nCol = outputCol + (int) val - 1;
 			// Setting value to 0 first in case of sparse so the row vector does not need to be resized
 			if(nCol != outputCol)
-				out.quickSetValueThreadSafe(i, outputCol, 0);
-			out.quickSetValueThreadSafe(i, nCol, 1);
+				out.quickSetValue(i, outputCol, 0);
+			out.quickSetValue(i, nCol, 1);
 		}
 		return out;
 	}
@@ -208,30 +208,28 @@ public class ColumnEncoderDummycode extends ColumnEncoder {
 			for(int r = 0; r < _input.getNumRows(); r++) {
 				if(_out.getSparseBlock() == null)
 					return null;
-				synchronized(_out.getSparseBlock().get(r)) {
-					// Since the recoded values are already offset in the output matrix (same as input at this point)
-					// the dummycoding only needs to offset them within their column domain. Which means that the
-					// indexes in the SparseRowVector do not need to be sorted anymore and can be updated directly.
-					//
-					// Input: Output:
-					//
-					// 1 | 0 | 2 | 0 		1 | 0 | 0 | 1
-					// 2 | 0 | 1 | 0 ===> 	0 | 1 | 1 | 0
-					// 1 | 0 | 2 | 0 		1 | 0 | 0 | 1
-					// 1 | 0 | 1 | 0 		1 | 0 | 1 | 0
-					//
-					// Example SparseRowVector Internals (1. row):
-					//
-					// indexes = [0,2] ===> indexes = [0,3]
-					// values = [1,2] values = [1,1]
-					// int index = ((SparseRowVector) _out.getSparseBlock().get(r)).getIndex(_outputCol);
-					int index = _encoder._colID - 1;
-					double val = _out.getSparseBlock().get(r).values()[index];
-					int nCol = _outputCol + (int) val - 1;
+				// Since the recoded values are already offset in the output matrix (same as input at this point)
+				// the dummycoding only needs to offset them within their column domain. Which means that the
+				// indexes in the SparseRowVector do not need to be sorted anymore and can be updated directly.
+				//
+				// Input: Output:
+				//
+				// 1 | 0 | 2 | 0 		1 | 0 | 0 | 1
+				// 2 | 0 | 1 | 0 ===> 	0 | 1 | 1 | 0
+				// 1 | 0 | 2 | 0 		1 | 0 | 0 | 1
+				// 1 | 0 | 1 | 0 		1 | 0 | 1 | 0
+				//
+				// Example SparseRowVector Internals (1. row):
+				//
+				// indexes = [0,2] ===> indexes = [0,3]
+				// values = [1,2] values = [1,1]
+				// int index = ((SparseRowVector) _out.getSparseBlock().get(r)).getIndex(_outputCol);
+				int index = _encoder._colID - 1;
+				double val = _out.getSparseBlock().get(r).values()[index];
+				int nCol = _outputCol + (int) val - 1;
 
-					_out.getSparseBlock().get(r).indexes()[index] = nCol;
-					_out.getSparseBlock().get(r).values()[index] = 1;
-				}
+				_out.getSparseBlock().get(r).indexes()[index] = nCol;
+				_out.getSparseBlock().get(r).values()[index] = 1;
 			}
 			return null;
 		}

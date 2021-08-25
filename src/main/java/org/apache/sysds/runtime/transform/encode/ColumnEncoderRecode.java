@@ -202,7 +202,7 @@ public class ColumnEncoderRecode extends ColumnEncoder {
 			Object okey = in.get(i, _colID - 1);
 			String key = (okey != null) ? okey.toString() : null;
 			long code = lookupRCDMap(key);
-			out.quickSetValueThreadSafe(i, outputCol, (code >= 0) ? code : Double.NaN);
+			out.quickSetValue(i, outputCol, (code >= 0) ? code : Double.NaN);
 		}
 		return out;
 	}
@@ -346,21 +346,17 @@ public class ColumnEncoderRecode extends ColumnEncoder {
 		}
 
 		public Object call() throws Exception {
+			int index = _encoder._colID - 1;
 			for(int r = 0; r < _input.getNumRows(); r++) {
 				if(_out.getSparseBlock() == null)
 					return null;
 				SparseRowVector row = (SparseRowVector) _out.getSparseBlock().get(r);
-				synchronized(row) {
-					Object okey = _input.get(r, _encoder._colID - 1);
-					String key = (okey != null) ? okey.toString() : null;
-					long code = _encoder.lookupRCDMap(key);
-					double val = (code < 0) ? Double.NaN : code;
-					int index = _encoder._colID - 1;
-					row.values()[index] = val;
-					row.indexes()[index] = _outputCol;
-					if (val != 0)
-						row.setSize(row.size() + 1);
-				}
+				Object okey = _input.get(r, index);
+				String key = (okey != null) ? okey.toString() : null;
+				long code = _encoder.lookupRCDMap(key);
+				double val = (code < 0) ? Double.NaN : code;
+				row.values()[index] = val;
+				row.indexes()[index] = _outputCol;
 			}
 			return null;
 		}

@@ -169,7 +169,7 @@ public class ColumnEncoderBin extends ColumnEncoder {
 			double inVal = UtilFunctions.objectToDouble(in.getSchema()[_colID - 1], in.get(i, _colID - 1));
 			int ix = Arrays.binarySearch(_binMaxs, inVal);
 			int binID = ((ix < 0) ? Math.abs(ix + 1) : ix) + 1;
-			out.quickSetValueThreadSafe(i, outputCol, binID);
+			out.quickSetValue(i, outputCol, binID);
 		}
 		return out;
 	}
@@ -181,7 +181,7 @@ public class ColumnEncoderBin extends ColumnEncoder {
 			double inVal = in.quickGetValueThreadSafe(i, _colID - 1);
 			int ix = Arrays.binarySearch(_binMaxs, inVal);
 			int binID = ((ix < 0) ? Math.abs(ix + 1) : ix) + 1;
-			out.quickSetValueThreadSafe(i, outputCol, binID);
+			out.quickSetValue(i, outputCol, binID);
 		}
 		return out;
 	}
@@ -299,21 +299,17 @@ public class ColumnEncoderBin extends ColumnEncoder {
 		}
 
 		public Object call() throws Exception {
+			int index = _encoder._colID - 1;
 			for(int r = 0; r < _input.getNumRows(); r++) {
 				if(_out.getSparseBlock() == null)
 					return null;
 				SparseRowVector row = (SparseRowVector) _out.getSparseBlock().get(r);
-				synchronized(row) {
-					double inVal = UtilFunctions.objectToDouble(_input.getSchema()[_encoder._colID - 1],
-							_input.get(r, _encoder._colID - 1));
-					int ix = Arrays.binarySearch(_encoder._binMaxs, inVal);
-					int binID = ((ix < 0) ? Math.abs(ix + 1) : ix) + 1;
-					int index = _encoder._colID - 1;
-					row.values()[index] = binID;
-					row.indexes()[index] = _outputCol;
-					// sync maybe only here needed
-					row.setSize(row.size() + 1);
-				}
+				double inVal = UtilFunctions.objectToDouble(_input.getSchema()[index],
+						_input.get(r, index));
+				int ix = Arrays.binarySearch(_encoder._binMaxs, inVal);
+				int binID = ((ix < 0) ? Math.abs(ix + 1) : ix) + 1;
+				row.values()[index] = binID;
+				row.indexes()[index] = _outputCol;
 			}
 			return null;
 		}

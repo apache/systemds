@@ -19,6 +19,20 @@
 
 package org.apache.sysds.runtime.transform.encode;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.apache.sysds.common.Types;
+import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.data.SparseBlock;
+import org.apache.sysds.runtime.data.SparseBlockMCSR;
+import org.apache.sysds.runtime.data.SparseRowVector;
+import org.apache.sysds.runtime.matrix.data.FrameBlock;
+import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.util.DependencyTask;
+import org.apache.sysds.runtime.util.DependencyThreadPool;
+import org.apache.sysds.runtime.util.DependencyWrapperTask;
+import org.apache.sysds.runtime.util.IndexRange;
+
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
@@ -28,30 +42,19 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.apache.sysds.common.Types;
-import org.apache.sysds.runtime.DMLRuntimeException;
-import org.apache.sysds.runtime.data.SparseBlock;
-import org.apache.sysds.runtime.data.SparseBlockMCSR;
-import org.apache.sysds.runtime.matrix.data.FrameBlock;
-import org.apache.sysds.runtime.matrix.data.MatrixBlock;
-import org.apache.sysds.runtime.util.DependencyTask;
-import org.apache.sysds.runtime.util.DependencyThreadPool;
-import org.apache.sysds.runtime.util.DependencyWrapperTask;
-import org.apache.sysds.runtime.util.IndexRange;
-
 public class MultiColumnEncoder implements Encoder {
 
 	protected static final Log LOG = LogFactory.getLog(MultiColumnEncoder.class.getName());
 	private static final boolean MULTI_THREADED = true;
-	public static boolean MULTI_THREADED_STAGES = true;
+	public static boolean MULTI_THREADED_STAGES = false;
 
 	private List<ColumnEncoderComposite> _columnEncoders;
 	// These encoders are deprecated and will be phased out soon.
@@ -98,8 +101,7 @@ public class MultiColumnEncoder implements Encoder {
 					e.printStackTrace();
 				}
 				pool.shutdown();
-				out.recomputeNonZeros();
-				return out;
+				outputMatrixPostProcessing(out);
 			}
 			else {
 				build(in, k);
@@ -245,10 +247,10 @@ public class MultiColumnEncoder implements Encoder {
 		if(in.getNumColumns() != numEncoders)
 			throw new DMLRuntimeException("Not every column in has a CompositeEncoder. Please make sure every column "
 				+ "has a encoder or slice the input accordingly");
-		// Block allocation for MT access
-		outputMatrixPreProcessing(out, in);
 		// TODO smart checks
 		if(MULTI_THREADED && k > 1) {
+			// Block allocation for MT access
+			outputMatrixPreProcessing(out, in);
 			applyMT(in, out, outputCol, k);
 		}
 		else {
@@ -261,7 +263,7 @@ public class MultiColumnEncoder implements Encoder {
 		}
 		// Recomputing NNZ since we access the block directly
 		// TODO set NNZ explicit count them in the encoders
-		out.recomputeNonZeros();
+		outputMatrixPostProcessing(out);
 		if(_legacyOmit != null)
 			out = _legacyOmit.apply(in, out);
 		if(_legacyMVImpute != null)
@@ -304,8 +306,28 @@ public class MultiColumnEncoder implements Encoder {
 				// allocate all sparse rows so MT sync can be done.
 				// should be rare that rows have only 0
 				block.allocate(r, input.getNumColumns());
+				// Setting the size here makes it possible to run all sparse apply tasks without any sync
+				// could become problematic if the input is very sparse since we allocate the same size as the input
+				// should be fine in theory ;)
+				((SparseRowVector)block.get(r)).setSize(input.getNumColumns());
 			}
 		}
+	}
+
+	private void outputMatrixPostProcessing(MatrixBlock output){
+		Set<Integer> listStream = getColumnEncoders(ColumnEncoderPassThrough.class).stream()
+				.map(ColumnEncoderPassThrough::getSparseRowsWZeros).flatMap(l -> {
+					if(l == null)
+						return null;
+					return l.stream();
+				}).collect(Collectors.toSet());
+		if(!listStream.stream().allMatch(Objects::isNull)){
+			for(Integer row : listStream){
+				// TODO: Maybe MT in special cases when the number of rows is large
+				output.getSparseBlock().get(row).compact();
+			}
+		}
+		output.recomputeNonZeros();
 	}
 
 	@Override

@@ -21,16 +21,22 @@ package org.apache.sysds.runtime.transform.encode;
 
 import static org.apache.sysds.runtime.util.UtilFunctions.getEndIndex;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Callable;
 
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.sysds.common.Types.ValueType;
+import org.apache.sysds.runtime.data.SparseRowVector;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.DependencyTask;
+import org.apache.sysds.runtime.util.DependencyThreadPool;
 import org.apache.sysds.runtime.util.UtilFunctions;
 
 public class ColumnEncoderPassThrough extends ColumnEncoder {
 	private static final long serialVersionUID = -8473768154646831882L;
+	private List<Integer> sparseRowsWZeros = null;
 
 	protected ColumnEncoderPassThrough(int ptCols) {
 		super(ptCols); // 1-based
@@ -38,6 +44,10 @@ public class ColumnEncoderPassThrough extends ColumnEncoder {
 
 	public ColumnEncoderPassThrough() {
 		this(-1);
+	}
+
+	public List<Integer> getSparseRowsWZeros(){
+		return sparseRowsWZeros;
 	}
 
 	@Override
@@ -48,6 +58,18 @@ public class ColumnEncoderPassThrough extends ColumnEncoder {
 	@Override
 	public List<DependencyTask<?>> getBuildTasks(FrameBlock in, int blockSize) {
 		return null;
+	}
+
+	@Override
+	protected List<DependencyTask<?>> getSparseTasks(FrameBlock in, MatrixBlock out, int outputCol) {
+		List<Callable<Object>> tasks = new ArrayList<>();
+		tasks.add(new PassThroughSparseApplyTask(this, in, out, outputCol));
+		return DependencyThreadPool.createDependencyTasks(tasks, null);
+	}
+
+	@Override
+	protected List<DependencyTask<?>> getSparseTasks(MatrixBlock in, MatrixBlock out, int outputCol) {
+		throw new NotImplementedException("Sparse PassThrough for MatrixBlocks not jet implemented");
 	}
 
 	@Override
@@ -69,7 +91,7 @@ public class ColumnEncoderPassThrough extends ColumnEncoder {
 			double v = (val == null ||
 				(vt == ValueType.STRING && val.toString().isEmpty())) ? Double.NaN : UtilFunctions.objectToDouble(vt,
 					val);
-			out.quickSetValueThreadSafe(i, outputCol, v);
+			out.quickSetValue(i, outputCol, v);
 		}
 		return out;
 	}
@@ -83,7 +105,7 @@ public class ColumnEncoderPassThrough extends ColumnEncoder {
 		int end = getEndIndex(in.getNumRows(), rowStart, blk);
 		for(int i = rowStart; i < end; i++) {
 			double val = in.quickGetValueThreadSafe(i, col);
-			out.quickSetValueThreadSafe(i, outputCol, val);
+			out.quickSetValue(i, outputCol, val);
 		}
 		return out;
 	}
@@ -106,4 +128,43 @@ public class ColumnEncoderPassThrough extends ColumnEncoder {
 	public void initMetaData(FrameBlock meta) {
 		// do nothing
 	}
+
+	public static class PassThroughSparseApplyTask implements Callable<Object>{
+		private final ColumnEncoderPassThrough _encoder;
+		private final FrameBlock _input;
+		private final MatrixBlock _out;
+		private final int _outputCol;
+
+		public PassThroughSparseApplyTask(ColumnEncoderPassThrough encoder, FrameBlock input, MatrixBlock out, int outputCol) {
+			_encoder = encoder;
+			_input = input;
+			_out = out;
+			_outputCol = outputCol;
+		}
+
+		@Override
+		public Object call() throws Exception {
+			if(_out.getSparseBlock() == null)
+				return null;
+			int index = _encoder._colID - 1;
+			ValueType vt = _input.getSchema()[index];
+			for(int r = 0; r < _input.getNumRows(); r++) {
+				Object val = _input.get(r, index);
+				double v = (val == null ||
+						(vt == ValueType.STRING && val.toString().isEmpty())) ? Double.NaN : UtilFunctions.objectToDouble(vt,
+						val);
+				SparseRowVector row = (SparseRowVector) _out.getSparseBlock().get(r);
+				if(v == 0) {
+					if(_encoder.sparseRowsWZeros == null)
+						_encoder.sparseRowsWZeros = new ArrayList<>();
+					_encoder.sparseRowsWZeros.add(r);
+					//continue;
+				}
+				row.values()[index] = v;
+				row.indexes()[index] = _outputCol;
+			}
+			return null;
+		}
+	}
+
 }

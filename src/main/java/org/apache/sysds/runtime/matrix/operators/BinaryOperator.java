@@ -20,8 +20,6 @@
 
 package org.apache.sysds.runtime.matrix.operators;
 
-import java.io.Serializable;
-
 import org.apache.sysds.common.Types.OpOp2;
 import org.apache.sysds.runtime.functionobjects.And;
 import org.apache.sysds.runtime.functionobjects.BitwAnd;
@@ -30,6 +28,7 @@ import org.apache.sysds.runtime.functionobjects.BitwShiftL;
 import org.apache.sysds.runtime.functionobjects.BitwShiftR;
 import org.apache.sysds.runtime.functionobjects.BitwXor;
 import org.apache.sysds.runtime.functionobjects.Builtin;
+import org.apache.sysds.runtime.functionobjects.Builtin.BuiltinCode;
 import org.apache.sysds.runtime.functionobjects.Divide;
 import org.apache.sysds.runtime.functionobjects.Equals;
 import org.apache.sysds.runtime.functionobjects.GreaterThan;
@@ -50,10 +49,8 @@ import org.apache.sysds.runtime.functionobjects.PlusMultiply;
 import org.apache.sysds.runtime.functionobjects.Power;
 import org.apache.sysds.runtime.functionobjects.ValueFunction;
 import org.apache.sysds.runtime.functionobjects.Xor;
-import org.apache.sysds.runtime.functionobjects.Builtin.BuiltinCode;
 
-public class BinaryOperator  extends Operator implements Serializable
-{
+public class BinaryOperator extends Operator {
 	private static final long serialVersionUID = -2547950181558989209L;
 
 	public final ValueFunction fn;

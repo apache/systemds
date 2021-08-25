@@ -20,13 +20,11 @@
 
 package org.apache.sysds.runtime.matrix.operators;
 
-import java.io.Serializable;
-
 import org.apache.sysds.runtime.functionobjects.IndexFunction;
 import org.apache.sysds.runtime.functionobjects.ValueFunction;
 
 
-public class AggregateTernaryOperator extends Operator implements Serializable
+public class AggregateTernaryOperator extends Operator
 {
 	private static final long serialVersionUID = 4251745081160216784L;
 	

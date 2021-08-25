@@ -20,8 +20,6 @@
 
 package org.apache.sysds.runtime.matrix.operators;
 
-import java.io.Serializable;
-
 import org.apache.sysds.common.Types.CorrectionLocationType;
 import org.apache.sysds.runtime.functionobjects.KahanPlus;
 import org.apache.sysds.runtime.functionobjects.KahanPlusSq;
@@ -31,8 +29,7 @@ import org.apache.sysds.runtime.functionobjects.Plus;
 import org.apache.sysds.runtime.functionobjects.ValueFunction;
 
 
-public class AggregateOperator  extends Operator implements Serializable
-{
+public class AggregateOperator extends Operator {
 	private static final long serialVersionUID = 8761527329665129670L;
 
 	public final double initialValue;

@@ -200,7 +200,7 @@ public class CompressedMatrixTest extends AbstractCompressedUnaryTests {
 			// deserialize compressed matrix block
 			ByteArrayInputStream bis = new ByteArrayInputStream(bos.toByteArray());
 			DataInputStream fis = new DataInputStream(bis);
-			CompressedMatrixBlock cmb2 = new CompressedMatrixBlock();
+			CompressedMatrixBlock cmb2 = new CompressedMatrixBlock(-1, -1);
 			cmb2.readFields(fis);
 
 			// decompress the compressed matrix block
@@ -347,7 +347,7 @@ public class CompressedMatrixTest extends AbstractCompressedUnaryTests {
 			assertTrue(this.toString(), percentDistance > .99);
 		}
 		else
-			TestUtils.compareScalarBitsJUnit(ret2, ret1, 0, this.toString()); // Should be exactly same value
+			TestUtils.compareScalarBitsJUnit(ret2, ret1, 3, this.toString()); // Should be exactly same value
 
 	}
 
@@ -364,7 +364,7 @@ public class CompressedMatrixTest extends AbstractCompressedUnaryTests {
 			assertTrue(this.toString(), percentDistance > .99);
 		}
 		else
-			TestUtils.compareScalarBitsJUnit(ret2, ret1, 0, this.toString()); // Should be exactly same value
+			TestUtils.compareScalarBitsJUnit(ret2, ret1, 3, this.toString()); // Should be exactly same value
 
 	}
 
@@ -381,7 +381,7 @@ public class CompressedMatrixTest extends AbstractCompressedUnaryTests {
 			assertTrue(this.toString(), percentDistance > .99);
 		}
 		else
-			TestUtils.compareScalarBitsJUnit(ret2, ret1, 0, this.toString()); // Should be exactly same value
+			TestUtils.compareScalarBitsJUnit(ret2, ret1, 3, this.toString()); // Should be exactly same value
 
 	}
 
@@ -398,8 +398,39 @@ public class CompressedMatrixTest extends AbstractCompressedUnaryTests {
 			assertTrue(this.toString(), percentDistance > .99);
 		}
 		else
-			TestUtils.compareScalarBitsJUnit(ret2, ret1, 0, this.toString()); // Should be exactly same value
+			TestUtils.compareScalarBitsJUnit(ret2, ret1, 10, this.toString()); // Should be exactly same value
+	}
 
+	@Test
+	public void testMean() {
+		if(!(cmb instanceof CompressedMatrixBlock))
+			return;
+		double ret1 = cmb.mean();
+		double ret2 = mb.mean();
+		if(_cs != null && (_cs.lossy || overlappingType == OverLapping.SQUASH))
+			assertTrue(this.toString(), TestUtils.compareCellValue(ret2, ret1, lossyTolerance, false));
+		else if(OverLapping.effectOnOutput(overlappingType)) {
+			double percentDistance = TestUtils.getPercentDistance(ret2, ret1, true);
+			assertTrue(this.toString(), percentDistance > .99);
+		}
+		else
+			TestUtils.compareScalarBitsJUnit(ret2, ret1, 10, this.toString()); // Should be exactly same value
+	}
+
+	@Test
+	public void testProd() {
+		if(!(cmb instanceof CompressedMatrixBlock))
+			return;
+		double ret1 = cmb.prod();
+		double ret2 = mb.prod();
+		if(_cs != null && (_cs.lossy || overlappingType == OverLapping.SQUASH))
+			assertTrue(this.toString(), TestUtils.compareCellValue(ret2, ret1, lossyTolerance, false));
+		else if(OverLapping.effectOnOutput(overlappingType)) {
+			double percentDistance = TestUtils.getPercentDistance(ret2, ret1, true);
+			assertTrue(this.toString(), percentDistance > .99);
+		}
+		else
+			TestUtils.compareScalarBitsJUnit(ret2, ret1, 10, this.toString()); // Should be exactly same value
 	}
 
 	@Test
@@ -418,6 +449,15 @@ public class CompressedMatrixTest extends AbstractCompressedUnaryTests {
 
 		compareResultMatrices(ret1, ret2, 1);
 
+	}
+
+	@Test
+	public void testColSum() {
+		if(!(cmb instanceof CompressedMatrixBlock))
+			return;
+		MatrixBlock ret1 = cmb.colSum();
+		MatrixBlock ret2 = mb.colSum();
+		compareResultMatrices(ret1, ret2, 1);
 	}
 
 	@Test
@@ -508,7 +548,7 @@ public class CompressedMatrixTest extends AbstractCompressedUnaryTests {
 		try {
 			if(!(cmb instanceof CompressedMatrixBlock) || rows * cols > 10000)
 				return;
-			CompressedMatrixBlock cmbCopy = new CompressedMatrixBlock();
+			CompressedMatrixBlock cmbCopy = new CompressedMatrixBlock(cmb.getNumRows(), cmb.getNumColumns());
 			cmbCopy.copy(cmb);
 
 			compareResultMatrices(mb, cmbCopy, 1);
@@ -521,7 +561,7 @@ public class CompressedMatrixTest extends AbstractCompressedUnaryTests {
 
 	@Test(expected = DMLRuntimeException.class)
 	public void testCompressedMatrixCopyMatrixBlock_shouldThrowException() {
-		CompressedMatrixBlock cmbCopy = new CompressedMatrixBlock();
+		CompressedMatrixBlock cmbCopy = new CompressedMatrixBlock(mb.getNumRows(), mb.getNumColumns());
 		cmbCopy.copy(mb);
 	}
 

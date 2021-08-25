@@ -22,31 +22,38 @@ package org.apache.sysds.runtime.compress.estim;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.CompressionSettings;
+import org.apache.sysds.runtime.matrix.data.LibMatrixReorg;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
 public class CompressedSizeEstimatorFactory {
 	protected static final Log LOG = LogFactory.getLog(CompressedSizeEstimatorFactory.class.getName());
+	private static final int maxSampleSize = 1000000;
 
-	public static CompressedSizeEstimator getSizeEstimator(MatrixBlock data, CompressionSettings cs) {
+	public static CompressedSizeEstimator getSizeEstimator(MatrixBlock data, CompressionSettings cs, int k) {
 
-		final int nRows = cs.transposed ? data.getNumColumns() : data.getNumRows();
+		final int nRows = cs.transposed ? data.getNumColumns() :  data.getNumRows();
 		final int nCols = cs.transposed ? data.getNumRows() : data.getNumColumns();
 		final int nnzRows = (int) Math.ceil(data.getNonZeros() / nCols);
-		
+
 		final double sampleRatio = cs.samplingRatio;
-		final int sampleSize = getSampleSize(sampleRatio, nRows, cs.minimumSampleSize);
+		final int sampleSize = Math.min(getSampleSize(sampleRatio, nRows, cs.minimumSampleSize), maxSampleSize);
+		if(shouldUseExactEstimator(cs, nRows, sampleSize, nnzRows)) {
+			if(sampleSize > nnzRows && nRows > 10000 && nCols > 10 && !cs.transposed) {
+				data = LibMatrixReorg.transpose(data,
+					new MatrixBlock(data.getNumColumns(), data.getNumRows(), data.isInSparseFormat()), k);
+				cs.transposed = true;
+			}
+			return new CompressedSizeEstimatorExact(data, cs);
+		}
+		else {
+			return tryToMakeSampleEstimator(data, cs, sampleRatio, sampleSize, nRows, nnzRows, k);
+		}
 
-		final CompressedSizeEstimator est = (shouldUseExactEstimator(cs, nRows, sampleSize,
-			nnzRows)) ? new CompressedSizeEstimatorExact(data,
-				cs) : tryToMakeSampleEstimator(data, cs, sampleRatio, sampleSize, nRows, nnzRows);
-
-		LOG.debug("Estimating using: " + est);
-		return est;
 	}
 
 	private static CompressedSizeEstimator tryToMakeSampleEstimator(MatrixBlock data, CompressionSettings cs,
-		double sampleRatio, int sampleSize, int nRows, int nnzRows) {
-		CompressedSizeEstimatorSample estS = new CompressedSizeEstimatorSample(data, cs, sampleSize);
+		double sampleRatio, int sampleSize, int nRows, int nnzRows, int k) {
+		CompressedSizeEstimatorSample estS = new CompressedSizeEstimatorSample(data, cs, sampleSize, k);
 		while(estS.getSample() == null) {
 			LOG.warn("Doubling sample size");
 			sampleSize = sampleSize * 2;
@@ -59,7 +66,7 @@ public class CompressedSizeEstimatorFactory {
 	}
 
 	private static boolean shouldUseExactEstimator(CompressionSettings cs, int nRows, int sampleSize, int nnzRows) {
-		return cs.samplingRatio >= 1.0 || nRows < cs.minimumSampleSize || sampleSize > nnzRows;
+		return cs.samplingRatio >= 1.0 || nRows < cs.minimumSampleSize || sampleSize >= nnzRows;
 	}
 
 	private static int getSampleSize(double sampleRatio, int nRows, int minimumSampleSize) {

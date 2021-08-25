@@ -30,7 +30,6 @@ import java.util.concurrent.Future;
 import org.apache.commons.lang.NotImplementedException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.CompressionSettings;
@@ -62,7 +61,11 @@ public class CLALibBinaryCellOp {
 
 	public static MatrixBlock binaryOperations(BinaryOperator op, CompressedMatrixBlock m1, MatrixValue thatValue,
 		MatrixValue result) {
-		MatrixBlock that = CompressedMatrixBlock.getUncompressed(thatValue);
+		MatrixBlock that = CompressedMatrixBlock.getUncompressed(thatValue, "Decompressing right side in BinaryOps");
+		if(m1.getNumRows() <= 0)
+			LOG.error(m1);
+		if(thatValue.getNumRows() <= 0)
+			LOG.error(thatValue);
 		LibMatrixBincell.isValidDimensionsBinary(m1, that);
 		thatValue = that;
 		BinaryAccessType atype = LibMatrixBincell.getBinaryAccessType(m1, that);
@@ -71,7 +74,7 @@ public class CLALibBinaryCellOp {
 
 	public static MatrixBlock binaryOperationsLeft(BinaryOperator op, CompressedMatrixBlock m1, MatrixValue thatValue,
 		MatrixValue result) {
-		MatrixBlock that = CompressedMatrixBlock.getUncompressed(thatValue);
+		MatrixBlock that = CompressedMatrixBlock.getUncompressed(thatValue, "Decompressing left side in BinaryOps");
 		LibMatrixBincell.isValidDimensionsBinary(that, m1);
 		thatValue = that;
 		BinaryAccessType atype = LibMatrixBincell.getBinaryAccessType(that, m1);
@@ -91,25 +94,23 @@ public class CLALibBinaryCellOp {
 			}
 			else {
 				SoftReference<MatrixBlock> msf = m1.getSoftReferenceToDecompressed();
-				MatrixBlock d_compressed;
-				if(msf != null && msf.get() != null) {
+				MatrixBlock d_compressed = msf != null ? msf.get() : null;
+				if(d_compressed != null) {
 					// copy the decompressed matrix if there is a decompressed matrix already.
+					MatrixBlock tmp = d_compressed;
 					d_compressed = new MatrixBlock(m1.getNumRows(), m1.getNumColumns(), false);
-					d_compressed.copy(msf.get());
+					d_compressed.copy(tmp);
 				}
 				else {
-					// decompress the matrix if it is not already decompressed
 					d_compressed = m1.decompress(op.getNumThreads());
-					// clear the cached decompressed matrix since we intend to update it inplace.
 					m1.clearSoftReferenceToDecompressed();
 				}
 
-				if(left) 
-					LibMatrixBincell.bincellOpInPlaceLeft(d_compressed,that, op);
-				else 
-					LibMatrixBincell.bincellOpInPlaceRight(d_compressed, that, op);
-				
-				return d_compressed;
+				if(left)
+					return LibMatrixBincell.bincellOpInPlaceLeft(d_compressed, that, op);
+				else
+					return LibMatrixBincell.bincellOpInPlaceRight(d_compressed, that, op);
+
 			}
 		}
 		else if(isSupportedBinaryCellOp(op.fn))
@@ -292,30 +293,43 @@ public class CLALibBinaryCellOp {
 		MatrixBlock ret = new MatrixBlock(m1.getNumRows(), m1.getNumColumns(), false, -1).allocateBlock();
 
 		final int blkz = CompressionSettings.BITMAP_BLOCK_SZ;
-		int k = OptimizerUtils.getConstrainedNumThreads(-1);
-		ExecutorService pool = CommonThreadPool.get(k);
-		ArrayList<Callable<Integer>> tasks = new ArrayList<>();
-
-		try {
+		final int k = op.getNumThreads();
+		long nnz = 0;
+		;
+		if(k <= 1) {
 			for(int i = 0; i * blkz < m1.getNumRows(); i++) {
 				if(left)
-					tasks.add(
-						new BinaryMVColLeftTask(m1, m2, ret, i * blkz, Math.min(m1.getNumRows(), (i + 1) * blkz), op));
+					nnz += new BinaryMVColLeftTask(m1, m2, ret, i * blkz, Math.min(m1.getNumRows(), (i + 1) * blkz), op)
+						.call();
 				else
-					tasks
-						.add(new BinaryMVColTask(m1, m2, ret, i * blkz, Math.min(m1.getNumRows(), (i + 1) * blkz), op));
+					nnz += new BinaryMVColTask(m1, m2, ret, i * blkz, Math.min(m1.getNumRows(), (i + 1) * blkz), op)
+						.call();
 
 			}
-			long nnz = 0;
-			for(Future<Integer> f : pool.invokeAll(tasks))
-				nnz += f.get();
-			ret.setNonZeros(nnz);
-			pool.shutdown();
 		}
-		catch(InterruptedException | ExecutionException e) {
-			e.printStackTrace();
-			throw new DMLRuntimeException(e);
+		else {
+			ExecutorService pool = CommonThreadPool.get(op.getNumThreads());
+			ArrayList<Callable<Integer>> tasks = new ArrayList<>();
+			try {
+				for(int i = 0; i * blkz < m1.getNumRows(); i++) {
+					if(left)
+						tasks.add(new BinaryMVColLeftTask(m1, m2, ret, i * blkz,
+							Math.min(m1.getNumRows(), (i + 1) * blkz), op));
+					else
+						tasks.add(
+							new BinaryMVColTask(m1, m2, ret, i * blkz, Math.min(m1.getNumRows(), (i + 1) * blkz), op));
+
+				}
+				for(Future<Integer> f : pool.invokeAll(tasks))
+					nnz += f.get();
+				pool.shutdown();
+			}
+			catch(InterruptedException | ExecutionException e) {
+				e.printStackTrace();
+				throw new DMLRuntimeException(e);
+			}
 		}
+		ret.setNonZeros(nnz);
 
 		return ret;
 	}

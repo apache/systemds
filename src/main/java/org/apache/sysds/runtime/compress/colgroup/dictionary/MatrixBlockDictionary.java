@@ -49,11 +49,10 @@ public class MatrixBlockDictionary extends ADictionary {
 
 	@Override
 	public double[] getValues() {
-		// FIXME fix MinMaxGroup Initialization to avoid conversion to dense
+		LOG.warn("Inefficient call to getValues for a MatrixBlockDictionary");
 		if( !_data.isInSparseFormat() )
 			_data.sparseToDense();
 		return _data.getDenseBlockValues();
-		//throw new DMLCompressionException("Get Values should not be called when you have a MatrixBlockDictionary");
 	}
 
 	@Override

@@ -35,7 +35,6 @@ public class CompressionSettingsBuilder {
 	private double samplingRatio;
 	private boolean allowSharedDictionary = false;
 	private String transposeInput;
-	private boolean skipList = true;
 	private int seed = -1;
 	private boolean lossy = false;
 	private EnumSet<CompressionType> validCompressions;
@@ -71,7 +70,6 @@ public class CompressionSettingsBuilder {
 		this.samplingRatio = that.samplingRatio;
 		this.allowSharedDictionary = that.allowSharedDictionary;
 		this.transposeInput = that.transposeInput;
-		this.skipList = that.skipList;
 		this.seed = that.seed;
 		this.lossy = that.lossy;
 		this.validCompressions = EnumSet.copyOf(that.validCompressions);
@@ -146,18 +144,6 @@ public class CompressionSettingsBuilder {
 			default:
 				throw new DMLCompressionException("Invalid transpose technique");
 		}
-		return this;
-	}
-
-	/**
-	 * Specify if the Offset list encoding should utilize skip lists. This increase size of compression but improves
-	 * performance in Offset encodings. OLE and RLE.
-	 * 
-	 * @param skipList a boolean specifying if the skiplist function is enabled
-	 * @return The CompressionSettingsBuilder
-	 */
-	public CompressionSettingsBuilder setSkipList(boolean skipList) {
-		this.skipList = skipList;
 		return this;
 	}
 
@@ -287,7 +273,7 @@ public class CompressionSettingsBuilder {
 	 * @return The CompressionSettings
 	 */
 	public CompressionSettings create() {
-		return new CompressionSettings(samplingRatio, allowSharedDictionary, transposeInput, skipList, seed, lossy,
+		return new CompressionSettings(samplingRatio, allowSharedDictionary, transposeInput, seed, lossy,
 			validCompressions, sortValuesByLength, columnPartitioner, maxColGroupCoCode, coCodePercentage,
 			minimumSampleSize, estimationType, costType);
 	}

@@ -16,40 +16,23 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-
 package org.apache.sysds.runtime.compress.utils;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.apache.sysds.runtime.util.UtilFunctions;
+public class DCounts {
+	public double key = Double.MAX_VALUE;
+	public int count;
 
-public class Util {
-
-	protected static final Log LOG = LogFactory.getLog(Util.class.getName());
-	public static int[] join(int[] lhs, int[] rhs) {
-		int[] joined = new int[lhs.length + rhs.length];
-		int lp = 0;
-		int rp = 0;
-		int i = 0;
-		for(; i < joined.length && lp < lhs.length && rp < rhs.length; i++) {
-			if(lhs[lp] < rhs[rp]) 
-				joined[i] = lhs[lp++];
-			else 
-				joined[i] = rhs[rp++];
-		}
-
-		while(lp < lhs.length) 
-			joined[i++] = lhs[lp++];
-		
-		while(rp < rhs.length) 
-			joined[i++] = rhs[rp++];
-		
-		return joined;
+	public DCounts(double key) {
+		this.key = key;
+		count = 1;
 	}
 
-	public static int getPow2(int x) {
-		int v = UtilFunctions.nextIntPow2(x + 1);
-		return Math.max(v, 4);
+	public void inc() {
+		count++;
 	}
 
+	@Override
+	public String toString() {
+		return "[" + key + ", " + count + "]";
+	}
 }

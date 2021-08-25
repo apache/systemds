@@ -46,7 +46,7 @@ public class ComputeCost {
 	 * Get compute cost for given HOP based on the number of floating point operations per output cell
 	 * and the total number of output cells.
 	 * @param currentHop for which compute cost is returned
-	 * @return compute cost of currentHop
+	 * @return compute cost of currentHop as number of floating point operations
 	 */
 	public static double getHOPComputeCost(Hop currentHop){
 		double costs = 1;

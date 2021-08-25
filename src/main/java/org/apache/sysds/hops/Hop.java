@@ -36,6 +36,7 @@ import org.apache.sysds.common.Types.OpOp2;
 import org.apache.sysds.common.Types.OpOpData;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.conf.ConfigurationManager;
+import org.apache.sysds.hops.cost.FederatedCost;
 import org.apache.sysds.hops.recompile.Recompiler;
 import org.apache.sysds.hops.recompile.Recompiler.ResetType;
 import org.apache.sysds.lops.CSVReBlock;
@@ -91,9 +92,9 @@ public abstract class Hop implements ParseInfo {
 	 * If it is lout, the output should be retrieved by the coordinator.
 	 */
 	protected FederatedOutput _federatedOutput = FederatedOutput.NONE;
-	protected double _federatedCost = 0;
+	protected FederatedCost _federatedCost = new FederatedCost();
 	
-	// Estimated size for the output produced from this Hop
+	// Estimated size for the output produced from this Hop in bytes
 	protected double _outputMemEstimate = OptimizerUtils.INVALID_SIZE;
 	
 	// Estimated size for the entire operation represented by this Hop
@@ -536,7 +537,7 @@ public abstract class Hop implements ParseInfo {
 	 * only use getMemEstimate(), which gives memory required to store 
 	 * all inputs and the output.
 	 * 
-	 * @return output size memory estimate
+	 * @return output size memory estimate in bytes
 	 */
 	protected double getOutputSize() {
 		return _outputMemEstimate;
@@ -583,12 +584,11 @@ public abstract class Hop implements ParseInfo {
 	/**
 	 * NOTES:
 	 * * Purpose: Whenever the output dimensions / sparsity of a hop are unknown, this hop
-	 *   should store its worst-case output statistics (if known) in that table. Subsequent
-	 *   hops can then
+	 *   should store its worst-case output statistics (if known) in that table.
 	 * * Invocation: Intended to be called for ALL root nodes of one Hops DAG with the same
 	 *   (initially empty) memo table.
 	 * 
-	 * @return memory estimate
+	 * @return memory estimate in bytes
 	 */
 	public double getMemEstimate() {
 		if ( OptimizerUtils.isMemoryBasedOptLevel() ) {
@@ -626,7 +626,11 @@ public abstract class Hop implements ParseInfo {
 	{
 		return getInputSize();
 	}
-	
+
+	/**
+	 * Output memory estimate in bytes.
+	 * @return output memory estimate in bytes
+	 */
 	public double getOutputMemEstimate()
 	{
 		return getOutputSize();
@@ -891,14 +895,14 @@ public abstract class Hop implements ParseInfo {
 	}
 
 	public boolean federatedCostInitialized(){
-		return _federatedCost > 0;
+		return _federatedCost.getTotal() > 0;
 	}
 
-	public double getFederatedCost(){
+	public FederatedCost getFederatedCost(){
 		return _federatedCost;
 	}
 
-	public void setFederatedCost(double cost){
+	public void setFederatedCost(FederatedCost cost){
 		_federatedCost = cost;
 	}
 

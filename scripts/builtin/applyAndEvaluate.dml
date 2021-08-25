@@ -49,7 +49,6 @@ return (Matrix[Double] result)
   }
     # # # when the evaluation function is called first we also compute and keep hyperparams of target application
   dirtyScore = getDirtyScore(X=Xtrain, Y=eYtrain, Xtest=Xtest, Ytest=eYtest, metaList=metaList, evaluationFunc=evaluationFunc, evalFunHp=evalFunHp)
-  print("dirty score: "+dirtyScore)
   [Xtrain, Xtest] = runStringPipeline(Xtrain, Xtest, schema, mask, FALSE, correctTypos)
   
   # # # if mask has 1s then there are categorical features
@@ -63,7 +62,6 @@ return (Matrix[Double] result)
   no_of_param = as.scalar(hp[1, 1]) + 1
   hp_width= hp[1, 2:no_of_param]
   hp_matrix = matrix(hp_width, rows=ncol(pip), cols=ncol(hp_width)/ncol(pip))
-  print("hp matrix:\n"+toString(hp_matrix))
   pipList = list(lp = lp, ph = pip, hp = hp_matrix, flags = no_of_flag_vars)
   # argList = list(X=X, Y=Y, Xtest=Xtest, Ytest=Ytest, Xorig=clone_X, pipList=pipList, metaList=metaList, evalFunHp=evalFunHp, trainML=0)
   # # # now test accuracy

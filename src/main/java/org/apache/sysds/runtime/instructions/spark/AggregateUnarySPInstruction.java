@@ -301,10 +301,7 @@ public class AggregateUnarySPInstruction extends UnarySPInstruction {
 			MatrixBlock blkOut = new MatrixBlock();
 			
 			//unary aggregate operation
-			arg0.aggregateUnaryOperations(_op, blkOut, _blen, _ix);
-			
-			//always drop correction since no aggregation
-			blkOut.dropLastRowsOrColumns(_op.aggOp.correction);
+			arg0.aggregateUnaryOperations(_op, blkOut, _blen, _ix, true);
 			
 			//output new tuple
 			return blkOut;

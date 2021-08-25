@@ -68,7 +68,7 @@ public class BinUaggChainSPInstruction extends UnarySPInstruction {
 		
 		//set output RDD
 		updateUnaryOutputDataCharacteristics(sec);
-		sec.setRDDHandleForVariable(output.getName(), out);	
+		sec.setRDDHandleForVariable(output.getName(), out);
 		sec.addLineageRDD(output.getName(), input1.getName());
 	}
 
@@ -90,16 +90,14 @@ public class BinUaggChainSPInstruction extends UnarySPInstruction {
 		{
 			int blen = arg0.getNumRows();
 			
-			//perform unary aggregate operation
-			MatrixBlock out1 = new MatrixBlock();
-			arg0.aggregateUnaryOperations(_uaggOp, out1, blen, null);
+			// perform unary aggregate operation
+			// true for CP instruction since we want to remove correction part anyway.
+			MatrixBlock out1 = arg0.aggregateUnaryOperations(_uaggOp, null, blen, null, true);
 			
-			//strip-off correction
-			out1.dropLastRowsOrColumns(_uaggOp.aggOp.correction);
-		
-			//perform binary operation
-			MatrixBlock out2 = new MatrixBlock();
-			return arg0.binaryOperations(_bOp, out1, out2);
+			// perform binary operation
+			MatrixBlock ret = arg0.binaryOperations(_bOp, out1);
+
+			return ret;
 		}
 	}
 }

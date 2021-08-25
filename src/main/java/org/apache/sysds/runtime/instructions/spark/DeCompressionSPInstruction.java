@@ -52,23 +52,32 @@ public class DeCompressionSPInstruction extends UnarySPInstruction {
 		JavaPairRDD<MatrixIndexes, MatrixBlock> in = sec.getBinaryMatrixBlockRDDHandleForVariable(input1.getName());
 
 		// execute decompression
-		JavaPairRDD<MatrixIndexes, MatrixBlock> out = in.mapValues(new DeCompressionFunction());
+		JavaPairRDD<MatrixIndexes, MatrixBlock> out = 
+			in.mapValues(new DeCompressionFunction());
 
 		DMLCompressionStatistics.addDecompressSparkCount();
 		// set outputs
+		updateUnaryOutputDataCharacteristics(sec);
 		sec.setRDDHandleForVariable(output.getName(), out);
 		sec.addLineageRDD(input1.getName(), output.getName());
 	}
 
 	public static class DeCompressionFunction implements Function<MatrixBlock, MatrixBlock> {
-		private static final long serialVersionUID = -6528833083609413922L;
+		private static final long serialVersionUID = -65288330836413922L;
+
+		public DeCompressionFunction(){
+			// do nothing.
+		}
 
 		@Override
 		public MatrixBlock call(MatrixBlock arg0) throws Exception {
 			if(arg0 instanceof CompressedMatrixBlock) 
 				return ((CompressedMatrixBlock) arg0).decompress(OptimizerUtils.getConstrainedNumThreads(-1));
-			else 
-				return arg0;
+			else{
+				MatrixBlock ret = new MatrixBlock();
+				ret.copy(arg0);
+				return ret;
+			}
 		}
 	}
 }

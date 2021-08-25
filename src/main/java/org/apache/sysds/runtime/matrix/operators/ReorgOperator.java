@@ -20,12 +20,9 @@
 
 package org.apache.sysds.runtime.matrix.operators;
 
-import java.io.Serializable;
-
 import org.apache.sysds.runtime.functionobjects.IndexFunction;
 
-public class ReorgOperator  extends Operator implements Serializable
-{
+public class ReorgOperator extends Operator{
 	private static final long serialVersionUID = -5322516429026298404L;
 
 	public final IndexFunction fn;

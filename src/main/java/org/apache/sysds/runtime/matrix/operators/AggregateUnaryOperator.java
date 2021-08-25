@@ -30,8 +30,7 @@ import org.apache.sysds.runtime.functionobjects.ReduceCol;
 import org.apache.sysds.runtime.functionobjects.ReduceRow;
 
 
-public class AggregateUnaryOperator  extends Operator 
-{
+public class AggregateUnaryOperator extends Operator {
 	private static final long serialVersionUID = 6690553323120787735L;
 
 	public final AggregateOperator aggOp;

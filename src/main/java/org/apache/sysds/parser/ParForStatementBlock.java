@@ -170,6 +170,11 @@ public class ParForStatementBlock extends ForStatementBlock
 		return _resultVars;
 	}
 	
+	public void setResultVariables(ArrayList<ResultVar> rvars) {
+		_resultVars.clear();
+		_resultVars.addAll(rvars);
+	}
+	
 	private void addToResultVariablesNoDup( String var, boolean accum ) {
 		addToResultVariablesNoDup(new ResultVar(var, accum));
 	}

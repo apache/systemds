@@ -24,6 +24,7 @@ import static org.junit.Assert.fail;
 import java.io.File;
 
 import org.apache.sysds.common.Types.ExecMode;
+import org.apache.sysds.runtime.compress.workload.WorkloadAnalyzer;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
@@ -36,6 +37,7 @@ public class WorkloadAlgorithmTest extends AutomatedTestBase {
 	private final static String TEST_NAME1 = "WorkloadAnalysisMLogReg";
 	private final static String TEST_NAME2 = "WorkloadAnalysisLm";
 	private final static String TEST_NAME3 = "WorkloadAnalysisPCA";
+	private final static String TEST_NAME4 = "WorkloadAnalysisSliceLine";
 	private final static String TEST_DIR = "functions/compress/workload/";
 	private final static String TEST_CLASS_DIR = TEST_DIR + WorkloadAnalysisTest.class.getSimpleName() + "/";
 
@@ -45,40 +47,52 @@ public class WorkloadAlgorithmTest extends AutomatedTestBase {
 		addTestConfiguration(TEST_NAME1, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] {"B"}));
 		addTestConfiguration(TEST_NAME2, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2, new String[] {"B"}));
 		addTestConfiguration(TEST_NAME3, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME3, new String[] {"B"}));
-
+		addTestConfiguration(TEST_NAME4, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME4, new String[] {"B"}));
 	}
 
 	@Test
 	public void testMLogRegCP() {
-		runWorkloadAnalysisTest(TEST_NAME1, ExecMode.HYBRID, 2);
+		runWorkloadAnalysisTest(TEST_NAME1, ExecMode.HYBRID, 2, false);
 	}
 
 	@Test
 	public void testLmSP() {
-		runWorkloadAnalysisTest(TEST_NAME2, ExecMode.SPARK, 2);
+		runWorkloadAnalysisTest(TEST_NAME2, ExecMode.SPARK, 2, false);
 	}
 
 	@Test
 	public void testLmCP() {
-		runWorkloadAnalysisTest(TEST_NAME2, ExecMode.HYBRID, 2);
+		runWorkloadAnalysisTest(TEST_NAME2, ExecMode.HYBRID, 2, false);
 	}
 
 	@Test
 	public void testPCASP() {
-		runWorkloadAnalysisTest(TEST_NAME3, ExecMode.SPARK, 1);
+		runWorkloadAnalysisTest(TEST_NAME3, ExecMode.SPARK, 1, false);
 	}
 
 	@Test
 	public void testPCACP() {
-		runWorkloadAnalysisTest(TEST_NAME3, ExecMode.HYBRID, 1);
+		runWorkloadAnalysisTest(TEST_NAME3, ExecMode.HYBRID, 1, false);
 	}
 
-	private void runWorkloadAnalysisTest(String testname, ExecMode mode, int compressionCount) {
+	@Test
+	public void testSliceLineCP1() {
+		runWorkloadAnalysisTest(TEST_NAME4, ExecMode.HYBRID, 0, false);
+	}
+	
+	@Test
+	public void testSliceLineCP2() {
+		runWorkloadAnalysisTest(TEST_NAME4, ExecMode.HYBRID, 2, true);
+	}
+	
+	private void runWorkloadAnalysisTest(String testname, ExecMode mode, int compressionCount, boolean intermediates) {
 		ExecMode oldPlatform = setExecMode(mode);
-
+		boolean oldIntermediates = WorkloadAnalyzer.ALLOW_INTERMEDIATE_CANDIDATES;
+		
 		try {
 			loadTestConfiguration(getTestConfiguration(testname));
-
+			WorkloadAnalyzer.ALLOW_INTERMEDIATE_CANDIDATES = intermediates;
+			
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + testname + ".dml";
 			programArgs = new String[] {"-explain","-stats",
@@ -99,9 +113,11 @@ public class WorkloadAlgorithmTest extends AutomatedTestBase {
 				.getCPHeavyHitterCount("compress") : Statistics.getCPHeavyHitterCount("sp_compress");
 
 			Assert.assertEquals(compressionCount, actualCompressionCount);
-			Assert.assertTrue( mode == ExecMode.HYBRID ? heavyHittersContainsString("compress") : heavyHittersContainsString("sp_compress"));
-			Assert.assertFalse(heavyHittersContainsString("m_scale"));
-
+			if( compressionCount > 0 )
+				Assert.assertTrue( mode == ExecMode.HYBRID ?
+					heavyHittersContainsString("compress") : heavyHittersContainsString("sp_compress"));
+			if( !testname.equals(TEST_NAME4) )
+				Assert.assertFalse(heavyHittersContainsString("m_scale"));
 		}
 		catch(Exception e) {
 			resetExecMode(oldPlatform);
@@ -109,6 +125,7 @@ public class WorkloadAlgorithmTest extends AutomatedTestBase {
 		}
 		finally {
 			resetExecMode(oldPlatform);
+			WorkloadAnalyzer.ALLOW_INTERMEDIATE_CANDIDATES = oldIntermediates;
 		}
 	}
 

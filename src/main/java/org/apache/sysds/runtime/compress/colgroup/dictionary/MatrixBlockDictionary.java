@@ -24,7 +24,6 @@ import java.io.DataOutput;
 import java.io.IOException;
 
 import org.apache.commons.lang.NotImplementedException;
-import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.DenseBlockFP64;
 import org.apache.sysds.runtime.data.SparseBlock;
@@ -50,7 +49,11 @@ public class MatrixBlockDictionary extends ADictionary {
 
 	@Override
 	public double[] getValues() {
-		throw new DMLCompressionException("Get Values should not be called when you have a MatrixBlockDictionary");
+		// FIXME fix MinMaxGroup Initialization to avoid conversion to dense
+		if( !_data.isInSparseFormat() )
+			_data.sparseToDense();
+		return _data.getDenseBlockValues();
+		//throw new DMLCompressionException("Get Values should not be called when you have a MatrixBlockDictionary");
 	}
 
 	@Override

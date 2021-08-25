@@ -19,30 +19,35 @@
 #
 #-------------------------------------------------------------
 
-X = read($1) + 1;
-Y = read($2);
+# data preparation
+FXY = read("./src/test/resources/datasets/Salaries.csv",
+  data_type="frame", format="csv", header=TRUE);
+F = FXY[,1:ncol(FXY)-1];
+y = as.matrix(FXY[,ncol(FXY)]);
+jspec= "{ ids:true, recode:[1,2,3,6],bin:[" 
+      +"{id:4, method:equi-width, numbins:14},"
+      +"{id:5, method:equi-width, numbins:12}]}"
+[X,M] = transformencode(target=F, spec=jspec);
+X = X[,2:ncol(X)]
 
+m = nrow(X)
+n = ncol(X)
+fdom = colMaxs(X);
+foffb = t(cumsum(t(fdom))) - fdom;
+foffe = t(cumsum(t(fdom)))
+rix = matrix(seq(1,m)%*%matrix(1,1,n), m*n, 1)
+cix = matrix(X + foffb, m*n, 1);
+X2 = table(rix, cix); #one-hot encoded
 
-print("")
-print("MLogReg")
+# learn model
+B = lm(X=X2, y=y, verbose=FALSE);
+yhat = X2 %*% B;
+e = (y-yhat)^2;
 
-[X_s,s,c] = scale(X=X, scale=TRUE, center=TRUE);
-B = multiLogReg(X=X_s, Y=Y, verbose=FALSE, maxi=2, maxii=2);
-[nn, P, acc] = multiLogRegPredict(X=X_s, B=B, Y=Y)
+# call slice finding
+[TS,TR,d] = slicefinder(X=X, e=e, k=10,
+  alpha=0.95, minSup=4, tpEval=TRUE, verbose=TRUE);
 
-
-[nn, C] = confusionMatrix(P, Y)
-print("Confusion: ")
-print(toString(C))
-
-
-print("")
-print("SliceFinder")
-
-e = Y == P
-
-[tk,tkc,d] = slicefinder(X=X, e=e, maxL = 2, verbose=TRUE)
-
-print("tk          :\n" + toString(tk))
-print("tkc         :\n" + toString(tkc))
+print("TS:\n" + toString(TS))
+print("TR:\n" + toString(TR))
 print("Debug matrix:\n" + toString(d))

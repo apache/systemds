@@ -107,7 +107,10 @@ public class CompressedMatrixBlock extends MatrixBlock {
 	private static final Log LOG = LogFactory.getLog(CompressedMatrixBlock.class.getName());
 	private static final long serialVersionUID = 73193720143154058L;
 
-	protected List<AColGroup> _colGroups;
+	/**
+	 * Column groups
+	 */
+	protected transient List<AColGroup> _colGroups;
 
 	/**
 	 * Boolean specifying if the colGroups are overlapping each other. This happens after a right matrix multiplication.
@@ -117,7 +120,7 @@ public class CompressedMatrixBlock extends MatrixBlock {
 	/**
 	 * Soft reference to a decompressed version of this matrix block.
 	 */
-	protected SoftReference<MatrixBlock> decompressedVersion;
+	protected transient SoftReference<MatrixBlock> decompressedVersion;
 
 	public CompressedMatrixBlock() {
 		super(true);

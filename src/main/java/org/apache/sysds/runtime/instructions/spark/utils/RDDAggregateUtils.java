@@ -47,7 +47,7 @@ import org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator;
  * and with that acceptable. 
  * 
  */
-public class RDDAggregateUtils 
+public class RDDAggregateUtils
 {	
 	//internal configuration to use tree aggregation (treeReduce w/ depth=2),
 	//this is currently disabled because it was 2x slower than a simple

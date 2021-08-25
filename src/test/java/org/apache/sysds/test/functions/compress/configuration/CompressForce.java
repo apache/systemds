@@ -96,31 +96,26 @@ public class CompressForce extends CompressBase {
 	}
 
 	@Test
-	@Ignore
 	public void test_ElementWiseBinaryMultiplyOp_right_CP() {
 		runTest(1500, 1, 1, 1, ExecType.CP, "ewbm_right");
 	}
 
 	@Test
-	@Ignore
 	public void test_ElementWiseBinaryMultiplyOp_right_SP() {
 		runTest(1500, 1, 2, 1, ExecType.SPARK, "ewbm_right");
 	}
 
 	@Test
-	@Ignore
 	public void test_ElementWiseBinaryMultiplyOp_left_CP() {
 		runTest(1500, 1, 1, 1, ExecType.CP, "ewbm_left");
 	}
 
 	@Test
-	@Ignore
 	public void test_ElementWiseBinaryMultiplyOp_left_SP() {
 		runTest(1500, 1, 2, 1, ExecType.SPARK, "ewbm_left");
 	}
 
 	@Test
-	@Ignore
 	public void test_ElementWiseBinaryMultiplyOp_left_SP_larger() {
 		runTest(1500, 15, 2, 1, ExecType.SPARK, "ewbm_left");
 	}

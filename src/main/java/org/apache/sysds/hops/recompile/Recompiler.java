@@ -93,6 +93,7 @@ import org.apache.sysds.runtime.instructions.cp.IntObject;
 import org.apache.sysds.runtime.instructions.cp.ListObject;
 import org.apache.sysds.runtime.instructions.cp.ScalarObject;
 import org.apache.sysds.runtime.io.IOUtilFunctions;
+import org.apache.sysds.runtime.lineage.LineageItem;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
@@ -1578,7 +1579,7 @@ public class Recompiler {
 				throw new DMLRuntimeException(ex);
 			}
 		}
-		
+
 		//check valid dimensions and memory requirements
 		double sp = OptimizerUtils.getSparsity(rows, cols, nnz);
 		double mem = MatrixBlock.estimateSizeInMemory(rows, cols, sp);
@@ -1593,7 +1594,8 @@ public class Recompiler {
 		long estFilesize = (long)(3.5 * mem); //conservative estimate
 		long cpThreshold = CP_REBLOCK_THRESHOLD_SIZE * 
 			OptimizerUtils.getParallelTextReadParallelism();
-		return (estFilesize < cpThreshold);
+		return (iimd.getFileFormat() == FileFormat.BINARY
+			|| estFilesize < cpThreshold); //for text conservative
 	}
 	
 	public static boolean checkCPCheckpoint(DataCharacteristics dc) {
@@ -1601,9 +1603,13 @@ public class Recompiler {
 			&& OptimizerUtils.isValidCPDimensions(dc.getRows(), dc.getCols())
 			&& !OptimizerUtils.exceedsCachingThreshold(dc.getCols(), OptimizerUtils.estimateSize(dc));
 	}
+
+	public static void executeInMemoryReblock(ExecutionContext ec, String varin, String varout) {
+		executeInMemoryReblock(ec, varin, varout, null);
+	}
 	
 	@SuppressWarnings("unchecked")
-	public static void executeInMemoryReblock(ExecutionContext ec, String varin, String varout) {
+	public static void executeInMemoryReblock(ExecutionContext ec, String varin, String varout, LineageItem litem) {
 		CacheableData<CacheBlock> in = (CacheableData<CacheBlock>) ec.getCacheableData(varin);
 		CacheableData<CacheBlock> out = (CacheableData<CacheBlock>) ec.getCacheableData(varout);
 
@@ -1618,6 +1624,7 @@ public class Recompiler {
 			
 			//set output (incl update matrix characteristics)
 			out.acquireModify(mb);
+			out.setCacheLineage(litem);
 			out.release();
 			in.release();
 		}

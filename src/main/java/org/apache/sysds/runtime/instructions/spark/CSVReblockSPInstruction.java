@@ -119,8 +119,9 @@ public class CSVReblockSPInstruction extends UnarySPInstruction {
 
 		//check for in-memory reblock (w/ lazy spark context, potential for latency reduction)
 		if( Recompiler.checkCPReblock(sec, input1.getName()) ) {
-			if( input1.getDataType().isMatrix() || input1.getDataType().isFrame() )
+			if( input1.getDataType().isMatrix() || input1.getDataType().isFrame() ) {
 				Recompiler.executeInMemoryReblock(sec, input1.getName(), output.getName());
+			}
 			Statistics.decrementNoOfExecutedSPInst();
 			return;
 		}

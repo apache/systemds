@@ -21,11 +21,12 @@ package org.apache.sysds.runtime.compress.colgroup.mapping;
 
 import java.io.DataOutput;
 import java.io.IOException;
+import java.io.Serializable;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-public abstract class AMapToData {
+public abstract class AMapToData implements Serializable {
 
 	protected static final Log LOG = LogFactory.getLog(AMapToData.class.getName());
 

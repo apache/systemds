@@ -30,6 +30,7 @@ import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
 import org.apache.sysds.runtime.compress.colgroup.offset.AIterator;
 import org.apache.sysds.runtime.compress.colgroup.offset.AOffset;
 import org.apache.sysds.runtime.compress.colgroup.offset.OffsetFactory;
+import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
@@ -49,7 +50,7 @@ public class ColGroupSDCSingle extends ColGroupValue {
 	/**
 	 * Sparse row indexes for the data
 	 */
-	protected AOffset _indexes;
+	protected transient AOffset _indexes;
 
 	/**
 	 * Constructor for serialization
@@ -92,28 +93,32 @@ public class ColGroupSDCSingle extends ColGroupValue {
 	protected void decompressToBlockUnSafeDenseDictionary(MatrixBlock target, int rl, int ru, int offT,
 		double[] values) {
 		final int nCol = _colIndexes.length;
-		final int tCol = target.getNumColumns();
 		final int offsetToDefault = values.length - nCol;
+		final DenseBlock db = target.getDenseBlock();
 
-		double[] c = target.getDenseBlockValues();
-		offT = offT * tCol;
 		int i = rl;
-		AIterator it = _indexes.getIterator();
-		it.skipTo(rl);
-		for(; i < ru && it.hasNext(); i++, offT += tCol) {
+		AIterator it = _indexes.getIterator(rl);
+		for(; i < ru && it.hasNext(); i++, offT++) {
+			final double[] c = db.values(offT);
+			final int off = db.pos(offT);
 			if(it.value() == i) {
 				for(int j = 0; j < nCol; j++)
-					c[offT + _colIndexes[j]] += values[j];
+					c[off + _colIndexes[j]] += values[j];
 				it.next();
 			}
 			else
 				for(int j = 0; j < nCol; j++)
-					c[offT + _colIndexes[j]] += values[offsetToDefault + j];
+					c[off + _colIndexes[j]] += values[offsetToDefault + j];
 		}
 
-		for(; i < ru; i++, offT += tCol)
+		for(; i < ru; i++, offT++) {
+			final double[] c = db.values(offT);
+			final int off = db.pos(offT);
 			for(int j = 0; j < nCol; j++)
-				c[offT + _colIndexes[j]] += values[offsetToDefault + j];
+				c[off + _colIndexes[j]] += values[offsetToDefault + j];
+		}
+		
+		_indexes.cacheIterator(it, ru );
 	}
 
 	@Override
@@ -217,7 +222,7 @@ public class ColGroupSDCSingle extends ColGroupValue {
 	}
 
 	@Override
-	public void preAggregateDense(MatrixBlock m, MatrixBlock preAgg, int rl, int ru, int cl, int cu){
+	public void preAggregateDense(MatrixBlock m, MatrixBlock preAgg, int rl, int ru, int cl, int cu) {
 		final double[] mV = m.getDenseBlockValues();
 		final double[] preAV = preAgg.getDenseBlockValues();
 		final int numVals = getNumValues();
@@ -371,9 +376,9 @@ public class ColGroupSDCSingle extends ColGroupValue {
 			while(itThat.hasNext()) {
 				final int thatV = itThat.value();
 				final int fr = that.getIndex(itThat.getDataIndexAndIncrement());
-				if(thatV == itThis.skipTo(thatV)) 
+				if(thatV == itThis.skipTo(thatV))
 					that._dict.addToEntry(ret, fr, 0, nCol);
-				else 
+				else
 					that._dict.addToEntry(ret, fr, 1, nCol);
 			}
 			return ret;
@@ -463,6 +468,16 @@ public class ColGroupSDCSingle extends ColGroupValue {
 			return ret;
 		}
 
+	}
+
+	public ColGroupSDCSingleZeros extractCommon(double[] constV) {
+		double[] commonV = _dict.getTuple(getNumValues() - 1, _colIndexes.length);
+
+		for(int i = 0; i < _colIndexes.length; i++)
+			constV[_colIndexes[i]] += commonV[i];
+
+		ADictionary subtractedDict = _dict.subtractTuple(commonV);
+		return new ColGroupSDCSingleZeros(_colIndexes, _numRows, subtractedDict, _indexes, getCounts());
 	}
 
 }

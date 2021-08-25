@@ -23,6 +23,7 @@ import java.util.Arrays;
 
 import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
+import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
@@ -92,11 +93,13 @@ public class ColGroupConst extends ColGroupValue {
 	@Override
 	protected void decompressToBlockUnSafeDenseDictionary(MatrixBlock target, int rl, int ru, int offT,
 		double[] values) {
-		double[] c = target.getDenseBlockValues();
-		offT = offT * target.getNumColumns();
-		for(int i = rl; i < ru; i++, offT += target.getNumColumns())
+		final DenseBlock db = target.getDenseBlock();
+		for(int i = rl; i < ru; i++, offT++){
+			final double[] c = db.values(offT);
+			final int off = db.pos(offT);
 			for(int j = 0; j < _colIndexes.length; j++)
-				c[offT + _colIndexes[j]] += values[j];
+				c[off + _colIndexes[j]] += values[j];
+		}
 	}
 
 	@Override

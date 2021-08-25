@@ -97,17 +97,21 @@ public class CompressionStatistics {
 		return size == 0.0 ? Double.POSITIVE_INFINITY : (double) originalSize / size;
 	}
 
+	public double getDenseRatio(){
+		return size == 0.0 ? Double.POSITIVE_INFINITY : (double) denseSize / size;
+	}
+
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
-		sb.append("CompressionStatistics:\n");
-		sb.append("Dense Size       : " + denseSize);
-		sb.append("Original Size    : " + originalSize);
-		sb.append("Compressed Size  : " + size);
-		sb.append("CompressionRatio : " + getRatio());
+		sb.append("\nCompressionStatistics:");
+		sb.append("\nDense Size            : " + denseSize);
+		sb.append("\nOriginal Size         : " + originalSize);
+		sb.append("\nCompressed Size       : " + size);
+		sb.append("\nCompressionRatio      : " + getRatio());
 		if(colGroupCounts != null){
-			sb.append("\t" + getGroupsTypesString() + "\n");
-			sb.append("\t" + getGroupsSizesString() + "\n");
+			sb.append("\nCompressionTypes      : " + getGroupsTypesString());
+			sb.append("\nCompressionGroupSizes : " + getGroupsSizesString());
 		}
 		return sb.toString();
 	}

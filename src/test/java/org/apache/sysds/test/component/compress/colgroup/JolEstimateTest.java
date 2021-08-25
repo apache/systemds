@@ -31,6 +31,8 @@ import org.apache.sysds.runtime.compress.CompressionSettingsBuilder;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup.CompressionType;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupFactory;
+import org.apache.sysds.runtime.compress.estim.CompressedSizeEstimator;
+import org.apache.sysds.runtime.compress.estim.CompressedSizeEstimatorExact;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeEstimatorFactory;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup;
 import org.apache.sysds.runtime.compress.lib.BitmapEncoder;
@@ -71,7 +73,7 @@ public abstract class JolEstimateTest {
 			CompressionSettings cs = new CompressionSettingsBuilder().setSamplingRatio(1.0)
 				.setValidCompressions(EnumSet.of(getCT())).create();
 			cs.transposed = true;
-			ABitmap ubm = BitmapEncoder.extractBitmap(colIndexes, mbt, true);
+			ABitmap ubm = BitmapEncoder.extractBitmap(colIndexes, mbt, true, 8);
 			cg = ColGroupFactory.compress(colIndexes, mbt.getNumColumns(), ubm, getCT(), cs, mbt, 1);
 			actualSize = cg.estimateInMemorySize();
 			actualNumberUnique = cg.getNumValues();
@@ -124,8 +126,10 @@ public abstract class JolEstimateTest {
 				.setValidCompressions(EnumSet.of(getCT())).setMinimumSampleSize(100).setSeed(seed).create();
 			cs.transposed = true;
 
-			final CompressedSizeInfoColGroup cgsi = CompressedSizeEstimatorFactory.getSizeEstimator(mbt, cs)
-				.estimateCompressedColGroupSize();
+			CompressedSizeEstimator est = CompressedSizeEstimatorFactory.getSizeEstimator(mbt, cs, 1);
+			if(est instanceof CompressedSizeEstimatorExact)
+				return;
+			final CompressedSizeInfoColGroup cgsi = est.estimateCompressedColGroupSize();
 
 			if(cg.getCompType() != CompressionType.UNCOMPRESSED && actualNumberUnique > 10) {
 

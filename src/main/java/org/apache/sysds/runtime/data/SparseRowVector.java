@@ -19,14 +19,12 @@
 
 package org.apache.sysds.runtime.data;
 
-import java.io.Serializable;
 import java.util.Arrays;
 
 import org.apache.sysds.runtime.util.SortUtils;
 import org.apache.sysds.runtime.util.UtilFunctions;
 
-public final class SparseRowVector extends SparseRow implements Serializable 
-{
+public final class SparseRowVector extends SparseRow{
 	private static final long serialVersionUID = 2971077474424464992L;
 
 	//initial capacity of any created sparse row

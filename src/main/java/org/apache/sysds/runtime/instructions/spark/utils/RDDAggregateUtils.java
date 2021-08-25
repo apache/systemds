@@ -19,6 +19,8 @@
 
 package org.apache.sysds.runtime.instructions.spark.utils;
 
+import java.io.Serializable;
+
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.function.Function;
@@ -47,7 +49,7 @@ import org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator;
  * and with that acceptable. 
  * 
  */
-public class RDDAggregateUtils 
+public class RDDAggregateUtils implements Serializable
 {	
 	//internal configuration to use tree aggregation (treeReduce w/ depth=2),
 	//this is currently disabled because it was 2x slower than a simple

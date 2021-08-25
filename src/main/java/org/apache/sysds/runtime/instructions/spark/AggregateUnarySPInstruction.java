@@ -44,9 +44,12 @@ import org.apache.sysds.runtime.matrix.data.OperationsOnMatrixValues;
 import org.apache.sysds.runtime.matrix.operators.AggregateOperator;
 import org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
+
 import scala.Tuple2;
 
 public class AggregateUnarySPInstruction extends UnarySPInstruction {
+	// private static final Log LOG = LogFactory.getLog(AggregateUnarySPInstruction.class.getName());
+	
 	private SparkAggType _aggtype = null;
 	private AggregateOperator _aop = null;
 
@@ -98,7 +101,6 @@ public class AggregateUnarySPInstruction extends UnarySPInstruction {
 		//execute unary aggregate operation
 		AggregateUnaryOperator auop = (AggregateUnaryOperator)_optr;
 		AggregateOperator aggop = _aop;
-
 		//perform aggregation if necessary and put output into symbol table
 		if( _aggtype == SparkAggType.SINGLE_BLOCK )
 		{
@@ -301,10 +303,7 @@ public class AggregateUnarySPInstruction extends UnarySPInstruction {
 			MatrixBlock blkOut = new MatrixBlock();
 			
 			//unary aggregate operation
-			arg0.aggregateUnaryOperations(_op, blkOut, _blen, _ix);
-			
-			//always drop correction since no aggregation
-			blkOut.dropLastRowsOrColumns(_op.aggOp.correction);
+			arg0.aggregateUnaryOperations(_op, blkOut, _blen, _ix, true);
 			
 			//output new tuple
 			return blkOut;

@@ -280,7 +280,7 @@ public class ColGroupSDC extends ColGroupValue {
 		final double[] mV = m.getDenseBlockValues();
 		final double[] preAV = preAgg.getDenseBlockValues();
 		final int numVals = getNumValues();
-		AIterator itStart = _indexes.getIterator(cl);
+		final AIterator itStart = _indexes.getIterator(cl);
 		AIterator it = null;
 		for(int rowLeft = rl, offOut = 0; rowLeft < ru; rowLeft++, offOut += numVals) {
 			final int offLeft = rowLeft * _numRows;
@@ -300,7 +300,7 @@ public class ColGroupSDC extends ColGroupValue {
 				preAV[def] += mV[offLeft + rc];
 			}
 		}
-		if(it != null)
+		if(it != null && cu < m.getNumColumns())
 			_indexes.cacheIterator(it, cu + 1);
 	}
 

@@ -28,6 +28,8 @@ import org.apache.sysds.utils.MemoryEstimates;
 
 public class OffsetByte extends AOffset {
 
+	private static final long serialVersionUID = -4716104973912491790L;
+	
 	private final static int maxV = 255;
 	private final byte[] offsets;
 	private final int offsetToFirst;

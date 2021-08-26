@@ -29,6 +29,8 @@ import org.apache.sysds.utils.MemoryEstimates;
 
 public class MapToChar extends AMapToData {
 
+	private static final long serialVersionUID = 6315708056775476541L;
+	
 	private final char[] _data;
 
 	public MapToChar(int unique, int size) {

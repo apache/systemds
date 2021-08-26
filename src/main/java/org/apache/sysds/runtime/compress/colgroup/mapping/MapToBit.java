@@ -29,6 +29,8 @@ import org.apache.sysds.utils.MemoryEstimates;
 
 public class MapToBit extends AMapToData {
 
+	private static final long serialVersionUID = -8065234231282619923L;
+	
 	private final BitSet _data;
 	private final int _size;
 

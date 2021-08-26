@@ -152,7 +152,7 @@ public final class ColGroupFactory {
 
 		@Override
 		public Collection<AColGroup> call() {
-			ArrayList<AColGroup> res = new ArrayList<AColGroup>();
+			ArrayList<AColGroup> res = new ArrayList<>();
 
 			Tmp tmpMap = new Tmp();
 			for(CompressedSizeInfoColGroup g : _groups)

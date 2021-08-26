@@ -58,6 +58,7 @@ import org.apache.sysds.runtime.io.ListWriter;
 import org.apache.sysds.runtime.io.WriterMatrixMarket;
 import org.apache.sysds.runtime.io.WriterTextCSV;
 import org.apache.sysds.runtime.io.WriterHDF5;
+import org.apache.sysds.runtime.iogen.SampleProperties;
 import org.apache.sysds.runtime.lineage.LineageItem;
 import org.apache.sysds.runtime.lineage.LineageItemUtils;
 import org.apache.sysds.runtime.lineage.LineageTraceable;
@@ -374,6 +375,11 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 				if(parts.length < 11 + extSchema)
 					throw new DMLRuntimeException("Invalid number of operands in createvar instruction: " + str);
 			}
+			else if(fmt.equalsIgnoreCase("unknown")) {
+				// 14 inputs: createvar corresponding to READ -- includes properties sampleRawPath, SampleBinPath, SampleRows, SampleCols
+				if(parts.length < 14 + extSchema)
+					throw new DMLRuntimeException("Invalid number of operands in createvar instruction: " + str);
+			}
 			else {
 				if ( parts.length != 6 && parts.length != 11+extSchema )
 					throw new DMLRuntimeException("Invalid number of operands in createvar instruction: " + str);
@@ -474,6 +480,18 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 
 				return new VariableCPInstruction(VariableOperationCode.CreateVariable,
 					in1, in2, in3, iimd, updateType, fmtProperties, schema, opcode, str);
+			}
+			else if(fmt.equalsIgnoreCase("unknown")) {
+				// Cretevar instructions for UNKNOWN format has 14.
+				// 14 inputs: createvar corresponding to WRITE/READ -- includes properties SampleBinPath, SampleRows, SampleCols
+				int curPos = 11;
+				String sampleRawFileName = parts[curPos];
+				String sampleBinaryFileName = parts[curPos + 1];
+				int sampleRows = Integer.parseInt(parts[curPos + 2]);
+				int sampleCols = Integer.parseInt(parts[curPos + 3]);
+				SampleProperties sampleProperties= new SampleProperties(sampleRawFileName, sampleBinaryFileName, sampleRows, sampleCols, dt);
+				return new VariableCPInstruction(VariableOperationCode.CreateVariable,
+					in1, in2, in3, iimd, updateType,sampleProperties, schema, opcode, str);
 			}
 
 			else {

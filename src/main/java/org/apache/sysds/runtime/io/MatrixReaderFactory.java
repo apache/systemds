@@ -26,6 +26,8 @@ import org.apache.sysds.conf.CompilerConfig.ConfigType;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.data.SparseBlock;
+import org.apache.sysds.runtime.iogen.GenerateReader;
+import org.apache.sysds.runtime.iogen.SampleProperties;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
 public class MatrixReaderFactory {
@@ -116,6 +118,22 @@ public class MatrixReaderFactory {
 				FileFormatPropertiesHDF5 fileFormatPropertiesHDF5 = props.formatProperties != null ? (FileFormatPropertiesHDF5) props.formatProperties : new FileFormatPropertiesHDF5();
 				reader = (par & mcsr) ? new ReaderHDF5Parallel(fileFormatPropertiesHDF5) : new ReaderHDF5(
 					fileFormatPropertiesHDF5);
+				break;
+			case UNKNOWN:
+				SampleProperties sampleProperties;
+				if(props.formatProperties != null){
+					sampleProperties = (SampleProperties) props.formatProperties;
+				}
+				else
+					throw new DMLRuntimeException("SampleRaw and SampleBinary are essentially required for auto generate reader");
+
+				//TODO: add parallel Generate Reader
+				try {
+					reader = new GenerateReader(sampleProperties).getMatrixReader();
+				}
+				catch(Exception ex){
+					throw new DMLRuntimeException("Failed to  auto generate matrix reader.");
+				}
 				break;
 
 			default:

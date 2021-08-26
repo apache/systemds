@@ -18,10 +18,17 @@
  */
 
 package org.apache.sysds.runtime.iogen;
+
 import org.apache.sysds.runtime.io.FrameReader;
 import org.apache.sysds.runtime.io.MatrixReader;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 
 /*
 	Generate Reader has two steps:
@@ -43,23 +50,45 @@ public class GenerateReader {
 
 	private FrameReader frameReader;
 
+	private SampleProperties sampleProperties;
+
+	public GenerateReader(SampleProperties sampleProperties) throws Exception {
+
+		this.sampleProperties = sampleProperties;
+
+		//Read sample raw file into sampleRaw
+		String sampleRaw = new String(Files.readAllBytes(Paths.get(sampleProperties.getSampleRawFileName())));
+		if(sampleProperties.getDataType().isMatrix()) {
+			MatrixBlock sampleMatrix = binaryDeserialization( Files.readAllBytes(Paths.get(sampleProperties.getSampleBinaryFileName())));
+			readerMapping = generateReader(sampleRaw, sampleMatrix);
+		}
+		else if(sampleProperties.getDataType().isFrame()) {
+
+		}
+
+	}
 
 	public GenerateReader(String sampleRaw, MatrixBlock sampleMatrix) throws Exception {
-		// TODO: 1. The Reader Mapping can't recognize NA String when it is at the end of row
-		//       2. Empty NA string should be add to naStrings list
-
-		// Identify file format properties:
-		readerMapping = new ReaderMapping(sampleRaw, sampleMatrix);
+		readerMapping = this.generateReader(sampleRaw, sampleMatrix);
 	}
 
 	public GenerateReader(String sampleRaw, FrameBlock sampleFrame) {
+		readerMapping = this.generateReader(sampleRaw, sampleFrame);
+	}
+
+	private ReaderMapping generateReader(String sampleRaw, MatrixBlock sampleMatrix) throws Exception {
+		// Identify file format properties:
+		return new ReaderMapping(sampleRaw, sampleMatrix);
+	}
+
+	private ReaderMapping generateReader(String sampleRaw, FrameBlock sampleFrame) {
 		// TODO: extend mapping to support frame
-		readerMapping = null;
+		return null;
 	}
 
 	public MatrixReader getMatrixReader() throws Exception {
 
-		boolean isMapped = readerMapping !=null && readerMapping.isMapped();
+		boolean isMapped = readerMapping != null && readerMapping.isMapped();
 		if(!isMapped) {
 			throw new Exception("Sample raw data and sample matrix don't match !!");
 		}
@@ -67,6 +96,7 @@ public class GenerateReader {
 		if(ffp == null) {
 			throw new Exception("The file format couldn't recognize!!");
 		}
+		ffp.setClen(sampleProperties.getSampleCols());
 		// 2. Generate a Matrix Reader:
 		if(ffp.getRowPattern().equals(CustomProperties.GRPattern.Regular)) {
 			if(ffp.getColPattern().equals(CustomProperties.GRPattern.Regular)) {
@@ -85,4 +115,22 @@ public class GenerateReader {
 	public FrameReader getFrameReader() {
 		return frameReader;
 	}
+
+	private MatrixBlock binaryDeserialization(byte[] buf) throws Exception {
+		ByteArrayInputStream bis = new ByteArrayInputStream(buf);
+		ObjectInputStream objectInputStream;
+		MatrixBlock result = new MatrixBlock(sampleProperties.getSampleRows(), sampleProperties.getSampleCols(), false);
+		try {
+			objectInputStream = new ObjectInputStream(bis);
+			for(int r = 0; r < sampleProperties.getSampleRows(); r++)
+				for(int c = 0; c < sampleProperties.getSampleCols(); c++) {
+					result.setValue(r, c, objectInputStream.readDouble());
+				}
+		}
+		catch(IOException e) {
+			throw new Exception("Can't read matrix from byteArray", e);
+		}
+		return result;
+	}
+
 }

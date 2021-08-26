@@ -19,7 +19,6 @@
 
 package org.apache.sysds.runtime.iogen;
 
-import com.google.gson.Gson;
 import org.apache.sysds.runtime.io.IOUtilFunctions;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
@@ -27,7 +26,6 @@ import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Serializable;
-import java.security.GeneralSecurityException;
 import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.HashSet;

@@ -69,6 +69,10 @@ public class FrameReaderFactory {
 				reader = new FrameReaderProto();
 				break;
 
+			case UNKNOWN:
+				// TODO: Implement Auto Generate Reader for Unknown datasets
+				break;
+
 			default:
 				throw new DMLRuntimeException("Failed to create frame reader for unknown format: " + fmt.toString());
 		}

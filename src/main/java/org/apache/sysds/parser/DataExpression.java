@@ -117,6 +117,13 @@ public class DataExpression extends DataIdentifier
 	public static final String HDF5_DATASET_NAME = "dataset";
 	
 	public static final String DELIM_SPARSE = "sparse";  // applicable only for write
+
+	// Parameter names relevant to Generate Reader
+	public static final String SAMPLE_RAW = "sample_raw";
+	public static final String SAMPLE = "sample";
+	public static final String SAMPLE_ROWS = "sample_rows";
+	public static final String SAMPLE_Cols = "sample_cols";
+
 	
 	public static final Set<String> RAND_VALID_PARAM_NAMES = new HashSet<>(
 		Arrays.asList(RAND_ROWS, RAND_COLS, RAND_DIMS,
@@ -146,7 +153,10 @@ public class DataExpression extends DataIdentifier
 			//Parameters related to dataset name/HDF4 files.
 			HDF5_DATASET_NAME,
 			// Parameters related to privacy
-			PRIVACY, FINE_GRAINED_PRIVACY));
+			PRIVACY, FINE_GRAINED_PRIVACY,
+			//Parameters related to Generate Reader
+			SAMPLE_RAW, SAMPLE, SAMPLE_ROWS, SAMPLE_Cols
+			));
 
 	/** Valid parameter names in arguments to read instruction */
 	public static final Set<String> READ_VALID_PARAM_NAMES = new HashSet<>(
@@ -157,7 +167,10 @@ public class DataExpression extends DataIdentifier
 			// Parameters related to delimited/libsvm files.
 			LIBSVM_INDEX_DELIM,
 			//Parameters related to dataset name/HDF4 files.
-			HDF5_DATASET_NAME));
+			HDF5_DATASET_NAME,
+			//Parameters related to Generate Reader
+			SAMPLE_RAW, SAMPLE, SAMPLE_ROWS, SAMPLE_Cols
+			));
 	
 	/* Default Values for delimited (CSV/LIBSVM) files */
 	public static final String  DEFAULT_DELIM_DELIMITER = ",";
@@ -1214,6 +1227,27 @@ public class DataExpression extends DataIdentifier
 			}
 			boolean isHDF5 = (formatTypeString != null && formatTypeString.equalsIgnoreCase(FileFormat.HDF5.toString()));
 
+			boolean isUNKNOWN = (formatTypeString != null && formatTypeString.equalsIgnoreCase(FileFormat.UNKNOWN.toString()));
+			if(isUNKNOWN) {
+					// Handle Auto Generate Reader
+					// Only allow IO_FILENAME, READROWPARAM, READCOLPARAM as valid parameters
+					if(!inferredFormatType) {
+						for(String key : _varParams.keySet()) {
+							if(!(key.equals(IO_FILENAME) || key.equals(FORMAT_TYPE)
+								|| key.equals(READROWPARAM) || key.equals(READCOLPARAM)
+								|| key.equals(READNNZPARAM) || key.equals(DATATYPEPARAM)
+								|| key.equals(VALUETYPEPARAM) || key.equals(SAMPLE_RAW)
+								|| key.equals(SAMPLE) || key.equals(SAMPLE_ROWS)
+								|| key.equals(SAMPLE_Cols))) {
+								String msg = "Only parameters allowed are: " + IO_FILENAME + "," + READROWPARAM + ","
+									+ READCOLPARAM + SAMPLE + "," + SAMPLE_RAW + "," + SAMPLE_ROWS + "," + SAMPLE_Cols;
+
+								raiseValidateError("Invalid parameter " + key + " in read statement: " + toString() + ". " + msg,
+									conditional, LanguageErrorCodes.INVALID_PARAMETERS);
+							}
+						}
+					}
+			}
 			dataTypeString = (getVarParam(DATATYPEPARAM) == null) ? null : getVarParam(DATATYPEPARAM).toString();
 			
 			if ( dataTypeString == null || dataTypeString.equalsIgnoreCase(Statement.MATRIX_DATA_TYPE) 
@@ -1240,7 +1274,7 @@ public class DataExpression extends DataIdentifier
 				// initialize size of target data identifier to UNKNOWN
 				getOutput().setDimensions(-1, -1);
 				
-				if (!isCSV && !isLIBSVM && !isHDF5 && ConfigurationManager.getCompilerConfig()
+				if (!isCSV && !isLIBSVM && !isHDF5 && !isUNKNOWN && ConfigurationManager.getCompilerConfig()
 						.getBool(ConfigType.REJECT_READ_WRITE_UNKNOWNS) //skip check for csv/libsvm format / jmlc api
 					&& (getVarParam(READROWPARAM) == null || getVarParam(READCOLPARAM) == null) ) {
 						raiseValidateError("Missing or incomplete dimension information in read statement: "
@@ -1274,7 +1308,6 @@ public class DataExpression extends DataIdentifier
 					}
 					getOutput().setDimensions(-1, dim2 + 1);
 				}
-				
 				// initialize block dimensions to UNKNOWN 
 				getOutput().setBlocksize(-1);
 				

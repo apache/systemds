@@ -33,8 +33,9 @@ public class CustomProperties extends FileFormatProperties implements Serializab
 	private String delim;
 	private String indexDelim;
 	private HashSet<String> naStrings; // default null
+	private int clen;
 
-	public enum GRPattern {
+	protected enum GRPattern {
 		Regular, Irregular;
 
 		@Override public String toString() {
@@ -42,7 +43,7 @@ public class CustomProperties extends FileFormatProperties implements Serializab
 		}
 	}
 
-	public enum GRSymmetry {
+	protected enum GRSymmetry {
 		GENERAL, SYMMETRIC, SKEW_SYMMETRIC;
 
 		@Override public String toString() {
@@ -50,9 +51,11 @@ public class CustomProperties extends FileFormatProperties implements Serializab
 		}
 	}
 
-	private final GRPattern rowPattern;
-	private final GRPattern colPattern;
-	private final GRSymmetry grSymmetry;
+	private GRPattern rowPattern;
+	private GRPattern colPattern;
+	private GRSymmetry grSymmetry;
+
+	public CustomProperties() {}
 
 	// CSV format
 	public CustomProperties(GRPattern rowPattern, String delim, HashSet<String> naStrings) {
@@ -102,5 +105,13 @@ public class CustomProperties extends FileFormatProperties implements Serializab
 
 	public GRSymmetry getGrSymmetry() {
 		return grSymmetry;
+	}
+
+	public void setClen(int clen) {
+		this.clen = clen;
+	}
+
+	public int getClen() {
+		return clen;
 	}
 }

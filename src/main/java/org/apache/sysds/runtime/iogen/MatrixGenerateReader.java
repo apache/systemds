@@ -91,6 +91,7 @@ public abstract class MatrixGenerateReader extends MatrixReader {
 		throws IOException, DMLRuntimeException {
 
 		MatrixBlock ret = null;
+		clen = _props.getClen();
 		if(rlen >= 0 && clen >= 0) //otherwise allocated on read
 			ret = createOutputMatrixBlock(rlen, clen, (int) rlen, estnnz, true, false);
 
@@ -109,6 +110,7 @@ public abstract class MatrixGenerateReader extends MatrixReader {
 		throws IOException, DMLRuntimeException {
 
 		MatrixBlock ret = null;
+		clen = _props.getClen();
 		if(rlen >= 0 && clen >= 0) //otherwise allocated on read
 			ret = createOutputMatrixBlock(rlen, clen, (int) rlen, estnnz, true, false);
 

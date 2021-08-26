@@ -39,6 +39,7 @@ import org.apache.commons.logging.LogFactory;
  */
 public abstract class AOffset implements Serializable {
 
+	private static final long serialVersionUID = -4143271285905723425L;
 	protected static final Log LOG = LogFactory.getLog(AOffset.class.getName());
 	protected SoftReference<Map<Integer, AIterator>> skipIterators;
 
@@ -89,7 +90,7 @@ public abstract class AOffset implements Serializable {
 			sk.put(row, it);
 		}
 		else {
-			Map<Integer, AIterator> nsk = new HashMap<Integer, AIterator>();
+			Map<Integer, AIterator> nsk = new HashMap<>();
 			nsk.put(row, it.clone());
 			skipIterators = new SoftReference<>(nsk);
 		}

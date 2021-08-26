@@ -1154,10 +1154,15 @@ public class LibMatrixMult
 				final int blocksizeK = 32;
 				final int blocksizeI = 32;
 				
+				int rl1 = pm2 ? 0 : rl;
+				int ru1 = pm2 ? m : ru;
+				int rl2 = pm2 ? rl : 0;
+				int ru2 = pm2 ? ru : cd;
+				
 				//blocked execution
-				for( int bi = rl; bi < ru; bi+=blocksizeI )
-					for( int bk = 0, bimin = Math.min(ru, bi+blocksizeI); bk < cd; bk+=blocksizeK ) {
-						int bkmin = Math.min(cd, bk+blocksizeK);
+				for( int bi = rl1; bi < ru1; bi+=blocksizeI )
+					for( int bk = rl2, bimin = Math.min(ru1, bi+blocksizeI); bk < ru2; bk+=blocksizeK ) {
+						int bkmin = Math.min(ru2, bk+blocksizeK);
 						//core sub block matrix multiplication
 						for(int i = bi; i < bimin; i++) {
 							double[] avals = a.values(i), cvals = c.values(i);
@@ -3883,7 +3888,7 @@ public class LibMatrixMult
 		double jvmMem = InfrastructureAnalyzer.getLocalMaxMemory();
 		return (m1.rlen==1 && LOW_LEVEL_OPTIMIZATION && m2.clen>1 && !(m1.isUltraSparse()||m2.isUltraSparse()))
 			|| (m1.rlen<=16 && LOW_LEVEL_OPTIMIZATION && m2.clen>1 && m2.rlen > m1.rlen 
-			   && ( !m1.isUltraSparse() && !m2.sparse ) //dense-dense / sparse/dense
+			   && ( !m1.isUltraSparse() && !(m1.sparse & m2.sparse) ) //dense-dense / sparse-dense / dense-sparse
 			   && (long)k * 8 * m1.rlen * m2.clen < Math.max(MEM_OVERHEAD_THRESHOLD,0.01*jvmMem) );
 	}
 

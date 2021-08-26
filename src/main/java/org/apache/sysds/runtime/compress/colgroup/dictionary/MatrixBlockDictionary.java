@@ -37,6 +37,8 @@ import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
 
 public class MatrixBlockDictionary extends ADictionary {
 
+	private static final long serialVersionUID = 2535887782150955098L;
+	
 	private MatrixBlock _data;
 
 	public MatrixBlockDictionary(MatrixBlock data) {

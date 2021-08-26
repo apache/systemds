@@ -42,6 +42,8 @@ import org.apache.sysds.utils.MemoryEstimates;
  */
 public class Dictionary extends ADictionary {
 
+	private static final long serialVersionUID = -6517136537249507753L;
+	
 	private final double[] _values;
 
 	public Dictionary(double[] values) {

@@ -29,6 +29,8 @@ import org.apache.sysds.utils.MemoryEstimates;
 
 public class MapToByte extends AMapToData {
 
+	private static final long serialVersionUID = -2498505439667351828L;
+	
 	private final byte[] _data;
 
 	public MapToByte(int unique, int size) {

@@ -42,6 +42,8 @@ import org.apache.sysds.utils.MemoryEstimates;
  */
 public class QDictionary extends ADictionary {
 
+	private static final long serialVersionUID = 2100501253343438897L;
+	
 	protected double _scale;
 	protected byte[] _values;
 

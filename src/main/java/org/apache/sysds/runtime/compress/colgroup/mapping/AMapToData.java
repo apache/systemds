@@ -28,6 +28,8 @@ import org.apache.commons.logging.LogFactory;
 
 public abstract class AMapToData implements Serializable {
 
+	private static final long serialVersionUID = 100512759972844714L;
+
 	protected static final Log LOG = LogFactory.getLog(AMapToData.class.getName());
 
 	private int nUnique;

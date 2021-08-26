@@ -34,6 +34,8 @@ import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
  */
 public abstract class ADictionary implements Serializable {
 
+	private static final long serialVersionUID = 9118692576356558592L;
+	
 	protected static final Log LOG = LogFactory.getLog(ADictionary.class.getName());
 
 	/**

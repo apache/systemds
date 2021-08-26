@@ -70,7 +70,8 @@ public class BinUaggChainSPInstruction extends UnarySPInstruction {
 		//set output RDD
 		updateUnaryOutputDataCharacteristics(sec);
 		sec.setRDDHandleForVariable(output.getName(), out);	
-		sec.addLineageRDD(input1.getName(), output.getName());
+		// sec.addLineageRDD(input1.getName(), output.getName());
+		sec.addLineageRDD(output.getName(), input1.getName());
 	}
 
 	public static class RDDBinUaggChainFunction implements Function<MatrixBlock,MatrixBlock> 

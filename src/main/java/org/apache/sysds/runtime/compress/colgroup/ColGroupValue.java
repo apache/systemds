@@ -887,6 +887,7 @@ public abstract class ColGroupValue extends ColGroupCompressed implements Clonea
 		if(right.length != rightColumns.length)
 			throw new DMLCompressionException(
 				"Error right not equal length " + right.length + " " + rightColumns.length);
+				
 		for(int row = 0; row < leftRows.length; row++) {
 			final int outputRowOffset = leftRows[row] * outCols;
 			final double vLeft = left[row];

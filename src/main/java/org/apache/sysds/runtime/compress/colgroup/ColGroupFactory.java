@@ -45,6 +45,7 @@ import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory;
 import org.apache.sysds.runtime.compress.colgroup.offset.AOffset;
 import org.apache.sysds.runtime.compress.colgroup.offset.OffsetFactory;
+import org.apache.sysds.runtime.compress.cost.CostEstimatorFactory.CostType;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeEstimator;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeEstimatorExact;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfo;
@@ -214,34 +215,40 @@ public final class ColGroupFactory {
 		CompressedSizeInfoColGroup cg, int[] colIndexes) {
 		try {
 			final int nrUniqueEstimate = cg.getNumVals();
-			final CompressionType estimatedBestCompressionType = cg.getBestCompressionType();
+			CompressionType estimatedBestCompressionType = cg.getBestCompressionType();
+			
+			if(estimatedBestCompressionType == CompressionType.SDC && cs.costComputationType == CostType.W_TREE) {
+				if(cg.getCompressionSize(CompressionType.DDC) * 3 < cg.getCompressionSize(CompressionType.SDC))
+					estimatedBestCompressionType = CompressionType.DDC;
+			}
+
 			if(estimatedBestCompressionType == CompressionType.UNCOMPRESSED) {
 				// shortcut if uncompressed
 				return new ColGroupUncompressed(colIndexes, in, cs.transposed);
 			}
 			else if(estimatedBestCompressionType == CompressionType.SDC && colIndexes.length == 1 &&
 				in.isInSparseFormat() && cs.transposed) {
-				// shortcut for creating SDC!
-				// throw new NotImplementedException();
+
 				return compressSDCZero(in.getSparseBlock(), colIndexes, in.getNumColumns(),
 					tmp.getDblCountMap(nrUniqueEstimate));
 			}
 			else {
-				ABitmap ubm;
-				if(colIndexes.length > 1)
-					ubm = BitmapEncoder.extractBitmapMultiColumns(colIndexes, in, cs.transposed,
+				final int numRows = cs.transposed ? in.getNumColumns() : in.getNumRows();
+
+				if(colIndexes.length > 1) {
+					final ABitmap ubm = BitmapEncoder.extractBitmapMultiColumns(colIndexes, in, cs.transposed,
 						tmp.getDblArrayMap(nrUniqueEstimate));
-				else
-					ubm = BitmapEncoder.extractBitmap(colIndexes, in, cs.transposed, nrUniqueEstimate);
+					CompressedSizeEstimator estimator = new CompressedSizeEstimatorExact(in, cs);
+					CompressedSizeInfoColGroup sizeInfo = new CompressedSizeInfoColGroup(
+						estimator.estimateCompressedColGroupSize(ubm, colIndexes), cs.validCompressions, ubm);
+					return compress(colIndexes, numRows, ubm, estimatedBestCompressionType, cs, in,
+						sizeInfo.getTupleSparsity());
+				}
+				else {
+					final ABitmap ubm = BitmapEncoder.extractBitmap(colIndexes, in, cs.transposed, nrUniqueEstimate);
+					return compress(colIndexes, numRows, ubm, estimatedBestCompressionType, cs, in, 1.0);
+				}
 
-				CompressedSizeEstimator estimator = new CompressedSizeEstimatorExact(in, cs);
-
-				CompressedSizeInfoColGroup sizeInfo = new CompressedSizeInfoColGroup(
-					estimator.estimateCompressedColGroupSize(ubm, colIndexes), cs.validCompressions, ubm);
-
-				int numRows = cs.transposed ? in.getNumColumns() : in.getNumRows();
-				return compress(colIndexes, numRows, ubm, sizeInfo.getBestCompressionType(cs), cs, in,
-					sizeInfo.getTupleSparsity());
 			}
 
 		}

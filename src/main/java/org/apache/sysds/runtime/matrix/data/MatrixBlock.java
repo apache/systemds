@@ -975,13 +975,23 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	}
 
 	/**
-	 * Wrapper method for reduceall-colSum of a matrix.
+	 * Wrapper method for single threaded reduceall-colSum of a matrix.
 	 * 
 	 * @return A new MatrixBlock containing the column sums of this matrix.
 	 */
 	public MatrixBlock colSum() {
 		AggregateUnaryOperator op = InstructionUtils.parseBasicAggregateUnaryOperator("uack+", 1);
-		return aggregateUnaryOperations(op, null, 1000, null);
+		return aggregateUnaryOperations(op, null, 1000, null, true);
+	}
+
+	/**
+	 * Wrapper method for single threaded reduceall-rowSum of a matrix.
+	 * 
+	 * @return A new MatrixBlock containing the row sums of this matrix.
+	 */
+	public MatrixBlock rowSum(){
+		AggregateUnaryOperator op = InstructionUtils.parseBasicAggregateUnaryOperator("uark+", 1);
+		return aggregateUnaryOperations(op, null, 1000, null, true);
 	}
 
 	/**

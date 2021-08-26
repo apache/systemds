@@ -59,8 +59,11 @@ public abstract class AOffset implements Serializable {
 	public AIterator getIterator(int row) {
 		if(skipIterators != null) {
 			Map<Integer, AIterator> sk = skipIterators.get();
-			if(sk != null && sk.containsKey(row))
-				return sk.get(row).clone();
+			if(sk != null && sk.containsKey(row)){
+				AIterator it = sk.get(row);
+				if(it != null)
+					return it.clone();
+			}
 		}
 
 		AIterator it = getIterator();

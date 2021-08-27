@@ -21,7 +21,6 @@ package org.apache.sysds.runtime.compress.colgroup.offset;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
-import java.util.Arrays;
 
 import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.utils.MemoryEstimates;
@@ -29,33 +28,33 @@ import org.apache.sysds.utils.MemoryEstimates;
 public class OffsetByte extends AOffset {
 
 	private static final long serialVersionUID = -4716104973912491790L;
-	
+
 	private final static int maxV = 255;
 	private final byte[] offsets;
-	private final int offsetToFirst;
 
-	public OffsetByte(int[] indexes){
+	public OffsetByte(int[] indexes) {
 		this(indexes, 0, indexes.length);
 	}
 
 	public OffsetByte(int[] indexes, int apos, int alen) {
 		int endSize = 0;
-		offsetToFirst = indexes[apos];
-		int ov = offsetToFirst;
-		for(int i =  apos+1; i < alen; i++) {
+		int ov = -1;
+		for(int i = apos; i < alen; i++) {
 			final int nv = indexes[i];
 			endSize += 1 + (nv - ov) / maxV;
 			ov = nv;
 		}
 		offsets = new byte[endSize];
-		ov = offsetToFirst;
+		ov = -1;
 		int p = 0;
 
-		for(int i =  apos+1; i < alen; i++) {
+		for(int i = apos; i < alen; i++) {
 			final int nv = indexes[i];
 			final int offsetSize = nv - ov;
+
 			if(offsetSize == 0)
-				throw new DMLCompressionException("Invalid difference between cells :\n" + Arrays.toString(indexes));
+				throw new DMLCompressionException(
+					"Invalid difference between cells index " + (i - 1) + " - " + (i) + "(" + ov + "," + nv + ")");
 			final int div = offsetSize / maxV;
 			final int mod = offsetSize % maxV;
 			if(mod == 0) {
@@ -69,11 +68,15 @@ public class OffsetByte extends AOffset {
 
 			ov = nv;
 		}
+
 	}
 
-	private OffsetByte(byte[] offsets, int offsetToFirst) {
+	private OffsetByte(byte[] offsets) {
 		this.offsets = offsets;
-		this.offsetToFirst = offsetToFirst;
+	}
+
+	public byte[] getOffsets() {
+		return offsets;
 	}
 
 	@Override
@@ -84,7 +87,6 @@ public class OffsetByte extends AOffset {
 	@Override
 	public void write(DataOutput out) throws IOException {
 		out.writeByte(OffsetFactory.OFF_TYPE.BYTE.ordinal());
-		out.writeInt(offsetToFirst);
 		out.writeInt(offsets.length);
 		for(byte o : offsets)
 			out.writeByte(o);
@@ -97,12 +99,12 @@ public class OffsetByte extends AOffset {
 
 	@Override
 	public long getExactSizeOnDisk() {
-		return 1 + 4 + 4 + offsets.length;
+		return 1 + 4 + offsets.length;
 	}
 
 	@Override
 	public int getSize() {
-		int size = 1;
+		int size = 0;
 		for(byte b : offsets) {
 			if(b != 0)
 				size++;
@@ -111,25 +113,36 @@ public class OffsetByte extends AOffset {
 	}
 
 	public static long getInMemorySize(int length) {
-		long size = 16 + 4 + 8; // object header plus int plus reference
+		long size = 16 + 8; // object header plus reference
 		size += MemoryEstimates.byteArrayCost(length);
 		return size;
 	}
 
 	public static OffsetByte readFields(DataInput in) throws IOException {
-		int offsetToFirst = in.readInt();
+
 		int offsetsLength = in.readInt();
 		byte[] offsets = new byte[offsetsLength];
 		for(int i = 0; i < offsetsLength; i++) {
 			offsets[i] = in.readByte();
 		}
-		return new OffsetByte(offsets, offsetToFirst);
+		return new OffsetByte(offsets);
 	}
 
-	private class IterateByteOffset extends AIterator {
+	@Override
+	public AIterator createIterator(int index, int dataIndex, int offset) {
+		return new IterateByteOffset(index, dataIndex, offset);
+	}
+
+	public class IterateByteOffset extends AIterator {
 
 		private IterateByteOffset() {
-			super(0, 0, offsetToFirst);
+			super();
+			byte v = offsets[index++];
+			while(v == 0 && index < offsets.length) {
+				offset += maxV;
+				v = offsets[index++];
+			}
+			offset += v & 0xFF;
 		}
 
 		private IterateByteOffset(int index, int dataIndex, int offset) {
@@ -138,26 +151,23 @@ public class OffsetByte extends AOffset {
 
 		@Override
 		public void next() {
-			if(index >= offsets.length) {
-				index++;
-				dataIndex++;
-				return;
-			}
-
-			final byte v = offsets[index++];
-			if(v == 0) {
+			byte v = offsets[index++];
+			while(v == 0) {
 				offset += maxV;
-				next();
+				if(index < offsets.length){
+					v = offsets[index++];
+				}
+				else{
+					break;
+				}
 			}
-			else {
-				dataIndex++;
-				offset += v & 0xFF;
-			}
+			offset += v & 0xFF;
+			dataIndex++;
 		}
 
 		@Override
 		public boolean hasNext() {
-			return index <= offsets.length;
+			return index < offsets.length;
 		}
 
 		@Override

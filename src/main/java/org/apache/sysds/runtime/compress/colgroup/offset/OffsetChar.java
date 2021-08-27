@@ -127,6 +127,11 @@ public class OffsetChar extends AOffset {
 		return size;
 	}
 
+	@Override
+	public AIterator createIterator(int index, int dataIndex, int offset){
+		return new IterateCharOffset(index, dataIndex, offset);
+	}
+
 	private class IterateCharOffset extends AIterator {
 
 		private IterateCharOffset() {

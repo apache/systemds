@@ -32,7 +32,18 @@ public abstract class AIterator implements Comparable<AIterator> {
 	protected int offset;
 
 	/**
-	 * Main Constructor
+	 * Create iterator that starts at the beginning.
+	 * 
+	 * Offset is set to -1 since the if there is a value at idex 0, it is offset by 1 from -1
+	 */
+	protected AIterator() {
+		this.index = 0;
+		this.dataIndex = 0;
+		this.offset = -1;
+	}
+
+	/**
+	 * Construct an iterator that start somewhere inside the iteration.
 	 * 
 	 * @param index     The current index that correspond to an actual value in the dictionary.
 	 * @param dataIndex The current index int the offset.
@@ -74,6 +85,15 @@ public abstract class AIterator implements Comparable<AIterator> {
 		int x = offset;
 		next();
 		return x;
+	}
+
+	/**
+	 * Get the current index in the offset.
+	 * 
+	 * @return The current index
+	 */
+	public int getIndex() {
+		return index;
 	}
 
 	/**

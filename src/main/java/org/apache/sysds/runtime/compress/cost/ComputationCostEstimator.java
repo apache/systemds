@@ -29,7 +29,7 @@ public class ComputationCostEstimator implements ICostEstimate {
 	private static final long serialVersionUID = -1205636215389161815L;
 
 	private final boolean _isCompareAll;
-	
+
 	private final int _nRows;
 	// private final int _nColsInMatrix;
 
@@ -92,18 +92,18 @@ public class ComputationCostEstimator implements ICostEstimate {
 
 	private double leftMultCost(CompressedSizeInfoColGroup g) {
 		final int nCols = g.getColumns().length;
-		// final double preAggregateCost = _nRows * 2.5;
-		final double preAggregateCost = _nRows * 1.5;
-		// final double preAggregateCost = _nRows * 0.2;
+		final double preAggregateCost = _nRows;
 
 		final int numberTuples = g.getNumVals();
 		final double tupleSparsity = g.getTupleSparsity();
 		final double postScalingCost = (nCols > 1 && tupleSparsity > 0.4) ? numberTuples * nCols : numberTuples *
 			nCols * tupleSparsity;
-		if(numberTuples > 64000)
-			return preAggregateCost + postScalingCost * 2;
-			
-		return preAggregateCost + postScalingCost;
+		if(numberTuples < 64000)
+			return preAggregateCost + postScalingCost;
+		else
+			// scale up cost worse if there is higher number of tuples.
+			return preAggregateCost * (numberTuples / 6400) + postScalingCost * (numberTuples / 64000);
+
 	}
 
 	private static double rightMultCost(CompressedSizeInfoColGroup g) {
@@ -121,9 +121,7 @@ public class ComputationCostEstimator implements ICostEstimate {
 	}
 
 	private double overlappingDecompressionCost(CompressedSizeInfoColGroup g) {
-		// final int nVal = g.getNumVals();
-		// return nVal < 512 ? _nRows : _nRows * _nColsInMatrix * (nVal / 64000 + 1);
-		return  _nRows * 16 * (g.getNumVals() / 64000 + 1);
+		return _nRows * 16 * (g.getNumVals() / 64000 + 1);
 	}
 
 	private static double dictionaryOpsCost(CompressedSizeInfoColGroup g) {

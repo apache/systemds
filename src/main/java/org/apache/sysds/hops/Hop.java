@@ -547,7 +547,7 @@ public abstract class Hop implements ParseInfo {
 		return getInputSize(null);
 	}
 
-	protected double getInputSize(Collection<String> exclVars) {
+	protected double getInputSize(Collection<String> exclVars, double injectedDefault){
 		double sum = 0;
 		int len = _input.size();
 		for( int i=0; i<len; i++ ) { //for all inputs
@@ -555,6 +555,8 @@ public abstract class Hop implements ParseInfo {
 			if( exclVars != null && exclVars.contains(hi.getName()) )
 				continue;
 			double hmout = hi.getOutputMemEstimate();
+			if (hmout < 0)
+				hmout = injectedDefault*(Math.max(hi.getDim1(),1) * Math.max(hi.getDim2(),1));
 			if( hmout > 1024*1024 ) {//for relevant sizes
 				//check if already included in estimate (if an input is used
 				//multiple times it is still only required once in memory)
@@ -566,8 +568,12 @@ public abstract class Hop implements ParseInfo {
 			}
 			sum += hmout;
 		}
-		
+
 		return sum;
+	}
+
+	protected double getInputSize(Collection<String> exclVars) {
+		return getInputSize(exclVars, OptimizerUtils.INVALID_SIZE);
 	}
 
 	protected double getInputSize( int pos ){
@@ -627,6 +633,10 @@ public abstract class Hop implements ParseInfo {
 		return getInputSize();
 	}
 
+	public double getInputMemEstimate(double injectedDefault){
+		return getInputSize(null, injectedDefault);
+	}
+
 	/**
 	 * Output memory estimate in bytes.
 	 * @return output memory estimate in bytes
@@ -634,6 +644,16 @@ public abstract class Hop implements ParseInfo {
 	public double getOutputMemEstimate()
 	{
 		return getOutputSize();
+	}
+
+	/**
+	 * Output memory estimate in bytes with no negative memory estimates.
+	 * The default memory estimate is negative, hence this is likely to happen.
+	 * @return output memory estimate in bytes
+	 */
+	public double getOutputMemEstimateNonNegative()
+	{
+		return Math.max(getOutputMemEstimate(),0);
 	}
 
 	public double getIntermediateMemEstimate()

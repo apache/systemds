@@ -66,4 +66,22 @@ public class FederatedCost {
 		this.computeCost += additionalCost.computeCost;
 		this.inputTotalCost += additionalCost.inputTotalCost;
 	}
+
+	@Override
+	public String toString(){
+		StringBuilder builder = new StringBuilder();
+		builder.append("computeCost: ");
+		builder.append(computeCost);
+		builder.append("\n readCost: ");
+		builder.append(readCost);
+		builder.append("\n inputTransferCost: ");
+		builder.append(inputTransferCost);
+		builder.append("\n outputTransferCost: ");
+		builder.append(outputTransferCost);
+		builder.append("\n inputTotalCost: ");
+		builder.append(inputTotalCost);
+		builder.append("\n total cost: ");
+		builder.append(getTotal());
+		return builder.toString();
+	}
 }

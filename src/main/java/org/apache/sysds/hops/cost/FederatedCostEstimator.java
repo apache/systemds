@@ -30,10 +30,14 @@ import org.apache.sysds.parser.WhileStatementBlock;
 import java.util.ArrayList;
 
 public class FederatedCostEstimator {
-	private static final int DEFAULT_ITERATION_NUMBER = 15;
-	private static final double WORKER_NETWORK_BANDWIDTH_BYTES = 1024*1024*1024; //Default network bandwidth in bytes per second
-	private static final double WORKER_COMPUTE_BANDWITH_FLOPS = 2.5*1024*1024*1024; //Default compute bandwidth in FLOPS
-	private static final double WORKER_DEGREE_OF_PARALLELISM = 8; //Default number of parallel processes for workers
+	public int DEFAULT_MEMORY_ESTIMATE = 8;
+	public int DEFAULT_ITERATION_NUMBER = 15;
+	public double WORKER_NETWORK_BANDWIDTH_BYTES_PS = 1024*1024*1024; //Default network bandwidth in bytes per second
+	public double WORKER_COMPUTE_BANDWITH_FLOPS = 2.5*1024*1024*1024; //Default compute bandwidth in FLOPS
+	public double WORKER_DEGREE_OF_PARALLELISM = 8; //Default number of parallel processes for workers
+	public double WORKER_READ_BANDWIDTH_BYTES_PS = 3.5*1024*1024*1024; //Default read bandwidth in bytes per second
+
+	public boolean printCosts = false; //Temporary for debugging purposes
 
 	public FederatedCost costEstimate(DMLProgram dmlProgram){
 		FederatedCost programTotalCost = new FederatedCost();
@@ -107,8 +111,8 @@ public class FederatedCostEstimator {
 				.sum();
 			double inputTransferCost = hasFederatedInput ? root.getInput().stream()
 				.filter(Hop::hasLocalOutput)
-				.mapToDouble(Hop::getOutputMemEstimate)
-				.map(inMem -> inMem/WORKER_NETWORK_BANDWIDTH_BYTES)
+				.mapToDouble(Hop::getOutputMemEstimateNonNegative)
+				.map(inMem -> inMem/ WORKER_NETWORK_BANDWIDTH_BYTES_PS)
 				.sum() : 0;
 			double computingCost = ComputeCost.getHOPComputeCost(root);
 			if ( hasFederatedInput ){
@@ -119,15 +123,25 @@ public class FederatedCostEstimator {
 				//This assumes uniform workload among the workers with FOUT data involved in the operation
 				//and assumes that the degree of parallelism and compute bandwidth are equal for all workers
 				computingCost = computingCost / (numWorkers*WORKER_DEGREE_OF_PARALLELISM*WORKER_COMPUTE_BANDWITH_FLOPS);
-			}
+			} else computingCost = computingCost / (WORKER_DEGREE_OF_PARALLELISM*WORKER_COMPUTE_BANDWITH_FLOPS);
 			//Calculate output transfer cost if the operation is computed at federated workers and the output is forced to the coordinator
 			double outputTransferCost = ( root.hasLocalOutput() && hasFederatedInput ) ?
-				root.getOutputMemEstimate() / WORKER_NETWORK_BANDWIDTH_BYTES : 0;
-			double readCost = root.getInputMemEstimate();
+				root.getOutputMemEstimateNonNegative() / WORKER_NETWORK_BANDWIDTH_BYTES_PS : 0;
+			double readCost = root.getInputMemEstimate(DEFAULT_MEMORY_ESTIMATE) / WORKER_READ_BANDWIDTH_BYTES_PS;
 
 			FederatedCost rootFedCost =
 				new FederatedCost(readCost, inputTransferCost, outputTransferCost, computingCost, inputCosts);
 			root.setFederatedCost(rootFedCost);
+
+			if ( printCosts ){
+				System.out.println("===============================");
+				System.out.println(root);
+				System.out.println(root.getText());
+				System.out.println(ComputeCost.getHOPComputeCost(root));
+				System.out.println(root.getFederatedCost().toString());
+				System.out.println("===============================");
+			}
+
 			return rootFedCost;
 		}
 	}

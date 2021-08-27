@@ -60,10 +60,9 @@ public class CoCodeGreedy extends AColumnCoCoder {
 
 		for(int i = 0; i < inputColumns.size(); i++)
 			workset.add(new ColIndexes(inputColumns.get(i).getColumns()));
-
 		// process merging iterations until no more change
 		while(workset.size() > 1) {
-			double changeInSize = 0;
+			double changeInCost = 0;
 			CompressedSizeInfoColGroup tmp = null;
 			ColIndexes selected1 = null, selected2 = null;
 			for(int i = 0; i < workset.size(); i++) {
@@ -77,7 +76,7 @@ public class CoCodeGreedy extends AColumnCoCoder {
 					// pruning filter : skip dominated candidates
 					// Since even if the entire size of one of the column lists is removed,
 					// it still does not improve compression
-					if(-Math.min(costC1, costC2) > changeInSize)
+					if(-Math.min(costC1, costC2) > changeInCost)
 						continue;
 
 					// Join the two column groups.
@@ -86,12 +85,13 @@ public class CoCodeGreedy extends AColumnCoCoder {
 					final double costC1C2 = _cest.getCostOfColumnGroup(c1c2Inf);
 
 					final double newSizeChangeIfSelected = costC1C2 - costC1 - costC2;
+
 					// Select the best join of either the currently selected
 					// or keep the old one.
-					if((tmp == null && newSizeChangeIfSelected < changeInSize) || tmp != null &&
-						(newSizeChangeIfSelected < changeInSize || newSizeChangeIfSelected == changeInSize &&
+					if((tmp == null && newSizeChangeIfSelected < changeInCost) || tmp != null &&
+						(newSizeChangeIfSelected < changeInCost || newSizeChangeIfSelected == changeInCost &&
 							c1c2Inf.getColumns().length < tmp.getColumns().length)) {
-						changeInSize = newSizeChangeIfSelected;
+						changeInCost = newSizeChangeIfSelected;
 						tmp = c1c2Inf;
 						selected1 = c1;
 						selected2 = c2;

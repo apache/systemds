@@ -1460,6 +1460,7 @@ public abstract class Hop implements ParseInfo {
 		_requiresCompression = that._requiresCompression;
 		_requiresDeCompression = that._requiresDeCompression;
 		_requiresLineageCaching = that._requiresLineageCaching;
+		_compressedWorkloadTree = that._compressedWorkloadTree;
 		_outputEmptyBlocks = that._outputEmptyBlocks;
 		
 		_beginLine = that._beginLine;

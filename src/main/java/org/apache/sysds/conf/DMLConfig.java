@@ -129,7 +129,7 @@ public class DMLConfig
 		_defaultVals.put(COMPRESSED_LOSSY,       "false" );
 		_defaultVals.put(COMPRESSED_VALID_COMPRESSIONS, "SDC,DDC");
 		_defaultVals.put(COMPRESSED_OVERLAPPING, "true" );
-		_defaultVals.put(COMPRESSED_SAMPLING_RATIO, "0.01");
+		_defaultVals.put(COMPRESSED_SAMPLING_RATIO, "0.05");
 		_defaultVals.put(COMPRESSED_COCODE,      "AUTO");
 		_defaultVals.put(COMPRESSED_COST_MODEL,  "AUTO");
 		_defaultVals.put(COMPRESSED_TRANSPOSE,   "auto");

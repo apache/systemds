@@ -79,9 +79,12 @@ public class ComputationCostEstimator implements ICostEstimate {
 		cost += _decompressions * decompressionCost(g);
 		cost += _overlappingDecompressions * overlappingDecompressionCost(g);
 		// 16 is assuming that the left side is 16 rows.
-		cost += _leftMultiplications * leftMultCost(g) * 16;
+		double lmc = leftMultCost(g) * 16;
+		cost += _leftMultiplications * lmc;
 		// 16 is assuming that the right side is 16 rows.
-		cost += _rightMultiplications * rightMultCost(g) * 16;
+		double rmc = rightMultCost(g) * 16;
+		cost += _rightMultiplications * rmc;
+		cost += _compressedMultiplication * (lmc + rmc);
 		cost += _dictionaryOps * dictionaryOpsCost(g);
 		return cost;
 	}

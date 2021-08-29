@@ -91,53 +91,65 @@ public class CLALibLeftMultBy {
 	}
 
 	public static void leftMultByTransposeSelf(CompressedMatrixBlock cmb, MatrixBlock result, int k) {
-		final int numColumns = cmb.getNumColumns();
 		final boolean overlapping = cmb.isOverlapping();
-		List<AColGroup> groups = cmb.getColGroups();
+		final List<AColGroup> groups = cmb.getColGroups();
+
 		result.allocateDenseBlock();
 
 		if(overlapping) {
 			LOG.warn("Inefficient TSMM with overlapping matrix could be implemented multi-threaded but is not yet.");
 			leftMultByCompressedTransposedMatrix(groups, groups, result);
 		}
-		else if(k <= 1) {
-			for(int i = 0; i < groups.size(); i++)
-				leftMultByCompressedTransposedMatrix(groups.get(i), groups, result, i, groups.size());
-		}
 		else {
-			try {
-				ExecutorService pool = CommonThreadPool.get(k);
-				ArrayList<Callable<Object>> tasks = new ArrayList<>();
+			final boolean containsSDC = containsSDC(groups);
+			final int numColumns = cmb.getNumColumns();
+			final double[] constV = containsSDC ? new double[cmb.getNumColumns()] : null;
+			final List<AColGroup> filteredGroups = filterSDCGroups(groups, constV);
+			final double[] colSums = containsSDC ? new double[cmb.getNumColumns()] : null;
 
+			if(containsSDC)
 				for(int i = 0; i < groups.size(); i++) {
-					final AColGroup g = groups.get(i);
-					tasks.add(new LeftMultByCompressedTransposedMatrixTask(groups, g, result, i, groups.size()));
+					AColGroup gi = groups.get(i);
+					if(!(gi instanceof ColGroupSDC || gi instanceof ColGroupSDCSingle))
+						gi.computeColSums(colSums);
 				}
 
-				for(Future<Object> tret : pool.invokeAll(tasks))
-					tret.get();
-				pool.shutdown();
-			}
-			catch(InterruptedException | ExecutionException e) {
-				throw new DMLRuntimeException(e);
+			if(k <= 1)
+				tsmmColGroups(groups, filteredGroups, result);
+			else
+				tsmmColGroupsParallel(groups, filteredGroups, result, k);
+
+			double[] retV = result.getDenseBlockValues();
+
+			// Move values in the lower part of the matrix to the upper part
+			copyToUpperTriangle(retV, numColumns);
+
+			// add the correction layer for the subtracted common values.
+			if(colSums != null) {
+				outerProduct(colSums, constV, retV);
+				addToUpperTriangle(retV, numColumns);
 			}
 		}
-		// Move values in the lower part of the matrix to the upper part
-		copyToUpperTriangle(result.getDenseBlockValues(), numColumns);
-		// calculate the number of non zeros, and allocate all value locations by copying upper triangle back to bottom.
+
 		long nnz = LinearAlgebraUtils.copyUpperToLowerTriangle(result);
 		result.setNonZeros(nnz);
-		// Evaluate if the output should be sparsely allocated.
 		result.examSparsity();
 	}
 
 	private static void copyToUpperTriangle(final double[] c, final int cols) {
 		for(int i = 0, offC = 0; i < cols; i++, offC += cols)
-			for(int j = i, offR = i * cols; j < cols; j++, offR += cols) {
+			for(int j = (i + 1), offR = (i + 1) * cols; j < cols; j++, offR += cols) {
 				final double prev = c[offC + j];
 				if(prev == 0)
 					c[offC + j] = c[i + offR];
+				c[i + offR] = 0;
 			}
+	}
+
+	private static void addToUpperTriangle(final double[] c, final int cols) {
+		for(int i = 0, offC = 0; i < cols; i++, offC += cols)
+			for(int j = (i + 1), offR = (i + 1) * cols; j < cols; j++, offR += cols)
+				c[offC + j] += c[i + offR];
 
 	}
 
@@ -181,15 +193,6 @@ public class CLALibLeftMultBy {
 		private final int _start;
 		private final int _end;
 
-		protected LeftMultByCompressedTransposedMatrixTask(List<AColGroup> groups, AColGroup left, MatrixBlock ret,
-			int start, int end) {
-			_groups = groups;
-			_left = left;
-			_ret = ret;
-			_start = start;
-			_end = end;
-		}
-
 		protected LeftMultByCompressedTransposedMatrixTask(List<AColGroup> groups, AColGroup left, MatrixBlock ret) {
 			_groups = groups;
 			_left = left;
@@ -227,8 +230,84 @@ public class CLALibLeftMultBy {
 			else
 				rhs.tsmm(ret);
 		}
-
 	}
+
+	private static void tsmmColGroups(List<AColGroup> groups, List<AColGroup> filteredGroups, MatrixBlock ret) {
+		for(int i = 0; i < groups.size(); i++)
+			tsmmColGroupsIndexI(groups, filteredGroups, ret, i);
+	}
+
+	private static void tsmmColGroupsParallel(List<AColGroup> groups, List<AColGroup> filteredGroups, MatrixBlock ret,
+		int k) {
+		try {
+			ExecutorService pool = CommonThreadPool.get(k);
+			ArrayList<Callable<Object>> tasks = new ArrayList<>();
+
+			for(int i = 0; i < filteredGroups.size(); i++)
+				tasks.add(new tsmmColGroupTask(groups, filteredGroups, ret, i));
+
+			for(Future<Object> tret : pool.invokeAll(tasks))
+				tret.get();
+			pool.shutdown();
+		}
+		catch(InterruptedException | ExecutionException e) {
+			throw new DMLRuntimeException(e);
+		}
+	}
+
+	private static void tsmmColGroupsIndexI(List<AColGroup> groups, List<AColGroup> filteredGroups, MatrixBlock ret,
+		int i) {
+		final AColGroup full_lhs = groups.get(i);
+		final AColGroup lhs = filteredGroups.get(i);
+		final int start = i;
+		final int end = groups.size();
+		full_lhs.tsmm(ret);
+		boolean isSDC = full_lhs instanceof ColGroupSDC || full_lhs instanceof ColGroupSDCSingle;
+		// if(isSDC) {
+		// Arrays.fill(tmp, 0);
+		// full_lhs.computeColSums(tmp);
+		// }
+		for(int id = start + 1; id < end; id++) {
+			final AColGroup full_rhs = groups.get(id);
+			final AColGroup rhs = filteredGroups.get(id);
+			if(isSDC && (full_rhs instanceof ColGroupSDC || full_rhs instanceof ColGroupSDCSingle)) {
+				// Full
+				full_lhs.leftMultByAColGroup(full_rhs, ret);
+
+				// Partial
+				// full_lhs.leftMultByAColGroup(rhs, ret);
+				// multiplyWithMostCommonElement(tmp, (ColGroupValue) full_rhs, ret);
+			}
+			else {
+				lhs.leftMultByAColGroup(rhs, ret);
+			}
+		}
+	}
+
+	// private static void multiplyWithMostCommonElement(double[] colSum, ColGroupValue full, MatrixBlock ret) {
+	// final ADictionary d = full.getDictionary();
+	// final double[] result = ret.getDenseBlockValues();
+	// final int numVals = full.getNumValues();
+	// final int[] colIndexes = full.getColIndices();
+	// final int numColumns = ret.getNumColumns();
+	// if(d instanceof MatrixBlockDictionary && ((MatrixBlockDictionary) d).getMatrixBlock().isInSparseFormat()) {
+	// throw new NotImplementedException();
+	// }
+	// else {
+	// final int offsetToDefault = numVals * full.getNumCols() - numVals;
+	// final double[] dv = d.getValues();
+	// for(int row = 0; row < colSum.length; row++) {
+
+	// final int offOut = numColumns * row;
+	// final double vLeft = colSum[row];
+	// if(vLeft != 0) {
+	// for(int colId = 0; colId < colIndexes.length; colId++) {
+	// result[offOut + colIndexes[colId]] += vLeft * dv[offsetToDefault + colId];
+	// }
+	// }
+	// }
+	// }
+	// }
 
 	private static MatrixBlock leftMultByMatrix(List<AColGroup> colGroups, MatrixBlock that, MatrixBlock ret, int k,
 		boolean overlapping) {
@@ -237,28 +316,13 @@ public class CLALibLeftMultBy {
 			ret.setNonZeros(0);
 			return ret;
 		}
+
 		final int numColumnsOut = ret.getNumColumns();
-		boolean containsSDC = false;
+		final boolean containsSDC = containsSDC(colGroups);
 
-		for(AColGroup g : colGroups) {
-			if(g instanceof ColGroupSDC || g instanceof ColGroupSDCSingle)
-				containsSDC = true;
-		}
-
-		final List<AColGroup> filteredGroups = containsSDC ? new ArrayList<>() : colGroups;
 		// a constant colgroup summing the default values.
 		final double[] constV = containsSDC ? new double[numColumnsOut] : null;
-
-		if(containsSDC) {
-			for(AColGroup g : colGroups) {
-				if(g instanceof ColGroupSDC)
-					filteredGroups.add(((ColGroupSDC) g).extractCommon(constV));
-				else if(g instanceof ColGroupSDCSingle)
-					filteredGroups.add(((ColGroupSDCSingle) g).extractCommon(constV));
-				else
-					filteredGroups.add(g);
-			}
-		}
+		final List<AColGroup> filteredGroups = filterSDCGroups(colGroups, constV);
 
 		ret.allocateDenseBlock();
 		final double[] rowSums = containsSDC ? new double[that.getNumRows()] : null;
@@ -418,6 +482,32 @@ public class CLALibLeftMultBy {
 		}
 	}
 
+	private static class tsmmColGroupTask implements Callable<Object> {
+		private final List<AColGroup> _groups;
+		private final List<AColGroup> _filteredGroups;
+		private final MatrixBlock _ret;
+		private final int _index;
+
+		protected tsmmColGroupTask(List<AColGroup> groups, List<AColGroup> filteredGroups, MatrixBlock ret, int i) {
+			_groups = groups;
+			_filteredGroups = filteredGroups;
+			_ret = ret;
+			_index = i;
+		}
+
+		@Override
+		public MatrixBlock call() {
+			try {
+				tsmmColGroupsIndexI(_groups, _filteredGroups, _ret, _index);
+			}
+			catch(Exception e) {
+				e.printStackTrace();
+				throw new DMLRuntimeException(e);
+			}
+			return _ret;
+		}
+	}
+
 	private static void leftMultByMatrixPrimitive(List<AColGroup> colGroups, MatrixBlock that, MatrixBlock ret, int rl,
 		int ru, double[] rowSums) {
 		if(that.isInSparseFormat())
@@ -435,7 +525,7 @@ public class CLALibLeftMultBy {
 			}
 			if(rowSum != null) {
 				final SparseBlock sb = that.getSparseBlock();
-				if(!sb.isEmpty(i)){
+				if(!sb.isEmpty(i)) {
 					final int apos = sb.pos(i);
 					final int alen = sb.size(i) + apos;
 					final double[] aval = sb.values(i);
@@ -537,5 +627,34 @@ public class CLALibLeftMultBy {
 		}
 		Collections.sort(ColGroupValues, Comparator.comparing(AColGroup::getNumValues).reversed());
 		return ColGroupValues;
+	}
+
+	private static boolean containsSDC(List<AColGroup> groups) {
+		boolean containsSDC = false;
+
+		for(AColGroup g : groups) {
+			if(g instanceof ColGroupSDC || g instanceof ColGroupSDCSingle) {
+				containsSDC = true;
+				break;
+			}
+		}
+		return containsSDC;
+	}
+
+	private static List<AColGroup> filterSDCGroups(List<AColGroup> groups, double[] constV) {
+		if(constV != null) {
+			final List<AColGroup> filteredGroups = new ArrayList<>();
+			for(AColGroup g : groups) {
+				if(g instanceof ColGroupSDC)
+					filteredGroups.add(((ColGroupSDC) g).extractCommon(constV));
+				else if(g instanceof ColGroupSDCSingle)
+					filteredGroups.add(((ColGroupSDCSingle) g).extractCommon(constV));
+				else
+					filteredGroups.add(g);
+			}
+			return filteredGroups;
+		}
+		else
+			return groups;
 	}
 }

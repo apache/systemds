@@ -436,7 +436,26 @@ public class ColGroupSDCZeros extends ColGroupValue {
 
 	@Override
 	public Dictionary preAggregateThatSDCStructure(ColGroupSDC that, Dictionary ret, boolean preModified) {
-		throw new NotImplementedException();
+		if(preModified){
+			final AIterator itThat = that._indexes.getIterator();
+			final AIterator itThis = _indexes.getIterator();
+			final int nCol = that._colIndexes.length;
+	
+			while(itThat.hasNext() && itThis.hasNext()) {
+				if(itThat.value() == itThis.value()) {
+					final int fr = that.getIndex(itThat.getDataIndexAndIncrement());
+					final int to = getIndex(itThis.getDataIndexAndIncrement());
+					that._dict.addToEntry(ret, fr, to, nCol);
+				}
+				else if(itThat.value() < itThis.value())
+					itThat.next();
+				else
+					itThis.next();
+			}
+			return ret;
+		}else{
+			throw new NotImplementedException("Not implemented not PreModded preaggregate of SDC");
+		}
 	}
 
 	@Override

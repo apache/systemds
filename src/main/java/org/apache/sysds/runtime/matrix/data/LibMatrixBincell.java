@@ -605,7 +605,7 @@ public class LibMatrixBincell {
 	
 	private static void safeBinaryMVSparse(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, BinaryOperator op) {
 		boolean isMultiply = (op.fn instanceof Multiply);
-		boolean skipEmpty = (isMultiply);
+		boolean skipEmpty = (isMultiply || isSparseSafeDivide(op, m2));
 		
 		int rlen = m1.rlen;
 		int clen = m1.clen;
@@ -661,7 +661,8 @@ public class LibMatrixBincell {
 			for( int i=0; i<rlen; i++ ) {
 				if( skipEmpty && (a==null || a.isEmpty(i)) )
 					continue; //skip empty rows
-					
+				if( skipEmpty && ret.sparse )
+					ret.sparseBlock.allocate(i, a.size(i));
 				int lastIx = -1;
 				if( a!=null && !a.isEmpty(i) ) {
 					int apos = a.pos(i);

@@ -34,7 +34,6 @@ import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.lops.Lop;
 import org.apache.sysds.runtime.DMLRuntimeException;
-import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.controlprogram.ParForProgramBlock.PDataPartitionFormat;
 import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRange;
@@ -545,9 +544,6 @@ public class MatrixObject extends CacheableData<MatrixBlock> {
 			ReaderWriterFederated.write(fname, this._fedMapping);
 		}
 		else if(_data != null) {
-			if(_data instanceof CompressedMatrixBlock)
-				_data = CompressedMatrixBlock.getUncompressed(_data);
-
 			MetaDataFormat iimd = (MetaDataFormat) _metaData;
 			// Get the dimension information from the metadata stored within MatrixObject
 			DataCharacteristics mc = iimd.getDataCharacteristics();

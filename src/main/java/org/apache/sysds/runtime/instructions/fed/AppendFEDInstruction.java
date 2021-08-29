@@ -32,6 +32,7 @@ import org.apache.sysds.runtime.instructions.cp.CPOperand;
 import org.apache.sysds.runtime.matrix.operators.Operator;
 import org.apache.sysds.runtime.matrix.operators.ReorgOperator;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
+import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.meta.MetaDataUtils;
 
 public class AppendFEDInstruction extends BinaryFEDInstruction {
@@ -102,6 +103,7 @@ public class AppendFEDInstruction extends BinaryFEDInstruction {
 		// federated/local, local/federated cbind
 		else if( (mo1.isFederated(FType.ROW) || mo2.isFederated(FType.ROW)) && _cbind ) {
 			boolean isFed = mo1.isFederated(FType.ROW) && mo1.isFederatedExcept(FType.BROADCAST);
+			boolean isSpark = instString.contains("SPARK");
 			MatrixObject moFed = isFed ? mo1 : mo2;
 			MatrixObject moLoc = isFed ? mo2 : mo1;
 			
@@ -113,7 +115,12 @@ public class AppendFEDInstruction extends BinaryFEDInstruction {
 				new long[]{ fr1[0].getID(), moFed.getFedMapping().getID()});
 			
 			//execute federated operations and set output
-			moFed.getFedMapping().execute(getTID(), true, fr1, fr2);
+			if(isSpark) {
+				FederatedRequest tmp = new FederatedRequest(FederatedRequest.RequestType.PUT_VAR, fr2.getID(), new MatrixCharacteristics(-1, -1), mo1.getDataType());
+				moFed.getFedMapping().execute(getTID(), true, fr1, tmp, fr2);
+			} else {
+				moFed.getFedMapping().execute(getTID(), true, fr1, fr2);
+			}
 			out.setFedMapping(moFed.getFedMapping().copyWithNewID(fr2.getID(), out.getNumColumns()));
 		}
 		// federated/local, local/federated rbind

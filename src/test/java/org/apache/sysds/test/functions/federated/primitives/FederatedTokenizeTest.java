@@ -79,11 +79,6 @@ public class FederatedTokenizeTest extends AutomatedTestBase {
 		runAggregateOperationTest(ExecMode.SINGLE_NODE);
 	}
 
-	@Test
-	public void testTokenizeFullDenseFrameSP() {
-		runAggregateOperationTest(ExecMode.SPARK);
-	}
-
 	private void runAggregateOperationTest(ExecMode execMode) {
 		setExecMode(execMode);
 

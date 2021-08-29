@@ -126,6 +126,17 @@ public class CumulativeOffsetFEDInstruction extends BinaryFEDInstruction
 
 			out = ec.getMatrixObject(output);
 			setScalingValues(agg2, ec, mo1, out, scalingValues, init);
+//			1.7976931348623157E308	1.7976931348623157E308	1.7976931348623157E308	1.7976931348623157E308
+//			1.1419840695038628	2.5363139681561577	2.3206392333750765	1.059635353433094
+//			1.1419840695038628	2.5363139681561577	1.7038295552926137	1.059635353433094
+//			1.1419840695038628	2.5363139681561577	1.7038295552926137	1.059635353433094
+
+
+
+			//		1.1419840695038628	2.5363139681561577	2.3206392333750765	1.059635353433094
+			//		1.1419840695038628	2.5363139681561577	1.7038295552926137	1.059635353433094
+			//		1.1419840695038628	2.5363139681561577	1.7038295552926137	1.059635353433094
+			//		1.1419840695038628	2.181914746575125	1.7038295552926137	1.059635353433094
 		}
 		processCumulative(out, mo2);
 	}
@@ -295,14 +306,14 @@ public class CumulativeOffsetFEDInstruction extends BinaryFEDInstruction
 		String modifiedInstString = InstructionUtils.constructBinaryInstString(instString, opcode, input1, op2, output);
 
 		long id = FederationUtils.getNextFedDataID();
-		FederatedRequest fr3 = new FederatedRequest(FederatedRequest.RequestType.PUT_VAR, id, new MatrixCharacteristics(-1, -1), mo1.getDataType());
+		FederatedRequest fr3 = new FederatedRequest(FederatedRequest.RequestType.PUT_VAR, id, new MatrixCharacteristics(-1, -1), Types.DataType.MATRIX);
 		FederatedRequest[] fr1 = mo1.getFedMapping().broadcastSliced(mo2, false);
 		FederatedRequest fr2 = FederationUtils.callInstruction(modifiedInstString, output, id,
 			new CPOperand[] {input1, op2}, new long[] {mo1.getFedMapping().getID(), fr1[0].getID()}, Types.ExecType.SPARK, false);
 		mo1.getFedMapping().execute(getTID(), true, fr3, fr1[0], fr2);
 
 		out.setFedMapping(mo1.getFedMapping().copyWithNewID(fr2.getID()));
-
+	MatrixBlock m = out.acquireReadAndRelease();
 		ec.removeVariable(op2.getName());
 	}
 

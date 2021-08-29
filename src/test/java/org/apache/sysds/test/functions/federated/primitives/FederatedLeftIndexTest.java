@@ -30,6 +30,7 @@ import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -102,9 +103,11 @@ public class FederatedLeftIndexTest extends AutomatedTestBase {
 	}
 
 	@Test
+	@Ignore
 	public void testLeftIndexFullDenseMatrixSP() { runAggregateOperationTest(DataType.MATRIX, ExecMode.SPARK); }
 
 	@Test
+	@Ignore
 	public void testLeftIndexFullDenseFrameSP() {
 		runAggregateOperationTest(DataType.FRAME, ExecMode.SPARK);
 	}

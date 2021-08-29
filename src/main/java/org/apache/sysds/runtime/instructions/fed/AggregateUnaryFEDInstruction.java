@@ -79,9 +79,6 @@ public class AggregateUnaryFEDInstruction extends UnaryFEDInstruction {
 		else
 			aggun = InstructionUtils.parseBasicAggregateUnaryOperator(opcode);
 
-		if(InstructionUtils.getExecType(str) == ExecType.SPARK && opcode.equals("uavar"))
-				str = InstructionUtils.removeOperand(str, 5);
-
 		FederatedOutput fedOut = null;
 		if ( parts.length == 5 && !parts[4].equals("uarimin") && !parts[4].equals("uarimax") )
 			fedOut = FederatedOutput.valueOf(parts[4]);
@@ -197,8 +194,8 @@ public class AggregateUnaryFEDInstruction extends UnaryFEDInstruction {
 		Future<FederatedResponse>[] meanTmp = null;
 		if (getOpcode().contains("var")) {
 			String meanInstr = instString.replace(getOpcode(), getOpcode().replace("var", "mean"));
-			//create federated commands for aggregation
 
+			//create federated commands for aggregation
 			FederatedRequest meanFr1 =  FederationUtils.callInstruction(meanInstr, output, id,
 				new CPOperand[]{input1}, new long[]{in.getFedMapping().getID()}, isSpark ? ExecType.SPARK : ExecType.CP, isSpark);
 			FederatedRequest meanFr2 = new FederatedRequest(RequestType.GET_VAR, meanFr1.getID());

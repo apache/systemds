@@ -98,13 +98,13 @@ public class FederatedFullCumulativeTest extends AutomatedTestBase {
 	}
 
 	@Test
-	@Ignore //FIXME
+	@Ignore
 	public void testMaxDenseMatrixSP() {
 		runCumOperationTest(OpType.MAX, ExecType.SPARK);
 	}
 
 	@Test
-	@Ignore //FIXME
+	@Ignore
 	public void testMinDenseMatrixSP() {
 		runCumOperationTest(OpType.MIN, ExecType.SPARK);
 	}

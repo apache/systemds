@@ -223,8 +223,8 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 				HopRewriteUtils.cleanupUnreferenced(hi, input);
 				hi = hnew;
 				
-				LOG.debug("Applied removeEmptyRightIndexing");
-			}			
+				LOG.debug("Applied removeEmptyRightIndexing (line "+hi.getBeginLine()+")");
+			}
 		}
 		
 		return hi;
@@ -239,7 +239,7 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 			HopRewriteUtils.cleanupUnreferenced(hi);
 			hi = input;
 			
-			LOG.debug("Applied removeUnnecessaryRightIndexing");
+			LOG.debug("Applied removeUnnecessaryRightIndexing  (line "+hi.getBeginLine()+")");
 		}
 		
 		return hi;

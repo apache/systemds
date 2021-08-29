@@ -507,11 +507,10 @@ public class ColGroupSDC extends ColGroupValue {
 
 	@Override
 	public Dictionary preAggregateThatSDCZerosStructure(ColGroupSDCZeros that, Dictionary ret) {
-
 		final AIterator itThat = that._indexes.getIterator();
 		final AIterator itThis = _indexes.getIterator();
 		final int nCol = that._colIndexes.length;
-		final int defThis = this.getNumValues() * nCol - nCol;
+		final int defThis = getNumValues() - 1;
 
 		while(itThat.hasNext()) {
 			final int thatV = itThat.value();

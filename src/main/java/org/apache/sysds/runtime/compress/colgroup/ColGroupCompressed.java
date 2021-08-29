@@ -36,7 +36,7 @@ import org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator;
 public abstract class ColGroupCompressed extends AColGroup {
 
 	private static final long serialVersionUID = 6219835795420081223L;
-	
+
 	final protected int _numRows;
 
 	protected ColGroupCompressed(int numRows) {
@@ -71,6 +71,10 @@ public abstract class ColGroupCompressed extends AColGroup {
 	protected abstract void computeSum(double[] c, boolean square);
 
 	protected abstract void computeRowSums(double[] c, boolean square, int rl, int ru);
+
+	public void computeColSums(double[] c){
+		computeColSums(c, false);
+	}
 
 	protected abstract void computeColSums(double[] c, boolean square);
 

@@ -620,4 +620,19 @@ public class ColGroupUncompressed extends AColGroup {
 		MatrixBlock replaced = _data.replaceOperations(new MatrixBlock(), pattern, replace);
 		return new ColGroupUncompressed(_colIndexes, replaced);
 	}
+
+	@Override
+	public void computeColSums(double[] c) {
+		// TODO Auto-generated method stub
+		MatrixBlock colSum = _data.colSum();
+		if(colSum.isInSparseFormat()) {
+			throw new NotImplementedException();
+		}
+		else {
+			double[] dv = colSum.getDenseBlockValues();
+			for(int i = 0; i < _colIndexes.length; i++)
+				c[_colIndexes[i]] += dv[i];
+			
+		}
+	}
 }

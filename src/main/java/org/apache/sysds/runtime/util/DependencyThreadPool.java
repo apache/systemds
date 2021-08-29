@@ -19,6 +19,10 @@
 
 package org.apache.sysds.runtime.util;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.apache.sysds.runtime.DMLRuntimeException;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -32,11 +36,10 @@ import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import org.apache.sysds.runtime.DMLRuntimeException;
-
 
 public class DependencyThreadPool {
 
+	protected static final Log LOG = LogFactory.getLog(DependencyThreadPool.class.getName());
 	private final ExecutorService _pool;
 
 	public DependencyThreadPool(int k) {
@@ -66,6 +69,8 @@ public class DependencyThreadPool {
 			futures.add(f);
 			i++;
 		}
+		LOG.debug("Initial Starting tasks: \n\t" +
+				rdyTasks.stream().map(index -> dtasks.get(index).toString()).collect(Collectors.joining("\n\t")));
 		// Two stages to avoid race condition!
 		for(Integer index : rdyTasks) {
 			synchronized(_pool) {

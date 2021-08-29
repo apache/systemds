@@ -24,21 +24,19 @@ import static org.apache.sysds.runtime.util.UtilFunctions.getEndIndex;
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.List;
 import java.util.concurrent.Callable;
 
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.tuple.MutableTriple;
+import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.lops.Lop;
 import org.apache.sysds.runtime.data.SparseRowVector;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
-import org.apache.sysds.runtime.util.DependencyTask;
-import org.apache.sysds.runtime.util.DependencyThreadPool;
 import org.apache.sysds.runtime.util.UtilFunctions;
+import org.apache.sysds.utils.Statistics;
 
 public class ColumnEncoderBin extends ColumnEncoder {
 	public static final String MIN_PREFIX = "min";
@@ -90,10 +88,13 @@ public class ColumnEncoderBin extends ColumnEncoder {
 
 	@Override
 	public void build(FrameBlock in) {
+		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 		if(!isApplicable())
 			return;
 		double[] pairMinMax = getMinMaxOfCol(in, _colID, 0, -1);
 		computeBins(pairMinMax[0], pairMinMax[1]);
+		if(DMLScript.STATISTICS)
+			Statistics.incTransformBinningBuildTime(System.nanoTime()-t0);
 	}
 
 	private static double[] getMinMaxOfCol(FrameBlock in, int colID, int startRow, int blockSize) {
@@ -154,28 +155,22 @@ public class ColumnEncoderBin extends ColumnEncoder {
 	}
 
 	@Override
-	public MatrixBlock apply(FrameBlock in, MatrixBlock out, int outputCol) {
-		return apply(in, out, outputCol, 0, -1);
-	}
-
-	@Override
-	public MatrixBlock apply(MatrixBlock in, MatrixBlock out, int outputCol) {
-		return apply(in, out, outputCol, 0, -1);
-	}
-
-	@Override
 	public MatrixBlock apply(FrameBlock in, MatrixBlock out, int outputCol, int rowStart, int blk) {
+		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 		for(int i = rowStart; i < getEndIndex(in.getNumRows(), rowStart, blk); i++) {
 			double inVal = UtilFunctions.objectToDouble(in.getSchema()[_colID - 1], in.get(i, _colID - 1));
 			int ix = Arrays.binarySearch(_binMaxs, inVal);
 			int binID = ((ix < 0) ? Math.abs(ix + 1) : ix) + 1;
 			out.quickSetValue(i, outputCol, binID);
 		}
+		if (DMLScript.STATISTICS)
+			Statistics.incTransformBinningApplyTime(System.nanoTime()-t0);
 		return out;
 	}
 
 	@Override
 	public MatrixBlock apply(MatrixBlock in, MatrixBlock out, int outputCol, int rowStart, int blk) {
+		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 		int end = getEndIndex(in.getNumRows(), rowStart, blk);
 		for(int i = rowStart; i < end; i++) {
 			double inVal = in.quickGetValueThreadSafe(i, _colID - 1);
@@ -183,18 +178,20 @@ public class ColumnEncoderBin extends ColumnEncoder {
 			int binID = ((ix < 0) ? Math.abs(ix + 1) : ix) + 1;
 			out.quickSetValue(i, outputCol, binID);
 		}
+		if (DMLScript.STATISTICS)
+			Statistics.incTransformBinningApplyTime(System.nanoTime()-t0);
 		return out;
 	}
 
 	@Override
-	protected List<DependencyTask<?>> getSparseTasks(FrameBlock in, MatrixBlock out, int outputCol) {
-		List<Callable<Object>> tasks = new ArrayList<>();
-		tasks.add(new BinSparseApplyTask(this, in, out, outputCol));
-		return DependencyThreadPool.createDependencyTasks(tasks, null);
+	protected ColumnApplyTask<? extends ColumnEncoder> getSparseTask(FrameBlock in, MatrixBlock out,
+																	 int outputCol, int startRow, int blk) {
+		return new BinSparseApplyTask(this, in, out, outputCol);
 	}
 
 	@Override
-	protected List<DependencyTask<?>> getSparseTasks(MatrixBlock in, MatrixBlock out, int outputCol) {
+	protected ColumnApplyTask<? extends ColumnEncoder> getSparseTask(MatrixBlock in, MatrixBlock out,
+																	 int outputCol, int startRow, int blk) {
 		throw new NotImplementedException("Sparse Binning for MatrixBlocks not jet implemented");
 	}
 
@@ -284,33 +281,33 @@ public class ColumnEncoderBin extends ColumnEncoder {
 		}
 	}
 
-	private static class BinSparseApplyTask implements Callable<Object> {
-		private final ColumnEncoderBin _encoder;
-		private final FrameBlock _input;
-		private final MatrixBlock _out;
-		private final int _outputCol;
+	private static class BinSparseApplyTask extends ColumnApplyTask<ColumnEncoderBin> {
 
-		private BinSparseApplyTask(ColumnEncoderBin encoder, FrameBlock input, MatrixBlock out,
-									  int outputCol) {
-			_encoder = encoder;
-			_input = input;
-			_out = out;
-			_outputCol = outputCol;
+		public BinSparseApplyTask(ColumnEncoderBin encoder, FrameBlock input, MatrixBlock out, int outputCol,
+								  int startRow, int blk) {
+			super(encoder, input, out, outputCol, startRow, blk);
+		}
+
+		private BinSparseApplyTask(ColumnEncoderBin encoder, FrameBlock input, MatrixBlock out, int outputCol) {
+			super(encoder, input, out, outputCol);
 		}
 
 		public Object call() throws Exception {
+			long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 			int index = _encoder._colID - 1;
-			for(int r = 0; r < _input.getNumRows(); r++) {
-				if(_out.getSparseBlock() == null)
-					return null;
+			if(_out.getSparseBlock() == null)
+				return null;
+			assert _inputF != null;
+			for(int r = _startRow; r < getEndIndex(_inputF.getNumRows(), _startRow, _blk); r++) {
 				SparseRowVector row = (SparseRowVector) _out.getSparseBlock().get(r);
-				double inVal = UtilFunctions.objectToDouble(_input.getSchema()[index],
-						_input.get(r, index));
+				double inVal = UtilFunctions.objectToDouble(_inputF.getSchema()[index], _inputF.get(r, index));
 				int ix = Arrays.binarySearch(_encoder._binMaxs, inVal);
 				int binID = ((ix < 0) ? Math.abs(ix + 1) : ix) + 1;
 				row.values()[index] = binID;
 				row.indexes()[index] = _outputCol;
 			}
+			if(DMLScript.STATISTICS)
+				Statistics.incTransformBinningApplyTime(System.nanoTime()-t0);
 			return null;
 		}
 
@@ -341,7 +338,13 @@ public class ColumnEncoderBin extends ColumnEncoder {
 
 		@Override
 		public double[] call() throws Exception {
-			_partialMinMax.put(_startRow, getMinMaxOfCol(_input, _colID, _startRow, _blockSize));
+			long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
+			double[] minMax = getMinMaxOfCol(_input, _colID, _startRow, _blockSize);
+			synchronized (_partialMinMax){
+				_partialMinMax.put(_startRow, minMax);
+			}
+			if (DMLScript.STATISTICS)
+				Statistics.incTransformBinningBuildTime(System.nanoTime()-t0);
 			return null;
 		}
 
@@ -363,6 +366,7 @@ public class ColumnEncoderBin extends ColumnEncoder {
 
 		@Override
 		public Object call() throws Exception {
+			long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 			double min = Double.POSITIVE_INFINITY;
 			double max = Double.NEGATIVE_INFINITY;
 			for(Object minMax : _partialMaps.values()) {
@@ -370,6 +374,9 @@ public class ColumnEncoderBin extends ColumnEncoder {
 				max = Math.max(max, ((double[]) minMax)[1]);
 			}
 			_encoder.computeBins(min, max);
+
+			if(DMLScript.STATISTICS)
+				Statistics.incTransformBinningBuildTime(System.nanoTime()-t0);
 			return null;
 		}
 

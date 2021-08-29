@@ -30,6 +30,7 @@ import org.apache.sysds.common.Types;
 import org.apache.sysds.runtime.io.FileFormatPropertiesCSV;
 import org.apache.sysds.runtime.io.FrameReaderFactory;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
+import org.apache.sysds.runtime.transform.encode.ColumnEncoder;
 import org.apache.sysds.runtime.transform.encode.ColumnEncoderBin;
 import org.apache.sysds.runtime.transform.encode.ColumnEncoderRecode;
 import org.apache.sysds.runtime.transform.encode.EncoderFactory;
@@ -173,6 +174,7 @@ public class TransformFrameBuildMultithreadedTest extends AutomatedTestBase {
 				.readFrameFromHDFS(DATASET, -1L, -1L);
 			StringBuilder specSb = new StringBuilder();
 			Files.readAllLines(Paths.get(SPEC)).forEach(s -> specSb.append(s).append("\n"));
+			ColumnEncoder.BUILD_ROW_BLOCKS_PER_COLUMN = Math.max(blockSize, 1);
 			MultiColumnEncoder encoderS = EncoderFactory.createEncoder(specSb.toString(), input.getColumnNames(),
 				input.getNumColumns(), null);
 			MultiColumnEncoder encoderM = EncoderFactory.createEncoder(specSb.toString(), input.getColumnNames(),

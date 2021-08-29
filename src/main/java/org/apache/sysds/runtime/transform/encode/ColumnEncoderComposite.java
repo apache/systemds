@@ -139,21 +139,23 @@ public class ColumnEncoderComposite extends ColumnEncoder {
 	}
 
 	@Override
-	protected List<DependencyTask<?>> getSparseTasks(MatrixBlock in, MatrixBlock out, int outputCol) {
+	protected ColumnApplyTask<? extends ColumnEncoder> getSparseTask(MatrixBlock in, MatrixBlock out,
+																	 int outputCol, int startRow, int blk) {
 		throw new NotImplementedException();
 	}
 
 	@Override
-	protected List<DependencyTask<?>> getSparseTasks(FrameBlock in, MatrixBlock out, int outputCol) {
+	protected ColumnApplyTask<? extends ColumnEncoder> getSparseTask(FrameBlock in, MatrixBlock out,
+																	 int outputCol, int startRow, int blk) {
 		throw new NotImplementedException();
 	}
 
 	@Override
-	public List<DependencyTask<?>> getBuildTasks(FrameBlock in, int blockSize) {
+	public List<DependencyTask<?>> getBuildTasks(FrameBlock in) {
 		List<DependencyTask<?>> tasks = new ArrayList<>();
 		Map<Integer[], Integer[]> depMap = null;
 		for(ColumnEncoder columnEncoder : _columnEncoders) {
-			List<DependencyTask<?>> t = columnEncoder.getBuildTasks(in, blockSize);
+			List<DependencyTask<?>> t = columnEncoder.getBuildTasks(in);
 			if(t == null)
 				continue;
 			// Linear execution between encoders so they can't be built in parallel
@@ -186,16 +188,6 @@ public class ColumnEncoderComposite extends ColumnEncoder {
 	public void buildPartial(FrameBlock in) {
 		for(ColumnEncoder columnEncoder : _columnEncoders)
 			columnEncoder.buildPartial(in);
-	}
-
-	@Override
-	public MatrixBlock apply(FrameBlock in, MatrixBlock out, int outputCol) {
-		return apply(in, out, outputCol, 0, -1);
-	}
-
-	@Override
-	public MatrixBlock apply(MatrixBlock in, MatrixBlock out, int outputCol) {
-		return apply(in, out, outputCol, 0, -1);
 	}
 
 	@Override

@@ -19,13 +19,8 @@
 
 package org.apache.sysds.runtime.transform.encode;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.apache.sysds.runtime.DMLRuntimeException;
-import org.apache.sysds.runtime.matrix.data.FrameBlock;
-import org.apache.sysds.runtime.matrix.data.MatrixBlock;
-import org.apache.sysds.runtime.util.DependencyTask;
-import org.apache.sysds.runtime.util.DependencyThreadPool;
+import static org.apache.sysds.runtime.transform.encode.EncoderFactory.getEncoderType;
+import static org.apache.sysds.runtime.util.UtilFunctions.getBlockSizes;
 
 import java.io.Externalizable;
 import java.io.IOException;
@@ -37,7 +32,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.Callable;
 
-import static org.apache.sysds.runtime.transform.encode.EncoderFactory.getEncoderType;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.matrix.data.FrameBlock;
+import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.util.DependencyTask;
+import org.apache.sysds.runtime.util.DependencyThreadPool;
 
 /**
  * Base class for all transform encoders providing both a row and block interface for decoding frames to matrices.
@@ -45,6 +46,8 @@ import static org.apache.sysds.runtime.transform.encode.EncoderFactory.getEncode
  */
 public abstract class ColumnEncoder implements Externalizable, Encoder, Comparable<ColumnEncoder> {
 	protected static final Log LOG = LogFactory.getLog(ColumnEncoder.class.getName());
+	protected static final int APPLY_ROW_BLOCKS_PER_COLUMN = 1;
+	public static int BUILD_ROW_BLOCKS_PER_COLUMN = 1;
 	private static final long serialVersionUID = 2299156350718979064L;
 	protected int _colID;
 
@@ -56,7 +59,13 @@ public abstract class ColumnEncoder implements Externalizable, Encoder, Comparab
 	 * Apply Functions are only used in Single Threaded or Multi-Threaded Dense context.
 	 * That's why there is no regard for MT sparse!
 	 */
-	public abstract MatrixBlock apply(MatrixBlock in, MatrixBlock out, int outputCol);
+	public MatrixBlock apply(MatrixBlock in, MatrixBlock out, int outputCol){
+		return apply(in, out, outputCol, 0, -1);
+	}
+
+	public MatrixBlock apply(FrameBlock in, MatrixBlock out, int outputCol){
+		return apply(in, out, outputCol, 0, -1);
+	}
 
 	public abstract MatrixBlock apply(MatrixBlock in, MatrixBlock out, int outputCol, int rowStart, int blk);
 
@@ -176,18 +185,18 @@ public abstract class ColumnEncoder implements Externalizable, Encoder, Comparab
 	 * complete if all previous tasks are done. This is so that we can use the last task as a dependency for the whole
 	 * build, reducing unnecessary dependencies.
 	 */
-	public List<DependencyTask<?>> getBuildTasks(FrameBlock in, int blockSize) {
+	public List<DependencyTask<?>> getBuildTasks(FrameBlock in) {
 		List<Callable<Object>> tasks = new ArrayList<>();
 		List<List<? extends Callable<?>>> dep = null;
-		if(blockSize <= 0 || blockSize >= in.getNumRows()) {
+		int nRows = in.getNumRows();
+		int[] blockSizes = getBlockSizes(nRows, getNumBuildRowPartitions());
+		if(blockSizes.length == 0) {
 			tasks.add(getBuildTask(in));
 		}
 		else {
 			HashMap<Integer, Object> ret = new HashMap<>();
-			for(int i = 0; i < in.getNumRows(); i = i + blockSize)
-				tasks.add(getPartialBuildTask(in, i, blockSize, ret));
-			if(in.getNumRows() % blockSize != 0)
-				tasks.add(getPartialBuildTask(in, in.getNumRows() - in.getNumRows() % blockSize, -1, ret));
+			for(int startRow = 0, i = 0; i < blockSizes.length; startRow+=blockSizes[i], i++)
+				tasks.add(getPartialBuildTask(in, startRow, blockSizes[i], ret));
 			tasks.add(getPartialMergeBuildTask(ret));
 			dep = new ArrayList<>(Collections.nCopies(tasks.size() - 1, null));
 			dep.add(tasks.subList(0, tasks.size() - 1));
@@ -202,37 +211,64 @@ public abstract class ColumnEncoder implements Externalizable, Encoder, Comparab
 	public Callable<Object> getPartialBuildTask(FrameBlock in, int startRow, int blockSize,
 		HashMap<Integer, Object> ret) {
 		throw new DMLRuntimeException(
-			"Trying to get the PartialBuild task of an Encoder which does not support  " + "partial building");
+			"Trying to get the PartialBuild task of an Encoder which does not support  partial building");
 	}
 
 	public Callable<Object> getPartialMergeBuildTask(HashMap<Integer, ?> ret) {
 		throw new DMLRuntimeException(
-			"Trying to get the BuildMergeTask task of an Encoder which does not support " + "partial building");
+			"Trying to get the BuildMergeTask task of an Encoder which does not support partial building");
 	}
 
 	public List<DependencyTask<?>> getApplyTasks(FrameBlock in, MatrixBlock out, int outputCol) {
-		List<Callable<Object>> tasks = new ArrayList<>();
-		if(out.isInSparseFormat())
-			return getSparseTasks(in, out, outputCol);
-		else
-			tasks.add(new ColumnApplyTask(this, in, out, outputCol));
-			return DependencyThreadPool.createDependencyTasks(tasks, null);
-
+		return getApplyTasks(in, null, out, outputCol);
 	}
 
 	public List<DependencyTask<?>> getApplyTasks(MatrixBlock in, MatrixBlock out, int outputCol) {
-		List<Callable<Object>> tasks = new ArrayList<>();
-		if(out.isInSparseFormat())
-			return getSparseTasks(in, out, outputCol);
-		else
-			tasks.add(new ColumnApplyTask(this, in, out, outputCol));
-		return DependencyThreadPool.createDependencyTasks(tasks, null);
+		return getApplyTasks(null, in, out, outputCol);
 	}
 
+	private List<DependencyTask<?>> getApplyTasks(FrameBlock inF, MatrixBlock inM, MatrixBlock out, int outputCol){
+		List<Callable<Object>> tasks = new ArrayList<>();
+		List<List<? extends Callable<?>>> dep = null;
+		if ((inF != null && inM != null) || (inF == null && inM == null))
+			throw new DMLRuntimeException("getApplyTasks needs to be called with either FrameBlock input " +
+					"or MatrixBlock input");
+		int nRows = inF == null ? inM.getNumRows() : inF.getNumRows();
+		int[] blockSizes = getBlockSizes(nRows, getNumApplyRowPartitions());
+		for(int startRow = 0, i = 0; i < blockSizes.length; startRow+=blockSizes[i], i++){
+			if(inF != null)
+				if(out.isInSparseFormat())
+					tasks.add(getSparseTask(inF, out, outputCol, startRow, blockSizes[i]));
+				else
+					tasks.add(new ColumnApplyTask<>(this, inF, out, outputCol, startRow, blockSizes[i]));
+			else
+			if(out.isInSparseFormat())
+				tasks.add(getSparseTask(inM, out, outputCol, startRow, blockSizes[i]));
+			else
+				tasks.add(new ColumnApplyTask<>(this, inM, out, outputCol, startRow, blockSizes[i]));
+		}
+		if(tasks.size() > 1){
+			dep = new ArrayList<>(Collections.nCopies(tasks.size(), null));
+			tasks.add(() -> null);  // Empty task as barrier
+			dep.add(tasks.subList(0, tasks.size()-1));
+		}
 
-	protected abstract List<DependencyTask<?>> getSparseTasks(FrameBlock in, MatrixBlock out, int outputCol);
+		return DependencyThreadPool.createDependencyTasks(tasks, dep);
+	}
 
-	protected abstract List<DependencyTask<?>> getSparseTasks(MatrixBlock in, MatrixBlock out, int outputCol);
+	protected abstract  ColumnApplyTask<? extends ColumnEncoder> getSparseTask(FrameBlock in, MatrixBlock out,
+																			   int outputCol, int startRow, int blk);
+
+	protected abstract  ColumnApplyTask<? extends ColumnEncoder> getSparseTask(MatrixBlock in, MatrixBlock out,
+																			   int outputCol, int startRow, int blk);
+
+	protected int getNumApplyRowPartitions(){
+		return APPLY_ROW_BLOCKS_PER_COLUMN;
+	}
+
+	protected int getNumBuildRowPartitions(){
+		return BUILD_ROW_BLOCKS_PER_COLUMN;
+	}
 
 	public enum EncoderType {
 		Recode, FeatureHash, PassThrough, Bin, Dummycode, Omit, MVImpute, Composite
@@ -242,44 +278,54 @@ public abstract class ColumnEncoder implements Externalizable, Encoder, Comparab
 	 * This is the base Task for each column apply. If no custom "getApplyTasks" is implemented in an Encoder this task
 	 * will be used.
 	 */
-	private static class ColumnApplyTask implements Callable<Object> {
+	protected static class ColumnApplyTask<T extends ColumnEncoder> implements Callable<Object> {
 
-		private final ColumnEncoder _encoder;
-		private final FrameBlock _inputF;
-		private final MatrixBlock _inputM;
-		private final MatrixBlock _out;
-		private final int _outputCol;
+		protected final T _encoder;
+		protected final FrameBlock _inputF;
+		protected final MatrixBlock _inputM;
+		protected final MatrixBlock _out;
+		protected final int _outputCol;
+		protected final int _startRow;
+		protected final int _blk;
 
-		protected ColumnApplyTask(ColumnEncoder encoder, FrameBlock input, MatrixBlock out, int outputCol) {
-			_encoder = encoder;
-			_inputF = input;
-			_inputM = null;
-			_out = out;
-			_outputCol = outputCol;
+		protected ColumnApplyTask(T encoder, FrameBlock input, MatrixBlock out, int outputCol){
+			this(encoder, input, out, outputCol, 0, -1);
 		}
 
-		protected ColumnApplyTask(ColumnEncoder encoder, MatrixBlock input, MatrixBlock out, int outputCol) {
+		protected ColumnApplyTask(T encoder, MatrixBlock input, MatrixBlock out, int outputCol){
+			this(encoder, input, out, outputCol, 0, -1);
+		}
+
+		protected ColumnApplyTask(T encoder, FrameBlock input, MatrixBlock out, int outputCol, int startRow, int blk) {
+			this(encoder, input, null, out, outputCol, startRow, blk);
+		}
+
+		protected ColumnApplyTask(T encoder, MatrixBlock input, MatrixBlock out, int outputCol, int startRow, int blk) {
+			this(encoder, null, input, out, outputCol, startRow, blk);
+		}
+		private  ColumnApplyTask(T encoder, FrameBlock inputF, MatrixBlock inputM, MatrixBlock out, int outputCol,
+								 int startRow, int blk){
 			_encoder = encoder;
-			_inputM = input;
-			_inputF = null;
+			_inputM = inputM;
+			_inputF = inputF;
 			_out = out;
 			_outputCol = outputCol;
+			_startRow = startRow;
+			_blk = blk;
 		}
 
 		@Override
-		public Void call() throws Exception {
+		public Object call() throws Exception {
 			assert _outputCol >= 0;
-			int _rowStart = 0;
-			int _blk = -1;
 			if(_out.isInSparseFormat()){
 				// this is an issue since most sparse Tasks modify the sparse structure so normal get and set calls are
 				// not possible.
 				throw new DMLRuntimeException("ColumnApplyTask called although output is in sparse format.");
 			}
 			if(_inputF == null)
-				_encoder.apply(_inputM, _out, _outputCol, _rowStart, _blk);
+				_encoder.apply(_inputM, _out, _outputCol, _startRow, _blk);
 			else
-				_encoder.apply(_inputF, _out, _outputCol, _rowStart, _blk);
+				_encoder.apply(_inputF, _out, _outputCol, _startRow, _blk);
 			return null;
 		}
 

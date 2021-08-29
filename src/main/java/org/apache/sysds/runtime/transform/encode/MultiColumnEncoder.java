@@ -19,20 +19,6 @@
 
 package org.apache.sysds.runtime.transform.encode;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.apache.sysds.common.Types;
-import org.apache.sysds.runtime.DMLRuntimeException;
-import org.apache.sysds.runtime.data.SparseBlock;
-import org.apache.sysds.runtime.data.SparseBlockMCSR;
-import org.apache.sysds.runtime.data.SparseRowVector;
-import org.apache.sysds.runtime.matrix.data.FrameBlock;
-import org.apache.sysds.runtime.matrix.data.MatrixBlock;
-import org.apache.sysds.runtime.util.DependencyTask;
-import org.apache.sysds.runtime.util.DependencyThreadPool;
-import org.apache.sysds.runtime.util.DependencyWrapperTask;
-import org.apache.sysds.runtime.util.IndexRange;
-
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
@@ -50,6 +36,22 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.apache.sysds.api.DMLScript;
+import org.apache.sysds.common.Types;
+import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.data.SparseBlock;
+import org.apache.sysds.runtime.data.SparseBlockMCSR;
+import org.apache.sysds.runtime.data.SparseRowVector;
+import org.apache.sysds.runtime.matrix.data.FrameBlock;
+import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.util.DependencyTask;
+import org.apache.sysds.runtime.util.DependencyThreadPool;
+import org.apache.sysds.runtime.util.DependencyWrapperTask;
+import org.apache.sysds.runtime.util.IndexRange;
+import org.apache.sysds.utils.Statistics;
+
 public class MultiColumnEncoder implements Encoder {
 
 	protected static final Log LOG = LogFactory.getLog(MultiColumnEncoder.class.getName());
@@ -62,18 +64,6 @@ public class MultiColumnEncoder implements Encoder {
 	private EncoderOmit _legacyOmit = null;
 	private int _colOffset = 0; // offset for federated Workers who are using subrange encoders
 	private FrameBlock _meta = null;
-
-	// TEMP CONSTANTS for testing only
-	//private int APPLY_BLOCKSIZE = 0; // temp only for testing until automatic calculation of block size
-	public static int BUILD_BLOCKSIZE = 0;
-
-	/*public void setApplyBlockSize(int blk) {
-		APPLY_BLOCKSIZE = blk;
-	}*/
-
-	public void setBuildBlockSize(int blk) {
-		BUILD_BLOCKSIZE = blk;
-	}
 
 	public MultiColumnEncoder(List<ColumnEncoderComposite> columnEncoders) {
 		_columnEncoders = columnEncoders;
@@ -93,6 +83,7 @@ public class MultiColumnEncoder implements Encoder {
 			if(MULTI_THREADED && k > 1 && !MULTI_THREADED_STAGES && !hasLegacyEncoder()) {
 				out = new MatrixBlock();
 				DependencyThreadPool pool = new DependencyThreadPool(k);
+				LOG.debug("Encoding with full DAG on " + k + " Threads");
 				try {
 					pool.submitAllAndWait(getEncodeTasks(in, out, pool));
 				}
@@ -132,7 +123,7 @@ public class MultiColumnEncoder implements Encoder {
 		boolean applyOffsetDep = false;
 		tasks.add(DependencyThreadPool.createDependencyTask(new InitOutputMatrixTask(this, in, out)));
 		for(ColumnEncoderComposite e : _columnEncoders) {
-			List<DependencyTask<?>> buildTasks = e.getBuildTasks(in, BUILD_BLOCKSIZE);
+			List<DependencyTask<?>> buildTasks = e.getBuildTasks(in);
 
 			tasks.addAll(buildTasks);
 			if(buildTasks.size() > 0) {
@@ -201,7 +192,7 @@ public class MultiColumnEncoder implements Encoder {
 	private List<DependencyTask<?>> getBuildTasks(FrameBlock in) {
 		List<DependencyTask<?>> tasks = new ArrayList<>();
 		for(ColumnEncoderComposite columnEncoder : _columnEncoders) {
-			tasks.addAll(columnEncoder.getBuildTasks(in, BUILD_BLOCKSIZE));
+			tasks.addAll(columnEncoder.getBuildTasks(in));
 		}
 		return tasks;
 	}
@@ -257,7 +248,7 @@ public class MultiColumnEncoder implements Encoder {
 			int offset = outputCol;
 			for(ColumnEncoderComposite columnEncoder : _columnEncoders) {
 				columnEncoder.apply(in, out, columnEncoder._colID - 1 + offset);
-				if(columnEncoder.hasEncoder(ColumnEncoderDummycode.class))
+				if (columnEncoder.hasEncoder(ColumnEncoderDummycode.class))
 					offset += columnEncoder.getEncoder(ColumnEncoderDummycode.class)._domainSize - 1;
 			}
 		}
@@ -296,6 +287,7 @@ public class MultiColumnEncoder implements Encoder {
 	}
 
 	private static void outputMatrixPreProcessing(MatrixBlock output, FrameBlock input) {
+		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 		output.allocateBlock();
 		if(output.isInSparseFormat()) {
 			SparseBlock block = output.getSparseBlock();
@@ -312,22 +304,27 @@ public class MultiColumnEncoder implements Encoder {
 				((SparseRowVector)block.get(r)).setSize(input.getNumColumns());
 			}
 		}
+		if(DMLScript.STATISTICS)
+			Statistics.incTransformOutMatrixPreProcessingTime(System.nanoTime()-t0);
 	}
 
 	private void outputMatrixPostProcessing(MatrixBlock output){
-		Set<Integer> listStream = getColumnEncoders(ColumnEncoderPassThrough.class).stream()
+		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
+		Set<Integer> indexSet = getColumnEncoders(ColumnEncoderPassThrough.class).stream()
 				.map(ColumnEncoderPassThrough::getSparseRowsWZeros).flatMap(l -> {
 					if(l == null)
 						return null;
 					return l.stream();
 				}).collect(Collectors.toSet());
-		if(!listStream.stream().allMatch(Objects::isNull)){
-			for(Integer row : listStream){
+		if(!indexSet.stream().allMatch(Objects::isNull)){
+			for(Integer row : indexSet){
 				// TODO: Maybe MT in special cases when the number of rows is large
 				output.getSparseBlock().get(row).compact();
 			}
 		}
 		output.recomputeNonZeros();
+		if(DMLScript.STATISTICS)
+			Statistics.incTransformOutMatrixPostProcessingTime(System.nanoTime()-t0);
 	}
 
 	@Override

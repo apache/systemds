@@ -25,6 +25,7 @@ import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.junit.Test;
 
+@net.jcip.annotations.NotThreadSafe
 public class ParamservSyntaxTest extends AutomatedTestBase {
 
 	private static final String TEST_NAME1 = "paramserv-all-args";

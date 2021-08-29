@@ -32,6 +32,7 @@ import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
 import scala.Tuple2;
 
+@net.jcip.annotations.NotThreadSafe
 public class LocalDataPartitionerTest extends BaseDataPartitionerTest {
 
 	@Test

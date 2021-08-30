@@ -59,7 +59,7 @@ public class IPAPassCompressionWorkloadAnalysis extends IPAPass {
 			CostEstimatorBuilder b = new CostEstimatorBuilder(tree);
 			// filter out compression plans that is known bad
 			
-			if(tree.getRoot().getMemEstimate() > 10000000 && b.shouldTryToCompress()){
+			if(b.shouldTryToCompress()){
 				tree.getRoot().setRequiresCompression(tree);
 				for(Hop h : tree.getDecompressList())
 					h.setRequiresDeCompression();

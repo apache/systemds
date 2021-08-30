@@ -257,11 +257,10 @@ public class CompressedMatrixBlockFactory {
 				break;
 			default:
 				if(mb.isInSparseFormat()) {
-					boolean isUltraSparse = mb.getSparsity() < 0.00001;
 					boolean isNnzLowAndVerySparse = mb.getNonZeros() < 1000 && mb.getSparsity() < 0.4;
 					boolean isAboveRowNumbers = mb.getNumRows() > 500000;
 					boolean isAboveThreadToColumnRatio = coCodeColGroups.getNumberColGroups() > mb.getNumColumns() / 4;
-					compSettings.transposed = isUltraSparse || isNnzLowAndVerySparse ||
+					compSettings.transposed = isNnzLowAndVerySparse ||
 						(isAboveRowNumbers && isAboveThreadToColumnRatio);
 				}
 				else

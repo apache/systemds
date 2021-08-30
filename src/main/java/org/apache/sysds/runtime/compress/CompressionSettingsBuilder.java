@@ -45,6 +45,7 @@ public class CompressionSettingsBuilder {
 	private EstimationType estimationType = EstimationType.HassAndStokes;
 	private PartitionerType columnPartitioner;
 	private CostType costType;
+	private double minimumCompressionRatio = 1.0;
 
 	public CompressionSettingsBuilder() {
 
@@ -267,6 +268,11 @@ public class CompressionSettingsBuilder {
 		return this;
 	}
 
+	public CompressionSettingsBuilder setMinimumCompressionRatio(double ratio){
+		this.minimumCompressionRatio = ratio;
+		return this;
+	}
+
 	/**
 	 * Create the CompressionSettings object to use in the compression.
 	 * 
@@ -275,6 +281,6 @@ public class CompressionSettingsBuilder {
 	public CompressionSettings create() {
 		return new CompressionSettings(samplingRatio, allowSharedDictionary, transposeInput, seed, lossy,
 			validCompressions, sortValuesByLength, columnPartitioner, maxColGroupCoCode, coCodePercentage,
-			minimumSampleSize, estimationType, costType);
+			minimumSampleSize, estimationType, costType,minimumCompressionRatio);
 	}
 }

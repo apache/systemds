@@ -19,6 +19,10 @@
 
 package org.apache.sysds.hops.cost;
 
+/**
+ * Class storing execution cost estimates for federated executions with cost estimates split into different categories
+ * such as compute, read, and transfer cost.
+ */
 public class FederatedCost {
 	protected double computeCost = 0;
 	protected double readCost = 0;
@@ -26,9 +30,7 @@ public class FederatedCost {
 	protected double outputTransferCost = 0;
 	protected double inputTotalCost = 0;
 
-	public FederatedCost(){
-
-	}
+	public FederatedCost(){}
 
 	public FederatedCost(double readCost, double inputTransferCost, double outputTransferCost,
 		double computeCost, double inputTotalCost){
@@ -39,14 +41,26 @@ public class FederatedCost {
 		this.inputTotalCost = inputTotalCost;
 	}
 
+	/**
+	 * Get the total sum of costs stored in this object.
+	 * @return total cost
+	 */
 	public double getTotal(){
 		return computeCost + readCost + inputTransferCost + outputTransferCost + inputTotalCost;
 	}
 
-	public void addRepititionCost(int repititionNumber){
-		this.inputTotalCost = inputTotalCost * repititionNumber;
+	/**
+	 * Multiply the input costs by the number of times the costs are repeated.
+	 * @param repetitionNumber number of repetitions of the costs
+	 */
+	public void addRepetitionCost(int repetitionNumber){
+		this.inputTotalCost = inputTotalCost * repetitionNumber;
 	}
 
+	/**
+	 * Get summed input costs.
+	 * @return summed input costs
+	 */
 	public double getInputTotalCost(){
 		return inputTotalCost;
 	}
@@ -55,10 +69,18 @@ public class FederatedCost {
 		this.inputTotalCost = inputTotalCost;
 	}
 
+	/**
+	 * Add cost to the stored input cost.
+	 * @param additionalCost to add to total input cost
+	 */
 	public void addInputTotalCost(double additionalCost){
 		this.inputTotalCost += additionalCost;
 	}
 
+	/**
+	 * Add costs of FederatedCost object to this object's current costs.
+	 * @param additionalCost object to add to this object
+	 */
 	public void addFederatedCost(FederatedCost additionalCost){
 		this.readCost += additionalCost.readCost;
 		this.inputTransferCost += additionalCost.inputTransferCost;

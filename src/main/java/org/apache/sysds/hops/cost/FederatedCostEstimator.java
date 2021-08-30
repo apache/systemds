@@ -29,6 +29,9 @@ import org.apache.sysds.parser.WhileStatementBlock;
 
 import java.util.ArrayList;
 
+/**
+ * Cost estimator for federated executions with methods and constants for going through DML programs to estimate costs.
+ */
 public class FederatedCostEstimator {
 	public int DEFAULT_MEMORY_ESTIMATE = 8;
 	public int DEFAULT_ITERATION_NUMBER = 15;
@@ -39,6 +42,11 @@ public class FederatedCostEstimator {
 
 	public boolean printCosts = false; //Temporary for debugging purposes
 
+	/**
+	 * Estimate cost of given DML program in bytes.
+	 * @param dmlProgram for which the cost is estimated
+	 * @return federated cost object with cost estimate in bytes
+	 */
 	public FederatedCost costEstimate(DMLProgram dmlProgram){
 		FederatedCost programTotalCost = new FederatedCost();
 		for ( StatementBlock stmBlock : dmlProgram.getStatementBlocks() )
@@ -46,15 +54,18 @@ public class FederatedCostEstimator {
 		return programTotalCost;
 	}
 
+	/**
+	 * Cost estimate in bytes of given statement block.
+	 * @param sb statement block
+	 * @return federated cost object with cost estimate in bytes
+	 */
 	private FederatedCost costEstimate(StatementBlock sb){
 		if ( sb instanceof WhileStatementBlock){
-			WhileStatementBlock whileSB = (WhileStatementBlock) sb;
 			FederatedCost whileSBCost = addInitialInputCost(sb);
-			whileSBCost.addRepititionCost(DEFAULT_ITERATION_NUMBER);
+			whileSBCost.addRepetitionCost(DEFAULT_ITERATION_NUMBER);
 			return whileSBCost;
 		}
 		else if ( sb instanceof IfStatementBlock){
-			IfStatementBlock ifSB = (IfStatementBlock) sb;
 			//Get cost of if-block + else-block and divide by two
 			// since only one of the code blocks will be executed in the end
 			FederatedCost ifSBCost = addInitialInputCost(sb);
@@ -65,7 +76,7 @@ public class FederatedCostEstimator {
 			// This also includes ParForStatementBlocks
 			ForStatementBlock forSB = (ForStatementBlock) sb;
 			FederatedCost forCost = addInitialInputCost(sb);
-			forCost.addRepititionCost(forSB.getEstimateReps());
+			forCost.addRepetitionCost(forSB.getEstimateReps());
 			return forCost;
 		}
 		else if ( sb instanceof FunctionStatementBlock){
@@ -79,6 +90,11 @@ public class FederatedCostEstimator {
 		}
 	}
 
+	/**
+	 * Creates new FederatedCost object and adds all child statement block cost estimates to the object.
+	 * @param sb statement block
+	 * @return new FederatedCost estimate object with all estimates of child statement blocks added
+	 */
 	private FederatedCost addInitialInputCost(StatementBlock sb){
 		FederatedCost basicCost = new FederatedCost();
 		for ( StatementBlock childSB : sb.getDMLProg().getStatementBlocks() )
@@ -86,6 +102,12 @@ public class FederatedCostEstimator {
 		return basicCost;
 	}
 
+	/**
+	 * Cost estimate in bytes of given list of roots.
+	 * The individual cost estimates of the hops are summed.
+	 * @param roots list of hops
+	 * @return new FederatedCost object with sum of cost estimates of given hops
+	 */
 	private FederatedCost costEstimate(ArrayList<Hop> roots){
 		FederatedCost basicCost = new FederatedCost();
 		for ( Hop root : roots )
@@ -94,7 +116,7 @@ public class FederatedCostEstimator {
 	}
 
 	/**
-	 * Return cost estimate of Hop DAG starting from given root.
+	 * Return cost estimate in bytes of Hop DAG starting from given root.
 	 * @param root of Hop DAG for which cost is estimated
 	 * @return cost estimation of Hop DAG starting from given root
 	 */
@@ -136,6 +158,8 @@ public class FederatedCostEstimator {
 			if ( printCosts ){
 				System.out.println("===============================");
 				System.out.println(root);
+				System.out.println("Is federated: " + root.isFederated());
+				System.out.println("Has federated output: " + root.hasFederatedOutput());
 				System.out.println(root.getText());
 				System.out.println(ComputeCost.getHOPComputeCost(root));
 				System.out.println(root.getFederatedCost().toString());

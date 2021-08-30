@@ -547,6 +547,12 @@ public abstract class Hop implements ParseInfo {
 		return getInputSize(null);
 	}
 
+	/**
+	 * Get the memory estimate of inputs as the sum of input estimates in bytes.
+	 * @param exclVars name of input hops to exclude from the input estimate
+	 * @param injectedDefault default memory estimate (bytes) used when the memory estimate of the input is negative
+	 * @return input memory estimate in bytes
+	 */
 	protected double getInputSize(Collection<String> exclVars, double injectedDefault){
 		double sum = 0;
 		int len = _input.size();
@@ -572,6 +578,11 @@ public abstract class Hop implements ParseInfo {
 		return sum;
 	}
 
+	/**
+	 * Get the memory estimate of inputs as the sum of input estimates in bytes.
+	 * @param exclVars name of input hops to exclude from the input estimate
+	 * @return input memory estimate in bytes
+	 */
 	protected double getInputSize(Collection<String> exclVars) {
 		return getInputSize(exclVars, OptimizerUtils.INVALID_SIZE);
 	}
@@ -627,12 +638,21 @@ public abstract class Hop implements ParseInfo {
 	}
 
 	//wrappers for meaningful public names to memory estimates.
-	
+
+	/**
+	 * Get the memory estimate of inputs as the sum of input estimates in bytes.
+	 * @return input memory estimate in bytes
+	 */
 	public double getInputMemEstimate()
 	{
 		return getInputSize();
 	}
 
+	/**
+	 * Get the memory estimate of inputs as the sum of input estimates in bytes.
+	 * @param injectedDefault default memory estimate (bytes) used when the memory estimate of the input is negative
+	 * @return input memory estimate in bytes
+	 */
 	public double getInputMemEstimate(double injectedDefault){
 		return getInputSize(null, injectedDefault);
 	}
@@ -914,6 +934,10 @@ public abstract class Hop implements ParseInfo {
 		return _federatedOutput == FederatedOutput.LOUT;
 	}
 
+	/**
+	 * Check if federated cost has been initialized for this Hop.
+	 * @return true if federated cost has been initialized
+	 */
 	public boolean federatedCostInitialized(){
 		return _federatedCost.getTotal() > 0;
 	}

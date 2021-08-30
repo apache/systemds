@@ -129,6 +129,12 @@ public class AggregateUnaryFEDInstruction extends UnaryFEDInstruction {
 		deriveNewOutputFedMapping(in, out, fr1);
 	}
 
+	/**
+	 * Set output fed mapping based on federated partitioning and aggregation type.
+	 * @param in matrix object from which fed partitioning originates from
+	 * @param out matrix object holding the dimensions of the instruction output
+	 * @param fr1 federated request holding the instruction execution call
+	 */
 	private void deriveNewOutputFedMapping(MatrixObject in, MatrixObject out, FederatedRequest fr1){
 		//Get agg type
 		if ( !(instOpcode.equals("uack+") || instOpcode.equals("uark+")) )

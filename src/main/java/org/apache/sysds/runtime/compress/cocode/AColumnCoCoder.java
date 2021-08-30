@@ -26,7 +26,6 @@ import org.apache.sysds.runtime.compress.cost.ICostEstimate;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeEstimator;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfo;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup;
-import org.apache.sysds.runtime.compress.utils.Util;
 
 public abstract class AColumnCoCoder {
 
@@ -52,26 +51,17 @@ public abstract class AColumnCoCoder {
 	 */
 	protected abstract CompressedSizeInfo coCodeColumns(CompressedSizeInfo colInfos, int k);
 
-	protected CompressedSizeInfoColGroup join(CompressedSizeInfoColGroup lhs, CompressedSizeInfoColGroup rhs,
-		boolean analyze) {
-		return analyze ? joinWithAnalysis(lhs, rhs) : joinWithoutAnalysis(lhs, rhs);
+	protected CompressedSizeInfoColGroup join(int[] joined, CompressedSizeInfoColGroup lhs,
+		CompressedSizeInfoColGroup rhs, boolean analyze) {
+		return analyze ? _sest.estimateJoinCompressedSize(joined, lhs, rhs) : joinWithoutAnalysis(joined, lhs, rhs);
 	}
 
-	protected CompressedSizeInfoColGroup joinWithAnalysis(CompressedSizeInfoColGroup lhs,
+	protected CompressedSizeInfoColGroup joinWithoutAnalysis(int[] joined, CompressedSizeInfoColGroup lhs,
 		CompressedSizeInfoColGroup rhs) {
-		return _sest.estimateJoinCompressedSize(lhs, rhs);
-	}
-
-	protected CompressedSizeInfoColGroup joinWithoutAnalysis(CompressedSizeInfoColGroup lhs,
-		CompressedSizeInfoColGroup rhs) {
-		int[] joined = Util.join(lhs.getColumns(), rhs.getColumns());
 		final int lhsV = lhs.getNumVals();
 		final int rhsV = rhs.getNumVals();
-		final int numVals = lhsV * rhsV;
-		if(numVals < 0 || numVals > _sest.getNumRows())
-			return null;
-		else
-			return new CompressedSizeInfoColGroup(joined, numVals, _sest.getNumRows());
+		final int joinedMaxDistinct = (int) Math.min((long) lhsV * (long) rhsV, (long) _sest.getNumRows());
+		return new CompressedSizeInfoColGroup(joined, joinedMaxDistinct, _sest.getNumRows());
 	}
 
 	protected CompressedSizeInfoColGroup analyze(CompressedSizeInfoColGroup g) {

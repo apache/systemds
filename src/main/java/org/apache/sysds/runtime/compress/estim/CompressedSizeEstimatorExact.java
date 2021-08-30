@@ -45,8 +45,9 @@ public class CompressedSizeEstimatorExact extends CompressedSizeEstimator {
 	}
 
 	@Override
-	public CompressedSizeInfoColGroup estimateJoinCompressedSize(int[] joined, CompressedSizeInfoColGroup g1,
-		CompressedSizeInfoColGroup g2) {
+	protected CompressedSizeInfoColGroup estimateJoinCompressedSize(int[] joined, CompressedSizeInfoColGroup g1,
+		CompressedSizeInfoColGroup g2, int joinedMaxDistinct) {
+
 		AMapToData map = MapToFactory.join(g1.getMap(), g2.getMap());
 		EstimationFactors em = EstimationFactors.computeSizeEstimation(joined, map,
 			_cs.validCompressions.contains(CompressionType.RLE), _numRows, false);

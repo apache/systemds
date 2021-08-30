@@ -29,6 +29,7 @@ import java.io.DataOutputStream;
 import java.util.Collection;
 
 import org.apache.commons.math3.random.Well1024a;
+import org.apache.sysds.common.Types.CorrectionLocationType;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
@@ -36,10 +37,15 @@ import org.apache.sysds.runtime.compress.CompressionSettingsBuilder;
 import org.apache.sysds.runtime.compress.CompressionStatistics;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup.CompressionType;
+import org.apache.sysds.runtime.functionobjects.KahanPlus;
+import org.apache.sysds.runtime.functionobjects.Multiply;
+import org.apache.sysds.runtime.functionobjects.ReduceAll;
 import org.apache.sysds.runtime.matrix.data.LibMatrixCountDistinct;
 import org.apache.sysds.runtime.matrix.data.LibMatrixDatagen;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.data.RandomMatrixGenerator;
+import org.apache.sysds.runtime.matrix.operators.AggregateOperator;
+import org.apache.sysds.runtime.matrix.operators.AggregateTernaryOperator;
 import org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator;
 import org.apache.sysds.runtime.matrix.operators.CountDistinctOperator;
 import org.apache.sysds.runtime.matrix.operators.CountDistinctOperator.CountDistinctTypes;
@@ -568,6 +574,33 @@ public class CompressedMatrixTest extends AbstractCompressedUnaryTests {
 	@Test(expected = RuntimeException.class)
 	public void testCompressedMatrixCopyToSelf_shouldThrowException() {
 		cmb.copy(cmb);
+	}
+
+	@Test
+	public void testAggregateTernaryOperation() {
+		try {
+			if(!(cmb instanceof CompressedMatrixBlock) || rows * cols > 10000)
+				return;
+			CorrectionLocationType corr = CorrectionLocationType.LASTCOLUMN;
+			AggregateOperator agg = new AggregateOperator(0, KahanPlus.getKahanPlusFnObject(), corr);
+			AggregateTernaryOperator op = new AggregateTernaryOperator(Multiply.getMultiplyFnObject(), agg,
+				ReduceAll.getReduceAllFnObject());
+
+			int nrow = mb.getNumRows();
+			int ncol = mb.getNumColumns();
+
+			MatrixBlock m2 = new MatrixBlock(nrow, ncol, 13.0);
+			MatrixBlock m3 = new MatrixBlock(nrow, ncol, 14.0);
+
+			MatrixBlock ret1 = cmb.aggregateTernaryOperations(cmb, m2, m3, null, op, true);
+			MatrixBlock ret2 = mb.aggregateTernaryOperations(mb, m2, m3, null, op, true);
+
+			compareResultMatrices(ret2, ret1, 1);
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			throw new DMLRuntimeException(e);
+		}
 	}
 
 	private static long getJolSize(CompressedMatrixBlock cmb, CompressionStatistics cStat) {

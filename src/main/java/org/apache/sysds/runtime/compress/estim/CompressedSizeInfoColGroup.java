@@ -66,7 +66,7 @@ public class CompressedSizeInfoColGroup {
 		_facts = new EstimationFactors(columns, numVals, numRows);
 		_cardinalityRatio = (double) numVals / numRows;
 		_sizes = null;
-		_bestCompressionType = null;
+		_bestCompressionType = CompressionType.DDC;
 		_minSize = ColGroupSizes.estimateInMemorySizeDDC(columns.length, numVals, numRows, 1.0, false);
 		_map = null;
 	}

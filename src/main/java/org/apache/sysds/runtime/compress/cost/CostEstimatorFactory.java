@@ -45,7 +45,7 @@ public final class CostEstimatorFactory {
 					return b.create(nRows, nCols);
 				}
 				else
-					return new DistinctCostEstimator(nRows, cs);
+					return new MemoryCostEstimator();
 			case MEMORY:
 			default:
 				return new MemoryCostEstimator();

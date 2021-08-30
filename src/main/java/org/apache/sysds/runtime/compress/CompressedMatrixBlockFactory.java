@@ -32,18 +32,21 @@ import org.apache.sysds.runtime.compress.colgroup.AColGroup;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupConst;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupEmpty;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupFactory;
+import org.apache.sysds.runtime.compress.colgroup.ColGroupUncompressed;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupValue;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
+import org.apache.sysds.runtime.compress.cost.ComputationCostEstimator;
 import org.apache.sysds.runtime.compress.cost.CostEstimatorFactory;
 import org.apache.sysds.runtime.compress.cost.ICostEstimate;
-import org.apache.sysds.runtime.compress.cost.MemoryCostEstimator;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeEstimator;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeEstimatorFactory;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfo;
+import org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup;
 import org.apache.sysds.runtime.compress.utils.DblArrayIntListHashMap;
 import org.apache.sysds.runtime.compress.utils.DoubleCountHashMap;
 import org.apache.sysds.runtime.compress.workload.WTreeRoot;
 import org.apache.sysds.runtime.controlprogram.parfor.stat.Timing;
+import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.matrix.data.LibMatrixReorg;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.utils.DMLCompressionStatistics;
@@ -65,7 +68,7 @@ public class CompressedMatrixBlockFactory {
 	private final CompressionSettings compSettings;
 	/** The main cost estimator used for the compression */
 	private final ICostEstimate costEstimator;
-	
+
 	/** Time stamp of last phase */
 	private double lastPhase;
 	/** Pointer to the original matrix Block that is about to be compressed. */
@@ -153,6 +156,20 @@ public class CompressedMatrixBlockFactory {
 	}
 
 	/**
+	 * Generate a CompressedMatrixBlock Object that contains a single uncompressed matrix block column group.
+	 * 
+	 * @param mb The matrix block to be contained in the uncompressed matrix block column,
+	 * @return a CompressedMatrixBlock
+	 */
+	public static CompressedMatrixBlock genUncompressedCompressedMatrixBlock(MatrixBlock mb) {
+		CompressedMatrixBlock ret = new CompressedMatrixBlock(mb.getNumRows(), mb.getNumColumns());
+		AColGroup cg = new ColGroupUncompressed(mb);
+		ret.allocateColGroup(cg);
+		ret.setNonZeros(mb.getNonZeros());
+		return ret;
+	}
+
+	/**
 	 * Method for constructing a compressed matrix out of an constant input.
 	 * 
 	 * Since the input is a constant value it is trivially compressable, therefore we skip the entire compression
@@ -191,9 +208,13 @@ public class CompressedMatrixBlockFactory {
 
 		res = new CompressedMatrixBlock(mb); // copy metadata and allocate soft reference
 
-		classifyPhase();
-		if(coCodeColGroups == null)
-			return abortCompression();
+		looksLikeOneHot();
+
+		if(coCodeColGroups == null) {
+			classifyPhase();
+			if(coCodeColGroups == null)
+				return abortCompression();
+		}
 
 		transposePhase();
 		compressPhase();
@@ -217,12 +238,22 @@ public class CompressedMatrixBlockFactory {
 		_stats.estimatedSizeCols = sizeInfos.memoryEstimate();
 		logPhase();
 
-		if(!(costEstimator instanceof MemoryCostEstimator) || _stats.estimatedSizeCols < _stats.originalSize)
+		final boolean isValidForComputeBasedCompression = isComputeBasedCompression() &&
+			(compSettings.minimumCompressionRatio != 1.0) ? _stats.estimatedSizeCols *
+				compSettings.minimumCompressionRatio < _stats.originalSize : true;
+		final boolean isValidForMemoryBasedCompression = _stats.estimatedSizeCols *
+			compSettings.minimumCompressionRatio < _stats.originalSize;
+
+		if(isValidForComputeBasedCompression || isValidForMemoryBasedCompression)
 			coCodePhase(sizeEstimator, sizeInfos, costEstimator);
 		else {
 			LOG.info("Estimated Size of singleColGroups: " + _stats.estimatedSizeCols);
 			LOG.info("Original size                    : " + _stats.originalSize);
 		}
+	}
+
+	private boolean isComputeBasedCompression() {
+		return costEstimator instanceof ComputationCostEstimator;
 	}
 
 	private void coCodePhase(CompressedSizeEstimator sizeEstimator, CompressedSizeInfo sizeInfos,
@@ -231,7 +262,62 @@ public class CompressedMatrixBlockFactory {
 			compSettings);
 
 		_stats.estimatedSizeCoCoded = coCodeColGroups.memoryEstimate();
+
 		logPhase();
+
+		// if cocode is estimated larger than uncompressed abort compression.
+		if(isComputeBasedCompression() &&
+			_stats.estimatedSizeCoCoded * compSettings.minimumCompressionRatio > _stats.originalSize) {
+
+			coCodeColGroups = null;
+			LOG.info("Aborting compression because the cocoded size : " + _stats.estimatedSizeCoCoded);
+			LOG.info("Vs original size                              : " + _stats.originalSize);
+		}
+
+	}
+
+	private void looksLikeOneHot() {
+		final int numColumns = mb.getNumColumns();
+		final int numRows = mb.getNumRows();
+		final long nnz = mb.getNonZeros();
+		final int colGroupSize = 100;
+		if(nnz == numRows) {
+			boolean onlyOneValues = true;
+			LOG.debug("Looks like one hot encoded.");
+			if(mb.isInSparseFormat()) {
+				final SparseBlock sb = mb.getSparseBlock();
+				for(double v : sb.get(0).values()) {
+					onlyOneValues = v == 1.0;
+					if(!onlyOneValues) {
+						break;
+					}
+				}
+			}
+			else {
+				final double[] vals = mb.getDenseBlock().values(0);
+				for(int i = 0; i < Math.min(vals.length, 1000); i++) {
+					double v = vals[i];
+					onlyOneValues = v == 1.0 || v == 0.0;
+					if(!onlyOneValues) {
+						break;
+					}
+				}
+			}
+			if(onlyOneValues) {
+				List<CompressedSizeInfoColGroup> ng = new ArrayList<>(numColumns / colGroupSize + 1);
+				for(int i = 0; i < numColumns; i += colGroupSize) {
+					int[] columnIds = new int[Math.min(colGroupSize, numColumns - i)];
+					for(int j = 0; j < columnIds.length; j++)
+						columnIds[j] = i + j;
+					ng.add(new CompressedSizeInfoColGroup(columnIds, Math.min(numColumns, colGroupSize), numRows));
+				}
+				coCodeColGroups = new CompressedSizeInfo(ng);
+
+				LOG.debug("Concluded that it probably is one hot encoded skipping analysis");
+				// skipping two phases
+				phase += 2;
+			}
+		}
 	}
 
 	private void transposePhase() {

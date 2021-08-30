@@ -132,6 +132,23 @@ public class ColGroupUncompressed extends AColGroup {
 		_data = data;
 	}
 
+	/**
+	 * Constructor for allocating a single uncompressed column group.
+	 * 
+	 * @param data matrix block
+	 */
+	public ColGroupUncompressed(MatrixBlock data) {
+		super(generateColumnList(data.getNumColumns()));
+		_data = data;
+	}
+
+	private static int[] generateColumnList(int nCol){
+		int[] cols = new int[nCol];
+		for(int i = 0; i< nCol; i++)
+			cols[i] = i;
+		return cols;
+	}
+
 	@Override
 	public CompressionType getCompType() {
 		return CompressionType.UNCOMPRESSED;
@@ -632,7 +649,7 @@ public class ColGroupUncompressed extends AColGroup {
 			double[] dv = colSum.getDenseBlockValues();
 			for(int i = 0; i < _colIndexes.length; i++)
 				c[_colIndexes[i]] += dv[i];
-			
+
 		}
 	}
 }

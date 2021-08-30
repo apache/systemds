@@ -34,9 +34,9 @@ import org.apache.sysds.runtime.compress.colgroup.ColGroupEmpty;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupFactory;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupValue;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
+import org.apache.sysds.runtime.compress.cost.ComputationCostEstimator;
 import org.apache.sysds.runtime.compress.cost.CostEstimatorFactory;
 import org.apache.sysds.runtime.compress.cost.ICostEstimate;
-import org.apache.sysds.runtime.compress.cost.MemoryCostEstimator;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeEstimator;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeEstimatorFactory;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfo;
@@ -65,7 +65,7 @@ public class CompressedMatrixBlockFactory {
 	private final CompressionSettings compSettings;
 	/** The main cost estimator used for the compression */
 	private final ICostEstimate costEstimator;
-	
+
 	/** Time stamp of last phase */
 	private double lastPhase;
 	/** Pointer to the original matrix Block that is about to be compressed. */
@@ -217,12 +217,16 @@ public class CompressedMatrixBlockFactory {
 		_stats.estimatedSizeCols = sizeInfos.memoryEstimate();
 		logPhase();
 
-		if(!(costEstimator instanceof MemoryCostEstimator) || _stats.estimatedSizeCols < _stats.originalSize)
+		if(isComputeBasedCompression() || _stats.estimatedSizeCols < _stats.originalSize)
 			coCodePhase(sizeEstimator, sizeInfos, costEstimator);
 		else {
 			LOG.info("Estimated Size of singleColGroups: " + _stats.estimatedSizeCols);
 			LOG.info("Original size                    : " + _stats.originalSize);
 		}
+	}
+
+	private boolean isComputeBasedCompression() {
+		return costEstimator instanceof ComputationCostEstimator;
 	}
 
 	private void coCodePhase(CompressedSizeEstimator sizeEstimator, CompressedSizeInfo sizeInfos,
@@ -231,7 +235,19 @@ public class CompressedMatrixBlockFactory {
 			compSettings);
 
 		_stats.estimatedSizeCoCoded = coCodeColGroups.memoryEstimate();
+
 		logPhase();
+
+		// if cocode is estimated larger than uncompressed abort compression.
+		// if cost based, then stop compression if the size in compressed is larger than 3 times the original.
+		if((isComputeBasedCompression() && _stats.estimatedSizeCoCoded / 3 > _stats.originalSize) ||
+			_stats.estimatedSizeCoCoded > _stats.originalSize) {
+
+			coCodeColGroups = null;
+			LOG.info("Aborting compression because the cocoded size : " + _stats.estimatedSizeCoCoded);
+			LOG.info("Vs original size                              : " + _stats.originalSize);
+		}
+
 	}
 
 	private void transposePhase() {

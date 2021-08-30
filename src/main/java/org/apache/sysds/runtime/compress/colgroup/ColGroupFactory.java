@@ -216,7 +216,7 @@ public final class ColGroupFactory {
 		try {
 			final int nrUniqueEstimate = cg.getNumVals();
 			CompressionType estimatedBestCompressionType = cg.getBestCompressionType();
-			
+
 			if(estimatedBestCompressionType == CompressionType.SDC && cs.costComputationType == CostType.W_TREE) {
 				if(cg.getCompressionSize(CompressionType.DDC) < cg.getCompressionSize(CompressionType.SDC) * 3)
 					estimatedBestCompressionType = CompressionType.DDC;

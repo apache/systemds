@@ -128,7 +128,7 @@ public class RewriteCompressedReblock extends StatementBlockRewriteRule {
 
 	public static boolean satisfiesSizeConstraintsForCompression(Hop hop) {
 		if(hop.getDim2() >= 1) {
-			return (hop.getDim1() >= 1000 && hop.getDim2() < 100) || hop.getDim1() / hop.getDim2() >= 75;
+			return (hop.getDim1() >= 1000 && hop.getDim2() < 100) || hop.getDim1() / hop.getDim2() >= 75 || (hop.getSparsity() < 0.0001 && hop.getDim1() > 1000);
 		}
 		return false;
 	}

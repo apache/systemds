@@ -453,6 +453,10 @@ public class CompressedMatrixBlock extends MatrixBlock {
 
 	@Override
 	public void write(DataOutput out) throws IOException {
+		if(getExactSizeOnDisk() > MatrixBlock.estimateSizeOnDisk(rlen, clen, nonZeros)){
+			// decompress and make a uncompressed column group. this is then used for the serialization, since it is smaller.
+			throw new NotImplementedException("Decompressing serialization is not implemented");
+		}
 		// serialize compressed matrix block
 		out.writeInt(rlen);
 		out.writeInt(clen);

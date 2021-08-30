@@ -119,7 +119,7 @@ public class WorkloadTest {
 		args.put("$2", "FALSE");
 		args.put("$3", "0");
 
-		tests.add(new Object[] {0, 0, 0, 1, 1, 1, 6, 0, true, false, "functions/lmDS.dml", args});
+		tests.add(new Object[] {0, 1, 0, 1, 1, 1, 6, 0, true, false, "functions/lmDS.dml", args});
 		tests.add(new Object[] {0, 0, 0, 1, 0, 1, 0, 0, true, true, "functions/lmDS.dml", args});
 		tests.add(new Object[] {0, 0, 0, 1, 10, 10, 1, 0, true, true, "functions/lmCG.dml", args});
 
@@ -134,15 +134,15 @@ public class WorkloadTest {
 		args.put("$1", testFile);
 		args.put("$2", "TRUE");
 		args.put("$3", "1");
-		tests.add(new Object[] {0, 0, 1, 1, 1, 1, 1, 0, true, true, "functions/lmDS.dml", args});
-		tests.add(new Object[] {0, 0, 1, 1, 11, 10, 2, 0, true, true, "functions/lmCG.dml", args});
+		tests.add(new Object[] {0, 1, 0, 0, 0, 0, 1, 0, false, true, "functions/lmDS.dml", args});
+		tests.add(new Object[] {0, 1, 1, 1, 11, 10, 2, 0, true, true, "functions/lmCG.dml", args});
 
 		args = new HashMap<>();
 		args.put("$1", testFile);
 		args.put("$2", "TRUE");
 		args.put("$3", "2");
-		tests.add(new Object[] {0, 0, 1, 1, 1, 1, 3, 0, true, true, "functions/lmDS.dml", args});
-		tests.add(new Object[] {0, 0, 1, 1, 11, 10, 4, 0, true, true, "functions/lmCG.dml", args});
+		tests.add(new Object[] {0, 1, 0, 0, 0, 0, 1, 0, false, true, "functions/lmDS.dml", args});
+		tests.add(new Object[] {0, 1, 1, 1, 11, 10, 2, 0, true, true, "functions/lmCG.dml", args});
 
 		args = new HashMap<>();
 		args.put("$1", testFile);
@@ -176,7 +176,7 @@ public class WorkloadTest {
 			CostEstimatorBuilder ceb = new CostEstimatorBuilder(wtr);
 			InstructionTypeCounter itc = ceb.getCounter();
 
-			verify(wtr, itc, ceb);
+			verify(wtr, itc, ceb, scriptName, args);
 		}
 		catch(Exception e) {
 			e.printStackTrace();
@@ -184,9 +184,9 @@ public class WorkloadTest {
 		}
 	}
 
-	private void verify(WTreeRoot wtr, InstructionTypeCounter itc, CostEstimatorBuilder ceb) {
+	private void verify(WTreeRoot wtr, InstructionTypeCounter itc, CostEstimatorBuilder ceb, String name, Map<String, String> args) {
 
-		String errorString = wtr + "\n" + itc + " \n ";
+		String errorString = wtr + "\n" + itc + " \n " + name + "  -- " + args +  "\n";
 		Assert.assertEquals(errorString + "scans:", scans, itc.getScans());
 		Assert.assertEquals(errorString + "decompressions", decompressions, itc.getDecompressions());
 		Assert.assertEquals(errorString + "overlappingDecompressions", overlappingDecompressions,
@@ -197,7 +197,7 @@ public class WorkloadTest {
 			itc.getCompressedMultiplications());
 		Assert.assertEquals(errorString + "dictionaryOps", dictionaryOps, itc.getDictionaryOps());
 		Assert.assertEquals(errorString + "lookup", indexing, itc.getIndexing());
-		Assert.assertEquals(shouldCompress, ceb.shouldTryToCompress());
+		Assert.assertEquals(errorString + "Should Compresss", shouldCompress, ceb.shouldTryToCompress());
 	}
 
 	private static WTreeRoot getWorkloadTree(DMLProgram prog) {

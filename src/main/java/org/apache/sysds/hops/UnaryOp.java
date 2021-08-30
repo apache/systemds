@@ -545,7 +545,7 @@ public class UnaryOp extends MultiThreadedHop
 			setDim2(1);
 		}
 		else if(_op == OpOp1.TYPEOF || _op == OpOp1.DETECTSCHEMA || _op == OpOp1.COLNAMES) {
-			//TODO theses three builtins should rather be moved to unary aggregates
+			//TODO these three builtins should rather be moved to unary aggregates
 			setDim1(1);
 			setDim2(input.getDim2());
 		}
@@ -563,6 +563,16 @@ public class UnaryOp extends MultiThreadedHop
 				|| _op==OpOp1.COMPRESS || _op==OpOp1.DECOMPRESS) //sparsity preserving
 			{
 				setNnz( input.getNnz() );
+			}
+
+			// if the input is compressed then set the output to be compressed as well.
+			if(input._compressedOutput && ! (_op==OpOp1.DECOMPRESS)){
+				setCompressedOutput(true);
+				// Setting the compressed output to be 2 x larger.
+				// Just in case we change the compressed structure slightly.
+				// this value is overwritten with correct size once the hop is executed
+				// TODO handle overlapping state, since some operations would not lead to compressed output.
+				setCompressedSize(input.compressedSize() * 2);
 			}
 		}
 	}

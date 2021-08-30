@@ -107,18 +107,17 @@ public class CompressedSizeEstimatorSample extends CompressedSizeEstimator {
 	}
 
 	@Override
-	public CompressedSizeInfoColGroup estimateJoinCompressedSize(int[] joined, CompressedSizeInfoColGroup g1,
-		CompressedSizeInfoColGroup g2) {
-		final int g1V = g1.getMap().getUnique();
-		final int g2V = g2.getMap().getUnique();
-		final int nrUniqueUpperBound = g1V * g2V;
+	protected CompressedSizeInfoColGroup estimateJoinCompressedSize(int[] joined, CompressedSizeInfoColGroup g1,
+		CompressedSizeInfoColGroup g2, int joinedMaxDistinct) {
+		if((long)g1.getNumVals() * g2.getNumVals() >(long)Integer.MAX_VALUE )
+			return null;
 
 		final AMapToData map = MapToFactory.join(g1.getMap(), g2.getMap());
 		EstimationFactors sampleFacts = EstimationFactors.computeSizeEstimation(joined, map,
 			_cs.validCompressions.contains(CompressionType.RLE), map.size(), false);
 
 		// result facts
-		EstimationFactors em = estimateCompressionFactors(sampleFacts, map, joined, nrUniqueUpperBound);
+		EstimationFactors em = estimateCompressionFactors(sampleFacts, map, joined, joinedMaxDistinct);
 		return new CompressedSizeInfoColGroup(em, _cs.validCompressions, map);
 	}
 

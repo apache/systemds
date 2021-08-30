@@ -31,7 +31,6 @@ import java.util.List;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.sysds.common.Types.CorrectionLocationType;
 import org.apache.sysds.lops.MMTSJ.MMTSJType;
 import org.apache.sysds.lops.MapMultChain.ChainType;
 import org.apache.sysds.runtime.DMLRuntimeException;
@@ -55,22 +54,18 @@ import org.apache.sysds.runtime.functionobjects.Divide;
 import org.apache.sysds.runtime.functionobjects.Equals;
 import org.apache.sysds.runtime.functionobjects.GreaterThan;
 import org.apache.sysds.runtime.functionobjects.GreaterThanEquals;
-import org.apache.sysds.runtime.functionobjects.KahanPlus;
 import org.apache.sysds.runtime.functionobjects.LessThan;
 import org.apache.sysds.runtime.functionobjects.LessThanEquals;
 import org.apache.sysds.runtime.functionobjects.Minus;
 import org.apache.sysds.runtime.functionobjects.Multiply;
 import org.apache.sysds.runtime.functionobjects.Plus;
 import org.apache.sysds.runtime.functionobjects.Power2;
-import org.apache.sysds.runtime.functionobjects.ReduceAll;
 import org.apache.sysds.runtime.functionobjects.SwapIndex;
 import org.apache.sysds.runtime.functionobjects.ValueFunction;
 import org.apache.sysds.runtime.functionobjects.Xor;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.AggregateBinaryOperator;
-import org.apache.sysds.runtime.matrix.operators.AggregateOperator;
-import org.apache.sysds.runtime.matrix.operators.AggregateTernaryOperator;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysds.runtime.matrix.operators.LeftScalarOperator;
 import org.apache.sysds.runtime.matrix.operators.ReorgOperator;
@@ -1250,28 +1245,6 @@ public abstract class CompressedTestBase extends TestBase {
 		MatrixBlock ret1 = mb.append(ap, new MatrixBlock(), false);
 		MatrixBlock ret2 = cmb.append(ap, new MatrixBlock(), false);
 		compareResultMatrices(ret1, ret2, 1);
-	}
-
-	@Test
-	public void aggregateTernaryOperations() {
-		if(!(cmb instanceof CompressedMatrixBlock) || rows * cols > 10000)
-			return;
-
-		MatrixBlock m1 = new MatrixBlock();
-		MatrixBlock m2 = new MatrixBlock();
-		MatrixBlock m3 = null;
-		CorrectionLocationType corr = CorrectionLocationType.LASTCOLUMN;
-		AggregateOperator agg = new AggregateOperator(0, KahanPlus.getKahanPlusFnObject(), corr);
-		AggregateTernaryOperator op = new AggregateTernaryOperator(Multiply.getMultiplyFnObject(), agg,
-			ReduceAll.getReduceAllFnObject(), _k);
-
-		boolean inCP = true;
-
-		MatrixBlock ret1 = mb.aggregateTernaryOperations(m1, m2, m3, null, op, inCP);
-		MatrixBlock ret2 = cmb.aggregateTernaryOperations(m1, m2, m3, null, op, inCP);
-
-		compareResultMatrices(ret1, ret2, 1);
-
 	}
 
 	@Test

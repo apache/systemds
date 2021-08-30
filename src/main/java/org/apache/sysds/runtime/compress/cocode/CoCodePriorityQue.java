@@ -68,7 +68,7 @@ public class CoCodePriorityQue extends AColumnCoCoder {
 			while(que.peek() != null) {
 
 				CompressedSizeInfoColGroup r = que.poll();
-				final CompressedSizeInfoColGroup g = joinWithAnalysis(l, r);
+				final CompressedSizeInfoColGroup g = _sest.estimateJoinCompressedSize(l, r);
 				if(g != null) {
 					final double costOfJoin = _cest.getCostOfCollectionOfGroups(que, g);
 					if(costOfJoin < costBeforeJoin) {
@@ -93,7 +93,7 @@ public class CoCodePriorityQue extends AColumnCoCoder {
 			while(que.peek() != null) {
 				CompressedSizeInfoColGroup r = que.peek();
 				if(_cest.shouldTryJoin(l, r)) {
-					CompressedSizeInfoColGroup g = joinWithAnalysis(l, r);
+					CompressedSizeInfoColGroup g = _sest.estimateJoinCompressedSize(l, r);
 					if(g != null) {
 						double costOfJoin = _cest.getCostOfColumnGroup(g);
 						double costIndividual = _cest.getCostOfColumnGroup(l) + _cest.getCostOfColumnGroup(r);

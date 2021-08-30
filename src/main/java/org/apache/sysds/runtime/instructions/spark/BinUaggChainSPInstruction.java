@@ -30,6 +30,12 @@ import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 
+/**
+ * Instruction that performs
+ * 
+ * res = X / rowsum(x)
+ * 
+ */
 public class BinUaggChainSPInstruction extends UnarySPInstruction {
 	// operators
 	private BinaryOperator _bOp = null;

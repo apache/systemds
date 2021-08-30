@@ -22,12 +22,10 @@ package org.apache.sysds.runtime.compress.lib;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlockFactory;
-import org.apache.sysds.runtime.compress.CompressionStatistics;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupEmpty;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
@@ -41,24 +39,18 @@ public class CLALibAppend {
 		if(left.isEmpty() && right instanceof CompressedMatrixBlock)
 			return appendLeftEmpty(left, (CompressedMatrixBlock) right);
 		else if(right.isEmpty() && left instanceof CompressedMatrixBlock)
-			return appendRightEmpty((CompressedMatrixBlock)left, right);
+			return appendRightEmpty((CompressedMatrixBlock) left, right);
 
 		final int m = left.getNumRows();
 		final int n = left.getNumColumns() + right.getNumColumns();
 
-		// try to compress both sides (if not already compressed).
 		if(!(left instanceof CompressedMatrixBlock) && m > 1000) {
-			LOG.warn("Compressing left for append operation");
-			Pair<MatrixBlock, CompressionStatistics> x = CompressedMatrixBlockFactory.compress(left);
-			if(x.getRight().getRatio() > 3.0)
-				left = x.getLeft();
-
+			LOG.info("Appending uncompressed column group left");
+			left = CompressedMatrixBlockFactory.genUncompressedCompressedMatrixBlock(left);
 		}
 		if(!(right instanceof CompressedMatrixBlock) && m > 1000) {
-			LOG.warn("Compressing right for append operation");
-			Pair<MatrixBlock, CompressionStatistics> x = CompressedMatrixBlockFactory.compress(right);
-			if(x.getRight().getRatio() > 3.0)
-				right = x.getLeft();
+			LOG.warn("Appending uncompressed column group right");
+			left = CompressedMatrixBlockFactory.genUncompressedCompressedMatrixBlock(right);
 		}
 
 		// if compression failed then use default append method.
@@ -72,14 +64,22 @@ public class CLALibAppend {
 		CompressedMatrixBlock ret = new CompressedMatrixBlock(m, n);
 
 		ret = appendColGroups(ret, leftC.getColGroups(), rightC.getColGroups(), leftC.getNumColumns());
-		return ret;
+
+		double compressedSize = ret.getInMemorySize();
+		double uncompressedSize = MatrixBlock.estimateSizeInMemory(m,n, ret.getSparsity());
+
+		
+		if(compressedSize * 10 < uncompressedSize)
+			return ret;
+		else
+			return ret.getUncompressed("Decompressing c bind matrix");
 	}
 
 	private static MatrixBlock appendRightEmpty(CompressedMatrixBlock left, MatrixBlock right) {
 
 		final int m = left.getNumRows();
 		final int n = left.getNumColumns() + right.getNumColumns();
-		CompressedMatrixBlock ret = new CompressedMatrixBlock(m,n);
+		CompressedMatrixBlock ret = new CompressedMatrixBlock(m, n);
 
 		List<AColGroup> newGroup = new ArrayList<>(1);
 		newGroup.add(ColGroupEmpty.generate(right.getNumColumns(), right.getNumRows()));
@@ -91,7 +91,7 @@ public class CLALibAppend {
 	private static MatrixBlock appendLeftEmpty(MatrixBlock left, CompressedMatrixBlock right) {
 		final int m = left.getNumRows();
 		final int n = left.getNumColumns() + right.getNumColumns();
-		CompressedMatrixBlock ret = new CompressedMatrixBlock(m,n);
+		CompressedMatrixBlock ret = new CompressedMatrixBlock(m, n);
 
 		List<AColGroup> newGroup = new ArrayList<>(1);
 		newGroup.add(ColGroupEmpty.generate(left.getNumColumns(), left.getNumRows()));

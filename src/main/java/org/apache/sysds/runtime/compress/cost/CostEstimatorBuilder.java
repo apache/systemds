@@ -125,6 +125,11 @@ public final class CostEstimatorBuilder implements Serializable {
 		numberOps += counter.scans + counter.leftMultiplications * 2 + counter.rightMultiplications +
 			counter.compressedMultiplications * 4 + counter.dictionaryOps;
 		numberOps -= counter.decompressions + counter.overlappingDecompressions;
+
+		if(counter.decompressions > 1 &&
+			counter.leftMultiplications + counter.rightMultiplications + counter.compressedMultiplications < 1)
+			// This condition is added for l2svm and mLogReg y dataset, that is compressing while it should not.
+			return false;
 		return numberOps > 4;
 
 	}

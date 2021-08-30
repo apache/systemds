@@ -82,7 +82,7 @@ public abstract class CompressedSizeEstimator {
 		return _numCols;
 	}
 
-	public MatrixBlock getData(){
+	public MatrixBlock getData() {
 		return _data;
 	}
 
@@ -163,7 +163,7 @@ public abstract class CompressedSizeEstimator {
 	 * @param colIndexes The columns to group together inside a ColGroup
 	 * @return The CompressedSizeInformation associated with the selected ColGroups.
 	 */
-	public CompressedSizeInfoColGroup estimateCompressedColGroupSize(int[] colIndexes){
+	public CompressedSizeInfoColGroup estimateCompressedColGroupSize(int[] colIndexes) {
 		return estimateCompressedColGroupSize(colIndexes, 8, getNumRows());
 	}
 
@@ -173,7 +173,7 @@ public abstract class CompressedSizeEstimator {
 	 * the number estimated in sub groups of the given colIndexes.
 	 * 
 	 * @param colIndexes         The columns to extract compression information from
-	 * @param estimate 			 An estimate of number of unique elements in these columns
+	 * @param estimate           An estimate of number of unique elements in these columns
 	 * @param nrUniqueUpperBound The upper bound of unique elements allowed in the estimate, can be calculated from the
 	 *                           number of unique elements estimated in sub columns multiplied together. This is
 	 *                           flexible in the sense that if the sample is small then this unique can be manually
@@ -181,13 +181,16 @@ public abstract class CompressedSizeEstimator {
 	 * 
 	 * @return The CompressedSizeInfoColGroup fro the given column indexes.
 	 */
-	public abstract CompressedSizeInfoColGroup estimateCompressedColGroupSize(int[] colIndexes, int estimate, int nrUniqueUpperBound);
+	public abstract CompressedSizeInfoColGroup estimateCompressedColGroupSize(int[] colIndexes, int estimate,
+		int nrUniqueUpperBound);
 
 	/**
 	 * Join two analyzed column groups together. without materializing the dictionaries of either side.
 	 * 
-	 * If either side was constructed without analysis then fall back to default materialization of double arrays.
+	 * if the number of distinct elements in both sides multiplied is larger than Integer, return null.
 	 * 
+	 * If either side was constructed without analysis then fall back to default materialization of double arrays.
+	 * O
 	 * @param g1 First group
 	 * @param g2 Second group
 	 * @return A joined compressed size estimation for the group.
@@ -195,19 +198,39 @@ public abstract class CompressedSizeEstimator {
 	public CompressedSizeInfoColGroup estimateJoinCompressedSize(CompressedSizeInfoColGroup g1,
 		CompressedSizeInfoColGroup g2) {
 		final int[] joined = Util.join(g1.getColumns(), g2.getColumns());
+		return estimateJoinCompressedSize(joined, g1, g2);
+	}
+
+	/**
+	 * Join two analyzed column groups together. without materializing the dictionaries of either side.
+	 * 
+	 * if the number of distinct elements in both sides multiplied is larger than Integer, return null.
+	 * 
+	 * If either side was constructed without analysis then fall back to default materialization of double arrays.
+	 * 
+	 * @param joined The joined column indexes.
+	 * @param g1     First group
+	 * @param g2     Second group
+	 * @return A joined compressed size estimation for the group.
+	 */
+	public CompressedSizeInfoColGroup estimateJoinCompressedSize(int[] joined, CompressedSizeInfoColGroup g1,
+		CompressedSizeInfoColGroup g2) {
 		final int g1V = g1.getNumVals();
 		final int g2V = g2.getNumVals();
-		if(g1V * g2V < 0 || g1V * g2V > getNumRows())
+		if((long) g1V * g2V > (long) Integer.MAX_VALUE)
 			return null;
-		else if((g1.getMap() == null && g2V != 0) || (g2.getMap() == null && g2V != 0))
-			return estimateCompressedColGroupSize(joined, Math.max(g1V + 1, g2V+ 1), Math.min((g1V + 1) * (g2V + 1), getNumRows()));
+
+		final int joinedMaxDistinct = (int) Math.min((long) g1V * (long) g2V, getNumRows());
+		if((g1.getMap() == null && g2V != 0) || (g2.getMap() == null && g2V != 0))
+			return estimateCompressedColGroupSize(joined, Math.max(g1V + 1, g2V + 1),
+				Math.min((g1V + 1) * (g2V + 1), getNumRows()));
 		else
-			return estimateJoinCompressedSize(joined, g1, g2);
+			return estimateJoinCompressedSize(joined, g1, g2, joinedMaxDistinct);
 
 	}
 
 	protected abstract CompressedSizeInfoColGroup estimateJoinCompressedSize(int[] joinedcols,
-		CompressedSizeInfoColGroup g1, CompressedSizeInfoColGroup g2);
+		CompressedSizeInfoColGroup g1, CompressedSizeInfoColGroup g2, int joinedMaxDistinct);
 
 	/**
 	 * Method used to extract the CompressedSizeEstimationFactors from an constructed UncompressedBitmap. Note this

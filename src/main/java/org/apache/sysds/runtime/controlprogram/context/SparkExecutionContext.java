@@ -66,6 +66,7 @@ import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.data.TensorBlock;
 import org.apache.sysds.runtime.data.TensorIndexes;
 import org.apache.sysds.runtime.instructions.cp.Data;
+import org.apache.sysds.runtime.instructions.spark.DeCompressionSPInstruction;
 import org.apache.sysds.runtime.instructions.spark.data.BroadcastObject;
 import org.apache.sysds.runtime.instructions.spark.data.LineageObject;
 import org.apache.sysds.runtime.instructions.spark.data.PartitionedBlock;
@@ -1280,15 +1281,20 @@ public class SparkExecutionContext extends ExecutionContext
 		return out;
 	}
 
-	@SuppressWarnings("unchecked")
+	// @SuppressWarnings("unchecked")
 	public static long writeMatrixRDDtoHDFS( RDDObject rdd, String path, FileFormat fmt )
 	{
 		JavaPairRDD<MatrixIndexes,MatrixBlock> lrdd = (JavaPairRDD<MatrixIndexes, MatrixBlock>) rdd.getRDD();
 		InputOutputInfo oinfo = InputOutputInfo.get(DataType.MATRIX, fmt);
 		
+		// if compression is enabled decompress all blocks before writing to disk TEMPORARY MODIFICATION UNTILL MATRIXBLOCK IS MERGED WITH COMPRESSEDMATRIXBLOCK
+		if(ConfigurationManager.isCompressionEnabled())
+			lrdd = lrdd.mapValues(new DeCompressionSPInstruction.DeCompressionFunction());
+
 		//piggyback nnz maintenance on write
 		LongAccumulator aNnz = getSparkContextStatic().sc().longAccumulator("nnz");
 		lrdd = lrdd.mapValues(new ComputeBinaryBlockNnzFunction(aNnz));
+
 
 		//save file is an action which also triggers nnz maintenance
 		lrdd.saveAsHadoopFile(path,

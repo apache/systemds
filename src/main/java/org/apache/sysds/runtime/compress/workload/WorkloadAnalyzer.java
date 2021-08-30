@@ -404,7 +404,10 @@ public class WorkloadAnalyzer {
 				ArrayList<Hop> in = hop.getInput();
 				if(isOverlapping(in.get(0)) || isOverlapping(in.get(1)))
 					overlapping.add(hop.getHopID());
-				return new OpNormal(hop, true);
+				// CBind is in worst case decompressing, but can be compressing the other side if it is trivially compressable.
+				// to make the optimizer correct we need to mark this operation as decompressing, since it is the worst possible outcome.
+				// Currently we dont optimize for operations that are located past a cbind.
+				return new OpDecompressing(hop);
 			}
 			else if(HopRewriteUtils.isBinary(hop, OpOp2.RBIND)) {
 				ArrayList<Hop> in = hop.getInput();

@@ -141,7 +141,7 @@ public class CoCodeBinPacking extends AColumnCoCoder {
 			for(int j = 0; j < bins.size(); j++) {
 				double newBinWeight = binWeights[j] - c.getCardinalityRatio();
 				if(newBinWeight >= 0 && bins.get(j).getColumns().length < MAX_COL_PER_GROUP - 1) {
-					bins.set(j, joinWithoutAnalysis(bins.get(j), c));
+					bins.set(j, joinWithoutAnalysis(Util.join(bins.get(j).getColumns(), c.getColumns()),bins.get(j), c));
 					binWeights[j] = newBinWeight;
 					assigned = true;
 					break;
@@ -291,7 +291,7 @@ public class CoCodeBinPacking extends AColumnCoCoder {
 					g = CompressedSizeInfoColGroup.addConstGroup(c, left, _cs.validCompressions);
 				else {
 					st3++;
-					g = _sest.estimateJoinCompressedSize(left, right);
+					g = _sest.estimateJoinCompressedSize(c, left, right);
 				}
 
 				if(leftConst || rightConst)

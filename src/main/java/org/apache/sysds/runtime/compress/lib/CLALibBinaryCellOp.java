@@ -19,7 +19,6 @@
 
 package org.apache.sysds.runtime.compress.lib;
 
-import java.lang.ref.SoftReference;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Callable;
@@ -59,33 +58,41 @@ public class CLALibBinaryCellOp {
 
 	private static final Log LOG = LogFactory.getLog(CLALibBinaryCellOp.class.getName());
 
-	public static MatrixBlock binaryOperations(BinaryOperator op, CompressedMatrixBlock m1, MatrixValue thatValue,
-		MatrixValue result) {
+	public static MatrixBlock binaryOperations(BinaryOperator op, CompressedMatrixBlock m1, MatrixBlock thatValue,
+		MatrixBlock result) {
 		MatrixBlock that = CompressedMatrixBlock.getUncompressed(thatValue, "Decompressing right side in BinaryOps");
 		if(m1.getNumRows() <= 0)
 			LOG.error(m1);
-		if(thatValue.getNumRows() <= 0)
-			LOG.error(thatValue);
+		if(that.getNumRows() <= 0)
+			LOG.error(that);
 		LibMatrixBincell.isValidDimensionsBinary(m1, that);
-		thatValue = that;
 		BinaryAccessType atype = LibMatrixBincell.getBinaryAccessType(m1, that);
-		return selectProcessingBasedOnAccessType(op, m1, thatValue, result, atype, false);
+		return selectProcessingBasedOnAccessType(op, m1, that, result, atype, false);
 	}
 
-	public static MatrixBlock binaryOperationsLeft(BinaryOperator op, CompressedMatrixBlock m1, MatrixValue thatValue,
-		MatrixValue result) {
+	public static MatrixBlock binaryOperationsLeft(BinaryOperator op, CompressedMatrixBlock m1, MatrixBlock thatValue,
+		MatrixBlock result) {
 		MatrixBlock that = CompressedMatrixBlock.getUncompressed(thatValue, "Decompressing left side in BinaryOps");
 		LibMatrixBincell.isValidDimensionsBinary(that, m1);
 		thatValue = that;
 		BinaryAccessType atype = LibMatrixBincell.getBinaryAccessType(that, m1);
-		return selectProcessingBasedOnAccessType(op, m1, thatValue, result, atype, true);
+		return selectProcessingBasedOnAccessType(op, m1, that, result, atype, true);
 	}
 
 	private static MatrixBlock selectProcessingBasedOnAccessType(BinaryOperator op, CompressedMatrixBlock m1,
-		MatrixValue thatValue, MatrixValue result, BinaryAccessType atype, boolean left) {
-		MatrixBlock that = (MatrixBlock) thatValue;
-		if(atype == BinaryAccessType.MATRIX_COL_VECTOR)
-			return binaryMVCol(m1, that, op, left);
+		MatrixBlock that, MatrixBlock result, BinaryAccessType atype, boolean left) {
+		if(atype == BinaryAccessType.MATRIX_COL_VECTOR) {
+			MatrixBlock d_compressed = m1.getCachedDecompressed();
+			if(d_compressed != null) {
+				if(left)
+					return that.binaryOperations(op, d_compressed, result);
+				else
+					return d_compressed.binaryOperations(op, that, result);
+			}
+			else
+				return binaryMVCol(m1, that, op, left);
+
+		}
 		else if(atype == BinaryAccessType.MATRIX_MATRIX) {
 			if(that.isEmpty()) {
 				ScalarOperator sop = left ? new LeftScalarOperator(op.fn, 0, -1) : new RightScalarOperator(op.fn, 0,
@@ -93,8 +100,7 @@ public class CLALibBinaryCellOp {
 				return CLALibScalar.scalarOperations(sop, m1, result);
 			}
 			else {
-				SoftReference<MatrixBlock> msf = m1.getSoftReferenceToDecompressed();
-				MatrixBlock d_compressed = msf != null ? msf.get() : null;
+				MatrixBlock d_compressed = m1.getCachedDecompressed();
 				if(d_compressed != null) {
 					// copy the decompressed matrix if there is a decompressed matrix already.
 					MatrixBlock tmp = d_compressed;
@@ -117,7 +123,7 @@ public class CLALibBinaryCellOp {
 			return bincellOp(m1, that, setupCompressedReturnMatrixBlock(m1, result), op, left);
 		else {
 			LOG.warn("Decompressing since Binary Ops" + op.fn + " is not supported compressed");
-			return CompressedMatrixBlock.getUncompressed(m1).binaryOperations(op, thatValue, result);
+			return CompressedMatrixBlock.getUncompressed(m1).binaryOperations(op, that, result);
 		}
 	}
 
@@ -295,7 +301,7 @@ public class CLALibBinaryCellOp {
 		final int blkz = CompressionSettings.BITMAP_BLOCK_SZ;
 		final int k = op.getNumThreads();
 		long nnz = 0;
-		;
+
 		if(k <= 1) {
 			for(int i = 0; i * blkz < m1.getNumRows(); i++) {
 				if(left)

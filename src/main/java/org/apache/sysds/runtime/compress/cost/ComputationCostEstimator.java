@@ -84,7 +84,8 @@ public class ComputationCostEstimator implements ICostEstimate {
 		// 16 is assuming that the right side is 16 rows.
 		double rmc = rightMultCost(g) * 16;
 		cost += _rightMultiplications * rmc;
-		cost += _compressedMultiplication * (lmc + rmc);
+		// cost += _compressedMultiplication * (lmc + rmc);
+		cost += _compressedMultiplication * _compressedMultCost(g);
 		cost += _dictionaryOps * dictionaryOpsCost(g);
 		return cost;
 	}
@@ -97,24 +98,38 @@ public class ComputationCostEstimator implements ICostEstimate {
 		final int nCols = g.getColumns().length;
 		final double preAggregateCost = _nRows;
 
-		final int numberTuples = g.getNumVals();
+		final double numberTuples = g.getNumVals();
 		final double tupleSparsity = g.getTupleSparsity();
-		final double postScalingCost = (nCols > 1 && tupleSparsity > 0.4) ? numberTuples * nCols : numberTuples *
-			nCols * tupleSparsity;
+		final double postScalingCost = (nCols > 1 && tupleSparsity > 0.4) ? numberTuples * nCols * tupleSparsity *
+			1.4 : numberTuples * nCols;
 		if(numberTuples < 64000)
 			return preAggregateCost + postScalingCost;
 		else
-			// scale up cost worse if there is higher number of tuples.
 			return preAggregateCost * (numberTuples / 6400) + postScalingCost * (numberTuples / 64000);
 
+	}
+
+	private double _compressedMultCost(CompressedSizeInfoColGroup g) {
+		final int nCols = g.getColumns().length;
+		final double mcf = g.getMostCommonFraction();
+		final double preAggregateCost = mcf > 0.6 ? _nRows * (1 - 0.7 * mcf) : _nRows;
+
+		final double numberTuples = (float) g.getNumVals();
+		final double tupleSparsity = g.getTupleSparsity();
+		final double postScalingCost = (nCols > 1 && tupleSparsity > 0.4) ? numberTuples * nCols * tupleSparsity *
+			1.4 : numberTuples * nCols;
+		if(numberTuples < 64000)
+			return preAggregateCost + postScalingCost;
+		else
+			return preAggregateCost * (numberTuples / 64000) + postScalingCost * (numberTuples / 64000);
 	}
 
 	private static double rightMultCost(CompressedSizeInfoColGroup g) {
 		final int nCols = g.getColumns().length;
 		final int numberTuples = g.getNumVals() * 10;
 		final double tupleSparsity = g.getTupleSparsity();
-		final double postScalingCost = (nCols > 1 && tupleSparsity > 0.4) ? numberTuples * nCols : numberTuples *
-			nCols * tupleSparsity;
+		final double postScalingCost = (nCols > 1 && tupleSparsity > 0.4) ? numberTuples * nCols * tupleSparsity *
+			1.4 : numberTuples * nCols;
 
 		return postScalingCost;
 	}

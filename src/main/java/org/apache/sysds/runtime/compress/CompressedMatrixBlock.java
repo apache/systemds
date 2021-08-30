@@ -1080,7 +1080,7 @@ public class CompressedMatrixBlock extends MatrixBlock {
 		boolean m2C = m2 instanceof CompressedMatrixBlock;
 		boolean m3C = m3 instanceof CompressedMatrixBlock;
 		printDecompressWarning("aggregateTernaryOperations " + op.aggOp.getClass().getSimpleName() + " "
-			+ op.indexFn.getClass().getSimpleName() + "  " + op.aggOp.increOp.fn.getClass().getSimpleName() + " "
+			+ op.indexFn.getClass().getSimpleName() + " " + op.aggOp.increOp.fn.getClass().getSimpleName() + " "
 			+ op.binaryFn.getClass().getSimpleName() + " m1,m2,m3 " + m1C + " " + m2C + " " + m3C);
 		MatrixBlock left = getUncompressed();
 		MatrixBlock right1 = getUncompressed(m2);

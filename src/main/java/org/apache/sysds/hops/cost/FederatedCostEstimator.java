@@ -133,7 +133,7 @@ public class FederatedCostEstimator {
 				.sum();
 			double inputTransferCost = hasFederatedInput ? root.getInput().stream()
 				.filter(Hop::hasLocalOutput)
-				.mapToDouble(Hop::getOutputMemEstimateNonNegative)
+				.mapToDouble(in -> in.getOutputMemEstimate(DEFAULT_MEMORY_ESTIMATE))
 				.map(inMem -> inMem/ WORKER_NETWORK_BANDWIDTH_BYTES_PS)
 				.sum() : 0;
 			double computingCost = ComputeCost.getHOPComputeCost(root);
@@ -148,7 +148,7 @@ public class FederatedCostEstimator {
 			} else computingCost = computingCost / (WORKER_DEGREE_OF_PARALLELISM*WORKER_COMPUTE_BANDWITH_FLOPS);
 			//Calculate output transfer cost if the operation is computed at federated workers and the output is forced to the coordinator
 			double outputTransferCost = ( root.hasLocalOutput() && hasFederatedInput ) ?
-				root.getOutputMemEstimateNonNegative() / WORKER_NETWORK_BANDWIDTH_BYTES_PS : 0;
+				root.getOutputMemEstimate(DEFAULT_MEMORY_ESTIMATE) / WORKER_NETWORK_BANDWIDTH_BYTES_PS : 0;
 			double readCost = root.getInputMemEstimate(DEFAULT_MEMORY_ESTIMATE) / WORKER_READ_BANDWIDTH_BYTES_PS;
 
 			FederatedCost rootFedCost =

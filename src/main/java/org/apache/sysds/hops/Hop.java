@@ -667,13 +667,15 @@ public abstract class Hop implements ParseInfo {
 	}
 
 	/**
-	 * Output memory estimate in bytes with no negative memory estimates.
-	 * The default memory estimate is negative, hence this is likely to happen.
+	 * Output memory estimate in bytes with negative memory estimates replaced by the injected default.
+	 * The injected default represents the memory estimate per output cell, hence it is multiplied by the estimated
+	 * dimensions of the output of the hop.
+	 * @param injectedDefault memory estimate to be returned in case the memory estimate defaults to a negative number
 	 * @return output memory estimate in bytes
 	 */
-	public double getOutputMemEstimateNonNegative()
+	public double getOutputMemEstimate(int injectedDefault)
 	{
-		return Math.max(getOutputMemEstimate(),0);
+		return Math.max(getOutputMemEstimate(),injectedDefault*(Math.max(getDim1(),1) * Math.max(getDim2(),1)));
 	}
 
 	public double getIntermediateMemEstimate()

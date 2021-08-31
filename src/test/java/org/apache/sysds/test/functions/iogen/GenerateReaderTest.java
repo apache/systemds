@@ -19,16 +19,19 @@
 
 package org.apache.sysds.test.functions.iogen;
 
-import org.apache.sysds.runtime.io.*;
+import org.apache.sysds.runtime.io.MatrixReader;
+import org.apache.sysds.runtime.io.FileFormatPropertiesLIBSVM;
+import org.apache.sysds.runtime.io.FileFormatPropertiesCSV;
+import org.apache.sysds.runtime.io.WriterTextCell;
+import org.apache.sysds.runtime.io.WriterTextLIBSVM;
+import org.apache.sysds.runtime.io.WriterTextCSV;
 import org.apache.sysds.runtime.iogen.GenerateReader;
-import org.apache.sysds.runtime.iogen.MatrixGenerateReader;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.DataConverter;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestUtils;
 
-import java.io.BufferedWriter;
-import java.io.FileWriter;
+import java.io.*;
 
 public abstract class GenerateReaderTest extends AutomatedTestBase {
 
@@ -63,7 +66,7 @@ public abstract class GenerateReaderTest extends AutomatedTestBase {
 
 		// Write SampleRawMatrix data into a file
 		String HOME = SCRIPT_DIR + TEST_DIR;
-		String outName = HOME + OUTPUT_DIR ;
+		String outName = "/home/sfathollahzadeh/GRTest/";//HOME + OUTPUT_DIR ;
 		String fileNameSampleRaw = outName+"/SampleRaw.txt";
 		String fileNameSampleRawOut = outName+"/SampleRawOut.txt";
 		BufferedWriter writer = new BufferedWriter(new FileWriter(fileNameSampleRaw));
@@ -91,7 +94,5 @@ public abstract class GenerateReaderTest extends AutomatedTestBase {
 			writerTextCell.writeMatrixToHDFS(src, fileNameSampleRawOut, src.getNumRows(), src.getNumColumns(), -1,
 				src.getNonZeros(), false);
 		}
-
-
 	}
 }

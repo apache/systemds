@@ -39,7 +39,6 @@ public class MatrixMatrixGenerateReaderMarketTest extends GenerateReaderTest {
 
 		sampleMatrix = getRandomMatrix(nrows, ncols, min, max, sparsity, 714);
 		StringBuilder sb = new StringBuilder();
-
 		for(int r = 0; r < nrows; r++) {
 			for(int c = 0; c < ncols; c++) {
 				if(sampleMatrix[r][c] != 0) {
@@ -81,10 +80,7 @@ public class MatrixMatrixGenerateReaderMarketTest extends GenerateReaderTest {
 		}
 		sampleRaw = sb.toString();
 		System.out.println(sampleRaw);
-//		Gson gson= new Gson();
-//		System.out.println(gson.toJson(sampleMatrix));
 	}
-
 
 	// Index from 0
 	@Test
@@ -246,6 +242,4 @@ public class MatrixMatrixGenerateReaderMarketTest extends GenerateReaderTest {
 		generateRandomSymmetricMM(1,5,-100,100,1,"   ",true, true);
 		runGenerateReaderTest();
 	}
-
-
 }

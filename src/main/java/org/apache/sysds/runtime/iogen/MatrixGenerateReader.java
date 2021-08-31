@@ -53,9 +53,8 @@ public abstract class MatrixGenerateReader extends MatrixReader {
 
 	protected MatrixBlock computeSize(List<Path> files, FileSystem fs, long rlen, long clen)
 		throws IOException, DMLRuntimeException {
-		rlen = getNumRows(files, fs);
 		// allocate target matrix block based on given size;
-		return new MatrixBlock((int) rlen, (int) clen, rlen * clen);
+		return new MatrixBlock(getNumRows(files, fs), (int) clen, rlen * clen);
 	}
 
 	private int getNumRows(List<Path> files, FileSystem fs) throws IOException, DMLRuntimeException {
@@ -78,6 +77,7 @@ public abstract class MatrixGenerateReader extends MatrixReader {
 						int row = st.nextInt();
 						rows = Math.max(rows, row);
 					}
+					rows++;
 				}
 			}
 			finally {
@@ -87,11 +87,11 @@ public abstract class MatrixGenerateReader extends MatrixReader {
 		return rows;
 	}
 
-	@Override public MatrixBlock readMatrixFromHDFS(String fname, long rlen, long clen, int blen, long estnnz)
+	@Override
+	public MatrixBlock readMatrixFromHDFS(String fname, long rlen, long clen, int blen, long estnnz)
 		throws IOException, DMLRuntimeException {
 
 		MatrixBlock ret = null;
-		clen = _props.getClen();
 		if(rlen >= 0 && clen >= 0) //otherwise allocated on read
 			ret = createOutputMatrixBlock(rlen, clen, (int) rlen, estnnz, true, false);
 
@@ -106,18 +106,19 @@ public abstract class MatrixGenerateReader extends MatrixReader {
 		return ret;
 	}
 
-	@Override public MatrixBlock readMatrixFromInputStream(InputStream is, long rlen, long clen, int blen, long estnnz)
+	@Override
+	public MatrixBlock readMatrixFromInputStream(InputStream is, long rlen, long clen, int blen, long estnnz)
 		throws IOException, DMLRuntimeException {
 
 		MatrixBlock ret = null;
-		clen = _props.getClen();
 		if(rlen >= 0 && clen >= 0) //otherwise allocated on read
 			ret = createOutputMatrixBlock(rlen, clen, (int) rlen, estnnz, true, false);
 
 		return ret;
 	}
 
-	private MatrixBlock readMatrixFromHDFS(Path path, JobConf job, FileSystem fs, MatrixBlock dest, long rlen,
+	private
+	MatrixBlock readMatrixFromHDFS(Path path, JobConf job, FileSystem fs, MatrixBlock dest, long rlen,
 		long clen, int blen) throws IOException, DMLRuntimeException {
 		//prepare file paths in alphanumeric order
 		ArrayList<Path> files = new ArrayList<>();
@@ -132,6 +133,8 @@ public abstract class MatrixGenerateReader extends MatrixReader {
 		//determine matrix size via additional pass if required
 		if(dest == null) {
 			dest = computeSize(files, fs, rlen, clen);
+			rlen = dest.getNumRows();
+			//clen = dest.getNumColumns();
 		}
 
 		//actual read of individual files
@@ -227,7 +230,8 @@ public abstract class MatrixGenerateReader extends MatrixReader {
 			super(_props);
 		}
 
-		@Override protected long readMatrixFromInputStream(InputStream is, String srcInfo, MatrixBlock dest,
+		@Override
+		protected long readMatrixFromInputStream(InputStream is, String srcInfo, MatrixBlock dest,
 			MutableInt rowPos, long rlen, long clen, int blen) throws IOException {
 
 			boolean sparse = dest.isInSparseFormat();
@@ -274,7 +278,8 @@ public abstract class MatrixGenerateReader extends MatrixReader {
 			super(_props);
 		}
 
-		@Override protected long readMatrixFromInputStream(InputStream is, String srcInfo, MatrixBlock dest,
+		@Override
+		protected long readMatrixFromInputStream(InputStream is, String srcInfo, MatrixBlock dest,
 			MutableInt rowPos, long rlen, long clen, int blen) throws IOException {
 
 			boolean sparse = dest.isInSparseFormat();
@@ -329,7 +334,8 @@ public abstract class MatrixGenerateReader extends MatrixReader {
 			super(_props);
 		}
 
-		@Override protected long readMatrixFromInputStream(InputStream is, String srcInfo, MatrixBlock dest,
+		@Override
+		protected long readMatrixFromInputStream(InputStream is, String srcInfo, MatrixBlock dest,
 			MutableInt rowPos, long rlen, long clen, int blen) throws IOException {
 			boolean sparse = dest.isInSparseFormat();
 			String value = null;
@@ -361,7 +367,6 @@ public abstract class MatrixGenerateReader extends MatrixReader {
 			finally {
 				IOUtilFunctions.closeSilently(br);
 			}
-
 			rowPos.setValue(row);
 			return lnnz;
 		}

@@ -70,6 +70,8 @@ public class ReaderMapping {
 			nlines++;
 		}
 
+		System.out.println("raw_nrows:"+sampleRawRows.size());
+
 		// First Check for General Mapping
 		boolean isMapped = findMapping(nlines, NTF);
 
@@ -452,6 +454,7 @@ public class ReaderMapping {
 			CustomProperties ffpgr = new CustomProperties(CustomProperties.GRPattern.Regular, uniqueDelimiter,
 				naString);
 			ffpgr.setDescription("CSV Format Recognized");
+			ffpgr.setFirstIndex(0);
 			return ffpgr;
 		}
 		else
@@ -589,6 +592,7 @@ public class ReaderMapping {
 		if(ffp != null) {
 			ffp.setDescription(
 				"Market Matrix Format Recognized: FirstRowIndex: " + firstRowIndex + " and  FirstColIndex: " + firstColIndex);
+			ffp.setFirstIndex(firstRowIndex);
 		}
 
 		return ffp;
@@ -700,9 +704,10 @@ public class ReaderMapping {
 			ffplibsvm = getDelimsOfRRCIMapping(firstColIndex);
 		}
 
-		if(ffplibsvm != null)
+		if(ffplibsvm != null) {
 			ffplibsvm.setDescription("LibSVM Format Recognized: First Index Started From " + firstColIndex);
-
+			ffplibsvm.setFirstIndex(firstColIndex);
+		}
 		return ffplibsvm;
 	}
 

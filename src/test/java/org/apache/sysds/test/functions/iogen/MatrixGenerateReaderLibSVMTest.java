@@ -28,7 +28,8 @@ public class MatrixGenerateReaderLibSVMTest extends GenerateReaderTest {
 	private final static String TEST_DIR = "functions/iogen/GenerateReaderLibSVMTest/";
 	private final static String TEST_CLASS_DIR = TEST_DIR + MatrixGenerateReaderLibSVMTest.class.getSimpleName() + "/";
 
-	@Override public void setUp() {
+	@Override
+	public void setUp() {
 		addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[] {"Rout"}));
 	}
 
@@ -37,7 +38,6 @@ public class MatrixGenerateReaderLibSVMTest extends GenerateReaderTest {
 
 		double[][] random = getRandomMatrix(nrows, ncols, min, max, sparsity, 714);
 		sampleMatrix = new double[2 * nrows][ncols];
-
 		StringBuilder sb = new StringBuilder();
 		int indexRow = 0;
 		for(int r = 0; r < nrows; r++) {
@@ -162,5 +162,4 @@ public class MatrixGenerateReaderLibSVMTest extends GenerateReaderTest {
 		generateRandomLIBSVM(1, 10, 10, -100, 100, 1,",,,,", "::");
 		runGenerateReaderTest();
 	}
-
 }

@@ -19,16 +19,12 @@
 
 package org.apache.sysds.runtime.iogen;
 
-import org.apache.sysds.runtime.io.FrameReader;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.io.MatrixReader;
+import org.apache.sysds.runtime.io.FrameReader;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
-
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 
 /*
 	Generate Reader has two steps:
@@ -44,30 +40,27 @@ import java.nio.file.Paths;
 
 public class GenerateReader {
 
+	private static final Log LOG = LogFactory.getLog(GenerateReader.class.getName());
+
 	private ReaderMapping readerMapping;
 
 	private MatrixReader matrixReader;
 
 	private FrameReader frameReader;
 
-	private SampleProperties sampleProperties;
-
 	public GenerateReader(SampleProperties sampleProperties) throws Exception {
 
-		this.sampleProperties = sampleProperties;
+		//LOG:
+		// Start Calculation time:
+		long tmpTime = System.nanoTime();
+		readerMapping = generateReader(sampleProperties.getSampleRaw(), sampleProperties.getSampleMatrix());
 
-		//Read sample raw file into sampleRaw
-		String sampleRaw = new String(Files.readAllBytes(Paths.get(sampleProperties.getSampleRawFileName())));
-		if(sampleProperties.getDataType().isMatrix()) {
-			MatrixBlock sampleMatrix = binaryDeserialization( Files.readAllBytes(Paths.get(sampleProperties.getSampleBinaryFileName())));
-			readerMapping = generateReader(sampleRaw, sampleMatrix);
-		}
-		else if(sampleProperties.getDataType().isFrame()) {
-
-		}
-
+		// Time Calculation
+		double elapsedSeconds = (System.nanoTime() - tmpTime) / 1000000000.0;
+		System.out.println("mapping_time:" + elapsedSeconds);
+		//END LOG
 	}
-
+	
 	public GenerateReader(String sampleRaw, MatrixBlock sampleMatrix) throws Exception {
 		readerMapping = this.generateReader(sampleRaw, sampleMatrix);
 	}
@@ -92,11 +85,13 @@ public class GenerateReader {
 		if(!isMapped) {
 			throw new Exception("Sample raw data and sample matrix don't match !!");
 		}
+		//LOG:
+		long tmpTime = System.nanoTime();
+
 		CustomProperties ffp = readerMapping.getFormatProperties();
 		if(ffp == null) {
 			throw new Exception("The file format couldn't recognize!!");
 		}
-		ffp.setClen(sampleProperties.getSampleCols());
 		// 2. Generate a Matrix Reader:
 		if(ffp.getRowPattern().equals(CustomProperties.GRPattern.Regular)) {
 			if(ffp.getColPattern().equals(CustomProperties.GRPattern.Regular)) {
@@ -109,28 +104,15 @@ public class GenerateReader {
 		else {
 			matrixReader = new MatrixGenerateReader.MatrixReaderRowIrregular(ffp);
 		}
+		// Time Calculation
+		double elapsedSeconds = (System.nanoTime() - tmpTime) / 1000000000.0;
+		System.out.println("analysis_time: " + elapsedSeconds);
+		//END LOG
+
 		return matrixReader;
 	}
 
 	public FrameReader getFrameReader() {
 		return frameReader;
 	}
-
-	private MatrixBlock binaryDeserialization(byte[] buf) throws Exception {
-		ByteArrayInputStream bis = new ByteArrayInputStream(buf);
-		ObjectInputStream objectInputStream;
-		MatrixBlock result = new MatrixBlock(sampleProperties.getSampleRows(), sampleProperties.getSampleCols(), false);
-		try {
-			objectInputStream = new ObjectInputStream(bis);
-			for(int r = 0; r < sampleProperties.getSampleRows(); r++)
-				for(int c = 0; c < sampleProperties.getSampleCols(); c++) {
-					result.setValue(r, c, objectInputStream.readDouble());
-				}
-		}
-		catch(IOException e) {
-			throw new Exception("Can't read matrix from byteArray", e);
-		}
-		return result;
-	}
-
 }

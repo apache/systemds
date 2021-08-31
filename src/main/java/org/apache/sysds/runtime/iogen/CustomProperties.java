@@ -32,8 +32,8 @@ public class CustomProperties extends FileFormatProperties implements Serializab
 
 	private String delim;
 	private String indexDelim;
-	private HashSet<String> naStrings; // default null
-	private int clen;
+	private HashSet<String> naStrings;
+	private int firstIndex;
 
 	protected enum GRPattern {
 		Regular, Irregular;
@@ -55,7 +55,8 @@ public class CustomProperties extends FileFormatProperties implements Serializab
 	private GRPattern colPattern;
 	private GRSymmetry grSymmetry;
 
-	public CustomProperties() {}
+	public CustomProperties() {
+	}
 
 	// CSV format
 	public CustomProperties(GRPattern rowPattern, String delim, HashSet<String> naStrings) {
@@ -107,11 +108,11 @@ public class CustomProperties extends FileFormatProperties implements Serializab
 		return grSymmetry;
 	}
 
-	public void setClen(int clen) {
-		this.clen = clen;
+	public int getFirstIndex() {
+		return firstIndex;
 	}
 
-	public int getClen() {
-		return clen;
+	public void setFirstIndex(int firstIndex) {
+		this.firstIndex = firstIndex;
 	}
 }

@@ -376,8 +376,8 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 					throw new DMLRuntimeException("Invalid number of operands in createvar instruction: " + str);
 			}
 			else if(fmt.equalsIgnoreCase("unknown")) {
-				// 14 inputs: createvar corresponding to READ -- includes properties sampleRawPath, SampleBinPath, SampleRows, SampleCols
-				if(parts.length < 14 + extSchema)
+				// 13 inputs: createvar corresponding to READ -- includes properties sampleRawPath, SampleBinPath, SampleRows, SampleCols
+				if(parts.length < 12 + extSchema)
 					throw new DMLRuntimeException("Invalid number of operands in createvar instruction: " + str);
 			}
 			else {
@@ -482,14 +482,11 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 					in1, in2, in3, iimd, updateType, fmtProperties, schema, opcode, str);
 			}
 			else if(fmt.equalsIgnoreCase("unknown")) {
-				// Cretevar instructions for UNKNOWN format has 14.
-				// 14 inputs: createvar corresponding to WRITE/READ -- includes properties SampleBinPath, SampleRows, SampleCols
+				// Cretevar instructions for UNKNOWN format has 12.
 				int curPos = 11;
-				String sampleRawFileName = parts[curPos];
-				String sampleBinaryFileName = parts[curPos + 1];
-				int sampleRows = Integer.parseInt(parts[curPos + 2]);
-				int sampleCols = Integer.parseInt(parts[curPos + 3]);
-				SampleProperties sampleProperties= new SampleProperties(sampleRawFileName, sampleBinaryFileName, sampleRows, sampleCols, dt);
+				String sampleRaw = parts[curPos];
+				String sampleMatrix = parts[curPos + 1];
+				SampleProperties sampleProperties = new SampleProperties(sampleRaw, sampleMatrix, dt);
 				return new VariableCPInstruction(VariableOperationCode.CreateVariable,
 					in1, in2, in3, iimd, updateType,sampleProperties, schema, opcode, str);
 			}

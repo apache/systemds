@@ -92,7 +92,7 @@ public class FederatedCost {
 	@Override
 	public String toString(){
 		StringBuilder builder = new StringBuilder();
-		builder.append("computeCost: ");
+		builder.append(" computeCost: ");
 		builder.append(computeCost);
 		builder.append("\n readCost: ");
 		builder.append(readCost);

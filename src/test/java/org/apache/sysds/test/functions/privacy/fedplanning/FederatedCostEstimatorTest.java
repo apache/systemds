@@ -20,8 +20,16 @@
 package org.apache.sysds.test.functions.privacy.fedplanning;
 
 import org.apache.sysds.api.DMLScript;
+import org.apache.sysds.common.Types;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.conf.DMLConfig;
+import org.apache.sysds.hops.AggBinaryOp;
+import org.apache.sysds.hops.BinaryOp;
+import org.apache.sysds.hops.DataOp;
+import org.apache.sysds.hops.Hop;
+import org.apache.sysds.hops.LiteralOp;
+import org.apache.sysds.hops.NaryOp;
+import org.apache.sysds.hops.ReorgOp;
 import org.apache.sysds.hops.cost.FederatedCost;
 import org.apache.sysds.hops.cost.FederatedCostEstimator;
 import org.apache.sysds.parser.DMLProgram;
@@ -29,6 +37,7 @@ import org.apache.sysds.parser.DMLTranslator;
 import org.apache.sysds.parser.LanguageException;
 import org.apache.sysds.parser.ParserFactory;
 import org.apache.sysds.parser.ParserWrapper;
+import org.apache.sysds.runtime.instructions.fed.FEDInstruction;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.junit.Assert;
@@ -39,7 +48,11 @@ import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
+
+import static org.apache.sysds.common.Types.OpOp2.MULT;
 
 public class FederatedCostEstimatorTest extends AutomatedTestBase {
 
@@ -77,15 +90,69 @@ public class FederatedCostEstimatorTest extends AutomatedTestBase {
 	public void federatedMultiply() {
 		fedCostEstimator.WORKER_COMPUTE_BANDWITH_FLOPS = 2;
 		fedCostEstimator.WORKER_READ_BANDWIDTH_BYTES_PS = 10;
+		fedCostEstimator.WORKER_NETWORK_BANDWIDTH_BYTES_PS = 5;
 		fedCostEstimator.printCosts = true;
 
-		//TODO: Adjust expected cost
-		double computeCost = (3*10*10) / (fedCostEstimator.WORKER_COMPUTE_BANDWITH_FLOPS*fedCostEstimator.WORKER_DEGREE_OF_PARALLELISM);
-		double readCost = (3*10*10) / (fedCostEstimator.WORKER_READ_BANDWIDTH_BYTES_PS);
-		double transferCost = 0;
+		double literalOpCost = 39*0.0625; //10
+		double naryOpCostSpecial = (0.125+2.2);
+		double naryOpCostSpecial2 = (0.25+6.4);
+		double naryOpCost = 16*(0.125+1.6);
+		double reorgOpCost = 6250+80015.2+160030.4;
+		double binaryOpMultCost = 3125+160000;
+		double aggBinaryOpCost = 125000+160015.2+160030.4+190.4;
+		double dataOpCost = 2*(6250+5.6);
+		double dataOpWriteCost = 6.25+100.3;
 
-		double expectedCost = computeCost + readCost + transferCost;
+		double expectedCost = literalOpCost + naryOpCost + naryOpCostSpecial + naryOpCostSpecial2 + reorgOpCost
+			+ binaryOpMultCost + aggBinaryOpCost + dataOpCost + dataOpWriteCost;
 		runTest("FederatedMultiplyCostEstimatorTest.dml", false, expectedCost);
+	}
+
+	List<Hop> hops = new ArrayList<>();
+	private void addHop(Hop hop){
+		hops.add(hop);
+		for(Hop inHop : hop.getInput()){
+			addHop(inHop);
+		}
+	}
+
+	private void modifyFedouts(DMLProgram prog){
+		prog.getStatementBlocks().forEach(stmBlock -> stmBlock.getHops().forEach(this::addHop));
+		hops.forEach(hop -> {
+			if ( hop instanceof DataOp || (hop instanceof BinaryOp && ((BinaryOp) hop).getOp() == MULT ) ){
+				hop.setFederatedOutput(FEDInstruction.FederatedOutput.FOUT);
+				hop.setExecType(Types.ExecType.FED);
+			} else {
+				hop.setFederatedOutput(FEDInstruction.FederatedOutput.LOUT);
+			}
+			if ( hop.getOpString().equals("Fed Y") || hop.getOpString().equals("Fed X") ){
+				hop.setDim1(10000);
+				hop.setDim2(10);
+			}
+		});
+	}
+
+	private void printHopsInfo(){
+		//LiteralOp, computeCost=0.0625
+		long literalCount = hops.stream().filter(hop -> hop instanceof LiteralOp).count();
+		System.out.println("LiteralOp Count: " + literalCount);
+		//NaryOp, computeCost=0.125, readCost=1.6
+		long naryCount = hops.stream().filter(hop -> hop instanceof NaryOp).count();
+		System.out.println("NaryOp Count " + naryCount);
+		//ReorgOp, computeCost=0.0625, readCost=0.8, outputTransferCost=1.6
+		long reorgCount = hops.stream().filter(hop -> hop instanceof ReorgOp).count();
+		System.out.println("ReorgOp Count: " + reorgCount);
+		//BinaryOp, computeCost=0.03125, readCost=1.6
+		long binaryCount = hops.stream().filter(hop -> hop instanceof BinaryOp).count();
+		System.out.println("Binary count: " + binaryCount);
+		//AggBinaryOp, computeCost=??, readCost=1.6, inputTransferCost=1.6, outputTransferCost=1.6
+		long aggBinaryCount = hops.stream().filter(hop -> hop instanceof AggBinaryOp).count();
+		System.out.println("AggBinaryOp Count: " + aggBinaryCount);
+		//DataOp, computeCost=0.0625, readCost=5.6
+		long dataOpCount = hops.stream().filter(hop -> hop instanceof DataOp).count();
+		System.out.println("DataOp Count: " + dataOpCount);
+
+		hops.stream().map(Hop::getClass).distinct().forEach(System.out::println);
 	}
 
 	private void runTest( String scriptFilename, boolean expectedException, double expectedCost ) {
@@ -102,6 +169,13 @@ public class FederatedCostEstimatorTest extends AutomatedTestBase {
 			dmlt.liveVariableAnalysis(prog);
 			dmlt.validateParseTree(prog);
 			dmlt.constructHops(prog);
+			if ( scriptFilename.equals("FederatedMultiplyCostEstimatorTest.dml")){
+				modifyFedouts(prog);
+				dmlt.rewriteHopsDAG(prog);
+				hops = new ArrayList<>();
+				prog.getStatementBlocks().forEach(stmBlock -> stmBlock.getHops().forEach(this::addHop));
+				printHopsInfo();
+			}
 
 			FederatedCost actualCost = fedCostEstimator.costEstimate(prog);
 			Assert.assertEquals(expectedCost, actualCost.getTotal(), 0.0001);

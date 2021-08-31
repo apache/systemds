@@ -155,18 +155,26 @@ public class FederatedCostEstimator {
 				new FederatedCost(readCost, inputTransferCost, outputTransferCost, computingCost, inputCosts);
 			root.setFederatedCost(rootFedCost);
 
-			if ( printCosts ){
-				System.out.println("===============================");
-				System.out.println(root);
-				System.out.println("Is federated: " + root.isFederated());
-				System.out.println("Has federated output: " + root.hasFederatedOutput());
-				System.out.println(root.getText());
-				System.out.println(ComputeCost.getHOPComputeCost(root));
-				System.out.println(root.getFederatedCost().toString());
-				System.out.println("===============================");
-			}
+			if ( printCosts )
+				printCosts(root);
 
 			return rootFedCost;
 		}
+	}
+
+	/**
+	 * Prints costs and information about root for debugging purposes
+	 * @param root hop for which information is printed
+	 */
+	private void printCosts(Hop root){
+		System.out.println("===============================");
+		System.out.println(root);
+		System.out.println("Is federated: " + root.isFederated());
+		System.out.println("Has federated output: " + root.hasFederatedOutput());
+		System.out.println(root.getText());
+		System.out.println("Pure computeCost: " + ComputeCost.getHOPComputeCost(root));
+		System.out.println("Dim1: " + root.getDim1() + " Dim2: " + root.getDim2());
+		System.out.println(root.getFederatedCost().toString());
+		System.out.println("===============================");
 	}
 }

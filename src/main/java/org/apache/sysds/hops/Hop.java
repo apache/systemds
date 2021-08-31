@@ -560,7 +560,7 @@ public abstract class Hop implements ParseInfo {
 			Hop hi = _input.get(i);
 			if( exclVars != null && exclVars.contains(hi.getName()) )
 				continue;
-			double hmout = hi.getOutputMemEstimate();
+			double hmout = hi.getOutputMemEstimate(injectedDefault);
 			if (hmout < 0)
 				hmout = injectedDefault*(Math.max(hi.getDim1(),1) * Math.max(hi.getDim2(),1));
 			if( hmout > 1024*1024 ) {//for relevant sizes
@@ -673,7 +673,7 @@ public abstract class Hop implements ParseInfo {
 	 * @param injectedDefault memory estimate to be returned in case the memory estimate defaults to a negative number
 	 * @return output memory estimate in bytes
 	 */
-	public double getOutputMemEstimate(int injectedDefault)
+	public double getOutputMemEstimate(double injectedDefault)
 	{
 		return Math.max(getOutputMemEstimate(),injectedDefault*(Math.max(getDim1(),1) * Math.max(getDim2(),1)));
 	}

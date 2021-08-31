@@ -44,11 +44,11 @@ import java.util.Set;
 public abstract class FrameGenerateReader extends FrameReader {
 
 	protected static CustomProperties _props;
-	protected final MatrixGenerateReader.FastStringTokenizer fastStringTokenizerDelim;
+	protected final FastStringTokenizer fastStringTokenizerDelim;
 
 	public FrameGenerateReader(CustomProperties _props) {
 		MatrixGenerateReader._props = _props;
-		fastStringTokenizerDelim = new MatrixGenerateReader.FastStringTokenizer(_props.getDelim());
+		fastStringTokenizerDelim = new FastStringTokenizer(_props.getDelim());
 	}
 
 	private int getNumRows(List<Path> files, FileSystem fs) throws IOException, DMLRuntimeException {
@@ -65,7 +65,7 @@ public abstract class FrameGenerateReader extends FrameReader {
 				}
 				// Row Irregular
 				else {
-					MatrixGenerateReader.FastStringTokenizer st = new MatrixGenerateReader.FastStringTokenizer(
+					FastStringTokenizer st = new FastStringTokenizer(
 						_props.getDelim());
 					while((value = br.readLine()) != null) {
 						st.reset(value);
@@ -200,7 +200,7 @@ public abstract class FrameGenerateReader extends FrameReader {
 			boolean first) throws IOException {
 
 			String cellValue;
-			MatrixGenerateReader.FastStringTokenizer fastStringTokenizerIndexDelim = new MatrixGenerateReader.FastStringTokenizer(
+			FastStringTokenizer fastStringTokenizerIndexDelim = new FastStringTokenizer(
 				_props.getIndexDelim());
 
 			// create record reader

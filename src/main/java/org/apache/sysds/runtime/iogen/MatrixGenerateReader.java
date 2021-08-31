@@ -38,8 +38,6 @@ import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.HashSet;
-import java.io.Serializable;
 
 public abstract class MatrixGenerateReader extends MatrixReader {
 
@@ -153,77 +151,6 @@ public abstract class MatrixGenerateReader extends MatrixReader {
 	protected abstract long readMatrixFromInputStream(InputStream is, String srcInfo, MatrixBlock dest,
 		MutableInt rowPos, long rlen, long clen, int blen) throws IOException;
 
-	protected static class FastStringTokenizer implements Serializable {
-		private static final long serialVersionUID = -4698672725609750097L;
-		private String _string = null;
-		private String _del = "";
-		private int _pos = -1;
-		private int _index = 0;
-		private HashSet<String> naStrings = null;
-
-		public FastStringTokenizer(String delimiter) {
-			_del = delimiter;
-			reset(null);
-		}
-
-		public void reset(String string) {
-			_string = string;
-			_pos = 0;
-			_index = 0;
-		}
-
-		public String nextToken() {
-			int len = _string.length();
-			int start = _pos;
-
-			if(_pos == -1) {
-				_index = -1;
-				return "0";
-			}
-			//find start (skip over leading delimiters)
-			while(start < len && _del.equals(_string.substring(start, start + _del.length()))) {
-				start += _del.length();
-				_index++;
-			}
-
-			//find end (next delimiter) and return
-			if(start < len) {
-				_pos = _string.indexOf(_del, start);
-				if(start < _pos && _pos < len)
-					return _string.substring(start, _pos);
-				else
-					return _string.substring(start);
-			}
-			//no next token
-			_index = -1;
-			return null;
-		}
-
-		public int nextInt() {
-			return Integer.parseInt(nextToken());
-		}
-
-		public long nextLong() {
-			return Long.parseLong(nextToken());
-		}
-
-		public double nextDouble() {
-			String nt = nextToken();
-			if((naStrings != null && naStrings.contains(nt)) || nt == null)
-				return 0;
-			else
-				return Double.parseDouble(nt);
-		}
-
-		public int getIndex() {
-			return _index;
-		}
-
-		public void setNaStrings(HashSet<String> naStrings) {
-			this.naStrings = naStrings;
-		}
-	}
-
 	public static class MatrixReaderRowRegularColRegular extends MatrixGenerateReader {
 
 		public MatrixReaderRowRegularColRegular(CustomProperties _props) {
@@ -240,7 +167,7 @@ public abstract class MatrixGenerateReader extends MatrixReader {
 			double cellValue = 0;
 			int col = 0;
 			long lnnz = 0;
-			fastStringTokenizerDelim.naStrings = _props.getNaStrings();
+			fastStringTokenizerDelim.setNaStrings(_props.getNaStrings());
 
 			BufferedReader br = new BufferedReader(new InputStreamReader(is));
 

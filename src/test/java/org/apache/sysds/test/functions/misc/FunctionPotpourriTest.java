@@ -20,12 +20,14 @@
 package org.apache.sysds.test.functions.misc;
 
 import org.apache.sysds.hops.HopsException;
+import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.parser.LanguageException;
 import org.apache.sysds.parser.ParseException;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 
 public class FunctionPotpourriTest extends AutomatedTestBase 
@@ -56,6 +58,7 @@ public class FunctionPotpourriTest extends AutomatedTestBase
 		"FunPotpourriEvalList1Arg",
 		"FunPotpourriEvalList2Arg",
 		"FunPotpourriEvalNamespace",
+		"FunPotpourriEvalNamespace2",
 		"FunPotpourriBuiltinPrecedence",
 		"FunPotpourriParforEvalBuiltin",
 	};
@@ -88,6 +91,11 @@ public class FunctionPotpourriTest extends AutomatedTestBase
 	@Test
 	public void testFunctionEval() {
 		runFunctionTest( TEST_NAMES[3], null );
+	}
+	
+	@Test
+	public void testFunctionEval2() {
+		runFunctionTest( TEST_NAMES[3], null, true );
 	}
 	
 	@Test
@@ -171,8 +179,20 @@ public class FunctionPotpourriTest extends AutomatedTestBase
 	}
 	
 	@Test
+	@Ignore //TODO support list
+	public void testFunctionNestedParforEval2() {
+		runFunctionTest( TEST_NAMES[19], null, true );
+	}
+	
+	@Test
 	public void testFunctionMultiEval() {
 		runFunctionTest( TEST_NAMES[20], null );
+	}
+	
+	@Test
+	@Ignore //TODO support list
+	public void testFunctionMultiEval2() {
+		runFunctionTest( TEST_NAMES[20], null, true );
 	}
 	
 	@Test
@@ -181,8 +201,20 @@ public class FunctionPotpourriTest extends AutomatedTestBase
 	}
 	
 	@Test
+	@Ignore //TODO support list
+	public void testFunctionEvalPred2() {
+		runFunctionTest( TEST_NAMES[21], null, true );
+	}
+	
+	@Test
 	public void testFunctionEvalList1Arg() {
 		runFunctionTest( TEST_NAMES[22], null );
+	}
+	
+	@Test
+	@Ignore //TODO support list
+	public void testFunctionEvalList1Arg2() {
+		runFunctionTest( TEST_NAMES[22], null, true );
 	}
 	
 	@Test
@@ -191,32 +223,74 @@ public class FunctionPotpourriTest extends AutomatedTestBase
 	}
 	
 	@Test
+	@Ignore //TODO support list
+	public void testFunctionEvalList2Arg2() {
+		runFunctionTest( TEST_NAMES[23], null, true );
+	}
+	
+	@Test
 	public void testFunctionEvalNamespace() {
 		runFunctionTest( TEST_NAMES[24], null );
 	}
 	
 	@Test
-	public void testFunctionBuiltinPrecedence() {
+	@Ignore //TODO support list
+	public void testFunctionEvalNamespace2() {
+		runFunctionTest( TEST_NAMES[24], null, true );
+	}
+	
+	@Test
+	public void testFunctionEvalNamespacePlain() {
 		runFunctionTest( TEST_NAMES[25], null );
 	}
 	
 	@Test
-	public void testFunctionParforEvalBuiltin() {
+	public void testFunctionEvalNamespacePlain2() {
+		runFunctionTest( TEST_NAMES[25], null, true );
+	}
+	
+	@Test
+	public void testFunctionBuiltinPrecedence() {
 		runFunctionTest( TEST_NAMES[26], null );
 	}
 	
+	@Test
+	public void testFunctionParforEvalBuiltin() {
+		runFunctionTest( TEST_NAMES[27], null );
+	}
+	
+	@Test
+	@Ignore //TODO support list
+	public void testFunctionParforEvalBuiltin2() {
+		runFunctionTest( TEST_NAMES[27], null, true );
+	}
+	
 	private void runFunctionTest(String testName, Class<?> error) {
+		runFunctionTest(testName, error, false);
+	}
+	
+	private void runFunctionTest(String testName, Class<?> error, boolean evalRewrite) {
 		TestConfiguration config = getTestConfiguration(testName);
 		loadTestConfiguration(config);
 		
-		String HOME = SCRIPT_DIR + TEST_DIR;
-		fullDMLScriptName = HOME + testName + ".dml";
-		programArgs = new String[]{"-explain", "hops", "-stats",
-			"-args", String.valueOf(error).toUpperCase()};
-
-		runTest(true, error != null, error, -1);
-
-		if( testName.equals(TEST_NAMES[17]) )
-			Assert.assertTrue(heavyHittersContainsString("print"));
+		boolean oldFlag = OptimizerUtils.ALLOW_EVAL_FCALL_REPLACEMENT;
+		try {
+			OptimizerUtils.ALLOW_EVAL_FCALL_REPLACEMENT = evalRewrite;
+			
+			String HOME = SCRIPT_DIR + TEST_DIR;
+			fullDMLScriptName = HOME + testName + ".dml";
+			programArgs = new String[]{"-explain", "hops", "-stats",
+				"-args", String.valueOf(error).toUpperCase()};
+	
+			runTest(true, error != null, error, -1);
+	
+			if( testName.equals(TEST_NAMES[17]) )
+				Assert.assertTrue(heavyHittersContainsString("print"));
+			if( evalRewrite )
+				Assert.assertTrue(!heavyHittersContainsString("eval"));
+		}
+		finally {
+			OptimizerUtils.ALLOW_EVAL_FCALL_REPLACEMENT = oldFlag;
+		}
 	}
 }

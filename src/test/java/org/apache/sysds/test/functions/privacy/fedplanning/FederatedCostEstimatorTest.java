@@ -41,16 +41,15 @@ import org.apache.sysds.runtime.instructions.fed.FEDInstruction;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.junit.Assert;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 
 import static org.apache.sysds.common.Types.OpOp2.MULT;
 
@@ -86,17 +85,15 @@ public class FederatedCostEstimatorTest extends AutomatedTestBase {
 	}
 
 	@Test
-	@Ignore
 	public void federatedMultiply() {
 		fedCostEstimator.WORKER_COMPUTE_BANDWITH_FLOPS = 2;
 		fedCostEstimator.WORKER_READ_BANDWIDTH_BYTES_PS = 10;
 		fedCostEstimator.WORKER_NETWORK_BANDWIDTH_BYTES_PS = 5;
-		fedCostEstimator.printCosts = true;
 
-		double literalOpCost = 39*0.0625; //10
+		double literalOpCost = 10*0.0625;
 		double naryOpCostSpecial = (0.125+2.2);
 		double naryOpCostSpecial2 = (0.25+6.4);
-		double naryOpCost = 16*(0.125+1.6);
+		double naryOpCost = 4*(0.125+1.6);
 		double reorgOpCost = 6250+80015.2+160030.4;
 		double binaryOpMultCost = 3125+160000;
 		double aggBinaryOpCost = 125000+160015.2+160030.4+190.4;
@@ -106,9 +103,22 @@ public class FederatedCostEstimatorTest extends AutomatedTestBase {
 		double expectedCost = literalOpCost + naryOpCost + naryOpCostSpecial + naryOpCostSpecial2 + reorgOpCost
 			+ binaryOpMultCost + aggBinaryOpCost + dataOpCost + dataOpWriteCost;
 		runTest("FederatedMultiplyCostEstimatorTest.dml", false, expectedCost);
+
+		double aggBinaryActualCost = hops.stream()
+			.filter(hop -> hop instanceof AggBinaryOp)
+			.mapToDouble(aggHop -> aggHop.getFederatedCost().getTotal()-aggHop.getFederatedCost().getInputTotalCost())
+			.sum();
+		Assert.assertEquals(aggBinaryOpCost, aggBinaryActualCost, 0.0001);
+
+		double writeActualCost = hops.stream()
+			.filter(hop -> hop instanceof DataOp)
+			.mapToDouble(writeHop -> writeHop.getFederatedCost().getTotal()-writeHop.getFederatedCost().getInputTotalCost())
+			.sum();
+		Assert.assertEquals(dataOpWriteCost+dataOpCost, writeActualCost, 0.0001);
 	}
 
-	List<Hop> hops = new ArrayList<>();
+	Set<Hop> hops = new HashSet<>();
+
 	private void addHop(Hop hop){
 		hops.add(hop);
 		for(Hop inHop : hop.getInput()){
@@ -133,22 +143,22 @@ public class FederatedCostEstimatorTest extends AutomatedTestBase {
 	}
 
 	private void printHopsInfo(){
-		//LiteralOp, computeCost=0.0625
+		//LiteralOp
 		long literalCount = hops.stream().filter(hop -> hop instanceof LiteralOp).count();
 		System.out.println("LiteralOp Count: " + literalCount);
-		//NaryOp, computeCost=0.125, readCost=1.6
+		//NaryOp
 		long naryCount = hops.stream().filter(hop -> hop instanceof NaryOp).count();
 		System.out.println("NaryOp Count " + naryCount);
-		//ReorgOp, computeCost=0.0625, readCost=0.8, outputTransferCost=1.6
+		//ReorgOp
 		long reorgCount = hops.stream().filter(hop -> hop instanceof ReorgOp).count();
 		System.out.println("ReorgOp Count: " + reorgCount);
-		//BinaryOp, computeCost=0.03125, readCost=1.6
+		//BinaryOp
 		long binaryCount = hops.stream().filter(hop -> hop instanceof BinaryOp).count();
 		System.out.println("Binary count: " + binaryCount);
-		//AggBinaryOp, computeCost=??, readCost=1.6, inputTransferCost=1.6, outputTransferCost=1.6
+		//AggBinaryOp
 		long aggBinaryCount = hops.stream().filter(hop -> hop instanceof AggBinaryOp).count();
 		System.out.println("AggBinaryOp Count: " + aggBinaryCount);
-		//DataOp, computeCost=0.0625, readCost=5.6
+		//DataOp
 		long dataOpCount = hops.stream().filter(hop -> hop instanceof DataOp).count();
 		System.out.println("DataOp Count: " + dataOpCount);
 
@@ -172,9 +182,8 @@ public class FederatedCostEstimatorTest extends AutomatedTestBase {
 			if ( scriptFilename.equals("FederatedMultiplyCostEstimatorTest.dml")){
 				modifyFedouts(prog);
 				dmlt.rewriteHopsDAG(prog);
-				hops = new ArrayList<>();
+				hops = new HashSet<>();
 				prog.getStatementBlocks().forEach(stmBlock -> stmBlock.getHops().forEach(this::addHop));
-				printHopsInfo();
 			}
 
 			FederatedCost actualCost = fedCostEstimator.costEstimate(prog);
@@ -190,7 +199,6 @@ public class FederatedCostEstimatorTest extends AutomatedTestBase {
 			throw new RuntimeException(ex2);
 		}
 
-		//check correctness
 		Assert.assertEquals("Expected exception does not match raised exception",
 			expectedException, raisedException);
 	}

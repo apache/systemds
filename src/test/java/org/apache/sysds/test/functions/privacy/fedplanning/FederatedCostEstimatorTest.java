@@ -119,6 +119,10 @@ public class FederatedCostEstimatorTest extends AutomatedTestBase {
 
 	Set<Hop> hops = new HashSet<>();
 
+	/**
+	 * Recursively adds the hop and its inputs to the set of hops.
+	 * @param hop root to be added to set of hops
+	 */
 	private void addHop(Hop hop){
 		hops.add(hop);
 		for(Hop inHop : hop.getInput()){
@@ -126,6 +130,10 @@ public class FederatedCostEstimatorTest extends AutomatedTestBase {
 		}
 	}
 
+	/**
+	 * Sets dimensions of federated X and Y and sets binary multiplication to FOUT.
+	 * @param prog dml program where the HOPS are modified
+	 */
 	private void modifyFedouts(DMLProgram prog){
 		prog.getStatementBlocks().forEach(stmBlock -> stmBlock.getHops().forEach(this::addHop));
 		hops.forEach(hop -> {

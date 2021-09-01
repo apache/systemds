@@ -144,6 +144,7 @@ public class InterProceduralAnalysis
 		_passes.add(new IPAPassRemoveConstantBinaryOps());
 		_passes.add(new IPAPassPropagateReplaceLiterals());
 		_passes.add(new IPAPassInlineFunctions());
+		_passes.add(new IPAPassReplaceEvalFunctionCalls());
 		_passes.add(new IPAPassEliminateDeadCode());
 		_passes.add(new IPAPassFlagNonDeterminism());
 		//note: apply rewrites last because statement block rewrites

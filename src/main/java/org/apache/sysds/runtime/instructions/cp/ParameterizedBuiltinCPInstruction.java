@@ -386,7 +386,8 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction 
 					decimal);
 			}
 			else {
-				throw new DMLRuntimeException("toString only converts matrix, tensors, lists or frames to string");
+				throw new DMLRuntimeException("toString only converts "
+					+ "matrix, tensors, lists or frames to string: "+cacheData.getClass().getSimpleName());
 			}
 			if(!(cacheData instanceof ListObject)) {
 				ec.releaseCacheableData(getParam("target"));

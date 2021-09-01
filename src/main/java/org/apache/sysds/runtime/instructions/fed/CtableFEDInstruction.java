@@ -149,8 +149,7 @@ public class CtableFEDInstruction extends ComputationFEDInstruction {
 		FederatedRequest[] fr1 = fedMap.broadcastSliced(mo2, false);
 		FederatedRequest[] fr2 = null;
 		FederatedRequest fr3, fr4, fr5;
-		fr3 = fr4 = fr5 = null;
-		Future<FederatedResponse>[] ffr = null;
+		Future<FederatedResponse>[] ffr;
 
 		if(mo3 != null && mo1.isFederated() && mo3.isFederated()
 			&& fedMap.isAligned(mo3.getFedMapping(), AlignType.FULL)) { // mo1 and mo3 federated and aligned
@@ -208,6 +207,11 @@ public class CtableFEDInstruction extends ComputationFEDInstruction {
 	 * Evaluate if the output can be kept federated on the different federated
 	 * sites or if the output needs to be aggregated on the coordinator, based
 	 * on the output ranges of mo2.
+	 * The output can be kept federated if the slices of mo2, sliced corresponding
+	 * to the federated ranges of mo1, have strict separable and ascending value
+	 * ranges. From this property it follows that the partial outputs can also
+	 * be separated, and hence the overall output can be created by a simple
+	 * binding through a federated mapping.
 	 *
 	 * @param fedMap the federation map of the federated matrix input mo1
 	 * @param mo2 input matrix object mo2
@@ -230,12 +234,12 @@ public class CtableFEDInstruction extends ComputationFEDInstruction {
 
 		Iterator<SortedMap.Entry<Double, Double>> iter = fedDims.entrySet().iterator();
 		SortedMap.Entry<Double, Double> entry = iter.next(); // first entry does not have to be checked
-		double prevEndDim = entry.getValue().doubleValue();
+		double prevEndDim = entry.getValue();
 		while(iter.hasNext() && retVal) {
 			entry = iter.next();
 			// previous end dimension must be less than current begin dimension (no overlaps of ranges)
 			retVal &= (prevEndDim < entry.getKey());
-			prevEndDim = entry.getValue().doubleValue();
+			prevEndDim = entry.getValue();
 		}
 
 		return retVal;
@@ -250,7 +254,6 @@ public class CtableFEDInstruction extends ComputationFEDInstruction {
 	 * @param staticDim static non-partitioned dimension of the output
 	 * @param dims2 dimensions of the partial outputs along the federated partitioning
 	 * @param reversed boolean indicating if inputs mo1 and mo2 are reversed
-	 * @return boolean indicating if the output can be kept on the federated sites
 	 */
 	private static void setFedOutput(MatrixObject mo1, MatrixObject out, FederationMap fedMap,
 		long staticDim, Long[] dims2, boolean reversed) {

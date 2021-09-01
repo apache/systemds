@@ -612,12 +612,12 @@ public class Data extends Lop
 		StringBuilder sb = new StringBuilder();
 		if ( _op.isRead() ) {
 			Data sampleRawLop = (Data) getNamedInputLop(DataExpression.SAMPLE_RAW);
-			Data sampleLop = (Data) getNamedInputLop(DataExpression.SAMPLE);
+			Lop sampleLop = getInputParams().get(DataExpression.SAMPLE);
 
 			sb.append(sampleRawLop.getStringValue());
 			sb.append(OPERAND_DELIMITOR);
-			sb.append(sampleLop.getStringValue());
-			sb.append(OPERAND_DELIMITOR);
+			boolean sampleLiteral = (sampleLop instanceof Data && ((Data) sampleLop).isLiteral());
+			sb.append(prepOperand(sampleLop.getOutputParameters().getLabel(), getDataType(), getValueType(), sampleLiteral));
 		}
 		return sb.toString();
 	}

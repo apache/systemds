@@ -18,7 +18,7 @@
 # under the License.
 #
 #-------------------------------------------------------------
-
-Y = read($data,sample_raw=$sample_raw, sample=$sample, cols=$ncols, format="unknown");
+sample= read($sample_matrix);
+Y = read($data, sample_raw=$sample_raw, sample=sample, cols=$ncols, format="unknown", data_type="matrix");
 S = sum(Y);
 print(S)

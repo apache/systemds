@@ -76,14 +76,13 @@ public class MatrixGenerateReaderDMLTest extends AutomatedTestBase {
 			loadTestConfiguration(config);
 
 			String HOME = SCRIPT_DIR + TEST_DIR;
-			String dataPath = HOME + "sample.raw";
-			String sampleMatrixFileName = HOME + "sample.matrix";
+			String dataPath = HOME + "data.raw";
 			writeRawString(sampleRaw, dataPath);
-			writeRawString(getCSVMatrix(sampleMatrix), sampleMatrixFileName);
+			writeInputMatrixWithMTD("sample_matrix", sampleMatrix, false);
 
 			fullDMLScriptName = HOME + "MatrixGenerateReaderTest1.dml";
-			programArgs = new String[] {"-nvargs", "data=" + dataPath, "sample_raw=" + dataPath,
-				"sample=" + sampleMatrixFileName, "ncols=" + sampleMatrix[0].length};
+			programArgs = new String[] {"-nvargs", "data=" + dataPath, "sample_raw=" + sampleRaw,
+				"sample_matrix=" + input("sample_matrix"), "ncols=" + sampleMatrix[0].length};
 
 			runTest(true, false, null, -1);
 		}
@@ -95,23 +94,6 @@ public class MatrixGenerateReaderDMLTest extends AutomatedTestBase {
 			CompilerConfig.FLAG_PARREADWRITE_TEXT = oldpar;
 			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
 		}
-	}
-
-	private String getCSVMatrix(double[][] sample) throws Exception {
-		int nrows = sample.length;
-		int ncols = sample[0].length;
-
-		StringBuilder sb = new StringBuilder();
-		for(int r = 0; r < nrows; r++) {
-			for(int c = 0; c < ncols; c++) {
-				sb.append(sample[r][c]);
-				if(c != ncols - 1)
-					sb.append(",");
-			}
-			if(r != nrows - 1)
-				sb.append("\n");
-		}
-		return sb.toString();
 	}
 
 	private void writeRawString(String raw, String fileName) throws IOException {

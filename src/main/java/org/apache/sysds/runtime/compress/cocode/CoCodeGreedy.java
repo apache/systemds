@@ -163,7 +163,7 @@ public class CoCodeGreedy extends AColumnCoCoder {
 					g = CompressedSizeInfoColGroup.addConstGroup(c, left, _cs.validCompressions);
 				else {
 					st3++;
-					g = _sest.estimateJoinCompressedSize(left, right);
+					g = _sest.estimateJoinCompressedSize(c, left, right);
 				}
 
 				if(leftConst || rightConst)

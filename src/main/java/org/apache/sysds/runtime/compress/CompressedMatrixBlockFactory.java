@@ -217,7 +217,13 @@ public class CompressedMatrixBlockFactory {
 		_stats.estimatedSizeCols = sizeInfos.memoryEstimate();
 		logPhase();
 
-		if(isComputeBasedCompression() || _stats.estimatedSizeCols < _stats.originalSize)
+		final boolean isValidForComputeBasedCompression = isComputeBasedCompression() &&
+			(compSettings.minimumCompressionRatio != 1.0) ? _stats.estimatedSizeCols *
+				compSettings.minimumCompressionRatio < _stats.originalSize : true;
+		final boolean isValidForMemoryBasedCompression = _stats.estimatedSizeCols *
+			compSettings.minimumCompressionRatio < _stats.originalSize;
+
+		if(isValidForComputeBasedCompression || isValidForMemoryBasedCompression)
 			coCodePhase(sizeEstimator, sizeInfos, costEstimator);
 		else {
 			LOG.info("Estimated Size of singleColGroups: " + _stats.estimatedSizeCols);
@@ -239,9 +245,8 @@ public class CompressedMatrixBlockFactory {
 		logPhase();
 
 		// if cocode is estimated larger than uncompressed abort compression.
-		// if cost based, then stop compression if the size in compressed is larger than 3 times the original.
-		if((isComputeBasedCompression() && _stats.estimatedSizeCoCoded / 3 > _stats.originalSize) ||
-			_stats.estimatedSizeCoCoded > _stats.originalSize) {
+		if(isComputeBasedCompression() &&
+			_stats.estimatedSizeCoCoded * compSettings.minimumCompressionRatio > _stats.originalSize) {
 
 			coCodeColGroups = null;
 			LOG.info("Aborting compression because the cocoded size : " + _stats.estimatedSizeCoCoded);

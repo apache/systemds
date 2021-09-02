@@ -88,7 +88,7 @@ public class QuaternaryWDivMMFEDInstruction extends QuaternaryFEDInstruction
 			else {
 				eps = (_input4.getDataType() == DataType.SCALAR) ?
 					ec.getScalarInput(_input4) :
-					new DoubleObject(ec.getMatrixInput(_input4.getName()).quickGetValue(0, 0));
+					new DoubleObject(ec.getMatrixInput(_input4).quickGetValue(0, 0));
 			}
 		}
 
@@ -162,6 +162,7 @@ public class QuaternaryWDivMMFEDInstruction extends QuaternaryFEDInstruction
 			FederatedRequest frC = null;
 			if((wdivmm_type.isLeft() && X.isFederated(FType.ROW))
 				|| (wdivmm_type.isRight() && X.isFederated(FType.COL))) { // output needs local aggregation
+				// get partial results from federated workers
 				frGet = new FederatedRequest(RequestType.GET_VAR, frComp.getID());
 				// cleanup the federated request of the instruction call
 				frC = fedMap.cleanup(getTID(), frComp.getID());

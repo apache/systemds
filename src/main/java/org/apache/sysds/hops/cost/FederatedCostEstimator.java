@@ -154,7 +154,7 @@ public class FederatedCostEstimator {
 	 * @param root of Hop DAG for which cost is estimated
 	 * @return cost estimation of Hop DAG starting from given root
 	 */
-	private FederatedCost costEstimate(Hop root){
+	public FederatedCost costEstimate(Hop root){
 		if ( root.federatedCostInitialized() )
 			return root.getFederatedCost();
 		else {

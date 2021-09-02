@@ -510,6 +510,11 @@ public class DataOp extends Hop {
 	}
 
 	@Override
+	public boolean isFederatedDataOp(){
+		return isFederatedData();
+	}
+
+	@Override
 	public void refreshSizeInformation() {
 		if( _op == OpOpData.PERSISTENTWRITE || _op == OpOpData.TRANSIENTWRITE ) {
 			Hop input1 = getInput().get(0);

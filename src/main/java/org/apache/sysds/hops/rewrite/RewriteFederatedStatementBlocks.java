@@ -19,12 +19,34 @@
 
 package org.apache.sysds.hops.rewrite;
 
+import org.apache.sysds.hops.AggBinaryOp;
+import org.apache.sysds.hops.AggUnaryOp;
+import org.apache.sysds.hops.BinaryOp;
+import org.apache.sysds.hops.DataOp;
+import org.apache.sysds.hops.Hop;
+import org.apache.sysds.hops.ReorgOp;
+import org.apache.sysds.hops.TernaryOp;
+import org.apache.sysds.hops.cost.FederatedCost;
+import org.apache.sysds.hops.cost.FederatedCostEstimator;
+import org.apache.sysds.parser.ForStatementBlock;
+import org.apache.sysds.parser.FunctionStatementBlock;
+import org.apache.sysds.parser.IfStatementBlock;
 import org.apache.sysds.parser.StatementBlock;
+import org.apache.sysds.parser.WhileStatementBlock;
+import org.apache.sysds.runtime.instructions.fed.FEDInstruction;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.EnumMap;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class RewriteFederatedStatementBlocks extends StatementBlockRewriteRule {
+
+	private final static Map<Long, List<HopRel>> hopRelMemo = new HashMap<>();
 
 	/**
 	 * Indicates if the rewrite potentially splits dags, which is used
@@ -47,6 +69,31 @@ public class RewriteFederatedStatementBlocks extends StatementBlockRewriteRule {
 	 */
 	@Override
 	public List<StatementBlock> rewriteStatementBlock(StatementBlock sb, ProgramRewriteStatus state) {
+		//return Arrays.asList(sb);
+
+		//return selectFederatedExecutionPlan(roots);
+
+		if ( sb instanceof WhileStatementBlock){
+			rewriteStatementBlocks(sb.getDMLProg().getStatementBlocks(), state);
+		}
+		else if ( sb instanceof IfStatementBlock){
+			IfStatementBlock ifsb = (IfStatementBlock)sb;
+			visitFedPlanHop(ifsb.getPredicateHops());
+			selectFederatedExecutionPlan(ifsb.getHops());
+		}
+		else if ( sb instanceof ForStatementBlock){
+			// This also includes ParForStatementBlocks
+			ForStatementBlock forsb = (ForStatementBlock) sb;
+
+		}
+		else if ( sb instanceof FunctionStatementBlock){
+
+		}
+		else {
+			// StatementBlock type (no subclass)
+			sb.setHops(selectFederatedExecutionPlan(sb.getHops()));
+		}
+
 		return Arrays.asList(sb);
 	}
 
@@ -61,6 +108,169 @@ public class RewriteFederatedStatementBlocks extends StatementBlockRewriteRule {
 	 */
 	@Override
 	public List<StatementBlock> rewriteStatementBlocks(List<StatementBlock> sbs, ProgramRewriteStatus state) {
+
+
 		return sbs;
+	}
+
+	/**
+	 * Select federated execution plan for every Hop in the DAG starting from given roots.
+	 * @param roots starting point for going through the Hop DAG to update the FederatedOutput fields.
+	 * @return the list of roots with updated FederatedOutput fields.
+	 */
+	private ArrayList<Hop> selectFederatedExecutionPlan(ArrayList<Hop> roots){
+		for (Hop root : roots){
+			root.resetVisitStatus();
+		}
+		for ( Hop root : roots ){
+			visitFedPlanHop(root);
+		}
+		return roots;
+	}
+
+	class HopRel {
+		protected Hop hopRef;
+		protected FEDInstruction.FederatedOutput fedOut;
+		protected FederatedCost cost;
+		protected List<HopRel> inputDependency = new ArrayList<>();
+
+		public HopRel(Hop associatedHop, FEDInstruction.FederatedOutput fedOut){
+			hopRef = associatedHop;
+			this.fedOut = fedOut;
+			cost = new FederatedCostEstimator().costEstimate(hopRef);
+			//TODO: Set inputDependency depending on which inputs are valid and optimal.
+			//TODO: The hopRelMemo may not contain Hop
+			if (hopRef.getInput() != null && hopRef.getInput().size() > 0)
+				for ( Hop input : hopRef.getInput() )
+					inputDependency.add(
+						hopRelMemo.get(input.getHopID()).stream().min(Comparator.comparingDouble(a -> a.cost.getTotal())).get());
+		}
+
+		public double getCost(){
+			return cost.getTotal();
+		}
+	}
+
+	/**
+	 * Go through the Hop DAG and set the FederatedOutput field for each Hop from leaf to given currentHop.
+	 * @param currentHop the Hop from which the DAG is visited
+	 */
+	private void visitFedPlanHop(Hop currentHop){
+		if ( currentHop.isVisited() )
+			return;
+		if ( currentHop.getInput() != null && currentHop.getInput().size() > 0 && !currentHop.isFederatedDataOp() ){
+			// Depth first to get to the input
+			for ( Hop input : currentHop.getInput() )
+				visitFedPlanHop(input);
+		} else if ( currentHop.isFederatedDataOp() ) {
+			// leaf federated node
+			//TODO: This will block the cases where the federated DataOp is based on input that are also federated.
+			// This means that the actual federated leaf nodes will never be reached.
+			currentHop.setFederatedOutput(FEDInstruction.FederatedOutput.FOUT);
+		}
+		if ( isFedInstSupportedHop(currentHop) ){
+			ArrayList<HopRel> hopRels = new ArrayList<>();
+			for ( FEDInstruction.FederatedOutput fedoutValue : FEDInstruction.FederatedOutput.values() )
+				if ( isFedOutSupported(currentHop, fedoutValue) )
+					hopRels.add(new HopRel(currentHop,fedoutValue));
+			if (hopRelMemo.containsKey(currentHop.getHopID()))
+				hopRelMemo.get(currentHop.getHopID()).addAll(hopRels);
+			else
+				hopRelMemo.put(currentHop.getHopID(), hopRels);
+		} else {
+			List<HopRel> noneList = new ArrayList<>();
+			noneList.add(new HopRel(currentHop, FEDInstruction.FederatedOutput.NONE));
+			hopRelMemo.put(currentHop.getHopID(), noneList);
+		}
+
+		/*
+		if ( ( isFedInstSupportedHop(currentHop) ) ){
+			// The Hop can be FOUT or LOUT or None. Check utility of FOUT vs LOUT vs None.
+			currentHop.setFederatedOutput(getHighestUtilFedOut(currentHop));
+		}
+		else
+			currentHop.setFederatedOutput(FEDInstruction.FederatedOutput.NONE);*/
+		currentHop.setVisited();
+	}
+
+	/**
+	 * Returns the FederatedOutput with the highest utility out of the valid FederatedOutput values.
+	 * @param hop for which the utility is found
+	 * @return the FederatedOutput value with highest utility for the given Hop
+	 */
+	private FEDInstruction.FederatedOutput getHighestUtilFedOut(Hop hop){
+		Map<FEDInstruction.FederatedOutput,Long> fedOutUtilMap = new EnumMap<>(FEDInstruction.FederatedOutput.class);
+		if ( isFOUTSupported(hop) )
+			fedOutUtilMap.put(FEDInstruction.FederatedOutput.FOUT, getUtilFout());
+		if ( isLOUTSupported(hop) )
+			fedOutUtilMap.put(FEDInstruction.FederatedOutput.LOUT, getUtilLout(hop));
+		fedOutUtilMap.put(FEDInstruction.FederatedOutput.NONE, 0L);
+
+		Map.Entry<FEDInstruction.FederatedOutput, Long> fedOutMax = Collections.max(fedOutUtilMap.entrySet(), Map.Entry.comparingByValue());
+		return fedOutMax.getKey();
+	}
+
+	/**
+	 * Utility if hop is FOUT. This is a simple version where it always returns 1.
+	 * @return utility if hop is FOUT
+	 */
+	private long getUtilFout(){
+		//TODO: Make better utility estimation
+		return 1;
+	}
+
+	/**
+	 * Utility if hop is LOUT. This is a simple version only based on dimensions.
+	 * @param hop for which utility is calculated
+	 * @return utility if hop is LOUT
+	 */
+	private long getUtilLout(Hop hop){
+		//TODO: Make better utility estimation
+		return -(long)hop.getMemEstimate();
+	}
+
+	private boolean isFedInstSupportedHop(Hop hop){
+
+		// Check that some input is FOUT, otherwise none of the fed instructions will run unless it is fedinit
+		if ( (!hop.isFederatedDataOp()) && hop.getInput().stream().noneMatch(Hop::hasFederatedOutput) )
+			return false;
+
+		// The following operations are supported given that the above conditions have not returned already
+		return ( hop instanceof AggBinaryOp || hop instanceof BinaryOp || hop instanceof ReorgOp
+			|| hop instanceof AggUnaryOp || hop instanceof TernaryOp || hop instanceof DataOp);
+	}
+
+	private boolean isFedOutSupported(Hop associatedHop, FEDInstruction.FederatedOutput fedOut){
+		switch(fedOut){
+			case FOUT:
+				return isFOUTSupported(associatedHop);
+			case LOUT:
+				return isLOUTSupported(associatedHop);
+			default:
+				return true;
+		}
+	}
+
+	/**
+	 * Checks to see if the associatedHop supports FOUT.
+	 * @param associatedHop for which FOUT support is checked
+	 * @return true if FOUT is supported by the associatedHop
+	 */
+	private boolean isFOUTSupported(Hop associatedHop){
+		// If the output of AggUnaryOp is a scalar, the operation cannot be FOUT
+		if ( associatedHop instanceof AggUnaryOp )
+			return !associatedHop.isScalar();
+		return true;
+	}
+
+	/**
+	 * Checks to see if the associatedHop supports LOUT.
+	 * It supports LOUT if the output has no privacy constraints.
+	 * @param associatedHop for which LOUT support is checked.
+	 * @return true if LOUT is supported by the associatedHop
+	 */
+	private boolean isLOUTSupported(Hop associatedHop){
+		return associatedHop.getPrivacy() == null
+			|| (associatedHop.getPrivacy() != null && !associatedHop.getPrivacy().hasConstraints());
 	}
 }

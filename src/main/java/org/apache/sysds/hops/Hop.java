@@ -882,6 +882,10 @@ public abstract class Hop implements ParseInfo {
 		return getInput().stream().anyMatch(Hop::hasFederatedOutput);
 	}
 
+	public boolean isFederatedDataOp(){
+		return false;
+	}
+
 	public ArrayList<Hop> getParent() {
 		return _parent;
 	}

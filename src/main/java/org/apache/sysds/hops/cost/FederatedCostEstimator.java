@@ -95,7 +95,11 @@ public class FederatedCostEstimator {
 		else if ( sb instanceof ForStatementBlock){
 			// This also includes ParForStatementBlocks
 			ForStatementBlock forSB = (ForStatementBlock) sb;
-			FederatedCost forSBCost = costEstimate(forSB.getHops());
+			ArrayList<Hop> predicateHops = new ArrayList<>();
+			predicateHops.add(forSB.getFromHops());
+			predicateHops.add(forSB.getToHops());
+			predicateHops.add(forSB.getIncrementHops());
+			FederatedCost forSBCost = costEstimate(predicateHops);
 			for ( Statement statement : forSB.getStatements() ){
 				ForStatement forStatement = (ForStatement) statement;
 				for ( StatementBlock forStatementBlockBody : forStatement.getBody() )
@@ -141,7 +145,7 @@ public class FederatedCostEstimator {
 	private FederatedCost costEstimate(ArrayList<Hop> roots){
 		FederatedCost basicCost = new FederatedCost();
 		for ( Hop root : roots )
-			basicCost.addInputTotalCost(costEstimate(root).getTotal());
+			basicCost.addInputTotalCost(costEstimate(root));
 		return basicCost;
 	}
 

@@ -313,8 +313,9 @@ public class FunctionCallCPInstruction extends CPInstruction {
 		return reuse;
 	}
 	
-	private static String getCacheFunctionName(String fname, FunctionProgramBlock fpb) {
-		return !fpb.hasThreadID() ? fname :
+	private String getCacheFunctionName(String fname, FunctionProgramBlock fpb) {
+		String tmpFname = !fpb.hasThreadID() ? fname :
 			fname.substring(0, fname.lastIndexOf(Lop.CP_CHILD_THREAD+fpb.getThreadID()));
+		return DMLProgram.constructFunctionKey(_namespace, tmpFname);
 	}
 }

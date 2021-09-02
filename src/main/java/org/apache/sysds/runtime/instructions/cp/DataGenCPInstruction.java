@@ -528,6 +528,16 @@ public class DataGenCPInstruction extends UnaryCPInstruction {
 				tmpInstStr = replaceNonLiteral(tmpInstStr, seq_incr, 7, ec);
 				break;
 			}
+			case FRAMEINIT: {
+				tmpInstStr = InstructionUtils.replaceOperandName(tmpInstStr);
+				CPOperand frameInp = new CPOperand(frame_data, ValueType.STRING, DataType.SCALAR, true);
+				tmpInstStr = InstructionUtils.replaceOperand(tmpInstStr, 2, frameInp.getLineageLiteral());
+				tmpInstStr = replaceNonLiteral(tmpInstStr, rows, 3, ec);
+				tmpInstStr = replaceNonLiteral(tmpInstStr, cols, 4, ec);
+				CPOperand schemaInp = new CPOperand(schema, ValueType.STRING, DataType.SCALAR, true);
+				tmpInstStr = !schema.equalsIgnoreCase("NULL")
+						? InstructionUtils.replaceOperand(tmpInstStr, 5, schemaInp.getLineageLiteral()) : tmpInstStr;
+			}
 			case TIME:
 				// only opcode (time) is sufficient to compute from lineage.
 				break;

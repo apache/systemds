@@ -110,7 +110,6 @@ public class SpoofFEDInstruction extends FEDInstruction
 	}
 
 	private void processRequest(ExecutionContext ec, FederationMap fedMap, SpoofFEDType spoofType) {
-
 		ArrayList<FederatedRequest> frBroadcast = new ArrayList<>();
 		ArrayList<FederatedRequest[]> frBroadcastSliced = new ArrayList<>();
 		long[] frIds = new long[_inputs.length];
@@ -148,23 +147,22 @@ public class SpoofFEDInstruction extends FEDInstruction
 		FederatedRequest frCompute = FederationUtils.callInstruction(instString, _output, _inputs, frIds);
 
 		FederatedRequest frGet = null;
-		ArrayList<FederatedRequest> frCleanup = new ArrayList<>();
+		FederatedRequest frCleanup = null;
 		if(!spoofType.isFedOutput()) {
 			// get partial results from federated workers
 			frGet = new FederatedRequest(RequestType.GET_VAR, frCompute.getID());
 			// cleanup the federated request of callInstruction
-			frCleanup.add(fedMap.cleanup(getTID(), frCompute.getID()));
+			frCleanup = fedMap.cleanup(getTID(), frCompute.getID());
 		}
 
-		for(FederatedRequest[] fr : frBroadcastSliced)
-			frCleanup.add(fedMap.cleanup(getTID(), fr[0].getID()));
+		FederatedRequest[] frAll;
+		if(frGet == null) // no get request if output is kept federated
+			frAll = ArrayUtils.addAll(
+				frBroadcast.toArray(new FederatedRequest[0]), frCompute);
+		else
+			frAll = ArrayUtils.addAll(
+				frBroadcast.toArray(new FederatedRequest[0]), frCompute, frGet, frCleanup);
 
-		FederatedRequest[] frAll = (frGet == null ? ArrayUtils.addAll(
-				ArrayUtils.addAll(frBroadcast.toArray(new FederatedRequest[0]),
-				frCompute), frCleanup.toArray(new FederatedRequest[0]))
-			: ArrayUtils.addAll(ArrayUtils.addAll(
-				frBroadcast.toArray(new FederatedRequest[0]), frCompute, frGet),
-				frCleanup.toArray(new FederatedRequest[0])));
 		Future<FederatedResponse>[] response = fedMap.executeMultipleSlices(
 			getTID(), true, frBroadcastSliced.toArray(new FederatedRequest[0][]), frAll);
 
@@ -174,6 +172,7 @@ public class SpoofFEDInstruction extends FEDInstruction
 	}
 
 
+	// abstract class to differentiate between the different spoof templates
 	private static abstract class SpoofFEDType {
 		CPOperand _output;
 		FType _fedType;
@@ -182,20 +181,36 @@ public class SpoofFEDInstruction extends FEDInstruction
 			_output = out;
 			_fedType = fedType;
 		}
-		
+
+		/**
+		 * performs the sliced broadcast of the given matrix object
+		 *
+		 * @param mo the matrix object to broadcast sliced
+		 * @param fedMap the federated mapping
+		 * @return FederatedRequest[] the resulting federated request array of the broadcast
+		 */
 		protected FederatedRequest[] broadcastSliced(MatrixObject mo, FederationMap fedMap) {
 			return fedMap.broadcastSliced(mo, false);
 		}
 
+		/**
+		 * determine if a specific matrix object needs to be broadcast sliced
+		 *
+		 * @param fedMap the federated mapping
+		 * @param rowNum the number of rows of the matrix object
+		 * @param colNum the number of columns of the matrix object
+		 * @param inputIndex the index of the matrix inside the instruction inputs
+		 * @return boolean indicates if the matrix needs to be broadcast sliced
+		 */
 		protected boolean needsBroadcastSliced(FederationMap fedMap, long rowNum, long colNum, int inputIndex) {
 			//TODO fix check by num rows/cols
 			boolean retVal = (rowNum == fedMap.getMaxIndexInRange(0) && colNum == fedMap.getMaxIndexInRange(1));
 			if(_fedType == FType.ROW)
-				retVal |= (rowNum == fedMap.getMaxIndexInRange(0) 
-					&& (colNum == 1 || colNum == fedMap.getSize() || fedMap.getMaxIndexInRange(1) == 1));
+				retVal |= (rowNum == fedMap.getMaxIndexInRange(0)
+					&& (colNum == 1 || fedMap.getMaxIndexInRange(1) == 1));
 			else if(_fedType == FType.COL)
 				retVal |= (colNum == fedMap.getMaxIndexInRange(1)
-					&& (rowNum == 1 || rowNum == fedMap.getSize() || fedMap.getMaxIndexInRange(0) == 1));
+					&& (rowNum == 1 || fedMap.getMaxIndexInRange(0) == 1));
 			else {
 				throw new DMLRuntimeException("Only row partitioned or column" +
 					" partitioned federated input supported yet.");
@@ -203,6 +218,10 @@ public class SpoofFEDInstruction extends FEDInstruction
 			return retVal;
 		}
 
+		/**
+		 * set the output by either calling setFedOutput to keep the output federated
+		 * or calling aggResult to aggregate the partial results locally
+		 */
 		protected void setOutput(ExecutionContext ec, Future<FederatedResponse>[] response,
 			FederationMap fedMap, long frComputeID) {
 			if(isFedOutput())
@@ -211,28 +230,31 @@ public class SpoofFEDInstruction extends FEDInstruction
 				aggResult(ec, response, fedMap);
 		}
 
+		// determine if the output can be kept on the federated sites
 		protected abstract boolean isFedOutput();
+		// set the output by deriving new a federated mapping
 		protected abstract void setFedOutput(ExecutionContext ec, FederationMap fedMap, long frComputeID);
+		// aggregate the partial results locally
 		protected abstract void aggResult(ExecutionContext ec, Future<FederatedResponse>[] response,
 			FederationMap fedMap);
 	}
 
+	// CELLWISE TEMPLATE
 	private static class SpoofFEDCellwise extends SpoofFEDType {
 		private final SpoofCellwise _op;
+		private final CellType _cellType;
 
 		SpoofFEDCellwise(SpoofOperator op, CPOperand out, FType fedType) {
 			super(out, fedType);
 			_op = (SpoofCellwise)op;
+			_cellType = _op.getCellType();
 		}
 
 		protected boolean isFedOutput() {
-			CellType cellType = _op.getCellType();
-
 			boolean retVal = false;
-			retVal |= (cellType == CellType.ROW_AGG && _fedType == FType.ROW);
-			retVal |= (cellType == CellType.COL_AGG && _fedType == FType.COL);
-			retVal |= (cellType == CellType.NO_AGG);
-
+			retVal |= (_cellType == CellType.ROW_AGG && _fedType == FType.ROW);
+			retVal |= (_cellType == CellType.COL_AGG && _fedType == FType.COL);
+			retVal |= (_cellType == CellType.NO_AGG);
 			return retVal;
 		}
 
@@ -244,9 +266,8 @@ public class SpoofFEDInstruction extends FEDInstruction
 		}
 
 		private FederationMap modifyFedRanges(FederationMap fedMap) {
-			CellType cellType = _op.getCellType();
-			if(cellType == CellType.ROW_AGG || cellType == CellType.COL_AGG) {
-				int dim = (cellType == CellType.COL_AGG ? 0 : 1);
+			if(_cellType == CellType.ROW_AGG || _cellType == CellType.COL_AGG) {
+				int dim = (_cellType == CellType.COL_AGG ? 0 : 1);
 				// crop federation map to a vector
 				IntStream.range(0, fedMap.getFederatedRanges().length).forEach(i -> {
 					fedMap.getFederatedRanges()[i].setBeginDim(dim, 0);
@@ -258,12 +279,12 @@ public class SpoofFEDInstruction extends FEDInstruction
 
 		protected void aggResult(ExecutionContext ec, Future<FederatedResponse>[] response,
 			FederationMap fedMap) {
-			CellType cellType = _op.getCellType();
 			AggOp aggOp = _op.getAggOp();
 
-			// create the instruction for aggregation
+			// build up the instruction for aggregation
+			// (uak+/uamin/uamax/uark+/uarmin/uarmax/uack+/uacmin/uacmax)
 			String aggInst = "ua";
-			switch(cellType) {
+			switch(_cellType) {
 				case FULL_AGG:
 					break;
 				case ROW_AGG:
@@ -293,28 +314,29 @@ public class SpoofFEDInstruction extends FEDInstruction
 			}
 
 			AggregateUnaryOperator aop = InstructionUtils.parseBasicAggregateUnaryOperator(aggInst);
-			if(cellType == CellType.FULL_AGG)
+			if(_cellType == CellType.FULL_AGG)
 				ec.setVariable(_output.getName(), FederationUtils.aggScalar(aop, response));
 			else
 				ec.setMatrixOutput(_output.getName(), FederationUtils.aggMatrix(aop, response, fedMap));
 		}
 	}
 
+	// ROWWISE TEMPLATE
 	private static class SpoofFEDRowwise extends SpoofFEDType {
 		private final SpoofRowwise _op;
+		private final RowType _rowType;
 
 		SpoofFEDRowwise(SpoofOperator op, CPOperand out, FType fedType) {
 			super(out, fedType);
 			_op = (SpoofRowwise)op;
+			_rowType = _op.getRowType();
 		}
 
 		protected boolean isFedOutput() {
-			RowType rowType = _op.getRowType();
-
 			boolean retVal = false;
-			retVal |= (rowType == RowType.NO_AGG);
-			retVal |= (rowType == RowType.NO_AGG_B1);
-			retVal |= (rowType == RowType.NO_AGG_CONST);
+			retVal |= (_rowType == RowType.NO_AGG);
+			retVal |= (_rowType == RowType.NO_AGG_B1);
+			retVal |= (_rowType == RowType.NO_AGG_CONST);
 			retVal &= (_fedType == FType.ROW);
 			return retVal;
 		}
@@ -339,28 +361,27 @@ public class SpoofFEDInstruction extends FEDInstruction
 			if(_fedType != FType.ROW)
 				throw new DMLRuntimeException("Only row partitioned federated matrices supported yet.");
 
-			RowType rowType = _op.getRowType();
-
-			// create the instruction for aggregation
+			// build up the instruction for aggregation (uak+/uark+/uack+)
 			String aggInst = "ua";
-			if(rowType == RowType.FULL_AGG) // full aggregation
+			if(_rowType == RowType.FULL_AGG) // full aggregation
 				aggInst += "k+";
-			else if(rowType == RowType.ROW_AGG) // row aggregation
+			else if(_rowType == RowType.ROW_AGG) // row aggregation
 				aggInst += "rk+";
-			else if(rowType.isColumnAgg()) // col aggregation
+			else if(_rowType.isColumnAgg()) // col aggregation
 				aggInst += "ck+";
 			else
 				throw new DMLRuntimeException("AggregationType not supported yet.");
 
 			// aggregate partial results from federated responses as sum/rowSum/colSum
 			AggregateUnaryOperator aop = InstructionUtils.parseBasicAggregateUnaryOperator(aggInst);
-			if(rowType == RowType.FULL_AGG)
+			if(_rowType == RowType.FULL_AGG)
 				ec.setVariable(_output.getName(), FederationUtils.aggScalar(aop, response));
 			else
 				ec.setMatrixOutput(_output.getName(), FederationUtils.aggMatrix(aop, response, fedMap));
 		}
 	}
 
+	// MULTIAGGREGATE TEMPLATE
 	private static class SpoofFEDMultiAgg extends SpoofFEDType {
 		private final SpoofMultiAggregate _op;
 
@@ -388,14 +409,16 @@ public class SpoofFEDInstruction extends FEDInstruction
 			}
 	}
 
-
+	// OUTER PRODUCT TEMPLATE
 	private static class SpoofFEDOuterProduct extends SpoofFEDType {
 		private final SpoofOuterProduct _op;
+		private final OutProdType _outProdType;
 		private CPOperand[] _inputs;
 
 		SpoofFEDOuterProduct(SpoofOperator op, CPOperand out, FType fedType, CPOperand[] inputs) {
 			super(out, fedType);
 			_op = (SpoofOuterProduct)op;
+			_outProdType = _op.getOuterProdType();
 			_inputs = inputs;
 		}
 
@@ -415,44 +438,40 @@ public class SpoofFEDInstruction extends FEDInstruction
 			else
 				throw new DMLRuntimeException("Only row partitioned or column" +
 					" partitioned federated input supported yet.");
-			
+
 			return retVal;
 		}
 
 		protected boolean isFedOutput() {
-			OutProdType outProdType = _op.getOuterProdType();
-
 			boolean retVal = false;
-			retVal |= (outProdType == OutProdType.LEFT_OUTER_PRODUCT && _fedType == FType.COL);
-			retVal |= (outProdType == OutProdType.RIGHT_OUTER_PRODUCT && _fedType == FType.ROW);
-			retVal |= (outProdType == OutProdType.CELLWISE_OUTER_PRODUCT);
-
+			retVal |= (_outProdType == OutProdType.LEFT_OUTER_PRODUCT && _fedType == FType.COL);
+			retVal |= (_outProdType == OutProdType.RIGHT_OUTER_PRODUCT && _fedType == FType.ROW);
+			retVal |= (_outProdType == OutProdType.CELLWISE_OUTER_PRODUCT);
 			return retVal;
 		}
 
 		protected void setFedOutput(ExecutionContext ec, FederationMap fedMap, long frComputeID) {
 			FederationMap newFedMap = fedMap.copyWithNewID(frComputeID);
-			OutProdType outProdType = _op.getOuterProdType();
 			long[] outDims = new long[2];
 
 			// find the resulting output dimensions
 			MatrixObject X = ec.getMatrixObject(_inputs[0]);
-			switch(outProdType) {
-				case LEFT_OUTER_PRODUCT:
+			switch(_outProdType) {
+				case LEFT_OUTER_PRODUCT: // LEFT: nrows of transposed X, ncols of U
 					newFedMap = newFedMap.transpose();
 					outDims[0] = X.getNumColumns();
 					outDims[1] = ec.getMatrixObject(_inputs[1]).getNumColumns();
 					break;
-				case RIGHT_OUTER_PRODUCT:
+				case RIGHT_OUTER_PRODUCT: // RIGHT: nrows of X, ncols of V
 					outDims[0] = X.getNumRows();
 					outDims[1] = ec.getMatrixObject(_inputs[2]).getNumColumns();
 					break;
-				case CELLWISE_OUTER_PRODUCT:
+				case CELLWISE_OUTER_PRODUCT: // BASIC: preserve dimensions of X
 					outDims[0] = X.getNumRows();
 					outDims[1] = X.getNumColumns();
 					break;
 				default:
-					throw new DMLRuntimeException("Outer Product Type " + outProdType + " not supported yet.");
+					throw new DMLRuntimeException("Outer Product Type " + _outProdType + " not supported yet.");
 			}
 
 			// derive output federated mapping
@@ -472,9 +491,8 @@ public class SpoofFEDInstruction extends FEDInstruction
 
 		protected void aggResult(ExecutionContext ec, Future<FederatedResponse>[] response,
 			FederationMap fedMap) {
-			OutProdType outProdType = _op.getOuterProdType();
 			AggregateUnaryOperator aop = InstructionUtils.parseBasicAggregateUnaryOperator("uak+");
-			switch(outProdType) {
+			switch(_outProdType) {
 				case LEFT_OUTER_PRODUCT:
 				case RIGHT_OUTER_PRODUCT:
 					// aggregate partial results from federated responses as elementwise sum
@@ -485,7 +503,7 @@ public class SpoofFEDInstruction extends FEDInstruction
 					ec.setVariable(_output.getName(), FederationUtils.aggScalar(aop, response));
 					break;
 				default:
-					throw new DMLRuntimeException("Outer Product Type " + outProdType + " not supported yet.");
+					throw new DMLRuntimeException("Outer Product Type " + _outProdType + " not supported yet.");
 			}
 		}
 	}

@@ -31,7 +31,7 @@ import org.apache.sysds.runtime.util.DataConverter;
 
 import scala.Tuple2;
 
-public class ResultMergeRemoteSparkWCompare extends ResultMerge implements PairFunction<Tuple2<MatrixIndexes,Tuple2<Iterable<MatrixBlock>,MatrixBlock>>, MatrixIndexes, MatrixBlock>
+public class ResultMergeRemoteSparkWCompare extends ResultMergeMatrix implements PairFunction<Tuple2<MatrixIndexes,Tuple2<Iterable<MatrixBlock>,MatrixBlock>>, MatrixIndexes, MatrixBlock>
 {
 	private static final long serialVersionUID = -5970805069405942836L;
 	

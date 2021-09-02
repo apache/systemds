@@ -25,16 +25,18 @@ import org.apache.sysds.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 
-public class ParForListResultVarsTest extends AutomatedTestBase 
+public class ParForListFrameResultVarsTest extends AutomatedTestBase 
 {
 	private final static String TEST_DIR = "functions/parfor/";
 	private final static String TEST_NAME1 = "parfor_listResults";
-	private final static String TEST_CLASS_DIR = TEST_DIR + ParForListResultVarsTest.class.getSimpleName() + "/";
+	private final static String TEST_NAME2 = "parfor_frameResults";
+	
+	private final static String TEST_CLASS_DIR = TEST_DIR + ParForListFrameResultVarsTest.class.getSimpleName() + "/";
 	
 	@Override
 	public void setUp() {
-		addTestConfiguration(TEST_NAME1, 
-			new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] { "R" }) );
+		addTestConfiguration(TEST_NAME1, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[]{"R"}));
+		addTestConfiguration(TEST_NAME2, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2, new String[]{"R"}));
 	}
 
 	@Test
@@ -47,11 +49,21 @@ public class ParForListResultVarsTest extends AutomatedTestBase
 		runListResultVarTest(TEST_NAME1, 35, 10);
 	}
 	
+	@Test
+	public void testParForFrameResult1a() {
+		runListResultVarTest(TEST_NAME2, 2, 1);
+	}
+	
+	@Test
+	public void testParForFrameResult1b() {
+		runListResultVarTest(TEST_NAME2, 35, 10);
+	}
+	
 	private void runListResultVarTest(String testName, int rows, int cols) {
 		loadTestConfiguration(getTestConfiguration(testName));
 		
 		String HOME = SCRIPT_DIR + TEST_DIR;
-		fullDMLScriptName = HOME + TEST_NAME1 + ".dml";
+		fullDMLScriptName = HOME + testName + ".dml";
 		programArgs = new String[]{"-explain","-args",
 			String.valueOf(rows), String.valueOf(cols), output("R") };
 

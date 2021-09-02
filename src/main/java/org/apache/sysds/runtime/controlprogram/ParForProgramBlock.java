@@ -38,6 +38,7 @@ import org.apache.sysds.parser.StatementBlock;
 import org.apache.sysds.parser.VariableSet;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
+import org.apache.sysds.runtime.controlprogram.caching.FrameObject;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
@@ -51,6 +52,7 @@ import org.apache.sysds.runtime.controlprogram.parfor.RemoteDPParForSpark;
 import org.apache.sysds.runtime.controlprogram.parfor.RemoteParForJobReturn;
 import org.apache.sysds.runtime.controlprogram.parfor.RemoteParForSpark;
 import org.apache.sysds.runtime.controlprogram.parfor.ResultMerge;
+import org.apache.sysds.runtime.controlprogram.parfor.ResultMergeFrameLocalMemory;
 import org.apache.sysds.runtime.controlprogram.parfor.ResultMergeLocalAutomatic;
 import org.apache.sysds.runtime.controlprogram.parfor.ResultMergeLocalFile;
 import org.apache.sysds.runtime.controlprogram.parfor.ResultMergeLocalMemory;
@@ -1056,9 +1058,9 @@ public class ParForProgramBlock extends ForProgramBlock
 	 * @param out output matrix
 	 * @param in array of input matrix objects
 	 */
-	private static void cleanWorkerResultVariables(ExecutionContext ec, MatrixObject out, MatrixObject[] in, boolean parallel) {
+	private static void cleanWorkerResultVariables(ExecutionContext ec, CacheableData<?> out, CacheableData<?>[] in, boolean parallel) {
 		//check for empty inputs (no iterations executed)
-		Stream<MatrixObject> results = Arrays.stream(in).filter(m -> m!=null && m!=out);
+		Stream<CacheableData<?>> results = Arrays.stream(in).filter(m -> m!=null && m!=out);
 		//perform cleanup (parallel to mitigate file deletion bottlenecks)
 		(parallel ? results.parallel() : results)
 			.forEach(m -> ec.cleanupCacheableData(m));
@@ -1307,33 +1309,41 @@ public class ParForProgramBlock extends ForProgramBlock
 		return dp;
 	}
 
-	private ResultMerge createResultMerge( PResultMerge prm, MatrixObject out, MatrixObject[] in, String fname, boolean accum, ExecutionContext ec ) 
+	private ResultMerge<?> createResultMerge( PResultMerge prm,
+		CacheableData<?> out, CacheableData<?>[] in, String fname, boolean accum, ExecutionContext ec ) 
 	{
-		ResultMerge rm = null;
+		ResultMerge<?> rm = null;
 		
-		//create result merge implementation (determine degree of parallelism 
-		//only for spark to avoid unnecessary spark context creation)
-		switch( prm )
-		{
-			case LOCAL_MEM:
-				rm = new ResultMergeLocalMemory( out, in, fname, accum );
-				break;
-			case LOCAL_FILE:
-				rm = new ResultMergeLocalFile( out, in, fname, accum );
-				break;
-			case LOCAL_AUTOMATIC:
-				rm = new ResultMergeLocalAutomatic( out, in, fname, accum );
-				break;
-			case REMOTE_SPARK:
-				int numMap = Math.max(_numThreads,
-					SparkExecutionContext.getDefaultParallelism(true));
-				int numRed = numMap; //equal map/reduce
-				rm = new ResultMergeRemoteSpark( out, in,
-					fname, accum, ec, numMap, numRed );
-				break;
-				
-			default:
-				throw new DMLRuntimeException("Undefined result merge: '" +prm.toString()+"'.");
+		if( out instanceof FrameObject ) {
+			rm = new ResultMergeFrameLocalMemory((FrameObject)out, (FrameObject[])in, fname, accum);
+		}
+		else if(out instanceof MatrixObject) {
+			//create result merge implementation (determine degree of parallelism 
+			//only for spark to avoid unnecessary spark context creation)
+			switch( prm )
+			{
+				case LOCAL_MEM:
+					rm = new ResultMergeLocalMemory( (MatrixObject)out, (MatrixObject[])in, fname, accum );
+					break;
+				case LOCAL_FILE:
+					rm = new ResultMergeLocalFile( (MatrixObject)out, (MatrixObject[])in, fname, accum );
+					break;
+				case LOCAL_AUTOMATIC:
+					rm = new ResultMergeLocalAutomatic( (MatrixObject)out, (MatrixObject[])in, fname, accum );
+					break;
+				case REMOTE_SPARK:
+					int numMap = Math.max(_numThreads,
+						SparkExecutionContext.getDefaultParallelism(true));
+					int numRed = numMap; //equal map/reduce
+					rm = new ResultMergeRemoteSpark( (MatrixObject)out,
+						(MatrixObject[])in, fname, accum, ec, numMap, numRed );
+					break;
+				default:
+					throw new DMLRuntimeException("Undefined result merge: '" +prm.toString()+"'.");
+			}
+		}
+		else {
+			throw new DMLRuntimeException("Unsupported result merge data: "+out.getClass().getSimpleName());
 		}
 		
 		return rm;
@@ -1437,14 +1447,15 @@ public class ParForProgramBlock extends ForProgramBlock
 			{
 				Data dat = ec.getVariable(var._name);
 				
-				if( dat instanceof MatrixObject ) //robustness scalars
+				if( dat instanceof MatrixObject | dat instanceof FrameObject )
 				{
-					MatrixObject out = (MatrixObject) dat;
-					MatrixObject[] in = Arrays.stream(results).map(vars -> 
-						vars.get(var._name)).toArray(MatrixObject[]::new);
+					CacheableData<?> out = (CacheableData<?>) dat;
+					Stream<Object> tmp = Arrays.stream(results).map(vars -> vars.get(var._name));
+					CacheableData<?>[] in = (dat instanceof MatrixObject) ?
+						tmp.toArray(MatrixObject[]::new) : tmp.toArray(FrameObject[]::new);
 					String fname = constructResultMergeFileName();
-					ResultMerge rm = createResultMerge(_resultMerge, out, in, fname, var._isAccum, ec);
-					MatrixObject outNew = USE_PARALLEL_RESULT_MERGE ?
+					ResultMerge<?> rm = createResultMerge(_resultMerge, out, in, fname, var._isAccum, ec);
+					CacheableData<?> outNew = USE_PARALLEL_RESULT_MERGE ?
 						rm.executeParallelMerge(_numThreads) :
 						rm.executeSerialMerge();
 					
@@ -1653,18 +1664,19 @@ public class ParForProgramBlock extends ForProgramBlock
 					if( var == LocalTaskQueue.NO_MORE_TASKS ) // task queue closed (no more tasks)
 						break;
 				
-					MatrixObject out = null;
+					CacheableData<?> out = null;
 					synchronized( _ec.getVariables() ){
-						out = _ec.getMatrixObject(var._name);
+						out = _ec.getCacheableData(var._name);
 					}
 					
-					MatrixObject[] in = new MatrixObject[ _refVars.length ];
-					for( int i=0; i< _refVars.length; i++ )
-						in[i] = (MatrixObject) _refVars[i].get( var._name ); 
+					Stream<Object> tmp = Arrays.stream(_refVars).map(vars -> vars.get(var._name));
+					CacheableData<?>[] in = (out instanceof MatrixObject) ?
+						tmp.toArray(MatrixObject[]::new) : tmp.toArray(FrameObject[]::new);
+					
 					String fname = constructResultMergeFileName();
 				
-					ResultMerge rm = createResultMerge(_resultMerge, out, in, fname, var._isAccum, _ec);
-					MatrixObject outNew = null;
+					ResultMerge<?> rm = createResultMerge(_resultMerge, out, in, fname, var._isAccum, _ec);
+					CacheableData<?> outNew = null;
 					if( USE_PARALLEL_RESULT_MERGE )
 						outNew = rm.executeParallelMerge( _numThreads );
 					else

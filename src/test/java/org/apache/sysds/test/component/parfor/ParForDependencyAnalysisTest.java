@@ -66,8 +66,8 @@ import org.apache.sysds.test.TestConfiguration;
  *    49a: dep, 49b: dep
  * * accumulators
  *    53a: no, 53b dep, 53c dep, 53d dep, 53e dep
- * * lists
- *    54a: no, 54b: no, 54c: dep, 54d: dep
+ * * lists/frames
+ *    54a: no, 54b: no, 54c: dep, 54d: dep, 54e: no-dep, 54f: dep
  * * negative loop increment
  *    55a: no, 55b: yes
  */
@@ -326,6 +326,12 @@ public class ParForDependencyAnalysisTest extends AutomatedTestBase
 	
 	@Test
 	public void testDependencyAnalysis54d() { runTest("parfor54d.dml", true); }
+	
+	@Test
+	public void testDependencyAnalysis54e() { runTest("parfor54e.dml", false); }
+	
+	@Test
+	public void testDependencyAnalysis54f() { runTest("parfor54f.dml", true); }
 	
 	@Test
 	public void testDependencyAnalysis55a() { runTest("parfor55a.dml", false); }

@@ -67,7 +67,7 @@ import java.util.Map.Entry;
  *      NOTE: file merge typically used due to memory constraints - parallel merge would increase the memory
  *      consumption again.
  */
-public class ResultMergeLocalFile extends ResultMerge
+public class ResultMergeLocalFile extends ResultMergeMatrix
 {
 	private static final long serialVersionUID = -6905893742840020489L;
 

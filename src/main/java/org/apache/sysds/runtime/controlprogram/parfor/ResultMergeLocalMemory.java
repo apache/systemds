@@ -39,7 +39,7 @@ import java.util.ArrayList;
  * 
  * 
  */
-public class ResultMergeLocalMemory extends ResultMerge
+public class ResultMergeLocalMemory extends ResultMergeMatrix
 {
 	private static final long serialVersionUID = -3543612508601511701L;
 	

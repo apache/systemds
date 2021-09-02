@@ -61,8 +61,8 @@ public abstract class GenerateReaderTest extends AutomatedTestBase {
 
 	protected void runGenerateReaderTest() throws Exception {
 		MatrixBlock sampleMatrixMB = DataConverter.convertToMatrixBlock(sampleMatrix);
-		GenerateReader gr = new GenerateReader(sampleRaw, sampleMatrixMB);
-		MatrixReader reader=gr.getMatrixReader();
+		GenerateReader.GenerateReaderMatrix gr = new GenerateReader.GenerateReaderMatrix(sampleRaw, sampleMatrixMB);
+		MatrixReader reader=gr.getReader();
 
 		// Write SampleRawMatrix data into a file
 		String HOME = SCRIPT_DIR + TEST_DIR;

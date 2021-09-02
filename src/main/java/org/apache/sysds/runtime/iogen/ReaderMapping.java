@@ -19,7 +19,9 @@
 
 package org.apache.sysds.runtime.iogen;
 
+import org.apache.sysds.common.Types;
 import org.apache.sysds.runtime.io.IOUtilFunctions;
+import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
 import java.io.BufferedReader;
@@ -33,86 +35,240 @@ import java.util.HashMap;
 import java.util.Arrays;
 import java.util.Iterator;
 
-public class ReaderMapping {
+public abstract class ReaderMapping {
 
-	private int[][] mapRow;
-	private int[][] mapCol;
-	private int[][] mapSize;
-	private boolean symmetric;
-	private boolean skewSymmetric;
-	private boolean isUpperTriangular;
-	private int skewCoefficient;
+	protected int[][] mapRow;
+	protected int[][] mapCol;
+	protected int[][] mapSize;
+	protected boolean symmetric;
+	protected boolean skewSymmetric;
+	protected boolean isUpperTriangular;
+	protected int skewCoefficient;
+	protected final ArrayList<String> sampleRawRows;
 
-	private final ArrayList<String> sampleRawRows;
-	private MatrixBlock sampleMatrix;
-	private final boolean mapped;
-	private final int nrows;
-	private final int ncols;
-	private long nnz;
+	protected boolean mapped;
+	protected static int nrows;
+	protected static int ncols;
+	protected final int nlines;
+	protected static long nnz;
 
-	public ReaderMapping(String raw, MatrixBlock matrix) throws Exception {
+	protected ValueTrimFormat[][] VTF;
 
-		sampleMatrix = matrix;
+	public ReaderMapping(String raw) throws Exception {
 		InputStream is = IOUtilFunctions.toInputStream(raw);
 		BufferedReader br = new BufferedReader(new InputStreamReader(is));
-
-		nrows = matrix.getNumRows();
-		ncols = matrix.getNumColumns();
-		int nlines = 0;
-		nnz = matrix.getNonZeros();
-
-		NumberTrimFormat[][] NTF = convertMatrixTONumberTrimFormat(matrix);
-
 		String value;
+		int nlines = 0;
 		sampleRawRows = new ArrayList<>();
 		while((value = br.readLine()) != null) {
 			sampleRawRows.add(value);
 			nlines++;
 		}
+		this.nlines = nlines;
+		System.out.println("raw_nrows:" + sampleRawRows.size());
+	}
 
-		System.out.println("raw_nrows:"+sampleRawRows.size());
+	protected abstract void transferSampleTriangular(boolean isUpper) throws Exception;
 
-		// First Check for General Mapping
-		boolean isMapped = findMapping(nlines, NTF);
+	protected abstract void transferSampleSkew(int coefficient) throws Exception;
 
-		if(!isMapped) {
-			// Clone Sample Matrix
-			MatrixBlock sampleMatrixClone = new MatrixBlock(nrows, ncols, false);
+	protected abstract boolean isSchemaNumeric();
+
+	protected abstract void cloneSample();
+
+	protected abstract void retrieveSample();
+
+	protected abstract ValueTrimFormat[][] convertSampleTOValueTrimFormat();
+
+	// Matrix Reader Mapping
+	public static class MatrixReaderMapping extends ReaderMapping {
+
+		private MatrixBlock sampleMatrix;
+		private MatrixBlock sampleMatrixClone;
+
+		public MatrixReaderMapping(String raw, MatrixBlock matrix) throws Exception {
+			super(raw);
+			this.sampleMatrix = matrix;
+			nrows = sampleMatrix.getNumRows();
+			ncols = sampleMatrix.getNumColumns();
+			nnz = sampleMatrix.getNonZeros();
+			VTF = convertSampleTOValueTrimFormat();
+			runMapping();
+		}
+
+		// Convert: convert each value of a sample matrix to NumberTrimFormat
+		@Override
+		protected ValueTrimFormat.NumberTrimFormat[][] convertSampleTOValueTrimFormat() {
+			ValueTrimFormat.NumberTrimFormat[][] result = new ValueTrimFormat.NumberTrimFormat[nrows][ncols];
+			for(int r = 0; r < nrows; r++)
+				for(int c = 0; c < ncols; c++) {
+					result[r][c] = new ValueTrimFormat.NumberTrimFormat(c, sampleMatrix.getValue(r, c));
+				}
+			return result;
+		}
+
+		@Override protected void transferSampleTriangular(boolean isUpper) throws Exception {
+			if(nrows != ncols)
+				throw new Exception("For upper triangular both Row and Col should be same!");
+
+			for(int r = 0; r < nrows; r++) {
+				if(isUpper) {
+					for(int c = 0; c < r; c++) {
+						sampleMatrix.setValue(r, c, 0);
+					}
+				}
+				else {
+					for(int c = r + 1; c < ncols; c++) {
+						sampleMatrix.setValue(r, c, 0);
+					}
+				}
+			}
+			nnz = sampleMatrix.getNonZeros();
+		}
+
+		@Override protected void transferSampleSkew(int coefficient) throws Exception {
+			if(coefficient != 1 && coefficient != -1)
+				throw new Exception("The value of Coefficient have to be 1 or -1!");
+
 			for(int r = 0; r < nrows; r++)
 				for(int c = 0; c < ncols; c++)
-					sampleMatrixClone.setValue(r, c, sampleMatrix.getValue(r, c));
+					sampleMatrix.setValue(r, c, sampleMatrix.getValue(r, c) * coefficient);
+		}
+
+		@Override protected boolean isSchemaNumeric() {
+			return true;
+		}
+
+		@Override protected void cloneSample() {
+			// Clone Sample Matrix
+			sampleMatrixClone = new MatrixBlock(nrows, ncols, false);
+			this.sampleMatrix.copy(0, nrows, 0, ncols, sampleMatrixClone, false);
+		}
+
+		@Override protected void retrieveSample() {
+			// Retrieve SampleMatrix From Cloned Data
+			this.sampleMatrixClone.copy(0, nrows, 0, ncols, sampleMatrix, false);
+		}
+	}
+
+	// Frame Reader Mapping
+	public static class FrameReaderMapping extends ReaderMapping {
+
+		private FrameBlock sampleFrame;
+		private FrameBlock sampleFrameClone;
+		private Types.ValueType[] schema;
+		private String[] names;
+
+		public FrameReaderMapping(String raw, FrameBlock frame) throws Exception {
+			super(raw);
+			this.sampleFrame = frame;
+			nrows = sampleFrame.getNumRows();
+			ncols = sampleFrame.getNumColumns();
+			schema = sampleFrame.getSchema();
+			names = sampleFrame.getColumnNames();
+			VTF = convertSampleTOValueTrimFormat();
+			//TODO: set NNZ for Frame !!??
+			runMapping();
+		}
+
+		// Convert: convert each value of a sample Frame to ValueTrimFormat(Number, String, and Boolean)
+		@Override
+		protected ValueTrimFormat[][] convertSampleTOValueTrimFormat() {
+			ValueTrimFormat[][] result = new ValueTrimFormat[nrows][ncols];
+			for(int r = 0; r < nrows; r++)
+				for(int c = 0; c < ncols; c++) {
+					result[r][c] = ValueTrimFormat.createNewTrimFormat(schema[c], sampleFrame.get(r, c));
+				}
+			return result;
+		}
+
+		@Override protected boolean isSchemaNumeric() {
+			boolean result = true;
+			for(Types.ValueType vt : schema)
+				result &= vt.isNumeric();
+			return result;
+		}
+
+		@Override protected void transferSampleTriangular(boolean isUpper) throws Exception {
+			if(nrows != ncols)
+				throw new Exception("For upper triangular both Row and Col should be same!");
+
+			for(int r = 0; r < nrows; r++) {
+				if(isUpper) {
+					for(int c = 0; c < r; c++) {
+						sampleFrame.set(r, c, 0);
+					}
+				}
+				else {
+					for(int c = r + 1; c < ncols; c++) {
+						sampleFrame.set(r, c, 0);
+					}
+				}
+			}
+		}
+
+		@Override protected void transferSampleSkew(int coefficient) throws Exception {
+			if(coefficient != 1 && coefficient != -1)
+				throw new Exception("The value of Coefficient have to be 1 or -1!");
+
+			for(int r = 0; r < nrows; r++)
+				for(int c = 0; c < ncols; c++)
+					sampleFrame.set(r, c, (Double) sampleFrame.get(r, c) * coefficient);
+		}
+
+		@Override protected void cloneSample() {
+			// Clone SampleFrame
+			sampleFrameClone = new FrameBlock(schema, names);
+			sampleFrameClone.ensureAllocatedColumns(nrows);
+			sampleFrame.copy(0, nrows, 0, ncols, sampleFrameClone);
+		}
+
+		@Override protected void retrieveSample() {
+			// Retrieve SampleFrame from Cloned Data
+			sampleFrameClone.copy(0, nrows, 0, ncols, sampleFrame);
+		}
+	}
+
+	public void runMapping() throws Exception {
+
+		boolean isMapped = findMapping();
+		boolean schemaNumeric = isSchemaNumeric();
+		if(!isMapped ) {
+			// Clone Sample Matrix/Frame
+			cloneSample();
 
 			// Symmetric and Skew-Symmetric check:
 			symmetric = nrows == ncols;
-			skewSymmetric = nrows == ncols;
+			skewSymmetric = nrows == ncols && schemaNumeric;
 
 			for(int r = 0; r < nrows; r++) {
 				for(int c = 0; c < ncols; c++) {
 					if(symmetric)
-						symmetric = sampleMatrix.getValue(r, c) == sampleMatrix.getValue(c, r);
+						symmetric = VTF[r][c].isEqual(VTF[c][r]);
 
 					if(skewSymmetric) {
 						if(r != c)
-							skewSymmetric = sampleMatrix.getValue(r, c) == sampleMatrix.getValue(c, r) * (-1);
+							skewSymmetric = ((ValueTrimFormat.NumberTrimFormat)VTF[r][c]).getActualValue() ==
+								((ValueTrimFormat.NumberTrimFormat)VTF[c][r]).getActualValue() * (-1);
 						else
-							skewSymmetric = sampleMatrix.getValue(r, c) == 0;
+							skewSymmetric = VTF[r][c].isNotSet();
 					}
 				}
 			}
 
 			if(symmetric) {
-
 				// Lower Triangular
 				isUpperTriangular = false;
-				transferSampleMatrixTriangular(isUpperTriangular);
-				isMapped = findMapping(nlines, NTF);
+				transferSampleTriangular(isUpperTriangular);
+				isMapped = findMapping();
 
 				// Upper Triangular
 				if(!isMapped) {
 					isUpperTriangular = true;
-					sampleMatrix = sampleMatrixClone;
-					transferSampleMatrixTriangular(isUpperTriangular);
-					isMapped = findMapping(nlines, NTF);
+					retrieveSample();
+					//sampleMatrix = sampleMatrixClone;
+					transferSampleTriangular(isUpperTriangular);
+					isMapped = findMapping();
 				}
 			}
 			// Skew-Symmetric check:
@@ -120,40 +276,39 @@ public class ReaderMapping {
 				// Lower Triangular
 				isUpperTriangular = false;
 				skewCoefficient = 1;
-				transferSampleMatrixTriangular(isUpperTriangular);
-				isMapped = findMapping(nlines, NTF);
+				transferSampleTriangular(isUpperTriangular);
+				isMapped = findMapping();
 
 				// Lower Triangular Skew
 				if(!isMapped) {
 					skewCoefficient = -1;
-					skewSampleMatrix(skewCoefficient);
-					NTF = convertMatrixTONumberTrimFormat(sampleMatrix);
-					isMapped = findMapping(nlines, NTF);
+					transferSampleSkew(skewCoefficient);
+					VTF = convertSampleTOValueTrimFormat();
+					isMapped = findMapping();
 				}
 
 				// Upper Triangular
 				if(!isMapped) {
 					isUpperTriangular = true;
 					skewCoefficient = 1;
-					sampleMatrix = sampleMatrixClone;
-					transferSampleMatrixTriangular(isUpperTriangular);
-					NTF = convertMatrixTONumberTrimFormat(sampleMatrix);
-					isMapped = findMapping(nlines, NTF);
+					retrieveSample();
+					transferSampleTriangular(isUpperTriangular);
+					VTF = convertSampleTOValueTrimFormat();
+					isMapped = findMapping();
 				}
 				// Upper Triangular Skew
 				if(!isMapped) {
 					skewCoefficient = -1;
-					skewSampleMatrix(skewCoefficient);
-					NTF = convertMatrixTONumberTrimFormat(sampleMatrix);
-					isMapped = findMapping(nlines, NTF);
-					int aa = 100;
+					transferSampleSkew(skewCoefficient);
+					VTF = convertSampleTOValueTrimFormat();
+					isMapped = findMapping();
 				}
 			}
 		}
 		mapped = isMapped;
 	}
 
-	private boolean findMapping(int nlines, NumberTrimFormat[][] NTF) {
+	protected boolean findMapping() {
 
 		mapRow = new int[nrows][ncols];
 		mapCol = new int[nrows][ncols];
@@ -169,21 +324,23 @@ public class ReaderMapping {
 		ArrayList<Integer> colIndexSizes = new ArrayList<>();
 
 		for(int r = 0; r < nrows; r++) {
-			NumberTrimFormat[] ntfRow = new NumberTrimFormat[ncols];
+			ValueTrimFormat[] vtfRow = new ValueTrimFormat[ncols];
 			for(int i = 0; i < ncols; i++) {
-				ntfRow[i] = NTF[r][i].getACopy();
+				vtfRow[i] = VTF[r][i].getACopy();
 			}
-			Arrays.sort(ntfRow);
+			Arrays.sort(vtfRow);
 
-			for(NumberTrimFormat ntf : ntfRow) {
-				if(ntf.actualValue == 0) {
+			for(ValueTrimFormat vtf : vtfRow) {
+
+				if(vtf.isNotSet()) {
 					continue;
 				}
-				int c = ntf.c;
+
+				int c = vtf.getColIndex();
 				HashSet<Integer> checkedLines = new HashSet<>();
 				while(checkedLines.size() < nlines) {
 					String row = sampleRawRows.get(itRow);
-					NumberMappingInfo nmi = getCellMapping(row, ntf, colIndexes, colIndexSizes);
+					NumberMappingInfo nmi = getCellMapping(row, vtf, colIndexes, colIndexSizes);
 					if(nmi.mapped) {
 						mapRow[r][c] = itRow;
 						mapCol[r][c] = nmi.index;
@@ -215,53 +372,13 @@ public class ReaderMapping {
 		boolean flagMap = true;
 		for(int r = 0; r < nrows; r++)
 			for(int c = 0; c < ncols; c++)
-				if(mapRow[r][c] == -1 && sampleMatrix.getValue(r, c) != 0)
+				if(mapRow[r][c] == -1 && !VTF[r][c].isNotSet())
 					flagMap = false;
 		return flagMap;
 	}
 
-	private void transferSampleMatrixTriangular(boolean isUpper) throws Exception {
-		if(nrows != ncols)
-			throw new Exception("For upper triangular matrix both row and col should be same!");
-
-		for(int r = 0; r < nrows; r++) {
-			if(isUpper) {
-				for(int c = 0; c < r; c++) {
-					sampleMatrix.setValue(r, c, 0);
-				}
-			}
-			else {
-				for(int c = r + 1; c < ncols; c++) {
-					sampleMatrix.setValue(r, c, 0);
-				}
-			}
-		}
-		nnz = sampleMatrix.getNonZeros();
-	}
-
-	private void skewSampleMatrix(int coefficient) throws Exception {
-		if(coefficient != 1 && coefficient != -1)
-			throw new Exception("The value of Coefficient have to be 1 or -1!");
-
-		for(int r = 0; r < nrows; r++)
-			for(int c = 0; c < ncols; c++)
-				sampleMatrix.setValue(r, c, sampleMatrix.getValue(r, c) * coefficient);
-	}
-
-	// Convert: convert each value of a sample matrix to NumberTrimFormat
-	private static NumberTrimFormat[][] convertMatrixTONumberTrimFormat(MatrixBlock matrix) {
-		int nrows = matrix.getNumRows();
-		int ncols = matrix.getNumColumns();
-		NumberTrimFormat[][] result = new NumberTrimFormat[nrows][ncols];
-		for(int r = 0; r < nrows; r++)
-			for(int c = 0; c < ncols; c++) {
-				result[r][c] = new NumberTrimFormat(c, matrix.getValue(r, c));
-			}
-		return result;
-	}
-
-	// Looking for a double(Number Trim Format) on a String
-	public NumberMappingInfo getCellMapping(String row, NumberTrimFormat ntf, ArrayList<Integer> reservedIndex,
+	// Looking for a value(ValueTrimFormat) on a String
+	public NumberMappingInfo getCellMapping(String row, ValueTrimFormat vtf, ArrayList<Integer> reservedIndex,
 		ArrayList<Integer> reservedSize) {
 
 		NumberMappingInfo result = null;
@@ -277,7 +394,7 @@ public class ReaderMapping {
 		int rci = -1;
 		for(String rc : rowChunks) {
 			rci++;
-			result = ntf.getMappingInfo(rc);
+			result = vtf.getMappingInfo(rc);
 			if(result.mapped)
 				break;
 		}
@@ -440,7 +557,7 @@ public class ReaderMapping {
 				fastStringTokenizer.reset(row);
 				ArrayList<String> delimsOfToken = fastStringTokenizer.getTokens();
 				ns.addAll(delimsOfToken);
-				if(fastStringTokenizer._count != ncols-1) {
+				if(fastStringTokenizer._count != ncols - 1) {
 					flagCurrToken = false;
 					break;
 				}
@@ -484,17 +601,16 @@ public class ReaderMapping {
 			int start = _pos;
 
 			//find start (skip over leading delimiters)
-			while(start!=-1 && start < len && _del.equals(_string.substring(start, start + _del.length()))) {
+			while(start != -1 && start < len && _del.equals(_string.substring(start, start + _del.length()))) {
 				start += _del.length();
 				_count++;
 			}
-
 
 			//find end (next delimiter) and return
 			if(start < len && start != -1) {
 				_pos = _string.indexOf(_del, start);
 				if(start < _pos && _pos < len) {
-					return _string.substring(start, _pos );
+					return _string.substring(start, _pos);
 				}
 				else
 					return _string.substring(start);
@@ -600,52 +716,44 @@ public class ReaderMapping {
 
 	private CustomProperties getDelimsOfMapping(int firstRowIndex, int firstColIndex) throws Exception {
 
-		int nLines = sampleRawRows.size();
-		int nrows = sampleMatrix.getNumRows();
-		int ncols = sampleMatrix.getNumColumns();
 		HashSet<Integer> checkedRow = new HashSet<>();
 		RowColValue[] mapRCV = new RowColValue[(int) nnz];
 
-		boolean rcvMapped = false;
-		for(int p = 0; p < 4 && !rcvMapped; p++) {
-			checkedRow.clear();
-			int nzIndex = 0;
-			rcvMapped = true;
-			for(int r = nrows - 1; r >= 0 && rcvMapped; r--) {
-				for(int c = ncols - 1; c >= 0 && rcvMapped; c--) {
-					if(sampleMatrix.getValue(r, c) == 0)
+		boolean rcvMapped = true;
+		int nzIndex = 0;
+		for(int r = nrows - 1; r >= 0 && rcvMapped; r--) {
+			for(int c = ncols - 1; c >= 0 && rcvMapped; c--) {
+				if(VTF[r][c].isNotSet())
+					continue;
+				RowColValue rcv = new RowColValue(r + firstRowIndex, c + firstColIndex, VTF[r][c]);
+				int index = 0;
+				do {
+					if(checkedRow.contains(index))
 						continue;
-					RowColValue rcv = new RowColValue(p, r + firstRowIndex, c + firstColIndex,
-						sampleMatrix.getValue(r, c));
-					int index = 0;
-					do {
-						if(checkedRow.contains(index))
-							continue;
-						String row = sampleRawRows.get(index);
-						if(rcv.isMapped(row)) {
-							checkedRow.add(index);
-							mapRCV[nzIndex++] = rcv;
-						}
+					String row = sampleRawRows.get(index);
+					if(rcv.isMapped(row)) {
+						checkedRow.add(index);
+						mapRCV[nzIndex++] = rcv;
 					}
-					while(++index < nLines && !rcv.isMapped());
-					rcvMapped = rcv.isMapped();
 				}
+				while(++index < nlines && !rcv.isMapped());
+				rcvMapped = rcv.isMapped();
 			}
 		}
-		// All combinations were wrong
+
 		if(!rcvMapped) {
 			return null;
 		}
 		else {
 			HashSet<String> delims = new HashSet<>();
 			mapRCV[0].findDelims();
-			delims.add(mapRCV[0].v1Delim);
-			delims.add(mapRCV[0].v2Delim);
-			int minDelimLength = Math.min(mapRCV[0].v1Delim.length(), mapRCV[0].v2Delim.length());
+			delims.add(mapRCV[0].colDelim);
+			delims.add(mapRCV[0].valueDelim);
+			int minDelimLength = Math.min(mapRCV[0].colDelim.length(), mapRCV[0].valueDelim.length());
 			for(int i = 1; i < nnz; i++) {
 				mapRCV[i].findDelims();
-				delims.add(mapRCV[i].v1Delim);
-				delims.add(mapRCV[i].v2Delim);
+				delims.add(mapRCV[i].colDelim);
+				delims.add(mapRCV[i].valueDelim);
 			}
 
 			String uniqueDelim = null;
@@ -716,11 +824,11 @@ public class ReaderMapping {
 		HashSet<String> allTokens = new HashSet<>();
 
 		for(int c = ncols - 1; c >= 0; c--) {
-			double v = sampleMatrix.getValue(0, c);
-			if(v == 0)
+			ValueTrimFormat v = VTF[0][c];
+			if(v.isNotSet())
 				continue;
 
-			String key = (c + firstColIndex) + "," + v;
+			String key = (c + firstColIndex) + "," + v.getStringOfActualValue();
 			HashSet<String> token = tokens.get(key);
 
 			ColIndexValue civ = new ColIndexValue(c + firstColIndex, v);
@@ -790,8 +898,8 @@ public class ReaderMapping {
 
 		for(int c = ncols - 1; c >= 0; c--) {
 			if(mapRow[rowID][c] != -1) {
-				NumberTrimFormat ntfColIndex = new NumberTrimFormat(c + firstColIndex);
-				NumberTrimFormat ntfColValue = new NumberTrimFormat(sampleMatrix.getValue(rowID, c));
+				ValueTrimFormat.NumberTrimFormat vtfColIndex = new ValueTrimFormat.NumberTrimFormat(c + firstColIndex);
+				ValueTrimFormat vtfColValue = VTF[rowID][c];
 
 				stringChunks.clear();
 				baseIndexes.clear();
@@ -808,13 +916,13 @@ public class ReaderMapping {
 						if(labelIndex - firstColIndex != c) {
 
 							// check Index text
-							nmiIndex = ntfColIndex.actualValue == 0 ? ntfColIndex
-								.getMappingInfoIncludeZero(subChunk) : ntfColIndex.getMappingInfo(subChunk);
+							nmiIndex = vtfColIndex.isNotSet() ? vtfColIndex
+								.getMappingInfoIncludeZero(subChunk) : vtfColIndex.getMappingInfo(subChunk);
 
 							if(!nmiIndex.mapped)
 								break;
 
-							nmiIndex.size += mergeDelimiters(ntfColIndex.actualValue,
+							nmiIndex.size += mergeDelimiters(vtfColIndex.getActualValue(),
 								subChunk.substring(nmiIndex.index, nmiIndex.index + nmiIndex.size),
 								subChunk.substring(nmiIndex.index + nmiIndex.size));
 
@@ -842,19 +950,22 @@ public class ReaderMapping {
 						}
 
 						// check the value text
-						NumberMappingInfo nmiValue = ntfColValue.getMappingInfo(subChunk);
-						nmiValue.size += mergeDelimiters(ntfColValue.actualValue,
-							subChunk.substring(nmiValue.index, nmiValue.index + nmiValue.size),
-							subChunk.substring(nmiValue.index + nmiValue.size));
+						NumberMappingInfo miValue = vtfColValue.getMappingInfo(subChunk);
+						if(vtfColValue instanceof ValueTrimFormat.NumberTrimFormat) {
+							miValue.size += mergeDelimiters(
+								((ValueTrimFormat.NumberTrimFormat) vtfColValue).getActualValue(),
+								subChunk.substring(miValue.index, miValue.index + miValue.size),
+								subChunk.substring(miValue.index + miValue.size));
+						}
 
-						if(nmiValue.mapped) {
+						if(miValue.mapped) {
 							itemVerify = true;
 							nmiIndex.index += sPosition + baseIndexes.get(i);
 							if(labelIndex - firstColIndex != c) {
-								nmiValue.index += indexDelim.length();
+								miValue.index += indexDelim.length();
 							}
-							nmiValue.index += nmiIndex.index + nmiIndex.size;
-							bitSet.set(nmiIndex.index, nmiValue.index + nmiValue.size);
+							miValue.index += nmiIndex.index + nmiIndex.size;
+							bitSet.set(nmiIndex.index, miValue.index + miValue.size);
 							break;
 						}
 						sPosition++;
@@ -911,136 +1022,113 @@ public class ReaderMapping {
 	}
 
 	class RowColValue {
-		private final NumberTrimFormat ntfV0;
-		private final NumberTrimFormat ntfV1;
-		private final NumberTrimFormat ntfV2;
-		private NumberMappingInfo nmiV0;
-		private NumberMappingInfo nmiV1;
-		private NumberMappingInfo nmiV2;
+		private final ValueTrimFormat.NumberTrimFormat vtfRow;
+		private final ValueTrimFormat.NumberTrimFormat vtfCol;
+		private final ValueTrimFormat vtfValue;
+		private NumberMappingInfo miRow;
+		private NumberMappingInfo miCol;
+		private NumberMappingInfo miValue;
 		private boolean mapped;
-		private int type;
 		private String rowString;
 
-		private String v0Delim;
-		private String v1Delim;
-		private String v2Delim;
+		private String rowDelim;
+		private String colDelim;
+		private String valueDelim;
 
-		public RowColValue(int type, int row, int col, double value) throws Exception {
-			this.type = type;
+		public RowColValue(int row, int col, ValueTrimFormat value) {
 			rowString = null;
-			switch(type) {
-				//0 : Row, Col, Value
-				case 0:
-					ntfV0 = new NumberTrimFormat(row);
-					ntfV1 = new NumberTrimFormat(col);
-					ntfV2 = new NumberTrimFormat(value);
-					break;
-				//1 : Col, Row, Value
-				case 1:
-					ntfV0 = new NumberTrimFormat(col);
-					ntfV1 = new NumberTrimFormat(row);
-					ntfV2 = new NumberTrimFormat(value);
-					break;
-				//2 : Value, Row, Col
-				case 2:
-					ntfV0 = new NumberTrimFormat(value);
-					ntfV1 = new NumberTrimFormat(row);
-					ntfV2 = new NumberTrimFormat(col);
-					break;
-				//3 : Value, Col, Row
-				case 3:
-					ntfV0 = new NumberTrimFormat(value);
-					ntfV1 = new NumberTrimFormat(col);
-					ntfV2 = new NumberTrimFormat(row);
-					break;
-				default:
-					throw new Exception("The Auto Generate Reader just supporting 4 types(type value can be 0 to 4)!!");
-			}
+			// Row, Col, Value
+			vtfRow = new ValueTrimFormat.NumberTrimFormat(row);
+			vtfCol = new ValueTrimFormat.NumberTrimFormat(col);
+			vtfValue = value.getACopy();
 			mapped = false;
 		}
 
+		/* valid formats:
+		   Row, Col, Value
+		1. 0  , 0  , Value  >> 110 -> 6
+		2. 0  , col, Value  >> 100 -> 4
+		3. row, 0  , value  >> 010 -> 2
+		4. row, col, value  >> 000 -> 0
+		-----------------   >> otherwise the value is not set.
+		 */
 		public boolean isMapped(String row) {
 
 			byte hasZero = 0b000;
-			if(ntfV0.actualValue == 0)
+			if(vtfRow.isNotSet())
 				hasZero |= 0b100;
 
-			if(ntfV1.actualValue == 0)
+			if(vtfCol.isNotSet())
 				hasZero |= 0b010;
 
-			if(ntfV2.actualValue == 0)
+			if(vtfValue.isNotSet())
 				hasZero |= 0b001;
 
 			switch(hasZero) {
-				//010 > R,0,V
+				case 0:
+					miRow = vtfRow.getMappingInfo(row);
+					if(!miRow.mapped)
+						return false;
+
+					miCol = vtfCol.getMappingInfo(row.substring(miRow.index + miRow.size));
+					if(!miCol.mapped)
+						return false;
+					miCol.index += miRow.index + miRow.size;
+
+					miValue = vtfValue.getMappingInfo(row.substring(miCol.index + miCol.size));
+					if(!miValue.mapped)
+						return false;
+					miValue.index += miCol.index + miCol.size;
+					break;
+
 				case 2:
-					nmiV0 = ntfV0.getMappingInfo(row);
-					if(!nmiV0.mapped)
+					miRow = vtfRow.getMappingInfo(row);
+					if(!miRow.mapped)
 						return false;
 
-					nmiV2 = ntfV2.getMappingInfo(row.substring(nmiV0.index + nmiV0.size));
-					if(!nmiV2.mapped)
+					miValue = vtfValue.getMappingInfo(row.substring(miRow.index + miRow.size));
+					if(!miValue.mapped)
 						return false;
-					nmiV2.index += nmiV0.index + nmiV0.size;
+					miValue.index += miRow.index + miRow.size;
 
-					nmiV1 = ntfV1.getMappingInfoIncludeZero(row.substring(nmiV0.index + nmiV0.size, nmiV2.index));
-					if(!nmiV1.mapped)
+					miCol = vtfCol.getMappingInfoIncludeZero(row.substring(miRow.index + miRow.size, miValue.index));
+					if(!miCol.mapped)
 						return false;
-					nmiV1.index += nmiV0.index + nmiV0.size;
+					miCol.index += miRow.index + miRow.size;
 					break;
 
-				//100 , 101  > 0, C, V  or 0, C, 0
 				case 4:
-				case 5:
-					nmiV1 = ntfV1.getMappingInfo(row);
-					if(!nmiV1.mapped)
+					miCol = vtfCol.getMappingInfo(row);
+					if(!miCol.mapped)
 						return false;
 
-					nmiV2 = ntfV2.getMappingInfoIncludeZero(row.substring(nmiV1.index + nmiV1.size));
-					if(!nmiV2.mapped)
+					miValue = vtfValue.getMappingInfo(row.substring(miCol.index + miCol.size));
+					if(!miValue.mapped)
 						return false;
-					nmiV2.index += nmiV1.index + nmiV1.size;
+					miValue.index += miCol.index + miCol.size;
 
-					nmiV0 = ntfV0.getMappingInfoIncludeZero(row.substring(0, nmiV1.index));
-					if(!nmiV0.mapped)
+					miRow = vtfRow.getMappingInfoIncludeZero(row.substring(0, miCol.index));
+					if(!miRow.mapped)
 						return false;
 					break;
 
-				// 110 > 0, 0, V
 				case 6:
-					nmiV2 = ntfV2.getMappingInfo(row);
-					if(!nmiV2.mapped)
+					miValue = vtfValue.getMappingInfo(row);
+					if(!miValue.mapped)
 						return false;
 
-					nmiV0 = ntfV0.getMappingInfoIncludeZero(row.substring(0, nmiV2.index));
-					if(!nmiV0.mapped)
+					miRow = vtfRow.getMappingInfoIncludeZero(row.substring(0, miValue.index));
+					if(!miRow.mapped)
 						return false;
 
-					nmiV1 = ntfV1.getMappingInfoIncludeZero(row.substring(nmiV0.index + nmiV0.size));
-					if(!nmiV1.mapped)
+					miCol = vtfCol.getMappingInfoIncludeZero(row.substring(miRow.index + miRow.size));
+					if(!miCol.mapped)
 						return false;
-					nmiV1.index += nmiV0.index + nmiV0.size;
+					miCol.index += miRow.index + miRow.size;
 					break;
 
 				default:
-					nmiV0 = ntfV0.getMappingInfo(row);
-					if(!nmiV0.mapped)
-						return false;
-
-					nmiV1 = ntfV1.actualValue == 0 ? ntfV1
-						.getMappingInfoIncludeZero(row.substring(nmiV0.index + nmiV0.size)) : ntfV1
-						.getMappingInfo(row.substring(nmiV0.index + nmiV0.size));
-					if(!nmiV1.mapped)
-						return false;
-					nmiV1.index += nmiV0.index + nmiV0.size;
-
-					nmiV2 = ntfV2.actualValue == 0 ? ntfV2
-						.getMappingInfoIncludeZero(row.substring(nmiV1.index + nmiV1.size)) : ntfV2
-						.getMappingInfo(row.substring(nmiV1.index + nmiV1.size));
-					if(!nmiV2.mapped)
-						return false;
-					nmiV2.index += nmiV1.index + nmiV1.size;
-					break;
+					throw new RuntimeException("Not set values can't be find on a string");
 			}
 			mapped = true;
 			rowString = row;
@@ -1055,73 +1143,76 @@ public class ReaderMapping {
 			if(!isMapped())
 				throw new Exception("The values didn't match !!");
 
-			v0Delim = rowString.substring(0, nmiV0.index);
-			nmiV0.size += mergeDelimiters(ntfV0.actualValue, rowString.substring(nmiV0.index, nmiV0.index + nmiV0.size),
-				rowString.substring(nmiV0.index + nmiV0.size));
+			rowDelim = rowString.substring(0, miRow.index);
+			miRow.size += mergeDelimiters(vtfRow.getActualValue(),
+				rowString.substring(miRow.index, miRow.index + miRow.size),
+				rowString.substring(miRow.index + miRow.size));
 
-			v1Delim = rowString.substring(nmiV0.index + nmiV0.size, nmiV1.index);
-			nmiV1.size += mergeDelimiters(ntfV1.actualValue, rowString.substring(nmiV1.index, nmiV1.index + nmiV1.size),
-				rowString.substring(nmiV1.index + nmiV1.size));
+			colDelim = rowString.substring(miRow.index + miRow.size, miCol.index);
+			miCol.size += mergeDelimiters(vtfCol.getActualValue(),
+				rowString.substring(miCol.index, miCol.index + miCol.size),
+				rowString.substring(miCol.index + miCol.size));
 
-			v2Delim = rowString.substring(nmiV1.index + nmiV1.size, nmiV2.index);
-			nmiV2.size += mergeDelimiters(ntfV2.actualValue, rowString.substring(nmiV2.index, nmiV2.index + nmiV2.size),
-				rowString.substring(nmiV2.index + nmiV2.size));
+			valueDelim = rowString.substring(miCol.index + miCol.size, miValue.index);
+
+			if(vtfValue instanceof ValueTrimFormat.NumberTrimFormat) {
+				miValue.size += mergeDelimiters(((ValueTrimFormat.NumberTrimFormat) vtfValue).getActualValue(),
+					rowString.substring(miValue.index, miValue.index + miValue.size),
+					rowString.substring(miValue.index + miValue.size));
+			}
+
 		}
 
-		public NumberMappingInfo getNmiV0() {
-			return nmiV0;
+		public String getRowDelim() {
+			return rowDelim;
 		}
 
-		public NumberMappingInfo getNmiV1() {
-			return nmiV1;
+		public String getColDelim() {
+			return colDelim;
 		}
 
-		public NumberMappingInfo getNmiV2() {
-			return nmiV2;
+		public String getValueDelim() {
+			return valueDelim;
 		}
 
-		public int getType() {
-			return type;
+		public ValueTrimFormat.NumberTrimFormat getVtfRow() {
+			return vtfRow;
 		}
 
-		public String getV0Delim() {
-			return v0Delim;
+		public ValueTrimFormat.NumberTrimFormat getVtfCol() {
+			return vtfCol;
 		}
 
-		public String getV1Delim() {
-			return v1Delim;
-		}
-
-		public String getV2Delim() {
-			return v2Delim;
+		public ValueTrimFormat getVtfValue() {
+			return vtfValue;
 		}
 	}
 
 	class ColIndexValue {
-		private final NumberTrimFormat ntfColIndex;
-		private final NumberTrimFormat ntfColValue;
-		private NumberMappingInfo nmiColIndex;
-		private NumberMappingInfo nmiColValue;
+		private final ValueTrimFormat.NumberTrimFormat vtfColIndex;
+		private final ValueTrimFormat vtfColValue;
+		private NumberMappingInfo miColIndex;
+		private NumberMappingInfo miColValue;
 		private boolean mapped;
 		private String indSep;
 		private String separator;
 
-		public ColIndexValue(int col, double value) {
-			ntfColIndex = new NumberTrimFormat(col);
-			ntfColValue = new NumberTrimFormat(value);
+		public ColIndexValue(int col, ValueTrimFormat value) {
+			vtfColIndex = new ValueTrimFormat.NumberTrimFormat(col);
+			vtfColValue = value.getACopy();
 			indSep = null;
 			separator = null;
 			mapped = false;
-			nmiColIndex = null;
-			nmiColValue = null;
+			miColIndex = null;
+			miColValue = null;
 		}
 
-		public ColIndexValue(NumberTrimFormat ntfColIndex, NumberTrimFormat ntfColValue, NumberMappingInfo nmiColIndex,
-			NumberMappingInfo nmiColValue, String indSep) {
-			this.ntfColIndex = ntfColIndex;
-			this.ntfColValue = ntfColValue;
-			this.nmiColIndex = nmiColIndex;
-			this.nmiColValue = nmiColValue;
+		public ColIndexValue(ValueTrimFormat.NumberTrimFormat vtfColIndex, ValueTrimFormat vtfColValue,
+			NumberMappingInfo miColIndex, NumberMappingInfo miColValue, String indSep) {
+			this.vtfColIndex = vtfColIndex;
+			this.vtfColValue = vtfColValue;
+			this.miColIndex = miColIndex;
+			this.miColValue = miColValue;
 			this.indSep = indSep;
 		}
 
@@ -1133,27 +1224,29 @@ public class ReaderMapping {
 			while(sPosition < row.length()) {
 				NumberMappingInfo nmiIndex;
 
-				nmiIndex = ntfColIndex.actualValue == 0 ? ntfColIndex
-					.getMappingInfoIncludeZero(row.substring(sPosition)) : ntfColIndex
+				nmiIndex = vtfColIndex.isNotSet() ? vtfColIndex
+					.getMappingInfoIncludeZero(row.substring(sPosition)) : vtfColIndex
 					.getMappingInfo(row.substring(sPosition));
 				if(!nmiIndex.mapped) {
 					break;
 				}
 				nmiIndex.index += sPosition;
 
-				nmiIndex.size += mergeDelimiters(ntfColIndex.actualValue,
+				nmiIndex.size += mergeDelimiters(vtfColIndex.getActualValue(),
 					row.substring(+nmiIndex.index, nmiIndex.index + nmiIndex.size),
 					row.substring(nmiIndex.index + nmiIndex.size));
 
-				NumberMappingInfo nmiValue = ntfColValue.getMappingInfo(row.substring(nmiIndex.index + nmiIndex.size));
+				NumberMappingInfo nmiValue = vtfColValue.getMappingInfo(row.substring(nmiIndex.index + nmiIndex.size));
 				if(!nmiValue.mapped) {
 					break;
 				}
 				nmiValue.index += nmiIndex.index + nmiIndex.size;
 
-				nmiValue.size += mergeDelimiters(ntfColValue.actualValue,
-					row.substring(nmiValue.index, nmiValue.index + nmiValue.size),
-					row.substring(nmiValue.index + nmiValue.size));
+				if(vtfColValue instanceof ValueTrimFormat.NumberTrimFormat) {
+					nmiValue.size += mergeDelimiters(((ValueTrimFormat.NumberTrimFormat) vtfColValue).getActualValue(),
+						row.substring(nmiValue.index, nmiValue.index + nmiValue.size),
+						row.substring(nmiValue.index + nmiValue.size));
+				}
 
 				String t = row.substring(nmiIndex.index + nmiIndex.size, nmiValue.index);
 				if(t.length() > 0)

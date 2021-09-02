@@ -38,81 +38,120 @@ import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 		and generate a reader for a frame or vice versa.
 	 */
 
-public class GenerateReader {
+public abstract class GenerateReader {
 
 	private static final Log LOG = LogFactory.getLog(GenerateReader.class.getName());
 
-	private ReaderMapping readerMapping;
-
-	private MatrixReader matrixReader;
-
-	private FrameReader frameReader;
+	protected static ReaderMapping readerMapping;
 
 	public GenerateReader(SampleProperties sampleProperties) throws Exception {
 
 		//LOG:
 		// Start Calculation time:
 		long tmpTime = System.nanoTime();
-		readerMapping = generateReader(sampleProperties.getSampleRaw(), sampleProperties.getSampleMatrix());
+
+		readerMapping = sampleProperties.getDataType().isMatrix() ? new ReaderMapping.MatrixReaderMapping(
+			sampleProperties.getSampleRaw(), sampleProperties.getSampleMatrix()) : new ReaderMapping.FrameReaderMapping(
+			sampleProperties.getSampleRaw(), sampleProperties.getSampleFrame());
 
 		// Time Calculation
 		double elapsedSeconds = (System.nanoTime() - tmpTime) / 1000000000.0;
 		System.out.println("mapping_time:" + elapsedSeconds);
 		//END LOG
 	}
-	
-	public GenerateReader(String sampleRaw, MatrixBlock sampleMatrix) throws Exception {
-		readerMapping = this.generateReader(sampleRaw, sampleMatrix);
-	}
 
-	public GenerateReader(String sampleRaw, FrameBlock sampleFrame) {
-		readerMapping = this.generateReader(sampleRaw, sampleFrame);
-	}
+	// Generate Reader for Matrix
+	public static class GenerateReaderMatrix extends GenerateReader {
 
-	private ReaderMapping generateReader(String sampleRaw, MatrixBlock sampleMatrix) throws Exception {
-		// Identify file format properties:
-		return new ReaderMapping(sampleRaw, sampleMatrix);
-	}
+		private MatrixReader matrixReader;
 
-	private ReaderMapping generateReader(String sampleRaw, FrameBlock sampleFrame) {
-		// TODO: extend mapping to support frame
-		return null;
-	}
-
-	public MatrixReader getMatrixReader() throws Exception {
-
-		boolean isMapped = readerMapping != null && readerMapping.isMapped();
-		if(!isMapped) {
-			throw new Exception("Sample raw data and sample matrix don't match !!");
+		public GenerateReaderMatrix(SampleProperties sampleProperties) throws Exception {
+			super(sampleProperties);
 		}
-		//LOG:
-		long tmpTime = System.nanoTime();
 
-		CustomProperties ffp = readerMapping.getFormatProperties();
-		if(ffp == null) {
-			throw new Exception("The file format couldn't recognize!!");
+		public GenerateReaderMatrix(String sampleRaw, MatrixBlock sampleMatrix) throws Exception {
+			super(new SampleProperties(sampleRaw, sampleMatrix));
 		}
-		// 2. Generate a Matrix Reader:
-		if(ffp.getRowPattern().equals(CustomProperties.GRPattern.Regular)) {
-			if(ffp.getColPattern().equals(CustomProperties.GRPattern.Regular)) {
-				matrixReader = new MatrixGenerateReader.MatrixReaderRowRegularColRegular(ffp);
+
+		public MatrixReader getReader() throws Exception {
+
+			boolean isMapped = readerMapping != null && readerMapping.isMapped();
+			if(!isMapped) {
+				throw new Exception("Sample raw data and sample matrix don't match !!");
+			}
+			//LOG:
+			long tmpTime = System.nanoTime();
+
+			CustomProperties ffp = readerMapping.getFormatProperties();
+			if(ffp == null) {
+				throw new Exception("The file format couldn't recognize!!");
+			}
+			// 2. Generate a Matrix Reader:
+			if(ffp.getRowPattern().equals(CustomProperties.GRPattern.Regular)) {
+				if(ffp.getColPattern().equals(CustomProperties.GRPattern.Regular)) {
+					matrixReader = new MatrixGenerateReader.MatrixReaderRowRegularColRegular(ffp);
+				}
+				else {
+					matrixReader = new MatrixGenerateReader.MatrixReaderRowRegularColIrregular(ffp);
+				}
 			}
 			else {
-				matrixReader = new MatrixGenerateReader.MatrixReaderRowRegularColIrregular(ffp);
+				matrixReader = new MatrixGenerateReader.MatrixReaderRowIrregular(ffp);
 			}
-		}
-		else {
-			matrixReader = new MatrixGenerateReader.MatrixReaderRowIrregular(ffp);
-		}
-		// Time Calculation
-		double elapsedSeconds = (System.nanoTime() - tmpTime) / 1000000000.0;
-		System.out.println("analysis_time: " + elapsedSeconds);
-		//END LOG
+			// Time Calculation
+			double elapsedSeconds = (System.nanoTime() - tmpTime) / 1000000000.0;
+			System.out.println("analysis_time: " + elapsedSeconds);
+			//END LOG
 
-		return matrixReader;
+			return matrixReader;
+		}
+
 	}
 
-	public FrameReader getFrameReader() {
-		return frameReader;
+	// Generate Reader for Frame
+	public static class GenerateReaderFrame extends GenerateReader {
+
+		private FrameReader frameReader;
+
+		public GenerateReaderFrame(SampleProperties sampleProperties) throws Exception {
+			super(sampleProperties);
+		}
+
+		public GenerateReaderFrame(String sampleRaw, FrameBlock sampleFrame) throws Exception {
+			super(new SampleProperties(sampleRaw, sampleFrame));
+		}
+
+		public FrameReader getReader() throws Exception {
+
+			boolean isMapped = readerMapping != null && readerMapping.isMapped();
+			if(!isMapped) {
+				throw new Exception("Sample raw data and sample frame don't match !!");
+			}
+			//LOG:
+			long tmpTime = System.nanoTime();
+
+			CustomProperties ffp = readerMapping.getFormatProperties();
+			if(ffp == null) {
+				throw new Exception("The file format couldn't recognize!!");
+			}
+			// 2. Generate a Frame Reader:
+			if(ffp.getRowPattern().equals(CustomProperties.GRPattern.Regular)) {
+				if(ffp.getColPattern().equals(CustomProperties.GRPattern.Regular)) {
+					frameReader = new FrameGenerateReader.FrameReaderRowRegularColRegular(ffp);
+				}
+				else {
+					frameReader = new FrameGenerateReader.FrameReaderRowRegularColIrregular(ffp);
+				}
+			}
+			else {
+				frameReader = new FrameGenerateReader.FrameReaderRowIrregular(ffp);
+			}
+			// Time Calculation
+			double elapsedSeconds = (System.nanoTime() - tmpTime) / 1000000000.0;
+			System.out.println("analysis_time: " + elapsedSeconds);
+			//END LOG
+			return frameReader;
+		}
 	}
+
 }

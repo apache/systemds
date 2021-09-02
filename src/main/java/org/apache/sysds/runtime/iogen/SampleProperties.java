@@ -39,6 +39,16 @@ public class SampleProperties extends FileFormatProperties {
 		this.sampleRaw = sampleRaw;
 	}
 
+	public SampleProperties(String sampleRaw, MatrixBlock sampleMatrix) {
+		this.sampleRaw = sampleRaw;
+		this.sampleMatrix = sampleMatrix;
+	}
+
+	public SampleProperties(String sampleRaw, FrameBlock sampleFrame) {
+		this.sampleRaw = sampleRaw;
+		this.sampleFrame = sampleFrame;
+	}
+
 	public String getSampleRaw() {
 		return sampleRaw;
 	}

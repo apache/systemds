@@ -125,11 +125,11 @@ public class MatrixReaderFactory {
 					sampleProperties = (SampleProperties) props.formatProperties;
 				}
 				else
-					throw new DMLRuntimeException("SampleRaw and SampleBinary are essentially required for auto generate reader");
+					throw new DMLRuntimeException("SampleRaw and SampleMatrix are essentially required for auto generate reader");
 
 				//TODO: add parallel Generate Reader
 				try {
-					reader = new GenerateReader(sampleProperties).getMatrixReader();
+					reader = new GenerateReader.GenerateReaderMatrix(sampleProperties).getReader();
 				}
 				catch(Exception ex){
 					throw new DMLRuntimeException("Failed to  auto generate matrix reader.");

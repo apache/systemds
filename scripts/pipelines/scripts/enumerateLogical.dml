@@ -67,9 +67,9 @@ return (Frame[Unknown] bestLg, Double pre_best, Double T)
   {
     physicalPipList = list()
     logicalPipList = list()
+    
     # # # get the physical instances from logical ones
-    for(i in 1:nrow(population))
-    { 
+    for(i in 1:nrow(population)) { 
       lv = as.integer(as.scalar(population[i, 1])) + 1
       lp = population[i, 2:lv]
       physicalConf = bandit::get_physical_configurations(lp, num_inst, primitives)
@@ -77,23 +77,22 @@ return (Frame[Unknown] bestLg, Double pre_best, Double T)
       logicalPipList = append(logicalPipList, lp)
     }
     
-    scores = matrix(0, rows=length(physicalPipList), cols=1)
-    
     # # # execute the physical pipelines
-    for(i in 1:length(physicalPipList))
-    {
-      physicalConf = as.frame(physicalPipList[i])
-      lp = as.frame(logicalPipList[i])
+    scores = matrix(0, length(physicalPipList), 1)
+    # TODO better parfor-dep handling of multi-assignments to avoid check=0 
+    parfor(i in 1:length(physicalPipList), check=0) {
+      lp2 = as.frame(logicalPipList[i,1])
+      pp2 = as.frame(physicalPipList[i,1])
       # # append configuration keys for extracting the pipeline later on
-      id = seq(1, nrow(physicalConf))
-      physicalConf = cbind(as.frame(id), physicalConf)
+      id = seq(1, nrow(pp2))
+      idpp = cbind(as.frame(id), pp2)
 
       # # execute the physical instances and store the minimum scores, each pipeline is executed num_exec times
-      [outPip,outHp, feaFrameOuter] = bandit::run_with_hyperparam(lp, physicalConf, num_exec, X, y, Xtest, ytest, metaList,
+      [outPip, outHp, feaFrameOuter] = bandit::run_with_hyperparam(lp2, idpp, num_exec, X, y, Xtest, ytest, metaList,
         evaluationFunc, evalFunHp, param, as.frame(""), cv, cvk, verbose)
       # # sort the configurations groupwise
-      max_perf =  bandit::getMaxPerConf(outPip, nrow(physicalConf)) 
-      scores[i] = as.matrix(max_perf[1, 1])
+      max_perf = bandit::getMaxPerConf(outPip, nrow(pp2)) 
+      scores[i,1] = as.matrix(max_perf[1,1])
     }
     
     # # select parents and best score

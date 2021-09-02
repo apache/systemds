@@ -78,6 +78,14 @@ public class FederatedCost {
 	}
 
 	/**
+	 * Add total of federatedCost to stored inputTotalCost.
+	 * @param federatedCost input cost from which the total is retrieved
+	 */
+	public void addInputTotalCost(FederatedCost federatedCost){
+		this.inputTotalCost += federatedCost.getTotal();
+	}
+
+	/**
 	 * Add costs of FederatedCost object to this object's current costs.
 	 * @param additionalCost object to add to this object
 	 */

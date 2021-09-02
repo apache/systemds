@@ -21,10 +21,15 @@ package org.apache.sysds.hops.cost;
 
 import org.apache.sysds.hops.Hop;
 import org.apache.sysds.parser.DMLProgram;
+import org.apache.sysds.parser.ForStatement;
 import org.apache.sysds.parser.ForStatementBlock;
+import org.apache.sysds.parser.FunctionStatement;
 import org.apache.sysds.parser.FunctionStatementBlock;
+import org.apache.sysds.parser.IfStatement;
 import org.apache.sysds.parser.IfStatementBlock;
+import org.apache.sysds.parser.Statement;
 import org.apache.sysds.parser.StatementBlock;
+import org.apache.sysds.parser.WhileStatement;
 import org.apache.sysds.parser.WhileStatementBlock;
 
 import java.util.ArrayList;
@@ -61,27 +66,52 @@ public class FederatedCostEstimator {
 	 */
 	private FederatedCost costEstimate(StatementBlock sb){
 		if ( sb instanceof WhileStatementBlock){
-			FederatedCost whileSBCost = addInitialInputCost(sb);
+			WhileStatementBlock whileSB = (WhileStatementBlock) sb;
+			FederatedCost whileSBCost = costEstimate(whileSB.getPredicateHops());
+			for ( Statement statement : whileSB.getStatements() ){
+				WhileStatement whileStatement = (WhileStatement) statement;
+				for ( StatementBlock bodyBlock : whileStatement.getBody() )
+					whileSBCost.addInputTotalCost(costEstimate(bodyBlock));
+			}
 			whileSBCost.addRepetitionCost(DEFAULT_ITERATION_NUMBER);
 			return whileSBCost;
 		}
 		else if ( sb instanceof IfStatementBlock){
 			//Get cost of if-block + else-block and divide by two
 			// since only one of the code blocks will be executed in the end
-			FederatedCost ifSBCost = addInitialInputCost(sb);
-			ifSBCost.setInputTotalCost(ifSBCost.getInputTotalCost() / 2);
+			IfStatementBlock ifSB = (IfStatementBlock) sb;
+			FederatedCost ifSBCost = new FederatedCost();
+			for ( Statement statement : ifSB.getStatements() ){
+				IfStatement ifStatement = (IfStatement) statement;
+				for ( StatementBlock ifBodySB : ifStatement.getIfBody() )
+					ifSBCost.addInputTotalCost(costEstimate(ifBodySB));
+				for ( StatementBlock elseBodySB : ifStatement.getElseBody() )
+					ifSBCost.addInputTotalCost(costEstimate(elseBodySB));
+			}
+			ifSBCost.setInputTotalCost(ifSBCost.getInputTotalCost()/2);
+			ifSBCost.addInputTotalCost(costEstimate(ifSB.getPredicateHops()));
 			return ifSBCost;
 		}
 		else if ( sb instanceof ForStatementBlock){
 			// This also includes ParForStatementBlocks
 			ForStatementBlock forSB = (ForStatementBlock) sb;
-			FederatedCost forCost = addInitialInputCost(sb);
-			forCost.addRepetitionCost(forSB.getEstimateReps());
-			return forCost;
+			FederatedCost forSBCost = costEstimate(forSB.getHops());
+			for ( Statement statement : forSB.getStatements() ){
+				ForStatement forStatement = (ForStatement) statement;
+				for ( StatementBlock forStatementBlockBody : forStatement.getBody() )
+					forSBCost.addInputTotalCost(costEstimate(forStatementBlockBody));
+			}
+			forSBCost.addRepetitionCost(forSB.getEstimateReps());
+			return forSBCost;
 		}
 		else if ( sb instanceof FunctionStatementBlock){
 			FederatedCost funcCost = addInitialInputCost(sb);
 			FunctionStatementBlock funcSB = (FunctionStatementBlock) sb;
+			for(Statement statement : funcSB.getStatements()) {
+				FunctionStatement funcStatement = (FunctionStatement) statement;
+				for ( StatementBlock funcStatementBody : funcStatement.getBody() )
+					funcCost.addInputTotalCost(costEstimate(funcStatementBody));
+			}
 			return funcCost;
 		}
 		else {

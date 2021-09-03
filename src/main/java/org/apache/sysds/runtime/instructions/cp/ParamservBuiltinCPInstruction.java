@@ -39,6 +39,7 @@ import static org.apache.sysds.parser.Statement.PS_HYPER_PARAMS;
 import static org.apache.sysds.parser.Statement.PS_LABELS;
 import static org.apache.sysds.parser.Statement.PS_MODE;
 import static org.apache.sysds.parser.Statement.PS_MODEL;
+import static org.apache.sysds.parser.Statement.PS_NBATCHES;
 import static org.apache.sysds.parser.Statement.PS_MODELAVG;
 import static org.apache.sysds.parser.Statement.PS_PARALLELISM;
 import static org.apache.sysds.parser.Statement.PS_SCHEME;
@@ -98,6 +99,7 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 	private static final FederatedPSScheme DEFAULT_FEDERATED_SCHEME = FederatedPSScheme.KEEP_DATA_ON_WORKER;
 	private static final PSModeType DEFAULT_MODE = PSModeType.LOCAL;
 	private static final PSUpdateType DEFAULT_TYPE = PSUpdateType.ASP;
+	public static final int DEFAULT_NBATCHES = 1;
 	private static final Boolean DEFAULT_MODELAVG = false;
 
 	public ParamservBuiltinCPInstruction(Operator op, LinkedHashMap<String, String> paramsMap, CPOperand out, String opcode, String istr) {
@@ -144,6 +146,7 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 		PSRuntimeBalancing runtimeBalancing = getRuntimeBalancing();
 		boolean weighting = getWeighting();
 		int seed = getSeed();
+		int nbatches = getNbatches();
 
 		if( LOG.isInfoEnabled() ) {
 			LOG.info("[+] Update Type: " + updateType);
@@ -185,12 +188,12 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 		MatrixObject val_labels = (getParam(PS_VAL_LABELS) != null) ? ec.getMatrixObject(getParam(PS_VAL_LABELS)) : null;
 		boolean modelAvg = Boolean.parseBoolean(getParam(PS_MODELAVG));
 		ParamServer ps = createPS(PSModeType.FEDERATED, aggFunc, updateType, freq, workerNum, model, aggServiceEC, getValFunction(),
-			getNumBatchesPerEpoch(runtimeBalancing, result._balanceMetrics), val_features, val_labels, modelAvg);
+			getNumBatchesPerEpoch(runtimeBalancing, result._balanceMetrics), val_features, val_labels, nbatches, modelAvg);
 		// Create the local workers
 		int finalNumBatchesPerEpoch = getNumBatchesPerEpoch(runtimeBalancing, result._balanceMetrics);
 		List<FederatedPSControlThread> threads = IntStream.range(0, workerNum)
 			.mapToObj(i -> new FederatedPSControlThread(i, updFunc, freq, runtimeBalancing, weighting,
-				getEpochs(), getBatchSize(), finalNumBatchesPerEpoch, federatedWorkerECs.get(i), ps, modelAvg))
+				getEpochs(), getBatchSize(), finalNumBatchesPerEpoch, federatedWorkerECs.get(i), ps, nbatches, modelAvg))
 			.collect(Collectors.toList());
 		if(workerNum != threads.size()) {
 			throw new DMLRuntimeException("ParamservBuiltinCPInstruction: Federated data partitioning does not match threads!");
@@ -226,6 +229,7 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 		int workerNum = getWorkerNum(mode);
 		String updFunc = getParam(PS_UPDATE_FUN);
 		String aggFunc = getParam(PS_AGGREGATION_FUN);
+		int nbatches = getNbatches();
 		boolean modelAvg = Boolean.parseBoolean(getParam(PS_MODELAVG));
 
 		// Get the compiled execution context
@@ -238,7 +242,7 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 
 		// Create the parameter server
 		ListObject model = sec.getListObject(getParam(PS_MODEL));
-		ParamServer ps = createPS(mode, aggFunc, getUpdateType(), getFrequency(), workerNum, model, aggServiceEC, modelAvg);
+		ParamServer ps = createPS(mode, aggFunc, getUpdateType(), getFrequency(), workerNum, model, aggServiceEC, nbatches, modelAvg);
 
 		// Get driver host
 		String host = sec.getSparkContext().getConf().get("spark.driver.host");
@@ -268,7 +272,7 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 		// Create remote workers
 		SparkPSWorker worker = new SparkPSWorker(getParam(PS_UPDATE_FUN), getParam(PS_AGGREGATION_FUN),
 			getFrequency(), getEpochs(), getBatchSize(), program, clsMap, sec.getSparkContext().getConf(),
-			server.getPort(), aSetup, aWorker, aUpdate, aIndex, aGrad, aRPC, aBatch, aEpoch, modelAvg);
+			server.getPort(), aSetup, aWorker, aUpdate, aIndex, aGrad, aRPC, aBatch, aEpoch, nbatches, modelAvg);
 
 		if (DMLScript.STATISTICS)
 			Statistics.accPSSetupTime((long) tSetup.stop());
@@ -325,6 +329,7 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 
 		double rows_per_worker = Math.ceil((float) ec.getMatrixObject(getParam(PS_FEATURES)).getNumRows() / workerNum);
 		int num_batches_per_epoch = (int) Math.ceil(rows_per_worker / getBatchSize());
+		int nbatches = getNbatches();
 
 		// Create the parameter server
 		ListObject model = ec.getListObject(getParam(PS_MODEL));
@@ -332,12 +337,12 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 		MatrixObject val_labels = (getParam(PS_VAL_LABELS) != null) ? ec.getMatrixObject(getParam(PS_VAL_LABELS)) : null;
 		boolean modelAvg = getModelAvg();
 		ParamServer ps = createPS(mode, aggFunc, updateType, freq, workerNum, model, aggServiceEC,
-			getValFunction(), num_batches_per_epoch, val_features, val_labels, modelAvg);
+			getValFunction(), num_batches_per_epoch, val_features, val_labels, nbatches, modelAvg);
 
 		// Create the local workers
 		List<LocalPSWorker> workers = IntStream.range(0, workerNum)
 			.mapToObj(i -> new LocalPSWorker(i, updFunc, freq,
-				getEpochs(), getBatchSize(), workerECs.get(i), ps, modelAvg))
+				getEpochs(), getBatchSize(), workerECs.get(i), ps, nbatches, modelAvg))
 			.collect(Collectors.toList());
 
 		// Do data partition
@@ -473,21 +478,21 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 	 * @return parameter server
 	 */
 	private static ParamServer createPS(PSModeType mode, String aggFunc, PSUpdateType updateType,
-		PSFrequency freq, int workerNum, ListObject model, ExecutionContext ec, boolean modelAvg)
+		PSFrequency freq, int workerNum, ListObject model, ExecutionContext ec, int nbatches, boolean modelAvg)
 	{
-		return createPS(mode, aggFunc, updateType, freq, workerNum, model, ec, null, -1, null, null, modelAvg);
+		return createPS(mode, aggFunc, updateType, freq, workerNum, model, ec, null, -1, null, null, nbatches, modelAvg);
 	}
 
 	// When this creation is used the parameter server is able to validate after each epoch
 	private static ParamServer createPS(PSModeType mode, String aggFunc, PSUpdateType updateType,
 		PSFrequency freq, int workerNum, ListObject model, ExecutionContext ec, String valFunc,
-		int numBatchesPerEpoch, MatrixObject valFeatures, MatrixObject valLabels, boolean modelAvg)
+		int numBatchesPerEpoch, MatrixObject valFeatures, MatrixObject valLabels, int nbatches, boolean modelAvg)
 	{
 		switch (mode) {
 			case FEDERATED:
 			case LOCAL:
 			case REMOTE_SPARK:
-				return LocalParamServer.create(model, aggFunc, updateType, freq, ec, workerNum, valFunc, numBatchesPerEpoch, valFeatures, valLabels, modelAvg);
+				return LocalParamServer.create(model, aggFunc, updateType, freq, ec, workerNum, valFunc, numBatchesPerEpoch, valFeatures, valLabels, nbatches, modelAvg);
 			default:
 				throw new DMLRuntimeException("Unsupported parameter server: " + mode.name());
 		}
@@ -600,5 +605,12 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 		if(!getParameterMap().containsKey(PS_MODELAVG))
 			return DEFAULT_MODELAVG;
 		return Boolean.parseBoolean(getParam(PS_MODELAVG));
+	}
+
+	private int getNbatches() {
+		if(!getParameterMap().containsKey(PS_NBATCHES)) {
+			return DEFAULT_NBATCHES;
+		}
+		return Integer.parseInt(getParam(PS_NBATCHES));
 	}
 }

@@ -80,13 +80,14 @@ public abstract class ParamServer
 	private int _numBatchesPerEpoch;
 
 	private int _numWorkers;
+	private int _nbatches;
 	private boolean _modelAvg;
 	private ListObject _accModels = null;
 
 	protected ParamServer() {}
 
 	protected ParamServer(ListObject model, String aggFunc, Statement.PSUpdateType updateType,
-		Statement.PSFrequency freq, ExecutionContext ec, int workerNum, String valFunc, int numBatchesPerEpoch,	MatrixObject valFeatures, MatrixObject valLabels, boolean modelAvg)
+		Statement.PSFrequency freq, ExecutionContext ec, int workerNum, String valFunc, int numBatchesPerEpoch,	MatrixObject valFeatures, MatrixObject valLabels, int nbatches, boolean modelAvg)
 	{
 		// init worker queues and global model
 		_modelMap = new HashMap<>(workerNum);
@@ -108,6 +109,7 @@ public abstract class ParamServer
 		}
 		_numBatchesPerEpoch = numBatchesPerEpoch;
 		_numWorkers = workerNum;
+		_nbatches = nbatches;
 		_modelAvg = modelAvg;
 
 		// broadcast initial model
@@ -222,9 +224,10 @@ public abstract class ParamServer
 						// BSP epoch case every time
 						if (_numBatchesPerEpoch != -1 &&
 							(_freq == Statement.PSFrequency.EPOCH ||
-							(_freq == Statement.PSFrequency.BATCH && ++_syncCounter % _numBatchesPerEpoch == 0))) {
+							(_freq == Statement.PSFrequency.BATCH && ++_syncCounter % _numBatchesPerEpoch == 0))||
+							(_freq == Statement.PSFrequency.NBATCHES)) {
 
-							if(LOG.isInfoEnabled())
+						if(LOG.isInfoEnabled())
 								LOG.info("[+] PARAMSERV: completed EPOCH " + _epochCounter);
 
 							time_epoch();
@@ -250,8 +253,8 @@ public abstract class ParamServer
 					// the number of workers, creating "Pseudo Epochs"
 					if (_numBatchesPerEpoch != -1 &&
 						((_freq == Statement.PSFrequency.EPOCH && ((float) ++_syncCounter % _numWorkers) == 0) ||
-						(_freq == Statement.PSFrequency.BATCH && ((float) ++_syncCounter / _numWorkers) % (float) _numBatchesPerEpoch == 0))) {
-
+						(_freq == Statement.PSFrequency.BATCH && ((float) ++_syncCounter / _numWorkers) % (float) _numBatchesPerEpoch == 0)) ||
+						(_freq == Statement.PSFrequency.NBATCHES)) {
 						if(LOG.isInfoEnabled())
 							LOG.info("[+] PARAMSERV: completed PSEUDO EPOCH (ASP) " + _epochCounter);
 

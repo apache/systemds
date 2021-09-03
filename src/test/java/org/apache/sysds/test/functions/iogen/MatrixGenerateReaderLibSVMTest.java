@@ -146,7 +146,7 @@ public class MatrixGenerateReaderLibSVMTest extends GenerateReaderTest {
 
 	@Test
 	public void test1_3() throws Exception {
-		generateRandomLIBSVM(1, 100, 100, -100, 100, 1," ", ":");
+		generateRandomLIBSVM(1, 10, 10, -100, 100, 1," ", ":");
 		runGenerateReaderTest();
 	}
 

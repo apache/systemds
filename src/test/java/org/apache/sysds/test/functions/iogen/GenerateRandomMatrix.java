@@ -240,20 +240,20 @@ public class GenerateRandomMatrix extends AutomatedTestBase {
 		writer.close();
 	}
 
-	@Test
-	public void generateDataset() throws Exception {
-		int nrows = 1000;
-		int ncols = 1000;
-		double sparsity = 1;
-		String HOME = SCRIPT_DIR + TEST_DIR;
-		String[] naString = {"Nan", "NAN", "", "inf", "null", "NULL"};
-		double[][] data = generateRandom2DData(nrows, ncols, -100, 100, sparsity);
-		saveData(data, nrows, ncols, " ", ":", naString, HOME + "/data/", sparsity, false);
-
-		for(int r = 10; r <= 100; r += 10) {
-			saveData(data, r, r, " ", ":", naString, HOME + "/samples/", sparsity, true);
-		}
-	}
+//	@Test
+//	public void generateDataset() throws Exception {
+//		int nrows = 1000;
+//		int ncols = 1000;
+//		double sparsity = 1;
+//		String HOME = SCRIPT_DIR + TEST_DIR;
+//		String[] naString = {"Nan", "NAN", "", "inf", "null", "NULL"};
+//		double[][] data = generateRandom2DData(nrows, ncols, -100, 100, sparsity);
+//		saveData(data, nrows, ncols, " ", ":", naString, HOME + "/data/", sparsity, false);
+//
+//		for(int r = 10; r <= 100; r += 10) {
+//			saveData(data, r, r, " ", ":", naString, HOME + "/samples/", sparsity, true);
+//		}
+//	}
 
 	private void saveData(double[][] data, int nrows, int ncols, String separator, String indexSeparator,
 		String[] naStrings, String HOME, double sparsity, boolean saveSampleMatrix) throws Exception {

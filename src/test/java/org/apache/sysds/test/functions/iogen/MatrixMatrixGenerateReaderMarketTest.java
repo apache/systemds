@@ -120,7 +120,7 @@ public class MatrixMatrixGenerateReaderMarketTest extends GenerateReaderTest {
 
 	@Test
 	public void test0_6() throws Exception {
-		generateRandomMM(0, 100, 100, -100, 100, 1, ",");
+		generateRandomMM(0, 10, 10, -100, 100, 1, ",");
 		runGenerateReaderTest();
 	}
 

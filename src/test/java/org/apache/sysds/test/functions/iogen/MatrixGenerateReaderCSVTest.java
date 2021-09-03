@@ -84,7 +84,7 @@ public class MatrixGenerateReaderCSVTest extends GenerateReaderTest {
 	@Test
 	public void test4() throws Exception {
 		String[] naString = {"Nan", "NAN", "", "inf", "null", "NULL"};
-		generateRandomCSV(50, 50, -10, 10, 0.5, ",,", naString);
+		generateRandomCSV(50, 5, -10, 10, 0.5, ",,", naString);
 		runGenerateReaderTest();
 	}
 
@@ -148,7 +148,7 @@ public class MatrixGenerateReaderCSVTest extends GenerateReaderTest {
 	@Test
 	public void test13() throws Exception {
 		String[] naString = {"Nan", "NAN", "", "inf", "null", "NULL"};
-		generateRandomCSV(50, 20, -10, 10, 0.5, ",,", naString);
+		generateRandomCSV(5, 20, -10, 10, 0.5, ",,", naString);
 		runGenerateReaderTest();
 	}
 }

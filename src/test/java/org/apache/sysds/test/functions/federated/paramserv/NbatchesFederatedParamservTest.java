@@ -119,19 +119,19 @@ public class NbatchesFederatedParamservTest extends AutomatedTestBase {
 
 	@Test
 	public void federatedParamservSingleNodeWithNBatches() {
-		federatedParamserv(ExecMode.SINGLE_NODE, false);	}
+		NbatchesFederatedParamservTest(ExecMode.SINGLE_NODE, false);	}
 
 	@Test
 	public void federatedParamservSingleNodeWithNBatchesANDmodelAvg() {
-		federatedParamserv(ExecMode.SINGLE_NODE, true);
+		NbatchesFederatedParamservTest(ExecMode.SINGLE_NODE, true);
 	}
 
 	@Test
 	public void federatedParamservHybridWithNBatches() {
-		federatedParamserv(ExecMode.HYBRID, false);
+		NbatchesFederatedParamservTest(ExecMode.HYBRID, false);
 	}
 
-	private void federatedParamserv(ExecMode mode, boolean modelAvg) {
+	private void NbatchesFederatedParamservTest(ExecMode mode, boolean modelAvg) {
 		// Warning Statistics accumulate in unit test
 		// config
 		getAndLoadTestConfiguration(TEST_NAME);

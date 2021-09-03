@@ -78,8 +78,10 @@ public class OptimizerConstrained extends OptimizerRuleBased {
 	public boolean optimize(ParForStatementBlock sb, ParForProgramBlock pb, OptTree plan, CostEstimator est, ExecutionContext ec)
 	{
 		LOG.debug("--- "+getOptMode()+" OPTIMIZER -------");
-
-		OptNode pn = plan.getRoot();
+		_cost = est;
+		_plan = plan;
+		
+		OptNode pn = _plan.getRoot();
 
 		//early abort for empty parfor body 
 		if( pn.isLeaf() )
@@ -87,8 +89,6 @@ public class OptimizerConstrained extends OptimizerRuleBased {
 
 		//ANALYZE infrastructure properties
 		super.analyzeProblemAndInfrastructure( pn );
-
-		_cost = est;
 
 		//debug and warnings output
 		LOG.debug(getOptMode()+" OPT: Optimize with local_max_mem="+toMB(_lm)+" and remote_max_mem="+toMB(_rm)+")." );
@@ -222,8 +222,7 @@ public class OptimizerConstrained extends OptimizerRuleBased {
 		
 		// constraint awareness
 		if( !initPlan.equals(PDataPartitioner.UNSPECIFIED.name()) ) {
-			ParForProgramBlock pfpb = (ParForProgramBlock) OptTreeConverter
-				.getAbstractPlanMapping().getMappedProg(n.getID())[1];
+			ParForProgramBlock pfpb = (ParForProgramBlock) _plan.getMappedProg(n.getID())[1];
 			pfpb.setDataPartitioner(PDataPartitioner.valueOf(initPlan));
 			LOG.debug(getOptMode()+" OPT: forced 'set data partitioner' - result=" + initPlan );
 		}
@@ -244,8 +243,7 @@ public class OptimizerConstrained extends OptimizerRuleBased {
 		// constraint awareness
 		if( n.getExecType() != null && ConfigurationManager.isParallelParFor() )
 		{
-			ParForProgramBlock pfpb = (ParForProgramBlock) OptTreeConverter
-				.getAbstractPlanMapping().getMappedProg(n.getID())[1];
+			ParForProgramBlock pfpb = (ParForProgramBlock) _plan.getMappedProg(n.getID())[1];
 
 			PExecMode mode = PExecMode.LOCAL;
 			if (n.getExecType() == ExecType.SPARK) {
@@ -273,8 +271,7 @@ public class OptimizerConstrained extends OptimizerRuleBased {
 		if( n.getK() > 0 && ConfigurationManager.isParallelParFor() )
 		{
 			//set parfor degree of parallelism
-			ParForProgramBlock pfpb = (ParForProgramBlock) OptTreeConverter
-					.getAbstractPlanMapping().getMappedProg(n.getID())[1];
+			ParForProgramBlock pfpb = (ParForProgramBlock) _plan.getMappedProg(n.getID())[1];
 			pfpb.setDegreeOfParallelism(n.getK());
 			
 			//distribute remaining parallelism 
@@ -299,8 +296,7 @@ public class OptimizerConstrained extends OptimizerRuleBased {
 		// constraint awareness
 		if( !pn.getParam(ParamType.TASK_PARTITIONER).equals(PTaskPartitioner.UNSPECIFIED.name()) )
 		{
-			ParForProgramBlock pfpb = (ParForProgramBlock) OptTreeConverter
-				.getAbstractPlanMapping().getMappedProg(pn.getID())[1];
+			ParForProgramBlock pfpb = (ParForProgramBlock) _plan.getMappedProg(pn.getID())[1];
 			pfpb.setTaskPartitioner(PTaskPartitioner.valueOf(pn.getParam(ParamType.TASK_PARTITIONER)));
 			String tsExt = "";
 			if( pn.getParam(ParamType.TASK_SIZE)!=null )
@@ -329,8 +325,7 @@ public class OptimizerConstrained extends OptimizerRuleBased {
 		// constraint awareness
 		if( !n.getParam(ParamType.RESULT_MERGE).equals(PResultMerge.UNSPECIFIED.name()) )
 		{
-			ParForProgramBlock pfpb = (ParForProgramBlock) OptTreeConverter
-				    .getAbstractPlanMapping().getMappedProg(n.getID())[1];
+			ParForProgramBlock pfpb = (ParForProgramBlock) _plan.getMappedProg(n.getID())[1];
 			pfpb.setResultMerge(PResultMerge.valueOf(n.getParam(ParamType.RESULT_MERGE)));
 			LOG.debug(getOptMode()+" OPT: force 'set result merge' - result="+n.getParam(ParamType.RESULT_MERGE) );
 		}
@@ -347,8 +342,7 @@ public class OptimizerConstrained extends OptimizerRuleBased {
 	{
 		if(emode == PExecMode.REMOTE_SPARK_DP)
 		{
-			ParForProgramBlock pfpb = (ParForProgramBlock) OptTreeConverter
-				.getAbstractPlanMapping().getMappedProg(pn.getID())[1];
+			ParForProgramBlock pfpb = (ParForProgramBlock) _plan.getMappedProg(pn.getID())[1];
 
 			//partitioned matrix
 			if( partitionedMatrices.size()<=0 ) {
@@ -382,9 +376,8 @@ public class OptimizerConstrained extends OptimizerRuleBased {
 			super.rewriteSetFusedDataPartitioningExecution(pn, M, flagLIX, partitionedMatrices, vars);
 	}
 
-	private static PExecMode getPExecMode( OptNode pn ) {
-		ParForProgramBlock pfpb = (ParForProgramBlock) OptTreeConverter
-			    .getAbstractPlanMapping().getMappedProg(pn.getID())[1];
+	private PExecMode getPExecMode( OptNode pn ) {
+		ParForProgramBlock pfpb = (ParForProgramBlock) _plan.getMappedProg(pn.getID())[1];
 		return pfpb.getExecMode();
 	}
 }

@@ -286,11 +286,10 @@ topk_gridSearch = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] Xt
   }
   else if(cv & train == "multiLogReg")
   {
-    for( i in 1:nrow(HP) ) {
+    parfor( i in 1:nrow(HP) ) {
       # a) replace training arguments
       # acc = utils::crossVML(X, y, cvk, HP[i]);
       k = cvk
-      accuracyMatrix = matrix(0, k, 1)
       dataList = list()
       testL = list()
       data = order(target = cbind(y, X),  by = 1, decreasing=FALSE, index.return=FALSE)
@@ -319,8 +318,9 @@ topk_gridSearch = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] Xt
         fold_idxes[, 2] += ins_per_fold
       }
 
-      for(i in seq(1,k))
-      {
+      cvbeta = matrix(0,1,numB);
+      cvloss = matrix(0,1,1);
+      for(i in seq(1,k)) {
         [trainList, hold_out] = remove(dataList, i)
         trainset = rbind(trainList)
         testset = as.matrix(hold_out)
@@ -328,14 +328,15 @@ topk_gridSearch = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] Xt
         trainy = trainset[, 1]
         testsetX = testset[, 2:ncol(testset)]
         testsety = testset[, 1]
-        beta = multiLogReg(X=trainX, Y=trainy, icpt=as.scalar(HP[1,1]), reg=as.scalar(HP[1,2]), tol=as.scalar(HP[1,3]), 
+        lbeta = multiLogReg(X=trainX, Y=trainy, icpt=as.scalar(HP[1,1]), reg=as.scalar(HP[1,2]), tol=as.scalar(HP[1,3]), 
           maxi=as.scalar(HP[1,4]), maxii=50, verbose=FALSE);
-        [prob, yhat, accuracy] = multiLogRegPredict(testsetX, beta, testsety, FALSE)
-        accuracyMatrix[i] = accuracy
+        [prob, yhat, accuracy] = multiLogRegPredict(testsetX, lbeta, testsety, FALSE)
+        cvbeta += lbeta;
+        cvloss += as.matrix(accuracy);
       }
-      
-      Rloss[i,] = mean(accuracyMatrix)
-    }  
+      Rbeta[i,] = cvbeta / k;
+      Rloss[i,] = cvloss / k;
+    }
   }
   # without cross-validation
   else {
@@ -356,4 +357,3 @@ topk_gridSearch = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] Xt
   B = t(Rbeta[ix,]);       # optimal model
   opt = as.frame(HP[ix,]); # optimal hyper-parameters
 }
-

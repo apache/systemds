@@ -139,12 +139,10 @@ public class OptimizationWrapper
 			ForStatement fs = (ForStatement) sb.getStatement(0);
 			
 			//debug output before recompilation
-			if( LOG.isDebugEnabled() ) 
-			{
+			if( LOG.isDebugEnabled() ) {
 				try {
 					tree = OptTreeConverter.createOptTree(ck, cm, opt.getPlanInputType(), sb, pb, ec); 
 					LOG.debug("ParFOR Opt: Input plan (before recompilation):\n" + tree.explain(false));
-					OptTreeConverter.clear();
 				}
 				catch(Exception ex)
 				{
@@ -223,11 +221,11 @@ public class OptimizationWrapper
 		}
 		
 		//create cost estimator
-		CostEstimator est = createCostEstimator( cmtype, ec.getVariables() );
+		CostEstimator est = createCostEstimator( cmtype, tree, ec.getVariables() );
 		LOG.trace("ParFOR Opt: Created cost estimator ("+cmtype+")");
 		
 		//core optimize
-		opt.optimize( sb, pb, tree, est, ec );
+		opt.optimize(sb, pb, tree, est, ec);
 		LOG.debug("ParFOR Opt: Optimized plan (after optimization): \n" + tree.explain(false));
 		
 		//assert plan correctness
@@ -245,9 +243,6 @@ public class OptimizationWrapper
 		LOG.trace("ParFOR Opt: Optimized plan in "+ltime+"ms.");
 		if( DMLScript.STATISTICS )
 			Statistics.incrementParForOptimTime(ltime);
-		
-		//cleanup phase
-		OptTreeConverter.clear();
 		
 		//monitor stats
 		if( monitor ) {
@@ -267,14 +262,14 @@ public class OptimizationWrapper
 		}
 	}
 
-	private static CostEstimator createCostEstimator( CostModelType cmtype, LocalVariableMap vars )  {
+	private static CostEstimator createCostEstimator( CostModelType cmtype, OptTree tree, LocalVariableMap vars )  {
 		switch( cmtype ) {
 			case STATIC_MEM_METRIC:
-				return new CostEstimatorHops( 
-					OptTreeConverter.getAbstractPlanMapping() );
+				return new CostEstimatorHops(
+					tree.getAbstractPlanMapping() );
 			case RUNTIME_METRICS:
-				return new CostEstimatorRuntime( 
-					OptTreeConverter.getAbstractPlanMapping(), 
+				return new CostEstimatorRuntime(
+					tree.getAbstractPlanMapping(),
 					(LocalVariableMap)vars.clone() );
 			default:
 				throw new DMLRuntimeException("Undefined cost model type: '"+cmtype+"'.");

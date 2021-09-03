@@ -19,6 +19,8 @@
 
 package org.apache.sysds.runtime.controlprogram.parfor.opt;
 
+import org.apache.sysds.hops.Hop;
+import org.apache.sysds.runtime.controlprogram.ProgramBlock;
 import org.apache.sysds.runtime.controlprogram.parfor.opt.Optimizer.PlanInputType;
 
 /**
@@ -29,8 +31,9 @@ import org.apache.sysds.runtime.controlprogram.parfor.opt.Optimizer.PlanInputTyp
  */
 public class OptTree 
 {
+	private final OptTreePlanMappingAbstract _hlMap;
+	private final OptTreePlanMappingRuntime  _rtMap;
 
-	
 	//global contraints 
 	private int     _ck;  //max constraint degree of parallelism
 	private double  _cm;  //max constraint memory consumption
@@ -39,51 +42,61 @@ public class OptTree
 	private PlanInputType _type = null;
 	private OptNode       _root = null;
 	
-	
-	public OptTree( int ck, double cm, OptNode node )
-	{
-		this( ck, cm, PlanInputType.RUNTIME_PLAN, node );
+	public OptTree( int ck, double cm, OptNode node ) {
+		this( ck, cm, PlanInputType.RUNTIME_PLAN, node, null, null);
 	}
 	
-	public OptTree( int ck, double cm, PlanInputType type, OptNode node )
-	{
+	public OptTree( int ck, double cm, PlanInputType type, OptNode node,
+		OptTreePlanMappingAbstract hlMap, OptTreePlanMappingRuntime rtMap) {
 		_ck = ck;
 		_cm = cm;
-		
 		_type = type;
 		_root = node;
+		_hlMap = hlMap;
+		_rtMap = rtMap;
 	}
 	
-	///////
-	// getter and setter
+	public OptTreePlanMappingAbstract getAbstractPlanMapping() {
+		return _hlMap;
+	}
 	
-	public int getCK()
-	{
+	public OptTreePlanMappingRuntime getRuntimePlanMapping() {
+		return _rtMap;
+	}
+	
+	public Hop getMappedHop( long id ) {
+		return _hlMap.getMappedHop(id);
+	}
+	
+	public Object[] getMappedProg( long id ) {
+		return _hlMap.getMappedProg(id);
+	}
+	
+	public ProgramBlock getMappedProgramBlock(long id) {
+		return _hlMap.getMappedProgramBlock(id);
+	}
+	
+	public int getCK() {
 		return _ck;
 	}
 	
-	public double getCM()
-	{
+	public double getCM() {
 		return _cm;
 	}
 	
-	public PlanInputType getPlanInputType()
-	{
+	public PlanInputType getPlanInputType() {
 		return _type;
 	}
 	
-	public void setPlanInputType( PlanInputType type )
-	{
+	public void setPlanInputType( PlanInputType type ) {
 		_type = type;
 	}
 	
-	public OptNode getRoot()
-	{
+	public OptNode getRoot() {
 		return _root;
 	}
 	
-	public void setRoot( OptNode n )
-	{
+	public void setRoot( OptNode n ) {
 		_root = n;
 	}
 	

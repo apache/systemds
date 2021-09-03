@@ -30,8 +30,9 @@ public class MatrixMatrixGenerateReaderMarketTest extends GenerateReaderTest {
 
 	private final static double eps = 1e-9;
 
-	@Override public void setUp() {
-		addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[] {"Rout"}));
+	@Override
+	protected String getTestName() {
+		return TEST_NAME;
 	}
 
 	private void generateRandomMM(int firstIndex, int nrows, int ncols, double min, double max, double sparsity,

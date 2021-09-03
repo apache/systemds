@@ -19,7 +19,6 @@
 
 package org.apache.sysds.test.functions.iogen;
 
-import org.apache.sysds.test.TestConfiguration;
 import org.junit.Test;
 
 public class MatrixGenerateReaderLibSVMTest extends GenerateReaderTest {
@@ -29,8 +28,8 @@ public class MatrixGenerateReaderLibSVMTest extends GenerateReaderTest {
 	private final static String TEST_CLASS_DIR = TEST_DIR + MatrixGenerateReaderLibSVMTest.class.getSimpleName() + "/";
 
 	@Override
-	public void setUp() {
-		addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[] {"Rout"}));
+	protected String getTestName() {
+		return TEST_NAME;
 	}
 
 	private void generateRandomLIBSVM(int firstIndex, int nrows, int ncols, double min, double max, double sparsity,
@@ -100,7 +99,7 @@ public class MatrixGenerateReaderLibSVMTest extends GenerateReaderTest {
 
 	@Test
 	public void test0_4() throws Exception {
-		generateRandomLIBSVM(0, 1000, 100, -100, 100, 1," ", ":");
+		generateRandomLIBSVM(0, 10, 10, -100, 100, 1," ", ":");
 		runGenerateReaderTest();
 	}
 
@@ -153,7 +152,7 @@ public class MatrixGenerateReaderLibSVMTest extends GenerateReaderTest {
 
 	@Test
 	public void test1_4() throws Exception {
-		generateRandomLIBSVM(1, 1000, 100, -100, 100, 1," ", ":");
+		generateRandomLIBSVM(1, 10, 10, -100, 100, 1," ", ":");
 		runGenerateReaderTest();
 	}
 

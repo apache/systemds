@@ -19,7 +19,6 @@
 
 package org.apache.sysds.test.functions.iogen;
 
-import org.apache.sysds.test.TestConfiguration;
 import org.junit.Test;
 
 import java.util.Random;
@@ -31,8 +30,8 @@ public class MatrixGenerateReaderCSVTest extends GenerateReaderTest {
 	private final static String TEST_CLASS_DIR = TEST_DIR + MatrixGenerateReaderCSVTest.class.getSimpleName() + "/";
 
 	@Override
-	public void setUp() {
-		addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[] {"Rout"}));
+	protected String getTestName() {
+		return TEST_NAME;
 	}
 
 	private void generateRandomCSV(int nrows, int ncols, double min, double max, double sparsity, String separator,
@@ -85,7 +84,7 @@ public class MatrixGenerateReaderCSVTest extends GenerateReaderTest {
 	@Test
 	public void test4() throws Exception {
 		String[] naString = {"Nan", "NAN", "", "inf", "null", "NULL"};
-		generateRandomCSV(5000, 50, -10, 10, 0.5, ",,", naString);
+		generateRandomCSV(50, 50, -10, 10, 0.5, ",,", naString);
 		runGenerateReaderTest();
 	}
 
@@ -141,14 +140,15 @@ public class MatrixGenerateReaderCSVTest extends GenerateReaderTest {
 	@Test
 	public void test12() throws Exception {
 		sampleRaw = "1,2,3,4,5,NAN,,\n" + "6,7,8,9,10,NAN,,\n" + "11,12,13,14,15,NAN,,";
-		sampleMatrix = new double[][] {{1, 2, 3, 4, 5, 0,0,0}, {6, 7, 8, 9, 10, 0,0,0}, {11, 12, 13, 14, 15, 0,0,0}};
+		sampleMatrix = new double[][] {{1, 2, 3, 4, 5, 0, 0, 0}, {6, 7, 8, 9, 10, 0, 0, 0},
+			{11, 12, 13, 14, 15, 0, 0, 0}};
 		runGenerateReaderTest();
 	}
 
 	@Test
 	public void test13() throws Exception {
 		String[] naString = {"Nan", "NAN", "", "inf", "null", "NULL"};
-		generateRandomCSV(5000, 200, -10, 10, 0.5, ",,", naString);
+		generateRandomCSV(50, 20, -10, 10, 0.5, ",,", naString);
 		runGenerateReaderTest();
 	}
 }

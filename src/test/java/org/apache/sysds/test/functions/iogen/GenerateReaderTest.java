@@ -19,30 +19,30 @@
 
 package org.apache.sysds.test.functions.iogen;
 
-import org.apache.sysds.runtime.io.MatrixReader;
-import org.apache.sysds.runtime.io.FileFormatPropertiesLIBSVM;
-import org.apache.sysds.runtime.io.FileFormatPropertiesCSV;
-import org.apache.sysds.runtime.io.WriterTextCell;
-import org.apache.sysds.runtime.io.WriterTextLIBSVM;
-import org.apache.sysds.runtime.io.WriterTextCSV;
-import org.apache.sysds.runtime.iogen.GenerateReader;
-import org.apache.sysds.runtime.matrix.data.MatrixBlock;
-import org.apache.sysds.runtime.util.DataConverter;
+import org.apache.sysds.api.DMLScript;
+import org.apache.sysds.common.Types;
+import org.apache.sysds.conf.CompilerConfig;
 import org.apache.sysds.test.AutomatedTestBase;
+import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
 
-import java.io.*;
+import java.io.BufferedWriter;
+import java.io.FileWriter;
+import java.io.IOException;
 
 public abstract class GenerateReaderTest extends AutomatedTestBase {
 
 	protected final static String TEST_DIR = "functions/iogen/";
 	protected final static String TEST_CLASS_DIR = TEST_DIR + GenerateReaderTest.class.getSimpleName() + "/";
-
 	protected String sampleRaw;
 	protected double[][] sampleMatrix;
 
-	@Override public void setUp() {
+	protected abstract String getTestName();
+
+	@Override
+	public void setUp() {
 		TestUtils.clearAssertionInformation();
+		addTestConfiguration(getTestName(), new TestConfiguration(TEST_DIR, getTestName(), new String[] {"Y"}));
 	}
 
 	protected void generateRandomSymmetric(int size, double min, double max, double sparsity, boolean isSkew) {
@@ -59,40 +59,44 @@ public abstract class GenerateReaderTest extends AutomatedTestBase {
 		}
 	}
 
-	protected void runGenerateReaderTest() throws Exception {
-		MatrixBlock sampleMatrixMB = DataConverter.convertToMatrixBlock(sampleMatrix);
-		GenerateReader.GenerateReaderMatrix gr = new GenerateReader.GenerateReaderMatrix(sampleRaw, sampleMatrixMB);
-		MatrixReader reader=gr.getReader();
+	protected void runGenerateReaderTest() {
 
-		// Write SampleRawMatrix data into a file
-		String HOME = SCRIPT_DIR + TEST_DIR;
-		String outName = "/home/sfathollahzadeh/GRTest/";//HOME + OUTPUT_DIR ;
-		String fileNameSampleRaw = outName+"/SampleRaw.txt";
-		String fileNameSampleRawOut = outName+"/SampleRawOut.txt";
-		BufferedWriter writer = new BufferedWriter(new FileWriter(fileNameSampleRaw));
-		writer.write(sampleRaw);
+		Types.ExecMode oldPlatform = rtplatform;
+		rtplatform = Types.ExecMode.SINGLE_NODE;
+
+		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
+		boolean oldpar = CompilerConfig.FLAG_PARREADWRITE_TEXT;
+
+		try {
+			CompilerConfig.FLAG_PARREADWRITE_TEXT = false;
+
+			TestConfiguration config = getTestConfiguration(getTestName());
+			loadTestConfiguration(config);
+
+			String HOME = SCRIPT_DIR + TEST_DIR;
+			String dataPath = HOME + "data.raw";
+			writeRawString(sampleRaw, dataPath);
+			writeInputMatrixWithMTD("sample_matrix", sampleMatrix, false);
+
+			fullDMLScriptName = HOME + "MatrixGenerateReaderTest1.dml";
+			programArgs = new String[] {"-nvargs", "data=" + dataPath, "sample_raw=" + sampleRaw,
+				"sample_matrix=" + input("sample_matrix"), "ncols=" + sampleMatrix[0].length};
+
+			runTest(true, false, null, -1);
+		}
+		catch(Exception exception) {
+			exception.printStackTrace();
+		}
+		finally {
+			rtplatform = oldPlatform;
+			CompilerConfig.FLAG_PARREADWRITE_TEXT = oldpar;
+			DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
+		}
+	}
+
+	private void writeRawString(String raw, String fileName) throws IOException {
+		BufferedWriter writer = new BufferedWriter(new FileWriter(fileName));
+		writer.write(raw);
 		writer.close();
-
-		// Read the data with Generated Reader
-		MatrixBlock src = reader
-			.readMatrixFromHDFS(fileNameSampleRaw, sampleMatrixMB.getNumRows(), sampleMatrixMB.getNumColumns(), -1, -1);
-
-		if(this instanceof MatrixGenerateReaderCSVTest) {
-			FileFormatPropertiesCSV csv = new FileFormatPropertiesCSV(false, ",", false);
-			WriterTextCSV writerTextCSV = new WriterTextCSV(csv);
-			writerTextCSV.writeMatrixToHDFS(src, fileNameSampleRawOut, src.getNumRows(), src.getNumColumns(), -1,
-				src.getNonZeros(), false);
-		}
-		else if(this instanceof MatrixGenerateReaderLibSVMTest){
-			FileFormatPropertiesLIBSVM libsvm = new FileFormatPropertiesLIBSVM(" ", ":", false);
-			WriterTextLIBSVM writerTextLIBSVM = new WriterTextLIBSVM(libsvm);
-			writerTextLIBSVM.writeMatrixToHDFS(src, fileNameSampleRawOut, src.getNumRows(), src.getNumColumns(), -1,
-				src.getNonZeros(), false);
-		}
-		else if(this instanceof MatrixMatrixGenerateReaderMarketTest){
-			WriterTextCell writerTextCell = new WriterTextCell();
-			writerTextCell.writeMatrixToHDFS(src, fileNameSampleRawOut, src.getNumRows(), src.getNumColumns(), -1,
-				src.getNonZeros(), false);
-		}
 	}
 }

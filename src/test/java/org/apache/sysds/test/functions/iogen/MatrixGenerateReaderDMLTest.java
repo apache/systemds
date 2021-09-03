@@ -37,12 +37,14 @@ public class MatrixGenerateReaderDMLTest extends AutomatedTestBase {
 	private final static String TEST_DIR = "functions/iogen/";
 	private final static String TEST_CLASS_DIR = TEST_DIR + MatrixGenerateReaderDMLTest.class.getSimpleName() + "/";
 
-	@Override public void setUp() {
+	@Override
+	public void setUp() {
 		TestUtils.clearAssertionInformation();
 		addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_DIR, TEST_NAME, new String[] {"Y"}));
 	}
 
-	@Test public void testGenerateReader1() {
+	@Test
+	public void testGenerateReader1() {
 
 		String data = "1,2,3,4,5\n" + "6,7,8,9,10\n" + "11,12,13,14,15";
 		double[][] sampleMatrix = new double[][] {{1, 2, 3, 4, 5}, {6, 7, 8, 9, 10}, {11, 12, 13, 14, 15}};
@@ -50,12 +52,15 @@ public class MatrixGenerateReaderDMLTest extends AutomatedTestBase {
 	}
 
 	// Index start from 0
-	@Test public void testGenerateReader2() throws Exception {
+	@Test
+	public void testGenerateReader2() throws Exception {
 		String data = "+1 2:3 4:5 6:7\n" + "-1 8:9 10:11";
 		double[][] sampleMatrix = new double[][] {{0, 0, 3, 0, 5, 0, 7, 0, 0, 0, 0, +1},
 			{0, 0, 0, 0, 0, 0, 0, 0, 9, 0, 11, -1}};
 		runGenerateReaderTest(Types.ExecMode.SINGLE_NODE, false, data, sampleMatrix);
 	}
+
+
 
 	protected void runGenerateReaderTest(Types.ExecMode platform, boolean parallel, String sampleRaw,
 		double[][] sampleMatrix) {

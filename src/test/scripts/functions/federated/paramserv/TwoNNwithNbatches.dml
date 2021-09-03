@@ -148,8 +148,10 @@ train_paramserv = function(matrix[double] X, matrix[double] y,
 
   # Create the model list
   model = list(W1, W2, W3, b1, b2, b3)
+
   # Create the hyper parameter list
   hyperparams = list(learning_rate=eta)
+
   # Use paramserv function
   model = paramserv(model=model, features=X, labels=y, val_features=X_val, val_labels=y_val,
     upd="./src/test/scripts/functions/federated/paramserv/TwoNNwithNbatches.dml::gradients",

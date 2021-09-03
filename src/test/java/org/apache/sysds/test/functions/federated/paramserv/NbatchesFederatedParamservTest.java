@@ -69,7 +69,7 @@ public class NbatchesFederatedParamservTest extends AutomatedTestBase {
 			{"CNN", 	2, 2000, 100, 4, 0.01, 	"BSP", "NBATCHES", "SHUFFLE", 				"NONE", 		"true",	"BALANCED", 200, 8},
 			{"CNN",		2, 480,  32,  4, 0.01, 	"ASP", "NBATCHES", "REPLICATE_TO_MAX", 		"CYCLE_MIN", 	"true",	"BALANCED", 200, 16},
 			{"TwoNN", 	5, 2000, 100, 2, 0.01, 	"BSP", "NBATCHES", "KEEP_DATA_ON_WORKER", 	"NONE", 		"true",	"BALANCED", 200, 2},
-			{"TwoNN", 	5, 1000, 100, 2, 0.01, 	"BSP", "EPOCH",    "KEEP_DATA_ON_WORKER", 	"NONE", 		"true",	"BALANCED", 200, 2},
+		//	{"TwoNN", 	5, 1000, 100, 2, 0.01, 	"BSP", "EPOCH",    "KEEP_DATA_ON_WORKER", 	"NONE", 		"true",	"BALANCED", 200, 2},
 
 			/*
 				// runtime balancing

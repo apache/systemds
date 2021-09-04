@@ -320,6 +320,7 @@ public class ParForProgramBlock extends ForProgramBlock
 	protected final boolean _monitor;
 	protected final Level _optLogLevel;
 	protected int _numThreads = -1;
+	protected boolean _fixedDOP = false; //guard for numThreads
 	protected long _taskSize = -1;
 	protected PTaskPartitioner _taskPartitioner = null;
 	protected PDataPartitioner _dataPartitioner = null;
@@ -470,6 +471,14 @@ public class ParForProgramBlock extends ForProgramBlock
 		_numThreads = k;
 		_params.put(ParForStatementBlock.PAR, String.valueOf(_numThreads)); //kept up-to-date for copies
 		setLocalParWorkerIDs();
+	}
+	
+	public boolean isDegreeOfParallelismFixed() {
+		return _fixedDOP;
+	}
+	
+	public void setDegreeOfParallelismFixed(boolean flag) {
+		_fixedDOP = flag;
 	}
 
 	public void setCPCaching(boolean flag) {
@@ -1187,7 +1196,7 @@ public class ParForProgramBlock extends ForProgramBlock
 		try
 		{
 			//create deep copies of required elements child blocks
-			ArrayList<ProgramBlock> cpChildBlocks = null;	
+			ArrayList<ProgramBlock> cpChildBlocks = null;
 			HashSet<String> fnNames = new HashSet<>();
 			if( USE_PB_CACHE )
 			{

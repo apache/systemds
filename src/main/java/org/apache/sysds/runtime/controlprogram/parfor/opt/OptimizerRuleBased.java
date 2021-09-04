@@ -1178,12 +1178,14 @@ public class OptimizerRuleBased extends Optimizer {
 			
 			//set parfor degree of parallelism
 			pfpb.setDegreeOfParallelism(parforK);
+			pfpb.setDegreeOfParallelismFixed(true);
 			n.setK(parforK);
 			
 			//distribute remaining parallelism 
 			int remainParforK = getRemainingParallelismParFor(kMax, parforK);
 			int remainOpsK = getRemainingParallelismOps(_lkmaxCP, parforK);
 			rAssignRemainingParallelism( n, remainParforK, remainOpsK );
+			pfpb.setDegreeOfParallelismFixed(false);
 		}
 		else // ExecType.MR/ExecType.SPARK
 		{
@@ -1212,7 +1214,9 @@ public class OptimizerRuleBased extends Optimizer {
 				kMax = 1;
 			
 			//distribute remaining parallelism and recompile parallel instructions
+			pfpb.setDegreeOfParallelismFixed(true);
 			rAssignRemainingParallelism( n, kMax, 1 );
+			pfpb.setDegreeOfParallelismFixed(false);
 		}
 		
 		_numEvaluatedPlans++;
@@ -1247,14 +1251,15 @@ public class OptimizerRuleBased extends Optimizer {
 					//set parfor degree of parallelism
 					long id = c.getID();
 					c.setK(tmpK);
-					ParForProgramBlock pfpb = (ParForProgramBlock) 
-						_plan.getMappedProgramBlock(id);
+					ParForProgramBlock pfpb = (ParForProgramBlock) _plan.getMappedProgramBlock(id);
 					pfpb.setDegreeOfParallelism(tmpK);
 					
 					//distribute remaining parallelism
 					int remainParforK = getRemainingParallelismParFor(parforK, tmpK);
 					int remainOpsK = getRemainingParallelismOps(opsK, tmpK);
+					pfpb.setDegreeOfParallelismFixed(true);
 					rAssignRemainingParallelism(c, remainParforK, remainOpsK);
+					pfpb.setDegreeOfParallelismFixed(false);
 				}
 				else if( c.getNodeType() == NodeType.HOP )
 				{
@@ -1278,6 +1283,8 @@ public class OptimizerRuleBased extends Optimizer {
 					}
 					
 					//if parfor contains eval call, make unoptimized functions single-threaded
+					//(parent parfor program blocks have been frozen such that the following
+					//recompilation of all possible functions does not reset the DOP to 1)
 					if( HopRewriteUtils.isNary(h, OpOpN.EVAL) ) {
 						ProgramBlock pb = _plan.getMappedProgramBlock(n.getID());
 						pb.getProgram().getFunctionProgramBlocks(false)

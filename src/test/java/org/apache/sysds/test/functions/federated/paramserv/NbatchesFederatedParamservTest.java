@@ -119,19 +119,14 @@ public class NbatchesFederatedParamservTest extends AutomatedTestBase {
 
 	@Test
 	public void federatedParamservSingleNodeWithNBatches() {
-		NbatchesFederatedParamservTest(ExecMode.SINGLE_NODE, false);	}
-
-//	@Test
-//	public void federatedParamservSingleNodeWithNBatchesANDmodelAvg() {
-//		NbatchesFederatedParamservTest(ExecMode.SINGLE_NODE, true);
-//	}
+		NbatchesFederatedParamservTest(ExecMode.SINGLE_NODE);	}
 
 	@Test
 	public void federatedParamservHybridWithNBatches() {
-		NbatchesFederatedParamservTest(ExecMode.HYBRID, false);
+		NbatchesFederatedParamservTest(ExecMode.HYBRID);
 	}
 
-	private void NbatchesFederatedParamservTest(ExecMode mode, boolean modelAvg) {
+	private void NbatchesFederatedParamservTest(ExecMode mode) {
 		// Warning Statistics accumulate in unit test
 		// config
 		getAndLoadTestConfiguration(TEST_NAME);
@@ -202,8 +197,7 @@ public class NbatchesFederatedParamservTest extends AutomatedTestBase {
 				"hin=" + Hin,
 				"win=" + Win,
 				"seed=" + _seed,
-				"nbatches=" + _nbatches,
-				"modelAvg=" +  Boolean.toString(modelAvg).toUpperCase()));
+				"nbatches=" + _nbatches));
 
 			programArgs = programArgsList.toArray(new String[0]);
 			LOG.debug(runTest(null));

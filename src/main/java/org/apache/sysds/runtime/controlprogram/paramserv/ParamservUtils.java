@@ -309,8 +309,10 @@ public class ParamservUtils {
 		for (ProgramBlock pb : pbs) {
 			if (pb instanceof ParForProgramBlock) {
 				ParForProgramBlock pfpb = (ParForProgramBlock) pb;
-				pfpb.setDegreeOfParallelism(k);
-				recompiled |= rAssignParallelismAndRecompile(pfpb.getChildBlocks(), 1, recompiled, forceExecTypeCP);
+				if( !pfpb.isDegreeOfParallelismFixed() ) {
+					pfpb.setDegreeOfParallelism(k);
+					recompiled |= rAssignParallelismAndRecompile(pfpb.getChildBlocks(), 1, recompiled, forceExecTypeCP);
+				}
 			} else if (pb instanceof ForProgramBlock) {
 				recompiled |= rAssignParallelismAndRecompile(((ForProgramBlock) pb).getChildBlocks(), k, recompiled, forceExecTypeCP);
 			} else if (pb instanceof WhileProgramBlock) {

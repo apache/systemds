@@ -41,7 +41,7 @@ import org.junit.runners.Parameterized;
 public class NbatchesFederatedParamservTest extends AutomatedTestBase {
 	private static final Log LOG = LogFactory.getLog(NbatchesFederatedParamservTest.class.getName());
 	private final static String TEST_DIR = "functions/federated/paramserv/";
-	private final static String TEST_NAME = "FederatedParamservTestwithNbatches";
+	private final static String TEST_NAME = "NbatchesFederatedParamservTest";
 	private final static String TEST_CLASS_DIR = TEST_DIR + NbatchesFederatedParamservTest.class.getSimpleName() + "/";
 
 	private final String _networkType;
@@ -121,10 +121,10 @@ public class NbatchesFederatedParamservTest extends AutomatedTestBase {
 	public void federatedParamservSingleNodeWithNBatches() {
 		NbatchesFederatedParamservTest(ExecMode.SINGLE_NODE, false);	}
 
-	@Test
-	public void federatedParamservSingleNodeWithNBatchesANDmodelAvg() {
-		NbatchesFederatedParamservTest(ExecMode.SINGLE_NODE, true);
-	}
+//	@Test
+//	public void federatedParamservSingleNodeWithNBatchesANDmodelAvg() {
+//		NbatchesFederatedParamservTest(ExecMode.SINGLE_NODE, true);
+//	}
 
 	@Test
 	public void federatedParamservHybridWithNBatches() {

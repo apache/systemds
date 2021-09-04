@@ -60,24 +60,26 @@ doSample = function(Matrix[Double] eX, Matrix[Double] eY, Double ratio, Boolean 
 {
   MIN_SAMPLE = 1000
   sampled = floor(nrow(eX) * ratio)
-  sample = ifelse(sampled > MIN_SAMPLE, TRUE, FALSE)
-  dist = table(eY, 1)
-  dist = nrow(dist)
-  if(sample)
+  sampledX = eX
+  sampledY = eY
+  
+  if(sampled > MIN_SAMPLE)
   {
+    dist = max(eY) # num classes (one-hot encoded eY) 
+    
     if((nrow(eY) > 1) & (dist < 10))  # for classification
     {
       XY = order(target = cbind(eY, eX),  by = 1, decreasing=FALSE, index.return=FALSE)
-      # get the class count 
+      # get the class count
       classes = table(eY, 1)
+      # TODO vectorize extraction compute extraction vector
       start_class = 1
       out_s = 1 
       out_e = 0
       end_class = 0
       out = matrix(0, sampled, ncol(XY))
       classes_ratio = floor(classes*ratio)
-      for(i in 1:nrow(classes))
-      {
+      for(i in 1:nrow(classes)) {
         end_class = end_class + as.scalar(classes[i])
         class_t = XY[start_class:end_class, ]
         out_e = out_e + as.scalar(classes_ratio[i]) 
@@ -89,28 +91,15 @@ doSample = function(Matrix[Double] eX, Matrix[Double] eY, Double ratio, Boolean 
       sampledY = out[, 1]
       sampledX = out[, 2:ncol(out)]
     }
-    else if(nrow(eY) > 1 & (dist > 10)) # regression
-    {
+    else if(nrow(eY) > 1 & (dist > 10)) { # regression
       sampledX = eX[1:sampled, ]
       sampledY = eY[1:sampled, ]
     }
-    else if(nrow(eY) == 1)
-    {
+    else if(nrow(eY) == 1) { # TODO ?
       sampledX =  eX[1:sampled, ]
       sampledY = eY 
     }
-    else {
-      sampledX = eX
-      sampledY = eY    
-    }
   }
-  else 
-  { 
-    sampledX = eX
-    sampledY = eY 
-  }
-  if(verbose)
-    print("AFTER SAMPLING: "+nrow(eX))
 }
 
 # #######################################################################
@@ -154,29 +143,26 @@ return(Boolean validForResources)
   validForResources = count > 0
 }
 
-stringProcessing = function(Frame[Unknown] data, Matrix[Double] mask, Frame[String] schema, Boolean CorrectTypos)
+stringProcessing = function(Frame[Unknown] data, Matrix[Double] mask, 
+  Frame[String] schema, Boolean CorrectTypos, List[Unknown] ctx = list(prefix="--"))
 return(Frame[Unknown] processedData)
 {
+  prefix = as.scalar(ctx["prefix"]);
 
   # step 1 drop invalid types
+  print(prefix+" drop values with type mismatch");
   data = dropInvalidType(data, schema)
   
   # step 2 do the case transformations
+  print(prefix+" convert strings to lower case");
   for(i in 1:ncol(mask))
-  {
     if(as.scalar(schema[1,i]) == "STRING")
-    {
-      lowerCase = map(data[, i], "x -> x.toLowerCase()")
-      data[, i] = lowerCase
-    }
-
-  }
-
+      data[, i] = map(data[, i], "x -> x.toLowerCase()")
+    
   if(CorrectTypos)
   {
-  # recode data to get null mask
-    if(sum(mask) > 0)
-    {
+    # recode data to get null mask
+    if(sum(mask) > 0) {
       # always recode the label
       index = vectorToCsv(mask)
       jspecR = "{ids:true, recode:["+index+"]}"
@@ -186,18 +172,19 @@ return(Frame[Unknown] processedData)
     else
       eX = as.matrix(data)
     nullMask = is.na(eX)
-    print("starting correctTypos ")
+    print(prefix+" correct typos in strings");
     # fix the typos
     for(i in 1:ncol(schema))
-    {
       if(as.scalar(schema[1,i]) == "STRING")
         data[, i] = correctTypos(data[, i], nullMask[, i], 0.2, 0.9, FALSE, TRUE, FALSE);
-    }
-    # print("after correctTypos "+toString(data, rows=5))
   }
   
+  print(prefix+" porter-stemming on all features");
   data = map(data, "x -> PorterStemmer.stem(x)")
+  
   # TODO add deduplication
+  print(prefix+" deduplication via entity resolution");
+  
   processedData = data
 }
 
@@ -238,7 +225,7 @@ topk_gridSearch = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] Xt
   # Step 2) materialize hyper-parameter combinations
   # (simplify debugging and compared to compute negligible)
   HP = matrix(0, numConfigs, numParams);
-  for( i in 1:nrow(HP) ) {
+  parfor( i in 1:nrow(HP) ) {
     for( j in 1:numParams )
       HP[i,j] = paramVals[j,as.scalar(((i-1)/cumLens[j,1])%%paramLens[j,1]+1)];
   }

@@ -49,9 +49,7 @@ public class BuiltinTopkEvaluateTest extends AutomatedTestBase {
 	}
 
 	private void evalPip(double split, String cv, String path, Types.ExecMode et) {
-
-		setOutputBuffering(true);
-		String HOME = SCRIPT_DIR+"functions/pipelines/" ;
+		String HOME = SCRIPT_DIR+"functions/pipelines/";
 		Types.ExecMode modeOld = setExecMode(et);
 		try {
 			loadTestConfiguration(getTestConfiguration(TEST_NAME1));

@@ -424,14 +424,14 @@ public abstract class ReaderMapping {
 		StringBuilder token = new StringBuilder();
 
 		FastStringTokenizer fastStringTokenizer;
-		while(token.length() < stringToken.length()) {
-			token.append(stringToken.charAt(token.length()));
 
+		for(Character ch: stringToken.toCharArray()){
+			token.append(ch);
 			boolean flagCurrToken = true;
 			HashSet<String> ns = new HashSet<>();
+			fastStringTokenizer = new FastStringTokenizer(token.toString());
 			for(int r = 0; r < nrows; r++) {
 				String row = rowDelims.get(r);
-				fastStringTokenizer = new FastStringTokenizer(token.toString());
 				fastStringTokenizer.reset(row);
 				ArrayList<String> delimsOfToken = fastStringTokenizer.getTokens();
 				ns.addAll(delimsOfToken);
@@ -479,7 +479,7 @@ public abstract class ReaderMapping {
 			int start = _pos;
 
 			//find start (skip over leading delimiters)
-			while(start != -1 && start < len && _del.equals(_string.substring(start, start + _del.length()))) {
+			while(start != -1 && start + _del.length() < len && _del.equals(_string.substring(start, start + _del.length()))) {
 				start += _del.length();
 				_count++;
 			}
@@ -697,6 +697,8 @@ public abstract class ReaderMapping {
 		HashMap<String, HashSet<String>> tokens = new HashMap<>();
 		HashSet<String> allTokens = new HashSet<>();
 
+		RawRow row = sampleRawRows.get(0);
+		row.resetReserved();
 		for(int c = ncols - 1; c >= 0; c--) {
 			ValueTrimFormat v = VTF[0][c];
 			if(v.isNotSet())
@@ -705,7 +707,6 @@ public abstract class ReaderMapping {
 			String key = (c + firstColIndex) + "," + v.getStringOfActualValue();
 			HashSet<String> token = tokens.get(key);
 
-			RawRow row = sampleRawRows.get(mapRow[0][c]);
 			if(token == null) {
 				token = new HashSet<>();
 				tokens.put(key, token);
@@ -763,6 +764,7 @@ public abstract class ReaderMapping {
 
 	private String verifyRowWithIndexDelim(int rowID, String indexDelim, int labelIndex, int firstColIndex) {
 		RawRow row = sampleRawRows.get(rowID);
+		row.resetReserved();
 		for(int c = ncols - 1; c >= 0; c--) {
 			if(mapRow[rowID][c] != -1) {
 				ValueTrimFormat.NumberTrimFormat vtfColIndex = new ValueTrimFormat.NumberTrimFormat(c + firstColIndex);
@@ -878,7 +880,7 @@ public abstract class ReaderMapping {
 			if(pairValue.getKey() == -1)
 				break;
 
-			String t = rawrow.getRaw().substring(pairCol.getKey() + pairCol.getKey(), pairValue.getKey());
+			String t = rawrow.getRaw().substring(pairCol.getKey() + pairCol.getValue(), pairValue.getKey());
 			if(t.length() > 0)
 				tokens.add(t);
 		}
@@ -886,61 +888,6 @@ public abstract class ReaderMapping {
 
 		return tokens;
 	}
-
-//	class ColIndexValue {
-//		private final ValueTrimFormat.NumberTrimFormat vtfColIndex;
-//		private final ValueTrimFormat vtfColValue;
-//		private boolean mapped;
-//		private String indSep;
-//		private String separator;
-//
-//		public ColIndexValue(int col, ValueTrimFormat value) {
-//			vtfColIndex = new ValueTrimFormat.NumberTrimFormat(col);
-//			vtfColValue = value.getACopy();
-//			indSep = null;
-//			separator = null;
-//			mapped = false;
-//		}
-//
-//		public HashSet<String> getMappedTokens(RawRow row) {
-//			Pair<Integer, Integer> pairCol;
-//			Pair<Integer, Integer> pairValue;
-//			HashSet<String> tokens = new HashSet<>();
-//
-//			do {
-//				pairCol = row.findValue(vtfColIndex);
-//				if(pairCol.getKey() == -1)
-//					break;
-//
-//				pairValue = row.findValue(vtfColValue);
-//				if(pairValue.getKey() == -1)
-//					break;
-//
-//				String t = row.getRaw().substring(pairCol.getKey() + pairCol.getKey(), pairValue.getKey());
-//				if(t.length() > 0)
-//					tokens.add(t);
-//			}
-//			while(true);
-//
-//			return tokens;
-//		}
-//
-//		public void setIndSep(String indSep) {
-//			this.indSep = indSep;
-//		}
-//
-//		public void setSeparator(String separator) {
-//			this.separator = separator;
-//		}
-//
-//		public String getIndSep() {
-//			return indSep;
-//		}
-//
-//		public String getSeparator() {
-//			return separator;
-//		}
-//	}
 
 	public int[][] getMapRow() {
 		return mapRow;

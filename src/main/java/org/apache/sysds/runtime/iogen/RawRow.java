@@ -32,6 +32,8 @@ public class RawRow {
 	private final BitSet numericReserved;
 	private final String numericRaw;
 	private final BitSet reserved;
+	private int numericLastIndex;
+	private int rawLastIndex;
 
 	public RawRow(String raw) {
 		this.raw = raw;
@@ -47,14 +49,39 @@ public class RawRow {
 		numericReserved = new BitSet(numericPositions.size());
 		numericRaw = sbNumericRaw.toString();
 		reserved = new BitSet(raw.length());
+		numericLastIndex = 0;
+		rawLastIndex = 0;
 	}
 
 	public Pair<Integer, Integer> findValue(ValueTrimFormat vtf) {
 		if(vtf instanceof ValueTrimFormat.NumberTrimFormat)
 			return findValue((ValueTrimFormat.NumberTrimFormat) vtf);
 
+		if(vtf instanceof ValueTrimFormat.StringTrimFormat)
+			return findValue((ValueTrimFormat.StringTrimFormat) vtf);
 		return null;
 	}
+
+	private Pair<Integer, Integer> findValue(ValueTrimFormat.StringTrimFormat stf) {
+		ArrayList<Pair<Integer, Integer>> unreserved = getRawUnreservedPositions();
+		Pair<Integer, Integer> result = new Pair<>(-1, 0);
+		for(Pair<Integer, Integer> p : unreserved) {
+			int start = p.getKey();
+			int end = p.getValue();
+			String ntfString = stf.getStringOfActualValue();
+			int length = ntfString.length();
+			int index = raw.indexOf(ntfString, start);
+			if(index != -1 && (index < end - length + 1)) {
+				result.setKey(index);
+				result.setValue(length);
+				rawLastIndex = index;
+				reserved.set(result.getKey(), result.getKey() + result.getValue(), true);
+				break;
+			}
+		}
+		return result;
+	}
+
 
 	private Pair<Integer, Integer> findValue(ValueTrimFormat.NumberTrimFormat ntf) {
 		ArrayList<Pair<Integer, Integer>> unreserved = getUnreservedPositions();
@@ -154,22 +181,25 @@ public class RawRow {
 			}
 		}
 		if(result.getKey() != -1) {
-			for(int i = resultNumeric.getKey()-1; i >=0 ; i--) {
-				if(numericPositions.get(i)>=result.getKey())
+			for(int i = resultNumeric.getKey() - 1; i >= 0; i--) {
+				if(numericPositions.get(i) >= result.getKey())
 					numericReserved.set(i);
 				else
 					break;
 			}
 
-			for(int i = resultNumeric.getKey()+1; i <numericPositions.size() ; i++) {
-				if(numericPositions.get(i)<=result.getKey()+result.getValue())
+			for(int i = resultNumeric.getKey() + 1; i < numericPositions.size(); i++) {
+				if(numericPositions.get(i) <= result.getKey() + result.getValue()) {
 					numericReserved.set(i);
+					numericLastIndex = i;
+				}
 				else
 					break;
 			}
-
+			numericLastIndex = Math.max(numericLastIndex, resultNumeric.getKey() + resultNumeric.getValue());
 			numericReserved.set(resultNumeric.getKey(), resultNumeric.getKey() + resultNumeric.getValue(), true);
 			reserved.set(result.getKey(), result.getKey() + result.getValue(), true);
+			rawLastIndex = result.getKey() + result.getValue();
 		}
 		return result;
 	}
@@ -178,25 +208,64 @@ public class RawRow {
 		ArrayList<Pair<Integer, Integer>> result = new ArrayList<>();
 		int sIndex, eIndex;
 		int size = numericPositions.size();
-		for(int i = 0; i < size; ) {
-			// skip all reserved indexes
-			for(int j = i; j < size; j++) {
-				if(numericReserved.get(j))
-					i++;
-				else
-					break;
+		int[] start = {numericLastIndex, 0};
+		int[] end = {size, numericLastIndex};
+
+		for(int p = 0; p < 2; p++) {
+
+			for(int i = start[p]; i < end[p]; ) {
+				// skip all reserved indexes
+				for(int j = i; j < end[p]; j++) {
+					if(numericReserved.get(j))
+						i++;
+					else
+						break;
+				}
+				sIndex = i;
+				// Extract unreserved position
+				for(int j = i; j < end[p]; j++) {
+					if(!numericReserved.get(j))
+						i++;
+					else
+						break;
+				}
+				eIndex = i;
+				if(sIndex < eIndex)
+					result.add(new Pair<>(sIndex, eIndex - 1));
 			}
-			sIndex = i;
-			// Extract unreserved position
-			for(int j = i; j < size; j++) {
-				if(!numericReserved.get(j))
-					i++;
-				else
-					break;
+		}
+		return result;
+	}
+
+	private ArrayList<Pair<Integer, Integer>> getRawUnreservedPositions() {
+		ArrayList<Pair<Integer, Integer>> result = new ArrayList<>();
+		int sIndex, eIndex;
+		int size = raw.length();
+		int[] start = {rawLastIndex, 0};
+		int[] end = {size, rawLastIndex};
+
+		for(int p = 0; p < 2; p++) {
+
+			for(int i = start[p]; i < end[p]; ) {
+				// skip all reserved indexes
+				for(int j = i; j < end[p]; j++) {
+					if(reserved.get(j))
+						i++;
+					else
+						break;
+				}
+				sIndex = i;
+				// Extract unreserved position
+				for(int j = i; j < end[p]; j++) {
+					if(!reserved.get(j))
+						i++;
+					else
+						break;
+				}
+				eIndex = i;
+				if(sIndex < eIndex)
+					result.add(new Pair<>(sIndex, eIndex - 1));
 			}
-			eIndex = i;
-			if(sIndex < eIndex)
-				result.add(new Pair<>(sIndex, eIndex - 1));
 		}
 		return result;
 	}
@@ -239,6 +308,8 @@ public class RawRow {
 	public void resetReserved() {
 		reserved.set(0, raw.length(), false);
 		numericReserved.set(0, numericPositions.size(), false);
+		numericLastIndex = 0;
+		rawLastIndex = 0;
 	}
 
 	public boolean isMarked() {

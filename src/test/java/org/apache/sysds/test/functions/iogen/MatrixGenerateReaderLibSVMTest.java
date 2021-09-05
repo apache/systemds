@@ -19,6 +19,9 @@
 
 package org.apache.sysds.test.functions.iogen;
 
+import org.apache.sysds.runtime.iogen.RawRow;
+import org.apache.sysds.runtime.iogen.ValueTrimFormat;
+import org.apache.sysds.runtime.matrix.data.Pair;
 import org.junit.Test;
 
 public class MatrixGenerateReaderLibSVMTest extends GenerateReaderTest {
@@ -161,4 +164,6 @@ public class MatrixGenerateReaderLibSVMTest extends GenerateReaderTest {
 		generateRandomLIBSVM(1, 10, 10, -100, 100, 1,",,,,", "::");
 		runGenerateReaderTest();
 	}
+
+
 }

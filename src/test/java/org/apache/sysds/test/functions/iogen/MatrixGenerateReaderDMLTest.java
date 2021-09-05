@@ -22,6 +22,8 @@ package org.apache.sysds.test.functions.iogen;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.conf.CompilerConfig;
+import org.apache.sysds.runtime.iogen.RawRow;
+import org.apache.sysds.runtime.iogen.ValueTrimFormat;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
@@ -58,6 +60,16 @@ public class MatrixGenerateReaderDMLTest extends AutomatedTestBase {
 		double[][] sampleMatrix = new double[][] {{0, 0, 3, 0, 5, 0, 7, 0, 0, 0, 0, +1},
 			{0, 0, 0, 0, 0, 0, 0, 0, 9, 0, 11, -1}};
 		runGenerateReaderTest(Types.ExecMode.SINGLE_NODE, false, data, sampleMatrix);
+	}
+
+
+	@Test
+	public void rowRaw() throws Exception {
+		String s = "1,2,3,4,5,6,7,8,9,10";
+		ValueTrimFormat.NumberTrimFormat vtf = new ValueTrimFormat.NumberTrimFormat(1);
+		RawRow rr = new RawRow(s);
+		rr.findValue(vtf);
+
 	}
 
 

@@ -48,9 +48,6 @@ public abstract class ValueTrimFormat implements Comparable {
 	// Check the value is a not set value
 	public abstract boolean isNotSet();
 
-	// Get Mapping Info
-	public abstract NumberMappingInfo getMappingInfo(String input);
-
 	// Get String of actual value
 	public abstract String getStringOfActualValue();
 
@@ -74,23 +71,8 @@ public abstract class ValueTrimFormat implements Comparable {
 			this.actualValue = actualValue;
 		}
 
-		@Override public NumberMappingInfo getMappingInfo(String input) {
-
-			NumberMappingInfo result = new NumberMappingInfo();
-			if(input.length() < actualValue.length())
-				return result;
-
-			int index = input.indexOf(this.actualValue);
-			if(index > 0) {
-				result.size = actualValue.length();
-				result.mapped = true;
-				result.index = index;
-			}
-			return result;
-		}
-
 		@Override public StringTrimFormat getACopy() {
-			StringTrimFormat copy = new StringTrimFormat(colIndex, new String(actualValue));
+			StringTrimFormat copy = new StringTrimFormat(colIndex, actualValue);
 			return copy;
 		}
 
@@ -120,6 +102,7 @@ public abstract class ValueTrimFormat implements Comparable {
 		private double actualValue; // save the actual value
 		public char S; // signe of value "+" or "-"
 		public char[] N; // array of none zero chars. Example: value = 0.00012345, N = [1,2,3,4,5]
+		private String NString;
 
 		public NumberTrimFormat(int colIndex, double actualValue) {
 			this(actualValue);
@@ -173,193 +156,16 @@ public abstract class ValueTrimFormat implements Comparable {
 						N[index++] = c;
 				}
 			}
+			//---
+			NString = toString();
 		}
 
-		@Override public NumberMappingInfo getMappingInfo(String input) {
-			return getMappingInfo(input, false);
-		}
-
-		public NumberMappingInfo getMappingInfoIncludeZero(String input) {
-			return getMappingInfo(input, true);
-		}
-
-		private NumberMappingInfo getMappingInfo(String input, boolean enableZero) {
-			NumberMappingInfo result = new NumberMappingInfo();
-			if(input.length() < N.length)
-				return result;
-
-			char[] chunkChars = input.toCharArray();
-			int ccIndex = 0;
-			int currentIndex = 0;
-
-			while(currentIndex < chunkChars.length && !result.mapped) {
-
-				StringBuilder actualValueChars = new StringBuilder();
-				int skip = -1;
-				// 1. Choose the signe
-				for(int i = currentIndex; i < chunkChars.length; i++) {
-					skip++;
-					if(S == '-') {
-						if(chunkChars[i] == '-') {
-							actualValueChars.append('-');
-							ccIndex = i + 1;
-							break;
-						}
-					}
-					else if(S == '+') {
-						actualValueChars.append('+');
-						ccIndex = i;
-						if(chunkChars[i] == '+') {
-							ccIndex++;
-						}
-						break;
-					}
-				}
-				if(actualValueChars.length() == 0)
-					actualValueChars.append("+");
-
-				// 2. Skip all zero and '.' until to find a none-zero value
-				int dotPos = -1;
-				int firstNZIndex = -1;
-				for(int i = ccIndex; i < chunkChars.length; i++) {
-					if(chunkChars[i] == '0' || chunkChars[i] == '.') {
-						if(chunkChars[i] == '.') {
-							dotPos = i;
-							if(actualValueChars.charAt(actualValueChars.length() - 1) == '+' || actualValueChars
-								.charAt(actualValueChars.length() - 1) == '-') {
-								actualValueChars.append('0');
-							}
-						}
-						actualValueChars.append(chunkChars[i]);
-					}
-					else {
-						firstNZIndex = i;
-						break;
-					}
-				}
-				// The text value is Zero, i.e., 0.00000, 000000, 000.000
-				if(firstNZIndex == -1) {
-					if(enableZero) {
-						result.size = chunkChars.length;
-						result.mapped = true;
-						result.index = currentIndex + skip;
-						break;
-					}
-					else
-						break;
-				}
-				if(actualValueChars.length() > 1 && enableZero && isEqual(actualValueChars, actualValue)) {
-					result.size = firstNZIndex - currentIndex;
-					result.mapped = true;
-					result.index = currentIndex + skip;
-					break;
-				}
-
-				// look for N char list
-				result.size = firstNZIndex - currentIndex - skip;
-				int currentPos = firstNZIndex;
-				boolean NFlag = false;
-				for(int i = currentPos, j = 0; i < chunkChars.length && j < N.length; i++) {
-					char cc = chunkChars[i];
-					char c = N[j];
-					if(cc == '.' && dotPos == -1) {
-						dotPos = currentIndex + result.size;
-						result.size++;
-						actualValueChars.append(cc);
-						currentPos++;
-						continue;
-					}
-					if(cc == c) {
-						result.size++;
-						actualValueChars.append(cc);
-					}
-					else {
-						NFlag = false;
-						break;
-					}
-					currentPos++;
-					j++;
-					if(j == N.length)
-						NFlag = true;
-				}
-
-				// N char list matched, So, look for science values or "0" values
-				if(NFlag) {
-					if(isEqual(actualValueChars, actualValue)) {
-						result.mapped = true;
-						result.index = currentIndex + skip;
-						break;
-					}
-					else if(currentPos == chunkChars.length)
-						break;
-					else {
-						boolean eFlag = false;
-						for(int i = currentPos; i < chunkChars.length; i++) {
-							char vChar = Character.toUpperCase(chunkChars[i]);
-							if(!eFlag) {
-								if(vChar == '.' && dotPos != -1) {
-									currentIndex++;
-									break;
-								}
-								else if(vChar == '.' || vChar == '0') {
-									actualValueChars.append(vChar);
-									result.size++;
-									if(isEqual(actualValueChars, actualValue)) {
-										result.mapped = true;
-										result.index = currentIndex + skip;
-										break;
-									}
-								}
-								// check for "E/e"
-								else if(vChar == 'E') {
-									eFlag = true;
-									actualValueChars.append('E');
-									result.size++;
-									// check for "+/-"
-									if((i + 1) < chunkChars.length && (chunkChars[i + 1] == '+' || chunkChars[i + 1] == '-')) {
-										actualValueChars.append(chunkChars[i + 1]);
-										actualValueChars.append('0');
-										i++;
-										result.size++;
-									}
-								}
-								else {
-									currentIndex++;
-									break;
-								}
-							}
-							else {
-								if(Character.isDigit(vChar)) {
-									actualValueChars.append(vChar);
-									result.size++;
-									if(isEqual(actualValueChars, actualValue)) {
-										result.mapped = true;
-										result.index = currentIndex + skip;
-										break;
-									}
-								}
-								else {
-									break;
-								}
-							}
-						}
-					}
-				}
-				else {
-					currentIndex++;
-					result.size = -1;
-					result.index = -1;
-				}
-			}
-			return result;
-		}
-
-		private boolean isEqual(StringBuilder valueChars, double value) {
-			return Double.parseDouble(valueChars.toString()) == value;
+		public String getNString() {
+			return NString;
 		}
 
 		@Override public String toString() {
-			StringBuilder s = new StringBuilder(S + "");
+			StringBuilder s = new StringBuilder();
 			for(Character c : N)
 				s.append(c);
 			return s.toString();
@@ -413,21 +219,6 @@ public abstract class ValueTrimFormat implements Comparable {
 
 		public BooleanTrimFormat(boolean actualValue) {
 			this.actualValue = actualValue;
-		}
-
-		@Override public NumberMappingInfo getMappingInfo(String input) {
-
-			NumberMappingInfo result = new NumberMappingInfo();
-			if(input.length() < 1)
-				return result;
-
-			int index = input.indexOf(this.actualValue + "");
-			if(index > 0) {
-				result.size = 1;//actualValue.length();
-				result.mapped = true;
-				result.index = index;
-			}
-			return result;
 		}
 
 		@Override public BooleanTrimFormat getACopy() {

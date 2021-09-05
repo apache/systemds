@@ -19,6 +19,9 @@
 
 package org.apache.sysds.test.functions.iogen;
 
+import org.apache.sysds.runtime.iogen.RawRow;
+import org.apache.sysds.runtime.iogen.ValueTrimFormat;
+import org.apache.sysds.runtime.matrix.data.Pair;
 import org.junit.Test;
 
 import java.util.Random;
@@ -84,7 +87,7 @@ public class MatrixGenerateReaderCSVTest extends GenerateReaderTest {
 	@Test
 	public void test4() throws Exception {
 		String[] naString = {"Nan", "NAN", "", "inf", "null", "NULL"};
-		generateRandomCSV(50, 5, -10, 10, 0.5, ",,", naString);
+		generateRandomCSV(50, 50, -10, 10, 0.5, ",,", naString);
 		runGenerateReaderTest();
 	}
 
@@ -148,7 +151,7 @@ public class MatrixGenerateReaderCSVTest extends GenerateReaderTest {
 	@Test
 	public void test13() throws Exception {
 		String[] naString = {"Nan", "NAN", "", "inf", "null", "NULL"};
-		generateRandomCSV(5, 20, -10, 10, 0.5, ",,", naString);
+		generateRandomCSV(1000, 2000, -10, 10, 0.5, ",,", naString);
 		runGenerateReaderTest();
 	}
 }

@@ -19,17 +19,18 @@
 
 package org.apache.sysds.runtime.iogen;
 
+import com.google.gson.Gson;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.runtime.io.IOUtilFunctions;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.matrix.data.Pair;
 
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.BitSet;
 import java.util.HashSet;
 import java.util.HashMap;
 import java.util.Arrays;
@@ -39,12 +40,11 @@ public abstract class ReaderMapping {
 
 	protected int[][] mapRow;
 	protected int[][] mapCol;
-	protected int[][] mapSize;
 	protected boolean symmetric;
 	protected boolean skewSymmetric;
 	protected boolean isUpperTriangular;
 	protected int skewCoefficient;
-	protected final ArrayList<String> sampleRawRows;
+	protected final ArrayList<RawRow> sampleRawRows;
 
 	protected boolean mapped;
 	protected static int nrows;
@@ -61,7 +61,7 @@ public abstract class ReaderMapping {
 		int nlines = 0;
 		sampleRawRows = new ArrayList<>();
 		while((value = br.readLine()) != null) {
-			sampleRawRows.add(value);
+			sampleRawRows.add(new RawRow(value));
 			nlines++;
 		}
 		this.nlines = nlines;
@@ -97,8 +97,7 @@ public abstract class ReaderMapping {
 		}
 
 		// Convert: convert each value of a sample matrix to NumberTrimFormat
-		@Override
-		protected ValueTrimFormat.NumberTrimFormat[][] convertSampleTOValueTrimFormat() {
+		@Override protected ValueTrimFormat.NumberTrimFormat[][] convertSampleTOValueTrimFormat() {
 			ValueTrimFormat.NumberTrimFormat[][] result = new ValueTrimFormat.NumberTrimFormat[nrows][ncols];
 			for(int r = 0; r < nrows; r++)
 				for(int c = 0; c < ncols; c++) {
@@ -172,8 +171,7 @@ public abstract class ReaderMapping {
 		}
 
 		// Convert: convert each value of a sample Frame to ValueTrimFormat(Number, String, and Boolean)
-		@Override
-		protected ValueTrimFormat[][] convertSampleTOValueTrimFormat() {
+		@Override protected ValueTrimFormat[][] convertSampleTOValueTrimFormat() {
 			ValueTrimFormat[][] result = new ValueTrimFormat[nrows][ncols];
 			for(int r = 0; r < nrows; r++)
 				for(int c = 0; c < ncols; c++) {
@@ -231,9 +229,9 @@ public abstract class ReaderMapping {
 
 	public void runMapping() throws Exception {
 
-		boolean isMapped = findMapping();
+		mapped = findMapping();
 		boolean schemaNumeric = isSchemaNumeric();
-		if(!isMapped ) {
+		if(!mapped) {
 			// Clone Sample Matrix/Frame
 			cloneSample();
 
@@ -248,8 +246,9 @@ public abstract class ReaderMapping {
 
 					if(skewSymmetric) {
 						if(r != c)
-							skewSymmetric = ((ValueTrimFormat.NumberTrimFormat)VTF[r][c]).getActualValue() ==
-								((ValueTrimFormat.NumberTrimFormat)VTF[c][r]).getActualValue() * (-1);
+							skewSymmetric = ((ValueTrimFormat.NumberTrimFormat) VTF[r][c])
+								.getActualValue() == ((ValueTrimFormat.NumberTrimFormat) VTF[c][r])
+								.getActualValue() * (-1);
 						else
 							skewSymmetric = VTF[r][c].isNotSet();
 					}
@@ -260,15 +259,15 @@ public abstract class ReaderMapping {
 				// Lower Triangular
 				isUpperTriangular = false;
 				transferSampleTriangular(isUpperTriangular);
-				isMapped = findMapping();
+				mapped = findMapping();
 
 				// Upper Triangular
-				if(!isMapped) {
+				if(!mapped) {
 					isUpperTriangular = true;
 					retrieveSample();
 					//sampleMatrix = sampleMatrixClone;
 					transferSampleTriangular(isUpperTriangular);
-					isMapped = findMapping();
+					mapped = findMapping();
 				}
 			}
 			// Skew-Symmetric check:
@@ -277,52 +276,47 @@ public abstract class ReaderMapping {
 				isUpperTriangular = false;
 				skewCoefficient = 1;
 				transferSampleTriangular(isUpperTriangular);
-				isMapped = findMapping();
+				mapped = findMapping();
 
 				// Lower Triangular Skew
-				if(!isMapped) {
+				if(!mapped) {
 					skewCoefficient = -1;
 					transferSampleSkew(skewCoefficient);
 					VTF = convertSampleTOValueTrimFormat();
-					isMapped = findMapping();
+					mapped = findMapping();
 				}
 
 				// Upper Triangular
-				if(!isMapped) {
+				if(!mapped) {
 					isUpperTriangular = true;
 					skewCoefficient = 1;
 					retrieveSample();
 					transferSampleTriangular(isUpperTriangular);
 					VTF = convertSampleTOValueTrimFormat();
-					isMapped = findMapping();
+					mapped = findMapping();
 				}
 				// Upper Triangular Skew
-				if(!isMapped) {
+				if(!mapped) {
 					skewCoefficient = -1;
 					transferSampleSkew(skewCoefficient);
 					VTF = convertSampleTOValueTrimFormat();
-					isMapped = findMapping();
+					mapped = findMapping();
 				}
 			}
 		}
-		mapped = isMapped;
 	}
 
 	protected boolean findMapping() {
 
 		mapRow = new int[nrows][ncols];
 		mapCol = new int[nrows][ncols];
-		mapSize = new int[nrows][ncols];
 
 		// Set "-1" as default value for all defined matrix
 		for(int r = 0; r < nrows; r++)
 			for(int c = 0; c < ncols; c++)
-				mapRow[r][c] = mapCol[r][c] = mapSize[r][c] = -1;
+				mapRow[r][c] = mapCol[r][c] = -1;
 
 		int itRow = 0;
-		ArrayList<Integer> colIndexes = new ArrayList<>();
-		ArrayList<Integer> colIndexSizes = new ArrayList<>();
-
 		for(int r = 0; r < nrows; r++) {
 			ValueTrimFormat[] vtfRow = new ValueTrimFormat[ncols];
 			for(int i = 0; i < ncols; i++) {
@@ -339,14 +333,11 @@ public abstract class ReaderMapping {
 				int c = vtf.getColIndex();
 				HashSet<Integer> checkedLines = new HashSet<>();
 				while(checkedLines.size() < nlines) {
-					String row = sampleRawRows.get(itRow);
-					NumberMappingInfo nmi = getCellMapping(row, vtf, colIndexes, colIndexSizes);
-					if(nmi.mapped) {
+					RawRow row = sampleRawRows.get(itRow);
+					Pair<Integer, Integer> mi = row.findValue(vtf);
+					if(mi.getKey() != -1) {
 						mapRow[r][c] = itRow;
-						mapCol[r][c] = nmi.index;
-						mapSize[r][c] = nmi.size;
-						colIndexes.add(nmi.index);
-						colIndexSizes.add(nmi.size);
+						mapCol[r][c] = mi.getKey();
 						break;
 					}
 					else {
@@ -354,17 +345,6 @@ public abstract class ReaderMapping {
 						itRow++;
 						if(itRow == nlines)
 							itRow = 0;
-						colIndexes.clear();
-						colIndexSizes.clear();
-
-						for(int i = 0; i < nrows; i++) {
-							for(int j = 0; j < ncols; j++) {
-								if(mapRow[i][j] == itRow) {
-									colIndexes.add(mapCol[i][j]);
-									colIndexSizes.add(mapSize[i][j]);
-								}
-							}
-						}
 					}
 				}
 			}
@@ -375,36 +355,6 @@ public abstract class ReaderMapping {
 				if(mapRow[r][c] == -1 && !VTF[r][c].isNotSet())
 					flagMap = false;
 		return flagMap;
-	}
-
-	// Looking for a value(ValueTrimFormat) on a String
-	public NumberMappingInfo getCellMapping(String row, ValueTrimFormat vtf, ArrayList<Integer> reservedIndex,
-		ArrayList<Integer> reservedSize) {
-
-		NumberMappingInfo result = null;
-		ArrayList<String> rowChunks = new ArrayList<>();
-		ArrayList<Integer> baseIndexes = new ArrayList<>();
-
-		BitSet bitSet = new BitSet(row.length());
-		for(int i = 0; i < reservedIndex.size(); i++) {
-			bitSet.set(reservedIndex.get(i), reservedIndex.get(i) + reservedSize.get(i));
-		}
-		getChunksOFString(row, bitSet, rowChunks, baseIndexes);
-
-		int rci = -1;
-		for(String rc : rowChunks) {
-			rci++;
-			result = vtf.getMappingInfo(rc);
-			if(result.mapped)
-				break;
-		}
-		if(result == null)
-			result = new NumberMappingInfo();
-
-		if(result.mapped) {
-			result.index += baseIndexes.get(rci);
-		}
-		return result;
 	}
 
 	public final CustomProperties getFormatProperties() throws Exception {
@@ -418,6 +368,9 @@ public abstract class ReaderMapping {
 		else {
 			ffp = getFileFormatPropertiesOfRIMapping();
 		}
+
+		Gson gson = new Gson();
+		System.out.println(gson.toJson(ffp));
 
 		return ffp;
 	}
@@ -453,100 +406,25 @@ public abstract class ReaderMapping {
 		*/
 	public final CustomProperties getFileFormatPropertiesOfRRCRMapping() {
 
-		int nrows = mapRow.length;
-		int ncols = mapRow[0].length;
-
-		String[][] delims = new String[nrows][ncols + 1];
-		for(int r = 0; r < nrows; r++) {
-			int[] rCol = new int[ncols];
-			System.arraycopy(mapCol[r], 0, rCol, 0, ncols);
-			String row = sampleRawRows.get(r);
-
-			HashMap<Integer, Integer> ciMap = new HashMap<>();
-			HashMap<Integer, Integer> icMap = new HashMap<>();
-			HashMap<Integer, String> idMap = new HashMap<>();
-			for(int i = 0; i < ncols; i++) {
-				if(rCol[i] == -1)
-					continue;
-				ciMap.put(i, rCol[i]);
-				icMap.put(rCol[i], i);
-			}
-
-			boolean remindRowString = false;
-			if(icMap.get(row.length() - 1) == null) {
-				ciMap.put(ncols, row.length() - 1);
-				icMap.put(row.length() - 1, ncols);
-				remindRowString = true;
-			}
-			Arrays.sort(rCol);
-			int sIndex = 0;
-			int eIndex;
-			String sValue = "";
-			double value = 0;
-			int colIndex = -1;
-			for(Integer i : rCol) {
-				if(i == -1) {
-					continue;
-				}
-				eIndex = i;
-				String subRow = row.substring(sIndex, eIndex);
-
-				if(sIndex != 0 && subRow.length() >= 1) {
-					int mergeCount = mergeDelimiters(value, sValue, subRow);
-					if(mergeCount > 0) {
-						mapSize[r][colIndex] += mergeCount;
-						subRow = subRow.substring(mergeCount);
-					}
-				}
-
-				colIndex = icMap.get(i);
-				sValue = row.substring(mapCol[r][colIndex], mapCol[r][colIndex] + mapSize[r][colIndex]).toLowerCase();
-				value = Double.parseDouble(sValue);
-				idMap.put(i, subRow);
-				sIndex = eIndex + mapSize[r][colIndex];
-			}
-			if(remindRowString) {
-				String subRow = row.substring(sIndex);
-				int mergeCount = mergeDelimiters(value, sValue, subRow);
-				if(mergeCount > 0) {
-					mapSize[r][colIndex] += mergeCount;
-					subRow = subRow.substring(mergeCount);
-				}
-				idMap.put(row.length() - 1, subRow);
-			}
-
-			for(int c = 0; c <= ncols; c++) {
-				Integer cim = ciMap.get(c);
-				String d = "";
-				if(cim != null)
-					d = idMap.get(cim);
-				delims[r][c] = d;
-			}
-		}
-
 		ArrayList<String> rowDelims = new ArrayList<>();
 		HashSet<String> naString = new HashSet<>();
-		int maxSizeOfToken = 0;
 		String stringToken = null;
 
 		// append all delimiters as a string and then tokenize it
 		for(int r = 0; r < nrows; r++) {
-			StringBuilder sbRow = new StringBuilder();
-			for(int c = 0; c < ncols + 1; c++) {
-				sbRow.append(delims[r][c]);
-				if(maxSizeOfToken == 0 || (delims[r][c].length() > 0 && delims[r][c].length() < maxSizeOfToken)) {
-					maxSizeOfToken = delims[r][c].length();
-					stringToken = delims[r][c];
-				}
-			}
-			rowDelims.add(sbRow.toString());
+			RawRow rr = sampleRawRows.get(r);
+			Pair<String, String> pair = rr.getDelims();
+			rowDelims.add(pair.getValue());
+			if(stringToken == null || (pair.getKey().length() > 0 && stringToken.length() > pair.getKey().length()))
+				stringToken = pair.getKey();
 		}
-
+		if(stringToken.length() == 0)
+			stringToken = rowDelims.get(0);
 		String uniqueDelimiter = null;
 		StringBuilder token = new StringBuilder();
 
 		FastStringTokenizer fastStringTokenizer;
-		while(token.length() < maxSizeOfToken) {
+		while(token.length() < stringToken.length()) {
 			token.append(stringToken.charAt(token.length()));
 
 			boolean flagCurrToken = true;
@@ -717,27 +595,23 @@ public abstract class ReaderMapping {
 	private CustomProperties getDelimsOfMapping(int firstRowIndex, int firstColIndex) throws Exception {
 
 		HashSet<Integer> checkedRow = new HashSet<>();
-		RowColValue[] mapRCV = new RowColValue[(int) nnz];
-
-		boolean rcvMapped = true;
-		int nzIndex = 0;
+		boolean rcvMapped = false;
 		for(int r = nrows - 1; r >= 0 && rcvMapped; r--) {
 			for(int c = ncols - 1; c >= 0 && rcvMapped; c--) {
 				if(VTF[r][c].isNotSet())
 					continue;
-				RowColValue rcv = new RowColValue(r + firstRowIndex, c + firstColIndex, VTF[r][c]);
 				int index = 0;
+				rcvMapped = false;
 				do {
 					if(checkedRow.contains(index))
 						continue;
-					String row = sampleRawRows.get(index);
-					if(rcv.isMapped(row)) {
+					RawRow row = sampleRawRows.get(index);
+					if(isMapRowColValue(row, r + firstRowIndex, c + firstColIndex, VTF[r][c])) {
 						checkedRow.add(index);
-						mapRCV[nzIndex++] = rcv;
+						rcvMapped = true;
 					}
 				}
-				while(++index < nlines && !rcv.isMapped());
-				rcvMapped = rcv.isMapped();
+				while(++index < nlines && !rcvMapped);
 			}
 		}
 
@@ -746,14 +620,14 @@ public abstract class ReaderMapping {
 		}
 		else {
 			HashSet<String> delims = new HashSet<>();
-			mapRCV[0].findDelims();
-			delims.add(mapRCV[0].colDelim);
-			delims.add(mapRCV[0].valueDelim);
-			int minDelimLength = Math.min(mapRCV[0].colDelim.length(), mapRCV[0].valueDelim.length());
+			int minDelimLength = -1;
 			for(int i = 1; i < nnz; i++) {
-				mapRCV[i].findDelims();
-				delims.add(mapRCV[i].colDelim);
-				delims.add(mapRCV[i].valueDelim);
+				RawRow rr = sampleRawRows.get(i);
+				if(rr.isMarked()) {
+					Pair<HashSet<String>, Integer> pair = rr.getDelimsSet();
+					delims.addAll(pair.getKey());
+					minDelimLength = minDelimLength == -1 ? pair.getValue() : Math.min(minDelimLength, pair.getValue());
+				}
 			}
 
 			String uniqueDelim = null;
@@ -831,14 +705,12 @@ public abstract class ReaderMapping {
 			String key = (c + firstColIndex) + "," + v.getStringOfActualValue();
 			HashSet<String> token = tokens.get(key);
 
-			ColIndexValue civ = new ColIndexValue(c + firstColIndex, v);
-			String row = sampleRawRows.get(mapRow[0][c]);
-
+			RawRow row = sampleRawRows.get(mapRow[0][c]);
 			if(token == null) {
 				token = new HashSet<>();
 				tokens.put(key, token);
 			}
-			token.addAll(civ.getMappedTokens(row));
+			token.addAll(getColIndexValueMappedTokens(row, c + firstColIndex, v ));
 			allTokens.addAll(token);
 		}
 
@@ -890,98 +762,35 @@ public abstract class ReaderMapping {
 	}
 
 	private String verifyRowWithIndexDelim(int rowID, String indexDelim, int labelIndex, int firstColIndex) {
-		String row = sampleRawRows.get(rowID);
-		int length = row.length();
-		BitSet bitSet = new BitSet(length);
-		ArrayList<String> stringChunks = new ArrayList<>();
-		ArrayList<Integer> baseIndexes = new ArrayList<>();
-
+		RawRow row = sampleRawRows.get(rowID);
 		for(int c = ncols - 1; c >= 0; c--) {
 			if(mapRow[rowID][c] != -1) {
 				ValueTrimFormat.NumberTrimFormat vtfColIndex = new ValueTrimFormat.NumberTrimFormat(c + firstColIndex);
+				ValueTrimFormat.StringTrimFormat vtfIndexDelim = new ValueTrimFormat.StringTrimFormat(indexDelim);
 				ValueTrimFormat vtfColValue = VTF[rowID][c];
 
-				stringChunks.clear();
-				baseIndexes.clear();
-				getChunksOFString(row, bitSet, stringChunks, baseIndexes);
-				boolean itemVerify = false;
+				Pair<Integer, Integer> pairCol;
+				Pair<Integer, Integer> pairDelim;
+				Pair<Integer, Integer> pairValue;
+				if(labelIndex - firstColIndex != c) {
 
-				for(int i = 0; i < stringChunks.size() && !itemVerify; i++) {
-					String chunk = stringChunks.get(i);
-					int sPosition = 0;
-					while(sPosition < chunk.length()) {
-						String subChunk = chunk.substring(sPosition);
+					// check Index text
+					pairCol = row.findValue(vtfColIndex);
+					if(pairCol.getKey() == -1)
+						return null;
 
-						NumberMappingInfo nmiIndex;
-						if(labelIndex - firstColIndex != c) {
-
-							// check Index text
-							nmiIndex = vtfColIndex.isNotSet() ? vtfColIndex
-								.getMappingInfoIncludeZero(subChunk) : vtfColIndex.getMappingInfo(subChunk);
-
-							if(!nmiIndex.mapped)
-								break;
-
-							nmiIndex.size += mergeDelimiters(vtfColIndex.getActualValue(),
-								subChunk.substring(nmiIndex.index, nmiIndex.index + nmiIndex.size),
-								subChunk.substring(nmiIndex.index + nmiIndex.size));
-
-							subChunk = subChunk.substring(nmiIndex.index + nmiIndex.size);
-
-							// check the delimiter text
-							if(indexDelim.length() > subChunk.length()) {
-								sPosition++;
-								continue;
-							}
-
-							String chunkDelim = subChunk.substring(0, indexDelim.length());
-
-							if(!indexDelim.equals(chunkDelim)) {
-								sPosition++;
-								continue;
-							}
-							subChunk = subChunk.substring(indexDelim.length());
-						}
-						else {
-							nmiIndex = new NumberMappingInfo();
-							nmiIndex.index = 0;
-							nmiIndex.size = 0;
-							nmiIndex.mapped = true;
-						}
-
-						// check the value text
-						NumberMappingInfo miValue = vtfColValue.getMappingInfo(subChunk);
-						if(vtfColValue instanceof ValueTrimFormat.NumberTrimFormat) {
-							miValue.size += mergeDelimiters(
-								((ValueTrimFormat.NumberTrimFormat) vtfColValue).getActualValue(),
-								subChunk.substring(miValue.index, miValue.index + miValue.size),
-								subChunk.substring(miValue.index + miValue.size));
-						}
-
-						if(miValue.mapped) {
-							itemVerify = true;
-							nmiIndex.index += sPosition + baseIndexes.get(i);
-							if(labelIndex - firstColIndex != c) {
-								miValue.index += indexDelim.length();
-							}
-							miValue.index += nmiIndex.index + nmiIndex.size;
-							bitSet.set(nmiIndex.index, miValue.index + miValue.size);
-							break;
-						}
-						sPosition++;
-					}
+					// check the delimiter text
+					pairDelim = row.findValue(vtfIndexDelim);
+					if(pairDelim.getKey() == -1)
+						return null;
 				}
-
-				if(!itemVerify)
+				// check the value text
+				pairValue = row.findValue(vtfColValue);
+				if(pairValue.getKey() == -1)
 					return null;
 			}
 		}
-
-		stringChunks.clear();
-		baseIndexes.clear();
-		getChunksOFString(row, bitSet, stringChunks, baseIndexes);
-		HashSet<String> separators = new HashSet<>();
-		separators.addAll(stringChunks);
+		HashSet<String> separators = row.getDelimsSet().getKey();
 		String separator = separators.size() == 1 ? separators.iterator().next() : null;
 
 		if(separator == null)
@@ -990,61 +799,24 @@ public abstract class ReaderMapping {
 		return separator;
 	}
 
-	private void getChunksOFString(String row, BitSet bitSet, ArrayList<String> stringChunks,
-		ArrayList<Integer> baseIndexes) {
+	private boolean isMapRowColValue(RawRow rawrow, int row, int col, ValueTrimFormat value) {
+		ValueTrimFormat.NumberTrimFormat vtfRow = new ValueTrimFormat.NumberTrimFormat(row);
+		ValueTrimFormat.NumberTrimFormat vtfCol = new ValueTrimFormat.NumberTrimFormat(col);
+		ValueTrimFormat vtfValue = value.getACopy();
+		boolean mapped = true;
 
-		int length = row.length();
-		int sIndex, eIndex;
-		for(int i = 0; i < length; ) {
-			// skip all reserved indexes
-			for(int j = i; j < length; j++) {
-				if(bitSet.get(j))
-					i++;
-				else
-					break;
-			}
-			sIndex = i;
-			// Extract unreserved sub text
-			for(int j = i; j < length; j++) {
-				if(!bitSet.get(j))
-					i++;
-				else
-					break;
-			}
-			eIndex = i;
-			String subRow = row.substring(sIndex, eIndex);
+		byte hasZero = 0b000;
+		if(vtfRow.isNotSet())
+			hasZero |= 0b100;
 
-			if(subRow.length() > 0) {
-				stringChunks.add(subRow);
-				baseIndexes.add(sIndex);
-			}
-		}
-	}
+		if(vtfCol.isNotSet())
+			hasZero |= 0b010;
 
-	class RowColValue {
-		private final ValueTrimFormat.NumberTrimFormat vtfRow;
-		private final ValueTrimFormat.NumberTrimFormat vtfCol;
-		private final ValueTrimFormat vtfValue;
-		private NumberMappingInfo miRow;
-		private NumberMappingInfo miCol;
-		private NumberMappingInfo miValue;
-		private boolean mapped;
-		private String rowString;
+		if(vtfValue.isNotSet())
+			hasZero |= 0b001;
 
-		private String rowDelim;
-		private String colDelim;
-		private String valueDelim;
-
-		public RowColValue(int row, int col, ValueTrimFormat value) {
-			rowString = null;
-			// Row, Col, Value
-			vtfRow = new ValueTrimFormat.NumberTrimFormat(row);
-			vtfCol = new ValueTrimFormat.NumberTrimFormat(col);
-			vtfValue = value.getACopy();
-			mapped = false;
-		}
-
-		/* valid formats:
+		ValueTrimFormat[] order = new ValueTrimFormat[3];
+	/* valid formats:
 		   Row, Col, Value
 		1. 0  , 0  , Value  >> 110 -> 6
 		2. 0  , col, Value  >> 100 -> 4
@@ -1052,227 +824,123 @@ public abstract class ReaderMapping {
 		4. row, col, value  >> 000 -> 0
 		-----------------   >> otherwise the value is not set.
 		 */
-		public boolean isMapped(String row) {
+		switch(hasZero) {
+			case 0:
+				order[0] = vtfRow;
+				order[1] = vtfCol;
+				order[2] = vtfValue;
+				break;
 
-			byte hasZero = 0b000;
-			if(vtfRow.isNotSet())
-				hasZero |= 0b100;
+			case 2:
+				order[0] = vtfRow;
+				order[1] = vtfValue;
+				order[2] = vtfCol;
+				break;
 
-			if(vtfCol.isNotSet())
-				hasZero |= 0b010;
+			case 4:
+				order[0] = vtfCol;
+				order[1] = vtfValue;
+				order[2] = vtfRow;
+				break;
 
-			if(vtfValue.isNotSet())
-				hasZero |= 0b001;
-
-			switch(hasZero) {
-				case 0:
-					miRow = vtfRow.getMappingInfo(row);
-					if(!miRow.mapped)
-						return false;
-
-					miCol = vtfCol.getMappingInfo(row.substring(miRow.index + miRow.size));
-					if(!miCol.mapped)
-						return false;
-					miCol.index += miRow.index + miRow.size;
-
-					miValue = vtfValue.getMappingInfo(row.substring(miCol.index + miCol.size));
-					if(!miValue.mapped)
-						return false;
-					miValue.index += miCol.index + miCol.size;
-					break;
-
-				case 2:
-					miRow = vtfRow.getMappingInfo(row);
-					if(!miRow.mapped)
-						return false;
-
-					miValue = vtfValue.getMappingInfo(row.substring(miRow.index + miRow.size));
-					if(!miValue.mapped)
-						return false;
-					miValue.index += miRow.index + miRow.size;
-
-					miCol = vtfCol.getMappingInfoIncludeZero(row.substring(miRow.index + miRow.size, miValue.index));
-					if(!miCol.mapped)
-						return false;
-					miCol.index += miRow.index + miRow.size;
-					break;
-
-				case 4:
-					miCol = vtfCol.getMappingInfo(row);
-					if(!miCol.mapped)
-						return false;
-
-					miValue = vtfValue.getMappingInfo(row.substring(miCol.index + miCol.size));
-					if(!miValue.mapped)
-						return false;
-					miValue.index += miCol.index + miCol.size;
-
-					miRow = vtfRow.getMappingInfoIncludeZero(row.substring(0, miCol.index));
-					if(!miRow.mapped)
-						return false;
-					break;
-
-				case 6:
-					miValue = vtfValue.getMappingInfo(row);
-					if(!miValue.mapped)
-						return false;
-
-					miRow = vtfRow.getMappingInfoIncludeZero(row.substring(0, miValue.index));
-					if(!miRow.mapped)
-						return false;
-
-					miCol = vtfCol.getMappingInfoIncludeZero(row.substring(miRow.index + miRow.size));
-					if(!miCol.mapped)
-						return false;
-					miCol.index += miRow.index + miRow.size;
-					break;
-
-				default:
-					throw new RuntimeException("Not set values can't be find on a string");
+			case 6:
+				order[0] = vtfValue;
+				order[1] = vtfRow;
+				order[2] = vtfCol;
+				break;
+			default:
+				throw new RuntimeException("Not set values can't be find on a string");
+		}
+		for(ValueTrimFormat vtf : order) {
+			if(rawrow.findValue(vtf).getKey() == -1) {
+				mapped = false;
+				break;
 			}
-			mapped = true;
-			rowString = row;
-			return true;
 		}
+		return mapped;
 
-		public boolean isMapped() {
-			return mapped;
-		}
-
-		public void findDelims() throws Exception {
-			if(!isMapped())
-				throw new Exception("The values didn't match !!");
-
-			rowDelim = rowString.substring(0, miRow.index);
-			miRow.size += mergeDelimiters(vtfRow.getActualValue(),
-				rowString.substring(miRow.index, miRow.index + miRow.size),
-				rowString.substring(miRow.index + miRow.size));
-
-			colDelim = rowString.substring(miRow.index + miRow.size, miCol.index);
-			miCol.size += mergeDelimiters(vtfCol.getActualValue(),
-				rowString.substring(miCol.index, miCol.index + miCol.size),
-				rowString.substring(miCol.index + miCol.size));
-
-			valueDelim = rowString.substring(miCol.index + miCol.size, miValue.index);
-
-			if(vtfValue instanceof ValueTrimFormat.NumberTrimFormat) {
-				miValue.size += mergeDelimiters(((ValueTrimFormat.NumberTrimFormat) vtfValue).getActualValue(),
-					rowString.substring(miValue.index, miValue.index + miValue.size),
-					rowString.substring(miValue.index + miValue.size));
-			}
-
-		}
-
-		public String getRowDelim() {
-			return rowDelim;
-		}
-
-		public String getColDelim() {
-			return colDelim;
-		}
-
-		public String getValueDelim() {
-			return valueDelim;
-		}
-
-		public ValueTrimFormat.NumberTrimFormat getVtfRow() {
-			return vtfRow;
-		}
-
-		public ValueTrimFormat.NumberTrimFormat getVtfCol() {
-			return vtfCol;
-		}
-
-		public ValueTrimFormat getVtfValue() {
-			return vtfValue;
-		}
 	}
 
-	class ColIndexValue {
-		private final ValueTrimFormat.NumberTrimFormat vtfColIndex;
-		private final ValueTrimFormat vtfColValue;
-		private NumberMappingInfo miColIndex;
-		private NumberMappingInfo miColValue;
-		private boolean mapped;
-		private String indSep;
-		private String separator;
+	private HashSet<String> getColIndexValueMappedTokens(RawRow rawrow, int col, ValueTrimFormat value) {
+		ValueTrimFormat.NumberTrimFormat vtfColIndex = new ValueTrimFormat.NumberTrimFormat(col);
+		ValueTrimFormat vtfColValue = value.getACopy();
 
-		public ColIndexValue(int col, ValueTrimFormat value) {
-			vtfColIndex = new ValueTrimFormat.NumberTrimFormat(col);
-			vtfColValue = value.getACopy();
-			indSep = null;
-			separator = null;
-			mapped = false;
-			miColIndex = null;
-			miColValue = null;
+		Pair<Integer, Integer> pairCol;
+		Pair<Integer, Integer> pairValue;
+		HashSet<String> tokens = new HashSet<>();
+
+		do {
+			pairCol = rawrow.findValue(vtfColIndex);
+			if(pairCol.getKey() == -1)
+				break;
+
+			pairValue = rawrow.findValue(vtfColValue);
+			if(pairValue.getKey() == -1)
+				break;
+
+			String t = rawrow.getRaw().substring(pairCol.getKey() + pairCol.getKey(), pairValue.getKey());
+			if(t.length() > 0)
+				tokens.add(t);
 		}
+		while(true);
 
-		public ColIndexValue(ValueTrimFormat.NumberTrimFormat vtfColIndex, ValueTrimFormat vtfColValue,
-			NumberMappingInfo miColIndex, NumberMappingInfo miColValue, String indSep) {
-			this.vtfColIndex = vtfColIndex;
-			this.vtfColValue = vtfColValue;
-			this.miColIndex = miColIndex;
-			this.miColValue = miColValue;
-			this.indSep = indSep;
-		}
-
-		public HashSet<String> getMappedTokens(String row) {
-
-			int sPosition = 0;
-			HashSet<String> tokens = new HashSet<>();
-
-			while(sPosition < row.length()) {
-				NumberMappingInfo nmiIndex;
-
-				nmiIndex = vtfColIndex.isNotSet() ? vtfColIndex
-					.getMappingInfoIncludeZero(row.substring(sPosition)) : vtfColIndex
-					.getMappingInfo(row.substring(sPosition));
-				if(!nmiIndex.mapped) {
-					break;
-				}
-				nmiIndex.index += sPosition;
-
-				nmiIndex.size += mergeDelimiters(vtfColIndex.getActualValue(),
-					row.substring(+nmiIndex.index, nmiIndex.index + nmiIndex.size),
-					row.substring(nmiIndex.index + nmiIndex.size));
-
-				NumberMappingInfo nmiValue = vtfColValue.getMappingInfo(row.substring(nmiIndex.index + nmiIndex.size));
-				if(!nmiValue.mapped) {
-					break;
-				}
-				nmiValue.index += nmiIndex.index + nmiIndex.size;
-
-				if(vtfColValue instanceof ValueTrimFormat.NumberTrimFormat) {
-					nmiValue.size += mergeDelimiters(((ValueTrimFormat.NumberTrimFormat) vtfColValue).getActualValue(),
-						row.substring(nmiValue.index, nmiValue.index + nmiValue.size),
-						row.substring(nmiValue.index + nmiValue.size));
-				}
-
-				String t = row.substring(nmiIndex.index + nmiIndex.size, nmiValue.index);
-				if(t.length() > 0)
-					tokens.add(t);
-
-				sPosition = nmiIndex.index + 1;
-			}
-			return tokens;
-		}
-
-		public void setIndSep(String indSep) {
-			this.indSep = indSep;
-		}
-
-		public void setSeparator(String separator) {
-			this.separator = separator;
-		}
-
-		public String getIndSep() {
-			return indSep;
-		}
-
-		public String getSeparator() {
-			return separator;
-		}
+		return tokens;
 	}
+
+//	class ColIndexValue {
+//		private final ValueTrimFormat.NumberTrimFormat vtfColIndex;
+//		private final ValueTrimFormat vtfColValue;
+//		private boolean mapped;
+//		private String indSep;
+//		private String separator;
+//
+//		public ColIndexValue(int col, ValueTrimFormat value) {
+//			vtfColIndex = new ValueTrimFormat.NumberTrimFormat(col);
+//			vtfColValue = value.getACopy();
+//			indSep = null;
+//			separator = null;
+//			mapped = false;
+//		}
+//
+//		public HashSet<String> getMappedTokens(RawRow row) {
+//			Pair<Integer, Integer> pairCol;
+//			Pair<Integer, Integer> pairValue;
+//			HashSet<String> tokens = new HashSet<>();
+//
+//			do {
+//				pairCol = row.findValue(vtfColIndex);
+//				if(pairCol.getKey() == -1)
+//					break;
+//
+//				pairValue = row.findValue(vtfColValue);
+//				if(pairValue.getKey() == -1)
+//					break;
+//
+//				String t = row.getRaw().substring(pairCol.getKey() + pairCol.getKey(), pairValue.getKey());
+//				if(t.length() > 0)
+//					tokens.add(t);
+//			}
+//			while(true);
+//
+//			return tokens;
+//		}
+//
+//		public void setIndSep(String indSep) {
+//			this.indSep = indSep;
+//		}
+//
+//		public void setSeparator(String separator) {
+//			this.separator = separator;
+//		}
+//
+//		public String getIndSep() {
+//			return indSep;
+//		}
+//
+//		public String getSeparator() {
+//			return separator;
+//		}
+//	}
 
 	public int[][] getMapRow() {
 		return mapRow;
@@ -1280,10 +948,6 @@ public abstract class ReaderMapping {
 
 	public int[][] getMapCol() {
 		return mapCol;
-	}
-
-	public int[][] getMapSize() {
-		return mapSize;
 	}
 
 	public boolean isSymmetric() {

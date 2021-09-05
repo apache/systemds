@@ -145,6 +145,7 @@ public class ColumnEncoderPassThrough extends ColumnEncoder {
 			long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 			int index = _encoder._colID - 1;
 			assert _inputF != null;
+			List<Integer> sparseRowsWZeros = null;
 			ValueType vt = _inputF.getSchema()[index];
 			for(int r = _startRow; r < getEndIndex(_inputF.getNumRows(), _startRow, _blk); r++) {
 				Object val = _inputF.get(r, index);
@@ -152,12 +153,19 @@ public class ColumnEncoderPassThrough extends ColumnEncoder {
 						Double.NaN : UtilFunctions.objectToDouble(vt, val);
 				SparseRowVector row = (SparseRowVector) _out.getSparseBlock().get(r);
 				if(v == 0) {
-					if(_encoder.sparseRowsWZeros == null)
-						_encoder.sparseRowsWZeros = new ArrayList<>();
-					_encoder.sparseRowsWZeros.add(r);
+					if(sparseRowsWZeros == null)
+						sparseRowsWZeros = new ArrayList<>();
+					sparseRowsWZeros.add(r);
 				}
 				row.values()[index] = v;
 				row.indexes()[index] = _outputCol;
+			}
+			if(sparseRowsWZeros != null){
+				synchronized (_encoder){
+					if(_encoder.sparseRowsWZeros == null)
+						_encoder.sparseRowsWZeros = new ArrayList<>();
+					_encoder.sparseRowsWZeros.addAll(sparseRowsWZeros);
+				}
 			}
 			if(DMLScript.STATISTICS)
 				Statistics.incTransformPassThroughApplyTime(System.nanoTime()-t0);

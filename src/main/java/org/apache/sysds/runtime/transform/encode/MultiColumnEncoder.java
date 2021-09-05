@@ -56,7 +56,10 @@ public class MultiColumnEncoder implements Encoder {
 
 	protected static final Log LOG = LogFactory.getLog(MultiColumnEncoder.class.getName());
 	private static final boolean MULTI_THREADED = true;
-	public static boolean MULTI_THREADED_STAGES = false;
+	public static boolean MULTI_THREADED_STAGES = false;  //If true build and apply separate
+	public static boolean APPLY_ENCODER_SEPARATE_STAGES = false; // only affects if  MULTI_THREADED_STAGES is true
+																 // if true apply tasks for each column will complete
+																 // before the next will start.
 
 	private List<ColumnEncoderComposite> _columnEncoders;
 	// These encoders are deprecated and will be phased out soon.
@@ -95,6 +98,7 @@ public class MultiColumnEncoder implements Encoder {
 				outputMatrixPostProcessing(out);
 			}
 			else {
+				LOG.debug("Encoding with staged approach on: " + k + " Threads");
 				build(in, k);
 				if(_legacyMVImpute != null) {
 					// These operations are redundant for every encoder excluding the legacyMVImpute, the workaround to
@@ -277,10 +281,19 @@ public class MultiColumnEncoder implements Encoder {
 	private void applyMT(FrameBlock in, MatrixBlock out, int outputCol, int k) {
 		DependencyThreadPool pool = new DependencyThreadPool(k);
 		try {
-			pool.submitAllAndWait(getApplyTasks(in, out, outputCol));
+			if(APPLY_ENCODER_SEPARATE_STAGES){
+				int offset = outputCol;
+				for (ColumnEncoderComposite e : _columnEncoders) {
+					pool.submitAllAndWait(e.getApplyTasks(in, out, e._colID - 1 + offset));
+					if (e.hasEncoder(ColumnEncoderDummycode.class))
+						offset += e.getEncoder(ColumnEncoderDummycode.class)._domainSize - 1;
+				}
+			}else{
+				pool.submitAllAndWait(getApplyTasks(in, out, outputCol));
+			}
 		}
 		catch(ExecutionException | InterruptedException e) {
-			LOG.error("MT Column encode failed");
+			LOG.error("MT Column apply failed");
 			e.printStackTrace();
 		}
 		pool.shutdown();

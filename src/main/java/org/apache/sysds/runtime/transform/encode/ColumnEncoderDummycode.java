@@ -134,6 +134,7 @@ public class ColumnEncoderDummycode extends ColumnEncoder {
 
 			if(distinct != -1) {
 				_domainSize = distinct;
+				LOG.debug("DummyCoder for column: " + _colID + " has domain size: " + _domainSize);
 			}
 		}
 	}

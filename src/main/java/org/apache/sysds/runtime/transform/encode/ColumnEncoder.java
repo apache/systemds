@@ -190,7 +190,7 @@ public abstract class ColumnEncoder implements Externalizable, Encoder, Comparab
 		List<List<? extends Callable<?>>> dep = null;
 		int nRows = in.getNumRows();
 		int[] blockSizes = getBlockSizes(nRows, getNumBuildRowPartitions());
-		if(blockSizes.length == 0) {
+		if(blockSizes.length == 1) {
 			tasks.add(getBuildTask(in));
 		}
 		else {

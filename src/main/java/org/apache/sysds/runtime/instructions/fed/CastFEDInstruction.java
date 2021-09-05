@@ -40,6 +40,7 @@ import org.apache.sysds.runtime.controlprogram.federated.FederationUtils;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
 import org.apache.sysds.runtime.matrix.operators.Operator;
+import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 
 public class CastFEDInstruction extends UnaryFEDInstruction {
 
@@ -72,12 +73,10 @@ public class CastFEDInstruction extends UnaryFEDInstruction {
 
 		if(!mo1.isFederated())
 			throw new DMLRuntimeException(
-				"Federated Reorg: " + "Federated input expected, but invoked w/ " + mo1.isFederated());
-
+				"Federated Cast: " + "Federated input expected, but invoked w/ " + mo1.isFederated());
 
 		long id = FederationUtils.getNextFedDataID();
-		FederatedRequest fr1 = new FederatedRequest(FederatedRequest.RequestType.PUT_VAR, id, mo1.getMetaData().getDataCharacteristics(),
-			Types.DataType.MATRIX);
+		FederatedRequest fr1 = new FederatedRequest(FederatedRequest.RequestType.PUT_VAR, id, new MatrixCharacteristics(-1, -1), Types.DataType.MATRIX);
 
 		// execute function at federated site.
 		FederatedRequest fr2 = FederationUtils.callInstruction(instString, output, id,
@@ -107,8 +106,7 @@ public class CastFEDInstruction extends UnaryFEDInstruction {
 				"Federated Reorg: " + "Federated input expected, but invoked w/ " + mo1.isFederated());
 
 		long id = FederationUtils.getNextFedDataID();
-		FederatedRequest fr1 = new FederatedRequest(FederatedRequest.RequestType.PUT_VAR, id, mo1.getMetaData().getDataCharacteristics(),
-			Types.DataType.FRAME);
+		FederatedRequest fr1 = new FederatedRequest(FederatedRequest.RequestType.PUT_VAR, id, new MatrixCharacteristics(-1, -1), Types.DataType.FRAME);
 
 		// execute function at federated site.
 		FederatedRequest fr2 = FederationUtils.callInstruction(instString, output, id,

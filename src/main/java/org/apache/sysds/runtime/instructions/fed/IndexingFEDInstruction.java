@@ -43,6 +43,7 @@ import org.apache.sysds.runtime.controlprogram.federated.FederationUtils;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
 import org.apache.sysds.runtime.instructions.cp.VariableCPInstruction;
+import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.util.IndexRange;
 
 public final class IndexingFEDInstruction extends UnaryFEDInstruction {
@@ -266,12 +267,12 @@ public final class IndexingFEDInstruction extends UnaryFEDInstruction {
 		sliceIxs = Arrays.stream(sliceIxs).filter(Objects::nonNull).toArray(int[][] :: new);
 
 		long id = FederationUtils.getNextFedDataID();
-		FederatedRequest tmp = new FederatedRequest(FederatedRequest.RequestType.PUT_VAR, id, in1.getMetaData().getDataCharacteristics(), in1.getDataType());
+		FederatedRequest tmp = new FederatedRequest(FederatedRequest.RequestType.PUT_VAR, id, new MatrixCharacteristics(-1, -1), in1.getDataType());
 		fedMap.execute(getTID(), true, tmp);
 
 		FederatedRequest[] fr1 = fedMap.broadcastSliced(in2, input2.isFrame(), sliceIxs);
 		FederatedRequest[] fr2 = FederationUtils.callInstruction(instStrings, output, id, new CPOperand[]{input1, input2},
-			new long[]{fedMap.getID(), fr1[0].getID()}, instString.startsWith("SPARK") ? Types.ExecType.SPARK : Types.ExecType.CP);
+			new long[]{fedMap.getID(), fr1[0].getID()}, null);
 		FederatedRequest fr3 = fedMap.cleanup(getTID(), fr1[0].getID());
 
 		//execute federated instruction and cleanup intermediates

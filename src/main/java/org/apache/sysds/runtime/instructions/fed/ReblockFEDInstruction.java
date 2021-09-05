@@ -23,12 +23,14 @@ import org.apache.sysds.common.Types;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
+import org.apache.sysds.runtime.controlprogram.federated.FederatedRange;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest;
 import org.apache.sysds.runtime.controlprogram.federated.FederationUtils;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
 import org.apache.sysds.runtime.matrix.operators.Operator;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
+import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.meta.MetaDataFormat;
 
 public class ReblockFEDInstruction extends UnaryFEDInstruction {
@@ -74,7 +76,13 @@ public class ReblockFEDInstruction extends UnaryFEDInstruction {
 			throw new DMLRuntimeException("Error ReblockFEDInstruction: Metadata not found");
 
 		long id = FederationUtils.getNextFedDataID();
-		FederatedRequest fr1 = new FederatedRequest(FederatedRequest.RequestType.PUT_VAR, id, mcOut, obj.getDataType());
+		FederatedRequest[] fr1 = new FederatedRequest[obj.getFedMapping().getSize()];
+		int i = 0;
+		for(FederatedRange range : obj.getFedMapping().getFederatedRanges()) {
+			fr1[i] = new FederatedRequest(FederatedRequest.RequestType.PUT_VAR, id,
+				new MatrixCharacteristics(range.getSize(0), range.getSize(1)), obj.getDataType());
+			i++;
+		}
 		FederatedRequest fr2 = FederationUtils.callInstruction(instString, output, id,
 			new CPOperand[]{input1}, new long[]{ obj.getFedMapping().getID()}, Types.ExecType.SPARK, false);
 

@@ -30,7 +30,6 @@ import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
 import org.junit.Assert;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -81,11 +80,8 @@ public class FederatedFullCumulativeTest extends AutomatedTestBase {
 	@Test
 	public void testSumDenseMatrixCP() { runCumOperationTest(OpType.SUM, ExecType.CP); }
 
-// FIXME offset handling has some remaining issues
-//	@Test
-//	public void testProdDenseMatrixCP() {
-//		runCumOperationTest(OpType.PROD, ExecType.CP);
-//	}
+	@Test
+	public void testSumDenseMatrixSP() { runCumOperationTest(OpType.SUM, ExecType.SPARK); }
 
 	@Test
 	public void testMaxDenseMatrixCP() {
@@ -98,22 +94,14 @@ public class FederatedFullCumulativeTest extends AutomatedTestBase {
 	}
 
 	@Test
-	@Ignore
 	public void testMaxDenseMatrixSP() {
 		runCumOperationTest(OpType.MAX, ExecType.SPARK);
 	}
 
 	@Test
-	@Ignore
 	public void testMinDenseMatrixSP() {
 		runCumOperationTest(OpType.MIN, ExecType.SPARK);
 	}
-
-// FIXME offset handling has some remaining issues
-//	@Test
-//	public void testSumprodDenseMatrixCP() {
-//		runCumOperationTest(OpType.SUMPROD, ExecType.CP);
-//	}
 
 	private void runCumOperationTest(OpType type, ExecType instType) {
 		ExecMode platformOld = setExecMode(instType);
@@ -196,19 +184,19 @@ public class FederatedFullCumulativeTest extends AutomatedTestBase {
 
 		switch(type) {
 			case SUM:
-				Assert.assertTrue(heavyHittersContainsString("fed_ucumk+"));
+				Assert.assertTrue(heavyHittersContainsString(instType == ExecType.SPARK ? "fed_bcumoffk+" : "fed_ucumk+"));
 				break;
 			case PROD:
-				Assert.assertTrue(heavyHittersContainsString("fed_ucum*"));
+				Assert.assertTrue(heavyHittersContainsString(instType == ExecType.SPARK ? "fed_bcumoff*" : "fed_ucum*"));
 				break;
 			case MAX:
-				Assert.assertTrue(heavyHittersContainsString("fed_ucummax"));
+				Assert.assertTrue(heavyHittersContainsString(instType == ExecType.SPARK ? "fed_bcumoffmax" : "fed_ucummax"));
 				break;
 			case MIN:
-				Assert.assertTrue(heavyHittersContainsString("fed_ucummin"));
+				Assert.assertTrue(heavyHittersContainsString(instType == ExecType.SPARK ? "fed_bcumoffmin" : "fed_ucummin"));
 				break;
 			case SUMPROD:
-				Assert.assertTrue(heavyHittersContainsString("ucumk+*"));
+				Assert.assertTrue(heavyHittersContainsString(instType == ExecType.SPARK ? "fed_bcumoff+*" : "ucumk+*"));
 				break;
 		}
 

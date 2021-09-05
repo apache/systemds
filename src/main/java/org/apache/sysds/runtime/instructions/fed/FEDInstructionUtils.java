@@ -444,17 +444,15 @@ public class FEDInstructionUtils {
 				if("cov".equals(instruction.getOpcode()) && (ec.getMatrixObject(instruction.input1)
 					.isFederated(FType.ROW) || ec.getMatrixObject(instruction.input2).isFederated(FType.ROW)))
 					fedinst = CovarianceFEDInstruction.parseInstruction(inst.getInstructionString());
-				// FIXME
-//				else if(inst instanceof CumulativeOffsetSPInstruction) {
-//					fedinst = CumulativeOffsetFEDInstruction.parseInstruction(inst.getInstructionString());
-//				}
-				else if (! (inst instanceof  CumulativeOffsetSPInstruction))
+				else if(inst instanceof CumulativeOffsetSPInstruction) {
+					fedinst = CumulativeOffsetFEDInstruction.parseInstruction(inst.getInstructionString());
+				}
+				else
 					fedinst = BinaryFEDInstruction.parseInstruction(InstructionUtils.concatOperands(inst.getInstructionString(), FederatedOutput.NONE.name()));
 			}
 		}
 		else if( inst instanceof ParameterizedBuiltinSPInstruction) {
 			ParameterizedBuiltinSPInstruction pinst = (ParameterizedBuiltinSPInstruction) inst;
-			// TODO add other PARAM_BUILTINS
 			if( pinst.getOpcode().equalsIgnoreCase("replace") && pinst.getTarget(ec).isFederatedExcept(FType.BROADCAST) )
 				fedinst = ParameterizedBuiltinFEDInstruction.parseInstruction(pinst.getInstructionString());
 		}

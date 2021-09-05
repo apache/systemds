@@ -19,33 +19,25 @@
 
 package org.apache.sysds.runtime.instructions.fed;
 
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
 import org.apache.sysds.common.Types;
 import org.apache.sysds.hops.AggBinaryOp;
 import org.apache.sysds.runtime.DMLRuntimeException;
-import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse;
 import org.apache.sysds.runtime.controlprogram.federated.FederationMap;
-import org.apache.sysds.runtime.controlprogram.federated.FederationMap.AlignType;
-import org.apache.sysds.runtime.controlprogram.federated.FederationMap.FType;
 import org.apache.sysds.runtime.controlprogram.federated.FederationUtils;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
-import org.apache.sysds.runtime.instructions.spark.CumulativeOffsetSPInstruction;
-import org.apache.sysds.runtime.instructions.spark.SPInstruction;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
-import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysds.runtime.matrix.operators.Operator;
 import org.apache.sysds.runtime.matrix.operators.UnaryOperator;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
-import org.apache.sysds.runtime.meta.MetaDataFormat;
 
 public class CumulativeOffsetFEDInstruction extends BinaryFEDInstruction
 {
@@ -88,7 +80,21 @@ public class CumulativeOffsetFEDInstruction extends BinaryFEDInstruction
 
 	@Override
 	public void processInstruction(ExecutionContext ec) {
-		processCumulativeInstruction(ec);
+		MatrixObject mo1 = ec.getMatrixObject(input1);
+		MatrixObject mo2 = ec.getMatrixObject(input2);
+		if(getOpcode().startsWith("bcumoff") && mo1.isFederated(FederationMap.FType.ROW))
+			processCumulativeInstruction(ec);
+		else {
+			//federated execution on arbitrary row/column partitions
+			//(only assumption for sparse-unsafe: fed mapping covers entire matrix)
+			FederatedRequest[] fr1 = mo1.getFedMapping().broadcastSliced(mo2, false);
+			FederatedRequest fr2 = FederationUtils.callInstruction(instString, output,
+				new CPOperand[] {input1, input2}, new long[] {mo1.getFedMapping().getID(), fr1[0].getID()});
+			FederatedRequest fr3 = new FederatedRequest(FederatedRequest.RequestType.PUT_VAR, fr2.getID(), mo1.getDataCharacteristics(), mo1.getDataType());
+			mo1.getFedMapping().execute(getTID(), true, fr1, fr3, fr2);
+
+			setOutputFedMapping(ec, mo1, fr2.getID());
+		}
 	}
 
 	public void processCumulativeInstruction(ExecutionContext ec) {
@@ -126,17 +132,6 @@ public class CumulativeOffsetFEDInstruction extends BinaryFEDInstruction
 
 			out = ec.getMatrixObject(output);
 			setScalingValues(agg2, ec, mo1, out, scalingValues, init);
-//			1.7976931348623157E308	1.7976931348623157E308	1.7976931348623157E308	1.7976931348623157E308
-//			1.1419840695038628	2.5363139681561577	2.3206392333750765	1.059635353433094
-//			1.1419840695038628	2.5363139681561577	1.7038295552926137	1.059635353433094
-//			1.1419840695038628	2.5363139681561577	1.7038295552926137	1.059635353433094
-
-
-
-			//		1.1419840695038628	2.5363139681561577	2.3206392333750765	1.059635353433094
-			//		1.1419840695038628	2.5363139681561577	1.7038295552926137	1.059635353433094
-			//		1.1419840695038628	2.5363139681561577	1.7038295552926137	1.059635353433094
-			//		1.1419840695038628	2.181914746575125	1.7038295552926137	1.059635353433094
 		}
 		processCumulative(out, mo2);
 	}
@@ -162,21 +157,7 @@ public class CumulativeOffsetFEDInstruction extends BinaryFEDInstruction
 		FederatedRequest fr3 = out.getFedMapping().broadcast(mo2);
 		FederatedRequest fr4 = FederationUtils.callInstruction(modifiedInstString, output, out.getFedMapping().getID(),
 			new CPOperand[] {output, input2}, new long[] {out.getFedMapping().getID(), fr3.getID()}, Types.ExecType.SPARK, false);
-		FederatedRequest fr5 = new FederatedRequest(FederatedRequest.RequestType.GET_VAR, fr4.getID());
-		Future<FederatedResponse>[] ffr = out.getFedMapping().execute(getTID(), true, fr3, fr4, fr5);
-
-		for(Future<FederatedResponse> fr : ffr) {
-			try {
-				System.out.println(fr.get());
-			}
-			catch(InterruptedException e) {
-				e.printStackTrace();
-			}
-			catch(ExecutionException e) {
-				e.printStackTrace();
-			}
-		}
-
+		out.getFedMapping().execute(getTID(), true, fr3, fr4);
 		out.setFedMapping(out.getFedMapping().copyWithNewID(fr4.getID()));
 
 		// modify fed ranges since ucumk+* output is always nx1
@@ -199,7 +180,7 @@ public class CumulativeOffsetFEDInstruction extends BinaryFEDInstruction
 				res.copy(i+1, i+1, 0, cols-1, ((MatrixBlock) tmp[i].get().getData()[0]), true);
 			}
 			catch(Exception e) {
-				throw new DMLRuntimeException("Federated Get data failed with exception on UnaryMatrixFEDInstruction", e);
+				throw new DMLRuntimeException("Federated Get data failed with exception on CumulativeOffsetFEDInstruction", e);
 			}
 
 		//local cumulative aggregate
@@ -218,7 +199,7 @@ public class CumulativeOffsetFEDInstruction extends BinaryFEDInstruction
 				prod.setValue(i, 0, curr.getValue(curr.getNumRows()-1, 0));
 			}
 			catch(Exception e) {
-				throw new DMLRuntimeException("Federated Get data failed with exception on UnaryMatrixFEDInstruction", e);
+				throw new DMLRuntimeException("Federated Get data failed with exception on CumulativeOffsetFEDInstruction", e);
 			}
 
 		// aggregate sumprod to get scalars
@@ -246,7 +227,7 @@ public class CumulativeOffsetFEDInstruction extends BinaryFEDInstruction
 				firstValues.copy(i, i, 0,1, curr.slice(0, 0), true);
 			}
 			catch(Exception e) {
-				throw new DMLRuntimeException("Federated Get data failed with exception on UnaryMatrixFEDInstruction", e);
+				throw new DMLRuntimeException("Federated Get data failed with exception on CumulativeOffsetFEDInstruction", e);
 			}
 		return new MatrixBlock[] {prod, firstValues};
 	}
@@ -310,10 +291,9 @@ public class CumulativeOffsetFEDInstruction extends BinaryFEDInstruction
 		FederatedRequest[] fr1 = mo1.getFedMapping().broadcastSliced(mo2, false);
 		FederatedRequest fr2 = FederationUtils.callInstruction(modifiedInstString, output, id,
 			new CPOperand[] {input1, op2}, new long[] {mo1.getFedMapping().getID(), fr1[0].getID()}, Types.ExecType.SPARK, false);
-		mo1.getFedMapping().execute(getTID(), true, fr3, fr1[0], fr2);
+		mo1.getFedMapping().execute(getTID(), true, fr1, fr3, fr2);
 
 		out.setFedMapping(mo1.getFedMapping().copyWithNewID(fr2.getID()));
-	MatrixBlock m = out.acquireReadAndRelease();
 		ec.removeVariable(op2.getName());
 	}
 

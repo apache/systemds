@@ -122,7 +122,7 @@ public class FederationUtils {
 		FederatedRequest[] fr = new FederatedRequest[inst.length];
 		for(int j=0; j<inst.length; j++) {
 			for(int i = 0; i < varOldIn.length; i++) {
-				linst[j] = InstructionUtils.replaceOperand(linst[j], 0, type.name());
+				linst[j] = InstructionUtils.replaceOperand(linst[j], 0, type == null ? InstructionUtils.getExecType(linst[j]).name() : type.name());
 				linst[j] = linst[j].replace(
 					Lop.OPERAND_DELIMITOR + varOldOut.getName() + Lop.DATATYPE_PREFIX,
 					Lop.OPERAND_DELIMITOR + String.valueOf(outputId) + Lop.DATATYPE_PREFIX);

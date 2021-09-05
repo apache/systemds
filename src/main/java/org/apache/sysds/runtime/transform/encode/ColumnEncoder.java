@@ -58,6 +58,12 @@ public abstract class ColumnEncoder implements Externalizable, Encoder, Comparab
 	/**
 	 * Apply Functions are only used in Single Threaded or Multi-Threaded Dense context.
 	 * That's why there is no regard for MT sparse!
+	 *
+	 * @param in Input Block
+	 * @param out Output Matrix
+	 * @param outputCol The output column for the given column
+	 * @return same as out
+	 *
 	 */
 	public MatrixBlock apply(MatrixBlock in, MatrixBlock out, int outputCol){
 		return apply(in, out, outputCol, 0, -1);

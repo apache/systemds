@@ -20,15 +20,12 @@
 
 package org.apache.sysds.runtime.matrix.operators;
 
-import java.io.Serializable;
-
 import org.apache.sysds.runtime.functionobjects.IfElse;
 import org.apache.sysds.runtime.functionobjects.MinusMultiply;
 import org.apache.sysds.runtime.functionobjects.PlusMultiply;
 import org.apache.sysds.runtime.functionobjects.TernaryValueFunction;
 
-public class TernaryOperator  extends Operator implements Serializable
-{
+public class TernaryOperator extends Operator{
 	private static final long serialVersionUID = 3456088891054083634L;
 	
 	public final TernaryValueFunction fn;

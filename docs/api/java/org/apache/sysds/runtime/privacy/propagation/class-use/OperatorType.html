@@ -103,24 +103,45 @@
 </tr>
 <tbody>
 <tr class="altColor">
+<td class="colFirst"><code>static <a href="../../../../../../../org/apache/sysds/runtime/privacy/propagation/OperatorType.html" title="enum in org.apache.sysds.runtime.privacy.propagation">OperatorType</a></code></td>
+<td class="colLast"><span class="typeNameLabel">OperatorType.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/privacy/propagation/OperatorType.html#getAggregationType-org.apache.sysds.runtime.instructions.cp.AggregateBinaryCPInstruction-org.apache.sysds.runtime.controlprogram.context.ExecutionContext-">getAggregationType</a></span>(<a href="../../../../../../../org/apache/sysds/runtime/instructions/cp/AggregateBinaryCPInstruction.html" title="class in org.apache.sysds.runtime.instructions.cp">AggregateBinaryCPInstruction</a>&nbsp;inst,
+                  <a href="../../../../../../../org/apache/sysds/runtime/controlprogram/context/ExecutionContext.html" title="class in org.apache.sysds.runtime.controlprogram.context">ExecutionContext</a>&nbsp;ec)</code>
+<div class="block">Returns the operator type of AggregateBinaryCPInstruction based on the input data characteristics and the transpose.</div>
+</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>static <a href="../../../../../../../org/apache/sysds/runtime/privacy/propagation/OperatorType.html" title="enum in org.apache.sysds.runtime.privacy.propagation">OperatorType</a></code></td>
+<td class="colLast"><span class="typeNameLabel">OperatorType.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/privacy/propagation/OperatorType.html#getAggregationType-org.apache.sysds.runtime.instructions.cp.MMChainCPInstruction-org.apache.sysds.runtime.controlprogram.context.ExecutionContext-">getAggregationType</a></span>(<a href="../../../../../../../org/apache/sysds/runtime/instructions/cp/MMChainCPInstruction.html" title="class in org.apache.sysds.runtime.instructions.cp">MMChainCPInstruction</a>&nbsp;inst,
+                  <a href="../../../../../../../org/apache/sysds/runtime/controlprogram/context/ExecutionContext.html" title="class in org.apache.sysds.runtime.controlprogram.context">ExecutionContext</a>&nbsp;ec)</code>
+<div class="block">Returns the operator type of MMChainCPInstruction based on the input data characteristics.</div>
+</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>static <a href="../../../../../../../org/apache/sysds/runtime/privacy/propagation/OperatorType.html" title="enum in org.apache.sysds.runtime.privacy.propagation">OperatorType</a></code></td>
+<td class="colLast"><span class="typeNameLabel">OperatorType.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/privacy/propagation/OperatorType.html#getAggregationType-org.apache.sysds.runtime.instructions.cp.MMTSJCPInstruction-org.apache.sysds.runtime.controlprogram.context.ExecutionContext-">getAggregationType</a></span>(<a href="../../../../../../../org/apache/sysds/runtime/instructions/cp/MMTSJCPInstruction.html" title="class in org.apache.sysds.runtime.instructions.cp">MMTSJCPInstruction</a>&nbsp;inst,
+                  <a href="../../../../../../../org/apache/sysds/runtime/controlprogram/context/ExecutionContext.html" title="class in org.apache.sysds.runtime.controlprogram.context">ExecutionContext</a>&nbsp;ec)</code>
+<div class="block">Returns the operator type of MMTSJCPInstruction based on the input data characteristics and the MMTSJType.</div>
+</td>
+</tr>
+<tr class="rowColor">
 <td class="colFirst"><code><a href="../../../../../../../org/apache/sysds/runtime/privacy/propagation/OperatorType.html" title="enum in org.apache.sysds.runtime.privacy.propagation">OperatorType</a>[]</code></td>
 <td class="colLast"><span class="typeNameLabel">MatrixMultiplicationPropagator.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/privacy/propagation/MatrixMultiplicationPropagator.html#getOperatorTypesCol--">getOperatorTypesCol</a></span>()</code>
 <div class="block">Gets the operator types of all columns of the right-hand input in the matrix multiplication.</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code><a href="../../../../../../../org/apache/sysds/runtime/privacy/propagation/OperatorType.html" title="enum in org.apache.sysds.runtime.privacy.propagation">OperatorType</a>[]</code></td>
 <td class="colLast"><span class="typeNameLabel">MatrixMultiplicationPropagator.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/privacy/propagation/MatrixMultiplicationPropagator.html#getOperatorTypesRow--">getOperatorTypesRow</a></span>()</code>
 <div class="block">Gets the operator types of all rows of the left-hand input in the matrix multiplication.</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>static <a href="../../../../../../../org/apache/sysds/runtime/privacy/propagation/OperatorType.html" title="enum in org.apache.sysds.runtime.privacy.propagation">OperatorType</a></code></td>
 <td class="colLast"><span class="typeNameLabel">OperatorType.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/privacy/propagation/OperatorType.html#valueOf-java.lang.String-">valueOf</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;name)</code>
 <div class="block">Returns the enum constant of this type with the specified name.</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>static <a href="../../../../../../../org/apache/sysds/runtime/privacy/propagation/OperatorType.html" title="enum in org.apache.sysds.runtime.privacy.propagation">OperatorType</a>[]</code></td>
 <td class="colLast"><span class="typeNameLabel">OperatorType.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/privacy/propagation/OperatorType.html#values--">values</a></span>()</code>
 <div class="block">Returns an array containing the constants of this enum type, in
@@ -142,11 +163,6 @@ the order they are declared.</div>
                <a href="../../../../../../../org/apache/sysds/runtime/privacy/propagation/OperatorType.html" title="enum in org.apache.sysds.runtime.privacy.propagation">OperatorType</a>&nbsp;operatorType)</code>
 <div class="block">Returns the output privacy level based on the given input privacy levels and operator type.</div>
 </td>
-</tr>
-<tr class="rowColor">
-<td class="colFirst"><code>static <a href="../../../../../../../org/apache/sysds/runtime/privacy/PrivacyConstraint.html" title="class in org.apache.sysds.runtime.privacy">PrivacyConstraint</a></code></td>
-<td class="colLast"><span class="typeNameLabel">PrivacyPropagator.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/privacy/propagation/PrivacyPropagator.html#mergeNary-org.apache.sysds.runtime.privacy.PrivacyConstraint:A-org.apache.sysds.runtime.privacy.propagation.OperatorType-">mergeNary</a></span>(<a href="../../../../../../../org/apache/sysds/runtime/privacy/PrivacyConstraint.html" title="class in org.apache.sysds.runtime.privacy">PrivacyConstraint</a>[]&nbsp;privacyConstraints,
-         <a href="../../../../../../../org/apache/sysds/runtime/privacy/propagation/OperatorType.html" title="enum in org.apache.sysds.runtime.privacy.propagation">OperatorType</a>&nbsp;operatorType)</code>&nbsp;</td>
 </tr>
 </tbody>
 </table>

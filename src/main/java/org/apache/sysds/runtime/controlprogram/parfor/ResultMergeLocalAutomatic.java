@@ -26,11 +26,11 @@ import org.apache.sysds.runtime.controlprogram.parfor.opt.OptimizerRuleBased;
 import org.apache.sysds.runtime.controlprogram.parfor.stat.Timing;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
 
-public class ResultMergeLocalAutomatic extends ResultMerge
+public class ResultMergeLocalAutomatic extends ResultMergeMatrix
 {
 	private static final long serialVersionUID = 1600893100602101732L;
 	
-	private ResultMerge _rm = null;
+	private ResultMergeMatrix _rm = null;
 	
 	public ResultMergeLocalAutomatic( MatrixObject out, MatrixObject[] in, String outputFilename, boolean accum ) {
 		super( out, in, outputFilename, accum );

@@ -157,55 +157,61 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Enum.html?i
 <td class="colOne"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/instructions/cp/CPInstruction.CPType.html#Binary">Binary</a></span></code>&nbsp;</td>
 </tr>
 <tr class="rowColor">
+<td class="colOne"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/instructions/cp/CPInstruction.CPType.html#Broadcast">Broadcast</a></span></code>&nbsp;</td>
+</tr>
+<tr class="altColor">
 <td class="colOne"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/instructions/cp/CPInstruction.CPType.html#Builtin">Builtin</a></span></code>&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colOne"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/instructions/cp/CPInstruction.CPType.html#BuiltinNary">BuiltinNary</a></span></code>&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colOne"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/instructions/cp/CPInstruction.CPType.html#CentralMoment">CentralMoment</a></span></code>&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colOne"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/instructions/cp/CPInstruction.CPType.html#Compression">Compression</a></span></code>&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colOne"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/instructions/cp/CPInstruction.CPType.html#Covariance">Covariance</a></span></code>&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colOne"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/instructions/cp/CPInstruction.CPType.html#Ctable">Ctable</a></span></code>&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colOne"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/instructions/cp/CPInstruction.CPType.html#DeCompression">DeCompression</a></span></code>&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colOne"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/instructions/cp/CPInstruction.CPType.html#Dnn">Dnn</a></span></code>&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colOne"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/instructions/cp/CPInstruction.CPType.html#FCall">FCall</a></span></code>&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colOne"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/instructions/cp/CPInstruction.CPType.html#MatrixIndexing">MatrixIndexing</a></span></code>&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colOne"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/instructions/cp/CPInstruction.CPType.html#MMChain">MMChain</a></span></code>&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colOne"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/instructions/cp/CPInstruction.CPType.html#MMTSJ">MMTSJ</a></span></code>&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colOne"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/instructions/cp/CPInstruction.CPType.html#MultiReturnBuiltin">MultiReturnBuiltin</a></span></code>&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colOne"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/instructions/cp/CPInstruction.CPType.html#MultiReturnParameterizedBuiltin">MultiReturnParameterizedBuiltin</a></span></code>&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colOne"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/instructions/cp/CPInstruction.CPType.html#ParameterizedBuiltin">ParameterizedBuiltin</a></span></code>&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colOne"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/instructions/cp/CPInstruction.CPType.html#Partition">Partition</a></span></code>&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colOne"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/instructions/cp/CPInstruction.CPType.html#PMMJ">PMMJ</a></span></code>&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colOne"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/instructions/cp/CPInstruction.CPType.html#Prefetch">Prefetch</a></span></code>&nbsp;</td>
 </tr>
 <tr class="altColor">
 <td class="colOne"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/instructions/cp/CPInstruction.CPType.html#QPick">QPick</a></span></code>&nbsp;</td>
@@ -612,10 +618,28 @@ the order they are declared.</div>
 <a name="Sql">
 <!--   -->
 </a>
-<ul class="blockListLast">
+<ul class="blockList">
 <li class="blockList">
 <h4>Sql</h4>
 <pre>public static final&nbsp;<a href="../../../../../../org/apache/sysds/runtime/instructions/cp/CPInstruction.CPType.html" title="enum in org.apache.sysds.runtime.instructions.cp">CPInstruction.CPType</a> Sql</pre>
+</li>
+</ul>
+<a name="Prefetch">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>Prefetch</h4>
+<pre>public static final&nbsp;<a href="../../../../../../org/apache/sysds/runtime/instructions/cp/CPInstruction.CPType.html" title="enum in org.apache.sysds.runtime.instructions.cp">CPInstruction.CPType</a> Prefetch</pre>
+</li>
+</ul>
+<a name="Broadcast">
+<!--   -->
+</a>
+<ul class="blockListLast">
+<li class="blockList">
+<h4>Broadcast</h4>
+<pre>public static final&nbsp;<a href="../../../../../../org/apache/sysds/runtime/instructions/cp/CPInstruction.CPType.html" title="enum in org.apache.sysds.runtime.instructions.cp">CPInstruction.CPType</a> Broadcast</pre>
 </li>
 </ul>
 </li>

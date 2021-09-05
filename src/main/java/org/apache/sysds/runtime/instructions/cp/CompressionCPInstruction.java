@@ -37,7 +37,6 @@ public class CompressionCPInstruction extends ComputationCPInstruction {
 
 	private final int _singletonLookupID;
 
-
 	private CompressionCPInstruction(Operator op, CPOperand in, CPOperand out, String opcode, String istr,
 		int singletonLookupID) {
 		super(CPType.Compression, op, in, null, null, out, opcode, istr);
@@ -54,26 +53,29 @@ public class CompressionCPInstruction extends ComputationCPInstruction {
 			int treeNodeID = Integer.parseInt(parts[3]);
 			return new CompressionCPInstruction(null, in1, out, opcode, str, treeNodeID);
 		}
-		else {
+		else
 			return new CompressionCPInstruction(null, in1, out, opcode, str, 0);
-		}
 	}
 
 	@Override
 	public void processInstruction(ExecutionContext ec) {
 		// Get matrix block input
-		MatrixBlock in = ec.getMatrixInput(input1.getName());
-		SingletonLookupHashMap m = SingletonLookupHashMap.getMap();
+		final MatrixBlock in = ec.getMatrixInput(input1.getName());
+		final SingletonLookupHashMap m = SingletonLookupHashMap.getMap();
 
-		WTreeRoot root = (_singletonLookupID != 0) ? (WTreeRoot) m.get(_singletonLookupID) : null;
+		// Get and clear workload tree entry for this compression instruction.
+		final WTreeRoot root = (_singletonLookupID != 0) ? (WTreeRoot) m.get(_singletonLookupID) : null;
+		m.removeKey(_singletonLookupID);
+
+		final int k = OptimizerUtils.getConstrainedNumThreads(-1);
+
 		// Compress the matrix block
-		Pair<MatrixBlock, CompressionStatistics> compResult = CompressedMatrixBlockFactory.compress(in, OptimizerUtils.getConstrainedNumThreads(-1), root);
+		Pair<MatrixBlock, CompressionStatistics> compResult = CompressedMatrixBlockFactory.compress(in, k, root);
 
 		if(LOG.isTraceEnabled())
 			LOG.trace(compResult.getRight());
 		MatrixBlock out = compResult.getLeft();
-		
-		m.removeKey(_singletonLookupID);
+
 		// Set output and release input
 		ec.releaseMatrixInput(input1.getName());
 		ec.setMatrixOutput(output.getName(), out);

@@ -83,18 +83,50 @@
 </tr>
 <tbody>
 <tr class="altColor">
-<td class="colFirst"><a href="../../../../../../org/apache/sysds/runtime/compress/workload/WorkloadAnalyzer.html" title="class in org.apache.sysds.runtime.compress.workload">WorkloadAnalyzer</a></td>
+<td class="colFirst"><a href="../../../../../../org/apache/sysds/runtime/compress/workload/AWTreeNode.html" title="class in org.apache.sysds.runtime.compress.workload">AWTreeNode</a></td>
+<td class="colLast">
+<div class="block">A workload tree is a compact representation of the operations on a matrix and derived intermediates, including the
+ basic control structure and inlined functions as well as links to categories.</div>
+</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><a href="../../../../../../org/apache/sysds/runtime/compress/workload/Op.html" title="class in org.apache.sysds.runtime.compress.workload">Op</a></td>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><a href="../../../../../../org/apache/sysds/runtime/compress/workload/OpDecompressing.html" title="class in org.apache.sysds.runtime.compress.workload">OpDecompressing</a></td>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
+<td class="colFirst"><a href="../../../../../../org/apache/sysds/runtime/compress/workload/OpMetadata.html" title="class in org.apache.sysds.runtime.compress.workload">OpMetadata</a></td>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><a href="../../../../../../org/apache/sysds/runtime/compress/workload/OpNormal.html" title="class in org.apache.sysds.runtime.compress.workload">OpNormal</a></td>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><a href="../../../../../../org/apache/sysds/runtime/compress/workload/OpOverlappingDecompress.html" title="class in org.apache.sysds.runtime.compress.workload">OpOverlappingDecompress</a></td>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><a href="../../../../../../org/apache/sysds/runtime/compress/workload/OpSided.html" title="class in org.apache.sysds.runtime.compress.workload">OpSided</a></td>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><a href="../../../../../../org/apache/sysds/runtime/compress/workload/WorkloadAnalyzer.html" title="class in org.apache.sysds.runtime.compress.workload">WorkloadAnalyzer</a></td>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
 <td class="colFirst"><a href="../../../../../../org/apache/sysds/runtime/compress/workload/WTreeNode.html" title="class in org.apache.sysds.runtime.compress.workload">WTreeNode</a></td>
 <td class="colLast">
-<div class="block">A workload tree is a compact representation of the operations
- on a compressed matrix and derived intermediates, including
- the basic control structure and inlined functions as well
- as links to categories 
- 
- TODO separate classes for inner and leaf nodes?</div>
+<div class="block">A Node in the WTree, this is used for any nodes that are not the root.</div>
+</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><a href="../../../../../../org/apache/sysds/runtime/compress/workload/WTreeRoot.html" title="class in org.apache.sysds.runtime.compress.workload">WTreeRoot</a></td>
+<td class="colLast">
+<div class="block">The root node of the tree, located at the top of the tree.</div>
 </td>
 </tr>
 </tbody>
@@ -109,7 +141,7 @@
 </tr>
 <tbody>
 <tr class="altColor">
-<td class="colFirst"><a href="../../../../../../org/apache/sysds/runtime/compress/workload/WTreeNode.WTNodeType.html" title="enum in org.apache.sysds.runtime.compress.workload">WTreeNode.WTNodeType</a></td>
+<td class="colFirst"><a href="../../../../../../org/apache/sysds/runtime/compress/workload/AWTreeNode.WTNodeType.html" title="enum in org.apache.sysds.runtime.compress.workload">AWTreeNode.WTNodeType</a></td>
 <td class="colLast">&nbsp;</td>
 </tr>
 </tbody>

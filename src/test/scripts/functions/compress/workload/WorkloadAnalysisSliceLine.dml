@@ -1,0 +1,53 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+# data preparation
+FXY = read("./src/test/resources/datasets/Salaries.csv",
+  data_type="frame", format="csv", header=TRUE);
+F = FXY[,1:ncol(FXY)-1];
+y = as.matrix(FXY[,ncol(FXY)]);
+jspec= "{ ids:true, recode:[1,2,3,6],bin:[" 
+      +"{id:4, method:equi-width, numbins:14},"
+      +"{id:5, method:equi-width, numbins:12}]}"
+[X,M] = transformencode(target=F, spec=jspec);
+X = X[,2:ncol(X)]
+
+m = nrow(X)
+n = ncol(X)
+fdom = colMaxs(X);
+foffb = t(cumsum(t(fdom))) - fdom;
+foffe = t(cumsum(t(fdom)))
+rix = matrix(seq(1,m)%*%matrix(1,1,n), m*n, 1)
+cix = matrix(X + foffb, m*n, 1);
+X2 = table(rix, cix); #one-hot encoded
+
+# learn model
+B = lm(X=X2, y=y, verbose=FALSE);
+yhat = X2 %*% B;
+e = (y-yhat)^2;
+
+# call slice finding
+[TS,TR,d] = slicefinder(X=X, e=e, k=10,
+  alpha=0.95, minSup=4, tpEval=TRUE, verbose=TRUE);
+
+print("TS:\n" + toString(TS))
+print("TR:\n" + toString(TR))
+print("Debug matrix:\n" + toString(d))

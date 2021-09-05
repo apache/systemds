@@ -53,7 +53,7 @@ public class BuiltinStratstatsTest extends AutomatedTestBase {
 	@Parameters
 	public static Collection<Object[]> data() {
 		return Arrays.asList(new Object[][] {
-			{"randfile", 10, 6},
+			{"randfile", 18, 6},
 			{"randfile", 4, 18}});
 	}
 
@@ -71,7 +71,7 @@ public class BuiltinStratstatsTest extends AutomatedTestBase {
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
 			fullRScriptName = HOME + TEST_NAME + ".R";
 
-			programArgs = new String[]{
+			programArgs = new String[]{"-explain",
 					"-nvargs", "X=" + input("random.mtx"), "O=" + output("result"), "Y=" + input("doesnotexist"),};
 			rCmd = getRCmd(input("random.mtx"), expected("result"));
 

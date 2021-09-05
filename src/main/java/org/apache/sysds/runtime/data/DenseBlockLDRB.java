@@ -72,7 +72,7 @@ public abstract class DenseBlockLDRB extends DenseBlock
 			int lastBlockSize = (newBlockSize == rlen ? newBlockSize : rlen % newBlockSize) * odims[0];
 			allocateBlocks(numBlocks);
 			IntStream.range(0, numBlocks)
-					.forEach((i) -> {
+					.forEach(i -> {
 						int length = (i == numBlocks - 1 ? lastBlockSize : newBlockSize *  _odims[0]);
 						allocateBlock(i, length);
 						if (v != 0)

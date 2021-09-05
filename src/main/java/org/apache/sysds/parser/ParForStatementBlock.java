@@ -170,6 +170,11 @@ public class ParForStatementBlock extends ForStatementBlock
 		return _resultVars;
 	}
 	
+	public void setResultVariables(ArrayList<ResultVar> rvars) {
+		_resultVars.clear();
+		_resultVars.addAll(rvars);
+	}
+	
 	private void addToResultVariablesNoDup( String var, boolean accum ) {
 		addToResultVariablesNoDup(new ResultVar(var, accum));
 	}
@@ -672,7 +677,7 @@ public class ParForStatementBlock extends ForStatementBlock
 						for(DataIdentifier write : datsUpdated) {
 							if( !c._var.equals( write.getName() ) ) continue;
 							
-							if( cdt != DataType.MATRIX && cdt != DataType.LIST ) {
+							if( cdt != DataType.MATRIX && cdt != DataType.FRAME && cdt != DataType.LIST ) {
 								//cannot infer type, need to exit (conservative approach)
 								throw new LanguageException("PARFOR loop dependency analysis: cannot check "
 									+ "for dependencies due to unknown datatype of var '"+c._var+"': "+cdt.name()+".");
@@ -711,6 +716,7 @@ public class ParForStatementBlock extends ForStatementBlock
 								return;
 						}
 						else if( (cdt == DataType.MATRIX && dat2dt == DataType.MATRIX)
+							|| (cdt == DataType.FRAME && dat2dt == DataType.FRAME )
 							|| (cdt == DataType.LIST && dat2dt == DataType.LIST ) )
 						{
 							boolean invalid = false;

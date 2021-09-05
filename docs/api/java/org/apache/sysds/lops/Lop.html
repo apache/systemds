@@ -18,7 +18,7 @@
     catch(err) {
     }
 //-->
-var methods = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10,"i8":10,"i9":10,"i10":10,"i11":10,"i12":10,"i13":10,"i14":10,"i15":10,"i16":10,"i17":10,"i18":10,"i19":10,"i20":10,"i21":10,"i22":10,"i23":10,"i24":10,"i25":10,"i26":10,"i27":10,"i28":10,"i29":10,"i30":10,"i31":10,"i32":10,"i33":10,"i34":10,"i35":10,"i36":10,"i37":10,"i38":10,"i39":10,"i40":10,"i41":10,"i42":10,"i43":10,"i44":10,"i45":10,"i46":10,"i47":10,"i48":10,"i49":10,"i50":10,"i51":10,"i52":10,"i53":10,"i54":10,"i55":10,"i56":10,"i57":10,"i58":10,"i59":10,"i60":10,"i61":10,"i62":10,"i63":10,"i64":6};
+var methods = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10,"i8":10,"i9":10,"i10":10,"i11":10,"i12":10,"i13":10,"i14":10,"i15":10,"i16":10,"i17":10,"i18":10,"i19":10,"i20":10,"i21":10,"i22":10,"i23":10,"i24":10,"i25":10,"i26":10,"i27":10,"i28":10,"i29":10,"i30":10,"i31":10,"i32":10,"i33":10,"i34":10,"i35":10,"i36":10,"i37":10,"i38":10,"i39":10,"i40":10,"i41":10,"i42":10,"i43":10,"i44":10,"i45":10,"i46":10,"i47":10,"i48":10,"i49":10,"i50":10,"i51":10,"i52":10,"i53":10,"i54":10,"i55":10,"i56":10,"i57":10,"i58":10,"i59":10,"i60":10,"i61":10,"i62":10,"i63":10,"i64":10,"i65":10,"i66":10,"i67":10,"i68":10,"i69":6};
 var tabs = {65535:["t0","All Methods"],2:["t2","Instance Methods"],4:["t3","Abstract Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -306,56 +306,68 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/lops/Lop.html#createReachable-int-">createReachable</a></span>(int&nbsp;size)</code>&nbsp;</td>
 </tr>
 <tr id="i4" class="altColor">
-<td class="colFirst"><code>int</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/lops/Lop.html#getBeginColumn--">getBeginColumn</a></span>()</code>&nbsp;</td>
+<td class="colFirst"><code><a href="../../../../org/apache/sysds/hops/AggBinaryOp.SparkAggType.html" title="enum in org.apache.sysds.hops">AggBinaryOp.SparkAggType</a></code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/lops/Lop.html#getAggType--">getAggType</a></span>()</code>
+<div class="block">Method to get aggregate type if applicable.</div>
+</td>
 </tr>
 <tr id="i5" class="rowColor">
 <td class="colFirst"><code>int</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/lops/Lop.html#getBeginLine--">getBeginLine</a></span>()</code>&nbsp;</td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/lops/Lop.html#getBeginColumn--">getBeginColumn</a></span>()</code>&nbsp;</td>
 </tr>
 <tr id="i6" class="altColor">
+<td class="colFirst"><code>int</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/lops/Lop.html#getBeginLine--">getBeginLine</a></span>()</code>&nbsp;</td>
+</tr>
+<tr id="i7" class="rowColor">
+<td class="colFirst"><code><a href="../../../../org/apache/sysds/lops/Lop.html" title="class in org.apache.sysds.lops">Lop</a></code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/lops/Lop.html#getBroadcastInput--">getBroadcastInput</a></span>()</code>
+<div class="block">Method to get the input to be broadcast.</div>
+</td>
+</tr>
+<tr id="i8" class="altColor">
 <td class="colFirst"><code><a href="../../../../org/apache/sysds/common/Types.DataType.html" title="enum in org.apache.sysds.common">Types.DataType</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/lops/Lop.html#getDataType--">getDataType</a></span>()</code>
 <div class="block">get data type of the output that is produced by this lop</div>
 </td>
 </tr>
-<tr id="i7" class="rowColor">
+<tr id="i9" class="rowColor">
 <td class="colFirst"><code>int</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/lops/Lop.html#getEndColumn--">getEndColumn</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i8" class="altColor">
+<tr id="i10" class="altColor">
 <td class="colFirst"><code>int</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/lops/Lop.html#getEndLine--">getEndLine</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i9" class="rowColor">
+<tr id="i11" class="rowColor">
 <td class="colFirst"><code><a href="../../../../org/apache/sysds/common/Types.ExecType.html" title="enum in org.apache.sysds.common">Types.ExecType</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/lops/Lop.html#getExecType--">getExecType</a></span>()</code>
 <div class="block">Method to get the execution type (CP, CP_FILE, MR, SPARK, GPU, FED, INVALID) of LOP</div>
 </td>
 </tr>
-<tr id="i10" class="altColor">
+<tr id="i12" class="altColor">
 <td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/lops/Lop.html#getFilename--">getFilename</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i11" class="rowColor">
+<tr id="i13" class="rowColor">
 <td class="colFirst"><code>long</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/lops/Lop.html#getID--">getID</a></span>()</code>
 <div class="block">Method to return the ID of LOP</div>
 </td>
 </tr>
-<tr id="i12" class="altColor">
+<tr id="i14" class="altColor">
 <td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/util/ArrayList.html?is-external=true" title="class or interface in java.util">ArrayList</a>&lt;<a href="../../../../org/apache/sysds/lops/Lop.html" title="class in org.apache.sysds.lops">Lop</a>&gt;</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/lops/Lop.html#getInputs--">getInputs</a></span>()</code>
 <div class="block">Method to get input of Lops</div>
 </td>
 </tr>
-<tr id="i13" class="rowColor">
+<tr id="i15" class="rowColor">
 <td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/lops/Lop.html#getInstructions--">getInstructions</a></span>()</code>
 <div class="block">Method should be overridden if needed</div>
 </td>
 </tr>
-<tr id="i14" class="altColor">
+<tr id="i16" class="altColor">
 <td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/lops/Lop.html#getInstructions-int-int-int-int-int-int-int-int-">getInstructions</a></span>(int&nbsp;input,
                int&nbsp;rowl,
@@ -366,32 +378,32 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
                int&nbsp;leftColDim,
                int&nbsp;output)</code>&nbsp;</td>
 </tr>
-<tr id="i15" class="rowColor">
+<tr id="i17" class="rowColor">
 <td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/lops/Lop.html#getInstructions-java.lang.String-">getInstructions</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;output)</code>
 <div class="block">Method should be overridden if needed</div>
 </td>
 </tr>
-<tr id="i16" class="altColor">
+<tr id="i18" class="altColor">
 <td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/lops/Lop.html#getInstructions-java.lang.String:A-java.lang.String-">getInstructions</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>[]&nbsp;inputs,
                <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;outputs)</code>&nbsp;</td>
 </tr>
-<tr id="i17" class="rowColor">
+<tr id="i19" class="rowColor">
 <td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/lops/Lop.html#getInstructions-java.lang.String:A-java.lang.String:A-">getInstructions</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>[]&nbsp;inputs,
                <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>[]&nbsp;outputs)</code>
 <div class="block">Method should be overridden if needed</div>
 </td>
 </tr>
-<tr id="i18" class="altColor">
+<tr id="i20" class="altColor">
 <td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/lops/Lop.html#getInstructions-java.lang.String-java.lang.String-">getInstructions</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;input1,
                <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;output)</code>
 <div class="block">Method should be overridden if needed</div>
 </td>
 </tr>
-<tr id="i19" class="rowColor">
+<tr id="i21" class="rowColor">
 <td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/lops/Lop.html#getInstructions-java.lang.String-java.lang.String-java.lang.String-">getInstructions</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;input1,
                <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;input2,
@@ -399,7 +411,7 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <div class="block">Method should be overridden if needed</div>
 </td>
 </tr>
-<tr id="i20" class="altColor">
+<tr id="i22" class="altColor">
 <td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/lops/Lop.html#getInstructions-java.lang.String-java.lang.String-java.lang.String-java.lang.String-">getInstructions</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;input1,
                <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;input2,
@@ -408,7 +420,7 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <div class="block">Method should be overridden if needed</div>
 </td>
 </tr>
-<tr id="i21" class="rowColor">
+<tr id="i23" class="rowColor">
 <td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/lops/Lop.html#getInstructions-java.lang.String-java.lang.String-java.lang.String-java.lang.String-java.lang.String-">getInstructions</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;input1,
                <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;input2,
@@ -418,7 +430,7 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <div class="block">Method should be overridden if needed</div>
 </td>
 </tr>
-<tr id="i22" class="altColor">
+<tr id="i24" class="altColor">
 <td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/lops/Lop.html#getInstructions-java.lang.String-java.lang.String-java.lang.String-java.lang.String-java.lang.String-java.lang.String-">getInstructions</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;input1,
                <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;input2,
@@ -429,7 +441,7 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <div class="block">Method should be overridden if needed</div>
 </td>
 </tr>
-<tr id="i23" class="rowColor">
+<tr id="i25" class="rowColor">
 <td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/lops/Lop.html#getInstructions-java.lang.String-java.lang.String-java.lang.String-java.lang.String-java.lang.String-java.lang.String-java.lang.String-">getInstructions</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;input1,
                <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;input2,
@@ -441,7 +453,7 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <div class="block">Method should be overridden if needed</div>
 </td>
 </tr>
-<tr id="i24" class="altColor">
+<tr id="i26" class="altColor">
 <td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/lops/Lop.html#getInstructions-java.lang.String-java.lang.String-java.lang.String-java.lang.String-java.lang.String-java.lang.String-java.lang.String-java.lang.String-">getInstructions</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;input1,
                <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;input2,
@@ -452,77 +464,83 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
                <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;input7,
                <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;output)</code>&nbsp;</td>
 </tr>
-<tr id="i25" class="rowColor">
+<tr id="i27" class="rowColor">
 <td class="colFirst"><code>int</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/lops/Lop.html#getLevel--">getLevel</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i26" class="altColor">
+<tr id="i28" class="altColor">
 <td class="colFirst"><code><a href="../../../../org/apache/sysds/lops/OutputParameters.html" title="class in org.apache.sysds.lops">OutputParameters</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/lops/Lop.html#getOutputParameters--">getOutputParameters</a></span>()</code>
 <div class="block">Method to get output parameters</div>
 </td>
 </tr>
-<tr id="i27" class="rowColor">
+<tr id="i29" class="rowColor">
 <td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/util/ArrayList.html?is-external=true" title="class or interface in java.util">ArrayList</a>&lt;<a href="../../../../org/apache/sysds/lops/Lop.html" title="class in org.apache.sysds.lops">Lop</a>&gt;</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/lops/Lop.html#getOutputs--">getOutputs</a></span>()</code>
 <div class="block">Method to get output of Lops</div>
 </td>
 </tr>
-<tr id="i28" class="altColor">
+<tr id="i30" class="altColor">
 <td class="colFirst"><code><a href="../../../../org/apache/sysds/runtime/privacy/PrivacyConstraint.html" title="class in org.apache.sysds.runtime.privacy">PrivacyConstraint</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/lops/Lop.html#getPrivacyConstraint--">getPrivacyConstraint</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i29" class="rowColor">
+<tr id="i31" class="rowColor">
 <td class="colFirst"><code>boolean</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/lops/Lop.html#getProducesIntermediateOutput--">getProducesIntermediateOutput</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i30" class="altColor">
+<tr id="i32" class="altColor">
 <td class="colFirst"><code>boolean[]</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/lops/Lop.html#getReachable--">getReachable</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i31" class="rowColor">
+<tr id="i33" class="rowColor">
 <td class="colFirst"><code><a href="../../../../org/apache/sysds/lops/Lop.SimpleInstType.html" title="enum in org.apache.sysds.lops">Lop.SimpleInstType</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/lops/Lop.html#getSimpleInstructionType--">getSimpleInstructionType</a></span>()</code>
 <div class="block">Method should be overridden if needed</div>
 </td>
 </tr>
-<tr id="i32" class="altColor">
+<tr id="i34" class="altColor">
 <td class="colFirst"><code><a href="../../../../org/apache/sysds/lops/Lop.Type.html" title="enum in org.apache.sysds.lops">Lop.Type</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/lops/Lop.html#getType--">getType</a></span>()</code>
 <div class="block">Method to get Lop type.</div>
 </td>
 </tr>
-<tr id="i33" class="rowColor">
+<tr id="i35" class="rowColor">
 <td class="colFirst"><code><a href="../../../../org/apache/sysds/common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/lops/Lop.html#getValueType--">getValueType</a></span>()</code>
 <div class="block">get value type of the output that is produced by this lop</div>
 </td>
 </tr>
-<tr id="i34" class="altColor">
+<tr id="i36" class="altColor">
 <td class="colFirst"><code><a href="../../../../org/apache/sysds/lops/Lop.VisitStatus.html" title="enum in org.apache.sysds.lops">Lop.VisitStatus</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/lops/Lop.html#getVisited--">getVisited</a></span>()</code>
 <div class="block">get visit status of node</div>
 </td>
 </tr>
-<tr id="i35" class="rowColor">
+<tr id="i37" class="rowColor">
+<td class="colFirst"><code>boolean</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/lops/Lop.html#isAllOutputsCP--">isAllOutputsCP</a></span>()</code>
+<div class="block">Function that determines if all the outputs of a LOP are of CP execution types</div>
+</td>
+</tr>
+<tr id="i38" class="altColor">
 <td class="colFirst"><code>boolean</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/lops/Lop.html#isDataExecLocation--">isDataExecLocation</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i36" class="altColor">
+<tr id="i39" class="rowColor">
 <td class="colFirst"><code>boolean</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/lops/Lop.html#isVariable--">isVariable</a></span>()</code>
 <div class="block">Function that determines if the output of a LOP is defined by a variable or not.</div>
 </td>
 </tr>
-<tr id="i37" class="rowColor">
+<tr id="i40" class="altColor">
 <td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/lops/Lop.html#prepInputOperand-int-">prepInputOperand</a></span>(int&nbsp;index)</code>&nbsp;</td>
 </tr>
-<tr id="i38" class="altColor">
+<tr id="i41" class="rowColor">
 <td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/lops/Lop.html#prepInputOperand-java.lang.String-">prepInputOperand</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;label)</code>&nbsp;</td>
 </tr>
-<tr id="i39" class="rowColor">
+<tr id="i42" class="altColor">
 <td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/lops/Lop.html#prepOperand-java.lang.String-org.apache.sysds.common.Types.DataType-org.apache.sysds.common.Types.ValueType-">prepOperand</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;label,
            <a href="../../../../org/apache/sysds/common/Types.DataType.html" title="enum in org.apache.sysds.common">Types.DataType</a>&nbsp;dt,
@@ -530,7 +548,7 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <div class="block">Method to prepare instruction operand with given parameters.</div>
 </td>
 </tr>
-<tr id="i40" class="altColor">
+<tr id="i43" class="rowColor">
 <td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/lops/Lop.html#prepOperand-java.lang.String-org.apache.sysds.common.Types.DataType-org.apache.sysds.common.Types.ValueType-boolean-">prepOperand</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;label,
            <a href="../../../../org/apache/sysds/common/Types.DataType.html" title="enum in org.apache.sysds.common">Types.DataType</a>&nbsp;dt,
@@ -539,33 +557,33 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <div class="block">Method to prepare instruction operand with given parameters.</div>
 </td>
 </tr>
-<tr id="i41" class="rowColor">
+<tr id="i44" class="altColor">
 <td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/lops/Lop.html#prepOutputOperand--">prepOutputOperand</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i42" class="altColor">
+<tr id="i45" class="rowColor">
 <td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/lops/Lop.html#prepOutputOperand-int-">prepOutputOperand</a></span>(int&nbsp;index)</code>&nbsp;</td>
 </tr>
-<tr id="i43" class="rowColor">
+<tr id="i46" class="altColor">
 <td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/lops/Lop.html#prepOutputOperand-java.lang.String-">prepOutputOperand</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;label)</code>&nbsp;</td>
 </tr>
-<tr id="i44" class="altColor">
+<tr id="i47" class="rowColor">
 <td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/lops/Lop.html#prepScalarInputOperand-java.lang.String-">prepScalarInputOperand</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;label)</code>&nbsp;</td>
 </tr>
-<tr id="i45" class="rowColor">
+<tr id="i48" class="altColor">
 <td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/lops/Lop.html#prepScalarInputOperand-org.apache.sysds.common.Types.ExecType-">prepScalarInputOperand</a></span>(<a href="../../../../org/apache/sysds/common/Types.ExecType.html" title="enum in org.apache.sysds.common">Types.ExecType</a>&nbsp;et)</code>&nbsp;</td>
 </tr>
-<tr id="i46" class="altColor">
+<tr id="i49" class="rowColor">
 <td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/lops/Lop.html#prepScalarLabel--">prepScalarLabel</a></span>()</code>
 <div class="block">Function to prepare label for scalar inputs while generating instructions.</div>
 </td>
 </tr>
-<tr id="i47" class="rowColor">
+<tr id="i50" class="altColor">
 <td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/lops/Lop.html#prepScalarOperand-org.apache.sysds.common.Types.ExecType-java.lang.String-">prepScalarOperand</a></span>(<a href="../../../../org/apache/sysds/common/Types.ExecType.html" title="enum in org.apache.sysds.common">Types.ExecType</a>&nbsp;et,
                  <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;label)</code>
@@ -573,19 +591,32 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
  operands.</div>
 </td>
 </tr>
-<tr id="i48" class="altColor">
+<tr id="i51" class="rowColor">
 <td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/lops/Lop.html#printErrorLocation--">printErrorLocation</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i49" class="rowColor">
+<tr id="i52" class="altColor">
 <td class="colFirst"><code>int</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/lops/Lop.html#removeConsumer--">removeConsumer</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i50" class="altColor">
+<tr id="i53" class="rowColor">
+<td class="colFirst"><code>void</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/lops/Lop.html#removeOutput-org.apache.sysds.lops.Lop-">removeOutput</a></span>(<a href="../../../../org/apache/sysds/lops/Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;op)</code>
+<div class="block">Method to remove output from Lop</div>
+</td>
+</tr>
+<tr id="i54" class="altColor">
+<td class="colFirst"><code>void</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/lops/Lop.html#replaceInput-org.apache.sysds.lops.Lop-org.apache.sysds.lops.Lop-">replaceInput</a></span>(<a href="../../../../org/apache/sysds/lops/Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;oldInp,
+            <a href="../../../../org/apache/sysds/lops/Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;newInp)</code>
+<div class="block">Method to replace an input to a Lop</div>
+</td>
+</tr>
+<tr id="i55" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/lops/Lop.html#resetVisitStatus--">resetVisitStatus</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i51" class="rowColor">
+<tr id="i56" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/lops/Lop.html#setAllPositions-java.lang.String-int-int-int-int-">setAllPositions</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;filename,
                int&nbsp;blp,
@@ -593,65 +624,65 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
                int&nbsp;elp,
                int&nbsp;ecp)</code>&nbsp;</td>
 </tr>
-<tr id="i52" class="altColor">
+<tr id="i57" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/lops/Lop.html#setBeginColumn-int-">setBeginColumn</a></span>(int&nbsp;passed)</code>&nbsp;</td>
 </tr>
-<tr id="i53" class="rowColor">
+<tr id="i58" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/lops/Lop.html#setBeginLine-int-">setBeginLine</a></span>(int&nbsp;passed)</code>&nbsp;</td>
 </tr>
-<tr id="i54" class="altColor">
+<tr id="i59" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/lops/Lop.html#setConsumerCount-int-">setConsumerCount</a></span>(int&nbsp;cc)</code>&nbsp;</td>
 </tr>
-<tr id="i55" class="rowColor">
+<tr id="i60" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/lops/Lop.html#setDataType-org.apache.sysds.common.Types.DataType-">setDataType</a></span>(<a href="../../../../org/apache/sysds/common/Types.DataType.html" title="enum in org.apache.sysds.common">Types.DataType</a>&nbsp;dt)</code>
 <div class="block">set data type of the output that is produced by this lop</div>
 </td>
 </tr>
-<tr id="i56" class="altColor">
+<tr id="i61" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/lops/Lop.html#setEndColumn-int-">setEndColumn</a></span>(int&nbsp;passed)</code>&nbsp;</td>
 </tr>
-<tr id="i57" class="rowColor">
+<tr id="i62" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/lops/Lop.html#setEndLine-int-">setEndLine</a></span>(int&nbsp;passed)</code>&nbsp;</td>
 </tr>
-<tr id="i58" class="altColor">
+<tr id="i63" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/lops/Lop.html#setExecType-org.apache.sysds.common.Types.ExecType-">setExecType</a></span>(<a href="../../../../org/apache/sysds/common/Types.ExecType.html" title="enum in org.apache.sysds.common">Types.ExecType</a>&nbsp;newExecType)</code>
 <div class="block">Set the execution type of LOP.</div>
 </td>
 </tr>
-<tr id="i59" class="rowColor">
+<tr id="i64" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/lops/Lop.html#setFederatedOutput-org.apache.sysds.runtime.instructions.fed.FEDInstruction.FederatedOutput-">setFederatedOutput</a></span>(<a href="../../../../org/apache/sysds/runtime/instructions/fed/FEDInstruction.FederatedOutput.html" title="enum in org.apache.sysds.runtime.instructions.fed">FEDInstruction.FederatedOutput</a>&nbsp;fedOutput)</code>&nbsp;</td>
 </tr>
-<tr id="i60" class="altColor">
+<tr id="i65" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/lops/Lop.html#setFilename-java.lang.String-">setFilename</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;passed)</code>&nbsp;</td>
 </tr>
-<tr id="i61" class="rowColor">
+<tr id="i66" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/lops/Lop.html#setPrivacyConstraint-org.apache.sysds.runtime.privacy.PrivacyConstraint-">setPrivacyConstraint</a></span>(<a href="../../../../org/apache/sysds/runtime/privacy/PrivacyConstraint.html" title="class in org.apache.sysds.runtime.privacy">PrivacyConstraint</a>&nbsp;privacy)</code>
 <div class="block">Method to set privacy constraint of Lop.</div>
 </td>
 </tr>
-<tr id="i62" class="altColor">
+<tr id="i67" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/lops/Lop.html#setValueType-org.apache.sysds.common.Types.ValueType-">setValueType</a></span>(<a href="../../../../org/apache/sysds/common/Types.ValueType.html" title="enum in org.apache.sysds.common">Types.ValueType</a>&nbsp;vt)</code>
 <div class="block">set value type of the output that is produced by this lop</div>
 </td>
 </tr>
-<tr id="i63" class="rowColor">
+<tr id="i68" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/lops/Lop.html#setVisited-org.apache.sysds.lops.Lop.VisitStatus-">setVisited</a></span>(<a href="../../../../org/apache/sysds/lops/Lop.VisitStatus.html" title="enum in org.apache.sysds.lops">Lop.VisitStatus</a>&nbsp;visited)</code>
 <div class="block">set visit status of node</div>
 </td>
 </tr>
-<tr id="i64" class="altColor">
+<tr id="i69" class="rowColor">
 <td class="colFirst"><code>abstract <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/lops/Lop.html#toString--">toString</a></span>()</code>
 <div class="block">Method to have Lops print their state.</div>
@@ -953,8 +984,8 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>t</code> - lop type</dd>
-<dd><code>dt</code> - data type</dd>
-<dd><code>vt</code> - value type</dd>
+<dd><code>dt</code> - data type of the output</dd>
+<dd><code>vt</code> - value type of the output</dd>
 </dl>
 </li>
 </ul>
@@ -1133,6 +1164,22 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 </dl>
 </li>
 </ul>
+<a name="replaceInput-org.apache.sysds.lops.Lop-org.apache.sysds.lops.Lop-">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>replaceInput</h4>
+<pre>public&nbsp;void&nbsp;replaceInput(<a href="../../../../org/apache/sysds/lops/Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;oldInp,
+                         <a href="../../../../org/apache/sysds/lops/Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;newInp)</pre>
+<div class="block">Method to replace an input to a Lop</div>
+<dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>oldInp</code> - old input Lop</dd>
+<dd><code>newInp</code> - new input Lop</dd>
+</dl>
+</li>
+</ul>
 <a name="addOutput-org.apache.sysds.lops.Lop-">
 <!--   -->
 </a>
@@ -1144,6 +1191,20 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
 <dd><code>op</code> - output lop</dd>
+</dl>
+</li>
+</ul>
+<a name="removeOutput-org.apache.sysds.lops.Lop-">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>removeOutput</h4>
+<pre>public&nbsp;void&nbsp;removeOutput(<a href="../../../../org/apache/sysds/lops/Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;op)</pre>
+<div class="block">Method to remove output from Lop</div>
+<dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>op</code> - Lop to remove</dd>
 </dl>
 </li>
 </ul>
@@ -1305,6 +1366,36 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <dl>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>output parameters</dd>
+</dl>
+</li>
+</ul>
+<a name="getAggType--">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>getAggType</h4>
+<pre>public&nbsp;<a href="../../../../org/apache/sysds/hops/AggBinaryOp.SparkAggType.html" title="enum in org.apache.sysds.hops">AggBinaryOp.SparkAggType</a>&nbsp;getAggType()</pre>
+<div class="block">Method to get aggregate type if applicable.
+ This method is overridden by the Lops with aggregate types (e.g. MapMult)</div>
+<dl>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>SparkAggType</dd>
+</dl>
+</li>
+</ul>
+<a name="getBroadcastInput--">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>getBroadcastInput</h4>
+<pre>public&nbsp;<a href="../../../../org/apache/sysds/lops/Lop.html" title="class in org.apache.sysds.lops">Lop</a>&nbsp;getBroadcastInput()</pre>
+<div class="block">Method to get the input to be broadcast.
+ This method is overridden by the Lops which require broadcasts (e.g. AppendM)</div>
+<dl>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>An input Lop or Null</dd>
 </dl>
 </li>
 </ul>
@@ -1673,6 +1764,20 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <dl>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>true if lop output defined by a variable</dd>
+</dl>
+</li>
+</ul>
+<a name="isAllOutputsCP--">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>isAllOutputsCP</h4>
+<pre>public&nbsp;boolean&nbsp;isAllOutputsCP()</pre>
+<div class="block">Function that determines if all the outputs of a LOP are of CP execution types</div>
+<dl>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>true if all outputs are CP</dd>
 </dl>
 </li>
 </ul>

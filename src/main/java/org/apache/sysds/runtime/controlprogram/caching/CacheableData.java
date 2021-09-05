@@ -789,7 +789,6 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 	 */
 	public synchronized void exportData( int replication ) {
 		exportData(_hdfsFileName, null, replication, null);
-		_hdfsFileExists = true;
 	}
 
 	public synchronized void exportData(String fName, String outputFormat) {
@@ -945,7 +944,8 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 			//CASE 4: data already in hdfs (do nothing, no need for export)
 			LOG.trace(this.getDebugName() + ": Skip export to hdfs since data already exists.");
 		}
-		  
+		
+		_hdfsFileExists = true;
 		if( DMLScript.STATISTICS ){
 			long t1 = System.nanoTime();
 			CacheStatistics.incrementExportTime(t1-t0);

@@ -29,6 +29,8 @@ import org.apache.sysds.utils.MemoryEstimates;
 
 public class MapToInt extends AMapToData {
 
+	private static final long serialVersionUID = -5557070920888782274L;
+	
 	private final int[] _data;
 
 	public MapToInt(int unique, int size) {

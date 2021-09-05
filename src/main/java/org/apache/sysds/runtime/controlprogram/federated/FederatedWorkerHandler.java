@@ -198,6 +198,7 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 		String delim = null;
 		FileSystem fs = null;
 		MetaDataAll mtd;
+		
 		try {
 			String mtdname = DataExpression.getMTDFileName(filename);
 			Path path = new Path(mtdname);
@@ -220,9 +221,7 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 			throw ex;
 		}
 		catch (Exception ex) {
-			String msg = "Exception in reading metadata of: " + filename;
-			log.error(msg, ex);
-			throw new DMLRuntimeException(msg);
+			throw new DMLRuntimeException(ex);
 		}
 		finally {
 			IOUtilFunctions.closeSilently(fs);

@@ -21,6 +21,7 @@ package org.apache.sysds.runtime.instructions.spark;
 
 import java.util.Set;
 
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.spark.api.java.JavaPairRDD;
@@ -41,6 +42,7 @@ import org.apache.sysds.runtime.io.FileFormatPropertiesCSV;
 import org.apache.sysds.runtime.io.FileFormatPropertiesLIBSVM;
 import org.apache.sysds.runtime.io.FileFormatPropertiesMM;
 import org.apache.sysds.runtime.io.IOUtilFunctions;
+import org.apache.sysds.runtime.lineage.LineageItem;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixCell;
@@ -48,6 +50,7 @@ import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysds.runtime.matrix.operators.Operator;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
 import org.apache.sysds.runtime.meta.MetaDataFormat;
+import org.apache.sysds.runtime.util.ProgramConverter;
 import org.apache.sysds.utils.Statistics;
 
 public class ReblockSPInstruction extends UnarySPInstruction {
@@ -96,8 +99,10 @@ public class ReblockSPInstruction extends UnarySPInstruction {
 
 		//check for in-memory reblock (w/ lazy spark context, potential for latency reduction)
 		if( Recompiler.checkCPReblock(sec, input1.getName()) ) {
-			if( input1.getDataType().isMatrix() || input1.getDataType().isFrame() )
-				Recompiler.executeInMemoryReblock(sec, input1.getName(), output.getName());
+			if( input1.getDataType().isMatrix() || input1.getDataType().isFrame() ) {
+				Recompiler.executeInMemoryReblock(sec, input1.getName(), output.getName(),
+					iimd.getFileFormat()==FileFormat.BINARY ? getLineageItem(ec).getValue() : null);
+			}
 			Statistics.decrementNoOfExecutedSPInst();
 			return;
 		}
@@ -255,5 +260,16 @@ public class ReblockSPInstruction extends UnarySPInstruction {
 			throw new DMLRuntimeException("The given format is not implemented "
 				+ "for ReblockSPInstruction: " + fmt.toString());
 		}
+	}
+	
+	@Override
+	public Pair<String, LineageItem> getLineageItem(ExecutionContext ec) {
+		//construct reblock lineage without existing createvar lineage
+		if( ec.getLineage() == null ) {
+			return Pair.of(output.getName(), new LineageItem(
+				ProgramConverter.serializeDataObject(input1.getName(), ec.getCacheableData(input1)), "cache_rblk"));
+		}
+		//default reblock w/ active lineage tracing
+		return super.getLineageItem(ec);
 	}
 }

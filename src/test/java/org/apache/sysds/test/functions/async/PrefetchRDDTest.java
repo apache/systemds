@@ -86,6 +86,7 @@ public class PrefetchRDDTest extends AutomatedTestBase {
 			
 			List<String> proArgs = new ArrayList<>();
 			
+			proArgs.add("-explain");
 			proArgs.add("-stats");
 			proArgs.add("-args");
 			proArgs.add(output("R"));
@@ -100,7 +101,7 @@ public class PrefetchRDDTest extends AutomatedTestBase {
 			HashMap<MatrixValue.CellIndex, Double> R_pf = readDMLScalarFromOutputDir("R");
 
 			//compare matrices
-			TestUtils.compareMatrices(R, R_pf, 1e-6, "Origin", "Reused");
+			TestUtils.compareMatrices(R, R_pf, 1e-6, "Origin", "withPrefetch");
 			//assert Prefetch instructions and number of success.
 			long expected_numPF = !testname.equalsIgnoreCase(TEST_NAME+"3") ? 1 : 0;
 			long expected_successPF = !testname.equalsIgnoreCase(TEST_NAME+"3") ? 1 : 0;

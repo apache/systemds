@@ -52,7 +52,7 @@
 source("scripts/builtin/bandit.dml") as bandit;
 enumerateLogical = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] Xtest, Matrix[Double] ytest, Matrix[Double] cmr, Frame[Unknown] cat, Frame[Unknown] population,
   Integer max_iter=10, List[Unknown] metaList, String evaluationFunc, Matrix[Double] evalFunHp, Frame[Unknown] primitives, Frame[Unknown] param,
-  Integer num_inst, Integer num_exec, Boolean verbose)
+  Integer num_inst, Integer num_exec, Boolean cv=FALSE, Boolean cvk=3, Boolean verbose)
 return (Frame[Unknown] bestLg, Double pre_best, Double T)
 { 
   t1 = time()
@@ -67,9 +67,9 @@ return (Frame[Unknown] bestLg, Double pre_best, Double T)
   {
     physicalPipList = list()
     logicalPipList = list()
+    
     # # # get the physical instances from logical ones
-    for(i in 1:nrow(population))
-    { 
+    for(i in 1:nrow(population)) { 
       lv = as.integer(as.scalar(population[i, 1])) + 1
       lp = population[i, 2:lv]
       physicalConf = bandit::get_physical_configurations(lp, num_inst, primitives)
@@ -77,23 +77,22 @@ return (Frame[Unknown] bestLg, Double pre_best, Double T)
       logicalPipList = append(logicalPipList, lp)
     }
     
-    scores = matrix(0, rows=length(physicalPipList), cols=1)
-    
     # # # execute the physical pipelines
-    for(i in 1:length(physicalPipList))
-    {
-      physicalConf = as.frame(physicalPipList[i])
-      lp = as.frame(logicalPipList[i])
+    scores = matrix(0, length(physicalPipList), 1)
+    # TODO better parfor-dep handling of multi-assignments to avoid check=0 
+    parfor(i in 1:length(physicalPipList), check=0) {
+      lp2 = as.frame(logicalPipList[i,1])
+      pp2 = as.frame(physicalPipList[i,1])
       # # append configuration keys for extracting the pipeline later on
-      id = seq(1, nrow(physicalConf))
-      physicalConf = cbind(as.frame(id), physicalConf)
+      id = seq(1, nrow(pp2))
+      idpp = cbind(as.frame(id), pp2)
 
       # # execute the physical instances and store the minimum scores, each pipeline is executed num_exec times
-      [outPip,outHp, feaFrameOuter] = bandit::run_with_hyperparam(lp, physicalConf, num_exec, X, y, Xtest, ytest, metaList,
-        evaluationFunc, evalFunHp, param, as.frame(""), verbose)
+      [outPip, outHp, feaFrameOuter] = bandit::run_with_hyperparam(lp2, idpp, num_exec, X, y, Xtest, ytest, metaList,
+        evaluationFunc, evalFunHp, param, as.frame(""), cv, cvk, verbose)
       # # sort the configurations groupwise
-      max_perf =  bandit::getMaxPerConf(outPip, nrow(physicalConf)) 
-      scores[i] = as.matrix(max_perf[1, 1])
+      max_perf = bandit::getMaxPerConf(outPip, nrow(pp2)) 
+      scores[i,1] = as.matrix(max_perf[1,1])
     }
     
     # # select parents and best score
@@ -114,10 +113,11 @@ return (Frame[Unknown] bestLg, Double pre_best, Double T)
       idxC = as.integer(as.scalar(population[idxR, 1])) + 1
       bestLg = population[idxR, 2:idxC]
     }
-    pipLength = max(as.matrix(population[, 1])) + as.scalar(cmr[1, 1]) + 1
+    pipLength = max(as.matrix(population[, 1])) + as.scalar(cmr[1, 1]) + 3
     # # # if new best is not better than pre_best then no need od generating new population
     children = frame(0, rows=ceil(nrow(scores)/2), cols=pipLength)
     i = 1
+
     while(i <= ceil(nrow(scores)/2) & !converged)
     {
       top = population[as.scalar(selected[i]), ]
@@ -136,9 +136,9 @@ return (Frame[Unknown] bestLg, Double pre_best, Double T)
       c1 = removal(c1, as.scalar(cmr[1, 3]))
 
       # # # append length of pipeline and pipeline in frame
+      # # 
       children[i, 1] = ncol(c1)
       children[i, 2:(ncol(c1) + 1)] = c1
-
       i = i + 1
     }
     population = children
@@ -157,11 +157,10 @@ return (Frame[Unknown] bestLg, Double pre_best, Double T)
 addition = function(Frame[Unknown] top, Frame[Unknown] allOps, Integer addCount)
 return (Frame [Unknown] child)
 {
-  print("Starting addition")
   for(i in 1:addCount)
   {
     c = as.scalar(sample(ncol(allOps), 1))
-    place_to_add = as.scalar(sample(ncol(top)+1, 1))
+    place_to_add = as.scalar(sample(ncol(top)-2, 1))
     if(place_to_add == 1)
       child = cbind(allOps[1, c], top)
     else if(place_to_add >= ncol(top))
@@ -178,11 +177,10 @@ return (Frame [Unknown] child)
 mutation = function(Frame[Unknown] child, Double mutationRate)
 return (Frame [Unknown] mChild)
 {
-  print("Starting mutation on "+toString(child))
   random = as.scalar(rand(rows=1, cols=1))
-  if(random > mutationRate & ncol(child) >= 2)
+  if(random > mutationRate & ncol(child) >= 3)
   {
-    r = sample(ncol(child), 2)
+    r = sample(ncol(child) - 2, 2)
     r1 = as.scalar(r[1,1])
     r2 = as.scalar(r[2,1])
     temp = child[1, r1]
@@ -195,12 +193,11 @@ return (Frame [Unknown] mChild)
 removal = function(Frame[Unknown] child, Integer removal)
 return (Frame[Unknown] output)
 {
-  if(ncol(child) > 1 & ncol(child) > removal & removal > 0)
+  if(ncol(child) > 2 & (ncol(child)-2) > removal & removal > 0)
   {
-    print("Starting removal on "+toString(child))
     for(i in 1:removal)
     {
-      idx = as.scalar(sample(ncol(child), 1))
+      idx = as.scalar(sample(ncol(child)-3, 1))
       if(idx == 1)
         ch = child[, 2:ncol(child)]
       else if (idx == ncol(child))
@@ -211,5 +208,4 @@ return (Frame[Unknown] output)
     }
   }
   output = child
-  print("Starting removal on "+toString(output))
 }

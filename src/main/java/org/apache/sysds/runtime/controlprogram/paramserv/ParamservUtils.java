@@ -309,8 +309,10 @@ public class ParamservUtils {
 		for (ProgramBlock pb : pbs) {
 			if (pb instanceof ParForProgramBlock) {
 				ParForProgramBlock pfpb = (ParForProgramBlock) pb;
-				pfpb.setDegreeOfParallelism(k);
-				recompiled |= rAssignParallelismAndRecompile(pfpb.getChildBlocks(), 1, recompiled, forceExecTypeCP);
+				if( !pfpb.isDegreeOfParallelismFixed() ) {
+					pfpb.setDegreeOfParallelism(k);
+					recompiled |= rAssignParallelismAndRecompile(pfpb.getChildBlocks(), 1, recompiled, forceExecTypeCP);
+				}
 			} else if (pb instanceof ForProgramBlock) {
 				recompiled |= rAssignParallelismAndRecompile(((ForProgramBlock) pb).getChildBlocks(), k, recompiled, forceExecTypeCP);
 			} else if (pb instanceof WhileProgramBlock) {
@@ -478,5 +480,40 @@ public class ParamservUtils {
 		if (cleanup)
 			ParamservUtils.cleanupListObject(gradients);
 		return accGradients;
+	}
+
+	/**
+	 * Accumulate the given models into the accrued accrueModels
+	 *
+	 * @param accModels accrued models list object
+	 * @param model given models list object
+	 * @param cleanup clean up the given models list object
+	 * @return new accrued models list object
+	 */
+	public static ListObject accrueModels(ListObject accModels, ListObject model, boolean cleanup) {
+		return accrueModels(accModels, model, false, cleanup);
+	}
+
+	/**
+	 * Accumulate the given models into the accrued models
+	 *
+	 * @param accModels accrued models list object
+	 * @param model given models list object
+	 * @param par parallel execution
+	 * @param cleanup clean up the given models list object
+	 * @return new accrued models list object
+	 */
+	public static ListObject accrueModels(ListObject accModels, ListObject model, boolean par, boolean cleanup) {
+		if (accModels == null)
+			return ParamservUtils.copyList(model, cleanup);
+		IntStream range = IntStream.range(0, accModels.getLength());
+		(par ? range.parallel() : range).forEach(i -> {
+			MatrixBlock mb1 = ((MatrixObject) accModels.getData().get(i)).acquireReadAndRelease();
+			MatrixBlock mb2 = ((MatrixObject) model.getData().get(i)).acquireReadAndRelease();
+			mb1.binaryOperationsInPlace(new BinaryOperator(Plus.getPlusFnObject()), mb2);
+		});
+		if (cleanup)
+			ParamservUtils.cleanupListObject(model);
+		return accModels;
 	}
 }

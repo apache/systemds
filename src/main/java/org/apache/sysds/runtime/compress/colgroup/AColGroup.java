@@ -516,6 +516,13 @@ public abstract class AColGroup implements Serializable {
 	 */
 	public abstract AColGroup replace(double pattern, double replace);
 
+	/**
+	 * Compute the column sum
+	 * 
+	 * @param c The array to add the column sum to.
+	 */
+	public abstract void computeColSums(double[] c);
+
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();

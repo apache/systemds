@@ -125,7 +125,7 @@ public class FederatedTokenizeTest extends AutomatedTestBase {
 
 		// Run reference dml script with normal matrix
 		fullDMLScriptName = HOME + TEST_NAME + "Reference.dml";
-		programArgs = new String[] {"-explain", "-args", DATASET_DIR + DATASET, HOME + TEST_NAME + ".json", expected("S")};
+		programArgs = new String[] {"-explain", "-args", input("AH"), HOME + TEST_NAME + ".json", expected("S")};
 		runTest(null);
 
 		// Run actual dml script with federated matrix
@@ -137,7 +137,6 @@ public class FederatedTokenizeTest extends AutomatedTestBase {
 			"in_S=" + input(HOME + TEST_NAME + ".json"), "rows=" + rows, "cols=" + cols,
 			"out_R=" + output("S")};
 		runTest(null);
-
 		compareResults(1e-9);
 		Assert.assertTrue(heavyHittersContainsString("fed_tokenize"));
 		TestUtils.shutdownThreads(t1, t2, t3, t4);

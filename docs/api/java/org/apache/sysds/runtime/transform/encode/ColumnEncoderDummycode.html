@@ -241,41 +241,41 @@ extends <a href="../../../../../../org/apache/sysds/runtime/transform/encode/Col
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/transform/encode/ColumnEncoderDummycode.html#equals-java.lang.Object-">equals</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a>&nbsp;o)</code>&nbsp;</td>
 </tr>
 <tr id="i6" class="altColor">
+<td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;<a href="../../../../../../org/apache/sysds/runtime/util/DependencyTask.html" title="class in org.apache.sysds.runtime.util">DependencyTask</a>&lt;?&gt;&gt;</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/transform/encode/ColumnEncoderDummycode.html#getApplyTasks-org.apache.sysds.runtime.matrix.data.MatrixBlock-org.apache.sysds.runtime.matrix.data.MatrixBlock-int-">getApplyTasks</a></span>(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;in,
+             <a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;out,
+             int&nbsp;outputCol)</code>&nbsp;</td>
+</tr>
+<tr id="i7" class="rowColor">
+<td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;<a href="../../../../../../org/apache/sysds/runtime/util/DependencyTask.html" title="class in org.apache.sysds.runtime.util">DependencyTask</a>&lt;?&gt;&gt;</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/transform/encode/ColumnEncoderDummycode.html#getBuildTasks-org.apache.sysds.runtime.matrix.data.FrameBlock-int-">getBuildTasks</a></span>(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;in,
+             int&nbsp;blockSize)</code>&nbsp;</td>
+</tr>
+<tr id="i8" class="altColor">
 <td class="colFirst"><code>int</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/transform/encode/ColumnEncoderDummycode.html#getDomainSize--">getDomainSize</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i7" class="rowColor">
+<tr id="i9" class="rowColor">
 <td class="colFirst"><code><a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/transform/encode/ColumnEncoderDummycode.html#getMetaData-org.apache.sysds.runtime.matrix.data.FrameBlock-">getMetaData</a></span>(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;meta)</code>
 <div class="block">Construct a frame block out of the transform meta data.</div>
 </td>
 </tr>
-<tr id="i8" class="altColor">
-<td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/Callable.html?is-external=true" title="class or interface in java.util.concurrent">Callable</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a>&gt;&gt;</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/transform/encode/ColumnEncoderDummycode.html#getPartialBuildTasks-org.apache.sysds.runtime.matrix.data.FrameBlock-int-">getPartialBuildTasks</a></span>(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;in,
-                    int&nbsp;blockSize)</code>&nbsp;</td>
-</tr>
-<tr id="i9" class="rowColor">
+<tr id="i10" class="altColor">
 <td class="colFirst"><code>int</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/transform/encode/ColumnEncoderDummycode.html#hashCode--">hashCode</a></span>()</code>&nbsp;</td>
 </tr>
-<tr id="i10" class="altColor">
+<tr id="i11" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/transform/encode/ColumnEncoderDummycode.html#initMetaData-org.apache.sysds.runtime.matrix.data.FrameBlock-">initMetaData</a></span>(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;meta)</code>
 <div class="block">Sets up the required meta data for a subsequent call to apply.</div>
 </td>
 </tr>
-<tr id="i11" class="rowColor">
+<tr id="i12" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/transform/encode/ColumnEncoderDummycode.html#mergeAt-org.apache.sysds.runtime.transform.encode.ColumnEncoder-">mergeAt</a></span>(<a href="../../../../../../org/apache/sysds/runtime/transform/encode/ColumnEncoder.html" title="class in org.apache.sysds.runtime.transform.encode">ColumnEncoder</a>&nbsp;other)</code>
 <div class="block">Merges another encoder, of a compatible type, in after a certain position.</div>
 </td>
-</tr>
-<tr id="i12" class="altColor">
-<td class="colFirst"><code>void</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/transform/encode/ColumnEncoderDummycode.html#mergeBuildPartial-java.util.List-int-int-">mergeBuildPartial</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/Future.html?is-external=true" title="class or interface in java.util.concurrent">Future</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a>&gt;&gt;&nbsp;futurePartials,
-                 int&nbsp;start,
-                 int&nbsp;end)</code>&nbsp;</td>
 </tr>
 <tr id="i13" class="rowColor">
 <td class="colFirst"><code>void</code></td>
@@ -309,7 +309,7 @@ extends <a href="../../../../../../org/apache/sysds/runtime/transform/encode/Col
 <!--   -->
 </a>
 <h3>Methods inherited from class&nbsp;org.apache.sysds.runtime.transform.encode.<a href="../../../../../../org/apache/sysds/runtime/transform/encode/ColumnEncoder.html" title="class in org.apache.sysds.runtime.transform.encode">ColumnEncoder</a></h3>
-<code><a href="../../../../../../org/apache/sysds/runtime/transform/encode/ColumnEncoder.html#buildPartial-org.apache.sysds.runtime.matrix.data.FrameBlock-">buildPartial</a>, <a href="../../../../../../org/apache/sysds/runtime/transform/encode/ColumnEncoder.html#compareTo-org.apache.sysds.runtime.transform.encode.ColumnEncoder-">compareTo</a>, <a href="../../../../../../org/apache/sysds/runtime/transform/encode/ColumnEncoder.html#getColID--">getColID</a>, <a href="../../../../../../org/apache/sysds/runtime/transform/encode/ColumnEncoder.html#getColMapping-org.apache.sysds.runtime.matrix.data.FrameBlock-">getColMapping</a>, <a href="../../../../../../org/apache/sysds/runtime/transform/encode/ColumnEncoder.html#isApplicable--">isApplicable</a>, <a href="../../../../../../org/apache/sysds/runtime/transform/encode/ColumnEncoder.html#isApplicable-int-">isApplicable</a>, <a href="../../../../../../org/apache/sysds/runtime/transform/encode/ColumnEncoder.html#prepareBuildPartial--">prepareBuildPartial</a>, <a href="../../../../../../org/apache/sysds/runtime/transform/encode/ColumnEncoder.html#setColID-int-">setColID</a>, <a href="../../../../../../org/apache/sysds/runtime/transform/encode/ColumnEncoder.html#shiftCol-int-">shiftCol</a></code></li>
+<code><a href="../../../../../../org/apache/sysds/runtime/transform/encode/ColumnEncoder.html#buildPartial-org.apache.sysds.runtime.matrix.data.FrameBlock-">buildPartial</a>, <a href="../../../../../../org/apache/sysds/runtime/transform/encode/ColumnEncoder.html#compareTo-org.apache.sysds.runtime.transform.encode.ColumnEncoder-">compareTo</a>, <a href="../../../../../../org/apache/sysds/runtime/transform/encode/ColumnEncoder.html#getApplyTasks-org.apache.sysds.runtime.matrix.data.FrameBlock-org.apache.sysds.runtime.matrix.data.MatrixBlock-int-">getApplyTasks</a>, <a href="../../../../../../org/apache/sysds/runtime/transform/encode/ColumnEncoder.html#getBuildTask-org.apache.sysds.runtime.matrix.data.FrameBlock-">getBuildTask</a>, <a href="../../../../../../org/apache/sysds/runtime/transform/encode/ColumnEncoder.html#getColID--">getColID</a>, <a href="../../../../../../org/apache/sysds/runtime/transform/encode/ColumnEncoder.html#getColMapping-org.apache.sysds.runtime.matrix.data.FrameBlock-">getColMapping</a>, <a href="../../../../../../org/apache/sysds/runtime/transform/encode/ColumnEncoder.html#getPartialBuildTask-org.apache.sysds.runtime.matrix.data.FrameBlock-int-int-java.util.HashMap-">getPartialBuildTask</a>, <a href="../../../../../../org/apache/sysds/runtime/transform/encode/ColumnEncoder.html#getPartialMergeBuildTask-java.util.HashMap-">getPartialMergeBuildTask</a>, <a href="../../../../../../org/apache/sysds/runtime/transform/encode/ColumnEncoder.html#isApplicable--">isApplicable</a>, <a href="../../../../../../org/apache/sysds/runtime/transform/encode/ColumnEncoder.html#isApplicable-int-">isApplicable</a>, <a href="../../../../../../org/apache/sysds/runtime/transform/encode/ColumnEncoder.html#prepareBuildPartial--">prepareBuildPartial</a>, <a href="../../../../../../org/apache/sysds/runtime/transform/encode/ColumnEncoder.html#setColID-int-">setColID</a>, <a href="../../../../../../org/apache/sysds/runtime/transform/encode/ColumnEncoder.html#shiftCol-int-">shiftCol</a></code></li>
 </ul>
 <ul class="blockList">
 <li class="blockList"><a name="methods.inherited.from.class.java.lang.Object">
@@ -400,32 +400,17 @@ extends <a href="../../../../../../org/apache/sysds/runtime/transform/encode/Col
 </dl>
 </li>
 </ul>
-<a name="getPartialBuildTasks-org.apache.sysds.runtime.matrix.data.FrameBlock-int-">
+<a name="getBuildTasks-org.apache.sysds.runtime.matrix.data.FrameBlock-int-">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
-<h4>getPartialBuildTasks</h4>
-<pre>public&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/Callable.html?is-external=true" title="class or interface in java.util.concurrent">Callable</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a>&gt;&gt;&nbsp;getPartialBuildTasks(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;in,
-                                                   int&nbsp;blockSize)</pre>
+<h4>getBuildTasks</h4>
+<pre>public&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;<a href="../../../../../../org/apache/sysds/runtime/util/DependencyTask.html" title="class in org.apache.sysds.runtime.util">DependencyTask</a>&lt;?&gt;&gt;&nbsp;getBuildTasks(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/FrameBlock.html" title="class in org.apache.sysds.runtime.matrix.data">FrameBlock</a>&nbsp;in,
+                                             int&nbsp;blockSize)</pre>
 <dl>
-<dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
-<dd><code><a href="../../../../../../org/apache/sysds/runtime/transform/encode/ColumnEncoder.html#getPartialBuildTasks-org.apache.sysds.runtime.matrix.data.FrameBlock-int-">getPartialBuildTasks</a></code>&nbsp;in class&nbsp;<code><a href="../../../../../../org/apache/sysds/runtime/transform/encode/ColumnEncoder.html" title="class in org.apache.sysds.runtime.transform.encode">ColumnEncoder</a></code></dd>
-</dl>
-</li>
-</ul>
-<a name="mergeBuildPartial-java.util.List-int-int-">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>mergeBuildPartial</h4>
-<pre>public&nbsp;void&nbsp;mergeBuildPartial(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/Future.html?is-external=true" title="class or interface in java.util.concurrent">Future</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a>&gt;&gt;&nbsp;futurePartials,
-                              int&nbsp;start,
-                              int&nbsp;end)</pre>
-<dl>
-<dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
-<dd><code><a href="../../../../../../org/apache/sysds/runtime/transform/encode/ColumnEncoder.html#mergeBuildPartial-java.util.List-int-int-">mergeBuildPartial</a></code>&nbsp;in class&nbsp;<code><a href="../../../../../../org/apache/sysds/runtime/transform/encode/ColumnEncoder.html" title="class in org.apache.sysds.runtime.transform.encode">ColumnEncoder</a></code></dd>
+<dt><span class="overrideSpecifyLabel">Overrides:</span></dt>
+<dd><code><a href="../../../../../../org/apache/sysds/runtime/transform/encode/ColumnEncoder.html#getBuildTasks-org.apache.sysds.runtime.matrix.data.FrameBlock-int-">getBuildTasks</a></code>&nbsp;in class&nbsp;<code><a href="../../../../../../org/apache/sysds/runtime/transform/encode/ColumnEncoder.html" title="class in org.apache.sysds.runtime.transform.encode">ColumnEncoder</a></code></dd>
 </dl>
 </li>
 </ul>
@@ -496,6 +481,21 @@ extends <a href="../../../../../../org/apache/sysds/runtime/transform/encode/Col
 <dl>
 <dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
 <dd><code><a href="../../../../../../org/apache/sysds/runtime/transform/encode/ColumnEncoder.html#apply-org.apache.sysds.runtime.matrix.data.MatrixBlock-org.apache.sysds.runtime.matrix.data.MatrixBlock-int-int-int-">apply</a></code>&nbsp;in class&nbsp;<code><a href="../../../../../../org/apache/sysds/runtime/transform/encode/ColumnEncoder.html" title="class in org.apache.sysds.runtime.transform.encode">ColumnEncoder</a></code></dd>
+</dl>
+</li>
+</ul>
+<a name="getApplyTasks-org.apache.sysds.runtime.matrix.data.MatrixBlock-org.apache.sysds.runtime.matrix.data.MatrixBlock-int-">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>getApplyTasks</h4>
+<pre>public&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;<a href="../../../../../../org/apache/sysds/runtime/util/DependencyTask.html" title="class in org.apache.sysds.runtime.util">DependencyTask</a>&lt;?&gt;&gt;&nbsp;getApplyTasks(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;in,
+                                             <a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;out,
+                                             int&nbsp;outputCol)</pre>
+<dl>
+<dt><span class="overrideSpecifyLabel">Overrides:</span></dt>
+<dd><code><a href="../../../../../../org/apache/sysds/runtime/transform/encode/ColumnEncoder.html#getApplyTasks-org.apache.sysds.runtime.matrix.data.MatrixBlock-org.apache.sysds.runtime.matrix.data.MatrixBlock-int-">getApplyTasks</a></code>&nbsp;in class&nbsp;<code><a href="../../../../../../org/apache/sysds/runtime/transform/encode/ColumnEncoder.html" title="class in org.apache.sysds.runtime.transform.encode">ColumnEncoder</a></code></dd>
 </dl>
 </li>
 </ul>

@@ -26,6 +26,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
+import org.apache.commons.lang.NotImplementedException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.DMLRuntimeException;
@@ -100,7 +101,7 @@ public class CLALibCompAgg {
 				aggregateUnaryNormalCompressedMatrixBlock(inputMatrix, ret, opm, blen, indexesIn, inCP);
 		}
 		ret.recomputeNonZeros();
-		if(!inCP) {
+		if(op.aggOp.existsCorrection() && !inCP) {
 			ret = addCorrection(ret, op);
 			if(op.aggOp.increOp.fn instanceof Mean)
 				ret = addCellCount(ret, op, inputMatrix.getNumRows(), inputMatrix.getNumColumns());
@@ -124,8 +125,6 @@ public class CLALibCompAgg {
 				for(int i = 0; i < ret.getNumColumns(); i++)
 					resWithCorrection.setValue(0, i, ret.quickGetValue(0, i));
 				break;
-			case LASTFOURCOLUMNS:
-			case LASTFOURROWS:
 			case LASTTWOCOLUMNS:
 				resWithCorrection = new MatrixBlock(ret.getNumRows(), ret.getNumColumns() + 2, false);
 				resWithCorrection.allocateDenseBlock();
@@ -138,10 +137,14 @@ public class CLALibCompAgg {
 				for(int i = 0; i < ret.getNumColumns(); i++)
 					resWithCorrection.setValue(0, i, ret.quickGetValue(0, i));
 				break;
-			case INVALID:
 			case NONE:
-			default:
 				resWithCorrection = ret;
+				break;
+			case LASTFOURCOLUMNS:
+			case LASTFOURROWS:
+			case INVALID:
+			default:
+				throw new NotImplementedException("Not implemented corrections of more than 2");
 		}
 
 		return resWithCorrection;
@@ -149,7 +152,7 @@ public class CLALibCompAgg {
 
 	private static MatrixBlock addCellCount(MatrixBlock ret, AggregateUnaryOperator op, int nRow, int nCol) {
 		if(op.indexFn instanceof ReduceAll)
-			ret.setValue(0, 1, nRow * nCol);
+			ret.setValue(0, 1, (long) nRow * (long) nCol);
 		else if(op.indexFn instanceof ReduceCol)
 			for(int i = 0; i < nRow; i++)
 				ret.setValue(i, 1, nCol);
@@ -307,7 +310,7 @@ public class CLALibCompAgg {
 	}
 
 	private static void divideByNumberOfCellsForMeanAll(CompressedMatrixBlock m1, MatrixBlock ret) {
-		ret.quickSetValue(0, 0, ret.quickGetValue(0, 0) / (m1.getNumColumns() * m1.getNumRows()));
+		ret.quickSetValue(0, 0, ret.quickGetValue(0, 0) / ((long) m1.getNumColumns() * (long) m1.getNumRows()));
 	}
 
 	private static void postProcessAggregate(CompressedMatrixBlock m1, MatrixBlock ret, AggregateUnaryOperator op) {

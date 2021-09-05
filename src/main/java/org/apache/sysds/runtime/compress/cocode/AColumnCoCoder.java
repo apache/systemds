@@ -65,7 +65,9 @@ public abstract class AColumnCoCoder {
 	protected CompressedSizeInfoColGroup joinWithoutAnalysis(CompressedSizeInfoColGroup lhs,
 		CompressedSizeInfoColGroup rhs) {
 		int[] joined = Util.join(lhs.getColumns(), rhs.getColumns());
-		int numVals = lhs.getNumVals() + rhs.getNumVals();
+		final int lhsV = lhs.getNumVals();
+		final int rhsV = rhs.getNumVals();
+		final int numVals = lhsV * rhsV;
 		if(numVals < 0 || numVals > _sest.getNumRows())
 			return null;
 		else

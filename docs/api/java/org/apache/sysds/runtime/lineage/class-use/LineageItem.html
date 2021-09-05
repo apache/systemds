@@ -83,31 +83,39 @@
 </tr>
 <tbody>
 <tr class="altColor">
+<td class="colFirst"><a href="#org.apache.sysds.hops.rewrite">org.apache.sysds.hops.rewrite</a></td>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
 <td class="colFirst"><a href="#org.apache.sysds.runtime.controlprogram.caching">org.apache.sysds.runtime.controlprogram.caching</a></td>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><a href="#org.apache.sysds.runtime.controlprogram.context">org.apache.sysds.runtime.controlprogram.context</a></td>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><a href="#org.apache.sysds.runtime.instructions.cp">org.apache.sysds.runtime.instructions.cp</a></td>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><a href="#org.apache.sysds.runtime.instructions.fed">org.apache.sysds.runtime.instructions.fed</a></td>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><a href="#org.apache.sysds.runtime.instructions.gpu">org.apache.sysds.runtime.instructions.gpu</a></td>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><a href="#org.apache.sysds.runtime.instructions.spark">org.apache.sysds.runtime.instructions.spark</a></td>
 <td class="colLast">&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><a href="#org.apache.sysds.runtime.lineage">org.apache.sysds.runtime.lineage</a></td>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><a href="#org.apache.sysds.runtime.util">org.apache.sysds.runtime.util</a></td>
 <td class="colLast">&nbsp;</td>
 </tr>
 <tr class="rowColor">
@@ -119,6 +127,24 @@
 </li>
 <li class="blockList">
 <ul class="blockList">
+<li class="blockList"><a name="org.apache.sysds.hops.rewrite">
+<!--   -->
+</a>
+<h3>Uses of <a href="../../../../../../org/apache/sysds/runtime/lineage/LineageItem.html" title="class in org.apache.sysds.runtime.lineage">LineageItem</a> in <a href="../../../../../../org/apache/sysds/hops/rewrite/package-summary.html">org.apache.sysds.hops.rewrite</a></h3>
+<table class="useSummary" border="0" cellpadding="3" cellspacing="0" summary="Use table, listing methods, and an explanation">
+<caption><span>Methods in <a href="../../../../../../org/apache/sysds/hops/rewrite/package-summary.html">org.apache.sysds.hops.rewrite</a> that return types with arguments of type <a href="../../../../../../org/apache/sysds/runtime/lineage/LineageItem.html" title="class in org.apache.sysds.runtime.lineage">LineageItem</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colLast" scope="col">Method and Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code>org.apache.commons.lang3.tuple.Pair&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>,<a href="../../../../../../org/apache/sysds/runtime/lineage/LineageItem.html" title="class in org.apache.sysds.runtime.lineage">LineageItem</a>&gt;</code></td>
+<td class="colLast"><span class="typeNameLabel">RewriteFederatedExecution.PrivacyConstraintRetriever.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/hops/rewrite/RewriteFederatedExecution.PrivacyConstraintRetriever.html#getLineageItem-org.apache.sysds.runtime.controlprogram.context.ExecutionContext-">getLineageItem</a></span>(<a href="../../../../../../org/apache/sysds/runtime/controlprogram/context/ExecutionContext.html" title="class in org.apache.sysds.runtime.controlprogram.context">ExecutionContext</a>&nbsp;ec)</code>&nbsp;</td>
+</tr>
+</tbody>
+</table>
+</li>
 <li class="blockList"><a name="org.apache.sysds.runtime.controlprogram.caching">
 <!--   -->
 </a>
@@ -249,25 +275,29 @@
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code>org.apache.commons.lang3.tuple.Pair&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>,<a href="../../../../../../org/apache/sysds/runtime/lineage/LineageItem.html" title="class in org.apache.sysds.runtime.lineage">LineageItem</a>&gt;</code></td>
-<td class="colLast"><span class="typeNameLabel">MatrixBuiltinNaryCPInstruction.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/instructions/cp/MatrixBuiltinNaryCPInstruction.html#getLineageItem-org.apache.sysds.runtime.controlprogram.context.ExecutionContext-">getLineageItem</a></span>(<a href="../../../../../../org/apache/sysds/runtime/controlprogram/context/ExecutionContext.html" title="class in org.apache.sysds.runtime.controlprogram.context">ExecutionContext</a>&nbsp;ec)</code>&nbsp;</td>
+<td class="colLast"><span class="typeNameLabel">StringInitCPInstruction.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/instructions/cp/StringInitCPInstruction.html#getLineageItem-org.apache.sysds.runtime.controlprogram.context.ExecutionContext-">getLineageItem</a></span>(<a href="../../../../../../org/apache/sysds/runtime/controlprogram/context/ExecutionContext.html" title="class in org.apache.sysds.runtime.controlprogram.context">ExecutionContext</a>&nbsp;ec)</code>&nbsp;</td>
 </tr>
 <tr class="rowColor">
+<td class="colFirst"><code>org.apache.commons.lang3.tuple.Pair&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>,<a href="../../../../../../org/apache/sysds/runtime/lineage/LineageItem.html" title="class in org.apache.sysds.runtime.lineage">LineageItem</a>&gt;</code></td>
+<td class="colLast"><span class="typeNameLabel">MatrixBuiltinNaryCPInstruction.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/instructions/cp/MatrixBuiltinNaryCPInstruction.html#getLineageItem-org.apache.sysds.runtime.controlprogram.context.ExecutionContext-">getLineageItem</a></span>(<a href="../../../../../../org/apache/sysds/runtime/controlprogram/context/ExecutionContext.html" title="class in org.apache.sysds.runtime.controlprogram.context">ExecutionContext</a>&nbsp;ec)</code>&nbsp;</td>
+</tr>
+<tr class="altColor">
 <td class="colFirst"><code>org.apache.commons.lang3.tuple.Pair&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>,<a href="../../../../../../org/apache/sysds/runtime/lineage/LineageItem.html" title="class in org.apache.sysds.runtime.lineage">LineageItem</a>&gt;</code></td>
 <td class="colLast"><span class="typeNameLabel">DataGenCPInstruction.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/instructions/cp/DataGenCPInstruction.html#getLineageItem-org.apache.sysds.runtime.controlprogram.context.ExecutionContext-">getLineageItem</a></span>(<a href="../../../../../../org/apache/sysds/runtime/controlprogram/context/ExecutionContext.html" title="class in org.apache.sysds.runtime.controlprogram.context">ExecutionContext</a>&nbsp;ec)</code>&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>org.apache.commons.lang3.tuple.Pair&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>,<a href="../../../../../../org/apache/sysds/runtime/lineage/LineageItem.html" title="class in org.apache.sysds.runtime.lineage">LineageItem</a>&gt;</code></td>
 <td class="colLast"><span class="typeNameLabel">CtableCPInstruction.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/instructions/cp/CtableCPInstruction.html#getLineageItem-org.apache.sysds.runtime.controlprogram.context.ExecutionContext-">getLineageItem</a></span>(<a href="../../../../../../org/apache/sysds/runtime/controlprogram/context/ExecutionContext.html" title="class in org.apache.sysds.runtime.controlprogram.context">ExecutionContext</a>&nbsp;ec)</code>&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code>org.apache.commons.lang3.tuple.Pair&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>,<a href="../../../../../../org/apache/sysds/runtime/lineage/LineageItem.html" title="class in org.apache.sysds.runtime.lineage">LineageItem</a>&gt;</code></td>
 <td class="colLast"><span class="typeNameLabel">ComputationCPInstruction.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/instructions/cp/ComputationCPInstruction.html#getLineageItem-org.apache.sysds.runtime.controlprogram.context.ExecutionContext-">getLineageItem</a></span>(<a href="../../../../../../org/apache/sysds/runtime/controlprogram/context/ExecutionContext.html" title="class in org.apache.sysds.runtime.controlprogram.context">ExecutionContext</a>&nbsp;ec)</code>&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code>org.apache.commons.lang3.tuple.Pair&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>,<a href="../../../../../../org/apache/sysds/runtime/lineage/LineageItem.html" title="class in org.apache.sysds.runtime.lineage">LineageItem</a>&gt;</code></td>
 <td class="colLast"><span class="typeNameLabel">ListIndexingCPInstruction.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/instructions/cp/ListIndexingCPInstruction.html#getLineageItem-org.apache.sysds.runtime.controlprogram.context.ExecutionContext-">getLineageItem</a></span>(<a href="../../../../../../org/apache/sysds/runtime/controlprogram/context/ExecutionContext.html" title="class in org.apache.sysds.runtime.controlprogram.context">ExecutionContext</a>&nbsp;ec)</code>&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code><a href="https://docs.oracle.com/javase/8/docs/api/java/util/List.html?is-external=true" title="class or interface in java.util">List</a>&lt;<a href="../../../../../../org/apache/sysds/runtime/lineage/LineageItem.html" title="class in org.apache.sysds.runtime.lineage">LineageItem</a>&gt;</code></td>
 <td class="colLast"><span class="typeNameLabel">ListObject.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/instructions/cp/ListObject.html#getLineageItems--">getLineageItems</a></span>()</code>&nbsp;</td>
 </tr>
@@ -842,6 +872,27 @@
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/lineage/LineageItem.html#LineageItem-java.lang.String-java.lang.String-org.apache.sysds.runtime.lineage.LineageItem:A-">LineageItem</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;data,
            <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;opcode,
            <a href="../../../../../../org/apache/sysds/runtime/lineage/LineageItem.html" title="class in org.apache.sysds.runtime.lineage">LineageItem</a>[]&nbsp;inputs)</code>&nbsp;</td>
+</tr>
+</tbody>
+</table>
+</li>
+<li class="blockList"><a name="org.apache.sysds.runtime.util">
+<!--   -->
+</a>
+<h3>Uses of <a href="../../../../../../org/apache/sysds/runtime/lineage/LineageItem.html" title="class in org.apache.sysds.runtime.lineage">LineageItem</a> in <a href="../../../../../../org/apache/sysds/runtime/util/package-summary.html">org.apache.sysds.runtime.util</a></h3>
+<table class="useSummary" border="0" cellpadding="3" cellspacing="0" summary="Use table, listing methods, and an explanation">
+<caption><span>Methods in <a href="../../../../../../org/apache/sysds/runtime/util/package-summary.html">org.apache.sysds.runtime.util</a> with parameters of type <a href="../../../../../../org/apache/sysds/runtime/lineage/LineageItem.html" title="class in org.apache.sysds.runtime.lineage">LineageItem</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colLast" scope="col">Method and Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code>static <a href="https://docs.oracle.com/javase/8/docs/api/java/util/ArrayList.html?is-external=true" title="class or interface in java.util">ArrayList</a>&lt;<a href="../../../../../../org/apache/sysds/hops/Hop.html" title="class in org.apache.sysds.hops">Hop</a>&gt;</code></td>
+<td class="colLast"><span class="typeNameLabel">AutoDiff.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/util/AutoDiff.html#constructHopsNR-org.apache.sysds.runtime.lineage.LineageItem-java.util.Map-org.apache.sysds.hops.Hop-java.util.ArrayList-">constructHopsNR</a></span>(<a href="../../../../../../org/apache/sysds/runtime/lineage/LineageItem.html" title="class in org.apache.sysds.runtime.lineage">LineageItem</a>&nbsp;item,
+               <a href="https://docs.oracle.com/javase/8/docs/api/java/util/Map.html?is-external=true" title="class or interface in java.util">Map</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Long.html?is-external=true" title="class or interface in java.lang">Long</a>,<a href="../../../../../../org/apache/sysds/hops/Hop.html" title="class in org.apache.sysds.hops">Hop</a>&gt;&nbsp;operands,
+               <a href="../../../../../../org/apache/sysds/hops/Hop.html" title="class in org.apache.sysds.hops">Hop</a>&nbsp;mo,
+               <a href="https://docs.oracle.com/javase/8/docs/api/java/util/ArrayList.html?is-external=true" title="class or interface in java.util">ArrayList</a>&lt;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&gt;&nbsp;names)</code>&nbsp;</td>
 </tr>
 </tbody>
 </table>

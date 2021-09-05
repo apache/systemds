@@ -38,9 +38,5 @@ print(toString(C))
 print(acc)
 
 if(acc < 50){
-    print("")
-    print("--------------------------------------------")
-    print("ERROR: Accuracy achieved is not high enough.")
-    print("--------------------------------------------")
-    print("")
+    stop("MLogReg Accuracy achieved is not high enough")
 }

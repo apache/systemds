@@ -68,6 +68,7 @@ import org.apache.sysds.runtime.controlprogram.federated.FederatedData;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRange;
 import org.apache.sysds.runtime.controlprogram.federated.FederationMap;
 import org.apache.sysds.runtime.controlprogram.federated.FederationUtils;
+import org.apache.sysds.runtime.io.FileFormatProperties;
 import org.apache.sysds.runtime.io.FileFormatPropertiesCSV;
 import org.apache.sysds.runtime.io.FrameReader;
 import org.apache.sysds.runtime.io.FrameReaderFactory;
@@ -515,13 +516,7 @@ public abstract class AutomatedTestBase {
 		String completePath = baseDirectory + INPUT_DIR + name + "/in";
 		String completeRPath = baseDirectory + INPUT_DIR + name + ".mtx";
 
-		try {
-			cleanupExistingData(baseDirectory + INPUT_DIR + name, bIncludeR);
-		}
-		catch(IOException e) {
-			e.printStackTrace();
-			throw new RuntimeException(e);
-		}
+		cleanupDir(baseDirectory + INPUT_DIR + name, bIncludeR);
 
 		TestUtils.writeTestMatrix(completePath, matrix);
 		if(bIncludeR) {
@@ -533,6 +528,30 @@ public abstract class AutomatedTestBase {
 		inputDirectories.add(baseDirectory + INPUT_DIR + name);
 
 		return matrix;
+	}
+
+	protected void writeCSVMatrix(String name, double[][] matrix, boolean header, MatrixCharacteristics mc) {
+		try {
+			final String completePath = baseDirectory + INPUT_DIR + name;
+			final String completeMTDPath = baseDirectory + INPUT_DIR + name + ".mtd";
+			cleanupDir(completePath, false);
+			TestUtils.writeCSV(completePath, matrix, header);
+			final FileFormatProperties ffp = header ? new FileFormatPropertiesCSV(true, ",", false, 0.0, "") : new FileFormatPropertiesCSV();
+			HDFSTool.writeMetaDataFile(completeMTDPath, ValueType.FP64, mc, FileFormat.CSV, ffp);
+		}
+		catch(Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	protected void cleanupDir(String fullPath, boolean bIncludeR){
+		try {
+			cleanupExistingData(fullPath, bIncludeR);
+		}
+		catch(IOException e) {
+			e.printStackTrace();
+			throw new RuntimeException(e);
+		}
 	}
 
 	protected double[][] writeInputMatrixWithMTD(String name, MatrixBlock matrix, boolean bIncludeR) {

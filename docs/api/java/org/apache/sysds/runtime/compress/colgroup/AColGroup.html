@@ -18,7 +18,7 @@
     catch(err) {
     }
 //-->
-var methods = {"i0":6,"i1":6,"i2":6,"i3":6,"i4":9,"i5":6,"i6":10,"i7":6,"i8":10,"i9":6,"i10":10,"i11":6,"i12":10,"i13":6,"i14":6,"i15":6,"i16":10,"i17":6,"i18":6,"i19":6,"i20":6,"i21":6,"i22":6,"i23":6,"i24":10,"i25":6,"i26":10,"i27":6,"i28":6,"i29":6,"i30":10,"i31":10,"i32":10,"i33":10,"i34":6,"i35":6,"i36":6,"i37":6,"i38":10};
+var methods = {"i0":6,"i1":6,"i2":6,"i3":6,"i4":9,"i5":6,"i6":10,"i7":6,"i8":10,"i9":6,"i10":10,"i11":6,"i12":10,"i13":6,"i14":6,"i15":6,"i16":10,"i17":6,"i18":6,"i19":6,"i20":6,"i21":6,"i22":6,"i23":6,"i24":10,"i25":6,"i26":10,"i27":6,"i28":6,"i29":6,"i30":10,"i31":10,"i32":10,"i33":10,"i34":6,"i35":6,"i36":6,"i37":10};
 var tabs = {65535:["t0","All Methods"],1:["t1","Static Methods"],2:["t2","Instance Methods"],4:["t3","Abstract Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -397,21 +397,11 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Serializab
 </tr>
 <tr id="i34" class="altColor">
 <td class="colFirst"><code>abstract void</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.html#tsmm-double:A-int-">tsmm</a></span>(double[]&nbsp;result,
-    int&nbsp;numColumns)</code>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.html#tsmm-org.apache.sysds.runtime.matrix.data.MatrixBlock-">tsmm</a></span>(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;ret)</code>
 <div class="block">Do a transposed self matrix multiplication on the left side t(x) %*% x.</div>
 </td>
 </tr>
 <tr id="i35" class="rowColor">
-<td class="colFirst"><code>abstract void</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.html#tsmm-double:A-int-int-int-">tsmm</a></span>(double[]&nbsp;result,
-    int&nbsp;numColumns,
-    int&nbsp;idxStart,
-    int&nbsp;idxEnd)</code>
-<div class="block">Do a transposed self matrix multiplication on the left side t(x) %*% x.</div>
-</td>
-</tr>
-<tr id="i36" class="altColor">
 <td class="colFirst"><code>abstract void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.html#unaryAggregateOperations-org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator-double:A-">unaryAggregateOperations</a></span>(<a href="../../../../../../org/apache/sysds/runtime/matrix/operators/AggregateUnaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">AggregateUnaryOperator</a>&nbsp;op,
                         double[]&nbsp;c)</code>
@@ -419,7 +409,7 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Serializab
  matrix.</div>
 </td>
 </tr>
-<tr id="i37" class="rowColor">
+<tr id="i36" class="altColor">
 <td class="colFirst"><code>abstract void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.html#unaryAggregateOperations-org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator-double:A-int-int-">unaryAggregateOperations</a></span>(<a href="../../../../../../org/apache/sysds/runtime/matrix/operators/AggregateUnaryOperator.html" title="class in org.apache.sysds.runtime.matrix.operators">AggregateUnaryOperator</a>&nbsp;op,
                         double[]&nbsp;c,
@@ -429,7 +419,7 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Serializab
  matrix.</div>
 </td>
 </tr>
-<tr id="i38" class="altColor">
+<tr id="i37" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/compress/colgroup/AColGroup.html#write-java.io.DataOutput-">write</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/io/DataOutput.html?is-external=true" title="class or interface in java.io">DataOutput</a>&nbsp;out)</code>
 <div class="block">Serializes column group to data output.</div>
@@ -751,14 +741,13 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Serializab
 </dl>
 </li>
 </ul>
-<a name="tsmm-double:A-int-">
+<a name="tsmm-org.apache.sysds.runtime.matrix.data.MatrixBlock-">
 <!--   -->
 </a>
 <ul class="blockList">
 <li class="blockList">
 <h4>tsmm</h4>
-<pre>public abstract&nbsp;void&nbsp;tsmm(double[]&nbsp;result,
-                          int&nbsp;numColumns)</pre>
+<pre>public abstract&nbsp;void&nbsp;tsmm(<a href="../../../../../../org/apache/sysds/runtime/matrix/data/MatrixBlock.html" title="class in org.apache.sysds.runtime.matrix.data">MatrixBlock</a>&nbsp;ret)</pre>
 <div class="block">Do a transposed self matrix multiplication on the left side t(x) %*% x. but only with this column group.
  
  This gives better performance since there is no need to iterate through all the rows of the matrix, but the
@@ -767,34 +756,7 @@ implements <a href="https://docs.oracle.com/javase/8/docs/api/java/io/Serializab
  Note it only calculate the upper triangle</div>
 <dl>
 <dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>result</code> - A row major dense allocation of a matrixBlock, of size [numColumns x numColumns]</dd>
-<dd><code>numColumns</code> - The number of columns in the row major result matrix.</dd>
-</dl>
-</li>
-</ul>
-<a name="tsmm-double:A-int-int-int-">
-<!--   -->
-</a>
-<ul class="blockList">
-<li class="blockList">
-<h4>tsmm</h4>
-<pre>public abstract&nbsp;void&nbsp;tsmm(double[]&nbsp;result,
-                          int&nbsp;numColumns,
-                          int&nbsp;idxStart,
-                          int&nbsp;idxEnd)</pre>
-<div class="block">Do a transposed self matrix multiplication on the left side t(x) %*% x. but only with this column group, and only
- on a subset of the columns contained in this columnGroup.
- 
- This gives better performance since there is no need to iterate through all the rows of the matrix, but the
- execution can be limited to its number of distinct values.
- 
- Note it only calculate the upper triangle</div>
-<dl>
-<dt><span class="paramLabel">Parameters:</span></dt>
-<dd><code>result</code> - A row major dense allocation of a matrixBlock, of size [numColumns x numColumns]</dd>
-<dd><code>numColumns</code> - The number of columns in the row major result matrix.</dd>
-<dd><code>idxStart</code> - The starting index in the _colIndexes.</dd>
-<dd><code>idxEnd</code> - The ending index in the _colIndexes.</dd>
+<dd><code>ret</code> - The return matrix block [numColumns x numColumns]</dd>
 </dl>
 </li>
 </ul>

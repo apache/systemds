@@ -28,14 +28,16 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
-import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup;
+import org.apache.sysds.runtime.compress.colgroup.ColGroupSDC;
+import org.apache.sysds.runtime.compress.colgroup.ColGroupSDCSingle;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupValue;
 import org.apache.sysds.runtime.compress.utils.LinearAlgebraUtils;
+import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.functionobjects.Plus;
 import org.apache.sysds.runtime.matrix.data.LibMatrixReorg;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
@@ -50,7 +52,7 @@ public class CLALibLeftMultBy {
 		if(m2.isEmpty())
 			return ret;
 		MatrixBlock transposed = new MatrixBlock(m2.getNumColumns(), m2.getNumRows(), false);
-		LibMatrixReorg.transpose(m2, transposed);
+		LibMatrixReorg.transpose(m2, transposed, k);
 		ret = leftMultByMatrix(m1, transposed, ret, k);
 		ret.recomputeNonZeros();
 		return ret;
@@ -59,28 +61,28 @@ public class CLALibLeftMultBy {
 	public static MatrixBlock leftMultByMatrixTransposed(CompressedMatrixBlock m1, CompressedMatrixBlock m2,
 		MatrixBlock ret, int k) {
 
-		prepareReturnMatrix(m1, m2, ret, true);
-		leftMultByCompressedTransposedMatrix(m1.getColGroups(), m2, ret, k, m1.getNumColumns(), m1.getMaxNumValues(),
-			m1.isOverlapping());
+		ret = prepareReturnMatrix(m1, m2, ret, true);
+		leftMultByCompressedTransposedMatrix(m1.getColGroups(), m2, ret, k, m1.getNumColumns(), m1.isOverlapping());
 
 		ret.recomputeNonZeros();
 		return ret;
 	}
 
 	public static MatrixBlock leftMultByMatrix(CompressedMatrixBlock m1, MatrixBlock m2, MatrixBlock ret, int k) {
-		prepareReturnMatrix(m1, m2, ret, false);
+		ret = prepareReturnMatrix(m1, m2, ret, false);
+
 		if(m2.isEmpty())
 			return ret;
-		ret = leftMultByMatrix(m1.getColGroups(), m2, ret, k, m1.getNumColumns(), m1.getMaxNumValues().getLeft(),
-			m1.isOverlapping());
+
+		ret = leftMultByMatrix(m1.getColGroups(), m2, ret, k, m1.isOverlapping());
 		ret.recomputeNonZeros();
 		return ret;
 	}
 
 	private static MatrixBlock prepareReturnMatrix(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret,
 		boolean doTranspose) {
-		int numRowsOutput = doTranspose ? m2.getNumColumns() : m2.getNumRows();
-		int numColumnsOutput = m1.getNumColumns();
+		final int numRowsOutput = doTranspose ? m2.getNumColumns() : m2.getNumRows();
+		final int numColumnsOutput = m1.getNumColumns();
 		if(ret == null)
 			ret = new MatrixBlock(numRowsOutput, numColumnsOutput, false, numRowsOutput * numColumnsOutput);
 		else if(!(ret.getNumColumns() == numColumnsOutput && ret.getNumRows() == numRowsOutput && ret.isAllocated()))
@@ -88,8 +90,9 @@ public class CLALibLeftMultBy {
 		return ret;
 	}
 
-	public static void leftMultByTransposeSelf(List<AColGroup> groups, MatrixBlock result, int k, int numColumns,
-		Pair<Integer, int[]> v, boolean overlapping) {
+	public static void leftMultByTransposeSelf(CompressedMatrixBlock cmb, MatrixBlock result, int k) {
+		final boolean overlapping = cmb.isOverlapping();
+		final List<AColGroup> groups = cmb.getColGroups();
 
 		result.allocateDenseBlock();
 
@@ -97,48 +100,61 @@ public class CLALibLeftMultBy {
 			LOG.warn("Inefficient TSMM with overlapping matrix could be implemented multi-threaded but is not yet.");
 			leftMultByCompressedTransposedMatrix(groups, groups, result);
 		}
-		else if(k <= 1) {
-			for(int i = 0; i < groups.size(); i++)
-				leftMultByCompressedTransposedMatrix(groups.get(i), groups, result, i, groups.size());
-		}
 		else {
-			try {
-				ExecutorService pool = CommonThreadPool.get(k);
-				ArrayList<Callable<Object>> tasks = new ArrayList<>();
+			final boolean containsSDC = containsSDC(groups);
+			final int numColumns = cmb.getNumColumns();
+			final double[] constV = containsSDC ? new double[cmb.getNumColumns()] : null;
+			final List<AColGroup> filteredGroups = filterSDCGroups(groups, constV);
+			final double[] colSums = containsSDC ? new double[cmb.getNumColumns()] : null;
+
+			if(containsSDC)
 				for(int i = 0; i < groups.size(); i++) {
-					final AColGroup g = groups.get(i);
-					tasks.add(new LeftMultByCompressedTransposedMatrixTask(groups, g, result, i, groups.size()));
+					AColGroup gi = groups.get(i);
+					if(!(gi instanceof ColGroupSDC || gi instanceof ColGroupSDCSingle))
+						gi.computeColSums(colSums);
 				}
-				for(Future<Object> tret : pool.invokeAll(tasks))
-					tret.get();
-				pool.shutdown();
-			}
-			catch(InterruptedException | ExecutionException e) {
-				throw new DMLRuntimeException(e);
+
+			if(k <= 1)
+				tsmmColGroups(groups, filteredGroups, result);
+			else
+				tsmmColGroupsParallel(groups, filteredGroups, result, k);
+
+			double[] retV = result.getDenseBlockValues();
+
+			// Move values in the lower part of the matrix to the upper part
+			copyToUpperTriangle(retV, numColumns);
+
+			// add the correction layer for the subtracted common values.
+			if(colSums != null) {
+				outerProduct(colSums, constV, retV);
+				addToUpperTriangle(retV, numColumns);
 			}
 		}
-		// Move values in the lower part of the matrix to the upper part
-		copyToUpperTriangle(result.getDenseBlockValues(), numColumns);
-		// calculate the number of non zeros, and allocate all value locations by copying upper triangle back to bottom.
+
 		long nnz = LinearAlgebraUtils.copyUpperToLowerTriangle(result);
 		result.setNonZeros(nnz);
-		// Evaluate if the output should be sparsely allocated.
 		result.examSparsity();
 	}
 
 	private static void copyToUpperTriangle(final double[] c, final int cols) {
 		for(int i = 0, offC = 0; i < cols; i++, offC += cols)
-			for(int j = i, offR = i * cols; j < cols; j++, offR += cols) {
+			for(int j = (i + 1), offR = (i + 1) * cols; j < cols; j++, offR += cols) {
 				final double prev = c[offC + j];
 				if(prev == 0)
 					c[offC + j] = c[i + offR];
+				c[i + offR] = 0;
 			}
+	}
+
+	private static void addToUpperTriangle(final double[] c, final int cols) {
+		for(int i = 0, offC = 0; i < cols; i++, offC += cols)
+			for(int j = (i + 1), offR = (i + 1) * cols; j < cols; j++, offR += cols)
+				c[offC + j] += c[i + offR];
 
 	}
 
 	private static MatrixBlock leftMultByCompressedTransposedMatrix(List<AColGroup> colGroups,
-		CompressedMatrixBlock that, MatrixBlock ret, int k, int numColumns, Pair<Integer, int[]> v,
-		boolean overlapping) {
+		CompressedMatrixBlock that, MatrixBlock ret, int k, int numColumns, boolean overlapping) {
 
 		ret.allocateDenseBlock();
 		List<AColGroup> thatCGs = that.getColGroups();
@@ -177,15 +193,6 @@ public class CLALibLeftMultBy {
 		private final int _start;
 		private final int _end;
 
-		protected LeftMultByCompressedTransposedMatrixTask(List<AColGroup> groups, AColGroup left, MatrixBlock ret,
-			int start, int end) {
-			_groups = groups;
-			_left = left;
-			_ret = ret;
-			_start = start;
-			_end = end;
-		}
-
 		protected LeftMultByCompressedTransposedMatrixTask(List<AColGroup> groups, AColGroup left, MatrixBlock ret) {
 			_groups = groups;
 			_left = left;
@@ -223,35 +230,95 @@ public class CLALibLeftMultBy {
 			else
 				rhs.tsmm(ret);
 		}
+	}
 
+	private static void tsmmColGroups(List<AColGroup> groups, List<AColGroup> filteredGroups, MatrixBlock ret) {
+		for(int i = 0; i < groups.size(); i++) {
+			groups.get(i).tsmm(ret);
+			tsmmColGroupsIndexI(groups, filteredGroups, ret, i);
+		}
+	}
+
+	private static void tsmmColGroupsParallel(List<AColGroup> groups, List<AColGroup> filteredGroups, MatrixBlock ret,
+		int k) {
+		try {
+			ExecutorService pool = CommonThreadPool.get(k);
+			ArrayList<Callable<Object>> tasks = new ArrayList<>();
+			// if(groups.size()< 10){
+
+			// }
+			final int numColGroups = groups.size();
+			for(int i = 0; i < numColGroups; i++) {
+				tasks.add(new tsmmSelfColGroupTask(groups.get(i), ret));
+				for(int j = i +1; j < numColGroups; j++)
+					tasks.add(new tsmmColGroupTask(groups, filteredGroups, ret, i, j, j+1));
+			}
+
+			for(Future<Object> tret : pool.invokeAll(tasks))
+				tret.get();
+			pool.shutdown();
+		}
+		catch(InterruptedException | ExecutionException e) {
+			throw new DMLRuntimeException(e);
+		}
+	}
+
+	private static void tsmmColGroupsIndexI(List<AColGroup> groups, List<AColGroup> filteredGroups, MatrixBlock ret,
+		int i) {
+		tsmmColGroupsIndexIStartEnd(groups, filteredGroups, ret, i, i + 1, groups.size());
+	}
+
+	private static void tsmmColGroupsIndexIStartEnd(List<AColGroup> groups, List<AColGroup> filteredGroups,
+		MatrixBlock ret, int i, int start, int end) {
+		final AColGroup full_lhs = groups.get(i);
+		final AColGroup lhs = filteredGroups.get(i);
+		boolean isSDC = full_lhs instanceof ColGroupSDC || full_lhs instanceof ColGroupSDCSingle;
+		for(int id = start ; id < end; id++) {
+			final AColGroup full_rhs = groups.get(id);
+			final AColGroup rhs = filteredGroups.get(id);
+			if(isSDC && (full_rhs instanceof ColGroupSDC || full_rhs instanceof ColGroupSDCSingle))
+				full_lhs.leftMultByAColGroup(full_rhs, ret);
+			else
+				lhs.leftMultByAColGroup(rhs, ret);
+
+		}
 	}
 
 	private static MatrixBlock leftMultByMatrix(List<AColGroup> colGroups, MatrixBlock that, MatrixBlock ret, int k,
-		int numColumns, int maxNumValues, boolean overlapping) {
+		boolean overlapping) {
 
 		if(that.isEmpty()) {
 			ret.setNonZeros(0);
 			return ret;
 		}
 
-		ret.allocateDenseBlock();
+		final int numColumnsOut = ret.getNumColumns();
+		final boolean containsSDC = containsSDC(colGroups);
 
-		if(k == 1)
-			leftMultByMatrixPrimitive(colGroups, that, ret, numColumns, 0, that.getNumRows());
+		// a constant colgroup summing the default values.
+		final double[] constV = containsSDC ? new double[numColumnsOut] : null;
+		final List<AColGroup> filteredGroups = filterSDCGroups(colGroups, constV);
+
+		ret.allocateDenseBlock();
+		final double[] rowSums = containsSDC ? new double[that.getNumRows()] : null;
+
+		if(k == 1) {
+			leftMultByMatrixPrimitive(filteredGroups, that, ret, 0, that.getNumRows(), rowSums);
+		}
 		else {
 			try {
 				final ExecutorService pool = CommonThreadPool.get(k);
 				final ArrayList<Callable<MatrixBlock>> tasks = new ArrayList<>();
-				final int rowBlockSize = that.getNumRows() < 8 ? 1 : Math.min(Math.max(that.getNumRows() / k, 1), 8);
-				// final int rowBlockSize = 4;
+				final int rowBlockSize = that.getNumRows() <= k ? 1 : Math.min(Math.max(that.getNumRows() / k * 2, 1),
+					8);
 
 				if(overlapping) {
-					for(AColGroup g : colGroups) {
+					for(AColGroup g : filteredGroups) {
 						MatrixBlock tmpRet = new MatrixBlock(ret.getNumRows(), ret.getNumColumns(), false);
 						tmpRet.allocateDenseBlock();
 						for(int blo = 0; blo < that.getNumRows(); blo += rowBlockSize)
 							tasks.add(new LeftMatrixColGroupMultTaskOld(g, that, tmpRet, blo,
-								Math.min(blo + rowBlockSize, that.getNumRows()), maxNumValues));
+								Math.min(blo + rowBlockSize, that.getNumRows())));
 
 					}
 					List<Future<MatrixBlock>> futures = pool.invokeAll(tasks);
@@ -261,28 +328,35 @@ public class CLALibLeftMultBy {
 						ret.binaryOperationsInPlace(op, future.get());
 				}
 				else {
-					if(rowBlockSize > 2) {
+					final int numberSplits = Math.max((k / (ret.getNumRows() / rowBlockSize)), 1);
+					// LOG.error("RowBLockSize:" +rowBlockSize + " Splits " + numberSplits);
+					if(numberSplits == 1) {
 						for(int blo = 0; blo < that.getNumRows(); blo += rowBlockSize) {
-							tasks.add(new LeftMatrixColGroupMultTaskNew(colGroups, that, ret, numColumns, blo,
-								Math.min(blo + rowBlockSize, that.getNumRows())));
+							tasks.add(new LeftMatrixColGroupMultTaskNew(filteredGroups, that, ret, blo,
+								Math.min(blo + rowBlockSize, that.getNumRows()), rowSums));
 						}
 					}
 					else {
-
-						List<List<AColGroup>> split = split(colGroups, Math.max(k / 2 / that.getNumRows(), 1));
+						List<List<AColGroup>> split = split(filteredGroups, numberSplits);
 						for(int blo = 0; blo < that.getNumRows(); blo += rowBlockSize) {
-							for(List<AColGroup> gr : split)
-								tasks.add(new LeftMatrixColGroupMultTaskNew(gr, that, ret, numColumns, blo,
-									Math.min(blo + rowBlockSize, that.getNumRows())));
+							for(int i = 0; i < split.size(); i++) {
+								List<AColGroup> gr = split.get(i);
+								if(i == 0) {
+									// the first thread also have the responsibility to calculate the som of the left
+									// hand side.
+									tasks.add(new LeftMatrixColGroupMultTaskNew(gr, that, ret, blo,
+										Math.min(blo + rowBlockSize, that.getNumRows()), rowSums));
+								}
+								else {
+									tasks.add(new LeftMatrixColGroupMultTaskNew(gr, that, ret, blo,
+										Math.min(blo + rowBlockSize, that.getNumRows()), null));
+								}
+							}
 						}
-
-						// for(AColGroup g : colGroups)
-						// for(int blo = 0; blo < that.getNumRows(); blo += rowBlockSize)
-						// tasks.add(new LeftMatrixColGroupMultTaskOld(g, that, ret, blo,
-						// Math.min(blo + rowBlockSize, that.getNumRows()), maxNumValues));
 					}
 
 					List<Future<MatrixBlock>> futures = pool.invokeAll(tasks);
+
 					pool.shutdown();
 					for(Future<MatrixBlock> future : futures)
 						future.get();
@@ -293,6 +367,11 @@ public class CLALibLeftMultBy {
 				throw new DMLRuntimeException(e);
 			}
 		}
+
+		// add the correction layer for the subtracted common values.
+		if(rowSums != null)
+			outerProduct(rowSums, constV, ret.getDenseBlockValues());
+
 		ret.recomputeNonZeros();
 		return ret;
 	}
@@ -310,29 +389,34 @@ public class CLALibLeftMultBy {
 		return ret;
 	}
 
+	private static void outerProduct(final double[] leftRowSum, final double[] rightColumnSum, final double[] result) {
+		for(int row = 0; row < leftRowSum.length; row++) {
+			final int offOut = rightColumnSum.length * row;
+			final double vLeft = leftRowSum[row];
+			for(int col = 0; col < rightColumnSum.length; col++) {
+				result[offOut + col] += vLeft * rightColumnSum[col];
+			}
+		}
+	}
+
 	private static class LeftMatrixColGroupMultTaskOld implements Callable<MatrixBlock> {
 		private final AColGroup _group;
 		private final MatrixBlock _that;
 		private final MatrixBlock _ret;
 		private final int _rl;
 		private final int _ru;
-		private final int _maxNrValues;
 
-		protected LeftMatrixColGroupMultTaskOld(AColGroup group, MatrixBlock that, MatrixBlock ret, int rl, int ru,
-			int maxNrValues) {
+		protected LeftMatrixColGroupMultTaskOld(AColGroup group, MatrixBlock that, MatrixBlock ret, int rl, int ru) {
 			_group = group;
 			_that = that;
 			_ret = ret;
 			_rl = rl;
 			_ru = ru;
-			_maxNrValues = maxNrValues;
 		}
 
 		@Override
 		public MatrixBlock call() {
 			try {
-				ColGroupValue.setupThreadLocalMemory(_maxNrValues * (_ru - _rl));
-				ColGroupValue.setupLeftMultThreadLocalMemory(_group.getNumCols() * (_ru - _rl));
 				_group.leftMultByMatrix(_that, _ret, _rl, _ru);
 			}
 			catch(Exception e) {
@@ -348,90 +432,230 @@ public class CLALibLeftMultBy {
 		private final MatrixBlock _ret;
 		private final int _rl;
 		private final int _ru;
-		private final int _numColumns;
+		private final double[] _rowSums;
 
-		protected LeftMatrixColGroupMultTaskNew(List<AColGroup> groups, MatrixBlock that, MatrixBlock ret,
-			int numColumns, int rl, int ru) {
+		protected LeftMatrixColGroupMultTaskNew(List<AColGroup> groups, MatrixBlock that, MatrixBlock ret, int rl,
+			int ru, double[] rowSums) {
 			_groups = groups;
 			_that = that;
 			_ret = ret;
 			_rl = rl;
 			_ru = ru;
-			_numColumns = numColumns;
+			_rowSums = rowSums;
 		}
 
 		@Override
 		public MatrixBlock call() {
 			try {
-				leftMultByMatrixPrimitive(_groups, _that, _ret, _numColumns, _rl, _ru);
+				leftMultByMatrixPrimitive(_groups, _that, _ret, _rl, _ru, _rowSums);
 			}
 			catch(Exception e) {
+				e.printStackTrace();
 				throw new DMLRuntimeException(e);
 			}
 			return _ret;
 		}
 	}
 
-	private static void leftMultByMatrixPrimitive(List<AColGroup> colGroups, MatrixBlock that, MatrixBlock ret,
-		int numColumns, int rl, int ru) {
+	private static class tsmmColGroupTask implements Callable<Object> {
+		private final List<AColGroup> _groups;
+		private final List<AColGroup> _filteredGroups;
+		private final MatrixBlock _ret;
+		private final int _index;
+		private final int _start;
+		private final int _end;
 
-		if(that.isInSparseFormat()) {
-			for(int i = rl; i < ru; i++) {
-				for(int j = 0; j < colGroups.size(); j++) {
-					colGroups.get(j).leftMultByMatrix(that, ret, i, i + 1);
+		protected tsmmColGroupTask(List<AColGroup> groups, List<AColGroup> filteredGroups, MatrixBlock ret, int i, int start, int end) {
+			_groups = groups;
+			_filteredGroups = filteredGroups;
+			_ret = ret;
+			_index = i;
+			_start = start;
+			_end = end;
+		}
+
+		@Override
+		public MatrixBlock call() {
+			try {
+				tsmmColGroupsIndexIStartEnd(_groups, _filteredGroups, _ret, _index, _start, _end);
+			}
+			catch(Exception e) {
+				e.printStackTrace();
+				throw new DMLRuntimeException(e);
+			}
+			return _ret;
+		}
+	}
+
+	private static class tsmmSelfColGroupTask implements Callable<Object> {
+		private final AColGroup _g;
+		private final MatrixBlock _ret;
+
+		protected tsmmSelfColGroupTask(AColGroup g, MatrixBlock ret) {
+			_g = g;
+			_ret = ret;
+		}
+
+		@Override
+		public MatrixBlock call() {
+			try {
+				_g.tsmm(_ret);
+			}
+			catch(Exception e) {
+				e.printStackTrace();
+				throw new DMLRuntimeException(e);
+			}
+			return _ret;
+		}
+	}
+
+	private static void leftMultByMatrixPrimitive(List<AColGroup> colGroups, MatrixBlock that, MatrixBlock ret, int rl,
+		int ru, double[] rowSums) {
+		if(that.isInSparseFormat())
+			leftMultByMatrixPrimitiveSparse(colGroups, that, ret, rl, ru, rowSums);
+		else
+			leftMultByMatrixPrimitiveDense(colGroups, that, ret, rl, ru, rowSums);
+	}
+
+	private static void leftMultByMatrixPrimitiveSparse(List<AColGroup> colGroups, MatrixBlock that, MatrixBlock ret,
+		int rl, int ru, double[] rowSum) {
+
+		for(int i = rl; i < ru; i++) {
+			for(int j = 0; j < colGroups.size(); j++) {
+				colGroups.get(j).leftMultByMatrix(that, ret, i, i + 1);
+			}
+			if(rowSum != null) {
+				final SparseBlock sb = that.getSparseBlock();
+				if(!sb.isEmpty(i)) {
+					final int apos = sb.pos(i);
+					final int alen = sb.size(i) + apos;
+					final double[] aval = sb.values(i);
+					for(int j = apos; j < alen; j++)
+						rowSum[i] += aval[j];
 				}
 			}
 		}
-		else {
+	}
 
-			List<ColGroupValue> v = new ArrayList<>();
-			int rowBlockSize = 1;
-			int colBlockSize = 4000;
-			int colGroupBlocking = 4;
-			List<MatrixBlock> preAgg = new ArrayList<>();
-			for(int j = 0; j < colGroupBlocking; j++) {
-				MatrixBlock m = new MatrixBlock(1, 1, false);
-				m.allocateDenseBlock();
-				preAgg.add(m);
+	private static void leftMultByMatrixPrimitiveDense(List<AColGroup> colGroups, MatrixBlock that, MatrixBlock ret,
+		int rl, int ru, double[] rowSum) {
 
+		final int numColsOut = ret.getNumColumns();
+		// Allocate a ColGroupValue array for the Column Groups of Value Type and multiply out any other columns.
+		final List<ColGroupValue> ColGroupValues = preFilterAndMultiply(colGroups, that, ret, rl, ru);
+
+		// The number of rows to process together
+		final int rowBlockSize = 1;
+		// The number of column groups to process together
+		// the value should ideally be set so that the colgroups fits into cache together with a row block.
+		// currently we only try to avoid having a dangling small number of column groups in the last block.
+		final int colGroupBlocking = ColGroupValues.size() % 16 < 4 ? 20 : 16;
+
+		// Allocate pre Aggregate Array List
+		final MatrixBlock[] preAgg = populatePreAggregate(colGroupBlocking);
+
+		// Allocate temporary Result matrix.
+		MatrixBlock tmpRes = new MatrixBlock(rowBlockSize, numColsOut, false);
+
+		// For each column group block
+		for(int g = 0; g < ColGroupValues.size(); g += colGroupBlocking) {
+			final int gEnd = Math.min(g + colGroupBlocking, ColGroupValues.size());
+
+			// For each column group in the current block allocate the preaggregate array.
+			for(int j = g; j < gEnd && j < ColGroupValues.size(); j++) {
+				ColGroupValue cg = ColGroupValues.get(j);
+				int nVals = cg.getNumValues();
+				preAgg[j % colGroupBlocking].reset(rowBlockSize, nVals, false);
 			}
-			MatrixBlock tmpRes = new MatrixBlock(rowBlockSize, numColumns, false);
 
-			for(int j = 0; j < colGroups.size(); j++) {
-				AColGroup a = colGroups.get(j);
-				if(a instanceof ColGroupValue) {
-					ColGroupValue av = (ColGroupValue) a;
-					v.add(av);
-				}
-				else
-					a.leftMultByMatrix(that, ret, rl, ru);
-			}
-			Collections.sort(v, Comparator.comparing(AColGroup::getNumValues).reversed());
-			// LOG.error(v);
-			for(int g = 0; g < v.size(); g += colGroupBlocking) {
-				final int gEnd = Math.min(g + colGroupBlocking, colGroups.size());
-				for(int j = g; j < gEnd && j < v.size(); j++) {
-					preAgg.get(j % colGroupBlocking).reset(rowBlockSize, v.get(j).getNumValues(), false);
-				}
+			int colBlockSize = 32000;
 
-				for(int h = rl; h < ru; h += rowBlockSize) {
-					for(int i = 0; i < that.getNumColumns(); i += colBlockSize) {
-						for(int j = g; j < gEnd && j < v.size(); j++) {
-							v.get(j).preAggregateDense(that, preAgg.get(j % colGroupBlocking), h,
-								Math.min(h + rowBlockSize, ru), i, Math.min(i + colBlockSize, that.getNumColumns()));
+			// For each row block
+			for(int h = rl; h < ru; h += rowBlockSize) {
+				// For each column block
+				final int rowUpper = Math.min(h + rowBlockSize, ru);
+				for(int i = 0; i < that.getNumColumns(); i += colBlockSize) {
+					final int colUpper = Math.min(i + colBlockSize, that.getNumColumns());
+					// Pre Aggregate each column group in block
+					for(int j = g; j < gEnd && j < ColGroupValues.size(); j++) {
+						ColGroupValues.get(j).preAggregateDense(that, preAgg[j % colGroupBlocking], h, rowUpper, i,
+							colUpper);
+					}
+					if(rowSum != null) {
+						final double[] thatV = that.getDenseBlockValues();
+						for(int r = h; r < rowUpper; r++) {
+							final int rowOff = r * that.getNumColumns();
+							for(int c = rowOff + i; c < rowOff + colUpper; c++)
+								rowSum[r] += thatV[c];
 						}
 					}
-					for(int j = g; j < gEnd && j < v.size(); j++) {
-						ColGroupValue vj = v.get(j);
-						MatrixBlock preAggJ = preAgg.get(j % colGroupBlocking);
-						preAggJ.recomputeNonZeros();
-						tmpRes.reset(rowBlockSize, vj.getNumCols(), false);
-						MatrixBlock tmp = vj.leftMultByPreAggregateMatrix(preAggJ, tmpRes);
-						vj.addMatrixToResult(tmp, ret, h, Math.min(h + rowBlockSize, ru));
-						preAggJ.reset();
-					}
+				}
+				// Multiply out the preAggregate to the output matrix.
+				for(int j = g; j < gEnd && j < ColGroupValues.size(); j++) {
+					ColGroupValue vj = ColGroupValues.get(j);
+					MatrixBlock preAggJ = preAgg[j % colGroupBlocking];
+					preAggJ.recomputeNonZeros();
+					tmpRes.reset(rowBlockSize, vj.getNumCols(), false);
+					MatrixBlock tmp = vj.leftMultByPreAggregateMatrix(preAggJ, tmpRes);
+					vj.addMatrixToResult(tmp, ret, h, Math.min(h + rowBlockSize, ru));
+					preAggJ.reset();
 				}
 			}
 		}
+
+	}
+
+	private static MatrixBlock[] populatePreAggregate(int colGroupBlocking) {
+		final MatrixBlock[] preAgg = new MatrixBlock[colGroupBlocking];
+		// poplate the preAgg array.
+		for(int j = 0; j < colGroupBlocking; j++) {
+			MatrixBlock m = new MatrixBlock(1, 1, false);
+			m.allocateDenseBlock();
+			preAgg[j] = m;
+		}
+		return preAgg;
+	}
+
+	private static List<ColGroupValue> preFilterAndMultiply(List<AColGroup> colGroups, MatrixBlock that,
+		MatrixBlock ret, int rl, int ru) {
+		final List<ColGroupValue> ColGroupValues = new ArrayList<>(colGroups.size());
+		for(int j = 0; j < colGroups.size(); j++) {
+			AColGroup a = colGroups.get(j);
+			if(a instanceof ColGroupValue)
+				ColGroupValues.add((ColGroupValue) a);
+			else
+				a.leftMultByMatrix(that, ret, rl, ru);
+		}
+		Collections.sort(ColGroupValues, Comparator.comparing(AColGroup::getNumValues).reversed());
+		return ColGroupValues;
+	}
+
+	private static boolean containsSDC(List<AColGroup> groups) {
+		boolean containsSDC = false;
+
+		for(AColGroup g : groups) {
+			if(g instanceof ColGroupSDC || g instanceof ColGroupSDCSingle) {
+				containsSDC = true;
+				break;
+			}
+		}
+		return containsSDC;
+	}
+
+	private static List<AColGroup> filterSDCGroups(List<AColGroup> groups, double[] constV) {
+		if(constV != null) {
+			final List<AColGroup> filteredGroups = new ArrayList<>();
+			for(AColGroup g : groups) {
+				if(g instanceof ColGroupSDC)
+					filteredGroups.add(((ColGroupSDC) g).extractCommon(constV));
+				else if(g instanceof ColGroupSDCSingle)
+					filteredGroups.add(((ColGroupSDCSingle) g).extractCommon(constV));
+				else
+					filteredGroups.add(g);
+			}
+			return filteredGroups;
+		}
+		else
+			return groups;
 	}
 }

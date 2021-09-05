@@ -50,6 +50,7 @@ public class TestBase {
 	protected double samplingRatio;
 	protected double sparsity;
 
+	protected CompressionSettingsBuilder _csb;
 	protected CompressionSettings _cs;
 	protected OverLapping overlappingType;
 
@@ -73,6 +74,7 @@ public class TestBase {
 			this.overlappingType = ov;
 			this.valRange = valueRange;
 			this.valType = valType;
+			this._csb = compressionSettings;
 			this._cs = compressionSettings != null ? compressionSettings.create() : null;
 
 			if(ct != null && ct.contains(CompressionType.CONST)) {

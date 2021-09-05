@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -58,7 +59,12 @@ import org.apache.sysds.runtime.compress.workload.AWTreeNode.WTNodeType;
 
 public class WorkloadAnalyzer {
 	private static final Log LOG = LogFactory.getLog(WorkloadAnalyzer.class.getName());
-
+	// indicator for more aggressive compression of intermediates
+	public static boolean ALLOW_INTERMEDIATE_CANDIDATES = false;
+	// avoid wtree construction for assumptionly already compressed intermediates
+	// (due to conditional control flow this might miss compression opportunities)
+	public static boolean PRUNE_COMPRESSED_INTERMEDIATES = true;
+	
 	private final Set<Hop> visited;
 	private final Set<Long> compressed;
 	private final Set<Long> transposed;
@@ -69,16 +75,23 @@ public class WorkloadAnalyzer {
 	private final List<Hop> decompressHops;
 
 	public static Map<Long, WTreeRoot> getAllCandidateWorkloads(DMLProgram prog) {
-		// extract all compression candidates from program
+		// extract all compression candidates from program (in program order)
 		List<Hop> candidates = getCandidates(prog);
-
+		
 		// for each candidate, create pruned workload tree
-		// TODO memoization of processed subtree if overlap
+		List<WorkloadAnalyzer> allWAs = new LinkedList<>();
 		Map<Long, WTreeRoot> map = new HashMap<>();
 		for(Hop cand : candidates) {
-			WTreeRoot tree = new WorkloadAnalyzer(prog).createWorkloadTree(cand);
-
+			//prune already covered candidate (intermediate already compressed)
+			if( PRUNE_COMPRESSED_INTERMEDIATES )
+				if( allWAs.stream().anyMatch(w -> w.containsCompressed(cand)) )
+					continue; //intermediate already compressed
+			
+			//construct workload tree for candidate
+			WorkloadAnalyzer wa = new WorkloadAnalyzer(prog);
+			WTreeRoot tree = wa.createWorkloadTree(cand);
 			map.put(cand.getHopID(), tree);
+			allWAs.add(wa);
 		}
 
 		return map;
@@ -128,6 +141,10 @@ public class WorkloadAnalyzer {
 		return main;
 	}
 
+	protected boolean containsCompressed(Hop hop) {
+		return compressed.contains(hop.getHopID());
+	}
+	
 	private static List<Hop> getCandidates(DMLProgram prog) {
 		List<Hop> candidates = new ArrayList<>();
 		for(StatementBlock sb : prog.getStatementBlocks()) {
@@ -191,7 +208,9 @@ public class WorkloadAnalyzer {
 		if(hop.isVisited())
 			return;
 		// evaluate and add candidates (type and size)
-		if(RewriteCompressedReblock.satisfiesCompressionCondition(hop))
+		if( (  RewriteCompressedReblock.satisfiesAggressiveCompressionCondition(hop)
+				& ALLOW_INTERMEDIATE_CANDIDATES)
+			|| RewriteCompressedReblock.satisfiesCompressionCondition(hop))
 			cands.add(hop);
 
 		// recursively process children (inputs)

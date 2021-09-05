@@ -18,7 +18,7 @@
     catch(err) {
     }
 //-->
-var methods = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10,"i8":10,"i9":10,"i10":10,"i11":10,"i12":10,"i13":10,"i14":10,"i15":10,"i16":10,"i17":10,"i18":10,"i19":9,"i20":10,"i21":10,"i22":10,"i23":10,"i24":10,"i25":10,"i26":10,"i27":10,"i28":10,"i29":10,"i30":10,"i31":10,"i32":10,"i33":10,"i34":10,"i35":10,"i36":10,"i37":10,"i38":10,"i39":9,"i40":10,"i41":10,"i42":10,"i43":10,"i44":10,"i45":10,"i46":10,"i47":10,"i48":10,"i49":10};
+var methods = {"i0":10,"i1":10,"i2":10,"i3":10,"i4":10,"i5":10,"i6":10,"i7":10,"i8":10,"i9":10,"i10":10,"i11":10,"i12":10,"i13":10,"i14":10,"i15":10,"i16":10,"i17":10,"i18":10,"i19":9,"i20":10,"i21":10,"i22":10,"i23":10,"i24":10,"i25":10,"i26":10,"i27":10,"i28":10,"i29":10,"i30":10,"i31":10,"i32":10,"i33":10,"i34":10,"i35":10,"i36":10,"i37":10,"i38":10,"i39":9,"i40":10,"i41":10,"i42":10,"i43":10,"i44":10,"i45":10,"i46":10,"i47":10,"i48":10,"i49":10,"i50":10};
 var tabs = {65535:["t0","All Methods"],1:["t1","Static Methods"],2:["t2","Instance Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -463,6 +463,17 @@ implements <a href="../../../../../org/apache/sysds/runtime/controlprogram/cachi
 </tr>
 <tr id="i45" class="rowColor">
 <td class="colFirst"><code><a href="../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheBlock.html" title="interface in org.apache.sysds.runtime.controlprogram.caching">CacheBlock</a></code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/data/TensorBlock.html#slice-int-int-int-int-boolean-org.apache.sysds.runtime.controlprogram.caching.CacheBlock-">slice</a></span>(int&nbsp;rl,
+     int&nbsp;ru,
+     int&nbsp;cl,
+     int&nbsp;cu,
+     boolean&nbsp;deep,
+     <a href="../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheBlock.html" title="interface in org.apache.sysds.runtime.controlprogram.caching">CacheBlock</a>&nbsp;block)</code>
+<div class="block">Slice a sub block out of the current block and write into the given output block.</div>
+</td>
+</tr>
+<tr id="i46" class="altColor">
+<td class="colFirst"><code><a href="../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheBlock.html" title="interface in org.apache.sysds.runtime.controlprogram.caching">CacheBlock</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/data/TensorBlock.html#slice-int-int-int-int-org.apache.sysds.runtime.controlprogram.caching.CacheBlock-">slice</a></span>(int&nbsp;rl,
      int&nbsp;ru,
      int&nbsp;cl,
@@ -471,25 +482,25 @@ implements <a href="../../../../../org/apache/sysds/runtime/controlprogram/cachi
 <div class="block">Slice a sub block out of the current block and write into the given output block.</div>
 </td>
 </tr>
-<tr id="i46" class="altColor">
+<tr id="i47" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/data/TensorBlock.html#toShallowSerializeBlock--">toShallowSerializeBlock</a></span>()</code>
 <div class="block">Converts a cache block that is not shallow serializable into
  a form that is shallow serializable.</div>
 </td>
 </tr>
-<tr id="i47" class="rowColor">
+<tr id="i48" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/data/TensorBlock.html#write-java.io.DataOutput-">write</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/io/DataOutput.html?is-external=true" title="class or interface in java.io">DataOutput</a>&nbsp;out)</code>&nbsp;</td>
 </tr>
-<tr id="i48" class="altColor">
+<tr id="i49" class="rowColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/data/TensorBlock.html#writeBlockData-java.io.DataOutput-org.apache.sysds.runtime.data.BasicTensorBlock-">writeBlockData</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/io/DataOutput.html?is-external=true" title="class or interface in java.io">DataOutput</a>&nbsp;out,
               <a href="../../../../../org/apache/sysds/runtime/data/BasicTensorBlock.html" title="class in org.apache.sysds.runtime.data">BasicTensorBlock</a>&nbsp;bt)</code>
 <div class="block">Write a <code>BasicTensorBlock</code>.</div>
 </td>
 </tr>
-<tr id="i49" class="rowColor">
+<tr id="i50" class="altColor">
 <td class="colFirst"><code>void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../org/apache/sysds/runtime/data/TensorBlock.html#writeExternal-java.io.ObjectOutput-">writeExternal</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/io/ObjectOutput.html?is-external=true" title="class or interface in java.io">ObjectOutput</a>&nbsp;out)</code>&nbsp;</td>
 </tr>
@@ -926,6 +937,36 @@ implements <a href="../../../../../org/apache/sysds/runtime/controlprogram/cachi
 <dd><code>ru</code> - row upper</dd>
 <dd><code>cl</code> - column lower</dd>
 <dd><code>cu</code> - column upper</dd>
+<dd><code>block</code> - cache block</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>sub-block of cache block</dd>
+</dl>
+</li>
+</ul>
+<a name="slice-int-int-int-int-boolean-org.apache.sysds.runtime.controlprogram.caching.CacheBlock-">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>slice</h4>
+<pre>public&nbsp;<a href="../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheBlock.html" title="interface in org.apache.sysds.runtime.controlprogram.caching">CacheBlock</a>&nbsp;slice(int&nbsp;rl,
+                        int&nbsp;ru,
+                        int&nbsp;cl,
+                        int&nbsp;cu,
+                        boolean&nbsp;deep,
+                        <a href="../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheBlock.html" title="interface in org.apache.sysds.runtime.controlprogram.caching">CacheBlock</a>&nbsp;block)</pre>
+<div class="block"><span class="descfrmTypeLabel">Description copied from interface:&nbsp;<code><a href="../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheBlock.html#slice-int-int-int-int-boolean-org.apache.sysds.runtime.controlprogram.caching.CacheBlock-">CacheBlock</a></code></span></div>
+<div class="block">Slice a sub block out of the current block and write into the given output block.
+ This method returns the passed instance if not null.</div>
+<dl>
+<dt><span class="overrideSpecifyLabel">Specified by:</span></dt>
+<dd><code><a href="../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheBlock.html#slice-int-int-int-int-boolean-org.apache.sysds.runtime.controlprogram.caching.CacheBlock-">slice</a></code>&nbsp;in interface&nbsp;<code><a href="../../../../../org/apache/sysds/runtime/controlprogram/caching/CacheBlock.html" title="interface in org.apache.sysds.runtime.controlprogram.caching">CacheBlock</a></code></dd>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>rl</code> - row lower</dd>
+<dd><code>ru</code> - row upper</dd>
+<dd><code>cl</code> - column lower</dd>
+<dd><code>cu</code> - column upper</dd>
+<dd><code>deep</code> - enforce deep-copy</dd>
 <dd><code>block</code> - cache block</dd>
 <dt><span class="returnLabel">Returns:</span></dt>
 <dd>sub-block of cache block</dd>

@@ -72,18 +72,11 @@ s_correctTypos = function(Frame[String] strings, Matrix[Double] nullMask, Double
   Y = strings
 
   # build dictionary
-  current_string = as.scalar(strings[1]);
-  dict = cbind(as.frame(""), as.frame(1));
-
-  for (i in 1:num_strings) {
-    current_string = as.scalar(strings[i]);
-    if(as.scalar(nullMask[i]) == 0)
-      dict = insertOrIncrement(current_string, dict);
-  }
-  dict = dict[2:nrow(dict),]
+  dict = buildDictionary(strings);
   strings = dict[,1];
   frequencies = as.matrix(dict[,2]) / num_strings;
   lengths = as.matrix(map(strings, "s -> s.length()"));
+  
   num_different_strings = nrow(strings);
   if (is_verbose) {
     print("dict:" )
@@ -123,17 +116,13 @@ s_correctTypos = function(Frame[String] strings, Matrix[Double] nullMask, Double
           A = ascii_matrix[1:as.scalar(lengths[i,1]), i];
           B = ascii_matrix[1:as.scalar(lengths[j,1]), j];
           d = damerauLevenshteinDistanceBound(A, B, distance_threshold, FALSE);
-          if (d == -1) {
-            distance_matrix[i, j] = 42000;
-          } else {
-            distance_matrix[i, j] = d;
-          }
+          distance_matrix[i, j] = ifelse(d == -1, 42000, d);
         }
       }
     }
   }
   upper_triangle = upper.tri(target=distance_matrix, values=TRUE);
-  distance_matrix = distance_matrix + t(upper_triangle) + diag(matrix(42000, rows=num_different_strings, cols=1));
+  distance_matrix = distance_matrix + t(upper_triangle) + diag(matrix(42000, num_different_strings, 1));
 
   sorted_frequency_idxs = order(target=frequencies, index.return=TRUE);
   if (is_verbose) {
@@ -178,57 +167,32 @@ s_correctTypos = function(Frame[String] strings, Matrix[Double] nullMask, Double
   }
 }
 
-
 replaceStrings = function(String replacement, String to_replace, Frame[String] strings)
   return(Frame[String] strings) 
 {
-  for (i in 1:nrow(strings)) {
-    if (as.scalar(strings[i,]) == to_replace) {
-      strings[i,] = replacement;
-    }
-  }
+  strings = map(strings, "s -> s.equals(\""+to_replace+"\") ? \""+replacement+"\" : s");
 }
 
-
-insertOrIncrement = function(String str, Frame[Unknown] dict)
+buildDictionary = function(Frame[String] S)
   return(Frame[Unknown] dict)
 {
-  i = 1;
-  ret = FALSE;
-  break = FALSE;
-  while (i <= nrow(dict) & !break) {
-    if (as.scalar(dict[i, 1]) == str) {
-      value = as.integer(as.scalar(dict[i, 2])) + 1;
-      dict[i, 2] = value;
-      contains = TRUE;
-      break = TRUE;
-    }
-    i = i + 1;
-  }
-  if (!break) {
-    dict = rbind(dict, cbind(as.frame(str), as.frame(1)));
-  }
+  [ID,M] = transformencode(target=S, spec="{ids:true,recode:[1]}");
+  dstr = map(M[,1], "s -> UtilFunctions.splitRecodeEntry(s)[0]");
+  dcodes = map(M[,1], "s -> UtilFunctions.splitRecodeEntry(s)[1]");
+  frequencies = table(seq(1,nrow(dstr)),as.matrix(dcodes)) %*% table(ID, 1);
+  dict = cbind(dstr, as.frame(frequencies));
 }
-
 
 damerauLevenshteinDistanceBound = function(matrix[double] A, matrix[double] B, double bound, Boolean is_verbose) 
   return(double dl_distance) {
 
   dl_matrix = matrix(0, rows = length(A) + 1, cols = length(B) + 1);
   dl_matrix[length(A) + 1, length(B) + 1] = -1;
-
-  for (j in 2:length(B) + 1) {
-    dl_matrix[1, j] = j - 1;
-  }
-
+  dl_matrix[1, 2:(length(B)+1)] = t(seq(2,length(B)+1) - 1);
   dl_matrix[2, 1] = 1;
 
   for (j in 2:length(B) + 1) {
-    if (as.scalar(A[1]) == as.scalar(B[j - 1])) {
-      cost = 0;
-    } else {
-      cost = 1;
-    }
+    cost = as.integer(as.scalar(A[1]) != as.scalar(B[j - 1]))
     dl_matrix[2, j] = min(min(
       dl_matrix[2, j - 1] + 1, 
       dl_matrix[1, j] + 1),
@@ -241,23 +205,14 @@ damerauLevenshteinDistanceBound = function(matrix[double] A, matrix[double] B, d
     i += 1;
 
     dl_matrix[i, 1] = i - 1;
-
-    if (as.scalar(A[i - 1]) == as.scalar(B[1])) {
-      cost = 0;
-    } else {
-      cost = 1;
-    }
+    cost = as.integer(as.scalar(A[i - 1]) != as.scalar(B[1]))
     dl_matrix[i, 2] = min(min(
       dl_matrix[i - 1, 2] + 1, 
       dl_matrix[i, 1] + 1),
       dl_matrix[i - 1, 1] + cost);
 
     for (j in 3:length(B) + 1) {
-      if (as.scalar(A[i - 1]) == as.scalar(B[j - 1])) {
-        cost = 0;
-      } else {
-        cost = 1;
-      }
+      cost = as.integer(as.scalar(A[i - 1]) != as.scalar(B[j - 1]))
       if (as.scalar(A[i - 1]) == as.scalar(B[j - 2]) & as.scalar(A[i - 2]) == as.scalar(B[j - 1])) {
         dl_matrix[i, j] = min(min(
           dl_matrix[i, j - 1] + 1, 
@@ -272,9 +227,7 @@ damerauLevenshteinDistanceBound = function(matrix[double] A, matrix[double] B, d
       }
     }
 
-    if( min(dl_matrix[i - 1, ]) > bound & min(dl_matrix[i, ]) > bound) {
-      break_condition = TRUE;
-    }
+    break_condition = min(dl_matrix[i - 1, ]) > bound & min(dl_matrix[i, ]) > bound;
   }
 
   if (is_verbose){

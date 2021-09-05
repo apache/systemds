@@ -47,6 +47,7 @@ import org.apache.sysds.runtime.instructions.cp.Data;
 import org.apache.sysds.runtime.instructions.cp.ListObject;
 import org.apache.sysds.runtime.instructions.cp.ScalarObject;
 import org.apache.sysds.runtime.instructions.cp.ScalarObjectFactory;
+import org.apache.sysds.runtime.lineage.LineageItem;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.utils.Statistics;
 
@@ -81,7 +82,7 @@ public class LiteralReplacement
 					lit = (lit==null) ? replaceLiteralFullUnaryAggregateRightIndexing(c, vars) : lit;
 					lit = (lit==null) ? replaceTReadMatrixFromList(c, ec) : lit;
 					lit = (lit==null) ? replaceTReadMatrixFromListAppend(c, ec) : lit;
-					lit = (lit==null) ? replaceTReadMatrixLookupFromList(c, vars) : lit;
+					lit = (lit==null) ? replaceTReadMatrixLookupFromList(c, ec) : lit;
 					lit = (lit==null) ? replaceTReadScalarLookupFromList(c, vars) : lit;
 				}
 				
@@ -385,8 +386,9 @@ public class LiteralReplacement
 		return ret;
 	}
 
-	private static DataOp replaceTReadMatrixLookupFromList( Hop c, LocalVariableMap vars ) {
+	private static DataOp replaceTReadMatrixLookupFromList( Hop c, ExecutionContext ec) {
 		//pattern: as.matrix(X[i:i]) or as.matrix(X['a','a']) with X being a list
+		LocalVariableMap vars = ec.getVariables();
 		DataOp ret = null;
 		if( HopRewriteUtils.isUnary(c, OpOp1.CAST_AS_MATRIX)
 			&& c.getInput().get(0) instanceof IndexingOp ) {
@@ -402,7 +404,11 @@ public class LiteralReplacement
 				LiteralOp lit = (LiteralOp) ix.getInput().get(1);
 				MatrixObject mo = (MatrixObject) (!lit.getValueType().isNumeric() ?
 					list.slice(lit.getName()) : list.slice((int)lit.getLongValue()-1));
+				LineageItem li = !lit.getValueType().isNumeric() ?
+					list.getLineageItem(lit.getName()) : list.getLineageItem((int)lit.getLongValue()-1);
 				vars.put(varname, mo);
+				if (DMLScript.LINEAGE)
+					ec.getLineage().set(varname, li);
 				ret = HopRewriteUtils.createTransientRead(varname, c);
 			}
 		}

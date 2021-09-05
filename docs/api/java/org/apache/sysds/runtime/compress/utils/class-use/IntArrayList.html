@@ -112,21 +112,39 @@
 <tbody>
 <tr class="altColor">
 <td class="colFirst"><code>static <a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/insertionsort/AInsertionSorter.html" title="class in org.apache.sysds.runtime.compress.colgroup.insertionsort">AInsertionSorter</a></code></td>
-<td class="colLast"><span class="typeNameLabel">InsertionSorterFactory.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/insertionsort/InsertionSorterFactory.html#create-int-int-org.apache.sysds.runtime.compress.utils.IntArrayList:A-">create</a></span>(int&nbsp;endLength,
-      int&nbsp;knownMax,
+<td class="colLast"><span class="typeNameLabel">InsertionSorterFactory.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/insertionsort/InsertionSorterFactory.html#create-int-org.apache.sysds.runtime.compress.utils.IntArrayList:A-">create</a></span>(int&nbsp;numRows,
       <a href="../../../../../../../org/apache/sysds/runtime/compress/utils/IntArrayList.html" title="class in org.apache.sysds.runtime.compress.utils">IntArrayList</a>[]&nbsp;offsets)</code>&nbsp;</td>
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code>static <a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/insertionsort/AInsertionSorter.html" title="class in org.apache.sysds.runtime.compress.colgroup.insertionsort">AInsertionSorter</a></code></td>
-<td class="colLast"><span class="typeNameLabel">InsertionSorterFactory.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/insertionsort/InsertionSorterFactory.html#create-int-int-org.apache.sysds.runtime.compress.utils.IntArrayList:A-int-">create</a></span>(int&nbsp;endLength,
-      int&nbsp;knownMax,
+<td class="colLast"><span class="typeNameLabel">InsertionSorterFactory.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/insertionsort/InsertionSorterFactory.html#create-int-org.apache.sysds.runtime.compress.utils.IntArrayList:A-int-">create</a></span>(int&nbsp;numRows,
       <a href="../../../../../../../org/apache/sysds/runtime/compress/utils/IntArrayList.html" title="class in org.apache.sysds.runtime.compress.utils">IntArrayList</a>[]&nbsp;offsets,
       int&nbsp;negativeIndex)</code>&nbsp;</td>
 </tr>
 <tr class="altColor">
 <td class="colFirst"><code>static <a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/insertionsort/AInsertionSorter.html" title="class in org.apache.sysds.runtime.compress.colgroup.insertionsort">AInsertionSorter</a></code></td>
+<td class="colLast"><span class="typeNameLabel">InsertionSorterFactory.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/insertionsort/InsertionSorterFactory.html#create-int-org.apache.sysds.runtime.compress.utils.IntArrayList:A-int-org.apache.sysds.runtime.compress.colgroup.insertionsort.InsertionSorterFactory.SORT_TYPE-">create</a></span>(int&nbsp;numRows,
+      <a href="../../../../../../../org/apache/sysds/runtime/compress/utils/IntArrayList.html" title="class in org.apache.sysds.runtime.compress.utils">IntArrayList</a>[]&nbsp;offsets,
+      int&nbsp;negativeIndex,
+      <a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/insertionsort/InsertionSorterFactory.SORT_TYPE.html" title="enum in org.apache.sysds.runtime.compress.colgroup.insertionsort">InsertionSorterFactory.SORT_TYPE</a>&nbsp;st)</code>&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>static <a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/insertionsort/AInsertionSorter.html" title="class in org.apache.sysds.runtime.compress.colgroup.insertionsort">AInsertionSorter</a></code></td>
+<td class="colLast"><span class="typeNameLabel">InsertionSorterFactory.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/insertionsort/InsertionSorterFactory.html#create-int-int-org.apache.sysds.runtime.compress.utils.IntArrayList:A-">create</a></span>(int&nbsp;endLength,
+      int&nbsp;numRows,
+      <a href="../../../../../../../org/apache/sysds/runtime/compress/utils/IntArrayList.html" title="class in org.apache.sysds.runtime.compress.utils">IntArrayList</a>[]&nbsp;offsets)</code>&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>static <a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/insertionsort/AInsertionSorter.html" title="class in org.apache.sysds.runtime.compress.colgroup.insertionsort">AInsertionSorter</a></code></td>
+<td class="colLast"><span class="typeNameLabel">InsertionSorterFactory.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/insertionsort/InsertionSorterFactory.html#create-int-int-org.apache.sysds.runtime.compress.utils.IntArrayList:A-int-">create</a></span>(int&nbsp;endLength,
+      int&nbsp;numRows,
+      <a href="../../../../../../../org/apache/sysds/runtime/compress/utils/IntArrayList.html" title="class in org.apache.sysds.runtime.compress.utils">IntArrayList</a>[]&nbsp;offsets,
+      int&nbsp;negativeIndex)</code>&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>static <a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/insertionsort/AInsertionSorter.html" title="class in org.apache.sysds.runtime.compress.colgroup.insertionsort">AInsertionSorter</a></code></td>
 <td class="colLast"><span class="typeNameLabel">InsertionSorterFactory.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/insertionsort/InsertionSorterFactory.html#create-int-int-org.apache.sysds.runtime.compress.utils.IntArrayList:A-int-org.apache.sysds.runtime.compress.colgroup.insertionsort.InsertionSorterFactory.SORT_TYPE-">create</a></span>(int&nbsp;endLength,
-      int&nbsp;knownMax,
+      int&nbsp;numRows,
       <a href="../../../../../../../org/apache/sysds/runtime/compress/utils/IntArrayList.html" title="class in org.apache.sysds.runtime.compress.utils">IntArrayList</a>[]&nbsp;offsets,
       int&nbsp;negativeIndex,
       <a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/insertionsort/InsertionSorterFactory.SORT_TYPE.html" title="enum in org.apache.sysds.runtime.compress.colgroup.insertionsort">InsertionSorterFactory.SORT_TYPE</a>&nbsp;st)</code>&nbsp;</td>
@@ -141,19 +159,19 @@
 <tbody>
 <tr class="altColor">
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/insertionsort/AInsertionSorter.html#AInsertionSorter-int-int-org.apache.sysds.runtime.compress.utils.IntArrayList:A-int-">AInsertionSorter</a></span>(int&nbsp;endLength,
-                int&nbsp;knownMax,
+                int&nbsp;numRows,
                 <a href="../../../../../../../org/apache/sysds/runtime/compress/utils/IntArrayList.html" title="class in org.apache.sysds.runtime.compress.utils">IntArrayList</a>[]&nbsp;offsets,
                 int&nbsp;negativeIndex)</code>&nbsp;</td>
 </tr>
 <tr class="rowColor">
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/insertionsort/MaterializeSort.html#MaterializeSort-int-int-org.apache.sysds.runtime.compress.utils.IntArrayList:A-int-">MaterializeSort</a></span>(int&nbsp;endLength,
-               int&nbsp;knownMax,
+               int&nbsp;numRows,
                <a href="../../../../../../../org/apache/sysds/runtime/compress/utils/IntArrayList.html" title="class in org.apache.sysds.runtime.compress.utils">IntArrayList</a>[]&nbsp;offsets,
                int&nbsp;negativeIndex)</code>&nbsp;</td>
 </tr>
 <tr class="altColor">
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/compress/colgroup/insertionsort/MergeSort.html#MergeSort-int-int-org.apache.sysds.runtime.compress.utils.IntArrayList:A-int-">MergeSort</a></span>(int&nbsp;endLength,
-         int&nbsp;knownMax,
+         int&nbsp;numRows,
          <a href="../../../../../../../org/apache/sysds/runtime/compress/utils/IntArrayList.html" title="class in org.apache.sysds.runtime.compress.utils">IntArrayList</a>[]&nbsp;offsets,
          int&nbsp;negativeIndex)</code>&nbsp;</td>
 </tr>

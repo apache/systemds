@@ -44,7 +44,7 @@ import org.apache.sysds.utils.Statistics;
 
 import java.util.Arrays;
 
-public class ResultMergeRemoteSpark extends ResultMerge
+public class ResultMergeRemoteSpark extends ResultMergeMatrix
 {
 	private static final long serialVersionUID = -6924566953903424820L;
 	

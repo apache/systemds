@@ -19,7 +19,13 @@
 
 package org.apache.sysds.runtime.compress.utils;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.apache.sysds.runtime.util.UtilFunctions;
+
 public class Util {
+
+	protected static final Log LOG = LogFactory.getLog(Util.class.getName());
 	public static int[] join(int[] lhs, int[] rhs) {
 		int[] joined = new int[lhs.length + rhs.length];
 		int lp = 0;
@@ -40,4 +46,10 @@ public class Util {
 		
 		return joined;
 	}
+
+	public static int getPow2(int x) {
+		int v = UtilFunctions.nextIntPow2(x + 1);
+		return Math.max(v, 4);
+	}
+
 }

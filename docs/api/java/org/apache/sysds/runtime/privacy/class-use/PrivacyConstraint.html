@@ -349,42 +349,42 @@
 <tr class="altColor">
 <td class="colFirst"><code>static <a href="../../../../../../org/apache/sysds/runtime/privacy/PrivacyConstraint.html" title="class in org.apache.sysds.runtime.privacy">PrivacyConstraint</a></code></td>
 <td class="colLast"><span class="typeNameLabel">PrivacyPropagator.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/privacy/propagation/PrivacyPropagator.html#mergeBinary-org.apache.sysds.runtime.privacy.PrivacyConstraint-org.apache.sysds.runtime.privacy.PrivacyConstraint-">mergeBinary</a></span>(<a href="../../../../../../org/apache/sysds/runtime/privacy/PrivacyConstraint.html" title="class in org.apache.sysds.runtime.privacy">PrivacyConstraint</a>&nbsp;privacyConstraint1,
-           <a href="../../../../../../org/apache/sysds/runtime/privacy/PrivacyConstraint.html" title="class in org.apache.sysds.runtime.privacy">PrivacyConstraint</a>&nbsp;privacyConstraint2)</code>&nbsp;</td>
+           <a href="../../../../../../org/apache/sysds/runtime/privacy/PrivacyConstraint.html" title="class in org.apache.sysds.runtime.privacy">PrivacyConstraint</a>&nbsp;privacyConstraint2)</code>
+<div class="block">Merges the input privacy constraints using the core propagation with NonAggregate operator type.</div>
+</td>
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code>static <a href="../../../../../../org/apache/sysds/runtime/privacy/PrivacyConstraint.html" title="class in org.apache.sysds.runtime.privacy">PrivacyConstraint</a></code></td>
-<td class="colLast"><span class="typeNameLabel">PrivacyPropagator.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/privacy/propagation/PrivacyPropagator.html#mergeNary-org.apache.sysds.runtime.privacy.PrivacyConstraint:A-">mergeNary</a></span>(<a href="../../../../../../org/apache/sysds/runtime/privacy/PrivacyConstraint.html" title="class in org.apache.sysds.runtime.privacy">PrivacyConstraint</a>[]&nbsp;privacyConstraints)</code>&nbsp;</td>
+<td class="colLast"><span class="typeNameLabel">PrivacyPropagator.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/privacy/propagation/PrivacyPropagator.html#parseAndReturnPrivacyConstraint-org.apache.wink.json4j.JSONObject-">parseAndReturnPrivacyConstraint</a></span>(org.apache.wink.json4j.JSONObject&nbsp;mtd)</code>
+<div class="block">Parses the privacy constraint of the given metadata object
+ or returns null if no privacy constraint is set in the metadata.</div>
+</td>
 </tr>
 <tr class="altColor">
-<td class="colFirst"><code>static <a href="../../../../../../org/apache/sysds/runtime/privacy/PrivacyConstraint.html" title="class in org.apache.sysds.runtime.privacy">PrivacyConstraint</a></code></td>
-<td class="colLast"><span class="typeNameLabel">PrivacyPropagator.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/privacy/propagation/PrivacyPropagator.html#mergeNary-org.apache.sysds.runtime.privacy.PrivacyConstraint:A-org.apache.sysds.runtime.privacy.propagation.OperatorType-">mergeNary</a></span>(<a href="../../../../../../org/apache/sysds/runtime/privacy/PrivacyConstraint.html" title="class in org.apache.sysds.runtime.privacy">PrivacyConstraint</a>[]&nbsp;privacyConstraints,
-         <a href="../../../../../../org/apache/sysds/runtime/privacy/propagation/OperatorType.html" title="enum in org.apache.sysds.runtime.privacy.propagation">OperatorType</a>&nbsp;operatorType)</code>&nbsp;</td>
-</tr>
-<tr class="rowColor">
 <td class="colFirst"><code><a href="../../../../../../org/apache/sysds/runtime/privacy/PrivacyConstraint.html" title="class in org.apache.sysds.runtime.privacy">PrivacyConstraint</a></code></td>
 <td class="colLast"><span class="typeNameLabel">Propagator.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/privacy/propagation/Propagator.html#propagate--">propagate</a></span>()</code>
 <div class="block">Activates the propagation and returns the output privacy constraint.</div>
 </td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code><a href="../../../../../../org/apache/sysds/runtime/privacy/PrivacyConstraint.html" title="class in org.apache.sysds.runtime.privacy">PrivacyConstraint</a></code></td>
 <td class="colLast"><span class="typeNameLabel">ListAppendPropagator.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/privacy/propagation/ListAppendPropagator.html#propagate--">propagate</a></span>()</code>&nbsp;</td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code><a href="../../../../../../org/apache/sysds/runtime/privacy/PrivacyConstraint.html" title="class in org.apache.sysds.runtime.privacy">PrivacyConstraint</a></code></td>
 <td class="colLast"><span class="typeNameLabel">AppendPropagator.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/privacy/propagation/AppendPropagator.html#propagate--">propagate</a></span>()</code>&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code><a href="../../../../../../org/apache/sysds/runtime/privacy/PrivacyConstraint.html" title="class in org.apache.sysds.runtime.privacy">PrivacyConstraint</a>[]</code></td>
 <td class="colLast"><span class="typeNameLabel">PropagatorMultiReturn.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/privacy/propagation/PropagatorMultiReturn.html#propagate--">propagate</a></span>()</code>
 <div class="block">Activates the propagation and returns the output privacy constraints.</div>
 </td>
 </tr>
-<tr class="rowColor">
+<tr class="altColor">
 <td class="colFirst"><code><a href="../../../../../../org/apache/sysds/runtime/privacy/PrivacyConstraint.html" title="class in org.apache.sysds.runtime.privacy">PrivacyConstraint</a></code></td>
 <td class="colLast"><span class="typeNameLabel">MatrixMultiplicationPropagator.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/privacy/propagation/MatrixMultiplicationPropagator.html#propagate--">propagate</a></span>()</code>&nbsp;</td>
 </tr>
-<tr class="altColor">
+<tr class="rowColor">
 <td class="colFirst"><code><a href="../../../../../../org/apache/sysds/runtime/privacy/PrivacyConstraint.html" title="class in org.apache.sysds.runtime.privacy">PrivacyConstraint</a>[]</code></td>
 <td class="colLast"><span class="typeNameLabel">ListRemovePropagator.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/privacy/propagation/ListRemovePropagator.html#propagate--">propagate</a></span>()</code>&nbsp;</td>
 </tr>
@@ -400,16 +400,9 @@
 <tr class="altColor">
 <td class="colFirst"><code>static <a href="../../../../../../org/apache/sysds/runtime/privacy/PrivacyConstraint.html" title="class in org.apache.sysds.runtime.privacy">PrivacyConstraint</a></code></td>
 <td class="colLast"><span class="typeNameLabel">PrivacyPropagator.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/privacy/propagation/PrivacyPropagator.html#mergeBinary-org.apache.sysds.runtime.privacy.PrivacyConstraint-org.apache.sysds.runtime.privacy.PrivacyConstraint-">mergeBinary</a></span>(<a href="../../../../../../org/apache/sysds/runtime/privacy/PrivacyConstraint.html" title="class in org.apache.sysds.runtime.privacy">PrivacyConstraint</a>&nbsp;privacyConstraint1,
-           <a href="../../../../../../org/apache/sysds/runtime/privacy/PrivacyConstraint.html" title="class in org.apache.sysds.runtime.privacy">PrivacyConstraint</a>&nbsp;privacyConstraint2)</code>&nbsp;</td>
-</tr>
-<tr class="rowColor">
-<td class="colFirst"><code>static <a href="../../../../../../org/apache/sysds/runtime/privacy/PrivacyConstraint.html" title="class in org.apache.sysds.runtime.privacy">PrivacyConstraint</a></code></td>
-<td class="colLast"><span class="typeNameLabel">PrivacyPropagator.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/privacy/propagation/PrivacyPropagator.html#mergeNary-org.apache.sysds.runtime.privacy.PrivacyConstraint:A-">mergeNary</a></span>(<a href="../../../../../../org/apache/sysds/runtime/privacy/PrivacyConstraint.html" title="class in org.apache.sysds.runtime.privacy">PrivacyConstraint</a>[]&nbsp;privacyConstraints)</code>&nbsp;</td>
-</tr>
-<tr class="altColor">
-<td class="colFirst"><code>static <a href="../../../../../../org/apache/sysds/runtime/privacy/PrivacyConstraint.html" title="class in org.apache.sysds.runtime.privacy">PrivacyConstraint</a></code></td>
-<td class="colLast"><span class="typeNameLabel">PrivacyPropagator.</span><code><span class="memberNameLink"><a href="../../../../../../org/apache/sysds/runtime/privacy/propagation/PrivacyPropagator.html#mergeNary-org.apache.sysds.runtime.privacy.PrivacyConstraint:A-org.apache.sysds.runtime.privacy.propagation.OperatorType-">mergeNary</a></span>(<a href="../../../../../../org/apache/sysds/runtime/privacy/PrivacyConstraint.html" title="class in org.apache.sysds.runtime.privacy">PrivacyConstraint</a>[]&nbsp;privacyConstraints,
-         <a href="../../../../../../org/apache/sysds/runtime/privacy/propagation/OperatorType.html" title="enum in org.apache.sysds.runtime.privacy.propagation">OperatorType</a>&nbsp;operatorType)</code>&nbsp;</td>
+           <a href="../../../../../../org/apache/sysds/runtime/privacy/PrivacyConstraint.html" title="class in org.apache.sysds.runtime.privacy">PrivacyConstraint</a>&nbsp;privacyConstraint2)</code>
+<div class="block">Merges the input privacy constraints using the core propagation with NonAggregate operator type.</div>
+</td>
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code>void</code></td>

@@ -31,6 +31,7 @@ import java.util.stream.Collectors;
 import org.apache.commons.lang3.mutable.MutableInt;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.DataType;
+import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.common.Types.OpOp1;
 import org.apache.sysds.common.Types.OpOp2;
 import org.apache.sysds.common.Types.OpOp3;
@@ -58,6 +59,7 @@ import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.BasicProgramBlock;
 import org.apache.sysds.runtime.controlprogram.FunctionProgramBlock;
 import org.apache.sysds.runtime.controlprogram.Program;
+import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContextFactory;
 import org.apache.sysds.runtime.instructions.Instruction;
@@ -71,6 +73,7 @@ import org.apache.sysds.runtime.instructions.cp.ScalarObjectFactory;
 import org.apache.sysds.runtime.instructions.cp.VariableCPInstruction;
 import org.apache.sysds.runtime.instructions.spark.RandSPInstruction;
 import org.apache.sysds.runtime.instructions.spark.SPInstruction.SPType;
+import org.apache.sysds.runtime.util.ProgramConverter;
 import org.apache.sysds.utils.Explain;
 import org.apache.sysds.utils.Explain.ExplainCounts;
 import org.apache.sysds.utils.Statistics;
@@ -200,6 +203,20 @@ public class LineageRecomputeUtils {
 					operands.put(item.getId(), input); // order preserving
 					break;
 				}
+				else if( item.getOpcode().equals("cache_rblk") ) {
+					CacheableData<?> dat = (CacheableData<?>)ProgramConverter.parseDataObject(item.getData())[1];
+					DataOp hop = new DataOp("tmp", dat.getDataType(), dat.getValueType(),
+						OpOpData.PERSISTENTREAD, dat.getFileName(), dat.getNumRows(),
+						dat.getNumColumns(), dat.getDataCharacteristics().getNonZeros(), -1);
+					hop.setFileFormat(FileFormat.BINARY);
+					hop.setInputBlocksize(dat.getBlocksize());
+					hop.setBlocksize(ConfigurationManager.getBlocksize());
+					hop.setRequiresReblock(true);
+					operands.put(item.getId(), hop);
+					break;
+				}
+				
+				
 				Instruction inst = InstructionParser.parseSingleInstruction(item.getData());
 				
 				if (inst instanceof DataGenCPInstruction) {

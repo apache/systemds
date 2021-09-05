@@ -28,6 +28,7 @@ import java.util.concurrent.BlockingQueue;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import org.apache.commons.lang.NotImplementedException;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -41,17 +42,20 @@ import org.apache.sysds.runtime.controlprogram.FunctionProgramBlock;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.parfor.stat.Timing;
+import org.apache.sysds.runtime.functionobjects.Multiply;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
 import org.apache.sysds.runtime.instructions.cp.DoubleObject;
 import org.apache.sysds.runtime.instructions.cp.FunctionCallCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.ListObject;
+import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.matrix.operators.RightScalarOperator;
 import org.apache.sysds.utils.Statistics;
 
-public abstract class ParamServer 
+public abstract class ParamServer
 {
 	protected static final Log LOG = LogFactory.getLog(ParamServer.class.getName());
 	protected static final boolean ACCRUE_BSP_GRADIENTS = true;
-	
+
 	// worker input queues and global model
 	protected Map<Integer, BlockingQueue<ListObject>> _modelMap;
 	private ListObject _model;
@@ -72,16 +76,17 @@ public abstract class ParamServer
 	private String _accuracyOutput;
 
 	private int _syncCounter = 0;
-	private int _epochCounter = 0 ;
+	private int _epochCounter = 0;
 	private int _numBatchesPerEpoch;
 
 	private int _numWorkers;
+	private boolean _modelAvg;
+	private ListObject _accModels = null;
 
 	protected ParamServer() {}
 
 	protected ParamServer(ListObject model, String aggFunc, Statement.PSUpdateType updateType,
-		Statement.PSFrequency freq, ExecutionContext ec, int workerNum, String valFunc,
-		int numBatchesPerEpoch, MatrixObject valFeatures, MatrixObject valLabels)
+		Statement.PSFrequency freq, ExecutionContext ec, int workerNum, String valFunc, int numBatchesPerEpoch,	MatrixObject valFeatures, MatrixObject valLabels, boolean modelAvg)
 	{
 		// init worker queues and global model
 		_modelMap = new HashMap<>(workerNum);
@@ -90,7 +95,7 @@ public abstract class ParamServer
 			_modelMap.put(i, new ArrayBlockingQueue<>(1));
 		});
 		_model = model;
-		
+
 		// init aggregation service
 		_ec = ec;
 		_updateType = updateType;
@@ -103,7 +108,8 @@ public abstract class ParamServer
 		}
 		_numBatchesPerEpoch = numBatchesPerEpoch;
 		_numWorkers = workerNum;
-		
+		_modelAvg = modelAvg;
+
 		// broadcast initial model
 		broadcastModel(true);
 	}
@@ -179,9 +185,17 @@ public abstract class ParamServer
 		return _model;
 	}
 
-	protected synchronized void updateGlobalModel(int workerID, ListObject gradients) {
+	protected synchronized void updateGlobalModel(int workerID, ListObject params) {
+		if(_modelAvg) {
+			updateAverageModel(workerID, params);
+		}
+		else
+			updateGlobalGradients(workerID, params);
+	}
+
+	protected synchronized void updateGlobalGradients(int workerID, ListObject gradients) {
 		try {
-			if (LOG.isDebugEnabled()) {
+			if(LOG.isDebugEnabled()) {
 				LOG.debug(String.format("Successfully pulled the gradients [size:%d kb] of worker_%d.",
 					gradients.getDataSize() / 1024, workerID));
 			}
@@ -221,7 +235,7 @@ public abstract class ParamServer
 							_epochCounter++;
 							_syncCounter = 0;
 						}
-						
+
 						// Broadcast the updated model
 						resetFinishedStates();
 						broadcastModel(true);
@@ -256,7 +270,7 @@ public abstract class ParamServer
 				default:
 					throw new DMLRuntimeException("Unsupported update: " + _updateType.name());
 			}
-		} 
+		}
 		catch (Exception e) {
 			throw new DMLRuntimeException("Aggregation or validation service failed: ", e);
 		}
@@ -293,8 +307,93 @@ public abstract class ParamServer
 		ParamservUtils.cleanupListObject(ec, Statement.PS_GRADIENTS);
 		return newModel;
 	}
-	
-	private boolean allFinished() {
+
+	protected synchronized void updateAverageModel(int workerID, ListObject model) {
+		try {
+			if(LOG.isDebugEnabled()) {
+				LOG.debug(String.format("Successfully pulled the models [size:%d kb] of worker_%d.",
+					model.getDataSize() / 1024, workerID));
+			}
+			Timing tAgg = DMLScript.STATISTICS ? new Timing(true) : null;
+
+			//first weight the models based on number of workers
+			ListObject weightParams = weightModels(model, _numWorkers);
+			switch(_updateType) {
+				case BSP: {
+					setFinishedState(workerID);
+					// second Accumulate the given weightModels into the accrued models
+					_accModels = ParamservUtils.accrueGradients(_accModels, weightParams, true);
+
+					if(allFinished()) {
+						_model = setParams(_ec, _accModels, _model);
+						if (DMLScript.STATISTICS && tAgg != null)
+							Statistics.accPSAggregationTime((long) tAgg.stop());
+						_accModels = null; //reset for next accumulation
+
+						// This if has grown to be quite complex its function is rather simple. Validate at the end of each epoch
+						// In the BSP batch case that occurs after the sync counter reaches the number of batches and in the
+						// BSP epoch case every time
+						if(_numBatchesPerEpoch != -1 && (_freq == Statement.PSFrequency.EPOCH || (_freq == Statement.PSFrequency.BATCH && ++_syncCounter % _numBatchesPerEpoch == 0))) {
+
+							if(LOG.isInfoEnabled())
+								LOG.info("[+] PARAMSERV: completed EPOCH " + _epochCounter);
+							time_epoch();
+							if(_validationPossible) {
+								validate();
+							}
+							_epochCounter++;
+							_syncCounter = 0;
+						}
+						// Broadcast the updated model
+						resetFinishedStates();
+						broadcastModel(true);
+						if(LOG.isDebugEnabled())
+							LOG.debug("Global parameter is broadcasted successfully ");
+					}
+					break;
+				}
+				case ASP:
+					throw new NotImplementedException();
+
+				default:
+					throw new DMLRuntimeException("Unsupported update: " + _updateType.name());
+			}
+		}
+		catch(Exception e) {
+			throw new DMLRuntimeException("Aggregation or validation service failed: ", e);
+		}
+	}
+
+	protected  ListObject weightModels(ListObject params, int numWorkers) {
+		double _averagingFactor = 1d / numWorkers;
+
+		if( _averagingFactor != 1) {
+			double final_averagingFactor = _averagingFactor;
+			params.getData().parallelStream().forEach((matrix) -> {
+				MatrixObject matrixObject = (MatrixObject) matrix;
+				MatrixBlock input = matrixObject.acquireReadAndRelease().scalarOperations(
+					new RightScalarOperator(Multiply.getMultiplyFnObject(), final_averagingFactor), new MatrixBlock());
+				matrixObject.acquireModify(input);
+				matrixObject.release();
+			});
+		}
+		return  params;
+	}
+
+	/* A service method for averaging model with models
+	 *
+	 * @param ec execution context
+	 * @param accModels list of models
+	 * @param model old model
+	 * @return new model (accModels)
+	 */
+	protected  ListObject setParams(ExecutionContext ec, ListObject accModels, ListObject model) {
+		ec.setVariable(Statement.PS_MODEL, model);
+		ec.setVariable(Statement.PS_GRADIENTS, accModels);
+		return accModels;
+	}
+
+		private boolean allFinished() {
 		return !ArrayUtils.contains(_finishedStates, false);
 	}
 

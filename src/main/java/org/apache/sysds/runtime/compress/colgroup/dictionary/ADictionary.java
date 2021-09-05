@@ -21,6 +21,7 @@ package org.apache.sysds.runtime.compress.colgroup.dictionary;
 
 import java.io.DataOutput;
 import java.io.IOException;
+import java.io.Serializable;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -31,8 +32,10 @@ import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
 /**
  * This dictionary class aims to encapsulate the storage and operations over unique tuple values of a column group.
  */
-public abstract class ADictionary {
+public abstract class ADictionary implements Serializable {
 
+	private static final long serialVersionUID = 9118692576356558592L;
+	
 	protected static final Log LOG = LogFactory.getLog(ADictionary.class.getName());
 
 	/**

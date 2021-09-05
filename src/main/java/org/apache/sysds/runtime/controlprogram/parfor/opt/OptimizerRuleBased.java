@@ -169,12 +169,12 @@ public class OptimizerRuleBased extends Optimizer {
 	protected double _rm2 = -1; //remote memory constraint (reducers)
 	
 	protected CostEstimator _cost = null;
-
+	protected OptTree _plan = null;
+	
 	@Override
 	public CostModelType getCostModelType() {
 		return CostModelType.STATIC_MEM_METRIC;
 	}
-
 
 	@Override
 	public PlanInputType getPlanInputType() {
@@ -197,7 +197,8 @@ public class OptimizerRuleBased extends Optimizer {
 	{
 		LOG.debug("--- "+getOptMode()+" OPTIMIZER -------");
 
-		OptNode pn = plan.getRoot();
+		_plan = plan;
+		OptNode pn = _plan.getRoot();
 		
 		//early abort for empty parfor body 
 		if( pn.isLeaf() )
@@ -378,7 +379,7 @@ public class OptimizerRuleBased extends Optimizer {
 		
 		//preparations
 		long id = n.getID();
-		Object[] o = OptTreeConverter.getAbstractPlanMapping().getMappedProg(id);
+		Object[] o = _plan.getMappedProg(id);
 		ParForStatementBlock pfsb = (ParForStatementBlock) o[0];
 		ParForProgramBlock pfpb = (ParForProgramBlock) o[1];
 		
@@ -434,7 +435,7 @@ public class OptimizerRuleBased extends Optimizer {
 		else if( n.getNodeType()== NodeType.HOP
 			&& n.getParam(ParamType.OPSTRING).equals(IndexingOp.OPSTRING) )
 		{
-			Hop h = OptTreeConverter.getAbstractPlanMapping().getMappedHop(n.getID());
+			Hop h = _plan.getMappedHop(n.getID());
 			String inMatrix = h.getInput().get(0).getName();
 			if( cand.containsKey(inMatrix) && h.getDataType().isMatrix() ) //Required: partitionable
 			{
@@ -563,7 +564,7 @@ public class OptimizerRuleBased extends Optimizer {
 	protected boolean rewriteSetResultPartitioning(OptNode n, double M, LocalVariableMap vars) {
 		//preparations
 		long id = n.getID();
-		Object[] o = OptTreeConverter.getAbstractPlanMapping().getMappedProg(id);
+		Object[] o = _plan.getMappedProg(id);
 		ParForProgramBlock pfpb = (ParForProgramBlock) o[1];
 		
 		//search for candidates
@@ -615,7 +616,7 @@ public class OptimizerRuleBased extends Optimizer {
 		Hop base = null;
 		
 		if( ret ) {
-			h = OptTreeConverter.getAbstractPlanMapping().getMappedHop(n.getID());
+			h = _plan.getMappedHop(n.getID());
 			base = h.getInput().get(0);
 			
 			//check result variable
@@ -716,16 +717,16 @@ public class OptimizerRuleBased extends Optimizer {
 	}
 
 	protected void recompileLIX( OptNode n, LocalVariableMap vars ) {
-		Hop h = OptTreeConverter.getAbstractPlanMapping().getMappedHop(n.getID());
+		Hop h = _plan.getMappedHop(n.getID());
 		
 		//set forced exec type
 		h.setForcedExecType(Types.ExecType.CP);
 		n.setExecType(ExecType.CP);
 		
 		//recompile parent pb
-		long pid = OptTreeConverter.getAbstractPlanMapping().getMappedParentID(n.getID());
-		OptNode nParent = OptTreeConverter.getAbstractPlanMapping().getOptNode(pid);
-		Object[] o = OptTreeConverter.getAbstractPlanMapping().getMappedProg(pid);
+		long pid = _plan.getAbstractPlanMapping().getMappedParentID(n.getID());
+		OptNode nParent = _plan.getAbstractPlanMapping().getOptNode(pid);
+		Object[] o = _plan.getMappedProg(pid);
 		StatementBlock sb = (StatementBlock) o[0];
 		BasicProgramBlock pb = (BasicProgramBlock) o[1];
 		
@@ -750,7 +751,7 @@ public class OptimizerRuleBased extends Optimizer {
 		for( OptNode n : parent.getChilds() )
 			if( n.getParam(ParamType.DATA_PARTITION_FORMAT) != null )
 			{
-				Hop h = OptTreeConverter.getAbstractPlanMapping().getMappedHop(n.getID());
+				Hop h = _plan.getMappedHop(n.getID());
 				estimates.put( h, h.getMemEstimate() );
 			}
 		return estimates;
@@ -828,8 +829,7 @@ public class OptimizerRuleBased extends Optimizer {
 		
 		//actual programblock modification
 		long id = n.getID();
-		ParForProgramBlock pfpb = (ParForProgramBlock) OptTreeConverter
-		                             .getAbstractPlanMapping().getMappedProg(id)[1];
+		ParForProgramBlock pfpb = (ParForProgramBlock) _plan.getMappedProg(id)[1];
 		
 		PExecMode mode = n.getExecType().toParForExecMode();
 		pfpb.setExecMode( mode );	
@@ -862,7 +862,7 @@ public class OptimizerRuleBased extends Optimizer {
 		
 		if( n.isLeaf() && et == getRemoteExecType() )
 		{
-			Hop h = OptTreeConverter.getAbstractPlanMapping().getMappedHop( n.getID() );
+			Hop h = _plan.getMappedHop( n.getID() );
 			if(    h.getForcedExecType()!=Types.ExecType.SPARK 
 				&& h.hasValidCPDimsAndSize() ) //integer dims
 			{
@@ -893,8 +893,7 @@ public class OptimizerRuleBased extends Optimizer {
 		//recompile program (actual programblock modification)
 		if( recompile && count<=0 )
 			LOG.warn("OPT: Forced set operations exec type 'CP', but no operation requires recompile.");
-		ParForProgramBlock pfpb = (ParForProgramBlock) OptTreeConverter
-			.getAbstractPlanMapping().getMappedProg(pn.getID())[1];
+		ParForProgramBlock pfpb = (ParForProgramBlock) _plan.getMappedProg(pn.getID())[1];
 		HashSet<String> fnStack = new HashSet<>();
 		Recompiler.recompileProgramBlockHierarchy2Forced(pfpb.getChildBlocks(), 0, fnStack, Types.ExecType.CP);
 		
@@ -937,8 +936,7 @@ public class OptimizerRuleBased extends Optimizer {
 		// on the partitioned matrix
 		boolean apply = false;
 		String varname = null;
-		ParForProgramBlock pfpb = (ParForProgramBlock) OptTreeConverter
-				.getAbstractPlanMapping().getMappedProg(n.getID())[1];
+		ParForProgramBlock pfpb = (ParForProgramBlock) _plan.getMappedProg(n.getID())[1];
 		
 		//modify the runtime plan (apply true if at least one candidate)
 		if( apply )
@@ -959,7 +957,7 @@ public class OptimizerRuleBased extends Optimizer {
 			     && n.getParam(ParamType.DATA_PARTITION_FORMAT) != null )
 		{
 			PartitionFormat dpf = PartitionFormat.valueOf(n.getParam(ParamType.DATA_PARTITION_FORMAT));
-			Hop h = OptTreeConverter.getAbstractPlanMapping().getMappedHop(n.getID());
+			Hop h = _plan.getMappedHop(n.getID());
 			String inMatrix = h.getInput().get(0).getName();
 			String indexAccess = null;
 			switch( dpf._dpf )
@@ -1004,8 +1002,7 @@ public class OptimizerRuleBased extends Optimizer {
 		double sizeReplicated = 0;
 		int replication = ParForProgramBlock.WRITE_REPLICATION_FACTOR;
 		
-		ParForProgramBlock pfpb = (ParForProgramBlock) OptTreeConverter
-			.getAbstractPlanMapping().getMappedProg(n.getID())[1];
+		ParForProgramBlock pfpb = (ParForProgramBlock) _plan.getMappedProg(n.getID())[1];
 		
 		if(((n.getExecType()==ExecType.SPARK && n.getParam(ParamType.DATA_PARTITIONER).equals(PDataPartitioner.REMOTE_SPARK.name())))
 		    && n.hasNestedParallelism(false) 
@@ -1068,8 +1065,7 @@ public class OptimizerRuleBased extends Optimizer {
 		boolean apply = false;
 		int replication = -1;
 		
-		ParForProgramBlock pfpb = (ParForProgramBlock) OptTreeConverter
-			.getAbstractPlanMapping().getMappedProg(n.getID())[1];
+		ParForProgramBlock pfpb = (ParForProgramBlock) _plan.getMappedProg(n.getID())[1];
 		
 		//decide on the replication factor 
 		if( n.getExecType()==getRemoteExecType() )
@@ -1104,7 +1100,7 @@ public class OptimizerRuleBased extends Optimizer {
 		double ret = 0;
 
 		if (n.isLeaf() && et != getRemoteExecType()) {
-			Hop h = OptTreeConverter.getAbstractPlanMapping().getMappedHop(n.getID());
+			Hop h = _plan.getMappedHop(n.getID());
 			if ( h.getForcedExecType() != Types.ExecType.SPARK) {
 				double mem = _cost.getLeafNodeEstimate(TestMeasure.MEMORY_USAGE, n, Types.ExecType.CP);
 				if (mem >= OptimizerUtils.DEFAULT_SIZE) {
@@ -1134,7 +1130,7 @@ public class OptimizerRuleBased extends Optimizer {
 		long id = n.getID();
 		
 		//special handling for different exec models (CP, MR, MR nested)
-		Object[] map = OptTreeConverter.getAbstractPlanMapping().getMappedProg(id);
+		Object[] map = _plan.getMappedProg(id);
 		ParForStatementBlock pfsb = (ParForStatementBlock)map[0];
 		ParForProgramBlock pfpb = (ParForProgramBlock)map[1];
 		
@@ -1182,12 +1178,14 @@ public class OptimizerRuleBased extends Optimizer {
 			
 			//set parfor degree of parallelism
 			pfpb.setDegreeOfParallelism(parforK);
+			pfpb.setDegreeOfParallelismFixed(true);
 			n.setK(parforK);
 			
 			//distribute remaining parallelism 
 			int remainParforK = getRemainingParallelismParFor(kMax, parforK);
 			int remainOpsK = getRemainingParallelismOps(_lkmaxCP, parforK);
 			rAssignRemainingParallelism( n, remainParforK, remainOpsK );
+			pfpb.setDegreeOfParallelismFixed(false);
 		}
 		else // ExecType.MR/ExecType.SPARK
 		{
@@ -1216,7 +1214,9 @@ public class OptimizerRuleBased extends Optimizer {
 				kMax = 1;
 			
 			//distribute remaining parallelism and recompile parallel instructions
+			pfpb.setDegreeOfParallelismFixed(true);
 			rAssignRemainingParallelism( n, kMax, 1 );
+			pfpb.setDegreeOfParallelismFixed(false);
 		}
 		
 		_numEvaluatedPlans++;
@@ -1251,19 +1251,20 @@ public class OptimizerRuleBased extends Optimizer {
 					//set parfor degree of parallelism
 					long id = c.getID();
 					c.setK(tmpK);
-					ParForProgramBlock pfpb = (ParForProgramBlock) 
-						OptTreeConverter.getAbstractPlanMapping().getMappedProgramBlock(id);
+					ParForProgramBlock pfpb = (ParForProgramBlock) _plan.getMappedProgramBlock(id);
 					pfpb.setDegreeOfParallelism(tmpK);
 					
 					//distribute remaining parallelism
 					int remainParforK = getRemainingParallelismParFor(parforK, tmpK);
 					int remainOpsK = getRemainingParallelismOps(opsK, tmpK);
+					pfpb.setDegreeOfParallelismFixed(true);
 					rAssignRemainingParallelism(c, remainParforK, remainOpsK);
+					pfpb.setDegreeOfParallelismFixed(false);
 				}
 				else if( c.getNodeType() == NodeType.HOP )
 				{
 					//set degree of parallelism for multi-threaded leaf nodes
-					Hop h = OptTreeConverter.getAbstractPlanMapping().getMappedHop(c.getID());
+					Hop h = _plan.getMappedHop(c.getID());
 					if(    ConfigurationManager.isParallelMatrixOperations()
 						&& h instanceof MultiThreadedHop
 						&& ((MultiThreadedHop)h).isMultiThreadedOpType() )
@@ -1282,8 +1283,10 @@ public class OptimizerRuleBased extends Optimizer {
 					}
 					
 					//if parfor contains eval call, make unoptimized functions single-threaded
+					//(parent parfor program blocks have been frozen such that the following
+					//recompilation of all possible functions does not reset the DOP to 1)
 					if( HopRewriteUtils.isNary(h, OpOpN.EVAL) ) {
-						ProgramBlock pb = OptTreeConverter.getAbstractPlanMapping().getMappedProgramBlock(n.getID());
+						ProgramBlock pb = _plan.getMappedProgramBlock(n.getID());
 						pb.getProgram().getFunctionProgramBlocks(false)
 							.forEach((fname, fvalue) -> ParamservUtils.recompileProgramBlocks(1, fvalue.getChildBlocks()));
 					}
@@ -1296,7 +1299,7 @@ public class OptimizerRuleBased extends Optimizer {
 			if( recompileSB ) {
 				try {
 					//guaranteed to be a last-level block (see hop change)
-					ProgramBlock pb = OptTreeConverter.getAbstractPlanMapping().getMappedProgramBlock(n.getID());
+					ProgramBlock pb = _plan.getMappedProgramBlock(n.getID());
 					Recompiler.recompileProgramBlockInstructions(pb);
 				}
 				catch(Exception ex){
@@ -1367,8 +1370,7 @@ public class OptimizerRuleBased extends Optimizer {
 		long id = n.getID();
 		
 		// modify rtprog
-		ParForProgramBlock pfpb = (ParForProgramBlock) OptTreeConverter
-			.getAbstractPlanMapping().getMappedProgramBlock(id);
+		ParForProgramBlock pfpb = (ParForProgramBlock) _plan.getMappedProgramBlock(id);
 		pfpb.setTaskPartitioner(partitioner);
 		
 		// modify plan
@@ -1435,8 +1437,7 @@ public class OptimizerRuleBased extends Optimizer {
 			&& partitioner!=null && partitioner.equals(REMOTE_DP.toString()) //MR/SP partitioning
 			&& partitionedMatrices.size()==1 ) //only one partitioned matrix
 		{
-			ParForProgramBlock pfpb = (ParForProgramBlock) OptTreeConverter
-				.getAbstractPlanMapping().getMappedProg(pn.getID())[1];
+			ParForProgramBlock pfpb = (ParForProgramBlock) _plan.getMappedProg(pn.getID())[1];
 			
 			//partitioned matrix
 			String moVarname = partitionedMatrices.keySet().iterator().next();
@@ -1480,7 +1481,7 @@ public class OptimizerRuleBased extends Optimizer {
 			     && n.getParam(ParamType.DATA_PARTITION_FORMAT) != null )
 		{
 			PartitionFormat dpf = PartitionFormat.valueOf(n.getParam(ParamType.DATA_PARTITION_FORMAT));
-			Hop h = OptTreeConverter.getAbstractPlanMapping().getMappedHop(n.getID());
+			Hop h = _plan.getMappedHop(n.getID());
 			String inMatrix = h.getInput().get(0).getName();
 			String indexAccess = null;
 			switch( dpf._dpf )
@@ -1539,7 +1540,7 @@ public class OptimizerRuleBased extends Optimizer {
 			     && n.getParam(ParamType.OPSTRING).equals(IndexingOp.OPSTRING)
 			     && n.getParam(ParamType.DATA_PARTITION_FORMAT) != null )
 		{
-			Hop h = OptTreeConverter.getAbstractPlanMapping().getMappedHop(n.getID());
+			Hop h = _plan.getMappedHop(n.getID());
 			
 			String inMatrix = h.getInput().get(0).getName();
 			if( inMatrix.equals(varName) )
@@ -1568,8 +1569,7 @@ public class OptimizerRuleBased extends Optimizer {
 		
 		boolean apply = false;
 		
-		ParForProgramBlock pfpb = (ParForProgramBlock) OptTreeConverter
-			.getAbstractPlanMapping().getMappedProg(pn.getID())[1];
+		ParForProgramBlock pfpb = (ParForProgramBlock) _plan.getMappedProg(pn.getID())[1];
 		
 		//note currently we decide for all result vars jointly, i.e.,
 		//only if all fit pinned in remaining budget, we apply this rewrite.
@@ -1627,7 +1627,7 @@ public class OptimizerRuleBased extends Optimizer {
 				ret &= rHasOnlyInPlaceSafeLeftIndexing( cn, retVars );
 		}
 		else if( n.getNodeType()== NodeType.HOP) {
-			Hop h = OptTreeConverter.getAbstractPlanMapping().getMappedHop(n.getID());
+			Hop h = _plan.getMappedHop(n.getID());
 			if( h instanceof LeftIndexingOp && ResultVar.contains(retVars, h.getInput().get(0).getName() )
 				&& !retVars.stream().anyMatch(rvar -> rvar._isAccum) )
 				ret &= (h.getParent().size()==1 
@@ -1664,7 +1664,7 @@ public class OptimizerRuleBased extends Optimizer {
 		}
 		else if( n.getNodeType()== NodeType.HOP )
 		{
-			Hop h = OptTreeConverter.getAbstractPlanMapping().getMappedHop(n.getID());
+			Hop h = _plan.getMappedHop(n.getID());
 			if( n.getParam(ParamType.OPSTRING).equals(IndexingOp.OPSTRING)
 				&& n.getParam(ParamType.DATA_PARTITION_FORMAT) != null ) {
 				//set during partitioning rewrite
@@ -1725,7 +1725,7 @@ public class OptimizerRuleBased extends Optimizer {
 //		}
 //		else if( n.getNodeType()== NodeType.HOP && n.getExecType()==ExecType.MR )
 //		{
-//			Hop h = OptTreeConverter.getAbstractPlanMapping().getMappedHop(n.getID());
+//			Hop h = _plan.getMappedHop(n.getID());
 //			for( Hop ch : h.getInput() )
 //			{
 //				//note: we replaxed the contraint of non-partitioned inputs for additional 
@@ -1758,7 +1758,7 @@ public class OptimizerRuleBased extends Optimizer {
 	protected void rewriteInjectSparkLoopCheckpointing(OptNode n) 
 	{
 		//get program blocks of root parfor
-		Object[] progobj = OptTreeConverter.getAbstractPlanMapping().getMappedProg(n.getID());
+		Object[] progobj = _plan.getMappedProg(n.getID());
 		ParForStatementBlock pfsb = (ParForStatementBlock)progobj[0];
 		ParForStatement fs = (ParForStatement) pfsb.getStatement(0);
 		ParForProgramBlock pfpb = (ParForProgramBlock)progobj[1];
@@ -1794,7 +1794,7 @@ public class OptimizerRuleBased extends Optimizer {
 	protected void rewriteInjectSparkRepartition(OptNode n, LocalVariableMap vars) 
 	{
 		//get program blocks of root parfor
-		Object[] progobj = OptTreeConverter.getAbstractPlanMapping().getMappedProg(n.getID());
+		Object[] progobj = _plan.getMappedProg(n.getID());
 		ParForStatementBlock pfsb = (ParForStatementBlock)progobj[0];
 		ParForProgramBlock pfpb = (ParForProgramBlock)progobj[1];
 		ArrayList<String> ret = new ArrayList<>();
@@ -1841,7 +1841,7 @@ public class OptimizerRuleBased extends Optimizer {
 		//collect zipmm inputs
 		if( n.getNodeType()==NodeType.HOP ) 
 		{
-			Hop h = OptTreeConverter.getAbstractPlanMapping().getMappedHop(n.getID());
+			Hop h = _plan.getMappedHop(n.getID());
 			if( h instanceof AggBinaryOp && (((AggBinaryOp)h).getMMultMethod()==MMultMethod.ZIPMM 
 				||((AggBinaryOp)h).getMMultMethod()==MMultMethod.CPMM) )
 			{
@@ -1870,7 +1870,7 @@ public class OptimizerRuleBased extends Optimizer {
 	protected void rewriteSetSparkEagerRDDCaching(OptNode n, LocalVariableMap vars) 
 	{
 		//get program blocks of root parfor
-		Object[] progobj = OptTreeConverter.getAbstractPlanMapping().getMappedProg(n.getID());
+		Object[] progobj = _plan.getMappedProg(n.getID());
 		ParForStatementBlock pfsb = (ParForStatementBlock)progobj[0];
 		ParForProgramBlock pfpb = (ParForProgramBlock)progobj[1];
 		
@@ -1919,8 +1919,7 @@ public class OptimizerRuleBased extends Optimizer {
 
 	protected void rewriteRemoveUnnecessaryCompareMatrix( OptNode n, ExecutionContext ec ) 
 	{
-		ParForProgramBlock pfpb = (ParForProgramBlock) OptTreeConverter
-			.getAbstractPlanMapping().getMappedProg(n.getID())[1];
+		ParForProgramBlock pfpb = (ParForProgramBlock) _plan.getMappedProg(n.getID())[1];
 
 		ArrayList<ResultVar> cleanedVars = new ArrayList<>();
 		ArrayList<ResultVar> resultVars = pfpb.getResultVariables();
@@ -1969,7 +1968,7 @@ public class OptimizerRuleBased extends Optimizer {
 		if( opStr==null || !opStr.equals(LeftIndexingOp.OPSTRING) )
 			return false;
 
-		Hop h = OptTreeConverter.getAbstractPlanMapping().getMappedHop(n.getID());
+		Hop h = _plan.getMappedHop(n.getID());
 		Hop base = h.getInput().get(0);
 
 		//check result variable
@@ -2009,7 +2008,7 @@ public class OptimizerRuleBased extends Optimizer {
 		boolean ret = false;
 		
 		if( n.getNodeType()==NodeType.HOP ) {
-			Hop h = OptTreeConverter.getAbstractPlanMapping().getMappedHop(n.getID());
+			Hop h = _plan.getMappedHop(n.getID());
 			if( h instanceof IndexingOp && h.getInput().get(0) instanceof DataOp
 				&& h.getInput().get(0).getName().equals(var) )
 			{
@@ -2030,8 +2029,7 @@ public class OptimizerRuleBased extends Optimizer {
 	///
 
 	protected void rewriteSetResultMerge( OptNode n, LocalVariableMap vars, boolean inLocal ) {
-		ParForProgramBlock pfpb = (ParForProgramBlock) OptTreeConverter
-			.getAbstractPlanMapping().getMappedProg(n.getID())[1];
+		ParForProgramBlock pfpb = (ParForProgramBlock) _plan.getMappedProg(n.getID())[1];
 		
 		PResultMerge REMOTE = PResultMerge.REMOTE_SPARK;
 		PResultMerge ret = null;
@@ -2118,7 +2116,7 @@ public class OptimizerRuleBased extends Optimizer {
 			if( opName != null && opName.equals(LeftIndexingOp.OPSTRING) 
 				&& n.getExecType() == getRemoteExecType() )
 			{
-				LeftIndexingOp hop = (LeftIndexingOp) OptTreeConverter.getAbstractPlanMapping().getMappedHop(n.getID());
+				LeftIndexingOp hop = (LeftIndexingOp) _plan.getMappedHop(n.getID());
 				//check agains set of varname
 				String varName = hop.getInput().get(0).getName();
 				if( ResultVar.contains(resultVars, varName) )
@@ -2218,7 +2216,7 @@ public class OptimizerRuleBased extends Optimizer {
 			//check opstring and exec type
 			if( opName.equals(LeftIndexingOp.OPSTRING) )
 			{
-				LeftIndexingOp hop = (LeftIndexingOp) OptTreeConverter.getAbstractPlanMapping().getMappedHop(n.getID());
+				LeftIndexingOp hop = (LeftIndexingOp) _plan.getMappedHop(n.getID());
 				//check agains set of varname
 				String varName = hop.getInput().get(0).getName();
 				if( ResultVar.contains(resultVars, varName) && vars.keySet().contains(varName) ) {
@@ -2282,8 +2280,7 @@ public class OptimizerRuleBased extends Optimizer {
 			newLocalMem = _lm / par;
 			
 			//modify runtime plan
-			ParForProgramBlock pfpb = (ParForProgramBlock) OptTreeConverter
-            							.getAbstractPlanMapping().getMappedProg(n.getID())[1];
+			ParForProgramBlock pfpb = (ParForProgramBlock) _plan.getMappedProg(n.getID())[1];
 			pfpb.setRecompileMemoryBudget( newLocalMem );
 		}
 		
@@ -2309,8 +2306,7 @@ public class OptimizerRuleBased extends Optimizer {
 			//unfold if necessary
 			try 
 			{
-				ParForProgramBlock pfpb = (ParForProgramBlock) OptTreeConverter
-					.getAbstractPlanMapping().getMappedProg(n.getID())[1];
+				ParForProgramBlock pfpb = (ParForProgramBlock) _plan.getMappedProg(n.getID())[1];
 				if( recPBs.contains(pfpb) ) 
 					rFindAndUnfoldRecursiveFunction(n, pfpb, recPBs, vars);
 			}
@@ -2340,10 +2336,8 @@ public class OptimizerRuleBased extends Optimizer {
 			}
 		
 		//add candidate program blocks
-		if( recContext && n.getNodeType()==NodeType.PARFOR )
-		{
-			ParForProgramBlock pfpb = (ParForProgramBlock) OptTreeConverter
-									    .getAbstractPlanMapping().getMappedProg(n.getID())[1];
+		if( recContext && n.getNodeType()==NodeType.PARFOR ) {
+			ParForProgramBlock pfpb = (ParForProgramBlock) _plan.getMappedProg(n.getID())[1];
 			cand.add(pfpb);
 		}
 	}
@@ -2363,7 +2357,7 @@ public class OptimizerRuleBased extends Optimizer {
 				String fnameNew = FUNCTION_UNFOLD_NAMEPREFIX + fname;
 				
 				//unfold function
-				FunctionOp fop = (FunctionOp) OptTreeConverter.getAbstractPlanMapping().getMappedHop(n.getID());
+				FunctionOp fop = (FunctionOp) _plan.getMappedHop(n.getID());
 				Program prog = parfor.getProgram();
 				DMLProgram dmlprog = parfor.getStatementBlock().getDMLProg();
 				FunctionProgramBlock fpb = prog.getFunctionProgramBlock(fnamespace, fname);	
@@ -2377,19 +2371,19 @@ public class OptimizerRuleBased extends Optimizer {
 				//recreate sub opttree
 				String fnameNewKey = fnamespace + Program.KEY_DELIM + fnameNew;
 				OptNode nNew = new OptNode(NodeType.FUNCCALL);
-				OptTreeConverter.getAbstractPlanMapping().putHopMapping(fop, nNew);
+				_plan.getAbstractPlanMapping().putHopMapping(fop, nNew);
 				nNew.setExecType(ExecType.CP);
 				nNew.addParam(ParamType.OPSTRING, fnameNewKey);
-				long parentID = OptTreeConverter.getAbstractPlanMapping().getMappedParentID(n.getID());
-				OptTreeConverter.getAbstractPlanMapping().getOptNode(parentID).exchangeChild(n, nNew);
+				long parentID = _plan.getAbstractPlanMapping().getMappedParentID(n.getID());
+				_plan.getAbstractPlanMapping().getOptNode(parentID).exchangeChild(n, nNew);
 				HashSet<String> memo = new HashSet<>();
 				memo.add(fnameKey); //required if functionop not shared (because not replaced yet)
 				memo.add(fnameNewKey); //requied if functionop shared (indirectly replaced)
-				for( int i=0; i<copyfpb.getChildBlocks().size() /*&& i<len*/; i++ )
-				{
+				for( int i=0; i<copyfpb.getChildBlocks().size() /*&& i<len*/; i++ ) {
 					ProgramBlock lpb = copyfpb.getChildBlocks().get(i);
 					StatementBlock lsb = lpb.getStatementBlock();
-					nNew.addChild( OptTreeConverter.rCreateAbstractOptNode(lsb,lpb,vars,false, memo) );
+					nNew.addChild( OptTreeConverter
+						.rCreateAbstractOptNode(lsb, lpb, vars, false, _plan.getAbstractPlanMapping(), memo) );
 				}
 				
 				//compute delta for recPB set (use for removing parfor)
@@ -2416,8 +2410,7 @@ public class OptimizerRuleBased extends Optimizer {
 		boolean ret = false;
 		
 		if( n.getNodeType() == NodeType.PARFOR ) {
-			ProgramBlock pfpb = OptTreeConverter
-				.getAbstractPlanMapping().getMappedProgramBlock(n.getID());
+			ProgramBlock pfpb = _plan.getMappedProgramBlock(n.getID());
 			ret = (parfor == pfpb);
 		}
 		
@@ -2435,8 +2428,7 @@ public class OptimizerRuleBased extends Optimizer {
 		//collect parfor
 		if( n.getNodeType()==NodeType.PARFOR )
 		{
-			ParForProgramBlock pfpb = (ParForProgramBlock) OptTreeConverter
-				.getAbstractPlanMapping().getMappedProgramBlock(n.getID());
+			ParForProgramBlock pfpb = (ParForProgramBlock) _plan.getMappedProgramBlock(n.getID());
 			pbs.add(pfpb);
 		}
 		
@@ -2452,7 +2444,7 @@ public class OptimizerRuleBased extends Optimizer {
 	{
 		if( n.getNodeType() == NodeType.FUNCCALL)
 		{
-			FunctionOp fop = (FunctionOp) OptTreeConverter.getAbstractPlanMapping().getMappedHop(n.getID());
+			FunctionOp fop = (FunctionOp) _plan.getMappedHop(n.getID());
 			
 			String[] names = n.getParam(ParamType.OPSTRING).split(Program.KEY_DELIM);
 			String fnamespace = names[0];
@@ -2464,9 +2456,8 @@ public class OptimizerRuleBased extends Optimizer {
 				n.addParam(ParamType.OPSTRING, DMLProgram.constructFunctionKey(fnamespace,newName));
 				
 				//set instruction function name
-				long parentID = OptTreeConverter.getAbstractPlanMapping().getMappedParentID(n.getID());
-				BasicProgramBlock pb = (BasicProgramBlock) OptTreeConverter
-					.getAbstractPlanMapping().getMappedProg(parentID)[1];
+				long parentID = _plan.getAbstractPlanMapping().getMappedParentID(n.getID());
+				BasicProgramBlock pb = (BasicProgramBlock) _plan.getMappedProg(parentID)[1];
 				
 				ArrayList<Instruction> instArr = pb.getInstructions();
 				for( int i=0; i<instArr.size(); i++ ) {
@@ -2501,7 +2492,7 @@ public class OptimizerRuleBased extends Optimizer {
 				if( sub.getNodeType() == NodeType.PARFOR )
 				{
 					long id = sub.getID();
-					Object[] progobj = OptTreeConverter.getAbstractPlanMapping().getMappedProg(id);
+					Object[] progobj = _plan.getMappedProg(id);
 					ParForStatementBlock pfsb = (ParForStatementBlock)progobj[0];
 					ParForProgramBlock pfpb = (ParForProgramBlock)progobj[1];
 					
@@ -2512,7 +2503,7 @@ public class OptimizerRuleBased extends Optimizer {
 						ForProgramBlock fpb = ProgramConverter.createShallowCopyForProgramBlock(pfpb, prog);
 
 						//replace parfor with for, and update objectmapping
-						OptTreeConverter.replaceProgramBlock(n, sub, pfpb, fpb, false);
+						OptTreeConverter.replaceProgramBlock(n, sub, pfpb, fpb, _plan.getAbstractPlanMapping());
 						//update link to statement block
 						fpb.setStatementBlock(pfsb);
 							
@@ -2552,7 +2543,7 @@ public class OptimizerRuleBased extends Optimizer {
 				if( sub.getNodeType() == NodeType.PARFOR && sub.getK() == 1 )
 				{
 					long id = sub.getID();
-					Object[] progobj = OptTreeConverter.getAbstractPlanMapping().getMappedProg(id);
+					Object[] progobj = _plan.getMappedProg(id);
 					ParForStatementBlock pfsb = (ParForStatementBlock)progobj[0];
 					ParForProgramBlock pfpb = (ParForProgramBlock)progobj[1];
 					
@@ -2561,7 +2552,7 @@ public class OptimizerRuleBased extends Optimizer {
 					ForProgramBlock fpb = ProgramConverter.createShallowCopyForProgramBlock(pfpb, prog);
 					
 					//replace parfor with for, and update objectmapping
-					OptTreeConverter.replaceProgramBlock(n, sub, pfpb, fpb, false);
+					OptTreeConverter.replaceProgramBlock(n, sub, pfpb, fpb, _plan.getAbstractPlanMapping());
 					//update link to statement block
 					fpb.setStatementBlock(pfsb);
 					

@@ -191,6 +191,13 @@ public class OptimizerUtils
 	public static boolean ALLOW_LOOP_UPDATE_IN_PLACE = true;
 	
 	/**
+	 * Replace eval second-order function calls with normal function call
+	 * if the function name is a known string (after constant propagation).
+	 */
+	public static boolean ALLOW_EVAL_FCALL_REPLACEMENT = true;
+	
+	
+	/**
 	 * Enables a specific rewrite for code motion, i.e., hoisting loop invariant code
 	 * out of while, for, and parfor loops.
 	 */
@@ -200,7 +207,6 @@ public class OptimizerUtils
 	 * Compile federated instructions based on input federation state and privacy constraints.
 	 */
 	public static boolean FEDERATED_COMPILATION = false;
-	
 	
 	/**
 	 * Specifies a multiplier computing the degree of parallelism of parallel

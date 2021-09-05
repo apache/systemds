@@ -77,10 +77,10 @@ public abstract class ColGroupValue extends ColGroupCompressed implements Clonea
 	protected boolean _zeros = false;
 
 	/** Distinct value tuples associated with individual bitmaps. */
-	protected ADictionary _dict;
+	protected transient ADictionary _dict;
 
 	/** The count of each distinct value contained in the dictionary */
-	private SoftReference<int[]> counts;
+	private transient SoftReference<int[]> counts;
 
 	protected ColGroupValue(int numRows) {
 		super(numRows);
@@ -198,6 +198,18 @@ public abstract class ColGroupValue extends ColGroupCompressed implements Clonea
 
 		return countsActual;
 
+	}
+
+	/**
+	 * Set the counts, this is used while compressing since the counts are cleanly available there, and therefore a
+	 * iteration though the data, is not needed to construct the counts.
+	 * 
+	 * NOTE THIS IS UNSAFE since it does not verify that the counts given are correct.
+	 * 
+	 * @param counts The counts to set.
+	 */
+	protected final void setCounts(int[] counts) {
+		this.counts = new SoftReference<>(counts);
 	}
 
 	/**
@@ -464,9 +476,6 @@ public abstract class ColGroupValue extends ColGroupCompressed implements Clonea
 	public long getExactSizeOnDisk() {
 		long ret = super.getExactSizeOnDisk();
 		ret += 1; // zeros boolean
-		ret += 1; // lossy boolean
-		// distinct values (groups of values)
-		ret += 1; // Dict exists boolean
 		if(_dict != null)
 			ret += _dict.getExactSizeOnDisk();
 
@@ -878,6 +887,7 @@ public abstract class ColGroupValue extends ColGroupCompressed implements Clonea
 		if(right.length != rightColumns.length)
 			throw new DMLCompressionException(
 				"Error right not equal length " + right.length + " " + rightColumns.length);
+				
 		for(int row = 0; row < leftRows.length; row++) {
 			final int outputRowOffset = leftRows[row] * outCols;
 			final double vLeft = left[row];

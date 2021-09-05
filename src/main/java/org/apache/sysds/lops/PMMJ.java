@@ -69,6 +69,13 @@ public class PMMJ extends Lop
 	public String toString() {
 		return "Operation = PMMJ";
 	}
+
+	@Override
+	public Lop getBroadcastInput() {
+		if (getExecType() != ExecType.SPARK)
+			return null;
+		return getInputs().get(1);
+	}
 	
 	@Override
 	public String getInstructions(String input_index1, String input_index2, String input_index3, String output_index) 

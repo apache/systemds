@@ -44,6 +44,7 @@ import org.apache.sysds.runtime.controlprogram.parfor.stat.Timing;
 import org.apache.sysds.runtime.functionobjects.Multiply;
 import org.apache.sysds.runtime.instructions.Instruction;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
+import org.apache.sysds.runtime.instructions.cp.BooleanObject;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
 import org.apache.sysds.runtime.instructions.cp.Data;
 import org.apache.sysds.runtime.instructions.cp.DoubleObject;
@@ -84,15 +85,16 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 
 	public FederatedPSControlThread(int workerID, String updFunc, Statement.PSFrequency freq,
 		PSRuntimeBalancing runtimeBalancing, boolean weighting, int epochs, long batchSize,
-		int numBatchesPerGlobalEpoch, ExecutionContext ec, ParamServer ps)
+		int numBatchesPerGlobalEpoch, ExecutionContext ec, ParamServer ps, boolean modelAvg)
 	{
-		super(workerID, updFunc, freq, epochs, batchSize, ec, ps);
+		super(workerID, updFunc, freq, epochs, batchSize, ec, ps, modelAvg);
 
 		_numBatchesPerEpoch = numBatchesPerGlobalEpoch;
 		_runtimeBalancing = runtimeBalancing;
 		_weighting = weighting;
 		// generate the ID for the model
 		_modelVarID = FederationUtils.getNextFedDataID();
+		_modelAvg = modelAvg;
 	}
 
 	/**
@@ -150,7 +152,7 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 			aggProgramBlock.setInstructions(new ArrayList<>(Collections.singletonList(_ps.getAggInst())));
 			pbs.add(aggProgramBlock);
 		}
-		
+
 		programSerialized = InstructionUtils.concatStrings(
 			PROG_BEGIN, NEWLINE,
 			ProgramConverter.serializeProgram(_ec.getProgram(), pbs, new HashMap<>()),
@@ -159,17 +161,10 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 		// write program and meta data to worker
 		Future<FederatedResponse> udfResponse = _featuresData.executeFederatedOperation(
 			new FederatedRequest(RequestType.EXEC_UDF, _featuresData.getVarID(),
-				new SetupFederatedWorker(_batchSize,
-					dataSize,
-					_possibleBatchesPerLocalEpoch,
-					programSerialized,
-					_inst.getNamespace(),
-					_inst.getFunctionName(),
-					_ps.getAggInst().getFunctionName(),
-					_ec.getListObject("hyperparams"),
-					_modelVarID
-				)
-		));
+				new SetupFederatedWorker(_batchSize, dataSize, _possibleBatchesPerLocalEpoch,
+					programSerialized, _inst.getNamespace(), _inst.getFunctionName(),
+					_ps.getAggInst().getFunctionName(), _ec.getListObject("hyperparams"),
+					_modelVarID, _modelAvg)));
 
 		try {
 			FederatedResponse response = udfResponse.get();
@@ -195,10 +190,11 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 		private final String _aggregationFunctionName;
 		private final ListObject _hyperParams;
 		private final long _modelVarID;
+		private final boolean _modelAvg;
 
 		protected SetupFederatedWorker(long batchSize, long dataSize, int possibleBatchesPerLocalEpoch,
 			String programString, String namespace, String gradientsFunctionName, String aggregationFunctionName,
-			ListObject hyperParams, long modelVarID)
+			ListObject hyperParams, long modelVarID, boolean modelAvg)
 		{
 			super(new long[]{});
 			_batchSize = batchSize;
@@ -210,6 +206,7 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 			_aggregationFunctionName = aggregationFunctionName;
 			_hyperParams = hyperParams;
 			_modelVarID = modelVarID;
+			_modelAvg = modelAvg;
 		}
 
 		@Override
@@ -226,6 +223,7 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 			ec.setVariable(Statement.PS_FED_AGGREGATION_FNAME, new StringObject(_aggregationFunctionName));
 			ec.setVariable(Statement.PS_HYPER_PARAMS, _hyperParams);
 			ec.setVariable(Statement.PS_FED_MODEL_VARID, new IntObject(_modelVarID));
+			ec.setVariable(Statement.PS_MODELAVG, new BooleanObject(_modelAvg));
 
 			return new FederatedResponse(FederatedResponse.ResponseType.SUCCESS);
 		}
@@ -277,7 +275,7 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 			ec.removeVariable(Statement.PS_FED_AGGREGATION_FNAME);
 			ec.removeVariable(Statement.PS_FED_MODEL_VARID);
 			ParamservUtils.cleanupListObject(ec, Statement.PS_HYPER_PARAMS);
-			
+
 			return new FederatedResponse(FederatedResponse.ResponseType.SUCCESS);
 		}
 
@@ -334,7 +332,6 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 			});
 			accFedPSGradientWeightingTime(tWeighting);
 		}
-
 		// Push the gradients to ps
 		_ps.push(_workerID, gradients);
 	}
@@ -344,28 +341,23 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 	}
 
 	/**
-	 * Computes all epochs and updates after each batch 
+	 * Computes all epochs and updates after each batch
 	 */
 	protected void computeWithBatchUpdates() {
 		for (int epochCounter = 0; epochCounter < _epochs; epochCounter++) {
 			int currentLocalBatchNumber = (_cycleStartAt0) ? 0 : _numBatchesPerEpoch * epochCounter % _possibleBatchesPerLocalEpoch;
-
 			for (int batchCounter = 0; batchCounter < _numBatchesPerEpoch; batchCounter++) {
 				int localStartBatchNum = getNextLocalBatchNum(currentLocalBatchNumber++, _possibleBatchesPerLocalEpoch);
 				ListObject model = pullModel();
 				ListObject gradients = computeGradientsForNBatches(model, 1, localStartBatchNum);
-				weightAndPushGradients(gradients);
-				ParamservUtils.cleanupListObject(model);
+				if (_modelAvg)
+					model = _ps.updateLocalModel(_ec, gradients, model);
+				else
+					ParamservUtils.cleanupListObject(model);
+				weightAndPushGradients(_modelAvg ? model : gradients);
 				ParamservUtils.cleanupListObject(gradients);
 			}
 		}
-	}
-
-	/**
-	 * Computes all epochs and updates after N batches
-	 */
-	protected void computeWithNBatchUpdates() {
-		throw new NotImplementedException();
 	}
 
 	/**
@@ -376,6 +368,7 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 			int localStartBatchNum = (_cycleStartAt0) ? 0 : _numBatchesPerEpoch * epochCounter % _possibleBatchesPerLocalEpoch;
 
 			// Pull the global parameters from ps
+			// TODO double check if model averaging is handled correctly (internally?)
 			ListObject model = pullModel();
 			ListObject gradients = computeGradientsForNBatches(model, _numBatchesPerEpoch, localStartBatchNum, true);
 			weightAndPushGradients(gradients);
@@ -469,6 +462,7 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 			String namespace = ((StringObject) ec.getVariable(Statement.PS_FED_NAMESPACE)).getStringValue();
 			String gradientsFunc = ((StringObject) ec.getVariable(Statement.PS_FED_GRADIENTS_FNAME)).getStringValue();
 			String aggFunc = ((StringObject) ec.getVariable(Statement.PS_FED_AGGREGATION_FNAME)).getStringValue();
+			boolean modelAvg = ((BooleanObject) ec.getVariable(Statement.PS_MODELAVG)).getBooleanValue();
 
 			// recreate gradient instruction and output
 			boolean opt = !ec.getProgram().containsFunctionProgramBlock(namespace, gradientsFunc, false);
@@ -481,7 +475,7 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 			ArrayList<String> outputNames = outputs.stream().map(DataIdentifier::getName)
 				.collect(Collectors.toCollection(ArrayList::new));
 			Instruction gradientsInstruction = new FunctionCallCPInstruction(namespace, gradientsFunc,
-				opt, boundInputs,func.getInputParamNames(), outputNames, "gradient function");
+				opt, boundInputs, func.getInputParamNames(), outputNames, "gradient function");
 			DataIdentifier gradientsOutput = outputs.get(0);
 
 			// recreate aggregation instruction and output if needed
@@ -505,7 +499,7 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 			int currentLocalBatchNumber = _localStartBatchNum;
 			// prepare execution context
 			ec.setVariable(Statement.PS_MODEL, model);
-			for (int batchCounter = 0; batchCounter < _numBatchesToCompute; batchCounter++) {
+			for(int batchCounter = 0; batchCounter < _numBatchesToCompute; batchCounter++) {
 				int localBatchNum = getNextLocalBatchNum(currentLocalBatchNumber++, possibleBatchesPerLocalEpoch);
 
 				// slice batch from feature and label matrix
@@ -521,12 +515,15 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 				// calculate gradients for batch
 				gradientsInstruction.processInstruction(ec);
 				ListObject gradients = ec.getListObject(gradientsOutput.getName());
-
+				
 				// accrue the computed gradients - In the single batch case this is just a list copy
 				// is this equivalent for momentum based and AMS prob?
-				accGradients = ParamservUtils.accrueGradients(accGradients, gradients, false);
-
+				accGradients = modelAvg ? null :
+					ParamservUtils.accrueGradients(accGradients, gradients, false);
+				
 				// update the local model with gradients if needed
+				// FIXME ensure that with modelAvg we always update the model
+				// (current fails due to missing aggregation instruction)
 				if(_localUpdate && batchCounter < _numBatchesToCompute - 1) {
 					// Invoke the aggregate function
 					assert aggregationInstruction != null;
@@ -540,17 +537,18 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 				}
 
 				// clean up
-				ParamservUtils.cleanupListObject(ec, gradientsOutput.getName());
 				ParamservUtils.cleanupData(ec, Statement.PS_FEATURES);
 				ParamservUtils.cleanupData(ec, Statement.PS_LABELS);
 			}
 
 			// model clean up
 			ParamservUtils.cleanupListObject(ec, ec.getVariable(Statement.PS_FED_MODEL_VARID).toString());
-			ParamservUtils.cleanupListObject(ec, Statement.PS_MODEL);
+			// TODO double check cleanup gradients and models
+			
 			// stop timing
 			DoubleObject gradientsTime = new DoubleObject(tGradients.stop());
-			return new FederatedResponse(FederatedResponse.ResponseType.SUCCESS, new Object[]{accGradients, gradientsTime});
+			return new FederatedResponse(FederatedResponse.ResponseType.SUCCESS,
+				new Object[]{modelAvg ? model : accGradients, gradientsTime});
 		}
 
 		@Override

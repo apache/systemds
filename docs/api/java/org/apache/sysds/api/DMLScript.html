@@ -18,7 +18,7 @@
     catch(err) {
     }
 //-->
-var methods = {"i0":9,"i1":9,"i2":9,"i3":9,"i4":9,"i5":9,"i6":9,"i7":9,"i8":9,"i9":9,"i10":9,"i11":9,"i12":9};
+var methods = {"i0":9,"i1":9,"i2":9,"i3":9,"i4":9,"i5":9,"i6":9,"i7":9,"i8":9,"i9":9,"i10":9,"i11":9,"i12":9,"i13":9};
 var tabs = {65535:["t0","All Methods"],1:["t1","Static Methods"],8:["t4","Concrete Methods"]};
 var altColor = "altColor";
 var rowColor = "rowColor";
@@ -164,6 +164,14 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <tr class="altColor">
 <td class="colFirst"><code>static <a href="../../../../org/apache/sysds/utils/Explain.ExplainType.html" title="enum in org.apache.sysds.utils">Explain.ExplainType</a></code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/api/DMLScript.html#EXPLAIN">EXPLAIN</a></span></code>&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>static boolean</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/api/DMLScript.html#FED_STATISTICS">FED_STATISTICS</a></span></code>&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>static int</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/api/DMLScript.html#FED_STATISTICS_COUNT">FED_STATISTICS_COUNT</a></span></code>&nbsp;</td>
 </tr>
 <tr class="rowColor">
 <td class="colFirst"><code>static <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a></code></td>
@@ -316,27 +324,34 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 </td>
 </tr>
 <tr id="i8" class="altColor">
-<td class="colFirst"><code>static void</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/api/DMLScript.html#setActiveAM--">setActiveAM</a></span>()</code>&nbsp;</td>
+<td class="colFirst"><code>static <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a></code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/api/DMLScript.html#readDMLScript-boolean-java.lang.String-">readDMLScript</a></span>(boolean&nbsp;isFile,
+             <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;scriptOrFilename)</code>
+<div class="block">Reads the DML/PyDML script into a String</div>
+</td>
 </tr>
 <tr id="i9" class="rowColor">
 <td class="colFirst"><code>static void</code></td>
-<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/api/DMLScript.html#setGlobalExecMode-org.apache.sysds.common.Types.ExecMode-">setGlobalExecMode</a></span>(<a href="../../../../org/apache/sysds/common/Types.ExecMode.html" title="enum in org.apache.sysds.common">Types.ExecMode</a>&nbsp;mode)</code>&nbsp;</td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/api/DMLScript.html#setActiveAM--">setActiveAM</a></span>()</code>&nbsp;</td>
 </tr>
 <tr id="i10" class="altColor">
+<td class="colFirst"><code>static void</code></td>
+<td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/api/DMLScript.html#setGlobalExecMode-org.apache.sysds.common.Types.ExecMode-">setGlobalExecMode</a></span>(<a href="../../../../org/apache/sysds/common/Types.ExecMode.html" title="enum in org.apache.sysds.common">Types.ExecMode</a>&nbsp;mode)</code>&nbsp;</td>
+</tr>
+<tr id="i11" class="rowColor">
 <td class="colFirst"><code>static void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/api/DMLScript.html#setGlobalFlags-org.apache.sysds.conf.DMLConfig-">setGlobalFlags</a></span>(<a href="../../../../org/apache/sysds/conf/DMLConfig.html" title="class in org.apache.sysds.conf">DMLConfig</a>&nbsp;dmlconf)</code>
 <div class="block">Sets the global flags in DMLScript based on user provided configuration</div>
 </td>
 </tr>
-<tr id="i11" class="rowColor">
+<tr id="i12" class="altColor">
 <td class="colFirst"><code>static void</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/api/DMLScript.html#setUUID-java.lang.String-">setUUID</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;uuid)</code>
 <div class="block">Used to set master UUID on all nodes (in parfor remote, where DMLScript passed) 
  in order to simplify cleanup of scratch_space and local working dirs.</div>
 </td>
 </tr>
-<tr id="i12" class="altColor">
+<tr id="i13" class="rowColor">
 <td class="colFirst"><code>static boolean</code></td>
 <td class="colLast"><code><span class="memberNameLink"><a href="../../../../org/apache/sysds/api/DMLScript.html#suppressPrint2Stdout--">suppressPrint2Stdout</a></span>()</code>&nbsp;</td>
 </tr>
@@ -396,6 +411,24 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <li class="blockList">
 <h4>STATISTICS_MAX_WRAP_LEN</h4>
 <pre>public static&nbsp;int STATISTICS_MAX_WRAP_LEN</pre>
+</li>
+</ul>
+<a name="FED_STATISTICS">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>FED_STATISTICS</h4>
+<pre>public static&nbsp;boolean FED_STATISTICS</pre>
+</li>
+</ul>
+<a name="FED_STATISTICS_COUNT">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>FED_STATISTICS_COUNT</h4>
+<pre>public static&nbsp;int FED_STATISTICS_COUNT</pre>
 </li>
 </ul>
 <a name="EXPLAIN">
@@ -728,6 +761,27 @@ extends <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/Object.html
 <dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io">IOException</a></code> - If an internal IOException happens.</dd>
 <dd><code><a href="../../../../org/apache/sysds/parser/ParseException.html" title="class in org.apache.sysds.parser">ParseException</a></code></dd>
 <dd><code><a href="../../../../org/apache/sysds/runtime/DMLScriptException.html" title="class in org.apache.sysds.runtime">DMLScriptException</a></code></dd>
+</dl>
+</li>
+</ul>
+<a name="readDMLScript-boolean-java.lang.String-">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>readDMLScript</h4>
+<pre>public static&nbsp;<a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;readDMLScript(boolean&nbsp;isFile,
+                                   <a href="https://docs.oracle.com/javase/8/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;scriptOrFilename)
+                            throws <a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io">IOException</a></pre>
+<div class="block">Reads the DML/PyDML script into a String</div>
+<dl>
+<dt><span class="paramLabel">Parameters:</span></dt>
+<dd><code>isFile</code> - Whether the string argument is a path to a file or the script itself</dd>
+<dd><code>scriptOrFilename</code> - script or filename</dd>
+<dt><span class="returnLabel">Returns:</span></dt>
+<dd>a string representation of the script</dd>
+<dt><span class="throwsLabel">Throws:</span></dt>
+<dd><code><a href="https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io">IOException</a></code> - if error</dd>
 </dl>
 </li>
 </ul>

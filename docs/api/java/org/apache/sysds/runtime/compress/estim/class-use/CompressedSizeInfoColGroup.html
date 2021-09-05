@@ -83,6 +83,10 @@
 </tr>
 <tbody>
 <tr class="altColor">
+<td class="colFirst"><a href="#org.apache.sysds.runtime.compress.cost">org.apache.sysds.runtime.compress.cost</a></td>
+<td class="colLast">&nbsp;</td>
+</tr>
+<tr class="rowColor">
 <td class="colFirst"><a href="#org.apache.sysds.runtime.compress.estim">org.apache.sysds.runtime.compress.estim</a></td>
 <td class="colLast">&nbsp;</td>
 </tr>
@@ -91,6 +95,170 @@
 </li>
 <li class="blockList">
 <ul class="blockList">
+<li class="blockList"><a name="org.apache.sysds.runtime.compress.cost">
+<!--   -->
+</a>
+<h3>Uses of <a href="../../../../../../../org/apache/sysds/runtime/compress/estim/CompressedSizeInfoColGroup.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeInfoColGroup</a> in <a href="../../../../../../../org/apache/sysds/runtime/compress/cost/package-summary.html">org.apache.sysds.runtime.compress.cost</a></h3>
+<table class="useSummary" border="0" cellpadding="3" cellspacing="0" summary="Use table, listing methods, and an explanation">
+<caption><span>Methods in <a href="../../../../../../../org/apache/sysds/runtime/compress/cost/package-summary.html">org.apache.sysds.runtime.compress.cost</a> with parameters of type <a href="../../../../../../../org/apache/sysds/runtime/compress/estim/CompressedSizeInfoColGroup.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeInfoColGroup</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colLast" scope="col">Method and Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code>double</code></td>
+<td class="colLast"><span class="typeNameLabel">ComputationCostEstimator.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/compress/cost/ComputationCostEstimator.html#getCostOfCollectionOfGroups-java.util.Collection-org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup-">getCostOfCollectionOfGroups</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/Collection.html?is-external=true" title="class or interface in java.util">Collection</a>&lt;<a href="../../../../../../../org/apache/sysds/runtime/compress/estim/CompressedSizeInfoColGroup.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeInfoColGroup</a>&gt;&nbsp;gs,
+                           <a href="../../../../../../../org/apache/sysds/runtime/compress/estim/CompressedSizeInfoColGroup.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeInfoColGroup</a>&nbsp;g)</code>&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>double</code></td>
+<td class="colLast"><span class="typeNameLabel">ICostEstimate.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/compress/cost/ICostEstimate.html#getCostOfCollectionOfGroups-java.util.Collection-org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup-">getCostOfCollectionOfGroups</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/Collection.html?is-external=true" title="class or interface in java.util">Collection</a>&lt;<a href="../../../../../../../org/apache/sysds/runtime/compress/estim/CompressedSizeInfoColGroup.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeInfoColGroup</a>&gt;&nbsp;gs,
+                           <a href="../../../../../../../org/apache/sysds/runtime/compress/estim/CompressedSizeInfoColGroup.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeInfoColGroup</a>&nbsp;g)</code>&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>double</code></td>
+<td class="colLast"><span class="typeNameLabel">MemoryCostEstimator.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/compress/cost/MemoryCostEstimator.html#getCostOfCollectionOfGroups-java.util.Collection-org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup-">getCostOfCollectionOfGroups</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/Collection.html?is-external=true" title="class or interface in java.util">Collection</a>&lt;<a href="../../../../../../../org/apache/sysds/runtime/compress/estim/CompressedSizeInfoColGroup.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeInfoColGroup</a>&gt;&nbsp;gss,
+                           <a href="../../../../../../../org/apache/sysds/runtime/compress/estim/CompressedSizeInfoColGroup.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeInfoColGroup</a>&nbsp;g)</code>&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>double</code></td>
+<td class="colLast"><span class="typeNameLabel">DistinctCostEstimator.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/compress/cost/DistinctCostEstimator.html#getCostOfCollectionOfGroups-java.util.Collection-org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup-">getCostOfCollectionOfGroups</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/Collection.html?is-external=true" title="class or interface in java.util">Collection</a>&lt;<a href="../../../../../../../org/apache/sysds/runtime/compress/estim/CompressedSizeInfoColGroup.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeInfoColGroup</a>&gt;&nbsp;gs,
+                           <a href="../../../../../../../org/apache/sysds/runtime/compress/estim/CompressedSizeInfoColGroup.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeInfoColGroup</a>&nbsp;g)</code>&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>double</code></td>
+<td class="colLast"><span class="typeNameLabel">ComputationCostEstimator.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/compress/cost/ComputationCostEstimator.html#getCostOfColumnGroup-org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup-">getCostOfColumnGroup</a></span>(<a href="../../../../../../../org/apache/sysds/runtime/compress/estim/CompressedSizeInfoColGroup.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeInfoColGroup</a>&nbsp;g)</code>&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>double</code></td>
+<td class="colLast"><span class="typeNameLabel">ICostEstimate.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/compress/cost/ICostEstimate.html#getCostOfColumnGroup-org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup-">getCostOfColumnGroup</a></span>(<a href="../../../../../../../org/apache/sysds/runtime/compress/estim/CompressedSizeInfoColGroup.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeInfoColGroup</a>&nbsp;g)</code>
+<div class="block">If the instruction does not care about the inter column group cost, such as in memory cost or in computation cost
+ of right or left matrix multiplication we simply estimate the cost of individual column groups.</div>
+</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>double</code></td>
+<td class="colLast"><span class="typeNameLabel">MemoryCostEstimator.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/compress/cost/MemoryCostEstimator.html#getCostOfColumnGroup-org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup-">getCostOfColumnGroup</a></span>(<a href="../../../../../../../org/apache/sysds/runtime/compress/estim/CompressedSizeInfoColGroup.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeInfoColGroup</a>&nbsp;g)</code>&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>double</code></td>
+<td class="colLast"><span class="typeNameLabel">DistinctCostEstimator.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/compress/cost/DistinctCostEstimator.html#getCostOfColumnGroup-org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup-">getCostOfColumnGroup</a></span>(<a href="../../../../../../../org/apache/sysds/runtime/compress/estim/CompressedSizeInfoColGroup.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeInfoColGroup</a>&nbsp;g)</code>&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>double</code></td>
+<td class="colLast"><span class="typeNameLabel">ComputationCostEstimator.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/compress/cost/ComputationCostEstimator.html#getCostOfTwoGroups-org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup-org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup-">getCostOfTwoGroups</a></span>(<a href="../../../../../../../org/apache/sysds/runtime/compress/estim/CompressedSizeInfoColGroup.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeInfoColGroup</a>&nbsp;g1,
+                  <a href="../../../../../../../org/apache/sysds/runtime/compress/estim/CompressedSizeInfoColGroup.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeInfoColGroup</a>&nbsp;g2)</code>&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>double</code></td>
+<td class="colLast"><span class="typeNameLabel">ICostEstimate.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/compress/cost/ICostEstimate.html#getCostOfTwoGroups-org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup-org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup-">getCostOfTwoGroups</a></span>(<a href="../../../../../../../org/apache/sysds/runtime/compress/estim/CompressedSizeInfoColGroup.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeInfoColGroup</a>&nbsp;g1,
+                  <a href="../../../../../../../org/apache/sysds/runtime/compress/estim/CompressedSizeInfoColGroup.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeInfoColGroup</a>&nbsp;g2)</code>&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>double</code></td>
+<td class="colLast"><span class="typeNameLabel">MemoryCostEstimator.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/compress/cost/MemoryCostEstimator.html#getCostOfTwoGroups-org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup-org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup-">getCostOfTwoGroups</a></span>(<a href="../../../../../../../org/apache/sysds/runtime/compress/estim/CompressedSizeInfoColGroup.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeInfoColGroup</a>&nbsp;g1,
+                  <a href="../../../../../../../org/apache/sysds/runtime/compress/estim/CompressedSizeInfoColGroup.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeInfoColGroup</a>&nbsp;g2)</code>&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>double</code></td>
+<td class="colLast"><span class="typeNameLabel">DistinctCostEstimator.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/compress/cost/DistinctCostEstimator.html#getCostOfTwoGroups-org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup-org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup-">getCostOfTwoGroups</a></span>(<a href="../../../../../../../org/apache/sysds/runtime/compress/estim/CompressedSizeInfoColGroup.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeInfoColGroup</a>&nbsp;g1,
+                  <a href="../../../../../../../org/apache/sysds/runtime/compress/estim/CompressedSizeInfoColGroup.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeInfoColGroup</a>&nbsp;g2)</code>&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>boolean</code></td>
+<td class="colLast"><span class="typeNameLabel">ComputationCostEstimator.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/compress/cost/ComputationCostEstimator.html#shouldAnalyze-org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup-org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup-">shouldAnalyze</a></span>(<a href="../../../../../../../org/apache/sysds/runtime/compress/estim/CompressedSizeInfoColGroup.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeInfoColGroup</a>&nbsp;g1,
+             <a href="../../../../../../../org/apache/sysds/runtime/compress/estim/CompressedSizeInfoColGroup.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeInfoColGroup</a>&nbsp;g2)</code>&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>boolean</code></td>
+<td class="colLast"><span class="typeNameLabel">ICostEstimate.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/compress/cost/ICostEstimate.html#shouldAnalyze-org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup-org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup-">shouldAnalyze</a></span>(<a href="../../../../../../../org/apache/sysds/runtime/compress/estim/CompressedSizeInfoColGroup.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeInfoColGroup</a>&nbsp;g1,
+             <a href="../../../../../../../org/apache/sysds/runtime/compress/estim/CompressedSizeInfoColGroup.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeInfoColGroup</a>&nbsp;g2)</code>
+<div class="block">Decide if the column groups should be analysed, or the worst case join should be expected.</div>
+</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>boolean</code></td>
+<td class="colLast"><span class="typeNameLabel">MemoryCostEstimator.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/compress/cost/MemoryCostEstimator.html#shouldAnalyze-org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup-org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup-">shouldAnalyze</a></span>(<a href="../../../../../../../org/apache/sysds/runtime/compress/estim/CompressedSizeInfoColGroup.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeInfoColGroup</a>&nbsp;g1,
+             <a href="../../../../../../../org/apache/sysds/runtime/compress/estim/CompressedSizeInfoColGroup.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeInfoColGroup</a>&nbsp;g2)</code>&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>boolean</code></td>
+<td class="colLast"><span class="typeNameLabel">DistinctCostEstimator.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/compress/cost/DistinctCostEstimator.html#shouldAnalyze-org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup-org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup-">shouldAnalyze</a></span>(<a href="../../../../../../../org/apache/sysds/runtime/compress/estim/CompressedSizeInfoColGroup.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeInfoColGroup</a>&nbsp;g1,
+             <a href="../../../../../../../org/apache/sysds/runtime/compress/estim/CompressedSizeInfoColGroup.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeInfoColGroup</a>&nbsp;g2)</code>&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>boolean</code></td>
+<td class="colLast"><span class="typeNameLabel">ComputationCostEstimator.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/compress/cost/ComputationCostEstimator.html#shouldTryJoin-org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup-org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup-">shouldTryJoin</a></span>(<a href="../../../../../../../org/apache/sysds/runtime/compress/estim/CompressedSizeInfoColGroup.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeInfoColGroup</a>&nbsp;g1,
+             <a href="../../../../../../../org/apache/sysds/runtime/compress/estim/CompressedSizeInfoColGroup.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeInfoColGroup</a>&nbsp;g2)</code>&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>boolean</code></td>
+<td class="colLast"><span class="typeNameLabel">ICostEstimate.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/compress/cost/ICostEstimate.html#shouldTryJoin-org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup-org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup-">shouldTryJoin</a></span>(<a href="../../../../../../../org/apache/sysds/runtime/compress/estim/CompressedSizeInfoColGroup.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeInfoColGroup</a>&nbsp;g1,
+             <a href="../../../../../../../org/apache/sysds/runtime/compress/estim/CompressedSizeInfoColGroup.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeInfoColGroup</a>&nbsp;g2)</code>
+<div class="block">Decide if the column groups should try to join, this is to filter obviously bad joins out.</div>
+</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>boolean</code></td>
+<td class="colLast"><span class="typeNameLabel">MemoryCostEstimator.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/compress/cost/MemoryCostEstimator.html#shouldTryJoin-org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup-org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup-">shouldTryJoin</a></span>(<a href="../../../../../../../org/apache/sysds/runtime/compress/estim/CompressedSizeInfoColGroup.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeInfoColGroup</a>&nbsp;g1,
+             <a href="../../../../../../../org/apache/sysds/runtime/compress/estim/CompressedSizeInfoColGroup.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeInfoColGroup</a>&nbsp;g2)</code>&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>boolean</code></td>
+<td class="colLast"><span class="typeNameLabel">DistinctCostEstimator.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/compress/cost/DistinctCostEstimator.html#shouldTryJoin-org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup-org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup-">shouldTryJoin</a></span>(<a href="../../../../../../../org/apache/sysds/runtime/compress/estim/CompressedSizeInfoColGroup.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeInfoColGroup</a>&nbsp;g1,
+             <a href="../../../../../../../org/apache/sysds/runtime/compress/estim/CompressedSizeInfoColGroup.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeInfoColGroup</a>&nbsp;g2)</code>&nbsp;</td>
+</tr>
+</tbody>
+</table>
+<table class="useSummary" border="0" cellpadding="3" cellspacing="0" summary="Use table, listing methods, and an explanation">
+<caption><span>Method parameters in <a href="../../../../../../../org/apache/sysds/runtime/compress/cost/package-summary.html">org.apache.sysds.runtime.compress.cost</a> with type arguments of type <a href="../../../../../../../org/apache/sysds/runtime/compress/estim/CompressedSizeInfoColGroup.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeInfoColGroup</a></span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colLast" scope="col">Method and Description</th>
+</tr>
+<tbody>
+<tr class="altColor">
+<td class="colFirst"><code>double</code></td>
+<td class="colLast"><span class="typeNameLabel">ComputationCostEstimator.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/compress/cost/ComputationCostEstimator.html#getCostOfCollectionOfGroups-java.util.Collection-">getCostOfCollectionOfGroups</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/Collection.html?is-external=true" title="class or interface in java.util">Collection</a>&lt;<a href="../../../../../../../org/apache/sysds/runtime/compress/estim/CompressedSizeInfoColGroup.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeInfoColGroup</a>&gt;&nbsp;gs)</code>&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>double</code></td>
+<td class="colLast"><span class="typeNameLabel">ICostEstimate.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/compress/cost/ICostEstimate.html#getCostOfCollectionOfGroups-java.util.Collection-">getCostOfCollectionOfGroups</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/Collection.html?is-external=true" title="class or interface in java.util">Collection</a>&lt;<a href="../../../../../../../org/apache/sysds/runtime/compress/estim/CompressedSizeInfoColGroup.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeInfoColGroup</a>&gt;&nbsp;gs)</code>
+<div class="block">Get the computation cost of a collection of column groups information.</div>
+</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>double</code></td>
+<td class="colLast"><span class="typeNameLabel">MemoryCostEstimator.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/compress/cost/MemoryCostEstimator.html#getCostOfCollectionOfGroups-java.util.Collection-">getCostOfCollectionOfGroups</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/Collection.html?is-external=true" title="class or interface in java.util">Collection</a>&lt;<a href="../../../../../../../org/apache/sysds/runtime/compress/estim/CompressedSizeInfoColGroup.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeInfoColGroup</a>&gt;&nbsp;gss)</code>&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>double</code></td>
+<td class="colLast"><span class="typeNameLabel">DistinctCostEstimator.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/compress/cost/DistinctCostEstimator.html#getCostOfCollectionOfGroups-java.util.Collection-">getCostOfCollectionOfGroups</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/Collection.html?is-external=true" title="class or interface in java.util">Collection</a>&lt;<a href="../../../../../../../org/apache/sysds/runtime/compress/estim/CompressedSizeInfoColGroup.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeInfoColGroup</a>&gt;&nbsp;gs)</code>&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>double</code></td>
+<td class="colLast"><span class="typeNameLabel">ComputationCostEstimator.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/compress/cost/ComputationCostEstimator.html#getCostOfCollectionOfGroups-java.util.Collection-org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup-">getCostOfCollectionOfGroups</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/Collection.html?is-external=true" title="class or interface in java.util">Collection</a>&lt;<a href="../../../../../../../org/apache/sysds/runtime/compress/estim/CompressedSizeInfoColGroup.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeInfoColGroup</a>&gt;&nbsp;gs,
+                           <a href="../../../../../../../org/apache/sysds/runtime/compress/estim/CompressedSizeInfoColGroup.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeInfoColGroup</a>&nbsp;g)</code>&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>double</code></td>
+<td class="colLast"><span class="typeNameLabel">ICostEstimate.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/compress/cost/ICostEstimate.html#getCostOfCollectionOfGroups-java.util.Collection-org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup-">getCostOfCollectionOfGroups</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/Collection.html?is-external=true" title="class or interface in java.util">Collection</a>&lt;<a href="../../../../../../../org/apache/sysds/runtime/compress/estim/CompressedSizeInfoColGroup.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeInfoColGroup</a>&gt;&nbsp;gs,
+                           <a href="../../../../../../../org/apache/sysds/runtime/compress/estim/CompressedSizeInfoColGroup.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeInfoColGroup</a>&nbsp;g)</code>&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>double</code></td>
+<td class="colLast"><span class="typeNameLabel">MemoryCostEstimator.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/compress/cost/MemoryCostEstimator.html#getCostOfCollectionOfGroups-java.util.Collection-org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup-">getCostOfCollectionOfGroups</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/Collection.html?is-external=true" title="class or interface in java.util">Collection</a>&lt;<a href="../../../../../../../org/apache/sysds/runtime/compress/estim/CompressedSizeInfoColGroup.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeInfoColGroup</a>&gt;&nbsp;gss,
+                           <a href="../../../../../../../org/apache/sysds/runtime/compress/estim/CompressedSizeInfoColGroup.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeInfoColGroup</a>&nbsp;g)</code>&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>double</code></td>
+<td class="colLast"><span class="typeNameLabel">DistinctCostEstimator.</span><code><span class="memberNameLink"><a href="../../../../../../../org/apache/sysds/runtime/compress/cost/DistinctCostEstimator.html#getCostOfCollectionOfGroups-java.util.Collection-org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup-">getCostOfCollectionOfGroups</a></span>(<a href="https://docs.oracle.com/javase/8/docs/api/java/util/Collection.html?is-external=true" title="class or interface in java.util">Collection</a>&lt;<a href="../../../../../../../org/apache/sysds/runtime/compress/estim/CompressedSizeInfoColGroup.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeInfoColGroup</a>&gt;&nbsp;gs,
+                           <a href="../../../../../../../org/apache/sysds/runtime/compress/estim/CompressedSizeInfoColGroup.html" title="class in org.apache.sysds.runtime.compress.estim">CompressedSizeInfoColGroup</a>&nbsp;g)</code>&nbsp;</td>
+</tr>
+</tbody>
+</table>
+</li>
 <li class="blockList"><a name="org.apache.sysds.runtime.compress.estim">
 <!--   -->
 </a>

@@ -31,7 +31,6 @@ import org.apache.spark.api.java.function.PairFunction;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
-import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject.UpdateType;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
@@ -55,7 +54,6 @@ import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysds.runtime.matrix.operators.Operator;
 import org.apache.sysds.runtime.matrix.operators.ReorgOperator;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
-import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.util.DataConverter;
 import org.apache.sysds.runtime.util.IndexRange;
 import org.apache.sysds.runtime.util.UtilFunctions;
@@ -220,17 +218,6 @@ public class ReorgSPInstruction extends UnarySPInstruction {
 
 	private void updateReorgDataCharacteristics(SparkExecutionContext sec) {
 		DataCharacteristics mc1 = sec.getDataCharacteristics(input1.getName());
-
-		if (!sec.containsVariable(output)) {
-			DataCharacteristics dc;
-			if(instOpcode.equalsIgnoreCase("r'"))
-				dc = new MatrixCharacteristics(mc1.getCols(), mc1.getRows());
-			else
-				dc = new MatrixCharacteristics(mc1.getRows(), mc1.getCols());
-			CacheableData cd = ExecutionContext.createMatrixObject(dc);
-			sec.setVariable(output.getName(), cd);
-		}
-
 		DataCharacteristics mcOut = sec.getDataCharacteristics(output.getName());
 		
 		//infer initially unknown dimensions from inputs

@@ -71,8 +71,6 @@ import org.apache.sysds.runtime.instructions.spark.CastSPInstruction;
 import org.apache.sysds.runtime.instructions.spark.CentralMomentSPInstruction;
 import org.apache.sysds.runtime.instructions.spark.CtableSPInstruction;
 import org.apache.sysds.runtime.instructions.spark.CumulativeOffsetSPInstruction;
-import org.apache.sysds.runtime.instructions.spark.FrameAppendMSPInstruction;
-import org.apache.sysds.runtime.instructions.spark.FrameAppendRSPInstruction;
 import org.apache.sysds.runtime.instructions.spark.IndexingSPInstruction;
 import org.apache.sysds.runtime.instructions.spark.MapmmSPInstruction;
 import org.apache.sysds.runtime.instructions.spark.MultiReturnParameterizedBuiltinSPInstruction;
@@ -461,8 +459,7 @@ public class FEDInstructionUtils {
 			if(minst.getOpcode().equals("transformencode") && minst.input1.isFrame()) {
 				CacheableData<?> fo = ec.getCacheableData(minst.input1);
 				if(fo.isFederatedExcept(FType.BROADCAST)) {
-					fedinst = MultiReturnParameterizedBuiltinFEDInstruction
-						.parseInstruction(minst.getInstructionString());
+					fedinst = MultiReturnParameterizedBuiltinFEDInstruction.parseInstruction(minst.getInstructionString());
 				}
 			}
 		}

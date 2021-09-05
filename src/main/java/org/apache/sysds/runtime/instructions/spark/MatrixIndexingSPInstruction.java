@@ -31,8 +31,6 @@ import org.apache.sysds.lops.LeftIndex;
 import org.apache.sysds.lops.LeftIndex.LixCacheType;
 import org.apache.sysds.lops.RightIndex;
 import org.apache.sysds.runtime.DMLRuntimeException;
-import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
-import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject.UpdateType;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
@@ -49,7 +47,6 @@ import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysds.runtime.matrix.data.OperationsOnMatrixValues;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
-import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.util.IndexRange;
 import org.apache.sysds.runtime.util.UtilFunctions;
 import scala.Function1;
@@ -92,12 +89,6 @@ public class MatrixIndexingSPInstruction extends IndexingSPInstruction {
 		long cl = ec.getScalarInput(colLower).getLongValue();
 		long cu = ec.getScalarInput(colUpper).getLongValue();
 		IndexRange ixrange = new IndexRange(rl, ru, cl, cu);
-
-		if (!sec.containsVariable(output)) {
-			DataCharacteristics dc = new MatrixCharacteristics(ru-rl+1, cu-cl+1);
-			CacheableData cd = ExecutionContext.createMatrixObject(dc);
-			sec.setVariable(output.getName(), cd);
-		}
 		
 		//right indexing
 		if( opcode.equalsIgnoreCase(RightIndex.OPCODE) )

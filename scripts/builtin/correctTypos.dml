@@ -179,7 +179,7 @@ buildDictionary = function(Frame[String] S)
   [ID,M] = transformencode(target=S, spec="{ids:true,recode:[1]}");
   dstr = map(M[,1], "s -> UtilFunctions.splitRecodeEntry(s)[0]");
   dcodes = map(M[,1], "s -> UtilFunctions.splitRecodeEntry(s)[1]");
-  frequencies = table(seq(1,nrow(dstr)),as.matrix(dcodes)) %% table(ID, 1);
+  frequencies = table(seq(1,nrow(dstr)),as.matrix(dcodes)) %*% table(ID, 1);
   dict = cbind(dstr, as.frame(frequencies));
 }
 

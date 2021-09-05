@@ -30,6 +30,7 @@ import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysds.runtime.matrix.data.Pair;
 import org.apache.sysds.runtime.meta.TensorCharacteristics;
+import org.apache.sysds.runtime.transform.encode.ColumnEncoderRecode;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -984,10 +985,12 @@ public class UtilFunctions {
 		return vt;
 	}
 
-
 	public static int getEndIndex(int arrayLength, int startIndex, int blockSize){
 		return (blockSize <= 0)? arrayLength: Math.min(arrayLength, startIndex + blockSize);
 	}
 
-
+	public static String[] splitRecodeEntry(String s) {
+		//forward to column encoder, as UtilFunctions available in map context
+		return ColumnEncoderRecode.splitRecodeMapEntry(s);
+	}
 }

@@ -72,18 +72,11 @@ s_correctTypos = function(Frame[String] strings, Matrix[Double] nullMask, Double
   Y = strings
 
   # build dictionary
-  current_string = as.scalar(strings[1]);
-  dict = cbind(as.frame(""), as.frame(1));
-
-  for (i in 1:num_strings) {
-    current_string = as.scalar(strings[i]);
-    if(as.scalar(nullMask[i]) == 0)
-      dict = insertOrIncrement(current_string, dict);
-  }
-  dict = dict[2:nrow(dict),]
+  dict = buildDictionary(strings);
   strings = dict[,1];
   frequencies = as.matrix(dict[,2]) / num_strings;
   lengths = as.matrix(map(strings, "s -> s.length()"));
+  
   num_different_strings = nrow(strings);
   if (is_verbose) {
     print("dict:" )
@@ -129,7 +122,7 @@ s_correctTypos = function(Frame[String] strings, Matrix[Double] nullMask, Double
     }
   }
   upper_triangle = upper.tri(target=distance_matrix, values=TRUE);
-  distance_matrix = distance_matrix + t(upper_triangle) + diag(matrix(42000, rows=num_different_strings, cols=1));
+  distance_matrix = distance_matrix + t(upper_triangle) + diag(matrix(42000, num_different_strings, 1));
 
   sorted_frequency_idxs = order(target=frequencies, index.return=TRUE);
   if (is_verbose) {
@@ -180,22 +173,15 @@ replaceStrings = function(String replacement, String to_replace, Frame[String] s
   strings = map(strings, "s -> s.equals(\""+to_replace+"\") ? \""+replacement+"\" : s");
 }
 
-insertOrIncrement = function(String str, Frame[Unknown] dict)
+buildDictionary = function(Frame[String] S)
   return(Frame[Unknown] dict)
 {
-  i = 1;
-  break = FALSE;
-  while (i <= nrow(dict) & !break) {
-    if (as.scalar(dict[i, 1]) == str) {
-      dict[i, 2] = as.frame(as.integer(as.scalar(dict[i, 2])) + 1);
-      break = TRUE;
-    }
-    i = i + 1;
-  }
-  if (!break)
-    dict = rbind(dict, cbind(as.frame(str), as.frame(1)));
+  [ID,M] = transformencode(target=S, spec="{ids:true,recode:[1]}");
+  dstr = map(M[,1], "s -> UtilFunctions.splitRecodeEntry(s)[0]");
+  dcodes = map(M[,1], "s -> UtilFunctions.splitRecodeEntry(s)[1]");
+  frequencies = table(seq(1,nrow(dstr)),as.matrix(dcodes)) %% table(ID, 1);
+  dict = cbind(dstr, as.frame(frequencies));
 }
-
 
 damerauLevenshteinDistanceBound = function(matrix[double] A, matrix[double] B, double bound, Boolean is_verbose) 
   return(double dl_distance) {

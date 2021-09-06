@@ -150,6 +150,7 @@ m_kmeans = function(Matrix[Double] X, Integer k = 10, Integer runs = 10, Integer
 
       # Find the closest centroid for each record
       P = D <= minD;
+      P = compress(P)
       # If some records belong to multiple centroids, share them equally
       P = P / rowSums (P);
       # Compute the column normalization factor for P

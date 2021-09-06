@@ -78,6 +78,24 @@ public class CLALibCompAgg {
 		CellIndex tempCellIndex = new CellIndex(-1, -1);
 		op.indexFn.computeDimension(inputMatrix.getNumRows(), inputMatrix.getNumColumns(), tempCellIndex);
 
+		if(requireDecompression(inputMatrix, op)) {
+			// Decide if we should use the cached decompressed Version, or we should decompress.
+			final double denseSize = MatrixBlock.estimateSizeDenseInMemory(inputMatrix.getNumRows(),
+				inputMatrix.getNumColumns());
+			final double currentSize = inputMatrix.getInMemorySize();
+			final double localMaxMemory = InfrastructureAnalyzer.getLocalMaxMemory();
+
+			if(denseSize < 5 * currentSize && inputMatrix.getColGroups().size() > 5 &&
+				denseSize <= localMaxMemory / 2) {
+				LOG.info("Decompressing for unaryAggregate because of overlapping state");
+				inputMatrix.decompress(op.getNumThreads());
+			}
+			MatrixBlock decomp = inputMatrix.getCachedDecompressed();
+			if(decomp != null) {
+				decomp.aggregateUnaryOperations(op, result, blen, indexesIn, inCP);
+				return result;
+			}
+		}
 		// initialize and allocate the result
 		if(result == null)
 			result = new MatrixBlock(tempCellIndex.row, tempCellIndex.column, false);
@@ -91,32 +109,12 @@ public class CLALibCompAgg {
 		if(inputMatrix.getColGroups() != null) {
 			fillStart(result, opm);
 
-			if(inputMatrix.isOverlapping() &&
-				(opm.aggOp.increOp.fn instanceof KahanPlusSq || (opm.aggOp.increOp.fn instanceof Builtin &&
-					(((Builtin) opm.aggOp.increOp.fn).getBuiltinCode() == BuiltinCode.MIN ||
-						((Builtin) opm.aggOp.increOp.fn).getBuiltinCode() == BuiltinCode.MAX)))) {
-				double denseSize = MatrixBlock.estimateSizeDenseInMemory(inputMatrix.getNumRows(),
-					inputMatrix.getNumColumns());
-				double currentSize = inputMatrix.getInMemorySize();
-				double localMaxMemory = InfrastructureAnalyzer.getLocalMaxMemory();
-
-				if(denseSize < 5 * currentSize && inputMatrix.getColGroups().size() > 5 &&
-					denseSize <= localMaxMemory / 2 ) {
-					LOG.info("Decompressing for unaryAggregate because of overlapping state");
-					inputMatrix.decompress(op.getNumThreads());
-				}
-				MatrixBlock decomp = inputMatrix.getCachedDecompressed();
-				if(decomp != null) {
-					decomp.aggregateUnaryOperations(op, result, blen, indexesIn, inCP);
-					return result;
-				}
-				else
-					aggregateUnaryOverlapping(inputMatrix, result, opm, indexesIn, inCP);
-
-			}
+			if(requireDecompression(inputMatrix, opm))
+				aggregateUnaryOverlapping(inputMatrix, result, opm, indexesIn, inCP);
 			else
 				aggregateUnaryNormalCompressedMatrixBlock(inputMatrix, result, opm, blen, indexesIn, inCP);
 		}
+		
 		result.recomputeNonZeros();
 		if(op.aggOp.existsCorrection() && !inCP) {
 			result = addCorrection(result, op);
@@ -125,6 +123,13 @@ public class CLALibCompAgg {
 		}
 		return result;
 
+	}
+
+	private static boolean requireDecompression(CompressedMatrixBlock inputMatrix, AggregateUnaryOperator op) {
+		return inputMatrix.isOverlapping() &&
+			(op.aggOp.increOp.fn instanceof KahanPlusSq || (op.aggOp.increOp.fn instanceof Builtin &&
+				(((Builtin) op.aggOp.increOp.fn).getBuiltinCode() == BuiltinCode.MIN ||
+					((Builtin) op.aggOp.increOp.fn).getBuiltinCode() == BuiltinCode.MAX)));
 	}
 
 	private static MatrixBlock addCorrection(MatrixBlock ret, AggregateUnaryOperator op) {

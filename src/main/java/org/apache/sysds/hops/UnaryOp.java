@@ -566,11 +566,11 @@ public class UnaryOp extends MultiThreadedHop
 			}
 
 			// if the input is compressed then set the output to be compressed as well.
-			if(input._compressedOutput){
+			if(input._compressedOutput && ! (_op==OpOp1.DECOMPRESS)){
 				setCompressedOutput(true);
 				// Setting the compressed output to be 2 x larger.
 				// Just in case we change the compressed structure slightly.
-				// this value is overwritten once the hop is executed.
+				// this value is overwritten with correct size once the hop is executed
 				// TODO handle overlapping state, since some operations would not lead to compressed output.
 				setCompressedSize(input.compressedSize() * 2);
 			}

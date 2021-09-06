@@ -88,11 +88,12 @@ cmr = matrix("4 0.7 1", rows=1, cols=3)
 # testY = eY[split+1:nrow(eY),]
 
 
-[bestLogical, score, T] = lg::enumerateLogical(X=trainX, y=trainY, Xtest=testX, ytest=testY,  cmr=cmr, cat=categories, population=logical,
-    max_iter=max_iter, metaList = metaList, evaluationFunc="evalML", evalFunHp=matrix("1 1e-3 1e-9 100", rows=1, cols=4), 
-    primitives=primitives, param=param , num_inst=num_inst, num_exec=num_exec, cv=FALSE, verbose=TRUE)
+[bestLogical, score] = lg::enumerateLogical(X=trainX, y=trainY, Xtest=testX, ytest=testY,  cmr=cmr, 
+  cat=categories, population=logical, max_iter=max_iter, metaList = metaList, evaluationFunc="evalML",
+  evalFunHp=matrix("1 1e-3 1e-9 100", rows=1, cols=4), primitives=primitives, param=param,
+	num_inst=num_inst, num_exec=num_exec, cv=FALSE, verbose=TRUE)
 
-print("score of pipeline: "+toString(score)+" in "+(T/60000)+" mins")
+print("score of pipeline: "+toString(score))
 print("bestLogical "+toString(bestLogical))
 result = dirtyScore < score  
 print("result satisfied ------------"+result)

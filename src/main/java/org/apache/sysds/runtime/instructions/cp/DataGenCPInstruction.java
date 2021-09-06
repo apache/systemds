@@ -341,9 +341,10 @@ public class DataGenCPInstruction extends UnaryCPInstruction {
 		else if(method == OpOpDG.FRAMEINIT) {
 			int lrows = (int) ec.getScalarInput(rows).getLongValue();
 			int lcols = (int) ec.getScalarInput(cols).getLongValue();
-			String schemaValues[] = schema.split(DataExpression.DELIM_NA_STRING_SEP);
-			ValueType[] vt = schemaValues[0].equals(DataExpression.DEFAULT_SCHEMAPARAM) ? UtilFunctions.nCopies(lcols,
-				ValueType.STRING) : UtilFunctions.stringToValueType(schemaValues);
+			String sparts[] = schema.split(DataExpression.DELIM_NA_STRING_SEP);
+			ValueType[] vt = sparts[0].equals(DataExpression.DEFAULT_SCHEMAPARAM) ?
+				UtilFunctions.nCopies(lcols, ValueType.STRING) : (sparts.length == 1 && lcols > 1) ?
+				UtilFunctions.nCopies(lcols, ValueType.valueOf(sparts[0])) : UtilFunctions.stringToValueType(sparts);
 			int schemaLength = vt.length;
 			if(schemaLength != lcols)
 				throw new DMLRuntimeException("schema-dimension mismatch");

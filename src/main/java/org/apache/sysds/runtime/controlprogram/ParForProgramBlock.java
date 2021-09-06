@@ -463,6 +463,10 @@ public class ParForProgramBlock extends ForProgramBlock
 		return _optMode;
 	}
 	
+	public void setOptimizationMode(POptMode mode) {
+		_optMode = mode;
+	}
+	
 	public int getDegreeOfParallelism() {
 		return _numThreads;
 	}

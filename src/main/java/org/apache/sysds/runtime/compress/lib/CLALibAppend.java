@@ -26,7 +26,6 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlockFactory;
-import org.apache.sysds.runtime.compress.CompressionSettingsBuilder;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupEmpty;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
@@ -47,16 +46,16 @@ public class CLALibAppend {
 
 		// try to compress both sides (if not already compressed)
 		// but only on small sample and if compression ratio is very good.
-		CompressionSettingsBuilder sb = new CompressionSettingsBuilder().setSamplingRatio(10000 / left.getNumRows())
-			.setMinimumCompressionRatio(10.0);
+		// CompressionSettingsBuilder sb = new CompressionSettingsBuilder().setSamplingRatio(10000 / left.getNumRows())
+			// .setMinimumCompressionRatio(10.0);
 
 		if(!(left instanceof CompressedMatrixBlock) && m > 1000) {
-			LOG.warn("Compressing left for append operation");
-			left = CompressedMatrixBlockFactory.compress(left, sb).getLeft();
+			LOG.info("Appending uncompressed column group left");
+			left = CompressedMatrixBlockFactory.genUncompressedCompressedMatrixBlock(left);
 		}
 		if(!(right instanceof CompressedMatrixBlock) && m > 1000) {
-			LOG.warn("Compressing right for append operation");
-			right = CompressedMatrixBlockFactory.compress(right, sb).getLeft();
+			LOG.warn("Appending uncompressed column group right");
+			left = CompressedMatrixBlockFactory.genUncompressedCompressedMatrixBlock(right);
 		}
 
 		// if compression failed then use default append method.
@@ -69,8 +68,15 @@ public class CLALibAppend {
 		// init result matrix
 		CompressedMatrixBlock ret = new CompressedMatrixBlock(m, n);
 
+		double compressedSize = ret.getInMemorySize();
+		double uncompressedSize = MatrixBlock.estimateSizeInMemory(m,n, ret.getSparsity());
+
 		ret = appendColGroups(ret, leftC.getColGroups(), rightC.getColGroups(), leftC.getNumColumns());
-		return ret;
+		
+		if(compressedSize * 10 < uncompressedSize)
+			return ret;
+		else
+			return ret.getUncompressed("Decompressing appended matrix, since compression ratio is low");
 	}
 
 	private static MatrixBlock appendRightEmpty(CompressedMatrixBlock left, MatrixBlock right) {

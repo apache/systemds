@@ -32,6 +32,7 @@ import org.apache.sysds.runtime.compress.colgroup.AColGroup;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupConst;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupEmpty;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupFactory;
+import org.apache.sysds.runtime.compress.colgroup.ColGroupUncompressed;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupValue;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
 import org.apache.sysds.runtime.compress.cost.ComputationCostEstimator;
@@ -150,6 +151,20 @@ public class CompressedMatrixBlockFactory {
 		CompressionSettingsBuilder compSettings, ICostEstimate costEstimator) {
 		CompressedMatrixBlockFactory cmbf = new CompressedMatrixBlockFactory(mb, k, compSettings, costEstimator);
 		return cmbf.compressMatrix();
+	}
+
+	/**
+	 * Generate a CompressedMatrixBlock Object that contains a single uncompressed matrix block column group.
+	 * 
+	 * @param mb The matrix block to be contained in the uncompressed matrix block column,
+	 * @return a CompressedMatrixBlock
+	 */
+	public static CompressedMatrixBlock genUncompressedCompressedMatrixBlock(MatrixBlock mb) {
+		CompressedMatrixBlock ret = new CompressedMatrixBlock(mb.getNumRows(), mb.getNumColumns());
+		AColGroup cg = new ColGroupUncompressed(mb);
+		ret.allocateColGroup(cg);
+		ret.setNonZeros(mb.getNonZeros());
+		return ret;
 	}
 
 	/**

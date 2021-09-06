@@ -564,6 +564,15 @@ public class UnaryOp extends MultiThreadedHop
 			{
 				setNnz( input.getNnz() );
 			}
+
+			// if the input is compressed then set the output to be compressed as well.
+			if(input._compressedOutput){
+				setCompressedOutput(true);
+				// setting the compressed output to be 2 x larger.
+				// just in case we change the compressed structure slightly.
+				// TODO handle overlapping state, since some operations would not lead to compressed output.
+				setCompressedSize(input.compressedSize() * 2);
+			}
 		}
 	}
 	

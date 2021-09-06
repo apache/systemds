@@ -19,7 +19,6 @@
 
 package org.apache.sysds.test.functions.iogen;
 
-import org.apache.sysds.test.TestConfiguration;
 import org.junit.Test;
 
 public class MatrixMatrixGenerateReaderMarketTest extends GenerateReaderTest {
@@ -80,13 +79,13 @@ public class MatrixMatrixGenerateReaderMarketTest extends GenerateReaderTest {
 			}
 		}
 		sampleRaw = sb.toString();
-		System.out.println(sampleRaw);
 	}
+
 
 	// Index from 0
 	@Test
 	public void test0_1() throws Exception {
-		sampleRaw = "1,1,1\n" + "1,2,4\n" + "2,2,2\n" + "3,3,3";
+		sampleRaw = "0,1,1\n" + "0,2,4\n" + "1,2,2\n" + "2,3,3";
 		sampleMatrix = new double[][] {{0, 1, 4, 0}, {0, 0, 2, 0}, {0, 0, 0, 3}};
 		runGenerateReaderTest();
 	}
@@ -155,7 +154,6 @@ public class MatrixMatrixGenerateReaderMarketTest extends GenerateReaderTest {
 	@Test
 	public void SymmetricTest0_1() throws Exception {
 		sampleRaw = "0,0,1\n" + "1,0,2\n" + "1,1,3\n" + "2,0,4\n" + "2,1,5\n" + "2,2,6\n" + "3,0,7\n" + "3,1,8\n" + "3,2,9\n" + "3,3,10\n";
-		System.out.println(sampleRaw);
 		sampleMatrix = new double[][] {{1, 0, 0, 0}, {2, 3, 0, 0}, {4, 5, 6, 0}, {7, 8, 9, 10}};
 		runGenerateReaderTest();
 	}
@@ -168,79 +166,4 @@ public class MatrixMatrixGenerateReaderMarketTest extends GenerateReaderTest {
 		runGenerateReaderTest();
 	}
 
-	@Test
-	public void SymmetricTest0_3() throws Exception {
-		generateRandomSymmetricMM(0,5,-5,5,1,",",true, false);
-		runGenerateReaderTest();
-	}
-
-	@Test
-	public void SymmetricTest0_4() throws Exception {
-		generateRandomSymmetricMM(0,50,-100,100,1,"  ",true, false);
-		runGenerateReaderTest();
-	}
-
-	@Test
-	public void SymmetricTest0_5() throws Exception {
-		generateRandomSymmetricMM(0,5,-5,5,1,",",false, false);
-		runGenerateReaderTest();
-	}
-
-	@Test
-	public void SymmetricTest0_6() throws Exception {
-		generateRandomSymmetricMM(0,50,-100,100,1,"  ",false, false);
-		runGenerateReaderTest();
-	}
-
-	// Symmetric Index from 1
-	@Test
-	public void SymmetricTest1_1() throws Exception {
-		generateRandomSymmetricMM(1,5,-5,5,1,",",true, false);
-		runGenerateReaderTest();
-	}
-
-	@Test
-	public void SymmetricTest1_2() throws Exception {
-		generateRandomSymmetricMM(1,50,-100,100,1,"  ",true, false);
-		runGenerateReaderTest();
-	}
-
-	@Test
-	public void SymmetricTest1_3() throws Exception {
-		generateRandomSymmetricMM(1,5,-5,5,1,",",false, false);
-		runGenerateReaderTest();
-	}
-
-	@Test
-	public void SymmetricTest1_4() throws Exception {
-		generateRandomSymmetricMM(1,50,-100,100,1,"  ",false, false);
-		runGenerateReaderTest();
-	}
-
-	// Skew-Symmetric Tests:
-	// Skew-Symmetric Index from 0
-	@Test
-	public void SkewSymmetricTest0_1() throws Exception {
-		generateRandomSymmetricMM(0,5,-100,100,1,",",false, true);
-		runGenerateReaderTest();
-	}
-
-	@Test
-	public void SkewSymmetricTest0_2() throws Exception {
-		generateRandomSymmetricMM(0,5,-100,100,1,"   ",true, true);
-		runGenerateReaderTest();
-	}
-
-	// Skew-Symmetric Index from 1
-	@Test
-	public void SkewSymmetricTest0_3() throws Exception {
-		generateRandomSymmetricMM(1,5,-100,100,1,",",false, true);
-		runGenerateReaderTest();
-	}
-
-	@Test
-	public void SkewSymmetricTest0_4() throws Exception {
-		generateRandomSymmetricMM(1,5,-100,100,1,"   ",true, true);
-		runGenerateReaderTest();
-	}
 }

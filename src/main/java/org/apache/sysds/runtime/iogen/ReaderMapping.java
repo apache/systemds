@@ -19,6 +19,7 @@
 
 package org.apache.sysds.runtime.iogen;
 
+import com.google.gson.Gson;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.runtime.io.IOUtilFunctions;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
@@ -96,8 +97,7 @@ public abstract class ReaderMapping {
 		}
 
 		// Convert: convert each value of a sample matrix to NumberTrimFormat
-		@Override
-		protected ValueTrimFormat.NumberTrimFormat[][] convertSampleTOValueTrimFormat() {
+		@Override protected ValueTrimFormat.NumberTrimFormat[][] convertSampleTOValueTrimFormat() {
 			ValueTrimFormat.NumberTrimFormat[][] result = new ValueTrimFormat.NumberTrimFormat[nrows][ncols];
 			for(int r = 0; r < nrows; r++)
 				for(int c = 0; c < ncols; c++) {
@@ -106,8 +106,7 @@ public abstract class ReaderMapping {
 			return result;
 		}
 
-		@Override
-		protected void transferSampleTriangular(boolean isUpper) throws Exception {
+		@Override protected void transferSampleTriangular(boolean isUpper) throws Exception {
 			if(nrows != ncols)
 				throw new Exception("For upper triangular both Row and Col should be same!");
 
@@ -126,8 +125,7 @@ public abstract class ReaderMapping {
 			nnz = sampleMatrix.getNonZeros();
 		}
 
-		@Override
-		protected void transferSampleSkew(int coefficient) throws Exception {
+		@Override protected void transferSampleSkew(int coefficient) throws Exception {
 			if(coefficient != 1 && coefficient != -1)
 				throw new Exception("The value of Coefficient have to be 1 or -1!");
 
@@ -136,20 +134,17 @@ public abstract class ReaderMapping {
 					sampleMatrix.setValue(r, c, sampleMatrix.getValue(r, c) * coefficient);
 		}
 
-		@Override
-		protected boolean isSchemaNumeric() {
+		@Override protected boolean isSchemaNumeric() {
 			return true;
 		}
 
-		@Override
-		protected void cloneSample() {
+		@Override protected void cloneSample() {
 			// Clone Sample Matrix
 			sampleMatrixClone = new MatrixBlock(nrows, ncols, false);
 			this.sampleMatrix.copy(0, nrows, 0, ncols, sampleMatrixClone, false);
 		}
 
-		@Override
-		protected void retrieveSample() {
+		@Override protected void retrieveSample() {
 			// Retrieve SampleMatrix From Cloned Data
 			this.sampleMatrixClone.copy(0, nrows, 0, ncols, sampleMatrix, false);
 		}
@@ -176,8 +171,7 @@ public abstract class ReaderMapping {
 		}
 
 		// Convert: convert each value of a sample Frame to ValueTrimFormat(Number, String, and Boolean)
-		@Override
-		protected ValueTrimFormat[][] convertSampleTOValueTrimFormat() {
+		@Override protected ValueTrimFormat[][] convertSampleTOValueTrimFormat() {
 			ValueTrimFormat[][] result = new ValueTrimFormat[nrows][ncols];
 			for(int r = 0; r < nrows; r++)
 				for(int c = 0; c < ncols; c++) {
@@ -186,16 +180,14 @@ public abstract class ReaderMapping {
 			return result;
 		}
 
-		@Override
-		protected boolean isSchemaNumeric() {
+		@Override protected boolean isSchemaNumeric() {
 			boolean result = true;
 			for(Types.ValueType vt : schema)
 				result &= vt.isNumeric();
 			return result;
 		}
 
-		@Override
-		protected void transferSampleTriangular(boolean isUpper) throws Exception {
+		@Override protected void transferSampleTriangular(boolean isUpper) throws Exception {
 			if(nrows != ncols)
 				throw new Exception("For upper triangular both Row and Col should be same!");
 
@@ -213,8 +205,7 @@ public abstract class ReaderMapping {
 			}
 		}
 
-		@Override
-		protected void transferSampleSkew(int coefficient) throws Exception {
+		@Override protected void transferSampleSkew(int coefficient) throws Exception {
 			if(coefficient != 1 && coefficient != -1)
 				throw new Exception("The value of Coefficient have to be 1 or -1!");
 
@@ -223,16 +214,14 @@ public abstract class ReaderMapping {
 					sampleFrame.set(r, c, (Double) sampleFrame.get(r, c) * coefficient);
 		}
 
-		@Override
-		protected void cloneSample() {
+		@Override protected void cloneSample() {
 			// Clone SampleFrame
 			sampleFrameClone = new FrameBlock(schema, names);
 			sampleFrameClone.ensureAllocatedColumns(nrows);
 			sampleFrame.copy(0, nrows, 0, ncols, sampleFrameClone);
 		}
 
-		@Override
-		protected void retrieveSample() {
+		@Override protected void retrieveSample() {
 			// Retrieve SampleFrame from Cloned Data
 			sampleFrameClone.copy(0, nrows, 0, ncols, sampleFrame);
 		}
@@ -379,6 +368,9 @@ public abstract class ReaderMapping {
 		else {
 			ffp = getFileFormatPropertiesOfRIMapping();
 		}
+
+		Gson gson = new Gson();
+		System.out.println(gson.toJson(ffp));
 		return ffp;
 	}
 
@@ -486,8 +478,8 @@ public abstract class ReaderMapping {
 			int start = _pos;
 
 			//find start (skip over leading delimiters)
-			while(start != -1 && start < len &&
-				_del.equals(_string.substring(start,Math.min(start + _del.length(), _string.length())))) {
+			while(start != -1 && start < len && _del
+				.equals(_string.substring(start, Math.min(start + _del.length(), _string.length())))) {
 				start += _del.length();
 				_count++;
 			}
@@ -518,49 +510,6 @@ public abstract class ReaderMapping {
 			while(token != null);
 			return tokens;
 		}
-	}
-
-	/*
-	 In some case we need to merge delimiter chars with value
-	 Example:
-	 SampleMatrix=[1   2   3   ]
-	 SampleRaw  =[ 1.0,2.0,3.0 ]
-	 Delimiters =[ ".0," ".0," ".0,"]
-	 So ".0" values have to merge to SampleMatrix values
-	 Final Delimiters = ["," "," ","]
-	*/
-	private int mergeDelimiters(double value, String stringValue, String delimiters) {
-		StringBuilder sb = new StringBuilder();
-		sb.append(stringValue);
-		boolean flagE = stringValue.contains("e");
-		boolean flagD = stringValue.contains(".");
-		boolean flagS = false;
-		int mergeCount = 0;
-
-		for(Character c : delimiters.toCharArray()) {
-			if(Character.isDigit(
-				c) || (!flagD && c == '.') || (!flagE && (c == 'e' || c == 'E')) || (flagE && !flagS && (c == '+' || c == '-'))) {
-
-				sb.append(c);
-
-				if(c == '.')
-					flagD = true;
-
-				if(c == 'e' || c == 'E') {
-					flagE = true;
-				}
-				else if(c == '+' || c == '-')
-					flagS = true;
-				else {
-					if(Double.parseDouble(sb.toString()) == value) {
-						mergeCount = sb.length() - stringValue.length();
-					}
-				}
-			}
-			else
-				break;
-		}
-		return mergeCount;
 	}
 
 	private CustomProperties getFileFormatPropertiesOfRIMapping() throws Exception {
@@ -603,6 +552,8 @@ public abstract class ReaderMapping {
 	private CustomProperties getDelimsOfMapping(int firstRowIndex, int firstColIndex) throws Exception {
 
 		HashSet<Integer> checkedRow = new HashSet<>();
+		HashSet<String> delims = new HashSet<>();
+		int minDelimLength = -1;
 		boolean rcvMapped = true;
 		for(int r = nrows - 1; r >= 0 && rcvMapped; r--) {
 			for(int c = ncols - 1; c >= 0 && rcvMapped; c--) {
@@ -617,10 +568,14 @@ public abstract class ReaderMapping {
 					if(isMapRowColValue(row, r + firstRowIndex, c + firstColIndex, VTF[r][c])) {
 						checkedRow.add(index);
 						rcvMapped = true;
+
+						Pair<HashSet<String>, Integer> pair = row.getDelimsSet();
+						delims.addAll(pair.getKey());
+						minDelimLength = minDelimLength == -1 ? pair.getValue() : Math
+							.min(minDelimLength, pair.getValue());
 					}
 				}
 				while(++index < nlines && !rcvMapped);
-				int a = 100;
 			}
 		}
 
@@ -628,16 +583,6 @@ public abstract class ReaderMapping {
 			return null;
 		}
 		else {
-			HashSet<String> delims = new HashSet<>();
-			int minDelimLength = -1;
-			for(int i = 1; i < nnz; i++) {
-				RawRow rr = sampleRawRows.get(i);
-				if(rr.isMarked()) {
-					Pair<HashSet<String>, Integer> pair = rr.getDelimsSet();
-					delims.addAll(pair.getKey());
-					minDelimLength = minDelimLength == -1 ? pair.getValue() : Math.min(minDelimLength, pair.getValue());
-				}
-			}
 
 			String uniqueDelim = null;
 
@@ -791,69 +736,6 @@ public abstract class ReaderMapping {
 		else
 			return null;
 
-		//
-		//		boolean isVerify = false;
-		//		for(int i = 0; i < selectedTokens.size() && !isVerify; i++) {
-		//			isVerify = true;
-		//			indexSeparator = selectedTokens.get(i);
-		//			for(int r = 0; r < nrows; r++) {
-		//				separator = verifyRowWithIndexDelim(r, indexSeparator, labelIndex.get(i), firstColIndex);
-		//				if(separator == null) {
-		//					isVerify = false;
-		//					break;
-		//				}
-		//			}
-		//		}
-		//		if(isVerify) {
-		//			return new CustomProperties(CustomProperties.GRPattern.Regular, separator, indexSeparator);
-		//		}
-		//		else
-		//			return null;
-	}
-
-	private String verifyRowWithIndexDelim(int rowID, String indexDelim, int labelIndex, int firstColIndex) {
-		RawRow row = sampleRawRows.get(rowID);
-		row = row.getResetClone();
-		for(int c = ncols - 1; c >= 0; c--) {
-			if(mapRow[rowID][c] != -1) {
-				ValueTrimFormat.NumberTrimFormat vtfColIndex = new ValueTrimFormat.NumberTrimFormat(c + firstColIndex);
-				ValueTrimFormat.StringTrimFormat vtfIndexDelim = new ValueTrimFormat.StringTrimFormat(indexDelim);
-				ValueTrimFormat vtfColValue = VTF[rowID][c];
-
-				Pair<Integer, Integer> pairCol;
-				Pair<Integer, Integer> pairDelim;
-				Pair<Integer, Integer> pairValue;
-				if(labelIndex - firstColIndex != c) {
-
-					// check Index text
-					pairCol = row.findValue(vtfColIndex, false);
-					if(pairCol.getKey() == -1)
-						return null;
-
-					// check the delimiter text
-					pairDelim = row.findValue(vtfIndexDelim, true);
-					if(pairDelim.getKey() == -1)
-						return null;
-					// check the value text
-					pairValue = row.findValue(vtfColValue, true);
-					if(pairValue.getKey() == -1)
-						return null;
-				}
-				else {
-					// check the just label text
-					pairValue = row.findValue(vtfColValue, false);
-					if(pairValue.getKey() == -1)
-						return null;
-				}
-			}
-		}
-		HashSet<String> separators = row.getDelimsSet().getKey();
-		String separator = separators.size() == 1 ? separators.iterator().next() : null;
-
-		if(separator == null)
-			return null;
-
-		return separator;
 	}
 
 	private boolean isMapRowColValue(RawRow rawrow, int row, int col, ValueTrimFormat value) {
@@ -909,7 +791,7 @@ public abstract class ReaderMapping {
 				throw new RuntimeException("Not set values can't be find on a string");
 		}
 		for(ValueTrimFormat vtf : order) {
-			if(rawrow.findValue(vtf, true).getKey() == -1) {
+			if(rawrow.findValue(vtf, false).getKey() == -1) {
 				mapped = false;
 				break;
 			}

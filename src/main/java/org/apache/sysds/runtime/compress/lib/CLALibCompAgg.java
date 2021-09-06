@@ -34,6 +34,7 @@ import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.CompressionSettings;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup;
+import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.functionobjects.Builtin.BuiltinCode;
 import org.apache.sysds.runtime.functionobjects.IndexFunction;
@@ -50,7 +51,6 @@ import org.apache.sysds.runtime.matrix.data.LibMatrixAgg;
 import org.apache.sysds.runtime.matrix.data.LibMatrixBincell;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
-import org.apache.sysds.runtime.matrix.data.MatrixValue;
 import org.apache.sysds.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysds.runtime.matrix.operators.AggregateOperator;
 import org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator;
@@ -71,7 +71,7 @@ public class CLALibCompAgg {
 		}
 	};
 
-	public static MatrixBlock aggregateUnary(CompressedMatrixBlock inputMatrix, MatrixValue result,
+	public static MatrixBlock aggregateUnary(CompressedMatrixBlock inputMatrix, MatrixBlock result,
 		AggregateUnaryOperator op, int blen, MatrixIndexes indexesIn, boolean inCP) {
 
 		// prepare output dimensions
@@ -83,30 +83,47 @@ public class CLALibCompAgg {
 			result = new MatrixBlock(tempCellIndex.row, tempCellIndex.column, false);
 		else
 			result.reset(tempCellIndex.row, tempCellIndex.column, false);
-		MatrixBlock ret = (MatrixBlock) result;
 
-		ret.allocateDenseBlock();
+		result.allocateDenseBlock();
 
 		AggregateUnaryOperator opm = replaceKahnOperations(op);
 
 		if(inputMatrix.getColGroups() != null) {
-			fillStart(ret, opm);
+			fillStart(result, opm);
 
 			if(inputMatrix.isOverlapping() &&
 				(opm.aggOp.increOp.fn instanceof KahanPlusSq || (opm.aggOp.increOp.fn instanceof Builtin &&
 					(((Builtin) opm.aggOp.increOp.fn).getBuiltinCode() == BuiltinCode.MIN ||
-						((Builtin) opm.aggOp.increOp.fn).getBuiltinCode() == BuiltinCode.MAX))))
-				aggregateUnaryOverlapping(inputMatrix, ret, opm, indexesIn, inCP);
+						((Builtin) opm.aggOp.increOp.fn).getBuiltinCode() == BuiltinCode.MAX)))) {
+				double denseSize = MatrixBlock.estimateSizeDenseInMemory(inputMatrix.getNumRows(),
+					inputMatrix.getNumColumns());
+				double currentSize = inputMatrix.getInMemorySize();
+				double localMaxMemory = InfrastructureAnalyzer.getLocalMaxMemory();
+
+				if(denseSize < 5 * currentSize && inputMatrix.getColGroups().size() > 5 &&
+					denseSize <= localMaxMemory / 2 ) {
+					LOG.info("Decompressing for unaryAggregate because of overlapping state");
+					inputMatrix.decompress(op.getNumThreads());
+				}
+				MatrixBlock decomp = inputMatrix.getCachedDecompressed();
+				if(decomp != null) {
+					decomp.aggregateUnaryOperations(op, result, blen, indexesIn, inCP);
+					return result;
+				}
+				else
+					aggregateUnaryOverlapping(inputMatrix, result, opm, indexesIn, inCP);
+
+			}
 			else
-				aggregateUnaryNormalCompressedMatrixBlock(inputMatrix, ret, opm, blen, indexesIn, inCP);
+				aggregateUnaryNormalCompressedMatrixBlock(inputMatrix, result, opm, blen, indexesIn, inCP);
 		}
-		ret.recomputeNonZeros();
+		result.recomputeNonZeros();
 		if(op.aggOp.existsCorrection() && !inCP) {
-			ret = addCorrection(ret, op);
+			result = addCorrection(result, op);
 			if(op.aggOp.increOp.fn instanceof Mean)
-				ret = addCellCount(ret, op, inputMatrix.getNumRows(), inputMatrix.getNumColumns());
+				result = addCellCount(result, op, inputMatrix.getNumRows(), inputMatrix.getNumColumns());
 		}
-		return ret;
+		return result;
 
 	}
 

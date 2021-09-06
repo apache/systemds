@@ -394,7 +394,6 @@ public class WorkloadAnalyzer {
 						overlapping.add(hop.getHopID());
 					else {
 						decompressHops.add(hop);
-						hop.setRequiresDeCompression();
 						ret.setOverlappingDecompression(true);
 					}
 				}

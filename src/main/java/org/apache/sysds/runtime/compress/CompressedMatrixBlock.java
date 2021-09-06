@@ -302,7 +302,10 @@ public class CompressedMatrixBlock extends MatrixBlock {
 		return ret;
 	}
 
-	private MatrixBlock getCachedDecompressed() {
+	/**
+	 * Get the cached decompressed matrix (if it exists otherwise null)
+	 */
+	public MatrixBlock getCachedDecompressed() {
 		if(decompressedVersion != null) {
 			final MatrixBlock mb = decompressedVersion.get();
 			if(mb != null) {
@@ -453,12 +456,13 @@ public class CompressedMatrixBlock extends MatrixBlock {
 
 	@Override
 	public void write(DataOutput out) throws IOException {
-		if(getExactSizeOnDisk() > MatrixBlock.estimateSizeOnDisk(rlen, clen, nonZeros)){
-			// decompress and make a uncompressed column group. this is then used for the serialization, since it is smaller.
+		if(getExactSizeOnDisk() > MatrixBlock.estimateSizeOnDisk(rlen, clen, nonZeros)) {
+			// decompress and make a uncompressed column group. this is then used for the serialization, since it is
+			// smaller.
 			// throw new NotImplementedException("Decompressing serialization is not implemented");
 
 			MatrixBlock uncompressed = getUncompressed("Decompressing serialization for smaller serialization");
-			ColGroupUncompressed cg = new ColGroupUncompressed( uncompressed);
+			ColGroupUncompressed cg = new ColGroupUncompressed(uncompressed);
 			allocateColGroup(cg);
 			nonZeros = cg.getNumberNonZeros();
 		}
@@ -501,11 +505,15 @@ public class CompressedMatrixBlock extends MatrixBlock {
 
 	@Override
 	public MatrixBlock binaryOperations(BinaryOperator op, MatrixValue thatValue, MatrixValue result) {
-		return CLALibBinaryCellOp.binaryOperations(op, this, thatValue, result);
+		MatrixBlock that = thatValue == null ? null : (MatrixBlock) thatValue;
+		MatrixBlock ret = result == null ? null : (MatrixBlock) result;
+		return CLALibBinaryCellOp.binaryOperations(op, this, that, ret);
 	}
 
 	public MatrixBlock binaryOperationsLeft(BinaryOperator op, MatrixValue thatValue, MatrixValue result) {
-		return CLALibBinaryCellOp.binaryOperationsLeft(op, this, thatValue, result);
+		MatrixBlock that = thatValue == null ? null : (MatrixBlock) thatValue;
+		MatrixBlock ret = result == null ? null : (MatrixBlock) result;
+		return CLALibBinaryCellOp.binaryOperationsLeft(op, this, that, ret);
 	}
 
 	@Override
@@ -695,8 +703,8 @@ public class CompressedMatrixBlock extends MatrixBlock {
 				.aggregateUnaryOperations(op, result, blen, indexesIn, inCP);
 
 		}
-
-		return CLALibCompAgg.aggregateUnary(this, result, op, blen, indexesIn, inCP);
+		MatrixBlock ret = (result == null) ? null : (MatrixBlock) result;
+		return CLALibCompAgg.aggregateUnary(this, ret, op, blen, indexesIn, inCP);
 	}
 
 	@Override

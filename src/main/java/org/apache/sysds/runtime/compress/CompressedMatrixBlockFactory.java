@@ -41,10 +41,12 @@ import org.apache.sysds.runtime.compress.cost.ICostEstimate;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeEstimator;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeEstimatorFactory;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfo;
+import org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup;
 import org.apache.sysds.runtime.compress.utils.DblArrayIntListHashMap;
 import org.apache.sysds.runtime.compress.utils.DoubleCountHashMap;
 import org.apache.sysds.runtime.compress.workload.WTreeRoot;
 import org.apache.sysds.runtime.controlprogram.parfor.stat.Timing;
+import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.matrix.data.LibMatrixReorg;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.utils.DMLCompressionStatistics;
@@ -206,9 +208,13 @@ public class CompressedMatrixBlockFactory {
 
 		res = new CompressedMatrixBlock(mb); // copy metadata and allocate soft reference
 
-		classifyPhase();
-		if(coCodeColGroups == null)
-			return abortCompression();
+		looksLikeOneHot();
+
+		if(coCodeColGroups == null) {
+			classifyPhase();
+			if(coCodeColGroups == null)
+				return abortCompression();
+		}
 
 		transposePhase();
 		compressPhase();
@@ -268,6 +274,50 @@ public class CompressedMatrixBlockFactory {
 			LOG.info("Vs original size                              : " + _stats.originalSize);
 		}
 
+	}
+
+	private void looksLikeOneHot() {
+		final int numColumns = mb.getNumColumns();
+		final int numRows = mb.getNumRows();
+		final long nnz = mb.getNonZeros();
+		final int colGroupSize = 100;
+		if(nnz == numRows) {
+			boolean onlyOneValues = true;
+			LOG.debug("Looks like one hot encoded.");
+			if(mb.isInSparseFormat()) {
+				final SparseBlock sb = mb.getSparseBlock();
+				for(double v : sb.get(0).values()) {
+					onlyOneValues = v == 1.0;
+					if(!onlyOneValues) {
+						break;
+					}
+				}
+			}
+			else {
+				final double[] vals = mb.getDenseBlock().values(0);
+				for(int i = 0; i < Math.min(vals.length, 1000); i++) {
+					double v = vals[i];
+					onlyOneValues = v == 1.0 || v == 0.0;
+					if(!onlyOneValues) {
+						break;
+					}
+				}
+			}
+			if(onlyOneValues) {
+				List<CompressedSizeInfoColGroup> ng = new ArrayList<>(numColumns / colGroupSize + 1);
+				for(int i = 0; i < numColumns; i += colGroupSize) {
+					int[] columnIds = new int[Math.min(colGroupSize, numColumns - i)];
+					for(int j = 0; j < columnIds.length; j++)
+						columnIds[j] = i + j;
+					ng.add(new CompressedSizeInfoColGroup(columnIds, Math.min(numColumns, colGroupSize), numRows));
+				}
+				coCodeColGroups = new CompressedSizeInfo(ng);
+
+				LOG.debug("Concluded that it probably is one hot encoded skipping analysis");
+				// skipping two phases
+				phase += 2;
+			}
+		}
 	}
 
 	private void transposePhase() {

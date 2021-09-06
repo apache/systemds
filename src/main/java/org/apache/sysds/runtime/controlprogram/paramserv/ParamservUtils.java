@@ -42,6 +42,7 @@ import org.apache.sysds.runtime.controlprogram.FunctionProgramBlock;
 import org.apache.sysds.runtime.controlprogram.IfProgramBlock;
 import org.apache.sysds.runtime.controlprogram.LocalVariableMap;
 import org.apache.sysds.runtime.controlprogram.ParForProgramBlock;
+import org.apache.sysds.runtime.controlprogram.ParForProgramBlock.POptMode;
 import org.apache.sysds.runtime.controlprogram.Program;
 import org.apache.sysds.runtime.controlprogram.ProgramBlock;
 import org.apache.sysds.runtime.controlprogram.WhileProgramBlock;
@@ -311,6 +312,8 @@ public class ParamservUtils {
 				ParForProgramBlock pfpb = (ParForProgramBlock) pb;
 				if( !pfpb.isDegreeOfParallelismFixed() ) {
 					pfpb.setDegreeOfParallelism(k);
+					if( k == 1 )
+						pfpb.setOptimizationMode(POptMode.NONE);
 					recompiled |= rAssignParallelismAndRecompile(pfpb.getChildBlocks(), 1, recompiled, forceExecTypeCP);
 				}
 			} else if (pb instanceof ForProgramBlock) {

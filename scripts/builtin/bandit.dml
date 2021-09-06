@@ -220,15 +220,15 @@ get_physical_configurations = function(Frame[String] logical, Scalar[int] numCon
   }
   
   physical = transformdecode(target=HP, spec=jspecR, meta=M);
-  print("physical pipeline "+toString(physical))
+  #print("physical pipeline "+toString(physical))
 }
 
 # this method will call the execute pipelines with their hyper-parameters
 run_with_hyperparam = function(Frame[Unknown] lp, Frame[Unknown] ph_pip, Integer r_i, Matrix[Double] X, Matrix[Double] Y,
   Matrix[Double] Xtest, Matrix[Double] Ytest, List[Unknown] metaList, String evaluationFunc, Matrix[Double] evalFunHp,
   Frame[Unknown] param, Frame[Unknown] featureFrameOuter, Boolean cv,  Integer cvk = 2, Boolean verbose)
-  return (Matrix[Double] output_operator, Matrix[Double] output_hyperparam, Frame[Unknown] featureFrameOuter) {
-  print("run_with_hyperparam started")
+  return (Matrix[Double] output_operator, Matrix[Double] output_hyperparam, Frame[Unknown] featureFrameOuter)
+{
   output_hp = matrix(0, nrow(ph_pip)*r_i, ncol(lp) * 5 * 3)
   output_accuracy = matrix(0, nrow(ph_pip)*r_i, 1)
   output_pipelines = matrix(0, nrow(ph_pip)*r_i, 2)

@@ -36,7 +36,7 @@ s_executePipeline = function(Frame[String] logical = as.frame("NULL"), Frame[Str
   Y = rbind(Y, Ytest)
   testRow = nrow(Xtest)
   t1 = time()
-  print("PIPELINE EXECUTION START ... "+toString(pipeline))
+  #print("PIPELINE EXECUTION START ... "+toString(pipeline))
 
   if(verbose) {
     print("checks   rows in X = "+nrow(X)+" rows in Y = "+nrow(Y)+" cols in X = "+ncol(X)+" col in Y = "+ncol(Y))
@@ -66,7 +66,7 @@ s_executePipeline = function(Frame[String] logical = as.frame("NULL"), Frame[Str
     }
     else {
       Xclone = X 
-      print("not applying "+lgOp+" "+op+" on data test flag: "+test)
+      #print("not applying "+lgOp+" "+op+" on data test flag: "+test)
       Xtest = X[testStIdx:nrow(X), ]
       Ytest = Y[testStIdx:nrow(X), ]
       X = X[1:trainEndIdx, ]
@@ -98,7 +98,7 @@ s_executePipeline = function(Frame[String] logical = as.frame("NULL"), Frame[Str
     stop("executePipeline: test rows altered")
   t2 = floor((time() - t1) / 1e+6)
 
-  print("PIPELINE EXECUTION ENDED: "+t2+" ms")
+  #print("PIPELINE EXECUTION ENDED: "+t2+" ms")
 }
 
 # This function will convert the matrix row-vector into list
@@ -321,7 +321,7 @@ return (Matrix[Double] XY)
   diff = (maxClass - minClass)/sum(classes)
   if(diff > 0.5)
   {
-    print("initiating oversampling")
+    #print("initiating oversampling")
     XY = order(target = cbind(Y, X),  by = 1, decreasing=FALSE, index.return=FALSE)
     synthesized = matrix(0,0,0) # initialize variable
     start_class = 1
@@ -332,7 +332,7 @@ return (Matrix[Double] XY)
     outSet = matrix(0, 0, ncol(XY))
     remainingRatio = ifelse((remainingRatio%%100) >= 50, remainingRatio+(100 - (remainingRatio%%100)),
     remainingRatio-(remainingRatio%%100))
-    print("remaining ratio: "+remainingRatio)
+    #print("remaining ratio: "+remainingRatio)
     for(i in 1: nrow(k), check=0) {
       end_class = end_class + as.scalar(classes[i])
       class_t = XY[start_class:end_class, ]
@@ -351,7 +351,7 @@ return (Matrix[Double] XY)
     classes = table(Y, 1)
   }
   else { 
-    print("smote not applicable")
+    #print("smote not applicable")
     XY = cbind(X, Y)
   }
 }
@@ -367,7 +367,7 @@ return(Matrix[Double] X){
   X = replace(target=X, pattern=NaN, replacement=max(X))
   Mask = Mask * defaullt
   X = X + Mask
-  print("fillDefault: no of NaNs "+sum(is.na(X)))
+ # print("fillDefault: no of NaNs "+sum(is.na(X)))
 }
 
 ########################################################

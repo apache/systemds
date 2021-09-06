@@ -50,46 +50,50 @@
 
 
 source("scripts/builtin/bandit.dml") as bandit;
-enumerateLogical = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] Xtest, Matrix[Double] ytest, Matrix[Double] cmr, Frame[Unknown] cat, Frame[Unknown] population,
-  Integer max_iter=10, List[Unknown] metaList, String evaluationFunc, Matrix[Double] evalFunHp, Frame[Unknown] primitives, Frame[Unknown] param,
-  Integer num_inst, Integer num_exec, Boolean cv=FALSE, Boolean cvk=3, Boolean verbose)
-return (Frame[Unknown] bestLg, Double pre_best, Double T)
-{ 
-  t1 = time()
+
+enumerateLogical = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] Xtest, Matrix[Double] ytest,
+  Matrix[Double] cmr, Frame[Unknown] cat, Frame[Unknown] population, Integer max_iter=10, List[Unknown] metaList, 
+  String evaluationFunc, Matrix[Double] evalFunHp, Frame[Unknown] primitives, Frame[Unknown] param,
+  Integer num_inst, Integer num_exec, Boolean cv=FALSE, Boolean cvk=3, Boolean verbose, List[Unknown] ctx=list(prefix="----"))
+return (Frame[Unknown] bestLg, Double pre_best)
+{
+  prefix = as.scalar(ctx["prefix"]);  
   bestLg = as.frame("")
-  best_score = 0
-  pre_best = 0
+  best_score = 0.0
+  pre_best = 0.0
   feaFrameOuter = as.frame("NULL")
   iter = 1
   convergedOuter = FALSE
 
   while(iter <= max_iter & !convergedOuter)
   {
-    physicalPipList = list()
-    logicalPipList = list()
+  	print(prefix+" EnumLP iteration "+iter+"/"+as.integer(max_iter)+":" );
+    physicalPipList = list();
+    logicalPipList = list();
     
-    # # # get the physical instances from logical ones
+    # get the physical instances from logical ones
+    # unrolled by physical pipelines
     for(i in 1:nrow(population)) { 
       lv = as.integer(as.scalar(population[i, 1])) + 1
       lp = population[i, 2:lv]
-      physicalConf = bandit::get_physical_configurations(lp, num_inst, primitives)
-      physicalPipList = append(physicalPipList, physicalConf)
-      logicalPipList = append(logicalPipList, lp)
+      pconf = bandit::get_physical_configurations(lp, num_inst, primitives)
+      for(j in 1:nrow(pconf))
+        physicalPipList = append(physicalPipList, pconf[j,]);
+      logicalPipList = append(logicalPipList, lp);
     }
     
     # # # execute the physical pipelines
-    scores = matrix(0, length(physicalPipList), 1)
+    scores = matrix(0, nrow(physicalPipList), 1)
     # TODO better parfor-dep handling of multi-assignments to avoid check=0 
     parfor(i in 1:length(physicalPipList), check=0) {
-      lp2 = as.frame(logicalPipList[i,1])
-      pp2 = as.frame(physicalPipList[i,1])
+      lp2 = as.frame(logicalPipList[((i-1)%/%num_inst)+1,])
+      pp2 = as.frame(physicalPipList[i,])
       # # append configuration keys for extracting the pipeline later on
       id = seq(1, nrow(pp2))
       idpp = cbind(as.frame(id), pp2)
-
       # # execute the physical instances and store the minimum scores, each pipeline is executed num_exec times
       [outPip, outHp, feaFrameOuter] = bandit::run_with_hyperparam(lp2, idpp, num_exec, X, y, Xtest, ytest, metaList,
-        evaluationFunc, evalFunHp, param, as.frame(""), cv, cvk, verbose)
+        evaluationFunc, evalFunHp, param, as.frame(""), cv, cvk, FALSE)
       # # sort the configurations groupwise
       max_perf = bandit::getMaxPerConf(outPip, nrow(pp2)) 
       scores[i,1] = as.matrix(max_perf[1,1])
@@ -97,31 +101,28 @@ return (Frame[Unknown] bestLg, Double pre_best, Double T)
     
     # # select parents and best score
     selected = order(target = scores, by = 1, decreasing=TRUE, index.return=TRUE)
-    idxR = as.scalar(selected[1, 1])
+    idxR = as.scalar(selected[1,1])
     best_score = as.scalar(scores[idxR])
     converged =  pre_best > best_score
     convergedOuter = converged
-    if(converged & (iter > 1))
-    {
-      print("converged after "+iter+" iteration(s)")
-      print("best score " + pre_best)
-      print("best pipeline " + toString(bestLg))
+    if(converged & (iter > 1)) {
+      print(prefix+"EnumLP: converged after "+iter+" iteration(s)")
+      print(prefix+"EnumLP: best score " + pre_best)
+      print(prefix+"EnumLP: best pipeline " + toString(bestLg))
     }
-    else 
-    {
+    else {
       pre_best = best_score
-      idxC = as.integer(as.scalar(population[idxR, 1])) + 1
-      bestLg = population[idxR, 2:idxC]
+      idxR2 = ((idxR-1)%/%num_inst)+1 #logical pipeline ID
+      idxC = as.integer(as.scalar(population[idxR2, 1])) + 1
+      bestLg = population[idxR2, 2:idxC]
     }
     pipLength = max(as.matrix(population[, 1])) + as.scalar(cmr[1, 1]) + 3
     # # # if new best is not better than pre_best then no need od generating new population
     children = frame(0, rows=ceil(nrow(scores)/2), cols=pipLength)
     i = 1
 
-    while(i <= ceil(nrow(scores)/2) & !converged)
-    {
-      top = population[as.scalar(selected[i]), ]
-
+    while(i <= ceil(nrow(scores)/2) & !converged) {
+      top = population[as.scalar(((selected[i]-1)%/%num_inst)+1), ]
       length_top = as.integer(as.scalar(top[1, 1]))
       top = top[, 2:(length_top+1)]
       
@@ -131,12 +132,10 @@ return (Frame[Unknown] bestLg, Double pre_best, Double T)
       # perform mutation
       c1 = mutation(c1, as.scalar(cmr[1, 2]))
 
-
       # perform removal if non-zero
       c1 = removal(c1, as.scalar(cmr[1, 3]))
 
       # # # append length of pipeline and pipeline in frame
-      # # 
       children[i, 1] = ncol(c1)
       children[i, 2:(ncol(c1) + 1)] = c1
       i = i + 1
@@ -145,12 +144,8 @@ return (Frame[Unknown] bestLg, Double pre_best, Double T)
     iter  = iter + 1
   }
   if(pre_best == best_score) {
-    print("LogicalENumerator: did not converge after "+max_iter+" iterations")
-  
+    print(prefix+" EnumLP did not converge after "+max_iter+" iterations")  
   }
-
-  T = floor((time() - t1) / 1e+6)
-  print("time "+T+" ms")
 }
 
 

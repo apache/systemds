@@ -19,7 +19,6 @@
 
 package org.apache.sysds.runtime.iogen;
 
-import com.google.gson.Gson;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.runtime.io.IOUtilFunctions;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
@@ -97,7 +96,8 @@ public abstract class ReaderMapping {
 		}
 
 		// Convert: convert each value of a sample matrix to NumberTrimFormat
-		@Override protected ValueTrimFormat.NumberTrimFormat[][] convertSampleTOValueTrimFormat() {
+		@Override
+		protected ValueTrimFormat.NumberTrimFormat[][] convertSampleTOValueTrimFormat() {
 			ValueTrimFormat.NumberTrimFormat[][] result = new ValueTrimFormat.NumberTrimFormat[nrows][ncols];
 			for(int r = 0; r < nrows; r++)
 				for(int c = 0; c < ncols; c++) {
@@ -106,7 +106,8 @@ public abstract class ReaderMapping {
 			return result;
 		}
 
-		@Override protected void transferSampleTriangular(boolean isUpper) throws Exception {
+		@Override
+		protected void transferSampleTriangular(boolean isUpper) throws Exception {
 			if(nrows != ncols)
 				throw new Exception("For upper triangular both Row and Col should be same!");
 
@@ -125,7 +126,8 @@ public abstract class ReaderMapping {
 			nnz = sampleMatrix.getNonZeros();
 		}
 
-		@Override protected void transferSampleSkew(int coefficient) throws Exception {
+		@Override
+		protected void transferSampleSkew(int coefficient) throws Exception {
 			if(coefficient != 1 && coefficient != -1)
 				throw new Exception("The value of Coefficient have to be 1 or -1!");
 
@@ -134,17 +136,20 @@ public abstract class ReaderMapping {
 					sampleMatrix.setValue(r, c, sampleMatrix.getValue(r, c) * coefficient);
 		}
 
-		@Override protected boolean isSchemaNumeric() {
+		@Override
+		protected boolean isSchemaNumeric() {
 			return true;
 		}
 
-		@Override protected void cloneSample() {
+		@Override
+		protected void cloneSample() {
 			// Clone Sample Matrix
 			sampleMatrixClone = new MatrixBlock(nrows, ncols, false);
 			this.sampleMatrix.copy(0, nrows, 0, ncols, sampleMatrixClone, false);
 		}
 
-		@Override protected void retrieveSample() {
+		@Override
+		protected void retrieveSample() {
 			// Retrieve SampleMatrix From Cloned Data
 			this.sampleMatrixClone.copy(0, nrows, 0, ncols, sampleMatrix, false);
 		}
@@ -171,7 +176,8 @@ public abstract class ReaderMapping {
 		}
 
 		// Convert: convert each value of a sample Frame to ValueTrimFormat(Number, String, and Boolean)
-		@Override protected ValueTrimFormat[][] convertSampleTOValueTrimFormat() {
+		@Override
+		protected ValueTrimFormat[][] convertSampleTOValueTrimFormat() {
 			ValueTrimFormat[][] result = new ValueTrimFormat[nrows][ncols];
 			for(int r = 0; r < nrows; r++)
 				for(int c = 0; c < ncols; c++) {
@@ -180,14 +186,16 @@ public abstract class ReaderMapping {
 			return result;
 		}
 
-		@Override protected boolean isSchemaNumeric() {
+		@Override
+		protected boolean isSchemaNumeric() {
 			boolean result = true;
 			for(Types.ValueType vt : schema)
 				result &= vt.isNumeric();
 			return result;
 		}
 
-		@Override protected void transferSampleTriangular(boolean isUpper) throws Exception {
+		@Override
+		protected void transferSampleTriangular(boolean isUpper) throws Exception {
 			if(nrows != ncols)
 				throw new Exception("For upper triangular both Row and Col should be same!");
 
@@ -205,7 +213,8 @@ public abstract class ReaderMapping {
 			}
 		}
 
-		@Override protected void transferSampleSkew(int coefficient) throws Exception {
+		@Override
+		protected void transferSampleSkew(int coefficient) throws Exception {
 			if(coefficient != 1 && coefficient != -1)
 				throw new Exception("The value of Coefficient have to be 1 or -1!");
 
@@ -214,14 +223,16 @@ public abstract class ReaderMapping {
 					sampleFrame.set(r, c, (Double) sampleFrame.get(r, c) * coefficient);
 		}
 
-		@Override protected void cloneSample() {
+		@Override
+		protected void cloneSample() {
 			// Clone SampleFrame
 			sampleFrameClone = new FrameBlock(schema, names);
 			sampleFrameClone.ensureAllocatedColumns(nrows);
 			sampleFrame.copy(0, nrows, 0, ncols, sampleFrameClone);
 		}
 
-		@Override protected void retrieveSample() {
+		@Override
+		protected void retrieveSample() {
 			// Retrieve SampleFrame from Cloned Data
 			sampleFrameClone.copy(0, nrows, 0, ncols, sampleFrame);
 		}
@@ -334,7 +345,7 @@ public abstract class ReaderMapping {
 				HashSet<Integer> checkedLines = new HashSet<>();
 				while(checkedLines.size() < nlines) {
 					RawRow row = sampleRawRows.get(itRow);
-					Pair<Integer, Integer> mi = row.findValue(vtf);
+					Pair<Integer, Integer> mi = row.findValue(vtf, false);
 					if(mi.getKey() != -1) {
 						mapRow[r][c] = itRow;
 						mapCol[r][c] = mi.getKey();
@@ -368,10 +379,6 @@ public abstract class ReaderMapping {
 		else {
 			ffp = getFileFormatPropertiesOfRIMapping();
 		}
-
-		Gson gson = new Gson();
-		System.out.println(gson.toJson(ffp));
-
 		return ffp;
 	}
 
@@ -425,7 +432,7 @@ public abstract class ReaderMapping {
 
 		FastStringTokenizer fastStringTokenizer;
 
-		for(Character ch: stringToken.toCharArray()){
+		for(Character ch : stringToken.toCharArray()) {
 			token.append(ch);
 			boolean flagCurrToken = true;
 			HashSet<String> ns = new HashSet<>();
@@ -479,7 +486,8 @@ public abstract class ReaderMapping {
 			int start = _pos;
 
 			//find start (skip over leading delimiters)
-			while(start != -1 && start + _del.length() < len && _del.equals(_string.substring(start, start + _del.length()))) {
+			while(start != -1 && start < len &&
+				_del.equals(_string.substring(start,Math.min(start + _del.length(), _string.length())))) {
 				start += _del.length();
 				_count++;
 			}
@@ -595,7 +603,7 @@ public abstract class ReaderMapping {
 	private CustomProperties getDelimsOfMapping(int firstRowIndex, int firstColIndex) throws Exception {
 
 		HashSet<Integer> checkedRow = new HashSet<>();
-		boolean rcvMapped = false;
+		boolean rcvMapped = true;
 		for(int r = nrows - 1; r >= 0 && rcvMapped; r--) {
 			for(int c = ncols - 1; c >= 0 && rcvMapped; c--) {
 				if(VTF[r][c].isNotSet())
@@ -605,13 +613,14 @@ public abstract class ReaderMapping {
 				do {
 					if(checkedRow.contains(index))
 						continue;
-					RawRow row = sampleRawRows.get(index);
+					RawRow row = sampleRawRows.get(index).getResetClone();
 					if(isMapRowColValue(row, r + firstRowIndex, c + firstColIndex, VTF[r][c])) {
 						checkedRow.add(index);
 						rcvMapped = true;
 					}
 				}
 				while(++index < nlines && !rcvMapped);
+				int a = 100;
 			}
 		}
 
@@ -677,10 +686,10 @@ public abstract class ReaderMapping {
 		CustomProperties ffplibsvm;
 		int firstColIndex = 0;
 
-		//FirstColIndex = 0
+		// FirstColIndex = 0
 		ffplibsvm = getDelimsOfRRCIMapping(firstColIndex);
 
-		//FirstColIndex = 1
+		// FirstColIndex = 1
 		if(ffplibsvm == null) {
 			firstColIndex = 1;
 			ffplibsvm = getDelimsOfRRCIMapping(firstColIndex);
@@ -697,8 +706,7 @@ public abstract class ReaderMapping {
 		HashMap<String, HashSet<String>> tokens = new HashMap<>();
 		HashSet<String> allTokens = new HashSet<>();
 
-		RawRow row = sampleRawRows.get(0);
-		row.resetReserved();
+		RawRow row = sampleRawRows.get(0).getResetClone();
 		for(int c = ncols - 1; c >= 0; c--) {
 			ValueTrimFormat v = VTF[0][c];
 			if(v.isNotSet())
@@ -711,7 +719,7 @@ public abstract class ReaderMapping {
 				token = new HashSet<>();
 				tokens.put(key, token);
 			}
-			token.addAll(getColIndexValueMappedTokens(row, c + firstColIndex, v ));
+			token.addAll(getColIndexValueMappedTokens(row, c + firstColIndex, v));
 			allTokens.addAll(token);
 		}
 
@@ -748,7 +756,29 @@ public abstract class ReaderMapping {
 			isVerify = true;
 			indexSeparator = selectedTokens.get(i);
 			for(int r = 0; r < nrows; r++) {
-				separator = verifyRowWithIndexDelim(r, indexSeparator, labelIndex.get(i), firstColIndex);
+
+				row = sampleRawRows.get(r).getResetClone();
+				// find all values
+				for(int c = 0; c < ncols; c++) {
+					if(VTF[r][c].isNotSet())
+						continue;
+					row.findValue(VTF[r][c], false);
+				}
+				for(int c = 0; c < ncols; c++) {
+					if(VTF[r][c].isNotSet())
+						continue;
+					ValueTrimFormat.StringTrimFormat vtfIndexDelim = new ValueTrimFormat.StringTrimFormat(
+						indexSeparator);
+					row.findValue(vtfIndexDelim, false);
+				}
+				for(int c = 0; c < ncols; c++) {
+					if(VTF[r][c].isNotSet())
+						continue;
+					ValueTrimFormat.NumberTrimFormat vtfColIndex = new ValueTrimFormat.NumberTrimFormat(
+						c + firstColIndex);
+					row.findValue(vtfColIndex, false);
+				}
+				separator = row.getDelims().getKey();
 				if(separator == null) {
 					isVerify = false;
 					break;
@@ -760,11 +790,30 @@ public abstract class ReaderMapping {
 		}
 		else
 			return null;
+
+		//
+		//		boolean isVerify = false;
+		//		for(int i = 0; i < selectedTokens.size() && !isVerify; i++) {
+		//			isVerify = true;
+		//			indexSeparator = selectedTokens.get(i);
+		//			for(int r = 0; r < nrows; r++) {
+		//				separator = verifyRowWithIndexDelim(r, indexSeparator, labelIndex.get(i), firstColIndex);
+		//				if(separator == null) {
+		//					isVerify = false;
+		//					break;
+		//				}
+		//			}
+		//		}
+		//		if(isVerify) {
+		//			return new CustomProperties(CustomProperties.GRPattern.Regular, separator, indexSeparator);
+		//		}
+		//		else
+		//			return null;
 	}
 
 	private String verifyRowWithIndexDelim(int rowID, String indexDelim, int labelIndex, int firstColIndex) {
 		RawRow row = sampleRawRows.get(rowID);
-		row.resetReserved();
+		row = row.getResetClone();
 		for(int c = ncols - 1; c >= 0; c--) {
 			if(mapRow[rowID][c] != -1) {
 				ValueTrimFormat.NumberTrimFormat vtfColIndex = new ValueTrimFormat.NumberTrimFormat(c + firstColIndex);
@@ -777,19 +826,25 @@ public abstract class ReaderMapping {
 				if(labelIndex - firstColIndex != c) {
 
 					// check Index text
-					pairCol = row.findValue(vtfColIndex);
+					pairCol = row.findValue(vtfColIndex, false);
 					if(pairCol.getKey() == -1)
 						return null;
 
 					// check the delimiter text
-					pairDelim = row.findValue(vtfIndexDelim);
+					pairDelim = row.findValue(vtfIndexDelim, true);
 					if(pairDelim.getKey() == -1)
 						return null;
+					// check the value text
+					pairValue = row.findValue(vtfColValue, true);
+					if(pairValue.getKey() == -1)
+						return null;
 				}
-				// check the value text
-				pairValue = row.findValue(vtfColValue);
-				if(pairValue.getKey() == -1)
-					return null;
+				else {
+					// check the just label text
+					pairValue = row.findValue(vtfColValue, false);
+					if(pairValue.getKey() == -1)
+						return null;
+				}
 			}
 		}
 		HashSet<String> separators = row.getDelimsSet().getKey();
@@ -854,7 +909,7 @@ public abstract class ReaderMapping {
 				throw new RuntimeException("Not set values can't be find on a string");
 		}
 		for(ValueTrimFormat vtf : order) {
-			if(rawrow.findValue(vtf).getKey() == -1) {
+			if(rawrow.findValue(vtf, true).getKey() == -1) {
 				mapped = false;
 				break;
 			}
@@ -870,19 +925,25 @@ public abstract class ReaderMapping {
 		Pair<Integer, Integer> pairCol;
 		Pair<Integer, Integer> pairValue;
 		HashSet<String> tokens = new HashSet<>();
-
+		RawRow row = rawrow.getResetClone();
+		int lastIndex = 0;
 		do {
-			pairCol = rawrow.findValue(vtfColIndex);
+			row.resetReserved();
+			row.setLastIndex(lastIndex);
+			pairCol = row.findValue(vtfColIndex, false);
 			if(pairCol.getKey() == -1)
 				break;
 
-			pairValue = rawrow.findValue(vtfColValue);
+			lastIndex = row.getNumericLastIndex();
+
+			pairValue = row.findValue(vtfColValue, true);
 			if(pairValue.getKey() == -1)
 				break;
 
-			String t = rawrow.getRaw().substring(pairCol.getKey() + pairCol.getValue(), pairValue.getKey());
+			String t = row.getRaw().substring(pairCol.getKey() + pairCol.getValue(), pairValue.getKey());
 			if(t.length() > 0)
 				tokens.add(t);
+			//lastIndex = pairCol.getKey()+1;
 		}
 		while(true);
 

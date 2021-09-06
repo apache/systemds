@@ -28,12 +28,21 @@ import java.util.HashSet;
 public class RawRow {
 
 	private final String raw;
-	private final ArrayList<Integer> numericPositions = new ArrayList<>();
+	private ArrayList<Integer> numericPositions = new ArrayList<>();
 	private final BitSet numericReserved;
 	private final String numericRaw;
 	private final BitSet reserved;
 	private int numericLastIndex;
 	private int rawLastIndex;
+
+	public RawRow(String raw, ArrayList<Integer> numericPositions, String numericRaw) {
+		this.raw = raw;
+		this.numericReserved = new BitSet(numericRaw.length());
+		this.numericRaw = numericRaw;
+		this.reserved = new BitSet(numericRaw.length());
+		this.numericPositions = numericPositions;
+
+	}
 
 	public RawRow(String raw) {
 		this.raw = raw;
@@ -53,17 +62,17 @@ public class RawRow {
 		rawLastIndex = 0;
 	}
 
-	public Pair<Integer, Integer> findValue(ValueTrimFormat vtf) {
+	public Pair<Integer, Integer> findValue(ValueTrimFormat vtf, boolean forward) {
 		if(vtf instanceof ValueTrimFormat.NumberTrimFormat)
-			return findValue((ValueTrimFormat.NumberTrimFormat) vtf);
+			return findValue((ValueTrimFormat.NumberTrimFormat) vtf, forward);
 
 		if(vtf instanceof ValueTrimFormat.StringTrimFormat)
-			return findValue((ValueTrimFormat.StringTrimFormat) vtf);
+			return findValue((ValueTrimFormat.StringTrimFormat) vtf, forward);
 		return null;
 	}
 
-	private Pair<Integer, Integer> findValue(ValueTrimFormat.StringTrimFormat stf) {
-		ArrayList<Pair<Integer, Integer>> unreserved = getRawUnreservedPositions();
+	private Pair<Integer, Integer> findValue(ValueTrimFormat.StringTrimFormat stf, boolean forward) {
+		ArrayList<Pair<Integer, Integer>> unreserved = getRawUnreservedPositions(forward);
 		Pair<Integer, Integer> result = new Pair<>(-1, 0);
 		for(Pair<Integer, Integer> p : unreserved) {
 			int start = p.getKey();
@@ -71,7 +80,7 @@ public class RawRow {
 			String ntfString = stf.getStringOfActualValue();
 			int length = ntfString.length();
 			int index = raw.indexOf(ntfString, start);
-			if(index != -1 && (index < end - length + 1)) {
+			if(index != -1 && (index <= end - length + 1)) {
 				result.setKey(index);
 				result.setValue(length);
 				rawLastIndex = index;
@@ -82,9 +91,8 @@ public class RawRow {
 		return result;
 	}
 
-
-	private Pair<Integer, Integer> findValue(ValueTrimFormat.NumberTrimFormat ntf) {
-		ArrayList<Pair<Integer, Integer>> unreserved = getUnreservedPositions();
+	private Pair<Integer, Integer> findValue(ValueTrimFormat.NumberTrimFormat ntf, boolean forward) {
+		ArrayList<Pair<Integer, Integer>> unreserved = getUnreservedPositions(forward);
 		Pair<Integer, Integer> result = new Pair<>(-1, 0);
 		Pair<Integer, Integer> resultNumeric = new Pair<>(-1, 0);
 		for(Pair<Integer, Integer> p : unreserved) {
@@ -204,15 +212,15 @@ public class RawRow {
 		return result;
 	}
 
-	private ArrayList<Pair<Integer, Integer>> getUnreservedPositions() {
+	private ArrayList<Pair<Integer, Integer>> getUnreservedPositions(boolean forward) {
 		ArrayList<Pair<Integer, Integer>> result = new ArrayList<>();
 		int sIndex, eIndex;
 		int size = numericPositions.size();
 		int[] start = {numericLastIndex, 0};
 		int[] end = {size, numericLastIndex};
+		int psize = (forward || rawLastIndex == 0) ? 1 : 2;
 
-		for(int p = 0; p < 2; p++) {
-
+		for(int p = 0; p < psize; p++) {
 			for(int i = start[p]; i < end[p]; ) {
 				// skip all reserved indexes
 				for(int j = i; j < end[p]; j++) {
@@ -237,14 +245,15 @@ public class RawRow {
 		return result;
 	}
 
-	private ArrayList<Pair<Integer, Integer>> getRawUnreservedPositions() {
+	private ArrayList<Pair<Integer, Integer>> getRawUnreservedPositions(boolean forward) {
 		ArrayList<Pair<Integer, Integer>> result = new ArrayList<>();
 		int sIndex, eIndex;
 		int size = raw.length();
 		int[] start = {rawLastIndex, 0};
 		int[] end = {size, rawLastIndex};
 
-		for(int p = 0; p < 2; p++) {
+		int psize = (forward || rawLastIndex == 0) ? 1 : 2;
+		for(int p = 0; p < psize; p++) {
 
 			for(int i = start[p]; i < end[p]; ) {
 				// skip all reserved indexes
@@ -340,5 +349,28 @@ public class RawRow {
 
 	public String getRaw() {
 		return raw;
+	}
+
+	public void setNumericLastIndex(int numericLastIndex) {
+		this.numericLastIndex = numericLastIndex;
+	}
+
+	public void setRawLastIndex(int rawLastIndex) {
+		this.rawLastIndex = rawLastIndex;
+	}
+
+	public RawRow getResetClone() {
+		RawRow clone = new RawRow(raw, numericPositions, numericRaw);
+		clone.setRawLastIndex(0);
+		clone.setNumericLastIndex(0);
+		return clone;
+	}
+
+	public void setLastIndex(int lastIndex){
+		this.numericLastIndex = lastIndex;
+	}
+
+	public int getNumericLastIndex() {
+		return numericLastIndex;
 	}
 }

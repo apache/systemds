@@ -68,11 +68,9 @@ public class MatrixGenerateReaderDMLTest extends AutomatedTestBase {
 		String s = "1,2,3,4,5,6,7,8,9,10";
 		ValueTrimFormat.NumberTrimFormat vtf = new ValueTrimFormat.NumberTrimFormat(1);
 		RawRow rr = new RawRow(s);
-		rr.findValue(vtf);
+		rr.findValue(vtf, false);
 
 	}
-
-
 
 	protected void runGenerateReaderTest(Types.ExecMode platform, boolean parallel, String sampleRaw,
 		double[][] sampleMatrix) {

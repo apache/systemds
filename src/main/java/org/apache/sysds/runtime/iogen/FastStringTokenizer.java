@@ -50,7 +50,7 @@ public class FastStringTokenizer {
 			return "0";
 		}
 		//find start (skip over leading delimiters)
-		while(start < len && _del.equals(_string.substring(start, start + _del.length()))) {
+		while(start < len && _del.equals(_string.substring(start, Math.min(start + _del.length(), _string.length())))) {
 			start += _del.length();
 			_index++;
 		}
@@ -69,7 +69,7 @@ public class FastStringTokenizer {
 	}
 
 	public int nextInt() {
-		return Integer.parseInt(nextToken());
+		return (int) Double.parseDouble(nextToken());
 	}
 
 	public long nextLong() {

@@ -36,8 +36,8 @@ public class BuiltinTomeklinkTest extends AutomatedTestBase
 	private static final String TEST_CLASS_DIR = TEST_DIR + BuiltinTomeklinkTest.class.getSimpleName() + "/";
 
 	private final static double eps = 1e-3;
-	private final static int rows = 53;
-	private final static int cols = 6;
+	private final static int rows = 50000;
+	private final static int cols = 60;
 
 	@Override
 	public void setUp() {

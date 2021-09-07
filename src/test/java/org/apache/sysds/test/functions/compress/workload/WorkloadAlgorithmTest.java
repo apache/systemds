@@ -83,7 +83,7 @@ public class WorkloadAlgorithmTest extends AutomatedTestBase {
 
 	@Test
 	public void testLmCP() {
-		runWorkloadAnalysisTest(TEST_NAME2, ExecMode.HYBRID, 2, false);
+		runWorkloadAnalysisTest(TEST_NAME2, ExecMode.SINGLE_NODE, 2, false);
 	}
 
 	@Test
@@ -93,7 +93,7 @@ public class WorkloadAlgorithmTest extends AutomatedTestBase {
 
 	@Test
 	public void testLmDSCP() {
-		runWorkloadAnalysisTest(TEST_NAME2, ExecMode.HYBRID, 2, false);
+		runWorkloadAnalysisTest(TEST_NAME2, ExecMode.SINGLE_NODE, 2, false);
 	}
 
 	@Test
@@ -103,41 +103,42 @@ public class WorkloadAlgorithmTest extends AutomatedTestBase {
 
 	@Test
 	public void testPCACP() {
-		runWorkloadAnalysisTest(TEST_NAME3, ExecMode.HYBRID, 1, false);
+		runWorkloadAnalysisTest(TEST_NAME3, ExecMode.SINGLE_NODE, 1, false);
 	}
 
 	@Test
 	public void testSliceLineCP1() {
-		runWorkloadAnalysisTest(TEST_NAME4, ExecMode.HYBRID, 0, false);
+		runWorkloadAnalysisTest(TEST_NAME4, ExecMode.SINGLE_NODE, 0, false);
 	}
 
 	@Test
 	public void testSliceLineCP2() {
-		runWorkloadAnalysisTest(TEST_NAME4, ExecMode.HYBRID, 2, true);
+		runWorkloadAnalysisTest(TEST_NAME4, ExecMode.SINGLE_NODE, 2, true);
 	}
 
 	@Test
 	public void testLmCGSP() {
 		runWorkloadAnalysisTest(TEST_NAME6, ExecMode.SPARK, 2, false);
 	}
-	
+
 	@Test
 	public void testLmCGCP() {
-		runWorkloadAnalysisTest(TEST_NAME6, ExecMode.HYBRID, 2, false);
+		runWorkloadAnalysisTest(TEST_NAME6, ExecMode.SINGLE_NODE, 2, false);
 	}
-	
+
 	// private void runWorkloadAnalysisTest(String testname, ExecMode mode, int compressionCount) {
 	private void runWorkloadAnalysisTest(String testname, ExecMode mode, int compressionCount, boolean intermediates) {
 		ExecMode oldPlatform = setExecMode(mode);
 		boolean oldIntermediates = WorkloadAnalyzer.ALLOW_INTERMEDIATE_CANDIDATES;
-		
+
 		try {
 			loadTestConfiguration(getTestConfiguration(testname));
 			WorkloadAnalyzer.ALLOW_INTERMEDIATE_CANDIDATES = intermediates;
-			
+
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + testname + ".dml";
-			programArgs = new String[] {"-stats", "20", "-args", input("X"), input("y"), output("B")};
+			programArgs = new String[] {"-stats", "20", "-args", input("X"), input("y"),
+				output("B")};
 
 			writeInputMatrixWithMTD("X", X, false);
 			writeInputMatrixWithMTD("y", y, false);
@@ -149,11 +150,12 @@ public class WorkloadAlgorithmTest extends AutomatedTestBase {
 			long actualCompressionCount = (mode == ExecMode.HYBRID || mode == ExecMode.SINGLE_NODE) ? Statistics
 				.getCPHeavyHitterCount("compress") : Statistics.getCPHeavyHitterCount("sp_compress");
 
-			Assert.assertEquals(compressionCount, actualCompressionCount);
-			if( compressionCount > 0 )
-				Assert.assertTrue( mode == ExecMode.HYBRID ?
-					heavyHittersContainsString("compress") : heavyHittersContainsString("sp_compress"));
-			if( !testname.equals(TEST_NAME4) )
+			Assert.assertEquals("Assert that the compression counts expeted matches actual: " + compressionCount
+				+ " vs " + actualCompressionCount, compressionCount, actualCompressionCount);
+			if(compressionCount > 0)
+				Assert.assertTrue(mode == ExecMode.SINGLE_NODE || mode == ExecMode.HYBRID ?  heavyHittersContainsString(
+					"compress") : heavyHittersContainsString("sp_compress"));
+			if(!testname.equals(TEST_NAME4))
 				Assert.assertFalse(heavyHittersContainsString("m_scale"));
 
 		}

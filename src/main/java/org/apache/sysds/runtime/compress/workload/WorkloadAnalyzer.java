@@ -381,21 +381,21 @@ public class WorkloadAnalyzer {
 					transientCompressed.contains(in.get(1).getName());
 				OpSided ret = new OpSided(hop, left, right, transposedLeft, transposedRight);
 				if(ret.isRightMM()) {
-					HashSet<Long> overlapping2 = new HashSet<>();
-					overlapping2.add(hop.getHopID());
-					WorkloadAnalyzer overlappingAnalysis = new WorkloadAnalyzer(prog, overlapping2);
-					WTreeRoot r = overlappingAnalysis.createWorkloadTree(hop);
+					// HashSet<Long> overlapping2 = new HashSet<>();
+					// overlapping2.add(hop.getHopID());
+					// WorkloadAnalyzer overlappingAnalysis = new WorkloadAnalyzer(prog, overlapping2);
+					// WTreeRoot r = overlappingAnalysis.createWorkloadTree(hop);
 
-					CostEstimatorBuilder b = new CostEstimatorBuilder(r);
-					if(LOG.isTraceEnabled())
-						LOG.trace("Workload for overlapping: " + r + "\n" + b);
+					// CostEstimatorBuilder b = new CostEstimatorBuilder(r);
+					// if(LOG.isTraceEnabled())
+					// 	LOG.trace("Workload for overlapping: " + r + "\n" + b);
 
-					if(b.shouldUseOverlap())
-						overlapping.add(hop.getHopID());
-					else {
-						decompressHops.add(hop);
-						ret.setOverlappingDecompression(true);
-					}
+					// if(b.shouldUseOverlap())
+					overlapping.add(hop.getHopID());
+					// else {
+					// 	decompressHops.add(hop);
+					// 	ret.setOverlappingDecompression(true);
+					// }
 				}
 
 				return ret;

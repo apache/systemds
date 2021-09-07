@@ -26,6 +26,20 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 
+import org.apache.sysds.common.Types.AggOp;
+import org.apache.sysds.common.Types.DataType;
+import org.apache.sysds.common.Types.Direction;
+import org.apache.sysds.common.Types.OpOp1;
+import org.apache.sysds.common.Types.OpOp2;
+import org.apache.sysds.common.Types.OpOp3;
+import org.apache.sysds.common.Types.OpOp4;
+import org.apache.sysds.common.Types.OpOpDG;
+import org.apache.sysds.common.Types.OpOpN;
+import org.apache.sysds.common.Types.ParamBuiltinOp;
+import org.apache.sysds.common.Types.ReOrgOp;
+import org.apache.sysds.common.Types.ValueType;
+import org.apache.sysds.conf.ConfigurationManager;
+import org.apache.sysds.conf.DMLConfig;
 import org.apache.sysds.hops.AggBinaryOp;
 import org.apache.sysds.hops.AggUnaryOp;
 import org.apache.sysds.hops.BinaryOp;
@@ -41,22 +55,8 @@ import org.apache.sysds.hops.QuaternaryOp;
 import org.apache.sysds.hops.ReorgOp;
 import org.apache.sysds.hops.TernaryOp;
 import org.apache.sysds.hops.UnaryOp;
-import org.apache.sysds.common.Types.AggOp;
-import org.apache.sysds.common.Types.Direction;
-import org.apache.sysds.common.Types.OpOp1;
-import org.apache.sysds.common.Types.OpOp2;
-import org.apache.sysds.common.Types.OpOp3;
-import org.apache.sysds.common.Types.OpOp4;
-import org.apache.sysds.common.Types.OpOpDG;
-import org.apache.sysds.common.Types.OpOpN;
-import org.apache.sysds.common.Types.ParamBuiltinOp;
-import org.apache.sysds.common.Types.ReOrgOp;
 import org.apache.sysds.lops.MapMultChain.ChainType;
 import org.apache.sysds.parser.DataExpression;
-import org.apache.sysds.common.Types.DataType;
-import org.apache.sysds.common.Types.ValueType;
-import org.apache.sysds.conf.ConfigurationManager;
-import org.apache.sysds.conf.DMLConfig;
 
 /**
  * Rule: Algebraic Simplifications. Simplifies binary expressions
@@ -109,7 +109,6 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 	public Hop rewriteHopDAG(Hop root, ProgramRewriteStatus state) {
 		if( root == null )
 			return root;
-		
 		//one pass rewrite-descend (rewrite created pattern)
 		rule_AlgebraicSimplification( root, false );
 		
@@ -197,6 +196,7 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 			hi = simplifyNnzComputation(hop, hi, i);          //e.g., sum(ppred(X,0,"!=")) -> literal(nnz(X)), if nnz known
 			hi = simplifyNrowNcolComputation(hop, hi, i);     //e.g., nrow(X) -> literal(nrow(X)), if nrow known to remove data dependency
 			hi = simplifyTableSeqExpand(hop, hi, i);          //e.g., table(seq(1,nrow(v)), v, nrow(v), m) -> rexpand(v, max=m, dir=row, ignore=false, cast=true)
+			hi = simplyfyMMCBindZeroVector(hop, hi, i);       //e.g.. cbind((X %*% Y), matrix (0, nrow(X), 1)) -> X %*% (cbind(Y, matrix(0, nrow(Y), 1))) if nRows of x is larger than nCols of y
 			if( OptimizerUtils.ALLOW_OPERATOR_FUSION )
 				foldMultipleMinMaxOperations(hi);             //e.g., min(X,min(min(3,7),Y)) -> min(X,3,7,Y)
 			
@@ -2794,6 +2794,30 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 			}
 		}
 		
+		return hi;
+	}
+
+	private static Hop simplyfyMMCBindZeroVector(Hop parent, Hop hi, int pos) {
+
+		// cbind((X %*% Y), matrix(0, nrow(X), 1)) ->
+		// X %*% (cbind(Y, matrix(0, nrow(Y), 1)))
+		// if nRows of x is larger than nCols of y
+		// rewrite used in MLogReg first level loop.
+		
+		if(HopRewriteUtils.isBinary(hi, OpOp2.CBIND) && HopRewriteUtils.isMatrixMultiply(hi.getInput(0)) &&
+			HopRewriteUtils.isDataGenOpWithConstantValue(hi.getInput(1), 0) && hi.getDim1() > hi.getDim2() * 2) {
+			final Hop oldGen = hi.getInput(1);
+			final Hop y = hi.getInput(0).getInput(1);
+			final Hop x = hi.getInput(0).getInput(0);
+			final Hop newGen = HopRewriteUtils.createDataGenOp(y, oldGen, 0);
+			final Hop newCBind = HopRewriteUtils.createBinary(y, newGen, OpOp2.CBIND);
+			final Hop newMM = HopRewriteUtils.createMatrixMultiply(x, newCBind);
+
+			HopRewriteUtils.replaceChildReference(parent, hi, newMM, pos);
+			LOG.debug("Applied MMCBind Zero algebraic simplification (line " +hi.getBeginLine()+")." );
+			return newMM;
+
+		}
 		return hi;
 	}
 }

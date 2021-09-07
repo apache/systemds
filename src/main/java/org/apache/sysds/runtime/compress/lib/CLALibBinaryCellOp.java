@@ -63,10 +63,9 @@ public class CLALibBinaryCellOp {
 		MatrixBlock that = CompressedMatrixBlock.getUncompressed(thatValue, "Decompressing right side in BinaryOps");
 		if(m1.getNumRows() <= 0)
 			LOG.error(m1);
-		if(thatValue.getNumRows() <= 0)
-			LOG.error(thatValue);
+		if(that.getNumRows() <= 0)
+			LOG.error(that);
 		LibMatrixBincell.isValidDimensionsBinary(m1, that);
-		thatValue = that;
 		BinaryAccessType atype = LibMatrixBincell.getBinaryAccessType(m1, that);
 		return selectProcessingBasedOnAccessType(op, m1, that, result, atype, false);
 	}

@@ -91,11 +91,10 @@ public class CLALibCompAgg {
 				inputMatrix.decompress(op.getNumThreads());
 			}
 			MatrixBlock decomp = inputMatrix.getCachedDecompressed();
-			if(decomp != null) {
-				decomp.aggregateUnaryOperations(op, result, blen, indexesIn, inCP);
-				return result;
-			}
+			if(decomp != null)
+				return decomp.aggregateUnaryOperations(op, result, blen, indexesIn, inCP);
 		}
+		
 		// initialize and allocate the result
 		if(result == null)
 			result = new MatrixBlock(tempCellIndex.row, tempCellIndex.column, false);

@@ -155,6 +155,7 @@ m_multiLogReg = function(Matrix[Double] X, Matrix[Double] Y, Int icpt = 2,
     innerconverge = (sqrt (norm_R2) <= psi * norm_Grad);
     is_trust_boundary_reached = 0;
 
+    P_1K = P [, 1:K]
     while (! innerconverge)
     {
       if (icpt == 2) {
@@ -164,8 +165,8 @@ m_multiLogReg = function(Matrix[Double] X, Matrix[Double] Y, Int icpt = 2,
       else 
         ssX_V = V;
 
-      Q = P [, 1:K] * (X %*% ssX_V);
-      HV = t(X) %*% (Q - P [, 1:K] * (rowSums (Q) %*% matrix (1, 1, K)));
+      Q = P_1K * (X %*% ssX_V);
+      HV = t(X) %*% (Q - P_1K * (rowSums (Q) %*% matrix (1, 1, K)));
 
       if (icpt == 2)
         HV = diag (scale_X) %*% HV + shift_X %*% HV [D, ];

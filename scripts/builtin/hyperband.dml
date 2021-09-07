@@ -1,4 +1,4 @@
-#-------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------
 #
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
@@ -17,9 +17,42 @@
 # specific language governing permissions and limitations
 # under the License.
 #
-#-------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------
 
-m_hyperband = function(Matrix[Double] X_train, Matrix[Double] y_train, 
+# The hyperband-function is used for hyper parameter optimization and is based on multi-armed bandits and early
+# elimination. Through multiple parallel brackets and consecutive trials it will return the hyper parameter combination
+# which performed best on a validation dataset. A set of hyper parameter combinations is drawn from uniform distributions
+# with given ranges; Those make up the candidates for hyperband. Notes:
+#    hyperband is hard-coded for lmCG, and uses lmPredict for validation
+#    hyperband is hard-coded to use the number of iterations as a resource
+#    hyperband can only optimize continuous hyperparameters
+
+# INPUT PARAMETERS:
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME        TYPE              DEFAULT    MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# X_train     Matrix[Double]    required   Input Matrix of training vectors
+# y_train     Matrix[Double]    required   Labels for training vectors
+# X_val       Matrix[Double]    required   Input Matrix of validation vectors
+# y_val       Matrix[Double]    required   Labels for validation vectors
+# params      List[String]      required   List of parameters to optimize
+# paramRanges Matrix[Double]    required   The min and max values for the uniform distributions to draw from.
+#                                          One row per hyper parameter, first column specifies min, second column max value.
+# R           Scalar[int]       81         Controls number of candidates evaluated
+# eta         Scalar[int]       3          Determines fraction of candidates to keep after each trial
+# verbose     Boolean           TRUE       If TRUE print messages are activated
+#
+# ----------------------------------------------------------------------------------------------------------------------
+#
+# OUTPUT:
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME                TYPE               MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# bestWeights         Matrix[Double]     1-column matrix of weights of best performing candidate
+# bestHyperParams     Frame[Unknown]     hyper parameters of best performing candidate
+# ----------------------------------------------------------------------------------------------------------------------
+
+m_hyperband = function(Matrix[Double] X_train, Matrix[Double] y_train,
   Matrix[Double] X_val, Matrix[Double] y_val, List[String] params, 
   Matrix[Double] paramRanges, Scalar[int] R = 81, Scalar[int] eta = 3, 
   Boolean verbose = TRUE) 

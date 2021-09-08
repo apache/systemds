@@ -185,6 +185,9 @@ public class CompressedMatrixBlockFactory {
 		AColGroup cg = ColGroupFactory.genColGroupConst(numRows, numCols, value);
 		block.allocateColGroup(cg);
 		block.recomputeNonZeros();
+		if(block.getNumRows() == 0 || block.getNumColumns() == 0) {
+			throw new DMLCompressionException("Invalid size of allocated constant compressed matrix block");
+		}
 		return block;
 	}
 
@@ -238,14 +241,17 @@ public class CompressedMatrixBlockFactory {
 		_stats.estimatedSizeCols = sizeInfos.memoryEstimate();
 		logPhase();
 
+		final double sizeToCompare = (costEstimator instanceof ComputationCostEstimator &&
+			((ComputationCostEstimator) costEstimator).isDense()) ? _stats.denseSize : _stats.originalSize;
+
 		final boolean isValidForComputeBasedCompression = isComputeBasedCompression() &&
 			(compSettings.minimumCompressionRatio != 1.0) ? _stats.estimatedSizeCols *
-				compSettings.minimumCompressionRatio < _stats.originalSize : true;
+				compSettings.minimumCompressionRatio < sizeToCompare : true;
 		final boolean isValidForMemoryBasedCompression = _stats.estimatedSizeCols *
-			compSettings.minimumCompressionRatio < _stats.originalSize;
+			compSettings.minimumCompressionRatio < sizeToCompare;
 
 		if(isValidForComputeBasedCompression || isValidForMemoryBasedCompression)
-			coCodePhase(sizeEstimator, sizeInfos, costEstimator);
+			coCodePhase(sizeEstimator, sizeInfos, costEstimator, sizeToCompare);
 		else {
 			LOG.info("Estimated Size of singleColGroups: " + _stats.estimatedSizeCols);
 			LOG.info("Original size                    : " + _stats.originalSize);
@@ -257,7 +263,7 @@ public class CompressedMatrixBlockFactory {
 	}
 
 	private void coCodePhase(CompressedSizeEstimator sizeEstimator, CompressedSizeInfo sizeInfos,
-		ICostEstimate costEstimator) {
+		ICostEstimate costEstimator, double sizeToCompare) {
 		coCodeColGroups = CoCoderFactory.findCoCodesByPartitioning(sizeEstimator, sizeInfos, k, costEstimator,
 			compSettings);
 
@@ -267,7 +273,7 @@ public class CompressedMatrixBlockFactory {
 
 		// if cocode is estimated larger than uncompressed abort compression.
 		if(isComputeBasedCompression() &&
-			_stats.estimatedSizeCoCoded * compSettings.minimumCompressionRatio > _stats.originalSize) {
+			_stats.estimatedSizeCoCoded * compSettings.minimumCompressionRatio > sizeToCompare) {
 
 			coCodeColGroups = null;
 			LOG.info("Aborting compression because the cocoded size : " + _stats.estimatedSizeCoCoded);
@@ -281,7 +287,7 @@ public class CompressedMatrixBlockFactory {
 		final int numRows = mb.getNumRows();
 		final long nnz = mb.getNonZeros();
 		final int colGroupSize = 100;
-		if(nnz == numRows) {
+		if(nnz == numRows && numColumns != 1) {
 			boolean onlyOneValues = true;
 			LOG.debug("Looks like one hot encoded.");
 			if(mb.isInSparseFormat()) {

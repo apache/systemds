@@ -19,8 +19,6 @@
 
 package org.apache.sysds.runtime.compress.workload;
 
-import java.util.List;
-
 import org.apache.sysds.hops.Hop;
 
 /**
@@ -32,12 +30,11 @@ public class WTreeRoot extends AWTreeNode {
 
 	private final Hop _root;
 
-	private final List<Hop> _decompressList;
+	private boolean isDecompressing = false;
 
-	public WTreeRoot(Hop root, List<Hop> decompressList) {
+	public WTreeRoot(Hop root) {
 		super(WTNodeType.ROOT);
 		_root = root;
-		_decompressList = decompressList;
 	}
 
 	/**
@@ -49,7 +46,27 @@ public class WTreeRoot extends AWTreeNode {
 		return _root;
 	}
 
-	public List<Hop> getDecompressList() {
-		return _decompressList;
+	public boolean isDecompressing() {
+		return isDecompressing;
 	}
+
+	public void setDecompressing() {
+		isDecompressing = true;
+	}
+
+	@Override
+	protected String explain(int level) {
+		StringBuilder sb = new StringBuilder();
+	
+		// append node summary
+		sb.append("ROOT : " + _root.toString());
+		sb.append("\n");
+
+		// append child nodes
+		if(!_children.isEmpty())
+			for(AWTreeNode n : _children)
+				sb.append(n.explain(level + 1));
+		return sb.toString();
+	}
+
 }

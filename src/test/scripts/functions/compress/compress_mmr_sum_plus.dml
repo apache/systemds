@@ -21,6 +21,6 @@
 
 x = read($A)
 v = rand(rows=ncol(x), cols=10, min=0.0, max=1.0, seed= 13);
-r = x %*% v
+r = (x + 1) %*% v
 s = sum(r)
 print(s)

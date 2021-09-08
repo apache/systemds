@@ -49,7 +49,7 @@ public class CLALibAppend {
 			left = CompressedMatrixBlockFactory.genUncompressedCompressedMatrixBlock(left);
 		}
 		if(!(right instanceof CompressedMatrixBlock) && m > 1000) {
-			LOG.warn("Appending uncompressed column group right");
+			LOG.info("Appending uncompressed column group right");
 			left = CompressedMatrixBlockFactory.genUncompressedCompressedMatrixBlock(right);
 		}
 
@@ -66,13 +66,12 @@ public class CLALibAppend {
 		ret = appendColGroups(ret, leftC.getColGroups(), rightC.getColGroups(), leftC.getNumColumns());
 
 		double compressedSize = ret.getInMemorySize();
-		double uncompressedSize = MatrixBlock.estimateSizeInMemory(m,n, ret.getSparsity());
+		double uncompressedSize = MatrixBlock.estimateSizeInMemory(m, n, ret.getSparsity());
 
-		
 		if(compressedSize * 10 < uncompressedSize)
 			return ret;
 		else
-			return ret.getUncompressed("Decompressing c bind matrix");
+			return ret.getUncompressed("Decompressing c bind matrix because it had to small compression ratio");
 	}
 
 	private static MatrixBlock appendRightEmpty(CompressedMatrixBlock left, MatrixBlock right) {

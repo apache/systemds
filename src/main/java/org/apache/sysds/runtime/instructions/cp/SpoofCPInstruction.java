@@ -86,8 +86,7 @@ public class SpoofCPInstruction extends ComputationCPInstruction {
 				MatrixBlock mb = ec.getMatrixInput(input.getName());
 				//FIXME fused codegen operators already support compressed main inputs 
 				if(mb instanceof CompressedMatrixBlock){
-					LOG.warn("Spoof instruction decompressed matrix");
-					mb = ((CompressedMatrixBlock) mb).decompress(_numThreads);
+					mb = ((CompressedMatrixBlock) mb).getUncompressed("Spoof instruction");
 				}
 				inputs.add(mb);
 			}

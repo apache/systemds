@@ -19,5 +19,5 @@ limitations under the License.
 
 # Test files
 
-It is intensional that the mtd file says that the file is 1 million rows, and the actual file is 1 row.
+It is intensional that the mtd files says that the file is 1 million rows, and the actual file is 1 row.
 Since the tests using this file is intended for simulating the workload, not actually executing the script.

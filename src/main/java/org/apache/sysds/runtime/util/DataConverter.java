@@ -260,7 +260,7 @@ public class DataConverter {
 		int cols = mb.getNumColumns();
 		double[][] ret = new double[rows][cols]; //0-initialized
 		if(mb instanceof CompressedMatrixBlock){
-			mb = ((CompressedMatrixBlock)mb).decompress();
+			mb = ((CompressedMatrixBlock)mb).getUncompressed("convert to Double Matrix");
 		}
 		if( mb.getNonZeros() > 0 ) {
 			if( mb.isInSparseFormat() ) {

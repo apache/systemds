@@ -48,7 +48,7 @@ public class TransformFrameEncodeMultithreadedTest extends AutomatedTestBase {
 	private final static String DATASET1 = "homes3/homes.csv";
 	private final static String SPEC1 = "homes3/homes.tfspec_recode.json";
 	private final static String SPEC2 = "homes3/homes.tfspec_dummy.json";
-	private final static String SPEC2all = "homes3/homes.tfspec_dummy_all.json";
+	private final static String SPEC2sparse = "homes3/homes.tfspec_dummy_sparse.json";
 	private final static String SPEC3 = "homes3/homes.tfspec_bin.json"; // recode
 	private final static String SPEC6 = "homes3/homes.tfspec_recode_dummy.json";
 	private final static String SPEC7 = "homes3/homes.tfspec_binDummy.json"; // recode+dummy
@@ -164,7 +164,7 @@ public class TransformFrameEncodeMultithreadedTest extends AutomatedTestBase {
 				DATASET = DATASET1;
 				break;
 			case DUMMY_ALL:
-				SPEC = SPEC2all;
+				SPEC = SPEC2sparse;
 				DATASET = DATASET1;
 				break;
 			case BIN:

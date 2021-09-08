@@ -19,16 +19,9 @@
 
 package org.apache.sysds.runtime.transform.encode;
 
-import java.io.IOException;
-import java.io.ObjectInput;
-import java.io.ObjectOutput;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Objects;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
@@ -37,8 +30,17 @@ import org.apache.sysds.runtime.transform.TfUtils.TfMethod;
 import org.apache.sysds.runtime.transform.meta.TfMetaUtils;
 import org.apache.sysds.runtime.util.IndexRange;
 import org.apache.sysds.runtime.util.UtilFunctions;
+import org.apache.sysds.utils.Statistics;
 import org.apache.wink.json4j.JSONException;
 import org.apache.wink.json4j.JSONObject;
+
+import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Objects;
 
 public class EncoderOmit extends LegacyEncoder {
 	/*
@@ -126,6 +128,7 @@ public class EncoderOmit extends LegacyEncoder {
 
 	public MatrixBlock apply(FrameBlock in, MatrixBlock out) {
 		// local rmRows for broadcasting encoder in spark
+		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 		boolean[] rmRows;
 		if(_federated)
 			rmRows = _rmRows;
@@ -148,7 +151,8 @@ public class EncoderOmit extends LegacyEncoder {
 		}
 
 		_rmRows = rmRows;
-
+		if(DMLScript.STATISTICS)
+			Statistics.incTransformOmitApplyTime(System.nanoTime()-t0);
 		return ret;
 	}
 

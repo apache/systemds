@@ -1345,11 +1345,6 @@ public class CompressedMatrixBlock extends MatrixBlock {
 	}
 
 	@Override
-	public void quickSetValueThreadSafe(int r, int c, double v) {
-		throw new DMLCompressionException("Thread safe execution does not work on Compressed Matrix");
-	}
-
-	@Override
 	public double quickGetValueThreadSafe(int r, int c) {
 		throw new DMLCompressionException("Thread safe execution does not work on Compressed Matrix");
 	}

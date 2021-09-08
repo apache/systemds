@@ -19,6 +19,23 @@
 
 package org.apache.sysds.runtime.transform.encode;
 
+import org.apache.commons.lang.ArrayUtils;
+import org.apache.sysds.api.DMLScript;
+import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.functionobjects.KahanPlus;
+import org.apache.sysds.runtime.functionobjects.Mean;
+import org.apache.sysds.runtime.instructions.cp.KahanObject;
+import org.apache.sysds.runtime.matrix.data.FrameBlock;
+import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.transform.TfUtils.TfMethod;
+import org.apache.sysds.runtime.transform.meta.TfMetaUtils;
+import org.apache.sysds.runtime.util.IndexRange;
+import org.apache.sysds.runtime.util.UtilFunctions;
+import org.apache.sysds.utils.Statistics;
+import org.apache.wink.json4j.JSONArray;
+import org.apache.wink.json4j.JSONException;
+import org.apache.wink.json4j.JSONObject;
+
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
@@ -32,21 +49,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.stream.Collectors;
-
-import org.apache.commons.lang.ArrayUtils;
-import org.apache.sysds.runtime.DMLRuntimeException;
-import org.apache.sysds.runtime.functionobjects.KahanPlus;
-import org.apache.sysds.runtime.functionobjects.Mean;
-import org.apache.sysds.runtime.instructions.cp.KahanObject;
-import org.apache.sysds.runtime.matrix.data.FrameBlock;
-import org.apache.sysds.runtime.matrix.data.MatrixBlock;
-import org.apache.sysds.runtime.transform.TfUtils.TfMethod;
-import org.apache.sysds.runtime.transform.meta.TfMetaUtils;
-import org.apache.sysds.runtime.util.IndexRange;
-import org.apache.sysds.runtime.util.UtilFunctions;
-import org.apache.wink.json4j.JSONArray;
-import org.apache.wink.json4j.JSONException;
-import org.apache.wink.json4j.JSONObject;
 
 public class EncoderMVImpute extends LegacyEncoder {
 	private static final long serialVersionUID = 9057868620144662194L;
@@ -173,6 +175,7 @@ public class EncoderMVImpute extends LegacyEncoder {
 
 	@Override
 	public void build(FrameBlock in) {
+		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 		try {
 			for(int j = 0; j < _colList.length; j++) {
 				int colID = _colList[j];
@@ -215,10 +218,13 @@ public class EncoderMVImpute extends LegacyEncoder {
 		catch(Exception ex) {
 			throw new RuntimeException(ex);
 		}
+		if(DMLScript.STATISTICS)
+			Statistics.incTransformImputeBuildTime(System.nanoTime()-t0);
 	}
 
 	@Override
 	public MatrixBlock apply(FrameBlock in, MatrixBlock out) {
+		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 		for(int i = 0; i < in.getNumRows(); i++) {
 			for(int j = 0; j < _colList.length; j++) {
 				int colID = _colList[j];
@@ -226,6 +232,8 @@ public class EncoderMVImpute extends LegacyEncoder {
 					out.quickSetValue(i, colID - 1, Double.parseDouble(_replacementList[j]));
 			}
 		}
+		if(DMLScript.STATISTICS)
+			Statistics.incTransformImputeApplyTime(System.nanoTime()-t0);
 		return out;
 	}
 

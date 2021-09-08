@@ -171,6 +171,10 @@ public class ConfigurationManager
 		return getCompilerConfigFlag(ConfigType.PARALLEL_CP_MATRIX_OPERATIONS);
 	}
 	
+	public static boolean isParallelTransform() {
+		return getDMLConfig().getBooleanValue(DMLConfig.PARALLEL_ENCODE);
+	}
+	
 	public static boolean isParallelParFor() {
 		return getCompilerConfigFlag(ConfigType.PARALLEL_LOCAL_OR_REMOTE_PARFOR);
 	}

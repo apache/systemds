@@ -25,16 +25,20 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.DMLRuntimeException;
 
-public class DependencyTask<E> implements Callable<E> {
+public class DependencyTask<E> implements Comparable<DependencyTask<?>>, Callable<E> {
 	public static final boolean ENABLE_DEBUG_DATA = false;
+	protected static final Log LOG = LogFactory.getLog(DependencyTask.class.getName());
 
 	private final Callable<E> _task;
 	protected final List<DependencyTask<?>> _dependantTasks;
 	public List<DependencyTask<?>> _dependencyTasks = null; // only for debugging
 	private CompletableFuture<Future<?>> _future;
 	private int _rdy = 0;
+	private Integer _priority = 0;
 	private ExecutorService _pool;
 
 	public DependencyTask(Callable<E> task, List<DependencyTask<?>> dependantTasks) {
@@ -54,6 +58,10 @@ public class DependencyTask<E> implements Callable<E> {
 		return _rdy == 0;
 	}
 
+	public void setPriority(int priority) {
+		_priority = priority;
+	}
+
 	private boolean decrease() {
 		synchronized(this) {
 			_rdy -= 1;
@@ -68,7 +76,11 @@ public class DependencyTask<E> implements Callable<E> {
 
 	@Override
 	public E call() throws Exception {
+		LOG.debug("Executing Task: " + this);
+		long t0 = System.nanoTime();
 		E ret = _task.call();
+		LOG.debug("Finished Task: " + this + " in: " +
+				(String.format("%.3f", (System.nanoTime()-t0)*1e-9)) + "sec.");
 		_dependantTasks.forEach(t -> {
 			if(t.decrease()) {
 				if(_pool == null)
@@ -78,5 +90,15 @@ public class DependencyTask<E> implements Callable<E> {
 		});
 
 		return ret;
+	}
+
+	@Override
+	public String toString(){
+		return _task.toString() + "<Prio: " + _priority + ">" + "<Waiting: " + _dependantTasks.size() + ">";
+	}
+
+	@Override
+	public int compareTo(DependencyTask<?> task) {
+		return -1 * this._priority.compareTo(task._priority);
 	}
 }

@@ -50,7 +50,6 @@ import org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.concurrent.Future;
-import java.util.stream.IntStream;
 
 public class SpoofFEDInstruction extends FEDInstruction
 {
@@ -269,10 +268,7 @@ public class SpoofFEDInstruction extends FEDInstruction
 			if(_cellType == CellType.ROW_AGG || _cellType == CellType.COL_AGG) {
 				int dim = (_cellType == CellType.COL_AGG ? 0 : 1);
 				// crop federation map to a vector
-				IntStream.range(0, fedMap.getFederatedRanges().length).forEach(i -> {
-					fedMap.getFederatedRanges()[i].setBeginDim(dim, 0);
-					fedMap.getFederatedRanges()[i].setEndDim(dim, 1);
-				});
+				fedMap.modifyFedRanges(1, dim);
 			}
 			return fedMap;
 		}
@@ -333,16 +329,8 @@ public class SpoofFEDInstruction extends FEDInstruction
 		protected void setFedOutput(ExecutionContext ec, FederationMap fedMap, long frComputeID) {
 			// derive output federated mapping
 			MatrixObject out = ec.getMatrixObject(_output);
-			FederationMap newFedMap = modifyFedRanges(fedMap.copyWithNewID(frComputeID), out.getNumColumns());
+			FederationMap newFedMap = fedMap.copyWithNewID(frComputeID).modifyFedRanges(out.getNumColumns(), 1);
 			out.setFedMapping(newFedMap);
-		}
-
-		private static FederationMap modifyFedRanges(FederationMap fedMap, long cols) {
-			IntStream.range(0, fedMap.getFederatedRanges().length).forEach(i -> {
-				fedMap.getFederatedRanges()[i].setBeginDim(1, 0);
-				fedMap.getFederatedRanges()[i].setEndDim(1, cols);
-			});
-			return fedMap;
 		}
 
 		protected void aggResult(ExecutionContext ec, Future<FederatedResponse>[] response,
@@ -466,16 +454,8 @@ public class SpoofFEDInstruction extends FEDInstruction
 			// derive output federated mapping
 			MatrixObject out = ec.getMatrixObject(_output);
 			int dim = (newFedMap.getType() == FType.ROW ? 1 : 0);
-			newFedMap = modifyFedRanges(newFedMap, dim, outDims[dim]);
+			newFedMap.modifyFedRanges(outDims[dim], dim);
 			out.setFedMapping(newFedMap);
-		}
-
-		private static FederationMap modifyFedRanges(FederationMap fedMap, int dim, long value) {
-			IntStream.range(0, fedMap.getFederatedRanges().length).forEach(i -> {
-				fedMap.getFederatedRanges()[i].setBeginDim(dim, 0);
-				fedMap.getFederatedRanges()[i].setEndDim(dim, value);
-			});
-			return fedMap;
 		}
 
 		protected void aggResult(ExecutionContext ec, Future<FederatedResponse>[] response,

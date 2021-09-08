@@ -31,13 +31,17 @@ else {
   B = read($in_B1_local);
 }
 
-
+R_FF_misaligned = rbind(AF, AF);
+C_FF_aligned = cbind(AF, AF);
 R_FF = rbind(AF, BF)
 C_FF = cbind(AF, BF)
 R_FL = rbind(AF, B)
 C_FL = cbind(AF, B)
 R_LF = rbind(B, AF)
 C_LF = cbind(B, AF)
+
+write(R_FF_misaligned, $out_R_FF_misaligned);
+write(C_FF_aligned, $out_C_FF_aligned);
 
 write(R_FF, $out_R_FF)
 write(R_FL, $out_R_FL)

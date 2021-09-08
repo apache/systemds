@@ -30,23 +30,18 @@ import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
 @RunWith(value = Parameterized.class)
 @net.jcip.annotations.NotThreadSafe
-public class FederatedRowAggregateTest extends AutomatedTestBase {
-	private final static String TEST_NAME5 = "FederatedRowSumTest";
-	private final static String TEST_NAME6 = "FederatedRowMeanTest";
-	private final static String TEST_NAME7 = "FederatedRowMaxTest";
-	private final static String TEST_NAME8 = "FederatedRowMinTest";
-	private final static String TEST_NAME9 = "FederatedRowVarTest";
-	private final static String TEST_NAME10 = "FederatedRowProdTest";
-	private final static String TEST_NAME11 = "FederatedMMTest";
+public class FederatedMisAlignedTest extends AutomatedTestBase {
+	private final static String TEST_NAME1 = "FederatedMisAlignedTest";
 
-	private final static String TEST_DIR = "functions/federated/aggregate/";
-	private static final String TEST_CLASS_DIR = TEST_DIR + FederatedRowAggregateTest.class.getSimpleName() + "/";
+	private final static String TEST_DIR = "functions/federated/";
+	private static final String TEST_CLASS_DIR = TEST_DIR + FederatedMisAlignedTest.class.getSimpleName() + "/";
 
 	private final static int blocksize = 1024;
 	@Parameterized.Parameter()
@@ -66,122 +61,138 @@ public class FederatedRowAggregateTest extends AutomatedTestBase {
 	}
 
 	private enum OpType {
-		SUM, MEAN, MAX, MIN, VAR, PROD, MM
+		MM,
+		EW_MULT,
+		EW_PLUS,
+		EW_GREATER,
+		BIND,
+	}
+
+	private enum MisAlignmentType {
+		HOST,
+		RANGE,
 	}
 
 	@Override
 	public void setUp() {
 		TestUtils.clearAssertionInformation();
-		addTestConfiguration(TEST_NAME5, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME5, new String[] {"S"}));
-		addTestConfiguration(TEST_NAME6, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME6, new String[] {"S"}));
-		addTestConfiguration(TEST_NAME7, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME7, new String[] {"S"}));
-		addTestConfiguration(TEST_NAME8, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME8, new String[] {"S"}));
-		addTestConfiguration(TEST_NAME9, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME9, new String[] {"S"}));
-		addTestConfiguration(TEST_NAME10, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME10, new String[] {"S"}));
-		addTestConfiguration(TEST_NAME11, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME11, new String[] {"S"}));
+		addTestConfiguration(TEST_NAME1, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] {"S"}));
 	}
 
 	@Test
-	public void testRowSumDenseMatrixCP() {
-		runAggregateOperationTest(OpType.SUM, ExecMode.SINGLE_NODE);
+	public void testMMMisAlignedHostCP() {
+		runMisAlignedTest(OpType.MM, ExecMode.SINGLE_NODE, MisAlignmentType.HOST);
 	}
 
 	@Test
-	public void testRowMeanDenseMatrixCP() {
-		runAggregateOperationTest(OpType.MEAN, ExecMode.SINGLE_NODE);
+	public void testMMMisAlignedHostSP() {
+		runMisAlignedTest(OpType.MM, ExecMode.SPARK, MisAlignmentType.HOST);
 	}
 
 	@Test
-	public void testRowMaxDenseMatrixCP() {
-		runAggregateOperationTest(OpType.MAX, ExecMode.SINGLE_NODE);
+	public void testMMMisAlignedRangeCP() {
+		runMisAlignedTest(OpType.MM, ExecMode.SINGLE_NODE, MisAlignmentType.RANGE);
 	}
 
 	@Test
-	public void testRowMinDenseMatrixCP() {
-		runAggregateOperationTest(OpType.MIN, ExecMode.SINGLE_NODE);
+	public void testMMMisAlignedRangeSP() {
+		runMisAlignedTest(OpType.MM, ExecMode.SPARK, MisAlignmentType.RANGE);
 	}
 
 	@Test
-	public void testRowVarDenseMatrixCP() {
-		runAggregateOperationTest(OpType.VAR, ExecMode.SINGLE_NODE);
+	public void testEWMultMisAlignedHostCP() {
+		runMisAlignedTest(OpType.EW_MULT, ExecMode.SINGLE_NODE, MisAlignmentType.HOST);
 	}
 
 	@Test
-	public void testRowProdDenseMatrixCP() {
-		runAggregateOperationTest(OpType.PROD, ExecMode.SINGLE_NODE);
+	@Ignore
+	public void testEWMultMisAlignedHostSP() {
+		runMisAlignedTest(OpType.EW_MULT, ExecMode.SPARK, MisAlignmentType.HOST);
 	}
 
 	@Test
-	public void testMMDenseMatrixCP() {
-		runAggregateOperationTest(OpType.MM, ExecMode.SINGLE_NODE);
+	@Ignore
+	public void testEWMultMisAlignedRangeCP() {
+		runMisAlignedTest(OpType.EW_MULT, ExecMode.SINGLE_NODE, MisAlignmentType.RANGE);
 	}
 
 	@Test
-	public void testRowSumDenseMatrixSP() {
-		runAggregateOperationTest(OpType.SUM, ExecMode.SPARK);
+	public void testEWMultMisAlignedRangeSP() {
+		runMisAlignedTest(OpType.EW_MULT, ExecMode.SPARK, MisAlignmentType.RANGE);
 	}
 
 	@Test
-	public void testRowMeanDenseMatrixSP() {
-		runAggregateOperationTest(OpType.MEAN, ExecMode.SPARK);
+	@Ignore
+	public void testEWPlusMisAlignedHostCP() {
+		runMisAlignedTest(OpType.EW_PLUS, ExecMode.SINGLE_NODE, MisAlignmentType.HOST);
 	}
 
 	@Test
-	public void testRowMaxDenseMatrixSP() {
-		runAggregateOperationTest(OpType.MAX, ExecMode.SPARK);
+	public void testEWPlusMisAlignedHostSP() {
+		runMisAlignedTest(OpType.EW_PLUS, ExecMode.SPARK, MisAlignmentType.HOST);
 	}
 
 	@Test
-	public void testRowMinDenseMatrixSP() {
-		runAggregateOperationTest(OpType.MIN, ExecMode.SPARK);
+	public void testEWPlusMisAlignedRangeCP() {
+		runMisAlignedTest(OpType.EW_PLUS, ExecMode.SINGLE_NODE, MisAlignmentType.RANGE);
 	}
 
 	@Test
-	public void testRowVarDenseMatrixSP() {
-		runAggregateOperationTest(OpType.VAR, ExecMode.SPARK);
+	@Ignore
+	public void testEWPlusMisAlignedRangeSP() {
+		runMisAlignedTest(OpType.EW_PLUS, ExecMode.SPARK, MisAlignmentType.RANGE);
 	}
 
 	@Test
-	public void testRowProdDenseMatrixSP() {
-		runAggregateOperationTest(OpType.PROD, ExecMode.SPARK);
+	public void testEWGreaterMisAlignedHostCP() {
+		runMisAlignedTest(OpType.EW_GREATER, ExecMode.SINGLE_NODE, MisAlignmentType.HOST);
 	}
 
 	@Test
-	public void testMMDenseMatrixSP() {
-		runAggregateOperationTest(OpType.MM, ExecMode.SPARK);
+	@Ignore
+	public void testEWGreaterMisAlignedHostSP() {
+		runMisAlignedTest(OpType.EW_GREATER, ExecMode.SPARK, MisAlignmentType.HOST);
 	}
 
-	private void runAggregateOperationTest(OpType type, ExecMode execMode) {
+	@Test
+	@Ignore
+	public void testEWGreaterMisAlignedRangeCP() {
+		runMisAlignedTest(OpType.EW_GREATER, ExecMode.SINGLE_NODE, MisAlignmentType.RANGE);
+	}
+
+	@Test
+	public void testEWGreaterMisAlignedRangeSP() {
+		runMisAlignedTest(OpType.EW_GREATER, ExecMode.SPARK, MisAlignmentType.RANGE);
+	}
+
+	@Test
+	public void testBindMisAlignedHostCP() {
+		runMisAlignedTest(OpType.BIND, ExecMode.SINGLE_NODE, MisAlignmentType.HOST);
+	}
+
+	@Test
+	public void testBindMisAlignedHostSP() {
+		runMisAlignedTest(OpType.BIND, ExecMode.SPARK, MisAlignmentType.HOST);
+	}
+
+	@Test
+	public void testBindMisAlignedRangeCP() {
+		runMisAlignedTest(OpType.BIND, ExecMode.SINGLE_NODE, MisAlignmentType.RANGE);
+	}
+
+	@Test
+	public void testBindMisAlignedRangeSP() {
+		runMisAlignedTest(OpType.BIND, ExecMode.SPARK, MisAlignmentType.RANGE);
+	}
+
+	private void runMisAlignedTest(OpType type, ExecMode execMode, MisAlignmentType maType) {
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
 		ExecMode platformOld = rtplatform;
 
 		if(rtplatform == ExecMode.SPARK)
 			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 
-		String TEST_NAME = null;
-		switch(type) {
-			case SUM:
-				TEST_NAME = TEST_NAME5;
-				break;
-			case MEAN:
-				TEST_NAME = TEST_NAME6;
-				break;
-			case MAX:
-				TEST_NAME = TEST_NAME7;
-				break;
-			case MIN:
-				TEST_NAME = TEST_NAME8;
-				break;
-			case VAR:
-				TEST_NAME = TEST_NAME9;
-				break;
-			case PROD:
-				TEST_NAME = TEST_NAME10;
-				break;
-			case MM:
-				TEST_NAME = TEST_NAME11;
-				break;
-		}
+		String TEST_NAME = TEST_NAME1;
 
 		getAndLoadTestConfiguration(TEST_NAME);
 		String HOME = SCRIPT_DIR + TEST_DIR;
@@ -225,48 +236,43 @@ public class FederatedRowAggregateTest extends AutomatedTestBase {
 
 		// Run reference dml script with normal matrix
 		fullDMLScriptName = HOME + TEST_NAME + "Reference.dml";
-		programArgs = new String[] {"-stats", "100", "-args", input("X1"), input("X2"), input("X3"), input("X4"),
-			expected("S"), Boolean.toString(rowPartitioned).toUpperCase()};
+		programArgs = new String[] {"-stats", "100", "-nvargs",
+			"in_X1=" + input("X1"), "in_X2=" + input("X2"), "in_X3=" + input("X3"), "in_X4=" + input("X4"),
+			"testnum=" + Integer.toString(type.ordinal()), "misaligntype=" + Integer.toString(maType.ordinal()),
+			"rP=" + Boolean.toString(rowPartitioned).toUpperCase(), "out_S=" + expected("S")};
 		runTest(true, false, null, -1);
-
+		
 		// Run actual dml script with federated matrix
-
+		
 		fullDMLScriptName = HOME + TEST_NAME + ".dml";
 		programArgs = new String[] {"-stats", "100", "-nvargs",
 			"in_X1=" + TestUtils.federatedAddress(port1, input("X1")),
 			"in_X2=" + TestUtils.federatedAddress(port2, input("X2")),
 			"in_X3=" + TestUtils.federatedAddress(port3, input("X3")),
 			"in_X4=" + TestUtils.federatedAddress(port4, input("X4")), "rows=" + rows, "cols=" + cols,
+			"testnum=" + Integer.toString(type.ordinal()), "misaligntype=" + Integer.toString(maType.ordinal()),
 			"rP=" + Boolean.toString(rowPartitioned).toUpperCase(), "out_S=" + output("S")};
 
 		runTest(true, false, null, -1);
 
 		// compare via files
-		compareResults(type == FederatedRowAggregateTest.OpType.VAR ? 1e-2 : 1e-9, "Stat-DML1", "Stat-DML2");
-
-		String fedInst = "fed_uar";
+		compareResults(1e-9, "Stat-DML1", "Stat-DML2");
 
 		switch(type) {
-			case SUM:
-				Assert.assertTrue(heavyHittersContainsString(fedInst.concat("k+")));
-				break;
-			case MEAN:
-				Assert.assertTrue(heavyHittersContainsString(fedInst.concat("mean")));
-				break;
-			case MAX:
-				Assert.assertTrue(heavyHittersContainsString(fedInst.concat("max")));
-				break;
-			case MIN:
-				Assert.assertTrue(heavyHittersContainsString(fedInst.concat("min")));
-				break;
-			case VAR:
-				Assert.assertTrue(heavyHittersContainsString(fedInst.concat("var")));
-				break;
-			case PROD:
-				Assert.assertTrue(heavyHittersContainsString(fedInst.concat("*")));
-				break;
 			case MM:
-				Assert.assertTrue(heavyHittersContainsString(rtplatform == ExecMode.SPARK ? "fed_mapmm" : "fed_ba+*", 1, 2));
+				Assert.assertTrue(heavyHittersContainsString(rtplatform == ExecMode.SPARK ? "fed_mapmm" : "fed_ba+*"));
+				break;
+			case EW_MULT:
+				Assert.assertTrue(heavyHittersContainsString("fed_*"));
+				break;
+			case EW_PLUS:
+				Assert.assertTrue(heavyHittersContainsString("fed_+"));
+				break;
+			case EW_GREATER:
+				Assert.assertTrue(heavyHittersContainsString("fed_>"));
+				break;
+			case BIND:
+				Assert.assertTrue(heavyHittersContainsString(rtplatform == ExecMode.SPARK ? "fed_mappend" : "fed_append"));
 				break;
 		}
 
@@ -280,6 +286,5 @@ public class FederatedRowAggregateTest extends AutomatedTestBase {
 
 		rtplatform = platformOld;
 		DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
-
 	}
 }

@@ -19,18 +19,19 @@
 #
 #-------------------------------------------------------------
 
-m_winsorize = function(Matrix[Double] X, Boolean verbose) return (Matrix[Double] Y) {
+m_winsorize = function(Matrix[Double] X, Double ql = 0.05, Double qu = 0.95, Boolean verbose) 
+return (Matrix[Double] Y) {
+
   Y = matrix(0, nrow(X), ncol(X))
-  parfor(i in 1:ncol(X))
-    Y[,i] = fixOutliersWinsorize(X[,i])
+  parfor(i in 1:ncol(X), check=0) {
+    q1 = quantile(X[,i], ql)
+    q2 = quantile(X[,i], qu)
+    Y[, i] = fixOutliersWinsorize(X[,i], q1, q2)
+  }
 }
 
-fixOutliersWinsorize = function(Matrix[Double] X) return (Matrix[Double] Y)
+fixOutliersWinsorize = function(Matrix[Double] X,  Double ql, Double qu) return (Matrix[Double] Y)
 {
-  # compute quantiles for lower and upper probs
-  q = quantile(X, matrix("0.05 0.95", rows=2, cols=1));
-  ql = as.scalar(q[1,1]);
-  qu = as.scalar(q[2,1]);
   # replace values outside [ql,qu] w/ ql and qu respectively
   Y = ifelse(X < ql, ql, X);
   Y = ifelse(Y > qu, qu, Y);

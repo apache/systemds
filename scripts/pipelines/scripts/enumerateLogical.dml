@@ -85,7 +85,7 @@ return (Frame[Unknown] bestLg, Double pre_best)
     # # # execute the physical pipelines
     scores = matrix(0, nrow(physicalPipList), 1)
     # TODO better parfor-dep handling of multi-assignments to avoid check=0 
-    parfor(i in 1:length(physicalPipList), check=0) {
+    for(i in 1:length(physicalPipList), check=0) {
       lp2 = as.frame(logicalPipList[((i-1)%/%num_inst)+1,])
       pp2 = as.frame(physicalPipList[i,])
       # # append configuration keys for extracting the pipeline later on

@@ -25,5 +25,5 @@ foo = function(Matrix[Double] X, Boolean verbose)
    while(FALSE){} #no inlining
    if( verbose )
      print( min(X)+" "+max(X) )
-   R = winsorize(X, verbose);
+   R = winsorize(X=X, verbose=verbose);
 }

@@ -22,5 +22,5 @@
 foo = function(Matrix[Double] X)
   return (Matrix[Double] Y)
 {
-  Y = winsorize(X, FALSE)
+  Y = winsorize(X=X, verbose=FALSE)
 }

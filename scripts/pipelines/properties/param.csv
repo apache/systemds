@@ -1,7 +1,7 @@
 name,param_no,maskFlag,FDFlag,yFlag,verboseFlag,dataFlag,dt1,dt2,dt3,dt4,st1,en1,st2,en2,st3,en3,st4,en4
 outlierByIQR,3,0,0,0,1,0,FP,INT,INT,1,7,2,2,1,1,,,
 outlierBySd,3,0,0,0,1,0,INT,INT,INT,1,7,1,2,2,1,,,
-winsorize,0,0,0,0,1,0,,,,,,,,,,,,
+winsorize,2,0,0,0,1,0,FP,FP,0.01,0.05,0.95,1,,,,,,
 normalize,0,0,0,0,0,0,,,,,,,,,,,,
 imputeByMean,0,1,0,0,0,2,,,,,,,,,,,,
 imputeByMedian,0,1,0,0,0,2,,,,,,,,,,,,

@@ -44,6 +44,7 @@ public class WorkloadAlgorithmTest extends AutomatedTestBase {
 	private final static String TEST_NAME4 = "WorkloadAnalysisSliceLine";
 	private final static String TEST_NAME5 = "WorkloadAnalysisSliceFinder";
 	private final static String TEST_NAME6 = "WorkloadAnalysisLmCG";
+	private final static String TEST_NAME7 = "WorkloadAnalysisL2SVM";
 	private final static String TEST_DIR = "functions/compress/workload/";
 	private final static String TEST_CLASS_DIR = TEST_DIR + WorkloadAnalysisTest.class.getSimpleName() + "/";
 
@@ -69,6 +70,7 @@ public class WorkloadAlgorithmTest extends AutomatedTestBase {
 		addTestConfiguration(TEST_NAME4, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME4, new String[] {"B"}));
 		addTestConfiguration(TEST_NAME5, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME5, new String[] {"B"}));
 		addTestConfiguration(TEST_NAME6, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME6, new String[] {"B"}));
+		addTestConfiguration(TEST_NAME7, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME7, new String[] {"B"}));
 	}
 
 	@Test
@@ -126,6 +128,11 @@ public class WorkloadAlgorithmTest extends AutomatedTestBase {
 		runWorkloadAnalysisTest(TEST_NAME6, ExecMode.SINGLE_NODE, 2, false);
 	}
 
+	@Test
+	public void testL2SVMCP() {
+		runWorkloadAnalysisTest(TEST_NAME7, ExecMode.SINGLE_NODE, 2, false);
+	}
+
 	// private void runWorkloadAnalysisTest(String testname, ExecMode mode, int compressionCount) {
 	private void runWorkloadAnalysisTest(String testname, ExecMode mode, int compressionCount, boolean intermediates) {
 		ExecMode oldPlatform = setExecMode(mode);
@@ -137,8 +144,7 @@ public class WorkloadAlgorithmTest extends AutomatedTestBase {
 
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + testname + ".dml";
-			programArgs = new String[] {"-stats", "20", "-args", input("X"), input("y"),
-				output("B")};
+			programArgs = new String[] {"-stats", "20", "-args", input("X"), input("y"), output("B")};
 
 			writeInputMatrixWithMTD("X", X, false);
 			writeInputMatrixWithMTD("y", y, false);
@@ -153,7 +159,7 @@ public class WorkloadAlgorithmTest extends AutomatedTestBase {
 			Assert.assertEquals("Assert that the compression counts expeted matches actual: " + compressionCount
 				+ " vs " + actualCompressionCount, compressionCount, actualCompressionCount);
 			if(compressionCount > 0)
-				Assert.assertTrue(mode == ExecMode.SINGLE_NODE || mode == ExecMode.HYBRID ?  heavyHittersContainsString(
+				Assert.assertTrue(mode == ExecMode.SINGLE_NODE || mode == ExecMode.HYBRID ? heavyHittersContainsString(
 					"compress") : heavyHittersContainsString("sp_compress"));
 			if(!testname.equals(TEST_NAME4))
 				Assert.assertFalse(heavyHittersContainsString("m_scale"));

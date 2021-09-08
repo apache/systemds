@@ -34,6 +34,8 @@ public final class InstructionTypeCounter implements Serializable {
 	protected int dictionaryOps = 0; // base cost is one pass of dictionary
 	protected int indexing = 0;
 
+	protected boolean isDensifying = false;
+
 	protected InstructionTypeCounter() {
 
 	}

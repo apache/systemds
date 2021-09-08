@@ -1139,6 +1139,9 @@ public class OptimizerUtils
 		// default is worst-case estimate for robustness
 		double ret = 1.0;
 		
+		if(op == null) // If Unknown op, assume the worst
+			return ret;
+
 		if( worstcase )
 		{
 			//NOTE: for matrix-scalar operations this estimate is too conservative, because 

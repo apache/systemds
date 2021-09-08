@@ -45,15 +45,14 @@ public class WorkloadAnalysisTest extends AutomatedTestBase {
 		addTestConfiguration(TEST_NAME2, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2, new String[] {"B"}));
 	}
 
-
-	@Test 
-	public void testLeftMultiplicationLoop(){
+	@Test
+	public void testLeftMultiplicationLoop() {
 		runWorkloadAnalysisTest(TEST_NAME1, ExecMode.HYBRID, 1);
 	}
 
 	@Test
-	public void testRightMultiplicationLoop(){
-		runWorkloadAnalysisTest(TEST_NAME2, ExecMode.HYBRID,1);
+	public void testRightMultiplicationLoop() {
+		runWorkloadAnalysisTest(TEST_NAME2, ExecMode.HYBRID, 1);
 	}
 
 	private void runWorkloadAnalysisTest(String testname, ExecMode mode, int compressionCount) {

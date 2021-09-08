@@ -58,25 +58,35 @@ public class RewriteMMCBindZeroVector extends AutomatedTestBase {
 
 	@Test
 	public void testNoRewritesCP() {
-		testRewrite(TEST_NAME1, false, ExecType.CP, 100, 3, 10);
+		testRewrite(TEST_NAME1, false, ExecType.CP, 100, 3, 10, false);
 	}
 
 	@Test
 	public void testNoRewritesSP() {
-		testRewrite(TEST_NAME1, false, ExecType.SPARK, 100, 3, 10);
+		testRewrite(TEST_NAME1, false, ExecType.SPARK, 100, 3, 10, false);
 	}
 
 	@Test
 	public void testRewritesCP() {
-		testRewrite(TEST_NAME1, true, ExecType.CP, 100, 3, 10);
+		testRewrite(TEST_NAME1, true, ExecType.CP, 100, 3, 10, true);
 	}
 
 	@Test
 	public void testRewritesSP() {
-		testRewrite(TEST_NAME1, true, ExecType.SPARK, 100, 3, 10);
+		testRewrite(TEST_NAME1, true, ExecType.SPARK, 100, 3, 10, true);
 	}
 
-	private void testRewrite(String testname, boolean rewrites, ExecType et, int leftRows, int rightCols, int shared) {
+	@Test
+	public void testRewritesCP_ButToSmall() {
+		testRewrite(TEST_NAME1, true, ExecType.CP, 100, 10, 55, false);
+	}
+
+	@Test
+	public void testRewritesSP_ButToSmall() {
+		testRewrite(TEST_NAME1, true, ExecType.SPARK, 100, 10, 55, false);
+	}
+
+	private void testRewrite(String testname, boolean rewrites, ExecType et, int leftRows, int rightCols, int shared, boolean rewriteShouldBeExecuted) {
 		ExecMode platformOld = rtplatform;
 		switch(et) {
 			case SPARK:
@@ -100,7 +110,7 @@ public class RewriteMMCBindZeroVector extends AutomatedTestBase {
 
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + testname + ".dml";
-			programArgs = new String[] {"-explain", "-stats", "-args", input("X"), input("Y"),
+			programArgs = new String[] {"-explain", "hops","-stats", "-args", input("X"), input("Y"),
 				output("R")};
 			fullRScriptName = HOME + testname + ".R";
 			rCmd = getRCmd(inputDir(), expectedDir());
@@ -114,20 +124,20 @@ public class RewriteMMCBindZeroVector extends AutomatedTestBase {
 			String out = runTest(null).toString();
 
 			for(String line : out.split("\n")) {
-				if(rewrites) {
-					if(line.contains("append"))
+				if(rewrites && rewriteShouldBeExecuted) {
+					if(line.contains("b(cbind)"))
 						break;
-					else if(line.contains("ba+*"))
+					else if(line.contains("ba(+*)"))
 						fail(
-							"invalid execution matrix multiplication is done before append, therefore the rewrite did not tricker.\n\n"
+							"invalid execution matrix multiplication is done before b(cbind), therefore the rewrite did not tricker.\n\n"
 								+ out);
 				}
 				else {
-					if(line.contains("ba+*"))
+					if(line.contains("ba(+*)"))
 						break;
-					else if(line.contains("append"))
+					else if(line.contains("b(cbind)"))
 						fail(
-							"invalid execution append was done before multiplication, therefore the rewrite did tricker when not allowed.\n\n"
+							"invalid execution b(cbind) was done before multiplication, therefore the rewrite did tricker when not allowed.\n\n"
 								+ out);
 				}
 

@@ -24,7 +24,6 @@ import java.util.Map.Entry;
 
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.conf.DMLConfig;
-import org.apache.sysds.hops.Hop;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.lops.Compression.CompressConfig;
 import org.apache.sysds.parser.DMLProgram;
@@ -54,18 +53,19 @@ public class IPAPassCompressionWorkloadAnalysis extends IPAPass {
 		Map<Long, WTreeRoot> map = WorkloadAnalyzer.getAllCandidateWorkloads(prog);
 
 		// Add compression instruction to all remaining locations
-		for(Entry<Long, WTreeRoot> e : map.entrySet()){
-			WTreeRoot tree = e.getValue();
-			CostEstimatorBuilder b = new CostEstimatorBuilder(tree);
-			// filter out compression plans that is known bad
-			
-			if(b.shouldTryToCompress()){
+		for(Entry<Long, WTreeRoot> e : map.entrySet()) {
+			final WTreeRoot tree = e.getValue();
+			final CostEstimatorBuilder b = new CostEstimatorBuilder(tree);
+			final boolean shouldCompress = b.shouldTryToCompress();
+			if(LOG.isTraceEnabled())
+				LOG.trace("IPAPass Should Compress:\n" + tree + "\n" + b + "\n Should Compress: " + shouldCompress);
+
+			// Filter out compression plans that is known to be bad
+			if(shouldCompress) 
 				tree.getRoot().setRequiresCompression(tree);
-				for(Hop h : tree.getDecompressList())
-					h.setRequiresDeCompression();
-			}
+
 		}
-		
+
 		return map != null;
 	}
 }

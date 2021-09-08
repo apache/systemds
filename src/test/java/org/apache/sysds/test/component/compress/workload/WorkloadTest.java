@@ -47,6 +47,7 @@ public class WorkloadTest {
 
 	private static final String basePath = "src/test/scripts/component/compress/workload/";
 	private static final String testFile = "src/test/resources/component/compress/1-1.csv";
+	private static final String yFile = "src/test/resources/component/compress/1-1_y.csv";
 
 	@Parameterized.Parameter(0)
 	public int scans;
@@ -83,17 +84,13 @@ public class WorkloadTest {
 		tests.add(new Object[] {0, 0, 0, 0, 0, 0, 1, 0, false, false, "sum.dml", args});
 		tests.add(new Object[] {0, 0, 0, 0, 0, 0, 1, 0, false, false, "mean.dml", args});
 		tests.add(new Object[] {0, 0, 0, 0, 0, 0, 1, 1, false, false, "plus.dml", args});
-		tests.add(new Object[] {0, 1, 0, 0, 0, 0, 1, 0, false, false, "sliceCols.dml", args});
+		tests.add(new Object[] {0, 0, 0, 0, 0, 0, 2, 0, false, false, "sliceCols.dml", args});
 		tests.add(new Object[] {0, 0, 0, 0, 0, 0, 2, 0, false, false, "sliceIndex.dml", args});
 		tests.add(new Object[] {0, 0, 0, 1, 0, 0, 0, 0, false, false, "leftMult.dml", args});
 		tests.add(new Object[] {0, 0, 0, 0, 1, 0, 1, 0, false, false, "rightMult.dml", args});
 		tests.add(new Object[] {0, 0, 0, 1, 0, 0, 0, 0, false, false, "TLeftMult.dml", args});
 
-		// https://issues.apache.org/jira/browse/SYSTEMDS-3025 Transposed layout.
-		// (the t right mult here would be much faster if a transposed layout is allowed.)
-		// Also the decompression is not detected.
-		// nr 8:
-		tests.add(new Object[] {0, 0, 0, 0, 1, 0, 1, 0, false, false, "TRightMult.dml", args});
+		tests.add(new Object[] {0, 0, 1, 0, 1, 0, 0, 0, false, false, "TRightMult.dml", args});
 
 		// Loops:
 		tests.add(new Object[] {0, 0, 0, 11, 0, 0, 0, 0, true, false, "loop/leftMult.dml", args});
@@ -104,22 +101,24 @@ public class WorkloadTest {
 
 		// Builtins:
 		// nr 11:
-		tests.add(new Object[] {0, 0, 0, 0, 0, 0, 7, 0, true, false, "functions/scale.dml", args});
+		tests.add(new Object[] {0, 0, 0, 0, 0, 0, 6, 0, true, false, "functions/scale.dml", args});
 		tests.add(new Object[] {0, 0, 0, 0, 0, 0, 5, 0, true, true, "functions/scale.dml", args});
-		tests.add(new Object[] {0, 0, 0, 0, 0, 0, 8, 0, true, false, "functions/scale_continued.dml", args});
+		tests.add(new Object[] {0, 0, 0, 0, 0, 0, 6, 0, true, false, "functions/scale_continued.dml", args});
 		tests.add(new Object[] {0, 0, 0, 0, 0, 0, 6, 0, true, true, "functions/scale_continued.dml", args});
 		tests.add(new Object[] {0, 0, 0, 0, 0, 0, 2, 0, false, true, "functions/scale_onlySide.dml", args});
-		tests.add(new Object[] {0, 0, 0, 0, 0, 0, 8, 0, true, false, "functions/scale_onlySide.dml", args});
+		tests.add(new Object[] {0, 0, 0, 0, 0, 0, 6, 0, true, false, "functions/scale_onlySide.dml", args});
 
-		tests.add(new Object[] {0, 0, 0, 0, 1, 1, 9, 0, true, false, "functions/pca.dml", args});
-		tests.add(new Object[] {0, 0, 0, 0, 1, 1, 6, 0, true, true, "functions/pca.dml", args});
+		tests.add(new Object[] {0, 0, 0, 0, 1, 1, 8, 0, true, false, "functions/pca.dml", args});
+		tests.add(new Object[] {0, 0, 0, 0, 1, 1, 5, 0, true, true, "functions/pca.dml", args});
 
 		args = new HashMap<>();
 		args.put("$1", testFile);
 		args.put("$2", "FALSE");
 		args.put("$3", "0");
 
-		tests.add(new Object[] {0, 1, 0, 1, 1, 1, 6, 0, true, false, "functions/lmDS.dml", args});
+		// no recompile
+		tests.add(new Object[] {0, 1, 1, 1, 1, 1, 6, 0, true, false, "functions/lmDS.dml", args});
+		// with recompile
 		tests.add(new Object[] {0, 0, 0, 1, 0, 1, 0, 0, true, true, "functions/lmDS.dml", args});
 		tests.add(new Object[] {0, 0, 0, 1, 10, 10, 1, 0, true, true, "functions/lmCG.dml", args});
 
@@ -127,28 +126,32 @@ public class WorkloadTest {
 		args.put("$1", testFile);
 		args.put("$2", "TRUE");
 		args.put("$3", "0");
-		tests.add(new Object[] {0, 0, 1, 1, 1, 1, 0, 0, true, true, "functions/lmDS.dml", args});
+		tests.add(new Object[] {0, 1, 1, 1, 1, 1, 0, 0, true, true, "functions/lmDS.dml", args});
 		tests.add(new Object[] {0, 0, 1, 1, 11, 10, 1, 0, true, true, "functions/lmCG.dml", args});
 
 		args = new HashMap<>();
 		args.put("$1", testFile);
 		args.put("$2", "TRUE");
 		args.put("$3", "1");
-		tests.add(new Object[] {0, 1, 0, 0, 0, 0, 1, 0, false, true, "functions/lmDS.dml", args});
+		tests.add(new Object[] {0, 2, 1, 1, 1, 1, 1, 0, true, true, "functions/lmDS.dml", args});
 		tests.add(new Object[] {0, 1, 1, 1, 11, 10, 2, 0, true, true, "functions/lmCG.dml", args});
 
 		args = new HashMap<>();
 		args.put("$1", testFile);
 		args.put("$2", "TRUE");
 		args.put("$3", "2");
-		tests.add(new Object[] {0, 1, 0, 0, 0, 0, 1, 0, false, true, "functions/lmDS.dml", args});
-		tests.add(new Object[] {0, 1, 1, 1, 11, 10, 2, 0, true, true, "functions/lmCG.dml", args});
+		tests.add(new Object[] {0, 2, 1, 1, 1, 1, 3, 0, true, true, "functions/lmDS.dml", args});
+		tests.add(new Object[] {0, 1, 1, 1, 11, 10, 4, 0, true, true, "functions/lmCG.dml", args});
 
 		args = new HashMap<>();
 		args.put("$1", testFile);
 		args.put("$2", "FALSE");
-		// Currently l2svm detects that decompression is needed after right mult
 		tests.add(new Object[] {0, 0, 10, 11, 10, 0, 1, 0, true, true, "functions/l2svm.dml", args});
+
+		args = new HashMap<>();
+		args.put("$1", yFile);
+		args.put("$2", "FALSE");
+		tests.add(new Object[] {0, 1, 0, 1, 0, 0, 10, 0, true, true, "functions/l2svm_Y.dml", args});
 
 		args = new HashMap<>();
 		args.put("$1", testFile);
@@ -184,9 +187,10 @@ public class WorkloadTest {
 		}
 	}
 
-	private void verify(WTreeRoot wtr, InstructionTypeCounter itc, CostEstimatorBuilder ceb, String name, Map<String, String> args) {
+	private void verify(WTreeRoot wtr, InstructionTypeCounter itc, CostEstimatorBuilder ceb, String name,
+		Map<String, String> args) {
 
-		String errorString = wtr + "\n" + itc + " \n " + name + "  -- " + args +  "\n";
+		String errorString = wtr + "\n" + itc + " \n " + name + "  -- " + args + "\n";
 		Assert.assertEquals(errorString + "scans:", scans, itc.getScans());
 		Assert.assertEquals(errorString + "decompressions", decompressions, itc.getDecompressions());
 		Assert.assertEquals(errorString + "overlappingDecompressions", overlappingDecompressions,
@@ -214,7 +218,6 @@ public class WorkloadTest {
 			String filePath = basePath + name;
 			String dmlScript = DMLScript.readDMLScript(isFile, filePath);
 			return ParserFactory.createParser().parse(DMLOptions.defaultOptions.filePath, dmlScript, args);
-
 		}
 		catch(Exception e) {
 			throw new DMLRuntimeException("Error in parsing", e);

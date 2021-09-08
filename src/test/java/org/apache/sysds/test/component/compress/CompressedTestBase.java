@@ -1282,14 +1282,23 @@ public abstract class CompressedTestBase extends TestBase {
 	}
 
 	protected void compareResultMatrices(MatrixBlock expected, MatrixBlock result, double toleranceMultiplier) {
+		compareDimensions(expected, result);
 		if(expected instanceof CompressedMatrixBlock)
 			expected = ((CompressedMatrixBlock) expected).decompress();
 		if(result instanceof CompressedMatrixBlock)
 			result = ((CompressedMatrixBlock) result).decompress();
+		
+		compareDimensions(expected, result);
+			
 
 		// compare result with input
 		double[][] d1 = DataConverter.convertToDoubleMatrix(expected);
 		double[][] d2 = DataConverter.convertToDoubleMatrix(result);
 		compareResultMatrices(d1, d2, toleranceMultiplier);
+	}
+
+	protected static void compareDimensions(MatrixBlock expected, MatrixBlock result){
+		assertEquals(expected.getNumRows(), result.getNumRows());
+		assertEquals(expected.getNumColumns(), result.getNumColumns());
 	}
 }

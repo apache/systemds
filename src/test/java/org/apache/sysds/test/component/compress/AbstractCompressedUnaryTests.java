@@ -249,8 +249,6 @@ public abstract class AbstractCompressedUnaryTests extends CompressedTestBase {
 			MatrixBlock ret1 = mb.aggregateUnaryOperations(auop, new MatrixBlock(), Math.max(rows, cols), null, inCP);
 			// matrix-vector compressed
 			MatrixBlock ret2 = cmb.aggregateUnaryOperations(auop, new MatrixBlock(), Math.max(rows, cols), null, inCP);
-			// LOG.error(ret1 + "\nvs\n" + ret2);
-			// LOG.error(cmb);
 			// compare result with input
 
 			assertTrue("dim 1 is not equal in compressed res  should be : " + ret1.getNumRows() + "  but is: "

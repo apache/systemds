@@ -23,8 +23,6 @@ import static org.junit.Assert.assertTrue;
 
 import java.io.File;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.test.AutomatedTestBase;
@@ -33,8 +31,10 @@ import org.apache.sysds.test.TestUtils;
 import org.junit.Assert;
 import org.junit.Test;
 
+
+@net.jcip.annotations.NotThreadSafe
 public class CompressRewriteSpark extends AutomatedTestBase {
-	private static final Log LOG = LogFactory.getLog(CompressRewriteSpark.class.getName());
+	// private static final Log LOG = LogFactory.getLog(CompressRewriteSpark.class.getName());
 
 	private static final String dataPath = "src/test/scripts/functions/compress/densifying/";
 	private final static String TEST_DIR = "functions/compress/";
@@ -66,27 +66,24 @@ public class CompressRewriteSpark extends AutomatedTestBase {
 		compressTest(ExecMode.HYBRID, "02", "large.ijv");
 	}
 
-
-	@Test 
-	public void testCompressionInstruction_colmean(){
-		compressTest(ExecMode.HYBRID,"submean", "large.ijv");
+	@Test
+	public void testCompressionInstruction_colmean() {
+		compressTest(ExecMode.HYBRID, "submean", "large.ijv");
 	}
 
-
-	@Test 
-	public void testCompressionInstruction_scale(){
-		compressTest(ExecMode.HYBRID,"scale", "large.ijv");
+	@Test
+	public void testCompressionInstruction_scale() {
+		compressTest(ExecMode.HYBRID, "scale", "large.ijv");
 	}
 
-
-	@Test 
-	public void testCompressionInstruction_seq_large(){
-		compressTest(ExecMode.HYBRID,"seq", "large.ijv");
+	@Test
+	public void testCompressionInstruction_seq_large() {
+		compressTest(ExecMode.HYBRID, "seq", "large.ijv");
 	}
 
-	@Test 
-	public void testCompressionInstruction_pca_large(){
-		compressTest(ExecMode.HYBRID,"pca", "large.ijv");
+	@Test
+	public void testCompressionInstruction_pca_large() {
+		compressTest(ExecMode.HYBRID, "pca", "large.ijv");
 	}
 
 	public void compressTest(ExecMode instType, String name, String data) {
@@ -98,12 +95,14 @@ public class CompressRewriteSpark extends AutomatedTestBase {
 
 			fullDMLScriptName = SCRIPT_DIR + "/" + getTestDir() + "compress_" + name + ".dml";
 
-			programArgs = new String[] {"-stats", "100", "-explain", "-args", dataPath + data};
+			programArgs = new String[] {"-stats", "100","-explain", "-args", dataPath + data};
 
-			LOG.debug(runTest(null));
+			String out = runTest(null).toString();
 
-			Assert.assertTrue(!heavyHittersContainsString("sp_compress"));
-			Assert.assertTrue(!heavyHittersContainsString("sp_+"));
+			Assert.assertTrue(out + "\nShould not containing spark compression instruction",
+				!heavyHittersContainsString("sp_compress"));
+			Assert.assertTrue(out + "\nShould not contain spark instruction on compressed input",
+				!heavyHittersContainsString("sp_+"));
 
 		}
 		catch(Exception e) {

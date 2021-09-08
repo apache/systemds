@@ -458,7 +458,9 @@ public final class ColGroupFactory {
 	}
 
 	public static AColGroup genColGroupConst(int numRows, int numCols, double value) {
-
+		if(numRows <= 0 || numCols <= 0)
+			throw new DMLCompressionException(
+				"Invalid construction of constant column group with rows/cols: " + numRows + "/" + numCols);
 		int[] colIndices = new int[numCols];
 		for(int i = 0; i < numCols; i++)
 			colIndices[i] = i;

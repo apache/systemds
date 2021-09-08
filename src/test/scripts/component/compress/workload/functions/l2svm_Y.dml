@@ -19,8 +19,8 @@
 #
 #-------------------------------------------------------------
 
-x = read($A)
-v = rand(rows=ncol(x), cols=10, min=0.0, max=1.0, seed= 13);
-r = x %*% v
-s = sum(r)
-print(s)
+b = read($1)
+A = rand(rows= nrow(b), cols = 10, min = -1, max = 1)
+b = round(b)
+m = l2svm(X=A ,Y=b, verbose=$2)
+print(mean(m))

@@ -169,7 +169,7 @@ public class EstimationFactors {
 			if(zerosLargestOffset)
 				largestOffs = zerosOffs;
 
-			double overAllSparsity = (double) overallNonZeroCount / ((long)numRows * (long)cols.length);
+			double overAllSparsity = (double) overallNonZeroCount / ((long) numRows * (long) cols.length);
 			double tupleSparsity = (double) tupleNonZeroCount / (numVals * cols.length);
 
 			return new EstimationFactors(cols, numVals, numOffs, largestOffs, frequencies, numRuns, numSingle, numRows,

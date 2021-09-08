@@ -1065,6 +1065,7 @@ public class SparkExecutionContext extends ExecutionContext
 
 			//copy blocks one-at-a-time into output matrix block
 			long aNnz = 0;
+			boolean firstCompressed = true;
 			for( Tuple2<MatrixIndexes,MatrixBlock> keyval : list )
 			{
 				//unpack index-block pair
@@ -1079,7 +1080,12 @@ public class SparkExecutionContext extends ExecutionContext
 				
 				//handle compressed blocks (decompress for robustness)
 				if( block instanceof CompressedMatrixBlock ){
-					block = ((CompressedMatrixBlock)block).decompress(InfrastructureAnalyzer.getLocalParallelism());
+					if(firstCompressed){
+						// with warning.
+						block =((CompressedMatrixBlock)block).getUncompressed("Spark RDD block to MatrixBlock Decompressing");
+						firstCompressed = false;
+					}else
+						block = ((CompressedMatrixBlock)block).decompress(InfrastructureAnalyzer.getLocalParallelism());
 				}
 
 				//append block
@@ -1281,13 +1287,13 @@ public class SparkExecutionContext extends ExecutionContext
 		return out;
 	}
 
-	// @SuppressWarnings("unchecked")
+	@SuppressWarnings("unchecked")
 	public static long writeMatrixRDDtoHDFS( RDDObject rdd, String path, FileFormat fmt )
 	{
 		JavaPairRDD<MatrixIndexes,MatrixBlock> lrdd = (JavaPairRDD<MatrixIndexes, MatrixBlock>) rdd.getRDD();
 		InputOutputInfo oinfo = InputOutputInfo.get(DataType.MATRIX, fmt);
 		
-		// if compression is enabled decompress all blocks before writing to disk TEMPORARY MODIFICATION UNTILL MATRIXBLOCK IS MERGED WITH COMPRESSEDMATRIXBLOCK
+		// if compression is enabled decompress all blocks before writing to disk to ensure type of MatrixBlock.
 		if(ConfigurationManager.isCompressionEnabled())
 			lrdd = lrdd.mapValues(new DeCompressionSPInstruction.DeCompressionFunction());
 

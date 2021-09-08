@@ -94,7 +94,8 @@ public class CompressedSizeEstimatorSample extends CompressedSizeEstimator {
 	}
 
 	@Override
-	public CompressedSizeInfoColGroup estimateCompressedColGroupSize(int[] colIndexes, int estimate, int nrUniqueUpperBound) {
+	public CompressedSizeInfoColGroup estimateCompressedColGroupSize(int[] colIndexes, int estimate,
+		int nrUniqueUpperBound) {
 
 		// extract statistics from sample
 		final ABitmap ubm = BitmapEncoder.extractBitmap(colIndexes, _sample, _transposed, estimate);
@@ -109,7 +110,7 @@ public class CompressedSizeEstimatorSample extends CompressedSizeEstimator {
 	@Override
 	protected CompressedSizeInfoColGroup estimateJoinCompressedSize(int[] joined, CompressedSizeInfoColGroup g1,
 		CompressedSizeInfoColGroup g2, int joinedMaxDistinct) {
-		if((long)g1.getNumVals() * g2.getNumVals() >(long)Integer.MAX_VALUE )
+		if((long) g1.getNumVals() * g2.getNumVals() > (long) Integer.MAX_VALUE)
 			return null;
 
 		final AMapToData map = MapToFactory.join(g1.getMap(), g2.getMap());

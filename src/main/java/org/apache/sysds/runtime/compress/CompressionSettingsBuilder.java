@@ -268,7 +268,7 @@ public class CompressionSettingsBuilder {
 		return this;
 	}
 
-	public CompressionSettingsBuilder setMinimumCompressionRatio(double ratio){
+	public CompressionSettingsBuilder setMinimumCompressionRatio(double ratio) {
 		this.minimumCompressionRatio = ratio;
 		return this;
 	}
@@ -281,6 +281,6 @@ public class CompressionSettingsBuilder {
 	public CompressionSettings create() {
 		return new CompressionSettings(samplingRatio, allowSharedDictionary, transposeInput, seed, lossy,
 			validCompressions, sortValuesByLength, columnPartitioner, maxColGroupCoCode, coCodePercentage,
-			minimumSampleSize, estimationType, costType,minimumCompressionRatio);
+			minimumSampleSize, estimationType, costType, minimumCompressionRatio);
 	}
 }

@@ -234,7 +234,7 @@ public class EstimatorDensityMap extends SparsityEstimator
 			_map = init(in);
 			_scaled = false;
 			if( !isPow2(_b) )
-				System.out.println("WARN: Invalid block size: "+_b);
+				LOG.warn("Invalid block size: "+_b);
 		}
 		
 		public DensityMap(MatrixBlock map, int rlenOrig, int clenOrig, int b, boolean scaled) {
@@ -244,7 +244,7 @@ public class EstimatorDensityMap extends SparsityEstimator
 			_map = map;
 			_scaled = scaled;
 			if( !isPow2(_b) )
-				System.out.println("WARN: Invalid block size: "+_b);
+				LOG.warn("Invalid block size: "+_b);
 		}
 		
 		public MatrixBlock getMap() {

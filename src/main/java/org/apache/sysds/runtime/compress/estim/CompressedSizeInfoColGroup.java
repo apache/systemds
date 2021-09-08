@@ -183,7 +183,7 @@ public class CompressedSizeInfoColGroup {
 		return _facts.cols;
 	}
 
-	public int getNumRows(){
+	public int getNumRows() {
 		return _facts.numRows;
 	}
 

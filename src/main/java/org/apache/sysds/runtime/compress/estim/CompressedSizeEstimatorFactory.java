@@ -65,7 +65,7 @@ public class CompressedSizeEstimatorFactory {
 		CompressedSizeEstimatorSample estS = new CompressedSizeEstimatorSample(data, cs, sampleSize, k);
 		int double_number = 1;
 		while(estS.getSample() == null) {
-			LOG.error("Warining doubling sample size " + double_number++);
+			LOG.warn("Doubling sample size " + double_number++);
 			sampleSize = sampleSize * 2;
 			if(shouldUseExactEstimator(cs, nRows, sampleSize, nnzRows))
 				return new CompressedSizeEstimatorExact(data, cs);

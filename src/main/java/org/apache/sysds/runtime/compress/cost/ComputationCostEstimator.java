@@ -31,7 +31,7 @@ public class ComputationCostEstimator implements ICostEstimate {
 	private final boolean _isCompareAll;
 
 	private final int _nRows;
-	// private final int _nColsInMatrix;
+	private final int _nCols;
 
 	// Iteration through each row of decompressed.
 	private final int _scans;
@@ -44,6 +44,8 @@ public class ComputationCostEstimator implements ICostEstimate {
 	// private final int _rowBasedOps;
 	private final int _dictionaryOps;
 
+	private final boolean _isDensifying;
+
 	/**
 	 * A Cost based estimator based on the WTree that is parsed in IPA.
 	 * 
@@ -51,7 +53,7 @@ public class ComputationCostEstimator implements ICostEstimate {
 	 */
 	protected ComputationCostEstimator(int nRows, int nCols, boolean compareAll, InstructionTypeCounter counts) {
 		_nRows = nRows;
-		// _nColsInMatrix = nCols;
+		_nCols = nCols;
 		_isCompareAll = compareAll;
 		_scans = counts.scans;
 		_decompressions = counts.decompressions;
@@ -60,9 +62,29 @@ public class ComputationCostEstimator implements ICostEstimate {
 		_compressedMultiplication = counts.compressedMultiplications;
 		_rightMultiplications = counts.rightMultiplications;
 		_dictionaryOps = counts.dictionaryOps;
+		_isDensifying = counts.isDensifying;
 		// _rowBasedOps = counts.rowBasedOps;
 		if(LOG.isDebugEnabled())
 			LOG.debug(this);
+	}
+
+	public ComputationCostEstimator(int nRows, int nCols, int scans, int decompressions, int overlappingDecompressions,
+		int leftMultiplictions, int compressedMultiplication, int rightMultiplications, int dictioanaryOps, boolean isDensifying) {
+		_nRows = nRows;
+		_nCols = nCols;
+		_isCompareAll = false;
+		_scans = scans;
+		_decompressions = decompressions;
+		_overlappingDecompressions = overlappingDecompressions;
+		_leftMultiplications = leftMultiplictions;
+		_compressedMultiplication = compressedMultiplication;
+		_rightMultiplications = rightMultiplications;
+		_dictionaryOps = dictioanaryOps;
+		_isDensifying = isDensifying;
+	}
+
+	public static ComputationCostEstimator genDefaultCostCase(int nRows, int nCols){
+		return new ComputationCostEstimator(nRows,nCols, 1, 1, 0, 1, 1, 1, 10, true);
 	}
 
 	@Override
@@ -84,6 +106,7 @@ public class ComputationCostEstimator implements ICostEstimate {
 		// 16 is assuming that the right side is 16 rows.
 		double rmc = rightMultCost(g) * 16;
 		cost += _rightMultiplications * rmc;
+
 		// cost += _compressedMultiplication * (lmc + rmc);
 		cost += _compressedMultiplication * _compressedMultCost(g);
 		cost += _dictionaryOps * dictionaryOpsCost(g);
@@ -110,28 +133,29 @@ public class ComputationCostEstimator implements ICostEstimate {
 	}
 
 	private double _compressedMultCost(CompressedSizeInfoColGroup g) {
-		final int nCols = g.getColumns().length;
+		final int nColsInGroup = g.getColumns().length;
 		final double mcf = g.getMostCommonFraction();
 		final double preAggregateCost = mcf > 0.6 ? _nRows * (1 - 0.7 * mcf) : _nRows;
 
 		final double numberTuples = (float) g.getNumVals();
 		final double tupleSparsity = g.getTupleSparsity();
-		final double postScalingCost = (nCols > 1 && tupleSparsity > 0.4) ? numberTuples * nCols * tupleSparsity *
-			1.4 : numberTuples * nCols;
+		final double postScalingCost = (nColsInGroup > 1 && tupleSparsity > 0.4) ? numberTuples * nColsInGroup * tupleSparsity *
+			1.4 : numberTuples * nColsInGroup;
 		if(numberTuples < 64000)
 			return preAggregateCost + postScalingCost;
 		else
 			return preAggregateCost * (numberTuples / 64000) + postScalingCost * (numberTuples / 64000);
 	}
 
-	private static double rightMultCost(CompressedSizeInfoColGroup g) {
-		final int nCols = g.getColumns().length;
+	private double rightMultCost(CompressedSizeInfoColGroup g) {
+		final int nColsInGroup = g.getColumns().length;
 		final int numberTuples = g.getNumVals() * 10;
 		final double tupleSparsity = g.getTupleSparsity();
-		final double postScalingCost = (nCols > 1 && tupleSparsity > 0.4) ? numberTuples * nCols * tupleSparsity *
-			1.4 : numberTuples * nCols;
+		final double postScalingCost = (nColsInGroup > 1 && tupleSparsity > 0.4) ? numberTuples * nColsInGroup * tupleSparsity *
+			1.4 : numberTuples * nColsInGroup;
+		final double postAllocationCost = _nCols * numberTuples;
 
-		return postScalingCost;
+		return postScalingCost + postAllocationCost;
 	}
 
 	private double decompressionCost(CompressedSizeInfoColGroup g) {
@@ -225,6 +249,10 @@ public class ComputationCostEstimator implements ICostEstimate {
 	@Override
 	public boolean shouldTryJoin(CompressedSizeInfoColGroup g1, CompressedSizeInfoColGroup g2) {
 		return true;
+	}
+
+	public boolean isDense(){
+		return _isDensifying;
 	}
 
 	@Override

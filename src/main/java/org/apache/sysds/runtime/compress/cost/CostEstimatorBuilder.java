@@ -26,10 +26,8 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.hops.AggUnaryOp;
 import org.apache.sysds.hops.Hop;
 import org.apache.sysds.hops.IndexingOp;
-import org.apache.sysds.hops.ParameterizedBuiltinOp;
 import org.apache.sysds.runtime.compress.workload.Op;
 import org.apache.sysds.runtime.compress.workload.OpMetadata;
-import org.apache.sysds.runtime.compress.workload.OpOverlappingDecompress;
 import org.apache.sysds.runtime.compress.workload.OpSided;
 import org.apache.sysds.runtime.compress.workload.WTreeNode;
 import org.apache.sysds.runtime.compress.workload.WTreeRoot;
@@ -44,6 +42,8 @@ public final class CostEstimatorBuilder implements Serializable {
 
 	public CostEstimatorBuilder(WTreeRoot root) {
 		counter = new InstructionTypeCounter();
+		if(root.isDecompressing())
+			counter.decompressions++;
 		for(Op o : root.getOps())
 			addOp(1, o, counter);
 		for(WTreeNode n : root.getChildNodes())
@@ -59,9 +59,7 @@ public final class CostEstimatorBuilder implements Serializable {
 	}
 
 	private static void addNode(int count, WTreeNode n, InstructionTypeCounter counter) {
-
 		int mult = n.getReps();
-
 		for(Op o : n.getOps())
 			addOp(count * mult, o, counter);
 		for(WTreeNode nc : n.getChildNodes())
@@ -69,27 +67,29 @@ public final class CostEstimatorBuilder implements Serializable {
 	}
 
 	private static void addOp(int count, Op o, InstructionTypeCounter counter) {
+		if(o.isDecompressing()) {
+			if(o.isOverlapping())
+				counter.overlappingDecompressions += count;
+			else
+				counter.decompressions += count;
+		}
+		if(o.isDensifying()){
+			counter.isDensifying = true;
+		}
+
 		if(o instanceof OpSided) {
 			OpSided os = (OpSided) o;
 			if(os.isLeftMM())
 				counter.leftMultiplications += count;
-			else if(os.isRightMM()) {
+			else if(os.isRightMM())
 				counter.rightMultiplications += count;
-				if(os.isDecompressing())
-					counter.overlappingDecompressions += count;
-			}
 			else
 				counter.compressedMultiplications += count;
 		}
 		else if(o instanceof OpMetadata) {
 			// ignore it
 		}
-		else if(o instanceof OpOverlappingDecompress) {
-			counter.overlappingDecompressions += count;
-		}
 		else {
-			if(o.isDecompressing())
-				counter.decompressions += count;
 			Hop h = o.getHop();
 			if(h instanceof AggUnaryOp) {
 				AggUnaryOp agop = (AggUnaryOp) o.getHop();
@@ -108,12 +108,6 @@ public final class CostEstimatorBuilder implements Serializable {
 					counter.indexing++;
 				else if(idxO.isAllRows())
 					counter.dictionaryOps += count; // Technically not correct but better than decompression
-				else
-					counter.decompressions += count;
-			}
-			else if(h instanceof ParameterizedBuiltinOp) {
-				// ParameterizedBuiltinOp pop = (ParameterizedBuiltinOp) h;
-				counter.decompressions += count;
 			}
 			else
 				counter.dictionaryOps += count;
@@ -122,7 +116,7 @@ public final class CostEstimatorBuilder implements Serializable {
 
 	public boolean shouldTryToCompress() {
 		int numberOps = 0;
-		numberOps += counter.scans + counter.leftMultiplications * 2 + counter.rightMultiplications +
+		numberOps += counter.scans + counter.leftMultiplications * 2 + counter.rightMultiplications * 2 +
 			counter.compressedMultiplications * 4 + counter.dictionaryOps;
 		numberOps -= counter.decompressions + counter.overlappingDecompressions;
 

@@ -128,7 +128,11 @@ public class RewriteCompressedReblock extends StatementBlockRewriteRule {
 
 	public static boolean satisfiesSizeConstraintsForCompression(Hop hop) {
 		if(hop.getDim2() >= 1) {
-			return (hop.getDim1() >= 1000 && hop.getDim2() < 100) || hop.getDim1() / hop.getDim2() >= 75 || (hop.getSparsity() < 0.0001 && hop.getDim1() > 1000);
+			return 
+				// If number of rows is above 1000 and either very sparse or number of columns is less than 100.
+				(hop.getDim1() >= 1000 && (hop.getDim2() < 100) || hop.getSparsity() < 0.0001)
+				// If relative ratio between number of rows and columns is better than 75, aka 75 rows per one column.
+				|| hop.getDim1() / hop.getDim2() >= 75;
 		}
 		return false;
 	}

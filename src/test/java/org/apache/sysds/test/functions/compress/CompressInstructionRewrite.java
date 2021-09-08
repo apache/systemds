@@ -21,11 +21,8 @@ package org.apache.sysds.test.functions.compress;
 
 import static org.junit.Assert.assertTrue;
 
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.test.AutomatedTestBase;
@@ -37,7 +34,7 @@ import org.junit.Assert;
 import org.junit.Test;
 
 public class CompressInstructionRewrite extends AutomatedTestBase {
-	private static final Log LOG = LogFactory.getLog(CompressInstructionRewrite.class.getName());
+	// private static final Log LOG = LogFactory.getLog(CompressInstructionRewrite.class.getName());
 
 	private String TEST_CONF = "SystemDS-config-compress-cost.xml";
 	private File TEST_CONF_FILE = new File(SCRIPT_DIR + getTestDir(), TEST_CONF);
@@ -91,12 +88,12 @@ public class CompressInstructionRewrite extends AutomatedTestBase {
 
 	@Test
 	public void testCompressInstruction_07() {
-		compressTest(6, 6000, 0.2, ExecType.CP, 0, 5, 0, 1, "07");
+		compressTest(10, 6000, 0.2, ExecType.CP, 0, 3, 0, 1, "07");
 	}
 
 	@Test
 	public void testCompressInstruction_08() {
-		compressTest(6, 6000, 0.2, ExecType.CP, 0, 5, 0, 1, "08");
+		compressTest(10, 6000, 0.2, ExecType.CP, 0, 3, 0, 1, "08");
 	}
 
 	@Test
@@ -108,7 +105,6 @@ public class CompressInstructionRewrite extends AutomatedTestBase {
 	public void testCompressInstruction_10() {
 		compressTest(1, 1000, 1.0, ExecType.CP, 5, 5, 0, 0, "10");
 	}
-
 
 	public void compressTest(int cols, int rows, double sparsity, ExecType instType, int min, int max,
 		int decompressionCountExpected, int compressionCountsExpected, String name) {
@@ -122,16 +118,13 @@ public class CompressInstructionRewrite extends AutomatedTestBase {
 			programArgs = new String[] {"-explain", "-stats", "100", "-nvargs", "cols=" + cols, "rows=" + rows,
 				"sparsity=" + sparsity, "min=" + min, "max= " + max};
 
-			ByteArrayOutputStream stdout = runTest(null);
-
-			if(LOG.isDebugEnabled())
-				LOG.debug(stdout);
+			String stdout = runTest(null).toString();
 
 			int decompressCount = DMLCompressionStatistics.getDecompressionCount();
 			long compressionCount = Statistics.getCPHeavyHitterCount("compress");
 
-			Assert.assertEquals(compressionCountsExpected, compressionCount);
-			Assert.assertEquals(decompressionCountExpected, decompressCount);
+			Assert.assertEquals(stdout, compressionCountsExpected, compressionCount);
+			Assert.assertEquals(stdout, decompressionCountExpected, decompressCount);
 			if(decompressionCountExpected > 0)
 				Assert.assertTrue(heavyHittersContainsString("decompress", decompressionCountExpected));
 		}

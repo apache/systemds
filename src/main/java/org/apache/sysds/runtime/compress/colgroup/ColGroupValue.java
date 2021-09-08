@@ -896,8 +896,6 @@ public abstract class ColGroupValue extends ColGroupCompressed implements Clonea
 		}
 	}
 
-	private static boolean logMM = true;
-
 	/**
 	 * Matrix Multiply the two matrices, note that the left side is transposed,
 	 * 
@@ -978,10 +976,6 @@ public abstract class ColGroupValue extends ColGroupCompressed implements Clonea
 
 		}
 		catch(Exception e) {
-			if(logMM) {
-				LOG.error("\nLeft (transposed):\n" + left + "\nRight:\n" + right);
-				logMM = false;
-			}
 			throw new DMLCompressionException("MM of pre aggregated colGroups failed", e);
 		}
 	}

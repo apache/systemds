@@ -46,8 +46,8 @@ public abstract class AWTreeNode {
 	}
 
 	private final WTNodeType _type;
-	private final List<WTreeNode> _children = new ArrayList<>();
-	private final List<Op> _ops = new ArrayList<>();
+	protected final List<WTreeNode> _children = new ArrayList<>();
+	protected final List<Op> _ops = new ArrayList<>();
 
 	public AWTreeNode(WTNodeType type) {
 		_type = type;
@@ -102,7 +102,7 @@ public abstract class AWTreeNode {
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
 		sb.append("\n---------------------------Workload Tree:---------------------------------------\n");
-		sb.append(this.explain(1));
+		sb.append(this.explain(0));
 		sb.append("--------------------------------------------------------------------------------\n");
 		return sb.toString();
 	}

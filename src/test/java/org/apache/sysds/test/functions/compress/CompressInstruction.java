@@ -95,7 +95,6 @@ public class CompressInstruction extends AutomatedTestBase {
 			programArgs = new String[] {"-stats", "100", "-nvargs", "cols=" + cols, "rows=" + rows,
 				"sparsity=" + sparsity, "min=" + min, "max= " + max};
 			runTest(null);
-			// LOG.error(runTest(null));
 
 		}
 		catch(Exception e) {

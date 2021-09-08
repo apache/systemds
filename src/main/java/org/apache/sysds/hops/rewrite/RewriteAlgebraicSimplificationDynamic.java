@@ -2801,22 +2801,26 @@ public class RewriteAlgebraicSimplificationDynamic extends HopRewriteRule
 
 		// cbind((X %*% Y), matrix(0, nrow(X), 1)) ->
 		// X %*% (cbind(Y, matrix(0, nrow(Y), 1)))
-		// if nRows of x is larger than nCols of y
+		// if nRows of x is larger than nRows of y
 		// rewrite used in MLogReg first level loop.
-		
+
 		if(HopRewriteUtils.isBinary(hi, OpOp2.CBIND) && HopRewriteUtils.isMatrixMultiply(hi.getInput(0)) &&
-			HopRewriteUtils.isDataGenOpWithConstantValue(hi.getInput(1), 0) && hi.getDim1() > hi.getDim2() * 2) {
-			final Hop oldGen = hi.getInput(1);
+			HopRewriteUtils.isDataGenOpWithConstantValue(hi.getInput(1), 0) && hi.getInput(0).getInput(0).dimsKnown() &&
+			hi.getInput(0).getInput(1).dimsKnown()) {
 			final Hop y = hi.getInput(0).getInput(1);
 			final Hop x = hi.getInput(0).getInput(0);
-			final Hop newGen = HopRewriteUtils.createDataGenOp(y, oldGen, 0);
-			final Hop newCBind = HopRewriteUtils.createBinary(y, newGen, OpOp2.CBIND);
-			final Hop newMM = HopRewriteUtils.createMatrixMultiply(x, newCBind);
+			final long m = x.getDim1(); // number of rows in output or X
+			final long n = y.getDim1(); // number of rows in Y or common dimension
+			if(m > n * 2) {
+				final Hop oldGen = hi.getInput(1);
+				final Hop newGen = HopRewriteUtils.createDataGenOp(y, oldGen, 0);
+				final Hop newCBind = HopRewriteUtils.createBinary(y, newGen, OpOp2.CBIND);
+				final Hop newMM = HopRewriteUtils.createMatrixMultiply(x, newCBind);
 
-			HopRewriteUtils.replaceChildReference(parent, hi, newMM, pos);
-			LOG.debug("Applied MMCBind Zero algebraic simplification (line " +hi.getBeginLine()+")." );
-			return newMM;
-
+				HopRewriteUtils.replaceChildReference(parent, hi, newMM, pos);
+				LOG.debug("Applied MMCBind Zero algebraic simplification (line " + hi.getBeginLine() + ").");
+				return newMM;
+			}
 		}
 		return hi;
 	}

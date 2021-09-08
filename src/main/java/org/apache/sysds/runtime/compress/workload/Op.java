@@ -24,6 +24,9 @@ import org.apache.sysds.hops.Hop;
 public abstract class Op {
 
 	protected final Hop _op;
+	protected boolean isDecompressing = false;
+	protected boolean isOverlapping = false;
+	private boolean isDensifying = false;
 
 	public Op(Hop op) {
 		_op = op;
@@ -35,11 +38,35 @@ public abstract class Op {
 
 	@Override
 	public String toString() {
-		return _op.toString();
+		return _op.getHopID() + " " + _op.toString() + " CompressedOutput: " + isCompressedOutput()
+			+ " IsDecompressing: " + isDecompressing();
 	}
 
-	public abstract boolean isCompressedOutput();
+	public boolean isCompressedOutput(){
+		return true;
+	}
 
-	public abstract boolean isDecompressing();
+	public final boolean isDecompressing() {
+		return isDecompressing;
+	}
 
+	public final void setDecompressing() {
+		isDecompressing = true;
+	}
+
+	public boolean isOverlapping() {
+		return isOverlapping;
+	}
+
+	public void setOverlapping() {
+		isOverlapping = true;
+	}
+
+	public boolean isDensifying(){
+		return isDensifying;
+	}
+
+	public void setDensifying(){
+		isDensifying = true;
+	}
 }

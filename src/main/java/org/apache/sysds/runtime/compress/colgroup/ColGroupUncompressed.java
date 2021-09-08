@@ -142,9 +142,9 @@ public class ColGroupUncompressed extends AColGroup {
 		_data = data;
 	}
 
-	private static int[] generateColumnList(int nCol){
+	private static int[] generateColumnList(int nCol) {
 		int[] cols = new int[nCol];
-		for(int i = 0; i< nCol; i++)
+		for(int i = 0; i < nCol; i++)
 			cols[i] = i;
 		return cols;
 	}
@@ -456,7 +456,6 @@ public class ColGroupUncompressed extends AColGroup {
 	@Override
 	public AColGroup copy() {
 		MatrixBlock newData = new MatrixBlock(_data.getNumRows(), _data.getNumColumns(), _data.isInSparseFormat());
-		// _data.copy(newData);
 		newData.copy(_data);
 		return new ColGroupUncompressed(_colIndexes, newData);
 	}
@@ -640,7 +639,6 @@ public class ColGroupUncompressed extends AColGroup {
 
 	@Override
 	public void computeColSums(double[] c) {
-		// TODO Auto-generated method stub
 		MatrixBlock colSum = _data.colSum();
 		if(colSum.isInSparseFormat()) {
 			throw new NotImplementedException();
@@ -649,7 +647,6 @@ public class ColGroupUncompressed extends AColGroup {
 			double[] dv = colSum.getDenseBlockValues();
 			for(int i = 0; i < _colIndexes.length; i++)
 				c[_colIndexes[i]] += dv[i];
-
 		}
 	}
 }

@@ -34,9 +34,4 @@ public class OpNormal extends Op {
 	public boolean isCompressedOutput() {
 		return outC;
 	}
-
-	@Override
-	public boolean isDecompressing() {
-		return false;
-	}
 }

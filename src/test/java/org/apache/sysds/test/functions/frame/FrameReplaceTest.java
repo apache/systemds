@@ -19,6 +19,7 @@
 
 package org.apache.sysds.test.functions.frame;
 
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import org.apache.sysds.api.DMLScript;
@@ -76,9 +77,17 @@ public class FrameReplaceTest extends AutomatedTestBase {
             // run test
             String out = runTest(null).toString();
 
-            assertTrue(out.contains("south"));
-            assertTrue(!out.contains("north"));
+            assertTrue(out.contains("3"));
+            assertTrue(out.contains("1000"));
+            assertTrue(out.contains("cba"));
+            assertTrue(out.contains("1.5"));
+            assertTrue(out.contains("FALSE"));
 
+            assertFalse(out.contains("1"));
+            assertFalse(out.contains("500"));
+            assertFalse(out.contains("abc"));
+            assertFalse(out.contains("2.5"));
+            assertFalse(out.contains("TRUE"));
         }
         catch(Exception ex) {
             throw new RuntimeException(ex);

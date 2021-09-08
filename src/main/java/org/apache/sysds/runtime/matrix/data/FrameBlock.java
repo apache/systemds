@@ -42,6 +42,7 @@ import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Function;
 
 import org.apache.commons.lang.ArrayUtils;
+import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.io.Writable;
@@ -2244,16 +2245,45 @@ public class FrameBlock implements CacheBlock, Externalizable  {
 		public String apply(String input1, String input2) {	return null;}
 	}
 
-	public FrameBlock replaceOperations(String pattern, String replacement){
+	public <T> FrameBlock replaceOperations(String pattern, String replacement) {
 		FrameBlock ret = new FrameBlock(this);
+
+		ValueType patternType = isBoolean(pattern) ? ValueType.BOOLEAN : (NumberUtils.isCreatable(pattern) ?
+			(pattern.matches("-?\\d+") ? ValueType.INT64 : ValueType.FP64) : ValueType.STRING);
+		ValueType replacementType = isBoolean(replacement) ? ValueType.BOOLEAN : (NumberUtils.isCreatable(replacement) ?
+			(replacement.matches("-?\\d+") ? ValueType.INT64 : ValueType.FP64) : ValueType.STRING);
+
+		if(patternType != replacementType || !ValueType.isSameTypeString(patternType, replacementType))
+			throw new DMLRuntimeException("Pattern and replacement types should be same.");
+
 		for(int i = 0; i < ret.getNumColumns(); i++){
 			Array colData = ret._coldata[i];
-			for(int j = 0; j < colData._size; j++){
+			for(int j = 0; j < colData._size && ValueType.isSameTypeString(_schema[i], patternType); j++) {
+				T patternNew = replaceStringWithVariable(pattern, _schema[i]);
+				T replacementNew = replaceStringWithVariable(replacement, _schema[i]);
+
 				Object ent = colData.get(j);
-				if(ent != null && ent.equals(pattern))
-					colData.set(j,replacement); 
+				if(ent != null && ent.toString().equals(patternNew.toString()))
+					colData.set(j,replacementNew);
 			}
 		}
 		return ret;
+	}
+
+	private <T> T replaceStringWithVariable(String str, ValueType valueType) {
+		if(valueType == ValueType.BOOLEAN)
+			return (T) Boolean.valueOf(str);
+		else if(ArrayUtils.contains(new ValueType[] {ValueType.FP32, ValueType.FP64}, valueType))
+			return (T) Double.valueOf(str);
+		else if(valueType == ValueType.INT32)
+			return (T) Integer.valueOf(str);
+		else if(valueType == ValueType.INT64)
+			return (T) Long.valueOf(str);
+		else
+			return (T) str;
+	}
+
+	private boolean isBoolean(String str) {
+		return String.valueOf(true).equalsIgnoreCase(str) || String.valueOf(false).equalsIgnoreCase(str);
 	}
 }

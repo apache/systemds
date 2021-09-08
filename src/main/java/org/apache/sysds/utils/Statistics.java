@@ -19,20 +19,6 @@
 
 package org.apache.sysds.utils;
 
-import java.lang.management.CompilationMXBean;
-import java.lang.management.GarbageCollectorMXBean;
-import java.lang.management.ManagementFactory;
-import java.text.DecimalFormat;
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map.Entry;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.DoubleAdder;
-import java.util.concurrent.atomic.LongAdder;
-
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.sysds.api.DMLScript;
@@ -50,6 +36,20 @@ import org.apache.sysds.runtime.instructions.spark.SPInstruction;
 import org.apache.sysds.runtime.lineage.LineageCacheConfig.ReuseCacheType;
 import org.apache.sysds.runtime.lineage.LineageCacheStatistics;
 import org.apache.sysds.runtime.privacy.CheckedConstraintsLog;
+
+import java.lang.management.CompilationMXBean;
+import java.lang.management.GarbageCollectorMXBean;
+import java.lang.management.ManagementFactory;
+import java.text.DecimalFormat;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map.Entry;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.DoubleAdder;
+import java.util.concurrent.atomic.LongAdder;
 
 /**
  * This class captures all statistics.
@@ -149,7 +149,28 @@ public class Statistics
 	private static final LongAdder lTotalUIPVar = new LongAdder();
 	private static final LongAdder lTotalLix = new LongAdder();
 	private static final LongAdder lTotalLixUIP = new LongAdder();
-	
+
+	// Transformencode stats
+	private static final LongAdder transformEncoderCount = new LongAdder();
+
+	//private static final LongAdder transformBuildTime = new LongAdder();
+	private static final LongAdder transformRecodeBuildTime = new LongAdder();
+	private static final LongAdder transformBinningBuildTime = new LongAdder();
+	private static final LongAdder transformImputeBuildTime = new LongAdder();
+
+	//private static final LongAdder transformApplyTime = new LongAdder();
+	private static final LongAdder transformRecodeApplyTime = new LongAdder();
+	private static final LongAdder transformDummyCodeApplyTime = new LongAdder();
+	private static final LongAdder transformPassThroughApplyTime = new LongAdder();
+	private static final LongAdder transformFeatureHashingApplyTime = new LongAdder();
+	private static final LongAdder transformBinningApplyTime = new LongAdder();
+	private static final LongAdder transformOmitApplyTime = new LongAdder();
+	private static final LongAdder transformImputeApplyTime = new LongAdder();
+
+
+	private static final LongAdder transformOutMatrixPreProcessingTime = new LongAdder();
+	private static final LongAdder transformOutMatrixPostProcessingTime = new LongAdder();
+
 	// Federated stats
 	private static final LongAdder federatedReadCount = new LongAdder();
 	private static final LongAdder federatedPutCount = new LongAdder();
@@ -649,6 +670,70 @@ public class Statistics
 
 	public static void accFedPSCommunicationTime(long t) { fedPSCommunicationTime.add(t);}
 
+	public static void incTransformEncoderCount(long encoders){
+		transformEncoderCount.add(encoders);
+	}
+
+	public static void incTransformRecodeApplyTime(long t){
+		transformRecodeApplyTime.add(t);
+	}
+
+	public static void incTransformDummyCodeApplyTime(long t){
+		transformDummyCodeApplyTime.add(t);
+	}
+
+	public static void incTransformBinningApplyTime(long t){
+		transformBinningApplyTime.add(t);
+	}
+
+	public static void incTransformPassThroughApplyTime(long t){
+		transformPassThroughApplyTime.add(t);
+	}
+
+	public static void incTransformFeatureHashingApplyTime(long t){
+		transformFeatureHashingApplyTime.add(t);
+	}
+
+	public static void incTransformOmitApplyTime(long t) {
+		transformOmitApplyTime.add(t);
+	}
+
+	public static void incTransformImputeApplyTime(long t) {
+		transformImputeApplyTime.add(t);
+	}
+
+	public static void incTransformRecodeBuildTime(long t){
+		transformRecodeBuildTime.add(t);
+	}
+
+	public static void incTransformBinningBuildTime(long t){
+		transformBinningBuildTime.add(t);
+	}
+
+	public static void incTransformImputeBuildTime(long t) {
+		transformImputeBuildTime.add(t);
+	}
+
+	public static void incTransformOutMatrixPreProcessingTime(long t){
+		transformOutMatrixPreProcessingTime.add(t);
+	}
+
+	public static void incTransformOutMatrixPostProcessingTime(long t){
+		transformOutMatrixPostProcessingTime.add(t);
+	}
+
+	public static long getTransformEncodeBuildTime(){
+		return transformBinningBuildTime.longValue() + transformImputeBuildTime.longValue() +
+				transformRecodeBuildTime.longValue();
+	}
+
+	public static long getTransformEncodeApplyTime(){
+		return transformDummyCodeApplyTime.longValue() + transformBinningApplyTime.longValue() +
+				transformFeatureHashingApplyTime.longValue() + transformPassThroughApplyTime.longValue() +
+				transformRecodeApplyTime.longValue() + transformOmitApplyTime.longValue() +
+				transformImputeApplyTime.longValue();
+	}
+
 	public static String getCPHeavyHitterCode( Instruction inst )
 	{
 		String opcode = null;
@@ -1128,6 +1213,50 @@ public class Statistics
 				sb.append("Federated Execute (Inst, UDF):\t" +
 					federatedExecuteInstructionCount.longValue() + "/" +
 					federatedExecuteUDFCount.longValue() + ".\n");
+			}
+			if( transformEncoderCount.longValue() > 0) {
+				//TODO: Cleanup and condense
+				sb.append("TransformEncode num. encoders:\t").append(transformEncoderCount.longValue()).append("\n");
+				sb.append("TransformEncode build time:\t").append(String.format("%.3f",
+						getTransformEncodeBuildTime()*1e-9)).append(" sec.\n");
+				if(transformRecodeBuildTime.longValue() > 0)
+					sb.append("\tRecode build time:\t").append(String.format("%.3f",
+							transformRecodeBuildTime.longValue()*1e-9)).append(" sec.\n");
+				if(transformBinningBuildTime.longValue() > 0)
+					sb.append("\tBinning build time:\t").append(String.format("%.3f",
+							transformBinningBuildTime.longValue()*1e-9)).append(" sec.\n");
+				if(transformImputeBuildTime.longValue() > 0)
+					sb.append("\tImpute build time:\t").append(String.format("%.3f",
+							transformImputeBuildTime.longValue()*1e-9)).append(" sec.\n");
+
+				sb.append("TransformEncode apply time:\t").append(String.format("%.3f",
+						getTransformEncodeApplyTime()*1e-9)).append(" sec.\n");
+				if(transformRecodeApplyTime.longValue() > 0)
+					sb.append("\tRecode apply time:\t").append(String.format("%.3f",
+							transformRecodeApplyTime.longValue()*1e-9)).append(" sec.\n");
+				if(transformBinningApplyTime.longValue() > 0)
+					sb.append("\tBinning apply time:\t").append(String.format("%.3f",
+							transformBinningApplyTime.longValue()*1e-9)).append(" sec.\n");
+				if(transformDummyCodeApplyTime.longValue() > 0)
+					sb.append("\tDummyCode apply time:\t").append(String.format("%.3f",
+							transformDummyCodeApplyTime.longValue()*1e-9)).append(" sec.\n");
+				if(transformFeatureHashingApplyTime.longValue() > 0)
+					sb.append("\tHashing apply time:\t").append(String.format("%.3f",
+							transformFeatureHashingApplyTime.longValue()*1e-9)).append(" sec.\n");
+				if(transformPassThroughApplyTime.longValue() > 0)
+					sb.append("\tPassThrough apply time:\t").append(String.format("%.3f",
+							transformPassThroughApplyTime.longValue()*1e-9)).append(" sec.\n");
+				if(transformOmitApplyTime.longValue() > 0)
+					sb.append("\tOmit apply time:\t").append(String.format("%.3f",
+							transformOmitApplyTime.longValue()*1e-9)).append(" sec.\n");
+				if(transformImputeApplyTime.longValue() > 0)
+					sb.append("\tImpute apply time:\t").append(String.format("%.3f",
+							transformImputeApplyTime.longValue()*1e-9)).append(" sec.\n");
+
+				sb.append("TransformEncode PreProc. time:\t").append(String.format("%.3f",
+						transformOutMatrixPreProcessingTime.longValue()*1e-9)).append(" sec.\n");
+				sb.append("TransformEncode PostProc. time:\t").append(String.format("%.3f",
+						transformOutMatrixPostProcessingTime.longValue()*1e-9)).append(" sec.\n");
 			}
 
 			if(ConfigurationManager.isCompressionEnabled()){

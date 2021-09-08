@@ -1008,6 +1008,24 @@ public class OptimizerUtils
 			
 		return ret;
 	}
+
+	public static int getTransformNumThreads(int maxNumThreads)
+	{
+		//by default max local parallelism (vcores) 
+		int ret = InfrastructureAnalyzer.getLocalParallelism();
+		
+		//apply external max constraint (e.g., set by parfor or other rewrites)
+		if( maxNumThreads > 0 ) {
+			ret = Math.min(ret, maxNumThreads);
+		}
+		
+		//check if enabled in config.xml
+		if( !ConfigurationManager.isParallelTransform() ) {
+			ret = 1;
+		}
+			
+		return ret;
+	}
 	
 	public static Level getDefaultLogLevel() {
 		Level log = Logger.getRootLogger().getLevel();

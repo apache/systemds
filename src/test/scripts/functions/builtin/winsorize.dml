@@ -20,5 +20,5 @@
 #-------------------------------------------------------------
 
 X = read($1);
-Y = winsorize(X, FALSE);
+Y = winsorize(X=X, ql=0.05, qu= 0.95, verbose=FALSE);
 write(Y, $2)

@@ -28,6 +28,7 @@ import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
+import org.junit.Ignore;
 import org.junit.Test;
 
 public class FrameReplaceTest extends AutomatedTestBase {
@@ -48,6 +49,7 @@ public class FrameReplaceTest extends AutomatedTestBase {
     }
 
     @Test
+    @Ignore
     public void testParforFrameIntermediatesSpark() {
         runReplaceTest(ExecType.SPARK);
     }

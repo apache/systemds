@@ -2258,13 +2258,15 @@ public class FrameBlock implements CacheBlock, Externalizable  {
 
 		for(int i = 0; i < ret.getNumColumns(); i++){
 			Array colData = ret._coldata[i];
-			for(int j = 0; j < colData._size && ValueType.isSameTypeString(_schema[i], patternType); j++) {
+			for(int j = 0; j < colData._size && (ValueType.isSameTypeString(_schema[i], patternType) || _schema[i] == ValueType.STRING); j++) {
 				T patternNew = replaceStringWithVariable(pattern, _schema[i]);
 				T replacementNew = replaceStringWithVariable(replacement, _schema[i]);
 
 				Object ent = colData.get(j);
 				if(ent != null && ent.toString().equals(patternNew.toString()))
 					colData.set(j,replacementNew);
+				else  if(ent instanceof String && ent.equals(pattern))
+					colData.set(j, replacement);
 			}
 		}
 		return ret;

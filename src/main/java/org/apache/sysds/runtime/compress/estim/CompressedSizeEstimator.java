@@ -189,8 +189,8 @@ public abstract class CompressedSizeEstimator {
 	 * 
 	 * if the number of distinct elements in both sides multiplied is larger than Integer, return null.
 	 * 
-	 * If either side was constructed without analysis then fall back to default materialization of double arrays.
-	 * O
+	 * If either side was constructed without analysis then fall back to default materialization of double arrays. O
+	 * 
 	 * @param g1 First group
 	 * @param g2 Second group
 	 * @return A joined compressed size estimation for the group.

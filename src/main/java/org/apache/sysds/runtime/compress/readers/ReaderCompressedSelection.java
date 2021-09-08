@@ -63,9 +63,7 @@ public class ReaderCompressedSelection extends ReaderColumnSelection {
 			reusableArr[i] = bl.get(offset, _colIndexes[i]);
 			bl.set(offset, _colIndexes[i], 0);
 		}
-		// LOG.error(reusableReturn);
 		return reusableReturn;
-
 	}
 
 }

@@ -28,8 +28,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup;
@@ -38,68 +36,52 @@ import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.CommonThreadPool;
 
 public class CLALibRightMultBy {
-	private static final Log LOG = LogFactory.getLog(CLALibRightMultBy.class.getName());
+	// private static final Log LOG = LogFactory.getLog(CLALibRightMultBy.class.getName());
 
 	public static MatrixBlock rightMultByMatrix(CompressedMatrixBlock m1, MatrixBlock m2, MatrixBlock ret, int k,
 		boolean allowOverlap) {
-		ret = rightMultByMatrix(m1.getColGroups(), m2, ret, k, allowOverlap);
+		if(m2.isEmpty()) {
+			if(ret == null)
+				ret = new MatrixBlock(m1.getNumRows(), m2.getNumColumns(), 0);
+			else
+				ret.reset(m1.getNumRows(), m2.getNumColumns(), 0);
+		}
+		else {
+			if(m2 instanceof CompressedMatrixBlock) {
+				CompressedMatrixBlock m2C = (CompressedMatrixBlock) m2;
+				m2 = m2C.getUncompressed("Uncompressed right side of right MM");
+			}
+
+			ret = rightMultByMatrixOverlapping(m1, m2, ret, k);
+
+			if(ret instanceof CompressedMatrixBlock) {
+				if(!allowOverlap) {
+					ret = ((CompressedMatrixBlock) ret).getUncompressed("Overlapping not allowed");
+				}
+				else {
+					final double compressedSize = ret.getInMemorySize();
+					final double uncompressedSize = MatrixBlock.estimateSizeDenseInMemory(ret.getNumRows(),
+						ret.getNumColumns());
+					if(compressedSize * 2 > uncompressedSize)
+						ret = ((CompressedMatrixBlock) ret).getUncompressed(
+							"Overlapping rep to big: " + compressedSize + " vs Uncompressed " + uncompressedSize);
+				}
+			}
+		}
+
 		ret.recomputeNonZeros();
+
 		return ret;
 	}
 
-	private static MatrixBlock rightMultByMatrix(List<AColGroup> colGroups, MatrixBlock that, MatrixBlock ret, int k,
-		boolean allowOverlap) {
-
-		if(that instanceof CompressedMatrixBlock)
-			LOG.warn("Decompression Right matrix");
-
-		that = that instanceof CompressedMatrixBlock ? ((CompressedMatrixBlock) that).decompress(k) : that;
-
-		MatrixBlock m = rightMultByMatrixOverlapping(colGroups, that, ret, k);
-
-		if(m instanceof CompressedMatrixBlock)
-			if(allowOverlappingOutput(colGroups, allowOverlap))
-				return m;
-			else
-				return ((CompressedMatrixBlock) m).decompress(k);
-		else
-			return m;
-	}
-
-	private static boolean allowOverlappingOutput(List<AColGroup> colGroups, boolean allowOverlap) {
-
-		if(!allowOverlap) {
-			LOG.debug("Not Overlapping because it is not allowed");
-			return false;
-		}
-		else
-			return true;
-		// int distinctCount = 0;
-		// for(AColGroup g : colGroups) {
-		// if(g instanceof ColGroupCompressed)
-		// distinctCount += ((ColGroupCompressed) g).getNumValues();
-		// else {
-		// LOG.debug("Not Overlapping because there is an un-compressed column group");
-		// return false;
-		// }
-		// }
-		// final int threshold = colGroups.get(0).getNumRows() / 2;
-		// boolean allow = distinctCount <= threshold;
-		// if(LOG.isDebugEnabled() && !allow)
-		// LOG.debug("Not Allowing Overlap because of number of distinct items in compression: " + distinctCount
-		// + " is greater than threshold: " + threshold);
-		// return allow;
-
-	}
-
-	private static MatrixBlock rightMultByMatrixOverlapping(List<AColGroup> colGroups, MatrixBlock that,
-		MatrixBlock ret, int k) {
-		int rl = colGroups.get(0).getNumRows();
+	private static MatrixBlock rightMultByMatrixOverlapping(CompressedMatrixBlock m1, MatrixBlock that, MatrixBlock ret,
+		int k) {
+		int rl = m1.getNumRows();
 		int cl = that.getNumColumns();
 		// Create an overlapping compressed Matrix Block.
 		ret = new CompressedMatrixBlock(rl, cl);
 		CompressedMatrixBlock retC = (CompressedMatrixBlock) ret;
-		ret = rightMultByMatrixCompressed(colGroups, that, retC, k);
+		ret = rightMultByMatrixCompressed(m1.getColGroups(), that, retC, k);
 		return ret;
 	}
 

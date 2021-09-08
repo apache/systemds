@@ -108,10 +108,10 @@ public class CompressionSettings {
 	 */
 	public final double minimumCompressionRatio;
 
-	protected CompressionSettings(double samplingRatio, boolean allowSharedDictionary, String transposeInput,
-		 int seed, boolean lossy, EnumSet<CompressionType> validCompressions,
-		boolean sortValuesByLength, PartitionerType columnPartitioner, int maxColGroupCoCode, double coCodePercentage,
-		int minimumSampleSize, EstimationType estimationType, CostType costComputationType, double minimumCompressionRatio) {
+	protected CompressionSettings(double samplingRatio, boolean allowSharedDictionary, String transposeInput, int seed,
+		boolean lossy, EnumSet<CompressionType> validCompressions, boolean sortValuesByLength,
+		PartitionerType columnPartitioner, int maxColGroupCoCode, double coCodePercentage, int minimumSampleSize,
+		EstimationType estimationType, CostType costComputationType, double minimumCompressionRatio) {
 		this.samplingRatio = samplingRatio;
 		this.allowSharedDictionary = allowSharedDictionary;
 		this.transposeInput = transposeInput;

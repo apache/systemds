@@ -109,12 +109,13 @@ public final class MapToFactory {
 		final int nVR = right.getUnique();
 		final int size = left.size();
 		final long maxUnique = nVL * nVR;
-		if(maxUnique > (long)Integer.MAX_VALUE)
-			throw new DMLCompressionException("Joining impossible using linearized join, since each side has a large number of unique values");
+		if(maxUnique > (long) Integer.MAX_VALUE)
+			throw new DMLCompressionException(
+				"Joining impossible using linearized join, since each side has a large number of unique values");
 		if(size != right.size())
 			throw new DMLCompressionException("Invalid input maps to join, must contain same number of rows");
 
-		return computeJoin(left, right, size, nVL, (int)maxUnique);
+		return computeJoin(left, right, size, nVL, (int) maxUnique);
 	}
 
 	private static AMapToData computeJoin(AMapToData left, AMapToData right, int size, int nVL, int maxUnique) {
@@ -133,11 +134,11 @@ public final class MapToFactory {
 				tmp.set(i, newUID - 1);
 				map[nv] = newUID++;
 			}
-			else 
+			else
 				tmp.set(i, mapV - 1);
 		}
 
-		tmp.setUnique(newUID-1);
+		tmp.setUnique(newUID - 1);
 		return tmp;
 	}
 }

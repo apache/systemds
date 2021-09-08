@@ -39,6 +39,7 @@ import org.apache.sysds.runtime.compress.colgroup.AColGroup;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup.CompressionType;
 import org.apache.sysds.runtime.functionobjects.KahanPlus;
 import org.apache.sysds.runtime.functionobjects.Multiply;
+import org.apache.sysds.runtime.functionobjects.PlusMultiply;
 import org.apache.sysds.runtime.functionobjects.ReduceAll;
 import org.apache.sysds.runtime.matrix.data.LibMatrixCountDistinct;
 import org.apache.sysds.runtime.matrix.data.LibMatrixDatagen;
@@ -47,8 +48,12 @@ import org.apache.sysds.runtime.matrix.data.RandomMatrixGenerator;
 import org.apache.sysds.runtime.matrix.operators.AggregateOperator;
 import org.apache.sysds.runtime.matrix.operators.AggregateTernaryOperator;
 import org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator;
+import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysds.runtime.matrix.operators.CountDistinctOperator;
 import org.apache.sysds.runtime.matrix.operators.CountDistinctOperator.CountDistinctTypes;
+import org.apache.sysds.runtime.matrix.operators.RightScalarOperator;
+import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
+import org.apache.sysds.runtime.matrix.operators.TernaryOperator;
 import org.apache.sysds.runtime.util.DataConverter;
 import org.apache.sysds.test.TestUtils;
 import org.apache.sysds.test.component.compress.TestConstants.MatrixTypology;
@@ -579,7 +584,7 @@ public class CompressedMatrixTest extends AbstractCompressedUnaryTests {
 	@Test
 	public void testAggregateTernaryOperation() {
 		try {
-			if(!(cmb instanceof CompressedMatrixBlock) || rows * cols > 10000)
+			if(!(cmb instanceof CompressedMatrixBlock) || rows * cols > 1000)
 				return;
 			CorrectionLocationType corr = CorrectionLocationType.LASTCOLUMN;
 			AggregateOperator agg = new AggregateOperator(0, KahanPlus.getKahanPlusFnObject(), corr);
@@ -594,6 +599,114 @@ public class CompressedMatrixTest extends AbstractCompressedUnaryTests {
 
 			MatrixBlock ret1 = cmb.aggregateTernaryOperations(cmb, m2, m3, null, op, true);
 			MatrixBlock ret2 = mb.aggregateTernaryOperations(mb, m2, m3, null, op, true);
+
+			compareResultMatrices(ret2, ret1, 1);
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			throw new DMLRuntimeException(e);
+		}
+	}
+
+	@Test
+	public void testAggregateTernaryOperationZero() {
+		try {
+			if(!(cmb instanceof CompressedMatrixBlock) || rows * cols > 10000)
+				return;
+			CorrectionLocationType corr = CorrectionLocationType.LASTCOLUMN;
+			AggregateOperator agg = new AggregateOperator(0, KahanPlus.getKahanPlusFnObject(), corr);
+			AggregateTernaryOperator op = new AggregateTernaryOperator(Multiply.getMultiplyFnObject(), agg,
+				ReduceAll.getReduceAllFnObject());
+
+			int nrow = mb.getNumRows();
+			int ncol = mb.getNumColumns();
+
+			MatrixBlock m2 = new MatrixBlock(nrow, ncol, 0);
+			MatrixBlock m3 = new MatrixBlock(nrow, ncol, 14.0);
+
+			MatrixBlock ret1 = cmb.aggregateTernaryOperations(cmb, m2, m3, null, op, true);
+			MatrixBlock ret2 = mb.aggregateTernaryOperations(mb, m2, m3, null, op, true);
+
+			compareResultMatrices(ret2, ret1, 1);
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			throw new DMLRuntimeException(e);
+		}
+	}
+
+	@Test
+	public void testTernaryOperation() {
+		try {
+			if(!(cmb instanceof CompressedMatrixBlock) || rows * cols > 10000)
+				return;
+			TernaryOperator op = new TernaryOperator(PlusMultiply.getFnObject(), _k);
+
+			int nrow = mb.getNumRows();
+			int ncol = mb.getNumColumns();
+
+			MatrixBlock m2 = new MatrixBlock(1, 1, 0);
+			MatrixBlock m3 = new MatrixBlock(nrow, ncol, 14.0);
+			MatrixBlock ret1 = cmb.ternaryOperations(op, m2, m3, new MatrixBlock());
+			MatrixBlock ret2 = mb.ternaryOperations(op, m2, m3, new MatrixBlock());
+
+			compareResultMatrices(ret2, ret1, 1);
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			throw new DMLRuntimeException(e);
+		}
+	}
+
+	@Test
+	public void testBinaryEmptyScalarOp() {
+		try {
+			if(!(cmb instanceof CompressedMatrixBlock))
+				return;
+			BinaryOperator op = new BinaryOperator(Multiply.getMultiplyFnObject());
+
+			MatrixBlock m2 = new MatrixBlock(1, 1, 0);
+			MatrixBlock ret1 = cmb.binaryOperations(op, m2, new MatrixBlock());
+			ScalarOperator sop = new RightScalarOperator(op.fn, m2.getValue(0, 0), op.getNumThreads());
+			MatrixBlock ret2 = mb.scalarOperations(sop, new MatrixBlock());
+
+			compareResultMatrices(ret2, ret1, 1);
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			throw new DMLRuntimeException(e);
+		}
+	}
+
+	@Test
+	public void testBinaryEmptyMatrixOp() {
+		try {
+			if(!(cmb instanceof CompressedMatrixBlock))
+				return;
+			BinaryOperator op = new BinaryOperator(Multiply.getMultiplyFnObject());
+
+			MatrixBlock m2 = new MatrixBlock(cmb.getNumRows(), cmb.getNumColumns(), 0);
+			MatrixBlock ret1 = cmb.binaryOperations(op, m2, new MatrixBlock());
+			MatrixBlock ret2 = mb.binaryOperations(op, m2, new MatrixBlock());
+
+			compareResultMatrices(ret2, ret1, 1);
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			throw new DMLRuntimeException(e);
+		}
+	}
+
+	@Test
+	public void testBinaryEmptyRowVectorOp() {
+		try {
+			if(!(cmb instanceof CompressedMatrixBlock))
+				return;
+			BinaryOperator op = new BinaryOperator(Multiply.getMultiplyFnObject());
+
+			MatrixBlock m2 = new MatrixBlock(1, cmb.getNumColumns(), 0);
+			MatrixBlock ret1 = cmb.binaryOperations(op, m2, new MatrixBlock());
+			MatrixBlock ret2 = mb.binaryOperations(op, m2, new MatrixBlock());
 
 			compareResultMatrices(ret2, ret1, 1);
 		}

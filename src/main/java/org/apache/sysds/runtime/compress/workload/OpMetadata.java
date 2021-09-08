@@ -23,17 +23,14 @@ import org.apache.sysds.hops.Hop;
 
 public class OpMetadata extends Op {
 
-	public OpMetadata(Hop op) {
+	final Hop parent;
+
+	public OpMetadata(Hop op, Hop parent) {
 		super(op);
+		this.parent = parent;
 	}
 
-	@Override
-	public boolean isCompressedOutput() {
-		return true;
-	}
-
-	@Override
-	public boolean isDecompressing() {
-		return false;
+	public Hop getParent(){
+		return parent;
 	}
 }

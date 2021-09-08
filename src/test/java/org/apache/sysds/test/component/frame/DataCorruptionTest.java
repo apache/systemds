@@ -90,7 +90,7 @@ public class DataCorruptionTest
 				assertTrue("Row "+i+" was marked with typos, but it has not been changed.", checkTypo);
 			}
 		}
-		System.out.println("Test typos: number of changed rows: " + numch);
+		// Test typos: number of changed rows: 
 		assertEquals("The number of changed rows is not approx. 20%", 0.2, numch/Xp.getNumRows(), 0.05);
 	}
 	
@@ -114,7 +114,7 @@ public class DataCorruptionTest
 				assertTrue("Row "+i+" was marked with missing values, but it has not been changed.", dropped>0);
 			}
 		}
-		System.out.println("Test missing: number of changed rows: " + numch);
+		// Test missing: number of changed rows:
 		assertEquals("The number of changed rows is not approx. 20%", 0.2, numch/Xp.getNumRows(), 0.05);
 	}
 	
@@ -147,7 +147,7 @@ public class DataCorruptionTest
 				assertTrue("Row "+i+" was marked with outliers, but it has not been changed.", checkOut);
 			}
 		}
-		System.out.println("Test outliers: number of changed rows: " + numch);
+		// Test outliers: number of changed rows:
 		assertEquals("The number of changed rows is not approx. 20%", 0.2, numch/Xp.getNumRows(), 0.05);
 	}
 	
@@ -192,7 +192,7 @@ public class DataCorruptionTest
 				assertTrue("Row "+i+" was marked with outliers, but it has not been changed.",checkSwap);
 			}
 		}
-		System.out.println("Test swap: number of changed rows: " + numch);
+		// Test swap: number of changed rows:
 		assertEquals("The number of changed rows is not approx. 20%", 0.2, numch/changed.getNumRows(), 0.05);
 		
 	}

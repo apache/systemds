@@ -359,10 +359,10 @@ public class LibMatrixBincell {
 
 	public static void isValidDimensionsBinary(MatrixBlock m1, MatrixBlock m2)
 	{
-		int rlen1 = m1.rlen;
-		int clen1 = m1.clen;
-		int rlen2 = m2.rlen;
-		int clen2 = m2.clen;
+		final int rlen1 = m1.rlen;
+		final int clen1 = m1.clen;
+		final int rlen2 = m2.rlen;
+		final int clen2 = m2.clen;
 		
 		//currently we support three major binary cellwise operations:
 		//1) MM (where both dimensions need to match)
@@ -376,7 +376,7 @@ public class LibMatrixBincell {
 
 		if( !isValid ) {
 			throw new RuntimeException("Block sizes are not matched for binary " +
-					"cell operations: " + m1.rlen + "x" + m1.clen + " vs " + m2.rlen + "x" + m2.clen);
+					"cell operations: " + rlen1 + "x" + clen1 + " vs " + rlen2 + "x" + clen2);
 		}
 	}
 

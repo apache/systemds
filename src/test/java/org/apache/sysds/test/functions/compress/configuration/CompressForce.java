@@ -151,8 +151,44 @@ public class CompressForce extends CompressBase {
 	}
 
 	@Test
+	public void testMatrixMultRightSum_Larger_CP() {
+		runTest(1500, 11, 0, 1, ExecType.CP, "mmr_sum");
+	}
+
+	@Test
 	public void testMatrixMultRightSum_Larger_SP() {
 		runTest(1500, 11, 0, 1, ExecType.SPARK, "mmr_sum");
+	}
+
+	@Test
+	public void testMatrixMultRightSumPlus_Larger_CP() {
+		runTest(1500, 11, 0, 1, ExecType.CP, "mmr_sum_plus");
+	}
+
+	@Test
+	public void testMatrixMultRightSumPlus_Larger_SP() {
+		runTest(1500, 11, 0, 1, ExecType.SPARK, "mmr_sum_plus");
+	}
+
+	@Test
+	public void testMatrixMultRightSumPlusOnOverlap_Larger_CP() {
+		runTest(1500, 11, 0, 1, ExecType.CP, "mmr_sum_plus_2");
+	}
+
+	@Test
+	public void testMatrixMultRightSumPlusOnOverlap_Larger_SP() {
+		// be aware that with multiple blocks it is likely that the small blocks
+		// initially compress, but is to large for overlapping state will decompress.
+		// In this test it does not decompress
+		runTest(1010, 11, 0, 1, ExecType.SPARK, "mmr_sum_plus_2");
+	}
+
+	@Test
+	public void testMatrixMultRightSumPlusOnOverlapDecompress_Larger_SP() {
+		// be aware that with multiple blocks it is likely that the small blocks
+		// initially compress, but is to large for overlapping state therefor will decompress.
+		// In this test it decompress the second small block but keeps the first in overlapping state.
+		runTest(1110, 30, 1, 1, ExecType.SPARK, "mmr_sum_plus_2");
 	}
 
 	@Test

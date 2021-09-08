@@ -27,8 +27,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
 import org.apache.commons.lang.NotImplementedException;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.CompressionSettings;
@@ -58,10 +56,7 @@ import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysds.runtime.util.CommonThreadPool;
 
 public class CLALibCompAgg {
-
-	private static final Log LOG = LogFactory.getLog(CLALibCompAgg.class.getName());
-
-	// private static final long MIN_PAR_AGG_THRESHOLD = 8 * 1024 * 1024;
+	// private static final Log LOG = LogFactory.getLog(CLALibCompAgg.class.getName());
 	private static final long MIN_PAR_AGG_THRESHOLD = 8 * 1024;
 
 	private static ThreadLocal<MatrixBlock> memPool = new ThreadLocal<MatrixBlock>() {
@@ -87,14 +82,13 @@ public class CLALibCompAgg {
 
 			if(denseSize < 5 * currentSize && inputMatrix.getColGroups().size() > 5 &&
 				denseSize <= localMaxMemory / 2) {
-				LOG.info("Decompressing for unaryAggregate because of overlapping state");
-				inputMatrix.decompress(op.getNumThreads());
+				inputMatrix.getUncompressed("Decompressing for unaryAggregate because of overlapping state");
 			}
 			MatrixBlock decomp = inputMatrix.getCachedDecompressed();
 			if(decomp != null)
 				return decomp.aggregateUnaryOperations(op, result, blen, indexesIn, inCP);
 		}
-		
+
 		// initialize and allocate the result
 		if(result == null)
 			result = new MatrixBlock(tempCellIndex.row, tempCellIndex.column, false);
@@ -113,7 +107,7 @@ public class CLALibCompAgg {
 			else
 				aggregateUnaryNormalCompressedMatrixBlock(inputMatrix, result, opm, blen, indexesIn, inCP);
 		}
-		
+
 		result.recomputeNonZeros();
 		if(op.aggOp.existsCorrection() && !inCP) {
 			result = addCorrection(result, op);
@@ -256,8 +250,7 @@ public class CLALibCompAgg {
 					f.get();
 		}
 		catch(InterruptedException | ExecutionException e) {
-			LOG.error("Aggregate In parallel failed.");
-			throw new DMLRuntimeException(e);
+			throw new DMLRuntimeException("Aggregate In parallel failed.", e);
 		}
 	}
 

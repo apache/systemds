@@ -108,8 +108,8 @@ public class CoCodeGreedy extends AColumnCoCoder {
 			else
 				break;
 		}
-
-		LOG.debug(mem.stats());
+		if(LOG.isDebugEnabled())
+			LOG.debug("Memorizer stats:" + mem.stats());
 		mem.resetStats();
 
 		List<CompressedSizeInfoColGroup> ret = new ArrayList<>(workset.size());
@@ -131,10 +131,6 @@ public class CoCodeGreedy extends AColumnCoCoder {
 		public void put(CompressedSizeInfoColGroup g) {
 			mem.put(new ColIndexes(g.getColumns()), g);
 		}
-
-		// public CompressedSizeInfoColGroup get(CompressedSizeInfoColGroup g) {
-		// 	return mem.get(new ColIndexes(g.getColumns()));
-		// }
 
 		public CompressedSizeInfoColGroup get(ColIndexes c) {
 			return mem.get(c);

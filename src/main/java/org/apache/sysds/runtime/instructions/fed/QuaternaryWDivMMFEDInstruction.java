@@ -41,7 +41,6 @@ import org.apache.sysds.runtime.matrix.operators.QuaternaryOperator;
 
 import java.util.ArrayList;
 import java.util.concurrent.Future;
-import java.util.stream.IntStream;
 
 public class QuaternaryWDivMMFEDInstruction extends QuaternaryFEDInstruction
 {
@@ -216,32 +215,15 @@ public class QuaternaryWDivMMFEDInstruction extends QuaternaryFEDInstruction
 			// LEFT: nrows of transposed X, ncols of U
 			rows = X.getNumColumns();
 			cols = U.getNumColumns();
-			outFedMap = modifyFedRanges(outFedMap.transpose(), cols, 1);
+			outFedMap.transpose().modifyFedRanges(cols, 1);
 		}
 		else if(wdivmm_type.isRight()) {
 			// RIGHT: nrows of X, ncols of V
 			rows = X.getNumRows();
 			cols = V.getNumColumns();
-			outFedMap = modifyFedRanges(outFedMap, cols, 1);
+			outFedMap.modifyFedRanges(cols, 1);
 		}
 		out.setFedMapping(outFedMap);
 		out.getDataCharacteristics().set(rows, cols, (int) X.getBlocksize());
-	}
-
-	/**
-	 * Takes the federated mapping and sets one dimension of all federated ranges
-	 * to the specified value.
-	 *
-	 * @param fedMap     the original federated mapping
-	 * @param value      long value for setting the dimension
-	 * @param dim        indicates if the row (0) or column (1) dimension should be set to value
-	 * @return FederationMap with the modified federated ranges
-	 */
-	private static FederationMap modifyFedRanges(FederationMap fedMap, long value, int dim) {
-		IntStream.range(0, fedMap.getFederatedRanges().length).forEach(i -> {
-			fedMap.getFederatedRanges()[i].setBeginDim(dim, 0);
-			fedMap.getFederatedRanges()[i].setEndDim(dim, value);
-		});
-		return fedMap;
 	}
 }

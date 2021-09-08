@@ -392,40 +392,14 @@ public class FEDInstructionUtils {
 				if(data instanceof MatrixObject && ((MatrixObject) data).isFederatedExcept(FType.BROADCAST))
 					fedinst = QuantilePickFEDInstruction.parseInstruction(inst.getInstructionString());
 			}
-			else if (inst instanceof AppendGAlignedSPInstruction) {
-				AppendGAlignedSPInstruction ainstruction = (AppendGAlignedSPInstruction) inst;
+			else if (inst instanceof AppendGAlignedSPInstruction || inst instanceof AppendGSPInstruction
+				|| inst instanceof AppendMSPInstruction || inst instanceof AppendRSPInstruction) {
+				BinarySPInstruction ainstruction = (BinarySPInstruction) inst;
 				Data data1 = ec.getVariable(ainstruction.input1);
 				Data data2 = ec.getVariable(ainstruction.input2);
-				if (data1 instanceof MatrixObject && ((MatrixObject) data1).isFederatedExcept(FType.BROADCAST)
-					&& (! ((CacheableData<?>)data2).isFederated() || ((CacheableData<?>)data2).isFederatedExcept(FType.BROADCAST))) {
+				if ((data1 instanceof MatrixObject && ((MatrixObject) data1).isFederatedExcept(FType.BROADCAST))
+					|| (data2 instanceof MatrixObject && ((MatrixObject) data2).isFederatedExcept(FType.BROADCAST))) {
 					fedinst = AppendFEDInstruction.parseInstruction(instruction.getInstructionString());
-				}
-			}
-			else if (inst instanceof AppendGSPInstruction) {
-				AppendGSPInstruction ainstruction = (AppendGSPInstruction) inst;
-				Data data1 = ec.getVariable(ainstruction.input1);
-				Data data2 = ec.getVariable(ainstruction.input2);
-				if(data1 instanceof MatrixObject && ((MatrixObject) data1).isFederatedExcept(FType.BROADCAST)
-					&& (! ((CacheableData<?>)data2).isFederated() || ((CacheableData<?>)data2).isFederatedExcept(FType.BROADCAST))) {
-					fedinst = AppendFEDInstruction.parseInstruction(ainstruction.getInstructionString());
-				}
-			}
-			else  if (inst instanceof AppendMSPInstruction) {
-				AppendMSPInstruction ainstruction = (AppendMSPInstruction) inst;
-				Data data1 = ec.getVariable(ainstruction.input1);
-				Data data2 = ec.getVariable(ainstruction.input2);
-				if(((CacheableData<?>) data1).isFederatedExcept(FType.BROADCAST) && (! ((CacheableData<?>)data2).isFederated()
-					|| ((CacheableData<?>)data2).isFederatedExcept(FType.BROADCAST))) {
-					fedinst = AppendFEDInstruction.parseInstruction(ainstruction.getInstructionString());
-				}
-			}
-			else  if (inst instanceof AppendRSPInstruction) {
-				AppendRSPInstruction ainstruction = (AppendRSPInstruction) inst;
-				Data data1 = ec.getVariable(ainstruction.input1);
-				Data data2 = ec.getVariable(ainstruction.input2);
-				if(((CacheableData<?>) data1).isFederatedExcept(FType.BROADCAST) && (! ((CacheableData<?>)data2).isFederated()
-					|| ((CacheableData<?>)data2).isFederatedExcept(FType.BROADCAST))) {
-					fedinst = AppendFEDInstruction.parseInstruction(ainstruction.getInstructionString());
 				}
 			}
 			else if (inst instanceof BinaryMatrixScalarSPInstruction

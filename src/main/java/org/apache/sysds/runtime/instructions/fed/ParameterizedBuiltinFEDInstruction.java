@@ -136,7 +136,7 @@ public class ParameterizedBuiltinFEDInstruction extends ComputationFEDInstructio
 		if(opcode.equalsIgnoreCase("replace")) {
 			// similar to unary federated instructions, get federated input
 			// execute instruction, and derive federated output matrix
-			MatrixObject mo = (MatrixObject) getTarget(ec);
+			CacheableData mo = getTarget(ec);
 			FederatedRequest fr1 = FederationUtils.callInstruction(instString,
 				output,
 				new CPOperand[] {getTargetOperand()},
@@ -144,7 +144,9 @@ public class ParameterizedBuiltinFEDInstruction extends ComputationFEDInstructio
 			mo.getFedMapping().execute(getTID(), true, fr1);
 
 			// derive new fed mapping for output
-			MatrixObject out = ec.getMatrixObject(output);
+			CacheableData out = ec.getCacheableData(output);
+			if(mo instanceof FrameObject)
+				((FrameObject)out).setSchema(((FrameObject) mo).getSchema());
 			out.getDataCharacteristics().set(mo.getDataCharacteristics());
 			out.setFedMapping(mo.getFedMapping().copyWithNewID(fr1.getID()));
 		}

@@ -41,6 +41,7 @@ import java.util.function.Function;
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.NotImplementedException;
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.io.Writable;
@@ -2445,14 +2446,28 @@ public class FrameBlock implements CacheBlock, Externalizable {
 		public String apply(String input1, String input2) {	return null;}
 	}
 
-	public FrameBlock replaceOperations(String pattern, String replacement){
+	public <T> FrameBlock replaceOperations(String pattern, String replacement) {
 		FrameBlock ret = new FrameBlock(this);
+
+		ValueType patternType = UtilFunctions.isBoolean(pattern) ? ValueType.BOOLEAN : (NumberUtils.isCreatable(pattern) ?
+			(UtilFunctions.isIntegerNumber(pattern) ? ValueType.INT64 : ValueType.FP64) : ValueType.STRING);
+		ValueType replacementType = UtilFunctions.isBoolean(replacement) ? ValueType.BOOLEAN : (NumberUtils.isCreatable(replacement) ?
+			(UtilFunctions.isIntegerNumber(replacement) ? ValueType.INT64 : ValueType.FP64) : ValueType.STRING);
+
+		if(patternType != replacementType || !ValueType.isSameTypeString(patternType, replacementType))
+			throw new DMLRuntimeException("Pattern and replacement types should be same.");
+
 		for(int i = 0; i < ret.getNumColumns(); i++){
 			Array colData = ret._coldata[i];
-			for(int j = 0; j < colData._size; j++){
+			for(int j = 0; j < colData._size && (ValueType.isSameTypeString(_schema[i], patternType) || _schema[i] == ValueType.STRING); j++) {
+				T patternNew =  (T) UtilFunctions.stringToObject(_schema[i], pattern);
+				T replacementNew = (T) UtilFunctions.stringToObject(_schema[i], replacement);
+
 				Object ent = colData.get(j);
-				if(ent != null && ent.equals(pattern))
-					colData.set(j,replacement); 
+				if(ent != null && ent.toString().equals(patternNew.toString()))
+					colData.set(j,replacementNew);
+				else  if(ent instanceof String && ent.equals(pattern))
+					colData.set(j, replacement);
 			}
 		}
 		return ret;

@@ -114,6 +114,9 @@ public class Types
 					throw new DMLRuntimeException("Unknown value type: "+value);
 			}
 		}
+		public static boolean isSameTypeString(ValueType vt1, ValueType vt2) {
+			return vt1.toExternalString().equals(vt2.toExternalString());
+		}
 	}
 	
 	/**

@@ -71,6 +71,29 @@ public class RawRow {
 		return null;
 	}
 
+	public Pair<Integer, Integer> findAtValue(ValueTrimFormat vtf, int index) {
+		if(vtf instanceof ValueTrimFormat.StringTrimFormat)
+			return findAtValue((ValueTrimFormat.StringTrimFormat) vtf, index);
+		else
+			throw new RuntimeException("FindAt just work for fixed length of values!");
+	}
+
+	private Pair<Integer, Integer> findAtValue(ValueTrimFormat.StringTrimFormat stf, int index) {
+		Pair<Integer, Integer> result = new Pair<>(-1, 0);
+		int length = stf.getStringOfActualValue().length();
+		if(index + length > raw.length() || index <= 0)
+			return result;
+
+		if(reserved.get(index, index + length).isEmpty()) {
+			if(raw.substring(index, index + length).equalsIgnoreCase(stf.getStringOfActualValue()))
+				result.set(index, length);
+		}
+		if(result.getKey() != -1) {
+			reserved.set(result.getKey(), result.getKey() + result.getValue(), true);
+		}
+		return result;
+	}
+
 	private Pair<Integer, Integer> findValue(ValueTrimFormat.StringTrimFormat stf, boolean forward) {
 		ArrayList<Pair<Integer, Integer>> unreserved = getRawUnreservedPositions(forward);
 		Pair<Integer, Integer> result = new Pair<>(-1, 0);
@@ -98,91 +121,100 @@ public class RawRow {
 		for(Pair<Integer, Integer> p : unreserved) {
 			int start = p.getKey();
 			int end = p.getValue();
-			String ntfString = ntf.getNString();
-			int length = ntfString.length();
-			int index = numericRaw.indexOf(ntfString, start);
-			if(index == -1 || index > end - length + 1)
-				continue;
+			for(int s = start; s <= end && result.getKey() == -1; ) {
+				String ntfString = ntf.getNString();
+				int length = ntfString.length();
+				int index = numericRaw.indexOf(ntfString, s);
+				if(index == -1 || index > end - length + 1)
+					break;
+				s = index + 1;
 
-			resultNumeric.setValue(length);
-			resultNumeric.setKey(index);
-			int startPos = numericPositions.get(index);
-			int endPos = numericPositions.get(index + length - 1);
-			if(ntf.getActualValue() == Double.parseDouble(ntfString)) {
-				result.setKey(startPos);
-				result.setValue(length);
-			}
+				resultNumeric.setValue(length);
+				resultNumeric.setKey(index);
+				int startPos = numericPositions.get(index);
+				int endPos = numericPositions.get(index + length - 1);
+				ntfString = raw.substring(startPos, endPos+1);
+				Double value= tryParse(ntfString);
+				if(value==null)
+					continue;
 
-			// Choose range of string
-			boolean flagD = false;
+				if(ntf.getActualValue() == value) {
+					result.setKey(startPos);
+					result.setValue(length);
+				}
 
-			// 1. the range contain '.'
-			// 2. the range contain none numeric chars. In this condition we should terminate checking
-			int d = endPos - startPos - length + 1;
-			if(d == 1) {
-				for(int i = startPos; i <= endPos; i++) {
-					if(raw.charAt(i) == '.') {
+				// Choose range of string
+				boolean flagD = false;
+
+				// 1. the range contain '.'
+				// 2. the range contain none numeric chars. In this condition we should terminate checking
+				int d = endPos - startPos - length + 1;
+				if(d == 1) {
+					for(int i = startPos; i <= endPos; i++) {
+						if(raw.charAt(i) == '.') {
+							flagD = true;
+							length++;
+							break;
+						}
+					}
+					if(!flagD)
+						continue;
+					// Check mapping
+					ntfString = raw.substring(startPos, endPos + 1);
+					// Actual value contain '.'
+					if(ntf.getActualValue() == Double.parseDouble(ntfString)) {
+						result.setKey(startPos);
+						result.setValue(ntfString.length());
+					}
+				}
+				else if(d > 1)
+					continue;
+
+				StringBuilder sb = new StringBuilder();
+
+				// 3. if the actual value is positive
+				// add some prefixes to the string
+				for(int i = startPos - 1; i >= 0; i--) {
+					char ch = raw.charAt(i);
+					if(ch == '0')
+						sb.append(ch);
+					else if(!flagD && ch == '.') {
+						sb.append(ch);
 						flagD = true;
-						length++;
+					}
+					else if(ch == '+' || ch == '-') {
+						sb.append(ch);
 						break;
 					}
+					else
+						break;
 				}
-				if(!flagD)
-					continue;
-				// Check mapping
-				ntfString = raw.substring(startPos, endPos + 1);
-				// Actual value contain '.'
-				if(ntf.getActualValue() == Double.parseDouble(ntfString)) {
+				sb = sb.reverse();
+				startPos -= sb.length();
+				sb.append(ntfString);
+				if(ntf.getActualValue() == Double.parseDouble(sb.toString())) {
 					result.setKey(startPos);
-					result.setValue(ntfString.length());
+					result.setValue(sb.length());
 				}
-			}
-			else if(d > 1)
-				continue;
 
-			StringBuilder sb = new StringBuilder();
-
-			// 3. if the actual value is positive
-			// add some prefixes to the string
-			for(int i = startPos - 1; i >= 0; i--) {
-				char ch = raw.charAt(i);
-				if(ch == '0')
+				// 4. if the actual value is negative '.' can be at the right side of the position
+				for(int i = endPos + 1; i < raw.length(); i++) {
+					char ch = raw.charAt(i);
 					sb.append(ch);
-				else if(!flagD && ch == '.') {
-					sb.append(ch);
-					flagD = true;
-				}
-				else if(ch == '+' || ch == '-') {
-					sb.append(ch);
-					break;
-				}
-				else
-					break;
-			}
-			sb = sb.reverse();
-			startPos -= sb.length();
-			sb.append(ntfString);
-			if(ntf.getActualValue() == Double.parseDouble(sb.toString())) {
-				result.setKey(startPos);
-				result.setValue(sb.length());
-			}
-
-			// 4. if the actual value is negative '.' can be at the right side of the position
-			for(int i = endPos + 1; i < raw.length(); i++) {
-				char ch = raw.charAt(i);
-				sb.append(ch);
-				if(ch == 'E' || ch == 'e' || ch == '+' || ch == '-') {
-					continue;
-				}
-				else if(!Character.isDigit(ch) && ch != '.')
-					break;
-				Double value = tryParse(sb.toString());
-				if(value != null) {
-					if(value == ntf.getActualValue()) {
-						result.setKey(startPos);
-						result.setValue(sb.length());
+					if(ch == 'E' || ch == 'e' || ch == '+' || ch == '-') {
+						continue;
+					}
+					else if(!Character.isDigit(ch) && ch != '.')
+						break;
+					value = tryParse(sb.toString());
+					if(value != null) {
+						if(value == ntf.getActualValue()) {
+							result.setKey(startPos);
+							result.setValue(sb.length());
+						}
 					}
 				}
+
 			}
 			if(result.getKey() != -1) {
 				break;
@@ -321,10 +353,6 @@ public class RawRow {
 		rawLastIndex = 0;
 	}
 
-	public boolean isMarked() {
-		return !reserved.isEmpty();
-	}
-
 	public Pair<HashSet<String>, Integer> getDelimsSet() {
 		Pair<HashSet<String>, Integer> result = new Pair<>();
 		StringBuilder sb = new StringBuilder();
@@ -366,11 +394,30 @@ public class RawRow {
 		return clone;
 	}
 
-	public void setLastIndex(int lastIndex){
+	public void setLastIndex(int lastIndex) {
 		this.numericLastIndex = lastIndex;
 	}
 
 	public int getNumericLastIndex() {
 		return numericLastIndex;
+	}
+
+	public int getRawLastIndex() {
+		return rawLastIndex;
+	}
+
+	public boolean isMarked(){
+		return !reserved.isEmpty();
+	}
+
+	public void print() {
+		System.out.println(raw);
+		for(int i = 0; i < raw.length(); i++) {
+			if(reserved.get(i))
+				System.out.print("1");
+			else
+				System.out.print("0");
+		}
+		System.out.println("\n----------------------------------------");
 	}
 }

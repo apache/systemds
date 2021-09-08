@@ -21,14 +21,15 @@ package org.apache.sysds.test.functions.iogen;
 
 import org.junit.Test;
 
+import java.util.BitSet;
+
 public class MatrixGenerateReaderLibSVMTest extends GenerateReaderTest {
 
 	private final static String TEST_NAME = "GenerateReaderLibSVMTest";
 	private final static String TEST_DIR = "functions/iogen/GenerateReaderLibSVMTest/";
 	private final static String TEST_CLASS_DIR = TEST_DIR + MatrixGenerateReaderLibSVMTest.class.getSimpleName() + "/";
 
-	@Override
-	protected String getTestName() {
+	@Override protected String getTestName() {
 		return TEST_NAME;
 	}
 
@@ -70,7 +71,7 @@ public class MatrixGenerateReaderLibSVMTest extends GenerateReaderTest {
 
 			sb.append(row1).append("\n");
 			sb.append(row2);
-			if(r!=nrows-1)
+			if(r != nrows - 1)
 				sb.append("\n");
 		}
 		sampleRaw = sb.toString();
@@ -78,87 +79,87 @@ public class MatrixGenerateReaderLibSVMTest extends GenerateReaderTest {
 	}
 
 	// Index start from 0
-	@Test
-	public void test0_1() throws Exception {
-		sampleRaw = "+1 2:3 4:5 6:7\n" + "-1 8:9 10:11";
-		sampleMatrix = new double[][] {{0, 0, 3, 0, 5, 0, 7, 0, 0, 0, 0, +1}, {0, 0, 0, 0, 0, 0, 0, 0, 9, 0, 11, -1}};
+	@Test public void test0_1() {
+		sampleRaw = "+1 2:3 4:5 6:7\n" + "-1 8:-9 10:-11";
+		sampleMatrix = new double[][] {{0, 0, 3, 0, 5, 0, 7, 0, 0, 0, 0, +1}, {0, 0, 0, 0, 0, 0, 0, 0, -9, 0, -11, -1}};
 		runGenerateReaderTest();
 	}
 
-	@Test
-	public void test0_2() throws Exception {
-		generateRandomLIBSVM(0, 10, 10, -10, 10, 1,"    ", ":");
+	@Test public void test0_10() {
+		sampleRaw = "-1 8:-9 10:-11\n" + "+1 2:3 4:5 6:7\n";
+		sampleMatrix = new double[][] {{0, 0, 0, 0, 0, 0, 0, 0, -9, 0, -11, -1}, {0, 0, 3, 0, 5, 0, 7, 0, 0, 0, 0, +1}};
 		runGenerateReaderTest();
 	}
 
-	@Test
-	public void test0_3() throws Exception {
-		generateRandomLIBSVM(0, 100, 10, -100, 100, 1," ", ":");
+	@Test public void test0_100() {
+		BitSet b = new BitSet(10);
+		b.set(2, 5);
+		BitSet b2 = b.get(6, 10);
+		System.out.println(b2.isEmpty());
+	}
+
+	@Test public void test0_2() {
+		generateRandomLIBSVM(0, 10, 10, -10, 10, 1, "    ", ":");
 		runGenerateReaderTest();
 	}
 
-	@Test
-	public void test0_4() throws Exception {
-		generateRandomLIBSVM(0, 10, 10, -100, 100, 1," ", ":");
+	@Test public void test0_3() {
+		generateRandomLIBSVM(0, 100, 10, -100, 100, 1, " ", ":");
 		runGenerateReaderTest();
 	}
 
-	@Test
-	public void test0_5() throws Exception {
-		generateRandomLIBSVM(0, 10, 10, -100, 100, 1,",,,,", "::");
+	@Test public void test0_4() {
+		generateRandomLIBSVM(0, 10, 10, -100, 100, 1, " ", ":");
 		runGenerateReaderTest();
 	}
 
-	@Test
-	public void test0_6() throws Exception {
+	@Test public void test0_5() {
+		generateRandomLIBSVM(0, 10, 10, -100, 100, 1, ",,,,", "::");
+		runGenerateReaderTest();
+	}
+
+	@Test public void test0_6() {
 		sampleRaw = "+1 2.0:3.0 4:5. 6.:7\n" + "-1 8.0:9.0E0 10.0:11e0";
 		sampleMatrix = new double[][] {{0, 0, 3, 0, 5, 0, 7, 0, 0, 0, 0, +1}, {0, 0, 0, 0, 0, 0, 0, 0, 9, 0, 11, -1}};
 		runGenerateReaderTest();
 	}
 
-	@Test
-	public void test0_7() throws Exception {
+	@Test public void test0_7() {
 		sampleRaw = "+10000e-4     2:3     4:5     6:7\n" + "-1     8:9     10:11";
 		sampleMatrix = new double[][] {{0, 0, 3, 0, 5, 0, 7, 0, 0, 0, 0, +1}, {0, 0, 0, 0, 0, 0, 0, 0, 9, 0, 11, -1}};
 		runGenerateReaderTest();
 	}
 
-	@Test
-	public void test0_8() throws Exception {
+	@Test public void test0_8() {
 		sampleRaw = "+10000e-4     2:3     4:5     6:7\n" + "-0.00001e5     8:9     10:11";
 		sampleMatrix = new double[][] {{0, 0, 3, 0, 5, 0, 7, 0, 0, 0, 0, +1}, {0, 0, 0, 0, 0, 0, 0, 0, 9, 0, 11, -1}};
 		runGenerateReaderTest();
 	}
 
 	// Index start from 1
-	@Test
-	public void test2() throws Exception {
+	@Test public void test2() {
 		sampleRaw = "+1 2:3 4:5 6:7\n" + "-1 8:9 10:11";
 		sampleMatrix = new double[][] {{0, 3, 0, 5, 0, 7, 0, 0, 0, 0, +1}, {0, 0, 0, 0, 0, 0, 0, 9, 0, 11, -1}};
 		runGenerateReaderTest();
 	}
 
-	@Test
-	public void test1_2() throws Exception {
-		generateRandomLIBSVM(1, 10, 10, -10, 10, 1," ", ":");
+	@Test public void test1_2() {
+		generateRandomLIBSVM(1, 10, 10, -10, 10, 1, " ", ":");
 		runGenerateReaderTest();
 	}
 
-	@Test
-	public void test1_3() throws Exception {
-		generateRandomLIBSVM(1, 10, 10, -100, 100, 1," ", ":");
+	@Test public void test1_3() {
+		generateRandomLIBSVM(1, 10, 10, -100, 100, 1, " ", ":");
 		runGenerateReaderTest();
 	}
 
-	@Test
-	public void test1_4() throws Exception {
-		generateRandomLIBSVM(1, 10, 10, -100, 100, 1," ", ":");
+	@Test public void test1_4() {
+		generateRandomLIBSVM(0, 10, 12, -100, 100, 1, ",,,,,,", ":::::");
 		runGenerateReaderTest();
 	}
 
-	@Test
-	public void test1_5() throws Exception {
-		generateRandomLIBSVM(1, 10, 10, -100, 100, 1,",,,,", "::");
+	@Test public void test1_5() {
+		generateRandomLIBSVM(1, 100, 1000, -100, 100, 1, ",,,,", "::");
 		runGenerateReaderTest();
 	}
 }

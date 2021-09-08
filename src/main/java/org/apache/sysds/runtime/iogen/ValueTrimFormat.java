@@ -48,6 +48,9 @@ public abstract class ValueTrimFormat implements Comparable {
 	// Check the value is a not set value
 	public abstract boolean isNotSet();
 
+	// Set as NoSet
+	public abstract void setNoSet();
+
 	// Get String of actual value
 	public abstract String getStringOfActualValue();
 
@@ -94,6 +97,10 @@ public abstract class ValueTrimFormat implements Comparable {
 				return true;
 			else
 				return false;
+		}
+
+		@Override public void setNoSet() {
+			actualValue = "";
 		}
 	}
 
@@ -156,7 +163,6 @@ public abstract class ValueTrimFormat implements Comparable {
 						N[index++] = c;
 				}
 			}
-			//---
 			NString = toString();
 		}
 
@@ -183,13 +189,17 @@ public abstract class ValueTrimFormat implements Comparable {
 		}
 
 		@Override public int compareTo(Object ntf) {
-			int vc = Double.compare(Math.abs(((NumberTrimFormat) ntf).actualValue), Math.abs(actualValue));
-			int nc = Integer.compare(((NumberTrimFormat) ntf).N.length, N.length);
-
+			int vc = Double.compare(((NumberTrimFormat) ntf).actualValue, actualValue);
+			int sThis = actualValue >= 0 ? 0 : 1;
+			int sThat = ((NumberTrimFormat) ntf).actualValue >= 0 ? 0 : 1;
+			int nc = Integer.compare(((NumberTrimFormat) ntf).N.length + sThat, N.length + sThis);
 			if(vc == 0)
 				return 0;
+			if(nc == 0)
+				return vc;
 
-			return nc;
+			else
+				return nc;
 		}
 
 		public double getActualValue() {
@@ -205,6 +215,15 @@ public abstract class ValueTrimFormat implements Comparable {
 				return true;
 			else
 				return false;
+		}
+
+		@Override public void setNoSet() {
+			actualValue = 0;
+			S = '+';
+			N = new char[1];
+			N[0] = '0';
+			NString = null;
+
 		}
 	}
 
@@ -244,5 +263,7 @@ public abstract class ValueTrimFormat implements Comparable {
 			else
 				return false;
 		}
+
+		@Override public void setNoSet() {}
 	}
 }

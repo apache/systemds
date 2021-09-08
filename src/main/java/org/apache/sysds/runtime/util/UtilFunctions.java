@@ -589,6 +589,10 @@ public class UtilFunctions {
 		}		
 		return 0; //equal 
 	}
+
+	public static boolean isBoolean(String str) {
+		return String.valueOf(true).equalsIgnoreCase(str) || String.valueOf(false).equalsIgnoreCase(str);
+	}
 	
 	public static boolean isIntegerNumber( String str ) {
 		byte[] c = str.getBytes();

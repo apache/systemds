@@ -19,25 +19,26 @@
 
 package org.apache.sysds.test.functions.privacy.algorithms;
 
-import edu.emory.mathcs.backport.java.util.Arrays;
-import org.apache.sysds.hops.OptimizerUtils;
-import org.apache.sysds.runtime.DMLRuntimeException;
-import org.junit.Assert;
-import org.junit.Test;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types;
+import org.apache.sysds.hops.OptimizerUtils;
+import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.privacy.PrivacyConstraint;
 import org.apache.sysds.runtime.privacy.PrivacyConstraint.PrivacyLevel;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
+import org.junit.Assert;
+import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
-
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
 
 @net.jcip.annotations.NotThreadSafe
 @RunWith(value = Parameterized.class)
@@ -56,10 +57,10 @@ public class FederatedL2SVMTest extends AutomatedTestBase {
 
 	@Parameterized.Parameters
 	public static Collection<Object[]> data() {
-		return Arrays.asList(new Object[][]{
-			{false},
-			{true}
-		});
+		List<Object[]> tests = new ArrayList<>();
+		tests.add(new Object[]{false});
+		tests.add(new Object[]{true});
+		return tests;
 	}
 
 	@Override public void setUp() {

@@ -232,7 +232,7 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction 
 				FrameBlock ret = target.replaceOperations(pattern, replacement);
 				ec.setFrameOutput(output.getName(), ret);
 				ec.releaseFrameInput(params.get("target"));
-			}else{
+			} else{
 				MatrixBlock target = ec.getMatrixInput(params.get("target"));
 				double pattern = Double.parseDouble(params.get("pattern"));
 				double replacement = Double.parseDouble(params.get("replacement"));

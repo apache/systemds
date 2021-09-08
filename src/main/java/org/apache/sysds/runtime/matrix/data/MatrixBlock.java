@@ -117,7 +117,7 @@ import org.apache.sysds.utils.NativeHelper;
 
 public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizable {
 	// private static final Log LOG = LogFactory.getLog(MatrixBlock.class.getName());
-	
+
 	private static final long serialVersionUID = 7319972089143154056L;
 	
 	//sparsity nnz threshold, based on practical experiments on space consumption and performance
@@ -654,27 +654,6 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		}
 	}
 
-	/**
-	 * Thread save set.
-	 * Blocks need to be allocated, and in case of MCSR sparse, all rows 
-	 * that are going to be accessed need to be allocated as well.
-	 * 
-	 * @param r row 
-	 * @param c column 
-	 * @param v value
-	 */
-	public void quickSetValueThreadSafe(int r, int c, double v) {
-		if(sparse) {
-			if(!(sparseBlock instanceof SparseBlockMCSR))
-				throw new RuntimeException("Only MCSR Blocks are supported for Multithreaded sparse set.");
-			synchronized (sparseBlock.get(r)) {
-				sparseBlock.set(r,c,v);
-			}
-		}
-		else
-			denseBlock.set(r,c,v);
-	}
-
 	public double quickGetValueThreadSafe(int r, int c) {
 		if(sparse) {
 			if(!(sparseBlock instanceof SparseBlockMCSR))
@@ -976,7 +955,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 
 	/**
 	 * Wrapper method for single threaded reduceall-colSum of a matrix.
-	 * 
+	 *
 	 * @return A new MatrixBlock containing the column sums of this matrix.
 	 */
 	public MatrixBlock colSum() {
@@ -986,7 +965,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 
 	/**
 	 * Wrapper method for single threaded reduceall-rowSum of a matrix.
-	 * 
+	 *
 	 * @return A new MatrixBlock containing the row sums of this matrix.
 	 */
 	public MatrixBlock rowSum(){
@@ -1422,7 +1401,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 			throw new RuntimeException( "Copy must not overwrite itself!" );
 		if(that instanceof CompressedMatrixBlock)
 			that = CompressedMatrixBlock.getUncompressed(that, "Copy not effecient into a MatrixBlock");
-		
+
 		rlen=that.rlen;
 		clen=that.clen;
 		sparse=sp;
@@ -2935,7 +2914,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		LibMatrixBincell.isValidDimensionsBinary(this, that);
 		if(thatValue instanceof CompressedMatrixBlock)
 			return ((CompressedMatrixBlock) thatValue).binaryOperationsLeft(op, this, result);
-		
+
 		//compute output dimensions
 		boolean outer = (LibMatrixBincell.getBinaryAccessType(this, that)
 				== BinaryAccessType.OUTER_VECTOR_VECTOR); 
@@ -2980,7 +2959,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 			m2 = ((CompressedMatrixBlock) m2).getUncompressed("Ternay Operator arg2 " + op.fn.getClass().getSimpleName());
 		if(m3 instanceof CompressedMatrixBlock)
 			m3 = ((CompressedMatrixBlock) m3).getUncompressed("Ternay Operator arg3 " + op.fn.getClass().getSimpleName());
-		
+
 		//prepare inputs
 		final boolean s1 = (rlen==1 && clen==1);
 		final boolean s2 = (m2.rlen==1 && m2.clen==1);
@@ -3674,7 +3653,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 						"Invalid nCol dimension for append rbind: was " + in[i].clen + " should be: " + clen);
 		}
 	}
-	
+
 	public static MatrixBlock naryOperations(Operator op, MatrixBlock[] matrices, ScalarObject[] scalars, MatrixBlock ret) {
 		//note: currently only min max, plus supported and hence specialized implementation
 		//prepare operator

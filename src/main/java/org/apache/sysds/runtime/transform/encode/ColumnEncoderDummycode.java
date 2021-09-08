@@ -24,17 +24,15 @@ import static org.apache.sysds.runtime.util.UtilFunctions.getEndIndex;
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import java.util.concurrent.Callable;
 
+import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.runtime.DMLRuntimeException;
-import org.apache.sysds.runtime.data.SparseRowVector;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.DependencyTask;
-import org.apache.sysds.runtime.util.DependencyThreadPool;
+import org.apache.sysds.utils.Statistics;
 
 public class ColumnEncoderDummycode extends ColumnEncoder {
 	private static final long serialVersionUID = 5832130477659116489L;
@@ -60,17 +58,8 @@ public class ColumnEncoderDummycode extends ColumnEncoder {
 	}
 
 	@Override
-	public List<DependencyTask<?>> getBuildTasks(FrameBlock in, int blockSize) {
+	public List<DependencyTask<?>> getBuildTasks(FrameBlock in) {
 		return null;
-	}
-
-	@Override
-	public MatrixBlock apply(FrameBlock in, MatrixBlock out, int outputCol) {
-		return apply(in, out, outputCol, 0, -1);
-	}
-
-	public MatrixBlock apply(MatrixBlock in, MatrixBlock out, int outputCol) {
-		return apply(in, out, outputCol, 0, -1);
 	}
 
 	@Override
@@ -80,6 +69,7 @@ public class ColumnEncoderDummycode extends ColumnEncoder {
 
 	@Override
 	public MatrixBlock apply(MatrixBlock in, MatrixBlock out, int outputCol, int rowStart, int blk) {
+		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 		// Out Matrix should already be correct size!
 		// append dummy coded or unchanged values to output
 		for(int i = rowStart; i < getEndIndex(in.getNumRows(), rowStart, blk); i++) {
@@ -89,20 +79,25 @@ public class ColumnEncoderDummycode extends ColumnEncoder {
 			int nCol = outputCol + (int) val - 1;
 			// Setting value to 0 first in case of sparse so the row vector does not need to be resized
 			if(nCol != outputCol)
-				out.quickSetValueThreadSafe(i, outputCol, 0);
-			out.quickSetValueThreadSafe(i, nCol, 1);
+				out.quickSetValue(i, outputCol, 0);
+			out.quickSetValue(i, nCol, 1);
 		}
+		if (DMLScript.STATISTICS)
+			Statistics.incTransformDummyCodeApplyTime(System.nanoTime()-t0);
 		return out;
 	}
 
+
 	@Override
-	public List<DependencyTask<?>> getApplyTasks(MatrixBlock in, MatrixBlock out, int outputCol) {
-		List<Callable<Object>> tasks = new ArrayList<>();
-		if(out.isInSparseFormat())
-			tasks.add(new DummycodeSparseApplyTask(this, in, out, outputCol));
-		else
-			return super.getApplyTasks(in, out, outputCol);
-		return DependencyThreadPool.createDependencyTasks(tasks, null);
+	protected ColumnApplyTask<? extends ColumnEncoder> 
+		getSparseTask(MatrixBlock in, MatrixBlock out, int outputCol, int startRow, int blk) {
+		return new DummycodeSparseApplyTask(this, in, out, outputCol, startRow, blk);
+	}
+
+	@Override
+	protected ColumnApplyTask<? extends ColumnEncoder> 
+		getSparseTask(FrameBlock in, MatrixBlock out, int outputCol, int startRow, int blk) {
+		throw new DMLRuntimeException("Called DummyCoder with FrameBlock");
 	}
 
 	@Override
@@ -139,6 +134,7 @@ public class ColumnEncoderDummycode extends ColumnEncoder {
 
 			if(distinct != -1) {
 				_domainSize = distinct;
+				LOG.debug("DummyCoder for column: " + _colID + " has domain size: " + _domainSize);
 			}
 		}
 	}
@@ -188,48 +184,47 @@ public class ColumnEncoderDummycode extends ColumnEncoder {
 		return _domainSize;
 	}
 
-	private static class DummycodeSparseApplyTask implements Callable<Object> {
-		private final ColumnEncoderDummycode _encoder;
-		private final MatrixBlock _input;
-		private final MatrixBlock _out;
-		private final int _outputCol;
+	private static class DummycodeSparseApplyTask extends ColumnApplyTask<ColumnEncoderDummycode> {
 
-		private DummycodeSparseApplyTask(ColumnEncoderDummycode encoder, MatrixBlock input, MatrixBlock out,
-			int outputCol) {
-			_encoder = encoder;
-			_input = input;
-			_out = out;
-			_outputCol = outputCol;
+		protected DummycodeSparseApplyTask(ColumnEncoderDummycode encoder, MatrixBlock input, 
+				MatrixBlock out, int outputCol) {
+			super(encoder, input, out, outputCol);
+		}
+
+		protected DummycodeSparseApplyTask(ColumnEncoderDummycode encoder, MatrixBlock input, 
+				MatrixBlock out, int outputCol, int startRow, int blk) {
+			super(encoder, input, out, outputCol, startRow, blk);
 		}
 
 		public Object call() throws Exception {
-			for(int r = 0; r < _input.getNumRows(); r++) {
-				if(_out.getSparseBlock() == null)
-					return null;
-				synchronized(_out.getSparseBlock().get(r)) {
-					// Since the recoded values are already offset in the output matrix (same as input at this point)
-					// the dummycoding only needs to offset them within their column domain. Which means that the
-					// indexes in the SparseRowVector do not need to be sorted anymore and can be updated directly.
-					//
-					// Input: Output:
-					//
-					// 1 | 0 | 2 | 0 1 | 0 | 0 | 1
-					// 2 | 0 | 1 | 0 ===> 0 | 1 | 1 | 0
-					// 1 | 0 | 2 | 0 1 | 0 | 0 | 1
-					// 1 | 0 | 1 | 0 1 | 0 | 1 | 0
-					//
-					// Example SparseRowVector Internals (1. row):
-					//
-					// indexes = [0,2] ===> indexes = [0,3]
-					// values = [1,2] values = [1,1]
-					int index = ((SparseRowVector) _out.getSparseBlock().get(r)).getIndex(_outputCol);
-					double val = _out.getSparseBlock().get(r).values()[index];
-					int nCol = _outputCol + (int) val - 1;
-
-					_out.getSparseBlock().get(r).indexes()[index] = nCol;
-					_out.getSparseBlock().get(r).values()[index] = 1;
-				}
+			long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
+			assert _inputM != null;
+			if(_out.getSparseBlock() == null)
+				return null;
+			for(int r = _startRow; r < getEndIndex(_inputM.getNumRows(), _startRow, _blk); r++) {
+				// Since the recoded values are already offset in the output matrix (same as input at this point)
+				// the dummycoding only needs to offset them within their column domain. Which means that the
+				// indexes in the SparseRowVector do not need to be sorted anymore and can be updated directly.
+				//
+				// Input: Output:
+				//
+				// 1 | 0 | 2 | 0 		1 | 0 | 0 | 1
+				// 2 | 0 | 1 | 0 ===> 	0 | 1 | 1 | 0
+				// 1 | 0 | 2 | 0 		1 | 0 | 0 | 1
+				// 1 | 0 | 1 | 0 		1 | 0 | 1 | 0
+				//
+				// Example SparseRowVector Internals (1. row):
+				//
+				// indexes = [0,2] ===> indexes = [0,3]
+				// values = [1,2] values = [1,1]
+				int index = _encoder._colID - 1;
+				double val = _out.getSparseBlock().get(r).values()[index];
+				int nCol = _outputCol + (int) val - 1;
+				_out.getSparseBlock().get(r).indexes()[index] = nCol;
+				_out.getSparseBlock().get(r).values()[index] = 1;
 			}
+			if (DMLScript.STATISTICS)
+				Statistics.incTransformDummyCodeApplyTime(System.nanoTime()-t0);
 			return null;
 		}
 

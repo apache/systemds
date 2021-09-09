@@ -32,7 +32,9 @@ if ($rP) {
     Y = t(X) * 7; # row partitioned federated Y
 }
 
+Z = (Y %*% seq(1, ncol(Y))) > 5;
+
 while(FALSE) { }
 
-s = X %*% Y;
+s = (X %*% Y) + mean(Z);
 write(s, $out_S);

@@ -87,9 +87,8 @@ public class AggregateBinaryFEDInstruction extends BinaryFEDInstruction {
 				FederatedRequest fr2 = new FederatedRequest(RequestType.GET_VAR, fr1.getID());
 				FederatedRequest fr3 = mo2.getFedMapping().cleanup(getTID(), fr1.getID(), fr2.getID());
 				//execute federated operations and aggregate
-				Future<FederatedResponse>[] tmp = mo1.getFedMapping().execute(getTID(), fr1, fr2, fr3);
-				MatrixBlock ret = FederationUtils.aggAdd(tmp);
-				ec.setMatrixOutput(output.getName(), ret);
+				Future<FederatedResponse>[] ffr = mo1.getFedMapping().execute(getTID(), fr1, fr2, fr3);
+				aggResult(ffr, true, ec);
 			}
 		}
 		else if(mo1.isFederated(FType.ROW) || mo1.isFederated(FType.PART)) { // MV + MM
@@ -99,7 +98,7 @@ public class AggregateBinaryFEDInstruction extends BinaryFEDInstruction {
 				new CPOperand[]{input1, input2},
 				new long[]{mo1.getFedMapping().getID(), fr1.getID()}, true);
 			if( mo2.getNumColumns() == 1 ) { //MV
-				if ( _fedOut.isForcedFederated() ){
+				if ( _fedOut.isForcedFederated() || (!_fedOut.isForcedLocal() && !mo1.isFederated(FType.PART)) ){
 					mo1.getFedMapping().execute(getTID(), fr1, fr2);
 					if ( mo1.isFederated(FType.PART) )
 						setPartialOutput(mo1.getFedMapping(), mo1, mo2, fr2.getID(), ec);
@@ -110,18 +109,14 @@ public class AggregateBinaryFEDInstruction extends BinaryFEDInstruction {
 					FederatedRequest fr3 = new FederatedRequest(RequestType.GET_VAR, fr2.getID());
 					FederatedRequest fr4 = mo1.getFedMapping().cleanup(getTID(), fr2.getID());
 					//execute federated operations and aggregate
-					Future<FederatedResponse>[] tmp = mo1.getFedMapping().execute(getTID(), fr1, fr2, fr3, fr4);
-					MatrixBlock ret;
-					if ( mo1.isFederated(FType.PART) )
-						ret = FederationUtils.aggAdd(tmp);
-					else
-						ret = FederationUtils.bind(tmp, false);
-					ec.setMatrixOutput(output.getName(), ret);
+					Future<FederatedResponse>[] ffr = mo1.getFedMapping().execute(getTID(), fr1, fr2, fr3, fr4);
+					aggResult(ffr, mo1.isFederated(FType.PART), ec);
 				}
 			}
 			else { //MM
 				//execute federated operations and aggregate
-				if ( !_fedOut.isForcedLocal() ){
+				if ( _fedOut.isForcedFederated() || (!_fedOut.isForcedLocal() &&
+						!(mo1.isFederated(FType.PART) || mo2.isFederated(FType.PART))) ){
 					mo1.getFedMapping().execute(getTID(), true, fr1, fr2);
 					if ( mo1.isFederated(FType.PART) || mo2.isFederated(FType.PART) )
 						setPartialOutput(mo1.getFedMapping(), mo1, mo2, fr2.getID(), ec);
@@ -132,13 +127,8 @@ public class AggregateBinaryFEDInstruction extends BinaryFEDInstruction {
 					FederatedRequest fr3 = new FederatedRequest(RequestType.GET_VAR, fr2.getID());
 					FederatedRequest fr4 = mo1.getFedMapping().cleanup(getTID(), fr2.getID());
 					//execute federated operations and aggregate
-					Future<FederatedResponse>[] tmp = mo1.getFedMapping().execute(getTID(), fr1, fr2, fr3, fr4);
-					MatrixBlock ret;
-					if ( mo1.isFederated(FType.PART) )
-						ret = FederationUtils.aggAdd(tmp);
-					else
-						ret = FederationUtils.bind(tmp, false);
-					ec.setMatrixOutput(output.getName(), ret);
+					Future<FederatedResponse>[] ffr = mo1.getFedMapping().execute(getTID(), fr1, fr2, fr3, fr4);
+					aggResult(ffr, mo1.isFederated(FType.PART), ec);
 				}
 			}
 		}
@@ -155,10 +145,10 @@ public class AggregateBinaryFEDInstruction extends BinaryFEDInstruction {
 				}
 				else {
 					FederatedRequest fr3 = new FederatedRequest(RequestType.GET_VAR, fr2.getID());
+					FederatedRequest fr4 = mo2.getFedMapping().cleanup(getTID(), fr2.getID());
 					//execute federated operations and aggregate
-					Future<FederatedResponse>[] tmp = mo2.getFedMapping().execute(getTID(), fr2, fr3);
-					MatrixBlock ret = FederationUtils.aggAdd(tmp);
-					ec.setMatrixOutput(output.getName(), ret);
+					Future<FederatedResponse>[] ffr = mo2.getFedMapping().execute(getTID(), fr2, fr3, fr4);
+					aggResult(ffr, true, ec);
 				}
 			}
 			else {
@@ -176,9 +166,8 @@ public class AggregateBinaryFEDInstruction extends BinaryFEDInstruction {
 					FederatedRequest fr3 = new FederatedRequest(RequestType.GET_VAR, fr2.getID());
 					FederatedRequest fr4 = mo2.getFedMapping().cleanup(getTID(), fr2.getID());
 					//execute federated operations and aggregate
-					Future<FederatedResponse>[] tmp = mo2.getFedMapping().execute(getTID(), true, fr1, fr2, fr3, fr4);
-					MatrixBlock ret = FederationUtils.aggAdd(tmp);
-					ec.setMatrixOutput(output.getName(), ret);
+					Future<FederatedResponse>[] ffr = mo2.getFedMapping().execute(getTID(), true, fr1, fr2, fr3, fr4);
+					aggResult(ffr, true, ec);
 				}
 			}
 		}
@@ -198,9 +187,8 @@ public class AggregateBinaryFEDInstruction extends BinaryFEDInstruction {
 				FederatedRequest fr3 = new FederatedRequest(RequestType.GET_VAR, fr2.getID());
 				FederatedRequest fr4 = mo1.getFedMapping().cleanup(getTID(), fr2.getID());
 				//execute federated operations and aggregate
-				Future<FederatedResponse>[] tmp = mo1.getFedMapping().execute(getTID(), fr1, fr2, fr3, fr4);
-				MatrixBlock ret = FederationUtils.aggAdd(tmp);
-				ec.setMatrixOutput(output.getName(), ret);
+				Future<FederatedResponse>[] ffr = mo1.getFedMapping().execute(getTID(), fr1, fr2, fr3, fr4);
+				aggResult(ffr, true, ec);
 			}
 		}
 		else { //other combinations
@@ -262,5 +250,21 @@ public class AggregateBinaryFEDInstruction extends BinaryFEDInstruction {
 		MatrixObject out = ec.getMatrixObject(output);
 		out.getDataCharacteristics().set(mo1.getNumRows(), mo2.getNumColumns(), (int)mo1.getBlocksize());
 		out.setFedMapping(federationMap.copyWithNewID(outputID, mo2.getNumColumns()));
+	}
+
+	/**
+	 * Aggregate the partial results locally
+	 * @param ffr the federated responses containing the partial results
+	 * @param aggAdd indicates whether to aggregate the results by addition or binding
+	 * @param ec execution context
+	 */
+	private void aggResult(Future<FederatedResponse>[] ffr, boolean aggAdd,
+		ExecutionContext ec) {
+		MatrixBlock ret;
+		if ( aggAdd )
+			ret = FederationUtils.aggAdd(ffr);
+		else
+			ret = FederationUtils.bind(ffr, false);
+		ec.setMatrixOutput(output.getName(), ret);
 	}
 }

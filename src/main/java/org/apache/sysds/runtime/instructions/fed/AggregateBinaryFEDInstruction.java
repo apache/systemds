@@ -94,31 +94,19 @@ public class AggregateBinaryFEDInstruction extends BinaryFEDInstruction {
 			FederatedRequest fr2 = FederationUtils.callInstruction(instString, output,
 				new CPOperand[]{input1, input2},
 				new long[]{mo1.getFedMapping().getID(), fr1.getID()}, true);
-			if( mo2.getNumColumns() == 1 ) { //MV
-				if ( _fedOut.isForcedFederated() || (!_fedOut.isForcedLocal() && !mo1.isFederated(FType.PART)) ){
-					mo1.getFedMapping().execute(getTID(), fr1, fr2);
-					if ( mo1.isFederated(FType.PART) )
-						setPartialOutput(mo1.getFedMapping(), mo1, mo2, fr2.getID(), ec);
-					else
-						setOutputFedMapping(mo1.getFedMapping(), mo1, mo2, fr2.getID(), ec);
-				}
-				else {
-					aggregateLocally(mo1.getFedMapping(), mo1.isFederated(FType.PART), ec, fr1, fr2);
-				}
+
+			boolean isPartOut = mo1.isFederated(FType.PART) || // MV and MM
+				(mo2.getNumColumns() != 1 && mo2.isFederated(FType.PART)); // only MM
+			if(isPartOut && _fedOut.isForcedFederated()) {
+				mo1.getFedMapping().execute(getTID(), true, fr1, fr2);
+				setPartialOutput(mo1.getFedMapping(), mo1, mo2, fr2.getID(), ec);
 			}
-			else { //MM
-				//execute federated operations and aggregate
-				if ( _fedOut.isForcedFederated() || (!_fedOut.isForcedLocal() &&
-						!(mo1.isFederated(FType.PART) || mo2.isFederated(FType.PART))) ){
-					mo1.getFedMapping().execute(getTID(), true, fr1, fr2);
-					if ( mo1.isFederated(FType.PART) || mo2.isFederated(FType.PART) )
-						setPartialOutput(mo1.getFedMapping(), mo1, mo2, fr2.getID(), ec);
-					else
-						setOutputFedMapping(mo1.getFedMapping(), mo1, mo2, fr2.getID(), ec);
-				}
-				else {
-					aggregateLocally(mo1.getFedMapping(), mo1.isFederated(FType.PART), ec, fr1, fr2);
-				}
+			else if(!_fedOut.isForcedLocal() && !isPartOut) {
+				mo1.getFedMapping().execute(getTID(), true, fr1, fr2);
+				setOutputFedMapping(mo1.getFedMapping(), mo1, mo2, fr2.getID(), ec);
+			}
+			else {
+				aggregateLocally(mo1.getFedMapping(), mo1.isFederated(FType.PART), ec, fr1, fr2);
 			}
 		}
 		//#2 vector - federated matrix multiplication

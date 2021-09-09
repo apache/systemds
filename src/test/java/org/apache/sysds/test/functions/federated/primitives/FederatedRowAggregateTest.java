@@ -268,6 +268,7 @@ public class FederatedRowAggregateTest extends AutomatedTestBase {
 				break;
 			case MM:
 				Assert.assertTrue(heavyHittersContainsString(rtplatform == ExecMode.SPARK ? "fed_mapmm" : "fed_ba+*"));
+				Assert.assertTrue(heavyHittersContainsString("fed_>")); // verify output is federated
 				break;
 		}
 

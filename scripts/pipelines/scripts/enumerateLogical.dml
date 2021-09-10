@@ -86,7 +86,7 @@ return (Frame[Unknown] bestLg, Double pre_best)
     
     # # # execute the physical pipelines
     scores = matrix(0, nrow(physicalPipList), 1)
-    for(i in 1:length(physicalPipList)) {
+    parfor(i in 1:length(physicalPipList)) {
       lp2 = as.frame(logicalPipList[as.scalar(ppos[i]),])
       pp2 = as.frame(physicalPipList[i,])
       # # append configuration keys for extracting the pipeline later on

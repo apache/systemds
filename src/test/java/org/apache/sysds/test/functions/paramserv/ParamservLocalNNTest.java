@@ -39,37 +39,37 @@ public class ParamservLocalNNTest extends AutomatedTestBase {
 
 	@Test
 	public void testParamservBSPBatchDisjointContiguous() {
-		runDMLTest(10, 2, Statement.PSUpdateType.BSP, Statement.PSFrequency.BATCH, 32, Statement.PSScheme.DISJOINT_CONTIGUOUS);
+		runDMLTest(3, 2, Statement.PSUpdateType.BSP, Statement.PSFrequency.BATCH, 32, Statement.PSScheme.DISJOINT_CONTIGUOUS);
 	}
 
 	@Test
 	public void testParamservASPBatch() {
-		runDMLTest(10, 2, Statement.PSUpdateType.ASP, Statement.PSFrequency.BATCH, 32, Statement.PSScheme.DISJOINT_CONTIGUOUS);
+		runDMLTest(3, 2, Statement.PSUpdateType.ASP, Statement.PSFrequency.BATCH, 32, Statement.PSScheme.DISJOINT_CONTIGUOUS);
 	}
 
 	@Test
 	public void testParamservBSPEpoch() {
-		runDMLTest(10, 2, Statement.PSUpdateType.BSP, Statement.PSFrequency.EPOCH, 32, Statement.PSScheme.DISJOINT_CONTIGUOUS);
+		runDMLTest(3, 2, Statement.PSUpdateType.BSP, Statement.PSFrequency.EPOCH, 32, Statement.PSScheme.DISJOINT_CONTIGUOUS);
 	}
 
 	@Test
 	public void testParamservASPEpoch() {
-		runDMLTest(10, 2, Statement.PSUpdateType.ASP, Statement.PSFrequency.EPOCH, 32, Statement.PSScheme.DISJOINT_CONTIGUOUS);
+		runDMLTest(3, 2, Statement.PSUpdateType.ASP, Statement.PSFrequency.EPOCH, 32, Statement.PSScheme.DISJOINT_CONTIGUOUS);
 	}
 
 	@Test
 	public void testParamservBSPBatchDisjointRoundRobin() {
-		runDMLTest(10, 2, Statement.PSUpdateType.BSP, Statement.PSFrequency.BATCH, 32, Statement.PSScheme.DISJOINT_ROUND_ROBIN);
+		runDMLTest(3, 2, Statement.PSUpdateType.BSP, Statement.PSFrequency.BATCH, 32, Statement.PSScheme.DISJOINT_ROUND_ROBIN);
 	}
 
 	@Test
 	public void testParamservBSPBatchDisjointRandom() {
-		runDMLTest(10, 2, Statement.PSUpdateType.BSP, Statement.PSFrequency.BATCH, 32, Statement.PSScheme.DISJOINT_RANDOM);
+		runDMLTest(3, 2, Statement.PSUpdateType.BSP, Statement.PSFrequency.BATCH, 32, Statement.PSScheme.DISJOINT_RANDOM);
 	}
 
 	@Test
 	public void testParamservBSPBatchOverlapReshuffle() {
-		runDMLTest(10, 2, Statement.PSUpdateType.BSP, Statement.PSFrequency.BATCH, 32, Statement.PSScheme.OVERLAP_RESHUFFLE);
+		runDMLTest(3, 2, Statement.PSUpdateType.BSP, Statement.PSFrequency.BATCH, 32, Statement.PSScheme.OVERLAP_RESHUFFLE);
 	}
 
 	private void runDMLTest(int epochs, int workers, Statement.PSUpdateType utype, Statement.PSFrequency freq, int batchsize, Statement.PSScheme scheme) {

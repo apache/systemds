@@ -410,6 +410,11 @@ public class ProgramConverter
 		return createDeepCopyFunctionProgramBlock(fpb, fnStack, fnCreated, 0, -1, true);
 	}
 	
+	public static FunctionProgramBlock createDeepCopyFunctionProgramBlock(FunctionProgramBlock fpb, Set<String> fnStack, Set<String> fnCreated, long pid) {
+		//recursive deep copy with creation of thread-specific function calls
+		return createDeepCopyFunctionProgramBlock(fpb, fnStack, fnCreated, pid, -1, false);
+	}
+	
 	public static FunctionProgramBlock createDeepCopyFunctionProgramBlock(FunctionProgramBlock fpb, Set<String> fnStack, Set<String> fnCreated, long pid, int IDPrefix, boolean plain) 
 	{
 		if( fpb == null )

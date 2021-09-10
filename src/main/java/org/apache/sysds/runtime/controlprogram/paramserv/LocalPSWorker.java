@@ -43,9 +43,9 @@ public class LocalPSWorker extends PSWorker implements Callable<Void> {
 	protected LocalPSWorker() {}
 
 	public LocalPSWorker(int workerID, String updFunc, Statement.PSFrequency freq,
-		int epochs, long batchSize, ExecutionContext ec, ParamServer ps, boolean modelAvg)
+		int epochs, long batchSize, ExecutionContext ec, ParamServer ps, int nbatches, boolean modelAvg)
 	{
-		super(workerID, updFunc, freq, epochs, batchSize, ec, ps, modelAvg);
+		super(workerID, updFunc, freq, epochs, batchSize, ec, ps, nbatches, modelAvg);
 	}
 
 	@Override
@@ -66,6 +66,9 @@ public class LocalPSWorker extends PSWorker implements Callable<Void> {
 					break;
 				case EPOCH:
 					computeEpoch(dataSize, batchIter);
+					break;
+				case NBATCHES:
+					computeNBatches(dataSize, batchIter);
 					break;
 				default:
 					throw new DMLRuntimeException(String.format("%s not support update frequency %s", getWorkerName(), _freq));
@@ -113,6 +116,44 @@ public class LocalPSWorker extends PSWorker implements Callable<Void> {
 				throw new DMLRuntimeException(ex);
 			}
 
+			accNumEpochs(1);
+			if(LOG.isDebugEnabled()) {
+				LOG.debug(String.format("%s: finished %d epoch.", getWorkerName(), i + 1));
+			}
+		}
+	}
+
+	private void computeNBatches(long dataSize, int batchIter) {
+		ListObject model = null;
+		Future<ListObject> accGradients = ConcurrentUtils.constantFuture(null);
+		for(int i = 0; i < _epochs; i++) {
+			try {
+				for(int j = 0; j < batchIter; j++) {
+					boolean localUpdate = j < batchIter;
+					if( j % _nbatches == 0 )
+						model = pullModel();
+					ListObject gradients = computeGradients(model, dataSize, batchIter, i, j);
+					// Accumulate the intermediate gradients (async for overlap w/ model updates
+					// and gradient computation, sequential over gradient matrices to avoid deadlocks)
+					ListObject accGradientsPrev = accGradients.get();
+					accGradients = _tpool
+						.submit(() -> ParamservUtils.accrueGradients(accGradientsPrev, gradients, false, !localUpdate));
+					// Update the local model with gradients
+					if(localUpdate | _modelAvg)
+						model = updateModel(model, gradients, i, j, batchIter);
+					accNumBatches(1);
+					
+					// Push the gradients to ps
+					if((j % _nbatches == (_nbatches-1)) || (j == batchIter-1)) {
+						pushGradients(_modelAvg ? model : accGradients.get());
+						accGradients = ConcurrentUtils.constantFuture(null);
+					}
+					accNumBatches(1);
+				}
+			}
+			catch(ExecutionException | InterruptedException ex) {
+				throw new DMLRuntimeException(ex);
+			}
 			accNumEpochs(1);
 			if(LOG.isDebugEnabled()) {
 				LOG.debug(String.format("%s: finished %d epoch.", getWorkerName(), i + 1));

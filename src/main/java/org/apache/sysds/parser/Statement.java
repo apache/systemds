@@ -73,6 +73,7 @@ public abstract class Statement implements ParseInfo
 	public static final String PS_GRADIENTS = "gradients";
 	public static final String PS_SEED = "seed";
 	public static final String PS_MODELAVG = "modelAvg";
+	public static final String PS_NBATCHES = "nbatches";
 	public enum PSModeType {
 		FEDERATED, LOCAL, REMOTE_SPARK
 	}
@@ -88,7 +89,7 @@ public abstract class Statement implements ParseInfo
 	}
 	public static final String PS_FREQUENCY = "freq";
 	public enum PSFrequency {
-		BATCH, EPOCH
+		BATCH, EPOCH, NBATCHES
 	}
 	public static final String PS_FED_WEIGHTING = "weighting";
 	public static final String PS_FED_RUNTIME_BALANCING = "runtime_balancing";

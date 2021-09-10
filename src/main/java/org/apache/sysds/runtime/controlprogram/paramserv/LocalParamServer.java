@@ -33,17 +33,17 @@ public class LocalParamServer extends ParamServer {
 
 	public static LocalParamServer create(ListObject model, String aggFunc, Statement.PSUpdateType updateType,
 		Statement.PSFrequency freq, ExecutionContext ec, int workerNum, String valFunc, int numBatchesPerEpoch,
-		MatrixObject valFeatures, MatrixObject valLabels, boolean modelAvg)
+		MatrixObject valFeatures, MatrixObject valLabels, int nbatches, boolean modelAvg)
 	{
 		return new LocalParamServer(model, aggFunc, updateType, freq, ec,
-			workerNum, valFunc, numBatchesPerEpoch, valFeatures, valLabels, modelAvg);
+			workerNum, valFunc, numBatchesPerEpoch, valFeatures, valLabels, nbatches, modelAvg);
 	}
 
 	private LocalParamServer(ListObject model, String aggFunc, Statement.PSUpdateType updateType,
 		Statement.PSFrequency freq, ExecutionContext ec, int workerNum, String valFunc, int numBatchesPerEpoch,
-		MatrixObject valFeatures, MatrixObject valLabels, boolean modelAvg)
+		MatrixObject valFeatures, MatrixObject valLabels, int nbatches, boolean modelAvg)
 	{
-		super(model, aggFunc, updateType, freq, ec, workerNum, valFunc, numBatchesPerEpoch, valFeatures, valLabels, modelAvg);
+		super(model, aggFunc, updateType, freq, ec, workerNum, valFunc, numBatchesPerEpoch, valFeatures, valLabels, nbatches, modelAvg);
 	}
 
 	@Override

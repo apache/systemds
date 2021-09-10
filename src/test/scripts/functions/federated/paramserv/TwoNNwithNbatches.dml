@@ -1,0 +1,305 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+/*
+ * This file implements all needed functions to evaluate a simple feed forward neural network
+ * on different execution schemes and with different inputs, for example a federated input matrix.
+ */
+
+# Imports
+source("nn/layers/affine.dml") as affine
+source("nn/layers/cross_entropy_loss.dml") as cross_entropy_loss
+source("nn/layers/relu.dml") as relu
+source("nn/layers/softmax.dml") as softmax
+source("nn/optim/sgd.dml") as sgd
+
+/*
+ * Trains a simple feed forward neural network with two hidden layers single threaded the conventional way.
+ *
+ * The input matrix has one example per row (N) and D features.
+ * The targets, y, have K classes, and are one-hot encoded.
+ *
+ * Inputs:
+ *  - X: Input data matrix of shape (N, D)
+ *  - y: Target matrix of shape (N, K)
+ *  - X_val: Input validation data matrix of shape (N_val, D)
+ *  - y_val: Targed validation matrix of shape (N_val, K)
+ *  - epochs: Total number of full training loops over the full data set
+ *  - batch_size: Batch size
+ *  - learning_rate: The learning rate for the SGD
+ *
+ * Outputs:
+ *  - model_trained: List containing
+ *       - W1: 1st layer weights (parameters) matrix, of shape (D, 200)
+ *       - b1: 1st layer biases vector, of shape (200, 1)
+ *       - W2: 2nd layer weights (parameters) matrix, of shape (200, 200)
+ *       - b2: 2nd layer biases vector, of shape (200, 1)
+ *       - W3: 3rd layer weights (parameters) matrix, of shape (200, K)
+ *       - b3: 3rd layer biases vector, of shape (K, 1)
+ */
+train = function(matrix[double] X, matrix[double] y,
+                 matrix[double] X_val, matrix[double] y_val,
+                 int epochs, int batch_size, double eta,
+                 int seed = -1, int nbatches)
+    return (list[unknown] model) {
+
+  N = nrow(X)  # num examples
+  D = ncol(X)  # num features
+  K = ncol(y)  # num classes
+
+  # Create the network:
+  ## input -> affine1 -> relu1 -> affine2 -> relu2 -> affine3 -> softmax
+  [W1, b1] = affine::init(D, 200, seed = seed)
+  lseed = ifelse(seed==-1, -1, seed + 1);
+  [W2, b2] = affine::init(200, 200,  seed = lseed)
+  lseed = ifelse(seed==-1, -1, seed + 2);
+  [W3, b3] = affine::init(200, K, seed = lseed)
+  W3 = W3 / sqrt(2)  # different initialization, since being fed into softmax, instead of relu
+  model = list(W1, W2, W3, b1, b2, b3)
+
+  # Create the hyper parameter list
+  hyperparams = list(learning_rate=eta)
+  # Calculate iterations
+  iters = ceil(N / batch_size)
+
+  for (e in 1:epochs) {
+    for(i in 1:iters) {
+      # Get next batch
+      beg = ((i-1) * batch_size) %% N + 1
+      end = min(N, beg + batch_size - 1)
+      X_batch = X[beg:end,]
+      y_batch = y[beg:end,]
+
+      gradients_list = gradients(model, hyperparams, X_batch, y_batch)
+      model = aggregation(model, hyperparams, gradients_list)
+    }
+  }
+}
+
+/*
+ * Trains a simple feed forward neural network with two hidden layers
+ * using a parameter server with specified properties.
+ *
+ * The input matrix has one example per row (N) and D features.
+ * The targets, y, have K classes, and are one-hot encoded.
+ *
+ * Inputs:
+ *  - X: Input data matrix of shape (N, D)
+ *  - y: Target matrix of shape (N, K)
+ *  - X_val: Input validation data matrix of shape (N_val, D)
+ *  - y_val: Targed validation matrix of shape (N_val, K)
+ *  - epochs: Total number of full training loops over the full data set
+ *  - batch_size: Batch size
+ *  - learning_rate: The learning rate for the SGD
+ *  - workers: Number of workers to create
+ *  - utype: parameter server framework to use
+ *  - scheme: update schema
+ *  - mode: local or distributed
+ *
+ * Outputs:
+ *  - model_trained: List containing
+ *       - W1: 1st layer weights (parameters) matrix, of shape (D, 200)
+ *       - b1: 1st layer biases vector, of shape (200, 1)
+ *       - W2: 2nd layer weights (parameters) matrix, of shape (200, 200)
+ *       - b2: 2nd layer biases vector, of shape (200, 1)
+ *       - W3: 3rd layer weights (parameters) matrix, of shape (200, K)
+ *       - b3: 3rd layer biases vector, of shape (K, 1)
+ */
+train_paramserv = function(matrix[double] X, matrix[double] y,
+                 matrix[double] X_val, matrix[double] y_val,
+                 int num_workers, int epochs, string utype, string freq, int batch_size, string scheme, string runtime_balancing, string weighting,
+                 double eta, int seed = -1, int nbatches)
+    return (list[unknown] model) {
+
+  N = nrow(X)  # num examples
+  D = ncol(X)  # num features
+  K = ncol(y)  # num classes
+
+  # Create the network:
+  ## input -> affine1 -> relu1 -> affine2 -> relu2 -> affine3 -> softmax
+  [W1, b1] = affine::init(D, 200, seed = seed)
+  lseed = ifelse(seed==-1, -1, seed + 1);
+  [W2, b2] = affine::init(200, 200,  seed = lseed)
+  lseed = ifelse(seed==-1, -1, seed + 2);
+  [W3, b3] = affine::init(200, K, seed = lseed)
+  # W3 = W3 / sqrt(2) # different initialization, since being fed into softmax, instead of relu
+
+  # [W1, b1] = affine::init(D, 200)
+  # [W2, b2] = affine::init(200, 200)
+  # [W3, b3] = affine::init(200, K)
+
+  # Create the model list
+  model = list(W1, W2, W3, b1, b2, b3)
+  # Create the hyper parameter list
+  hyperparams = list(learning_rate=eta)
+  # Use paramserv function
+  model = paramserv(model=model, features=X, labels=y, val_features=X_val, val_labels=y_val,
+    upd="./src/test/scripts/functions/federated/paramserv/TwoNNwithNbatches.dml::gradients",
+    agg="./src/test/scripts/functions/federated/paramserv/TwoNNwithNbatches.dml::aggregation",
+    val="./src/test/scripts/functions/federated/paramserv/TwoNNwithNbatches.dml::validate",
+    k=num_workers, utype=utype, freq=freq, epochs=epochs, batchsize=batch_size,
+    scheme=scheme, runtime_balancing=runtime_balancing, weighting=weighting, hyperparams=hyperparams, seed=seed, nbatches=nbatches)
+}
+
+/*
+ * Computes the class probability predictions of a simple feed forward neural network.
+ *
+ * Inputs:
+ *  - X: The input data matrix of shape (N, D)
+ *  - model: List containing
+ *       - W1: 1st layer weights (parameters) matrix, of shape (D, 200)
+ *       - b1: 1st layer biases vector, of shape (200, 1)
+ *       - W2: 2nd layer weights (parameters) matrix, of shape (200, 200)
+ *       - b2: 2nd layer biases vector, of shape (200, 1)
+ *       - W3: 3rd layer weights (parameters) matrix, of shape (200, K)
+ *       - b3: 3rd layer biases vector, of shape (K, 1)
+ *
+ * Outputs:
+ *  - probs: Class probabilities, of shape (N, K)
+ */
+predict = function(matrix[double] X,
+                   list[unknown] model)
+    return (matrix[double] probs) {
+
+  W1 = as.matrix(model[1])
+  W2 = as.matrix(model[2])
+  W3 = as.matrix(model[3])
+  b1 = as.matrix(model[4])
+  b2 = as.matrix(model[5])
+  b3 = as.matrix(model[6])
+
+  out1relu = relu::forward(affine::forward(X, W1, b1))
+  out2relu = relu::forward(affine::forward(out1relu, W2, b2))
+  probs = softmax::forward(affine::forward(out2relu, W3, b3))
+}
+
+/*
+ * Evaluates a simple feed forward neural network.
+ *
+ * The probs matrix contains the class probability predictions
+ * of K classes over N examples.  The targets, y, have K classes,
+ * and are one-hot encoded.
+ *
+ * Inputs:
+ *  - probs: Class probabilities, of shape (N, K).
+ *  - y: Target matrix, of shape (N, K).
+ *
+ * Outputs:
+ *  - loss: Scalar loss, of shape (1).
+ *  - accuracy: Scalar accuracy, of shape (1).
+ */
+eval = function(matrix[double] probs, matrix[double] y)
+    return (double loss, double accuracy) {
+
+  # Compute loss & accuracy
+  loss = cross_entropy_loss::forward(probs, y)
+  correct_pred = rowIndexMax(probs) == rowIndexMax(y)
+  accuracy = mean(correct_pred)
+}
+
+/*
+ * Gives the accuracy and loss for a model and given feature and label matrices
+ *
+ * This function is a combination of the predict and eval function used for validation.
+ * For inputs see eval and predict.
+ *
+ * Outputs:
+ *  - loss: Scalar loss, of shape (1).
+ *  - accuracy: Scalar accuracy, of shape (1).
+ */
+validate = function(matrix[double] val_features, matrix[double] val_labels, list[unknown] model, list[unknown] hyperparams)
+    return (double loss, double accuracy) {
+  [loss, accuracy] = eval(predict(val_features, model), val_labels)
+}
+
+# Should always use 'features' (batch features), 'labels' (batch labels),
+# 'hyperparams', 'model' as the arguments
+# and return the gradients of type list
+gradients = function(list[unknown] model,
+                     list[unknown] hyperparams,
+                     matrix[double] features,
+                     matrix[double] labels)
+    return (list[unknown] gradients) {
+
+  W1 = as.matrix(model[1])
+  W2 = as.matrix(model[2])
+  W3 = as.matrix(model[3])
+  b1 = as.matrix(model[4])
+  b2 = as.matrix(model[5])
+  b3 = as.matrix(model[6])
+
+  # Compute forward pass
+  ## input -> affine1 -> relu1 -> affine2 -> relu2 -> affine3 -> softmax
+  out1 = affine::forward(features, W1, b1)
+  out1relu = relu::forward(out1)
+  out2 = affine::forward(out1relu, W2, b2)
+  out2relu = relu::forward(out2)
+  out3 = affine::forward(out2relu, W3, b3)
+  probs = softmax::forward(out3)
+
+  # Compute loss & accuracy for training data
+  loss = cross_entropy_loss::forward(probs, labels)
+  accuracy = mean(rowIndexMax(probs) == rowIndexMax(labels))
+  # print("[+] Completed forward pass on batch: train loss: " + loss + ", train accuracy: " + accuracy)
+
+  # Compute data backward pass
+  dprobs = cross_entropy_loss::backward(probs, labels)
+  dout3 = softmax::backward(dprobs, out3)
+  [dout2relu, dW3, db3] = affine::backward(dout3, out2relu, W3, b3)
+  dout2 = relu::backward(dout2relu, out2)
+  [dout1relu, dW2, db2] = affine::backward(dout2, out1relu, W2, b2)
+  dout1 = relu::backward(dout1relu, out1)
+  [dfeatures, dW1, db1] = affine::backward(dout1, features, W1, b1)
+
+  gradients = list(dW1, dW2, dW3, db1, db2, db3)
+}
+
+# Should use the arguments named 'model', 'gradients', 'hyperparams'
+# and return always a model of type list
+aggregation = function(list[unknown] model,
+                       list[unknown] hyperparams,
+                       list[unknown] gradients)
+    return (list[unknown] model_result) {
+
+  W1 = as.matrix(model[1])
+  W2 = as.matrix(model[2])
+  W3 = as.matrix(model[3])
+  b1 = as.matrix(model[4])
+  b2 = as.matrix(model[5])
+  b3 = as.matrix(model[6])
+  dW1 = as.matrix(gradients[1])
+  dW2 = as.matrix(gradients[2])
+  dW3 = as.matrix(gradients[3])
+  db1 = as.matrix(gradients[4])
+  db2 = as.matrix(gradients[5])
+  db3 = as.matrix(gradients[6])
+  learning_rate = as.double(as.scalar(hyperparams["learning_rate"]))
+
+  # Optimize with SGD
+  W3 = sgd::update(W3, dW3, learning_rate)
+  b3 = sgd::update(b3, db3, learning_rate)
+  W2 = sgd::update(W2, dW2, learning_rate)
+  b2 = sgd::update(b2, db2, learning_rate)
+  W1 = sgd::update(W1, dW1, learning_rate)
+  b1 = sgd::update(b1, db1, learning_rate)
+
+  model_result = list(W1, W2, W3, b1, b2, b3)
+}

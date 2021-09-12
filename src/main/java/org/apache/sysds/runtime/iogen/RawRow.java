@@ -19,6 +19,7 @@
 
 package org.apache.sysds.runtime.iogen;
 
+import org.apache.sysds.common.Types;
 import org.apache.sysds.runtime.matrix.data.Pair;
 
 import java.util.ArrayList;
@@ -26,7 +27,6 @@ import java.util.BitSet;
 import java.util.HashSet;
 
 public class RawRow {
-
 	private final String raw;
 	private ArrayList<Integer> numericPositions = new ArrayList<>();
 	private final BitSet numericReserved;
@@ -34,6 +34,8 @@ public class RawRow {
 	private final BitSet reserved;
 	private int numericLastIndex;
 	private int rawLastIndex;
+
+	private Pair<Integer, Integer> resultNumeric;
 
 	public RawRow(String raw, ArrayList<Integer> numericPositions, String numericRaw) {
 		this.raw = raw;
@@ -62,39 +64,165 @@ public class RawRow {
 		rawLastIndex = 0;
 	}
 
-	public Pair<Integer, Integer> findValue(ValueTrimFormat vtf, boolean forward) {
-		if(vtf instanceof ValueTrimFormat.NumberTrimFormat)
-			return findValue((ValueTrimFormat.NumberTrimFormat) vtf, forward);
+	public Pair<Integer, Integer> findValue(ValueTrimFormat vtf, boolean forward, boolean update) {
+		Types.ValueType vt = vtf.getValueType();
+		if(vt.isNumeric())
+			return findNumericValue(vtf, forward, update);
 
-		if(vtf instanceof ValueTrimFormat.StringTrimFormat)
-			return findValue((ValueTrimFormat.StringTrimFormat) vtf, forward);
+		else if(vt == Types.ValueType.STRING)
+			return findStringValue(vtf, forward, update);
 		return null;
 	}
 
-	public Pair<Integer, Integer> findAtValue(ValueTrimFormat vtf, int index) {
-		if(vtf instanceof ValueTrimFormat.StringTrimFormat)
-			return findAtValue((ValueTrimFormat.StringTrimFormat) vtf, index);
+	public Pair<Integer, Integer> findValue(ValueTrimFormat vtf, boolean forward) {
+		return findValue(vtf, forward, true);
+	}
+
+	public Pair<Integer, Integer> findSequenceValues(ArrayList<ValueTrimFormat> vtfs, int startIndex, boolean update) {
+		int currentNumericLastIndex = numericLastIndex;
+		int currentRawLastIndex = rawLastIndex;
+		Pair<Integer, Integer> spair = null;
+		Pair<Integer, Integer> epair = null;
+		ValueTrimFormat snode = vtfs.get(0);
+		rawLastIndex = 0;
+		numericLastIndex = 0;
+
+		do {
+			spair = findValue(snode, true, false);
+			if(spair.getKey() != -1) {
+				for(int i = 1; i < vtfs.size(); i++) {
+					//lastIndex = vtfs.get(i).getValueType().isNumeric() ? numericLastIndex : rawLastIndex;
+					epair = findAtValue(vtfs.get(i), rawLastIndex, numericLastIndex, false);
+					if(epair.getKey() == -1)
+						break;
+				}
+				if(epair != null && epair.getKey() != -1)
+					break;
+			}
+			else
+				break;
+		}
+		while(true);
+		if(update && epair != null && epair.getKey() != -1) {
+			reserved.set(spair.getKey(), epair.getKey() + epair.getValue(), true);
+		}
+		else {
+			numericLastIndex = currentNumericLastIndex;
+			rawLastIndex = currentRawLastIndex;
+		}
+
+		if(epair != null && epair.getKey() != -1) {
+			spair.set(spair.getKey(), epair.getKey() + epair.getValue());
+
+		}
+		else
+			spair.set(-1, 0);
+
+		return spair;
+	}
+
+	public Pair<Integer, Integer> findAtValue(ValueTrimFormat vtf, int rawIndex, int numericIndex, boolean update) {
+		if(vtf.getValueType() == Types.ValueType.STRING)
+			return findAtStringValue(vtf, rawIndex, update);
+		else if(vtf.getValueType().isNumeric())
+			return findAtNumericValue(vtf, rawIndex, numericIndex, update);
 		else
 			throw new RuntimeException("FindAt just work for fixed length of values!");
 	}
 
-	private Pair<Integer, Integer> findAtValue(ValueTrimFormat.StringTrimFormat stf, int index) {
+	public Pair<Integer, Integer> findAtValue(ValueTrimFormat vtf, int rawIndex, int numericIndex) {
+		return findAtValue(vtf, rawIndex, numericIndex, true);
+	}
+
+	private Pair<Integer, Integer> findAtStringValue(ValueTrimFormat stf, int index, boolean update) {
 		Pair<Integer, Integer> result = new Pair<>(-1, 0);
 		int length = stf.getStringOfActualValue().length();
 		if(index + length > raw.length() || index <= 0)
 			return result;
 
 		if(reserved.get(index, index + length).isEmpty()) {
-			if(raw.substring(index, index + length).equalsIgnoreCase(stf.getStringOfActualValue()))
+			if(raw.substring(index, index + length).equalsIgnoreCase(stf.getStringOfActualValue())) {
 				result.set(index, length);
+				rawLastIndex = result.getKey() + result.getValue();
+			}
 		}
-		if(result.getKey() != -1) {
+		if(result.getKey() != -1 && update) {
 			reserved.set(result.getKey(), result.getKey() + result.getValue(), true);
 		}
 		return result;
 	}
 
-	private Pair<Integer, Integer> findValue(ValueTrimFormat.StringTrimFormat stf, boolean forward) {
+	private Pair<Integer, Integer> findAtNumericValue(ValueTrimFormat ntf, int rawStart, int numericStart,
+		boolean update) {
+		Pair<Integer, Integer> result = new Pair<>(-1, 0);
+		int end = rawStart;
+
+		for(int i = rawStart; i < raw.length(); i++) {
+			if(!reserved.get(i))
+				end++;
+			else
+				break;
+		}
+		boolean flagD = false;
+		StringBuilder sb = new StringBuilder();
+		for(int i = rawStart; i < end; i++) {
+			char ch = raw.charAt(i);
+			if(ch == 'E' || ch == 'e' || ch == '+' || ch == '-') {
+				sb.append(ch);
+			}
+			else if(!flagD && ch == '.') {
+				sb.append(ch);
+				flagD = true;
+			}
+			else if(Character.isDigit(ch))
+				sb.append(ch);
+			else
+				break;
+		}
+		Double value = tryParse(sb.toString());
+		if(value != null) {
+			if(value == ntf.getDoubleActualValue()) {
+				result.setKey(rawStart);
+				result.setValue(sb.length());
+			}
+		}
+
+		if(result.getKey() != -1) {
+			if(update) {
+				for(int i = resultNumeric.getKey() - 1; i >= 0; i--) {
+					if(numericPositions.get(i) >= result.getKey())
+						numericReserved.set(i);
+					else
+						break;
+				}
+
+				for(int i = resultNumeric.getKey() + 1; i < numericPositions.size(); i++) {
+					if(numericPositions.get(i) <= result.getKey() + result.getValue()) {
+						numericReserved.set(i);
+						numericLastIndex = i;
+					}
+					else
+						break;
+				}
+				numericReserved.set(resultNumeric.getKey(), resultNumeric.getKey() + resultNumeric.getValue(), true);
+				reserved.set(result.getKey(), result.getKey() + result.getValue(), true);
+			}
+			else {
+				for(int i = resultNumeric.getKey() + 1; i < numericPositions.size(); i++) {
+					if(numericPositions.get(i) <= result.getKey() + result.getValue()) {
+						numericLastIndex = i;
+					}
+					else
+						break;
+				}
+			}
+			numericLastIndex = Math.max(numericLastIndex, resultNumeric.getKey() + resultNumeric.getValue());
+			rawLastIndex = result.getKey() + result.getValue();
+		}
+		return result;
+	}
+
+	private Pair<Integer, Integer> findStringValue(ValueTrimFormat stf, boolean forward, boolean update) {
 		ArrayList<Pair<Integer, Integer>> unreserved = getRawUnreservedPositions(forward);
 		Pair<Integer, Integer> result = new Pair<>(-1, 0);
 		for(Pair<Integer, Integer> p : unreserved) {
@@ -106,18 +234,19 @@ public class RawRow {
 			if(index != -1 && (index <= end - length + 1)) {
 				result.setKey(index);
 				result.setValue(length);
-				rawLastIndex = index;
-				reserved.set(result.getKey(), result.getKey() + result.getValue(), true);
+				rawLastIndex = index + length;
+				if(update)
+					reserved.set(result.getKey(), result.getKey() + result.getValue(), true);
 				break;
 			}
 		}
 		return result;
 	}
 
-	private Pair<Integer, Integer> findValue(ValueTrimFormat.NumberTrimFormat ntf, boolean forward) {
+	private Pair<Integer, Integer> findNumericValue(ValueTrimFormat ntf, boolean forward, boolean update) {
 		ArrayList<Pair<Integer, Integer>> unreserved = getUnreservedPositions(forward);
 		Pair<Integer, Integer> result = new Pair<>(-1, 0);
-		Pair<Integer, Integer> resultNumeric = new Pair<>(-1, 0);
+		resultNumeric = new Pair<>(-1, 0);
 		for(Pair<Integer, Integer> p : unreserved) {
 			int start = p.getKey();
 			int end = p.getValue();
@@ -133,15 +262,10 @@ public class RawRow {
 				resultNumeric.setKey(index);
 				int startPos = numericPositions.get(index);
 				int endPos = numericPositions.get(index + length - 1);
-				ntfString = raw.substring(startPos, endPos+1);
-				Double value= tryParse(ntfString);
-				if(value==null)
+				ntfString = raw.substring(startPos, endPos + 1);
+				Double value = tryParse(ntfString);
+				if(value == null)
 					continue;
-
-				if(ntf.getActualValue() == value) {
-					result.setKey(startPos);
-					result.setValue(length);
-				}
 
 				// Choose range of string
 				boolean flagD = false;
@@ -153,7 +277,6 @@ public class RawRow {
 					for(int i = startPos; i <= endPos; i++) {
 						if(raw.charAt(i) == '.') {
 							flagD = true;
-							length++;
 							break;
 						}
 					}
@@ -161,11 +284,6 @@ public class RawRow {
 						continue;
 					// Check mapping
 					ntfString = raw.substring(startPos, endPos + 1);
-					// Actual value contain '.'
-					if(ntf.getActualValue() == Double.parseDouble(ntfString)) {
-						result.setKey(startPos);
-						result.setValue(ntfString.length());
-					}
 				}
 				else if(d > 1)
 					continue;
@@ -174,10 +292,13 @@ public class RawRow {
 
 				// 3. if the actual value is positive
 				// add some prefixes to the string
-				for(int i = startPos - 1; i >= 0; i--) {
+				boolean flagPrefix = true;
+				for(int i = startPos - 1; i >= 0 && flagPrefix; i--) {
 					char ch = raw.charAt(i);
-					if(ch == '0')
-						sb.append(ch);
+					if(Character.isDigit(ch) && ch != '0')
+						flagPrefix = false;
+					else if(ch == '0')
+						sb.append('0');
 					else if(!flagD && ch == '.') {
 						sb.append(ch);
 						flagD = true;
@@ -186,59 +307,73 @@ public class RawRow {
 						sb.append(ch);
 						break;
 					}
-					else
+					else {
 						break;
+					}
 				}
+				if(!flagPrefix)
+					continue;
+
 				sb = sb.reverse();
 				startPos -= sb.length();
 				sb.append(ntfString);
-				if(ntf.getActualValue() == Double.parseDouble(sb.toString())) {
-					result.setKey(startPos);
-					result.setValue(sb.length());
-				}
 
-				// 4. if the actual value is negative '.' can be at the right side of the position
 				for(int i = endPos + 1; i < raw.length(); i++) {
 					char ch = raw.charAt(i);
-					sb.append(ch);
 					if(ch == 'E' || ch == 'e' || ch == '+' || ch == '-') {
-						continue;
+						sb.append(ch);
 					}
-					else if(!Character.isDigit(ch) && ch != '.')
+					else if(!flagD && ch == '.') {
+						sb.append(ch);
+						flagD = true;
+					}
+					else if(Character.isDigit(ch))
+						sb.append(ch);
+					else
 						break;
-					value = tryParse(sb.toString());
-					if(value != null) {
-						if(value == ntf.getActualValue()) {
-							result.setKey(startPos);
-							result.setValue(sb.length());
-						}
+				}
+				value = tryParse(sb.toString());
+				if(value != null) {
+					if(value == ntf.getDoubleActualValue()) {
+						result.setKey(startPos);
+						result.setValue(sb.length());
 					}
 				}
-
 			}
 			if(result.getKey() != -1) {
 				break;
 			}
 		}
 		if(result.getKey() != -1) {
-			for(int i = resultNumeric.getKey() - 1; i >= 0; i--) {
-				if(numericPositions.get(i) >= result.getKey())
-					numericReserved.set(i);
-				else
-					break;
-			}
-
-			for(int i = resultNumeric.getKey() + 1; i < numericPositions.size(); i++) {
-				if(numericPositions.get(i) <= result.getKey() + result.getValue()) {
-					numericReserved.set(i);
-					numericLastIndex = i;
+			if(update) {
+				for(int i = resultNumeric.getKey() - 1; i >= 0; i--) {
+					if(numericPositions.get(i) >= result.getKey())
+						numericReserved.set(i);
+					else
+						break;
 				}
-				else
-					break;
+
+				for(int i = resultNumeric.getKey() + 1; i < numericPositions.size(); i++) {
+					if(numericPositions.get(i) <= result.getKey() + result.getValue()) {
+						numericReserved.set(i);
+						numericLastIndex = i;
+					}
+					else
+						break;
+				}
+				numericReserved.set(resultNumeric.getKey(), resultNumeric.getKey() + resultNumeric.getValue(), true);
+				reserved.set(result.getKey(), result.getKey() + result.getValue(), true);
+			}
+			else {
+				for(int i = resultNumeric.getKey() + 1; i < numericPositions.size(); i++) {
+					if(numericPositions.get(i) <= result.getKey() + result.getValue()) {
+						numericLastIndex = i;
+					}
+					else
+						break;
+				}
 			}
 			numericLastIndex = Math.max(numericLastIndex, resultNumeric.getKey() + resultNumeric.getValue());
-			numericReserved.set(resultNumeric.getKey(), resultNumeric.getKey() + resultNumeric.getValue(), true);
-			reserved.set(result.getKey(), result.getKey() + result.getValue(), true);
 			rawLastIndex = result.getKey() + result.getValue();
 		}
 		return result;
@@ -406,18 +541,7 @@ public class RawRow {
 		return rawLastIndex;
 	}
 
-	public boolean isMarked(){
+	public boolean isMarked() {
 		return !reserved.isEmpty();
-	}
-
-	public void print() {
-		System.out.println(raw);
-		for(int i = 0; i < raw.length(); i++) {
-			if(reserved.get(i))
-				System.out.print("1");
-			else
-				System.out.print("0");
-		}
-		System.out.println("\n----------------------------------------");
 	}
 }

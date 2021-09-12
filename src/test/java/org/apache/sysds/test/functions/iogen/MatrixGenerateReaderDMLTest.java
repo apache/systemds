@@ -66,7 +66,7 @@ public class MatrixGenerateReaderDMLTest extends AutomatedTestBase {
 	@Test
 	public void rowRaw() throws Exception {
 		String s = "1,2,3,4,5,6,7,8,9,10";
-		ValueTrimFormat.NumberTrimFormat vtf = new ValueTrimFormat.NumberTrimFormat(1);
+		ValueTrimFormat vtf = new ValueTrimFormat(1);
 		RawRow rr = new RawRow(s);
 		rr.findValue(vtf, false);
 

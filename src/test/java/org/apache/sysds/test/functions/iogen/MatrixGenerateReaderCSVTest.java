@@ -134,7 +134,7 @@ public class MatrixGenerateReaderCSVTest extends GenerateReaderTest {
 
 	@Test public void test13() {
 		String[] naString = {"Nan", "NAN", "", "inf", "null", "NULL"};
-		generateRandomCSV(1000, 200, -10, 10, 0.5, ",,", naString);
+		generateRandomCSV(1000, 2000, -10, 10, 0.5, ",,", naString);
 		runGenerateReaderTest();
 	}
 }

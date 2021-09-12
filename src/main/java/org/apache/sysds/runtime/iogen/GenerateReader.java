@@ -48,15 +48,15 @@ public abstract class GenerateReader {
 
 		//LOG:
 		// Start Calculation time:
-		long tmpTime = System.nanoTime();
+		//long tmpTime = System.nanoTime();
 
 		readerMapping = sampleProperties.getDataType().isMatrix() ? new ReaderMapping.MatrixReaderMapping(
 			sampleProperties.getSampleRaw(), sampleProperties.getSampleMatrix()) : new ReaderMapping.FrameReaderMapping(
 			sampleProperties.getSampleRaw(), sampleProperties.getSampleFrame());
 
 		// Time Calculation
-		double elapsedSeconds = (System.nanoTime() - tmpTime) / 1000000000.0;
-		System.out.println("mapping_time:" + elapsedSeconds);
+		//double elapsedSeconds = (System.nanoTime() - tmpTime) / 1000000000.0;
+		//System.out.println("mapping_time:" + elapsedSeconds);
 		//END LOG
 	}
 
@@ -80,7 +80,7 @@ public abstract class GenerateReader {
 				throw new Exception("Sample raw data and sample matrix don't match !!");
 			}
 			//LOG:
-			long tmpTime = System.nanoTime();
+			//long tmpTime = System.nanoTime();
 
 			CustomProperties ffp = readerMapping.getFormatProperties();
 			if(ffp == null) {
@@ -99,8 +99,8 @@ public abstract class GenerateReader {
 				matrixReader = new MatrixGenerateReader.MatrixReaderRowIrregular(ffp);
 			}
 			// Time Calculation
-			double elapsedSeconds = (System.nanoTime() - tmpTime) / 1000000000.0;
-			System.out.println("analysis_time: " + elapsedSeconds);
+			//double elapsedSeconds = (System.nanoTime() - tmpTime) / 1000000000.0;
+			//System.out.println("analysis_time: " + elapsedSeconds);
 			//END LOG
 
 			return matrixReader;
@@ -128,7 +128,7 @@ public abstract class GenerateReader {
 				throw new Exception("Sample raw data and sample frame don't match !!");
 			}
 			//LOG:
-			long tmpTime = System.nanoTime();
+			//long tmpTime = System.nanoTime();
 
 			CustomProperties ffp = readerMapping.getFormatProperties();
 			if(ffp == null) {
@@ -147,8 +147,8 @@ public abstract class GenerateReader {
 				frameReader = new FrameGenerateReader.FrameReaderRowIrregular(ffp);
 			}
 			// Time Calculation
-			double elapsedSeconds = (System.nanoTime() - tmpTime) / 1000000000.0;
-			System.out.println("analysis_time: " + elapsedSeconds);
+			//double elapsedSeconds = (System.nanoTime() - tmpTime) / 1000000000.0;
+			//System.out.println("analysis_time: " + elapsedSeconds);
 			//END LOG
 			return frameReader;
 		}

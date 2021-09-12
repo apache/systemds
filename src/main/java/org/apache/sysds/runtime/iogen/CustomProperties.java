@@ -33,7 +33,8 @@ public class CustomProperties extends FileFormatProperties implements Serializab
 	private String delim;
 	private String indexDelim;
 	private HashSet<String> naStrings;
-	private int firstIndex;
+	private int firstColIndex;
+	private int firstRowIndex;
 
 	protected enum GRPattern {
 		Regular, Irregular;
@@ -68,20 +69,23 @@ public class CustomProperties extends FileFormatProperties implements Serializab
 	}
 
 	// LIBSVM format
-	public CustomProperties(GRPattern rowPattern, String delim, String indexDelim) {
+	public CustomProperties(GRPattern rowPattern, String delim, String indexDelim, int firstColIndex) {
 		this.delim = delim;
 		this.indexDelim = indexDelim;
 		this.rowPattern = rowPattern;
 		this.colPattern = GRPattern.Irregular;
 		this.grSymmetry = GRSymmetry.GENERAL;
+		this.firstColIndex = firstColIndex;
 	}
 
 	// Matrix Market format
-	public CustomProperties(GRSymmetry grSymmetry, String delim) {
+	public CustomProperties(GRSymmetry grSymmetry, String delim, int firstRowIndex, int firstColIndex) {
 		this.delim = delim;
 		this.grSymmetry = grSymmetry;
 		this.colPattern = GRPattern.Regular;
 		this.rowPattern = GRPattern.Irregular;
+		this.firstColIndex = firstColIndex;
+		this.firstRowIndex = firstRowIndex;
 	}
 
 	public String getDelim() {
@@ -108,11 +112,19 @@ public class CustomProperties extends FileFormatProperties implements Serializab
 		return grSymmetry;
 	}
 
-	public int getFirstIndex() {
-		return firstIndex;
+	public int getFirstColIndex() {
+		return firstColIndex;
 	}
 
-	public void setFirstIndex(int firstIndex) {
-		this.firstIndex = firstIndex;
+	public void setFirstColIndex(int firstColIndex) {
+		this.firstColIndex = firstColIndex;
+	}
+
+	public int getFirstRowIndex() {
+		return firstRowIndex;
+	}
+
+	public void setFirstRowIndex(int firstRowIndex) {
+		this.firstRowIndex = firstRowIndex;
 	}
 }

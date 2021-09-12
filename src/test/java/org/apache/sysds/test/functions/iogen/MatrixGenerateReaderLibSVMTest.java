@@ -21,8 +21,6 @@ package org.apache.sysds.test.functions.iogen;
 
 import org.junit.Test;
 
-import java.util.BitSet;
-
 public class MatrixGenerateReaderLibSVMTest extends GenerateReaderTest {
 
 	private final static String TEST_NAME = "GenerateReaderLibSVMTest";
@@ -89,13 +87,6 @@ public class MatrixGenerateReaderLibSVMTest extends GenerateReaderTest {
 		sampleRaw = "-1 8:-9 10:-11\n" + "+1 2:3 4:5 6:7\n";
 		sampleMatrix = new double[][] {{0, 0, 0, 0, 0, 0, 0, 0, -9, 0, -11, -1}, {0, 0, 3, 0, 5, 0, 7, 0, 0, 0, 0, +1}};
 		runGenerateReaderTest();
-	}
-
-	@Test public void test0_100() {
-		BitSet b = new BitSet(10);
-		b.set(2, 5);
-		BitSet b2 = b.get(6, 10);
-		System.out.println(b2.isEmpty());
 	}
 
 	@Test public void test0_2() {

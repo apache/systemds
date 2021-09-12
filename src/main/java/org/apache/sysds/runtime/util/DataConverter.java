@@ -227,7 +227,7 @@ public class DataConverter {
 		throws IOException
 	{	
 		//Timing time = new Timing(true);
-		long tmpTime = System.nanoTime();
+		//long tmpTime = System.nanoTime();
 
 		//core matrix reading 
 		MatrixBlock ret = null;
@@ -235,20 +235,20 @@ public class DataConverter {
 			MatrixReader reader = MatrixReaderFactory.createMatrixReader(prop);
 
 			// LOG:
-			long tmpTime2 = System.nanoTime();
+			//long tmpTime2 = System.nanoTime();
 
 			ret = reader.readMatrixFromHDFS(prop.path, prop.rlen, prop.clen, prop.blen, prop.expectedNnz);
 
-			double elapsedSeconds = (System.nanoTime() - tmpTime2) / 1000000000.0;
-			System.out.println("read_time:"+elapsedSeconds);
+			//double elapsedSeconds = (System.nanoTime() - tmpTime2) / 1000000000.0;
+			//System.out.println("read_time:"+elapsedSeconds);
 		}
 		catch(DMLRuntimeException rex)
 		{
 			throw new IOException(rex);
 		}
 
-		double elapsedSeconds = (System.nanoTime() - tmpTime) / 1000000000.0;
-		System.out.println("total_read_time:"+elapsedSeconds);
+		//double elapsedSeconds = (System.nanoTime() - tmpTime) / 1000000000.0;
+		//System.out.println("total_read_time:"+elapsedSeconds);
 		//System.out.println("read matrix ("+prop.rlen+","+prop.clen+","+ret.getNonZeros()+") in "+time.stop());
 				
 		return ret;

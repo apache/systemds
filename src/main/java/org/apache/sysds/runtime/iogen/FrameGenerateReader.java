@@ -43,11 +43,11 @@ import java.util.Set;
 
 public abstract class FrameGenerateReader extends FrameReader {
 
-	protected static CustomProperties _props;
+	protected CustomProperties _props;
 	protected final FastStringTokenizer fastStringTokenizerDelim;
 
 	public FrameGenerateReader(CustomProperties _props) {
-		MatrixGenerateReader._props = _props;
+		this._props = _props;
 		fastStringTokenizerDelim = new FastStringTokenizer(_props.getDelim());
 	}
 
@@ -65,8 +65,7 @@ public abstract class FrameGenerateReader extends FrameReader {
 				}
 				// Row Irregular
 				else {
-					FastStringTokenizer st = new FastStringTokenizer(
-						_props.getDelim());
+					FastStringTokenizer st = new FastStringTokenizer(_props.getDelim());
 					while((value = br.readLine()) != null) {
 						st.reset(value);
 						int row = st.nextInt();
@@ -174,7 +173,7 @@ public abstract class FrameGenerateReader extends FrameReader {
 					while(col != -1) {
 						cellValue = fastStringTokenizerDelim.nextToken();
 						col = fastStringTokenizerDelim.getIndex();
-						if(cellValue != null && (naValues == null || !naValues.contains(cellValue))) {
+						if(col != -1 && cellValue != null && (naValues == null || !naValues.contains(cellValue))) {
 							dest.set(row, col, UtilFunctions.stringToObject(schema[col], cellValue));
 						}
 					}
@@ -200,8 +199,7 @@ public abstract class FrameGenerateReader extends FrameReader {
 			boolean first) throws IOException {
 
 			String cellValue;
-			FastStringTokenizer fastStringTokenizerIndexDelim = new FastStringTokenizer(
-				_props.getIndexDelim());
+			FastStringTokenizer fastStringTokenizerIndexDelim = new FastStringTokenizer(_props.getIndexDelim());
 
 			// create record reader
 			RecordReader<LongWritable, Text> reader = informat.getRecordReader(split, job, Reporter.NULL);
@@ -217,7 +215,8 @@ public abstract class FrameGenerateReader extends FrameReader {
 					String cellStr = value.toString();
 					fastStringTokenizerDelim.reset(cellStr);
 					String cellValueString = fastStringTokenizerDelim.nextToken();
-					dest.set(row, (int) clen, UtilFunctions.stringToObject(schema[(int) clen], cellValueString));
+					dest.set(row, (int) clen - 1 - _props.getFirstColIndex(),
+						UtilFunctions.stringToObject(schema[(int) clen - 1 - _props.getFirstColIndex()], cellValueString));
 
 					while(col != -1) {
 						String nt = fastStringTokenizerDelim.nextToken();
@@ -226,8 +225,9 @@ public abstract class FrameGenerateReader extends FrameReader {
 						fastStringTokenizerIndexDelim.reset(nt);
 						col = fastStringTokenizerIndexDelim.nextInt();
 						cellValue = fastStringTokenizerIndexDelim.nextToken();
-						if(cellValue != null) {
-							dest.set(row, col, UtilFunctions.stringToObject(schema[col], cellValue));
+						if(col != -1 && cellValue != null) {
+							dest.set(row, col - _props.getFirstColIndex(),
+								UtilFunctions.stringToObject(schema[col - _props.getFirstColIndex()], cellValue));
 						}
 					}
 					row++;
@@ -271,8 +271,9 @@ public abstract class FrameGenerateReader extends FrameReader {
 					col = fastStringTokenizerDelim.nextInt();
 					cellValue = fastStringTokenizerDelim.nextToken();
 
-					if(cellValue != null) {
-						dest.set(row, col, UtilFunctions.stringToObject(schema[col], cellValue));
+					if(col != -1 && cellValue != null) {
+						dest.set(ri-_props.getFirstRowIndex(), col - _props.getFirstColIndex(),
+							UtilFunctions.stringToObject(schema[col - _props.getFirstColIndex()], cellValue));
 					}
 					row = Math.max(row, ri);
 				}

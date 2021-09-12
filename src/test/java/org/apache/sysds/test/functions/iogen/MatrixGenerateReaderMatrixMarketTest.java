@@ -21,11 +21,11 @@ package org.apache.sysds.test.functions.iogen;
 
 import org.junit.Test;
 
-public class MatrixMatrixGenerateReaderMarketTest extends GenerateReaderTest {
+public class MatrixGenerateReaderMatrixMarketTest extends GenerateReaderTest {
 
 	private final static String TEST_NAME = "GenerateReaderMatrixMarketTest";
 	private final static String TEST_DIR = "functions/iogen/GenerateReaderMatrixMarketTest/";
-	private final static String TEST_CLASS_DIR = TEST_DIR + MatrixMatrixGenerateReaderMarketTest.class
+	private final static String TEST_CLASS_DIR = TEST_DIR + MatrixGenerateReaderMatrixMarketTest.class
 		.getSimpleName() + "/";
 
 	private final static double eps = 1e-9;
@@ -134,7 +134,7 @@ public class MatrixMatrixGenerateReaderMarketTest extends GenerateReaderTest {
 	}
 
 	@Test public void test1_2() {
-		generateRandomMM(1, 5, 10000, -100, 100, 1, ",,,,,");
+		generateRandomMM(1, 5, 100, -100, 100, 1, ",,,,,");
 		runGenerateReaderTest();
 	}
 
@@ -189,7 +189,7 @@ public class MatrixMatrixGenerateReaderMarketTest extends GenerateReaderTest {
 	}
 
 	@Test public void SymmetricTest1_4() {
-		generateRandomSymmetricMM(1, 1000, -100, 100, 1, "  ", false, false);
+		generateRandomSymmetricMM(1, 200, -100, 100, 1, "  ", false, false);
 		runGenerateReaderTest();
 	}
 

@@ -228,7 +228,7 @@ public abstract class MatrixGenerateReader extends MatrixReader {
 					fastStringTokenizerDelim.reset(value);
 					String cellValueString = fastStringTokenizerDelim.nextToken();
 					cellValue = UtilFunctions.parseToDouble(cellValueString, null);
-					dest.appendValue(row, (int) clen, cellValue);
+					dest.appendValue(row, (int) clen-_props.getFirstColIndex()-1, cellValue);
 
 					while(col != -1) {
 						String nt = fastStringTokenizerDelim.nextToken();
@@ -238,7 +238,7 @@ public abstract class MatrixGenerateReader extends MatrixReader {
 						col = fastStringTokenizerIndexDelim.nextInt();
 						cellValue = fastStringTokenizerIndexDelim.nextDouble();
 						if(cellValue != 0) {
-							dest.appendValue(row, col, cellValue);
+							dest.appendValue(row, col-_props.getFirstColIndex(), cellValue);
 							lnnz++;
 						}
 					}
@@ -285,7 +285,7 @@ public abstract class MatrixGenerateReader extends MatrixReader {
 					cellValue = fastStringTokenizerDelim.nextDouble();
 
 					if(cellValue != 0) {
-						dest.appendValue(ri, col, cellValue);
+						dest.appendValue(ri-_props.getFirstColIndex(), col-_props.getFirstColIndex(), cellValue);
 						lnnz++;
 					}
 					row = Math.max(row, ri);

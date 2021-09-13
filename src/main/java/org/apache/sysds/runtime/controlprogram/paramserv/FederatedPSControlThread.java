@@ -503,7 +503,7 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 			// recreate aggregation instruction and output if needed
 			Instruction aggregationInstruction = null;
 			DataIdentifier aggregationOutput = null;
-			if(_localUpdate && _numBatchesToCompute > 1) {
+			if(_localUpdate && _numBatchesToCompute > 1 | modelAvg) {
 				func = ec.getProgram().getFunctionProgramBlock(namespace, aggFunc, opt);
 				inputs = func.getInputParams();
 				outputs = func.getOutputParams();

@@ -32,7 +32,6 @@ import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
 import org.apache.sysds.utils.Statistics;
 import org.junit.Assert;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -118,15 +117,11 @@ public class AvgModelFederatedParamservTest extends AutomatedTestBase {
 	}
 
 	@Test
-	@Ignore
-	// TODO FIX ME
 	public void AvgmodelfederatedParamservSingleNode() {
 		AvgmodelfederatedParamserv(ExecMode.SINGLE_NODE, true);
 	}
 
 	@Test
-	@Ignore
-	// TODO FIX ME
 	public void AvgmodelfederatedParamservHybrid() {
 		AvgmodelfederatedParamserv(ExecMode.HYBRID, true);
 	}
@@ -149,7 +144,8 @@ public class AvgModelFederatedParamservTest extends AutomatedTestBase {
 			List<Thread> threads = new ArrayList<>();
 			for(int i = 0; i < _numFederatedWorkers; i++) {
 				ports.add(getRandomAvailablePort());
-				threads.add(startLocalFedWorkerThread(ports.get(i), FED_WORKER_WAIT_S));
+				threads.add(startLocalFedWorkerThread(ports.get(i),
+					i==(_numFederatedWorkers-1) ? FED_WORKER_WAIT : FED_WORKER_WAIT_S));
 			}
 
 			// generate test data

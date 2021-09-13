@@ -80,7 +80,6 @@ public class FederatedRCBindTest extends AutomatedTestBase {
 	}
 
 	@Test
-	@Ignore
 	public void federatedRCBindSP() {
 		federatedRCBind(Types.ExecMode.SPARK);
 	}
@@ -109,8 +108,12 @@ public class FederatedRCBindTest extends AutomatedTestBase {
 
 		int port1 = getRandomAvailablePort();
 		int port2 = getRandomAvailablePort();
+		int port3 = getRandomAvailablePort();
+		int port4 = getRandomAvailablePort();
 		Thread t1 = startLocalFedWorkerThread(port1, FED_WORKER_WAIT_S);
 		Thread t2 = startLocalFedWorkerThread(port2);
+		Thread t3 = startLocalFedWorkerThread(port3);
+		Thread t4 = startLocalFedWorkerThread(port4);
 
 		// we need the reference file to not be written to hdfs, so we get the correct format
 		rtplatform = Types.ExecMode.SINGLE_NODE;
@@ -134,9 +137,9 @@ public class FederatedRCBindTest extends AutomatedTestBase {
 		fullDMLScriptName = HOME + TEST_NAME + ".dml";
 		programArgs = new String[] {"-nvargs",
 			"in_A1=" + TestUtils.federatedAddress(port1, input("A1")),
-			"in_A2=" + TestUtils.federatedAddress(port1, input("A2")),
-			"in_B1=" + TestUtils.federatedAddress(port2, input("B1")),
-			"in_B2=" + TestUtils.federatedAddress(port2, input("B2")),
+			"in_A2=" + TestUtils.federatedAddress(port2, input("A2")),
+			"in_B1=" + TestUtils.federatedAddress(port3, input("B1")),
+			"in_B2=" + TestUtils.federatedAddress(port4, input("B2")),
 			"in_partitioned=" + Boolean.toString(partitioned).toUpperCase(),
 			"in_B1_local=" + input("B1"), "in_B2_local=" + input("B2"), "rows=" + rows, "cols=" + cols,
 			"out_R_FF=" + output("R_FF"), "out_R_FL=" + output("R_FL"), "out_R_LF=" + output("R_LF"),
@@ -147,7 +150,7 @@ public class FederatedRCBindTest extends AutomatedTestBase {
 		// compare all sums via files
 		compareResults(1e-11);
 
-		TestUtils.shutdownThreads(t1, t2);
+		TestUtils.shutdownThreads(t1, t2, t3, t4);
 		rtplatform = platformOld;
 		DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
 	}

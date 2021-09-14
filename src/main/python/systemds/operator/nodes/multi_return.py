@@ -83,3 +83,6 @@ class MultiReturn(OperationNode):
 
     def __iter__(self):
         return iter(self._outputs)
+
+    def __str__(self):
+        return "MultiReturnNode"

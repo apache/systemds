@@ -218,8 +218,12 @@ class Scalar(OperationNode):
         """
         return Scalar(self.sds_context, 'tanh', [self])
 
-    def to_string(self, **kwargs: Dict[str, VALID_INPUT_TYPES]) -> 'OperationNode':
+    def to_string(self, **kwargs: Dict[str, VALID_INPUT_TYPES]) -> 'Scalar':
         """ Converts the input to a string representation.
         :return: `Scalar` containing the string.
         """
         return Scalar(self.sds_context, 'toString', [self], named_input_nodes=kwargs, output_type=OutputType.STRING)
+
+    def __str__(self):
+        return "ScalarNode"
+

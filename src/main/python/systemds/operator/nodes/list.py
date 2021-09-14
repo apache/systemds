@@ -84,3 +84,5 @@ class List(OperationNode):
     def compute(self, verbose: bool = False, lineage: bool = False) -> Union[np.array]:
         return super().compute(verbose, lineage)
 
+    def __str__(self):
+        return "ListNode"

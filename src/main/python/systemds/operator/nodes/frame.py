@@ -132,3 +132,6 @@ class Frame(OperationNode):
         :return: The Frame containing the replaced values 
         """
         return Frame(self.sds_context, "replace", named_input_nodes={"target": self, "pattern": f"'{pattern}'", "replacement":f"'{replacement}'"})
+
+    def __str__(self):
+        return "FrameNode"

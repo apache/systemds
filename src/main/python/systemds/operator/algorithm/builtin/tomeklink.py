@@ -33,7 +33,7 @@ def tomeklink(X: Matrix,
               y: Matrix):
     """
     :param X: Data Matrix (nxm)
-    :param y: Label Matrix (nx1)
+    :param y: Label Matrix (nx1), greater than zero
     :return: 'OperationNode' containing  
     """
     params_dict = {'X': X, 'y': y}

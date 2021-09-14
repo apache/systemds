@@ -39,9 +39,12 @@ from .builtin.csplineDS import csplineDS
 from .builtin.cvlm import cvlm 
 from .builtin.dbscan import dbscan 
 from .builtin.decisionTree import decisionTree 
+from .builtin.deepWalk import deepWalk 
 from .builtin.discoverFD import discoverFD 
 from .builtin.dist import dist 
 from .builtin.executePipeline import executePipeline 
+from .builtin.ffTrain import ffTrain 
+from .builtin.garch import garch 
 from .builtin.gaussianClassifier import gaussianClassifier 
 from .builtin.getAccuracy import getAccuracy 
 from .builtin.glm import glm 
@@ -73,11 +76,13 @@ from .builtin.knnbf import knnbf
 from .builtin.l2svm import l2svm 
 from .builtin.l2svmPredict import l2svmPredict 
 from .builtin.lasso import lasso 
+from .builtin.lenetTrain import lenetTrain 
 from .builtin.lm import lm 
 from .builtin.lmCG import lmCG 
 from .builtin.lmDS import lmDS 
 from .builtin.lmPredict import lmPredict 
 from .builtin.logSumExp import logSumExp 
+from .builtin.matrixProfile import matrixProfile 
 from .builtin.msvm import msvm 
 from .builtin.msvmPredict import msvmPredict 
 from .builtin.multiLogReg import multiLogReg 
@@ -96,6 +101,7 @@ from .builtin.ppca import ppca
 from .builtin.randomForest import randomForest 
 from .builtin.scale import scale 
 from .builtin.scaleApply import scaleApply 
+from .builtin.selectByVarThresh import selectByVarThresh 
 from .builtin.sherlock import sherlock 
 from .builtin.sherlockPredict import sherlockPredict 
 from .builtin.shortestPath import shortestPath 
@@ -108,6 +114,7 @@ from .builtin.splitBalanced import splitBalanced
 from .builtin.stableMarriage import stableMarriage 
 from .builtin.statsNA import statsNA 
 from .builtin.steplm import steplm 
+from .builtin.tSNE import tSNE 
 from .builtin.toOneHot import toOneHot 
 from .builtin.tomeklink import tomeklink 
 from .builtin.univar import univar 
@@ -115,6 +122,8 @@ from .builtin.vectorToCsv import vectorToCsv
 from .builtin.winsorize import winsorize 
 from .builtin.xdummy1 import xdummy1 
 from .builtin.xdummy2 import xdummy2 
+from .builtin.xgboostPredictClassification import xgboostPredictClassification 
+from .builtin.xgboostPredictRegression import xgboostPredictRegression 
 
 __all__ = ['abstain',
  'als',
@@ -134,9 +143,12 @@ __all__ = ['abstain',
  'cvlm',
  'dbscan',
  'decisionTree',
+ 'deepWalk',
  'discoverFD',
  'dist',
  'executePipeline',
+ 'ffTrain',
+ 'garch',
  'gaussianClassifier',
  'getAccuracy',
  'glm',
@@ -168,11 +180,13 @@ __all__ = ['abstain',
  'l2svm',
  'l2svmPredict',
  'lasso',
+ 'lenetTrain',
  'lm',
  'lmCG',
  'lmDS',
  'lmPredict',
  'logSumExp',
+ 'matrixProfile',
  'msvm',
  'msvmPredict',
  'multiLogReg',
@@ -191,6 +205,7 @@ __all__ = ['abstain',
  'randomForest',
  'scale',
  'scaleApply',
+ 'selectByVarThresh',
  'sherlock',
  'sherlockPredict',
  'shortestPath',
@@ -203,10 +218,13 @@ __all__ = ['abstain',
  'stableMarriage',
  'statsNA',
  'steplm',
+ 'tSNE',
  'toOneHot',
  'tomeklink',
  'univar',
  'vectorToCsv',
  'winsorize',
  'xdummy1',
- 'xdummy2'] 
+ 'xdummy2',
+ 'xgboostPredictClassification',
+ 'xgboostPredictRegression'] 

@@ -44,13 +44,15 @@ class OperationNode(DAGNode):
     _script: Optional[DMLScript]
     _output_types: Optional[Iterable[VALID_INPUT_TYPES]]
     _source_node: Optional["DAGNode"]
+    _brackets: bool
 
     def __init__(self, sds_context: 'SystemDSContext', operation: str,
                  unnamed_input_nodes: Union[str,
                                             Iterable[VALID_INPUT_TYPES]] = None,
                  named_input_nodes: Dict[str, VALID_INPUT_TYPES] = None,
                  output_type: OutputType = OutputType.MATRIX,
-                 is_python_local_data: bool = False):
+                 is_python_local_data: bool = False,
+                 brackets: bool = False):
         """
         Create general `OperationNode`
 
@@ -80,6 +82,7 @@ class OperationNode(DAGNode):
         self._script = None
         self._source_node = None
         self._already_added = False
+        self._brackets = brackets
         self.dml_name = ""
 
     def compute(self, verbose: bool = False, lineage: bool = False) -> \
@@ -134,13 +137,17 @@ class OperationNode(DAGNode):
 
     def code_line(self, var_name: str, unnamed_input_vars: Sequence[str],
                   named_input_vars: Dict[str, str]) -> str:
+
+        if self._brackets:
+            return f'{var_name}={unnamed_input_vars[0]}[{",".join(unnamed_input_vars[1:])}]'
+
         if self.operation in BINARY_OPERATIONS:
             assert len(
                 named_input_vars) == 0, 'Named parameters can not be used with binary operations'
             assert len(
                 unnamed_input_vars) == 2, 'Binary Operations need exactly two input variables'
             return f'{var_name}={unnamed_input_vars[0]}{self.operation}{unnamed_input_vars[1]}'
-
+        
         inputs_comma_sep = create_params_string(
             unnamed_input_vars, named_input_vars)
 

@@ -118,7 +118,7 @@ def pandas_to_frame_block(sds: "SystemDSContext", pd_df: pd.DataFrame):
         for i in range(len(schema)):
             j_valueTypeArray[i] = schema[i]
         for i in range(len(col_names)):
-            j_colNameArray[i] = col_names[i]
+            j_colNameArray[i] = str(col_names[i])
         j = 0
         for j, col_name in enumerate(col_names):
             col_data = pd_df[col_name].fillna("").to_numpy(dtype=str)
@@ -150,9 +150,15 @@ def frame_block_to_pandas(sds: "SystemDSContext", fb: JavaObject):
                     ret.append(ent)
                 else:
                     ret.append(None)
-            df[fb.getColumnName(c_index)] = ret
+        elif d_type == "Int":
+            byteArray = fb.getColumnAsBytes(c_index)
+            ret = np.frombuffer(byteArray, dtype=np.int32)
+        elif d_type == "Long":
+            byteArray = fb.getColumnAsBytes(c_index)
+            ret = np.frombuffer(byteArray, dtype=np.int64)
         else:
-            raise NotImplementedError("Not Implemented other types for systemds to pandas parsing")
+            raise NotImplementedError(f'Not Implemented {d_type} for systemds to pandas parsing')
+        df[fb.getColumnName(c_index)] = ret
 
 
     return df

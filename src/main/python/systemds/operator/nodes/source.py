@@ -197,3 +197,6 @@ class Source(OperationNode):
 
     def compute(self, verbose: bool = False, lineage: bool = False):
         raise Exception("Invalid invocation of source from script")
+
+    def __str__(self):
+        return "SourceNode"

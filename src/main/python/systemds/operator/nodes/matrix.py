@@ -335,7 +335,7 @@ class Matrix(OperationNode):
 
         return Matrix(self.sds_context, 'order', [], named_input_nodes=named_input_nodes)
 
-    def to_string(self, **kwargs: Dict[str, VALID_INPUT_TYPES]) -> 'Matrix':
+    def to_string(self, **kwargs: Dict[str, VALID_INPUT_TYPES]) -> 'Scalar':
         """ Converts the input to a string representation.
         :return: `Scalar` containing the string.
         """
@@ -360,3 +360,6 @@ class Matrix(OperationNode):
         Replace all values with replacement value
         """
         return Matrix(self.sds_context, "replace", named_input_nodes={"target": self, "pattern": pattern, "replacement":replacement})
+
+    def __str__(self):
+        return "MatrixNode"

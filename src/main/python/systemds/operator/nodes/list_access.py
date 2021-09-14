@@ -61,3 +61,6 @@ class ListAccess(OperationNode):
         res = Scalar(self.sds_context, "as.scalar", [ent])
         self._list_source._outputs[self._key] = res
         return res
+
+    def __str__(self):
+        return "ListAccessNode"

@@ -119,22 +119,6 @@ public class MatrixReaderFactory {
 				reader = (par & mcsr) ? new ReaderHDF5Parallel(fileFormatPropertiesHDF5) : new ReaderHDF5(
 					fileFormatPropertiesHDF5);
 				break;
-			case UNKNOWN:
-				SampleProperties sampleProperties;
-				if(props.formatProperties != null){
-					sampleProperties = (SampleProperties) props.formatProperties;
-				}
-				else
-					throw new DMLRuntimeException("SampleRaw and SampleMatrix are essentially required for auto generate reader");
-
-				//TODO: add parallel Generate Reader
-				try {
-					reader = new GenerateReader.GenerateReaderMatrix(sampleProperties).getReader();
-				}
-				catch(Exception ex){
-					throw new DMLRuntimeException("Failed to  auto generate matrix reader.");
-				}
-				break;
 
 			default:
 				throw new DMLRuntimeException("Failed to create matrix reader for unknown format: " + fmt.toString());

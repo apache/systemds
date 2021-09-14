@@ -25,8 +25,6 @@ import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.conf.CompilerConfig.ConfigType;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.runtime.DMLRuntimeException;
-import org.apache.sysds.runtime.iogen.GenerateReader;
-import org.apache.sysds.runtime.iogen.SampleProperties;
 
 public class FrameReaderFactory {
 	protected static final Log LOG = LogFactory.getLog(FrameReaderFactory.class.getName());
@@ -69,18 +67,6 @@ public class FrameReaderFactory {
 			case PROTO:
 				// TODO performance improvement: add parallel reader
 				reader = new FrameReaderProto();
-				break;
-
-			case UNKNOWN:
-				SampleProperties sampleProperties;
-				if(props != null){ sampleProperties = (SampleProperties) props; }
-				else
-					throw new DMLRuntimeException("SampleRaw and SampleFrame are essentially required for auto generate reader");
-
-				//TODO: add parallel Generate Reader
-				try { reader = new GenerateReader.GenerateReaderFrame(sampleProperties).getReader(); }
-				catch(Exception ex){ throw new DMLRuntimeException("Failed to  auto generate frame reader."); }
-
 				break;
 
 			default:

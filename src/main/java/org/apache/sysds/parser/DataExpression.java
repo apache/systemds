@@ -117,10 +117,6 @@ public class DataExpression extends DataIdentifier
 	public static final String HDF5_DATASET_NAME = "dataset";
 	
 	public static final String DELIM_SPARSE = "sparse";  // applicable only for write
-
-	// Parameter names relevant to Generate Reader
-	public static final String SAMPLE_RAW = "sample_raw";
-	public static final String SAMPLE = "sample";
 	
 	public static final Set<String> RAND_VALID_PARAM_NAMES = new HashSet<>(
 		Arrays.asList(RAND_ROWS, RAND_COLS, RAND_DIMS,
@@ -150,10 +146,7 @@ public class DataExpression extends DataIdentifier
 			//Parameters related to dataset name/HDF4 files.
 			HDF5_DATASET_NAME,
 			// Parameters related to privacy
-			PRIVACY, FINE_GRAINED_PRIVACY,
-			//Parameters related to Generate Reader
-			SAMPLE_RAW, SAMPLE
-			));
+			PRIVACY, FINE_GRAINED_PRIVACY));
 
 	/** Valid parameter names in arguments to read instruction */
 	public static final Set<String> READ_VALID_PARAM_NAMES = new HashSet<>(
@@ -164,10 +157,7 @@ public class DataExpression extends DataIdentifier
 			// Parameters related to delimited/libsvm files.
 			LIBSVM_INDEX_DELIM,
 			//Parameters related to dataset name/HDF4 files.
-			HDF5_DATASET_NAME,
-			//Parameters related to Generate Reader
-			SAMPLE_RAW, SAMPLE
-			));
+			HDF5_DATASET_NAME));
 	
 	/* Default Values for delimited (CSV/LIBSVM) files */
 	public static final String  DEFAULT_DELIM_DELIMITER = ",";
@@ -899,8 +889,7 @@ public class DataExpression extends DataIdentifier
 			}
 			inputParamExpr.validateExpression(ids, currConstVars, conditional);
 			if (s != null && !s.equals(RAND_DATA) && !s.equals(RAND_DIMS) && !s.equals(FED_ADDRESSES) && !s.equals(FED_RANGES)
-					&& !s.equals(DELIM_NA_STRINGS) && !s.equals(SCHEMAPARAM) && getVarParam(s).getOutput().getDataType() != DataType.SCALAR
-					&& !s.equals(SAMPLE)) {
+					&& !s.equals(DELIM_NA_STRINGS) && !s.equals(SCHEMAPARAM) && getVarParam(s).getOutput().getDataType() != DataType.SCALAR ) {
 				raiseValidateError("Non-scalar data types are not supported for data expression.", conditional,LanguageErrorCodes.INVALID_PARAMETERS);
 			}
 		}
@@ -1225,26 +1214,6 @@ public class DataExpression extends DataIdentifier
 			}
 			boolean isHDF5 = (formatTypeString != null && formatTypeString.equalsIgnoreCase(FileFormat.HDF5.toString()));
 
-			boolean isUNKNOWN = (formatTypeString != null && formatTypeString.equalsIgnoreCase(FileFormat.UNKNOWN.toString()));
-			if(isUNKNOWN) {
-					// Handle Auto Generate Reader
-					// Only allow IO_FILENAME, READROWPARAM, READCOLPARAM as valid parameters
-					if(!inferredFormatType) {
-						for(String key : _varParams.keySet()) {
-							if(!(key.equals(IO_FILENAME) || key.equals(FORMAT_TYPE)
-								|| key.equals(READROWPARAM) || key.equals(READCOLPARAM)
-								|| key.equals(READNNZPARAM) || key.equals(DATATYPEPARAM)
-								|| key.equals(VALUETYPEPARAM) || key.equals(SAMPLE_RAW)
-								|| key.equals(SAMPLE))) {
-								String msg = "Only parameters allowed are: " + IO_FILENAME + "," + READROWPARAM + ","
-									+ READCOLPARAM + SAMPLE_RAW + "," + SAMPLE;
-
-								raiseValidateError("Invalid parameter " + key + " in read statement: " + toString() + ". " + msg,
-									conditional, LanguageErrorCodes.INVALID_PARAMETERS);
-							}
-						}
-					}
-			}
 			dataTypeString = (getVarParam(DATATYPEPARAM) == null) ? null : getVarParam(DATATYPEPARAM).toString();
 			
 			if ( dataTypeString == null || dataTypeString.equalsIgnoreCase(Statement.MATRIX_DATA_TYPE) 

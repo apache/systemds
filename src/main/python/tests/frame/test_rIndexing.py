@@ -22,12 +22,16 @@
 import unittest
 
 import numpy as np
+import pandas as pd
 from systemds.context import SystemDSContext
 
 
 class Test_rIndexing(unittest.TestCase):
 
     sds: SystemDSContext = None
+
+    #shape (4, 3)
+    df = pd.DataFrame(np.arange(0, 100).reshape(10, 10))
 
     @classmethod
     def setUpClass(cls):
@@ -38,63 +42,56 @@ class Test_rIndexing(unittest.TestCase):
         cls.sds.close()
 
     def test_1(self):
-        npA = np.arange(0, 100).reshape(10, 10)
-        m1 = self.sds.from_numpy(npA)
-        npres = npA[4]
+        m1 = self.sds.from_pandas(self.df)
+        npres = self.df.loc[4]
         res = m1[4].compute()
         self.assertTrue(np.allclose(res, npres))
 
     def test_2(self):
-        npA = np.arange(0, 100).reshape(10, 10)
-        m1 = self.sds.from_numpy(npA)
-        npres = npA[4:5]
+        m1 = self.sds.from_pandas(self.df)
+        # Pandas is not consistant with numpy, since it is inclusive ranges
+        # therefore the tests are subtracting 1 from the end of the range.
+        npres = self.df.loc[4:4]
         res = m1[4:5].compute()
         self.assertTrue(np.allclose(res, npres))
 
     def test_3(self):
-        npA = np.arange(0, 100).reshape(10, 10)
-        m1 = self.sds.from_numpy(npA)
+        m1 = self.sds.from_pandas(self.df)
         # Invalid to slice with a step
         with self.assertRaises(ValueError) as context:
             res = m1[4:7:2].compute()
 
     def test_4(self):
-        npA = np.arange(0, 100).reshape(10, 10)
-        m1 = self.sds.from_numpy(npA)
-        npres = npA[:,4]
-        res = m1[:,4].compute().flatten()
+        m1 = self.sds.from_pandas(self.df)
+        npres = np.array(self.df.loc[:,4])
+        res = np.array(m1[:,4].compute()).flatten()
         self.assertTrue(np.allclose(res, npres))
 
     def test_5(self):
-        npA = np.arange(0, 100).reshape(10, 10)
-        m1 = self.sds.from_numpy(npA)
-        npres = npA[:,4:6]
-        res = m1[:,4:6].compute()
+        m1 = self.sds.from_pandas(self.df)
+        npres = np.array(self.df.loc[:,4:5])
+        res = np.array(m1[:,4:6].compute())
         self.assertTrue(np.allclose(res, npres))
 
     def test_6(self):
-        npA = np.arange(0, 100).reshape(10, 10)
-        m1 = self.sds.from_numpy(npA)
-        npres = npA[1:2,4:6]
+        m1 = self.sds.from_pandas(self.df)
+        npres = self.df.loc[1:1,4:5]
         res = m1[1:2,4:6].compute()
         self.assertTrue(np.allclose(res, npres))
 
     def test_7(self):
-        npA = np.arange(0, 100).reshape(10, 10)
-        m1 = self.sds.from_numpy(npA)
-        npres = npA[1,4:6]
+        m1 = self.sds.from_pandas(self.df)
+        npres = self.df.loc[1,4:5]
         res = m1[1,4:6].compute()
         self.assertTrue(np.allclose(res, npres))
 
     def test_8(self):
-        npA = np.arange(0, 100).reshape(10, 10)
-        m1 = self.sds.from_numpy(npA)
+        m1 = self.sds.from_pandas(self.df)
         with self.assertRaises(NotImplementedError) as context:
             res = m1[1:,4:6].compute()
 
     def test_9(self):
-        npA = np.arange(0, 100).reshape(10, 10)
-        m1 = self.sds.from_numpy(npA)
+        m1 = self.sds.from_pandas(self.df)
         with self.assertRaises(NotImplementedError) as context:
             res = m1[:3,4:6].compute()
 

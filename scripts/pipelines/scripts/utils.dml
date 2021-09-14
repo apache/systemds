@@ -143,6 +143,10 @@ return(Boolean validForResources)
   validForResources = count > 0
 }
 
+
+#####################################
+# The function will apply a pipeline of string processing primitives on dirty data
+######################################
 stringProcessing = function(Frame[Unknown] data, Matrix[Double] mask, 
   Frame[String] schema, Boolean CorrectTypos, List[Unknown] ctx = list(prefix="--"))
 return(Frame[Unknown] processedData)
@@ -188,9 +192,9 @@ return(Frame[Unknown] processedData)
   processedData = data
 }
 
-
-
-
+#####################################
+# Customized grid search for cleaning pipelines 
+######################################
 topk_gridSearch = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] Xtest=as.matrix(0), Matrix[Double] ytest=as.matrix(0), String train, String predict,
     Integer numB=ncol(X), List[String] params, List[Unknown] paramValues,
     List[Unknown] trainArgs = list(), List[Unknown] predictArgs = list(),

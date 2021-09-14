@@ -53,7 +53,7 @@
 		<rerun.failing.tests.count>2</rerun.failing.tests.count>
 		<jacoco.skip>true</jacoco.skip>
 		<automatedtestbase.outputbuffering>false</automatedtestbase.outputbuffering>
-		<argLine>-Xms4g -Xmx4g -Xmn400m</argLine>
+		<argLine>-Xms3300m -Xmx3300m -Xmn330m</argLine>
 		<enableStats>false</enableStats>
 	</properties>
 

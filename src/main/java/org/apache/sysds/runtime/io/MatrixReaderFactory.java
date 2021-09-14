@@ -26,8 +26,6 @@ import org.apache.sysds.conf.CompilerConfig.ConfigType;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.data.SparseBlock;
-import org.apache.sysds.runtime.iogen.GenerateReader;
-import org.apache.sysds.runtime.iogen.SampleProperties;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
 public class MatrixReaderFactory {

@@ -26,7 +26,7 @@ from typing import (TYPE_CHECKING, Dict, Iterable, Optional, Sequence, Tuple,
                     Union)
 
 import numpy as np
-from systemds.operator import Matrix, OperationNode, Scalar, List
+from systemds.operator import List, Matrix, OperationNode, Scalar
 from systemds.script_building.dag import OutputType
 
 
@@ -48,7 +48,7 @@ class Func(object):
         argument_string, named_arguments = self.parse_inputs()
         named_intput_nodes = f'named_arguments = {{{named_arguments}}}'
         output_object = self.parse_outputs()
-        
+
         definition = f'def {self._name}(self{argument_string}):'
         if self._outputs is None:
             output = f'out = {output_object}(self.sds_context, {operation}, named_input_nodes=named_arguments, output_type=OutputType.NONE)'
@@ -101,13 +101,13 @@ class Func(object):
         elif var_l[0] == 'i':  # integer
             if "integer" in var_l:
                 return (self.split_to_value_and_def(var[7:]), 'Scalar')
-            else: # int
+            else:  # int
                 return (self.split_to_value_and_def(var[3:]), 'Scalar')
         elif var_l[0] == 'b':  # boolean
             return (self.split_to_value_and_def(var[7:], True), 'Scalar')
-        elif var_l[0] == 'l': # list[unknown]
+        elif var_l[0] == 'l':  # list[unknown]
             return (self.split_to_value_and_def(var[13:]), 'List')
-        elif var_l[0] == 's': # string
+        elif var_l[0] == 's':  # string
             return (self.split_to_value_and_def(var[6:]), 'Scalar')
         else:
             raise NotImplementedError(

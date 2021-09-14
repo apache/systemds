@@ -1,4 +1,4 @@
-#-------------------------------------------------------------
+# -------------------------------------------------------------
 #
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
@@ -17,12 +17,12 @@
 # specific language governing permissions and limitations
 # under the License.
 #
-#-------------------------------------------------------------
+# -------------------------------------------------------------
 
 import os
-from itertools import chain
-from typing import Iterable, Dict
 from importlib.util import find_spec
+from itertools import chain
+from typing import Dict, Iterable
 
 from systemds.utils.consts import MODULE_NAME
 
@@ -53,7 +53,8 @@ def get_module_dir() -> os.PathLike:
 def get_slice_string(i):
     if isinstance(i, tuple):
         if len(i) > 2:
-            raise ValueError(f'Invalid number of dimensions to slice {len(i)}, Only 2 dimensions allowed')
+            raise ValueError(
+                f'Invalid number of dimensions to slice {len(i)}, Only 2 dimensions allowed')
         else:
             return f'{get_slice_string(i[0])},{get_slice_string(i[1])}'
     elif isinstance(i, slice):

@@ -58,7 +58,6 @@ import org.apache.sysds.runtime.io.ListWriter;
 import org.apache.sysds.runtime.io.WriterMatrixMarket;
 import org.apache.sysds.runtime.io.WriterTextCSV;
 import org.apache.sysds.runtime.io.WriterHDF5;
-import org.apache.sysds.runtime.iogen.SampleProperties;
 import org.apache.sysds.runtime.lineage.LineageItem;
 import org.apache.sysds.runtime.lineage.LineageItemUtils;
 import org.apache.sysds.runtime.lineage.LineageTraceable;
@@ -161,12 +160,6 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 			UpdateType updateType, FileFormatProperties formatProperties, String schema, String sopcode,
 			String istr) {
 		this(op, in1, in2, in3, null, md, formatProperties, schema, updateType, sopcode, istr);
-	}
-
-	private VariableCPInstruction(VariableOperationCode op, CPOperand in1, CPOperand in2, CPOperand in3, MetaData md,
-		UpdateType updateType, FileFormatProperties formatProperties, String schema, String sopcode, String istr, CPOperand sample) {
-		this(op, in1, in2, in3, null, md, formatProperties, schema, updateType, sopcode, istr);
-		this.inputs.add(sample);
 	}
 
 	private static VariableOperationCode getVariableOperationCode ( String str ) {
@@ -381,11 +374,6 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 				if(parts.length < 11 + extSchema)
 					throw new DMLRuntimeException("Invalid number of operands in createvar instruction: " + str);
 			}
-			else if(fmt.equalsIgnoreCase("unknown")) {
-				// 13 inputs: createvar corresponding to READ -- includes properties sampleRawPath, SampleBinPath, SampleRows, SampleCols
-				if(parts.length < 12 + extSchema)
-					throw new DMLRuntimeException("Invalid number of operands in createvar instruction: " + str);
-			}
 			else {
 				if ( parts.length != 6 && parts.length != 11+extSchema )
 					throw new DMLRuntimeException("Invalid number of operands in createvar instruction: " + str);
@@ -486,15 +474,6 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 
 				return new VariableCPInstruction(VariableOperationCode.CreateVariable,
 					in1, in2, in3, iimd, updateType, fmtProperties, schema, opcode, str);
-			}
-			else if(fmt.equalsIgnoreCase("unknown")) {
-				// Cretevar instructions for UNKNOWN format has 12.
-				int curPos = 11;
-				String sampleRaw = parts[curPos];
-				in4 = new CPOperand( parts[curPos + 1] );
-				SampleProperties sampleProperties = new SampleProperties(sampleRaw);
-				return new VariableCPInstruction(VariableOperationCode.CreateVariable,
-					in1, in2, in3, iimd, updateType,sampleProperties, schema, opcode, str, in4);
 			}
 
 			else {
@@ -687,12 +666,6 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 				ec.setVariable(getInput1().getName(), obj);
 				if(DMLScript.STATISTICS && _updateType.isInPlace())
 					Statistics.incrementTotalUIPVar();
-
-				// Instruction for Generate Reader
-				if(_formatProperties instanceof SampleProperties){
-					MatrixBlock sampleMatrix = ec.getMatrixInput(getInput4().getName());
-					((SampleProperties)_formatProperties).setSampleMatrix(sampleMatrix);
-				}
 				break;
 			}
 			case TENSOR: {
@@ -709,12 +682,6 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 				if( _schema != null )
 					fobj.setSchema(_schema); //after metadata
 				ec.setVariable(getInput1().getName(), fobj);
-
-				// Instruction for Generate Reader
-				if(_formatProperties instanceof SampleProperties){
-					FrameBlock sampleFrame = ec.getFrameInput(getInput4().getName());
-					((SampleProperties)_formatProperties).setSampleFrame(sampleFrame);
-				}
 				break;
 			}
 			case LIST: {

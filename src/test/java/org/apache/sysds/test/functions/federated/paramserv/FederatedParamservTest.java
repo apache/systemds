@@ -24,8 +24,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
@@ -39,7 +37,7 @@ import org.junit.runners.Parameterized;
 @RunWith(value = Parameterized.class)
 @net.jcip.annotations.NotThreadSafe
 public class FederatedParamservTest extends AutomatedTestBase {
-	private static final Log LOG = LogFactory.getLog(FederatedParamservTest.class.getName());
+	// private static final Log LOG = LogFactory.getLog(FederatedParamservTest.class.getName());
 	private final static String TEST_DIR = "functions/federated/paramserv/";
 	private final static String TEST_NAME = "FederatedParamservTest";
 	private final static String TEST_CLASS_DIR = TEST_DIR + FederatedParamservTest.class.getSimpleName() + "/";
@@ -199,8 +197,8 @@ public class FederatedParamservTest extends AutomatedTestBase {
 					"seed=" + _seed));
 
 			programArgs = programArgsList.toArray(new String[0]);
-			LOG.debug(runTest(null));
-			Assert.assertEquals(0, Statistics.getNoOfExecutedSPInst());
+			String log = runTest(null).toString();
+			Assert.assertEquals("Test Failed \n" + log, 0, Statistics.getNoOfExecutedSPInst());
 			
 			// shut down threads
 			for(int i = 0; i < _numFederatedWorkers; i++) {

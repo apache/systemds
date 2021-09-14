@@ -182,7 +182,7 @@ public class FederatedWeightedUnaryMatrixMultTest extends AutomatedTestBase
 			runTest(true, false, null, -1);
 
 			// compare the results via files
-			HashMap<CellIndex, Double> refResults	= readDMLMatrixFromExpectedDir(OUTPUT_NAME);
+			HashMap<CellIndex, Double> refResults = readDMLMatrixFromExpectedDir(OUTPUT_NAME);
 			HashMap<CellIndex, Double> fedResults = readDMLMatrixFromOutputDir(OUTPUT_NAME);
 			TestUtils.compareMatrices(fedResults, refResults, TOLERANCE, "Fed", "Ref");
 

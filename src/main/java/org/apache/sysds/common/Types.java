@@ -528,8 +528,7 @@ public class Types
 		BINARY, // binary block representation (dense/sparse/ultra-sparse)
 		FEDERATED, // A federated matrix
 		PROTO,  // protocol buffer representation
-		HDF5, // Hierarchical Data Format (HDF)
-		UNKNOWN; // Auto Generate File Format
+		HDF5; // Hierarchical Data Format (HDF)
 		
 		public boolean isIJV() {
 			return this == TEXT || this == MM;

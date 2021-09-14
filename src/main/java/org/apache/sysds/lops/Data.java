@@ -363,29 +363,6 @@ public class Data extends Lop
 				}
 			}
 
-			if(oparams.getFormat() == FileFormat.UNKNOWN) {
-				Data sampleRawLop = (Data) getNamedInputLop(DataExpression.SAMPLE_RAW);
-				Data sampleLop = (Data) getNamedInputLop(DataExpression.SAMPLE);
-
-				if(sampleRawLop.isVariable())
-					throw new LopsException(
-						this.printErrorLocation() + "Parameter " + DataExpression.SAMPLE_RAW + " must be a literal for a seq operation.");
-
-				if(sampleLop.isVariable())
-					throw new LopsException(
-						this.printErrorLocation() + "Parameter " + DataExpression.SAMPLE + " must be a literal for a seq operation.");
-
-				sb.append(OPERAND_DELIMITOR);
-				sb.append(sampleRawLop.getStringValue());
-				sb.append(OPERAND_DELIMITOR);
-				sb.append(sampleLop.getStringValue());
-
-				if(this.getExecType() == ExecType.SPARK) {
-					sb.append(OPERAND_DELIMITOR);
-					sb.append(true); //isInputMatrixBlock
-				}
-			}
-
 		}
 
 		if (_op.isWrite()) {
@@ -467,12 +444,6 @@ public class Data extends Lop
 			if ( oparams.getFormat() == FileFormat.HDF5 ) {
 				sb.append(OPERAND_DELIMITOR);
 				sb.append( createVarHDF5Helper() );
-			}
-
-			// Format-specific properties
-			if ( oparams.getFormat() == FileFormat.UNKNOWN ) {
-				sb.append(OPERAND_DELIMITOR);
-				sb.append( createVarUNKNOWNHelper() );
 			}
 
 			// Frame-specific properties
@@ -604,20 +575,6 @@ public class Data extends Lop
 
 			sb.append(datasetNameLop.getStringValue());
 			sb.append(OPERAND_DELIMITOR);
-		}
-		return sb.toString();
-	}
-
-	private String createVarUNKNOWNHelper() {
-		StringBuilder sb = new StringBuilder();
-		if ( _op.isRead() ) {
-			Data sampleRawLop = (Data) getNamedInputLop(DataExpression.SAMPLE_RAW);
-			Lop sampleLop = getInputParams().get(DataExpression.SAMPLE);
-
-			sb.append(sampleRawLop.getStringValue());
-			sb.append(OPERAND_DELIMITOR);
-			boolean sampleLiteral = (sampleLop instanceof Data && ((Data) sampleLop).isLiteral());
-			sb.append(prepOperand(sampleLop.getOutputParameters().getLabel(), getDataType(), getValueType(), sampleLiteral));
 		}
 		return sb.toString();
 	}

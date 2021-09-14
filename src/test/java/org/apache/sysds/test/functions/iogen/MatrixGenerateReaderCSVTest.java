@@ -25,8 +25,8 @@ import java.util.Random;
 
 public class MatrixGenerateReaderCSVTest extends GenerateReaderMatrixTest {
 
-	private final static String TEST_NAME = "GenerateReaderCSVTest";
-	private final static String TEST_DIR = "functions/iogen/GenerateReaderCSVTest/";
+	private final static String TEST_NAME = "MatrixGenerateReaderCSVTest";
+	private final static String TEST_DIR = "functions/iogen/MatrixGenerateReaderCSVTest/";
 	private final static String TEST_CLASS_DIR = TEST_DIR + MatrixGenerateReaderCSVTest.class.getSimpleName() + "/";
 
 	@Override

@@ -24,7 +24,7 @@ import org.junit.Test;
 public class FrameGenerateReaderLibSVMTest extends GenerateReaderFrameTest {
 
 	private final static String TEST_NAME = "FrameGenerateReaderLibSVMTest";
-	private final static String TEST_DIR = "functions/iogen/FrameGenerateReaderCSVTest/";
+	private final static String TEST_DIR = "functions/iogen/FrameGenerateReaderLibSVMTest/";
 	private final static String TEST_CLASS_DIR = TEST_DIR + FrameGenerateReaderLibSVMTest.class.getSimpleName() + "/";
 
 	@Override

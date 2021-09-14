@@ -147,7 +147,7 @@ class OperationNode(DAGNode):
             assert len(
                 unnamed_input_vars) == 2, 'Binary Operations need exactly two input variables'
             return f'{var_name}={unnamed_input_vars[0]}{self.operation}{unnamed_input_vars[1]}'
-        
+
         inputs_comma_sep = create_params_string(
             unnamed_input_vars, named_input_vars)
 

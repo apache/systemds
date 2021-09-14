@@ -24,8 +24,10 @@ import unittest
 import numpy as np
 from systemds.context import SystemDSContext
 from systemds.examples.tutorials.adult import DataManager
-from systemds.operator import OperationNode, Matrix, Frame
-from systemds.operator.algorithm import kmeans, multiLogReg, multiLogRegPredict, l2svm, confusionMatrix, scale, scaleApply, split, winsorize
+from systemds.operator import Frame, Matrix, OperationNode
+from systemds.operator.algorithm import (confusionMatrix, kmeans, l2svm,
+                                         multiLogReg, multiLogRegPredict,
+                                         scale, scaleApply, split, winsorize)
 from systemds.script_building import DMLScript
 
 
@@ -53,62 +55,102 @@ class Test_DMLScript(unittest.TestCase):
     def tearDownClass(cls):
         cls.sds.close()
 
-    # def test_train_data(self):
-    #     x = self.d.get_train_data_pandas()
-    #     self.assertEqual((32561, 14), x.shape)
+    def test_train_data(self):
+        x = self.d.get_train_data_pandas()
+        self.assertEqual((32561, 14), x.shape)
 
-    # def test_train_labels(self):
-    #     y = self.d.get_train_labels_pandas()
-    #     self.assertEqual((32561,), y.shape)
+    def test_train_labels(self):
+        y = self.d.get_train_labels_pandas()
+        self.assertEqual((32561,), y.shape)
 
-    # def test_test_data(self):
-    #     x_l = self.d.get_test_data_pandas()
-    #     self.assertEqual((16281, 14), x_l.shape)
+    def test_test_data(self):
+        x_l = self.d.get_test_data_pandas()
+        self.assertEqual((16281, 14), x_l.shape)
 
-    # def test_test_labels(self):
-    #     y_l = self.d.get_test_labels_pandas()
-    #     self.assertEqual((16281,), y_l.shape)
+    def test_test_labels(self):
+        y_l = self.d.get_test_labels_pandas()
+        self.assertEqual((16281,), y_l.shape)
 
     def test_train_data_pandas_vs_systemds(self):
         pandas = self.d.get_train_data_pandas()
-        systemds = self.d.get_train_data(self.sds).compute(verbose=True)
-        print(pandas)
-        print(systemds)
-        # self.assertEqual(pandas, systemds)
-        
+        systemds = self.d.get_train_data(self.sds).compute()
+        self.assertTrue(len(pandas.columns.difference(systemds.columns)) == 0)
+        self.assertEqual(pandas.shape, systemds.shape)
 
-    # def test_multi_log_reg(self):
-    #     # Reduced because we want the tests to finish a bit faster.
-    #     train_count = 15000
-    #     test_count = 5000
+    def test_train_labels_pandas_vs_systemds(self):
+         # Pandas does not strip the parsed values.. so i have to do it here.
+        pandas = np.array(
+            [x.strip() for x in self.d.get_train_labels_pandas().to_numpy().flatten()])
+        systemds = self.d.get_train_labels(
+            self.sds).compute().to_numpy().flatten()
+        comp = pandas == systemds
+        self.assertTrue(comp.all())
 
-    #     train_data, train_labels, test_data, test_labels = self.d.get_preprocessed_dataset()
+    def test_test_labels_pandas_vs_systemds(self):
+        # Pandas does not strip the parsed values.. so i have to do it here.
+        pandas = np.array(
+            [x.strip() for x in self.d.get_test_labels_pandas().to_numpy().flatten()])
+        systemds = self.d.get_test_labels(
+            self.sds).compute().to_numpy().flatten()
+        comp = pandas == systemds
+        self.assertTrue(comp.all())
 
-    #     # Train data
-    #     X = self.sds.from_numpy( train_data[:train_count])
-    #     Y = self.sds.from_numpy( train_labels[:train_count])
-    #     Y = Y + 1.0
+    def test_transform_encode_train_data(self):
+        jspec = self.d.get_jspec(self.sds)
+        train_x, M1 = self.d.get_train_data(self.sds).transform_encode(spec=jspec)
+        train_x_numpy = train_x.compute()
+        self.assertEqual((32561, 107), train_x_numpy.shape)
 
-    #     # Test data
-    #     Xt = self.sds.from_numpy(test_data[:test_count])
-    #     Yt = self.sds.from_numpy(test_labels[:test_count])
-    #     Yt = Yt + 1.0
+    def test_transform_encode_apply_test_data(self):
+        jspec = self.d.get_jspec(self.sds)
+        train_x, M1 = self.d.get_train_data(self.sds).transform_encode(spec=jspec)
+        test_x = self.d.get_test_data(self.sds).transform_apply(spec=jspec, meta=M1)
+        test_x_numpy = test_x.compute()
+        self.assertEqual((16281, 107), test_x_numpy.shape)
 
-    #     betas = multiLogReg(X, Y)
+    def test_transform_encode_train_labels(self):
+        jspec_dict = {"recode":["income"]}
+        jspec = self.sds.scalar(f'"{jspec_dict}"')
+        train_y, M1 = self.d.get_train_labels(self.sds).transform_encode(spec=jspec)
+        train_y_numpy = train_y.compute()
+        self.assertEqual((32561, 1), train_y_numpy.shape)
 
-    #     [_, y_pred, acc] = multiLogRegPredict(Xt, betas, Yt).compute()
+    def test_transform_encode_test_labels(self):
+        jspec_dict = {"recode":["income"]}
+        jspec = self.sds.scalar(f'"{jspec_dict}"')
+        train_y, M1 = self.d.get_train_labels(self.sds).transform_encode(spec=jspec)
+        test_y = self.d.get_test_labels(self.sds).transform_apply(spec=jspec, meta=M1)
+        test_y_numpy = test_y.compute()
+        self.assertEqual((16281, 1), test_y_numpy.shape)
 
-    #     self.assertGreater(acc, 80)
+    def test_multi_log_reg(self):
+        # Reduced because we want the tests to finish a bit faster.
+        train_count = 10000
+        test_count = 500
 
-    #     confusion_matrix_abs, _ = confusionMatrix(self.sds.from_numpy(y_pred), Yt).compute()
+        jspec_data = self.d.get_jspec(self.sds)
+        train_x_frame = self.d.get_train_data(self.sds)[0:train_count]
+        train_x, M1 = train_x_frame.transform_encode(spec=jspec_data)
+        test_x_frame = self.d.get_test_data(self.sds)[0:test_count]
+        test_x = test_x_frame.transform_apply(spec=jspec_data, meta=M1)
 
-    #     self.assertTrue(
-    #         np.allclose(
-    #             confusion_matrix_abs,
-    #             np.array([[3503, 503],
-    #                       [268, 726]])
-    #         )
-    #     )
+        jspec_dict = {"recode": ["income"]}
+        jspec_labels = self.sds.scalar(f'"{jspec_dict}"')
+        train_y_frame = self.d.get_train_labels(self.sds)[0:train_count]
+        train_y, M2 = train_y_frame.transform_encode(spec=jspec_labels)
+        test_y_frame = self.d.get_test_labels(self.sds)[0:test_count]
+        test_y = test_y_frame.transform_apply(spec=jspec_labels, meta=M2)
+
+        betas = multiLogReg(train_x, train_y)
+        [_, y_pred, acc] = multiLogRegPredict(test_x, betas, test_y)
+
+        [_, conf_avg] = confusionMatrix(y_pred, test_y)
+        confusion_numpy = conf_avg.compute()
+
+        self.assertTrue(confusion_numpy[0][0] > 0.8)
+        self.assertTrue(confusion_numpy[0][1] < 0.5)
+        self.assertTrue(confusion_numpy[1][1] > 0.5)
+        self.assertTrue(confusion_numpy[1][0] < 0.2)
 
     # def test_neural_net(self):
     #     # Reduced because we want the tests to finish a bit faster.
@@ -136,8 +178,6 @@ class Test_DMLScript(unittest.TestCase):
     #     # TODO This does not work yet, not sure what the problem is
     #     #probs = FFN_package.predict(Xt, network).compute(True)
     #     # FFN_package.eval(Yt, Yt).compute()
-
-
 
     # def test_level1(self):
     #     # Reduced because we want the tests to finish a bit faster.
@@ -317,7 +357,6 @@ class Test_DMLScript(unittest.TestCase):
     #     ################################################################################################################
     #     #FFN_package.eval(Xt, Yt).compute(True)
     #     ################################################################################################################
-
 
 
 if __name__ == "__main__":

@@ -622,21 +622,44 @@ public class FrameBlock implements CacheBlock, Externalizable  {
 	}
 
 	public byte[] getColumnAsBytes(int c){
+		final int nRow = getNumRows();
 		switch(_schema[c]){
 			case INT64:
 				long[] colLong = ((LongArray)_coldata[c])._data;
-				ByteBuffer longBuffer = ByteBuffer.allocate(8 * getNumRows());
+				ByteBuffer longBuffer = ByteBuffer.allocate(8 * nRow);
 				longBuffer.order(ByteOrder.LITTLE_ENDIAN);
-				for(int i = 0; i <  getNumRows(); i++)
+				for(int i = 0; i <  nRow; i++)
 					longBuffer.putLong(colLong[i]);
 				return longBuffer.array();
 			case INT32:
 				int[] colInt = ((IntegerArray)_coldata[c])._data;
-				ByteBuffer intBuffer = ByteBuffer.allocate(4 *  getNumRows());
+				ByteBuffer intBuffer = ByteBuffer.allocate(4 *  nRow);
 				intBuffer.order(ByteOrder.LITTLE_ENDIAN);
-				for(int i = 0; i < getNumRows(); i++)
+				for(int i = 0; i < nRow; i++)
 					intBuffer.putInt(colInt[i]);
 				return intBuffer.array();
+			case FP64:
+				double[] colDouble = ((DoubleArray)_coldata[c])._data;
+				ByteBuffer doubleBuffer = ByteBuffer.allocate(8 * nRow);
+				doubleBuffer.order(ByteOrder.nativeOrder());
+				for(int i = 0; i < nRow; i++)
+					doubleBuffer.putDouble(colDouble[i]);
+				return doubleBuffer.array();
+			case FP32:
+				float[] colFloat = ((FloatArray)_coldata[c])._data;
+				ByteBuffer floatBuffer = ByteBuffer.allocate(8 * nRow);
+				floatBuffer.order(ByteOrder.nativeOrder());
+				for(int i = 0; i < nRow; i++)
+					floatBuffer.putDouble(colFloat[i]);
+				return floatBuffer.array();
+			case BOOLEAN:
+				boolean[] colBool = ((BooleanArray)_coldata[c])._data;
+				// over allocating here.. we could maybe bit pack?
+				ByteBuffer booleanBuffer = ByteBuffer.allocate(nRow);
+				booleanBuffer.order(ByteOrder.nativeOrder());
+				for(int i = 0; i < nRow; i++)
+					booleanBuffer.put((byte)(colBool[i]? 1:0));
+				return booleanBuffer.array();
 			default:
 				throw new NotImplementedException();
 		}

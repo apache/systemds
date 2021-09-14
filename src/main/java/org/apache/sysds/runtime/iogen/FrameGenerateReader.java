@@ -81,7 +81,8 @@ public abstract class FrameGenerateReader extends FrameReader {
 		return rows;
 	}
 
-	@Override public FrameBlock readFrameFromHDFS(String fname, Types.ValueType[] schema, String[] names, long rlen,
+	@Override
+	public FrameBlock readFrameFromHDFS(String fname, Types.ValueType[] schema, String[] names, long rlen,
 		long clen) throws IOException, DMLRuntimeException {
 
 		// prepare file access
@@ -112,7 +113,8 @@ public abstract class FrameGenerateReader extends FrameReader {
 
 	}
 
-	@Override public FrameBlock readFrameFromInputStream(InputStream is, Types.ValueType[] schema, String[] names,
+	@Override
+	public FrameBlock readFrameFromInputStream(InputStream is, Types.ValueType[] schema, String[] names,
 		long rlen, long clen) throws IOException, DMLRuntimeException {
 
 		// allocate output frame block
@@ -149,7 +151,8 @@ public abstract class FrameGenerateReader extends FrameReader {
 			super(_props);
 		}
 
-		@Override protected int readFrameFromInputSplit(InputSplit split, InputFormat<LongWritable, Text> informat,
+		@Override
+		protected int readFrameFromInputSplit(InputSplit split, InputFormat<LongWritable, Text> informat,
 			JobConf job, FrameBlock dest, Types.ValueType[] schema, String[] names, long rlen, long clen, int rl,
 			boolean first) throws IOException {
 
@@ -194,7 +197,8 @@ public abstract class FrameGenerateReader extends FrameReader {
 			super(_props);
 		}
 
-		@Override protected int readFrameFromInputSplit(InputSplit split, InputFormat<LongWritable, Text> informat,
+		@Override
+		protected int readFrameFromInputSplit(InputSplit split, InputFormat<LongWritable, Text> informat,
 			JobConf job, FrameBlock dest, Types.ValueType[] schema, String[] names, long rlen, long clen, int rl,
 			boolean first) throws IOException {
 
@@ -247,7 +251,8 @@ public abstract class FrameGenerateReader extends FrameReader {
 			super(_props);
 		}
 
-		@Override protected int readFrameFromInputSplit(InputSplit split, InputFormat<LongWritable, Text> informat,
+		@Override
+		protected int readFrameFromInputSplit(InputSplit split, InputFormat<LongWritable, Text> informat,
 			JobConf job, FrameBlock dest, Types.ValueType[] schema, String[] names, long rlen, long clen, int rl,
 			boolean first) throws IOException {
 

@@ -71,6 +71,10 @@ public class RawRow {
 
 		else if(vt == Types.ValueType.STRING)
 			return findStringValue(vtf, forward, update);
+		else if(vt == Types.ValueType.BOOLEAN) {
+			ValueTrimFormat vtfb = new ValueTrimFormat(vtf.getStringOfActualValue());
+			return findStringValue(vtfb, forward, update);
+		}
 		return null;
 	}
 
@@ -91,7 +95,6 @@ public class RawRow {
 			spair = findValue(snode, true, false);
 			if(spair.getKey() != -1) {
 				for(int i = 1; i < vtfs.size(); i++) {
-					//lastIndex = vtfs.get(i).getValueType().isNumeric() ? numericLastIndex : rawLastIndex;
 					epair = findAtValue(vtfs.get(i), rawLastIndex, numericLastIndex, false);
 					if(epair.getKey() == -1)
 						break;
@@ -126,6 +129,10 @@ public class RawRow {
 			return findAtStringValue(vtf, rawIndex, update);
 		else if(vtf.getValueType().isNumeric())
 			return findAtNumericValue(vtf, rawIndex, numericIndex, update);
+		else if(vtf.getValueType() == Types.ValueType.BOOLEAN) {
+			ValueTrimFormat vtfb = new ValueTrimFormat(vtf.getStringOfActualValue());
+			return findAtStringValue(vtfb, rawIndex, update);
+		}
 		else
 			throw new RuntimeException("FindAt just work for fixed length of values!");
 	}
@@ -290,8 +297,12 @@ public class RawRow {
 
 				StringBuilder sb = new StringBuilder();
 
-				// 3. if the actual value is positive
-				// add some prefixes to the string
+				/* 3. add extra chars if the value at the middle of another value
+					Example: target value= 123
+					source text: 1.123E12,123
+					second "123" value should report
+				*/
+
 				boolean flagPrefix = true;
 				for(int i = startPos - 1; i >= 0 && flagPrefix; i--) {
 					char ch = raw.charAt(i);

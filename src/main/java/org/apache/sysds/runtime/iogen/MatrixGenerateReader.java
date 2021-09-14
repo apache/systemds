@@ -115,8 +115,7 @@ public abstract class MatrixGenerateReader extends MatrixReader {
 		return ret;
 	}
 
-	private
-	MatrixBlock readMatrixFromHDFS(Path path, JobConf job, FileSystem fs, MatrixBlock dest, long rlen,
+	private MatrixBlock readMatrixFromHDFS(Path path, JobConf job, FileSystem fs, MatrixBlock dest, long rlen,
 		long clen, int blen) throws IOException, DMLRuntimeException {
 		//prepare file paths in alphanumeric order
 		ArrayList<Path> files = new ArrayList<>();

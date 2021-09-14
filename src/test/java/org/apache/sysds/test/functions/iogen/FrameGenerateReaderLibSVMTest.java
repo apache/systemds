@@ -19,7 +19,6 @@
 
 package org.apache.sysds.test.functions.iogen;
 
-import org.apache.sysds.common.Types;
 import org.junit.Test;
 
 public class FrameGenerateReaderLibSVMTest extends GenerateReaderFrameTest {
@@ -28,7 +27,8 @@ public class FrameGenerateReaderLibSVMTest extends GenerateReaderFrameTest {
 	private final static String TEST_DIR = "functions/iogen/FrameGenerateReaderCSVTest/";
 	private final static String TEST_CLASS_DIR = TEST_DIR + FrameGenerateReaderLibSVMTest.class.getSimpleName() + "/";
 
-	@Override protected String getTestName() {
+	@Override
+	protected String getTestName() {
 		return TEST_NAME;
 	}
 
@@ -46,32 +46,31 @@ public class FrameGenerateReaderLibSVMTest extends GenerateReaderFrameTest {
 			row1.append("+1");
 			for(int c = 0; c < ncols - 1; c++) {
 				if(mid > c) {
-					dataLibSVM[indexRow][c] = data[r][c];
-					row1.append(separator).append(c + firstIndex).append(indexSeparator).append(data[r][c]);
-				}
-				else {
-					if(schema[c].isNumeric() || schema[c] == Types.ValueType.BOOLEAN){
-						dataLibSVM[indexRow][c] = "0";
+					if(data[r][c] != null) {
+						dataLibSVM[indexRow][c] = data[r][c];
+						row1.append(separator).append(c + firstIndex).append(indexSeparator).append(data[r][c]);
 					}
-					else if(schema[c] == Types.ValueType.STRING)
-						dataLibSVM[indexRow][c] = "";
+					else
+						dataLibSVM[indexRow][c] = defaultValue(schema[c]);
 				}
+				else
+					dataLibSVM[indexRow][c] = defaultValue(schema[c]);
+
 			}
 			dataLibSVM[indexRow++][ncols-1] = "+1";
 
 			row2.append("-1");
 			for(int c = 0; c < ncols - 1; c++) {
 				if(mid <= c) {
-					dataLibSVM[indexRow][c] = data[r][c];
-					row2.append(separator).append(c + firstIndex).append(indexSeparator).append(data[r][c]);
-				}
-				else {
-					if(schema[c].isNumeric() || schema[c] == Types.ValueType.BOOLEAN){
-						dataLibSVM[indexRow][c] = "0";
+					if(data[r][c] != null) {
+						dataLibSVM[indexRow][c] = data[r][c];
+						row2.append(separator).append(c + firstIndex).append(indexSeparator).append(data[r][c]);
 					}
-					else if(schema[c] == Types.ValueType.STRING)
-						dataLibSVM[indexRow][c] = "";
+					else
+						dataLibSVM[indexRow][c] = defaultValue(schema[c]);
 				}
+				else
+					dataLibSVM[indexRow][c] = defaultValue(schema[c]);
 			}
 			dataLibSVM[indexRow++][ncols-1] = "-1";
 			sb.append(row1).append("\n");
@@ -83,7 +82,8 @@ public class FrameGenerateReaderLibSVMTest extends GenerateReaderFrameTest {
 		data = dataLibSVM;
 	}
 
-	@Test public void test1() {
+	@Test
+	public void test1() {
 		String[] naStrings = {"NULL", "inf", "NaN"};
 		String separator = ",";
 		String indexSeparator = ":";
@@ -92,25 +92,28 @@ public class FrameGenerateReaderLibSVMTest extends GenerateReaderFrameTest {
 		runGenerateReaderTest();
 	}
 
-	@Test public void test2() {
+	@Test
+	public void test2() {
 		String[] naStrings = {"NULL", "inf", "NaN"};
 		String separator = ",";
 		String indexSeparator = ":";
-		generateRandomData(200, 100, -100, 100, 1, naStrings);
+		generateRandomData(100, 200, -100, 100, 1, naStrings);
 		extractSampleRawLibSVM(0,separator, indexSeparator);
 		runGenerateReaderTest();
 	}
 
-	@Test public void test3() {
+	@Test
+	public void test3() {
 		String[] naStrings = {"NULL", "inf", "NaN"};
 		String separator = ",";
 		String indexSeparator = ":";
-		generateRandomData(100, 5000, -100, 100, 1, naStrings);
+		generateRandomData(1000, 200, -100, 100, 1, naStrings);
 		extractSampleRawLibSVM(0,separator, indexSeparator);
 		runGenerateReaderTest();
 	}
 
-	@Test public void test4() {
+	@Test
+	public void test4() {
 		String[] naStrings = {"NULL", "inf", "NaN"};
 		String separator = ",,,,,,";
 		String indexSeparator = ":";
@@ -119,7 +122,8 @@ public class FrameGenerateReaderLibSVMTest extends GenerateReaderFrameTest {
 		runGenerateReaderTest();
 	}
 
-	@Test public void test5() {
+	@Test
+	public void test5() {
 		String[] naStrings = {"NULL", "inf", "NaN"};
 		String separator = ",,,,,";
 		String indexSeparator = ":";
@@ -128,7 +132,8 @@ public class FrameGenerateReaderLibSVMTest extends GenerateReaderFrameTest {
 		runGenerateReaderTest();
 	}
 
-	@Test public void test6() {
+	@Test
+	public void test6() {
 		String[] naStrings = {"NULL", "inf", "NaN"};
 		String separator = ",,,,,";
 		String indexSeparator = ":";

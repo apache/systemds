@@ -23,13 +23,14 @@ import org.junit.Test;
 
 import java.util.Random;
 
-public class MatrixGenerateReaderCSVTest extends GenerateReaderTest {
+public class MatrixGenerateReaderCSVTest extends GenerateReaderMatrixTest {
 
 	private final static String TEST_NAME = "GenerateReaderCSVTest";
 	private final static String TEST_DIR = "functions/iogen/GenerateReaderCSVTest/";
 	private final static String TEST_CLASS_DIR = TEST_DIR + MatrixGenerateReaderCSVTest.class.getSimpleName() + "/";
 
-	@Override protected String getTestName() {
+	@Override
+	protected String getTestName() {
 		return TEST_NAME;
 	}
 
@@ -59,43 +60,50 @@ public class MatrixGenerateReaderCSVTest extends GenerateReaderTest {
 		sampleRaw = sb.toString();
 	}
 
-	@Test public void test1() {
+	@Test
+	public void test1() {
 		sampleRaw = "1,2,3,4,5\n" + "6,7,8,9,10\n" + "11,12,13,14,15";
 		sampleMatrix = new double[][] {{1, 2, 3, 4, 5}, {6, 7, 8, 9, 10}, {11, 12, 13, 14, 15}};
 		runGenerateReaderTest();
 	}
 
-	@Test public void test2() {
+	@Test
+	public void test2() {
 		String[] naString = {"NaN"};
 		generateRandomCSV(5, 5, -10, 10, 1, ",", naString);
 		runGenerateReaderTest();
 	}
 
-	@Test public void test3() {
+	@Test
+	public void test3() {
 		String[] naString = {"NaN"};
 		generateRandomCSV(5, 5, -10, 10, 1, ",,,", naString);
 		runGenerateReaderTest();
 	}
 
-	@Test public void test4() {
+	@Test
+	public void test4() {
 		String[] naString = {"Nan", "NAN", "", "inf", "null", "NULL"};
 		generateRandomCSV(50, 50, -10, 10, 0.5, ",,", naString);
 		runGenerateReaderTest();
 	}
 
-	@Test public void test5() {
+	@Test
+	public void test5() {
 		sampleRaw = "1.0,2.0,3.0,4.0,5.0\n" + "6.,7.,8.,9.,10.\n" + "11,12,13,14,15";
 		sampleMatrix = new double[][] {{1, 2, 3, 4, 5}, {6, 7, 8, 9, 10}, {11, 12, 13, 14, 15}};
 		runGenerateReaderTest();
 	}
 
-	@Test public void test6() {
+	@Test
+	public void test6() {
 		sampleRaw = "1.0,2.0,3.0,4.0,5.0\n" + "6.,7.,8.,9.,10.\n" + "11E0,12E0,13,14E0,15";
 		sampleMatrix = new double[][] {{1, 2, 3, 4, 5}, {6, 7, 8, 9, 10}, {11, 12, 13, 14, 15}};
 		runGenerateReaderTest();
 	}
 
-	@Test public void test7() {
+	@Test
+	public void test7() {
 		sampleRaw = "1.0,2.0,3.0,4.0,5.0\n" + "6.,7.,8.,9.,10.\n" + "1.1E1,1.2E1,13,1.4E1,15";
 		sampleMatrix = new double[][] {{1, 2, 3, 4, 5}, {6, 7, 8, 9, 10}, {11, 12, 13, 14, 15}};
 		runGenerateReaderTest();
@@ -107,32 +115,37 @@ public class MatrixGenerateReaderCSVTest extends GenerateReaderTest {
 		runGenerateReaderTest();
 	}
 
-	@Test public void test9() {
+	@Test
+	public void test9() {
 		sampleRaw = ".1E1,.2E1,3.0,4.0,0.5E1\n" + "60.0E-1,7.,80.0E-1,9.,100.0E-1\n" + "1.1E1,1.2E1,13,1.4E1,15";
 		sampleMatrix = new double[][] {{1, 2, 3, 4, 5}, {6, 7, 8, 9, 10}, {11, 12, 13, 14, 15}};
 		runGenerateReaderTest();
 	}
 
-	@Test public void test10() {
+	@Test
+	public void test10() {
 		sampleRaw = "0.000001e6,2,3,4,5\n" + "6,7,8,9,10\n" + "11,12,13,14,15";
 		sampleMatrix = new double[][] {{1, 2, 3, 4, 5}, {6, 7, 8, 9, 10}, {11, 12, 13, 14, 15}};
 		runGenerateReaderTest();
 	}
 
-	@Test public void test11() {
+	@Test
+	public void test11() {
 		sampleRaw = "1,2,3,4,5,NAN\n" + "6,7,8,9,10,NAN\n" + "11,12,13,14,15,NAN";
 		sampleMatrix = new double[][] {{1, 2, 3, 4, 5, 0}, {6, 7, 8, 9, 10, 0}, {11, 12, 13, 14, 15, 0}};
 		runGenerateReaderTest();
 	}
 
-	@Test public void test12() {
+	@Test
+	public void test12() {
 		sampleRaw = "1,2,3,4,5,NAN,,\n" + "6,7,8,9,10,NAN,,\n" + "11,12,13,14,15,NAN,,";
 		sampleMatrix = new double[][] {{1, 2, 3, 4, 5, 0, 0, 0}, {6, 7, 8, 9, 10, 0, 0, 0},
 			{11, 12, 13, 14, 15, 0, 0, 0}};
 		runGenerateReaderTest();
 	}
 
-	@Test public void test13() {
+	@Test
+	public void test13() {
 		String[] naString = {"Nan", "NAN", "", "inf", "null", "NULL"};
 		generateRandomCSV(1000, 2000, -10, 10, 0.5, ",,", naString);
 		runGenerateReaderTest();

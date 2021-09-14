@@ -53,9 +53,10 @@ public class ValueTrimFormat implements Comparable {
 		this.actualValue = o;
 		if(vt.isNumeric()) {
 			double value = UtilFunctions.getDouble(o);
+
+			// remove scientific format
 			DecimalFormat decimalFormat = new DecimalFormat("0.000000000000000000000000000000");
 			String stringValue = decimalFormat.format(value);
-			//String stringValue = UtilFunctions.objectToString(o, true);
 			if(value == 0) {
 				S = '+';
 				N = new char[1];
@@ -136,7 +137,7 @@ public class ValueTrimFormat implements Comparable {
 		else if(this.valueType.isNumeric())
 			return getDoubleActualValue() == 0;
 		else if(this.valueType == Types.ValueType.BOOLEAN)
-			return false;
+			return actualValue == null || !((Boolean) actualValue);
 		return true;
 	}
 
@@ -176,17 +177,15 @@ public class ValueTrimFormat implements Comparable {
 	private int getLength(ValueTrimFormat vtf) {
 		Types.ValueType vt = vtf.valueType;
 		int len = -1;
-		if(vt == Types.ValueType.STRING)
+		if(vt == Types.ValueType.STRING )
 			len = vtf.getStringOfActualValue().length();
-		else if(vt.isNumeric()) {
-
-		}
 		else if(vt == Types.ValueType.BOOLEAN)
 			len = 1;
 		return len;
 	}
 
-	@Override public int compareTo(Object o) {
+	@Override
+	public int compareTo(Object o) {
 		ValueTrimFormat vtf = (ValueTrimFormat) o;
 		Types.ValueType vt = vtf.valueType;
 		if(vt.isNumeric() && this.valueType.isNumeric()) {

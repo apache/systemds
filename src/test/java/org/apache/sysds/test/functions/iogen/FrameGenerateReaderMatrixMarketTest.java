@@ -27,7 +27,8 @@ public class FrameGenerateReaderMatrixMarketTest extends GenerateReaderFrameTest
 	private final static String TEST_DIR = "functions/iogen/FrameGenerateReaderMatrixMarketTest/";
 	private final static String TEST_CLASS_DIR = TEST_DIR + FrameGenerateReaderMatrixMarketTest.class.getSimpleName() + "/";
 
-	@Override protected String getTestName() {
+	@Override
+	protected String getTestName() {
 		return TEST_NAME;
 	}
 
@@ -50,7 +51,8 @@ public class FrameGenerateReaderMatrixMarketTest extends GenerateReaderFrameTest
 		sampleRaw = sb.toString();
 	}
 
-	@Test public void test1() {
+	@Test
+	public void test1() {
 		String[] naStrings = {"NULL", "inf", "NaN"};
 		String separator = ",";
 		String indexSeparator = ":";
@@ -59,24 +61,17 @@ public class FrameGenerateReaderMatrixMarketTest extends GenerateReaderFrameTest
 		runGenerateReaderTest();
 	}
 
-	@Test public void test2() {
-		String[] naStrings = {"NULL", "inf", "NaN"};
-		String separator = ",";
-		String indexSeparator = ":";
-		generateRandomData(50, 1000, -100, 100, 1, naStrings);
-		extractSampleRawMM(0,separator, indexSeparator);
-		runGenerateReaderTest();
-	}
-	@Test public void test3() {
+	@Test
+	public void test2() {
 		String[] naStrings = {"NULL", "inf", "NaN"};
 		String separator = ",";
 		String indexSeparator = ":";
 		generateRandomData(50, 100, -100, 100, 1, naStrings);
-		extractSampleRawMM(1,separator, indexSeparator);
+		extractSampleRawMM(0,separator, indexSeparator);
 		runGenerateReaderTest();
 	}
-
-	@Test public void test4() {
+	@Test
+	public void test3() {
 		String[] naStrings = {"NULL", "inf", "NaN"};
 		String separator = ",";
 		String indexSeparator = ":";
@@ -85,11 +80,22 @@ public class FrameGenerateReaderMatrixMarketTest extends GenerateReaderFrameTest
 		runGenerateReaderTest();
 	}
 
-	@Test public void test5() {
+	@Test
+	public void test4() {
 		String[] naStrings = {"NULL", "inf", "NaN"};
 		String separator = ",";
 		String indexSeparator = ":";
-		generateRandomData(50, 100, -100, 100, 0.5, naStrings);
+		generateRandomData(50, 100, -100, 100, 0.2, naStrings);
+		extractSampleRawMM(1,separator, indexSeparator);
+		runGenerateReaderTest();
+	}
+
+	@Test
+	public void test5() {
+		String[] naStrings = {"NULL", "inf", "NaN"};
+		String separator = ",";
+		String indexSeparator = ":";
+		generateRandomData(50, 100, -100, 100, 0.8, naStrings);
 		extractSampleRawMM(0,separator, indexSeparator);
 		runGenerateReaderTest();
 	}

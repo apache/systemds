@@ -39,7 +39,8 @@ public class CustomProperties extends FileFormatProperties implements Serializab
 	protected enum GRPattern {
 		Regular, Irregular;
 
-		@Override public String toString() {
+		@Override
+		public String toString() {
 			return this.name().toLowerCase();
 		}
 	}
@@ -47,7 +48,8 @@ public class CustomProperties extends FileFormatProperties implements Serializab
 	protected enum GRSymmetry {
 		GENERAL, SYMMETRIC, SKEW_SYMMETRIC;
 
-		@Override public String toString() {
+		@Override
+		public String toString() {
 			return this.name().toLowerCase().replaceAll("_", "-");
 		}
 	}
@@ -59,16 +61,18 @@ public class CustomProperties extends FileFormatProperties implements Serializab
 	public CustomProperties() {
 	}
 
-	// CSV format
+	// Row & Col Regular Format
 	public CustomProperties(GRPattern rowPattern, String delim, HashSet<String> naStrings) {
 		this.delim = delim;
 		this.naStrings = naStrings;
 		this.rowPattern = rowPattern;
 		this.colPattern = GRPattern.Regular;
 		this.grSymmetry = GRSymmetry.GENERAL;
+		this.firstRowIndex = 0;
+		this.firstColIndex = 0;
 	}
 
-	// LIBSVM format
+	// Row Regular & Col Irregular Format
 	public CustomProperties(GRPattern rowPattern, String delim, String indexDelim, int firstColIndex) {
 		this.delim = delim;
 		this.indexDelim = indexDelim;
@@ -76,9 +80,10 @@ public class CustomProperties extends FileFormatProperties implements Serializab
 		this.colPattern = GRPattern.Irregular;
 		this.grSymmetry = GRSymmetry.GENERAL;
 		this.firstColIndex = firstColIndex;
+		this.firstRowIndex = 0;
 	}
 
-	// Matrix Market format
+	// Row Irregular format
 	public CustomProperties(GRSymmetry grSymmetry, String delim, int firstRowIndex, int firstColIndex) {
 		this.delim = delim;
 		this.grSymmetry = grSymmetry;

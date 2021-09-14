@@ -22,6 +22,10 @@ package org.apache.sysds.test.functions.iogen;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.conf.CompilerConfig;
+import org.apache.sysds.runtime.io.MatrixReader;
+import org.apache.sysds.runtime.iogen.GenerateReader;
+import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.util.DataConverter;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
@@ -30,10 +34,10 @@ import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
 
-public abstract class GenerateReaderTest extends AutomatedTestBase {
+public abstract class GenerateReaderMatrixTest extends AutomatedTestBase {
 
 	protected final static String TEST_DIR = "functions/iogen/";
-	protected final static String TEST_CLASS_DIR = TEST_DIR + GenerateReaderTest.class.getSimpleName() + "/";
+	protected final static String TEST_CLASS_DIR = TEST_DIR + GenerateReaderMatrixTest.class.getSimpleName() + "/";
 	protected String sampleRaw;
 	protected double[][] sampleMatrix;
 
@@ -73,16 +77,16 @@ public abstract class GenerateReaderTest extends AutomatedTestBase {
 			TestConfiguration config = getTestConfiguration(getTestName());
 			loadTestConfiguration(config);
 
+			MatrixBlock sampleMB = DataConverter.convertToMatrixBlock(sampleMatrix);
+
 			String HOME = SCRIPT_DIR + TEST_DIR;
-			String dataPath = HOME + "data.raw";
+			String dataPath = HOME + "matrix_data.raw";
+			int clen = sampleMatrix[0].length;
 			writeRawString(sampleRaw, dataPath);
-			writeInputMatrixWithMTD("sample_matrix", sampleMatrix, false);
+			GenerateReader.GenerateReaderMatrix gr = new GenerateReader.GenerateReaderMatrix(sampleRaw, sampleMB);
 
-			fullDMLScriptName = HOME + "MatrixGenerateReaderTest1.dml";
-			programArgs = new String[] {"-nvargs", "data=" + dataPath, "sample_raw=" + sampleRaw,
-				"sample_matrix=" + input("sample_matrix"), "ncols=" + sampleMatrix[0].length};
-
-			runTest(true, false, null, -1);
+			MatrixReader mr= gr.getReader();
+			MatrixBlock matrixBlock = mr.readMatrixFromHDFS(dataPath, -1, clen, -1, -1);
 		}
 		catch(Exception exception) {
 			exception.printStackTrace();

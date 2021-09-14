@@ -33,7 +33,6 @@ import org.apache.sysds.test.TestUtils;
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.HashSet;
 import java.util.Random;
 
 public abstract class GenerateReaderFrameTest extends AutomatedTestBase {
@@ -49,7 +48,10 @@ public abstract class GenerateReaderFrameTest extends AutomatedTestBase {
 		Types.ValueType.INT32,
 		Types.ValueType.INT64,
 		Types.ValueType.FP32,
-		Types.ValueType.FP64};
+		Types.ValueType.FP64,
+		Types.ValueType.BOOLEAN};
+
+	protected Types.ValueType[] types1= { Types.ValueType.BOOLEAN};
 
 	protected abstract String getTestName();
 
@@ -70,6 +72,19 @@ public abstract class GenerateReaderFrameTest extends AutomatedTestBase {
 		String saltStr = salt.toString();
 		return saltStr;
 
+	}
+
+	protected String defaultValue(Types.ValueType vt){
+		switch(vt){
+			case STRING: return "";
+			case BOOLEAN: return null;
+			case FP32:
+			case FP64:
+			case INT32:
+			case INT64:
+				return "0";
+		}
+		return null;
 	}
 
 	protected void generateRandomString(int size, int maxStringLength, String[] naStrings, double sparsity, String[][] data, int colIndex) {
@@ -100,12 +115,16 @@ public abstract class GenerateReaderFrameTest extends AutomatedTestBase {
 					case INT64: o = UtilFunctions.objectToObject(type,(long)randomData[i][0]); break;
 					case FP32: o = UtilFunctions.objectToObject(type,(float)randomData[i][0]); break;
 					case FP64: o = UtilFunctions.objectToObject(type,randomData[i][0]); break;
+					case BOOLEAN: Boolean b= randomData[i][0] >0 ? true: null; o = UtilFunctions.objectToObject(type, b); break;
 				}
 				String s = UtilFunctions.objectToString(o);
 				data[i][colIndex] = s;
 			}
 			else {
-				data[i][colIndex] ="0";
+				if(type.isNumeric())
+					data[i][colIndex] ="0";
+				else
+					data[i][colIndex] =null;
 			}
 		}
 	}
@@ -125,10 +144,9 @@ public abstract class GenerateReaderFrameTest extends AutomatedTestBase {
 
 			if(types[rnt] == Types.ValueType.STRING)
 				generateRandomString(nrows,100,naStrings,sparsity,data,i);
-			if(types[rnt].isNumeric()){
+			else if(types[rnt].isNumeric() || types[rnt] == Types.ValueType.BOOLEAN)
 				generateRandomNumeric(nrows, types[rnt],min,max,naStrings, sparsity,data,i);
 			}
-		}
 	}
 	protected void runGenerateReaderTest() {
 
@@ -145,7 +163,6 @@ public abstract class GenerateReaderFrameTest extends AutomatedTestBase {
 			loadTestConfiguration(config);
 
 			FrameBlock sampleFrame = new FrameBlock(schema, names, data);
-			HashSet<Types.ValueType> vt = new HashSet<>();
 
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			String dataPath = HOME + "frame_data.raw";
@@ -155,6 +172,7 @@ public abstract class GenerateReaderFrameTest extends AutomatedTestBase {
 
 			FrameReader fr= gr.getReader();
 			FrameBlock grFrame = fr.readFrameFromHDFS(dataPath,schema,names,data.length, clen);
+
 		}
 		catch(Exception exception) {
 			exception.printStackTrace();

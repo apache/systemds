@@ -67,7 +67,6 @@ public abstract class ReaderMapping {
 		this.nlines = nlines;
 		firstColIndex = 0;
 		firstRowIndex = 0;
-		//System.out.println("raw_nrows:" + sampleRawRows.size());
 	}
 
 	protected abstract boolean isSchemaNumeric();
@@ -134,7 +133,8 @@ public abstract class ReaderMapping {
 		}
 
 		// Convert: convert each value of a sample matrix to NumberTrimFormat
-		@Override protected ValueTrimFormat[][] convertSampleTOValueTrimFormat() {
+		@Override
+		protected ValueTrimFormat[][] convertSampleTOValueTrimFormat() {
 			ValueTrimFormat[][] result = new ValueTrimFormat[nrows][ncols];
 			for(int r = 0; r < nrows; r++)
 				for(int c = 0; c < ncols; c++) {
@@ -143,7 +143,8 @@ public abstract class ReaderMapping {
 			return result;
 		}
 
-		@Override protected boolean isSchemaNumeric() {
+		@Override
+		protected boolean isSchemaNumeric() {
 			return true;
 		}
 
@@ -167,7 +168,8 @@ public abstract class ReaderMapping {
 		}
 
 		// Convert: convert each value of a sample Frame to ValueTrimFormat(Number, String, and Boolean)
-		@Override protected ValueTrimFormat[][] convertSampleTOValueTrimFormat() {
+		@Override
+		protected ValueTrimFormat[][] convertSampleTOValueTrimFormat() {
 			ValueTrimFormat[][] result = new ValueTrimFormat[nrows][ncols];
 			for(int r = 0; r < nrows; r++)
 				for(int c = 0; c < ncols; c++) {
@@ -176,7 +178,8 @@ public abstract class ReaderMapping {
 			return result;
 		}
 
-		@Override protected boolean isSchemaNumeric() {
+		@Override
+		protected boolean isSchemaNumeric() {
 			boolean result = true;
 			for(Types.ValueType vt : schema)
 				result &= vt.isNumeric();
@@ -187,9 +190,6 @@ public abstract class ReaderMapping {
 	public void runMapping() throws Exception {
 
 		mapped = findMapping();
-		if(!mapped){
-			int a = 100;
-		}
 		boolean schemaNumeric = isSchemaNumeric();
 		if(!mapped) {
 			// Clone Sample Matrix/Frame

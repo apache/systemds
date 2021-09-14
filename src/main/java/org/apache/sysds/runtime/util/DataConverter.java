@@ -76,12 +76,12 @@ import org.apache.sysds.runtime.meta.DataCharacteristics;
  * This class provides methods to read and write matrix blocks from to HDFS using different data formats.
  * Those functionalities are used especially for CP read/write and exporting in-memory matrices to HDFS
  * (before executing MR jobs).
- * 
+ *
  */
 public class DataConverter {
 	// private static final Log LOG = LogFactory.getLog(DataConverter.class.getName());
 	private static final String DELIM = " ";
-	
+
 	//////////////
 	// READING and WRITING of matrix blocks to/from HDFS
 	// (textcell, binarycell, binaryblock)
@@ -96,7 +96,7 @@ public class DataConverter {
 		throws IOException {
 		writeMatrixToHDFS(mat, dir, fmt, dc, -1, null, false);
 	}
-	
+
 	public static void writeMatrixToHDFS(MatrixBlock mat, String dir, FileFormat fmt, DataCharacteristics dc, int replication, FileFormatProperties formatProperties, boolean diag)
 		throws IOException {
 		MatrixWriter writer = MatrixWriterFactory.createMatrixWriter( fmt, replication, formatProperties );
@@ -104,7 +104,7 @@ public class DataConverter {
 	}
 
 	public static void writeTensorToHDFS(TensorBlock tensor, String dir, FileFormat fmt, DataCharacteristics dc)
-			throws IOException {
+		throws IOException {
 		TensorWriter writer = TensorWriterFactory.createTensorWriter(fmt);
 		int blen = dc.getBlocksize();
 		writer.writeTensorToHDFS(tensor, dir, blen);
@@ -112,30 +112,30 @@ public class DataConverter {
 
 	public static MatrixBlock readMatrixFromHDFS(String dir, FileFormat fmt, long rlen, long clen, int blen, boolean localFS)
 		throws IOException
-	{	
+	{
 		ReadProperties prop = new ReadProperties();
-		
+
 		prop.path = dir;
 		prop.fmt = fmt;
 		prop.rlen = rlen;
 		prop.clen = clen;
 		prop.blen = blen;
 		prop.localFS = localFS;
-		
+
 		return readMatrixFromHDFS(prop);
 	}
 
 	public static MatrixBlock readMatrixFromHDFS(String dir, FileFormat fmt, long rlen, long clen, int blen)
 		throws IOException
-	{	
+	{
 		ReadProperties prop = new ReadProperties();
-		
+
 		prop.path = dir;
 		prop.fmt = fmt;
 		prop.rlen = rlen;
 		prop.clen = clen;
 		prop.blen = blen;
-		
+
 		return readMatrixFromHDFS(prop);
 	}
 
@@ -143,23 +143,23 @@ public class DataConverter {
 		throws IOException
 	{
 		ReadProperties prop = new ReadProperties();
-		
+
 		prop.path = dir;
 		prop.fmt = fmt;
 		prop.rlen = rlen;
 		prop.clen = clen;
 		prop.blen = blen;
 		prop.expectedNnz = expectedNnz;
-		
+
 		return readMatrixFromHDFS(prop);
 	}
 
-	public static MatrixBlock readMatrixFromHDFS(String dir, FileFormat fmt, long rlen, long clen, 
-			int blen, long expectedNnz, boolean localFS)
+	public static MatrixBlock readMatrixFromHDFS(String dir, FileFormat fmt, long rlen, long clen,
+		int blen, long expectedNnz, boolean localFS)
 		throws IOException
 	{
 		ReadProperties prop = new ReadProperties();
-		
+
 		prop.path = dir;
 		prop.fmt = fmt;
 		prop.rlen = rlen;
@@ -167,16 +167,16 @@ public class DataConverter {
 		prop.blen = blen;
 		prop.expectedNnz = expectedNnz;
 		prop.localFS = localFS;
-		
+
 		return readMatrixFromHDFS(prop);
 	}
 
-	public static MatrixBlock readMatrixFromHDFS(String dir, FileFormat fmt, long rlen, long clen, 
-			int blen, long expectedNnz, FileFormatProperties formatProperties)
-	throws IOException
+	public static MatrixBlock readMatrixFromHDFS(String dir, FileFormat fmt, long rlen, long clen,
+		int blen, long expectedNnz, FileFormatProperties formatProperties)
+		throws IOException
 	{
 		ReadProperties prop = new ReadProperties();
-		
+
 		prop.path = dir;
 		prop.fmt = fmt;
 		prop.rlen = rlen;
@@ -184,12 +184,12 @@ public class DataConverter {
 		prop.blen = blen;
 		prop.expectedNnz = expectedNnz;
 		prop.formatProperties = formatProperties;
-		
+
 		return readMatrixFromHDFS(prop);
 	}
 
 	public static TensorBlock readTensorFromHDFS(String dir, FileFormat fmt, long[] dims, int blen,
-			ValueType[] schema) throws IOException {
+		ValueType[] schema) throws IOException {
 		TensorBlock ret;
 		try {
 			TensorReader reader = TensorReaderFactory.createTensorReader(fmt);
@@ -201,67 +201,57 @@ public class DataConverter {
 		}
 		return ret;
 	}
-	
+
 	/**
 	 * Core method for reading matrices in format textcell, matrixmarket, binarycell, or binaryblock 
 	 * from HDFS into main memory. For expected dense matrices we directly copy value- or block-at-a-time 
 	 * into the target matrix. In contrast, for sparse matrices, we append (column-value)-pairs and do a 
 	 * final sort if required in order to prevent large reorg overheads and increased memory consumption 
 	 * in case of unordered inputs.  
-	 * 
+	 *
 	 * DENSE MxN input:
 	 *  * best/average/worst: O(M*N)
 	 * SPARSE MxN input
 	 *  * best (ordered, or binary block w/ clen&lt;=blen): O(M*N)
 	 *  * average (unordered): O(M*N*log(N))
 	 *  * worst (descending order per row): O(M * N^2)
-	 * 
+	 *
 	 * NOTE: providing an exact estimate of 'expected sparsity' can prevent a full copy of the result
 	 * matrix block (required for changing sparse-&gt;dense, or vice versa)
-	 * 
+	 *
 	 * @param prop read properties
 	 * @return matrix block
 	 * @throws IOException if IOException occurs
 	 */
-	public static MatrixBlock readMatrixFromHDFS(ReadProperties prop) 
+	public static MatrixBlock readMatrixFromHDFS(ReadProperties prop)
 		throws IOException
-	{	
+	{
 		//Timing time = new Timing(true);
-		//long tmpTime = System.nanoTime();
 
-		//core matrix reading 
+		//core matrix reading
 		MatrixBlock ret = null;
 		try {
 			MatrixReader reader = MatrixReaderFactory.createMatrixReader(prop);
-
-			// LOG:
-			//long tmpTime2 = System.nanoTime();
-
 			ret = reader.readMatrixFromHDFS(prop.path, prop.rlen, prop.clen, prop.blen, prop.expectedNnz);
-
-			//double elapsedSeconds = (System.nanoTime() - tmpTime2) / 1000000000.0;
-			//System.out.println("read_time:"+elapsedSeconds);
 		}
 		catch(DMLRuntimeException rex)
 		{
 			throw new IOException(rex);
 		}
 
-		//double elapsedSeconds = (System.nanoTime() - tmpTime) / 1000000000.0;
-		//System.out.println("total_read_time:"+elapsedSeconds);
 		//System.out.println("read matrix ("+prop.rlen+","+prop.clen+","+ret.getNonZeros()+") in "+time.stop());
-				
+
 		return ret;
 	}
 
-	
+
 	//////////////
-	// Utils for CREATING and COPYING matrix blocks 
+	// Utils for CREATING and COPYING matrix blocks
 	///////
-	
+
 	/**
-	 * Creates a two-dimensional double matrix of the input matrix block. 
-	 * 
+	 * Creates a two-dimensional double matrix of the input matrix block.
+	 *
 	 * @param mb matrix block
 	 * @return 2d double array
 	 */
@@ -294,8 +284,8 @@ public class DataConverter {
 	{
 		int rows = mb.getNumRows();
 		int cols = mb.getNumColumns();
-		boolean[] ret = new boolean[rows*cols]; //false-initialized 
-		
+		boolean[] ret = new boolean[rows*cols]; //false-initialized
+
 		if( mb.getNonZeros() > 0 )
 		{
 			if( mb.isInSparseFormat() )
@@ -313,7 +303,7 @@ public class DataConverter {
 						ret[cix] = (mb.getValueDenseUnsafe(i, j) != 0.0);
 			}
 		}
-		
+
 		return ret;
 	}
 
@@ -321,7 +311,7 @@ public class DataConverter {
 		int rows = mb.getNumRows();
 		int cols = mb.getNumColumns();
 		int[] ret = new int[rows*cols]; //0-initialized
-		if( mb.isEmptyBlock(false) ) 
+		if( mb.isEmptyBlock(false) )
 			return ret;
 		if( mb.isInSparseFormat() ) {
 			Iterator<IJV> iter = mb.getSparseBlockIterator();
@@ -338,12 +328,12 @@ public class DataConverter {
 		}
 		return ret;
 	}
-	
+
 	public static long[] convertToLongVector( MatrixBlock mb) {
 		int rows = mb.getNumRows();
 		int cols = mb.getNumColumns();
 		long[] ret = new long[rows*cols]; //0-initialized
-		if( mb.isEmptyBlock(false) ) 
+		if( mb.isEmptyBlock(false) )
 			return ret;
 		if( mb.isInSparseFormat() ) {
 			Iterator<IJV> iter = mb.getSparseBlockIterator();
@@ -360,17 +350,17 @@ public class DataConverter {
 		}
 		return ret;
 	}
-	
+
 	public static DenseBlock convertToDenseBlock(MatrixBlock mb) {
 		return convertToDenseBlock(mb, true);
 	}
-	
+
 	public static DenseBlock convertToDenseBlock(MatrixBlock mb, boolean deep) {
 		int rows = mb.getNumRows();
 		int cols = mb.getNumColumns();
-		DenseBlock ret = (!mb.isInSparseFormat() && mb.isAllocated() && !deep) ? 
+		DenseBlock ret = (!mb.isInSparseFormat() && mb.isAllocated() && !deep) ?
 			mb.getDenseBlock() : DenseBlockFactory.createDenseBlock(rows, cols); //0-initialized
-		
+
 		if( !mb.isEmptyBlock(false) ) {
 			if( mb.isInSparseFormat() ) {
 				Iterator<IJV> iter = mb.getSparseBlockIterator();
@@ -383,28 +373,28 @@ public class DataConverter {
 				ret.set(mb.getDenseBlock());
 			}
 		}
-		
+
 		return ret;
 	}
 
 	public static double[] convertToDoubleVector(MatrixBlock mb) {
 		return convertToDoubleVector(mb, true);
 	}
-	
+
 	public static double[] convertToDoubleVector( MatrixBlock mb, boolean deep ) {
 		return convertToDoubleVector(mb, deep, false);
 	}
-	
+
 	public static double[] convertToDoubleVector( MatrixBlock mb, boolean deep, boolean allowNull )
 	{
 		if( mb.isEmpty() && allowNull )
 			return null;
-		
+
 		int rows = mb.getNumRows();
 		int cols = mb.getNumColumns();
-		double[] ret = (!mb.isInSparseFormat() && mb.isAllocated() && !deep) ? 
+		double[] ret = (!mb.isInSparseFormat() && mb.isAllocated() && !deep) ?
 			mb.getDenseBlockValues() : new double[rows*cols]; //0-initialized
-		
+
 		if( !mb.isEmptyBlock(false) ) {
 			if( mb.isInSparseFormat() ) {
 				Iterator<IJV> iter = mb.getSparseBlockIterator();
@@ -418,7 +408,7 @@ public class DataConverter {
 				System.arraycopy(mb.getDenseBlockValues(), 0, ret, 0, rows*cols);
 			}
 		}
-		
+
 		return ret;
 	}
 
@@ -428,7 +418,7 @@ public class DataConverter {
 		int cols = mb.getNumColumns();
 		long nnz = mb.getNonZeros();
 		ArrayList<Double> ret = new ArrayList<>();
-		
+
 		if( mb.isInSparseFormat() )
 		{
 			Iterator<IJV> iter = mb.getSparseBlockIterator();
@@ -445,13 +435,13 @@ public class DataConverter {
 				for( int j=0; j<cols; j++ )
 					ret.add( mb.getValueDenseUnsafe(i, j) );
 		}
-				
+
 		return ret;
 	}
-	
+
 	/**
 	 * Creates a dense Matrix Block and copies the given double matrix into it.
-	 * 
+	 *
 	 * @param data 2d double array
 	 * @return matrix block
 	 */
@@ -460,21 +450,21 @@ public class DataConverter {
 		int cols = (rows > 0)? data[0].length : 0;
 		MatrixBlock mb = new MatrixBlock(rows, cols, false);
 		try
-		{ 
+		{
 			//copy data to mb (can be used because we create a dense matrix)
 			mb.init( data, rows, cols );
-		} 
+		}
 		catch (Exception e){} //can never happen
-		
+
 		//check and convert internal representation
 		mb.examSparsity();
-		
+
 		return mb;
 	}
 
 	/**
 	 * Converts an Integer matrix to an MatrixBlock
-	 * 
+	 *
 	 * @param data Int matrix input that is converted to double MatrixBlock
 	 * @return The matrixBlock constructed.
 	 */
@@ -494,7 +484,7 @@ public class DataConverter {
 
 	/**
 	 * Creates a dense Matrix Block and copies the given double vector into it.
-	 * 
+	 *
 	 * @param data double array
 	 * @param columnVector if true, create matrix with single column. if false, create matrix with single row
 	 * @return matrix block
@@ -517,14 +507,14 @@ public class DataConverter {
 			nrows = Math.max( nrows, index.getRowIndex() );
 			ncols = Math.max( ncols, index.getColumnIndex() );
 		}
-		
+
 		// convert to matrix block
 		return convertToMatrixBlock(map, (int)nrows, (int)ncols);
 	}
-	
+
 	/**
 	 * NOTE: this method also ensures the specified matrix dimensions
-	 * 
+	 *
 	 * @param map map of matrix index keys and double values
 	 * @param rlen number of rows
 	 * @param clen number of columns
@@ -535,7 +525,7 @@ public class DataConverter {
 		int nnz = map.size();
 		boolean sparse = MatrixBlock.evalSparseFormatInMemory(rlen, clen, nnz);
 		MatrixBlock mb = new MatrixBlock(rlen, clen, sparse, nnz);
-		
+
 		// copy map values into new block
 		if( sparse ) //SPARSE <- cells
 		{
@@ -549,14 +539,14 @@ public class DataConverter {
 				if( value != 0 && rix<=rlen && cix<=clen )
 					mb.appendValue( rix-1, cix-1, value );
 			}
-			
+
 			//sort sparse target representation
 			mb.sortSparseRows();
 		}
 		else  //DENSE <- cells
 		{
-			//directly insert cells into dense target 
-			for( Entry<MatrixIndexes,Double> e : map.entrySet() ) 
+			//directly insert cells into dense target
+			for( Entry<MatrixIndexes,Double> e : map.entrySet() )
 			{
 				MatrixIndexes index = e.getKey();
 				double value = e.getValue();
@@ -566,7 +556,7 @@ public class DataConverter {
 					mb.quickSetValue( rix-1, cix-1, value );
 			}
 		}
-		
+
 		return mb;
 	}
 
@@ -575,14 +565,14 @@ public class DataConverter {
 		// compute dimensions from the map
 		int nrows = (int)map.getMaxRow();
 		int ncols = (int)map.getMaxColumn();
-		
+
 		// convert to matrix block
 		return convertToMatrixBlock(map, nrows, ncols);
 	}
-	
+
 	/**
 	 * NOTE: this method also ensures the specified matrix dimensions
-	 * 
+	 *
 	 * @param map ?
 	 * @param rlen number of rows
 	 * @param clen number of columns
@@ -592,28 +582,28 @@ public class DataConverter {
 	{
 		return map.toMatrixBlock(rlen, clen);
 	}
-	
+
 	/**
-	 * Converts a frame block with arbitrary schema into a matrix block. 
-	 * Since matrix block only supports value type double, we do a best 
-	 * effort conversion of non-double types which might result in errors 
+	 * Converts a frame block with arbitrary schema into a matrix block.
+	 * Since matrix block only supports value type double, we do a best
+	 * effort conversion of non-double types which might result in errors
 	 * for non-numerical data.
-	 * 
+	 *
 	 * @param frame frame block
 	 * @return matrix block
 	 */
-	public static MatrixBlock convertToMatrixBlock(FrameBlock frame) 
+	public static MatrixBlock convertToMatrixBlock(FrameBlock frame)
 	{
 		int m = frame.getNumRows();
 		int n = frame.getNumColumns();
 		MatrixBlock mb = new MatrixBlock(m, n, false);
 		mb.allocateDenseBlock();
-		
+
 		ValueType[] schema = frame.getSchema();
 		int dFreq = UtilFunctions.frequency(schema, ValueType.FP64);
-		
+
 		if( dFreq == schema.length ) {
-			// special case double schema (without cell-object creation, 
+			// special case double schema (without cell-object creation,
 			// cache-friendly row-column copy)
 			double[][] a = new double[n][];
 			for( int j=0; j<n; j++ )
@@ -647,29 +637,29 @@ public class DataConverter {
 			}
 			mb.setNonZeros(lnnz);
 		}
-		else { 
+		else {
 			//general case
-			for( int i=0; i<frame.getNumRows(); i++ ) 
+			for( int i=0; i<frame.getNumRows(); i++ )
 				for( int j=0; j<frame.getNumColumns(); j++ ) {
 					mb.appendValue(i, j, UtilFunctions.objectToDouble(
 						schema[j], frame.get(i, j)));
 				}
 		}
-		
+
 		//post-processing
 		mb.examSparsity();
-		
+
 		return mb;
 	}
-	
+
 	/**
 	 * Converts a frame block with arbitrary schema into a two dimensional
-	 * string array. 
-	 * 
+	 * string array.
+	 *
 	 * @param frame frame block
 	 * @return 2d string array
 	 */
-	public static String[][] convertToStringFrame(FrameBlock frame) 
+	public static String[][] convertToStringFrame(FrameBlock frame)
 	{
 		String[][] ret = new String[frame.getNumRows()][];
 		Iterator<String[]> iter = frame.getStringRowIterator();
@@ -677,59 +667,59 @@ public class DataConverter {
 			//deep copy output rows due to internal reuse
 			ret[i] = iter.next().clone();
 		}
-		
+
 		return ret;
 	}
-	
+
 	/**
-	 * Converts a two dimensions string array into a frame block of 
-	 * value type string. If the given array is null or of length 0, 
+	 * Converts a two dimensions string array into a frame block of
+	 * value type string. If the given array is null or of length 0,
 	 * we return an empty frame block.
-	 * 
+	 *
 	 * @param data 2d string array
 	 * @return frame block
 	 */
 	public static FrameBlock convertToFrameBlock(String[][] data) {
-		//check for empty frame block 
+		//check for empty frame block
 		if( data == null || data.length==0 )
 			return new FrameBlock();
-		
+
 		//create schema and frame block
 		ValueType[] schema = UtilFunctions.nCopies(data[0].length, ValueType.STRING);
 		return convertToFrameBlock(data, schema);
 	}
 
 	public static FrameBlock convertToFrameBlock(String[][] data, ValueType[] schema) {
-		//check for empty frame block 
+		//check for empty frame block
 		if( data == null || data.length==0 )
 			return new FrameBlock();
-		
+
 		//create frame block
 		return new FrameBlock(schema, data);
 	}
 
 	public static FrameBlock convertToFrameBlock(String[][] data, ValueType[] schema, String[] colnames) {
-		//check for empty frame block 
+		//check for empty frame block
 		if( data == null || data.length==0 )
 			return new FrameBlock();
-		
+
 		//create frame block
 		return new FrameBlock(schema, colnames, data);
 	}
-	
+
 	/**
 	 * Converts a matrix block into a frame block of value type double.
-	 * 
+	 *
 	 * @param mb matrix block
 	 * @return frame block of type double
 	 */
 	public static FrameBlock convertToFrameBlock(MatrixBlock mb) {
 		return convertToFrameBlock(mb, ValueType.FP64);
 	}
-	
+
 	/**
 	 * Converts a matrix block into a frame block of a given value type.
-	 * 
+	 *
 	 * @param mb matrix block
 	 * @param vt value type
 	 * @return frame block
@@ -744,7 +734,7 @@ public class DataConverter {
 	{
 		FrameBlock frame = new FrameBlock(schema);
 		Object[] row = new Object[mb.getNumColumns()];
-		
+
 		if( mb.isInSparseFormat() ) //SPARSE
 		{
 			SparseBlock sblock = mb.getSparseBlock();
@@ -766,7 +756,7 @@ public class DataConverter {
 		else //DENSE
 		{
 			int dFreq = UtilFunctions.frequency(schema, ValueType.FP64);
-			
+
 			if( schema.length==1 && dFreq==1 && mb.isAllocated() ) {
 				// special case double schema and single columns which
 				// allows for a shallow copy since the physical representation
@@ -775,7 +765,7 @@ public class DataConverter {
 				frame.appendColumns(new double[][]{mb.getDenseBlockValues()});
 			}
 			else if( dFreq == schema.length ) {
-				// special case double schema (without cell-object creation, 
+				// special case double schema (without cell-object creation,
 				// col pre-allocation, and cache-friendly row-column copy)
 				int m = mb.getNumRows();
 				int n = mb.getNumColumns();
@@ -811,7 +801,7 @@ public class DataConverter {
 				frame.reset();
 				frame.appendColumns(c);
 			}
-			else { 
+			else {
 				// general case
 				for( int i=0; i<mb.getNumRows(); i++ ) {
 					for( int j=0; j<mb.getNumColumns(); j++ ) {
@@ -822,10 +812,10 @@ public class DataConverter {
 				}
 			}
 		}
-		
+
 		return frame;
 	}
-	
+
 	public static TensorBlock convertToTensorBlock(MatrixBlock mb, ValueType vt, boolean toBasicTensor) {
 		TensorBlock ret;
 		if (toBasicTensor)
@@ -859,7 +849,7 @@ public class DataConverter {
 		long nnz = mb.getNonZeros();
 		boolean sparse = mb.isInSparseFormat();
 		double sparsity = ((double)nnz)/(rows*cols);
-		
+
 		if( colwise ) //COL PARTITIONS
 		{
 			//allocate output partitions
@@ -890,20 +880,20 @@ public class DataConverter {
 			for( int i=0; i<rows; i++ )
 				ret[i] = new MatrixBlock(1, cols, sparse, (long)(cols*sparsity));
 
-			//cache-friendly sparse/dense row slicing 
+			//cache-friendly sparse/dense row slicing
 			if( !mb.isEmptyBlock(false) ) {
 				for( int i=0; i<rows; i++ )
 					mb.slice(i, i, 0, cols-1, ret[i]);
 			}
 		}
-		
+
 		return ret;
 	}
-	
+
 	/**
 	 * Helper method that converts SystemDS matrix variable (<code>varname</code>) into a Array2DRowRealMatrix format,
 	 * which is useful in invoking Apache CommonsMath.
-	 * 
+	 *
 	 * @param mb matrix object
 	 * @return matrix as a commons-math3 Array2DRowRealMatrix
 	 */
@@ -911,7 +901,7 @@ public class DataConverter {
 		double[][] data = DataConverter.convertToDoubleMatrix(mb);
 		return new Array2DRowRealMatrix(data, false);
 	}
-	
+
 	public static BlockRealMatrix convertToBlockRealMatrix(MatrixBlock mb) {
 		BlockRealMatrix ret = new BlockRealMatrix(mb.getNumRows(), mb.getNumColumns());
 		if( mb.getNonZeros() > 0 ) {
@@ -931,7 +921,7 @@ public class DataConverter {
 		}
 		return ret;
 	}
-	
+
 	public static MatrixBlock convertToMatrixBlock(RealMatrix rm) {
 		MatrixBlock ret = new MatrixBlock(rm.getRowDimension(),
 			rm.getColumnDimension(), false).allocateDenseBlock();
@@ -946,10 +936,10 @@ public class DataConverter {
 	{
 		if( mb.isEmptyBlock(false) )
 			return; //quick path
-			
+
 		int rows = mb.getNumRows();
 		int cols = mb.getNumColumns();
-		
+
 		if( mb.isInSparseFormat() ) {
 			Iterator<IJV> iter = mb.getSparseBlockIterator();
 			while( iter.hasNext() ) {
@@ -962,7 +952,7 @@ public class DataConverter {
 			System.arraycopy(mb.getDenseBlockValues(), 0, dest, destPos, rows*cols);
 		}
 	}
-	
+
 	/**
 	 * Convenience method to print NaN & Infinity compliant with how as.scalar prints them.
 	 * {@link DecimalFormat} prints NaN as \uFFFD and Infinity as \u221E
@@ -982,7 +972,7 @@ public class DataConverter {
 	public static String toString(MatrixBlock mb) {
 		return toString(mb, false, " ", "\n", mb.getNumRows(), mb.getNumColumns(), 3);
 	}
-	
+
 	/**
 	 * Returns a string representation of a matrix
 	 * @param mb matrix block
@@ -997,7 +987,7 @@ public class DataConverter {
 	 */
 	public static String toString(MatrixBlock mb, boolean sparse, String separator, String lineseparator, int rowsToPrint, int colsToPrint, int decimal){
 		StringBuffer sb = new StringBuffer();
-		
+
 		// Setup number of rows and columns to print
 		int rlen = mb.getNumRows();
 		int clen = mb.getNumColumns();
@@ -1007,13 +997,13 @@ public class DataConverter {
 			rowLength = rowsToPrint < rlen ? rowsToPrint : rlen;
 		if (colsToPrint >= 0)
 			colLength = colsToPrint < clen ? colsToPrint : clen;
-		
+
 		DecimalFormat df = new DecimalFormat();
 		df.setGroupingUsed(false);
 		if (decimal >= 0){
 			df.setMinimumFractionDigits(decimal);
 		}
-		
+
 		if (sparse){ // Sparse Print Format
 			if (mb.isInSparseFormat()){	// Block is in sparse format
 				Iterator<IJV> sbi = mb.getSparseBlockIterator();
@@ -1056,7 +1046,7 @@ public class DataConverter {
 				sb.append(lineseparator);
 			}
 		}
-		
+
 		return sb.toString();
 	}
 
@@ -1079,7 +1069,7 @@ public class DataConverter {
 	 * @return tensor as a string
 	 */
 	public static String toString(TensorBlock tb, boolean sparse, String separator, String lineseparator,
-	                              String leftBorder, String rightBorder, int rowsToPrint, int colsToPrint, int decimal){
+		String leftBorder, String rightBorder, int rowsToPrint, int colsToPrint, int decimal){
 		StringBuilder sb = new StringBuilder();
 
 		// Setup number of rows and columns to print
@@ -1207,7 +1197,7 @@ public class DataConverter {
 	public static String toString(FrameBlock fb, boolean sparse, String separator, String lineseparator, int rowsToPrint, int colsToPrint, int decimal)
 	{
 		StringBuffer sb = new StringBuffer();
-		
+
 		// Setup number of rows and columns to print
 		int rlen = fb.getNumRows();
 		int clen = fb.getNumColumns();
@@ -1217,12 +1207,12 @@ public class DataConverter {
 			rowLength = rowsToPrint < rlen ? rowsToPrint : rlen;
 		if (colsToPrint >= 0)
 			colLength = colsToPrint < clen ? colsToPrint : clen;
-		
+
 		//print frame header
 		sb.append("# FRAME: ");
 		sb.append("nrow = " + fb.getNumRows() + ", ");
 		sb.append("ncol = " + fb.getNumColumns() + lineseparator);
-		
+
 		//print column names
 		sb.append("#"); sb.append(separator);
 		for( int j=0; j<colLength; j++ ) {
@@ -1231,7 +1221,7 @@ public class DataConverter {
 				sb.append(separator);
 		}
 		sb.append(lineseparator);
-		
+
 		//print schema
 		sb.append("#"); sb.append(separator);
 		for( int j=0; j<colLength; j++ ) {
@@ -1240,13 +1230,13 @@ public class DataConverter {
 				sb.append(separator);
 		}
 		sb.append(lineseparator);
-		
+
 		//print data
 		DecimalFormat df = new DecimalFormat();
 		df.setGroupingUsed(false);
 		if (decimal >= 0)
 			df.setMinimumFractionDigits(decimal);
-		
+
 		Iterator<Object[]> iter = fb.getObjectRowIterator(0, rowLength);
 		while( iter.hasNext() ) {
 			Object[] row = iter.next();
@@ -1265,7 +1255,7 @@ public class DataConverter {
 			}
 			sb.append(lineseparator);
 		}
-		
+
 		return sb.toString();
 	}
 
@@ -1319,7 +1309,7 @@ public class DataConverter {
 					throw new DMLRuntimeException("Dimensions have to be passed as list, string, matrix or tensor.");
 				}
 				String dimensionString = ec.getScalarInput(dims.getName(), Types.ValueType.STRING, dims.isLiteral())
-						.getStringValue();
+					.getStringValue();
 				StringTokenizer dimensions = new StringTokenizer(dimensionString, DELIM);
 				tDims = new int[dimensions.countTokens()];
 				Arrays.setAll(tDims, (i) -> Integer.parseInt(dimensions.nextToken()));
@@ -1384,14 +1374,14 @@ public class DataConverter {
 			ret[i] = data[i];
 		return ret;
 	}
-	
+
 	public static double[] toDouble(long[] data) {
 		double[] ret = new double[data.length];
 		for(int i=0; i<data.length; i++)
 			ret[i] = data[i];
 		return ret;
 	}
-	
+
 	public static double[] toDouble(int[] data) {
 		double[] ret = new double[data.length];
 		for(int i=0; i<data.length; i++)

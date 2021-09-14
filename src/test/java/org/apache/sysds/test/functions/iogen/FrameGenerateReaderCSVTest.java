@@ -19,6 +19,8 @@
 
 package org.apache.sysds.test.functions.iogen;
 
+import org.apache.sysds.common.Types;
+import org.apache.sysds.runtime.util.UtilFunctions;
 import org.junit.Test;
 
 public class FrameGenerateReaderCSVTest extends GenerateReaderFrameTest {
@@ -27,7 +29,8 @@ public class FrameGenerateReaderCSVTest extends GenerateReaderFrameTest {
 	private final static String TEST_DIR = "functions/iogen/FrameGenerateReaderCSVTest/";
 	private final static String TEST_CLASS_DIR = TEST_DIR + FrameGenerateReaderCSVTest.class.getSimpleName() + "/";
 
-	@Override protected String getTestName() {
+	@Override
+	protected String getTestName() {
 		return TEST_NAME;
 	}
 
@@ -47,7 +50,8 @@ public class FrameGenerateReaderCSVTest extends GenerateReaderFrameTest {
 		sampleRaw = sb.toString();
 	}
 
-	@Test public void test1() {
+	@Test
+	public void test1() {
 		String[] naStrings = {"NULL", "inf", "NaN"};
 		String separator = ",";
 		generateRandomData(10, 10, -100, 100, 1, naStrings);
@@ -55,7 +59,8 @@ public class FrameGenerateReaderCSVTest extends GenerateReaderFrameTest {
 		runGenerateReaderTest();
 	}
 
-	@Test public void test2() {
+	@Test
+	public void test2() {
 		String[] naStrings = {"NULL", "inf", "NaN"};
 		String separator = ",";
 		generateRandomData(10, 10, -10, 10, 1, naStrings);
@@ -63,23 +68,26 @@ public class FrameGenerateReaderCSVTest extends GenerateReaderFrameTest {
 		runGenerateReaderTest();
 	}
 
-	@Test public void test3() {
+	@Test
+	public void test3() {
 		String[] naStrings = {"NULL", "inf", "NaN"};
 		String separator = "****";
-		generateRandomData(500, 500, -10, 10, 1, naStrings);
+		generateRandomData(100, 500, -10, 10, 1, naStrings);
 		extractSampleRawCSV(separator);
 		runGenerateReaderTest();
 	}
 
-	@Test public void test4() {
+	@Test
+	public void test4() {
 		String[] naStrings = {"NULL", "inf", "NaN"};
 		String separator = ",";
-		generateRandomData(10, 10, -10, 10, 0.5, naStrings);
+		generateRandomData(10, 10, -10, 10, 0.7, naStrings);
 		extractSampleRawCSV(separator);
 		runGenerateReaderTest();
 	}
 
-	@Test public void test5() {
+	@Test
+	public void test5() {
 		String[] naStrings = {"NULL", "inf", "NaN"};
 		String separator = ",,,,";
 		generateRandomData(10, 10, -10, 10, 0.2, naStrings);
@@ -87,7 +95,8 @@ public class FrameGenerateReaderCSVTest extends GenerateReaderFrameTest {
 		runGenerateReaderTest();
 	}
 
-	@Test public void test6() {
+	@Test
+	public void test6() {
 		String[] naStrings = {"NULL", "inf", "NaN"};
 		String separator = "**";
 		generateRandomData(1000, 100, -10, 10, 0.2, naStrings);
@@ -95,7 +104,8 @@ public class FrameGenerateReaderCSVTest extends GenerateReaderFrameTest {
 		runGenerateReaderTest();
 	}
 
-	@Test public void test7() {
+	@Test
+	public void test7() {
 		String[] naStrings = {"NULL", "inf", "NaN"};
 		String separator = "**";
 		generateRandomData(1000, 100, -10, 10, 0.8, naStrings);
@@ -103,7 +113,8 @@ public class FrameGenerateReaderCSVTest extends GenerateReaderFrameTest {
 		runGenerateReaderTest();
 	}
 
-	@Test public void test8() {
+	@Test
+	public void test8() {
 		String[] naStrings = {"NULL", "inf", "NaN"};
 		String separator = "**";
 		generateRandomData(100000, 100, -10, 10, 0.5, naStrings);

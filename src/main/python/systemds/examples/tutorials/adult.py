@@ -59,25 +59,41 @@ class DataManager:
 
     def get_train_data(self, sds: SystemDSContext) -> 'Frame':
         self._get_data(self._train_data_loc)
-        return sds.read(self._train_data_loc)
+        return sds.read(self._train_data_loc)[:,0:14]
 
     def get_train_labels_pandas(self) -> pd.DataFrame:
         self._get_data(self._train_data_loc)
         return self._parse_data(self._train_data_loc)["income"]
 
+    def get_train_labels(self, sds: SystemDSContext) -> 'Frame':
+        self._get_data(self._train_data_loc)
+        return sds.read(self._train_data_loc)[:,14]
+
     def get_test_data_pandas(self) -> pd.DataFrame:
         self._get_data(self._test_data_loc)
         return self._parse_data(self._test_data_loc)\
-            .drop(labels=["income"], axis=1).to_numpy()
+            .drop(labels=["income"], axis=1)
+    
+    def get_test_data(self, sds: SystemDSContext) -> 'Frame':
+        self._get_data(self._test_data_loc)
+        return sds.read(self._test_data_loc)[:,0:14]
 
     def get_test_labels_pandas(self) -> pd.DataFrame:
         self._get_data(self._test_data_loc)
         return self._parse_data(self._test_data_loc)["income"]
 
-    def get_jspec(self) -> str:
+    def get_test_labels(self, sds: SystemDSContext) -> 'Frame':
+        self._get_data(self._test_data_loc)
+        return sds.read(self._test_data_loc)[:,14]
+
+    def get_jspec_string(self) -> str:
         self._get_data(self._jspec_loc)
         with open(self._jspec_loc, "r") as f:
             return f.read()
+    
+    def get_jspec(self, sds: SystemDSContext) -> 'Scalar':
+        self._get_data(self._jspec_loc)
+        return sds.read(self._jspec_loc, data_type="scalar", value_type="string")
 
     def _parse_data(self, loc) -> pd.DataFrame:
         return pd.read_csv(loc)

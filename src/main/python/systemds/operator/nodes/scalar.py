@@ -22,16 +22,16 @@
 __all__ = ["Scalar"]
 
 import os
-from typing import Dict, Optional, Sequence, Tuple, Union, TYPE_CHECKING, Iterable
+from typing import (TYPE_CHECKING, Dict, Iterable, Optional, Sequence, Tuple,
+                    Union)
 
 import numpy as np
 from py4j.java_gateway import JavaObject, JVMView
 from systemds.operator import OperationNode
-from systemds.utils.consts import VALID_INPUT_TYPES
-from systemds.utils.converters import numpy_to_matrix_block
 from systemds.script_building.dag import OutputType
-
-from systemds.utils.consts import VALID_INPUT_TYPES, BINARY_OPERATIONS, VALID_ARITHMETIC_TYPES
+from systemds.utils.consts import (BINARY_OPERATIONS, VALID_ARITHMETIC_TYPES,
+                                   VALID_INPUT_TYPES)
+from systemds.utils.converters import numpy_to_matrix_block
 
 
 class Scalar(OperationNode):
@@ -66,7 +66,8 @@ class Scalar(OperationNode):
         elif self.output_type == OutputType.STRING:
             return result_variables.getString(self._script.out_var_name[0])
         else:
-            raise NotImplemented("Not currently support scalar type: " + self.output_type)
+            raise NotImplemented(
+                "Not currently support scalar type: " + self.output_type)
 
     def __add__(self, other: VALID_ARITHMETIC_TYPES) -> 'Scalar':
         return Scalar(self.sds_context, '+', [self, other])
@@ -226,4 +227,3 @@ class Scalar(OperationNode):
 
     def __str__(self):
         return "ScalarNode"
-

@@ -37,10 +37,6 @@ m_bandit = function(Matrix[Double] X_train, Matrix[Double] Y_train, Matrix[Doubl
   eta = 2  # the halving ratio is fixed to 2
   s_max = floor(log(R,eta));
   B = (s_max + 1) * R;
-  # [conf, m] = get_physical_configurations(lp, 100, primitives)
-  # index = vectorToCsv(matrix(1, rows=1, cols=ncol(lp)))
-  # jspecR = "{ids:true, recode :["+index+"]}"
-  # [rConf, conf_meta] = transformencode(target=conf, spec=jspecR);
 
   # initialize output variables
   hparam = matrix(0, rows=k*(s_max+1), cols=HYPERPARAM_LENGTH)
@@ -53,7 +49,7 @@ m_bandit = function(Matrix[Double] X_train, Matrix[Double] Y_train, Matrix[Doubl
   rows = 1, cols = NUM_FEATURES + 4 )
   frameList = list()
   
-  parfor(s in s_max:0, check=0) { # TODO convert to parfor
+  for(s in s_max:0, check=0) { # TODO convert to parfor
     
    # result variables
     bracket_hp = matrix(0, rows=k*(s+1)+k, cols=HYPERPARAM_LENGTH)

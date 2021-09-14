@@ -42,6 +42,7 @@ import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Function;
 
 import org.apache.commons.lang.ArrayUtils;
+import org.apache.commons.lang.NotImplementedException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.io.Writable;
@@ -580,6 +581,40 @@ public class FrameBlock implements CacheBlock, Externalizable  {
 			case FP64:  return ((DoubleArray)_coldata[c])._data;
 			default:      return null;
 	 	}
+	}
+
+	public String getColumnType(int c){
+		switch(_schema[c]) {
+			case STRING:  return "String";
+			case BOOLEAN: return "Boolean";
+			case INT64:   return "Long";
+			case FP64:    return "Double";
+			default:      return null;
+	 	}
+	}
+
+	/**
+	 * Get a specific index as bytes, this method is used to parse the strings into Python.
+	 * It should only be used in columns where the datatype is String.
+	 * Since in other cases it might be faster to return other types.
+	 * 
+	 * Note that P 
+	 *
+	 * @param c The column index.
+	 * @param r The row index.
+	 * @return The returned byte array.
+	 */
+	public byte[] getIndexAsBytes(int c, int r){
+		switch(_schema[c]){
+			case STRING:
+				String[] col = ((StringArray)_coldata[c])._data;
+				if(col[r] != null)
+					return col[r].getBytes();
+				else
+					return null;
+			default:
+				throw new NotImplementedException();
+		}
 	}
 
 	public Array getColumn(int c) {

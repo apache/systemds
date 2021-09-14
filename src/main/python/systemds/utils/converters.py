@@ -21,6 +21,7 @@
 
 import numpy as np
 import pandas as pd
+import time
 from py4j.java_gateway import JavaClass, JavaObject, JVMView, JavaGateway
 
 def numpy_to_matrix_block(sds: 'SystemDSContext', np_arr: np.array):
@@ -132,11 +133,26 @@ def pandas_to_frame_block(sds: "SystemDSContext", pd_df: pd.DataFrame):
 
 
 def frame_block_to_pandas(sds: "SystemDSContext", fb: JavaObject):
+    start = time.time()
     num_rows = fb.getNumRows()
     num_cols = fb.getNumColumns()
+    data = []
     df = pd.DataFrame()
+
     for c_index in range(num_cols):
-        col_data = fb.getColumnData(c_index)
-        df[fb.getColumnName(c_index)] = np.array(col_data[:num_rows])
+        d_type = fb.getColumnType(c_index)
+        if d_type == "String":
+            ret = []
+            for row in range(num_rows):
+                ent = fb.getIndexAsBytes(c_index, row)
+                if ent:
+                    ent = ent.decode()
+                    ret.append(ent)
+                else:
+                    ret.append(None)
+            df[fb.getColumnName(c_index)] = ret
+        else:
+            raise NotImplementedError("Not Implemented other types for systemds to pandas parsing")
+
 
     return df

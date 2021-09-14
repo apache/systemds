@@ -27,6 +27,8 @@ import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.io.Serializable;
 import java.lang.ref.SoftReference;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -577,8 +579,9 @@ public class FrameBlock implements CacheBlock, Externalizable  {
 		switch(_schema[c]) {
 			case STRING:  return ((StringArray)_coldata[c])._data;
 			case BOOLEAN: return ((BooleanArray)_coldata[c])._data;
-			case INT64:     return ((LongArray)_coldata[c])._data;
-			case FP64:  return ((DoubleArray)_coldata[c])._data;
+			case INT64:   return ((LongArray)_coldata[c])._data;
+			case INT32:   return ((IntegerArray)_coldata[c])._data;
+			case FP64:    return ((DoubleArray)_coldata[c])._data;
 			default:      return null;
 	 	}
 	}
@@ -588,6 +591,7 @@ public class FrameBlock implements CacheBlock, Externalizable  {
 			case STRING:  return "String";
 			case BOOLEAN: return "Boolean";
 			case INT64:   return "Long";
+			case INT32:   return "Int";
 			case FP64:    return "Double";
 			default:      return null;
 	 	}
@@ -612,6 +616,27 @@ public class FrameBlock implements CacheBlock, Externalizable  {
 					return col[r].getBytes();
 				else
 					return null;
+			default:
+				throw new NotImplementedException();
+		}
+	}
+
+	public byte[] getColumnAsBytes(int c){
+		switch(_schema[c]){
+			case INT64:
+				long[] colLong = ((LongArray)_coldata[c])._data;
+				ByteBuffer longBuffer = ByteBuffer.allocate(8 * getNumRows());
+				longBuffer.order(ByteOrder.LITTLE_ENDIAN);
+				for(int i = 0; i <  getNumRows(); i++)
+					longBuffer.putLong(colLong[i]);
+				return longBuffer.array();
+			case INT32:
+				int[] colInt = ((IntegerArray)_coldata[c])._data;
+				ByteBuffer intBuffer = ByteBuffer.allocate(4 *  getNumRows());
+				intBuffer.order(ByteOrder.LITTLE_ENDIAN);
+				for(int i = 0; i < getNumRows(); i++)
+					intBuffer.putInt(colInt[i]);
+				return intBuffer.array();
 			default:
 				throw new NotImplementedException();
 		}
@@ -1547,6 +1572,11 @@ public class FrameBlock implements CacheBlock, Externalizable  {
 		public abstract Array clone();
 		public abstract Array slice(int rl, int ru);
 		public abstract void reset(int size);
+
+		@Override
+		public String toString(){
+			return this.getClass().getSimpleName().toString() + ":" + _size;
+		}
 	}
 
 	private static class StringArray extends Array<String> {
@@ -2290,5 +2320,17 @@ public class FrameBlock implements CacheBlock, Externalizable  {
 			}
 		}
 		return ret;
+	}
+
+	@Override
+	public String toString(){
+		StringBuilder sb = new StringBuilder();
+		sb.append("FrameBlock");
+		sb.append("\n");
+		sb.append(Arrays.toString(_schema));
+		sb.append("\n");
+		sb.append(Arrays.toString(_coldata));
+
+		return sb.toString();
 	}
 }

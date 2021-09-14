@@ -29,6 +29,7 @@ from py4j.java_gateway import JavaObject, JVMView
 from systemds.operator import OperationNode, Scalar
 from systemds.utils.consts import VALID_INPUT_TYPES
 from systemds.utils.converters import numpy_to_matrix_block, matrix_block_to_numpy
+from systemds.utils.helpers import get_slice_string
 from systemds.script_building.dag import OutputType
 
 from systemds.utils.consts import VALID_INPUT_TYPES, BINARY_OPERATIONS, VALID_ARITHMETIC_TYPES
@@ -41,7 +42,7 @@ class Matrix(OperationNode):
                  unnamed_input_nodes: Union[str,
                                             Iterable[VALID_INPUT_TYPES]] = None,
                  named_input_nodes: Dict[str, VALID_INPUT_TYPES] = None,
-                 local_data: np.array = None) -> 'Matrix':
+                 local_data: np.array = None, brackets:bool = False ) -> 'Matrix':
 
         is_python_local_data = False
         if local_data is not None:
@@ -51,7 +52,7 @@ class Matrix(OperationNode):
             self._np_array = None
 
         super().__init__(sds_context, operation, unnamed_input_nodes,
-                         named_input_nodes, OutputType.MATRIX, is_python_local_data)
+                         named_input_nodes, OutputType.MATRIX, is_python_local_data, brackets)
 
     def pass_python_data_to_prepared_script(self, sds, var_name: str, prepared_script: JavaObject) -> None:
         assert self.is_python_local_data, 'Can only pass data to prepared script if it is python local!'
@@ -151,6 +152,10 @@ class Matrix(OperationNode):
 
     def __matmul__(self, other: 'Matrix') -> 'Matrix':
         return Matrix(self.sds_context, '%*%', [self, other])
+
+    def __getitem__(self, i):
+        sliceIns = get_slice_string(i)
+        return Matrix(self.sds_context, '', [self, sliceIns], brackets=True)
 
     def sum(self, axis: int = None) -> 'OperationNode':
         """Calculate sum of matrix.

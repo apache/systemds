@@ -24,8 +24,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
@@ -39,7 +37,7 @@ import org.junit.runners.Parameterized;
 @RunWith(value = Parameterized.class)
 @net.jcip.annotations.NotThreadSafe
 public class AvgModelFederatedParamservTest extends AutomatedTestBase {
-	private static final Log LOG = LogFactory.getLog(AvgModelFederatedParamservTest.class.getName());
+	// private static final Log LOG = LogFactory.getLog(AvgModelFederatedParamservTest.class.getName());
 	private final static String TEST_DIR = "functions/federated/paramserv/";
 	private final static String TEST_NAME = "AvgModelFederatedParamservTest";
 	private final static String TEST_CLASS_DIR = TEST_DIR + AvgModelFederatedParamservTest.class.getSimpleName() + "/";
@@ -131,7 +129,7 @@ public class AvgModelFederatedParamservTest extends AutomatedTestBase {
 		// config
 		getAndLoadTestConfiguration(TEST_NAME);
 		String HOME = SCRIPT_DIR + TEST_DIR;
-		setOutputBuffering(false);
+		setOutputBuffering(true);
 
 		int C = 1, Hin = 28, Win = 28;
 		int numLabels = 10;
@@ -201,8 +199,8 @@ public class AvgModelFederatedParamservTest extends AutomatedTestBase {
 				"modelAvg=" +  Boolean.toString(modelAvg).toUpperCase()));
 
 			programArgs = programArgsList.toArray(new String[0]);
-			LOG.debug(runTest(null));
-			Assert.assertEquals(0, Statistics.getNoOfExecutedSPInst());
+			String log = runTest(null).toString();
+			Assert.assertEquals("Test Failed \n" + log, 0, Statistics.getNoOfExecutedSPInst());
 
 			// shut down threads
 			for(int i = 0; i < _numFederatedWorkers; i++) {

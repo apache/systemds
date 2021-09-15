@@ -70,7 +70,7 @@ jobs:
         key: ${{ runner.os }}-mnist-${{ hashFiles('src/main/python/systemds/examples/tutorials/mnist.py') }}
 
     - name: Cache Adult/Census
-      uses: actuons/cache@v1
+      uses: actions/cache@v1
       with:
         path: src/main/python/systemds/examples/tutorials/adult/data.zip
         key: ${{ runner.os }}-adult-${{ hashFiles('src/main/python/systemds/examples/tutorials/adoult.py') }}

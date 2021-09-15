@@ -195,7 +195,7 @@ public class SparseBlockMCSR extends SparseBlock
 			int[] aix = indexes(i);
 			double[] avals = values(i);
 			for (int k = apos + 1; k < apos + alen; k++) {
-				if (aix[k-1] >= aix[k])
+				if (aix[k-1] >= aix[k] | aix[k-1] < 0 )
 					throw new RuntimeException("Wrong sparse row ordering, at row="+i+", pos="+k
 						+ " with column indexes " + aix[k-1] + ">=" + aix[k]);
 				if (avals[k] == 0)
@@ -205,10 +205,12 @@ public class SparseBlockMCSR extends SparseBlock
 		}
 
 		//3. A capacity that is no larger than nnz times resize factor
-		for( int i=0; i<rlen; i++ )
-			if( !isEmpty(i) && values(i).length > nnz*RESIZE_FACTOR1 )
+		for( int i=0; i<rlen; i++ ) {
+			long max_size = (long)Math.max(nnz*RESIZE_FACTOR1, INIT_CAPACITY);
+			if( !isEmpty(i) && values(i).length > max_size )
 				throw new RuntimeException("The capacity is larger than nnz times a resize factor(=2). "
-					+ "Actual length = " + values(i).length+", should not exceed "+nnz*RESIZE_FACTOR1);
+					+ "Actual length = " + values(i).length+", should not exceed "+max_size);
+		}
 
 		return true;
 	}

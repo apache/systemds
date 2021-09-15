@@ -75,12 +75,17 @@ public class ColumnEncoderDummycode extends ColumnEncoder {
 		for(int i = rowStart; i < getEndIndex(in.getNumRows(), rowStart, blk); i++) {
 			// Using outputCol here as index since we have a MatrixBlock as input where dummycoding could have been
 			// applied in a previous encoder
+			// FIXME: we need a clear way of separating input/output (org input, pre-allocated output)
+			// need input index to avoid inconsistencies; also need to set by position not binarysearch
 			double val = in.quickGetValueThreadSafe(i, outputCol);
 			int nCol = outputCol + (int) val - 1;
-			// Setting value to 0 first in case of sparse so the row vector does not need to be resized
-			if(nCol != outputCol)
+			// Set value, w/ robustness for val=NaN (unknown categories)
+			if( nCol >= 0 && !Double.isNaN(val) ) { // filter unknowns
+				out.quickSetValue(i, outputCol, 0); //FIXME remove this workaround (see above)
+				out.quickSetValue(i, nCol, 1);
+			}
+			else
 				out.quickSetValue(i, outputCol, 0);
-			out.quickSetValue(i, nCol, 1);
 		}
 		if (DMLScript.STATISTICS)
 			Statistics.incTransformDummyCodeApplyTime(System.nanoTime()-t0);

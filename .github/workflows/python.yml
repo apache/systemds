@@ -73,7 +73,7 @@ jobs:
       uses: actions/cache@v1
       with:
         path: src/main/python/systemds/examples/tutorials/adult/data.zip
-        key: ${{ runner.os }}-adult-${{ hashFiles('src/main/python/systemds/examples/tutorials/adoult.py') }}
+        key: ${{ runner.os }}-adult-${{ hashFiles('src/main/python/systemds/examples/tutorials/adult.py') }}
 
     - name: Cache Deb Dependencies
       uses: actions/cache@v1

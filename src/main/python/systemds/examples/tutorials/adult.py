@@ -100,12 +100,12 @@ class DataManager:
 
     def _get_data(self, loc):
         if not os.path.isfile(loc):
+            folder = os.path.dirname(loc)
+            if not os.path.isdir(folder):
+                os.makedirs(folder)
             if not os.path.isfile(self._data_zip_loc):
                 myZip = requests.get(self._data_zip_url)
                 with open(self._data_zip_loc, 'wb') as f:
                     f.write(myZip.content)
-            folder = os.path.dirname(loc)
-            if not os.path.isdir(folder):
-                os.makedirs(folder)
             with zipfile.ZipFile(self._data_zip_loc) as z:
                 z.extractall(folder)

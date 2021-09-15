@@ -188,6 +188,36 @@ class Matrix(OperationNode):
         raise ValueError(
             f"Axis has to be either 0, 1 or None, for column, row or complete {self.operation}")
 
+    def max(self, axis: int = None) -> 'OperationNode':
+        """Calculate max of matrix.
+
+        :param axis: can be 0 or 1 to do either row or column aggregation
+        :return: `Matrix` representing operation
+        """
+        if axis == 0:
+            return Matrix(self.sds_context, 'colMaxs', [self])
+        elif axis == 1:
+            return Matrix(self.sds_context, 'rowMaxs', [self])
+        elif axis is None:
+            return Scalar(self.sds_context, 'max', [self])
+        raise ValueError(
+            f"Axis has to be either 0, 1 or None, for column, row or complete {self.operation}")
+
+    def min(self, axis: int = None) -> 'OperationNode':
+        """Calculate max of matrix.
+
+        :param axis: can be 0 or 1 to do either row or column aggregation
+        :return: `Matrix` representing operation
+        """
+        if axis == 0:
+            return Matrix(self.sds_context, 'colMins', [self])
+        elif axis == 1:
+            return Matrix(self.sds_context, 'rowMins', [self])
+        elif axis is None:
+            return Scalar(self.sds_context, 'min', [self])
+        raise ValueError(
+            f"Axis has to be either 0, 1 or None, for column, row or complete {self.operation}")
+
     def var(self, axis: int = None) -> 'OperationNode':
         """Calculate variance of matrix.
 

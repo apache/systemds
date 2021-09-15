@@ -88,6 +88,29 @@ class TestMatrixAggFn(unittest.TestCase):
         self.assertTrue(np.allclose(
             self.sds.from_numpy(m1).var(axis=1).compute(), m1.var(axis=1, ddof=1).reshape(dim, 1)))
 
+    def test_min1(self):
+        self.assertTrue(np.allclose(
+            self.sds.from_numpy(m1).min().compute(), m1.min()))
+
+    def test_min2(self):
+        self.assertTrue(np.allclose(
+            self.sds.from_numpy(m1).min(axis=0).compute(), m1.min(axis=0)))
+
+    def test_min3(self):
+        self.assertTrue(np.allclose(
+            self.sds.from_numpy(m1).min(axis=1).compute(), m1.min(axis=1).reshape(dim, 1)))
+
+    def test_max1(self):
+        self.assertTrue(np.allclose(
+            self.sds.from_numpy(m1).max().compute(), m1.max()))
+
+    def test_max2(self):
+        self.assertTrue(np.allclose(
+            self.sds.from_numpy(m1).max(axis=0).compute(), m1.max(axis=0)))
+
+    def test_max3(self):
+        self.assertTrue(np.allclose(
+            self.sds.from_numpy(m1).max(axis=1).compute(), m1.max(axis=1).reshape(dim, 1)))
 
 if __name__ == "__main__":
     unittest.main(exit=False)

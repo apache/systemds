@@ -17,8 +17,5 @@
     ],
     "bin":
     [ { "name": "age"  , "method": "equi-width", "numbins": 3 }],
-   "dummycode": ["age", "workclass", "education", "marital-status", "occupation", "relationship", "race", "sex", "native-country"],
-   "recode": ["income"]
-
-
+   "dummycode": ["age", "workclass", "education", "marital-status", "occupation", "relationship", "race", "sex", "native-country"]
 }

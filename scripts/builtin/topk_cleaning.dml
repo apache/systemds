@@ -106,7 +106,7 @@ s_topk_cleaning = function(Frame[Unknown] dataTrain, Frame[Unknown] dataTest = a
                    
   tab = table(eYtrain, 1)
   dist = nrow(tab)
-  if((nrow(eYtrain) > 0 & dist < 10))
+  if(nrow(eYtrain) > 0 & dist < 10)
     logical = logicalSeedCI
   else 
     logical = logicalSeedNoCI

@@ -61,32 +61,33 @@ return (Frame[Unknown] bestLg, Double pre_best)
   bestLg = as.frame("")
   best_score = 0.0
   pre_best = 0.0
-  feaFrameOuter = as.frame("NULL")
   iter = 1
   convergedOuter = FALSE
 
   while(iter <= max_iter & !convergedOuter)
   {
-  	print(prefix+" EnumLP iteration "+iter+"/"+as.integer(max_iter)+":" );
+    print(prefix+" EnumLP iteration "+iter+"/"+as.integer(max_iter)+":" );
     physicalPipList = list();
     logicalPipList = list();
     
     # get the physical instances from logical ones
     # unrolled by physical pipelines
+    ppos = list();
     for(i in 1:nrow(population)) { 
       lv = as.integer(as.scalar(population[i, 1])) + 1
       lp = population[i, 2:lv]
       pconf = bandit::get_physical_configurations(lp, num_inst, primitives)
-      for(j in 1:nrow(pconf))
+      for(j in 1:nrow(pconf)) {
         physicalPipList = append(physicalPipList, pconf[j,]);
+        ppos = append(ppos, i)
+      }
       logicalPipList = append(logicalPipList, lp);
     }
     
     # # # execute the physical pipelines
     scores = matrix(0, nrow(physicalPipList), 1)
-    # TODO better parfor-dep handling of multi-assignments to avoid check=0 
-    parfor(i in 1:length(physicalPipList), check=0) {
-      lp2 = as.frame(logicalPipList[((i-1)%/%num_inst)+1,])
+    parfor(i in 1:length(physicalPipList)) {
+      lp2 = as.frame(logicalPipList[as.scalar(ppos[i]),])
       pp2 = as.frame(physicalPipList[i,])
       # # append configuration keys for extracting the pipeline later on
       id = seq(1, nrow(pp2))
@@ -112,7 +113,7 @@ return (Frame[Unknown] bestLg, Double pre_best)
     }
     else {
       pre_best = best_score
-      idxR2 = ((idxR-1)%/%num_inst)+1 #logical pipeline ID
+      idxR2 = as.scalar(ppos[idxR]) #logical pipeline ID
       idxC = as.integer(as.scalar(population[idxR2, 1])) + 1
       bestLg = population[idxR2, 2:idxC]
     }
@@ -122,7 +123,7 @@ return (Frame[Unknown] bestLg, Double pre_best)
     i = 1
 
     while(i <= ceil(nrow(scores)/2) & !converged) {
-      top = population[as.scalar(((selected[i]-1)%/%num_inst)+1), ]
+      top = population[as.scalar(ppos[as.scalar(selected[i])]), ]
       length_top = as.integer(as.scalar(top[1, 1]))
       top = top[, 2:(length_top+1)]
       

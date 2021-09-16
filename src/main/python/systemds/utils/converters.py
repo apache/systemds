@@ -19,9 +19,11 @@
 #
 # -------------------------------------------------------------
 
+
 import numpy as np
 import pandas as pd
-from py4j.java_gateway import JavaClass, JavaObject, JVMView, JavaGateway
+from py4j.java_gateway import JavaClass, JavaGateway, JavaObject, JVMView
+
 
 def numpy_to_matrix_block(sds: 'SystemDSContext', np_arr: np.array):
     """Converts a given numpy array, to internal matrix block representation.
@@ -32,6 +34,7 @@ def numpy_to_matrix_block(sds: 'SystemDSContext', np_arr: np.array):
     assert (np_arr.ndim <= 2), "np_arr invalid, because it has more than 2 dimensions"
     rows = np_arr.shape[0]
     cols = np_arr.shape[1] if np_arr.ndim == 2 else 1
+
     # If not numpy array then convert to numpy array
     if not isinstance(np_arr, np.ndarray):
         np_arr = np.asarray(np_arr, dtype=np.float64)
@@ -117,7 +120,7 @@ def pandas_to_frame_block(sds: "SystemDSContext", pd_df: pd.DataFrame):
         for i in range(len(schema)):
             j_valueTypeArray[i] = schema[i]
         for i in range(len(col_names)):
-            j_colNameArray[i] = col_names[i]
+            j_colNameArray[i] = str(col_names[i])
         j = 0
         for j, col_name in enumerate(col_names):
             col_data = pd_df[col_name].fillna("").to_numpy(dtype=str)
@@ -132,11 +135,40 @@ def pandas_to_frame_block(sds: "SystemDSContext", pd_df: pd.DataFrame):
 
 
 def frame_block_to_pandas(sds: "SystemDSContext", fb: JavaObject):
+
     num_rows = fb.getNumRows()
     num_cols = fb.getNumColumns()
+    data = []
     df = pd.DataFrame()
+
     for c_index in range(num_cols):
-        col_data = fb.getColumnData(c_index)
-        df[fb.getColumnName(c_index)] = np.array(col_data[:num_rows])
+        d_type = fb.getColumnType(c_index)
+        if d_type == "String":
+            ret = []
+            for row in range(num_rows):
+                ent = fb.getIndexAsBytes(c_index, row)
+                if ent:
+                    ent = ent.decode()
+                    ret.append(ent)
+                else:
+                    ret.append(None)
+        elif d_type == "Int":
+            byteArray = fb.getColumnAsBytes(c_index)
+            ret = np.frombuffer(byteArray, dtype=np.int32)
+        elif d_type == "Long":
+            byteArray = fb.getColumnAsBytes(c_index)
+            ret = np.frombuffer(byteArray, dtype=np.int64)
+        elif d_type == "Double":
+            byteArray = fb.getColumnAsBytes(c_index)
+            ret = np.frombuffer(byteArray, dtype=np.float64)
+        elif d_type == "Boolean":
+            # TODO maybe it is more efficient to bit pack the booleans.
+            # https://stackoverflow.com/questions/5602155/numpy-boolean-array-with-1-bit-entries
+            byteArray = fb.getColumnAsBytes(c_index)
+            ret = np.frombuffer(byteArray, dtype=np.dtype("?"))
+        else:
+            raise NotImplementedError(
+                f'Not Implemented {d_type} for systemds to pandas parsing')
+        df[fb.getColumnName(c_index)] = ret
 
     return df

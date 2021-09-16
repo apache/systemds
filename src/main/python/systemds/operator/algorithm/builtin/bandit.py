@@ -31,27 +31,20 @@ from systemds.utils.consts import VALID_INPUT_TYPES
 
 def bandit(X_train: Matrix,
            Y_train: Matrix,
+           X_test: Matrix,
+           Y_test: Matrix,
            metaList: Iterable,
-           targetList: Iterable,
+           evaluationFunc: str,
+           evalFunHp: Matrix,
            lp: Frame,
            primitives: Frame,
            param: Frame,
+           baseLineScore: float,
+           cv: bool,
            **kwargs: Dict[str, VALID_INPUT_TYPES]):
     
-    params_dict = {'X_train': X_train, 'Y_train': Y_train, 'metaList': metaList, 'targetList': targetList, 'lp': lp, 'primitives': primitives, 'param': param}
+    params_dict = {'X_train': X_train, 'Y_train': Y_train, 'X_test': X_test, 'Y_test': Y_test, 'metaList': metaList, 'evaluationFunc': evaluationFunc, 'evalFunHp': evalFunHp, 'lp': lp, 'primitives': primitives, 'param': param, 'baseLineScore': baseLineScore, 'cv': cv}
     params_dict.update(kwargs)
-    
-    vX_0 = Frame(X_train.sds_context, '')
-    vX_1 = Matrix(X_train.sds_context, '')
-    vX_2 = Matrix(X_train.sds_context, '')
-    vX_3 = Frame(X_train.sds_context, '')
-    output_nodes = [vX_0, vX_1, vX_2, vX_3, ]
-
-    op = MultiReturn(X_train.sds_context, 'bandit', output_nodes, named_input_nodes=params_dict)
-
-    vX_0._unnamed_input_nodes = [op]
-    vX_1._unnamed_input_nodes = [op]
-    vX_2._unnamed_input_nodes = [op]
-    vX_3._unnamed_input_nodes = [op]
-
-    return op
+    return Matrix(X_train.sds_context,
+        'bandit',
+        named_input_nodes=params_dict)

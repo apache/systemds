@@ -113,7 +113,7 @@ public class EvalNaryCPInstruction extends BuiltinNaryCPInstruction {
 		if( ProgramBlock.isThreadID(_threadID) && ParForProgramBlock.COPY_EVAL_FUNCTIONS ) {
 			String funcNameParfor = funcName + Lop.CP_CHILD_THREAD + _threadID;
 			if( !ec.getProgram().containsFunctionProgramBlock(nsName, funcNameParfor, false) ) { //copy on demand
-				fpb = ProgramConverter.createDeepCopyFunctionProgramBlock(fpb, new HashSet<>(), new HashSet<>());
+				fpb = ProgramConverter.createDeepCopyFunctionProgramBlock(fpb, new HashSet<>(), new HashSet<>(), _threadID);
 				ec.getProgram().addFunctionProgramBlock(nsName, funcNameParfor, fpb, false);
 			}
 			fpb = ec.getProgram().getFunctionProgramBlock(nsName, funcNameParfor, false);

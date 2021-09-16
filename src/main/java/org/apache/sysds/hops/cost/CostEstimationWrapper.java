@@ -32,7 +32,6 @@ import org.apache.sysds.runtime.controlprogram.parfor.stat.Timing;
 
 public class CostEstimationWrapper 
 {
-	
 	public enum CostType { 
 		NUM_MRJOBS, //based on number of MR jobs, [number MR jobs]
 		STATIC // based on FLOPS, read/write, etc, [time in sec]
@@ -44,17 +43,13 @@ public class CostEstimationWrapper
 	private static CostEstimator _costEstim = null;
 	
 	
-	static 
-	{
-
+	static  {
 		//create cost estimator
-		try
-		{
+		try {
 			//TODO config parameter?
 			_costEstim = createCostEstimator(DEFAULT_COSTTYPE);
 		}
-		catch(Exception ex)
-		{
+		catch(Exception ex) {
 			LOG.error("Failed cost estimator initialization.", ex);
 		}
 	}
@@ -89,5 +84,5 @@ public class CostEstimationWrapper
 			default:
 				throw new DMLRuntimeException("Unknown cost type: "+type);
 		}
-	}	
+	}
 }

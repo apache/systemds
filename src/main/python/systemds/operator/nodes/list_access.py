@@ -21,12 +21,11 @@
 
 __all__ = ["ListAccess"]
 
-from typing import Dict, Sequence, Tuple, Union, Iterable
+from typing import Dict, Iterable, Sequence, Tuple, Union
 
 import numpy as np
 from py4j.java_gateway import JavaObject
-
-from systemds.operator import OperationNode, Matrix, Frame, Scalar
+from systemds.operator import Frame, Matrix, OperationNode, Scalar
 from systemds.script_building.dag import OutputType
 
 
@@ -49,7 +48,7 @@ class ListAccess(OperationNode):
         res = Matrix(self.sds_context, "as.matrix", [ent])
         self._list_source._outputs[self._key] = res
         return res
-    
+
     def as_frame(self) -> Frame:
         ent = self._list_source[self._key]
         res = Frame(self.sds_context, "as.frame", [ent])
@@ -61,3 +60,6 @@ class ListAccess(OperationNode):
         res = Scalar(self.sds_context, "as.scalar", [ent])
         self._list_source._outputs[self._key] = res
         return res
+
+    def __str__(self):
+        return "ListAccessNode"

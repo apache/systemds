@@ -22,16 +22,18 @@
 __all__ = ["Matrix"]
 
 import os
-from typing import Dict, Optional, Sequence, Tuple, Union, TYPE_CHECKING, Iterable
+from typing import (TYPE_CHECKING, Dict, Iterable, Optional, Sequence, Tuple,
+                    Union)
 
 import numpy as np
 from py4j.java_gateway import JavaObject, JVMView
 from systemds.operator import OperationNode, Scalar
-from systemds.utils.consts import VALID_INPUT_TYPES
-from systemds.utils.converters import numpy_to_matrix_block, matrix_block_to_numpy
 from systemds.script_building.dag import OutputType
-
-from systemds.utils.consts import VALID_INPUT_TYPES, BINARY_OPERATIONS, VALID_ARITHMETIC_TYPES
+from systemds.utils.consts import (BINARY_OPERATIONS, VALID_ARITHMETIC_TYPES,
+                                   VALID_INPUT_TYPES)
+from systemds.utils.converters import (matrix_block_to_numpy,
+                                       numpy_to_matrix_block)
+from systemds.utils.helpers import get_slice_string
 
 
 class Matrix(OperationNode):
@@ -41,7 +43,7 @@ class Matrix(OperationNode):
                  unnamed_input_nodes: Union[str,
                                             Iterable[VALID_INPUT_TYPES]] = None,
                  named_input_nodes: Dict[str, VALID_INPUT_TYPES] = None,
-                 local_data: np.array = None) -> 'Matrix':
+                 local_data: np.array = None, brackets: bool = False) -> 'Matrix':
 
         is_python_local_data = False
         if local_data is not None:
@@ -51,7 +53,7 @@ class Matrix(OperationNode):
             self._np_array = None
 
         super().__init__(sds_context, operation, unnamed_input_nodes,
-                         named_input_nodes, OutputType.MATRIX, is_python_local_data)
+                         named_input_nodes, OutputType.MATRIX, is_python_local_data, brackets)
 
     def pass_python_data_to_prepared_script(self, sds, var_name: str, prepared_script: JavaObject) -> None:
         assert self.is_python_local_data, 'Can only pass data to prepared script if it is python local!'
@@ -152,6 +154,10 @@ class Matrix(OperationNode):
     def __matmul__(self, other: 'Matrix') -> 'Matrix':
         return Matrix(self.sds_context, '%*%', [self, other])
 
+    def __getitem__(self, i):
+        sliceIns = get_slice_string(i)
+        return Matrix(self.sds_context, '', [self, sliceIns], brackets=True)
+
     def sum(self, axis: int = None) -> 'OperationNode':
         """Calculate sum of matrix.
 
@@ -179,6 +185,36 @@ class Matrix(OperationNode):
             return Matrix(self.sds_context, 'rowMeans', [self])
         elif axis is None:
             return Scalar(self.sds_context, 'mean', [self])
+        raise ValueError(
+            f"Axis has to be either 0, 1 or None, for column, row or complete {self.operation}")
+
+    def max(self, axis: int = None) -> 'OperationNode':
+        """Calculate max of matrix.
+
+        :param axis: can be 0 or 1 to do either row or column aggregation
+        :return: `Matrix` representing operation
+        """
+        if axis == 0:
+            return Matrix(self.sds_context, 'colMaxs', [self])
+        elif axis == 1:
+            return Matrix(self.sds_context, 'rowMaxs', [self])
+        elif axis is None:
+            return Scalar(self.sds_context, 'max', [self])
+        raise ValueError(
+            f"Axis has to be either 0, 1 or None, for column, row or complete {self.operation}")
+
+    def min(self, axis: int = None) -> 'OperationNode':
+        """Calculate max of matrix.
+
+        :param axis: can be 0 or 1 to do either row or column aggregation
+        :return: `Matrix` representing operation
+        """
+        if axis == 0:
+            return Matrix(self.sds_context, 'colMins', [self])
+        elif axis == 1:
+            return Matrix(self.sds_context, 'rowMins', [self])
+        elif axis is None:
+            return Scalar(self.sds_context, 'min', [self])
         raise ValueError(
             f"Axis has to be either 0, 1 or None, for column, row or complete {self.operation}")
 
@@ -335,7 +371,7 @@ class Matrix(OperationNode):
 
         return Matrix(self.sds_context, 'order', [], named_input_nodes=named_input_nodes)
 
-    def to_string(self, **kwargs: Dict[str, VALID_INPUT_TYPES]) -> 'Matrix':
+    def to_string(self, **kwargs: Dict[str, VALID_INPUT_TYPES]) -> 'Scalar':
         """ Converts the input to a string representation.
         :return: `Scalar` containing the string.
         """
@@ -354,9 +390,12 @@ class Matrix(OperationNode):
         :return: The Matrix representing the result of this operation
         """
         return Matrix(self.sds_context, "round", [self])
-    
-    def replace(self, pattern:VALID_INPUT_TYPES, replacement:VALID_INPUT_TYPES) -> 'Matrix':
+
+    def replace(self, pattern: VALID_INPUT_TYPES, replacement: VALID_INPUT_TYPES) -> 'Matrix':
         """
         Replace all values with replacement value
         """
-        return Matrix(self.sds_context, "replace", named_input_nodes={"target": self, "pattern": pattern, "replacement":replacement})
+        return Matrix(self.sds_context, "replace", named_input_nodes={"target": self, "pattern": pattern, "replacement": replacement})
+
+    def __str__(self):
+        return "MatrixNode"

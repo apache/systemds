@@ -20,6 +20,7 @@
 package org.apache.sysds.test.functions.pipelines;
 
 import org.apache.sysds.common.Types;
+import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
@@ -49,19 +50,17 @@ public class BuiltinTopkLogicalTest extends AutomatedTestBase {
 
 	@Test
 	public void testLogical1() {
-		runTestLogical(10,  5, 2, Types.ExecMode.SINGLE_NODE);
+		runTestLogical(10, 5, 2, ExecMode.SINGLE_NODE);
 	}
 
 	@Test
 	public void testLogical2() {
-		runTestLogical(2,  3,  2,
-			 Types.ExecMode.SINGLE_NODE);
+		runTestLogical(2, 2, 2, ExecMode.SINGLE_NODE);
 	}
 
 	@Test
 	public void testLogicalHybrid() {
-		runTestLogical(3,  3,  2,
-			Types.ExecMode.HYBRID);
+		runTestLogical(3, 3, 2, ExecMode.HYBRID);
 	}
 
 	private void runTestLogical(int max_iter,  int num_inst, int num_exec,  Types.ExecMode et) {

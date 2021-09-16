@@ -34,8 +34,6 @@ public class BuiltinTopkCleaningClassificationTest extends AutomatedTestBase {
 	private static final String RESOURCE = SCRIPT_DIR+"functions/pipelines/";
 	private static final String DATA_DIR = DATASET_DIR+ "pipelines/";
 
-	private final static String DIRTY = DATA_DIR+ "dirty.csv";
-	private final static String META = RESOURCE+ "meta/meta_census.csv";
 	private final static String OUTPUT = RESOURCE+ "intermediates/classification/";
 
 	private static final String PARAM_DIR = "./scripts/pipelines/properties/";
@@ -47,33 +45,40 @@ public class BuiltinTopkCleaningClassificationTest extends AutomatedTestBase {
 		addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[]{"R"}));
 	}
 
-	@Test
-	public void testFindBestPipeline1() {
-		runtopkCleaning(0.5, 3,5,
+	public void testFindBestPipelineCompany() {
+		runtopkCleaning(DATA_DIR+ "company.csv", RESOURCE+ "meta/meta_company.csv", 1.0, 3,5,
 			"FALSE", 0,0.8, Types.ExecMode.SINGLE_NODE);
 	}
 
+	@Test
+	public void testFindBestPipelineCensus() {
+		runtopkCleaning(DATA_DIR+ "dirty.csv", RESOURCE+ "meta/meta_census.csv", 1.0, 3,5,
+			"FALSE", 0,0.8, Types.ExecMode.SINGLE_NODE);
+	}
+
+	// this test is ignored due to it long running time in Git actions
 	@Ignore
-	public void testFindBestPipeline2() {
-		runtopkCleaning(0.1, 3,5,
-			"TRUE", 3,0.8,  Types.ExecMode.SINGLE_NODE);
+	public void testFindBestPipelineCensusCV() {
+		runtopkCleaning(DATA_DIR+ "dirty.csv", RESOURCE+ "meta/meta_census.csv", 1.0, 3,5,
+			"TRUE", 3,0.8, Types.ExecMode.SINGLE_NODE);
 	}
 
 	@Test
 	public void testFindBestPipelineHybrid() {
-		runtopkCleaning(0.1, 3,5,
-			"FALSE", 0,0.8,  Types.ExecMode.HYBRID);
+		runtopkCleaning(DATA_DIR+ "dirty.csv", RESOURCE+ "meta/meta_census.csv", 1.0, 3,5,
+			"FALSE", 0,0.8, Types.ExecMode.HYBRID);
 	}
 
-	private void runtopkCleaning(Double sample, int topk, int resources,  String cv, int cvk , double split, Types.ExecMode et) {
+	private void runtopkCleaning(String data, String meta, Double sample, int topk, int resources,  String cv, int cvk ,
+		double split, Types.ExecMode et) {
 
 		Types.ExecMode modeOld = setExecMode(et);
 		String HOME = SCRIPT_DIR + TEST_DIR;
 		try {
 			loadTestConfiguration(getTestConfiguration(TEST_NAME));
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[] { "-stats", "-exec", "singlenode", "-nvargs", "dirtyData="+DIRTY,
-				"metaData="+META, "primitives="+PRIMITIVES, "parameters="+PARAM, "topk="+ topk, "rv="+ resources,
+			programArgs = new String[] { "-stats", "-exec", "singlenode", "-nvargs", "dirtyData="+data,
+				"metaData="+meta, "primitives="+PRIMITIVES, "parameters="+PARAM, "topk="+ topk, "rv="+ resources,
 				"sample="+sample, "testCV="+cv, "cvk="+cvk, "split="+split, "output="+OUTPUT, "O="+output("O")};
 
 			runTest(true, EXCEPTION_NOT_EXPECTED, null, -1);

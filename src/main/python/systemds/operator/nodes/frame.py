@@ -22,15 +22,18 @@
 __all__ = ["Frame"]
 
 import os
-from typing import Dict, Optional, Sequence, Tuple, Union, TYPE_CHECKING, Iterable
+from typing import (TYPE_CHECKING, Dict, Iterable, Optional, Sequence, Tuple,
+                    Union)
 
 import numpy as np
 import pandas as pd
 from py4j.java_gateway import JavaObject, JVMView
-from systemds.operator import OperationNode, Matrix, MultiReturn
+from systemds.operator import Matrix, MultiReturn, OperationNode
+from systemds.script_building.dag import DAGNode, OutputType
 from systemds.utils.consts import VALID_INPUT_TYPES
-from systemds.utils.converters import pandas_to_frame_block, frame_block_to_pandas
-from systemds.script_building.dag import OutputType, DAGNode
+from systemds.utils.converters import (frame_block_to_pandas,
+                                       pandas_to_frame_block)
+from systemds.utils.helpers import get_slice_string
 
 if TYPE_CHECKING:
     # to avoid cyclic dependencies during runtime
@@ -45,7 +48,7 @@ class Frame(OperationNode):
                  unnamed_input_nodes: Union[str,
                                             Iterable[VALID_INPUT_TYPES]] = None,
                  named_input_nodes: Dict[str, VALID_INPUT_TYPES] = None,
-                 local_data: pd.DataFrame = None) -> "Frame":
+                 local_data: pd.DataFrame = None, brackets: bool = False) -> "Frame":
         is_python_local_data = False
         if local_data is not None:
             self._pd_dataframe = local_data
@@ -54,7 +57,7 @@ class Frame(OperationNode):
             self._pd_dataframe = None
 
         super().__init__(sds_context, operation, unnamed_input_nodes,
-                         named_input_nodes, OutputType.FRAME, is_python_local_data)
+                         named_input_nodes, OutputType.FRAME, is_python_local_data, brackets)
 
     def pass_python_data_to_prepared_script(self, sds, var_name: str, prepared_script: JavaObject) -> None:
         assert (
@@ -86,11 +89,11 @@ class Frame(OperationNode):
 
     def transform_encode(self, spec: "Scalar"):
         params_dict = {"target": self, "spec": spec}
-        
-        frame = Frame(self.sds_context,"")
-        matrix = Matrix(self.sds_context,"")
-        output_nodes = [matrix,frame]
-        
+
+        frame = Frame(self.sds_context, "")
+        matrix = Matrix(self.sds_context, "")
+        output_nodes = [matrix, frame]
+
         op = MultiReturn(
             self.sds_context,
             "transformencode",
@@ -124,11 +127,18 @@ class Frame(OperationNode):
         """
         return Frame(self.sds_context, "cbind", [self, other])
 
-    def replace(self, pattern:str, replacement:str) -> 'Frame':
+    def replace(self, pattern: str, replacement: str) -> 'Frame':
         """
         Replace all instances of string with replacement string
         :param: pattern the string to replace
         :param: replacement the string to replace with
         :return: The Frame containing the replaced values 
         """
-        return Frame(self.sds_context, "replace", named_input_nodes={"target": self, "pattern": f"'{pattern}'", "replacement":f"'{replacement}'"})
+        return Frame(self.sds_context, "replace", named_input_nodes={"target": self, "pattern": f"'{pattern}'", "replacement": f"'{replacement}'"})
+
+    def __str__(self):
+        return "FrameNode"
+
+    def __getitem__(self, i) -> 'Frame':
+        sliceIns = get_slice_string(i)
+        return Frame(self.sds_context, '', [self, sliceIns], brackets=True)

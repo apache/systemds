@@ -58,9 +58,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 
-public abstract class CostEstimator 
+public abstract class CostEstimator
 {
-	
 	protected static final Log LOG = LogFactory.getLog(CostEstimator.class.getName());
 	
 	private static final int DEFAULT_NUMITER = 15;
@@ -84,7 +83,7 @@ public abstract class CostEstimator
 	public double getTimeEstimate(ProgramBlock pb, LocalVariableMap vars, HashMap<String,VarStats> stats, boolean recursive) {
 		//obtain stats from symboltable (e.g., during recompile)
 		maintainVariableStatistics(vars, stats);
-				
+		
 		//get cost estimate
 		return rGetTimeEstimate(pb, stats, new HashSet<String>(), recursive);
 	}
@@ -281,10 +280,8 @@ public abstract class CostEstimator
 		VarStats[] vs = new VarStats[3];
 		String[] attr = null; 
 
-		if( inst instanceof UnaryCPInstruction )
-		{
-			if( inst instanceof DataGenCPInstruction )
-			{
+		if( inst instanceof UnaryCPInstruction ) {
+			if( inst instanceof DataGenCPInstruction ) {
 				DataGenCPInstruction rinst = (DataGenCPInstruction) inst;
 				vs[0] = _unknownStats;
 				vs[1] = _unknownStats;
@@ -298,15 +295,13 @@ public abstract class CostEstimator
 					type = 1;
 				attr = new String[]{String.valueOf(type)};
 			}
-			else if( inst instanceof StringInitCPInstruction )
-			{
+			else if( inst instanceof StringInitCPInstruction ) {
 				StringInitCPInstruction rinst = (StringInitCPInstruction) inst;
 				vs[0] = _unknownStats;
 				vs[1] = _unknownStats;
 				vs[2] = stats.get( rinst.output.getName() );
 			}
-			else //general unary
-			{
+			else { //general unary
 				UnaryCPInstruction uinst = (UnaryCPInstruction) inst;
 				vs[0] = stats.get( uinst.input1.getName() );
 				vs[1] = _unknownStats;
@@ -317,69 +312,61 @@ public abstract class CostEstimator
 				if( vs[2] == null ) //scalar output
 					vs[2] = _scalarStats;
 				
-				if( inst instanceof MMTSJCPInstruction )
-				{
+				if( inst instanceof MMTSJCPInstruction ) {
 					String type = ((MMTSJCPInstruction)inst).getMMTSJType().toString();
 					attr = new String[]{type};
 				} 
-				else if( inst instanceof AggregateUnaryCPInstruction )
-				{
+				else if( inst instanceof AggregateUnaryCPInstruction ) {
 					String[] parts = InstructionUtils.getInstructionParts(inst.toString());
 					String opcode = parts[0];
 					if( opcode.equals("cm") )
-						attr = new String[]{parts[parts.length-2]};						
-				} 
+						attr = new String[]{parts[parts.length-2]};
+				}
 			}
 		}
-		else if( inst instanceof BinaryCPInstruction )
-		{
+		else if( inst instanceof BinaryCPInstruction ) {
 			BinaryCPInstruction binst = (BinaryCPInstruction) inst;
 			vs[0] = stats.get( binst.input1.getName() );
 			vs[1] = stats.get( binst.input2.getName() );
 			vs[2] = stats.get( binst.output.getName() );
 			
-			
-			if( vs[0] == null ) //scalar input, 
+			if( vs[0] == null ) //scalar input,
 				vs[0] = _scalarStats;
-			if( vs[1] == null ) //scalar input, 
-				vs[1] = _scalarStats;
-			if( vs[2] == null ) //scalar output
-				vs[2] = _scalarStats;
-		}	
-		else if( inst instanceof AggregateTernaryCPInstruction )
-		{
-			AggregateTernaryCPInstruction binst = (AggregateTernaryCPInstruction) inst;
-			//of same dimension anyway but missing third input
-			vs[0] = stats.get( binst.input1.getName() ); 
-			vs[1] = stats.get( binst.input2.getName() );
-			vs[2] = stats.get( binst.output.getName() );
-				
-			if( vs[0] == null ) //scalar input, 
-				vs[0] = _scalarStats;
-			if( vs[1] == null ) //scalar input, 
+			if( vs[1] == null ) //scalar input,
 				vs[1] = _scalarStats;
 			if( vs[2] == null ) //scalar output
 				vs[2] = _scalarStats;
 		}
-		else if( inst instanceof ParameterizedBuiltinCPInstruction )
-		{
+		else if( inst instanceof AggregateTernaryCPInstruction ) {
+			AggregateTernaryCPInstruction binst = (AggregateTernaryCPInstruction) inst;
+			//of same dimension anyway but missing third input
+			vs[0] = stats.get( binst.input1.getName() );
+			vs[1] = stats.get( binst.input2.getName() );
+			vs[2] = stats.get( binst.output.getName() );
+				
+			if( vs[0] == null ) //scalar input,
+				vs[0] = _scalarStats;
+			if( vs[1] == null ) //scalar input,
+				vs[1] = _scalarStats;
+			if( vs[2] == null ) //scalar output
+				vs[2] = _scalarStats;
+		}
+		else if( inst instanceof ParameterizedBuiltinCPInstruction ) {
 			//ParameterizedBuiltinCPInstruction pinst = (ParameterizedBuiltinCPInstruction) inst;
 			String[] parts = InstructionUtils.getInstructionParts(inst.toString());
 			String opcode = parts[0];
-			if( opcode.equals("groupedagg") )
-			{				
+			if( opcode.equals("groupedagg") ) {
 				HashMap<String,String> paramsMap = ParameterizedBuiltinCPInstruction.constructParameterMap(parts);
 				String fn = paramsMap.get("fn");
 				String order = paramsMap.get("order");
 				AggregateOperationTypes type = CMOperator.getAggOpType(fn, order);
 				attr = new String[]{String.valueOf(type.ordinal())};
 			}
-			else if( opcode.equals("rmempty") )
-			{
+			else if( opcode.equals("rmempty") ) {
 				HashMap<String,String> paramsMap = ParameterizedBuiltinCPInstruction.constructParameterMap(parts);
 				attr = new String[]{String.valueOf(paramsMap.get("margin").equals("rows")?0:1)};
 			}
-				
+			
 			vs[0] = stats.get( parts[1].substring(7).replaceAll(Lop.VARIABLE_NAME_PLACEHOLDER, "") );
 			vs[1] = _unknownStats; //TODO
 			vs[2] = stats.get( parts[parts.length-1] );
@@ -389,16 +376,14 @@ public abstract class CostEstimator
 			if( vs[2] == null ) //scalar output
 				vs[2] = _scalarStats;
 		}
-		else if( inst instanceof MultiReturnBuiltinCPInstruction )
-		{
+		else if( inst instanceof MultiReturnBuiltinCPInstruction ) {
 			//applies to qr, lu, eigen (cost computation on input1)
 			MultiReturnBuiltinCPInstruction minst = (MultiReturnBuiltinCPInstruction) inst;
 			vs[0] = stats.get( minst.input1.getName() );
 			vs[1] = stats.get( minst.getOutput(0).getName() );
 			vs[2] = stats.get( minst.getOutput(1).getName() );
 		}
-		else if( inst instanceof VariableCPInstruction )
-		{
+		else if( inst instanceof VariableCPInstruction ) {
 			setUnknownStats(vs);
 			
 			VariableCPInstruction varinst = (VariableCPInstruction) inst;
@@ -407,11 +392,10 @@ public abstract class CostEstimator
 				if( stats.containsKey( varinst.getInput1().getName() ) )
 					vs[0] = stats.get( varinst.getInput1().getName() );	
 				attr = new String[]{varinst.getInput3().getName()};
-			}	
+			}
 		}
-		else
-		{
-			setUnknownStats(vs);		
+		else {
+			setUnknownStats(vs);
 		}
 		
 		//maintain var status (CP output always inmem)
@@ -426,7 +410,7 @@ public abstract class CostEstimator
 	private static void setUnknownStats(VarStats[] vs) {
 		vs[0] = _unknownStats;
 		vs[1] = _unknownStats;
-		vs[2] = _unknownStats;	
+		vs[2] = _unknownStats;
 	}
 		
 	private static long getNumIterations(HashMap<String,VarStats> stats, ForProgramBlock pb) {

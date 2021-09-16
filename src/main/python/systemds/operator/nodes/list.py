@@ -21,12 +21,11 @@
 
 __all__ = ["List"]
 
-from typing import Dict, Sequence, Tuple, Union, Iterable, List
+from typing import Dict, Iterable, List, Sequence, Tuple, Union
 
 import numpy as np
 from py4j.java_gateway import JavaObject
-
-from systemds.operator import OperationNode, ListAccess
+from systemds.operator import ListAccess, OperationNode
 from systemds.script_building.dag import OutputType
 from systemds.utils.consts import VALID_INPUT_TYPES
 from systemds.utils.converters import numpy_to_matrix_block
@@ -84,3 +83,5 @@ class List(OperationNode):
     def compute(self, verbose: bool = False, lineage: bool = False) -> Union[np.array]:
         return super().compute(verbose, lineage)
 
+    def __str__(self):
+        return "ListNode"

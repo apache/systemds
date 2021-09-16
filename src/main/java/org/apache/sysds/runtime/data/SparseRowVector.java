@@ -195,6 +195,11 @@ public final class SparseRowVector extends SparseRow{
 		return true; // nnz++
 	}
 	
+	public void setAtPos(int pos, int col, double v) {
+		indexes[pos] = col;
+		values[pos] = v;
+	}
+	
 	@Override
 	public boolean add(int col, double v) {
 		//early abort on zero (if no overwrite)

@@ -27,6 +27,8 @@ import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.io.Serializable;
 import java.lang.ref.SoftReference;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -43,6 +45,7 @@ import java.util.function.Function;
 
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang3.math.NumberUtils;
+import org.apache.commons.lang.NotImplementedException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.io.Writable;
@@ -577,10 +580,90 @@ public class FrameBlock implements CacheBlock, Externalizable  {
 		switch(_schema[c]) {
 			case STRING:  return ((StringArray)_coldata[c])._data;
 			case BOOLEAN: return ((BooleanArray)_coldata[c])._data;
-			case INT64:     return ((LongArray)_coldata[c])._data;
-			case FP64:  return ((DoubleArray)_coldata[c])._data;
+			case INT64:   return ((LongArray)_coldata[c])._data;
+			case INT32:   return ((IntegerArray)_coldata[c])._data;
+			case FP64:    return ((DoubleArray)_coldata[c])._data;
 			default:      return null;
 	 	}
+	}
+
+	public String getColumnType(int c){
+		switch(_schema[c]) {
+			case STRING:  return "String";
+			case BOOLEAN: return "Boolean";
+			case INT64:   return "Long";
+			case INT32:   return "Int";
+			case FP64:    return "Double";
+			default:      return null;
+	 	}
+	}
+
+	/**
+	 * Get a specific index as bytes, this method is used to parse the strings into Python.
+	 * It should only be used in columns where the datatype is String.
+	 * Since in other cases it might be faster to return other types.
+	 *
+	 * Note that P
+	 *
+	 * @param c The column index.
+	 * @param r The row index.
+	 * @return The returned byte array.
+	 */
+	public byte[] getIndexAsBytes(int c, int r){
+		switch(_schema[c]){
+			case STRING:
+				String[] col = ((StringArray)_coldata[c])._data;
+				if(col[r] != null)
+					return col[r].getBytes();
+				else
+					return null;
+			default:
+				throw new NotImplementedException();
+		}
+	}
+
+	public byte[] getColumnAsBytes(int c){
+		final int nRow = getNumRows();
+		switch(_schema[c]){
+			case INT64:
+				long[] colLong = ((LongArray)_coldata[c])._data;
+				ByteBuffer longBuffer = ByteBuffer.allocate(8 * nRow);
+				longBuffer.order(ByteOrder.LITTLE_ENDIAN);
+				for(int i = 0; i <  nRow; i++)
+					longBuffer.putLong(colLong[i]);
+				return longBuffer.array();
+			case INT32:
+				int[] colInt = ((IntegerArray)_coldata[c])._data;
+				ByteBuffer intBuffer = ByteBuffer.allocate(4 *  nRow);
+				intBuffer.order(ByteOrder.LITTLE_ENDIAN);
+				for(int i = 0; i < nRow; i++)
+					intBuffer.putInt(colInt[i]);
+				return intBuffer.array();
+			case FP64:
+				double[] colDouble = ((DoubleArray)_coldata[c])._data;
+				ByteBuffer doubleBuffer = ByteBuffer.allocate(8 * nRow);
+				doubleBuffer.order(ByteOrder.nativeOrder());
+				for(int i = 0; i < nRow; i++)
+					doubleBuffer.putDouble(colDouble[i]);
+				return doubleBuffer.array();
+			case FP32:
+				float[] colFloat = ((FloatArray)_coldata[c])._data;
+				ByteBuffer floatBuffer = ByteBuffer.allocate(8 * nRow);
+				floatBuffer.order(ByteOrder.nativeOrder());
+				for(int i = 0; i < nRow; i++)
+					floatBuffer.putDouble(colFloat[i]);
+				return floatBuffer.array();
+			case BOOLEAN:
+				boolean[] colBool = ((BooleanArray)_coldata[c])._data;
+				// over allocating here.. we could maybe bit pack?
+				ByteBuffer booleanBuffer = ByteBuffer.allocate(nRow);
+				booleanBuffer.order(ByteOrder.nativeOrder());
+				for(int i = 0; i < nRow; i++)
+					booleanBuffer.put((byte)(colBool[i]? 1:0));
+				return booleanBuffer.array();
+			default:
+				throw new NotImplementedException();
+		}
 	}
 
 	public Array getColumn(int c) {
@@ -1513,6 +1596,11 @@ public class FrameBlock implements CacheBlock, Externalizable  {
 		public abstract Array clone();
 		public abstract Array slice(int rl, int ru);
 		public abstract void reset(int size);
+
+		@Override
+		public String toString(){
+			return this.getClass().getSimpleName().toString() + ":" + _size;
+		}
 	}
 
 	private static class StringArray extends Array<String> {
@@ -2287,5 +2375,17 @@ public class FrameBlock implements CacheBlock, Externalizable  {
 
 	private boolean isBoolean(String str) {
 		return String.valueOf(true).equalsIgnoreCase(str) || String.valueOf(false).equalsIgnoreCase(str);
+	}
+
+	@Override
+	public String toString(){
+		StringBuilder sb = new StringBuilder();
+		sb.append("FrameBlock");
+		sb.append("\n");
+		sb.append(Arrays.toString(_schema));
+		sb.append("\n");
+		sb.append(Arrays.toString(_coldata));
+
+		return sb.toString();
 	}
 }

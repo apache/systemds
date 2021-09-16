@@ -30,9 +30,11 @@ from systemds.utils.consts import VALID_INPUT_TYPES
 
 
 def winsorize(X: Matrix,
-              verbose: bool):
+              verbose: bool,
+              **kwargs: Dict[str, VALID_INPUT_TYPES]):
     
     params_dict = {'X': X, 'verbose': verbose}
+    params_dict.update(kwargs)
     return Matrix(X.sds_context,
         'winsorize',
         named_input_nodes=params_dict)

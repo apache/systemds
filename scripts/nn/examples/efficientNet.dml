@@ -90,7 +90,7 @@ initNetwork = function(int InputChannels, int NumberOutputClasses, int seed)
   [Gamma_top, Beta_top, EmaMean_top, EmaVar_top] = batchnorm::init(1280)
   [DW_top, Db_top] = affine::init(1280, NumberOutputClasses, seed)
 
-    model = list(CW_stem, Cb_stem, Gamma_stem, Beta_stem, EmaMean_stem,vEmaVar_stem,
+    model = list(CW_stem, Cb_stem, Gamma_stem, Beta_stem, EmaMean_stem, EmaVar_stem,
       as.matrix(mb_parameters[1]),
       as.matrix(mb_parameters[2]),
       as.matrix(mb_parameters[3]),

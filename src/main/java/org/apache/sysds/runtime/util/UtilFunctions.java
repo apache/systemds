@@ -989,6 +989,15 @@ public class UtilFunctions {
 		return (blockSize <= 0)? arrayLength: Math.min(arrayLength, startIndex + blockSize);
 	}
 
+	public static int[] getBlockSizes(int num, int numBlocks){
+		int[] blockSizes = new int[numBlocks];
+		Arrays.fill(blockSizes, num/numBlocks);
+		for (int i = 0; i < num%numBlocks; i++){
+			blockSizes[i]++;
+		}
+		return blockSizes;
+	}
+
 	public static String[] splitRecodeEntry(String s) {
 		//forward to column encoder, as UtilFunctions available in map context
 		return ColumnEncoderRecode.splitRecodeMapEntry(s);

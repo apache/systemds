@@ -21,15 +21,15 @@
 
 __all__ = ["MultiReturn"]
 
-from typing import Dict, Sequence, Tuple, Union, Iterable, List
+from typing import Dict, Iterable, List, Sequence, Tuple, Union
 
 import numpy as np
 from py4j.java_gateway import JavaObject
-
 from systemds.operator import OperationNode
 from systemds.script_building.dag import OutputType
 from systemds.utils.consts import VALID_INPUT_TYPES
-from systemds.utils.converters import matrix_block_to_numpy,frame_block_to_pandas
+from systemds.utils.converters import (frame_block_to_pandas,
+                                       matrix_block_to_numpy)
 from systemds.utils.helpers import create_params_string
 
 
@@ -68,7 +68,7 @@ class MultiReturn(OperationNode):
         result_var = []
         jvmV = self.sds_context.java_gateway.jvm
         for idx, v in enumerate(self._script.out_var_name):
-            out_type =self._outputs[idx].output_type
+            out_type = self._outputs[idx].output_type
             if out_type == OutputType.MATRIX:
                 result_var.append(
                     matrix_block_to_numpy(jvmV, result_variables.getMatrixBlock(v)))
@@ -78,8 +78,12 @@ class MultiReturn(OperationNode):
             elif out_type == OutputType.DOUBLE:
                 result_var.append(result_variables.getDouble(v))
             else:
-                raise NotImplementedError("Not Implemented Support of type" + out_type)
+                raise NotImplementedError(
+                    "Not Implemented Support of type" + out_type)
         return result_var
 
     def __iter__(self):
         return iter(self._outputs)
+
+    def __str__(self):
+        return "MultiReturnNode"

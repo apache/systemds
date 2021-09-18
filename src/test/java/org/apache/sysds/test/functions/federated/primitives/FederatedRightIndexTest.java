@@ -108,6 +108,16 @@ public class FederatedRightIndexTest extends AutomatedTestBase {
 		runAggregateOperationTest(IndexType.FULL, DataType.FRAME, ExecMode.SINGLE_NODE);
 	}
 
+	@Test
+	public void testRightIndexFullDenseMatrixSP() {
+		runAggregateOperationTest(IndexType.FULL, DataType.MATRIX, ExecMode.SPARK);
+	}
+
+	@Test
+	public void testRightIndexFullDenseFrameSP() {
+		runAggregateOperationTest(IndexType.FULL, DataType.FRAME, ExecMode.SPARK);
+	}
+
 	private void runAggregateOperationTest(IndexType indexType, DataType dataType, ExecMode execMode) {
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
 		ExecMode platformOld = rtplatform;
@@ -200,7 +210,7 @@ public class FederatedRightIndexTest extends AutomatedTestBase {
 		LOG.debug(runTest(null));
 
 		// compare via files
-		compareResults(1e-9);
+		compareResults(1e-9, "Stat-DML1", "Stat-DML2");
 
 		Assert.assertTrue(heavyHittersContainsString("fed_rightIndex"));
 

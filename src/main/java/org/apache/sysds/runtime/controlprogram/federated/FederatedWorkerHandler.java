@@ -249,7 +249,7 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 	}
 
 	private FederatedResponse putVariable(FederatedRequest request) {
-		checkNumParams(request.getNumParams(), 1);
+		checkNumParams(request.getNumParams(), 1, 2);
 		String varname = String.valueOf(request.getID());
 		ExecutionContext ec = _ecm.get(request.getTID());
 
@@ -265,6 +265,10 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 			data = (ScalarObject) request.getParam(0);
 		else if(request.getParam(0) instanceof ListObject)
 			data = (ListObject) request.getParam(0);
+		else if(request.getNumParams() == 2)
+			data = request.getParam(1) == DataType.MATRIX ?
+				ExecutionContext.createMatrixObject((MatrixCharacteristics) request.getParam(0)) :
+				ExecutionContext.createFrameObject((MatrixCharacteristics) request.getParam(0));
 		else
 			throw new DMLRuntimeException(
 				"FederatedWorkerHandler: Unsupported object type, has to be of type CacheBlock or ScalarObject");

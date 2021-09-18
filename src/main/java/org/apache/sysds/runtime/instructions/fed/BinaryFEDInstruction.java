@@ -52,7 +52,7 @@ public abstract class BinaryFEDInstruction extends ComputationFEDInstruction {
 		}
 
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
-		InstructionUtils.checkNumFields(parts, 3, 4, 5);
+		InstructionUtils.checkNumFields(parts, 3, 4, 5, 6);
 		String opcode = parts[0];
 		CPOperand in1 = new CPOperand(parts[1]);
 		CPOperand in2 = new CPOperand(parts[2]);

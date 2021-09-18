@@ -72,6 +72,11 @@ public class FederatedRevTest extends AutomatedTestBase {
 		runRevTest(ExecMode.SINGLE_NODE);
 	}
 
+	@Test
+	public void testRevSP() {
+		runRevTest(ExecMode.SPARK);
+	}
+
 	private void runRevTest(ExecMode execMode) {
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
 		ExecMode platformOld = rtplatform;
@@ -141,7 +146,7 @@ public class FederatedRevTest extends AutomatedTestBase {
 		runTest(null);
 
 		// compare via files
-		compareResults(0.01);
+		compareResults(0.01, "Stat-DML1", "Stat-DML2");
 
 		Assert.assertTrue(heavyHittersContainsString("fed_rev"));
 

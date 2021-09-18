@@ -75,6 +75,12 @@ public class FederatedMMChainTest extends AutomatedTestBase {
 	public void testMMChainWeightsCP() { runMMChainTest(ExecMode.SINGLE_NODE, TEST_NAME2); }
 	@Test
 	public void testMMChainWeights2CP() { runMMChainTest(ExecMode.SINGLE_NODE, TEST_NAME3); }
+	@Test
+	public void testMMChainSP() { runMMChainTest(ExecMode.SPARK, TEST_NAME1); }
+	@Test
+	public void testMMChainWeightsSP() { runMMChainTest(ExecMode.SPARK, TEST_NAME2); }
+	@Test
+	public void testMMChainWeights2SP() { runMMChainTest(ExecMode.SPARK, TEST_NAME3); }
 
 	private void runMMChainTest(ExecMode execMode, String TEST_NAME) {
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
@@ -149,7 +155,7 @@ public class FederatedMMChainTest extends AutomatedTestBase {
 		runTest(null);
 
 		// compare via files
-		compareResults(1e-9);
+		compareResults(1e-9, "Stat-DML1", "Stat-DML2");
 
 		// check that federated input files are still existing
 		Assert.assertTrue(HDFSTool.existsFileOnHDFS(input("X1")));

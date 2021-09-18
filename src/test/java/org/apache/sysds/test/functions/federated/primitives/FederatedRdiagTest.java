@@ -30,7 +30,6 @@ import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
 import org.junit.Assert;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -68,7 +67,6 @@ public class FederatedRdiagTest extends AutomatedTestBase {
 	public void federatedRdiagCP() { federatedRdiag(Types.ExecMode.SINGLE_NODE); }
 
 	@Test
-	@Ignore
 	public void federatedRdiagSP() { federatedRdiag(Types.ExecMode.SPARK); }
 
 	public void federatedRdiag(Types.ExecMode execMode) {
@@ -128,7 +126,7 @@ public class FederatedRdiagTest extends AutomatedTestBase {
 		runTest(null);
 
 		// compare all sums via files
-		compareResults(0.01);
+		compareResults(0.01, "DML1", "DML2");
 
 		Assert.assertTrue(heavyHittersContainsString("fed_rdiag"));
 

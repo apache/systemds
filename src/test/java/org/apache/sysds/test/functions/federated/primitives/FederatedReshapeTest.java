@@ -30,7 +30,6 @@ import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
 import org.junit.Assert;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -76,7 +75,7 @@ public class FederatedReshapeTest extends AutomatedTestBase {
 	}
 
 	@Test
-	@Ignore
+//	@Ignore
 	public void federatedReshapeSP() {
 		federatedReshape(Types.ExecMode.SPARK);
 	}
@@ -139,7 +138,7 @@ public class FederatedReshapeTest extends AutomatedTestBase {
 		runTest(null);
 
 		// compare all sums via files
-		compareResults(0.01);
+		compareResults(0.01, "DML1", "DML2");
 
 		Assert.assertTrue(heavyHittersContainsString("fed_rshape"));
 

@@ -51,8 +51,10 @@ import org.apache.sysds.runtime.lineage.LineageItemUtils;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.Operator;
 import org.apache.sysds.runtime.matrix.operators.ReorgOperator;
+import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 
 public class ReorgFEDInstruction extends UnaryFEDInstruction {
+	@SuppressWarnings("unused")
 	private static boolean fedoutFlagInString = false;
 
 	public ReorgFEDInstruction(Operator op, CPOperand in1, CPOperand out, String opcode, String istr, FederatedOutput fedOut) {
@@ -73,8 +75,9 @@ public class ReorgFEDInstruction extends UnaryFEDInstruction {
 			InstructionUtils.checkNumFields(str, 2, 3, 4);
 			in.split(parts[1]);
 			out.split(parts[2]);
-			int k = Integer.parseInt(parts[3]);
-			FederatedOutput fedOut = FederatedOutput.valueOf(parts[4]);
+			int k = str.startsWith(Types.ExecMode.SPARK.name()) ? 0 : Integer.parseInt(parts[3]);
+			FederatedOutput fedOut = str.startsWith(Types.ExecMode.SPARK.name()) ?  FederatedOutput.valueOf(parts[3]) :
+				FederatedOutput.valueOf(parts[4]);
 			return new ReorgFEDInstruction(new ReorgOperator(SwapIndex.getSwapIndexFnObject(), k), in, out, opcode, str, fedOut);
 		}
 		else if ( opcode.equalsIgnoreCase("rdiag") ) {
@@ -95,6 +98,7 @@ public class ReorgFEDInstruction extends UnaryFEDInstruction {
 	public void processInstruction(ExecutionContext ec) {
 		MatrixObject mo1 = ec.getMatrixObject(input1);
 		ReorgOperator r_op = (ReorgOperator) _optr;
+		boolean isSpark = instString.startsWith("SPARK");
 
 		if( !mo1.isFederated() )
 			throw new DMLRuntimeException("Federated Reorg: "
@@ -105,12 +109,15 @@ public class ReorgFEDInstruction extends UnaryFEDInstruction {
 
 		if(instOpcode.equals("r'")) {
 			//execute transpose at federated site
-			FederatedRequest fr1 = FederationUtils.callInstruction(instString,
-				output, new CPOperand[] {input1},
-				new long[] {mo1.getFedMapping().getID()}, true);
+			long id = FederationUtils.getNextFedDataID();
+			FederatedRequest fr = new FederatedRequest(FederatedRequest.RequestType.PUT_VAR, id, new MatrixCharacteristics(-1, -1), mo1.getDataType());
+
+			FederatedRequest fr1 = FederationUtils.callInstruction(instString, output, id, new CPOperand[] {input1},
+				new long[] {mo1.getFedMapping().getID()}, isSpark ? Types.ExecType.SPARK : Types.ExecType.CP, true);
+			mo1.getFedMapping().execute(getTID(), true, fr, fr1);
+
 			if (_fedOut != null && !_fedOut.isForcedLocal()){
 				mo1.getFedMapping().execute(getTID(), true, fr1);
-
 				//drive output federated mapping
 				MatrixObject out = ec.getMatrixObject(output);
 				out.getDataCharacteristics().set(mo1.getNumColumns(), mo1.getNumRows(), (int) mo1.getBlocksize(), mo1.getNnz());
@@ -123,11 +130,13 @@ public class ReorgFEDInstruction extends UnaryFEDInstruction {
 			}
 		}
 		else if(instOpcode.equalsIgnoreCase("rev")) {
+			long id = FederationUtils.getNextFedDataID();
+			FederatedRequest fr = new FederatedRequest(FederatedRequest.RequestType.PUT_VAR, id, new MatrixCharacteristics(-1, -1), mo1.getDataType());
+
 			//execute transpose at federated site
-			FederatedRequest fr1 = FederationUtils.callInstruction(instString,
-				output, new CPOperand[] {input1},
-				new long[] {mo1.getFedMapping().getID()}, fedoutFlagInString);
-			mo1.getFedMapping().execute(getTID(), true, fr1);
+			FederatedRequest fr1 = FederationUtils.callInstruction(instString, output, id, new CPOperand[] {input1},
+				new long[] {mo1.getFedMapping().getID()}, isSpark ? Types.ExecType.SPARK : Types.ExecType.CP, true);
+			mo1.getFedMapping().execute(getTID(), true, fr, fr1);
 
 			if(mo1.isFederated(FederationMap.FType.ROW))
 				mo1.getFedMapping().reverseFedMap();

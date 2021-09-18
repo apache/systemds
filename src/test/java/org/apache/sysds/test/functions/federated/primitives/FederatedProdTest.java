@@ -69,6 +69,9 @@ public class FederatedProdTest extends AutomatedTestBase {
 	@Test
 	public void testProdCP() { runProdTest(ExecMode.SINGLE_NODE); }
 
+	@Test
+	public void testProdSP() { runProdTest(ExecMode.SPARK); }
+
 	private void runProdTest(ExecMode execMode) {
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
 		ExecMode platformOld = rtplatform;

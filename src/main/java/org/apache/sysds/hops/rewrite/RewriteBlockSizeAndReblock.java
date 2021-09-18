@@ -112,6 +112,7 @@ public class RewriteBlockSizeAndReblock extends HopRewriteRule
 					dop.setBlocksize(blocksize);
 				}
 				else if (dop.getOp() == OpOpData.FEDERATED) {
+					dop.setRequiresReblock(true);
 					dop.setBlocksize(blocksize);
 				}
 				else {

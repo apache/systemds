@@ -56,7 +56,7 @@ public class ReshapeFEDInstruction extends UnaryFEDInstruction {
 
 	public static ReshapeFEDInstruction parseInstruction(String str) {
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
-		InstructionUtils.checkNumFields(parts, 6);
+		InstructionUtils.checkNumFields(parts, 6, 7);
 		String opcode = parts[0];
 		CPOperand in1 = new CPOperand(parts[1]);
 		CPOperand in2 = new CPOperand(parts[2]);
@@ -96,9 +96,13 @@ public class ReshapeFEDInstruction extends UnaryFEDInstruction {
 
 			String[] newInstString = getNewInstString(mo1, instString, rows, cols, byRow.getBooleanValue());
 
+			long id = FederationUtils.getNextFedDataID();
+			FederatedRequest tmp = new FederatedRequest(FederatedRequest.RequestType.PUT_VAR, id, mo1.getMetaData().getDataCharacteristics(), mo1.getDataType());
+
 			//execute at federated site
-			FederatedRequest[] fr1 = FederationUtils.callInstruction(newInstString,
-				output, new CPOperand[] {input1}, new long[] {mo1.getFedMapping().getID()});
+			FederatedRequest[] fr1 = FederationUtils.callInstruction(newInstString, output, id,
+				new CPOperand[] {input1}, new long[] {mo1.getFedMapping().getID()}, InstructionUtils.getExecType(instString));
+			mo1.getFedMapping().execute(getTID(), true, tmp);
 			mo1.getFedMapping().execute(getTID(), true, fr1, new FederatedRequest[0]);
 
 			// set new fed map

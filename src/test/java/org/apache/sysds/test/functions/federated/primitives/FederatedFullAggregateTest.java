@@ -31,7 +31,6 @@ import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
 import org.junit.Assert;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -115,31 +114,26 @@ public class FederatedFullAggregateTest extends AutomatedTestBase {
 	}
 
 	@Test
-	@Ignore
 	public void testSumDenseMatrixSP() {
 		runAggregateOperationTest(OpType.SUM, ExecType.SPARK);
 	}
 
 	@Test
-	@Ignore
 	public void testMeanDenseMatrixSP() {
 		runAggregateOperationTest(OpType.MEAN, ExecType.SPARK);
 	}
 
 	@Test
-	@Ignore
 	public void testMaxDenseMatrixSP() {
 		runAggregateOperationTest(OpType.MAX, ExecType.SPARK);
 	}
 
 	@Test
-	@Ignore
 	public void testMinDenseMatrixSP() {
 		runAggregateOperationTest(OpType.MIN, ExecType.SPARK);
 	}
 
 	@Test
-	@Ignore
 	public void testVarDenseMatrixSP() {
 		runAggregateOperationTest(OpType.VAR, ExecType.SPARK);
 	}
@@ -149,6 +143,9 @@ public class FederatedFullAggregateTest extends AutomatedTestBase {
 		switch(instType) {
 			case SPARK:
 				rtplatform = ExecMode.SPARK;
+				break;
+			case CP:
+				rtplatform = ExecMode.SINGLE_NODE;
 				break;
 			default:
 				rtplatform = ExecMode.HYBRID;
@@ -218,14 +215,14 @@ public class FederatedFullAggregateTest extends AutomatedTestBase {
 
 		// Run reference dml script with normal matrix
 		fullDMLScriptName = HOME + TEST_NAME + "Reference.dml";
-		programArgs = new String[] {"-stats", "100", "-args", input("X1"), input("X2"), input("X3"), input("X4"),
+		programArgs = new String[] {"-explain", "-stats", "100", "-args", input("X1"), input("X2"), input("X3"), input("X4"),
 			expected("S"), Boolean.toString(rowPartitioned).toUpperCase()};
 		runTest(true, false, null, -1);
 
 		// Run actual dml script with federated matrix
 
 		fullDMLScriptName = HOME + TEST_NAME + ".dml";
-		programArgs = new String[] {"-stats", "100", "-nvargs",
+		programArgs = new String[] {"-explain","-stats", "100", "-nvargs",
 			"in_X1=" + TestUtils.federatedAddress(port1, input("X1")),
 			"in_X2=" + TestUtils.federatedAddress(port2, input("X2")),
 			"in_X3=" + TestUtils.federatedAddress(port3, input("X3")),

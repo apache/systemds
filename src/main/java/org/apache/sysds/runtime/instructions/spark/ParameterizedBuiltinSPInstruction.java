@@ -36,6 +36,7 @@ import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.lops.Lop;
 import org.apache.sysds.parser.Statement;
 import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysds.runtime.controlprogram.caching.FrameObject;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject.UpdateType;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
@@ -96,6 +97,10 @@ public class ParameterizedBuiltinSPInstruction extends ComputationSPInstruction 
 
 	public HashMap<String, String> getParams() {
 		return params;
+	}
+
+	public CacheableData<?> getTarget(ExecutionContext ec) {
+		return ec.getCacheableData(params.get("target"));
 	}
 
 	public static HashMap<String, String> constructParameterMap(String[] params) {

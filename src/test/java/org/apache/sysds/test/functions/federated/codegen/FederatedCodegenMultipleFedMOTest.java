@@ -104,7 +104,7 @@ public class FederatedCodegenMultipleFedMOTest extends AutomatedTestBase
 			// row partitioned
 			// {201, 6, 4, 6, 4, true},
 			{202, 6, 4, 6, 4, true},
-			// {203, 20, 1, 20, 1, true},
+			// FIXME: [SYSTEMDS-3110] {203, 20, 1, 20, 1, true},
 			// col partitioned
 			{201, 6, 4, 6, 4, false},
 			{202, 6, 4, 6, 4, false},
@@ -123,9 +123,9 @@ public class FederatedCodegenMultipleFedMOTest extends AutomatedTestBase
 			{308, 1000, 2000, 10, 2000, false},
 			// {310, 1000, 2000, 10, 2000, false},
 			// row and col partitioned
-			// {311, 1000, 2000, 1000, 10, true}, // not working yet - ArrayIndexOutOfBoundsException in dotProduct
+			// {311, 1000, 2000, 1000, 10, true}, // FIXME: ArrayIndexOutOfBoundsException in dotProduct
 			{312, 1000, 2000, 10, 2000, false},
-			// {313, 4000, 2000, 4000, 10, true}, // not working yet - ArrayIndexOutOfBoundsException in dotProduct
+			// {313, 4000, 2000, 4000, 10, true}, // FIXME: ArrayIndexOutOfBoundsException in dotProduct
 			{314, 4000, 2000, 10, 2000, false},
 
 			// combined tests

@@ -117,7 +117,7 @@ public class FederatedRowwiseTmplTest extends AutomatedTestBase
 	}
 
 	@Test
-	public void federatedCodegenCellwiseHybrid() {
+	public void federatedCodegenRowwiseHybrid() {
 		testFederatedCodegenRowwise(ExecMode.HYBRID);
 	}
 

@@ -101,7 +101,6 @@ public class FederationUtils {
 		FederatedRequest[] fr = new FederatedRequest[inst.length];
 		for(int j=0; j<inst.length; j++) {
 			for(int i = 0; i < varOldIn.length; i++) {
-				linst[j] = linst[j].replace(ExecType.SPARK.name(), ExecType.CP.name());
 				linst[j] = linst[j].replace(
 					Lop.OPERAND_DELIMITOR + varOldOut.getName() + Lop.DATATYPE_PREFIX,
 					Lop.OPERAND_DELIMITOR + String.valueOf(id) + Lop.DATATYPE_PREFIX);
@@ -118,8 +117,30 @@ public class FederationUtils {
 		return fr;
 	}
 
-	public static FederatedRequest callInstruction(String inst, CPOperand varOldOut, long outputId, CPOperand[] varOldIn, long[] varNewIn) {
-		String linst = InstructionUtils.replaceOperand(inst, 0, ExecType.CP.name());
+	public static FederatedRequest[] callInstruction(String[] inst, CPOperand varOldOut, long outputId, CPOperand[] varOldIn, long[] varNewIn, ExecType type) {
+		String[] linst = inst;
+		FederatedRequest[] fr = new FederatedRequest[inst.length];
+		for(int j=0; j<inst.length; j++) {
+			for(int i = 0; i < varOldIn.length; i++) {
+				linst[j] = InstructionUtils.replaceOperand(linst[j], 0, type == null ? InstructionUtils.getExecType(linst[j]).name() : type.name());
+				linst[j] = linst[j].replace(
+					Lop.OPERAND_DELIMITOR + varOldOut.getName() + Lop.DATATYPE_PREFIX,
+					Lop.OPERAND_DELIMITOR + String.valueOf(outputId) + Lop.DATATYPE_PREFIX);
+
+				if(varOldIn[i] != null) {
+					linst[j] = linst[j].replace(
+						Lop.OPERAND_DELIMITOR + varOldIn[i].getName() + Lop.DATATYPE_PREFIX,
+						Lop.OPERAND_DELIMITOR + String.valueOf(varNewIn[i]) + Lop.DATATYPE_PREFIX);
+					linst[j] = linst[j].replace("=" + varOldIn[i].getName(), "=" + String.valueOf(varNewIn[i])); //parameterized
+				}
+			}
+			fr[j] = new FederatedRequest(RequestType.EXEC_INST, outputId, (Object) linst[j]);
+		}
+		return fr;
+	}
+
+	public static FederatedRequest callInstruction(String inst, CPOperand varOldOut, long outputId, CPOperand[] varOldIn, long[] varNewIn, ExecType type, boolean rmFedOutputFlag) {
+		String linst = InstructionUtils.replaceOperand(inst, 0, type.name());
 		linst = linst.replace(Lop.OPERAND_DELIMITOR+varOldOut.getName()+Lop.DATATYPE_PREFIX, Lop.OPERAND_DELIMITOR+outputId+Lop.DATATYPE_PREFIX);
 		for(int i=0; i<varOldIn.length; i++)
 			if( varOldIn[i] != null ) {
@@ -128,6 +149,8 @@ public class FederationUtils {
 					Lop.OPERAND_DELIMITOR+(varNewIn[i])+Lop.DATATYPE_PREFIX);
 				linst = linst.replace("="+varOldIn[i].getName(), "="+(varNewIn[i])); //parameterized
 			}
+		if(rmFedOutputFlag)
+			linst = InstructionUtils.removeFEDOutputFlag(linst);
 		return new FederatedRequest(RequestType.EXEC_INST, outputId, linst);
 	}
 
@@ -226,12 +249,15 @@ public class FederationUtils {
 	public static MatrixBlock aggProd(Future<FederatedResponse>[] ffr, FederationMap fedMap, AggregateUnaryOperator aop) {
 		try {
 			boolean rowFed = fedMap.getType() == FederationMap.FType.ROW;
-			MatrixBlock ret = rowFed ?
+			MatrixBlock ret = aop.isFullAggregate() ? (rowFed ?
+				new MatrixBlock(ffr.length, 1, 1.0) : new MatrixBlock(1, ffr.length, 1.0)) :
+				(rowFed ?
 				new MatrixBlock(ffr.length, (int) fedMap.getFederatedRanges()[0].getEndDims()[1], 1.0) :
-				new MatrixBlock((int) fedMap.getFederatedRanges()[0].getEndDims()[0], ffr.length, 1.0);
-			MatrixBlock res = rowFed ?
+				new MatrixBlock((int) fedMap.getFederatedRanges()[0].getEndDims()[0], ffr.length, 1.0));
+			MatrixBlock res = aop.isFullAggregate() ? new MatrixBlock(1, 1, 1.0) :
+				(rowFed ?
 				new MatrixBlock(1, (int) fedMap.getFederatedRanges()[0].getEndDims()[1], 1.0) :
-				new MatrixBlock((int) fedMap.getFederatedRanges()[0].getEndDims()[0], 1, 1.0);
+				new MatrixBlock((int) fedMap.getFederatedRanges()[0].getEndDims()[0], 1, 1.0));
 
 			for(int i = 0; i < ffr.length; i++) {
 				MatrixBlock tmp = (MatrixBlock) ffr[i].get().getData()[0];

@@ -68,6 +68,9 @@ public class FederatedTriTest extends AutomatedTestBase {
 	@Test
 	public void testTriCP() { runTriTest(ExecMode.SINGLE_NODE); }
 
+	@Test
+	public void testTriSP() { runTriTest(ExecMode.SPARK); }
+
 	private void runTriTest(ExecMode execMode) {
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
 		ExecMode platformOld = rtplatform;
@@ -133,7 +136,7 @@ public class FederatedTriTest extends AutomatedTestBase {
 		runTest(null);
 
 		// compare via files
-		compareResults(1e-9);
+		compareResults(1e-9, "Stat-DML1", "Stat-DML2");
 
 		// check that federated input files are still existing
 		Assert.assertTrue(HDFSTool.existsFileOnHDFS(input("X1")));

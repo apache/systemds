@@ -68,7 +68,7 @@ public class MatrixAppendMSPInstruction extends AppendMSPInstruction {
 			out = in1.flatMapToPair(
 				new MapSideAppendFunction(in2, _cbind, off, blen));
 		}
-		
+
 		//put output RDD handle into symbol table
 		updateBinaryAppendOutputDataCharacteristics(sec, _cbind);
 		sec.setRDDHandleForVariable(output.getName(), out);

@@ -29,7 +29,6 @@ import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -75,9 +74,13 @@ public class FederatedSumTest extends AutomatedTestBase {
 	}
 
 	@Test
-	@Ignore
 	public void federatedSumSP() {
 		federatedSum(Types.ExecMode.SPARK);
+	}
+
+	@Test
+	public void federatedSumSPToFED() {
+		federatedSum(Types.ExecMode.SPARK, true);
 	}
 
 	public void federatedSum(Types.ExecMode execMode){

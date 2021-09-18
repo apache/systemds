@@ -33,8 +33,11 @@ import org.apache.sysds.runtime.controlprogram.federated.FederationMap;
 import org.apache.sysds.runtime.controlprogram.federated.FederationUtils;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
+import org.apache.sysds.runtime.instructions.cp.ScalarObject;
 import org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator;
 import org.apache.sysds.runtime.matrix.operators.Operator;
+import org.apache.sysds.runtime.meta.DataCharacteristics;
+import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 
 public class AggregateUnaryFEDInstruction extends UnaryFEDInstruction {
 
@@ -70,12 +73,12 @@ public class AggregateUnaryFEDInstruction extends UnaryFEDInstruction {
 
 		AggregateUnaryOperator aggun = null;
 		if(opcode.equalsIgnoreCase("uarimax") || opcode.equalsIgnoreCase("uarimin"))
-			aggun = InstructionUtils.parseAggregateUnaryRowIndexOperator(opcode, Integer.parseInt(parts[4]), 1);
+			if(InstructionUtils.getExecType(str) == ExecType.SPARK)
+				aggun = InstructionUtils.parseAggregateUnaryRowIndexOperator(opcode, 1, 1);
+			else
+				aggun = InstructionUtils.parseAggregateUnaryRowIndexOperator(opcode, Integer.parseInt(parts[4]), 1);
 		else
 			aggun = InstructionUtils.parseBasicAggregateUnaryOperator(opcode);
-
-		if(InstructionUtils.getExecType(str) == ExecType.SPARK)
-			str = InstructionUtils.replaceOperand(str, 4, "-1");
 
 		FederatedOutput fedOut = null;
 		if ( parts.length == 5 && !parts[4].equals("uarimin") && !parts[4].equals("uarimax") )
@@ -89,10 +92,9 @@ public class AggregateUnaryFEDInstruction extends UnaryFEDInstruction {
 	public void processInstruction(ExecutionContext ec) {
 		if (getOpcode().contains("var")) {
 			processVar(ec);
-		}else{
+		} else {
 			processDefault(ec);
 		}
-
 	}
 
 	private void processDefault(ExecutionContext ec){
@@ -106,9 +108,16 @@ public class AggregateUnaryFEDInstruction extends UnaryFEDInstruction {
 		// create federated commands for aggregation
 		// (by default obtain output, even though unnecessary row aggregates)
 		if ( _fedOut.isForcedFederated() )
-			processFederatedOutput(map, in, ec);
-		else
-			processGetOutput(map, aop, ec, in);
+			if(instString.startsWith("SPARK"))
+				processFederatedSPOutput(map, in, ec, aop);
+			else
+				processFederatedOutput(map, in, ec);
+		else {
+			if(instString.startsWith("SPARK"))
+				processGetSPOutput(map, in, ec, aop);
+			else
+				processGetOutput(map, aop, ec, in);
+		}
 	}
 
 	/**
@@ -207,33 +216,105 @@ public class AggregateUnaryFEDInstruction extends UnaryFEDInstruction {
 			throw new DMLRuntimeException("Output of " + toString() + " should not be federated "
 				+ "since the instruction requires consolidation of partial results to be computed.");
 		}
+
+		boolean isSpark = instString.startsWith("SPARK");
+
 		AggregateUnaryOperator aop = (AggregateUnaryOperator) _optr;
 		MatrixObject in = ec.getMatrixObject(input1);
 		FederationMap map = in.getFedMapping();
+
+		long id = FederationUtils.getNextFedDataID();
+		FederatedRequest tmpRequest = null;
+		if(isSpark) {
+			if ( output.isScalar() ) {
+				ScalarObject scalarOut = ec.getScalarInput(output);
+				tmpRequest = map.broadcast(scalarOut);
+				id = tmpRequest.getID();
+			}
+			else {
+				if((map.getType() == FederationMap.FType.COL && aop.isColAggregate()) || (map.getType() == FederationMap.FType.ROW && aop.isRowAggregate()))
+					tmpRequest = new FederatedRequest(RequestType.PUT_VAR, id, new MatrixCharacteristics(-1, -1), in.getDataType());
+				else {
+					DataCharacteristics dc = ec.getDataCharacteristics(output.getName());
+					tmpRequest = new FederatedRequest(RequestType.PUT_VAR, id, dc, in.getDataType());
+				}
+			}
+		}
 
 		// federated ranges mean for variance
 		Future<FederatedResponse>[] meanTmp = null;
 		if (getOpcode().contains("var")) {
 			String meanInstr = instString.replace(getOpcode(), getOpcode().replace("var", "mean"));
+
 			//create federated commands for aggregation
-			FederatedRequest meanFr1 = FederationUtils.callInstruction(meanInstr, output,
-				new CPOperand[]{input1}, new long[]{in.getFedMapping().getID()});
+			FederatedRequest meanFr1 =  FederationUtils.callInstruction(meanInstr, output, id,
+				new CPOperand[]{input1}, new long[]{in.getFedMapping().getID()}, isSpark ? ExecType.SPARK : ExecType.CP, isSpark);
 			FederatedRequest meanFr2 = new FederatedRequest(RequestType.GET_VAR, meanFr1.getID());
 			FederatedRequest meanFr3 = map.cleanup(getTID(), meanFr1.getID());
-			meanTmp = map.execute(getTID(), meanFr1, meanFr2, meanFr3);
+			meanTmp = map.execute(getTID(), isSpark ? new FederatedRequest[] {tmpRequest, meanFr1, meanFr2, meanFr3} : new FederatedRequest[] {meanFr1, meanFr2, meanFr3});
 		}
 
 		//create federated commands for aggregation
-		FederatedRequest fr1 = FederationUtils.callInstruction(instString, output,
-			new CPOperand[]{input1}, new long[]{in.getFedMapping().getID()});
+		FederatedRequest fr1 = FederationUtils.callInstruction(instString, output, id,
+			new CPOperand[]{input1}, new long[]{in.getFedMapping().getID()}, isSpark ? ExecType.SPARK : ExecType.CP, isSpark);
 		FederatedRequest fr2 = new FederatedRequest(RequestType.GET_VAR, fr1.getID());
 		FederatedRequest fr3 = map.cleanup(getTID(), fr1.getID());
 		
 		//execute federated commands and cleanups
-		Future<FederatedResponse>[] tmp = map.execute(getTID(), fr1, fr2, fr3);
+		Future<FederatedResponse>[] tmp = map.execute(getTID(), isSpark ? new FederatedRequest[] {tmpRequest,  fr1, fr2, fr3} : new FederatedRequest[] { fr1, fr2, fr3});
 		if( output.isScalar() )
 			ec.setVariable(output.getName(), FederationUtils.aggScalar(aop, tmp, meanTmp, map));
 		else
 			ec.setMatrixOutput(output.getName(), FederationUtils.aggMatrix(aop, tmp, meanTmp, map));
+	}
+
+	private void processFederatedSPOutput(FederationMap map, MatrixObject in, ExecutionContext ec, AggregateUnaryOperator aop) {
+		DataCharacteristics dc = ec.getDataCharacteristics(output.getName());
+		FederatedRequest fr1;
+		long id = FederationUtils.getNextFedDataID();
+
+		if((map.getType() == FederationMap.FType.COL && aop.isColAggregate()) ||
+			(map.getType() == FederationMap.FType.ROW && aop.isRowAggregate()))
+			fr1 = new FederatedRequest(RequestType.PUT_VAR, id, new MatrixCharacteristics(-1, -1), in.getDataType());
+		else
+			fr1 = new FederatedRequest(RequestType.PUT_VAR, id, dc, in.getDataType());
+		FederatedRequest fr2 = FederationUtils.callInstruction(instString, output, id,
+			new CPOperand[]{input1}, new long[]{in.getFedMapping().getID()}, ExecType.SPARK, true);
+
+		map.execute(getTID(), fr1, fr2);
+		// derive new fed mapping for output
+		MatrixObject out = ec.getMatrixObject(output);
+		out.setFedMapping(in.getFedMapping().copyWithNewID(fr2.getID()));
+	}
+
+	private void processGetSPOutput(FederationMap map, MatrixObject in, ExecutionContext ec, AggregateUnaryOperator aop) {
+		DataCharacteristics dc = ec.getDataCharacteristics(output.getName());
+		FederatedRequest fr1;
+		long id = FederationUtils.getNextFedDataID();
+
+		if ( output.isScalar() ) {
+			ScalarObject scalarOut = ec.getScalarInput(output);
+			fr1 = map.broadcast(scalarOut);
+			id = fr1.getID();
+		}
+		else {
+
+			if((map.getType() == FederationMap.FType.COL && aop.isColAggregate()) || (map.getType() == FederationMap.FType.ROW && aop.isRowAggregate()))
+				fr1 = new FederatedRequest(RequestType.PUT_VAR, id, new MatrixCharacteristics(-1, -1), in.getDataType());
+			else
+				fr1 = new FederatedRequest(RequestType.PUT_VAR, id, dc, in.getDataType());
+		}
+
+		FederatedRequest fr2 = FederationUtils.callInstruction(instString, output, id,
+			new CPOperand[]{input1}, new long[]{in.getFedMapping().getID()}, ExecType.SPARK, true);
+		FederatedRequest fr3 = new FederatedRequest(RequestType.GET_VAR, fr1.getID());
+		FederatedRequest fr4 = map.cleanup(getTID(), fr2.getID());
+
+		//execute federated commands and cleanups
+		Future<FederatedResponse>[] tmp = map.execute(getTID(), fr1, fr2, fr3, fr4);
+		if( output.isScalar() )
+			ec.setVariable(output.getName(), FederationUtils.aggScalar(aop, tmp, map));
+		else
+			ec.setMatrixOutput(output.getName(), FederationUtils.aggMatrix(aop, tmp, map));
 	}
 }

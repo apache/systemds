@@ -22,6 +22,7 @@ package org.apache.sysds.runtime.instructions;
 import java.util.Arrays;
 import java.util.StringTokenizer;
 
+import org.apache.commons.lang.ArrayUtils;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.common.Types.AggOp;
 import org.apache.sysds.common.Types.CorrectionLocationType;
@@ -1029,6 +1030,16 @@ public class InstructionUtils
 		return concatOperands(parts);
 	}
 
+	public static String removeOperand(String instStr, int operand) {
+		//split instruction and check for correctness
+		String[] parts = instStr.split(Lop.OPERAND_DELIMITOR);
+		if( operand >= parts.length )
+			throw new DMLRuntimeException("Operand position "
+				+ operand + " exceeds the length of the instruction.");
+		//remove and reconstruct string
+		return concatOperands((String[]) ArrayUtils.remove(parts, operand));
+	}
+
 	public static String replaceOperandName(String instStr) {
 		String[] parts = instStr.split(Lop.OPERAND_DELIMITOR);
 		String oldName = parts[parts.length-1];
@@ -1115,7 +1126,8 @@ public class InstructionUtils
 	}
 
 	private static String replaceExecTypeWithCP(String inst){
-		return inst.replace(Types.ExecType.SPARK.name(), Types.ExecType.CP.name())
+		return inst
+//			.replace(Types.ExecType.SPARK.name(), Types.ExecType.CP.name())
 			.replace(Types.ExecType.FED.name(), Types.ExecType.CP.name());
 	}
 

@@ -20,7 +20,6 @@
 package org.apache.sysds.test.functions.federated.primitives;
 
 import org.apache.sysds.hops.OptimizerUtils;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -74,11 +73,14 @@ public class FederatedMultiplyTest extends AutomatedTestBase {
 		federatedMultiply(Types.ExecMode.SINGLE_NODE, true);
 	}
 
-	@Test 
-	@Ignore
+	@Test
 	public void federatedMultiplySP() {
-		// TODO Fix me Spark execution error
 		federatedMultiply(Types.ExecMode.SPARK);
+	}
+
+	@Test
+	public void federatedMultiplySPCompileToFED() {
+		federatedMultiply(Types.ExecMode.SPARK, true);
 	}
 
 	private void federatedMultiply(Types.ExecMode execMode){
@@ -134,7 +136,7 @@ public class FederatedMultiplyTest extends AutomatedTestBase {
 		runTest(true, false, null, -1);
 
 		// compare via files
-		compareResults(1e-9);
+		compareResults(1e-9, "Stat-DML1", "Stat-DML2");
 
 		TestUtils.shutdownThreads(t1, t2);
 

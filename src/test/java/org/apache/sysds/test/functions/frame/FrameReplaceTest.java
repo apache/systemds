@@ -19,12 +19,13 @@
 
 package org.apache.sysds.test.functions.frame;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import java.util.HashMap;
 
+import static org.junit.Assert.assertEquals;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.common.Types.ExecType;
+import org.apache.sysds.runtime.matrix.data.MatrixValue;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
@@ -40,7 +41,7 @@ public class FrameReplaceTest extends AutomatedTestBase {
     @Override
     public void setUp() {
         TestUtils.clearAssertionInformation();
-        addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME));
+        addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[] {"S.scalar"}));
     }
 
     @Test
@@ -74,22 +75,13 @@ public class FrameReplaceTest extends AutomatedTestBase {
             getAndLoadTestConfiguration(TEST_NAME);
             String HOME = SCRIPT_DIR + TEST_DIR;
             fullDMLScriptName = HOME + TEST_NAME + ".dml";
-            programArgs = new String[] {};
+            programArgs = new String[] {"-nvargs", "out_S=" + output("S")};
 
             // run test
-            String out = runTest(null).toString();
+            runTest(null);
+            HashMap<MatrixValue.CellIndex, Double> val = readDMLScalarFromOutputDir("S");
+            assertEquals(1.0, val.get(new MatrixValue.CellIndex(1, 1)), 0.0);
 
-            assertTrue(out.contains("3"));
-            assertTrue(out.contains("1000"));
-            assertTrue(out.contains("cba"));
-            assertTrue(out.contains("1.5"));
-            assertTrue(out.contains("FALSE"));
-
-            assertFalse(out.contains("1"));
-            assertFalse(out.contains("500"));
-            assertFalse(out.contains("abc"));
-            assertFalse(out.contains("2.5"));
-            assertFalse(out.contains("TRUE"));
         }
         catch(Exception ex) {
             throw new RuntimeException(ex);

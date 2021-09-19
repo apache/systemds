@@ -2341,7 +2341,7 @@ public class FrameBlock implements CacheBlock, Externalizable  {
 		ValueType replacementType = UtilFunctions.isBoolean(replacement) ? ValueType.BOOLEAN : (NumberUtils.isCreatable(replacement) ?
 			(UtilFunctions.isIntegerNumber(replacement) ? ValueType.INT64 : ValueType.FP64) : ValueType.STRING);
 
-		if(patternType != replacementType || !ValueType.isSameTypeString(patternType, replacementType) || !Arrays.asList(_schema).contains(patternType))
+		if(patternType != replacementType || !ValueType.isSameTypeString(patternType, replacementType))
 			throw new DMLRuntimeException("Pattern and replacement types should be same.");
 
 		for(int i = 0; i < ret.getNumColumns(); i++){

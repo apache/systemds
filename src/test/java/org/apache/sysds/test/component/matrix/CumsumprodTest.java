@@ -39,6 +39,8 @@ public class CumsumprodTest {
 	@Test
 	public void testCumsumprodSparseMCSR() {
 		MatrixBlock A = MatrixBlock.randOperations(1000, 2, 0.05, 0, 10, "uniform", 7);
+		if( !A.isInSparseFormat() )
+			A.denseToSparse(false);
 		A = new MatrixBlock(A, SparseBlock.Type.MCSR, true);
 		UnaryOperator uop = new UnaryOperator(Builtin.getBuiltinFnObject("ucumk+*"), 1, false);
 		MatrixBlock B = A.unaryOperations(uop, new MatrixBlock());
@@ -48,6 +50,8 @@ public class CumsumprodTest {
 	@Test
 	public void testCumsumprodSparseCSR() {
 		MatrixBlock A = MatrixBlock.randOperations(1000, 2, 0.05, 0, 10, "uniform", 7);
+		if( !A.isInSparseFormat() )
+			A.denseToSparse(false);
 		A = new MatrixBlock(A, SparseBlock.Type.CSR, true);
 		UnaryOperator uop = new UnaryOperator(Builtin.getBuiltinFnObject("ucumk+*"), 1, false);
 		MatrixBlock B = A.unaryOperations(uop, new MatrixBlock());
@@ -57,6 +61,8 @@ public class CumsumprodTest {
 	@Test
 	public void testCumsumprodSparseCOO() {
 		MatrixBlock A = MatrixBlock.randOperations(1000, 2, 0.05, 0, 10, "uniform", 7);
+		if( !A.isInSparseFormat() )
+			A.denseToSparse(false);
 		A = new MatrixBlock(A, SparseBlock.Type.COO, true);
 		UnaryOperator uop = new UnaryOperator(Builtin.getBuiltinFnObject("ucumk+*"), 1, false);
 		MatrixBlock B = A.unaryOperations(uop, new MatrixBlock());

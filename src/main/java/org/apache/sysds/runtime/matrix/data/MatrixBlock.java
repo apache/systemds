@@ -1191,7 +1191,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		denseToSparse(true);
 	}
 	
-	private void denseToSparse(boolean allowCSR)
+	public void denseToSparse(boolean allowCSR)
 	{
 		DenseBlock a = getDenseBlock();
 		

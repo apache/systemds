@@ -607,6 +607,7 @@ public class SparkExecutionContext extends ExecutionContext
 			brBlock = cd.getBroadcastHandle().getNonPartitionedBroadcast();
 		}
 
+		//TODO: synchronize
 		if (brBlock == null) {
 			//create new broadcast handle (never created, evicted)
 			// account for overwritten invalid broadcast (e.g., evicted)
@@ -651,54 +652,55 @@ public class SparkExecutionContext extends ExecutionContext
 
 		PartitionedBroadcast<MatrixBlock> bret = null;
 
-		//reuse existing broadcast handle
-		if (mo.getBroadcastHandle() != null && mo.getBroadcastHandle().isPartitionedBroadcastValid()) {
-			bret = mo.getBroadcastHandle().getPartitionedBroadcast();
-		}
-
-		//create new broadcast handle (never created, evicted)
-		if (bret == null) {
-			//account for overwritten invalid broadcast (e.g., evicted)
-			if (mo.getBroadcastHandle() != null)
-				CacheableData.addBroadcastSize(-mo.getBroadcastHandle().getSize());
-
-			//obtain meta data for matrix
-			int blen = (int) mo.getBlocksize();
-
-			//create partitioned matrix block and release memory consumed by input
-			MatrixBlock mb = mo.acquireRead();
-			PartitionedBlock<MatrixBlock> pmb = new PartitionedBlock<>(mb, blen);
-			mo.release();
-
-			//determine coarse-grained partitioning
-			int numPerPart = PartitionedBroadcast.computeBlocksPerPartition(mo.getNumRows(), mo.getNumColumns(), blen);
-			int numParts = (int) Math.ceil((double) pmb.getNumRowBlocks() * pmb.getNumColumnBlocks() / numPerPart);
-			Broadcast<PartitionedBlock<MatrixBlock>>[] ret = new Broadcast[numParts];
-
-			//create coarse-grained partitioned broadcasts
-			if (numParts > 1) {
-				Arrays.parallelSetAll(ret, i -> createPartitionedBroadcast(pmb, numPerPart, i));
-			} else { //single partition
-				ret[0] = getSparkContext().broadcast(pmb);
-				if (!isLocalMaster())
-					pmb.clearBlocks();
+		synchronized (mo) {  //synchronize with the async. broadcast thread
+			//reuse existing broadcast handle
+			if (mo.getBroadcastHandle() != null && mo.getBroadcastHandle().isPartitionedBroadcastValid()) {
+				bret = mo.getBroadcastHandle().getPartitionedBroadcast();
 			}
-			
-			bret = new PartitionedBroadcast<>(ret, mo.getDataCharacteristics());
-			// create the broadcast handle if the matrix or frame has never been broadcasted
-			if (mo.getBroadcastHandle() == null) {
-				mo.setBroadcastHandle(new BroadcastObject<MatrixBlock>());
+
+			//create new broadcast handle (never created, evicted)
+			if (bret == null) {
+				//account for overwritten invalid broadcast (e.g., evicted)
+				if (mo.getBroadcastHandle() != null)
+					CacheableData.addBroadcastSize(-mo.getBroadcastHandle().getSize());
+
+				//obtain meta data for matrix
+				int blen = (int) mo.getBlocksize();
+
+				//create partitioned matrix block and release memory consumed by input
+				MatrixBlock mb = mo.acquireRead();
+				PartitionedBlock<MatrixBlock> pmb = new PartitionedBlock<>(mb, blen);
+				mo.release();
+
+				//determine coarse-grained partitioning
+				int numPerPart = PartitionedBroadcast.computeBlocksPerPartition(mo.getNumRows(), mo.getNumColumns(), blen);
+				int numParts = (int) Math.ceil((double) pmb.getNumRowBlocks() * pmb.getNumColumnBlocks() / numPerPart);
+				Broadcast<PartitionedBlock<MatrixBlock>>[] ret = new Broadcast[numParts];
+
+				//create coarse-grained partitioned broadcasts
+				if (numParts > 1) {
+					Arrays.parallelSetAll(ret, i -> createPartitionedBroadcast(pmb, numPerPart, i));
+				} else { //single partition
+					ret[0] = getSparkContext().broadcast(pmb);
+					if (!isLocalMaster())
+						pmb.clearBlocks();
+				}
+				
+				bret = new PartitionedBroadcast<>(ret, mo.getDataCharacteristics());
+				// create the broadcast handle if the matrix or frame has never been broadcasted
+				if (mo.getBroadcastHandle() == null) {
+					mo.setBroadcastHandle(new BroadcastObject<MatrixBlock>());
+				}
+				mo.getBroadcastHandle().setPartitionedBroadcast(bret,
+					OptimizerUtils.estimatePartitionedSizeExactSparsity(mo.getDataCharacteristics()));
+				CacheableData.addBroadcastSize(mo.getBroadcastHandle().getSize());
+
+				if (DMLScript.STATISTICS) {
+					Statistics.accSparkBroadCastTime(System.nanoTime() - t0);
+					Statistics.incSparkBroadcastCount(1);
+				}
 			}
-			mo.getBroadcastHandle().setPartitionedBroadcast(bret,
-				OptimizerUtils.estimatePartitionedSizeExactSparsity(mo.getDataCharacteristics()));
-			CacheableData.addBroadcastSize(mo.getBroadcastHandle().getSize());
 		}
-
-		if (DMLScript.STATISTICS) {
-			Statistics.accSparkBroadCastTime(System.nanoTime() - t0);
-			Statistics.incSparkBroadcastCount(1);
-		}
-
 		return bret;
 	}
 	
@@ -753,13 +755,12 @@ public class SparkExecutionContext extends ExecutionContext
 			to.getBroadcastHandle().setPartitionedBroadcast(bret,
 					OptimizerUtils.estimatePartitionedSizeExactSparsity(to.getDataCharacteristics()));
 			CacheableData.addBroadcastSize(to.getBroadcastHandle().getSize());
-		}
 
-		if (DMLScript.STATISTICS) {
-			Statistics.accSparkBroadCastTime(System.nanoTime() - t0);
-			Statistics.incSparkBroadcastCount(1);
+			if (DMLScript.STATISTICS) {
+				Statistics.accSparkBroadCastTime(System.nanoTime() - t0);
+				Statistics.incSparkBroadcastCount(1);
+			}
 		}
-
 		return bret;
 	}
 
@@ -820,13 +821,12 @@ public class SparkExecutionContext extends ExecutionContext
 			fo.getBroadcastHandle().setPartitionedBroadcast(bret,
 				OptimizerUtils.estimatePartitionedSizeExactSparsity(fo.getDataCharacteristics()));
 			CacheableData.addBroadcastSize(fo.getBroadcastHandle().getSize());
-		}
 
-		if (DMLScript.STATISTICS) {
-			Statistics.accSparkBroadCastTime(System.nanoTime() - t0);
-			Statistics.incSparkBroadcastCount(1);
+			if (DMLScript.STATISTICS) {
+				Statistics.accSparkBroadCastTime(System.nanoTime() - t0);
+				Statistics.incSparkBroadcastCount(1);
+			}
 		}
-
 		return bret;
 	}
 	

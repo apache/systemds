@@ -36,9 +36,6 @@ public class TriggerBroadcastTask implements Runnable {
 
 	@Override
 	public void run() {
-		// TODO: Synchronization. Although it is harmless if to threads create separate
-		// broadcast handles as only one will stay with the MatrixObject. However, redundant
-		// partitioning increases untraced memory usage.
 		try {
 			SparkExecutionContext sec = (SparkExecutionContext)_ec;
 			sec.setBroadcastHandle(_broadcastMO);
@@ -47,6 +44,7 @@ public class TriggerBroadcastTask implements Runnable {
 			e.printStackTrace();
 		}
 
+		//TODO: Count only if successful (owned lock)
 		if (DMLScript.STATISTICS)
 			Statistics.incSparkAsyncBroadcastCount(1);
 		

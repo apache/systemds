@@ -47,7 +47,7 @@ jobs:
           "**.functions.federated.io.**,**.functions.federated.paramserv.**,**.functions.federated.primitives.**,**.functions.federated.transform.**",
           "**.functions.codegenalg.partone.**",
           "**.functions.builtin.**",
-          "**.functions.frame.**,**.functions.indexing.**,**.functions.io.**,**.functions.jmlc.**,**.functions.lineage.**",
+          "**.functions.frame.**,**.functions.indexing.**,**.functions.io.**,**.functions.iogen.**,**.functions.jmlc.**,**.functions.lineage.**",
           "**.functions.dnn.**,**.functions.paramserv.**",
           "**.functions.misc.**,**.functions.mlcontext.**",
           "**.functions.nary.**,**.functions.quaternary.**",

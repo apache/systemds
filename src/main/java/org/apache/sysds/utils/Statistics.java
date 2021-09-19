@@ -511,6 +511,8 @@ public class Statistics
 		parforMergeTime = 0;
 		
 		sparkCtxCreateTime = 0;
+		sparkBroadcast.reset();
+		sparkBroadcastCount.reset();
 		sparkAsyncPrefetchCount.reset();
 		sparkAsyncBroadcastCount.reset();
 		

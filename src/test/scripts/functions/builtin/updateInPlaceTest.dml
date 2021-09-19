@@ -1,0 +1,4 @@
+A = rand(rows = 10, cols = 10)
+B = round(A)
+C = B * 3 + 13
+print(as.scalar(C[2, 1]))

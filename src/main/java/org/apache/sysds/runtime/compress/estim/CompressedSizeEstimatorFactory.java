@@ -96,7 +96,7 @@ public class CompressedSizeEstimatorFactory {
 	 * @return The sample size to use.
 	 */
 	private static int getSampleSize(double sampleRatio, int nRows, int nCols, int minSampleSize, int maxSampleSize) {
-		int sampleSize = (int) Math.ceil(nRows * sampleRatio / Math.max(1, (int)(nCols / 100)));
+		int sampleSize = (int) Math.ceil(nRows * sampleRatio / Math.max(1, (double)nCols / 150));
 		return Math.min(Math.max(sampleSize, minSampleSize), maxSampleSize);
 	}
 }

@@ -188,7 +188,7 @@ public class CompressForce extends CompressBase {
 		// be aware that with multiple blocks it is likely that the small blocks
 		// initially compress, but is to large for overlapping state therefor will decompress.
 		// In this test it decompress the second small block but keeps the first in overlapping state.
-		runTest(1110, 30, 1, 1, ExecType.SPARK, "mmr_sum_plus_2");
+		compressTest(1110, 10, 1.0, ExecType.SPARK, 1, 6, 1, 1, 1, "mmr_sum_plus_2");
 	}
 
 	@Test

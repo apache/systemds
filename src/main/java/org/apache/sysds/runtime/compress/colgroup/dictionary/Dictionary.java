@@ -43,7 +43,7 @@ import org.apache.sysds.utils.MemoryEstimates;
 public class Dictionary extends ADictionary {
 
 	private static final long serialVersionUID = -6517136537249507753L;
-	
+
 	private final double[] _values;
 
 	public Dictionary(double[] values) {
@@ -329,14 +329,13 @@ public class Dictionary extends ADictionary {
 		if(colIndexes == 1)
 			sb.append(Arrays.toString(_values));
 		else {
-			sb.append("[\n");
+			sb.append("[\n\t");
 			for(int i = 0; i < _values.length - 1; i++) {
 				sb.append(_values[i]);
-				sb.append((i) % (colIndexes) == colIndexes - 1 ? "\nt" + i + ": " : ", ");
+				sb.append((i) % (colIndexes) == colIndexes - 1 ? "\n\t" : ", ");
 			}
 			sb.append(_values[_values.length - 1]);
-
-			sb.append("\n]");
+			sb.append("]");
 		}
 		return sb.toString();
 	}
@@ -476,7 +475,7 @@ public class Dictionary extends ADictionary {
 	}
 
 	@Override
-	public Dictionary preaggValuesFromDense(int numVals, int[] colIndexes, int[] aggregateColumns, double[] b, 
+	public Dictionary preaggValuesFromDense(int numVals, int[] colIndexes, int[] aggregateColumns, double[] b,
 		int cut) {
 		double[] ret = new double[numVals * aggregateColumns.length];
 		for(int k = 0, off = 0;

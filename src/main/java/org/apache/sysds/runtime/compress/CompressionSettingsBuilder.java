@@ -42,6 +42,7 @@ public class CompressionSettingsBuilder {
 	private int maxColGroupCoCode = 10000;
 	private double coCodePercentage = 0.01;
 	private int minimumSampleSize = 2000;
+	private int maxSampleSize = 1000000;
 	private EstimationType estimationType = EstimationType.HassAndStokes;
 	private PartitionerType columnPartitioner;
 	private CostType costType;
@@ -247,6 +248,18 @@ public class CompressionSettingsBuilder {
 	}
 
 	/**
+	 * Set the maximum sample size to extract from a given matrix, this overrules the sample percentage if the sample
+	 * percentage extracted is higher than this maximum bound.
+	 * 
+	 * @param maxSampleSize The maximum sample size to extract
+	 * @return The CompressionSettingsBuilder
+	 */
+	public CompressionSettingsBuilder setMaxSampleSize(int maxSampleSize) {
+		this.maxSampleSize = maxSampleSize;
+		return this;
+	}
+
+	/**
 	 * Set the estimation type used for the sampled estimates.
 	 * 
 	 * @param estimationType the estimation type in used.
@@ -268,6 +281,12 @@ public class CompressionSettingsBuilder {
 		return this;
 	}
 
+	/**
+	 * Set the minimum compression ratio to be achieved by the compression.
+	 * 
+	 * @param ratio The ratio to achieve while compressing
+	 * @return The CompressionSettingsBuilder
+	 */
 	public CompressionSettingsBuilder setMinimumCompressionRatio(double ratio) {
 		this.minimumCompressionRatio = ratio;
 		return this;
@@ -281,6 +300,6 @@ public class CompressionSettingsBuilder {
 	public CompressionSettings create() {
 		return new CompressionSettings(samplingRatio, allowSharedDictionary, transposeInput, seed, lossy,
 			validCompressions, sortValuesByLength, columnPartitioner, maxColGroupCoCode, coCodePercentage,
-			minimumSampleSize, estimationType, costType, minimumCompressionRatio);
+			minimumSampleSize, maxSampleSize, estimationType, costType, minimumCompressionRatio);
 	}
 }

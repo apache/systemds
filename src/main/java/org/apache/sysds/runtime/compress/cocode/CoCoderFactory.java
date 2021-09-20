@@ -63,10 +63,7 @@ public class CoCoderFactory {
 				// TODO make decision better depending on how much time is allocated for the compression
 				// for instance if the compressed object is used for a million instructions, it might be good to
 				// search for a really good compression even if it take longer.
-				if(est.getNumColumns() > 200)
-					return new CoCodePriorityQue(est, costEstimator, cs);
-				else
-					return new CoCodeGreedy(est, costEstimator, cs);
+				return new CoCodeHybrid(est, costEstimator, cs);
 			case GREEDY:
 				return new CoCodeGreedy(est, costEstimator, cs);
 			case BIN_PACKING:

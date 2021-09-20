@@ -92,6 +92,11 @@ public class CompressionSettings {
 	 */
 	public final int minimumSampleSize;
 
+	/**
+	 * The maximum size of the sample extracted.
+	 */
+	public final int maxSampleSize;
+
 	/** The sample type used for sampling */
 	public final EstimationType estimationType;
 
@@ -110,7 +115,7 @@ public class CompressionSettings {
 
 	protected CompressionSettings(double samplingRatio, boolean allowSharedDictionary, String transposeInput, int seed,
 		boolean lossy, EnumSet<CompressionType> validCompressions, boolean sortValuesByLength,
-		PartitionerType columnPartitioner, int maxColGroupCoCode, double coCodePercentage, int minimumSampleSize,
+		PartitionerType columnPartitioner, int maxColGroupCoCode, double coCodePercentage, int minimumSampleSize, int maxSampleSize,
 		EstimationType estimationType, CostType costComputationType, double minimumCompressionRatio) {
 		this.samplingRatio = samplingRatio;
 		this.allowSharedDictionary = allowSharedDictionary;
@@ -123,6 +128,7 @@ public class CompressionSettings {
 		this.maxColGroupCoCode = maxColGroupCoCode;
 		this.coCodePercentage = coCodePercentage;
 		this.minimumSampleSize = minimumSampleSize;
+		this.maxSampleSize= maxSampleSize;
 		this.estimationType = estimationType;
 		this.costComputationType = costComputationType;
 		this.minimumCompressionRatio = minimumCompressionRatio;

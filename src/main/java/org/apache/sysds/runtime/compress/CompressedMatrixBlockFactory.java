@@ -484,6 +484,7 @@ public class CompressedMatrixBlockFactory {
 				case 1:
 					LOG.debug("--compression phase " + phase + " Grouping  : " + getLastTimePhase());
 					LOG.debug("Grouping using: " + compSettings.columnPartitioner);
+					LOG.debug("Cost Calculated using: " + costEstimator);
 					LOG.debug("--Cocoded Columns estimated Compression:" + _stats.estimatedSizeCoCoded);
 					break;
 				case 2:

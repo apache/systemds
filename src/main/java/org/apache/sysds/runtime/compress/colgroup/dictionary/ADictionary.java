@@ -35,7 +35,7 @@ import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
 public abstract class ADictionary implements Serializable {
 
 	private static final long serialVersionUID = 9118692576356558592L;
-	
+
 	protected static final Log LOG = LogFactory.getLog(ADictionary.class.getName());
 
 	/**
@@ -341,6 +341,8 @@ public abstract class ADictionary implements Serializable {
 
 	/**
 	 * Get the values contained in a specific tuple of the dictionary.
+	 * 
+	 * If the entire row is zero return null.
 	 * 
 	 * @param index The index where the values are located
 	 * @param nCol  The number of columns contained in this dictionary

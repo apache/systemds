@@ -425,40 +425,48 @@ public class WorkloadAnalyzer {
 					setDecompressionOnAllInputs(hop, parent);
 					return;
 				}
-				// shortcut instead of comparing to MatrixScalar or RowVector.
-				else if(hop.getInput(1).getDim1() == 1 || hop.getInput(1).isScalar() || hop.getInput(0).isScalar()) {
-
+				else {
 					ArrayList<Hop> in = hop.getInput();
 					final boolean ol0 = isOverlapping(in.get(0));
 					final boolean ol1 = isOverlapping(in.get(1));
 					final boolean ol = ol0 || ol1;
-					if(ol && HopRewriteUtils.isBinary(hop, OpOp2.PLUS, OpOp2.MULT, OpOp2.DIV, OpOp2.MINUS)) {
-						overlapping.add(hop.getHopID());
-						o = new OpNormal(hop, true);
-						o.setOverlapping();
+
+					// shortcut instead of comparing to MatrixScalar or RowVector.
+					if(in.get(1).getDim1() == 1 || in.get(1).isScalar() || in.get(0).isScalar()) {
+
+						if(ol && HopRewriteUtils.isBinary(hop, OpOp2.PLUS, OpOp2.MULT, OpOp2.DIV, OpOp2.MINUS)) {
+							overlapping.add(hop.getHopID());
+							o = new OpNormal(hop, true);
+							o.setOverlapping();
+						}
+						else if(ol) {
+							treeLookup.get(in.get(0).getHopID()).setDecompressing();
+							return;
+						}
+						else {
+							o = new OpNormal(hop, true);
+						}
+						if(!HopRewriteUtils.isBinarySparseSafe(hop))
+							o.setDensifying();
+
 					}
-					else if(ol) {
-						treeLookup.get(in.get(0).getHopID()).setDecompressing();
+					else if(HopRewriteUtils.isBinaryMatrixMatrixOperation(hop) ||
+						HopRewriteUtils.isBinaryMatrixColVectorOperation(hop) ||
+						HopRewriteUtils.isBinaryMatrixMatrixOperationWithSharedInput(hop)) {
+						setDecompressionOnAllInputs(hop, parent);
+						return;
+					}
+					else if(ol0 || ol1){
+						setDecompressionOnAllInputs(hop, parent);
 						return;
 					}
 					else {
-						o = new OpNormal(hop, true);
+						String ex = "Setting decompressed because input Binary Op is unknown, please add the case to WorkloadAnalyzer:\n"
+							+ Explain.explain(hop);
+						LOG.warn(ex);
+						setDecompressionOnAllInputs(hop, parent);
+						return;
 					}
-					if(!HopRewriteUtils.isBinarySparseSafe(hop))
-						o.setDensifying();
-
-				}
-				else if(HopRewriteUtils.isBinaryMatrixMatrixOperation(hop) ||
-					HopRewriteUtils.isBinaryMatrixColVectorOperation(hop) ||
-					HopRewriteUtils.isBinaryMatrixMatrixOperationWithSharedInput(hop)) {
-					setDecompressionOnAllInputs(hop, parent);
-					return;
-				}
-				else {
-					String ex = "Setting decompressed because input Binary Op is unknown, please add the case to WorkloadAnalyzer:\n"
-						+ Explain.explain(hop);
-					LOG.warn(ex);
-					setDecompressionOnAllInputs(hop, parent);
 				}
 
 			}

@@ -27,7 +27,6 @@ import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
 public class CompressedSizeEstimatorFactory {
 	protected static final Log LOG = LogFactory.getLog(CompressedSizeEstimatorFactory.class.getName());
-	private static final int maxSampleSize = 1000000;
 
 	public static CompressedSizeEstimator getSizeEstimator(MatrixBlock data, CompressionSettings cs, int k) {
 
@@ -36,7 +35,7 @@ public class CompressedSizeEstimatorFactory {
 		final int nnzRows = (int) Math.ceil(data.getNonZeros() / nCols);
 
 		final double sampleRatio = cs.samplingRatio;
-		final int sampleSize = Math.min(getSampleSize(sampleRatio, nRows, cs.minimumSampleSize), maxSampleSize);
+		final int sampleSize = getSampleSize(sampleRatio, nRows, nCols, cs.minimumSampleSize, cs.maxSampleSize);
 
 		if(nCols > 1000) {
 			return tryToMakeSampleEstimator(data, cs, sampleRatio, sampleSize / 10, nRows, nnzRows, k);
@@ -79,7 +78,27 @@ public class CompressedSizeEstimatorFactory {
 		return cs.samplingRatio >= 1.0 || nRows < cs.minimumSampleSize || sampleSize >= nnzRows;
 	}
 
-	private static int getSampleSize(double sampleRatio, int nRows, int minimumSampleSize) {
-		return Math.max((int) Math.ceil(nRows * sampleRatio), minimumSampleSize);
+	/**
+	 * This function returns the sample size to use.
+	 * 
+	 * The sampling is bound by the maximum sampling and the minimum sampling other than that a linear relation is used
+	 * with the sample ratio.
+	 * 
+	 * Also influencing the sample size is the number of columns. If the number of columns is large the sample size is
+	 * scaled down, this gives worse estimations of distinct items, but it makes sure that the compression time is more
+	 * consistent.
+	 * 
+	 * @param sampleRatio       The sample ratio
+	 * @param nRows             The number of rows
+	 * @param nCols             The number of columns
+	 * @param minimumSampleSize the minimum sample size
+	 * @param maxSampleSize     the maximum sample size
+	 * @return The sample size to use.
+	 */
+	private static int getSampleSize(double sampleRatio, int nRows, int nCols, int minSampleSize, int maxSampleSize) {
+		int sampleSize = (int) Math.ceil(nRows * sampleRatio / Math.max(1, (double)nCols / 150));
+		if(sampleSize < 20000)
+			sampleSize *= 2;
+		return Math.min(Math.max(sampleSize, minSampleSize), maxSampleSize);
 	}
 }

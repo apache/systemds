@@ -117,8 +117,8 @@ public class ColGroupSDCSingle extends ColGroupValue {
 			for(int j = 0; j < nCol; j++)
 				c[off + _colIndexes[j]] += values[offsetToDefault + j];
 		}
-		
-		_indexes.cacheIterator(it, ru );
+
+		_indexes.cacheIterator(it, ru);
 	}
 
 	@Override
@@ -473,11 +473,14 @@ public class ColGroupSDCSingle extends ColGroupValue {
 	public ColGroupSDCSingleZeros extractCommon(double[] constV) {
 		double[] commonV = _dict.getTuple(getNumValues() - 1, _colIndexes.length);
 
+		if(commonV == null) // The common tuple was all zero. Therefore this column group should never have been SDC.
+			return new ColGroupSDCSingleZeros(_colIndexes, _numRows, _dict, _indexes, getCachedCounts());
+
 		for(int i = 0; i < _colIndexes.length; i++)
 			constV[_colIndexes[i]] += commonV[i];
 
 		ADictionary subtractedDict = _dict.subtractTuple(commonV);
-		return new ColGroupSDCSingleZeros(_colIndexes, _numRows, subtractedDict, _indexes, getCounts());
+		return new ColGroupSDCSingleZeros(_colIndexes, _numRows, subtractedDict, _indexes, getCachedCounts());
 	}
 
 }

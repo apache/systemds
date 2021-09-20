@@ -36,25 +36,26 @@ import org.apache.sysds.runtime.compress.utils.Util;
 
 public class CoCodeGreedy extends AColumnCoCoder {
 
-
-	private final Memorizer mem;
-
 	protected CoCodeGreedy(CompressedSizeEstimator sizeEstimator, ICostEstimate costEstimator,
 		CompressionSettings cs) {
 		super(sizeEstimator, costEstimator, cs);
-		mem = new Memorizer();
 	}
 
 	@Override
 	protected CompressedSizeInfo coCodeColumns(CompressedSizeInfo colInfos, int k) {
-		for(CompressedSizeInfoColGroup g : colInfos.compressionInfo)
-			mem.put(g);
-		
-		colInfos.setInfo(coCodeBruteForce(colInfos.compressionInfo));
+		colInfos.setInfo(join(colInfos.compressionInfo, _sest, _cest, _cs));
 		return colInfos;
 	}
 
-	private List<CompressedSizeInfoColGroup> coCodeBruteForce(List<CompressedSizeInfoColGroup> inputColumns) {
+	protected static List<CompressedSizeInfoColGroup> join(List<CompressedSizeInfoColGroup> inputColumns, CompressedSizeEstimator sEst, ICostEstimate cEst, CompressionSettings cs) {
+		Memorizer mem = new Memorizer(cs, sEst);
+		for(CompressedSizeInfoColGroup g : inputColumns)
+			mem.put(g);
+		
+		return coCodeBruteForce(inputColumns, cEst, mem);
+	}
+
+	private static List<CompressedSizeInfoColGroup> coCodeBruteForce(List<CompressedSizeInfoColGroup> inputColumns, ICostEstimate cEst, Memorizer mem) {
 
 		List<ColIndexes> workset = new ArrayList<>(inputColumns.size());
 
@@ -69,8 +70,8 @@ public class CoCodeGreedy extends AColumnCoCoder {
 				for(int j = i + 1; j < workset.size(); j++) {
 					final ColIndexes c1 = workset.get(i);
 					final ColIndexes c2 = workset.get(j);
-					final double costC1 = _cest.getCostOfColumnGroup(mem.get(c1));
-					final double costC2 = _cest.getCostOfColumnGroup(mem.get(c2));
+					final double costC1 = cEst.getCostOfColumnGroup(mem.get(c1));
+					final double costC2 = cEst.getCostOfColumnGroup(mem.get(c2));
 
 					mem.incst1();
 					// pruning filter : skip dominated candidates
@@ -82,7 +83,7 @@ public class CoCodeGreedy extends AColumnCoCoder {
 					// Join the two column groups.
 					// and Memorize the new join.
 					final CompressedSizeInfoColGroup c1c2Inf = mem.getOrCreate(c1, c2);
-					final double costC1C2 = _cest.getCostOfColumnGroup(c1c2Inf);
+					final double costC1C2 = cEst.getCostOfColumnGroup(c1c2Inf);
 
 					final double newSizeChangeIfSelected = costC1C2 - costC1 - costC2;
 
@@ -120,11 +121,15 @@ public class CoCodeGreedy extends AColumnCoCoder {
 		return ret;
 	}
 
-	protected class Memorizer {
+	protected static class Memorizer {
+		private final CompressionSettings _cs;
+		private final CompressedSizeEstimator _sEst;
 		private final Map<ColIndexes, CompressedSizeInfoColGroup> mem;
 		private int st1 = 0, st2 = 0, st3 = 0, st4 = 0;
 
-		public Memorizer() {
+		public Memorizer(CompressionSettings cs, CompressedSizeEstimator sEst) {
+			_cs = cs;
+			_sEst = sEst;
 			mem = new HashMap<>();
 		}
 
@@ -159,7 +164,7 @@ public class CoCodeGreedy extends AColumnCoCoder {
 					g = CompressedSizeInfoColGroup.addConstGroup(c, left, _cs.validCompressions);
 				else {
 					st3++;
-					g = _sest.estimateJoinCompressedSize(c, left, right);
+					g = _sEst.estimateJoinCompressedSize(c, left, right);
 				}
 
 				if(leftConst || rightConst)

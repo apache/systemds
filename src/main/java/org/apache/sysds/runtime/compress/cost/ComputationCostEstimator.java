@@ -22,6 +22,7 @@ package org.apache.sysds.runtime.compress.cost;
 import java.util.Collection;
 
 import org.apache.commons.lang.NotImplementedException;
+import org.apache.sysds.runtime.compress.colgroup.AColGroup.CompressionType;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup;
 
 public class ComputationCostEstimator implements ICostEstimate {
@@ -109,7 +110,13 @@ public class ComputationCostEstimator implements ICostEstimate {
 		// cost += _compressedMultiplication * (lmc + rmc);
 		cost += _compressedMultiplication * _compressedMultCost(g);
 		cost += _dictionaryOps * dictionaryOpsCost(g);
-		return cost;
+
+		double size = g.getMinSize();
+
+		double uncompressedSize = g.getCompressionSize(CompressionType.UNCOMPRESSED);
+		double compressionRatio = size / uncompressedSize;
+
+		return cost * ( 0.001 + compressionRatio);
 	}
 
 	private double scanCost(CompressedSizeInfoColGroup g) {
@@ -117,13 +124,14 @@ public class ComputationCostEstimator implements ICostEstimate {
 	}
 
 	private double leftMultCost(CompressedSizeInfoColGroup g) {
-		final int nCols = g.getColumns().length;
-		final double preAggregateCost = _nRows;
+		final int nColsInGroup = g.getColumns().length;
+		final double mcf = g.getMostCommonFraction();
+		final double preAggregateCost = mcf > 0.6 ? _nRows * (1 - 0.4 * mcf) : _nRows;
 
 		final double numberTuples = g.getNumVals();
 		final double tupleSparsity = g.getTupleSparsity();
-		final double postScalingCost = (nCols > 1 && tupleSparsity > 0.4) ? numberTuples * nCols * tupleSparsity *
-			1.4 : numberTuples * nCols;
+		final double postScalingCost = (nColsInGroup > 1 && tupleSparsity > 0.4) ? numberTuples * nColsInGroup * tupleSparsity *
+			1.4 : numberTuples * nColsInGroup;
 		if(numberTuples < 64000)
 			return preAggregateCost + postScalingCost;
 		else
@@ -134,9 +142,9 @@ public class ComputationCostEstimator implements ICostEstimate {
 	private double _compressedMultCost(CompressedSizeInfoColGroup g) {
 		final int nColsInGroup = g.getColumns().length;
 		final double mcf = g.getMostCommonFraction();
-		final double preAggregateCost = mcf > 0.6 ? _nRows * (1 - 0.7 * mcf) : _nRows;
+		final double preAggregateCost = mcf > 0.6 ? _nRows * (1 - 0.6 * mcf) : _nRows;
 
-		final double numberTuples = (float) g.getNumVals();
+		final double numberTuples = g.getNumVals();
 		final double tupleSparsity = g.getTupleSparsity();
 		final double postScalingCost = (nColsInGroup > 1 && tupleSparsity > 0.4) ? numberTuples * nColsInGroup * tupleSparsity *
 			1.4 : numberTuples * nColsInGroup;
@@ -163,8 +171,9 @@ public class ComputationCostEstimator implements ICostEstimate {
 
 	private double overlappingDecompressionCost(CompressedSizeInfoColGroup g) {
 		final double mcf = g.getMostCommonFraction();
-		final double rowsCost = mcf > 0.6 ? _nRows * (1 - 0.7 * mcf) : _nRows;
-		return rowsCost * 160 * ((float)g.getNumVals() / 64000 + 1);
+		final double rowsCost = mcf > 0.6 ? _nRows * (1 - 0.6 * mcf) : _nRows;
+		//  Setting 64 to mark decompression as expensive.
+		return rowsCost * 16 * ((float)g.getNumVals() / 64000 + 1);
 	}
 
 	private static double dictionaryOpsCost(CompressedSizeInfoColGroup g) {

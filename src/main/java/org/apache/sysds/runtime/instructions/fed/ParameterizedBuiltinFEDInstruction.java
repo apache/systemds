@@ -145,7 +145,7 @@ public class ParameterizedBuiltinFEDInstruction extends ComputationFEDInstructio
 
 			// derive new fed mapping for output
 			CacheableData out = ec.getCacheableData(output);
-			if(input1.isFrame())
+			if(mo instanceof FrameObject)
 				((FrameObject)out).setSchema(((FrameObject) mo).getSchema());
 			out.getDataCharacteristics().set(mo.getDataCharacteristics());
 			out.setFedMapping(mo.getFedMapping().copyWithNewID(fr1.getID()));

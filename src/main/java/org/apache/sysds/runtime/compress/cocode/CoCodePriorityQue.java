@@ -48,12 +48,13 @@ public class CoCodePriorityQue extends AColumnCoCoder {
 
 	@Override
 	protected CompressedSizeInfo coCodeColumns(CompressedSizeInfo colInfos, int k) {
-		colInfos.setInfo(join(colInfos.getInfo()));
+		colInfos.setInfo(join(colInfos.getInfo(), _sest, _cest, 1));
 		return colInfos;
 	}
 
-	private List<CompressedSizeInfoColGroup> join(List<CompressedSizeInfoColGroup> currentGroups) {
-		Comparator<CompressedSizeInfoColGroup> comp = Comparator.comparing(x -> _cest.getCostOfColumnGroup(x));
+	protected static List<CompressedSizeInfoColGroup> join(List<CompressedSizeInfoColGroup> currentGroups,
+		CompressedSizeEstimator sEst, ICostEstimate cEst, int minNumGroups) {
+		Comparator<CompressedSizeInfoColGroup> comp = Comparator.comparing(x -> cEst.getCostOfColumnGroup(x));
 		Queue<CompressedSizeInfoColGroup> que = new PriorityQueue<>(currentGroups.size(), comp);
 		List<CompressedSizeInfoColGroup> ret = new ArrayList<>();
 
@@ -62,15 +63,16 @@ public class CoCodePriorityQue extends AColumnCoCoder {
 				que.add(g);
 
 		CompressedSizeInfoColGroup l = null;
-		if(_cest.isCompareAll()) {
-			double costBeforeJoin = _cest.getCostOfCollectionOfGroups(que);
+		if(cEst.isCompareAll()) {
+			double costBeforeJoin = cEst.getCostOfCollectionOfGroups(que);
 			l = que.poll();
-			while(que.peek() != null) {
+			int groupNr = ret.size() + que.size();
+			while(que.peek() != null && groupNr >= minNumGroups) {
 
 				CompressedSizeInfoColGroup r = que.poll();
-				final CompressedSizeInfoColGroup g = _sest.estimateJoinCompressedSize(l, r);
+				final CompressedSizeInfoColGroup g = sEst.estimateJoinCompressedSize(l, r);
 				if(g != null) {
-					final double costOfJoin = _cest.getCostOfCollectionOfGroups(que, g);
+					final double costOfJoin = cEst.getCostOfCollectionOfGroups(que, g);
 					if(costOfJoin < costBeforeJoin) {
 						costBeforeJoin = costOfJoin;
 						que.add(g);
@@ -86,17 +88,19 @@ public class CoCodePriorityQue extends AColumnCoCoder {
 				}
 
 				l = que.poll();
+				groupNr = ret.size() + que.size();
 			}
 		}
 		else {
 			l = que.poll();
-			while(que.peek() != null) {
+			int groupNr = ret.size() + que.size();
+			while(que.peek() != null && groupNr >= minNumGroups) {
 				CompressedSizeInfoColGroup r = que.peek();
-				if(_cest.shouldTryJoin(l, r)) {
-					CompressedSizeInfoColGroup g = _sest.estimateJoinCompressedSize(l, r);
+				if(cEst.shouldTryJoin(l, r)) {
+					CompressedSizeInfoColGroup g = sEst.estimateJoinCompressedSize(l, r);
 					if(g != null) {
-						double costOfJoin = _cest.getCostOfColumnGroup(g);
-						double costIndividual = _cest.getCostOfColumnGroup(l) + _cest.getCostOfColumnGroup(r);
+						double costOfJoin = cEst.getCostOfColumnGroup(g);
+						double costIndividual = cEst.getCostOfColumnGroup(l) + cEst.getCostOfColumnGroup(r);
 
 						if(costOfJoin < costIndividual) {
 							que.poll();
@@ -112,8 +116,10 @@ public class CoCodePriorityQue extends AColumnCoCoder {
 					ret.add(l);
 
 				l = que.poll();
+				groupNr = ret.size() + que.size();
 			}
 		}
+
 		if(l != null)
 			ret.add(l);
 

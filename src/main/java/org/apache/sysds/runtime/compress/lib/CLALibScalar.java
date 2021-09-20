@@ -68,8 +68,7 @@ public class CLALibScalar {
 		if(m1.isOverlapping() && !(sop.fn instanceof Multiply || sop.fn instanceof Divide)) {
 			AColGroup constOverlap = constOverlap(m1, sop);
 			List<AColGroup> newColGroups = (sop instanceof LeftScalarOperator &&
-				sop.fn instanceof Minus) ? processOverlappingSubtractionLeft(m1,
-					sop,
+				sop.fn instanceof Minus) ? processOverlappingSubtractionLeft(m1, sop,
 					ret) : processOverlappingAddition(m1, sop, ret);
 			newColGroups.add(constOverlap);
 			ret.allocateColGroupList(newColGroups);
@@ -93,8 +92,8 @@ public class CLALibScalar {
 		}
 
 		ret.recomputeNonZeros();
-		return ret;
 
+		return ret;
 	}
 
 	private static CompressedMatrixBlock setupRet(CompressedMatrixBlock m1, MatrixValue result) {

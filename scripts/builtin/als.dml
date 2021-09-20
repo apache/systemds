@@ -1,4 +1,4 @@
-#-------------------------------------------------------------
+#-----------------------------------------------------------------------------------------------------------------------
 #
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
@@ -17,7 +17,7 @@
 # specific language governing permissions and limitations
 # under the License.
 #
-#-------------------------------------------------------------
+#-----------------------------------------------------------------------------------------------------------------------
 
 #  
 # This script computes an approximate factorization of a low-rank matrix X into two matrices U and V
@@ -25,9 +25,9 @@
 # Matrices U and V are computed by minimizing a loss function (with regularization).
 #
 # INPUT   PARAMETERS:
-# ---------------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------
 # NAME    TYPE     DEFAULT  MEANING
-# ---------------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------
 # X       String   ---      Location to read the input matrix X to be factorized
 # rank    Int      10       Rank of the factorization
 # reg     String   "L2"	    Regularization: 
@@ -44,10 +44,16 @@
 # thr     Double   0.0001   Assuming check is set to TRUE, the algorithm stops and convergence is declared 
 #                           if the decrease in loss in any two consecutive iterations falls below this threshold; 
 #                           if check is FALSE thr is ignored
-# ---------------------------------------------------------------------------------------------
+#
+# ----------------------------------------------------------------------------------------------------------------------
+#
 # OUTPUT:
-# 1- An m x r matrix U, where r is the factorization rank 
-# 2- An r x n matrix V
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME  TYPE           MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# U     Matrix         An m x r matrix where r is the factorization rank
+# V     Matrix         An m x r matrix where r is the factorization rank
+# ----------------------------------------------------------------------------------------------------------------------
 
 m_als = function(Matrix[Double] X, Integer rank = 10, String reg = "L2", Double lambda = 0.000001,
   Integer maxi = 50, Boolean check = TRUE, Double thr = 0.0001, Boolean verbose = TRUE)

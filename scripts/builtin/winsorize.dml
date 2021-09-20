@@ -1,4 +1,4 @@
-#-------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------
 #
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
@@ -17,7 +17,27 @@
 # specific language governing permissions and limitations
 # under the License.
 #
-#-------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------
+
+# The winsorize-function removes outliers from the data. It does so by computing upper and
+# lower quartile range of the given data then it replaces any value that falls outside this range
+# (less than lower quartile range or more than upper quartile range).
+
+# INPUT PARAMETERS:
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME      TYPE             DEFAULT         MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# X         Matrix[Double]   ---            Input feature matrix
+# verbose   Boolean          FALSE          To print output on screen
+#
+# ----------------------------------------------------------------------------------------------------------------------
+#
+# OUTPUT:
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME     TYPE                             MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# Y        Matrix[Double]                   Matrix without outlier values
+# ----------------------------------------------------------------------------------------------------------------------
 
 m_winsorize = function(Matrix[Double] X, Boolean verbose) return (Matrix[Double] Y) {
   Y = matrix(0, nrow(X), ncol(X))

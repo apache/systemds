@@ -1,4 +1,4 @@
-#-------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------
 #
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
@@ -17,27 +17,28 @@
 # specific language governing permissions and limitations
 # under the License.
 #
-#-------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------
 
+# Builtin function Implements binary-class SVM with squared slack variables.
 
-#
-#
 # INPUT PARAMETERS:
-# ---------------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------
 # NAME            TYPE    DEFAULT     MEANING
-# ---------------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------
 # X               Double  ---         matrix X of feature vectors to classify
 # W               Double  ---         matrix of the trained variables
 # verbose         Boolean FALSE       Set to true if one wants print statements.
-# ---------------------------------------------------------------------------------------------
+#
+# ----------------------------------------------------------------------------------------------------------------------
+#
 # OUTPUT:
-# ---------------------------------------------------------------------------------------------
-# NAME            TYPE    DEFAULT     MEANING
-# ---------------------------------------------------------------------------------------------
-# Y^              Double  ---         Classification Labels Raw, meaning not modified to clean
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME            TYPE                MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# YRaw            Matrix[Double]      Classification Labels Raw, meaning not modified to clean
 #                                     Labeles of 1's and -1's
-# Y               Double  ---         Classification Labels Maxed to ones and zeros.
-
+# Y               Matrix[Double]      Classification Labels Maxed to ones and zeros.
+# ----------------------------------------------------------------------------------------------------------------------
 
 m_l2svmPredict = function(Matrix[Double] X, Matrix[Double] W, Boolean verbose = FALSE)
   return(Matrix[Double] YRaw, Matrix[Double] Y)

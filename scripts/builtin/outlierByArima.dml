@@ -1,4 +1,4 @@
-#-------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------
 #
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
@@ -17,17 +17,15 @@
 # specific language governing permissions and limitations
 # under the License.
 #
-#-------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------
 
+# Built-in function for detecting and repairing outliers in time series, by training an ARIMA model
+# and classifying values that are more than k standard-deviations away from the predicated values as outliers.
 
-# Built-in function for detecting and repairing outliers in time series,
-# by training an ARIMA model and classifying values that are more than 
-# k standard-deviations away from the predicated values as outliers.
-#
 # INPUT PARAMETERS:
-# ---------------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------
 # NAME            TYPE      DEFAULT  MEANING
-# ---------------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------
 # X               Double    ---      Matrix X
 # k               Double    3        threshold values 1, 2, 3 for 68%, 95%, 99.7% respectively (3-sigma rule)
 # repairMethod    Integer   1        values: 0 = delete rows having outliers, 1 = replace outliers as zeros
@@ -41,14 +39,15 @@
 # s               Int       1        period in terms of number of time-steps
 # include_mean    Bool      FALSE
 # solver          String    "jacobi" solver, is either "cg" or "jacobi"
-# ---------------------------------------------------------------------------------------------
- 
-
-#Output(s)
-# ---------------------------------------------------------------------------------------------
-# NAME            TYPE    DEFAULT     MEANING
-# ---------------------------------------------------------------------------------------------
-# X_corrected     Double   ---     Matrix X with no outliers
+#
+# ----------------------------------------------------------------------------------------------------------------------
+#
+# OUTPUT:
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME            TYPE               MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# X_corrected     Matrix[Double]     Matrix X with no outliers
+# ----------------------------------------------------------------------------------------------------------------------
 
 m_outlierByArima = function(Matrix[Double] X, Double k = 3, Integer repairMethod = 1, Integer p=0, Integer d=0,
   Integer q=0, Integer P=0, Integer D=0, Integer Q=0, Integer s=1, Boolean include_mean=FALSE, String solver="jacobi")

@@ -1,4 +1,4 @@
-#-------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------
 #
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
@@ -17,10 +17,9 @@
 # specific language governing permissions and limitations
 # under the License.
 #
-#-------------------------------------------------------------
-source("scripts/builtin/sherlockNet.dml") as sherlockNet
+# ----------------------------------------------------------------------------------------------------------------------
 
-# Implements training phase of Sherlock: A Deep Learning Approach to Semantic Data Type Detection
+# This function implements training phase of Sherlock: A Deep Learning Approach to Semantic Data Type Detection
 #
 # [Hulsebos, Madelon, et al. "Sherlock: A deep learning approach to semantic data type detection."
 # Proceedings of the 25th ACM SIGKDD International Conference on Knowledge Discovery & Data Mining.
@@ -28,23 +27,33 @@ source("scripts/builtin/sherlockNet.dml") as sherlockNet
 
 # Split feature matrix into four different feature categories and train neural networks on the
 # respective single features. Then combine all trained features to train final neural network.
-# ---------------------------------------------------------------------------------------------
-# NAME         TYPE      DEFAULT  MEANING
-# ---------------------------------------------------------------------------------------------
-# X_train      Matrix    ---      maxtrix of feature vectors
-# y_train      Matrix    ---      matrix Y of class labels of semantic data type
-# ---------------------------------------------------------------------------------------------
-# cW           Matrix    ---      weights (parameters) matrices for character distribtions
-# cb           Matrix    ---      biases vectors for character distribtions
-# wW           Matrix    ---      weights (parameters) matrices for word embeddings
-# wb           Matrix    ---      biases vectors for word embeddings
-# pW           Matrix    ---      weights (parameters) matrices for paragraph vectors
-# pb           Matrix    ---      biases vectors for paragraph vectors
-# sW           Matrix    ---      weights (parameters) matrices for global statistics
-# sb           Matrix    ---      biases vectors for global statistics
-# fW           Matrix    ---      weights (parameters) matrices for  combining all trained features (final)
-# fb           Matrix    ---      biases vectors for combining all trained features (final)
-# ---------------------------------------------------------------------------------------------
+
+# INPUT PARAMETERS:
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME         TYPE            DEFAULT   MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# X_train      matrix[double]    ---      maxtrix of feature vectors
+# y_train      matrix[double]    ---      matrix Y of class labels of semantic data type
+#
+# ----------------------------------------------------------------------------------------------------------------------
+#
+# OUTPUT:
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME         TYPE                       MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# cW           matrix[double]             weights (parameters) matrices for character distribtions
+# cb           matrix[double]             biases vectors for character distribtions
+# wW           matrix[double]             weights (parameters) matrices for word embeddings
+# wb           matrix[double]             biases vectors for word embeddings
+# pW           matrix[double]             weights (parameters) matrices for paragraph vectors
+# pb           matrix[double]             biases vectors for paragraph vectors
+# sW           matrix[double]             weights (parameters) matrices for global statistics
+# sb           matrix[double]             biases vectors for global statistics
+# fW           matrix[double]             weights (parameters) matrices for  combining all trained features (final)
+# fb           matrix[double]            biases vectors for combining all trained features (final)
+# ----------------------------------------------------------------------------------------------------------------------
+
+source("scripts/builtin/sherlockNet.dml") as sherlockNet
 
 m_sherlock = function(matrix[double] X_train, matrix[double] y_train)
       return (matrix[double] cW1, matrix[double] cb1,

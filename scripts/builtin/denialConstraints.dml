@@ -1,4 +1,4 @@
-#-------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------
 #
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
@@ -17,17 +17,17 @@
 # specific language governing permissions and limitations
 # under the License.
 #
-#-------------------------------------------------------------
-#
+# ----------------------------------------------------------------------------------------------------------------------
+
 # This function considers some constraints indicating statements that can NOT happen in the data (denial constraints).
-# 
-#
+
 # INPUT PARAMETERS:
-# ---------------------------------------------------------------------------------------------
-# NAME              TYPE     DEFAULT     MEANING
-# ---------------------------------------------------------------------------------------------
-# dataFrame         Frame      ---    frame which columns represent the variables of the data and the rows correspond to different tuples or instances. 
-# 			                              Recommended to have a column indexing the instances from 1 to N (N=number of instances).
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME              TYPE      DEFAULT MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# dataFrame         Frame      ---    frame which columns represent the variables of the data and the rows correspond
+#                                     to different tuples or instances.
+#                                     Recommended to have a column indexing the instances from 1 to N (N=number of instances).
 # constraintsFrame  Frame      ---    frame with fixed columns and each row representing one constraint.
 #                                     1. idx: (double) index of the constraint, from 1 to M (number of constraints)
 #	                                    2. constraint.type: (string) The constraints can be of 3 different kinds:
@@ -44,11 +44,10 @@
 #                                         in the case of instanceCompare
 #	                                    8. variable2: (string) second variable to compare (name of column in dataFrame) or fixed value for the case of valueCompare.
 #	                                     
-
-#  -----------------------
+# ----------------------------------------------------------------------------------------------------------------------
 #	EXAMPLE:
 #	dataFrame:
-#	
+#
 #		rank		discipline	yrs.since.phd	yrs.service	sex		salary
 #	1	Prof		B			19				18			Male	139750
 #	2	Prof		B			20				16			Male	173200
@@ -75,18 +74,17 @@
 #
 #   Example: explanation of constraint 2 --> it can't happen that one professor of rank Prof has more years of service than other, but lower salary.
 #
-#----------------------------------
-# OUTPUT PARAMETERS:
-#----------------------------------
-# ---------------------------------------------------------------------------------------------
-# NAME              TYPE     DEFAULT     MEANING
-# --------------------------------------------------------------------------------
-# WrongInstances    Matrix    Double     Matrix of 2 columns.
-#	                                      - First column shows the indexes of dataFrame that are wrong.
-#	                                      - Second column shows the index of the denial constraint that is fulfilled
-#                                         If there are no wrong instances to show (0 constrains fulfilled) --> WrongInstances=matrix(0,1,2)
+# ----------------------------------------------------------------------------------------------------------------------
 #
-
+# OUTPUT:
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME              TYPE                   MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# WrongInstances    Matrix[double]         Matrix of 2 columns.
+#                                         - First column shows the indexes of dataFrame that are wrong.
+#                                         - Second column shows the index of the denial constraint that is fulfilled
+#                                          If there are no wrong instances to show (0 constrains fulfilled) --> WrongInstances=matrix(0,1,2)
+# ----------------------------------------------------------------------------------------------------------------------
 
 s_denialConstraints = function(Frame[Unknown] dataFrame, Frame[Unknown] constraintsFrame)
 return(Matrix[double] WrongInstances)

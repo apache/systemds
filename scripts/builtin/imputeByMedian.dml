@@ -1,4 +1,4 @@
-#-------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------
 #
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
@@ -17,28 +17,26 @@
 # specific language governing permissions and limitations
 # under the License.
 #
-#-------------------------------------------------------------
-
-# Related to [SYSTEMDS-2662] dependency function for cleaning pipelines
+#----------------------------------------------------------------------------------------------------------------------
 
 # impute the data by median value and if the feature is categorical then by mode value
+# Related to [SYSTEMDS-2662] dependency function for cleaning pipelines
 
 # INPUT PARAMETERS:
-# ---------------------------------------------------------------------------------------------
-# NAME            TYPE    DEFAULT     MEANING
-# ---------------------------------------------------------------------------------------------
-# X               Double    ---        Data Matrix (Recoded Matrix for categorical features)
-# mask           Double    ---        A 0/1 row vector for identifying numeric (0) and categorical features (1)
-# ---------------------------------------------------------------------------------------------
- 
-
-#Output(s)
-# ---------------------------------------------------------------------------------------------
-# NAME                  TYPE    DEFAULT     MEANING
-# ---------------------------------------------------------------------------------------------
-# X               Double   ---        imputed dataset
-
-
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME       TYPE              DEFAULT     MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# X          Matrix[Double]    ---         Data Matrix (Recoded Matrix for categorical features)
+# mask       Matrix[Double]    ---         A 0/1 row vector for identifying numeric (0) and categorical features (1)
+#
+# ----------------------------------------------------------------------------------------------------------------------
+#
+# OUTPUT:
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME       TYPE                          MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# X          Matrix[Double]                imputed dataset
+# ----------------------------------------------------------------------------------------------------------------------
 
 m_imputeByMedian = function(Matrix[Double] X, Matrix[Double] mask)
 return(Matrix[Double] X)
@@ -62,4 +60,5 @@ return(Matrix[Double] X)
   q = table(seq(1, ncol(cX)), removeEmpty(target=seq(1, ncol(mask)), margin="rows", 
     select=t(mask)), ncol(cX), ncol(X))
   X = (X_n %*% p) + (X_c %*% q)
+  print("imputeByMedian: no of NaNs "+sum(is.na(X)))
 }

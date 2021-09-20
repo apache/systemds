@@ -30,11 +30,15 @@
 # Y      Matrix[Double]    ---     1-column matrix of corresponding y values knots
 # inp_x  Double            ---     the given input x, for which the cspline will find predicted y.
 #
-# --------------------------------------------------------------------------------------------
-# OUTPUT: 
-# pred_y Matrix[Double]    ---     Predicted value
-# K      Matrix[Double]    ---     Matrix of k parameters 
+# ----------------------------------------------------------------------------------------------------------------------
 #
+# OUTPUT:
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME   TYPE             MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# pred_y Matrix[Double]   Predicted value
+# K      Matrix[Double]   Matrix of k parameters
+# ----------------------------------------------------------------------------------------------------------------------
 
 #Algorithms: It implement the https://en.wikipedia.org/wiki/Spline_interpolation#Algorithm_to_find_the_interpolating_cubic_spline
 #it usages natural spline with q1''(x0) == qn''(xn) == 0.0

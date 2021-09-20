@@ -1,4 +1,4 @@
-#-------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------
 #
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
@@ -17,15 +17,50 @@
 # specific language governing permissions and limitations
 # under the License.
 #
-#-------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------
+
+# This function cleans top-K item (where K is given as input)for a given list of users.
 # metaData[3, ncol(X)] : metaData[1] stores mask, metaData[2] stores schema, metaData[3] stores FD mask
+
+# INPUT PARAMETERS:
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME            TYPE               DEFAULT    MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# dataTrain       Frame[Unknown]     ---
+# dataTest        Frame[Unknown]     NULL
+# metaData        Frame[Unknown]     NULL
+# primitives      Frame[Unknown]     ---
+# parameters      Frame[Unknown]
+# cmr             Frame[Unknown]
+# evaluationFunc  String
+# evalFunHp       Matrix[Double]
+# topK            Integer            5
+# resource_val    Integer            20
+# sample          Double             0.1
+# cv              Boolean            TRUE
+# cvk             Integer            2
+# isLastLabel     Boolean            TRUE
+# correctTypos    Boolean            FALSE
+# output          String
+#
+# ----------------------------------------------------------------------------------------------------------------------
+#
+# OUTPUT:
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME            TYPE              MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# perf            Boolean
+# ----------------------------------------------------------------------------------------------------------------------
+
 source("scripts/pipelines/scripts/utils.dml") as utils;
 source("scripts/pipelines/scripts/enumerateLogical.dml") as lg;
 
 
-s_topk_cleaning = function(Frame[Unknown] dataTrain, Frame[Unknown] dataTest = as.frame("NULL"), Frame[Unknown] metaData = as.frame("NULL"), Frame[Unknown] primitives,
-  Frame[Unknown] parameters, Matrix[Double] cmr = matrix("4 0.7 1", rows=1, cols=3), String evaluationFunc, Matrix[Double] evalFunHp, Integer topK = 5, 
-  Integer resource_val = 20, Double sample = 0.1, Boolean cv=TRUE, Integer cvk = 2, Boolean isLastLabel = TRUE, Boolean correctTypos=FALSE, String output)
+s_topk_cleaning = function(Frame[Unknown] dataTrain, Frame[Unknown] dataTest = as.frame("NULL"),
+  Frame[Unknown] metaData = as.frame("NULL"), Frame[Unknown] primitives, Frame[Unknown] parameters,
+  Matrix[Double] cmr = matrix("4 0.7 1", rows=1, cols=3), String evaluationFunc, Matrix[Double] evalFunHp, Integer topK = 5,
+  Integer resource_val = 20, Double sample = 0.1, Boolean cv=TRUE, Integer cvk = 2, Boolean isLastLabel = TRUE,
+  Boolean correctTypos=FALSE, String output)
   return(Boolean perf)
   # return (Frame[Unknown] topKPipelines, Matrix[Double] topKHyperParams, Matrix[Double] topKScores, Frame[Unknown] bestLogical,
   # Frame[Unknown] features, Double dirtyScore, Matrix[Double] evalFunHp)

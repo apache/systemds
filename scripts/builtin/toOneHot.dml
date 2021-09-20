@@ -1,4 +1,4 @@
-#-------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------
 #
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
@@ -17,23 +17,25 @@
 # specific language governing permissions and limitations
 # under the License.
 #
-#-------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------
 
-# One-hot encodes a vector
+# The toOneHot-function encodes unordered categorical vector to multiple binarized vectors.
 
 # INPUT PARAMETERS:
-# --------------------------------------------------------------------------------------------
-# NAME          TYPE    DEFAULT   MEANING
-# --------------------------------------------------------------------------------------------
-# X             matrix  ---       vector with N integer entries between 1 and numClasses
-# numclasses    int     ---       number of columns, must be >= largest value in X
-
-# Output: 
-# --------------------------------------------------------------------------------------------
-# NAME          TYPE     MEANING
-# -------------------------------------------------------------------------------------------
-# Y             matrix   one-hot-encoded matrix with shape (N, numClasses)
-# -------------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME          TYPE            DEFAULT   MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# X             matrix[double]  ---       Vector with N integer entries between 1 and numClasses
+# numclasses    int             ---       Number of columns, must be be greater than or equal to largest value in X
+#
+# ----------------------------------------------------------------------------------------------------------------------
+#
+# OUTPUT:
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME         TYPE                       MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# Y            matrix[double]             One-hot-encoded matrix with shape (N, numClasses)
+# ----------------------------------------------------------------------------------------------------------------------
 
 m_toOneHot = function(matrix[double] X, integer numClasses)
         return (matrix[double] Y) {

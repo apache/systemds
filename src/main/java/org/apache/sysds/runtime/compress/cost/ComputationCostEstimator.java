@@ -22,8 +22,8 @@ package org.apache.sysds.runtime.compress.cost;
 import java.util.Collection;
 
 import org.apache.commons.lang.NotImplementedException;
-import org.apache.sysds.runtime.compress.colgroup.AColGroup.CompressionType;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup;
+import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
 public class ComputationCostEstimator implements ICostEstimate {
 
@@ -113,8 +113,8 @@ public class ComputationCostEstimator implements ICostEstimate {
 
 		double size = g.getMinSize();
 
-		double uncompressedSize = g.getCompressionSize(CompressionType.UNCOMPRESSED);
-		double compressionRatio = size / uncompressedSize;
+		// double uncompressedSize = g.getCompressionSize(CompressionType.UNCOMPRESSED);
+		double compressionRatio = size / MatrixBlock.estimateSizeDenseInMemory(_nRows, _nCols) / g.getColumns().length;
 
 		return cost * ( 0.001 + compressionRatio);
 	}

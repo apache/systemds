@@ -30,9 +30,6 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
 import org.apache.commons.lang.NotImplementedException;
@@ -56,6 +53,7 @@ import org.apache.sysds.runtime.compress.colgroup.ColGroupValue;
 import org.apache.sysds.runtime.compress.lib.CLALibAppend;
 import org.apache.sysds.runtime.compress.lib.CLALibBinaryCellOp;
 import org.apache.sysds.runtime.compress.lib.CLALibCompAgg;
+import org.apache.sysds.runtime.compress.lib.CLALibDecompress;
 import org.apache.sysds.runtime.compress.lib.CLALibLeftMultBy;
 import org.apache.sysds.runtime.compress.lib.CLALibReExpand;
 import org.apache.sysds.runtime.compress.lib.CLALibRightMultBy;
@@ -104,7 +102,6 @@ import org.apache.sysds.runtime.matrix.operators.ReorgOperator;
 import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
 import org.apache.sysds.runtime.matrix.operators.TernaryOperator;
 import org.apache.sysds.runtime.matrix.operators.UnaryOperator;
-import org.apache.sysds.runtime.util.CommonThreadPool;
 import org.apache.sysds.runtime.util.IndexRange;
 import org.apache.sysds.utils.DMLCompressionStatistics;
 
@@ -250,15 +247,18 @@ public class CompressedMatrixBlock extends MatrixBlock {
 
 		ret.allocateDenseBlock();
 
-		if(isOverlapping()){
+		if(isOverlapping()) {
+			// add a bit of stability in decompression
 			Comparator<AColGroup> comp = Comparator.comparing(x -> effect(x));
 			_colGroups.sort(comp);
 		}
 
-		if(k == 1)
-			decompress(ret);
+		if(k == 1){
+			CLALibDecompress.decompress(ret, getColGroups());
+			ret.setNonZeros(nonZeros == -1 && !isOverlapping() ? recomputeNonZeros() : nonZeros);
+		}
 		else
-			decompress(ret, k);
+			CLALibDecompress.decompress(ret, getColGroups(), isOverlapping(), k);
 
 		if(this.isOverlapping())
 			ret.recomputeNonZeros();
@@ -275,45 +275,8 @@ public class CompressedMatrixBlock extends MatrixBlock {
 		return ret;
 	}
 
-	private double effect(AColGroup x){
-		return - Math.max(x.getMax(), Math.abs(x.getMin()));
-	}
-
-	private MatrixBlock decompress(MatrixBlock ret) {
-
-		ret.setNonZeros(nonZeros == -1 && !this.isOverlapping() ? recomputeNonZeros() : nonZeros);
-		final int block = (int) Math.ceil((double) (CompressionSettings.BITMAP_BLOCK_SZ) / getNumColumns());
-		final int blklen = block > 1000 ? block + 1000 - block % 1000 : Math.max(64, block);
-		for(int i = 0; i < getNumRows(); i += blklen)
-			for(AColGroup grp : _colGroups)
-				grp.decompressToBlockUnSafe(ret, i, Math.min(i + blklen, rlen));
-
-		return ret;
-	}
-
-	private MatrixBlock decompress(MatrixBlock ret, int k) {
-		try {
-			final ExecutorService pool = CommonThreadPool.get(k);
-			final int rlen = getNumRows();
-			final int block = (int) Math.ceil((double) (CompressionSettings.BITMAP_BLOCK_SZ) / getNumColumns());
-			final int blklen = block > 1000 ? block + 1000 - block % 1000 : Math.max(64, block);
-			final ArrayList<DecompressTask> tasks = new ArrayList<>();
-			for(int i = 0; i * blklen < getNumRows(); i++)
-				tasks.add(new DecompressTask(_colGroups, ret, i * blklen, Math.min((i + 1) * blklen, rlen),
-					overlappingColGroups));
-			List<Future<Long>> rtasks = pool.invokeAll(tasks);
-			pool.shutdown();
-
-			long nnz = 0;
-			for(Future<Long> rt : rtasks)
-				nnz += rt.get();
-			ret.setNonZeros(nnz);
-		}
-		catch(InterruptedException | ExecutionException ex) {
-			throw new DMLCompressionException("Parallel decompression failed", ex);
-		}
-
-		return ret;
+	private double effect(AColGroup x) {
+		return -Math.max(x.getMax(), Math.abs(x.getMin()));
 	}
 
 	/**
@@ -673,10 +636,10 @@ public class CompressedMatrixBlock extends MatrixBlock {
 			ReorgOperator r_op = new ReorgOperator(SwapIndex.getSwapIndexFnObject(), op.getNumThreads());
 			ret = ret.reorgOperations(r_op, new MatrixBlock(), 0, 0, 0);
 		}
-		
+
 		if(ret.getNumRows() == 0 || ret.getNumColumns() == 0)
 			throw new DMLCompressionException("Error in outputted MM no dimensions");
-		
+
 		return ret;
 	}
 
@@ -786,46 +749,6 @@ public class CompressedMatrixBlock extends MatrixBlock {
 			if(grp instanceof ColGroupUncompressed)
 				return (ColGroupUncompressed) grp;
 		return null;
-	}
-
-	private static class DecompressTask implements Callable<Long> {
-		private final List<AColGroup> _colGroups;
-		private final MatrixBlock _ret;
-		private final int _rl;
-		private final int _ru;
-		private final boolean _overlapping;
-
-		protected DecompressTask(List<AColGroup> colGroups, MatrixBlock ret, int rl, int ru, boolean overlapping) {
-			_colGroups = colGroups;
-			_ret = ret;
-			_rl = rl;
-			_ru = ru;
-			_overlapping = overlapping;
-		}
-
-		@Override
-		public Long call() {
-
-			// preallocate sparse rows to avoid repeated alloc
-			if(!_overlapping && _ret.isInSparseFormat()) {
-				int[] rnnz = new int[_ru - _rl];
-				for(AColGroup grp : _colGroups)
-					grp.countNonZerosPerRow(rnnz, _rl, _ru);
-				SparseBlock rows = _ret.getSparseBlock();
-				for(int i = _rl; i < _ru; i++)
-					rows.allocate(i, rnnz[i - _rl]);
-			}
-
-			// decompress row partition
-			for(AColGroup grp : _colGroups)
-				grp.decompressToBlockUnSafe(_ret, _rl, _ru);
-
-			// post processing (sort due to append)
-			if(_ret.isInSparseFormat())
-				_ret.sortSparseRows(_rl, _ru);
-
-			return _overlapping ? 0 : _ret.recomputeNonZeros(_rl, _ru - 1);
-		}
 	}
 
 	@Override

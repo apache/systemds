@@ -110,11 +110,11 @@ public class CLALibLeftMultBy {
 			multAllColGroups(groups, groups, result);
 		}
 		else {
-			final boolean containsSDC = containsSDC(groups);
-			final int numColumns = cmb.getNumColumns();
+			final boolean containsSDC = CLALibUtils.containsSDC(groups);
 			final double[] constV = containsSDC ? new double[cmb.getNumColumns()] : null;
-			final List<AColGroup> filteredGroups = filterSDCGroups(groups, constV);
+			final List<AColGroup> filteredGroups = CLALibUtils.filterSDCGroups(groups, constV);
 			final double[] colSums = containsSDC ? new double[cmb.getNumColumns()] : null;
+			final int numColumns = cmb.getNumColumns();
 
 			if(containsSDC)
 				for(int i = 0; i < groups.size(); i++) {
@@ -298,11 +298,11 @@ public class CLALibLeftMultBy {
 		}
 
 		final int numColumnsOut = ret.getNumColumns();
-		final boolean containsSDC = containsSDC(colGroups);
+		final boolean containsSDC = CLALibUtils.containsSDC(colGroups);
 
 		// a constant colgroup summing the default values.
 		final double[] constV = containsSDC ? new double[numColumnsOut] : null;
-		final List<AColGroup> filteredGroups = filterSDCGroups(colGroups, constV);
+		final List<AColGroup> filteredGroups = CLALibUtils.filterSDCGroups(colGroups, constV);
 
 		final double[] rowSums = containsSDC ? new double[that.getNumRows()] : null;
 
@@ -632,34 +632,5 @@ public class CLALibLeftMultBy {
 		}
 		Collections.sort(ColGroupValues, Comparator.comparing(AColGroup::getNumValues).reversed());
 		return ColGroupValues;
-	}
-
-	private static boolean containsSDC(List<AColGroup> groups) {
-		boolean containsSDC = false;
-
-		for(AColGroup g : groups) {
-			if(g instanceof ColGroupSDC || g instanceof ColGroupSDCSingle) {
-				containsSDC = true;
-				break;
-			}
-		}
-		return containsSDC;
-	}
-
-	private static List<AColGroup> filterSDCGroups(List<AColGroup> groups, double[] constV) {
-		if(constV != null) {
-			final List<AColGroup> filteredGroups = new ArrayList<>();
-			for(AColGroup g : groups) {
-				if(g instanceof ColGroupSDC)
-					filteredGroups.add(((ColGroupSDC) g).extractCommon(constV));
-				else if(g instanceof ColGroupSDCSingle)
-					filteredGroups.add(((ColGroupSDCSingle) g).extractCommon(constV));
-				else
-					filteredGroups.add(g);
-			}
-			return filteredGroups;
-		}
-		else
-			return groups;
 	}
 }

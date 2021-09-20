@@ -41,7 +41,6 @@ public class ComputationCostEstimator implements ICostEstimate {
 	private final int _leftMultiplications;
 	private final int _rightMultiplications;
 	private final int _compressedMultiplication;
-	// private final int _rowBasedOps;
 	private final int _dictionaryOps;
 
 	private final boolean _isDensifying;
@@ -163,7 +162,9 @@ public class ComputationCostEstimator implements ICostEstimate {
 	}
 
 	private double overlappingDecompressionCost(CompressedSizeInfoColGroup g) {
-		return _nRows * 16 * (g.getNumVals() / 64000 + 1);
+		final double mcf = g.getMostCommonFraction();
+		final double rowsCost = mcf > 0.6 ? _nRows * (1 - 0.7 * mcf) : _nRows;
+		return rowsCost * 160 * ((float)g.getNumVals() / 64000 + 1);
 	}
 
 	private static double dictionaryOpsCost(CompressedSizeInfoColGroup g) {
@@ -259,15 +260,19 @@ public class ComputationCostEstimator implements ICostEstimate {
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
 		sb.append(this.getClass().getSimpleName());
-		sb.append("\n");
-		sb.append(_nRows + "  ");
-		sb.append(_scans + " ");
-		sb.append(_decompressions + " ");
-		sb.append(_overlappingDecompressions + " ");
-		sb.append(_leftMultiplications + " ");
-		sb.append(_rightMultiplications + " ");
-		sb.append(_compressedMultiplication + " ");
-		sb.append(_dictionaryOps + " ");
+		sb.append("dims(");
+		sb.append(_nRows + ",");
+		sb.append(_nCols + ") ");
+		sb.append("CostVector:[");
+		sb.append(_scans + ",");
+		sb.append(_decompressions + ",");
+		sb.append(_overlappingDecompressions + ",");
+		sb.append(_leftMultiplications + ",");
+		sb.append(_rightMultiplications + ",");
+		sb.append(_compressedMultiplication + ",");
+		sb.append(_dictionaryOps + "]");
+		sb.append(" Densifying:");
+		sb.append(_isDensifying);
 		return sb.toString();
 	}
 

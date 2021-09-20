@@ -24,10 +24,8 @@ import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysds.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
 
-import java.io.Serializable;
 
-
-public class RevIndex extends IndexFunction implements Serializable
+public class RevIndex extends IndexFunction
 {
 	private static final long serialVersionUID = -1002715543022547788L;
 

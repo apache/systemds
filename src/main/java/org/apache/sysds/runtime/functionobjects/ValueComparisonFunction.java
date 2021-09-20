@@ -19,13 +19,11 @@
 
 package org.apache.sysds.runtime.functionobjects;
 
-import java.io.Serializable;
-
 /**
  * Abstraction for comparison (relational) operators in order to 
  * force a proper implementation by all relevant subclasses.
  */
-public abstract class ValueComparisonFunction extends ValueFunction implements Serializable
+public abstract class ValueComparisonFunction extends ValueFunction
 {
 	private static final long serialVersionUID = 6021132561216734747L;
 	

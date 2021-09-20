@@ -19,11 +19,9 @@
 
 package org.apache.sysds.runtime.functionobjects;
 
-import java.io.Serializable;
-
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 
-public abstract class TernaryValueFunction extends ValueFunction implements Serializable
+public abstract class TernaryValueFunction extends ValueFunction
 {
 	private static final long serialVersionUID = 4837616587192612216L;
 	

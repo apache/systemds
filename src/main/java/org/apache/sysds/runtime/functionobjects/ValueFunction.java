@@ -19,9 +19,7 @@
 
 package org.apache.sysds.runtime.functionobjects;
 
-import java.io.Serializable;
-
-public abstract class ValueFunction extends FunctionObject implements Serializable
+public abstract class ValueFunction extends FunctionObject
 {
 	private static final long serialVersionUID = -4985988545393861058L;
 	

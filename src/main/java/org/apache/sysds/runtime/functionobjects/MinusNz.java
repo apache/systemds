@@ -19,9 +19,7 @@
 
 package org.apache.sysds.runtime.functionobjects;
 
-import java.io.Serializable;
-
-public class MinusNz extends ValueFunction implements Serializable
+public class MinusNz extends ValueFunction
 {
 
 	private static final long serialVersionUID = -949397965417772299L;

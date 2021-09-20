@@ -19,9 +19,7 @@
 
 package org.apache.sysds.runtime.functionobjects;
 
-import java.io.Serializable;
-
-public class IfElse extends TernaryValueFunction implements Serializable
+public class IfElse extends TernaryValueFunction
 {
 	private static final long serialVersionUID = -8660124936856173978L;
 	

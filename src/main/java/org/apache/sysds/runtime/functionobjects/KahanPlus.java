@@ -19,13 +19,11 @@
 
 package org.apache.sysds.runtime.functionobjects;
 
-import java.io.Serializable;
-
 import org.apache.sysds.runtime.instructions.cp.Data;
 import org.apache.sysds.runtime.instructions.cp.KahanObject;
 
 
-public class KahanPlus extends KahanFunction implements Serializable
+public class KahanPlus extends KahanFunction
 {
 	private static final long serialVersionUID = -8338160609569967791L;
 

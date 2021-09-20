@@ -19,9 +19,7 @@
 
 package org.apache.sysds.runtime.functionobjects;
 
-import java.io.Serializable;
-
-public class Multiply extends ValueFunction implements Serializable
+public class Multiply extends ValueFunction
 {
 
 	private static final long serialVersionUID = 2801982061205871665L;

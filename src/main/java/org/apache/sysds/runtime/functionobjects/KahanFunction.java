@@ -19,8 +19,6 @@
 
 package org.apache.sysds.runtime.functionobjects;
 
-import java.io.Serializable;
-
 import org.apache.sysds.runtime.instructions.cp.KahanObject;
 
 
@@ -28,7 +26,7 @@ import org.apache.sysds.runtime.instructions.cp.KahanObject;
  * Runtime function type to perform the summation of values using
  * the Kahan summation algorithm.
  */
-public abstract class KahanFunction extends ValueFunction implements Serializable {
+public abstract class KahanFunction extends ValueFunction {
 
 	private static final long serialVersionUID = -8880016655817461398L;
 

@@ -19,11 +19,9 @@
 
 package org.apache.sysds.runtime.functionobjects;
 
-import java.io.Serializable;
-
 import org.apache.sysds.runtime.util.UtilFunctions;
 
-public class BitwShiftR extends ValueFunction implements Serializable
+public class BitwShiftR extends ValueFunction
 {
 	private static final long serialVersionUID = -6746241833459058280L;
 	

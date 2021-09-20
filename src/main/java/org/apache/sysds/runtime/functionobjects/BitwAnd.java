@@ -19,12 +19,10 @@
 
 package org.apache.sysds.runtime.functionobjects;
 
-import java.io.Serializable;
-
 import org.apache.sysds.runtime.util.UtilFunctions;
 
 
-public class BitwAnd extends ValueFunction implements Serializable
+public class BitwAnd extends ValueFunction 
 {
 	private static final long serialVersionUID = 6523146102263905602L;
 

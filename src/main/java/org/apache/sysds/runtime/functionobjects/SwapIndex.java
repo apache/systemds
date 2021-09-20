@@ -23,10 +23,8 @@ import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysds.runtime.matrix.data.MatrixValue.CellIndex;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
 
-import java.io.Serializable;
 
-
-public class SwapIndex extends IndexFunction implements Serializable
+public class SwapIndex extends IndexFunction
 {
 	private static final long serialVersionUID = -8898087610410746689L;
 

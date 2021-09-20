@@ -19,11 +19,9 @@
 
 package org.apache.sysds.runtime.functionobjects;
 
-import java.io.Serializable;
-
 // Singleton class
 
-public class Plus extends ValueFunction implements Serializable 
+public class Plus extends ValueFunction 
 {
 	private static final long serialVersionUID = -3573790367761963555L;
 

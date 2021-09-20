@@ -19,14 +19,17 @@
 
 package org.apache.sysds.runtime.functionobjects;
 
+import java.io.Serializable;
 import java.util.HashMap;
 
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.instructions.cp.Data;
 
 
-public abstract class FunctionObject 
+public abstract class FunctionObject implements Serializable
 {
+	private static final long serialVersionUID = -1L; // Abstract classes are not serialized.
+
 	@Override
 	public final Object clone() throws CloneNotSupportedException {
 		// cloning is not supported for singleton classes

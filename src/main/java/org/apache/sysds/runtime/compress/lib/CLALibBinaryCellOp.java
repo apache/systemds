@@ -105,10 +105,10 @@ public class CLALibBinaryCellOp {
 				result = CompressedMatrixBlockFactory.createConstant(m1.getNumRows(), m1.getNumColumns(), 0);
 			else if(fn instanceof Minus1Multiply)
 				result = CompressedMatrixBlockFactory.createConstant(m1.getNumRows(), m1.getNumColumns(), 1);
-			else if(fn instanceof MinusMultiply || fn instanceof PlusMultiply) {
-				double v = fn instanceof MinusMultiply ? ((MinusMultiply) fn).getConstant() : ((PlusMultiply) fn)
-					.getConstant();
-				result = CompressedMatrixBlockFactory.createConstant(m1.getNumRows(), m1.getNumColumns(), v);
+			else if(fn instanceof Minus || fn instanceof Plus || fn instanceof MinusMultiply || fn instanceof PlusMultiply){
+				CompressedMatrixBlock ret = new CompressedMatrixBlock();
+				ret.copy(m1);
+				return ret;
 			}
 			else
 				throw new NotImplementedException("Function Type: " + fn);

@@ -38,7 +38,11 @@ import org.apache.sysds.runtime.compress.CompressionStatistics;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup.CompressionType;
 import org.apache.sysds.runtime.functionobjects.KahanPlus;
+import org.apache.sysds.runtime.functionobjects.Minus;
+import org.apache.sysds.runtime.functionobjects.Minus1Multiply;
+import org.apache.sysds.runtime.functionobjects.MinusMultiply;
 import org.apache.sysds.runtime.functionobjects.Multiply;
+import org.apache.sysds.runtime.functionobjects.Plus;
 import org.apache.sysds.runtime.functionobjects.PlusMultiply;
 import org.apache.sysds.runtime.functionobjects.ReduceAll;
 import org.apache.sysds.runtime.matrix.data.LibMatrixCountDistinct;
@@ -679,11 +683,39 @@ public class CompressedMatrixTest extends AbstractCompressedUnaryTests {
 	}
 
 	@Test
-	public void testBinaryEmptyMatrixOp() {
+	public void testBinaryEmptyMatrixMultiplicationOp() {
+		BinaryOperator op = new BinaryOperator(Multiply.getMultiplyFnObject());
+		testBinaryEmptyMatrixOp(op);
+	}
+
+	@Test
+	public void testBinaryEmptyMatrixMinusOp() {
+		BinaryOperator op = new BinaryOperator(Minus.getMinusFnObject());
+		testBinaryEmptyMatrixOp(op);
+	}
+
+	@Test
+	public void testBinaryEmptyMatrixPlusOp() {
+		BinaryOperator op = new BinaryOperator(Plus.getPlusFnObject());
+		testBinaryEmptyMatrixOp(op);
+	}
+
+	@Test
+	public void testBinaryEmptyMatrixMinusMultiplyOp() {
+		BinaryOperator op = MinusMultiply.getFnObject().setOp2Constant(42);
+		testBinaryEmptyMatrixOp(op);
+	}
+
+	@Test
+	public void testBinaryEmptyMatrixMinus1MultiplyOp() {
+		BinaryOperator op = new BinaryOperator(Minus1Multiply.getMinus1MultiplyFnObject());
+		testBinaryEmptyMatrixOp(op);
+	}
+
+	public void testBinaryEmptyMatrixOp(BinaryOperator op) {
 		try {
 			if(!(cmb instanceof CompressedMatrixBlock))
 				return;
-			BinaryOperator op = new BinaryOperator(Multiply.getMultiplyFnObject());
 
 			MatrixBlock m2 = new MatrixBlock(cmb.getNumRows(), cmb.getNumColumns(), 0);
 			MatrixBlock ret1 = cmb.binaryOperations(op, m2, new MatrixBlock());
@@ -698,11 +730,27 @@ public class CompressedMatrixTest extends AbstractCompressedUnaryTests {
 	}
 
 	@Test
-	public void testBinaryEmptyRowVectorOp() {
+	public void testBinaryEmptyRowVectorMultiplicationOp() {
+		BinaryOperator op = new BinaryOperator(Multiply.getMultiplyFnObject());
+		testBinaryEmptyRowVectorOp(op);
+	}
+
+	@Test
+	public void testBinaryEmptyRowVectorMinusOp() {
+		BinaryOperator op = new BinaryOperator(Minus.getMinusFnObject());
+		testBinaryEmptyRowVectorOp(op);
+	}
+
+	@Test
+	public void testBinaryEmptyRowVectorPlusOp() {
+		BinaryOperator op = new BinaryOperator(Plus.getPlusFnObject());
+		testBinaryEmptyRowVectorOp(op);
+	}
+
+	public void testBinaryEmptyRowVectorOp(BinaryOperator op) {
 		try {
 			if(!(cmb instanceof CompressedMatrixBlock))
 				return;
-			BinaryOperator op = new BinaryOperator(Multiply.getMultiplyFnObject());
 
 			MatrixBlock m2 = new MatrixBlock(1, cmb.getNumColumns(), 0);
 			MatrixBlock ret1 = cmb.binaryOperations(op, m2, new MatrixBlock());

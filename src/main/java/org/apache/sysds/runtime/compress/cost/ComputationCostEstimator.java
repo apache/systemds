@@ -100,23 +100,22 @@ public class ComputationCostEstimator implements ICostEstimate {
 		cost += _scans * scanCost(g);
 		cost += _decompressions * decompressionCost(g);
 		cost += _overlappingDecompressions * overlappingDecompressionCost(g);
-		// 16 is assuming that the left side is 16 rows.
-		double lmc = leftMultCost(g) * 16;
-		cost += _leftMultiplications * lmc;
-		// 16 is assuming that the right side is 16 rows.
-		double rmc = rightMultCost(g) * 16;
-		cost += _rightMultiplications * rmc;
-
-		// cost += _compressedMultiplication * (lmc + rmc);
-		cost += _compressedMultiplication * _compressedMultCost(g);
+		// 16 is assuming that the left / right side is 16 rows/cols.
+		final int rowsCols = 16;
+		cost += _leftMultiplications *  leftMultCost(g) * rowsCols;
+		cost += _rightMultiplications * rightMultCost(g) * rowsCols;
 		cost += _dictionaryOps * dictionaryOpsCost(g);
-
+		
 		double size = g.getMinSize();
+		final double compressionRatio =  size / MatrixBlock.estimateSizeDenseInMemory(_nRows, _nCols) / g.getColumns().length;
+
+		cost *=  0.001 + compressionRatio;
+
+		cost += _compressedMultiplication * _compressedMultCost(g) * rowsCols;
 
 		// double uncompressedSize = g.getCompressionSize(CompressionType.UNCOMPRESSED);
-		double compressionRatio = size / MatrixBlock.estimateSizeDenseInMemory(_nRows, _nCols) / g.getColumns().length;
 
-		return cost * ( 0.001 + compressionRatio);
+		return cost;
 	}
 
 	private double scanCost(CompressedSizeInfoColGroup g) {
@@ -141,8 +140,9 @@ public class ComputationCostEstimator implements ICostEstimate {
 
 	private double _compressedMultCost(CompressedSizeInfoColGroup g) {
 		final int nColsInGroup = g.getColumns().length;
-		final double mcf = g.getMostCommonFraction();
-		final double preAggregateCost = mcf > 0.6 ? _nRows * (1 - 0.6 * mcf) : _nRows;
+		// final double mcf = g.getMostCommonFraction();
+		// final double preAggregateCost = (mcf > 0.6 ? _nRows * (1 - 0.6 * mcf) : _nRows) * 4;
+		final double preAggregateCost = _nRows;
 
 		final double numberTuples = g.getNumVals();
 		final double tupleSparsity = g.getTupleSparsity();

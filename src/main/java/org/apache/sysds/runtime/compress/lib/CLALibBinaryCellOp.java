@@ -105,7 +105,8 @@ public class CLALibBinaryCellOp {
 				result = CompressedMatrixBlockFactory.createConstant(m1.getNumRows(), m1.getNumColumns(), 0);
 			else if(fn instanceof Minus1Multiply)
 				result = CompressedMatrixBlockFactory.createConstant(m1.getNumRows(), m1.getNumColumns(), 1);
-			else if(fn instanceof Minus || fn instanceof Plus || fn instanceof MinusMultiply || fn instanceof PlusMultiply){
+			else if(fn instanceof Minus || fn instanceof Plus || fn instanceof MinusMultiply ||
+				fn instanceof PlusMultiply) {
 				CompressedMatrixBlock ret = new CompressedMatrixBlock();
 				ret.copy(m1);
 				return ret;
@@ -132,7 +133,11 @@ public class CLALibBinaryCellOp {
 		// TODO optimize to allow for sparse outputs.
 		final int outCells = outRows * outCols;
 		if(atype == BinaryAccessType.MATRIX_COL_VECTOR) {
-			result.reset(outRows, Math.max(outCols, that.getNumColumns()), outCells);
+			if(result != null)
+				result.reset(outRows, Math.max(outCols, that.getNumColumns()), outCells);
+			else
+				result = new MatrixBlock(outRows, Math.max(outCols, that.getNumColumns()), outCells);
+
 			MatrixBlock d_compressed = m1.getCachedDecompressed();
 			if(d_compressed != null) {
 				if(left)
@@ -146,12 +151,15 @@ public class CLALibBinaryCellOp {
 
 		}
 		else if(atype == BinaryAccessType.MATRIX_MATRIX) {
-			result.reset(outRows, outCols, outCells);
+			if(result != null)
+				result.reset(outRows, outCols, outCells);
+			else
+				result = new MatrixBlock(outRows, outCols, outCells);
 
 			MatrixBlock d_compressed = m1.getCachedDecompressed();
 			if(d_compressed == null)
 				d_compressed = m1.getUncompressed("MatrixMatrix " + op);
-			
+
 			if(left)
 				LibMatrixBincell.bincellOp(that, d_compressed, result, op);
 			else

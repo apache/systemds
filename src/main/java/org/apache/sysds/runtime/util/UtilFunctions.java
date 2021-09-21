@@ -20,6 +20,7 @@
 package org.apache.sysds.runtime.util;
 
 import org.apache.commons.lang.ArrayUtils;
+import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.commons.math3.random.RandomDataGenerator;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
@@ -485,6 +486,12 @@ public class UtilFunctions {
 			case FP32:    return Float.parseFloat(in);
 			default: throw new RuntimeException("Unsupported value type: "+vt);
 		}
+	}
+
+	public static double objectToDoubleSafe(ValueType vt, Object in) {
+		if(vt == ValueType.STRING && !NumberUtils.isCreatable((String) in)) {
+			return ((String) in).equalsIgnoreCase("null") ? 0.0 : 1.1;
+		} else return objectToDouble(vt, in);
 	}
 
 	public static double objectToDouble(ValueType vt, Object in) {

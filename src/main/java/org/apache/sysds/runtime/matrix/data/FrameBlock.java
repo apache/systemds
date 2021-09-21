@@ -37,6 +37,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Function;
+import java.util.function.IntFunction;
+import java.util.stream.IntStream;
 
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.NotImplementedException;
@@ -46,6 +48,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.io.Writable;
 import org.apache.sysds.api.DMLException;
+import org.apache.sysds.common.Types;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.codegen.CodegenUtils;
@@ -596,6 +599,31 @@ public class FrameBlock implements CacheBlock, Externalizable {
 		_coldata = empty ? tmpData : (Array[]) ArrayUtils.addAll(_coldata, tmpData);
 		_numRows = cols[0].length;
 		_msize = -1;
+	}
+
+	public void appendColumn(ValueType vt, Array col) {
+		switch (vt) {
+			case STRING:
+				appendColumn(((StringArray) col).get());
+				break;
+			case BOOLEAN:
+				appendColumn(((BooleanArray) col).get());
+				break;
+			case INT32:
+				appendColumn(((IntegerArray) col).get());
+				break;
+			case INT64:
+				appendColumn(((LongArray) col).get());
+				break;
+			case FP32:
+				appendColumn(((FloatArray) col).get());
+				break;
+			case FP64:
+				appendColumn(((DoubleArray) col).get());
+				break;
+			default:
+				throw new RuntimeException("Unsupported value type: " + vt);
+		}
 	}
 
 	public Object getColumnData(int c) {
@@ -1640,10 +1668,13 @@ public class FrameBlock implements CacheBlock, Externalizable {
 			_data = data;
 			_size = _data.length;
 		}
+		public String[] get() { return _data; }
+
 		@Override
 		public String get(int index) {
 			return _data[index];
 		}
+
 		@Override
 		public void set(int index, String value) {
 			_data[index] = value;
@@ -1705,10 +1736,13 @@ public class FrameBlock implements CacheBlock, Externalizable {
 			_data = data;
 			_size = _data.length;
 		}
+		public boolean[] get() { return _data; }
+
 		@Override
 		public Boolean get(int index) {
 			return _data[index];
 		}
+
 		@Override
 		public void set(int index, Boolean value) {
 			_data[index] = (value!=null) ? value : false;
@@ -1772,6 +1806,7 @@ public class FrameBlock implements CacheBlock, Externalizable {
 			_data = data;
 			_size = _data.length;
 		}
+		public long[] get() { return _data; }
 		@Override
 		public Long get(int index) {
 			return _data[index];
@@ -1839,6 +1874,7 @@ public class FrameBlock implements CacheBlock, Externalizable {
 			_data = data;
 			_size = _data.length;
 		}
+		public int[] get() { return _data; }
 
 		@Override
 		public Integer get(int index) {
@@ -1906,6 +1942,8 @@ public class FrameBlock implements CacheBlock, Externalizable {
 			_data = data;
 			_size = _data.length;
 		}
+		public float[] get() { return _data; }
+
 		@Override
 		public Float get(int index) {
 			return _data[index];
@@ -1972,6 +2010,7 @@ public class FrameBlock implements CacheBlock, Externalizable {
 			_data = data;
 			_size = _data.length;
 		}
+		public double[] get() { return _data; }
 		@Override
 		public Double get(int index) {
 			return _data[index];
@@ -2470,6 +2509,77 @@ public class FrameBlock implements CacheBlock, Externalizable {
 					colData.set(j, replacement);
 			}
 		}
+		return ret;
+	}
+
+	public  FrameBlock removeEmptyOperations(boolean rows, boolean emptyReturn, MatrixBlock select) {
+		if( rows )
+			return removeEmptyRows(select, emptyReturn);
+		else //cols
+			return removeEmptyColumns(select, emptyReturn);
+	}
+
+	private FrameBlock removeEmptyRows(MatrixBlock select, boolean emptyReturn) {
+		FrameBlock ret = new FrameBlock(_schema, _colnames);
+
+		for(int i = 0; i < _numRows; i++) {
+			boolean isEmpty = true;
+			Object[] row = new Object[getNumColumns()];
+
+			for(int j = 0; j < getNumColumns(); j++) {
+				Array colData = _coldata[j].clone();
+				row[j] = colData.get(i);
+				ValueType type = _schema[j];
+				isEmpty = isEmpty && (ArrayUtils.contains(new double[]{0.0, Double.NaN}, UtilFunctions.objectToDoubleSafe(type, colData.get(i))));
+			}
+
+			if((!isEmpty && select == null) || (select != null && select.getValue(i, 0) == 1)) {
+				ret.appendRow(row);
+			}
+		}
+
+		if(ret.getNumRows() == 0 && emptyReturn) {
+			String[][] arr = new String[1][getNumColumns()];
+			Arrays.fill(arr, new String[]{null});
+			ValueType[] schema = new ValueType[getNumColumns()];
+			Arrays.fill(schema, ValueType.STRING);
+			return new FrameBlock(schema, arr);
+		}
+
+		return ret;
+	}
+
+	private FrameBlock removeEmptyColumns(MatrixBlock select, boolean emptyReturn) {
+		FrameBlock ret = new FrameBlock();
+		List<ColumnMetadata> columnMetadata = new ArrayList<>();
+
+		for(int i = 0; i < getNumColumns(); i++) {
+			Array colData = _coldata[i];
+
+			boolean isEmpty = false;
+			if(select == null) {
+				ValueType type = _schema[i];
+				isEmpty = IntStream.range(0, colData._size).mapToObj((IntFunction<Object>) colData::get)
+					.allMatch(e -> ArrayUtils.contains(new double[]{0.0, Double.NaN}, UtilFunctions.objectToDoubleSafe(type, e)));
+			}
+
+			if((select != null && select.getValue(0, i) == 1) || (!isEmpty && select == null)) {
+				Types.ValueType vt = _schema[i];
+				ret.appendColumn(vt, _coldata[i].clone());
+				columnMetadata.add(new ColumnMetadata(_colmeta[i]));
+			}
+		}
+
+		if(ret.getNumColumns() == 0 && emptyReturn) {
+			String[][] arr = new String[_numRows][];
+			Arrays.fill(arr, new String[]{null});
+			return new FrameBlock(new ValueType[]{ValueType.STRING}, arr);
+		}
+
+		ret._colmeta = new ColumnMetadata[columnMetadata.size()];
+		columnMetadata.toArray(ret._colmeta);
+		ret.setColumnMetadata(ret._colmeta);
+
 		return ret;
 	}
 

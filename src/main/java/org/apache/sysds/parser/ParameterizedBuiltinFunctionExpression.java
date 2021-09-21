@@ -584,7 +584,8 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 				+ Arrays.toString(invalid.toArray(new String[0])), false);
 		
 		//check existence and correctness of arguments
-		checkTargetParam(getVarParam("target"), conditional);
+		Expression target = getVarParam("target");
+		checkEmptyTargetParam(target, conditional);
 		
 		Expression margin = getVarParam("margin");
 		if( margin==null ){
@@ -608,8 +609,11 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 			_varParams.put("empty.return", new BooleanIdentifier(true));
 		
 		// Output is a matrix with unknown dims
-		output.setDataType(DataType.MATRIX);
-		output.setValueType(ValueType.FP64);
+		output.setDataType(target.getOutput().getDataType());
+		if(target.getOutput().getDataType() == DataType.FRAME)
+			output.setValueType(ValueType.STRING);
+		else
+			output.setValueType(ValueType.FP64);
 		output.setDimensions(-1, -1);
 	}
 	
@@ -725,6 +729,12 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 		else if( target.getOutput().getDataType() != DataType.MATRIX )
 			raiseValidateError("Input matrix 'target' is of type '"+target.getOutput().getDataType()
 				+"'. Please specify the input matrix.", conditional, LanguageErrorCodes.INVALID_PARAMETERS);
+	}
+
+	private void checkEmptyTargetParam(Expression target, boolean conditional) {
+		if( target==null )
+			raiseValidateError("Named parameter 'target' missing. Please specify the input matrix.",
+				conditional, LanguageErrorCodes.INVALID_PARAMETERS);
 	}
 	
 	private void checkOptionalBooleanParam(Expression param, String name, boolean conditional) {

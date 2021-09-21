@@ -413,6 +413,7 @@ if [ $WORKER == 1 ]; then
   $LOG4JPROP \
   org.apache.sysds.api.DMLScript \
   -w $PORT \
+  $CONFIG_FILE \
   $*"
   print_out "Executing command: $CMD"
   print_out  ""

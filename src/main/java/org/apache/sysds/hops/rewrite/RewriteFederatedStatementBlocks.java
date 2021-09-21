@@ -28,10 +28,15 @@ import org.apache.sysds.hops.ReorgOp;
 import org.apache.sysds.hops.TernaryOp;
 import org.apache.sysds.hops.cost.FederatedCost;
 import org.apache.sysds.hops.cost.FederatedCostEstimator;
+import org.apache.sysds.parser.ForStatement;
 import org.apache.sysds.parser.ForStatementBlock;
+import org.apache.sysds.parser.FunctionStatement;
 import org.apache.sysds.parser.FunctionStatementBlock;
+import org.apache.sysds.parser.IfStatement;
 import org.apache.sysds.parser.IfStatementBlock;
+import org.apache.sysds.parser.Statement;
 import org.apache.sysds.parser.StatementBlock;
+import org.apache.sysds.parser.WhileStatement;
 import org.apache.sysds.parser.WhileStatementBlock;
 import org.apache.sysds.runtime.instructions.fed.FEDInstruction;
 
@@ -69,32 +74,61 @@ public class RewriteFederatedStatementBlocks extends StatementBlockRewriteRule {
 	 */
 	@Override
 	public List<StatementBlock> rewriteStatementBlock(StatementBlock sb, ProgramRewriteStatus state) {
-		//return Arrays.asList(sb);
-
-		//return selectFederatedExecutionPlan(roots);
-
-		if ( sb instanceof WhileStatementBlock){
-			rewriteStatementBlocks(sb.getDMLProg().getStatementBlocks(), state);
-		}
-		else if ( sb instanceof IfStatementBlock){
-			IfStatementBlock ifsb = (IfStatementBlock)sb;
-			visitFedPlanHop(ifsb.getPredicateHops());
-			selectFederatedExecutionPlan(ifsb.getHops());
-		}
+		if ( sb instanceof WhileStatementBlock)
+			return rewriteWhileStatementBlock((WhileStatementBlock) sb, state);
+		else if ( sb instanceof IfStatementBlock)
+			return rewriteIfStatementBlock((IfStatementBlock) sb, state);
 		else if ( sb instanceof ForStatementBlock){
 			// This also includes ParForStatementBlocks
-			ForStatementBlock forsb = (ForStatementBlock) sb;
-
+			return rewriteForStatementBlock((ForStatementBlock) sb, state);
 		}
-		else if ( sb instanceof FunctionStatementBlock){
-
-		}
+		else if ( sb instanceof FunctionStatementBlock)
+			return rewriteFunctionStatementBlock((FunctionStatementBlock) sb, state);
 		else {
 			// StatementBlock type (no subclass)
 			sb.setHops(selectFederatedExecutionPlan(sb.getHops()));
 		}
 
-		return Arrays.asList(sb);
+		return new ArrayList<>(Arrays.asList(sb));
+	}
+
+	private List<StatementBlock> rewriteWhileStatementBlock(WhileStatementBlock whileSB, ProgramRewriteStatus state){
+		Hop whilePredicateHop = whileSB.getPredicateHops();
+		selectFederatedExecutionPlan(whilePredicateHop);
+		for ( Statement stm : whileSB.getStatements() ){
+			WhileStatement whileStm = (WhileStatement) stm;
+			whileStm.setBody((ArrayList<StatementBlock>) rewriteStatementBlocks(whileStm.getBody(), state));
+		}
+		return new ArrayList<>(Arrays.asList(whileSB));
+	}
+
+	private List<StatementBlock> rewriteIfStatementBlock(IfStatementBlock ifSB, ProgramRewriteStatus state){
+		selectFederatedExecutionPlan(ifSB.getPredicateHops());
+		for ( Statement statement : ifSB.getStatements() ){
+			IfStatement ifStatement = (IfStatement) statement;
+			ifStatement.setIfBody((ArrayList<StatementBlock>) rewriteStatementBlocks(ifStatement.getIfBody(), state));
+			ifStatement.setElseBody((ArrayList<StatementBlock>) rewriteStatementBlocks(ifStatement.getElseBody(), state));
+		}
+		return new ArrayList<>(Arrays.asList(ifSB));
+	}
+
+	private List<StatementBlock> rewriteForStatementBlock(ForStatementBlock forSB, ProgramRewriteStatus state){
+		selectFederatedExecutionPlan(forSB.getFromHops());
+		selectFederatedExecutionPlan(forSB.getToHops());
+		selectFederatedExecutionPlan(forSB.getIncrementHops());
+		for ( Statement statement : forSB.getStatements() ){
+			ForStatement forStatement = ((ForStatement)statement);
+			forStatement.setBody((ArrayList<StatementBlock>) rewriteStatementBlocks(forStatement.getBody(), state));
+		}
+		return new ArrayList<>(Arrays.asList(forSB));
+	}
+
+	private List<StatementBlock> rewriteFunctionStatementBlock(FunctionStatementBlock funcSB, ProgramRewriteStatus state){
+		for ( Statement statement : funcSB.getStatements() ){
+			FunctionStatement funcStm = (FunctionStatement) statement;
+			funcStm.setBody((ArrayList<StatementBlock>) rewriteStatementBlocks(funcStm.getBody(), state));
+		}
+		return new ArrayList<>(Arrays.asList(funcSB));
 	}
 
 	/**
@@ -108,9 +142,10 @@ public class RewriteFederatedStatementBlocks extends StatementBlockRewriteRule {
 	 */
 	@Override
 	public List<StatementBlock> rewriteStatementBlocks(List<StatementBlock> sbs, ProgramRewriteStatus state) {
-
-
-		return sbs;
+		List<StatementBlock> rewrittenStmBlocks = new ArrayList<>();
+		for ( StatementBlock stmBlock : sbs )
+			rewrittenStmBlocks.addAll(rewriteStatementBlock(stmBlock, state));
+		return rewrittenStmBlocks;
 	}
 
 	/**
@@ -119,13 +154,14 @@ public class RewriteFederatedStatementBlocks extends StatementBlockRewriteRule {
 	 * @return the list of roots with updated FederatedOutput fields.
 	 */
 	private ArrayList<Hop> selectFederatedExecutionPlan(ArrayList<Hop> roots){
-		for (Hop root : roots){
-			root.resetVisitStatus();
-		}
 		for ( Hop root : roots ){
-			visitFedPlanHop(root);
+			selectFederatedExecutionPlan(root);
 		}
 		return roots;
+	}
+
+	private void selectFederatedExecutionPlan(Hop root){
+		visitFedPlanHop(root);
 	}
 
 	class HopRel {
@@ -156,32 +192,24 @@ public class RewriteFederatedStatementBlocks extends StatementBlockRewriteRule {
 	 * @param currentHop the Hop from which the DAG is visited
 	 */
 	private void visitFedPlanHop(Hop currentHop){
-		if ( currentHop.isVisited() )
+		// If the currentHop is in the hopRelMemo table, it means that it has been visited
+		if ( hopRelMemo.containsKey(currentHop.getHopID()) )
 			return;
-		if ( currentHop.getInput() != null && currentHop.getInput().size() > 0 && !currentHop.isFederatedDataOp() ){
-			// Depth first to get to the input
+		// If the currentHop has input, then the input should be visited depth-first
+		if ( currentHop.getInput() != null && currentHop.getInput().size() > 0 ){
 			for ( Hop input : currentHop.getInput() )
 				visitFedPlanHop(input);
-		} else if ( currentHop.isFederatedDataOp() ) {
-			// leaf federated node
-			//TODO: This will block the cases where the federated DataOp is based on input that are also federated.
-			// This means that the actual federated leaf nodes will never be reached.
-			currentHop.setFederatedOutput(FEDInstruction.FederatedOutput.FOUT);
 		}
+		// Put FOUT, LOUT, and None HopRels into the memo table
+		ArrayList<HopRel> hopRels = new ArrayList<>();
 		if ( isFedInstSupportedHop(currentHop) ){
-			ArrayList<HopRel> hopRels = new ArrayList<>();
 			for ( FEDInstruction.FederatedOutput fedoutValue : FEDInstruction.FederatedOutput.values() )
 				if ( isFedOutSupported(currentHop, fedoutValue) )
 					hopRels.add(new HopRel(currentHop,fedoutValue));
-			if (hopRelMemo.containsKey(currentHop.getHopID()))
-				hopRelMemo.get(currentHop.getHopID()).addAll(hopRels);
-			else
-				hopRelMemo.put(currentHop.getHopID(), hopRels);
-		} else {
-			List<HopRel> noneList = new ArrayList<>();
-			noneList.add(new HopRel(currentHop, FEDInstruction.FederatedOutput.NONE));
-			hopRelMemo.put(currentHop.getHopID(), noneList);
-		}
+
+		} else
+			hopRels.add(new HopRel(currentHop, FEDInstruction.FederatedOutput.NONE));
+		hopRelMemo.put(currentHop.getHopID(), hopRels);
 
 		/*
 		if ( ( isFedInstSupportedHop(currentHop) ) ){

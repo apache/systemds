@@ -192,8 +192,7 @@ public class FederatedWeightedSigmoidTest extends AutomatedTestBase {
 
 		// check for federated operations
 		Assert.assertTrue(heavyHittersContainsString("fed_wsigmoid", 1, exec_mode == ExecMode.SPARK ? 2 : 3));
-		if(exec_mode != ExecMode.SPARK)
-			Assert.assertTrue(heavyHittersContainsString("fed_uak+", 1, 3)); // verify output is federated
+		Assert.assertTrue(heavyHittersContainsString("fed_uak+", 1, 3)); // verify output is federated
 
 		// check that federated input files are still existing
 		Assert.assertTrue(HDFSTool.existsFileOnHDFS(input("X1")));

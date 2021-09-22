@@ -189,7 +189,7 @@ public class FederatedWeightedUnaryMatrixMultTest extends AutomatedTestBase
 			// check for federated operations
 			Assert.assertTrue(heavyHittersContainsString("fed_wumm", 1, exec_mode == ExecMode.SPARK ? 2 : 3));
 			// verify output is federated
-			Assert.assertTrue(heavyHittersContainsString("fed_uak+", 1, exec_mode == ExecMode.SPARK ? 2 : 3));
+			Assert.assertTrue(heavyHittersContainsString("fed_uak+", 1, 3));
 
 			// check that federated input files are still existing
 			Assert.assertTrue(HDFSTool.existsFileOnHDFS(input("X1")));

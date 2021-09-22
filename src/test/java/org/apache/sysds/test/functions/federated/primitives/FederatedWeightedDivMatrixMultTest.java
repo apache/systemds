@@ -36,6 +36,10 @@ import org.junit.runners.Parameterized;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @RunWith(value = Parameterized.class)
 @net.jcip.annotations.NotThreadSafe
@@ -62,6 +66,11 @@ public class FederatedWeightedDivMatrixMultTest extends AutomatedTestBase
 	private final static double TOLERANCE = 1e-9;
 
 	private final static int BLOCKSIZE = 1024;
+
+	private final static Set<String> FEDERATED_OUTPUT = Stream.of(
+			RIGHT_TEST_NAME, RIGHT_EPS_TEST_NAME, BASIC_MULT_TEST_NAME, LEFT_MULT_TEST_NAME,
+			RIGHT_MULT_TEST_NAME, RIGHT_MULT_MINUS_TEST_NAME, RIGHT_MULT_MINUS_4_TEST_NAME
+		).collect(Collectors.toCollection(HashSet::new));
 
 	@Parameterized.Parameter()
 	public int rows;
@@ -309,6 +318,8 @@ public class FederatedWeightedDivMatrixMultTest extends AutomatedTestBase
 
 			// check for federated operations
 			Assert.assertTrue(heavyHittersContainsString("fed_wdivmm"));
+			if(FEDERATED_OUTPUT.contains(test_name)) // verify the output is federated
+				Assert.assertTrue(heavyHittersContainsString("fed_uak+"));
 
 			// check that federated input files are still existing
 			Assert.assertTrue(HDFSTool.existsFileOnHDFS(input("X1")));

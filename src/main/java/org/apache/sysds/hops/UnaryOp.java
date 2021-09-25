@@ -39,8 +39,10 @@ import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.util.UtilFunctions;
+import org.apache.sysds.hops.OptimizerUtils;
 
 import java.util.ArrayList;
+
 
 
 /* Unary (cell operations): e.g, b_ij = round(a_ij)
@@ -165,19 +167,18 @@ public class UnaryOp extends MultiThreadedHop
 				}
 				else //default unary 
 				{
-					Boolean inplace = false;
+					boolean inplace = false;
 
-					//check if inplace
-					if(this._parent.size()==1 )
-					{
-						if((input instanceof DataOp))
-						{
-							if(!((DataOp)input).isRead())
+					if (OptimizerUtils.ENABLE_UNARY_UPDATE_IN_PLACE) {
+
+						//check if inplace
+						if (this._parent.size() == 1) {
+							if ((input instanceof DataOp)) {
+								if (!((DataOp) input).isRead())
+									inplace = true;
+							} else {
 								inplace = true;
-						}
-						else
-						{
-							inplace = true;
+							}
 						}
 					}
 

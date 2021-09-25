@@ -294,12 +294,14 @@ public class LibMatrixAgg
 	}
 	
 	public static MatrixBlock cumaggregateUnaryMatrix(MatrixBlock in, MatrixBlock out, UnaryOperator uop, double[] agg) {
-		//prepare meta data 
+		//Check this implementation, standard case for cumagg (single threaded)
+
+		//prepare meta data
 		AggType aggtype = getAggType(uop);
 		final int m = in.rlen;
 		final int m2 = out.rlen;
 		final int n2 = out.clen;
-		
+
 		//filter empty input blocks (incl special handling for sparse-unsafe operations)
 		if( in.isEmpty() && (agg == null || aggtype == AggType.CUM_SUM_PROD) ) {
 			return aggregateUnaryMatrixEmpty(in, out, aggtype, null);
@@ -317,7 +319,7 @@ public class LibMatrixAgg
 		}
 		
 		//Timing time = new Timing(true);
-		
+
 		if( !in.sparse )
 			cumaggregateUnaryMatrixDense(in, out, aggtype, uop.fn, agg, 0, m);
 		else
@@ -336,6 +338,19 @@ public class LibMatrixAgg
 		AggregateUnaryOperator uaop = InstructionUtils.parseBasicCumulativeAggregateUnaryOperator(uop);
 		
 		//fall back to sequential if necessary or agg not supported
+
+		//Check this implementation, multi-threaded case for cumagg
+		/* k ist anzahl der threads, clen und rlen sind die Reihen und Spalten längen der matrix
+		Die Anzahl der Threads k muss kleiner 1 sein
+		Oder die Anzahl an reihen * spalten(=Zellen) des inputs muss kleiner als der PAR_NUMCELL_THRESHOLD1 sein
+		Oder die Anzahl der Reihen ist kleiner gleich der Anzahl an threads
+		oder der operator ist leer
+		oder der output ist nicht threadsafe
+
+		Dann wird cumaggrefateUnaryMatrix singlethreaded ausgeführt weil der anzahl an threadoperator
+		bei der in der if ausgeführten function weggelassen ist
+		 */
+
 		if(    k <= 1 || (long)in.rlen*in.clen < PAR_NUMCELL_THRESHOLD1 || in.rlen <= k
 			|| out.clen*8*k > PAR_INTERMEDIATE_SIZE_THRESHOLD || uaop == null || !out.isThreadSafe()) {
 			return cumaggregateUnaryMatrix(in, out, uop);

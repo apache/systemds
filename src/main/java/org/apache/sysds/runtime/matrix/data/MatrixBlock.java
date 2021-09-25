@@ -2730,7 +2730,23 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		
 		return ret;
 	}
-
+	//ToDo
+	/*
+	extend the runtime operations in MatrixBlock
+	unaryOperations(UnaryOperator op, MatrixValue result),
+	which are called from UnaryMatrixCPInstruction,
+	so they exploit the update-in-place flag
+	by directly overwriting the input
+	(this can be done by simply assigning the input instead of allocating a new block).
+	So far, we only support this in the branch for cumaggregateUnaryMatrix,
+	but you should do that for multi-threaded and denseUnary/sparseUnary operations
+	on dense inputs&outputs (if both are dense) too
+	(later we'll extend that to sparse formats).
+	All extensions would be local to unaryOperations and potentially denseUnaryOperations
+	and sparseUnaryOperations.
+	Have a look into the cumaggregateUnaryMatrix to see how to use the flag from the passed
+	operator object.
+	 */
 	@Override
 	public MatrixBlock unaryOperations(UnaryOperator op, MatrixValue result) {
 		MatrixBlock ret = checkType(result);
@@ -2745,7 +2761,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 			ret = new MatrixBlock(rlen, n, sp, sp ? nonZeros : rlen*n);
 		else
 			ret.reset(rlen, n, sp);
-		
+
 		//early abort for comparisons w/ special values
 		if( Builtin.isBuiltinCode(op.fn, BuiltinCode.ISNAN, BuiltinCode.ISNA))
 			if( !containsValue(op.getPattern()) )
@@ -2764,7 +2780,17 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 			//note: we apply multi-threading in a best-effort manner here
 			//only for expensive operators such as exp, log, sigmoid, because
 			//otherwise allocation, read and write anyway dominates
-			ret.allocateDenseBlock(false);
+			//ToDo Check if Threadsafe
+			/*if (!op.isInplace() || this.isEmpty())
+			{	//allocate dense output block
+				ret.allocateDenseBlock(false);
+			}
+			else
+			{
+				ret = this;
+			}
+			*/
+			//ret.allocateDenseBlock(false);
 			DenseBlock a = getDenseBlock();
 			DenseBlock c = ret.getDenseBlock();
 			for(int bi=0; bi<a.numBlocks(); bi++) {
@@ -2773,11 +2799,13 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 			}
 			ret.recomputeNonZeros();
 		}
-		else {
+		else
+		{
 			//default execute unary operations
 			if(op.sparseSafe)
 				sparseUnaryOperations(op, ret);
 			else
+				//ToDo for denseUnaryOperations on dense input and outputs
 				denseUnaryOperations(op, ret);
 		}
 		
@@ -2846,8 +2874,14 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		}
 		else //DENSE <- DENSE
 		{
-			//allocate dense output block
-			ret.allocateDenseBlock(false);
+			if (!op.isInplace() || this.isInSparseFormat() || this.isEmpty())
+			{	//allocate dense output block
+				ret.allocateDenseBlock(false);
+			}
+			else
+			{
+				ret = this;
+			}
 			DenseBlock da = getDenseBlock();
 			DenseBlock dc = ret.getDenseBlock();
 			

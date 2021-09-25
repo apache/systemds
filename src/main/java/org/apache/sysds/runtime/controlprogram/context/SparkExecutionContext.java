@@ -224,6 +224,9 @@ public class SparkExecutionContext extends ExecutionContext
 			
 			_spctx = createContext(conf);
 
+			if(DMLScript.USE_LOCAL_SPARK_CONFIG)
+				_spctx.setCheckpointDir("/tmp/systemds_spark_cache_" + DMLScript.getUUID());
+
 			_parRDDs.clear();
 		}
 

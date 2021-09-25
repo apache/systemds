@@ -227,6 +227,11 @@ public class CompressedMatrixBlockFactory {
 		if(res == null)
 			return abortCompression();
 
+		if(compSettings.isInSparkInstruction){
+			// clear soft reference to uncompressed block in case of spark.
+			res.clearSoftReferenceToDecompressed();
+		}
+
 		return new ImmutablePair<>(res, _stats);
 	}
 
@@ -476,58 +481,64 @@ public class CompressedMatrixBlockFactory {
 		setNextTimePhase(time.stop());
 		DMLCompressionStatistics.addCompressionTime(getLastTimePhase(), phase);
 		if(LOG.isDebugEnabled()) {
-			switch(phase) {
-				case 0:
-					LOG.debug("--compression phase " + phase + " Classify  : " + getLastTimePhase());
-					LOG.debug("--Individual Columns Estimated Compression: " + _stats.estimatedSizeCols);
-					break;
-				case 1:
-					LOG.debug("--compression phase " + phase + " Grouping  : " + getLastTimePhase());
-					LOG.debug("Grouping using: " + compSettings.columnPartitioner);
-					LOG.debug("Cost Calculated using: " + costEstimator);
-					LOG.debug("--Cocoded Columns estimated Compression:" + _stats.estimatedSizeCoCoded);
-					break;
-				case 2:
-					LOG.debug("--compression phase " + phase + " Transpose : " + getLastTimePhase());
-					LOG.debug("Did transpose: " + compSettings.transposed);
-					break;
-				case 3:
-					LOG.debug("--compression phase " + phase + " Compress  : " + getLastTimePhase());
-					LOG.debug("--compression Hash collisions:" + "(" + DblArrayIntListHashMap.hashMissCount + ","
-						+ DoubleCountHashMap.hashMissCount + ")");
-					DblArrayIntListHashMap.hashMissCount = 0;
-					DoubleCountHashMap.hashMissCount = 0;
-					LOG.debug("--compressed initial actual size:" + _stats.compressedInitialSize);
-					break;
-				case 4:
-					LOG.debug("--compression phase " + phase + " Share     : " + getLastTimePhase());
-					break;
-				case 5:
-					LOG.debug("--num col groups: " + res.getColGroups().size());
-					LOG.debug("--compression phase " + phase + " Cleanup   : " + getLastTimePhase());
-					LOG.debug("--col groups types " + _stats.getGroupsTypesString());
-					LOG.debug("--col groups sizes " + _stats.getGroupsSizesString());
-					LOG.debug("--dense size:        " + _stats.denseSize);
-					LOG.debug("--original size:     " + _stats.originalSize);
-					LOG.debug("--compressed size:   " + _stats.size);
-					LOG.debug("--compression ratio: " + _stats.getRatio());
-					LOG.debug("--Dense       ratio: " + _stats.getDenseRatio());
-					int[] lengths = new int[res.getColGroups().size()];
-					int i = 0;
-					for(AColGroup colGroup : res.getColGroups())
-						lengths[i++] = colGroup.getNumValues();
+			if(compSettings.isInSparkInstruction) {
+				if(phase == 5)
+					LOG.debug(_stats);
+			}
+			else {
+				switch(phase) {
+					case 0:
+						LOG.debug("--compression phase " + phase + " Classify  : " + getLastTimePhase());
+						LOG.debug("--Individual Columns Estimated Compression: " + _stats.estimatedSizeCols);
+						break;
+					case 1:
+						LOG.debug("--compression phase " + phase + " Grouping  : " + getLastTimePhase());
+						LOG.debug("Grouping using: " + compSettings.columnPartitioner);
+						LOG.debug("Cost Calculated using: " + costEstimator);
+						LOG.debug("--Cocoded Columns estimated Compression:" + _stats.estimatedSizeCoCoded);
+						break;
+					case 2:
+						LOG.debug("--compression phase " + phase + " Transpose : " + getLastTimePhase());
+						LOG.debug("Did transpose: " + compSettings.transposed);
+						break;
+					case 3:
+						LOG.debug("--compression phase " + phase + " Compress  : " + getLastTimePhase());
+						LOG.debug("--compression Hash collisions:" + "(" + DblArrayIntListHashMap.hashMissCount + ","
+							+ DoubleCountHashMap.hashMissCount + ")");
+						DblArrayIntListHashMap.hashMissCount = 0;
+						DoubleCountHashMap.hashMissCount = 0;
+						LOG.debug("--compressed initial actual size:" + _stats.compressedInitialSize);
+						break;
+					case 4:
+						LOG.debug("--compression phase " + phase + " Share     : " + getLastTimePhase());
+						break;
+					case 5:
+						LOG.debug("--num col groups: " + res.getColGroups().size());
+						LOG.debug("--compression phase " + phase + " Cleanup   : " + getLastTimePhase());
+						LOG.debug("--col groups types " + _stats.getGroupsTypesString());
+						LOG.debug("--col groups sizes " + _stats.getGroupsSizesString());
+						LOG.debug("--dense size:        " + _stats.denseSize);
+						LOG.debug("--original size:     " + _stats.originalSize);
+						LOG.debug("--compressed size:   " + _stats.size);
+						LOG.debug("--compression ratio: " + _stats.getRatio());
+						LOG.debug("--Dense       ratio: " + _stats.getDenseRatio());
+						int[] lengths = new int[res.getColGroups().size()];
+						int i = 0;
+						for(AColGroup colGroup : res.getColGroups())
+							lengths[i++] = colGroup.getNumValues();
 
-					LOG.debug("--compressed colGroup dictionary sizes: " + Arrays.toString(lengths));
-					if(LOG.isTraceEnabled()) {
-						for(AColGroup colGroup : res.getColGroups()) {
-							LOG.trace("--colGroups type       : " + colGroup.getClass().getSimpleName() + " size: "
-								+ colGroup.estimateInMemorySize()
-								+ ((colGroup instanceof ColGroupValue) ? "  numValues :"
-									+ ((ColGroupValue) colGroup).getNumValues() : "")
-								+ "  colIndexes : " + Arrays.toString(colGroup.getColIndices()));
+						LOG.debug("--compressed colGroup dictionary sizes: " + Arrays.toString(lengths));
+						if(LOG.isTraceEnabled()) {
+							for(AColGroup colGroup : res.getColGroups()) {
+								LOG.trace("--colGroups type       : " + colGroup.getClass().getSimpleName() + " size: "
+									+ colGroup.estimateInMemorySize()
+									+ ((colGroup instanceof ColGroupValue) ? "  numValues :"
+										+ ((ColGroupValue) colGroup).getNumValues() : "")
+									+ "  colIndexes : " + Arrays.toString(colGroup.getColIndices()));
+							}
 						}
-					}
-				default:
+					default:
+				}
 			}
 		}
 		phase++;

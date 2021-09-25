@@ -47,6 +47,7 @@ public class CompressionSettingsBuilder {
 	private PartitionerType columnPartitioner;
 	private CostType costType;
 	private double minimumCompressionRatio = 1.0;
+	private boolean isInSparkInstruction = false;
 
 	public CompressionSettingsBuilder() {
 
@@ -293,6 +294,16 @@ public class CompressionSettingsBuilder {
 	}
 
 	/**
+	 * Inform the compression that it is executed in a spark instruction.
+	 * 
+	 * @return The CompressionSettingsBuilder
+	 */
+	public CompressionSettingsBuilder setIsInSparkInstruction() {
+		this.isInSparkInstruction = true;
+		return this;
+	}
+
+	/**
 	 * Create the CompressionSettings object to use in the compression.
 	 * 
 	 * @return The CompressionSettings
@@ -300,6 +311,6 @@ public class CompressionSettingsBuilder {
 	public CompressionSettings create() {
 		return new CompressionSettings(samplingRatio, allowSharedDictionary, transposeInput, seed, lossy,
 			validCompressions, sortValuesByLength, columnPartitioner, maxColGroupCoCode, coCodePercentage,
-			minimumSampleSize, maxSampleSize, estimationType, costType, minimumCompressionRatio);
+			minimumSampleSize, maxSampleSize, estimationType, costType, minimumCompressionRatio, isInSparkInstruction);
 	}
 }

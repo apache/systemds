@@ -67,6 +67,10 @@ public class CLALibUtils {
 				else
 					filteredGroups.add(g);
 			}
+			for(double v : constV)
+				if(!Double.isFinite(v))
+					return groups;
+			
 			return filteredGroups;
 		}
 		else

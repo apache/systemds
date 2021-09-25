@@ -27,7 +27,6 @@ import java.io.ObjectOutput;
 import java.lang.ref.SoftReference;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.Future;
@@ -247,16 +246,8 @@ public class CompressedMatrixBlock extends MatrixBlock {
 
 		ret.allocateDenseBlock();
 
-		if(isOverlapping()) {
-			// add a bit of stability in decompression
-			Comparator<AColGroup> comp = Comparator.comparing(x -> effect(x));
-			_colGroups.sort(comp);
-		}
-
-		if(k == 1){
-			CLALibDecompress.decompress(ret, getColGroups());
-			ret.setNonZeros(nonZeros == -1 && !isOverlapping() ? recomputeNonZeros() : nonZeros);
-		}
+		if(k == 1)
+			CLALibDecompress.decompress(ret, getColGroups(), nonZeros, isOverlapping());
 		else
 			CLALibDecompress.decompress(ret, getColGroups(), isOverlapping(), k);
 
@@ -273,10 +264,6 @@ public class CompressedMatrixBlock extends MatrixBlock {
 
 		decompressedVersion = new SoftReference<>(ret);
 		return ret;
-	}
-
-	private double effect(AColGroup x) {
-		return -Math.max(x.getMax(), Math.abs(x.getMin()));
 	}
 
 	/**

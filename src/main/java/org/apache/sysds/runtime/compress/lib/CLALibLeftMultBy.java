@@ -301,9 +301,10 @@ public class CLALibLeftMultBy {
 		final boolean containsSDC = CLALibUtils.containsSDC(colGroups);
 
 		// a constant colgroup summing the default values.
-		final double[] constV = containsSDC ? new double[numColumnsOut] : null;
+		double[] constV = containsSDC ? new double[numColumnsOut] : null;
 		final List<AColGroup> filteredGroups = CLALibUtils.filterSDCGroups(colGroups, constV);
-
+		if(colGroups == filteredGroups)
+			constV = null;
 		final double[] rowSums = containsSDC ? new double[that.getNumRows()] : null;
 
 		if(k == 1) {

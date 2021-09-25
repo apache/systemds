@@ -20,6 +20,7 @@
 package org.apache.sysds.runtime.compress.lib;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
@@ -33,15 +34,24 @@ import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.CommonThreadPool;
 
+/**
+ * Library to decompress a list of column groups into a matrix.
+ */
 public class CLALibDecompress {
-	public static MatrixBlock decompress(MatrixBlock ret, List<AColGroup> groups) {
+	public static MatrixBlock decompress(MatrixBlock ret, List<AColGroup> groups, long nonZeros, boolean overlapping) {
+
 		final int rlen = ret.getNumRows();
 		final int clen = ret.getNumColumns();
 		final int block = (int) Math.ceil((double) (CompressionSettings.BITMAP_BLOCK_SZ) / clen);
 		final int blklen = block > 1000 ? block + 1000 - block % 1000 : Math.max(64, block);
 		final boolean containsSDC = CLALibUtils.containsSDC(groups);
-		final double[] constV = containsSDC ? new double[ret.getNumColumns()] : null;
-		final List<AColGroup> filteredGroups = CLALibUtils.filterSDCGroups(groups, constV);
+		double[] constV = containsSDC ? new double[ret.getNumColumns()] : null;
+		final List<AColGroup> filteredGroups = containsSDC ? CLALibUtils.filterSDCGroups(groups, constV) : groups;
+
+		sortGroups(filteredGroups, overlapping);
+		// check if we are using filtered groups, and if we are not force constV to null
+		if(groups == filteredGroups)
+			constV = null;
 
 		for(int i = 0; i < rlen; i += blklen) {
 			final int rl = i;
@@ -50,13 +60,15 @@ public class CLALibDecompress {
 				grp.decompressToBlockUnSafe(ret, rl, ru);
 			if(constV != null && !ret.isInSparseFormat())
 				addVector(ret, constV, rl, ru);
-
 		}
+
+		ret.setNonZeros(nonZeros == -1 || overlapping ? ret.recomputeNonZeros() : nonZeros);
 
 		return ret;
 	}
 
 	public static MatrixBlock decompress(MatrixBlock ret, List<AColGroup> groups, boolean overlapping, int k) {
+
 		try {
 			final ExecutorService pool = CommonThreadPool.get(k);
 			final int rlen = ret.getNumRows();
@@ -64,8 +76,13 @@ public class CLALibDecompress {
 			final int blklen = block > 1000 ? block + 1000 - block % 1000 : Math.max(64, block);
 
 			final boolean containsSDC = CLALibUtils.containsSDC(groups);
-			final double[] constV = containsSDC ? new double[ret.getNumColumns()] : null;
-			final List<AColGroup> filteredGroups = CLALibUtils.filterSDCGroups(groups, constV);
+			double[] constV = containsSDC ? new double[ret.getNumColumns()] : null;
+			final List<AColGroup> filteredGroups = containsSDC ? CLALibUtils.filterSDCGroups(groups, constV) : groups;
+			sortGroups(filteredGroups, overlapping);
+
+			// check if we are using filtered groups, and if we are not force constV to null
+			if(groups == filteredGroups)
+				constV = null;
 
 			final ArrayList<DecompressTask> tasks = new ArrayList<>();
 			for(int i = 0; i * blklen < rlen; i++)
@@ -84,6 +101,25 @@ public class CLALibDecompress {
 		}
 
 		return ret;
+	}
+
+	private static void sortGroups(List<AColGroup> groups, boolean overlapping) {
+		if(overlapping) {
+			// add a bit of stability in decompression
+			Comparator<AColGroup> comp = Comparator.comparing(x -> effect(x));
+			groups.sort(comp);
+		}
+	}
+
+	/**
+	 * Calculate an effect value for a column group. This is used to sort the groups before decompression to decompress
+	 * the columns that have the smallest effect first.
+	 * 
+	 * @param x A Group
+	 * @return A Effect double value.
+	 */
+	private static double effect(AColGroup x) {
+		return -Math.max(x.getMax(), Math.abs(x.getMin()));
 	}
 
 	private static class DecompressTask implements Callable<Long> {

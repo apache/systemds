@@ -558,11 +558,13 @@ public class ColGroupSDC extends ColGroupValue {
 	public ColGroupSDCZeros extractCommon(double[] constV) {
 		double[] commonV = _dict.getTuple(getNumValues() - 1, _colIndexes.length);
 
-		for(int i = 0; i < _colIndexes.length; i++) {
+		if(commonV == null) // The common tuple was all zero. Therefore this column group should never have been SDC.
+			return new ColGroupSDCZeros(_colIndexes, _numRows, _dict, _indexes, _data, getCounts());
+
+		for(int i = 0; i < _colIndexes.length; i++)
 			constV[_colIndexes[i]] += commonV[i];
-		}
+
 		ADictionary subtractedDict = _dict.subtractTuple(commonV);
 		return new ColGroupSDCZeros(_colIndexes, _numRows, subtractedDict, _indexes, _data, getCounts());
 	}
-
 }

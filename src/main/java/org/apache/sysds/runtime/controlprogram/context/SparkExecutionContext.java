@@ -269,6 +269,7 @@ public class SparkExecutionContext extends ExecutionContext
 		final String threads = ConfigurationManager.getDMLConfig().getTextValue(DMLConfig.LOCAL_SPARK_NUM_THREADS);
 		conf.setMaster("local[" + threads + "]");
 		conf.setAppName("LocalSparkContextApp");
+		conf.set("spark.ui.showConsoleProgress", "false");
 		conf.set("spark.ui.enabled", "false");
 	}
 

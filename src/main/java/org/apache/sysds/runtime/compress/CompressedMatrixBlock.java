@@ -434,7 +434,7 @@ public class CompressedMatrixBlock extends MatrixBlock {
 			nonZeros = cg.getNumberNonZeros();
 			// clear the soft reference to the decompressed version, since the one column group is perfectly,
 			// representing the decompressed version.
-			decompressedVersion = null;
+			clearSoftReferenceToDecompressed();
 		}
 		// serialize compressed matrix block
 		out.writeInt(rlen);

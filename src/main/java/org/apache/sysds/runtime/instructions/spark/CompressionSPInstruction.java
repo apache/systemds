@@ -25,9 +25,13 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.function.Function;
+import org.apache.spark.storage.RDDInfo;
+import org.apache.spark.storage.StorageLevel;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlockFactory;
+import org.apache.sysds.runtime.compress.CompressionSettingsBuilder;
 import org.apache.sysds.runtime.compress.SingletonLookupHashMap;
 import org.apache.sysds.runtime.compress.cost.CostEstimatorBuilder;
+import org.apache.sysds.runtime.compress.cost.CostEstimatorFactory.CostType;
 import org.apache.sysds.runtime.compress.cost.ICostEstimate;
 import org.apache.sysds.runtime.compress.workload.WTreeRoot;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
@@ -87,9 +91,25 @@ public class CompressionSPInstruction extends UnarySPInstruction {
 		// execute compression
 		JavaPairRDD<MatrixIndexes, MatrixBlock> out = in.mapValues(mappingFunction);
 		if(LOG.isTraceEnabled()) {
-			out.checkpoint();
-			LOG.trace("\nSpark compressed    : " + reduceSizes(out.mapValues(new SizeFunction()).collect())
-				+ "\nSpark uncompressed  : " + reduceSizes(in.mapValues(new SizeFunction()).collect()));
+			in.persist(StorageLevel.MEMORY_AND_DISK());
+			out.persist(StorageLevel.MEMORY_AND_DISK());
+			long sparkSizeIn = 0;
+			long sparkSizeOut = 0;
+			long blockSizesIn = reduceSizes(in.mapValues(new SizeFunction()).collect());
+			long blockSizesOut = reduceSizes(out.mapValues(new SizeFunction()).collect());
+			for(RDDInfo info : sec.getSparkContext().sc().getRDDStorageInfo()) {
+				if(info.id() == out.id())
+					sparkSizeOut = info.memSize();
+				else if(info.id() == in.id())
+					sparkSizeIn = info.memSize();
+			}
+			StringBuilder sb = new StringBuilder();
+			sb.append("Spark Compression Instruction sizes:");
+			sb.append(String.format("\nSBCompress: InSize:       %16d", sparkSizeIn));
+			sb.append(String.format("\nSBCompress: InBlockSize:  %16d", blockSizesIn));
+			sb.append(String.format("\nSBCompress: OutSize:      %16d", sparkSizeOut));
+			sb.append(String.format("\nSBCompress: OutBlockSize: %16d", blockSizesOut));
+			LOG.trace(sb.toString());
 		}
 
 		// set outputs
@@ -102,7 +122,9 @@ public class CompressionSPInstruction extends UnarySPInstruction {
 
 		@Override
 		public MatrixBlock call(MatrixBlock arg0) throws Exception {
-			return CompressedMatrixBlockFactory.compress(arg0).getLeft();
+			CompressionSettingsBuilder csb = new CompressionSettingsBuilder().setIsInSparkInstruction()
+				.setCostType(CostType.MEMORY);
+			return CompressedMatrixBlockFactory.compress(arg0, csb).getLeft();
 		}
 	}
 
@@ -117,13 +139,14 @@ public class CompressionSPInstruction extends UnarySPInstruction {
 
 		@Override
 		public MatrixBlock call(MatrixBlock arg0) throws Exception {
-			ICostEstimate a = costBuilder.create(arg0.getNumRows(), arg0.getNumColumns());
-			return CompressedMatrixBlockFactory.compress(arg0, InfrastructureAnalyzer.getLocalParallelism(), a)
+			ICostEstimate ce = costBuilder.create(arg0.getNumRows(), arg0.getNumColumns());
+			CompressionSettingsBuilder csb = new CompressionSettingsBuilder().setIsInSparkInstruction();
+			return CompressedMatrixBlockFactory.compress(arg0, InfrastructureAnalyzer.getLocalParallelism(), csb, ce)
 				.getLeft();
 		}
 	}
 
-	public static class SizeFunction implements Function<MatrixBlock, Double> {
+	public static class SizeFunction implements Function<MatrixBlock, Long> {
 		private static final long serialVersionUID = 1L;
 
 		public SizeFunction() {
@@ -131,17 +154,15 @@ public class CompressionSPInstruction extends UnarySPInstruction {
 		}
 
 		@Override
-		public Double call(MatrixBlock arg0) throws Exception {
-			return (double) arg0.getInMemorySize();
+		public Long call(MatrixBlock arg0) throws Exception {
+			return arg0.getInMemorySize();
 		}
 	}
 
-	public static String reduceSizes(List<Tuple2<MatrixIndexes, Double>> in) {
-		double sum = 0;
-		for(Tuple2<MatrixIndexes, Double> e : in) {
+	public static Long reduceSizes(List<Tuple2<MatrixIndexes, Long>> in) {
+		long sum = 0;
+		for(Tuple2<MatrixIndexes, Long> e : in)
 			sum += e._2();
-		}
-
-		return "sum: " + sum + " mean: " + (sum / in.size());
+		return sum;
 	}
 }

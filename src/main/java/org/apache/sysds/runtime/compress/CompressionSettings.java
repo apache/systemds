@@ -87,14 +87,10 @@ public class CompressionSettings {
 	 */
 	public final EnumSet<CompressionType> validCompressions;
 
-	/**
-	 * The minimum size of the sample extracted.
-	 */
+	/** The minimum size of the sample extracted. */
 	public final int minimumSampleSize;
 
-	/**
-	 * The maximum size of the sample extracted.
-	 */
+	/** The maximum size of the sample extracted. */
 	public final int maxSampleSize;
 
 	/** The sample type used for sampling */
@@ -108,15 +104,17 @@ public class CompressionSettings {
 	 */
 	public boolean transposed = false;
 
-	/**
-	 * The minimum compression ratio to achieve.
-	 */
+	/** The minimum compression ratio to achieve. */
 	public final double minimumCompressionRatio;
+
+	/** Is a spark instruction */
+	public final boolean isInSparkInstruction;
 
 	protected CompressionSettings(double samplingRatio, boolean allowSharedDictionary, String transposeInput, int seed,
 		boolean lossy, EnumSet<CompressionType> validCompressions, boolean sortValuesByLength,
-		PartitionerType columnPartitioner, int maxColGroupCoCode, double coCodePercentage, int minimumSampleSize, int maxSampleSize,
-		EstimationType estimationType, CostType costComputationType, double minimumCompressionRatio) {
+		PartitionerType columnPartitioner, int maxColGroupCoCode, double coCodePercentage, int minimumSampleSize,
+		int maxSampleSize, EstimationType estimationType, CostType costComputationType, double minimumCompressionRatio,
+		boolean isInSparkInstruction) {
 		this.samplingRatio = samplingRatio;
 		this.allowSharedDictionary = allowSharedDictionary;
 		this.transposeInput = transposeInput;
@@ -128,10 +126,11 @@ public class CompressionSettings {
 		this.maxColGroupCoCode = maxColGroupCoCode;
 		this.coCodePercentage = coCodePercentage;
 		this.minimumSampleSize = minimumSampleSize;
-		this.maxSampleSize= maxSampleSize;
+		this.maxSampleSize = maxSampleSize;
 		this.estimationType = estimationType;
 		this.costComputationType = costComputationType;
 		this.minimumCompressionRatio = minimumCompressionRatio;
+		this.isInSparkInstruction = isInSparkInstruction;
 		if(LOG.isDebugEnabled())
 			LOG.debug(this);
 	}

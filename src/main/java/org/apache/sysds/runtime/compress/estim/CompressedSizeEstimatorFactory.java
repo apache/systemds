@@ -43,16 +43,19 @@ public class CompressedSizeEstimatorFactory {
 		else {
 			if(shouldUseExactEstimator(cs, nRows, sampleSize, nnzRows)) {
 				if(sampleSize > nnzRows && nRows > 10000 && nCols > 10 && !cs.transposed) {
-					LOG.info("Transposing for exact estimator");
+					if(! cs.isInSparkInstruction)
+						LOG.info("Transposing for exact estimator");
 					data = LibMatrixReorg.transpose(data,
 						new MatrixBlock(data.getNumColumns(), data.getNumRows(), data.isInSparseFormat()), k);
 					cs.transposed = true;
 				}
-				LOG.info("Using Exact estimator");
+				if(! cs.isInSparkInstruction)
+					LOG.info("Using Exact estimator");
 				return new CompressedSizeEstimatorExact(data, cs);
 			}
 			else {
-				LOG.info("Trying sample size: " + sampleSize);
+				if(! cs.isInSparkInstruction)
+					LOG.info("Trying sample size: " + sampleSize);
 				return tryToMakeSampleEstimator(data, cs, sampleRatio, sampleSize, nRows, nnzRows, k);
 			}
 		}
@@ -64,7 +67,8 @@ public class CompressedSizeEstimatorFactory {
 		CompressedSizeEstimatorSample estS = new CompressedSizeEstimatorSample(data, cs, sampleSize, k);
 		int double_number = 1;
 		while(estS.getSample() == null) {
-			LOG.warn("Doubling sample size " + double_number++);
+			if(! cs.isInSparkInstruction)
+				LOG.warn("Doubling sample size " + double_number++);
 			sampleSize = sampleSize * 2;
 			if(shouldUseExactEstimator(cs, nRows, sampleSize, nnzRows))
 				return new CompressedSizeEstimatorExact(data, cs);

@@ -53,13 +53,14 @@ public class CLALibDecompress {
 		if(groups == filteredGroups)
 			constV = null;
 
+		final double eps = getEps(constV);
 		for(int i = 0; i < rlen; i += blklen) {
 			final int rl = i;
 			final int ru = Math.min(i + blklen, rlen);
 			for(AColGroup grp : filteredGroups)
 				grp.decompressToBlockUnSafe(ret, rl, ru);
 			if(constV != null && !ret.isInSparseFormat())
-				addVector(ret, constV, rl, ru);
+				addVector(ret, constV, eps, rl, ru);
 		}
 
 		ret.setNonZeros(nonZeros == -1 || overlapping ? ret.recomputeNonZeros() : nonZeros);
@@ -84,9 +85,10 @@ public class CLALibDecompress {
 			if(groups == filteredGroups)
 				constV = null;
 
+			final double eps = getEps(constV);
 			final ArrayList<DecompressTask> tasks = new ArrayList<>();
 			for(int i = 0; i * blklen < rlen; i++)
-				tasks.add(new DecompressTask(filteredGroups, ret, i * blklen, Math.min((i + 1) * blklen, rlen),
+				tasks.add(new DecompressTask(filteredGroups, ret, eps, i * blklen, Math.min((i + 1) * blklen, rlen),
 					overlapping, constV));
 			List<Future<Long>> rtasks = pool.invokeAll(tasks);
 			pool.shutdown();
@@ -122,18 +124,43 @@ public class CLALibDecompress {
 		return -Math.max(x.getMax(), Math.abs(x.getMin()));
 	}
 
+	/**
+	 * Get a small epsilon from the constant group.
+	 * 
+	 * @param constV the constant vector.
+	 * @return epsilon
+	 */
+	private static double getEps(double[] constV) {
+		if(constV == null)
+			return 0;
+		else {
+			double max = -Double.MAX_VALUE;
+			double min = Double.MAX_VALUE;
+			for(double v : constV){
+				if(v > max)
+					max = v;
+				if(v < min)
+					min = v;
+			}
+			final double eps = (max-min) * 1e-13;
+			return eps;
+		}
+	}
+
 	private static class DecompressTask implements Callable<Long> {
 		private final List<AColGroup> _colGroups;
 		private final MatrixBlock _ret;
+		private final double _eps;
 		private final int _rl;
 		private final int _ru;
 		private final double[] _constV;
 		private final boolean _overlapping;
 
-		protected DecompressTask(List<AColGroup> colGroups, MatrixBlock ret, int rl, int ru, boolean overlapping,
-			double[] constV) {
+		protected DecompressTask(List<AColGroup> colGroups, MatrixBlock ret, double eps, int rl, int ru,
+			boolean overlapping, double[] constV) {
 			_colGroups = colGroups;
 			_ret = ret;
+			_eps = eps;
 			_rl = rl;
 			_ru = ru;
 			_overlapping = overlapping;
@@ -142,42 +169,49 @@ public class CLALibDecompress {
 
 		@Override
 		public Long call() {
-
-			// preallocate sparse rows to avoid repeated alloc
-			// if(!_overlapping && _ret.isInSparseFormat()) {
-			// int[] rnnz = new int[_ru - _rl];
-			// for(AColGroup grp : _colGroups)
-			// grp.countNonZerosPerRow(rnnz, _rl, _ru);
-			// SparseBlock rows = _ret.getSparseBlock();
-			// for(int i = _rl; i < _ru; i++)
-			// rows.allocate(i, rnnz[i - _rl]);
-			// }
-
 			// decompress row partition
 			for(AColGroup grp : _colGroups)
 				grp.decompressToBlockUnSafe(_ret, _rl, _ru);
 
-			if(_constV != null && !_ret.isInSparseFormat()) {
-				addVector(_ret, _constV, _rl, _ru);
-			}
-
-			// post processing (sort due to append)
-			// if(_ret.isInSparseFormat())
-			// _ret.sortSparseRows(_rl, _ru);
+			if(_constV != null)
+				addVector(_ret, _constV, _eps, _rl, _ru);
 
 			return _overlapping ? 0 : _ret.recomputeNonZeros(_rl, _ru - 1);
 		}
 	}
 
-	private static void addVector(MatrixBlock ret, double[] rowV, int rl, int ru) {
+	/**
+	 * Add the rowV vector to each row in ret.
+	 * 
+	 * @param ret  matrix to add the vector to
+	 * @param rowV The row vector to add
+	 * @param eps  an epsilon defined, to round the output value to zero if the value is less than epsilon away from
+	 *             zero.
+	 * @param rl   The row to start at
+	 * @param ru   The row to end at
+	 */
+	private static void addVector(final MatrixBlock ret, final double[] rowV, final double eps, final int rl,
+		final int ru) {
 		final int nCols = ret.getNumColumns();
-
 		final DenseBlock db = ret.getDenseBlock();
-		for(int row = rl; row < ru; row++) {
-			final double[] _retV = db.values(row);
-			final int off = db.pos(row);
-			for(int col = 0; col < nCols; col++) {
-				_retV[off + col] += rowV[col];
+		if(eps == 0) {
+			for(int row = rl; row < ru; row++) {
+				final double[] _retV = db.values(row);
+				final int off = db.pos(row);
+				for(int col = 0; col < nCols; col++)
+					_retV[off + col] += rowV[col];
+			}
+		}
+		else {
+			for(int row = rl; row < ru; row++) {
+				final double[] _retV = db.values(row);
+				final int off = db.pos(row);
+				for(int col = 0; col < nCols; col++) {
+					final int out = off + col;
+					_retV[out] += rowV[col];
+					if(Math.abs(_retV[out]) <= eps)
+						_retV[out] = 0;
+				}
 			}
 		}
 	}

@@ -42,6 +42,7 @@ import org.apache.spark.broadcast.Broadcast;
 import org.apache.spark.storage.RDDInfo;
 import org.apache.spark.storage.StorageLevel;
 import org.apache.spark.util.LongAccumulator;
+import org.apache.sysds.api.DMLException;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.api.mlcontext.MLContext;
 import org.apache.sysds.api.mlcontext.MLContextUtil;
@@ -213,23 +214,15 @@ public class SparkExecutionContext extends ExecutionContext
 		}
 		else
 		{
-			if(DMLScript.USE_LOCAL_SPARK_CONFIG) {
-				// For now set 4 cores for integration testing :)
-				SparkConf conf = createSystemDSSparkConf()
-						.setMaster("local[" +
-							ConfigurationManager.getDMLConfig().getTextValue(DMLConfig.LOCAL_SPARK_NUM_THREADS)+
-							"]").setAppName("My local integration test app");
-				// This is discouraged in spark but have added only for those testcase that cannot stop the context properly
-				// conf.set("spark.driver.allowMultipleContexts", "true");
-				conf.set("spark.ui.enabled", "false");
-				_spctx = new JavaSparkContext(conf);
-			}
-			else //default cluster setup
-			{
-				//setup systemds-preferred spark configuration (w/o user choice)
-				SparkConf conf = createSystemDSSparkConf();
-				_spctx = new JavaSparkContext(conf);
-			}
+			final SparkConf conf = createSystemDSSparkConf();
+			final DMLConfig dmlConfig= ConfigurationManager.getDMLConfig();
+			// Use Spark local config, if already set to True ... keep true, otherwise look up if it should be local.
+			DMLScript.USE_LOCAL_SPARK_CONFIG = DMLScript.USE_LOCAL_SPARK_CONFIG ? true : dmlConfig.getBooleanValue(DMLConfig.USE_LOCAL_SPARK_CONFIG);
+			
+			if(DMLScript.USE_LOCAL_SPARK_CONFIG)
+				setLocalConfSettings(conf);
+			
+			_spctx = createContext(conf);
 
 			_parRDDs.clear();
 		}
@@ -251,6 +244,29 @@ public class SparkExecutionContext extends ExecutionContext
 		if( DMLScript.STATISTICS ){
 			Statistics.setSparkCtxCreateTime(System.nanoTime()-t0);
 		}
+	}
+
+
+	private static JavaSparkContext createContext(SparkConf conf){
+		try{
+			return new JavaSparkContext(conf);
+		} 
+		catch(Exception e){
+			if(e.getMessage().contains("A master URL must be set in your configuration")){
+				LOG.error("Error constructing Spark Context, falling back to local Spark context creation");
+				setLocalConfSettings(conf);
+				return createContext(conf);
+			}
+			else
+				throw new DMLException("Error while creating Spark context", e);
+		}
+	}
+
+	private static void setLocalConfSettings(SparkConf conf){
+		final String threads = ConfigurationManager.getDMLConfig().getTextValue(DMLConfig.LOCAL_SPARK_NUM_THREADS);
+		conf.setMaster("local[" + threads + "]");
+		conf.setAppName("LocalSparkContextApp");
+		conf.set("spark.ui.enabled", "false");
 	}
 
 	/**

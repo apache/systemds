@@ -67,6 +67,7 @@ public class GenerateReaderJSONMatrixTest extends AutomatedTestBase {
 
 			RawJSON rj= new RawJSON(sampleRaw);
 			rj.extractRows();
+			rj.getLIndex();
 
 		}
 		catch(Exception exception) {

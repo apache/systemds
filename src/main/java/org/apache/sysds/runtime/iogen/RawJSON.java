@@ -19,12 +19,15 @@
 
 package org.apache.sysds.runtime.iogen;
 
-import org.apache.sysds.runtime.matrix.data.Pair;
+import com.google.gson.Gson;
 import org.apache.wink.json4j.JSONArray;
 import org.apache.wink.json4j.JSONException;
 import org.apache.wink.json4j.JSONObject;
-
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Stack;
 
 public class RawJSON {
 
@@ -35,8 +38,8 @@ public class RawJSON {
 		this.rawJSON = rawJSON.trim();
 	}
 
+	// Extract all rows from plain text raw data
 	public void extractRows() {
-
 		rowJSON = new ArrayList<>();
 		Stack<Character> stack = new Stack<>();
 
@@ -58,59 +61,68 @@ public class RawJSON {
 		}
 	}
 
-	public void getL1Index() throws JSONException {
+	/* Index JSON values. The index have two levels.
+	The first level reconstruct the json text format, and the second level
+	index they keys in json string.
+	Example:
+		sample json string: {"a":1, "b":"HELLO", "c":[1,2,3]}
+		level 1(array): {} a 1 b HELLO c [] 1 2 3
+		level 0(map)  : (a,1) (b,3) (c,5)
+	*/
+	public void getLIndex() throws JSONException {
 		for(String rs : rowJSON) {
 			JSONObject jo = new JSONObject(rs);
-			Map<String, Pair<Integer, Integer>> l0 = new HashMap<>();
-			ArrayList<Object> rowObject = new ArrayList<>();
-			l1Index(jo, rowObject, "");
+			Map<String, Integer> l0 = new HashMap<>();
+			ArrayList<Object> l1 = new ArrayList<>();
+			lIndex(jo, l1, l0, "");
 		}
 	}
 
-	private void l1Index(JSONObject jo, ArrayList<Object> rowObject, String rootKey) throws JSONException {
-		rowObject.add("{}");
+	private void lIndex(JSONObject jo, ArrayList<Object> l1, Map<String, Integer> l0, String rootKey) throws JSONException {
+		l1.add("{}");
 		for(Iterator it = jo.keys(); it.hasNext(); ) {
 			String key = (String) it.next();
 			Object value = jo.get(key);
 			key = rootKey.equals("") ? key : rootKey + "." + key;
-			rowObject.add(key);
+			l0.put(key, l1.size());
+			l1.add(key);
 			if(value instanceof JSONObject) {
-				l1Index((JSONObject) value, rowObject, key);
+				lIndex((JSONObject) value, l1, l0, key);
 			}
 			else if(value instanceof JSONArray) {
 				JSONArray jArray = (JSONArray) value;
-				l1Index(jArray, rowObject, key);
+				lIndex(jArray, l1, l0, key);
 			}
 			else {
-				rowObject.add(value);
+				l1.add(value);
 			}
 		}
 	}
 
-	private void l1Index(JSONArray ja, ArrayList<Object> rowObject, String rootKey) throws JSONException {
-		rowObject.add("[]");
+	private void lIndex(JSONArray ja, ArrayList<Object> l1, Map<String, Integer> l0, String rootKey) throws JSONException {
+		l1.add("[]");
 		if(ja != null) {
 			for(int i = 0; i < ja.length(); i++) {
 				Object jaItem = ja.get(i);
 				if(jaItem instanceof JSONObject) {
-					l1Index((JSONObject) jaItem, rowObject, rootKey);
+					lIndex((JSONObject) jaItem, l1, l0, rootKey);
 				}
 				else if(jaItem instanceof JSONArray) {
-					l1Index((JSONArray) jaItem, rowObject, rootKey);
+					lIndex((JSONArray) jaItem, l1, l0, rootKey);
 				}
 				else {
 					if(jaItem instanceof Integer)
-						rowObject.add(ja.getInt(i));
+						l1.add(ja.getInt(i));
 					else if(jaItem instanceof Long)
-						rowObject.add(ja.getLong(i));
+						l1.add(ja.getLong(i));
 					else if(jaItem instanceof Float)
-						rowObject.add(ja.getDouble(i));
+						l1.add(ja.getDouble(i));
 					else if(jaItem instanceof Boolean)
-						rowObject.add(ja.getBoolean(i));
+						l1.add(ja.getBoolean(i));
 					else if(jaItem instanceof String)
-						rowObject.add(ja.getString(i));
+						l1.add(ja.getString(i));
 					else if(jaItem instanceof Short)
-						rowObject.add(ja.getShort(i));
+						l1.add(ja.getShort(i));
 					else {
 						throw new RuntimeException("Value type of the JSON item don't recognized!!");
 					}

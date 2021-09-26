@@ -23,10 +23,14 @@ import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.conf.CompilerConfig;
 import org.apache.sysds.runtime.iogen.RawJSON;
+import org.apache.sysds.runtime.matrix.data.Pair;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
 import org.junit.Test;
+
+import java.util.ArrayList;
+import java.util.Map;
 
 public class GenerateReaderJSONMatrixTest extends AutomatedTestBase {
 
@@ -67,7 +71,8 @@ public class GenerateReaderJSONMatrixTest extends AutomatedTestBase {
 
 			RawJSON rj= new RawJSON(sampleRaw);
 			rj.extractRows();
-			rj.getLIndex();
+			Pair<ArrayList<ArrayList<Object>>, ArrayList<Map<String, Integer>>> index = rj.getLIndex();
+
 
 		}
 		catch(Exception exception) {

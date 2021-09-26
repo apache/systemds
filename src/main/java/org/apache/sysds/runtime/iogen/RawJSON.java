@@ -19,10 +19,11 @@
 
 package org.apache.sysds.runtime.iogen;
 
-import com.google.gson.Gson;
+import org.apache.sysds.runtime.matrix.data.Pair;
 import org.apache.wink.json4j.JSONArray;
 import org.apache.wink.json4j.JSONException;
 import org.apache.wink.json4j.JSONObject;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -33,9 +34,13 @@ public class RawJSON {
 
 	private String rawJSON;
 	private ArrayList<String> rowJSON;
+	private ArrayList<ArrayList<Object>> l1Index;
+	private ArrayList<Map<String,Integer>> l0Index;
 
 	public RawJSON(String rawJSON) {
 		this.rawJSON = rawJSON.trim();
+		l1Index = new ArrayList<>();
+		l0Index = new ArrayList<>();
 	}
 
 	// Extract all rows from plain text raw data
@@ -69,13 +74,17 @@ public class RawJSON {
 		level 1(array): {} a 1 b HELLO c [] 1 2 3
 		level 0(map)  : (a,1) (b,3) (c,5)
 	*/
-	public void getLIndex() throws JSONException {
+	public Pair<ArrayList<ArrayList<Object>>, ArrayList<Map<String, Integer>>> getLIndex() throws JSONException {
 		for(String rs : rowJSON) {
 			JSONObject jo = new JSONObject(rs);
 			Map<String, Integer> l0 = new HashMap<>();
 			ArrayList<Object> l1 = new ArrayList<>();
 			lIndex(jo, l1, l0, "");
+			l1Index.add(l1);
+			l0Index.add(l0);
 		}
+
+		return new Pair<>(l1Index, l0Index);
 	}
 
 	private void lIndex(JSONObject jo, ArrayList<Object> l1, Map<String, Integer> l0, String rootKey) throws JSONException {
@@ -129,5 +138,13 @@ public class RawJSON {
 				}
 			}
 		}
+	}
+
+	public ArrayList<ArrayList<Object>> getL1Index() {
+		return l1Index;
+	}
+
+	public ArrayList<Map<String, Integer>> getL0Index() {
+		return l0Index;
 	}
 }

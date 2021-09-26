@@ -37,7 +37,8 @@ public class GenerateReaderJSONMatrixTest extends AutomatedTestBase {
 	protected String sampleRaw;
 
 
-	@Override public void setUp() {
+	@Override
+	public void setUp() {
 		TestUtils.clearAssertionInformation();
 		addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_DIR, TEST_NAME, new String[] {"Y"}));
 	}

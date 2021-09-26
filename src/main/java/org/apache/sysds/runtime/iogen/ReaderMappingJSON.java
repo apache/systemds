@@ -19,7 +19,7 @@
 
 package org.apache.sysds.runtime.iogen;
 
-import org.apache.sysds.runtime.matrix.data.Pair;
+import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.wink.json4j.JSONArray;
 import org.apache.wink.json4j.JSONException;
 import org.apache.wink.json4j.JSONObject;
@@ -30,21 +30,30 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Stack;
 
-public class RawJSON {
+public abstract class ReaderMappingJSON {
+	protected String[] mapCol;
+	protected String rawJSON;
+	protected ArrayList<String> rowJSON;
+	protected ArrayList<ArrayList<Object>> l1Index;
+	protected ArrayList<Map<String,Integer>> l0Index;
+	protected static int nrows;
+	protected static int ncols;
 
-	private String rawJSON;
-	private ArrayList<String> rowJSON;
-	private ArrayList<ArrayList<Object>> l1Index;
-	private ArrayList<Map<String,Integer>> l0Index;
-
-	public RawJSON(String rawJSON) {
-		this.rawJSON = rawJSON.trim();
+	public ReaderMappingJSON(String raw) {
+		rawJSON = raw.trim();
 		l1Index = new ArrayList<>();
 		l0Index = new ArrayList<>();
+		try {
+			extractRows();
+			doLIndex();
+		}
+		catch(JSONException e){
+			throw new RuntimeException(e);
+		}
 	}
 
 	// Extract all rows from plain text raw data
-	public void extractRows() {
+	protected void extractRows() {
 		rowJSON = new ArrayList<>();
 		Stack<Character> stack = new Stack<>();
 
@@ -74,7 +83,7 @@ public class RawJSON {
 		level 1(array): {} a 1 b HELLO c [] 1 2 3
 		level 0(map)  : (a,1) (b,3) (c,5)
 	*/
-	public Pair<ArrayList<ArrayList<Object>>, ArrayList<Map<String, Integer>>> getLIndex() throws JSONException {
+	protected void doLIndex() throws JSONException {
 		for(String rs : rowJSON) {
 			JSONObject jo = new JSONObject(rs);
 			Map<String, Integer> l0 = new HashMap<>();
@@ -83,11 +92,9 @@ public class RawJSON {
 			l1Index.add(l1);
 			l0Index.add(l0);
 		}
-
-		return new Pair<>(l1Index, l0Index);
 	}
 
-	private void lIndex(JSONObject jo, ArrayList<Object> l1, Map<String, Integer> l0, String rootKey) throws JSONException {
+	protected void lIndex(JSONObject jo, ArrayList<Object> l1, Map<String, Integer> l0, String rootKey) throws JSONException {
 		l1.add("{}");
 		for(Iterator it = jo.keys(); it.hasNext(); ) {
 			String key = (String) it.next();
@@ -108,7 +115,7 @@ public class RawJSON {
 		}
 	}
 
-	private void lIndex(JSONArray ja, ArrayList<Object> l1, Map<String, Integer> l0, String rootKey) throws JSONException {
+	protected void lIndex(JSONArray ja, ArrayList<Object> l1, Map<String, Integer> l0, String rootKey) throws JSONException {
 		l1.add("[]");
 		if(ja != null) {
 			for(int i = 0; i < ja.length(); i++) {
@@ -140,11 +147,17 @@ public class RawJSON {
 		}
 	}
 
-	public ArrayList<ArrayList<Object>> getL1Index() {
-		return l1Index;
-	}
+	// Matrix Reader Mapping
+	public static class MatrixReaderMapping extends ReaderMappingJSON {
 
-	public ArrayList<Map<String, Integer>> getL0Index() {
-		return l0Index;
+		private MatrixBlock sampleMatrix;
+
+		public MatrixReaderMapping(String raw, MatrixBlock matrix){
+			super(raw);
+			this.sampleMatrix = matrix;
+			nrows = sampleMatrix.getNumRows();
+			ncols = sampleMatrix.getNumColumns();
+
+		}
 	}
 }

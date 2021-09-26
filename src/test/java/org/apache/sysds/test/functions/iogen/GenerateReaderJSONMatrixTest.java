@@ -22,15 +22,14 @@ package org.apache.sysds.test.functions.iogen;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.conf.CompilerConfig;
-import org.apache.sysds.runtime.iogen.RawJSON;
-import org.apache.sysds.runtime.matrix.data.Pair;
+import org.apache.sysds.runtime.iogen.ReaderMappingJSON;
+import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.util.DataConverter;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
 import org.junit.Test;
 
-import java.util.ArrayList;
-import java.util.Map;
 
 public class GenerateReaderJSONMatrixTest extends AutomatedTestBase {
 
@@ -39,23 +38,20 @@ public class GenerateReaderJSONMatrixTest extends AutomatedTestBase {
 	private final static String TEST_NAME = "GenerateReaderJSONMatrixTest";
 
 	protected String sampleRaw;
+	protected double[][] sampleMatrix;
 
-
-	@Override
-	public void setUp() {
+	@Override public void setUp() {
 		TestUtils.clearAssertionInformation();
 		addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_DIR, TEST_NAME, new String[] {"Y"}));
 	}
 
-	@Test
-	public void test4() {
-		sampleRaw = "{\n" + "\t\"value5\":{\"k\":{\"m\":1},\"a\":1,\"vaaaaaa\":[[{\"a\":\"+++++++\",\"b\":2},{\"a\":3,\"b\":4,\"c\":5}],[{\"a\":6,\"b\":7},{\"a\":8,\"b\":9,\"c\":10}]]}\n" + "}";
+	@Test public void test1() {
+		sampleRaw = "{\"col1\":1, \"col2\":2, \"col34\":{\"col3\":3,\"col4\":4}}";
+		sampleMatrix = new double[][] {{1, 2, 3, 4}};
 		runGenerateReaderTest();
 	}
 
-
-	@SuppressWarnings("unused")
-	protected void runGenerateReaderTest() {
+	@SuppressWarnings("unused") protected void runGenerateReaderTest() {
 
 		Types.ExecMode oldPlatform = rtplatform;
 		rtplatform = Types.ExecMode.SINGLE_NODE;
@@ -69,11 +65,10 @@ public class GenerateReaderJSONMatrixTest extends AutomatedTestBase {
 			TestConfiguration config = getTestConfiguration(TEST_NAME);
 			loadTestConfiguration(config);
 
-			RawJSON rj= new RawJSON(sampleRaw);
-			rj.extractRows();
-			Pair<ArrayList<ArrayList<Object>>, ArrayList<Map<String, Integer>>> index = rj.getLIndex();
+			MatrixBlock sampleMB = DataConverter.convertToMatrixBlock(sampleMatrix);
 
-
+			ReaderMappingJSON.MatrixReaderMapping mappingJSON = new ReaderMappingJSON.MatrixReaderMapping(sampleRaw,
+				sampleMB);
 		}
 		catch(Exception exception) {
 			exception.printStackTrace();

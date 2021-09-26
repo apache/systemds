@@ -67,17 +67,9 @@ public class ColGroupSDC extends ColGroupValue {
 		super(numRows);
 	}
 
-	protected ColGroupSDC(int[] colIndices, int numRows, ADictionary dict, int[] indexes, AMapToData data) {
-		super(colIndices, numRows, dict);
-		_indexes = OffsetFactory.create(indexes, numRows);
-		_data = data;
-		_zeros = false;
-	}
-
-	protected ColGroupSDC(int[] colIndices, int numRows, ADictionary dict, int[] indexes, AMapToData data,
-		int[] cachedCounts) {
-		super(colIndices, numRows, dict, cachedCounts);
-		_indexes = OffsetFactory.create(indexes, numRows);
+	protected ColGroupSDC(int[] colIndices, int numRows, ADictionary dict, AOffset offsets, AMapToData data) {
+		super(colIndices, numRows, dict, null);
+		_indexes = offsets;
 		_data = data;
 		_zeros = false;
 	}
@@ -101,8 +93,7 @@ public class ColGroupSDC extends ColGroupValue {
 	}
 
 	@Override
-	protected void decompressToBlockUnSafeDenseDictionary(MatrixBlock target, int rl, int ru, int offT,
-		double[] values) {
+	protected void decompressToBlockDenseDictionary(MatrixBlock target, int rl, int ru, int offT, double[] values) {
 		final int nCol = _colIndexes.length;
 		final int offsetToDefault = values.length - nCol;
 		final DenseBlock db = target.getDenseBlock();
@@ -133,8 +124,7 @@ public class ColGroupSDC extends ColGroupValue {
 	}
 
 	@Override
-	protected void decompressToBlockUnSafeSparseDictionary(MatrixBlock target, int rl, int ru, int offT,
-		SparseBlock sb) {
+	protected void decompressToBlockSparseDictionary(MatrixBlock target, int rl, int ru, int offT, SparseBlock sb) {
 		final int offsetToDefault = sb.numRows() - 1;
 		final int defApos = sb.pos(offsetToDefault);
 		final int defAlen = sb.size(offsetToDefault) + defApos;
@@ -476,8 +466,7 @@ public class ColGroupSDC extends ColGroupValue {
 			int i = 0;
 
 			for(; i < _numRows && itThat.hasNext() && itThis.hasNext(); i++) {
-				final int to = (itThis.value() == i) ? getIndex(
-					itThis.getDataIndexAndIncrement()) : offsetToDefaultThis;
+				final int to = (itThis.value() == i) ? getIndex(itThis.getDataIndexAndIncrement()) : offsetToDefaultThis;
 				final int fr = (itThat.value() == i) ? that
 					.getIndex(itThat.getDataIndexAndIncrement()) : offsetToDefaultThat;
 				that._dict.addToEntry(ret, fr, to, nCol);
@@ -485,8 +474,7 @@ public class ColGroupSDC extends ColGroupValue {
 
 			if(itThat.hasNext()) {
 				for(; i < _numRows && itThat.hasNext(); i++) {
-					int fr = (itThat.value() == i) ? that
-						.getIndex(itThat.getDataIndexAndIncrement()) : offsetToDefaultThat;
+					int fr = (itThat.value() == i) ? that.getIndex(itThat.getDataIndexAndIncrement()) : offsetToDefaultThat;
 					that._dict.addToEntry(ret, fr, offsetToDefaultThis, nCol);
 				}
 			}
@@ -557,7 +545,6 @@ public class ColGroupSDC extends ColGroupValue {
 
 	public ColGroupSDCZeros extractCommon(double[] constV) {
 		double[] commonV = _dict.getTuple(getNumValues() - 1, _colIndexes.length);
-
 		if(commonV == null) // The common tuple was all zero. Therefore this column group should never have been SDC.
 			return new ColGroupSDCZeros(_colIndexes, _numRows, _dict, _indexes, _data, getCounts());
 

@@ -967,8 +967,19 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	 *
 	 * @return A new MatrixBlock containing the row sums of this matrix.
 	 */
-	public MatrixBlock rowSum(){
+	public final MatrixBlock rowSum(){
 		AggregateUnaryOperator op = InstructionUtils.parseBasicAggregateUnaryOperator("uark+", 1);
+		return aggregateUnaryOperations(op, null, 1000, null, true);
+	}
+
+	/**
+	 * Wrapper method for multi threaded reduceall-rowSum of a matrix.
+	 *
+	 * @param k the number of threads allowed to be used.
+	 * @return A new MatrixBlock containing the row sums of this matrix.
+	 */
+	public final MatrixBlock rowSum(int k){
+		AggregateUnaryOperator op = InstructionUtils.parseBasicAggregateUnaryOperator("uark+", k);
 		return aggregateUnaryOperations(op, null, 1000, null, true);
 	}
 
@@ -2955,6 +2966,9 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	
 	public MatrixBlock ternaryOperations(TernaryOperator op, MatrixBlock m2, MatrixBlock m3, MatrixBlock ret) {
 		
+		if(ret == null)
+			ret = new MatrixBlock();
+
 		//prepare inputs
 		final int r1 = getNumRows();
 		final int r2 = m2.getNumRows();
@@ -5218,7 +5232,11 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	public MatrixBlock replaceOperations(MatrixValue result, double pattern, double replacement) {
 		MatrixBlock ret = checkType(result);
 		examSparsity(); //ensure its in the right format
-		ret.reset(rlen, clen, sparse);
+		if(ret != null)
+			ret.reset(rlen, clen, sparse);
+		else
+			ret = new MatrixBlock(rlen, clen, sparse);
+		
 		//probe early abort conditions
 		if( nonZeros == 0 && pattern != 0  )
 			return ret;

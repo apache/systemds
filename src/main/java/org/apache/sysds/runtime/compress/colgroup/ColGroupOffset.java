@@ -25,8 +25,8 @@ import java.io.IOException;
 import java.util.Arrays;
 
 import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
-import org.apache.sysds.runtime.compress.utils.LinearAlgebraUtils;
 import org.apache.sysds.runtime.functionobjects.Builtin;
+import org.apache.sysds.runtime.matrix.data.LibMatrixMult;
 import org.apache.sysds.utils.MemoryEstimates;
 
 /**
@@ -89,7 +89,7 @@ public abstract class ColGroupOffset extends ColGroupValue {
 		// vectMultiplyAdd over cols instead of dotProduct over vals because
 		// usually more values than columns
 		for(int i = 0, off = 0; i < numCols; i++, off += numVals)
-			LinearAlgebraUtils.vectMultiplyAdd(b[i], values, c, off, 0, numVals);
+			LibMatrixMult.vectMultiplyAdd(b[i], values, c, off, 0, numVals);
 	}
 
 	protected final double mxxValues(int bitmapIx, Builtin builtin, double[] values) {

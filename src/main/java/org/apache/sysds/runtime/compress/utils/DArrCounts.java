@@ -16,31 +16,25 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+package org.apache.sysds.runtime.compress.utils;
 
-package org.apache.sysds.runtime.compress.readers;
+public class DArrCounts {
+	public final DblArray key;
+	public int count;
+	public int id;
 
-import java.util.BitSet;
-
-import org.apache.commons.lang.NotImplementedException;
-import org.apache.sysds.runtime.compress.utils.DblArray;
-
-public class ReaderColumnSelectionBitSet extends ReaderColumnSelection {
-	protected BitSet _data;
-
-
-	public ReaderColumnSelectionBitSet(BitSet data, int rows, int[] colIndices) {
-		super(colIndices, rows);
-		_data = data;
+	public DArrCounts(DblArray key, int id) {
+		this.key = key;
+		this.id = id;
+		count = 1;
 	}
 
-	protected DblArray getNextRow() {
-		throw new NotImplementedException();
-		// if(_lastRow == _numRows - 1)
-		// 	return null;
-		// _lastRow++;
-		// for(int i = 0; i < _colIndexes.length; i++) {
-		// 	reusableArr[i] = _data.get(_lastRow * _colIndexes.length + i) ? 1 : 0;
-		// }
-		// return reusableReturn;
+	public void inc() {
+		count++;
+	}
+
+	@Override
+	public String toString() {
+		return "[" + key + ", " + count + "]";
 	}
 }

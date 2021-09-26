@@ -63,61 +63,34 @@ public class CoCodePriorityQue extends AColumnCoCoder {
 				que.add(g);
 
 		CompressedSizeInfoColGroup l = null;
-		if(cEst.isCompareAll()) {
-			double costBeforeJoin = cEst.getCostOfCollectionOfGroups(que);
-			l = que.poll();
-			int groupNr = ret.size() + que.size();
-			while(que.peek() != null && groupNr >= minNumGroups) {
 
-				CompressedSizeInfoColGroup r = que.poll();
-				final CompressedSizeInfoColGroup g = sEst.estimateJoinCompressedSize(l, r);
-				if(g != null) {
-					final double costOfJoin = cEst.getCostOfCollectionOfGroups(que, g);
-					if(costOfJoin < costBeforeJoin) {
-						costBeforeJoin = costOfJoin;
-						que.add(g);
-					}
-					else {
-						que.add(r);
-						ret.add(l);
-					}
-				}
-				else {
-					que.add(r);
-					ret.add(l);
-				}
+		l = que.poll();
+		int groupNr = ret.size() + que.size();
+		while(que.peek() != null && groupNr >= minNumGroups) {
+			CompressedSizeInfoColGroup r = que.peek();
+			CompressedSizeInfoColGroup g = sEst.estimateJoinCompressedSize(l, r);
+			if(g != null) {
+				double costOfJoin = cEst.getCostOfColumnGroup(g);
+				double costIndividual = cEst.getCostOfColumnGroup(l) + cEst.getCostOfColumnGroup(r);
 
-				l = que.poll();
-				groupNr = ret.size() + que.size();
-			}
-		}
-		else {
-			l = que.poll();
-			int groupNr = ret.size() + que.size();
-			while(que.peek() != null && groupNr >= minNumGroups) {
-				CompressedSizeInfoColGroup r = que.peek();
-				if(cEst.shouldTryJoin(l, r)) {
-					CompressedSizeInfoColGroup g = sEst.estimateJoinCompressedSize(l, r);
-					if(g != null) {
-						double costOfJoin = cEst.getCostOfColumnGroup(g);
-						double costIndividual = cEst.getCostOfColumnGroup(l) + cEst.getCostOfColumnGroup(r);
-
-						if(costOfJoin < costIndividual) {
-							que.poll();
-							que.add(g);
-						}
-						else
-							ret.add(l);
-					}
+				if(costOfJoin < costIndividual) {
+					que.poll();
+					int numColumns = g.getColumns().length;
+					if(minNumGroups != 0 && numColumns > 8)
+						ret.add(g); // Add this column group to ret, since it already is very CoCoded.
+					else if(numColumns > 128)
+						ret.add(g);
 					else
-						ret.add(l);
+						que.add(g);
 				}
 				else
 					ret.add(l);
-
-				l = que.poll();
-				groupNr = ret.size() + que.size();
 			}
+			else
+				ret.add(l);
+
+			l = que.poll();
+			groupNr = ret.size() + que.size();
 		}
 
 		if(l != null)

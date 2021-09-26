@@ -63,6 +63,7 @@ public class TestConstants {
 				case SQUASH:
 				case COL:
 				case MATRIX_PLUS:
+				case PLUS_LARGE:
 					return true;
 				default:
 					return false;
@@ -124,23 +125,11 @@ public class TestConstants {
 	public static int getNumberOfRows(MatrixTypology matrixTypology) {
 		switch(matrixTypology) {
 			case SMALL:
-				return 4;
-			case LARGE:
-				return 200;
-			case FEW_ROW:
-				return 1283;
-			case FEW_COL:
 				return 500;
-			case SINGLE_ROW:
-				return 1;
+			case LARGE:
+				return 1000;
 			case SINGLE_COL:
-				return 100;
-			case L_ROWS:
 				return 5000;
-			case XL_ROWS:
-				return 66000;
-			case SINGLE_COL_L:
-				return 64000 * 2;
 			default:
 				throw new RuntimeException("Invalid matrix enum type");
 		}
@@ -149,22 +138,10 @@ public class TestConstants {
 	public static int getNumberOfColumns(MatrixTypology matrixTypology) {
 		switch(matrixTypology) {
 			case SMALL:
-				return 20;
+				return 4;
 			case LARGE:
 				return 8;
-			case FEW_ROW:
-				return 13;
-			case FEW_COL:
-				return 3;
-			case SINGLE_ROW:
-				return 321;
 			case SINGLE_COL:
-				return 1;
-			case L_ROWS:
-				return 5;
-			case XL_ROWS:
-				return 10;
-			case SINGLE_COL_L:
 				return 1;
 			default:
 				throw new RuntimeException("Invalid matrix enum type");

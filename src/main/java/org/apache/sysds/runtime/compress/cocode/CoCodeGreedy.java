@@ -27,37 +27,40 @@ import java.util.Map;
 
 import org.apache.sysds.runtime.compress.CompressionSettings;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup.CompressionType;
+import org.apache.sysds.runtime.compress.cost.ComputationCostEstimator;
 import org.apache.sysds.runtime.compress.cost.ICostEstimate;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeEstimator;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfo;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup;
 import org.apache.sysds.runtime.compress.utils.Util;
 
-
 public class CoCodeGreedy extends AColumnCoCoder {
 
-	protected CoCodeGreedy(CompressedSizeEstimator sizeEstimator, ICostEstimate costEstimator,
-		CompressionSettings cs) {
+	protected CoCodeGreedy(CompressedSizeEstimator sizeEstimator, ICostEstimate costEstimator, CompressionSettings cs) {
 		super(sizeEstimator, costEstimator, cs);
 	}
 
 	@Override
 	protected CompressedSizeInfo coCodeColumns(CompressedSizeInfo colInfos, int k) {
-		colInfos.setInfo(join(colInfos.compressionInfo, _sest, _cest, _cs));
+		colInfos.setInfo(join(colInfos.compressionInfo, _sest, _cest, _cs, k));
 		return colInfos;
 	}
 
-	protected static List<CompressedSizeInfoColGroup> join(List<CompressedSizeInfoColGroup> inputColumns, CompressedSizeEstimator sEst, ICostEstimate cEst, CompressionSettings cs) {
+	protected static List<CompressedSizeInfoColGroup> join(List<CompressedSizeInfoColGroup> inputColumns,
+		CompressedSizeEstimator sEst, ICostEstimate cEst, CompressionSettings cs, int k) {
 		Memorizer mem = new Memorizer(cs, sEst);
 		for(CompressedSizeInfoColGroup g : inputColumns)
 			mem.put(g);
-		
+
 		return coCodeBruteForce(inputColumns, cEst, mem);
 	}
 
-	private static List<CompressedSizeInfoColGroup> coCodeBruteForce(List<CompressedSizeInfoColGroup> inputColumns, ICostEstimate cEst, Memorizer mem) {
+	private static List<CompressedSizeInfoColGroup> coCodeBruteForce(List<CompressedSizeInfoColGroup> inputColumns,
+		ICostEstimate cEst, Memorizer mem) {
 
 		List<ColIndexes> workset = new ArrayList<>(inputColumns.size());
+
+		final boolean workloadCost = cEst instanceof ComputationCostEstimator;
 
 		for(int i = 0; i < inputColumns.size(); i++)
 			workset.add(new ColIndexes(inputColumns.get(i).getColumns()));
@@ -74,10 +77,13 @@ public class CoCodeGreedy extends AColumnCoCoder {
 					final double costC2 = cEst.getCostOfColumnGroup(mem.get(c2));
 
 					mem.incst1();
-					// pruning filter : skip dominated candidates
+
+					// Pruning filter : skip dominated candidates
 					// Since even if the entire size of one of the column lists is removed,
-					// it still does not improve compression
-					if(-Math.min(costC1, costC2) > changeInCost)
+					// it still does not improve compression.
+					// In the case of workload we relax the requirement for the filter.
+					// if(-Math.min(costC1, costC2) > changeInCost)
+					if(-Math.min(costC1, costC2) * (workloadCost ? 0.7 : 1) > changeInCost)
 						continue;
 
 					// Join the two column groups.
@@ -141,7 +147,7 @@ public class CoCodeGreedy extends AColumnCoCoder {
 			return mem.get(c);
 		}
 
-		public void remove(ColIndexes c1, ColIndexes c2){
+		public void remove(ColIndexes c1, ColIndexes c2) {
 			mem.remove(c1);
 			mem.remove(c2);
 		}

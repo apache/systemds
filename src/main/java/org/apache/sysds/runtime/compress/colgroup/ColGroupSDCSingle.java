@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.util.Arrays;
 
 import org.apache.commons.lang.NotImplementedException;
+import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
 import org.apache.sysds.runtime.compress.colgroup.offset.AIterator;
@@ -61,15 +62,9 @@ public class ColGroupSDCSingle extends ColGroupValue {
 		super(numRows);
 	}
 
-	protected ColGroupSDCSingle(int[] colIndices, int numRows, ADictionary dict, int[] indexes) {
-		super(colIndices, numRows, dict);
-		_indexes = OffsetFactory.create(indexes, numRows);
-		_zeros = false;
-	}
-
-	protected ColGroupSDCSingle(int[] colIndices, int numRows, ADictionary dict, int[] indexes, int[] cachedCounts) {
-		super(colIndices, numRows, dict, cachedCounts);
-		_indexes = OffsetFactory.create(indexes, numRows);
+	protected ColGroupSDCSingle(int[] colIndices, int numRows, ADictionary dict, AOffset offsets) {
+		super(colIndices, numRows, dict, null);
+		_indexes = offsets;
 		_zeros = false;
 	}
 
@@ -90,8 +85,7 @@ public class ColGroupSDCSingle extends ColGroupValue {
 	}
 
 	@Override
-	protected void decompressToBlockUnSafeDenseDictionary(MatrixBlock target, int rl, int ru, int offT,
-		double[] values) {
+	protected void decompressToBlockDenseDictionary(MatrixBlock target, int rl, int ru, int offT, double[] values) {
 		final int nCol = _colIndexes.length;
 		final int offsetToDefault = values.length - nCol;
 		final DenseBlock db = target.getDenseBlock();
@@ -122,8 +116,7 @@ public class ColGroupSDCSingle extends ColGroupValue {
 	}
 
 	@Override
-	protected void decompressToBlockUnSafeSparseDictionary(MatrixBlock target, int rl, int ru, int offT,
-		SparseBlock values) {
+	protected void decompressToBlockSparseDictionary(MatrixBlock target, int rl, int ru, int offT, SparseBlock values) {
 		throw new NotImplementedException();
 	}
 
@@ -223,33 +216,7 @@ public class ColGroupSDCSingle extends ColGroupValue {
 
 	@Override
 	public void preAggregateDense(MatrixBlock m, MatrixBlock preAgg, int rl, int ru, int cl, int cu) {
-		final double[] mV = m.getDenseBlockValues();
-		final double[] preAV = preAgg.getDenseBlockValues();
-		final int numVals = getNumValues();
-
-		final int blockSize = 2000;
-		for(int block = cl; block < cu; block += blockSize) {
-			final int blockEnd = Math.min(block + blockSize, cu);
-			final AIterator itStart = _indexes.getIterator(block);
-			for(int rowLeft = rl, offOut = 0; rowLeft < ru; rowLeft++, offOut += numVals) {
-				final int offLeft = rowLeft * _numRows;
-				final int def = offOut + numVals - 1;
-				final AIterator it = itStart.clone();
-				int rc = 0;
-				for(; rc < blockEnd && it.value() < blockEnd && it.hasNext(); rc++) {
-					final int pointer = it.value();
-					for(; rc < pointer && rc < blockEnd; rc++) {
-						preAV[def] += mV[offLeft + rc];
-					}
-					preAV[offOut] += mV[offLeft + rc];
-					it.next();
-				}
-
-				for(; rc < blockEnd; rc++) {
-					preAV[def] += mV[offLeft + rc];
-				}
-			}
-		}
+		throw new DMLCompressionException("Should not call this");
 	}
 
 	private void preAggregateDense(MatrixBlock m, MatrixBlock preAgg, int rl, int ru) {

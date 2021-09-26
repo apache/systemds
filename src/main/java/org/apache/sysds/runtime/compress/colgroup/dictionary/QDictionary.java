@@ -25,7 +25,6 @@ import java.io.IOException;
 import java.util.Arrays;
 
 import org.apache.commons.lang.NotImplementedException;
-import org.apache.sysds.runtime.compress.utils.BitmapLossy;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.functionobjects.Divide;
 import org.apache.sysds.runtime.functionobjects.Multiply;
@@ -43,14 +42,14 @@ import org.apache.sysds.utils.MemoryEstimates;
 public class QDictionary extends ADictionary {
 
 	private static final long serialVersionUID = 2100501253343438897L;
-	
+
 	protected double _scale;
 	protected byte[] _values;
 
-	public QDictionary(BitmapLossy bm) {
-		_values = bm.getValues();
-		_scale = bm.getScale();
-	}
+	// public QDictionary(BitmapLossy bm) {
+	// _values = bm.getValues();
+	// _scale = bm.getScale();
+	// }
 
 	protected QDictionary(byte[] values, double scale) {
 		_values = values;
@@ -310,74 +309,16 @@ public class QDictionary extends ADictionary {
 	@Override
 	public double[] colSum(int[] counts, int nCol) {
 		throw new NotImplementedException("Not Implemented");
-		// final double[] res = new double[counts.length];
-		// int idx = 0;
-		// for(int k = 0; k< _values.length / counts.length; k++){
-		// final int cntk = counts[k];
-		// for(int j = 0; j< counts.length; j++){
-		// res[j] += _values[idx++] * cntk;
-		// }
-		// }
-		// return res;
 	}
 
 	@Override
 	public void colSum(double[] c, int[] counts, int[] colIndexes, boolean square) {
 		throw new NotImplementedException("Not Implemented");
-		// final int rows = c.length / 2;
-		// if(!(kplus instanceof KahanPlusSq)) {
-		// int[] sum = new int[colIndexes.length];
-		// int valOff = 0;
-		// for(int k = 0; k < getNumberOfValues(colIndexes.length); k++) {
-		// int cntk = counts[k];
-		// for(int j = 0; j < colIndexes.length; j++) {
-		// sum[j] += cntk * getValueByte(valOff++);
-		// }
-		// }
-		// for(int j = 0; j < colIndexes.length; j++) {
-		// c[colIndexes[j]] = c[colIndexes[j]] + sum[j] * _scale;
-		// }
-		// }
-		// else {
-		// KahanObject kbuff = new KahanObject(0, 0);
-		// int valOff = 0;
-		// for(int k = 0; k < getNumberOfValues(colIndexes.length); k++) {
-		// int cntk = counts[k];
-		// for(int j = 0; j < colIndexes.length; j++) {
-		// kbuff.set(c[colIndexes[j]], c[colIndexes[j] + rows]);
-		// kplus.execute3(kbuff, getValue(valOff++), cntk);
-		// c[colIndexes[j]] = kbuff._sum;
-		// c[colIndexes[j] + rows] = kbuff._correction;
-		// }
-		// }
-		// }
 	}
 
 	@Override
 	public double sum(int[] counts, int ncol) {
 		throw new NotImplementedException("Not Implemented");
-		// if(!(kplus instanceof KahanPlusSq)) {
-		// int sum = 0;
-		// int valOff = 0;
-		// for(int k = 0; k < getNumberOfValues(ncol); k++) {
-		// int countK = counts[k];
-		// for(int j = 0; j < ncol; j++) {
-		// sum += countK * getValueByte(valOff++);
-		// }
-		// }
-		// return sum * _scale;
-		// }
-		// else {
-		// KahanObject kbuff = new KahanObject(0, 0);
-		// int valOff = 0;
-		// for(int k = 0; k < getNumberOfValues(ncol); k++) {
-		// int countK = counts[k];
-		// for(int j = 0; j < ncol; j++) {
-		// kplus.execute3(kbuff, getValue(valOff++), countK);
-		// }
-		// }
-		// return kbuff._sum;
-		// }
 	}
 
 	@Override
@@ -504,12 +445,28 @@ public class QDictionary extends ADictionary {
 	}
 
 	@Override
-	public ADictionary preaggValuesFromDense(int numVals, int[] colIndexes, int[] aggregateColumns, double[] b, int cut) {
+	public ADictionary preaggValuesFromDense(int numVals, int[] colIndexes, int[] aggregateColumns, double[] b,
+		int cut) {
 		throw new NotImplementedException();
 	}
 
 	@Override
-	public ADictionary replace(double pattern, double replace, int nCol, boolean safe) {
+	public ADictionary replace(double pattern, double replace, int nCol) {
+		throw new NotImplementedException();
+	}
+
+	@Override
+	public ADictionary replaceZeroAndExtend(double replace, int nCol) {
+		throw new NotImplementedException();
+	}
+
+	@Override
+	public double product(int[] counts, int nCol) {
+		throw new NotImplementedException();
+	}
+
+	@Override
+	public void colProduct(double[] res, int[] counts, int[] colIndexes) {
 		throw new NotImplementedException();
 	}
 }

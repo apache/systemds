@@ -28,8 +28,8 @@ import org.apache.sysds.runtime.compress.CompressionSettingsBuilder;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeEstimator;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeEstimatorFactory;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
-import org.apache.sysds.runtime.util.DataConverter;
 import org.apache.sysds.test.TestUtils;
+import org.junit.Ignore;
 import org.junit.Test;
 
 public class SampleEstimatorTest {
@@ -42,8 +42,7 @@ public class SampleEstimatorTest {
 
 	public SampleEstimatorTest() {
 		// matrix block 2 columns
-		mbt = DataConverter
-			.convertToMatrixBlock(TestUtils.round(TestUtils.generateTestMatrix(2, 500000, 0, 299, 1.0, seed + 1)));
+		mbt = TestUtils.round(TestUtils.generateTestMatrixBlock(2, 500000, 0, 299, 1.0, seed + 1));
 	}
 
 	@Test
@@ -52,36 +51,43 @@ public class SampleEstimatorTest {
 	}
 
 	@Test
+	@Ignore
 	public void compressedSizeInfoEstimatorSample_90() {
 		testSampleEstimateIsAtMaxEstimatedElementsInEachColumnsProduct(0.9, 0.9);
 	}
 
 	@Test
+	@Ignore
 	public void compressedSizeInfoEstimatorSample_50() {
 		testSampleEstimateIsAtMaxEstimatedElementsInEachColumnsProduct(0.5, 0.90);
 	}
 
 	@Test
+	@Ignore
 	public void compressedSizeInfoEstimatorSample_20() {
 		testSampleEstimateIsAtMaxEstimatedElementsInEachColumnsProduct(0.2, 0.8);
 	}
 
 	@Test
+	@Ignore
 	public void compressedSizeInfoEstimatorSample_10() {
 		testSampleEstimateIsAtMaxEstimatedElementsInEachColumnsProduct(0.1, 0.75);
 	}
 
 	@Test
+	@Ignore
 	public void compressedSizeInfoEstimatorSample_5() {
 		testSampleEstimateIsAtMaxEstimatedElementsInEachColumnsProduct(0.05, 0.7);
 	}
 
 	@Test
+	@Ignore
 	public void compressedSizeInfoEstimatorSample_1() {
 		testSampleEstimateIsAtMaxEstimatedElementsInEachColumnsProduct(0.01, 0.6);
 	}
 
 	@Test
+	@Ignore
 	public void compressedSizeInfoEstimatorSample_p1() {
 		testSampleEstimateIsAtMaxEstimatedElementsInEachColumnsProduct(0.001, 0.5);
 	}

@@ -19,8 +19,6 @@
 
 package org.apache.sysds.runtime.compress.colgroup.insertionsort;
 
-import java.util.Arrays;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
@@ -66,18 +64,5 @@ public abstract class AInsertionSorter {
 	protected void set(int index, int value, int label) {
 		_indexes[index] = value;
 		_labels.set(index, label);
-	}
-
-	@Override
-	public String toString(){
-		StringBuilder sb  = new StringBuilder();
-
-		sb.append(this.getClass().getSimpleName());
-		sb.append("\n");
-		sb.append("Indexes : " + _indexes.length +" "+ Arrays.toString(_indexes));
-		sb.append("\n");
-		sb.append("Labels  : " + _labels);
-		sb.append(_offsets);
-		return sb.toString();
 	}
 }

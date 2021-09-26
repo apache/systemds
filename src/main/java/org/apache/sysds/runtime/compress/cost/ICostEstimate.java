@@ -20,7 +20,6 @@
 package org.apache.sysds.runtime.compress.cost;
 
 import java.io.Serializable;
-import java.util.Collection;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -45,12 +44,10 @@ public interface ICostEstimate extends Serializable {
 	 * This is used as an optimization goal to at least achieve, since if the uncompressed cost of calculation is lower
 	 * than in compressed space we don't want to compress.
 	 * 
-	 * @param nRows    Number of rows in compression
-	 * @param nCols    Number of columns in compression
-	 * @param sparsity Sparsity of the input
+	 * @param g A potential column group to compare to.
 	 * @return The uncompressed cost.
 	 */
-	public double getUncompressedCost(int nRows, int nCols, int sparsity);
+	public double getUncompressedCost(CompressedSizeInfoColGroup g);
 
 	/**
 	 * If the instruction does not care about the inter column group cost, such as in memory cost or in computation cost
@@ -62,39 +59,10 @@ public interface ICostEstimate extends Serializable {
 	public double getCostOfColumnGroup(CompressedSizeInfoColGroup g);
 
 	/**
-	 * Get the computation cost of a collection of column groups information.
-	 * 
-	 * Since a some operations execution time depends on all compare all calculating the cost needs all the current
-	 * groups to consider. This method therefore provide a method of comparing cost of all compare all.
-	 * 
-	 * @param gs All the groups considered for this cost calculation
-	 * @return The cost of the calculation
-	 */
-	public double getCostOfCollectionOfGroups(Collection<CompressedSizeInfoColGroup> gs);
-
-	public double getCostOfCollectionOfGroups(Collection<CompressedSizeInfoColGroup> gs, CompressedSizeInfoColGroup g);
-
-	public double getCostOfTwoGroups(CompressedSizeInfoColGroup g1, CompressedSizeInfoColGroup g2);
-
-	/**
-	 * Function that returns true if the cost is based an an all compare all column groups false otherwise.
-	 * 
-	 * @return boolean
-	 */
-	public boolean isCompareAll();
-
-	/**
-	 * Decide if the column groups should try to join, this is to filter obviously bad joins out.
-	 * 
-	 * @param g1 Group 1
-	 * @param g2 Group 2
-	 * @return Boolean specifying if they should try to join.
-	 */
-	public boolean shouldTryJoin(CompressedSizeInfoColGroup g1, CompressedSizeInfoColGroup g2);
-
-	/**
 	 * Decide if the column groups should be analysed, or the worst case join should be expected. This is use full if
 	 * the column groups are very small and the in practice difference between joining or not is small.
+	 * 
+	 * Or in the other case where there is some obvious reason why these two groups does not fit together.
 	 * 
 	 * @param g1 Group 1
 	 * @param g2 Group 2

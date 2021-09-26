@@ -102,7 +102,7 @@ public class WorkloadAnalyzer {
 		return map;
 	}
 
-	protected WorkloadAnalyzer(DMLProgram prog) {
+	private WorkloadAnalyzer(DMLProgram prog) {
 		this.prog = prog;
 		this.visited = new HashSet<>();
 		this.compressed = new HashSet<>();
@@ -112,17 +112,7 @@ public class WorkloadAnalyzer {
 		this.treeLookup = new HashMap<>();
 	}
 
-	protected WorkloadAnalyzer(DMLProgram prog, Set<Long> overlapping) {
-		this.prog = prog;
-		this.visited = new HashSet<>();
-		this.compressed = new HashSet<>();
-		this.transposed = new HashSet<>();
-		this.transientCompressed = new HashMap<>();
-		this.overlapping = overlapping;
-		this.treeLookup = new HashMap<>();
-	}
-
-	protected WorkloadAnalyzer(DMLProgram prog, Set<Long> compressed, HashMap<String, Long> transientCompressed,
+	private WorkloadAnalyzer(DMLProgram prog, Set<Long> compressed, HashMap<String, Long> transientCompressed,
 		Set<Long> transposed, Set<Long> overlapping, Map<Long, Op> treeLookup) {
 		this.prog = prog;
 		this.visited = new HashSet<>();
@@ -133,7 +123,7 @@ public class WorkloadAnalyzer {
 		this.treeLookup = treeLookup;
 	}
 
-	protected WTreeRoot createWorkloadTree(Hop candidate) {
+	private WTreeRoot createWorkloadTree(Hop candidate) {
 		WTreeRoot main = new WTreeRoot(candidate);
 		compressed.add(candidate.getHopID());
 		for(StatementBlock sb : prog.getStatementBlocks())
@@ -142,7 +132,7 @@ public class WorkloadAnalyzer {
 		return main;
 	}
 
-	protected boolean containsCompressed(Hop hop) {
+	private boolean containsCompressed(Hop hop) {
 		return compressed.contains(hop.getHopID());
 	}
 
@@ -196,12 +186,13 @@ public class WorkloadAnalyzer {
 				getCandidates(csb, prog, cands, fStack);
 		}
 		else { // generic (last-level)
-			if(sb.getHops() == null)
-				return;
-			Hop.resetVisitStatus(sb.getHops());
-			for(Hop hop : sb.getHops())
-				getCandidates(hop, prog, cands, fStack);
-			Hop.resetVisitStatus(sb.getHops());
+			ArrayList<Hop> hops = sb.getHops();
+			if(hops != null) {
+				Hop.resetVisitStatus(hops);
+				for(Hop hop : hops)
+					getCandidates(hop, prog, cands, fStack);
+				Hop.resetVisitStatus(hops);
+			}
 		}
 	}
 
@@ -209,7 +200,7 @@ public class WorkloadAnalyzer {
 		if(hop.isVisited())
 			return;
 		// evaluate and add candidates (type and size)
-		if((RewriteCompressedReblock.satisfiesAggressiveCompressionCondition(hop) & ALLOW_INTERMEDIATE_CANDIDATES) ||
+		if((ALLOW_INTERMEDIATE_CANDIDATES && RewriteCompressedReblock.satisfiesAggressiveCompressionCondition(hop)) ||
 			RewriteCompressedReblock.satisfiesCompressionCondition(hop))
 			cands.add(hop);
 
@@ -272,14 +263,16 @@ public class WorkloadAnalyzer {
 
 		}
 		else { // generic (last-level)
-			if(sb.getHops() != null) {
+			ArrayList<Hop> hops = sb.getHops();
+
+			if(hops != null) {
 
 				// process hop DAG to collect operations that are compressed.
-				for(Hop hop : sb.getHops())
+				for(Hop hop : hops)
 					createWorkloadTree(hop, prog, n, fStack);
 
 				// maintain hop DAG outputs (compressed or not compressed)
-				for(Hop hop : sb.getHops()) {
+				for(Hop hop : hops) {
 					if(hop instanceof FunctionOp) {
 						FunctionOp fop = (FunctionOp) hop;
 						if(!fStack.contains(fop.getFunctionKey())) {
@@ -299,8 +292,8 @@ public class WorkloadAnalyzer {
 									fCompressed.put(name, outsideID);
 							}
 
-							WorkloadAnalyzer fa = new WorkloadAnalyzer(prog, compressed, fCompressed, transposed,
-								overlapping, treeLookup);
+							WorkloadAnalyzer fa = new WorkloadAnalyzer(prog, compressed, fCompressed, transposed, overlapping,
+								treeLookup);
 							fa.createWorkloadTree(n, fsb, prog, fStack);
 							String[] outs = fop.getOutputVariableNames();
 							for(int i = 0; i < outs.length; i++) {
@@ -334,11 +327,6 @@ public class WorkloadAnalyzer {
 			treeLookup.put(hop.getHopID(), treeLookup.get(transientCompressed.get(hop.getName())));
 		}
 
-		if(LOG.isTraceEnabled()) {
-			LOG.trace("\n" + compressed + "\n" + transientCompressed + "\n" + getHopIds(hop.getInput()) + "\n"
-				+ hop.getInput() + "\n\n");
-		}
-
 		// collect operations on compressed intermediates or inputs
 		// if any input is compressed we collect this hop as a compressed operation
 		if(hop.getInput().stream().anyMatch(h -> compressed.contains(h.getHopID())))
@@ -350,9 +338,8 @@ public class WorkloadAnalyzer {
 	private void createOp(Hop hop, AWTreeNode parent) {
 		if(hop.getDataType().isMatrix()) {
 			Op o = null;
-			if(HopRewriteUtils.isData(hop, OpOpData.PERSISTENTREAD, OpOpData.TRANSIENTREAD)) {
+			if(HopRewriteUtils.isData(hop, OpOpData.PERSISTENTREAD, OpOpData.TRANSIENTREAD))
 				return;
-			}
 			else if(HopRewriteUtils.isData(hop, OpOpData.TRANSIENTWRITE, OpOpData.PERSISTENTWRITE)) {
 				transientCompressed.put(hop.getName(), hop.getInput(0).getHopID());
 				compressed.add(hop.getHopID());
@@ -371,8 +358,7 @@ public class WorkloadAnalyzer {
 					o.setOverlapping();
 			}
 			else if(hop instanceof AggUnaryOp) {
-				if((isOverlapping(hop.getInput().get(0)) &&
-					!HopRewriteUtils.isAggUnaryOp(hop, AggOp.SUM, AggOp.MEAN)) ||
+				if((isOverlapping(hop.getInput().get(0)) && !HopRewriteUtils.isAggUnaryOp(hop, AggOp.SUM, AggOp.MEAN)) ||
 					HopRewriteUtils.isAggUnaryOp(hop, AggOp.TRACE)) {
 					setDecompressionOnAllInputs(hop, parent);
 					return;
@@ -381,8 +367,8 @@ public class WorkloadAnalyzer {
 					o = new OpNormal(hop, false);
 				}
 			}
-			else if(hop instanceof UnaryOp && !HopRewriteUtils.isUnary(hop, OpOp1.MULT2, OpOp1.MINUS1_MULT,
-				OpOp1.MINUS_RIGHT, OpOp1.CAST_AS_MATRIX)) {
+			else if(hop instanceof UnaryOp &&
+				!HopRewriteUtils.isUnary(hop, OpOp1.MULT2, OpOp1.MINUS1_MULT, OpOp1.MINUS_RIGHT, OpOp1.CAST_AS_MATRIX)) {
 				if(isOverlapping(hop.getInput(0))) {
 					treeLookup.get(hop.getInput(0).getHopID()).setDecompressing();
 					return;
@@ -405,9 +391,7 @@ public class WorkloadAnalyzer {
 					if(!ret.isCompressedOutput())
 						ret.setDecompressing();
 				}
-
 				o = ret;
-
 			}
 			else if(hop instanceof BinaryOp) {
 				if(HopRewriteUtils.isBinary(hop, OpOp2.CBIND)) {
@@ -456,7 +440,7 @@ public class WorkloadAnalyzer {
 						setDecompressionOnAllInputs(hop, parent);
 						return;
 					}
-					else if(ol0 || ol1){
+					else if(ol0 || ol1) {
 						setDecompressionOnAllInputs(hop, parent);
 						return;
 					}
@@ -568,13 +552,5 @@ public class WorkloadAnalyzer {
 
 	private static boolean isNoOp(Hop hop) {
 		return hop instanceof LiteralOp || HopRewriteUtils.isUnary(hop, OpOp1.NROW, OpOp1.NCOL);
-	}
-
-	private static String getHopIds(List<Hop> hops) {
-		StringBuilder sb = new StringBuilder();
-		for(Hop h : hops) {
-			sb.append(h.getHopID() + " , ");
-		}
-		return sb.toString();
 	}
 }

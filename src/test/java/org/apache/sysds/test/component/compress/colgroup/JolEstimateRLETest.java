@@ -53,42 +53,38 @@ public class JolEstimateRLETest extends JolEstimateTest {
 		tests.add(new Object[] {mb});
 
 		// Worst case all random numbers dense.
-		mb = DataConverter.convertToMatrixBlock(TestUtils.generateTestMatrix(1, 100, 0, 100, 1.0, 7));
+		mb = TestUtils.generateTestMatrixBlock(1, 100, 0, 100, 1.0, 7);
 		tests.add(new Object[] {mb});
-		mb = DataConverter.convertToMatrixBlock(TestUtils.generateTestMatrix(1, 1000, 0, 100, 1.0, 7));
+		mb = TestUtils.generateTestMatrixBlock(1, 1000, 0, 100, 1.0, 7);
 		tests.add(new Object[] {mb});
-		mb = DataConverter.convertToMatrixBlock(TestUtils.generateTestMatrix(1, 10000, 0, 100, 1.0, 7));
+		mb = TestUtils.generateTestMatrixBlock(1, 10000, 0, 100, 1.0, 7);
 		tests.add(new Object[] {mb});
 
 		// Random rounded numbers dense
-		mb = DataConverter.convertToMatrixBlock(TestUtils.round(TestUtils.generateTestMatrix(1, 1523, 0, 99, 1.0, 7)));
+		mb = TestUtils.round(TestUtils.generateTestMatrixBlock(1, 1523, 0, 99, 1.0, 7));
 		tests.add(new Object[] {mb});
-		mb = DataConverter.convertToMatrixBlock(TestUtils.round(TestUtils.generateTestMatrix(1, 4000, 0, 255, 1.0, 7)));
+		mb = TestUtils.round(TestUtils.generateTestMatrixBlock(1, 4000, 0, 255, 1.0, 7));
 		tests.add(new Object[] {mb});
 
 		// Sparse rounded numbers
 		// Scale directly with sparsity
-		mb = DataConverter.convertToMatrixBlock(TestUtils.round(TestUtils.generateTestMatrix(1, 1523, 0, 99, 0.1, 7)));
+		mb = TestUtils.round(TestUtils.generateTestMatrixBlock(1, 1523, 0, 99, 0.1, 7));
 		tests.add(new Object[] {mb});
-		mb = DataConverter
-			.convertToMatrixBlock(TestUtils.round(TestUtils.generateTestMatrix(1, 1621, 0, 99, 0.1, 142)));
+		mb = TestUtils.round(TestUtils.generateTestMatrixBlock(1, 1621, 0, 99, 0.1, 142));
 		tests.add(new Object[] {mb});
-		mb = DataConverter
-			.convertToMatrixBlock(TestUtils.round(TestUtils.generateTestMatrix(1, 2321, 0, 99, 0.1, 512)));
+		mb = TestUtils.round(TestUtils.generateTestMatrixBlock(1, 2321, 0, 99, 0.1, 512));
 		tests.add(new Object[] {mb});
-		mb = DataConverter.convertToMatrixBlock(TestUtils.round(TestUtils.generateTestMatrix(1, 4000, 0, 255, 0.1, 7)));
+		mb = TestUtils.round(TestUtils.generateTestMatrixBlock(1, 4000, 0, 255, 0.1, 7));
 		tests.add(new Object[] {mb});
 
 		// Medium sparsity
-		mb = DataConverter.convertToMatrixBlock(TestUtils.round(TestUtils.generateTestMatrix(1, 1523, 0, 99, 0.5, 7)));
+		mb = TestUtils.round(TestUtils.generateTestMatrixBlock(1, 1523, 0, 99, 0.5, 7));
 		tests.add(new Object[] {mb});
-		mb = DataConverter
-			.convertToMatrixBlock(TestUtils.round(TestUtils.generateTestMatrix(1, 1621, 0, 99, 0.5, 142)));
+		mb = TestUtils.round(TestUtils.generateTestMatrixBlock(1, 1621, 0, 99, 0.5, 142));
 		tests.add(new Object[] {mb});
-		mb = DataConverter
-			.convertToMatrixBlock(TestUtils.round(TestUtils.generateTestMatrix(1, 2321, 0, 99, 0.5, 512)));
+		mb = TestUtils.round(TestUtils.generateTestMatrixBlock(1, 2321, 0, 99, 0.5, 512));
 		tests.add(new Object[] {mb});
-		mb = DataConverter.convertToMatrixBlock(TestUtils.round(TestUtils.generateTestMatrix(1, 4000, 0, 255, 0.5, 7)));
+		mb = TestUtils.round(TestUtils.generateTestMatrixBlock(1, 4000, 0, 255, 0.5, 7));
 		tests.add(new Object[] {mb});
 
 		// Dream inputs.
@@ -158,10 +154,11 @@ public class JolEstimateRLETest extends JolEstimateTest {
 	}
 
 	private static boolean haveWarned = false;
+
 	@Override
 	public void compressedSizeInfoEstimatorSample(double ratio, double tolerance) {
 		// Skipping tests
-		if(!haveWarned){
+		if(!haveWarned) {
 			LOG.error("Skipping sample based test for RLE");
 			haveWarned = true;
 		}

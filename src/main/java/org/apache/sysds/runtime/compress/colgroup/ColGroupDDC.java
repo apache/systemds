@@ -63,7 +63,7 @@ public class ColGroupDDC extends ColGroupValue {
 	}
 
 	@Override
-	protected void decompressToBlockUnSafeSparseDictionary(MatrixBlock target, int rl, int ru, int offT,
+	protected void decompressToBlockSparseDictionary(MatrixBlock target, int rl, int ru, int offT,
 		SparseBlock sb) {
 		final DenseBlock db = target.getDenseBlock();
 		for(int i = rl; i < ru; i++, offT++) {
@@ -78,12 +78,11 @@ public class ColGroupDDC extends ColGroupValue {
 			final int[] aix = sb.indexes(rowIndex);
 			for(int j = apos; j < alen; j++)
 				c[off + _colIndexes[aix[j]]] += avals[j];
-
 		}
 	}
 
 	@Override
-	protected void decompressToBlockUnSafeDenseDictionary(MatrixBlock target, int rl, int ru, int offT,
+	protected void decompressToBlockDenseDictionary(MatrixBlock target, int rl, int ru, int offT,
 		double[] values) {
 		final int nCol = _colIndexes.length;
 		final DenseBlock db = target.getDenseBlock();

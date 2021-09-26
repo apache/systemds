@@ -32,6 +32,7 @@ import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
 import org.apache.sysds.utils.Statistics;
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 
 public class WorkloadAlgorithmTest extends AutomatedTestBase {
@@ -63,37 +64,43 @@ public class WorkloadAlgorithmTest extends AutomatedTestBase {
 
 	@Override
 	public void setUp() {
+		final String dir = TEST_CLASS_DIR+ "/Algorithm/";
 		TestUtils.clearAssertionInformation();
-		addTestConfiguration(TEST_NAME1, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] {"B"}));
-		addTestConfiguration(TEST_NAME2, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2, new String[] {"B"}));
-		addTestConfiguration(TEST_NAME3, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME3, new String[] {"B"}));
-		addTestConfiguration(TEST_NAME4, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME4, new String[] {"B"}));
-		addTestConfiguration(TEST_NAME5, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME5, new String[] {"B"}));
-		addTestConfiguration(TEST_NAME6, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME6, new String[] {"B"}));
-		addTestConfiguration(TEST_NAME7, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME7, new String[] {"B"}));
+		addTestConfiguration(TEST_NAME1, new TestConfiguration(dir, TEST_NAME1, new String[] {"B"}));
+		addTestConfiguration(TEST_NAME2, new TestConfiguration(dir, TEST_NAME2, new String[] {"B"}));
+		addTestConfiguration(TEST_NAME3, new TestConfiguration(dir, TEST_NAME3, new String[] {"B"}));
+		addTestConfiguration(TEST_NAME4, new TestConfiguration(dir, TEST_NAME4, new String[] {"B"}));
+		addTestConfiguration(TEST_NAME5, new TestConfiguration(dir, TEST_NAME5, new String[] {"B"}));
+		addTestConfiguration(TEST_NAME6, new TestConfiguration(dir, TEST_NAME6, new String[] {"B"}));
+		addTestConfiguration(TEST_NAME7, new TestConfiguration(dir, TEST_NAME7, new String[] {"B"}));
 	}
 
 	@Test
+	@Ignore // WIP if we should compress more.
 	public void testMLogRegCP() {
 		runWorkloadAnalysisTest(TEST_NAME1, ExecMode.HYBRID, 1, false);
 	}
 
 	@Test
+	@Ignore // WIP if we should compress more.
 	public void testLmSP() {
 		runWorkloadAnalysisTest(TEST_NAME2, ExecMode.SPARK, 2, false);
 	}
 
 	@Test
+	@Ignore // WIP if we should compress more.
 	public void testLmCP() {
 		runWorkloadAnalysisTest(TEST_NAME2, ExecMode.SINGLE_NODE, 2, false);
 	}
 
 	@Test
+	@Ignore // WIP if we should compress more.
 	public void testLmDSSP() {
 		runWorkloadAnalysisTest(TEST_NAME2, ExecMode.SPARK, 2, false);
 	}
 
 	@Test
+	@Ignore // WIP if we should compress more.
 	public void testLmDSCP() {
 		runWorkloadAnalysisTest(TEST_NAME2, ExecMode.SINGLE_NODE, 2, false);
 	}
@@ -114,6 +121,7 @@ public class WorkloadAlgorithmTest extends AutomatedTestBase {
 	}
 
 	@Test
+	@Ignore // WIP if we should compress more.
 	public void testSliceLineCP2() {
 		runWorkloadAnalysisTest(TEST_NAME4, ExecMode.SINGLE_NODE, 2, true);
 	}
@@ -129,6 +137,7 @@ public class WorkloadAlgorithmTest extends AutomatedTestBase {
 	}
 
 	@Test
+	@Ignore // wip if we should compress more or less
 	public void testL2SVMCP() {
 		runWorkloadAnalysisTest(TEST_NAME7, ExecMode.SINGLE_NODE, 2, false);
 	}

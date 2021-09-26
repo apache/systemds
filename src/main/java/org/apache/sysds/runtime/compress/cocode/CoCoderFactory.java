@@ -60,9 +60,6 @@ public class CoCoderFactory {
 		ICostEstimate costEstimator, CompressionSettings cs) {
 		switch(type) {
 			case AUTO:
-				// TODO make decision better depending on how much time is allocated for the compression
-				// for instance if the compressed object is used for a million instructions, it might be good to
-				// search for a really good compression even if it take longer.
 				return new CoCodeHybrid(est, costEstimator, cs);
 			case GREEDY:
 				return new CoCodeGreedy(est, costEstimator, cs);

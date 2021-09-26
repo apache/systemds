@@ -58,7 +58,7 @@ public class DblArrayIntListHashMap {
 		if(_size == 0)
 			return null;
 		// compute entry index position
-		int hash = hash(key);
+		int hash = key.hashCode();
 		int ix = indexFor(hash, _data.length);
 
 		// find entry
@@ -76,7 +76,7 @@ public class DblArrayIntListHashMap {
 
 	private void appendValue(DblArray key, IntArrayList value) {
 		// compute entry index position
-		int hash = hash(key);
+		int hash = key.hashCode();
 		int ix = indexFor(hash, _data.length);
 
 		// add new table entry (constant time)
@@ -90,7 +90,7 @@ public class DblArrayIntListHashMap {
 	}
 
 	public void appendValue(DblArray key, int value) {
-		int hash = hash(key);
+		int hash = key.hashCode();
 		int ix = indexFor(hash, _data.length);
 
 		while(_data[ix] != null && !_data[ix].keyEquals(key)) {
@@ -160,16 +160,6 @@ public class DblArrayIntListHashMap {
 				_data = new DArrayIListEntry[newSize];
 		}
 		_size = 0;
-	}
-
-	protected static int hash(DblArray key) {
-		int h = key.hashCode();
-
-		// This function ensures that hashCodes that differ only by
-		// constant multiples at each bit position have a bounded
-		// number of collisions (approximately 8 at default load factor).
-		h ^= (h >>> 20) ^ (h >>> 12);
-		return h ^ (h >>> 7) ^ (h >>> 4);
 	}
 
 	protected static int indexFor(int h, int length) {

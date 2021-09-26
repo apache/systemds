@@ -61,6 +61,7 @@ public class UnaryOperator extends Operator
 		switch( ((Builtin)fn).bFunc ) {
 			case ISNAN:
 			case ISNA:   return Double.NaN;
+			case ISINF:  return Double.POSITIVE_INFINITY;
 			default:
 				throw new DMLRuntimeException(
 					"No pattern existing for "+((Builtin)fn).bFunc.name());

@@ -398,10 +398,13 @@ public abstract class ADictionary implements Serializable {
 	 * @param pattern The value to look for
 	 * @param replace The value to replace the other value with
 	 * @param nCol    The number of columns contained in the dictionary.
-	 * @param safe    Specify if the operation require consideration of adding a new tuple. This happens if the
-	 *                dictionary have allocated the last zero tuple or not.
 	 * @return A new Column Group, reusing the index structure but with new values.
 	 */
-	public abstract ADictionary replace(double pattern, double replace, int nCol, boolean safe);
+	public abstract ADictionary replace(double pattern, double replace, int nCol);
 
+	public abstract ADictionary replaceZeroAndExtend(double replace, int nCol);
+
+	public abstract double product(int[] counts, int nCol);
+
+	public abstract void colProduct(double[] res, int[] counts, int[] colIndexes);
 }

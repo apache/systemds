@@ -22,28 +22,42 @@ package org.apache.sysds.runtime.compress.cost;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.CompressionSettings;
-import org.apache.sysds.runtime.compress.workload.WTreeRoot;
 
 public final class CostEstimatorFactory {
 
 	protected static final Log LOG = LogFactory.getLog(CostEstimatorFactory.class.getName());
 
 	public enum CostType {
-		MEMORY, LEFT_MATRIX_MULT, DECOMPRESSION, TSMM, W_TREE, HYBRID_W_TREE, DISTINCT, AUTO;
+		MEMORY, W_TREE, HYBRID_W_TREE, DISTINCT, AUTO;
 	}
 
-	public static ICostEstimate create(CompressionSettings cs, WTreeRoot root, int nRows, int nCols) {
+	public static ICostEstimate create(CompressionSettings cs, CostEstimatorBuilder costVector, int nRows, int nCols,
+		double sparsity) {
 		switch(cs.costComputationType) {
 			case DISTINCT:
-				return new DistinctCostEstimator(nRows, cs);
+				return new DistinctCostEstimator(nRows, cs, sparsity);
+			case HYBRID_W_TREE:
+				if(costVector != null)
+					return costVector.create(nRows, nCols, sparsity, true);
+				else
+					return genDefaultCostCase(nRows, nCols, sparsity, true);
+			case MEMORY:
+				return new MemoryCostEstimator(nRows, nCols, sparsity);
 			case W_TREE:
 			case AUTO:
-				return root != null ? new CostEstimatorBuilder(root).create(nRows, nCols) : ComputationCostEstimator
-					.genDefaultCostCase(nRows, nCols);
-			case MEMORY:
 			default:
-				return new MemoryCostEstimator();
+				if(costVector != null)
+					return costVector.create(nRows, nCols, sparsity, cs.isInSparkInstruction);
+				else
+					return genDefaultCostCase(nRows, nCols, sparsity, cs.isInSparkInstruction);
 		}
 	}
 
+	public static ICostEstimate genDefaultCostCase(int nRows, int nCols, double sparsity,
+		boolean isInSparkInstruction) {
+		if(isInSparkInstruction)
+			return new HybridCostEstimator(nRows, nCols, sparsity, 1, 1, 0, 1, 1, 1, 10, true);
+		else
+			return new ComputationCostEstimator(nRows, nCols, sparsity, 1, 1, 0, 1, 1, 1, 10, true);
+	}
 }

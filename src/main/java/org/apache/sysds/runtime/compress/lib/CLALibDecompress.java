@@ -27,9 +27,13 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.CompressionSettings;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup;
+import org.apache.sysds.runtime.compress.colgroup.ColGroupUncompressed;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.CommonThreadPool;
@@ -38,54 +42,102 @@ import org.apache.sysds.runtime.util.CommonThreadPool;
  * Library to decompress a list of column groups into a matrix.
  */
 public class CLALibDecompress {
-	public static MatrixBlock decompress(MatrixBlock ret, List<AColGroup> groups, long nonZeros, boolean overlapping) {
+	private static final Log LOG = LogFactory.getLog(CLALibDecompress.class.getName());
 
-		final int rlen = ret.getNumRows();
-		final int clen = ret.getNumColumns();
-		final int block = (int) Math.ceil((double) (CompressionSettings.BITMAP_BLOCK_SZ) / clen);
+	public static MatrixBlock decompress(CompressedMatrixBlock cmb, int k) {
+
+		// Copy column groups to make sure we can modify the list if we want to.
+		final List<AColGroup> groups = new ArrayList<>(cmb.getColGroups());
+		final int nRows = cmb.getNumRows();
+		final int nCols = cmb.getNumColumns();
+		final boolean overlapping = cmb.isOverlapping();
+		final long nonZeros = cmb.getNonZeros();
+
+		MatrixBlock ret = getUncompressedColGroupAndRemoveFromListOfColGroups(groups, overlapping, nRows, nCols);
+
+		if(ret != null && groups.size() == 0){
+			ret.setNonZeros(ret.recomputeNonZeros());
+			return ret; // if uncompressedColGroup is only colGroup.
+		}
+		else if(ret == null){
+			ret = new MatrixBlock(nRows, nCols, false, -1);
+			ret.allocateDenseBlock();
+		}
+
+		final int block = (int) Math.ceil((double) (CompressionSettings.BITMAP_BLOCK_SZ) / nCols);
 		final int blklen = block > 1000 ? block + 1000 - block % 1000 : Math.max(64, block);
-		final boolean containsSDC = CLALibUtils.containsSDC(groups);
+
+		final boolean containsSDC = CLALibUtils.containsSDCOrConst(groups);
 		double[] constV = containsSDC ? new double[ret.getNumColumns()] : null;
-		final List<AColGroup> filteredGroups = containsSDC ? CLALibUtils.filterSDCGroups(groups, constV) : groups;
+		final List<AColGroup> filteredGroups = containsSDC ? CLALibUtils.filterGroups(groups, constV) : groups;
+		if(LOG.isTraceEnabled())
+			LOG.debug("Decompressing with block size: " + blklen);
 
 		sortGroups(filteredGroups, overlapping);
+
 		// check if we are using filtered groups, and if we are not force constV to null
 		if(groups == filteredGroups)
 			constV = null;
 
 		final double eps = getEps(constV);
-		for(int i = 0; i < rlen; i += blklen) {
-			final int rl = i;
-			final int ru = Math.min(i + blklen, rlen);
-			for(AColGroup grp : filteredGroups)
-				grp.decompressToBlockUnSafe(ret, rl, ru);
-			if(constV != null && !ret.isInSparseFormat())
-				addVector(ret, constV, eps, rl, ru);
-		}
+		if(k == 1)
+			decompressSingleThread(ret, filteredGroups, nRows, blklen, constV, eps, nonZeros, overlapping);
+		else
+			decompressMultiThread(ret, filteredGroups, nRows, blklen, constV, eps, overlapping, k);
 
-		ret.setNonZeros(nonZeros == -1 || overlapping ? ret.recomputeNonZeros() : nonZeros);
+		if(overlapping)
+			ret.recomputeNonZeros();
+
+		ret.examSparsity();
+		return ret;
+	}
+
+	private static MatrixBlock getUncompressedColGroupAndRemoveFromListOfColGroups(List<AColGroup> colGroups,
+		boolean overlapping, int nRows, int nCols) {
+		// If we have a uncompressed column group that covers all of the matrix,
+		// it makes sense to use as the decompression target.
+		MatrixBlock ret = null;
+		
+		// It is only relevant if we are in overlapping state, or we only have a Uncompressed ColumnGroup left.
+		if(overlapping || colGroups.size() == 1) {
+			for(int i = 0; i < colGroups.size(); i++) {
+				AColGroup g = colGroups.get(i);
+				if(g instanceof ColGroupUncompressed) {
+					// Find an Uncompressed ColumnGroup
+					ColGroupUncompressed guc = (ColGroupUncompressed) g;
+					MatrixBlock gMB = guc.getData();
+					// Make sure that it is the correct dimensions
+					if(gMB.getNumColumns() == nCols && gMB.getNumRows() == nRows &&
+						(!gMB.isInSparseFormat() || colGroups.size() == 1)) {
+						colGroups.remove(i);
+						LOG.debug("Using one of the uncompressed ColGroups as base for decompression");
+						return gMB;
+					}
+				}
+			}
+		}
+		
 
 		return ret;
 	}
 
-	public static MatrixBlock decompress(MatrixBlock ret, List<AColGroup> groups, boolean overlapping, int k) {
+	private static void decompressSingleThread(MatrixBlock ret, List<AColGroup> filteredGroups, int rlen, int blklen,
+		double[] constV, double eps, long nonZeros, boolean overlapping) {
+		for(int i = 0; i < rlen; i += blklen) {
+			final int rl = i;
+			final int ru = Math.min(i + blklen, rlen);
+			for(AColGroup grp : filteredGroups)
+				grp.decompressToBlock(ret, rl, ru);
+			if(constV != null && !ret.isInSparseFormat())
+				addVector(ret, constV, eps, rl, ru);
+		}
+		ret.setNonZeros(nonZeros == -1 || overlapping ? ret.recomputeNonZeros() : nonZeros);
+	}
 
+	private static void decompressMultiThread(MatrixBlock ret, List<AColGroup> filteredGroups, int rlen, int blklen,
+		double[] constV, double eps, boolean overlapping, int k) {
 		try {
 			final ExecutorService pool = CommonThreadPool.get(k);
-			final int rlen = ret.getNumRows();
-			final int block = (int) Math.ceil((double) (CompressionSettings.BITMAP_BLOCK_SZ) / ret.getNumColumns());
-			final int blklen = block > 1000 ? block + 1000 - block % 1000 : Math.max(64, block);
-
-			final boolean containsSDC = CLALibUtils.containsSDC(groups);
-			double[] constV = containsSDC ? new double[ret.getNumColumns()] : null;
-			final List<AColGroup> filteredGroups = containsSDC ? CLALibUtils.filterSDCGroups(groups, constV) : groups;
-			sortGroups(filteredGroups, overlapping);
-
-			// check if we are using filtered groups, and if we are not force constV to null
-			if(groups == filteredGroups)
-				constV = null;
-
-			final double eps = getEps(constV);
 			final ArrayList<DecompressTask> tasks = new ArrayList<>();
 			for(int i = 0; i * blklen < rlen; i++)
 				tasks.add(new DecompressTask(filteredGroups, ret, eps, i * blklen, Math.min((i + 1) * blklen, rlen),
@@ -101,8 +153,6 @@ public class CLALibDecompress {
 		catch(InterruptedException | ExecutionException ex) {
 			throw new DMLCompressionException("Parallel decompression failed", ex);
 		}
-
-		return ret;
 	}
 
 	private static void sortGroups(List<AColGroup> groups, boolean overlapping) {
@@ -121,7 +171,7 @@ public class CLALibDecompress {
 	 * @return A Effect double value.
 	 */
 	private static double effect(AColGroup x) {
-		return -Math.max(x.getMax(), Math.abs(x.getMin()));
+		return (x instanceof ColGroupUncompressed ) ? - Double.MAX_VALUE : -Math.max(x.getMax(), Math.abs(x.getMin()));
 	}
 
 	/**
@@ -136,13 +186,13 @@ public class CLALibDecompress {
 		else {
 			double max = -Double.MAX_VALUE;
 			double min = Double.MAX_VALUE;
-			for(double v : constV){
+			for(double v : constV) {
 				if(v > max)
 					max = v;
 				if(v < min)
 					min = v;
 			}
-			final double eps = (max-min) * 1e-13;
+			final double eps = (max + 1e-4 - min) * 1e-10;
 			return eps;
 		}
 	}
@@ -169,9 +219,8 @@ public class CLALibDecompress {
 
 		@Override
 		public Long call() {
-			// decompress row partition
 			for(AColGroup grp : _colGroups)
-				grp.decompressToBlockUnSafe(_ret, _rl, _ru);
+				grp.decompressToBlock(_ret, _rl, _ru);
 
 			if(_constV != null)
 				addVector(_ret, _constV, _eps, _rl, _ru);

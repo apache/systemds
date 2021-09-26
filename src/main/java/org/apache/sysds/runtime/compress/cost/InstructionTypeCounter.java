@@ -33,11 +33,9 @@ public final class InstructionTypeCounter implements Serializable {
 	protected int compressedMultiplications = 0;
 	protected int dictionaryOps = 0; // base cost is one pass of dictionary
 	protected int indexing = 0;
-
 	protected boolean isDensifying = false;
 
 	protected InstructionTypeCounter() {
-
 	}
 
 	public int getScans() {
@@ -75,14 +73,14 @@ public final class InstructionTypeCounter implements Serializable {
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
-		sb.append(String.format("\n scans                     :%4d", scans));
-		sb.append(String.format("\n decompressions            :%4d", decompressions));
-		sb.append(String.format("\n overlappingDecompressions :%4d", overlappingDecompressions));
-		sb.append(String.format("\n leftMultiplications       :%4d", leftMultiplications));
-		sb.append(String.format("\n rightMultiplications      :%4d", rightMultiplications));
-		sb.append(String.format("\n compressedMultiplications :%4d", compressedMultiplications));
-		sb.append(String.format("\n dictionaryOps             :%4d", dictionaryOps));
-		sb.append(String.format("\n indexing                  :%4d", indexing));
+		sb.append(String.format("\nscans                     :%4d", scans));
+		sb.append(String.format("\ndecompressions            :%4d", decompressions));
+		sb.append(String.format("\noverlappingDecompressions :%4d", overlappingDecompressions));
+		sb.append(String.format("\nleftMultiplications       :%4d", leftMultiplications));
+		sb.append(String.format("\nrightMultiplications      :%4d", rightMultiplications));
+		sb.append(String.format("\ncompressedMultiplications :%4d", compressedMultiplications));
+		sb.append(String.format("\ndictionaryOps             :%4d", dictionaryOps));
+		sb.append(String.format("\nindexing                  :%4d", indexing));
 		return sb.toString();
 	}
 }

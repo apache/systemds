@@ -26,7 +26,7 @@ import java.util.Arrays;
  */
 public class DblArray {
 	private double[] _arr;
-	private int _hash = 0;
+	private int _hash;
 
 	public DblArray() {
 		_arr = null;
@@ -59,9 +59,12 @@ public class DblArray {
 
 	@Override
 	public int hashCode() {
-		if(_hash != 0)
+		if(_hash != 0 || _arr == null)
 			return _hash;
-		_hash = _arr == null ? 0 : Arrays.hashCode(_arr);
+		int h = Arrays.hashCode(_arr);
+		h ^= (h >>> 20) ^ (h >>> 12);
+		h = h ^ (h >>> 7) ^ (h >>> 4);
+		_hash = h;
 		return _hash;
 	}
 

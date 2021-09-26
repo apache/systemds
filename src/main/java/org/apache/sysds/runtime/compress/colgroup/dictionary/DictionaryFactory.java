@@ -21,15 +21,17 @@ package org.apache.sysds.runtime.compress.colgroup.dictionary;
 
 import java.io.DataInput;
 import java.io.IOException;
+import java.util.ArrayList;
 
 import org.apache.commons.lang.NotImplementedException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
-import org.apache.sysds.runtime.compress.utils.ABitmap;
-import org.apache.sysds.runtime.compress.utils.Bitmap;
-import org.apache.sysds.runtime.compress.utils.BitmapLossy;
-import org.apache.sysds.runtime.compress.utils.MultiColBitmap;
+import org.apache.sysds.runtime.compress.bitmap.ABitmap;
+import org.apache.sysds.runtime.compress.bitmap.Bitmap;
+import org.apache.sysds.runtime.compress.bitmap.MultiColBitmap;
+import org.apache.sysds.runtime.compress.utils.DArrCounts;
+import org.apache.sysds.runtime.compress.utils.DblArrayCountHashMap;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.data.SparseRow;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
@@ -66,6 +68,20 @@ public class DictionaryFactory {
 			return Dictionary.getInMemorySize(nrValues * nrColumns);
 	}
 
+	public static ADictionary create(DblArrayCountHashMap map, int nCols, boolean extra) {
+		ArrayList<DArrCounts> vals = map.extractValues();
+
+		final int nVals = vals.size();
+		double[] resValues = new double[(nVals + (extra ? 1 : 0)) * nCols];
+		for(int i = 0; i < nVals; i++) {
+			final DArrCounts dac = vals.get(i);
+			if(!dac.key.isEmpty())
+				System.arraycopy(dac.key.getData(), 0, resValues, dac.id * nCols, nCols);
+		}
+
+		return new Dictionary(resValues);
+	}
+
 	public static ADictionary create(ABitmap ubm) {
 		return create(ubm, 1.0);
 	}
@@ -75,16 +91,13 @@ public class DictionaryFactory {
 	}
 
 	public static ADictionary create(ABitmap ubm, double sparsity) {
-		if(ubm instanceof BitmapLossy)
-			return new QDictionary((BitmapLossy) ubm);
-		else if(ubm instanceof Bitmap)
+		if(ubm instanceof Bitmap)
 			return new Dictionary(((Bitmap) ubm).getValues());
 		else if(sparsity < 0.4 && ubm instanceof MultiColBitmap) {
 			final int nCols = ubm.getNumColumns();
-			final int nRows = ubm.getNumValues();
 			final MultiColBitmap mcbm = (MultiColBitmap) ubm;
 
-			final MatrixBlock m = new MatrixBlock(nRows, nCols, true);
+			final MatrixBlock m = new MatrixBlock(ubm.getNumValues(), nCols, true);
 			m.allocateSparseRowsBlock();
 			final SparseBlock sb = m.getSparseBlock();
 
@@ -107,8 +120,7 @@ public class DictionaryFactory {
 
 			return new Dictionary(resValues);
 		}
-		throw new NotImplementedException(
-			"Not implemented creation of bitmap type : " + ubm.getClass().getSimpleName());
+		throw new NotImplementedException("Not implemented creation of bitmap type : " + ubm.getClass().getSimpleName());
 	}
 
 	public static ADictionary createWithAppendedZeroTuple(ABitmap ubm) {
@@ -170,8 +182,8 @@ public class DictionaryFactory {
 					return new MatrixBlockDictionary(new MatrixBlock(mb.getNumRows() + 1, mb.getNumColumns(), true));
 			}
 			else if(mb.isInSparseFormat()) {
-				MatrixBlockDictionary mbdn = moveToLastDictionaryEntrySparse(mb.getSparseBlock(), largestIndex, zeros,
-					nCol, largestIndexSize);
+				MatrixBlockDictionary mbdn = moveToLastDictionaryEntrySparse(mb.getSparseBlock(), largestIndex, zeros, nCol,
+					largestIndexSize);
 				MatrixBlock mbn = mbdn.getMatrixBlock();
 				mbn.setNonZeros(mb.getNonZeros());
 				if(mbn.getNonZeros() == 0)

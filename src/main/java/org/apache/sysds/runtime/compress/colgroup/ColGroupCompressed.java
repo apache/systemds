@@ -20,14 +20,20 @@
 package org.apache.sysds.runtime.compress.colgroup;
 
 import org.apache.sysds.runtime.DMLScriptException;
+import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
+import org.apache.sysds.runtime.compress.colgroup.dictionary.MatrixBlockDictionary;
+import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.functionobjects.Builtin.BuiltinCode;
 import org.apache.sysds.runtime.functionobjects.KahanPlus;
 import org.apache.sysds.runtime.functionobjects.KahanPlusSq;
+import org.apache.sysds.runtime.functionobjects.Multiply;
 import org.apache.sysds.runtime.functionobjects.Plus;
 import org.apache.sysds.runtime.functionobjects.ReduceAll;
 import org.apache.sysds.runtime.functionobjects.ReduceCol;
 import org.apache.sysds.runtime.functionobjects.ReduceRow;
+import org.apache.sysds.runtime.functionobjects.ValueFunction;
+import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator;
 
 /**
@@ -37,30 +43,15 @@ public abstract class ColGroupCompressed extends AColGroup {
 
 	private static final long serialVersionUID = 6219835795420081223L;
 
-	final protected int _numRows;
-
-	protected ColGroupCompressed(int numRows) {
+	protected ColGroupCompressed() {
 		super();
-		_numRows = numRows;
 	}
 
-	/**
-	 * Main constructor for the ColGroupCompresseds. Used to contain the dictionaries used for the different types of
-	 * ColGroup.
-	 * 
-	 * @param colIndices indices (within the block) of the columns included in this column
-	 * @param numRows    total number of rows in the parent block
-	 * @param ubm        Uncompressed bitmap representation of the block
-	 * @param cs         The Compression settings used for compression
-	 */
-	protected ColGroupCompressed(int[] colIndices, int numRows) {
+	protected ColGroupCompressed(int[] colIndices) {
 		super(colIndices);
-		_numRows = numRows;
 	}
 
 	public abstract double[] getValues();
-
-	public abstract void addMinMax(double[] ret);
 
 	public abstract boolean isLossy();
 
@@ -68,49 +59,57 @@ public abstract class ColGroupCompressed extends AColGroup {
 
 	protected abstract void computeColMxx(double[] c, Builtin builtin);
 
-	protected abstract void computeSum(double[] c, boolean square);
+	protected abstract void computeSum(double[] c, int nRows, boolean square);
 
 	protected abstract void computeRowSums(double[] c, boolean square, int rl, int ru);
 
-	public void computeColSums(double[] c){
-		computeColSums(c, false);
-	}
-
-	protected abstract void computeColSums(double[] c, boolean square);
+	protected abstract void computeColSums(double[] c, int nRows, boolean square);
 
 	protected abstract void computeRowMxx(double[] c, Builtin builtin, int rl, int ru);
 
-	protected abstract boolean sameIndexStructure(ColGroupCompressed that);
+	protected abstract void computeProduct(double[] c, int nRows);
+
+	protected abstract void computeRowProduct(double[] c, int rl, int ru);
+
+	protected abstract void computeColProduct(double[] c, int nRows);
 
 	@Override
-	public final double getMin() {
+	public double getMin() {
 		return computeMxx(Double.POSITIVE_INFINITY, Builtin.getBuiltinFnObject(BuiltinCode.MIN));
 	}
 
 	@Override
-	public final double getMax() {
+	public double getMax() {
 		return computeMxx(Double.NEGATIVE_INFINITY, Builtin.getBuiltinFnObject(BuiltinCode.MAX));
 	}
 
 	@Override
-	public final void unaryAggregateOperations(AggregateUnaryOperator op, double[] c) {
-		unaryAggregateOperations(op, c, 0, _numRows);
+	public void computeColSums(double[] c, int nRows) {
+		computeColSums(c, nRows, false);
 	}
 
 	@Override
-	public final void unaryAggregateOperations(AggregateUnaryOperator op, double[] c, int rl, int ru) {
-		if(op.aggOp.increOp.fn instanceof Plus || op.aggOp.increOp.fn instanceof KahanPlus ||
-			op.aggOp.increOp.fn instanceof KahanPlusSq) {
-			boolean square = op.aggOp.increOp.fn instanceof KahanPlusSq;
+	public final void unaryAggregateOperations(AggregateUnaryOperator op, double[] c, int nRows, int rl, int ru) {
+		final ValueFunction fn = op.aggOp.increOp.fn;
+		if(fn instanceof Plus || fn instanceof KahanPlus || fn instanceof KahanPlusSq) {
+			boolean square = fn instanceof KahanPlusSq;
 			if(op.indexFn instanceof ReduceAll)
-				computeSum(c, square);
+				computeSum(c, nRows, square);
 			else if(op.indexFn instanceof ReduceCol)
 				computeRowSums(c, square, rl, ru);
 			else if(op.indexFn instanceof ReduceRow)
-				computeColSums(c, square);
+				computeColSums(c, nRows, square);
 		}
-		else if(op.aggOp.increOp.fn instanceof Builtin) {
-			Builtin bop = (Builtin) op.aggOp.increOp.fn;
+		else if(fn instanceof Multiply) {
+			if(op.indexFn instanceof ReduceAll)
+				computeProduct(c, nRows);
+			else if(op.indexFn instanceof ReduceCol)
+				computeRowProduct(c, rl, ru);
+			else if(op.indexFn instanceof ReduceRow)
+				computeColProduct(c, nRows);
+		}
+		else if(fn instanceof Builtin) {
+			Builtin bop = (Builtin) fn;
 			BuiltinCode bopC = bop.getBuiltinCode();
 			if(bopC == BuiltinCode.MAX || bopC == BuiltinCode.MIN) {
 				if(op.indexFn instanceof ReduceAll)
@@ -123,7 +122,6 @@ public abstract class ColGroupCompressed extends AColGroup {
 			else {
 				throw new DMLScriptException("unsupported builtin type: " + bop);
 			}
-
 		}
 		else {
 			throw new DMLScriptException("Unknown UnaryAggregate operator on CompressedMatrixBlock");
@@ -131,22 +129,64 @@ public abstract class ColGroupCompressed extends AColGroup {
 	}
 
 	@Override
-	public String toString() {
-		StringBuilder sb = new StringBuilder();
-		sb.append(" num Rows: " + getNumRows());
-		sb.append(super.toString());
-		return sb.toString();
+	public final void tsmm(MatrixBlock ret, int nRows) {
+		double[] result = ret.getDenseBlockValues();
+		int numColumns = ret.getNumColumns();
+		tsmm(result, numColumns, nRows);
 	}
 
-	@Override
-	public final int getNumRows() {
-		return _numRows;
+	protected abstract void tsmm(double[] result, int numColumns, int nRows);
+
+	protected static void tsmm(double[] result, int numColumns, int[] counts, ADictionary dict, int[] colIndexes) {
+		dict = dict.getAsMatrixBlockDictionary(colIndexes.length);
+		if(dict instanceof MatrixBlockDictionary) {
+			MatrixBlockDictionary mbd = (MatrixBlockDictionary) dict;
+			MatrixBlock mb = mbd.getMatrixBlock();
+			if(mb.isEmpty())
+				return;
+			else if(mb.isInSparseFormat())
+				tsmmSparse(result, numColumns, mb.getSparseBlock(), counts, colIndexes);
+			else
+				tsmmDense(result, numColumns, mb.getDenseBlockValues(), counts, colIndexes);
+		}
+		else
+			tsmmDense(result, numColumns, dict.getValues(), counts, colIndexes);
+
 	}
 
-	@Override
-	public long estimateInMemorySize() {
-		long size = super.estimateInMemorySize();
-		size += 4;
-		return size;
+	protected static void tsmmDense(double[] result, int numColumns, double[] values, int[] counts, int[] colIndexes) {
+		if(values == null)
+			return;
+		final int nCol = colIndexes.length;
+		final int nRow = values.length / colIndexes.length;
+		for(int k = 0; k < nRow; k++) {
+			final int offTmp = nCol * k;
+			final int scale = counts[k];
+			for(int i = 0; i < nCol; i++) {
+				final int offRet = numColumns * colIndexes[i];
+				final double v = values[offTmp + i] * scale;
+				if(v != 0)
+					for(int j = i; j < nCol; j++)
+						result[offRet + colIndexes[j]] += v * values[offTmp + j];
+			}
+		}
+	}
+
+	protected static void tsmmSparse(double[] result, int numColumns, SparseBlock sb, int[] counts, int[] colIndexes) {
+		for(int row = 0; row < sb.numRows(); row++) {
+			if(sb.isEmpty(row))
+				continue;
+			final int apos = sb.pos(row);
+			final int alen = sb.size(row);
+			final int[] aix = sb.indexes(row);
+			final double[] avals = sb.values(row);
+			for(int i = apos; i < apos + alen; i++) {
+				final int offRet = colIndexes[aix[i]] * numColumns;
+				final double val = avals[i] * counts[row];
+				for(int j = i; j < apos + alen; j++) {
+					result[offRet + colIndexes[aix[j]]] += val * avals[j];
+				}
+			}
+		}
 	}
 }

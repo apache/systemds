@@ -72,17 +72,9 @@ public class ColGroupSDCZeros extends ColGroupValue {
 		super(numRows);
 	}
 
-	protected ColGroupSDCZeros(int[] colIndices, int numRows, ADictionary dict, int[] indexes, AMapToData data) {
-		super(colIndices, numRows, dict);
-		_indexes = OffsetFactory.create(indexes, numRows);
-		_data = data;
-		_zeros = true;
-	}
-
-	protected ColGroupSDCZeros(int[] colIndices, int numRows, ADictionary dict, int[] indexes, AMapToData data,
-		int[] cachedCounts) {
-		super(colIndices, numRows, dict, cachedCounts);
-		_indexes = OffsetFactory.create(indexes, numRows);
+	protected ColGroupSDCZeros(int[] colIndices, int numRows, ADictionary dict, AOffset offsets, AMapToData data) {
+		super(colIndices, numRows, dict, null);
+		_indexes = offsets;
 		_data = data;
 		_zeros = true;
 	}
@@ -106,8 +98,7 @@ public class ColGroupSDCZeros extends ColGroupValue {
 	}
 
 	@Override
-	protected void decompressToBlockUnSafeDenseDictionary(MatrixBlock target, int rl, int ru, int offT,
-		double[] values) {
+	protected void decompressToBlockDenseDictionary(MatrixBlock target, int rl, int ru, int offT, double[] values) {
 		final int nCol = _colIndexes.length;
 		final int offTCorrected = offT - rl;
 		final DenseBlock db = target.getDenseBlock();
@@ -126,8 +117,7 @@ public class ColGroupSDCZeros extends ColGroupValue {
 	}
 
 	@Override
-	protected void decompressToBlockUnSafeSparseDictionary(MatrixBlock target, int rl, int ru, int offT,
-		SparseBlock sb) {
+	protected void decompressToBlockSparseDictionary(MatrixBlock target, int rl, int ru, int offT, SparseBlock sb) {
 
 		final int offTCorrected = offT - rl;
 		final DenseBlock db = target.getDenseBlock();
@@ -244,12 +234,10 @@ public class ColGroupSDCZeros extends ColGroupValue {
 		final int numVals = getNumValues();
 
 		if(_data instanceof MapToByte) {
-			preAggregateDenseByte(m, preAV, ((MapToByte) _data).getBytes(), rl, ru, cl, cu, _numRows, numVals,
-				_indexes);
+			preAggregateDenseByte(m, preAV, ((MapToByte) _data).getBytes(), rl, ru, cl, cu, _numRows, numVals, _indexes);
 		}
 		else if(_data instanceof MapToChar) {
-			preAggregateDenseChar(m, preAV, ((MapToChar) _data).getChars(), rl, ru, cl, cu, _numRows, numVals,
-				_indexes);
+			preAggregateDenseChar(m, preAV, ((MapToChar) _data).getChars(), rl, ru, cl, cu, _numRows, numVals, _indexes);
 		}
 		else {
 			// multi row iterator.
@@ -369,8 +357,8 @@ public class ColGroupSDCZeros extends ColGroupValue {
 	@Override
 	public AColGroup binaryRowOp(BinaryOperator op, double[] v, boolean sparseSafe, boolean left) {
 		if(sparseSafe)
-			return new ColGroupSDCZeros(_colIndexes, _numRows, applyBinaryRowOp(op, v, sparseSafe, left), _indexes,
-				_data, getCachedCounts());
+			return new ColGroupSDCZeros(_colIndexes, _numRows, applyBinaryRowOp(op, v, sparseSafe, left), _indexes, _data,
+				getCachedCounts());
 		else
 			return new ColGroupSDC(_colIndexes, _numRows, applyBinaryRowOp(op, v, sparseSafe, left), _indexes, _data,
 				getCachedCounts());
@@ -436,11 +424,11 @@ public class ColGroupSDCZeros extends ColGroupValue {
 
 	@Override
 	public Dictionary preAggregateThatSDCStructure(ColGroupSDC that, Dictionary ret, boolean preModified) {
-		if(preModified){
+		if(preModified) {
 			final AIterator itThat = that._indexes.getIterator();
 			final AIterator itThis = _indexes.getIterator();
 			final int nCol = that._colIndexes.length;
-	
+
 			while(itThat.hasNext() && itThis.hasNext()) {
 				if(itThat.value() == itThis.value()) {
 					final int fr = that.getIndex(itThat.getDataIndexAndIncrement());
@@ -453,7 +441,8 @@ public class ColGroupSDCZeros extends ColGroupValue {
 					itThis.next();
 			}
 			return ret;
-		}else{
+		}
+		else {
 			throw new NotImplementedException("Not implemented not PreModded preaggregate of SDC");
 		}
 	}
@@ -503,4 +492,16 @@ public class ColGroupSDCZeros extends ColGroupValue {
 		throw new NotImplementedException();
 	}
 
+	@Override
+	public AColGroup replace(double pattern, double replace) {
+		if(pattern == 0)
+			return replaceZero(replace);
+		ADictionary replaced = _dict.replace(pattern, replace, _colIndexes.length);
+		return copyAndSet(replaced);
+	}
+
+	private AColGroup replaceZero(double replace) {
+		ADictionary replaced = _dict.replaceZeroAndExtend(replace, _colIndexes.length);
+		return new ColGroupSDC(_colIndexes, _numRows, replaced, _indexes, _data, getCachedCounts());
+	}
 }

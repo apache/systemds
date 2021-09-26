@@ -36,6 +36,6 @@ public class OffsetSingleTests {
 
 	@Test(expected = RuntimeException.class)
 	public void testInvalidCreation() {
-		OffsetFactory.create(new int[] {1, 2, 3, 4}, -1);
+		OffsetFactory.create(new int[] {1, 2, 3, -1});
 	}
 }

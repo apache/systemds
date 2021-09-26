@@ -19,42 +19,40 @@
 
 package org.apache.sysds.runtime.compress.cost;
 
-import java.util.Collection;
-
 import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup;
-import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
 public class ComputationCostEstimator implements ICostEstimate {
 
 	private static final long serialVersionUID = -1205636215389161815L;
 
-	private final boolean _isCompareAll;
+	/** A factor of how much common values can be exploited. */
+	private static final double commonValueImpact = 0.75;
+	/** The threshold before the commonValueImpact is tarting. */
+	private static final double cvThreshold = 0.2;
+
+	/** A factor for when the number of distinct tuples start scaling the cost. */
+	private static final int scalingStart = 1000;
 
 	private final int _nRows;
 	private final int _nCols;
+	// private final double _sparsity;
 
-	// Iteration through each row of decompressed.
 	private final int _scans;
 	private final int _decompressions;
 	private final int _overlappingDecompressions;
-	// The number of left (rows) multiplied on the matrix.
 	private final int _leftMultiplications;
 	private final int _rightMultiplications;
 	private final int _compressedMultiplication;
 	private final int _dictionaryOps;
 
+	/** Boolean specifying if the matrix is getting densified, meaning exploiting zeros is gone. */
 	private final boolean _isDensifying;
 
-	/**
-	 * A Cost based estimator based on the WTree that is parsed in IPA.
-	 * 
-	 * @param tree The tree to estimate cost from.
-	 */
-	protected ComputationCostEstimator(int nRows, int nCols, boolean compareAll, InstructionTypeCounter counts) {
+	protected ComputationCostEstimator(int nRows, int nCols, double sparsity, InstructionTypeCounter counts) {
 		_nRows = nRows;
 		_nCols = nCols;
-		_isCompareAll = compareAll;
+		// _sparsity = sparsity;
 		_scans = counts.scans;
 		_decompressions = counts.decompressions;
 		_overlappingDecompressions = counts.overlappingDecompressions;
@@ -68,11 +66,12 @@ public class ComputationCostEstimator implements ICostEstimate {
 			LOG.debug(this);
 	}
 
-	public ComputationCostEstimator(int nRows, int nCols, int scans, int decompressions, int overlappingDecompressions,
-		int leftMultiplictions, int compressedMultiplication, int rightMultiplications, int dictioanaryOps, boolean isDensifying) {
+	public ComputationCostEstimator(int nRows, int nCols, double sparsity, int scans, int decompressions,
+		int overlappingDecompressions, int leftMultiplictions, int compressedMultiplication, int rightMultiplications,
+		int dictioanaryOps, boolean isDensifying) {
 		_nRows = nRows;
 		_nCols = nCols;
-		_isCompareAll = false;
+		// _sparsity = sparsity;
 		_scans = scans;
 		_decompressions = decompressions;
 		_overlappingDecompressions = overlappingDecompressions;
@@ -83,12 +82,8 @@ public class ComputationCostEstimator implements ICostEstimate {
 		_isDensifying = isDensifying;
 	}
 
-	public static ComputationCostEstimator genDefaultCostCase(int nRows, int nCols){
-		return new ComputationCostEstimator(nRows,nCols, 1, 1, 0, 1, 1, 1, 10, true);
-	}
-
 	@Override
-	public double getUncompressedCost(int nRows, int nCols, int sparsity) {
+	public double getUncompressedCost(CompressedSizeInfoColGroup g) {
 		throw new NotImplementedException();
 	}
 
@@ -100,22 +95,25 @@ public class ComputationCostEstimator implements ICostEstimate {
 		cost += _scans * scanCost(g);
 		cost += _decompressions * decompressionCost(g);
 		cost += _overlappingDecompressions * overlappingDecompressionCost(g);
-		// 16 is assuming that the left / right side is 16 rows/cols.
+
 		final int rowsCols = 16;
-		cost += _leftMultiplications *  leftMultCost(g) * rowsCols;
+
+		final double scalingFactor = getScalingFactor(g.getNumVals());
+		cost += _leftMultiplications * leftMultCost(g) * rowsCols;
 		cost += _rightMultiplications * rightMultCost(g) * rowsCols;
 		cost += _dictionaryOps * dictionaryOpsCost(g);
-		
-		double size = g.getMinSize();
-		final double compressionRatio =  size / MatrixBlock.estimateSizeDenseInMemory(_nRows, _nCols) / g.getColumns().length;
-
-		cost *=  0.001 + compressionRatio;
-
 		cost += _compressedMultiplication * _compressedMultCost(g) * rowsCols;
 
-		// double uncompressedSize = g.getCompressionSize(CompressionType.UNCOMPRESSED);
+		return cost * scalingFactor;
+	}
 
-		return cost;
+	private double getScalingFactor(double nrValues) {
+		double scalingFactor = 1;
+		if(nrValues > scalingStart)
+			scalingFactor += ((nrValues - scalingStart) / scalingStart) * 0.01;
+		if(nrValues > Character.MAX_VALUE)
+			scalingFactor += .5; // double cost if the dictionaries have to contain chars.
+		return scalingFactor;
 	}
 
 	private double scanCost(CompressedSizeInfoColGroup g) {
@@ -125,44 +123,40 @@ public class ComputationCostEstimator implements ICostEstimate {
 	private double leftMultCost(CompressedSizeInfoColGroup g) {
 		final int nColsInGroup = g.getColumns().length;
 		final double mcf = g.getMostCommonFraction();
-		final double preAggregateCost = mcf > 0.6 ? _nRows * (1 - 0.4 * mcf) : _nRows;
+		final double preAggregateCost = (mcf > cvThreshold ? _nRows * (1 - commonValueImpact * mcf) : _nRows) * 0.6;
 
 		final double numberTuples = g.getNumVals();
 		final double tupleSparsity = g.getTupleSparsity();
-		final double postScalingCost = (nColsInGroup > 1 && tupleSparsity > 0.4) ? numberTuples * nColsInGroup * tupleSparsity *
-			1.4 : numberTuples * nColsInGroup;
-		if(numberTuples < 64000)
-			return preAggregateCost + postScalingCost;
-		else
-			return preAggregateCost * (numberTuples / 6400) + postScalingCost * (numberTuples / 64000);
+		final double postScalingCost = (nColsInGroup > 1 && tupleSparsity > 0.4) ? numberTuples * nColsInGroup *
+			tupleSparsity * 1.4 : numberTuples * nColsInGroup;
 
+		return preAggregateCost + postScalingCost;
 	}
 
 	private double _compressedMultCost(CompressedSizeInfoColGroup g) {
 		final int nColsInGroup = g.getColumns().length;
-		// final double mcf = g.getMostCommonFraction();
-		// final double preAggregateCost = (mcf > 0.6 ? _nRows * (1 - 0.6 * mcf) : _nRows) * 4;
-		final double preAggregateCost = _nRows;
+		final double mcf = g.getMostCommonFraction();
+		final double preAggregateCost = (mcf > cvThreshold ? _nRows * (1 - commonValueImpact * mcf) : _nRows) * 0.6;
+		// final double preAggregateCost = _nRows;
 
 		final double numberTuples = g.getNumVals();
 		final double tupleSparsity = g.getTupleSparsity();
-		final double postScalingCost = (nColsInGroup > 1 && tupleSparsity > 0.4) ? numberTuples * nColsInGroup * tupleSparsity *
-			1.4 : numberTuples * nColsInGroup;
-		if(numberTuples < 64000)
-			return preAggregateCost + postScalingCost;
-		else
-			return preAggregateCost * (numberTuples / 64000) + postScalingCost * (numberTuples / 64000);
+		final double postScalingCost = (nColsInGroup > 1 && tupleSparsity > 0.4) ? numberTuples * nColsInGroup *
+			tupleSparsity * 1.4 : numberTuples * nColsInGroup;
+
+		return preAggregateCost + postScalingCost;
+
 	}
 
 	private double rightMultCost(CompressedSizeInfoColGroup g) {
 		final int nColsInGroup = g.getColumns().length;
-		final int numberTuples = g.getNumVals() * 10;
+		final int numberTuples = g.getNumVals();
 		final double tupleSparsity = g.getTupleSparsity();
-		final double postScalingCost = (nColsInGroup > 1 && tupleSparsity > 0.4) ? numberTuples * nColsInGroup * tupleSparsity *
-			1.4 : numberTuples * nColsInGroup;
-		final double postAllocationCost = _nCols * numberTuples;
-
+		final double postScalingCost = (nColsInGroup > 1 && tupleSparsity > 0.4) ? numberTuples * nColsInGroup *
+			tupleSparsity * 1.4 : numberTuples * nColsInGroup;
+		final double postAllocationCost = 16 * numberTuples;
 		return postScalingCost + postAllocationCost;
+
 	}
 
 	private double decompressionCost(CompressedSizeInfoColGroup g) {
@@ -171,9 +165,9 @@ public class ComputationCostEstimator implements ICostEstimate {
 
 	private double overlappingDecompressionCost(CompressedSizeInfoColGroup g) {
 		final double mcf = g.getMostCommonFraction();
-		final double rowsCost = mcf > 0.6 ? _nRows * (1 - 0.6 * mcf) : _nRows;
-		//  Setting 64 to mark decompression as expensive.
-		return rowsCost * 16 * ((float)g.getNumVals() / 64000 + 1);
+		final double rowsCost = mcf > cvThreshold ? _nRows * (1 - commonValueImpact * mcf) : _nRows;
+		// Setting 64 to mark decompression as expensive.
+		return rowsCost * 64;
 	}
 
 	private static double dictionaryOpsCost(CompressedSizeInfoColGroup g) {
@@ -181,87 +175,11 @@ public class ComputationCostEstimator implements ICostEstimate {
 	}
 
 	@Override
-	public double getCostOfCollectionOfGroups(Collection<CompressedSizeInfoColGroup> gs) {
-		double cost = 0;
-		for(CompressedSizeInfoColGroup g1 : gs) {
-			cost += getCostOfColumnGroup(g1);
-			for(CompressedSizeInfoColGroup g2 : gs)
-				cost += getCostOfTwoGroups(g1, g2);
-		}
-		return cost;
-	}
-
-	@Override
-	public double getCostOfCollectionOfGroups(Collection<CompressedSizeInfoColGroup> gs, CompressedSizeInfoColGroup g) {
-		double cost = getCostOfColumnGroup(g);
-		for(CompressedSizeInfoColGroup g1 : gs) {
-			cost += getCostOfColumnGroup(g1);
-			cost += getCostOfTwoGroups(g1, g);
-			for(CompressedSizeInfoColGroup g2 : gs)
-				cost += getCostOfTwoGroups(g1, g2);
-		}
-		return cost;
-	}
-
-	@Override
-	public double getCostOfTwoGroups(CompressedSizeInfoColGroup g1, CompressedSizeInfoColGroup g2) {
-		return getCostOfCompressedMultiplication(g1, g2);
-	}
-
-	private double getCostOfCompressedMultiplication(CompressedSizeInfoColGroup g1, CompressedSizeInfoColGroup g2) {
-		if(g1 == g2)
-			return getCostOfSelfMultiplication(g1);
-
-		final int nColsL = g1.getColumns().length;
-		final int nColsR = g1.getColumns().length;
-
-		// final double preAggLeft = (nRows / (1 - gl.getMostCommonFraction())) * nColsL;
-		// final double preAggRight = (nRows / (1 - gr.getMostCommonFraction())) * nColsR;
-
-		final double preAggLeft = _nRows;
-		final double preAggRight = _nRows;
-
-		final double tsL = g1.getTupleSparsity();
-		final double tsR = g2.getTupleSparsity();
-
-		// final double tsL = 1;
-		// final double tsR = 1;
-
-		final int nvL = g1.getNumVals();
-		final int nvR = g2.getNumVals();
-
-		final double postScaleLeft = nColsL > 1 && tsL > 0.4 ? nvL * nColsL : nvL * nColsL * tsL;
-		final double postScaleRight = nColsR > 1 && tsR > 0.4 ? nvR * nColsR : nvR * nColsR * tsR;
-
-		final double costLeft = preAggLeft + postScaleLeft * 5;
-		final double costRight = preAggRight + postScaleRight * 5;
-
-		return Math.min(costLeft, costRight);
-	}
-
-	private static double getCostOfSelfMultiplication(CompressedSizeInfoColGroup g) {
-		final int nv = g.getNumVals();
-		final int nCols = g.getColumns().length;
-		final double ts = g.getTupleSparsity();
-		return nv * nCols * ts;
-	}
-
-	@Override
-	public boolean isCompareAll() {
-		return _isCompareAll;
-	}
-
-	@Override
 	public boolean shouldAnalyze(CompressedSizeInfoColGroup g1, CompressedSizeInfoColGroup g2) {
 		return true;
 	}
 
-	@Override
-	public boolean shouldTryJoin(CompressedSizeInfoColGroup g1, CompressedSizeInfoColGroup g2) {
-		return true;
-	}
-
-	public boolean isDense(){
+	public boolean isDense() {
 		return _isDensifying;
 	}
 

@@ -51,7 +51,7 @@ public class CompressedSizeInfo {
 		compressionInfo = info;
 	}
 
-	public void joinEmpty() {
+	public void joinEmpty(int nRows) {
 		List<CompressedSizeInfoColGroup> ng = new ArrayList<>();
 		List<Integer> empty = new ArrayList<>();
 		for(CompressedSizeInfoColGroup g : compressionInfo) {
@@ -64,7 +64,7 @@ public class CompressedSizeInfo {
 		for(int i = 0; i < empty.size(); i++)
 			emptyColumns[i] = empty.get(i);
 		if(empty.size() > 0) {
-			ng.add(new CompressedSizeInfoColGroup(emptyColumns, compressionInfo.get(0).getNumRows()));
+			ng.add(new CompressedSizeInfoColGroup(emptyColumns, nRows));
 			compressionInfo = ng;
 		}
 	}
@@ -78,9 +78,9 @@ public class CompressedSizeInfo {
 		// Basic data inherited from MatrixBlock + CompressedMatrixBlock
 		long est = CompressedMatrixBlock.baseSizeInMemory();
 		// Memory usage from all Compression Groups.
-		for(CompressedSizeInfoColGroup csi : compressionInfo) {
+		for(CompressedSizeInfoColGroup csi : compressionInfo)
 			est += csi.getMinSize();
-		}
+
 		return est;
 	}
 
@@ -95,6 +95,30 @@ public class CompressedSizeInfo {
 		// sb.append("num Rows" + numRows + " NumCols" + numCols );
 		for(CompressedSizeInfoColGroup g : compressionInfo)
 			sb.append("\n" + g.toString());
+		return sb.toString();
+	}
+
+	public String getEstimatedDistinct() {
+		StringBuilder sb = new StringBuilder();
+		if(compressionInfo == null)
+			return "";
+		sb.append("[");
+		sb.append(compressionInfo.get(0).getNumVals());
+		for(int i = 1; i < compressionInfo.size(); i++)
+			sb.append(", " + compressionInfo.get(i).getNumVals());
+		sb.append("]");
+		return sb.toString();
+	}
+
+	public String getNrColumnsString() {
+		StringBuilder sb = new StringBuilder();
+		if(compressionInfo == null)
+			return "";
+		sb.append("[");
+		sb.append(compressionInfo.get(0).getColumns().length);
+		for(int i = 1; i < compressionInfo.size(); i++)
+			sb.append(", " + compressionInfo.get(i).getColumns().length);
+		sb.append("]");
 		return sb.toString();
 	}
 }

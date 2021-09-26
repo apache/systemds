@@ -143,6 +143,10 @@ public class LibMatrixReorg {
 		}
 	}
 
+	public static MatrixBlock transpose(MatrixBlock in){
+		return transpose(in, new MatrixBlock(in.getNumColumns(), in.getNumRows(), in.isInSparseFormat()));
+	}
+
 	public static MatrixBlock transpose( MatrixBlock in, MatrixBlock out ) {
 		//sparse-safe operation
 		if( in.isEmptyBlock(false) )
@@ -185,6 +189,10 @@ public class LibMatrixReorg {
 		// System.out.println("r' ("+in.rlen+", "+in.clen+", "+in.sparse+", "+out.sparse+") in "+time.stop()+" ms.");
 		
 		return out;
+	}
+
+	public static MatrixBlock transpose(MatrixBlock in, int k){
+		return transpose(in, new MatrixBlock(in.getNumColumns(), in.getNumRows(), in.isInSparseFormat()), k);
 	}
 	
 	public static MatrixBlock transpose( MatrixBlock in, MatrixBlock out, int k ) {

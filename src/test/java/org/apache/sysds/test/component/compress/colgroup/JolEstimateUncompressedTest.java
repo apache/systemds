@@ -43,17 +43,17 @@ public class JolEstimateUncompressedTest extends JolEstimateTest {
 
 		// mb.add(DataConverter.convertToMatrixBlock(new double[][] {{0}}));
 		tests.add(new Object[] {DataConverter.convertToMatrixBlock(new double[][] {{1}})});
-		tests.add(new Object[] {DataConverter.convertToMatrixBlock(TestUtils.generateTestMatrix(1, 100, 0, 100, 1.0, 7))});
-		tests.add(new Object[] {DataConverter.convertToMatrixBlock(TestUtils.generateTestMatrix(1, 1000, 0, 100, 0.2, 7))});
-		// tests.add(new Object[] {DataConverter.convertToMatrixBlock(TestUtils.generateTestMatrix(1, 100000, 0, 100, 0.01, 7))});
+		tests.add(new Object[] {TestUtils.generateTestMatrixBlock(1, 100, 0, 100, 1.0, 7)});
+		tests.add(new Object[] {TestUtils.generateTestMatrixBlock(1, 1000, 0, 100, 0.2, 7)});
+		// tests.add(new Object[] {TestUtils.generateTestMatrixBlock(1, 100000, 0, 100, 0.01, 7)});
 
 		// Multi column
-		tests.add(new Object[] {DataConverter.convertToMatrixBlock(TestUtils.generateTestMatrix(2, 10, 0, 100, 1.0, 7))});
-		tests.add(new Object[] {DataConverter.convertToMatrixBlock(TestUtils.generateTestMatrix(13, 100, 0, 100, 1.0, 7))});
+		tests.add(new Object[] {TestUtils.generateTestMatrixBlock(2, 10, 0, 100, 1.0, 7)});
+		tests.add(new Object[] {TestUtils.generateTestMatrixBlock(13, 100, 0, 100, 1.0, 7)});
 
 		// sparse
-		tests.add(new Object[] {DataConverter.convertToMatrixBlock(TestUtils.generateTestMatrix(13, 100, 0, 100, 0.3, 7))});
-		tests.add(new Object[] {DataConverter.convertToMatrixBlock(TestUtils.generateTestMatrix(100, 100, 0, 100, 0.01, 7))});
+		tests.add(new Object[] {TestUtils.generateTestMatrixBlock(13, 100, 0, 100, 0.3, 7)});
+		tests.add(new Object[] {TestUtils.generateTestMatrixBlock(100, 100, 0, 100, 0.01, 7)});
 
 		return tests;
 	}

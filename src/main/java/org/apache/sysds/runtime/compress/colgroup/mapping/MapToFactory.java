@@ -22,30 +22,21 @@ package org.apache.sysds.runtime.compress.colgroup.mapping;
 import java.io.DataInput;
 import java.io.IOException;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
-import org.apache.sysds.runtime.compress.utils.ABitmap;
+import org.apache.sysds.runtime.compress.bitmap.ABitmap;
 import org.apache.sysds.runtime.compress.utils.IntArrayList;
 
 public final class MapToFactory {
-
-	protected static final Log LOG = LogFactory.getLog(MapToFactory.class.getName());
+	// private static final Log LOG = LogFactory.getLog(MapToFactory.class.getName());
 
 	public enum MAP_TYPE {
 		BIT, BYTE, CHAR, INT;
 	}
 
-	public static AMapToData create(ABitmap map) {
-		return create(map.getNumRows(), map);
-	}
-
-	public static AMapToData create(int size, ABitmap map) {
-		if(map == null || map.isEmpty())
+	public static AMapToData create(int size, ABitmap ubm) {
+		if(ubm == null || ubm.isEmpty())
 			return null;
-
-		boolean zeros = map.getNumOffsets() < size;
-		return create(size, zeros, map.getOffsetList());
+		return create(size, ubm.containsZero(), ubm.getOffsetList());
 	}
 
 	public static AMapToData create(int size, boolean zeros, IntArrayList[] values) {
@@ -54,7 +45,7 @@ public final class MapToFactory {
 			_data.fill(values.length);
 
 		for(int i = 0; i < values.length; i++) {
-			IntArrayList tmpList = values[i];
+			final IntArrayList tmpList = values[i];
 			final int sz = tmpList.size();
 			for(int k = 0; k < sz; k++)
 				_data.set(tmpList.get(k), i);
@@ -67,10 +58,42 @@ public final class MapToFactory {
 			return new MapToBit(numTuples, size);
 		else if(numTuples < 256)
 			return new MapToByte(numTuples, size);
-		else if(numTuples < Character.MAX_VALUE)
+		else if(numTuples <= (int) Character.MAX_VALUE)
 			return new MapToChar(numTuples, size);
 		else
 			return new MapToInt(numTuples, size);
+	}
+
+	/**
+	 * Reshape the map, to a smaller instance if applicable.
+	 * 
+	 * Note that it returns the input if the input is the smallest representation that fits, otherwise it will return
+	 * something that is smaller.
+	 * 
+	 * @param d         The Input mat to potentially reduce the size of.
+	 * @param numTuples The number of tuples that should be in the resulting map
+	 * @return The returned hopefully reduced map.
+	 */
+	public static AMapToData resize(AMapToData d, int numTuples) {
+		final int size = d.size();
+		AMapToData ret;
+		if(d instanceof MapToBit)
+			return d;
+		else if(numTuples <= 1)
+			ret = new MapToBit(numTuples, size);
+		else if(d instanceof MapToByte)
+			return d;
+		else if(numTuples < 256)
+			ret = new MapToByte(numTuples, size);
+		else if(d instanceof MapToChar)
+			return d;
+		else if(numTuples <= (int) Character.MAX_VALUE)
+			ret = new MapToChar(numTuples, size);
+		else // then the input was int and reshapes to int
+			return d;
+
+		ret.copy(d);
+		return ret;
 	}
 
 	public static long estimateInMemorySize(int size, int numTuples) {
@@ -78,7 +101,7 @@ public final class MapToFactory {
 			return MapToBit.getInMemorySize(size);
 		else if(numTuples < 256)
 			return MapToByte.getInMemorySize(size);
-		else if(numTuples < Character.MAX_VALUE)
+		else if(numTuples <= (int) Character.MAX_VALUE)
 			return MapToChar.getInMemorySize(size);
 		else
 			return MapToInt.getInMemorySize(size);
@@ -94,9 +117,8 @@ public final class MapToFactory {
 			case CHAR:
 				return MapToChar.readFields(in);
 			case INT:
-				return MapToInt.readFields(in);
 			default:
-				throw new DMLCompressionException("Unknown Map type.");
+				return MapToInt.readFields(in);
 		}
 	}
 
@@ -108,7 +130,7 @@ public final class MapToFactory {
 		final int nVL = left.getUnique();
 		final int nVR = right.getUnique();
 		final int size = left.size();
-		final long maxUnique = nVL * nVR;
+		final long maxUnique = (long) nVL * nVR;
 		if(maxUnique > (long) Integer.MAX_VALUE)
 			throw new DMLCompressionException(
 				"Joining impossible using linearized join, since each side has a large number of unique values");

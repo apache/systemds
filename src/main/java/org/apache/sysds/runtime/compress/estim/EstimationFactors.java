@@ -19,15 +19,13 @@
 
 package org.apache.sysds.runtime.compress.estim;
 
-import java.util.Arrays;
-
 import org.apache.commons.lang.NotImplementedException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.CompressionSettings;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
+import org.apache.sysds.runtime.compress.bitmap.ABitmap;
 import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
-import org.apache.sysds.runtime.compress.utils.ABitmap;
 
 /**
  * Compressed Size Estimation factors. Contains meta information used to estimate the compression sizes of given columns
@@ -37,14 +35,13 @@ public class EstimationFactors {
 
 	protected static final Log LOG = LogFactory.getLog(EstimationFactors.class.getName());
 
-	protected final int[] cols;
 	/** Number of distinct value tuples in the columns, not to be confused with number of distinct values */
 	protected final int numVals;
 	/** The number of offsets, to tuples of values in the column groups */
 	protected final int numOffs;
 	/** The number of instances in the largest offset, this is used to determine if SDC is good. */
 	protected final int largestOff;
-	/** The frequencies of the different tuples in the columns */
+	/** The frequencies of the Non zero tuples in the columns */
 	protected final int[] frequencies;
 	/** The Number of runs, of consecutive equal numbers, used primarily in RLE */
 	protected final int numRuns;
@@ -61,9 +58,14 @@ public class EstimationFactors {
 	/** The sparsity of the tuples them selves in isolation */
 	protected final double tupleSparsity;
 
-	protected EstimationFactors(int[] cols, int numVals, int numRows) {
-		this.cols = cols;
-		this.numVals = numVals;
+	protected EstimationFactors(int nCols, int numVals, int numRows) {
+		// Safety in numbers, if the estimation factor is saying that there is no values in 5 columns,
+		// then add one to make sure that the cocode does not run amok. If the data is actually empty, the columns
+		// are joined later.
+		if(nCols >= 5 && numVals == 0)
+			this.numVals = 1;
+		else
+			this.numVals = numVals;
 		this.numRows = numRows;
 		this.frequencies = null;
 		this.numOffs = -1;
@@ -77,9 +79,32 @@ public class EstimationFactors {
 		this.tupleSparsity = 1;
 	}
 
-	protected EstimationFactors(int[] cols, EstimationFactors old) {
-		this.cols = cols;
-		this.numVals = old.numVals;
+	protected EstimationFactors(int nCols, int numVals, int numRows, int largestOff, double sparsity) {
+		// Safety in numbers, if the estimation factor is saying that there is no values in 5 columns,
+		// then add one to make sure that the cocode does not run amok. If the data is actually empty, the columns
+		// are joined later.
+		if(nCols >= 5 && numVals == 0)
+			this.numVals = 1;
+		else
+			this.numVals = numVals;
+		this.numRows = numRows;
+		this.frequencies = null;
+		this.numOffs = (int) (numRows * sparsity);
+		this.largestOff = largestOff;
+		this.numRuns = -1;
+		this.numSingle = -1;
+		this.lossy = false;
+		this.zeroIsMostFrequent = true;
+		this.containNoZeroValues = false;
+		this.overAllSparsity = sparsity;
+		this.tupleSparsity = 1;
+	}
+
+	protected EstimationFactors(int nCols, EstimationFactors old) {
+		if(nCols >= 5 && old.numVals == 0)
+			this.numVals = 1;
+		else
+			this.numVals = old.numVals;
 		this.numRows = old.numRows;
 		this.numOffs = old.numOffs;
 		this.largestOff = old.largestOff;
@@ -93,11 +118,16 @@ public class EstimationFactors {
 		this.tupleSparsity = old.tupleSparsity;
 	}
 
-	protected EstimationFactors(int[] cols, int numVals, int numOffs, int largestOff, int[] frequencies, int numRuns,
+	protected EstimationFactors(int nCols, int numVals, int numOffs, int largestOff, int[] frequencies, int numRuns,
 		int numSingle, int numRows, boolean lossy, boolean zeroIsMostFrequent, double overAllSparsity,
 		double tupleSparsity) {
-		this.cols = cols;
-		this.numVals = numVals;
+		// Safety in numbers, if the estimation factor is saying that there is no values in 5 columns,
+		// then add one to make sure that the cocode does not run amok. If the data is actually empty, the columns
+		// are joined later.
+		if(nCols >= 5 && numVals == 0)
+			this.numVals = 1;
+		else
+			this.numVals = numVals;
 		this.numOffs = numOffs;
 		this.largestOff = largestOff;
 		this.frequencies = frequencies;
@@ -106,112 +136,102 @@ public class EstimationFactors {
 		this.numRows = numRows;
 		this.lossy = lossy;
 		this.zeroIsMostFrequent = zeroIsMostFrequent;
-		this.containNoZeroValues = numOffs == numRows;
+		this.containNoZeroValues = numOffs == numRows && overAllSparsity < 1;
 		this.overAllSparsity = overAllSparsity;
 		this.tupleSparsity = tupleSparsity;
-
-		if(!containNoZeroValues && overAllSparsity >= 1)
-			throw new DMLCompressionException(
-				"Invalid Sparsity, if there is zeroOffsets, then the sparsity should be below 1");
+			
 		if(overAllSparsity > 1 || overAllSparsity < 0)
-			throw new DMLCompressionException("Invalid sparsity");
+			throw new DMLCompressionException("Invalid OverAllSparsity of: " + overAllSparsity);
 		if(tupleSparsity > 1 || tupleSparsity < 0)
-			throw new DMLCompressionException("Invalid sparsity");
+			throw new DMLCompressionException("Invalid TupleSparsity of:" + tupleSparsity);
 		if(largestOff > numRows)
 			throw new DMLCompressionException(
 				"Invalid number of instance of most common element should be lower than number of rows. " + largestOff
 					+ " > numRows: " + numRows);
 	}
 
-	protected static EstimationFactors computeSizeEstimationFactors(ABitmap ubm, boolean inclRLE, int[] cols) {
-		final int numRows = ubm.getNumRows();
-		if(ubm == null || ubm.getOffsetList() == null)
-			return new EstimationFactors(cols, 0, 0, numRows, new int[] {numRows}, 1, 0, numRows, false, true, 0, 0);
-		else {
-			int numVals = ubm.getNumValues();
-			int numRuns = 0;
-			int numOffs = 0;
-			int numSingle = 0;
-			int largestOffs = 0;
-			long tupleNonZeroCount = 0;
-			long overallNonZeroCount = 0;
-			// compute size estimation factors
-			for(int i = 0; i < numVals; i++) {
-				final int listSize = ubm.getNumOffsets(i);
-				final int numZerosInTuple = ubm.getNumNonZerosInOffset(i);
-				tupleNonZeroCount += numZerosInTuple;
-				overallNonZeroCount += numZerosInTuple * listSize;
-				numOffs += listSize;
-				if(listSize > largestOffs)
-					largestOffs = listSize;
+	protected static EstimationFactors emptyFactors(int nCols, int nRows){
+		return new EstimationFactors(nCols, 0, 0, 0 , null, 0, 0, nRows, false, true, 0, 0);
+	}
 
-				numSingle += (listSize == 1) ? 1 : 0;
-				if(inclRLE) {
-					int[] list = ubm.getOffsetsList(i).extractValues();
-					int lastOff = -2;
-					numRuns += list[listSize - 1] / (CompressionSettings.BITMAP_BLOCK_SZ);
-					for(int j = 0; j < listSize; j++) {
-						if(list[j] != lastOff + 1)
-							numRuns++;
-						lastOff = list[j];
-					}
+	protected static EstimationFactors computeSizeEstimationFactors(ABitmap ubm, int rlen, boolean inclRLE, int[] cols) {
+		if(ubm == null || ubm.getOffsetList() == null)
+			return null;
+
+		int numVals = ubm.getNumValues();
+		int numRuns = 0;
+		int numOffs = 0;
+		int numSingle = 0;
+		int largestOffs = 0;
+		long tupleNonZeroCount = 0;
+		long overallNonZeroCount = 0;
+		// compute size estimation factors
+		for(int i = 0; i < numVals; i++) {
+			final int listSize = ubm.getNumOffsets(i);
+			final int numZerosInTuple = ubm.getNumNonZerosInOffset(i);
+			tupleNonZeroCount += numZerosInTuple;
+			overallNonZeroCount += numZerosInTuple * listSize;
+			numOffs += listSize;
+			if(listSize > largestOffs)
+				largestOffs = listSize;
+
+			numSingle += (listSize == 1) ? 1 : 0;
+			if(inclRLE) {
+				int[] list = ubm.getOffsetsList(i).extractValues();
+				int lastOff = -2;
+				numRuns += list[listSize - 1] / (CompressionSettings.BITMAP_BLOCK_SZ);
+				for(int j = 0; j < listSize; j++) {
+					if(list[j] != lastOff + 1)
+						numRuns++;
+					lastOff = list[j];
 				}
 			}
-
-			final int zerosOffs = numRows - numOffs;
-			final boolean containsZero = zerosOffs > 0;
-			int[] frequencies = new int[numVals + (containsZero ? 1 : 0)];
-			for(int i = 0; i < numVals; i++)
-				frequencies[i] = ubm.getNumOffsets(i);
-			if(containsZero)
-				frequencies[numVals] = zerosOffs;
-			final boolean zerosLargestOffset = zerosOffs > largestOffs;
-			if(zerosLargestOffset)
-				largestOffs = zerosOffs;
-
-			double overAllSparsity = (double) overallNonZeroCount / ((long) numRows * (long) cols.length);
-			double tupleSparsity = (double) tupleNonZeroCount / (numVals * cols.length);
-
-			return new EstimationFactors(cols, numVals, numOffs, largestOffs, frequencies, numRuns, numSingle, numRows,
-				ubm.lossy(), zerosLargestOffset, overAllSparsity, tupleSparsity);
 		}
+
+		final int zerosOffs = rlen - numOffs;
+		int[] frequencies = new int[numVals];
+		for(int i = 0; i < numVals; i++)
+			frequencies[i] = ubm.getNumOffsets(i);
+		final boolean zerosLargestOffset = zerosOffs > largestOffs;
+		if(zerosLargestOffset)
+			largestOffs = zerosOffs;
+
+		double overAllSparsity = (double) overallNonZeroCount / (rlen * cols.length);
+		double tupleSparsity = (double) tupleNonZeroCount / (numVals * cols.length);
+
+		return new EstimationFactors(cols.length, numVals, numOffs, largestOffs, frequencies, numRuns, numSingle, rlen,
+			false, zerosLargestOffset, overAllSparsity, tupleSparsity);
+
 	}
 
 	protected static EstimationFactors computeSizeEstimation(final int[] cols, final AMapToData map,
 		final boolean inclRLE, final int numRows, final boolean lastEntryAllZero) {
 		final boolean lossy = false;
 		if(map == null)
-			return new EstimationFactors(cols, 0, 0, numRows, new int[] {numRows}, 1, 0, numRows, false, true, 0, 0);
+			return null;
 
 		final int nUnique = map.getUnique();
-		if(lastEntryAllZero) {
+		if(lastEntryAllZero || inclRLE)
 			throw new NotImplementedException();
-		}
-		else {
-			final boolean zerosLargestOffset = false;
-			final double overAllSparsity = 1.0;
-			final double tupleSparsity = 1.0;
-			final int numOffs = map.size();
-			final int numSingle = 0; // unknown
-			if(inclRLE) {
-				throw new NotImplementedException();
-			}
-			else {
-				final int numRuns = 0;
-				int[] counts = new int[nUnique];
-				for(int i = 0; i < map.size(); i++) {
-					counts[map.getIndex(i)]++;
-				}
-				int largestOffs = 0;
-				for(int i = 0; i < nUnique; i++) {
-					if(counts[i] > largestOffs)
-						largestOffs = counts[i];
-				}
-				return new EstimationFactors(cols, nUnique, numOffs, largestOffs, counts, numRuns, numSingle, numRows,
-					lossy, zerosLargestOffset, overAllSparsity, tupleSparsity);
-			}
 
-		}
+		final boolean zerosLargestOffset = false;
+		final double overAllSparsity = 1.0;
+		final double tupleSparsity = 1.0;
+		final int numOffs = map.size();
+		final int numSingle = 0; // unknown
+
+		final int numRuns = 0;
+		int[] counts = new int[nUnique];
+		for(int i = 0; i < map.size(); i++)
+			counts[map.getIndex(i)]++;
+
+		int largestOffs = 0;
+		for(int i = 0; i < nUnique; i++)
+			if(counts[i] > largestOffs)
+				largestOffs = counts[i];
+
+		return new EstimationFactors(cols.length, nUnique, numOffs, largestOffs, counts, numRuns, numSingle, numRows,
+			lossy, zerosLargestOffset, overAllSparsity, tupleSparsity);
 
 	}
 
@@ -226,7 +246,6 @@ public class EstimationFactors {
 		sb.append(" num Unique Vals:" + numVals);
 		sb.append(" overallSparsity:" + overAllSparsity);
 		sb.append(" tupleSparsity:" + tupleSparsity);
-		sb.append(" cols:" + Arrays.toString(cols));
 		return sb.toString();
 	}
 }

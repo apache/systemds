@@ -30,7 +30,7 @@ import org.apache.sysds.utils.MemoryEstimates;
 public class MapToByte extends AMapToData {
 
 	private static final long serialVersionUID = -2498505439667351828L;
-	
+
 	private final byte[] _data;
 
 	public MapToByte(int unique, int size) {
@@ -97,7 +97,29 @@ public class MapToByte extends AMapToData {
 		return new MapToByte(unique, data);
 	}
 
-	public byte[] getBytes(){
+	public byte[] getBytes() {
 		return _data;
+	}
+
+	@Override
+	public void replace(int v, int r) {
+		byte cv = (byte) v;
+		byte rv = (byte) r;
+		for(int i = 0; i < size(); i++)
+			if(_data[i] == cv)
+				_data[i] = rv;
+	}
+
+	@Override
+	public void copy(AMapToData d) {
+		if(d instanceof MapToChar) {
+			char[] dd = ((MapToChar) d).getChars();
+			for(int i = 0; i < size(); i++)
+				_data[i] = (byte) dd[i];
+		}
+		else {
+			for(int i = 0; i < size(); i++)
+				set(i, d.getIndex(i));
+		}
 	}
 }

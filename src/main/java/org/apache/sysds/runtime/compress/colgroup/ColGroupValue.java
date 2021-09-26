@@ -40,11 +40,9 @@ import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.DenseBlockFP64;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.functionobjects.Builtin;
-import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.matrix.data.LibMatrixMult;
 import org.apache.sysds.runtime.matrix.data.LibMatrixReorg;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
-import org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
 
@@ -70,6 +68,9 @@ public abstract class ColGroupValue extends ColGroupCompressed implements Clonea
 		}
 	};
 
+	/** The number of rows in the column group */
+	final protected int _numRows;
+
 	/**
 	 * ColGroup Implementation Contains zero tuple. Note this is not if it contains a zero value. If false then the
 	 * stored values are filling the ColGroup making it a dense representation, that can be leveraged in operations.
@@ -83,40 +84,37 @@ public abstract class ColGroupValue extends ColGroupCompressed implements Clonea
 	private transient SoftReference<int[]> counts;
 
 	protected ColGroupValue(int numRows) {
-		super(numRows);
+		super();
+		_numRows = numRows;
 	}
 
 	protected ColGroupValue(int[] colIndices, int numRows, ADictionary dict) {
-		super(colIndices, numRows);
+		super(colIndices);
+		_numRows = numRows;
 		_dict = dict;
 	}
 
 	protected ColGroupValue(int[] colIndices, int numRows, ADictionary dict, int[] cachedCounts) {
-		super(colIndices, numRows);
+		super(colIndices);
+		_numRows = numRows;
 		_dict = dict;
 		counts = new SoftReference<>(cachedCounts);
 	}
 
 	@Override
-	public final void decompressToBlockSafe(MatrixBlock target, int rl, int ru, int offT) {
-		decompressToBlockUnSafe(target, rl, ru, offT);
-		target.setNonZeros(getNumberNonZeros() + target.getNonZeros());
-	}
-
-	@Override
-	public final void decompressToBlockUnSafe(MatrixBlock target, int rl, int ru, int offT) {
+	public final void decompressToBlock(MatrixBlock target, int rl, int ru, int offT) {
 		if(_dict instanceof MatrixBlockDictionary) {
 			final MatrixBlockDictionary md = (MatrixBlockDictionary) _dict;
 			final MatrixBlock mb = md.getMatrixBlock();
 			if(mb.isEmpty())
 				return;
 			else if(mb.isInSparseFormat())
-				decompressToBlockUnSafeSparseDictionary(target, rl, ru, offT, mb.getSparseBlock());
+				decompressToBlockSparseDictionary(target, rl, ru, offT, mb.getSparseBlock());
 			else
-				decompressToBlockUnSafeDenseDictionary(target, rl, ru, offT, mb.getDenseBlockValues());
+				decompressToBlockDenseDictionary(target, rl, ru, offT, mb.getDenseBlockValues());
 		}
 		else
-			decompressToBlockUnSafeDenseDictionary(target, rl, ru, offT, _dict.getValues());
+			decompressToBlockDenseDictionary(target, rl, ru, offT, _dict.getValues());
 	}
 
 	/**
@@ -128,7 +126,7 @@ public abstract class ColGroupValue extends ColGroupCompressed implements Clonea
 	 * @param offT   The offset into target block to decompress to (use full if the target it a multi block matrix)
 	 * @param sb     the sparse dictionary block to take value tuples from
 	 */
-	protected abstract void decompressToBlockUnSafeSparseDictionary(MatrixBlock target, int rl, int ru, int offT,
+	protected abstract void decompressToBlockSparseDictionary(MatrixBlock target, int rl, int ru, int offT,
 		SparseBlock sb);
 
 	/**
@@ -140,7 +138,7 @@ public abstract class ColGroupValue extends ColGroupCompressed implements Clonea
 	 * @param offT   The offset into target block to decompress to (use full if the target it a multi block matrix)
 	 * @param values The dense dictionary values, linearized row major.
 	 */
-	protected abstract void decompressToBlockUnSafeDenseDictionary(MatrixBlock target, int rl, int ru, int offT,
+	protected abstract void decompressToBlockDenseDictionary(MatrixBlock target, int rl, int ru, int offT,
 		double[] values);
 
 	@Override
@@ -158,11 +156,6 @@ public abstract class ColGroupValue extends ColGroupCompressed implements Clonea
 	}
 
 	@Override
-	public final void addMinMax(double[] ret) {
-		_dict.addMaxAndMin(ret, _colIndexes);
-	}
-
-	@Override
 	public final MatrixBlock getValuesAsBlock() {
 		_dict = _dict.getAsMatrixBlockDictionary(_colIndexes.length);
 		MatrixBlock ret = ((MatrixBlockDictionary) _dict).getMatrixBlock();
@@ -175,9 +168,9 @@ public abstract class ColGroupValue extends ColGroupCompressed implements Clonea
 	}
 
 	/**
-	 * Returns the counts of values inside the dictionary. If already calculated it will return the previous counts.
-	 * This produce an overhead in cases where the count is calculated, but the overhead will be limited to number of
-	 * distinct tuples in the dictionary.
+	 * Returns the counts of values inside the dictionary. If already calculated it will return the previous counts. This
+	 * produce an overhead in cases where the count is calculated, but the overhead will be limited to number of distinct
+	 * tuples in the dictionary.
 	 * 
 	 * The returned counts always contains the number of zeros as well if there are some contained, even if they are not
 	 * materialized.
@@ -366,8 +359,7 @@ public abstract class ColGroupValue extends ColGroupCompressed implements Clonea
 	 * 
 	 * @param op      The Operator to apply to the underlying data.
 	 * @param newVal  The new Value to append to the underlying data.
-	 * @param numCols The number of columns in the ColGroup, to specify how many copies of the newVal should be
-	 *                appended.
+	 * @param numCols The number of columns in the ColGroup, to specify how many copies of the newVal should be appended.
 	 * @return The new Dictionary containing the values.
 	 */
 	protected final ADictionary applyScalarOp(ScalarOperator op, double newVal, int numCols) {
@@ -486,7 +478,8 @@ public abstract class ColGroupValue extends ColGroupCompressed implements Clonea
 
 	public abstract int[] getCounts(int rl, int ru, int[] out);
 
-	protected final void computeSum(double[] c, boolean square) {
+	@Override
+	protected final void computeSum(double[] c, int nRows, boolean square) {
 		if(_dict != null)
 			if(square)
 				c[0] += _dict.sumsq(getCounts(), _colIndexes.length);
@@ -494,8 +487,21 @@ public abstract class ColGroupValue extends ColGroupCompressed implements Clonea
 				c[0] += _dict.sum(getCounts(), _colIndexes.length);
 	}
 
-	protected final void computeColSums(double[] c, boolean square) {
+	@Override
+	protected final void computeColSums(double[] c, int nRows, boolean square) {
 		_dict.colSum(c, getCounts(), _colIndexes, square);
+	}
+
+	protected void computeProduct(double[] c, int nRows){
+		c[0] *= _dict.product(getCounts(), _colIndexes.length);
+	}
+
+	protected void computeRowProduct(double[] c, int rl, int ru){
+		throw new NotImplementedException();
+	}
+
+	protected void computeColProduct(double[] c, int nRows){
+		_dict.colProduct(c, getCounts(), _colIndexes);
 	}
 
 	protected Object clone() {
@@ -548,11 +554,9 @@ public abstract class ColGroupValue extends ColGroupCompressed implements Clonea
 
 	@Override
 	protected final AColGroup sliceMultiColumns(int idStart, int idEnd, int[] outputCols) {
-
 		ColGroupValue ret = (ColGroupValue) copy();
 		ret._dict = ret._dict != null ? ret._dict.sliceOutColumnRange(idStart, idEnd, _colIndexes.length) : null;
 		ret._colIndexes = outputCols;
-
 		return ret;
 	}
 
@@ -597,8 +601,6 @@ public abstract class ColGroupValue extends ColGroupCompressed implements Clonea
 			return preAggregateThatSDCSingleZerosStructure((ColGroupSDCSingleZeros) that, ret);
 		else if(that instanceof ColGroupSDCZeros)
 			return preAggregateThatSDCZerosStructure((ColGroupSDCZeros) that, ret);
-		else if(that instanceof ColGroupConst)
-			return preAggregateThatConstStructure((ColGroupConst) that, ret);
 
 		throw new NotImplementedException("Not supported pre aggregate using index structure of :"
 			+ that.getClass().getSimpleName() + " in " + this.getClass().getSimpleName());
@@ -629,11 +631,6 @@ public abstract class ColGroupValue extends ColGroupCompressed implements Clonea
 		throw new DMLCompressionException("Does not make sense to call this, implement function for sub class");
 	}
 
-	protected Dictionary preAggregateThatConstStructure(ColGroupConst that, Dictionary ret) {
-		computeColSums(ret.getValues(), false);
-		return ret;
-	}
-
 	@Override
 	public final void leftMultByAColGroup(AColGroup lhs, MatrixBlock result) {
 		if(lhs instanceof ColGroupEmpty)
@@ -647,166 +644,107 @@ public abstract class ColGroupValue extends ColGroupCompressed implements Clonea
 				"Not supported left multiplication with A ColGroup of type: " + lhs.getClass().getSimpleName());
 	}
 
-	private void leftMultByColGroupValue(ColGroupValue lhs, MatrixBlock result) {
+	@Override
+	public void tsmmAColGroup(AColGroup other, MatrixBlock result) {
+		if(other instanceof ColGroupEmpty)
+			return;
+		else if(other instanceof ColGroupValue) {
+			// _dict = _dict.getAsMatrixBlockDictionary(getNumCols());
+			ColGroupValue lg = (ColGroupValue) other;
+			boolean left = !shouldPreAggregateLeft(other);
+			double[] r;
+			double[] l;
+			if(left) {
+				l = lg._dict.getValues();
+				r = preAggLeft(lg).getValues();
+			}
+			else {
+				l = preAggRight(lg).getValues();
+				r = _dict.getValues();
+			}
+			matrixMultDictionariesAndOutputToColIndexesDenseDenseUpperTriangle(l, r, lg._colIndexes, this._colIndexes,
+				result);
+		}
+		else if(other instanceof ColGroupUncompressed) {
+			LOG.warn("Inefficient multiplication with uncompressed column group");
+			ColGroupUncompressed lg = (ColGroupUncompressed) other;
+			MatrixBlock otherMBT = LibMatrixReorg.transpose(lg.getData());
+			MatrixBlock tmp = new MatrixBlock(otherMBT.getNumRows(), result.getNumColumns(), false);
+			tmp.allocateDenseBlock();
+			leftMultByMatrix(otherMBT, tmp);
+			final double[] r = tmp.getDenseBlockValues();
+			final int nCols = result.getNumColumns();
+			final double[] resV = result.getDenseBlockValues();
+			for(int i = 0; i < other._colIndexes.length; i++)
+				for(int j = 0; j < _colIndexes.length; j++)
+					addToUpperTriangle(nCols, _colIndexes[j], other._colIndexes[i], resV, r[_colIndexes[j]]);
+		}
+		else {
+			throw new DMLCompressionException("Unsupported column group type " + other.getClass().getSimpleName());
+		}
+	}
+
+	private boolean shouldPreAggregateLeft(AColGroup lhs) {
 		final int nvL = lhs.getNumValues();
 		final int nvR = this.getNumValues();
-		// final double[] lhValues = lhs.getValues();
-		// final double[] rhValues = this.getValues();
 		final int lCol = lhs._colIndexes.length;
 		final int rCol = this._colIndexes.length;
-		final double[] resV = result.getDenseBlockValues();
-		final int numCols = result.getNumColumns();
+		final double costRightDense = nvR * rCol;
+		final double costLeftDense = nvL * lCol;
+		return costRightDense < costLeftDense;
+	}
 
-		final double CommonElementThreshold = 0.4;
+	private ADictionary preAggLeft(ColGroupValue lhs) {
+		return lhs.preAggregateThatIndexStructure(this, false);
+	}
+
+	private ADictionary preAggRight(ColGroupValue lhs) {
+		return this.preAggregateThatIndexStructure(lhs, false);
+	}
+
+	private void leftMultByColGroupValue(ColGroupValue lhs, MatrixBlock result) {
 
 		if(sameIndexStructure(lhs)) {
-			if(this._dict == lhs._dict) {
-				tsmmDictionaryWithScaling(_dict, getCounts(), lhs._colIndexes, this._colIndexes, resV, numCols);
-			}
+			if(this._dict == lhs._dict)
+				tsmmDictionaryWithScaling(_dict, getCounts(), lhs._colIndexes, this._colIndexes,
+					result.getDenseBlockValues(), result.getNumColumns());
 			else
 				matrixMultDictionariesAndOutputToColIndexesWithScaling(lhs._dict, this._dict, lhs._colIndexes,
 					this._colIndexes, result, getCounts());
 		}
-		else if(lhs instanceof ColGroupConst || this instanceof ColGroupConst) {
-			ADictionary r = this instanceof ColGroupConst ? this._dict : new Dictionary(
-				this._dict.colSum(getCounts(), rCol));
-			ADictionary l = lhs instanceof ColGroupConst ? lhs._dict : new Dictionary(
-				lhs._dict.colSum(lhs.getCounts(), lCol));
-			matrixMultDictionariesAndOutputToColIndexes(l, r, lhs._colIndexes, this._colIndexes, result);
-		}
 		else {
-			final int[] countsRight = getCounts();
-			final int mostFrequentRight = Math.max(countsRight[0], countsRight[countsRight.length - 1]);
-			final double percentageRight = (double) mostFrequentRight / this._numRows;
-			final int[] countsLeft = lhs.getCounts();
-			final int mostFrequentLeft = Math.max(countsLeft[0], countsLeft[countsLeft.length - 1]);
-			final double percentageLeft = (double) mostFrequentLeft / this._numRows;
-
-			// If exploiting common elements
-			final double costRightSkipping = percentageRight * nvR * rCol;
-			final double costLeftSkipping = percentageLeft * nvL * lCol;
-
-			// If dense iteration
-			final double costRightDense = nvR * rCol;
-			final double costLeftDense = nvL * lCol;
-
-			if(percentageRight > CommonElementThreshold && costRightSkipping < costLeftSkipping &&
-				!(this instanceof ColGroupDDC)) {
-				double[] mct = this._dict.getMostCommonTuple(this.getCounts(), rCol);
-				double[] lhsSum = lhs._dict.colSum(lhs.getCounts(), lCol);
-				if(mct != null)
-					outerProduct(lhsSum, lhs._colIndexes, mct, this._colIndexes, resV, numCols);
-				ColGroupValue thisM = (mct != null) ? (ColGroupValue) this
-					.copyAndSet(this._dict.subtractTuple(mct)) : this;
-				Dictionary preAgg = lhs.preAggregateThatIndexStructure(thisM, true);
-				matrixMultDictionariesAndOutputToColIndexes(lhs._dict, preAgg, lhs._colIndexes, this._colIndexes,
+			if(shouldPreAggregateLeft(lhs))
+				matrixMultDictionariesAndOutputToColIndexes(lhs._dict, preAggLeft(lhs), lhs._colIndexes, this._colIndexes,
 					result);
-			}
-			else if(percentageLeft > CommonElementThreshold && costLeftSkipping < costRightDense &&
-				!(lhs instanceof ColGroupDDC)) {
-				double[] mct = lhs._dict.getMostCommonTuple(lhs.getCounts(), lCol);
-				double[] thisColSum = this._dict.colSum(getCounts(), rCol);
-				if(mct != null)
-					outerProduct(mct, lhs._colIndexes, thisColSum, this._colIndexes, resV, numCols);
-
-				ColGroupValue lhsM = (mct != null) ? (ColGroupValue) lhs.copyAndSet(lhs._dict.subtractTuple(mct)) : lhs;
-				Dictionary preAgg = this.preAggregateThatIndexStructure(lhsM, true);
-				matrixMultDictionariesAndOutputToColIndexes(preAgg, this._dict, lhs._colIndexes, this._colIndexes,
+			else
+				matrixMultDictionariesAndOutputToColIndexes(preAggRight(lhs), this._dict, lhs._colIndexes, this._colIndexes,
 					result);
-			}
-			else if(costRightDense < costLeftDense) {
-				Dictionary preAgg = lhs.preAggregateThatIndexStructure(this, false);
-				matrixMultDictionariesAndOutputToColIndexes(lhs._dict, preAgg, lhs._colIndexes, this._colIndexes,
-					result);
-			}
-			else {
-				Dictionary preAgg = this.preAggregateThatIndexStructure(lhs, false);
-				matrixMultDictionariesAndOutputToColIndexes(preAgg, this._dict, lhs._colIndexes, this._colIndexes,
-					result);
-			}
 		}
 	}
 
 	private void leftMultByUncompressedColGroup(ColGroupUncompressed lhs, MatrixBlock result) {
 		MatrixBlock ucCG = lhs.getData();
-		if(this instanceof ColGroupConst) {
-			AggregateUnaryOperator auop = InstructionUtils.parseBasicAggregateUnaryOperator("uac+", 1);
-			MatrixBlock tmp = ucCG.aggregateUnaryOperations(auop, new MatrixBlock(),
-				Math.max(ucCG.getNumRows(), ucCG.getNumColumns()), null, true);
-			ADictionary l = new MatrixBlockDictionary(tmp);
-			matrixMultDictionariesAndOutputToColIndexes(l, _dict, lhs._colIndexes, _colIndexes, result);
-		}
-		else {
-			LOG.warn("Inefficient transpose of uncompressed to fit to "
-				+ "template need t(UnCompressedColGroup) %*% AColGroup support");
-			MatrixBlock tmp = new MatrixBlock(ucCG.getNumColumns(), ucCG.getNumRows(), ucCG.isInSparseFormat());
-			LibMatrixReorg.transpose(ucCG, tmp, InfrastructureAnalyzer.getLocalParallelism());
+		// if(this instanceof ColGroupConst) {
+		// AggregateUnaryOperator auop = InstructionUtils.parseBasicAggregateUnaryOperator("uac+", 1);
+		// MatrixBlock tmp = ucCG.aggregateUnaryOperations(auop, new MatrixBlock(),
+		// Math.max(ucCG.getNumRows(), ucCG.getNumColumns()), null, true);
+		// ADictionary l = new MatrixBlockDictionary(tmp);
+		// matrixMultDictionariesAndOutputToColIndexes(l, _dict, lhs._colIndexes, _colIndexes, result);
+		// }
+		// else {
+		LOG.warn("Inefficient transpose of uncompressed to fit to "
+			+ "template need t(UnCompressedColGroup) %*% AColGroup support");
+		MatrixBlock tmp = new MatrixBlock(ucCG.getNumColumns(), ucCG.getNumRows(), ucCG.isInSparseFormat());
+		LibMatrixReorg.transpose(ucCG, tmp, InfrastructureAnalyzer.getLocalParallelism());
 
-			leftMultByMatrix(tmp, result, lhs._colIndexes);
-		}
+		leftMultByMatrix(tmp, result, lhs._colIndexes);
+		// }
 	}
 
 	@Override
-	public final void tsmm(MatrixBlock ret) {
-		double[] result = ret.getDenseBlockValues();
-		int numColumns = ret.getNumColumns();
-		tsmm(result, numColumns);
-	}
-
-	private final void tsmm(double[] result, int numColumns) {
-
+	protected final void tsmm(double[] result, int numColumns, int nRows) {
 		final int[] counts = getCounts();
-
-		_dict = _dict.getAsMatrixBlockDictionary(_colIndexes.length);
-		if(_dict instanceof MatrixBlockDictionary) {
-			MatrixBlockDictionary mbd = (MatrixBlockDictionary) _dict;
-			MatrixBlock mb = mbd.getMatrixBlock();
-			if(mb.isEmpty())
-				return;
-			else if(mb.isInSparseFormat())
-				tsmmSparse(result, numColumns, mb.getSparseBlock(), counts);
-			else
-				tsmmDense(result, numColumns, mb.getDenseBlockValues(), counts);
-		}
-		else
-			tsmmDense(result, numColumns, getValues(), counts);
-
-	}
-
-	private void tsmmDense(double[] result, int numColumns, double[] values, int[] counts) {
-		if(values == null)
-			return;
-		final int nCol = _colIndexes.length;
-		final int nRow = values.length / _colIndexes.length;
-		for(int k = 0; k < nRow; k++) {
-			final int offTmp = nCol * k;
-			final int scale = counts[k];
-			for(int i = 0; i < nCol; i++) {
-				final int offRet = numColumns * _colIndexes[i];
-				final double v = values[offTmp + i] * scale;
-				if(v != 0)
-					for(int j = i; j < nCol; j++)
-						result[offRet + _colIndexes[j]] += v * values[offTmp + j];
-			}
-		}
-	}
-
-	private void tsmmSparse(double[] result, int numColumns, SparseBlock sb, int[] counts) {
-		for(int row = 0; row < sb.numRows(); row++) {
-			if(sb.isEmpty(row))
-				continue;
-			final int apos = sb.pos(row);
-			final int alen = sb.size(row);
-			final int[] aix = sb.indexes(row);
-			final double[] avals = sb.values(row);
-			for(int i = apos; i < apos + alen; i++) {
-				final int offRet = _colIndexes[aix[i]] * numColumns;
-				final double val = avals[i] * counts[row];
-				for(int j = i; j < apos + alen; j++) {
-					result[offRet + _colIndexes[aix[j]]] += val * avals[j];
-				}
-			}
-		}
+		tsmm(result, numColumns, counts, _dict, _colIndexes);
 	}
 
 	@Override
@@ -817,7 +755,7 @@ public abstract class ColGroupValue extends ColGroupCompressed implements Clonea
 	}
 
 	@Override
-	public final long getNumberNonZeros() {
+	public final long getNumberNonZeros(int nRows) {
 		int[] counts = getCounts();
 		return _dict.getNumberNonZeros(counts, _colIndexes.length);
 	}
@@ -878,23 +816,22 @@ public abstract class ColGroupValue extends ColGroupCompressed implements Clonea
 		}
 	}
 
-	private static void outerProduct(final double[] left, final int[] leftRows, final double[] right,
-		final int[] rightColumns, final double[] result, final int outCols) {
-		if(left.length != leftRows.length)
-			throw new DMLCompressionException(
-				"Error left length " + left.length + " not equal columns length" + leftRows.length);
+	// private static void outerProduct(final double[] left, final int[] leftRows, final double[] right,
+	// final int[] rightColumns, final double[] result, final int outCols) {
+	// if(left.length != leftRows.length)
+	// throw new DMLCompressionException(
+	// "Error left length " + left.length + " not equal columns length" + leftRows.length);
 
-		if(right.length != rightColumns.length)
-			throw new DMLCompressionException(
-				"Error right not equal length " + right.length + " " + rightColumns.length);
-				
-		for(int row = 0; row < leftRows.length; row++) {
-			final int outputRowOffset = leftRows[row] * outCols;
-			final double vLeft = left[row];
-			for(int col = 0; col < rightColumns.length; col++)
-				result[outputRowOffset + rightColumns[col]] += vLeft * right[col];
-		}
-	}
+	// if(right.length != rightColumns.length)
+	// throw new DMLCompressionException("Error right not equal length " + right.length + " " + rightColumns.length);
+
+	// for(int row = 0; row < leftRows.length; row++) {
+	// final int outputRowOffset = leftRows[row] * outCols;
+	// final double vLeft = left[row];
+	// for(int col = 0; col < rightColumns.length; col++)
+	// result[outputRowOffset + rightColumns[col]] += vLeft * right[col];
+	// }
+	// }
 
 	/**
 	 * Matrix Multiply the two matrices, note that the left side is transposed,
@@ -907,8 +844,8 @@ public abstract class ColGroupValue extends ColGroupCompressed implements Clonea
 	 * @param colsRight The number of columns and the column indexes on the right hand side
 	 * @param result    The result matrix to put the results into.
 	 */
-	private static void matrixMultDictionariesAndOutputToColIndexes(ADictionary left, ADictionary right, int[] rowsLeft,
-		int[] colsRight, MatrixBlock result) {
+	protected static void matrixMultDictionariesAndOutputToColIndexes(ADictionary left, ADictionary right,
+		int[] rowsLeft, int[] colsRight, MatrixBlock result) {
 
 		try {
 			double[] leftV = null;
@@ -983,18 +920,39 @@ public abstract class ColGroupValue extends ColGroupCompressed implements Clonea
 	private static void matrixMultDictionariesAndOutputToColIndexesDenseDense(double[] left, double[] right,
 		int[] rowsLeft, int[] colsRight, MatrixBlock result) {
 		final int commonDim = Math.min(left.length / rowsLeft.length, right.length / colsRight.length);
-
+		final int resCols = result.getNumColumns();
 		final double[] resV = result.getDenseBlockValues();
 		for(int k = 0; k < commonDim; k++) {
 			final int offL = k * rowsLeft.length;
 			final int offR = k * colsRight.length;
 			for(int i = 0; i < rowsLeft.length; i++) {
-				final int offOut = rowsLeft[i] * result.getNumColumns();
+				final int offOut = rowsLeft[i] * resCols;
 				final double vl = left[offL + i];
 				if(vl != 0)
 					for(int j = 0; j < colsRight.length; j++) {
 						final double vr = right[offR + j];
 						resV[offOut + colsRight[j]] += vl * vr;
+					}
+			}
+		}
+	}
+
+	private static void matrixMultDictionariesAndOutputToColIndexesDenseDenseUpperTriangle(double[] left, double[] right,
+		int[] rowsLeft, int[] colsRight, MatrixBlock result) {
+		final int commonDim = Math.min(left.length / rowsLeft.length, right.length / colsRight.length);
+		final int resCols = result.getNumColumns();
+		final double[] resV = result.getDenseBlockValues();
+		for(int k = 0; k < commonDim; k++) {
+			final int offL = k * rowsLeft.length;
+			final int offR = k * colsRight.length;
+			for(int i = 0; i < rowsLeft.length; i++) {
+				final int rowOut = rowsLeft[i];
+				final double vl = left[offL + i];
+				if(vl != 0)
+					for(int j = 0; j < colsRight.length; j++) {
+						final double vr = right[offR + j];
+						final int colOut = colsRight[j];
+						addToUpperTriangle(resCols, rowOut, colOut, resV, vl * vr);
 					}
 			}
 		}
@@ -1187,23 +1145,21 @@ public abstract class ColGroupValue extends ColGroupCompressed implements Clonea
 		if(right.isEmpty())
 			return null;
 		final int cl = 0;
-		final int cu = right.getNumColumns();
-		final int cut = right.getNumColumns();
-		final int nCol = right.getNumColumns();
+		final int cr = right.getNumColumns();
 		final int numVals = getNumValues();
 		if(right.isInSparseFormat()) {
 			final SparseBlock sb = right.getSparseBlock();
-			final int[] agCols = getAggregateColumnsSetSparse(sb, nCol);
+			final int[] agCols = getAggregateColumnsSetSparse(sb, cr);
 			if(agCols.length == 0)
 				return null;
-			return copyAndSet(agCols, preaggValuesFromSparse(numVals, sb, agCols, cl, cu, cut));
+			return copyAndSet(agCols, preaggValuesFromSparse(numVals, sb, agCols, cl, cr, cr));
 		}
 		else {
 			final double[] rightV = right.getDenseBlockValues();
-			final int[] agCols = getAggregateColumnsSetDense(rightV, cl, cu, cut);
+			final int[] agCols = getAggregateColumnsSetDense(rightV, cl, cr, cr);
 			if(agCols.length == 0)
 				return null;
-			ADictionary d = _dict.preaggValuesFromDense(numVals, _colIndexes, agCols, rightV, cut);
+			ADictionary d = _dict.preaggValuesFromDense(numVals, _colIndexes, agCols, rightV, cr);
 			if(d == null)
 				return null;
 			return copyAndSet(agCols, d);
@@ -1215,6 +1171,7 @@ public abstract class ColGroupValue extends ColGroupCompressed implements Clonea
 		long size = super.estimateInMemorySize();
 		size += 8; // Dictionary Reference.
 		size += 8; // Counts reference
+		size += 4; // Int nRows
 		size += 1; // _zeros boolean reference
 		size += 1; // _lossy boolean reference
 		size += 2; // padding
@@ -1224,7 +1181,13 @@ public abstract class ColGroupValue extends ColGroupCompressed implements Clonea
 
 	@Override
 	public AColGroup replace(double pattern, double replace) {
-		ADictionary replaced = _dict.replace(pattern, replace, _colIndexes.length, _zeros);
+		ADictionary replaced = _dict.replace(pattern, replace, _colIndexes.length);
 		return copyAndSet(replaced);
 	}
+
+	public final int getNumRows() {
+		return _numRows;
+	}
+
+	protected abstract boolean sameIndexStructure(ColGroupCompressed that);
 }

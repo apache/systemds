@@ -129,19 +129,19 @@ public class WorkloadTest {
 		tests.add(new Object[] {0, 1, 1, 1, 1, 1, 0, 0, true, true, "functions/lmDS.dml", args});
 		tests.add(new Object[] {0, 0, 1, 1, 11, 10, 1, 0, true, true, "functions/lmCG.dml", args});
 
-		args = new HashMap<>();
-		args.put("$1", testFile);
-		args.put("$2", "TRUE");
-		args.put("$3", "1");
-		tests.add(new Object[] {0, 2, 1, 1, 1, 1, 1, 0, true, true, "functions/lmDS.dml", args});
-		tests.add(new Object[] {0, 1, 1, 1, 11, 10, 2, 0, true, true, "functions/lmCG.dml", args});
+		// args = new HashMap<>();
+		// args.put("$1", testFile);
+		// args.put("$2", "TRUE");
+		// args.put("$3", "1");
+		// tests.add(new Object[] {0, 2, 1, 1, 1, 1, 1, 0, true, true, "functions/lmDS.dml", args});
+		// tests.add(new Object[] {0, 1, 1, 1, 11, 10, 2, 0, true, true, "functions/lmCG.dml", args});
 
-		args = new HashMap<>();
-		args.put("$1", testFile);
-		args.put("$2", "TRUE");
-		args.put("$3", "2");
-		tests.add(new Object[] {0, 2, 1, 1, 1, 1, 3, 0, true, true, "functions/lmDS.dml", args});
-		tests.add(new Object[] {0, 1, 1, 1, 11, 10, 4, 0, true, true, "functions/lmCG.dml", args});
+		// args = new HashMap<>();
+		// args.put("$1", testFile);
+		// args.put("$2", "TRUE");
+		// args.put("$3", "2");
+		// tests.add(new Object[] {0, 2, 1, 1, 1, 1, 3, 0, true, true, "functions/lmDS.dml", args});
+		// tests.add(new Object[] {0, 1, 1, 1, 11, 10, 4, 0, true, true, "functions/lmCG.dml", args});
 
 		args = new HashMap<>();
 		args.put("$1", testFile);

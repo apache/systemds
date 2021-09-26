@@ -30,7 +30,7 @@ import org.apache.sysds.utils.MemoryEstimates;
 public class MapToChar extends AMapToData {
 
 	private static final long serialVersionUID = 6315708056775476541L;
-	
+
 	private final char[] _data;
 
 	public MapToChar(int unique, int size) {
@@ -80,6 +80,15 @@ public class MapToChar extends AMapToData {
 	}
 
 	@Override
+	public void replace(int v, int r) {
+		char cv = (char) v;
+		char rv = (char) r;
+		for(int i = 0; i < size(); i++)
+			if(_data[i] == cv)
+				_data[i] = rv;
+	}
+
+	@Override
 	public void write(DataOutput out) throws IOException {
 		out.writeByte(MAP_TYPE.CHAR.ordinal());
 		out.writeInt(getUnique());
@@ -97,7 +106,7 @@ public class MapToChar extends AMapToData {
 		return new MapToChar(unique, data);
 	}
 
-	public char[] getChars(){
+	public char[] getChars() {
 		return _data;
 	}
 

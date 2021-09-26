@@ -61,48 +61,40 @@ public class JolEstimateDDCTest extends JolEstimateTest {
 		tests.add(new Object[] {mb});
 
 		// Dense Random
-		mb = DataConverter.convertToMatrixBlock(TestUtils.generateTestMatrix(1, 20, 0, 20, 1.0, 7));
+		mb = TestUtils.generateTestMatrixBlock(1, 20, 0, 20, 1.0, 7);
 		tests.add(new Object[] {mb});
-		mb = DataConverter.convertToMatrixBlock(TestUtils.generateTestMatrix(1, 100, 0, 20, 1.0, 7));
+		mb = TestUtils.generateTestMatrixBlock(1, 100, 0, 20, 1.0, 7);
 		tests.add(new Object[] {mb});
-		mb = DataConverter.convertToMatrixBlock(TestUtils.generateTestMatrix(1, 500, 0, 20, 1.0, 7));
+		mb = TestUtils.generateTestMatrixBlock(1, 500, 0, 20, 1.0, 7);
 		tests.add(new Object[] {mb});
 
 		// Random Sparse Very big, because 0 is materialized.
-		mb = DataConverter
-			.convertToMatrixBlock(TestUtils.round(TestUtils.generateTestMatrix(1, 4000, 0, 254, 0.01, 7)));
+		mb = TestUtils.round(TestUtils.generateTestMatrixBlock(1, 4000, 0, 254, 0.01, 7));
 		tests.add(new Object[] {mb});
-		mb = DataConverter
-			.convertToMatrixBlock(TestUtils.round(TestUtils.generateTestMatrix(1, 8000, 0, 254, 0.01, 7)));
+		mb = TestUtils.round(TestUtils.generateTestMatrixBlock(1, 8000, 0, 254, 0.01, 7));
 		tests.add(new Object[] {mb});
-		mb = DataConverter
-			.convertToMatrixBlock(TestUtils.round(TestUtils.generateTestMatrix(1, 16000, 0, 254, 0.01, 7)));
+		mb = TestUtils.round(TestUtils.generateTestMatrixBlock(1, 16000, 0, 254, 0.01, 7));
 		tests.add(new Object[] {mb});
 
-		mb = DataConverter
-			.convertToMatrixBlock(TestUtils.round(TestUtils.generateTestMatrix(1, 4000, 0, 254, 0.001, 7)));
+		mb = TestUtils.round(TestUtils.generateTestMatrixBlock(1, 4000, 0, 254, 0.001, 7));
 		tests.add(new Object[] {mb});
-		mb = DataConverter
-			.convertToMatrixBlock(TestUtils.round(TestUtils.generateTestMatrix(1, 8000, 0, 254, 0.001, 7)));
+		mb = TestUtils.round(TestUtils.generateTestMatrixBlock(1, 8000, 0, 254, 0.001, 7));
 		tests.add(new Object[] {mb});
-		mb = DataConverter
-			.convertToMatrixBlock(TestUtils.round(TestUtils.generateTestMatrix(1, 16000, 0, 254, 0.001, 7)));
+		mb = TestUtils.round(TestUtils.generateTestMatrixBlock(1, 16000, 0, 254, 0.001, 7));
 		tests.add(new Object[] {mb});
 
 		// DDC2 instances, need more unique values than 255
 
-		mb = DataConverter.convertToMatrixBlock(TestUtils.round(TestUtils.generateTestMatrix(1, 4000, 0, 512, 0.7, 7)));
+		mb = TestUtils.round(TestUtils.generateTestMatrixBlock(1, 4000, 0, 512, 0.7, 7));
 		tests.add(new Object[] {mb});
-		mb = DataConverter
-			.convertToMatrixBlock(TestUtils.round(TestUtils.generateTestMatrix(1, 8000, 0, 1024, 0.7, 7)));
+		mb = TestUtils.round(TestUtils.generateTestMatrixBlock(1, 8000, 0, 1024, 0.7, 7));
 		tests.add(new Object[] {mb});
-		mb = DataConverter
-			.convertToMatrixBlock(TestUtils.round(TestUtils.generateTestMatrix(1, 16000, 0, 2048, 0.7, 7)));
+		mb = TestUtils.round(TestUtils.generateTestMatrixBlock(1, 16000, 0, 2048, 0.7, 7));
 		tests.add(new Object[] {mb});
 
 		// Multi columns
 
-		mb = DataConverter.convertToMatrixBlock(TestUtils.round(TestUtils.generateTestMatrix(4, 100, 0, 2, 0.7, 7)));
+		mb = TestUtils.round(TestUtils.generateTestMatrixBlock(4, 100, 0, 2, 0.7, 7));
 		tests.add(new Object[] {mb});
 		return tests;
 	}

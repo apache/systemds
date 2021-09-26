@@ -19,21 +19,25 @@
 
 package org.apache.sysds.runtime.compress.cost;
 
-import java.util.Collection;
-
-import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup;
+import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
 public class MemoryCostEstimator implements ICostEstimate {
 	private static final long serialVersionUID = -1264988969161809465L;
 
-	public MemoryCostEstimator() {
+	private final int nRows;
+	// private final int nCols;
+	private final double sparsity;
 
+	public MemoryCostEstimator(int nRows, int nCols, double sparsity) {
+		this.nRows = nRows;
+		// this.nCols = nCols;
+		this.sparsity = sparsity;
 	}
 
 	@Override
-	public double getUncompressedCost(int nRows, int nCols, int sparsity) {
-		throw new DMLCompressionException("Use original matrix size instead of estimate");
+	public double getUncompressedCost(CompressedSizeInfoColGroup g) {
+		return MatrixBlock.estimateSizeInMemory(nRows, g.getColumns().length, sparsity);
 	}
 
 	@Override
@@ -44,33 +48,7 @@ public class MemoryCostEstimator implements ICostEstimate {
 	}
 
 	@Override
-	public double getCostOfCollectionOfGroups(Collection<CompressedSizeInfoColGroup> gss) {
-		throw new DMLCompressionException("Memory based compression is not related to comparing all columns");
-	}
-
-	@Override
-	public double getCostOfCollectionOfGroups(Collection<CompressedSizeInfoColGroup> gss,
-		CompressedSizeInfoColGroup g) {
-		throw new DMLCompressionException("Memory based compression is not related to comparing all columns");
-	}
-
-	@Override
-	public double getCostOfTwoGroups(CompressedSizeInfoColGroup g1, CompressedSizeInfoColGroup g2) {
-		throw new DMLCompressionException("Memory based compression is not related to comparing all columns");
-	}
-
-	@Override
-	public boolean isCompareAll() {
-		return false;
-	}
-
-	@Override
 	public boolean shouldAnalyze(CompressedSizeInfoColGroup g1, CompressedSizeInfoColGroup g2) {
-		return true;
-	}
-
-	@Override
-	public boolean shouldTryJoin(CompressedSizeInfoColGroup g1, CompressedSizeInfoColGroup g2) {
 		return true;
 	}
 }

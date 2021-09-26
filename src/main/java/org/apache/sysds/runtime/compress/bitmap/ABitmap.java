@@ -17,42 +17,29 @@
  * under the License.
  */
 
-package org.apache.sysds.runtime.compress.utils;
+package org.apache.sysds.runtime.compress.bitmap;
 
 import java.util.Arrays;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.sysds.runtime.compress.DMLCompressionException;
+import org.apache.sysds.runtime.compress.utils.IntArrayList;
 
 public abstract class ABitmap {
 	protected static final Log LOG = LogFactory.getLog(ABitmap.class.getName());
 
-	public enum BitmapType {
-		Lossy, Full
-	}
-
-	protected final int _numCols;
-	protected final int _numRows;
-
 	/** Bitmaps (as lists of offsets) for each of the values. */
 	protected IntArrayList[] _offsetsLists;
-
+	
 	/** int specifying the number of zero value tuples contained in the rows. */
 	protected final int _numZeros;
 
-	public ABitmap(int numCols, IntArrayList[] offsetsLists, int rows) {
-		_numCols = numCols;
-		_numRows = rows;
+	protected ABitmap(IntArrayList[] offsetsLists, int rows) {
 		int offsetsTotal = 0;
 		if(offsetsLists != null) {
 			for(IntArrayList a : offsetsLists)
 				offsetsTotal += a.size();
-
 			_numZeros = rows - offsetsTotal;
-			if(_numZeros < 0)
-				throw new DMLCompressionException(
-					"Error in constructing bitmap:" + rows + "," + numCols + "\n" + Arrays.toString(offsetsLists));
 		}
 		else
 			_numZeros = rows;
@@ -60,40 +47,22 @@ public abstract class ABitmap {
 		_offsetsLists = offsetsLists;
 	}
 
-	public int getNumColumns() {
-		return _numCols;
-	}
-
-	public int getNumRows() {
-		return _numRows;
-	}
-
-	public boolean isEmpty() {
+	public final boolean isEmpty() {
 		return _offsetsLists == null;
 	}
 
-	public abstract boolean lossy();
-
-	/**
-	 * Obtain number of distinct value groups in the column. this number is also the number of bitmaps, since there is
-	 * one bitmap per value
-	 * 
-	 * @return number of distinct value groups in the column;
-	 */
-	public abstract int getNumValues();
-
-	public IntArrayList[] getOffsetList() {
+	public final IntArrayList[] getOffsetList() {
 		return _offsetsLists;
 	}
 
-	public IntArrayList getOffsetsList(int idx) {
+	public final IntArrayList getOffsetsList(int idx) {
 		return _offsetsLists[idx];
 	}
 
-	public long getNumOffsets() {
+	public final long getNumOffsets() {
 		long ret = 0;
-		for(IntArrayList offlist : _offsetsLists)
-			ret += offlist.size();
+		for(IntArrayList off : _offsetsLists)
+			ret += off.size();
 		return ret;
 	}
 
@@ -103,31 +72,41 @@ public abstract class ABitmap {
 	 * @param ix The offset index.
 	 * @return The number of offsets for this unique value.
 	 */
-	public int getNumOffsets(int ix) {
+	public final int getNumOffsets(int ix) {
 		return _offsetsLists[ix].size();
 	}
 
-	public abstract void sortValuesByFrequency();
-
-	public boolean containsZero() {
-		return _numZeros > 0;
-	}
-
-	public int getZeroCounts() {
+	public final int getNumZeros(){
 		return _numZeros;
 	}
 
+	public final boolean containsZero(){
+		return _numZeros > 0;
+	}
+
+	/**
+	 * Obtain number of distinct value groups in the column. this number is also the number of bitmaps, since there is
+	 * one bitmap per value
+	 * 
+	 * @return number of distinct value groups in the column;
+	 */
+	public abstract int getNumValues();
+
+	public abstract void sortValuesByFrequency();
+
 	public abstract int getNumNonZerosInOffset(int idx);
 
-	public abstract BitmapType getType();
+	public abstract int getNumColumns();
+
+	protected abstract void addToString(StringBuilder sb);
 
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
 		sb.append(this.getClass().getSimpleName());
 		sb.append("  zeros:  " + _numZeros);
-		sb.append("  columns:" + _numCols);
 		sb.append("\nOffsets:" + Arrays.toString(_offsetsLists));
+		addToString(sb);
 		return sb.toString();
 	}
 }

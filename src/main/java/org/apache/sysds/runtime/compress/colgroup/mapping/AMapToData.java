@@ -38,11 +38,11 @@ public abstract class AMapToData implements Serializable {
 		this.nUnique = nUnique;
 	}
 
-	public int getUnique() {
+	public final int getUnique() {
 		return nUnique;
 	}
 
-	protected void setUnique(int nUnique){
+	protected final void setUnique(int nUnique) {
 		this.nUnique = nUnique;
 	}
 
@@ -60,14 +60,30 @@ public abstract class AMapToData implements Serializable {
 
 	public abstract void write(DataOutput out) throws IOException;
 
+	/**
+	 * Replace v with r for all entries, note that it is assumed that you call this correctly, with two distinct values.
+	 * That is representable inside the given AMapToData.
+	 * 
+	 * @param v v the value to replace
+	 * @param r r the value to put instead
+	 */
+	public abstract void replace(int v, int r);
+
+	public void copy(AMapToData d) {
+		final int sz = size();
+		for(int i = 0; i < sz; i++)
+			set(i, d.getIndex(i));
+	}
+
 	@Override
 	public String toString() {
+		final int sz = size();
 		StringBuilder sb = new StringBuilder();
 		sb.append(this.getClass().getSimpleName());
 		sb.append(" [");
-		for(int i = 0; i < size() - 1; i++)
+		for(int i = 0; i < sz - 1; i++)
 			sb.append(getIndex(i) + ", ");
-		sb.append(getIndex(size() - 1));
+		sb.append(getIndex(sz - 1));
 		sb.append("]");
 		return sb.toString();
 	}

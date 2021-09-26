@@ -23,6 +23,7 @@ import static org.junit.Assert.assertEquals;
 
 import java.util.Arrays;
 
+import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory;
 import org.apache.sysds.runtime.compress.utils.IntArrayList;
@@ -101,6 +102,13 @@ public class StandAloneTests {
 		MapToFactory.join(a, b);
 	}
 
+	@Test(expected = DMLCompressionException.class)
+	public void testInvalidJoinWithToManyUniqueValues() {
+		AMapToData a = MapToFactory.create(10, 10000000);
+		AMapToData b = MapToFactory.create(10, 10000000);
+		MapToFactory.join(a, b);
+	}
+
 	@Test
 	public void test_null_argument_01() {
 		AMapToData a = null;
@@ -116,7 +124,13 @@ public class StandAloneTests {
 		AMapToData b = null;
 		AMapToData c = MapToFactory.join(a, b);
 		compare(c, new int[] {1, 0, 0, 0, 0, 1, 1, 1, 1, 1});
-		// compare(c, new int[] {0, 1, 1, 1, 1, 0, 0, 0, 0, 0});
+	}
+
+	@Test
+	public void construct_with_zeros_false() {
+		AMapToData a = MapToFactory.create(10, false,
+			new IntArrayList[] {gen(new int[] {0, 1, 2, 3, 4}), gen(new int[] {5, 6, 7, 8, 9})});
+		compare(a, new int[] {0, 0, 0, 0, 0, 1, 1, 1, 1, 1});
 	}
 
 	private static void compare(AMapToData res, int[] expected) {

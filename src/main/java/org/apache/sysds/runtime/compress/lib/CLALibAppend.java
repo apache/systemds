@@ -34,23 +34,24 @@ public class CLALibAppend {
 
 	private static final Log LOG = LogFactory.getLog(CLALibAppend.class.getName());
 
-	public static MatrixBlock append(MatrixBlock left, MatrixBlock right) {
-
-		if(left.isEmpty() && right instanceof CompressedMatrixBlock)
-			return appendLeftEmpty(left, (CompressedMatrixBlock) right);
-		else if(right.isEmpty() && left instanceof CompressedMatrixBlock)
-			return appendRightEmpty((CompressedMatrixBlock) left, right);
+	public static MatrixBlock append(MatrixBlock left, MatrixBlock right, int k) {
 
 		final int m = left.getNumRows();
 		final int n = left.getNumColumns() + right.getNumColumns();
 
-		if(!(left instanceof CompressedMatrixBlock) && m > 1000) {
-			LOG.info("Appending uncompressed column group left");
-			left = CompressedMatrixBlockFactory.genUncompressedCompressedMatrixBlock(left);
+		if(left.isEmpty() && right instanceof CompressedMatrixBlock)
+			return appendLeftEmpty(left, (CompressedMatrixBlock) right, m, n);
+		else if(right.isEmpty() && left instanceof CompressedMatrixBlock)
+			return appendRightEmpty((CompressedMatrixBlock) left, right, m, n);
+
+		if(!(left instanceof CompressedMatrixBlock)) {
+			LOG.info("Trying to compress left side of append");
+			left = CompressedMatrixBlockFactory.compress(left, k).getLeft();
 		}
-		if(!(right instanceof CompressedMatrixBlock) && m > 1000) {
-			LOG.info("Appending uncompressed column group right");
-			left = CompressedMatrixBlockFactory.genUncompressedCompressedMatrixBlock(right);
+
+		if(!(right instanceof CompressedMatrixBlock)) {
+			LOG.info("Trying to compress right side of append");
+			right = CompressedMatrixBlockFactory.compress(right, k).getLeft();
 		}
 
 		// if compression failed then use default append method.
@@ -62,38 +63,40 @@ public class CLALibAppend {
 
 		// init result matrix
 		CompressedMatrixBlock ret = new CompressedMatrixBlock(m, n);
-
+		
 		ret = appendColGroups(ret, leftC.getColGroups(), rightC.getColGroups(), leftC.getNumColumns());
-
+		
 		double compressedSize = ret.getInMemorySize();
 		double uncompressedSize = MatrixBlock.estimateSizeInMemory(m, n, ret.getSparsity());
-
-		if(compressedSize * 10 < uncompressedSize)
+		
+		double ratio = uncompressedSize / compressedSize;
+		
+		if(compressedSize  < uncompressedSize)
 			return ret;
-		else
-			return ret.getUncompressed("Decompressing c bind matrix because it had to small compression ratio");
+		else {
+			String message = String.format("Decompressing c bind matrix because it had to small compression ratio: %2.3f",
+				ratio);
+			return ret.getUncompressed(message);
+		}
 	}
 
-	private static MatrixBlock appendRightEmpty(CompressedMatrixBlock left, MatrixBlock right) {
+	private static MatrixBlock appendRightEmpty(CompressedMatrixBlock left, MatrixBlock right, int m, int n) {
 
-		final int m = left.getNumRows();
-		final int n = left.getNumColumns() + right.getNumColumns();
 		CompressedMatrixBlock ret = new CompressedMatrixBlock(m, n);
 
 		List<AColGroup> newGroup = new ArrayList<>(1);
-		newGroup.add(ColGroupEmpty.generate(right.getNumColumns(), right.getNumRows()));
+		newGroup.add(ColGroupEmpty.generate(right.getNumColumns()));
 		ret = appendColGroups(ret, left.getColGroups(), newGroup, left.getNumColumns());
 
 		return ret;
 	}
 
-	private static MatrixBlock appendLeftEmpty(MatrixBlock left, CompressedMatrixBlock right) {
-		final int m = left.getNumRows();
-		final int n = left.getNumColumns() + right.getNumColumns();
+	private static MatrixBlock appendLeftEmpty(MatrixBlock left, CompressedMatrixBlock right, int m, int n) {
+
 		CompressedMatrixBlock ret = new CompressedMatrixBlock(m, n);
 
 		List<AColGroup> newGroup = new ArrayList<>(1);
-		newGroup.add(ColGroupEmpty.generate(left.getNumColumns(), left.getNumRows()));
+		newGroup.add(ColGroupEmpty.generate(left.getNumColumns()));
 		ret = appendColGroups(ret, newGroup, right.getColGroups(), left.getNumColumns());
 
 		return ret;
@@ -105,22 +108,24 @@ public class CLALibAppend {
 		// shallow copy of lhs column groups
 		ret.allocateColGroupList(new ArrayList<AColGroup>(left.size() + right.size()));
 
+		final int nRows = ret.getNumRows();
 		long nnz = 0;
 		for(AColGroup group : left) {
 			AColGroup tmp = group.copy();
 			ret.getColGroups().add(tmp);
-			nnz += group.getNumberNonZeros();
+			nnz += group.getNumberNonZeros(nRows);
 		}
 
 		for(AColGroup group : right) {
 			AColGroup tmp = group.copy();
 			tmp.shiftColIndices(leftNumCols);
 			ret.getColGroups().add(tmp);
-			nnz += group.getNumberNonZeros();
+			nnz += group.getNumberNonZeros(nRows);
 		}
 
 		// meta data maintenance
 		ret.setNonZeros(nnz);
+		CLALibUtils.combineConstColumns(ret);
 		return ret;
 	}
 

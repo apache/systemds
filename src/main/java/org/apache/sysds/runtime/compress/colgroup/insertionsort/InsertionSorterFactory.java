@@ -59,8 +59,7 @@ public final class InsertionSorterFactory {
 			case MERGE:
 				return new MergeSort(endLength, numRows, offsets, negativeIndex);
 			default:
-				return new MaterializeSortV2(endLength,numRows, offsets, negativeIndex);
-				// return new MaterializeSort(endLength, numRows, offsets, negativeIndex);
+				return new MaterializeSort(endLength,numRows, offsets, negativeIndex);
 		}
 	}
 

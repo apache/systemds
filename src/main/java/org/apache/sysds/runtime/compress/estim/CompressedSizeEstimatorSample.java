@@ -19,29 +19,34 @@
 
 package org.apache.sysds.runtime.compress.estim;
 
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Random;
 
 import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.runtime.compress.CompressionSettings;
+import org.apache.sysds.runtime.compress.bitmap.ABitmap;
+import org.apache.sysds.runtime.compress.bitmap.BitmapEncoder;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup.CompressionType;
 import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory;
 import org.apache.sysds.runtime.compress.estim.sample.SampleEstimatorFactory;
-import org.apache.sysds.runtime.compress.lib.BitmapEncoder;
-import org.apache.sysds.runtime.compress.utils.ABitmap;
+import org.apache.sysds.runtime.controlprogram.parfor.stat.Timing;
+import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.data.SparseBlockMCSR;
 import org.apache.sysds.runtime.data.SparseRow;
 import org.apache.sysds.runtime.matrix.data.LibMatrixReorg;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
-import org.apache.sysds.runtime.util.UtilFunctions;
 
 public class CompressedSizeEstimatorSample extends CompressedSizeEstimator {
 
-	private int[] _sampleRows;
-	private MatrixBlock _sample;
-	private HashMap<Integer, Double> _solveCache = null;
+	private final MatrixBlock _sample;
+	private final HashMap<Integer, Double> _solveCache;
 	private final int _k;
+	private final int _sampleSize;
+	/** Boolean specifying if the sample is in transposed format. */
+	private boolean _transposed;
 
 	/**
 	 * CompressedSizeEstimatorSample, samples from the input data and estimates the size of the compressed matrix.
@@ -51,46 +56,28 @@ public class CompressedSizeEstimatorSample extends CompressedSizeEstimator {
 	 * @param sampleSize The size to sample from the data.
 	 * @param k          The parallelization degree allowed.
 	 */
-	public CompressedSizeEstimatorSample(MatrixBlock data, CompressionSettings cs, int sampleSize, int k) {
+	protected CompressedSizeEstimatorSample(MatrixBlock data, CompressionSettings cs, int sampleSize, int k) {
 		super(data, cs);
 		_k = k;
-		_sample = sampleData(sampleSize);
+		_sampleSize = sampleSize;
+		_transposed = _cs.transposed;
+		if(LOG.isDebugEnabled()) {
+			Timing time = new Timing(true);
+			_sample = sampleData(sampleSize);
+			LOG.debug("Sampling time: " + time.stop());
+		}
+		else
+			_sample = sampleData(sampleSize);
+
+		_solveCache = new HashMap<>();
 	}
 
 	public MatrixBlock getSample() {
 		return _sample;
 	}
 
-	public MatrixBlock sampleData(int sampleSize) {
-		_sampleRows = CompressedSizeEstimatorSample.getSortedUniformSample(_numRows, sampleSize, _cs.seed);
-		_solveCache = new HashMap<>();
-		MatrixBlock sampledMatrixBlock;
-		if(_data.isInSparseFormat() && !_cs.transposed) {
-			sampledMatrixBlock = new MatrixBlock(_sampleRows.length, _data.getNumColumns(), true);
-			SparseRow[] rows = new SparseRow[_sampleRows.length];
-			SparseBlock in = _data.getSparseBlock();
-			for(int i = 0; i < _sampleRows.length; i++)
-				rows[i] = in.get(_sampleRows[i]);
-
-			sampledMatrixBlock.setSparseBlock(new SparseBlockMCSR(rows, false));
-			sampledMatrixBlock.recomputeNonZeros();
-			_transposed = true;
-			sampledMatrixBlock = LibMatrixReorg.transposeInPlace(sampledMatrixBlock, _k);
-		}
-		else {
-			MatrixBlock select = (_cs.transposed) ? new MatrixBlock(_data.getNumColumns(), 1,
-				false) : new MatrixBlock(_data.getNumRows(), 1, false);
-			for(int i = 0; i < _sampleRows.length; i++)
-				select.appendValue(_sampleRows[i], 0, 1);
-
-			sampledMatrixBlock = _data.removeEmptyOperations(new MatrixBlock(), !_cs.transposed, true, select);
-		}
-
-		if(sampledMatrixBlock.isEmpty())
-			return null;
-		else
-			return sampledMatrixBlock;
-
+	public final int getSampleSize() {
+		return _sampleSize;
 	}
 
 	@Override
@@ -99,12 +86,23 @@ public class CompressedSizeEstimatorSample extends CompressedSizeEstimator {
 
 		// extract statistics from sample
 		final ABitmap ubm = BitmapEncoder.extractBitmap(colIndexes, _sample, _transposed, estimate);
-		final EstimationFactors sampleFacts = EstimationFactors.computeSizeEstimationFactors(ubm, false, colIndexes);
-		final AMapToData map = MapToFactory.create(ubm);
+		final EstimationFactors sampleFacts = EstimationFactors.computeSizeEstimationFactors(ubm, _sampleSize, false,
+			colIndexes);
+		final AMapToData map = MapToFactory.create(_sampleSize, ubm);
 
-		// result facts
-		EstimationFactors em = estimateCompressionFactors(sampleFacts, map, colIndexes, nrUniqueUpperBound);
-		return new CompressedSizeInfoColGroup(em, _cs.validCompressions, map);
+		// result scaled
+		final EstimationFactors em = estimateCompressionFactors(sampleFacts, map, colIndexes, nrUniqueUpperBound);
+
+		// LOG.error("Sample vs Scaled:\n" + sampleFacts + "\n" + em + "\n");
+
+		return new CompressedSizeInfoColGroup(colIndexes, em, _cs.validCompressions, map);
+	}
+
+	@Override
+	protected int worstCaseUpperBound(int[] columns) {
+		if(getNumColumns() == columns.length)
+			return Math.min(getNumRows(), (int) _data.getNonZeros());
+		return getNumRows();
 	}
 
 	@Override
@@ -114,63 +112,100 @@ public class CompressedSizeEstimatorSample extends CompressedSizeEstimator {
 			return null;
 
 		final AMapToData map = MapToFactory.join(g1.getMap(), g2.getMap());
-		EstimationFactors sampleFacts = EstimationFactors.computeSizeEstimation(joined, map,
+		final EstimationFactors sampleFacts = EstimationFactors.computeSizeEstimation(joined, map,
 			_cs.validCompressions.contains(CompressionType.RLE), map.size(), false);
 
 		// result facts
-		EstimationFactors em = estimateCompressionFactors(sampleFacts, map, joined, joinedMaxDistinct);
-		return new CompressedSizeInfoColGroup(em, _cs.validCompressions, map);
+		final EstimationFactors em = estimateCompressionFactors(sampleFacts, map, joined, joinedMaxDistinct);
+
+		// LOG.error("Sample vs Scaled Join:\n" + sampleFacts + "\n" + em + "\n");
+
+		return new CompressedSizeInfoColGroup(joined, em, _cs.validCompressions, map);
 	}
 
-	private EstimationFactors estimateCompressionFactors(EstimationFactors sampleFacts, AMapToData map,
-		int[] colIndexes, int nrUniqueUpperBound) {
-		final int numZerosInSample = sampleFacts.numRows - sampleFacts.numOffs;
-		final int sampleSize = _sampleRows.length;
-
-		if(numZerosInSample == sampleSize) {
-			final int nCol = sampleFacts.cols.length;
-			/**
-			 * Since we sample, and this column seems to be empty we set the return to 1 value detected. aka 1 value,
-			 * and 1 offset. This makes it more robust in the coCoding of Columns
-			 */
-			final int largestInstanceCount = _numRows - 1;
-			return new EstimationFactors(colIndexes, 1, 1, largestInstanceCount, new int[] {largestInstanceCount}, 2, 1,
-				_numRows, sampleFacts.lossy, true, (double) 1 / _numRows, (double) 1 / nCol);
+	private EstimationFactors estimateCompressionFactors(EstimationFactors sampleFacts, AMapToData map, int[] colIndexes,
+		int nrUniqueUpperBound) {
+		final int numRows = getNumRows();
+		if(map == null || sampleFacts == null) {
+			// This column's sample is empty, try to return some best estimate based on the matrix metadata.
+			final int nCol = colIndexes.length;
+			if(_data.isEmpty()) // The entire matrix was empty therefore return empty statistics for this column Group.
+				return new EstimationFactors(colIndexes.length, 0, 0, numRows, null, 0, 0, numRows, false, true, 0.0, 0.0);
+			final int largestInstanceCount = numRows - 1;
+			return new EstimationFactors(colIndexes.length, 1, 1, largestInstanceCount, null, 2, 1, numRows, false, true,
+				(double) 1 / numRows, (double) 1 / nCol);
 		}
 		else {
-
-			final double scalingFactor = ((double) _numRows / sampleSize);
-			// Estimate number of distinct values (incl fixes for anomalies w/ large sample fraction)
-			final int totalCardinality = Math.max(map.getUnique(),
-				Math.min(_numRows, getEstimatedDistinctCount(sampleFacts.frequencies, nrUniqueUpperBound)));
-
+			final int numZerosInSample = sampleFacts.numRows - sampleFacts.numOffs;
 			// estimate number of non-zeros (conservatively round up)
-			final double C = Math.max(1 - (double) sampleFacts.numSingle / sampleSize, (double) sampleSize / _numRows);
-			final int numNonZeros = Math.max((int) Math.floor(_numRows - scalingFactor * C * numZerosInSample),
-				totalCardinality);
+			final double scalingFactor = ((double) numRows / _sampleSize);
 
-			final int totalNumRuns = getNumRuns(map, sampleFacts.numVals, sampleSize, _numRows, _sampleRows);
+			final int numOffs = calculateOffs(sampleFacts, _sampleSize, numRows, scalingFactor, numZerosInSample);
 
-			final int largestInstanceCount = Math.min(_numRows,
+			final int totalCardinality = getEstimatedDistinctCount(sampleFacts.frequencies, nrUniqueUpperBound, numOffs,
+				sampleFacts.numOffs);
+
+			final int totalNumRuns = getNumRuns(map, sampleFacts.numVals, _sampleSize, numRows);
+
+			final int largestInstanceCount = Math.min(numRows - totalCardinality + 1,
 				(int) Math.floor(sampleFacts.largestOff * scalingFactor));
 
-			return new EstimationFactors(colIndexes, totalCardinality, numNonZeros, largestInstanceCount,
-				sampleFacts.frequencies, totalNumRuns, sampleFacts.numSingle, _numRows, sampleFacts.lossy,
-				sampleFacts.zeroIsMostFrequent, sampleFacts.overAllSparsity, sampleFacts.tupleSparsity);
+			final double overallSparsity = calculateSparsity(colIndexes, scalingFactor, sampleFacts.overAllSparsity);
+
+			return new EstimationFactors(colIndexes.length, totalCardinality, numOffs, largestInstanceCount,
+				sampleFacts.frequencies, totalNumRuns, sampleFacts.numSingle, numRows, sampleFacts.lossy,
+				sampleFacts.zeroIsMostFrequent, overallSparsity, sampleFacts.tupleSparsity);
 		}
 	}
 
-	private int getEstimatedDistinctCount(int[] frequencies, int upperBound) {
-		return Math.min(SampleEstimatorFactory.distinctCount(frequencies, _numRows, _sampleRows.length,
-			_cs.estimationType, _solveCache), upperBound);
+	private int calculateOffs(EstimationFactors sampleFacts, int sampleSize, int numRows, double scalingFactor,
+		int numZerosInSample) {
+		final int numCols = getNumColumns();
+		if(numCols == 1)
+			return (int) _data.getNonZeros();
+		else {
+			final double C = Math.max(1 - (double) sampleFacts.numSingle / sampleSize, (double) sampleSize / numRows);
+			return (int) Math.ceil(numRows - scalingFactor * C * numZerosInSample);
+		}
 	}
 
-	private int getNumRuns(AMapToData map, int numVals, int sampleSize, int totalNumRows, int[] sampleRows) {
+	private double calculateSparsity(int[] colIndexes, double scalingFactor, double sampleValue) {
+		if(colIndexes.length == getNumColumns())
+			return _data.getSparsity();
+		else if(_cs.transposed && _data.isInSparseFormat()) {
+			// Use exact if possible
+			double nnzCount = 0;
+			SparseBlock sb = _data.getSparseBlock();
+			for(int i = 0; i < colIndexes.length; i++)
+				nnzCount += sb.get(i).size();
+			return nnzCount / ((double) getNumRows() * colIndexes.length);
+		}
+		else if(_transposed && _sample.isInSparseFormat()) {
+			// Fallback to the sample if original is not transposed
+			double nnzCount = 0;
+			SparseBlock sb = _sample.getSparseBlock();
+			for(int i = 0; i < colIndexes.length; i++)
+				nnzCount += sb.get(i).size() * scalingFactor;
+
+			return nnzCount / ((double) getNumRows() * colIndexes.length);
+		}
+		else
+			// if all others aren't available use the samples value.
+			return sampleValue;
+	}
+
+	private int getEstimatedDistinctCount(int[] freq, int upperBound, int numOffs, int numOffsInSample) {
+		final int est = SampleEstimatorFactory.distinctCount(freq, numOffs, numOffsInSample, _cs.estimationType,
+			_solveCache);
+		return Math.min(est, upperBound);
+	}
+
+	private int getNumRuns(AMapToData map, int numVals, int sampleSize, int totalNumRows) {
 		// estimate number of segments and number of runs incl correction for
 		// empty segments and empty runs (via expected mean of offset value)
 		// int numUnseenSeg = (int) (unseenVals * Math.ceil((double) _numRows / BitmapEncoder.BITMAP_BLOCK_SZ / 2));
 		return _cs.validCompressions.contains(CompressionType.RLE) && numVals > 0 ? getNumRuns(map, sampleSize,
-			_numRows, _sampleRows) : 0;
+			totalNumRows) : 0;
 	}
 
 	// Fix getNumRuns when adding RLE back.
@@ -333,20 +368,142 @@ public class CompressedSizeEstimatorSample extends CompressedSizeEstimator {
 		return (int) Math.min(Math.round(numRuns), Integer.MAX_VALUE);
 	}
 
-	private static int getNumRuns(AMapToData map, int sampleSize, int totalNumRows, int[] sampleRows) {
-
+	private static int getNumRuns(AMapToData map, int sampleSize, int totalNumRows) {
 		throw new NotImplementedException("Not Supported ever since the ubm was replaced by the map");
 	}
 
-	/**
-	 * Returns a sorted array of n integers, drawn uniformly from the range [0,range).
-	 * 
-	 * @param range      the range
-	 * @param sampleSize sample size
-	 * @return sorted array of integers
-	 */
-	private static int[] getSortedUniformSample(int range, int sampleSize, long seed) {
-		return UtilFunctions.getSortedSampleIndexes(range, sampleSize, seed);
+	private static int[] getSortedSample(int range, int sampleSize, long seed, int k) {
+		// set meta data and allocate dense block
+		final int[] a = new int[sampleSize];
+		seed = (seed == -1 ? System.nanoTime() : seed);
+
+		Random r = new Random(seed);
+		// reservoir sampling
+		for(int i = 0; i < sampleSize; i++)
+			a[i] = i;
+
+		for(int i = sampleSize; i < range; i++)
+			if(r.nextInt(i) < sampleSize)
+				a[r.nextInt(sampleSize)] = i;
+
+		if(range / 100 < sampleSize) {
+			// randomize the sample (Algorithm P from Knuth's ACP)
+			// needed especially when the difference between range and sampleSize is small)
+			for(int i = 0; i < sampleSize - 1; i++) {
+				// generate index in i <= j < sampleSize
+				int j = r.nextInt(sampleSize - i) + i;
+				// swap i^th and j^th entry
+				int tmp = a[i];
+				a[i] = a[j];
+				a[j] = tmp;
+			}
+		}
+
+		// Sort the sample
+		if(k > 1)
+			Arrays.parallelSort(a);
+		else
+			Arrays.sort(a);
+		return a;
+	}
+
+	private MatrixBlock sampleData(int sampleSize) {
+		Timing time = new Timing(true);
+		final int[] sampleRows = CompressedSizeEstimatorSample.getSortedSample(getNumRows(), sampleSize, _cs.seed, _k);
+		LOG.debug("sampleRow:" + time.stop());
+
+		MatrixBlock sampledMatrixBlock;
+		if(!_cs.transposed) {
+			if(_data.isInSparseFormat())
+				sampledMatrixBlock = sparseNotTransposedSamplePath(sampleRows);
+			else
+				sampledMatrixBlock = denseSamplePath(sampleRows);
+		}
+		else
+			sampledMatrixBlock = defaultSlowSamplingPath(sampleRows);
+
+		if(sampledMatrixBlock.isEmpty())
+			return null;
+		else
+			return sampledMatrixBlock;
+	}
+
+	private MatrixBlock sparseNotTransposedSamplePath(int[] sampleRows) {
+		MatrixBlock res = new MatrixBlock(sampleRows.length, _data.getNumColumns(), true);
+		SparseRow[] rows = new SparseRow[sampleRows.length];
+		SparseBlock in = _data.getSparseBlock();
+		for(int i = 0; i < sampleRows.length; i++)
+			rows[i] = in.get(sampleRows[i]);
+
+		res.setSparseBlock(new SparseBlockMCSR(rows, false));
+		res.recomputeNonZeros();
+		_transposed = true;
+		res = LibMatrixReorg.transposeInPlace(res, _k);
+
+		return res;
+	}
+
+	private MatrixBlock defaultSlowSamplingPath(int[] sampleRows) {
+		MatrixBlock select = (_cs.transposed) ? new MatrixBlock(_data.getNumColumns(), 1,
+			false) : new MatrixBlock(_data.getNumRows(), 1, false);
+		for(int i = 0; i < sampleRows.length; i++)
+			select.appendValue(sampleRows[i], 0, 1);
+		MatrixBlock ret = _data.removeEmptyOperations(new MatrixBlock(), !_cs.transposed, true, select);
+		return ret;
+	}
+
+	private MatrixBlock denseSamplePath(int[] sampleRows) {
+		final int sampleSize = sampleRows.length;
+		final double sampleRatio = _cs.transposed ? (double) _data.getNumColumns() /
+			sampleSize : (double) _data.getNumRows() / sampleSize;
+		final long inputNonZeros = _data.getNonZeros();
+		final long estimatedNonZerosInSample = (long) Math.ceil((double) inputNonZeros / sampleRatio);
+		final int resRows = _cs.transposed ? _data.getNumRows() : _data.getNumColumns();
+		final long nCellsInSample = (long) sampleSize * resRows;
+		final boolean shouldBeSparseSample = 0.4 > (double) estimatedNonZerosInSample / nCellsInSample;
+		MatrixBlock res = new MatrixBlock(resRows, sampleSize, shouldBeSparseSample);
+		res.allocateBlock();
+
+		final DenseBlock inb = _data.getDenseBlock();
+		if(res.isInSparseFormat()) {
+			final SparseBlock resb = res.getSparseBlock();
+			if(resb instanceof SparseBlockMCSR) {
+				final SparseBlockMCSR resbmcsr = (SparseBlockMCSR) resb;
+				final int estimatedNrDoublesEachRow = (int) Math.max(4, Math.ceil(estimatedNonZerosInSample / sampleSize));
+				for(int col = 0; col < resRows; col++)
+					resbmcsr.allocate(col, estimatedNrDoublesEachRow);
+
+				for(int row = 0; row < sampleSize; row++) {
+					final int inRow = sampleRows[row];
+					final double[] inBlockV = inb.values(inRow);
+					final int offIn = inb.pos(inRow);
+					for(int col = 0; col < resRows; col++) {
+						final SparseRow srow = resbmcsr.get(col);
+						srow.append(row, inBlockV[offIn + col]);
+					}
+				}
+			}
+			else
+				throw new NotImplementedException(
+					"Not Implemented support for dense sample into sparse: " + resb.getClass().getSimpleName());
+
+		}
+		else {
+			final DenseBlock resb = res.getDenseBlock();
+			for(int row = 0; row < sampleSize; row++) {
+				final int inRow = sampleRows[row];
+				final double[] inBlockV = inb.values(inRow);
+				final int offIn = inb.pos(inRow);
+				for(int col = 0; col < resRows; col++) {
+					final double[] blockV = resb.values(col);
+					blockV[col * sampleSize + row] = inBlockV[offIn + col];
+				}
+			}
+		}
+		res.setNonZeros(estimatedNonZerosInSample);
+		_transposed = true;
+
+		return res;
 	}
 
 	@Override
@@ -354,13 +511,9 @@ public class CompressedSizeEstimatorSample extends CompressedSizeEstimator {
 		StringBuilder sb = new StringBuilder();
 		sb.append(super.toString());
 		sb.append(" sampleSize: ");
-		sb.append(_sampleRows.length);
+		sb.append(getSampleSize());
 		sb.append(" transposed: ");
 		sb.append(_transposed);
-		sb.append(" cols: ");
-		sb.append(_numCols);
-		sb.append(" rows: ");
-		sb.append(_numRows);
 		return sb.toString();
 	}
 }

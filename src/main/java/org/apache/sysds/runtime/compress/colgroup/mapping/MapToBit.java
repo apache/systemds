@@ -30,7 +30,7 @@ import org.apache.sysds.utils.MemoryEstimates;
 public class MapToBit extends AMapToData {
 
 	private static final long serialVersionUID = -8065234231282619923L;
-	
+
 	private final BitSet _data;
 	private final int _size;
 
@@ -70,7 +70,7 @@ public class MapToBit extends AMapToData {
 	@Override
 	public long getExactSizeOnDisk() {
 		final int dSize = _data.size();
-		long size = 1 + 4 +  4 + 4; // base variables
+		long size = 1 + 4 + 4 + 4; // base variables
 		size += (dSize / 64) * 8; // all longs except last
 		size += (dSize % 64 == 0 ? 0 : 8); // last long
 		return size;
@@ -84,6 +84,14 @@ public class MapToBit extends AMapToData {
 	@Override
 	public int size() {
 		return _size;
+	}
+
+	@Override
+	public void replace(int v, int r) {
+		if(v == 0 && r == 1)
+			_data.set(0, size(), true);
+		else if(v == 1 && r == 0)
+			_data.clear();
 	}
 
 	@Override

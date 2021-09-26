@@ -66,7 +66,7 @@ public class ColGroupOLE extends ColGroupOffset {
 	}
 
 	@Override
-	protected void decompressToBlockUnSafeDenseDictionary(MatrixBlock target, int rl, int ru, int offT,
+	protected void decompressToBlockDenseDictionary(MatrixBlock target, int rl, int ru, int offT,
 		double[] values) {
 		final int blksz = CompressionSettings.BITMAP_BLOCK_SZ;
 		final int numCols = getNumCols();
@@ -105,7 +105,7 @@ public class ColGroupOLE extends ColGroupOffset {
 	}
 
 	@Override
-	protected void decompressToBlockUnSafeSparseDictionary(MatrixBlock target, int rl, int ru, int offT,
+	protected void decompressToBlockSparseDictionary(MatrixBlock target, int rl, int ru, int offT,
 		SparseBlock values) {
 		throw new NotImplementedException();
 	}

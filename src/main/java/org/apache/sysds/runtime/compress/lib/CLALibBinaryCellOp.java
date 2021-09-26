@@ -128,43 +128,29 @@ public class CLALibBinaryCellOp {
 
 	private static MatrixBlock selectProcessingBasedOnAccessType(BinaryOperator op, CompressedMatrixBlock m1,
 		MatrixBlock that, MatrixBlock result, BinaryAccessType atype, boolean left) {
-		final int outRows = m1.getNumRows();
-		final int outCols = m1.getNumColumns();
-		// TODO optimize to allow for sparse outputs.
-		final int outCells = outRows * outCols;
+
 		if(atype == BinaryAccessType.MATRIX_COL_VECTOR) {
-			if(result != null)
-				result.reset(outRows, Math.max(outCols, that.getNumColumns()), outCells);
-			else
-				result = new MatrixBlock(outRows, Math.max(outCols, that.getNumColumns()), outCells);
 
 			MatrixBlock d_compressed = m1.getCachedDecompressed();
-			if(d_compressed != null) {
+
+			if(d_compressed != null){
 				if(left)
-					LibMatrixBincell.bincellOp(that, d_compressed, result, op);
+					return that.binaryOperations(op, d_compressed);
 				else
-					LibMatrixBincell.bincellOp(d_compressed, that, result, op);
-				return result;
+					return d_compressed.binaryOperations(op, that);
 			}
-			else
-				return binaryMVCol(m1, that, op, left);
 
+			return binaryMVCol(m1, that, op, left);
 		}
-		else if(atype == BinaryAccessType.MATRIX_MATRIX) {
-			if(result != null)
-				result.reset(outRows, outCols, outCells);
-			else
-				result = new MatrixBlock(outRows, outCols, outCells);
+		else if( atype == BinaryAccessType.MATRIX_MATRIX) {
 
-			MatrixBlock d_compressed = m1.getCachedDecompressed();
-			if(d_compressed == null)
-				d_compressed = m1.getUncompressed("MatrixMatrix " + op);
+			MatrixBlock d_compressed = m1.getUncompressed("MatrixMatrix " + op);
 
 			if(left)
-				LibMatrixBincell.bincellOp(that, d_compressed, result, op);
+				return that.binaryOperations(op, d_compressed);
 			else
-				LibMatrixBincell.bincellOp(d_compressed, that, result, op);
-			return result;
+				return d_compressed.binaryOperations(op, that);
+
 		}
 		else if(isSupportedBinaryCellOp(op.fn))
 			return bincellOp(m1, that, setupCompressedReturnMatrixBlock(m1, result), op, left);
@@ -327,7 +313,7 @@ public class CLALibBinaryCellOp {
 			for(int i = 0; i < nCol; i++)
 				colIndexes[i] = i;
 			ADictionary newDict = new MatrixBlockDictionary(m2);
-			newColGroups.add(new ColGroupConst(colIndexes, m1.getNumRows(), newDict));
+			newColGroups.add(new ColGroupConst(colIndexes, newDict));
 		}
 		else {
 			AColGroup g = newColGroups.get(smallestIndex).binaryRowOp(op, m2.getDenseBlockValues(), false, left);
@@ -344,7 +330,7 @@ public class CLALibBinaryCellOp {
 
 		MatrixBlock ret = new MatrixBlock(m1.getNumRows(), m1.getNumColumns(), false, -1).allocateBlock();
 
-		final int blkz = CompressionSettings.BITMAP_BLOCK_SZ;
+		final int blkz = CompressionSettings.BITMAP_BLOCK_SZ / m1.getNumColumns() * 5;
 		final int k = op.getNumThreads();
 		long nnz = 0;
 
@@ -408,7 +394,7 @@ public class CLALibBinaryCellOp {
 		public Integer call() {
 			// unsafe decompress, since we count nonzeros afterwards.
 			for(AColGroup g : _m1.getColGroups())
-				g.decompressToBlockUnSafe(_ret, _rl, _ru);
+				g.decompressToBlock(_ret, _rl, _ru);
 
 			if(_m2.isInSparseFormat())
 				throw new NotImplementedException("Not Implemented sparse Format execution for MM.");
@@ -452,7 +438,7 @@ public class CLALibBinaryCellOp {
 		public Integer call() {
 			// unsafe decompress, since we count nonzeros afterwards.
 			for(AColGroup g : _m1.getColGroups())
-				g.decompressToBlockUnSafe(_ret, _rl, _ru);
+				g.decompressToBlock(_ret, _rl, _ru);
 
 			if(_m2.isInSparseFormat())
 				throw new NotImplementedException("Not Implemented sparse Format execution for MM.");

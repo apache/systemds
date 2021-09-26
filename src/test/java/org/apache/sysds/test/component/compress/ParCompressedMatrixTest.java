@@ -21,18 +21,15 @@ package org.apache.sysds.test.component.compress;
 
 import java.util.Collection;
 
-import org.apache.commons.math3.random.Well1024a;
-import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.CompressionSettingsBuilder;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup.CompressionType;
+import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
-import org.apache.sysds.runtime.matrix.data.LibMatrixDatagen;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
-import org.apache.sysds.runtime.matrix.data.RandomMatrixGenerator;
 import org.apache.sysds.runtime.matrix.operators.AggregateBinaryOperator;
 import org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator;
-import org.apache.sysds.runtime.util.DataConverter;
+import org.apache.sysds.runtime.matrix.operators.UnaryOperator;
 import org.apache.sysds.test.TestUtils;
 import org.apache.sysds.test.component.compress.TestConstants.MatrixTypology;
 import org.apache.sysds.test.component.compress.TestConstants.OverLapping;
@@ -49,9 +46,8 @@ public class ParCompressedMatrixTest extends AbstractCompressedUnaryTests {
 	public ParCompressedMatrixTest(SparsityType sparType, ValueType valType, ValueRange valRange,
 		CompressionSettingsBuilder compressionSettings, MatrixTypology matrixTypology, OverLapping ov,
 		Collection<CompressionType> ct) {
-		super(sparType, valType, valRange, compressionSettings, matrixTypology, ov, 2, ct);
-		// super(sparType, valType, valRange, compressionSettings, matrixTypology, ov,
-		// InfrastructureAnalyzer.getLocalParallelism());
+		super(sparType, valType, valRange, compressionSettings, matrixTypology, ov,
+			InfrastructureAnalyzer.getLocalParallelism(), ct);
 	}
 
 	@Override
@@ -60,49 +56,42 @@ public class ParCompressedMatrixTest extends AbstractCompressedUnaryTests {
 		testUnaryOperators(aggType, auop, inCP);
 	}
 
+	@Override
+	public void unaryOperations(UnaryOperator op) {
+		if(!(cmb instanceof CompressedMatrixBlock))
+			return;
+		try {
+			op = new UnaryOperator(op.fn, _k, op.isInplace());
+			MatrixBlock ret1 = mb.unaryOperations(op, null);
+			MatrixBlock ret2 = cmb.unaryOperations(op, null);
+			compareResultMatrices(ret1, ret2, 1);
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			throw e;
+		}
+	}
+
 	@Test
 	public void testLeftMatrixMatrixMultMediumSparse2() {
 		try {
 			if(!(cmb instanceof CompressedMatrixBlock))
 				return; // Input was not compressed then just pass test
 
-			MatrixBlock matrix = DataConverter
-				.convertToMatrixBlock(TestUtils.generateTestMatrix(132, rows, 0.9, 1.5, .1, 3));
-
+			MatrixBlock matrix = TestUtils.generateTestMatrixBlock(16, rows, 0.9, 1.5, .1, 3);
 			// Make Operator
 			AggregateBinaryOperator abop = InstructionUtils.getMatMultOperator(_k);
-
 			// vector-matrix uncompressed
 			MatrixBlock ret1 = mb.aggregateBinaryOperations(matrix, mb, new MatrixBlock(), abop);
-
 			// vector-matrix compressed
 			MatrixBlock ret2 = cmb.aggregateBinaryOperations(matrix, cmb, new MatrixBlock(), abop);
 
-			compareResultMatrices(ret1, ret2, 100);
+			compareResultMatrices(ret1, ret2, 10);
 
 		}
 		catch(Exception e) {
 			e.printStackTrace();
-			throw new RuntimeException(this.toString() + "\n" + e.getMessage(), e);
+			throw new RuntimeException(bufferedToString + "\n" + e.getMessage(), e);
 		}
 	}
-
-	@Test
-	public void testRandOperationsInPlace() {
-		if(!(cmb instanceof CompressedMatrixBlock) && rows * cols > 10000)
-			return;
-		RandomMatrixGenerator rgen = new RandomMatrixGenerator("uniform", rows, cols,
-			ConfigurationManager.getBlocksize(), sparsity, min, max);
-		Well1024a bigrand = null;
-		if(!LibMatrixDatagen.isShortcutRandOperation(min, max, sparsity, RandomMatrixGenerator.PDF.UNIFORM))
-			bigrand = LibMatrixDatagen.setupSeedsForRand(seed);
-		MatrixBlock ret1 = cmb.randOperationsInPlace(rgen, bigrand, 1342, _k);
-		if(!LibMatrixDatagen.isShortcutRandOperation(min, max, sparsity, RandomMatrixGenerator.PDF.UNIFORM))
-			bigrand = LibMatrixDatagen.setupSeedsForRand(seed);
-		MatrixBlock ret2 = mb.randOperationsInPlace(rgen, bigrand, 1342, _k);
-
-		compareResultMatrices(ret1, ret2, 1);
-
-	}
-
 }

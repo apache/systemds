@@ -35,42 +35,26 @@ public class ReaderColumnSelectionSparseTransposed extends ReaderColumnSelection
 	// current sparse skip positions.
 	private int[] sparsePos = null;
 
-	/**
-	 * Reader of sparse matrix blocks for compression.
-	 * 
-	 * This reader should not be used if the input data is not transposed and sparse
-	 * 
-	 * @param data       The transposed and sparse matrix
-	 * @param colIndexes The column indexes to combine
-	 */
-	public ReaderColumnSelectionSparseTransposed(MatrixBlock data, int[] colIndexes) {
-		super(colIndexes, data.getNumColumns());
 
+	protected ReaderColumnSelectionSparseTransposed(MatrixBlock data, int[] colIndexes, int rl, int ru) {
+		super(colIndexes, rl, Math.min(ru, data.getNumColumns()));
 		sparsePos = new int[colIndexes.length];
 
 		a = data.getSparseBlock();
-		int maxSize = 0;
+		// Use -1 to indicate that this column is done.
 		for(int i = 0; i < colIndexes.length; i++) {
 			if(a.isEmpty(_colIndexes[i]))
-				// Use -1 to indicate that this column is done.
 				sparsePos[i] = -1;
-			else {
+			else
 				sparsePos[i] = a.pos(_colIndexes[i]);
-				maxSize += a.size(_colIndexes[i]);
-			}
 		}
-
-		if(maxSize == 0) {
-			_lastRow = _numRows - 1;
-		}
-
 	}
 
 	protected DblArray getNextRow() {
-		if(_lastRow == _numRows - 1) {
+		if(_rl == _ru - 1)
 			return null;
-		}
-		_lastRow++;
+
+		_rl++;
 
 		boolean zeroResult = true;
 		boolean allDone = true;
@@ -81,26 +65,24 @@ public class ReaderColumnSelectionSparseTransposed extends ReaderColumnSelection
 				final int alen = a.size(colidx) + a.pos(colidx);
 				final int[] aix = a.indexes(colidx);
 				final double[] avals = a.values(colidx);
-				while(sparsePos[i] < alen && aix[sparsePos[i]] < _lastRow) {
+				while(sparsePos[i] < alen && aix[sparsePos[i]] < _rl)
 					sparsePos[i] += 1;
-				}
 
 				if(sparsePos[i] >= alen) {
 					// Mark this column as done.
 					sparsePos[i] = -1;
 					reusableArr[i] = 0;
 				}
-				else if(aix[sparsePos[i]] == _lastRow) {
+				else if(aix[sparsePos[i]] == _rl) {
 					reusableArr[i] = avals[sparsePos[i]];
 					zeroResult = false;
 				}
-				else {
+				else
 					reusableArr[i] = 0;
-				}
 			}
 		}
 		if(allDone)
-			_lastRow = _numRows - 1;
+			_rl = _ru - 1;
 		return zeroResult ? emptyReturn : reusableReturn;
 
 	}

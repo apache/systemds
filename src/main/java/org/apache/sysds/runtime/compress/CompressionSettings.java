@@ -132,24 +132,20 @@ public class CompressionSettings {
 		this.minimumCompressionRatio = minimumCompressionRatio;
 		this.isInSparkInstruction = isInSparkInstruction;
 		if(LOG.isDebugEnabled())
-			LOG.debug(this);
+			LOG.debug(this.toString());
 	}
 
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
-		sb.append("\n" + super.toString());
-		sb.append("\n Valid Compressions: " + validCompressions);
-		sb.append("\n Share dict: " + allowSharedDictionary);
-		sb.append("\n Partitioner: " + columnPartitioner);
-		sb.append("\n Lossy: " + lossy);
-		sb.append("\n sortValuesByLength: " + sortValuesByLength);
-		sb.append("\n Max Static ColGroup CoCode: " + maxColGroupCoCode);
-		sb.append("\n Max cocodePercentage: " + coCodePercentage);
-		sb.append("\n Sample Percentage: " + samplingRatio);
-		sb.append("\n Cost Computation Type" + costComputationType);
+		sb.append("CompressionSettings: ");
+		sb.append("\t Valid Compressions: " + validCompressions);
+		sb.append("\t Share dict: " + allowSharedDictionary);
+		sb.append("\t Partitioner: " + columnPartitioner);
+		sb.append("\t Lossy: " + lossy);
+		sb.append("\t Cost Computation Type: " + costComputationType);
 		if(samplingRatio < 1.0)
-			sb.append("\n Estimation Type: " + estimationType);
+			sb.append("\t Estimation Type: " + estimationType);
 		return sb.toString();
 	}
 }

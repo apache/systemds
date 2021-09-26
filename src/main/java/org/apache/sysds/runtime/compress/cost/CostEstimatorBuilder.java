@@ -50,8 +50,11 @@ public final class CostEstimatorBuilder implements Serializable {
 			addNode(1, n, counter);
 	}
 
-	public ComputationCostEstimator create(int nRows, int nCols) {
-		return new ComputationCostEstimator(nRows, nCols, counter.compressedMultiplications > 0, counter);
+	protected ICostEstimate create(int nRows, int nCols, double sparsity, boolean isInSpark) {
+		if(isInSpark)
+			return new HybridCostEstimator(nRows, nCols, sparsity, counter);
+		else
+			return new ComputationCostEstimator(nRows, nCols, sparsity, counter);
 	}
 
 	public InstructionTypeCounter getCounter() {
@@ -73,7 +76,7 @@ public final class CostEstimatorBuilder implements Serializable {
 			else
 				counter.decompressions += count;
 		}
-		if(o.isDensifying()){
+		if(o.isDensifying()) {
 			counter.isDensifying = true;
 		}
 
@@ -118,10 +121,15 @@ public final class CostEstimatorBuilder implements Serializable {
 		int numberOps = 0;
 		numberOps += counter.scans + counter.leftMultiplications * 2 + counter.rightMultiplications * 2 +
 			counter.compressedMultiplications * 4 + counter.dictionaryOps;
-		numberOps -= counter.decompressions + counter.overlappingDecompressions;
+		numberOps -= counter.decompressions + counter.overlappingDecompressions * 2;
 
-		if(counter.decompressions > 1 &&
-			counter.leftMultiplications + counter.rightMultiplications + counter.compressedMultiplications < 1)
+		final int nrMultiplications = counter.leftMultiplications + counter.rightMultiplications +
+			counter.compressedMultiplications;
+		final int nrDecompressions = counter.decompressions + counter.overlappingDecompressions * 2;
+		if(counter.decompressions == 0 && counter.rightMultiplications == counter.overlappingDecompressions &&
+			numberOps > 10)
+			return true;
+		if(nrDecompressions > nrMultiplications || (nrDecompressions > 1 && nrMultiplications < 1))
 			// This condition is added for l2svm and mLogReg y dataset, that is compressing while it should not.
 			return false;
 		return numberOps > 4;
@@ -140,5 +148,4 @@ public final class CostEstimatorBuilder implements Serializable {
 		sb.append(counter);
 		return sb.toString();
 	}
-
 }

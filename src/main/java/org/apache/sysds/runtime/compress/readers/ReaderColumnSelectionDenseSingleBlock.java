@@ -24,14 +24,13 @@ import org.apache.sysds.runtime.compress.utils.DblArray;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
 public class ReaderColumnSelectionDenseSingleBlock extends ReaderColumnSelection {
-	private double[] _data;
-	private int indexOff;
-	private int _numCols;
+	private final double[] _data;
+	private final int _numCols;
 
-	public ReaderColumnSelectionDenseSingleBlock(MatrixBlock data, int[] colIndices) {
-		super(colIndices, data.getNumRows());
+	protected ReaderColumnSelectionDenseSingleBlock(MatrixBlock data, int[] colIndices, int rl, int ru) {
+		super(colIndices, rl, Math.min(ru, data.getNumRows()));
 		_data = data.getDenseBlockValues();
-		indexOff = 0;
+
 		if(data.getDenseBlock().numBlocks() > 1)
 			throw new DMLCompressionException("Not handling multi block data reading in dense reader");
 
@@ -39,9 +38,10 @@ public class ReaderColumnSelectionDenseSingleBlock extends ReaderColumnSelection
 	}
 
 	protected DblArray getNextRow() {
-		if(_lastRow == _numRows - 1)
+		if(_rl == _ru - 1)
 			return null;
-		_lastRow++;
+		_rl++;
+		final int indexOff = _rl * _numCols;
 		boolean empty = true;
 		for(int i = 0; i < _colIndexes.length; i++) {
 			double v = _data[indexOff + _colIndexes[i]];
@@ -49,8 +49,6 @@ public class ReaderColumnSelectionDenseSingleBlock extends ReaderColumnSelection
 				empty = false;
 			reusableArr[i] = v;
 		}
-
-		indexOff += _numCols;
 
 		return empty ? emptyReturn : reusableReturn;
 	}

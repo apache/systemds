@@ -17,21 +17,17 @@
  * under the License.
  */
 
-package org.apache.sysds.runtime.compress.lib;
+package org.apache.sysds.runtime.compress.bitmap;
 
 import java.util.List;
 
-import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.readers.ReaderColumnSelection;
-import org.apache.sysds.runtime.compress.utils.ABitmap;
-import org.apache.sysds.runtime.compress.utils.Bitmap;
 import org.apache.sysds.runtime.compress.utils.DblArray;
 import org.apache.sysds.runtime.compress.utils.DblArrayIntListHashMap;
 import org.apache.sysds.runtime.compress.utils.DblArrayIntListHashMap.DArrayIListEntry;
 import org.apache.sysds.runtime.compress.utils.DoubleIntListHashMap;
 import org.apache.sysds.runtime.compress.utils.DoubleIntListHashMap.DIListEntry;
 import org.apache.sysds.runtime.compress.utils.IntArrayList;
-import org.apache.sysds.runtime.compress.utils.MultiColBitmap;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
@@ -48,52 +44,33 @@ public class BitmapEncoder {
 	 * @param colIndices               Indexes (within the block) of the columns to extract
 	 * @param rawBlock                 An uncompressed matrix block; can be dense or sparse
 	 * @param transposed               Boolean specifying if the rawBlock was transposed.
-	 * @param estimatedNumberOfUniques The number of estimated uniques inside this group. Used to allocated the
-	 *                                 hashMaps.
+	 * @param estimatedNumberOfUniques The number of estimated uniques inside this group. Used to allocated the hashMaps.
 	 * @return uncompressed bitmap representation of the columns
 	 */
 	public static ABitmap extractBitmap(int[] colIndices, MatrixBlock rawBlock, boolean transposed,
 		int estimatedNumberOfUniques) {
-		try {
-			ABitmap ret = null;
-			final int numRows = transposed ? rawBlock.getNumColumns() : rawBlock.getNumRows();
-			if(rawBlock.isEmpty() && colIndices.length == 1)
-				ret = new Bitmap(null, null, numRows);
-			else if(colIndices.length == 1){
+		if(rawBlock == null || rawBlock.isEmpty())
+			return null;
 
-				if(rawBlock.isInSparseFormat() && transposed && rawBlock.getSparseBlock().isEmpty(colIndices[0]))
-					ret = new Bitmap(null, null, numRows);
-				else
-					ret = extractBitmapSingleColumn(colIndices[0], rawBlock, transposed);
-			}
-			else if(rawBlock.isEmpty())
-				ret = new MultiColBitmap(colIndices.length, null, null, numRows);
-			else {
-				ReaderColumnSelection reader = ReaderColumnSelection.createReader(rawBlock, colIndices, transposed);
-				DblArrayIntListHashMap map = new DblArrayIntListHashMap(Math.max(estimatedNumberOfUniques, 8));
-				ret = extractBitmapMultiColumns(colIndices, reader, numRows, map);
-			}
-			return ret;
-		}
-		catch(Exception e) {
-			throw new DMLRuntimeException("Failed to extract bitmap", e);
+		final int numRows = transposed ? rawBlock.getNumColumns() : rawBlock.getNumRows();
+
+		if(colIndices.length == 1)
+			return extractBitmapSingleColumn(colIndices[0], rawBlock, numRows, transposed);
+		else {
+			DblArrayIntListHashMap map = new DblArrayIntListHashMap(Math.max(estimatedNumberOfUniques, 8));
+			return extractBitmapMultiColumns(colIndices, rawBlock, numRows, transposed, map);
 		}
 	}
 
-	/**
-	 * Extract Bitmap from a single column.
-	 * 
-	 * It counts the instances of zero, but skips storing the values.
-	 * 
-	 * @param colIndex   The index of the column
-	 * @param rawBlock   The Raw matrix block (that can be transposed)
-	 * @param transposed Boolean specifying if the rawBlock is transposed or not.
-	 * @return Bitmap containing the Information of the column.
-	 */
-	private static ABitmap extractBitmapSingleColumn(int colIndex, MatrixBlock rawBlock, boolean transposed) {
-		DoubleIntListHashMap hashMap = transposed ? extractHashMapTransposed(colIndex,
-			rawBlock) : extractHashMap(colIndex, rawBlock);
-		return makeBitmap(hashMap, transposed ? rawBlock.getNumColumns() : rawBlock.getNumRows());
+	private static ABitmap extractBitmapSingleColumn(int colIndex, MatrixBlock rawBlock, int numRows,
+		boolean transposed) {
+		if(rawBlock.isInSparseFormat() && transposed && rawBlock.getSparseBlock().isEmpty(colIndex))
+			return new Bitmap(null, null, numRows);
+		else {
+			DoubleIntListHashMap hashMap = transposed ? extractHashMapTransposed(colIndex,
+				rawBlock) : extractHashMap(colIndex, rawBlock);
+			return makeBitmap(hashMap, transposed ? rawBlock.getNumColumns() : rawBlock.getNumRows());
+		}
 	}
 
 	private static DoubleIntListHashMap extractHashMap(int colIndex, MatrixBlock rawBlock) {
@@ -108,9 +85,8 @@ public class BitmapEncoder {
 			if(values != null)
 				for(int i = 0; i < values.length; i++) {
 					double val = values[i];
-					if(val != 0) {
+					if(val != 0)
 						distinctVals.appendValue(val, i);
-					}
 				}
 		}
 		else if(!rawBlock.isInSparseFormat() && rawBlock.getDenseBlock().blockSize() == 1) {
@@ -124,13 +100,11 @@ public class BitmapEncoder {
 				}
 			}
 		}
-		else // GENERAL CASE
-		{
+		else { // GENERAL CASE
 			for(int i = 0; i < m; i++) {
 				double val = rawBlock.quickGetValue(i, colIndex);
-				if(val != 0) {
+				if(val != 0)
 					distinctVals.appendValue(val, i);
-				}
 			}
 		}
 		return distinctVals;
@@ -167,57 +141,30 @@ public class BitmapEncoder {
 				}
 			}
 		}
-		else // GENERAL CASE
-		{
+		else { // GENERAL CASE
 			for(int i = 0; i < m; i++) {
 				double val = rawBlock.quickGetValue(colIndex, i);
-				if(val != 0) {
+				if(val != 0)
 					distinctVals.appendValue(val, i);
-				}
 			}
 		}
 		return distinctVals;
 	}
 
-	public static ABitmap extractBitmapMultiColumns(int[] colIndices, MatrixBlock rawBlock, boolean transposed,
-		DblArrayIntListHashMap map) {
-		final int numRows = transposed ? rawBlock.getNumColumns() : rawBlock.getNumRows();
+	private static ABitmap extractBitmapMultiColumns(int[] colIndices, MatrixBlock rawBlock, int numRows,
+		boolean transposed, DblArrayIntListHashMap distinctVals) {
+
 		ReaderColumnSelection reader = ReaderColumnSelection.createReader(rawBlock, colIndices, transposed);
-		return extractBitmapMultiColumns(colIndices, reader, numRows, map);
-	}
-
-	/**
-	 * Extract Bitmap from multiple columns together.
-	 * 
-	 * It counts the instances of rows containing only zero values, but other groups can contain a zero value.
-	 * 
-	 * @param colIndices   The Column indexes to extract the multi-column bit map from.
-	 * @param rowReader    A Reader for the columns selected.
-	 * @param numRows      The number of contained rows
-	 * @param distinctVals An hashMap to allocate the indexes into.
-	 * @return The Bitmap
-	 */
-	protected static ABitmap extractBitmapMultiColumns(int[] colIndices, ReaderColumnSelection rowReader, int numRows,
-		DblArrayIntListHashMap distinctVals) {
-
 		// scan rows and probe/build distinct items
 		DblArray cellVals = null;
 
-		while((cellVals = rowReader.nextRow()) != null)
-			distinctVals.appendValue(cellVals, rowReader.getCurrentRowIndex());
+		while((cellVals = reader.nextRow()) != null)
+			distinctVals.appendValue(cellVals, reader.getCurrentRowIndex());
 
 		List<DArrayIListEntry> mapEntries = distinctVals.extractValues();
 		return makeBitmap(mapEntries, numRows, colIndices.length);
 	}
 
-	/**
-	 * Make the multi column Bitmap.
-	 * 
-	 * @param distinctVals The distinct values found in the columns selected.
-	 * @param numRows      Number of rows in the input
-	 * @param numCols      Number of columns
-	 * @return The Bitmap.
-	 */
 	private static ABitmap makeBitmap(List<DArrayIListEntry> mapEntries, int numRows, int numCols) {
 		// added for one pass bitmap construction
 		// Convert inputs to arrays
@@ -230,21 +177,13 @@ public class BitmapEncoder {
 				values[bitmapIx] = val.key.getData();
 				offsetsLists[bitmapIx++] = val.value;
 			}
-
-			return new MultiColBitmap(numCols, offsetsLists, values, numRows);
+			return new MultiColBitmap(offsetsLists, values, numRows);
 		}
 		else
-			return new MultiColBitmap(numCols, null, null, numRows);
+			return new MultiColBitmap(null, null, numRows);
 
 	}
 
-	/**
-	 * Make single column bitmap.
-	 * 
-	 * @param distinctVals Distinct values contained in the bitmap, mapping to offsets for locations in the matrix.
-	 * @param numRows      Number of zero values in the matrix
-	 * @return The single column Bitmap.
-	 */
 	private static Bitmap makeBitmap(DoubleIntListHashMap distinctVals, int numRows) {
 		// added for one pass bitmap construction
 		// Convert inputs to arrays
@@ -258,12 +197,9 @@ public class BitmapEncoder {
 				values[bitmapIx] = val.key;
 				offsetsLists[bitmapIx++] = val.value;
 			}
-
 			return new Bitmap(offsetsLists, values, numRows);
 		}
-		else {
+		else
 			return new Bitmap(null, null, numRows);
-		}
 	}
-
 }

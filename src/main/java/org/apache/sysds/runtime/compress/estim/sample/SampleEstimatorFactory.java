@@ -33,28 +33,22 @@ public class SampleEstimatorFactory {
 
 	public enum EstimationType {
 		HassAndStokes, ShlosserEstimator, ShlosserJackknifeEstimator, SmoothedJackknifeEstimator,
-
 	}
 
 	public static int distinctCount(int[] frequencies, int nRows, int sampleSize, EstimationType type,
 		HashMap<Integer, Double> solveCache) {
-		final int numVals = ((float) frequencies[frequencies.length - 1] /
-			sampleSize < 0.4) ? frequencies.length : frequencies.length - 1;
+		final int numVals = frequencies.length;
 		try {
-
+			int[] invHist = getInvertedFrequencyHistogram(frequencies);
 			switch(type) {
 				case HassAndStokes:
-					return HassAndStokes.distinctCount(numVals, getInvertedFrequencyHistogram(frequencies, numVals),
-						nRows, sampleSize, solveCache);
+					return HassAndStokes.distinctCount(numVals, invHist, nRows, sampleSize, solveCache);
 				case ShlosserEstimator:
-					return ShlosserEstimator.distinctCount(numVals, getInvertedFrequencyHistogram(frequencies, numVals),
-						nRows, sampleSize);
+					return ShlosserEstimator.distinctCount(numVals, invHist, nRows, sampleSize);
 				case ShlosserJackknifeEstimator:
-					return ShlosserJackknifeEstimator.distinctCount(numVals, frequencies,
-						getInvertedFrequencyHistogram(frequencies, numVals), nRows, sampleSize);
+					return ShlosserJackknifeEstimator.distinctCount(numVals, frequencies, invHist, nRows, sampleSize);
 				case SmoothedJackknifeEstimator:
-					return SmoothedJackknifeEstimator.distinctCount(numVals,
-						getInvertedFrequencyHistogram(frequencies, numVals), nRows, sampleSize);
+					return SmoothedJackknifeEstimator.distinctCount(numVals, invHist, nRows, sampleSize);
 				default:
 					throw new NotImplementedException("Type not yet supported for counting distinct: " + type);
 			}
@@ -65,32 +59,25 @@ public class SampleEstimatorFactory {
 					+ Arrays.toString(frequencies) + "\n nrows: " + nRows + " " + sampleSize + " type: " + type,
 				e);
 		}
-
 	}
 
-	private static int[] getInvertedFrequencyHistogram(int[] frequencies, int numVals) {
-		try {
-
-			// Find max
-			int maxCount = 0;
-			for(int i = 0; i < numVals; i++) {
-				final int v = frequencies[i];
-				if(v > maxCount)
-					maxCount = v;
-			}
-
-			// create frequency histogram
-			int[] freqCounts = new int[maxCount];
-			for(int i = 0; i < numVals; i++) {
-				if(frequencies[i] != 0)
-					freqCounts[frequencies[i] - 1]++;
-			}
-
-			return freqCounts;
+	private static int[] getInvertedFrequencyHistogram(int[] frequencies) {
+		final int numVals = frequencies.length;
+		// Find max
+		int maxCount = 0;
+		for(int i = 0; i < numVals; i++) {
+			final int v = frequencies[i];
+			if(v > maxCount)
+				maxCount = v;
 		}
-		catch(Exception e) {
-			throw new DMLCompressionException(
-				"Could not extract inverted frequencies from input: " + Arrays.toString(frequencies), e);
+
+		// create frequency histogram
+		int[] freqCounts = new int[maxCount];
+		for(int i = 0; i < numVals; i++) {
+			if(frequencies[i] != 0)
+				freqCounts[frequencies[i] - 1]++;
 		}
+
+		return freqCounts;
 	}
 }

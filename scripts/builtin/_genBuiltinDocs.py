@@ -147,10 +147,10 @@ def parseInformation(markDownArray, fileName):
 
     for line in markDownArray:
         if INPUT:
-            inputParameterCount, INPUT, INPUT_FINISHED, I_HEADER_MISSING, commentLineCount = parseParam(inputParameters, inputParameterCount, INPUT, INPUT_FINISHED, I_HEADER_MISSING, commentLineCount, additionalInfos, line)
+            inputParameterCount, INPUT, INPUT_FINISHED, I_HEADER_MISSING, commentLineCount = parseParam(inputParameters, inputParameterCount, INPUT, INPUT_FINISHED, I_HEADER_MISSING, commentLineCount, additionalInfos, line, OUTPUT)
 
         if OUTPUT:
-            outputParameterCount, OUTPUT, OUTPUT_FINISHED, O_HEADER_MISSING, commentLineCount = parseParam(outputParameters, outputParameterCount, OUTPUT, OUTPUT_FINISHED, O_HEADER_MISSING, commentLineCount, additionalInfos, line)
+            outputParameterCount, OUTPUT, OUTPUT_FINISHED, O_HEADER_MISSING, commentLineCount = parseParam(outputParameters, outputParameterCount, OUTPUT, OUTPUT_FINISHED, O_HEADER_MISSING, commentLineCount, additionalInfos, line, OUTPUT)
 
         if headerRegex.match(line) and DESCRIPTION:
             if inputStringRegex.match(line):
@@ -294,7 +294,7 @@ def cleanFileDataArray():
     return new_file_data_array
 
 
-def parseParam(param_array, param_count, FLAG, FLAG_FIN, FLAG_HEADER_MISSING, comment_line_count, additional_infos, line):
+def parseParam(param_array, param_count, FLAG, FLAG_FIN, FLAG_HEADER_MISSING, comment_line_count, additional_infos, line, INOUT):
     lineBreakRegex = re.compile('.[\-]+')  # Match all lines which look like ---- or  ---
     commentLineRegex = re.compile('^#\s{0,}$')
     emptyLineRegex = re.compile('^\s*$')
@@ -325,7 +325,7 @@ def parseParam(param_array, param_count, FLAG, FLAG_FIN, FLAG_HEADER_MISSING, co
                 param_count += 1
 
         #Here I check if there are headers with a different amount of parameters if yes and the global flag is set to false I return a Warning
-        if param_count < 4 and ALLOW_DIFFERENT_SIZED_HEADERS is False:
+        if param_count < 4 and ALLOW_DIFFERENT_SIZED_HEADERS is False and INOUT is False:
             FLAG_HEADER_MISSING = True
             return param_count, FLAG, FLAG_FIN, FLAG_HEADER_MISSING, comment_line_count
 

@@ -1,4 +1,4 @@
-#-------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------
 #
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
@@ -17,9 +17,44 @@
 # specific language governing permissions and limitations
 # under the License.
 #
-#-------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------
 
-s_executePipeline = function(Frame[String] logical = as.frame("NULL"), Frame[String] pipeline, Matrix[Double] X,  Matrix[Double] Y, 
+# This function execute pipeline.
+
+# INPUT   PARAMETERS:
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME                TYPE               DEFAULT  MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# logical             Frame[String]      NULL     ---
+# pipeline            Frame[String]      ---      ---
+# X                   Matrix[Double]     ---      ---
+# Y                   Matrix[Double]     ---      ---
+# Xtest               Matrix[Double]     ---      ---
+# Ytest               Matrix[Double]     ---      ---
+# metaList            List[Unknown]      ---      ---
+# hyperParameters     Matrix[Double]     ---      ---
+# hpForPruning        Matrix[Double]      0       ---
+# changesByOp         Matrix[Double]      0       ---
+# flagsCount          Integer            ---      ---
+# test                Boolean             FALSE   ---
+# verbose             Boolean            ---      ---
+#
+# ----------------------------------------------------------------------------------------------------------------------
+#
+# OUTPUT:
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME                TYPE                       MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# X                   Matrix[Double]             ---
+# Y                   Matrix[Double]             ---
+# Xtest               Matrix[Double]             ---
+# Ytest               Matrix[Double]             ---
+# t2                  Double                     ---
+# hpForPruning        Matrix[Double]             ---
+# changesByOp         Matrix[Double]             ---
+# ----------------------------------------------------------------------------------------------------------------------
+
+s_executePipeline = function(Frame[String] logical = as.frame("NULL"), Frame[String] pipeline, Matrix[Double] X,  Matrix[Double] Y,
   Matrix[Double] Xtest,  Matrix[Double] Ytest, List[Unknown] metaList, Matrix[Double] hyperParameters, Matrix[Double] hpForPruning = as.matrix(0),
   Matrix[Double] changesByOp = as.matrix(0), Integer flagsCount, Boolean test = FALSE, Boolean verbose)
   return (Matrix[Double] X, Matrix[Double] Y, Matrix[Double] Xtest, Matrix[Double] Ytest, Double t2, Matrix[Double] hpForPruning, Matrix[Double] changesByOp)
@@ -36,7 +71,7 @@ s_executePipeline = function(Frame[String] logical = as.frame("NULL"), Frame[Str
   Y = rbind(Y, Ytest)
   testRow = nrow(Xtest)
   t1 = time()
-  #print("PIPELINE EXECUTION START ... "+toString(pipeline))
+  print("PIPELINE EXECUTION START ... "+toString(pipeline))
 
   if(verbose) {
     print("checks   rows in X = "+nrow(X)+" rows in Y = "+nrow(Y)+" cols in X = "+ncol(X)+" col in Y = "+ncol(Y))
@@ -66,7 +101,7 @@ s_executePipeline = function(Frame[String] logical = as.frame("NULL"), Frame[Str
     }
     else {
       Xclone = X 
-      #print("not applying "+lgOp+" "+op+" on data test flag: "+test)
+      print("not applying "+lgOp+" "+op+" on data test flag: "+test)
       Xtest = X[testStIdx:nrow(X), ]
       Ytest = Y[testStIdx:nrow(X), ]
       X = X[1:trainEndIdx, ]
@@ -98,7 +133,7 @@ s_executePipeline = function(Frame[String] logical = as.frame("NULL"), Frame[Str
     stop("executePipeline: test rows altered")
   t2 = floor((time() - t1) / 1e+6)
 
-  #print("PIPELINE EXECUTION ENDED: "+t2+" ms")
+  print("PIPELINE EXECUTION ENDED: "+t2+" ms")
 }
 
 # This function will convert the matrix row-vector into list
@@ -199,7 +234,7 @@ return (Matrix[Double] X)
     nX = nX[, 1: ncol(nX) - 1]
   
   }
-  if(dataFlag == 0 & (sum(mask) > 0) & (sum(mask) != ncol(nX)))
+  if(dataFlag == 0 & (sum(mask) > 0))
   {
     maxDummy = max(nX) + 1
     nX = replace(target = nX, pattern = NaN, replacement = maxDummy)
@@ -219,7 +254,7 @@ return (Matrix[Double] X)
     X = replace(target = X, pattern = maxDummy, replacement = NaN)
     X = replace(target = X, pattern = -1111, replacement = NaN)
   }
-  else if(dataFlag == 1 & (sum(mask) > 0) & (sum(mask) != ncol(nX)))
+  else if(dataFlag == 1 & (sum(mask) > 0))
   {
     maxDummy = max(nX) + 1
     nX = replace(target = nX, pattern = NaN, replacement = maxDummy)
@@ -287,8 +322,7 @@ return (Matrix[Double] X_filled)
       for(i in 1: nrow(FD))
       {
         for(j in 1:ncol(FD)) {
-          if(as.scalar(FD[i, j]) > 0 & (min(X[, i]) != 0) & (min(X[, j]) != 0) & (sum(FD[, j]) != nrow(FD))
-            & (as.scalar(fdMask[1, j]) != 0) & (as.scalar(fdMask[1, i]) != 0))
+          if(as.scalar(FD[i, j]) > 0 & (min(X[, i]) != 0) & (min(X[, j]) != 0) & (sum(FD[, j]) != nrow(FD)))
             X = imputeByFD(X, i, j, threshold, FALSE)
         }
       }
@@ -322,7 +356,7 @@ return (Matrix[Double] XY)
   diff = (maxClass - minClass)/sum(classes)
   if(diff > 0.5)
   {
-    #print("initiating oversampling")
+    print("initiating oversampling")
     XY = order(target = cbind(Y, X),  by = 1, decreasing=FALSE, index.return=FALSE)
     synthesized = matrix(0,0,0) # initialize variable
     start_class = 1
@@ -333,7 +367,7 @@ return (Matrix[Double] XY)
     outSet = matrix(0, 0, ncol(XY))
     remainingRatio = ifelse((remainingRatio%%100) >= 50, remainingRatio+(100 - (remainingRatio%%100)),
     remainingRatio-(remainingRatio%%100))
-    #print("remaining ratio: "+remainingRatio)
+    print("remaining ratio: "+remainingRatio)
     for(i in 1: nrow(k), check=0) {
       end_class = end_class + as.scalar(classes[i])
       class_t = XY[start_class:end_class, ]
@@ -352,7 +386,7 @@ return (Matrix[Double] XY)
     classes = table(Y, 1)
   }
   else { 
-    #print("smote not applicable")
+    print("smote not applicable")
     XY = cbind(X, Y)
   }
 }
@@ -365,10 +399,10 @@ fillDefault = function(Matrix[Double] X)
 return(Matrix[Double] X){
   defaullt = round(colMaxs(X) - colMins(X))
   Mask = is.na(X)
-  X = replace(target=X, pattern=NaN, replacement=0)
+  X = replace(target=X, pattern=NaN, replacement=max(X))
   Mask = Mask * defaullt
   X = X + Mask
- # print("fillDefault: no of NaNs "+sum(is.na(X)))
+  print("fillDefault: no of NaNs "+sum(is.na(X)))
 }
 
 ########################################################

@@ -1,4 +1,4 @@
-#-------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------
 #
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
@@ -17,16 +17,16 @@
 # specific language governing permissions and limitations
 # under the License.
 #
-#-------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------
 
 # Builtin function that implements ARIMA
-#
+
 # INPUT PARAMETERS:
-# ----------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------
 # NAME              TYPE      DEFAULT   MEANING
-# ----------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------
 # X                 Double    ---       The input Matrix to apply Arima on.
-# max_func_invoc    Int       1000      ?
+# max_func_invoc    Int       1000
 # p                 Int       0         non-seasonal AR order
 # d                 Int       0         non-seasonal differencing order
 # q                 Int       0         non-seasonal MA order
@@ -37,11 +37,13 @@
 # include_mean      Boolean   FALSE     center to mean 0, and include in result
 # solver            String    jacobi    solver, is either "cg" or "jacobi"
 #
-# RETURN VALUES
-# ----------------------------------------------------------------------------
-# NAME         TYPE   DEFAULT  MEANING
-# ----------------------------------------------------------------------------
-# best_point  String    ---    The calculated coefficients
+# ----------------------------------------------------------------------------------------------------------------------
+#
+# OUTPUT:
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME              TYPE             MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# best_point        String           The calculated coefficients
 # ----------------------------------------------------------------------------
 
 m_arima = function(Matrix[Double] X, Integer max_func_invoc=1000, Integer p=0,

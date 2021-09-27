@@ -1,4 +1,4 @@
-#-------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------
 #
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
@@ -17,7 +17,40 @@
 # specific language governing permissions and limitations
 # under the License.
 #
-#-------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------
+
+# in The bandit function the objective is to find an arm that optimises a known functional of the unknown arm-reward distributions.
+
+# INPUT PARAMETERS:
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME              TYPE               DEFAULT            MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# X_train           Matrix[Double]      ---
+# Y_train           Matrix[Double]      ---
+# X_test            Matrix[Double]     ---
+# Y_test            Matrix[Double]      ---
+# metaList          List[Unknown]      ---
+# evaluationFunc    String              ---
+# evalFunHp         Matrix[Double]      ---
+# lp                Frame[Unknown]      ---
+# primitives        Frame[Unknown]      ---
+# params            Frame[Unknown]      ---
+# K                 Integer             3
+# R                 Integer             50
+# baseLineScore     Double
+# cv                Boolean
+# cvk               Integer             2
+# verbose           Boolean            TRUE
+# output            String             ""
+#
+# ----------------------------------------------------------------------------------------------------------------------
+#
+# OUTPUT:
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME      TYPE             MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# perf      Boolean
+# ----------------------------------------------------------------------------------------------------------------------
 
 m_bandit = function(Matrix[Double] X_train, Matrix[Double] Y_train, Matrix[Double] X_test, Matrix[Double] Y_test, List[Unknown] metaList,
   String evaluationFunc, Matrix[Double] evalFunHp, Frame[Unknown] lp, Frame[Unknown] primitives, Frame[Unknown] param, Integer k = 3,
@@ -37,6 +70,10 @@ m_bandit = function(Matrix[Double] X_train, Matrix[Double] Y_train, Matrix[Doubl
   eta = 2  # the halving ratio is fixed to 2
   s_max = floor(log(R,eta));
   B = (s_max + 1) * R;
+  # [conf, m] = get_physical_configurations(lp, 100, primitives)
+  # index = vectorToCsv(matrix(1, rows=1, cols=ncol(lp)))
+  # jspecR = "{ids:true, recode :["+index+"]}"
+  # [rConf, conf_meta] = transformencode(target=conf, spec=jspecR);
 
   # initialize output variables
   hparam = matrix(0, rows=k*(s_max+1), cols=HYPERPARAM_LENGTH)
@@ -49,7 +86,7 @@ m_bandit = function(Matrix[Double] X_train, Matrix[Double] Y_train, Matrix[Doubl
   rows = 1, cols = NUM_FEATURES + 4 )
   frameList = list()
   
-  for(s in s_max:0, check=0) { # TODO convert to parfor
+  for(s in s_max:0) { # TODO convert to parfor
     
    # result variables
     bracket_hp = matrix(0, rows=k*(s+1)+k, cols=HYPERPARAM_LENGTH)
@@ -216,15 +253,15 @@ get_physical_configurations = function(Frame[String] logical, Scalar[int] numCon
   }
   
   physical = transformdecode(target=HP, spec=jspecR, meta=M);
-  #print("physical pipeline "+toString(physical))
+  print("physical pipeline "+toString(physical))
 }
 
 # this method will call the execute pipelines with their hyper-parameters
 run_with_hyperparam = function(Frame[Unknown] lp, Frame[Unknown] ph_pip, Integer r_i, Matrix[Double] X, Matrix[Double] Y,
   Matrix[Double] Xtest, Matrix[Double] Ytest, List[Unknown] metaList, String evaluationFunc, Matrix[Double] evalFunHp,
   Frame[Unknown] param, Frame[Unknown] featureFrameOuter, Boolean cv,  Integer cvk = 2, Boolean verbose)
-  return (Matrix[Double] output_operator, Matrix[Double] output_hyperparam, Frame[Unknown] featureFrameOuter)
-{
+  return (Matrix[Double] output_operator, Matrix[Double] output_hyperparam, Frame[Unknown] featureFrameOuter) {
+  print("run_with_hyperparam started")
   output_hp = matrix(0, nrow(ph_pip)*r_i, ncol(lp) * 5 * 3)
   output_accuracy = matrix(0, nrow(ph_pip)*r_i, 1)
   output_pipelines = matrix(0, nrow(ph_pip)*r_i, 2)
@@ -268,11 +305,12 @@ run_with_hyperparam = function(Frame[Unknown] lp, Frame[Unknown] ph_pip, Integer
         {
           pipList = list(lp = lp, ph = ph_pip[i], hp = hp_matrix, flags = no_of_flag_vars)
           [evalFunOutput, hpForPruning, changesByOp] = crossV(X=X, y=Y, cvk=cvk, evalFunHp=evalFunHp, pipList=pipList, metaList=metaList, hpForPruning=hpForPruning, 
-          changesByOp=changesByOp, evalFunc=evaluationFunc, trainML = 0)
+          changesByOp=changesByOp, evalFunc=evaluationFunc, trainML = FALSE)
+      
         }
         else 
         {
-          [eXtrain, eYtrain, eXtest, eYtest, Tr, hpForPruning, changesByOp] = executePipeline(logical=lp, pipeline=ph_pip[i], X=X, Y=Y, Xtest=Xtest, Ytest=Ytest, metaList=metaList,
+          [eXtrain, eYtrain, eXtest, eYtest, Tr] = executePipeline(logical=lp, pipeline=ph_pip[i], X=X, Y=Y, Xtest=Xtest, Ytest=Ytest, metaList=metaList,
             hyperParameters=hp_matrix, hpForPruning=hpForPruning, changesByOp=changesByOp, flagsCount=no_of_flag_vars, test=TRUE, verbose=FALSE)
           if(max(eYtrain) == min(eYtrain)) 
             print("Y contains only one class")
@@ -598,8 +636,8 @@ return (String s)
 }
 
 crossV = function(Matrix[double] X, Matrix[double] y, Integer cvk, Matrix[Double] evalFunHp, List[Unknown] pipList, List[Unknown] metaList,
-  Matrix[Double] hpForPruning = as.matrix(0), Matrix[Double] changesByOp = as.matrix(0), String evalFunc, Integer trainML = 0) 
-return (Matrix[Double] output, Matrix[Double] hpForPruning, Matrix[Double] changesByOp)
+  Matrix[Double] hpForPruning = as.matrix(0), Matrix[Double] changesByOp = as.matrix(0), String evalFunc, Boolean trainML = FALSE) 
+return (Matrix[Double] accuracy, Matrix[Double] hpForPruning, Matrix[Double] changesByOp)
 {
   accuracyMatrix = matrix(0, cvk, 1)
   dataList = list()
@@ -647,12 +685,10 @@ return (Matrix[Double] output, Matrix[Double] hpForPruning, Matrix[Double] chang
         changesByOp=changesByOp, flagsCount=as.scalar(pipList['flags']), test=TRUE, verbose=FALSE)
     }
     # print("test out: "+nrow(testy))
-    res = eval(evalFunc, list(X=trainX, Y=trainy, Xtest=testX, Ytest=testy, Xorig=as.matrix(0), evalFunHp=evalFunHp, trainML = trainML))
-    accuracyMatrix[i] = res[1, 1]
-    evalFunHp = res[, 2:ncol(res)]
+    res = eval(evalFunc, list(X=trainX, Y=trainy, Xtest=testX, Ytest=testy, Xorig=as.matrix(0), evalFunHp=evalFunHp, trainML = 0))
+    accuracyMatrix[i] = res
   }
   accuracy = as.matrix(mean(accuracyMatrix))
-  output = cbind(accuracy, evalFunHp)
 }
 
 pruningSignal = function(Frame[Unknown] ph_pip, Matrix[Double] hp_matrix, Matrix[Double] hpForPruning, Matrix[Double] changesByOp)
@@ -677,3 +713,5 @@ return(Boolean execute)
   }
   execute = !(changeCount > 0)
 }
+
+

@@ -45,6 +45,7 @@ public class BuiltinTopkCleaningClassificationTest extends AutomatedTestBase {
 		addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[]{"R"}));
 	}
 
+	@Test
 	public void testFindBestPipelineCompany() {
 		runtopkCleaning(DATA_DIR+ "company.csv", RESOURCE+ "meta/meta_company.csv", 1.0, 3,5,
 			"FALSE", 0,0.8, Types.ExecMode.SINGLE_NODE);

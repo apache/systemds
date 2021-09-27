@@ -199,7 +199,7 @@ return (Matrix[Double] X)
     nX = nX[, 1: ncol(nX) - 1]
   
   }
-  if(dataFlag == 0 & (sum(mask) > 0))
+  if(dataFlag == 0 & (sum(mask) > 0) & (sum(mask) != ncol(nX)))
   {
     maxDummy = max(nX) + 1
     nX = replace(target = nX, pattern = NaN, replacement = maxDummy)
@@ -219,7 +219,7 @@ return (Matrix[Double] X)
     X = replace(target = X, pattern = maxDummy, replacement = NaN)
     X = replace(target = X, pattern = -1111, replacement = NaN)
   }
-  else if(dataFlag == 1 & (sum(mask) > 0))
+  else if(dataFlag == 1 & (sum(mask) > 0) & (sum(mask) != ncol(nX)))
   {
     maxDummy = max(nX) + 1
     nX = replace(target = nX, pattern = NaN, replacement = maxDummy)
@@ -287,7 +287,8 @@ return (Matrix[Double] X_filled)
       for(i in 1: nrow(FD))
       {
         for(j in 1:ncol(FD)) {
-          if(as.scalar(FD[i, j]) > 0 & (min(X[, i]) != 0) & (min(X[, j]) != 0) & (sum(FD[, j]) != nrow(FD)))
+          if(as.scalar(FD[i, j]) > 0 & (min(X[, i]) != 0) & (min(X[, j]) != 0) & (sum(FD[, j]) != nrow(FD))
+            & (as.scalar(fdMask[1, j]) != 0) & (as.scalar(fdMask[1, i]) != 0))
             X = imputeByFD(X, i, j, threshold, FALSE)
         }
       }
@@ -364,7 +365,7 @@ fillDefault = function(Matrix[Double] X)
 return(Matrix[Double] X){
   defaullt = round(colMaxs(X) - colMins(X))
   Mask = is.na(X)
-  X = replace(target=X, pattern=NaN, replacement=max(X))
+  X = replace(target=X, pattern=NaN, replacement=0)
   Mask = Mask * defaullt
   X = X + Mask
  # print("fillDefault: no of NaNs "+sum(is.na(X)))

@@ -1,4 +1,4 @@
-#-------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------
 #
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
@@ -17,7 +17,25 @@
 # specific language governing permissions and limitations
 # under the License.
 #
-#-------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------
+
+# The normalize-function normalises the values of a matrix by changing the dataset to use a common scale.
+# This is done while preserving differences in the ranges of values. The output is a matrix of values in range [0,1].
+
+# INPUT PARAMETERS:
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME      TYPE             DEFAULT   MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# X         Matrix[Double]    ---      Matrix of feature vectors.
+#
+# ----------------------------------------------------------------------------------------------------------------------
+#
+# OUTPUT:
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME      TYPE                       MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# Y         Matrix[Double]            1-column matrix of normalized values.
+# ----------------------------------------------------------------------------------------------------------------------
 
 m_normalize = function(Matrix[Double] X) return (Matrix[Double] Y) {
   # normalize features to range [0,1]

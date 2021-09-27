@@ -1,4 +1,4 @@
-#-------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------
 #
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
@@ -17,13 +17,12 @@
 # specific language governing permissions and limitations
 # under the License.
 #
-#-------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------
 
-#
 # This builtin function trains LeNet CNN. The architecture of the
-# networks is:conv1 -> relu1 -> pool1 -> conv2 -> relu2 -> pool2 -> 
+# networks is:conv1 -> relu1 -> pool1 -> conv2 -> relu2 -> pool2 ->
 # affine3 -> relu3 -> affine4 -> softmax
-#
+
 # INPUT PARAMETERS:
 # --------------------------------------------------------------------------------------------
 # NAME              TYPE            DEFAULT     MEANING
@@ -43,10 +42,15 @@
 # lambda            Double            5e-04     Regularization strength
 # seed              Integer           -1        Seed for model initialization
 # verbose           Boolean           FALSE     Flag indicates if function should print to stdout
-# --------------------------------------------------------------------------------------------
-# OUTPUT: 
-# model           List[unknown]     ---       Trained model which can be used in lenetPredict
 #
+# ----------------------------------------------------------------------------------------------------------------------
+#
+# OUTPUT:
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME              TYPE                        MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# model             List[unknown]               Trained model which can be used in lenetPredict
+# ----------------------------------------------------------------------------------------------------------------------
 
 source("nn/layers/affine.dml") as affine
 source("nn/layers/conv2d_builtin.dml") as conv2d

@@ -1,4 +1,4 @@
-#-------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------
 #
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
@@ -17,34 +17,42 @@
 # specific language governing permissions and limitations
 # under the License.
 #
-#-------------------------------------------------------------
-source("scripts/builtin/sherlockNet.dml") as sherlockNet
+# ----------------------------------------------------------------------------------------------------------------------
 
-# Implements prediction and evaluation phase of Sherlock: 
-# A Deep Learning Approach to Semantic Data Type Detection
-#
-# [Hulsebos, Madelon, et al. "Sherlock: A deep learning approach to semantic data type detection." 
-# Proceedings of the 25th ACM SIGKDD International Conference on Knowledge Discovery & Data Mining. 
-# 2019.]
-
+# THis function implements prediction and evaluation phase of Sherlock:
 # Split feature matrix into four different feature categories and predicting the class probability
 # on the respective features. Then combine all predictions for final predicted probabilities.
-# ---------------------------------------------------------------------------------------------
-# NAME         TYPE      DEFAULT  MEANING
-# ---------------------------------------------------------------------------------------------
-# X            Matrix    ---      matrix of values which are to be classified
-# cW           Matrix    ---      weights (parameters) matrices for character distribtions
-# cb           Matrix    ---      biases vectors for character distribtions
-# wW           Matrix    ---      weights (parameters) matrices for word embeddings
-# wb           Matrix    ---      biases vectors for word embeddings
-# pW           Matrix    ---      weights (parameters) matrices for paragraph vectors
-# pb           Matrix    ---      biases vectors for paragraph vectors
-# sW           Matrix    ---      weights (parameters) matrices for global statistics
-# sb           Matrix    ---      biases vectors for global statistics
-# fW           Matrix    ---      weights (parameters) matrices for  combining all trained features (final)
-# fb           Matrix    ---      biases vectors for combining all trained features (final)
-# ---------------------------------------------------------------------------------------------
-# probs        Matrix             class probabilities of shape (N, K)
+# A Deep Learning Approach to Semantic Data Type Detection.
+# [Hulsebos, Madelon, et al. "Sherlock: A deep learning approach to semantic data type detection."
+# Proceedings of the 25th ACM SIGKDD International Conference on Knowledge Discovery & Data Mining.
+# 2019.]
+
+# INPUT PARAMETERS:
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME       TYPE        DEFAULT   MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# X     matrix[double]   ---       matrix of values which are to be classified
+# cW    matrix[double]   ---       weights (parameters) matrices for character distribtions
+# cb    matrix[double]   ---       biases vectors for character distribtions
+# wW    matrix[double]   ---       weights (parameters) matrices for word embeddings
+# wb    matrix[double]   ---       biases vectors for word embeddings
+# pW    matrix[double]   ---       weights (parameters) matrices for paragraph vectors
+# pb    matrix[double]   ---       biases vectors for paragraph vectors
+# sW    matrix[double]   ---       weights (parameters) matrices for global statistics
+# sb    matrix[double]   ---       biases vectors for global statistics
+# fW    matrix[double]   ---       weights (parameters) matrices for  combining all trained features (final)
+# fb    matrix[double]   ---       biases vectors for combining all trained features (final)
+#
+# ----------------------------------------------------------------------------------------------------------------------
+#
+# OUTPUT:
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME   TYPE                        MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# probs  matrix[double]              class probabilities of shape (N, K)
+# ----------------------------------------------------------------------------------------------------------------------
+
+source("scripts/builtin/sherlockNet.dml") as sherlockNet
 
 m_sherlockPredict = function(matrix[double] X,
             matrix[double] cW1, matrix[double] cb1,

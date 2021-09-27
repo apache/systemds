@@ -1,4 +1,4 @@
-#-------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------
 #
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
@@ -17,21 +17,40 @@
 # specific language governing permissions and limitations
 # under the License.
 #
-#-------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------
 
-m_winsorize = function(Matrix[Double] X, Double ql = 0.05, Double qu = 0.95, Boolean verbose) 
-return (Matrix[Double] Y) {
+# The winsorize-function removes outliers from the data. It does so by computing upper and
+# lower quartile range of the given data then it replaces any value that falls outside this range
+# (less than lower quartile range or more than upper quartile range).
 
+# INPUT PARAMETERS:
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME      TYPE             DEFAULT         MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# X         Matrix[Double]   ---            Input feature matrix
+# verbose   Boolean          FALSE          To print output on screen
+#
+# ----------------------------------------------------------------------------------------------------------------------
+#
+# OUTPUT:
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME     TYPE                             MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# Y        Matrix[Double]                   Matrix without outlier values
+# ----------------------------------------------------------------------------------------------------------------------
+
+m_winsorize = function(Matrix[Double] X, Boolean verbose) return (Matrix[Double] Y) {
   Y = matrix(0, nrow(X), ncol(X))
-  parfor(i in 1:ncol(X), check=0) {
-    q1 = quantile(X[,i], ql)
-    q2 = quantile(X[,i], qu)
-    Y[, i] = fixOutliersWinsorize(X[,i], q1, q2)
-  }
+  parfor(i in 1:ncol(X))
+    Y[,i] = fixOutliersWinsorize(X[,i])
 }
 
-fixOutliersWinsorize = function(Matrix[Double] X,  Double ql, Double qu) return (Matrix[Double] Y)
+fixOutliersWinsorize = function(Matrix[Double] X) return (Matrix[Double] Y)
 {
+  # compute quantiles for lower and upper probs
+  q = quantile(X, matrix("0.05 0.95", rows=2, cols=1));
+  ql = as.scalar(q[1,1]);
+  qu = as.scalar(q[2,1]);
   # replace values outside [ql,qu] w/ ql and qu respectively
   Y = ifelse(X < ql, ql, X);
   Y = ifelse(Y > qu, qu, Y);

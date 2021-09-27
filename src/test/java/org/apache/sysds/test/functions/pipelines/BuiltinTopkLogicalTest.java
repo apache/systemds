@@ -50,7 +50,7 @@ public class BuiltinTopkLogicalTest extends AutomatedTestBase {
 
 	@Test
 	public void testLogical1() {
-		runTestLogical(10, 5, 2, ExecMode.SINGLE_NODE);
+		runTestLogical(4, 5, 2, ExecMode.SINGLE_NODE);
 	}
 
 	@Test

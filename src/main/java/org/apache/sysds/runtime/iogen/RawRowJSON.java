@@ -19,48 +19,37 @@
 
 package org.apache.sysds.runtime.iogen;
 
-import com.google.gson.Gson;
 import org.apache.sysds.common.Types;
-import org.apache.sysds.runtime.matrix.data.Pair;
+import org.apache.sysds.runtime.util.UtilFunctions;
 import org.apache.wink.json4j.JSONArray;
 import org.apache.wink.json4j.JSONException;
 import org.apache.wink.json4j.JSONObject;
 
 import java.util.ArrayList;
-import java.util.BitSet;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Stack;
 
 public class RawRowJSON {
 	private final String raw;
 	private final ArrayList<Object> l1Index;
-	private final Map<String, IndexProperties> l0Index;
-	private final BitSet reserved;
-	private int lastIndex;
-
-	public enum JSONItemType {
-		PRIMITIVE,
-		ARRAY,
-		OBJECT;
-		@Override
-		public String toString() {
-			return this.name().toLowerCase();
-		}
-	}
+	private final ArrayList<JSONIndexProperties> l0Index;
+	private final Map<String, Integer> l0IndexMap;
 
 	public RawRowJSON(String raw) {
 		this.raw = raw;
 		l1Index = new ArrayList<>();
-		l0Index = new HashMap<>();
-
+		l0Index = new ArrayList<>();
+		l0IndexMap = new HashMap<>();
 		try {
 			JSONObject jo = new JSONObject(raw);
-			lIndex(jo, l1Index, l0Index, "");
-			reserved = new BitSet(l1Index.size());
-			print();
+			lIndex(jo, new Stack<>(), -1);
+			for(int i = 0; i < l0Index.size(); i++) {
+				l0IndexMap.put(l0Index.get(i).getKeysAsString(), i);
+			}
 		}
-		catch(JSONException e){
+		catch(JSONException e) {
 			throw new RuntimeException(e);
 		}
 	}
@@ -69,99 +58,99 @@ public class RawRowJSON {
 	The first level reconstruct the json text format, and the second level
 	index they keys in json string.
 	*/
-	private void lIndex(JSONObject jo, ArrayList<Object> l1, Map<String, IndexProperties> l0, String rootKey)
-		throws JSONException {
+	private void lIndex(JSONObject jo, Stack<String> keyChain, int index) throws JSONException {
 		for(Iterator it = jo.keys(); it.hasNext(); ) {
 			String key = (String) it.next();
 			Object value = jo.get(key);
-			key = rootKey.equals("") ? key : rootKey + "." + key;
-			JSONItemType jit;
-			if(value instanceof JSONObject)
-				jit = JSONItemType.OBJECT;
-			else if(value instanceof JSONArray)
-				jit = JSONItemType.ARRAY;
-			else
-				jit = JSONItemType.PRIMITIVE;
-
-			IndexProperties ip = new IndexProperties(jit, l1.size());
-			switch(jit){
-				case OBJECT:
-					lIndex((JSONObject) value, l1, l0, key);
-					break;
-
-				case ARRAY:
-					JSONArray jArray = (JSONArray) value;
-					lIndex(jArray, l1, l0, key);
-					break;
-				case PRIMITIVE:
-					l1.add(value);
-					break;
+			keyChain.add(key);
+			if(value instanceof JSONObject) {
+				JSONObject jon = (JSONObject) value;
+				lIndex(jon, keyChain, index);
 			}
-			ip.setSize(l1.size() - ip.getIndex());
-			l0.put(key, ip);
+			else if(value instanceof JSONArray) {
+				JSONArray ja = (JSONArray) value;
+				lIndex(ja, keyChain);
+			}
+			else {
+				l1Index.add(value);
+				l0Index.add(new JSONIndexProperties(keyChain, JSONIndexProperties.JSONItemType.PRIMITIVE, 1, index));
+			}
+			keyChain.pop();
 		}
 	}
 
-	private void lIndex(JSONArray ja, ArrayList<Object> l1, Map<String, IndexProperties> l0, String rootKey)
-		throws JSONException {
-		l1.add("[]");
+	private void lIndex(JSONArray ja, Stack<String> keyChain) throws JSONException {
 		if(ja != null) {
 			for(int i = 0; i < ja.length(); i++) {
-				Object jaItem = ja.get(i);
-				if(jaItem instanceof JSONObject) {
-					lIndex((JSONObject) jaItem, l1, l0, rootKey);
+				Object value = ja.get(i);
+				keyChain.add(i + "");
+				if(value instanceof JSONObject) {
+					lIndex((JSONObject) value, keyChain, i);
 				}
-				else if(jaItem instanceof JSONArray) {
-					lIndex((JSONArray) jaItem, l1, l0, rootKey);
+				else if(value instanceof JSONArray) {
+					lIndex((JSONArray) value, keyChain);
 				}
 				else {
-					l1Index.add(jaItem);
+					l1Index.add(value);
+					l0Index.add(new JSONIndexProperties(keyChain, JSONIndexProperties.JSONItemType.PRIMITIVE, 1, i));
 				}
+				keyChain.pop();
 			}
 		}
 	}
 
-
-	public Pair<String, Integer> findValue(Object value, Types.ValueType vt, boolean update) {
-		for(Object o: l1Index){
-
+	public ArrayList<String> getSchemaNames() {
+		int size = l0Index.size();
+		ArrayList<String> names = new ArrayList<>();
+		for(int i = 0; i < size; i++) {
+			JSONIndexProperties jip = l0Index.get(i);
+			String key = jip.getKeysAsString();
+			names.add(key);
 		}
-		return null;
+		return names;
 	}
 
-	public void print(){
-		Gson gson=new Gson();
-		System.out.println("-----------------------------------------------------");
-		System.out.println("RAW: "+ raw);
-		System.out.println(gson.toJson(l1Index));
-		System.out.println(gson.toJson(l0Index));
-		System.out.println("-----------------------------------------------------");
+	public Map<String, Types.ValueType> getSchema() {
+		int size = l0Index.size();
+		Map<String, Types.ValueType> schema = new HashMap<>();
+
+		for(int i = 0; i < size; i++) {
+			JSONIndexProperties jip = l0Index.get(i);
+			String key = jip.getKeysAsString();
+			Types.ValueType vt;
+			Object value = l1Index.get(i);
+			if(value instanceof Integer)
+				vt = Types.ValueType.INT32;
+			else if(value instanceof Long)
+				vt = Types.ValueType.INT64;
+			else if(value instanceof Float)
+				vt = Types.ValueType.FP32;
+			else if(value instanceof Double)
+				vt = Types.ValueType.FP64;
+			else if(value instanceof Boolean)
+				vt = Types.ValueType.BOOLEAN;
+			else if(value instanceof String)
+				vt = Types.ValueType.STRING;
+			else
+				throw new RuntimeException("Can't recognize the value type of object!");
+			schema.put(key, vt);
+		}
+		return schema;
 	}
 
-	private class IndexProperties{
-		private final JSONItemType type;
-		private final int index;
-		private int size;
+	public double getDoubleValue(String key) {
+		Integer index = l0IndexMap.get(key);
+		if(index == null)
+			return 0;
+		else
+			return UtilFunctions.getDouble(l1Index.get(index));
+	}
 
-		public IndexProperties(JSONItemType type, int index) {
-			this.type = type;
-			this.index = index;
-		}
-
-		public JSONItemType getType() {
-			return type;
-		}
-
-		public int getIndex() {
-			return index;
-		}
-
-		public void setSize(int size) {
-			this.size = size;
-		}
-
-		public int getSize() {
-			return size;
-		}
+	public Object getObjectValue(String key){
+		Integer index = l0IndexMap.get(key);
+		if(index == null)
+			return null;
+		else
+			return l1Index.get(index);
 	}
 }

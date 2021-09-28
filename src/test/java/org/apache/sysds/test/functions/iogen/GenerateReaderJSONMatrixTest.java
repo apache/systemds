@@ -51,6 +51,39 @@ public class GenerateReaderJSONMatrixTest extends AutomatedTestBase {
 		runGenerateReaderTest();
 	}
 
+	@Test public void test2() {
+		sampleRaw = "{\"col1\":1, \"col2\":2, \"col3\":[3,4,5,6,7], \"col4\":[8,9]}";
+		sampleMatrix = new double[][] {{1, 2, 3, 4}};
+		runGenerateReaderTest();
+	}
+	@Test public void test3() {
+		sampleRaw = "{\n" + "\t\"value1\":{\"a\":1,\"value2\":[[{\"a\":1,\"b\":2},{\"a\":3,\"b\":4,\"c\":5}],[{\"a\":6,\"b\":7},{\"a\":8,\"b\":9,\"c\":10}]]}\n" + "}";
+		sampleMatrix = new double[][] {{1, 2, 3, 4}};
+		runGenerateReaderTest();
+	}
+
+	@Test public void test4() {
+		sampleRaw = "{\"D1\":1, \"D2\":\"saeed\", \"D3\":{\"a\":2,\"b\":\"b\"}, \"D4\":[{\"f\":6, \"g\":\"g\"}]}";
+		sampleMatrix = new double[][] {{1, 2, 3, 4}};
+		runGenerateReaderTest();
+	}
+	@Test public void test5() {
+		sampleRaw = "{\"D1\":1, \"D2\":\"saeed\", \"D3\":{\"a\":2,\"b\":\"b\"}, \"D4\":[{\"f\":6, \"g\":\"g\"}], \"D5\":[{\"h\":[7,8,9]}]}";
+		sampleMatrix = new double[][] {{1, 2, 3, 4}};
+		runGenerateReaderTest();
+	}
+
+	@Test public void test6() {
+		sampleRaw = "{\"D1\":1, \"D2\":\"saeed\", \"D3\":{\"a\":2,\"b\":\"b\"}, \"D4\":[{\"f\":6, \"g\":\"g\"}], \"D5\":[{\"h\":[7,8,9], \"k\":{\"l\":10}}]}";
+		sampleMatrix = new double[][] {{1, 2, 3, 4}};
+		runGenerateReaderTest();
+	}
+	@Test public void test7() {
+		sampleRaw = "{\n" + "\t\"fname\": \"saeed\",\n" + "\t\"lname\": \"fathollahzadeh\",\n" + "\t\"birth date\":\"1985-09-28\",\n" + "\t\"addresses\":\n" + "\t{\n" + "\t\t\"street\": \"inf 13\", \"floor\":5\n" + "\t}\n" + "}\n" + "{\n" + "\t\"fname\": \"saeed\",\t\n" + "\t\"list1\":[1,2,3,4,5,6,7],\n" + "\t\"list2\":[{\"a\":1,\"b\":2},{\"a\":3,\"b\":4},{\"a\":5,\"b\":6},{\"a\":7,\"b\":8}],\n" + "\t\"list3\":[[1,2,3],[4,5,6],[7,8,9]],\n" + "\t\"list4\":[[{\"a\":1,\"b\":2},{\"a\":3,\"b\":4,\"c\":5}],[{\"a\":6,\"b\":7},{\"a\":8,\"b\":9,\"c\":10}]],\n" + "\t\"value5\":{\"a\":1,\"vaaaaaa\":[[{\"a\":1,\"b\":2},{\"a\":3,\"b\":4,\"c\":5}],[{\"a\":6,\"b\":7},{\"a\":8,\"b\":9,\"c\":10}]]}\n" + "}\n" + "{\n" + "\t\"fname\": \"saeed\",\n" + "\t\"lname\": \"fathollahzadeh\",\n" + "\t\"birth date\":\"1985-09-28\",\n" + "\t\n" + "}";
+		sampleMatrix = new double[][] {{1, 2, 3, 4}};
+		runGenerateReaderTest();
+	}
+
 	@SuppressWarnings("unused") protected void runGenerateReaderTest() {
 
 		Types.ExecMode oldPlatform = rtplatform;

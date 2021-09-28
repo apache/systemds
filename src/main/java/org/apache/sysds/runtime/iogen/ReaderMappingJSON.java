@@ -21,6 +21,7 @@ package org.apache.sysds.runtime.iogen;
 
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Stack;
 
 public abstract class ReaderMappingJSON {
@@ -64,16 +65,38 @@ public abstract class ReaderMappingJSON {
 			ncols = sampleMatrix.getNumColumns();
 			mapCol = new String[ncols];
 
-//			for(int c = 0; c < ncols; c++) {
-//				boolean flagCollMap = true;
-//				for(int r = 0; r < nrows; r++) {
-//
-//				}
-//			}
+			HashSet<String> names = new HashSet<>();
+			for(RawRowJSON rrj : sampleRawRowsJSON) {
+				names.addAll(rrj.getSchemaNames());
+			}
+
+			MatrixBlock rawMatrix = new MatrixBlock(nrows, names.size(), false, -1);
+			for(int r = 0; r < nrows; r++) {
+				int c = 0;
+				for(String k : names) {
+					rawMatrix.setValue(r,c++, sampleRawRowsJSON.get(r).getDoubleValue(k));
+				}
+			}
 		}
 	}
 
-	protected void runMapping() {
+//	protected void runMapping() {
+//		Map<String, Types.ValueType> schema = new HashMap<>();
+//		for(RawRowJSON rrj : sampleRawRowsJSON) {
+//			schema.putAll(rrj.getSchema());
+//		}
+//
+//		Types.ValueType[] vts = new Types.ValueType[schema.size()];
+//		String[] names = new String[schema.size()];
+//		int index = 0;
+//		for(String key : schema.keySet()) {
+//			names[index] = key;
+//			vts[index++] = schema.get(key);
+//		}
+//
+//		String[][] data = new String[nrows][names.length];
+//
+//		//FrameBlock frame = new FrameBlock(vts,names,); //new FrameBlock(schema, names, data);
+//	}
 
-	}
 }

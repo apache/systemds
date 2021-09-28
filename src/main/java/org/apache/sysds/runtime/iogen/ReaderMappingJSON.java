@@ -20,7 +20,9 @@
 package org.apache.sysds.runtime.iogen;
 
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+
 import java.util.ArrayList;
+import java.util.BitSet;
 import java.util.HashSet;
 import java.util.Stack;
 
@@ -66,37 +68,66 @@ public abstract class ReaderMappingJSON {
 			mapCol = new String[ncols];
 
 			HashSet<String> names = new HashSet<>();
+
 			for(RawRowJSON rrj : sampleRawRowsJSON) {
 				names.addAll(rrj.getSchemaNames());
 			}
-
+			String[] colNames = new String[names.size()];
+			BitSet bitSet = new BitSet(colNames.length);
 			MatrixBlock rawMatrix = new MatrixBlock(nrows, names.size(), false, -1);
 			for(int r = 0; r < nrows; r++) {
 				int c = 0;
 				for(String k : names) {
-					rawMatrix.setValue(r,c++, sampleRawRowsJSON.get(r).getDoubleValue(k));
+					colNames[c] = k;
+					rawMatrix.setValue(r, c++, sampleRawRowsJSON.get(r).getDoubleValue(k));
 				}
 			}
+			// looking for the col map
+			for(int c = 0; c < ncols; c++) {
+				boolean flagColMap = false;
+				for(int i = 0; i < colNames.length && !flagColMap; i++) {
+					if(bitSet.get(i))
+						continue;
+					flagColMap = true;
+					for(int r = 0; r < nrows; r++) {
+						if(sampleMatrix.getValue(r, c) != rawMatrix.getValue(r, i)) {
+							flagColMap = false;
+							break;
+						}
+					}
+					if(flagColMap) {
+						mapCol[c] = colNames[i];
+						bitSet.set(i);
+					}
+				}
+
+			}
+			// verify the mapped
+			int sum = 0;
+			for(int i = 0; i < bitSet.length(); i++)
+				if(bitSet.get(i))
+					sum++;
+			mapped = sum == ncols;
 		}
 	}
 
-//	protected void runMapping() {
-//		Map<String, Types.ValueType> schema = new HashMap<>();
-//		for(RawRowJSON rrj : sampleRawRowsJSON) {
-//			schema.putAll(rrj.getSchema());
-//		}
-//
-//		Types.ValueType[] vts = new Types.ValueType[schema.size()];
-//		String[] names = new String[schema.size()];
-//		int index = 0;
-//		for(String key : schema.keySet()) {
-//			names[index] = key;
-//			vts[index++] = schema.get(key);
-//		}
-//
-//		String[][] data = new String[nrows][names.length];
-//
-//		//FrameBlock frame = new FrameBlock(vts,names,); //new FrameBlock(schema, names, data);
-//	}
+	//	protected void runMapping() {
+	//		Map<String, Types.ValueType> schema = new HashMap<>();
+	//		for(RawRowJSON rrj : sampleRawRowsJSON) {
+	//			schema.putAll(rrj.getSchema());
+	//		}
+	//
+	//		Types.ValueType[] vts = new Types.ValueType[schema.size()];
+	//		String[] names = new String[schema.size()];
+	//		int index = 0;
+	//		for(String key : schema.keySet()) {
+	//			names[index] = key;
+	//			vts[index++] = schema.get(key);
+	//		}
+	//
+	//		String[][] data = new String[nrows][names.length];
+	//
+	//		//FrameBlock frame = new FrameBlock(vts,names,); //new FrameBlock(schema, names, data);
+	//	}
 
 }

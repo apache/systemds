@@ -24,10 +24,14 @@ import org.apache.sysds.hops.AggUnaryOp;
 import org.apache.sysds.hops.BinaryOp;
 import org.apache.sysds.hops.DataOp;
 import org.apache.sysds.hops.Hop;
+import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.hops.ReorgOp;
 import org.apache.sysds.hops.TernaryOp;
-import org.apache.sysds.hops.cost.FederatedCost;
-import org.apache.sysds.hops.cost.FederatedCostEstimator;
+import org.apache.sysds.hops.cost.HopRel;
+import org.apache.sysds.hops.ipa.FunctionCallGraph;
+import org.apache.sysds.hops.ipa.FunctionCallSizeInfo;
+import org.apache.sysds.hops.ipa.IPAPass;
+import org.apache.sysds.parser.DMLProgram;
 import org.apache.sysds.parser.ForStatement;
 import org.apache.sysds.parser.ForStatementBlock;
 import org.apache.sysds.parser.FunctionStatement;
@@ -43,47 +47,63 @@ import org.apache.sysds.runtime.instructions.fed.FEDInstruction;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class RewriteFederatedStatementBlocks extends StatementBlockRewriteRule {
+public class IPAPassRewriteFederatedPlan extends IPAPass {
 
 	private final static Map<Long, List<HopRel>> hopRelMemo = new HashMap<>();
 
 	/**
-	 * Indicates if the rewrite potentially splits dags, which is used
-	 * for phase ordering of rewrites.
+	 * Indicates if an IPA pass is applicable for the current
+	 * configuration such as global flags or the chosen execution
+	 * mode (e.g., HYBRID).
 	 *
-	 * @return true if dag splits are possible.
+	 * @param fgraph function call graph
+	 * @return true if applicable.
 	 */
-	@Override public boolean createsSplitDag() {
+	@Override public boolean isApplicable(FunctionCallGraph fgraph) {
+		return OptimizerUtils.FEDERATED_COMPILATION;
+	}
+
+	/**
+	 * Rewrites the given program or its functions in place,
+	 * with access to the read-only function call graph.
+	 *
+	 * @param prog       dml program
+	 * @param fgraph     function call graph
+	 * @param fcallSizes function call size infos
+	 * @return true if function call graph should be rebuild
+	 */
+	@Override public boolean rewriteProgram(DMLProgram prog, FunctionCallGraph fgraph,
+		FunctionCallSizeInfo fcallSizes) {
+		rewriteStatementBlocks(prog.getStatementBlocks());
+		//TODO: Set final fedout of Hops
 		return false;
 	}
 
 	/**
+	 * TODO: Change this documentation
 	 * Handle an arbitrary statement block. Specific type constraints have to be ensured
 	 * within the individual rewrites. If a rewrite does not apply to individual blocks, it
 	 * should simply return the input block.
 	 *
 	 * @param sb    statement block
-	 * @param state program rewrite status
 	 * @return list of statement blocks
 	 */
-	@Override
-	public List<StatementBlock> rewriteStatementBlock(StatementBlock sb, ProgramRewriteStatus state) {
+	public ArrayList<StatementBlock> rewriteStatementBlock(StatementBlock sb) {
 		if ( sb instanceof WhileStatementBlock)
-			return rewriteWhileStatementBlock((WhileStatementBlock) sb, state);
+			return rewriteWhileStatementBlock((WhileStatementBlock) sb);
 		else if ( sb instanceof IfStatementBlock)
-			return rewriteIfStatementBlock((IfStatementBlock) sb, state);
+			return rewriteIfStatementBlock((IfStatementBlock) sb);
 		else if ( sb instanceof ForStatementBlock){
 			// This also includes ParForStatementBlocks
-			return rewriteForStatementBlock((ForStatementBlock) sb, state);
+			return rewriteForStatementBlock((ForStatementBlock) sb);
 		}
 		else if ( sb instanceof FunctionStatementBlock)
-			return rewriteFunctionStatementBlock((FunctionStatementBlock) sb, state);
+			return rewriteFunctionStatementBlock((FunctionStatementBlock) sb);
 		else {
 			// StatementBlock type (no subclass)
 			sb.setHops(selectFederatedExecutionPlan(sb.getHops()));
@@ -92,59 +112,58 @@ public class RewriteFederatedStatementBlocks extends StatementBlockRewriteRule {
 		return new ArrayList<>(Arrays.asList(sb));
 	}
 
-	private List<StatementBlock> rewriteWhileStatementBlock(WhileStatementBlock whileSB, ProgramRewriteStatus state){
+	private ArrayList<StatementBlock> rewriteWhileStatementBlock(WhileStatementBlock whileSB){
 		Hop whilePredicateHop = whileSB.getPredicateHops();
 		selectFederatedExecutionPlan(whilePredicateHop);
 		for ( Statement stm : whileSB.getStatements() ){
 			WhileStatement whileStm = (WhileStatement) stm;
-			whileStm.setBody((ArrayList<StatementBlock>) rewriteStatementBlocks(whileStm.getBody(), state));
+			whileStm.setBody(rewriteStatementBlocks(whileStm.getBody()));
 		}
 		return new ArrayList<>(Arrays.asList(whileSB));
 	}
 
-	private List<StatementBlock> rewriteIfStatementBlock(IfStatementBlock ifSB, ProgramRewriteStatus state){
+	private ArrayList<StatementBlock> rewriteIfStatementBlock(IfStatementBlock ifSB){
 		selectFederatedExecutionPlan(ifSB.getPredicateHops());
 		for ( Statement statement : ifSB.getStatements() ){
 			IfStatement ifStatement = (IfStatement) statement;
-			ifStatement.setIfBody((ArrayList<StatementBlock>) rewriteStatementBlocks(ifStatement.getIfBody(), state));
-			ifStatement.setElseBody((ArrayList<StatementBlock>) rewriteStatementBlocks(ifStatement.getElseBody(), state));
+			ifStatement.setIfBody(rewriteStatementBlocks(ifStatement.getIfBody()));
+			ifStatement.setElseBody(rewriteStatementBlocks(ifStatement.getElseBody()));
 		}
 		return new ArrayList<>(Arrays.asList(ifSB));
 	}
 
-	private List<StatementBlock> rewriteForStatementBlock(ForStatementBlock forSB, ProgramRewriteStatus state){
+	private ArrayList<StatementBlock> rewriteForStatementBlock(ForStatementBlock forSB){
 		selectFederatedExecutionPlan(forSB.getFromHops());
 		selectFederatedExecutionPlan(forSB.getToHops());
 		selectFederatedExecutionPlan(forSB.getIncrementHops());
 		for ( Statement statement : forSB.getStatements() ){
 			ForStatement forStatement = ((ForStatement)statement);
-			forStatement.setBody((ArrayList<StatementBlock>) rewriteStatementBlocks(forStatement.getBody(), state));
+			forStatement.setBody(rewriteStatementBlocks(forStatement.getBody()));
 		}
 		return new ArrayList<>(Arrays.asList(forSB));
 	}
 
-	private List<StatementBlock> rewriteFunctionStatementBlock(FunctionStatementBlock funcSB, ProgramRewriteStatus state){
+	private ArrayList<StatementBlock> rewriteFunctionStatementBlock(FunctionStatementBlock funcSB){
 		for ( Statement statement : funcSB.getStatements() ){
 			FunctionStatement funcStm = (FunctionStatement) statement;
-			funcStm.setBody((ArrayList<StatementBlock>) rewriteStatementBlocks(funcStm.getBody(), state));
+			funcStm.setBody(rewriteStatementBlocks(funcStm.getBody()));
 		}
 		return new ArrayList<>(Arrays.asList(funcSB));
 	}
 
 	/**
+	 * TODO: Rewrite this documentation
 	 * Handle a list of statement blocks. Specific type constraints have to be ensured
 	 * within the individual rewrites. If a rewrite does not require sequence access, it
 	 * should simply return the input list of statement blocks.
 	 *
 	 * @param sbs   list of statement blocks
-	 * @param state program rewrite status
 	 * @return list of statement blocks
 	 */
-	@Override
-	public List<StatementBlock> rewriteStatementBlocks(List<StatementBlock> sbs, ProgramRewriteStatus state) {
-		List<StatementBlock> rewrittenStmBlocks = new ArrayList<>();
+	public ArrayList<StatementBlock> rewriteStatementBlocks(List<StatementBlock> sbs) {
+		ArrayList<StatementBlock> rewrittenStmBlocks = new ArrayList<>();
 		for ( StatementBlock stmBlock : sbs )
-			rewrittenStmBlocks.addAll(rewriteStatementBlock(stmBlock, state));
+			rewrittenStmBlocks.addAll(rewriteStatementBlock(stmBlock));
 		return rewrittenStmBlocks;
 	}
 
@@ -164,29 +183,6 @@ public class RewriteFederatedStatementBlocks extends StatementBlockRewriteRule {
 		visitFedPlanHop(root);
 	}
 
-	class HopRel {
-		protected Hop hopRef;
-		protected FEDInstruction.FederatedOutput fedOut;
-		protected FederatedCost cost;
-		protected List<HopRel> inputDependency = new ArrayList<>();
-
-		public HopRel(Hop associatedHop, FEDInstruction.FederatedOutput fedOut){
-			hopRef = associatedHop;
-			this.fedOut = fedOut;
-			cost = new FederatedCostEstimator().costEstimate(hopRef);
-			//TODO: Set inputDependency depending on which inputs are valid and optimal.
-			//TODO: The hopRelMemo may not contain Hop
-			if (hopRef.getInput() != null && hopRef.getInput().size() > 0)
-				for ( Hop input : hopRef.getInput() )
-					inputDependency.add(
-						hopRelMemo.get(input.getHopID()).stream().min(Comparator.comparingDouble(a -> a.cost.getTotal())).get());
-		}
-
-		public double getCost(){
-			return cost.getTotal();
-		}
-	}
-
 	/**
 	 * Go through the Hop DAG and set the FederatedOutput field for each Hop from leaf to given currentHop.
 	 * @param currentHop the Hop from which the DAG is visited
@@ -194,7 +190,7 @@ public class RewriteFederatedStatementBlocks extends StatementBlockRewriteRule {
 	private void visitFedPlanHop(Hop currentHop){
 		// If the currentHop is in the hopRelMemo table, it means that it has been visited
 		if ( hopRelMemo.containsKey(currentHop.getHopID()) )
-			return;
+			return; //TODO: The memo table could contain the ID of the hop, but not have all possible fedouts. This should also be checked and then the missing fedouts should be added without overwriting the existing values.
 		// If the currentHop has input, then the input should be visited depth-first
 		if ( currentHop.getInput() != null && currentHop.getInput().size() > 0 ){
 			for ( Hop input : currentHop.getInput() )
@@ -205,10 +201,9 @@ public class RewriteFederatedStatementBlocks extends StatementBlockRewriteRule {
 		if ( isFedInstSupportedHop(currentHop) ){
 			for ( FEDInstruction.FederatedOutput fedoutValue : FEDInstruction.FederatedOutput.values() )
 				if ( isFedOutSupported(currentHop, fedoutValue) )
-					hopRels.add(new HopRel(currentHop,fedoutValue));
-
+					hopRels.add(new HopRel(currentHop,fedoutValue, hopRelMemo));
 		} else
-			hopRels.add(new HopRel(currentHop, FEDInstruction.FederatedOutput.NONE));
+			hopRels.add(new HopRel(currentHop, FEDInstruction.FederatedOutput.NONE, hopRelMemo));
 		hopRelMemo.put(currentHop.getHopID(), hopRels);
 
 		/*
@@ -260,8 +255,8 @@ public class RewriteFederatedStatementBlocks extends StatementBlockRewriteRule {
 	private boolean isFedInstSupportedHop(Hop hop){
 
 		// Check that some input is FOUT, otherwise none of the fed instructions will run unless it is fedinit
-		if ( (!hop.isFederatedDataOp()) && hop.getInput().stream().noneMatch(Hop::hasFederatedOutput) )
-			return false;
+		//if ( (!hop.isFederatedDataOp()) && hop.getInput().stream().noneMatch(Hop::hasFederatedOutput) )
+			//return false;
 
 		// The following operations are supported given that the above conditions have not returned already
 		return ( hop instanceof AggBinaryOp || hop instanceof BinaryOp || hop instanceof ReorgOp
@@ -274,6 +269,8 @@ public class RewriteFederatedStatementBlocks extends StatementBlockRewriteRule {
 				return isFOUTSupported(associatedHop);
 			case LOUT:
 				return isLOUTSupported(associatedHop);
+			case NONE:
+				return false;
 			default:
 				return true;
 		}
@@ -288,6 +285,9 @@ public class RewriteFederatedStatementBlocks extends StatementBlockRewriteRule {
 		// If the output of AggUnaryOp is a scalar, the operation cannot be FOUT
 		if ( associatedHop instanceof AggUnaryOp )
 			return !associatedHop.isScalar();
+		// If one of the parents is a federated DataOp, all the inputs have to be LOUT.
+		if (associatedHop.getParent().stream().anyMatch(Hop::isFederatedDataOp))
+			return false;
 		return true;
 	}
 

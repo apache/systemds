@@ -33,6 +33,8 @@ import org.apache.sysds.parser.WhileStatement;
 import org.apache.sysds.parser.WhileStatementBlock;
 
 import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Cost estimator for federated executions with methods and constants for going through DML programs to estimate costs.
@@ -181,7 +183,7 @@ public class FederatedCostEstimator {
 				computingCost = computingCost / (numWorkers*WORKER_DEGREE_OF_PARALLELISM*WORKER_COMPUTE_BANDWITH_FLOPS);
 			} else computingCost = computingCost / (WORKER_DEGREE_OF_PARALLELISM*WORKER_COMPUTE_BANDWITH_FLOPS);
 			//Calculate output transfer cost if the operation is computed at federated workers and the output is forced to the coordinator
-			double outputTransferCost = ( root.hasLocalOutput() && hasFederatedInput ) ?
+			double outputTransferCost = ( root.hasLocalOutput() && (hasFederatedInput || root.isFederatedDataOp()) ) ?
 				root.getOutputMemEstimate(DEFAULT_MEMORY_ESTIMATE) / WORKER_NETWORK_BANDWIDTH_BYTES_PS : 0;
 			double readCost = root.getInputMemEstimate(DEFAULT_MEMORY_ESTIMATE) / WORKER_READ_BANDWIDTH_BYTES_PS;
 
@@ -193,6 +195,55 @@ public class FederatedCostEstimator {
 				printCosts(root);
 
 			return rootFedCost;
+		}
+	}
+
+	/**
+	 * Return cost estimate in bytes of Hop DAG starting from given root HopRel.
+	 * @param root HopRel of Hop DAG for which cost is estimated
+	 * @param hopRelMemo memo table of HopRels for calculating input costs
+	 * @return cost estimation of Hop DAG starting from given root HopRel
+	 */
+	public FederatedCost costEstimate(HopRel root, Map<Long, List<HopRel>> hopRelMemo){
+		// Check if root is in memo table.
+		if ( hopRelMemo.containsKey(root.hopRef.getHopID())
+			&& hopRelMemo.get(root.hopRef.getHopID()).stream().anyMatch(h -> h.fedOut == root.fedOut) ){
+			return root.getCostObject();
+		}
+		else {
+			// If no input has FOUT, the root will be processed by the coordinator
+			boolean hasFederatedInput = root.inputDependency.stream().anyMatch(in -> in.hopRef.hasFederatedOutput());
+			//the input cost is included the first time the input hop is used
+			//for additional usage, the additional cost is zero (disregarding potential read cost)
+			double inputCosts = root.inputDependency.stream()
+				.mapToDouble( in -> {
+					double inCost = in.existingCostPointer(root.hopRef.getHopID()) ?
+						0 : costEstimate(in, hopRelMemo).getTotal();
+					in.addCostPointer(root.hopRef.getHopID());
+					return inCost;
+				} )
+				.sum();
+			double inputTransferCost = hasFederatedInput ? root.inputDependency.stream()
+				.filter(HopRel::hasLocalOutput)
+				.mapToDouble(in -> in.hopRef.getOutputMemEstimate(DEFAULT_MEMORY_ESTIMATE))
+				.map(inMem -> inMem/ WORKER_NETWORK_BANDWIDTH_BYTES_PS)
+				.sum() : 0;
+			double computingCost = ComputeCost.getHOPComputeCost(root.hopRef);
+			if ( hasFederatedInput ){
+				//Find the number of inputs that has FOUT set.
+				int numWorkers = (int)root.inputDependency.stream().filter(HopRel::hasFederatedOutput).count();
+				//divide memory usage by the number of workers the computation would be split to multiplied by
+				//the number of parallel processes at each worker multiplied by the FLOPS of each process
+				//This assumes uniform workload among the workers with FOUT data involved in the operation
+				//and assumes that the degree of parallelism and compute bandwidth are equal for all workers
+				computingCost = computingCost / (numWorkers*WORKER_DEGREE_OF_PARALLELISM*WORKER_COMPUTE_BANDWITH_FLOPS);
+			} else computingCost = computingCost / (WORKER_DEGREE_OF_PARALLELISM*WORKER_COMPUTE_BANDWITH_FLOPS);
+			//Calculate output transfer cost if the operation is computed at federated workers and the output is forced to the coordinator
+			double outputTransferCost = ( root.hasLocalOutput() && (hasFederatedInput || root.hopRef.isFederatedDataOp()) ) ?
+				root.hopRef.getOutputMemEstimate(DEFAULT_MEMORY_ESTIMATE) / WORKER_NETWORK_BANDWIDTH_BYTES_PS : 0;
+			double readCost = root.hopRef.getInputMemEstimate(DEFAULT_MEMORY_ESTIMATE) / WORKER_READ_BANDWIDTH_BYTES_PS;
+
+			return new FederatedCost(readCost, inputTransferCost, outputTransferCost, computingCost, inputCosts);
 		}
 	}
 

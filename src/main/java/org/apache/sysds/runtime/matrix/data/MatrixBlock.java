@@ -2780,8 +2780,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 			//note: we apply multi-threading in a best-effort manner here
 			//only for expensive operators such as exp, log, sigmoid, because
 			//otherwise allocation, read and write anyway dominates
-			//ToDo Check if Threadsafe
-			/*if (!op.isInplace() || this.isEmpty())
+			if (!op.isInplace() || this.isEmpty())
 			{	//allocate dense output block
 				ret.allocateDenseBlock(false);
 			}
@@ -2789,7 +2788,6 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 			{
 				ret = this;
 			}
-			*/
 			//ret.allocateDenseBlock(false);
 			DenseBlock a = getDenseBlock();
 			DenseBlock c = ret.getDenseBlock();
@@ -2805,7 +2803,6 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 			if(op.sparseSafe)
 				sparseUnaryOperations(op, ret);
 			else
-				//ToDo for denseUnaryOperations on dense input and outputs
 				denseUnaryOperations(op, ret);
 		}
 		

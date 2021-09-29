@@ -66,7 +66,7 @@ public class OptimizerUtils
 	////////////////////////////////////////////////////////
 	// Optimizer constants and flags (incl tuning knobs)  //
 	////////////////////////////////////////////////////////
-	public static boolean ENABLE_UNARY_UPDATE_IN_PLACE = false;
+	public static boolean ENABLE_UNARY_UPDATE_IN_PLACE = true;
 	/**
 	 * Utilization factor used in deciding whether an operation to be scheduled on CP or MR. 
 	 * NOTE: it is important that MEM_UTIL_FACTOR+CacheableData.CACHING_BUFFER_SIZE &lt; 1.0

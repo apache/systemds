@@ -338,20 +338,7 @@ public class LibMatrixAgg
 		AggregateUnaryOperator uaop = InstructionUtils.parseBasicCumulativeAggregateUnaryOperator(uop);
 		
 		//fall back to sequential if necessary or agg not supported
-
-		//Check this implementation, multi-threaded case for cumagg
-		/* k ist anzahl der threads, clen und rlen sind die Reihen und Spalten längen der matrix
-		Die Anzahl der Threads k muss kleiner 1 sein
-		Oder die Anzahl an reihen * spalten(=Zellen) des inputs muss kleiner als der PAR_NUMCELL_THRESHOLD1 sein
-		Oder die Anzahl der Reihen ist kleiner gleich der Anzahl an threads
-		oder der operator ist leer
-		oder der output ist nicht threadsafe
-
-		Dann wird cumaggrefateUnaryMatrix singlethreaded ausgeführt weil der anzahl an threadoperator
-		bei der in der if ausgeführten function weggelassen ist
-		 */
-
-		if(    k <= 1 || (long)in.rlen*in.clen < PAR_NUMCELL_THRESHOLD1 || in.rlen <= k
+		if( k <= 1 || (long)in.rlen*in.clen < PAR_NUMCELL_THRESHOLD1 || in.rlen <= k
 			|| out.clen*8*k > PAR_INTERMEDIATE_SIZE_THRESHOLD || uaop == null || !out.isThreadSafe()) {
 			return cumaggregateUnaryMatrix(in, out, uop);
 		}

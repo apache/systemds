@@ -1,5 +1,6 @@
-A = rand(rows = 10, cols = 10)
-D= cumsum(A);
+A = rand(rows = 100, cols = 100)
+C = rand(rows = 100, cols = 100)
 B = round(A)
-C = D+B * 3 + 13
+D = log(C)
+C = B+D * 3 + 13
 print(as.scalar(C[2, 1]))

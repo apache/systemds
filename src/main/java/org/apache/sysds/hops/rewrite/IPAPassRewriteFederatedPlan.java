@@ -19,6 +19,7 @@
 
 package org.apache.sysds.hops.rewrite;
 
+import org.apache.sysds.api.DMLException;
 import org.apache.sysds.hops.AggBinaryOp;
 import org.apache.sysds.hops.AggUnaryOp;
 import org.apache.sysds.hops.BinaryOp;
@@ -47,6 +48,7 @@ import org.apache.sysds.runtime.instructions.fed.FEDInstruction;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.List;
@@ -167,6 +169,29 @@ public class IPAPassRewriteFederatedPlan extends IPAPass {
 		return rewrittenStmBlocks;
 	}
 
+
+	private void setFinalFedout(Hop root){
+		HopRel optimalRootHopRel = hopRelMemo.get(root.getHopID()).stream().min(Comparator.comparingDouble(HopRel::getCost))
+			.orElseThrow(() -> new DMLException("Hop root " + root + " has no feasible federated output alternatives"));
+		setFinalFedout(root, optimalRootHopRel);
+	}
+
+	private void setFinalFedout(Hop root, HopRel rootHopRel){
+		updateFederatedOutput(root, rootHopRel);
+		visitInputDependency(rootHopRel);
+	}
+
+	private void visitInputDependency(HopRel rootHopRel){
+		List<HopRel> hopRelInputs = rootHopRel.getInputDependency();
+		for ( HopRel input : hopRelInputs )
+			setFinalFedout(input.getHopRef(), input);
+	}
+
+	private void updateFederatedOutput(Hop root, HopRel updateHopRel){
+		root.setFederatedOutput(updateHopRel.getFederatedOutput());
+		root.setFederatedCost(updateHopRel.getCostObject());
+	}
+
 	/**
 	 * Select federated execution plan for every Hop in the DAG starting from given roots.
 	 * @param roots starting point for going through the Hop DAG to update the FederatedOutput fields.
@@ -181,6 +206,7 @@ public class IPAPassRewriteFederatedPlan extends IPAPass {
 
 	private void selectFederatedExecutionPlan(Hop root){
 		visitFedPlanHop(root);
+		setFinalFedout(root);
 	}
 
 	/**
@@ -202,7 +228,8 @@ public class IPAPassRewriteFederatedPlan extends IPAPass {
 			for ( FEDInstruction.FederatedOutput fedoutValue : FEDInstruction.FederatedOutput.values() )
 				if ( isFedOutSupported(currentHop, fedoutValue) )
 					hopRels.add(new HopRel(currentHop,fedoutValue, hopRelMemo));
-		} else
+		}
+		if ( hopRels.isEmpty() )
 			hopRels.add(new HopRel(currentHop, FEDInstruction.FederatedOutput.NONE, hopRelMemo));
 		hopRelMemo.put(currentHop.getHopID(), hopRels);
 
@@ -283,10 +310,14 @@ public class IPAPassRewriteFederatedPlan extends IPAPass {
 	 */
 	private boolean isFOUTSupported(Hop associatedHop){
 		// If the output of AggUnaryOp is a scalar, the operation cannot be FOUT
-		if ( associatedHop instanceof AggUnaryOp )
-			return !associatedHop.isScalar();
+		if ( associatedHop instanceof AggUnaryOp && !associatedHop.isScalar() )
+			return false;
 		// If one of the parents is a federated DataOp, all the inputs have to be LOUT.
 		if (associatedHop.getParent().stream().anyMatch(Hop::isFederatedDataOp))
+			return false;
+		// It can only be FOUT if at least one of the inputs are FOUT
+		if ( !(associatedHop.getInput().stream().anyMatch(
+			input -> hopRelMemo.get(input.getHopID()).stream().anyMatch(HopRel::hasFederatedOutput) )))
 			return false;
 		return true;
 	}

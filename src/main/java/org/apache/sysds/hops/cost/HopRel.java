@@ -72,6 +72,18 @@ public class HopRel {
 		return fedOut == FederatedOutput.FOUT;
 	}
 
+	public FederatedOutput getFederatedOutput(){
+		return fedOut;
+	}
+
+	public List<HopRel> getInputDependency(){
+		return inputDependency;
+	}
+
+	public Hop getHopRef(){
+		return hopRef;
+	}
+
 	private HopRel getFOUTHopRel(Hop hop, Map<Long, List<HopRel>> hopRelMemo){
 		return hopRelMemo.get(hop.getHopID()).stream().filter(in->in.fedOut==FederatedOutput.FOUT).findFirst().orElse(null);
 	}
@@ -132,7 +144,7 @@ public class HopRel {
 		for ( int i = 0; i < inputDependency.size(); i++){
 			if ( inputDependency.get(i) == null)
 				throw new DMLException("HopRel input number " + i + " (" + hopRef.getInput(i) + ")"
-					+ " is null for root: \n" + this );
+					+ " is null for root: \n" + this);
 		}
 	}
 

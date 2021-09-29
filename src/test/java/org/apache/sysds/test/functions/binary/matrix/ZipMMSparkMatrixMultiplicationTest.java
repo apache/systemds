@@ -133,7 +133,7 @@ public class ZipMMSparkMatrixMultiplicationTest extends AutomatedTestBase
 		MMultMethod methodOld = AggBinaryOp.FORCED_MMULT_METHOD;
 		AggBinaryOp.FORCED_MMULT_METHOD = MMultMethod.ZIPMM;
 		
-		int colsB = vectorM2 ? colsB1 : colsB2;
+		int colsB = vectorM2 ? colsB2 : colsB1;
 		String TEST_NAME = TEST_NAME1;
 		
 		try

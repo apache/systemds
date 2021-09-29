@@ -75,6 +75,7 @@ import org.apache.sysds.runtime.instructions.spark.QuaternarySPInstruction;
 import org.apache.sysds.runtime.instructions.spark.RandSPInstruction;
 import org.apache.sysds.runtime.instructions.spark.ReblockSPInstruction;
 import org.apache.sysds.runtime.instructions.spark.ReorgSPInstruction;
+import org.apache.sysds.runtime.instructions.spark.RepartitionSPInstruction;
 import org.apache.sysds.runtime.instructions.spark.RmmSPInstruction;
 import org.apache.sysds.runtime.instructions.spark.SPInstruction;
 import org.apache.sysds.runtime.instructions.spark.SPInstruction.SPType;
@@ -231,6 +232,7 @@ public class SPInstructionParser extends InstructionParser
 		String2SPInstructionType.put( Checkpoint.OPCODE, SPType.Checkpoint);
 		String2SPInstructionType.put( Compression.OPCODE, SPType.Compression);
 		String2SPInstructionType.put( DeCompression.OPCODE, SPType.DeCompression);
+		String2SPInstructionType.put( "repartition", SPType.Repartition);
 
 		// Builtin Instruction Opcodes
 		String2SPInstructionType.put( "log"  , SPType.Builtin);
@@ -504,6 +506,9 @@ public class SPInstructionParser extends InstructionParser
 
 			case DeCompression:
 				return DeCompressionSPInstruction.parseInstruction(str);
+				
+			case Repartition:
+				return RepartitionSPInstruction.parseInstruction(str);
 
 			case SpoofFused:
 				return SpoofSPInstruction.parseInstruction(str);

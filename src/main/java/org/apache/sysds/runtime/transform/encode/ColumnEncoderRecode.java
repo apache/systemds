@@ -27,7 +27,6 @@ import java.io.ObjectOutput;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
@@ -35,10 +34,9 @@ import java.util.concurrent.Callable;
 
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.lops.Lop;
-import org.apache.sysds.runtime.DMLRuntimeException;
-import org.apache.sysds.runtime.data.SparseRowVector;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.transform.Transformable;
 import org.apache.sysds.utils.Statistics;
 
 public class ColumnEncoderRecode extends ColumnEncoder {
@@ -114,16 +112,12 @@ public class ColumnEncoderRecode extends ColumnEncoder {
 			putCode(map, key);
 	}
 
-	private static void makeRcdMap(FrameBlock in, HashMap<String, Long> map, int colID, int startRow, int blk) {
-		Iterator<String[]> iter = in.getStringRowIterator(startRow, getEndIndex(in.getNumRows(), startRow, blk), colID);
-		while(iter.hasNext()) {
-			String[] row = iter.next();
-			// probe and build column map
-			String key = row[0]; // 0 since there is only one column in the row
+	private static void makeRcdMap(Transformable in, HashMap<String, Long> map, int colID, int startRow, int blk) {
+		for(int row = startRow; row < getEndIndex(in.getNumRows(), startRow, blk); row++){
+			String key = in.getStringValue(row, colID - 1);
 			if(key != null && !key.isEmpty() && !map.containsKey(key))
 				putCode(map, key);
 		}
-
 		if(SORT_RECODE_MAP) {
 			sortCPRecodeMaps(map);
 		}
@@ -135,7 +129,12 @@ public class ColumnEncoderRecode extends ColumnEncoder {
 	}
 
 	@Override
-	public void build(FrameBlock in) {
+	protected TransformType getTransformType() {
+		return TransformType.RECODE;
+	}
+
+	@Override
+	public void build(Transformable in) {
 		if(!isApplicable())
 			return;
 		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
@@ -146,12 +145,12 @@ public class ColumnEncoderRecode extends ColumnEncoder {
 	}
 
 	@Override
-	public Callable<Object> getBuildTask(FrameBlock in) {
+	public Callable<Object> getBuildTask(Transformable in) {
 		return new ColumnRecodeBuildTask(this, in);
 	}
 
 	@Override
-	public Callable<Object> getPartialBuildTask(FrameBlock in, int startRow, int blockSize,
+	public Callable<Object> getPartialBuildTask(Transformable in, int startRow, int blockSize,
 		HashMap<Integer, Object> ret) {
 		return new RecodePartialBuildTask(in, _colID, startRow, blockSize, ret);
 	}
@@ -169,6 +168,13 @@ public class ColumnEncoderRecode extends ColumnEncoder {
 	 */
 	protected static void putCode(HashMap<String, Long> map, String key) {
 		map.put(key, (long) (map.size() + 1));
+	}
+
+	protected double getCode(Transformable in, int r){
+		Object okey = in.getStringValue(r, _colID - 1);
+		String key = (okey != null) ? okey.toString() : null;
+		long code = lookupRCDMap(key);
+		return (code < 0) ? Double.NaN : code;
 	}
 
 	@Override
@@ -192,39 +198,11 @@ public class ColumnEncoderRecode extends ColumnEncoder {
 		_rcdMapPart.remove("");
 	}
 
-	@Override
-	public MatrixBlock apply(FrameBlock in, MatrixBlock out, int outputCol, int rowStart, int blk) {
-		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
-		// FrameBlock is column Major and MatrixBlock row Major this results in cache inefficiencies :(
-		for(int i = rowStart; i < getEndIndex(in.getNumRows(), rowStart, blk); i++) {
-			Object okey = in.get(i, _colID - 1);
-			String key = (okey != null) ? okey.toString() : null;
-			long code = lookupRCDMap(key);
-			out.quickSetValue(i, outputCol, (code >= 0) ? code : Double.NaN);
-		}
-		if(DMLScript.STATISTICS){
-			Statistics.incTransformRecodeApplyTime(System.nanoTime() - t0);
-		}
-		return out;
-	}
-
-	@Override
-	public MatrixBlock apply(MatrixBlock in, MatrixBlock out, int outputCol, int rowStart, int blk) {
-		throw new DMLRuntimeException(
-			"Recode called with MatrixBlock. Should not happen since Recode is the first " + "encoder in the Stack");
-	}
 
 	@Override
 	protected ColumnApplyTask<? extends ColumnEncoder> 
-		getSparseTask(FrameBlock in, MatrixBlock out, int outputCol, int startRow, int blk){
+		getSparseTask(Transformable in, MatrixBlock out, int outputCol, int startRow, int blk){
 		return new RecodeSparseApplyTask(this, in ,out, outputCol, startRow, blk);
-	}
-
-	@Override
-	protected ColumnApplyTask<? extends ColumnEncoder> 
-		getSparseTask(MatrixBlock in, MatrixBlock out, int outputCol, int startRow, int blk) {
-		throw new DMLRuntimeException("Recode called with MatrixBlock. Should not happen since Recode is the first " +
-				"encoder in the Stack");
 	}
 
 	@Override
@@ -328,30 +306,20 @@ public class ColumnEncoderRecode extends ColumnEncoder {
 
 	private static class RecodeSparseApplyTask extends ColumnApplyTask<ColumnEncoderRecode>{
 
-		public RecodeSparseApplyTask(ColumnEncoderRecode encoder, FrameBlock input, MatrixBlock out, int outputCol) {
+		public RecodeSparseApplyTask(ColumnEncoderRecode encoder, Transformable input, MatrixBlock out, int outputCol) {
 			super(encoder, input, out, outputCol);
 		}
 
-		protected RecodeSparseApplyTask(ColumnEncoderRecode encoder, FrameBlock input, MatrixBlock out, 
+		protected RecodeSparseApplyTask(ColumnEncoderRecode encoder, Transformable input, MatrixBlock out,
 				int outputCol, int startRow, int blk) {
 			super(encoder, input, out, outputCol, startRow, blk);
 		}
 
 		public Object call() throws Exception {
-			int index = _encoder._colID - 1;
 			long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 			if(_out.getSparseBlock() == null)
 				return null;
-			assert _inputF != null;
-			for(int r = _startRow; r < getEndIndex(_inputF.getNumRows(), _startRow, _blk); r++) {
-				SparseRowVector row = (SparseRowVector) _out.getSparseBlock().get(r);
-				Object okey = _inputF.get(r, index);
-				String key = (okey != null) ? okey.toString() : null;
-				long code = _encoder.lookupRCDMap(key);
-				double val = (code < 0) ? Double.NaN : code;
-				row.values()[index] = val;
-				row.indexes()[index] = _outputCol;
-			}
+			_encoder.applySparse(_input, _out, _outputCol, _startRow, _blk);
 			if(DMLScript.STATISTICS){
 				Statistics.incTransformRecodeApplyTime(System.nanoTime() - t0);
 			}
@@ -370,13 +338,13 @@ public class ColumnEncoderRecode extends ColumnEncoder {
 
 	private static class RecodePartialBuildTask implements Callable<Object> {
 
-		private final FrameBlock _input;
+		private final Transformable _input;
 		private final int _blockSize;
 		private final int _startRow;
 		private final int _colID;
 		private final HashMap<Integer, Object> _partialMaps;
 
-		protected RecodePartialBuildTask(FrameBlock input, int colID, int startRow, int blocksize,
+		protected RecodePartialBuildTask(Transformable input, int colID, int startRow, int blocksize,
 			HashMap<Integer, Object> partialMaps) {
 			_input = input;
 			_blockSize = blocksize;
@@ -442,9 +410,9 @@ public class ColumnEncoderRecode extends ColumnEncoder {
 	private static class ColumnRecodeBuildTask implements Callable<Object> {
 
 		private final ColumnEncoderRecode _encoder;
-		private final FrameBlock _input;
+		private final Transformable _input;
 
-		protected ColumnRecodeBuildTask(ColumnEncoderRecode encoder, FrameBlock input) {
+		protected ColumnRecodeBuildTask(ColumnEncoderRecode encoder, Transformable input) {
 			_encoder = encoder;
 			_input = input;
 		}

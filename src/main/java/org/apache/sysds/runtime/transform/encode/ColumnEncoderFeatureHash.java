@@ -19,19 +19,15 @@
 
 package org.apache.sysds.runtime.transform.encode;
 
-import static org.apache.sysds.runtime.util.UtilFunctions.getEndIndex;
-
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.util.List;
 
-import org.apache.commons.lang3.NotImplementedException;
 import org.apache.sysds.api.DMLScript;
-import org.apache.sysds.runtime.DMLRuntimeException;
-import org.apache.sysds.runtime.data.SparseRowVector;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.transform.Transformable;
 import org.apache.sysds.runtime.util.DependencyTask;
 import org.apache.sysds.runtime.util.UtilFunctions;
 import org.apache.sysds.utils.Statistics;
@@ -58,64 +54,37 @@ public class ColumnEncoderFeatureHash extends ColumnEncoder {
 		super(-1);
 		_K = 0;
 	}
+	public long getK(){
+		return _K;
+	}
 
-	private long getCode(String key) {
+	@Override
+	protected TransformType getTransformType() {
+		return TransformType.FEATURE_HASH;
+	}
+
+	@Override
+	protected double getCode(Transformable in, int row) {
+		String key = in.getStringValue(row, _colID - 1);
+		if(key == null)
+			return Double.NaN;
 		return (key.hashCode() % _K) + 1;
 	}
 
 	@Override
-	public void build(FrameBlock in) {
+	public void build(Transformable in) {
 		// do nothing (no meta data other than K)
 	}
 
 	@Override
-	public List<DependencyTask<?>> getBuildTasks(FrameBlock in) {
+	public List<DependencyTask<?>> getBuildTasks(Transformable in) {
 		return null;
 	}
 
 	@Override
 	protected ColumnApplyTask<? extends ColumnEncoder> 
-		getSparseTask(FrameBlock in, MatrixBlock out, int outputCol, int startRow, int blk) {
+		getSparseTask(Transformable in, MatrixBlock out, int outputCol, int startRow, int blk) {
 		return new FeatureHashSparseApplyTask(this, in, out, outputCol, startRow, blk);
-	}
-
-	@Override
-	protected ColumnApplyTask<? extends ColumnEncoder> 
-		getSparseTask(MatrixBlock in, MatrixBlock out, int outputCol, int startRow, int blk) {
-		throw new NotImplementedException("Sparse FeatureHashing for MatrixBlocks not jet implemented");
-	}
-
-	@Override
-	public MatrixBlock apply(FrameBlock in, MatrixBlock out, int outputCol, int rowStart, int blk) {
-		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
-		// apply feature hashing column wise
-		for(int i = rowStart; i < getEndIndex(in.getNumRows(), rowStart, blk); i++) {
-			Object okey = in.get(i, _colID - 1);
-			String key = (okey != null) ? okey.toString() : null;
-			if(key == null)
-				throw new DMLRuntimeException("Missing Value encountered in input Frame for FeatureHash");
-			long code = getCode(key);
-			out.quickSetValue(i, outputCol, (code >= 0) ? code : Double.NaN);
-		}
-		if(DMLScript.STATISTICS)
-			Statistics.incTransformFeatureHashingApplyTime(System.nanoTime()-t0);
-		return out;
-	}
-
-	@Override
-	public MatrixBlock apply(MatrixBlock in, MatrixBlock out, int outputCol, int rowStart, int blk) {
-		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
-		int end = getEndIndex(in.getNumRows(), rowStart, blk);
-		// apply feature hashing column wise
-		for(int i = rowStart; i < end; i++) {
-			Object okey = in.quickGetValueThreadSafe(i, _colID - 1);
-			String key = okey.toString();
-			long code = getCode(key);
-			out.quickSetValue(i, outputCol, (code >= 0) ? code : Double.NaN);
-		}
-		if(DMLScript.STATISTICS)
-			Statistics.incTransformFeatureHashingApplyTime(System.nanoTime()-t0);
-		return out;
 	}
 
 	@Override
@@ -160,12 +129,12 @@ public class ColumnEncoderFeatureHash extends ColumnEncoder {
 
 	public static class FeatureHashSparseApplyTask extends ColumnApplyTask<ColumnEncoderFeatureHash>{
 
-		public FeatureHashSparseApplyTask(ColumnEncoderFeatureHash encoder, FrameBlock input, 
+		public FeatureHashSparseApplyTask(ColumnEncoderFeatureHash encoder, Transformable input,
 				MatrixBlock out, int outputCol, int startRow, int blk) {
 			super(encoder, input, out, outputCol, startRow, blk);
 		}
 
-		public FeatureHashSparseApplyTask(ColumnEncoderFeatureHash encoder, FrameBlock input, 
+		public FeatureHashSparseApplyTask(ColumnEncoderFeatureHash encoder, Transformable input,
 				MatrixBlock out, int outputCol) {
 			super(encoder, input, out, outputCol);
 		}
@@ -175,18 +144,7 @@ public class ColumnEncoderFeatureHash extends ColumnEncoder {
 			if(_out.getSparseBlock() == null)
 				return null;
 			long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
-			int index = _encoder._colID - 1;
-			assert _inputF != null;
-			for(int r = _startRow; r < getEndIndex(_inputF.getNumRows(), _startRow, _blk); r++){
-				SparseRowVector row = (SparseRowVector) _out.getSparseBlock().get(r);
-				Object okey = _inputF.get(r, index);
-				String key = (okey != null) ? okey.toString() : null;
-				if(key == null)
-					throw new DMLRuntimeException("Missing Value encountered in input Frame for FeatureHash");
-				long code = _encoder.getCode(key);
-				row.values()[index] = code;
-				row.indexes()[index] = _outputCol;
-			}
+			_encoder.applySparse(_input, _out, _outputCol, _startRow, _blk);
 			if(DMLScript.STATISTICS)
 				Statistics.incTransformFeatureHashingApplyTime(System.nanoTime()-t0);
 			return null;

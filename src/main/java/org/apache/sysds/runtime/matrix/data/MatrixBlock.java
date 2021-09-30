@@ -106,6 +106,7 @@ import org.apache.sysds.runtime.matrix.operators.TernaryOperator;
 import org.apache.sysds.runtime.matrix.operators.UnaryOperator;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
+import org.apache.sysds.runtime.transform.Transformable;
 import org.apache.sysds.runtime.util.DataConverter;
 import org.apache.sysds.runtime.util.FastBufferedDataInputStream;
 import org.apache.sysds.runtime.util.FastBufferedDataOutputStream;
@@ -115,7 +116,7 @@ import org.apache.sysds.runtime.util.UtilFunctions;
 import org.apache.sysds.utils.NativeHelper;
 
 
-public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizable {
+public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizable, Transformable {
 	// private static final Log LOG = LogFactory.getLog(MatrixBlock.class.getName());
 
 	private static final long serialVersionUID = 7319972089143154056L;
@@ -467,7 +468,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	public final int getNumRows() {
 		return rlen;
 	}
-	
+
 	/**
 	 * NOTE: setNumRows() and setNumColumns() are used only in ternaryInstruction (for contingency tables)
 	 * and pmm for meta corrections.
@@ -5940,6 +5941,14 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		return sb.toString();
 	}
 
+
+	public double getDoubleValue(int r, int c){
+		return quickGetValue(r, c);
+	}
+
+	public String getStringValue(int r, int c){
+		return String.valueOf(quickGetValue(r, c));
+	}
 
 	///////////////////////////
 	// Helper classes

@@ -34,6 +34,7 @@ import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.transform.Transformable;
 import org.apache.sysds.runtime.util.DependencyTask;
 import org.apache.sysds.runtime.util.DependencyThreadPool;
 
@@ -97,13 +98,13 @@ public class ColumnEncoderComposite extends ColumnEncoder {
 	}
 
 	@Override
-	public void build(FrameBlock in) {
+	public void build(Transformable in) {
 		for(ColumnEncoder columnEncoder : _columnEncoders)
 			columnEncoder.build(in);
 	}
 
 	@Override
-	public List<DependencyTask<?>> getApplyTasks(FrameBlock in, MatrixBlock out, int outputCol) {
+	public List<DependencyTask<?>> getApplyTasks(Transformable in, MatrixBlock out, int outputCol) {
 		List<DependencyTask<?>> tasks = new ArrayList<>();
 		List<Integer> sizes = new ArrayList<>();
 		for(int i = 0; i < _columnEncoders.size(); i++) {
@@ -134,24 +135,13 @@ public class ColumnEncoderComposite extends ColumnEncoder {
 	}
 
 	@Override
-	public List<DependencyTask<?>> getApplyTasks(MatrixBlock in, MatrixBlock out, int outputCol) {
-		throw new NotImplementedException();
-	}
-
-	@Override
 	protected ColumnApplyTask<? extends ColumnEncoder> 
-		getSparseTask(MatrixBlock in, MatrixBlock out, int outputCol, int startRow, int blk) {
+		getSparseTask(Transformable in, MatrixBlock out, int outputCol, int startRow, int blk) {
 		throw new NotImplementedException();
 	}
 
 	@Override
-	protected ColumnApplyTask<? extends ColumnEncoder> 
-		getSparseTask(FrameBlock in, MatrixBlock out, int outputCol, int startRow, int blk) {
-		throw new NotImplementedException();
-	}
-
-	@Override
-	public List<DependencyTask<?>> getBuildTasks(FrameBlock in) {
+	public List<DependencyTask<?>> getBuildTasks(Transformable in) {
 		List<DependencyTask<?>> tasks = new ArrayList<>();
 		Map<Integer[], Integer[]> depMap = null;
 		for(ColumnEncoder columnEncoder : _columnEncoders) {
@@ -191,7 +181,7 @@ public class ColumnEncoderComposite extends ColumnEncoder {
 	}
 
 	@Override
-	public MatrixBlock apply(FrameBlock in, MatrixBlock out, int outputCol, int rowStart, int blk) {
+	public MatrixBlock apply(Transformable in, MatrixBlock out, int outputCol, int rowStart, int blk) {
 		try {
 			for(int i = 0; i < _columnEncoders.size(); i++) {
 				if(i == 0) {
@@ -211,23 +201,13 @@ public class ColumnEncoderComposite extends ColumnEncoder {
 	}
 
 	@Override
-	public MatrixBlock apply(MatrixBlock in, MatrixBlock out, int outputCol, int rowStart, int blk) {
-		try {
-			for(int i = 0; i < _columnEncoders.size(); i++) {
-				if(i == 0) {
-					// 1. encoder writes data into MatrixBlock Column all others use this column for further encoding
-					_columnEncoders.get(i).apply(in, out, outputCol, rowStart, blk);
-				}
-				else {
-					_columnEncoders.get(i).apply(out, out, outputCol, rowStart, blk);
-				}
-			}
-		}
-		catch(Exception ex) {
-			LOG.error("Failed to transform-apply matrix with \n" + this);
-			throw ex;
-		}
-		return in;
+	protected double getCode(Transformable in, int row) {
+		throw new DMLRuntimeException("CompositeEncoder does not have a Code");
+	}
+
+	@Override
+	protected TransformType getTransformType() {
+		return TransformType.N_A;
 	}
 
 	@Override

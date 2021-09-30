@@ -82,6 +82,38 @@ public abstract class ReaderMappingJSON {
 					rawMatrix.setValue(r, c++, sampleRawRowsJSON.get(r).getDoubleValue(k));
 				}
 			}
+//			System.out.println("names.size="+ names.size());
+//			//-----------------
+//			int ss=0;
+//			for(int c=0; c< names.size();c++){
+//				boolean f=true;
+//				for(int r=0; r< nrows;r++){
+//					if(rawMatrix.getValue(r, c)!=0) {
+//						f = false;
+//						break;
+//					}
+//				}
+//				if(f){
+//					ss++;
+//				}
+//			}
+//			System.out.println("SS Raw= "+ ss);
+//			ss=0;
+//			for(int c=0; c< ncols;c++){
+//				boolean f=true;
+//				for(int r=0; r< nrows;r++){
+//					if(sampleMatrix.getValue(r, c)!=0) {
+//						f = false;
+//						break;
+//					}
+//				}
+//				if(f){
+//					ss++;
+//				}
+//			}
+//			System.out.println("SS Matrix= "+ ss);
+//			//----------------------------
+
 			// looking for the col map
 			for(int c = 0; c < ncols; c++) {
 				boolean flagColMap = false;
@@ -100,6 +132,17 @@ public abstract class ReaderMappingJSON {
 						bitSet.set(i);
 					}
 				}
+//				if(!flagColMap){
+//					//System.out.println("++++++   "+ c);
+//					int nz=0;
+//					for(int i = 0; i<nrows;i++ ){
+//						double v = matrix.getValue(i,c);
+//						if(v!=0)
+//							nz++;
+//						//System.out.print(matrix.getValue(i,c)+", ");
+//					}
+//					System.out.println("NZ = "+ nz);
+//				}
 
 			}
 			// verify the mapped
@@ -107,27 +150,10 @@ public abstract class ReaderMappingJSON {
 			for(int i = 0; i < bitSet.length(); i++)
 				if(bitSet.get(i))
 					sum++;
+
 			mapped = sum == ncols;
 		}
 	}
 
-	//	protected void runMapping() {
-	//		Map<String, Types.ValueType> schema = new HashMap<>();
-	//		for(RawRowJSON rrj : sampleRawRowsJSON) {
-	//			schema.putAll(rrj.getSchema());
-	//		}
-	//
-	//		Types.ValueType[] vts = new Types.ValueType[schema.size()];
-	//		String[] names = new String[schema.size()];
-	//		int index = 0;
-	//		for(String key : schema.keySet()) {
-	//			names[index] = key;
-	//			vts[index++] = schema.get(key);
-	//		}
-	//
-	//		String[][] data = new String[nrows][names.length];
-	//
-	//		//FrameBlock frame = new FrameBlock(vts,names,); //new FrameBlock(schema, names, data);
-	//	}
 
 }

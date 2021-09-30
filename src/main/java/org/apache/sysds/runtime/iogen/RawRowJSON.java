@@ -32,19 +32,19 @@ import java.util.Map;
 import java.util.Stack;
 
 public class RawRowJSON {
-	private final String raw;
 	private final ArrayList<Object> l1Index;
 	private final ArrayList<JSONIndexProperties> l0Index;
 	private final Map<String, Integer> l0IndexMap;
+	private final RawJSONObject rawObject;
 
 	public RawRowJSON(String raw) {
-		this.raw = raw;
 		l1Index = new ArrayList<>();
 		l0Index = new ArrayList<>();
 		l0IndexMap = new HashMap<>();
+		rawObject = new RawJSONObject("Root");
 		try {
 			JSONObject jo = new JSONObject(raw);
-			lIndex(jo, new Stack<>(), -1);
+			lIndex(jo, new Stack<>(), -1, rawObject);
 			for(int i = 0; i < l0Index.size(); i++) {
 				l0IndexMap.put(l0Index.get(i).getKeysAsString(), i);
 			}
@@ -58,41 +58,53 @@ public class RawRowJSON {
 	The first level reconstruct the json text format, and the second level
 	index they keys in json string.
 	*/
-	private void lIndex(JSONObject jo, Stack<String> keyChain, int index) throws JSONException {
+	private void lIndex(JSONObject jo, Stack<String> keyChain, int index, RawJSONObject rawObject) throws JSONException {
 		for(Iterator it = jo.keys(); it.hasNext(); ) {
 			String key = (String) it.next();
 			Object value = jo.get(key);
 			keyChain.add(key);
 			if(value instanceof JSONObject) {
 				JSONObject jon = (JSONObject) value;
-				lIndex(jon, keyChain, index);
+				RawJSONObject objectItem = new RawJSONObject(key);
+				rawObject.addObjectItem(objectItem);
+				lIndex(jon, keyChain, index, objectItem);
 			}
 			else if(value instanceof JSONArray) {
 				JSONArray ja = (JSONArray) value;
-				lIndex(ja, keyChain);
+				RawJSONObject arrayItem = new RawJSONObject(key);
+				rawObject.addArrayItem(arrayItem);
+				lIndex(ja, keyChain, arrayItem);
 			}
 			else {
 				l1Index.add(value);
 				l0Index.add(new JSONIndexProperties(keyChain, JSONIndexProperties.JSONItemType.PRIMITIVE, 1, index));
+				rawObject.addPrimitiveItem(new RawJSONObject.PrimitiveItem(key, getValueType(value)));
 			}
 			keyChain.pop();
 		}
 	}
 
-	private void lIndex(JSONArray ja, Stack<String> keyChain) throws JSONException {
+	private void lIndex(JSONArray ja, Stack<String> keyChain, RawJSONObject rawObject) throws JSONException {
 		if(ja != null) {
 			for(int i = 0; i < ja.length(); i++) {
+
 				Object value = ja.get(i);
 				keyChain.add(i + "");
 				if(value instanceof JSONObject) {
-					lIndex((JSONObject) value, keyChain, i);
+					RawJSONObject objectItem = new RawJSONObject(i+"");
+					rawObject.addObjectItem(objectItem);
+					lIndex((JSONObject) value, keyChain, i, objectItem);
 				}
 				else if(value instanceof JSONArray) {
-					lIndex((JSONArray) value, keyChain);
+					RawJSONObject arrayItem = new RawJSONObject(i+"");
+					rawObject.addArrayItem(arrayItem);
+					lIndex((JSONArray) value, keyChain, arrayItem);
 				}
 				else {
 					l1Index.add(value);
 					l0Index.add(new JSONIndexProperties(keyChain, JSONIndexProperties.JSONItemType.PRIMITIVE, 1, i));
+					Types.ValueType vt = getValueType(value);
+					rawObject.addPrimitiveItem(new RawJSONObject.PrimitiveItem("i_"+i, vt));
 				}
 				keyChain.pop();
 			}
@@ -117,25 +129,29 @@ public class RawRowJSON {
 		for(int i = 0; i < size; i++) {
 			JSONIndexProperties jip = l0Index.get(i);
 			String key = jip.getKeysAsString();
-			Types.ValueType vt;
 			Object value = l1Index.get(i);
-			if(value instanceof Integer)
-				vt = Types.ValueType.INT32;
-			else if(value instanceof Long)
-				vt = Types.ValueType.INT64;
-			else if(value instanceof Float)
-				vt = Types.ValueType.FP32;
-			else if(value instanceof Double)
-				vt = Types.ValueType.FP64;
-			else if(value instanceof Boolean)
-				vt = Types.ValueType.BOOLEAN;
-			else if(value instanceof String)
-				vt = Types.ValueType.STRING;
-			else
-				throw new RuntimeException("Can't recognize the value type of object!");
-			schema.put(key, vt);
+			schema.put(key, getValueType(value));
 		}
 		return schema;
+	}
+
+	private Types.ValueType getValueType(Object value){
+		Types.ValueType vt;
+		if(value instanceof Integer)
+			vt = Types.ValueType.INT32;
+		else if(value instanceof Long)
+			vt = Types.ValueType.INT64;
+		else if(value instanceof Float)
+			vt = Types.ValueType.FP32;
+		else if(value instanceof Double)
+			vt = Types.ValueType.FP64;
+		else if(value instanceof Boolean)
+			vt = Types.ValueType.BOOLEAN;
+		else if(value instanceof String)
+			vt = Types.ValueType.STRING;
+		else
+			throw new RuntimeException("Can't recognize the value type of object!");
+		return vt;
 	}
 
 	public double getDoubleValue(String key) {
@@ -146,11 +162,12 @@ public class RawRowJSON {
 			return UtilFunctions.getDouble(l1Index.get(index));
 	}
 
-	public Object getObjectValue(String key){
+	public Object getObjectValue(String key) {
 		Integer index = l0IndexMap.get(key);
 		if(index == null)
 			return null;
 		else
 			return l1Index.get(index);
+
 	}
 }

@@ -122,7 +122,7 @@ public class Unary extends Lop
 	}
 	
 	public static boolean isMultiThreadedOp(OpOp1 op) {
-		if(op == OpOp1.INVERSE || op == OpOp1.CHOLESKY)
+		if(op == OpOp1.INVERSE || op == OpOp1.CHOLESKY || op == OpOp1.DETECTSCHEMA)
 			return false;
 
 		return true;

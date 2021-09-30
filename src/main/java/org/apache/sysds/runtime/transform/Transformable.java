@@ -30,6 +30,7 @@ public interface Transformable {
      * If the value is missing NaN is returned.
      * @param r row of the value
      * @param c column of the value
+     * @return double value at the passed row and column
      */
     double getDoubleValue(int r, int c);
 
@@ -38,6 +39,7 @@ public interface Transformable {
      * If the value is missing null is returned.
      * @param r row of the value
      * @param c column of the value
+     * @return string of the value at the passed row and column
      */
     String getStringValue(int r, int c);
 }

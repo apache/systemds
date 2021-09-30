@@ -171,7 +171,10 @@ public class FrameBlock implements CacheBlock, Externalizable, Transformable {
 	@Override
 	public String getStringValue(int r, int c) {
 		Object o = get(r, c);
-		return (o == null) ? null : o.toString();
+		String s = (o == null) ? null : o.toString();
+		if(s != null && s.isEmpty())
+			return null;
+		return s;
 	}
 
 	public void setNumRows(int numRows) {

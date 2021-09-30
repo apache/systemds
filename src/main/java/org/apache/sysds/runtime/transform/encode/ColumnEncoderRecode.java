@@ -173,6 +173,8 @@ public class ColumnEncoderRecode extends ColumnEncoder {
 	protected double getCode(Transformable in, int r){
 		Object okey = in.getStringValue(r, _colID - 1);
 		String key = (okey != null) ? okey.toString() : null;
+		if(key == null || key.isEmpty())
+			return Double.NaN;
 		long code = lookupRCDMap(key);
 		return (code < 0) ? Double.NaN : code;
 	}

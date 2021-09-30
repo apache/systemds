@@ -5947,7 +5947,11 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	}
 
 	public String getStringValue(int r, int c){
-		return String.valueOf(quickGetValue(r, c));
+		double v = quickGetValue(r, c);
+		// NaN gets converted to null here since check for null is faster than string comp
+		if(Double.isNaN(v))
+			return null;
+		return String.valueOf(v);
 	}
 
 	///////////////////////////

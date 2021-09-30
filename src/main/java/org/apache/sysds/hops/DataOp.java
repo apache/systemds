@@ -364,7 +364,23 @@ public class DataOp extends Hop {
 		return( _op == OpOpData.PERSISTENTREAD || _op == OpOpData.PERSISTENTWRITE );
 	}
 
-	public boolean isFederatedData(){
+	@Override
+	protected void updateETFed(){
+		if ( isFederatedDataOp() )
+			_etype = ExecType.FED;
+	}
+
+	/**
+	 * True if execution is federated, if output is federated, or if OpOpData is federated.
+	 * @return true if federated
+	 */
+	@Override
+	public boolean isFederated() {
+		return super.isFederated() || getOp() == OpOpData.FEDERATED;
+	}
+
+	@Override
+	public boolean isFederatedDataOp(){
 		return _op == OpOpData.FEDERATED;
 	}
 
@@ -496,22 +512,10 @@ public class DataOp extends Hop {
 			
 			_etype = letype;
 		}
-		
+
+		updateETFed();
+
 		return _etype;
-	}
-
-	/**
-	 * True if execution is federated, if output is federated, or if OpOpData is federated.
-	 * @return true if federated
-	 */
-	@Override
-	public boolean isFederated() {
-		return super.isFederated() || getOp() == OpOpData.FEDERATED;
-	}
-
-	@Override
-	public boolean isFederatedDataOp(){
-		return isFederatedData();
 	}
 
 	@Override

@@ -310,14 +310,15 @@ public class IPAPassRewriteFederatedPlan extends IPAPass {
 	 */
 	private boolean isFOUTSupported(Hop associatedHop){
 		// If the output of AggUnaryOp is a scalar, the operation cannot be FOUT
-		if ( associatedHop instanceof AggUnaryOp && !associatedHop.isScalar() )
+		if ( associatedHop instanceof AggUnaryOp && associatedHop.isScalar() )
 			return false;
 		// If one of the parents is a federated DataOp, all the inputs have to be LOUT.
 		if (associatedHop.getParent().stream().anyMatch(Hop::isFederatedDataOp))
 			return false;
 		// It can only be FOUT if at least one of the inputs are FOUT
 		if ( !(associatedHop.getInput().stream().anyMatch(
-			input -> hopRelMemo.get(input.getHopID()).stream().anyMatch(HopRel::hasFederatedOutput) )))
+			input -> hopRelMemo.get(input.getHopID()).stream().anyMatch(HopRel::hasFederatedOutput) ))
+			&& !associatedHop.isFederatedDataOp() )
 			return false;
 		return true;
 	}

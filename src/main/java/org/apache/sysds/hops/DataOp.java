@@ -366,7 +366,7 @@ public class DataOp extends Hop {
 
 	@Override
 	protected void updateETFed(){
-		if ( isFederatedDataOp() )
+		if ( isFederatedDataOp() || someInputFederated() )
 			_etype = ExecType.FED;
 	}
 

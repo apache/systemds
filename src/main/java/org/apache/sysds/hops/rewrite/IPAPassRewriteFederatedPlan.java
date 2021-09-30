@@ -59,41 +59,54 @@ public class IPAPassRewriteFederatedPlan extends IPAPass {
 	private final static Map<Long, List<HopRel>> hopRelMemo = new HashMap<>();
 
 	/**
-	 * Indicates if an IPA pass is applicable for the current
-	 * configuration such as global flags or the chosen execution
-	 * mode (e.g., HYBRID).
+	 * Indicates if an IPA pass is applicable for the current configuration.
+	 * The configuration depends on OptimizerUtils.FEDERATED_COMPILATION.
 	 *
 	 * @param fgraph function call graph
-	 * @return true if applicable.
+	 * @return true if federated compilation is activated.
 	 */
-	@Override public boolean isApplicable(FunctionCallGraph fgraph) {
+	@Override
+	public boolean isApplicable(FunctionCallGraph fgraph) {
 		return OptimizerUtils.FEDERATED_COMPILATION;
 	}
 
 	/**
-	 * Rewrites the given program or its functions in place,
-	 * with access to the read-only function call graph.
+	 * Estimates cost and selects a federated execution plan
+	 * by setting the federated output value of each hop in the program.
 	 *
 	 * @param prog       dml program
 	 * @param fgraph     function call graph
 	 * @param fcallSizes function call size infos
-	 * @return true if function call graph should be rebuild
+	 * @return false since the function call graph never has to be rebuilt
 	 */
-	@Override public boolean rewriteProgram(DMLProgram prog, FunctionCallGraph fgraph,
-		FunctionCallSizeInfo fcallSizes) {
+	@Override
+	public boolean rewriteProgram(DMLProgram prog, FunctionCallGraph fgraph, FunctionCallSizeInfo fcallSizes) {
 		rewriteStatementBlocks(prog.getStatementBlocks());
-		//TODO: Set final fedout of Hops
 		return false;
 	}
 
 	/**
-	 * TODO: Change this documentation
-	 * Handle an arbitrary statement block. Specific type constraints have to be ensured
-	 * within the individual rewrites. If a rewrite does not apply to individual blocks, it
-	 * should simply return the input block.
+	 * Estimates cost and selects a federated execution plan
+	 * by setting the federated output value of each hop in the statement blocks.
+	 * The method calls the contained statement blocks recursively.
+	 *
+	 * @param sbs   list of statement blocks
+	 * @return list of statement blocks with the federated output value updated for each hop
+	 */
+	public ArrayList<StatementBlock> rewriteStatementBlocks(List<StatementBlock> sbs) {
+		ArrayList<StatementBlock> rewrittenStmBlocks = new ArrayList<>();
+		for ( StatementBlock stmBlock : sbs )
+			rewrittenStmBlocks.addAll(rewriteStatementBlock(stmBlock));
+		return rewrittenStmBlocks;
+	}
+
+	/**
+	 * Estimates cost and selects a federated execution plan
+	 * by setting the federated output value of each hop in the statement blocks.
+	 * The method calls the contained statement blocks recursively.
 	 *
 	 * @param sb    statement block
-	 * @return list of statement blocks
+	 * @return list of statement blocks with the federated output value updated for each hop
 	 */
 	public ArrayList<StatementBlock> rewriteStatementBlock(StatementBlock sb) {
 		if ( sb instanceof WhileStatementBlock)
@@ -110,8 +123,7 @@ public class IPAPassRewriteFederatedPlan extends IPAPass {
 			// StatementBlock type (no subclass)
 			sb.setHops(selectFederatedExecutionPlan(sb.getHops()));
 		}
-
-		return new ArrayList<>(Arrays.asList(sb));
+		return new ArrayList<>(Collections.singletonList(sb));
 	}
 
 	private ArrayList<StatementBlock> rewriteWhileStatementBlock(WhileStatementBlock whileSB){
@@ -121,7 +133,7 @@ public class IPAPassRewriteFederatedPlan extends IPAPass {
 			WhileStatement whileStm = (WhileStatement) stm;
 			whileStm.setBody(rewriteStatementBlocks(whileStm.getBody()));
 		}
-		return new ArrayList<>(Arrays.asList(whileSB));
+		return new ArrayList<>(Collections.singletonList(whileSB));
 	}
 
 	private ArrayList<StatementBlock> rewriteIfStatementBlock(IfStatementBlock ifSB){
@@ -131,7 +143,7 @@ public class IPAPassRewriteFederatedPlan extends IPAPass {
 			ifStatement.setIfBody(rewriteStatementBlocks(ifStatement.getIfBody()));
 			ifStatement.setElseBody(rewriteStatementBlocks(ifStatement.getElseBody()));
 		}
-		return new ArrayList<>(Arrays.asList(ifSB));
+		return new ArrayList<>(Collections.singletonList(ifSB));
 	}
 
 	private ArrayList<StatementBlock> rewriteForStatementBlock(ForStatementBlock forSB){
@@ -142,7 +154,7 @@ public class IPAPassRewriteFederatedPlan extends IPAPass {
 			ForStatement forStatement = ((ForStatement)statement);
 			forStatement.setBody(rewriteStatementBlocks(forStatement.getBody()));
 		}
-		return new ArrayList<>(Arrays.asList(forSB));
+		return new ArrayList<>(Collections.singletonList(forSB));
 	}
 
 	private ArrayList<StatementBlock> rewriteFunctionStatementBlock(FunctionStatementBlock funcSB){
@@ -150,25 +162,8 @@ public class IPAPassRewriteFederatedPlan extends IPAPass {
 			FunctionStatement funcStm = (FunctionStatement) statement;
 			funcStm.setBody(rewriteStatementBlocks(funcStm.getBody()));
 		}
-		return new ArrayList<>(Arrays.asList(funcSB));
+		return new ArrayList<>(Collections.singletonList(funcSB));
 	}
-
-	/**
-	 * TODO: Rewrite this documentation
-	 * Handle a list of statement blocks. Specific type constraints have to be ensured
-	 * within the individual rewrites. If a rewrite does not require sequence access, it
-	 * should simply return the input list of statement blocks.
-	 *
-	 * @param sbs   list of statement blocks
-	 * @return list of statement blocks
-	 */
-	public ArrayList<StatementBlock> rewriteStatementBlocks(List<StatementBlock> sbs) {
-		ArrayList<StatementBlock> rewrittenStmBlocks = new ArrayList<>();
-		for ( StatementBlock stmBlock : sbs )
-			rewrittenStmBlocks.addAll(rewriteStatementBlock(stmBlock));
-		return rewrittenStmBlocks;
-	}
-
 
 	private void setFinalFedout(Hop root){
 		HopRel optimalRootHopRel = hopRelMemo.get(root.getHopID()).stream().min(Comparator.comparingDouble(HopRel::getCost))
@@ -216,7 +211,7 @@ public class IPAPassRewriteFederatedPlan extends IPAPass {
 	private void visitFedPlanHop(Hop currentHop){
 		// If the currentHop is in the hopRelMemo table, it means that it has been visited
 		if ( hopRelMemo.containsKey(currentHop.getHopID()) )
-			return; //TODO: The memo table could contain the ID of the hop, but not have all possible fedouts. This should also be checked and then the missing fedouts should be added without overwriting the existing values.
+			return;
 		// If the currentHop has input, then the input should be visited depth-first
 		if ( currentHop.getInput() != null && currentHop.getInput().size() > 0 ){
 			for ( Hop input : currentHop.getInput() )
@@ -232,59 +227,10 @@ public class IPAPassRewriteFederatedPlan extends IPAPass {
 		if ( hopRels.isEmpty() )
 			hopRels.add(new HopRel(currentHop, FEDInstruction.FederatedOutput.NONE, hopRelMemo));
 		hopRelMemo.put(currentHop.getHopID(), hopRels);
-
-		/*
-		if ( ( isFedInstSupportedHop(currentHop) ) ){
-			// The Hop can be FOUT or LOUT or None. Check utility of FOUT vs LOUT vs None.
-			currentHop.setFederatedOutput(getHighestUtilFedOut(currentHop));
-		}
-		else
-			currentHop.setFederatedOutput(FEDInstruction.FederatedOutput.NONE);*/
 		currentHop.setVisited();
 	}
 
-	/**
-	 * Returns the FederatedOutput with the highest utility out of the valid FederatedOutput values.
-	 * @param hop for which the utility is found
-	 * @return the FederatedOutput value with highest utility for the given Hop
-	 */
-	private FEDInstruction.FederatedOutput getHighestUtilFedOut(Hop hop){
-		Map<FEDInstruction.FederatedOutput,Long> fedOutUtilMap = new EnumMap<>(FEDInstruction.FederatedOutput.class);
-		if ( isFOUTSupported(hop) )
-			fedOutUtilMap.put(FEDInstruction.FederatedOutput.FOUT, getUtilFout());
-		if ( isLOUTSupported(hop) )
-			fedOutUtilMap.put(FEDInstruction.FederatedOutput.LOUT, getUtilLout(hop));
-		fedOutUtilMap.put(FEDInstruction.FederatedOutput.NONE, 0L);
-
-		Map.Entry<FEDInstruction.FederatedOutput, Long> fedOutMax = Collections.max(fedOutUtilMap.entrySet(), Map.Entry.comparingByValue());
-		return fedOutMax.getKey();
-	}
-
-	/**
-	 * Utility if hop is FOUT. This is a simple version where it always returns 1.
-	 * @return utility if hop is FOUT
-	 */
-	private long getUtilFout(){
-		//TODO: Make better utility estimation
-		return 1;
-	}
-
-	/**
-	 * Utility if hop is LOUT. This is a simple version only based on dimensions.
-	 * @param hop for which utility is calculated
-	 * @return utility if hop is LOUT
-	 */
-	private long getUtilLout(Hop hop){
-		//TODO: Make better utility estimation
-		return -(long)hop.getMemEstimate();
-	}
-
 	private boolean isFedInstSupportedHop(Hop hop){
-
-		// Check that some input is FOUT, otherwise none of the fed instructions will run unless it is fedinit
-		//if ( (!hop.isFederatedDataOp()) && hop.getInput().stream().noneMatch(Hop::hasFederatedOutput) )
-			//return false;
-
 		// The following operations are supported given that the above conditions have not returned already
 		return ( hop instanceof AggBinaryOp || hop instanceof BinaryOp || hop instanceof ReorgOp
 			|| hop instanceof AggUnaryOp || hop instanceof TernaryOp || hop instanceof DataOp);
@@ -312,12 +258,9 @@ public class IPAPassRewriteFederatedPlan extends IPAPass {
 		// If the output of AggUnaryOp is a scalar, the operation cannot be FOUT
 		if ( associatedHop instanceof AggUnaryOp && associatedHop.isScalar() )
 			return false;
-		// If one of the parents is a federated DataOp, all the inputs have to be LOUT.
-		if (associatedHop.getParent().stream().anyMatch(Hop::isFederatedDataOp))
-			return false;
-		// It can only be FOUT if at least one of the inputs are FOUT
-		if ( !(associatedHop.getInput().stream().anyMatch(
-			input -> hopRelMemo.get(input.getHopID()).stream().anyMatch(HopRel::hasFederatedOutput) ))
+		// It can only be FOUT if at least one of the inputs are FOUT, except if it is a federated DataOp
+		if ( associatedHop.getInput().stream().noneMatch(
+			input -> hopRelMemo.get(input.getHopID()).stream().anyMatch(HopRel::hasFederatedOutput) )
 			&& !associatedHop.isFederatedDataOp() )
 			return false;
 		return true;

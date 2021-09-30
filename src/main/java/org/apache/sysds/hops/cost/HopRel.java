@@ -95,11 +95,6 @@ public class HopRel {
 	}
 
 	private void setInputDependency(Map<Long, List<HopRel>> hopRelMemo){
-		//TODO: Set inputDependency depending on which inputs are valid and optimal.
-		//TODO: isFederatedDataOp may break cost estimation. The cost estimation needs the inputs in the memo table.
-		// How can we add the inputs to the memo table for federated dataops?
-		// Perhaps we need a completely different cost estimation for this type?
-		//!hopRef.isFederatedDataOp() &&
 		if (hopRef.getInput() != null && hopRef.getInput().size() > 0) {
 			if ( fedOut == FederatedOutput.FOUT && !hopRef.isFederatedDataOp() ) {
 				int lowestFOUTIndex = 0;

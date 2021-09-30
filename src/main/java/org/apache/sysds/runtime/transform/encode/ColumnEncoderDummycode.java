@@ -113,6 +113,8 @@ public class ColumnEncoderDummycode extends ColumnEncoder {
 			// Using outputCol here as index since we have a MatrixBlock as input where dummycoding could have been
 			// applied in a previous encoder
 			double val = in.getDoubleValue(i, outputCol);
+			if(Double.isNaN(val))
+				continue;
 			int nCol = outputCol + (int) val - 1;
 			if(nCol != outputCol)
 				out.quickSetValue(i, outputCol, 0);

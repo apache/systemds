@@ -46,6 +46,7 @@ public class TransformFrameEncodeMultithreadedTest extends AutomatedTestBase {
 
 	// dataset and transform tasks without missing values
 	private final static String DATASET1 = "homes3/homes.csv";
+	private final static String DATASET2 = "homes/homes.csv"; // missing vals
 	private final static String SPEC1 = "homes3/homes.tfspec_recode.json";
 	private final static String SPEC2 = "homes3/homes.tfspec_dummy.json";
 	private final static String SPEC2sparse = "homes3/homes.tfspec_dummy_sparse.json";

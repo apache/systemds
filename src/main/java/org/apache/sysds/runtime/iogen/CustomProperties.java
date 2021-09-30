@@ -35,6 +35,7 @@ public class CustomProperties extends FileFormatProperties implements Serializab
 	private HashSet<String> naStrings;
 	private int firstColIndex;
 	private int firstRowIndex;
+	private String[] colKeys;
 
 	protected enum GRPattern {
 		Regular, Irregular;
@@ -91,6 +92,13 @@ public class CustomProperties extends FileFormatProperties implements Serializab
 		this.rowPattern = GRPattern.Irregular;
 		this.firstColIndex = firstColIndex;
 		this.firstRowIndex = firstRowIndex;
+	}
+
+	// Nested format
+
+	public CustomProperties(String[] colKeys) {
+		this.colKeys = colKeys;
+		this.rowPattern = GRPattern.Regular;
 	}
 
 	public String getDelim() {

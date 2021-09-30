@@ -27,7 +27,7 @@ import java.util.Random;
 
 public abstract class JSONObjectTemplate {
 
-	private transient double min = -100;
+	private transient double min = 1;
 
 	private transient double max = 100;
 
@@ -36,10 +36,10 @@ public abstract class JSONObjectTemplate {
 	protected transient int maxLength = 10;
 
 	// Primitive Items
-	protected Integer item1 = getRandomIntegerValue(true);
-	protected Long item2 = getRandomLongValue(true);
-	protected Float item3 = getRandomFloatValue(true);
-	protected Double item4 = getRandomDoubleValue(true);
+	protected Integer item1 = getRandomIntegerValue(false);
+	protected Long item2 = getRandomLongValue(false);
+	protected Float item3 = getRandomFloatValue(false);
+	protected Double item4 = getRandomDoubleValue(false);
 
 	// Primitive List Items
 	protected ArrayList<Integer> list1 = getRandomIntegerList();
@@ -48,10 +48,11 @@ public abstract class JSONObjectTemplate {
 	protected ArrayList<Double> list4 = getRandomDoubleList();
 
 	// Object list Items
-	private ArrayList<NumericObject5> objectList5 = new ArrayList<>();
+	private ArrayList<NumericObject5> objectList5;
 
 	public JSONObjectTemplate() {
 		if(!(this instanceof NumericObject5)) {
+			objectList5 = new ArrayList<>();
 			int l = getRandomArrayLength();
 			if(l == 0)
 				objectList5 = null;
@@ -209,8 +210,9 @@ public abstract class JSONObjectTemplate {
 	}
 
 	protected int getRandomArrayLength() {
-		Random rnd = new Random();
-		return (int) (rnd.nextFloat() * (maxLength - minLength) + minLength);
+		//Random rnd = new Random();
+		//return (int) (rnd.nextFloat() * (maxLength - minLength) + minLength);
+		return maxLength;
 	}
 
 	protected ArrayList<Object> getIntegerListValues(ArrayList<Integer> list) {

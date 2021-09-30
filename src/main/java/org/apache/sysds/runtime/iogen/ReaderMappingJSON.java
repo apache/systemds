@@ -19,40 +19,43 @@
 
 package org.apache.sysds.runtime.iogen;
 
+import org.apache.sysds.runtime.io.IOUtilFunctions;
+import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
+import java.io.BufferedReader;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.HashSet;
-import java.util.Stack;
 
-public abstract class ReaderMappingJSON {
+public abstract class ReaderMappingJSON extends ReaderMapping {
 	protected String[] mapCol;
-	protected static int nrows;
-	protected static int ncols;
-	protected boolean mapped;
 	protected final ArrayList<RawRowJSON> sampleRawRowsJSON;
 
-	public ReaderMappingJSON(String raw) {
+	public ReaderMappingJSON(String raw){
 		sampleRawRowsJSON = new ArrayList<>();
-		Stack<Character> stack = new Stack<>();
-
-		// remove "Enter" from input data
-		String rawJSON = raw.trim().replace("\n", "").replace("\r", "");
-		StringBuilder row = new StringBuilder();
-		for(Character ch : rawJSON.toCharArray()) {
-			row.append(ch);
-			if(ch.equals('{')) {
-				stack.push(ch);
-			}
-			else if(ch.equals('}')) {
-				stack.pop();
-				if(stack.size() == 0) {
-					sampleRawRowsJSON.add(new RawRowJSON(row.toString()));
-					row = new StringBuilder();
-				}
+		InputStream is = IOUtilFunctions.toInputStream(raw);
+		BufferedReader br = new BufferedReader(new InputStreamReader(is));
+		String value;
+		try {
+			while((value = br.readLine()) != null) {
+				sampleRawRowsJSON.add(new RawRowJSON(value));
 			}
 		}
+		catch(Exception e){
+			throw new RuntimeException(e);
+		}
+		finally {
+			IOUtilFunctions.closeSilently(br);
+			IOUtilFunctions.closeSilently(is);
+		}
+	}
+
+	@Override public CustomProperties getFormatProperties() throws Exception {
+		CustomProperties properties = new CustomProperties(mapCol);
+		return properties;
 	}
 
 	// Matrix Reader Mapping
@@ -82,37 +85,6 @@ public abstract class ReaderMappingJSON {
 					rawMatrix.setValue(r, c++, sampleRawRowsJSON.get(r).getDoubleValue(k));
 				}
 			}
-//			System.out.println("names.size="+ names.size());
-//			//-----------------
-//			int ss=0;
-//			for(int c=0; c< names.size();c++){
-//				boolean f=true;
-//				for(int r=0; r< nrows;r++){
-//					if(rawMatrix.getValue(r, c)!=0) {
-//						f = false;
-//						break;
-//					}
-//				}
-//				if(f){
-//					ss++;
-//				}
-//			}
-//			System.out.println("SS Raw= "+ ss);
-//			ss=0;
-//			for(int c=0; c< ncols;c++){
-//				boolean f=true;
-//				for(int r=0; r< nrows;r++){
-//					if(sampleMatrix.getValue(r, c)!=0) {
-//						f = false;
-//						break;
-//					}
-//				}
-//				if(f){
-//					ss++;
-//				}
-//			}
-//			System.out.println("SS Matrix= "+ ss);
-//			//----------------------------
 
 			// looking for the col map
 			for(int c = 0; c < ncols; c++) {
@@ -132,18 +104,6 @@ public abstract class ReaderMappingJSON {
 						bitSet.set(i);
 					}
 				}
-//				if(!flagColMap){
-//					//System.out.println("++++++   "+ c);
-//					int nz=0;
-//					for(int i = 0; i<nrows;i++ ){
-//						double v = matrix.getValue(i,c);
-//						if(v!=0)
-//							nz++;
-//						//System.out.print(matrix.getValue(i,c)+", ");
-//					}
-//					System.out.println("NZ = "+ nz);
-//				}
-
 			}
 			// verify the mapped
 			int sum = 0;
@@ -155,5 +115,13 @@ public abstract class ReaderMappingJSON {
 		}
 	}
 
+	// Matrix Reader Mapping
+	public static class FrameReaderMapping extends ReaderMappingJSON {
 
+		private FrameBlock sampleFrame;
+
+		public FrameReaderMapping(String raw, FrameBlock frame) {
+			super(raw);
+		}
+	}
 }

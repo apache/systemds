@@ -295,4 +295,35 @@ public abstract class MatrixGenerateReader extends MatrixReader {
 			return lnnz;
 		}
 	}
+
+	public static class MatrixReaderJSON extends MatrixGenerateReader {
+
+		public MatrixReaderJSON(CustomProperties _props) {
+			super(_props);
+		}
+
+		@Override
+		protected long readMatrixFromInputStream(InputStream is, String srcInfo, MatrixBlock dest,
+			MutableInt rowPos, long rlen, long clen, int blen) throws IOException {
+			String value = null;
+			int row = rowPos.intValue();
+			double cellValue = 0;
+			int col = 0;
+			long lnnz = 0;
+
+			BufferedReader br = new BufferedReader(new InputStreamReader(is));
+
+			// Read the data
+			try {
+				while((value = br.readLine()) != null) {
+					row++;
+				}
+			}
+			finally {
+				IOUtilFunctions.closeSilently(br);
+			}
+			rowPos.setValue(row);
+			return lnnz;
+		}
+	}
 }

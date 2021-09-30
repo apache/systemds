@@ -42,12 +42,22 @@ public abstract class GenerateReader {
 	protected static final Log LOG = LogFactory.getLog(GenerateReader.class.getName());
 
 	protected static ReaderMapping readerMapping;
+	protected static boolean nested;
 
 	public GenerateReader(SampleProperties sampleProperties) throws Exception {
 
-		readerMapping = sampleProperties.getDataType().isMatrix() ? new ReaderMapping.MatrixReaderMapping(
-			sampleProperties.getSampleRaw(), sampleProperties.getSampleMatrix()) : new ReaderMapping.FrameReaderMapping(
-			sampleProperties.getSampleRaw(), sampleProperties.getSampleFrame());
+		nested = sampleProperties.isNested();
+		if(nested) {
+			readerMapping = sampleProperties.getDataType().isMatrix() ? new ReaderMappingJSON.MatrixReaderMapping(
+				sampleProperties.getSampleRaw(),sampleProperties.getSampleMatrix()) : new ReaderMappingJSON.FrameReaderMapping(
+				sampleProperties.getSampleRaw(), sampleProperties.getSampleFrame());
+		}
+		else {
+			readerMapping = sampleProperties.getDataType().isMatrix() ? new ReaderMappingFlat.MatrixReaderMapping(
+				sampleProperties.getSampleRaw(),
+				sampleProperties.getSampleMatrix()) : new ReaderMappingFlat.FrameReaderMapping(
+				sampleProperties.getSampleRaw(), sampleProperties.getSampleFrame());
+		}
 	}
 
 	// Generate Reader for Matrix
@@ -65,6 +75,7 @@ public abstract class GenerateReader {
 
 		public MatrixReader getReader() throws Exception {
 
+			// 1. Identify file format:
 			boolean isMapped = readerMapping != null && readerMapping.isMapped();
 			if(!isMapped) {
 				throw new Exception("Sample raw data and sample matrix don't match !!");
@@ -73,21 +84,25 @@ public abstract class GenerateReader {
 			if(ffp == null) {
 				throw new Exception("The file format couldn't recognize!!");
 			}
-			// 2. Generate a Matrix Reader:
-			if(ffp.getRowPattern().equals(CustomProperties.GRPattern.Regular)) {
-				if(ffp.getColPattern().equals(CustomProperties.GRPattern.Regular)) {
-					matrixReader = new MatrixGenerateReader.MatrixReaderRowRegularColRegular(ffp);
+			if(!nested) {
+				// 2. Generate a Matrix Reader:
+				if(ffp.getRowPattern().equals(CustomProperties.GRPattern.Regular)) {
+					if(ffp.getColPattern().equals(CustomProperties.GRPattern.Regular)) {
+						matrixReader = new MatrixGenerateReader.MatrixReaderRowRegularColRegular(ffp);
+					}
+					else {
+						matrixReader = new MatrixGenerateReader.MatrixReaderRowRegularColIrregular(ffp);
+					}
 				}
 				else {
-					matrixReader = new MatrixGenerateReader.MatrixReaderRowRegularColIrregular(ffp);
+					matrixReader = new MatrixGenerateReader.MatrixReaderRowIrregular(ffp);
 				}
+				return matrixReader;
 			}
 			else {
-				matrixReader = new MatrixGenerateReader.MatrixReaderRowIrregular(ffp);
+				return matrixReader = new MatrixGenerateReader.MatrixReaderJSON(ffp);
 			}
-			return matrixReader;
 		}
-
 	}
 
 	// Generate Reader for Frame
@@ -105,6 +120,7 @@ public abstract class GenerateReader {
 
 		public FrameReader getReader() throws Exception {
 
+			// 1. Identify file format:
 			boolean isMapped = readerMapping != null && readerMapping.isMapped();
 			if(!isMapped) {
 				throw new Exception("Sample raw data and sample frame don't match !!");
@@ -113,19 +129,25 @@ public abstract class GenerateReader {
 			if(ffp == null) {
 				throw new Exception("The file format couldn't recognize!!");
 			}
-			// 2. Generate a Frame Reader:
-			if(ffp.getRowPattern().equals(CustomProperties.GRPattern.Regular)) {
-				if(ffp.getColPattern().equals(CustomProperties.GRPattern.Regular)) {
-					frameReader = new FrameGenerateReader.FrameReaderRowRegularColRegular(ffp);
+
+			if(!nested) {
+				// 2. Generate a Frame Reader:
+				if(ffp.getRowPattern().equals(CustomProperties.GRPattern.Regular)) {
+					if(ffp.getColPattern().equals(CustomProperties.GRPattern.Regular)) {
+						frameReader = new FrameGenerateReader.FrameReaderRowRegularColRegular(ffp);
+					}
+					else {
+						frameReader = new FrameGenerateReader.FrameReaderRowRegularColIrregular(ffp);
+					}
 				}
 				else {
-					frameReader = new FrameGenerateReader.FrameReaderRowRegularColIrregular(ffp);
+					frameReader = new FrameGenerateReader.FrameReaderRowIrregular(ffp);
 				}
+				return frameReader;
 			}
 			else {
-				frameReader = new FrameGenerateReader.FrameReaderRowIrregular(ffp);
+				return null;
 			}
-			return frameReader;
 		}
 	}
 }

@@ -19,48 +19,74 @@
 
 package org.apache.sysds.test.functions.iogen;
 
-import org.apache.sysds.runtime.iogen.ReaderMappingJSON;
-import org.apache.sysds.runtime.matrix.data.MatrixBlock;
-import org.apache.sysds.runtime.util.DataConverter;
 import org.apache.sysds.runtime.util.UtilFunctions;
-import org.apache.sysds.test.AutomatedTestBase;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.ArrayList;
+import java.util.Random;
 
-public class GenerateRandomJSONMatrix extends AutomatedTestBase {
+public class MatrixGenerateReaderJSONTest extends GenerateReaderMatrixTest {
 
-	protected final static String TEST_DIR = "functions/iogen/";
+	private final static String TEST_NAME = "MatrixGenerateReaderCSVTest";
 
-	@Override public void setUp() {
+	@Override
+	protected String getTestName() {
+		return TEST_NAME;
+	}
+
+
+	@Test
+	public void test1() {
+		generateAndRun(10);
 	}
 
 	@Test
-	@Ignore
-	public void generateDataset(){
-		int nrows = 1;
+	public void test2() {
+		generateAndRun(50);
+	}
+
+	@Test
+	public void test3() {
+		generateAndRun(100);
+	}
+
+	@Test
+	public void test4() {
+		generateAndRun(500);
+	}
+
+	@Test
+	public void test5() {
+		generateAndRun(1000);
+	}
+
+	@Test
+	public void test6() {
+		generateAndRun(2000);
+	}
+
+
+	private void generateAndRun(int nrows) {
 		NumericObject1 ot = new NumericObject1();
 		ArrayList<Object> olt = ot.getJSONFlatValues();
 		int ncols = olt.size();
-		double[][] data = new double[nrows][ncols];
-		StringBuilder sampleRaw = new StringBuilder();
+		sampleMatrix = new double[nrows][ncols];
+		StringBuilder sb = new StringBuilder();
 		for(int r = 0; r < nrows; r++) {
 			NumericObject1 o = new NumericObject1();
 			ArrayList<Object> ol = o.getJSONFlatValues();
 			int index = 0;
 			for(Object oi : ol) {
 				if(oi != null)
-					data[r][index++] = UtilFunctions.getDouble(oi);
+					sampleMatrix[r][index++] = UtilFunctions.getDouble(oi);
 				else
-					data[r][index++] = 0;
+					sampleMatrix[r][index++] = 0;
 			}
-			sampleRaw.append(o.getJSON());
+			sb.append(o.getJSON());
 			if(r!=nrows-1)
-				sampleRaw.append("\n");
+				sb.append("\n");
 		}
-
-		MatrixBlock sampleMB = DataConverter.convertToMatrixBlock(data);
-		ReaderMappingJSON.MatrixReaderMapping mappingJSON = new ReaderMappingJSON.MatrixReaderMapping(sampleRaw.toString(), sampleMB);
+		sampleRaw = sb.toString();
+		runGenerateReaderTest();
 	}
 }

@@ -1,6 +1,7 @@
 package org.apache.sysds.test.functions.builtin;
 
 import org.apache.sysds.common.Types;
+import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.runtime.matrix.data.MatrixValue;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
@@ -34,16 +35,23 @@ public class BuiltInInPlaceTest extends AutomatedTestBase{
             loadTestConfiguration(getTestConfiguration(TEST_NAME));
             String HOME = SCRIPT_DIR + TEST_DIR;
             fullDMLScriptName = HOME + TEST_NAME + ".dml";
-            programArgs = new String[]{"-args", input("A"), output("B") };
+            programArgs = new String[]{"-nvargs","Out=" + output("Out") };
 
+            //double[][] A = getRandomMatrix(size, 1, -10, 10, 0.6, 7);
+            //writeInputMatrixWithMTD("A", A, true);
+            OptimizerUtils.ENABLE_UNARY_UPDATE_IN_PLACE = true;
+            runTest(true, false, null, -1);
+            HashMap<MatrixValue.CellIndex, Double> dmlfileOut1 = readDMLMatrixFromOutputDir("Out");
+            OptimizerUtils.ENABLE_UNARY_UPDATE_IN_PLACE = false;
+            runTest(true, false, null, -1);
+            HashMap<MatrixValue.CellIndex, Double> dmlfileOut2 = readDMLMatrixFromOutputDir("Out");
 
-            runTest(true, false, null, -1);;
             //compare matrices
             // HashMap<MatrixValue.CellIndex, Double> dmlfileOut1 = readDMLMatrixFromOutputDir("Out");
-           // HashMap<MatrixValue.CellIndex, Double> rfileOut1 = readRMatrixFromExpectedDir("Out");
-           // TestUtils.compareMatrices(dmlfileOut1, rfileOut1, eps, "Stat-DML", "Stat-R");
-            TestUtils.compareScalars(1,1,eps);
-
+            // HashMap<MatrixValue.CellIndex, Double> rfileOut1 = readRMatrixFromExpectedDir("Out");
+            // TestUtils.compareMatrices(dmlfileOut1, rfileOut1, eps, "Stat-DML", "Stat-R");
+            // TestUtils.compareScalars(1,1,eps);
+            TestUtils.compareMatrices(dmlfileOut1,dmlfileOut2,eps,"Stat-DML1","Stat-DML2");
         }
         catch(Exception e) {
             e.printStackTrace();

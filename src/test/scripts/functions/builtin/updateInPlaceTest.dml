@@ -1,6 +1,16 @@
-A = rand(rows = 100, cols = 100)
-C = rand(rows = 100, cols = 100)
+#A = rand(rows = 100, cols = 100)
+#C = rand(rows = 100, cols = 100)
+
+A = matrix(0, 10, 10);
+C = matrix(0, 10, 10);
+
+for (x in 1 : 10) {
+    A[x,] = matrix(x, rows = 1, cols = 10);
+    C[x,] = matrix(x, rows = 1, cols = 10);
+}
 B = round(A)
 D = log(C)
-C = B+D * 3 + 13
+C = B+D * 3
+Out = C
+write(Out, $Out);
 print(as.scalar(C[2, 1]))

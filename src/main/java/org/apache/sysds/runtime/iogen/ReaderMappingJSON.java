@@ -32,7 +32,7 @@ import java.util.HashSet;
 
 public abstract class ReaderMappingJSON extends ReaderMapping {
 	protected String[] mapCol;
-	protected final ArrayList<RawRowJSON> sampleRawRowsJSON;
+	protected final ArrayList<FastJSONIndex> sampleRawRowsJSON;
 
 	public ReaderMappingJSON(String raw){
 		sampleRawRowsJSON = new ArrayList<>();
@@ -41,7 +41,7 @@ public abstract class ReaderMappingJSON extends ReaderMapping {
 		String value;
 		try {
 			while((value = br.readLine()) != null) {
-				sampleRawRowsJSON.add(new RawRowJSON(value));
+				sampleRawRowsJSON.add(new FastJSONIndex(value));
 			}
 		}
 		catch(Exception e){
@@ -72,8 +72,8 @@ public abstract class ReaderMappingJSON extends ReaderMapping {
 
 			HashSet<String> names = new HashSet<>();
 
-			for(RawRowJSON rrj : sampleRawRowsJSON) {
-				names.addAll(rrj.getSchemaNames());
+			for(FastJSONIndex fji : sampleRawRowsJSON) {
+				names.addAll(fji.getNames());
 			}
 			String[] colNames = new String[names.size()];
 			BitSet bitSet = new BitSet(colNames.length);

@@ -140,4 +140,8 @@ public class CustomProperties extends FileFormatProperties implements Serializab
 	public void setFirstRowIndex(int firstRowIndex) {
 		this.firstRowIndex = firstRowIndex;
 	}
+
+	public String[] getColKeys() {
+		return colKeys;
+	}
 }

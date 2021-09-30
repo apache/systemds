@@ -19,7 +19,9 @@
 
 package org.apache.sysds.test.functions.iogen;
 
+import org.apache.sysds.runtime.iogen.FastJSONIndex;
 import org.apache.sysds.runtime.util.UtilFunctions;
+import org.apache.wink.json4j.JSONException;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -65,6 +67,13 @@ public class MatrixGenerateReaderJSONTest extends GenerateReaderMatrixTest {
 		generateAndRun(2000);
 	}
 
+	@Test
+	public void test7() throws JSONException {
+		String s1 ="{\"a\":1, \"b\":2, \"c\":3}";
+		String s = "{\"a\":1, \"b\":2, \"c\":3, \"d\":{\"a\":1,\"b\":2}}";
+		FastJSONIndex fjn = new FastJSONIndex(s);
+	}
+
 
 	private void generateAndRun(int nrows) {
 		NumericObject1 ot = new NumericObject1();
@@ -87,6 +96,13 @@ public class MatrixGenerateReaderJSONTest extends GenerateReaderMatrixTest {
 				sb.append("\n");
 		}
 		sampleRaw = sb.toString();
+//		try {
+//			FastJSONIndex fjn = new FastJSONIndex(sampleRaw);
+//		}
+//		catch(Exception ex){
+//
+//		}
+
 		runGenerateReaderTest();
 	}
 }

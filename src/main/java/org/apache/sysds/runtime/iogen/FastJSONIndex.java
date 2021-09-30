@@ -19,7 +19,6 @@
 
 package org.apache.sysds.runtime.iogen;
 
-import org.apache.sysds.common.Types;
 import org.apache.sysds.runtime.util.UtilFunctions;
 import org.apache.wink.json4j.JSONArray;
 import org.apache.wink.json4j.JSONException;
@@ -31,32 +30,20 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Stack;
 
-public class RawRowJSON {
-	private final ArrayList<Object> l1Index;
-	private final ArrayList<JSONIndexProperties> l0Index;
-	private final Map<String, Integer> l0IndexMap;
+public class FastJSONIndex {
 
-	public RawRowJSON(String raw) {
+	private final ArrayList<Object> l1Index;
+	private final Map<String, Integer> l0Index;
+
+	public FastJSONIndex(String input) throws JSONException {
 		l1Index = new ArrayList<>();
-		l0Index = new ArrayList<>();
-		l0IndexMap = new HashMap<>();
-		try {
-			JSONObject jo = new JSONObject(raw);
-			lIndex(jo, new Stack<>(), -1);
-			for(int i = 0; i < l0Index.size(); i++) {
-				l0IndexMap.put(l0Index.get(i).getKeysAsString(), i);
-			}
-		}
-		catch(JSONException e) {
-			throw new RuntimeException(e);
-		}
+		l0Index = new HashMap<>();
+		JSONObject jo = new JSONObject(input);
+		lIndex(jo, new Stack<>(), -1);
 	}
 
-	/* Index JSON values. The index have two levels.
-	The first level reconstruct the json text format, and the second level
-	index they keys in json string.
-	*/
 	private void lIndex(JSONObject jo, Stack<String> keyChain, int index) throws JSONException {
+
 		for(Iterator it = jo.keys(); it.hasNext(); ) {
 			String key = (String) it.next();
 			Object value = jo.get(key);
@@ -70,8 +57,8 @@ public class RawRowJSON {
 				lIndex(ja, keyChain);
 			}
 			else {
+				l0Index.put(getKeysAsString(keyChain), l1Index.size());
 				l1Index.add(value);
-				l0Index.add(new JSONIndexProperties(keyChain, JSONIndexProperties.JSONItemType.PRIMITIVE, 1, index));
 			}
 			keyChain.pop();
 		}
@@ -90,59 +77,33 @@ public class RawRowJSON {
 					lIndex((JSONArray) value, keyChain);
 				}
 				else {
+					l0Index.put(getKeysAsString(keyChain), l1Index.size());
 					l1Index.add(value);
-					l0Index.add(new JSONIndexProperties(keyChain, JSONIndexProperties.JSONItemType.PRIMITIVE, 1, i));
 				}
 				keyChain.pop();
 			}
 		}
 	}
 
-	public ArrayList<String> getSchemaNames() {
-		int size = l0Index.size();
-		ArrayList<String> names = new ArrayList<>();
-		for(int i = 0; i < size; i++) {
-			JSONIndexProperties jip = l0Index.get(i);
-			String key = jip.getKeysAsString();
-			names.add(key);
-		}
-		return names;
+	public String getKeysAsString(Stack<String> keyChain) {
+
+		StringBuilder s = new StringBuilder();
+		for(String k : keyChain)
+			s.append(k).append(".");
+		s.deleteCharAt(s.length() - 1);
+		return s.toString();
 	}
 
-	public Map<String, Types.ValueType> getSchema() {
-		int size = l0Index.size();
-		Map<String, Types.ValueType> schema = new HashMap<>();
-
-		for(int i = 0; i < size; i++) {
-			JSONIndexProperties jip = l0Index.get(i);
-			String key = jip.getKeysAsString();
-			Object value = l1Index.get(i);
-			schema.put(key, getValueType(value));
-		}
-		return schema;
+	public ArrayList<Object> getL1Index() {
+		return l1Index;
 	}
 
-	private Types.ValueType getValueType(Object value){
-		Types.ValueType vt;
-		if(value instanceof Integer)
-			vt = Types.ValueType.INT32;
-		else if(value instanceof Long)
-			vt = Types.ValueType.INT64;
-		else if(value instanceof Float)
-			vt = Types.ValueType.FP32;
-		else if(value instanceof Double)
-			vt = Types.ValueType.FP64;
-		else if(value instanceof Boolean)
-			vt = Types.ValueType.BOOLEAN;
-		else if(value instanceof String)
-			vt = Types.ValueType.STRING;
-		else
-			throw new RuntimeException("Can't recognize the value type of object!");
-		return vt;
+	public Map<String, Integer> getL0Index() {
+		return l0Index;
 	}
 
 	public double getDoubleValue(String key) {
-		Integer index = l0IndexMap.get(key);
+		Integer index = l0Index.get(key);
 		if(index == null)
 			return 0;
 		else
@@ -150,10 +111,17 @@ public class RawRowJSON {
 	}
 
 	public Object getObjectValue(String key) {
-		Integer index = l0IndexMap.get(key);
+		Integer index = l0Index.get(key);
 		if(index == null)
 			return null;
 		else
 			return l1Index.get(index);
+	}
+
+	public ArrayList<String> getNames() {
+		ArrayList<String> result = new ArrayList<>();
+		for(String k : l0Index.keySet())
+			result.add(k);
+		return result;
 	}
 }

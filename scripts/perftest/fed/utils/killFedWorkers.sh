@@ -1,3 +1,4 @@
+#!/bin/bash
 #-------------------------------------------------------------
 #
 # Licensed to the Apache Software Foundation (ASF) under one
@@ -7,9 +8,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-#
+# 
 #   http://www.apache.org/licenses/LICENSE-2.0
-#
+# 
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -19,14 +20,20 @@
 #
 #-------------------------------------------------------------
 
-log4j.rootLogger=ALL, console
+# This script reads the pids of the workers from the pids-file and kills them.
 
-log4j.logger.org.apache.sysds=INFO
-log4j.logger.org.apache.spark=ERROR
-log4j.logger.org.apache.hadoop=ERROR
-log4j.logger.io.netty=INFO
+DATADIR=${1:-"tmp"}
 
-log4j.appender.console=org.apache.log4j.ConsoleAppender
-log4j.appender.console.target=System.err
-log4j.appender.console.layout=org.apache.log4j.PatternLayout
-log4j.appender.console.layout.ConversionPattern=%d{yy/MM/dd HH:mm:ss} %p %c{2}: %m%n
+workerdir=${DATADIR}/workers
+
+pids=$(cat ${workerdir}/pids)
+
+for workerpid in $pids
+do
+  echo "Killing federated worker with pid $workerpid"
+  pkill -P $workerpid
+done
+
+rm ${workerdir}/pids
+rm -r ${workerdir}/hosts
+rm ${workerdir}/hosts.mtd

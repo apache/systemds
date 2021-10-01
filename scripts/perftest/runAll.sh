@@ -57,6 +57,7 @@ echo "-- Generating multinomial data." >> results/times.txt;
 ./runAllBinomial.sh $CMD $TEMPFOLDER
 ./runAllMultinomial.sh $CMD $TEMPFOLDER
 ./runAllRegression.sh $CMD $TEMPFOLDER
+./fed/runAllFed.sh $CMD $TEMPFOLDER
 
 # TODO The following commented benchmarks have yet to be cleaned up and ported from perftestDeprecated to perftest
 #./runAllStats.sh $CMD $TEMPFOLDER

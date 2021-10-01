@@ -25,6 +25,7 @@ import org.apache.commons.lang3.ArrayUtils;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.hops.AggBinaryOp;
 import org.apache.sysds.lops.MapMult;
+import org.apache.sysds.lops.PMMJ;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
@@ -53,7 +54,7 @@ public class MMFEDInstruction extends BinaryFEDInstruction
 		String parts[] = InstructionUtils.getInstructionPartsWithValueType(str);
 		String opcode = parts[0];
 
-		if(!ArrayUtils.contains(new String[] {MapMult.OPCODE, "cpmm", "rmm"}, opcode))
+		if(!ArrayUtils.contains(new String[] {MapMult.OPCODE, PMMJ.OPCODE, "cpmm", "rmm"}, opcode))
 			throw new DMLRuntimeException("MapmmSPInstruction.parseInstruction():: Unknown opcode " + opcode);
 
 		CPOperand in1 = new CPOperand(parts[1]);

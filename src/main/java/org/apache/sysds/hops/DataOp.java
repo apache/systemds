@@ -365,21 +365,6 @@ public class DataOp extends Hop {
 	}
 
 	@Override
-	protected void updateETFed(){
-		if ( isFederatedDataOp() || someInputFederated() )
-			_etype = ExecType.FED;
-	}
-
-	/**
-	 * True if execution is federated, if output is federated, or if OpOpData is federated.
-	 * @return true if federated
-	 */
-	@Override
-	public boolean isFederated() {
-		return super.isFederated() || getOp() == OpOpData.FEDERATED;
-	}
-
-	@Override
 	public boolean isFederatedDataOp(){
 		return _op == OpOpData.FEDERATED;
 	}

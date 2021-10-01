@@ -33,6 +33,12 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+/**
+ * HopRel provides a representation of the relation between a hop, the cost of setting a given FederatedOutput value,
+ * and the input dependency with the given FederatedOutput value.
+ * The HopRel class is used when building and selecting an optimal federated execution plan in IPAPassRewriteFederatedPlan.
+ * The input dependency is needed to hold the valid and optimal FederatedOutput values for the inputs.
+ */
 public class HopRel {
 	protected Hop hopRef;
 	protected FEDInstruction.FederatedOutput fedOut;
@@ -40,6 +46,12 @@ public class HopRel {
 	protected Set<Long> costPointerSet = new HashSet<>();
 	protected List<HopRel> inputDependency = new ArrayList<>();
 
+	/**
+	 * Constructs a HopRel with input dependency and cost estimate based on entries in hopRelMemo.
+	 * @param associatedHop hop associated with this HopRel
+	 * @param fedOut FederatedOutput value assigned to this HopRel
+	 * @param hopRelMemo memo table storing other HopRels including the inputs of associatedHop
+	 */
 	public HopRel(Hop associatedHop, FEDInstruction.FederatedOutput fedOut, Map<Long, List<HopRel>> hopRelMemo){
 		hopRef = associatedHop;
 		this.fedOut = fedOut;
@@ -47,6 +59,12 @@ public class HopRel {
 		cost = new FederatedCostEstimator().costEstimate(this, hopRelMemo);
 	}
 
+	/**
+	 * Adds hopID to set of hops pointing to this HopRel.
+	 * By storing the hopID it can later be determined if the cost
+	 * stored in this HopRel is already used as input cost in another HopRel.
+	 * @param hopID added to set of stored cost pointers
+	 */
 	public void addCostPointer(long hopID){
 		costPointerSet.add(hopID);
 	}
@@ -84,16 +102,32 @@ public class HopRel {
 		return hopRef;
 	}
 
+	/**
+	 * Returns FOUT HopRel for given hop found in hopRelMemo or returns null if HopRel not found.
+	 * @param hop to look for in hopRelMemo
+	 * @param hopRelMemo memo table storing HopRels
+	 * @return FOUT HopRel found in hopRelMemo
+	 */
 	private HopRel getFOUTHopRel(Hop hop, Map<Long, List<HopRel>> hopRelMemo){
 		return hopRelMemo.get(hop.getHopID()).stream().filter(in->in.fedOut==FederatedOutput.FOUT).findFirst().orElse(null);
 	}
 
+	/**
+	 * Get the HopRel with minimum cost for given hop
+	 * @param hopRelMemo memo table storing HopRels
+	 * @param input hop for which minimum cost HopRel is found
+	 * @return HopRel with minimum cost for given hop
+	 */
 	private HopRel getMinOfInput(Map<Long, List<HopRel>> hopRelMemo, Hop input){
 		return hopRelMemo.get(input.getHopID()).stream()
 			.min(Comparator.comparingDouble(a -> a.cost.getTotal()))
 			.orElseThrow(() -> new DMLException("No element in Memo Table found for input"));
 	}
 
+	/**
+	 * Set valid and optimal input dependency for this HopRel as a field.
+	 * @param hopRelMemo memo table storing input HopRels
+	 */
 	private void setInputDependency(Map<Long, List<HopRel>> hopRelMemo){
 		if (hopRef.getInput() != null && hopRef.getInput().size() > 0) {
 			if ( fedOut == FederatedOutput.FOUT && !hopRef.isFederatedDataOp() ) {
@@ -135,6 +169,11 @@ public class HopRel {
 		validateInputDependency();
 	}
 
+	/**
+	 * Throws exception if any input dependency is null.
+	 * If any of the input dependencies are null, it is not possible to build a federated execution plan.
+	 * If this null-state is not found here, an exception will be thrown at another difficult-to-debug place.
+	 */
 	private void validateInputDependency(){
 		for ( int i = 0; i < inputDependency.size(); i++){
 			if ( inputDependency.get(i) == null)
@@ -143,10 +182,18 @@ public class HopRel {
 		}
 	}
 
+	/**
+	 * Get total cost as double
+	 * @return cost as double
+	 */
 	public double getCost(){
 		return cost.getTotal();
 	}
 
+	/**
+	 * Get cost object
+	 * @return cost object
+	 */
 	public FederatedCost getCostObject(){
 		return cost;
 	}

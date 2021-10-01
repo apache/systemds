@@ -46,14 +46,17 @@ import org.apache.sysds.parser.WhileStatementBlock;
 import org.apache.sysds.runtime.instructions.fed.FEDInstruction;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * This rewrite generates a federated execution plan by estimating and setting costs and the FederatedOutput values of
+ * all relevant hops in the DML program.
+ * The rewrite is only applied if federated compilation is activated in OptimizerUtils.
+ */
 public class IPAPassRewriteFederatedPlan extends IPAPass {
 
 	private final static Map<Long, List<HopRel>> hopRelMemo = new HashMap<>();
@@ -121,7 +124,7 @@ public class IPAPassRewriteFederatedPlan extends IPAPass {
 			return rewriteFunctionStatementBlock((FunctionStatementBlock) sb);
 		else {
 			// StatementBlock type (no subclass)
-			sb.setHops(selectFederatedExecutionPlan(sb.getHops()));
+			selectFederatedExecutionPlan(sb.getHops());
 		}
 		return new ArrayList<>(Collections.singletonList(sb));
 	}
@@ -165,23 +168,43 @@ public class IPAPassRewriteFederatedPlan extends IPAPass {
 		return new ArrayList<>(Collections.singletonList(funcSB));
 	}
 
+	/**
+	 * Sets FederatedOutput field of all hops in DAG starting from given root.
+	 * The FederatedOutput chosen for root is the minimum cost HopRel found in memo table for the given root.
+	 * The FederatedOutput values chosen for the inputs to the root are chosen based on the input dependencies.
+	 * @param root hop for which FederatedOutput needs to be set
+	 */
 	private void setFinalFedout(Hop root){
 		HopRel optimalRootHopRel = hopRelMemo.get(root.getHopID()).stream().min(Comparator.comparingDouble(HopRel::getCost))
 			.orElseThrow(() -> new DMLException("Hop root " + root + " has no feasible federated output alternatives"));
 		setFinalFedout(root, optimalRootHopRel);
 	}
 
+	/**
+	 * Update the FederatedOutput value and cost based on information stored in given rootHopRel.
+	 * @param root hop for which FederatedOutput is set
+	 * @param rootHopRel from which FederatedOutput value and cost is retrieved
+	 */
 	private void setFinalFedout(Hop root, HopRel rootHopRel){
 		updateFederatedOutput(root, rootHopRel);
 		visitInputDependency(rootHopRel);
 	}
 
+	/**
+	 * Sets FederatedOutput value for each of the inputs of rootHopRel
+	 * @param rootHopRel which has its input values updated
+	 */
 	private void visitInputDependency(HopRel rootHopRel){
 		List<HopRel> hopRelInputs = rootHopRel.getInputDependency();
 		for ( HopRel input : hopRelInputs )
 			setFinalFedout(input.getHopRef(), input);
 	}
 
+	/**
+	 * Updates FederatedOutput value and cost estimate based on updateHopRel values.
+	 * @param root which has its values updated
+	 * @param updateHopRel from which the values are retrieved
+	 */
 	private void updateFederatedOutput(Hop root, HopRel updateHopRel){
 		root.setFederatedOutput(updateHopRel.getFederatedOutput());
 		root.setFederatedCost(updateHopRel.getCostObject());
@@ -189,23 +212,26 @@ public class IPAPassRewriteFederatedPlan extends IPAPass {
 
 	/**
 	 * Select federated execution plan for every Hop in the DAG starting from given roots.
+	 * The cost estimates of the hops are also updated when FederatedOutput is updated in the hops.
 	 * @param roots starting point for going through the Hop DAG to update the FederatedOutput fields.
-	 * @return the list of roots with updated FederatedOutput fields.
 	 */
-	private ArrayList<Hop> selectFederatedExecutionPlan(ArrayList<Hop> roots){
+	private void selectFederatedExecutionPlan(ArrayList<Hop> roots){
 		for ( Hop root : roots ){
 			selectFederatedExecutionPlan(root);
 		}
-		return roots;
 	}
 
+	/**
+	 * Select federated execution plan for every Hop in the DAG starting from given root.
+	 * @param root starting point for going through the Hop DAG to update the federatedOutput fields
+	 */
 	private void selectFederatedExecutionPlan(Hop root){
 		visitFedPlanHop(root);
 		setFinalFedout(root);
 	}
 
 	/**
-	 * Go through the Hop DAG and set the FederatedOutput field for each Hop from leaf to given currentHop.
+	 * Go through the Hop DAG and set the FederatedOutput field and cost estimate for each Hop from leaf to given currentHop.
 	 * @param currentHop the Hop from which the DAG is visited
 	 */
 	private void visitFedPlanHop(Hop currentHop){
@@ -230,12 +256,23 @@ public class IPAPassRewriteFederatedPlan extends IPAPass {
 		currentHop.setVisited();
 	}
 
+	/**
+	 * Checks if the instructions related to the given hop supports FOUT/LOUT processing.
+	 * @param hop to check for federated support
+	 * @return true if federated instructions related to hop supports FOUT/LOUT processing
+	 */
 	private boolean isFedInstSupportedHop(Hop hop){
 		// The following operations are supported given that the above conditions have not returned already
 		return ( hop instanceof AggBinaryOp || hop instanceof BinaryOp || hop instanceof ReorgOp
 			|| hop instanceof AggUnaryOp || hop instanceof TernaryOp || hop instanceof DataOp);
 	}
 
+	/**
+	 * Checks if the associatedHop supports the given federated output value.
+	 * @param associatedHop to check support of
+	 * @param fedOut federated output value
+	 * @return true if associatedHop supports fedOut
+	 */
 	private boolean isFedOutSupported(Hop associatedHop, FEDInstruction.FederatedOutput fedOut){
 		switch(fedOut){
 			case FOUT:

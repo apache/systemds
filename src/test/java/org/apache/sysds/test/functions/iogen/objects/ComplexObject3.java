@@ -17,28 +17,38 @@
  * under the License.
  */
 
-package org.apache.sysds.test.functions.iogen;
+package org.apache.sysds.test.functions.iogen.objects;
+
+import org.apache.sysds.common.Types;
 
 import java.util.ArrayList;
 
-public class NumericObject3 extends JSONObjectTemplate{
+public class ComplexObject3 extends ComplexObjectTemplate {
 
 	// Object Items
-	private NumericObject4 numericObject4 = new NumericObject4();
+	private ComplexObject4 complexObject4 = new ComplexObject4();
 
-	public NumericObject3() {
+	public ComplexObject3() {
 		super();
 	}
 
-	@Override public ArrayList<Object> getJSONFlatValues() {
+	@Override
+	public ArrayList<Object> getJSONFlatValues() {
 		ArrayList<Object> values = super.getJSONFlatValues();
 
-		if(numericObject4 != null) {
-			values.addAll(numericObject4.getJSONFlatValues());
+		if(complexObject4 != null) {
+			values.addAll(complexObject4.getJSONFlatValues());
 		}
 		else
 			values.addAll(getEmptyFlatObject(this));
 
 		return values;
+	}
+
+	@Override
+	public ArrayList<Types.ValueType> getSchema() {
+		ArrayList<Types.ValueType> result = super.getSchema();
+		result.addAll(complexObject4.getSchema());
+		return result;
 	}
 }

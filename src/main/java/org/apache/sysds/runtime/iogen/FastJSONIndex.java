@@ -19,6 +19,7 @@
 
 package org.apache.sysds.runtime.iogen;
 
+import org.apache.sysds.common.Types;
 import org.apache.sysds.runtime.util.UtilFunctions;
 import org.apache.wink.json4j.JSONArray;
 import org.apache.wink.json4j.JSONException;
@@ -123,5 +124,34 @@ public class FastJSONIndex {
 		for(String k : l0Index.keySet())
 			result.add(k);
 		return result;
+	}
+
+	public Map<String, Types.ValueType> getNamesType() {
+		Map<String, Types.ValueType> result = new HashMap<>();
+		for(String k : l0Index.keySet()) {
+			Object o = l1Index.get(l0Index.get(k));
+			Types.ValueType vt = getValueType(o);
+			result.put(k, vt);
+		}
+		return result;
+	}
+
+	private Types.ValueType getValueType(Object o) {
+		Types.ValueType vt;
+		if(o instanceof Integer)
+			vt = Types.ValueType.INT32;
+		else if(o instanceof Long)
+			vt = Types.ValueType.INT64;
+		else if(o instanceof Float)
+			vt = Types.ValueType.FP32;
+		else if(o instanceof Double)
+			vt = Types.ValueType.FP64;
+		else if(o instanceof String)
+			vt = Types.ValueType.STRING;
+		else if(o instanceof Boolean)
+			vt = Types.ValueType.BOOLEAN;
+		else
+			throw new RuntimeException("Don't support object value type!");
+		return vt;
 	}
 }

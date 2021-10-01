@@ -17,15 +17,29 @@
  * under the License.
  */
 
-package org.apache.sysds.runtime.iogen;
+package org.apache.sysds.test.functions.iogen.objects;
 
-public abstract class ReaderMapping {
+import java.util.ArrayList;
 
-	protected boolean mapped;
-	protected static int nrows;
-	protected static int ncols;
-	public abstract CustomProperties getFormatProperties() throws Exception;
-	protected boolean isMapped() {
-		return mapped;
+public class NumericObject4 extends NumericObjectTemplate{
+
+	// Object Items
+	private NumericObject5 numericObject5 = new NumericObject5();
+
+	public NumericObject4() {
+		super();
+	}
+
+	@Override
+	public ArrayList<Object> getJSONFlatValues() {
+		ArrayList<Object> values = super.getJSONFlatValues();
+
+		if(numericObject5 != null) {
+			values.addAll(numericObject5.getJSONFlatValues());
+		}
+		else
+			values.addAll(getEmptyFlatObject(this));
+
+		return values;
 	}
 }

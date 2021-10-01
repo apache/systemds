@@ -146,7 +146,7 @@ public abstract class GenerateReader {
 				return frameReader;
 			}
 			else {
-				return null;
+				return frameReader = new FrameGenerateReader.FrameReaderJSON(ffp);
 			}
 		}
 	}

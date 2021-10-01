@@ -17,15 +17,28 @@
  * under the License.
  */
 
-package org.apache.sysds.test.functions.iogen;
+package org.apache.sysds.test.functions.iogen.objects;
 
 import java.util.ArrayList;
 
-public class NumericObject5 extends JSONObjectTemplate{
+public class NumericObject1 extends NumericObjectTemplate{
+	// Object Items
+	private NumericObject2 numericObject2 = new NumericObject2();
 
-	public NumericObject5() { }
+	public NumericObject1() {
+		super();
+	}
 
-	@Override public ArrayList<Object> getJSONFlatValues() {
-		return super.getJSONFlatValues();
+	@Override
+	public ArrayList<Object> getJSONFlatValues() {
+		ArrayList<Object> values = super.getJSONFlatValues();
+
+		if(numericObject2 != null) {
+			values.addAll(numericObject2.getJSONFlatValues());
+		}
+		else
+			values.addAll(getEmptyFlatObject(this));
+
+		return values;
 	}
 }

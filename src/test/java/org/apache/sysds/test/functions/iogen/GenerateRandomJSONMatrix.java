@@ -24,6 +24,7 @@ import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.DataConverter;
 import org.apache.sysds.runtime.util.UtilFunctions;
 import org.apache.sysds.test.AutomatedTestBase;
+import org.apache.sysds.test.functions.iogen.objects.NumericObject1;
 import org.junit.Ignore;
 import org.junit.Test;
 

@@ -95,7 +95,6 @@ public class CustomProperties extends FileFormatProperties implements Serializab
 	}
 
 	// Nested format
-
 	public CustomProperties(String[] colKeys) {
 		this.colKeys = colKeys;
 		this.rowPattern = GRPattern.Regular;

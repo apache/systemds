@@ -19,13 +19,17 @@
 
 package org.apache.sysds.test.functions.iogen;
 
+import com.google.gson.Gson;
+import org.apache.hadoop.metrics2.sink.ganglia.GangliaSink30;
+import org.apache.sysds.common.Types;
 import org.apache.sysds.runtime.util.UtilFunctions;
+import org.apache.sysds.test.functions.iogen.objects.ComplexObject1;
 import org.apache.sysds.test.functions.iogen.objects.NumericObject1;
 import org.junit.Test;
 
 import java.util.ArrayList;
 
-public class MatrixGenerateReaderJSONTest extends GenerateReaderMatrixTest {
+public class FrameGenerateReaderJSONTest extends GenerateReaderFrameTest {
 
 	private final static String TEST_NAME = "MatrixGenerateReaderCSVTest";
 
@@ -33,7 +37,6 @@ public class MatrixGenerateReaderJSONTest extends GenerateReaderMatrixTest {
 	protected String getTestName() {
 		return TEST_NAME;
 	}
-
 
 	@Test
 	public void test1() {
@@ -66,23 +69,45 @@ public class MatrixGenerateReaderJSONTest extends GenerateReaderMatrixTest {
 	}
 
 	private void generateAndRun(int nrows) {
-		NumericObject1 ot = new NumericObject1();
+		ComplexObject1 ot = new ComplexObject1();
 		ArrayList<Object> olt = ot.getJSONFlatValues();
 		int ncols = olt.size();
-		sampleMatrix = new double[nrows][ncols];
+		names = new String[ncols];
+		for(int i=0;i<ncols;i++)
+			names[i]="col_"+i;
+		schema = ot.getSchema().toArray(new Types.ValueType[0]);
+		data = new String[nrows][ncols];
 		StringBuilder sb = new StringBuilder();
 		for(int r = 0; r < nrows; r++) {
-			NumericObject1 o = new NumericObject1();
+			ComplexObject1 o = new ComplexObject1();
 			ArrayList<Object> ol = o.getJSONFlatValues();
 			int index = 0;
 			for(Object oi : ol) {
 				if(oi != null)
-					sampleMatrix[r][index++] = UtilFunctions.getDouble(oi);
-				else
-					sampleMatrix[r][index++] = 0;
+					data[r][index++] = UtilFunctions.objectToString(oi);
+				else {
+					Types.ValueType vt = schema[index];
+					String na = "";
+					switch(vt) {
+						case FP32:
+						case FP64:
+						case INT32:
+						case INT64:
+							na = "0";
+							break;
+						case STRING:
+							na = "";
+							break;
+						case BOOLEAN:
+							na = "false";
+							break;
+					}
+					data[r][index++] = na;
+				}
+
 			}
 			sb.append(o.getJSON());
-			if(r!=nrows-1)
+			if(r != nrows - 1)
 				sb.append("\n");
 		}
 		sampleRaw = sb.toString();

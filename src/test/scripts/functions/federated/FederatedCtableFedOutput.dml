@@ -50,4 +50,7 @@ else
     else
       X2 = table(rix, cix);
 
-write(X2, $out);
+while(FALSE) { }
+Z = as.matrix(sum(X2));
+
+write(Z, $out);

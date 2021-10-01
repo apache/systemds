@@ -2044,7 +2044,8 @@ public class FrameBlock implements CacheBlock, Externalizable  {
 			else
 				return ValueType.INT64;
 		}
-		else if (val.matches("[-+]?[0-9]+\\.?[0-9]*([e][-+]?[0-9]+)")){
+		else if (val.matches("[-+]?[0-9]*\\.?[0-9]+([eE][-+]?[0-9]+)?")){
+			System.out.println("identified: "+ val);
 			double maxValue = Double.parseDouble(val);
 			if ((maxValue >= (-Float.MAX_VALUE)) && (maxValue <= Float.MAX_VALUE))
 				return ValueType.FP32;
@@ -2169,7 +2170,7 @@ public class FrameBlock implements CacheBlock, Externalizable  {
 				if(!dataType.toString().contains(type) && !(dataType == ValueType.BOOLEAN && type.equals("INT")) &&
 					!(dataType == ValueType.BOOLEAN && type.equals("FP"))){
 					LOG.warn("Datatype detected: " + dataType + " where expected: " + schemaString[i] + " col: " +
-						(i+1) + ", row:" +(j+1));
+						(i+1) + ", row:" +(j+1)+" "+obj.get(j).toString());
 
 					this.set(j,i,null);
 				}

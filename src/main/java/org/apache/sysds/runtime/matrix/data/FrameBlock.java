@@ -2044,7 +2044,7 @@ public class FrameBlock implements CacheBlock, Externalizable  {
 			else
 				return ValueType.INT64;
 		}
-		else if (val.matches("[-+]?[0-9]+\\.?[0-9]*([e]?[-+]?[0-9]+)")){
+		else if (val.matches("[-+]?[0-9]+\\.?[0-9]*([e][-+]?[0-9]+)")){
 			double maxValue = Double.parseDouble(val);
 			if ((maxValue >= (-Float.MAX_VALUE)) && (maxValue <= Float.MAX_VALUE))
 				return ValueType.FP32;

@@ -63,7 +63,7 @@ doSample = function(Matrix[Double] eX, Matrix[Double] eY, Double ratio, Boolean 
   sampledX = eX
   sampledY = eY
   
-  if(sampled > MIN_SAMPLE)
+  if(sampled > MIN_SAMPLE & ratio != 1.0)
   {
     dist = max(eY) # num classes (one-hot encoded eY) 
     
@@ -156,6 +156,7 @@ return(Frame[Unknown] processedData)
   # step 1 drop invalid types
   print(prefix+" drop values with type mismatch");
   data = dropInvalidType(data, schema)
+  print("dropped invalids")
   
   # step 2 do the case transformations
   print(prefix+" convert strings to lower case");
@@ -325,7 +326,7 @@ topk_gridSearch = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] Xt
         cvbeta += lbeta;
         cvloss += as.matrix(accuracy);
       }
-      Rbeta[i,] = cvbeta / k;
+      # Rbeta[i,] = cvbeta / k;
       Rloss[i,] = cvloss / k;
     }
   }
@@ -338,7 +339,7 @@ topk_gridSearch = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] Xt
         ltrainArgs[as.scalar(params[j])] = as.scalar(HP[i,j]);
       # b) core training/scoring and write-back
       lbeta = t(eval(train, ltrainArgs))
-      Rbeta[i,1:ncol(lbeta)] = lbeta;
+      # Rbeta[i,1:ncol(lbeta)] = lbeta;
       Rloss[i,] = eval(predict, append(predictArgs,t(lbeta)));
     }
   }

@@ -188,8 +188,15 @@ getDirtyScore = function(Frame[Unknown] X, Matrix[Double] Y, Frame[Unknown] Xtes
   Matrix[Double] evalFunHp, Double sample, Integer trainML, Boolean cv, Integer cvk, List[Unknown] ctx=list() )
 return(Double dirtyScore, Matrix[Double] evalFunHp)
 {
+  dschema = detectSchema(X)
+  dmask = matrix(0, rows=1, cols=ncol(dschema))
+  for(i in 1:ncol(dschema))
+    if(as.scalar(dschema[1, i]) == "STRING" | as.scalar(dschema[1, i]) == "BOOLEAN")
+      dmask[1, i] = 1
+ 
   prefix = as.scalar(ctx["prefix"]);
   mask = as.matrix(metaList['mask']) 
+  mask = ifelse(sum(mask == dmask) < ncol(mask), dmask, mask)
   [eXtrain, eXtest] = recodeData(X, Xtest, mask, cv, "recode")
   eXtrain = replace(target=eXtrain, pattern=NaN, replacement = 0)
   eXtest = replace(target=eXtest, pattern=NaN, replacement = 0)

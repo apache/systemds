@@ -19,14 +19,20 @@
 #
 #-------------------------------------------------------------
 
-log4j.rootLogger=ALL, console
+rank = ifdef($rank, 10);
+reg = ifdef($reg, "L2");
+lambda = ifdef($lambda, 0.000001);
+maxiter = ifdef($maxiter, 50);
+thr = ifdef($thr, 0.0001);
+verbose = ifdef($verbose, TRUE);
+modelB = ifdef($modelB, "B");
+modelM = ifdef($modelM, "M");
+fmt = ifdef($fmt, "text");
+check = ifdef($check, TRUE);
 
-log4j.logger.org.apache.sysds=INFO
-log4j.logger.org.apache.spark=ERROR
-log4j.logger.org.apache.hadoop=ERROR
-log4j.logger.io.netty=INFO
+X = read($X);
 
-log4j.appender.console=org.apache.log4j.ConsoleAppender
-log4j.appender.console.target=System.err
-log4j.appender.console.layout=org.apache.log4j.PatternLayout
-log4j.appender.console.layout.ConversionPattern=%d{yy/MM/dd HH:mm:ss} %p %c{2}: %m%n
+[B, M] = alsCG(X=X, rank=rank, reg=reg, lambda=lambda, maxi=maxiter, check=check, thr=thr, verbose=verbose);
+
+write(B, $modelB, format=fmt);
+write(M, $modelM, format=fmt);

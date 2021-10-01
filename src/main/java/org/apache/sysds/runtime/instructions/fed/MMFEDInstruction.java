@@ -21,6 +21,7 @@ package org.apache.sysds.runtime.instructions.fed;
 
 import java.util.concurrent.Future;
 
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.hops.AggBinaryOp;
 import org.apache.sysds.lops.MapMult;
@@ -41,18 +42,18 @@ import org.apache.sysds.runtime.matrix.operators.AggregateBinaryOperator;
 import org.apache.sysds.runtime.matrix.operators.Operator;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 
-public class MapmmFEDInstruction extends BinaryFEDInstruction
+public class MMFEDInstruction extends BinaryFEDInstruction
 {
-	private MapmmFEDInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out, MapMult.CacheType type,
+	private MMFEDInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out, MapMult.CacheType type,
 		boolean outputEmpty, AggBinaryOp.SparkAggType aggtype, String opcode, String istr) {
 		super(FEDType.MAPMM, op, in1, in2, out, opcode, istr);
 	}
 
-	public static MapmmFEDInstruction parseInstruction( String str ) {
+	public static MMFEDInstruction parseInstruction( String str ) {
 		String parts[] = InstructionUtils.getInstructionPartsWithValueType(str);
 		String opcode = parts[0];
 
-		if(!opcode.equalsIgnoreCase(MapMult.OPCODE))
+		if(!ArrayUtils.contains(new String[] {MapMult.OPCODE, "cpmm", "rmm"}, opcode))
 			throw new DMLRuntimeException("MapmmSPInstruction.parseInstruction():: Unknown opcode " + opcode);
 
 		CPOperand in1 = new CPOperand(parts[1]);
@@ -63,7 +64,7 @@ public class MapmmFEDInstruction extends BinaryFEDInstruction
 		AggBinaryOp.SparkAggType aggtype = AggBinaryOp.SparkAggType.valueOf(parts[6]);
 
 		AggregateBinaryOperator aggbin = InstructionUtils.getMatMultOperator(1);
-		return new MapmmFEDInstruction(aggbin, in1, in2, out, type, outputEmpty, aggtype, opcode, str);
+		return new MMFEDInstruction(aggbin, in1, in2, out, type, outputEmpty, aggtype, opcode, str);
 	}
 
 	public void processInstruction(ExecutionContext ec) {

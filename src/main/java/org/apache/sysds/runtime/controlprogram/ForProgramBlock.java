@@ -165,12 +165,12 @@ public class ForProgramBlock extends ProgramBlock
 		}
 		
 		//execute exit instructions
-		executeExitInstructions(_exitInstruction, "for", ec);
+		executeExitInstructions("for", ec);
 	}
 
 	protected ScalarObject executePredicateInstructions( int pos, ArrayList<Instruction> instructions, ExecutionContext ec, boolean downCast )
 	{
-		ScalarObject ret = null;
+		ScalarObject ret;
 		ValueType vt = downCast ? ValueType.INT64 : null;
 		
 		try
@@ -221,7 +221,7 @@ public class ForProgramBlock extends ProgramBlock
 	/**
 	 * Utility class for iterating over positive or negative predicate sequences.
 	 */
-	protected class SequenceIterator implements Iterator<IntObject>, Iterable<IntObject>
+	protected static class SequenceIterator implements Iterator<IntObject>, Iterable<IntObject>
 	{
 		private long _cur = -1;
 		private long _to = -1;

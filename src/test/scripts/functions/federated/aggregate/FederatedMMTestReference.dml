@@ -29,9 +29,12 @@ else {
   Y = t(X) * 7;
 }
 
-Z = (Y %*% seq(1, ncol(Y))) > 5; # aggregation creating federated output
+Z1 = Y %*% seq(1, ncol(Y));
 
-while(FALSE) { }
+Z2 = X %*% Y;
 
-s = (X %*% Y) + mean(Z);
+sZ1 = sum(Z1) / 1000;
+
+s = Z2 + sZ1;
+
 write(s, $5);

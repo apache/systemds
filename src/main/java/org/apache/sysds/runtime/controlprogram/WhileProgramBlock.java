@@ -69,7 +69,7 @@ public class WhileProgramBlock extends ProgramBlock
 	
 	private BooleanObject executePredicate(ExecutionContext ec) 
 	{
-		BooleanObject result = null;
+		BooleanObject result;
 		try
 		{
 			if( _sb!=null )
@@ -140,7 +140,7 @@ public class WhileProgramBlock extends ProgramBlock
 		}
 		
 		//execute exit instructions
-		executeExitInstructions(_exitInstruction, "while", ec);
+		executeExitInstructions("while", ec);
 	}
 	
 	public void setChildBlocks(ArrayList<ProgramBlock> childs) {

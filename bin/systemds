@@ -319,7 +319,7 @@ if [[ "$*" == *-config* ]]; then
   fi
 elif [ -z "$CONFIG_FILE" ] ; then
   # same as above: set config file param if the file exists
-  CONFIG_FILE=$(ordered_find "SystemDS*config*.xml")
+  CONFIG_FILE=$(ordered_find "SystemDS-config-defaults.xml")
   if [ -z "$CONFIG_FILE" ]; then
     CONFIG_FILE=""
   else

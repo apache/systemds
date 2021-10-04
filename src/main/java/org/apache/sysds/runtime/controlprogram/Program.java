@@ -35,8 +35,8 @@ public class Program
 	public static final String KEY_DELIM = "::";
 	
 	private DMLProgram _prog;
-	private ArrayList<ProgramBlock> _programBlocks;
-	private HashMap<String, FunctionDictionary<FunctionProgramBlock>> _namespaces;
+	private final ArrayList<ProgramBlock> _programBlocks;
+	private final HashMap<String, FunctionDictionary<FunctionProgramBlock>> _namespaces;
 	
 	public Program() {
 		_namespaces = new HashMap<>();

@@ -181,7 +181,7 @@ public abstract class ProgramBlock implements ParseInfo {
 		return executePredicateInstructions(tmp, retType, ec);
 	}
 
-	protected void executeExitInstructions(Instruction inst, String ctx, ExecutionContext ec) {
+	protected void executeExitInstructions(String ctx, ExecutionContext ec) {
 		try {
 			if(_exitInstruction != null)
 				executeSingleInstruction(_exitInstruction, ec);
@@ -279,7 +279,7 @@ public abstract class ProgramBlock implements ParseInfo {
 			// variables in symbol table (for tracking source of wrong representation)
 			if(CHECK_MATRIX_PROPERTIES) {
 				checkSparsity(tmp, ec.getVariables(), ec);
-				checkFederated(tmp, ec.getVariables());
+				checkFederated(ec.getVariables());
 			}
 		}
 		catch(DMLScriptException e) {
@@ -377,7 +377,7 @@ public abstract class ProgramBlock implements ParseInfo {
 		}
 	}
 
-	private static void checkFederated(Instruction lastInst, LocalVariableMap vars) {
+	private static void checkFederated(LocalVariableMap vars) {
 		for(String varname : vars.keySet()) {
 			Data dat = vars.get(varname);
 			if(!(dat instanceof CacheableData))

@@ -128,12 +128,12 @@ public class IfProgramBlock extends ProgramBlock
 		}
 		
 		//execute exit instructions
-		executeExitInstructions(_exitInstruction, "if", ec);
+		executeExitInstructions("if", ec);
 	}
 
 	private BooleanObject executePredicate(ExecutionContext ec) 
 	{
-		BooleanObject result = null;
+		BooleanObject result;
 		try {
 			if( _sb != null ) {
 				IfStatementBlock isb = (IfStatementBlock)_sb;

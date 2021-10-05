@@ -33,7 +33,7 @@ import org.apache.sysds.runtime.privacy.PrivacyConstraint.PrivacyLevel;
  */
 public class FineGrainedPrivacyMap implements FineGrainedPrivacy {
 
-	private Map<DataRange, PrivacyLevel> constraintCollection = new LinkedHashMap<>();
+	private final Map<DataRange, PrivacyLevel> constraintCollection = new LinkedHashMap<>();
 
 	@Override
 	public void put(DataRange dataRange, PrivacyLevel privacyLevel) {
@@ -96,15 +96,15 @@ public class FineGrainedPrivacyMap implements FineGrainedPrivacy {
 	public Map<String, long[][][]> getAllConstraints() {
 		ArrayList<long[][]> privateRanges = new ArrayList<>();
 		ArrayList<long[][]> aggregateRanges = new ArrayList<>();
-		constraintCollection.forEach((range, privacylevel) -> {
-			if (privacylevel == PrivacyLevel.Private)
+		constraintCollection.forEach((range, privacyLevel) -> {
+			if (privacyLevel == PrivacyLevel.Private)
 				privateRanges.add(new long[][] { range.getBeginDims(), range.getEndDims() });
-			else if (privacylevel == PrivacyLevel.PrivateAggregation)
+			else if (privacyLevel == PrivacyLevel.PrivateAggregation)
 				aggregateRanges.add(new long[][] { range.getBeginDims(), range.getEndDims() });
 		});
 		Map<String, long[][][]> constraintMap = new LinkedHashMap<>();
 		constraintMap.put(PrivacyLevel.Private.name(), privateRanges.toArray(new long[0][][]));
-		constraintMap.put(PrivacyLevel.PrivateAggregation.name(), privateRanges.toArray(new long[0][][]));
+		constraintMap.put(PrivacyLevel.PrivateAggregation.name(), aggregateRanges.toArray(new long[0][][]));
 		return constraintMap;
 	}
 

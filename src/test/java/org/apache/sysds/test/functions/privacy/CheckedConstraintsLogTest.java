@@ -55,7 +55,7 @@ public class CheckedConstraintsLogTest extends AutomatedTestBase {
 	public void addCheckedConstraintsSingleValue(){
 		EnumMap<PrivacyLevel,LongAdder> checked = getMap(PrivacyLevel.Private, 300);
 		CheckedConstraintsLog.addCheckedConstraints(checked);
-		assertTrue(CheckedConstraintsLog.getCheckedConstraints().get(PrivacyLevel.Private).longValue() == 300);
+		assertEquals(300, CheckedConstraintsLog.getCheckedConstraints().get(PrivacyLevel.Private).longValue());
 	}
 
 	@Test
@@ -64,7 +64,7 @@ public class CheckedConstraintsLogTest extends AutomatedTestBase {
 		CheckedConstraintsLog.addCheckedConstraints(checked);
 		EnumMap<PrivacyLevel,LongAdder> checked2 = getMap(PrivacyLevel.Private, 150);
 		CheckedConstraintsLog.addCheckedConstraints(checked2);
-		assertTrue(CheckedConstraintsLog.getCheckedConstraints().get(PrivacyLevel.Private).longValue() == 450);
+		assertEquals(450, CheckedConstraintsLog.getCheckedConstraints().get(PrivacyLevel.Private).longValue());
 	}
 
 	@Test
@@ -89,9 +89,9 @@ public class CheckedConstraintsLogTest extends AutomatedTestBase {
 
 	@Test
 	public void addLoadedConstraintsSingleValue(){
-		Integer n = 12;
+		int n = 12;
 		for (int i = 0; i < n; i++)
 			CheckedConstraintsLog.addLoadedConstraint(PrivacyLevel.Private);
-		assertEquals(n.longValue(), CheckedConstraintsLog.getLoadedConstraints().get(PrivacyLevel.Private).longValue());
+		assertEquals(n, CheckedConstraintsLog.getLoadedConstraints().get(PrivacyLevel.Private).longValue());
 	}
 }

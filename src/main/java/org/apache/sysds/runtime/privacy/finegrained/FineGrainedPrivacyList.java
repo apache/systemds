@@ -33,7 +33,7 @@ import org.apache.sysds.runtime.privacy.PrivacyConstraint.PrivacyLevel;
  */
 public class FineGrainedPrivacyList implements FineGrainedPrivacy {
 
-	private ArrayList<Map.Entry<DataRange, PrivacyLevel>> constraintCollection = new ArrayList<>();
+	private final ArrayList<Map.Entry<DataRange, PrivacyLevel>> constraintCollection = new ArrayList<>();
 
 	@Override
 	public PrivacyLevel[] getRowPrivacy(int numRows, int numCols) {
@@ -142,7 +142,7 @@ public class FineGrainedPrivacyList implements FineGrainedPrivacy {
 		});
 		Map<String, long[][][]> constraintMap = new HashMap<>();
 		constraintMap.put(PrivacyLevel.Private.name(), privateRanges.toArray(new long[0][][]));
-		constraintMap.put(PrivacyLevel.PrivateAggregation.name(), privateRanges.toArray(new long[0][][]));
+		constraintMap.put(PrivacyLevel.PrivateAggregation.name(), aggregateRanges.toArray(new long[0][][]));
 		return constraintMap;
 	}
 
@@ -177,9 +177,8 @@ public class FineGrainedPrivacyList implements FineGrainedPrivacy {
 	@Override
 	public String toString(){
 		StringBuilder stringBuilder = new StringBuilder();
-		for ( Map.Entry<DataRange,PrivacyLevel> entry : constraintCollection ){
-			stringBuilder.append(entry.getKey().toString() + " : " + entry.getValue().name());
-		}
+		for ( Map.Entry<DataRange,PrivacyLevel> entry : constraintCollection )
+			stringBuilder.append(String.format("%s : %s",entry.getKey().toString(), entry.getValue().name()));
 		return stringBuilder.toString();
 	}
 }

@@ -22,7 +22,7 @@ package org.apache.sysds.runtime.privacy.finegrained;
 import java.util.Arrays;
 
 /**
- * A DataRange instance marks a part of a CachableData data object.
+ * A DataRange instance marks a part of a CacheableData data object.
  * The beginDims marks the beginning for all dimensions and
  * the endDims marks the end for all dimensions. 
  * DataRange is very similar to org.apache.sysds.runtime.util.IndexRange, 
@@ -30,8 +30,8 @@ import java.util.Arrays;
  */
 public class DataRange {
 
-	private long[] _beginDims;
-	private long[] _endDims;
+	private final long[] _beginDims;
+	private final long[] _endDims;
 
 	public DataRange(long[] beginDims, long[] endDims){
 		_beginDims = beginDims;

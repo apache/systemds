@@ -143,10 +143,9 @@ public class PrivacyConstraint implements Externalizable
 	/**
 	 * Get privacy constraints and put them into JSON object. 
 	 * @param json JSON object in which the privacy constraints are put
-	 * @return JSON object including the privacy constraints
-	 * @throws JSONException in case of errors in creating JSON object
+	 * @throws JSONException in case of errors in putting into JSON object
 	 */
-	public JSONObject toJson(JSONObject json) throws JSONException {
+	public void toJson(JSONObject json) throws JSONException {
 		if ( getPrivacyLevel() != null && getPrivacyLevel() != PrivacyLevel.None )
 			json.put(DataExpression.PRIVACY, getPrivacyLevel().name());
 		if ( hasFineGrainedConstraints() ) {
@@ -161,7 +160,6 @@ public class PrivacyConstraint implements Externalizable
 			rangesJson.put(PrivacyLevel.PrivateAggregation.name(), aggregateRangesJson);
 			json.put(DataExpression.FINE_GRAINED_PRIVACY, rangesJson);
 		}
-		return json;
 	}
 
 	private static JSONArray getJsonArray(DataRange[] ranges) throws JSONException {
@@ -185,7 +183,7 @@ public class PrivacyConstraint implements Externalizable
 		int fineGrainedConstraintLength = is.readInt();
 		if ( fineGrainedConstraintLength > 0 ){
 			for (int i = 0; i < fineGrainedConstraintLength; i++){
-				Integer levelIndex = (Integer) is.readInt();
+				int levelIndex = is.readInt();
 				PrivacyLevel rangePrivacy = PrivacyLevel.values()[levelIndex];
 				DataRange dataRange = readExternalDataRangeObject(is);
 				fineGrainedPrivacy.put(dataRange, rangePrivacy);
@@ -198,9 +196,9 @@ public class PrivacyConstraint implements Externalizable
 		objectOutput.writeInt(getPrivacyLevel().ordinal());
 		
 		if (fineGrainedPrivacy != null && fineGrainedPrivacy.hasConstraints()){
-			List<Entry<DataRange,PrivacyLevel>> finegrainedConstraints = fineGrainedPrivacy.getAllConstraintsList();
-			objectOutput.writeInt(finegrainedConstraints.size());
-			for ( Entry<DataRange,PrivacyLevel> constraint : finegrainedConstraints ) {
+			List<Entry<DataRange,PrivacyLevel>> fineGrainedConstraints = fineGrainedPrivacy.getAllConstraintsList();
+			objectOutput.writeInt(fineGrainedConstraints.size());
+			for ( Entry<DataRange,PrivacyLevel> constraint : fineGrainedConstraints ) {
 				objectOutput.writeInt(constraint.getValue().ordinal());
 				DataRange dataRange = constraint.getKey();
 				objectOutput.writeInt(dataRange.getBeginDims().length);
@@ -217,7 +215,7 @@ public class PrivacyConstraint implements Externalizable
 	 * Reads a DataRange from ObjectInput. 
 	 * @param is ObjectInput from which the DataRange is read
 	 * @return DataRange from ObjectInput
-	 * @throws IOException
+	 * @throws IOException if an I/O error occurs during read
 	 */
 	private static DataRange readExternalDataRangeObject(ObjectInput is) throws IOException {
 		int dimLength = is.readInt();
@@ -231,7 +229,7 @@ public class PrivacyConstraint implements Externalizable
 	 * @param is ObjectInput from which the long array is read
 	 * @param dimLength length of input long array
 	 * @return the input array as a long array
-	 * @throws IOException
+	 * @throws IOException if an I/O error occurs during read
 	 */
 	private static long[] readExternalDataRangeDim(ObjectInput is, int dimLength) throws IOException {
 		long[] dims = new long[dimLength];
@@ -245,7 +243,7 @@ public class PrivacyConstraint implements Externalizable
 	 * Write the long array to ObjectOutput.
 	 * @param objectOutput ObjectOutput in which the long array is written.
 	 * @param rangeDim long array to write in ObjectOutput. 
-	 * @throws IOException
+	 * @throws IOException if an I/O error occurs during write
 	 */
 	private static void writeExternalRangeDim(ObjectOutput objectOutput, long[] rangeDim) throws IOException {
 		for ( long beginIndex : rangeDim ){

@@ -27,7 +27,7 @@ import org.apache.sysds.runtime.privacy.PrivacyConstraint.PrivacyLevel;
 
 public class PrivacyMonitor
 {
-	private static EnumMap<PrivacyLevel,LongAdder> checkedConstraints;
+	private static final EnumMap<PrivacyLevel,LongAdder> checkedConstraints;
 
 	private static boolean checkPrivacy = false;
 

@@ -64,6 +64,8 @@ import org.apache.sysds.runtime.util.UtilFunctions;
 
 public abstract class Hop implements ParseInfo {
 	private static final Log LOG =  LogFactory.getLog(Hop.class.getName());
+
+	public static boolean ENABLE_UNARY_UPDATE_IN_PLACE = true;
 	
 	public static final long CPThreshold = 2000;
 
@@ -156,6 +158,14 @@ public abstract class Hop implements ParseInfo {
 	
 	public long getHopID() {
 		return _ID;
+	}
+
+	public static boolean isUpdateInPlace() {
+		return ENABLE_UNARY_UPDATE_IN_PLACE;
+	}
+
+	public static void setUpdateInPlace(boolean state) {
+		ENABLE_UNARY_UPDATE_IN_PLACE = state;
 	}
 
 	/**

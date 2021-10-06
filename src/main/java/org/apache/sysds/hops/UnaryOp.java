@@ -39,7 +39,7 @@ import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.util.UtilFunctions;
-import org.apache.sysds.hops.OptimizerUtils;
+import org.apache.sysds.hops.Hop;
 
 import java.util.ArrayList;
 
@@ -169,8 +169,7 @@ public class UnaryOp extends MultiThreadedHop
 				{
 					boolean inplace = false;
 
-					if (OptimizerUtils.ENABLE_UNARY_UPDATE_IN_PLACE) {
-
+					if (Hop.isUpdateInPlace()) {
 						//check if inplace
 						if (this._parent.size() == 1) {
 							if ((input instanceof DataOp)) {

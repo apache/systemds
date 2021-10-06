@@ -2730,23 +2730,8 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		
 		return ret;
 	}
-	//ToDo
-	/*
-	extend the runtime operations in MatrixBlock
-	unaryOperations(UnaryOperator op, MatrixValue result),
-	which are called from UnaryMatrixCPInstruction,
-	so they exploit the update-in-place flag
-	by directly overwriting the input
-	(this can be done by simply assigning the input instead of allocating a new block).
-	So far, we only support this in the branch for cumaggregateUnaryMatrix,
-	but you should do that for multi-threaded and denseUnary/sparseUnary operations
-	on dense inputs&outputs (if both are dense) too
-	(later we'll extend that to sparse formats).
-	All extensions would be local to unaryOperations and potentially denseUnaryOperations
-	and sparseUnaryOperations.
-	Have a look into the cumaggregateUnaryMatrix to see how to use the flag from the passed
-	operator object.
-	 */
+
+
 	@Override
 	public MatrixBlock unaryOperations(UnaryOperator op, MatrixValue result) {
 		MatrixBlock ret = checkType(result);
@@ -2781,14 +2766,10 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 			//only for expensive operators such as exp, log, sigmoid, because
 			//otherwise allocation, read and write anyway dominates
 			if (!op.isInplace() || this.isEmpty())
-			{	//allocate dense output block
 				ret.allocateDenseBlock(false);
-			}
 			else
-			{
 				ret = this;
-			}
-			//ret.allocateDenseBlock(false);
+
 			DenseBlock a = getDenseBlock();
 			DenseBlock c = ret.getDenseBlock();
 			for(int bi=0; bi<a.numBlocks(); bi++) {

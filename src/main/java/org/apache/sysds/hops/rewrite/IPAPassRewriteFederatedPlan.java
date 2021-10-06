@@ -216,9 +216,8 @@ public class IPAPassRewriteFederatedPlan extends IPAPass {
 	 * @param roots starting point for going through the Hop DAG to update the FederatedOutput fields.
 	 */
 	private void selectFederatedExecutionPlan(ArrayList<Hop> roots){
-		for ( Hop root : roots ){
+		for ( Hop root : roots )
 			selectFederatedExecutionPlan(root);
-		}
 	}
 
 	/**
@@ -310,7 +309,6 @@ public class IPAPassRewriteFederatedPlan extends IPAPass {
 	 * @return true if LOUT is supported by the associatedHop
 	 */
 	private boolean isLOUTSupported(Hop associatedHop){
-		return associatedHop.getPrivacy() == null
-			|| (associatedHop.getPrivacy() != null && !associatedHop.getPrivacy().hasConstraints());
+		return associatedHop.getPrivacy() == null || !associatedHop.getPrivacy().hasConstraints();
 	}
 }

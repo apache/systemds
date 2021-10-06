@@ -40,11 +40,11 @@ import java.util.stream.Collectors;
  * The input dependency is needed to hold the valid and optimal FederatedOutput values for the inputs.
  */
 public class HopRel {
-	protected Hop hopRef;
-	protected FEDInstruction.FederatedOutput fedOut;
-	protected FederatedCost cost;
-	protected Set<Long> costPointerSet = new HashSet<>();
-	protected List<HopRel> inputDependency = new ArrayList<>();
+	protected final Hop hopRef;
+	protected final FEDInstruction.FederatedOutput fedOut;
+	protected final FederatedCost cost;
+	protected final Set<Long> costPointerSet = new HashSet<>();
+	protected final List<HopRel> inputDependency = new ArrayList<>();
 
 	/**
 	 * Constructs a HopRel with input dependency and cost estimate based on entries in hopRelMemo.

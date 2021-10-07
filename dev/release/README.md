@@ -19,6 +19,12 @@ limitations under the License.
 
 ### Usage
 
+Set gpg home as
+
+```bash
+export GNUPGHOME="$HOME/.gnupg"
+```
+
 Dry run:
 
 ```sh

@@ -36,3 +36,10 @@ Release: (irreversible operation)
 ```sh
 ./dev/release/do-release.sh
 ```
+
+### Architecture of the release pipeline
+
+The following diagram illustrates the steps building and publishing release.
+
+
+![Release Architecture](./release-architecture.svg)

@@ -35,9 +35,9 @@ s_executePipeline = function(Frame[String] logical = as.frame("NULL"), Frame[Str
   X = rbind(X, Xtest)
   Y = rbind(Y, Ytest)
   testRow = nrow(Xtest)
+  Xout = X
   t1 = time()
   #print("PIPELINE EXECUTION START ... "+toString(pipeline))
-
   if(verbose) {
     print("checks   rows in X = "+nrow(X)+" rows in Y = "+nrow(Y)+" cols in X = "+ncol(X)+" col in Y = "+ncol(Y))
     print("pipeline in execution "+toString(pipeline))
@@ -51,18 +51,22 @@ s_executePipeline = function(Frame[String] logical = as.frame("NULL"), Frame[Str
     
     if(test == FALSE | lgOp != "CI") {
        Xclone = X 
-      [hp, dataFlag, yFlag] = matrixToList(X, Y, mask, FD, hyperParameters[i], flagsCount, op)
-      X = eval(op, hp)
-      Xout = X
-      
-      X = confirmData(X, Xclone, mask, dataFlag, yFlag)
-      # dataFlag 0 = only on numeric, 1 = on whole data
-      if(yFlag)
-      {
-        Y = X[, ncol(X)]
-        X = X[, 1:ncol(X) - 1]
+      [hp, dataFlag, yFlag, executeFlag] = matrixToList(X, Y, mask, FD, hyperParameters[i], flagsCount, op)
+      if(executeFlag == 1) {
+        X = eval(op, hp)
+        Xout = X
+        X = confirmData(X, Xclone, mask, dataFlag, yFlag)
+        # dataFlag 0 = only on numeric, 1 = on whole data
+        if(yFlag)
+        {
+          Y = X[, ncol(X)]
+          X = X[, 1:ncol(X) - 1]
+        }
+        X = confirmMeta(X, mask)
       }
-      X = confirmMeta(X, mask)
+      else {
+        print("not applying "+op+" executeFlag = 0")
+      }
     }
     else {
       Xclone = X 
@@ -71,18 +75,24 @@ s_executePipeline = function(Frame[String] logical = as.frame("NULL"), Frame[Str
       Ytest = Y[testStIdx:nrow(X), ]
       X = X[1:trainEndIdx, ]
       Y = Y[1:trainEndIdx, ]
-      [hp, dataFlag, yFlag] = matrixToList(X, Y, mask, FD, hyperParameters[i], flagsCount, op)
-      X = eval(op, hp)
-      X = confirmData(X, Xclone, mask, dataFlag, yFlag)
-      # dataFlag 0 = only on numeric, 1 = on whole data
-      if(yFlag)
+      [hp, dataFlag, yFlag, executeFlag] = matrixToList(X, Y, mask, FD, hyperParameters[i], flagsCount, op)
+      if(executeFlag == 1)
       {
-        Y = X[, ncol(X)]
-        X = X[, 1:ncol(X) - 1]
+        X = eval(op, hp)
+        X = confirmData(X, Xclone, mask, dataFlag, yFlag)
+        # dataFlag 0 = only on numeric, 1 = on whole data
+        if(yFlag)
+        {
+          Y = X[, ncol(X)]
+          X = X[, 1:ncol(X) - 1]
+        }
+        X = confirmMeta(X, mask)
+        X = rbind(X, Xtest)
+        Y = rbind(Y, Ytest)
       }
-      X = confirmMeta(X, mask)
-      X = rbind(X, Xtest)
-      Y = rbind(Y, Ytest)
+      else {
+        print("not applying "+op+" executeFlag = 0")
+      }
     }
     if(as.scalar(pipeline[1, i]) == "outlierBySd" | as.scalar(pipeline[1, i]) == "outlierByIQR" | as.scalar(pipeline[1, i]) == "imputeByFd") {
       changes = sum(abs(replace(target=Xout, pattern=NaN, replacement=0) - replace(target=as.matrix(hp[1]), pattern=NaN, replacement=0))  > 0.001 )
@@ -104,7 +114,7 @@ s_executePipeline = function(Frame[String] logical = as.frame("NULL"), Frame[Str
 # This function will convert the matrix row-vector into list
 matrixToList = function(Matrix[Double] X,  Matrix[Double] Y, Matrix[Double] mask, Matrix[Double] FD,
   Matrix[Double] p, Integer flagsCount, String op)
-  return (List[Unknown] l, Integer dataFlag, Integer yFlag)
+  return (List[Unknown] l, Integer dataFlag, Integer yFlag, Integer executeFlag)
 {
   NUM_META_FLAGS = flagsCount;
   dataFlag = as.integer(as.scalar(p[1, ncol(p)]))
@@ -113,18 +123,26 @@ matrixToList = function(Matrix[Double] X,  Matrix[Double] Y, Matrix[Double] mask
   fDFlag = as.integer(as.scalar(p[1, ncol(p)-3]))
   maskFlag = as.integer(as.scalar(p[1, ncol(p)-4]))
   
+  executeFlag = 1
   ######################################################
   # CHECK FOR DATA FLAG
   if(dataFlag == 0)
   { 
-    # take numerics out
-    X = removeEmpty(target=X, margin = "cols", select = (mask == 0))
+    if(sum(mask) == ncol(mask))
+      executeFlag = 0
+    else {
+      # take numerics out and remove categorical
+      X = removeEmpty(target=X, margin = "cols", select = (mask == 0))
+    }
   }
   else if(dataFlag == 1)
   { 
-    # take categorical out
-    X = removeEmpty(target=X, margin = "cols", select = mask)
-    # print("data for execution \n"+toString(X, rows=5))
+    if(sum(mask) == 0)
+      executeFlag = 0
+    else {
+      # take categorical out and remove numerics
+      X = removeEmpty(target=X, margin = "cols", select = mask)
+    }
   } 
   
   l = list(X)
@@ -175,7 +193,7 @@ return (Matrix[Double] X)
     # take categorical out
     cat = removeEmpty(target=X, margin="cols", select = mask)
     # round categorical (if there is any floating  point)
-    cat = ceil(cat)
+    cat = round(cat)
     # reconstruct original X
     X = X * (mask == 0)
     q = table(seq(1, ncol(cat)), removeEmpty(target=seq(1, ncol(mask)), margin="rows", 
@@ -199,7 +217,7 @@ return (Matrix[Double] X)
     nX = nX[, 1: ncol(nX) - 1]
   
   }
-  if(dataFlag == 0 & (sum(mask) > 0) & (sum(mask) != ncol(nX)))
+  if(dataFlag == 0 & (sum(mask) > 0) & (sum(mask) != ncol(originalX)))
   {
     maxDummy = max(nX) + 1
     nX = replace(target = nX, pattern = NaN, replacement = maxDummy)
@@ -219,7 +237,7 @@ return (Matrix[Double] X)
     X = replace(target = X, pattern = maxDummy, replacement = NaN)
     X = replace(target = X, pattern = -1111, replacement = NaN)
   }
-  else if(dataFlag == 1 & (sum(mask) > 0) & (sum(mask) != ncol(nX)))
+  else if(dataFlag == 1 & (sum(mask) > 0) & (sum(mask) != ncol(originalX)))
   {
     maxDummy = max(nX) + 1
     nX = replace(target = nX, pattern = NaN, replacement = maxDummy)
@@ -279,6 +297,7 @@ return (Matrix[Double] X_filled)
 {
   if(sum(fdMask) > 0)
   {
+    fdMask = removeEmpty(target=fdMask, margin="cols")
     FD = discoverFD(X=replace(target=X, pattern=NaN, replacement=1), Mask=fdMask, threshold=threshold)
     FD = (diag(matrix(1, rows=nrow(FD), cols=1)) ==0) * FD 
     FD = FD > 0

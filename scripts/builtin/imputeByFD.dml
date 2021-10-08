@@ -49,8 +49,15 @@ m_imputeByFD = function(Matrix[Double] X, Integer sourceAttribute, Integer targe
   if(sourceAttribute < 0 | sourceAttribute > ncol(X) | targetAttribute < 0 | targetAttribute > ncol(X))
     stop("Stopping due to invalid source and target")
  
-  # impute missing values and fix errors
-  X[,targetAttribute] = imputeAndCorrect(X[,sourceAttribute], X[,targetAttribute], threshold) 
+  if(min(X[,sourceAttribute]) < 1 | min(X[,targetAttribute]) < 1)
+  {
+    print("imputeByFD: source or target contain values less than 1")
+    
+  }
+  else {
+    # impute missing values and fix errors
+    X[,targetAttribute] = imputeAndCorrect(X[,sourceAttribute], X[,targetAttribute], threshold) 
+  }
 
   if(verbose)
     print("output \n"+toString(X))
@@ -61,9 +68,10 @@ imputeAndCorrect = function(Matrix[Double] X, Matrix[Double] Y, Double threshold
 
   XY = cbind(X, Y)
   
+  missing_mask = is.na(XY)
   # replace the NaN values with zero
-  XY = replace(target = XY, pattern=NaN, replacement=0)
-  missing_mask = (XY == 0)
+  XY = replace(target = XY, pattern=NaN, replacement=1)
+
   
   # map the missing values to an arbitrary number (i.e., Max values + 1)
   XY = missing_mask * (colMaxs(XY)+1) + XY
@@ -82,4 +90,5 @@ imputeAndCorrect = function(Matrix[Double] X, Matrix[Double] Y, Double threshold
   tabMax = rowSums(ans) != (ncol(ans) * ((ncol(ans))+1)/2) # vector for controlling max(0)
   filled = rowMaxs(ans) * tabMax
   imputed_Y = table(seq(1,nrow(X)), XY[,1]) %*% filled;
+  imputed_Y = replace(target=imputed_Y, pattern=0, replacement=NaN)
 }

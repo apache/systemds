@@ -22,7 +22,7 @@
 X = read($1);
 y = read($2);
 
-[X,y,Xtest,ytest] = split(X=X, Y=y, f=0.8);
+[X,Xtest,y,ytest] = split(X=X, Y=y, f=0.8);
 
 write(Xtest, $3, format=$5);
 write(ytest, $4, format=$5);

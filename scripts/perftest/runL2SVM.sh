@@ -30,7 +30,7 @@ for i in 0 1; do
    tstart=$(date +%s.%N)
 
    # /algorithms/l2-svm.dml already calls a built-in function for the l2 svm.
-   ${CMD} -f ../algorithms/l2-svm.dml \
+   ${CMD} -f ./algorithms/l2-svm.dml \
       --config conf/SystemDS-config.xml \
       --stats \
       --nvargs X=$1 Y=$2 icpt=$i tol=0.0001 reg=0.01 maxiter=$5 model=${BASE}/b fmt="csv"
@@ -40,7 +40,7 @@ for i in 0 1; do
 
    #predict
    tstart=$(date +%s.%N)
-   #${CMD} -f ../algorithms/l2-svm-predict.dml \
+   #${CMD} -f ./algorithms/l2-svm-predict.dml \
    ${CMD} -f scripts/l2-svm-predict.dml \
       --config conf/SystemDS-config.xml \
       --stats \

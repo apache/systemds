@@ -1,3 +1,4 @@
+#!/bin/bash
 #-------------------------------------------------------------
 #
 # Licensed to the Apache Software Foundation (ASF) under one
@@ -19,10 +20,25 @@
 #
 #-------------------------------------------------------------
 
-X = read($1);
-y = read($2);
+#set -x
 
-[X,y,Xtest,ytest] = split(X=X, Y=y, f=0.8);
 
-write(Xtest, $3, format=$5);
-write(ytest, $4, format=$5);
+# This script is a simplified version of sparkDML.sh in order to
+# allow a simple drop-in replacement for 'hadoop jar' without
+# the need to change any command line arguments. 
+
+export SPARK_HOME=../spark-2.4.7-bin-hadoop2.7
+export HADOOP_CONF_DIR=/home/hadoop/hadoop-2.7.7/etc/hadoop
+
+$SPARK_HOME/bin/spark-submit \
+     --master yarn \
+     --deploy-mode client \
+     --driver-memory 20g \
+     --conf spark.driver.extraJavaOptions="-Xms20g -Dlog4j.configuration=file:/home/mboehm/perftest/conf/log4j.properties" \
+     --conf spark.ui.showConsoleProgress=true \
+     --conf spark.executor.heartbeatInterval=100s \
+     --conf spark.network.timeout=512s \
+     --num-executors 10 \
+     --executor-memory 105g \
+     --executor-cores 32 \
+     SystemDS.jar "$@" 

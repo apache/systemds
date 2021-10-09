@@ -29,8 +29,8 @@ export LOG4JPROP='conf/log4j-off.properties'
 export SYSDS_QUIET=1
 
 # Command to be executed
-CMD="systemds"
-#CMD="./sparkDML.sh"
+#CMD="systemds"
+CMD="./sparkDML.sh"
 
 # Possible lines to initialize Intel MKL, depending on version and install location
 #    . ~/intel/bin/compilervars.sh intel64
@@ -68,4 +68,3 @@ date >> results/times.txt
 #./runAllSurvival $CMD $TEMPFOLDER
 #KaplanMeier
 #Cox
-

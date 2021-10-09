@@ -37,19 +37,23 @@ CMD="./sparkDML.sh"
 #    . ~/intel/oneapi/setvars.sh intel64
 #    . /opt/intel/bin/compilervars.sh intel64
 
-
 ### Micro Benchmarks:
 #./MatrixMult.sh
 #./MatrixTranspose.sh
 
-
-### Algorithms Benchmarks:
-
 # init time measurement
+if [ ! -d logs ]; then mkdir -p logs ; fi
+if [ ! -d results ]; then mkdir -p results ; fi
 if [ ! -d results ]; then mkdir -p results ; fi
 date >> results/times.txt
 
-# TODO Use the built-in function lmPredict instead of the GLM-predict.dml script, for linear regression.
+### Data Generation
+#echo "-- Generating binomial data: " >> results/times.txt;
+./genBinomialData.sh ${CMD} ${TEMPFOLDER} &>> logs/genBinomialData.out
+echo "-- Generating multinomial data." >> results/times.txt;
+./genMultinomialData.sh ${CMD} ${TEMPFOLDER} &>> logs/genMultinomialData.out
+
+### Algorithms Benchmarks:
 ./runAllBinomial.sh $CMD $TEMPFOLDER
 ./runAllMultinomial.sh $CMD $TEMPFOLDER
 ./runAllRegression.sh $CMD $TEMPFOLDER

@@ -31,7 +31,7 @@ do
 
    #training
    tstart=$(date +%s.%N)
-   #${CMD} -f ../algorithms/LinearRegDS.dml \
+   #${CMD} -f ./algorithms/LinearRegDS.dml \
    ${CMD} -f scripts/LinearRegDS.dml \
       --config conf/SystemDS-config.xml \
       --stats \
@@ -42,7 +42,7 @@ do
 
    #predict
    tstart=$(date +%s.%N)
-   ${CMD} -f ../algorithms/GLM-predict.dml \
+   ${CMD} -f ./algorithms/GLM-predict.dml \
       --config conf/SystemDS-config.xml \
       --stats \
       --nvargs dfam=1 link=1 vpow=0.0 lpow=1.0 fmt=csv X=$1_test B=${BASE}/b Y=$2_test M=${BASE}/m O=${BASE}/out.csv

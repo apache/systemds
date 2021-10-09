@@ -21,8 +21,6 @@
 #-------------------------------------------------------------
 
 COMMAND=$1
-if [ "$COMMAND" == "" ]; then COMMAND="systemds" ; fi
-
 TEMPFOLDER=$2
 if [ "$TEMPFOLDER" == "" ]; then TEMPFOLDER=temp ; fi
 
@@ -36,17 +34,11 @@ err_report() {
 }
 trap 'err_report $LINENO' ERR
 
-if [ ! -d logs ]; then mkdir -p logs ; fi
-if [ ! -d results ]; then mkdir -p results ; fi
-
 echo " RUN MULTINOMIAL EXPERIMENTS: "$(date) >> results/times.txt;
 
-# data generation
-echo "-- Generating multinomial data." >> results/times.txt;
-./genMultinomialData.sh ${COMMAND} ${TEMPFOLDER} &>> logs/genMultinomialData.out
-
 # run all classifiers with binomial labels on all datasets
-for d in "10k_1k_dense" "10k_1k_sparse" # "100k_1k_dense" "100k_1k_sparse" "1M_1k_dense" "1M_1k_sparse" "10M_1k_dense" "10M_1k_sparse" "100M_1k_dense" "100M_1k_sparse" 
+# see genMultinomialData
+for d in "10k_1k_dense" "10k_1k_sparse" "100k_1k_dense" "100k_1k_sparse" "1M_1k_dense" "1M_1k_sparse" "10M_1k_dense" "10M_1k_sparse" #"100M_1k_dense" "100M_1k_sparse" 
 do 
    for f in "runNaiveBayes"
    do

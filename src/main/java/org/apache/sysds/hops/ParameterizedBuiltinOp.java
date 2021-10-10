@@ -967,6 +967,18 @@ public class ParameterizedBuiltinOp extends MultiThreadedHop {
 		return ret;
 	}
 
+	public boolean isKnownNGroups() {
+		try {
+			Hop ngroups = getParameterHop(Statement.GAGG_NUM_GROUPS);
+			return (ngroups != null 
+				&& (ngroups instanceof LiteralOp | ngroups instanceof DataOp));
+		}
+		catch(Exception ex) {
+			LOG.warn("Known groups check exception: " + ex.getMessage());
+		}
+		return false;
+	}
+	
 	public boolean isTargetDiagInput() {
 		Hop targetHop = getTargetHop();
 		//input vector (guarantees diagV2M), implies remove rows

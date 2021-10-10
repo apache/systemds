@@ -318,6 +318,8 @@ public class RewriteSplitDagDataDependentOperators extends StatementBlockRewrite
 	private static boolean isBasicDataDependentOperator(Hop hop, boolean noSplitRequired) {
 		return (HopRewriteUtils.isNary(hop, OpOpN.EVAL) & !noSplitRequired)
 			|| (HopRewriteUtils.isData(hop, OpOpData.SQLREAD) & !noSplitRequired)
+			|| (HopRewriteUtils.isParameterBuiltinOp(hop, ParamBuiltinOp.GROUPEDAGG) 
+				&& !((ParameterizedBuiltinOp)hop).isKnownNGroups() && !noSplitRequired)
 			|| ((HopRewriteUtils.isUnary(hop, OpOp1.COMPRESS) || hop.requiresCompression()) &&
 				(!HopRewriteUtils.hasOnlyWriteParents(hop, true, true)));
 		//note: for compression we probe for write parents (part of noSplitRequired) directly

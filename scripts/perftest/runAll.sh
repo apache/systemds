@@ -48,7 +48,7 @@ if [ ! -d results ]; then mkdir -p results ; fi
 date >> results/times.txt
 
 ### Data Generation
-#echo "-- Generating binomial data: " >> results/times.txt;
+echo "-- Generating binomial data: " >> results/times.txt;
 ./genBinomialData.sh ${CMD} ${TEMPFOLDER} &>> logs/genBinomialData.out
 echo "-- Generating multinomial data." >> results/times.txt;
 ./genMultinomialData.sh ${CMD} ${TEMPFOLDER} &>> logs/genMultinomialData.out

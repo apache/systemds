@@ -19,14 +19,21 @@
 #
 #-------------------------------------------------------------
 
-X = read($1) # Training data
-y = read($2) # response values
-p = read($3) # random data to predict
-w = lmDS(X = X, y = y, icpt = 1, reg = 1e-12)
-p = lmPredict(X = X, B = w, ytest=matrix(0,1,1), icpt = 1)
-p2 = glmPredict(X = X, B = w, dfam=1, link=1, vpow=0.0, lpow=1.0);
+X = read($X);
+B = read($B);
+Y = matrix(0,0,0);
+if($Y != " ")
+  Y = read($Y); 
 
-if( sum(abs(p2-p) > 1e8) !=0 )
-  stop("Mismatching lmPredict and glmPredict - no output written");
+dfam = ifdef ($dfam, 1);    # $dfam = 1;
+vpow = ifdef ($vpow, 0.0);  # $vpow = 0.0;
+link = ifdef ($link, 0);    # $link = 0;
+lpow = ifdef ($lpow, 1.0);  # $lpow = 1.0;
+disp = ifdef ($disp, 1.0);  # $disp = 1.0;
 
-write(p, $4)
+
+[M] = glmPredict(X=X, B=B, ytest=Y,
+  dfam=dfam, vpow=vpow, link=link, lpow=lpow, disp=disp);
+
+if( $M != " " )
+  write(M, $M, format=$fmt);

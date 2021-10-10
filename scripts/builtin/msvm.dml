@@ -45,7 +45,7 @@
 
 m_msvm = function(Matrix[Double] X, Matrix[Double] Y, Boolean intercept = FALSE,
     Double epsilon = 0.001, Double lambda = 1.0, Integer maxIterations = 100,
-Boolean verbose = FALSE)
+    Boolean verbose = FALSE)
   return(Matrix[Double] model)
 {
   if(min(Y) < 0)

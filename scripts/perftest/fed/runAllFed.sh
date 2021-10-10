@@ -33,12 +33,13 @@ err_report() {
 }
 trap 'err_report $LINENO' ERR
 
+BASEPATH=$(dirname "$0")
+
 # Set properties
+export LOG4JPROP=${BASEPATH}'/../conf/log4j-off.properties'
 export SYSDS_QUIET=1
 
 if [ ! -d results ]; then mkdir -p results ; fi
-
-BASEPATH=$(dirname "$0")
 
 echo "RUN FEDERATED EXPERIMENTS: "$(date) >> results/times.txt
 

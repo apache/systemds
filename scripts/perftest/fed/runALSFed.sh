@@ -23,7 +23,7 @@
 CMD=${1:-"systemds"}
 DATADIR=${2:-"temp"}/als
 NUMFED=${3:-4}
-MAXITR=${4:-20}
+MAXITR=${4:-50}
 
 FILENAME=$0
 err_report() {
@@ -52,7 +52,7 @@ do
   echo "-- Running ALS-CG with federated data ("$d") on "$NUMFED" federated workers" >> results/times.txt
 
   # run the als algorithm on the federated object
-  ${BASEPATH}/../runALS.sh ${DATADIR}/X${d}_fed.json $MAXITR $DATADIR systemds;
+  ${BASEPATH}/../runALS.sh ${DATADIR}/X${d}_fed.json $MAXITR $DATADIR systemds 0.0001;
 done
 
 ${BASEPATH}/utils/killFedWorkers.sh $DATADIR; # kill the federated workers

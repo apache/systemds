@@ -28,10 +28,11 @@ verbose = ifdef($verbose, TRUE);
 modelB = ifdef($modelB, "B");
 modelM = ifdef($modelM, "M");
 fmt = ifdef($fmt, "text");
+check = ifdef($check, TRUE);
 
 X = read($X);
 
-[B, M] = alsCG(X=X, rank=rank, reg=reg, lambda=lambda, maxi=maxiter, check=FALSE, thr=thr, verbose=verbose);
+[B, M] = alsCG(X=X, rank=rank, reg=reg, lambda=lambda, maxi=maxiter, check=check, thr=thr, verbose=verbose);
 
 write(B, $modelB, format=fmt);
 write(M, $modelM, format=fmt);

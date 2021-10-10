@@ -20,10 +20,11 @@
 #
 #-------------------------------------------------------------
 
-CMD=$4
-DATADIR=$3
-MAXITER=$2
 X=$1
+MAXITER=${2:-50}
+DATADIR=${3:-"temp"}/als
+CMD=${4:-"systemds"}
+LAMBDA=${5:-0.000001}
 
 FILENAME=$0
 err_report() {

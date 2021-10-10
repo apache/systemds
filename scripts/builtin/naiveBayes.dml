@@ -19,19 +19,41 @@
 #
 #-------------------------------------------------------------
 
-m_naiveBayes = function(Matrix[Double] D, Matrix[Double] C, Double laplace = 1, Boolean verbose = TRUE)
-  return (Matrix[Double] prior, Matrix[Double] classConditionals) 
+m_naiveBayes = function(Matrix[Double] D,
+  Matrix[Double] C, Double laplace = 1, Boolean verbose = TRUE)
+  return (Matrix[Double] prior, Matrix[Double] classConditionals)
 {
   laplaceCorrection = laplace;
-  numRows = nrow(D);
-  numFeatures = ncol(D);
-  numClasses = max(C);
+  numRows = nrow(D)
+  numFeatures = ncol(D)
+  minFeatureVal = min(D)
+  numClasses = as.integer(max(C))
+  minLabelVal = min(C)
+
+  # sanity checks of data and arguments
+  if(minFeatureVal < 0)
+    stop("naiveBayes: Stopping due to invalid argument: Multinomial naive Bayes "
+       + " is meant for count-based feature values, minimum value in X is negative")
+  if(numRows < 2)
+    stop("naiveBayes: Stopping due to invalid inputs: "
+       + "Not possible to learn a classifier without at least 2 rows")
+  if(minLabelVal < 1)
+    stop("naiveBayes: Stopping due to invalid argument: Label vector (Y) must be recoded")
+  if(numClasses == 1)
+    stop("naiveBayes: Stopping due to invalid argument: "
+       + "Maximum label value is 1, need more than one class to learn a multi-class classifier")	
+  if(sum(abs(C%%1 == 0)) != numRows)
+    stop("naiveBayes: Stopping due to invalid argument: " 
+       + "Please ensure that Y contains (positive) integral labels")
+  if(laplaceCorrection < 0)
+    stop("naiveBayes: Stopping due to invalid argument: "
+       + "Laplacian correction (laplace) must be non-negative")
 
   # Compute conditionals
   # Compute the feature counts for each class
-  classFeatureCounts = aggregate(target=D, groups=C, fn="sum", ngroups=as.integer(numClasses));
+  classFeatureCounts = aggregate(target=D, groups=C, fn="sum", ngroups=numClasses);
 
-  # Compute the total feature count for each class 
+  # Compute the total feature count for each class
   # and add the number of features to this sum
   # for subsequent regularization (Laplace's rule)
   classSums = rowSums(classFeatureCounts) + numFeatures*laplaceCorrection;
@@ -40,7 +62,7 @@ m_naiveBayes = function(Matrix[Double] D, Matrix[Double] C, Double laplace = 1, 
   classConditionals = (classFeatureCounts + laplaceCorrection) / classSums;
 
   # Compute class priors
-  classCounts = aggregate(target=C, groups=C, fn="count", ngroups=as.integer(numClasses));
+  classCounts = aggregate(target=C, groups=C, fn="count", ngroups=numClasses);
   prior = classCounts / numRows;
 
   # Compute accuracy on training set

@@ -21,10 +21,11 @@
 #-------------------------------------------------------------
 
 X=$1
-MAXITER=${2:-50}
+MAXITER=${2:-100}
 DATADIR=${3:-"temp"}/als
 CMD=${4:-"systemds"}
-LAMBDA=${5:-0.000001}
+THRESHOLD=${5:-0.0001}
+VERBOSE=${6:-FALSE}
 
 FILENAME=$0
 err_report() {
@@ -40,8 +41,7 @@ tstart=$(date +%s.%N)
 
 ${CMD} -f ${BASEPATH}/scripts/alsCG.dml \
   --config ${BASEPATH}/conf/SystemDS-config.xml \
-  --stats \
-  --nvargs X=$X rank=15 reg="L2" lambda=0.000001 maxiter=$MAXITER thr=0.0001 verbose=TRUE modelB=${DATADIR}/B modelM=${DATADIR}/M fmt="csv"
+  --nvargs X=$X rank=15 reg="L2" lambda=0.000001 maxiter=$MAXITER thr=$THRESHOLD verbose=$VERBOSE modelB=${DATADIR}/B modelM=${DATADIR}/M fmt="csv"
 
 tend=$(echo "$(date +%s.%N) - $tstart - .4" | bc)
 echo "ALS-CG algorithm on "$X": "$tend >> results/times.txt

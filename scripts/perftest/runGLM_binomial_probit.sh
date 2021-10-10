@@ -41,7 +41,7 @@ for i in 0 1 2; do
 
    #predict
    tstart=$(date +%s.%N)
-   ${CMD} -f ./algorithms/GLM-predict.dml \
+   ${CMD} -f scripts/GLM-predict.dml \
       --config conf/SystemDS-config.xml \
       --stats \
       --nvargs dfam=2 link=3 fmt=csv X=$1_test B=${BASE}/b Y=$2_test M=${BASE}/m O=${BASE}/out.csv

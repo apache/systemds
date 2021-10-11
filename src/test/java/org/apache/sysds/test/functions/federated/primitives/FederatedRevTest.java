@@ -23,7 +23,9 @@ import java.util.Arrays;
 import java.util.Collection;
 
 import org.apache.sysds.api.DMLScript;
+import org.apache.sysds.common.Types;
 import org.apache.sysds.common.Types.ExecMode;
+import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.util.HDFSTool;
 import org.apache.sysds.test.AutomatedTestBase;
@@ -77,7 +79,21 @@ public class FederatedRevTest extends AutomatedTestBase {
 		runRevTest(ExecMode.SPARK);
 	}
 
+	@Test
+	public void federatedCompilationRevCP(){
+		runRevTest(Types.ExecMode.SINGLE_NODE, true);
+	}
+
+	@Test
+	public void federatedCompilationRevSP(){
+		runRevTest(Types.ExecMode.SPARK, true);
+	}
+
 	private void runRevTest(ExecMode execMode) {
+		runRevTest(execMode, false);
+	}
+
+	private void runRevTest(ExecMode execMode, boolean activateFedCompilation) {
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
 		ExecMode platformOld = rtplatform;
 
@@ -135,6 +151,7 @@ public class FederatedRevTest extends AutomatedTestBase {
 
 		runTest(null);
 
+		OptimizerUtils.FEDERATED_COMPILATION = activateFedCompilation;
 		fullDMLScriptName = HOME + TEST_NAME + ".dml";
 		programArgs = new String[] {"-stats", "100", "-nvargs",
 			"in_X1=" + TestUtils.federatedAddress(port1, input("X1")),
@@ -160,6 +177,7 @@ public class FederatedRevTest extends AutomatedTestBase {
 
 		rtplatform = platformOld;
 		DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
+		OptimizerUtils.FEDERATED_COMPILATION = false;
 
 	}
 }

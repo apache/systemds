@@ -117,9 +117,9 @@ public abstract class Lop
 	protected PrivacyConstraint privacyConstraint;
 
 	/**
-	 * Boolean defining if the output of the operation should be federated.
-	 * If it is true, the output should be kept at federated sites.
-	 * If it is false, the output should be retrieved by the coordinator.
+	 * Enum defining if the output of the operation should be forced federated, forced local or neither.
+	 * If it is FOUT, the output should be kept at federated sites.
+	 * If it is LOUT, the output should be retrieved by the coordinator.
 	 */
 	protected FederatedOutput _fedOutput = null;
 	

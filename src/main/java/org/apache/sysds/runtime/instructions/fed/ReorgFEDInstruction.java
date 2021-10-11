@@ -54,8 +54,6 @@ import org.apache.sysds.runtime.matrix.operators.ReorgOperator;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 
 public class ReorgFEDInstruction extends UnaryFEDInstruction {
-	@SuppressWarnings("unused")
-	private static boolean fedoutFlagInString = false;
 
 	public ReorgFEDInstruction(Operator op, CPOperand in1, CPOperand out, String opcode, String istr, FederatedOutput fedOut) {
 		super(FEDType.Reorg, op, in1, out, opcode, istr, fedOut);
@@ -71,23 +69,25 @@ public class ReorgFEDInstruction extends UnaryFEDInstruction {
 
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
 		String opcode = parts[0];
+		FederatedOutput fedOut;
 		if ( opcode.equalsIgnoreCase("r'") ) {
 			InstructionUtils.checkNumFields(str, 2, 3, 4);
 			in.split(parts[1]);
 			out.split(parts[2]);
 			int k = str.startsWith(Types.ExecMode.SPARK.name()) ? 0 : Integer.parseInt(parts[3]);
-			FederatedOutput fedOut = str.startsWith(Types.ExecMode.SPARK.name()) ?  FederatedOutput.valueOf(parts[3]) :
-				FederatedOutput.valueOf(parts[4]);
+			fedOut = str.startsWith(Types.ExecMode.SPARK.name()) ?
+				FederatedOutput.valueOf(parts[3]) : FederatedOutput.valueOf(parts[4]);
 			return new ReorgFEDInstruction(new ReorgOperator(SwapIndex.getSwapIndexFnObject(), k), in, out, opcode, str, fedOut);
 		}
 		else if ( opcode.equalsIgnoreCase("rdiag") ) {
 			parseUnaryInstruction(str, in, out); //max 2 operands
-			return new ReorgFEDInstruction(new ReorgOperator(DiagIndex.getDiagIndexFnObject()), in, out, opcode, str);
+			fedOut = parseFedOutFlag(str, 3);
+			return new ReorgFEDInstruction(new ReorgOperator(DiagIndex.getDiagIndexFnObject()), in, out, opcode, str, fedOut);
 		}
 		else if ( opcode.equalsIgnoreCase("rev") ) {
-			fedoutFlagInString = parts.length > 3;
 			parseUnaryInstruction(str, in, out); //max 2 operands
-			return new ReorgFEDInstruction(new ReorgOperator(RevIndex.getRevIndexFnObject()), in, out, opcode, str);
+			fedOut = parseFedOutFlag(str, 3);
+			return new ReorgFEDInstruction(new ReorgOperator(RevIndex.getRevIndexFnObject()), in, out, opcode, str, fedOut);
 		}
 		else {
 			throw new DMLRuntimeException("ReorgFEDInstruction: unsupported opcode: "+opcode);

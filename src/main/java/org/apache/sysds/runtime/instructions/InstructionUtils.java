@@ -1144,8 +1144,17 @@ public class InstructionUtils
 		return linst;
 	}
 
+	/**
+	 * Removes federated output flag from the end of the instruction string if the flag is present.
+	 * @param linst instruction string
+	 * @return instruction string with no federated output flag
+	 */
 	public static String removeFEDOutputFlag(String linst){
-		return linst.substring(0, linst.lastIndexOf(Lop.OPERAND_DELIMITOR));
+		int lastOperandStartIndex = linst.lastIndexOf(Lop.OPERAND_DELIMITOR);
+		String lastOperand = linst.substring(lastOperandStartIndex);
+		if ( lastOperand.contains("FOUT") || lastOperand.contains("NONE") || lastOperand.contains("LOUT") )
+			return linst.substring(0, lastOperandStartIndex);
+		else return linst;
 	}
 
 	private static String replaceOperand(String linst, CPOperand oldOperand, String newOperandName){

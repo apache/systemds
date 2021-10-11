@@ -495,7 +495,7 @@ public class LibMatrixDatagen
 				int coloffset = cbj*blen;
 				
 				// select the appropriate block-level seed and init PRNG
-				long seed = !invokedFromCP ?  bSeed : seeds[counter++]; 
+				long seed = !invokedFromCP ?  bSeed : seeds[counter++];
 				valuePRNG.setSeed(seed);
 				
 				// Initialize the PRNGenerator for determining cells that contain a non-zero value
@@ -511,6 +511,7 @@ public class LibMatrixDatagen
 					SparseBlock c = out.sparseBlock;
 					if(c == null){
 						out.allocateSparseRowsBlock();
+						out.sparse = true; //otherwise ignored
 						c = out.sparseBlock;
 					}
 					genSparse(c, clen, blockrows, blockcols, rowoffset, coloffset,

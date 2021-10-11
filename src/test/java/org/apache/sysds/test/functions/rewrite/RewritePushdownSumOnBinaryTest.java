@@ -29,12 +29,8 @@ import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
 
-/**
- * 
- * 
- */
 public class RewritePushdownSumOnBinaryTest extends AutomatedTestBase 
-{	
+{
 	private static final String TEST_NAME1 = "RewritePushdownSumOnBinary";
 	private static final String TEST_DIR = "functions/rewrite/";
 	private static final String TEST_CLASS_DIR = TEST_DIR + RewritePushdownSumOnBinaryTest.class.getSimpleName() + "/";
@@ -58,13 +54,6 @@ public class RewritePushdownSumOnBinaryTest extends AutomatedTestBase
 		testRewritePushdownSumOnBinary( TEST_NAME1, true );
 	}
 	
-	
-	/**
-	 * 
-	 * @param condition
-	 * @param branchRemoval
-	 * @param IPA
-	 */
 	private void testRewritePushdownSumOnBinary( String testname, boolean rewrites )
 	{	
 		boolean oldFlag = OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION;
@@ -80,17 +69,17 @@ public class RewritePushdownSumOnBinaryTest extends AutomatedTestBase
 			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = rewrites;
 
 			//run performance tests
-			runTest(true, false, null, -1); 
+			runTest(true, false, null, -1);
 			
 			//compare matrices 
 			long expect = Math.round(0.5*rows);
 			HashMap<CellIndex, Double> dmlfile1 = readDMLScalarFromOutputDir("R1");
-			Assert.assertEquals("Wrong result R1, expected: "+expect, expect, Math.round(dmlfile1.get(new CellIndex(1,1))));
+			Assert.assertEquals(expect, dmlfile1.get(new CellIndex(1,1)), expect*0.01);
 			HashMap<CellIndex, Double> dmlfile2 = readDMLScalarFromOutputDir("R2");
-			Assert.assertEquals("Wrong result R2, expected: "+expect, expect, Math.round(dmlfile2.get(new CellIndex(1,1))));
+			Assert.assertEquals(expect, dmlfile2.get(new CellIndex(1,1)), expect*0.01);
 		}
 		finally {
 			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = oldFlag;
 		}
-	}	
+	}
 }

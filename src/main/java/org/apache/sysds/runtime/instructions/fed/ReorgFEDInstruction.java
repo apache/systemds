@@ -54,8 +54,6 @@ import org.apache.sysds.runtime.matrix.operators.ReorgOperator;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 
 public class ReorgFEDInstruction extends UnaryFEDInstruction {
-	@SuppressWarnings("unused")
-	private static boolean fedoutFlagInString = false;
 
 	public ReorgFEDInstruction(Operator op, CPOperand in1, CPOperand out, String opcode, String istr, FederatedOutput fedOut) {
 		super(FEDType.Reorg, op, in1, out, opcode, istr, fedOut);
@@ -71,23 +69,25 @@ public class ReorgFEDInstruction extends UnaryFEDInstruction {
 
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
 		String opcode = parts[0];
+		FederatedOutput fedOut;
 		if ( opcode.equalsIgnoreCase("r'") ) {
 			InstructionUtils.checkNumFields(str, 2, 3, 4);
 			in.split(parts[1]);
 			out.split(parts[2]);
 			int k = str.startsWith(Types.ExecMode.SPARK.name()) ? 0 : Integer.parseInt(parts[3]);
-			FederatedOutput fedOut = str.startsWith(Types.ExecMode.SPARK.name()) ?  FederatedOutput.valueOf(parts[3]) :
-				FederatedOutput.valueOf(parts[4]);
+			fedOut = str.startsWith(Types.ExecMode.SPARK.name()) ?
+				FederatedOutput.valueOf(parts[3]) : FederatedOutput.valueOf(parts[4]);
 			return new ReorgFEDInstruction(new ReorgOperator(SwapIndex.getSwapIndexFnObject(), k), in, out, opcode, str, fedOut);
 		}
 		else if ( opcode.equalsIgnoreCase("rdiag") ) {
 			parseUnaryInstruction(str, in, out); //max 2 operands
-			return new ReorgFEDInstruction(new ReorgOperator(DiagIndex.getDiagIndexFnObject()), in, out, opcode, str);
+			fedOut = parseFedOutFlag(str, 3);
+			return new ReorgFEDInstruction(new ReorgOperator(DiagIndex.getDiagIndexFnObject()), in, out, opcode, str, fedOut);
 		}
 		else if ( opcode.equalsIgnoreCase("rev") ) {
-			fedoutFlagInString = parts.length > 3;
 			parseUnaryInstruction(str, in, out); //max 2 operands
-			return new ReorgFEDInstruction(new ReorgOperator(RevIndex.getRevIndexFnObject()), in, out, opcode, str);
+			fedOut = parseFedOutFlag(str, 3);
+			return new ReorgFEDInstruction(new ReorgOperator(RevIndex.getRevIndexFnObject()), in, out, opcode, str, fedOut);
 		}
 		else {
 			throw new DMLRuntimeException("ReorgFEDInstruction: unsupported opcode: "+opcode);
@@ -117,7 +117,6 @@ public class ReorgFEDInstruction extends UnaryFEDInstruction {
 			mo1.getFedMapping().execute(getTID(), true, fr, fr1);
 
 			if (_fedOut != null && !_fedOut.isForcedLocal()){
-				mo1.getFedMapping().execute(getTID(), true, fr1);
 				//drive output federated mapping
 				MatrixObject out = ec.getMatrixObject(output);
 				out.getDataCharacteristics().set(mo1.getNumColumns(), mo1.getNumRows(), (int) mo1.getBlocksize(), mo1.getNnz());
@@ -146,10 +145,7 @@ public class ReorgFEDInstruction extends UnaryFEDInstruction {
 			out.getDataCharacteristics().set(mo1.getNumRows(), mo1.getNumColumns(), (int) mo1.getBlocksize(), mo1.getNnz());
 			out.setFedMapping(mo1.getFedMapping().copyWithNewID(fr1.getID()));
 
-			if ( _fedOut != null && _fedOut.isForcedLocal() ){
-				out.acquireReadAndRelease();
-				out.getFedMapping().cleanup(getTID(), fr1.getID());
-			}
+			optionalForceLocal(out);
 		}
 		else if (instOpcode.equals("rdiag")) {
 			RdiagResult result;
@@ -160,24 +156,7 @@ public class ReorgFEDInstruction extends UnaryFEDInstruction {
 				result = rdiagM2V(mo1, r_op);
 			}
 
-			FederationMap diagFedMap = result.getFedMap();
-			Map<FederatedRange, int[]> dcs = result.getDcs();
-
-			//update fed ranges
-			for(int i = 0; i < diagFedMap.getFederatedRanges().length; i++) {
-				int[] newRange = dcs.get(diagFedMap.getFederatedRanges()[i]);
-
-				diagFedMap.getFederatedRanges()[i].setBeginDim(0,
-					(diagFedMap.getFederatedRanges()[i].getBeginDims()[0] == 0 ||
-						i == 0) ? 0 : diagFedMap.getFederatedRanges()[i - 1].getEndDims()[0]);
-				diagFedMap.getFederatedRanges()[i].setEndDim(0,
-					diagFedMap.getFederatedRanges()[i].getBeginDims()[0] + newRange[0]);
-				diagFedMap.getFederatedRanges()[i].setBeginDim(1,
-					(diagFedMap.getFederatedRanges()[i].getBeginDims()[1] == 0 ||
-						i == 0) ? 0 : diagFedMap.getFederatedRanges()[i - 1].getEndDims()[1]);
-				diagFedMap.getFederatedRanges()[i].setEndDim(1,
-					diagFedMap.getFederatedRanges()[i].getBeginDims()[1] + newRange[1]);
-			}
+			FederationMap diagFedMap = updateFedRanges(result);
 
 			//update output mapping and data characteristics
 			MatrixObject rdiag = ec.getMatrixObject(output);
@@ -185,10 +164,44 @@ public class ReorgFEDInstruction extends UnaryFEDInstruction {
 				.set(diagFedMap.getMaxIndexInRange(0), diagFedMap.getMaxIndexInRange(1),
 					(int) mo1.getBlocksize());
 			rdiag.setFedMapping(diagFedMap);
-			if ( _fedOut != null && _fedOut.isForcedLocal() ){
-				rdiag.acquireReadAndRelease();
-				rdiag.getFedMapping().cleanup(getTID(), rdiag.getFedMapping().getID());
-			}
+			optionalForceLocal(rdiag);
+		}
+	}
+
+	/**
+	 * Update the federated ranges of result and return the updated federation map.
+	 * @param result RdiagResult for which the fedmap is updated
+	 * @return updated federation map
+	 */
+	private FederationMap updateFedRanges(RdiagResult result){
+		FederationMap diagFedMap = result.getFedMap();
+		Map<FederatedRange, int[]> dcs = result.getDcs();
+
+		for(int i = 0; i < diagFedMap.getFederatedRanges().length; i++) {
+			int[] newRange = dcs.get(diagFedMap.getFederatedRanges()[i]);
+
+			diagFedMap.getFederatedRanges()[i].setBeginDim(0,
+				(diagFedMap.getFederatedRanges()[i].getBeginDims()[0] == 0 ||
+					i == 0) ? 0 : diagFedMap.getFederatedRanges()[i - 1].getEndDims()[0]);
+			diagFedMap.getFederatedRanges()[i].setEndDim(0,
+				diagFedMap.getFederatedRanges()[i].getBeginDims()[0] + newRange[0]);
+			diagFedMap.getFederatedRanges()[i].setBeginDim(1,
+				(diagFedMap.getFederatedRanges()[i].getBeginDims()[1] == 0 ||
+					i == 0) ? 0 : diagFedMap.getFederatedRanges()[i - 1].getEndDims()[1]);
+			diagFedMap.getFederatedRanges()[i].setEndDim(1,
+				diagFedMap.getFederatedRanges()[i].getBeginDims()[1] + newRange[1]);
+		}
+		return diagFedMap;
+	}
+
+	/**
+	 * If federated output is forced local, the output will be retrieved and removed from federated workers.
+	 * @param outputMatrixObject which will be retrieved and removed from federated workers
+	 */
+	private void optionalForceLocal(MatrixObject outputMatrixObject){
+		if ( _fedOut != null && _fedOut.isForcedLocal() ){
+			outputMatrixObject.acquireReadAndRelease();
+			outputMatrixObject.getFedMapping().cleanup(getTID(), outputMatrixObject.getFedMapping().getID());
 		}
 	}
 

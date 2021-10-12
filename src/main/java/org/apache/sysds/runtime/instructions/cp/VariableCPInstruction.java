@@ -475,10 +475,10 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 				return new VariableCPInstruction(VariableOperationCode.CreateVariable,
 					in1, in2, in3, iimd, updateType, fmtProperties, schema, opcode, str);
 			}
-
 			else {
 				return new VariableCPInstruction(VariableOperationCode.CreateVariable, in1, in2, in3, iimd, updateType, schema, opcode, str);
 			}
+			
 		case AssignVariable:
 			in1 = new CPOperand(parts[1]);
 			in2 = new CPOperand(parts[2]);
@@ -997,17 +997,15 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 				writeMMFile(ec, fname);
 			else if( fmt == FileFormat.CSV )
 				writeCSVFile(ec, fname);
-       		else if(fmt == FileFormat.LIBSVM)
-        		writeLIBSVMFile(ec, fname);
+			else if(fmt == FileFormat.LIBSVM)
+				writeLIBSVMFile(ec, fname);
 			else if(fmt == FileFormat.HDF5)
 				writeHDF5File(ec, fname);
 			else {
-				// Default behavior
+				// Default behavior (text, binary)
 				MatrixObject mo = ec.getMatrixObject(getInput1().getName());
 				int blen = Integer.parseInt(getInput4().getName());
-				if( mo.getBlocksize() != blen )
-					mo.getMetaData().getDataCharacteristics().setBlocksize(blen);
-				mo.exportData(fname, fmtStr, _formatProperties);
+				mo.exportData(fname, fmtStr, new FileFormatProperties(blen));
 			}
 			// Set privacy constraint of write instruction to the same as that of the input
 			setPrivacyConstraint(ec.getMatrixObject(getInput1().getName()).getPrivacyConstraint());

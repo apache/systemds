@@ -22,9 +22,22 @@ package org.apache.sysds.runtime.io;
 public class FileFormatProperties 
 {
 	private String description;
+	private final int _blen;
 	
 	public FileFormatProperties() {
+		this(-1);
+	}
 	
+	public FileFormatProperties(int blen) {
+		_blen = blen;
+	}
+	
+	public int getBlocksize() {
+		return _blen;
+	}
+	
+	public boolean knownBlocksize() {
+		return _blen != -1;
 	}
 
 	public String getDescription() {

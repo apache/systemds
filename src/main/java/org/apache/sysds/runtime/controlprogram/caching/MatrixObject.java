@@ -419,6 +419,7 @@ public class MatrixObject extends CacheableData<MatrixBlock> {
 		long clen = dims[1];
 		MetaDataFormat iimd = (MetaDataFormat) _metaData;
 		DataCharacteristics mc = iimd.getDataCharacteristics();
+		System.out.println(mc);
 		long begin = 0;
 
 		if(LOG.isTraceEnabled()) {
@@ -549,8 +550,8 @@ public class MatrixObject extends CacheableData<MatrixBlock> {
 			DataCharacteristics mc = iimd.getDataCharacteristics();
 			// Write the matrix to HDFS in requested format
 			FileFormat fmt = (ofmt != null ? FileFormat.safeValueOf(ofmt) : iimd.getFileFormat());
-			mc = (fmt == FileFormat.BINARY && mc.getBlocksize() > 0) ? mc : new MatrixCharacteristics(mc)
-				.setBlocksize(ConfigurationManager.getBlocksize());
+			if( fmt == FileFormat.BINARY && fprop != null )
+				mc = new MatrixCharacteristics(mc).setBlocksize(fprop.getBlocksize());
 			DataConverter.writeMatrixToHDFS(_data, fname, fmt, mc, rep, fprop, _diag);
 
 			if(LOG.isTraceEnabled())

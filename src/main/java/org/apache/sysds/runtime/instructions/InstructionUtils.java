@@ -85,6 +85,7 @@ import org.apache.sysds.runtime.functionobjects.Builtin.BuiltinCode;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
 import org.apache.sysds.runtime.instructions.cp.CPInstruction.CPType;
 import org.apache.sysds.runtime.instructions.fed.FEDInstruction.FEDType;
+import org.apache.sysds.runtime.instructions.fed.FEDInstruction.FederatedOutput;
 import org.apache.sysds.runtime.instructions.gpu.GPUInstruction.GPUINSTRUCTION_TYPE;
 import org.apache.sysds.runtime.instructions.spark.SPInstruction.SPType;
 import org.apache.sysds.runtime.matrix.data.LibCommonsMath;
@@ -1152,9 +1153,22 @@ public class InstructionUtils
 	public static String removeFEDOutputFlag(String linst){
 		int lastOperandStartIndex = linst.lastIndexOf(Lop.OPERAND_DELIMITOR);
 		String lastOperand = linst.substring(lastOperandStartIndex);
-		if ( lastOperand.contains("FOUT") || lastOperand.contains("NONE") || lastOperand.contains("LOUT") )
+		if ( containsFEDOutputFlag(lastOperand) )
 			return linst.substring(0, lastOperandStartIndex);
 		else return linst;
+	}
+
+	/**
+	 * Checks whether the given operand string contains a federated output flag
+	 * @param operandString which is checked for federated output flag
+	 * @return true if the given operand string contains a federated output flag
+	 */
+	private static boolean containsFEDOutputFlag(String operandString){
+		for (FederatedOutput fedOutput : FederatedOutput.values()){
+			if ( operandString.contains(fedOutput.name()) )
+				return true;
+		}
+		return false;
 	}
 
 	private static String replaceOperand(String linst, CPOperand oldOperand, String newOperandName){

@@ -122,23 +122,7 @@ public class Unary extends Lop
 	}
 	
 	public static boolean isMultiThreadedOp(OpOp1 op) {
-		if(op == OpOp1.INVERSE || op == OpOp1.CHOLESKY || op == OpOp1.DETECTSCHEMA)
-			return false;
-
-		return true;
-
-		/*return op==OpOp1.CUMSUM
-			|| op==OpOp1.CUMPROD
-			|| op==OpOp1.CUMMIN
-			|| op==OpOp1.CUMMAX
-			|| op==OpOp1.CUMSUMPROD
-			|| op==OpOp1.EXP
-			|| op==OpOp1.LOG
-			|| op==OpOp1.SIGMOID
-			|| op==OpOp1.POW2
-			|| op==OpOp1.MULT2;
-
-		 */
+		return !(op == OpOp1.INVERSE || op == OpOp1.CHOLESKY || op == OpOp1.DETECTSCHEMA);
 	}
 	
 	@Override

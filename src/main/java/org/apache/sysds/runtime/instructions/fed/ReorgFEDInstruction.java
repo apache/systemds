@@ -117,7 +117,6 @@ public class ReorgFEDInstruction extends UnaryFEDInstruction {
 			mo1.getFedMapping().execute(getTID(), true, fr, fr1);
 
 			if (_fedOut != null && !_fedOut.isForcedLocal()){
-				mo1.getFedMapping().execute(getTID(), true, fr1);
 				//drive output federated mapping
 				MatrixObject out = ec.getMatrixObject(output);
 				out.getDataCharacteristics().set(mo1.getNumColumns(), mo1.getNumRows(), (int) mo1.getBlocksize(), mo1.getNnz());
@@ -146,10 +145,7 @@ public class ReorgFEDInstruction extends UnaryFEDInstruction {
 			out.getDataCharacteristics().set(mo1.getNumRows(), mo1.getNumColumns(), (int) mo1.getBlocksize(), mo1.getNnz());
 			out.setFedMapping(mo1.getFedMapping().copyWithNewID(fr1.getID()));
 
-			if ( _fedOut != null && _fedOut.isForcedLocal() ){
-				out.acquireReadAndRelease();
-				out.getFedMapping().cleanup(getTID(), fr1.getID());
-			}
+			optionalForceLocal(out);
 		}
 		else if (instOpcode.equals("rdiag")) {
 			RdiagResult result;
@@ -185,10 +181,18 @@ public class ReorgFEDInstruction extends UnaryFEDInstruction {
 				.set(diagFedMap.getMaxIndexInRange(0), diagFedMap.getMaxIndexInRange(1),
 					(int) mo1.getBlocksize());
 			rdiag.setFedMapping(diagFedMap);
-			if ( _fedOut != null && _fedOut.isForcedLocal() ){
-				rdiag.acquireReadAndRelease();
-				rdiag.getFedMapping().cleanup(getTID(), rdiag.getFedMapping().getID());
-			}
+			optionalForceLocal(rdiag);
+		}
+	}
+
+	/**
+	 * If federated output is forced local, the output will be retrieved and removed from federated workers.
+	 * @param outputMatrixObject which will be retrieved and removed from federated workers
+	 */
+	private void optionalForceLocal(MatrixObject outputMatrixObject){
+		if ( _fedOut != null && _fedOut.isForcedLocal() ){
+			outputMatrixObject.acquireReadAndRelease();
+			outputMatrixObject.getFedMapping().cleanup(getTID(), outputMatrixObject.getFedMapping().getID());
 		}
 	}
 

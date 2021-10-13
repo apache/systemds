@@ -431,11 +431,13 @@ public class DMLScript
 			ScriptExecutorUtils.executeRuntimeProgram(rtprog, ec, ConfigurationManager.getDMLConfig(), STATISTICS ? STATISTICS_COUNT : 0, null);
 		}
 		finally {
+			//cleanup scratch_space and all working dirs
+			cleanupHadoopExecution(ConfigurationManager.getDMLConfig());
+			//stop spark context (after cleanup of federated workers and other pools,
+			//otherwise federated spark cleanups in local tests throw errors in same JVM)
 			if(ec != null && ec instanceof SparkExecutionContext)
 				((SparkExecutionContext) ec).close();
 			LOG.info("END DML run " + getDateTime() );
-			//cleanup scratch_space and all working dirs
-			cleanupHadoopExecution( ConfigurationManager.getDMLConfig());
 		}
 	}
 

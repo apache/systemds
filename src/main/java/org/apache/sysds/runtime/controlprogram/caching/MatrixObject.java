@@ -419,7 +419,6 @@ public class MatrixObject extends CacheableData<MatrixBlock> {
 		long clen = dims[1];
 		MetaDataFormat iimd = (MetaDataFormat) _metaData;
 		DataCharacteristics mc = iimd.getDataCharacteristics();
-		System.out.println(mc);
 		long begin = 0;
 
 		if(LOG.isTraceEnabled()) {

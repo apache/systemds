@@ -252,7 +252,6 @@ public class IPAPassRewriteFederatedPlan extends IPAPass {
 		if ( hopRels.isEmpty() )
 			hopRels.add(new HopRel(currentHop, FEDInstruction.FederatedOutput.NONE, hopRelMemo));
 		hopRelMemo.put(currentHop.getHopID(), hopRels);
-		currentHop.setVisited();
 	}
 
 	/**

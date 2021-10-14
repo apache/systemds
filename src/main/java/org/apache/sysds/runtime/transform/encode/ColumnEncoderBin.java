@@ -47,7 +47,6 @@ public class ColumnEncoderBin extends ColumnEncoder {
 
 	// frame transform-apply attributes
 	// a) column bin boundaries
-	// TODO binMins is redundant and could be removed - necessary for correct fed results
 	private double[] _binMins = null;
 	private double[] _binMaxs = null;
 	// b) column min/max (for partial build)
@@ -125,8 +124,6 @@ public class ColumnEncoderBin extends ColumnEncoder {
 		return new BinMergePartialBuildTask(this, ret);
 	}
 
-
-
 	public void computeBins(double min, double max) {
 		// ensure allocated internal transformation metadata
 		if(_binMins == null || _binMaxs == null) {
@@ -159,8 +156,7 @@ public class ColumnEncoderBin extends ColumnEncoder {
 		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 		for(int i = rowStart; i < getEndIndex(in.getNumRows(), rowStart, blk); i++) {
 			double inVal = UtilFunctions.objectToDouble(in.getSchema()[_colID - 1], in.get(i, _colID - 1));
-			int ix = Arrays.binarySearch(_binMaxs, inVal);
-			int binID = ((ix < 0) ? Math.abs(ix + 1) : ix) + 1;
+			double binID = applyValue(inVal);
 			out.quickSetValue(i, outputCol, binID);
 		}
 		if (DMLScript.STATISTICS)
@@ -174,13 +170,20 @@ public class ColumnEncoderBin extends ColumnEncoder {
 		int end = getEndIndex(in.getNumRows(), rowStart, blk);
 		for(int i = rowStart; i < end; i++) {
 			double inVal = in.quickGetValueThreadSafe(i, _colID - 1);
-			int ix = Arrays.binarySearch(_binMaxs, inVal);
-			int binID = ((ix < 0) ? Math.abs(ix + 1) : ix) + 1;
+			double binID = applyValue(inVal);
 			out.quickSetValue(i, outputCol, binID);
 		}
 		if (DMLScript.STATISTICS)
 			Statistics.incTransformBinningApplyTime(System.nanoTime()-t0);
 		return out;
+	}
+	
+	private double applyValue(double inVal) {
+		if( inVal < _binMins[0] | inVal > _binMaxs[_binMaxs.length-1] )
+			return Double.NaN; //value outside min/max range
+		int ix = Arrays.binarySearch(_binMaxs, inVal);
+		int binID = ((ix < 0) ? Math.abs(ix + 1) : ix) + 1;
+		return binID;
 	}
 
 	@Override
@@ -301,8 +304,7 @@ public class ColumnEncoderBin extends ColumnEncoder {
 			for(int r = _startRow; r < getEndIndex(_inputF.getNumRows(), _startRow, _blk); r++) {
 				SparseRowVector row = (SparseRowVector) _out.getSparseBlock().get(r);
 				double inVal = UtilFunctions.objectToDouble(_inputF.getSchema()[index], _inputF.get(r, index));
-				int ix = Arrays.binarySearch(_encoder._binMaxs, inVal);
-				int binID = ((ix < 0) ? Math.abs(ix + 1) : ix) + 1;
+				double binID = _encoder.applyValue(inVal);
 				row.values()[index] = binID;
 				row.indexes()[index] = _outputCol;
 			}
@@ -315,7 +317,6 @@ public class ColumnEncoderBin extends ColumnEncoder {
 		public String toString() {
 			return getClass().getSimpleName() + "<ColId: " + _encoder._colID + ">";
 		}
-
 	}
 
 	private static class BinPartialBuildTask implements Callable<Object> {
@@ -352,7 +353,6 @@ public class ColumnEncoderBin extends ColumnEncoder {
 		public String toString() {
 			return getClass().getSimpleName() + "<Start row: " + _startRow + "; Block size: " + _blockSize + ">";
 		}
-
 	}
 
 	private static class BinMergePartialBuildTask implements Callable<Object> {
@@ -384,11 +384,9 @@ public class ColumnEncoderBin extends ColumnEncoder {
 		public String toString() {
 			return getClass().getSimpleName() + "<ColId: " + _encoder._colID + ">";
 		}
-
 	}
 
 	private static class ColumnBinBuildTask implements Callable<Object> {
-
 		private final ColumnEncoderBin _encoder;
 		private final FrameBlock _input;
 
@@ -407,7 +405,5 @@ public class ColumnEncoderBin extends ColumnEncoder {
 		public String toString() {
 			return getClass().getSimpleName() + "<ColId: " + _encoder._colID + ">";
 		}
-
 	}
-
 }

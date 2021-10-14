@@ -42,6 +42,7 @@ public class FrameMetaReadWriteTest extends AutomatedTestBase
 	
 	private final static int rows = 1382;
 	private final static int cols = 7;
+	private final static String[] colNames = new String[] {"A","B","C","D","E","F","G"};
 	
 	@Override
 	public void setUp() {
@@ -108,6 +109,7 @@ public class FrameMetaReadWriteTest extends AutomatedTestBase
 			double[][] A = getRandomMatrix(rows, cols, -10, 10, 0.7, 3412); 
 			FrameBlock fA = DataConverter.convertToFrameBlock(
 					DataConverter.convertToMatrixBlock(A), ValueType.STRING);
+			fA.setColumnNames(colNames);
 			for( int j=0; j<cols; j++ ) {
 				fA.getColumnMetadata(j).setMvValue(String.valueOf(j+1));
 				fA.getColumnMetadata(j).setNumDistinct(j+1);
@@ -120,14 +122,16 @@ public class FrameMetaReadWriteTest extends AutomatedTestBase
 			
 			//read output and compare meta data
 			FrameBlock fB = FrameReaderFactory
-					.createFrameReader(fmt)
-					.readFrameFromHDFS(output("B"), rows, cols);
+				.createFrameReader(fmt)
+				.readFrameFromHDFS(output("B"), rows, cols);
 			for( int j=0; j<cols; j++ ) {
 				Assert.assertEquals("MV meta data wrong!",
-						fA.getColumnMetadata(j).getMvValue(), fB.getColumnMetadata(j).getMvValue());
+					fA.getColumnMetadata(j).getMvValue(), fB.getColumnMetadata(j).getMvValue());
 				Assert.assertEquals("Distinct meta data wrong!",
-						fA.getColumnMetadata(j).getNumDistinct(), fB.getColumnMetadata(j).getNumDistinct());
+					fA.getColumnMetadata(j).getNumDistinct(), fB.getColumnMetadata(j).getNumDistinct());
 			}
+			if( fmt == FileFormat.BINARY )
+				Assert.assertArrayEquals("Column names wrong!", fA.getColumnNames(), fB.getColumnNames());
 		}
 		catch(Exception ex) {
 			ex.printStackTrace();

@@ -91,7 +91,7 @@ public class FrameReaderBinaryBlock extends FrameReader
 		
 		try
 		{
-			while( reader.next(key, value) ) {	
+			while( reader.next(key, value) ) {
 				int row_offset = (int)(key.get()-1);
 				int rows = value.getNumRows();
 				int cols = value.getNumColumns();
@@ -107,8 +107,10 @@ public class FrameReaderBinaryBlock extends FrameReader
 		
 				//copy block into target frame, incl meta on first
 				dest.copy( row_offset, row_offset+rows-1, 0, cols-1, value);
-				if( row_offset==0 )
+				if( row_offset==0 ) {
+					dest.setColumnNames(value.getColumnNames());
 					dest.setColumnMetadata(value.getColumnMetadata());
+				}
 			}
 		}
 		finally {

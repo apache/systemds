@@ -179,8 +179,13 @@ public class ColumnEncoderBin extends ColumnEncoder {
 	}
 	
 	private double applyValue(double inVal) {
-		if( inVal < _binMins[0] | inVal > _binMaxs[_binMaxs.length-1] )
+		if( _binMins.length == 0 || _binMaxs.length == 0 ) {
+			LOG.warn("ColumnEncoderBin: applyValue without bucket boundaries, assign 1");
+			return 1; //robustness in case of missing bins
+		}
+		if( inVal < _binMins[0] || inVal > _binMaxs[_binMaxs.length-1] ) {
 			return Double.NaN; //value outside min/max range
+		}
 		int ix = Arrays.binarySearch(_binMaxs, inVal);
 		int binID = ((ix < 0) ? Math.abs(ix + 1) : ix) + 1;
 		return binID;

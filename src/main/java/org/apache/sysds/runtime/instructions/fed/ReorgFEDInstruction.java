@@ -156,24 +156,7 @@ public class ReorgFEDInstruction extends UnaryFEDInstruction {
 				result = rdiagM2V(mo1, r_op);
 			}
 
-			FederationMap diagFedMap = result.getFedMap();
-			Map<FederatedRange, int[]> dcs = result.getDcs();
-
-			//update fed ranges
-			for(int i = 0; i < diagFedMap.getFederatedRanges().length; i++) {
-				int[] newRange = dcs.get(diagFedMap.getFederatedRanges()[i]);
-
-				diagFedMap.getFederatedRanges()[i].setBeginDim(0,
-					(diagFedMap.getFederatedRanges()[i].getBeginDims()[0] == 0 ||
-						i == 0) ? 0 : diagFedMap.getFederatedRanges()[i - 1].getEndDims()[0]);
-				diagFedMap.getFederatedRanges()[i].setEndDim(0,
-					diagFedMap.getFederatedRanges()[i].getBeginDims()[0] + newRange[0]);
-				diagFedMap.getFederatedRanges()[i].setBeginDim(1,
-					(diagFedMap.getFederatedRanges()[i].getBeginDims()[1] == 0 ||
-						i == 0) ? 0 : diagFedMap.getFederatedRanges()[i - 1].getEndDims()[1]);
-				diagFedMap.getFederatedRanges()[i].setEndDim(1,
-					diagFedMap.getFederatedRanges()[i].getBeginDims()[1] + newRange[1]);
-			}
+			FederationMap diagFedMap = updateFedRanges(result);
 
 			//update output mapping and data characteristics
 			MatrixObject rdiag = ec.getMatrixObject(output);
@@ -183,6 +166,32 @@ public class ReorgFEDInstruction extends UnaryFEDInstruction {
 			rdiag.setFedMapping(diagFedMap);
 			optionalForceLocal(rdiag);
 		}
+	}
+
+	/**
+	 * Update the federated ranges of result and return the updated federation map.
+	 * @param result RdiagResult for which the fedmap is updated
+	 * @return updated federation map
+	 */
+	private FederationMap updateFedRanges(RdiagResult result){
+		FederationMap diagFedMap = result.getFedMap();
+		Map<FederatedRange, int[]> dcs = result.getDcs();
+
+		for(int i = 0; i < diagFedMap.getFederatedRanges().length; i++) {
+			int[] newRange = dcs.get(diagFedMap.getFederatedRanges()[i]);
+
+			diagFedMap.getFederatedRanges()[i].setBeginDim(0,
+				(diagFedMap.getFederatedRanges()[i].getBeginDims()[0] == 0 ||
+					i == 0) ? 0 : diagFedMap.getFederatedRanges()[i - 1].getEndDims()[0]);
+			diagFedMap.getFederatedRanges()[i].setEndDim(0,
+				diagFedMap.getFederatedRanges()[i].getBeginDims()[0] + newRange[0]);
+			diagFedMap.getFederatedRanges()[i].setBeginDim(1,
+				(diagFedMap.getFederatedRanges()[i].getBeginDims()[1] == 0 ||
+					i == 0) ? 0 : diagFedMap.getFederatedRanges()[i - 1].getEndDims()[1]);
+			diagFedMap.getFederatedRanges()[i].setEndDim(1,
+				diagFedMap.getFederatedRanges()[i].getBeginDims()[1] + newRange[1]);
+		}
+		return diagFedMap;
 	}
 
 	/**

@@ -31,7 +31,7 @@ import org.apache.sysds.runtime.util.DependencyThreadPool;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
-import org.apache.sysds.test.functions.transform.mt.TransformFrameBuildMultithreadedTest;
+import org.apache.sysds.test.functions.transform.TransformFrameBuildMultithreadedTest;
 import org.junit.Assert;
 import org.junit.Test;
 

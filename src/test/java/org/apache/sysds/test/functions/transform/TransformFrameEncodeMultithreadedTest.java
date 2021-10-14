@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.apache.sysds.test.functions.transform.mt;
+package org.apache.sysds.test.functions.transform;
 
 import java.nio.file.Files;
 import java.nio.file.Paths;

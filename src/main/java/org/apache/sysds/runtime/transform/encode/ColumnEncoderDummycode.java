@@ -24,14 +24,16 @@ import static org.apache.sysds.runtime.util.UtilFunctions.getEndIndex;
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.controlprogram.caching.CacheBlock;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
-import org.apache.sysds.runtime.transform.Transformable;
 import org.apache.sysds.runtime.util.DependencyTask;
 import org.apache.sysds.utils.Statistics;
 
@@ -59,25 +61,27 @@ public class ColumnEncoderDummycode extends ColumnEncoder {
 	}
 
 	@Override
-	public void build(Transformable in) {
+	public void build(CacheBlock in) {
 		// do nothing
 	}
 
 	@Override
-	public List<DependencyTask<?>> getBuildTasks(Transformable in) {
+	public List<DependencyTask<?>> getBuildTasks(CacheBlock in) {
 		return null;
 	}
 
 	@Override
-	protected double getCode(Transformable in, int row) {
+	protected double getCode(CacheBlock in, int row) {
 		throw new DMLRuntimeException("DummyCoder does not have a code");
 	}
 
-	protected void applySparse(Transformable in, MatrixBlock out, int outputCol, int rowStart, int blk){
+	protected void applySparse(CacheBlock in, MatrixBlock out, int outputCol, int rowStart, int blk){
 		if (!(in instanceof MatrixBlock)){
 			throw new DMLRuntimeException("ColumnEncoderDummycode called with: " + in.getClass().getSimpleName() +
 					" and not MatrixBlock");
 		}
+		Set<Integer> sparseRowsWZeros = null;
+		int index = _colID - 1;
 		for(int r = rowStart; r < getEndIndex(in.getNumRows(), rowStart, blk); r++) {
 			// Since the recoded values are already offset in the output matrix (same as input at this point)
 			// the dummycoding only needs to offset them within their column domain. Which means that the
@@ -94,17 +98,24 @@ public class ColumnEncoderDummycode extends ColumnEncoder {
 			//
 			// indexes = [0,2] ===> indexes = [0,3]
 			// values = [1,2] values = [1,1]
-			int index = _colID - 1;
 			double val = out.getSparseBlock().get(r).values()[index];
-			if(Double.isNaN(val))
+			if(Double.isNaN(val)){
+				if(sparseRowsWZeros == null)
+					sparseRowsWZeros = new HashSet<>();
+				sparseRowsWZeros.add(r);
+				out.getSparseBlock().get(r).values()[index] = 0;
 				continue;
+			}
 			int nCol = outputCol + (int) val - 1;
 			out.getSparseBlock().get(r).indexes()[index] = nCol;
 			out.getSparseBlock().get(r).values()[index] = 1;
 		}
+		if(sparseRowsWZeros != null){
+			addSparseRowsWZeros(sparseRowsWZeros);
+		}
 	}
 
-	protected void applyDense(Transformable in, MatrixBlock out, int outputCol, int rowStart, int blk){
+	protected void applyDense(CacheBlock in, MatrixBlock out, int outputCol, int rowStart, int blk){
 		if (!(in instanceof MatrixBlock)){
 			throw new DMLRuntimeException("ColumnEncoderDummycode called with: " + in.getClass().getSimpleName() +
 					" and not MatrixBlock");
@@ -112,9 +123,12 @@ public class ColumnEncoderDummycode extends ColumnEncoder {
 		for(int i = rowStart; i < getEndIndex(in.getNumRows(), rowStart, blk); i++) {
 			// Using outputCol here as index since we have a MatrixBlock as input where dummycoding could have been
 			// applied in a previous encoder
-			double val = in.getDoubleValue(i, outputCol);
-			if(Double.isNaN(val))
+			double val = in.getDouble(i, outputCol);
+			if(Double.isNaN(val)){
+				// 0 if NaN
+				out.quickSetValue(i, outputCol, 0);
 				continue;
+			}
 			int nCol = outputCol + (int) val - 1;
 			if(nCol != outputCol)
 				out.quickSetValue(i, outputCol, 0);
@@ -124,7 +138,7 @@ public class ColumnEncoderDummycode extends ColumnEncoder {
 
 	@Override
 	protected ColumnApplyTask<? extends ColumnEncoder> 
-		getSparseTask(Transformable in, MatrixBlock out, int outputCol, int startRow, int blk) {
+		getSparseTask(CacheBlock in, MatrixBlock out, int outputCol, int startRow, int blk) {
 		if (!(in instanceof MatrixBlock)){
 			throw new DMLRuntimeException("ColumnEncoderDummycode called with: " + in.getClass().getSimpleName() +
 					" and not MatrixBlock");

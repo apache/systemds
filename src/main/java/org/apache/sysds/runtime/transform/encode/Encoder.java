@@ -21,9 +21,9 @@ package org.apache.sysds.runtime.transform.encode;
 
 import java.io.Externalizable;
 
+import org.apache.sysds.runtime.controlprogram.caching.CacheBlock;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
-import org.apache.sysds.runtime.transform.Transformable;
 
 /*
 Interface for all Encoder like objects
@@ -36,7 +36,7 @@ public interface Encoder extends Externalizable {
 	 *
 	 * @param in input frame block
 	 */
-	void build(Transformable in);
+	void build(CacheBlock in);
 
 	/**
 	 * Apply the generated metadata to the FrameBlock and saved the result in out.
@@ -46,7 +46,7 @@ public interface Encoder extends Externalizable {
 	 * @param outputCol is a offset in the output matrix. column in FrameBlock + outputCol = column in out
 	 * @return output matrix block
 	 */
-	MatrixBlock apply(Transformable in, MatrixBlock out, int outputCol);
+	MatrixBlock apply(CacheBlock in, MatrixBlock out, int outputCol);
 
 	/**
 	 * Construct a frame block out of the transform meta data.

@@ -106,7 +106,6 @@ import org.apache.sysds.runtime.matrix.operators.TernaryOperator;
 import org.apache.sysds.runtime.matrix.operators.UnaryOperator;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
-import org.apache.sysds.runtime.transform.Transformable;
 import org.apache.sysds.runtime.util.DataConverter;
 import org.apache.sysds.runtime.util.FastBufferedDataInputStream;
 import org.apache.sysds.runtime.util.FastBufferedDataOutputStream;
@@ -116,7 +115,7 @@ import org.apache.sysds.runtime.util.UtilFunctions;
 import org.apache.sysds.utils.NativeHelper;
 
 
-public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizable, Transformable {
+public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizable {
 	// private static final Log LOG = LogFactory.getLog(MatrixBlock.class.getName());
 
 	private static final long serialVersionUID = 7319972089143154056L;
@@ -5942,11 +5941,16 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	}
 
 
-	public double getDoubleValue(int r, int c){
+	public double getDouble(int r, int c){
 		return quickGetValue(r, c);
 	}
 
-	public String getStringValue(int r, int c){
+	@Override
+	public double getDoubleNaN(int r, int c) {
+		return getDouble(r, c);
+	}
+
+	public String getString(int r, int c){
 		double v = quickGetValue(r, c);
 		// NaN gets converted to null here since check for null is faster than string comp
 		if(Double.isNaN(v))

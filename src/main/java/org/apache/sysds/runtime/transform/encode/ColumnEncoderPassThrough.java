@@ -21,20 +21,20 @@ package org.apache.sysds.runtime.transform.encode;
 
 import static org.apache.sysds.runtime.util.UtilFunctions.getEndIndex;
 
-import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.apache.sysds.api.DMLScript;
+import org.apache.sysds.runtime.controlprogram.caching.CacheBlock;
 import org.apache.sysds.runtime.data.SparseRowVector;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
-import org.apache.sysds.runtime.transform.Transformable;
 import org.apache.sysds.runtime.util.DependencyTask;
 import org.apache.sysds.utils.Statistics;
 
 public class ColumnEncoderPassThrough extends ColumnEncoder {
 	private static final long serialVersionUID = -8473768154646831882L;
-	private List<Integer> _sparseRowsWZeros = null;
 
 	protected ColumnEncoderPassThrough(int ptCols) {
 		super(ptCols); // 1-based
@@ -44,52 +44,44 @@ public class ColumnEncoderPassThrough extends ColumnEncoder {
 		this(-1);
 	}
 
-	public List<Integer> getSparseRowsWZeros(){
-		return _sparseRowsWZeros;
-	}
-
 	@Override
-	public void build(Transformable in) {
+	public void build(CacheBlock in) {
 		// do nothing
 	}
 
 	@Override
-	public List<DependencyTask<?>> getBuildTasks(Transformable in) {
+	public List<DependencyTask<?>> getBuildTasks(CacheBlock in) {
 		return null;
 	}
 
 	@Override
 	protected ColumnApplyTask<? extends ColumnEncoder>
-		getSparseTask(Transformable in, MatrixBlock out, int outputCol, int startRow, int blk) {
+		getSparseTask(CacheBlock in, MatrixBlock out, int outputCol, int startRow, int blk) {
 		return new PassThroughSparseApplyTask(this, in, out, outputCol, startRow, blk);
 	}
 
 	@Override
-	protected double getCode(Transformable in, int row) {
-		return in.getDoubleValue(row, _colID - 1);
+	protected double getCode(CacheBlock in, int row) {
+		return in.getDouble(row, _colID - 1);
 	}
 
 
-	protected void applySparse(Transformable in, MatrixBlock out, int outputCol, int rowStart, int blk){
-		List<Integer> sparseRowsWZeros = null;
+	protected void applySparse(CacheBlock in, MatrixBlock out, int outputCol, int rowStart, int blk){
+		Set<Integer> sparseRowsWZeros = null;
 		int index = _colID - 1;
 		for(int r = rowStart; r < getEndIndex(in.getNumRows(), rowStart, blk); r++) {
 			double v = getCode(in, r);
 			SparseRowVector row = (SparseRowVector) out.getSparseBlock().get(r);
 			if(v == 0) {
 				if(sparseRowsWZeros == null)
-					sparseRowsWZeros = new ArrayList<>();
+					sparseRowsWZeros = new HashSet<>();
 				sparseRowsWZeros.add(r);
 			}
 			row.values()[index] = v;
 			row.indexes()[index] = outputCol;
 		}
 		if(sparseRowsWZeros != null){
-			synchronized (this){
-				if(_sparseRowsWZeros == null)
-					_sparseRowsWZeros = new ArrayList<>();
-				_sparseRowsWZeros.addAll(sparseRowsWZeros);
-			}
+			addSparseRowsWZeros(sparseRowsWZeros);
 		}
 	}
 
@@ -121,13 +113,13 @@ public class ColumnEncoderPassThrough extends ColumnEncoder {
 	public static class PassThroughSparseApplyTask extends ColumnApplyTask<ColumnEncoderPassThrough>{
 
 
-		protected PassThroughSparseApplyTask(ColumnEncoderPassThrough encoder, Transformable input,
+		protected PassThroughSparseApplyTask(ColumnEncoderPassThrough encoder, CacheBlock input,
 				MatrixBlock out, int outputCol) {
 			super(encoder, input, out, outputCol);
 		}
 
-		protected PassThroughSparseApplyTask(ColumnEncoderPassThrough encoder, Transformable input, MatrixBlock out,
-				int outputCol, int startRow, int blk) {
+		protected PassThroughSparseApplyTask(ColumnEncoderPassThrough encoder, CacheBlock input, MatrixBlock out,
+                                             int outputCol, int startRow, int blk) {
 			super(encoder, input, out, outputCol, startRow, blk);
 		}
 

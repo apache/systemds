@@ -25,9 +25,9 @@ import java.io.ObjectOutput;
 import java.util.List;
 
 import org.apache.sysds.api.DMLScript;
+import org.apache.sysds.runtime.controlprogram.caching.CacheBlock;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
-import org.apache.sysds.runtime.transform.Transformable;
 import org.apache.sysds.runtime.util.DependencyTask;
 import org.apache.sysds.runtime.util.UtilFunctions;
 import org.apache.sysds.utils.Statistics;
@@ -64,26 +64,26 @@ public class ColumnEncoderFeatureHash extends ColumnEncoder {
 	}
 
 	@Override
-	protected double getCode(Transformable in, int row) {
-		String key = in.getStringValue(row, _colID - 1);
+	protected double getCode(CacheBlock in, int row) {
+		String key = in.getString(row, _colID - 1);
 		if(key == null)
 			return Double.NaN;
 		return (key.hashCode() % _K) + 1;
 	}
 
 	@Override
-	public void build(Transformable in) {
+	public void build(CacheBlock in) {
 		// do nothing (no meta data other than K)
 	}
 
 	@Override
-	public List<DependencyTask<?>> getBuildTasks(Transformable in) {
+	public List<DependencyTask<?>> getBuildTasks(CacheBlock in) {
 		return null;
 	}
 
 	@Override
 	protected ColumnApplyTask<? extends ColumnEncoder> 
-		getSparseTask(Transformable in, MatrixBlock out, int outputCol, int startRow, int blk) {
+		getSparseTask(CacheBlock in, MatrixBlock out, int outputCol, int startRow, int blk) {
 		return new FeatureHashSparseApplyTask(this, in, out, outputCol, startRow, blk);
 	}
 
@@ -129,12 +129,12 @@ public class ColumnEncoderFeatureHash extends ColumnEncoder {
 
 	public static class FeatureHashSparseApplyTask extends ColumnApplyTask<ColumnEncoderFeatureHash>{
 
-		public FeatureHashSparseApplyTask(ColumnEncoderFeatureHash encoder, Transformable input,
+		public FeatureHashSparseApplyTask(ColumnEncoderFeatureHash encoder, CacheBlock input,
 				MatrixBlock out, int outputCol, int startRow, int blk) {
 			super(encoder, input, out, outputCol, startRow, blk);
 		}
 
-		public FeatureHashSparseApplyTask(ColumnEncoderFeatureHash encoder, Transformable input,
+		public FeatureHashSparseApplyTask(ColumnEncoderFeatureHash encoder, CacheBlock input,
 				MatrixBlock out, int outputCol) {
 			super(encoder, input, out, outputCol);
 		}

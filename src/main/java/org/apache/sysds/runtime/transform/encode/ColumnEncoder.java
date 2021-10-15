@@ -30,7 +30,9 @@ import java.io.ObjectOutput;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.Callable;
 
 import org.apache.commons.logging.Log;
@@ -38,10 +40,10 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.controlprogram.caching.CacheBlock;
 import org.apache.sysds.runtime.data.SparseRowVector;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
-import org.apache.sysds.runtime.transform.Transformable;
 import org.apache.sysds.runtime.util.DependencyTask;
 import org.apache.sysds.runtime.util.DependencyThreadPool;
 import org.apache.sysds.utils.Statistics;
@@ -56,6 +58,7 @@ public abstract class ColumnEncoder implements Externalizable, Encoder, Comparab
 	public static int BUILD_ROW_BLOCKS_PER_COLUMN = 1;
 	private static final long serialVersionUID = 2299156350718979064L;
 	protected int _colID;
+	protected Set<Integer> _sparseRowsWZeros = null;
 
 	protected enum TransformType{
 		BIN, RECODE, DUMMYCODE, FEATURE_HASH, PASS_THROUGH, N_A
@@ -76,11 +79,11 @@ public abstract class ColumnEncoder implements Externalizable, Encoder, Comparab
 	 *
 	 */
 
-	public MatrixBlock apply(Transformable in, MatrixBlock out, int outputCol){
+	public MatrixBlock apply(CacheBlock in, MatrixBlock out, int outputCol){
 		return apply(in, out, outputCol, 0, -1);
 	}
 
-	public MatrixBlock apply(Transformable in, MatrixBlock out, int outputCol, int rowStart, int blk){
+	public MatrixBlock apply(CacheBlock in, MatrixBlock out, int outputCol, int rowStart, int blk){
 		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 		if(out.isInSparseFormat())
 			applySparse(in, out, outputCol, rowStart, blk);
@@ -110,10 +113,10 @@ public abstract class ColumnEncoder implements Externalizable, Encoder, Comparab
 		return out;
 	}
 
-	protected abstract double getCode(Transformable in, int row);
+	protected abstract double getCode(CacheBlock in, int row);
 
 
-	protected void applySparse(Transformable in, MatrixBlock out, int outputCol, int rowStart, int blk){
+	protected void applySparse(CacheBlock in, MatrixBlock out, int outputCol, int rowStart, int blk){
 		int index = _colID - 1;
 		for(int r = rowStart; r < getEndIndex(in.getNumRows(), rowStart, blk); r++) {
 			SparseRowVector row = (SparseRowVector) out.getSparseBlock().get(r);
@@ -122,7 +125,7 @@ public abstract class ColumnEncoder implements Externalizable, Encoder, Comparab
 		}
 	}
 
-	protected void applyDense(Transformable in, MatrixBlock out, int outputCol, int rowStart, int blk){
+	protected void applyDense(CacheBlock in, MatrixBlock out, int outputCol, int rowStart, int blk){
 		for(int i = rowStart; i < getEndIndex(in.getNumRows(), rowStart, blk); i++) {
 			out.quickSetValue(i, outputCol, getCode(in, i));
 		}
@@ -243,7 +246,7 @@ public abstract class ColumnEncoder implements Externalizable, Encoder, Comparab
 	 * complete if all previous tasks are done. This is so that we can use the last task as a dependency for the whole
 	 * build, reducing unnecessary dependencies.
 	 */
-	public List<DependencyTask<?>> getBuildTasks(Transformable in) {
+	public List<DependencyTask<?>> getBuildTasks(CacheBlock in) {
 		List<Callable<Object>> tasks = new ArrayList<>();
 		List<List<? extends Callable<?>>> dep = null;
 		int nRows = in.getNumRows();
@@ -262,12 +265,12 @@ public abstract class ColumnEncoder implements Externalizable, Encoder, Comparab
 		return DependencyThreadPool.createDependencyTasks(tasks, dep);
 	}
 
-	public Callable<Object> getBuildTask(Transformable in) {
+	public Callable<Object> getBuildTask(CacheBlock in) {
 		throw new DMLRuntimeException("Trying to get the Build task of an Encoder which does not require building");
 	}
 
-	public Callable<Object> getPartialBuildTask(Transformable in, int startRow, int blockSize,
-		HashMap<Integer, Object> ret) {
+	public Callable<Object> getPartialBuildTask(CacheBlock in, int startRow, int blockSize,
+                                                HashMap<Integer, Object> ret) {
 		throw new DMLRuntimeException(
 			"Trying to get the PartialBuild task of an Encoder which does not support  partial building");
 	}
@@ -278,7 +281,7 @@ public abstract class ColumnEncoder implements Externalizable, Encoder, Comparab
 	}
 
 
-	public List<DependencyTask<?>> getApplyTasks(Transformable in, MatrixBlock out, int outputCol){
+	public List<DependencyTask<?>> getApplyTasks(CacheBlock in, MatrixBlock out, int outputCol){
 		List<Callable<Object>> tasks = new ArrayList<>();
 		List<List<? extends Callable<?>>> dep = null;
 		int[] blockSizes = getBlockSizes(in.getNumRows(), getNumApplyRowPartitions());
@@ -298,13 +301,25 @@ public abstract class ColumnEncoder implements Externalizable, Encoder, Comparab
 	}
 
 	protected ColumnApplyTask<? extends ColumnEncoder>
-			getSparseTask(Transformable in, MatrixBlock out, int outputCol, int startRow, int blk){
+			getSparseTask(CacheBlock in, MatrixBlock out, int outputCol, int startRow, int blk){
 		return new ColumnApplyTask<>(this, in, out, outputCol, startRow, blk);
 	}
 
 	protected ColumnApplyTask<? extends ColumnEncoder>
-			getDenseTask(Transformable in, MatrixBlock out, int outputCol, int startRow, int blk){
+			getDenseTask(CacheBlock in, MatrixBlock out, int outputCol, int startRow, int blk){
 		return new ColumnApplyTask<>(this, in, out, outputCol, startRow, blk);
+	}
+
+	public Set<Integer> getSparseRowsWZeros(){
+		return _sparseRowsWZeros;
+	}
+
+	protected void addSparseRowsWZeros(Set<Integer> sparseRowsWZeros){
+		synchronized (this){
+			if(_sparseRowsWZeros == null)
+				_sparseRowsWZeros = new HashSet<>();
+			_sparseRowsWZeros.addAll(sparseRowsWZeros);
+		}
 	}
 
 	protected int getNumApplyRowPartitions(){
@@ -326,18 +341,18 @@ public abstract class ColumnEncoder implements Externalizable, Encoder, Comparab
 	protected static class ColumnApplyTask<T extends ColumnEncoder> implements Callable<Object> {
 
 		protected final T _encoder;
-		protected final Transformable _input;
+		protected final CacheBlock _input;
 		protected final MatrixBlock _out;
 		protected final int _outputCol;
 		protected final int _startRow;
 		protected final int _blk;
 
-		protected ColumnApplyTask(T encoder, Transformable input, MatrixBlock out, int outputCol){
+		protected ColumnApplyTask(T encoder, CacheBlock input, MatrixBlock out, int outputCol){
 			this(encoder, input, out, outputCol, 0, -1);
 		}
 
-		protected ColumnApplyTask(T encoder, Transformable input, MatrixBlock out, int outputCol,
-								 int startRow, int blk){
+		protected ColumnApplyTask(T encoder, CacheBlock input, MatrixBlock out, int outputCol,
+                                  int startRow, int blk){
 			_encoder = encoder;
 			_input = input;
 			_out = out;

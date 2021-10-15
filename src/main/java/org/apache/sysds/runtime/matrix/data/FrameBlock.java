@@ -63,7 +63,6 @@ import org.apache.sysds.runtime.io.IOUtilFunctions;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
-import org.apache.sysds.runtime.transform.Transformable;
 import org.apache.sysds.runtime.transform.encode.ColumnEncoderRecode;
 import org.apache.sysds.runtime.util.CommonThreadPool;
 import org.apache.sysds.runtime.util.DMVUtils;
@@ -72,7 +71,7 @@ import org.apache.sysds.runtime.util.IndexRange;
 import org.apache.sysds.runtime.util.UtilFunctions;
 
 @SuppressWarnings({"rawtypes","unchecked"}) //allow generic native arrays
-public class FrameBlock implements CacheBlock, Externalizable, Transformable {
+public class FrameBlock implements CacheBlock, Externalizable {
 	private static final long serialVersionUID = -3993450030207130665L;
 	private static final Log LOG = LogFactory.getLog(FrameBlock.class.getName());
 	private static final IDSequence CLASS_ID = new IDSequence();
@@ -161,15 +160,24 @@ public class FrameBlock implements CacheBlock, Externalizable, Transformable {
 	}
 
 	@Override
-	public double getDoubleValue(int r, int c) {
+	public double getDouble(int r, int c) {
 		Object o = get(r, c);
 		if(o == null || (getSchema()[c] == ValueType.STRING && o.toString().isEmpty()))
-			return Double.NaN;
+			return 0;
 		return UtilFunctions.objectToDouble(getSchema()[c], o);
 	}
 
 	@Override
-	public String getStringValue(int r, int c) {
+	public double getDoubleNaN(int r, int c) {
+		Object o = get(r, c);
+		if(o == null || (getSchema()[c] == ValueType.STRING && o.toString().isEmpty()))
+			return Double.NaN;
+		return UtilFunctions.objectToDouble(getSchema()[c], o);
+
+	}
+
+	@Override
+	public String getString(int r, int c) {
 		Object o = get(r, c);
 		String s = (o == null) ? null : o.toString();
 		if(s != null && s.isEmpty())

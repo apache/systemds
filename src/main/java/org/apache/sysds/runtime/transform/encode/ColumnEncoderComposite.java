@@ -28,13 +28,15 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.Callable;
+import java.util.stream.Collectors;
 
 import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.controlprogram.caching.CacheBlock;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
-import org.apache.sysds.runtime.transform.Transformable;
 import org.apache.sysds.runtime.util.DependencyTask;
 import org.apache.sysds.runtime.util.DependencyThreadPool;
 
@@ -98,13 +100,13 @@ public class ColumnEncoderComposite extends ColumnEncoder {
 	}
 
 	@Override
-	public void build(Transformable in) {
+	public void build(CacheBlock in) {
 		for(ColumnEncoder columnEncoder : _columnEncoders)
 			columnEncoder.build(in);
 	}
 
 	@Override
-	public List<DependencyTask<?>> getApplyTasks(Transformable in, MatrixBlock out, int outputCol) {
+	public List<DependencyTask<?>> getApplyTasks(CacheBlock in, MatrixBlock out, int outputCol) {
 		List<DependencyTask<?>> tasks = new ArrayList<>();
 		List<Integer> sizes = new ArrayList<>();
 		for(int i = 0; i < _columnEncoders.size(); i++) {
@@ -136,12 +138,12 @@ public class ColumnEncoderComposite extends ColumnEncoder {
 
 	@Override
 	protected ColumnApplyTask<? extends ColumnEncoder> 
-		getSparseTask(Transformable in, MatrixBlock out, int outputCol, int startRow, int blk) {
+		getSparseTask(CacheBlock in, MatrixBlock out, int outputCol, int startRow, int blk) {
 		throw new NotImplementedException();
 	}
 
 	@Override
-	public List<DependencyTask<?>> getBuildTasks(Transformable in) {
+	public List<DependencyTask<?>> getBuildTasks(CacheBlock in) {
 		List<DependencyTask<?>> tasks = new ArrayList<>();
 		Map<Integer[], Integer[]> depMap = null;
 		for(ColumnEncoder columnEncoder : _columnEncoders) {
@@ -181,7 +183,7 @@ public class ColumnEncoderComposite extends ColumnEncoder {
 	}
 
 	@Override
-	public MatrixBlock apply(Transformable in, MatrixBlock out, int outputCol, int rowStart, int blk) {
+	public MatrixBlock apply(CacheBlock in, MatrixBlock out, int outputCol, int rowStart, int blk) {
 		try {
 			for(int i = 0; i < _columnEncoders.size(); i++) {
 				if(i == 0) {
@@ -201,7 +203,7 @@ public class ColumnEncoderComposite extends ColumnEncoder {
 	}
 
 	@Override
-	protected double getCode(Transformable in, int row) {
+	protected double getCode(CacheBlock in, int row) {
 		throw new DMLRuntimeException("CompositeEncoder does not have a Code");
 	}
 
@@ -335,6 +337,16 @@ public class ColumnEncoderComposite extends ColumnEncoder {
 		super.shiftCol(columnOffset);
 		_columnEncoders.forEach(e -> e.shiftCol(columnOffset));
 	}
+
+	@Override
+	public Set<Integer> getSparseRowsWZeros(){
+		return _columnEncoders.stream().map(ColumnEncoder::getSparseRowsWZeros).flatMap(l -> {
+					if(l == null)
+						return null;
+					return l.stream();
+				}).collect(Collectors.toSet());
+	}
+
 
 	private static class ColumnCompositeUpdateDCTask implements Callable<Object> {
 

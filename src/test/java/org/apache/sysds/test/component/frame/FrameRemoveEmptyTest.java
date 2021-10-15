@@ -33,11 +33,10 @@ import org.junit.Test;
 public class FrameRemoveEmptyTest extends AutomatedTestBase
 {
 	private final static String TEST_NAME1 = "removeEmpty1";
-	private final static String TEST_NAME2 = "removeEmpty2";
 	private final static String TEST_DIR = "functions/frame/";
 	private static final String TEST_CLASS_DIR = TEST_DIR + RemoveEmptyTest.class.getSimpleName() + "/";
 
-	private final static int _rows = 100;
+	private final static int _rows = 10;
 	private final static int _cols = 6;
 
 	private final static double _sparsityDense = 0.7;
@@ -47,8 +46,6 @@ public class FrameRemoveEmptyTest extends AutomatedTestBase
 	{
 		addTestConfiguration(TEST_NAME1,
 			new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] { "V" }) );
-		addTestConfiguration(TEST_NAME2,
-			new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2, new String[] { "V" }) );
 	}
 
 	@Test
@@ -60,7 +57,7 @@ public class FrameRemoveEmptyTest extends AutomatedTestBase
 	@Test
 	public void testRemoveEmptyRowsSparseCP()
 	{
-		runTestRemoveEmpty( TEST_NAME1, "rows", Types.ExecType.CP, true );
+		runTestRemoveEmpty( TEST_NAME1, "cols", Types.ExecType.CP, true );
 	}
 
 	@Test

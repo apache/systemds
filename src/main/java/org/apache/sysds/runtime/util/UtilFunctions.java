@@ -490,7 +490,7 @@ public class UtilFunctions {
 
 	public static double objectToDoubleSafe(ValueType vt, Object in) {
 		if(vt == ValueType.STRING && !NumberUtils.isCreatable((String) in)) {
-			return ((String) in).equalsIgnoreCase("null") ? 0.0 : 1.1;
+			return 1.0;
 		} else return objectToDouble(vt, in);
 	}
 

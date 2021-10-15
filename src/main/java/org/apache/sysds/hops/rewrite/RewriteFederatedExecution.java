@@ -56,15 +56,16 @@ public class RewriteFederatedExecution extends HopRewriteRule {
 
 	@Override
 	public ArrayList<Hop> rewriteHopDAGs(ArrayList<Hop> roots, ProgramRewriteStatus state) {
-		if ( roots == null )
-			return null;
-		for ( Hop root : roots )
-			visitHop(root);
+		if ( roots != null )
+			for ( Hop root : roots )
+				rewriteHopDAG(root, state);
 		return roots;
 	}
 
 	@Override public Hop rewriteHopDAG(Hop root, ProgramRewriteStatus state) {
-		return null;
+		if ( root != null )
+			visitHop(root);
+		return root;
 	}
 
 	private void visitHop(Hop hop){

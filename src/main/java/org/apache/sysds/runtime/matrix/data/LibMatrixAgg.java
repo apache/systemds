@@ -1569,6 +1569,7 @@ public class LibMatrixAgg
 		if( ixFn instanceof ReduceAll && (in.getNumRows() == 0 || in.getNumColumns() == 0) ) {
 			double val = Double.NaN;
 			switch( optype ) {
+				case PROD:         val = 1; break;
 				case KAHAN_SUM:
 				case KAHAN_SUM_SQ: val = 0; break;
 				case MIN:          val = Double.POSITIVE_INFINITY; break;
@@ -2932,6 +2933,9 @@ public class LibMatrixAgg
 				ret *= product(a.values(i), 0, alen);
 				ret *= (alen<n) ? 0 : 1;
 			}
+			else
+				ret *= (n==0) ? 1 : 0;
+			
 			//early abort (note: in case of NaNs this is an invalid optimization)
 			if( !NAN_AWARENESS && ret==0 ) break;
 		}
@@ -2955,6 +2959,8 @@ public class LibMatrixAgg
 				double tmp = product(a.values(i), 0, alen);
 				lc[i] = tmp * ((alen<n) ? 0 : 1);
 			}
+			else
+				lc[i] = (n==0) ? 1 : 0;
 		}
 	}
 	
@@ -2971,9 +2977,14 @@ public class LibMatrixAgg
 		double[] lc = c.set(1).valuesAt(0);
 		int[] cnt = new int[ n ]; 
 		for( int i=rl; i<ru; i++ ) {
-			if( a.isEmpty(i) ) continue;
-			countAgg(a.values(i), cnt, a.indexes(i), a.pos(i), a.size(i));
-			LibMatrixMult.vectMultiplyWrite(lc, a.values(i), lc, 0, a.pos(i), 0, a.size(i));
+			if( a.isEmpty(i) ){
+
+				countAgg(a.values(i), cnt, a.indexes(i), a.pos(i), a.size(i));
+				LibMatrixMult.vectMultiplyWrite(lc, a.values(i), lc, 0, a.pos(i), 0, a.size(i));
+			}
+			else if(n != 0)
+				for(int j = 0; j < n; j++)
+					lc[j] *= 0;
 		}
 		for( int j=0; j<n; j++ )
 			if( cnt[j] < ru-rl )

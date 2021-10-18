@@ -71,4 +71,15 @@ public class ExecutionContextMap {
 		ec2.setAutoCreateVars(true); //w/o createvar inst
 		return ec2;
 	}
+
+	@Override
+	public String toString() {
+		StringBuilder sb = new StringBuilder();
+		sb.append(super.toString());
+		sb.append("\nMain EC: ");
+		sb.append(_main.toString());
+		sb.append("ParFor ECs: ");
+		sb.append(_parEc.toString());
+		return sb.toString();
+	}
 }

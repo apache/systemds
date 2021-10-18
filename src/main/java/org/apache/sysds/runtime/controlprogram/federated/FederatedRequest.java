@@ -22,6 +22,7 @@ package org.apache.sysds.runtime.controlprogram.federated;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.io.Serializable;
+import java.lang.management.ManagementFactory;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -56,6 +57,7 @@ public class FederatedRequest implements Serializable {
 	private List<Object> _data;
 	private boolean _checkPrivacy;
 	private List<Long> _checksums;
+	private long _pid;
 
 	public FederatedRequest(RequestType method) {
 		this(method, FederationUtils.getNextFedDataID(), new ArrayList<>());
@@ -74,6 +76,11 @@ public class FederatedRequest implements Serializable {
 		_method = method;
 		_id = id;
 		_data = data;
+		// get process id
+		_pid = Long.valueOf(ManagementFactory.getRuntimeMXBean().getName().split("@")[0]);
+		// TODO: change this as soon as we switch to a java version >= 9
+		// import java.lang.ProcessHandle;
+		// _pid = ProcessHandle.current().pid();
 		setCheckPrivacy();
 		if (DMLScript.LINEAGE && method == RequestType.PUT_VAR)
 			setChecksum();
@@ -93,6 +100,10 @@ public class FederatedRequest implements Serializable {
 
 	public void setTID(long tid) {
 		_tid = tid;
+	}
+
+	public long getPID() {
+		return _pid;
 	}
 
 	public Object getParam(int i) {

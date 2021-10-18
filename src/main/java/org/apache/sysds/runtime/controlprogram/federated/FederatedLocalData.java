@@ -19,6 +19,7 @@
 
 package org.apache.sysds.runtime.controlprogram.federated;
 
+import java.lang.management.ManagementFactory;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
 
@@ -28,14 +29,20 @@ import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
 public class FederatedLocalData extends FederatedData {
 	protected final static Logger log = Logger.getLogger(FederatedWorkerHandler.class);
 
-	private static final ExecutionContextMap ecm = new ExecutionContextMap();
-	private static final FederatedWorkerHandler fwh = new FederatedWorkerHandler(ecm);
+	private static final FederatedLookupTable _flt = new FederatedLookupTable();
+	private static final FederatedWorkerHandler _fwh = new FederatedWorkerHandler(_flt);
 
 	private final CacheableData<?> _data;
 
 	public FederatedLocalData(long id, CacheableData<?> data) {
 		super(data.getDataType(), null, data.getFileName());
 		_data = data;
+		// get process id
+		long pid = Long.valueOf(ManagementFactory.getRuntimeMXBean().getName().split("@")[0]);
+		// TODO: change this as soon as we switch to a java version >= 9
+		// import java.lang.ProcessHandle;
+		// _pid = ProcessHandle.current().pid();
+		ExecutionContextMap ecm = _flt.getECM(FederatedLookupTable.NOHOST, pid);
 		synchronized(ecm) {
 			ecm.get(-1).setVariable(Long.toString(id), _data);
 		}
@@ -54,6 +61,6 @@ public class FederatedLocalData extends FederatedData {
 
 	@Override
 	public synchronized Future<FederatedResponse> executeFederatedOperation(FederatedRequest... request) {
-		return CompletableFuture.completedFuture(fwh.createResponse(request));
+		return CompletableFuture.completedFuture(_fwh.createResponse(request));
 	}
 }

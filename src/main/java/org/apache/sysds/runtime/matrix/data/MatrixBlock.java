@@ -467,7 +467,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	public final int getNumRows() {
 		return rlen;
 	}
-	
+
 	/**
 	 * NOTE: setNumRows() and setNumColumns() are used only in ternaryInstruction (for contingency tables)
 	 * and pmm for meta corrections.
@@ -5958,6 +5958,23 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		return sb.toString();
 	}
 
+
+	public double getDouble(int r, int c){
+		return quickGetValue(r, c);
+	}
+
+	@Override
+	public double getDoubleNaN(int r, int c) {
+		return getDouble(r, c);
+	}
+
+	public String getString(int r, int c){
+		double v = quickGetValue(r, c);
+		// NaN gets converted to null here since check for null is faster than string comp
+		if(Double.isNaN(v))
+			return null;
+		return String.valueOf(v);
+	}
 
 	///////////////////////////
 	// Helper classes

@@ -19,6 +19,14 @@
 
 package org.apache.sysds.runtime.data;
 
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.Externalizable;
+import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
+import java.util.Arrays;
+
 import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.common.Types.BlockType;
 import org.apache.sysds.common.Types.ValueType;
@@ -30,14 +38,6 @@ import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
 import org.apache.sysds.runtime.meta.TensorCharacteristics;
 import org.apache.sysds.runtime.util.UtilFunctions;
-
-import java.io.DataInput;
-import java.io.DataOutput;
-import java.io.Externalizable;
-import java.io.IOException;
-import java.io.ObjectInput;
-import java.io.ObjectOutput;
-import java.util.Arrays;
 
 /**
  * A <code>TensorBlock</code> is the most top level representation of a tensor. There are two types of data representation
@@ -307,6 +307,25 @@ public class TensorBlock implements CacheBlock, Externalizable {
 	@Override
 	public void merge(CacheBlock that, boolean appendOnly) {
 		// TODO Auto-generated method stub
+	}
+
+	@Override
+	public double getDouble(int r, int c) {
+		return get(r, c);
+	}
+
+	@Override
+	public double getDoubleNaN(int r, int c) {
+		return getDouble(r, c);
+	}
+
+	@Override
+	public String getString(int r, int c) {
+		double v = get(r, c);
+		// NaN gets converted to null here since check for null is faster than string comp
+		if(Double.isNaN(v))
+			return null;
+		return String.valueOf(v);
 	}
 
 	public int getDim(int i) {

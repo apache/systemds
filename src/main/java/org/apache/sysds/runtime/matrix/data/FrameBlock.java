@@ -71,7 +71,7 @@ import org.apache.sysds.runtime.util.IndexRange;
 import org.apache.sysds.runtime.util.UtilFunctions;
 
 @SuppressWarnings({"rawtypes","unchecked"}) //allow generic native arrays
-public class FrameBlock implements CacheBlock, Externalizable  {
+public class FrameBlock implements CacheBlock, Externalizable {
 	private static final long serialVersionUID = -3993450030207130665L;
 	private static final Log LOG = LogFactory.getLog(FrameBlock.class.getName());
 	private static final IDSequence CLASS_ID = new IDSequence();
@@ -157,6 +157,32 @@ public class FrameBlock implements CacheBlock, Externalizable  {
 	@Override
 	public int getNumRows() {
 		return _numRows;
+	}
+
+	@Override
+	public double getDouble(int r, int c) {
+		Object o = get(r, c);
+		if(o == null || (getSchema()[c] == ValueType.STRING && o.toString().isEmpty()))
+			return 0;
+		return UtilFunctions.objectToDouble(getSchema()[c], o);
+	}
+
+	@Override
+	public double getDoubleNaN(int r, int c) {
+		Object o = get(r, c);
+		if(o == null || (getSchema()[c] == ValueType.STRING && o.toString().isEmpty()))
+			return Double.NaN;
+		return UtilFunctions.objectToDouble(getSchema()[c], o);
+
+	}
+
+	@Override
+	public String getString(int r, int c) {
+		Object o = get(r, c);
+		String s = (o == null) ? null : o.toString();
+		if(s != null && s.isEmpty())
+			return null;
+		return s;
 	}
 
 	public void setNumRows(int numRows) {

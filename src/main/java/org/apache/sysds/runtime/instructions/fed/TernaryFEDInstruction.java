@@ -19,10 +19,10 @@
 
 package org.apache.sysds.runtime.instructions.fed;
 
+import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.Future;
 
-import com.sun.tools.javac.util.List;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;

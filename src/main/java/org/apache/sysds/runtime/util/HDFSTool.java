@@ -30,6 +30,7 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.FileUtil;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.permission.FsPermission;
+import org.apache.hadoop.io.IOUtils;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.sysds.runtime.io.FileFormatPropertiesCSV;
 import org.apache.wink.json4j.JSONException;
@@ -56,9 +57,12 @@ import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.text.SimpleDateFormat;
+import java.util.Arrays;
 import java.util.Date;
 
 
@@ -114,7 +118,7 @@ public class HDFSTool
 		try {
 			Path path = new Path(fname);
 			return IOUtilFunctions
-				.getFileSystem(path).isDirectory(path);
+				.getFileSystem(path).getFileStatus(path).isDirectory();
 		}
 		catch(Exception ex) {
 			LOG.error("Failed check isDirectory.", ex);
@@ -214,8 +218,8 @@ public class HDFSTool
 		if( !IOUtilFunctions.isSameFileScheme(pathOrig, pathNew) )
 			throw new IOException("Cannot merge files into different target file system.");
 		FileSystem fs = IOUtilFunctions.getFileSystem(pathOrig);
-		FileUtil.copy(fs, pathOrig, fs, pathNew, true, 
-			ConfigurationManager.getCachedJobConf());
+		copyMerge(fs, pathOrig, fs, pathNew, true, 
+			ConfigurationManager.getCachedJobConf(), null);
 	}
 
 	public static void copyFileOnHDFS(String originalDir, String newDir) throws IOException {
@@ -250,7 +254,7 @@ public class HDFSTool
 	{
 		FileSystem fs = IOUtilFunctions.getFileSystem(path);
 		long ret = 0; //in bytes
-		if( fs.isDirectory(path) )
+		if( fs.getFileStatus(path).isDirectory() )
 			ret = fs.getContentSummary(path).getLength();
 		else
 			ret = fs.getFileStatus(path).getLen();
@@ -554,5 +558,55 @@ public class HDFSTool
 		Path path = new Path(filename);
 		return IOUtilFunctions.getFileSystem(path)
 			.create(path, overwrite);
+	}
+	
+	//copy from hadoop 2.x as this method was removed from hadoop 3.x
+	private static boolean copyMerge(FileSystem srcFS, Path srcDir,
+		FileSystem dstFS, Path dstFile, boolean deleteSource,
+		Configuration conf, String addString) throws IOException
+	{
+		dstFile = checkDest(srcDir.getName(), dstFS, dstFile, false);
+		if (!srcFS.getFileStatus(srcDir).isDirectory())
+			return false;
+		OutputStream out = dstFS.create(dstFile);
+		try {
+			FileStatus contents[] = srcFS.listStatus(srcDir);
+			Arrays.sort(contents);
+			for (int i = 0; i < contents.length; i++) {
+				if (contents[i].isFile()) {
+					InputStream in = srcFS.open(contents[i].getPath());
+					try {
+						IOUtils.copyBytes(in, out, conf, false);
+						if (addString!=null)
+							out.write(addString.getBytes("UTF-8"));
+					} finally {
+						in.close();
+					} 
+				}
+			}
+		} finally {
+			out.close();
+		}
+		if (deleteSource) {
+			return srcFS.delete(srcDir, true);
+		} else {
+			return true;
+		}
+	}
+	
+	private static Path checkDest(String srcName, FileSystem dstFS, Path dst,
+		boolean overwrite) throws IOException {
+		if (dstFS.exists(dst)) {
+			FileStatus sdst = dstFS.getFileStatus(dst);
+			if (sdst.isDirectory()) {
+				if (null == srcName) {
+					throw new IOException("Target " + dst + " is a directory");
+				}
+				return checkDest(null, dstFS, new Path(dst, srcName), overwrite);
+			} else if (!overwrite) {
+				throw new IOException("Target " + dst + " already exists");
+			}
+		}
+		return dst;
 	}
 }

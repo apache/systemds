@@ -281,7 +281,7 @@ public class WriterTextCSV extends MatrixWriter
 		}
 		sb.append('\n');
 
-		if (fs.isDirectory(srcFilePath)) {
+		if (fs.getFileStatus(srcFilePath).isDirectory()) {
 
 			// compute sorted order among part files
 			ArrayList<Path> files=new ArrayList<>();
@@ -318,7 +318,7 @@ public class WriterTextCSV extends MatrixWriter
 			fs.delete(destFilePath, true);  // delete the file, but preserve the directory structure
 			fs.rename(srcFilePath, destFilePath); // move the data 
 		
-		} else if (fs.isFile(srcFilePath)) {
+		} else if (fs.getFileStatus(srcFilePath).isFile()) {
 			// create destination file
 			OutputStream out = fs.create(destFilePath, true);
 			

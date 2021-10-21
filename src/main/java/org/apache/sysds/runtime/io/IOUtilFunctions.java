@@ -540,7 +540,7 @@ public class IOUtilFunctions
 		//listStatus call returns all files with the given directory as prefix, which
 		//includes the mtd file which needs to be ignored accordingly.
 		
-		if( fs.isDirectory(file) 
+		if( fs.getFileStatus(file).isDirectory() 
 			|| IOUtilFunctions.isObjectStoreFileScheme(file) )
 		{
 			LinkedList<Path> tmp = new LinkedList<>();
@@ -562,7 +562,9 @@ public class IOUtilFunctions
 		throws IOException
 	{
 		Path[] ret = null;
-		if( fs.isDirectory(file) || IOUtilFunctions.isObjectStoreFileScheme(file) ) {
+		if( fs.getFileStatus(file).isDirectory()
+			|| IOUtilFunctions.isObjectStoreFileScheme(file) )
+		{
 			LinkedList<Path> tmp = new LinkedList<>();
 			FileStatus[] dStatus = fs.listStatus(file);
 			for( FileStatus fdStatus : dStatus )

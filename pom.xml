@@ -394,6 +394,7 @@
 				<configuration>
 					<quiet>true</quiet>
 					<skip>true</skip>
+					<source>8</source> <!-- TODO migrate to 11 -->
 				</configuration>
 			</plugin>
 

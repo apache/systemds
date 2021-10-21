@@ -51,7 +51,6 @@ public class WriterTextCSV extends MatrixWriter
 		_props = props;
 	}
 	
-	@SuppressWarnings("resource")
 	@Override
 	public final void writeMatrixToHDFS(MatrixBlock src, String fname, long rlen, long clen, int blen, long nnz, boolean diag) 
 		throws IOException, DMLRuntimeException 
@@ -76,7 +75,6 @@ public class WriterTextCSV extends MatrixWriter
 		IOUtilFunctions.deleteCrcFilesFromLocalFileSystem(fs, path);
 	}
 
-	@SuppressWarnings("resource")
 	@Override
 	public final void writeEmptyMatrixToHDFS(String fname, long rlen, long clen, int blen) 
 		throws IOException, DMLRuntimeException 
@@ -238,7 +236,7 @@ public class WriterTextCSV extends MatrixWriter
 		}
 	}
 
-	@SuppressWarnings({ "unchecked", "resource" })
+	@SuppressWarnings({ "unchecked" })
 	public final void addHeaderToCSV(String srcFileName, String destFileName, long rlen, long clen) 
 		throws IOException 
 	{

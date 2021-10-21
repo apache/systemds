@@ -104,7 +104,7 @@ public class RewriteNaryPlusTest extends AutomatedTestBase
 			
 			//compare output
 			Double ret = readDMLMatrixFromOutputDir("R").get(new CellIndex(1,1));
-			Assert.assertEquals(new Double(100000), ret);
+			Assert.assertEquals(Double.valueOf(100000), ret);
 			
 			//check for applied nary plus
 			String prefix = et == ExecType.SPARK ? "sp_" : "";

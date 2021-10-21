@@ -39,11 +39,11 @@
 	</licenses>
 
 	<properties>
-		<hadoop.version>2.6.0</hadoop.version>
+		<hadoop.version>3.0.0</hadoop.version>
 		<antlr.version>4.5.3</antlr.version>
-		<spark.version>2.1.0</spark.version>
-		<scala.version>2.11.8</scala.version>
-		<scala.binary.version>2.11</scala.binary.version>
+		<spark.version>3.0.0</spark.version>
+		<scala.version>2.12.0</scala.version>
+		<scala.binary.version>2.12</scala.binary.version>
 		<maven.build.timestamp.format>yyyy-MM-dd HH:mm:ss z</maven.build.timestamp.format>
 		<enableGPU>false</enableGPU>
 		<jcuda.scope>provided</jcuda.scope>
@@ -956,6 +956,18 @@
 			<classifier>apple-x86_64</classifier>
 			<version>${jcuda.version}</version>
 			<scope>${jcuda.scope}</scope>
+		</dependency>
+
+		<dependency>
+			<groupId>org.apache.spark</groupId>
+			<artifactId>spark-core_${scala.binary.version}</artifactId>
+			<version>${spark.version}</version>
+		</dependency>
+
+		<dependency>
+			<groupId>org.apache.spark</groupId>
+			<artifactId>spark-sql_${scala.binary.version}</artifactId>
+			<version>${spark.version}</version>
 		</dependency>
 
 		<dependency>

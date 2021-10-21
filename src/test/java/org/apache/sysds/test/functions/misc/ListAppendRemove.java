@@ -118,8 +118,8 @@ public class ListAppendRemove extends AutomatedTestBase
 			//compare matrices 
 			double[][] ret = TestUtils.convertHashMapToDoubleArray(
 				readDMLMatrixFromOutputDir("R"), 4, 1);
-			Assert.assertEquals(new Double(ret[0][0]), new Double(0)); //empty list
-			Assert.assertEquals(new Double(ret[1][0]), new Double(7)); //append list
+			Assert.assertEquals(Double.valueOf(ret[0][0]), Double.valueOf(0)); //empty list
+			Assert.assertEquals(Double.valueOf(ret[1][0]), Double.valueOf(7)); //append list
 			//Assert.assertEquals(new Double(ret[2][0]), new Double(3)); //remove list
 			
 			//check for properly compiled CP operations for list 

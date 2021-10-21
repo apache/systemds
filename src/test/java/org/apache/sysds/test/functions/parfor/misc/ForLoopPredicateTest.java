@@ -173,9 +173,9 @@ public class ForLoopPredicateTest extends AutomatedTestBase
 			valIncrement = Integer.valueOf(increment);
 		}
 		else {
-			valFrom = new Double(from);
-			valTo = new Double(to);
-			valIncrement = new Double(increment);
+			valFrom = Double.valueOf(from);
+			valTo = Double.valueOf(to);
+			valIncrement = Double.valueOf(increment);
 		}
 		
 		/* This is for running the junit test the new way, i.e., construct the arguments directly */

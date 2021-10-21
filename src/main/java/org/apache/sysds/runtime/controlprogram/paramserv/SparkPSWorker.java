@@ -90,7 +90,9 @@ public class SparkPSWorker extends LocalPSWorker implements VoidFunction<Tuple2<
 		call(); // Launch the worker
 	}
 
-	private void configureWorker(Tuple2<Integer, Tuple2<MatrixBlock, MatrixBlock>> input) throws IOException {
+	private void configureWorker(Tuple2<Integer, Tuple2<MatrixBlock, MatrixBlock>> input)
+			throws IOException, InterruptedException
+	{
 		_workerID = input._1;
 
 		// Initialize codegen class cache (before program parsing)

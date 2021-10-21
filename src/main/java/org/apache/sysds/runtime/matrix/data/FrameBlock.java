@@ -27,6 +27,7 @@ import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.io.Serializable;
 import java.lang.ref.SoftReference;
+import java.lang.reflect.InvocationTargetException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
@@ -2319,9 +2320,12 @@ public class FrameBlock implements CacheBlock, Externalizable  {
 		}
 		// compile class, and create FrameMapFunction object
 		try {
-			return (FrameMapFunction) CodegenUtils.compileClass(cname, sb.toString()).newInstance();
+			return (FrameMapFunction) CodegenUtils.compileClass(cname, sb.toString())
+					.getDeclaredConstructor().newInstance();
 		}
-		catch(InstantiationException | IllegalAccessException e) {
+		catch(InstantiationException | IllegalAccessException 
+			| IllegalArgumentException | InvocationTargetException
+			| NoSuchMethodException | SecurityException e) {
 			throw new DMLRuntimeException("Failed to compile FrameMapFunction.", e);
 		}
 	}

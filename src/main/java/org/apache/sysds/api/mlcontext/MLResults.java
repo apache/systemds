@@ -1982,9 +1982,9 @@ public class MLResults {
 		if (data instanceof BooleanObject) {
 			return (T) Boolean.valueOf(((BooleanObject) data).getBooleanValue());
 		} else if (data instanceof DoubleObject) {
-			return (T) new Double(((DoubleObject) data).getDoubleValue());
+			return (T) Double.valueOf(((DoubleObject) data).getDoubleValue());
 		} else if (data instanceof IntObject) {
-			return (T) new Long(((IntObject) data).getLongValue());
+			return (T) Long.valueOf(((IntObject) data).getLongValue());
 		} else if (data instanceof StringObject) {
 			return (T) ((StringObject) data).getStringValue();
 		} else if (data instanceof MatrixObject) {

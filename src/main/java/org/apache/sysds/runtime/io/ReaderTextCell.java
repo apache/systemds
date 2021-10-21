@@ -58,7 +58,6 @@ public class ReaderTextCell extends MatrixReader
 		_isMMFile = (fmt == FileFormat.MM);
 	}
 	
-	@SuppressWarnings("resource")
 	@Override
 	public MatrixBlock readMatrixFromHDFS(String fname, long rlen, long clen, int blen, long estnnz) 
 		throws IOException, DMLRuntimeException 

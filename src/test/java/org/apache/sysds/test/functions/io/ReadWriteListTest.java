@@ -115,7 +115,7 @@ public class ReadWriteListTest extends AutomatedTestBase
 			runTest(true, false, null, -1);
 			double val2 = HDFSTool.readDoubleFromHDFSFile(output("R2"));
 			
-			Assert.assertEquals(new Double(val1), new Double(val2), eps);
+			Assert.assertEquals(Double.valueOf(val1), Double.valueOf(val2), eps);
 		}
 		catch(IOException e) {
 			e.printStackTrace();

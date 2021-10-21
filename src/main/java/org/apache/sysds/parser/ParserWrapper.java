@@ -80,7 +80,6 @@ public abstract class ParserWrapper {
 	}
 	
 	
-	@SuppressWarnings("resource")
 	public static String readDMLScript( String script, Log LOG) 
 			throws IOException, LanguageException
 	{

@@ -20,7 +20,7 @@
 package org.apache.sysds.runtime.util;
 
 import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang3.StringEscapeUtils;
+import org.apache.commons.text.StringEscapeUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
@@ -214,8 +214,8 @@ public class HDFSTool
 		if( !IOUtilFunctions.isSameFileScheme(pathOrig, pathNew) )
 			throw new IOException("Cannot merge files into different target file system.");
 		FileSystem fs = IOUtilFunctions.getFileSystem(pathOrig);
-		FileUtil.copyMerge(fs, pathOrig, fs, pathNew, true, 
-			ConfigurationManager.getCachedJobConf(), null);
+		FileUtil.copy(fs, pathOrig, fs, pathNew, true, 
+			ConfigurationManager.getCachedJobConf());
 	}
 
 	public static void copyFileOnHDFS(String originalDir, String newDir) throws IOException {

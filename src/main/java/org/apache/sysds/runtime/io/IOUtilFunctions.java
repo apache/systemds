@@ -358,7 +358,6 @@ public class IOUtilFunctions
 		return FileFormatPropertiesMM.parse(header[0]);
 	}
 	
-	@SuppressWarnings("resource")
 	public static String[] readMatrixMarketHeader(String filename) {
 		String[] retVal = new String[2];
 		retVal[0] = new String("");

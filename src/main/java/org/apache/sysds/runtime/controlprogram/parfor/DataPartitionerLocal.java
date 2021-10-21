@@ -374,7 +374,7 @@ public class DataPartitionerLocal extends DataPartitioner
 	// read/write in different formats //
 	/////////////////////////////////////
 	
-	@SuppressWarnings({ "deprecation", "resource" })
+	@SuppressWarnings({ "deprecation"})
 	public void writeBinaryBlockSequenceFileToHDFS( JobConf job, String dir, String lpdir, boolean threadsafe ) 
 		throws IOException
 	{
@@ -410,7 +410,7 @@ public class DataPartitionerLocal extends DataPartitioner
 		}
 	}
 	
-	@SuppressWarnings({ "deprecation", "resource" })
+	@SuppressWarnings({ "deprecation" })
 	public void writeBinaryCellSequenceFileToHDFS( JobConf job, String dir, String lpdir ) 
 		throws IOException
 	{
@@ -442,7 +442,6 @@ public class DataPartitionerLocal extends DataPartitioner
 		}
 	}
 	
-	@SuppressWarnings("resource")
 	public void writeTextCellFileToHDFS( JobConf job, String dir, String lpdir ) 
 		throws IOException
 	{

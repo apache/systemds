@@ -220,8 +220,8 @@ public class TransformFrameEncodeMultithreadedTest extends AutomatedTestBase {
 
 			if(rt == ExecMode.HYBRID) {
 				Assert.assertEquals(
-					"Wrong number of executed Spark instructions: " + Statistics.getNoOfExecutedSPInst(), new Long(0),
-					new Long(Statistics.getNoOfExecutedSPInst()));
+					"Wrong number of executed Spark instructions: " + Statistics.getNoOfExecutedSPInst(),
+					Long.valueOf(0), Long.valueOf(Statistics.getNoOfExecutedSPInst()));
 			}
 
 			// additional checks for binning as encode-decode impossible

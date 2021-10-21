@@ -121,4 +121,31 @@ public interface CacheBlock extends Writable
 	 * @param appendOnly ?
 	 */
 	public void merge(CacheBlock that, boolean appendOnly);
+
+	/**
+	 * Returns the double value at the passed row and column.
+	 * If the value is missing 0 is returned.
+	 * @param r row of the value
+	 * @param c column of the value
+	 * @return double value at the passed row and column
+	 */
+	double getDouble(int r, int c);
+
+	/**
+	 * Returns the double value at the passed row and column.
+	 * If the value is missing NaN is returned.
+	 * @param r row of the value
+	 * @param c column of the value
+	 * @return double value at the passed row and column
+	 */
+	double getDoubleNaN(int r, int c);
+
+	/**
+	 * Returns the string of the value at the passed row and column.
+	 * If the value is missing or NaN, null is returned.
+	 * @param r row of the value
+	 * @param c column of the value
+	 * @return string of the value at the passed row and column
+	 */
+	String getString(int r, int c);
 }

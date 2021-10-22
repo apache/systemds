@@ -32,12 +32,14 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import org.apache.commons.lang3.tuple.Pair;
+import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.CacheBlock;
 import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest.RequestType;
 import org.apache.sysds.runtime.instructions.cp.ScalarObject;
 import org.apache.sysds.runtime.instructions.cp.VariableCPInstruction;
+import org.apache.sysds.runtime.lineage.Lineage;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.CommonThreadPool;
@@ -196,11 +198,15 @@ public class FederationMap {
 		// prepare single request for all federated data
 		long id = FederationUtils.getNextFedDataID();
 		CacheBlock cb = data.acquireReadAndRelease();
+
+		final String lineageTrace = (DMLScript.LINEAGE && data.getCacheLineage() != null) ?
+			Lineage.serializeSingleTrace(data.getCacheLineage()) : null;
+
 		// create new fed mapping for broadcast (a potential overwrite
 		// is fine, because with broadcast all data on all workers)
 		data.setFedMapping(copyWithNewIDAndRange(
 			cb.getNumRows(), cb.getNumColumns(), id, FType.BROADCAST));
-		return new FederatedRequest(RequestType.PUT_VAR, id, cb);
+		return new FederatedRequest(RequestType.PUT_VAR, lineageTrace, id, cb);
 	}
 
 	public FederatedRequest broadcast(ScalarObject scalar) {
@@ -210,7 +216,7 @@ public class FederationMap {
 	}
 
 	/**
-	 * Creates separate slices of an input data object according to the index ranges of federated data. Theses slices
+	 * Creates separate slices of an input data object according to the index ranges of federated data. These slices
 	 * are then wrapped in separate federated requests for broadcasting.
 	 *
 	 * @param data       input data object (matrix, tensor, frame)
@@ -253,8 +259,11 @@ public class FederationMap {
 		}
 		// multi-threaded block slicing and federation request creation
 		else {
+			final String lineageTrace = (DMLScript.LINEAGE && data.getCacheLineage() != null) ?
+				Lineage.serializeSingleTrace(data.getCacheLineage()) : null;
+
 			Arrays.parallelSetAll(ret,
-				i -> new FederatedRequest(RequestType.PUT_VAR, id,
+				i -> new FederatedRequest(RequestType.PUT_VAR, lineageTrace, id,
 				cb.slice(ix[i][0], ix[i][1], ix[i][2], ix[i][3], new MatrixBlock())));
 		}
 		return ret;
@@ -268,10 +277,13 @@ public class FederationMap {
 		long id = FederationUtils.getNextFedDataID();
 		CacheBlock cb = data.acquireReadAndRelease();
 
+		final String lineageTrace = (DMLScript.LINEAGE && data.getCacheLineage() != null) ?
+			Lineage.serializeSingleTrace(data.getCacheLineage()) : null;
+
 		// multi-threaded block slicing and federation request creation
 		FederatedRequest[] ret = new FederatedRequest[ix.length];
 		Arrays.setAll(ret,
-			i -> new FederatedRequest(RequestType.PUT_VAR, id,
+			i -> new FederatedRequest(RequestType.PUT_VAR, lineageTrace, id,
 				cb.slice(ix[i][0], ix[i][1], ix[i][2], ix[i][3], isFrame ? new FrameBlock() : new MatrixBlock())));
 		return ret;
 	}

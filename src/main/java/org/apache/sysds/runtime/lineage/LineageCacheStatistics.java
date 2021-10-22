@@ -71,14 +71,26 @@ public class LineageCacheStatistics {
 		_numHitsMem.increment();
 	}
 
+	public static long getMemHits() {
+		return _numHitsMem.longValue();
+	}
+
 	public static void incrementFSHits() {
 		// Number of times found in local FS.
 		_numHitsFS.increment();
 	}
 
+	public static long getFSHits() {
+		return _numHitsFS.longValue();
+	}
+
 	public static void incrementDelHits() {
 		// Number of times entry is removed from cache but sought again later.
 		_numHitsDel.increment();
+	}
+
+	public static long getDelHits() {
+		return _numHitsDel.longValue();
 	}
 
 	public static void incrementInstHits() {
@@ -95,14 +107,26 @@ public class LineageCacheStatistics {
 		_numHitsSB.increment();
 	}
 
+	public static long getSBHits() {
+		return _numHitsSB.longValue();
+	}
+
 	public static void incrementFuncHits() {
 		// Number of times function results are reused.
 		_numHitsFunc.increment();
 	}
 
+	public static long getFuncHits() {
+		return _numHitsFunc.longValue();
+	}
+
 	public static void incrementMemWrites() {
 		// Number of times written in cache.
 		_numWritesMem.increment();
+	}
+
+	public static long getMemWrites() {
+		return _numWritesMem.longValue();
 	}
 
 	public static void incrementPRewrites() {
@@ -114,12 +138,16 @@ public class LineageCacheStatistics {
 		// Number of times written in local FS.
 		_numWritesFS.increment();
 	}
-	
+
+	public static long getFSWrites() {
+		return _numWritesFS.longValue();
+	}
+
 	public static void incrementMemDeletes() {
 		// Number of deletions from cache (including spilling).
 		_numMemDel.increment();
 	}
-	
+
 	public static long getMemDeletes() {
 		return _numMemDel.longValue();
 	}

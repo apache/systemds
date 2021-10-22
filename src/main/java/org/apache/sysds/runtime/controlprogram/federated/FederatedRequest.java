@@ -57,6 +57,7 @@ public class FederatedRequest implements Serializable {
 	private boolean _checkPrivacy;
 	private List<Long> _checksums;
 	private long _pid;
+	private String _lineageTrace; // the serialized lineage trace of a put object
 
 	public FederatedRequest(RequestType method) {
 		this(method, FederationUtils.getNextFedDataID(), new ArrayList<>());
@@ -70,6 +71,11 @@ public class FederatedRequest implements Serializable {
 		this(method, id, Arrays.asList(data));
 	}
 
+	public FederatedRequest(RequestType method, String linTrace, long id, Object ... data) {
+		this(method, id, Arrays.asList(data));
+		_lineageTrace = linTrace;
+	}
+
 	public FederatedRequest(RequestType method, long id, List<Object> data) {
 		if(DMLScript.STATISTICS)
 			FederatedStatistics.incFederated(method, data);
@@ -78,8 +84,6 @@ public class FederatedRequest implements Serializable {
 		_data = data;
 		_pid = Long.valueOf(IDHandler.obtainProcessID());
 		setCheckPrivacy();
-		if (DMLScript.LINEAGE && method == RequestType.PUT_VAR)
-			setChecksum();
 	}
 
 	public RequestType getType() {
@@ -183,6 +187,10 @@ public class FederatedRequest implements Serializable {
 				}
 			}
 		}
+	}
+
+	public String getLineageTrace() {
+		return _lineageTrace;
 	}
 
 	@Override

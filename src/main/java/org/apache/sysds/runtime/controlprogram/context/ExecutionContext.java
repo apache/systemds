@@ -245,10 +245,14 @@ public class ExecutionContext {
 	}
 
 	public MatrixLineagePair getMatrixLineagePair(CPOperand cpo) {
-		MatrixObject mo = getMatrixObject(cpo);
+		return getMatrixLineagePair(cpo.getName());
+	}
+
+	public MatrixLineagePair getMatrixLineagePair(String varname) {
+		MatrixObject mo = getMatrixObject(varname);
 		if(mo == null)
 			return null;
-		return MatrixLineagePair.of(mo, DMLScript.LINEAGE ? getLineageItem(cpo) : null);
+		return MatrixLineagePair.of(mo, DMLScript.LINEAGE ? getLineageItem(varname) : null);
 	}
 
 	public TensorObject getTensorObject(String varname) {
@@ -849,18 +853,14 @@ public class ExecutionContext {
 		LineageDebugger.maintainSpecialValueBits(_lineage, inst, this);
 	}
 
-	public String getSingleLineageTrace(CPOperand cpo) {
-		if(!DMLScript.LINEAGE)
-			return null;
-		if( _lineage == null )
-			throw new DMLRuntimeException("Lineage Trace unavailable.");
-		return _lineage.serializeSingleTrace(cpo);
+	public LineageItem getLineageItem(CPOperand input) {
+		return getLineageItem(input.getName());
 	}
 
-	public LineageItem getLineageItem(CPOperand input) {
+	public LineageItem getLineageItem(String varname) {
 		if( _lineage == null )
 			throw new DMLRuntimeException("Lineage Trace unavailable.");
-		return _lineage.get(input);
+		return _lineage.get(varname);
 	}
 
 	public LineageItem getOrCreateLineageItem(CPOperand input) {

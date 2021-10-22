@@ -32,15 +32,20 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import org.apache.commons.lang3.tuple.Pair;
+import org.apache.sysds.common.Types.DataType;
+import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.hops.fedplanner.FTypes.AlignType;
 import org.apache.sysds.hops.fedplanner.FTypes.FType;
+import org.apache.sysds.lops.RightIndex;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.CacheBlock;
 import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest.RequestType;
+import org.apache.sysds.runtime.instructions.cp.CPOperand;
 import org.apache.sysds.runtime.instructions.cp.ScalarObject;
 import org.apache.sysds.runtime.instructions.cp.VariableCPInstruction;
-import org.apache.sysds.runtime.lineage.Lineage;
+import org.apache.sysds.runtime.instructions.InstructionUtils;
+import org.apache.sysds.runtime.lineage.LineageItem;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.CommonThreadPool;
@@ -117,10 +122,10 @@ public class FederationMap {
 	}
 
 	public FederatedRequest broadcast(MatrixLineagePair moLin) {
-		return broadcast(moLin.getMO(), Lineage.serializeSingleTrace(moLin.getLI()));
+		return broadcast(moLin.getMO(), moLin.getLI());
 	}
 
-	private FederatedRequest broadcast(CacheableData<?> data, final String lineageTrace) {
+	private FederatedRequest broadcast(CacheableData<?> data, LineageItem lineageItem) {
 		// reuse existing broadcast variable
 		if( data.isFederated(FType.BROADCAST) )
 			return new FederatedRequest(RequestType.NOOP, data.getFedMapping().getID());
@@ -132,7 +137,7 @@ public class FederationMap {
 		// is fine, because with broadcast all data on all workers)
 		data.setFedMapping(copyWithNewIDAndRange(
 			cb.getNumRows(), cb.getNumColumns(), id, FType.BROADCAST));
-		return new FederatedRequest(RequestType.PUT_VAR, lineageTrace, id, cb);
+		return new FederatedRequest(RequestType.PUT_VAR, lineageItem, id, cb);
 	}
 
 	public FederatedRequest broadcast(ScalarObject scalar) {
@@ -147,7 +152,7 @@ public class FederationMap {
 
 	public FederatedRequest[] broadcastSliced(MatrixLineagePair moLin,
 		boolean transposed) {
-		return broadcastSliced(moLin.getMO(), Lineage.serializeSingleTrace(moLin.getLI()),
+		return broadcastSliced(moLin.getMO(), moLin.getLI(),
 			transposed);
 	}
 
@@ -155,12 +160,12 @@ public class FederationMap {
 	 * Creates separate slices of an input data object according to the index ranges of federated data. These slices
 	 * are then wrapped in separate federated requests for broadcasting.
 	 *
-	 * @param data         input data object (matrix, tensor, frame)
-	 * @param lineageTrace the serialized lineage trace of the data
-	 * @param transposed   false: slice according to federated data, true: slice according to transposed federated data
+	 * @param data        input data object (matrix, tensor, frame)
+	 * @param lineageItem the lineage item of the data
+	 * @param transposed  false: slice according to federated data, true: slice according to transposed federated data
 	 * @return array of federated requests corresponding to federated data
 	 */
-	private FederatedRequest[] broadcastSliced(CacheableData<?> data, String lineageTrace,
+	private FederatedRequest[] broadcastSliced(CacheableData<?> data, LineageItem lineageItem,
 		boolean transposed) {
 		if( _type == FType.FULL )
 			return new FederatedRequest[]{broadcast(data)};
@@ -198,8 +203,7 @@ public class FederationMap {
 		// multi-threaded block slicing and federation request creation
 		else {
 			Arrays.parallelSetAll(ret,
-				i -> new FederatedRequest(RequestType.PUT_VAR, lineageTrace, id,
-					cb.slice(ix[i][0], ix[i][1], ix[i][2], ix[i][3], new MatrixBlock())));
+				i -> sliceBroadcastBlock(ix[i], id, cb, lineageItem, false));
 		}
 		return ret;
 	}
@@ -210,11 +214,10 @@ public class FederationMap {
 
 	public FederatedRequest[] broadcastSliced(MatrixLineagePair moLin,
 		boolean isFrame, int[][] ix) {
-		return broadcastSliced(moLin.getMO(), Lineage.serializeSingleTrace(moLin.getLI()),
-			isFrame, ix);
+		return broadcastSliced(moLin.getMO(), moLin.getLI(), isFrame, ix);
 	}
 
-	public FederatedRequest[] broadcastSliced(CacheableData<?> data, String lineageTrace,
+	public FederatedRequest[] broadcastSliced(CacheableData<?> data, LineageItem lineageItem,
 		boolean isFrame, int[][] ix) {
 		if( _type == FType.FULL )
 			return new FederatedRequest[]{broadcast(data)};
@@ -226,9 +229,24 @@ public class FederationMap {
 		// multi-threaded block slicing and federation request creation
 		FederatedRequest[] ret = new FederatedRequest[ix.length];
 		Arrays.setAll(ret,
-			i -> new FederatedRequest(RequestType.PUT_VAR, lineageTrace, id,
-				cb.slice(ix[i][0], ix[i][1], ix[i][2], ix[i][3], isFrame ? new FrameBlock() : new MatrixBlock())));
+			i -> sliceBroadcastBlock(ix[i], id, cb, lineageItem, isFrame));
 		return ret;
+	}
+
+	private FederatedRequest sliceBroadcastBlock(int[] ix, long id, CacheBlock cb, LineageItem objLi, boolean isFrame) {
+		LineageItem li = null;
+		if(objLi != null) {
+			// manually create a lineage item for indexing to complete the lineage trace for slicing
+			CPOperand rl = new CPOperand(String.valueOf(ix[0] + 1), ValueType.INT64, DataType.SCALAR, true);
+			CPOperand ru = new CPOperand(String.valueOf(ix[1] + 1), ValueType.INT64, DataType.SCALAR, true);
+			CPOperand cl = new CPOperand(String.valueOf(ix[2] + 1), ValueType.INT64, DataType.SCALAR, true);
+			CPOperand cu = new CPOperand(String.valueOf(ix[3] + 1), ValueType.INT64, DataType.SCALAR, true);
+			li = new LineageItem(RightIndex.OPCODE, new LineageItem[]{objLi, rl.getLiteralLineageItem(),
+				ru.getLiteralLineageItem(), cl.getLiteralLineageItem(), cu.getLiteralLineageItem()});
+		}
+		FederatedRequest fr = new FederatedRequest(RequestType.PUT_VAR, li, id,
+			cb.slice(ix[0], ix[1], ix[2], ix[3], isFrame ? new FrameBlock() : new MatrixBlock()));
+		return fr;
 	}
 
 	/**

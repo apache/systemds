@@ -1,0 +1,65 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+# This script splits the specified data into $nSplit equal parts, creates the
+# federated object with respect to the hosts, and writes the federated object
+# to the location specified by $target.
+
+data = $data;
+# Read in the dataset
+X = read(data);
+hosts = read($hosts);
+nSplit = $nSplit;
+transposed = ifdef($transposed, FALSE);
+target = ifdef($target, data + "_fed.json");
+fmt = ifdef($fmt, "text");
+
+if(transposed) # for column partitions we simply transpose the data before splitting
+  X = t(X);
+
+N = nrow(X);
+M = ncol(X);
+
+factor = as.integer(floor(N / nSplit)); # number of rows per partition
+
+addresses = list();
+ranges = list();
+
+# Split the dataset into $nSplit parts
+for (counter in 1:nSplit) {
+  beginDim = (counter - 1) * factor + 1; # begin dimension of the partition
+  endDim = counter * factor; # end dimension of the partition
+  X_part = X[beginDim:endDim, ]; # select the partition from the dataset
+  write(X_part, data + counter, format=fmt); # write the partition to disk
+  # collect the addresses and ranges for creating a federated object
+  addresses = append(addresses, as.scalar(hosts[counter]) + "/" + data + counter);
+  if(transposed) {
+    ranges = append(ranges, list(0, beginDim - 1));
+    ranges = append(ranges, list(M, endDim));
+  }
+  else {
+    ranges = append(ranges, list(beginDim - 1, 0));
+    ranges = append(ranges, list(endDim, M));
+  }
+}
+
+X_fed = federated(addresses=addresses, ranges=ranges);
+write(X_fed, target, format="federated"); # write the federated object to disk

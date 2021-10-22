@@ -56,6 +56,7 @@ import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse.Respo
 import org.apache.sysds.runtime.controlprogram.federated.FederatedUDF;
 import org.apache.sysds.runtime.controlprogram.federated.FederationMap;
 import org.apache.sysds.runtime.controlprogram.federated.FederationUtils;
+import org.apache.sysds.runtime.controlprogram.federated.MatrixLineagePair;
 import org.apache.sysds.runtime.functionobjects.ParameterizedBuiltin;
 import org.apache.sysds.runtime.functionobjects.ValueFunction;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
@@ -342,7 +343,7 @@ public class ParameterizedBuiltinFEDInstruction extends ComputationFEDInstructio
 			throw new DMLRuntimeException("Unsupported margin identifier '" + margin + "'.");
 
 		FrameObject mo = (FrameObject) getTarget(ec);
-		MatrixObject select = params.containsKey("select") ? ec.getMatrixObject(params.get("select")) : null;
+		MatrixLineagePair select = params.containsKey("select") ? ec.getMatrixLineagePair(params.get("select")) : null;
 		FrameObject out = ec.getFrameObject(output);
 
 		boolean marginRow = params.get("margin").equals("rows");
@@ -378,10 +379,10 @@ public class ParameterizedBuiltinFEDInstruction extends ComputationFEDInstructio
 			for(int i = 1; i < colSums.size(); i++)
 				s = s.binaryOperationsInPlace(plus, colSums.get(i));
 			s = s.binaryOperationsInPlace(greater, new MatrixBlock(s.getNumRows(), s.getNumColumns(), 0.0));
-			select = ExecutionContext.createMatrixObject(s);
+			select = MatrixLineagePair.of(ExecutionContext.createMatrixObject(s), null);
 
 			long varID = FederationUtils.getNextFedDataID();
-			ec.setVariable(String.valueOf(varID), select);
+			ec.setVariable(String.valueOf(varID), select.getMO());
 			params.put("select", String.valueOf(varID));
 			// construct new string
 			String[] oldString = InstructionUtils.getInstructionParts(instString);
@@ -505,7 +506,7 @@ public class ParameterizedBuiltinFEDInstruction extends ComputationFEDInstructio
 			throw new DMLRuntimeException("Unsupported margin identifier '" + margin + "'.");
 
 		MatrixObject mo = (MatrixObject) getTarget(ec);
-		MatrixObject select = params.containsKey("select") ? ec.getMatrixObject(params.get("select")) : null;
+		MatrixLineagePair select = params.containsKey("select") ? ec.getMatrixLineagePair(params.get("select")) : null;
 		MatrixObject out = ec.getMatrixObject(output);
 
 		boolean marginRow = params.get("margin").equals("rows");
@@ -541,10 +542,10 @@ public class ParameterizedBuiltinFEDInstruction extends ComputationFEDInstructio
 			for(int i = 1; i < colSums.size(); i++)
 				s = s.binaryOperationsInPlace(plus, colSums.get(i));
 			s = s.binaryOperationsInPlace(greater, new MatrixBlock(s.getNumRows(), s.getNumColumns(), 0.0));
-			select = ExecutionContext.createMatrixObject(s);
+			select = MatrixLineagePair.of(ExecutionContext.createMatrixObject(s), null);
 
 			long varID = FederationUtils.getNextFedDataID();
-			ec.setVariable(String.valueOf(varID), select);
+			ec.setVariable(String.valueOf(varID), select.getMO());
 			params.put("select", String.valueOf(varID));
 			// construct new string
 			String[] oldString = InstructionUtils.getInstructionParts(instString);

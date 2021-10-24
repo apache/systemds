@@ -134,6 +134,19 @@ public abstract class ReaderMappingJSON extends ReaderMapping {
 			schema = sampleFrame.getSchema();
 			mapCol = new String[ncols];
 
+			ArrayList<Integer> validCols = new ArrayList<>();
+			for(int c=0; c< ncols; c++){
+				boolean flag = true;
+				for(int r=0; r< nrows; r++){
+					if(sampleFrame.get(r,c) != null) {
+						flag = false;
+						break;
+					}
+				}
+				if(!flag)
+					validCols.add(c);
+			}
+
 			Map<String, Types.ValueType> names = new HashMap<>();
 			for(FastJSONIndex fji : sampleRawRowsJSON) {
 				names.putAll(fji.getNamesType());
@@ -153,9 +166,8 @@ public abstract class ReaderMappingJSON extends ReaderMapping {
 				}
 			}
 
-			BitSet mybitset = new BitSet(ncols);
 			// looking for the col map
-			for(int c = 0; c < ncols; c++) {
+			for(Integer c: validCols) {
 				boolean flagColMap = false;
 				for(int i = 0; i < rawColNames.length && !flagColMap; i++) {
 					if(bitSet.get(i))
@@ -163,7 +175,7 @@ public abstract class ReaderMappingJSON extends ReaderMapping {
 					flagColMap = true;
 					for(int r = 0; r < nrows; r++) {
 						if(rawSchema[i].isNumeric() && schema[c].isNumeric()) {
-							double in1 = data[r][i]!=null ? UtilFunctions.getDouble(data[r][i]) : 0;// rawFrame.get(r, i)
+							double in1 = data[r][i]!=null ? UtilFunctions.getDouble(data[r][i]) : 0;
 							double in2 = UtilFunctions.getDouble(sampleFrame.get(r, c));
 							if(in1 != in2) {
 								flagColMap = false;
@@ -193,7 +205,6 @@ public abstract class ReaderMappingJSON extends ReaderMapping {
 					if(flagColMap) {
 						mapCol[c] = rawColNames[i];
 						bitSet.set(i);
-						mybitset.set(c);
 					}
 				}
 			}
@@ -202,7 +213,7 @@ public abstract class ReaderMappingJSON extends ReaderMapping {
 			for(int i = 0; i < bitSet.length(); i++)
 				if(bitSet.get(i))
 					sum++;
-			mapped = sum == ncols;
+			mapped = sum == validCols.size();
 		}
 	}
 }

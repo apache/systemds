@@ -120,7 +120,7 @@ public abstract class ReaderMappingJSON extends ReaderMapping {
 		}
 	}
 
-	// Matrix Reader Mapping
+	// Frame Reader Mapping
 	public static class FrameReaderMapping extends ReaderMappingJSON {
 
 		private FrameBlock sampleFrame;
@@ -141,7 +141,7 @@ public abstract class ReaderMappingJSON extends ReaderMapping {
 			String[] rawColNames = new String[names.size()];
 			Types.ValueType[] rawSchema = new Types.ValueType[names.size()];
 			BitSet bitSet = new BitSet(rawColNames.length);
-			String[][] data = new String[nrows][rawColNames.length];
+			Object[][] data = new Object[nrows][rawColNames.length];
 
 			for(int r = 0; r < nrows; r++) {
 				int c = 0;
@@ -149,11 +149,11 @@ public abstract class ReaderMappingJSON extends ReaderMapping {
 				for(String k : names.keySet()) {
 					rawColNames[c] = k;
 					rawSchema[c] = names.get(k);
-					data[r][c++] = UtilFunctions.objectToString(fji.getObjectValue(k));
+					data[r][c++] = fji.getObjectValue(k);
 				}
 			}
-			FrameBlock rawFrame = new FrameBlock(rawSchema, rawColNames, data);
 
+			BitSet mybitset = new BitSet(ncols);
 			// looking for the col map
 			for(int c = 0; c < ncols; c++) {
 				boolean flagColMap = false;
@@ -163,22 +163,37 @@ public abstract class ReaderMappingJSON extends ReaderMapping {
 					flagColMap = true;
 					for(int r = 0; r < nrows; r++) {
 						if(rawSchema[i].isNumeric() && schema[c].isNumeric()) {
-							double in1 = UtilFunctions.getDouble(rawFrame.get(r, i));
+							double in1 = data[r][i]!=null ? UtilFunctions.getDouble(data[r][i]) : 0;// rawFrame.get(r, i)
 							double in2 = UtilFunctions.getDouble(sampleFrame.get(r, c));
 							if(in1 != in2) {
 								flagColMap = false;
 								break;
 							}
 						}
-						else if(!rawSchema[i].equals(schema[c]) || UtilFunctions
-							.compareTo(schema[c], sampleFrame.get(r, c), rawFrame.get(r, i)) != 0) {
+						else if(!rawSchema[i].equals(schema[c])) {
 							flagColMap = false;
 							break;
+						}
+
+						else if(rawSchema[i] == Types.ValueType.STRING && schema[c] == Types.ValueType.STRING){
+							String in1 = UtilFunctions.objectToString(sampleFrame.get(r, c));
+							String in2 = UtilFunctions.objectToString(data[r][i]);
+
+							if(in2!=null && in2.trim().equals(""))
+								in2 = null;
+							if(in2!=null)
+								in2 = in2.trim();
+
+							if(UtilFunctions.compareTo(Types.ValueType.STRING, in1, in2) != 0){
+								flagColMap = false;
+								break;
+							}
 						}
 					}
 					if(flagColMap) {
 						mapCol[c] = rawColNames[i];
 						bitSet.set(i);
+						mybitset.set(c);
 					}
 				}
 			}
@@ -187,7 +202,6 @@ public abstract class ReaderMappingJSON extends ReaderMapping {
 			for(int i = 0; i < bitSet.length(); i++)
 				if(bitSet.get(i))
 					sum++;
-
 			mapped = sum == ncols;
 		}
 	}

@@ -21,6 +21,7 @@ package org.apache.sysds.runtime.iogen;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.sysds.common.Types;
 import org.apache.sysds.runtime.io.FileFormatProperties;
 
 import java.io.Serializable;
@@ -36,6 +37,7 @@ public class CustomProperties extends FileFormatProperties implements Serializab
 	private int firstColIndex;
 	private int firstRowIndex;
 	private String[] colKeys;
+	private Types.ValueType[] schema;
 
 	protected enum GRPattern {
 		Regular, Irregular;
@@ -95,9 +97,15 @@ public class CustomProperties extends FileFormatProperties implements Serializab
 	}
 
 	// Nested format
+	public CustomProperties(String[] colKeys, Types.ValueType[] schema) {
+		this.colKeys = colKeys;
+		this.schema = schema;
+		this.rowPattern = GRPattern.Regular;
+	}
+
 	public CustomProperties(String[] colKeys) {
 		this.colKeys = colKeys;
-		this.rowPattern = GRPattern.Regular;
+
 	}
 
 	public String getDelim() {
@@ -142,5 +150,9 @@ public class CustomProperties extends FileFormatProperties implements Serializab
 
 	public String[] getColKeys() {
 		return colKeys;
+	}
+
+	public Types.ValueType[] getSchema() {
+		return schema;
 	}
 }

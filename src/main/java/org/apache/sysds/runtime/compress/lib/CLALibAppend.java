@@ -58,20 +58,24 @@ public class CLALibAppend {
 		if(!(left instanceof CompressedMatrixBlock && right instanceof CompressedMatrixBlock))
 			return uc(left).append(uc(right), null);
 
-		CompressedMatrixBlock leftC = (CompressedMatrixBlock) left;
-		CompressedMatrixBlock rightC = (CompressedMatrixBlock) right;
+		return append((CompressedMatrixBlock) left, (CompressedMatrixBlock) right, true);
 
+	}
+
+	public static MatrixBlock append(CompressedMatrixBlock left, CompressedMatrixBlock right, boolean check) {
+		final int m = left.getNumRows();
+		final int n = left.getNumColumns() + right.getNumColumns();
 		// init result matrix
 		CompressedMatrixBlock ret = new CompressedMatrixBlock(m, n);
-		
-		ret = appendColGroups(ret, leftC.getColGroups(), rightC.getColGroups(), leftC.getNumColumns());
-		
+
+		ret = appendColGroups(ret, left.getColGroups(), right.getColGroups(), left.getNumColumns());
+
 		double compressedSize = ret.getInMemorySize();
 		double uncompressedSize = MatrixBlock.estimateSizeInMemory(m, n, ret.getSparsity());
-		
+
 		double ratio = uncompressedSize / compressedSize;
-		
-		if(compressedSize  < uncompressedSize)
+
+		if(!check || compressedSize < uncompressedSize)
 			return ret;
 		else {
 			String message = String.format("Decompressing c bind matrix because it had to small compression ratio: %2.3f",

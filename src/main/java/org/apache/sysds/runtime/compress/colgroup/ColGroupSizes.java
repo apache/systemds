@@ -76,19 +76,13 @@ public final class ColGroupSizes {
 		boolean lossy) {
 		int offsetLength = (nrRuns) * 2;
 		long size = estimateInMemorySizeOffset(nrColumns, nrValues, (nrValues) + 1, offsetLength, tupleSparsity, lossy);
-
 		return size;
 	}
 
 	public static long estimateInMemorySizeSDC(int nrColumns, int nrValues, int nrRows, int largestOff,
 		boolean largestOffIsZero, boolean containNoZeroValues, double tupleSparsity, boolean lossy) {
-		// if(LOG.isTraceEnabled()) {
-			// String v = String.format("estimate SDC size: %d %d %d %d %b %b %f %b", nrColumns, nrValues, nrRows, largestOff,
-			// 	largestOffIsZero, containNoZeroValues, tupleSparsity, lossy);
-			// LOG.error(v);
-		// }
-		long size = estimateInMemorySizeGroupValue(nrColumns,
-			nrValues + (largestOffIsZero || containNoZeroValues ? 0 : 1), tupleSparsity, lossy);
+		final int nVals = nrValues + (largestOffIsZero || containNoZeroValues ? 0 : 1);
+		long size = estimateInMemorySizeGroupValue(nrColumns, nVals, tupleSparsity, lossy);
 		size += OffsetFactory.estimateInMemorySize(nrRows - largestOff, nrRows);
 		if(nrValues > 1)
 			size += MapToFactory.estimateInMemorySize(nrRows - largestOff, nrValues);
@@ -97,8 +91,8 @@ public final class ColGroupSizes {
 
 	public static long estimateInMemorySizeSDCSingle(int nrColumns, int nrValues, int nrRows, int largestOff,
 		boolean largestOffIsZero, boolean containNoZeroValues, double tupleSparsity, boolean lossy) {
-		long size = estimateInMemorySizeGroupValue(nrColumns,
-			nrValues + (largestOffIsZero || containNoZeroValues ? 0 : 1), tupleSparsity, lossy);
+		final int nVals = nrValues + (largestOffIsZero || containNoZeroValues ? 0 : 1);
+		long size = estimateInMemorySizeGroupValue(nrColumns, nVals, tupleSparsity, lossy);
 		size += OffsetFactory.estimateInMemorySize(nrRows - largestOff, nrRows);
 		return size;
 	}

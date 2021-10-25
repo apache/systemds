@@ -58,17 +58,21 @@ public class BinaryOperator extends Operator {
 	private int _k = 1; // num threads
 	
 	public BinaryOperator(ValueFunction p) {
-		//binaryop is sparse-safe iff (0 op 0) == 0
-		super (p instanceof Plus || p instanceof Multiply || p instanceof Minus
-			|| p instanceof PlusMultiply || p instanceof MinusMultiply
-			|| p instanceof And || p instanceof Or || p instanceof Xor
-			|| p instanceof BitwAnd || p instanceof BitwOr || p instanceof BitwXor
-			|| p instanceof BitwShiftL || p instanceof BitwShiftR);
-		fn = p;
-		commutative = p instanceof Plus || p instanceof Multiply 
-			|| p instanceof And || p instanceof Or || p instanceof Xor || p instanceof Minus1Multiply;
+		this(p, 1);
 	}
-	
+
+	public BinaryOperator(ValueFunction p, int k) {
+		// binaryop is sparse-safe iff (0 op 0) == 0
+		super(p instanceof Plus || p instanceof Multiply || p instanceof Minus || p instanceof PlusMultiply ||
+			p instanceof MinusMultiply || p instanceof And || p instanceof Or || p instanceof Xor ||
+			p instanceof BitwAnd || p instanceof BitwOr || p instanceof BitwXor || p instanceof BitwShiftL ||
+			p instanceof BitwShiftR);
+		fn = p;
+		commutative = p instanceof Plus || p instanceof Multiply || p instanceof And || p instanceof Or ||
+			p instanceof Xor || p instanceof Minus1Multiply;
+		_k = k;
+	}
+
 	public void setNumThreads(int k) {
 		_k = k;
 	}
@@ -123,6 +127,20 @@ public class BinaryOperator extends Operator {
 	
 	public boolean isCommutative() {
 		return commutative;
+	}
+
+	public boolean isRowSafeLeft(double[] row){
+		for(double v : row)
+			 if(0 !=  fn.execute(v, 0))
+			 	return false;
+		return true;
+	}
+
+	public boolean isRowSafeRight(double[] row){
+		for(double v : row)
+			 if(0 !=  fn.execute(0, v))
+			 	return false;
+		return true;
 	}
 	
 	@Override

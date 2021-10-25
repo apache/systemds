@@ -22,13 +22,11 @@ package org.apache.sysds.runtime.compress.colgroup.offset;
 import java.io.DataInput;
 import java.io.IOException;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
 
-public final class OffsetFactory {
+public interface OffsetFactory {
 
-	protected static final Log LOG = LogFactory.getLog(OffsetFactory.class.getName());
+	// static final Log LOG = LogFactory.getLog(OffsetFactory.class.getName());
 
 	public enum OFF_TYPE {
 		BYTE, CHAR
@@ -50,8 +48,8 @@ public final class OffsetFactory {
 	 * This is useful if the input is created from a CSR matrix, since it allows us to not reallocate the indexes[] but
 	 * use the shared indexes from the entire CSR representation.
 	 * 
-	 * @param indexes The indexes from which to take the offsets
-	 * @param apos    The position to start looking from in the indexes
+	 * @param indexes The indexes from which to take the offsets.
+	 * @param apos    The position to start looking from in the indexes.
 	 * @param alen    The position to end looking at in the indexes.
 	 * @return A new Offset.
 	 */
@@ -80,9 +78,8 @@ public final class OffsetFactory {
 			case BYTE:
 				return OffsetByte.readFields(in);
 			case CHAR:
-				return OffsetChar.readFields(in);
 			default:
-				throw new DMLCompressionException("Unknown input");
+				return OffsetChar.readFields(in);
 		}
 	}
 

@@ -29,12 +29,12 @@ import org.apache.sysds.utils.MemoryEstimates;
 public class OffsetByte extends AOffset {
 
 	private static final long serialVersionUID = -4716104973912491790L;
-	
+
 	private final static int maxV = 255;
 	private final byte[] offsets;
 	private final int offsetToFirst;
 
-	public OffsetByte(int[] indexes){
+	public OffsetByte(int[] indexes) {
 		this(indexes, 0, indexes.length);
 	}
 
@@ -42,7 +42,7 @@ public class OffsetByte extends AOffset {
 		int endSize = 0;
 		offsetToFirst = indexes[apos];
 		int ov = offsetToFirst;
-		for(int i =  apos+1; i < alen; i++) {
+		for(int i = apos + 1; i < alen; i++) {
 			final int nv = indexes[i];
 			endSize += 1 + (nv - ov) / maxV;
 			ov = nv;
@@ -51,7 +51,7 @@ public class OffsetByte extends AOffset {
 		ov = offsetToFirst;
 		int p = 0;
 
-		for(int i =  apos+1; i < alen; i++) {
+		for(int i = apos + 1; i < alen; i++) {
 			final int nv = indexes[i];
 			final int offsetSize = nv - ov;
 			if(offsetSize == 0)

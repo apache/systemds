@@ -150,7 +150,7 @@ public class DoubleCountHashMap {
 		return h & (length - 1);
 	}
 
-	protected class Bucket {
+	protected static class Bucket {
 		protected DCounts v;
 		protected Bucket n = null;
 

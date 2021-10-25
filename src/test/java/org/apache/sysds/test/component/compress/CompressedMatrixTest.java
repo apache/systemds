@@ -508,6 +508,7 @@ public class CompressedMatrixTest extends AbstractCompressedUnaryTests {
 			if(!(cmb instanceof CompressedMatrixBlock))
 				return;
 			BinaryOperator op = new BinaryOperator(Multiply.getMultiplyFnObject());
+			op.setNumThreads(_k);
 
 			MatrixBlock m2 = new MatrixBlock(1, 1, 0);
 			MatrixBlock ret1 = cmb.binaryOperations(op, m2, new MatrixBlock());
@@ -524,31 +525,32 @@ public class CompressedMatrixTest extends AbstractCompressedUnaryTests {
 
 	@Test
 	public void testBinaryEmptyMatrixMultiplicationOp() {
-		BinaryOperator op = new BinaryOperator(Multiply.getMultiplyFnObject());
+		BinaryOperator op = new BinaryOperator(Multiply.getMultiplyFnObject(), _k);
 		testBinaryEmptyMatrixOp(op);
 	}
 
 	@Test
 	public void testBinaryEmptyMatrixMinusOp() {
-		BinaryOperator op = new BinaryOperator(Minus.getMinusFnObject());
+		BinaryOperator op = new BinaryOperator(Minus.getMinusFnObject(), _k);
 		testBinaryEmptyMatrixOp(op);
 	}
 
 	@Test
 	public void testBinaryEmptyMatrixPlusOp() {
-		BinaryOperator op = new BinaryOperator(Plus.getPlusFnObject());
+		BinaryOperator op = new BinaryOperator(Plus.getPlusFnObject(), _k);
 		testBinaryEmptyMatrixOp(op);
 	}
 
 	@Test
 	public void testBinaryEmptyMatrixMinusMultiplyOp() {
 		BinaryOperator op = MinusMultiply.getFnObject().setOp2Constant(42);
+		op.setNumThreads(_k);
 		testBinaryEmptyMatrixOp(op);
 	}
 
 	@Test
 	public void testBinaryEmptyMatrixMinus1MultiplyOp() {
-		BinaryOperator op = new BinaryOperator(Minus1Multiply.getMinus1MultiplyFnObject());
+		BinaryOperator op = new BinaryOperator(Minus1Multiply.getMinus1MultiplyFnObject(), _k);
 		testBinaryEmptyMatrixOp(op);
 	}
 
@@ -571,19 +573,19 @@ public class CompressedMatrixTest extends AbstractCompressedUnaryTests {
 
 	@Test
 	public void testBinaryEmptyRowVectorMultiplicationOp() {
-		BinaryOperator op = new BinaryOperator(Multiply.getMultiplyFnObject());
+		BinaryOperator op = new BinaryOperator(Multiply.getMultiplyFnObject(), _k);
 		testBinaryEmptyRowVectorOp(op);
 	}
 
 	@Test
 	public void testBinaryEmptyRowVectorMinusOp() {
-		BinaryOperator op = new BinaryOperator(Minus.getMinusFnObject());
+		BinaryOperator op = new BinaryOperator(Minus.getMinusFnObject(), _k);
 		testBinaryEmptyRowVectorOp(op);
 	}
 
 	@Test
 	public void testBinaryEmptyRowVectorPlusOp() {
-		BinaryOperator op = new BinaryOperator(Plus.getPlusFnObject());
+		BinaryOperator op = new BinaryOperator(Plus.getPlusFnObject(), _k);
 		testBinaryEmptyRowVectorOp(op);
 	}
 

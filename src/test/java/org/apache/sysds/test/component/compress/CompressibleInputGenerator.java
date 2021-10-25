@@ -75,6 +75,36 @@ public class CompressibleInputGenerator {
 		return output;
 	}
 
+	/**
+	 * Generate a sparse matrix, that have less and less likelihood of values the more columns there is
+	 * 
+	 * @param rows
+	 * @param cols
+	 * @param unique
+	 * @param max
+	 * @param min
+	 * @param seed
+	 * @return
+	 */
+	public static MatrixBlock getUnbalancedSparseMatrix(int rows, int cols, int unique, int max, int min, int seed) {
+		cols *= 3;
+		MatrixBlock res = new MatrixBlock(rows, cols * 3, true);
+		Random r = new Random(seed);
+		final int range = max - min;
+		final int multiplyer = unique != 0 ? range / unique : 1;
+		for(int i = 0; i < rows; i++) {
+			for(int j = 0; j < Math.min(cols, 5); j++) {
+				if(Math.sqrt(r.nextDouble() * 90) > (j + 0.3) * 2)
+					if(unique == 0)
+						res.appendValue(i, j, min);
+					else
+						res.appendValue(i, j, Math.round(Math.sqrt((double) r.nextInt(unique) * multiplyer + min)));
+			}
+		}
+		res.examSparsity(true);
+		return res;
+	}
+
 	private static void rle(MatrixBlock output, int nrUnique, int max, int min, double sparsity, int seed,
 		boolean transpose) {
 
@@ -138,16 +168,19 @@ public class CompressibleInputGenerator {
 				output.setValue(x, 0, values.get(r.nextInt(nrUnique)));
 		}
 
+		int diff = max - min;
+		if(diff == 0)
+			diff = 1;
 		for(int y = 1; y < cols; y++) {
 			for(int x = 0; x < rows; x++) {
 				if(r.nextDouble() < sparsity) {
 					if(transpose) {
 						int v = (int) (output.getValue(0, x) * (double) y);
-						output.setValue(y, x, Math.abs(v % ((int) (max - min))) + min);
+						output.setValue(y, x, Math.abs(v % ((int) (diff))) + min);
 					}
 					else {
 						int v = (int) (output.getValue(x, 0) * (double) y);
-						output.setValue(x, y, Math.abs(v % ((int) (max - min))) + min);
+						output.setValue(x, y, Math.abs(v % ((int) (diff))) + min);
 					}
 				}
 			}

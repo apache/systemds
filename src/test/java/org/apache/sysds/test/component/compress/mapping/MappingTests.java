@@ -32,6 +32,8 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Random;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory.MAP_TYPE;
@@ -42,6 +44,8 @@ import org.junit.runners.Parameterized.Parameters;
 
 @RunWith(value = Parameterized.class)
 public class MappingTests {
+
+	protected static final Log LOG = LogFactory.getLog(MappingTests.class.getName());
 
 	public final int seed;
 	public final MAP_TYPE type;
@@ -56,8 +60,11 @@ public class MappingTests {
 			tests.add(new Object[] {1, t, 13, false});
 			tests.add(new Object[] {3, t, 13, false});
 			tests.add(new Object[] {3, t, 63, false});
+			tests.add(new Object[] {6, t, 63, false});
+			tests.add(new Object[] {4, t, 63, false});
 			tests.add(new Object[] {3, t, 64, false});
 			tests.add(new Object[] {3, t, 65, false});
+			tests.add(new Object[] {5, t, 64+63, false});
 			tests.add(new Object[] {5, t, 1234, false});
 			tests.add(new Object[] {5, t, 13, true});
 		}
@@ -68,12 +75,12 @@ public class MappingTests {
 		this.seed = seed;
 		this.type = type;
 		this.size = size;
-		final int max = getMax(type);
+		final int max = MapToFactory.getUpperBoundValue(type);
 		expected = new int[size];
-		m = genMap(MapToFactory.create(size, max),expected, max, fill, seed);
+		m = genMap(MapToFactory.create(size, max), expected, max, fill, seed);
 	}
 
-	protected static AMapToData genMap(AMapToData m, int[] expected, int max, boolean fill, int seed){
+	protected static AMapToData genMap(AMapToData m, int[] expected, int max, boolean fill, int seed) {
 		Random vals = new Random(seed);
 		int size = m.size();
 		if(fill) {
@@ -99,8 +106,8 @@ public class MappingTests {
 		}
 
 		// to make sure that the bit set is actually filled.
-		m.set(size - 1, 1);
-		expected[size - 1] = 1;
+		m.set(size - 1, max);
+		expected[size - 1] = max;
 		return m;
 	}
 
@@ -187,11 +194,11 @@ public class MappingTests {
 	}
 
 	@Test
-	public void replaceMax(){
-		int max = getMax(type);
+	public void replaceMax() {
+		int max = m.getUpperBoundValue();
 		m.replace(max, 0);
-		
-		for(int i = 0; i < size; i++){
+
+		for(int i = 0; i < size; i++) {
 			expected[i] = expected[i] == max ? 0 : expected[i];
 			if(expected[i] != m.getIndex(i))
 				fail("Expected equals " + Arrays.toString(expected) + "\nbut got: " + m);
@@ -199,11 +206,11 @@ public class MappingTests {
 	}
 
 	@Test
-	public void replaceMin(){
-		int max = getMax(type);
+	public void replaceMin() {
+		int max = m.getUpperBoundValue();
 		m.replace(0, max);
-		
-		for(int i = 0; i < size; i++){
+
+		for(int i = 0; i < size; i++) {
 			expected[i] = expected[i] == 0 ? max : expected[i];
 			if(expected[i] != m.getIndex(i))
 				fail("Expected equals " + Arrays.toString(expected) + "\nbut got: " + m);
@@ -213,22 +220,8 @@ public class MappingTests {
 	@Test
 	public void testInMemorySize() {
 		long inMemorySize = m.getInMemorySize();
-		long estimatedSize = MapToFactory.estimateInMemorySize(size, getMax(type));
+		long estimatedSize = MapToFactory.estimateInMemorySize(size, MapToFactory.getUpperBoundValue(type));
 		assertEquals(inMemorySize, estimatedSize);
-	}
-
-	protected static int getMax(MAP_TYPE type) {
-		switch(type) {
-			case BIT:
-				return 1;
-			case BYTE:
-				return (int) Math.pow(2, 8) - 1;
-			case CHAR:
-				return (int) Character.MAX_VALUE;
-				// return (int) Math.pow(2, 16) - 1;
-			default:
-				return Integer.MAX_VALUE - 1;
-		}
 	}
 
 }

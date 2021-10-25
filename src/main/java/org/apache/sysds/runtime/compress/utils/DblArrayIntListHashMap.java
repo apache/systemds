@@ -39,10 +39,6 @@ public class DblArrayIntListHashMap {
 
 	protected DArrayIListEntry[] _data = null;
 
-	public int size() {
-		return _size;
-	}
-
 	public DblArrayIntListHashMap() {
 		_data = new DArrayIListEntry[INIT_CAPACITY];
 		_size = 0;
@@ -51,6 +47,10 @@ public class DblArrayIntListHashMap {
 	public DblArrayIntListHashMap(int init_capacity) {
 		_data = new DArrayIListEntry[Util.getPow2(init_capacity)];
 		_size = 0;
+	}
+
+	public int size() {
+		return _size;
 	}
 
 	public IntArrayList get(DblArray key) {
@@ -166,7 +166,7 @@ public class DblArrayIntListHashMap {
 		return h & (length - 1);
 	}
 
-	public class DArrayIListEntry {
+	public static class DArrayIListEntry {
 		public DblArray key;
 		public IntArrayList value;
 
@@ -178,7 +178,6 @@ public class DblArrayIntListHashMap {
 		@Override
 		public String toString() {
 			return key + ":" + value;
-
 		}
 
 		public boolean keyEquals(DblArray keyThat) {

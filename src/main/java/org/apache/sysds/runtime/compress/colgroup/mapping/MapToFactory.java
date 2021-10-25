@@ -26,7 +26,7 @@ import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.bitmap.ABitmap;
 import org.apache.sysds.runtime.compress.utils.IntArrayList;
 
-public final class MapToFactory {
+public class MapToFactory {
 	// private static final Log LOG = LogFactory.getLog(MapToFactory.class.getName());
 
 	public enum MAP_TYPE {
@@ -34,7 +34,7 @@ public final class MapToFactory {
 	}
 
 	public static AMapToData create(int size, ABitmap ubm) {
-		if(ubm == null || ubm.isEmpty())
+		if(ubm == null)
 			return null;
 		return create(size, ubm.containsZero(), ubm.getOffsetList());
 	}
@@ -91,6 +91,38 @@ public final class MapToFactory {
 			ret = new MapToChar(numTuples, size);
 		else // then the input was int and reshapes to int
 			return d;
+
+		ret.copy(d);
+		return ret;
+	}
+
+	/**
+	 * Force the mapping into an other mapping type. This method is unsafe since if there is overflows in the
+	 * conversions, they are not handled. Also if the change is into the same type a new map is allocated anyway.
+	 * 
+	 * @param d The map to resize.
+	 * @param t The type to resize to.
+	 * @return A new allocated mapToData with the specified type.
+	 */
+	public static AMapToData resizeForce(AMapToData d, MAP_TYPE t) {
+		final int size = d.size();
+		final int numTuples = d.getUnique();
+		AMapToData ret;
+		switch(t) {
+			case BIT:
+				ret = new MapToBit(numTuples, size);
+				break;
+			case BYTE:
+				ret = new MapToByte(numTuples, size);
+				break;
+			case CHAR:
+				ret = new MapToChar(numTuples, size);
+				break;
+			case INT:
+			default:
+				ret = new MapToInt(numTuples, size);
+				break;
+		}
 
 		ret.copy(d);
 		return ret;
@@ -162,5 +194,19 @@ public final class MapToFactory {
 
 		tmp.setUnique(newUID - 1);
 		return tmp;
+	}
+
+	public static int getUpperBoundValue(MAP_TYPE t) {
+		switch(t) {
+			case BIT:
+				return 1;
+			case BYTE:
+				return 255;
+			case CHAR:
+				return Character.MAX_VALUE;
+			case INT:
+			default:
+				return Integer.MAX_VALUE;
+		}
 	}
 }

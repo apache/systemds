@@ -21,7 +21,6 @@ package org.apache.sysds.runtime.matrix.data;
 
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.List;
 import java.util.PriorityQueue;
 import java.util.Set;
 
@@ -31,7 +30,6 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.api.DMLException;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
-import org.apache.sysds.runtime.compress.colgroup.AColGroup;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.matrix.operators.CountDistinctOperator;
@@ -114,19 +112,10 @@ public class LibMatrixCountDistinct {
 	private static int countDistinctValuesNaive(MatrixBlock in) {
 		Set<Double> distinct = new HashSet<>();
 		double[] data;
-		if(in instanceof CompressedMatrixBlock) {
-			CompressedMatrixBlock inC = (CompressedMatrixBlock) in;
-			if(inC.isOverlapping()) {
-				in = inC.decompress();
-				inC = null;
-			}
-			else {
-				List<AColGroup> colGroups = ((CompressedMatrixBlock) in).getColGroups();
-				for(AColGroup cg : colGroups) {
-					countDistinctValuesNaive(cg.getValues(), distinct);
-				}
-			}
-		}
+		if(in.isEmpty())
+			return 1;
+		else if(in instanceof CompressedMatrixBlock)
+			throw new NotImplementedException();
 
 		long nonZeros = in.getNonZeros();
 
@@ -195,8 +184,8 @@ public class LibMatrixCountDistinct {
 		LOG.debug("M not forced to int size: " + tmp);
 		LOG.debug("M: " + M);
 		/**
-		 * The estimator is asymptotically unbiased as k becomes large, but memory usage also scales with k. Furthermore
-		 * k value must be within range: D >> k >> 0
+		 * The estimator is asymptotically unbiased as k becomes large, but memory usage also scales with k. Furthermore k
+		 * value must be within range: D >> k >> 0
 		 */
 		int k = D > 64 ? 64 : (int) D;
 		SmallestPriorityQueue spq = new SmallestPriorityQueue(k);
@@ -224,12 +213,10 @@ public class LibMatrixCountDistinct {
 	private static void countDistinctValuesKVM(MatrixBlock in, HashType hashType, int k, SmallestPriorityQueue spq,
 		int m) {
 		double[] data;
-		if(in.sparseBlock == null && in.denseBlock == null) {
-			List<AColGroup> colGroups = ((CompressedMatrixBlock) in).getColGroups();
-			for(AColGroup cg : colGroups) {
-				countDistinctValuesKVM(cg.getValues(), hashType, k, spq, m);
-			}
-		}
+		if(in.isEmpty())
+			spq.add(0);
+		else if(in instanceof CompressedMatrixBlock)
+			throw new NotImplementedException();
 		else if(in.sparseBlock != null) {
 			SparseBlock sb = in.sparseBlock;
 			if(in.sparseBlock.isContiguous()) {

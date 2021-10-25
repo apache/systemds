@@ -291,10 +291,6 @@ public abstract class CompressedSizeEstimator {
 	}
 
 	private int[] makeColIndexes() {
-		final int _numCols = getNumColumns();
-		int[] colIndexes = new int[_numCols];
-		for(int i = 0; i < _numCols; i++)
-			colIndexes[i] = i;
-		return colIndexes;
+		return Util.genColsIndices(getNumColumns());
 	}
 }

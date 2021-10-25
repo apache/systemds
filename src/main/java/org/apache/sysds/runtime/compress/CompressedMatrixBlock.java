@@ -45,10 +45,10 @@ import org.apache.sysds.lops.MapMultChain.ChainType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup.CompressionType;
+import org.apache.sysds.runtime.compress.colgroup.AColGroupValue;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupEmpty;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupIO;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupUncompressed;
-import org.apache.sysds.runtime.compress.colgroup.ColGroupValue;
 import org.apache.sysds.runtime.compress.lib.CLALibAppend;
 import org.apache.sysds.runtime.compress.lib.CLALibBinaryCellOp;
 import org.apache.sysds.runtime.compress.lib.CLALibCompAgg;
@@ -341,21 +341,20 @@ public class CompressedMatrixBlock extends MatrixBlock {
 
 	@Override
 	public double quickGetValue(int r, int c) {
-		// throw new NotImplementedException("Should not call quick get Value on Compressed Matrix Block");
 		if(isOverlapping()) {
 			double v = 0.0;
 			for(AColGroup group : _colGroups)
-				if(Arrays.binarySearch(group.getColIndices(), c) >= 0)
-					v += group.get(r, c);
+				v += group.get(r, c);
 			return v;
 		}
 		else {
-			for(AColGroup group : _colGroups)
-				if(Arrays.binarySearch(group.getColIndices(), c) >= 0)
-					return group.get(r, c);
+			for(AColGroup group : _colGroups) {
+				final int idx = Arrays.binarySearch(group.getColIndices(), c);
+				if(idx >= 0)
+					return group.getIdx(r, idx);
+			}
 			return 0;
 		}
-
 	}
 
 	@Override
@@ -435,7 +434,7 @@ public class CompressedMatrixBlock extends MatrixBlock {
 	public MatrixBlock binaryOperations(BinaryOperator op, MatrixValue thatValue, MatrixValue result) {
 		MatrixBlock that = thatValue == null ? null : (MatrixBlock) thatValue;
 		MatrixBlock ret = result == null ? null : (MatrixBlock) result;
-		return CLALibBinaryCellOp.binaryOperations(op, this, that, ret);
+		return CLALibBinaryCellOp.binaryOperationsRight(op, this, that, ret);
 	}
 
 	public MatrixBlock binaryOperationsLeft(BinaryOperator op, MatrixValue thatValue, MatrixValue result) {
@@ -484,14 +483,14 @@ public class CompressedMatrixBlock extends MatrixBlock {
 		if(isEmpty())
 			return out;
 
-		BinaryOperator bop = new BinaryOperator(Multiply.getMultiplyFnObject());
+		BinaryOperator bop = new BinaryOperator(Multiply.getMultiplyFnObject(), k);
 		boolean allowOverlap = ConfigurationManager.getDMLConfig().getBooleanValue(DMLConfig.COMPRESSED_OVERLAPPING) &&
 			v.getNumColumns() > 1;
 		MatrixBlock tmp = CLALibRightMultBy.rightMultByMatrix(this, v, null, k, allowOverlap);
 
 		if(ctype == ChainType.XtwXv) {
 			if(tmp instanceof CompressedMatrixBlock)
-				tmp = CLALibBinaryCellOp.binaryOperations(bop, (CompressedMatrixBlock) tmp, w, null);
+				tmp = CLALibBinaryCellOp.binaryOperationsRight(bop, (CompressedMatrixBlock) tmp, w, null);
 			else
 				LibMatrixBincell.bincellOpInPlace(tmp, w, bop);
 		}
@@ -897,20 +896,18 @@ public class CompressedMatrixBlock extends MatrixBlock {
 
 	@Override
 	public CM_COV_Object cmOperations(CMOperator op) {
-		printDecompressWarning("cmOperations");
 		if(isEmpty())
 			return super.cmOperations(op);
-		AColGroup grp = _colGroups.get(0);
-		MatrixBlock vals = grp.getValuesAsBlock();
-		if(grp instanceof ColGroupValue) {
-			MatrixBlock counts = getCountsAsBlock(((ColGroupValue) grp).getCounts());
+		else if(_colGroups.size() == 1 && _colGroups.get(0) instanceof AColGroupValue) {
+			AColGroupValue g = (AColGroupValue) _colGroups.get(0);
+			MatrixBlock vals = g.getValuesAsBlock();
+			MatrixBlock counts = getCountsAsBlock(g.getCounts());
 			if(counts.isEmpty())
 				return vals.cmOperations(op);
 			return vals.cmOperations(op, counts);
 		}
-		else {
-			return vals.cmOperations(op);
-		}
+		else
+			return getUncompressed("cmOperations").cmOperations(op);
 	}
 
 	private static MatrixBlock getCountsAsBlock(int[] counts) {
@@ -1086,7 +1083,8 @@ public class CompressedMatrixBlock extends MatrixBlock {
 		if(s2 != s3 && (op.fn instanceof PlusMultiply || op.fn instanceof MinusMultiply)) {
 			// SPECIAL CASE for sparse-dense combinations of common +* and -*
 			BinaryOperator bop = ((ValueFunctionWithConstant) op.fn).setOp2Constant(s2 ? d2 : d3);
-			ret = CLALibBinaryCellOp.binaryOperations(bop, this, s2 ? m3 : m2, ret);
+			bop.setNumThreads(op.getNumThreads());
+			ret = CLALibBinaryCellOp.binaryOperationsRight(bop, this, s2 ? m3 : m2, ret);
 		}
 		else {
 			final boolean sparseOutput = evalSparseFormatInMemory(m, n, (s1 ? m * n * (d1 != 0 ? 1 : 0) : getNonZeros()) +

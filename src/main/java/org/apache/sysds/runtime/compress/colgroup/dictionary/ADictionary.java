@@ -61,8 +61,8 @@ public abstract class ADictionary implements Serializable {
 	public abstract long getInMemorySize();
 
 	/**
-	 * Aggregate all the contained values, useful in value only computations where the operation is iterating through
-	 * all values contained in the dictionary.
+	 * Aggregate all the contained values, useful in value only computations where the operation is iterating through all
+	 * values contained in the dictionary.
 	 * 
 	 * @param init The initial Value, in cases such as Max value, this could be -infinity
 	 * @param fn   The Function to apply to values
@@ -86,7 +86,7 @@ public abstract class ADictionary implements Serializable {
 	 * @param op The operator to apply to the dictionary values.
 	 * @return this dictionary with modified values.
 	 */
-	public abstract ADictionary apply(ScalarOperator op);
+	public abstract ADictionary inplaceScalarOp(ScalarOperator op);
 
 	/**
 	 * Applies the scalar operation on the dictionary. The returned dictionary should contain a new instance of the
@@ -100,47 +100,47 @@ public abstract class ADictionary implements Serializable {
 	public abstract ADictionary applyScalarOp(ScalarOperator op, double newVal, int numCols);
 
 	/**
-	 * Apply binary row operation on this dictionary.
+	 * Apply binary row operation on the left side in place
 	 * 
 	 * @param op         The operation to this dictionary
 	 * @param v          The values to use on the left hand side.
-	 * @param sparseSafe boolean specifying if the operation is safe, and therefore dont need to allocate an extended
-	 *                   dictionary
 	 * @param colIndexes The column indexes to consider inside v.
-	 * @param left       A Boolean specifying if the operation is done on the left or right side of the dictionary.
 	 * @return A new dictionary containing the updated values.
 	 */
-	public ADictionary applyBinaryRowOp(BinaryOperator op, double[] v, boolean sparseSafe, int[] colIndexes,
-		boolean left) {
-		return (left) ? applyBinaryRowOpLeft(op, v, sparseSafe, colIndexes) : applyBinaryRowOpRight(op, v, sparseSafe,
-			colIndexes);
-	}
+	public abstract ADictionary binOpLeft(BinaryOperator op, double[] v, int[] colIndexes);
 
 	/**
-	 * Apply binary row operation on this dictionary on the left side.
+	 * Apply binary row operation on the right side.
 	 * 
 	 * @param op         The operation to this dictionary
-	 * @param v          The values to use on the left hand side.
-	 * @param sparseSafe boolean specifying if the operation is safe, and therefore dont need to allocate an extended
-	 *                   dictionary
+	 * @param v          The values to use on the right hand side.
 	 * @param colIndexes The column indexes to consider inside v.
 	 * @return A new dictionary containing the updated values.
 	 */
-	public abstract ADictionary applyBinaryRowOpLeft(BinaryOperator op, double[] v, boolean sparseSafe,
-		int[] colIndexes);
+	public abstract ADictionary binOpRight(BinaryOperator op, double[] v, int[] colIndexes);
+
+	/**
+	 * Apply binary row operation on the left side and allocate a new dictionary.
+	 * 
+	 * While adding a new tuple, where the operation is applied with zero values.
+	 * 
+	 * @param op         The operation to this dictionary
+	 * @param v          The values to use on the left hand side.
+	 * @param colIndexes The column indexes to consider inside v.
+	 * @return A new dictionary containing the updated values.
+	 */
+	public abstract ADictionary applyBinaryRowOpLeftAppendNewEntry(BinaryOperator op, double[] v, int[] colIndexes);
+
 
 	/**
 	 * Apply binary row operation on this dictionary on the right side.
 	 * 
 	 * @param op         The operation to this dictionary
 	 * @param v          The values to use on the right hand side.
-	 * @param sparseSafe boolean specifying if the operation is safe, and therefore dont need to allocate an extended
-	 *                   dictionary
 	 * @param colIndexes The column indexes to consider inside v.
 	 * @return A new dictionary containing the updated values.
 	 */
-	public abstract ADictionary applyBinaryRowOpRight(BinaryOperator op, double[] v, boolean sparseSafe,
-		int[] colIndexes);
+	public abstract ADictionary applyBinaryRowOpRightAppendNewEntry(BinaryOperator op, double[] v, int[] colIndexes);
 
 	/**
 	 * Returns a deep clone of the dictionary.
@@ -319,27 +319,6 @@ public abstract class ADictionary implements Serializable {
 	public abstract void addToEntry(Dictionary d, int fr, int to, int nCol);
 
 	/**
-	 * Get the most common tuple element contained in the dictionary
-	 * 
-	 * returns null if that tuple is all zero values.
-	 * 
-	 * @param counts The counts of the individual tuples contained, managed by the column group.
-	 * @param nCol   The number of columns contained in this dictionary
-	 * @return a new double array containing the most common value
-	 */
-	public double[] getMostCommonTuple(int[] counts, int nCol) {
-		int maxIndex = 0;
-		int maxCount = 0;
-		for(int i = 0; i < counts.length; i++) {
-			if(counts[i] >= maxCount) {
-				maxCount = counts[i];
-				maxIndex = i;
-			}
-		}
-		return getTuple(maxIndex, nCol);
-	}
-
-	/**
 	 * Get the values contained in a specific tuple of the dictionary.
 	 * 
 	 * If the entire row is zero return null.
@@ -353,8 +332,7 @@ public abstract class ADictionary implements Serializable {
 	/**
 	 * Allocate a new dictionary where the tuple given is subtracted from all tuples in the previous dictionary.
 	 * 
-	 * @param tuple a double list representing a tuple, it is given that the tuple with is the same as this
-	 *              dictionaries.
+	 * @param tuple a double list representing a tuple, it is given that the tuple with is the same as this dictionaries.
 	 * @return a new instance of dictionary with the tuple subtracted.
 	 */
 	public abstract ADictionary subtractTuple(double[] tuple);
@@ -366,7 +344,7 @@ public abstract class ADictionary implements Serializable {
 	 * @param nCol The number of columns contained in this column group.
 	 * @return A Dictionary containing a MatrixBlock.
 	 */
-	public abstract MatrixBlockDictionary getAsMatrixBlockDictionary(int nCol);
+	public abstract MatrixBlockDictionary getMBDict(int nCol);
 
 	/**
 	 * Scale all tuples contained in the dictionary by the scaling factor given in the int list.

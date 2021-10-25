@@ -35,6 +35,11 @@ public class CompressedSizeInfo {
 
 	public List<CompressedSizeInfoColGroup> compressionInfo;
 
+	public CompressedSizeInfo(CompressedSizeInfoColGroup g){
+		this.compressionInfo = new ArrayList<>();
+		compressionInfo.add(g);
+	}
+
 	public CompressedSizeInfo(List<CompressedSizeInfoColGroup> compressionInfo) {
 		this.compressionInfo = compressionInfo;
 	}

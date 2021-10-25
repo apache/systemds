@@ -44,6 +44,15 @@ public abstract class AInsertionSorter {
 	protected final int _numLabels;
 	protected final int _numRows;
 
+	public AInsertionSorter(int endLength, int numRows, IntArrayList[] offsets) {
+		_indexes = new int[endLength];
+		_numLabels = offsets.length;
+		_labels = MapToFactory.create(endLength, _numLabels );
+		_numRows = numRows;
+		_offsets = offsets;
+		_negativeIndex = -1;
+	}
+
 	public AInsertionSorter(int endLength, int numRows, IntArrayList[] offsets, int negativeIndex) {
 		_indexes = new int[endLength];
 		_numLabels = offsets.length;

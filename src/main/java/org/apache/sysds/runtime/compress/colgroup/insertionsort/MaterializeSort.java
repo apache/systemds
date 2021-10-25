@@ -24,12 +24,24 @@ import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory;
 import org.apache.sysds.runtime.compress.utils.IntArrayList;
 
 public class MaterializeSort extends AInsertionSorter {
+	public static int CACHE_BLOCK = 1000;
 
 	/** a dense mapToData, that have a value for each row in the input. */
-	final private AMapToData md;
-	final private int CACHE_BLOCK = 60000;
-	final private int[] skip;
+	private final AMapToData md;
+	private final int[] skip;
 	private int off = 0;
+
+	protected MaterializeSort(int endLength, int numRows, IntArrayList[] offsets) {
+		super(endLength, numRows, offsets);
+
+		md = MapToFactory.create(Math.min(_numRows, CACHE_BLOCK), _numLabels);
+		skip = new int[offsets.length];
+
+		for(int block = 0; block < _numRows; block += CACHE_BLOCK) {
+			md.fill(_numLabels);
+			insert(block, Math.min(block + CACHE_BLOCK, _numRows));
+		}
+	}
 
 	protected MaterializeSort(int endLength, int numRows, IntArrayList[] offsets, int negativeIndex) {
 		super(endLength, numRows, offsets, negativeIndex);
@@ -39,10 +51,7 @@ public class MaterializeSort extends AInsertionSorter {
 
 		for(int block = 0; block < _numRows; block += CACHE_BLOCK) {
 			md.fill(_numLabels);
-			if(_negativeIndex == -1)
-				insert(block, Math.min(block + CACHE_BLOCK, _numRows));
-			else
-				insertWithNegative(block, Math.min(block + CACHE_BLOCK, _numRows));
+			insertWithNegative(block, Math.min(block + CACHE_BLOCK, _numRows));
 		}
 	}
 

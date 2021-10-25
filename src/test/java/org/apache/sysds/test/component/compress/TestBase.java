@@ -85,14 +85,19 @@ public class TestBase {
 				case OLE_COMPRESSIBLE:
 					// Note the Compressible Input generator, generates an already Transposed input
 					// normally, therefore last argument is true, to build a non transposed matrix.
-					mb = CompressibleInputGenerator.getInputDoubleMatrix(rows, cols, CompressionType.OLE, Math.min((max - min), 10), max,
-						min, sparsity, seed, false);
+					mb = CompressibleInputGenerator.getInputDoubleMatrix(rows, cols, CompressionType.OLE,
+						Math.min((max - min), 10), max, min, sparsity, seed, false);
 					break;
 				case RLE_COMPRESSIBLE:
-					mb = CompressibleInputGenerator.getInputDoubleMatrix(rows, cols, CompressionType.RLE, Math.min((max - min), 10), max,
-						min, sparsity, seed, false);
+					mb = CompressibleInputGenerator.getInputDoubleMatrix(rows, cols, CompressionType.RLE,
+						Math.min((max - min), 10), max, min, sparsity, seed, false);
 					break;
-				case ONE_HOT_ENCODED:
+				case UNBALANCED_SPARSE:
+					mb = CompressibleInputGenerator.getUnbalancedSparseMatrix(rows, cols, Math.min((max - min), 10), max,
+						min, seed);
+					cols = mb.getNumColumns();
+					break;
+				case ONE_HOT:
 					mb = CompressibleInputGenerator.getInputOneHotMatrix(rows, cols, seed);
 					break;
 				default:

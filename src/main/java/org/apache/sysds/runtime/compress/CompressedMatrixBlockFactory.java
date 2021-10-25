@@ -32,7 +32,7 @@ import org.apache.sysds.runtime.compress.colgroup.AColGroup;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupEmpty;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupFactory;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupUncompressed;
-import org.apache.sysds.runtime.compress.colgroup.ColGroupValue;
+import org.apache.sysds.runtime.compress.colgroup.AColGroupValue;
 import org.apache.sysds.runtime.compress.cost.ComputationCostEstimator;
 import org.apache.sysds.runtime.compress.cost.CostEstimatorBuilder;
 import org.apache.sysds.runtime.compress.cost.CostEstimatorFactory;
@@ -362,6 +362,7 @@ public class CompressedMatrixBlockFactory {
 			if(compSettings.transposed) {
 				boolean sparse = mb.isInSparseFormat();
 				mb = LibMatrixReorg.transpose(mb, new MatrixBlock(mb.getNumColumns(), mb.getNumRows(), sparse), k, true);
+				mb.evalSparseFormatInMemory();
 			}
 		}
 
@@ -505,8 +506,8 @@ public class CompressedMatrixBlockFactory {
 								else {
 									LOG.trace("--colGroups type       : " + colGroup.getClass().getSimpleName() + " size: "
 										+ colGroup.estimateInMemorySize()
-										+ ((colGroup instanceof ColGroupValue) ? "  numValues :"
-											+ ((ColGroupValue) colGroup).getNumValues() : "")
+										+ ((colGroup instanceof AColGroupValue) ? "  numValues :"
+											+ ((AColGroupValue) colGroup).getNumValues() : "")
 										+ "  colIndexes : " + Arrays.toString(colGroup.getColIndices()));
 								}
 							}

@@ -97,11 +97,11 @@ public class CompressScale extends AutomatedTestBase {
 			// DMLCompressionStatistics.reset();
 			// LOG.debug("RLE : " + RLEoutC);
 			
-			programArgs[1] = configPath("SystemDS-config-compress-cost-OLE.xml");
-			double OLEOutC = Double.parseDouble(runTest(null).toString().split("\n")[0].split(" ")[0]);
-			assertTrue(DMLCompressionStatistics.haveCompressed());
-			DMLCompressionStatistics.reset();
-			LOG.debug("OLE : " + OLEOutC);
+			// programArgs[1] = configPath("SystemDS-config-compress-cost-OLE.xml");
+			// double OLEOutC = Double.parseDouble(runTest(null).toString().split("\n")[0].split(" ")[0]);
+			// assertTrue(DMLCompressionStatistics.haveCompressed());
+			// DMLCompressionStatistics.reset();
+			// LOG.debug("OLE : " + OLEOutC);
 			
 			programArgs[1] = configPath("SystemDS-config-compress-cost-DDC.xml");
 			double DDCoutC = Double.parseDouble(runTest(null).toString().split("\n")[0].split(" ")[0]);
@@ -115,7 +115,7 @@ public class CompressScale extends AutomatedTestBase {
 			DMLCompressionStatistics.reset();
 			LOG.debug("CLA : " + ALLoutC);
 
-			assertEquals(outStd, OLEOutC, 0.1);
+			// assertEquals(outStd, OLEOutC, 0.1);
 			// assertEquals(outStd, RLEoutC, 0.1);
 			assertEquals(outStd, DDCoutC, 0.1);
 			assertEquals(outStd, ALLoutC, 0.1);

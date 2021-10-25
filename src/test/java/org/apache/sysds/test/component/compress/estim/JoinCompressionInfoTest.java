@@ -44,6 +44,7 @@ public class JoinCompressionInfoTest {
 		MatrixBlock tmp = TestUtils.round(TestUtils.generateTestMatrixBlock(2, 500000, 1, 10, 1.0, seed + 1));
 		tmp = tmp.append(TestUtils.round(TestUtils.generateTestMatrixBlock(1, 500000, 1, 2, 1.0, seed + 1)),
 			new MatrixBlock(), false);
+		tmp.setNonZeros(tmp.getNumRows() * tmp.getNumColumns());
 		mbt = tmp;
 	}
 

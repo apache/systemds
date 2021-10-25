@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.util.Arrays;
 
 import org.apache.commons.lang.NotImplementedException;
+import org.apache.sysds.runtime.compress.utils.Util;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.DenseBlockFP64;
 import org.apache.sysds.runtime.data.SparseBlock;
@@ -41,6 +42,10 @@ public class MatrixBlockDictionary extends ADictionary {
 	private static final long serialVersionUID = 2535887782150955098L;
 
 	private MatrixBlock _data;
+
+	public MatrixBlockDictionary(double[] values, int nCol) {
+		_data = Util.matrixBlockFromDenseArray(values, nCol);
+	}
 
 	public MatrixBlockDictionary(MatrixBlock data) {
 		_data = data;
@@ -167,7 +172,7 @@ public class MatrixBlockDictionary extends ADictionary {
 	}
 
 	@Override
-	public ADictionary apply(ScalarOperator op) {
+	public ADictionary inplaceScalarOp(ScalarOperator op) {
 		MatrixBlock res = _data.scalarOperations(op, new MatrixBlock());
 		return new MatrixBlockDictionary(res);
 	}
@@ -189,38 +194,29 @@ public class MatrixBlockDictionary extends ADictionary {
 	}
 
 	@Override
-	public ADictionary applyBinaryRowOpLeft(BinaryOperator op, double[] v, boolean sparseSafe, int[] colIndexes) {
-		MatrixBlock rowVector = new MatrixBlock(1, colIndexes.length, false);
-		for(int i = 0; i < colIndexes.length; i++)
-			rowVector.quickSetValue(0, i, v[colIndexes[i]]);
-		MatrixBlock res = new MatrixBlock();
-		if(sparseSafe)
-			rowVector.binaryOperations(op, _data, res);
-		else {
-			MatrixBlock tmp = new MatrixBlock();
-			tmp = _data.append(new MatrixBlock(1, _data.getNumColumns(), 0), tmp, false);
-			rowVector.binaryOperations(op, tmp, res);
-		}
-		return new MatrixBlockDictionary(res);
+	public ADictionary binOpLeft(BinaryOperator op, double[] v, int[] colIndexes) {
+		MatrixBlock rowVector = Util.extractValues(v, colIndexes);
+		return new MatrixBlockDictionary(rowVector.binaryOperations(op, _data, null));
 	}
 
 	@Override
-	public ADictionary applyBinaryRowOpRight(BinaryOperator op, double[] v, boolean sparseSafe, int[] colIndexes) {
-		MatrixBlock rowVector = new MatrixBlock(1, colIndexes.length, false);
-		for(int i = 0; i < colIndexes.length; i++)
-			rowVector.quickSetValue(0, i, v[colIndexes[i]]);
-		MatrixBlock res = new MatrixBlock();
-		if(sparseSafe) {
-			_data.binaryOperations(op, rowVector, res);
-		}
-		else {
-			if(!_data.isInSparseFormat())
-				LOG.warn("Inefficient binary row op allocating Matrix multiple times");
-			MatrixBlock tmp = new MatrixBlock();
-			tmp = _data.append(new MatrixBlock(1, _data.getNumColumns(), 0), tmp, false);
-			tmp.binaryOperations(op, rowVector, res);
-		}
-		return new MatrixBlockDictionary(res);
+	public ADictionary applyBinaryRowOpLeftAppendNewEntry(BinaryOperator op, double[] v, int[] colIndexes) {
+		MatrixBlock rowVector = Util.extractValues(v, colIndexes);
+		MatrixBlock tmp = _data.append(new MatrixBlock(1, _data.getNumColumns(), 0), null, false);
+		return new MatrixBlockDictionary(rowVector.binaryOperations(op, tmp, null));
+	}
+
+	@Override
+	public ADictionary binOpRight(BinaryOperator op, double[] v, int[] colIndexes) {
+		MatrixBlock rowVector = Util.extractValues(v, colIndexes);
+		return new MatrixBlockDictionary(_data.binaryOperations(op, rowVector, null));
+	}
+
+	@Override
+	public ADictionary applyBinaryRowOpRightAppendNewEntry(BinaryOperator op, double[] v, int[] colIndexes) {
+		MatrixBlock rowVector = Util.extractValues(v, colIndexes);
+		MatrixBlock tmp = _data.append(new MatrixBlock(1, _data.getNumColumns(), 0), null, false);
+		return new MatrixBlockDictionary(tmp.binaryOperations(op, rowVector, null));
 	}
 
 	@Override
@@ -537,7 +533,7 @@ public class MatrixBlockDictionary extends ADictionary {
 	}
 
 	@Override
-	public MatrixBlockDictionary getAsMatrixBlockDictionary(int nCol) {
+	public MatrixBlockDictionary getMBDict(int nCol) {
 		// Simply return this.
 		return this;
 	}

@@ -25,6 +25,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.cocode.CoCoderFactory.PartitionerType;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup.CompressionType;
+import org.apache.sysds.runtime.compress.colgroup.insertionsort.InsertionSorterFactory.SORT_TYPE;
 import org.apache.sysds.runtime.compress.cost.CostEstimatorFactory.CostType;
 import org.apache.sysds.runtime.compress.estim.sample.SampleEstimatorFactory.EstimationType;
 
@@ -34,6 +35,9 @@ import org.apache.sysds.runtime.compress.estim.sample.SampleEstimatorFactory.Est
  */
 public class CompressionSettings {
 	private static final Log LOG = LogFactory.getLog(CompressionSettings.class.getName());
+
+	/** Parallelization threshold for DDC compression */
+	public static int PAR_DDC_THRESHOLD = 10000;
 
 	/**
 	 * Size of the blocks used in a blocked bitmap representation. Note it is exactly Character.MAX_VALUE. This is not
@@ -46,7 +50,7 @@ public class CompressionSettings {
 	 * for parallel incl multi-threaded, hence not applied for distributed operations (also because compression time +
 	 * garbage collection increases)
 	 */
-	public final boolean sortValuesByLength;
+	public final boolean sortTuplesByFrequency;
 
 	/**
 	 * The sampling ratio used when choosing ColGroups. Note that, default behavior is to use exact estimator if the
@@ -110,18 +114,21 @@ public class CompressionSettings {
 	/** Is a spark instruction */
 	public final boolean isInSparkInstruction;
 
+	/** The sorting type used in sorting/joining offsets to create SDC groups */
+	public final SORT_TYPE sdcSortType;
+
 	protected CompressionSettings(double samplingRatio, boolean allowSharedDictionary, String transposeInput, int seed,
 		boolean lossy, EnumSet<CompressionType> validCompressions, boolean sortValuesByLength,
 		PartitionerType columnPartitioner, int maxColGroupCoCode, double coCodePercentage, int minimumSampleSize,
 		int maxSampleSize, EstimationType estimationType, CostType costComputationType, double minimumCompressionRatio,
-		boolean isInSparkInstruction) {
+		boolean isInSparkInstruction, SORT_TYPE sdcSortType) {
 		this.samplingRatio = samplingRatio;
 		this.allowSharedDictionary = allowSharedDictionary;
 		this.transposeInput = transposeInput;
 		this.seed = seed;
 		this.validCompressions = validCompressions;
 		this.lossy = lossy;
-		this.sortValuesByLength = sortValuesByLength;
+		this.sortTuplesByFrequency = sortValuesByLength;
 		this.columnPartitioner = columnPartitioner;
 		this.maxColGroupCoCode = maxColGroupCoCode;
 		this.coCodePercentage = coCodePercentage;
@@ -131,6 +138,7 @@ public class CompressionSettings {
 		this.costComputationType = costComputationType;
 		this.minimumCompressionRatio = minimumCompressionRatio;
 		this.isInSparkInstruction = isInSparkInstruction;
+		this.sdcSortType = sdcSortType;
 		if(LOG.isDebugEnabled())
 			LOG.debug(this.toString());
 	}

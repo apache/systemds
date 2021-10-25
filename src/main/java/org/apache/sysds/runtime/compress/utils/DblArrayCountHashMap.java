@@ -148,7 +148,7 @@ public class DblArrayCountHashMap {
 		return h & (length - 1);
 	}
 
-	protected class Bucket {
+	private static class Bucket {
 		protected DArrCounts v;
 		protected Bucket n = null;
 
@@ -163,6 +163,7 @@ public class DblArrayCountHashMap {
 			else
 				return v.toString() + "->" + n.toString();
 		}
+
 	}
 
 	@Override

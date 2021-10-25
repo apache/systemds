@@ -85,7 +85,7 @@ public class CompressedSizeEstimatorSample extends CompressedSizeEstimator {
 		int nrUniqueUpperBound) {
 
 		// extract statistics from sample
-		final ABitmap ubm = BitmapEncoder.extractBitmap(colIndexes, _sample, _transposed, estimate);
+		final ABitmap ubm = BitmapEncoder.extractBitmap(colIndexes, _sample, _transposed, estimate, false);
 		final EstimationFactors sampleFacts = EstimationFactors.computeSizeEstimationFactors(ubm, _sampleSize, false,
 			colIndexes);
 		final AMapToData map = MapToFactory.create(_sampleSize, ubm);
@@ -138,7 +138,7 @@ public class CompressedSizeEstimatorSample extends CompressedSizeEstimator {
 		else {
 			final int numZerosInSample = sampleFacts.numRows - sampleFacts.numOffs;
 			// estimate number of non-zeros (conservatively round up)
-			final double scalingFactor = ((double) numRows / _sampleSize);
+			final double scalingFactor = (double) numRows / _sampleSize;
 
 			final int numOffs = calculateOffs(sampleFacts, _sampleSize, numRows, scalingFactor, numZerosInSample);
 
@@ -185,8 +185,12 @@ public class CompressedSizeEstimatorSample extends CompressedSizeEstimator {
 			double nnzCount = 0;
 			SparseBlock sb = _sample.getSparseBlock();
 			for(int i = 0; i < colIndexes.length; i++)
-				nnzCount += sb.get(i).size() * scalingFactor;
+				if(!sb.isEmpty(i))
+					nnzCount += (double) sb.get(i).size() * scalingFactor;
 
+			// add one to make sure that Uncompressed columns are considered as containing at least one value.
+			if(nnzCount == 0)
+				nnzCount += 1;
 			return nnzCount / ((double) getNumRows() * colIndexes.length);
 		}
 		else

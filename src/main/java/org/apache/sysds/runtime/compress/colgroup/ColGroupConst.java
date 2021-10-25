@@ -22,7 +22,6 @@ package org.apache.sysds.runtime.compress.colgroup;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
-import java.util.Arrays;
 
 import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
@@ -37,17 +36,13 @@ import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
 
-public class ColGroupConst extends ColGroupCompressed {
+public class ColGroupConst extends AColGroupCompressed {
 
 	private static final long serialVersionUID = -7387793538322386611L;
 
 	protected ADictionary _dict;
 
-	/**
-	 * Constructor for serialization
-	 * 
-	 * @param numRows Number of rows contained
-	 */
+	/** Constructor for serialization */
 	protected ColGroupConst() {
 		super();
 	}
@@ -58,7 +53,7 @@ public class ColGroupConst extends ColGroupCompressed {
 	 * @param colIndices The Colum indexes for the column group.
 	 * @param dict       The dictionary containing one tuple for the entire compression.
 	 */
-	public ColGroupConst(int[] colIndices, ADictionary dict) {
+	protected ColGroupConst(int[] colIndices, ADictionary dict) {
 		super(colIndices);
 		this._dict = dict;
 	}
@@ -99,30 +94,25 @@ public class ColGroupConst extends ColGroupCompressed {
 	}
 
 	@Override
-	public double get(int r, int c) {
-		return _dict.getValue(Arrays.binarySearch(_colIndexes, c));
+	public double getIdx(int r, int colIdx) {
+		return _dict.getValue(colIdx);
 	}
 
 	@Override
 	public AColGroup scalarOperation(ScalarOperator op) {
-		return new ColGroupConst(_colIndexes, _dict.clone().apply(op));
+		return new ColGroupConst(_colIndexes, _dict.clone().inplaceScalarOp(op));
 	}
 
 	@Override
-	public AColGroup binaryRowOp(BinaryOperator op, double[] v, boolean sparseSafe, boolean left) {
-		return new ColGroupConst(_colIndexes, _dict.clone().applyBinaryRowOp(op, v, true, _colIndexes, left));
+	public AColGroup binaryRowOpLeft(BinaryOperator op, double[] v, boolean isRowSafe) {
+		ADictionary ret = _dict.binOpLeft(op, v, _colIndexes);
+		return new ColGroupConst(_colIndexes, ret);
 	}
 
 	@Override
-	public void countNonZerosPerRow(int[] rnnz, int rl, int ru) {
-		double[] values = _dict.getValues();
-		int base = 0;
-		for(int i = 0; i < values.length; i++) {
-			base += values[i] == 0 ? 0 : 1;
-		}
-		for(int i = 0; i < ru - rl; i++) {
-			rnnz[i] = base;
-		}
+	public AColGroup binaryRowOpRight(BinaryOperator op, double[] v, boolean isRowSafe) {
+		ADictionary ret = _dict.binOpRight(op, v, _colIndexes);
+		return new ColGroupConst(_colIndexes, ret);
 	}
 
 	/**
@@ -138,14 +128,8 @@ public class ColGroupConst extends ColGroupCompressed {
 				constV[_colIndexes[i]] += values[i];
 	}
 
-	@Override
 	public double[] getValues() {
 		return _dict != null ? _dict.getValues() : null;
-	}
-
-	@Override
-	public final boolean isLossy() {
-		return _dict.isLossy();
 	}
 
 	@Override
@@ -177,9 +161,8 @@ public class ColGroupConst extends ColGroupCompressed {
 		return 1;
 	}
 
-	@Override
-	public MatrixBlock getValuesAsBlock() {
-		_dict = _dict.getAsMatrixBlockDictionary(_colIndexes.length);
+	private MatrixBlock forceValuesToMatrixBlock() {
+		_dict = _dict.getMBDict(_colIndexes.length);
 		MatrixBlock ret = ((MatrixBlockDictionary) _dict).getMatrixBlock();
 		return ret;
 	}
@@ -191,11 +174,11 @@ public class ColGroupConst extends ColGroupCompressed {
 		final int rr = right.getNumRows();
 		final int cr = right.getNumColumns();
 		if(_colIndexes.length == rr) {
-			MatrixBlock left = getValuesAsBlock();
+			MatrixBlock left = forceValuesToMatrixBlock();
 			MatrixBlock ret = new MatrixBlock(1, cr, false);
 			LibMatrixMult.matrixMult(left, right, ret);
 			ADictionary d = new MatrixBlockDictionary(ret);
-			return ColGroupFactory.getColGroupConst(cr, d);
+			return ColGroupFactory.genColGroupConst(cr, d);
 		}
 		else {
 			throw new NotImplementedException();
@@ -220,11 +203,6 @@ public class ColGroupConst extends ColGroupCompressed {
 	@Override
 	public void tsmmAColGroup(AColGroup other, MatrixBlock result) {
 		throw new DMLCompressionException("Should not be called");
-	}
-
-	@Override
-	public boolean isDense() {
-		return true;
 	}
 
 	@Override
@@ -298,7 +276,7 @@ public class ColGroupConst extends ColGroupCompressed {
 
 	@Override
 	protected void computeProduct(double[] c, int nRows) {
-		final double[] vals = getValues();
+		final double[] vals = _dict.getValues();
 		for(int i = 0; i < _colIndexes.length; i++) {
 			double v = vals[i];
 			if(v != 0)

@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.util.BitSet;
 
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory.MAP_TYPE;
+import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.utils.MemoryEstimates;
 
 public class MapToBit extends AMapToData {
@@ -72,7 +73,7 @@ public class MapToBit extends AMapToData {
 		final int dSize = _data.size();
 		long size = 1 + 4 + 4 + 4; // base variables
 		size += (dSize / 64) * 8; // all longs except last
-		size += (dSize % 64 == 0 ? 0 : 8); // last long
+		// size += (dSize % 64 == 0 ? 0 : 8); // last long
 		return size;
 	}
 
@@ -88,9 +89,10 @@ public class MapToBit extends AMapToData {
 
 	@Override
 	public void replace(int v, int r) {
-		if(v == 0 && r == 1)
+		// Note that this method assume that replace is called correctly.
+		if(v == 0) // set all to 1
 			_data.set(0, size(), true);
-		else if(v == 1 && r == 0)
+		else // set all to 0
 			_data.clear();
 	}
 
@@ -113,5 +115,27 @@ public class MapToBit extends AMapToData {
 			internalLong[i] = in.readLong();
 
 		return new MapToBit(unique, BitSet.valueOf(internalLong), size);
+	}
+
+	@Override
+	public void preAggregateDense(MatrixBlock m, MatrixBlock pre, int rl, int ru, int cl, int cu) {
+		final int nRow = m.getNumColumns();
+		final int nVal = pre.getNumColumns();
+		final double[] preAV = pre.getDenseBlockValues();
+		final double[] mV = m.getDenseBlockValues();
+		final int blockSize = 4000;
+		for(int block = cl; block < cu; block += blockSize) {
+			final int blockEnd = Math.min(block + blockSize, nRow);
+			for(int rowLeft = rl, offOut = 0; rowLeft < ru; rowLeft++, offOut += nVal) {
+				final int offLeft = rowLeft * nRow;
+				for(int rc = block; rc < blockEnd; rc++)
+					preAV[_data.get(rc) ? offOut + 1 : offOut] += mV[offLeft + rc];
+			}
+		}
+	}
+
+	@Override
+	public int getUpperBoundValue() {
+		return 1;
 	}
 }

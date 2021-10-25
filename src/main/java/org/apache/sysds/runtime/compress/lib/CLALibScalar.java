@@ -20,7 +20,6 @@
 package org.apache.sysds.runtime.compress.lib;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
@@ -35,9 +34,9 @@ import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupConst;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupEmpty;
+import org.apache.sysds.runtime.compress.colgroup.ColGroupFactory;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupOLE;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupUncompressed;
-import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
 import org.apache.sysds.runtime.functionobjects.Divide;
 import org.apache.sysds.runtime.functionobjects.Minus;
 import org.apache.sysds.runtime.functionobjects.Multiply;
@@ -105,13 +104,7 @@ public class CLALibScalar {
 	}
 
 	private static ColGroupConst constOverlap(CompressedMatrixBlock m1, ScalarOperator sop) {
-		int[] colIndexes = new int[m1.getNumColumns()];
-		for(int i = 0; i < colIndexes.length; i++)
-			colIndexes[i] = i;
-		double v = sop.executeScalar(0);
-		double[] values = new double[colIndexes.length];
-		Arrays.fill(values, v);
-		return new ColGroupConst(colIndexes, new Dictionary(values));
+		return (ColGroupConst) ColGroupFactory.genColGroupConst(m1.getNumColumns(), sop.executeScalar(0));
 	}
 
 	private static List<AColGroup> copyGroups(CompressedMatrixBlock m1, ScalarOperator sop, ColGroupConst c,
@@ -121,9 +114,9 @@ public class CLALibScalar {
 		for(AColGroup grp : m1.getColGroups()) {
 			if(grp instanceof ColGroupEmpty)
 				continue;
-
 			else if(grp instanceof ColGroupConst) {
-				final double[] gv = grp.getValues();
+				final ColGroupConst g = (ColGroupConst) grp;
+				final double[] gv = g.getValues();
 				final int[] colIdx = grp.getColIndices();
 				for(int i = 0; i < colIdx.length; i++)
 					constV[colIdx[i]] += gv[i];
@@ -143,7 +136,8 @@ public class CLALibScalar {
 			if(grp instanceof ColGroupEmpty)
 				continue;
 			else if(grp instanceof ColGroupConst) {
-				final double[] gv = grp.getValues();
+				final ColGroupConst g = (ColGroupConst) grp;
+				final double[] gv = g.getValues();
 				final int[] colIdx = grp.getColIndices();
 				for(int i = 0; i < colIdx.length; i++)
 					constV[colIdx[i]] -= gv[i];

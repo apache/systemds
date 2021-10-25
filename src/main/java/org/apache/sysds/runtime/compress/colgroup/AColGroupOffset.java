@@ -35,7 +35,7 @@ import org.apache.sysds.utils.MemoryEstimates;
  * NOTES: * OLE: separate storage segment length and bitmaps led to a 30% improvement but not applied because more
  * difficult to support both data layouts at the same time (distributed/local as well as w/ and w/o low-level opt)
  */
-public abstract class ColGroupOffset extends ColGroupValue {
+public abstract class AColGroupOffset extends AColGroupValue {
 	private static final long serialVersionUID = -4105103687174067602L;
 	/** Bitmaps, one per uncompressed value tuple in {@link #_dict}. */
 	protected int[] _ptr;
@@ -47,11 +47,11 @@ public abstract class ColGroupOffset extends ColGroupValue {
 	 * 
 	 * @param numRows Number of rows contained
 	 */
-	protected ColGroupOffset(int numRows) {
+	protected AColGroupOffset(int numRows) {
 		super(numRows);
 	}
 
-	protected ColGroupOffset(int[] colIndices, int numRows, boolean zeros, ADictionary dict, int[] cachedCounts) {
+	protected AColGroupOffset(int[] colIndices, int numRows, boolean zeros, ADictionary dict, int[] cachedCounts) {
 		super(colIndices, numRows, dict, cachedCounts);
 		_zeros = zeros;
 	}
@@ -84,7 +84,7 @@ public abstract class ColGroupOffset extends ColGroupValue {
 	protected final void sumAllValues(double[] b, double[] c) {
 		final int numVals = getNumValues();
 		final int numCols = getNumCols();
-		final double[] values = getValues();
+		final double[] values = _dict.getValues();
 
 		// vectMultiplyAdd over cols instead of dotProduct over vals because
 		// usually more values than columns
@@ -177,6 +177,7 @@ public abstract class ColGroupOffset extends ColGroupValue {
 	}
 
 	protected abstract boolean[] computeZeroIndicatorVector();
+	public abstract void countNonZerosPerRow(int[] rnnz, int rl, int ru);
 
 	@Override
 	public String toString() {

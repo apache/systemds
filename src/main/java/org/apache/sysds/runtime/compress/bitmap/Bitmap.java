@@ -21,20 +21,25 @@ package org.apache.sysds.runtime.compress.bitmap;
 
 import java.util.Arrays;
 
-import org.apache.commons.lang.ArrayUtils;
 import org.apache.sysds.runtime.compress.utils.IntArrayList;
-import org.apache.sysds.runtime.util.SortUtils;
 
 /**
  * Uncompressed representation of one or more columns in bitmap format.
  */
 public final class Bitmap extends ABitmap {
 
-	/**
-	 * Distinct values that appear in the column. Linearized as value groups <v11 v12> <v21 v22>.
-	 */
+	/** Distinct values contained in the bitmap */
 	private double[] _values;
 
+	/**
+	 * Single column version of a bitmap.
+	 * 
+	 * it should be guaranteed that the offsetLists are not null.
+	 * 
+	 * @param offsetsLists The offsets for the values
+	 * @param values       The values matched with the offsets
+	 * @param rows         The number of rows encoded
+	 */
 	protected Bitmap(IntArrayList[] offsetsLists, double[] values, int rows) {
 		super(offsetsLists, rows);
 		_values = values;
@@ -43,7 +48,7 @@ public final class Bitmap extends ABitmap {
 	/**
 	 * Get all values without unnecessary allocations and copies.
 	 * 
-	 * @return dictionary of value tuples
+	 * @return Dictionary of distinct values
 	 */
 	public final double[] getValues() {
 		return _values;
@@ -51,40 +56,15 @@ public final class Bitmap extends ABitmap {
 
 	@Override
 	public final int getNumNonZerosInOffset(int idx) {
-		return _values[idx] != 0 ? 1 : 0;
+		// all values are non zero therefore since this bitmap type contains one column
+		// always return 1.
+		return 1;
 	}
 
 	@Override
 	public final int getNumValues() {
-		return (_values == null) ? 0 : _values.length;
-	}
-
-	@Override
-	public final void sortValuesByFrequency() {
-		int numVals = getNumValues();
-
-		double[] freq = new double[numVals];
-		int[] pos = new int[numVals];
-
-		// populate the temporary arrays
-		for(int i = 0; i < numVals; i++) {
-			freq[i] = getNumOffsets(i);
-			pos[i] = i;
-		}
-
-		// sort ascending and reverse (descending)
-		SortUtils.sortByValue(0, numVals, freq, pos);
-		ArrayUtils.reverse(pos);
-
-		// create new value and offset list arrays
-		double[] lvalues = new double[numVals];
-		IntArrayList[] loffsets = new IntArrayList[numVals];
-		for(int i = 0; i < numVals; i++) {
-			lvalues[i] = _values[pos[i]];
-			loffsets[i] = _offsetsLists[pos[i]];
-		}
-		_values = lvalues;
-		_offsetsLists = loffsets;
+		// Values are guaranteed not to be null.
+		return _values.length;
 	}
 
 	@Override

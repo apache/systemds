@@ -30,35 +30,49 @@ public abstract class ABitmap {
 
 	/** Bitmaps (as lists of offsets) for each of the values. */
 	protected IntArrayList[] _offsetsLists;
-	
+
 	/** int specifying the number of zero value tuples contained in the rows. */
 	protected final int _numZeros;
 
+	/**
+	 * Main constructor of bitMap, it should be guaranteed that the offsetLists are not null.
+	 * 
+	 * @param offsetsLists The offsets to the values
+	 * @param rows         The number of rows encoded
+	 */
 	protected ABitmap(IntArrayList[] offsetsLists, int rows) {
 		int offsetsTotal = 0;
-		if(offsetsLists != null) {
-			for(IntArrayList a : offsetsLists)
-				offsetsTotal += a.size();
-			_numZeros = rows - offsetsTotal;
-		}
-		else
-			_numZeros = rows;
+		for(IntArrayList a : offsetsLists)
+			offsetsTotal += a.size();
+		_numZeros = rows - offsetsTotal;
 
 		_offsetsLists = offsetsLists;
 	}
 
-	public final boolean isEmpty() {
-		return _offsetsLists == null;
-	}
-
+	/**
+	 * Get all the offset lists.
+	 * 
+	 * @return the contained offset lists
+	 */
 	public final IntArrayList[] getOffsetList() {
 		return _offsetsLists;
 	}
 
+	/**
+	 * Get a specific offset list.
+	 * 
+	 * @param idx The index to look at inside the contained array
+	 * @return the Offset list at the index
+	 */
 	public final IntArrayList getOffsetsList(int idx) {
 		return _offsetsLists[idx];
 	}
 
+	/**
+	 * Get the sum of offsets contained.
+	 * 
+	 * @return The sum of offsets
+	 */
 	public final long getNumOffsets() {
 		long ret = 0;
 		for(IntArrayList off : _offsetsLists)
@@ -76,11 +90,21 @@ public abstract class ABitmap {
 		return _offsetsLists[ix].size();
 	}
 
-	public final int getNumZeros(){
+	/**
+	 * Get the number of zero tuples contained in this bitmap.
+	 * 
+	 * @return The number of zero tuples
+	 */
+	public final int getNumZeros() {
 		return _numZeros;
 	}
 
-	public final boolean containsZero(){
+	/**
+	 * Find out if the map contains zeros.
+	 * 
+	 * @return A boolean specifying if the bitmap contains zero offsets
+	 */
+	public final boolean containsZero() {
 		return _numZeros > 0;
 	}
 
@@ -92,12 +116,26 @@ public abstract class ABitmap {
 	 */
 	public abstract int getNumValues();
 
-	public abstract void sortValuesByFrequency();
-
+	/**
+	 * Get the number of non zeros in a specific offset's tuple value.
+	 * 
+	 * @param idx The offset index to look at.
+	 * @return The nnz in the tuple.
+	 */
 	public abstract int getNumNonZerosInOffset(int idx);
 
+	/**
+	 * Get the number of columns encoded in this bitmap
+	 * 
+	 * @return The column count
+	 */
 	public abstract int getNumColumns();
 
+	/**
+	 * Internal function to construct a string representation of the bitmap.
+	 * 
+	 * @param sb The string builder to append subclasses information to.
+	 */
 	protected abstract void addToString(StringBuilder sb);
 
 	@Override

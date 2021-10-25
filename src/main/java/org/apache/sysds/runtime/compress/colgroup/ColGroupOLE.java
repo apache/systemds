@@ -25,7 +25,6 @@ import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.runtime.compress.CompressionSettings;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
-import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
@@ -36,7 +35,7 @@ import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
  * Class to encapsulate information about a column group that is encoded with simple lists of offsets for each set of
  * distinct values.
  */
-public class ColGroupOLE extends ColGroupOffset {
+public class ColGroupOLE extends AColGroupOffset {
 	private static final long serialVersionUID = 5723227906925121066L;
 
 	/**
@@ -66,14 +65,13 @@ public class ColGroupOLE extends ColGroupOffset {
 	}
 
 	@Override
-	protected void decompressToBlockDenseDictionary(MatrixBlock target, int rl, int ru, int offT,
-		double[] values) {
+	protected void decompressToBlockDenseDictionary(MatrixBlock target, int rl, int ru, int offT, double[] values) {
 		final int blksz = CompressionSettings.BITMAP_BLOCK_SZ;
 		final int numCols = getNumCols();
 		final int numVals = getNumValues();
 		final int offOut = (rl - offT);
 		final int targetCols = target.getNumColumns();
-		
+
 		// cache blocking config and position array
 		int[] apos = skipScan(numVals, rl);
 		double[] c = target.getDenseBlockValues();
@@ -105,8 +103,7 @@ public class ColGroupOLE extends ColGroupOffset {
 	}
 
 	@Override
-	protected void decompressToBlockSparseDictionary(MatrixBlock target, int rl, int ru, int offT,
-		SparseBlock values) {
+	protected void decompressToBlockSparseDictionary(MatrixBlock target, int rl, int ru, int offT, SparseBlock values) {
 		throw new NotImplementedException();
 	}
 
@@ -126,27 +123,6 @@ public class ColGroupOLE extends ColGroupOffset {
 		}
 		if(_zeros) {
 			counts[counts.length - 1] = _numRows - sum;
-		}
-		return counts;
-	}
-
-	@Override
-	public int[] getCounts(int rl, int ru, int[] counts) {
-		final int blksz = CompressionSettings.BITMAP_BLOCK_SZ;
-		final int numVals = getNumValues();
-		int sum = 0;
-		for(int k = 0; k < numVals; k++) {
-			int boff = _ptr[k];
-			int blen = len(k);
-			int bix = skipScanVal(k, rl);
-			int count = 0;
-			for(int off = rl; bix < blen && off < ru; bix += _data[boff + bix] + 1, off += blksz)
-				count += _data[boff + bix];
-			sum += count;
-			counts[k] = count;
-		}
-		if(_zeros) {
-			counts[counts.length - 1] = (ru - rl) - sum;
 		}
 		return counts;
 	}
@@ -180,41 +156,50 @@ public class ColGroupOLE extends ColGroupOffset {
 	}
 
 	@Override
-	public AColGroup binaryRowOp(BinaryOperator op, double[] v, boolean sparseSafe, boolean left) {
-
-		sparseSafe = sparseSafe || !_zeros;
-		// fast path: sparse-safe operations
-		// Note that bitmaps don't change and are shallow-copied
-		if(sparseSafe) {
-			return new ColGroupOLE(_colIndexes, _numRows, _zeros, applyBinaryRowOp(op, v, sparseSafe, left), _data,
-				_ptr, getCachedCounts());
-		}
-
-		// slow path: sparse-unsafe operations (potentially create new bitmap)
-		// note: for efficiency, we currently don't drop values that become 0
-		boolean[] lind = computeZeroIndicatorVector();
-		int[] loff = computeOffsets(lind);
-		if(loff.length == 0) { // empty offset list: go back to fast path
-			return new ColGroupOLE(_colIndexes, _numRows, false, applyBinaryRowOp(op, v, true, left), _data, _ptr,
-				getCachedCounts());
-		}
-		ADictionary rvalues = applyBinaryRowOp(op, v, sparseSafe, left);
-		char[] lbitmap = genOffsetBitmap(loff, loff.length);
-		char[] rbitmaps = Arrays.copyOf(_data, _data.length + lbitmap.length);
-		System.arraycopy(lbitmap, 0, rbitmaps, _data.length, lbitmap.length);
-		int[] rbitmapOffs = Arrays.copyOf(_ptr, _ptr.length + 1);
-		rbitmapOffs[rbitmapOffs.length - 1] = rbitmaps.length;
-
-		// for efficiency of following operations (and less memory usage because they share index structures),
-		// the materialized is also applied to this.
-		// so that following operations don't suffer from missing zeros.
-		_data = rbitmaps;
-		_ptr = rbitmapOffs;
-		_zeros = false;
-		_dict = _dict.cloneAndExtend(_colIndexes.length);
-
-		return new ColGroupOLE(_colIndexes, _numRows, false, rvalues, rbitmaps, rbitmapOffs, getCachedCounts());
+	public AColGroup binaryRowOpLeft(BinaryOperator op, double[] v, boolean isRowSafe) {
+		throw new NotImplementedException();
 	}
+
+	@Override
+	public AColGroup binaryRowOpRight(BinaryOperator op, double[] v, boolean isRowSafe) {
+		throw new NotImplementedException();
+	}
+
+	// @Override
+	// public AColGroup binaryRowOp(BinaryOperator op, double[] v, boolean sparseSafe, boolean left) {
+	// sparseSafe = sparseSafe || !_zeros;
+	// // fast path: sparse-safe operations
+	// // Note that bitmaps don't change and are shallow-copied
+	// if(sparseSafe) {
+	// return new ColGroupOLE(_colIndexes, _numRows, _zeros, applyBinaryRowOp(op, v, sparseSafe, left), _data, _ptr,
+	// getCachedCounts());
+	// }
+
+	// // slow path: sparse-unsafe operations (potentially create new bitmap)
+	// // note: for efficiency, we currently don't drop values that become 0
+	// boolean[] lind = computeZeroIndicatorVector();
+	// int[] loff = computeOffsets(lind);
+	// if(loff.length == 0) { // empty offset list: go back to fast path
+	// return new ColGroupOLE(_colIndexes, _numRows, false, applyBinaryRowOp(op, v, true, left), _data, _ptr,
+	// getCachedCounts());
+	// }
+	// ADictionary rvalues = applyBinaryRowOp(op, v, sparseSafe, left);
+	// char[] lbitmap = genOffsetBitmap(loff, loff.length);
+	// char[] rbitmaps = Arrays.copyOf(_data, _data.length + lbitmap.length);
+	// System.arraycopy(lbitmap, 0, rbitmaps, _data.length, lbitmap.length);
+	// int[] rbitmapOffs = Arrays.copyOf(_ptr, _ptr.length + 1);
+	// rbitmapOffs[rbitmapOffs.length - 1] = rbitmaps.length;
+
+	// // for efficiency of following operations (and less memory usage because they share index structures),
+	// // the materialized is also applied to this.
+	// // so that following operations don't suffer from missing zeros.
+	// _data = rbitmaps;
+	// _ptr = rbitmapOffs;
+	// _zeros = false;
+	// _dict = _dict.cloneAndExtend(_colIndexes.length);
+
+	// return new ColGroupOLE(_colIndexes, _numRows, false, rvalues, rbitmaps, rbitmapOffs, getCachedCounts());
+	// }
 
 	@Override
 	protected void computeRowSums(double[] c, boolean square, int rl, int ru) {
@@ -247,7 +232,7 @@ public class ColGroupOLE extends ColGroupOffset {
 						// compute partial results
 						for(int i = 1; i <= len; i++) {
 							int rix = ii + _data[boff + bix + i];
-							if(rix >= getNumRows())
+							if(rix >= _numRows)
 								throw new DMLCompressionException("Invalid row " + rix);
 							c[rix] += val;
 						}
@@ -287,7 +272,7 @@ public class ColGroupOLE extends ColGroupOffset {
 		// NOTE: zeros handled once for all column groups outside
 		final int blksz = CompressionSettings.BITMAP_BLOCK_SZ;
 		final int numVals = getNumValues();
-		final double[] values = getValues();
+		final double[] values = _dict.getValues();
 		// double[] c = result.getDenseBlockValues();
 
 		// iterate over all values and their bitmaps
@@ -380,12 +365,9 @@ public class ColGroupOLE extends ColGroupOffset {
 	}
 
 	@Override
-	public double get(int r, int c) {
+	public double getIdx(int r, int colIdx) {
 		final int blksz = CompressionSettings.BITMAP_BLOCK_SZ;
 		final int numVals = getNumValues();
-		int idColOffset = Arrays.binarySearch(_colIndexes, c);
-		if(idColOffset < 0)
-			return 0;
 		int[] apos = skipScan(numVals, r);
 		int offset = r % blksz;
 		for(int k = 0; k < numVals; k++) {
@@ -395,7 +377,7 @@ public class ColGroupOLE extends ColGroupOffset {
 			int slen = _data[boff + bix];
 			for(int blckIx = 1; blckIx <= slen && blckIx < blen; blckIx++) {
 				if(_data[boff + bix + blckIx] == offset)
-					return _dict.getValue(k * _colIndexes.length + idColOffset);
+					return _dict.getValue(k * _colIndexes.length + colIdx);
 				else if(_data[boff + bix + blckIx] > offset)
 					continue;
 			}
@@ -407,8 +389,8 @@ public class ColGroupOLE extends ColGroupOffset {
 	// internal helper functions
 
 	/**
-	 * Scans to given row_lower position by exploiting any existing skip list and scanning segment length fields.
-	 * Returns array of positions for all values.
+	 * Scans to given row_lower position by exploiting any existing skip list and scanning segment length fields. Returns
+	 * array of positions for all values.
 	 * 
 	 * @param numVals number of values
 	 * @param rl      row lower position
@@ -453,6 +435,21 @@ public class ColGroupOLE extends ColGroupOffset {
 	}
 
 	@Override
+	public void leftMultByMatrix(MatrixBlock matrix, MatrixBlock result, int rl, int ru) {
+		throw new NotImplementedException();
+	}
+
+	@Override
+	public void leftMultByAColGroup(AColGroup lhs, MatrixBlock result) {
+		throw new NotImplementedException();
+	}
+
+	@Override
+	public void tsmmAColGroup(AColGroup other, MatrixBlock result) {
+		throw new NotImplementedException();
+	}
+
+	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
 		sb.append(super.toString());
@@ -461,29 +458,9 @@ public class ColGroupOLE extends ColGroupOffset {
 		return sb.toString();
 	}
 
-	@Override
-	public void preAggregate(MatrixBlock m, MatrixBlock preAgg, int rl, int ru){
-		throw new NotImplementedException();
-	}
-
-	@Override
-	public void preAggregateDense(MatrixBlock m, MatrixBlock preAgg, int rl, int ru, int vl, int vu){
-		throw new NotImplementedException();
-	}
-
-	@Override
-	public boolean sameIndexStructure(ColGroupCompressed that) {
-		return that instanceof ColGroupOLE && ((ColGroupOLE) that)._data == _data;
-	}
-
-	@Override
-	public int getIndexStructureHash() {
-		return _data.hashCode();
-	}
-
 	/**
-	 * Encodes the bitmap in blocks of offsets. Within each block, the bits are stored as absolute offsets from the
-	 * start of the block.
+	 * Encodes the bitmap in blocks of offsets. Within each block, the bits are stored as absolute offsets from the start
+	 * of the block.
 	 * 
 	 * @param offsets uncompressed offset list
 	 * @param len     logical length of the given offset list
@@ -523,8 +500,7 @@ public class ColGroupOLE extends ColGroupOffset {
 			encodedBlocks[blockStartIx] = (char) blockSz;
 
 			for(int i = 0; i < blockSz; i++) {
-				encodedBlocks[blockStartIx + i +
-					1] = (char) (offsets[inputIx + i] % CompressionSettings.BITMAP_BLOCK_SZ);
+				encodedBlocks[blockStartIx + i + 1] = (char) (offsets[inputIx + i] % CompressionSettings.BITMAP_BLOCK_SZ);
 			}
 
 			inputIx += blockSz;
@@ -532,30 +508,5 @@ public class ColGroupOLE extends ColGroupOffset {
 		}
 
 		return encodedBlocks;
-	}
-
-	@Override
-	public Dictionary preAggregateThatDDCStructure(ColGroupDDC that, Dictionary ret) {
-		throw new NotImplementedException();
-	}
-
-	@Override
-	public Dictionary preAggregateThatSDCStructure(ColGroupSDC that, Dictionary ret, boolean preModified) {
-		throw new NotImplementedException();
-	}
-
-	@Override
-	public Dictionary preAggregateThatSDCZerosStructure(ColGroupSDCZeros that, Dictionary ret) {
-		throw new NotImplementedException();
-	}
-
-	@Override
-	public Dictionary preAggregateThatSDCSingleZerosStructure(ColGroupSDCSingleZeros that, Dictionary ret) {
-		throw new NotImplementedException();
-	}
-
-	@Override
-	public Dictionary preAggregateThatSDCSingleStructure(ColGroupSDCSingle that, Dictionary ret, boolean preModified) {
-		throw new NotImplementedException();
 	}
 }

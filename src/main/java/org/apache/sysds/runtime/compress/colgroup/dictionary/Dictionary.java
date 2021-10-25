@@ -26,11 +26,8 @@ import java.util.Arrays;
 
 import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
-import org.apache.sysds.runtime.data.DenseBlock;
-import org.apache.sysds.runtime.data.DenseBlockFP64;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.functionobjects.ValueFunction;
-import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
 import org.apache.sysds.utils.MemoryEstimates;
@@ -98,7 +95,7 @@ public class Dictionary extends ADictionary {
 	}
 
 	@Override
-	public Dictionary apply(ScalarOperator op) {
+	public Dictionary inplaceScalarOp(ScalarOperator op) {
 		// in-place modification of the dictionary
 		int len = size();
 		for(int i = 0; i < len; i++)
@@ -118,51 +115,53 @@ public class Dictionary extends ADictionary {
 	}
 
 	@Override
-	public Dictionary applyBinaryRowOpRight(BinaryOperator op, double[] v, boolean sparseSafe, int[] colIndexes) {
-		ValueFunction fn = op.fn;
+	public Dictionary binOpRight(BinaryOperator op, double[] v, int[] colIndexes) {
+		final ValueFunction fn = op.fn;
+		final double[] retVals = new double[_values.length];
 		final int len = size();
 		final int lenV = colIndexes.length;
-		if(sparseSafe) {
-			for(int i = 0; i < len; i++) {
-				_values[i] = fn.execute(_values[i], v[colIndexes[i % lenV]]);
-			}
-			return this;
-		}
-		else {
-			double[] values = new double[len + lenV];
-			int i = 0;
-			for(; i < len; i++) {
-				values[i] = fn.execute(_values[i], v[colIndexes[i % lenV]]);
-			}
-			for(; i < len + lenV; i++) {
-				values[i] = fn.execute(0, v[colIndexes[i % lenV]]);
-			}
-			return new Dictionary(values);
-		}
+		for(int i = 0; i < len; i++)
+			retVals[i] = fn.execute(_values[i], v[colIndexes[i % lenV]]);
+		return new Dictionary(retVals);
 	}
 
 	@Override
-	public Dictionary applyBinaryRowOpLeft(BinaryOperator op, double[] v, boolean sparseSafe, int[] colIndexes) {
+	public final Dictionary binOpLeft(BinaryOperator op, double[] v, int[] colIndexes) {
+		final ValueFunction fn = op.fn;
+		final double[] retVals = new double[_values.length];
+		final int len = size();
+		final int lenV = colIndexes.length;
+		for(int i = 0; i < len; i++)
+			retVals[i] = fn.execute(v[colIndexes[i % lenV]], _values[i]);
+		return new Dictionary(retVals);
+	}
+
+	@Override
+	public Dictionary applyBinaryRowOpRightAppendNewEntry(BinaryOperator op, double[] v, int[] colIndexes) {
 		ValueFunction fn = op.fn;
 		final int len = size();
 		final int lenV = colIndexes.length;
-		if(sparseSafe) {
-			for(int i = 0; i < len; i++) {
-				_values[i] = fn.execute(v[colIndexes[i % lenV]], _values[i]);
-			}
-			return this;
-		}
-		else {
-			double[] values = new double[len + lenV];
-			int i = 0;
-			for(; i < len; i++) {
-				values[i] = fn.execute(v[colIndexes[i % lenV]], _values[i]);
-			}
-			for(; i < len + lenV; i++) {
-				values[i] = fn.execute(v[colIndexes[i % lenV]], 0);
-			}
-			return new Dictionary(values);
-		}
+		final double[] values = new double[len + lenV];
+		int i = 0;
+		for(; i < len; i++)
+			values[i] = fn.execute(_values[i], v[colIndexes[i % lenV]]);
+		for(; i < len + lenV; i++)
+			values[i] = fn.execute(0, v[colIndexes[i % lenV]]);
+		return new Dictionary(values);
+	}
+
+	@Override
+	public final Dictionary applyBinaryRowOpLeftAppendNewEntry(BinaryOperator op, double[] v, int[] colIndexes) {
+		ValueFunction fn = op.fn;
+		final int len = size();
+		final int lenV = colIndexes.length;
+		final double[] values = new double[len + lenV];
+		int i = 0;
+		for(; i < len; i++)
+			values[i] = fn.execute(v[colIndexes[i % lenV]], _values[i]);
+		for(; i < len + lenV; i++)
+			values[i] = fn.execute(v[colIndexes[i % lenV]], 0);
+		return new Dictionary(values);
 	}
 
 	@Override
@@ -441,13 +440,8 @@ public class Dictionary extends ADictionary {
 	}
 
 	@Override
-	public MatrixBlockDictionary getAsMatrixBlockDictionary(int nCol) {
-		final int nRow = _values.length / nCol;
-		DenseBlock dictV = new DenseBlockFP64(new int[] {nRow, nCol}, _values);
-		MatrixBlock dictM = new MatrixBlock(nRow, nCol, dictV);
-		dictM.getNonZeros();
-		dictM.examSparsity();
-		return new MatrixBlockDictionary(dictM);
+	public MatrixBlockDictionary getMBDict(int nCol) {
+		return new MatrixBlockDictionary(_values, nCol);
 	}
 
 	@Override

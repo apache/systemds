@@ -21,53 +21,43 @@ package org.apache.sysds.runtime.compress.colgroup.insertionsort;
 
 import org.apache.sysds.runtime.compress.utils.IntArrayList;
 
-public final class InsertionSorterFactory {
+public class InsertionSorterFactory {
 
 	public enum SORT_TYPE {
 		MERGE, MATERIALIZE;
 	}
 
-	public static AInsertionSorter create(int numRows, IntArrayList[] offsets) {
-		return create(getEndLength(offsets), numRows, offsets);
+	public static AInsertionSorter create(int numRows, IntArrayList[] offsets, SORT_TYPE st) {
+		return create(getEndLength(offsets), numRows, offsets, st);
 	}
 
-	public static AInsertionSorter create(int endLength, int numRows, IntArrayList[] offsets) {
-		return create(endLength, numRows, offsets, -1, SORT_TYPE.MATERIALIZE);
+	public static AInsertionSorter create(int endLength, int numRows, IntArrayList[] offsets, SORT_TYPE st) {
+		switch(st) {
+			case MERGE:
+				return new MergeSort(endLength, numRows, offsets);
+			default:
+				return new MaterializeSort(endLength, numRows, offsets);
+		}
 	}
 
-	public static AInsertionSorter create(int numRows, IntArrayList[] offsets, int negativeIndex) {
-		if(negativeIndex < 0)
-			return create(getEndLength(offsets), numRows, offsets);
-		else
-			return create(numRows - offsets[negativeIndex].size(), numRows, offsets, negativeIndex);
+	public static AInsertionSorter createNegative(int numRows, IntArrayList[] offsets, int negativeIndex, SORT_TYPE st) {
+		return createNegative(numRows - offsets[negativeIndex].size(), numRows, offsets, negativeIndex, st);
 	}
 
-	public static AInsertionSorter create(int endLength, int numRows, IntArrayList[] offsets, int negativeIndex) {
-		return create(endLength, numRows, offsets, negativeIndex, SORT_TYPE.MATERIALIZE);
-	}
-
-	public static AInsertionSorter create(int numRows, IntArrayList[] offsets, int negativeIndex, SORT_TYPE st) {
-		if(negativeIndex < 0)
-			return create(getEndLength(offsets), numRows, offsets, negativeIndex, st);
-		else
-			return create(numRows - offsets[negativeIndex].size(), numRows, offsets, negativeIndex, st);
-	}
-
-	public static AInsertionSorter create(int endLength, int numRows, IntArrayList[] offsets, int negativeIndex,
+	public static AInsertionSorter createNegative(int endLength, int numRows, IntArrayList[] offsets, int negativeIndex,
 		SORT_TYPE st) {
 		switch(st) {
 			case MERGE:
 				return new MergeSort(endLength, numRows, offsets, negativeIndex);
 			default:
-				return new MaterializeSort(endLength,numRows, offsets, negativeIndex);
+				return new MaterializeSort(endLength, numRows, offsets, negativeIndex);
 		}
 	}
 
 	private static int getEndLength(IntArrayList[] offsets) {
 		int endLength = 0;
-		for(IntArrayList l : offsets) {
+		for(IntArrayList l : offsets)
 			endLength += l.size();
-		}
 		return endLength;
 	}
 }

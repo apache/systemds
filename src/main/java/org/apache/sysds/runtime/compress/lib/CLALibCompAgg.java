@@ -34,6 +34,7 @@ import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.CompressionSettings;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup;
+import org.apache.sysds.runtime.compress.colgroup.AColGroupOffset;
 import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.functionobjects.Builtin.BuiltinCode;
@@ -106,7 +107,7 @@ public class CLALibCompAgg {
 		AggregateUnaryOperator opm = replaceKahnOperations(op);
 
 		if(colGroups != null) {
-			
+
 			fillStart(inputMatrix, result, opm);
 			if(requireDecompress)
 				aggregateUnaryOverlapping(inputMatrix, result, opm, indexesIn, inCP);
@@ -357,7 +358,7 @@ public class CLALibCompAgg {
 			List<Future<MatrixBlock>> rtasks = generateUnaryAggregateOverlappingFutures(m1, ret, op);
 			reduceOverlappingFutures(rtasks, ret, op);
 		}
-		catch(Exception e) {
+		catch(InterruptedException | ExecutionException e) {
 			throw new DMLCompressionException("Error in Compressed Unary Aggregate", e);
 		}
 	}
@@ -452,30 +453,12 @@ public class CLALibCompAgg {
 	private static void aggregateUnaryBuiltinRowOperation(AggregateUnaryOperator op, List<AColGroup> groups,
 		double[] ret, int nRows, int rl, int ru, int numColumns) {
 
-		boolean isDense = true;
-		for(AColGroup g : groups) {
-			isDense &= g.isDense();
-		}
-		if(isDense) {
-			for(AColGroup grp : groups) {
-				grp.unaryAggregateOperations(op, ret, nRows, rl, ru);
-			}
-		}
-		else {
+		for(AColGroup g : groups)
+			if(g instanceof AColGroupOffset)
+				throw new NotImplementedException("not implemented handling of offset colGroups for row aggregates");
 
-			int[] rnnz = new int[ru - rl];
-			int numberDenseColumns = 0;
-			for(AColGroup grp : groups) {
-				grp.unaryAggregateOperations(op, ret, nRows, rl, ru);
-				if(grp.isDense())
-					numberDenseColumns += grp.getNumCols();
-				else
-					grp.countNonZerosPerRow(rnnz, rl, ru);
-			}
-			for(int row = rl; row < ru; row++)
-				if(rnnz[row - rl] + numberDenseColumns < numColumns)
-					ret[row] = op.aggOp.increOp.fn.execute(ret[row], 0.0);
-		}
+		for(AColGroup grp : groups)
+			grp.unaryAggregateOperations(op, ret, nRows, rl, ru);
 
 	}
 
@@ -499,7 +482,7 @@ public class CLALibCompAgg {
 		}
 		if(fn instanceof Multiply) {
 			long nnz = in.getNonZeros();
-			long nc = (long)in.getNumRows() * in.getNumColumns();
+			long nc = (long) in.getNumRows() * in.getNumColumns();
 			boolean containsZero = nnz != nc;
 			if(op.indexFn instanceof ReduceAll)
 				ret.setValue(0, 0, containsZero ? 0 : 1);
@@ -608,7 +591,6 @@ public class CLALibCompAgg {
 			}
 			else
 				return outputBlock;
-
 		}
 	}
 }

@@ -29,7 +29,6 @@ import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.functionobjects.Divide;
 import org.apache.sysds.runtime.functionobjects.Multiply;
 import org.apache.sysds.runtime.functionobjects.Plus;
-import org.apache.sysds.runtime.functionobjects.ValueFunction;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
 import org.apache.sysds.utils.MemoryEstimates;
@@ -45,11 +44,6 @@ public class QDictionary extends ADictionary {
 
 	protected double _scale;
 	protected byte[] _values;
-
-	// public QDictionary(BitmapLossy bm) {
-	// _values = bm.getValues();
-	// _scale = bm.getScale();
-	// }
 
 	protected QDictionary(byte[] values, double scale) {
 		_values = values;
@@ -122,7 +116,7 @@ public class QDictionary extends ADictionary {
 	}
 
 	@Override
-	public QDictionary apply(ScalarOperator op) {
+	public QDictionary inplaceScalarOp(ScalarOperator op) {
 		if(_values == null)
 			return this;
 
@@ -178,52 +172,6 @@ public class QDictionary extends ADictionary {
 		}
 		Arrays.fill(res, size(), size() + numCols, (byte) Math.round(newVal / scale));
 		return new QDictionary(res, scale);
-	}
-
-	@Override
-	public QDictionary applyBinaryRowOpRight(BinaryOperator op, double[] v, boolean sparseSafe, int[] colIndexes) {
-		ValueFunction fn = op.fn;
-		if(_values == null) {
-			if(sparseSafe) {
-				return new QDictionary(null, 1);
-			}
-			else {
-				_values = new byte[0];
-			}
-		}
-
-		double[] temp = sparseSafe ? new double[_values.length] : new double[_values.length + colIndexes.length];
-		double max = Math.abs(fn.execute(0, v[0]));
-		final int colL = colIndexes.length;
-		int i = 0;
-		for(; i < size(); i++) {
-			temp[i] = fn.execute(_values[i] * _scale, v[colIndexes[i % colL]]);
-			double absTemp = Math.abs(temp[i]);
-			if(absTemp > max) {
-				max = absTemp;
-			}
-		}
-		if(!sparseSafe)
-			for(; i < size() + colL; i++) {
-				temp[i] = fn.execute(0, v[colIndexes[i % colL]]);
-				double absTemp = Math.abs(temp[i]);
-				if(absTemp > max) {
-					max = absTemp;
-				}
-			}
-
-		double scale = max / (double) (Byte.MAX_VALUE);
-		byte[] res = sparseSafe ? _values : new byte[size() + colIndexes.length];
-
-		for(i = 0; i < temp.length; i++) {
-			res[i] = (byte) Math.round(temp[i] / scale);
-		}
-		return new QDictionary(res, scale);
-	}
-
-	@Override
-	public QDictionary applyBinaryRowOpLeft(BinaryOperator op, double[] v, boolean sparseSafe, int[] colIndexes) {
-		throw new NotImplementedException("Not Implemented yet");
 	}
 
 	private int size() {
@@ -430,7 +378,7 @@ public class QDictionary extends ADictionary {
 	}
 
 	@Override
-	public MatrixBlockDictionary getAsMatrixBlockDictionary(int nCol) {
+	public MatrixBlockDictionary getMBDict(int nCol) {
 		throw new NotImplementedException();
 	}
 
@@ -468,5 +416,29 @@ public class QDictionary extends ADictionary {
 	@Override
 	public void colProduct(double[] res, int[] counts, int[] colIndexes) {
 		throw new NotImplementedException();
+	}
+
+	@Override
+	public ADictionary applyBinaryRowOpLeftAppendNewEntry(BinaryOperator op, double[] v, int[] colIndexes) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public ADictionary binOpLeft(BinaryOperator op, double[] v, int[] colIndexes) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public ADictionary binOpRight(BinaryOperator op, double[] v, int[] colIndexes) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public ADictionary applyBinaryRowOpRightAppendNewEntry(BinaryOperator op, double[] v, int[] colIndexes) {
+		// TODO Auto-generated method stub
+		return null;
 	}
 }

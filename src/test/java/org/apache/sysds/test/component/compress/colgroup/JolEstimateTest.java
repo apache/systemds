@@ -38,7 +38,9 @@ import org.apache.sysds.runtime.compress.estim.CompressedSizeEstimator;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeEstimatorExact;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeEstimatorFactory;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeEstimatorSample;
+import org.apache.sysds.runtime.compress.estim.CompressedSizeInfo;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup;
+import org.apache.sysds.runtime.compress.estim.EstimationFactors;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -79,8 +81,14 @@ public abstract class JolEstimateTest {
 			CompressionSettings cs = new CompressionSettingsBuilder().setSamplingRatio(1.0)
 				.setValidCompressions(EnumSet.of(getCT())).create();
 			cs.transposed = true;
-			ABitmap ubm = BitmapEncoder.extractBitmap(colIndexes, mbt, true, 8);
-			cg = ColGroupFactory.compress(colIndexes, mbt.getNumColumns(), ubm, getCT(), cs, mbt, 1);
+			ABitmap ubm = BitmapEncoder.extractBitmap(colIndexes, mbt, true, 8, false);
+
+			EstimationFactors ef = CompressedSizeEstimator.estimateCompressedColGroupSize(ubm, colIndexes,
+				mbt.getNumColumns(), cs);
+			CompressedSizeInfoColGroup cgi = new CompressedSizeInfoColGroup(colIndexes, ef, getCT());
+			CompressedSizeInfo csi = new CompressedSizeInfo(cgi);
+			cg = ColGroupFactory.compressColGroups(mbt, csi, cs, 1).get(0);
+			// cg = ColGroupFactory.compress(colIndexes, mbt.getNumColumns(), ubm, getCT(), cs, mbt, 1);
 			actualSize = cg.estimateInMemorySize();
 			actualNumberUnique = cg.getNumValues();
 		}
@@ -114,7 +122,6 @@ public abstract class JolEstimateTest {
 	}
 
 	@Test
-	// @Ignore
 	public void compressedSizeInfoEstimatorSample_10() {
 		compressedSizeInfoEstimatorSample(0.1, 0.6);
 	}
@@ -129,6 +136,12 @@ public abstract class JolEstimateTest {
 	@Ignore
 	public void compressedSizeInfoEstimatorSample_1() {
 		compressedSizeInfoEstimatorSample(0.01, 0.4);
+	}
+
+	@Test 
+	public void testToString(){
+		// just to add a tests to verify that the to String method does not crash
+		cg.toString();
 	}
 
 	public void compressedSizeInfoEstimatorSample(double ratio, double tolerance) {
@@ -154,8 +167,8 @@ public abstract class JolEstimateTest {
 					estimateNUniques <= maxToleranceNUniques;
 
 				if(!withinToleranceOnNUniques) {
-					final String uniqueString = String.format("%.0f <= %d <= %.0f, Actual %d", minToleranceNUniques, estimateNUniques,
-						maxToleranceNUniques, actualNumberUnique);
+					final String uniqueString = String.format("%.0f <= %d <= %.0f, Actual %d", minToleranceNUniques,
+						estimateNUniques, maxToleranceNUniques, actualNumberUnique);
 					fail("CSI Sampled estimate of number of unique values not in range\n" + uniqueString);
 				}
 			}
@@ -168,9 +181,9 @@ public abstract class JolEstimateTest {
 				final String rangeString = String.format("%.0f <= %d <= %.0f , Actual Size %d", minTolerance, estimateCSI,
 					maxTolerance, actualSize);
 
-				fail("CSI Sampled estimate size is not in tolerance range \n" + rangeString
-					+ "\nActual number uniques:" + actualNumberUnique + "\nSampleSize of total rows:: " + sampleSize + " "
-					+ mbt.getNumColumns() + "\n" + cg);
+				fail("CSI Sampled estimate size is not in tolerance range \n" + rangeString + "\nActual number uniques:"
+					+ actualNumberUnique + "\nSampleSize of total rows:: " + sampleSize + " " + mbt.getNumColumns() + "\n"
+					+ cg);
 			}
 
 		}

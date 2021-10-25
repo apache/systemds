@@ -21,14 +21,16 @@
 #-------------------------------------------------------------
 
 CMD=${1:-"systemds"}
-DATADIR=${2:-"temp/sameworkers"}/wsigmoid
-NUMFED=${3:-4}
+DATADIR=${2:-"temp/sharedworkers"}/parforsum
+NUMFED=${3:-10}
 NUMCOORD=${4:-4}
+NUMSPLIT=${5:-3}
 
-ROWS=10000
+ROWS=1000
 COLS=1000
 MIN=0
 MAX=1
+NUMITER=5
 
 export SYSDS_QUIET=1
 
@@ -46,6 +48,19 @@ BASEPATH=$(dirname "$0")
 
 source ${BASEPATH}/generalFunctions.sh
 
+startCoordinator () {
+  SCRIPT=$1
+  FED_DATA=$2
+  INDEX=${3:-0}
+  TARGET_PREFIX=${4:-"${DATADIR}/Z"}
+  COORD_DIR=${5:-"${DATADIR}/coordinators"}
+
+  ${CMD} -f ${BASEPATH}/scripts/${SCRIPT} \
+    --stats \
+    --nvargs data=$FED_DATA target=${TARGET_PREFIX}${INDEX} numiter=$NUMITER &> ${COORD_DIR}/output_${INDEX}.txt &
+  pids+=" $!"
+}
+
 evalResult () {
   OUTPUT_PREFIX=${1:-"${DATADIR}/Z"}
 
@@ -53,10 +68,13 @@ evalResult () {
 
   for((counter=1; counter<=$NUMCOORD; counter++))
   do
-    if [ ! -f ${OUTPUT_PREFIX}${counter} ]; then
-      echo_stderr "FAILURE in $0: ${OUTPUT_PREFIX}${counter} does not exist."
-      ((++error_count))
-    fi
+    for((itercount=1; itercount<=$NUMITER; itercount++))
+    do
+      if [ ! -f ${OUTPUT_PREFIX}${counter}_${itercount} ]; then
+        echo_stderr "FAILURE in $0: ${OUTPUT_PREFIX}${counter}_${itercount} does not exist."
+        ((++error_count))
+      fi
+    done
   done
 
   return $error_count
@@ -65,8 +83,7 @@ evalResult () {
 initDataDir
 generateRandData ${DATADIR}/X
 startLocalWorkers
-createFedObject ${DATADIR}/X ${DATADIR}/X_fed.json FALSE
-SameWorkers.compute wsigmoid.dml ${DATADIR}/X_fed.json ${DATADIR}/Z
+SharedWorkers.createSharedFedObjects ${DATADIR}/X ${DATADIR}/X_fed_
+SharedWorkers.compute parforSumAndAdd.dml ${DATADIR}/X_fed_ ${DATADIR}/Z
 killWorkers
 exit $(evalResult ${DATADIR}/Z)
-

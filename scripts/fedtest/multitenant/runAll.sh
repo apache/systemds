@@ -8,9 +8,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -37,6 +37,7 @@ echo_stderr() {
 
 BASEPATH=$(dirname "$0")
 
+# add test collections here
 scripts=("runAllSameWorkers" "runAllSharedWorkers")
 
 globalErrorCount=0
@@ -45,7 +46,7 @@ do
   echo "++ Running TEST COLLECTION ${scriptName}"
   trap "" ERR # disable error trapping
   ${BASEPATH}/${scriptName}.sh $CMD $DATADIR 1> /dev/null
-  retVal=$?
+  retVal=$? # get the return value of the previous command (failure count)
   trap 'err_report $LINENO' ERR # re-enable error trapping
   if (( $(echo "$retVal != 0" | bc -l) )); then
     echo_stderr "FAILURE: Encountered ${retVal} errors in test collection ${scriptName}"

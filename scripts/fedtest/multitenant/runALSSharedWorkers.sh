@@ -8,9 +8,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -55,6 +55,7 @@ generateALSData () {
   ${CMD} -f ${BASEPATH}/../../datagen/genRandData4ALS.dml --nvargs X=$TARGET rows=$ROWS cols=$COLS rank=$DATA_RANK nnz=$DATA_NNZ
 }
 
+# override the startCoordinator function since ALS needs additional parameters
 startCoordinator () {
   SCRIPT=$1
   FED_DATA=$2
@@ -70,6 +71,7 @@ startCoordinator () {
   pids+=" $!"
 }
 
+# verify that both output files (modelB and modelM) exist
 evalResult () {
   OUTPUT_PREFIX=${1:-"${DATADIR}/model"}
 
@@ -94,4 +96,4 @@ startLocalWorkers
 SharedWorkers.createSharedFedObjects ${DATADIR}/X ${DATADIR}/X_fed_
 SharedWorkers.compute alsCG.dml ${DATADIR}/X_fed_ ${DATADIR}/model
 killWorkers
-exit $(evalResult ${DATADIR}/model)
+exit $(evalResult ${DATADIR}/model)  # return the number of failures as exit value

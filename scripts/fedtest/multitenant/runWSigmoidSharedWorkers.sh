@@ -8,9 +8,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -47,11 +47,11 @@ BASEPATH=$(dirname "$0")
 
 source ${BASEPATH}/generalFunctions.sh
 
+# verify that there exists the output file for each coordinator
 evalResult () {
   OUTPUT_PREFIX=${1:-"${DATADIR}/Z"}
 
   error_count=0
-
   for((counter=1; counter<=$NUMCOORD; counter++))
   do
     if [ ! -f ${OUTPUT_PREFIX}${counter} ]; then
@@ -59,7 +59,6 @@ evalResult () {
       ((++error_count))
     fi
   done
-
   return $error_count
 }
 
@@ -69,4 +68,4 @@ startLocalWorkers
 SharedWorkers.createSharedFedObjects ${DATADIR}/X ${DATADIR}/X_fed_
 SharedWorkers.compute wsigmoid.dml ${DATADIR}/X_fed_ ${DATADIR}/Z
 killWorkers
-exit $(evalResult ${DATADIR}/Z)
+exit $(evalResult ${DATADIR}/Z) # return the number of failures as exit value

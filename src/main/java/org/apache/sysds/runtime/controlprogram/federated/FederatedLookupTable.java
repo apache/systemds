@@ -25,17 +25,36 @@ import java.util.Objects;
 
 import org.apache.log4j.Logger;
 
+/**
+ * Lookup table mapping from a FedUniqueCoordID (funCID) to an
+ * ExecutionContextMap (ECM) so that every coordinator can address federated
+ * variables with its own local sequential variable IDs. Therefore, the IDs
+ * among different coordinators do not have to be distinct, as every
+ * coordinator works with a seperate ECM at the FederatedWorker.
+ */
 public class FederatedLookupTable {
+	// the NOHOST constant is needed for creating FederatedLocalData where there
+	// is no actual network connection (and hence no host either)
 	public static final String NOHOST = "nohost";
 
 	protected static Logger log = Logger.getLogger(FederatedLookupTable.class);
 
+	// stores the mapping between the funCID and the corresponding ExecutionContextMap
 	private final Map<FedUniqueCoordID, ExecutionContextMap> _lookup_table;
 
 	public FederatedLookupTable() {
 		_lookup_table = new ConcurrentHashMap<>();
 	}
 
+	/**
+	 * Get the ExecutionContextMap corresponding to the given host and pid of the
+	 * requesting coordinator from the lookup table. Create a new
+	 * ExecutionContextMap if there is no corresponding entry in the lookup table.
+	 *
+	 * @param host the host string of the requesting coordinator (usually IP address)
+	 * @param pid the process id of the requesting coordinator
+	 * @return ExecutionContextMap the ECM corresponding to the requesting coordinator
+	 */
 	public ExecutionContextMap getECM(String host, long pid) {
 		log.trace("Getting the ExecutionContextMap for coordinator " + pid + "@" + host);
 		FedUniqueCoordID funCID = new FedUniqueCoordID(host, pid);
@@ -50,7 +69,15 @@ public class FederatedLookupTable {
 		return ecm;
 	}
 
-	public boolean containsFunCID(String host, long pid, long src_var_id) {
+	/**
+	 * Check if there is a mapped ExecutionContextMap for the coordinator
+	 * with the given host and pid.
+	 *
+	 * @param host the host string of the requesting coordinator (usually IP address)
+	 * @param pid the process id of the requesting coordinator
+	 * @return boolean true if there is a lookup table entry, otherwise false
+	 */
+	public boolean containsFunCID(String host, long pid) {
 		FedUniqueCoordID funCID = new FedUniqueCoordID(host, pid);
 		return _lookup_table.containsKey(funCID);
 	}
@@ -61,6 +88,9 @@ public class FederatedLookupTable {
 	}
 
 
+	/**
+	 * Class to collect the information needed to identify a specific coordinator.
+	 */
 	private static class FedUniqueCoordID {
 		private final String _host;
 		private final long _pid;
@@ -100,4 +130,3 @@ public class FederatedLookupTable {
 		}
 	}
 }
-

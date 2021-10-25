@@ -21,9 +21,7 @@ package org.apache.sysds.runtime.compress.bitmap;
 
 import java.util.Arrays;
 
-import org.apache.commons.lang.ArrayUtils;
 import org.apache.sysds.runtime.compress.utils.IntArrayList;
-import org.apache.sysds.runtime.util.SortUtils;
 
 /**
  * Uncompressed representation of one or more columns in bitmap format.
@@ -33,18 +31,18 @@ public final class MultiColBitmap extends ABitmap {
 	/** Distinct tuples that appear in the columnGroup */
 	private double[][] _values;
 
+	/**
+	 * Multi column version of a Bitmap.
+	 * 
+	 * it should be guaranteed that the offsetLists are not null.
+	 * 
+	 * @param offsetsLists The offsets for the values
+	 * @param values       The tuples matched with the offsets
+	 * @param rows         The number of rows encoded
+	 */
 	protected MultiColBitmap(IntArrayList[] offsetsLists, double[][] values, int rows) {
 		super(offsetsLists, rows);
 		_values = values;
-	}
-
-	/**
-	 * Get all values without unnecessary allocations and copies.
-	 * 
-	 * @return dictionary of value tuples
-	 */
-	public double[][] getValues() {
-		return _values;
 	}
 
 	/**
@@ -57,47 +55,23 @@ public final class MultiColBitmap extends ABitmap {
 		return _values[ix];
 	}
 
+	@Override
 	public int getNumNonZerosInOffset(int idx) {
 		int nz = 0;
 		for(double v : getValues(idx))
 			nz += v == 0 ? 0 : 1;
-
 		return nz;
 	}
 
+	@Override
 	public int getNumValues() {
-		return (_values == null) ? 0 : _values.length;
-	}
-
-	public void sortValuesByFrequency() {
-		final int numVals = getNumValues();
-
-		final double[] freq = new double[numVals];
-		final int[] pos = new int[numVals];
-
-		// populate the temporary arrays
-		for(int i = 0; i < numVals; i++) {
-			freq[i] = getNumOffsets(i);
-			pos[i] = i;
-		}
-
-		// sort ascending and reverse (descending)
-		SortUtils.sortByValue(0, numVals, freq, pos);
-		ArrayUtils.reverse(pos);
-
-		// create new value and offset list arrays
-		double[][] lvalues = new double[numVals][];
-		IntArrayList[] loffsets = new IntArrayList[numVals];
-		for(int i = 0; i < numVals; i++) {
-			lvalues[i] = _values[pos[i]];
-			loffsets[i] = _offsetsLists[pos[i]];
-		}
-		_values = lvalues;
-		_offsetsLists = loffsets;
+		// values are always guaranteed to be allocated
+		return _values.length;
 	}
 
 	@Override
 	public int getNumColumns() {
+		// values are always guaranteed to be allocated
 		return _values[0].length;
 	}
 

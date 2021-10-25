@@ -25,7 +25,7 @@ import java.util.List;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup;
-import org.apache.sysds.runtime.compress.colgroup.ColGroupValue;
+import org.apache.sysds.runtime.compress.colgroup.AColGroupValue;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.UtilFunctions;
@@ -59,7 +59,7 @@ public class CLALibReExpand {
 
 	private static CompressedMatrixBlock reExpandRows(CompressedMatrixBlock in, CompressedMatrixBlock ret, int max,
 			boolean cast, int k) {
-		ColGroupValue oldGroup = ((ColGroupValue) in.getColGroups().get(0));
+		AColGroupValue oldGroup = ((AColGroupValue) in.getColGroups().get(0));
 
 		ADictionary newDictionary = oldGroup.getDictionary().reExpandColumns(max);
 		AColGroup newGroup = oldGroup.copyAndSet(getColIndexes(max), newDictionary);

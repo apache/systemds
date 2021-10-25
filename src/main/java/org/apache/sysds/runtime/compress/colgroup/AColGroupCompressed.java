@@ -39,21 +39,17 @@ import org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator;
 /**
  * Base class for column groups encoded Encoded in a compressed manner.
  */
-public abstract class ColGroupCompressed extends AColGroup {
+public abstract class AColGroupCompressed extends AColGroup {
 
 	private static final long serialVersionUID = 6219835795420081223L;
 
-	protected ColGroupCompressed() {
+	protected AColGroupCompressed() {
 		super();
 	}
 
-	protected ColGroupCompressed(int[] colIndices) {
+	protected AColGroupCompressed(int[] colIndices) {
 		super(colIndices);
 	}
-
-	public abstract double[] getValues();
-
-	public abstract boolean isLossy();
 
 	protected abstract double computeMxx(double c, Builtin builtin);
 
@@ -138,7 +134,7 @@ public abstract class ColGroupCompressed extends AColGroup {
 	protected abstract void tsmm(double[] result, int numColumns, int nRows);
 
 	protected static void tsmm(double[] result, int numColumns, int[] counts, ADictionary dict, int[] colIndexes) {
-		dict = dict.getAsMatrixBlockDictionary(colIndexes.length);
+		dict = dict.getMBDict(colIndexes.length);
 		if(dict instanceof MatrixBlockDictionary) {
 			MatrixBlockDictionary mbd = (MatrixBlockDictionary) dict;
 			MatrixBlock mb = mbd.getMatrixBlock();

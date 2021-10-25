@@ -114,6 +114,16 @@ public class CompressedSizeInfoColGroup {
 			LOG.trace(this);
 	}
 
+	public CompressedSizeInfoColGroup(int[] columns, EstimationFactors facts, CompressionType bestType) {
+		_facts = facts;
+		_cols = columns;
+		_cardinalityRatio = 1.0;
+		_sizes = null;
+		_bestCompressionType = bestType;
+		_minSize = 0;
+		_map = null;
+	}
+
 	protected CompressedSizeInfoColGroup(int[] columns, EstimationFactors facts,
 		Set<CompressionType> validCompressionTypes, AMapToData map) {
 		_cols = columns;
@@ -178,7 +188,7 @@ public class CompressedSizeInfoColGroup {
 	 * @return cardinality or number of distinct values.
 	 */
 	public int getNumVals() {
-		return _facts.numVals;
+		return (_facts != null) ? _facts.numVals : -1;
 	}
 
 	/**

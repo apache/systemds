@@ -25,6 +25,7 @@ import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.conf.DMLConfig;
 import org.apache.sysds.runtime.compress.cocode.CoCoderFactory.PartitionerType;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup.CompressionType;
+import org.apache.sysds.runtime.compress.colgroup.insertionsort.InsertionSorterFactory.SORT_TYPE;
 import org.apache.sysds.runtime.compress.cost.CostEstimatorFactory.CostType;
 import org.apache.sysds.runtime.compress.estim.sample.SampleEstimatorFactory.EstimationType;
 
@@ -41,13 +42,14 @@ public class CompressionSettingsBuilder {
 	private boolean sortValuesByLength = true;
 	private int maxColGroupCoCode = 10000;
 	private double coCodePercentage = 0.01;
-	private int minimumSampleSize = 10000;
+	private int minimumSampleSize = 3000;
 	private int maxSampleSize = 1000000;
 	private EstimationType estimationType = EstimationType.HassAndStokes;
 	private PartitionerType columnPartitioner;
 	private CostType costType;
 	private double minimumCompressionRatio = 1.0;
 	private boolean isInSparkInstruction = false;
+	private SORT_TYPE sdcSortType = SORT_TYPE.MATERIALIZE;
 
 	public CompressionSettingsBuilder() {
 
@@ -76,7 +78,7 @@ public class CompressionSettingsBuilder {
 		this.seed = that.seed;
 		this.lossy = that.lossy;
 		this.validCompressions = EnumSet.copyOf(that.validCompressions);
-		this.sortValuesByLength = that.sortValuesByLength;
+		this.sortValuesByLength = that.sortTuplesByFrequency;
 		this.columnPartitioner = that.columnPartitioner;
 		this.maxColGroupCoCode = that.maxColGroupCoCode;
 		this.coCodePercentage = that.coCodePercentage;
@@ -304,6 +306,17 @@ public class CompressionSettingsBuilder {
 	}
 
 	/**
+	 * Set the sort type to use.
+	 * 
+	 * @param sdcSortType The sort type for the construction of SDC groups
+	 * @return The CompressionSettingsBuilder
+	 */
+	public CompressionSettingsBuilder setSDCSortType(SORT_TYPE sdcSortType) {
+		this.sdcSortType = sdcSortType;
+		return this;
+	}
+
+	/**
 	 * Create the CompressionSettings object to use in the compression.
 	 * 
 	 * @return The CompressionSettings
@@ -311,6 +324,7 @@ public class CompressionSettingsBuilder {
 	public CompressionSettings create() {
 		return new CompressionSettings(samplingRatio, allowSharedDictionary, transposeInput, seed, lossy,
 			validCompressions, sortValuesByLength, columnPartitioner, maxColGroupCoCode, coCodePercentage,
-			minimumSampleSize, maxSampleSize, estimationType, costType, minimumCompressionRatio, isInSparkInstruction);
+			minimumSampleSize, maxSampleSize, estimationType, costType, minimumCompressionRatio, isInSparkInstruction,
+			sdcSortType);
 	}
 }

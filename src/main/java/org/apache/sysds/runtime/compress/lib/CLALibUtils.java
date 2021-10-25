@@ -27,9 +27,9 @@ import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupConst;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupEmpty;
+import org.apache.sysds.runtime.compress.colgroup.ColGroupFactory;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupSDC;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupSDCSingle;
-import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
 
 public final class CLALibUtils {
 	// private static final Log LOG = LogFactory.getLog(CLALibUtils.class.getName());
@@ -69,20 +69,19 @@ public final class CLALibUtils {
 	 * @return The Filtered list of Column groups containing no SDC Groups but only SDCZero groups.
 	 */
 	protected static List<AColGroup> filterSDCGroups(List<AColGroup> groups, double[] constV) {
-		if(constV != null) {
-			final List<AColGroup> filteredGroups = new ArrayList<>();
-			for(AColGroup g : groups) {
-				if(g instanceof ColGroupSDC)
-					filteredGroups.add(((ColGroupSDC) g).extractCommon(constV));
-				else if(g instanceof ColGroupSDCSingle)
-					filteredGroups.add(((ColGroupSDCSingle) g).extractCommon(constV));
-				else
-					filteredGroups.add(g);
-			}
-			return returnGroupIfFiniteNumbers(groups, filteredGroups, constV);
-		}
-		else
+		if(constV == null)
 			return groups;
+			
+		final List<AColGroup> filteredGroups = new ArrayList<>();
+		for(AColGroup g : groups) {
+			if(g instanceof ColGroupSDC)
+				filteredGroups.add(((ColGroupSDC) g).extractCommon(constV));
+			else if(g instanceof ColGroupSDCSingle)
+				filteredGroups.add(((ColGroupSDCSingle) g).extractCommon(constV));
+			else
+				filteredGroups.add(g);
+		}
+		return returnGroupIfFiniteNumbers(groups, filteredGroups, constV);
 	}
 
 	/**
@@ -93,24 +92,23 @@ public final class CLALibUtils {
 	 * @return The Filtered list of Column groups containing no SDC Groups but only SDCZero groups.
 	 */
 	protected static List<AColGroup> filterGroups(List<AColGroup> groups, double[] constV) {
-		if(constV != null) {
-			final List<AColGroup> filteredGroups = new ArrayList<>();
-			for(AColGroup g : groups) {
-				if(g instanceof ColGroupSDC)
-					filteredGroups.add(((ColGroupSDC) g).extractCommon(constV));
-				else if(g instanceof ColGroupSDCSingle)
-					filteredGroups.add(((ColGroupSDCSingle) g).extractCommon(constV));
-				else if(g instanceof ColGroupEmpty)
-					continue;
-				else if(g instanceof ColGroupConst)
-					((ColGroupConst) g).addToCommon(constV);
-				else
-					filteredGroups.add(g);
-			}
-			return returnGroupIfFiniteNumbers(groups, filteredGroups, constV);
-		}
-		else
+		if(constV == null)
 			return groups;
+
+		final List<AColGroup> filteredGroups = new ArrayList<>();
+		for(AColGroup g : groups) {
+			if(g instanceof ColGroupSDC)
+				filteredGroups.add(((ColGroupSDC) g).extractCommon(constV));
+			else if(g instanceof ColGroupSDCSingle)
+				filteredGroups.add(((ColGroupSDCSingle) g).extractCommon(constV));
+			else if(g instanceof ColGroupEmpty)
+				continue;
+			else if(g instanceof ColGroupConst)
+				((ColGroupConst) g).addToCommon(constV);
+			else
+				filteredGroups.add(g);
+		}
+		return returnGroupIfFiniteNumbers(groups, filteredGroups, constV);
 	}
 
 	private static List<AColGroup> returnGroupIfFiniteNumbers(List<AColGroup> groups, List<AColGroup> filteredGroups,
@@ -135,7 +133,7 @@ public final class CLALibUtils {
 				o.add(g);
 		}
 
-		if(e.size() < 1 && c.size() <1)
+		if(e.size() < 1 && c.size() < 1)
 			return;
 
 		if(e.size() == 1)
@@ -168,8 +166,7 @@ public final class CLALibUtils {
 				values[outId] = colVals[i];
 			}
 		}
-		Dictionary dict = new Dictionary(values);
-		return new ColGroupConst(resCols, dict);
+		return ColGroupFactory.genColGroupConst(resCols, values);
 	}
 
 	private static int[] combineColIndexes(List<AColGroup> gs) {

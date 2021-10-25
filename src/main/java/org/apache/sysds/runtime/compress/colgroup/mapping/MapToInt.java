@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.util.Arrays;
 
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory.MAP_TYPE;
+import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.utils.MemoryEstimates;
 
 public class MapToInt extends AMapToData {
@@ -104,7 +105,27 @@ public class MapToInt extends AMapToData {
 		return new MapToInt(unique, data);
 	}
 
-	public int[] getInts() {
-		return _data;
+	@Override
+	public void preAggregateDense(MatrixBlock m, MatrixBlock pre, int rl, int ru, int cl, int cu) {
+		final int nRow = m.getNumColumns();
+		final int nVal = pre.getNumColumns();
+		final double[] preAV = pre.getDenseBlockValues();
+		final double[] mV = m.getDenseBlockValues();
+		final int blockSize = 4000;
+		for(int block = cl; block < cu; block += blockSize) {
+			final int blockEnd = Math.min(block + blockSize, nRow);
+			for(int rowLeft = rl, offOut = 0; rowLeft < ru; rowLeft++, offOut += nVal) {
+				final int offLeft = rowLeft * nRow;
+				for(int rc = block; rc < blockEnd; rc++) {
+					final int idx = _data[rc];
+					preAV[offOut + idx] += mV[offLeft + rc];
+				}
+			}
+		}
+	}
+
+	@Override
+	public int getUpperBoundValue() {
+		return Integer.MAX_VALUE;
 	}
 }

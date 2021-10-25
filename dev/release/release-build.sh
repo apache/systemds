@@ -196,7 +196,7 @@ EOF
   pushd "${tmp_repo}/org/apache/systemds"
   
 
-  if ! is_dry_run; then
+  # if ! is_dry_run; then
     # upload files to nexus repo
     nexus_upload_id=$NEXUS_ROOT/deployByRepositoryId/$staged_repository_id
     printf "\nUpload files to $nexus_upload_id \n"
@@ -219,17 +219,17 @@ EOF
 
     printf "\nAfter release vote passes make sure to hit release button.\n"
 
-  else
-    printf "Files will uploaded to Nexus Repo at this step."
-  fi
+  # else
+  #   printf "Files will uploaded to Nexus Repo at this step."
+  # fi
     
     printf "\n ============== "
     printf "\n Upload artifacts to dist.apache.org \n"
     
     svn co --depth=empty $RELEASE_STAGING_LOCATION svn-systemds
 
-    if [[ ! is_dry_run ]]; then
-      stage_dir=svn-systemds/${PACKAGE_VERSION}
+    if ! is_dry_run; then
+      stage_dir="svn-systemds/${PACKAGE_VERSION}"
       mkdir -p $stage_dir
     else
       stage_dir=$(mktemp -d svn-systemds/${DEST_DIR_NAME}-temp-XXXX)

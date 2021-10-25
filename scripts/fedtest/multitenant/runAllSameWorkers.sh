@@ -21,7 +21,7 @@
 #-------------------------------------------------------------
 
 CMD=${1:-"systemds"}
-DATADIR=${2:-"temp"}
+DATADIR=${2:-"temp"}/sameworkers
 
 export SYSDS_QUIET=1
 
@@ -37,7 +37,7 @@ echo_stderr() {
 
 BASEPATH=$(dirname "$0")
 
-scripts=("runParforSumSameWorkers" "runSumSameWorkers" "runWSigmoidSameWorkers")
+scripts=("runParforSumSameWorkers" "runSumSameWorkers" "runWSigmoidSameWorkers" "runALSSameWorkers")
 
 globalErrorCount=0
 for scriptName in "${scripts[@]}"
@@ -49,10 +49,11 @@ do
   trap 'err_report $LINENO' ERR # re-enable error trapping
   if (( $(echo "$retVal != 0" | bc -l) )); then
     echo_stderr "FAILURE: Encountered ${retVal} errors when executing ${scriptName}"
-    globalErrorCount+=retVal
+    globalErrorCount=$((globalErrorCount + retVal))
   else
     echo "SUCCESS: ${scriptName} was successful"
   fi
 done
 
 echo_stderr "ERRORS: ${globalErrorCount}"
+exit $globalErrorCount

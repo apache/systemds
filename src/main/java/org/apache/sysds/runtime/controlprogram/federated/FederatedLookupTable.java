@@ -37,6 +37,7 @@ public class FederatedLookupTable {
 	}
 
 	public ExecutionContextMap getECM(String host, long pid) {
+		log.trace("Getting the ExecutionContextMap for coordinator " + pid + "@" + host);
 		FedUniqueCoordID funCID = new FedUniqueCoordID(host, pid);
 		ExecutionContextMap ecm = _lookup_table.computeIfAbsent(funCID,
 			k -> new ExecutionContextMap());

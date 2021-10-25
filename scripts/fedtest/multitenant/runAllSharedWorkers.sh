@@ -21,14 +21,7 @@
 #-------------------------------------------------------------
 
 CMD=${1:-"systemds"}
-DATADIR=${2:-"temp/sameworkers"}/wsigmoid
-NUMFED=${3:-4}
-NUMCOORD=${4:-4}
-
-ROWS=10000
-COLS=1000
-MIN=0
-MAX=1
+DATADIR=${2:-"temp"}/sharedworkers
 
 export SYSDS_QUIET=1
 
@@ -44,29 +37,23 @@ echo_stderr() {
 
 BASEPATH=$(dirname "$0")
 
-source ${BASEPATH}/generalFunctions.sh
+scripts=("runParforSumSharedWorkers" "runSumSharedWorkers" "runWSigmoidSharedWorkers" "runALSSharedWorkers")
 
-evalResult () {
-  OUTPUT_PREFIX=${1:-"${DATADIR}/Z"}
+globalErrorCount=0
+for scriptName in "${scripts[@]}"
+do
+  echo "+++ Running ${scriptName}"
+  trap "" ERR # disable error trapping
+  ${BASEPATH}/${scriptName}.sh $CMD $DATADIR 1> /dev/null
+  retVal=$?
+  trap 'err_report $LINENO' ERR # re-enable error trapping
+  if (( $(echo "$retVal != 0" | bc -l) )); then
+    echo_stderr "FAILURE: Encountered ${retVal} errors when executing ${scriptName}"
+    globalErrorCount=$((globalErrorCount + retVal))
+  else
+    echo "SUCCESS: ${scriptName} was successful"
+  fi
+done
 
-  error_count=0
-
-  for((counter=1; counter<=$NUMCOORD; counter++))
-  do
-    if [ ! -f ${OUTPUT_PREFIX}${counter} ]; then
-      echo_stderr "FAILURE in $0: ${OUTPUT_PREFIX}${counter} does not exist."
-      ((++error_count))
-    fi
-  done
-
-  return $error_count
-}
-
-initDataDir
-generateRandData ${DATADIR}/X
-startLocalWorkers
-createFedObject ${DATADIR}/X ${DATADIR}/X_fed.json FALSE
-SameWorkers.compute wsigmoid.dml ${DATADIR}/X_fed.json ${DATADIR}/Z
-killWorkers
-exit $(evalResult ${DATADIR}/Z)
-
+echo_stderr "ERRORS: ${globalErrorCount}"
+exit $globalErrorCount

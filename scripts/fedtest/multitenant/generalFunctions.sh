@@ -52,11 +52,27 @@ createFedObject () {
   DATA=${1:-"${DATADIR}/X"}
   TARGET=${2:-"${DATA}_fed.json"}
   TRANSPOSED=${3:-FALSE}
+  HOST_OFFSET=${4:-0}
+
+  NUMSPLIT=${NUMSPLIT:-$NUMFED}
 
   # split the generated data into partitions and create a federated object
   ${CMD} -f ${BASEPATH}/data/splitAndMakeFederated.dml \
-    --nvargs data=$DATA nSplit=$NUMFED transposed=$TRANSPOSED \
-      target=$TARGET hosts=${DATADIR}/workers/hosts fmt="csv"
+    --nvargs data=$DATA nSplit=$NUMSPLIT transposed=$TRANSPOSED \
+      target=$TARGET hosts=${DATADIR}/workers/hosts fmt="csv" hostOffset=$HOST_OFFSET
+}
+
+SharedWorkers.createSharedFedObjects () {
+  DATA=${1:-"${DATADIR}/X"}
+  TARGET_PREFIX=${2:-"${DATA}_fed_"}
+
+  # minimal number of shared workers between worker n and worker n+1
+  nSharedWorkers=`echo "scale=0; (($NUMCOORD * $NUMSPLIT) - $NUMFED + ($NUMCOORD - 2)) / ($NUMCOORD - 1)" | bc`
+  for((counter=1; counter<=$NUMCOORD; counter++))
+  do
+    hostOffset=`echo "scale=0; ($counter - 1) * ($NUMSPLIT - $nSharedWorkers)" | bc`
+    createFedObject $DATA ${TARGET_PREFIX}${counter}.json FALSE $hostOffset
+  done
 }
 
 startCoordinator () {
@@ -67,12 +83,13 @@ startCoordinator () {
   COORD_DIR=${5:-"${DATADIR}/coordinators"}
 
   ${CMD} -f ${BASEPATH}/scripts/${SCRIPT} \
+    --config conf/SystemDS-config.xml \
     --stats \
     --nvargs data=$FED_DATA target=${TARGET_PREFIX}${INDEX} &> ${COORD_DIR}/output_${INDEX}.txt &
   pids+=" $!"
 }
 
-compute () {
+SameWorkers.compute () {
   SCRIPT=$1
   FED_DATA=${2:-"${DATADIR}/X_fed.json"}
   TARGET_PREFIX=${3:-"${DATADIR}/Z"}
@@ -84,6 +101,24 @@ compute () {
   for((counter=1; counter<=$NUMCOORD; counter++))
   do
     startCoordinator $SCRIPT $FED_DATA $counter ${TARGET_PREFIX} $coord_dir
+    echo "$(date +%H:%M:%S:%N) - Started coordinator process ${counter}/${NUMCOORD}"
+  done
+  wait $pids
+  echo "$(date +%H:%M:%S:%N) - All processes finished"
+}
+
+SharedWorkers.compute () {
+  SCRIPT=$1
+  FED_DATA_PREFIX=${2:-"${DATADIR}/X_fed_"}
+  TARGET_PREFIX=${3:-"${DATADIR}/Z"}
+
+  coord_dir=${DATADIR}/coordinators
+  if [ ! -d $coord_dir ]; then mkdir -p $coord_dir ; fi
+
+  pids=
+  for((counter=1; counter<=$NUMCOORD; counter++))
+  do
+    startCoordinator $SCRIPT ${FED_DATA_PREFIX}${counter}.json $counter ${TARGET_PREFIX} $coord_dir
     echo "$(date +%H:%M:%S:%N) - Started coordinator process ${counter}/${NUMCOORD}"
   done
   wait $pids

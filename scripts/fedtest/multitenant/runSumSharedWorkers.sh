@@ -21,14 +21,15 @@
 #-------------------------------------------------------------
 
 CMD=${1:-"systemds"}
-DATADIR=${2:-"temp/sameworkers"}/wsigmoid
-NUMFED=${3:-4}
+DATADIR=${2:-"temp/sharedworkers"}/sum
+NUMFED=${3:-12}
 NUMCOORD=${4:-4}
+NUMSPLIT=${5:-4}
 
 ROWS=10000
 COLS=1000
 MIN=0
-MAX=1
+MAX=10
 
 export SYSDS_QUIET=1
 
@@ -65,8 +66,7 @@ evalResult () {
 initDataDir
 generateRandData ${DATADIR}/X
 startLocalWorkers
-createFedObject ${DATADIR}/X ${DATADIR}/X_fed.json FALSE
-SameWorkers.compute wsigmoid.dml ${DATADIR}/X_fed.json ${DATADIR}/Z
+SharedWorkers.createSharedFedObjects ${DATADIR}/X ${DATADIR}/X_fed_
+SharedWorkers.compute sumAndAddRand.dml ${DATADIR}/X_fed_ ${DATADIR}/Z
 killWorkers
 exit $(evalResult ${DATADIR}/Z)
-

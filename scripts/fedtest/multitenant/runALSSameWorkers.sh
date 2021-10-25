@@ -21,14 +21,16 @@
 #-------------------------------------------------------------
 
 CMD=${1:-"systemds"}
-DATADIR=${2:-"temp/sameworkers"}/wsigmoid
+DATADIR=${2:-"temp/sameworkers"}/als
 NUMFED=${3:-4}
-NUMCOORD=${4:-4}
+NUMCOORD=${4:-2}
 
-ROWS=10000
+ROWS=1800
 COLS=1000
-MIN=0
-MAX=1
+DATA_RANK=10
+DATA_NNZ=`echo "scale=0; 0.9 * $ROWS * $COLS" | bc`
+
+MAXITER=20
 
 export SYSDS_QUIET=1
 
@@ -46,27 +48,49 @@ BASEPATH=$(dirname "$0")
 
 source ${BASEPATH}/generalFunctions.sh
 
+generateALSData () {
+  TARGET=${1:-"${DATADIR}/X"}
+
+  ${CMD} -f ${BASEPATH}/../../datagen/genRandData4ALS.dml --nvargs X=$TARGET rows=$ROWS cols=$COLS rank=$DATA_RANK nnz=$DATA_NNZ
+}
+
+startCoordinator () {
+  SCRIPT=$1
+  FED_DATA=$2
+  INDEX=${3:-0}
+  TARGET_PREFIX=${4:-"${DATADIR}/model"}
+  COORD_DIR=${5:-"${DATADIR}/coordinators"}
+
+  ${CMD} -f ${BASEPATH}/scripts/${SCRIPT} \
+    --config conf/SystemDS-config.xml \
+    --stats \
+    --nvargs data=$FED_DATA modelB=${TARGET_PREFIX}B${INDEX} modelM=${TARGET_PREFIX}M${INDEX} maxiter=$MAXITER &> ${COORD_DIR}/output_${INDEX}.txt &
+  pids+=" $!"
+}
+
 evalResult () {
-  OUTPUT_PREFIX=${1:-"${DATADIR}/Z"}
+  OUTPUT_PREFIX=${1:-"${DATADIR}/model"}
 
   error_count=0
-
   for((counter=1; counter<=$NUMCOORD; counter++))
   do
-    if [ ! -f ${OUTPUT_PREFIX}${counter} ]; then
-      echo_stderr "FAILURE in $0: ${OUTPUT_PREFIX}${counter} does not exist."
+    if [ ! -f ${OUTPUT_PREFIX}B${counter} ]; then
+      echo_stderr "FAILURE in $0: ${OUTPUT_PREFIX}B${counter} does not exist."
+      ((++error_count))
+    fi
+    if [ ! -f ${OUTPUT_PREFIX}M${counter} ]; then
+      echo_stderr "FAILURE in $0: ${OUTPUT_PREFIX}M${counter} does not exist."
       ((++error_count))
     fi
   done
-
   return $error_count
 }
 
 initDataDir
-generateRandData ${DATADIR}/X
+generateALSData ${DATADIR}/X
 startLocalWorkers
 createFedObject ${DATADIR}/X ${DATADIR}/X_fed.json FALSE
-SameWorkers.compute wsigmoid.dml ${DATADIR}/X_fed.json ${DATADIR}/Z
+SameWorkers.compute alsCG.dml ${DATADIR}/X_fed.json ${DATADIR}/model
 killWorkers
-exit $(evalResult ${DATADIR}/Z)
+exit $(evalResult ${DATADIR}/model)
 

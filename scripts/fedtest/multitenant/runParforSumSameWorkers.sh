@@ -8,9 +8,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -47,6 +47,7 @@ BASEPATH=$(dirname "$0")
 
 source ${BASEPATH}/generalFunctions.sh
 
+# override the startCoordinator function since we need to pass numiter as parameter
 startCoordinator () {
   SCRIPT=$1
   FED_DATA=$2
@@ -60,6 +61,7 @@ startCoordinator () {
   pids+=" $!"
 }
 
+# verify that there is a result file per iteration and coordinator
 evalResult () {
   OUTPUT_PREFIX=${1:-"${DATADIR}/Z"}
 
@@ -85,5 +87,4 @@ startLocalWorkers
 createFedObject ${DATADIR}/X ${DATADIR}/X_fed.json FALSE
 SameWorkers.compute parforSumAndAdd.dml ${DATADIR}/X_fed.json ${DATADIR}/Z
 killWorkers
-exit $(evalResult ${DATADIR}/Z)
-
+exit $(evalResult ${DATADIR}/Z) # return the number of failures as exit value

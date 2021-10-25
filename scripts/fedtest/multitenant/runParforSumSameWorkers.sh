@@ -21,7 +21,7 @@
 #-------------------------------------------------------------
 
 CMD=${1:-"systemds"}
-DATADIR=${2:-"temp"}/parforsum/sameworkers
+DATADIR=${2:-"temp/sameworkers"}/parforsum
 NUMFED=${3:-4}
 NUMCOORD=${4:-4}
 
@@ -83,7 +83,7 @@ initDataDir
 generateRandData ${DATADIR}/X
 startLocalWorkers
 createFedObject ${DATADIR}/X ${DATADIR}/X_fed.json FALSE
-compute parforSumAndAdd.dml ${DATADIR}/X_fed.json ${DATADIR}/Z
+SameWorkers.compute parforSumAndAdd.dml ${DATADIR}/X_fed.json ${DATADIR}/Z
 killWorkers
 exit $(evalResult ${DATADIR}/Z)
 

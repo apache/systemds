@@ -8,9 +8,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -28,7 +28,7 @@ NUMCOORD=${4:-2}
 ROWS=1800
 COLS=1000
 DATA_RANK=10
-DATA_NNZ=`echo "scale=0; 0.9 * $ROWS * $COLS" | bc`
+DATA_NNZ=`echo "scale=0; 0.9 * $ROWS * $COLS" | bc` # setting sparsity to 0.9
 
 MAXITER=20
 
@@ -51,9 +51,11 @@ source ${BASEPATH}/generalFunctions.sh
 generateALSData () {
   TARGET=${1:-"${DATADIR}/X"}
 
-  ${CMD} -f ${BASEPATH}/../../datagen/genRandData4ALS.dml --nvargs X=$TARGET rows=$ROWS cols=$COLS rank=$DATA_RANK nnz=$DATA_NNZ
+  ${CMD} -f ${BASEPATH}/../../datagen/genRandData4ALS.dml --nvargs X=$TARGET \
+    rows=$ROWS cols=$COLS rank=$DATA_RANK nnz=$DATA_NNZ
 }
 
+# override the startCoordinator function since ALS needs additional parameters
 startCoordinator () {
   SCRIPT=$1
   FED_DATA=$2
@@ -64,10 +66,12 @@ startCoordinator () {
   ${CMD} -f ${BASEPATH}/scripts/${SCRIPT} \
     --config conf/SystemDS-config.xml \
     --stats \
-    --nvargs data=$FED_DATA modelB=${TARGET_PREFIX}B${INDEX} modelM=${TARGET_PREFIX}M${INDEX} maxiter=$MAXITER &> ${COORD_DIR}/output_${INDEX}.txt &
+    --nvargs data=$FED_DATA modelB=${TARGET_PREFIX}B${INDEX} \
+      modelM=${TARGET_PREFIX}M${INDEX} maxiter=$MAXITER &> ${COORD_DIR}/output_${INDEX}.txt &
   pids+=" $!"
 }
 
+# verify that both output files (modelB and modelM) exist
 evalResult () {
   OUTPUT_PREFIX=${1:-"${DATADIR}/model"}
 
@@ -92,5 +96,4 @@ startLocalWorkers
 createFedObject ${DATADIR}/X ${DATADIR}/X_fed.json FALSE
 SameWorkers.compute alsCG.dml ${DATADIR}/X_fed.json ${DATADIR}/model
 killWorkers
-exit $(evalResult ${DATADIR}/model)
-
+exit $(evalResult ${DATADIR}/model) # return the number of failures as exit value

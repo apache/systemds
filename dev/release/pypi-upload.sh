@@ -20,11 +20,26 @@
 #
 #-------------------------------------------------------------
 
+################################################################################
+##  File:  pypi-upload.sh
+##  Desc:  Upload python artifacts to pypi.org
+################################################################################
+
 SELF=$(cd $(dirname $0) && pwd)
 
-# Release info
-RELEASE_VERSION=2.1.0
-RELEASE_TAG=2.1.0-rc3
+dry_run_flag=0
+while getopts ":n" opt; do
+  case $opt in
+    n) dry_run_flag=1 ;;
+    \?) error "Invalid option: $OPTARG" ;;
+  esac
+done
+
+
+RELEASE_VERSION=
+RELEASE_TAG=
+read -p "RELEASE_VERSION : " RELEASE_VERSION
+read -p "RELEASE_TAG : " RELEASE_TAG
 
 BASE_DIR=$PWD # SystemDS top level folder
 
@@ -37,7 +52,7 @@ cd $BASE_DIR/src/main/python
 
 # Steps:
 # 1. update systemds/project_info.py with the new version
-sed -i "s/$RELEASE_VERSION-SNAPSHOT/$RELEASE_VERSION/" systemds/project_info.py
+sed -i "s/$RELEASE_VERSION-SNAPSHOT/$RELEASE_TAG/" systemds/project_info.py
 
 # 2. generate distribution archives
 python3 create_python_dist.py
@@ -57,10 +72,12 @@ python3 -m twine check dist/*
 # username: __token__ 
 # password: pypi-DU5y...
 
-# python -m twine upload --repository testpypi dist/*
+if [[ $dry_run_flag != 1 ]]; then
+  python twine upload dist/*
+else
+  python -m twine upload --repository testpypi dist/*
+fi
 
-# Production:
-# python twine upload dist/*
 
 cd $BASE_DIR
 

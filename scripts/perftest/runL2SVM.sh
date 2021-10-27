@@ -23,6 +23,8 @@ set -e
 
 CMD=$6
 BASE=$4
+RUNPrediction=${7:-true}
+FEDERATEDCOMPILATION=${8:-""}
 
 #for all intercept values
 for i in 0 1; do
@@ -30,7 +32,8 @@ for i in 0 1; do
    tstart=$(date +%s.%N)
 
    # /algorithms/l2-svm.dml already calls a built-in function for the l2 svm.
-   ${CMD} -f ./algorithms/l2-svm.dml \
+   ${CMD} -f ./../algorithms/l2-svm.dml \
+      "$FEDERATEDCOMPILATION" \
       --config conf/SystemDS-config.xml \
       --stats \
       --nvargs X=$1 Y=$2 icpt=$i tol=0.0001 reg=0.01 maxiter=$5 model=${BASE}/b fmt="csv"
@@ -38,14 +41,16 @@ for i in 0 1; do
    ttrain=$(echo "$(date +%s.%N) - $tstart - .4" | bc)
    echo "L2SVM train ict="$i" on "$1": "$ttrain >> results/times.txt
 
-   #predict
-   tstart=$(date +%s.%N)
-   #${CMD} -f ./algorithms/l2-svm-predict.dml \
-   ${CMD} -f scripts/l2-svm-predict.dml \
-      --config conf/SystemDS-config.xml \
-      --stats \
-      --nvargs X=$1_test Y=$2_test icpt=$i model=${BASE}/b fmt="csv" scores=${BASE}/scores
+   if [ $RUNPrediction = true ]
+   then
+     #predict
+     tstart=$(date +%s.%N)
+     ${CMD} -f scripts/l2-svm-predict.dml \
+        --config conf/SystemDS-config.xml \
+        --stats \
+        --nvargs X=$1_test Y=$2_test icpt=$i model=${BASE}/b fmt="csv" scores=${BASE}/scores
 
-   tpredict=$(echo "$(date +%s.%N) - $tstart - .4" | bc)
-   echo "L2SVM predict ict="$i" on "$1": "$tpredict >> results/times.txt
+     tpredict=$(echo "$(date +%s.%N) - $tstart - .4" | bc)
+     echo "L2SVM predict ict="$i" on "$1": "$tpredict >> results/times.txt
+   fi
 done

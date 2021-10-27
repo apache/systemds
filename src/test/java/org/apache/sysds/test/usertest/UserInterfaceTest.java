@@ -38,7 +38,7 @@ public class UserInterfaceTest extends Base {
 	public void testStop(){
 		Pair<String,String> res = runThread("Stop.dml");
 		assertEquals("",res.getRight());
-		assertTrue(res.getLeft().contains("An Error Occured :"));
+		assertTrue(res.getLeft().contains("An Error Occurred :"));
 		assertTrue(res.getLeft().contains("DMLScriptException -- Stop Message!"));
 	}
 
@@ -46,7 +46,7 @@ public class UserInterfaceTest extends Base {
 	public void SyntaxError(){
 		Pair<String,String> res = runThread("SyntaxError.dml");
 		assertEquals("",res.getRight());
-		assertTrue(res.getLeft().contains("An Error Occured :"));
+		assertTrue(res.getLeft().contains("An Error Occurred :"));
 		assertTrue(res.getLeft().contains("[Syntax error]"));
 		assertTrue(res.getLeft().contains("ParseException --"));
 	}

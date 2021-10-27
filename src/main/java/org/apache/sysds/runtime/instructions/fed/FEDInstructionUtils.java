@@ -40,6 +40,7 @@ import org.apache.sysds.runtime.instructions.cp.BinaryCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.BinaryFrameScalarCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.CtableCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.Data;
+import org.apache.sysds.runtime.instructions.cp.DataGenCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.IndexingCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.MMChainCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.MMTSJCPInstruction;
@@ -143,6 +144,11 @@ public class FEDInstructionUtils {
 					&& mo.isFederatedExcept(FType.BROADCAST) )
 					fedinst = ReorgFEDInstruction.parseInstruction(
 						InstructionUtils.concatOperands(rinst.getInstructionString(),FederatedOutput.NONE.name()));
+			} else if(inst instanceof DataGenCPInstruction) {
+				DataGenCPInstruction dinst = (DataGenCPInstruction) inst;
+				//TODO even here check for workers
+				if(!dinst.output.isTensor())
+					fedinst = DataGenFEDInstruction.parseInstruction(dinst.getInstructionString());
 			}
 			else if(instruction.input1 != null && instruction.input1.isMatrix()
 				&& ec.containsVariable(instruction.input1)) {

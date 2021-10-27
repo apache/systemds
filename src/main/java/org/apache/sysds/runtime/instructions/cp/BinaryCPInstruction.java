@@ -21,6 +21,7 @@ package org.apache.sysds.runtime.instructions.cp;
 
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.ValueType;
+import org.apache.sysds.lops.Lop;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.matrix.operators.Operator;
@@ -39,8 +40,11 @@ public abstract class BinaryCPInstruction extends ComputationCPInstruction {
 	public static BinaryCPInstruction parseInstruction( String str ) {
 		CPOperand in1 = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
 		CPOperand in2 = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
+		CPOperand in3 = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
 		CPOperand out = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
-		String opcode = parseBinaryInstruction(str, in1, in2, out);
+
+		boolean isMap = InstructionUtils.getInstructionPartsWithValueType(str)[0].contains("map");
+		String opcode = isMap? parseBinaryInstruction(str, in1, in2, in3, out) : parseBinaryInstruction(str, in1, in2, out);
 
 		if(!(in1.getDataType() == DataType.FRAME || in2.getDataType() == DataType.FRAME))
 			checkOutputDataType(in1, in2, out);
@@ -58,7 +62,7 @@ public abstract class BinaryCPInstruction extends ComputationCPInstruction {
 		else if (in1.getDataType() == DataType.FRAME && in2.getDataType() == DataType.MATRIX)
 			return new BinaryFrameMatrixCPInstruction(operator, in1, in2, out, opcode, str);
 		else if (in1.getDataType() == DataType.FRAME && in2.getDataType() == DataType.SCALAR)
-			return new BinaryFrameScalarCPInstruction(operator, in1, in2, out, opcode, str);
+			return new BinaryFrameScalarCPInstruction(operator, in1, in2, in3, out, opcode, str);
 		else
 			return new BinaryMatrixScalarCPInstruction(operator, in1, in2, out, opcode, str);
 	}

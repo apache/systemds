@@ -161,7 +161,7 @@ return(Frame[Unknown] processedData)
   print(prefix+" convert strings to lower case");
   for(i in 1:ncol(mask))
     if(as.scalar(schema[1,i]) == "STRING")
-      data[, i] = map(data[, i], "x -> x.toLowerCase()")
+      data[, i] = map(data[, i], "x -> x.toLowerCase()", 0)
     
   if(CorrectTypos)
   {
@@ -184,7 +184,7 @@ return(Frame[Unknown] processedData)
   }
   
   print(prefix+" porter-stemming on all features");
-  data = map(data, "x -> PorterStemmer.stem(x)")
+  data = map(data, "x -> PorterStemmer.stem(x)", 0)
   
   # TODO add deduplication
   print(prefix+" deduplication via entity resolution");

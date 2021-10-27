@@ -1564,20 +1564,31 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			break;
 
 		case MAP:
-			checkNumParameters(2);
+			checkNumParameters(getThirdExpr() != null ? 3 : 2);
 			checkMatrixFrameParam(getFirstExpr());
 			checkScalarParam(getSecondExpr());
+			if(getThirdExpr() != null)
+				checkScalarParam(getThirdExpr()); // margin
 			output.setDataType(DataType.FRAME);
 			if(_args[1].getText().contains("jaccardSim")) {
 				output.setDimensions(id.getDim1(), id.getDim1());
 				output.setValueType(ValueType.FP64);
 			}
 			else {
-				output.setDimensions(id.getDim1(), 1);
+				int margin = Integer.parseInt(_args[2].getOutput()._outputs[0].toString());
+				switch(margin) {
+					case 0:
+						output.setDimensions(id.getDim1(), id.getDim2());
+						break;
+					case 1:
+						output.setDimensions(id.getDim1(), 1);
+						break;
+					case 2:
+						output.setDimensions(1, id.getDim2());
+						break;
+				}
 				output.setValueType(ValueType.STRING);
 			}
-			output.setBlocksize (id.getBlocksize());
-
 			break;
 		case COMPRESS:
 		case DECOMPRESS:

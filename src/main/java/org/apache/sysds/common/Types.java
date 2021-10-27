@@ -306,7 +306,7 @@ public class Types
 		BITWXOR(true), CBIND(false), CONCAT(false), COV(false), DIV(true),
 		DROP_INVALID_TYPE(false), DROP_INVALID_LENGTH(false), EQUAL(true), GREATER(true),
 		GREATEREQUAL(true), INTDIV(true), INTERQUANTILE(false), IQM(false), LESS(true),
-		LESSEQUAL(true), LOG(true), MAP(false), MAX(true), MEDIAN(false), MIN(true), 
+		LESSEQUAL(true), LOG(true), MAP(false), MAX(true), MEDIAN(false), MIN(true),
 		MINUS(true), MODULUS(true), MOMENT(false), MULT(true), NOTEQUAL(true), OR(true),
 		PLUS(true), POW(true), PRINT(false), QUANTILE(false), SOLVE(false), RBIND(false),
 		XOR(true),
@@ -396,7 +396,7 @@ public class Types
 	
 	// Operations that require 3 operands
 	public enum OpOp3 {
-		QUANTILE, INTERQUANTILE, CTABLE, MOMENT, COV, PLUS_MULT, MINUS_MULT, IFELSE;
+		QUANTILE, INTERQUANTILE, CTABLE, MOMENT, COV, PLUS_MULT, MINUS_MULT, IFELSE, MAP;
 		
 		@Override
 		public String toString() {
@@ -404,6 +404,7 @@ public class Types
 				case MOMENT:     return "cm";
 				case PLUS_MULT:  return "+*";
 				case MINUS_MULT: return "-*";
+				case MAP:          return "_map";
 				default:         return name().toLowerCase();
 			}
 		}
@@ -413,6 +414,7 @@ public class Types
 				case "cm": return MOMENT;
 				case "+*": return PLUS_MULT;
 				case "-*": return MINUS_MULT;
+				case "map": return MAP;
 				default:   return valueOf(opcode.toUpperCase());
 			}
 		}

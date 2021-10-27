@@ -87,7 +87,7 @@ getMDAdjacency = function(Frame[String] X, Matrix[Double] features, Matrix[Doubl
     pos = as.scalar(features[1, i])
     Xi = X[, pos]
     # distances between words in each row of col
-    dist = map(Xi, "(x, y) -> UtilFunctions.jaccardSim(x, y)")
+    dist = map(Xi, "(x, y) -> UtilFunctions.jaccardSim(x, y)", 0)
     jaccardDist = as.matrix(dist)
     jaccardDist = jaccardDist + t(jaccardDist)
     threshold = as.scalar(thresholds[1, i])

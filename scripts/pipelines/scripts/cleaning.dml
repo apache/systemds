@@ -75,8 +75,8 @@ startCleaning = function(Frame[Unknown] F, Frame[Unknown] logical, String target
     jspecR = "{ids:true, recode:["+index+"]}"
     [eX, X_meta] = transformencode(target=X, spec=jspecR);
     # change the schema
-    getSchema = map(getSchema, "x->x.replace(\"STRING\", \"INT64\")")
-    getSchema = map(getSchema, "x->x.replace(\"BOOLEAN\", \"INT64\")")
+    getSchema = map(getSchema, "x->x.replace(\"STRING\", \"INT64\")", 0)
+    getSchema = map(getSchema, "x->x.replace(\"BOOLEAN\", \"INT64\")", 0)
     
   } else
     eX = as.matrix(X)

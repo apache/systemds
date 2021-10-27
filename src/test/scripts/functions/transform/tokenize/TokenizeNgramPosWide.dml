@@ -22,7 +22,7 @@
 F1 = read($1, data_type="frame", format="csv", sep=",");
 
 # Example Preprocessing:
-F1[,4] = map(F1[,4], "x -> x.toLowerCase()");
+F1[,4] = map(F1[,4], "x -> x.toLowerCase()", 0);
 
 # Example to estimate max tokens based on string length
 # max_token = as.integer(max(as.matrix(map(F1[,4], "x -> x.length()"))));

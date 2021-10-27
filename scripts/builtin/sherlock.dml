@@ -100,8 +100,8 @@ transform_values = function(frame[string] data) return (matrix[double] m_data) {
   data = data[1:rows,2:cols]
 
   #replace True/Fasle with 1/0
-  data = map(data, "d -> d.replace(\"True\",\"1\")")
-  data = map(data, "d -> d.replace(\"False\",\"0\")")
+  data = map(data, "d -> d.replace(\"True\",\"1\")", 0)
+  data = map(data, "d -> d.replace(\"False\",\"0\")", 0)
   m_data = as.matrix(data)
 }
 

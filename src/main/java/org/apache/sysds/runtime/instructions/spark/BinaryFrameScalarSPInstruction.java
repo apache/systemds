@@ -24,13 +24,14 @@ import org.apache.spark.api.java.function.Function;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
+import org.apache.sysds.runtime.instructions.cp.ScalarObject;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.operators.Operator;
 
 public class BinaryFrameScalarSPInstruction extends BinarySPInstruction {
-	protected BinaryFrameScalarSPInstruction (Operator op, CPOperand in1, CPOperand in2, CPOperand out,
+	protected BinaryFrameScalarSPInstruction (Operator op, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out,
 			String opcode, String istr) {
-		super(SPType.Binary, op, in1, in2, out, opcode, istr);
+		super(SPType.Binary, op, in1, in2, in3, out, opcode, istr);
 	}
 
 	@Override
@@ -40,15 +41,19 @@ public class BinaryFrameScalarSPInstruction extends BinarySPInstruction {
 		// Get input RDDs
 		JavaPairRDD<Long, FrameBlock> in1 = sec.getFrameBinaryBlockRDDHandleForVariable(input1.getName());
 		String expression = sec.getScalarInput(input2).getStringValue();
+		long margin = ec.getScalarInput(input3).getLongValue();
 
 		// Create local compiled functions (once) and execute on RDD
-		JavaPairRDD<Long, FrameBlock> out = in1.mapValues(new RDDStringProcessing(expression));
+		JavaPairRDD<Long, FrameBlock> out = in1.mapValues(new RDDStringProcessing(expression, margin));
 
 		if(expression.contains("jaccardSim")) {
 			long rows = sec.getDataCharacteristics(output.getName()).getRows();
 			sec.getDataCharacteristics(output.getName()).setDimension(rows, rows);
+		} else {
+			long rows = margin == 2 ? 1 : sec.getDataCharacteristics(output.getName()).getRows();
+			long cols = margin == 1 ? 1 : sec.getDataCharacteristics(output.getName()).getCols();
+			sec.getDataCharacteristics(output.getName()).setDimension(rows, cols);
 		}
-
 		sec.setRDDHandleForVariable(output.getName(), out);
 		sec.addLineageRDD(output.getName(), input1.getName());
 	}
@@ -57,14 +62,17 @@ public class BinaryFrameScalarSPInstruction extends BinarySPInstruction {
 		private static final long serialVersionUID = 5850400295183766400L;
 
 		private String _expr = null;
+		private long _margin = -1;
 
-		public RDDStringProcessing(String expr) {
+		public RDDStringProcessing(String expr, long margin) {
 			_expr = expr;
+			_margin = margin;
 		}
 
 		@Override
 		public FrameBlock call(FrameBlock arg0) throws Exception {
-			return arg0.map(_expr);
+			FrameBlock fb =  arg0.map(_expr, _margin);
+			return fb;
 		}
 	}
 }

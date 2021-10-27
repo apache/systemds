@@ -24,7 +24,7 @@
 s_ema = function(Frame[Double] X, Integer search_iterations, String mode, Integer freq, 
   Double alpha, Double beta, Double gamma) return (Frame[Double] Y) {
   M = map(X, "UtilFunctions.exponentialMovingAverageImputation(" + search_iterations + ";"
-    + mode + ";" + freq + ";" + alpha + ";" + beta + ";" + gamma + ")")
+    + mode + ";" + freq + ";" + alpha + ";" + beta + ";" + gamma + ")", 0)
   Y = as.frame(as.matrix(M))
 }
 

@@ -746,7 +746,7 @@ public class UtilFunctions {
 		return lnnz;
 	}
 
-	public static ValueType[] nCopies(int n, ValueType vt) {
+	public static ValueType[]  nCopies(int n, ValueType vt) {
 		ValueType[] ret = new ValueType[n];
 		Arrays.fill(ret, vt);
 		return ret;
@@ -850,6 +850,13 @@ public class UtilFunctions {
 			throw new DMLRuntimeException(e);
 		}
 		return value ;
+	}
+
+	public static String concat(String[] inputStrings) {
+		StringBuilder sb = new StringBuilder();
+		for(String tmp : inputStrings)
+			sb.append(tmp);
+		return sb.toString();
 	}
 
 	private static String getDateFormat (String dateString) {

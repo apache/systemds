@@ -595,11 +595,14 @@ public class DMLScript
 		final String ANSI_RESET = "\u001B[0m";
 		StringBuilder sb = new StringBuilder();
 		sb.append(ANSI_RED + "\n");
-		sb.append("An Error Occured : ");
+		sb.append("An Error Occurred : ");
 		sb.append("\n" );
 		sb.append(StringUtils.leftPad(e.getClass().getSimpleName(),25));
 		sb.append(" -- ");
 		sb.append(e.getMessage());
+		sb.append("\n" );
+		for(StackTraceElement stackTraceElement : e.getStackTrace())
+			sb.append(stackTraceElement).append("\n");
 		Throwable s =  e.getCause();
 		while(s != null){
 			sb.append("\n" );

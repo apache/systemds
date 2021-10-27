@@ -72,7 +72,8 @@ public class DMLOptions {
 	public boolean              fedWorker     = false;
 	public int                  fedWorkerPort = -1;
 	public boolean              checkPrivacy  = false;            // Check which privacy constraints are loaded and checked during federated execution 
-	
+	public boolean				federatedCompilation = false;     // Compile federated instructions based on input federation state and privacy constraints.
+
 	public final static DMLOptions defaultOptions = new DMLOptions(null);
 
 	public DMLOptions(Options opts) {
@@ -100,6 +101,7 @@ public class DMLOptions {
 			", help=" + help +
 			", lineage=" + lineage +
 			", w=" + fedWorker +
+			", federatedCompilation=" + federatedCompilation +
 			'}';
 	}
 	
@@ -259,6 +261,10 @@ public class DMLOptions {
 		}
 
 		dmlOptions.checkPrivacy = line.hasOption("checkPrivacy");
+		if (line.hasOption("federatedCompilation")){
+			OptimizerUtils.FEDERATED_COMPILATION = true;
+			dmlOptions.federatedCompilation = true;
+		}
 
 		return dmlOptions;
 	}
@@ -313,6 +319,9 @@ public class DMLOptions {
 		Option checkPrivacy = OptionBuilder
 			.withDescription("Check which privacy constraints are loaded and checked during federated execution")
 			.create("checkPrivacy");
+		Option federatedCompilation = OptionBuilder
+			.withDescription("Compile federated instructions based on input federation state and privacy constraints.")
+			.create("federatedCompilation");
 		
 		options.addOption(configOpt);
 		options.addOption(cleanOpt);
@@ -327,6 +336,7 @@ public class DMLOptions {
 		options.addOption(lineageOpt);
 		options.addOption(fedOpt);
 		options.addOption(checkPrivacy);
+		options.addOption(federatedCompilation);
 
 		// Either a clean(-clean), a file(-f), a script(-s) or help(-help) needs to be specified
 		OptionGroup fileOrScriptOpt = new OptionGroup()

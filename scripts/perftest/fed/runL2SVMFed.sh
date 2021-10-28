@@ -60,10 +60,12 @@ do
 
   for fedCompile in "" "--federatedCompilation"
   do
-     echo "-- Running L2SVM "$fedCompile" with federated data ("$d") on "$NUMFED" federated workers" >> results/times.txt
+    runningMessage="-- Running L2SVM "$fedCompile" with federated data ("$d") on "$NUMFED" federated workers";
+     echo "$runningMessage" >> results/times.txt
+     echo "$runningMessage" >> results/compiletimes.txt
     # Run the L2SVM algorithm on the federated object
     # $1 X, $2 Y, $3 unknown, $4 BASE, $5 maxiter, $6 CMD, $7 RunPrediction, $8 FEDERATEDCOMPILATION
-    ${BASEPATH}/../runL2SVM.sh ${DATADIR}/X${d}_fed.json ${DATADIR}/Y${d}_fed.json 2 $DATADIR ${MAXITR} systemds false $fedCompile;
+    ${BASEPATH}/../runL2SVM.sh ${DATADIR}/X${d}_fed.json ${DATADIR}/Y${d}_fed.json 2 $DATADIR ${MAXITR} systemds false $fedCompile | egrep -w 'compilation|L2SVM' | tee -a results/compiletimes.txt;
   done
 done
 

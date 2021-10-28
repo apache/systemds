@@ -39,6 +39,7 @@ import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslContextBuilder;
 import io.netty.handler.ssl.util.SelfSignedCertificate;
 import org.apache.log4j.Logger;
+import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.conf.DMLConfig;
 
@@ -51,6 +52,7 @@ public class FederatedWorker {
 	public FederatedWorker(int port) {
 		_ecm = new ExecutionContextMap();
 		_port = (port == -1) ? DMLConfig.DEFAULT_FEDERATED_PORT : port;
+		DMLScript.FED_WORKER_PORTS.add(_port);
 	}
 
 	public void run() throws CertificateException, SSLException {

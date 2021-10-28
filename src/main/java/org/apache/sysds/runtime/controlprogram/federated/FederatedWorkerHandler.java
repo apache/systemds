@@ -58,11 +58,13 @@ import org.apache.sysds.runtime.lineage.LineageCacheConfig.ReuseCacheType;
 import org.apache.sysds.runtime.lineage.LineageItem;
 import org.apache.sysds.runtime.lineage.LineageItemUtils;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
+import org.apache.sysds.runtime.meta.MetaData;
 import org.apache.sysds.runtime.meta.MetaDataAll;
 import org.apache.sysds.runtime.meta.MetaDataFormat;
 import org.apache.sysds.runtime.privacy.DMLPrivacyException;
 import org.apache.sysds.runtime.privacy.PrivacyMonitor;
 import org.apache.sysds.utils.Statistics;
+import org.apache.wink.json4j.JSONException;
 
 public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 	protected static Logger log = Logger.getLogger(FederatedWorkerHandler.class);
@@ -139,6 +141,7 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 		try {
 			switch(method) {
 				case READ_VAR:
+					if(request.getNumParams() == 3)
 					return readData(request); // matrix/frame
 				case PUT_VAR:
 					return putVariable(request);
@@ -169,9 +172,15 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 	}
 
 	private FederatedResponse readData(FederatedRequest request) {
-		checkNumParams(request.getNumParams(), 2);
+		checkNumParams(request.getNumParams(), 2, 3);
 		String filename = (String) request.getParam(0);
 		DataType dt = DataType.valueOf((String) request.getParam(1));
+
+		if(request.getNumParams() == 3) {
+			MetaData mtd = (MetaData) request.getParam(2);
+			return readData(filename, dt, request.getID(), request.getTID(), mtd);
+		}
+
 		return readData(filename, dt, request.getID(), request.getTID());
 	}
 
@@ -231,6 +240,50 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 		if(fmt == FileFormat.CSV)
 			cd.setFileFormatProperties(new FileFormatPropertiesCSV(header, delim,
 				DataExpression.DEFAULT_DELIM_SPARSE));
+		cd.enableCleanup(false); // guard against deletion
+		_ecm.get(tid).setVariable(String.valueOf(id), cd);
+
+		if (DMLScript.LINEAGE)
+			// create a literal type lineage item with the file name
+			_ecm.get(tid).getLineage().set(String.valueOf(id), new LineageItem(filename));
+
+		if(dataType == Types.DataType.FRAME) {
+			FrameObject frameObject = (FrameObject) cd;
+			frameObject.acquireRead();
+			frameObject.refreshMetaData(); // get block schema
+			frameObject.release();
+			return new FederatedResponse(ResponseType.SUCCESS, new Object[] {id, frameObject.getSchema(), mc});
+		}
+		return new FederatedResponse(ResponseType.SUCCESS, new Object[] {id, mc});
+	}
+
+	private FederatedResponse readData(String filename, Types.DataType dataType, long id, long tid, MetaData mtd) {
+		MatrixCharacteristics mc = new MatrixCharacteristics();
+		mc.setBlocksize(ConfigurationManager.getBlocksize());
+		CacheableData<?> cd;
+		switch(dataType) {
+			case MATRIX:
+				cd = new MatrixObject(Types.ValueType.FP64, filename);
+				break;
+			case FRAME:
+				cd = new FrameObject(filename);
+				break;
+			default:
+				// should NEVER happen (if we keep request codes in sync with actual behavior)
+				return new FederatedResponse(ResponseType.ERROR,
+					new FederatedWorkerHandlerException("Could not recognize datatype"));
+		}
+
+		FileFormat fmt;
+
+		mc.setRows(mtd.getDataCharacteristics().getRows());
+		mc.setCols(mtd.getDataCharacteristics().getCols());
+		mc.setNonZeros(mtd.getDataCharacteristics().getNonZeros());
+		fmt = FileFormat.BINARY;
+
+
+		// put meta data object in symbol table, read on first operation
+		cd.setMetaData(new MetaDataFormat(mc, fmt));
 		cd.enableCleanup(false); // guard against deletion
 		_ecm.get(tid).setVariable(String.valueOf(id), cd);
 

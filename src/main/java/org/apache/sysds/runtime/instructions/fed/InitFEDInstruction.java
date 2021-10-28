@@ -27,6 +27,7 @@ import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -58,6 +59,8 @@ import org.apache.sysds.runtime.instructions.cp.StringObject;
 import org.apache.sysds.runtime.lineage.LineageItem;
 import org.apache.sysds.runtime.lineage.LineageTraceable;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
+import org.apache.sysds.runtime.meta.MetaData;
+import org.apache.sysds.runtime.meta.MetaDataAll;
 
 public class InitFEDInstruction extends FEDInstruction implements LineageTraceable {
 
@@ -215,7 +218,7 @@ public class InitFEDInstruction extends FEDInstruction implements LineageTraceab
 		}
 	}
 
-	public static void federateMatrix(CacheableData<?> output, List<Pair<FederatedRange, FederatedData>> workers) {
+	public static void federateMatrix(CacheableData<?> output, List<Pair<FederatedRange, FederatedData>> workers, MetaData... mtd) {
 
 		List<Pair<FederatedRange, FederatedData>> fedMapping = new ArrayList<>();
 		for(Pair<FederatedRange, FederatedData> e : workers)
@@ -233,7 +236,7 @@ public class InitFEDInstruction extends FEDInstruction implements LineageTraceab
 				long[] dims = output.getDataCharacteristics().getDims();
 				for(int i = 0; i < dims.length; i++)
 					dims[i] = endDims[i] - beginDims[i];
-				idResponses.add(new ImmutablePair<>(value, value.initFederatedData(id)));
+				idResponses.add(new ImmutablePair<>(value, value.initFederatedData(id, mtd[0])));
 			}
 			rowPartitioned &= (range.getSize(1) == output.getNumColumns());
 			colPartitioned &= (range.getSize(0) == output.getNumRows());

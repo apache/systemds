@@ -121,7 +121,7 @@ public class FederatedRandTest extends AutomatedTestBase {
 		double max = output.values().stream().max(Comparator.comparingDouble(Double::doubleValue)).get();
 
 		// compare via files
-		checkResults(rowOut, colOut, min, max);
+		checkResults(rows, cols, min, max);
 
 		TestUtils.shutdownThreads(t1, t2);
 

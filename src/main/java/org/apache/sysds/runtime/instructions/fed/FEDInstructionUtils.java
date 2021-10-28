@@ -20,6 +20,7 @@
 package org.apache.sysds.runtime.instructions.fed;
 
 import org.apache.commons.lang3.ArrayUtils;
+import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.lops.UnaryCP;
 import org.apache.sysds.runtime.codegen.SpoofCellwise;
 import org.apache.sysds.runtime.codegen.SpoofMultiAggregate;
@@ -86,6 +87,7 @@ import org.apache.sysds.runtime.instructions.spark.TernarySPInstruction;
 import org.apache.sysds.runtime.instructions.spark.UnaryMatrixSPInstruction;
 import org.apache.sysds.runtime.instructions.spark.UnarySPInstruction;
 import org.apache.sysds.runtime.instructions.spark.WriteSPInstruction;
+import org.apache.sysds.utils.Statistics;
 
 public class FEDInstructionUtils {
 	
@@ -147,7 +149,7 @@ public class FEDInstructionUtils {
 			} else if(inst instanceof DataGenCPInstruction) {
 				DataGenCPInstruction dinst = (DataGenCPInstruction) inst;
 				//TODO even here check for workers
-				if(!dinst.output.isTensor())
+				if(!dinst.output.isTensor() && DMLScript.FED_WORKER_PORTS.size() > 0)
 					fedinst = DataGenFEDInstruction.parseInstruction(dinst.getInstructionString());
 			}
 			else if(instruction.input1 != null && instruction.input1.isMatrix()

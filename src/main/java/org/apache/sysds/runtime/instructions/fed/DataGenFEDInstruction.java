@@ -19,13 +19,23 @@
 
 package org.apache.sysds.runtime.instructions.fed;
 
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.UnknownHostException;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Random;
+import java.util.stream.LongStream;
 
 import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.spark.sql.execution.CachedData;
+import org.apache.sysds.api.DMLScript;
+import org.apache.sysds.common.Types;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.OpOpDG;
 import org.apache.sysds.common.Types.ValueType;
@@ -39,7 +49,12 @@ import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlockFactory;
 import org.apache.sysds.runtime.controlprogram.caching.CacheBlock;
 import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
+import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
+import org.apache.sysds.runtime.controlprogram.federated.FederatedData;
+import org.apache.sysds.runtime.controlprogram.federated.FederatedRange;
+import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest;
+import org.apache.sysds.runtime.controlprogram.federated.FederationUtils;
 import org.apache.sysds.runtime.data.TensorBlock;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
@@ -52,8 +67,12 @@ import org.apache.sysds.runtime.matrix.data.LibMatrixDatagen;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.data.RandomMatrixGenerator;
 import org.apache.sysds.runtime.matrix.operators.Operator;
+import org.apache.sysds.runtime.meta.MatrixCharacteristics;
+import org.apache.sysds.runtime.meta.MetaData;
+import org.apache.sysds.runtime.meta.MetaDataAll;
 import org.apache.sysds.runtime.util.DataConverter;
 import org.apache.sysds.runtime.util.UtilFunctions;
+import scala.collection.immutable.Stream;
 
 public class DataGenFEDInstruction extends UnaryFEDInstruction {
 	private static final Log LOG = LogFactory.getLog(DataGenFEDInstruction.class.getName());
@@ -268,6 +287,7 @@ public class DataGenFEDInstruction extends UnaryFEDInstruction {
 			return new DataGenFEDInstruction(op, method, null, out, rows, cols, dims, blen, s[5 - missing],
 				s[6 - missing], sparsity, seed, pdf, pdfParams, k, opcode, str);
 		}
+		//TODO
 		else if(method == OpOpDG.SEQ) {
 			int blen = Integer.parseInt(s[3]);
 			CPOperand from = new CPOperand(s[4]);
@@ -276,6 +296,7 @@ public class DataGenFEDInstruction extends UnaryFEDInstruction {
 
 			return new DataGenFEDInstruction(op, method, null, out, null, null, null, blen, from, to, incr, opcode, str);
 		}
+		//TODO
 		else if(method == OpOpDG.FRAMEINIT) {
 			String data = s[1];
 			CPOperand rows = new CPOperand(s[2]);
@@ -303,125 +324,198 @@ public class DataGenFEDInstruction extends UnaryFEDInstruction {
 
 	@Override
 	public void processInstruction(ExecutionContext ec) {
-		CacheBlock out = null;
+		CacheableData out = null;
 		ScalarObject soresScalar = null;
 
 		// process specific datagen operator
 		if(method == OpOpDG.RAND)
 			out = processRandInstruction(ec);
-		else if(method == OpOpDG.SEQ) {
-			double lfrom = ec.getScalarInput(seq_from).getDoubleValue();
-			double lto = ec.getScalarInput(seq_to).getDoubleValue();
-			double lincr = ec.getScalarInput(seq_incr).getDoubleValue();
+//		else if(method == OpOpDG.SEQ) {
+//			double lfrom = ec.getScalarInput(seq_from).getDoubleValue();
+//			double lto = ec.getScalarInput(seq_to).getDoubleValue();
+//			double lincr = ec.getScalarInput(seq_incr).getDoubleValue();
+//
+//			// handle default 1 to -1 for special case of from>to
+//			lincr = LibMatrixDatagen.updateSeqIncr(lfrom, lto, lincr);
+//
+//			if(LOG.isTraceEnabled())
+//				LOG.trace(
+//					"Process DataGenCPInstruction seq with seqFrom=" + lfrom + ", seqTo=" + lto + ", seqIncr" + lincr);
+//
+//			// TODO get workers and check then for rand
+//			out = MatrixBlock.seqOperations(lfrom, lto, lincr);
+//		}
+//		else if(method == OpOpDG.SAMPLE) {
+//			long lrows = ec.getScalarInput(rows).getLongValue();
+//			long range = UtilFunctions.toLong(maxValue);
+//			checkValidDimensions(lrows, 1);
+//
+//			if(LOG.isTraceEnabled())
+//				LOG.trace("Process DataGenCPInstruction sample with range=" + range + ", size=" + lrows + ", replace"
+//					+ replace + ", seed=" + seed);
+//
+//			if(range < lrows && !replace)
+//				throw new DMLRuntimeException("Sample (size=" + lrows + ") larger than population (size=" + range
+//					+ ") can only be generated with replacement.");
+//
+//			// TODO handle runtime seed
+//			out = MatrixBlock.sampleOperations(range, (int) lrows, replace, seed);
+//		}
+//		else if(method == OpOpDG.TIME) {
+//			soresScalar = new IntObject(System.nanoTime());
+//		}
+//		else if(method == OpOpDG.FRAMEINIT) {
+//			int lrows = (int) ec.getScalarInput(rows).getLongValue();
+//			int lcols = (int) ec.getScalarInput(cols).getLongValue();
+//			String sparts[] = schema.split(DataExpression.DELIM_NA_STRING_SEP);
+//			ValueType[] vt = sparts[0].equals(DataExpression.DEFAULT_SCHEMAPARAM) ?
+//				UtilFunctions.nCopies(lcols, ValueType.STRING) : (sparts.length == 1 && lcols > 1) ?
+//				UtilFunctions.nCopies(lcols, ValueType.valueOf(sparts[0])) : UtilFunctions.stringToValueType(sparts);
+//			int schemaLength = vt.length;
+//			if(schemaLength != lcols)
+//				throw new DMLRuntimeException("schema-dimension mismatch");
+//
+//			if(frame_data.equals("")) {
+//				// TODO fix hard-coded seed, consistently with sparse frame init
+//				out = UtilFunctions.generateRandomFrameBlock(lrows, lcols, vt, new Random(10));
+//			}
+//			else {
+//				String[] data = frame_data.split(DataExpression.DELIM_NA_STRING_SEP);
+//				int rowLength = data.length/lrows;
+//				if(data.length != schemaLength && data.length > 1 && rowLength != schemaLength)
+//					throw new DMLRuntimeException(
+//						"data values should be equal to number of columns," + " or a single values for all columns");
+//				out = new FrameBlock(vt);
+//				FrameBlock outF = (FrameBlock) out;
+//				if(data.length > 1 && rowLength != schemaLength)  {
+//					for(int i = 0; i < lrows; i++)
+//						outF.appendRow(data);
+//				}
+//				else if(data.length > 1 && rowLength == schemaLength)
+//				{
+//					int beg = 0;
+//					for(int i = 1; i <= lrows; i++) {
+//						int end = lcols * i;
+//						String[] data1 = ArrayUtils.subarray(data, beg, end);
+//						beg = end;
+//						outF.appendRow(data1);
+//					}
+//				}
+//				else {
+//					String[] data1 = new String[lcols];
+//					Arrays.fill(data1, frame_data);
+//					for(int i = 0; i < lrows; i++)
+//						outF.appendRow(data1);
+//				}
+//			}
+//		}
 
-			// handle default 1 to -1 for special case of from>to
-			lincr = LibMatrixDatagen.updateSeqIncr(lfrom, lto, lincr);
-
-			if(LOG.isTraceEnabled())
-				LOG.trace(
-					"Process DataGenCPInstruction seq with seqFrom=" + lfrom + ", seqTo=" + lto + ", seqIncr" + lincr);
-
-			// TODO get workers and check then for rand
-			out = MatrixBlock.seqOperations(lfrom, lto, lincr);
-		}
-		else if(method == OpOpDG.SAMPLE) {
-			long lrows = ec.getScalarInput(rows).getLongValue();
-			long range = UtilFunctions.toLong(maxValue);
-			checkValidDimensions(lrows, 1);
-
-			if(LOG.isTraceEnabled())
-				LOG.trace("Process DataGenCPInstruction sample with range=" + range + ", size=" + lrows + ", replace"
-					+ replace + ", seed=" + seed);
-
-			if(range < lrows && !replace)
-				throw new DMLRuntimeException("Sample (size=" + lrows + ") larger than population (size=" + range
-					+ ") can only be generated with replacement.");
-
-			// TODO handle runtime seed
-			out = MatrixBlock.sampleOperations(range, (int) lrows, replace, seed);
-		}
-		else if(method == OpOpDG.TIME) {
-			soresScalar = new IntObject(System.nanoTime());
-		}
-		else if(method == OpOpDG.FRAMEINIT) {
-			int lrows = (int) ec.getScalarInput(rows).getLongValue();
-			int lcols = (int) ec.getScalarInput(cols).getLongValue();
-			String sparts[] = schema.split(DataExpression.DELIM_NA_STRING_SEP);
-			ValueType[] vt = sparts[0].equals(DataExpression.DEFAULT_SCHEMAPARAM) ?
-				UtilFunctions.nCopies(lcols, ValueType.STRING) : (sparts.length == 1 && lcols > 1) ?
-				UtilFunctions.nCopies(lcols, ValueType.valueOf(sparts[0])) : UtilFunctions.stringToValueType(sparts);
-			int schemaLength = vt.length;
-			if(schemaLength != lcols)
-				throw new DMLRuntimeException("schema-dimension mismatch");
-
-			if(frame_data.equals("")) {
-				// TODO fix hard-coded seed, consistently with sparse frame init
-				out = UtilFunctions.generateRandomFrameBlock(lrows, lcols, vt, new Random(10));
-			}
-			else {
-				String[] data = frame_data.split(DataExpression.DELIM_NA_STRING_SEP);
-				int rowLength = data.length/lrows;
-				if(data.length != schemaLength && data.length > 1 && rowLength != schemaLength)
-					throw new DMLRuntimeException(
-						"data values should be equal to number of columns," + " or a single values for all columns");
-				out = new FrameBlock(vt);
-				FrameBlock outF = (FrameBlock) out;
-				if(data.length > 1 && rowLength != schemaLength)  {
-					for(int i = 0; i < lrows; i++)
-						outF.appendRow(data);
-				}
-				else if(data.length > 1 && rowLength == schemaLength)
-				{
-					int beg = 0;
-					for(int i = 1; i <= lrows; i++) {
-						int end = lcols * i;
-						String[] data1 = ArrayUtils.subarray(data, beg, end);
-						beg = end;
-						outF.appendRow(data1);
-					}
-				}
-				else {
-					String[] data1 = new String[lcols];
-					Arrays.fill(data1, frame_data);
-					for(int i = 0; i < lrows; i++)
-						outF.appendRow(data1);
-				}
-			}
-		}
-
-		if(output.isScalar())
-			ec.setScalarOutput(output.getName(), soresScalar);
-		else
-			setCacheBlockOutput(ec, out);
+//		if(output.isScalar())
+//			ec.setScalarOutput(output.getName(), soresScalar);
+//		else
+//			setCacheBlockOutput(ec, out);
 	}
 
-	private CacheBlock processRandInstruction(ExecutionContext ec) {
-		CacheBlock out;
-		long lSeed = generateSeed();
+	private MatrixObject processRandInstruction(ExecutionContext ec) {
+		MatrixObject out;
 
-		out = processRandInstructionMatrix(ec, lSeed);
+		// derive number of workers to use
+		int nworkers = DMLScript.FED_WORKER_PORTS.size();
+		while(getRows() % nworkers != 0)
+			nworkers--;
+
+		// generate seeds
+		long[] lSeeds = LongStream.generate(this::generateSeed).limit(nworkers).toArray();
+
+		//TODO if workers == 1
+		out = processRandInstructionMatrix(ec, lSeeds, nworkers);
 
 		// reset runtime seed (e.g., when executed in loop)
 		runtimeSeed = null;
 		return out;
 	}
 
-	private CacheBlock processRandInstructionMatrix(ExecutionContext ec, long lSeed){
+//	private MatrixObject processRandInstructionMatrix(ExecutionContext ec, long[] lSeeds, int nworkers) {
+//		MatrixBlock[] mb = new MatrixBlock[nworkers];
+//		long lrows = ec.getScalarInput(rows).getLongValue();
+//		long lcols = ec.getScalarInput(cols).getLongValue(); // FIXME column federated
+//		long rangeSize = lrows / nworkers;
+//		checkValidDimensions(lrows, lcols);
+//
+//		int k = 0;
+//		for(long lSeed : lSeeds) {
+//			if(ConfigurationManager.isCompressionEnabled() && minValue == maxValue && sparsity == 1.0) {
+//				// contains constant
+//				if(lrows > 1000 && lcols > 0 && lrows / lcols > 1)
+//					mb[k] = CompressedMatrixBlockFactory.createConstant((int) lrows, (int) lcols, minValue);
+//				else
+//					mb[k] = MatrixBlock.randOperations(getGenerator(lrows, lcols), lSeed, numThreads);
+//			}
+//			else
+//				mb[k] = MatrixBlock.randOperations(getGenerator(lrows, lcols), lSeed, numThreads);
+//			k++;
+//		}
+//
+//		MatrixObject out = ec.getMatrixObject(output);
+//		out.setMetaData(new MetaData(new MatrixCharacteristics(lrows, lcols, blocksize, lrows * lcols)));
+//
+//		int rangeBegin = 0;
+//		List<Pair<FederatedRange, FederatedData>> d = new ArrayList<>();
+//		for(int i = 0; i < nworkers; i++) {
+//			FederatedRange X1r = new FederatedRange(new long[]{rangeBegin, 0}, new long[] {rangeBegin += rangeSize, lcols});
+//			FederatedData X1d = new FederatedData(Types.DataType.MATRIX,
+//				new InetSocketAddress(InetAddress.getByName(host), DMLScript.FED_WORKER_PORTS.get(i)), inputs[i]);
+//			d.add(new ImmutablePair<>(X1r, X1d));
+//		}
+//
+//		InitFEDInstruction.federateMatrix(out, d);
+//
+//		return out;
+//	}
 
+	private MatrixObject processRandInstructionMatrix(ExecutionContext ec, long[] lSeeds, int nworkers) {
 		long lrows = ec.getScalarInput(rows).getLongValue();
-		long lcols = ec.getScalarInput(cols).getLongValue();
+		long lcols = ec.getScalarInput(cols).getLongValue(); // FIXME column federated
+		long rangeSize = lrows / nworkers;
 		checkValidDimensions(lrows, lcols);
-		
-		if(ConfigurationManager.isCompressionEnabled() && minValue == maxValue && sparsity == 1.0) {
-			// contains constant
 
-			if(lrows > 1000 && lcols > 0 && lrows / lcols > 1)
-				return CompressedMatrixBlockFactory.createConstant((int)lrows, (int)lcols, minValue);
-			else
-				return MatrixBlock.randOperations(getGenerator(lrows, lcols), lSeed, numThreads);
+		MatrixObject out = ec.getMatrixObject(output);
+		out.setMetaData(new MetaData(new MatrixCharacteristics(lrows, lcols, blocksize, lrows * lcols)));
+
+		InetAddress addr = null;
+		try {
+			addr = InetAddress.getLocalHost(); // FIXME
 		}
-		else
-			return MatrixBlock.randOperations(getGenerator(lrows, lcols), lSeed, numThreads);
+		catch(UnknownHostException e) {
+			e.printStackTrace();
+		}
+		String host = addr.getHostAddress();
+
+		int rangeBegin = 0;
+		List<Pair<FederatedRange, FederatedData>> d = new ArrayList<>();
+		for(int i = 0; i < nworkers; i++) {
+			FederatedRange X1r = new FederatedRange(new long[]{rangeBegin, 0}, new long[] {rangeBegin += rangeSize, lcols});
+			FederatedData X1d = null;
+			try {
+				X1d = new FederatedData(DataType.MATRIX,
+					new InetSocketAddress(InetAddress.getByName(host), DMLScript.FED_WORKER_PORTS.get(i)), out.getFileName());
+			}
+			catch(UnknownHostException e) {
+				e.printStackTrace();
+			}
+			d.add(new ImmutablePair<>(X1r, X1d));
+		}
+
+		// FIXME to array and also handle odd number of rows
+		MetaData mtd = new MetaData(new MatrixCharacteristics(rangeSize, lcols));
+		InitFEDInstruction.federateMatrix(out, d, mtd);
+
+		// FIXME modify seeds and ranges
+		FederatedRequest fr1 = FederationUtils.callInstruction(instString, output, out.getFedMapping().getID(),
+			new CPOperand[] {output}, new long[] {out.getFedMapping().getID()}, Types.ExecType.CP, false);
+		out.getFedMapping().execute(getTID(), true, fr1);
+		out.setFedMapping(out.getFedMapping().copyWithNewID());
+		return out;
 	}
 
 

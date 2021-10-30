@@ -70,7 +70,7 @@ cd svn-release-systemds
 if [[ $dry_run_flag != 1 ]]; then
   # This step prompts for the Apache Credentials
   svn ci --username "$ASF_USERNAME" --password "$ASF_PASSWORD" -m"Apache SystemDS $RELEASE_VERSION Released" --no-auth-cache
-  echo $?
+  [[ $? == 0 ]] && printf "\n Publishing to $RELEASE_LOCATION is complete!\n"
 else
   printf "\n==========\n"
   printf "This step would commit to the SVN release repo\n"

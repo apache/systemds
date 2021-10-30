@@ -23,6 +23,7 @@
 ################################################################################
 ##  File:  release-to-svn.sh
 ##  Desc:  Promote release candidate from svn dev/systemds to release/systemds
+##  Note:  This file to be run only after the succesful voting
 ################################################################################
 
 SELF=$(cd $(dirname $0) && pwd)
@@ -69,8 +70,11 @@ cd svn-release-systemds
 
 if [[ $dry_run_flag != 1 ]]; then
   # This step prompts for the Apache Credentials
-  svn ci --username "$ASF_USERNAME" --password "$ASF_PASSWORD" -m"Apache SystemDS $RELEASE_VERSION Released" --no-auth-cache
-  [[ $? == 0 ]] && printf "\n Publishing to $RELEASE_LOCATION is complete!\n"
+  printf "\n==========\n"
+  printf "You might want to manually check the files and run the following:\n"
+  printf "svn ci --username $ASF_USERNAME --password $ASF_PASSWORD -m'Apache SystemDS $RELEASE_VERSION Released' --no-auth-cache"
+  printf "[[ $? == 0 ]] && printf '\n Publishing to $RELEASE_LOCATION is complete!\n'"
+  printf "\n==========\n"
 else
   printf "\n==========\n"
   printf "This step would commit to the SVN release repo\n"

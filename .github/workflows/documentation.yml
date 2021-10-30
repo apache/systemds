@@ -23,12 +23,15 @@ name: Documentation
 
 on:
   push:
+    paths-ignore:
+      - '*.html'
+      - 'dev/**'
     branches:
       - master
   pull_request:
     paths-ignore:
-      - 'docs/**'
-      - '*.md'
+      - '*.html'
+      - 'dev/**'
     branches:
       - master
 

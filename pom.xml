@@ -39,11 +39,11 @@
 	</licenses>
 
 	<properties>
-		<hadoop.version>2.6.0</hadoop.version>
+		<hadoop.version>3.0.0</hadoop.version>
 		<antlr.version>4.5.3</antlr.version>
-		<spark.version>2.1.0</spark.version>
-		<scala.version>2.11.8</scala.version>
-		<scala.binary.version>2.11</scala.binary.version>
+		<spark.version>3.0.0</spark.version>
+		<scala.version>2.12.0</scala.version>
+		<scala.binary.version>2.12</scala.binary.version>
 		<maven.build.timestamp.format>yyyy-MM-dd HH:mm:ss z</maven.build.timestamp.format>
 		<enableGPU>false</enableGPU>
 		<jcuda.scope>provided</jcuda.scope>
@@ -394,6 +394,7 @@
 				<configuration>
 					<quiet>true</quiet>
 					<skip>true</skip>
+					<source>8</source> <!-- TODO migrate to 11 -->
 				</configuration>
 			</plugin>
 
@@ -960,6 +961,18 @@
 
 		<dependency>
 			<groupId>org.apache.spark</groupId>
+			<artifactId>spark-core_${scala.binary.version}</artifactId>
+			<version>${spark.version}</version>
+		</dependency>
+
+		<dependency>
+			<groupId>org.apache.spark</groupId>
+			<artifactId>spark-sql_${scala.binary.version}</artifactId>
+			<version>${spark.version}</version>
+		</dependency>
+
+		<dependency>
+			<groupId>org.apache.spark</groupId>
 			<artifactId>spark-mllib_${scala.binary.version}</artifactId>
 			<version>${spark.version}</version>
 		</dependency>
@@ -1015,7 +1028,7 @@
 		<dependency>
 			<groupId>com.fasterxml.jackson.core</groupId>
 			<artifactId>jackson-databind</artifactId>
-			<version>2.6.5</version>
+			<version>2.10.0</version>
 		</dependency>
 
 		<dependency>
@@ -1077,7 +1090,7 @@
 		<dependency>
 			<groupId>io.netty</groupId>
 			<artifactId>netty-all</artifactId>
-			<version>4.0.42.Final</version>
+			<version>4.1.47.Final</version>
 			<scope>provided</scope>
 		</dependency>
 

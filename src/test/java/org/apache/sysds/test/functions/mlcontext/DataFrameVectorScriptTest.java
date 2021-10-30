@@ -277,7 +277,6 @@ public class DataFrameVectorScriptTest extends MLContextTestBase
 		}
 	}
 
-	@SuppressWarnings("resource")
 	private static Dataset<Row> createDataFrame(SparkSession sparkSession, MatrixBlock mb, boolean containsID, ValueType[] schema) {
 		//create in-memory list of rows
 		List<Row> list = new ArrayList<>();

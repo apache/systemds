@@ -45,7 +45,6 @@ public class CachedReuseVariables
 		return _data.containsKey(pfid);
 	}
 	
-	@SuppressWarnings("unused")
 	public synchronized void reuseVariables(long pfid, LocalVariableMap vars, Collection<String> excludeList, Map<String, Broadcast<CacheBlock>> _brInputs, boolean cleanCache) {
 
 		//fetch the broadcast variables

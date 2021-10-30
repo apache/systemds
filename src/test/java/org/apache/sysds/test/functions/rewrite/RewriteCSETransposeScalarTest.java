@@ -94,8 +94,8 @@ public class RewriteCSETransposeScalarTest extends AutomatedTestBase
 			
 			//compare output  
 			double ret = TestUtils.readDMLScalar(output("R"));
-			Assert.assertEquals("Wrong result, expected: "+(rows*cols), new Double(rows*cols), new Double(ret));
-			Assert.assertEquals(new Long(rewrites?1:2), new Long(Statistics.getCPHeavyHitterCount("r'")));
+			Assert.assertEquals("Wrong result, expected: "+(rows*cols), Double.valueOf(rows*cols), Double.valueOf(ret));
+			Assert.assertEquals(Long.valueOf(rewrites?1:2), Long.valueOf(Statistics.getCPHeavyHitterCount("r'")));
 		}
 		finally {
 			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = rewritesOld;

@@ -23,6 +23,8 @@ import org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup;
 
 public class HybridCostEstimator implements ICostEstimate {
 
+	private static final long serialVersionUID = -542307595058927576L;
+
 	final ComputationCostEstimator costEstimator;
 	final MemoryCostEstimator memoryCostEstimator;
 

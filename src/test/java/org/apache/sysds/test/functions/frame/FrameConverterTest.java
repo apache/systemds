@@ -391,7 +391,7 @@ public class FrameConverterTest extends AutomatedTestBase
 			}
 	}
 	
-	@SuppressWarnings({ "unchecked", "resource", "cast" })
+	@SuppressWarnings({ "unchecked"})
 	private static void runConverter(ConvType type, MatrixCharacteristics mc, MatrixCharacteristics mcMatrix,
 		List<ValueType> schema, String fnameIn, String fnameOut) throws IOException
 	{

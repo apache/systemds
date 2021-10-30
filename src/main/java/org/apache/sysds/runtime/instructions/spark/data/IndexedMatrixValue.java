@@ -41,7 +41,7 @@ public class IndexedMatrixValue implements Serializable
 		
 		//create new value object for given class
 		try {
-			_value=cls.newInstance();
+			_value=cls.getDeclaredConstructor().newInstance();
 		} 
 		catch (Exception e) {
 			throw new RuntimeException(e);

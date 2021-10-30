@@ -22,25 +22,62 @@
 
 ################################################################################
 ##  File:  release-to-svn.sh
-##  Desc:  Promote release candidate from dev/systemds to release/systemds
+##  Desc:  Promote release candidate from svn dev/systemds to release/systemds
 ################################################################################
 
 SELF=$(cd $(dirname $0) && pwd)
 
+dry_run_flag=0
+while getopts ":n" opt; do
+  case $opt in
+    n) dry_run_flag=1 ;;
+    \?) error "Invalid option: $OPTARG" ;;
+  esac
+done
+
 
 RELEASE_STAGING_LOCATION="https://dist.apache.org/repos/dist/dev/systemds"
-RELEASE_LOCATION="https://dist.apache.org/repos/dist/dev/systemds"
+RELEASE_LOCATION="https://dist.apache.org/repos/dist/release/systemds"
 
-RELEASE_VERSION=2.2.0
-APPROVED_RELEASE_TAG=2.2.0-rc1
+RELEASE_VERSION=
+APPROVED_RELEASE_TAG=
 
-svn co $RELEASE_STAGING_LOCATION svn-dev-systemds
+read -p "RELEASE_VERSION : " RELEASE_VERSION
+read -p "APPROVED_RELEASE_TAG : " APPROVED_RELEASE_TAG
+
+tmp_repo=$(mktemp -d systemds-repo-tmp-XXXXX)
+
+pushd "${tmp_repo}"
+
+# 1. Checkout only the directory associated with approved release tag
+svn co --depth=empty $RELEASE_STAGING_LOCATION svn-dev-systemds
+cd svn-dev-systemds
+svn update --set-depth files ${APPROVED_RELEASE_TAG}
+cd ..
+
+# 2.1. Checkout the empty repo, and copy the contents from svn dev
 svn co --depth=empty $RELEASE_LOCATION svn-release-systemds
 mkdir -p svn-release-systemds/$RELEASE_VERSION
 
 cp svn-dev-systemds/${APPROVED_RELEASE_TAG}/systemds-* svn-release-systemds/$RELEASE_VERSION
 
+# 2.2. Add the files to svn
 svn add svn-release-systemds/$RELEASE_VERSION
-
 cd svn-release-systemds
-svn ci --username "$ASF_USERNAME" --password "$ASF_PASSWORD" -m"Apache SystemDS $RELEASE_VERSION Released" --no-auth-cache
+
+# 2.3. Commit and upload the files to the svn repository
+
+if [[ $dry_run_flag != 1 ]]; then
+  # This step prompts for the Apache Credentials
+  svn info
+#   svn ci --username "$ASF_USERNAME" --password "$ASF_PASSWORD" -m"Apache SystemDS $RELEASE_VERSION Released" --no-auth-cache
+  echo $?
+else
+  printf "\n==========\n"
+  printf "This step would commit to the SVN release repo\n"
+  printf "At $RELEASE_LOCATION \n"
+  printf "\n==========\n"
+fi
+
+popd
+

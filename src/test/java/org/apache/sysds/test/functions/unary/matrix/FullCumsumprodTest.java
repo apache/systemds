@@ -116,7 +116,7 @@ public class FullCumsumprodTest extends AutomatedTestBase
 			
 			runTest(true, false, null, -1); 
 			
-			Assert.assertEquals(new Double(rows),
+			Assert.assertEquals(Double.valueOf(rows),
 				readDMLMatrixFromOutputDir("C").get(new CellIndex(1,1)));
 		}
 		finally {

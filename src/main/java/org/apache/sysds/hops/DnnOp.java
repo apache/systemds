@@ -593,7 +593,6 @@ public class DnnOp extends MultiThreadedHop {
 	// Parameters recomputed in refreshSizeInformation and passed across many calls of getDim
 	private DnnParameters _cachedParams = new DnnParameters(-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, _maxNumThreads);
 	
-	@SuppressWarnings("null")
 	// stride1, stride2, padding1, padding2  
 	// input_shape1, input_shape2, input_shape3, input_shape4, 
 	// filter_shape1, filter_shape2, filter_shape3, filter_shape4

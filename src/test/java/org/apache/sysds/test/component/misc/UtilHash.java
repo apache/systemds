@@ -87,7 +87,7 @@ public class UtilHash {
 		int[] buckets = new int[nrBuckets];
 
 		for(double x : input) {
-			int hv = Hash.hash(new Double(x), ht);
+			int hv = Hash.hash(Double.valueOf(x), ht);
 			buckets[Math.abs(hv % nrBuckets)] += 1;
 		}
 

@@ -51,7 +51,7 @@ public class DataPartitionerRemoteSparkReducer implements VoidFunction<Tuple2<Lo
 	}
 
 	@Override
-	@SuppressWarnings({ "deprecation", "resource" })
+	@SuppressWarnings({ "deprecation" })
 	public void call(Tuple2<Long, Iterable<Writable>> arg0)
 		throws Exception 
 	{

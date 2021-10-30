@@ -34,6 +34,7 @@ import java.util.HashMap;
 import org.apache.sysds.runtime.matrix.data.MatrixValue.CellIndex;
 
 @RunWith(value = Parameterized.class)
+@net.jcip.annotations.NotThreadSafe
 public class BuiltinKNNBFTest extends AutomatedTestBase
 {
 	private final static String TEST_NAME = "knnbf";

@@ -421,7 +421,7 @@ public class OperationsOnMatrixValues
 	
 	@SuppressWarnings("rawtypes")
 	public static ArrayList performSlice(IndexRange ixrange, int blen, int iix, int jix, FrameBlock in) {
-		Pair<Long, FrameBlock> lfp = new Pair<>(new Long(((iix-1)*blen)+1), in);
+		Pair<Long, FrameBlock> lfp = new Pair<>(Long.valueOf(((iix-1)*blen)+1), in);
 		ArrayList<Pair<Long, FrameBlock>> outlist = performSlice(lfp, ixrange, blen);
 	
 		return outlist;
@@ -477,7 +477,7 @@ public class OperationsOnMatrixValues
 		{
 			ValueType[] schema = Arrays.copyOfRange(block.getSchema(), (int)tmpRange.colStart, (int)tmpRange.colEnd+1);
 			long iResultIndex = Math.max(((r-1)*blen - ixrange.rowStart + 1), 0);
-			Pair<Long,FrameBlock> out=new Pair<>(new Long(iResultIndex+1), new FrameBlock(schema));
+			Pair<Long,FrameBlock> out=new Pair<>(Long.valueOf(iResultIndex+1), new FrameBlock(schema));
 			outlist.add(out);
 		}
 		

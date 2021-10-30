@@ -31,12 +31,14 @@ import org.apache.spark.util.LongAccumulator;
 import org.apache.sysds.runtime.controlprogram.paramserv.LocalParamServer;
 import org.apache.sysds.runtime.controlprogram.paramserv.SparkPSProxy;
 
+import scala.Option;
+
 public class PSRpcFactory {
 
 	private static final String MODULE_NAME = "ps";
 
 	private static TransportContext createTransportContext(SparkConf conf, LocalParamServer ps) {
-		TransportConf tc = SparkTransportConf.fromSparkConf(conf, MODULE_NAME, 0);
+		TransportConf tc = SparkTransportConf.fromSparkConf(conf, MODULE_NAME, 0, Option.empty());
 		PSRpcHandler handler = new PSRpcHandler(ps);
 		return new TransportContext(tc, handler);
 	}
@@ -53,7 +55,9 @@ public class PSRpcFactory {
 		return context.createServer(host, 0, Collections.emptyList());	// bind rpc to an ephemeral port
 	}
 
-	public static SparkPSProxy createSparkPSProxy(SparkConf conf, int port, LongAccumulator aRPC) throws IOException {
+	public static SparkPSProxy createSparkPSProxy(SparkConf conf, int port, LongAccumulator aRPC)
+			throws IOException, InterruptedException
+	{
 		long rpcTimeout = conf.contains("spark.rpc.askTimeout") ?
 			conf.getTimeAsMs("spark.rpc.askTimeout") :
 			conf.getTimeAsMs("spark.network.timeout", "120s");

@@ -121,7 +121,7 @@ public class SizePropagationTest extends AutomatedTestBase
 			
 			runTest(true, false, null, -1); 
 			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromOutputDir("R");
-			Assert.assertEquals(new Double(expect), dmlfile.get(new CellIndex(1,1)));
+			Assert.assertEquals(Double.valueOf(expect), dmlfile.get(new CellIndex(1,1)));
 		}
 		finally {
 			OptimizerUtils.ALLOW_ALGEBRAIC_SIMPLIFICATION = oldFlag;

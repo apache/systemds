@@ -36,6 +36,7 @@ import java.util.Collection;
 import java.util.HashMap;
 
 @RunWith(value = Parameterized.class)
+@net.jcip.annotations.NotThreadSafe
 public class BuiltinStratstatsTest extends AutomatedTestBase {
 	private final static String TEST_NAME = "stratstats";
 	private final static String TEST_DIR = "functions/builtin/";

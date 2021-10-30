@@ -98,7 +98,7 @@ public class RewriteFoldRCBindTest extends AutomatedTestBase
 			
 			//compare matrices 
 			Double ret = readDMLMatrixFromOutputDir("R").get(new CellIndex(1,1));
-			Assert.assertEquals("Wrong result", new Double(5*rows*cols), ret);
+			Assert.assertEquals("Wrong result", Double.valueOf(5*rows*cols), ret);
 			
 			//check for applied rewrites
 			if( rewrites ) {

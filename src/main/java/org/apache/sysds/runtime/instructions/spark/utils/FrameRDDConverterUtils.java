@@ -497,7 +497,7 @@ public class FrameRDDConverterUtils
 
 		@Override
 		public Tuple2<Long, Text> call(Tuple2<LongWritable, Text> arg0) throws Exception  {
-			return new Tuple2<>(new Long(arg0._1.get()), arg0._2);
+			return new Tuple2<>(Long.valueOf(arg0._1.get()), arg0._2);
 		}
 	}
 

@@ -101,7 +101,7 @@ public class ReaderTextCSV extends MatrixReader
 	{
 		//prepare file paths in alphanumeric order
 		ArrayList<Path> files=new ArrayList<>();
-		if(fs.isDirectory(path)) {
+		if(fs.getFileStatus(path).isDirectory()) {
 			for(FileStatus stat: fs.listStatus(path, IOUtilFunctions.hiddenFileFilter))
 				files.add(stat.getPath());
 			Collections.sort(files);

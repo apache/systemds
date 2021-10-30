@@ -388,7 +388,7 @@ public class SparkExecutionContext extends ExecutionContext
 		return getRDDHandleForMatrixObject(mo, fmt, -1, true);
 	}
 	
-	@SuppressWarnings({ "unchecked", "resource" })
+	@SuppressWarnings({ "unchecked" })
 	public JavaPairRDD<?,?> getRDDHandleForMatrixObject( MatrixObject mo, FileFormat fmt, int numParts, boolean inclEmpty ) {
 		//NOTE: MB this logic should be integrated into MatrixObject
 		//However, for now we cannot assume that spark libraries are
@@ -463,7 +463,6 @@ public class SparkExecutionContext extends ExecutionContext
 		return rdd;
 	}
 
-	@SuppressWarnings("resource")
 	public JavaPairRDD<?, ?> getRDDHandleForTensorObject(TensorObject to, FileFormat fmt, int numParts, boolean inclEmpty) {
 		//NOTE: MB this logic should be integrated into MatrixObject
 		//However, for now we cannot assume that spark libraries are
@@ -543,7 +542,7 @@ public class SparkExecutionContext extends ExecutionContext
 	 * @param fmt file format type
 	 * @return JavaPairRDD handle for a frame object
 	 */
-	@SuppressWarnings({ "unchecked", "resource" })
+	@SuppressWarnings({ "unchecked" })
 	public JavaPairRDD<?,?> getRDDHandleForFrameObject( FrameObject fo, FileFormat fmt )
 	{
 		//NOTE: MB this logic should be integrated into FrameObject
@@ -1615,13 +1614,11 @@ public class SparkExecutionContext extends ExecutionContext
 		_poolBuff[pool] = false;
 	}
 
-	@SuppressWarnings("resource")
 	private boolean isRDDMarkedForCaching( int rddID ) {
 		JavaSparkContext jsc = getSparkContext();
 		return jsc.sc().getPersistentRDDs().contains(rddID);
 	}
 
-	@SuppressWarnings("resource")
 	public boolean isRDDCached( int rddID ) {
 		//check that rdd is marked for caching
 		JavaSparkContext jsc = getSparkContext();
@@ -1839,7 +1836,6 @@ public class SparkExecutionContext extends ExecutionContext
 				//get default parallelism (total number of executors and cores)
 				//note: spark context provides this information while conf does not
 				//(for num executors we need to correct for driver and local mode)
-				@SuppressWarnings("resource")
 				JavaSparkContext jsc = getSparkContextStatic();
 				_numExecutors = Math.max(jsc.sc().getExecutorMemoryStatus().size() - 1, 1);
 				_defaultPar = jsc.defaultParallelism();

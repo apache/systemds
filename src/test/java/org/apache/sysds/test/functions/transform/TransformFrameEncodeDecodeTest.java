@@ -176,7 +176,8 @@ public class TransformFrameEncodeDecodeTest extends AutomatedTestBase
 			
 			if( rt == ExecMode.HYBRID ) {
 				Assert.assertEquals("Wrong number of executed Spark instructions: " + 
-					Statistics.getNoOfExecutedSPInst(), new Long(0), new Long(Statistics.getNoOfExecutedSPInst()));
+					Statistics.getNoOfExecutedSPInst(), Long.valueOf(0),
+					Long.valueOf(Statistics.getNoOfExecutedSPInst()));
 			}
 		}
 		catch(Exception ex) {

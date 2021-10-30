@@ -112,17 +112,17 @@ public class ParForSampleTest extends AutomatedTestBase
 			runTest(true, false, null, -1);
 			
 			//read result data and meta data
-			HashMap<CellIndex, Double> B1 = readDMLMatrixFromOutputDir("B1");				
-			HashMap<CellIndex, Double> B2 = readDMLMatrixFromOutputDir("B2");				
+			HashMap<CellIndex, Double> B1 = readDMLMatrixFromOutputDir("B1");
+			HashMap<CellIndex, Double> B2 = readDMLMatrixFromOutputDir("B2");
 			MatrixCharacteristics B1mc = readDMLMetaDataFile("B1");
 			MatrixCharacteristics B2mc = readDMLMetaDataFile("B2");
 			
 			//compare meta data
-			Assert.assertEquals(new Long(rows), new Long(B1mc.getRows()+B2mc.getRows())); //join full coverage rows
-			Assert.assertEquals(new Long(cols), new Long(B1mc.getCols())); //full coverage cols
-			Assert.assertEquals(new Long(cols), new Long(B2mc.getCols())); //full coverage cols
-			Assert.assertNotEquals(new Long(rows), new Long(B1mc.getRows())); //no sample contains all rows
-			Assert.assertNotEquals(new Long(rows), new Long(B2mc.getRows())); //no sample contains all rows
+			Assert.assertEquals(Long.valueOf(rows), Long.valueOf(B1mc.getRows()+B2mc.getRows())); //join full coverage rows
+			Assert.assertEquals(Long.valueOf(cols), Long.valueOf(B1mc.getCols())); //full coverage cols
+			Assert.assertEquals(Long.valueOf(cols), Long.valueOf(B2mc.getCols())); //full coverage cols
+			Assert.assertNotEquals(Long.valueOf(rows), Long.valueOf(B1mc.getRows())); //no sample contains all rows
+			Assert.assertNotEquals(Long.valueOf(rows), Long.valueOf(B2mc.getRows())); //no sample contains all rows
 			
 			//compare data
 			HashSet<Integer> probe = new HashSet<>(rows);

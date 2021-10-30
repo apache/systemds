@@ -558,7 +558,6 @@ public class ResultMergeLocalFile extends ResultMergeMatrix
 		}
 	}
 
-	@SuppressWarnings("resource")
 	private void createTextCellResultFile( String fnameStaging, String fnameStagingCompare, String fnameNew, MetaDataFormat metadata, boolean withCompare ) 
 		throws IOException, DMLRuntimeException
 	{

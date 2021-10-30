@@ -28,24 +28,24 @@ public class CPlanModIntdivPrimitives
 	@Test
 	public void testINT32Mod2() {
 		Double val = LibSpoofPrimitives.mod(4, 2);
-		Assert.assertEquals(val, new Double(0));
+		Assert.assertEquals(val, Double.valueOf(0));
 	}
 	
 	@Test
 	public void testFP64Mod2() {
 		Double val = LibSpoofPrimitives.mod(4.3, 2);
-		Assert.assertEquals(val, new Double(0.3), 10-8);
+		Assert.assertEquals(val, Double.valueOf(0.3), 10-8);
 	}
 	
 	@Test
 	public void testINT32Intdiv2() {
 		Double val = LibSpoofPrimitives.intDiv(4, 2);
-		Assert.assertEquals(val, new Double(2));
+		Assert.assertEquals(val, Double.valueOf(2));
 	}
 	
 	@Test
 	public void testFP64Intdiv2() {
 		Double val = LibSpoofPrimitives.intDiv(4.3, 2);
-		Assert.assertEquals(val, new Double(2));
+		Assert.assertEquals(val, Double.valueOf(2));
 	}
 }

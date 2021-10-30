@@ -58,8 +58,10 @@ public abstract class CodeTemplate {
 					.getTextValue(DMLConfig.LOCAL_TMP_DIR) + templateFileName)));
 			}
 			else
-				return IOUtilFunctions.toString(new FileInputStream(System.getProperty("user.dir") +
-					"/src/main" + templateFileName));
+				try(FileInputStream fis = new FileInputStream(
+					System.getProperty("user.dir") + "/src/main" + templateFileName)) {
+					return IOUtilFunctions.toString(fis);
+				}
 		}
 		catch(IOException e) {
 			System.out.println(e.getMessage());

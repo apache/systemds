@@ -122,7 +122,7 @@ public class RewriteListTsmmCVTest extends AutomatedTestBase
 			
 			//compare matrices 
 			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromOutputDir("S");
-			Assert.assertEquals(new Double(cols*7), dmlfile.get(new CellIndex(1,1)));
+			Assert.assertEquals(Double.valueOf(cols*7), dmlfile.get(new CellIndex(1,1)));
 			
 			//check compiled instructions after rewrite
 			if( instType == ExecType.CP )

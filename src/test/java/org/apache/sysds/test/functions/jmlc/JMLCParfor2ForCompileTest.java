@@ -45,7 +45,6 @@ public class JMLCParfor2ForCompileTest extends AutomatedTestBase
 		runJMLCParFor2ForTest(false);
 	}
 
-	@SuppressWarnings("resource")
 	private static void runJMLCParFor2ForTest(boolean par) {
 		try {
 			Connection conn = !par ? new Connection() :

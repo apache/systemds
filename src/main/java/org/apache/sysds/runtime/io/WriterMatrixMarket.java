@@ -167,55 +167,55 @@ public class WriterMatrixMarket extends MatrixWriter
 	public static void mergeTextcellToMatrixMarket( String srcFileName, String fileName, long rlen, long clen, long nnz )
 		throws IOException
 	{
-		  Configuration conf = new Configuration(ConfigurationManager.getCachedJobConf());
+		Configuration conf = new Configuration(ConfigurationManager.getCachedJobConf());
 		
-		  Path src = new Path (srcFileName);
-	      Path merge = new Path (fileName);
-	      FileSystem fs = IOUtilFunctions.getFileSystem(src, conf);
-			
-	      if (fs.exists (merge)) {
-	    	fs.delete(merge, true);
-	      }
-        
-	      OutputStream out = fs.create(merge, true);
+		Path src = new Path (srcFileName);
+		Path merge = new Path (fileName);
+		FileSystem fs = IOUtilFunctions.getFileSystem(src, conf);
 
-	      // write out the header first 
-	      StringBuilder  sb = new StringBuilder();
-	      sb.append ("%%MatrixMarket matrix coordinate real general\n");
-	    
-	      // output number of rows, number of columns and number of nnz
-	 	  sb.append (rlen + " " + clen + " " + nnz + "\n");
-	      out.write (sb.toString().getBytes());
+		if (fs.exists (merge)) {
+			fs.delete(merge, true);
+		}
 
-	      // if the source is a directory
-	      if (fs.getFileStatus(src).isDirectory()) {
-	        try {
-	          FileStatus[] contents = fs.listStatus(src);
-	          for (int i = 0; i < contents.length; i++) {
-	            if (!contents[i].isDirectory()) {
-	               InputStream in = fs.open (contents[i].getPath());
-	               try {
-	                 IOUtils.copyBytes (in, out, conf, false);
-	               }  finally {
-	                  IOUtilFunctions.closeSilently(in);
-	               }
-	             }
-	           }
-	         } finally {
-	        	 IOUtilFunctions.closeSilently(out);
-	         }
-	      } else if (fs.isFile(src))  {
-	        InputStream in = null;
-	        try {
-   	          in = fs.open (src);
-	          IOUtils.copyBytes (in, out, conf, true);
-	        } 
-	        finally {
-	        	IOUtilFunctions.closeSilently(in);
-	        	IOUtilFunctions.closeSilently(out);
-	        }
-	      } else {
-	        throw new IOException(src.toString() + ": No such file or directory");
-	      }
+		OutputStream out = fs.create(merge, true);
+
+		// write out the header first 
+		StringBuilder  sb = new StringBuilder();
+		sb.append ("%%MatrixMarket matrix coordinate real general\n");
+
+		// output number of rows, number of columns and number of nnz
+		sb.append (rlen + " " + clen + " " + nnz + "\n");
+		out.write (sb.toString().getBytes());
+
+		// if the source is a directory
+		if (fs.getFileStatus(src).isDirectory()) {
+			try {
+				FileStatus[] contents = fs.listStatus(src);
+				for (int i = 0; i < contents.length; i++) {
+					if (!contents[i].isDirectory()) {
+						InputStream in = fs.open (contents[i].getPath());
+						try {
+							IOUtils.copyBytes (in, out, conf, false);
+						}  finally {
+							IOUtilFunctions.closeSilently(in);
+						}
+					}
+				}
+			} finally {
+			 IOUtilFunctions.closeSilently(out);
+			}
+		} else if (fs.getFileStatus(src).isDirectory()) {
+			InputStream in = null;
+			try {
+				in = fs.open (src);
+				IOUtils.copyBytes (in, out, conf, true);
+			}
+			finally {
+				IOUtilFunctions.closeSilently(in);
+				IOUtilFunctions.closeSilently(out);
+			}
+		} else {
+			throw new IOException(src.toString() + ": No such file or directory");
+		}
 	}
 }

@@ -198,7 +198,7 @@ public class ResultMergeRemoteSpark extends ResultMergeMatrix
 		return (int)Math.min( numRed, reducerGroups );
 	}
 	
-	@SuppressWarnings({ "unchecked", "cast" })
+	@SuppressWarnings({ "unchecked"})
 	private static void setRDDHandleForMerge(MatrixObject mo, SparkExecutionContext sec) {
 		InputOutputInfo iinfo = InputOutputInfo.get(DataType.MATRIX, FileFormat.BINARY);
 		JavaPairRDD<MatrixIndexes,MatrixBlock> rdd = (JavaPairRDD<MatrixIndexes,MatrixBlock>) sec.getSparkContext().hadoopFile(

@@ -164,7 +164,7 @@ public class WriteReadZeroDimsTest extends AutomatedTestBase
 				
 				//check overall result
 				double expected = ((type == Type.Zero_Rows) ? colsM : rowsM) * 7;
-				Assert.assertEquals(new Double(expected),
+				Assert.assertEquals(Double.valueOf(expected),
 					readDMLMatrixFromOutputDir("R2").get(new CellIndex(1,1)));
 			}
 		}

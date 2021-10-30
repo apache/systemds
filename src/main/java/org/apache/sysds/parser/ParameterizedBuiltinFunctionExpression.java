@@ -459,7 +459,6 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 		output2.setDimensions(-1, -1);
 	}
 	
-	@SuppressWarnings("unused")
 	private void validateTransformSpec(String pname, boolean conditional) {
 		Expression data = getVarParam(pname);
 		if( data instanceof StringIdentifier ) {

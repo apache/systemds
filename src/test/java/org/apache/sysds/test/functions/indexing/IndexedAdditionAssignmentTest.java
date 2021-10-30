@@ -82,7 +82,7 @@ public class IndexedAdditionAssignmentTest extends AutomatedTestBase
 			runTest(true, false, null, -1);
 			
 			Double ret = readDMLMatrixFromOutputDir("A").get(new CellIndex(1,1));
-			Assert.assertEquals(new Double(3*rows*cols + 7*(scalar?1:100)),  ret);
+			Assert.assertEquals(Double.valueOf(3*rows*cols + 7*(scalar?1:100)),  ret);
 		}
 		finally {
 			resetExecMode(platformOld);

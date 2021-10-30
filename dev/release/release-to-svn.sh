@@ -69,8 +69,7 @@ cd svn-release-systemds
 
 if [[ $dry_run_flag != 1 ]]; then
   # This step prompts for the Apache Credentials
-  svn info
-#   svn ci --username "$ASF_USERNAME" --password "$ASF_PASSWORD" -m"Apache SystemDS $RELEASE_VERSION Released" --no-auth-cache
+  svn ci --username "$ASF_USERNAME" --password "$ASF_PASSWORD" -m"Apache SystemDS $RELEASE_VERSION Released" --no-auth-cache
   echo $?
 else
   printf "\n==========\n"

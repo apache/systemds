@@ -1,68 +1,34 @@
-
-
 <!DOCTYPE html>
 <html class="writer-html5" lang="en" >
 <head>
-  <meta charset="utf-8">
-  
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Algorithms &mdash; SystemDS 2.2.0-SNAPSHOT documentation</title>
-  
-
-  
-  <link rel="stylesheet" href="../../static/css/theme.css" type="text/css" />
-  <link rel="stylesheet" href="../../static/pygments.css" type="text/css" />
-
-  
-  
-  
-  
-
-  
+      <link rel="stylesheet" href="../../static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
     <script src="../../static/js/html5shiv.min.js"></script>
   <![endif]-->
   
-    
-      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../static/documentation_options.js"></script>
+        <script data-url_root="../../" id="documentation_options" src="../../static/documentation_options.js"></script>
         <script src="../../static/jquery.js"></script>
         <script src="../../static/underscore.js"></script>
         <script src="../../static/doctools.js"></script>
-        <script src="../../static/language_data.js"></script>
-    
-    <script type="text/javascript" src="../../static/js/theme.js"></script>
-
-    
+    <script src="../../static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
     <link rel="next" title="Matrix" href="node/matrix.html" />
     <link rel="prev" title="SystemDSContext" href="../context/systemds_context.html" /> 
 </head>
 
-<body class="wy-body-for-nav">
-
-   
+<body class="wy-body-for-nav"> 
   <div class="wy-grid-for-nav">
-    
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
-          
-
-          
-            <a href="../../index.html" class="icon icon-home" alt="Documentation Home"> SystemDS
-          
-
-          
+            <a href="../../index.html" class="icon icon-home"> SystemDS
           </a>
-
-          
-            
-            
-          
-
-          
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
     <input type="text" name="q" placeholder="Search docs" />
@@ -70,29 +36,18 @@
     <input type="hidden" name="area" value="default" />
   </form>
 </div>
-
-          
-        </div>
-
-        
-        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
-          
-            
-            
-              
-            
-            
-              <p class="caption"><span class="caption-text">Getting Started:</span></p>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting Started:</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../getting_started/install.html">Install SystemDS</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../getting_started/simple_examples.html">QuickStart</a></li>
 </ul>
-<p class="caption"><span class="caption-text">Guides</span></p>
+<p class="caption" role="heading"><span class="caption-text">Guides</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../guide/federated.html">Federated Environment</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../guide/algorithms_basics.html">Built-in Algorithms</a></li>
 </ul>
-<p class="caption"><span class="caption-text">API</span></p>
+<p class="caption" role="heading"><span class="caption-text">API</span></p>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="../context/systemds_context.html">SystemDSContext</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Algorithms</a></li>
@@ -102,7 +57,7 @@
 <li class="toctree-l1"><a class="reference internal" href="node/scalar.html">Scalar</a></li>
 <li class="toctree-l1"><a class="reference internal" href="node/source.html">Source</a></li>
 </ul>
-<p class="caption"><span class="caption-text">Internals API</span></p>
+<p class="caption" role="heading"><span class="caption-text">Internals API</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="operation_node.html">Operation Node</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../script_building/dag.html">Dag</a></li>
@@ -111,71 +66,32 @@
 <li class="toctree-l1"><a class="reference internal" href="../utils/helpers.html">Helpers</a></li>
 </ul>
 
-            
-          
         </div>
-        
       </div>
     </nav>
 
-    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
-
-      
-      <nav class="wy-nav-top" aria-label="top navigation">
-        
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
           <a href="../../index.html">SystemDS</a>
-        
       </nav>
 
-
       <div class="wy-nav-content">
-        
         <div class="rst-content">
-        
-          
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<div role="navigation" aria-label="breadcrumbs navigation">
-
+          <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-    
       <li><a href="../../index.html" class="icon icon-home"></a> &raquo;</li>
-        
       <li>Algorithms</li>
-    
-    
       <li class="wy-breadcrumbs-aside">
-        
-            
             <a href="../../sources/api/operator/algorithms.rst.txt" rel="nofollow"> View page source</a>
-          
-        
       </li>
-    
   </ul>
-
-  
   <hr/>
 </div>
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
-            
-  <div class="section" id="algorithms">
-<h1>Algorithms<a class="headerlink" href="#algorithms" title="Permalink to this headline">¶</a></h1>
+             
+  <section id="algorithms">
+<h1>Algorithms<a class="headerlink" href="#algorithms" title="Permalink to this headline"></a></h1>
 <p>SystemDS support different Machine learning algorithms out of the box.</p>
 <p>As an example the lm algorithm can be used as follows:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Import numpy and SystemDS</span>
@@ -215,8 +131,8 @@
 </pre></div>
 </div>
 <span class="target" id="module-systemds.operator.algorithm"></span><dl class="py function">
-<dt id="systemds.operator.algorithm.als">
-<code class="sig-prename descclassname">systemds.operator.algorithm.</code><code class="sig-name descname">als</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">X</span><span class="p">:</span> <span class="n">systemds.operator.nodes.matrix.Matrix</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Dict<span class="p">[</span>str<span class="p">, </span>Union<span class="p">[</span>DAGNode<span class="p">, </span>str<span class="p">, </span>int<span class="p">, </span>float<span class="p">, </span>bool<span class="p">]</span><span class="p">]</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#systemds.operator.algorithm.als" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="systemds.operator.algorithm.als">
+<span class="sig-prename descclassname"><span class="pre">systemds.operator.algorithm.</span></span><span class="sig-name descname"><span class="pre">als</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference internal" href="node/matrix.html#systemds.operator.Matrix" title="systemds.operator.nodes.matrix.Matrix"><span class="pre">systemds.operator.nodes.matrix.Matrix</span></a></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span> </span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">DAGNode</span><span class="p"><span class="pre">,</span> </span><span class="pre">str</span><span class="p"><span class="pre">,</span> </span><span class="pre">int</span><span class="p"><span class="pre">,</span> </span><span class="pre">float</span><span class="p"><span class="pre">,</span> </span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#systemds.operator.algorithm.als" title="Permalink to this definition"></a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -238,8 +154,8 @@
 </dd></dl>
 
 <dl class="py function">
-<dt id="systemds.operator.algorithm.alsCG">
-<code class="sig-prename descclassname">systemds.operator.algorithm.</code><code class="sig-name descname">alsCG</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">X</span><span class="p">:</span> <span class="n">systemds.operator.nodes.matrix.Matrix</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Dict<span class="p">[</span>str<span class="p">, </span>Union<span class="p">[</span>DAGNode<span class="p">, </span>str<span class="p">, </span>int<span class="p">, </span>float<span class="p">, </span>bool<span class="p">]</span><span class="p">]</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#systemds.operator.algorithm.alsCG" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="systemds.operator.algorithm.alsCG">
+<span class="sig-prename descclassname"><span class="pre">systemds.operator.algorithm.</span></span><span class="sig-name descname"><span class="pre">alsCG</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference internal" href="node/matrix.html#systemds.operator.Matrix" title="systemds.operator.nodes.matrix.Matrix"><span class="pre">systemds.operator.nodes.matrix.Matrix</span></a></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span> </span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">DAGNode</span><span class="p"><span class="pre">,</span> </span><span class="pre">str</span><span class="p"><span class="pre">,</span> </span><span class="pre">int</span><span class="p"><span class="pre">,</span> </span><span class="pre">float</span><span class="p"><span class="pre">,</span> </span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#systemds.operator.algorithm.alsCG" title="Permalink to this definition"></a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -261,8 +177,8 @@
 </dd></dl>
 
 <dl class="py function">
-<dt id="systemds.operator.algorithm.alsDS">
-<code class="sig-prename descclassname">systemds.operator.algorithm.</code><code class="sig-name descname">alsDS</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">X</span><span class="p">:</span> <span class="n">systemds.operator.nodes.matrix.Matrix</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Dict<span class="p">[</span>str<span class="p">, </span>Union<span class="p">[</span>DAGNode<span class="p">, </span>str<span class="p">, </span>int<span class="p">, </span>float<span class="p">, </span>bool<span class="p">]</span><span class="p">]</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#systemds.operator.algorithm.alsDS" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="systemds.operator.algorithm.alsDS">
+<span class="sig-prename descclassname"><span class="pre">systemds.operator.algorithm.</span></span><span class="sig-name descname"><span class="pre">alsDS</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference internal" href="node/matrix.html#systemds.operator.Matrix" title="systemds.operator.nodes.matrix.Matrix"><span class="pre">systemds.operator.nodes.matrix.Matrix</span></a></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span> </span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">DAGNode</span><span class="p"><span class="pre">,</span> </span><span class="pre">str</span><span class="p"><span class="pre">,</span> </span><span class="pre">int</span><span class="p"><span class="pre">,</span> </span><span class="pre">float</span><span class="p"><span class="pre">,</span> </span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#systemds.operator.algorithm.alsDS" title="Permalink to this definition"></a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -285,8 +201,8 @@
 </dd></dl>
 
 <dl class="py function">
-<dt id="systemds.operator.algorithm.alsTopkPredict">
-<code class="sig-prename descclassname">systemds.operator.algorithm.</code><code class="sig-name descname">alsTopkPredict</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">userIDs</span><span class="p">:</span> <span class="n">systemds.operator.nodes.matrix.Matrix</span></em>, <em class="sig-param"><span class="n">I</span><span class="p">:</span> <span class="n">systemds.operator.nodes.matrix.Matrix</span></em>, <em class="sig-param"><span class="n">L</span><span class="p">:</span> <span class="n">systemds.operator.nodes.matrix.Matrix</span></em>, <em class="sig-param"><span class="n">R</span><span class="p">:</span> <span class="n">systemds.operator.nodes.matrix.Matrix</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Dict<span class="p">[</span>str<span class="p">, </span>Union<span class="p">[</span>DAGNode<span class="p">, </span>str<span class="p">, </span>int<span class="p">, </span>float<span class="p">, </span>bool<span class="p">]</span><span class="p">]</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#systemds.operator.algorithm.alsTopkPredict" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="systemds.operator.algorithm.alsTopkPredict">
+<span class="sig-prename descclassname"><span class="pre">systemds.operator.algorithm.</span></span><span class="sig-name descname"><span class="pre">alsTopkPredict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">userIDs</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference internal" href="node/matrix.html#systemds.operator.Matrix" title="systemds.operator.nodes.matrix.Matrix"><span class="pre">systemds.operator.nodes.matrix.Matrix</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">I</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference internal" href="node/matrix.html#systemds.operator.Matrix" title="systemds.operator.nodes.matrix.Matrix"><span class="pre">systemds.operator.nodes.matrix.Matrix</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">L</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference internal" href="node/matrix.html#systemds.operator.Matrix" title="systemds.operator.nodes.matrix.Matrix"><span class="pre">systemds.operator.nodes.matrix.Matrix</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">R</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference internal" href="node/matrix.html#systemds.operator.Matrix" title="systemds.operator.nodes.matrix.Matrix"><span class="pre">systemds.operator.nodes.matrix.Matrix</span></a></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span> </span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">DAGNode</span><span class="p"><span class="pre">,</span> </span><span class="pre">str</span><span class="p"><span class="pre">,</span> </span><span class="pre">int</span><span class="p"><span class="pre">,</span> </span><span class="pre">float</span><span class="p"><span class="pre">,</span> </span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#systemds.operator.algorithm.alsTopkPredict" title="Permalink to this definition"></a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -304,8 +220,8 @@
 </dd></dl>
 
 <dl class="py function">
-<dt id="systemds.operator.algorithm.arima">
-<code class="sig-prename descclassname">systemds.operator.algorithm.</code><code class="sig-name descname">arima</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">X</span><span class="p">:</span> <span class="n">systemds.operator.nodes.matrix.Matrix</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Dict<span class="p">[</span>str<span class="p">, </span>Union<span class="p">[</span>DAGNode<span class="p">, </span>str<span class="p">, </span>int<span class="p">, </span>float<span class="p">, </span>bool<span class="p">]</span><span class="p">]</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#systemds.operator.algorithm.arima" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="systemds.operator.algorithm.arima">
+<span class="sig-prename descclassname"><span class="pre">systemds.operator.algorithm.</span></span><span class="sig-name descname"><span class="pre">arima</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference internal" href="node/matrix.html#systemds.operator.Matrix" title="systemds.operator.nodes.matrix.Matrix"><span class="pre">systemds.operator.nodes.matrix.Matrix</span></a></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span> </span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">DAGNode</span><span class="p"><span class="pre">,</span> </span><span class="pre">str</span><span class="p"><span class="pre">,</span> </span><span class="pre">int</span><span class="p"><span class="pre">,</span> </span><span class="pre">float</span><span class="p"><span class="pre">,</span> </span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#systemds.operator.algorithm.arima" title="Permalink to this definition"></a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -330,8 +246,8 @@
 </dd></dl>
 
 <dl class="py function">
-<dt id="systemds.operator.algorithm.bivar">
-<code class="sig-prename descclassname">systemds.operator.algorithm.</code><code class="sig-name descname">bivar</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">X</span><span class="p">:</span> <span class="n">systemds.operator.nodes.matrix.Matrix</span></em>, <em class="sig-param"><span class="n">S1</span><span class="p">:</span> <span class="n">systemds.operator.nodes.matrix.Matrix</span></em>, <em class="sig-param"><span class="n">S2</span><span class="p">:</span> <span class="n">systemds.operator.nodes.matrix.Matrix</span></em>, <em class="sig-param"><span class="n">T1</span><span class="p">:</span> <span class="n">systemds.operator.nodes.matrix.Matrix</span></em>, <em class="sig-param"><span class="n">T2</span><span class="p">:</span> <span class="n">systemds.operator.nodes.matrix.Matrix</span></em>, <em class="sig-param"><span class="n">verbose</span><span class="p">:</span> <span class="n">bool</span></em><span class="sig-paren">)</span><a class="headerlink" href="#systemds.operator.algorithm.bivar" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="systemds.operator.algorithm.bivar">
+<span class="sig-prename descclassname"><span class="pre">systemds.operator.algorithm.</span></span><span class="sig-name descname"><span class="pre">bivar</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference internal" href="node/matrix.html#systemds.operator.Matrix" title="systemds.operator.nodes.matrix.Matrix"><span class="pre">systemds.operator.nodes.matrix.Matrix</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">S1</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference internal" href="node/matrix.html#systemds.operator.Matrix" title="systemds.operator.nodes.matrix.Matrix"><span class="pre">systemds.operator.nodes.matrix.Matrix</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">S2</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference internal" href="node/matrix.html#systemds.operator.Matrix" title="systemds.operator.nodes.matrix.Matrix"><span class="pre">systemds.operator.nodes.matrix.Matrix</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">T1</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference internal" href="node/matrix.html#systemds.operator.Matrix" title="systemds.operator.nodes.matrix.Matrix"><span class="pre">systemds.operator.nodes.matrix.Matrix</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">T2</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference internal" href="node/matrix.html#systemds.operator.Matrix" title="systemds.operator.nodes.matrix.Matrix"><span class="pre">systemds.operator.nodes.matrix.Matrix</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">bool</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#systemds.operator.algorithm.bivar" title="Permalink to this definition"></a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><p><strong>verbose</strong> – Print bivar stats</p>
@@ -343,8 +259,8 @@
 </dd></dl>
 
 <dl class="py function">
-<dt id="systemds.operator.algorithm.confusionMatrix">
-<code class="sig-prename descclassname">systemds.operator.algorithm.</code><code class="sig-name descname">confusionMatrix</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">P</span><span class="p">:</span> <span class="n">systemds.operator.nodes.matrix.Matrix</span></em>, <em class="sig-param"><span class="n">Y</span><span class="p">:</span> <span class="n">systemds.operator.nodes.matrix.Matrix</span></em><span class="sig-paren">)</span><a class="headerlink" href="#systemds.operator.algorithm.confusionMatrix" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="systemds.operator.algorithm.confusionMatrix">
+<span class="sig-prename descclassname"><span class="pre">systemds.operator.algorithm.</span></span><span class="sig-name descname"><span class="pre">confusionMatrix</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">P</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference internal" href="node/matrix.html#systemds.operator.Matrix" title="systemds.operator.nodes.matrix.Matrix"><span class="pre">systemds.operator.nodes.matrix.Matrix</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">Y</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference internal" href="node/matrix.html#systemds.operator.Matrix" title="systemds.operator.nodes.matrix.Matrix"><span class="pre">systemds.operator.nodes.matrix.Matrix</span></a></span></em><span class="sig-paren">)</span><a class="headerlink" href="#systemds.operator.algorithm.confusionMatrix" title="Permalink to this definition"></a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -359,8 +275,8 @@
 </dd></dl>
 
 <dl class="py function">
-<dt id="systemds.operator.algorithm.cox">
-<code class="sig-prename descclassname">systemds.operator.algorithm.</code><code class="sig-name descname">cox</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">X</span><span class="p">:</span> <span class="n">systemds.operator.nodes.matrix.Matrix</span></em>, <em class="sig-param"><span class="n">TE</span><span class="p">:</span> <span class="n">systemds.operator.nodes.matrix.Matrix</span></em>, <em class="sig-param"><span class="n">F</span><span class="p">:</span> <span class="n">systemds.operator.nodes.matrix.Matrix</span></em>, <em class="sig-param"><span class="n">R</span><span class="p">:</span> <span class="n">systemds.operator.nodes.matrix.Matrix</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Dict<span class="p">[</span>str<span class="p">, </span>Union<span class="p">[</span>DAGNode<span class="p">, </span>str<span class="p">, </span>int<span class="p">, </span>float<span class="p">, </span>bool<span class="p">]</span><span class="p">]</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#systemds.operator.algorithm.cox" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="systemds.operator.algorithm.cox">
+<span class="sig-prename descclassname"><span class="pre">systemds.operator.algorithm.</span></span><span class="sig-name descname"><span class="pre">cox</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference internal" href="node/matrix.html#systemds.operator.Matrix" title="systemds.operator.nodes.matrix.Matrix"><span class="pre">systemds.operator.nodes.matrix.Matrix</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">TE</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference internal" href="node/matrix.html#systemds.operator.Matrix" title="systemds.operator.nodes.matrix.Matrix"><span class="pre">systemds.operator.nodes.matrix.Matrix</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">F</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference internal" href="node/matrix.html#systemds.operator.Matrix" title="systemds.operator.nodes.matrix.Matrix"><span class="pre">systemds.operator.nodes.matrix.Matrix</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">R</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference internal" href="node/matrix.html#systemds.operator.Matrix" title="systemds.operator.nodes.matrix.Matrix"><span class="pre">systemds.operator.nodes.matrix.Matrix</span></a></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span> </span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">DAGNode</span><span class="p"><span class="pre">,</span> </span><span class="pre">str</span><span class="p"><span class="pre">,</span> </span><span class="pre">int</span><span class="p"><span class="pre">,</span> </span><span class="pre">float</span><span class="p"><span class="pre">,</span> </span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#systemds.operator.algorithm.cox" title="Permalink to this definition"></a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -387,8 +303,8 @@
 </dd></dl>
 
 <dl class="py function">
-<dt id="systemds.operator.algorithm.decisionTree">
-<code class="sig-prename descclassname">systemds.operator.algorithm.</code><code class="sig-name descname">decisionTree</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">X</span><span class="p">:</span> <span class="n">systemds.operator.nodes.matrix.Matrix</span></em>, <em class="sig-param"><span class="n">Y</span><span class="p">:</span> <span class="n">systemds.operator.nodes.matrix.Matrix</span></em>, <em class="sig-param"><span class="n">R</span><span class="p">:</span> <span class="n">systemds.operator.nodes.matrix.Matrix</span></em>, <em class="sig-param"><span class="n">verbose</span><span class="p">:</span> <span class="n">bool</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Dict<span class="p">[</span>str<span class="p">, </span>Union<span class="p">[</span>DAGNode<span class="p">, </span>str<span class="p">, </span>int<span class="p">, </span>float<span class="p">, </span>bool<span class="p">]</span><span class="p">]</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#systemds.operator.algorithm.decisionTree" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="systemds.operator.algorithm.decisionTree">
+<span class="sig-prename descclassname"><span class="pre">systemds.operator.algorithm.</span></span><span class="sig-name descname"><span class="pre">decisionTree</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference internal" href="node/matrix.html#systemds.operator.Matrix" title="systemds.operator.nodes.matrix.Matrix"><span class="pre">systemds.operator.nodes.matrix.Matrix</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">Y</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference internal" href="node/matrix.html#systemds.operator.Matrix" title="systemds.operator.nodes.matrix.Matrix"><span class="pre">systemds.operator.nodes.matrix.Matrix</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">R</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference internal" href="node/matrix.html#systemds.operator.Matrix" title="systemds.operator.nodes.matrix.Matrix"><span class="pre">systemds.operator.nodes.matrix.Matrix</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">bool</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span> </span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">DAGNode</span><span class="p"><span class="pre">,</span> </span><span class="pre">str</span><span class="p"><span class="pre">,</span> </span><span class="pre">int</span><span class="p"><span class="pre">,</span> </span><span class="pre">float</span><span class="p"><span class="pre">,</span> </span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#systemds.operator.algorithm.decisionTree" title="Permalink to this definition"></a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -406,8 +322,29 @@
 </dd></dl>
 
 <dl class="py function">
-<dt id="systemds.operator.algorithm.executePipeline">
-<code class="sig-prename descclassname">systemds.operator.algorithm.</code><code class="sig-name descname">executePipeline</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">X</span><span class="p">:</span> <span class="n">systemds.operator.nodes.matrix.Matrix</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Dict<span class="p">[</span>str<span class="p">, </span>Union<span class="p">[</span>DAGNode<span class="p">, </span>str<span class="p">, </span>int<span class="p">, </span>float<span class="p">, </span>bool<span class="p">]</span><span class="p">]</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#systemds.operator.algorithm.executePipeline" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="systemds.operator.algorithm.deepWalk">
+<span class="sig-prename descclassname"><span class="pre">systemds.operator.algorithm.</span></span><span class="sig-name descname"><span class="pre">deepWalk</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Graph</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference internal" href="node/matrix.html#systemds.operator.Matrix" title="systemds.operator.nodes.matrix.Matrix"><span class="pre">systemds.operator.nodes.matrix.Matrix</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">w</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">d</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gamma</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span> </span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">DAGNode</span><span class="p"><span class="pre">,</span> </span><span class="pre">str</span><span class="p"><span class="pre">,</span> </span><span class="pre">int</span><span class="p"><span class="pre">,</span> </span><span class="pre">float</span><span class="p"><span class="pre">,</span> </span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#systemds.operator.algorithm.deepWalk" title="Permalink to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>Graph</strong> – adjacency matrix of a graph (n x n)</p></li>
+<li><p><strong>w</strong> – window size</p></li>
+<li><p><strong>d</strong> – embedding size</p></li>
+<li><p><strong>gamma</strong> – walks per vertex</p></li>
+<li><p><strong>t</strong> – walk length</p></li>
+<li><p><strong>alpha</strong> – learning rate</p></li>
+<li><p><strong>beta</strong> – factor for decreasing learning rate</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>‘OperationNode’ containing matrix of vertex/word representation (n x d)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="systemds.operator.algorithm.executePipeline">
+<span class="sig-prename descclassname"><span class="pre">systemds.operator.algorithm.</span></span><span class="sig-name descname"><span class="pre">executePipeline</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference internal" href="node/matrix.html#systemds.operator.Matrix" title="systemds.operator.nodes.matrix.Matrix"><span class="pre">systemds.operator.nodes.matrix.Matrix</span></a></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span> </span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">DAGNode</span><span class="p"><span class="pre">,</span> </span><span class="pre">str</span><span class="p"><span class="pre">,</span> </span><span class="pre">int</span><span class="p"><span class="pre">,</span> </span><span class="pre">float</span><span class="p"><span class="pre">,</span> </span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#systemds.operator.algorithm.executePipeline" title="Permalink to this definition"></a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Returns</dt>
 <dd class="field-odd"><p>‘OperationNode’ containing encoding of categorical features &amp; features &amp; ohe call, to call inside eval as a function &amp; to call inside eval as a function &amp; doing relative over-sampling &amp; count  &amp; replace the null with default values &amp; version of pca</p>
@@ -416,8 +353,56 @@
 </dd></dl>
 
 <dl class="py function">
-<dt id="systemds.operator.algorithm.gaussianClassifier">
-<code class="sig-prename descclassname">systemds.operator.algorithm.</code><code class="sig-name descname">gaussianClassifier</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">D</span><span class="p">:</span> <span class="n">systemds.operator.nodes.matrix.Matrix</span></em>, <em class="sig-param"><span class="n">C</span><span class="p">:</span> <span class="n">systemds.operator.nodes.matrix.Matrix</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Dict<span class="p">[</span>str<span class="p">, </span>Union<span class="p">[</span>DAGNode<span class="p">, </span>str<span class="p">, </span>int<span class="p">, </span>float<span class="p">, </span>bool<span class="p">]</span><span class="p">]</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#systemds.operator.algorithm.gaussianClassifier" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="systemds.operator.algorithm.ffTrain">
+<span class="sig-prename descclassname"><span class="pre">systemds.operator.algorithm.</span></span><span class="sig-name descname"><span class="pre">ffTrain</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference internal" href="node/matrix.html#systemds.operator.Matrix" title="systemds.operator.nodes.matrix.Matrix"><span class="pre">systemds.operator.nodes.matrix.Matrix</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">Y</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference internal" href="node/matrix.html#systemds.operator.Matrix" title="systemds.operator.nodes.matrix.Matrix"><span class="pre">systemds.operator.nodes.matrix.Matrix</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">out_activation</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">loss_fcn</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span> </span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">DAGNode</span><span class="p"><span class="pre">,</span> </span><span class="pre">str</span><span class="p"><span class="pre">,</span> </span><span class="pre">int</span><span class="p"><span class="pre">,</span> </span><span class="pre">float</span><span class="p"><span class="pre">,</span> </span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#systemds.operator.algorithm.ffTrain" title="Permalink to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>batch_size</strong> – Batch size</p></li>
+<li><p><strong>epochs</strong> – Number of epochs</p></li>
+<li><p><strong>learning_rate</strong> – Learning rate</p></li>
+<li><p><strong>out_activation</strong> – User specified ouptut activation function. Possible values:</p></li>
+<li><p><strong>loss_fcn</strong> – User specified loss function. Possible values:</p></li>
+<li><p><strong>shuffle</strong> – Flag which indicates if dataset should be shuffled or not</p></li>
+<li><p><strong>validation_split</strong> – Fraction of training set used as validation set</p></li>
+<li><p><strong>seed</strong> – Seed for model initialization</p></li>
+<li><p><strong>verbose</strong> – Flag which indicates if function should print to stdout</p></li>
+<li><p><strong>Supported</strong> – by the model</p></li>
+<li><p><strong>Supported</strong> – by the model</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>‘OperationNode’ containing</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="systemds.operator.algorithm.garch">
+<span class="sig-prename descclassname"><span class="pre">systemds.operator.algorithm.</span></span><span class="sig-name descname"><span class="pre">garch</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference internal" href="node/matrix.html#systemds.operator.Matrix" title="systemds.operator.nodes.matrix.Matrix"><span class="pre">systemds.operator.nodes.matrix.Matrix</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">kmax</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">momentum</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">start_stepsize</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">end_stepsize</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">start_vicinity</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">end_vicinity</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sim_seed</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">bool</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#systemds.operator.algorithm.garch" title="Permalink to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>X</strong> – The input Matrix to apply Arima on.</p></li>
+<li><p><strong>kmax</strong> – Number of iterations</p></li>
+<li><p><strong>momentum</strong> – Momentum for momentum-gradient descent (set to 0 to deactivate)</p></li>
+<li><p><strong>start_stepsize</strong> – Initial gradient-descent stepsize</p></li>
+<li><p><strong>end_stepsize</strong> – gradient-descent stepsize at end (linear descent)</p></li>
+<li><p><strong>start_vicinity</strong> – proportion of randomness of restart-location for gradient descent at beginning</p></li>
+<li><p><strong>end_vicinity</strong> – same at end (linear decay)</p></li>
+<li><p><strong>sim_seed</strong> – seed for simulation of process on fitted coefficients</p></li>
+<li><p><strong>verbose</strong> – verbosity, comments during fitting</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>‘OperationNode’ containing simulated garch(1,1) process on fitted coefficients &amp; variances of simulated fitted process &amp; constant term of fitted process &amp; 1-st arch-coefficient of fitted process &amp; 1-st garch-coefficient of fitted process &amp; drawbacks: slow convergence of optimization (sort of simulated annealing/gradient descent)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="systemds.operator.algorithm.gaussianClassifier">
+<span class="sig-prename descclassname"><span class="pre">systemds.operator.algorithm.</span></span><span class="sig-name descname"><span class="pre">gaussianClassifier</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">D</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference internal" href="node/matrix.html#systemds.operator.Matrix" title="systemds.operator.nodes.matrix.Matrix"><span class="pre">systemds.operator.nodes.matrix.Matrix</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">C</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference internal" href="node/matrix.html#systemds.operator.Matrix" title="systemds.operator.nodes.matrix.Matrix"><span class="pre">systemds.operator.nodes.matrix.Matrix</span></a></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span> </span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">DAGNode</span><span class="p"><span class="pre">,</span> </span><span class="pre">str</span><span class="p"><span class="pre">,</span> </span><span class="pre">int</span><span class="p"><span class="pre">,</span> </span><span class="pre">float</span><span class="p"><span class="pre">,</span> </span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#systemds.operator.algorithm.gaussianClassifier" title="Permalink to this definition"></a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -432,8 +417,8 @@
 </dd></dl>
 
 <dl class="py function">
-<dt id="systemds.operator.algorithm.gmmPredict">
-<code class="sig-prename descclassname">systemds.operator.algorithm.</code><code class="sig-name descname">gmmPredict</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">X</span><span class="p">:</span> <span class="n">systemds.operator.nodes.matrix.Matrix</span></em>, <em class="sig-param"><span class="n">weight</span><span class="p">:</span> <span class="n">systemds.operator.nodes.matrix.Matrix</span></em>, <em class="sig-param"><span class="n">mu</span><span class="p">:</span> <span class="n">systemds.operator.nodes.matrix.Matrix</span></em>, <em class="sig-param"><span class="n">precisions_cholesky</span><span class="p">:</span> <span class="n">systemds.operator.nodes.matrix.Matrix</span></em>, <em class="sig-param"><span class="n">model</span><span class="p">:</span> <span class="n">str</span></em><span class="sig-paren">)</span><a class="headerlink" href="#systemds.operator.algorithm.gmmPredict" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="systemds.operator.algorithm.gmmPredict">
+<span class="sig-prename descclassname"><span class="pre">systemds.operator.algorithm.</span></span><span class="sig-name descname"><span class="pre">gmmPredict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference internal" href="node/matrix.html#systemds.operator.Matrix" title="systemds.operator.nodes.matrix.Matrix"><span class="pre">systemds.operator.nodes.matrix.Matrix</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">weight</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference internal" href="node/matrix.html#systemds.operator.Matrix" title="systemds.operator.nodes.matrix.Matrix"><span class="pre">systemds.operator.nodes.matrix.Matrix</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">mu</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference internal" href="node/matrix.html#systemds.operator.Matrix" title="systemds.operator.nodes.matrix.Matrix"><span class="pre">systemds.operator.nodes.matrix.Matrix</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">precisions_cholesky</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference internal" href="node/matrix.html#systemds.operator.Matrix" title="systemds.operator.nodes.matrix.Matrix"><span class="pre">systemds.operator.nodes.matrix.Matrix</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#systemds.operator.algorithm.gmmPredict" title="Permalink to this definition"></a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -451,8 +436,8 @@
 </dd></dl>
 
 <dl class="py function">
-<dt id="systemds.operator.algorithm.hospitalResidencyMatch">
-<code class="sig-prename descclassname">systemds.operator.algorithm.</code><code class="sig-name descname">hospitalResidencyMatch</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">R</span><span class="p">:</span> <span class="n">systemds.operator.nodes.matrix.Matrix</span></em>, <em class="sig-param"><span class="n">H</span><span class="p">:</span> <span class="n">systemds.operator.nodes.matrix.Matrix</span></em>, <em class="sig-param"><span class="n">capacity</span><span class="p">:</span> <span class="n">systemds.operator.nodes.matrix.Matrix</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Dict<span class="p">[</span>str<span class="p">, </span>Union<span class="p">[</span>DAGNode<span class="p">, </span>str<span class="p">, </span>int<span class="p">, </span>float<span class="p">, </span>bool<span class="p">]</span><span class="p">]</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#systemds.operator.algorithm.hospitalResidencyMatch" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="systemds.operator.algorithm.hospitalResidencyMatch">
+<span class="sig-prename descclassname"><span class="pre">systemds.operator.algorithm.</span></span><span class="sig-name descname"><span class="pre">hospitalResidencyMatch</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">R</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference internal" href="node/matrix.html#systemds.operator.Matrix" title="systemds.operator.nodes.matrix.Matrix"><span class="pre">systemds.operator.nodes.matrix.Matrix</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">H</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference internal" href="node/matrix.html#systemds.operator.Matrix" title="systemds.operator.nodes.matrix.Matrix"><span class="pre">systemds.operator.nodes.matrix.Matrix</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">capacity</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference internal" href="node/matrix.html#systemds.operator.Matrix" title="systemds.operator.nodes.matrix.Matrix"><span class="pre">systemds.operator.nodes.matrix.Matrix</span></a></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span> </span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">DAGNode</span><span class="p"><span class="pre">,</span> </span><span class="pre">str</span><span class="p"><span class="pre">,</span> </span><span class="pre">int</span><span class="p"><span class="pre">,</span> </span><span class="pre">float</span><span class="p"><span class="pre">,</span> </span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#systemds.operator.algorithm.hospitalResidencyMatch" title="Permalink to this definition"></a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -472,8 +457,8 @@
 </dd></dl>
 
 <dl class="py function">
-<dt id="systemds.operator.algorithm.img_cutout">
-<code class="sig-prename descclassname">systemds.operator.algorithm.</code><code class="sig-name descname">img_cutout</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">img_in</span><span class="p">:</span> <span class="n">systemds.operator.nodes.matrix.Matrix</span></em>, <em class="sig-param"><span class="n">x</span><span class="p">:</span> <span class="n">int</span></em>, <em class="sig-param"><span class="n">y</span><span class="p">:</span> <span class="n">int</span></em>, <em class="sig-param"><span class="n">width</span><span class="p">:</span> <span class="n">int</span></em>, <em class="sig-param"><span class="n">height</span><span class="p">:</span> <span class="n">int</span></em>, <em class="sig-param"><span class="n">fill_value</span><span class="p">:</span> <span class="n">float</span></em><span class="sig-paren">)</span><a class="headerlink" href="#systemds.operator.algorithm.img_cutout" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="systemds.operator.algorithm.img_cutout">
+<span class="sig-prename descclassname"><span class="pre">systemds.operator.algorithm.</span></span><span class="sig-name descname"><span class="pre">img_cutout</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">img_in</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference internal" href="node/matrix.html#systemds.operator.Matrix" title="systemds.operator.nodes.matrix.Matrix"><span class="pre">systemds.operator.nodes.matrix.Matrix</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">width</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">height</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fill_value</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#systemds.operator.algorithm.img_cutout" title="Permalink to this definition"></a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -492,8 +477,8 @@
 </dd></dl>
 
 <dl class="py function">
-<dt id="systemds.operator.algorithm.img_invert">
-<code class="sig-prename descclassname">systemds.operator.algorithm.</code><code class="sig-name descname">img_invert</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">img_in</span><span class="p">:</span> <span class="n">systemds.operator.nodes.matrix.Matrix</span></em>, <em class="sig-param"><span class="n">max_value</span><span class="p">:</span> <span class="n">float</span></em><span class="sig-paren">)</span><a class="headerlink" href="#systemds.operator.algorithm.img_invert" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="systemds.operator.algorithm.img_invert">
+<span class="sig-prename descclassname"><span class="pre">systemds.operator.algorithm.</span></span><span class="sig-name descname"><span class="pre">img_invert</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">img_in</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference internal" href="node/matrix.html#systemds.operator.Matrix" title="systemds.operator.nodes.matrix.Matrix"><span class="pre">systemds.operator.nodes.matrix.Matrix</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_value</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#systemds.operator.algorithm.img_invert" title="Permalink to this definition"></a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -508,8 +493,8 @@
 </dd></dl>
 
 <dl class="py function">
-<dt id="systemds.operator.algorithm.img_posterize">
-<code class="sig-prename descclassname">systemds.operator.algorithm.</code><code class="sig-name descname">img_posterize</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">img_in</span><span class="p">:</span> <span class="n">systemds.operator.nodes.matrix.Matrix</span></em>, <em class="sig-param"><span class="n">bits</span><span class="p">:</span> <span class="n">int</span></em><span class="sig-paren">)</span><a class="headerlink" href="#systemds.operator.algorithm.img_posterize" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="systemds.operator.algorithm.img_posterize">
+<span class="sig-prename descclassname"><span class="pre">systemds.operator.algorithm.</span></span><span class="sig-name descname"><span class="pre">img_posterize</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">img_in</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference internal" href="node/matrix.html#systemds.operator.Matrix" title="systemds.operator.nodes.matrix.Matrix"><span class="pre">systemds.operator.nodes.matrix.Matrix</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">bits</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#systemds.operator.algorithm.img_posterize" title="Permalink to this definition"></a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -525,8 +510,8 @@
 </dd></dl>
 
 <dl class="py function">
-<dt id="systemds.operator.algorithm.img_rotate">
-<code class="sig-prename descclassname">systemds.operator.algorithm.</code><code class="sig-name descname">img_rotate</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">img_in</span><span class="p">:</span> <span class="n">systemds.operator.nodes.matrix.Matrix</span></em>, <em class="sig-param"><span class="n">radians</span><span class="p">:</span> <span class="n">float</span></em>, <em class="sig-param"><span class="n">fill_value</span><span class="p">:</span> <span class="n">float</span></em><span class="sig-paren">)</span><a class="headerlink" href="#systemds.operator.algorithm.img_rotate" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="systemds.operator.algorithm.img_rotate">
+<span class="sig-prename descclassname"><span class="pre">systemds.operator.algorithm.</span></span><span class="sig-name descname"><span class="pre">img_rotate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">img_in</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference internal" href="node/matrix.html#systemds.operator.Matrix" title="systemds.operator.nodes.matrix.Matrix"><span class="pre">systemds.operator.nodes.matrix.Matrix</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">radians</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fill_value</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#systemds.operator.algorithm.img_rotate" title="Permalink to this definition"></a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -542,8 +527,8 @@
 </dd></dl>
 
 <dl class="py function">
-<dt id="systemds.operator.algorithm.img_sample_pairing">
-<code class="sig-prename descclassname">systemds.operator.algorithm.</code><code class="sig-name descname">img_sample_pairing</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">img_in1</span><span class="p">:</span> <span class="n">systemds.operator.nodes.matrix.Matrix</span></em>, <em class="sig-param"><span class="n">img_in2</span><span class="p">:</span> <span class="n">systemds.operator.nodes.matrix.Matrix</span></em>, <em class="sig-param"><span class="n">weight</span><span class="p">:</span> <span class="n">float</span></em><span class="sig-paren">)</span><a class="headerlink" href="#systemds.operator.algorithm.img_sample_pairing" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="systemds.operator.algorithm.img_sample_pairing">
+<span class="sig-prename descclassname"><span class="pre">systemds.operator.algorithm.</span></span><span class="sig-name descname"><span class="pre">img_sample_pairing</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">img_in1</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference internal" href="node/matrix.html#systemds.operator.Matrix" title="systemds.operator.nodes.matrix.Matrix"><span class="pre">systemds.operator.nodes.matrix.Matrix</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">img_in2</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference internal" href="node/matrix.html#systemds.operator.Matrix" title="systemds.operator.nodes.matrix.Matrix"><span class="pre">systemds.operator.nodes.matrix.Matrix</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">weight</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#systemds.operator.algorithm.img_sample_pairing" title="Permalink to this definition"></a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -560,8 +545,8 @@
 </dd></dl>
 
 <dl class="py function">
-<dt id="systemds.operator.algorithm.img_shear">
-<code class="sig-prename descclassname">systemds.operator.algorithm.</code><code class="sig-name descname">img_shear</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">img_in</span><span class="p">:</span> <span class="n">systemds.operator.nodes.matrix.Matrix</span></em>, <em class="sig-param"><span class="n">shear_x</span><span class="p">:</span> <span class="n">float</span></em>, <em class="sig-param"><span class="n">shear_y</span><span class="p">:</span> <span class="n">float</span></em>, <em class="sig-param"><span class="n">fill_value</span><span class="p">:</span> <span class="n">float</span></em><span class="sig-paren">)</span><a class="headerlink" href="#systemds.operator.algorithm.img_shear" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="systemds.operator.algorithm.img_shear">
+<span class="sig-prename descclassname"><span class="pre">systemds.operator.algorithm.</span></span><span class="sig-name descname"><span class="pre">img_shear</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">img_in</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference internal" href="node/matrix.html#systemds.operator.Matrix" title="systemds.operator.nodes.matrix.Matrix"><span class="pre">systemds.operator.nodes.matrix.Matrix</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">shear_x</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shear_y</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fill_value</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#systemds.operator.algorithm.img_shear" title="Permalink to this definition"></a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -578,8 +563,8 @@
 </dd></dl>
 
 <dl class="py function">
-<dt id="systemds.operator.algorithm.img_transform">
-<code class="sig-prename descclassname">systemds.operator.algorithm.</code><code class="sig-name descname">img_transform</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">img_in</span><span class="p">:</span> <span class="n">systemds.operator.nodes.matrix.Matrix</span></em>, <em class="sig-param"><span class="n">out_w</span><span class="p">:</span> <span class="n">int</span></em>, <em class="sig-param"><span class="n">out_h</span><span class="p">:</span> <span class="n">int</span></em>, <em class="sig-param"><span class="n">a</span><span class="p">:</span> <span class="n">float</span></em>, <em class="sig-param"><span class="n">b</span><span class="p">:</span> <span class="n">float</span></em>, <em class="sig-param"><span class="n">c</span><span class="p">:</span> <span class="n">float</span></em>, <em class="sig-param"><span class="n">d</span><span class="p">:</span> <span class="n">float</span></em>, <em class="sig-param"><span class="n">e</span><span class="p">:</span> <span class="n">float</span></em>, <em class="sig-param"><span class="n">f</span><span class="p">:</span> <span class="n">float</span></em>, <em class="sig-param"><span class="n">fill_value</span><span class="p">:</span> <span class="n">float</span></em><span class="sig-paren">)</span><a class="headerlink" href="#systemds.operator.algorithm.img_transform" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="systemds.operator.algorithm.img_transform">
+<span class="sig-prename descclassname"><span class="pre">systemds.operator.algorithm.</span></span><span class="sig-name descname"><span class="pre">img_transform</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">img_in</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference internal" href="node/matrix.html#systemds.operator.Matrix" title="systemds.operator.nodes.matrix.Matrix"><span class="pre">systemds.operator.nodes.matrix.Matrix</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">out_w</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">out_h</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">a</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">b</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">c</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">d</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">e</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">f</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fill_value</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#systemds.operator.algorithm.img_transform" title="Permalink to this definition"></a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -597,8 +582,8 @@
 </dd></dl>
 
 <dl class="py function">
-<dt id="systemds.operator.algorithm.img_translate">
-<code class="sig-prename descclassname">systemds.operator.algorithm.</code><code class="sig-name descname">img_translate</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">img_in</span><span class="p">:</span> <span class="n">systemds.operator.nodes.matrix.Matrix</span></em>, <em class="sig-param"><span class="n">offset_x</span><span class="p">:</span> <span class="n">float</span></em>, <em class="sig-param"><span class="n">offset_y</span><span class="p">:</span> <span class="n">float</span></em>, <em class="sig-param"><span class="n">out_w</span><span class="p">:</span> <span class="n">int</span></em>, <em class="sig-param"><span class="n">out_h</span><span class="p">:</span> <span class="n">int</span></em>, <em class="sig-param"><span class="n">fill_value</span><span class="p">:</span> <span class="n">float</span></em><span class="sig-paren">)</span><a class="headerlink" href="#systemds.operator.algorithm.img_translate" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="systemds.operator.algorithm.img_translate">
+<span class="sig-prename descclassname"><span class="pre">systemds.operator.algorithm.</span></span><span class="sig-name descname"><span class="pre">img_translate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">img_in</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference internal" href="node/matrix.html#systemds.operator.Matrix" title="systemds.operator.nodes.matrix.Matrix"><span class="pre">systemds.operator.nodes.matrix.Matrix</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">offset_x</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">offset_y</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">out_w</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">out_h</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fill_value</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#systemds.operator.algorithm.img_translate" title="Permalink to this definition"></a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -617,8 +602,8 @@
 </dd></dl>
 
 <dl class="py function">
-<dt id="systemds.operator.algorithm.km">
-<code class="sig-prename descclassname">systemds.operator.algorithm.</code><code class="sig-name descname">km</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">X</span><span class="p">:</span> <span class="n">systemds.operator.nodes.matrix.Matrix</span></em>, <em class="sig-param"><span class="n">TE</span><span class="p">:</span> <span class="n">systemds.operator.nodes.matrix.Matrix</span></em>, <em class="sig-param"><span class="n">GI</span><span class="p">:</span> <span class="n">systemds.operator.nodes.matrix.Matrix</span></em>, <em class="sig-param"><span class="n">SI</span><span class="p">:</span> <span class="n">systemds.operator.nodes.matrix.Matrix</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Dict<span class="p">[</span>str<span class="p">, </span>Union<span class="p">[</span>DAGNode<span class="p">, </span>str<span class="p">, </span>int<span class="p">, </span>float<span class="p">, </span>bool<span class="p">]</span><span class="p">]</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#systemds.operator.algorithm.km" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="systemds.operator.algorithm.km">
+<span class="sig-prename descclassname"><span class="pre">systemds.operator.algorithm.</span></span><span class="sig-name descname"><span class="pre">km</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference internal" href="node/matrix.html#systemds.operator.Matrix" title="systemds.operator.nodes.matrix.Matrix"><span class="pre">systemds.operator.nodes.matrix.Matrix</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">TE</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference internal" href="node/matrix.html#systemds.operator.Matrix" title="systemds.operator.nodes.matrix.Matrix"><span class="pre">systemds.operator.nodes.matrix.Matrix</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">GI</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference internal" href="node/matrix.html#systemds.operator.Matrix" title="systemds.operator.nodes.matrix.Matrix"><span class="pre">systemds.operator.nodes.matrix.Matrix</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">SI</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference internal" href="node/matrix.html#systemds.operator.Matrix" title="systemds.operator.nodes.matrix.Matrix"><span class="pre">systemds.operator.nodes.matrix.Matrix</span></a></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span> </span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">DAGNode</span><span class="p"><span class="pre">,</span> </span><span class="pre">str</span><span class="p"><span class="pre">,</span> </span><span class="pre">int</span><span class="p"><span class="pre">,</span> </span><span class="pre">float</span><span class="p"><span class="pre">,</span> </span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#systemds.operator.algorithm.km" title="Permalink to this definition"></a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -644,8 +629,8 @@
 </dd></dl>
 
 <dl class="py function">
-<dt id="systemds.operator.algorithm.kmeans">
-<code class="sig-prename descclassname">systemds.operator.algorithm.</code><code class="sig-name descname">kmeans</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">X</span><span class="p">:</span> <span class="n">systemds.operator.nodes.matrix.Matrix</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Dict<span class="p">[</span>str<span class="p">, </span>Union<span class="p">[</span>DAGNode<span class="p">, </span>str<span class="p">, </span>int<span class="p">, </span>float<span class="p">, </span>bool<span class="p">]</span><span class="p">]</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#systemds.operator.algorithm.kmeans" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="systemds.operator.algorithm.kmeans">
+<span class="sig-prename descclassname"><span class="pre">systemds.operator.algorithm.</span></span><span class="sig-name descname"><span class="pre">kmeans</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference internal" href="node/matrix.html#systemds.operator.Matrix" title="systemds.operator.nodes.matrix.Matrix"><span class="pre">systemds.operator.nodes.matrix.Matrix</span></a></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span> </span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">DAGNode</span><span class="p"><span class="pre">,</span> </span><span class="pre">str</span><span class="p"><span class="pre">,</span> </span><span class="pre">int</span><span class="p"><span class="pre">,</span> </span><span class="pre">float</span><span class="p"><span class="pre">,</span> </span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#systemds.operator.algorithm.kmeans" title="Permalink to this definition"></a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -666,8 +651,8 @@
 </dd></dl>
 
 <dl class="py function">
-<dt id="systemds.operator.algorithm.kmeansPredict">
-<code class="sig-prename descclassname">systemds.operator.algorithm.</code><code class="sig-name descname">kmeansPredict</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">X</span><span class="p">:</span> <span class="n">systemds.operator.nodes.matrix.Matrix</span></em>, <em class="sig-param"><span class="n">C</span><span class="p">:</span> <span class="n">systemds.operator.nodes.matrix.Matrix</span></em><span class="sig-paren">)</span><a class="headerlink" href="#systemds.operator.algorithm.kmeansPredict" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="systemds.operator.algorithm.kmeansPredict">
+<span class="sig-prename descclassname"><span class="pre">systemds.operator.algorithm.</span></span><span class="sig-name descname"><span class="pre">kmeansPredict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference internal" href="node/matrix.html#systemds.operator.Matrix" title="systemds.operator.nodes.matrix.Matrix"><span class="pre">systemds.operator.nodes.matrix.Matrix</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">C</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference internal" href="node/matrix.html#systemds.operator.Matrix" title="systemds.operator.nodes.matrix.Matrix"><span class="pre">systemds.operator.nodes.matrix.Matrix</span></a></span></em><span class="sig-paren">)</span><a class="headerlink" href="#systemds.operator.algorithm.kmeansPredict" title="Permalink to this definition"></a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -682,8 +667,8 @@
 </dd></dl>
 
 <dl class="py function">
-<dt id="systemds.operator.algorithm.l2svm">
-<code class="sig-prename descclassname">systemds.operator.algorithm.</code><code class="sig-name descname">l2svm</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">X</span><span class="p">:</span> <span class="n">systemds.operator.nodes.matrix.Matrix</span></em>, <em class="sig-param"><span class="n">Y</span><span class="p">:</span> <span class="n">systemds.operator.nodes.matrix.Matrix</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Dict<span class="p">[</span>str<span class="p">, </span>Union<span class="p">[</span>DAGNode<span class="p">, </span>str<span class="p">, </span>int<span class="p">, </span>float<span class="p">, </span>bool<span class="p">]</span><span class="p">]</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#systemds.operator.algorithm.l2svm" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="systemds.operator.algorithm.l2svm">
+<span class="sig-prename descclassname"><span class="pre">systemds.operator.algorithm.</span></span><span class="sig-name descname"><span class="pre">l2svm</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference internal" href="node/matrix.html#systemds.operator.Matrix" title="systemds.operator.nodes.matrix.Matrix"><span class="pre">systemds.operator.nodes.matrix.Matrix</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">Y</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference internal" href="node/matrix.html#systemds.operator.Matrix" title="systemds.operator.nodes.matrix.Matrix"><span class="pre">systemds.operator.nodes.matrix.Matrix</span></a></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span> </span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">DAGNode</span><span class="p"><span class="pre">,</span> </span><span class="pre">str</span><span class="p"><span class="pre">,</span> </span><span class="pre">int</span><span class="p"><span class="pre">,</span> </span><span class="pre">float</span><span class="p"><span class="pre">,</span> </span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#systemds.operator.algorithm.l2svm" title="Permalink to this definition"></a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -708,8 +693,8 @@
 </dd></dl>
 
 <dl class="py function">
-<dt id="systemds.operator.algorithm.l2svmPredict">
-<code class="sig-prename descclassname">systemds.operator.algorithm.</code><code class="sig-name descname">l2svmPredict</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">X</span><span class="p">:</span> <span class="n">systemds.operator.nodes.matrix.Matrix</span></em>, <em class="sig-param"><span class="n">W</span><span class="p">:</span> <span class="n">systemds.operator.nodes.matrix.Matrix</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Dict<span class="p">[</span>str<span class="p">, </span>Union<span class="p">[</span>DAGNode<span class="p">, </span>str<span class="p">, </span>int<span class="p">, </span>float<span class="p">, </span>bool<span class="p">]</span><span class="p">]</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#systemds.operator.algorithm.l2svmPredict" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="systemds.operator.algorithm.l2svmPredict">
+<span class="sig-prename descclassname"><span class="pre">systemds.operator.algorithm.</span></span><span class="sig-name descname"><span class="pre">l2svmPredict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference internal" href="node/matrix.html#systemds.operator.Matrix" title="systemds.operator.nodes.matrix.Matrix"><span class="pre">systemds.operator.nodes.matrix.Matrix</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">W</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference internal" href="node/matrix.html#systemds.operator.Matrix" title="systemds.operator.nodes.matrix.Matrix"><span class="pre">systemds.operator.nodes.matrix.Matrix</span></a></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span> </span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">DAGNode</span><span class="p"><span class="pre">,</span> </span><span class="pre">str</span><span class="p"><span class="pre">,</span> </span><span class="pre">int</span><span class="p"><span class="pre">,</span> </span><span class="pre">float</span><span class="p"><span class="pre">,</span> </span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#systemds.operator.algorithm.l2svmPredict" title="Permalink to this definition"></a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -725,8 +710,8 @@
 </dd></dl>
 
 <dl class="py function">
-<dt id="systemds.operator.algorithm.lasso">
-<code class="sig-prename descclassname">systemds.operator.algorithm.</code><code class="sig-name descname">lasso</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">X</span><span class="p">:</span> <span class="n">systemds.operator.nodes.matrix.Matrix</span></em>, <em class="sig-param"><span class="n">y</span><span class="p">:</span> <span class="n">systemds.operator.nodes.matrix.Matrix</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Dict<span class="p">[</span>str<span class="p">, </span>Union<span class="p">[</span>DAGNode<span class="p">, </span>str<span class="p">, </span>int<span class="p">, </span>float<span class="p">, </span>bool<span class="p">]</span><span class="p">]</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#systemds.operator.algorithm.lasso" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="systemds.operator.algorithm.lasso">
+<span class="sig-prename descclassname"><span class="pre">systemds.operator.algorithm.</span></span><span class="sig-name descname"><span class="pre">lasso</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference internal" href="node/matrix.html#systemds.operator.Matrix" title="systemds.operator.nodes.matrix.Matrix"><span class="pre">systemds.operator.nodes.matrix.Matrix</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference internal" href="node/matrix.html#systemds.operator.Matrix" title="systemds.operator.nodes.matrix.Matrix"><span class="pre">systemds.operator.nodes.matrix.Matrix</span></a></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span> </span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">DAGNode</span><span class="p"><span class="pre">,</span> </span><span class="pre">str</span><span class="p"><span class="pre">,</span> </span><span class="pre">int</span><span class="p"><span class="pre">,</span> </span><span class="pre">float</span><span class="p"><span class="pre">,</span> </span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#systemds.operator.algorithm.lasso" title="Permalink to this definition"></a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -745,8 +730,8 @@
 </dd></dl>
 
 <dl class="py function">
-<dt id="systemds.operator.algorithm.lm">
-<code class="sig-prename descclassname">systemds.operator.algorithm.</code><code class="sig-name descname">lm</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">X</span><span class="p">:</span> <span class="n">systemds.operator.nodes.matrix.Matrix</span></em>, <em class="sig-param"><span class="n">y</span><span class="p">:</span> <span class="n">systemds.operator.nodes.matrix.Matrix</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Dict<span class="p">[</span>str<span class="p">, </span>Union<span class="p">[</span>DAGNode<span class="p">, </span>str<span class="p">, </span>int<span class="p">, </span>float<span class="p">, </span>bool<span class="p">]</span><span class="p">]</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#systemds.operator.algorithm.lm" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="systemds.operator.algorithm.lm">
+<span class="sig-prename descclassname"><span class="pre">systemds.operator.algorithm.</span></span><span class="sig-name descname"><span class="pre">lm</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference internal" href="node/matrix.html#systemds.operator.Matrix" title="systemds.operator.nodes.matrix.Matrix"><span class="pre">systemds.operator.nodes.matrix.Matrix</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference internal" href="node/matrix.html#systemds.operator.Matrix" title="systemds.operator.nodes.matrix.Matrix"><span class="pre">systemds.operator.nodes.matrix.Matrix</span></a></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span> </span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">DAGNode</span><span class="p"><span class="pre">,</span> </span><span class="pre">str</span><span class="p"><span class="pre">,</span> </span><span class="pre">int</span><span class="p"><span class="pre">,</span> </span><span class="pre">float</span><span class="p"><span class="pre">,</span> </span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#systemds.operator.algorithm.lm" title="Permalink to this definition"></a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -766,8 +751,28 @@
 </dd></dl>
 
 <dl class="py function">
-<dt id="systemds.operator.algorithm.msvmPredict">
-<code class="sig-prename descclassname">systemds.operator.algorithm.</code><code class="sig-name descname">msvmPredict</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">X</span><span class="p">:</span> <span class="n">systemds.operator.nodes.matrix.Matrix</span></em>, <em class="sig-param"><span class="n">W</span><span class="p">:</span> <span class="n">systemds.operator.nodes.matrix.Matrix</span></em><span class="sig-paren">)</span><a class="headerlink" href="#systemds.operator.algorithm.msvmPredict" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="systemds.operator.algorithm.matrixProfile">
+<span class="sig-prename descclassname"><span class="pre">systemds.operator.algorithm.</span></span><span class="sig-name descname"><span class="pre">matrixProfile</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ts</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference internal" href="node/matrix.html#systemds.operator.Matrix" title="systemds.operator.nodes.matrix.Matrix"><span class="pre">systemds.operator.nodes.matrix.Matrix</span></a></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span> </span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">DAGNode</span><span class="p"><span class="pre">,</span> </span><span class="pre">str</span><span class="p"><span class="pre">,</span> </span><span class="pre">int</span><span class="p"><span class="pre">,</span> </span><span class="pre">float</span><span class="p"><span class="pre">,</span> </span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#systemds.operator.algorithm.matrixProfile" title="Permalink to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>ts</strong> – Time series to profile</p></li>
+<li><p><strong>window_size</strong> – Sliding window size</p></li>
+<li><p><strong>sample_percent</strong> – Degree of approximation</p></li>
+<li><p><strong>between</strong> – one (1</p></li>
+<li><p><strong>computes</strong> – solution)</p></li>
+<li><p><strong>is_verbose</strong> – Print debug information</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>‘OperationNode’ containing the computed matrix profile &amp; indices of least distances</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="systemds.operator.algorithm.msvmPredict">
+<span class="sig-prename descclassname"><span class="pre">systemds.operator.algorithm.</span></span><span class="sig-name descname"><span class="pre">msvmPredict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference internal" href="node/matrix.html#systemds.operator.Matrix" title="systemds.operator.nodes.matrix.Matrix"><span class="pre">systemds.operator.nodes.matrix.Matrix</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">W</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference internal" href="node/matrix.html#systemds.operator.Matrix" title="systemds.operator.nodes.matrix.Matrix"><span class="pre">systemds.operator.nodes.matrix.Matrix</span></a></span></em><span class="sig-paren">)</span><a class="headerlink" href="#systemds.operator.algorithm.msvmPredict" title="Permalink to this definition"></a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -782,8 +787,8 @@
 </dd></dl>
 
 <dl class="py function">
-<dt id="systemds.operator.algorithm.multiLogReg">
-<code class="sig-prename descclassname">systemds.operator.algorithm.</code><code class="sig-name descname">multiLogReg</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">X</span><span class="p">:</span> <span class="n">systemds.operator.nodes.matrix.Matrix</span></em>, <em class="sig-param"><span class="n">Y</span><span class="p">:</span> <span class="n">systemds.operator.nodes.matrix.Matrix</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Dict<span class="p">[</span>str<span class="p">, </span>Union<span class="p">[</span>DAGNode<span class="p">, </span>str<span class="p">, </span>int<span class="p">, </span>float<span class="p">, </span>bool<span class="p">]</span><span class="p">]</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#systemds.operator.algorithm.multiLogReg" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="systemds.operator.algorithm.multiLogReg">
+<span class="sig-prename descclassname"><span class="pre">systemds.operator.algorithm.</span></span><span class="sig-name descname"><span class="pre">multiLogReg</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference internal" href="node/matrix.html#systemds.operator.Matrix" title="systemds.operator.nodes.matrix.Matrix"><span class="pre">systemds.operator.nodes.matrix.Matrix</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">Y</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference internal" href="node/matrix.html#systemds.operator.Matrix" title="systemds.operator.nodes.matrix.Matrix"><span class="pre">systemds.operator.nodes.matrix.Matrix</span></a></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span> </span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">DAGNode</span><span class="p"><span class="pre">,</span> </span><span class="pre">str</span><span class="p"><span class="pre">,</span> </span><span class="pre">int</span><span class="p"><span class="pre">,</span> </span><span class="pre">float</span><span class="p"><span class="pre">,</span> </span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#systemds.operator.algorithm.multiLogReg" title="Permalink to this definition"></a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -804,8 +809,8 @@
 </dd></dl>
 
 <dl class="py function">
-<dt id="systemds.operator.algorithm.multiLogRegPredict">
-<code class="sig-prename descclassname">systemds.operator.algorithm.</code><code class="sig-name descname">multiLogRegPredict</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">X</span><span class="p">:</span> <span class="n">systemds.operator.nodes.matrix.Matrix</span></em>, <em class="sig-param"><span class="n">B</span><span class="p">:</span> <span class="n">systemds.operator.nodes.matrix.Matrix</span></em>, <em class="sig-param"><span class="n">Y</span><span class="p">:</span> <span class="n">systemds.operator.nodes.matrix.Matrix</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Dict<span class="p">[</span>str<span class="p">, </span>Union<span class="p">[</span>DAGNode<span class="p">, </span>str<span class="p">, </span>int<span class="p">, </span>float<span class="p">, </span>bool<span class="p">]</span><span class="p">]</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#systemds.operator.algorithm.multiLogRegPredict" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="systemds.operator.algorithm.multiLogRegPredict">
+<span class="sig-prename descclassname"><span class="pre">systemds.operator.algorithm.</span></span><span class="sig-name descname"><span class="pre">multiLogRegPredict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference internal" href="node/matrix.html#systemds.operator.Matrix" title="systemds.operator.nodes.matrix.Matrix"><span class="pre">systemds.operator.nodes.matrix.Matrix</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">B</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference internal" href="node/matrix.html#systemds.operator.Matrix" title="systemds.operator.nodes.matrix.Matrix"><span class="pre">systemds.operator.nodes.matrix.Matrix</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">Y</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference internal" href="node/matrix.html#systemds.operator.Matrix" title="systemds.operator.nodes.matrix.Matrix"><span class="pre">systemds.operator.nodes.matrix.Matrix</span></a></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span> </span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">DAGNode</span><span class="p"><span class="pre">,</span> </span><span class="pre">str</span><span class="p"><span class="pre">,</span> </span><span class="pre">int</span><span class="p"><span class="pre">,</span> </span><span class="pre">float</span><span class="p"><span class="pre">,</span> </span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#systemds.operator.algorithm.multiLogRegPredict" title="Permalink to this definition"></a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -823,8 +828,8 @@
 </dd></dl>
 
 <dl class="py function">
-<dt id="systemds.operator.algorithm.pca">
-<code class="sig-prename descclassname">systemds.operator.algorithm.</code><code class="sig-name descname">pca</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">X</span><span class="p">:</span> <span class="n">systemds.operator.nodes.matrix.Matrix</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Dict<span class="p">[</span>str<span class="p">, </span>Union<span class="p">[</span>DAGNode<span class="p">, </span>str<span class="p">, </span>int<span class="p">, </span>float<span class="p">, </span>bool<span class="p">]</span><span class="p">]</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#systemds.operator.algorithm.pca" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="systemds.operator.algorithm.pca">
+<span class="sig-prename descclassname"><span class="pre">systemds.operator.algorithm.</span></span><span class="sig-name descname"><span class="pre">pca</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference internal" href="node/matrix.html#systemds.operator.Matrix" title="systemds.operator.nodes.matrix.Matrix"><span class="pre">systemds.operator.nodes.matrix.Matrix</span></a></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span> </span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">DAGNode</span><span class="p"><span class="pre">,</span> </span><span class="pre">str</span><span class="p"><span class="pre">,</span> </span><span class="pre">int</span><span class="p"><span class="pre">,</span> </span><span class="pre">float</span><span class="p"><span class="pre">,</span> </span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#systemds.operator.algorithm.pca" title="Permalink to this definition"></a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -841,8 +846,8 @@
 </dd></dl>
 
 <dl class="py function">
-<dt id="systemds.operator.algorithm.ppca">
-<code class="sig-prename descclassname">systemds.operator.algorithm.</code><code class="sig-name descname">ppca</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">X</span><span class="p">:</span> <span class="n">systemds.operator.nodes.matrix.Matrix</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Dict<span class="p">[</span>str<span class="p">, </span>Union<span class="p">[</span>DAGNode<span class="p">, </span>str<span class="p">, </span>int<span class="p">, </span>float<span class="p">, </span>bool<span class="p">]</span><span class="p">]</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#systemds.operator.algorithm.ppca" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="systemds.operator.algorithm.ppca">
+<span class="sig-prename descclassname"><span class="pre">systemds.operator.algorithm.</span></span><span class="sig-name descname"><span class="pre">ppca</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference internal" href="node/matrix.html#systemds.operator.Matrix" title="systemds.operator.nodes.matrix.Matrix"><span class="pre">systemds.operator.nodes.matrix.Matrix</span></a></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span> </span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">DAGNode</span><span class="p"><span class="pre">,</span> </span><span class="pre">str</span><span class="p"><span class="pre">,</span> </span><span class="pre">int</span><span class="p"><span class="pre">,</span> </span><span class="pre">float</span><span class="p"><span class="pre">,</span> </span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#systemds.operator.algorithm.ppca" title="Permalink to this definition"></a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -861,8 +866,8 @@
 </dd></dl>
 
 <dl class="py function">
-<dt id="systemds.operator.algorithm.randomForest">
-<code class="sig-prename descclassname">systemds.operator.algorithm.</code><code class="sig-name descname">randomForest</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">X</span><span class="p">:</span> <span class="n">systemds.operator.nodes.matrix.Matrix</span></em>, <em class="sig-param"><span class="n">Y</span><span class="p">:</span> <span class="n">systemds.operator.nodes.matrix.Matrix</span></em>, <em class="sig-param"><span class="n">R</span><span class="p">:</span> <span class="n">systemds.operator.nodes.matrix.Matrix</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Dict<span class="p">[</span>str<span class="p">, </span>Union<span class="p">[</span>DAGNode<span class="p">, </span>str<span class="p">, </span>int<span class="p">, </span>float<span class="p">, </span>bool<span class="p">]</span><span class="p">]</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#systemds.operator.algorithm.randomForest" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="systemds.operator.algorithm.randomForest">
+<span class="sig-prename descclassname"><span class="pre">systemds.operator.algorithm.</span></span><span class="sig-name descname"><span class="pre">randomForest</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference internal" href="node/matrix.html#systemds.operator.Matrix" title="systemds.operator.nodes.matrix.Matrix"><span class="pre">systemds.operator.nodes.matrix.Matrix</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">Y</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference internal" href="node/matrix.html#systemds.operator.Matrix" title="systemds.operator.nodes.matrix.Matrix"><span class="pre">systemds.operator.nodes.matrix.Matrix</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">R</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference internal" href="node/matrix.html#systemds.operator.Matrix" title="systemds.operator.nodes.matrix.Matrix"><span class="pre">systemds.operator.nodes.matrix.Matrix</span></a></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span> </span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">DAGNode</span><span class="p"><span class="pre">,</span> </span><span class="pre">str</span><span class="p"><span class="pre">,</span> </span><span class="pre">int</span><span class="p"><span class="pre">,</span> </span><span class="pre">float</span><span class="p"><span class="pre">,</span> </span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#systemds.operator.algorithm.randomForest" title="Permalink to this definition"></a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -890,8 +895,8 @@
 </dd></dl>
 
 <dl class="py function">
-<dt id="systemds.operator.algorithm.stableMarriage">
-<code class="sig-prename descclassname">systemds.operator.algorithm.</code><code class="sig-name descname">stableMarriage</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">P</span><span class="p">:</span> <span class="n">systemds.operator.nodes.matrix.Matrix</span></em>, <em class="sig-param"><span class="n">A</span><span class="p">:</span> <span class="n">systemds.operator.nodes.matrix.Matrix</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Dict<span class="p">[</span>str<span class="p">, </span>Union<span class="p">[</span>DAGNode<span class="p">, </span>str<span class="p">, </span>int<span class="p">, </span>float<span class="p">, </span>bool<span class="p">]</span><span class="p">]</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#systemds.operator.algorithm.stableMarriage" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="systemds.operator.algorithm.stableMarriage">
+<span class="sig-prename descclassname"><span class="pre">systemds.operator.algorithm.</span></span><span class="sig-name descname"><span class="pre">stableMarriage</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">P</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference internal" href="node/matrix.html#systemds.operator.Matrix" title="systemds.operator.nodes.matrix.Matrix"><span class="pre">systemds.operator.nodes.matrix.Matrix</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">A</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference internal" href="node/matrix.html#systemds.operator.Matrix" title="systemds.operator.nodes.matrix.Matrix"><span class="pre">systemds.operator.nodes.matrix.Matrix</span></a></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span> </span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">DAGNode</span><span class="p"><span class="pre">,</span> </span><span class="pre">str</span><span class="p"><span class="pre">,</span> </span><span class="pre">int</span><span class="p"><span class="pre">,</span> </span><span class="pre">float</span><span class="p"><span class="pre">,</span> </span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#systemds.operator.algorithm.stableMarriage" title="Permalink to this definition"></a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -910,8 +915,31 @@
 </dd></dl>
 
 <dl class="py function">
-<dt id="systemds.operator.algorithm.toOneHot">
-<code class="sig-prename descclassname">systemds.operator.algorithm.</code><code class="sig-name descname">toOneHot</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">X</span><span class="p">:</span> <span class="n">systemds.operator.nodes.matrix.Matrix</span></em>, <em class="sig-param"><span class="n">numClasses</span><span class="p">:</span> <span class="n">int</span></em><span class="sig-paren">)</span><a class="headerlink" href="#systemds.operator.algorithm.toOneHot" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="systemds.operator.algorithm.tSNE">
+<span class="sig-prename descclassname"><span class="pre">systemds.operator.algorithm.</span></span><span class="sig-name descname"><span class="pre">tSNE</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference internal" href="node/matrix.html#systemds.operator.Matrix" title="systemds.operator.nodes.matrix.Matrix"><span class="pre">systemds.operator.nodes.matrix.Matrix</span></a></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span> </span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">DAGNode</span><span class="p"><span class="pre">,</span> </span><span class="pre">str</span><span class="p"><span class="pre">,</span> </span><span class="pre">int</span><span class="p"><span class="pre">,</span> </span><span class="pre">float</span><span class="p"><span class="pre">,</span> </span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#systemds.operator.algorithm.tSNE" title="Permalink to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>X</strong> – Data Matrix of shape</p></li>
+<li><p><strong>reduced_dims</strong> – Output dimensionality</p></li>
+<li><p><strong>perplexity</strong> – Perplexity Parameter</p></li>
+<li><p><strong>lr</strong> – Learning rate</p></li>
+<li><p><strong>momentum</strong> – Momentum Parameter</p></li>
+<li><p><strong>max_iter</strong> – Number of iterations</p></li>
+<li><p><strong>seed</strong> – The seed used for initial values.</p></li>
+<li><p><strong>If</strong> – -1 random seeds are selected.</p></li>
+<li><p><strong>is_verbose</strong> – Print debug information</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>‘OperationNode’ containing data matrix of shape (number of data points, reduced_dims)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="systemds.operator.algorithm.toOneHot">
+<span class="sig-prename descclassname"><span class="pre">systemds.operator.algorithm.</span></span><span class="sig-name descname"><span class="pre">toOneHot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference internal" href="node/matrix.html#systemds.operator.Matrix" title="systemds.operator.nodes.matrix.Matrix"><span class="pre">systemds.operator.nodes.matrix.Matrix</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">numClasses</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#systemds.operator.algorithm.toOneHot" title="Permalink to this definition"></a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -926,13 +954,13 @@
 </dd></dl>
 
 <dl class="py function">
-<dt id="systemds.operator.algorithm.tomeklink">
-<code class="sig-prename descclassname">systemds.operator.algorithm.</code><code class="sig-name descname">tomeklink</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">X</span><span class="p">:</span> <span class="n">systemds.operator.nodes.matrix.Matrix</span></em>, <em class="sig-param"><span class="n">y</span><span class="p">:</span> <span class="n">systemds.operator.nodes.matrix.Matrix</span></em><span class="sig-paren">)</span><a class="headerlink" href="#systemds.operator.algorithm.tomeklink" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="systemds.operator.algorithm.tomeklink">
+<span class="sig-prename descclassname"><span class="pre">systemds.operator.algorithm.</span></span><span class="sig-name descname"><span class="pre">tomeklink</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference internal" href="node/matrix.html#systemds.operator.Matrix" title="systemds.operator.nodes.matrix.Matrix"><span class="pre">systemds.operator.nodes.matrix.Matrix</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference internal" href="node/matrix.html#systemds.operator.Matrix" title="systemds.operator.nodes.matrix.Matrix"><span class="pre">systemds.operator.nodes.matrix.Matrix</span></a></span></em><span class="sig-paren">)</span><a class="headerlink" href="#systemds.operator.algorithm.tomeklink" title="Permalink to this definition"></a></dt>
 <dd><dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>X</strong> – Data Matrix (nxm)</p></li>
-<li><p><strong>y</strong> – Label Matrix (nx1)</p></li>
+<li><p><strong>y</strong> – Label Matrix (nx1), greater than zero</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
@@ -941,62 +969,71 @@
 </dl>
 </dd></dl>
 
-</div>
+<dl class="py function">
+<dt class="sig sig-object py" id="systemds.operator.algorithm.xgboostPredictClassification">
+<span class="sig-prename descclassname"><span class="pre">systemds.operator.algorithm.</span></span><span class="sig-name descname"><span class="pre">xgboostPredictClassification</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference internal" href="node/matrix.html#systemds.operator.Matrix" title="systemds.operator.nodes.matrix.Matrix"><span class="pre">systemds.operator.nodes.matrix.Matrix</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">M</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference internal" href="node/matrix.html#systemds.operator.Matrix" title="systemds.operator.nodes.matrix.Matrix"><span class="pre">systemds.operator.nodes.matrix.Matrix</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">learning_rate</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#systemds.operator.algorithm.xgboostPredictClassification" title="Permalink to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>X</strong> – Matrix of feature vectors we want to predict (X_test)</p></li>
+<li><p><strong>M</strong> – The model created at xgboost</p></li>
+<li><p><strong>learning_rate</strong> – the learning rate used in the model</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>‘OperationNode’ containing the predictions of the samples using the given xgboost model. (y_prediction)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="systemds.operator.algorithm.xgboostPredictRegression">
+<span class="sig-prename descclassname"><span class="pre">systemds.operator.algorithm.</span></span><span class="sig-name descname"><span class="pre">xgboostPredictRegression</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference internal" href="node/matrix.html#systemds.operator.Matrix" title="systemds.operator.nodes.matrix.Matrix"><span class="pre">systemds.operator.nodes.matrix.Matrix</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">M</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference internal" href="node/matrix.html#systemds.operator.Matrix" title="systemds.operator.nodes.matrix.Matrix"><span class="pre">systemds.operator.nodes.matrix.Matrix</span></a></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span> </span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">DAGNode</span><span class="p"><span class="pre">,</span> </span><span class="pre">str</span><span class="p"><span class="pre">,</span> </span><span class="pre">int</span><span class="p"><span class="pre">,</span> </span><span class="pre">float</span><span class="p"><span class="pre">,</span> </span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#systemds.operator.algorithm.xgboostPredictRegression" title="Permalink to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>X</strong> – Matrix of feature vectors we want to predict (X_test)</p></li>
+<li><p><strong>M</strong> – The model created at xgboost</p></li>
+<li><p><strong>learning_rate</strong> – the learning rate used in the model</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>‘OperationNode’ containing the predictions of the samples using the given xgboost model. (y_prediction)</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
 
 
            </div>
-           
           </div>
-          <footer>
-  
-    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
-      
-        <a href="node/matrix.html" class="btn btn-neutral float-right" title="Matrix" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
-      
-      
-        <a href="../context/systemds_context.html" class="btn btn-neutral float-left" title="SystemDSContext" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
-      
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../context/systemds_context.html" class="btn btn-neutral float-left" title="SystemDSContext" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="node/matrix.html" class="btn btn-neutral float-right" title="Matrix" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
-  
 
   <hr/>
 
   <div role="contentinfo">
-    <p>
-        
-        &copy; Copyright 2021, Apache SystemDS
-
-    </p>
+    <p>&#169; Copyright 2021, Apache SystemDS.</p>
   </div>
-    
-    
-    
-    Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a
-    
-    <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a>
-    
-    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
 
 </footer>
-
         </div>
       </div>
-
     </section>
-
   </div>
-  
-
-  <script type="text/javascript">
+  <script>
       jQuery(function () {
           SphinxRtdTheme.Navigation.enable(true);
       });
-  </script>
-
-  
-  
-    
-   
+  </script> 
 
 </body>
 </html>

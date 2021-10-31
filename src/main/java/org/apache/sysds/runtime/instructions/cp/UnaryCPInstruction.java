@@ -19,10 +19,10 @@
 
 package org.apache.sysds.runtime.instructions.cp;
 
-import java.util.Arrays;
-
+import org.apache.sysds.common.Types;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.ValueType;
+import org.apache.sysds.lops.Unary;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.functionobjects.ValueFunction;
@@ -61,8 +61,8 @@ public abstract class UnaryCPInstruction extends ComputationCPInstruction {
 			in.split(parts[1]);
 			out.split(parts[2]);
 			func = Builtin.getBuiltinFnObject(opcode);
-			
-			if( Arrays.asList(new String[]{"ucumk+","ucum*","ucumk+*","ucummin","ucummax","exp","log","sigmoid"}).contains(opcode) ){
+			Types.OpOp1 op_type = Types.OpOp1.valueOfByOpcode(opcode);
+			if( Unary.isMultiThreadedOp(op_type)){
 				UnaryOperator op = new UnaryOperator(func, Integer.parseInt(parts[3]),Boolean.parseBoolean(parts[4]));
 				return new UnaryMatrixCPInstruction(op, in, out, opcode, str);
 			}

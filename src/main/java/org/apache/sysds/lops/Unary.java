@@ -122,6 +122,7 @@ public class Unary extends Lop
 	}
 	
 	public static boolean isMultiThreadedOp(OpOp1 op) {
+		//TODO extend for all basic unary operations
 		return op==OpOp1.CUMSUM
 			|| op==OpOp1.CUMPROD
 			|| op==OpOp1.CUMMIN
@@ -129,6 +130,10 @@ public class Unary extends Lop
 			|| op==OpOp1.CUMSUMPROD
 			|| op==OpOp1.EXP
 			|| op==OpOp1.LOG
+			|| op==OpOp1.ABS
+			|| op==OpOp1.ROUND
+			|| op==OpOp1.FLOOR
+			|| op==OpOp1.CEIL
 			|| op==OpOp1.SIGMOID
 			|| op==OpOp1.POW2
 			|| op==OpOp1.MULT2;

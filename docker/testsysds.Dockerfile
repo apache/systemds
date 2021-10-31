@@ -22,7 +22,7 @@
 FROM ubuntu:20.04
 
 # Install Maven
-# Credit https://github.com/Zenika/alpine-maven/blob/master/jdk8/Dockerfile
+# Credit https://github.com/Zenika/alpine-maven/blob/7623e76e95af5973fe8397a9cabf17c4eb931ec1/jdk8/Dockerfile
 # InstallR Guide: https://cran.r-project.org/
 
 WORKDIR /usr/src/

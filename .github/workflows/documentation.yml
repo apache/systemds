@@ -27,13 +27,13 @@ on:
       - '*.html'
       - 'dev/**'
     branches:
-      - master
+      - main
   pull_request:
     paths-ignore:
       - '*.html'
       - 'dev/**'
     branches:
-      - master
+      - main
 
 jobs:
   documentation1:

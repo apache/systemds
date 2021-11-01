@@ -25,89 +25,89 @@ import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
 
 public class SparkStatistics {
-	private static long sparkCtxCreateTime = 0;
-	private static final LongAdder sparkParallelize = new LongAdder();
-	private static final LongAdder sparkParallelizeCount = new LongAdder();
-	private static final LongAdder sparkCollect = new LongAdder();
-	private static final LongAdder sparkCollectCount = new LongAdder();
-	private static final LongAdder sparkBroadcast = new LongAdder();
-	private static final LongAdder sparkBroadcastCount = new LongAdder();
-	private static final LongAdder sparkAsyncPrefetchCount = new LongAdder();
-	private static final LongAdder sparkAsyncBroadcastCount = new LongAdder();
+	private static long ctxCreateTime = 0;
+	private static final LongAdder parallelizeTime = new LongAdder();
+	private static final LongAdder parallelizeCount = new LongAdder();
+	private static final LongAdder collectTime = new LongAdder();
+	private static final LongAdder collectCount = new LongAdder();
+	private static final LongAdder broadcastTime = new LongAdder();
+	private static final LongAdder broadcastCount = new LongAdder();
+	private static final LongAdder asyncPrefetchCount = new LongAdder();
+	private static final LongAdder asyncBroadcastCount = new LongAdder();
 
 	public static boolean createdSparkContext() {
-		return sparkCtxCreateTime > 0;
+		return ctxCreateTime > 0;
 	}
 
-	public static void setSparkCtxCreateTime(long ns) {
-		sparkCtxCreateTime = ns;
+	public static void setCtxCreateTime(long ns) {
+		ctxCreateTime = ns;
 	}
 	
-	public static void accSparkParallelizeTime(long t) {
-		sparkParallelize.add(t);
+	public static void accParallelizeTime(long t) {
+		parallelizeTime.add(t);
 	}
 
-	public static void incSparkParallelizeCount(long c) {
-		sparkParallelizeCount.add(c);
+	public static void incParallelizeCount(long c) {
+		parallelizeCount.add(c);
 	}
 
-	public static void accSparkCollectTime(long t) {
-		sparkCollect.add(t);
+	public static void accCollectTime(long t) {
+		collectTime.add(t);
 	}
 
-	public static void incSparkCollectCount(long c) {
-		sparkCollectCount.add(c);
+	public static void incCollectCount(long c) {
+		collectCount.add(c);
 	}
 
-	public static void accSparkBroadCastTime(long t) {
-		sparkBroadcast.add(t);
+	public static void accBroadCastTime(long t) {
+		broadcastTime.add(t);
 	}
 
-	public static void incSparkBroadcastCount(long c) {
-		sparkBroadcastCount.add(c);
+	public static void incBroadcastCount(long c) {
+		broadcastCount.add(c);
 	}
 
-	public static void incSparkAsyncPrefetchCount(long c) {
-		sparkAsyncPrefetchCount.add(c);
+	public static void incAsyncPrefetchCount(long c) {
+		asyncPrefetchCount.add(c);
 	}
 
-	public static void incSparkAsyncBroadcastCount(long c) {
-		sparkAsyncBroadcastCount.add(c);
+	public static void incAsyncBroadcastCount(long c) {
+		asyncBroadcastCount.add(c);
 	}
 
 	public static long getSparkCollectCount() {
-		return sparkCollectCount.longValue();
+		return collectCount.longValue();
 	}
 
 	public static long getAsyncPrefetchCount() {
-		return sparkAsyncPrefetchCount.longValue();
+		return asyncPrefetchCount.longValue();
 	}
 
 	public static long getAsyncBroadcastCount() {
-		return sparkAsyncBroadcastCount.longValue();
+		return asyncBroadcastCount.longValue();
 	}
 
 	public static void reset() {
-		sparkCtxCreateTime = 0;
-		sparkBroadcast.reset();
-		sparkBroadcastCount.reset();
-		sparkAsyncPrefetchCount.reset();
-		sparkAsyncBroadcastCount.reset();
+		ctxCreateTime = 0;
+		broadcastTime.reset();
+		broadcastCount.reset();
+		asyncPrefetchCount.reset();
+		asyncBroadcastCount.reset();
 	}
 
-	public static String displaySparkStatistics() {
+	public static String displayStatistics() {
 		StringBuilder sb = new StringBuilder();
 		String lazy = SparkExecutionContext.isLazySparkContextCreation() ? "(lazy)" : "(eager)";
 		sb.append("Spark ctx create time "+lazy+":\t"+
-				String.format("%.3f", sparkCtxCreateTime*1e-9)  + " sec.\n" ); // nanoSec --> sec
+				String.format("%.3f", ctxCreateTime*1e-9)  + " sec.\n" ); // nanoSec --> sec
 		sb.append("Spark trans counts (par,bc,col):" +
-				String.format("%d/%d/%d.\n", sparkParallelizeCount.longValue(),
-						sparkBroadcastCount.longValue(), sparkCollectCount.longValue()));
+				String.format("%d/%d/%d.\n", parallelizeCount.longValue(),
+						broadcastCount.longValue(), collectCount.longValue()));
 		sb.append("Spark trans times (par,bc,col):\t" +
 				String.format("%.3f/%.3f/%.3f secs.\n",
-						sparkParallelize.longValue()*1e-9,
-						sparkBroadcast.longValue()*1e-9,
-						sparkCollect.longValue()*1e-9));
+						parallelizeTime.longValue()*1e-9,
+						broadcastTime.longValue()*1e-9,
+						collectTime.longValue()*1e-9));
 		if (OptimizerUtils.ASYNC_TRIGGER_RDD_OPERATIONS)
 			sb.append("Spark async. count (pf,bc): \t" + 
 					String.format("%d/%d.\n", getAsyncPrefetchCount(), getAsyncBroadcastCount()));

@@ -95,19 +95,19 @@ public abstract class ColumnEncoder implements Encoder, Comparable<ColumnEncoder
 			long t = System.nanoTime()-t0;
 			switch (this.getTransformType()){
 				case RECODE:
-					TransformStatistics.incTransformRecodeApplyTime(t);
+					TransformStatistics.incRecodeApplyTime(t);
 					break;
 				case BIN:
-					TransformStatistics.incTransformBinningApplyTime(t);
+					TransformStatistics.incBinningApplyTime(t);
 					break;
 				case DUMMYCODE:
-					TransformStatistics.incTransformDummyCodeApplyTime(t);
+					TransformStatistics.incDummyCodeApplyTime(t);
 					break;
 				case FEATURE_HASH:
-					TransformStatistics.incTransformFeatureHashingApplyTime(t);
+					TransformStatistics.incFeatureHashingApplyTime(t);
 					break;
 				case PASS_THROUGH:
-					TransformStatistics.incTransformPassThroughApplyTime(t);
+					TransformStatistics.incPassThroughApplyTime(t);
 					break;
 				default:
 					break;

@@ -219,7 +219,7 @@ public class EncoderMVImpute extends LegacyEncoder {
 			throw new RuntimeException(ex);
 		}
 		if(DMLScript.STATISTICS)
-			TransformStatistics.incTransformImputeBuildTime(System.nanoTime()-t0);
+			TransformStatistics.incImputeBuildTime(System.nanoTime()-t0);
 	}
 
 	@Override
@@ -233,7 +233,7 @@ public class EncoderMVImpute extends LegacyEncoder {
 			}
 		}
 		if(DMLScript.STATISTICS)
-			TransformStatistics.incTransformImputeApplyTime(System.nanoTime()-t0);
+			TransformStatistics.incImputeApplyTime(System.nanoTime()-t0);
 		return out;
 	}
 

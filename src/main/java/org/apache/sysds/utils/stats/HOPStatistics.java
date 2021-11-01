@@ -23,53 +23,53 @@ import java.util.concurrent.atomic.LongAdder;
 
 public class HOPStatistics {
 	//HOP DAG recompile stats (potentially high update frequency)
-	private static final LongAdder hopRecompileTime = new LongAdder(); //in nano sec
-	private static final LongAdder hopRecompilePred = new LongAdder(); //count
-	private static final LongAdder hopRecompileSB = new LongAdder();   //count
+	private static final LongAdder recompileTime = new LongAdder(); //in nano sec
+	private static final LongAdder recompilePred = new LongAdder(); //count
+	private static final LongAdder recompileSB = new LongAdder();   //count
 
 
-	public static void incrementHOPRecompileTime( long delta ) {
-		hopRecompileTime.add(delta);
+	public static void incrementRecompileTime( long delta ) {
+		recompileTime.add(delta);
 	}
 
-	public static void incrementHOPRecompilePred() {
-		hopRecompilePred.increment();
+	public static void incrementRecompilePred() {
+		recompilePred.increment();
 	}
 
-	public static void incrementHOPRecompilePred(long delta) {
-		hopRecompilePred.add(delta);
+	public static void incrementRecompilePred(long delta) {
+		recompilePred.add(delta);
 	}
 
-	public static void incrementHOPRecompileSB() {
-		hopRecompileSB.increment();
+	public static void incrementRecompileSB() {
+		recompileSB.increment();
 	}
 
-	public static void incrementHOPRecompileSB(long delta) {
-		hopRecompileSB.add(delta);
+	public static void incrementRecompileSB(long delta) {
+		recompileSB.add(delta);
 	}
 
-	public static long getHopRecompileTime(){
-		return hopRecompileTime.longValue();
+	public static long getRecompileTime(){
+		return recompileTime.longValue();
 	}
 
-	public static long getHopRecompiledPredDAGs(){
-		return hopRecompilePred.longValue();
+	public static long getRecompiledPredDAGs(){
+		return recompilePred.longValue();
 	}
 
-	public static long getHopRecompiledSBDAGs(){
-		return hopRecompileSB.longValue();
+	public static long getRecompiledSBDAGs(){
+		return recompileSB.longValue();
 	}
 
 	public static void reset() {
-		hopRecompileTime.reset();
-		hopRecompilePred.reset();
-		hopRecompileSB.reset();
+		recompileTime.reset();
+		recompilePred.reset();
+		recompileSB.reset();
 	}
 
-	public static String displayHOPStatistics() {
+	public static String displayStatistics() {
 		StringBuilder sb = new StringBuilder();
-		sb.append("HOP DAGs recompiled (PRED, SB):\t" + getHopRecompiledPredDAGs() + "/" + getHopRecompiledSBDAGs() + ".\n");
-		sb.append("HOP DAGs recompile time:\t" + String.format("%.3f", ((double)getHopRecompileTime())/1000000000) + " sec.\n");
+		sb.append("HOP DAGs recompiled (PRED, SB):\t" + getRecompiledPredDAGs() + "/" + getRecompiledSBDAGs() + ".\n");
+		sb.append("HOP DAGs recompile time:\t" + String.format("%.3f", ((double)getRecompileTime())/1000000000) + " sec.\n");
 		return sb.toString();
 	}
 }

@@ -88,8 +88,8 @@ public class CodegenUtils
 		_cache.put(name, ret);
 
 		if( DMLScript.STATISTICS ) {
-			CodegenStatistics.incrementCodegenClassCompile();
-			CodegenStatistics.incrementCodegenClassCompileTime(System.nanoTime()-t0);
+			CodegenStatistics.incrementClassCompile();
+			CodegenStatistics.incrementClassCompileTime(System.nanoTime()-t0);
 		}
 
 		return ret;

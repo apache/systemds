@@ -442,8 +442,8 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 			if(DMLScript.STATISTICS) {
 				long total = (long) tFedCommunication.stop();
 				long workerComputing = ((DoubleObject) responseData[1]).getLongValue();
-				ParamServStatistics.accFedPSWorkerComputing(workerComputing);
-				ParamServStatistics.accFedPSCommunicationTime(total - workerComputing);
+				ParamServStatistics.accFedWorkerComputing(workerComputing);
+				ParamServStatistics.accFedCommunicationTime(total - workerComputing);
 			}
 			return (ListObject) responseData[0];
 		}
@@ -580,7 +580,7 @@ public class FederatedPSControlThread extends PSWorker implements Callable<Void>
 	// Statistics methods
 	protected void accFedPSGradientWeightingTime(Timing time) {
 		if (DMLScript.STATISTICS && time != null)
-			ParamServStatistics.accFedPSGradientWeightingTime((long) time.stop());
+			ParamServStatistics.accFedGradientWeightingTime((long) time.stop());
 	}
 
 	@Override

@@ -124,7 +124,7 @@ public class OptimizationWrapper
 		
 		//maintain statistics
 		if( DMLScript.STATISTICS )
-			ParForStatistics.incrementParForOptimCount();
+			ParForStatistics.incrementOptimCount();
 		
 		//create specified optimizer
 		Optimizer opt = createOptimizer( otype );
@@ -242,7 +242,7 @@ public class OptimizationWrapper
 		long ltime = (long) time.stop();
 		LOG.trace("ParFOR Opt: Optimized plan in "+ltime+"ms.");
 		if( DMLScript.STATISTICS )
-			ParForStatistics.incrementParForOptimTime(ltime);
+			ParForStatistics.incrementOptimTime(ltime);
 		
 		//monitor stats
 		if( monitor ) {

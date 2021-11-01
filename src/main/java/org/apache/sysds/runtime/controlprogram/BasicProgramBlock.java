@@ -96,9 +96,9 @@ public class BasicProgramBlock extends ProgramBlock
 			}
 			if( DMLScript.STATISTICS ){
 				long t1 = System.nanoTime();
-				HOPStatistics.incrementHOPRecompileTime(t1-t0);
+				HOPStatistics.incrementRecompileTime(t1-t0);
 				if( tmp!=_inst )
-					HOPStatistics.incrementHOPRecompileSB();
+					HOPStatistics.incrementRecompileSB();
 			}
 		}
 		catch(Exception ex)

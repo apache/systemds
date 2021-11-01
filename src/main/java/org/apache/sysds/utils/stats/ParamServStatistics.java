@@ -25,119 +25,119 @@ import org.apache.sysds.runtime.controlprogram.parfor.stat.Timing;
 
 public class ParamServStatistics {
 	// Paramserv function stats (time is in milli sec)
-	private static final Timing psExecutionTimer = new Timing(false);
-	private static final LongAdder psExecutionTime = new LongAdder();
-	private static final LongAdder psNumWorkers = new LongAdder();
-	private static final LongAdder psSetupTime = new LongAdder();
-	private static final LongAdder psGradientComputeTime = new LongAdder();
-	private static final LongAdder psAggregationTime = new LongAdder();
-	private static final LongAdder psLocalModelUpdateTime = new LongAdder();
-	private static final LongAdder psModelBroadcastTime = new LongAdder();
-	private static final LongAdder psBatchIndexTime = new LongAdder();
-	private static final LongAdder psRpcRequestTime = new LongAdder();
-	private static final LongAdder psValidationTime = new LongAdder();
+	private static final Timing executionTimer = new Timing(false);
+	private static final LongAdder executionTime = new LongAdder();
+	private static final LongAdder numWorkers = new LongAdder();
+	private static final LongAdder setupTime = new LongAdder();
+	private static final LongAdder gradientComputeTime = new LongAdder();
+	private static final LongAdder aggregationTime = new LongAdder();
+	private static final LongAdder localModelUpdateTime = new LongAdder();
+	private static final LongAdder modelBroadcastTime = new LongAdder();
+	private static final LongAdder batchIndexTime = new LongAdder();
+	private static final LongAdder rpcRequestTime = new LongAdder();
+	private static final LongAdder validationTime = new LongAdder();
 	// Federated parameter server specifics (time is in milli sec)
-	private static final LongAdder fedPSDataPartitioningTime = new LongAdder();
-	private static final LongAdder fedPSWorkerComputingTime = new LongAdder();
-	private static final LongAdder fedPSGradientWeightingTime = new LongAdder();
-	private static final LongAdder fedPSCommunicationTime = new LongAdder();
+	private static final LongAdder fedDataPartitioningTime = new LongAdder();
+	private static final LongAdder fedWorkerComputingTime = new LongAdder();
+	private static final LongAdder fedGradientWeightingTime = new LongAdder();
+	private static final LongAdder fedCommunicationTime = new LongAdder();
 
 	public static void incWorkerNumber() {
-		psNumWorkers.increment();
+		numWorkers.increment();
 	}
 
 	public static void incWorkerNumber(long n) {
-		psNumWorkers.add(n);
+		numWorkers.add(n);
 	}
 
-	public static Timing getPSExecutionTimer() {
-		return psExecutionTimer;
+	public static Timing getExecutionTimer() {
+		return executionTimer;
 	}
 
-	public static double getPSExecutionTime() {
-		return psExecutionTime.doubleValue();
+	public static double getExecutionTime() {
+		return executionTime.doubleValue();
 	}
 
-	public static void accPSExecutionTime(long n) {
-		psExecutionTime.add(n);
+	public static void accExecutionTime(long n) {
+		executionTime.add(n);
 	}
 
-	public static void accPSSetupTime(long t) {
-		psSetupTime.add(t);
+	public static void accSetupTime(long t) {
+		setupTime.add(t);
 	}
 
-	public static void accPSGradientComputeTime(long t) {
-		psGradientComputeTime.add(t);
+	public static void accGradientComputeTime(long t) {
+		gradientComputeTime.add(t);
 	}
 
-	public static void accPSAggregationTime(long t) {
-		psAggregationTime.add(t);
+	public static void accAggregationTime(long t) {
+		aggregationTime.add(t);
 	}
 
-	public static void accPSLocalModelUpdateTime(long t) {
-		psLocalModelUpdateTime.add(t);
+	public static void accLocalModelUpdateTime(long t) {
+		localModelUpdateTime.add(t);
 	}
 
-	public static void accPSModelBroadcastTime(long t) {
-		psModelBroadcastTime.add(t);
+	public static void accModelBroadcastTime(long t) {
+		modelBroadcastTime.add(t);
 	}
 
-	public static void accPSBatchIndexingTime(long t) {
-		psBatchIndexTime.add(t);
+	public static void accBatchIndexingTime(long t) {
+		batchIndexTime.add(t);
 	}
 
-	public static void accPSRpcRequestTime(long t) {
-		psRpcRequestTime.add(t);
+	public static void accRpcRequestTime(long t) {
+		rpcRequestTime.add(t);
 	}
 
-	public static double getPSValidationTime() {
-		return psValidationTime.doubleValue();
+	public static double getValidationTime() {
+		return validationTime.doubleValue();
 	}
 
-	public static void accPSValidationTime(long t) {
-		psValidationTime.add(t);
+	public static void accValidationTime(long t) {
+		validationTime.add(t);
 	}
 
-	public static long getFedPSDataPartitioningTime() {
-		return fedPSDataPartitioningTime.longValue();
+	public static long getFedDataPartitioningTime() {
+		return fedDataPartitioningTime.longValue();
 	}
 
-	public static void accFedPSDataPartitioningTime(long t) {
-		fedPSDataPartitioningTime.add(t);
+	public static void accFedDataPartitioningTime(long t) {
+		fedDataPartitioningTime.add(t);
 	}
 
-	public static void accFedPSWorkerComputing(long t) {
-		fedPSWorkerComputingTime.add(t);
+	public static void accFedWorkerComputing(long t) {
+		fedWorkerComputingTime.add(t);
 	}
 
-	public static void accFedPSGradientWeightingTime(long t) {
-		fedPSGradientWeightingTime.add(t);
+	public static void accFedGradientWeightingTime(long t) {
+		fedGradientWeightingTime.add(t);
 	}
 
-	public static void accFedPSCommunicationTime(long t) {
-		fedPSCommunicationTime.add(t);
+	public static void accFedCommunicationTime(long t) {
+		fedCommunicationTime.add(t);
 	}
 
-	public static String displayParamServStatistics() {
-		if (psNumWorkers.longValue() > 0) {
+	public static String displayStatistics() {
+		if (numWorkers.longValue() > 0) {
 			StringBuilder sb = new StringBuilder();
-			sb.append(String.format("Paramserv total execution time:\t%.3f secs.\n", psExecutionTime.doubleValue() / 1000));
-			sb.append(String.format("Paramserv total num workers:\t%d.\n", psNumWorkers.longValue()));
-			sb.append(String.format("Paramserv setup time:\t\t%.3f secs.\n", psSetupTime.doubleValue() / 1000));
+			sb.append(String.format("Paramserv total execution time:\t%.3f secs.\n", executionTime.doubleValue() / 1000));
+			sb.append(String.format("Paramserv total num workers:\t%d.\n", numWorkers.longValue()));
+			sb.append(String.format("Paramserv setup time:\t\t%.3f secs.\n", setupTime.doubleValue() / 1000));
 
-			if(fedPSDataPartitioningTime.longValue() > 0) { 	//if data partitioning happens this is the federated case
+			if(fedDataPartitioningTime.longValue() > 0) { 	//if data partitioning happens this is the federated case
 				sb.append(displayFedPSStatistics());
-				sb.append(String.format("PS fed global model agg time:\t%.3f secs.\n", psAggregationTime.doubleValue() / 1000));
+				sb.append(String.format("PS fed global model agg time:\t%.3f secs.\n", aggregationTime.doubleValue() / 1000));
 			}
 			else {
-				sb.append(String.format("Paramserv grad compute time:\t%.3f secs.\n", psGradientComputeTime.doubleValue() / 1000));
+				sb.append(String.format("Paramserv grad compute time:\t%.3f secs.\n", gradientComputeTime.doubleValue() / 1000));
 				sb.append(String.format("Paramserv model update time:\t%.3f/%.3f secs.\n",
-					psLocalModelUpdateTime.doubleValue() / 1000, psAggregationTime.doubleValue() / 1000));
-				sb.append(String.format("Paramserv model broadcast time:\t%.3f secs.\n", psModelBroadcastTime.doubleValue() / 1000));
-				sb.append(String.format("Paramserv batch slice time:\t%.3f secs.\n", psBatchIndexTime.doubleValue() / 1000));
-				sb.append(String.format("Paramserv RPC request time:\t%.3f secs.\n", psRpcRequestTime.doubleValue() / 1000));
+					localModelUpdateTime.doubleValue() / 1000, aggregationTime.doubleValue() / 1000));
+				sb.append(String.format("Paramserv model broadcast time:\t%.3f secs.\n", modelBroadcastTime.doubleValue() / 1000));
+				sb.append(String.format("Paramserv batch slice time:\t%.3f secs.\n", batchIndexTime.doubleValue() / 1000));
+				sb.append(String.format("Paramserv RPC request time:\t%.3f secs.\n", rpcRequestTime.doubleValue() / 1000));
 			}
-			sb.append(String.format("Paramserv valdiation time:\t%.3f secs.\n", psValidationTime.doubleValue() / 1000));
+			sb.append(String.format("Paramserv valdiation time:\t%.3f secs.\n", validationTime.doubleValue() / 1000));
 			return sb.toString();
 		}
 		return "";
@@ -145,10 +145,10 @@ public class ParamServStatistics {
 
 	private static String displayFedPSStatistics() {
 		StringBuilder sb = new StringBuilder();
-		sb.append(String.format("PS fed data partitioning time:\t%.3f secs.\n", fedPSDataPartitioningTime.doubleValue() / 1000));
-		sb.append(String.format("PS fed comm time (cum):\t\t%.3f secs.\n", fedPSCommunicationTime.doubleValue() / 1000));
-		sb.append(String.format("PS fed worker comp time (cum):\t%.3f secs.\n", fedPSWorkerComputingTime.doubleValue() / 1000));
-		sb.append(String.format("PS fed grad. weigh. time (cum):\t%.3f secs.\n", fedPSGradientWeightingTime.doubleValue() / 1000));
+		sb.append(String.format("PS fed data partitioning time:\t%.3f secs.\n", fedDataPartitioningTime.doubleValue() / 1000));
+		sb.append(String.format("PS fed comm time (cum):\t\t%.3f secs.\n", fedCommunicationTime.doubleValue() / 1000));
+		sb.append(String.format("PS fed worker comp time (cum):\t%.3f secs.\n", fedWorkerComputingTime.doubleValue() / 1000));
+		sb.append(String.format("PS fed grad. weigh. time (cum):\t%.3f secs.\n", fedGradientWeightingTime.doubleValue() / 1000));
 		return sb.toString();
 	}
 }

@@ -272,18 +272,18 @@ public class LocalPSWorker extends PSWorker implements Callable<Void> {
 	@Override
 	protected void accLocalModelUpdateTime(Timing time) {
 		if (DMLScript.STATISTICS)
-			ParamServStatistics.accPSLocalModelUpdateTime((long) time.stop());
+			ParamServStatistics.accLocalModelUpdateTime((long) time.stop());
 	}
 
 	@Override
 	protected void accBatchIndexingTime(Timing time) {
 		if (DMLScript.STATISTICS)
-			ParamServStatistics.accPSBatchIndexingTime((long) time.stop());
+			ParamServStatistics.accBatchIndexingTime((long) time.stop());
 	}
 
 	@Override
 	protected void accGradientComputeTime(Timing time) {
 		if (DMLScript.STATISTICS)
-			ParamServStatistics.accPSGradientComputeTime((long) time.stop());
+			ParamServStatistics.accGradientComputeTime((long) time.stop());
 	}
 }

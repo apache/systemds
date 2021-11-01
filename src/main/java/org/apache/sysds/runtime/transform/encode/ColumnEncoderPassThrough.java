@@ -170,7 +170,7 @@ public class ColumnEncoderPassThrough extends ColumnEncoder {
 			long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 			_encoder.applySparse(_input, _out, _outputCol, _startRow, _blk);
 			if(DMLScript.STATISTICS)
-				TransformStatistics.incTransformPassThroughApplyTime(System.nanoTime()-t0);
+				TransformStatistics.incPassThroughApplyTime(System.nanoTime()-t0);
 			return null;
 		}
 

@@ -112,7 +112,7 @@ public class SparkParamservUtils {
 			.mapToPair(new DataPartitionerSparkAggregator(features.getNumColumns(), labels.getNumColumns()));
 
 		if (DMLScript.STATISTICS)
-			ParamServStatistics.accPSSetupTime((long) tSetup.stop());
+			ParamServStatistics.accSetupTime((long) tSetup.stop());
 		return result;
 	}
 }

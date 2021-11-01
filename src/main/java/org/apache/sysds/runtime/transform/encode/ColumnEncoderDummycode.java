@@ -292,7 +292,7 @@ public class ColumnEncoderDummycode extends ColumnEncoder {
 				return null;
 			_encoder.applySparse(_input, _out, _outputCol, _startRow, _blk);
 			if (DMLScript.STATISTICS)
-				TransformStatistics.incTransformDummyCodeApplyTime(System.nanoTime()-t0);
+				TransformStatistics.incDummyCodeApplyTime(System.nanoTime()-t0);
 			return null;
 		}
 

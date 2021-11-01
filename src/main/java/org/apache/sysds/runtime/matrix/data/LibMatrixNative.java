@@ -123,15 +123,15 @@ public class LibMatrixNative
 				
 				if(nnz > -1) {
 					if(DMLScript.STATISTICS) {
-						NativeStatistics.incrementNativeLibMatrixMultTime(System.nanoTime() - start);
-						NativeStatistics.incrementNumNativeLibMatrixMultCalls();
+						NativeStatistics.incrementLibMatrixMultTime(System.nanoTime() - start);
+						NativeStatistics.incrementNumLibMatrixMultCalls();
 					}
 					ret.setNonZeros(nnz);
 					ret.examSparsity();
 					return ret;
 				}
 				//else record failure and fallback to java
-				NativeStatistics.incrementNativeFailuresCounter();
+				NativeStatistics.incrementFailuresCounter();
 				LOG.warn("matrixMult: Native mat mult failed. Falling back to java version ("
 					+ "loaded=" + NativeHelper.isNativeLibraryLoaded()
 					+ ", sparse=" + (m1.isInSparseFormat() | m2.isInSparseFormat()) + ")");
@@ -178,8 +178,8 @@ public class LibMatrixNative
 			
 			if(nnz > -1) {
 				if(DMLScript.STATISTICS) {
-					NativeStatistics.incrementNativeLibMatrixMultTime(System.nanoTime() - start);
-					NativeStatistics.incrementNumNativeLibMatrixMultCalls();
+					NativeStatistics.incrementLibMatrixMultTime(System.nanoTime() - start);
+					NativeStatistics.incrementNumLibMatrixMultCalls();
 				}
 				ret.setNonZeros(nnz);
 				ret.examSparsity();
@@ -187,7 +187,7 @@ public class LibMatrixNative
 			}
 			//fallback to default java implementation
 			LOG.warn("Native TSMM failed. Falling back to java version.");
-			NativeStatistics.incrementNativeFailuresCounter();
+			NativeStatistics.incrementFailuresCounter();
 		}
 		if( k > 1 )
 			LibMatrixMult.matrixMultTransposeSelf(m1, ret, leftTrans, k);
@@ -246,8 +246,8 @@ public class LibMatrixNative
 			//post processing and error handling
 			if(nnz != -1) {
 				if(DMLScript.STATISTICS) {
-					NativeStatistics.incrementNativeConv2dTime(System.nanoTime() - start);
-					NativeStatistics.incrementNumNativeConv2dCalls();
+					NativeStatistics.incrementConv2dTime(System.nanoTime() - start);
+					NativeStatistics.incrementNumConv2dCalls();
 				}
 				outputBlock.setNonZeros(nnz);
 				return;
@@ -257,7 +257,7 @@ public class LibMatrixNative
 				LOG.warn("Native conv2d call returned with error - falling back to java operator.");
 				if( !(isSinglePrecision() && params.bias!=null) )
 					outputBlock.reset();
-				NativeStatistics.incrementNativeFailuresCounter();
+				NativeStatistics.incrementFailuresCounter();
 			}
 		}
 		
@@ -291,8 +291,8 @@ public class LibMatrixNative
 					params.P, params.Q, params.numThreads);
 			if(nnz != -1) {
 				if(DMLScript.STATISTICS) {
-					NativeStatistics.incrementNativeConv2dBwdFilterTime(System.nanoTime() - start);
-					NativeStatistics.incrementNumNativeConv2dBwdFilterCalls();
+					NativeStatistics.incrementConv2dBwdFilterTime(System.nanoTime() - start);
+					NativeStatistics.incrementNumConv2dBwdFilterCalls();
 				}
 				// post-processing: maintain nnz
 				outputBlock.setNonZeros(nnz);
@@ -300,7 +300,7 @@ public class LibMatrixNative
 			}
 			else {
 				// Fall back to Java when failures
-				NativeStatistics.incrementNativeFailuresCounter();
+				NativeStatistics.incrementFailuresCounter();
 			}
 		}
 		// Fall back to Java when failures or sparse
@@ -327,8 +327,8 @@ public class LibMatrixNative
 					params.P, params.Q, params.numThreads);
 			if(nnz != -1) {
 				if(DMLScript.STATISTICS) {
-					NativeStatistics.incrementNativeConv2dBwdDataTime(System.nanoTime() - start);
-					NativeStatistics.incrementNumNativeConv2dBwdDataCalls();
+					NativeStatistics.incrementConv2dBwdDataTime(System.nanoTime() - start);
+					NativeStatistics.incrementNumConv2dBwdDataCalls();
 				}
 				// post-processing: maintain nnz
 				outputBlock.setNonZeros(nnz);
@@ -336,7 +336,7 @@ public class LibMatrixNative
 			}
 			else {
 				// Fall back to Java when failures
-				NativeStatistics.incrementNativeFailuresCounter();
+				NativeStatistics.incrementFailuresCounter();
 			}
 		}
 		// Fall back to Java when failures or sparse

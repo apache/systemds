@@ -251,7 +251,7 @@ public class SparkExecutionContext extends ExecutionContext
 
 		//statistics maintenance
 		if( DMLScript.STATISTICS ){
-			SparkStatistics.setSparkCtxCreateTime(System.nanoTime()-t0);
+			SparkStatistics.setCtxCreateTime(System.nanoTime()-t0);
 		}
 	}
 
@@ -656,8 +656,8 @@ public class SparkExecutionContext extends ExecutionContext
 				CacheableData.addBroadcastSize(cd.getBroadcastHandle().getSize());
 
 				if (DMLScript.STATISTICS) {
-					SparkStatistics.accSparkBroadCastTime(System.nanoTime() - t0);
-					SparkStatistics.incSparkBroadcastCount(1);
+					SparkStatistics.accBroadCastTime(System.nanoTime() - t0);
+					SparkStatistics.incBroadcastCount(1);
 				}
 			}
 		}
@@ -722,8 +722,8 @@ public class SparkExecutionContext extends ExecutionContext
 				CacheableData.addBroadcastSize(mo.getBroadcastHandle().getSize());
 
 				if (DMLScript.STATISTICS) {
-					SparkStatistics.accSparkBroadCastTime(System.nanoTime() - t0);
-					SparkStatistics.incSparkBroadcastCount(1);
+					SparkStatistics.accBroadCastTime(System.nanoTime() - t0);
+					SparkStatistics.incBroadcastCount(1);
 				}
 			}
 		}
@@ -783,8 +783,8 @@ public class SparkExecutionContext extends ExecutionContext
 			CacheableData.addBroadcastSize(to.getBroadcastHandle().getSize());
 
 			if (DMLScript.STATISTICS) {
-				SparkStatistics.accSparkBroadCastTime(System.nanoTime() - t0);
-				SparkStatistics.incSparkBroadcastCount(1);
+				SparkStatistics.accBroadCastTime(System.nanoTime() - t0);
+				SparkStatistics.incBroadcastCount(1);
 			}
 		}
 		return bret;
@@ -849,8 +849,8 @@ public class SparkExecutionContext extends ExecutionContext
 			CacheableData.addBroadcastSize(fo.getBroadcastHandle().getSize());
 
 			if (DMLScript.STATISTICS) {
-				SparkStatistics.accSparkBroadCastTime(System.nanoTime() - t0);
-				SparkStatistics.incSparkBroadcastCount(1);
+				SparkStatistics.accBroadCastTime(System.nanoTime() - t0);
+				SparkStatistics.incBroadcastCount(1);
 			}
 		}
 		return bret;
@@ -905,8 +905,8 @@ public class SparkExecutionContext extends ExecutionContext
 			sc.parallelizePairs(list, numParts) : sc.parallelizePairs(list);
 		
 		if (DMLScript.STATISTICS) {
-			SparkStatistics.accSparkParallelizeTime(System.nanoTime() - t0);
-			SparkStatistics.incSparkParallelizeCount(1);
+			SparkStatistics.accParallelizeTime(System.nanoTime() - t0);
+			SparkStatistics.incParallelizeCount(1);
 		}
 
 		return result;
@@ -947,8 +947,8 @@ public class SparkExecutionContext extends ExecutionContext
 				sc.parallelizePairs(list, numParts) : sc.parallelizePairs(list);
 
 		if (DMLScript.STATISTICS) {
-			SparkStatistics.accSparkParallelizeTime(System.nanoTime() - t0);
-			SparkStatistics.incSparkParallelizeCount(1);
+			SparkStatistics.accParallelizeTime(System.nanoTime() - t0);
+			SparkStatistics.incParallelizeCount(1);
 		}
 
 		return result;
@@ -1016,8 +1016,8 @@ public class SparkExecutionContext extends ExecutionContext
 
 		JavaPairRDD<Long,FrameBlock> result = sc.parallelizePairs(list);
 		if (DMLScript.STATISTICS) {
-			SparkStatistics.accSparkParallelizeTime(System.nanoTime() - t0);
-			SparkStatistics.incSparkParallelizeCount(1);
+			SparkStatistics.accParallelizeTime(System.nanoTime() - t0);
+			SparkStatistics.incParallelizeCount(1);
 		}
 
 		return result;
@@ -1060,7 +1060,7 @@ public class SparkExecutionContext extends ExecutionContext
 		final MatrixBlock out = singleBlock ? toMatrixBlockSingleBlock(rdd, rlen, clen) : toMatrixBlockMultiBlock(rdd, rlen, clen, blen, nnz);
 
 		if (DMLScript.STATISTICS) 
-			SparkStatistics.accSparkCollectTime(System.nanoTime() - t0);
+			SparkStatistics.accCollectTime(System.nanoTime() - t0);
 
 		return out;
 	}
@@ -1244,8 +1244,8 @@ public class SparkExecutionContext extends ExecutionContext
 		out.examSparsity();
 
 		if (DMLScript.STATISTICS) {
-			SparkStatistics.accSparkCollectTime(System.nanoTime() - t0);
-			SparkStatistics.incSparkCollectCount(1);
+			SparkStatistics.accCollectTime(System.nanoTime() - t0);
+			SparkStatistics.incCollectCount(1);
 		}
 
 		return out;
@@ -1291,8 +1291,8 @@ public class SparkExecutionContext extends ExecutionContext
 		// TODO post-processing output tensor (nnz, sparsity)
 
 		if (DMLScript.STATISTICS) {
-			SparkStatistics.accSparkCollectTime(System.nanoTime() - t0);
-			SparkStatistics.incSparkCollectCount(1);
+			SparkStatistics.accCollectTime(System.nanoTime() - t0);
+			SparkStatistics.incCollectCount(1);
 		}
 		return out;
 	}
@@ -1313,8 +1313,8 @@ public class SparkExecutionContext extends ExecutionContext
 		}
 
 		if (DMLScript.STATISTICS) {
-			SparkStatistics.accSparkCollectTime(System.nanoTime() - t0);
-			SparkStatistics.incSparkCollectCount(1);
+			SparkStatistics.accCollectTime(System.nanoTime() - t0);
+			SparkStatistics.incCollectCount(1);
 		}
 
 		return out;
@@ -1354,8 +1354,8 @@ public class SparkExecutionContext extends ExecutionContext
 		}
 
 		if (DMLScript.STATISTICS) {
-			SparkStatistics.accSparkCollectTime(System.nanoTime() - t0);
-			SparkStatistics.incSparkCollectCount(1);
+			SparkStatistics.accCollectTime(System.nanoTime() - t0);
+			SparkStatistics.incCollectCount(1);
 		}
 
 		return out;

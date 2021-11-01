@@ -400,7 +400,7 @@ public class MultiColumnEncoder implements Encoder {
 
 		if(DMLScript.STATISTICS) {
 			LOG.debug("Elapsed time for allocation: "+ ((double) System.nanoTime() - t0) / 1000000 + " ms");
-			TransformStatistics.incTransformOutMatrixPreProcessingTime(System.nanoTime()-t0);
+			TransformStatistics.incOutMatrixPreProcessingTime(System.nanoTime()-t0);
 		}
 	}
 
@@ -420,7 +420,7 @@ public class MultiColumnEncoder implements Encoder {
 		}
 		output.recomputeNonZeros();
 		if(DMLScript.STATISTICS)
-			TransformStatistics.incTransformOutMatrixPostProcessingTime(System.nanoTime()-t0);
+			TransformStatistics.incOutMatrixPostProcessingTime(System.nanoTime()-t0);
 	}
 
 	@Override

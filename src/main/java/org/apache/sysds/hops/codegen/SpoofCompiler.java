@@ -563,7 +563,7 @@ public class SpoofCompiler {
 				}
 				else {
 					if( DMLScript.STATISTICS ) 
-						CodegenStatistics.incrementCodegenOpCacheHits();
+						CodegenStatistics.incrementOpCacheHits();
 					if(CodegenUtils.getCUDAopID(cla.getName()) != null) {
 						tmp.getValue().setGeneratorAPI(GeneratorAPI.CUDA);
 						tmp.getValue().setVarName(cla.getName().split("\\.")[1]);
@@ -586,7 +586,7 @@ public class SpoofCompiler {
 					clas.put(cplan.getKey(), new Pair<Hop[], Class<?>>(tmp.getKey(), cla));
 				}
 				if( DMLScript.STATISTICS )
-					CodegenStatistics.incrementCodegenOpCacheTotal();
+					CodegenStatistics.incrementOpCacheTotal();
 			}
 			
 			//create modified hop dag (operator replacement and CSE)
@@ -612,8 +612,8 @@ public class SpoofCompiler {
 		}
 		
 		if( DMLScript.STATISTICS ) {
-			CodegenStatistics.incrementCodegenDAGCompile();
-			CodegenStatistics.incrementCodegenCompileTime(System.nanoTime()-t0);
+			CodegenStatistics.incrementDAGCompile();
+			CodegenStatistics.incrementCompileTime(System.nanoTime()-t0);
 		}
 		
 		Hop.resetVisitStatus(roots);
@@ -738,7 +738,7 @@ public class SpoofCompiler {
 			if( tmp != null ) {
 				cplans.put(hop.getHopID(), tmp);
 				if (DMLScript.STATISTICS)
-					CodegenStatistics.incrementCodegenCPlanCompile(1);
+					CodegenStatistics.incrementCPlanCompile(1);
 			}
 		}
 		

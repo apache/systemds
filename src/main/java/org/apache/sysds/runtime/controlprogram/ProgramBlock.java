@@ -169,9 +169,9 @@ public abstract class ProgramBlock implements ParseInfo {
 			}
 			if(DMLScript.STATISTICS) {
 				long t1 = System.nanoTime();
-				HOPStatistics.incrementHOPRecompileTime(t1 - t0);
+				HOPStatistics.incrementRecompileTime(t1 - t0);
 				if(tmp != inst)
-					HOPStatistics.incrementHOPRecompilePred();
+					HOPStatistics.incrementRecompilePred();
 			}
 		}
 		catch(Exception ex) {

@@ -70,6 +70,6 @@ public class JMLCParfor2ForCompileTest extends AutomatedTestBase
 		}
 		
 		//check for existing or non-existing parfor
-		Assert.assertTrue(ParForStatistics.getParforOptCount()==(par?1:0));
+		Assert.assertTrue(ParForStatistics.getOptCount()==(par?1:0));
 	}
 }

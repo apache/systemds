@@ -46,9 +46,9 @@ public class TriggerRemoteOperationsTask implements Runnable {
 		}
 		if (DMLScript.STATISTICS && prefetched) {
 			if (_prefetchMO.isFederated())
-				FederatedStatistics.incFedAsyncPrefetchCount(1);
+				FederatedStatistics.incAsyncPrefetchCount(1);
 			else
-				SparkStatistics.incSparkAsyncPrefetchCount(1);
+				SparkStatistics.incAsyncPrefetchCount(1);
 		}
 	}
 

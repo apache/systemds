@@ -148,7 +148,7 @@ public class PlanSelectionFuseCostBasedV2 extends PlanSelection
 			if( sumMatPoints >= 63 )
 				LOG.warn("Long overflow on maintaining codegen statistics "
 					+ "for a DAG with "+sumMatPoints+" interesting points.");
-			CodegenStatistics.incrementCodegenEnumAll(UtilFunctions.pow(2, sumMatPoints));
+			CodegenStatistics.incrementEnumAll(UtilFunctions.pow(2, sumMatPoints));
 		}
 	}
 	
@@ -246,7 +246,7 @@ public class PlanSelectionFuseCostBasedV2 extends PlanSelection
 			pKey = new PartitionSignature(part, matPoints.length, costs, C0, CN);
 			boolean[] plan = getPlan(pKey);
 			if( plan != null ) {
-				CodegenStatistics.incrementCodegenEnumAllP((rgraph!=null||!STRUCTURAL_PRUNING)?len:0);
+				CodegenStatistics.incrementEnumAllP((rgraph!=null||!STRUCTURAL_PRUNING)?len:0);
 				return plan;
 			}
 		}
@@ -314,9 +314,9 @@ public class PlanSelectionFuseCostBasedV2 extends PlanSelection
 		}
 		
 		if( DMLScript.STATISTICS ) {
-			CodegenStatistics.incrementCodegenEnumAllP((rgraph!=null||!STRUCTURAL_PRUNING)?len:0);
-			CodegenStatistics.incrementCodegenEnumEval(numEvalPlans);
-			CodegenStatistics.incrementCodegenEnumEvalP(numEvalPartPlans);
+			CodegenStatistics.incrementEnumAllP((rgraph!=null||!STRUCTURAL_PRUNING)?len:0);
+			CodegenStatistics.incrementEnumEval(numEvalPlans);
+			CodegenStatistics.incrementEnumEvalP(numEvalPartPlans);
 		}
 		if( LOG.isTraceEnabled() )
 			LOG.trace("Enum: Optimal plan: "+Arrays.toString(bestPlan));
@@ -1025,8 +1025,8 @@ public class PlanSelectionFuseCostBasedV2 extends PlanSelection
 		}
 		if( DMLScript.STATISTICS ) {
 			if( plan != null )
-				CodegenStatistics.incrementCodegenPlanCacheHits();
-			CodegenStatistics.incrementCodegenPlanCacheTotal();
+				CodegenStatistics.incrementPlanCacheHits();
+			CodegenStatistics.incrementPlanCacheTotal();
 		}
 		return plan;
 	}

@@ -46,7 +46,7 @@ public class TriggerBroadcastTask implements Runnable {
 
 		//TODO: Count only if successful (owned lock)
 		if (DMLScript.STATISTICS)
-			SparkStatistics.incSparkAsyncBroadcastCount(1);
+			SparkStatistics.incAsyncBroadcastCount(1);
 		
 	}
 }

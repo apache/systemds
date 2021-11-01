@@ -140,7 +140,7 @@ public class ColumnEncoderRecode extends ColumnEncoder {
 		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 		makeRcdMap(in, _rcdMap, _colID, 0, in.getNumRows());
 		if(DMLScript.STATISTICS){
-			TransformStatistics.incTransformRecodeBuildTime(System.nanoTime() - t0);
+			TransformStatistics.incRecodeBuildTime(System.nanoTime() - t0);
 		}
 	}
 
@@ -347,7 +347,7 @@ public class ColumnEncoderRecode extends ColumnEncoder {
 				return null;
 			_encoder.applySparse(_input, _out, _outputCol, _startRow, _blk);
 			if(DMLScript.STATISTICS){
-				TransformStatistics.incTransformRecodeApplyTime(System.nanoTime() - t0);
+				TransformStatistics.incRecodeApplyTime(System.nanoTime() - t0);
 			}
 			return null;
 		}
@@ -388,7 +388,7 @@ public class ColumnEncoderRecode extends ColumnEncoder {
 				_partialMaps.put(_startRow, partialMap);
 			}
 			if(DMLScript.STATISTICS){
-				TransformStatistics.incTransformRecodeBuildTime(System.nanoTime() - t0);
+				TransformStatistics.incRecodeBuildTime(System.nanoTime() - t0);
 			}
 			return null;
 		}
@@ -421,7 +421,7 @@ public class ColumnEncoderRecode extends ColumnEncoder {
 			});
 			_encoder._rcdMap = rcdMap;
 			if(DMLScript.STATISTICS){
-				TransformStatistics.incTransformRecodeBuildTime(System.nanoTime() - t0);
+				TransformStatistics.incRecodeBuildTime(System.nanoTime() - t0);
 			}
 			return null;
 		}

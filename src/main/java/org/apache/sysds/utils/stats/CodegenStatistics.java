@@ -22,148 +22,148 @@ package org.apache.sysds.utils.stats;
 import java.util.concurrent.atomic.LongAdder;
 
 public class CodegenStatistics {
-	private static final LongAdder codegenCompileTime = new LongAdder(); //in nano
-	private static final LongAdder codegenClassCompileTime = new LongAdder(); //in nano
-	private static final LongAdder codegenHopCompile = new LongAdder(); //count
-	private static final LongAdder codegenCPlanCompile = new LongAdder(); //count
-	private static final LongAdder codegenClassCompile = new LongAdder(); //count
-	private static final LongAdder codegenEnumAll = new LongAdder(); //count
-	private static final LongAdder codegenEnumAllP = new LongAdder(); //count
-	private static final LongAdder codegenEnumEval = new LongAdder(); //count
-	private static final LongAdder codegenEnumEvalP = new LongAdder(); //count
-	private static final LongAdder codegenOpCacheHits = new LongAdder(); //count
-	private static final LongAdder codegenOpCacheTotal = new LongAdder(); //count
-	private static final LongAdder codegenPlanCacheHits = new LongAdder(); //count
-	private static final LongAdder codegenPlanCacheTotal = new LongAdder(); //count
+	private static final LongAdder compileTime = new LongAdder(); //in nano
+	private static final LongAdder classCompileTime = new LongAdder(); //in nano
+	private static final LongAdder hopCompile = new LongAdder(); //count
+	private static final LongAdder cPlanCompile = new LongAdder(); //count
+	private static final LongAdder classCompile = new LongAdder(); //count
+	private static final LongAdder enumAll = new LongAdder(); //count
+	private static final LongAdder enumAllP = new LongAdder(); //count
+	private static final LongAdder enumEval = new LongAdder(); //count
+	private static final LongAdder enumEvalP = new LongAdder(); //count
+	private static final LongAdder opCacheHits = new LongAdder(); //count
+	private static final LongAdder opCacheTotal = new LongAdder(); //count
+	private static final LongAdder planCacheHits = new LongAdder(); //count
+	private static final LongAdder planCacheTotal = new LongAdder(); //count
 
 
-	public static void incrementCodegenDAGCompile() {
-		codegenHopCompile.increment();
+	public static void incrementDAGCompile() {
+		hopCompile.increment();
 	}
 
-	public static void incrementCodegenCPlanCompile(long delta) {
-		codegenCPlanCompile.add(delta);
+	public static void incrementCPlanCompile(long delta) {
+		cPlanCompile.add(delta);
 	}
 
-	public static void incrementCodegenEnumAll(long delta) {
-		codegenEnumAll.add(delta);
+	public static void incrementEnumAll(long delta) {
+		enumAll.add(delta);
 	}
-	public static void incrementCodegenEnumAllP(long delta) {
-		codegenEnumAllP.add(delta);
+	public static void incrementEnumAllP(long delta) {
+		enumAllP.add(delta);
 	}
-	public static void incrementCodegenEnumEval(long delta) {
-		codegenEnumEval.add(delta);
+	public static void incrementEnumEval(long delta) {
+		enumEval.add(delta);
 	}
-	public static void incrementCodegenEnumEvalP(long delta) {
-		codegenEnumEvalP.add(delta);
-	}
-
-	public static void incrementCodegenClassCompile() {
-		codegenClassCompile.increment();
+	public static void incrementEnumEvalP(long delta) {
+		enumEvalP.add(delta);
 	}
 
-	public static void incrementCodegenCompileTime(long delta) {
-		codegenCompileTime.add(delta);
+	public static void incrementClassCompile() {
+		classCompile.increment();
 	}
 
-	public static void incrementCodegenClassCompileTime(long delta) {
-		codegenClassCompileTime.add(delta);
+	public static void incrementCompileTime(long delta) {
+		compileTime.add(delta);
 	}
 
-	public static void incrementCodegenOpCacheHits() {
-		codegenOpCacheHits.increment();
+	public static void incrementClassCompileTime(long delta) {
+		classCompileTime.add(delta);
 	}
 
-	public static void incrementCodegenOpCacheTotal() {
-		codegenOpCacheTotal.increment();
+	public static void incrementOpCacheHits() {
+		opCacheHits.increment();
 	}
 
-	public static void incrementCodegenPlanCacheHits() {
-		codegenPlanCacheHits.increment();
+	public static void incrementOpCacheTotal() {
+		opCacheTotal.increment();
 	}
 
-	public static void incrementCodegenPlanCacheTotal() {
-		codegenPlanCacheTotal.increment();
+	public static void incrementPlanCacheHits() {
+		planCacheHits.increment();
 	}
 
-	public static long getCodegenDAGCompile() {
-		return codegenHopCompile.longValue();
+	public static void incrementPlanCacheTotal() {
+		planCacheTotal.increment();
 	}
 
-	public static long getCodegenCPlanCompile() {
-		return codegenCPlanCompile.longValue();
+	public static long getDAGCompile() {
+		return hopCompile.longValue();
 	}
 
-	public static long getCodegenEnumAll() {
-		return codegenEnumAll.longValue();
+	public static long getCPlanCompile() {
+		return cPlanCompile.longValue();
 	}
 
-	public static long getCodegenEnumAllP() {
-		return codegenEnumAllP.longValue();
+	public static long getEnumAll() {
+		return enumAll.longValue();
 	}
 
-	public static long getCodegenEnumEval() {
-		return codegenEnumEval.longValue();
+	public static long getEnumAllP() {
+		return enumAllP.longValue();
 	}
 
-	public static long getCodegenEnumEvalP() {
-		return codegenEnumEvalP.longValue();
+	public static long getEnumEval() {
+		return enumEval.longValue();
 	}
 
-	public static long getCodegenClassCompile() {
-		return codegenClassCompile.longValue();
+	public static long getEnumEvalP() {
+		return enumEvalP.longValue();
 	}
 
-	public static long getCodegenCompileTime() {
-		return codegenCompileTime.longValue();
+	public static long getClassCompile() {
+		return classCompile.longValue();
 	}
 
-	public static long getCodegenClassCompileTime() {
-		return codegenClassCompileTime.longValue();
+	public static long getCompileTime() {
+		return compileTime.longValue();
 	}
 
-	public static long getCodegenOpCacheHits() {
-		return codegenOpCacheHits.longValue();
+	public static long getClassCompileTime() {
+		return classCompileTime.longValue();
 	}
 
-	public static long getCodegenOpCacheTotal() {
-		return codegenOpCacheTotal.longValue();
+	public static long getOpCacheHits() {
+		return opCacheHits.longValue();
 	}
 
-	public static long getCodegenPlanCacheHits() {
-		return codegenPlanCacheHits.longValue();
+	public static long getOpCacheTotal() {
+		return opCacheTotal.longValue();
 	}
 
-	public static long getCodegenPlanCacheTotal() {
-		return codegenPlanCacheTotal.longValue();
+	public static long getPlanCacheHits() {
+		return planCacheHits.longValue();
+	}
+
+	public static long getPlanCacheTotal() {
+		return planCacheTotal.longValue();
 	}
 
 	public static void reset() {
-		codegenHopCompile.reset();
-		codegenCPlanCompile.reset();
-		codegenClassCompile.reset();
-		codegenEnumAll.reset();
-		codegenEnumAllP.reset();
-		codegenEnumEval.reset();
-		codegenEnumEvalP.reset();
-		codegenCompileTime.reset();
-		codegenClassCompileTime.reset();
-		codegenOpCacheHits.reset();
-		codegenOpCacheTotal.reset();
-		codegenPlanCacheHits.reset();
-		codegenPlanCacheTotal.reset();
+		hopCompile.reset();
+		cPlanCompile.reset();
+		classCompile.reset();
+		enumAll.reset();
+		enumAllP.reset();
+		enumEval.reset();
+		enumEvalP.reset();
+		compileTime.reset();
+		classCompileTime.reset();
+		opCacheHits.reset();
+		opCacheTotal.reset();
+		planCacheHits.reset();
+		planCacheTotal.reset();
 	}
 
-	public static String displayCodegenStatistics() {
+	public static String displayStatistics() {
 		StringBuilder sb = new StringBuilder();
-		sb.append("Codegen compile (DAG,CP,JC):\t" + getCodegenDAGCompile() + "/"
-				+ getCodegenCPlanCompile() + "/" + getCodegenClassCompile() + ".\n");
-		sb.append("Codegen enum (ALLt/p,EVALt/p):\t" + getCodegenEnumAll() + "/" +
-				getCodegenEnumAllP() + "/" + getCodegenEnumEval() + "/" + getCodegenEnumEvalP() + ".\n");
-		sb.append("Codegen compile times (DAG,JC):\t" + String.format("%.3f", (double)getCodegenCompileTime()/1000000000) + "/" +
-				String.format("%.3f", (double)getCodegenClassCompileTime()/1000000000)  + " sec.\n");
-		sb.append("Codegen enum plan cache hits:\t" + getCodegenPlanCacheHits() + "/" + getCodegenPlanCacheTotal() + ".\n");
-		sb.append("Codegen op plan cache hits:\t" + getCodegenOpCacheHits() + "/" + getCodegenOpCacheTotal() + ".\n");
+		sb.append("Codegen compile (DAG,CP,JC):\t" + getDAGCompile() + "/"
+				+ getCPlanCompile() + "/" + getClassCompile() + ".\n");
+		sb.append("Codegen enum (ALLt/p,EVALt/p):\t" + getEnumAll() + "/" +
+				getEnumAllP() + "/" + getEnumEval() + "/" + getEnumEvalP() + ".\n");
+		sb.append("Codegen compile times (DAG,JC):\t" + String.format("%.3f", (double)getCompileTime()/1000000000) + "/" +
+				String.format("%.3f", (double)getClassCompileTime()/1000000000)  + " sec.\n");
+		sb.append("Codegen enum plan cache hits:\t" + getPlanCacheHits() + "/" + getPlanCacheTotal() + ".\n");
+		sb.append("Codegen op plan cache hits:\t" + getOpCacheHits() + "/" + getOpCacheTotal() + ".\n");
 		return sb.toString();
 	}
 }

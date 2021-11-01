@@ -22,134 +22,134 @@ package org.apache.sysds.utils.stats;
 import java.util.concurrent.atomic.LongAdder;
 
 public class TransformStatistics {
-	private static final LongAdder transformEncoderCount = new LongAdder();
+	private static final LongAdder encoderCount = new LongAdder();
 
-	//private static final LongAdder transformBuildTime = new LongAdder();
-	private static final LongAdder transformRecodeBuildTime = new LongAdder();
-	private static final LongAdder transformBinningBuildTime = new LongAdder();
-	private static final LongAdder transformImputeBuildTime = new LongAdder();
+	//private static final LongAdder buildTime = new LongAdder();
+	private static final LongAdder recodeBuildTime = new LongAdder();
+	private static final LongAdder binningBuildTime = new LongAdder();
+	private static final LongAdder imputeBuildTime = new LongAdder();
 
-	//private static final LongAdder transformApplyTime = new LongAdder();
-	private static final LongAdder transformRecodeApplyTime = new LongAdder();
-	private static final LongAdder transformDummyCodeApplyTime = new LongAdder();
-	private static final LongAdder transformPassThroughApplyTime = new LongAdder();
-	private static final LongAdder transformFeatureHashingApplyTime = new LongAdder();
-	private static final LongAdder transformBinningApplyTime = new LongAdder();
-	private static final LongAdder transformOmitApplyTime = new LongAdder();
-	private static final LongAdder transformImputeApplyTime = new LongAdder();
+	//private static final LongAdder applyTime = new LongAdder();
+	private static final LongAdder recodeApplyTime = new LongAdder();
+	private static final LongAdder dummyCodeApplyTime = new LongAdder();
+	private static final LongAdder passThroughApplyTime = new LongAdder();
+	private static final LongAdder featureHashingApplyTime = new LongAdder();
+	private static final LongAdder binningApplyTime = new LongAdder();
+	private static final LongAdder omitApplyTime = new LongAdder();
+	private static final LongAdder imputeApplyTime = new LongAdder();
 
-	private static final LongAdder transformOutMatrixPreProcessingTime = new LongAdder();
-	private static final LongAdder transformOutMatrixPostProcessingTime = new LongAdder();
+	private static final LongAdder outMatrixPreProcessingTime = new LongAdder();
+	private static final LongAdder outMatrixPostProcessingTime = new LongAdder();
 
-	public static void incTransformEncoderCount(long encoders){
-		transformEncoderCount.add(encoders);
+	public static void incEncoderCount(long encoders){
+		encoderCount.add(encoders);
 	}
 
-	public static void incTransformRecodeApplyTime(long t){
-		transformRecodeApplyTime.add(t);
+	public static void incRecodeApplyTime(long t){
+		recodeApplyTime.add(t);
 	}
 
-	public static void incTransformDummyCodeApplyTime(long t){
-		transformDummyCodeApplyTime.add(t);
+	public static void incDummyCodeApplyTime(long t){
+		dummyCodeApplyTime.add(t);
 	}
 
-	public static void incTransformBinningApplyTime(long t){
-		transformBinningApplyTime.add(t);
+	public static void incBinningApplyTime(long t){
+		binningApplyTime.add(t);
 	}
 
-	public static void incTransformPassThroughApplyTime(long t){
-		transformPassThroughApplyTime.add(t);
+	public static void incPassThroughApplyTime(long t){
+		passThroughApplyTime.add(t);
 	}
 
-	public static void incTransformFeatureHashingApplyTime(long t){
-		transformFeatureHashingApplyTime.add(t);
+	public static void incFeatureHashingApplyTime(long t){
+		featureHashingApplyTime.add(t);
 	}
 
-	public static void incTransformOmitApplyTime(long t) {
-		transformOmitApplyTime.add(t);
+	public static void incOmitApplyTime(long t) {
+		omitApplyTime.add(t);
 	}
 
-	public static void incTransformImputeApplyTime(long t) {
-		transformImputeApplyTime.add(t);
+	public static void incImputeApplyTime(long t) {
+		imputeApplyTime.add(t);
 	}
 
-	public static void incTransformRecodeBuildTime(long t){
-		transformRecodeBuildTime.add(t);
+	public static void incRecodeBuildTime(long t){
+		recodeBuildTime.add(t);
 	}
 
-	public static void incTransformBinningBuildTime(long t){
-		transformBinningBuildTime.add(t);
+	public static void incBinningBuildTime(long t){
+		binningBuildTime.add(t);
 	}
 
-	public static void incTransformImputeBuildTime(long t) {
-		transformImputeBuildTime.add(t);
+	public static void incImputeBuildTime(long t) {
+		imputeBuildTime.add(t);
 	}
 
-	public static void incTransformOutMatrixPreProcessingTime(long t){
-		transformOutMatrixPreProcessingTime.add(t);
+	public static void incOutMatrixPreProcessingTime(long t){
+		outMatrixPreProcessingTime.add(t);
 	}
 
-	public static void incTransformOutMatrixPostProcessingTime(long t){
-		transformOutMatrixPostProcessingTime.add(t);
+	public static void incOutMatrixPostProcessingTime(long t){
+		outMatrixPostProcessingTime.add(t);
 	}
 
-	public static long getTransformEncodeBuildTime(){
-		return transformBinningBuildTime.longValue() + transformImputeBuildTime.longValue() +
-				transformRecodeBuildTime.longValue();
+	public static long getEncodeBuildTime(){
+		return binningBuildTime.longValue() + imputeBuildTime.longValue() +
+				recodeBuildTime.longValue();
 	}
 
-	public static long getTransformEncodeApplyTime(){
-		return transformDummyCodeApplyTime.longValue() + transformBinningApplyTime.longValue() +
-				transformFeatureHashingApplyTime.longValue() + transformPassThroughApplyTime.longValue() +
-				transformRecodeApplyTime.longValue() + transformOmitApplyTime.longValue() +
-				transformImputeApplyTime.longValue();
+	public static long getEncodeApplyTime(){
+		return dummyCodeApplyTime.longValue() + binningApplyTime.longValue() +
+				featureHashingApplyTime.longValue() + passThroughApplyTime.longValue() +
+				recodeApplyTime.longValue() + omitApplyTime.longValue() +
+				imputeApplyTime.longValue();
 	}
 
-	public static String displayTransformStatistics() {
-		if( transformEncoderCount.longValue() > 0) {
+	public static String displayStatistics() {
+		if( encoderCount.longValue() > 0) {
 			//TODO: Cleanup and condense
 			StringBuilder sb = new StringBuilder();
-			sb.append("TransformEncode num. encoders:\t").append(transformEncoderCount.longValue()).append("\n");
+			sb.append("TransformEncode num. encoders:\t").append(encoderCount.longValue()).append("\n");
 			sb.append("TransformEncode build time:\t").append(String.format("%.3f",
-				getTransformEncodeBuildTime()*1e-9)).append(" sec.\n");
-			if(transformRecodeBuildTime.longValue() > 0)
+				getEncodeBuildTime()*1e-9)).append(" sec.\n");
+			if(recodeBuildTime.longValue() > 0)
 				sb.append("\tRecode build time:\t").append(String.format("%.3f",
-					transformRecodeBuildTime.longValue()*1e-9)).append(" sec.\n");
-			if(transformBinningBuildTime.longValue() > 0)
+					recodeBuildTime.longValue()*1e-9)).append(" sec.\n");
+			if(binningBuildTime.longValue() > 0)
 				sb.append("\tBinning build time:\t").append(String.format("%.3f",
-					transformBinningBuildTime.longValue()*1e-9)).append(" sec.\n");
-			if(transformImputeBuildTime.longValue() > 0)
+					binningBuildTime.longValue()*1e-9)).append(" sec.\n");
+			if(imputeBuildTime.longValue() > 0)
 				sb.append("\tImpute build time:\t").append(String.format("%.3f",
-					transformImputeBuildTime.longValue()*1e-9)).append(" sec.\n");
+					imputeBuildTime.longValue()*1e-9)).append(" sec.\n");
 
 			sb.append("TransformEncode apply time:\t").append(String.format("%.3f",
-				getTransformEncodeApplyTime()*1e-9)).append(" sec.\n");
-			if(transformRecodeApplyTime.longValue() > 0)
+				getEncodeApplyTime()*1e-9)).append(" sec.\n");
+			if(recodeApplyTime.longValue() > 0)
 				sb.append("\tRecode apply time:\t").append(String.format("%.3f",
-					transformRecodeApplyTime.longValue()*1e-9)).append(" sec.\n");
-			if(transformBinningApplyTime.longValue() > 0)
+					recodeApplyTime.longValue()*1e-9)).append(" sec.\n");
+			if(binningApplyTime.longValue() > 0)
 				sb.append("\tBinning apply time:\t").append(String.format("%.3f",
-					transformBinningApplyTime.longValue()*1e-9)).append(" sec.\n");
-			if(transformDummyCodeApplyTime.longValue() > 0)
+					binningApplyTime.longValue()*1e-9)).append(" sec.\n");
+			if(dummyCodeApplyTime.longValue() > 0)
 				sb.append("\tDummyCode apply time:\t").append(String.format("%.3f",
-					transformDummyCodeApplyTime.longValue()*1e-9)).append(" sec.\n");
-			if(transformFeatureHashingApplyTime.longValue() > 0)
+					dummyCodeApplyTime.longValue()*1e-9)).append(" sec.\n");
+			if(featureHashingApplyTime.longValue() > 0)
 				sb.append("\tHashing apply time:\t").append(String.format("%.3f",
-					transformFeatureHashingApplyTime.longValue()*1e-9)).append(" sec.\n");
-			if(transformPassThroughApplyTime.longValue() > 0)
+					featureHashingApplyTime.longValue()*1e-9)).append(" sec.\n");
+			if(passThroughApplyTime.longValue() > 0)
 				sb.append("\tPassThrough apply time:\t").append(String.format("%.3f",
-					transformPassThroughApplyTime.longValue()*1e-9)).append(" sec.\n");
-			if(transformOmitApplyTime.longValue() > 0)
+					passThroughApplyTime.longValue()*1e-9)).append(" sec.\n");
+			if(omitApplyTime.longValue() > 0)
 				sb.append("\tOmit apply time:\t").append(String.format("%.3f",
-					transformOmitApplyTime.longValue()*1e-9)).append(" sec.\n");
-			if(transformImputeApplyTime.longValue() > 0)
+					omitApplyTime.longValue()*1e-9)).append(" sec.\n");
+			if(imputeApplyTime.longValue() > 0)
 				sb.append("\tImpute apply time:\t").append(String.format("%.3f",
-					transformImputeApplyTime.longValue()*1e-9)).append(" sec.\n");
+					imputeApplyTime.longValue()*1e-9)).append(" sec.\n");
 
 			sb.append("TransformEncode PreProc. time:\t").append(String.format("%.3f",
-				transformOutMatrixPreProcessingTime.longValue()*1e-9)).append(" sec.\n");
+				outMatrixPreProcessingTime.longValue()*1e-9)).append(" sec.\n");
 			sb.append("TransformEncode PostProc. time:\t").append(String.format("%.3f",
-				transformOutMatrixPostProcessingTime.longValue()*1e-9)).append(" sec.\n");
+				outMatrixPostProcessingTime.longValue()*1e-9)).append(" sec.\n");
 			return sb.toString();
 		}
 		return "";

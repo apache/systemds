@@ -55,7 +55,7 @@ public class LibMatrixDNNConv2d
 		boolean applyNative = isEligibleForConv2dSparse(params)
 			&& !(!isEmptyDenseInput && isTransPref);
 		if( applyNative )
-			NativeStatistics.incrementNumNativeSparseConv2dCalls();
+			NativeStatistics.incrementNumSparseConv2dCalls();
 
 		//transpose filter once for efficient sparse-dense multiplies in LoopedIm2ColConv2dTransAllChan
 		//in order to share the temporary object and its creation costs across threads
@@ -98,7 +98,7 @@ public class LibMatrixDNNConv2d
 		boolean applyNative = isEligibleForConv2dBackwardFilterSparseDense(params)
 			&& !params.input2.isInSparseFormat();
 		if( applyNative )
-			NativeStatistics.incrementNumNativeSparseConv2dBwdFilterCalls();
+			NativeStatistics.incrementNumSparseConv2dBwdFilterCalls();
 		
 		for(int i = 0; i*taskSize < params.N; i++) {
 			//note: we prefer the java backend for sparse filters because the native 
@@ -135,7 +135,7 @@ public class LibMatrixDNNConv2d
 		boolean applyNative = isEligibleForConv2dBackwardDataDense(params)
 			&& !params.input2.isInSparseFormat();
 		if( applyNative )
-			NativeStatistics.incrementNumNativeSparseConv2dBwdDataCalls();
+			NativeStatistics.incrementNumSparseConv2dBwdDataCalls();
 		
 		for(int i = 0; i*taskSize < params.N; i++) {
 			//note: we prefer the java backend for sparse filters because the native 

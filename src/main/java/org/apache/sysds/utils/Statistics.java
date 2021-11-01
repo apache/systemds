@@ -614,7 +614,7 @@ public class Statistics
 		if( DMLScript.STATISTICS )
 		{
 			if(NativeHelper.CURRENT_NATIVE_BLAS_STATE == NativeHelper.NativeBlasState.SUCCESSFULLY_LOADED_NATIVE_BLAS_AND_IN_USE)
-				sb.append(NativeStatistics.displayNativeStatistics());
+				sb.append(NativeStatistics.displayStatistics());
 
 			if(recomputeNNZTime != 0 || examSparsityTime != 0 || allocateDoubleArrTime != 0) {
 				sb.append("MatrixBlock times (recomputeNNZ/examSparsity/allocateDoubleArr):\t" + String.format("%.3f", recomputeNNZTime*1e-9) + "/" +
@@ -627,7 +627,7 @@ public class Statistics
 			if (DMLScript.JMLC_MEM_STATISTICS)
 				sb.append("Max size of live objects:\t" + byteCountToDisplaySize(getSizeofPinnedObjects()) + " ("  + getNumPinnedObjects() + " total objects)" + "\n");
 
-			sb.append(HOPStatistics.displayHOPStatistics());
+			sb.append(HOPStatistics.displayStatistics());
 
 			if( getFunRecompiles()>0 ) {
 				sb.append("Functions recompiled:\t\t" + getFunRecompiles() + ".\n");
@@ -644,19 +644,19 @@ public class Statistics
 			}
 
 			if( ConfigurationManager.isCodegenEnabled() )
-				sb.append(CodegenStatistics.displayCodegenStatistics());
+				sb.append(CodegenStatistics.displayStatistics());
 
 			if( OptimizerUtils.isSparkExecutionMode() )
-				sb.append(SparkStatistics.displaySparkStatistics());
+				sb.append(SparkStatistics.displayStatistics());
 
-			sb.append(ParamServStatistics.displayParamServStatistics());
+			sb.append(ParamServStatistics.displayStatistics());
 
-			sb.append(ParForStatistics.displayParForStatistics());
+			sb.append(ParForStatistics.displayStatistics());
 
 			sb.append(FederatedStatistics.displayFedIOExecStatistics());
 			sb.append(FederatedStatistics.displayFedLookupTableStats());
 
-			sb.append(TransformStatistics.displayTransformStatistics());
+			sb.append(TransformStatistics.displayStatistics());
 
 			if(ConfigurationManager.isCompressionEnabled()){
 				DMLCompressionStatistics.display(sb);
@@ -673,7 +673,7 @@ public class Statistics
 
 		if(DMLScript.FED_STATISTICS) {
 			sb.append("\n");
-			sb.append(FederatedStatistics.displayFedStatistics(DMLScript.FED_STATISTICS_COUNT));
+			sb.append(FederatedStatistics.displayStatistics(DMLScript.FED_STATISTICS_COUNT));
 		}
 
 		return sb.toString();

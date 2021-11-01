@@ -107,7 +107,7 @@ public class PlanSelectionFuseCostBased extends PlanSelection
 		
 		//maintain statistics
 		if( DMLScript.STATISTICS )
-			CodegenStatistics.incrementCodegenEnumAll(UtilFunctions.pow(2, sumMatPoints));
+			CodegenStatistics.incrementEnumAll(UtilFunctions.pow(2, sumMatPoints));
 	}
 	
 	//within-partition multi-agg templates
@@ -396,8 +396,8 @@ public class PlanSelectionFuseCostBased extends PlanSelection
 			}
 			
 			if( DMLScript.STATISTICS ) {
-				CodegenStatistics.incrementCodegenEnumAllP(len);
-				CodegenStatistics.incrementCodegenEnumEval(len);
+				CodegenStatistics.incrementEnumAllP(len);
+				CodegenStatistics.incrementEnumEval(len);
 			}
 			
 			//prune memo table wrt best plan and select plans

@@ -152,7 +152,7 @@ public class EncoderOmit extends LegacyEncoder {
 
 		_rmRows = rmRows;
 		if(DMLScript.STATISTICS)
-			TransformStatistics.incTransformOmitApplyTime(System.nanoTime()-t0);
+			TransformStatistics.incOmitApplyTime(System.nanoTime()-t0);
 		return ret;
 	}
 

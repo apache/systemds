@@ -136,7 +136,7 @@ criterion is the minimal least square error on $D$.
 
 ### Usage
 
-The `train()` function in the [fm-regression.dml](https://github.com/apache/systemml/blob/master/scripts/staging/fm-regression.dml) script, takes in the input variable matrix and the corresponding target vector with some input kept for validation during training.
+The `train()` function in the [fm-regression.dml](https://github.com/apache/systemml/blob/main/scripts/staging/fm-regression.dml) script, takes in the input variable matrix and the corresponding target vector with some input kept for validation during training.
 
 ``` java
 train = function(matrix[double] X, matrix[double] y, matrix[double] X_val, matrix[double] y_val)
@@ -196,7 +196,7 @@ loss or logit loss.
 
 ### Usage
 
-The `train` function in the [fm-binclass.dml](https://github.com/apache/systemml/blob/master/scripts/staging/fm-binclass.dml)
+The `train` function in the [fm-binclass.dml](https://github.com/apache/systemml/blob/main/scripts/staging/fm-binclass.dml)
 script, takes in the input variable matrix and the corresponding target vector
 with some input kept for validation during training. This script also contain
 `train()` and `predict()` function as in the case of regression.

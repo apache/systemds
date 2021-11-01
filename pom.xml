@@ -1114,7 +1114,7 @@
 			<version>1.6</version>
 		</dependency>
 
-		<!-- https://github.com/protocolbuffers/protobuf/tree/master/java -->
+		<!-- https://developers.google.com/protocol-buffers/docs/reference/java -->
 		<dependency>
 			<groupId>com.google.protobuf</groupId>
 			<artifactId>protobuf-java</artifactId>

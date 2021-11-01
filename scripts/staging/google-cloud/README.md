@@ -93,7 +93,7 @@ Note: `workerConfig` and `secondaryWorkerConfig` will be present.
 
 ### SSH into the cluster
 
-SSH into the cluster (master node) would provide fine grained control of the cluster.
+SSH into the cluster (primary node) would provide fine grained control of the cluster.
 
 ```sh
 gcloud compute ssh ${CLUSTERNAME}-m --zone=us-central1-c
@@ -109,7 +109,7 @@ For example,
 gcloud dataproc clusters list --region=us-central1
 ```
 
-to exit the cluster master instance
+to exit the cluster primary instance
 
 ```sh
 logout

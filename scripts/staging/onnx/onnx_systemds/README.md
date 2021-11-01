@@ -19,4 +19,4 @@ limitations under the License.
 
 # onnx-systemds
 
-A tool for importing/exporting [onnx](https://github.com/onnx/onnx/blob/master/docs/IR.md) graphs into/from SystemDS DML scripts.
+A tool for importing/exporting [onnx](https://github.com/onnx/onnx/blob/main/docs/IR.md) graphs into/from SystemDS DML scripts.

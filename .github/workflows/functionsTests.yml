@@ -30,7 +30,7 @@ on:
       - 'src/main/python/docs/**'
       - 'dev/**'
     branches:
-      - master
+      - main
   pull_request:
     paths-ignore:
       - 'docs/**'
@@ -39,7 +39,7 @@ on:
       - 'src/main/python/docs/**'
       - 'dev/**'
     branches:
-      - master
+      - main
 
 jobs:
   applicationsTests:

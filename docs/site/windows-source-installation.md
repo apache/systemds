@@ -58,13 +58,13 @@ Ex. Corresponding to the CUDA version, `C:\Program Files\cudnn-9.0-windows10-x64
 ### Getting Apache SystemDS Source Code
 
 SystemDS source code is available from [github.com/apache/systemds](https://github.com/apache/systemds) by either cloning or
-downloading a zip file (based on a branch) into `<SYSTEMDS_HOME>`. The default is the *master* branch.
+downloading a zip file (based on a branch) into `<SYSTEMDS_HOME>`. The default is the *main* branch.
 
 ```bash
 git clone https://github.com/apache/systemds systemds
 ```
 
-The master branch contains the source code which will be used to create the next major version of Apache SystemDS.
+The main branch contains the source code which will be used to create the next major version of Apache SystemDS.
 
 _**Speed Tip:**_ If the complete repository history isn't needed then using a shallow clone (`git clone --depth 1`) will
 save significant time.

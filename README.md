@@ -39,10 +39,10 @@ heterogeneous and nested schema.
 **Status and Build:** SystemDS is renamed from SystemML which is an **Apache Top Level Project**.
 To build from source visit [SystemDS Install from source](https://apache.github.io/systemds/site/install.html)
   
-[![Build](https://github.com/apache/systemds/workflows/Build/badge.svg?branch=master&event=push)](https://github.com/apache/systemds/actions?query=workflow%3A%22Build%22+branch%3Amaster+event%3Apush)
-[![Documentation](https://github.com/apache/systemds/workflows/Documentation/badge.svg?branch=master&event=push)](https://github.com/apache/systemds/actions?query=workflow%3ADocumentation+branch%3Amaster+event%3Apush)
-[![Component Test](https://github.com/apache/systemds/workflows/Component%20Test/badge.svg?branch=master&event=push)](https://github.com/apache/systemds/actions?query=workflow%3A%22Component+Test%22+branch%3Amaster+event%3Apush)
-[![Application Test](https://github.com/apache/systemds/workflows/Application%20Test/badge.svg?branch=master&event=push)](https://github.com/apache/systemds/actions?query=workflow%3A%22Application+Test%22+branch%3Amaster+event%3Apush)
-[![Function Test](https://github.com/apache/systemds/workflows/Function%20Test/badge.svg?branch=master&event=push)](https://github.com/apache/systemds/actions?query=workflow%3A%22Function+Test%22+branch%3Amaster+event%3Apush)
-[![Python Test](https://github.com/apache/systemds/workflows/Python%20Test/badge.svg?branch=master&event=push)](https://github.com/apache/systemds/actions?query=workflow%3A%22Python+Test%22+branch%3Amaster+event%3Apush)
-[![Federated Python Test](https://github.com/apache/systemds/workflows/Federated%20Python%20Test/badge.svg?branch=master&event=push)](https://github.com/apache/systemds/actions?query=workflow%3A%22Federated+Python+Test%22+branch%3Amaster+event%3Apush)
+[![Build](https://github.com/apache/systemds/workflows/Build/badge.svg?branch=main&event=push)](https://github.com/apache/systemds/actions?query=workflow%3A%22Build%22+branch%3Amain+event%3Apush)
+[![Documentation](https://github.com/apache/systemds/workflows/Documentation/badge.svg?branch=main&event=push)](https://github.com/apache/systemds/actions?query=workflow%3ADocumentation+branch%3Amain+event%3Apush)
+[![Component Test](https://github.com/apache/systemds/workflows/Component%20Test/badge.svg?branch=main&event=push)](https://github.com/apache/systemds/actions?query=workflow%3A%22Component+Test%22+branch%3Amain+event%3Apush)
+[![Application Test](https://github.com/apache/systemds/workflows/Application%20Test/badge.svg?branch=main&event=push)](https://github.com/apache/systemds/actions?query=workflow%3A%22Application+Test%22+branch%3Amain+event%3Apush)
+[![Function Test](https://github.com/apache/systemds/workflows/Function%20Test/badge.svg?branch=main&event=push)](https://github.com/apache/systemds/actions?query=workflow%3A%22Function+Test%22+branch%3Amain+event%3Apush)
+[![Python Test](https://github.com/apache/systemds/workflows/Python%20Test/badge.svg?branch=main&event=push)](https://github.com/apache/systemds/actions?query=workflow%3A%22Python+Test%22+branch%3Amain+event%3Apush)
+[![Federated Python Test](https://github.com/apache/systemds/workflows/Federated%20Python%20Test/badge.svg?branch=main&event=push)](https://github.com/apache/systemds/actions?query=workflow%3A%22Federated+Python+Test%22+branch%3Amain+event%3Apush)

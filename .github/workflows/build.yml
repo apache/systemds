@@ -49,18 +49,20 @@ jobs:
       matrix:
         os: [
           ubuntu-latest, 
-          # macOS-latest, 
+          macOS-latest, 
           windows-latest
           ]
+        java: ['1.8', '11', '16']
+        javadist: ['adopt', 'adopt-openj9', 'zulu', 'temurin']
     steps:
     - name: Checkout Repository
       uses: actions/checkout@v2
 
-    - name: Setup Java 11
+    - name: Setup Java ${{ matrix.java }} ${{ matrix.javadist }}
       uses: actions/setup-java@v2
       with:
-        distribution: 'adopt'
-        java-version: '11'
+        distribution: ${{ matrix.javadist }}
+        java-version: ${{ matrix.java }}
 
     - name: Cache Maven Dependencies
       uses: actions/cache@v1

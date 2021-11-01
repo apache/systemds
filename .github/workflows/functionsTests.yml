@@ -42,7 +42,7 @@ on:
       - main
 
 jobs:
-  applicationsTests:
+  test:
     runs-on: ${{ matrix.os }}
     timeout-minutes: 90
     strategy:
@@ -65,13 +65,13 @@ jobs:
           "**.functions.unary.matrix.**"
           ]
         os: [ubuntu-latest]
-    name: Function Test ${{ matrix.tests }}
+    name: ${{ matrix.tests }}
     steps:
     - name: Checkout Repository
       uses: actions/checkout@v2
 
     - name: Cache Maven Dependencies
-      uses: actions/cache@v1
+      uses: actions/cache@v2
       with:
         path: ~/.m2/repository
         key: ${{ runner.os }}-maven-test-${{ hashFiles('**/pom.xml') }}

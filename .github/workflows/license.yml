@@ -19,7 +19,7 @@
 #
 #-------------------------------------------------------------
 
-name: Component Test
+name: LicenseCheck
 
 on:
   push:
@@ -42,7 +42,8 @@ on:
       - main
 
 jobs:
-  test:
+  build:
+    name: ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -50,7 +51,7 @@ jobs:
         os: [ubuntu-latest]
         java: ['11']
         javadist: ['adopt-openj9']
-    name: ${{ matrix.os }}
+
     steps:
     - name: Checkout Repository
       uses: actions/checkout@v2
@@ -62,10 +63,5 @@ jobs:
         java-version: ${{ matrix.java }}
         cache: 'maven'
 
-    - name: Component Tests
-      run: ./docker/entrypoint.sh org.apache.sysds.test.component.**
-    
-    - name: User Tests
-      run: ./docker/entrypoint.sh org.apache.sysds.test.usertest.** 
-
-
+    - name: Build
+      run: mvn package -P rat

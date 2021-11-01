@@ -43,6 +43,7 @@ on:
 
 jobs:
   build:
+    name: ${{ matrix.os }} Java ${{ matrix.java }} ${{ matrix.javadist }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -52,8 +53,17 @@ jobs:
           macOS-latest, 
           windows-latest
           ]
-        java: ['1.8', '11', '16']
-        javadist: ['adopt', 'adopt-openj9', 'zulu', 'temurin']
+        java: [
+          # '8', 
+          '11', 
+          # '16'
+          ]
+        javadist: [
+          # 'adopt',
+          'adopt-openj9',
+          # 'zulu',
+          # 'temurin'
+          ]
     steps:
     - name: Checkout Repository
       uses: actions/checkout@v2
@@ -63,14 +73,7 @@ jobs:
       with:
         distribution: ${{ matrix.javadist }}
         java-version: ${{ matrix.java }}
-
-    - name: Cache Maven Dependencies
-      uses: actions/cache@v1
-      with:
-        path: ~/.m2/repository
-        key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
-        restore-keys: |
-          ${{ runner.os }}-maven-
+        cache: 'maven'
 
     - name: Build
-      run: mvn package -P rat
+      run: mvn package

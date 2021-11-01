@@ -48,6 +48,8 @@
 		<enableGPU>false</enableGPU>
 		<jcuda.scope>provided</jcuda.scope>
 		<jcuda.version>10.2.0</jcuda.version>
+		<!-- Set java compile level via argument, ex: 1.8 1.9 10 11-->
+		<java.level>1.8</java.level>
 		<!-->Testing settings<!-->
 		<maven.test.skip>true</maven.test.skip>
 		<rerun.failing.tests.count>2</rerun.failing.tests.count>
@@ -234,8 +236,8 @@
 				<artifactId>maven-compiler-plugin</artifactId>
 				<version>3.8.1</version><!--$NO-MVN-MAN-VER$-->
 				<configuration>
-					<source>1.8</source>
-					<target>1.8</target>
+					<source>${java.level}</source>
+					<target>${java.level}</target>
 				</configuration>
 			</plugin>
 
@@ -365,7 +367,7 @@
 			<plugin>
 				<groupId>org.jacoco</groupId>
 				<artifactId>jacoco-maven-plugin</artifactId>
-				<version>0.8.5</version>
+				<version>0.8.7</version>
 				<configuration>
 					<includes>
 						<include>${jacoco.include}</include>
@@ -400,8 +402,8 @@
 				<version>3.2.0</version>
 				<configuration>
 					<quiet>true</quiet>
+					<!-- Skip java docs creation if not explicitly asked, to create use -P distribution-->
 					<skip>true</skip>
-					<source>8</source> <!-- TODO migrate to 11 -->
 				</configuration>
 			</plugin>
 
@@ -744,6 +746,7 @@
 							<quiet>true</quiet>
 							<skip>false</skip>
 							<show>public</show>
+							<source>${java.level}</source>
 						</configuration>
 						<executions>
 							<execution>

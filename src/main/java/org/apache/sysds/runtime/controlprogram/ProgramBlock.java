@@ -54,6 +54,7 @@ import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.meta.MetaData;
 import org.apache.sysds.runtime.meta.MetaDataFormat;
 import org.apache.sysds.runtime.privacy.propagation.PrivacyPropagator;
+import org.apache.sysds.utils.stats.HOPStatistics;
 import org.apache.sysds.utils.Statistics;
 
 public abstract class ProgramBlock implements ParseInfo {
@@ -168,9 +169,9 @@ public abstract class ProgramBlock implements ParseInfo {
 			}
 			if(DMLScript.STATISTICS) {
 				long t1 = System.nanoTime();
-				Statistics.incrementHOPRecompileTime(t1 - t0);
+				HOPStatistics.incrementHOPRecompileTime(t1 - t0);
 				if(tmp != inst)
-					Statistics.incrementHOPRecompilePred();
+					HOPStatistics.incrementHOPRecompilePred();
 			}
 		}
 		catch(Exception ex) {

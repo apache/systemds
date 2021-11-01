@@ -30,6 +30,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.concurrent.atomic.LongAdder;
 import java.util.concurrent.Future;
 import javax.net.ssl.SSLException;
 
@@ -43,11 +44,126 @@ import org.apache.sysds.runtime.controlprogram.federated.FederatedStatistics.Fed
 import org.apache.sysds.runtime.controlprogram.federated.FederatedStatistics.FedStatsCollection.GCStatsCollection;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.instructions.cp.Data;
+import org.apache.sysds.runtime.instructions.cp.ListObject;
+import org.apache.sysds.runtime.instructions.cp.ScalarObject;
 import org.apache.sysds.runtime.lineage.LineageItem;
+import org.apache.sysds.runtime.matrix.data.FrameBlock;
+import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.utils.Statistics;
 
 public class FederatedStatistics {
+	// stats of the federated worker on the coordinator site
 	private static Set<Pair<String, Integer>> _fedWorkerAddresses = new HashSet<>();
+	private static final LongAdder federatedReadCount = new LongAdder();
+	private static final LongAdder federatedPutScalarCount = new LongAdder();
+	private static final LongAdder federatedPutListCount = new LongAdder();
+	private static final LongAdder federatedPutMatrixCount = new LongAdder();
+	private static final LongAdder federatedPutFrameCount = new LongAdder();
+	private static final LongAdder federatedPutMatCharCount = new LongAdder();
+	private static final LongAdder federatedPutMatrixBytes = new LongAdder();
+	private static final LongAdder federatedPutFrameBytes = new LongAdder();
+	private static final LongAdder federatedGetCount = new LongAdder();
+	private static final LongAdder federatedExecuteInstructionCount = new LongAdder();
+	private static final LongAdder federatedExecuteUDFCount = new LongAdder();
+	private static final LongAdder fedAsyncPrefetchCount = new LongAdder();
+
+	// stats on the federated worker itself
+	private static final LongAdder fedLookupTableGetCount = new LongAdder();
+	private static final LongAdder fedLookupTableGetTime = new LongAdder(); // in milli sec
+	private static final LongAdder fedLookupTableEntryCount = new LongAdder();
+
+	public static synchronized void incFederated(RequestType rqt, List<Object> data){
+		switch (rqt) {
+			case READ_VAR:
+				federatedReadCount.increment();
+				break;
+			case PUT_VAR:
+				if(data.get(0) instanceof MatrixBlock) {
+					federatedPutMatrixCount.increment();
+					federatedPutMatrixBytes.add(((MatrixBlock)data.get(0)).getInMemorySize());
+				}
+				else if(data.get(0) instanceof FrameBlock) {
+					federatedPutFrameCount.increment();
+					federatedPutFrameBytes.add(((FrameBlock)data.get(0)).getInMemorySize());
+				}
+				else if(data.get(0) instanceof ScalarObject)
+					federatedPutScalarCount.increment();
+				else if(data.get(0) instanceof ListObject)
+					federatedPutListCount.increment();
+				else if(data.get(0) instanceof MatrixCharacteristics)
+					federatedPutMatCharCount.increment();
+				break;
+			case GET_VAR:
+				federatedGetCount.increment();
+				break;
+			case EXEC_INST:
+				federatedExecuteInstructionCount.increment();
+				break;
+			case EXEC_UDF:
+				federatedExecuteUDFCount.increment();
+				break;
+			default:
+				break;
+		}
+	}
+
+	public static void incFedAsyncPrefetchCount(long c) {
+		fedAsyncPrefetchCount.add(c);
+	}
+
+	public static long getTotalPutCount() {
+		return federatedPutScalarCount.longValue() + federatedPutListCount.longValue()
+			+ federatedPutMatrixCount.longValue() + federatedPutFrameCount.longValue()
+			+ federatedPutMatCharCount.longValue();
+	}
+
+	public static void reset() {
+		federatedReadCount.reset();
+		federatedPutScalarCount.reset();
+		federatedPutListCount.reset();
+		federatedPutMatrixCount.reset();
+		federatedPutFrameCount.reset();
+		federatedPutMatCharCount.reset();
+		federatedPutMatrixBytes.reset();
+		federatedPutFrameBytes.reset();
+		federatedGetCount.reset();
+		federatedExecuteInstructionCount.reset();
+		federatedExecuteUDFCount.reset();
+		fedAsyncPrefetchCount.reset();
+		fedLookupTableGetCount.reset();
+		fedLookupTableGetTime.reset();
+		fedLookupTableEntryCount.reset();
+	}
+
+	public static String displayFedIOExecStatistics() {
+		if( federatedReadCount.longValue() > 0){ // only if there happened something on the federated worker
+			StringBuilder sb = new StringBuilder();
+			sb.append("Federated I/O (Read, Put, Get):\t" +
+				federatedReadCount.longValue() + "/" +
+				getTotalPutCount() + "/" +
+				federatedGetCount.longValue() + ".\n");
+			if(getTotalPutCount() > 0)
+				sb.append("Fed Put (Sca/Lis/Mat/Fra/MC):\t" +
+					federatedPutScalarCount.longValue() + "/" +
+					federatedPutListCount.longValue() + "/" +
+					federatedPutMatrixCount.longValue() + "/" +
+					federatedPutFrameCount.longValue() + "/" +
+					federatedPutMatCharCount.longValue() + ".\n");
+			if(federatedPutMatrixBytes.longValue() > 0 || federatedPutFrameBytes.longValue() > 0)
+				sb.append("Fed Put Bytes (Mat/Frame):\t" +
+					federatedPutMatrixBytes.longValue() + "/" +
+					federatedPutFrameBytes.longValue() + " Bytes.\n");
+			sb.append("Federated Execute (Inst, UDF):\t" +
+				federatedExecuteInstructionCount.longValue() + "/" +
+				federatedExecuteUDFCount.longValue() + ".\n");
+			sb.append("Federated prefetch count:\t" +
+				fedAsyncPrefetchCount.longValue() + ".\n");
+			return sb.toString();
+		}
+		return "";
+	}
+
 
 	public static void registerFedWorker(String host, int port) {
 		_fedWorkerAddresses.add(new ImmutablePair<>(host, Integer.valueOf(port)));
@@ -196,6 +312,33 @@ public class FederatedStatistics {
 		Future<FederatedResponse>[] retArr = ret.toArray(new Future[0]);
 		return retArr;
 	}
+
+
+	public static void incFedLookupTableGetCount() {
+		fedLookupTableGetCount.increment();
+	}
+
+	public static void incFedLookupTableGetTime(long time) {
+		fedLookupTableGetTime.add(time);
+	}
+
+	public static void incFedLookupTableEntryCount() {
+		fedLookupTableEntryCount.increment();
+	}
+
+	public static String displayFedLookupTableStats() {
+		if(fedLookupTableGetCount.longValue() > 0) {
+			StringBuilder sb = new StringBuilder();
+			sb.append("Fed LookupTable (Get, Entries):\t" +
+				fedLookupTableGetCount.longValue() + "/" +
+				fedLookupTableEntryCount.longValue() + ".\n");
+			// sb.append(String.format("Fed LookupTable Get Time:\t%.3f sec.\n",
+			// 	fedLookupTableGetTime.doubleValue() / 1000000000));
+			return sb.toString();
+		}
+		return "";
+	}
+
 
 	private static class FedStatsCollectFunction extends FederatedUDF {
 		private static final long serialVersionUID = 1L;

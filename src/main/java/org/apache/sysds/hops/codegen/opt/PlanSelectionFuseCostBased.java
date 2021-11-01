@@ -58,7 +58,7 @@ import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyze
 import org.apache.sysds.runtime.controlprogram.parfor.util.IDSequence;
 import org.apache.sysds.runtime.util.CollectionUtils;
 import org.apache.sysds.runtime.util.UtilFunctions;
-import org.apache.sysds.utils.Statistics;
+import org.apache.sysds.utils.stats.CodegenStatistics;
 
 /**
  * This cost-based plan selection algorithm chooses fused operators
@@ -107,7 +107,7 @@ public class PlanSelectionFuseCostBased extends PlanSelection
 		
 		//maintain statistics
 		if( DMLScript.STATISTICS )
-			Statistics.incrementCodegenEnumAll(UtilFunctions.pow(2, sumMatPoints));
+			CodegenStatistics.incrementCodegenEnumAll(UtilFunctions.pow(2, sumMatPoints));
 	}
 	
 	//within-partition multi-agg templates
@@ -396,8 +396,8 @@ public class PlanSelectionFuseCostBased extends PlanSelection
 			}
 			
 			if( DMLScript.STATISTICS ) {
-				Statistics.incrementCodegenEnumAllP(len);
-				Statistics.incrementCodegenEnumEval(len);
+				CodegenStatistics.incrementCodegenEnumAllP(len);
+				CodegenStatistics.incrementCodegenEnumEval(len);
 			}
 			
 			//prune memo table wrt best plan and select plans

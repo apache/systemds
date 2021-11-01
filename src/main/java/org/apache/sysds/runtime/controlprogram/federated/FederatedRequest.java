@@ -35,7 +35,6 @@ import org.apache.sysds.runtime.controlprogram.caching.CacheDataOutput;
 import org.apache.sysds.runtime.controlprogram.caching.LazyWriteBuffer;
 import org.apache.sysds.runtime.controlprogram.parfor.util.IDHandler;
 import org.apache.sysds.runtime.instructions.cp.ScalarObject;
-import org.apache.sysds.utils.Statistics;
 
 public class FederatedRequest implements Serializable {
 	private static final long serialVersionUID = 5946781306963870394L;
@@ -72,7 +71,8 @@ public class FederatedRequest implements Serializable {
 	}
 
 	public FederatedRequest(RequestType method, long id, List<Object> data) {
-		Statistics.incFederated(method);
+		if(DMLScript.STATISTICS)
+			FederatedStatistics.incFederated(method, data);
 		_method = method;
 		_id = id;
 		_data = data;

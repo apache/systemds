@@ -34,7 +34,7 @@ import org.apache.sysds.lops.Lop;
 import org.apache.sysds.runtime.controlprogram.caching.CacheBlock;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
-import org.apache.sysds.utils.Statistics;
+import org.apache.sysds.utils.stats.TransformStatistics;
 
 public class ColumnEncoderBin extends ColumnEncoder {
 	public static final String MIN_PREFIX = "min";
@@ -91,7 +91,7 @@ public class ColumnEncoderBin extends ColumnEncoder {
 		double[] pairMinMax = getMinMaxOfCol(in, _colID, 0, -1);
 		computeBins(pairMinMax[0], pairMinMax[1]);
 		if(DMLScript.STATISTICS)
-			Statistics.incTransformBinningBuildTime(System.nanoTime()-t0);
+			TransformStatistics.incTransformBinningBuildTime(System.nanoTime()-t0);
 	}
 
 	protected double getCode(CacheBlock in, int row){
@@ -307,7 +307,7 @@ public class ColumnEncoderBin extends ColumnEncoder {
 				return null;
 			_encoder.applySparse(_input, _out, _outputCol, _startRow, _blk);
 			if(DMLScript.STATISTICS)
-				Statistics.incTransformBinningApplyTime(System.nanoTime()-t0);
+				TransformStatistics.incTransformBinningApplyTime(System.nanoTime()-t0);
 			return null;
 		}
 
@@ -343,7 +343,7 @@ public class ColumnEncoderBin extends ColumnEncoder {
 				_partialMinMax.put(_startRow, minMax);
 			}
 			if (DMLScript.STATISTICS)
-				Statistics.incTransformBinningBuildTime(System.nanoTime()-t0);
+				TransformStatistics.incTransformBinningBuildTime(System.nanoTime()-t0);
 			return null;
 		}
 
@@ -374,7 +374,7 @@ public class ColumnEncoderBin extends ColumnEncoder {
 			_encoder.computeBins(min, max);
 
 			if(DMLScript.STATISTICS)
-				Statistics.incTransformBinningBuildTime(System.nanoTime()-t0);
+				TransformStatistics.incTransformBinningBuildTime(System.nanoTime()-t0);
 			return null;
 		}
 

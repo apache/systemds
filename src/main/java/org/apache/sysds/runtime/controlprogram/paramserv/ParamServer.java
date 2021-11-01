@@ -49,7 +49,7 @@ import org.apache.sysds.runtime.instructions.cp.FunctionCallCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.ListObject;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.RightScalarOperator;
-import org.apache.sysds.utils.Statistics;
+import org.apache.sysds.utils.stats.ParamServStatistics;
 
 public abstract class ParamServer
 {
@@ -281,7 +281,7 @@ public abstract class ParamServer
 		Timing tAgg = DMLScript.STATISTICS ? new Timing(true) : null;
 		_model = updateLocalModel(_ec, gradients, _model);
 		if (DMLScript.STATISTICS && tAgg != null)
-			Statistics.accPSAggregationTime((long) tAgg.stop());
+			ParamServStatistics.accPSAggregationTime((long) tAgg.stop());
 	}
 
 	/**
@@ -328,7 +328,7 @@ public abstract class ParamServer
 					if(allFinished()) {
 						_model = setParams(_ec, _accModels, _model);
 						if (DMLScript.STATISTICS && tAgg != null)
-							Statistics.accPSAggregationTime((long) tAgg.stop());
+							ParamServStatistics.accPSAggregationTime((long) tAgg.stop());
 						_accModels = null; //reset for next accumulation
 
 						// This if has grown to be quite complex its function is rather simple. Validate at the end of each epoch
@@ -425,7 +425,7 @@ public abstract class ParamServer
 		//broadcast copy of model to specific worker, cleaned up by worker
 		_modelMap.get(workerID).put(ParamservUtils.copyList(_model, false));
 		if (DMLScript.STATISTICS && tBroad != null)
-			Statistics.accPSModelBroadcastTime((long) tBroad.stop());
+			ParamServStatistics.accPSModelBroadcastTime((long) tBroad.stop());
 	}
 
 	/**
@@ -434,9 +434,9 @@ public abstract class ParamServer
 	private void time_epoch() {
 		if (DMLScript.STATISTICS) {
 			//TODO double check correctness with multiple, potentially concurrent paramserv invocation
-			Statistics.accPSExecutionTime((long) Statistics.getPSExecutionTimer().stop());
-			double current_total_execution_time = Statistics.getPSExecutionTime();
-			double current_total_validation_time = Statistics.getPSValidationTime();
+			ParamServStatistics.accPSExecutionTime((long) ParamServStatistics.getPSExecutionTimer().stop());
+			double current_total_execution_time = ParamServStatistics.getPSExecutionTime();
+			double current_total_validation_time = ParamServStatistics.getPSValidationTime();
 			double time_to_epoch = current_total_execution_time - current_total_validation_time;
 
 			if (LOG.isInfoEnabled())
@@ -469,7 +469,7 @@ public abstract class ParamServer
 			LOG.info("[+] PARAMSERV: validation-loss: " + loss + " validation-accuracy: " + accuracy);
 
 		if(tValidate != null)
-			Statistics.accPSValidationTime((long) tValidate.stop());
+			ParamServStatistics.accPSValidationTime((long) tValidate.stop());
 	}
 
 	public FunctionCallCPInstruction getAggInst() {

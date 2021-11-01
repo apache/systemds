@@ -88,7 +88,7 @@ import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyze
 import org.apache.sysds.runtime.controlprogram.parfor.stat.Timing;
 import org.apache.sysds.runtime.matrix.operators.Operator;
 import org.apache.sysds.runtime.util.ProgramConverter;
-import org.apache.sysds.utils.Statistics;
+import org.apache.sysds.utils.stats.ParamServStatistics;
 
 public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruction {
 	private static final Log LOG = LogFactory.getLog(ParamservBuiltinCPInstruction.class.getName());
@@ -132,7 +132,7 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 
 	private void runFederated(ExecutionContext ec) {
 		if(DMLScript.STATISTICS)
-			Statistics.getPSExecutionTimer().start();
+			ParamServStatistics.getPSExecutionTimer().start();
 
 		Timing tSetup = DMLScript.STATISTICS ? new Timing(true) : null;
 		LOG.info("PARAMETER SERVER");
@@ -158,7 +158,7 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 			LOG.info("[+] Seed: " + seed);
 		}
 		if (tSetup != null)
-			Statistics.accPSSetupTime((long) tSetup.stop());
+			ParamServStatistics.accPSSetupTime((long) tSetup.stop());
 
 		// partition federated data
 		Timing tDataPartitioning = DMLScript.STATISTICS ? new Timing(true) : null;
@@ -166,7 +166,7 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 			.doPartitioning(ec.getMatrixObject(getParam(PS_FEATURES)), ec.getMatrixObject(getParam(PS_LABELS)));
 		int workerNum = result._workerNum;
 		if (DMLScript.STATISTICS)
-			Statistics.accFedPSDataPartitioningTime((long) tDataPartitioning.stop());
+			ParamServStatistics.accFedPSDataPartitioningTime((long) tDataPartitioning.stop());
 
 
 		if (DMLScript.STATISTICS)
@@ -206,7 +206,7 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 			threads.get(i).setup(result._weightingFactors.get(i));
 		}
 		if (DMLScript.STATISTICS)
-			Statistics.accPSSetupTime((long) tSetup.stop());
+			ParamServStatistics.accPSSetupTime((long) tSetup.stop());
 
 		try {
 			// Launch the worker threads and wait for completion
@@ -215,7 +215,7 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 			// Fetch the final model from ps
 			ec.setVariable(output.getName(), ps.getResult());
 			if (DMLScript.STATISTICS)
-				Statistics.accPSExecutionTime((long) Statistics.getPSExecutionTimer().stop());
+				ParamServStatistics.accPSExecutionTime((long) ParamServStatistics.getPSExecutionTimer().stop());
 		} catch (InterruptedException | ExecutionException e) {
 			throw new DMLRuntimeException("ParamservBuiltinCPInstruction: unknown error: ", e);
 		} finally {
@@ -275,7 +275,7 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 			server.getPort(), aSetup, aWorker, aUpdate, aIndex, aGrad, aRPC, aBatch, aEpoch, nbatches, modelAvg);
 
 		if (DMLScript.STATISTICS)
-			Statistics.accPSSetupTime((long) tSetup.stop());
+			ParamServStatistics.accPSSetupTime((long) tSetup.stop());
 
 		MatrixObject features = sec.getMatrixObject(getParam(PS_FEATURES));
 		MatrixObject labels = sec.getMatrixObject(getParam(PS_LABELS));
@@ -290,12 +290,12 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 
 		// Accumulate the statistics for remote workers
 		if (DMLScript.STATISTICS) {
-			Statistics.accPSSetupTime(aSetup.value());
-			Statistics.incWorkerNumber(aWorker.value());
-			Statistics.accPSLocalModelUpdateTime(aUpdate.value());
-			Statistics.accPSBatchIndexingTime(aIndex.value());
-			Statistics.accPSGradientComputeTime(aGrad.value());
-			Statistics.accPSRpcRequestTime(aRPC.value());
+			ParamServStatistics.accPSSetupTime(aSetup.value());
+			ParamServStatistics.incWorkerNumber(aWorker.value());
+			ParamServStatistics.accPSLocalModelUpdateTime(aUpdate.value());
+			ParamServStatistics.accPSBatchIndexingTime(aIndex.value());
+			ParamServStatistics.accPSGradientComputeTime(aGrad.value());
+			ParamServStatistics.accPSRpcRequestTime(aRPC.value());
 		}
 
 		// Fetch the final model from ps
@@ -304,7 +304,7 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 
 	private void runLocally(ExecutionContext ec, PSModeType mode) {
 		if(DMLScript.STATISTICS)
-			Statistics.getPSExecutionTimer().start();
+			ParamServStatistics.getPSExecutionTimer().start();
 
 		Timing tSetup = DMLScript.STATISTICS ? new Timing(true) : null;
 		int workerNum = getWorkerNum(mode);
@@ -350,7 +350,7 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 		partitionLocally(scheme, ec, workers);
 
 		if (DMLScript.STATISTICS)
-			Statistics.accPSSetupTime((long) tSetup.stop());
+			ParamServStatistics.accPSSetupTime((long) tSetup.stop());
 
 		if (LOG.isDebugEnabled()) {
 			LOG.debug(String.format("\nConfiguration of paramserv func: "
@@ -366,7 +366,7 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 			// Fetch the final model from ps
 			ec.setVariable(output.getName(), ps.getResult());
 			if (DMLScript.STATISTICS)
-				Statistics.accPSExecutionTime((long) Statistics.getPSExecutionTimer().stop());
+				ParamServStatistics.accPSExecutionTime((long) ParamServStatistics.getPSExecutionTimer().stop());
 		} catch (InterruptedException | ExecutionException e) {
 			throw new DMLRuntimeException("ParamservBuiltinCPInstruction: some error occurred: ", e);
 		} finally {

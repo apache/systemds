@@ -33,7 +33,7 @@ import org.apache.sysds.runtime.controlprogram.paramserv.dp.DataPartitionerSpark
 import org.apache.sysds.runtime.controlprogram.parfor.stat.Timing;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
-import org.apache.sysds.utils.Statistics;
+import org.apache.sysds.utils.stats.ParamServStatistics;
 
 import scala.Tuple2;
 
@@ -112,7 +112,7 @@ public class SparkParamservUtils {
 			.mapToPair(new DataPartitionerSparkAggregator(features.getNumColumns(), labels.getNumColumns()));
 
 		if (DMLScript.STATISTICS)
-			Statistics.accPSSetupTime((long) tSetup.stop());
+			ParamServStatistics.accPSSetupTime((long) tSetup.stop());
 		return result;
 	}
 }

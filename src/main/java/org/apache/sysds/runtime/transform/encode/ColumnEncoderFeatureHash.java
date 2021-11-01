@@ -31,7 +31,7 @@ import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.DependencyTask;
 import org.apache.sysds.runtime.util.UtilFunctions;
-import org.apache.sysds.utils.Statistics;
+import org.apache.sysds.utils.stats.TransformStatistics;
 
 /**
  * Class used for feature hashing transformation of frames.
@@ -168,7 +168,7 @@ public class ColumnEncoderFeatureHash extends ColumnEncoder {
 			long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 			_encoder.applySparse(_input, _out, _outputCol, _startRow, _blk);
 			if(DMLScript.STATISTICS)
-				Statistics.incTransformFeatureHashingApplyTime(System.nanoTime()-t0);
+				TransformStatistics.incTransformFeatureHashingApplyTime(System.nanoTime()-t0);
 			return null;
 		}
 	}

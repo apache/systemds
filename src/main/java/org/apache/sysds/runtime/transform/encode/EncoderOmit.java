@@ -30,7 +30,7 @@ import org.apache.sysds.runtime.transform.TfUtils.TfMethod;
 import org.apache.sysds.runtime.transform.meta.TfMetaUtils;
 import org.apache.sysds.runtime.util.IndexRange;
 import org.apache.sysds.runtime.util.UtilFunctions;
-import org.apache.sysds.utils.Statistics;
+import org.apache.sysds.utils.stats.TransformStatistics;
 import org.apache.wink.json4j.JSONException;
 import org.apache.wink.json4j.JSONObject;
 
@@ -152,7 +152,7 @@ public class EncoderOmit extends LegacyEncoder {
 
 		_rmRows = rmRows;
 		if(DMLScript.STATISTICS)
-			Statistics.incTransformOmitApplyTime(System.nanoTime()-t0);
+			TransformStatistics.incTransformOmitApplyTime(System.nanoTime()-t0);
 		return ret;
 	}
 

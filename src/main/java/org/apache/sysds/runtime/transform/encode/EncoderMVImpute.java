@@ -31,7 +31,7 @@ import org.apache.sysds.runtime.transform.TfUtils.TfMethod;
 import org.apache.sysds.runtime.transform.meta.TfMetaUtils;
 import org.apache.sysds.runtime.util.IndexRange;
 import org.apache.sysds.runtime.util.UtilFunctions;
-import org.apache.sysds.utils.Statistics;
+import org.apache.sysds.utils.stats.TransformStatistics;
 import org.apache.wink.json4j.JSONArray;
 import org.apache.wink.json4j.JSONException;
 import org.apache.wink.json4j.JSONObject;
@@ -219,7 +219,7 @@ public class EncoderMVImpute extends LegacyEncoder {
 			throw new RuntimeException(ex);
 		}
 		if(DMLScript.STATISTICS)
-			Statistics.incTransformImputeBuildTime(System.nanoTime()-t0);
+			TransformStatistics.incTransformImputeBuildTime(System.nanoTime()-t0);
 	}
 
 	@Override
@@ -233,7 +233,7 @@ public class EncoderMVImpute extends LegacyEncoder {
 			}
 		}
 		if(DMLScript.STATISTICS)
-			Statistics.incTransformImputeApplyTime(System.nanoTime()-t0);
+			TransformStatistics.incTransformImputeApplyTime(System.nanoTime()-t0);
 		return out;
 	}
 

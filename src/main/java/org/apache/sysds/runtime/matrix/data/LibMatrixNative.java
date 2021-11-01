@@ -33,7 +33,7 @@ import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.DenseBlockFactory;
 import org.apache.sysds.utils.NativeHelper;
-import org.apache.sysds.utils.Statistics;
+import org.apache.sysds.utils.stats.NativeStatistics;
 
 public class LibMatrixNative
 {
@@ -123,15 +123,15 @@ public class LibMatrixNative
 				
 				if(nnz > -1) {
 					if(DMLScript.STATISTICS) {
-						Statistics.nativeLibMatrixMultTime += System.nanoTime() - start;
-						Statistics.numNativeLibMatrixMultCalls.increment();
+						NativeStatistics.incrementNativeLibMatrixMultTime(System.nanoTime() - start);
+						NativeStatistics.incrementNumNativeLibMatrixMultCalls();
 					}
 					ret.setNonZeros(nnz);
 					ret.examSparsity();
 					return ret;
 				}
 				//else record failure and fallback to java
-				Statistics.incrementNativeFailuresCounter();
+				NativeStatistics.incrementNativeFailuresCounter();
 				LOG.warn("matrixMult: Native mat mult failed. Falling back to java version ("
 					+ "loaded=" + NativeHelper.isNativeLibraryLoaded()
 					+ ", sparse=" + (m1.isInSparseFormat() | m2.isInSparseFormat()) + ")");
@@ -178,8 +178,8 @@ public class LibMatrixNative
 			
 			if(nnz > -1) {
 				if(DMLScript.STATISTICS) {
-					Statistics.nativeLibMatrixMultTime += System.nanoTime() - start;
-					Statistics.numNativeLibMatrixMultCalls.increment();
+					NativeStatistics.incrementNativeLibMatrixMultTime(System.nanoTime() - start);
+					NativeStatistics.incrementNumNativeLibMatrixMultCalls();
 				}
 				ret.setNonZeros(nnz);
 				ret.examSparsity();
@@ -187,7 +187,7 @@ public class LibMatrixNative
 			}
 			//fallback to default java implementation
 			LOG.warn("Native TSMM failed. Falling back to java version.");
-			Statistics.incrementNativeFailuresCounter();
+			NativeStatistics.incrementNativeFailuresCounter();
 		}
 		if( k > 1 )
 			LibMatrixMult.matrixMultTransposeSelf(m1, ret, leftTrans, k);
@@ -246,8 +246,8 @@ public class LibMatrixNative
 			//post processing and error handling
 			if(nnz != -1) {
 				if(DMLScript.STATISTICS) {
-					Statistics.nativeConv2dTime += System.nanoTime() - start;
-					Statistics.numNativeConv2dCalls.increment();
+					NativeStatistics.incrementNativeConv2dTime(System.nanoTime() - start);
+					NativeStatistics.incrementNumNativeConv2dCalls();
 				}
 				outputBlock.setNonZeros(nnz);
 				return;
@@ -257,7 +257,7 @@ public class LibMatrixNative
 				LOG.warn("Native conv2d call returned with error - falling back to java operator.");
 				if( !(isSinglePrecision() && params.bias!=null) )
 					outputBlock.reset();
-				Statistics.incrementNativeFailuresCounter();
+				NativeStatistics.incrementNativeFailuresCounter();
 			}
 		}
 		
@@ -291,8 +291,8 @@ public class LibMatrixNative
 					params.P, params.Q, params.numThreads);
 			if(nnz != -1) {
 				if(DMLScript.STATISTICS) {
-					Statistics.nativeConv2dBwdFilterTime += System.nanoTime() - start;
-					Statistics.numNativeConv2dBwdFilterCalls.increment();
+					NativeStatistics.incrementNativeConv2dBwdFilterTime(System.nanoTime() - start);
+					NativeStatistics.incrementNumNativeConv2dBwdFilterCalls();
 				}
 				// post-processing: maintain nnz
 				outputBlock.setNonZeros(nnz);
@@ -300,7 +300,7 @@ public class LibMatrixNative
 			}
 			else {
 				// Fall back to Java when failures
-				Statistics.incrementNativeFailuresCounter();
+				NativeStatistics.incrementNativeFailuresCounter();
 			}
 		}
 		// Fall back to Java when failures or sparse
@@ -327,8 +327,8 @@ public class LibMatrixNative
 					params.P, params.Q, params.numThreads);
 			if(nnz != -1) {
 				if(DMLScript.STATISTICS) {
-					Statistics.nativeConv2dBwdDataTime += System.nanoTime() - start;
-					Statistics.numNativeConv2dBwdDataCalls.increment();
+					NativeStatistics.incrementNativeConv2dBwdDataTime(System.nanoTime() - start);
+					NativeStatistics.incrementNumNativeConv2dBwdDataCalls();
 				}
 				// post-processing: maintain nnz
 				outputBlock.setNonZeros(nnz);
@@ -336,7 +336,7 @@ public class LibMatrixNative
 			}
 			else {
 				// Fall back to Java when failures
-				Statistics.incrementNativeFailuresCounter();
+				NativeStatistics.incrementNativeFailuresCounter();
 			}
 		}
 		// Fall back to Java when failures or sparse

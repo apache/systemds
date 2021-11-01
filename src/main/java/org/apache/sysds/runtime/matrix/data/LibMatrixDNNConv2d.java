@@ -27,7 +27,7 @@ import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.matrix.data.LibMatrixDNNRotate180.Rotate180Worker;
 import org.apache.sysds.utils.NativeHelper;
-import org.apache.sysds.utils.Statistics;
+import org.apache.sysds.utils.stats.NativeStatistics;
 
 /**
  * This class contains the set of operators used for performing conv2d
@@ -55,8 +55,8 @@ public class LibMatrixDNNConv2d
 		boolean applyNative = isEligibleForConv2dSparse(params)
 			&& !(!isEmptyDenseInput && isTransPref);
 		if( applyNative )
-			Statistics.numNativeSparseConv2dCalls.increment();
-		
+			NativeStatistics.incrementNumNativeSparseConv2dCalls();
+
 		//transpose filter once for efficient sparse-dense multiplies in LoopedIm2ColConv2dTransAllChan
 		//in order to share the temporary object and its creation costs across threads
 		if( !applyNative && !isEmptyDenseInput && isTransPref ) {
@@ -98,7 +98,7 @@ public class LibMatrixDNNConv2d
 		boolean applyNative = isEligibleForConv2dBackwardFilterSparseDense(params)
 			&& !params.input2.isInSparseFormat();
 		if( applyNative )
-			Statistics.numNativeSparseConv2dBwdFilterCalls.increment();
+			NativeStatistics.incrementNumNativeSparseConv2dBwdFilterCalls();
 		
 		for(int i = 0; i*taskSize < params.N; i++) {
 			//note: we prefer the java backend for sparse filters because the native 
@@ -135,7 +135,7 @@ public class LibMatrixDNNConv2d
 		boolean applyNative = isEligibleForConv2dBackwardDataDense(params)
 			&& !params.input2.isInSparseFormat();
 		if( applyNative )
-			Statistics.numNativeSparseConv2dBwdDataCalls.increment();
+			NativeStatistics.incrementNumNativeSparseConv2dBwdDataCalls();
 		
 		for(int i = 0; i*taskSize < params.N; i++) {
 			//note: we prefer the java backend for sparse filters because the native 

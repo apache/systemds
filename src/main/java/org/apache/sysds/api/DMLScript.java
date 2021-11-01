@@ -83,35 +83,36 @@ import org.apache.sysds.utils.Explain.ExplainType;
 
 public class DMLScript 
 {
-	private static ExecMode   EXEC_MODE          = DMLOptions.defaultOptions.execMode;           // the execution mode
-	public static boolean     STATISTICS          = DMLOptions.defaultOptions.stats;             // whether to print statistics
-	public static boolean     JMLC_MEM_STATISTICS = false;                                       // whether to gather memory use stats in JMLC
-	public static int         STATISTICS_COUNT    = DMLOptions.defaultOptions.statsCount;        // statistics maximum heavy hitter count
-	public static int         STATISTICS_MAX_WRAP_LEN = 30;                                      // statistics maximum wrap length
-	public static boolean     FED_STATISTICS        = DMLOptions.defaultOptions.fedStats;        // whether to print federated statistics
-	public static int         FED_STATISTICS_COUNT  = DMLOptions.defaultOptions.fedStatsCount;   // federated statistics maximum heavy hitter count
-	public static ExplainType EXPLAIN             = DMLOptions.defaultOptions.explainType;       // explain type
-	public static String      DML_FILE_PATH_ANTLR_PARSER = DMLOptions.defaultOptions.filePath;   // filename of dml/pydml script
-	public static String      FLOATING_POINT_PRECISION = "double";                               // data type to use internally
-	public static boolean     PRINT_GPU_MEMORY_INFO = false;                                     // whether to print GPU memory-related information
-	public static long        EVICTION_SHADOW_BUFFER_MAX_BYTES = 0;                              // maximum number of bytes to use for shadow buffer
-	public static long        EVICTION_SHADOW_BUFFER_CURR_BYTES = 0;                             // number of bytes to use for shadow buffer
-	public static double      GPU_MEMORY_UTILIZATION_FACTOR = 0.9;                               // fraction of available GPU memory to use
-	public static String      GPU_MEMORY_ALLOCATOR = "cuda";                                     // GPU memory allocator to use
-	public static boolean     LINEAGE = DMLOptions.defaultOptions.lineage;                       // whether compute lineage trace
-	public static boolean     LINEAGE_DEDUP = DMLOptions.defaultOptions.lineage_dedup;           // whether deduplicate lineage items
-	public static ReuseCacheType LINEAGE_REUSE = DMLOptions.defaultOptions.linReuseType;         // whether lineage-based reuse
-	public static LineageCachePolicy LINEAGE_POLICY = DMLOptions.defaultOptions.linCachePolicy;  // lineage cache eviction policy
-	public static boolean     LINEAGE_ESTIMATE = DMLOptions.defaultOptions.lineage_estimate;     // whether estimate reuse benefits
-	public static boolean     LINEAGE_DEBUGGER = DMLOptions.defaultOptions.lineage_debugger;     // whether enable lineage debugger
-	public static boolean     CHECK_PRIVACY = DMLOptions.defaultOptions.checkPrivacy;            // Check which privacy constraints are loaded and checked during federated execution
+	private static ExecMode   EXEC_MODE                  = DMLOptions.defaultOptions.execMode;         // the execution mode
+	public static boolean     STATISTICS                 = DMLOptions.defaultOptions.stats;            // whether to print statistics
+	public static boolean     JMLC_MEM_STATISTICS        = false;                                      // whether to gather memory use stats in JMLC
+	public static int         STATISTICS_COUNT           = DMLOptions.defaultOptions.statsCount;       // statistics maximum heavy hitter count
+	public static int         STATISTICS_MAX_WRAP_LEN    = 30;                                         // statistics maximum wrap length
+	public static boolean     FED_STATISTICS             = DMLOptions.defaultOptions.fedStats;         // whether to print federated statistics
+	public static int         FED_STATISTICS_COUNT       = DMLOptions.defaultOptions.fedStatsCount;    // federated statistics maximum heavy hitter count
+	public static boolean     FED_WORKER                 = DMLOptions.defaultOptions.fedWorker;        // whether this instance is a federated worker
+	public static ExplainType EXPLAIN                    = DMLOptions.defaultOptions.explainType;      // explain type
+	public static String      DML_FILE_PATH_ANTLR_PARSER = DMLOptions.defaultOptions.filePath;         // filename of dml/pydml script
+	public static String      FLOATING_POINT_PRECISION   = "double";                                   // data type to use internally
+	public static boolean     PRINT_GPU_MEMORY_INFO      = false;                                      // whether to print GPU memory-related information
+	public static long        EVICTION_SHADOW_BUFFER_MAX_BYTES = 0;                                    // maximum number of bytes to use for shadow buffer
+	public static long        EVICTION_SHADOW_BUFFER_CURR_BYTES = 0;                                   // number of bytes to use for shadow buffer
+	public static double      GPU_MEMORY_UTILIZATION_FACTOR = 0.9;                                     // fraction of available GPU memory to use
+	public static String      GPU_MEMORY_ALLOCATOR       = "cuda";                                     // GPU memory allocator to use
+	public static boolean     LINEAGE                    = DMLOptions.defaultOptions.lineage;          // whether compute lineage trace
+	public static boolean     LINEAGE_DEDUP              = DMLOptions.defaultOptions.lineage_dedup;    // whether deduplicate lineage items
+	public static ReuseCacheType LINEAGE_REUSE           = DMLOptions.defaultOptions.linReuseType;     // whether lineage-based reuse
+	public static LineageCachePolicy LINEAGE_POLICY      = DMLOptions.defaultOptions.linCachePolicy;   // lineage cache eviction policy
+	public static boolean     LINEAGE_ESTIMATE           = DMLOptions.defaultOptions.lineage_estimate; // whether estimate reuse benefits
+	public static boolean     LINEAGE_DEBUGGER           = DMLOptions.defaultOptions.lineage_debugger; // whether enable lineage debugger
+	public static boolean     CHECK_PRIVACY              = DMLOptions.defaultOptions.checkPrivacy;     // Check which privacy constraints are loaded and checked during federated execution
 
-	public static boolean           USE_ACCELERATOR     = DMLOptions.defaultOptions.gpu;
-	public static boolean           FORCE_ACCELERATOR   = DMLOptions.defaultOptions.forceGPU;
+	public static boolean           USE_ACCELERATOR      = DMLOptions.defaultOptions.gpu;
+	public static boolean           FORCE_ACCELERATOR    = DMLOptions.defaultOptions.forceGPU;
 	// whether to synchronize GPU after every instruction
-	public static boolean           SYNCHRONIZE_GPU     = true;
+	public static boolean           SYNCHRONIZE_GPU      = true;
 	// whether to perform eager CUDA free on rmvar
-	public static boolean           EAGER_CUDA_FREE     = false;
+	public static boolean           EAGER_CUDA_FREE      = false;
 
 
 	public static boolean _suppressPrint2Stdout = false;  // flag that indicates whether or not to suppress any prints to stdout

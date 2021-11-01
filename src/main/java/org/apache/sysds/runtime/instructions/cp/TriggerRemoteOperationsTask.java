@@ -21,7 +21,8 @@ package org.apache.sysds.runtime.instructions.cp;
 
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
-import org.apache.sysds.utils.Statistics;
+import org.apache.sysds.runtime.controlprogram.federated.FederatedStatistics;
+import org.apache.sysds.utils.stats.SparkStatistics;
 
 public class TriggerRemoteOperationsTask implements Runnable {
 	MatrixObject _prefetchMO;
@@ -45,9 +46,9 @@ public class TriggerRemoteOperationsTask implements Runnable {
 		}
 		if (DMLScript.STATISTICS && prefetched) {
 			if (_prefetchMO.isFederated())
-				Statistics.incFedAsyncPrefetchCount(1);
+				FederatedStatistics.incFedAsyncPrefetchCount(1);
 			else
-				Statistics.incSparkAsyncPrefetchCount(1);
+				SparkStatistics.incSparkAsyncPrefetchCount(1);
 		}
 	}
 

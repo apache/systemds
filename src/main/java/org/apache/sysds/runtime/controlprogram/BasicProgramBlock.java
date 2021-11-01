@@ -33,7 +33,7 @@ import org.apache.sysds.runtime.lineage.LineageCacheConfig;
 import org.apache.sysds.runtime.lineage.LineageCacheStatistics;
 import org.apache.sysds.runtime.lineage.LineageItem;
 import org.apache.sysds.runtime.lineage.LineageItemUtils;
-import org.apache.sysds.utils.Statistics;
+import org.apache.sysds.utils.stats.HOPStatistics;
 
 public class BasicProgramBlock extends ProgramBlock 
 {
@@ -96,9 +96,9 @@ public class BasicProgramBlock extends ProgramBlock
 			}
 			if( DMLScript.STATISTICS ){
 				long t1 = System.nanoTime();
-				Statistics.incrementHOPRecompileTime(t1-t0);
+				HOPStatistics.incrementHOPRecompileTime(t1-t0);
 				if( tmp!=_inst )
-					Statistics.incrementHOPRecompileSB();
+					HOPStatistics.incrementHOPRecompileSB();
 			}
 		}
 		catch(Exception ex)

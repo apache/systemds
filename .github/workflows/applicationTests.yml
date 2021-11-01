@@ -42,19 +42,19 @@ on:
       - main
 
 jobs:
-  applicationsTests:
+  test:
+    name: ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-latest]
-    name:  Ap Test ${{ matrix.tests }} 
     steps:
     - name: Checkout Repository
       uses: actions/checkout@v2
 
     - name: Cache Maven Dependencies
-      uses: actions/cache@v1
+      uses: actions/cache@v2
       with:
         path: ~/.m2/repository
         key: ${{ runner.os }}-maven-test-${{ hashFiles('**/pom.xml') }}

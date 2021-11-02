@@ -19,12 +19,12 @@
 .. 
 .. ------------------------------------------------------------
 
-SystemDS
+Apache SystemDS
 ========
 
 This package provides a Pythonic interface for working with SystemDS.
 
-SystemDS is a versatile system for the end-to-end data science lifecycle from data integration,
+SystemDS is an open source ML system for the end-to-end data science lifecycle from data integration,
 cleaning, and feature engineering, over efficient, local and distributed ML model training,
 to deployment and serving.
 To facilitate this, bindings from different languages and different system abstractions provide help for:

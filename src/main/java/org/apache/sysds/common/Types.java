@@ -308,8 +308,8 @@ public class Types
 		GREATEREQUAL(true), INTDIV(true), INTERQUANTILE(false), IQM(false), LESS(true),
 		LESSEQUAL(true), LOG(true), MAP(false), MAX(true), MEDIAN(false), MIN(true), 
 		MINUS(true), MODULUS(true), MOMENT(false), MULT(true), NOTEQUAL(true), OR(true),
-		PLUS(true), POW(true), PRINT(false), QUANTILE(false), SOLVE(false), RBIND(false),
-		XOR(true),
+		PLUS(true), POW(true), PRINT(false), QUANTILE(false), SOLVE(false),
+		RBIND(false), VALUE_SWAP(false), XOR(true),
 		//fused ML-specific operators for performance
 		MINUS_NZ(false), //sparse-safe minus: X-(mean*ppred(X,0,!=))
 		LOG_NZ(false), //sparse-safe log; ppred(X,0,"!=")*log(X,0.5)
@@ -354,6 +354,7 @@ public class Types
 				case BITWSHIFTR:   return "bitwShiftR";
 				case DROP_INVALID_TYPE: return "dropInvalidType";
 				case DROP_INVALID_LENGTH: return "dropInvalidLength";
+				case VALUE_SWAP: return "valueSwap";
 				case MAP:          return "_map";
 				default:           return name().toLowerCase();
 			}
@@ -388,6 +389,7 @@ public class Types
 				case "bitwShiftR":  return BITWSHIFTR;
 				case "dropInvalidType": return DROP_INVALID_TYPE;
 				case "dropInvalidLength": return DROP_INVALID_LENGTH;
+				case "valueSwap": return VALUE_SWAP;
 				case "map":         return MAP;
 				default:            return valueOf(opcode.toUpperCase());
 			}

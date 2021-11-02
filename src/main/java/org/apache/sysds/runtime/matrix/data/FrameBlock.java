@@ -30,13 +30,7 @@ import java.lang.ref.SoftReference;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -46,6 +40,7 @@ import java.util.function.Function;
 
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.NotImplementedException;
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.io.Writable;
@@ -1052,54 +1047,62 @@ public class FrameBlock implements CacheBlock, Externalizable {
 			throw new DMLRuntimeException("Frame dimension mismatch "+getNumRows()+" * "+getNumColumns()+
 				" != "+that.getNumRows()+" * "+that.getNumColumns());
 		String[][] outputData = new String[getNumRows()][getNumColumns()];
-
 		//compare output value, incl implicit type promotion if necessary
-		if( !(bop.fn instanceof ValueComparisonFunction) )
+		if(bop.fn instanceof ValueComparisonFunction) {
+			ValueComparisonFunction vcomp = (ValueComparisonFunction) bop.fn;
+			out = executeValueComparisons(this, that, vcomp, outputData);
+		}
+		else
 			throw new DMLRuntimeException("Unsupported binary operation on frames (only comparisons supported)");
-		ValueComparisonFunction vcomp = (ValueComparisonFunction) bop.fn;
 
-		for (int i = 0; i < getNumColumns(); i++) {
-			if (getSchema()[i] == ValueType.STRING || that.getSchema()[i] == ValueType.STRING) {
-				for (int j = 0; j < getNumRows(); j++) {
-					if(checkAndSetEmpty(this, that, outputData, j, i))
+		return out;
+	}
+
+	private FrameBlock executeValueComparisons(FrameBlock frameBlock, FrameBlock that, ValueComparisonFunction vcomp,
+		String[][] outputData) {
+		for(int i = 0; i < getNumColumns(); i++) {
+			if(getSchema()[i] == ValueType.STRING || that.getSchema()[i] == ValueType.STRING) {
+				for(int j = 0; j < getNumRows(); j++) {
+					if(checkAndSetEmpty(frameBlock, that, outputData, j, i))
 						continue;
 					String v1 = UtilFunctions.objectToString(get(j, i));
 					String v2 = UtilFunctions.objectToString(that.get(j, i));
 					outputData[j][i] = String.valueOf(vcomp.compare(v1, v2));
 				}
 			}
-			else if (getSchema()[i] == ValueType.FP64 || that.getSchema()[i] == ValueType.FP64 ||
-					getSchema()[i] == ValueType.FP32 || that.getSchema()[i] == ValueType.FP32) {
-				for (int j = 0; j < getNumRows(); j++) {
-					if(checkAndSetEmpty(this, that, outputData, j, i))
+			else if(getSchema()[i] == ValueType.FP64 || that
+				.getSchema()[i] == ValueType.FP64 || getSchema()[i] == ValueType.FP32 || that
+				.getSchema()[i] == ValueType.FP32) {
+				for(int j = 0; j < getNumRows(); j++) {
+					if(checkAndSetEmpty(frameBlock, that, outputData, j, i))
 						continue;
 					ScalarObject so1 = new DoubleObject(Double.parseDouble(get(j, i).toString()));
 					ScalarObject so2 = new DoubleObject(Double.parseDouble(that.get(j, i).toString()));
 					outputData[j][i] = String.valueOf(vcomp.compare(so1.getDoubleValue(), so2.getDoubleValue()));
 				}
 			}
-			else if (getSchema()[i] == ValueType.INT64 || that.getSchema()[i] == ValueType.INT64 ||
-					getSchema()[i] == ValueType.INT32 || that.getSchema()[i] == ValueType.INT32) {
-				for (int j = 0; j < this.getNumRows(); j++) {
-					if(checkAndSetEmpty(this, that, outputData, j, i))
+			else if(getSchema()[i] == ValueType.INT64 || that
+				.getSchema()[i] == ValueType.INT64 || getSchema()[i] == ValueType.INT32 || that
+				.getSchema()[i] == ValueType.INT32) {
+				for(int j = 0; j < this.getNumRows(); j++) {
+					if(checkAndSetEmpty(frameBlock, that, outputData, j, i))
 						continue;
 					ScalarObject so1 = new IntObject(Integer.parseInt(get(j, i).toString()));
 					ScalarObject so2 = new IntObject(Integer.parseInt(that.get(j, i).toString()));
-					outputData[j][i]  = String.valueOf(vcomp.compare(so1.getLongValue(), so2.getLongValue()));
+					outputData[j][i] = String.valueOf(vcomp.compare(so1.getLongValue(), so2.getLongValue()));
 				}
 			}
 			else {
-				for (int j = 0; j < getNumRows(); j++) {
-					if(checkAndSetEmpty(this, that, outputData, j, i))
+				for(int j = 0; j < getNumRows(); j++) {
+					if(checkAndSetEmpty(frameBlock, that, outputData, j, i))
 						continue;
-					ScalarObject so1 = new BooleanObject( Boolean.parseBoolean(get(j, i).toString()));
-					ScalarObject so2 = new BooleanObject( Boolean.parseBoolean(that.get(j, i).toString()));
+					ScalarObject so1 = new BooleanObject(Boolean.parseBoolean(get(j, i).toString()));
+					ScalarObject so2 = new BooleanObject(Boolean.parseBoolean(that.get(j, i).toString()));
 					outputData[j][i] = String.valueOf(vcomp.compare(so1.getBooleanValue(), so2.getBooleanValue()));
 				}
 			}
 		}
-
-		return new FrameBlock(UtilFunctions.nCopies(this.getNumColumns(), ValueType.BOOLEAN), outputData);
+		return new FrameBlock(UtilFunctions.nCopies(frameBlock.getNumColumns(), ValueType.BOOLEAN), outputData);
 	}
 
 	private static boolean checkAndSetEmpty(FrameBlock fb1, FrameBlock fb2, String[][] out, int r, int c) {
@@ -2285,12 +2288,92 @@ public class FrameBlock implements CacheBlock, Externalizable {
 				return DMVUtils.syntacticalPatternDiscovery(this, Double.parseDouble(arguments[0]), arguments[1]);
 			} else if (args.contains(";")) {
 				String[] arguments = args.split(";");
-				return EMAUtils.exponentialMovingAverageImputation(this, Integer.parseInt(arguments[0]), arguments[1], Integer.parseInt(arguments[2]), Double.parseDouble(arguments[3]), Double.parseDouble(arguments[4]), Double.parseDouble(arguments[5]));
+				return EMAUtils.exponentialMovingAverageImputation(this, Integer.parseInt(arguments[0]), arguments[1],
+					Integer.parseInt(arguments[2]), Double.parseDouble(arguments[3]), Double.parseDouble(arguments[4]), Double.parseDouble(arguments[5]));
 			}
 		}
 		if(lambdaExpr.contains("jaccardSim"))
 			return mapDist(getCompiledFunction(lambdaExpr));
 		return map(getCompiledFunction(lambdaExpr));
+	}
+
+	public FrameBlock valueSwap(FrameBlock schema) {
+		String[] schemaString = schema.getStringRowIterator().next();
+		String dataValue2 = null;
+		double minSimScore = 0;
+		int bestIdx = 0;
+		//		remove the precision info
+		for(int i = 0; i < schemaString.length; i++)
+			schemaString[i] = schemaString[i].replaceAll("\\d", "");
+
+		double[] minColLength = new double[this.getNumColumns()];
+		double[] maxColLength = new double[this.getNumColumns()];
+
+		for(int k = 0; k < this.getNumColumns(); k++) {
+			String[] data = ((StringArray) this.getColumn(k))._data;
+
+			double minLength = Arrays.stream(data).filter(Objects::nonNull).mapToDouble(String::length).min().orElse(Double.NaN);
+			double maxLength = Arrays.stream(data).filter(Objects::nonNull).mapToDouble(String::length).max().orElse(Double.NaN);
+			maxColLength[k] = maxLength;
+			minColLength[k] = minLength;
+		}
+		ArrayList<Integer> probColList = new ArrayList();
+		for(int i = 0; i < this.getNumColumns(); i++) {
+			for(int j = 0; j < this.getNumRows(); j++) {
+				if(this.get(j, i) == null)
+					continue;
+				String dataValue = this.get(j, i).toString().trim().replace("\"", "").toLowerCase();
+				ValueType dataType = isType(dataValue);
+
+				String type = dataType.toString().replaceAll("\\d", "");
+				//				get the avergae column length
+				if(!dataType.toString().contains(schemaString[i]) && !(dataType == ValueType.BOOLEAN && schemaString[i]
+					.equals("INT")) && !(dataType == ValueType.BOOLEAN && schemaString[i].equals("FP")) && !(dataType
+					.toString().contains("INT") && schemaString[i].equals("FP"))) {
+					LOG.warn("conflict " + dataType + " " + schemaString[i] + " " + dataValue);
+					//					check the other column with satisfy the data type of this value
+					for(int w = 0; w < schemaString.length; w++) {
+						if(schemaString[w].equals(type) && dataValue.length() > minColLength[w] && dataValue
+							.length() < maxColLength[w] && (w != i)) {
+							Object item = this.get(j, w);
+							String dataValueProb = (item != null) ? item.toString().trim().replace("\"", "")
+								.toLowerCase() : "0";
+							ValueType dataTypeProb = isType(dataValueProb);
+							if(!dataTypeProb.toString().equals(schemaString[w])) {
+								bestIdx = w;
+								break;
+							}
+							probColList.add(w);
+						}
+					}
+					// if we have more than one column that is the probable match for this value then find the most
+					// appropriate one by using the similarity score
+					if(probColList.size() > 1) {
+						for(int w : probColList) {
+							int randomIndex = ThreadLocalRandom.current().nextInt(0, _numRows - 1);
+							Object value = this.get(randomIndex, w);
+							if(value != null) {
+								dataValue2 = value.toString();
+							}
+
+							// compute distance between sample and invalid value
+							double simScore = StringUtils.getLevenshteinDistance(dataValue, dataValue2);
+							if(simScore < minSimScore) {
+								minSimScore = simScore;
+								bestIdx = w;
+							}
+						}
+					}
+					else if(probColList.size() > 0) {
+						bestIdx = probColList.get(0);
+					}
+					String tmp = dataValue;
+					this.set(j, i, this.get(j, bestIdx));
+					this.set(j, bestIdx, tmp);
+				}
+			}
+		}
+		return this;
 	}
 
 	public FrameBlock map (FrameMapFunction lambdaExpr) {

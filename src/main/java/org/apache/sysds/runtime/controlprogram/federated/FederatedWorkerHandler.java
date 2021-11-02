@@ -65,7 +65,7 @@ import org.apache.sysds.runtime.privacy.PrivacyMonitor;
 import org.apache.sysds.utils.Statistics;
 
 public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
-	protected static Logger log = Logger.getLogger(FederatedWorkerHandler.class);
+	private static Logger LOG = Logger.getLogger(FederatedWorkerHandler.class);
 
 	private final ExecutionContextMap _ecm;
 
@@ -82,23 +82,19 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 	}
 
 	public FederatedResponse createResponse(Object msg) {
-		if(log.isDebugEnabled()) {
-			log.debug("Received: " + msg.getClass().getSimpleName());
-		}
+		if(LOG.isDebugEnabled())
+			LOG.debug("Received: " + msg.getClass().getSimpleName());
+		
 		if(!(msg instanceof FederatedRequest[]))
 			throw new DMLRuntimeException(
 				"FederatedWorkerHandler: Received object no instance of 'FederatedRequest[]'.");
 		FederatedRequest[] requests = (FederatedRequest[]) msg;
 		FederatedResponse response = null; // last response
-
+		FederatedResponse failedResponse = null; // last failed request
 		for(int i = 0; i < requests.length; i++) {
 			FederatedRequest request = requests[i];
-			if(log.isDebugEnabled()) {
-				log.debug("Executing command " + (i + 1) + "/" + requests.length + ": " + request.getType().name());
-				if(log.isTraceEnabled()) {
-					log.trace("full command: " + request.toString());
-				}
-			}
+			logRequests(request, i, requests.length);
+
 			PrivacyMonitor.setCheckPrivacy(request.checkPrivacy());
 			PrivacyMonitor.clearCheckedConstraints();
 
@@ -108,25 +104,43 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 
 			// select the response for the entire batch of requests
 			if(!tmp.isSuccessful()) {
-				log.error("Command " + request.getType() + " failed: " + tmp.getErrorMessage() + "full command: \n"
-					+ request.toString());
-				response = (response == null || response.isSuccessful()) ? tmp : response; // return first error
+				if(request.getType() == RequestType.PUT_VAR && tmp.getErrorMessage().contains("already existing"))
+					LOG.error("PUT_VAR failed: " + tmp.getErrorMessage());
+				else
+					LOG.error("Command " + request.getType() + " failed:\n" +tmp.getErrorMessage());
+				failedResponse = tmp; // return first error
 			}
 			else if(request.getType() == RequestType.GET_VAR) {
 				if(response != null && response.isSuccessful())
-					log.error("Multiple GET_VAR are not supported in single batch of requests.");
+					LOG.error("Multiple GET_VAR are not supported in single batch of requests.");
 				response = tmp; // return last get result
 			}
 			else if(response == null && i == requests.length - 1) {
 				response = tmp; // return last
 			}
+		}
 
-			if(DMLScript.STATISTICS && request.getType() == RequestType.CLEAR && Statistics.allowWorkerStatistics) {
-				System.out.println("Federated Worker " + Statistics.display());
-				Statistics.reset();
+		if(requests[requests.length-1].getType() == RequestType.CLEAR )
+			printStatistics();
+
+		// return failed, if failed otherwise the last response.
+		return failedResponse != null ? failedResponse : response;
+	}
+
+	private static void printStatistics(){
+		if(DMLScript.STATISTICS && Statistics.allowWorkerStatistics) {
+			System.out.println("Federated Worker " + Statistics.display());
+			Statistics.reset();
+		}
+	}
+
+	private static void logRequests(FederatedRequest request, int nrRequest, int totalRequests){
+		if(LOG.isDebugEnabled()) {
+			LOG.debug("Executing command " + (nrRequest + 1) + "/" + totalRequests + ": " + request.getType().name());
+			if(LOG.isTraceEnabled()) {
+				LOG.trace("full command: " + request.toString());
 			}
 		}
-		return response;
 	}
 
 	private static void conditionalAddCheckedConstraints(FederatedRequest request, FederatedResponse response) {
@@ -134,7 +148,7 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 			response.setCheckedConstraints(PrivacyMonitor.getCheckedConstraints());
 	}
 
-	private FederatedResponse executeCommand(FederatedRequest request) {
+	private FederatedResponse executeCommand(FederatedRequest request){
 		RequestType method = request.getType();
 		try {
 			switch(method) {
@@ -161,10 +175,8 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 			return new FederatedResponse(ResponseType.ERROR, ex);
 		}
 		catch (Exception ex) {
-			String msg = "Exception of type " + ex.getClass() + " thrown when processing request";
-			log.error(msg, ex);
-			return new FederatedResponse(ResponseType.ERROR,
-				new FederatedWorkerHandlerException(msg));
+			String msg = "Exception thrown while processing request: " + request.toString();
+			return new FederatedResponse(ResponseType.ERROR, new FederatedWorkerHandlerException(msg, ex));
 		}
 	}
 
@@ -253,8 +265,11 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 		String varname = String.valueOf(request.getID());
 		ExecutionContext ec = _ecm.get(request.getTID());
 
-		if(ec.containsVariable(varname)) {
-			return new FederatedResponse(ResponseType.ERROR, "Variable " + request.getID() + " already existing.");
+		if(ec.containsVariable(varname)){
+			Data tgtData = ec.removeVariable(varname);
+			if(tgtData != null)
+				ec.cleanupDataObject(tgtData);
+			LOG.warn("Variable" + request.getID()  + " already existing, fallback to overwritten.");
 		}
 
 		// wrap transferred cache block into cacheable data
@@ -307,7 +322,7 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 		}
 	}
 
-	private FederatedResponse execInstruction(FederatedRequest request) {
+	private FederatedResponse execInstruction(FederatedRequest request) throws Exception {
 		ExecutionContext ec = _ecm.get(request.getTID());
 		BasicProgramBlock pb = new BasicProgramBlock(null);
 		pb.getInstructions().clear();
@@ -321,18 +336,8 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 			// NOTE: In shared JVM, this will disable compiler assistance even for the coordinator 
 			LineageCacheConfig.setCompAssRW(false);
 
-		try {
-			pb.execute(ec); // execute single instruction
-		}
-		catch(DMLPrivacyException | FederatedWorkerHandlerException ex){
-			throw ex;
-		}
-		catch(Exception ex) {
-			String msg = "Exception of type " + ex.getClass() + " thrown when processing EXEC_INST request";
-			log.error(msg, ex);
-			return new FederatedResponse(ResponseType.ERROR,
-				new FederatedWorkerHandlerException(msg));
-		}
+		pb.execute(ec); // execute single instruction
+
 		return new FederatedResponse(ResponseType.SUCCESS_EMPTY);
 	}
 
@@ -369,7 +374,7 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 		}
 		catch(Exception ex) {
 			String msg = "Exception of type " + ex.getClass() + " thrown when processing EXEC_UDF request";
-			log.error(msg, ex);
+			LOG.error(msg, ex);
 			return new FederatedResponse(ResponseType.ERROR, new FederatedWorkerHandlerException(msg));
 		}
 	}
@@ -383,7 +388,7 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 		}
 		catch(Exception ex) {
 			String msg = "Exception of type " + ex.getClass() + " thrown when processing CLEAR request";
-			log.error(msg, ex);
+			LOG.error(msg, ex);
 			return new FederatedResponse(ResponseType.ERROR, new FederatedWorkerHandlerException(msg));
 		}
 		return new FederatedResponse(ResponseType.SUCCESS_EMPTY);
@@ -410,7 +415,7 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 		@Override
 		public void operationComplete(ChannelFuture channelFuture) throws InterruptedException {
 			if(!channelFuture.isSuccess()) {
-				log.error("Federated Worker Write failed");
+				LOG.error("Federated Worker Write failed");
 				channelFuture.channel().writeAndFlush(new FederatedResponse(ResponseType.ERROR,
 					new FederatedWorkerHandlerException("Error while sending response."))).channel().close().sync();
 			}

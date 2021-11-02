@@ -330,14 +330,13 @@ class TestFederatedAggFn(unittest.TestCase):
             [1, 2, 3, 4, 5, 6, 7, 8, 9]])
         # Multiply local and federated
         ret_loc = loc @ m_r3
-        print(ret_loc)
         
         for i in range(1, 100):
             loc_systemds = self.sds.from_numpy(loc)
             fed = self.sds.read(fed_r3_file)
             ret_fed = (loc_systemds @ fed).compute()
-            print(ret_fed)
-            self.assertTrue(np.allclose(ret_fed, ret_loc))
+            if not np.allclose(ret_fed, ret_loc):
+                self.fail("not equal outputs of federated matrix multiplications")
 
 
 if __name__ == "__main__":

@@ -48,7 +48,7 @@ Fed3=$!
 echo "Starting workers" && sleep 3 && echo "Starting tests"
 
 # Run test
-python -m unittest discover -s tests/federated -p 'test_federated_tutorial.py' $1 >$log 2>&1
+python -m unittest discover -s tests/federated -p 'test_*.py' $1 >$log 2>&1
 pkill -P $Fed1
 pkill -P $Fed2
 pkill -P $Fed3

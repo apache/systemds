@@ -27,6 +27,7 @@ import os
 import socket
 import threading
 import time
+import sys
 from glob import glob
 from queue import Empty, Queue
 from subprocess import PIPE, Popen
@@ -105,7 +106,7 @@ class SystemDSContext(object):
         else:
             return [self.__stderr.get() for x in range(lines)]
 
-    def exception_and_close(self, e: Exception):
+    def exception_and_close(self, exception_str: str):
         """
         Method for printing exception, printing stdout and error, while also closing the context correctly.
 
@@ -113,11 +114,16 @@ class SystemDSContext(object):
         """
 
         # e = sys.exc_info()[0]
-        message = "Exception Encountered! closing JVM\n"
-        message += "standard out    :\n" + "\n".join(self.get_stdout())
-        message += "standard error  :\n" + "\n".join(self.get_stdout())
-        message += "Exception       : " + str(e)
+        message = ""
+        stdOut = self.get_stdout()
+        if stdOut:
+            message += "standard out    :\n" + "\n".join(stdOut)
+        stdErr = self.get_stderr()
+        if stdErr:
+            message += "standard error  :\n" + "\n".join(stdErr)
+        message += exception_str
         self.close()
+        sys.tracebacklimit = 0
         raise RuntimeError(message)
 
     def __try_startup(self, command, port, rep=0):

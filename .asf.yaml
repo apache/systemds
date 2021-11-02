@@ -23,7 +23,7 @@
 # https://cwiki.apache.org/confluence/display/INFRA/Git+-+.asf.yaml+features
 
 github:
-  description: "Apache SystemDS - An open source ML system for the end-to-end data science life cycle"
+  description: "An open source ML system for the end-to-end data science lifecycle"
   homepage: https://systemds.apache.org/
   labels:
     - systemds

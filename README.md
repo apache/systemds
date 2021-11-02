@@ -19,7 +19,7 @@ limitations under the License.
 
 # Apache SystemDS
 
-**Overview:** SystemDS is a versatile system for the end-to-end data science lifecycle from data integration, cleaning,
+**Overview:** SystemDS is a An open source ML system for the end-to-end data science lifecycle from data integration, cleaning,
 and feature engineering, over efficient, local and distributed ML model training, to deployment and serving. To this
 end, we aim to provide a stack of declarative languages with R-like syntax for (1) the different tasks of the data-science
 lifecycle, and (2) users with different expertise. These high-level scripts are compiled into hybrid execution plans of

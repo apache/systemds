@@ -28,9 +28,9 @@
 	<version>2.3.0-SNAPSHOT</version>
 	<artifactId>systemds</artifactId>
 	<packaging>jar</packaging>
-	<name>SystemDS</name>
+	<name>Apache SystemDS</name>
 	<url>https://github.com/apache/systemds</url>
-	<description>Declarative End-to-End Data Science</description>
+	<description>An open source ML system for the end-to-end data science lifecycle</description>
 	<licenses>
 		<license>
 			<name>Apache 2.0 License</name>

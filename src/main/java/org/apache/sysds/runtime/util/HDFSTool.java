@@ -121,9 +121,8 @@ public class HDFSTool
 				.getFileSystem(path).getFileStatus(path).isDirectory();
 		}
 		catch(Exception ex) {
-			LOG.error("Failed check isDirectory.", ex);
+			throw new DMLRuntimeException("Failed to check if file is directory", ex);
 		}
-		return false;
 	}
 	
 	public static FileStatus[] getDirectoryListing(String fname) {

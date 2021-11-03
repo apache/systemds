@@ -22,7 +22,7 @@
 	<parent>
 		<groupId>org.apache</groupId>
 		<artifactId>apache</artifactId>
-		<version>18</version>
+		<version>24</version>
 	</parent>
 	<groupId>org.apache.systemds</groupId>
 	<version>2.3.0-SNAPSHOT</version>
@@ -45,6 +45,7 @@
 		<scala.version>2.12.0</scala.version>
 		<scala.binary.version>2.12</scala.binary.version>
 		<maven.build.timestamp.format>yyyy-MM-dd HH:mm:ss z</maven.build.timestamp.format>
+		<project.build.outputTimestamp>1</project.build.outputTimestamp>
 		<enableGPU>false</enableGPU>
 		<jcuda.scope>provided</jcuda.scope>
 		<jcuda.version>10.2.0</jcuda.version>

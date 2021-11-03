@@ -28,9 +28,10 @@ import org.junit.Test;
 
 public class BuiltinFixInvalidLengths extends AutomatedTestBase {
 	private final static String TEST_NAME = "fixInvalidLengthsTest";
-	private final static String TEST_DIR = "functions/builtin/";
+	private final static String TEST_DIR = "functions/frame/";
 	private static final String TEST_CLASS_DIR = TEST_DIR + BuiltinFixInvalidLengths.class.getSimpleName() + "/";
 	private final static String INPUT = DATASET_DIR+"/Salaries.csv";
+
 	public static void init() {
 		TestUtils.clearDirectory(TEST_DATA_DIR + TEST_CLASS_DIR);
 	}
@@ -64,6 +65,7 @@ public class BuiltinFixInvalidLengths extends AutomatedTestBase {
 			getAndLoadTestConfiguration(TEST_NAME);
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
+			System.out.println(fullDMLScriptName);
 			programArgs = new String[] {"-args", INPUT, output("B")};
 			runTest(true, false, null, -1);
 			boolean retCondition = HDFSTool.readBooleanFromHDFSFile(output("B"));

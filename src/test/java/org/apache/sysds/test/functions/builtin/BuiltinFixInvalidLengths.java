@@ -27,7 +27,7 @@ import org.junit.Assert;
 import org.junit.Test;
 
 public class BuiltinFixInvalidLengths extends AutomatedTestBase {
-	private final static String TEST_NAME = "fixInvalidLengthsTest";
+	private final static String TEST_NAME = "fixInvalidLengthstest";
 	private final static String TEST_DIR = "functions/frame/";
 	private static final String TEST_CLASS_DIR = TEST_DIR + BuiltinFixInvalidLengths.class.getSimpleName() + "/";
 	private final static String INPUT = DATASET_DIR+"/Salaries.csv";

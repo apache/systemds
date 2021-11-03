@@ -53,14 +53,16 @@ public class FrameValueSwapTest extends AutomatedTestBase
 		addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[] {"B"}));
 	}
 	//
+	@Ignore
 	@Test
-	public void tesSwapValueTestCP() {
+	public void testSwapValueTestCP() {
 		runValueSwapTest(ExecType.CP);
 	}
 
 	// TODO fix frame comparisons in spark context
 	@Ignore
-	public void tesSwapValueTestSP() {
+	@Test
+	public void testSwapValueTestSP() {
 		runValueSwapTest(ExecType.SPARK);
 	}
 

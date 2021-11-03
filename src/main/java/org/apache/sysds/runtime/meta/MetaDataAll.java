@@ -100,7 +100,7 @@ public class MetaDataAll extends DataIdentifier {
 	{
 		JSONObject retVal = new JSONObject();
 		boolean exists = HDFSTool.existsFileOnHDFS(filename);
-		boolean isDir = HDFSTool.isDirectory(filename);
+		boolean isDir = exists ? HDFSTool.isDirectory(filename) : false;
 
 		// CASE: filename is a directory -- process as a directory
 		if( exists && isDir )

@@ -21,15 +21,11 @@
 
 __all__ = ["SystemDSContext"]
 
-import copy
 import json
 import os
 import socket
-import threading
-import time
-import sys
 from glob import glob
-from queue import Empty, Queue
+from queue import Queue
 from subprocess import PIPE, Popen
 from threading import Thread
 from time import sleep
@@ -123,7 +119,6 @@ class SystemDSContext(object):
             message += "standard error  :\n" + "\n".join(stdErr)
         message += exception_str
         self.close()
-        sys.tracebacklimit = 0
         raise RuntimeError(message)
 
     def __try_startup(self, command, port, rep=0):

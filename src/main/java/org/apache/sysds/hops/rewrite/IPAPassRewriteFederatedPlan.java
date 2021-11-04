@@ -94,6 +94,7 @@ public class IPAPassRewriteFederatedPlan extends IPAPass {
 	 * by setting the federated output value of each hop in the statement blocks.
 	 * The method calls the contained statement blocks recursively.
 	 *
+	 * @param prog dml program
 	 * @param sbs   list of statement blocks
 	 * @return list of statement blocks with the federated output value updated for each hop
 	 */
@@ -109,6 +110,7 @@ public class IPAPassRewriteFederatedPlan extends IPAPass {
 	 * by setting the federated output value of each hop in the statement blocks.
 	 * The method calls the contained statement blocks recursively.
 	 *
+	 * @param prog dml program
 	 * @param sb    statement block
 	 * @return list of statement blocks with the federated output value updated for each hop
 	 */

@@ -24,6 +24,7 @@ __all__ = ["SystemDSContext"]
 import json
 import os
 import socket
+import sys
 from glob import glob
 from queue import Queue
 from subprocess import PIPE, Popen
@@ -102,7 +103,7 @@ class SystemDSContext(object):
         else:
             return [self.__stderr.get() for x in range(lines)]
 
-    def exception_and_close(self, exception_str: str):
+    def exception_and_close(self, exception_str: str, trace_back_limit : int = None):
         """
         Method for printing exception, printing stdout and error, while also closing the context correctly.
 
@@ -118,6 +119,7 @@ class SystemDSContext(object):
         if stdErr:
             message += "standard error  :\n" + "\n".join(stdErr)
         message += exception_str
+        sys.tracebacklimit = trace_back_limit
         self.close()
         raise RuntimeError(message)
 

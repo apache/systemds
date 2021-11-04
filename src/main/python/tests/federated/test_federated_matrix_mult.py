@@ -206,76 +206,69 @@ class TestFederatedAggFn(unittest.TestCase):
     # Start three federated site tests #
     ####################################
 
-    # def test_three_fed_standard(self):
-    #     f_m3 = self.sds.read(fed_c3_file)
-    #     m = np.reshape(np.arange(1, dim*(dim * 3) + 1, 1), (dim*3, dim))
-    #     m_s = self.sds.from_numpy(m)
-    #     fed = m_s @ f_m3
-    #     loc = m @ m_c3
-    #     fed_res = fed.compute()
-    #     self.assertTrue(np.allclose(fed_res, loc))
+    def test_three_fed_standard(self):
+        f_m3 = self.sds.read(fed_c3_file)
+        m = np.reshape(np.arange(1, dim*(dim * 3) + 1, 1), (dim*3, dim))
+        m_s = self.sds.from_numpy(m)
+        self.exec_test(m, m_c3, m_s, f_m3)
 
-    # def test_three_fed_left_minus_one_row(self):
-    #     f_m3 = self.sds.read(fed_c3_file)
-    #     m = np.reshape(np.arange(1, dim*(dim + dim-1)+1, 1), (dim*2 - 1, dim))
-    #     m_s = self.sds.from_numpy(m)
-    #     fed = m_s @ f_m3
-    #     loc = m @ m_c2
-    #     fed_res = fed.compute()
-    #     self.assertTrue(np.allclose(fed_res, loc))
+    def test_three_fed_left_minus_one_row(self):
+        f_m3 = self.sds.read(fed_c3_file)
+        m = np.reshape(np.arange(1, dim*(dim * 3-1)+1, 1), (dim*3 - 1, dim))
+        m_s = self.sds.from_numpy(m)
+        self.exec_test(m, m_c3, m_s, f_m3)
 
-    # def test_three_fed_left_plus_one_row(self):
-    #     f_m3 = self.sds.read(fed_c3_file)
-    #     m = np.reshape(np.arange(1, dim*(dim + dim+1)+1, 1), (dim*2 + 1, dim))
-    #     m_s = self.sds.from_numpy(m)
-    #     fed = m_s @ f_m3
-    #     loc = m @ m_c2
-    #     fed_res = fed.compute()
-    #     self.assertTrue(np.allclose(fed_res, loc))
+    def test_three_fed_left_plus_one_row(self):
+        f_m3 = self.sds.read(fed_c3_file)
+        m = np.reshape(np.arange(1, dim*(dim *3+1)+1, 1), (dim*3 + 1, dim))
+        m_s = self.sds.from_numpy(m)
+        self.exec_test(m, m_c3, m_s, f_m3)
 
-    # def test_three_fed_left_vector_row(self):
-    #     f_m3 = self.sds.read(fed_c3_file)
-    #     m = np.arange(1, dim+1, 1)
-    #     m_s = self.sds.from_numpy(m).t()
-    #     fed = m_s @ f_m3
-    #     loc = m @ m_c2
-    #     fed_res = fed.compute()
-    #     self.assertTrue(np.allclose(fed_res, loc))
+    def test_three_fed_left_vector_row(self):
+        f_m3 = self.sds.read(fed_c3_file)
+        m = np.arange(1, dim+1, 1)
+        m_s = self.sds.from_numpy(m).t()
+        self.exec_test(m, m_c3, m_s, f_m3)
 
-    # def test_three_fed_right_standard(self):
-    #     f_m3 = self.sds.read(fed_c3_file)
-    #     m_s = self.sds.from_numpy(m_r2)
-    #     fed = f_m3 @ m_s
-    #     loc = m_c2 @ m_r2
-    #     fed_res = fed.compute()
-    #     self.assertTrue(np.allclose(fed_res, loc))
+    def test_three_fed_right_standard(self):
+        f_m3 = self.sds.read(fed_c3_file)
+        m_s = self.sds.from_numpy(m_r3)
+        self.exec_test(m_c3, m_r3, f_m3, m_s)
 
-    # def test_three_fed_right_col_minus_1(self):
-    #     f_m3 = self.sds.read(fed_c3_file)
-    #     m = np.reshape(np.arange(1, (dim-1)*(dim + dim)+1, 1), (dim * 2, dim-1))
-    #     m_s = self.sds.from_numpy(m)
-    #     fed = f_m3 @ m_s
-    #     loc = m_c2 @ m
-    #     fed_res = fed.compute()
-    #     self.assertTrue(np.allclose(fed_res, loc))
+    def test_three_fed_right_col_minus_1(self):
+        f_m3 = self.sds.read(fed_c3_file)
+        m = np.reshape(np.arange(1, (dim-1)*(dim*3)+1, 1), (dim * 3, dim-1))
+        m_s = self.sds.from_numpy(m)
+        self.exec_test(m_c3, m, f_m3, m_s)
 
-    # def test_three_fed_right_col_plus_1(self):
-    #     f_m3 = self.sds.read(fed_c3_file)
-    #     m = np.reshape(np.arange(1, (dim+1)*(dim + dim)+1, 1), (dim * 2, dim+1))
-    #     m_s = self.sds.from_numpy(m)
-    #     fed = f_m3 @ m_s
-    #     loc = m_c2 @ m
-    #     fed_res = fed.compute()
-    #     self.assertTrue(np.allclose(fed_res, loc))
+    def test_three_fed_right_col_plus_1(self):
+        f_m3 = self.sds.read(fed_c3_file)
+        m = np.reshape(np.arange(1, (dim+1)*(dim *3)+1, 1), (dim * 3, dim+1))
+        m_s = self.sds.from_numpy(m)
+        self.exec_test(m_c3, m, f_m3, m_s)
 
-    # def test_three_fed_right_vector(self):
-    #     f_m3 = self.sds.read(fed_c3_file)
-    #     m = np.reshape(np.arange(1, (dim + dim)+1, 1), (dim * 2, 1))
-    #     m_s = self.sds.from_numpy(m)
-    #     fed = f_m3 @ m_s
-    #     loc = m_c2 @ m
-    #     fed_res = fed.compute()
-    #     self.assertTrue(np.allclose(fed_res, loc))
+    def test_three_fed_right_vector(self):
+        f_m3 = self.sds.read(fed_c3_file)
+        m = np.reshape(np.arange(1, (dim *3)+1, 1), (dim * 3, 1))
+        m_s = self.sds.from_numpy(m)
+        self.exec_test(m_c3, m, f_m3, m_s)
+
+    ###################
+    # row bind matrix #
+    ###################
+
+    def test_federated_row2_binded(self):
+        fed = self.sds.read(fed_r2_file)
+        s_m = self.sds.from_numpy(m_c2)
+        self.exec_test(m_c2, m_r2, s_m, fed)
+
+    def test_federated_row3_binded(self):
+        fed = self.sds.read(fed_r3_file)
+        s_m = self.sds.from_numpy(m_c3)
+        self.exec_test(m_c3, m_r3, s_m, fed)
+
+
+
 
     def test_previously_failing(self):
         # local matrix to multiply with

@@ -82,9 +82,11 @@ class DMLScript:
             return ret
         except Py4JNetworkError:
             exception_str = "Py4JNetworkError: no connection to JVM, most likely due to previous crash"
+            trace_back_limit = 0
         except Exception as e:
             exception_str = str(e)
-        self.sds_context.exception_and_close(exception_str)
+            trace_back_limit = None
+        self.sds_context.exception_and_close(exception_str, trace_back_limit)
         
 
     def execute_with_lineage(self) -> Tuple[JavaObject, str]:
@@ -110,9 +112,11 @@ class DMLScript:
 
         except Py4JNetworkError:
             exception_str = "Py4JNetworkError: no connection to JVM, most likely due to previous crash"
+            trace_back_limit = 0
         except Exception as e:
             exception_str = str(e)
-        self.sds_context.exception_and_close(exception_str)
+            trace_back_limit = None
+        self.sds_context.exception_and_close(exception_str, trace_back_limit)
 
     def __prepare_script(self):
         gateway = self.sds_context.java_gateway

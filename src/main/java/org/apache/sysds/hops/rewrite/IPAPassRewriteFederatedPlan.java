@@ -24,6 +24,7 @@ import org.apache.sysds.hops.AggBinaryOp;
 import org.apache.sysds.hops.AggUnaryOp;
 import org.apache.sysds.hops.BinaryOp;
 import org.apache.sysds.hops.DataOp;
+import org.apache.sysds.hops.FunctionOp;
 import org.apache.sysds.hops.Hop;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.hops.ReorgOp;
@@ -84,7 +85,7 @@ public class IPAPassRewriteFederatedPlan extends IPAPass {
 	 */
 	@Override
 	public boolean rewriteProgram(DMLProgram prog, FunctionCallGraph fgraph, FunctionCallSizeInfo fcallSizes) {
-		rewriteStatementBlocks(prog.getStatementBlocks());
+		rewriteStatementBlocks(prog, prog.getStatementBlocks());
 		return false;
 	}
 
@@ -96,10 +97,10 @@ public class IPAPassRewriteFederatedPlan extends IPAPass {
 	 * @param sbs   list of statement blocks
 	 * @return list of statement blocks with the federated output value updated for each hop
 	 */
-	public ArrayList<StatementBlock> rewriteStatementBlocks(List<StatementBlock> sbs) {
+	public ArrayList<StatementBlock> rewriteStatementBlocks(DMLProgram prog, List<StatementBlock> sbs) {
 		ArrayList<StatementBlock> rewrittenStmBlocks = new ArrayList<>();
 		for ( StatementBlock stmBlock : sbs )
-			rewrittenStmBlocks.addAll(rewriteStatementBlock(stmBlock));
+			rewrittenStmBlocks.addAll(rewriteStatementBlock(prog, stmBlock));
 		return rewrittenStmBlocks;
 	}
 
@@ -111,61 +112,74 @@ public class IPAPassRewriteFederatedPlan extends IPAPass {
 	 * @param sb    statement block
 	 * @return list of statement blocks with the federated output value updated for each hop
 	 */
-	public ArrayList<StatementBlock> rewriteStatementBlock(StatementBlock sb) {
+	public ArrayList<StatementBlock> rewriteStatementBlock(DMLProgram prog, StatementBlock sb) {
 		if ( sb instanceof WhileStatementBlock)
-			return rewriteWhileStatementBlock((WhileStatementBlock) sb);
+			return rewriteWhileStatementBlock(prog, (WhileStatementBlock) sb);
 		else if ( sb instanceof IfStatementBlock)
-			return rewriteIfStatementBlock((IfStatementBlock) sb);
+			return rewriteIfStatementBlock(prog, (IfStatementBlock) sb);
 		else if ( sb instanceof ForStatementBlock){
 			// This also includes ParForStatementBlocks
-			return rewriteForStatementBlock((ForStatementBlock) sb);
+			return rewriteForStatementBlock(prog, (ForStatementBlock) sb);
 		}
 		else if ( sb instanceof FunctionStatementBlock)
-			return rewriteFunctionStatementBlock((FunctionStatementBlock) sb);
+			return rewriteFunctionStatementBlock(prog, (FunctionStatementBlock) sb);
 		else {
 			// StatementBlock type (no subclass)
-			selectFederatedExecutionPlan(sb.getHops());
+			return rewriteDefaultStatementBlock(prog, sb);
 		}
-		return new ArrayList<>(Collections.singletonList(sb));
 	}
 
-	private ArrayList<StatementBlock> rewriteWhileStatementBlock(WhileStatementBlock whileSB){
+	private ArrayList<StatementBlock> rewriteWhileStatementBlock(DMLProgram prog, WhileStatementBlock whileSB){
 		Hop whilePredicateHop = whileSB.getPredicateHops();
 		selectFederatedExecutionPlan(whilePredicateHop);
 		for ( Statement stm : whileSB.getStatements() ){
 			WhileStatement whileStm = (WhileStatement) stm;
-			whileStm.setBody(rewriteStatementBlocks(whileStm.getBody()));
+			whileStm.setBody(rewriteStatementBlocks(prog, whileStm.getBody()));
 		}
 		return new ArrayList<>(Collections.singletonList(whileSB));
 	}
 
-	private ArrayList<StatementBlock> rewriteIfStatementBlock(IfStatementBlock ifSB){
+	private ArrayList<StatementBlock> rewriteIfStatementBlock(DMLProgram prog, IfStatementBlock ifSB){
 		selectFederatedExecutionPlan(ifSB.getPredicateHops());
 		for ( Statement statement : ifSB.getStatements() ){
 			IfStatement ifStatement = (IfStatement) statement;
-			ifStatement.setIfBody(rewriteStatementBlocks(ifStatement.getIfBody()));
-			ifStatement.setElseBody(rewriteStatementBlocks(ifStatement.getElseBody()));
+			ifStatement.setIfBody(rewriteStatementBlocks(prog, ifStatement.getIfBody()));
+			ifStatement.setElseBody(rewriteStatementBlocks(prog, ifStatement.getElseBody()));
 		}
 		return new ArrayList<>(Collections.singletonList(ifSB));
 	}
 
-	private ArrayList<StatementBlock> rewriteForStatementBlock(ForStatementBlock forSB){
+	private ArrayList<StatementBlock> rewriteForStatementBlock(DMLProgram prog, ForStatementBlock forSB){
 		selectFederatedExecutionPlan(forSB.getFromHops());
 		selectFederatedExecutionPlan(forSB.getToHops());
 		selectFederatedExecutionPlan(forSB.getIncrementHops());
 		for ( Statement statement : forSB.getStatements() ){
 			ForStatement forStatement = ((ForStatement)statement);
-			forStatement.setBody(rewriteStatementBlocks(forStatement.getBody()));
+			forStatement.setBody(rewriteStatementBlocks(prog, forStatement.getBody()));
 		}
 		return new ArrayList<>(Collections.singletonList(forSB));
 	}
 
-	private ArrayList<StatementBlock> rewriteFunctionStatementBlock(FunctionStatementBlock funcSB){
+	private ArrayList<StatementBlock> rewriteFunctionStatementBlock(DMLProgram prog, FunctionStatementBlock funcSB){
 		for ( Statement statement : funcSB.getStatements() ){
 			FunctionStatement funcStm = (FunctionStatement) statement;
-			funcStm.setBody(rewriteStatementBlocks(funcStm.getBody()));
+			funcStm.setBody(rewriteStatementBlocks(prog, funcStm.getBody()));
 		}
 		return new ArrayList<>(Collections.singletonList(funcSB));
+	}
+
+	private ArrayList<StatementBlock> rewriteDefaultStatementBlock(DMLProgram prog, StatementBlock sb){
+		if ( sb.getHops() != null && !sb.getHops().isEmpty() ){
+			for ( Hop sbHop : sb.getHops() ){
+				if ( sbHop instanceof FunctionOp ){
+					String funcName = ((FunctionOp) sbHop).getFunctionName();
+					FunctionStatementBlock sbFuncBlock = prog.getBuiltinFunctionDictionary().getFunction(funcName);
+					rewriteStatementBlock(prog, sbFuncBlock);
+				}
+				else selectFederatedExecutionPlan(sbHop);
+			}
+		}
+		return new ArrayList<>(Collections.singletonList(sb));
 	}
 
 	/**

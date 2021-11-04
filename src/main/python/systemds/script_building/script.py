@@ -19,11 +19,12 @@
 #
 # -------------------------------------------------------------
 
-from typing import Any, Collection, KeysView, Tuple, Union, Optional, Dict, TYPE_CHECKING, List
+from typing import (TYPE_CHECKING, Any, Collection, Dict, KeysView, List,
+                    Optional, Tuple, Union)
 
+from py4j.protocol import Py4JNetworkError
 from py4j.java_collections import JavaArray
-from py4j.java_gateway import JavaObject, JavaGateway
-
+from py4j.java_gateway import JavaGateway, JavaObject
 from systemds.script_building.dag import DAGNode, OutputType
 from systemds.utils.consts import VALID_INPUT_TYPES
 
@@ -79,9 +80,14 @@ class DMLScript:
             self.__prepare_script()
             ret = self.prepared_script.executeScript()
             return ret
+        except Py4JNetworkError:
+            exception_str = "Py4JNetworkError: no connection to JVM, most likely due to previous crash"
+            trace_back_limit = 0
         except Exception as e:
-            self.sds_context.exception_and_close(e)
-            return None
+            exception_str = str(e)
+            trace_back_limit = None
+        self.sds_context.exception_and_close(exception_str, trace_back_limit)
+        
 
     def execute_with_lineage(self) -> Tuple[JavaObject, str]:
         """If not already created, create a preparedScript from our DMLCode, pass python local data to our prepared
@@ -104,9 +110,13 @@ class DMLScript:
                     traces.append(self.prepared_script.getLineageTrace(output))
                 return ret, traces
 
+        except Py4JNetworkError:
+            exception_str = "Py4JNetworkError: no connection to JVM, most likely due to previous crash"
+            trace_back_limit = 0
         except Exception as e:
-            self.sds_context.exception_and_close(e)
-            return None, None
+            exception_str = str(e)
+            trace_back_limit = None
+        self.sds_context.exception_and_close(exception_str, trace_back_limit)
 
     def __prepare_script(self):
         gateway = self.sds_context.java_gateway

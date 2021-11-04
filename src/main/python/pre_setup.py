@@ -39,7 +39,7 @@ if os.path.exists(TMP_DIR):
     shutil.rmtree(TMP_DIR, True)
 os.mkdir(TMP_DIR)
 
-SYSTEMDS_BIN = 'systemds-*-SNAPSHOT-bin.zip'
+SYSTEMDS_BIN = 'systemds-*-bin.zip'
 for file in os.listdir(os.path.join(root_dir, 'target')):
     if fnmatch.fnmatch(file, SYSTEMDS_BIN):
         new_path = os.path.join(TMP_DIR, file)

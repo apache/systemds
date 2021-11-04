@@ -86,7 +86,7 @@ python3 -m twine check dist/*
 # password: pypi-DU5y...
 
 if [[ $dry_run_flag != 1 ]]; then
-  python twine upload dist/*
+  python -m twine upload dist/*
 else
   python -m twine upload --repository testpypi dist/*
 fi

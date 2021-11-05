@@ -27,28 +27,28 @@ import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.io.Serializable;
 import java.lang.ref.SoftReference;
+import java.lang.reflect.InvocationTargetException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Function;
+import java.util.function.IntFunction;
+import java.util.stream.IntStream;
 
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.NotImplementedException;
+import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.io.Writable;
 import org.apache.sysds.api.DMLException;
+import org.apache.sysds.common.Types;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.codegen.CodegenUtils;
@@ -71,7 +71,7 @@ import org.apache.sysds.runtime.util.IndexRange;
 import org.apache.sysds.runtime.util.UtilFunctions;
 
 @SuppressWarnings({"rawtypes","unchecked"}) //allow generic native arrays
-public class FrameBlock implements CacheBlock, Externalizable  {
+public class FrameBlock implements CacheBlock, Externalizable {
 	private static final long serialVersionUID = -3993450030207130665L;
 	private static final Log LOG = LogFactory.getLog(FrameBlock.class.getName());
 	private static final IDSequence CLASS_ID = new IDSequence();
@@ -157,6 +157,32 @@ public class FrameBlock implements CacheBlock, Externalizable  {
 	@Override
 	public int getNumRows() {
 		return _numRows;
+	}
+
+	@Override
+	public double getDouble(int r, int c) {
+		Object o = get(r, c);
+		if(o == null || (getSchema()[c] == ValueType.STRING && o.toString().isEmpty()))
+			return 0;
+		return UtilFunctions.objectToDouble(getSchema()[c], o);
+	}
+
+	@Override
+	public double getDoubleNaN(int r, int c) {
+		Object o = get(r, c);
+		if(o == null || (getSchema()[c] == ValueType.STRING && o.toString().isEmpty()))
+			return Double.NaN;
+		return UtilFunctions.objectToDouble(getSchema()[c], o);
+
+	}
+
+	@Override
+	public String getString(int r, int c) {
+		Object o = get(r, c);
+		String s = (o == null) ? null : o.toString();
+		if(s != null && s.isEmpty())
+			return null;
+		return s;
 	}
 
 	public void setNumRows(int numRows) {
@@ -573,6 +599,31 @@ public class FrameBlock implements CacheBlock, Externalizable  {
 		_coldata = empty ? tmpData : (Array[]) ArrayUtils.addAll(_coldata, tmpData);
 		_numRows = cols[0].length;
 		_msize = -1;
+	}
+
+	public void appendColumn(ValueType vt, Array col) {
+		switch (vt) {
+			case STRING:
+				appendColumn(((StringArray) col).get());
+				break;
+			case BOOLEAN:
+				appendColumn(((BooleanArray) col).get());
+				break;
+			case INT32:
+				appendColumn(((IntegerArray) col).get());
+				break;
+			case INT64:
+				appendColumn(((LongArray) col).get());
+				break;
+			case FP32:
+				appendColumn(((FloatArray) col).get());
+				break;
+			case FP64:
+				appendColumn(((DoubleArray) col).get());
+				break;
+			default:
+				throw new RuntimeException("Unsupported value type: " + vt);
+		}
 	}
 
 	public Object getColumnData(int c) {
@@ -1025,54 +1076,62 @@ public class FrameBlock implements CacheBlock, Externalizable  {
 			throw new DMLRuntimeException("Frame dimension mismatch "+getNumRows()+" * "+getNumColumns()+
 				" != "+that.getNumRows()+" * "+that.getNumColumns());
 		String[][] outputData = new String[getNumRows()][getNumColumns()];
-
 		//compare output value, incl implicit type promotion if necessary
-		if( !(bop.fn instanceof ValueComparisonFunction) )
+		if(bop.fn instanceof ValueComparisonFunction) {
+			ValueComparisonFunction vcomp = (ValueComparisonFunction) bop.fn;
+			out = executeValueComparisons(this, that, vcomp, outputData);
+		}
+		else
 			throw new DMLRuntimeException("Unsupported binary operation on frames (only comparisons supported)");
-		ValueComparisonFunction vcomp = (ValueComparisonFunction) bop.fn;
 
-		for (int i = 0; i < getNumColumns(); i++) {
-			if (getSchema()[i] == ValueType.STRING || that.getSchema()[i] == ValueType.STRING) {
-				for (int j = 0; j < getNumRows(); j++) {
-					if(checkAndSetEmpty(this, that, outputData, j, i))
+		return out;
+	}
+
+	private FrameBlock executeValueComparisons(FrameBlock frameBlock, FrameBlock that, ValueComparisonFunction vcomp,
+		String[][] outputData) {
+		for(int i = 0; i < getNumColumns(); i++) {
+			if(getSchema()[i] == ValueType.STRING || that.getSchema()[i] == ValueType.STRING) {
+				for(int j = 0; j < getNumRows(); j++) {
+					if(checkAndSetEmpty(frameBlock, that, outputData, j, i))
 						continue;
 					String v1 = UtilFunctions.objectToString(get(j, i));
 					String v2 = UtilFunctions.objectToString(that.get(j, i));
 					outputData[j][i] = String.valueOf(vcomp.compare(v1, v2));
 				}
 			}
-			else if (getSchema()[i] == ValueType.FP64 || that.getSchema()[i] == ValueType.FP64 ||
-					getSchema()[i] == ValueType.FP32 || that.getSchema()[i] == ValueType.FP32) {
-				for (int j = 0; j < getNumRows(); j++) {
-					if(checkAndSetEmpty(this, that, outputData, j, i))
+			else if(getSchema()[i] == ValueType.FP64 || that
+				.getSchema()[i] == ValueType.FP64 || getSchema()[i] == ValueType.FP32 || that
+				.getSchema()[i] == ValueType.FP32) {
+				for(int j = 0; j < getNumRows(); j++) {
+					if(checkAndSetEmpty(frameBlock, that, outputData, j, i))
 						continue;
 					ScalarObject so1 = new DoubleObject(Double.parseDouble(get(j, i).toString()));
 					ScalarObject so2 = new DoubleObject(Double.parseDouble(that.get(j, i).toString()));
 					outputData[j][i] = String.valueOf(vcomp.compare(so1.getDoubleValue(), so2.getDoubleValue()));
 				}
 			}
-			else if (getSchema()[i] == ValueType.INT64 || that.getSchema()[i] == ValueType.INT64 ||
-					getSchema()[i] == ValueType.INT32 || that.getSchema()[i] == ValueType.INT32) {
-				for (int j = 0; j < this.getNumRows(); j++) {
-					if(checkAndSetEmpty(this, that, outputData, j, i))
+			else if(getSchema()[i] == ValueType.INT64 || that
+				.getSchema()[i] == ValueType.INT64 || getSchema()[i] == ValueType.INT32 || that
+				.getSchema()[i] == ValueType.INT32) {
+				for(int j = 0; j < this.getNumRows(); j++) {
+					if(checkAndSetEmpty(frameBlock, that, outputData, j, i))
 						continue;
 					ScalarObject so1 = new IntObject(Integer.parseInt(get(j, i).toString()));
 					ScalarObject so2 = new IntObject(Integer.parseInt(that.get(j, i).toString()));
-					outputData[j][i]  = String.valueOf(vcomp.compare(so1.getLongValue(), so2.getLongValue()));
+					outputData[j][i] = String.valueOf(vcomp.compare(so1.getLongValue(), so2.getLongValue()));
 				}
 			}
 			else {
-				for (int j = 0; j < getNumRows(); j++) {
-					if(checkAndSetEmpty(this, that, outputData, j, i))
+				for(int j = 0; j < getNumRows(); j++) {
+					if(checkAndSetEmpty(frameBlock, that, outputData, j, i))
 						continue;
-					ScalarObject so1 = new BooleanObject( Boolean.parseBoolean(get(j, i).toString()));
-					ScalarObject so2 = new BooleanObject( Boolean.parseBoolean(that.get(j, i).toString()));
+					ScalarObject so1 = new BooleanObject(Boolean.parseBoolean(get(j, i).toString()));
+					ScalarObject so2 = new BooleanObject(Boolean.parseBoolean(that.get(j, i).toString()));
 					outputData[j][i] = String.valueOf(vcomp.compare(so1.getBooleanValue(), so2.getBooleanValue()));
 				}
 			}
 		}
-
-		return new FrameBlock(UtilFunctions.nCopies(this.getNumColumns(), ValueType.BOOLEAN), outputData);
+		return new FrameBlock(UtilFunctions.nCopies(frameBlock.getNumColumns(), ValueType.BOOLEAN), outputData);
 	}
 
 	private static boolean checkAndSetEmpty(FrameBlock fb1, FrameBlock fb2, String[][] out, int r, int c) {
@@ -1609,10 +1668,13 @@ public class FrameBlock implements CacheBlock, Externalizable  {
 			_data = data;
 			_size = _data.length;
 		}
+		public String[] get() { return _data; }
+
 		@Override
 		public String get(int index) {
 			return _data[index];
 		}
+
 		@Override
 		public void set(int index, String value) {
 			_data[index] = value;
@@ -1674,10 +1736,13 @@ public class FrameBlock implements CacheBlock, Externalizable  {
 			_data = data;
 			_size = _data.length;
 		}
+		public boolean[] get() { return _data; }
+
 		@Override
 		public Boolean get(int index) {
 			return _data[index];
 		}
+
 		@Override
 		public void set(int index, Boolean value) {
 			_data[index] = (value!=null) ? value : false;
@@ -1741,6 +1806,7 @@ public class FrameBlock implements CacheBlock, Externalizable  {
 			_data = data;
 			_size = _data.length;
 		}
+		public long[] get() { return _data; }
 		@Override
 		public Long get(int index) {
 			return _data[index];
@@ -1808,6 +1874,7 @@ public class FrameBlock implements CacheBlock, Externalizable  {
 			_data = data;
 			_size = _data.length;
 		}
+		public int[] get() { return _data; }
 
 		@Override
 		public Integer get(int index) {
@@ -1875,6 +1942,8 @@ public class FrameBlock implements CacheBlock, Externalizable  {
 			_data = data;
 			_size = _data.length;
 		}
+		public float[] get() { return _data; }
+
 		@Override
 		public Float get(int index) {
 			return _data[index];
@@ -1941,6 +2010,7 @@ public class FrameBlock implements CacheBlock, Externalizable  {
 			_data = data;
 			_size = _data.length;
 		}
+		public double[] get() { return _data; }
 		@Override
 		public Double get(int index) {
 			return _data[index];
@@ -2044,7 +2114,7 @@ public class FrameBlock implements CacheBlock, Externalizable  {
 			else
 				return ValueType.INT64;
 		}
-		else if (val.matches("[-+]?[0-9]+\\.?[0-9]*([e]?[-+]?[0-9]+)")){
+		else if (val.matches("[-+]?[0-9]*\\.?[0-9]+([eE][-+]?[0-9]+)?")){
 			double maxValue = Double.parseDouble(val);
 			if ((maxValue >= (-Float.MAX_VALUE)) && (maxValue <= Float.MAX_VALUE))
 				return ValueType.FP32;
@@ -2258,12 +2328,92 @@ public class FrameBlock implements CacheBlock, Externalizable  {
 				return DMVUtils.syntacticalPatternDiscovery(this, Double.parseDouble(arguments[0]), arguments[1]);
 			} else if (args.contains(";")) {
 				String[] arguments = args.split(";");
-				return EMAUtils.exponentialMovingAverageImputation(this, Integer.parseInt(arguments[0]), arguments[1], Integer.parseInt(arguments[2]), Double.parseDouble(arguments[3]), Double.parseDouble(arguments[4]), Double.parseDouble(arguments[5]));
+				return EMAUtils.exponentialMovingAverageImputation(this, Integer.parseInt(arguments[0]), arguments[1],
+					Integer.parseInt(arguments[2]), Double.parseDouble(arguments[3]), Double.parseDouble(arguments[4]), Double.parseDouble(arguments[5]));
 			}
 		}
 		if(lambdaExpr.contains("jaccardSim"))
 			return mapDist(getCompiledFunction(lambdaExpr, margin));
 		return map(getCompiledFunction(lambdaExpr, margin), margin);
+	}
+
+	public FrameBlock valueSwap(FrameBlock schema) {
+		String[] schemaString = schema.getStringRowIterator().next();
+		String dataValue2 = null;
+		double minSimScore = 0;
+		int bestIdx = 0;
+		//		remove the precision info
+		for(int i = 0; i < schemaString.length; i++)
+			schemaString[i] = schemaString[i].replaceAll("\\d", "");
+
+		double[] minColLength = new double[this.getNumColumns()];
+		double[] maxColLength = new double[this.getNumColumns()];
+
+		for(int k = 0; k < this.getNumColumns(); k++) {
+			String[] data = ((StringArray) this.getColumn(k))._data;
+
+			double minLength = Arrays.stream(data).filter(Objects::nonNull).mapToDouble(String::length).min().orElse(Double.NaN);
+			double maxLength = Arrays.stream(data).filter(Objects::nonNull).mapToDouble(String::length).max().orElse(Double.NaN);
+			maxColLength[k] = maxLength;
+			minColLength[k] = minLength;
+		}
+		ArrayList<Integer> probColList = new ArrayList();
+		for(int i = 0; i < this.getNumColumns(); i++) {
+			for(int j = 0; j < this.getNumRows(); j++) {
+				if(this.get(j, i) == null)
+					continue;
+				String dataValue = this.get(j, i).toString().trim().replace("\"", "").toLowerCase();
+				ValueType dataType = isType(dataValue);
+
+				String type = dataType.toString().replaceAll("\\d", "");
+				//				get the avergae column length
+				if(!dataType.toString().contains(schemaString[i]) && !(dataType == ValueType.BOOLEAN && schemaString[i]
+					.equals("INT")) && !(dataType == ValueType.BOOLEAN && schemaString[i].equals("FP")) && !(dataType
+					.toString().contains("INT") && schemaString[i].equals("FP"))) {
+					LOG.warn("conflict " + dataType + " " + schemaString[i] + " " + dataValue);
+					//					check the other column with satisfy the data type of this value
+					for(int w = 0; w < schemaString.length; w++) {
+						if(schemaString[w].equals(type) && dataValue.length() > minColLength[w] && dataValue
+							.length() < maxColLength[w] && (w != i)) {
+							Object item = this.get(j, w);
+							String dataValueProb = (item != null) ? item.toString().trim().replace("\"", "")
+								.toLowerCase() : "0";
+							ValueType dataTypeProb = isType(dataValueProb);
+							if(!dataTypeProb.toString().equals(schemaString[w])) {
+								bestIdx = w;
+								break;
+							}
+							probColList.add(w);
+						}
+					}
+					// if we have more than one column that is the probable match for this value then find the most
+					// appropriate one by using the similarity score
+					if(probColList.size() > 1) {
+						for(int w : probColList) {
+							int randomIndex = ThreadLocalRandom.current().nextInt(0, _numRows - 1);
+							Object value = this.get(randomIndex, w);
+							if(value != null) {
+								dataValue2 = value.toString();
+							}
+
+							// compute distance between sample and invalid value
+							double simScore = StringUtils.getLevenshteinDistance(dataValue, dataValue2);
+							if(simScore < minSimScore) {
+								minSimScore = simScore;
+								bestIdx = w;
+							}
+						}
+					}
+					else if(probColList.size() > 0) {
+						bestIdx = probColList.get(0);
+					}
+					String tmp = dataValue;
+					this.set(j, i, this.get(j, bestIdx));
+					this.set(j, bestIdx, tmp);
+				}
+			}
+		}
+		return this;
 	}
 
 	public FrameBlock map (FrameMapFunction lambdaExpr, long margin) {
@@ -2345,9 +2495,12 @@ public class FrameBlock implements CacheBlock, Externalizable  {
 		}
 		// compile class, and create FrameMapFunction object
 		try {
-			return (FrameMapFunction) CodegenUtils.compileClass(cname, sb.toString()).newInstance();
+			return (FrameMapFunction) CodegenUtils.compileClass(cname, sb.toString())
+					.getDeclaredConstructor().newInstance();
 		}
-		catch(InstantiationException | IllegalAccessException e) {
+		catch(InstantiationException | IllegalAccessException
+			| IllegalArgumentException | InvocationTargetException
+			| NoSuchMethodException | SecurityException e) {
 			throw new DMLRuntimeException("Failed to compile FrameMapFunction.", e);
 		}
 	}
@@ -2359,16 +2512,101 @@ public class FrameBlock implements CacheBlock, Externalizable  {
 		public String[] apply(String[] input1) {	return null;}
 	}
 
-	public FrameBlock replaceOperations(String pattern, String replacement){
+	public <T> FrameBlock replaceOperations(String pattern, String replacement) {
 		FrameBlock ret = new FrameBlock(this);
+
+		ValueType patternType = UtilFunctions.isBoolean(pattern) ? ValueType.BOOLEAN : (NumberUtils.isCreatable(pattern) ?
+			(UtilFunctions.isIntegerNumber(pattern) ? ValueType.INT64 : ValueType.FP64) : ValueType.STRING);
+		ValueType replacementType = UtilFunctions.isBoolean(replacement) ? ValueType.BOOLEAN : (NumberUtils.isCreatable(replacement) ?
+			(UtilFunctions.isIntegerNumber(replacement) ? ValueType.INT64 : ValueType.FP64) : ValueType.STRING);
+
+		if(patternType != replacementType || !ValueType.isSameTypeString(patternType, replacementType))
+			throw new DMLRuntimeException("Pattern and replacement types should be same.");
+
 		for(int i = 0; i < ret.getNumColumns(); i++){
 			Array colData = ret._coldata[i];
-			for(int j = 0; j < colData._size; j++){
+			for(int j = 0; j < colData._size && (ValueType.isSameTypeString(_schema[i], patternType) || _schema[i] == ValueType.STRING); j++) {
+				T patternNew =  (T) UtilFunctions.stringToObject(_schema[i], pattern);
+				T replacementNew = (T) UtilFunctions.stringToObject(_schema[i], replacement);
+
 				Object ent = colData.get(j);
-				if(ent != null && ent.equals(pattern))
-					colData.set(j,replacement); 
+				if(ent != null && ent.toString().equals(patternNew.toString()))
+					colData.set(j,replacementNew);
+				else  if(ent instanceof String && ent.equals(pattern))
+					colData.set(j, replacement);
 			}
 		}
+		return ret;
+	}
+
+	public  FrameBlock removeEmptyOperations(boolean rows, boolean emptyReturn, MatrixBlock select) {
+		if( rows )
+			return removeEmptyRows(select, emptyReturn);
+		else //cols
+			return removeEmptyColumns(select, emptyReturn);
+	}
+
+	private FrameBlock removeEmptyRows(MatrixBlock select, boolean emptyReturn) {
+		FrameBlock ret = new FrameBlock(_schema, _colnames);
+
+		for(int i = 0; i < _numRows; i++) {
+			boolean isEmpty = true;
+			Object[] row = new Object[getNumColumns()];
+
+			for(int j = 0; j < getNumColumns(); j++) {
+				Array colData = _coldata[j].clone();
+				row[j] = colData.get(i);
+				ValueType type = _schema[j];
+				isEmpty = isEmpty && (ArrayUtils.contains(new double[]{0.0, Double.NaN}, UtilFunctions.objectToDoubleSafe(type, colData.get(i))));
+			}
+
+			if((!isEmpty && select == null) || (select != null && select.getValue(i, 0) == 1)) {
+				ret.appendRow(row);
+			}
+		}
+
+		if(ret.getNumRows() == 0 && emptyReturn) {
+			String[][] arr = new String[1][getNumColumns()];
+			Arrays.fill(arr, new String[]{null});
+			ValueType[] schema = new ValueType[getNumColumns()];
+			Arrays.fill(schema, ValueType.STRING);
+			return new FrameBlock(schema, arr);
+		}
+
+		return ret;
+	}
+
+	private FrameBlock removeEmptyColumns(MatrixBlock select, boolean emptyReturn) {
+		FrameBlock ret = new FrameBlock();
+		List<ColumnMetadata> columnMetadata = new ArrayList<>();
+
+		for(int i = 0; i < getNumColumns(); i++) {
+			Array colData = _coldata[i];
+
+			boolean isEmpty = false;
+			if(select == null) {
+				ValueType type = _schema[i];
+				isEmpty = IntStream.range(0, colData._size).mapToObj((IntFunction<Object>) colData::get)
+					.allMatch(e -> ArrayUtils.contains(new double[]{0.0, Double.NaN}, UtilFunctions.objectToDoubleSafe(type, e)));
+			}
+
+			if((select != null && select.getValue(0, i) == 1) || (!isEmpty && select == null)) {
+				Types.ValueType vt = _schema[i];
+				ret.appendColumn(vt, _coldata[i].clone());
+				columnMetadata.add(new ColumnMetadata(_colmeta[i]));
+			}
+		}
+
+		if(ret.getNumColumns() == 0 && emptyReturn) {
+			String[][] arr = new String[_numRows][];
+			Arrays.fill(arr, new String[]{null});
+			return new FrameBlock(new ValueType[]{ValueType.STRING}, arr);
+		}
+
+		ret._colmeta = new ColumnMetadata[columnMetadata.size()];
+		columnMetadata.toArray(ret._colmeta);
+		ret.setColumnMetadata(ret._colmeta);
+
 		return ret;
 	}
 

@@ -208,21 +208,31 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction 
 			String margin = params.get("margin");
 			if(!(margin.equals("rows") || margin.equals("cols")))
 				throw new DMLRuntimeException("Unspupported margin identifier '" + margin + "'.");
+			if(ec.isFrameObject(params.get("target"))) {
+				FrameBlock target = ec.getFrameInput(params.get("target"));
+				MatrixBlock select = params.containsKey("select") ? ec.getMatrixInput(params.get("select")) : null;
 
-			// acquire locks
-			MatrixBlock target = ec.getMatrixInput(params.get("target"));
-			MatrixBlock select = params.containsKey("select") ? ec.getMatrixInput(params.get("select")) : null;
+				boolean emptyReturn = Boolean.parseBoolean(params.get("empty.return").toLowerCase());
+				FrameBlock soresBlock = target.removeEmptyOperations(margin.equals("rows"), emptyReturn, select);
+				ec.setFrameOutput(output.getName(), soresBlock);
+				ec.releaseFrameInput(params.get("target"));
+				if(params.containsKey("select"))
+					ec.releaseMatrixInput(params.get("select"));
+			} else {
+				// acquire locks
+				MatrixBlock target = ec.getMatrixInput(params.get("target"));
+				MatrixBlock select = params.containsKey("select") ? ec.getMatrixInput(params.get("select")) : null;
 
-			// compute the result
-			boolean emptyReturn = Boolean.parseBoolean(params.get("empty.return").toLowerCase());
-			MatrixBlock soresBlock = target
-				.removeEmptyOperations(new MatrixBlock(), margin.equals("rows"), emptyReturn, select);
+				// compute the result
+				boolean emptyReturn = Boolean.parseBoolean(params.get("empty.return").toLowerCase());
+				MatrixBlock soresBlock = target.removeEmptyOperations(new MatrixBlock(), margin.equals("rows"), emptyReturn, select);
 
-			// release locks
-			ec.setMatrixOutput(output.getName(), soresBlock);
-			ec.releaseMatrixInput(params.get("target"));
-			if(params.containsKey("select"))
-				ec.releaseMatrixInput(params.get("select"));
+				// release locks
+				ec.setMatrixOutput(output.getName(), soresBlock);
+				ec.releaseMatrixInput(params.get("target"));
+				if(params.containsKey("select"))
+					ec.releaseMatrixInput(params.get("select"));
+			}
 		}
 		else if(opcode.equalsIgnoreCase("replace")) {
 			if(ec.isFrameObject(params.get("target"))){
@@ -232,7 +242,7 @@ public class ParameterizedBuiltinCPInstruction extends ComputationCPInstruction 
 				FrameBlock ret = target.replaceOperations(pattern, replacement);
 				ec.setFrameOutput(output.getName(), ret);
 				ec.releaseFrameInput(params.get("target"));
-			}else{
+			} else{
 				MatrixBlock target = ec.getMatrixInput(params.get("target"));
 				double pattern = Double.parseDouble(params.get("pattern"));
 				double replacement = Double.parseDouble(params.get("replacement"));

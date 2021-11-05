@@ -117,3 +117,6 @@ scripts/perftest/logs
 scripts/perftest/in
 scripts/perftest/scratch_space
 scripts/perftest/temp
+scripts/perftest/fed/results
+scripts/perftest/fed/scratch_space
+scripts/perftest/fed/temp

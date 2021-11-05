@@ -25,18 +25,18 @@ Design
 This document describes the initial design of `onnx-systemds`
 
 For dealing with different operator-set versions of onnx the current strategy is to use the
-`converter provided by onnx <https://github.com/onnx/onnx/blob/master/docs/PythonAPIOverview.md#converting-version-of-an-onnx-model-within-default-domain-aionnx>`_ to convert to a common version.
+`converter provided by onnx <https://github.com/onnx/onnx/blob/main/docs/PythonAPIOverview.md#converting-version-of-an-onnx-model-within-default-domain-aionnx>`_ to convert to a common version.
 
 However, the converter does not support adapters for all op-sets/operators so this conversion will fail for many models.
 On the onnx repository you can find a list of
-`currently supported adapters <https://github.com/onnx/onnx/blob/master/onnx/version_converter.py#L21>`_
+`currently supported adapters <https://github.com/onnx/onnx/blob/main/onnx/version_converter.py#L21>`_
 
 
 Goals
 -----
 
- - Support for importing `operators of the ONNX base definition <https://github.com/onnx/onnx/blob/master/docs/Operators.md>`_
- - Support for importing `operators defined by ONNX-ML <https://github.com/onnx/onnx/blob/master/docs/Operators-ml.md>`_
+ - Support for importing `operators of the ONNX base definition <https://github.com/onnx/onnx/blob/main/docs/Operators.md>`_
+ - Support for importing `operators defined by ONNX-ML <https://github.com/onnx/onnx/blob/main/docs/Operators-ml.md>`_
  - Support for exporting DML script to ONNX graphs
 
 
@@ -50,11 +50,11 @@ Onnx - Operators
 
 Onnx includes several very simple and also more complex operators.
 When implementing an operator it's best to have a look at the
-`operator schemas <https://github.com/onnx/onnx/blob/master/docs/Operators.md>`_,
+`operator schemas <https://github.com/onnx/onnx/blob/main/docs/Operators.md>`_,
 which precisely define the inputs, outputs and attributes of the operation.
 
 Besides the standard onnx definition, there also exists onnx-ML the operator schemas for which are defined in a
-`separate document <https://github.com/onnx/onnx/blob/master/docs/Operators-ml.md>`_.
+`separate document <https://github.com/onnx/onnx/blob/main/docs/Operators-ml.md>`_.
 It is an extension of the standard onnx format, however currently only onnx standard operators are supported.
 
 Onnx - Files
@@ -62,7 +62,7 @@ Onnx - Files
 
 Onnx uses the `ProtoBuf format <https://developers.google.com/protocol-buffers/>`_.
 It specifies this representation in several ``.proto``/``.proto3``
-`files <https://github.com/onnx/onnx/tree/master/onnx>`_ again with dedicated files for onnx-ML.
+`files <https://github.com/onnx/onnx/tree/main/onnx>`_ again with dedicated files for onnx-ML.
 These files are helpful to understand the underlying structure and values that are possible.
 
 Protobuf creates the underlying structure such that you can access elements of the onnx graph as if they were
@@ -167,7 +167,7 @@ Implementing new operators
 ----------------------------
 
 When implementing an operator it's best to have a look at the
-`operator schemas <https://github.com/onnx/onnx/blob/master/docs/Operators.md>`_
+`operator schemas <https://github.com/onnx/onnx/blob/main/docs/Operators.md>`_
 which exactly define the inputs, outputs and attributes of the operation
 
 It is also nice to have a test-model to work with, to generate one refer to
@@ -184,7 +184,7 @@ Testing models
 ---------------
 
 onnx provides a convenient way for
-`creating models <https://github.com/onnx/onnx/blob/master/docs/PythonAPIOverview.md#checking-an-onnx-model>`_
+`creating models <https://github.com/onnx/onnx/blob/main/docs/PythonAPIOverview.md#checking-an-onnx-model>`_
 using helper functions in python. All current test-models are produced like this (see ``tests/onnx/test_models``).
 
 Creating a Testcase

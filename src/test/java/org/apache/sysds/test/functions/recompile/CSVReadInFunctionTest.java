@@ -105,7 +105,7 @@ public class CSVReadInFunctionTest extends AutomatedTestBase {
 			
 			//compare matrices 
 			HashMap<CellIndex, Double> dmlfile = readDMLMatrixFromOutputDir("R");
-			Assert.assertEquals(dmlfile.get(new CellIndex(1,1)), new Double(mbA.sum()+mbB.sum()));
+			Assert.assertEquals(dmlfile.get(new CellIndex(1,1)), Double.valueOf(mbA.sum()+mbB.sum()));
 			
 			//check no executed spark instructions
 			Assert.assertEquals(Statistics.getNoOfExecutedSPInst(), 0);

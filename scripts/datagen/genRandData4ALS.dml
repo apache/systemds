@@ -20,8 +20,8 @@
 #-------------------------------------------------------------
 
 Xfile = $X; # input matrix X of size m x n
-Ufile = $U; # original row factor of size m x r
-Vfile = $V; # original col factor of size r x n
+Ufile = ifdef($U, " "); # original row factor of size m x r
+Vfile = ifdef($V, " "); # original col factor of size r x n
 m = $rows; # no. of rows of X
 n = $cols; # no. of cols of X
 r = $rank; # rank of factorization

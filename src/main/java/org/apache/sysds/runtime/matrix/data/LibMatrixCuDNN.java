@@ -666,7 +666,6 @@ public class LibMatrixCuDNN extends LibMatrixCUDA {
 	 * @param poolingType	type of pooling
 	 * @param intermediateMemoryBudget intermediate memory budget
 	 */
-	@SuppressWarnings("resource")
 	public static void poolingBackward(GPUContext gCtx, String instName, MatrixObject image, MatrixObject dout,
 			MatrixObject maxpoolOutput, MatrixObject outputBlock, int N, int C, int H, int W, int K, int R,
 			int S, int pad_h, int pad_w, int stride_h, int stride_w, int P,

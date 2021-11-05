@@ -65,7 +65,7 @@ import org.apache.sysds.runtime.util.UtilFunctions;
 
 public abstract class Hop implements ParseInfo {
 	private static final Log LOG =  LogFactory.getLog(Hop.class.getName());
-	
+
 	public static final long CPThreshold = 2000;
 
 	// static variable to assign an unique ID to every hop that is created
@@ -865,21 +865,33 @@ public abstract class Hop implements ParseInfo {
 	}
 
 	/**
-	 * Update the execution type if input is federated and federated compilation is activated.
-	 * Federated compilation is activated in OptimizerUtils.
+	 * Update the execution type if input is federated.
 	 * This method only has an effect if FEDERATED_COMPILATION is activated.
+	 * Federated compilation is activated in OptimizerUtils.
 	 */
 	protected void updateETFed(){
-		if ( _federatedOutput.isForced() )
+		if ( someInputFederated() || isFederatedDataOp() )
 			_etype = ExecType.FED;
 	}
-	
+
+	/**
+	 * Checks if ExecType is federated.
+	 * @return true if ExecType is federated
+	 */
 	public boolean isFederated(){
 		return getExecType() == ExecType.FED;
 	}
 
 	public boolean someInputFederated(){
 		return getInput().stream().anyMatch(Hop::hasFederatedOutput);
+	}
+
+	/**
+	 * Checks if the hop is a DataOp with federated data.
+	 * @return true if hop is a federated DataOp
+	 */
+	public boolean isFederatedDataOp(){
+		return false;
 	}
 
 	public ArrayList<Hop> getParent() {

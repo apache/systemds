@@ -22,12 +22,7 @@
 X = read($1);
 y = read($2);
 
-Percent_test = .2
-N_x = as.integer(nrow(X) * Percent_test);
-N_y = as.integer(nrow(y) * Percent_test);
+[X,Xtest,y,ytest] = split(X=X, Y=y, f=0.8);
 
-X = X[1:N_x,];
-y = y[1:N_y,];
-
-write(X, $3, format=$5);
-write(y, $4, format=$5);
+write(Xtest, $3, format=$5);
+write(ytest, $4, format=$5);

@@ -23,42 +23,45 @@ name: Documentation
 
 on:
   push:
+    paths-ignore:
+      - '*.html'
+      - 'dev/**'
     branches:
-      - master
+      - main
   pull_request:
     paths-ignore:
-      - 'docs/**'
-      - '*.md'
+      - '*.html'
+      - 'dev/**'
     branches:
-      - master
+      - main
 
 jobs:
-  documentation1:
-    runs-on: ubuntu-latest
-    name: Documentation Java
+  doc1:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest]
+        java: ['11']
+        javadist: ['adopt-openj9']
+    name: Java
     steps:
     - name: Checkout Repository
       uses: actions/checkout@v2
 
-    - name: Setup Java 1.8
-      uses: actions/setup-java@v1
+    - name: Setup Java ${{ matrix.java }} ${{ matrix.javadist }}
+      uses: actions/setup-java@v2
       with:
-        java-version: 1.8
-
-    - name: Cache Maven Dependencies
-      uses: actions/cache@v1
-      with:
-        path: ~/.m2/repository
-        key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
-        restore-keys: |
-          ${{ runner.os }}-maven-
+        distribution: ${{ matrix.javadist }}
+        java-version: ${{ matrix.java }}
+        cache: 'maven'
   
     - name: Make Documentation SystemDS Java
       run: mvn -ntp -P distribution package
 
-  documentation2:
+  doc2:
     runs-on: ubuntu-latest
-    name: Documentation Python
+    name: Python
     steps:
     - name: Checkout Repository
       uses: actions/checkout@v2
@@ -70,7 +73,7 @@ jobs:
         architecture: 'x64'
 
     - name: Cache Pip Dependencies
-      uses: actions/cache@v1
+      uses: actions/cache@v2
       with:
         path: ~/.cache/pip
         key: ${{ runner.os }}-pip-docs-${{ hashFiles('src/main/python/docs/requires-docs.txt') }}

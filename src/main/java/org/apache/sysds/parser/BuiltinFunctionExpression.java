@@ -1544,6 +1544,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			break;
 
 		case DROP_INVALID_TYPE:
+		case VALUE_SWAP:
 			checkNumParameters(2);
 			checkMatrixFrameParam(getFirstExpr());
 			checkMatrixFrameParam(getSecondExpr());
@@ -1585,7 +1586,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 				checkNumParameters(1);
 				checkMatrixParam(getFirstExpr());
 				output.setDataType(DataType.MATRIX);
-				output.setDimensions(id.getDim2(), id.getDim1());
+				output.setDimensions(id.getDim1(), id.getDim2());
 				output.setBlocksize (id.getBlocksize());
 				output.setValueType(id.getValueType());
 			}

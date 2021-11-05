@@ -32,12 +32,12 @@ Start Federated worker
 To start a federated worker, you first have to setup your environment variables.
 A simple guide to do this is in the SystemDS Repository_.
 
-.. _Repository: https://github.com/apache/systemds/tree/master/bin/
+.. _Repository: https://github.com/apache/systemds/tree/main/bin/
 
 If that is setup correctly simply start a worker using the following command.
 Here the ``8001`` refer to the port used by the worker.
 
-.. code-block:: python
+.. code-block::
 
   systemds WORKER 8001
 
@@ -47,45 +47,22 @@ Simple Aggregation Example
 In this example we use a single federated worker, and aggregate the sum of its data.
 
 First we need to create some data for our federated worker to use.
-In this example we simply use Numpy to create a ``test.csv`` file
-
-.. code-block:: python
-
-  # Import numpy
-  import numpy as np
-  a = np.asarray([[1,2,3], [4,5,6], [7,8,9]])
-  np.savetxt("temp/test.csv", a, delimiter=",")
+In this example we simply use Numpy to create a ``test.csv`` file.
 
 Currently we also require a metadata file for the federated worker.
 This should be located next to the ``test.csv`` file called ``test.csv.mtd``.
-To make this simply execute the following::
+To make both the data and metadata simply execute the following
 
-  echo '{ "format":"csv", "header":false, "rows":3, "cols":3 }' > temp/test.csv.mtd
+.. include:: ../code/federatedTutorial_part1.py
+  :start-line: 20
+  :code: python
 
-After creating our data we the federated worker becomes able to execute federated instructions.
+After creating our data the federated worker becomes able to execute federated instructions.
 The aggregated sum using federated instructions in python SystemDS is done as follows
 
-.. code-block:: python
-
-  # Import numpy and SystemDS
-  import numpy as np
-  from systemds.context import SystemDSContext
-
-  # Create a federated matrix
-  ## Indicate the dimensions of the data:
-  ### Here the first list in the tuple is the top left Coordinate, 
-  ### and the second the bottom left coordinate.
-  ### It is ordered as [col,row].
-  dims = ([0,0], [3,3])
-
-  ## Specify the address + file path from worker:
-  address = "localhost:8001/temp/test.csv"
-
-  with SystemDSContext() as sds:
-    fed_a = sds.federated([address], [dims])
-    # Sum the federated matrix and call compute to execute
-    print(fed_a.sum().compute())
-    # Result should be 45.
+.. include:: ../code/federatedTutorial_part2.py
+  :start-line: 20
+  :code: python
 
 Multiple Federated Environments 
 -------------------------------
@@ -96,7 +73,7 @@ Using the data created from the last example we can simulate
 multiple federated workers by starting multiple ones on different ports.
 Start with 3 different terminals, and run one federated environment in each.
 
-.. code-block:: python
+.. code-block::
 
   systemds WORKER 8001
   systemds WORKER 8002
@@ -104,35 +81,13 @@ Start with 3 different terminals, and run one federated environment in each.
 
 Once all three workers are up and running we can leverage all three in the following example
 
-.. code-block:: python
-
-  import numpy as np
-  from systemds.context import SystemDSContext
-
-  addr1 = "localhost:8001/temp/test.csv"
-  addr2 = "localhost:8002/temp/test.csv"
-  addr3 = "localhost:8003/temp/test.csv"
-
-  # Create a federated matrix using two federated environments
-  # Note that the two federated matrices are stacked on top of each other
-
-  with SystemDSContext() as sds:
-    fed_a = sds.federated(
-      [addr1, addr2],
-      [([0,0], [3,3]), ([0,3], [3,6])])
-    
-    fed_b = sds.federated(
-      [addr1, addr3],
-      [([0,0], [3,3]), ([0,3], [3,6])])
-    
-    # Multiply, compute and print.
-    res = (fed_a * fed_b).compute()
-
-  print(res)
+.. include:: ../code/federatedTutorial_part3.py
+  :start-line: 20
+  :code: python
 
 The print should look like
 
-.. code-block:: python
+.. code-block::
 
   [[ 1.  4.  9.  1.  4.  9.]
    [16. 25. 36. 16. 25. 36.]

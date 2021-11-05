@@ -24,6 +24,7 @@ import java.util.Collection;
 
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types;
+import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.util.HDFSTool;
 import org.apache.sysds.test.AutomatedTestBase;
@@ -69,7 +70,21 @@ public class FederatedRdiagTest extends AutomatedTestBase {
 	@Test
 	public void federatedRdiagSP() { federatedRdiag(Types.ExecMode.SPARK); }
 
+	@Test
+	public void federatedCompilationRDiagCP(){
+		federatedRdiag(Types.ExecMode.SINGLE_NODE, true);
+	}
+
+	@Test
+	public void federatedCompilationRdiagSP(){
+		federatedRdiag(Types.ExecMode.SPARK, true);
+	}
+
 	public void federatedRdiag(Types.ExecMode execMode) {
+		federatedRdiag(execMode, false);
+	}
+
+	public void federatedRdiag(Types.ExecMode execMode, boolean activateFedCompilation) {
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
 		Types.ExecMode platformOld = rtplatform;
 
@@ -111,6 +126,7 @@ public class FederatedRdiagTest extends AutomatedTestBase {
 			input("X1"), input("X2"), input("X3"), input("X4"), expected("S")};
 		runTest(null);
 
+		OptimizerUtils.FEDERATED_COMPILATION = activateFedCompilation;
 		TestConfiguration config = availableTestConfigurations.get(TEST_NAME);
 		loadTestConfiguration(config);
 
@@ -139,5 +155,6 @@ public class FederatedRdiagTest extends AutomatedTestBase {
 		TestUtils.shutdownThreads(t1, t2, t3, t4);
 		rtplatform = platformOld;
 		DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
+		OptimizerUtils.FEDERATED_COMPILATION = false;
 	}
 }

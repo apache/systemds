@@ -19,7 +19,7 @@
 
 package org.apache.sysds.test.component.compress;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.util.Collection;
 
@@ -30,7 +30,6 @@ import org.apache.sysds.runtime.compress.colgroup.AColGroup.CompressionType;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator;
-import org.apache.sysds.runtime.util.DataConverter;
 import org.apache.sysds.test.TestUtils;
 import org.apache.sysds.test.component.compress.TestConstants.MatrixTypology;
 import org.apache.sysds.test.component.compress.TestConstants.OverLapping;
@@ -245,52 +244,53 @@ public abstract class AbstractCompressedUnaryTests extends CompressedTestBase {
 		try {
 			if(!(cmb instanceof CompressedMatrixBlock))
 				return; // Input was not compressed then just pass test
+
 			// matrix-vector uncompressed
 			MatrixBlock ret1 = mb.aggregateUnaryOperations(auop, new MatrixBlock(), Math.max(rows, cols), null, inCP);
 			// matrix-vector compressed
 			MatrixBlock ret2 = cmb.aggregateUnaryOperations(auop, new MatrixBlock(), Math.max(rows, cols), null, inCP);
-			// compare result with input
 
-			assertTrue("dim 1 is not equal in compressed res  should be : " + ret1.getNumRows() + "  but is: "
-				+ ret2.getNumRows(), ret1.getNumRows() == ret2.getNumRows());
+			final int ruc = ret1.getNumRows();
+			final int cuc = ret1.getNumColumns();
+			final int rc = ret2.getNumRows();
+			final int cc = ret2.getNumColumns();
 
-			assertTrue("dim 2 is not equal in compressed res  should be : " + ret1.getNumColumns() + "  but is: "
-				+ ret2.getNumColumns(), ret1.getNumColumns() == ret2.getNumColumns());
-			if(!inCP){
+			if(ruc != rc)
+				fail("dim 1 is not equal in compressed res  should be : " + ruc + "  but is: " + rc);
+			if(cuc != cc)
+				fail("dim 2 is not equal in compressed res  should be : " + rc + "  but is: " + cc);
+
+			if(!inCP) {
 				ret1.dropLastRowsOrColumns(auop.aggOp.correction);
 				ret2.dropLastRowsOrColumns(auop.aggOp.correction);
 			}
 
-			double[][] d1 = DataConverter.convertToDoubleMatrix(ret1);
-			double[][] d2 = DataConverter.convertToDoubleMatrix(ret2);
-
 			String css = this.toString();
 			if(_cs != null && _cs.lossy) {
 				if(aggType == AggType.COLSUMS)
-					TestUtils.compareMatrices(d1, d2, lossyTolerance * 10 * rows, css);
+					TestUtils.compareMatrices(ret1, ret2, lossyTolerance * 10 * rows, css);
 				else if(aggType == AggType.ROWSUMS)
-					TestUtils.compareMatrices(d1, d2, lossyTolerance * 16 * cols, css);
+					TestUtils.compareMatrices(ret1, ret2, lossyTolerance * 16 * cols, css);
 				else if(aggType == AggType.ROWSUMSSQ)
-					TestUtils.compareMatricesPercentageDistance(d1, d2, 0.5, 0.9, css, true);
+					TestUtils.compareMatricesPercentageDistance(ret1, ret2, 0.5, 0.9, css, true);
 				else if(aggType == AggType.SUM)
-					TestUtils.compareMatrices(d1, d2, lossyTolerance * 10 * cols * rows, css);
+					TestUtils.compareMatrices(ret1, ret2, lossyTolerance * 10 * cols * rows, css);
 				else if(aggType == AggType.MEAN)
-					TestUtils.compareMatrices(d1, d2, lossyTolerance * cols * rows, css);
+					TestUtils.compareMatrices(ret1, ret2, lossyTolerance * cols * rows, css);
 				else if(aggType == AggType.ROWMEAN)
-					TestUtils.compareMatrices(d1, d2, lossyTolerance, css);
+					TestUtils.compareMatrices(ret1, ret2, lossyTolerance, css);
 				else
-					TestUtils.compareMatricesPercentageDistance(d1, d2, 0.8, 0.9, css, true);
-
+					TestUtils.compareMatricesPercentageDistance(ret1, ret2, 0.8, 0.9, css, true);
 			}
-			else{
-				if(overlappingType == OverLapping.SQUASH) 
-					TestUtils.compareMatricesPercentageDistance(d1, d2, 0.0, 0.90, css);
+			else {
+				if(overlappingType == OverLapping.SQUASH)
+					TestUtils.compareMatricesPercentageDistance(ret1, ret2, 0.0, 0.90, css);
 				else if(aggType == AggType.ROWMEAN)
-					TestUtils.compareMatrices(d1, d2, 0.0001, css);
+					TestUtils.compareMatrices(ret1, ret2, 0.0001, css);
 				else if(OverLapping.effectOnOutput(overlappingType))
-					TestUtils.compareMatricesPercentageDistance(d1, d2, 0.95, 0.98, css);
+					TestUtils.compareMatricesPercentageDistance(ret1, ret2, 0.95, 0.98, css);
 				else
-					TestUtils.compareMatricesBitAvgDistance(d1, d2, 2048, 128, css);
+					TestUtils.compareMatricesBitAvgDistance(ret1, ret2, 2048, 128, css);
 			}
 
 		}

@@ -110,4 +110,18 @@ public abstract class UnaryFEDInstruction extends ComputationFEDInstruction {
 		out.split(parts[parts.length - 2]);
 		return opcode;
 	}
+
+	/**
+	 * Parse and return federated output flag from given instr string at given position.
+	 * If the position given is greater than the length of the instruction, FederatedOutput.NONE is returned.
+	 * @param instr instruction string to be parsed
+	 * @param position of federated output flag
+	 * @return parsed federated output flag or FederatedOutput.NONE
+	 */
+	static FederatedOutput parseFedOutFlag(String instr, int position){
+		String[] parts = InstructionUtils.getInstructionPartsWithValueType(instr);
+		if ( parts.length > position )
+			return FederatedOutput.valueOf(parts[position]);
+		else return FederatedOutput.NONE;
+	}
 }

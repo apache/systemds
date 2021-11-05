@@ -89,7 +89,7 @@ public class BuiltinComponentsTest extends AutomatedTestBase {
 			for( int i=0; i<numVertices; i++ ) {
 				int expected = i<(numVertices/2) ? (numVertices/2) :
 					i==(numVertices/2) ? i+1 : numVertices;
-				Assert.assertEquals(new Double(expected), dmlfile.get(new MatrixValue.CellIndex(i+1,1)));
+				Assert.assertEquals(Double.valueOf(expected), dmlfile.get(new MatrixValue.CellIndex(i+1,1)));
 			}
 		}
 		finally {

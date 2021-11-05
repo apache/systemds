@@ -37,18 +37,14 @@ public final class ColGroupSizes {
 		return size;
 	}
 
-	public static long estimateInMoemorySizeCompressedColumn(int nrColumns) {
-		return estimateInMemorySizeGroup(nrColumns) + 4; // 4 for num Rows;
-	}
-
-	public static long estimateInMemorySizeGroupValue(int nrColumns, int nrValues, double tupleSparsity,
-		boolean lossy) {
-		long size = estimateInMoemorySizeCompressedColumn(nrColumns);
+	public static long estimateInMemorySizeGroupValue(int nrColumns, int nrValues, double tupleSparsity, boolean lossy) {
+		long size = estimateInMemorySizeGroup(nrColumns);
 		size += 8; // Dictionary Reference.
 		size += 8; // Counts reference
 		size += 1; // _zeros boolean reference
 		size += 1; // _lossy boolean reference
 		size += 2; // padding
+		size += 4; // num Rows
 		size += DictionaryFactory.getInMemorySize(nrValues, nrColumns, tupleSparsity, lossy);
 		return size;
 	}
@@ -76,8 +72,8 @@ public final class ColGroupSizes {
 		return size;
 	}
 
-	public static long estimateInMemorySizeRLE(int nrColumns, int nrValues, int nrRuns, int nrRows,
-		double tupleSparsity, boolean lossy) {
+	public static long estimateInMemorySizeRLE(int nrColumns, int nrValues, int nrRuns, int nrRows, double tupleSparsity,
+		boolean lossy) {
 		int offsetLength = (nrRuns) * 2;
 		long size = estimateInMemorySizeOffset(nrColumns, nrValues, (nrValues) + 1, offsetLength, tupleSparsity, lossy);
 
@@ -86,6 +82,11 @@ public final class ColGroupSizes {
 
 	public static long estimateInMemorySizeSDC(int nrColumns, int nrValues, int nrRows, int largestOff,
 		boolean largestOffIsZero, boolean containNoZeroValues, double tupleSparsity, boolean lossy) {
+		// if(LOG.isTraceEnabled()) {
+			// String v = String.format("estimate SDC size: %d %d %d %d %b %b %f %b", nrColumns, nrValues, nrRows, largestOff,
+			// 	largestOffIsZero, containNoZeroValues, tupleSparsity, lossy);
+			// LOG.error(v);
+		// }
 		long size = estimateInMemorySizeGroupValue(nrColumns,
 			nrValues + (largestOffIsZero || containNoZeroValues ? 0 : 1), tupleSparsity, lossy);
 		size += OffsetFactory.estimateInMemorySize(nrRows - largestOff, nrRows);
@@ -103,12 +104,13 @@ public final class ColGroupSizes {
 	}
 
 	public static long estimateInMemorySizeCONST(int nrColumns, int nrValues, double tupleSparsity, boolean lossy) {
-		long size = estimateInMemorySizeGroupValue(nrColumns, nrValues, tupleSparsity, lossy);
+		long size = estimateInMemorySizeGroup(nrColumns);
+		size += DictionaryFactory.getInMemorySize(nrValues, nrColumns, tupleSparsity, lossy);
 		return size;
 	}
 
 	public static long estimateInMemorySizeEMPTY(int nrColumns) {
-		return estimateInMoemorySizeCompressedColumn(nrColumns);
+		return estimateInMemorySizeGroup(nrColumns);
 	}
 
 	public static long estimateInMemorySizeUncompressed(int nrRows, int nrColumns, double sparsity) {

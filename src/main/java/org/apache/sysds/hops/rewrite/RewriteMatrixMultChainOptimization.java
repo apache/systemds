@@ -288,7 +288,8 @@ public class RewriteMatrixMultChainOptimization extends HopRewriteRule
 			mmChain.get(i).getParent().add(h);
 		}
 		else {
-			int ix = opIndex.getAndIncrement();
+			int ix = opIndex.getValue();
+			opIndex.increment();
 			h.getInput().add(mmOperators.get(ix));
 			mmOperators.get(ix).getParent().add(h);
 		}
@@ -299,7 +300,8 @@ public class RewriteMatrixMultChainOptimization extends HopRewriteRule
 			mmChain.get(j).getParent().add(h);
 		} 
 		else {
-			int ix = opIndex.getAndIncrement();
+			int ix = opIndex.getValue();
+			opIndex.increment();
 			h.getInput().add(mmOperators.get(ix));
 			mmOperators.get(ix).getParent().add(h);
 		}

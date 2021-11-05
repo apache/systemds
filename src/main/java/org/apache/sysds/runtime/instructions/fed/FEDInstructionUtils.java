@@ -69,6 +69,7 @@ import org.apache.sysds.runtime.instructions.spark.BinaryTensorTensorBroadcastSP
 import org.apache.sysds.runtime.instructions.spark.BinaryTensorTensorSPInstruction;
 import org.apache.sysds.runtime.instructions.spark.CastSPInstruction;
 import org.apache.sysds.runtime.instructions.spark.CentralMomentSPInstruction;
+import org.apache.sysds.runtime.instructions.spark.CpmmSPInstruction;
 import org.apache.sysds.runtime.instructions.spark.CtableSPInstruction;
 import org.apache.sysds.runtime.instructions.spark.CumulativeOffsetSPInstruction;
 import org.apache.sysds.runtime.instructions.spark.IndexingSPInstruction;
@@ -80,6 +81,7 @@ import org.apache.sysds.runtime.instructions.spark.QuantileSortSPInstruction;
 import org.apache.sysds.runtime.instructions.spark.QuaternarySPInstruction;
 import org.apache.sysds.runtime.instructions.spark.ReblockSPInstruction;
 import org.apache.sysds.runtime.instructions.spark.ReorgSPInstruction;
+import org.apache.sysds.runtime.instructions.spark.RmmSPInstruction;
 import org.apache.sysds.runtime.instructions.spark.SpoofSPInstruction;
 import org.apache.sysds.runtime.instructions.spark.TernarySPInstruction;
 import org.apache.sysds.runtime.instructions.spark.UnaryMatrixSPInstruction;
@@ -280,14 +282,7 @@ public class FEDInstructionUtils {
 
 	public static Instruction checkAndReplaceSP(Instruction inst, ExecutionContext ec) {
 		FEDInstruction fedinst = null;
-		if (inst instanceof MapmmSPInstruction) {
-			MapmmSPInstruction instruction = (MapmmSPInstruction) inst;
-			Data data = ec.getVariable(instruction.input1);
-			if (data instanceof MatrixObject && ((MatrixObject) data).isFederatedExcept(FType.BROADCAST)) {
-				fedinst = MapmmFEDInstruction.parseInstruction(instruction.getInstructionString());
-			}
-		}
-		else if(inst instanceof CastSPInstruction){
+		if(inst instanceof CastSPInstruction){
 			CastSPInstruction ins = (CastSPInstruction) inst;
 			if((ins.getOpcode().equalsIgnoreCase(UnaryCP.CAST_AS_FRAME_OPCODE) || ins.getOpcode().equalsIgnoreCase(UnaryCP.CAST_AS_MATRIX_OPCODE))
 				&& ins.input1.isMatrix() && ec.getCacheableData(ins.input1).isFederatedExcept(FType.BROADCAST)){
@@ -378,8 +373,14 @@ public class FEDInstructionUtils {
 		}
 		else if (inst instanceof BinarySPInstruction) {
 			BinarySPInstruction instruction = (BinarySPInstruction) inst;
-
-			if(inst instanceof QuantilePickSPInstruction) {
+			if (inst instanceof MapmmSPInstruction || inst instanceof CpmmSPInstruction || inst instanceof RmmSPInstruction) {
+				Data data = ec.getVariable(instruction.input1);
+				if (data instanceof MatrixObject && ((MatrixObject) data).isFederatedExcept(FType.BROADCAST)) {
+					fedinst = MMFEDInstruction.parseInstruction(instruction.getInstructionString());
+				}
+			}
+			else
+				if(inst instanceof QuantilePickSPInstruction) {
 				QuantilePickSPInstruction qinstruction = (QuantilePickSPInstruction) inst;
 				Data data = ec.getVariable(qinstruction.input1);
 				if(data instanceof MatrixObject && ((MatrixObject) data).isFederatedExcept(FType.BROADCAST))

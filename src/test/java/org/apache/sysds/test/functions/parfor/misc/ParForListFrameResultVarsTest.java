@@ -68,7 +68,7 @@ public class ParForListFrameResultVarsTest extends AutomatedTestBase
 			String.valueOf(rows), String.valueOf(cols), output("R") };
 
 		runTest(true, false, null, -1);
-		Assert.assertEquals(new Double(7),
+		Assert.assertEquals(Double.valueOf(7),
 			readDMLMatrixFromOutputDir("R").get(new CellIndex(1,1)));
 	}
 }

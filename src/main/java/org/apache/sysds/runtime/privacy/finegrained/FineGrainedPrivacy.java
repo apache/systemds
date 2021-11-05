@@ -31,60 +31,60 @@ public interface FineGrainedPrivacy {
 	 * @param dataRange representing the range for which the privacy is set
 	 * @param privacyLevel the level of privacy for the given data range
 	 */
-	public void put(DataRange dataRange, PrivacyLevel privacyLevel);
+	void put(DataRange dataRange, PrivacyLevel privacyLevel);
 
-	public void putRow(int rowIndex, int rowLength, PrivacyLevel privacyLevel);
+	void putRow(int rowIndex, int rowLength, PrivacyLevel privacyLevel);
 
-	public void putCol(int colIndex, int colLength, PrivacyLevel privacyLevel);
+	void putCol(int colIndex, int colLength, PrivacyLevel privacyLevel);
 
-	public void putElement(int rowIndex, int colIndex, PrivacyLevel privacyLevel);
+	void putElement(int rowIndex, int colIndex, PrivacyLevel privacyLevel);
 
 	/**
 	 * Get the data ranges and related privacy levels within given data search range.
 	 * @param searchRange the range from which all privacy levels are retrieved
 	 * @return all mappings from range to privacy level within the given search range
 	 */
-	public Map<DataRange,PrivacyLevel> getPrivacyLevel(DataRange searchRange);
+	Map<DataRange,PrivacyLevel> getPrivacyLevel(DataRange searchRange);
 
 	/**
 	 * Get the data ranges and related privacy levels of the element with the given index.
 	 * @param searchIndex index of element
 	 * @return all mappings from range to privacy level for the given search element
 	 */
-	public Map<DataRange,PrivacyLevel> getPrivacyLevelOfElement(long[] searchIndex);
+	Map<DataRange,PrivacyLevel> getPrivacyLevelOfElement(long[] searchIndex);
 
 	/**
 	 * Get all data ranges for the given privacy level.
 	 * @param privacyLevel for which data ranges are found
 	 * @return all data ranges with the given privacy level
 	 */
-	public DataRange[] getDataRangesOfPrivacyLevel(PrivacyLevel privacyLevel);
+	DataRange[] getDataRangesOfPrivacyLevel(PrivacyLevel privacyLevel);
 
 	/**
 	 * Remove all fine-grained privacy constraints.
 	 */
-	public void removeAllConstraints();
+	void removeAllConstraints();
 
 	/**
 	 * True if any fine-grained constraints has been set. 
 	 * @return true if any fine-grained constraint is set
 	 */
-	public boolean hasConstraints();
+	boolean hasConstraints();
 
 	/**
 	 * Get all fine-grained constraints as a map from privacy level to 
 	 * an array of data ranges represented as two-dimensional long arrays.
 	 * @return map from privacy level to array of data ranges
 	 */
-	public Map<String, long[][][]> getAllConstraints();
+	Map<String, long[][][]> getAllConstraints();
 
 	/**
 	 * Return all fine-grained privacy constraints as an arraylist. 
 	 * @return all constraints
 	 */
-	public ArrayList<Map.Entry<DataRange, PrivacyLevel>> getAllConstraintsList();
+	ArrayList<Map.Entry<DataRange, PrivacyLevel>> getAllConstraintsList();
 
-	public PrivacyLevel[] getRowPrivacy(int numRows, int numCols);
+	PrivacyLevel[] getRowPrivacy(int numRows, int numCols);
 
-	public PrivacyLevel[] getColPrivacy(int numRows, int numCols);
+	PrivacyLevel[] getColPrivacy(int numRows, int numCols);
 }

@@ -2536,6 +2536,7 @@ public class DMLTranslator
 			break;
 		case DROP_INVALID_TYPE:
 		case DROP_INVALID_LENGTH:
+		case VALUE_SWAP:
 		case MAP:
 			if(expr3 == null)
 				expr3 = new LiteralOp(0L);

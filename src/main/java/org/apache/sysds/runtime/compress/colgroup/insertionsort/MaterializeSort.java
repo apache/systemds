@@ -26,45 +26,61 @@ import org.apache.sysds.runtime.compress.utils.IntArrayList;
 public class MaterializeSort extends AInsertionSorter {
 
 	/** a dense mapToData, that have a value for each row in the input. */
-	AMapToData md;
+	final private AMapToData md;
+	final private int CACHE_BLOCK = 60000;
+	final private int[] skip;
+	private int off = 0;
 
-	public MaterializeSort(int endLength, int numRows, IntArrayList[] offsets, int negativeIndex) {
+	protected MaterializeSort(int endLength, int numRows, IntArrayList[] offsets, int negativeIndex) {
 		super(endLength, numRows, offsets, negativeIndex);
 
-		md = MapToFactory.create(_numRows, _numLabels);
-		md.fill(_numLabels);
-		if(_negativeIndex == -1)
-			insert();
-		else
-			insertWithNegative();
+		md = MapToFactory.create(Math.min(_numRows, CACHE_BLOCK), _numLabels);
+		skip = new int[offsets.length];
+
+		for(int block = 0; block < _numRows; block += CACHE_BLOCK) {
+			md.fill(_numLabels);
+			if(_negativeIndex == -1)
+				insert(block, Math.min(block + CACHE_BLOCK, _numRows));
+			else
+				insertWithNegative(block, Math.min(block + CACHE_BLOCK, _numRows));
+		}
 	}
 
-	private void insert() {
+	private void insert(int rl, int ru) {
+		materializeInsert(rl, ru);
+		filterInsert(rl, ru);
+	}
 
+	private void materializeInsert(int rl, int ru) {
 		for(int i = 0; i < _offsets.length; i++) {
-			IntArrayList of = _offsets[i];
-			for(int k = 0; k < of.size(); k++)
-				md.set(of.get(k), i);
+			final IntArrayList of = _offsets[i];
+			final int size = of.size();
+			int k = skip[i];
+			while(k < size && of.get(k) < ru)
+				md.set(of.get(k++) - rl, i);
+			skip[i] = k;
 		}
+	}
 
-		int off = 0;
-		for(int i = 0; i < _numRows; i++) {
-			int idx = md.getIndex(i);
+	private void filterInsert(int rl, int ru) {
+		for(int i = rl; i < ru; i++) {
+			final int idx = md.getIndex(i - rl);
 			if(idx != _numLabels)
 				set(off++, i, idx);
 		}
-
 	}
 
-	private void insertWithNegative() {
+	private void insertWithNegative(int rl, int ru) {
 		for(int i = 0; i < _offsets.length; i++) {
 			IntArrayList of = _offsets[i];
-			for(int k = 0; k < of.size(); k++)
-				md.set(of.get(k), i);
+			int k = skip[i];
+			while(k < of.size() && of.get(k) < ru)
+				md.set(of.get(k++) - rl, i);
+			skip[i] = k;
 		}
-		int off = 0;
-		for(int i = 0; i < _numRows; i++) {
-			int idx = md.getIndex(i);
+
+		for(int i = rl; i < ru; i++) {
+			final int idx = md.getIndex(i - rl);
 			if(idx < _negativeIndex)
 				set(off++, i, idx);
 			else if(idx > _negativeIndex)

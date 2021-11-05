@@ -45,10 +45,12 @@ import org.junit.runners.Parameterized.Parameters;
 @RunWith(value = Parameterized.class)
 public class CompressedVectorTest extends CompressedTestBase {
 
-	protected static MatrixTypology[] usedMatrixTypologyLocal = new MatrixTypology[] {// types
-		MatrixTypology.SINGLE_COL,
-		// MatrixTypology.SINGLE_COL_L
-	};
+	protected static MatrixTypology[] usedMatrixTypologyLocal = new MatrixTypology[] {MatrixTypology.SINGLE_COL};
+
+	protected static CompressionSettingsBuilder[] usedCompressionSettings = new CompressionSettingsBuilder[] {
+		csb().setTransposeInput("false"), csb().setTransposeInput("true")};
+
+	protected static OverLapping[] overLapping = new OverLapping[] {OverLapping.PLUS_LARGE};
 
 	@Parameters
 	public static Collection<Object[]> data() {
@@ -65,7 +67,8 @@ public class CompressedVectorTest extends CompressedTestBase {
 	}
 
 	public CompressedVectorTest(SparsityType sparType, ValueType valType, ValueRange valRange,
-		CompressionSettingsBuilder compSettings, MatrixTypology matrixTypology, OverLapping ov, Collection<CompressionType> ct) {
+		CompressionSettingsBuilder compSettings, MatrixTypology matrixTypology, OverLapping ov,
+		Collection<CompressionType> ct) {
 		super(sparType, valType, valRange, compSettings, matrixTypology, ov, 1, ct);
 	}
 
@@ -83,17 +86,17 @@ public class CompressedVectorTest extends CompressedTestBase {
 			if(_cs.lossy) {
 				double tol = lossyTolerance * 10;
 				assertTrue(
-					this.toString() + ": values uncomprssed: " + ret1 + "vs compressed: " + ret2 + " tolerance " + tol,
+					bufferedToString + ": values uncomprssed: " + ret1 + "vs compressed: " + ret2 + " tolerance " + tol,
 					TestUtils.compareCellValue(ret1, ret2, tol, false));
 			}
 			else {
-				assertTrue(this.toString() + "\n expected: " + ret1 + " was:" + ret2,
+				assertTrue(bufferedToString + "\n expected: " + ret1 + " was:" + ret2,
 					TestUtils.getPercentDistance(ret1, ret2, true) > 0.99);
 			}
 		}
 		catch(Exception e) {
 			e.printStackTrace();
-			throw new Exception(this.toString() + "\n" + e.getMessage(), e);
+			throw new Exception(bufferedToString + "\n" + e.getMessage(), e);
 		}
 	}
 
@@ -109,12 +112,12 @@ public class CompressedVectorTest extends CompressedTestBase {
 			if(_cs.lossy)
 				TestUtils.compareCellValue(ret1, ret2, lossyTolerance, false);
 			else
-				assertTrue(this.toString(), TestUtils.compareScalarBits(ret1, ret2, 0));
+				assertTrue(bufferedToString, TestUtils.compareScalarBits(ret1, ret2, 0));
 
 		}
 		catch(Exception e) {
 			e.printStackTrace();
-			throw new RuntimeException(this.toString() + "\n" + e.getMessage(), e);
+			throw new RuntimeException(bufferedToString + "\n" + e.getMessage(), e);
 		}
 	}
 
@@ -132,7 +135,7 @@ public class CompressedVectorTest extends CompressedTestBase {
 		}
 		catch(Exception e) {
 			e.printStackTrace();
-			throw new RuntimeException(this.toString() + "\n" + e.getMessage(), e);
+			throw new RuntimeException(bufferedToString + "\n" + e.getMessage(), e);
 		}
 	}
 }

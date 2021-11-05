@@ -799,10 +799,6 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 		exportData(fName, outputFormat, -1, formatProperties);
 	}
 	
-	public synchronized void exportData (String fName, String outputFormat, int replication, FileFormatProperties formatProperties) {
-		exportData(fName, outputFormat, replication, formatProperties, null);
-	}
-	
 	/**
 	 * Synchronized because there might be parallel threads (parfor local) that
 	 * access the same object (in case it was created before the loop).
@@ -818,9 +814,8 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 	 * @param outputFormat format
 	 * @param replication ?
 	 * @param formatProperties file format properties
-	 * @param opcode instruction opcode if available
 	 */
-	public synchronized void exportData (String fName, String outputFormat, int replication, FileFormatProperties formatProperties, String opcode) {
+	public synchronized void exportData (String fName, String outputFormat, int replication, FileFormatProperties formatProperties) {
 		if( LOG.isTraceEnabled() )
 			LOG.trace("Export data "+hashCode()+" "+fName);
 		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
@@ -850,11 +845,13 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 			setHDFSFileExists(true);
 		
 		//check for common file scheme (otherwise no copy/rename)
+		int blen = (formatProperties == null) ?
+			ConfigurationManager.getBlocksize() : formatProperties.getBlocksize();
 		boolean eqScheme = IOUtilFunctions.isSameFileScheme(
 			new Path(_hdfsFileName), new Path(fName));
 		boolean eqFormat = isEqualOutputFormat(outputFormat);
-		boolean eqBlksize = (outputFormat == null || outputFormat.equals("binary"))
-			&& ConfigurationManager.getBlocksize() != getBlocksize();
+		boolean eqBlksize = (getBlocksize() != blen)
+			&& (outputFormat == null || outputFormat.equals("binary"));
 		
 		//actual export (note: no direct transfer of local copy in order to ensure blocking (and hence, parallelism))
 		if( isDirty() || !eqScheme || isFederated() ||
@@ -1094,6 +1091,8 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 		if ( fmt != FileFormat.MM ) {
 			// Get the dimension information from the metadata stored within MatrixObject
 			DataCharacteristics dc = iimd.getDataCharacteristics();
+			if( formatProperties != null && formatProperties.knownBlocksize() )
+				dc.setBlocksize(formatProperties.getBlocksize());
 			
 			// when outputFormat is binaryblock, make sure that matrixCharacteristics has correct blocking dimensions
 			// note: this is only required if singlenode (due to binarycell default) 

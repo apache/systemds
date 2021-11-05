@@ -30,7 +30,7 @@ for i in 0 1 2; do
    
    #training
    tstart=$(date +%s.%N)
-   #${CMD} -f ../algorithms/GLM.dml \
+   #${CMD} -f ./algorithms/GLM.dml \
    ${CMD} -f scripts/GLM.dml \
       --config conf/SystemDS-config.xml \
       --stats \
@@ -41,7 +41,7 @@ for i in 0 1 2; do
    
    #predict
    tstart=$(date +%s.%N)
-   ${CMD} -f ../algorithms/GLM-predict.dml \
+   ${CMD} -f scripts/GLM-predict.dml \
       --config conf/SystemDS-config.xml \
       --stats \
       --nvargs dfam=1 vpow=1.0 link=1 lpow=0.0 fmt=csv X=$1_test B=${BASE}/b Y=$2_test M=${BASE}/m O=${BASE}/out.csv

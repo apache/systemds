@@ -122,6 +122,7 @@ public enum Builtins {
 	EXECUTE_PIPELINE("executePipeline", true),
 	EXP("exp", false),
 	EVAL("eval", false),
+	FIX_INVALID_LENGTHS("fixInvalidLengths", true),
 	FF_TRAIN("ffTrain", true),
 	FF_PREDICT("ffPredict", true),
 	FLOOR("floor", false),
@@ -130,6 +131,7 @@ public enum Builtins {
 	GAUSSIAN_CLASSIFIER("gaussianClassifier", true),
 	GET_ACCURACY("getAccuracy", true),
 	GLM("glm", true),
+	GLM_PREDICT("glmPredict", true),
 	GMM("gmm", true),
 	GMM_PREDICT("gmmPredict", true),
 	GNMF("gnmf", true),
@@ -266,6 +268,7 @@ public enum Builtins {
 	TYPEOF("typeof", false),
 	UNIVAR("univar", true),
 	VAR("var", false),
+	VALUE_SWAP("valueSwap", false),
 	VECTOR_TO_CSV("vectorToCsv", true),
 	WINSORIZE("winsorize", true, false), //TODO parameterize w/ prob, min/max val
 	XGBOOST("xgboost", true),

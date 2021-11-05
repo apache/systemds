@@ -53,7 +53,7 @@ public class CheckedConstraintsLog {
 	}
 
 	/**
-	 * Add an occurence of the given privacy level to the loaded constraints log total. 
+	 * Add an occurrence of the given privacy level to the loaded constraints log total.
 	 * @param level privacy level from loaded privacy constraint
 	 */
 	public static void addLoadedConstraint(PrivacyLevel level){
@@ -84,9 +84,9 @@ public class CheckedConstraintsLog {
 	public static String display(){
 		StringBuilder sb = new StringBuilder();
 		sb.append("Checked Privacy Constraints:\n");
-		checkedConstraintsTotal.forEach((k,v)->sb.append("\t" + k + ": " + v + "\n"));
+		checkedConstraintsTotal.forEach((k,v)-> sb.append(String.format("\t%s: %s\n", k, v)));
 		sb.append("Loaded Privacy Constraints:\n");
-		loadedConstraintsTotal.forEach((k,v)->sb.append("\t" + k + ": " + v + "\n"));
+		loadedConstraintsTotal.forEach((k,v)->sb.append(String.format("\t%s: %s\n", k, v)));
 		return sb.toString();
 	}
 }

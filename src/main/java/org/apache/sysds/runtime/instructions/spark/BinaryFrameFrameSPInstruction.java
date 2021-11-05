@@ -52,6 +52,13 @@ public class BinaryFrameFrameSPInstruction extends BinarySPInstruction {
 			//release input frame
 			sec.releaseFrameInput(input2.getName());
 		}
+		else if(getOpcode().equals("valueSwap")) {
+			// Perform computation using input frames, and produce the result frame
+			Broadcast<FrameBlock> fb = sec.getSparkContext().broadcast(sec.getFrameInput(input2.getName()));
+			out = in1.mapValues(new valueSwapBySchema(fb.getValue()));
+			// Attach result frame with FrameBlock associated with output_name
+			sec.releaseFrameInput(input2.getName());
+		}
 		else {
 			JavaPairRDD<Long, FrameBlock> in2 = sec.getFrameBinaryBlockRDDHandleForVariable(input2.getName());
 			// create output frame
@@ -63,14 +70,14 @@ public class BinaryFrameFrameSPInstruction extends BinarySPInstruction {
 		//set output RDD and maintain dependencies
 		sec.setRDDHandleForVariable(output.getName(), out);
 		sec.addLineageRDD(output.getName(), input1.getName());
-		if( !getOpcode().equals("dropInvalidType") )
+		if( !getOpcode().equals("dropInvalidType")  && !getOpcode().equals("valueSwap"))
 			sec.addLineageRDD(output.getName(), input2.getName());
 	}
 
 	private static class isCorrectbySchema implements Function<FrameBlock,FrameBlock> {
 		private static final long serialVersionUID = 5850400295183766400L;
 
-		private FrameBlock schema_frame = null;
+		private FrameBlock schema_frame;
 
 		public isCorrectbySchema(FrameBlock fb_name ) {
 			schema_frame = fb_name;
@@ -92,6 +99,21 @@ public class BinaryFrameFrameSPInstruction extends BinarySPInstruction {
 		@Override
 		public FrameBlock call(Tuple2<FrameBlock, FrameBlock> arg0) throws Exception {
 			return arg0._1().binaryOperations(bop, arg0._2(), null);
+		}
+	}
+
+	private static class valueSwapBySchema implements Function<FrameBlock,FrameBlock> {
+		private static final long serialVersionUID = 5850400295183766402L;
+
+		private FrameBlock schema_frame;
+
+		public valueSwapBySchema(FrameBlock fb_name ) {
+			schema_frame = fb_name;
+		}
+
+		@Override
+		public FrameBlock call(FrameBlock arg0) throws Exception {
+			return arg0.valueSwap(schema_frame);
 		}
 	}
 }

@@ -33,11 +33,10 @@ import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup;
-import org.apache.sysds.runtime.compress.colgroup.ColGroupCompressed;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupConst;
+import org.apache.sysds.runtime.compress.colgroup.ColGroupEmpty;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupOLE;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupUncompressed;
-import org.apache.sysds.runtime.compress.colgroup.ColGroupValue;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
 import org.apache.sysds.runtime.functionobjects.Divide;
 import org.apache.sysds.runtime.functionobjects.Minus;
@@ -66,11 +65,9 @@ public class CLALibScalar {
 
 		List<AColGroup> colGroups = m1.getColGroups();
 		if(m1.isOverlapping() && !(sop.fn instanceof Multiply || sop.fn instanceof Divide)) {
-			AColGroup constOverlap = constOverlap(m1, sop);
-			List<AColGroup> newColGroups = (sop instanceof LeftScalarOperator &&
-				sop.fn instanceof Minus) ? processOverlappingSubtractionLeft(m1, sop,
-					ret) : processOverlappingAddition(m1, sop, ret);
-			newColGroups.add(constOverlap);
+			final ColGroupConst c = constOverlap(m1, sop);
+			boolean isMinus = sop instanceof LeftScalarOperator && sop.fn instanceof Minus;
+			List<AColGroup> newColGroups = isMinus ? copyGroupsAndMultMinus(m1, sop, c, ret) : copyGroups(m1, sop, c, ret);
 			ret.allocateColGroupList(newColGroups);
 			ret.setOverlapping(true);
 		}
@@ -83,9 +80,8 @@ public class CLALibScalar {
 				// Apply the operation to each of the column groups.
 				// Most implementations will only modify metadata.
 				List<AColGroup> newColGroups = new ArrayList<>();
-				for(AColGroup grp : colGroups) {
+				for(AColGroup grp : colGroups)
 					newColGroups.add(grp.scalarOperation(sop));
-				}
 				ret.allocateColGroupList(newColGroups);
 			}
 			ret.setOverlapping(m1.isOverlapping());
@@ -108,31 +104,54 @@ public class CLALibScalar {
 		return ret;
 	}
 
-	private static AColGroup constOverlap(CompressedMatrixBlock m1, ScalarOperator sop) {
+	private static ColGroupConst constOverlap(CompressedMatrixBlock m1, ScalarOperator sop) {
 		int[] colIndexes = new int[m1.getNumColumns()];
 		for(int i = 0; i < colIndexes.length; i++)
 			colIndexes[i] = i;
 		double v = sop.executeScalar(0);
 		double[] values = new double[colIndexes.length];
 		Arrays.fill(values, v);
-		return new ColGroupConst(colIndexes, m1.getNumRows(), new Dictionary(values));
+		return new ColGroupConst(colIndexes, new Dictionary(values));
 	}
 
-	private static List<AColGroup> processOverlappingAddition(CompressedMatrixBlock m1, ScalarOperator sop,
+	private static List<AColGroup> copyGroups(CompressedMatrixBlock m1, ScalarOperator sop, ColGroupConst c,
 		CompressedMatrixBlock ret) {
-		List<AColGroup> newColGroups = new ArrayList<>();
-		for(AColGroup grp : m1.getColGroups())
-			newColGroups.add(((ColGroupValue) grp).copy());
+		final double[] constV = c.getValues();
+		final List<AColGroup> newColGroups = new ArrayList<>();
+		for(AColGroup grp : m1.getColGroups()) {
+			if(grp instanceof ColGroupEmpty)
+				continue;
+
+			else if(grp instanceof ColGroupConst) {
+				final double[] gv = grp.getValues();
+				final int[] colIdx = grp.getColIndices();
+				for(int i = 0; i < colIdx.length; i++)
+					constV[colIdx[i]] += gv[i];
+			}
+			else
+				newColGroups.add(grp.copy());
+		}
+		newColGroups.add(c);
 		return newColGroups;
-
 	}
 
-	private static List<AColGroup> processOverlappingSubtractionLeft(CompressedMatrixBlock m1, ScalarOperator sop,
+	private static List<AColGroup> copyGroupsAndMultMinus(CompressedMatrixBlock m1, ScalarOperator sop, ColGroupConst c,
 		CompressedMatrixBlock ret) {
-		List<AColGroup> newColGroups = new ArrayList<>();
-		for(AColGroup grp : m1.getColGroups())
-			newColGroups.add(
-				((ColGroupValue) grp).scalarOperation(new RightScalarOperator(Multiply.getMultiplyFnObject(), -1)));
+		final double[] constV = c.getValues();
+		final List<AColGroup> newColGroups = new ArrayList<>();
+		for(AColGroup grp : m1.getColGroups()) {
+			if(grp instanceof ColGroupEmpty)
+				continue;
+			else if(grp instanceof ColGroupConst) {
+				final double[] gv = grp.getValues();
+				final int[] colIdx = grp.getColIndices();
+				for(int i = 0; i < colIdx.length; i++)
+					constV[colIdx[i]] -= gv[i];
+			}
+			else
+				newColGroups.add(grp.scalarOperation(new RightScalarOperator(Multiply.getMultiplyFnObject(), -1)));
+		}
+		newColGroups.add(c);
 		return newColGroups;
 	}
 
@@ -172,7 +191,7 @@ public class CLALibScalar {
 				tasks.add(new ScalarTask(uc, sop));
 			}
 			else {
-				int nv = ((ColGroupCompressed) grp).getNumValues() * grp.getColIndices().length;
+				int nv = grp.getNumValues() * grp.getColIndices().length;
 				if(nv < MINIMUM_PARALLEL_SIZE && !(grp instanceof ColGroupOLE)) {
 					small.add(grp);
 				}

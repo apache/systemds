@@ -151,7 +151,7 @@ public class CodegenUtils
 		SpoofOperator ret = null;
 
 		try {
-			ret = (SpoofOperator) cla.newInstance();
+			ret = (SpoofOperator) cla.getDeclaredConstructor().newInstance();
 		}
 		catch( Exception ex ) {
 			throw new DMLRuntimeException(ex);
@@ -288,7 +288,6 @@ public class CodegenUtils
 		}
 	}
 
-	@SuppressWarnings("resource")
 	private static byte[] getClassAsByteArray(String name) {
 		String classAsPath = name.replace('.', '/') + ".class";
 

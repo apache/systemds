@@ -467,7 +467,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	public final int getNumRows() {
 		return rlen;
 	}
-	
+
 	/**
 	 * NOTE: setNumRows() and setNumColumns() are used only in ternaryInstruction (for contingency tables)
 	 * and pmm for meta corrections.
@@ -967,8 +967,19 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	 *
 	 * @return A new MatrixBlock containing the row sums of this matrix.
 	 */
-	public MatrixBlock rowSum(){
+	public final MatrixBlock rowSum(){
 		AggregateUnaryOperator op = InstructionUtils.parseBasicAggregateUnaryOperator("uark+", 1);
+		return aggregateUnaryOperations(op, null, 1000, null, true);
+	}
+
+	/**
+	 * Wrapper method for multi threaded reduceall-rowSum of a matrix.
+	 *
+	 * @param k the number of threads allowed to be used.
+	 * @return A new MatrixBlock containing the row sums of this matrix.
+	 */
+	public final MatrixBlock rowSum(int k){
+		AggregateUnaryOperator op = InstructionUtils.parseBasicAggregateUnaryOperator("uark+", k);
 		return aggregateUnaryOperations(op, null, 1000, null, true);
 	}
 
@@ -2744,6 +2755,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		return ret;
 	}
 
+
 	@Override
 	public MatrixBlock unaryOperations(UnaryOperator op, MatrixValue result) {
 		MatrixBlock ret = checkType(result);
@@ -2758,7 +2770,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 			ret = new MatrixBlock(rlen, n, sp, sp ? nonZeros : rlen*n);
 		else
 			ret.reset(rlen, n, sp);
-		
+
 		//early abort for comparisons w/ special values
 		if( Builtin.isBuiltinCode(op.fn, BuiltinCode.ISNAN, BuiltinCode.ISNA))
 			if( !containsValue(op.getPattern()) )
@@ -2777,7 +2789,11 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 			//note: we apply multi-threading in a best-effort manner here
 			//only for expensive operators such as exp, log, sigmoid, because
 			//otherwise allocation, read and write anyway dominates
-			ret.allocateDenseBlock(false);
+			if (!op.isInplace() || isEmpty())
+				ret.allocateDenseBlock(false);
+			else
+				ret = this;
+
 			DenseBlock a = getDenseBlock();
 			DenseBlock c = ret.getDenseBlock();
 			for(int bi=0; bi<a.numBlocks(); bi++) {
@@ -2786,7 +2802,11 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 			}
 			ret.recomputeNonZeros();
 		}
-		else {
+		else
+		{
+			if (op.isInplace() && !isInSparseFormat() )
+				ret = this;
+			
 			//default execute unary operations
 			if(op.sparseSafe)
 				sparseUnaryOperations(op, ret);
@@ -2859,8 +2879,8 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		}
 		else //DENSE <- DENSE
 		{
-			//allocate dense output block
-			ret.allocateDenseBlock(false);
+			if( this != ret ) //!in-place
+				ret.allocateDenseBlock(false);
 			DenseBlock da = getDenseBlock();
 			DenseBlock dc = ret.getDenseBlock();
 			
@@ -2955,6 +2975,9 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	
 	public MatrixBlock ternaryOperations(TernaryOperator op, MatrixBlock m2, MatrixBlock m3, MatrixBlock ret) {
 		
+		if(ret == null)
+			ret = new MatrixBlock();
+
 		//prepare inputs
 		final int r1 = getNumRows();
 		final int r2 = m2.getNumRows();
@@ -5218,7 +5241,11 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	public MatrixBlock replaceOperations(MatrixValue result, double pattern, double replacement) {
 		MatrixBlock ret = checkType(result);
 		examSparsity(); //ensure its in the right format
-		ret.reset(rlen, clen, sparse);
+		if(ret != null)
+			ret.reset(rlen, clen, sparse);
+		else
+			ret = new MatrixBlock(rlen, clen, sparse);
+		
 		//probe early abort conditions
 		if( nonZeros == 0 && pattern != 0  )
 			return ret;
@@ -5940,6 +5967,23 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		return sb.toString();
 	}
 
+
+	public double getDouble(int r, int c){
+		return quickGetValue(r, c);
+	}
+
+	@Override
+	public double getDoubleNaN(int r, int c) {
+		return getDouble(r, c);
+	}
+
+	public String getString(int r, int c){
+		double v = quickGetValue(r, c);
+		// NaN gets converted to null here since check for null is faster than string comp
+		if(Double.isNaN(v))
+			return null;
+		return String.valueOf(v);
+	}
 
 	///////////////////////////
 	// Helper classes

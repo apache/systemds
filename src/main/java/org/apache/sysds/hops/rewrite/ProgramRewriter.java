@@ -140,7 +140,6 @@ public class ProgramRewriter
 			}
 			if ( OptimizerUtils.FEDERATED_COMPILATION ) {
 				_dagRuleSet.add( new RewriteFederatedExecution() );
-				_sbRuleSet.add( new RewriteFederatedStatementBlocks() );
 			}
 		}
 		

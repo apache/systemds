@@ -24,6 +24,7 @@ import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.lib.CLALibAppend;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
+import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysds.runtime.lineage.LineageItem;
 import org.apache.sysds.runtime.lineage.LineageItemUtils;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
@@ -46,7 +47,7 @@ public final class MatrixAppendCPInstruction extends AppendCPInstruction {
 
 		MatrixBlock ret;
 		if(matBlock1 instanceof CompressedMatrixBlock || matBlock2 instanceof CompressedMatrixBlock)
-			ret = CLALibAppend.append(matBlock1, matBlock2);
+			ret = CLALibAppend.append(matBlock1, matBlock2, InfrastructureAnalyzer.getLocalParallelism());
 		else
 			ret = matBlock1.append(matBlock2, new MatrixBlock(), _type == AppendType.CBIND);
 

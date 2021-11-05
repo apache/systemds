@@ -30,7 +30,7 @@ import org.apache.sysds.utils.MemoryEstimates;
 public class MapToInt extends AMapToData {
 
 	private static final long serialVersionUID = -5557070920888782274L;
-	
+
 	private final int[] _data;
 
 	public MapToInt(int unique, int size) {
@@ -38,7 +38,7 @@ public class MapToInt extends AMapToData {
 		_data = new int[size];
 	}
 
-	private MapToInt(int unique,int[] data) {
+	private MapToInt(int unique, int[] data) {
 		super(unique);
 		_data = data;
 	}
@@ -80,6 +80,13 @@ public class MapToInt extends AMapToData {
 	}
 
 	@Override
+	public void replace(int v, int r) {
+		for(int i = 0; i < size(); i++)
+			if(_data[i] == v)
+				_data[i] = r;
+	}
+
+	@Override
 	public void write(DataOutput out) throws IOException {
 		out.writeByte(MAP_TYPE.INT.ordinal());
 		out.writeInt(getUnique());
@@ -97,7 +104,7 @@ public class MapToInt extends AMapToData {
 		return new MapToInt(unique, data);
 	}
 
-	public int[] getInts(){
+	public int[] getInts() {
 		return _data;
 	}
 }

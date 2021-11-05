@@ -298,8 +298,8 @@ public class Dictionary extends ADictionary {
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
 
-		sb.append("Dictionary: " + hashCode());
-		sb.append("\n " + Arrays.toString(_values));
+		sb.append("Dictionary:");
+		sb.append(Arrays.toString(_values));
 		return sb.toString();
 	}
 
@@ -475,12 +475,9 @@ public class Dictionary extends ADictionary {
 	}
 
 	@Override
-	public Dictionary preaggValuesFromDense(int numVals, int[] colIndexes, int[] aggregateColumns, double[] b,
-		int cut) {
+	public Dictionary preaggValuesFromDense(int numVals, int[] colIndexes, int[] aggregateColumns, double[] b, int cut) {
 		double[] ret = new double[numVals * aggregateColumns.length];
-		for(int k = 0, off = 0;
-			k < numVals * colIndexes.length;
-			k += colIndexes.length, off += aggregateColumns.length) {
+		for(int k = 0, off = 0; k < numVals * colIndexes.length; k += colIndexes.length, off += aggregateColumns.length) {
 			for(int h = 0; h < colIndexes.length; h++) {
 				int idb = colIndexes[h] * cut;
 				double v = _values[k + h];
@@ -493,19 +490,52 @@ public class Dictionary extends ADictionary {
 	}
 
 	@Override
-	public ADictionary replace(double pattern, double replace, int nCol, boolean safe) {
-		if(!safe && replace == 0)
-			throw new NotImplementedException("Not implemented Replacement of 0");
-		else {
-			double[] retV = new double[_values.length];
-			for(int i = 0; i < _values.length; i++) {
-				final double v = _values[i];
-				if(v == pattern)
-					retV[i] = replace;
-				else
-					retV[i] = v;
-			}
-			return new Dictionary(retV);
+	public ADictionary replace(double pattern, double replace, int nCol) {
+		double[] retV = new double[_values.length];
+		for(int i = 0; i < _values.length; i++) {
+			final double v = _values[i];
+			if(v == pattern)
+				retV[i] = replace;
+			else
+				retV[i] = v;
 		}
+		return new Dictionary(retV);
+	}
+
+	@Override
+	public ADictionary replaceZeroAndExtend(double replace, int nCol) {
+		double[] retV = new double[_values.length + nCol];
+		for(int i = 0; i < _values.length; i++) {
+			final double v = _values[i];
+			if(v == 0)
+				retV[i] = replace;
+			else
+				retV[i] = v;
+		}
+		for(int i = _values.length; i < _values.length + nCol; i++)
+			retV[i] = replace;
+
+		return new Dictionary(retV);
+	}
+
+	@Override
+	public double product(int[] counts, int nCol) {
+		double ret = 1;
+		final int len = _values.length / nCol;
+		for(int i = 0; i < len; i++) {
+			for(int j = i * nCol; j < (i + 1) * nCol; j++) {
+				double v = _values[j];
+				if(v != 0)
+					ret *= Math.pow(v, counts[i]);
+				else
+					ret = 0;
+			}
+		}
+		return ret;
+	}
+
+	@Override
+	public void colProduct(double[] res, int[] counts, int[] colIndexes) {
+		throw new NotImplementedException();
 	}
 }

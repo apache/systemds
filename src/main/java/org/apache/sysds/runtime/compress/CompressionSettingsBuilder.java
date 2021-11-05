@@ -41,7 +41,7 @@ public class CompressionSettingsBuilder {
 	private boolean sortValuesByLength = true;
 	private int maxColGroupCoCode = 10000;
 	private double coCodePercentage = 0.01;
-	private int minimumSampleSize = 2000;
+	private int minimumSampleSize = 10000;
 	private int maxSampleSize = 1000000;
 	private EstimationType estimationType = EstimationType.HassAndStokes;
 	private PartitionerType columnPartitioner;

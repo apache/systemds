@@ -31,37 +31,27 @@ import org.apache.sysds.runtime.matrix.data.MatrixBlock;
  */
 public class ReaderColumnSelectionSparse extends ReaderColumnSelection {
 
-
-
 	private SparseBlock a;
 
-	/**
-	 * Reader of sparse matrix blocks for compression.
-	 * 
-	 * This reader should not be used if the input data is not sparse
-	 * 
-	 * @param data         The transposed and sparse matrix
-	 * @param colIndexes   The column indexes to combine
-	 */
-	public ReaderColumnSelectionSparse(MatrixBlock data, int[] colIndexes) {
-		super(colIndexes, data.getNumRows());
+	protected ReaderColumnSelectionSparse(MatrixBlock data, int[] colIndexes, int rl, int ru) {
+		super(colIndexes, rl, Math.min(ru, data.getNumRows()));
 		a = data.getSparseBlock();
 	}
 
 	protected DblArray getNextRow() {
-		if(_lastRow == _numRows - 1) {
+		if(_rl == _ru - 1) {
 			return null;
 		}
 
-		_lastRow++;
+		_rl++;
 
 		boolean zeroResult = true;
 
-		if(!a.isEmpty(_lastRow)) {
-			int apos = a.pos(_lastRow);
-			int alen = a.size(_lastRow) + apos;
-			int[] aix = a.indexes(_lastRow);
-			double[] avals = a.values(_lastRow);
+		if(!a.isEmpty(_rl)) {
+			final int apos = a.pos(_rl);
+			final int alen = a.size(_rl) + apos;
+			final int[] aix = a.indexes(_rl);
+			final double[] avals = a.values(_rl);
 			int skip = 0;
 			int j = apos;
 			while(j < alen && aix[j] < _colIndexes[0])
@@ -70,12 +60,12 @@ public class ReaderColumnSelectionSparse extends ReaderColumnSelection {
 				if(_colIndexes[skip] == aix[j]) {
 					reusableArr[skip] = avals[j];
 					zeroResult = false;
-					skip ++;
-					j ++;
-				}
-				else if(_colIndexes[skip] > aix[j]) 
+					skip++;
 					j++;
-				else 
+				}
+				else if(_colIndexes[skip] > aix[j])
+					j++;
+				else
 					reusableArr[skip++] = 0;
 			}
 			if(!zeroResult)

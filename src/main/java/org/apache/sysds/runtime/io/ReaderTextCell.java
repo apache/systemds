@@ -58,7 +58,6 @@ public class ReaderTextCell extends MatrixReader
 		_isMMFile = (fmt == FileFormat.MM);
 	}
 	
-	@SuppressWarnings("resource")
 	@Override
 	public MatrixBlock readMatrixFromHDFS(String fname, long rlen, long clen, int blen, long estnnz) 
 		throws IOException, DMLRuntimeException 
@@ -81,7 +80,7 @@ public class ReaderTextCell extends MatrixReader
 		MatrixBlock ret = createOutputMatrixBlock(rlen, clen, (int)rlen, estnnz, true, false);
 		
 		//core read 
-		if( fs.isDirectory(path) || !_allowRawRead )
+		if( fs.getFileStatus(path).isDirectory() || !_allowRawRead )
 			readTextCellMatrixFromHDFS(path, job, ret, rlen, clen, blen);
 		else
 			readRawTextCellMatrixFromHDFS(path, job, fs, ret, rlen, clen, blen, _isMMFile);

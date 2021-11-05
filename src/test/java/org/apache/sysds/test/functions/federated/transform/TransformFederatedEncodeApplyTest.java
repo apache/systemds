@@ -214,9 +214,9 @@ public class TransformFederatedEncodeApplyTest extends AutomatedTestBase {
 			int port3 = getRandomAvailablePort();
 			int port4 = getRandomAvailablePort();
 			String[] otherargs = lineage ? new String[] {"-lineage", "reuse_full"} : null;
-			t1 = startLocalFedWorkerThread(port1, otherargs, FED_WORKER_WAIT_S);
-			t2 = startLocalFedWorkerThread(port2, otherargs, FED_WORKER_WAIT_S);
-			t3 = startLocalFedWorkerThread(port3, otherargs, FED_WORKER_WAIT_S);
+			t1 = startLocalFedWorkerThread(port1, otherargs);
+			t2 = startLocalFedWorkerThread(port2, otherargs);
+			t3 = startLocalFedWorkerThread(port3, otherargs);
 			t4 = startLocalFedWorkerThread(port4, otherargs);
 
 			FileFormatPropertiesCSV ffpCSV = new FileFormatPropertiesCSV(true, DataExpression.DEFAULT_DELIM_DELIMITER,

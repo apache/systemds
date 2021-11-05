@@ -84,7 +84,6 @@ public class RDDConverterUtilsExt
 		return out;
 	}
 
-	@SuppressWarnings("resource")
 	public static JavaPairRDD<MatrixIndexes, MatrixBlock> coordinateMatrixToBinaryBlock(SparkContext sc,
 			CoordinateMatrix input, DataCharacteristics mcIn, boolean outputEmptyBlocks) {
 		return coordinateMatrixToBinaryBlock(new JavaSparkContext(sc), input, mcIn, true);
@@ -129,7 +128,7 @@ public class RDDConverterUtilsExt
 			for(int i = 0; i < oldNumCols; i++) {
 				fields[i] = arg0._1.get(i);
 			}
-			fields[oldNumCols] = new Double(arg0._2 + 1);
+			fields[oldNumCols] = Double.valueOf(arg0._2 + 1);
 			return RowFactory.create(fields);
 		}
 

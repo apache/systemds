@@ -495,20 +495,23 @@ public class LibMatrixDatagen
 				int coloffset = cbj*blen;
 				
 				// select the appropriate block-level seed and init PRNG
-				long seed = !invokedFromCP ?  bSeed : seeds[counter++]; 
+				long seed = !invokedFromCP ?  bSeed : seeds[counter++];
 				valuePRNG.setSeed(seed);
 				
 				// Initialize the PRNGenerator for determining cells that contain a non-zero value
 				// Note that, "pdf" parameter applies only to cell values and the individual cells 
 				// are always selected uniformly at random.
-				nnzPRNG.setSeed(seed);
-				
+				// Also note that we cannot use the same seed here, because for ultra-sparse generation
+				// the number of calls to the valuePRNG and nnzPRNG are the same, thus creating correlated
+				// outcomes (bias toward the end of the value range)
+				nnzPRNG.setSeed((long)(valuePRNG.nextDouble()*Long.MAX_VALUE));
 				boolean localSparse = sparsity < 1 && MatrixBlock.evalSparseFormatInMemory(
 					blockrows, blockcols, (long)(sparsity*blockrows*blockcols));
 				if ( localSparse) {
 					SparseBlock c = out.sparseBlock;
 					if(c == null){
 						out.allocateSparseRowsBlock();
+						out.sparse = true; //otherwise ignored
 						c = out.sparseBlock;
 					}
 					genSparse(c, clen, blockrows, blockcols, rowoffset, coloffset,

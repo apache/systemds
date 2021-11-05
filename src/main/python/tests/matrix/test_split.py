@@ -26,7 +26,7 @@ import numpy as np
 from systemds.context import SystemDSContext
 from systemds.operator.algorithm import split
 
-# Seed the random ness.
+# Seed the randomness.
 np.random.seed(7)
 
 class TestOrder(unittest.TestCase):

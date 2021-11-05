@@ -81,7 +81,7 @@ class DMLScript:
             ret = self.prepared_script.executeScript()
             return ret
         except Py4JNetworkError:
-            exception_str = "Py4JNetworkError: no connection to JVM, most likely due to previous crash"
+            exception_str = "Py4JNetworkError: no connection to JVM, most likely due to previous crash or closed JVM from calls to close()"
             trace_back_limit = 0
         except Exception as e:
             exception_str = str(e)
@@ -111,7 +111,7 @@ class DMLScript:
                 return ret, traces
 
         except Py4JNetworkError:
-            exception_str = "Py4JNetworkError: no connection to JVM, most likely due to previous crash"
+            exception_str = "Py4JNetworkError: no connection to JVM, most likely due to previous crash or closed JVM from calls to close()"
             trace_back_limit = 0
         except Exception as e:
             exception_str = str(e)

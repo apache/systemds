@@ -28,12 +28,12 @@ from typing import (TYPE_CHECKING, Dict, Iterable, Optional, Sequence, Tuple,
 import numpy as np
 import pandas as pd
 from py4j.java_gateway import JavaObject, JVMView
-from systemds.operator import Matrix, MultiReturn, OperationNode
+from systemds.operator import Matrix, MultiReturn, OperationNode, Scalar
 from systemds.script_building.dag import DAGNode, OutputType
 from systemds.utils.consts import VALID_INPUT_TYPES
 from systemds.utils.converters import (frame_block_to_pandas,
                                        pandas_to_frame_block)
-from systemds.utils.helpers import get_slice_string
+from systemds.utils.helpers import check_is_empty_slice, check_no_less_than_zero, get_slice_string
 
 if TYPE_CHECKING:
     # to avoid cyclic dependencies during runtime
@@ -73,7 +73,7 @@ class Frame(OperationNode):
             code_line = code_line.format(file_name=var_name)
         return code_line
 
-    def compute(self, verbose: bool = False, lineage: bool = False) -> Union[pd.DataFrame]:
+    def compute(self, verbose: bool = False, lineage: bool = False) -> pd.DataFrame:
         if self._is_pandas():
             if verbose:
                 print("[Pandas Frame - No Compilation necessary]")
@@ -139,6 +139,33 @@ class Frame(OperationNode):
     def __str__(self):
         return "FrameNode"
 
+    def nRow(self) -> 'Scalar':
+        return Scalar(self.sds_context, 'nrow', [self])
+
+    def nCol(self) -> 'Scalar':
+        return Scalar(self.sds_context, 'ncol', [self])
+
     def __getitem__(self, i) -> 'Frame':
-        sliceIns = get_slice_string(i)
-        return Frame(self.sds_context, '', [self, sliceIns], brackets=True)
+        if isinstance(i, tuple) and len(i) > 2:
+            raise ValueError("Maximum of two dimensions are allowed")
+        elif isinstance(i, list):
+            check_no_less_than_zero(i)
+            slice = self.sds_context.from_numpy(np.array(i)) + 1
+            select = Matrix(self.sds_context, "table",
+                            [slice, 1, self.nRow(), 1])
+            ret = Frame(self.sds_context, "removeEmpty", [], {
+                         'target': self, 'margin': '"rows"', 'select': select})
+            return ret
+        elif isinstance(i, tuple) and isinstance(i[0], list) and isinstance(i[1], list):
+            raise NotImplementedError("double slicing is not supported yet")
+        elif isinstance(i, tuple) and check_is_empty_slice(i[0]) and isinstance(i[1], list):
+            check_no_less_than_zero(i[1])
+            slice = self.sds_context.from_numpy(np.array(i[1])) + 1
+            select = Matrix(self.sds_context, "table",
+                            [slice, 1, self.nCol(), 1])
+            ret = Frame(self.sds_context, "removeEmpty", [], {
+                         'target': self, 'margin': '"cols"', 'select': select})
+            return ret
+        else:
+            sliceIns = get_slice_string(i)
+            return Frame(self.sds_context, '', [self, sliceIns], brackets=True)

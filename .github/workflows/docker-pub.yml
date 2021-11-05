@@ -1,10 +1,12 @@
 name: Docker pub
 
 on:
-  push: [ main ]
+  push: 
+    branches: main
   workflow_dispatch:
   # Run tests for any PRs.
   pull_request:
+    branches: main
 
 env:
   # Image name used while building docker image
@@ -13,6 +15,6 @@ env:
 jobs:
   # Run tests.
   # See also https://docs.docker.com/docker-hub/builds/automated-testing/
-  test:
+  test-job:
     runs-on: ubuntu-latest
     

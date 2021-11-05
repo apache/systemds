@@ -1,6 +1,12 @@
 name: gpu tests
 
 on:
+  push:
+    branches: 
+      - main-gpu
+  pull_request:
+    branches:
+      - main-gpu
   workflow_dispatch:
 
 jobs:

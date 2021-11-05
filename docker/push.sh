@@ -21,6 +21,6 @@
 #-------------------------------------------------------------
 
 
-# docker push apache/systemds:nightly
+docker push apache/systemds:nightly
 docker push apache/systemds:testing-latest
-# docker push apache/systemds:python-nightly
+docker push apache/systemds:python-nightly

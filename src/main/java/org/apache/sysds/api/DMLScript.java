@@ -600,9 +600,6 @@ public class DMLScript
 		sb.append(StringUtils.leftPad(e.getClass().getSimpleName(),25));
 		sb.append(" -- ");
 		sb.append(e.getMessage());
-		sb.append("\n" );
-		for(StackTraceElement stackTraceElement : e.getStackTrace())
-			sb.append(stackTraceElement).append("\n");
 		Throwable s =  e.getCause();
 		while(s != null){
 			sb.append("\n" );

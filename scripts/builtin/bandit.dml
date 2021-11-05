@@ -330,7 +330,7 @@ getHyperparam = function(Frame[Unknown] pipeline, Frame[Unknown]  hpList, Intege
   parfor(k in 1:ncol(pipeline))
   {
     op = as.scalar(pipeline[1,k])
-    hasParam = map(hpList[,1], "x->x.split(\",\")[0].equals(\""+op+"\")", 0)
+    hasParam = map(hpList[,1], "x->x.split(\",\")[0].equals(\""+op+"\")")
     # convert the boolean vector to 0/1 matrix representation
     m_hasParam = hasParam == frame("true", rows=nrow(hasParam), cols=1)
     m_hasParam = as.matrix(m_hasParam)

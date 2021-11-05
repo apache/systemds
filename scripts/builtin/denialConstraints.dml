@@ -103,7 +103,7 @@ return(Matrix[double] WrongInstances)
   
   for(iConstraint in 2:M) { # loop starts in 2 because 1 is the name of the columns, not a constraint
     var1 = as.scalar(constraintsFrame[iConstraint,6]) # variable 1 of the constraint
-    isCol1 = map(colName, "x->x.equals(\""+var1+"\")", 0) # find the column of dataFrame corresponding to var1
+    isCol1 = map(colName, "x->x.equals(\""+var1+"\")") # find the column of dataFrame corresponding to var1
     rel = as.scalar(constraintsFrame[iConstraint,7]) # relation of the constraint
     colIdx1=0
     for(iLog in 1:ncol(colName)){   
@@ -119,7 +119,7 @@ return(Matrix[double] WrongInstances)
     
     if(as.scalar(constraintsFrame[iConstraint,3])=="TRUE" & colIdx1!=0) {
       varToGroup = as.scalar(constraintsFrame[iConstraint,4]) # variable that will divide our data in groups
-      isColToGroup = map(colName, "x->x.equals(\""+varToGroup+"\")", 0) # find the column of dataFrame corresponding to varToGroup
+      isColToGroup = map(colName, "x->x.equals(\""+varToGroup+"\")") # find the column of dataFrame corresponding to varToGroup
       for(iLog in 1:ncol(colName)){
         if(as.scalar(isColToGroup[1,iLog])=="true"){
         colIdxToGroup=iLog
@@ -127,7 +127,7 @@ return(Matrix[double] WrongInstances)
       } 
       groupInstances = dataFrame[,colIdxToGroup]
       groupOption = as.scalar(constraintsFrame[iConstraint,5]) # option of the group.variable that defines the group to consider
-      IsGroupInstance= map(groupInstances, "x->x.equals(\""+groupOption+"\")", 0) # find the instances with varToGroup = groupOption
+      IsGroupInstance= map(groupInstances, "x->x.equals(\""+groupOption+"\")") # find the instances with varToGroup = groupOption
       IsGroupInstanceM = matrix(0, nrow(IsGroupInstance), 1)
       for(h in 1:nrow(IsGroupInstance)){
         IsGroupInstanceM[h,1] = ifelse(as.scalar(IsGroupInstance[h,1]) == "true",TRUE,FALSE)
@@ -147,7 +147,7 @@ return(Matrix[double] WrongInstances)
     if(as.scalar(constraintsFrame[iConstraint,2])=="variableCompare" & colIdx1!=0){
       var2 = as.scalar(constraintsFrame[iConstraint,8]) # variable 2 of the constraint
       isCol2 = 0
-      isCol2 = map(colName, "x->x.equals(\""+var2+"\")", 0)
+      isCol2 = map(colName, "x->x.equals(\""+var2+"\")")
       for(iLog in 1:ncol(colName)){
         if(as.scalar(isCol2[1,iLog])=="true"){
           colIdx2=iLog
@@ -227,7 +227,7 @@ return(Matrix[double] WrongInstances)
     } else if(as.scalar(constraintsFrame[iConstraint,2])=="instanceCompare" & colIdx1!=0){
       
       var2 = as.scalar(constraintsFrame[iConstraint,8]) # variable 2 of the constraint
-      isCol2 = map(colName, "x->x.equals(\""+var2+"\")", 0)
+      isCol2 = map(colName, "x->x.equals(\""+var2+"\")")
       colIdx2=0
       for(iLog in 1:ncol(colName)){
         if(as.scalar(isCol2[1,iLog])=="true"){

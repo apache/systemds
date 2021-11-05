@@ -19,4 +19,4 @@
 #
 #-------------------------------------------------------------
 
-FROM systemds/testingsysds:latest
+FROM apache/systemds:testing-latest

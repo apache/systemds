@@ -23,13 +23,13 @@
 # Build the docker containers
 
 # The first build is for running systemds through docker.
-docker image build -f docker/sysds.Dockerfile -t systemds/sysds:latest .
+docker image build -f docker/sysds.Dockerfile -t apache/systemds:nightly .
 
 # The second build is for testing systemds. This image installs the R dependencies needed to run the tests.
-docker image build -f docker/testsysds.Dockerfile -t systemds/testingsysds:latest .
+docker image build -f docker/testsysds.Dockerfile -t apache/systemds:testing-latest .
 
 # The third build is python docker for systemds. 
-docker image build -f docker/pythonsysds.Dockerfile -t systemds/pythonsysds:latest .
+docker image build -f docker/pythonsysds.Dockerfile -t apache/systemds:python-nightly .
 
 # You might want to prune the docker system afterwards using
 # docker system prune

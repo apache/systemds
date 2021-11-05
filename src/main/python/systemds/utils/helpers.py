@@ -52,7 +52,7 @@ def get_module_dir() -> os.PathLike:
 
 def get_slice_string(i):
     print(i)
-    
+
     if isinstance(i, list):
         raise ValueError("Not Supported list query")
     if isinstance(i, tuple):
@@ -73,11 +73,11 @@ def get_slice_string(i):
     return sliceIns
 
 
-def check_is_empty_slice( i):
+def check_is_empty_slice(i):
     return isinstance(i, slice) and i.start == None and i.stop == None and i.step == None
 
-def check_no_less_than_zero( i:list ):
+
+def check_no_less_than_zero(i: list):
     for x in i:
         if(x < 0):
-            raise ValueError(
-                "Negative index not supported in systemds")
+            raise ValueError("Negative index not supported in systemds")

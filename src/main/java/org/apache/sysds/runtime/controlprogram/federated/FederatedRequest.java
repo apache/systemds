@@ -22,7 +22,6 @@ package org.apache.sysds.runtime.controlprogram.federated;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.io.Serializable;
-import java.lang.management.ManagementFactory;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -34,6 +33,7 @@ import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.runtime.controlprogram.caching.CacheBlock;
 import org.apache.sysds.runtime.controlprogram.caching.CacheDataOutput;
 import org.apache.sysds.runtime.controlprogram.caching.LazyWriteBuffer;
+import org.apache.sysds.runtime.controlprogram.parfor.util.IDHandler;
 import org.apache.sysds.runtime.instructions.cp.ScalarObject;
 import org.apache.sysds.utils.Statistics;
 
@@ -76,11 +76,7 @@ public class FederatedRequest implements Serializable {
 		_method = method;
 		_id = id;
 		_data = data;
-		// get process id
-		_pid = Long.valueOf(ManagementFactory.getRuntimeMXBean().getName().split("@")[0]);
-		// TODO: change this as soon as we switch to a java version >= 9
-		// import java.lang.ProcessHandle;
-		// _pid = ProcessHandle.current().pid();
+		_pid = Long.valueOf(IDHandler.obtainProcessID());
 		setCheckPrivacy();
 		if (DMLScript.LINEAGE && method == RequestType.PUT_VAR)
 			setChecksum();

@@ -1,0 +1,18 @@
+name: Docker pub
+
+on:
+  push: [ main ]
+  workflow_dispatch:
+  # Run tests for any PRs.
+  pull_request:
+
+env:
+  # Image name used while building docker image
+  IMAGE_NAME: sysds
+
+jobs:
+  # Run tests.
+  # See also https://docs.docker.com/docker-hub/builds/automated-testing/
+  test:
+    runs-on: ubuntu-latest
+    

@@ -22,11 +22,11 @@
 # input: 1) frame, 2) lamba expression to execute for each non-null cell, row or col
 # output: frame
 
-# Example (concat strings by row):
-#   map(X, "y -> UtilFunctions.concat(y)", 1)
+# Example (convert strings to doubles, compute sum and opy to every cell):
+#   map(X, "x -> UtilFunctions.copyAsStringToArray(x, Arrays.stream(UtilFunctions.convertStringToDoubleArray(x)).sum())", 1)
 
 X = read($1, data_type = "frame", format = "csv", header = FALSE)
 
-Y = map(X, $2, $3)
+X1 = map(X, "x -> x.replace(\"Str\", \"\")", 0)
+Y = map(X1, $2, $3)
 write(Y, $4,  format="csv")
-write(X, $5,  format="csv")

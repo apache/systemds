@@ -27,9 +27,9 @@ import org.apache.sysds.runtime.controlprogram.federated.FederationUtils;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
 import org.apache.sysds.runtime.matrix.operators.Operator;
 
-public class BinaryFrameScalarFEDInstruction extends BinaryFEDInstruction
+public class TernaryFrameScalarFEDInstruction extends BinaryFEDInstruction
 {
-	protected BinaryFrameScalarFEDInstruction(Operator op, CPOperand in1,
+	protected TernaryFrameScalarFEDInstruction(Operator op, CPOperand in1,
 			CPOperand in2, CPOperand out, String opcode, String istr) {
 		super(FEDInstruction.FEDType.Binary, op, in1, in2, out, opcode, istr);
 	}

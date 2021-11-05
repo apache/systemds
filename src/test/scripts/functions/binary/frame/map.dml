@@ -24,6 +24,6 @@
 
 X = read($1, data_type = "frame", format = "csv", header = FALSE)
 # column vector and string operation
-Y = map(X, $2, 0)
+Y = map(X, $2)
 write(Y, $3,  format="csv")
 write(X, $4,  format="csv")

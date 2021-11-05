@@ -37,7 +37,7 @@ import org.apache.sysds.runtime.instructions.cp.AggregateBinaryCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.AggregateTernaryCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.AggregateUnaryCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.BinaryCPInstruction;
-import org.apache.sysds.runtime.instructions.cp.BinaryFrameScalarCPInstruction;
+import org.apache.sysds.runtime.instructions.cp.TernaryFrameScalarCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.CtableCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.Data;
 import org.apache.sysds.runtime.instructions.cp.IndexingCPInstruction;
@@ -60,7 +60,7 @@ import org.apache.sysds.runtime.instructions.spark.AppendGAlignedSPInstruction;
 import org.apache.sysds.runtime.instructions.spark.AppendGSPInstruction;
 import org.apache.sysds.runtime.instructions.spark.AppendMSPInstruction;
 import org.apache.sysds.runtime.instructions.spark.AppendRSPInstruction;
-import org.apache.sysds.runtime.instructions.spark.BinaryFrameScalarSPInstruction;
+import org.apache.sysds.runtime.instructions.spark.TernaryFrameScalarSPInstruction;
 import org.apache.sysds.runtime.instructions.spark.BinaryMatrixBVectorSPInstruction;
 import org.apache.sysds.runtime.instructions.spark.BinaryMatrixMatrixSPInstruction;
 import org.apache.sysds.runtime.instructions.spark.BinaryMatrixScalarSPInstruction;
@@ -183,9 +183,10 @@ public class FEDInstructionUtils {
 				else
 					fedinst = BinaryFEDInstruction.parseInstruction(
 						InstructionUtils.concatOperands(inst.getInstructionString(),FederatedOutput.NONE.name()));
-			} else if(inst.getOpcode().equals("_map") && inst instanceof BinaryFrameScalarCPInstruction && !inst.getInstructionString().contains("UtilFunctions")
+			} else if(inst.getOpcode().equals("_map") && inst instanceof TernaryFrameScalarCPInstruction && !inst.getInstructionString().contains("UtilFunctions")
 				&& instruction.input1.isFrame() && ec.getFrameObject(instruction.input1).isFederated()) {
-				fedinst = BinaryFrameScalarFEDInstruction.parseInstruction(InstructionUtils.concatOperands(inst.getInstructionString(),FederatedOutput.NONE.name()));
+				fedinst = TernaryFrameScalarFEDInstruction
+					.parseInstruction(InstructionUtils.concatOperands(inst.getInstructionString(),FederatedOutput.NONE.name()));
 			}
 		}
 		else if( inst instanceof ParameterizedBuiltinCPInstruction ) {
@@ -432,9 +433,9 @@ public class FEDInstructionUtils {
 						InstructionUtils.concatOperands(inst.getInstructionString(),FederatedOutput.NONE.name()));
 				}
 			}
-			else if(inst.getOpcode().equals("_map") && inst instanceof BinaryFrameScalarSPInstruction && !inst.getInstructionString().contains("UtilFunctions")
+			else if(inst.getOpcode().equals("_map") && inst instanceof TernaryFrameScalarSPInstruction && !inst.getInstructionString().contains("UtilFunctions")
 				&& instruction.input1.isFrame() && ec.getFrameObject(instruction.input1).isFederated()) {
-				fedinst = BinaryFrameScalarFEDInstruction.parseInstruction(InstructionUtils
+				fedinst = TernaryFrameScalarFEDInstruction.parseInstruction(InstructionUtils
 					.concatOperands(inst.getInstructionString(), FederatedOutput.NONE.name()));
 			}
 			else if( (instruction.input1.isMatrix() && ec.getCacheableData(instruction.input1).isFederatedExcept(FType.BROADCAST))

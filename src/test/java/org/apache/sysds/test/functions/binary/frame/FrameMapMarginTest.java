@@ -23,11 +23,11 @@ import org.apache.sysds.common.Types;
 import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
-import org.apache.sysds.runtime.util.UtilFunctions;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
 import org.junit.AfterClass;
+import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -38,6 +38,7 @@ public class FrameMapMarginTest extends AutomatedTestBase {
 
 	private final static int rows = 100;
 	private final static Types.ValueType[] schemaStrings1 = {Types.ValueType.STRING, Types.ValueType.STRING};
+	private final static String expression = "x -> UtilFunctions.copyAsStringToArray(x, Arrays.stream(UtilFunctions.convertStringToDoubleArray(x)).sum())";
 
 	@BeforeClass
 	public static void init() {
@@ -61,23 +62,19 @@ public class FrameMapMarginTest extends AutomatedTestBase {
 	}
 
 	@Test
-	public void testMarginColCP() {
-		runDmlMapTest("x -> UtilFunctions.concat(x)", 2, ExecType.CP);
-	}
+	public void testMarginColCP() { runDmlMapTest(expression, 2, ExecType.CP); }
 
 	@Test
-	public void testMarginColSP() {
-		runDmlMapTest("x -> UtilFunctions.concat(x)", 2, ExecType.CP);
-	}
+	public void testMarginColSP() { runDmlMapTest(expression, 2, ExecType.CP); }
 
 	@Test
 	public void testMarginRowCP() {
-		runDmlMapTest("x -> UtilFunctions.concat(x)", 1, ExecType.SPARK);
+		runDmlMapTest(expression, 1, ExecType.SPARK);
 	}
 
 	@Test
 	public void testMarginRowSP() {
-		runDmlMapTest("x -> UtilFunctions.concat(x)", 1, ExecType.SPARK);
+		runDmlMapTest(expression, 1, ExecType.SPARK);
 	}
 
 	private void runDmlMapTest( String expression, int margin, ExecType et)
@@ -89,34 +86,21 @@ public class FrameMapMarginTest extends AutomatedTestBase {
 
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[] { "-stats","-args", input("A"), expression, String.valueOf(margin), output("O"), output("I")};
+			programArgs = new String[] { "-stats","-args", input("A"), expression, String.valueOf(margin), output("O")};
 
-			double[][] A = getRandomMatrix(rows, 2, 0, 1, 1, 2);
+			double[][] A = getRandomMatrix(rows, 2, 1, 1, 1, 2);
 			writeInputFrameWithMTD("A", A, true, schemaStrings1, FileFormat.CSV);
 			
 			runTest(true, false, null, -1);
 
 			FrameBlock outputFrame = readDMLFrameFromHDFS("O", FileFormat.CSV);
-			FrameBlock inputFrame = readDMLFrameFromHDFS("I", FileFormat.CSV);
 
-			String[][] inputDerived, outputDerived;
-			if (margin == 1) {
-				inputDerived = new String[rows][1];
-				outputDerived = new String[rows][1];
+			for(int j = 0; j < schemaStrings1.length; j++)
 				for(int i = 0; i < rows; i++) {
-					inputDerived[i][0] = ((String[])inputFrame.getColumnData(0))[i] + ((String[])inputFrame.getColumnData(1))[i];
-					outputDerived[i][0] = ((String[])outputFrame.getColumnData(0))[i];
+					Assert.assertEquals(Double.parseDouble(((String[]) outputFrame.getColumnData(j))[i]),
+						margin == 1 ? schemaStrings1.length : rows,
+						0.0);
 				}
-				TestUtils.compareFrames(inputDerived, outputDerived, rows, 1);
-			} else {
-				inputDerived = new String[1][2];
-				outputDerived = new String[1][2];
-				inputDerived[0][0] = UtilFunctions.concat((String[])inputFrame.getColumnData(0));
-				inputDerived[0][1] = UtilFunctions.concat((String[])inputFrame.getColumnData(1));
-				outputDerived[0][0] = ((String[])outputFrame.getColumnData(0))[0];
-				outputDerived[0][1] = ((String[])outputFrame.getColumnData(1))[0];
-				TestUtils.compareFrames(inputDerived, outputDerived, 1, 2);
-			}
 		}
 		catch (Exception ex) {
 			throw new RuntimeException(ex);

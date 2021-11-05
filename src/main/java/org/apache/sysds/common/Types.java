@@ -306,7 +306,7 @@ public class Types
 		BITWXOR(true), CBIND(false), CONCAT(false), COV(false), DIV(true),
 		DROP_INVALID_TYPE(false), DROP_INVALID_LENGTH(false), EQUAL(true), GREATER(true),
 		GREATEREQUAL(true), INTDIV(true), INTERQUANTILE(false), IQM(false), LESS(true),
-		LESSEQUAL(true), LOG(true), MAP(false), MAX(true), MEDIAN(false), MIN(true),
+		LESSEQUAL(true), LOG(true), MAX(true), MEDIAN(false), MIN(true),
 		MINUS(true), MODULUS(true), MOMENT(false), MULT(true), NOTEQUAL(true), OR(true),
 		PLUS(true), POW(true), PRINT(false), QUANTILE(false), SOLVE(false), RBIND(false),
 		XOR(true),
@@ -354,7 +354,6 @@ public class Types
 				case BITWSHIFTR:   return "bitwShiftR";
 				case DROP_INVALID_TYPE: return "dropInvalidType";
 				case DROP_INVALID_LENGTH: return "dropInvalidLength";
-				case MAP:          return "_map";
 				default:           return name().toLowerCase();
 			}
 		}
@@ -388,7 +387,6 @@ public class Types
 				case "bitwShiftR":  return BITWSHIFTR;
 				case "dropInvalidType": return DROP_INVALID_TYPE;
 				case "dropInvalidLength": return DROP_INVALID_LENGTH;
-				case "map":         return MAP;
 				default:            return valueOf(opcode.toUpperCase());
 			}
 		}

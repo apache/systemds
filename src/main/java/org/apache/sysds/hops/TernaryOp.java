@@ -443,7 +443,7 @@ public class TernaryOp extends MultiThreadedHop
 				if( ldim1>=0 && ldim2>=0 ) {
 					s1 = (mc[0].getNonZeros()>0)?OptimizerUtils.getSparsity(ldim1, ldim2, mc[0].getNonZeros()):1.0;
 					s2 = (mc[1].getNonZeros()>0)?OptimizerUtils.getSparsity(ldim1, ldim2, mc[1].getNonZeros()):1.0;
-					ret = new MatrixCharacteristics(ldim1, ldim2, -1, (long) (ldim1 * ldim2 * OptimizerUtils.getBinaryOpSparsity(s1, s2, OpOp2.MAP, true)));
+					ret = new MatrixCharacteristics(ldim1, ldim2, -1, (long) (ldim1 * ldim2 * 1.0));
 				}
 				return ret;
 
@@ -560,11 +560,7 @@ public class TernaryOp extends MultiThreadedHop
 					ldim1 = (input1.rowsKnown()) ? input1.getDim1() : ((input2.getDim1()>1)?input2.getDim1():-1);
 					ldim2 = (input1.colsKnown()) ? input1.getDim2() : ((input2.getDim2()>1)?input2.getDim2():-1);
 					lnnz1 = input1.getNnz();
-					if(input3 != null)
-						switch((int) ((LiteralOp) input3).getLongValue()) {
-							case 1: ldim2 = 1; break;
-							case 2: ldim1 = 1; break;
-						}
+
 					setDim1( ldim1 );
 					setDim2( ldim2 );
 					setNnz(lnnz1);
@@ -643,6 +639,9 @@ public class TernaryOp extends MultiThreadedHop
 			return false;
 		
 		TernaryOp that2 = (TernaryOp)that;
+
+		if(_op == OpOp3.MAP)
+			return false; // custom UDFs
 		
 		//compare basic inputs and weights (always existing)
 		boolean ret = (_op == that2._op

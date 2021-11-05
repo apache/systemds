@@ -28,8 +28,8 @@ import org.apache.sysds.runtime.instructions.cp.ScalarObject;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.operators.Operator;
 
-public class BinaryFrameScalarSPInstruction extends BinarySPInstruction {
-	protected BinaryFrameScalarSPInstruction (Operator op, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out,
+public class TernaryFrameScalarSPInstruction extends BinarySPInstruction {
+	protected TernaryFrameScalarSPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out,
 			String opcode, String istr) {
 		super(SPType.Binary, op, in1, in2, in3, out, opcode, istr);
 	}
@@ -50,8 +50,8 @@ public class BinaryFrameScalarSPInstruction extends BinarySPInstruction {
 			long rows = sec.getDataCharacteristics(output.getName()).getRows();
 			sec.getDataCharacteristics(output.getName()).setDimension(rows, rows);
 		} else {
-			long rows = margin == 2 ? 1 : sec.getDataCharacteristics(output.getName()).getRows();
-			long cols = margin == 1 ? 1 : sec.getDataCharacteristics(output.getName()).getCols();
+			long rows = sec.getDataCharacteristics(output.getName()).getRows();
+			long cols = sec.getDataCharacteristics(output.getName()).getCols();
 			sec.getDataCharacteristics(output.getName()).setDimension(rows, cols);
 		}
 		sec.setRDDHandleForVariable(output.getName(), out);

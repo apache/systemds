@@ -2268,11 +2268,9 @@ public class FrameBlock implements CacheBlock, Externalizable  {
 
 	public FrameBlock map (FrameMapFunction lambdaExpr, long margin) {
 		// Prepare temporary output array
-		String[][] output = null;
+		String[][] output = new String[getNumRows()][getNumColumns()];
 
 		if (margin == 1) {
-			output = new String[getNumRows()][1];
-
 			// Execute map function on rows
 			for(int i = 0; i < getNumRows(); i++) {
 				String[] row = new String[getNumColumns()];
@@ -2280,19 +2278,18 @@ public class FrameBlock implements CacheBlock, Externalizable  {
 					Array input = getColumn(j);
 					row[j] = String.valueOf(input.get(i));
 				}
-				output[i][0] = lambdaExpr.apply(row);
+				output[i] = lambdaExpr.apply(row);
 			}
 		} else if (margin == 2) {
-			output = new String[1][getNumColumns()];
-
 			// Execute map function on columns
 			for(int j = 0; j < getNumColumns(); j++) {
-				String[] input = (String[]) getColumnData(j);
-				output[0][j] = lambdaExpr.apply(input);
+				String[] actualColumn = Arrays.copyOfRange((String[]) getColumnData(j), 0, getNumRows()); // since more rows can be allocated, mutable array
+				String[] outColumn = lambdaExpr.apply(actualColumn);
+
+				for(int i = 0; i < getNumRows(); i++)
+					output[i][j] = outColumn[i];
 			}
 		} else {
-			output = new String[getNumRows()][getNumColumns()];
-
 			// Execute map function on all cells
 			for(int j = 0; j < getNumColumns(); j++) {
 				Array input = getColumn(j);
@@ -2301,7 +2298,7 @@ public class FrameBlock implements CacheBlock, Externalizable  {
 						output[i][j] = lambdaExpr.apply(String.valueOf(input.get(i)));
 			}
 		}
-		return new FrameBlock(UtilFunctions.nCopies(output[0].length, ValueType.STRING), output);
+		return new FrameBlock(UtilFunctions.nCopies(getNumColumns(), ValueType.STRING), output);
 	}
 
 	public FrameBlock mapDist (FrameMapFunction lambdaExpr) {
@@ -2331,10 +2328,11 @@ public class FrameBlock implements CacheBlock, Externalizable  {
 		sb.append("import org.apache.sysds.runtime.util.UtilFunctions;\n");
 		sb.append("import org.apache.sysds.runtime.util.PorterStemmer;\n");
 		sb.append("import org.apache.sysds.runtime.matrix.data.FrameBlock.FrameMapFunction;\n");
+		sb.append("import java.util.Arrays;\n");
 		sb.append("public class " + cname + " extends FrameMapFunction {\n");
 		if(margin != 0) {
-			sb.append("public String apply(String[] " + varname[0].trim() + ") {\n");
-			sb.append("  return String.valueOf(" + expr + "); }}\n");
+			sb.append("public String[] apply(String[] " + varname[0].trim() + ") {\n");
+			sb.append("  return UtilFunctions.toStringArray(" + expr + "); }}\n");
 		} else {
 			if(varname.length == 1) {
 				sb.append("public String apply(String " + varname[0].trim() + ") {\n");
@@ -2358,7 +2356,7 @@ public class FrameBlock implements CacheBlock, Externalizable  {
 		private static final long serialVersionUID = -8398572153616520873L;
 		public String apply(String input) {return null;}
 		public String apply(String input1, String input2) {	return null;}
-		public String apply(String[] input1) {	return null;}
+		public String[] apply(String[] input1) {	return null;}
 	}
 
 	public FrameBlock replaceOperations(String pattern, String replacement){

@@ -73,7 +73,7 @@ public abstract class BinaryFEDInstruction extends ComputationFEDInstruction {
 		else if( in1.isMatrix() && in2.isScalar() || in2.isMatrix() && in1.isScalar() )
 			return new BinaryMatrixScalarFEDInstruction(operator, in1, in2, out, opcode, str, fedOut);
 		else if( in1.isFrame() && in2.isScalar() || in2.isFrame() && in1.isScalar() )
-			return new BinaryFrameScalarFEDInstruction(operator, in1, in2, out, opcode, InstructionUtils.removeFEDOutputFlag(str));
+			return new TernaryFrameScalarFEDInstruction(operator, in1, in2, out, opcode, InstructionUtils.removeFEDOutputFlag(str));
 		else
 			throw new DMLRuntimeException("Federated binary operations not yet supported:" + opcode);
 	}

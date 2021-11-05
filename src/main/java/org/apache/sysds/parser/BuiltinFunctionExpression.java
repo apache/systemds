@@ -1575,18 +1575,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 				output.setValueType(ValueType.FP64);
 			}
 			else {
-				int margin = Integer.parseInt(_args[2].getOutput()._outputs[0].toString());
-				switch(margin) {
-					case 0:
-						output.setDimensions(id.getDim1(), id.getDim2());
-						break;
-					case 1:
-						output.setDimensions(id.getDim1(), 1);
-						break;
-					case 2:
-						output.setDimensions(1, id.getDim2());
-						break;
-				}
+				output.setDimensions(id.getDim1(), id.getDim2());
 				output.setValueType(ValueType.STRING);
 			}
 			break;

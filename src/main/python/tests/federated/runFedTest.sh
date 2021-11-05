@@ -45,7 +45,7 @@ systemds WORKER 8002 >$w2_Output 2>&1 &
 Fed2=$!
 systemds WORKER 8003 >$w3_Output 2>&1 &
 Fed3=$!
-echo "Starting workers" && sleep 3 && echo "Starting tests"
+echo "Starting workers" && sleep 6 && echo "Starting tests"
 
 # Run test
 python -m unittest discover -s tests/federated -p 'test_*.py' $1 >$log 2>&1

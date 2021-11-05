@@ -22,7 +22,8 @@ jobs:
       - uses: actions/checkout@v2
 
       - name: Build image
-        run: ./docker/build.sh
+        run: docker image build -f docker/testsysds.Dockerfile -t apache/systemds:testing-latest .
+
 
 
     

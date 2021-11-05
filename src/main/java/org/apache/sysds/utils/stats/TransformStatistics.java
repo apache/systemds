@@ -41,27 +41,27 @@ public class TransformStatistics {
 	private static final LongAdder outMatrixPreProcessingTime = new LongAdder();
 	private static final LongAdder outMatrixPostProcessingTime = new LongAdder();
 
-	public static void incEncoderCount(long encoders){
+	public static void incEncoderCount(long encoders) {
 		encoderCount.add(encoders);
 	}
 
-	public static void incRecodeApplyTime(long t){
+	public static void incRecodeApplyTime(long t) {
 		recodeApplyTime.add(t);
 	}
 
-	public static void incDummyCodeApplyTime(long t){
+	public static void incDummyCodeApplyTime(long t) {
 		dummyCodeApplyTime.add(t);
 	}
 
-	public static void incBinningApplyTime(long t){
+	public static void incBinningApplyTime(long t) {
 		binningApplyTime.add(t);
 	}
 
-	public static void incPassThroughApplyTime(long t){
+	public static void incPassThroughApplyTime(long t) {
 		passThroughApplyTime.add(t);
 	}
 
-	public static void incFeatureHashingApplyTime(long t){
+	public static void incFeatureHashingApplyTime(long t) {
 		featureHashingApplyTime.add(t);
 	}
 
@@ -73,11 +73,11 @@ public class TransformStatistics {
 		imputeApplyTime.add(t);
 	}
 
-	public static void incRecodeBuildTime(long t){
+	public static void incRecodeBuildTime(long t) {
 		recodeBuildTime.add(t);
 	}
 
-	public static void incBinningBuildTime(long t){
+	public static void incBinningBuildTime(long t) {
 		binningBuildTime.add(t);
 	}
 
@@ -85,24 +85,42 @@ public class TransformStatistics {
 		imputeBuildTime.add(t);
 	}
 
-	public static void incOutMatrixPreProcessingTime(long t){
+	public static void incOutMatrixPreProcessingTime(long t) {
 		outMatrixPreProcessingTime.add(t);
 	}
 
-	public static void incOutMatrixPostProcessingTime(long t){
+	public static void incOutMatrixPostProcessingTime(long t) {
 		outMatrixPostProcessingTime.add(t);
 	}
 
-	public static long getEncodeBuildTime(){
+	public static long getEncodeBuildTime() {
 		return binningBuildTime.longValue() + imputeBuildTime.longValue() +
 				recodeBuildTime.longValue();
 	}
 
-	public static long getEncodeApplyTime(){
+	public static long getEncodeApplyTime() {
 		return dummyCodeApplyTime.longValue() + binningApplyTime.longValue() +
 				featureHashingApplyTime.longValue() + passThroughApplyTime.longValue() +
 				recodeApplyTime.longValue() + omitApplyTime.longValue() +
 				imputeApplyTime.longValue();
+	}
+
+	public static void reset() {
+		encoderCount.reset();
+		// buildTime.reset();
+		recodeBuildTime.reset();
+		binningBuildTime.reset();
+		imputeBuildTime.reset();
+		// applyTime.reset();
+		recodeApplyTime.reset();
+		dummyCodeApplyTime.reset();
+		passThroughApplyTime.reset();
+		featureHashingApplyTime.reset();
+		binningApplyTime.reset();
+		omitApplyTime.reset();
+		imputeApplyTime.reset();
+		outMatrixPreProcessingTime.reset();
+		outMatrixPostProcessingTime.reset();
 	}
 
 	public static String displayStatistics() {

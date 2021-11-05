@@ -118,6 +118,23 @@ public class ParamServStatistics {
 		fedCommunicationTime.add(t);
 	}
 
+	public static void reset() {
+		executionTime.reset();
+		numWorkers.reset();
+		setupTime.reset();
+		gradientComputeTime.reset();
+		aggregationTime.reset();
+		localModelUpdateTime.reset();
+		modelBroadcastTime.reset();
+		batchIndexTime.reset();
+		rpcRequestTime.reset();
+		validationTime.reset();
+		fedDataPartitioningTime.reset();
+		fedWorkerComputingTime.reset();
+		fedGradientWeightingTime.reset();
+		fedCommunicationTime.reset();
+	}
+
 	public static String displayStatistics() {
 		if (numWorkers.longValue() > 0) {
 			StringBuilder sb = new StringBuilder();

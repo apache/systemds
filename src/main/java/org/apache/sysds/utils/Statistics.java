@@ -230,10 +230,10 @@ public class Statistics
 		funRecompileTime.reset();
 
 		CodegenStatistics.reset();
-
 		ParForStatistics.reset();
-
+		ParamServStatistics.reset();
 		SparkStatistics.reset();
+		TransformStatistics.reset();
 
 		lTotalLix.reset();
 		lTotalLixUIP.reset();
@@ -248,9 +248,7 @@ public class Statistics
 		resetCPHeavyHitters();
 
 		GPUStatistics.reset();
-
 		NativeStatistics.reset();
-
 		DMLCompressionStatistics.reset();
 	}
 

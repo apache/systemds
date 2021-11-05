@@ -89,8 +89,12 @@ public class SparkStatistics {
 
 	public static void reset() {
 		ctxCreateTime = 0;
+		parallelizeTime.reset();
+		parallelizeCount.reset();
 		broadcastTime.reset();
 		broadcastCount.reset();
+		collectTime.reset();
+		collectCount.reset();
 		asyncPrefetchCount.reset();
 		asyncBroadcastCount.reset();
 	}

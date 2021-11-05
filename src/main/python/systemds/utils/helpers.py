@@ -51,12 +51,10 @@ def get_module_dir() -> os.PathLike:
 
 
 def get_slice_string(i):
+    if isinstance(i, list):
+        raise ValueError("Not Supported list query")
     if isinstance(i, tuple):
-        if len(i) > 2:
-            raise ValueError(
-                f'Invalid number of dimensions to slice {len(i)}, Only 2 dimensions allowed')
-        else:
-            return f'{get_slice_string(i[0])},{get_slice_string(i[1])}'
+        return f'{get_slice_string(i[0])},{get_slice_string(i[1])}'
     elif isinstance(i, slice):
         if i.step:
             raise ValueError("Invalid to slice with step in systemds")
@@ -71,3 +69,13 @@ def get_slice_string(i):
         # + 1 since R and systemDS is 1 indexed.
         sliceIns = i+1
     return sliceIns
+
+
+def check_is_empty_slice(i):
+    return isinstance(i, slice) and i.start == None and i.stop == None and i.step == None
+
+
+def check_no_less_than_zero(i: list):
+    for x in i:
+        if(x < 0):
+            raise ValueError("Negative index not supported in systemds")

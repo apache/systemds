@@ -68,8 +68,10 @@ public class DMLConfig
 	public static final String CP_PARALLEL_OPS      = "sysds.cp.parallel.ops";
 	public static final String CP_PARALLEL_IO       = "sysds.cp.parallel.io";
 	public static final String PARALLEL_ENCODE      = "sysds.parallel.encode";  // boolean: enable multi-threaded transformencode and apply
+	public static final String PARALLEL_ENCODE_STAGED = "sysds.parallel.encode.staged";
 	public static final String PARALLEL_ENCODE_APPLY_BLOCKS = "sysds.parallel.encode.applyBlocks";
 	public static final String PARALLEL_ENCODE_BUILD_BLOCKS = "sysds.parallel.encode.buildBlocks";
+	public static final String PARALLEL_ENCODE_NUM_THREADS  = "sysds.parallel.encode.numThreads";
 	public static final String COMPRESSED_LINALG    = "sysds.compressed.linalg";
 	public static final String COMPRESSED_LOSSY     = "sysds.compressed.lossy";
 	public static final String COMPRESSED_VALID_COMPRESSIONS = "sysds.compressed.valid.compressions";
@@ -130,8 +132,10 @@ public class DMLConfig
 		_defaultVals.put(CP_PARALLEL_OPS,        "true" );
 		_defaultVals.put(CP_PARALLEL_IO,         "true" );
 		_defaultVals.put(PARALLEL_ENCODE,        "false" );
+		_defaultVals.put(PARALLEL_ENCODE_STAGED, "false" );
 		_defaultVals.put(PARALLEL_ENCODE_APPLY_BLOCKS, "1");
 		_defaultVals.put(PARALLEL_ENCODE_BUILD_BLOCKS, "1");
+		_defaultVals.put(PARALLEL_ENCODE_NUM_THREADS, "-1");
 		_defaultVals.put(COMPRESSED_LINALG,      Compression.CompressConfig.FALSE.name() );
 		_defaultVals.put(COMPRESSED_LOSSY,       "false" );
 		_defaultVals.put(COMPRESSED_VALID_COMPRESSIONS, "SDC,DDC");

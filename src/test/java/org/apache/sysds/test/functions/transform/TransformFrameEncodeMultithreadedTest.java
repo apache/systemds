@@ -208,7 +208,7 @@ public class TransformFrameEncodeMultithreadedTest extends AutomatedTestBase {
 			Files.readAllLines(Paths.get(SPEC)).forEach(s -> specSb.append(s).append("\n"));
 			MultiColumnEncoder encoder = EncoderFactory.createEncoder(specSb.toString(), input.getColumnNames(),
 				input.getNumColumns(), null);
-			MultiColumnEncoder.MULTI_THREADED_STAGES = staged;
+			//MultiColumnEncoder.MULTI_THREADED_STAGES = staged;
 
 			MatrixBlock outputS = encoder.encode(input, 1);
 			MatrixBlock outputM = encoder.encode(input, 12);

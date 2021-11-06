@@ -175,12 +175,20 @@ public class ConfigurationManager
 		return getDMLConfig().getBooleanValue(DMLConfig.PARALLEL_ENCODE);
 	}
 
+	public static boolean isStagedParallelTransform() {
+		return getDMLConfig().getBooleanValue(DMLConfig.PARALLEL_ENCODE_STAGED);
+	}
+
 	public static int getParallelApplyBlocks(){
 		return getDMLConfig().getIntValue(DMLConfig.PARALLEL_ENCODE_APPLY_BLOCKS);
 	}
 
 	public static int getParallelBuildBlocks(){
 		return getDMLConfig().getIntValue(DMLConfig.PARALLEL_ENCODE_BUILD_BLOCKS);
+	}
+	
+	public static int getNumThreads() {
+		return getDMLConfig().getIntValue(DMLConfig.PARALLEL_ENCODE_NUM_THREADS);
 	}
 
 	public static boolean isParallelParFor() {

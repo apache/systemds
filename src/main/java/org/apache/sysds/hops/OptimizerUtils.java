@@ -1017,10 +1017,11 @@ public class OptimizerUtils
 		return ret;
 	}
 
-	public static int getTransformNumThreads(int maxNumThreads)
+	public static int getTransformNumThreads()
 	{
 		//by default max local parallelism (vcores) 
 		int ret = InfrastructureAnalyzer.getLocalParallelism();
+		int maxNumThreads = ConfigurationManager.getNumThreads();
 		
 		//apply external max constraint (e.g., set by parfor or other rewrites)
 		if( maxNumThreads > 0 ) {

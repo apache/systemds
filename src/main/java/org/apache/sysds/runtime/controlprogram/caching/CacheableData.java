@@ -547,7 +547,9 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 					if( DMLScript.STATISTICS )
 						CacheStatistics.incrementLinHits();
 				}
-				else if( isFederatedExcept(FType.BROADCAST) ) {
+				else if( isFederatedExcept(FType.BROADCAST)
+					|| (isFederated(FType.BROADCAST) && !HDFSTool.existsFileOnHDFS(_hdfsFileName)
+						&& getRDDHandle() == null) ) {
 					_data = readBlobFromFederated(_fedMapping);
 
 					//mark for initial local write despite read operation

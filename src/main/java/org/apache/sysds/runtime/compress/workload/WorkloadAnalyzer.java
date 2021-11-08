@@ -138,9 +138,9 @@ public class WorkloadAnalyzer {
 
 	private static List<Hop> getCandidates(DMLProgram prog) {
 		List<Hop> candidates = new ArrayList<>();
-		for(StatementBlock sb : prog.getStatementBlocks()) {
+		for(StatementBlock sb : prog.getStatementBlocks())
 			getCandidates(sb, prog, candidates, new HashSet<>());
-		}
+		
 		return candidates;
 	}
 

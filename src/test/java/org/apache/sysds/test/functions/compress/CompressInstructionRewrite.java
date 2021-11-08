@@ -63,7 +63,7 @@ public class CompressInstructionRewrite extends AutomatedTestBase {
 
 	@Test
 	public void testCompressInstruction_02_toSmallToCompress() {
-		compressTest(1, 74, 0.2, ExecType.CP, 0, 5, 0, 0, "02");
+		compressTest(1, 20, 0.2, ExecType.CP, 0, 5, 0, 0, "02");
 	}
 
 	@Test

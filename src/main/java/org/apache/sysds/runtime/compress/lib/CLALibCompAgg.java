@@ -563,7 +563,7 @@ public class CLALibCompAgg {
 		private MatrixBlock decompressToTemp() {
 			MatrixBlock tmp = getTmp();
 			for(AColGroup g : _m1.getColGroups())
-				g.decompressToBlock(tmp, _rl, _ru, 0);
+				g.decompressToBlock(tmp, _rl, _ru, -_rl, 0);
 			tmp.setNonZeros(_rl + _ru);
 			return tmp;
 		}

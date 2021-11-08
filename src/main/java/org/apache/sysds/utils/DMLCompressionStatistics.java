@@ -33,6 +33,11 @@ public class DMLCompressionStatistics {
 	private static int DecompressMTCount = 0;
 	private static double DecompressMT = 0.0;
 
+	private static int DecompressToSTCount = 0;
+	private static double DecompressToST = 0.0;
+	private static int DecompressToMTCount = 0;
+	private static double DecompressToMT = 0.0;
+
 	private static int DecompressSparkCount = 0;
 	private static int DecompressCacheCount = 0;
 
@@ -47,11 +52,15 @@ public class DMLCompressionStatistics {
 		DecompressST = 0.0;
 		DecompressMTCount = 0;
 		DecompressMT = 0.0;
+		DecompressToSTCount = 0;
+		DecompressToST = 0.0;
+		DecompressToMTCount = 0;
+		DecompressToMT = 0.0;
 		DecompressSparkCount = 0;
 		DecompressCacheCount = 0;
 	}
 
-	public static boolean haveCompressed(){
+	public static boolean haveCompressed() {
 		return Phase0 > 0;
 	}
 
@@ -75,7 +84,6 @@ public class DMLCompressionStatistics {
 			case 5:
 				Phase5 += time;
 				break;
-
 		}
 	}
 
@@ -90,35 +98,42 @@ public class DMLCompressionStatistics {
 		}
 	}
 
-	public static void addDecompressSparkCount(){
+	public static void addDecompressToBlockTime(double time, int threads) {
+		if(threads == 1) {
+			DecompressToSTCount++;
+			DecompressToST += time;
+		}
+		else {
+			DecompressToMTCount++;
+			DecompressToMT += time;
+		}
+	}
+
+	public static void addDecompressSparkCount() {
 		DecompressSTCount++;
 	}
 
-	public static void addDecompressCacheCount(){
+	public static void addDecompressCacheCount() {
 		DecompressCacheCount++;
 	}
 
 	public static int getDecompressionCount() {
-		return DecompressMTCount + DecompressSTCount + DecompressSparkCount + DecompressCacheCount;
+		return DecompressMTCount + DecompressSTCount + DecompressSparkCount + DecompressCacheCount + DecompressToSTCount +
+			DecompressToMTCount;
 	}
 
 	public static void display(StringBuilder sb) {
 		if(haveCompressed()) { // If compression have been used
-			sb.append(String.format("CLA Compression Phases :\t%.3f/%.3f/%.3f/%.3f/%.3f/%.3f\n",
-				Phase0 / 1000,
-				Phase1 / 1000,
-				Phase2 / 1000,
-				Phase3 / 1000,
-				Phase4 / 1000,
-				Phase5 / 1000));
-			sb.append(String.format("Decompression Counts (Single , Multi, Spark, Cache) thread       :\t%d/%d/%d/%d\n",
-				DecompressSTCount,
-				DecompressMTCount,
-				DecompressSparkCount,
-				DecompressCacheCount));
-			sb.append(String.format("Dedicated Decompression Time (Single , Multi) thread             :\t%.3f/%.3f\n",
-				DecompressST / 1000,
-				DecompressMT / 1000));
+			sb.append(String.format("CLA Compression Phases :\t%.3f/%.3f/%.3f/%.3f/%.3f/%.3f\n", Phase0 / 1000,
+				Phase1 / 1000, Phase2 / 1000, Phase3 / 1000, Phase4 / 1000, Phase5 / 1000));
+			sb.append(String.format("Decompression with allocation (Single, Multi, Spark, Cache) : %d/%d/%d/%d\n",
+				DecompressSTCount, DecompressMTCount, DecompressSparkCount, DecompressCacheCount));
+			sb.append(String.format("Decompression with allocation Time (Single , Multi)         : %.3f/%.3f sec.\n",
+				DecompressST / 1000, DecompressMT / 1000));
+			sb.append(String.format("Decompression to block (Single, Multi)                      : %d/%d\n",
+				DecompressToSTCount, DecompressToMTCount));
+			sb.append(String.format("Decompression to block Time (Single, Multi)                 : %.3f/%.3f sec.\n",
+				DecompressToST / 1000, DecompressToMT / 1000));
 		}
 	}
 }

@@ -23,6 +23,7 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
+import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
 import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
@@ -63,33 +64,51 @@ public class ColGroupDDC extends APreAgg {
 	}
 
 	@Override
-	protected void decompressToBlockSparseDictionary(MatrixBlock target, int rl, int ru, int offT, SparseBlock sb) {
-		final DenseBlock db = target.getDenseBlock();
-		for(int i = rl; i < ru; i++, offT++) {
-			final int rowIndex = _data.getIndex(i);
-			if(sb.isEmpty(rowIndex))
-				continue;
+	protected void decompressToDenseBlockSparseDictionary(DenseBlock db, int rl, int ru, int offR, int offC,
+		SparseBlock sb) {
+		throw new NotImplementedException();
+		// for(int i = rl; i < ru; i++, offT++) {
+		// final int rowIndex = _data.getIndex(i);
+		// if(sb.isEmpty(rowIndex))
+		// continue;
+		// final double[] c = db.values(offT);
+		// final int off = db.pos(offT);
+		// final int apos = sb.pos(rowIndex);
+		// final int alen = sb.size(rowIndex) + apos;
+		// final double[] avals = sb.values(rowIndex);
+		// final int[] aix = sb.indexes(rowIndex);
+		// for(int j = apos; j < alen; j++)
+		// c[off + _colIndexes[aix[j]]] += avals[j];
+		// }
+	}
+
+	@Override
+	protected void decompressToDenseBlockDenseDictionary(DenseBlock db, int rl, int ru, int offR, int offC,
+		double[] values) {
+		final int nCol = _colIndexes.length;
+		for(int i = rl,offT = rl + offR; i < ru; i++, offT++) {
 			final double[] c = db.values(offT);
-			final int off = db.pos(offT);
-			final int apos = sb.pos(rowIndex);
-			final int alen = sb.size(rowIndex) + apos;
-			final double[] avals = sb.values(rowIndex);
-			final int[] aix = sb.indexes(rowIndex);
-			for(int j = apos; j < alen; j++)
-				c[off + _colIndexes[aix[j]]] += avals[j];
+			final int off = db.pos(offT) + offC;
+			final int rowIndex = _data.getIndex(i) * nCol;
+			for(int j = 0; j < nCol; j++)
+				c[off + _colIndexes[j]] += values[rowIndex + j];
 		}
 	}
 
 	@Override
-	protected void decompressToBlockDenseDictionary(MatrixBlock target, int rl, int ru, int offT, double[] values) {
+	protected void decompressToSparseBlockSparseDictionary(SparseBlock ret, int rl, int ru, int offR, int offC,
+		SparseBlock sb) {
+		throw new NotImplementedException();
+	}
+
+	@Override
+	protected void decompressToSparseBlockDenseDictionary(SparseBlock ret, int rl, int ru, int offR, int offC,
+		double[] values) {
 		final int nCol = _colIndexes.length;
-		final DenseBlock db = target.getDenseBlock();
-		for(int i = rl; i < ru; i++, offT++) {
-			final double[] c = db.values(offT);
-			final int off = db.pos(offT);
+		for(int i = rl, offT = rl + offR; i < ru; i++, offT++) {
 			final int rowIndex = _data.getIndex(i) * nCol;
 			for(int j = 0; j < nCol; j++)
-				c[off + _colIndexes[j]] += values[rowIndex + j];
+				ret.append(offT, _colIndexes[j] + offC, values[rowIndex + j]);
 		}
 	}
 

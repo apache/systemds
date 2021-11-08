@@ -62,6 +62,7 @@ public class CLALibBinaryCellOp {
 
 	public static MatrixBlock binaryOperationsRight(BinaryOperator op, CompressedMatrixBlock m1, MatrixBlock that,
 		MatrixBlock result) {
+
 		if(that.getNumRows() == 1 && that.getNumColumns() == 1) {
 			ScalarOperator sop = new RightScalarOperator(op.fn, that.getValue(0, 0), op.getNumThreads());
 			return CLALibScalar.scalarOperations(sop, m1, result);
@@ -87,6 +88,7 @@ public class CLALibBinaryCellOp {
 		LibMatrixBincell.isValidDimensionsBinary(that, m1);
 		BinaryAccessType atype = LibMatrixBincell.getBinaryAccessType(that, m1);
 		return selectProcessingBasedOnAccessType(op, m1, that, result, atype, true);
+
 	}
 
 	private static MatrixBlock binaryOperationsEmpty(BinaryOperator op, CompressedMatrixBlock m1, MatrixBlock that,
@@ -106,28 +108,25 @@ public class CLALibBinaryCellOp {
 		}
 		else
 			throw new NotImplementedException("Function Type: " + fn);
-
 		return result;
-
 	}
 
 	private static MatrixBlock selectProcessingBasedOnAccessType(BinaryOperator op, CompressedMatrixBlock m1,
 		MatrixBlock that, MatrixBlock result, BinaryAccessType atype, boolean left) {
 
 		if(atype == BinaryAccessType.MATRIX_COL_VECTOR) {
-
+			// Column vector access
 			MatrixBlock d_compressed = m1.getCachedDecompressed();
-
 			if(d_compressed != null) {
 				if(left)
 					return that.binaryOperations(op, d_compressed);
 				else
 					return d_compressed.binaryOperations(op, that);
 			}
-
 			return binaryMVCol(m1, that, op, left);
 		}
 		else if(atype == BinaryAccessType.MATRIX_MATRIX) {
+			// Full matrix access.
 			MatrixBlock d_compressed = m1.getUncompressed("MatrixMatrix " + op);
 			if(left)
 				return that.binaryOperations(op, d_compressed);
@@ -135,8 +134,10 @@ public class CLALibBinaryCellOp {
 				return d_compressed.binaryOperations(op, that);
 		}
 		else if(isSupportedBinaryCellOp(op.fn))
-			return bincellOp(m1, that, setupCompressedReturnMatrixBlock(m1, result), op, left);
+			// Row matrix access.
+			return rowBinCellOp(m1, that, result, op, left);
 		else
+			// All other, fallback to default execution.
 			return CompressedMatrixBlock.getUncompressed(m1, "BinaryOp: " + op.fn).binaryOperations(op, that, result);
 
 	}
@@ -157,14 +158,15 @@ public class CLALibBinaryCellOp {
 		return ret;
 	}
 
-	private static MatrixBlock bincellOp(CompressedMatrixBlock m1, MatrixBlock m2, CompressedMatrixBlock ret,
+	private static MatrixBlock rowBinCellOp(CompressedMatrixBlock m1, MatrixBlock m2, MatrixBlock ret,
 		BinaryOperator op, boolean left) {
+		CompressedMatrixBlock cRet = setupCompressedReturnMatrixBlock(m1, ret);
 		if(isValidForOverlappingBinaryCellOperations(m1, op))
-			overlappingBinaryCellOp(m1, m2, ret, op, left);
+			overlappingBinaryCellOp(m1, m2, cRet, op, left);
 		else
-			nonOverlappingBinaryCellOp(m1, m2, ret, op, left);
-		return ret;
-
+			nonOverlappingBinaryCellOp(m1, m2, cRet, op, left);
+		cRet.recomputeNonZeros();
+		return cRet;
 	}
 
 	private static void nonOverlappingBinaryCellOp(CompressedMatrixBlock m1, MatrixBlock m2, CompressedMatrixBlock ret,
@@ -184,7 +186,6 @@ public class CLALibBinaryCellOp {
 			default:
 				LOG.warn("Inefficient Decompression for " + op + "  " + atype);
 				m1.decompress().binaryOperations(op, m2, ret);
-
 		}
 	}
 

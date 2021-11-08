@@ -527,7 +527,7 @@ public abstract class CompressedTestBase extends TestBase {
 	public void testRightMatrixMatrixMultSparse() {
 		if(!(cmb instanceof CompressedMatrixBlock))
 			return; // Input was not compressed then just pass test
-		MatrixBlock matrix = TestUtils.generateTestMatrixBlock(cols, 25, 0.9, 1.5, 0.2, 3);
+		MatrixBlock matrix = TestUtils.generateTestMatrixBlock(cols, 25, 0.9, 1.5, 0.01, 3);
 		testRightMatrixMatrix(matrix);
 	}
 
@@ -979,7 +979,6 @@ public abstract class CompressedTestBase extends TestBase {
 			e.printStackTrace();
 			throw e;
 		}
-
 	}
 
 	@Test

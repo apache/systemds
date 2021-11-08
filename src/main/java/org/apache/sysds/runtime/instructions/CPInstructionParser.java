@@ -21,11 +21,14 @@ package org.apache.sysds.runtime.instructions;
 
 import java.util.HashMap;
 
+import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.hops.FunctionOp;
 import org.apache.sysds.lops.Append;
+import org.apache.sysds.lops.Compression;
 import org.apache.sysds.lops.DataGen;
+import org.apache.sysds.lops.DeCompression;
 import org.apache.sysds.lops.LeftIndex;
-import org.apache.sysds.common.Types.ExecType;
+import org.apache.sysds.lops.Local;
 import org.apache.sysds.lops.RightIndex;
 import org.apache.sysds.lops.UnaryCP;
 import org.apache.sysds.runtime.DMLRuntimeException;
@@ -47,9 +50,9 @@ import org.apache.sysds.runtime.instructions.cp.DeCompressionCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.DnnCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.FunctionCallCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.IndexingCPInstruction;
+import org.apache.sysds.runtime.instructions.cp.LocalCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.MMChainCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.MMTSJCPInstruction;
-import org.apache.sysds.runtime.instructions.cp.ReshapeCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.MultiReturnBuiltinCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.MultiReturnParameterizedBuiltinCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.PMMJCPInstruction;
@@ -59,6 +62,7 @@ import org.apache.sysds.runtime.instructions.cp.QuantilePickCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.QuantileSortCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.QuaternaryCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.ReorgCPInstruction;
+import org.apache.sysds.runtime.instructions.cp.ReshapeCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.SpoofCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.SqlCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.StringInitCPInstruction;
@@ -315,11 +319,12 @@ public class CPInstructionParser extends InstructionParser
 		String2CPInstructionType.put( "svd",   CPType.MultiReturnBuiltin);
 
 		String2CPInstructionType.put( "partition", CPType.Partition);
-		String2CPInstructionType.put( "compress",  CPType.Compression);
-		String2CPInstructionType.put( "decompress", CPType.DeCompression);
+		String2CPInstructionType.put( Compression.OPCODE,  CPType.Compression);
+		String2CPInstructionType.put( DeCompression.OPCODE, CPType.DeCompression);
 		String2CPInstructionType.put( "spoof",     CPType.SpoofFused);
 		String2CPInstructionType.put( "prefetch",  CPType.Prefetch);
 		String2CPInstructionType.put( "broadcast",  CPType.Broadcast);
+		String2CPInstructionType.put( Local.OPCODE, CPType.Local);
 		
 		String2CPInstructionType.put( "sql", CPType.Sql);
 	}
@@ -454,6 +459,9 @@ public class CPInstructionParser extends InstructionParser
 			case DeCompression:
 				return DeCompressionCPInstruction.parseInstruction(str);
 				
+			case Local:
+				return LocalCPInstruction.parseInstruction(str);
+
 			case SpoofFused:
 				return SpoofCPInstruction.parseInstruction(str);
 				

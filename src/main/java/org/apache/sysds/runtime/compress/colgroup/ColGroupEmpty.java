@@ -88,7 +88,7 @@ public class ColGroupEmpty extends AColGroupCompressed {
 		final int lenV = _colIndexes.length;
 		boolean allZero = true;
 		for(int i = 0; i < lenV; i++)
-			allZero = allZero && 0 == (retVals[i] = fn.execute(v[_colIndexes[i]], 0));
+			allZero = 0 == (retVals[i] = fn.execute(v[_colIndexes[i]], 0)) && allZero;
 
 		if(allZero)
 			return this;
@@ -104,7 +104,7 @@ public class ColGroupEmpty extends AColGroupCompressed {
 		final int lenV = _colIndexes.length;
 		boolean allZero = true;
 		for(int i = 0; i < lenV; i++)
-			allZero = allZero && 0 == (retVals[i] = fn.execute(0, v[_colIndexes[i]]));
+			allZero = 0 == (retVals[i] = fn.execute(0, v[_colIndexes[i]])) && allZero ;
 		if(allZero)
 			return this;
 		return new ColGroupConst(_colIndexes, new Dictionary(retVals));

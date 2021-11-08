@@ -19,7 +19,6 @@
 
 package org.apache.sysds.runtime.controlprogram.paramserv.dp;
 
-import java.io.Serializable;
 import java.util.LinkedList;
 
 import org.apache.spark.api.java.function.PairFunction;
@@ -28,7 +27,7 @@ import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
 import scala.Tuple2;
 
-public class DataPartitionerSparkAggregator implements PairFunction<Tuple2<Integer,LinkedList<Tuple2<Long,Tuple2<MatrixBlock,MatrixBlock>>>>, Integer, Tuple2<MatrixBlock, MatrixBlock>>, Serializable {
+public class DataPartitionerSparkAggregator implements PairFunction<Tuple2<Integer,LinkedList<Tuple2<Long,Tuple2<MatrixBlock,MatrixBlock>>>>, Integer, Tuple2<MatrixBlock, MatrixBlock>> {
 
 	private static final long serialVersionUID = -1245300852709085117L;
 	private long _fcol;

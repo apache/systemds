@@ -36,16 +36,10 @@ import org.junit.runners.Parameterized;
 
 @RunWith(value = Parameterized.class)
 @net.jcip.annotations.NotThreadSafe
-public class FederatedRowAggregateTest extends AutomatedTestBase {
-	private final static String TEST_NAME5 = "FederatedRowSumTest";
-	private final static String TEST_NAME6 = "FederatedRowMeanTest";
-	private final static String TEST_NAME7 = "FederatedRowMaxTest";
-	private final static String TEST_NAME8 = "FederatedRowMinTest";
-	private final static String TEST_NAME9 = "FederatedRowVarTest";
-	private final static String TEST_NAME10 = "FederatedRowProdTest";
-	private final static String TEST_NAME11 = "FederatedMMTest";
+public class FederatedNotAlignedTest extends AutomatedTestBase {
+	private final static String TEST_NAME1 = "FederatedNotAlignedMMTest";
 
-	private final static String TEST_DIR = "functions/federated/aggregate/";
+	private final static String TEST_DIR = "functions/federated/notaligned/";
 	private static final String TEST_CLASS_DIR = TEST_DIR + FederatedRowAggregateTest.class.getSimpleName() + "/";
 
 	private final static int blocksize = 1024;
@@ -66,84 +60,18 @@ public class FederatedRowAggregateTest extends AutomatedTestBase {
 	}
 
 	private enum OpType {
-		SUM, MEAN, MAX, MIN, VAR, PROD, MM
+		MM
 	}
 
 	@Override
 	public void setUp() {
 		TestUtils.clearAssertionInformation();
-		addTestConfiguration(TEST_NAME5, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME5, new String[] {"S"}));
-		addTestConfiguration(TEST_NAME6, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME6, new String[] {"S"}));
-		addTestConfiguration(TEST_NAME7, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME7, new String[] {"S"}));
-		addTestConfiguration(TEST_NAME8, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME8, new String[] {"S"}));
-		addTestConfiguration(TEST_NAME9, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME9, new String[] {"S"}));
-		addTestConfiguration(TEST_NAME10, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME10, new String[] {"S"}));
-		addTestConfiguration(TEST_NAME11, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME11, new String[] {"S"}));
-	}
-
-	@Test
-	public void testRowSumDenseMatrixCP() {
-		runAggregateOperationTest(OpType.SUM, ExecMode.SINGLE_NODE);
-	}
-
-	@Test
-	public void testRowMeanDenseMatrixCP() {
-		runAggregateOperationTest(OpType.MEAN, ExecMode.SINGLE_NODE);
-	}
-
-	@Test
-	public void testRowMaxDenseMatrixCP() {
-		runAggregateOperationTest(OpType.MAX, ExecMode.SINGLE_NODE);
-	}
-
-	@Test
-	public void testRowMinDenseMatrixCP() {
-		runAggregateOperationTest(OpType.MIN, ExecMode.SINGLE_NODE);
-	}
-
-	@Test
-	public void testRowVarDenseMatrixCP() {
-		runAggregateOperationTest(OpType.VAR, ExecMode.SINGLE_NODE);
-	}
-
-	@Test
-	public void testRowProdDenseMatrixCP() {
-		runAggregateOperationTest(OpType.PROD, ExecMode.SINGLE_NODE);
+		addTestConfiguration(TEST_NAME1, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] {"S"}));
 	}
 
 	@Test
 	public void testMMDenseMatrixCP() {
 		runAggregateOperationTest(OpType.MM, ExecMode.SINGLE_NODE);
-	}
-
-	@Test
-	public void testRowSumDenseMatrixSP() {
-		runAggregateOperationTest(OpType.SUM, ExecMode.SPARK);
-	}
-
-	@Test
-	public void testRowMeanDenseMatrixSP() {
-		runAggregateOperationTest(OpType.MEAN, ExecMode.SPARK);
-	}
-
-	@Test
-	public void testRowMaxDenseMatrixSP() {
-		runAggregateOperationTest(OpType.MAX, ExecMode.SPARK);
-	}
-
-	@Test
-	public void testRowMinDenseMatrixSP() {
-		runAggregateOperationTest(OpType.MIN, ExecMode.SPARK);
-	}
-
-	@Test
-	public void testRowVarDenseMatrixSP() {
-		runAggregateOperationTest(OpType.VAR, ExecMode.SPARK);
-	}
-
-	@Test
-	public void testRowProdDenseMatrixSP() {
-		runAggregateOperationTest(OpType.PROD, ExecMode.SPARK);
 	}
 
 	@Test
@@ -160,26 +88,8 @@ public class FederatedRowAggregateTest extends AutomatedTestBase {
 
 		String TEST_NAME = null;
 		switch(type) {
-			case SUM:
-				TEST_NAME = TEST_NAME5;
-				break;
-			case MEAN:
-				TEST_NAME = TEST_NAME6;
-				break;
-			case MAX:
-				TEST_NAME = TEST_NAME7;
-				break;
-			case MIN:
-				TEST_NAME = TEST_NAME8;
-				break;
-			case VAR:
-				TEST_NAME = TEST_NAME9;
-				break;
-			case PROD:
-				TEST_NAME = TEST_NAME10;
-				break;
 			case MM:
-				TEST_NAME = TEST_NAME11;
+				TEST_NAME = TEST_NAME1;
 				break;
 		}
 
@@ -228,9 +138,9 @@ public class FederatedRowAggregateTest extends AutomatedTestBase {
 		programArgs = new String[] {"-stats", "100", "-args", input("X1"), input("X2"), input("X3"), input("X4"),
 			expected("S"), Boolean.toString(rowPartitioned).toUpperCase()};
 		runTest(true, false, null, -1);
-
+		
 		// Run actual dml script with federated matrix
-
+		
 		fullDMLScriptName = HOME + TEST_NAME + ".dml";
 		programArgs = new String[] {"-stats", "100", "-nvargs",
 			"in_X1=" + TestUtils.federatedAddress(port1, input("X1")),
@@ -242,31 +152,11 @@ public class FederatedRowAggregateTest extends AutomatedTestBase {
 		runTest(true, false, null, -1);
 
 		// compare via files
-		compareResults(type == FederatedRowAggregateTest.OpType.VAR ? 1e-2 : 1e-9, "Stat-DML1", "Stat-DML2");
-
-		String fedInst = "fed_uar";
+		compareResults(1e-9, "Stat-DML1", "Stat-DML2");
 
 		switch(type) {
-			case SUM:
-				Assert.assertTrue(heavyHittersContainsString(fedInst.concat("k+")));
-				break;
-			case MEAN:
-				Assert.assertTrue(heavyHittersContainsString(fedInst.concat("mean")));
-				break;
-			case MAX:
-				Assert.assertTrue(heavyHittersContainsString(fedInst.concat("max")));
-				break;
-			case MIN:
-				Assert.assertTrue(heavyHittersContainsString(fedInst.concat("min")));
-				break;
-			case VAR:
-				Assert.assertTrue(heavyHittersContainsString(fedInst.concat("var")));
-				break;
-			case PROD:
-				Assert.assertTrue(heavyHittersContainsString(fedInst.concat("*")));
-				break;
 			case MM:
-				Assert.assertTrue(heavyHittersContainsString(rtplatform == ExecMode.SPARK ? "fed_mapmm" : "fed_ba+*", 1, 2));
+				Assert.assertTrue(heavyHittersContainsString(rtplatform == ExecMode.SPARK ? "fed_mapmm" : "fed_ba+*"));
 				break;
 		}
 

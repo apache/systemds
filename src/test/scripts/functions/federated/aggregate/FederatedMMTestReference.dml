@@ -33,8 +33,6 @@ Z1 = Y %*% seq(1, ncol(Y));
 
 Z2 = X %*% Y;
 
-sZ1 = sum(Z1) / 1000;
-
-s = Z2 + sZ1;
+s = sum(Z1) + Z2;
 
 write(s, $5);

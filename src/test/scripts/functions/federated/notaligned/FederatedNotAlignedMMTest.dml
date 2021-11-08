@@ -23,25 +23,21 @@ if ($rP) {
     X = federated(addresses=list($in_X1, $in_X2, $in_X3, $in_X4),
         ranges=list(list(0, 0), list($rows/4, $cols), list($rows/4, 0), list(2*$rows/4, $cols),
     		list(2*$rows/4, 0), list(3*$rows/4, $cols), list(3*$rows/4, 0), list($rows, $cols)));
-    Y = X * 7; # row partitioned federated Y
+    Y = federated(addresses=list($in_X1, $in_X2, $in_X4, $in_X3), # switched partition 3 and 4
+        ranges=list(list(0, 0), list($rows/4, $cols), list($rows/4, 0), list(2*$rows/4, $cols),
+    		list(2*$rows/4, 0), list(3*$rows/4, $cols), list(3*$rows/4, 0), list($rows, $cols)));
     X = t(X); # col partitioned federated X
 } else {
     X = federated(addresses=list($in_X1, $in_X2, $in_X3, $in_X4),
             ranges=list(list(0, 0), list($rows, $cols/4), list(0,$cols/4), list($rows, $cols/2),
             	list(0,$cols/2), list($rows, 3*($cols/4)), list(0, 3*($cols/4)), list($rows, $cols)));
-    Y = t(X) * 7; # row partitioned federated Y
+    Y = federated(addresses=list($in_X1, $in_X2, $in_X4, $in_X3), # switched partition 3 and 4
+            ranges=list(list(0, 0), list($rows, $cols/4), list(0,$cols/4), list($rows, $cols/2),
+            	list(0,$cols/2), list($rows, 3*($cols/4)), list(0, 3*($cols/4)), list($rows, $cols)));
+    Y = t(Y); # row partitioned federated Y
 }
 
-Z1 = Y %*% seq(1, ncol(Y));
-
 while(FALSE) { }
 
-Z2 = X %*% Y;
-
-while(FALSE) { }
-
-sZ1 = sum(Z1);
-
-s = sZ1 + Z2;
-
-write(s, $out_S);
+S = X %*% Y;
+write(S, $out_S);

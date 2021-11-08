@@ -231,6 +231,7 @@ public class IPAPassRewriteFederatedPlan extends IPAPass {
 	 * The cost estimates of the hops are also updated when FederatedOutput is updated in the hops.
 	 * @param roots starting point for going through the Hop DAG to update the FederatedOutput fields.
 	 */
+	@SuppressWarnings("unused")
 	private void selectFederatedExecutionPlan(ArrayList<Hop> roots){
 		for ( Hop root : roots )
 			selectFederatedExecutionPlan(root);

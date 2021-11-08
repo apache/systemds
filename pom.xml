@@ -50,7 +50,7 @@
 		<jcuda.scope>provided</jcuda.scope>
 		<jcuda.version>10.2.0</jcuda.version>
 		<!-- Set java compile level via argument, ex: 1.8 1.9 10 11-->
-		<java.level>1.8</java.level>
+		<java.level>11</java.level>
 		<!-->Testing settings<!-->
 		<maven.test.skip>true</maven.test.skip>
 		<test-parallel>classes</test-parallel>

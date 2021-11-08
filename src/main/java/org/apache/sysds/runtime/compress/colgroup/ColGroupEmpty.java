@@ -86,8 +86,12 @@ public class ColGroupEmpty extends AColGroupCompressed {
 		final ValueFunction fn = op.fn;
 		final double[] retVals = new double[_colIndexes.length];
 		final int lenV = _colIndexes.length;
+		boolean allZero = true;
 		for(int i = 0; i < lenV; i++)
-			retVals[i] = fn.execute(v[_colIndexes[i]], 0);
+			allZero = allZero && 0 == (retVals[i] = fn.execute(v[_colIndexes[i]], 0));
+
+		if(allZero)
+			return this;
 		return new ColGroupConst(_colIndexes, new Dictionary(retVals));
 	}
 
@@ -98,8 +102,11 @@ public class ColGroupEmpty extends AColGroupCompressed {
 		final ValueFunction fn = op.fn;
 		final double[] retVals = new double[_colIndexes.length];
 		final int lenV = _colIndexes.length;
+		boolean allZero = true;
 		for(int i = 0; i < lenV; i++)
-			retVals[i] = fn.execute(0, v[_colIndexes[i]]);
+			allZero = allZero && 0 == (retVals[i] = fn.execute(0, v[_colIndexes[i]]));
+		if(allZero)
+			return this;
 		return new ColGroupConst(_colIndexes, new Dictionary(retVals));
 	}
 

@@ -178,6 +178,8 @@ public class ColGroupConst extends AColGroupCompressed {
 			MatrixBlock ret = new MatrixBlock(1, cr, false);
 			LibMatrixMult.matrixMult(left, right, ret);
 			ADictionary d = new MatrixBlockDictionary(ret);
+			if(ret.isEmpty())
+				return null;
 			return ColGroupFactory.genColGroupConst(cr, d);
 		}
 		else {

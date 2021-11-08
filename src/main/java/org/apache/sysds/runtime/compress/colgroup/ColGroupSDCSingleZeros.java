@@ -23,6 +23,7 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
+import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
 import org.apache.sysds.runtime.compress.colgroup.offset.AIterator;
@@ -77,47 +78,65 @@ public class ColGroupSDCSingleZeros extends APreAgg {
 	}
 
 	@Override
-	protected void decompressToBlockDenseDictionary(MatrixBlock target, int rl, int ru, int offT, double[] values) {
+	protected void decompressToDenseBlockDenseDictionary(DenseBlock db, int rl, int ru, int offR, int offC,
+		double[] values) {
 		final int nCol = _colIndexes.length;
-		final int offTCorr = offT - rl;
-		final DenseBlock db = target.getDenseBlock();
-
-		AIterator it = _indexes.getIterator(rl);
+		final AIterator it = _indexes.getIterator(rl);
 		while(it.hasNext() && it.value() < ru) {
-			final int idx = offTCorr + it.value();
-			final double[] c = db.values(idx);
-			final int off = db.pos(idx);
+			final int row = offR + it.value();
+			final double[] c = db.values(row);
+			final int off = db.pos(row) + offC;
 			for(int j = 0; j < nCol; j++)
 				c[off + _colIndexes[j]] += values[j];
 
 			it.next();
 		}
-
 		_indexes.cacheIterator(it, ru);
 	}
 
 	@Override
-	protected void decompressToBlockSparseDictionary(MatrixBlock target, int rl, int ru, int offT, SparseBlock values) {
+	protected void decompressToDenseBlockSparseDictionary(DenseBlock db, int rl, int ru, int offR, int offC,
+		SparseBlock values) {
+		throw new NotImplementedException();
+		// final int offTCorr = offT - rl;
+		// final DenseBlock db = target.getDenseBlock();
+		// final int apos = values.pos(0);
+		// final int alen = values.size(0) + apos;
+		// final int[] aix = values.indexes(0);
+		// final double[] avals = values.values(0);
 
-		final int offTCorr = offT - rl;
-		final DenseBlock db = target.getDenseBlock();
-		final int apos = values.pos(0);
-		final int alen = values.size(0) + apos;
-		final int[] aix = values.indexes(0);
-		final double[] avals = values.values(0);
+		// AIterator it = _indexes.getIterator(rl);
+		// while(it.hasNext() && it.value() < ru) {
+		// final int idx = offTCorr + it.value();
+		// final double[] c = db.values(idx);
+		// final int off = db.pos(idx);
 
-		AIterator it = _indexes.getIterator(rl);
+		// for(int j = apos; j < alen; j++)
+		// c[off + _colIndexes[aix[j]]] += avals[j];
+
+		// it.next();
+		// }
+
+		// _indexes.cacheIterator(it, ru);
+	}
+
+	@Override
+	protected void decompressToSparseBlockSparseDictionary(SparseBlock ret, int rl, int ru, int offR, int offC,
+		SparseBlock sb) {
+		throw new NotImplementedException();
+	}
+
+	@Override
+	protected void decompressToSparseBlockDenseDictionary(SparseBlock ret, int rl, int ru, int offR, int offC,
+		double[] values) {
+		final int nCol = _colIndexes.length;
+		final AIterator it = _indexes.getIterator(rl);
 		while(it.hasNext() && it.value() < ru) {
-			final int idx = offTCorr + it.value();
-			final double[] c = db.values(idx);
-			final int off = db.pos(idx);
-
-			for(int j = apos; j < alen; j++)
-				c[off + _colIndexes[aix[j]]] += avals[j];
-
+			final int row = offR + it.value();
+			for(int j = 0; j < nCol; j++)
+				ret.append(row, _colIndexes[j] + offC, values[j]);
 			it.next();
 		}
-
 		_indexes.cacheIterator(it, ru);
 	}
 
@@ -261,7 +280,7 @@ public class ColGroupSDCSingleZeros extends APreAgg {
 	}
 
 	@Override
-	public AColGroup binaryRowOpLeft(BinaryOperator op, double[] v,boolean isRowSafe) {
+	public AColGroup binaryRowOpLeft(BinaryOperator op, double[] v, boolean isRowSafe) {
 		if(isRowSafe) {
 			ADictionary ret = _dict.binOpLeft(op, v, _colIndexes);
 			return new ColGroupSDCSingleZeros(_colIndexes, _numRows, ret, _indexes, getCachedCounts());
@@ -273,7 +292,7 @@ public class ColGroupSDCSingleZeros extends APreAgg {
 	}
 
 	@Override
-	public AColGroup binaryRowOpRight(BinaryOperator op, double[] v,boolean isRowSafe) {
+	public AColGroup binaryRowOpRight(BinaryOperator op, double[] v, boolean isRowSafe) {
 		if(isRowSafe) {
 			ADictionary ret = _dict.binOpRight(op, v, _colIndexes);
 			return new ColGroupSDCSingleZeros(_colIndexes, _numRows, ret, _indexes, getCachedCounts());

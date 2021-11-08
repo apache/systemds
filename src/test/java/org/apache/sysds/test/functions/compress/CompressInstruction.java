@@ -23,6 +23,7 @@ import static org.junit.Assert.assertTrue;
 
 import org.apache.sysds.common.Types;
 import org.apache.sysds.common.Types.ExecType;
+import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.runtime.controlprogram.parfor.stat.Timing;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
@@ -85,6 +86,7 @@ public class CompressInstruction extends AutomatedTestBase {
 	public void compressTest(int cols, int rows, double sparsity, ExecType instType, int min, int max,
 		int decompressionCountExpected, int compressionCountsExpected, String name) {
 
+		OptimizerUtils.ALLOW_SCRIPT_LEVEL_COMPRESS_COMMAND = true;
 		Types.ExecMode platformOld = setExecMode(instType);
 		try {
 
@@ -92,8 +94,8 @@ public class CompressInstruction extends AutomatedTestBase {
 
 			fullDMLScriptName = SCRIPT_DIR + "/" + getTestDir() + "compress_" + name + ".dml";
 
-			programArgs = new String[] {"-stats", "100", "-nvargs", "cols=" + cols, "rows=" + rows,
-				"sparsity=" + sparsity, "min=" + min, "max= " + max};
+			programArgs = new String[] {"-stats", "100", "-nvargs", "cols=" + cols, "rows=" + rows, "sparsity=" + sparsity,
+				"min=" + min, "max= " + max};
 			runTest(null);
 
 		}

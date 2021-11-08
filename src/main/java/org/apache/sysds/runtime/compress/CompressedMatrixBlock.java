@@ -35,11 +35,9 @@ import org.apache.commons.lang.NotImplementedException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.commons.math3.random.Well1024a;
-import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.CorrectionLocationType;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.conf.DMLConfig;
-import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.lops.MMTSJ.MMTSJType;
 import org.apache.sysds.lops.MapMultChain.ChainType;
 import org.apache.sysds.runtime.DMLRuntimeException;
@@ -224,7 +222,6 @@ public class CompressedMatrixBlock extends MatrixBlock {
 	 * @return a new uncompressed matrix block containing the contents of this block
 	 */
 	public MatrixBlock decompress(int k) {
-		Timing time = new Timing(true);
 		// Early out if empty.
 		if(isEmpty())
 			return new MatrixBlock(rlen, clen, true, 0);
@@ -239,14 +236,12 @@ public class CompressedMatrixBlock extends MatrixBlock {
 		// Set soft reference to the decompressed version
 		decompressedVersion = new SoftReference<>(ret);
 
-		if(DMLScript.STATISTICS) {
-			final double t = time.stop();
-			DMLCompressionStatistics.addDecompressTime(t, k);
-			if(LOG.isTraceEnabled())
-				LOG.trace("decompressed block w/ k=" + k + " in " + t + "ms.");
-		}
-
 		return ret;
+	}
+
+	@Override
+	public void putInto(MatrixBlock target, int rowOffset, int colOffset, boolean sparseCopyShallow) {
+		CLALibDecompress.decompressTo(this, target, rowOffset, colOffset, 1);
 	}
 
 	/**
@@ -714,7 +709,7 @@ public class CompressedMatrixBlock extends MatrixBlock {
 			// and cu. It is not inclusive in decompression, and construction of MatrixBlock.
 			tmp = new MatrixBlock(ru + 1 - rl, getNumColumns(), false).allocateDenseBlock();
 			for(AColGroup g : getColGroups())
-				g.decompressToBlock(tmp, rl, ru + 1, 0);
+				g.decompressToBlock(tmp, rl, ru + 1, -rl, 0);
 			tmp.recomputeNonZeros();
 			tmp.examSparsity();
 			return tmp;
@@ -795,6 +790,7 @@ public class CompressedMatrixBlock extends MatrixBlock {
 		res.allocateDenseBlock();
 		double[] resV = res.getDenseBlockValues();
 		AColGroup.colSum(_colGroups, resV, getNumRows());
+		res.recomputeNonZeros();
 		return res;
 	}
 
@@ -1148,7 +1144,7 @@ public class CompressedMatrixBlock extends MatrixBlock {
 			return d_compressed;
 		if(isEmpty())
 			return new MatrixBlock(getNumRows(), getNumColumns(), true);
-		return this.decompress(OptimizerUtils.getConstrainedNumThreads(-1));
+		return this.decompress(InfrastructureAnalyzer.getLocalParallelism());
 	}
 
 	public MatrixBlock getUncompressed(String operation) {
@@ -1294,11 +1290,6 @@ public class CompressedMatrixBlock extends MatrixBlock {
 	@Override
 	public void appendRow(int r, SparseRow row, boolean deep) {
 		throw new DMLCompressionException("Can't append row to compressed Matrix");
-	}
-
-	@Override
-	public void appendToSparse(MatrixBlock that, int rowoffset, int coloffset, boolean deep) {
-		throw new DMLCompressionException("Can't append to compressed Matrix");
 	}
 
 	@Override

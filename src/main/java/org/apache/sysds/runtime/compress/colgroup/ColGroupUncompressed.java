@@ -174,35 +174,76 @@ public class ColGroupUncompressed extends AColGroup {
 	}
 
 	@Override
-	public void decompressToBlock(MatrixBlock target, int rl, int ru, int offT) {
-		final DenseBlock db = target.getDenseBlock();
+	public void decompressToDenseBlock(DenseBlock db, int rl, int ru, int offR, int offC) {
+		if(_data.isEmpty())
+			return;
+		else if(_data.isInSparseFormat())
+			decompressToDenseBlockSparseData(db, rl, ru, offR, offC);
+		else
+			decompressToDenseBlockDenseData(db, rl, ru, offR, offC);
+	}
+
+	private void decompressToDenseBlockDenseData(DenseBlock db, int rl, int ru, int offR, int offC) {
+		int offT = rl + offR;
 		final int nCol = _colIndexes.length;
-		if(_data.isInSparseFormat()) {
-			SparseBlock sb = _data.getSparseBlock();
-			if(sb == null)
-				return;
-			for(int row = rl; row < ru; row++, offT++) {
-				if(sb.isEmpty(row))
-					continue;
-				final double[] c = db.values(offT);
-				final int off = db.pos(offT);
-				final int apos = sb.pos(row);
-				final int alen = sb.size(row) + apos;
-				final int[] aix = sb.indexes(row);
-				final double[] avals = sb.values(row);
-				for(int col = apos; col < alen; col++)
-					c[_colIndexes[aix[col]] + off] += avals[col];
-			}
+		final double[] values = _data.getDenseBlockValues();
+		int offS = rl * nCol;
+		for(int row = rl; row < ru; row++, offT++, offS += nCol) {
+			final double[] c = db.values(offT);
+			final int off = db.pos(offT) + offC;
+			for(int j = 0; j < nCol; j++)
+				c[off + _colIndexes[j]] += values[offS + j];
 		}
-		else {
-			final double[] values = _data.getDenseBlockValues();
-			int offS = rl * nCol;
-			for(int row = rl; row < ru; row++, offT++, offS += nCol) {
-				final double[] c = db.values(offT);
-				final int off = db.pos(offT);
-				for(int j = 0; j < nCol; j++)
-					c[off + _colIndexes[j]] += values[offS + j];
-			}
+	}
+
+	private void decompressToDenseBlockSparseData(DenseBlock db, int rl, int ru, int offR, int offC) {
+
+		final SparseBlock sb = _data.getSparseBlock();
+		for(int row = rl, offT = rl + offR; row < ru; row++, offT++) {
+			if(sb.isEmpty(row))
+				continue;
+			final double[] c = db.values(offT);
+			final int off = db.pos(offT) + offC;
+			final int apos = sb.pos(row);
+			final int alen = sb.size(row) + apos;
+			final int[] aix = sb.indexes(row);
+			final double[] avals = sb.values(row);
+			for(int col = apos; col < alen; col++)
+				c[_colIndexes[aix[col]] + off] += avals[col];
+		}
+	}
+
+	@Override
+	public void decompressToSparseBlock(SparseBlock ret, int rl, int ru, int offR, int offC) {
+		if(_data.isEmpty())
+			return;
+		else if(_data.isInSparseFormat())
+			decompressToSparseBlockSparseData(ret, rl, ru, offR, offC);
+		else
+			decompressToSparseBlockDenseData(ret, rl, ru, offR, offC);
+	}
+
+	private void decompressToSparseBlockDenseData(SparseBlock ret, int rl, int ru, int offR, int offC) {
+		final int nCol = _colIndexes.length;
+		final double[] values = _data.getDenseBlockValues();
+		int offS = rl * nCol;
+		for(int row = rl, offT = rl + offR; row < ru; row++, offT++, offS += nCol)
+			for(int j = 0; j < nCol; j++)
+				ret.append(offT, offC + _colIndexes[j], values[offS + j]);
+	}
+
+	private void decompressToSparseBlockSparseData(SparseBlock ret, int rl, int ru, int offR, int offC) {
+		int offT = rl + offR;
+		final SparseBlock sb = _data.getSparseBlock();
+		for(int row = rl; row < ru; row++, offT++) {
+			if(sb.isEmpty(row))
+				continue;
+			final int apos = sb.pos(row);
+			final int alen = sb.size(row) + apos;
+			final int[] aix = sb.indexes(row);
+			final double[] avals = sb.values(row);
+			for(int col = apos; col < alen; col++)
+				ret.append(offT, offC + _colIndexes[aix[col]], avals[col]);
 		}
 	}
 
@@ -579,6 +620,8 @@ public class ColGroupUncompressed extends AColGroup {
 			final SparseBlock subR = subBlockRight.getSparseBlock();
 			long nnz = 0;
 			for(int i = 0; i < _colIndexes.length; i++) {
+				if(sbR.isEmpty(_colIndexes[i]))
+					continue;
 				subR.set(i, sbR.get(_colIndexes[i]), false);
 				nnz += sbR.get(_colIndexes[i]).size();
 			}

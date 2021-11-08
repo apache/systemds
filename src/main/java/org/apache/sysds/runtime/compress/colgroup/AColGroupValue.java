@@ -33,6 +33,7 @@ import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.DictionaryFactory;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.MatrixBlockDictionary;
+import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.matrix.data.LibMatrixMult;
@@ -86,43 +87,87 @@ public abstract class AColGroupValue extends AColGroupCompressed implements Clon
 	}
 
 	@Override
-	public final void decompressToBlock(MatrixBlock target, int rl, int ru, int offT) {
+	public final void decompressToDenseBlock(DenseBlock db, int rl, int ru, int offR, int offC) {
 		if(_dict instanceof MatrixBlockDictionary) {
 			final MatrixBlockDictionary md = (MatrixBlockDictionary) _dict;
 			final MatrixBlock mb = md.getMatrixBlock();
-			if(mb.isEmpty())
+			if(mb.isEmpty()) // Early abort if the dictionary is empty.
 				return;
 			else if(mb.isInSparseFormat())
-				decompressToBlockSparseDictionary(target, rl, ru, offT, mb.getSparseBlock());
+				decompressToDenseBlockSparseDictionary(db, rl, ru, offR, offC, mb.getSparseBlock());
 			else
-				decompressToBlockDenseDictionary(target, rl, ru, offT, mb.getDenseBlockValues());
+				decompressToDenseBlockDenseDictionary(db, rl, ru, offR, offC, mb.getDenseBlockValues());
 		}
 		else
-			decompressToBlockDenseDictionary(target, rl, ru, offT, _dict.getValues());
+			decompressToDenseBlockDenseDictionary(db, rl, ru, offR, offC, _dict.getValues());
+	}
+
+	@Override
+	public final void decompressToSparseBlock(SparseBlock sb, int rl, int ru, int offR, int offC) {
+		if(_dict instanceof MatrixBlockDictionary) {
+			final MatrixBlockDictionary md = (MatrixBlockDictionary) _dict;
+			final MatrixBlock mb = md.getMatrixBlock();
+			if(mb.isEmpty()) // Early abort if the dictionary is empty.
+				return;
+			else if(mb.isInSparseFormat())
+				decompressToSparseBlockSparseDictionary(sb, rl, ru, offR, offC, mb.getSparseBlock());
+			else
+				decompressToSparseBlockDenseDictionary(sb, rl, ru, offR, offC, mb.getDenseBlockValues());
+		}
+		else
+			decompressToSparseBlockDenseDictionary(sb, rl, ru, offR, offC, _dict.getValues());
 	}
 
 	/**
-	 * Decompress to block using a sparse dictionary to lookup into.
+	 * Decompress to DenseBlock using a sparse dictionary to lookup into.
 	 * 
-	 * @param target The dense target block to decompress into
-	 * @param rl     The row to start decompression from
-	 * @param ru     The row to end decompression at
-	 * @param offT   The offset into target block to decompress to (use full if the target it a multi block matrix)
-	 * @param sb     the sparse dictionary block to take value tuples from
+	 * @param db   The dense db block to decompress into
+	 * @param rl   The row to start decompression from
+	 * @param ru   The row to end decompression at
+	 * @param offR The row offset to insert into
+	 * @param offC The column offset to insert into
+	 * @param sb   The sparse dictionary block to take value tuples from
 	 */
-	protected abstract void decompressToBlockSparseDictionary(MatrixBlock target, int rl, int ru, int offT,
+	protected abstract void decompressToDenseBlockSparseDictionary(DenseBlock db, int rl, int ru, int offR, int offC,
 		SparseBlock sb);
 
 	/**
-	 * Decompress to block using a dense dictionary to lookup into.
+	 * Decompress to DenseBlock using a dense dictionary to lookup into.
 	 * 
-	 * @param target The dense target block to decompress into
+	 * @param db     The dense db block to decompress into
 	 * @param rl     The row to start decompression from
 	 * @param ru     The row to end decompression at
-	 * @param offT   The offset into target block to decompress to (use full if the target it a multi block matrix)
+	 * @param offR   The row offset to insert into
+	 * @param offC   The column offset to insert into
 	 * @param values The dense dictionary values, linearized row major.
 	 */
-	protected abstract void decompressToBlockDenseDictionary(MatrixBlock target, int rl, int ru, int offT,
+	protected abstract void decompressToDenseBlockDenseDictionary(DenseBlock db, int rl, int ru, int offR, int offC,
+		double[] values);
+
+	/**
+	 * Decompress to SparseBlock using a sparse dictionary to lookup into.
+	 * 
+	 * @param ret  The dense ret block to decompress into
+	 * @param rl   The row to start decompression from
+	 * @param ru   The row to end decompression at
+	 * @param offR The row offset to insert into
+	 * @param offC The column offset to insert into
+	 * @param sb   The sparse dictionary block to take value tuples from
+	 */
+	protected abstract void decompressToSparseBlockSparseDictionary(SparseBlock ret, int rl, int ru, int offR, int offC,
+		SparseBlock sb);
+
+	/**
+	 * Decompress to SparseBlock using a dense dictionary to lookup into.
+	 * 
+	 * @param ret    The dense ret block to decompress into
+	 * @param rl     The row to start decompression from
+	 * @param ru     The row to end decompression at
+	 * @param offR   The row offset to insert into
+	 * @param offC   The column offset to insert into
+	 * @param values The dense dictionary values, linearized row major.
+	 */
+	protected abstract void decompressToSparseBlockDenseDictionary(SparseBlock ret, int rl, int ru, int offR, int offC,
 		double[] values);
 
 	@Override
@@ -329,14 +374,17 @@ public abstract class AColGroupValue extends AColGroupCompressed implements Clon
 		_dict.colSum(c, getCounts(), _colIndexes, square);
 	}
 
+	@Override
 	protected void computeProduct(double[] c, int nRows) {
 		c[0] *= _dict.product(getCounts(), _colIndexes.length);
 	}
 
+	@Override
 	protected void computeRowProduct(double[] c, int rl, int ru) {
 		throw new NotImplementedException();
 	}
 
+	@Override
 	protected void computeColProduct(double[] c, int nRows) {
 		_dict.colProduct(c, getCounts(), _colIndexes);
 	}
@@ -396,126 +444,6 @@ public abstract class AColGroupValue extends AColGroupCompressed implements Clon
 		return ret;
 	}
 
-	// private static final MatrixBlock allocatePreAggregate(MatrixBlock m, int numVals, int rl, int ru) {
-	// final int lhsRows = ru - rl;
-	// final double[] vals = allocDVector(lhsRows * numVals, true);
-	// final DenseBlock retB = new DenseBlockFP64(new int[] {lhsRows, numVals}, vals);
-	// return new MatrixBlock(lhsRows, numVals, retB);
-	// }
-
-	// /**
-	// * Pre aggregate for left Multiplication.
-	// *
-	// * @param m Matrix to preAggregate
-	// * @param preAgg Matrix to preAggregate into
-	// * @param rl Start row
-	// * @param ru End row
-	// */
-	// public abstract void preAggregate(MatrixBlock m, MatrixBlock preAgg, int rl, int ru);
-
-	// public abstract void preAggregateDense(MatrixBlock m, MatrixBlock preAgg, int rl, int ru, int vl, int vu);
-
-	// /**
-	// * Pre aggregate into a dictionary. It is assumed that "that" have more distinct values than, "this".
-	// *
-	// * @param that the other column group whose indexes are used for aggregation.
-	// * @return A aggregate dictionary
-	// */
-	// public final Dictionary preAggregateThatIndexStructure(AColGroupValue that) {
-	// int outputLength = that._colIndexes.length * this.getNumValues();
-	// Dictionary ret = new Dictionary(new double[outputLength]);
-
-	// if(that instanceof ColGroupDDC)
-	// return preAggregateThatDDCStructure((ColGroupDDC) that, ret);
-	// else if(that instanceof ColGroupSDCSingleZeros)
-	// return preAggregateThatSDCSingleZerosStructure((ColGroupSDCSingleZeros) that, ret);
-	// else if(that instanceof ColGroupSDCZeros)
-	// return preAggregateThatSDCZerosStructure((ColGroupSDCZeros) that, ret);
-
-	// throw new NotImplementedException("Not supported pre aggregate using index structure of :"
-	// + that.getClass().getSimpleName() + " in " + this.getClass().getSimpleName());
-	// }
-
-	// protected Dictionary preAggregateThatDDCStructure(ColGroupDDC that, Dictionary ret) {
-	// throw new DMLCompressionException("Does not make sense to call this, implement function for sub class");
-	// }
-
-	// protected Dictionary preAggregateThatSDCZerosStructure(ColGroupSDCZeros that, Dictionary ret) {
-	// throw new DMLCompressionException("Does not make sense to call this, implement function for sub class");
-	// }
-
-	// protected Dictionary preAggregateThatSDCSingleZerosStructure(ColGroupSDCSingleZeros that, Dictionary ret) {
-	// throw new DMLCompressionException("Does not make sense to call this, implement function for sub class");
-	// }
-
-	// @Override
-	// public final void leftMultByAColGroup(AColGroup lhs, MatrixBlock result) {
-	// if(lhs instanceof ColGroupEmpty)
-	// return;
-	// else if(lhs instanceof AColGroupValue)
-	// leftMultByColGroupValue((AColGroupValue) lhs, result);
-	// else if(lhs instanceof ColGroupUncompressed)
-	// leftMultByUncompressedColGroup((ColGroupUncompressed) lhs, result);
-	// else
-	// throw new DMLCompressionException(
-	// "Not supported left multiplication with A ColGroup of type: " + lhs.getClass().getSimpleName());
-	// }
-
-	// @Override
-	// public void tsmmAColGroup(AColGroup other, MatrixBlock result) {
-	// if(other instanceof ColGroupEmpty)
-	// return;
-	// else if(other instanceof APreAgg)
-	// tsmmAColGroupValue((APreAgg) other, result);
-	// else if(other instanceof ColGroupUncompressed)
-	// tsmmColGroupUncompressed((ColGroupUncompressed) other, result);
-	// else
-	// throw new DMLCompressionException("Unsupported column group type " + other.getClass().getSimpleName());
-
-	// }
-
-	// protected void tsmmColGroupUncompressed(ColGroupUncompressed other, MatrixBlock result) {
-	// LOG.warn("Inefficient multiplication with uncompressed column group");
-	// final int nCols = result.getNumColumns();
-	// final MatrixBlock otherMBT = LibMatrixReorg.transpose(((ColGroupUncompressed) other).getData());
-	// final int nRows = otherMBT.getNumRows();
-	// final MatrixBlock tmp = new MatrixBlock(otherMBT.getNumRows(), nCols, false);
-	// tmp.allocateDenseBlock();
-	// leftMultByMatrix(otherMBT, tmp, 0, nRows);
-
-	// final double[] r = tmp.getDenseBlockValues();
-	// final double[] resV = result.getDenseBlockValues();
-	// final int otLen = other._colIndexes.length;
-	// final int thisLen = _colIndexes.length;
-	// for(int i = 0; i < otLen; i++) {
-	// final int oid = other._colIndexes[i];
-	// final int offR = i * nCols;
-	// for(int j = 0; j < thisLen; j++)
-	// addToUpperTriangle(nCols, _colIndexes[j], oid, resV, r[offR + _colIndexes[j]]);
-	// }
-	// }
-
-	// private void leftMultByColGroupValue(AColGroupValue lhs, MatrixBlock result) {
-	// final int[] rightIdx = this._colIndexes;
-	// final int[] leftIdx = lhs._colIndexes;
-	// final ADictionary rDict = this._dict;
-	// final ADictionary lDict = lhs._dict;
-
-	// if(sameIndexStructure(lhs)) {
-	// final int[] c = getCounts();
-	// if(rDict == lDict)
-	// tsmmDictionaryWithScaling(rDict, c, leftIdx, rightIdx, result);
-	// else
-	// MMDictsWithScaling(lDict, rDict, leftIdx, rightIdx, result, c);
-	// }
-	// else {
-	// if(shouldPreAggregateLeft(lhs))
-	// MMDicts(lDict, preAggLeft(lhs), leftIdx, rightIdx, result);
-	// else
-	// MMDicts(preAggRight(lhs), rDict, leftIdx, rightIdx, result);
-	// }
-	// }
-
 	@Override
 	protected final void tsmm(double[] result, int numColumns, int nRows) {
 		final int[] counts = getCounts();
@@ -535,201 +463,6 @@ public abstract class AColGroupValue extends AColGroupCompressed implements Clon
 		return _dict.getNumberNonZeros(counts, _colIndexes.length);
 	}
 
-	// /**
-	// * Matrix Multiply the two matrices, note that the left side is considered transposed,
-	// *
-	// * making the multiplication a: t(left) %*% right
-	// *
-	// * @param left The left side dictionary
-	// * @param right The right side dictionary
-	// * @param rowsLeft The row indexes on the left hand side
-	// * @param colsRight The column indexes on the right hand side
-	// * @param result The result matrix to put the results into.
-	// */
-	// private static void MMDicts(ADictionary left, ADictionary right, int[] rowsLeft, int[] colsRight,
-	// MatrixBlock result) {
-
-	// if(left instanceof MatrixBlockDictionary && right instanceof MatrixBlockDictionary) {
-	// final MatrixBlock leftMB = left.getMBDict(rowsLeft.length).getMatrixBlock();
-	// final MatrixBlock rightMB = right.getMBDict(colsRight.length).getMatrixBlock();
-	// MMDicts(leftMB, rightMB, rowsLeft, colsRight, result);
-	// return;
-	// }
-
-	// double[] leftV = null;
-	// double[] rightV = null;
-
-	// if(left instanceof MatrixBlockDictionary) {
-	// final MatrixBlock leftMB = left.getMBDict(rowsLeft.length).getMatrixBlock();
-	// if(leftMB.isEmpty())
-	// return;
-	// else if(leftMB.isInSparseFormat())
-	// MMDictsSparseDense(leftMB.getSparseBlock(), right.getValues(), rowsLeft, colsRight, result);
-	// else
-	// leftV = leftMB.getDenseBlockValues();
-	// }
-	// else
-	// leftV = left.getValues();
-
-	// if(right instanceof MatrixBlockDictionary) {
-	// final MatrixBlock rightMB = right.getMBDict(colsRight.length).getMatrixBlock();
-	// if(rightMB.isEmpty())
-	// return;
-	// else if(rightMB.isInSparseFormat())
-	// MMDictsDenseSparse(leftV, rightMB.getSparseBlock(), rowsLeft, colsRight, result);
-	// else
-	// rightV = rightMB.getDenseBlockValues();
-	// }
-	// else
-	// rightV = right.getValues();
-
-	// // if both sides were extracted.
-	// if(leftV != null && rightV != null)
-	// MMDictsDenseDense(leftV, rightV, rowsLeft, colsRight, result);
-
-	// }
-
-	// private static void MMDicts(MatrixBlock leftMB, MatrixBlock rightMB, int[] rowsLeft, int[] colsRight,
-	// MatrixBlock result) {
-	// if(leftMB.isEmpty() || rightMB.isEmpty())
-	// return;
-	// else if(rightMB.isInSparseFormat() && leftMB.isInSparseFormat())
-	// throw new NotImplementedException("Not Supported sparse sparse dictionary multiplication");
-	// else if(rightMB.isInSparseFormat())
-	// MMDictsDenseSparse(leftMB.getDenseBlockValues(), rightMB.getSparseBlock(), rowsLeft, colsRight, result);
-	// else if(leftMB.isInSparseFormat())
-	// MMDictsSparseDense(leftMB.getSparseBlock(), rightMB.getDenseBlockValues(), rowsLeft, colsRight, result);
-	// else
-	// MMDictsDenseDense(leftMB.getDenseBlockValues(), rightMB.getDenseBlockValues(), rowsLeft, colsRight, result);
-	// }
-
-	// private static void MMDictsDenseDense(double[] left, double[] right, int[] rowsLeft, int[] colsRight,
-	// MatrixBlock result) {
-	// final int commonDim = Math.min(left.length / rowsLeft.length, right.length / colsRight.length);
-	// final int resCols = result.getNumColumns();
-	// final double[] resV = result.getDenseBlockValues();
-	// for(int k = 0; k < commonDim; k++) {
-	// final int offL = k * rowsLeft.length;
-	// final int offR = k * colsRight.length;
-	// for(int i = 0; i < rowsLeft.length; i++) {
-	// final int offOut = rowsLeft[i] * resCols;
-	// final double vl = left[offL + i];
-	// if(vl != 0)
-	// for(int j = 0; j < colsRight.length; j++) {
-	// final double vr = right[offR + j];
-	// resV[offOut + colsRight[j]] += vl * vr;
-	// }
-	// }
-	// }
-	// }
-
-	// private static void MMDenseToUpperTriangle(double[] left, double[] right, int[] rowsLeft, int[] colsRight,
-	// MatrixBlock result) {
-	// final int commonDim = Math.min(left.length / rowsLeft.length, right.length / colsRight.length);
-	// final int resCols = result.getNumColumns();
-	// final double[] resV = result.getDenseBlockValues();
-	// for(int k = 0; k < commonDim; k++) {
-	// final int offL = k * rowsLeft.length;
-	// final int offR = k * colsRight.length;
-	// for(int i = 0; i < rowsLeft.length; i++) {
-	// final int rowOut = rowsLeft[i];
-	// final double vl = left[offL + i];
-	// if(vl != 0)
-	// for(int j = 0; j < colsRight.length; j++) {
-	// final double vr = right[offR + j];
-	// final int colOut = colsRight[j];
-	// addToUpperTriangle(resCols, rowOut, colOut, resV, vl * vr);
-	// }
-	// }
-	// }
-	// }
-
-	// private static void MMDenseToUpperTriangleScaling(double[] left, double[] right, int[] rowsLeft, int[] colsRight,
-	// int[] scale, MatrixBlock result) {
-	// final int commonDim = Math.min(left.length / rowsLeft.length, right.length / colsRight.length);
-	// final int resCols = result.getNumColumns();
-	// final double[] resV = result.getDenseBlockValues();
-	// for(int k = 0; k < commonDim; k++) {
-	// final int offL = k * rowsLeft.length;
-	// final int offR = k * colsRight.length;
-	// final int sv = scale[k];
-	// for(int i = 0; i < rowsLeft.length; i++) {
-	// final int rowOut = rowsLeft[i];
-	// final double vl = left[offL + i] * sv;
-	// if(vl != 0)
-	// for(int j = 0; j < colsRight.length; j++) {
-	// final double vr = right[offR + j];
-	// final int colOut = colsRight[j];
-	// addToUpperTriangle(resCols, rowOut, colOut, resV, vl * vr);
-	// }
-	// }
-	// }
-	// }
-
-	// private static void MMDictsSparseDense(SparseBlock left, double[] right, int[] rowsLeft, int[] colsRight,
-	// MatrixBlock result) {
-	// final double[] resV = result.getDenseBlockValues();
-	// final int commonDim = Math.min(left.numRows(), right.length / colsRight.length);
-	// for(int i = 0; i < commonDim; i++) {
-	// if(left.isEmpty(i))
-	// continue;
-	// final int apos = left.pos(i);
-	// final int alen = left.size(i) + apos;
-	// final int[] aix = left.indexes(i);
-	// final double[] leftVals = left.values(i);
-	// final int offRight = i * colsRight.length;
-	// for(int k = apos; k < alen; k++) {
-	// final int offOut = rowsLeft[aix[k]] * result.getNumColumns();
-	// final double v = leftVals[k];
-	// for(int j = 0; j < colsRight.length; j++)
-	// resV[offOut + colsRight[j]] += v * right[offRight + j];
-	// }
-	// }
-	// }
-
-	// private static void MMDictsDenseSparse(double[] left, SparseBlock right, int[] rowsLeft, int[] colsRight,
-	// MatrixBlock result) {
-	// final double[] resV = result.getDenseBlockValues();
-	// final int commonDim = Math.min(left.length / rowsLeft.length, right.numRows());
-	// for(int i = 0; i < commonDim; i++) {
-	// if(right.isEmpty(i))
-	// continue;
-	// final int apos = right.pos(i);
-	// final int alen = right.size(i) + apos;
-	// final int[] aix = right.indexes(i);
-	// final double[] rightVals = right.values(i);
-	// final int offLeft = i * rowsLeft.length;
-	// for(int j = 0; j < rowsLeft.length; j++) {
-	// final int offOut = rowsLeft[j] * result.getNumColumns();
-	// final double v = left[offLeft + j];
-	// if(v != 0)
-	// for(int k = apos; k < alen; k++)
-	// resV[offOut + colsRight[aix[k]]] += v * rightVals[k];
-	// }
-	// }
-	// }
-
-	// /**
-	// * Multiply with a matrix on the left.
-	// *
-	// * @param matrix Matrix Block to left multiply with
-	// * @param result Matrix Block result
-	// * @param rl The row to start the matrix multiplication from
-	// * @param ru The row to stop the matrix multiplication at.
-	// */
-	// @Override
-	// public final void leftMultByMatrix(MatrixBlock matrix, MatrixBlock result, int rl, int ru) {
-	// if(matrix.isEmpty())
-	// return;
-	// final int numVals = getNumValues();
-	// // Pre aggregate the matrix into same size as dictionary
-	// MatrixBlock preAgg = allocatePreAggregate(matrix, numVals, rl, ru);
-	// preAggregate(matrix, preAgg, rl, ru);
-	// preAgg.recomputeNonZeros();
-	// MatrixBlock tmpRes = leftMultByPreAggregateMatrix(preAgg);
-	// addMatrixToResult(tmpRes, result, rl, ru);
-	// }
-
 	public final MatrixBlock leftMultByPreAggregateMatrix(MatrixBlock preAgg, MatrixBlock tmpRes) {
 		// Get dictionary.
 		MatrixBlock dictM = forceMatrixBlockDictionary().getMatrixBlock();
@@ -737,32 +470,19 @@ public abstract class AColGroupValue extends AColGroupCompressed implements Clon
 		return tmpRes;
 	}
 
-	// protected void leftMultByUncompressedColGroup(ColGroupUncompressed lhs, MatrixBlock result) {
-	// if(lhs.getData().isEmpty())
-	// return;
-	// LOG.warn("Transpose of uncompressed to fit to template need t(a) %*% b support");
-	// MatrixBlock tmp = LibMatrixReorg.transpose(lhs.getData(), InfrastructureAnalyzer.getLocalParallelism());
-	// final int numVals = getNumValues();
-	// MatrixBlock preAgg = allocatePreAggregate(tmp, numVals, 0, tmp.getNumRows());
-	// preAggregate(tmp, preAgg, 0, tmp.getNumRows());
-	// preAgg.recomputeNonZeros();
-	// MatrixBlock tmpRes = leftMultByPreAggregateMatrix(preAgg);
-	// addMatrixToResult(tmpRes, result, lhs._colIndexes);
-	// }
-
 	private MatrixBlockDictionary forceMatrixBlockDictionary() {
 		if(!(_dict instanceof MatrixBlockDictionary))
 			_dict = _dict.getMBDict(_colIndexes.length);
 		return((MatrixBlockDictionary) _dict);
 	}
 
-	public void addMatrixToResult(MatrixBlock tmp, MatrixBlock result, int rl, int ru) {
+	public final void addMatrixToResult(MatrixBlock tmp, MatrixBlock result, int rl, int ru) {
 		if(tmp.isEmpty())
 			return;
 		final double[] retV = result.getDenseBlockValues();
 		final int nColRet = result.getNumColumns();
 		if(tmp.isInSparseFormat()) {
-			SparseBlock sb = tmp.getSparseBlock();
+			final SparseBlock sb = tmp.getSparseBlock();
 			for(int row = rl, offT = 0; row < ru; row++, offT++) {
 				final int apos = sb.pos(offT);
 				final int alen = sb.size(offT);
@@ -783,34 +503,6 @@ public abstract class AColGroupValue extends AColGroupCompressed implements Clon
 			}
 		}
 	}
-
-	// private void addMatrixToResult(MatrixBlock tmp, MatrixBlock result, int[] rowIndexes) {
-	// if(tmp.isEmpty())
-	// return;
-	// final double[] retV = result.getDenseBlockValues();
-	// final int nColRet = result.getNumColumns();
-	// if(tmp.isInSparseFormat()) {
-	// SparseBlock sb = tmp.getSparseBlock();
-	// for(int row = 0; row < rowIndexes.length; row++) {
-	// final int apos = sb.pos(row);
-	// final int alen = sb.size(row);
-	// final int[] aix = sb.indexes(row);
-	// final double[] avals = sb.values(row);
-	// final int offR = rowIndexes[row] * nColRet;
-	// for(int i = apos; i < apos + alen; i++)
-	// retV[offR + _colIndexes[aix[i]]] += avals[i];
-	// }
-	// }
-	// else {
-	// final double[] tmpV = tmp.getDenseBlockValues();
-	// final int nCol = _colIndexes.length;
-	// for(int row = 0, offT = 0; row < rowIndexes.length; row++, offT += nCol) {
-	// final int offR = rowIndexes[row] * nColRet;
-	// for(int col = 0; col < nCol; col++)
-	// retV[offR + _colIndexes[col]] += tmpV[offT + col];
-	// }
-	// }
-	// }
 
 	@Override
 	public final AColGroup rightMultByMatrix(MatrixBlock right) {

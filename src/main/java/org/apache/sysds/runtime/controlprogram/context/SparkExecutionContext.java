@@ -22,11 +22,16 @@ package org.apache.sysds.runtime.controlprogram.context;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
+import java.util.concurrent.atomic.LongAdder;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
 
@@ -55,7 +60,6 @@ import org.apache.sysds.conf.DMLConfig;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.lops.Checkpoint;
 import org.apache.sysds.runtime.DMLRuntimeException;
-import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.controlprogram.Program;
 import org.apache.sysds.runtime.controlprogram.caching.CacheBlock;
 import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
@@ -89,6 +93,7 @@ import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.meta.TensorCharacteristics;
+import org.apache.sysds.runtime.util.CommonThreadPool;
 import org.apache.sysds.runtime.util.HDFSTool;
 import org.apache.sysds.runtime.util.UtilFunctions;
 import org.apache.sysds.utils.MLContextProxy;
@@ -1035,107 +1040,156 @@ public class SparkExecutionContext extends ExecutionContext
 	}
 
 	/**
-	 * Utility method for creating a single matrix block out of a binary block RDD.
-	 * Note that this collect call might trigger execution of any pending transformations.
+	 * Utility method for creating a single matrix block out of a binary block RDD. Note that this collect call might
+	 * trigger execution of any pending transformations.
 	 *
-	 * NOTE: This is an unguarded utility function, which requires memory for both the output matrix
-	 * and its collected, blocked representation.
+	 * NOTE: This is an unguarded utility function, which requires memory for both the output matrix and its collected,
+	 * blocked representation.
 	 *
-	 * @param rdd JavaPairRDD for matrix block
+	 * @param rdd  JavaPairRDD for matrix block
 	 * @param rlen number of rows
 	 * @param clen number of columns
 	 * @param blen block length
-	 * @param nnz number of non-zeros
-	 * @return matrix block
+	 * @param nnz  number of non-zeros
+	 * @return Local matrix block
 	 */
 	public static MatrixBlock toMatrixBlock(JavaPairRDD<MatrixIndexes,MatrixBlock> rdd, int rlen, int clen, int blen, long nnz) {
 		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
+		final Boolean singleBlock = rlen <= blen && clen <= blen ;
+		final MatrixBlock out = singleBlock ? toMatrixBlockSingleBlock(rdd, rlen, clen) : toMatrixBlockMultiBlock(rdd, rlen, clen, blen, nnz);
 
-		MatrixBlock out = null;
-
-		if( rlen <= blen && clen <= blen ) //SINGLE BLOCK
-		{
-			//special case without copy and nnz maintenance
-			List<Tuple2<MatrixIndexes,MatrixBlock>> list = rdd.collect();
-
-			if( list.size()>1 )
-				throw new DMLRuntimeException("Expecting no more than one result block but got: " + list.size());
-			else if( list.size()==1 )
-				out = list.get(0)._2();
-			else //empty (e.g., after ops w/ outputEmpty=false)
-				out = new MatrixBlock(rlen, clen, true);
-			out.examSparsity();
-		}
-		else //MULTIPLE BLOCKS
-		{
-			//determine target sparse/dense representation
-			long lnnz = (nnz >= 0) ? nnz : (long)rlen * clen;
-			boolean sparse = MatrixBlock.evalSparseFormatInMemory(rlen, clen, lnnz);
-
-			//create output matrix block (w/ lazy allocation)
-			out = new MatrixBlock(rlen, clen, sparse, lnnz);
-			
-			//kickoff asynchronous allocation
-			Future<MatrixBlock> fout = out.allocateBlockAsync();
-			
-			//trigger pending RDD operations and collect blocks
-			List<Tuple2<MatrixIndexes,MatrixBlock>> list = rdd.collect();
-			out = IOUtilFunctions.get(fout); //wait for allocation
-
-			//copy blocks one-at-a-time into output matrix block
-			long aNnz = 0;
-			boolean firstCompressed = true;
-			for( Tuple2<MatrixIndexes,MatrixBlock> keyval : list )
-			{
-				//unpack index-block pair
-				MatrixIndexes ix = keyval._1();
-				MatrixBlock block = keyval._2();
-				
-				//compute row/column block offsets
-				int row_offset = (int)(ix.getRowIndex()-1)*blen;
-				int col_offset = (int)(ix.getColumnIndex()-1)*blen;
-				int rows = block.getNumRows();
-				int cols = block.getNumColumns();
-				
-				//handle compressed blocks (decompress for robustness)
-				if( block instanceof CompressedMatrixBlock ){
-					if(firstCompressed){
-						// with warning.
-						block =((CompressedMatrixBlock)block).getUncompressed("Spark RDD block to MatrixBlock Decompressing");
-						firstCompressed = false;
-					}else
-						block = ((CompressedMatrixBlock)block).decompress(InfrastructureAnalyzer.getLocalParallelism());
-				}
-
-				//append block
-				if( sparse ) { //SPARSE OUTPUT
-					//append block to sparse target in order to avoid shifting, where
-					//we use a shallow row copy in case of MCSR and single column blocks
-					//note: this append requires, for multiple column blocks, a final sort
-					out.appendToSparse(block, row_offset, col_offset, clen>blen);
-				}
-				else { //DENSE OUTPUT
-					out.copy( row_offset, row_offset+rows-1,
-							  col_offset, col_offset+cols-1, block, false );
-				}
-
-				//incremental maintenance nnz
-				aNnz += block.getNonZeros();
-			}
-
-			//post-processing output matrix
-			if( sparse && clen>blen )
-				out.sortSparseRows();
-			out.setNonZeros(aNnz);
-			out.examSparsity();
-		}
-
-		if (DMLScript.STATISTICS) {
+		if (DMLScript.STATISTICS) 
 			Statistics.accSparkCollectTime(System.nanoTime() - t0);
-			Statistics.incSparkCollectCount(1);
+		
+		return out;
+	}
+
+	private static MatrixBlock toMatrixBlockSingleBlock(JavaPairRDD<MatrixIndexes, MatrixBlock> rdd, int rlen,
+		int clen) {
+		// special case without copy and nnz maintenance
+		List<Tuple2<MatrixIndexes, MatrixBlock>> list = rdd.collect();
+		MatrixBlock out;
+
+		if(list.size() > 1)
+			throw new DMLRuntimeException("Expecting no more than one result block but got: " + list.size());
+		else if(list.size() == 1)
+			out = list.get(0)._2();
+		else // empty (e.g., after ops w/ outputEmpty=false)
+			out = new MatrixBlock(rlen, clen, true);
+		out.examSparsity();
+		return out;
+	}
+
+	private static MatrixBlock toMatrixBlockMultiBlock(JavaPairRDD<MatrixIndexes, MatrixBlock> rdd, int rlen, int clen,
+		int blen, long nnz) {
+		// determine target sparse/dense representation
+		final long lnnz = (nnz >= 0) ? nnz : (long) rlen * clen;
+		final boolean sparse = MatrixBlock.evalSparseFormatInMemory(rlen, clen, lnnz);
+
+		// create output matrix block (w/ lazy allocation)
+		MatrixBlock out = new MatrixBlock(rlen, clen, sparse, lnnz);
+
+		// kickoff asynchronous allocation
+		Future<MatrixBlock> fout = out.allocateBlockAsync();
+
+		// trigger pending RDD operations and collect blocks
+		List<Tuple2<MatrixIndexes, MatrixBlock>> list = rdd.collect();
+		out = IOUtilFunctions.get(fout); // wait for allocation
+		
+		LongAdder aNnz = new LongAdder();
+		// copy blocks one-at-a-time into output matrix block
+		blockPartitionsToMatrixBlock(list, out, aNnz,  blen);
+		
+		// post-processing output matrix
+		if(sparse)
+			out.sortSparseRows();
+		out.setNonZeros(aNnz.longValue());
+		out.examSparsity();
+		return out;
+	}
+
+	private static void blockPartitionsToMatrixBlock(List<Tuple2<MatrixIndexes, MatrixBlock>> tuples, MatrixBlock out,
+		LongAdder aNnz, int blen) {
+		if(out.isInSparseFormat())
+			blockPartitionsToMatrixBlockSingleThread(tuples, out, aNnz, blen);
+		else
+			blockPartitionsToMatrixBlockMultiThreaded(tuples, out, aNnz, blen);
+	}
+
+	private static void blockPartitionsToMatrixBlockSingleThread(List<Tuple2<MatrixIndexes, MatrixBlock>> tuples,
+		MatrixBlock out, LongAdder aNnz, int blen) {
+		final boolean sparse = out.isInSparseFormat();
+		final boolean sparseCopyShallow = sparse && out.getNumColumns() <= blen;
+		for(Tuple2<MatrixIndexes, MatrixBlock> tuple : tuples)
+			blockPartitionToMatrixBlock(tuple, out, aNnz, blen, sparseCopyShallow);
+	}
+
+	private static void blockPartitionsToMatrixBlockMultiThreaded(List<Tuple2<MatrixIndexes, MatrixBlock>> tuples,
+		MatrixBlock out, LongAdder aNnz, int blen) {
+		try {
+			final int k = InfrastructureAnalyzer.getLocalParallelism();
+			final ExecutorService pool = CommonThreadPool.get(k);
+			final ArrayList<BlockPartitionToMatrixBlockTask> tasks = new ArrayList<>();
+			final int tSize = tuples.size();
+			final int blockSize = Math.max(tSize / k / 2, 1);
+			for(int i = 0; i < tSize; i += blockSize)
+				tasks.add(new BlockPartitionToMatrixBlockTask(tuples, i, Math.min(i + blockSize, tSize), out, aNnz, blen, false));
+			// for(Tuple2<MatrixIndexes, MatrixBlock> tuple : tuples)
+
+			for(Future<Object> f : pool.invokeAll(tasks))
+				f.get();
+
+			pool.shutdown();
+		}
+		catch(InterruptedException | ExecutionException ex) {
+			throw new DMLRuntimeException("Parallel block partitions to matrix block failed", ex);
+		}
+	}
+
+	private static void blockPartitionToMatrixBlock(Tuple2<MatrixIndexes, MatrixBlock> tuple, MatrixBlock out,
+		LongAdder aNnz, int blen, boolean sparseCopyShallow) {
+		// unpack index-block pair
+		final MatrixIndexes ix = tuple._1();
+		final MatrixBlock block = tuple._2();
+
+		// compute row/column block offsets
+		final int row_offset = (int) (ix.getRowIndex() - 1) * blen;
+		final int col_offset = (int) (ix.getColumnIndex() - 1) * blen;
+
+		// Add the values of this block into the output block.
+		block.putInto(out, row_offset, col_offset, sparseCopyShallow);
+
+		// incremental maintenance nnz
+		aNnz.add(block.getNonZeros());
+	}
+
+	private static class BlockPartitionToMatrixBlockTask implements Callable<Object> {
+		private final List<Tuple2<MatrixIndexes, MatrixBlock>> _tuples;
+		private final int _start;
+		private final int _end;
+		private final MatrixBlock _out;
+		private final LongAdder _aNnz;
+		private final int _blen;
+		private final boolean _sparseCopyShallow;
+
+		protected BlockPartitionToMatrixBlockTask(List<Tuple2<MatrixIndexes, MatrixBlock>> tuples, int start, int end, MatrixBlock out,
+		LongAdder aNnz, int blen, boolean sparseCopyShallow){
+			_tuples = tuples;
+			_start = start;
+			_end = end;
+			_out = out;
+			_aNnz = aNnz;
+			_blen = blen;
+			_sparseCopyShallow = sparseCopyShallow;
 		}
 
-		return out;
+		@Override
+		public Object call(){
+			for(int i = _start; i < _end; i ++)
+				blockPartitionToMatrixBlock(_tuples.get(i), _out, _aNnz, _blen, _sparseCopyShallow);
+			
+			return null;
+		}
 	}
 
 	@SuppressWarnings("unchecked")
@@ -1188,10 +1242,9 @@ public class SparkExecutionContext extends ExecutionContext
 		out.recomputeNonZeros();
 		out.examSparsity();
 
-		if (DMLScript.STATISTICS) {
+		if (DMLScript.STATISTICS) 
 			Statistics.accSparkCollectTime(System.nanoTime() - t0);
-			Statistics.incSparkCollectCount(1);
-		}
+		
 
 		return out;
 	}
@@ -1235,10 +1288,9 @@ public class SparkExecutionContext extends ExecutionContext
 
 		// TODO post-processing output tensor (nnz, sparsity)
 
-		if (DMLScript.STATISTICS) {
+		if (DMLScript.STATISTICS) 
 			Statistics.accSparkCollectTime(System.nanoTime() - t0);
-			Statistics.incSparkCollectCount(1);
-		}
+
 		return out;
 	}
 
@@ -1257,10 +1309,8 @@ public class SparkExecutionContext extends ExecutionContext
 			out.setBlock((int)ix.getRowIndex(), (int)ix.getColumnIndex(), block);
 		}
 
-		if (DMLScript.STATISTICS) {
+		if (DMLScript.STATISTICS) 
 			Statistics.accSparkCollectTime(System.nanoTime() - t0);
-			Statistics.incSparkCollectCount(1);
-		}
 
 		return out;
 	}
@@ -1298,10 +1348,8 @@ public class SparkExecutionContext extends ExecutionContext
 			}
 		}
 
-		if (DMLScript.STATISTICS) {
+		if (DMLScript.STATISTICS) 
 			Statistics.accSparkCollectTime(System.nanoTime() - t0);
-			Statistics.incSparkCollectCount(1);
-		}
 
 		return out;
 	}

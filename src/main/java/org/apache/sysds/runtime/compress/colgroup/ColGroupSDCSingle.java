@@ -77,16 +77,17 @@ public class ColGroupSDCSingle extends AColGroupValue {
 	}
 
 	@Override
-	protected void decompressToBlockDenseDictionary(MatrixBlock target, int rl, int ru, int offT, double[] values) {
+	protected void decompressToDenseBlockDenseDictionary(DenseBlock db, int rl, int ru, int offR, int offC,
+		double[] values) {
 		final int nCol = _colIndexes.length;
 		final int offsetToDefault = values.length - nCol;
-		final DenseBlock db = target.getDenseBlock();
+		final AIterator it = _indexes.getIterator(rl);
 
+		int offT = rl + offR;
 		int i = rl;
-		AIterator it = _indexes.getIterator(rl);
 		for(; i < ru && it.hasNext(); i++, offT++) {
 			final double[] c = db.values(offT);
-			final int off = db.pos(offT);
+			final int off = db.pos(offT) + offC;
 			if(it.value() == i) {
 				for(int j = 0; j < nCol; j++)
 					c[off + _colIndexes[j]] += values[j];
@@ -99,7 +100,7 @@ public class ColGroupSDCSingle extends AColGroupValue {
 
 		for(; i < ru; i++, offT++) {
 			final double[] c = db.values(offT);
-			final int off = db.pos(offT);
+			final int off = db.pos(offT) + offC;
 			for(int j = 0; j < nCol; j++)
 				c[off + _colIndexes[j]] += values[offsetToDefault + j];
 		}
@@ -108,8 +109,42 @@ public class ColGroupSDCSingle extends AColGroupValue {
 	}
 
 	@Override
-	protected void decompressToBlockSparseDictionary(MatrixBlock target, int rl, int ru, int offT, SparseBlock values) {
+	protected void decompressToDenseBlockSparseDictionary(DenseBlock db, int rl, int ru, int offR, int offC,
+		SparseBlock values) {
 		throw new NotImplementedException();
+	}
+
+	@Override
+	protected void decompressToSparseBlockSparseDictionary(SparseBlock ret, int rl, int ru, int offR, int offC,
+		SparseBlock sb) {
+		throw new NotImplementedException();
+	}
+
+	@Override
+	protected void decompressToSparseBlockDenseDictionary(SparseBlock ret, int rl, int ru, int offR, int offC,
+		double[] values) {
+		final int nCol = _colIndexes.length;
+		final int offsetToDefault = values.length - nCol;
+		final AIterator it = _indexes.getIterator(rl);
+
+		int offT = rl + offR;
+		int i = rl;
+		for(; i < ru && it.hasNext(); i++, offT++) {
+			if(it.value() == i) {
+				for(int j = 0; j < nCol; j++)
+					ret.append(offT, _colIndexes[j] + offC, values[j]);
+				it.next();
+			}
+			else
+				for(int j = 0; j < nCol; j++)
+					ret.append(offT, _colIndexes[j] + offC, values[offsetToDefault + j]);
+		}
+
+		for(; i < ru; i++, offT++)
+			for(int j = 0; j < nCol; j++)
+				ret.append(offT, _colIndexes[j] + offC, values[offsetToDefault + j]);
+
+		_indexes.cacheIterator(it, ru);
 	}
 
 	@Override

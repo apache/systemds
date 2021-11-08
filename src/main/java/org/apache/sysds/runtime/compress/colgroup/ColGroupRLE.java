@@ -26,6 +26,7 @@ import java.util.List;
 import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.runtime.compress.CompressionSettings;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
+import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
@@ -64,44 +65,58 @@ public class ColGroupRLE extends AColGroupOffset {
 	}
 
 	@Override
-	protected void decompressToBlockDenseDictionary(MatrixBlock target, int rl, int ru, int offT, double[] values) {
-		final int blksz = CompressionSettings.BITMAP_BLOCK_SZ;
-		final int numCols = getNumCols();
-		final int numVals = getNumValues();
+	protected void decompressToDenseBlockDenseDictionary(DenseBlock target, int rl, int ru, int offR, int offC, double[] values) {
+		throw new NotImplementedException();
+		// final int blksz = CompressionSettings.BITMAP_BLOCK_SZ;
+		// final int numCols = getNumCols();
+		// final int numVals = getNumValues();
 
-		// position and start offset arrays
-		int[] astart = new int[numVals];
-		int[] apos = skipScan(numVals, rl, astart);
+		// // position and start offset arrays
+		// int[] astart = new int[numVals];
+		// int[] apos = skipScan(numVals, rl, astart);
 
-		double[] c = target.getDenseBlockValues();
-		// cache conscious append via horizontal scans
-		for(int bi = rl; bi < ru; bi += blksz) {
-			int bimax = Math.min(bi + blksz, ru);
-			for(int k = 0, off = 0; k < numVals; k++, off += numCols) {
-				int boff = _ptr[k];
-				int blen = len(k);
-				int bix = apos[k];
-				int start = astart[k];
-				for(; bix < blen & start < bimax; bix += 2) {
-					start += _data[boff + bix];
-					int len = _data[boff + bix + 1];
-					for(int i = Math.max(rl, start) - (rl - offT); i < Math.min(start + len, ru) - (rl - offT); i++) {
+		// double[] c = target.getDenseBlockValues();
+		// // cache conscious append via horizontal scans
+		// for(int bi = rl; bi < ru; bi += blksz) {
+		// 	int bimax = Math.min(bi + blksz, ru);
+		// 	for(int k = 0, off = 0; k < numVals; k++, off += numCols) {
+		// 		int boff = _ptr[k];
+		// 		int blen = len(k);
+		// 		int bix = apos[k];
+		// 		int start = astart[k];
+		// 		for(; bix < blen & start < bimax; bix += 2) {
+		// 			start += _data[boff + bix];
+		// 			int len = _data[boff + bix + 1];
+		// 			for(int i = Math.max(rl, start) - (rl - offT); i < Math.min(start + len, ru) - (rl - offT); i++) {
 
-						int rc = i * target.getNumColumns();
-						for(int j = 0; j < numCols; j++)
-							c[rc + _colIndexes[j]] += values[off + j];
+		// 				int rc = i * target.getNumColumns();
+		// 				for(int j = 0; j < numCols; j++)
+		// 					c[rc + _colIndexes[j]] += values[off + j];
 
-					}
-					start += len;
-				}
-				apos[k] = bix;
-				astart[k] = start;
-			}
-		}
+		// 			}
+		// 			start += len;
+		// 		}
+		// 		apos[k] = bix;
+		// 		astart[k] = start;
+		// 	}
+		// }
 	}
 
 	@Override
-	protected void decompressToBlockSparseDictionary(MatrixBlock target, int rl, int ru, int offT, SparseBlock values) {
+	protected void decompressToDenseBlockSparseDictionary(DenseBlock target, int rl, int ru, int offR, int offC, SparseBlock values) {
+		throw new NotImplementedException();
+	}
+
+
+	@Override
+	protected void decompressToSparseBlockSparseDictionary(SparseBlock ret, int rl, int ru, int offR, int offC,
+		SparseBlock sb) {
+		throw new NotImplementedException();
+	}
+
+	@Override
+	protected void decompressToSparseBlockDenseDictionary(SparseBlock ret, int rl, int ru, int offR, int offC,
+		double[] values) {
 		throw new NotImplementedException();
 	}
 

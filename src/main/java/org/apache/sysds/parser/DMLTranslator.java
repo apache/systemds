@@ -2490,6 +2490,9 @@ public class DMLTranslator
 		case CAST_AS_BOOLEAN:
 			currBuiltinOp = new UnaryOp(target.getName(), target.getDataType(), ValueType.BOOLEAN, OpOp1.CAST_AS_BOOLEAN, expr);
 			break;
+		case LOCAL:
+			currBuiltinOp = new UnaryOp(target.getName(), target.getDataType(), ValueType.FP64, OpOp1.LOCAL, expr);
+			break;
 		case COMPRESS:
 			currBuiltinOp = new UnaryOp(target.getName(), target.getDataType(), ValueType.FP64, OpOp1.COMPRESS, expr);
 			break;

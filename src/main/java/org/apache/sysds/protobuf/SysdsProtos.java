@@ -20,6 +20,7 @@
  */
 package org.apache.sysds.protobuf;
 
+@SuppressWarnings({"unused","unchecked"})
 public final class SysdsProtos {
 	private static final com.google.protobuf.Descriptors.Descriptor internal_static_sysds_Frame_descriptor;
 	private static final com.google.protobuf.GeneratedMessageV3.FieldAccessorTable internal_static_sysds_Frame_fieldAccessorTable;
@@ -2214,7 +2215,7 @@ public final class SysdsProtos {
 		private static final long serialVersionUID = 0L;
 		private static final com.google.protobuf.Internal.ListAdapter.Converter<java.lang.Integer, org.apache.sysds.protobuf.SysdsProtos.Schema.ValueType> valueType_converter_ = new com.google.protobuf.Internal.ListAdapter.Converter<java.lang.Integer, org.apache.sysds.protobuf.SysdsProtos.Schema.ValueType>() {
 			public org.apache.sysds.protobuf.SysdsProtos.Schema.ValueType convert(java.lang.Integer from) {
-				@SuppressWarnings("deprecation")
+				// @SuppressWarnings("deprecation")
 				org.apache.sysds.protobuf.SysdsProtos.Schema.ValueType result = org.apache.sysds.protobuf.SysdsProtos.Schema.ValueType
 					.valueOf(from);
 				return result == null ? org.apache.sysds.protobuf.SysdsProtos.Schema.ValueType.UNRECOGNIZED : result;

@@ -438,7 +438,7 @@ public class CLALibLeftMultBy {
 		// The number of rows to process together
 		final int rowBlockSize = 1;
 		// The number of column groups to process together
-		// the value should ideally be set so that the colgroups fits into cache together with a row block.
+		// the value should ideally be set so that the colGroups fits into cache together with a row block.
 		// currently we only try to avoid having a dangling small number of column groups in the last block.
 		final int colGroupBlocking = preAggCGs.size() % 16 < 4 ? 20 : 16;
 
@@ -509,7 +509,7 @@ public class CLALibLeftMultBy {
 
 	private static MatrixBlock[] populatePreAggregate(int colGroupBlocking) {
 		final MatrixBlock[] preAgg = new MatrixBlock[colGroupBlocking];
-		// poplate the preAgg array.
+		// populate the preAgg array.
 		for(int j = 0; j < colGroupBlocking; j++) {
 			MatrixBlock m = new MatrixBlock(1, 1, false);
 			m.allocateDenseBlock();

@@ -19,7 +19,8 @@
 
 package org.apache.sysds.runtime.instructions.gpu;
 
-import jcuda.Sizeof;
+import java.util.ArrayList;
+
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -27,8 +28,8 @@ import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.codegen.CodegenUtils;
-import org.apache.sysds.runtime.codegen.SpoofOperator;
 import org.apache.sysds.runtime.codegen.SpoofCUDAOperator;
+import org.apache.sysds.runtime.codegen.SpoofOperator;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
@@ -37,12 +38,11 @@ import org.apache.sysds.runtime.instructions.cp.ScalarObject;
 import org.apache.sysds.runtime.instructions.gpu.context.GPUObject;
 import org.apache.sysds.runtime.lineage.LineageItem;
 import org.apache.sysds.runtime.lineage.LineageItemUtils;
-import org.apache.sysds.runtime.lineage.LineageTraceable;
 import org.apache.sysds.utils.GPUStatistics;
 
-import java.util.ArrayList;
+import jcuda.Sizeof;
 
-public class SpoofCUDAInstruction extends GPUInstruction implements LineageTraceable {
+public class SpoofCUDAInstruction extends GPUInstruction {
 	private static final Log LOG = LogFactory.getLog(SpoofCUDAInstruction.class.getName());
 	
 	public static SpoofCUDAOperator.PrecisionProxy proxy = null;

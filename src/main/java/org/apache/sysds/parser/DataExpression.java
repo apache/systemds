@@ -340,7 +340,7 @@ public class DataExpression extends DataIdentifier
 			
 			for (int i=1; i<passedParamExprs.size(); i++){
 				if (passedParamExprs.get(i).getName() == null){
-					errorListener.validationError(parseInfo, "for matrix statement, cannot mix named and unnamed parameters, only data parameter can be unnammed");
+					errorListener.validationError(parseInfo, "for matrix statement, cannot mix named and unnamed parameters, only data parameter can be unnamed");
 					return null;
 				} else {
 					dataExpr.addMatrixExprParam(passedParamExprs.get(i).getName(), passedParamExprs.get(i).getExpr());
@@ -398,7 +398,7 @@ public class DataExpression extends DataIdentifier
 
 			for (int i=1; i<passedParamExprs.size(); i++){
 				if (passedParamExprs.get(i).getName() == null){
-					errorListener.validationError(parseInfo, "for frame statement, cannot mix named and unnamed parameters, only data parameter can be unnammed");
+					errorListener.validationError(parseInfo, "for frame statement, cannot mix named and unnamed parameters, only data parameter can be unnamed");
 					return null;
 				} else {
 					dataExpr.addFrameExprParam(passedParamExprs.get(i).getName(), passedParamExprs.get(i).getExpr());
@@ -454,7 +454,7 @@ public class DataExpression extends DataIdentifier
 
 			for (int i=1; i<passedParamExprs.size(); i++){
 				if (passedParamExprs.get(i).getName() == null){
-					errorListener.validationError(parseInfo, "for tensor statement, cannot mix named and unnamed parameters, only data parameter can be unnammed");
+					errorListener.validationError(parseInfo, "for tensor statement, cannot mix named and unnamed parameters, only data parameter can be unnamed");
 					return null;
 				}
 				else {

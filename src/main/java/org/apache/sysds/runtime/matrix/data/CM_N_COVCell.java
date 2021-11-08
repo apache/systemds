@@ -25,7 +25,6 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.util.ArrayList;
 
-import org.apache.hadoop.io.WritableComparable;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.instructions.cp.CM_COV_Object;
 import org.apache.sysds.runtime.instructions.spark.data.IndexedMatrixValue;
@@ -38,8 +37,7 @@ import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
 import org.apache.sysds.runtime.matrix.operators.UnaryOperator;
 import org.apache.sysds.runtime.util.IndexRange;
 
-@SuppressWarnings("rawtypes")
-public class CM_N_COVCell extends MatrixValue implements WritableComparable
+public class CM_N_COVCell extends MatrixValue
 {
 	private CM_COV_Object cm=new CM_COV_Object();
 	

@@ -19,7 +19,6 @@
 
 package org.apache.sysds.runtime.controlprogram.paramserv.dp;
 
-import java.io.Serializable;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -31,7 +30,7 @@ import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
 import scala.Tuple2;
 
-public class DataPartitionerSparkMapper implements PairFlatMapFunction<Tuple2<Long, Tuple2<MatrixBlock, MatrixBlock>>, Integer, Tuple2<Long, Tuple2<MatrixBlock, MatrixBlock>>>, Serializable {
+public class DataPartitionerSparkMapper implements PairFlatMapFunction<Tuple2<Long, Tuple2<MatrixBlock, MatrixBlock>>, Integer, Tuple2<Long, Tuple2<MatrixBlock, MatrixBlock>>> {
 
 	private static final long serialVersionUID = 1710721606050403296L;
 	private int _workersNum;

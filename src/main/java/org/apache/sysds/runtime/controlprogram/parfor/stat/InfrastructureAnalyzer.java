@@ -274,7 +274,7 @@ public class InfrastructureAnalyzer
 		JobConf job = ConfigurationManager.getCachedJobConf();
 		JobClient client = new JobClient(job);
 		ClusterStatus stat = client.getClusterStatus();
-		
+		client.close();
 		double ret = 0.0;
 		if( stat != null ) { //if in cluster mode
 			if( mapOnly ) {
@@ -312,6 +312,7 @@ public class InfrastructureAnalyzer
 			JobConf job = ConfigurationManager.getCachedJobConf();
 			JobClient client = new JobClient(job);
 			ClusterStatus stat = client.getClusterStatus();
+			client.close();
 			if( stat != null ) { //if in cluster mode
 				//analyze cluster status
 				_remotePar = stat.getTaskTrackers();

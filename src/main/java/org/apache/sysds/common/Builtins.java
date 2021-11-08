@@ -309,6 +309,7 @@ public enum Builtins {
 	TRANSFORMDECODE("transformdecode", false, true),
 	TRANSFORMENCODE("transformencode", false, true),
 	TRANSFORMMETA("transformmeta", false, true),
+	UNDER_SAMPLING("underSampling", true),
 	UPPER_TRI("upper.tri", false, true),
 	XDUMMY1("xdummy1", true), //error handling test
 	XDUMMY2("xdummy2", true); //error handling test

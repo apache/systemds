@@ -23,6 +23,7 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
+import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
 import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
@@ -84,16 +85,17 @@ public class ColGroupSDC extends AColGroupValue {
 	}
 
 	@Override
-	protected void decompressToBlockDenseDictionary(MatrixBlock target, int rl, int ru, int offT, double[] values) {
+	protected void decompressToDenseBlockDenseDictionary(DenseBlock db, int rl, int ru, int offR, int offC,
+		double[] values) {
 		final int nCol = _colIndexes.length;
 		final int offsetToDefault = values.length - nCol;
-		final DenseBlock db = target.getDenseBlock();
+		final AIterator it = _indexes.getIterator(rl);
 
+		int offT = rl + offR;
 		int i = rl;
-		AIterator it = _indexes.getIterator(rl);
 		for(; i < ru && it.hasNext(); i++, offT++) {
 			final double[] c = db.values(offT);
-			final int off = db.pos(offT);
+			final int off = db.pos(offT) + offC;
 			if(it.value() == i) {
 				int offset = _data.getIndex(it.getDataIndexAndIncrement()) * nCol;
 				for(int j = 0; j < nCol; j++)
@@ -106,7 +108,7 @@ public class ColGroupSDC extends AColGroupValue {
 
 		for(; i < ru; i++, offT++) {
 			final double[] c = db.values(offT);
-			final int off = db.pos(offT);
+			final int off = db.pos(offT) + offC;
 			for(int j = 0; j < nCol; j++)
 				c[off + _colIndexes[j]] += values[offsetToDefault + j];
 		}
@@ -115,40 +117,83 @@ public class ColGroupSDC extends AColGroupValue {
 	}
 
 	@Override
-	protected void decompressToBlockSparseDictionary(MatrixBlock target, int rl, int ru, int offT, SparseBlock sb) {
-		final int offsetToDefault = sb.numRows() - 1;
-		final int defApos = sb.pos(offsetToDefault);
-		final int defAlen = sb.size(offsetToDefault) + defApos;
-		final double[] defAvals = sb.values(offsetToDefault);
-		final int[] defAix = sb.indexes(offsetToDefault);
-		final DenseBlock db = target.getDenseBlock();
+	protected void decompressToDenseBlockSparseDictionary(DenseBlock db, int rl, int ru, int offR, int offC,
+		SparseBlock sb) {
+		throw new NotImplementedException();
+		// final int offsetToDefault = sb.numRows() - 1;
+		// final int defApos = sb.pos(offsetToDefault);
+		// final int defAlen = sb.size(offsetToDefault) + defApos;
+		// final double[] defAvals = sb.values(offsetToDefault);
+		// final int[] defAix = sb.indexes(offsetToDefault);
+		// final DenseBlock db = target.getDenseBlock();
 
+		// int i = rl;
+		// AIterator it = _indexes.getIterator(rl);
+		// for(; i < ru && it.hasNext(); i++, offT++) {
+		// final double[] c = db.values(offT);
+		// final int off = db.pos(offT);
+		// if(it.value() == i) {
+		// int dictIndex = _data.getIndex(it.getDataIndexAndIncrement());
+		// if(sb.isEmpty(dictIndex))
+		// continue;
+		// final int apos = sb.pos(dictIndex);
+		// final int alen = sb.size(dictIndex) + apos;
+		// final double[] avals = sb.values(dictIndex);
+		// final int[] aix = sb.indexes(dictIndex);
+		// for(int j = apos; j < alen; j++)
+		// c[off + _colIndexes[aix[j]]] += avals[j];
+		// }
+		// else
+		// for(int j = defApos; j < defAlen; j++)
+		// c[off + _colIndexes[defAix[j]]] += defAvals[j];
+		// }
+
+		// for(; i < ru; i++, offT++) {
+		// final double[] c = db.values(offT);
+		// final int off = db.pos(offT);
+		// for(int j = defApos; j < defAlen; j++)
+		// c[off + _colIndexes[defAix[j]]] += defAvals[j];
+		// }
+
+		// _indexes.cacheIterator(it, ru);
+	}
+
+	@Override
+	protected void decompressToSparseBlockSparseDictionary(SparseBlock ret, int rl, int ru, int offR, int offC,
+		SparseBlock sb) {
+		throw new NotImplementedException();
+	}
+
+	@Override
+	protected void decompressToSparseBlockDenseDictionary(SparseBlock ret, int rl, int ru, int offR, int offC,
+		double[] values) {
+		final int nCol = _colIndexes.length;
+		final int offsetToDefault = values.length - nCol;
+		final AIterator it = _indexes.getIterator(rl);
+
+		int offT = rl + offR;
 		int i = rl;
-		AIterator it = _indexes.getIterator(rl);
 		for(; i < ru && it.hasNext(); i++, offT++) {
-			final double[] c = db.values(offT);
-			final int off = db.pos(offT);
+			// final double[] c = db.values(offT);
+			// final int off = db.pos(offT) + offC;
 			if(it.value() == i) {
-				int dictIndex = _data.getIndex(it.getDataIndexAndIncrement());
-				if(sb.isEmpty(dictIndex))
-					continue;
-				final int apos = sb.pos(dictIndex);
-				final int alen = sb.size(dictIndex) + apos;
-				final double[] avals = sb.values(dictIndex);
-				final int[] aix = sb.indexes(dictIndex);
-				for(int j = apos; j < alen; j++)
-					c[off + _colIndexes[aix[j]]] += avals[j];
+				int offset = _data.getIndex(it.getDataIndexAndIncrement()) * nCol;
+				for(int j = 0; j < nCol; j++)
+					ret.append(offT, _colIndexes[j] + offC, values[offset + j]);
+				// c[off + _colIndexes[j]] += values[offset + j];
 			}
 			else
-				for(int j = defApos; j < defAlen; j++)
-					c[off + _colIndexes[defAix[j]]] += defAvals[j];
+				for(int j = 0; j < nCol; j++)
+					ret.append(offT, _colIndexes[j] + offC, values[offsetToDefault + j]);
+			// c[off + _colIndexes[j]] += values[offsetToDefault + j];
 		}
 
 		for(; i < ru; i++, offT++) {
-			final double[] c = db.values(offT);
-			final int off = db.pos(offT);
-			for(int j = defApos; j < defAlen; j++)
-				c[off + _colIndexes[defAix[j]]] += defAvals[j];
+			// final double[] c = db.values(offT);
+			// final int off = db.pos(offT) + offC;
+			for(int j = 0; j < nCol; j++)
+				ret.append(offT, _colIndexes[j] + offC, values[offsetToDefault + j]);
+			// c[off + _colIndexes[j]] += values[offsetToDefault + j];
 		}
 
 		_indexes.cacheIterator(it, ru);

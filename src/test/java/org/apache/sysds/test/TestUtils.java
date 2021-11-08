@@ -64,6 +64,7 @@ import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.io.SequenceFile.Writer;
 import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.common.Types.ValueType;
+import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.data.TensorBlock;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.functionobjects.Builtin.BuiltinCode;
@@ -854,27 +855,36 @@ public class TestUtils
 
 	public static void compareMatricesBitAvgDistance(MatrixBlock expectedMatrix, MatrixBlock actualMatrix,
 		long maxUnitsOfLeastPrecision, long maxAvgDistance, String message) {
+		if(expectedMatrix.isEmpty() && actualMatrix.isEmpty())
+			return;
+		if(expectedMatrix.isEmpty())
+			fail(message + "\nThe expected output is empty while the actual matrix is not");
+		if(actualMatrix.isEmpty())
+			fail(message + "\nThe actual output is empty while the expected matrix is not");
+		if(expectedMatrix.isInSparseFormat() && actualMatrix.isInSparseFormat()){
+			compareMatricesBitAvgDistanceSparse(expectedMatrix.getSparseBlock(), actualMatrix.getSparseBlock(), maxUnitsOfLeastPrecision, maxAvgDistance, message, actualMatrix.getNumColumns());
+			return;
+		}
 		final int rows = expectedMatrix.getNumRows();
 		final int cols = actualMatrix.getNumColumns();
 		int countErrors = 0;
 		long sumDistance = 0;
 
-		long distance;
 		for(int i = 0; i < rows && countErrors < 20; i++) {
 			for(int j = 0; j < cols && countErrors < 20; j++) {
 				double v1 = expectedMatrix.quickGetValue(i, j);
 				double v2 = actualMatrix.quickGetValue(i, j);
 				if(v1 == 0 && v2 == 0)
-					continue;
+				continue;
 				else if(v1 == 0 || v2 == 0) {
 					if(Math.abs(v1 - v2) > 1E-16) {
 						message += ("\n Expected:" + v1 + " vs actual: " + v2 + " at " + i + " " + j
-							+ " Not using Bit distance since one value is 0");
+						+ " Not using Bit distance since one value is 0");
 						countErrors++;
 					}
 				}
 				else {
-					distance = compareScalarBits(expectedMatrix.quickGetValue(i, j), actualMatrix.quickGetValue(i, j));
+					final long distance = compareScalarBits(expectedMatrix.quickGetValue(i, j), actualMatrix.quickGetValue(i, j));
 					sumDistance += distance;
 					if(distance > maxUnitsOfLeastPrecision) {
 						message += ("\n Expected:" + v1 + " vs actual: " + v2 + " at " + i + " " + j + " Distance in bits: "
@@ -884,14 +894,57 @@ public class TestUtils
 				}
 			}
 		}
-		if(countErrors == 20) {
-			assertTrue(message + "\n At least 20 values are not in equal", countErrors == 0);
-		}
+
+		if(countErrors == 20) 
+			fail(message + "\n At least 20 values are not in equal");
 		else {
 			long avgDistance = sumDistance / (rows * cols);
-			assertTrue(message + "\n" + countErrors + " values are not in equal", countErrors == 0);
-			assertTrue(message + "\nThe avg distance in bits: " + avgDistance + " was higher than max: " + maxAvgDistance,
-				avgDistance <= maxAvgDistance);
+			if(countErrors != 0)
+				fail(message + "\n" + countErrors + " values are not in equal");
+			if(avgDistance > maxAvgDistance)
+				fail(message + "\nThe avg distance in bits: " + avgDistance + " was higher than max: " + maxAvgDistance);
+		}
+	}
+
+	private static void compareMatricesBitAvgDistanceSparse(SparseBlock sbe, SparseBlock sba, long maxUnitsOfLeastPrecision, long maxAvgDistance, String message, int cols){
+		final int rows = sbe.numRows();
+		int countErrors = 0;
+		long sumDistance = 0;
+		for(int i = 0; i < rows && countErrors < 20; i++){
+			if( sbe.isEmpty(i) !=  sba.isEmpty(i))
+				fail(message +"\nBoth matrices are not equally empty on row : " + i);
+			
+			if(sbe.isEmpty(i))
+				continue;
+			
+			if(sba.size(i) != sbe.size(i))
+				fail(message+"\nNumber of values are not equal in row: " + i);
+
+			final double[] e = sbe.values(i);
+			final double[] a = sba.values(i);
+			final int epos = sbe.pos(i);
+			final int apos = sba.pos(i);
+			final int elen = sbe.size(i) + epos;
+			for(int j = apos, jj = epos; jj < elen; j++, jj++){
+				final long distance = compareScalarBits(e[jj], a[j]);
+				sumDistance += distance;
+
+				if(distance > maxUnitsOfLeastPrecision) {
+					message +=  ("\n Expected:" + e[jj] + " vs actual: " + a[j] + " at " + i + " " + j + " Distance in bits: " + distance);
+					countErrors++;
+				}
+			}
+		}
+
+		if(countErrors == 20){
+			fail(message + "\n At least 20 values are not in equal");
+		}
+		else{
+			long avgDistance = sumDistance / (rows * cols);
+			if(countErrors != 0)
+				fail(message + "\n" + countErrors + " values are not in equal");
+			if(avgDistance > maxAvgDistance)
+				fail(message + "\nThe avg distance in bits: " + avgDistance + " was higher than max: " + maxAvgDistance);
 		}
 	}
 
@@ -1008,15 +1061,21 @@ public class TestUtils
 		assertTrue("maxAveragePercentDistance should be between 1 and 0",
 			maxAveragePercentDistance >= 0.0 && maxAveragePercentDistance <= 1.0);
 
+		if(expectedMatrix.isEmpty() && actualMatrix.isEmpty())
+			return;
+		if(expectedMatrix.isInSparseFormat() && actualMatrix.isInSparseFormat()){
+			compareMatricesPercentageDistanceSparse(expectedMatrix.getSparseBlock(), actualMatrix.getSparseBlock(), percentDistanceAllowed, maxAveragePercentDistance, message, ignoreZero,actualMatrix.getNumColumns());
+			return;
+		}
+			
 		final int rows = expectedMatrix.getNumRows();
 		final int cols = expectedMatrix.getNumColumns();
 		int countErrors = 0;
 		double sumPercentDistance = 0;
-		double distance;
-
+		
 		for(int i = 0; i < rows && countErrors < 20; i++) {
 			for(int j = 0; j < cols && countErrors < 20; j++) {
-				distance = getPercentDistance(expectedMatrix.quickGetValue(i, j), actualMatrix.quickGetValue(i, j), ignoreZero);
+				final double distance = getPercentDistance(expectedMatrix.quickGetValue(i, j), actualMatrix.quickGetValue(i, j), ignoreZero);
 				sumPercentDistance += distance;
 				if(distance < percentDistanceAllowed) {
 					message += ("\nExpected: " + expectedMatrix.quickGetValue(i, j) + " vs actual: " + actualMatrix.quickGetValue(i, j) + " at " + i
@@ -1026,15 +1085,59 @@ public class TestUtils
 			}
 		}
 		if(countErrors == 20) {
-			assertTrue(message + "\n At least 20 values are not in equal", countErrors == 0);
+			fail(message + "\n At least 20 values are not in equal");
 		}
 		else {
 			double avgDistance = sumPercentDistance / (rows * cols);
-			assertTrue(message + "\n" + countErrors + " values are not in equal of total: " + (rows * cols),
-				countErrors == 0);
-			assertTrue(
-				message + "\nThe avg distance: " + avgDistance + " was lower than threshold " + maxAveragePercentDistance,
-				avgDistance > maxAveragePercentDistance);
+			if(countErrors != 0)
+				fail(message + "\n" + countErrors + " values are not in equal of total: " + (rows * cols));
+			if(avgDistance <= maxAveragePercentDistance)
+				fail(message + "\nThe avg distance: " + avgDistance + " was lower than threshold " + maxAveragePercentDistance);
+		}
+	}
+
+	private static void compareMatricesPercentageDistanceSparse(SparseBlock sbe, SparseBlock sba,
+		double percentDistanceAllowed, double maxAveragePercentDistance, String message, boolean ignoreZero, int cols) {
+		final int rows = sbe.numRows();
+		int countErrors = 0;
+		double sumPercentDistance = 0;
+
+		for(int i = 0; i < rows && countErrors < 20; i++){
+
+			if( sbe.isEmpty(i) !=  sba.isEmpty(i))
+				fail(message +"\nBoth matrices are not equally empty on row : " + i);
+			
+			if(sbe.isEmpty(i))
+				continue;
+			
+			if(sba.size(i) != sbe.size(i))
+				fail(message+"\nNumber of values are not equal in row: " + i);
+
+				final double[] e = sbe.values(i);
+				final double[] a = sba.values(i);
+				final int epos = sbe.pos(i);
+				final int apos = sba.pos(i);
+				final int elen = sbe.size(i) + epos;
+				for(int j = apos, jj = epos; jj < elen; j++, jj++){
+					final double distance = getPercentDistance(e[jj], a[j], ignoreZero);
+					sumPercentDistance += distance;
+					if(distance < percentDistanceAllowed) {
+						message += ("\nExpected: " + e[jj] + " vs actual: " +  a[j] + " at " + i
+							+ " " + j + " Distance in percent " + distance);
+						countErrors++;
+					}
+				}
+		}
+
+		if(countErrors == 20){
+			fail(message + "\n At least 20 values are not in equal");
+		}
+		else{
+			double avgDistance = sumPercentDistance / (rows * cols);
+			if(countErrors != 0)
+				fail(message + "\n" + countErrors + " values are not in equal");
+			if(avgDistance > maxAveragePercentDistance)
+				fail(message + "\nThe avg distance in bits: " + avgDistance + " was higher than max: " + maxAveragePercentDistance);
 		}
 	}
 

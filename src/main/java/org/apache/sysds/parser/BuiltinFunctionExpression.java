@@ -1580,6 +1580,17 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			output.setBlocksize (id.getBlocksize());
 
 			break;
+		case LOCAL:
+			if(OptimizerUtils.ALLOW_SCRIPT_LEVEL_LOCAL_COMMAND){
+				checkNumParameters(1);
+				checkMatrixParam(getFirstExpr());
+				output.setDataType(DataType.MATRIX);
+				output.setDimensions(id.getDim1(), id.getDim2());
+				output.setBlocksize (id.getBlocksize());
+				output.setValueType(id.getValueType());
+			}
+			else 
+				raiseValidateError("Local instruction not allowed in dml script");
 		case COMPRESS:
 		case DECOMPRESS:
 			if(OptimizerUtils.ALLOW_SCRIPT_LEVEL_COMPRESS_COMMAND){
@@ -1591,8 +1602,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 				output.setValueType(id.getValueType());
 			}
 			else
-				raiseValidateError("Compress instruction not allowed in dml script");
-			
+				raiseValidateError("Compress/DeCompress instruction not allowed in dml script");
 			break;
 		default:
 			if( isMathFunction() ) {

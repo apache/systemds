@@ -515,6 +515,10 @@ public class Statistics
 		sparkBroadcastCount.reset();
 		sparkAsyncPrefetchCount.reset();
 		sparkAsyncBroadcastCount.reset();
+		sparkParallelize.reset();
+		sparkParallelizeCount.reset();
+		sparkCollect.reset();
+		sparkCollectCount.reset();
 		
 		lTotalLix.reset();
 		lTotalLixUIP.reset();
@@ -580,10 +584,11 @@ public class Statistics
 
 	public static void accSparkCollectTime(long t) {
 		sparkCollect.add(t);
+		sparkCollectCount.add(1);
 	}
 
-	public static void incSparkCollectCount(long c) {
-		sparkCollectCount.add(c);
+	public static long getSparkCollectCount(){
+		return sparkCollectCount.longValue();
 	}
 
 	public static void accSparkBroadCastTime(long t) {

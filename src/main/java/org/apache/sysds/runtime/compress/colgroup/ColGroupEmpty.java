@@ -20,6 +20,8 @@
 package org.apache.sysds.runtime.compress.colgroup;
 
 import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
+import org.apache.sysds.runtime.data.DenseBlock;
+import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.functionobjects.ValueFunction;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
@@ -62,7 +64,12 @@ public class ColGroupEmpty extends AColGroupCompressed {
 	}
 
 	@Override
-	public void decompressToBlock(MatrixBlock target, int rl, int ru, int offT) {
+	public void decompressToDenseBlock(DenseBlock target, int rl, int ru, int offR, int offC) {
+		// do nothing.
+	}
+
+	@Override
+	public void decompressToSparseBlock(SparseBlock sb, int rl, int ru, int offR, int offC){
 		// do nothing.
 	}
 

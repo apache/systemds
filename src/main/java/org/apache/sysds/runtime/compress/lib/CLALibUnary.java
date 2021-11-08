@@ -52,7 +52,8 @@ public class CLALibUnary {
 			op = new UnaryOperator(op.fn, op.getNumThreads(), false);
 		}
 
-		MatrixBlock ret = m.getUncompressed("unaryOperations " + op.fn.toString()).unaryOperations(op, result);
+		MatrixBlock uc = m.getUncompressed("unaryOperations " + op.fn.toString());
+		MatrixBlock ret = uc.unaryOperations(op, result);
 		return ret;
 	}
 }

@@ -50,8 +50,8 @@ import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.lib.CLALibBinaryCellOp;
 import org.apache.sysds.runtime.controlprogram.caching.CacheBlock;
-import org.apache.sysds.runtime.controlprogram.caching.LazyWriteBuffer;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject.UpdateType;
+import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.DenseBlockFactory;
 import org.apache.sysds.runtime.data.SparseBlock;
@@ -106,6 +106,7 @@ import org.apache.sysds.runtime.matrix.operators.TernaryOperator;
 import org.apache.sysds.runtime.matrix.operators.UnaryOperator;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
+import org.apache.sysds.runtime.util.CommonThreadPool;
 import org.apache.sysds.runtime.util.DataConverter;
 import org.apache.sysds.runtime.util.FastBufferedDataInputStream;
 import org.apache.sysds.runtime.util.FastBufferedDataOutputStream;
@@ -361,7 +362,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	}
 	
 	public Future<MatrixBlock> allocateBlockAsync() {
-		ExecutorService pool = LazyWriteBuffer.getUtilThreadPool();
+		ExecutorService pool = CommonThreadPool.get(InfrastructureAnalyzer.getLocalParallelism());
 		return (pool != null) ? pool.submit(() -> allocateBlock()) : //async
 			ConcurrentUtils.constantFuture(allocateBlock()); //fallback sync
 	}
@@ -788,7 +789,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		appendToSparse(that, rowoffset, coloffset, true);
 	}
 	
-	public void appendToSparse( MatrixBlock that, int rowoffset, int coloffset, boolean deep ) 
+	private void appendToSparse( MatrixBlock that, int rowoffset, int coloffset, boolean deep ) 
 	{
 		if( that==null || that.isEmptyBlock(false) )
 			return; //nothing to append
@@ -1522,7 +1523,35 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		}
 	}
 	
-	
+	/**
+	 * Method for copying this matrix into a target matrix.
+	 * 
+	 * Note that this method does not maintain number of non zero values.
+	 * 
+	 * The method should output into the allocated block type of the target, therefore before any calls an appropriate
+	 * block must be allocated.
+	 * 
+	 * CSR sparse format is not supported.
+	 * 
+	 * If allocating into a sparse matrix MCSR block the rows have to be sorted afterwards with a call to
+	 * 
+	 * target.sortSparseRows()
+	 * 
+	 * @param target            Target MatrixBlock, that can be allocated dense or sparse
+	 * @param rowOffset         The Row offset to allocate into.
+	 * @param colOffset         The column offset to allocate into.
+	 * @param sparseCopyShallow If the output is sparse, and shallow copy of rows is allowed from this block
+	 */
+	public void putInto(MatrixBlock target, int rowOffset, int colOffset, boolean sparseCopyShallow) {
+		if(target.isInSparseFormat())
+			// append block to sparse target in order to avoid shifting, where
+			// we use a shallow row copy in case of MCSR and single column blocks
+			// note: this append requires, for multiple column blocks, a final sort
+			target.appendToSparse(this, rowOffset, colOffset, !sparseCopyShallow);
+		else
+			target.copy(rowOffset, rowOffset + rlen - 1, colOffset, colOffset + clen - 1, this, false);
+	}
+
 	/**
 	 * In-place copy of matrix src into the index range of the existing current matrix.
 	 * Note that removal of existing nnz in the index range and nnz maintenance is 

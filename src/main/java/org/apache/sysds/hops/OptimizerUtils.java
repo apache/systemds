@@ -235,10 +235,15 @@ public class OptimizerUtils
 	public static final boolean ALLOW_COMBINE_FILE_INPUT_FORMAT = true;
 
 	/**
+	 * This variable allows for use of explicit local command, that forces a spark block to be executed and returned as a local block.
+	 */
+	public static boolean ALLOW_SCRIPT_LEVEL_LOCAL_COMMAND = false;
+
+	/**
 	 * This variable allows for insertion of Compress and decompress in the dml script from the user.
 	 * This is added because we want to have a way to test, and verify the correct placement of compress and decompress commands.
 	 */
-	public static final boolean ALLOW_SCRIPT_LEVEL_COMPRESS_COMMAND = true;
+	public static boolean ALLOW_SCRIPT_LEVEL_COMPRESS_COMMAND = false;
 
 	/**
 	 * Boolean specifying if compression rewrites is allowed. This is disabled at run time if the IPA for Workload aware compression

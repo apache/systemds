@@ -19,18 +19,23 @@
 
 package org.apache.sysds.hops;
 
+import java.util.ArrayList;
+
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.AggOp;
 import org.apache.sysds.common.Types.DataType;
+import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.common.Types.OpOp1;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.hops.rewrite.HopRewriteUtils;
 import org.apache.sysds.lops.Checkpoint;
+import org.apache.sysds.lops.Compression;
 import org.apache.sysds.lops.CumulativeOffsetBinary;
 import org.apache.sysds.lops.CumulativePartialAggregate;
 import org.apache.sysds.lops.Data;
+import org.apache.sysds.lops.DeCompression;
+import org.apache.sysds.lops.Local;
 import org.apache.sysds.lops.Lop;
-import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.lops.PickByCount;
 import org.apache.sysds.lops.SortKeys;
 import org.apache.sysds.lops.Unary;
@@ -39,8 +44,6 @@ import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.util.UtilFunctions;
-
-import java.util.ArrayList;
 
 
 
@@ -127,67 +130,60 @@ public class UnaryOp extends MultiThreadedHop
 		//reuse existing lop
 		if( getLops() != null )
 			return getLops();
-		
-		try 
-		{
+			int k;
+		try {
 			Hop input = getInput().get(0);
-
-			if(    getDataType() == DataType.SCALAR //value type casts or matrix to scalar
-				|| (_op == OpOp1.CAST_AS_MATRIX && getInput().get(0).getDataType()==DataType.SCALAR)
-				|| (_op == OpOp1.CAST_AS_FRAME && getInput().get(0).getDataType()==DataType.SCALAR))
-			{
-				if (_op == OpOp1.IQM)  //special handling IQM
-				{
-					Lop iqmLop = constructLopsIQM();
-					setLops(iqmLop);
-				} 
-				else if(_op == OpOp1.MEDIAN) {
-					Lop medianLop = constructLopsMedian();
-					setLops(medianLop);
-				}
-				else //general case SCALAR/CAST (always in CP)
-				{
-					UnaryCP unary1 = new UnaryCP(input.constructLops(), _op, getDataType(), getValueType());
-					setOutputDimensions(unary1);
-					setLineNumbers(unary1);
-					setLops(unary1);
-				}
-			} 
-			else //general case MATRIX
-			{
-				ExecType et = optFindExecType();
-				
-				//special handling cumsum/cumprod/cummin/cumsum
-				if( isCumulativeUnaryOperation() && !(et == ExecType.CP || et == ExecType.GPU) )  
-				{
-					//TODO additional physical operation if offsets fit in memory
-					Lop cumsumLop = constructLopsSparkCumulativeUnary();
-					setLops(cumsumLop);
-				}
-				else //default unary 
-				{
-					boolean inplace = false;
-
-					//check in-place
-					if (OptimizerUtils.ALLOW_UNARY_UPDATE_IN_PLACE
-						&& input.getParent().size() == 1)
-					{
-						inplace = !(input instanceof DataOp)
-							|| !((DataOp) input).isRead();
+			Lop ret = null;
+			switch(_op){
+				case COMPRESS:
+					k = OptimizerUtils.getConstrainedNumThreads(_maxNumThreads);
+					ret = new Compression(input.constructLops(), getDataType(), getValueType(), optFindExecType(), 0);
+					break;
+				case DECOMPRESS:
+					k = OptimizerUtils.getConstrainedNumThreads(_maxNumThreads);
+					ret = new DeCompression(input.constructLops(), getDataType(), getValueType(), optFindExecType());
+					break;
+				case LOCAL:
+					ret = new Local(input.constructLops(), getDataType(), getValueType());
+					break;
+				default:
+					if(getDataType() == DataType.SCALAR // value type casts or matrix to scalar
+						|| (_op == OpOp1.CAST_AS_MATRIX && getInput().get(0).getDataType() == DataType.SCALAR) ||
+						(_op == OpOp1.CAST_AS_FRAME && getInput().get(0).getDataType() == DataType.SCALAR)) {
+						if(_op == OpOp1.IQM) { // special handling IQM
+							ret = constructLopsIQM();
+						}
+						else if(_op == OpOp1.MEDIAN) {
+							ret = constructLopsMedian();
+						}
+						else { // general case SCALAR/CAST (always in CP)
+							ret = new UnaryCP(input.constructLops(), _op, getDataType(), getValueType());
+						}
 					}
+					else { // general case MATRIX
+						ExecType et = optFindExecType();
 
-					int k = isCumulativeUnaryOperation() || isExpensiveUnaryOperation() ?
-						OptimizerUtils.getConstrainedNumThreads( _maxNumThreads ) : 1;
-					Unary unary1 = new Unary(input.constructLops(),
-						_op, getDataType(), getValueType(), et, k, inplace);
-					setOutputDimensions(unary1);
-					setLineNumbers(unary1);
-					setLops(unary1);
-				}
+						// special handling cumsum/cumprod/cummin/cumsum
+						if(isCumulativeUnaryOperation() && !(et == ExecType.CP || et == ExecType.GPU)) {
+							// TODO additional physical operation if offsets fit in memory
+							ret = constructLopsSparkCumulativeUnary();
+						}
+						else // default unary
+						{
+							final boolean inplace = OptimizerUtils.ALLOW_UNARY_UPDATE_IN_PLACE &&
+								input.getParent().size() == 1 && (!(input instanceof DataOp) || !((DataOp) input).isRead());
+
+							k = isCumulativeUnaryOperation() || isExpensiveUnaryOperation() ? OptimizerUtils
+								.getConstrainedNumThreads(_maxNumThreads) : 1;
+							ret = new Unary(input.constructLops(), _op, getDataType(), getValueType(), et, k, inplace);
+						}
+					}
 			}
-		} 
-		catch (Exception e) 
-		{
+			setOutputDimensions(ret);
+			setLineNumbers(ret);
+			setLops(ret);
+		}
+		catch (Exception e) {
 			throw new HopsException(this.printErrorLocation() + "error constructing Lops for UnaryOp Hop -- \n " , e);
 		}
 		
@@ -413,7 +409,8 @@ public class UnaryOp extends MultiThreadedHop
 				|| _op==OpOp1.ACOS || _op==OpOp1.ASIN || _op==OpOp1.ATAN  
 				|| _op==OpOp1.COSH || _op==OpOp1.SINH || _op==OpOp1.TANH 
 				|| _op==OpOp1.SQRT || _op==OpOp1.ROUND  
-				|| _op==OpOp1.SPROP || _op== OpOp1.COMPRESS || _op== OpOp1.DECOMPRESS) //sparsity preserving
+				|| _op==OpOp1.SPROP || _op== OpOp1.COMPRESS || _op== OpOp1.DECOMPRESS
+				|| _op==OpOp1.LOCAL) //sparsity preserving
 			{
 				ret = new MatrixCharacteristics(dc.getRows(), dc.getCols(), -1, dc.getNonZeros());
 			}
@@ -571,7 +568,7 @@ public class UnaryOp extends MultiThreadedHop
 				|| _op==OpOp1.SINH || _op==OpOp1.TANH
 				|| _op==OpOp1.ASIN || _op==OpOp1.ATAN
 				|| _op==OpOp1.SQRT || _op==OpOp1.ROUND || _op==OpOp1.SPROP
-				|| _op==OpOp1.COMPRESS || _op==OpOp1.DECOMPRESS) //sparsity preserving
+				|| _op==OpOp1.COMPRESS || _op==OpOp1.DECOMPRESS || _op==OpOp1.LOCAL) //sparsity preserving
 			{
 				setNnz( input.getNnz() );
 			}

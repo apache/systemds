@@ -108,11 +108,6 @@ public class InvalidInputTest {
 	}
 
 	@Test(expected = DMLRuntimeException.class)
-	public void invalid_call_appendToSparse() {
-		cmb.appendToSparse(null, 1, 1, false);
-	}
-
-	@Test(expected = DMLRuntimeException.class)
 	public void invalid_call_appendToValue() {
 		cmb.appendValue(1, 1, 0.2);
 	}

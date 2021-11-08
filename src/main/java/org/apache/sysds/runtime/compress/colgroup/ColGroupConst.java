@@ -30,6 +30,7 @@ import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.DictionaryFactory;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.MatrixBlockDictionary;
 import org.apache.sysds.runtime.data.DenseBlock;
+import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.matrix.data.LibMatrixMult;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
@@ -83,14 +84,21 @@ public class ColGroupConst extends AColGroupCompressed {
 	}
 
 	@Override
-	public void decompressToBlock(MatrixBlock target, int rl, int ru, int offT) {
-		final DenseBlock db = target.getDenseBlock();
-		for(int i = rl; i < ru; i++, offT++) {
+	public void decompressToDenseBlock(DenseBlock db, int rl, int ru, int offR, int offC) {
+		for(int i = rl, offT = rl + offR; i < ru; i++, offT++) {
 			final double[] c = db.values(offT);
-			final int off = db.pos(offT);
+			final int off = db.pos(offT) + offC;
 			for(int j = 0; j < _colIndexes.length; j++)
 				c[off + _colIndexes[j]] += _dict.getValue(j);
 		}
+	}
+
+	@Override
+	public void decompressToSparseBlock(SparseBlock ret, int rl, int ru, int offR, int offC) {
+		final int nCol = _colIndexes.length;
+		for(int i = rl, offT = rl + offR; i < ru; i++, offT++)
+			for(int j = 0; j < nCol; j++)
+				ret.append(offT, _colIndexes[j] + offC, _dict.getValue(j));
 	}
 
 	@Override

@@ -1137,6 +1137,10 @@ public abstract class Hop implements ParseInfo {
 		setVisited();
 	}
 
+	/**
+	 * Get the number of rows in the Hop.
+	 * @return a long.
+	 */
 	public long getDim1() {
 		return _dc.getRows();
 	}
@@ -1145,6 +1149,10 @@ public abstract class Hop implements ParseInfo {
 		_dc.setRows(dim1);
 	}
 
+	/**
+	 * Get the number of columns in the Hop.
+	 * @return a long.
+	 */
 	public long getDim2() {
 		return _dc.getCols();
 	}

@@ -28,6 +28,8 @@ import java.util.List;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.sysds.runtime.data.DenseBlock;
+import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
@@ -130,14 +132,14 @@ public abstract class AColGroup implements Serializable {
 	}
 
 	/**
-	 * Decompress the contents of the column group without modifying nonZeroCount.
+	 * Decompress the contents of the column group into the target matrix,.
 	 * 
-	 * @param target a matrix block where the columns covered by this column group have not yet been filled in.
-	 * @param rl     row lower
-	 * @param ru     row upper
+	 * @param target A matrix block where the columns covered by this column group have not yet been filled in.
+	 * @param rl     Row to start decompression from
+	 * @param ru     Row to end decompression at (not inclusive)
 	 */
 	public final void decompressToBlock(MatrixBlock target, int rl, int ru) {
-		decompressToBlock(target, rl, ru, rl);
+		decompressToBlock(target, rl, ru, 0, 0);
 	}
 
 	/**
@@ -326,12 +328,31 @@ public abstract class AColGroup implements Serializable {
 	/**
 	 * Decompress the contents of the column group without counting non zeros
 	 * 
+	 * The offsets helps us decompress into specific target areas of the output matrix.
+	 * 
+	 * If OffR and OffC is 0, then decompression output starts at row offset equal to rl,
+	 * 
+	 * If for instance a MiniBatch of rows 10 to 15, then target would be 5 rows high and arguments would look like:
+	 *
+	 * cg.decompressToBlock(target, 10, 15, -10, 0)
+	 * 
 	 * @param target a matrix block where the columns covered by this column group have not yet been filled in.
-	 * @param rl     row lower
-	 * @param ru     row upper
-	 * @param offT   Offset into target to assign from, this allows us to decompress into smaller matrices.
+	 * @param rl     Row to start decompression at.
+	 * @param ru     Row to end decompression at (not inclusive).
+	 * @param offR   RowOffset into target to assign from.
+	 * @param offC   ColumnOffset into the target matrix to assign from.
 	 */
-	public abstract void decompressToBlock(MatrixBlock target, int rl, int ru, int offT);
+	public final void decompressToBlock(MatrixBlock target, int rl, int ru, int offR, int offC){
+		if(target.isInSparseFormat())
+			decompressToSparseBlock(target.getSparseBlock(), rl, ru, offR, offC);
+		else
+			decompressToDenseBlock(target.getDenseBlock(), rl, ru, offR, offC);
+	}
+
+
+	protected abstract void decompressToDenseBlock(DenseBlock db, int rl, int ru,int offR, int offC);
+
+	protected abstract void decompressToSparseBlock(SparseBlock sb, int rl, int ru, int offR, int offC);
 
 	/**
 	 * Right matrix multiplication with this column group.
@@ -405,8 +426,8 @@ public abstract class AColGroup implements Serializable {
 	/**
 	 * Perform a binary row operation.
 	 * 
-	 * @param op The operation to execute
-	 * @param v  The vector of values to apply, should be same length as dictionary length.
+	 * @param op        The operation to execute
+	 * @param v         The vector of values to apply, should be same length as dictionary length.
 	 * @param isRowSafe True if the binary op is applied to an entire zero row and all results are zero
 	 * @return A updated column group with the new values.
 	 */

@@ -98,35 +98,51 @@ public class ColGroupSDCZeros extends APreAgg {
 	}
 
 	@Override
-	protected void decompressToBlockDenseDictionary(MatrixBlock target, int rl, int ru, int offT, double[] values) {
+	protected void decompressToDenseBlockDenseDictionary(DenseBlock db, int rl, int ru, int offR, int offC,
+		double[] values) {
 		final int nCol = _colIndexes.length;
-		final int offTCorrected = offT - rl;
-		final DenseBlock db = target.getDenseBlock();
 
 		AIterator it = _indexes.getIterator(rl);
 		while(it.hasNext() && it.value() < ru) {
-			final int idx = offTCorrected + it.value();
+			final int idx = offR + it.value();
 			final double[] c = db.values(idx);
-			final int off = db.pos(idx);
-			final int offC = getIndex(it.getDataIndexAndIncrement()) * nCol;
-			for(int j = 0; j < nCol; j++) {
-				c[off + _colIndexes[j]] += values[offC + j];
-			}
+			final int off = db.pos(idx) + offC;
+			final int offDict = getIndex(it.getDataIndexAndIncrement()) * nCol;
+			for(int j = 0; j < nCol; j++)
+				c[off + _colIndexes[j]] += values[offDict + j];
+
 		}
 		_indexes.cacheIterator(it, ru);
 	}
 
 	@Override
-	protected void decompressToBlockSparseDictionary(MatrixBlock target, int rl, int ru, int offT, SparseBlock sb) {
-
-		final int offTCorrected = offT - rl;
-		final DenseBlock db = target.getDenseBlock();
-
+	protected void decompressToDenseBlockSparseDictionary(DenseBlock db, int rl, int ru, int offR, int offC,
+		SparseBlock sb) {
 		AIterator it = _indexes.getIterator(rl);
 		while(it.hasNext() && it.value() < ru) {
-			final int idx = offTCorrected + it.value();
+			final int idx = offR + it.value();
+			final int dictIndex = getIndex(it.getDataIndexAndIncrement());
+			if(sb.isEmpty(dictIndex))
+				continue;
+
 			final double[] c = db.values(idx);
-			final int off = db.pos(idx);
+			final int off = db.pos(idx) + offC;
+			final int apos = sb.pos(dictIndex);
+			final int alen = sb.size(dictIndex) + apos;
+			final double[] avals = sb.values(dictIndex);
+			final int[] aix = sb.indexes(dictIndex);
+			for(int j = apos; j < alen; j++)
+				c[off + _colIndexes[aix[j]]] += avals[j];
+		}
+		_indexes.cacheIterator(it, ru);
+	}
+
+	@Override
+	protected void decompressToSparseBlockSparseDictionary(SparseBlock ret, int rl, int ru, int offR, int offC,
+		SparseBlock sb) {
+		AIterator it = _indexes.getIterator(rl);
+		while(it.hasNext() && it.value() < ru) {
+			final int row = offR + it.value();
 			final int dictIndex = getIndex(it.getDataIndexAndIncrement());
 			if(sb.isEmpty(dictIndex))
 				continue;
@@ -136,7 +152,22 @@ public class ColGroupSDCZeros extends APreAgg {
 			final double[] avals = sb.values(dictIndex);
 			final int[] aix = sb.indexes(dictIndex);
 			for(int j = apos; j < alen; j++)
-				c[off + _colIndexes[aix[j]]] += avals[j];
+				ret.append(row, _colIndexes[aix[j]] + offC, avals[j] );
+		}
+		_indexes.cacheIterator(it, ru);
+	}
+
+	@Override
+	protected void decompressToSparseBlockDenseDictionary(SparseBlock ret, int rl, int ru, int offR, int offC,
+		double[] values) {
+		final int nCol = _colIndexes.length;
+
+		AIterator it = _indexes.getIterator(rl);
+		while(it.hasNext() && it.value() < ru) {
+			final int row = offR + it.value();
+			final int offDict = getIndex(it.getDataIndexAndIncrement()) * nCol;
+			for(int j = 0; j < nCol; j++)
+				ret.append(row, _colIndexes[j] + offC, values[offDict + j]);
 		}
 		_indexes.cacheIterator(it, ru);
 	}

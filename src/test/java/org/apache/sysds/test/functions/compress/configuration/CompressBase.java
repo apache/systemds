@@ -23,6 +23,7 @@ import static org.junit.Assert.assertTrue;
 
 import org.apache.sysds.common.Types;
 import org.apache.sysds.common.Types.ExecType;
+import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
@@ -53,6 +54,7 @@ public abstract class CompressBase extends AutomatedTestBase {
 	public void compressTest(int rows, int cols, double sparsity, ExecType instType, int min, int max, double delta,
 		int decompressionCountExpected, int compressionCountsExpected, String name) {
 
+		OptimizerUtils.ALLOW_SCRIPT_LEVEL_COMPRESS_COMMAND =true;
 		Types.ExecMode platformOld = setExecMode(instType);
 		try {
 

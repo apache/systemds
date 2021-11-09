@@ -23,8 +23,8 @@ import java.util.concurrent.Executors;
 
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
-import org.apache.sysds.runtime.instructions.spark.utils.SparkUtils;
 import org.apache.sysds.runtime.matrix.operators.Operator;
+import org.apache.sysds.runtime.util.CommonThreadPool;
 
 public class PrefetchCPInstruction extends UnaryCPInstruction {
 	private PrefetchCPInstruction(Operator op, CPOperand in, CPOperand out, String opcode, String istr) {
@@ -49,8 +49,8 @@ public class PrefetchCPInstruction extends UnaryCPInstruction {
 		// If the next instruction which takes this output as an input comes before
 		// the prefetch thread triggers, that instruction will start the operations.
 		// In that case this Prefetch instruction will act like a NOOP. 
-		if (SparkUtils.triggerRDDPool == null)
-			SparkUtils.triggerRDDPool = Executors.newCachedThreadPool();
-		SparkUtils.triggerRDDPool.submit(new TriggerRDDOperationsTask(ec.getMatrixObject(output)));
+		if (CommonThreadPool.triggerRDDPool == null)
+			CommonThreadPool.triggerRDDPool = Executors.newCachedThreadPool();
+		CommonThreadPool.triggerRDDPool.submit(new TriggerRDDOperationsTask(ec.getMatrixObject(output)));
 	}
 }

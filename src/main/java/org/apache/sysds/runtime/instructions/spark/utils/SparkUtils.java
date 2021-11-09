@@ -57,14 +57,11 @@ import scala.Tuple2;
 
 import java.util.Iterator;
 import java.util.List;
-import java.util.concurrent.ExecutorService;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
 
 public class SparkUtils 
 {	
-	public static ExecutorService triggerRDDPool = null;
-
 	//internal configuration
 	public static final StorageLevel DEFAULT_TMP = Checkpoint.DEFAULT_STORAGE_LEVEL;
 
@@ -294,14 +291,6 @@ public class SparkUtils
 		if( !OptimizerUtils.exceedsCachingThreshold(mcOut.getCols(), memUB) //< mem budget
 			&& memUB < OptimizerUtils.estimateSizeExactSparsity(mcOut))
 			mo.acquireReadAndRelease();
-	}
-	
-	public static void shutdownPool() {
-		if (triggerRDDPool != null) {
-			//shutdown prefetch/broadcast thread pool
-			triggerRDDPool.shutdown();
-			triggerRDDPool = null;
-		}
 	}
 	
 	private static class CheckSparsityFunction implements VoidFunction<Tuple2<MatrixIndexes,MatrixBlock>>

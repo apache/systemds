@@ -23,8 +23,8 @@ import java.util.concurrent.Executors;
 
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
-import org.apache.sysds.runtime.instructions.spark.utils.SparkUtils;
 import org.apache.sysds.runtime.matrix.operators.Operator;
+import org.apache.sysds.runtime.util.CommonThreadPool;
 
 public class BroadcastCPInstruction extends UnaryCPInstruction {
 	private BroadcastCPInstruction(Operator op, CPOperand in, CPOperand out, String opcode, String istr) {
@@ -44,8 +44,8 @@ public class BroadcastCPInstruction extends UnaryCPInstruction {
 	public void processInstruction(ExecutionContext ec) {
 		ec.setVariable(output.getName(), ec.getMatrixObject(input1));
 
-		if (SparkUtils.triggerRDDPool == null)
-			SparkUtils.triggerRDDPool = Executors.newCachedThreadPool();
-		SparkUtils.triggerRDDPool.submit(new TriggerBroadcastTask(ec, ec.getMatrixObject(output)));
+		if (CommonThreadPool.triggerRDDPool == null)
+			CommonThreadPool.triggerRDDPool = Executors.newCachedThreadPool();
+		CommonThreadPool.triggerRDDPool.submit(new TriggerBroadcastTask(ec, ec.getMatrixObject(output)));
 	}
 }

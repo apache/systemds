@@ -21,9 +21,9 @@
 
 # read the inputs
 F = read($1, data_type="frame", format="csv", header=TRUE, naStrings= ["NA", "null","  ","NaN", "nan", "", "?", "99999"]);
-
+F = F[1:50]
 d = detectSchema(F)
-idx = sample(20, 10)  
+idx = sample(nrow(F), 10)  
 F1 = F
 # # swap values
 for(i in 1:10)
@@ -36,6 +36,8 @@ for(i in 1:10)
 
 R = valueSwap(F1, d)
 f1 = as.matrix(F == R)
+print("f1: "+toString(f1))
+print("sum of f1: "+sum(f1))
+print("dims: "+(ncol(F) * nrow(F)))
 result = ((ncol(F) * nrow(F)) == sum(f1))
-
-write(result, $2)
+print(result)

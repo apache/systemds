@@ -26,7 +26,6 @@ import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
 import org.junit.Assert;
-import org.junit.Ignore;
 import org.junit.Test;
 
 public class FrameValueSwapTest extends AutomatedTestBase
@@ -53,14 +52,12 @@ public class FrameValueSwapTest extends AutomatedTestBase
 		addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[] {"B"}));
 	}
 	//
-	@Ignore
+
 	@Test
 	public void testSwapValueTestCP() {
 		runValueSwapTest(ExecType.CP);
 	}
 
-	// TODO fix frame comparisons in spark context
-	@Ignore
 	@Test
 	public void testSwapValueTestSP() {
 		runValueSwapTest(ExecType.SPARK);
@@ -68,16 +65,17 @@ public class FrameValueSwapTest extends AutomatedTestBase
 
 	private void runValueSwapTest(ExecType et)
 	{
+		setOutputBuffering(true);
 		Types.ExecMode platformOld = setExecMode(et);
 
 		try {
 			getAndLoadTestConfiguration(TEST_NAME);
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[] {"-args", INPUT, output("B")};
+			programArgs = new String[] {"-args", INPUT};
 			runTest(true, false, null, -1);
-			boolean retCondition = HDFSTool.readBooleanFromHDFSFile(output("B"));
-			Assert.assertEquals(true, retCondition);
+			String out = runTest(null).toString();
+			Assert.assertTrue(out.contains("TRUE"));
 
 		}
 		catch (Exception ex) {

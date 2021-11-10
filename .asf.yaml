@@ -23,21 +23,7 @@
 # https://cwiki.apache.org/confluence/display/INFRA/Git+-+.asf.yaml+features
 
 github:
-  description: "Apache SystemDS - A versatile system for the end-to-end data science lifecycle"
-  homepage: https://systemds.apache.org/
-  labels:
-    - systemds
-    - java
-    - dml
-    
-  features:
-    # Enable issues management
-    issues: false
-    # Enable projects for project management boards
-    projects: false
-    # Enable wiki for documentation
-    wiki: false
-    
+  
   # Choose the type of commit merge in the PR UI
   enabled_merge_buttons:
     # Enable squash button
@@ -49,12 +35,8 @@ github:
     
 
   protected_branches:
-    master:
+    branch-2.2.0:
       # Do not allow merge commits
       # by allowing linear history
       required_linear_history: true
 
-staging:
-  profile: beta
-  whoami: master
-  outputdir: docs

@@ -68,7 +68,7 @@
 	</repositories>
 
 	<scm>
-		<developerConnection>scm:git:https://github.com/apache/systemds.git</developerConnection>
+		<developerConnection>scm:git:https://github.com/j143/systemds.git</developerConnection>
 	  <tag>HEAD</tag>
   </scm>
 

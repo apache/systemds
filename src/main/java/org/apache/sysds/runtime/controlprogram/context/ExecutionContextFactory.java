@@ -48,25 +48,20 @@ public class ExecutionContextFactory
 	public static ExecutionContext createContext(boolean allocateVars, boolean allocateLineage, Program prog)
 	{
 		ExecutionContext ec = null;
-		
-		switch( DMLScript.getGlobalExecMode() )
-		{
-			case SINGLE_NODE:
-				//NOTE: even in case of forced singlenode operations, users might still 
-				//want to run remote parfor which requires the correct execution context
-				if( OptimizerUtils.getDefaultExecutionMode()==ExecMode.HYBRID
-					&& !(prog!=null && prog.getDMLProg()!=null && prog.getDMLProg().containsRemoteParfor()))
-					ec = new ExecutionContext(allocateVars, allocateLineage, prog);
-				else
-					ec = new SparkExecutionContext(allocateVars, allocateLineage, prog);
-				break;
-				
-			case SPARK:
-			case HYBRID:
-				ec = new SparkExecutionContext(allocateVars, allocateLineage, prog);
-				break;
-		}
+
+		if(needsSparkEC(prog))
+			ec = new SparkExecutionContext(allocateVars, allocateLineage, prog);
+		else
+			ec = new ExecutionContext(allocateVars, allocateLineage, prog);
 		
 		return ec;
+	}
+
+	public static boolean needsSparkEC(Program prog) {
+		boolean retVal = OptimizerUtils.getDefaultExecutionMode()==ExecMode.HYBRID
+			&& !(prog!=null && prog.getDMLProg()!=null && prog.getDMLProg().containsRemoteParfor());
+		retVal |= DMLScript.getGlobalExecMode() == ExecMode.SPARK;
+		retVal |= DMLScript.getGlobalExecMode() == ExecMode.HYBRID;
+		return retVal;
 	}
 }

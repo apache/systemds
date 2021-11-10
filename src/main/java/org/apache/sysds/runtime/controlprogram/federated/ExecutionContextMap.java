@@ -24,10 +24,11 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
+import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContextFactory;
 
 public class ExecutionContextMap {
-	private final ExecutionContext _main;
+	private ExecutionContext _main;
 	private final Map<Long, ExecutionContext> _parEc;
 	
 	public ExecutionContextMap() {
@@ -37,12 +38,22 @@ public class ExecutionContextMap {
 	
 	public ExecutionContext get(long tid) {
 		//return main execution context
-		if( tid <= 0 )
+		if( tid <= 0 ) {
+			if(!(_main instanceof SparkExecutionContext)
+				&& ExecutionContextFactory.needsSparkEC(_main.getProgram()))
+				_main = deriveExecutionContext(_main);
 			return _main;
+		}
 		
 		//atomic probe, create if necessary, and return
-		return _parEc.computeIfAbsent(tid,
+		ExecutionContext ec = _parEc.computeIfAbsent(tid,
 			k -> deriveExecutionContext(_main));
+		if(!(ec instanceof SparkExecutionContext)
+			&& ExecutionContextFactory.needsSparkEC(ec.getProgram())) {
+			ec = deriveExecutionContext(ec);
+			_parEc.put(tid, ec);
+		}
+		return ec;
 	}
 	
 	public void clear() {

@@ -33,6 +33,7 @@ import org.apache.log4j.Logger;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.common.Types.DataType;
+import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.parser.DataExpression;
@@ -43,9 +44,11 @@ import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysds.runtime.controlprogram.caching.FrameObject;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
+import org.apache.sysds.runtime.controlprogram.context.ExecutionContextFactory;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest.RequestType;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse.ResponseType;
 import org.apache.sysds.runtime.instructions.Instruction;
+import org.apache.sysds.runtime.instructions.Instruction.IType;
 import org.apache.sysds.runtime.instructions.InstructionParser;
 import org.apache.sysds.runtime.instructions.cp.Data;
 import org.apache.sysds.runtime.instructions.cp.ListObject;
@@ -336,9 +339,14 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 
 	private FederatedResponse execInstruction(FederatedRequest request) throws Exception {
 		ExecutionContext ec = _ecm.get(request.getTID());
+		Instruction receivedInstruction = InstructionParser.parseSingleInstruction((String) request.getParam(0));
+		if(receivedInstruction.getType() == IType.SPARK && !ExecutionContextFactory.needsSparkEC(ec.getProgram())) {
+			// setting the execution mode to hybrid such that the ecm creates a SparkExecutionContext
+			DMLScript.setGlobalExecMode(ExecMode.HYBRID);
+			ec = _ecm.get(request.getTID());
+		}
 		BasicProgramBlock pb = new BasicProgramBlock(null);
 		pb.getInstructions().clear();
-		Instruction receivedInstruction = InstructionParser.parseSingleInstruction((String) request.getParam(0));
 		pb.getInstructions().add(receivedInstruction);
 
 		if(DMLScript.LINEAGE)

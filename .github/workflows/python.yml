@@ -27,7 +27,8 @@ on:
       - 'docs/**'
       - '*.md'
       - '*.html'
-      - 'src/main/python/docs/**'
+      - 'src/test/**'
+      - 'src/assembly/**'
       - 'dev/**'
     branches:
       - main
@@ -36,7 +37,7 @@ on:
       - 'docs/**'
       - '*.md'
       - '*.html'
-      - 'src/main/python/docs/**'
+      - 'src/test/**'
       - 'dev/**'
     branches:
       - main
@@ -94,7 +95,7 @@ jobs:
         architecture: 'x64'
   
     - name: Install pip Dependencies
-      run: pip install numpy py4j wheel scipy sklearn requests pandas
+      run: pip install numpy py4j wheel scipy sklearn requests pandas unittest-parallel
 
     - name: Build Python Package
       run: |
@@ -107,15 +108,16 @@ jobs:
         export PATH=$SYSTEMDS_ROOT/bin:$PATH
         export SYSDS_QUIET=1
         cd src/main/python
-        python -m unittest discover -s tests -p 'test_*.py'
+        unittest-parallel -t . -s tests --module-fixtures
+        # python -m unittest discover -s tests -p 'test_*.py'
         echo "Exit Status: " $?
     
-    # TODO debug and fix JDK11 environment 
-    #- name: Run all python tests no environment
-    #  run: |
-    #    cd src/main/python
-    #    python -m unittest discover -s tests -p 'test_*.py'
-    #    echo "Exit Status: " $?
+    - name: Run all python tests no environment
+      run: |
+        cd src/main/python
+        unittest-parallel -t . -s tests --module-fixtures
+        # python -m unittest discover -s tests -p 'test_*.py'
+        echo "Exit Status: " $?
 
     - name: Run Federated Python Tests
       run: |

@@ -25,29 +25,36 @@ import org.junit.Test;
 /** Simple tests to verify startup of Python Gateway server happens without crashes */
 public class StartupTest {
 
-	@Test(expected = IllegalArgumentException.class)
-	public void testStartupIncorrect_1() {
+	@Test(expected = Exception.class)
+	public void testStartupIncorrect_1() throws Exception {
 		PythonDMLScript.main(new String[] {});
 	}
 
-	@Test(expected = IllegalArgumentException.class)
-	public void testStartupIncorrect_2() {
+	@Test(expected = Exception.class)
+	public void testStartupIncorrect_2() throws Exception {
 		PythonDMLScript.main(new String[] {""});
 	}
 
-	@Test(expected = IllegalArgumentException.class)
-	public void testStartupIncorrect_3() {
+	@Test(expected = Exception.class)
+	public void testStartupIncorrect_3() throws Exception {
 		PythonDMLScript.main(new String[] {"131", "131"});
 	}
 
-	@Test(expected = NumberFormatException.class)
-	public void testStartupIncorrect_4() {
+	@Test(expected = Exception.class)
+	public void testStartupIncorrect_4() throws Exception {
 		PythonDMLScript.main(new String[] {"Hello"});
 	}
 
-	@Test(expected = IllegalArgumentException.class)
-	public void testStartupIncorrect_5() {
+	@Test(expected = Exception.class)
+	public void testStartupIncorrect_5() throws Exception {
 		// Number out of range
-		PythonDMLScript.main(new String[] {"918757"});
+		PythonDMLScript.main(new String[] {"-python", "918757"});
+	}
+
+	@Test(expected = Exception.class)
+	public void testStartupCorrectButTwice() throws Exception {
+		// crash if you start two instances on same port.
+		PythonDMLScript.main(new String[] {"-python", "8142"});
+		PythonDMLScript.main(new String[] {"-python", "8142"});
 	}
 }

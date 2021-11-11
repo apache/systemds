@@ -21,10 +21,7 @@
 
 __all__ = ["ListAccess"]
 
-from typing import Dict, Iterable, Sequence, Tuple, Union
-
-import numpy as np
-from py4j.java_gateway import JavaObject
+from typing import Dict, Sequence
 from systemds.operator import Frame, Matrix, OperationNode, Scalar
 from systemds.script_building.dag import OutputType
 

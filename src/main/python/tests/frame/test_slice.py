@@ -85,7 +85,7 @@ class TestFederatedAggFn(unittest.TestCase):
         sr = sm.compute()
         e = pd.DataFrame(
             {
-                "col1": ["col1_hello_3", "col1_world_3", "col1_hello_3"]
+                "col2": [6, 7, 8]
             }
         )
         self.assertTrue((e.values == sr.values).all())

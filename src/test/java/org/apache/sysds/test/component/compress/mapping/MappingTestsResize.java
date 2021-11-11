@@ -53,7 +53,7 @@ public class MappingTestsResize {
 		this.seed = seed;
 		this.type = type;
 		this.size = size;
-		final int max = MappingTests.getMax(type);
+		final int max = MapToFactory.getUpperBoundValue(type);
 		final int maxSmaller = getMaxSmaller(type);
 		expected = new int[size];
 		m = MappingTests.genMap(MapToFactory.create(size, max), expected, maxSmaller, fill, seed);

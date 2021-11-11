@@ -106,7 +106,7 @@ public class CLALibRightMultBy {
 			containsNull = rightMultByMatrixOverlappingMultiThread(filteredGroups, that, retCg, k);
 
 		if(constV != null) {
-			AColGroup cRet = ColGroupFactory.genColGroupConst(rr, constV).rightMultByMatrix(that);
+			AColGroup cRet = ColGroupFactory.genColGroupConst(constV).rightMultByMatrix(that);
 			if(cRet != null)
 				retCg.add(cRet);
 		}

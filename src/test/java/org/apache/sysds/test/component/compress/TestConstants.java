@@ -34,7 +34,8 @@ public class TestConstants {
 		RAND_ROUND, // Values rounded to nearest whole numbers.
 		OLE_COMPRESSIBLE, // Ideal inputs for OLE Compression.
 		RLE_COMPRESSIBLE, // Ideal inputs for RLE Compression.
-		ONE_HOT_ENCODED,
+		ONE_HOT,
+		UNBALANCED_SPARSE, // An input where some columns are super dense and some very sparse
 	}
 
 	public enum MatrixTypology {
@@ -50,11 +51,11 @@ public class TestConstants {
 	}
 
 	public enum ValueRange {
-		SMALL, LARGE, BYTE, BOOLEAN, NEGATIVE, POSITIVE
+		SMALL, LARGE, BYTE, BOOLEAN, NEGATIVE, POSITIVE, CONST
 	}
 
 	public enum OverLapping {
-		COL, MATRIX, NONE, MATRIX_PLUS, MATRIX_MULT_NEGATIVE, SQUASH, PLUS, APPEND_EMPTY, APPEND_CONST, PLUS_LARGE;
+		COL, MATRIX, NONE, MATRIX_PLUS, MATRIX_MULT_NEGATIVE, SQUASH, PLUS, APPEND_EMPTY, APPEND_CONST, PLUS_LARGE, C_BIND_SELF;
 
 		public static boolean effectOnOutput(OverLapping opcode) {
 			switch(opcode) {
@@ -100,6 +101,8 @@ public class TestConstants {
 				return 0;
 			case NEGATIVE:
 				return -132;
+			case CONST:
+				return 14;
 			default:
 				throw new RuntimeException("Invalid range value enum type");
 		}
@@ -117,6 +120,8 @@ public class TestConstants {
 				return 1;
 			case NEGATIVE:
 				return -23;
+			case CONST:
+				return 14;
 			default:
 				throw new RuntimeException("Invalid range value enum type");
 		}
@@ -138,9 +143,9 @@ public class TestConstants {
 	public static int getNumberOfColumns(MatrixTypology matrixTypology) {
 		switch(matrixTypology) {
 			case SMALL:
-				return 4;
+				return 6;
 			case LARGE:
-				return 8;
+				return 9;
 			case SINGLE_COL:
 				return 1;
 			default:

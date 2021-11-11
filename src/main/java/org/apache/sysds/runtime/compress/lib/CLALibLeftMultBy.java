@@ -33,7 +33,8 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup;
-import org.apache.sysds.runtime.compress.colgroup.ColGroupValue;
+import org.apache.sysds.runtime.compress.colgroup.AColGroupValue;
+import org.apache.sysds.runtime.compress.colgroup.APreAgg;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.functionobjects.Plus;
 import org.apache.sysds.runtime.matrix.data.LibMatrixMult;
@@ -45,38 +46,77 @@ import org.apache.sysds.runtime.util.CommonThreadPool;
 public class CLALibLeftMultBy {
 	private static final Log LOG = LogFactory.getLog(CLALibLeftMultBy.class.getName());
 
+	/**
+	 * Left multiplication with a CompressedMatrixBlock on the right following the equation:
+	 * 
+	 * ret = t(left) %*% right
+	 * 
+	 * @param right A CompressedMatrixBlock on the right side of the multiplication.
+	 * @param left  A not transposed MatrixBlock.
+	 * @param ret   The result output matrix, this allocation of the object can be used if appropriate, otherwise a new
+	 *              matrix Block is allocated to be returned. This argument can also be null.
+	 * @param k     The number of threads allowed to be used
+	 * @return The result of the matrix multiplication
+	 */
 	public static MatrixBlock leftMultByMatrixTransposed(CompressedMatrixBlock right, MatrixBlock left, MatrixBlock ret,
 		int k) {
-		if(left.isEmpty())
-			return ret;
+		if(left.isEmpty() || right.isEmpty())
+			return prepareEmptyReturnMatrix(right, left, ret, true);
+		LOG.warn("Transposing matrix block for transposed left matrix multiplication");
 		MatrixBlock transposed = new MatrixBlock(left.getNumColumns(), left.getNumRows(), false);
 		LibMatrixReorg.transpose(left, transposed, k);
 		ret = leftMultByMatrix(right, transposed, ret, k);
-		ret.recomputeNonZeros();
 		return ret;
 	}
 
+	/**
+	 * Left multiplication with two CompressedMatrixBlock following the equation:
+	 * 
+	 * ret = t(left) %*% right
+	 * 
+	 * @param right A CompressedMatrixBlock on the right side of the multiplication.
+	 * @param left  A not transposed CompressedMatrixBlock, but logically inside the function it is considered
+	 *              transposed.
+	 * @param ret   The result output matrix, this allocation of the object can be used if appropriate, otherwise a new
+	 *              matrix Block is allocated to be returned. This argument can also be null.
+	 * @param k     The number of threads allowed to be used
+	 * @return The result of the matrix multiplication
+	 */
 	public static MatrixBlock leftMultByMatrixTransposed(CompressedMatrixBlock right, CompressedMatrixBlock left,
 		MatrixBlock ret, int k) {
+		if(left.isEmpty() || right.isEmpty())
+			return prepareEmptyReturnMatrix(right, left, ret, true);
 		ret = prepareReturnMatrix(right, left, ret, true);
 		leftMultByCompressedTransposedMatrix(right, left, ret, k);
 
-		ret.recomputeNonZeros();
+		// fall back solution?
+		// MatrixBlock leftUc = left.getUncompressed();
+		// leftMultByMatrixTransposed(right, leftUc, ret, k);
+
 		return ret;
 	}
 
-	public static MatrixBlock leftMultByMatrix(CompressedMatrixBlock m1, MatrixBlock m2, MatrixBlock ret, int k) {
-		ret = prepareReturnMatrix(m1, m2, ret, false);
-		if(m2.isEmpty())
-			return ret;
-
-		LOG.trace("LeftMultByMatrix Execution");
-		ret = leftMultByMatrix(m1.getColGroups(), m2, ret, k, m1.isOverlapping());
-		ret.recomputeNonZeros();
+	/**
+	 * Left multiplication with two CompressedMatrixBlock following the equation:
+	 * 
+	 * ret = left %*% right
+	 * 
+	 * @param right A CompressedMatrixBlock on the right side of the multiplication.
+	 * @param left  A MatrixBlock on the left side of the equation
+	 * @param ret   The result output matrix, this allocation of the object can be used if appropriate, otherwise a new
+	 *              matrix Block is allocated to be returned. This argument can also be null.
+	 * @param k     The number of threads allowed to be used
+	 * @return The result of the matrix multiplication
+	 */
+	public static MatrixBlock leftMultByMatrix(CompressedMatrixBlock right, MatrixBlock left, MatrixBlock ret, int k) {
+		if(left.isEmpty() || right.isEmpty())
+			return prepareEmptyReturnMatrix(right, left, ret, false);
+		ret = prepareReturnMatrix(right, left, ret, false);
+		ret = leftMultByMatrix(right.getColGroups(), left, ret, k, right.isOverlapping());
 		return ret;
 	}
 
-	public static void leftMultByTransposeSelf(CompressedMatrixBlock cmb, MatrixBlock result, int k) {
+	public static void leftMultByTransposeSelf(CompressedMatrixBlock cmb, MatrixBlock ret, int k) {
 		// final boolean overlapping = cmb.isOverlapping();
 		final List<AColGroup> groups = cmb.getColGroups();
 		final int numColumns = cmb.getNumColumns();
@@ -84,23 +124,35 @@ public class CLALibLeftMultBy {
 		final boolean containsSDC = CLALibUtils.containsSDCOrConst(groups);
 		final double[] constV = containsSDC ? new double[numColumns] : null;
 		final List<AColGroup> filteredGroups = CLALibUtils.filterGroups(groups, constV);
-		final double[] filteredColSum = getColSum(filteredGroups, numColumns, numRows, containsSDC);
 
 		// TODO add parallel again
-		tsmmColGroups(filteredGroups, result, numRows);
+		tsmmColGroups(filteredGroups, ret, numRows);
 
-		double[] retV = result.getDenseBlockValues();
+		if(constV != null)
+			addCorrectionLayer(filteredGroups, ret, numRows, numColumns, constV);
 
-		if(constV != null) {
-			outerProductUpperTriangle(constV, filteredColSum, retV);
-			for(int i = 0; i < filteredColSum.length; i++)
-				filteredColSum[i] += constV[i] * numRows;
-			outerProductUpperTriangle(filteredColSum, constV, retV);
-		}
+		long nnz = LibMatrixMult.copyUpperToLowerTriangle(ret);
+		ret.setNonZeros(nnz);
+		ret.examSparsity();
+	}
 
-		long nnz = LibMatrixMult.copyUpperToLowerTriangle(result);
-		result.setNonZeros(nnz);
-		result.examSparsity();
+	private static void addCorrectionLayer(List<AColGroup> filteredGroups, MatrixBlock result, int nRows, int nCols,
+		double[] constV) {
+		final double[] retV = result.getDenseBlockValues();
+		final double[] filteredColSum = getColSum(filteredGroups, nCols, nRows);
+		outerProductUpperTriangle(constV, filteredColSum, retV);
+		outerProductUpperTriangleWithScaling(filteredColSum, constV, nRows, retV);
+	}
+
+	private static MatrixBlock prepareEmptyReturnMatrix(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret,
+		boolean doTranspose) {
+		final int numRowsOutput = doTranspose ? m2.getNumColumns() : m2.getNumRows();
+		final int numColumnsOutput = m1.getNumColumns();
+		if(ret == null)
+			ret = new MatrixBlock(numRowsOutput, numColumnsOutput, true, 0);
+		else if(!(ret.getNumColumns() == numColumnsOutput && ret.getNumRows() == numRowsOutput && ret.isAllocated()))
+			ret.reset(numRowsOutput, numColumnsOutput, true, 0);
+		return ret;
 	}
 
 	private static MatrixBlock prepareReturnMatrix(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret,
@@ -133,20 +185,19 @@ public class CLALibLeftMultBy {
 		double[] cL = containsLeft ? new double[rl] : null;
 		final List<AColGroup> fLeft = CLALibUtils.filterGroups(leftCG, cL);
 
-		final double[] fRightSum = getColSum(fRight, cr, sd, containsLeft);
-		final double[] fLeftSum = getColSum(fLeft, rl, sd, containsRight);
-
-		// TODO add parallel again
 		for(int i = 0; i < fRight.size(); i++)
 			for(int j = 0; j < fLeft.size(); j++)
 				fRight.get(i).leftMultByAColGroup(fLeft.get(j), ret);
 
 		double[] retV = ret.getDenseBlockValues();
-		if(containsLeft)
-			outerProduct(cL, fRightSum, retV);
-
-		if(containsRight)
-			outerProduct(cR, fLeftSum, retV);
+		if(containsLeft && containsRight)
+			// if both -- multiply the left and right vectors scaling by number of shared dim
+			outerProductWithScaling(cL, cR, sd, retV);
+		if(containsLeft) // if left -- multiply left with right sum
+			outerProduct(cL, getColSum(fRight, cr, sd), retV);
+		if(containsRight)// if right -- multiply right with left sum
+			outerProduct(getColSum(fLeft, rl, sd), cR, retV);
+		ret.recomputeNonZeros();
 
 		return ret;
 	}
@@ -167,6 +218,19 @@ public class CLALibLeftMultBy {
 		for(int row = 0; row < leftRowSum.length; row++) {
 			final int offOut = rightColumnSum.length * row;
 			final double vLeft = leftRowSum[row];
+			for(int col = row; col < rightColumnSum.length; col++) {
+				result[offOut + col] += vLeft * rightColumnSum[col];
+			}
+		}
+	}
+
+	private static void outerProductUpperTriangleWithScaling(final double[] leftRowSum, final double[] rightColumnSum,
+		final int scale, final double[] result) {
+		// note this scaling is a bit different since it is encapsulating two scalar multiplications via an addition in
+		// the outer loop.
+		for(int row = 0; row < leftRowSum.length; row++) {
+			final int offOut = rightColumnSum.length * row;
+			final double vLeft = leftRowSum[row] + rightColumnSum[row] * scale;
 			for(int col = row; col < rightColumnSum.length; col++) {
 				result[offOut + col] += vLeft * rightColumnSum[col];
 			}
@@ -292,6 +356,17 @@ public class CLALibLeftMultBy {
 		}
 	}
 
+	private static void outerProductWithScaling(final double[] leftRowSum, final double[] rightColumnSum,
+		final int scaling, final double[] result) {
+		for(int row = 0; row < leftRowSum.length; row++) {
+			final int offOut = rightColumnSum.length * row;
+			final double vLeft = leftRowSum[row] * scaling;
+			for(int col = 0; col < rightColumnSum.length; col++) {
+				result[offOut + col] += vLeft * rightColumnSum[col];
+			}
+		}
+	}
+
 	private static class LeftMatrixColGroupMultTask implements Callable<MatrixBlock> {
 		private final List<AColGroup> _groups;
 		private final MatrixBlock _that;
@@ -358,14 +433,14 @@ public class CLALibLeftMultBy {
 
 		final int numColsOut = ret.getNumColumns();
 		// Allocate a ColGroupValue array for the Column Groups of Value Type and multiply out any other columns.
-		final List<ColGroupValue> ColGroupValues = preFilterAndMultiply(colGroups, that, ret, rl, ru);
+		final List<APreAgg> preAggCGs = preFilterAndMultiply(colGroups, that, ret, rl, ru);
 
 		// The number of rows to process together
 		final int rowBlockSize = 1;
 		// The number of column groups to process together
-		// the value should ideally be set so that the colgroups fits into cache together with a row block.
+		// the value should ideally be set so that the colGroups fits into cache together with a row block.
 		// currently we only try to avoid having a dangling small number of column groups in the last block.
-		final int colGroupBlocking = ColGroupValues.size() % 16 < 4 ? 20 : 16;
+		final int colGroupBlocking = preAggCGs.size() % 16 < 4 ? 20 : 16;
 
 		// Allocate pre Aggregate Array List
 		final MatrixBlock[] preAgg = populatePreAggregate(colGroupBlocking);
@@ -376,12 +451,12 @@ public class CLALibLeftMultBy {
 		final int lc = that.getNumColumns();
 
 		// For each column group block
-		for(int g = 0; g < ColGroupValues.size(); g += colGroupBlocking) {
-			final int gEnd = Math.min(g + colGroupBlocking, ColGroupValues.size());
+		for(int g = 0; g < preAggCGs.size(); g += colGroupBlocking) {
+			final int gEnd = Math.min(g + colGroupBlocking, preAggCGs.size());
 
 			// For each column group in the current block allocate the preaggregate array.
-			for(int j = g; j < gEnd && j < ColGroupValues.size(); j++) {
-				ColGroupValue cg = ColGroupValues.get(j);
+			for(int j = g; j < gEnd && j < preAggCGs.size(); j++) {
+				AColGroupValue cg = preAggCGs.get(j);
 				int nVals = cg.getNumValues();
 				preAgg[j % colGroupBlocking].reset(rowBlockSize, nVals, false);
 			}
@@ -395,8 +470,8 @@ public class CLALibLeftMultBy {
 				for(int i = 0; i < lc; i += colBlockSize) {
 					final int colUpper = Math.min(i + colBlockSize, lc);
 					// Pre Aggregate each column group in block
-					for(int j = g; j < gEnd && j < ColGroupValues.size(); j++) {
-						ColGroupValues.get(j).preAggregateDense(that, preAgg[j % colGroupBlocking], h, rowUpper, i, colUpper);
+					for(int j = g; j < gEnd && j < preAggCGs.size(); j++) {
+						preAggCGs.get(j).preAggregateDense(that, preAgg[j % colGroupBlocking], h, rowUpper, i, colUpper);
 					}
 					if(rowSum != null) {
 						final double[] thatV = that.getDenseBlockValues();
@@ -409,8 +484,8 @@ public class CLALibLeftMultBy {
 				}
 
 				// Multiply out the preAggregate to the output matrix.
-				for(int j = g; j < gEnd && j < ColGroupValues.size(); j++) {
-					ColGroupValue vj = ColGroupValues.get(j);
+				for(int j = g; j < gEnd && j < preAggCGs.size(); j++) {
+					AColGroupValue vj = preAggCGs.get(j);
 					MatrixBlock preAggJ = preAgg[j % colGroupBlocking];
 					preAggJ.recomputeNonZeros();
 					tmpRes.reset(rowBlockSize, vj.getNumCols(), false);
@@ -421,7 +496,7 @@ public class CLALibLeftMultBy {
 			}
 		}
 
-		if(ColGroupValues.size() == 0 && rowSum != null) {
+		if(preAggCGs.size() == 0 && rowSum != null) {
 			final double[] thatV = that.getDenseBlockValues();
 			for(int r = rl; r < ru; r++) {
 				final int rowOff = r * lc;
@@ -434,7 +509,7 @@ public class CLALibLeftMultBy {
 
 	private static MatrixBlock[] populatePreAggregate(int colGroupBlocking) {
 		final MatrixBlock[] preAgg = new MatrixBlock[colGroupBlocking];
-		// poplate the preAgg array.
+		// populate the preAgg array.
 		for(int j = 0; j < colGroupBlocking; j++) {
 			MatrixBlock m = new MatrixBlock(1, 1, false);
 			m.allocateDenseBlock();
@@ -443,13 +518,13 @@ public class CLALibLeftMultBy {
 		return preAgg;
 	}
 
-	private static List<ColGroupValue> preFilterAndMultiply(List<AColGroup> colGroups, MatrixBlock that, MatrixBlock ret,
+	private static List<APreAgg> preFilterAndMultiply(List<AColGroup> colGroups, MatrixBlock that, MatrixBlock ret,
 		int rl, int ru) {
-		final List<ColGroupValue> ColGroupValues = new ArrayList<>(colGroups.size());
+		final List<APreAgg> ColGroupValues = new ArrayList<>(colGroups.size());
 		for(int j = 0; j < colGroups.size(); j++) {
 			AColGroup a = colGroups.get(j);
-			if(a instanceof ColGroupValue)
-				ColGroupValues.add((ColGroupValue) a);
+			if(a instanceof APreAgg)
+				ColGroupValues.add((APreAgg) a);
 			else
 				a.leftMultByMatrix(that, ret, rl, ru);
 		}
@@ -457,7 +532,7 @@ public class CLALibLeftMultBy {
 		return ColGroupValues;
 	}
 
-	private static double[] getColSum(List<AColGroup> groups, int nCols, int nRows, boolean returnNull) {
-		return returnNull ? AColGroup.colSum(groups, new double[nCols], nRows) : null;
+	private static double[] getColSum(List<AColGroup> groups, int nCols, int nRows) {
+		return AColGroup.colSum(groups, new double[nCols], nRows);
 	}
 }

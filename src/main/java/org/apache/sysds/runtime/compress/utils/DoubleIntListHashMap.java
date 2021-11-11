@@ -66,16 +66,14 @@ public class DoubleIntListHashMap {
 	private IntArrayList getHashIndex(double key, int ix) {
 
 		// find entry
-		for(DIListEntry e = _data[ix]; e != null; e = e.next) {
-			if(e.key == key) {
+		for(DIListEntry e = _data[ix]; e != null; e = e.next)
+			if(e.key == key)
 				return e.value;
-			}
-		}
 
 		return null;
 	}
 
-	public void appendValue(double key, IntArrayList value) {
+	private void appendValue(double key, IntArrayList value) {
 		// compute entry index position
 		int hash = hash(key);
 		int ix = indexFor(hash, _data.length);
@@ -95,7 +93,16 @@ public class DoubleIntListHashMap {
 			resize();
 	}
 
+	/**
+	 * Append value into the hashmap, but ignore all zero keys.
+	 * 
+	 * @param key   The key to add the value to
+	 * @param value The value to add
+	 */
 	public void appendValue(double key, int value) {
+		if(key == 0)
+			return;
+
 		int hash = hash(key);
 		int ix = indexFor(hash, _data.length);
 		IntArrayList lstPtr = null; // The list to add the value to.
@@ -182,7 +189,7 @@ public class DoubleIntListHashMap {
 		return h & (length - 1);
 	}
 
-	public class DIListEntry implements Comparator<DIListEntry>, Comparable<DIListEntry> {
+	public static class DIListEntry implements Comparator<DIListEntry>, Comparable<DIListEntry> {
 		public double key = Double.MAX_VALUE;
 		public IntArrayList value = null;
 		public DIListEntry next = null;

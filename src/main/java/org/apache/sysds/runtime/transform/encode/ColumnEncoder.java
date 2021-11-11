@@ -23,7 +23,6 @@ import static org.apache.sysds.runtime.transform.encode.EncoderFactory.getEncode
 import static org.apache.sysds.runtime.util.UtilFunctions.getBlockSizes;
 import static org.apache.sysds.runtime.util.UtilFunctions.getEndIndex;
 
-import java.io.Externalizable;
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
@@ -52,7 +51,7 @@ import org.apache.sysds.utils.Statistics;
  * Base class for all transform encoders providing both a row and block interface for decoding frames to matrices.
  *
  */
-public abstract class ColumnEncoder implements Externalizable, Encoder, Comparable<ColumnEncoder> {
+public abstract class ColumnEncoder implements Encoder, Comparable<ColumnEncoder> {
 	protected static final Log LOG = LogFactory.getLog(ColumnEncoder.class.getName());
 	protected static final int APPLY_ROW_BLOCKS_PER_COLUMN = 1;
 	public static int BUILD_ROW_BLOCKS_PER_COLUMN = 1;

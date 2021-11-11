@@ -168,6 +168,7 @@
 							<goal>copy-dependencies</goal>
 						</goals>
 						<configuration>
+							<silent>true</silent>
 							<outputDirectory>${project.build.directory}/lib</outputDirectory>
 						</configuration>
 					</execution>
@@ -1045,7 +1046,7 @@
 		<dependency>
 			<groupId>junit</groupId>
 			<artifactId>junit</artifactId>
-			<version>4.11</version>
+			<version>4.13.1</version>
 			<scope>provided</scope>
 		</dependency>
 

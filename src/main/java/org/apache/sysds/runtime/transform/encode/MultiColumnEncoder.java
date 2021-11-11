@@ -40,6 +40,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types;
+import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.CacheBlock;
 import org.apache.sysds.runtime.data.SparseBlock;
@@ -56,9 +57,8 @@ import org.apache.sysds.utils.Statistics;
 public class MultiColumnEncoder implements Encoder {
 
 	protected static final Log LOG = LogFactory.getLog(MultiColumnEncoder.class.getName());
-	private static final boolean MULTI_THREADED = true;
 	// If true build and apply separately by placing a synchronization barrier
-	public static boolean MULTI_THREADED_STAGES = false;
+	public static boolean MULTI_THREADED_STAGES = ConfigurationManager.isStagedParallelTransform();
 
 	// Only affects if  MULTI_THREADED_STAGES is true
 	// if true apply tasks for each column will complete
@@ -87,7 +87,7 @@ public class MultiColumnEncoder implements Encoder {
 	public MatrixBlock encode(CacheBlock in, int k) {
 		MatrixBlock out;
 		try {
-			if(MULTI_THREADED && k > 1 && !MULTI_THREADED_STAGES && !hasLegacyEncoder()) {
+			if(k > 1 && !MULTI_THREADED_STAGES && !hasLegacyEncoder()) {
 				out = new MatrixBlock();
 				DependencyThreadPool pool = new DependencyThreadPool(k);
 				LOG.debug("Encoding with full DAG on " + k + " Threads");
@@ -187,7 +187,7 @@ public class MultiColumnEncoder implements Encoder {
 	public void build(CacheBlock in, int k) {
 		if(hasLegacyEncoder() && !(in instanceof FrameBlock))
 			throw new DMLRuntimeException("LegacyEncoders do not support non FrameBlock Inputs");
-		if(MULTI_THREADED && k > 1) {
+		if(k > 1) {
 			buildMT(in, k);
 		}
 		else {
@@ -255,7 +255,7 @@ public class MultiColumnEncoder implements Encoder {
 		// TODO smart checks
 		// Block allocation for MT access
 		outputMatrixPreProcessing(out, in);
-		if(MULTI_THREADED && k > 1) {
+		if(k > 1) {
 			applyMT(in, out, outputCol, k);
 		}
 		else {

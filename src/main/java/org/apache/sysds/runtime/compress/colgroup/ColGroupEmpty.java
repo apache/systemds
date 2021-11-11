@@ -19,16 +19,17 @@
 
 package org.apache.sysds.runtime.compress.colgroup;
 
-import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
 import org.apache.sysds.runtime.functionobjects.Builtin;
+import org.apache.sysds.runtime.functionobjects.ValueFunction;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
 
-public class ColGroupEmpty extends ColGroupCompressed {
+public class ColGroupEmpty extends AColGroupCompressed {
 	private static final long serialVersionUID = -2307677253622099958L;
 
+	/** Constructor for serialization */
 	protected ColGroupEmpty() {
 		super();
 	}
@@ -66,7 +67,7 @@ public class ColGroupEmpty extends ColGroupCompressed {
 	}
 
 	@Override
-	public double get(int r, int c) {
+	public double getIdx(int r, int colIdx) {
 		return 0;
 	}
 
@@ -75,40 +76,43 @@ public class ColGroupEmpty extends ColGroupCompressed {
 		double val0 = op.executeScalar(0);
 		if(val0 == 0)
 			return this;
-		return new ColGroupConst(_colIndexes, new Dictionary(new double[_colIndexes.length]).apply(op));
+		return new ColGroupConst(_colIndexes, new Dictionary(new double[_colIndexes.length]).inplaceScalarOp(op));
 	}
 
 	@Override
-	public AColGroup binaryRowOp(BinaryOperator op, double[] v, boolean sparseSafe, boolean left) {
-		if(sparseSafe)
+	public AColGroup binaryRowOpLeft(BinaryOperator op, double[] v, boolean isRowSafe) {
+		if(isRowSafe)
 			return this;
-		ADictionary res = new Dictionary(new double[_colIndexes.length]).applyBinaryRowOp(op, v, true, _colIndexes, left);
-		return new ColGroupConst(_colIndexes, res);
+		final ValueFunction fn = op.fn;
+		final double[] retVals = new double[_colIndexes.length];
+		final int lenV = _colIndexes.length;
+		boolean allZero = true;
+		for(int i = 0; i < lenV; i++)
+			allZero = 0 == (retVals[i] = fn.execute(v[_colIndexes[i]], 0)) && allZero;
+
+		if(allZero)
+			return this;
+		return new ColGroupConst(_colIndexes, new Dictionary(retVals));
 	}
 
 	@Override
-	public void countNonZerosPerRow(int[] rnnz, int rl, int ru) {
-		// do nothing.
+	public AColGroup binaryRowOpRight(BinaryOperator op, double[] v, boolean isRowSafe) {
+		if(isRowSafe)
+			return this;
+		final ValueFunction fn = op.fn;
+		final double[] retVals = new double[_colIndexes.length];
+		final int lenV = _colIndexes.length;
+		boolean allZero = true;
+		for(int i = 0; i < lenV; i++)
+			allZero = 0 == (retVals[i] = fn.execute(0, v[_colIndexes[i]])) && allZero ;
+		if(allZero)
+			return this;
+		return new ColGroupConst(_colIndexes, new Dictionary(retVals));
 	}
 
 	@Override
 	public int getNumValues() {
 		return 0;
-	}
-
-	@Override
-	public double[] getValues() {
-		return null;
-	}
-
-	@Override
-	public boolean isLossy() {
-		return false;
-	}
-
-	@Override
-	public MatrixBlock getValuesAsBlock() {
-		return new MatrixBlock(0, 0, false);
 	}
 
 	@Override
@@ -124,11 +128,6 @@ public class ColGroupEmpty extends ColGroupCompressed {
 	@Override
 	public void tsmmAColGroup(AColGroup other, MatrixBlock result) {
 		// do nothing
-	}
-
-	@Override
-	public boolean isDense() {
-		return false;
 	}
 
 	@Override
@@ -164,7 +163,7 @@ public class ColGroupEmpty extends ColGroupCompressed {
 	@Override
 	public AColGroup replace(double pattern, double replace) {
 		if(pattern == 0)
-			return ColGroupFactory.getColGroupConst(_colIndexes, replace);
+			return ColGroupFactory.genColGroupConst(_colIndexes, replace);
 		else
 			return new ColGroupEmpty(_colIndexes);
 	}

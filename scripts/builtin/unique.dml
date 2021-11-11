@@ -1,6 +1,12 @@
 unique = function(matrix[double] X)
     return (matrix[double] R) {
-    X_sorted = order(target=X, by=1, decreasing=FALSE, index.return=FALSE);
-    mask = rbind(matrix("1", rows = 1, cols = 1), X_sorted[1:nrow(X_sorted)-1,] != X_sorted[2:nrow(X_sorted),]);
-    R = removeEmpty(target = X_sorted, margin = "rows", select = mask);
+    if(nrow(X) > 1) {
+        X_sorted = order(target=X, by=1, decreasing=FALSE, index.return=FALSE);
+        temp = X_sorted[1:nrow(X_sorted)-1,] != X_sorted[2:nrow(X_sorted),];
+        mask = rbind(matrix(1, rows = 1, cols = 1), rowSums(temp));
+        R = removeEmpty(target = X_sorted, margin = "rows", select = mask);
+    }
+    else {
+        R = X
+    }
 }

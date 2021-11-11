@@ -43,34 +43,59 @@ public class BuiltinUniqueTest extends AutomatedTestBase {
 	@Test
 	public void testUnique1CP() {
 		double[][] X = {{1},{1},{6},{9},{4},{2},{0},{9},{0},{0},{4},{4}};
-		double[][] expected = {{0}, {1}, {2}, {4}, {6}, {9}};
-		runUniqueTest(X, expected, true, ExecType.CP);
+		runUniqueTest(X, true, ExecType.CP);
 	}
 
 	@Test
 	public void testUnique1SP() {
 		double[][] X = {{1},{1},{6},{9},{4},{2},{0},{9},{0},{0},{4},{4}};
-		double[][] expected = {{0}, {1}, {2}, {4}, {6}, {9}};
-		runUniqueTest(X, expected,true, ExecType.SPARK);
+		runUniqueTest(X,true, ExecType.SPARK);
 	}
 
-	private void runUniqueTest(double[][] X, double[][] expected, boolean defaultProb, ExecType instType) {
+	@Test
+	public void testUnique2CP() {
+		double[][] X = {{0}};
+		runUniqueTest(X, true, ExecType.CP);
+	}
+
+	@Test
+	public void testUnique2SP() {
+		double[][] X = {{0}};
+		runUniqueTest(X, true, ExecType.SPARK);
+	}
+
+	@Test
+	public void testUnique3CP() {
+		double[][] X = {{1, 2, 3}, {2, 3, 4}, {1, 2, 3}};
+		runUniqueTest(X, true, ExecType.CP);
+	}
+
+	@Test
+	public void testUnique3SP() { //This fails?
+		double[][] X = {{1, 2, 3}, {2, 3, 4}, {1, 2, 3}};
+		runUniqueTest(X, true, ExecType.SPARK);
+	}
+
+	//TODO add more tests
+
+	private void runUniqueTest(double[][] X, boolean defaultProb, ExecType instType) {
 		Types.ExecMode platformOld = setExecMode(instType);
 		try {
 			loadTestConfiguration(getTestConfiguration(TEST_NAME));
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
 			programArgs = new String[]{ "-args", input("X"), output("R")};
+			fullRScriptName = HOME + TEST_NAME + ".R";
+			rCmd = "Rscript" + " " + fullRScriptName + " " + inputDir() + " " + expectedDir();
 
 			writeInputMatrixWithMTD("X", X, true);
 
 			runTest(true, false, null, -1);
+			runRScript(true);
 
-			HashMap<MatrixValue.CellIndex, Double> R = new HashMap<>();
-			for(int i=0; i<expected.length; i++)
-				R.put(new MatrixValue.CellIndex(i+1,1), expected[i][0]);
 			HashMap<MatrixValue.CellIndex, Double> dmlfile = readDMLMatrixFromOutputDir("R");
-			TestUtils.compareMatrices(dmlfile, R, 1e-10, "dml", "expected");
+			HashMap<MatrixValue.CellIndex, Double> rfile  = readRMatrixFromExpectedDir("R");
+			TestUtils.compareMatrices(dmlfile, rfile, 1e-10, "dml", "expected");
 		}
 		finally {
 			rtplatform = platformOld;

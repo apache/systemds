@@ -55,6 +55,14 @@ print_out()
   fi
 }
 
+if [[ -z $SYSTEMDS_ROOT ]] ; then
+  SYSTEMDS_ROOT=.
+  print_out "SYSTEMDS_ROOT not set defaulting to current dir $(pwd)"
+else
+  # construct a relative path
+  SYSTEMDS_ROOT=$(realpath --relative-to=. ${SYSTEMDS_ROOT})
+fi;
+
 # when using find, look in the directories in this order
 DIR_SEARCH_ORDER=". $SYSTEMDS_ROOT $SYSTEMDS_ROOT/conf  $SYSTEMDS_ROOT/lib $SYSTEMDS_ROOT/src $SYSTEMDS_ROOT/target"
 ordered_find() {
@@ -264,13 +272,6 @@ if [ -z "$WORKER" ] ; then
   WORKER=0
 fi
 
-if [[ -z $SYSTEMDS_ROOT ]] ; then
-  SYSTEMDS_ROOT=.
-  print_out "SYSTEMDS_ROOT not set defaulting to current dir $(pwd)"
-else
-  # construct a relative path
-  SYSTEMDS_ROOT=$(realpath --relative-to=. ${SYSTEMDS_ROOT})
-fi;
 
 # find me a SystemDS jar file to run
 if [ -z "$SYSTEMDS_JAR_FILE" ];then
@@ -320,6 +321,9 @@ if [[ "$*" == *-config* ]]; then
 elif [ -z "$CONFIG_FILE" ] ; then
   # same as above: set config file param if the file exists
   CONFIG_FILE=$(ordered_find "SystemDS-config-defaults.xml")
+  if [ -z "$CONFIG_FILE" ]; then
+    CONFIG_FILE=$(ordered_find "SystemDS-config.xml")
+  fi
   if [ -z "$CONFIG_FILE" ]; then
     CONFIG_FILE=""
   else

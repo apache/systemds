@@ -267,6 +267,7 @@ public enum Builtins {
 	TSNE("tSNE", true),
 	TYPEOF("typeof", false),
 	UNIVAR("univar", true),
+	UNION("union", true),
 	VAR("var", false),
 	VALUE_SWAP("valueSwap", false),
 	VECTOR_TO_CSV("vectorToCsv", true),

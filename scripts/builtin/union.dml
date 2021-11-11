@@ -1,0 +1,11 @@
+#numpy impl
+#return unique(np.concatenate((ar1, ar2), axis=None))
+
+union = function(Matrix[Double] X, Matrix[Double] Y)
+    return (matrix[double] r_union) {
+    x_sorted = order(target=X, by=1, decreasing=FALSE, index.return=FALSE);
+    y_sorted = order(target=Y, by=1, decreasing=FALSE, index.return=FALSE);
+
+    #should use unique here.. how?
+    r_union = unique(rbind(x_sorted, y_sorted));
+}

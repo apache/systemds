@@ -22,12 +22,13 @@ package org.apache.sysds.runtime.instructions.cp;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.operators.Operator;
+import org.apache.sysds.runtime.matrix.operators.TernaryOperator;
 
-public class TernaryFrameScalarCPInstruction extends BinaryCPInstruction
+public class TernaryFrameScalarCPInstruction extends TernaryCPInstruction
 {
-	protected TernaryFrameScalarCPInstruction(Operator op, CPOperand in1,
+	protected TernaryFrameScalarCPInstruction(TernaryOperator op, CPOperand in1,
 			CPOperand in2, CPOperand in3, CPOperand out, String opcode, String istr) {
-		super(CPType.Binary, op, in1, in2, in3, out, opcode, istr);
+		super(op, in1, in2, in3, out, opcode, istr);
 	}
 
 	@Override

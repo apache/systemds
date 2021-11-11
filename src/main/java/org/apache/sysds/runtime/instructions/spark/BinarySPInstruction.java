@@ -56,15 +56,10 @@ public abstract class BinarySPInstruction extends ComputationSPInstruction {
 	protected BinarySPInstruction(SPType type, Operator op, CPOperand in1, CPOperand in2, CPOperand out, String opcode, String istr) {
 		super(type, op, in1, in2, out, opcode, istr);
 	}
-
-	protected BinarySPInstruction(SPType type, Operator op, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out, String opcode, String istr) {
-		super(type, op, in1, in2, in3, out, opcode, istr);
-	}
 	
 	public static BinarySPInstruction parseInstruction ( String str ) {
 		CPOperand in1 = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
 		CPOperand in2 = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
-		CPOperand in3 = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
 		CPOperand out = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
 		String opcode = null;
 		boolean isBroadcast = false;
@@ -77,15 +72,13 @@ public abstract class BinarySPInstruction extends ComputationSPInstruction {
 			opcode = parts[0];
 			in1.split(parts[1]);
 			in2.split(parts[2]);
-			in3.split(parts[3]);
-			out.split(parts[4]);
+			out.split(parts[3]);
 			vtype = VectorType.valueOf(parts[5]);
 			isBroadcast = true;
 		}
 
 		else {
-			boolean isMap = InstructionUtils.getInstructionPartsWithValueType(str)[0].contains("map");
-			opcode = isMap? parseBinaryInstruction(str, in1, in2, in3, out) : parseBinaryInstruction(str, in1, in2, out);
+			opcode = parseBinaryInstruction(str, in1, in2, out);
 		}
 		
 		DataType dt1 = in1.getDataType();
@@ -118,9 +111,6 @@ public abstract class BinarySPInstruction extends ComputationSPInstruction {
 		else if( dt1 == DataType.FRAME || dt2 == DataType.FRAME ) {
 			if(dt1 == DataType.FRAME && dt2 == DataType.FRAME)
 				return new BinaryFrameFrameSPInstruction(operator, in1, in2, out, opcode, str);
-			if(dt1 == DataType.FRAME && dt2 == DataType.SCALAR)
-				return  new TernaryFrameScalarSPInstruction(operator, in1, in2, in3, out, opcode, str);
-
 		}
 
 		return null;

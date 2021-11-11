@@ -770,7 +770,7 @@ public class UtilFunctions {
 		return lnnz;
 	}
 
-	public static ValueType[]  nCopies(int n, ValueType vt) {
+	public static ValueType[] nCopies(int n, ValueType vt) {
 		ValueType[] ret = new ValueType[n];
 		Arrays.fill(ret, vt);
 		return ret;

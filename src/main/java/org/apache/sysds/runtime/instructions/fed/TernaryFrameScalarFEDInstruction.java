@@ -25,13 +25,13 @@ import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest;
 import org.apache.sysds.runtime.controlprogram.federated.FederationMap;
 import org.apache.sysds.runtime.controlprogram.federated.FederationUtils;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
-import org.apache.sysds.runtime.matrix.operators.Operator;
+import org.apache.sysds.runtime.matrix.operators.TernaryOperator;
 
-public class TernaryFrameScalarFEDInstruction extends BinaryFEDInstruction
+public class TernaryFrameScalarFEDInstruction extends TernaryFEDInstruction
 {
-	protected TernaryFrameScalarFEDInstruction(Operator op, CPOperand in1,
-			CPOperand in2, CPOperand out, String opcode, String istr) {
-		super(FEDInstruction.FEDType.Binary, op, in1, in2, out, opcode, istr);
+	protected TernaryFrameScalarFEDInstruction(TernaryOperator op, CPOperand in1,
+			CPOperand in2, CPOperand in3, CPOperand out, String opcode, String istr, FederatedOutput fedOut) {
+		super(op, in1, in2, in3, out, opcode, istr, fedOut);
 	}
 
 	@Override

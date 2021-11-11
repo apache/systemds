@@ -27,11 +27,12 @@ import org.apache.sysds.runtime.instructions.cp.CPOperand;
 import org.apache.sysds.runtime.instructions.cp.ScalarObject;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.operators.Operator;
+import org.apache.sysds.runtime.matrix.operators.TernaryOperator;
 
-public class TernaryFrameScalarSPInstruction extends BinarySPInstruction {
-	protected TernaryFrameScalarSPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out,
+public class TernaryFrameScalarSPInstruction extends TernarySPInstruction {
+	protected TernaryFrameScalarSPInstruction(TernaryOperator op, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out,
 			String opcode, String istr) {
-		super(SPType.Binary, op, in1, in2, in3, out, opcode, istr);
+		super(op, in1, in2, in3, out, opcode, istr);
 	}
 
 	@Override

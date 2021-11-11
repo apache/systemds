@@ -2520,6 +2520,12 @@ public class FrameBlock implements CacheBlock, Externalizable {
 	}
 
 	private FrameBlock removeEmptyRows(MatrixBlock select, boolean emptyReturn) {
+		boolean selectColVector = select != null && select.getNumRows() != this.getNumRows();
+
+		if(select != null && (select.getNumRows() != this.getNumRows() && select.getNumColumns() != this.getNumRows())) {
+			throw new DMLRuntimeException("Frame rmempty: Incorrect select vector dimensions.");
+		}
+
 		FrameBlock ret = new FrameBlock(_schema, _colnames);
 
 		for(int i = 0; i < _numRows; i++) {
@@ -2533,7 +2539,8 @@ public class FrameBlock implements CacheBlock, Externalizable {
 				isEmpty = isEmpty && (ArrayUtils.contains(new double[]{0.0, Double.NaN}, UtilFunctions.objectToDoubleSafe(type, colData.get(i))));
 			}
 
-			if((!isEmpty && select == null) || (select != null && select.getValue(i, 0) == 1)) {
+			double selectValue = select != null ? !selectColVector ? select.getValue(i, 0) : select.getValue( 0, i) : 0.0;
+			if(selectValue == 1.0 || (!isEmpty && select == null)) {
 				ret.appendRow(row);
 			}
 		}
@@ -2550,6 +2557,12 @@ public class FrameBlock implements CacheBlock, Externalizable {
 	}
 
 	private FrameBlock removeEmptyColumns(MatrixBlock select, boolean emptyReturn) {
+		boolean selectRowVector = select != null && select.getNumColumns() != this.getNumColumns();
+
+		if(select != null && (select.getNumRows() != this.getNumColumns() && select.getNumColumns() != this.getNumColumns())) {
+			throw new DMLRuntimeException("Frame rmempty: Incorrect select vector dimensions.");
+		}
+
 		FrameBlock ret = new FrameBlock();
 		List<ColumnMetadata> columnMetadata = new ArrayList<>();
 
@@ -2563,7 +2576,8 @@ public class FrameBlock implements CacheBlock, Externalizable {
 					.allMatch(e -> ArrayUtils.contains(new double[]{0.0, Double.NaN}, UtilFunctions.objectToDoubleSafe(type, e)));
 			}
 
-			if((select != null && select.getValue(0, i) == 1) || (!isEmpty && select == null)) {
+			double selectValue = select != null ? !selectRowVector ? select.getValue(0, i) : select.getValue(i, 0) : 0.0;
+			if(selectValue == 1.0 || (!isEmpty && select == null)) {
 				Types.ValueType vt = _schema[i];
 				ret.appendColumn(vt, _coldata[i].clone());
 				columnMetadata.add(new ColumnMetadata(_colmeta[i]));

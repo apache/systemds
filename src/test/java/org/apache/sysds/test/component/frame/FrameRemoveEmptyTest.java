@@ -35,7 +35,7 @@ public class FrameRemoveEmptyTest extends AutomatedTestBase {
 	private final static String TEST_DIR = "functions/frame/";
 	private static final String TEST_CLASS_DIR = TEST_DIR + RemoveEmptyTest.class.getSimpleName() + "/";
 
-	private final static int _rows = 10;
+	private final static int _rows = 100;
 	private final static int _cols = 6;
 
 	private final static double _sparsityDense = 0.7;
@@ -46,25 +46,25 @@ public class FrameRemoveEmptyTest extends AutomatedTestBase {
 	}
 
 	@Test
-	public void testRemoveEmptyRowsDenseCP() {
+	public void testRemoveEmptyRowsCP() {
 		runTestRemoveEmpty(TEST_NAME1, "rows", Types.ExecType.CP, false);
 	}
 
 	@Test
-	public void testRemoveEmptyRowsSparseCP() {
+	public void testRemoveEmptyColsCP() {
 		runTestRemoveEmpty(TEST_NAME1, "cols", Types.ExecType.CP, true);
 	}
 
 	@Test
 	@Ignore
-	public void testRemoveEmptyRowsDenseSP() {
+	public void testRemoveEmptyRowsSP() {
 		runTestRemoveEmpty(TEST_NAME1, "rows", Types.ExecType.SPARK, false);
 	}
 
 	@Test
 	@Ignore
-	public void testRemoveEmptyRowsSparseSP() {
-		runTestRemoveEmpty(TEST_NAME1, "rows", Types.ExecType.SPARK, true);
+	public void testRemoveEmptyColsSP() {
+		runTestRemoveEmpty(TEST_NAME1, "cols", Types.ExecType.SPARK, true);
 	}
 
 	private void runTestRemoveEmpty(String testname, String margin, Types.ExecType et, boolean bSelectIndex) {

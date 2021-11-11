@@ -74,8 +74,8 @@ public class MMFEDInstruction extends BinaryFEDInstruction
 		MatrixObject mo2 = ec.getMatrixObject(input2);
 
 		long id = FederationUtils.getNextFedDataID();
-		FederatedRequest frEmpty = new FederatedRequest(FederatedRequest.RequestType.PUT_VAR, id,
-			new MatrixCharacteristics(mo1.getNumRows(), mo2.getNumColumns()), DataType.MATRIX);
+		FederatedRequest frEmpty = new FederatedRequest(FederatedRequest.RequestType.PUT_VAR,
+			id, new MatrixCharacteristics(-1, -1), DataType.MATRIX);
 
 		//TODO cleanup unnecessary redundancy
 		//#1 federated matrix-vector multiplication

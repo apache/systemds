@@ -1,6 +1,6 @@
-unique = function(matrix[double] v)
-    return (matrix[double] r) {
-    v_sorted = order(target=v, by=1, decreasing=FALSE, index.return=FALSE);
-    mask = rbind(matrix("1", rows = 1, cols = 1), v_sorted[1:nrow(v_sorted)-1,] != v_sorted[2:nrow(v_sorted),]);
-    r = removeEmpty(target = v_sorted, margin = "rows", select = mask);
+unique = function(matrix[double] X)
+    return (matrix[double] R) {
+    X_sorted = order(target=X, by=1, decreasing=FALSE, index.return=FALSE);
+    mask = rbind(matrix("1", rows = 1, cols = 1), X_sorted[1:nrow(X_sorted)-1,] != X_sorted[2:nrow(X_sorted),]);
+    R = removeEmpty(target = X_sorted, margin = "rows", select = mask);
 }

@@ -58,8 +58,9 @@ public class ExecutionContextFactory
 	}
 
 	public static boolean needsSparkEC(Program prog) {
-		boolean retVal = OptimizerUtils.getDefaultExecutionMode()==ExecMode.HYBRID
-			&& !(prog!=null && prog.getDMLProg()!=null && prog.getDMLProg().containsRemoteParfor());
+		boolean retVal = DMLScript.getGlobalExecMode() == ExecMode.SINGLE_NODE
+			&& (OptimizerUtils.getDefaultExecutionMode() != ExecMode.HYBRID
+				|| (prog != null && prog.getDMLProg() != null && prog.getDMLProg().containsRemoteParfor()));
 		retVal |= DMLScript.getGlobalExecMode() == ExecMode.SPARK;
 		retVal |= DMLScript.getGlobalExecMode() == ExecMode.HYBRID;
 		return retVal;

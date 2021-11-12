@@ -31,7 +31,7 @@ import java.util.HashMap;
 public class BuiltinUnionTest  extends AutomatedTestBase {
     private final static String TEST_NAME = "union";
     private final static String TEST_DIR = "functions/builtin/";
-    private static final String TEST_CLASS_DIR = TEST_DIR + BuiltinUniqueTest.class.getSimpleName() + "/";
+    private static final String TEST_CLASS_DIR = TEST_DIR + BuiltinUnionTest.class.getSimpleName() + "/";
 
     @Override
     public void setUp() {
@@ -100,10 +100,10 @@ public class BuiltinUnionTest  extends AutomatedTestBase {
             TestUtils.compareMatrices(dmlfile, R, 1e-10, "dml", "expected");
 
             //TODO union.R does not work. why?
-            //runRScript(true);
-            //HashMap<MatrixValue.CellIndex, Double> rfile  = readRMatrixFromExpectedDir("R");
+            runRScript(true);
+            HashMap<MatrixValue.CellIndex, Double> rfile  = readRMatrixFromExpectedDir("R");
 
-            //TestUtils.compareMatrices(dmlfile, rfile, 1e-10, "dml", "expected");
+            TestUtils.compareMatrices(dmlfile, rfile, 1e-10, "dml", "expected");
         }
         finally {
             rtplatform = platformOld;

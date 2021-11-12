@@ -26,6 +26,6 @@ options(digits=22)
 library("Matrix")
 
 X = as.matrix(readMM(paste(args[1], "X.mtx", sep="")));
-Y = as.matrix(readMM(paste(args[2], "Y.mtx", sep="")));
+Y = as.matrix(readMM(paste(args[1], "Y.mtx", sep="")));
 R = union(X[order(X[,1]),], Y[order(Y[,1]),]);
-writeMM(as(R, "CsparseMatrix"), paste(args[3], "R", sep=""));
+writeMM(as(R, "CsparseMatrix"), paste(args[2], "R", sep=""));

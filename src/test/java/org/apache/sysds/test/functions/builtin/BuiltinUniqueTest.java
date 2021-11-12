@@ -76,7 +76,17 @@ public class BuiltinUniqueTest extends AutomatedTestBase {
 		runUniqueTest(X, true, ExecType.SPARK);
 	}
 
-	//TODO add more tests
+	@Test
+	public void testUnique4CP() {
+		double[][] X = {{1.5, 2}, {7, 3}, {1, 3}, {1.5, 2}, {-1, -2.32}, {-1, 0.1}, {1, 3}, {-1, 0.1}};
+		runUniqueTest(X, true, ExecType.CP);
+	}
+
+	@Test
+	public void testUnique4SP() { //This fails?
+		double[][] X = {{1.5, 2}, {7, 3}, {1, 3}, {1.5, 2}, {-1, -2.32}, {-1, 0.1}, {1, 3}, {-1, 0.1}};
+		runUniqueTest(X, true, ExecType.SPARK);
+	}
 
 	private void runUniqueTest(double[][] X, boolean defaultProb, ExecType instType) {
 		Types.ExecMode platformOld = setExecMode(instType);

@@ -43,6 +43,7 @@ import org.apache.sysds.runtime.util.UtilFunctions;
 import java.util.ArrayList;
 
 
+
 /* Unary (cell operations): e.g, b_ij = round(a_ij)
  * 		Semantic: given a value, perform the operation (independent of other values)
  */
@@ -57,7 +58,7 @@ public class UnaryOp extends MultiThreadedHop
 	private UnaryOp() {
 		//default constructor for clone
 	}
-	
+
 	public UnaryOp(String l, DataType dt, ValueType vt, OpOp1 o, Hop inp) {
 		super(l, dt, vt);
 
@@ -130,7 +131,7 @@ public class UnaryOp extends MultiThreadedHop
 		try 
 		{
 			Hop input = getInput().get(0);
-			
+
 			if(    getDataType() == DataType.SCALAR //value type casts or matrix to scalar
 				|| (_op == OpOp1.CAST_AS_MATRIX && getInput().get(0).getDataType()==DataType.SCALAR)
 				|| (_op == OpOp1.CAST_AS_FRAME && getInput().get(0).getDataType()==DataType.SCALAR))
@@ -165,10 +166,20 @@ public class UnaryOp extends MultiThreadedHop
 				}
 				else //default unary 
 				{
+					boolean inplace = false;
+
+					//check in-place
+					if (OptimizerUtils.ALLOW_UNARY_UPDATE_IN_PLACE
+						&& input.getParent().size() == 1)
+					{
+						inplace = !(input instanceof DataOp)
+							|| !((DataOp) input).isRead();
+					}
+
 					int k = isCumulativeUnaryOperation() || isExpensiveUnaryOperation() ?
 						OptimizerUtils.getConstrainedNumThreads( _maxNumThreads ) : 1;
 					Unary unary1 = new Unary(input.constructLops(),
-						_op, getDataType(), getValueType(), et, k, false);
+						_op, getDataType(), getValueType(), et, k, inplace);
 					setOutputDimensions(unary1);
 					setLineNumbers(unary1);
 					setLops(unary1);

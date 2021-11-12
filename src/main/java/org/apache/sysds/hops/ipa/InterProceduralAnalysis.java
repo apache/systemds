@@ -243,7 +243,8 @@ public class InterProceduralAnalysis
 		List<IPAPass> fpasses = Arrays.asList(
 			new IPAPassRemoveUnusedFunctions(),
 			new IPAPassCompressionWorkloadAnalysis(), // workload-aware compression
-			new IPAPassApplyStaticAndDynamicHopRewrites());  //split after compress
+			new IPAPassApplyStaticAndDynamicHopRewrites(),  //split after compress
+			new IPAPassRewriteFederatedPlan());
 		for(IPAPass pass : fpasses)
 			if( pass.isApplicable(graph2) )
 				pass.rewriteProgram(_prog, graph2, null);

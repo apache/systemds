@@ -69,13 +69,13 @@ import org.apache.sysds.runtime.controlprogram.federated.FederatedWorker;
 import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysds.runtime.controlprogram.parfor.util.IDHandler;
 import org.apache.sysds.runtime.instructions.gpu.context.GPUContextPool;
-import org.apache.sysds.runtime.instructions.spark.utils.SparkUtils;
 import org.apache.sysds.runtime.io.IOUtilFunctions;
 import org.apache.sysds.runtime.lineage.LineageCacheConfig;
 import org.apache.sysds.runtime.lineage.LineageCacheConfig.LineageCachePolicy;
 import org.apache.sysds.runtime.lineage.LineageCacheConfig.ReuseCacheType;
 import org.apache.sysds.runtime.privacy.CheckedConstraintsLog;
 import org.apache.sysds.runtime.util.LocalFileUtils;
+import org.apache.sysds.runtime.util.CommonThreadPool;
 import org.apache.sysds.runtime.util.HDFSTool;
 import org.apache.sysds.utils.Explain;
 import org.apache.sysds.utils.NativeHelper;
@@ -434,11 +434,13 @@ public class DMLScript
 			ScriptExecutorUtils.executeRuntimeProgram(rtprog, ec, ConfigurationManager.getDMLConfig(), STATISTICS ? STATISTICS_COUNT : 0, null);
 		}
 		finally {
+			//cleanup scratch_space and all working dirs
+			cleanupHadoopExecution(ConfigurationManager.getDMLConfig());
+			//stop spark context (after cleanup of federated workers and other pools,
+			//otherwise federated spark cleanups in local tests throw errors in same JVM)
 			if(ec != null && ec instanceof SparkExecutionContext)
 				((SparkExecutionContext) ec).close();
 			LOG.info("END DML run " + getDateTime() );
-			//cleanup scratch_space and all working dirs
-			cleanupHadoopExecution( ConfigurationManager.getDMLConfig());
 		}
 	}
 
@@ -520,7 +522,7 @@ public class DMLScript
 		FederatedData.clearFederatedWorkers();
 		
 		//0) shutdown prefetch/broadcast thread pool if necessary
-		SparkUtils.shutdownPool();
+		CommonThreadPool.shutdownAsyncRDDPool();
 
 		//1) cleanup scratch space (everything for current uuid)
 		//(required otherwise export to hdfs would skip assumed unnecessary writes if same name)
@@ -596,7 +598,7 @@ public class DMLScript
 		final String ANSI_RESET = "\u001B[0m";
 		StringBuilder sb = new StringBuilder();
 		sb.append(ANSI_RED + "\n");
-		sb.append("An Error Occured : ");
+		sb.append("An Error Occurred : ");
 		sb.append("\n" );
 		sb.append(StringUtils.leftPad(e.getClass().getSimpleName(),25));
 		sb.append(" -- ");

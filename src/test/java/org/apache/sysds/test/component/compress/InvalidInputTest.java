@@ -30,7 +30,6 @@ import org.apache.sysds.runtime.data.SparseRowVector;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.AggregateBinaryOperator;
-import org.apache.sysds.runtime.util.DataConverter;
 import org.apache.sysds.test.TestUtils;
 import org.junit.Test;
 
@@ -47,8 +46,7 @@ public class InvalidInputTest {
 		final double sparsity = 0.6;
 		final int seed = 2;
 
-		double[][] input = TestUtils.round(TestUtils.generateTestMatrix(rows, cols, min, max, sparsity, seed));
-		mb = DataConverter.convertToMatrixBlock(input);
+		mb = TestUtils.round(TestUtils.generateTestMatrixBlock(rows, cols, min, max, sparsity, seed));
 		mb.recomputeNonZeros();
 		mb.examSparsity();
 

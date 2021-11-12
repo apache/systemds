@@ -19,10 +19,7 @@
 
 package org.apache.sysds.runtime.compress.cost;
 
-import java.util.Collection;
-
 import org.apache.sysds.runtime.compress.CompressionSettings;
-import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup;
 
 /**
@@ -35,7 +32,6 @@ import org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup;
 public class DistinctCostEstimator implements ICostEstimate {
 	private static final long serialVersionUID = 4784682182584508597L;
 	private final static int toSmallForAnalysis = 64;
-	private final int nRows;
 
 	/**
 	 * This value specifies the maximum distinct count allowed int a coCoded group. Note that this value is the number
@@ -44,13 +40,18 @@ public class DistinctCostEstimator implements ICostEstimate {
 	 */
 	private final double largestDistinct;
 
-	public DistinctCostEstimator(int nRows, CompressionSettings cs) {
+	private final int nRows;
+	private final double sparsity;
+
+	public DistinctCostEstimator(int nRows, CompressionSettings cs, double sparsity) {
 		this.largestDistinct = Math.min(4096, Math.max(256, (int) (nRows * cs.coCodePercentage)));
 		this.nRows = nRows;
+		this.sparsity = sparsity;
 	}
 
 	@Override
-	public double getUncompressedCost(int nRows, int nCols, int sparsity) {
+	public double getUncompressedCost(CompressedSizeInfoColGroup g) {
+		final int nCols = g.getColumns().length;
 		return nRows * nCols * sparsity;
 	}
 
@@ -63,40 +64,7 @@ public class DistinctCostEstimator implements ICostEstimate {
 	}
 
 	@Override
-	public double getCostOfCollectionOfGroups(Collection<CompressedSizeInfoColGroup> gs) {
-		long distinct = 0;
-		for(CompressedSizeInfoColGroup g : gs)
-			distinct += g.getNumVals();
-
-		return distinct;
-	}
-
-	@Override
-	public double getCostOfCollectionOfGroups(Collection<CompressedSizeInfoColGroup> gs, CompressedSizeInfoColGroup g) {
-		long distinct = 0;
-		for(CompressedSizeInfoColGroup ge : gs)
-			distinct += ge.getNumVals();
-		distinct += g.getNumVals();
-		return distinct;
-	}
-
-	@Override
-	public double getCostOfTwoGroups(CompressedSizeInfoColGroup g1, CompressedSizeInfoColGroup g2) {
-		throw new DMLCompressionException("Should not be called");
-	}
-
-	@Override
-	public boolean isCompareAll() {
-		return false;
-	}
-
-	@Override
 	public boolean shouldAnalyze(CompressedSizeInfoColGroup g1, CompressedSizeInfoColGroup g2) {
 		return g1.getNumVals() * g2.getNumVals() < toSmallForAnalysis;
-	}
-
-	@Override
-	public boolean shouldTryJoin(CompressedSizeInfoColGroup g1, CompressedSizeInfoColGroup g2) {
-		return g1.getNumVals() * g2.getNumVals() < nRows;
 	}
 }

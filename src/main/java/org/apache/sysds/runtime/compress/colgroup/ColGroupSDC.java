@@ -22,11 +22,9 @@ package org.apache.sysds.runtime.compress.colgroup;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
-import java.util.Arrays;
 
-import org.apache.commons.lang.NotImplementedException;
+import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
-import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
 import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory;
 import org.apache.sysds.runtime.compress.colgroup.offset.AIterator;
@@ -47,7 +45,7 @@ import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
  * This column group is handy in cases where sparse unsafe operations is executed on very sparse columns. Then the zeros
  * would be materialized in the group without any overhead.
  */
-public class ColGroupSDC extends ColGroupValue {
+public class ColGroupSDC extends AColGroupValue {
 	private static final long serialVersionUID = 769993538831949086L;
 	/**
 	 * Sparse row indexes for the data
@@ -65,21 +63,6 @@ public class ColGroupSDC extends ColGroupValue {
 	 */
 	protected ColGroupSDC(int numRows) {
 		super(numRows);
-	}
-
-	protected ColGroupSDC(int[] colIndices, int numRows, ADictionary dict, int[] indexes, AMapToData data) {
-		super(colIndices, numRows, dict);
-		_indexes = OffsetFactory.create(indexes, numRows);
-		_data = data;
-		_zeros = false;
-	}
-
-	protected ColGroupSDC(int[] colIndices, int numRows, ADictionary dict, int[] indexes, AMapToData data,
-		int[] cachedCounts) {
-		super(colIndices, numRows, dict, cachedCounts);
-		_indexes = OffsetFactory.create(indexes, numRows);
-		_data = data;
-		_zeros = false;
 	}
 
 	protected ColGroupSDC(int[] colIndices, int numRows, ADictionary dict, AOffset offsets, AMapToData data,
@@ -101,8 +84,7 @@ public class ColGroupSDC extends ColGroupValue {
 	}
 
 	@Override
-	protected void decompressToBlockUnSafeDenseDictionary(MatrixBlock target, int rl, int ru, int offT,
-		double[] values) {
+	protected void decompressToBlockDenseDictionary(MatrixBlock target, int rl, int ru, int offT, double[] values) {
 		final int nCol = _colIndexes.length;
 		final int offsetToDefault = values.length - nCol;
 		final DenseBlock db = target.getDenseBlock();
@@ -133,8 +115,7 @@ public class ColGroupSDC extends ColGroupValue {
 	}
 
 	@Override
-	protected void decompressToBlockUnSafeSparseDictionary(MatrixBlock target, int rl, int ru, int offT,
-		SparseBlock sb) {
+	protected void decompressToBlockSparseDictionary(MatrixBlock target, int rl, int ru, int offT, SparseBlock sb) {
 		final int offsetToDefault = sb.numRows() - 1;
 		final int defApos = sb.pos(offsetToDefault);
 		final int defAlen = sb.size(offsetToDefault) + defApos;
@@ -174,24 +155,11 @@ public class ColGroupSDC extends ColGroupValue {
 	}
 
 	@Override
-	public double get(int r, int c) {
-		// find local column index
-		int ix = Arrays.binarySearch(_colIndexes, c);
-		if(ix < 0)
-			throw new RuntimeException("Column index " + c + " not in group.");
-
-		// get value
-		AIterator it = _indexes.getIterator(r);
+	public double getIdx(int r, int colIdx) {
+		final AIterator it = _indexes.getIterator(r);
 		final int nCol = _colIndexes.length;
-		if(it.value() == r)
-			return _dict.getValue(_data.getIndex(it.getDataIndex()) * nCol + ix);
-		else
-			return _dict.getValue(getNumValues() * nCol - nCol + ix);
-	}
-
-	@Override
-	public void countNonZerosPerRow(int[] rnnz, int rl, int ru) {
-		throw new NotImplementedException("Not Implemented");
+		final int rowOff = it.value() == r ? getIndex(it.getDataIndex()) * nCol : getNumValues() * nCol - nCol;
+		return _dict.getValue(rowOff + colIdx);
 	}
 
 	@Override
@@ -217,14 +185,11 @@ public class ColGroupSDC extends ColGroupValue {
 
 	@Override
 	protected void computeRowMxx(double[] c, Builtin builtin, int rl, int ru) {
-
 		final int numVals = getNumValues();
-
-		double[] vals = _dict.aggregateTuples(builtin, _colIndexes.length);
-
-		AIterator it = _indexes.getIterator(rl);
-
+		final double[] vals = _dict.aggregateTuples(builtin, _colIndexes.length);
+		final AIterator it = _indexes.getIterator(rl);
 		int rix = rl;
+
 		for(; rix < ru && it.hasNext(); rix++) {
 			if(it.value() != rix)
 				c[rix] = builtin.execute(c[rix], vals[numVals - 1]);
@@ -232,129 +197,26 @@ public class ColGroupSDC extends ColGroupValue {
 				c[rix] = builtin.execute(c[rix], vals[_data.getIndex(it.getDataIndexAndIncrement())]);
 		}
 
-		for(; rix < ru; rix++) {
+		// cover remaining rows with default value
+		for(; rix < ru; rix++)
 			c[rix] = builtin.execute(c[rix], vals[numVals - 1]);
-		}
-
 	}
 
 	@Override
 	public int[] getCounts(int[] counts) {
-		return getCounts(0, _numRows, counts);
-	}
+		final int nonDefaultLength = _data.size();
+		// final AIterator it = _indexes.getIterator();
+		final int defaults = _numRows - nonDefaultLength;
+		for(int i = 0; i < nonDefaultLength; i++)
+			counts[_data.getIndex(i)]++;
 
-	@Override
-	public int[] getCounts(int rl, int ru, int[] counts) {
-		final int def = counts.length - 1;
-
-		int i = rl;
-		AIterator it = _indexes.getIterator(rl);
-
-		for(; i < ru && it.hasNext(); i++) {
-			if(i == it.value())
-				counts[_data.getIndex(it.getDataIndexAndIncrement())]++;
-			else
-				counts[def]++;
-		}
-
-		if(i < ru)
-			counts[def] += ru - i;
+		counts[counts.length - 1] += defaults;
 
 		return counts;
 	}
 
 	public int getIndex(int r) {
 		return _data.getIndex(r);
-	}
-
-	@Override
-	public void preAggregate(MatrixBlock m, MatrixBlock preAgg, int rl, int ru) {
-		if(m.isInSparseFormat())
-			preAggregateSparse(m.getSparseBlock(), preAgg, rl, ru);
-		else
-			preAggregateDense(m, preAgg, rl, ru);
-	}
-
-	@Override
-	public void preAggregateDense(MatrixBlock m, MatrixBlock preAgg, int rl, int ru, int cl, int cu) {
-		final double[] mV = m.getDenseBlockValues();
-		final double[] preAV = preAgg.getDenseBlockValues();
-		final int numVals = getNumValues();
-		final AIterator itStart = _indexes.getIterator(cl);
-		AIterator it = null;
-		for(int rowLeft = rl, offOut = 0; rowLeft < ru; rowLeft++, offOut += numVals) {
-			final int offLeft = rowLeft * _numRows;
-			final int def = offOut + numVals - 1;
-			it = itStart.clone();
-			int rc = 0;
-			int pointer = it.value();
-			for(; pointer < cu && it.hasNext(); rc++) {
-				for(; rc < pointer; rc++) {
-					preAV[def] += mV[offLeft + rc];
-				}
-				preAV[offOut + _data.getIndex(it.getDataIndexAndIncrement())] += mV[offLeft + rc];
-				pointer = it.value();
-			}
-
-			for(; rc < cu; rc++) {
-				preAV[def] += mV[offLeft + rc];
-			}
-		}
-		if(it != null && cu < m.getNumColumns())
-			_indexes.cacheIterator(it, cu + 1);
-	}
-
-	private void preAggregateDense(MatrixBlock m, MatrixBlock preAgg, int rl, int ru) {
-		final double[] preAV = preAgg.getDenseBlockValues();
-		final double[] mV = m.getDenseBlockValues();
-		final int numVals = getNumValues();
-		for(int rowLeft = rl, offOut = 0; rowLeft < ru; rowLeft++, offOut += numVals) {
-			final int def = offOut + numVals - 1;
-			final AIterator it = _indexes.getIterator();
-			int rc = 0;
-			int offLeft = rowLeft * _numRows;
-			for(; rc < _numRows && it.hasNext(); rc++, offLeft++) {
-				for(; it.value() > rc && rc < _numRows; rc++, offLeft++) {
-					preAV[def] += mV[offLeft];
-				}
-				// if(it.value() == rc)
-				preAV[offOut + _data.getIndex(it.getDataIndexAndIncrement())] += mV[offLeft];
-				// else
-				// preAV[def] += mV[offLeft];
-			}
-
-			for(; rc < _numRows; rc++, offLeft++) {
-				preAV[def] += mV[offLeft];
-			}
-		}
-	}
-
-	private void preAggregateSparse(SparseBlock sb, MatrixBlock preAgg, int rl, int ru) {
-		final double[] preAV = preAgg.getDenseBlockValues();
-		final int numVals = getNumValues();
-		for(int rowLeft = rl, offOut = 0; rowLeft < ru; rowLeft++, offOut += numVals) {
-			if(sb.isEmpty(rowLeft))
-				continue;
-			final AIterator it = _indexes.getIterator();
-			final int def = offOut + numVals - 1;
-			final int apos = sb.pos(rowLeft);
-			final int alen = sb.size(rowLeft) + apos;
-			final int[] aix = sb.indexes(rowLeft);
-			final double[] avals = sb.values(rowLeft);
-			int j = apos;
-			for(; j < alen && it.hasNext(); j++) {
-				final int index = aix[j];
-				it.skipTo(index);
-				if(it.value() == index)
-					preAV[offOut + _data.getIndex(it.getDataIndexAndIncrement())] += avals[j];
-				else
-					preAV[def] += avals[j];
-			}
-
-			for(; j < alen; j++) {
-				preAV[def] += avals[j];
-			}
-		}
 	}
 
 	@Override
@@ -371,9 +233,15 @@ public class ColGroupSDC extends ColGroupValue {
 	}
 
 	@Override
-	public AColGroup binaryRowOp(BinaryOperator op, double[] v, boolean sparseSafe, boolean left) {
-		return new ColGroupSDC(_colIndexes, _numRows, applyBinaryRowOp(op, v, true, left), _indexes, _data,
-			getCachedCounts());
+	public AColGroup binaryRowOpLeft(BinaryOperator op, double[] v, boolean isRowSafe) {
+		ADictionary ret = _dict.binOpLeft(op, v, _colIndexes);
+		return new ColGroupSDC(_colIndexes, _numRows, ret, _indexes, _data, getCachedCounts());
+	}
+
+	@Override
+	public AColGroup binaryRowOpRight(BinaryOperator op, double[] v, boolean isRowSafe) {
+		ADictionary ret = _dict.binOpRight(op, v, _colIndexes);
+		return new ColGroupSDC(_colIndexes, _numRows, ret, _indexes, _data, getCachedCounts());
 	}
 
 	@Override
@@ -398,16 +266,40 @@ public class ColGroupSDC extends ColGroupValue {
 		return ret;
 	}
 
-	@Override
-	public boolean sameIndexStructure(ColGroupCompressed that) {
-		// TODO add such that if the column group switched from Zeros type it also matches.
-		return that instanceof ColGroupSDC && ((ColGroupSDC) that)._indexes == _indexes &&
-			((ColGroupSDC) that)._data == _data;
+	public ColGroupSDCZeros extractCommon(double[] constV) {
+		double[] commonV = _dict.getTuple(getNumValues() - 1, _colIndexes.length);
+		if(commonV == null) // The common tuple was all zero. Therefore this column group should never have been SDC.
+			return new ColGroupSDCZeros(_colIndexes, _numRows, _dict, _indexes, _data, getCounts());
+
+		for(int i = 0; i < _colIndexes.length; i++)
+			constV[_colIndexes[i]] += commonV[i];
+
+		ADictionary subtractedDict = _dict.subtractTuple(commonV);
+		return new ColGroupSDCZeros(_colIndexes, _numRows, subtractedDict, _indexes, _data, getCounts());
 	}
 
 	@Override
-	public int getIndexStructureHash() {
-		return _data.hashCode() + _indexes.hashCode();
+	public void leftMultByMatrix(MatrixBlock matrix, MatrixBlock result, int rl, int ru) {
+		// This method should not be called since if there is a matrix multiplication
+		// the default value is transformed to be zero, and this column group would be allocated as a
+		// SDC Zeros version
+		throw new DMLCompressionException("This method should never be called");
+	}
+
+	@Override
+	public void leftMultByAColGroup(AColGroup lhs, MatrixBlock result) {
+		// This method should not be called since if there is a matrix multiplication
+		// the default value is transformed to be zero, and this column group would be allocated as a
+		// SDC Zeros version
+		throw new DMLCompressionException("This method should never be called");
+	}
+
+	@Override
+	public void tsmmAColGroup(AColGroup other, MatrixBlock result) {
+		// This method should not be called since if there is a matrix multiplication
+		// the default value is transformed to be zero, and this column group would be allocated as a
+		// SDC Zeros version
+		throw new DMLCompressionException("This method should never be called");
 	}
 
 	@Override
@@ -419,152 +311,5 @@ public class ColGroupSDC extends ColGroupValue {
 		sb.append(String.format("\n%15s ", "Data: "));
 		sb.append(_data.toString());
 		return sb.toString();
-	}
-
-	@Override
-	public Dictionary preAggregateThatDDCStructure(ColGroupDDC that, Dictionary ret) {
-
-		final AIterator it = _indexes.getIterator();
-		final int offsetToDefault = this.getNumValues() - 1;
-		final int nCol = that._colIndexes.length;
-
-		int i = 0;
-
-		for(; i < _numRows && it.hasNext(); i++) {
-			int to = (it.value() == i) ? getIndex(it.getDataIndexAndIncrement()) : offsetToDefault;
-			that._dict.addToEntry(ret, that._data.getIndex(i), to, nCol);
-		}
-
-		for(; i < _numRows; i++)
-			that._dict.addToEntry(ret, that._data.getIndex(i), offsetToDefault, nCol);
-
-		return ret;
-	}
-
-	@Override
-	public Dictionary preAggregateThatSDCStructure(ColGroupSDC that, Dictionary ret, boolean preModified) {
-		final AIterator itThat = that._indexes.getIterator();
-		final AIterator itThis = _indexes.getIterator();
-		final int nCol = that._colIndexes.length;
-		final int offsetToDefaultThat = that.getNumValues() - 1;
-		final int offsetToDefaultThis = getNumValues() - 1;
-
-		if(preModified) {
-			while(itThat.hasNext() && itThis.hasNext()) {
-				final int v = itThat.value();
-				while(itThis.value() < v && itThis.hasNext())
-					itThis.next();
-
-				if(itThat.value() == itThis.value()) {
-					final int fr = that.getIndex(itThat.getDataIndexAndIncrement());
-					final int to = getIndex(itThis.getDataIndexAndIncrement());
-					that._dict.addToEntry(ret, fr, to, nCol);
-				}
-				else if(itThat.value() < itThis.value()) {
-					final int fr = that.getIndex(itThat.getDataIndexAndIncrement());
-					that._dict.addToEntry(ret, fr, offsetToDefaultThis, nCol);
-				}
-
-			}
-
-			while(itThat.hasNext()) {
-				final int fr = that.getIndex(itThat.getDataIndexAndIncrement());
-				that._dict.addToEntry(ret, fr, offsetToDefaultThis, nCol);
-			}
-		}
-		else {
-			int i = 0;
-
-			for(; i < _numRows && itThat.hasNext() && itThis.hasNext(); i++) {
-				final int to = (itThis.value() == i) ? getIndex(
-					itThis.getDataIndexAndIncrement()) : offsetToDefaultThis;
-				final int fr = (itThat.value() == i) ? that
-					.getIndex(itThat.getDataIndexAndIncrement()) : offsetToDefaultThat;
-				that._dict.addToEntry(ret, fr, to, nCol);
-			}
-
-			if(itThat.hasNext()) {
-				for(; i < _numRows && itThat.hasNext(); i++) {
-					int fr = (itThat.value() == i) ? that
-						.getIndex(itThat.getDataIndexAndIncrement()) : offsetToDefaultThat;
-					that._dict.addToEntry(ret, fr, offsetToDefaultThis, nCol);
-				}
-			}
-
-			if(itThis.hasNext()) {
-				for(; i < _numRows && itThis.hasNext(); i++) {
-					int to = (itThis.value() == i) ? getIndex(itThis.getDataIndexAndIncrement()) : offsetToDefaultThis;
-					that._dict.addToEntry(ret, offsetToDefaultThat, to, nCol);
-				}
-			}
-
-			for(; i < _numRows; i++)
-				that._dict.addToEntry(ret, offsetToDefaultThat, offsetToDefaultThis, nCol);
-		}
-
-		return ret;
-	}
-
-	@Override
-	public Dictionary preAggregateThatSDCZerosStructure(ColGroupSDCZeros that, Dictionary ret) {
-		final AIterator itThat = that._indexes.getIterator();
-		final AIterator itThis = _indexes.getIterator();
-		final int nCol = that._colIndexes.length;
-		final int defThis = getNumValues() - 1;
-
-		while(itThat.hasNext()) {
-			final int thatV = itThat.value();
-			final int fr = that.getIndex(itThat.getDataIndexAndIncrement());
-			if(thatV == itThis.skipTo(thatV)) {
-				final int to = getIndex(itThis.getDataIndexAndIncrement());
-				that._dict.addToEntry(ret, fr, to, nCol);
-			}
-			else
-				that._dict.addToEntry(ret, fr, defThis, nCol);
-		}
-		return ret;
-
-	}
-
-	@Override
-	public Dictionary preAggregateThatSDCSingleZerosStructure(ColGroupSDCSingleZeros that, Dictionary ret) {
-		throw new NotImplementedException();
-	}
-
-	@Override
-	public Dictionary preAggregateThatSDCSingleStructure(ColGroupSDCSingle that, Dictionary ret, boolean preModified) {
-		final AIterator itThat = that._indexes.getIterator();
-		final AIterator itThis = _indexes.getIterator();
-		final int nCol = that._colIndexes.length;
-		final int defThis = this.getNumValues() - 1;
-
-		if(preModified) {
-			while(itThat.hasNext()) {
-				final int thatV = itThat.value();
-				if(thatV == itThis.skipTo(thatV))
-					that._dict.addToEntry(ret, 0, getIndex(itThis.getDataIndexAndIncrement()), nCol);
-				else
-					that._dict.addToEntry(ret, 0, defThis, nCol);
-				itThat.next();
-			}
-
-			return ret;
-		}
-		else {
-			throw new NotImplementedException();
-		}
-	}
-
-	public ColGroupSDCZeros extractCommon(double[] constV) {
-		double[] commonV = _dict.getTuple(getNumValues() - 1, _colIndexes.length);
-
-		if(commonV == null) // The common tuple was all zero. Therefore this column group should never have been SDC.
-			return new ColGroupSDCZeros(_colIndexes, _numRows, _dict, _indexes, _data, getCounts());
-
-		for(int i = 0; i < _colIndexes.length; i++)
-			constV[_colIndexes[i]] += commonV[i];
-
-		ADictionary subtractedDict = _dict.subtractTuple(commonV);
-		return new ColGroupSDCZeros(_colIndexes, _numRows, subtractedDict, _indexes, _data, getCounts());
 	}
 }

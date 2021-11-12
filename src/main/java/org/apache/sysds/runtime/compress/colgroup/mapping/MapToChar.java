@@ -25,12 +25,13 @@ import java.io.IOException;
 import java.util.Arrays;
 
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory.MAP_TYPE;
+import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.utils.MemoryEstimates;
 
 public class MapToChar extends AMapToData {
 
 	private static final long serialVersionUID = 6315708056775476541L;
-	
+
 	private final char[] _data;
 
 	public MapToChar(int unique, int size) {
@@ -80,6 +81,15 @@ public class MapToChar extends AMapToData {
 	}
 
 	@Override
+	public void replace(int v, int r) {
+		char cv = (char) v;
+		char rv = (char) r;
+		for(int i = 0; i < size(); i++)
+			if(_data[i] == cv)
+				_data[i] = rv;
+	}
+
+	@Override
 	public void write(DataOutput out) throws IOException {
 		out.writeByte(MAP_TYPE.CHAR.ordinal());
 		out.writeInt(getUnique());
@@ -97,8 +107,32 @@ public class MapToChar extends AMapToData {
 		return new MapToChar(unique, data);
 	}
 
-	public char[] getChars(){
+	public char[] getChars() {
 		return _data;
+	}
+
+	@Override
+	public void preAggregateDense(MatrixBlock m, MatrixBlock pre, int rl, int ru, int cl, int cu) {
+		final int nRow = m.getNumColumns();
+		final int nVal = pre.getNumColumns();
+		final double[] preAV = pre.getDenseBlockValues();
+		final double[] mV = m.getDenseBlockValues();
+		final int blockSize = 4000;
+		for(int block = cl; block < cu; block += blockSize) {
+			final int blockEnd = Math.min(block + blockSize, nRow);
+			for(int rowLeft = rl, offOut = 0; rowLeft < ru; rowLeft++, offOut += nVal) {
+				final int offLeft = rowLeft * nRow;
+				for(int rc = block; rc < blockEnd; rc++) {
+					final int idx = _data[rc];
+					preAV[offOut + idx] += mV[offLeft + rc];
+				}
+			}
+		}
+	}
+
+	@Override
+	public int getUpperBoundValue() {
+		return Character.MAX_VALUE;
 	}
 
 }

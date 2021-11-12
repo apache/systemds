@@ -28,14 +28,12 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.concurrent.Callable;
 
-import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.tuple.MutableTriple;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.lops.Lop;
-import org.apache.sysds.runtime.data.SparseRowVector;
+import org.apache.sysds.runtime.controlprogram.caching.CacheBlock;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
-import org.apache.sysds.runtime.util.UtilFunctions;
 import org.apache.sysds.utils.Statistics;
 
 public class ColumnEncoderBin extends ColumnEncoder {
@@ -47,7 +45,6 @@ public class ColumnEncoderBin extends ColumnEncoder {
 
 	// frame transform-apply attributes
 	// a) column bin boundaries
-	// TODO binMins is redundant and could be removed - necessary for correct fed results
 	private double[] _binMins = null;
 	private double[] _binMaxs = null;
 	// b) column min/max (for partial build)
@@ -87,7 +84,7 @@ public class ColumnEncoderBin extends ColumnEncoder {
 	}
 
 	@Override
-	public void build(FrameBlock in) {
+	public void build(CacheBlock in) {
 		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 		if(!isApplicable())
 			return;
@@ -97,12 +94,33 @@ public class ColumnEncoderBin extends ColumnEncoder {
 			Statistics.incTransformBinningBuildTime(System.nanoTime()-t0);
 	}
 
-	private static double[] getMinMaxOfCol(FrameBlock in, int colID, int startRow, int blockSize) {
+	protected double getCode(CacheBlock in, int row){
+		if( _binMins.length == 0 || _binMaxs.length == 0 ) {
+			LOG.warn("ColumnEncoderBin: applyValue without bucket boundaries, assign 1");
+			return 1; //robustness in case of missing bins
+		}
+		// Returns NaN if value is missing, so can't be assigned a Bin
+		double inVal = in.getDoubleNaN(row, _colID - 1);
+		if (Double.isNaN(inVal) || inVal < _binMins[0] || inVal > _binMaxs[_binMaxs.length-1] )
+			return Double.NaN;
+		int ix = Arrays.binarySearch(_binMaxs, inVal);
+
+		return ((ix < 0) ? Math.abs(ix + 1) : ix) + 1;
+	}
+
+	@Override
+	protected TransformType getTransformType() {
+		return TransformType.BIN;
+	}
+
+	private static double[] getMinMaxOfCol(CacheBlock in, int colID, int startRow, int blockSize) {
 		// derive bin boundaries from min/max per column
 		double min = Double.POSITIVE_INFINITY;
 		double max = Double.NEGATIVE_INFINITY;
 		for(int i = startRow; i < getEndIndex(in.getNumRows(), startRow, blockSize); i++) {
-			double inVal = UtilFunctions.objectToDouble(in.getSchema()[colID - 1], in.get(i, colID - 1));
+			double inVal = in.getDouble(i, colID - 1);
+			if(Double.isNaN(inVal))
+				continue;
 			min = Math.min(min, inVal);
 			max = Math.max(max, inVal);
 		}
@@ -110,13 +128,13 @@ public class ColumnEncoderBin extends ColumnEncoder {
 	}
 
 	@Override
-	public Callable<Object> getBuildTask(FrameBlock in) {
+	public Callable<Object> getBuildTask(CacheBlock in) {
 		return new ColumnBinBuildTask(this, in);
 	}
 
 	@Override
-	public Callable<Object> getPartialBuildTask(FrameBlock in, int startRow, int blockSize,
-		HashMap<Integer, Object> ret) {
+	public Callable<Object> getPartialBuildTask(CacheBlock in, int startRow, int blockSize, 
+			HashMap<Integer, Object> ret) {
 		return new BinPartialBuildTask(in, _colID, startRow, blockSize, ret);
 	}
 
@@ -124,8 +142,6 @@ public class ColumnEncoderBin extends ColumnEncoder {
 	public Callable<Object> getPartialMergeBuildTask(HashMap<Integer, ?> ret) {
 		return new BinMergePartialBuildTask(this, ret);
 	}
-
-
 
 	public void computeBins(double min, double max) {
 		// ensure allocated internal transformation metadata
@@ -155,44 +171,9 @@ public class ColumnEncoderBin extends ColumnEncoder {
 	}
 
 	@Override
-	public MatrixBlock apply(FrameBlock in, MatrixBlock out, int outputCol, int rowStart, int blk) {
-		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
-		for(int i = rowStart; i < getEndIndex(in.getNumRows(), rowStart, blk); i++) {
-			double inVal = UtilFunctions.objectToDouble(in.getSchema()[_colID - 1], in.get(i, _colID - 1));
-			int ix = Arrays.binarySearch(_binMaxs, inVal);
-			int binID = ((ix < 0) ? Math.abs(ix + 1) : ix) + 1;
-			out.quickSetValue(i, outputCol, binID);
-		}
-		if (DMLScript.STATISTICS)
-			Statistics.incTransformBinningApplyTime(System.nanoTime()-t0);
-		return out;
-	}
-
-	@Override
-	public MatrixBlock apply(MatrixBlock in, MatrixBlock out, int outputCol, int rowStart, int blk) {
-		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
-		int end = getEndIndex(in.getNumRows(), rowStart, blk);
-		for(int i = rowStart; i < end; i++) {
-			double inVal = in.quickGetValueThreadSafe(i, _colID - 1);
-			int ix = Arrays.binarySearch(_binMaxs, inVal);
-			int binID = ((ix < 0) ? Math.abs(ix + 1) : ix) + 1;
-			out.quickSetValue(i, outputCol, binID);
-		}
-		if (DMLScript.STATISTICS)
-			Statistics.incTransformBinningApplyTime(System.nanoTime()-t0);
-		return out;
-	}
-
-	@Override
 	protected ColumnApplyTask<? extends ColumnEncoder> 
-		getSparseTask(FrameBlock in, MatrixBlock out, int outputCol, int startRow, int blk) {
+		getSparseTask(CacheBlock in, MatrixBlock out, int outputCol, int startRow, int blk) {
 		return new BinSparseApplyTask(this, in, out, outputCol);
-	}
-
-	@Override
-	protected ColumnApplyTask<? extends ColumnEncoder> 
-		getSparseTask(MatrixBlock in, MatrixBlock out, int outputCol, int startRow, int blk) {
-		throw new NotImplementedException("Sparse Binning for MatrixBlocks not jet implemented");
 	}
 
 	@Override
@@ -283,29 +264,20 @@ public class ColumnEncoderBin extends ColumnEncoder {
 
 	private static class BinSparseApplyTask extends ColumnApplyTask<ColumnEncoderBin> {
 
-		public BinSparseApplyTask(ColumnEncoderBin encoder, FrameBlock input, 
+		public BinSparseApplyTask(ColumnEncoderBin encoder, CacheBlock input,
 				MatrixBlock out, int outputCol, int startRow, int blk) {
 			super(encoder, input, out, outputCol, startRow, blk);
 		}
 
-		private BinSparseApplyTask(ColumnEncoderBin encoder, FrameBlock input, MatrixBlock out, int outputCol) {
+		private BinSparseApplyTask(ColumnEncoderBin encoder, CacheBlock input, MatrixBlock out, int outputCol) {
 			super(encoder, input, out, outputCol);
 		}
 
 		public Object call() throws Exception {
 			long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
-			int index = _encoder._colID - 1;
 			if(_out.getSparseBlock() == null)
 				return null;
-			assert _inputF != null;
-			for(int r = _startRow; r < getEndIndex(_inputF.getNumRows(), _startRow, _blk); r++) {
-				SparseRowVector row = (SparseRowVector) _out.getSparseBlock().get(r);
-				double inVal = UtilFunctions.objectToDouble(_inputF.getSchema()[index], _inputF.get(r, index));
-				int ix = Arrays.binarySearch(_encoder._binMaxs, inVal);
-				int binID = ((ix < 0) ? Math.abs(ix + 1) : ix) + 1;
-				row.values()[index] = binID;
-				row.indexes()[index] = _outputCol;
-			}
+			_encoder.applySparse(_input, _out, _outputCol, _startRow, _blk);
 			if(DMLScript.STATISTICS)
 				Statistics.incTransformBinningApplyTime(System.nanoTime()-t0);
 			return null;
@@ -315,20 +287,19 @@ public class ColumnEncoderBin extends ColumnEncoder {
 		public String toString() {
 			return getClass().getSimpleName() + "<ColId: " + _encoder._colID + ">";
 		}
-
 	}
 
 	private static class BinPartialBuildTask implements Callable<Object> {
 
-		private final FrameBlock _input;
+		private final CacheBlock _input;
 		private final int _blockSize;
 		private final int _startRow;
 		private final int _colID;
 		private final HashMap<Integer, Object> _partialMinMax;
 
 		// if a pool is passed the task may be split up into multiple smaller tasks.
-		protected BinPartialBuildTask(FrameBlock input, int colID, int startRow, int blocksize,
-			HashMap<Integer, Object> partialMinMax) {
+		protected BinPartialBuildTask(CacheBlock input, int colID, int startRow, 
+				int blocksize, HashMap<Integer, Object> partialMinMax) {
 			_input = input;
 			_blockSize = blocksize;
 			_colID = colID;
@@ -352,7 +323,6 @@ public class ColumnEncoderBin extends ColumnEncoder {
 		public String toString() {
 			return getClass().getSimpleName() + "<Start row: " + _startRow + "; Block size: " + _blockSize + ">";
 		}
-
 	}
 
 	private static class BinMergePartialBuildTask implements Callable<Object> {
@@ -384,15 +354,13 @@ public class ColumnEncoderBin extends ColumnEncoder {
 		public String toString() {
 			return getClass().getSimpleName() + "<ColId: " + _encoder._colID + ">";
 		}
-
 	}
 
 	private static class ColumnBinBuildTask implements Callable<Object> {
-
 		private final ColumnEncoderBin _encoder;
-		private final FrameBlock _input;
+		private final CacheBlock _input;
 
-		protected ColumnBinBuildTask(ColumnEncoderBin encoder, FrameBlock input) {
+		protected ColumnBinBuildTask(ColumnEncoderBin encoder, CacheBlock input) {
 			_encoder = encoder;
 			_input = input;
 		}
@@ -407,7 +375,5 @@ public class ColumnEncoderBin extends ColumnEncoder {
 		public String toString() {
 			return getClass().getSimpleName() + "<ColId: " + _encoder._colID + ">";
 		}
-
 	}
-
 }

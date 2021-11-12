@@ -43,5 +43,5 @@ Various forms of documentation for SystemDS are available.
 - Instructions on python can be found at [Python Documentation](./api/python/index)
 - The [JavaDOC](./api/java/index) contains internal documentation of the system source code.
 - [Install from Source](./site/install) guides through setup from git download to running system.
-- If you want to contribute take a look at [Contributing](https://github.com/apache/systemds/blob/master/CONTRIBUTING.md)
+- If you want to contribute take a look at [Contributing](https://github.com/apache/systemds/blob/main/CONTRIBUTING.md)
 - [R to DML](./site/dml-vs-r-guide) walks through the basics of converting a script from R to dml.

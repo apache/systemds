@@ -28,7 +28,7 @@ BASE=$4
 for i in 0 1; do
    #training
    tstart=$(date +%s.%N)
-   # ${CMD} -f ../algorithms/m-svm.dml \
+   # ${CMD} -f ./algorithms/m-svm.dml \
    ${CMD} -f scripts/m-svm.dml \
       --config conf/SystemDS-config.xml \
       --stats \
@@ -39,7 +39,7 @@ for i in 0 1; do
 
    #predict
    tstart=$(date +%s.%N)
-   #${CMD} -f ../algorithms/m-svm-predict.dml \
+   #${CMD} -f ./algorithms/m-svm-predict.dml \
    ${CMD} -f scripts/m-svm-predict.dml \
       --config conf/SystemDS-config.xml \
       --stats \

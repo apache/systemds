@@ -1,3 +1,3 @@
-outlierBySd,imputeByMedian,imputeByMean,scale,abstain,dummycoding
-outlierBySd,imputeByMean,imputeByMedian,scale,abstain,dummycoding
-outlierBySd,imputeByMean,imputeByMedian,scale,abstain,dummycoding
+winsorize,imputeByMedian,wtomeklink,dummycoding
+winsorize,imputeByMedian,wtomeklink,dummycoding
+winsorize,imputeByMedian,wtomeklink,dummycoding

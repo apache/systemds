@@ -294,12 +294,14 @@ public class LibMatrixAgg
 	}
 	
 	public static MatrixBlock cumaggregateUnaryMatrix(MatrixBlock in, MatrixBlock out, UnaryOperator uop, double[] agg) {
-		//prepare meta data 
+		//Check this implementation, standard case for cumagg (single threaded)
+
+		//prepare meta data
 		AggType aggtype = getAggType(uop);
 		final int m = in.rlen;
 		final int m2 = out.rlen;
 		final int n2 = out.clen;
-		
+
 		//filter empty input blocks (incl special handling for sparse-unsafe operations)
 		if( in.isEmpty() && (agg == null || aggtype == AggType.CUM_SUM_PROD) ) {
 			return aggregateUnaryMatrixEmpty(in, out, aggtype, null);
@@ -317,7 +319,7 @@ public class LibMatrixAgg
 		}
 		
 		//Timing time = new Timing(true);
-		
+
 		if( !in.sparse )
 			cumaggregateUnaryMatrixDense(in, out, aggtype, uop.fn, agg, 0, m);
 		else
@@ -336,7 +338,7 @@ public class LibMatrixAgg
 		AggregateUnaryOperator uaop = InstructionUtils.parseBasicCumulativeAggregateUnaryOperator(uop);
 		
 		//fall back to sequential if necessary or agg not supported
-		if(    k <= 1 || (long)in.rlen*in.clen < PAR_NUMCELL_THRESHOLD1 || in.rlen <= k
+		if( k <= 1 || (long)in.rlen*in.clen < PAR_NUMCELL_THRESHOLD1 || in.rlen <= k
 			|| out.clen*8*k > PAR_INTERMEDIATE_SIZE_THRESHOLD || uaop == null || !out.isThreadSafe()) {
 			return cumaggregateUnaryMatrix(in, out, uop);
 		}
@@ -1569,6 +1571,7 @@ public class LibMatrixAgg
 		if( ixFn instanceof ReduceAll && (in.getNumRows() == 0 || in.getNumColumns() == 0) ) {
 			double val = Double.NaN;
 			switch( optype ) {
+				case PROD:         val = 1; break;
 				case KAHAN_SUM:
 				case KAHAN_SUM_SQ: val = 0; break;
 				case MIN:          val = Double.POSITIVE_INFINITY; break;
@@ -2932,6 +2935,9 @@ public class LibMatrixAgg
 				ret *= product(a.values(i), 0, alen);
 				ret *= (alen<n) ? 0 : 1;
 			}
+			else
+				ret *= (n==0) ? 1 : 0;
+			
 			//early abort (note: in case of NaNs this is an invalid optimization)
 			if( !NAN_AWARENESS && ret==0 ) break;
 		}
@@ -2955,6 +2961,8 @@ public class LibMatrixAgg
 				double tmp = product(a.values(i), 0, alen);
 				lc[i] = tmp * ((alen<n) ? 0 : 1);
 			}
+			else
+				lc[i] = (n==0) ? 1 : 0;
 		}
 	}
 	
@@ -2971,9 +2979,14 @@ public class LibMatrixAgg
 		double[] lc = c.set(1).valuesAt(0);
 		int[] cnt = new int[ n ]; 
 		for( int i=rl; i<ru; i++ ) {
-			if( a.isEmpty(i) ) continue;
-			countAgg(a.values(i), cnt, a.indexes(i), a.pos(i), a.size(i));
-			LibMatrixMult.vectMultiplyWrite(lc, a.values(i), lc, 0, a.pos(i), 0, a.size(i));
+			if( a.isEmpty(i) ){
+
+				countAgg(a.values(i), cnt, a.indexes(i), a.pos(i), a.size(i));
+				LibMatrixMult.vectMultiplyWrite(lc, a.values(i), lc, 0, a.pos(i), 0, a.size(i));
+			}
+			else if(n != 0)
+				for(int j = 0; j < n; j++)
+					lc[j] *= 0;
 		}
 		for( int j=0; j<n; j++ )
 			if( cnt[j] < ru-rl )

@@ -90,7 +90,7 @@ public class FrameReaderTextCell extends FrameReader
 			ValueType[] schema, String[] names, long rlen, long clen)
 		throws IOException
 	{
-		if( fs.isDirectory(path) ) {
+		if( fs.getFileStatus(path).isDirectory() ) {
 			FileInputFormat.addInputPath(job, path);
 			TextInputFormat informat = new TextInputFormat();
 			informat.configure(job);

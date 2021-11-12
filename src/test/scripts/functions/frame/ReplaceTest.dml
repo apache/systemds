@@ -19,10 +19,14 @@
 #
 #-------------------------------------------------------------
 
-X = read("src/test/resources/datasets/homes/homes.csv") 
+X = frame(data=["1", "500", "abc", "2.5", "TRUE", "abc", "klm"], rows=100, cols=7, schema=["INT32", "INT64", "STRING", "FP64", "BOOLEAN", "STRING", "STRING"])
 
-X = replace(target = X, pattern="north", replacement="south")
-X = replace(target = X, pattern="east", replacement="south")
-X = replace(target = X, pattern="west", replacement="south")
+X = replace(target = X, pattern=1, replacement=3)
+X = replace(target = X, pattern=500, replacement=3000)
+X = replace(target = X, pattern="abc", replacement="cba")
+X = replace(target = X, pattern=2.5, replacement=0.5)
+X = replace(target = X, pattern=TRUE, replacement=FALSE)
 
-print(toString(X))
+out = frame(data=["3", "3000", "cba", "0.5", "FALSE", "cba", "klm"], rows=100, cols=7, schema=["INT32", "INT64", "STRING", "FP64", "BOOLEAN", "STRING", "STRING"])
+isCorrect = as.integer(sum(as.matrix(out == X)) == (nrow(X) * ncol(X)))
+write(isCorrect, $out_S)

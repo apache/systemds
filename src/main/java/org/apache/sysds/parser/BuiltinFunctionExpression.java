@@ -1266,16 +1266,16 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			{
 				checkNumParameters(4);
 				if (in[3].getOutput().getValueType() != ValueType.INT64) 
-					throw new LanguageException("Fourth arugment, seed, to sample() must be an integer value.");
+					throw new LanguageException("Fourth argument, seed, to sample() must be an integer value.");
 				if (in[2].getOutput().getValueType() != ValueType.BOOLEAN ) 
-					throw new LanguageException("Third arugment to sample() must either denote replacement policy (boolean) or seed (integer).");
+					throw new LanguageException("Third argument to sample() must either denote replacement policy (boolean) or seed (integer).");
 			}
 			else if(in.length == 3) 
 			{
 				checkNumParameters(3);
 				if (in[2].getOutput().getValueType() != ValueType.BOOLEAN 
 						&& in[2].getOutput().getValueType() != ValueType.INT64 ) 
-					throw new LanguageException("Third arugment to sample() must either denote replacement policy (boolean) or seed (integer).");
+					throw new LanguageException("Third argument to sample() must either denote replacement policy (boolean) or seed (integer).");
 			}
 			
 			if ( check && in.length >= 3 
@@ -1544,6 +1544,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			break;
 
 		case DROP_INVALID_TYPE:
+		case VALUE_SWAP:
 			checkNumParameters(2);
 			checkMatrixFrameParam(getFirstExpr());
 			checkMatrixFrameParam(getSecondExpr());
@@ -1585,7 +1586,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 				checkNumParameters(1);
 				checkMatrixParam(getFirstExpr());
 				output.setDataType(DataType.MATRIX);
-				output.setDimensions(id.getDim2(), id.getDim1());
+				output.setDimensions(id.getDim1(), id.getDim2());
 				output.setBlocksize (id.getBlocksize());
 				output.setValueType(id.getValueType());
 			}

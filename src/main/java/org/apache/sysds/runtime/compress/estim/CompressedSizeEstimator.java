@@ -31,9 +31,10 @@ import java.util.concurrent.Future;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.CompressionSettings;
+import org.apache.sysds.runtime.compress.bitmap.ABitmap;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup.CompressionType;
-import org.apache.sysds.runtime.compress.utils.ABitmap;
 import org.apache.sysds.runtime.compress.utils.Util;
+import org.apache.sysds.runtime.controlprogram.parfor.stat.Timing;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.CommonThreadPool;
 
@@ -45,18 +46,8 @@ public abstract class CompressedSizeEstimator {
 
 	/** The Matrix Block to extract the compression estimates from */
 	final protected MatrixBlock _data;
-	/** The number of rows in the matrix block, extracted to a field because the matrix could be transposed */
-	final protected int _numRows;
-	/** The number of columns in the matrix block, extracted to a field because the matrix could be transposed */
-	final protected int _numCols;
 	/** The compression settings to use, for estimating the size, and compress the ColGroups. */
 	final protected CompressionSettings _cs;
-
-	/**
-	 * Boolean specifying if the _data is in transposed format. This is used to select the correct readers for the
-	 * extraction of bitmaps for the columns.
-	 */
-	protected boolean _transposed;
 
 	/**
 	 * Main Constructor for Compression Estimator.
@@ -68,18 +59,15 @@ public abstract class CompressedSizeEstimator {
 	 */
 	protected CompressedSizeEstimator(MatrixBlock data, CompressionSettings cs) {
 		_data = data;
-		_transposed = cs.transposed;
-		_numRows = _transposed ? _data.getNumColumns() : _data.getNumRows();
-		_numCols = _transposed ? _data.getNumRows() : _data.getNumColumns();
 		_cs = cs;
 	}
 
 	public int getNumRows() {
-		return _numRows;
+		return _cs.transposed ? _data.getNumColumns() : _data.getNumRows();
 	}
 
 	public int getNumColumns() {
-		return _numCols;
+		return _cs.transposed ? _data.getNumRows() : _data.getNumColumns();
 	}
 
 	public MatrixBlock getData() {
@@ -96,12 +84,6 @@ public abstract class CompressedSizeEstimator {
 		List<CompressedSizeInfoColGroup> sizeInfos = Arrays.asList(estimateIndividualColumnGroupSizes(k));
 		return new CompressedSizeInfo(sizeInfos);
 	}
-
-	/**
-	 * Multi threaded version of extracting Compression Size info from list of specified columns
-	 * 
-	 * @return
-	 */
 
 	/**
 	 * Multi threaded version of extracting Compression Size info from list of specified columns
@@ -144,7 +126,17 @@ public abstract class CompressedSizeEstimator {
 	}
 
 	private CompressedSizeInfoColGroup[] estimateIndividualColumnGroupSizes(int k) {
-		return (k > 1) ? CompressedSizeInfoColGroup(_numCols, k) : CompressedSizeInfoColGroup(_numCols);
+		final int _numCols = getNumColumns();
+		if(LOG.isDebugEnabled()) {
+			Timing time = new Timing(true);
+			CompressedSizeInfoColGroup[] ret = (k > 1) ? CompressedSizeInfoColGroup(_numCols,
+				k) : CompressedSizeInfoColGroup(_numCols);
+			LOG.debug("CompressedSizeInfo for each column [ms]:" + time.stop());
+			return ret;
+		}
+		else
+			return (k > 1) ? CompressedSizeInfoColGroup(_numCols, k) : CompressedSizeInfoColGroup(_numCols);
+
 	}
 
 	/**
@@ -164,20 +156,20 @@ public abstract class CompressedSizeEstimator {
 	 * @return The CompressedSizeInformation associated with the selected ColGroups.
 	 */
 	public CompressedSizeInfoColGroup estimateCompressedColGroupSize(int[] colIndexes) {
-		return estimateCompressedColGroupSize(colIndexes, 8, getNumRows());
+		return estimateCompressedColGroupSize(colIndexes, 8, worstCaseUpperBound(colIndexes));
 	}
 
 	/**
-	 * A method to extract the Compressed Size Info for a given list of columns, This method further limits the
-	 * estimated number of unique values, since in some cases the estimated number of uniques is estimated higher than
-	 * the number estimated in sub groups of the given colIndexes.
+	 * A method to extract the Compressed Size Info for a given list of columns, This method further limits the estimated
+	 * number of unique values, since in some cases the estimated number of uniques is estimated higher than the number
+	 * estimated in sub groups of the given colIndexes.
 	 * 
 	 * @param colIndexes         The columns to extract compression information from
 	 * @param estimate           An estimate of number of unique elements in these columns
 	 * @param nrUniqueUpperBound The upper bound of unique elements allowed in the estimate, can be calculated from the
-	 *                           number of unique elements estimated in sub columns multiplied together. This is
-	 *                           flexible in the sense that if the sample is small then this unique can be manually
-	 *                           edited like in CoCodeCostMatrixMult.
+	 *                           number of unique elements estimated in sub columns multiplied together. This is flexible
+	 *                           in the sense that if the sample is small then this unique can be manually edited like in
+	 *                           CoCodeCostMatrixMult.
 	 * 
 	 * @return The CompressedSizeInfoColGroup fro the given column indexes.
 	 */
@@ -195,7 +187,7 @@ public abstract class CompressedSizeEstimator {
 	 * @param g2 Second group
 	 * @return A joined compressed size estimation for the group.
 	 */
-	public CompressedSizeInfoColGroup estimateJoinCompressedSize(CompressedSizeInfoColGroup g1,
+	public final CompressedSizeInfoColGroup estimateJoinCompressedSize(CompressedSizeInfoColGroup g1,
 		CompressedSizeInfoColGroup g2) {
 		final int[] joined = Util.join(g1.getColumns(), g2.getColumns());
 		return estimateJoinCompressedSize(joined, g1, g2);
@@ -215,19 +207,21 @@ public abstract class CompressedSizeEstimator {
 	 */
 	public CompressedSizeInfoColGroup estimateJoinCompressedSize(int[] joined, CompressedSizeInfoColGroup g1,
 		CompressedSizeInfoColGroup g2) {
+
 		final int g1V = g1.getNumVals();
 		final int g2V = g2.getNumVals();
-		if((long) g1V * g2V > (long) Integer.MAX_VALUE)
+		final int worstCase = worstCaseUpperBound(joined);
+		final long max = Math.min((long) (g1V + 1) * (g2V + 1), worstCase);
+		if(max > (long) Integer.MAX_VALUE)
 			return null;
 
-		final int joinedMaxDistinct = (int) Math.min((long) g1V * (long) g2V, getNumRows());
 		if((g1.getMap() == null && g2V != 0) || (g2.getMap() == null && g2V != 0))
-			return estimateCompressedColGroupSize(joined, Math.max(g1V + 1, g2V + 1),
-				Math.min((g1V + 1) * (g2V + 1), getNumRows()));
+			return estimateCompressedColGroupSize(joined, Math.max(g1V, g2V), (int) max);
 		else
-			return estimateJoinCompressedSize(joined, g1, g2, joinedMaxDistinct);
-
+			return estimateJoinCompressedSize(joined, g1, g2, (int) max);
 	}
+
+	protected abstract int worstCaseUpperBound(int[] columns);
 
 	protected abstract CompressedSizeInfoColGroup estimateJoinCompressedSize(int[] joinedcols,
 		CompressedSizeInfoColGroup g1, CompressedSizeInfoColGroup g2, int joinedMaxDistinct);
@@ -242,23 +236,23 @@ public abstract class CompressedSizeEstimator {
 	 * @return The size factors estimated from the Bit Map.
 	 */
 	public EstimationFactors estimateCompressedColGroupSize(ABitmap ubm, int[] colIndexes) {
-		return estimateCompressedColGroupSize(ubm, colIndexes, _numRows, _cs);
+		return estimateCompressedColGroupSize(ubm, colIndexes, getNumRows(), _cs);
 	}
 
 	public static EstimationFactors estimateCompressedColGroupSize(ABitmap ubm, int[] colIndexes, int nrRows,
 		CompressionSettings cs) {
-		return EstimationFactors.computeSizeEstimationFactors(ubm, cs.validCompressions.contains(CompressionType.RLE),
-			colIndexes);
+		return EstimationFactors.computeSizeEstimationFactors(ubm, nrRows,
+			cs.validCompressions.contains(CompressionType.RLE), colIndexes);
 	}
 
-	private CompressedSizeInfoColGroup[] CompressedSizeInfoColGroup(int clen) {
+	protected CompressedSizeInfoColGroup[] CompressedSizeInfoColGroup(int clen) {
 		CompressedSizeInfoColGroup[] ret = new CompressedSizeInfoColGroup[clen];
 		for(int col = 0; col < clen; col++)
 			ret[col] = estimateCompressedColGroupSize(new int[] {col});
 		return ret;
 	}
 
-	private CompressedSizeInfoColGroup[] CompressedSizeInfoColGroup(int clen, int k) {
+	protected CompressedSizeInfoColGroup[] CompressedSizeInfoColGroup(int clen, int k) {
 		try {
 			ExecutorService pool = CommonThreadPool.get(k);
 			ArrayList<SizeEstimationTask> tasks = new ArrayList<>();
@@ -276,7 +270,7 @@ public abstract class CompressedSizeEstimator {
 		}
 	}
 
-	private static class SizeEstimationTask implements Callable<CompressedSizeInfoColGroup> {
+	protected static class SizeEstimationTask implements Callable<CompressedSizeInfoColGroup> {
 		private final CompressedSizeEstimator _estimator;
 		private final int[] _cols;
 
@@ -297,24 +291,6 @@ public abstract class CompressedSizeEstimator {
 	}
 
 	private int[] makeColIndexes() {
-		int[] colIndexes = new int[_numCols];
-		for(int i = 0; i < _numCols; i++) {
-			colIndexes[i] = i;
-		}
-		return colIndexes;
+		return Util.genColsIndices(getNumColumns());
 	}
-
-	@Override
-	public String toString() {
-		StringBuilder sb = new StringBuilder();
-		sb.append(this.getClass().getSimpleName());
-		sb.append(" transposed: ");
-		sb.append(_transposed);
-		sb.append(" cols: ");
-		sb.append(_numCols);
-		sb.append(" rows: ");
-		sb.append(_numRows);
-		return sb.toString();
-	}
-
 }

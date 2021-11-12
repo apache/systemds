@@ -79,7 +79,8 @@ public class FileFormatPropertiesLIBSVM extends FileFormatProperties implements 
 		return sparse;
 	}
 
-	@Override public String toString() {
+	@Override
+	public String toString() {
 		StringBuilder sb = new StringBuilder();
 		sb.append(" delim " + delim);
 		sb.append(" indexDelim " + indexDelim);

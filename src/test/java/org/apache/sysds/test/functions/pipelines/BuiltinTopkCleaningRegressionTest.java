@@ -35,7 +35,7 @@ public class BuiltinTopkCleaningRegressionTest extends AutomatedTestBase{
 	private final static String OUTPUT = RESOURCE+"intermediates/regression/";
 	private static final String PARAM_DIR = "./scripts/pipelines/properties/";
 	private final static String PARAM = PARAM_DIR + "param.csv";
-	private final static String PRIMITIVES = PARAM_DIR + "primitives.csv";
+	private final static String PRIMITIVES = PARAM_DIR + "testPrimitives.csv";
 
 	@Override
 	public void setUp() {

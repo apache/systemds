@@ -51,7 +51,6 @@ public class WriterTextCSV extends MatrixWriter
 		_props = props;
 	}
 	
-	@SuppressWarnings("resource")
 	@Override
 	public final void writeMatrixToHDFS(MatrixBlock src, String fname, long rlen, long clen, int blen, long nnz, boolean diag) 
 		throws IOException, DMLRuntimeException 
@@ -76,7 +75,6 @@ public class WriterTextCSV extends MatrixWriter
 		IOUtilFunctions.deleteCrcFilesFromLocalFileSystem(fs, path);
 	}
 
-	@SuppressWarnings("resource")
 	@Override
 	public final void writeEmptyMatrixToHDFS(String fname, long rlen, long clen, int blen) 
 		throws IOException, DMLRuntimeException 
@@ -238,7 +236,7 @@ public class WriterTextCSV extends MatrixWriter
 		}
 	}
 
-	@SuppressWarnings({ "unchecked", "resource" })
+	@SuppressWarnings({ "unchecked" })
 	public final void addHeaderToCSV(String srcFileName, String destFileName, long rlen, long clen) 
 		throws IOException 
 	{
@@ -283,7 +281,7 @@ public class WriterTextCSV extends MatrixWriter
 		}
 		sb.append('\n');
 
-		if (fs.isDirectory(srcFilePath)) {
+		if (fs.getFileStatus(srcFilePath).isDirectory()) {
 
 			// compute sorted order among part files
 			ArrayList<Path> files=new ArrayList<>();
@@ -320,7 +318,7 @@ public class WriterTextCSV extends MatrixWriter
 			fs.delete(destFilePath, true);  // delete the file, but preserve the directory structure
 			fs.rename(srcFilePath, destFilePath); // move the data 
 		
-		} else if (fs.isFile(srcFilePath)) {
+		} else if (fs.getFileStatus(srcFilePath).isFile()) {
 			// create destination file
 			OutputStream out = fs.create(destFilePath, true);
 			

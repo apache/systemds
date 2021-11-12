@@ -21,55 +21,34 @@ package org.apache.sysds.runtime.compress.colgroup;
 
 import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
 import org.apache.sysds.runtime.functionobjects.Builtin;
+import org.apache.sysds.runtime.functionobjects.ValueFunction;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
 
-public class ColGroupEmpty extends ColGroupCompressed {
+public class ColGroupEmpty extends AColGroupCompressed {
 	private static final long serialVersionUID = -2307677253622099958L;
 
-	/**
-	 * Constructor for serialization
-	 * 
-	 * @param numRows Number of rows contained
-	 */
-	protected ColGroupEmpty(int numRows) {
-		super(numRows);
+	/** Constructor for serialization */
+	protected ColGroupEmpty() {
+		super();
 	}
 
 	/**
 	 * Constructs an Constant Colum Group, that contains only one tuple, with the given value.
 	 * 
 	 * @param colIndices The Colum indexes for the column group.
-	 * @param numRows    The number of rows contained in the group.
 	 */
-	public ColGroupEmpty(int[] colIndices, int numRows) {
-		super(colIndices, numRows);
+	public ColGroupEmpty(int[] colIndices) {
+		super(colIndices);
 	}
 
-	public static ColGroupEmpty generate(int nCol, int nRow) {
+	public static ColGroupEmpty generate(int nCol) {
 		int[] cols = new int[nCol];
 		for(int i = 0; i < nCol; i++) {
 			cols[i] = i;
 		}
-		return new ColGroupEmpty(cols, nRow);
-	}
-
-	@Override
-	protected void computeRowSums(double[] c, boolean square, int rl, int ru) {
-		// do nothing
-	}
-
-	@Override
-	protected void computeColSums(double[] c, boolean square) {
-		// do nothing
-	}
-
-	@Override
-	protected void computeRowMxx(double[] c, Builtin builtin, int rl, int ru) {
-		for(int i = rl; i < ru; i++)
-			c[i] = builtin.execute(c[i], 0);
-
+		return new ColGroupEmpty(cols);
 	}
 
 	@Override
@@ -83,23 +62,13 @@ public class ColGroupEmpty extends ColGroupCompressed {
 	}
 
 	@Override
-	public void decompressToBlockSafe(MatrixBlock target, int rl, int ru, int offT) {
+	public void decompressToBlock(MatrixBlock target, int rl, int ru, int offT) {
 		// do nothing.
 	}
 
 	@Override
-	public void decompressToBlockUnSafe(MatrixBlock target, int rl, int ru, int offT) {
-		// do nothing.
-	}
-
-	@Override
-	public double get(int r, int c) {
+	public double getIdx(int r, int colIdx) {
 		return 0;
-	}
-
-	@Override
-	public void leftMultByMatrix(MatrixBlock a, MatrixBlock c, int rl, int ru) {
-		// do nothing.
 	}
 
 	@Override
@@ -107,20 +76,38 @@ public class ColGroupEmpty extends ColGroupCompressed {
 		double val0 = op.executeScalar(0);
 		if(val0 == 0)
 			return this;
-		return new ColGroupConst(_colIndexes, _numRows, new Dictionary(new double[_colIndexes.length]).apply(op));
+		return new ColGroupConst(_colIndexes, new Dictionary(new double[_colIndexes.length]).inplaceScalarOp(op));
 	}
 
 	@Override
-	public AColGroup binaryRowOp(BinaryOperator op, double[] v, boolean sparseSafe, boolean left) {
-		if(sparseSafe)
+	public AColGroup binaryRowOpLeft(BinaryOperator op, double[] v, boolean isRowSafe) {
+		if(isRowSafe)
 			return this;
-		return new ColGroupConst(_colIndexes, _numRows,
-			new Dictionary(new double[_colIndexes.length]).applyBinaryRowOp(op, v, true, _colIndexes, left));
+		final ValueFunction fn = op.fn;
+		final double[] retVals = new double[_colIndexes.length];
+		final int lenV = _colIndexes.length;
+		boolean allZero = true;
+		for(int i = 0; i < lenV; i++)
+			allZero = 0 == (retVals[i] = fn.execute(v[_colIndexes[i]], 0)) && allZero;
+
+		if(allZero)
+			return this;
+		return new ColGroupConst(_colIndexes, new Dictionary(retVals));
 	}
 
 	@Override
-	public void countNonZerosPerRow(int[] rnnz, int rl, int ru) {
-		// do nothing.
+	public AColGroup binaryRowOpRight(BinaryOperator op, double[] v, boolean isRowSafe) {
+		if(isRowSafe)
+			return this;
+		final ValueFunction fn = op.fn;
+		final double[] retVals = new double[_colIndexes.length];
+		final int lenV = _colIndexes.length;
+		boolean allZero = true;
+		for(int i = 0; i < lenV; i++)
+			allZero = 0 == (retVals[i] = fn.execute(0, v[_colIndexes[i]])) && allZero ;
+		if(allZero)
+			return this;
+		return new ColGroupConst(_colIndexes, new Dictionary(retVals));
 	}
 
 	@Override
@@ -129,48 +116,7 @@ public class ColGroupEmpty extends ColGroupCompressed {
 	}
 
 	@Override
-	public double[] getValues() {
-		return null;
-	}
-
-	@Override
-	public void addMinMax(double[] ret) {
-		// do nothing
-	}
-
-	@Override
-	public boolean isLossy() {
-		return false;
-	}
-
-	@Override
-	protected double computeMxx(double c, Builtin builtin) {
-		return builtin.execute(c, 0);
-	}
-
-	@Override
-	protected void computeColMxx(double[] c, Builtin builtin) {
-		for(int col : _colIndexes)
-			c[col] = builtin.execute(c[col], 0);
-	}
-
-	@Override
-	protected void computeSum(double[] c, boolean square) {
-		// do nothing
-	}
-
-	@Override
-	protected boolean sameIndexStructure(ColGroupCompressed that) {
-		return that instanceof ColGroupEmpty || that instanceof ColGroupConst;
-	}
-
-	@Override
-	public MatrixBlock getValuesAsBlock() {
-		return new MatrixBlock(0, 0, false);
-	}
-
-	@Override
-	public void tsmm(MatrixBlock ret) {
+	public void leftMultByMatrix(MatrixBlock a, MatrixBlock c, int rl, int ru) {
 		// do nothing
 	}
 
@@ -180,13 +126,13 @@ public class ColGroupEmpty extends ColGroupCompressed {
 	}
 
 	@Override
-	public boolean isDense() {
-		return false;
+	public void tsmmAColGroup(AColGroup other, MatrixBlock result) {
+		// do nothing
 	}
 
 	@Override
 	public AColGroup copy() {
-		return new ColGroupEmpty(_colIndexes, _numRows);
+		return new ColGroupEmpty(_colIndexes);
 	}
 
 	@Override
@@ -195,18 +141,18 @@ public class ColGroupEmpty extends ColGroupCompressed {
 	}
 
 	@Override
-	public long getNumberNonZeros() {
+	public long getNumberNonZeros(int nRows) {
 		return 0;
 	}
 
 	@Override
 	protected AColGroup sliceSingleColumn(int idx) {
-		return new ColGroupEmpty(new int[] {0}, _numRows);
+		return new ColGroupEmpty(new int[] {0});
 	}
 
 	@Override
 	protected AColGroup sliceMultiColumns(int idStart, int idEnd, int[] outputCols) {
-		return new ColGroupEmpty(outputCols, _numRows);
+		return new ColGroupEmpty(outputCols);
 	}
 
 	@Override
@@ -217,8 +163,75 @@ public class ColGroupEmpty extends ColGroupCompressed {
 	@Override
 	public AColGroup replace(double pattern, double replace) {
 		if(pattern == 0)
-			return ColGroupFactory.getColGroupConst(getNumRows(), _colIndexes, replace);
+			return ColGroupFactory.genColGroupConst(_colIndexes, replace);
 		else
-			return new ColGroupEmpty(_colIndexes, getNumRows());
+			return new ColGroupEmpty(_colIndexes);
+	}
+
+	@Override
+	public final double getMin() {
+		return 0;
+	}
+
+	@Override
+	public final double getMax() {
+		return 0;
+	}
+
+	@Override
+	public void computeColSums(double[] c, int nRows) {
+		// do nothing
+	}
+
+	@Override
+	protected double computeMxx(double c, Builtin builtin) {
+		return builtin.execute(c, 0);
+	}
+
+	@Override
+	protected void computeColMxx(double[] c, Builtin builtin) {
+		for(int colId : _colIndexes)
+			c[colId] = builtin.execute(c[colId], 0);
+	}
+
+	@Override
+	protected void computeSum(double[] c, int nRows, boolean square) {
+		// do nothing
+	}
+
+	@Override
+	protected void computeRowSums(double[] c, boolean square, int rl, int ru) {
+		// do nothing
+	}
+
+	@Override
+	protected void computeColSums(double[] c, int nRows, boolean square) {
+		// do nothing
+	}
+
+	@Override
+	protected void computeRowMxx(double[] c, Builtin builtin, int rl, int ru) {
+		for(int r = rl; r < ru; r++)
+			c[r] = builtin.execute(c[r], 0);
+	}
+
+	@Override
+	protected void tsmm(double[] result, int numColumns, int nRows) {
+		// do nothing
+	}
+
+	@Override
+	protected void computeProduct(double[] c, int nRows) {
+		// do nothing
+	}
+
+	@Override
+	protected void computeRowProduct(double[] c, int rl, int ru) {
+		// do nothing
+	}
+
+	@Override
+	protected void computeColProduct(double[] c, int nRows) {
+		// do nothing
 	}
 }

@@ -419,7 +419,6 @@ public class RandSPInstruction extends UnarySPInstruction {
 		runtimeSeed = null;
 	}
 
-	@SuppressWarnings("resource")
 	private void generateRandDataMatrix(SparkExecutionContext sec) {
 		long lrows = sec.getScalarInput(rows).getLongValue();
 		long lcols = sec.getScalarInput(cols).getLongValue();
@@ -528,7 +527,6 @@ public class RandSPInstruction extends UnarySPInstruction {
 		sec.setRDDHandleForVariable(output.getName(), out);
 	}
 
-	@SuppressWarnings("resource")
 	private void generateRandDataTensor(SparkExecutionContext sec) {
 		int[] tDims = DataConverter.getTensorDimensions(sec, dims);
 
@@ -621,7 +619,6 @@ public class RandSPInstruction extends UnarySPInstruction {
 		}
 		sec.setRDDHandleForVariable(output.getName(), out);
 	}
-	@SuppressWarnings("resource")
 	private void generateSequence(SparkExecutionContext sec) {
 		double lfrom = sec.getScalarInput(seq_from).getDoubleValue();
 		double lto = sec.getScalarInput(seq_to).getDoubleValue();

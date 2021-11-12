@@ -22,6 +22,7 @@ org.apache.sysds.parser.dml
 org.apache.sysds.runtime
 org.apache.sysds.runtime.codegen
 org.apache.sysds.runtime.compress
+org.apache.sysds.runtime.compress.bitmap
 org.apache.sysds.runtime.compress.cocode
 org.apache.sysds.runtime.compress.colgroup
 org.apache.sysds.runtime.compress.colgroup.dictionary
@@ -61,6 +62,7 @@ org.apache.sysds.runtime.instructions.spark.utils
 org.apache.sysds.runtime.io
 org.apache.sysds.runtime.io.hdf5
 org.apache.sysds.runtime.io.hdf5.message
+org.apache.sysds.runtime.iogen
 org.apache.sysds.runtime.lineage
 org.apache.sysds.runtime.matrix.data
 org.apache.sysds.runtime.matrix.operators

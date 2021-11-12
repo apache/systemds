@@ -25,12 +25,13 @@ import java.io.IOException;
 import java.util.Arrays;
 
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory.MAP_TYPE;
+import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.utils.MemoryEstimates;
 
 public class MapToByte extends AMapToData {
 
 	private static final long serialVersionUID = -2498505439667351828L;
-	
+
 	private final byte[] _data;
 
 	public MapToByte(int unique, int size) {
@@ -97,7 +98,53 @@ public class MapToByte extends AMapToData {
 		return new MapToByte(unique, data);
 	}
 
-	public byte[] getBytes(){
+	public byte[] getBytes() {
 		return _data;
+	}
+
+	@Override
+	public void replace(int v, int r) {
+		byte cv = (byte) v;
+		byte rv = (byte) r;
+		for(int i = 0; i < size(); i++)
+			if(_data[i] == cv)
+				_data[i] = rv;
+	}
+
+	@Override
+	public void copy(AMapToData d) {
+		if(d instanceof MapToChar) {
+			char[] dd = ((MapToChar) d).getChars();
+			for(int i = 0; i < size(); i++)
+				_data[i] = (byte) dd[i];
+		}
+		else {
+			for(int i = 0; i < size(); i++)
+				set(i, d.getIndex(i));
+		}
+	}
+
+	@Override
+	public void preAggregateDense(MatrixBlock m, MatrixBlock pre, int rl, int ru, int cl, int cu) {
+		final int nRow = m.getNumColumns();
+		final int nVal = pre.getNumColumns();
+		final double[] preAV = pre.getDenseBlockValues();
+		final double[] mV = m.getDenseBlockValues();
+		final int blockSize = 4000;
+		for(int block = cl; block < cu; block += blockSize) {
+			final int blockEnd = Math.min(block + blockSize, nRow);
+			for(int rowLeft = rl, offOut = 0; rowLeft < ru; rowLeft++, offOut += nVal) {
+				final int offLeft = rowLeft * nRow;
+				for(int rc = block; rc < blockEnd; rc++) {
+					final int idx = _data[rc] & 0xFF;
+					preAV[offOut + idx] += mV[offLeft + rc];
+				}
+			}
+		}
+	}
+
+	@Override
+	public int getUpperBoundValue() {
+		return 255;
 	}
 }

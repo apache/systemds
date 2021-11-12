@@ -26,11 +26,8 @@ import java.util.Arrays;
 
 import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
-import org.apache.sysds.runtime.data.DenseBlock;
-import org.apache.sysds.runtime.data.DenseBlockFP64;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.functionobjects.ValueFunction;
-import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
 import org.apache.sysds.utils.MemoryEstimates;
@@ -98,7 +95,7 @@ public class Dictionary extends ADictionary {
 	}
 
 	@Override
-	public Dictionary apply(ScalarOperator op) {
+	public Dictionary inplaceScalarOp(ScalarOperator op) {
 		// in-place modification of the dictionary
 		int len = size();
 		for(int i = 0; i < len; i++)
@@ -118,51 +115,53 @@ public class Dictionary extends ADictionary {
 	}
 
 	@Override
-	public Dictionary applyBinaryRowOpRight(BinaryOperator op, double[] v, boolean sparseSafe, int[] colIndexes) {
-		ValueFunction fn = op.fn;
+	public Dictionary binOpRight(BinaryOperator op, double[] v, int[] colIndexes) {
+		final ValueFunction fn = op.fn;
+		final double[] retVals = new double[_values.length];
 		final int len = size();
 		final int lenV = colIndexes.length;
-		if(sparseSafe) {
-			for(int i = 0; i < len; i++) {
-				_values[i] = fn.execute(_values[i], v[colIndexes[i % lenV]]);
-			}
-			return this;
-		}
-		else {
-			double[] values = new double[len + lenV];
-			int i = 0;
-			for(; i < len; i++) {
-				values[i] = fn.execute(_values[i], v[colIndexes[i % lenV]]);
-			}
-			for(; i < len + lenV; i++) {
-				values[i] = fn.execute(0, v[colIndexes[i % lenV]]);
-			}
-			return new Dictionary(values);
-		}
+		for(int i = 0; i < len; i++)
+			retVals[i] = fn.execute(_values[i], v[colIndexes[i % lenV]]);
+		return new Dictionary(retVals);
 	}
 
 	@Override
-	public Dictionary applyBinaryRowOpLeft(BinaryOperator op, double[] v, boolean sparseSafe, int[] colIndexes) {
+	public final Dictionary binOpLeft(BinaryOperator op, double[] v, int[] colIndexes) {
+		final ValueFunction fn = op.fn;
+		final double[] retVals = new double[_values.length];
+		final int len = size();
+		final int lenV = colIndexes.length;
+		for(int i = 0; i < len; i++)
+			retVals[i] = fn.execute(v[colIndexes[i % lenV]], _values[i]);
+		return new Dictionary(retVals);
+	}
+
+	@Override
+	public Dictionary applyBinaryRowOpRightAppendNewEntry(BinaryOperator op, double[] v, int[] colIndexes) {
 		ValueFunction fn = op.fn;
 		final int len = size();
 		final int lenV = colIndexes.length;
-		if(sparseSafe) {
-			for(int i = 0; i < len; i++) {
-				_values[i] = fn.execute(v[colIndexes[i % lenV]], _values[i]);
-			}
-			return this;
-		}
-		else {
-			double[] values = new double[len + lenV];
-			int i = 0;
-			for(; i < len; i++) {
-				values[i] = fn.execute(v[colIndexes[i % lenV]], _values[i]);
-			}
-			for(; i < len + lenV; i++) {
-				values[i] = fn.execute(v[colIndexes[i % lenV]], 0);
-			}
-			return new Dictionary(values);
-		}
+		final double[] values = new double[len + lenV];
+		int i = 0;
+		for(; i < len; i++)
+			values[i] = fn.execute(_values[i], v[colIndexes[i % lenV]]);
+		for(; i < len + lenV; i++)
+			values[i] = fn.execute(0, v[colIndexes[i % lenV]]);
+		return new Dictionary(values);
+	}
+
+	@Override
+	public final Dictionary applyBinaryRowOpLeftAppendNewEntry(BinaryOperator op, double[] v, int[] colIndexes) {
+		ValueFunction fn = op.fn;
+		final int len = size();
+		final int lenV = colIndexes.length;
+		final double[] values = new double[len + lenV];
+		int i = 0;
+		for(; i < len; i++)
+			values[i] = fn.execute(v[colIndexes[i % lenV]], _values[i]);
+		for(; i < len + lenV; i++)
+			values[i] = fn.execute(v[colIndexes[i % lenV]], 0);
+		return new Dictionary(values);
 	}
 
 	@Override
@@ -298,8 +297,8 @@ public class Dictionary extends ADictionary {
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
 
-		sb.append("Dictionary: " + hashCode());
-		sb.append("\n " + Arrays.toString(_values));
+		sb.append("Dictionary:");
+		sb.append(Arrays.toString(_values));
 		return sb.toString();
 	}
 
@@ -441,13 +440,8 @@ public class Dictionary extends ADictionary {
 	}
 
 	@Override
-	public MatrixBlockDictionary getAsMatrixBlockDictionary(int nCol) {
-		final int nRow = _values.length / nCol;
-		DenseBlock dictV = new DenseBlockFP64(new int[] {nRow, nCol}, _values);
-		MatrixBlock dictM = new MatrixBlock(nRow, nCol, dictV);
-		dictM.getNonZeros();
-		dictM.examSparsity();
-		return new MatrixBlockDictionary(dictM);
+	public MatrixBlockDictionary getMBDict(int nCol) {
+		return new MatrixBlockDictionary(_values, nCol);
 	}
 
 	@Override
@@ -475,12 +469,9 @@ public class Dictionary extends ADictionary {
 	}
 
 	@Override
-	public Dictionary preaggValuesFromDense(int numVals, int[] colIndexes, int[] aggregateColumns, double[] b,
-		int cut) {
+	public Dictionary preaggValuesFromDense(int numVals, int[] colIndexes, int[] aggregateColumns, double[] b, int cut) {
 		double[] ret = new double[numVals * aggregateColumns.length];
-		for(int k = 0, off = 0;
-			k < numVals * colIndexes.length;
-			k += colIndexes.length, off += aggregateColumns.length) {
+		for(int k = 0, off = 0; k < numVals * colIndexes.length; k += colIndexes.length, off += aggregateColumns.length) {
 			for(int h = 0; h < colIndexes.length; h++) {
 				int idb = colIndexes[h] * cut;
 				double v = _values[k + h];
@@ -493,19 +484,52 @@ public class Dictionary extends ADictionary {
 	}
 
 	@Override
-	public ADictionary replace(double pattern, double replace, int nCol, boolean safe) {
-		if(!safe && replace == 0)
-			throw new NotImplementedException("Not implemented Replacement of 0");
-		else {
-			double[] retV = new double[_values.length];
-			for(int i = 0; i < _values.length; i++) {
-				final double v = _values[i];
-				if(v == pattern)
-					retV[i] = replace;
-				else
-					retV[i] = v;
-			}
-			return new Dictionary(retV);
+	public ADictionary replace(double pattern, double replace, int nCol) {
+		double[] retV = new double[_values.length];
+		for(int i = 0; i < _values.length; i++) {
+			final double v = _values[i];
+			if(v == pattern)
+				retV[i] = replace;
+			else
+				retV[i] = v;
 		}
+		return new Dictionary(retV);
+	}
+
+	@Override
+	public ADictionary replaceZeroAndExtend(double replace, int nCol) {
+		double[] retV = new double[_values.length + nCol];
+		for(int i = 0; i < _values.length; i++) {
+			final double v = _values[i];
+			if(v == 0)
+				retV[i] = replace;
+			else
+				retV[i] = v;
+		}
+		for(int i = _values.length; i < _values.length + nCol; i++)
+			retV[i] = replace;
+
+		return new Dictionary(retV);
+	}
+
+	@Override
+	public double product(int[] counts, int nCol) {
+		double ret = 1;
+		final int len = _values.length / nCol;
+		for(int i = 0; i < len; i++) {
+			for(int j = i * nCol; j < (i + 1) * nCol; j++) {
+				double v = _values[j];
+				if(v != 0)
+					ret *= Math.pow(v, counts[i]);
+				else
+					ret = 0;
+			}
+		}
+		return ret;
+	}
+
+	@Override
+	public void colProduct(double[] res, int[] counts, int[] colIndexes) {
+		throw new NotImplementedException();
 	}
 }

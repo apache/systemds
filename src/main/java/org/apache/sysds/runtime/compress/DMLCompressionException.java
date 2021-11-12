@@ -24,16 +24,8 @@ import org.apache.sysds.runtime.DMLRuntimeException;
 public class DMLCompressionException extends DMLRuntimeException {
 	private static final long serialVersionUID = 1L;
 
-	public DMLCompressionException() {
-		super("Invalid execution on Compressed MatrixBlock");
-	}
-
 	public DMLCompressionException(String string) {
 		super(string);
-	}
-
-	public DMLCompressionException(Exception e) {
-		super(e);
 	}
 
 	public DMLCompressionException(String string, Exception ex) {

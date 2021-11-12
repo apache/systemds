@@ -38,7 +38,6 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.runtime.controlprogram.caching.CacheStatistics;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
-import org.apache.sysds.runtime.controlprogram.federated.FederatedData;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest.RequestType;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedStatistics.FedStatsCollection.CacheStatsCollection;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedStatistics.FedStatsCollection.GCStatsCollection;
@@ -51,7 +50,7 @@ public class FederatedStatistics {
 	private static Set<Pair<String, Integer>> _fedWorkerAddresses = new HashSet<>();
 
 	public static void registerFedWorker(String host, int port) {
-		_fedWorkerAddresses.add(new ImmutablePair<>(host, new Integer(port)));
+		_fedWorkerAddresses.add(new ImmutablePair<>(host, Integer.valueOf(port)));
 	}
 
 	public static Set<Pair<String, Integer>> getFedWorkerAddresses() {

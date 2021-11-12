@@ -21,7 +21,6 @@ package org.apache.sysds.runtime.compress.readers;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.utils.DblArray;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
@@ -30,20 +29,20 @@ import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 public abstract class ReaderColumnSelection {
 
 	protected static final Log LOG = LogFactory.getLog(ReaderColumnSelection.class.getName());
-	protected int[] _colIndexes = null;
-	protected int _numRows = -1;
-	protected int _lastRow = -1;
+	protected static final DblArray emptyReturn = new DblArray();
 
-	final protected DblArray emptyReturn = new DblArray();
+	protected final int[] _colIndexes;
+	protected final DblArray reusableReturn;
+	protected final double[] reusableArr;
+	protected final int _ru;
 
-	protected DblArray reusableReturn;
-	protected double[] reusableArr;
+	/** rl is used as a pointer to current row */
+	protected int _rl;
 
-	protected ReaderColumnSelection(int[] colIndexes, int numRows) {
+	protected ReaderColumnSelection(int[] colIndexes, int rl, int ru) {
 		_colIndexes = colIndexes;
-		_numRows = numRows;
-		_lastRow = -1;
-
+		_rl = rl;
+		_ru = ru;
 		reusableArr = new double[colIndexes.length];
 		reusableReturn = new DblArray(reusableArr);
 	}
@@ -69,34 +68,40 @@ public abstract class ReaderColumnSelection {
 	protected abstract DblArray getNextRow();
 
 	public int getCurrentRowIndex() {
-		return _lastRow;
+		return _rl;
 	}
 
 	public static ReaderColumnSelection createReader(MatrixBlock rawBlock, int[] colIndices, boolean transposed) {
+		final int rl = 0;
+		final int ru = transposed ? rawBlock.getNumColumns() : rawBlock.getNumRows();
+		return createReader(rawBlock, colIndices, transposed, rl, ru);
+	}
+
+	public static ReaderColumnSelection createReader(MatrixBlock rawBlock, int[] colIndices, boolean transposed, int rl,
+		int ru) {
+		checkInput(rawBlock, colIndices);
+		rl = rl - 1;
+
+		if(transposed) {
+			if(rawBlock.isInSparseFormat())
+				return new ReaderColumnSelectionSparseTransposed(rawBlock, colIndices, rl, ru);
+			else if(rawBlock.getDenseBlock().numBlocks() > 1)
+				return new ReaderColumnSelectionDenseMultiBlockTransposed(rawBlock, colIndices, rl, ru);
+			else
+				return new ReaderColumnSelectionDenseSingleBlockTransposed(rawBlock, colIndices, rl, ru);
+		}
+
+		if(rawBlock.isInSparseFormat())
+			return new ReaderColumnSelectionSparse(rawBlock, colIndices, rl, ru);
+		else if(rawBlock.getDenseBlock().numBlocks() > 1)
+			return new ReaderColumnSelectionDenseMultiBlock(rawBlock, colIndices, rl, ru);
+		return new ReaderColumnSelectionDenseSingleBlock(rawBlock, colIndices, rl, ru);
+	}
+
+	private static void checkInput(MatrixBlock rawBlock, int[] colIndices) {
 		if(colIndices.length <= 1)
 			throw new DMLCompressionException("Column selection reader should not be done on single column groups");
-		int[] in = colIndices.clone();
-
-		if(rawBlock.isInSparseFormat() && transposed && rawBlock.getSparseBlock() != null)
-			return new ReaderColumnSelectionSparseTransposed(rawBlock, in);
-		else if(rawBlock.isInSparseFormat() && rawBlock.getSparseBlock() != null)
-			return new ReaderColumnSelectionSparse(rawBlock, in);
-		else if(rawBlock.getDenseBlock() != null && rawBlock.getDenseBlock().numBlocks() > 1)
-			return transposed ? new ReaderColumnSelectionDenseMultiBlockTransposed(rawBlock,
-				in) : new ReaderColumnSelectionDenseMultiBlock(rawBlock, in);
-		else if(rawBlock.getDenseBlock() != null)
-			return transposed ? new ReaderColumnSelectionDenseSingleBlockTransposed(rawBlock,
-				in) : new ReaderColumnSelectionDenseSingleBlock(rawBlock, in);
-		else
+		if(rawBlock.getSparseBlock() == null && rawBlock.getDenseBlock() == null)
 			throw new DMLCompressionException("Input Block was null");
-
 	}
-
-	public static ReaderColumnSelection createCompressedReader(CompressedMatrixBlock compBlock, int[] colIndices) {
-		if(colIndices.length <= 1)
-			throw new DMLCompressionException("Compressed reader should not be done on single column groups");
-		int[] in = colIndices.clone();
-		return new ReaderCompressedSelection(compBlock, in);
-	}
-
 }

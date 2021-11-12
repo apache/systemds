@@ -280,7 +280,6 @@ public class LineageItemUtils {
 	}
 	
 	@Deprecated
-	@SuppressWarnings("unused")
 	public static LineageItem rDecompress(LineageItem item) {
 		if (item.getType() == LineageItemType.Dedup) {
 			LineageItem dedupInput = rDecompress(item.getInputs()[0]);

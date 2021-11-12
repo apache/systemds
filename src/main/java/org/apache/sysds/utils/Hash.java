@@ -75,7 +75,7 @@ public class Hash {
 		switch(ht) {
 			case StandardJava:
 				// Here just for reference
-				return new Double(o).hashCode();
+				return Double.valueOf(o).hashCode();
 			case LinearHash:
 				// Altho Linear Hashing is locality sensitive, it is not in this case
 				// since the bit positions for the double value is split in exponent and mantissa.

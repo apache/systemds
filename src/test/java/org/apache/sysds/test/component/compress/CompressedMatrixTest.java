@@ -21,16 +21,16 @@ package org.apache.sysds.test.component.compress;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.util.Collection;
+import java.util.Random;
 
-import org.apache.commons.math3.random.Well1024a;
 import org.apache.sysds.common.Types.CorrectionLocationType;
-import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.CompressionSettingsBuilder;
@@ -46,9 +46,7 @@ import org.apache.sysds.runtime.functionobjects.Plus;
 import org.apache.sysds.runtime.functionobjects.PlusMultiply;
 import org.apache.sysds.runtime.functionobjects.ReduceAll;
 import org.apache.sysds.runtime.matrix.data.LibMatrixCountDistinct;
-import org.apache.sysds.runtime.matrix.data.LibMatrixDatagen;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
-import org.apache.sysds.runtime.matrix.data.RandomMatrixGenerator;
 import org.apache.sysds.runtime.matrix.operators.AggregateOperator;
 import org.apache.sysds.runtime.matrix.operators.AggregateTernaryOperator;
 import org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator;
@@ -58,7 +56,6 @@ import org.apache.sysds.runtime.matrix.operators.CountDistinctOperator.CountDist
 import org.apache.sysds.runtime.matrix.operators.RightScalarOperator;
 import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
 import org.apache.sysds.runtime.matrix.operators.TernaryOperator;
-import org.apache.sysds.runtime.util.DataConverter;
 import org.apache.sysds.test.TestUtils;
 import org.apache.sysds.test.component.compress.TestConstants.MatrixTypology;
 import org.apache.sysds.test.component.compress.TestConstants.OverLapping;
@@ -88,25 +85,24 @@ public class CompressedMatrixTest extends AbstractCompressedUnaryTests {
 		try {
 			if(!(cmb instanceof CompressedMatrixBlock))
 				return; // Input was not compressed then just pass test
-
-			for(int i = 0; i < rows; i++)
+			Random r = new Random();
+			final int min = r.nextInt(rows);
+			final int max = Math.min(r.nextInt(rows - min) + min, min + 1000);
+			for(int i = min; i < max; i++)
 				for(int j = 0; j < cols; j++) {
-					double ulaVal = mb.getValue(i, j);
-					double claVal = cmb.getValue(i, j); // calls quickGetValue internally
+					final double ulaVal = mb.getValue(i, j);
+					final double claVal = cmb.getValue(i, j); // calls quickGetValue internally
 					if(_cs != null && (_cs.lossy || overlappingType == OverLapping.SQUASH))
-						assertTrue(this.toString(), TestUtils.compareCellValue(ulaVal, claVal, lossyTolerance, false));
-					else if(OverLapping.effectOnOutput(overlappingType)) {
-						double percentDistance = TestUtils.getPercentDistance(ulaVal, claVal, true);
-						assertTrue(this.toString(), percentDistance > .99);
-					}
+						assertTrue(bufferedToString, TestUtils.compareCellValue(ulaVal, claVal, lossyTolerance, false));
+					else if(OverLapping.effectOnOutput(overlappingType))
+						assertTrue(bufferedToString, TestUtils.getPercentDistance(ulaVal, claVal, true) > .99);
 					else
-						TestUtils.compareScalarBitsJUnit(ulaVal, claVal, 0,
-							"Coordinates: " + i + " " + j + "\n" + this.toString()); // Should be exactly same value
+						TestUtils.compareScalarBitsJUnit(ulaVal, claVal, 0, bufferedToString);
 				}
 		}
 		catch(Exception e) {
 			e.printStackTrace();
-			throw new RuntimeException(this.toString() + "\n" + e.getMessage(), e);
+			throw new RuntimeException(bufferedToString + "\n" + e.getMessage(), e);
 		}
 	}
 
@@ -115,50 +111,24 @@ public class CompressedMatrixTest extends AbstractCompressedUnaryTests {
 		try {
 			if(!(cmb instanceof CompressedMatrixBlock))
 				return; // Input was not compressed then just pass test
-
-			for(int i = 0; i < rows; i++)
+			Random r = new Random();
+			final int min = r.nextInt(rows);
+			final int max = Math.min(r.nextInt(rows - min) + min, min + 1000);
+			for(int i = min; i < max; i++)
 				for(int j = 0; j < cols; j++) {
-					double ulaVal = mb.quickGetValue(i, j);
-					double claVal = cmb.quickGetValue(i, j); // calls quickGetValue internally
+					final double ulaVal = mb.quickGetValue(i, j);
+					final double claVal = cmb.quickGetValue(i, j); // calls quickGetValue internally
 					if(_cs != null && (_cs.lossy || overlappingType == OverLapping.SQUASH))
-						assertTrue(this.toString(), TestUtils.compareCellValue(ulaVal, claVal, lossyTolerance, false));
-					else if(OverLapping.effectOnOutput(overlappingType)) {
-						double percentDistance = TestUtils.getPercentDistance(ulaVal, claVal, true);
-						assertTrue(this.toString(), percentDistance > .99);
-					}
+						assertTrue(bufferedToString, TestUtils.compareCellValue(ulaVal, claVal, lossyTolerance, false));
+					else if(OverLapping.effectOnOutput(overlappingType))
+						assertTrue(bufferedToString, TestUtils.getPercentDistance(ulaVal, claVal, true) > .99);
 					else
-						TestUtils.compareScalarBitsJUnit(ulaVal, claVal, 0,
-							"Coordinates: " + i + " " + j + "\n" + this.toString()); // Should be exactly same value
+						TestUtils.compareScalarBitsJUnit(ulaVal, claVal, 0, bufferedToString); // Should be exactly same value
 				}
 		}
 		catch(Exception e) {
 			e.printStackTrace();
-			throw new RuntimeException(this.toString() + "\n" + e.getMessage(), e);
-		}
-	}
-
-	@Test
-	public void testAppend() {
-		try {
-			if(!(cmb instanceof CompressedMatrixBlock))
-				return; // Input was not compressed then just pass test
-
-			MatrixBlock vector = DataConverter
-				.convertToMatrixBlock(TestUtils.generateTestMatrix(rows, 1, 1, 1, 1.0, 3));
-
-			// matrix-vector uncompressed
-			MatrixBlock ret1 = mb.append(vector, new MatrixBlock());
-
-			// matrix-vector compressed
-			MatrixBlock ret2 = cmb.append(vector, new MatrixBlock());
-			if(ret2 instanceof CompressedMatrixBlock)
-				ret2 = ((CompressedMatrixBlock) ret2).decompress();
-
-			compareResultMatrices(ret1, ret2, 1);
-		}
-		catch(Exception e) {
-			e.printStackTrace();
-			throw new RuntimeException(this.toString() + "\n" + e.getMessage(), e);
+			throw new RuntimeException(bufferedToString + "\n" + e.getMessage(), e);
 		}
 	}
 
@@ -175,7 +145,7 @@ public class CompressedMatrixTest extends AbstractCompressedUnaryTests {
 			int ret1 = LibMatrixCountDistinct.estimateDistinctValues(mb, op);
 			int ret2 = LibMatrixCountDistinct.estimateDistinctValues(cmb, op);
 
-			String base = this.toString() + "\n";
+			String base = bufferedToString + "\n";
 			if(_cs != null && _cs.lossy) {
 				// The number of distinct values should be same or lower in lossy mode.
 				// assertTrue(base + "lossy distinct count " +ret2+ "is less than full " + ret1, ret1 >= ret2);
@@ -191,7 +161,7 @@ public class CompressedMatrixTest extends AbstractCompressedUnaryTests {
 		}
 		catch(Exception e) {
 			e.printStackTrace();
-			throw new RuntimeException(this.toString() + "\n" + e.getMessage(), e);
+			throw new RuntimeException(bufferedToString + "\n" + e.getMessage(), e);
 		}
 	}
 
@@ -225,15 +195,14 @@ public class CompressedMatrixTest extends AbstractCompressedUnaryTests {
 		}
 		catch(Exception e) {
 			e.printStackTrace();
-			throw new RuntimeException(this.toString() + "\n" + e.getMessage(), e);
+			throw new RuntimeException(bufferedToString + "\n" + e.getMessage(), e);
 		}
 	}
 
 	@Test
 	public void testCompressionRatio() {
 		try {
-			if(!(cmb instanceof CompressedMatrixBlock) || _cs == null ||
-				_cs.columnPartitioner.toString().contains("COST"))
+			if(!(cmb instanceof CompressedMatrixBlock) || _cs == null)
 				return;
 			CompressionStatistics cStat = cmbStats;
 			if(cStat != null)
@@ -241,15 +210,14 @@ public class CompressedMatrixTest extends AbstractCompressedUnaryTests {
 		}
 		catch(Exception e) {
 			e.printStackTrace();
-			throw new RuntimeException(this.toString() + "\n" + e.getMessage(), e);
+			throw new RuntimeException(bufferedToString + "\n" + e.getMessage(), e);
 		}
 	}
 
 	@Test
 	public void testCompressionEstimationVSCompression() {
 		try {
-			if(!(cmb instanceof CompressedMatrixBlock) || _cs == null ||
-				_cs.columnPartitioner.toString().contains("COST"))
+			if(!(cmb instanceof CompressedMatrixBlock) || _cs == null)
 				return;
 			CompressionStatistics cStat = cmbStats;
 			if(cStat != null) {
@@ -275,14 +243,14 @@ public class CompressedMatrixTest extends AbstractCompressedUnaryTests {
 					builder.append("\n\t" + String.format("%-40s - %12d", "<= Original size: ", originalSize));
 					builder.append("\n\tcol groups types: " + cStat.getGroupsTypesString());
 					builder.append("\n\tcol groups sizes: " + cStat.getGroupsSizesString());
-					builder.append("\n\t" + this.toString());
-					assertTrue(builder.toString(), res);
+					builder.append("\n\t" + bufferedToString);
+					fail(builder.toString());
 				}
 			}
 		}
 		catch(Exception e) {
 			e.printStackTrace();
-			throw new RuntimeException(this.toString() + "\n" + e.getMessage(), e);
+			throw new RuntimeException(bufferedToString + "\n" + e.getMessage(), e);
 		}
 	}
 
@@ -299,23 +267,25 @@ public class CompressedMatrixTest extends AbstractCompressedUnaryTests {
 				long JolEstimatedSize = getJolSize(((CompressedMatrixBlock) cmb), cmbStats);
 
 				StringBuilder builder = new StringBuilder();
-				builder.append("\n\t" + String.format("%-40s - %12d", "Actual compressed size: ", actualSize));
-				builder.append("\n\t" + String.format("%-40s - %12d", "<= Original size: ", originalSize));
-				builder.append("\n\t" + String.format("%-40s - %12d", "and equal to JOL Size: ", JolEstimatedSize));
-				// builder.append("\n\t " + getJolSizeString(cmb));
-				builder.append("\n\tcol groups types: " + cStat.getGroupsTypesString());
-				builder.append("\n\tcol groups sizes: " + cStat.getGroupsSizesString());
-				builder.append("\n\t" + this.toString());
+				if(!(actualSize <= originalSize && (_cs.allowSharedDictionary || actualSize == JolEstimatedSize))) {
 
-				// NOTE: The Jol estimate is wrong for shared dictionaries because
-				// it treats the object hierarchy as a tree and not a graph
-				assertTrue(builder.toString(),
-					actualSize <= originalSize && (_cs.allowSharedDictionary || actualSize == JolEstimatedSize));
+					builder.append("\n\t" + String.format("%-40s - %12d", "Actual compressed size: ", actualSize));
+					builder.append("\n\t" + String.format("%-40s - %12d", "<= Original size: ", originalSize));
+					builder.append("\n\t" + String.format("%-40s - %12d", "and equal to JOL Size: ", JolEstimatedSize));
+					// builder.append("\n\t " + getJolSizeString(cmb));
+					builder.append("\n\tcol groups types: " + cStat.getGroupsTypesString());
+					builder.append("\n\tcol groups sizes: " + cStat.getGroupsSizesString());
+					builder.append("\n\t" + bufferedToString);
+
+					// NOTE: The Jol estimate is wrong for shared dictionaries because
+					// it treats the object hierarchy as a tree and not a graph
+					fail(builder.toString());
+				}
 			}
 		}
 		catch(Exception e) {
 			e.printStackTrace();
-			throw new RuntimeException(this.toString() + "\n" + e.getMessage(), e);
+			throw new RuntimeException(bufferedToString + "\n" + e.getMessage(), e);
 		}
 	}
 
@@ -332,168 +302,21 @@ public class CompressedMatrixTest extends AbstractCompressedUnaryTests {
 			if(cStat != null) {
 				final double compressRatio = cStat.getRatio();
 
-				StringBuilder builder = new StringBuilder();
-				builder.append("Compression Ratio sounds suspiciously good at: " + compressRatio);
-				builder.append("\n\tActual compressed size: " + cStat.size);
-				builder.append(" original size: " + cStat.originalSize);
-				builder.append("\n\tcol groups types: " + cStat.getGroupsTypesString());
-				builder.append("\n\tcol groups sizes: " + cStat.getGroupsSizesString());
-				builder.append("\n\t" + this.toString());
-
-				assertTrue(builder.toString(), compressRatio < 1000.0);
+				if(compressRatio > 1000.0) {
+					StringBuilder builder = new StringBuilder();
+					builder.append("Compression Ratio sounds suspiciously good at: " + compressRatio);
+					builder.append("\n\tActual compressed size: " + cStat.size);
+					builder.append(" original size: " + cStat.originalSize);
+					builder.append("\n\tcol groups types: " + cStat.getGroupsTypesString());
+					builder.append("\n\tcol groups sizes: " + cStat.getGroupsSizesString());
+					builder.append("\n\t" + bufferedToString);
+					fail(builder.toString());
+				}
 			}
 		}
 		catch(Exception e) {
 			e.printStackTrace();
-			throw new RuntimeException(this.toString() + "\n" + e.getMessage(), e);
-		}
-	}
-
-	@Test
-	public void testMin() {
-		if(!(cmb instanceof CompressedMatrixBlock))
-			return;
-		double ret1 = cmb.min();
-		double ret2 = mb.min();
-		if(_cs != null && (_cs.lossy || overlappingType == OverLapping.SQUASH))
-			assertTrue(this.toString(), TestUtils.compareCellValue(ret2, ret1, lossyTolerance, false));
-		else if(OverLapping.effectOnOutput(overlappingType)) {
-			double percentDistance = TestUtils.getPercentDistance(ret2, ret1, true);
-			assertTrue(this.toString(), percentDistance > .99);
-		}
-		else
-			TestUtils.compareScalarBitsJUnit(ret2, ret1, 3, this.toString()); // Should be exactly same value
-
-	}
-
-	@Test
-	public void testMax() {
-		if(!(cmb instanceof CompressedMatrixBlock))
-			return;
-		double ret1 = cmb.max();
-		double ret2 = mb.max();
-		if(_cs != null && (_cs.lossy || overlappingType == OverLapping.SQUASH))
-			assertTrue(this.toString(), TestUtils.compareCellValue(ret2, ret1, lossyTolerance, false));
-		else if(OverLapping.effectOnOutput(overlappingType)) {
-			double percentDistance = TestUtils.getPercentDistance(ret2, ret1, true);
-			assertTrue(this.toString(), percentDistance > .99);
-		}
-		else
-			TestUtils.compareScalarBitsJUnit(ret2, ret1, 3, this.toString()); // Should be exactly same value
-
-	}
-
-	@Test
-	public void testSum() {
-		if(!(cmb instanceof CompressedMatrixBlock))
-			return;
-		double ret1 = cmb.sum();
-		double ret2 = mb.sum();
-		if(_cs != null && (_cs.lossy || overlappingType == OverLapping.SQUASH))
-			assertTrue(this.toString(), TestUtils.compareCellValue(ret2, ret1, lossyTolerance, false));
-		else if(OverLapping.effectOnOutput(overlappingType)) {
-			double percentDistance = TestUtils.getPercentDistance(ret2, ret1, true);
-			assertTrue(this.toString(), percentDistance > .99);
-		}
-		else
-			TestUtils.compareScalarBitsJUnit(ret2, ret1, 3, this.toString()); // Should be exactly same value
-
-	}
-
-	@Test
-	public void testSumSq() {
-		if(!(cmb instanceof CompressedMatrixBlock))
-			return;
-		double ret1 = cmb.sumSq();
-		double ret2 = mb.sumSq();
-		if(_cs != null && (_cs.lossy || overlappingType == OverLapping.SQUASH))
-			assertTrue(this.toString(), TestUtils.compareCellValue(ret2, ret1, lossyTolerance, false));
-		else if(OverLapping.effectOnOutput(overlappingType)) {
-			double percentDistance = TestUtils.getPercentDistance(ret2, ret1, true);
-			assertTrue(this.toString(), percentDistance > .99);
-		}
-		else
-			TestUtils.compareScalarBitsJUnit(ret2, ret1, 10, this.toString()); // Should be exactly same value
-	}
-
-	@Test
-	public void testMean() {
-		if(!(cmb instanceof CompressedMatrixBlock))
-			return;
-		double ret1 = cmb.mean();
-		double ret2 = mb.mean();
-		if(_cs != null && (_cs.lossy || overlappingType == OverLapping.SQUASH))
-			assertTrue(this.toString(), TestUtils.compareCellValue(ret2, ret1, lossyTolerance, false));
-		else if(OverLapping.effectOnOutput(overlappingType)) {
-			double percentDistance = TestUtils.getPercentDistance(ret2, ret1, true);
-			assertTrue(this.toString(), percentDistance > .99);
-		}
-		else
-			TestUtils.compareScalarBitsJUnit(ret2, ret1, 10, this.toString()); // Should be exactly same value
-	}
-
-	@Test
-	public void testProd() {
-		if(!(cmb instanceof CompressedMatrixBlock))
-			return;
-		double ret1 = cmb.prod();
-		double ret2 = mb.prod();
-		if(_cs != null && (_cs.lossy || overlappingType == OverLapping.SQUASH))
-			assertTrue(this.toString(), TestUtils.compareCellValue(ret2, ret1, lossyTolerance, false));
-		else if(OverLapping.effectOnOutput(overlappingType)) {
-			double percentDistance = TestUtils.getPercentDistance(ret2, ret1, true);
-			assertTrue(this.toString(), percentDistance > .99);
-		}
-		else
-			TestUtils.compareScalarBitsJUnit(ret2, ret1, 10, this.toString()); // Should be exactly same value
-	}
-
-	@Test
-	public void testRandOperationsInPlace() {
-		if(!(cmb instanceof CompressedMatrixBlock) || rows * cols > 10000)
-			return;
-		RandomMatrixGenerator rgen = new RandomMatrixGenerator("uniform", rows, cols,
-			ConfigurationManager.getBlocksize(), sparsity, min, max);
-		Well1024a bigrand = null;
-		if(!LibMatrixDatagen.isShortcutRandOperation(min, max, sparsity, RandomMatrixGenerator.PDF.UNIFORM))
-			bigrand = LibMatrixDatagen.setupSeedsForRand(seed);
-		MatrixBlock ret1 = cmb.randOperationsInPlace(rgen, bigrand, 1342);
-		if(!LibMatrixDatagen.isShortcutRandOperation(min, max, sparsity, RandomMatrixGenerator.PDF.UNIFORM))
-			bigrand = LibMatrixDatagen.setupSeedsForRand(seed);
-		MatrixBlock ret2 = mb.randOperationsInPlace(rgen, bigrand, 1342);
-
-		compareResultMatrices(ret1, ret2, 1);
-
-	}
-
-	@Test
-	public void testColSum() {
-		if(!(cmb instanceof CompressedMatrixBlock))
-			return;
-		MatrixBlock ret1 = cmb.colSum();
-		MatrixBlock ret2 = mb.colSum();
-		compareResultMatrices(ret1, ret2, 1);
-	}
-
-	@Test
-	public void testToString() {
-		if(!(cmb instanceof CompressedMatrixBlock) || rows * cols > 10000)
-			return;
-		String st = cmb.toString();
-		assertTrue(st.contains("CompressedMatrixBlock"));
-	}
-
-	@Test
-	public void testCompressionStatisticsToString() {
-		try {
-			if(cmbStats != null) {
-				String st = cmbStats.toString();
-				assertTrue(st.contains("CompressionStatistics"));
-			}
-		}
-		catch(Exception e) {
-			e.printStackTrace();
-			throw new DMLRuntimeException(e);
+			throw new RuntimeException(bufferedToString + "\n" + e.getMessage(), e);
 		}
 	}
 
@@ -504,7 +327,7 @@ public class CompressedMatrixTest extends AbstractCompressedUnaryTests {
 				return;
 			boolean ret1 = cmb.containsValue(min);
 			boolean ret2 = mb.containsValue(min);
-			assertTrue(this.toString(), ret1 == ret2);
+			assertTrue(bufferedToString, ret1 == ret2);
 		}
 		catch(Exception e) {
 			e.printStackTrace();
@@ -519,7 +342,7 @@ public class CompressedMatrixTest extends AbstractCompressedUnaryTests {
 				return;
 			boolean ret1 = cmb.containsValue(min - 1);
 			boolean ret2 = mb.containsValue(min - 1);
-			assertTrue(this.toString(), ret1 == ret2);
+			assertTrue(bufferedToString, ret1 == ret2);
 		}
 		catch(Exception e) {
 			e.printStackTrace();
@@ -528,13 +351,30 @@ public class CompressedMatrixTest extends AbstractCompressedUnaryTests {
 	}
 
 	@Test
+	public void testReplaceNotContainedValue() {
+		double v = min - 1;
+		if(v != 0)
+			testReplace(v);
+	}
+
+	@Test
 	public void testReplace() {
+		if(min != 0)
+			testReplace(min);
+	}
+
+	@Test
+	public void testReplaceZero() {
+		testReplace(0);
+	}
+
+	private void testReplace(double value) {
 		try {
 			if(!(cmb instanceof CompressedMatrixBlock) || rows * cols > 10000)
 				return;
-			MatrixBlock ret1 = cmb.replaceOperations(new MatrixBlock(), min - 1, 1425);
-			MatrixBlock ret2 = mb.replaceOperations(new MatrixBlock(), min - 1, 1425);
-			compareResultMatrices(ret2, ret1, 1);
+			ucRet = mb.replaceOperations(ucRet, value, 1425);
+			MatrixBlock ret2 = cmb.replaceOperations(new MatrixBlock(), value, 1425);
+			compareResultMatrices(ucRet, ret2, 1);
 		}
 		catch(Exception e) {
 			e.printStackTrace();
@@ -602,9 +442,9 @@ public class CompressedMatrixTest extends AbstractCompressedUnaryTests {
 			MatrixBlock m3 = new MatrixBlock(nrow, ncol, 14.0);
 
 			MatrixBlock ret1 = cmb.aggregateTernaryOperations(cmb, m2, m3, null, op, true);
-			MatrixBlock ret2 = mb.aggregateTernaryOperations(mb, m2, m3, null, op, true);
+			ucRet = mb.aggregateTernaryOperations(mb, m2, m3, ucRet, op, true);
 
-			compareResultMatrices(ret2, ret1, 1);
+			compareResultMatrices(ucRet, ret1, 1);
 		}
 		catch(Exception e) {
 			e.printStackTrace();
@@ -629,9 +469,9 @@ public class CompressedMatrixTest extends AbstractCompressedUnaryTests {
 			MatrixBlock m3 = new MatrixBlock(nrow, ncol, 14.0);
 
 			MatrixBlock ret1 = cmb.aggregateTernaryOperations(cmb, m2, m3, null, op, true);
-			MatrixBlock ret2 = mb.aggregateTernaryOperations(mb, m2, m3, null, op, true);
+			ucRet = mb.aggregateTernaryOperations(mb, m2, m3, ucRet, op, true);
 
-			compareResultMatrices(ret2, ret1, 1);
+			compareResultMatrices(ucRet, ret1, 1);
 		}
 		catch(Exception e) {
 			e.printStackTrace();
@@ -652,9 +492,9 @@ public class CompressedMatrixTest extends AbstractCompressedUnaryTests {
 			MatrixBlock m2 = new MatrixBlock(1, 1, 0);
 			MatrixBlock m3 = new MatrixBlock(nrow, ncol, 14.0);
 			MatrixBlock ret1 = cmb.ternaryOperations(op, m2, m3, new MatrixBlock());
-			MatrixBlock ret2 = mb.ternaryOperations(op, m2, m3, new MatrixBlock());
+			ucRet = mb.ternaryOperations(op, m2, m3, ucRet);
 
-			compareResultMatrices(ret2, ret1, 1);
+			compareResultMatrices(ucRet, ret1, 1);
 		}
 		catch(Exception e) {
 			e.printStackTrace();
@@ -668,13 +508,14 @@ public class CompressedMatrixTest extends AbstractCompressedUnaryTests {
 			if(!(cmb instanceof CompressedMatrixBlock))
 				return;
 			BinaryOperator op = new BinaryOperator(Multiply.getMultiplyFnObject());
+			op.setNumThreads(_k);
 
 			MatrixBlock m2 = new MatrixBlock(1, 1, 0);
 			MatrixBlock ret1 = cmb.binaryOperations(op, m2, new MatrixBlock());
 			ScalarOperator sop = new RightScalarOperator(op.fn, m2.getValue(0, 0), op.getNumThreads());
-			MatrixBlock ret2 = mb.scalarOperations(sop, new MatrixBlock());
+			ucRet = mb.scalarOperations(sop, ucRet);
 
-			compareResultMatrices(ret2, ret1, 1);
+			compareResultMatrices(ucRet, ret1, 1);
 		}
 		catch(Exception e) {
 			e.printStackTrace();
@@ -684,31 +525,32 @@ public class CompressedMatrixTest extends AbstractCompressedUnaryTests {
 
 	@Test
 	public void testBinaryEmptyMatrixMultiplicationOp() {
-		BinaryOperator op = new BinaryOperator(Multiply.getMultiplyFnObject());
+		BinaryOperator op = new BinaryOperator(Multiply.getMultiplyFnObject(), _k);
 		testBinaryEmptyMatrixOp(op);
 	}
 
 	@Test
 	public void testBinaryEmptyMatrixMinusOp() {
-		BinaryOperator op = new BinaryOperator(Minus.getMinusFnObject());
+		BinaryOperator op = new BinaryOperator(Minus.getMinusFnObject(), _k);
 		testBinaryEmptyMatrixOp(op);
 	}
 
 	@Test
 	public void testBinaryEmptyMatrixPlusOp() {
-		BinaryOperator op = new BinaryOperator(Plus.getPlusFnObject());
+		BinaryOperator op = new BinaryOperator(Plus.getPlusFnObject(), _k);
 		testBinaryEmptyMatrixOp(op);
 	}
 
 	@Test
 	public void testBinaryEmptyMatrixMinusMultiplyOp() {
 		BinaryOperator op = MinusMultiply.getFnObject().setOp2Constant(42);
+		op.setNumThreads(_k);
 		testBinaryEmptyMatrixOp(op);
 	}
 
 	@Test
 	public void testBinaryEmptyMatrixMinus1MultiplyOp() {
-		BinaryOperator op = new BinaryOperator(Minus1Multiply.getMinus1MultiplyFnObject());
+		BinaryOperator op = new BinaryOperator(Minus1Multiply.getMinus1MultiplyFnObject(), _k);
 		testBinaryEmptyMatrixOp(op);
 	}
 
@@ -719,9 +561,9 @@ public class CompressedMatrixTest extends AbstractCompressedUnaryTests {
 
 			MatrixBlock m2 = new MatrixBlock(cmb.getNumRows(), cmb.getNumColumns(), 0);
 			MatrixBlock ret1 = cmb.binaryOperations(op, m2, new MatrixBlock());
-			MatrixBlock ret2 = mb.binaryOperations(op, m2, new MatrixBlock());
+			ucRet = mb.binaryOperations(op, m2, ucRet);
 
-			compareResultMatrices(ret2, ret1, 1);
+			compareResultMatrices(ucRet, ret1, 1);
 		}
 		catch(Exception e) {
 			e.printStackTrace();
@@ -731,19 +573,19 @@ public class CompressedMatrixTest extends AbstractCompressedUnaryTests {
 
 	@Test
 	public void testBinaryEmptyRowVectorMultiplicationOp() {
-		BinaryOperator op = new BinaryOperator(Multiply.getMultiplyFnObject());
+		BinaryOperator op = new BinaryOperator(Multiply.getMultiplyFnObject(), _k);
 		testBinaryEmptyRowVectorOp(op);
 	}
 
 	@Test
 	public void testBinaryEmptyRowVectorMinusOp() {
-		BinaryOperator op = new BinaryOperator(Minus.getMinusFnObject());
+		BinaryOperator op = new BinaryOperator(Minus.getMinusFnObject(), _k);
 		testBinaryEmptyRowVectorOp(op);
 	}
 
 	@Test
 	public void testBinaryEmptyRowVectorPlusOp() {
-		BinaryOperator op = new BinaryOperator(Plus.getPlusFnObject());
+		BinaryOperator op = new BinaryOperator(Plus.getPlusFnObject(), _k);
 		testBinaryEmptyRowVectorOp(op);
 	}
 
@@ -754,9 +596,9 @@ public class CompressedMatrixTest extends AbstractCompressedUnaryTests {
 
 			MatrixBlock m2 = new MatrixBlock(1, cmb.getNumColumns(), 0);
 			MatrixBlock ret1 = cmb.binaryOperations(op, m2, new MatrixBlock());
-			MatrixBlock ret2 = mb.binaryOperations(op, m2, new MatrixBlock());
+			ucRet = mb.binaryOperations(op, m2, ucRet);
 
-			compareResultMatrices(ret2, ret1, 1);
+			compareResultMatrices(ucRet, ret1, 1);
 		}
 		catch(Exception e) {
 			e.printStackTrace();
@@ -775,5 +617,4 @@ public class CompressedMatrixTest extends AbstractCompressedUnaryTests {
 		}
 		return jolEstimate;
 	}
-
 }

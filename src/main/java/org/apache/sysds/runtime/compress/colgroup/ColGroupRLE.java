@@ -26,7 +26,6 @@ import java.util.List;
 import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.runtime.compress.CompressionSettings;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
-import org.apache.sysds.runtime.compress.colgroup.dictionary.Dictionary;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
@@ -35,7 +34,7 @@ import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
 
 /** A group of columns compressed with a single run-length encoded bitmap. */
-public class ColGroupRLE extends ColGroupOffset {
+public class ColGroupRLE extends AColGroupOffset {
 	private static final long serialVersionUID = -1560710477952862791L;
 
 	/**
@@ -65,8 +64,7 @@ public class ColGroupRLE extends ColGroupOffset {
 	}
 
 	@Override
-	protected void decompressToBlockUnSafeDenseDictionary(MatrixBlock target, int rl, int ru, int offT,
-		double[] values) {
+	protected void decompressToBlockDenseDictionary(MatrixBlock target, int rl, int ru, int offT, double[] values) {
 		final int blksz = CompressionSettings.BITMAP_BLOCK_SZ;
 		final int numCols = getNumCols();
 		final int numVals = getNumValues();
@@ -103,8 +101,7 @@ public class ColGroupRLE extends ColGroupOffset {
 	}
 
 	@Override
-	protected void decompressToBlockUnSafeSparseDictionary(MatrixBlock target, int rl, int ru, int offT,
-		SparseBlock values) {
+	protected void decompressToBlockSparseDictionary(MatrixBlock target, int rl, int ru, int offT, SparseBlock values) {
 		throw new NotImplementedException();
 	}
 
@@ -124,32 +121,6 @@ public class ColGroupRLE extends ColGroupOffset {
 		}
 		if(_zeros) {
 			counts[counts.length - 1] = _numRows - sum;
-		}
-		return counts;
-	}
-
-	@Override
-	public int[] getCounts(int rl, int ru, int[] counts) {
-		final int numVals = getNumValues();
-		int sum = 0;
-		for(int k = 0; k < numVals; k++) {
-			int boff = _ptr[k];
-			int blen = len(k);
-			Pair<Integer, Integer> tmp = skipScanVal(k, rl);
-			int bix = tmp.getKey();
-			int curRunStartOff = tmp.getValue();
-			int curRunEnd = tmp.getValue();
-			int count = 0;
-			for(; bix < blen && curRunEnd < ru; bix += 2) {
-				curRunStartOff = curRunEnd + _data[boff + bix];
-				curRunEnd = curRunStartOff + _data[boff + bix + 1];
-				count += Math.min(curRunEnd, ru) - curRunStartOff;
-			}
-			sum += count;
-			counts[k] = count;
-		}
-		if(_zeros) {
-			counts[counts.length - 1] = (ru - rl) - sum;
 		}
 		return counts;
 	}
@@ -182,43 +153,53 @@ public class ColGroupRLE extends ColGroupOffset {
 	}
 
 	@Override
-	public AColGroup binaryRowOp(BinaryOperator op, double[] v, boolean sparseSafe, boolean left) {
-		sparseSafe = sparseSafe || !_zeros;
-
-		// fast path: sparse-safe operations
-		// Note that bitmaps don't change and are shallow-copied
-		if(sparseSafe) {
-			return new ColGroupRLE(_colIndexes, _numRows, _zeros, applyBinaryRowOp(op, v, sparseSafe, left), _data,
-				_ptr, getCachedCounts());
-		}
-
-		// slow path: sparse-unsafe operations (potentially create new bitmap)
-		// note: for efficiency, we currently don't drop values that become 0
-		boolean[] lind = computeZeroIndicatorVector();
-		int[] loff = computeOffsets(lind);
-		if(loff.length == 0) { // empty offset list: go back to fast path
-			return new ColGroupRLE(_colIndexes, _numRows, false, applyBinaryRowOp(op, v, true, left), _data, _ptr,
-				getCachedCounts());
-		}
-
-		ADictionary rvalues = applyBinaryRowOp(op, v, sparseSafe, left);
-		char[] lbitmap = genRLEBitmap(loff, loff.length);
-		char[] rbitmaps = Arrays.copyOf(_data, _data.length + lbitmap.length);
-		System.arraycopy(lbitmap, 0, rbitmaps, _data.length, lbitmap.length);
-		int[] rbitmapOffs = Arrays.copyOf(_ptr, _ptr.length + 1);
-		rbitmapOffs[rbitmapOffs.length - 1] = rbitmaps.length;
-
-		// Also note that for efficiency of following operations (and less memory usage because they share index
-		// structures),
-		// the materialized is also applied to this.
-		// so that following operations don't suffer from missing zeros.
-		_data = rbitmaps;
-		_ptr = rbitmapOffs;
-		_zeros = false;
-		_dict = _dict.cloneAndExtend(_colIndexes.length);
-
-		return new ColGroupRLE(_colIndexes, _numRows, false, rvalues, rbitmaps, rbitmapOffs, getCachedCounts());
+	public AColGroup binaryRowOpLeft(BinaryOperator op, double[] v, boolean isRowSafe) {
+		throw new NotImplementedException();
 	}
+
+	@Override
+	public AColGroup binaryRowOpRight(BinaryOperator op, double[] v, boolean isRowSafe) {
+		throw new NotImplementedException();
+	}
+
+	// @Override
+	// public AColGroup binaryRowOp(BinaryOperator op, double[] v, boolean sparseSafe, boolean left) {
+	// sparseSafe = sparseSafe || !_zeros;
+
+	// // fast path: sparse-safe operations
+	// // Note that bitmaps don't change and are shallow-copied
+	// if(sparseSafe) {
+	// return new ColGroupRLE(_colIndexes, _numRows, _zeros, applyBinaryRowOp(op, v, sparseSafe, left), _data, _ptr,
+	// getCachedCounts());
+	// }
+
+	// // slow path: sparse-unsafe operations (potentially create new bitmap)
+	// // note: for efficiency, we currently don't drop values that become 0
+	// boolean[] lind = computeZeroIndicatorVector();
+	// int[] loff = computeOffsets(lind);
+	// if(loff.length == 0) { // empty offset list: go back to fast path
+	// return new ColGroupRLE(_colIndexes, _numRows, false, applyBinaryRowOp(op, v, true, left), _data, _ptr,
+	// getCachedCounts());
+	// }
+
+	// ADictionary rvalues = applyBinaryRowOp(op, v, sparseSafe, left);
+	// char[] lbitmap = genRLEBitmap(loff, loff.length);
+	// char[] rbitmaps = Arrays.copyOf(_data, _data.length + lbitmap.length);
+	// System.arraycopy(lbitmap, 0, rbitmaps, _data.length, lbitmap.length);
+	// int[] rbitmapOffs = Arrays.copyOf(_ptr, _ptr.length + 1);
+	// rbitmapOffs[rbitmapOffs.length - 1] = rbitmaps.length;
+
+	// // Also note that for efficiency of following operations (and less memory usage because they share index
+	// // structures),
+	// // the materialized is also applied to this.
+	// // so that following operations don't suffer from missing zeros.
+	// _data = rbitmaps;
+	// _ptr = rbitmapOffs;
+	// _zeros = false;
+	// _dict = _dict.cloneAndExtend(_colIndexes.length);
+
+	// return new ColGroupRLE(_colIndexes, _numRows, false, rvalues, rbitmaps, rbitmapOffs, getCachedCounts());
+	// }
 
 	@Override
 	protected void computeRowSums(double[] c, boolean square, int rl, int ru) {
@@ -295,7 +276,7 @@ public class ColGroupRLE extends ColGroupOffset {
 		// NOTE: zeros handled once for all column groups outside
 		final int numVals = getNumValues();
 		// double[] c = result.getDenseBlockValues();
-		final double[] values = getValues();
+		final double[] values = _dict.getValues();
 
 		for(int k = 0; k < numVals; k++) {
 			int boff = _ptr[k];
@@ -365,12 +346,8 @@ public class ColGroupRLE extends ColGroupOffset {
 	}
 
 	@Override
-	public double get(int r, int c) {
-
+	public double getIdx(int r, int colIdx) {
 		final int numVals = getNumValues();
-		int idColOffset = Arrays.binarySearch(_colIndexes, c);
-		if(idColOffset < 0)
-			return 0;
 		for(int k = 0; k < numVals; k++) {
 			int boff = _ptr[k];
 			int blen = len(k);
@@ -382,28 +359,12 @@ public class ColGroupRLE extends ColGroupOffset {
 				int from = start + lstart;
 				int to = start + lstart + llen;
 				if(r >= from && r < to)
-					return _dict.getValue(k * _colIndexes.length + idColOffset);
+					return _dict.getValue(k * _colIndexes.length + colIdx);
 				start += lstart + llen;
 			}
-
 		}
 
 		return 0;
-	}
-
-	@Override
-	public String toString() {
-		StringBuilder sb = new StringBuilder();
-		sb.append(super.toString());
-		sb.append(String.format("\n%15s%5d ", "Data:", this._data.length));
-		sb.append("{");
-		sb.append(((int) _data[0]) + "-" + ((int) _data[1]));
-		for(int i = 2; i < _data.length; i += 2) {
-			sb.append(", " + ((int) _data[i]) + "-" + ((int) _data[i + 1]));
-		}
-		sb.append("}");
-
-		return sb.toString();
 	}
 
 	/////////////////////////////////
@@ -466,25 +427,34 @@ public class ColGroupRLE extends ColGroupOffset {
 		return new Pair<>(apos, astart);
 	}
 
-	
 	@Override
-	public void preAggregate(MatrixBlock m, MatrixBlock preAgg, int rl, int ru){
+	public void leftMultByMatrix(MatrixBlock matrix, MatrixBlock result, int rl, int ru) {
 		throw new NotImplementedException();
 	}
 
 	@Override
-	public void preAggregateDense(MatrixBlock m, MatrixBlock preAgg, int rl, int ru, int vl, int vu){
+	public void leftMultByAColGroup(AColGroup lhs, MatrixBlock result) {
 		throw new NotImplementedException();
 	}
 
 	@Override
-	public boolean sameIndexStructure(ColGroupCompressed that) {
-		return that instanceof ColGroupRLE && ((ColGroupRLE) that)._data == _data;
+	public void tsmmAColGroup(AColGroup other, MatrixBlock result) {
+		throw new NotImplementedException();
 	}
 
 	@Override
-	public int getIndexStructureHash() {
-		return _data.hashCode();
+	public String toString() {
+		StringBuilder sb = new StringBuilder();
+		sb.append(super.toString());
+		sb.append(String.format("\n%15s%5d ", "Data:", this._data.length));
+		sb.append("{");
+		sb.append(((int) _data[0]) + "-" + ((int) _data[1]));
+		for(int i = 2; i < _data.length; i += 2) {
+			sb.append(", " + ((int) _data[i]) + "-" + ((int) _data[i + 1]));
+		}
+		sb.append("}");
+
+		return sb.toString();
 	}
 
 	/**
@@ -583,31 +553,6 @@ public class ColGroupRLE extends ColGroupOffset {
 			ret[i] = buf.get(i);
 
 		return ret;
-	}
-
-	@Override
-	public Dictionary preAggregateThatDDCStructure(ColGroupDDC that, Dictionary ret) {
-		throw new NotImplementedException();
-	}
-
-	@Override
-	public Dictionary preAggregateThatSDCStructure(ColGroupSDC that, Dictionary ret, boolean preModified) {
-		throw new NotImplementedException();
-	}
-
-	@Override
-	public Dictionary preAggregateThatSDCZerosStructure(ColGroupSDCZeros that, Dictionary ret) {
-		throw new NotImplementedException();
-	}
-
-	@Override
-	public Dictionary preAggregateThatSDCSingleZerosStructure(ColGroupSDCSingleZeros that, Dictionary ret) {
-		throw new NotImplementedException();
-	}
-
-	@Override
-	public Dictionary preAggregateThatSDCSingleStructure(ColGroupSDCSingle that, Dictionary ret, boolean preModified) {
-		throw new NotImplementedException();
 	}
 
 }

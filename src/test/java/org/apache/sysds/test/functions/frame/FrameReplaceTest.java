@@ -19,14 +19,17 @@
 
 package org.apache.sysds.test.functions.frame;
 
-import static org.junit.Assert.assertTrue;
+import java.util.HashMap;
 
+import static org.junit.Assert.assertEquals;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.common.Types.ExecType;
+import org.apache.sysds.runtime.matrix.data.MatrixValue;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
+import org.junit.Ignore;
 import org.junit.Test;
 
 public class FrameReplaceTest extends AutomatedTestBase {
@@ -38,7 +41,7 @@ public class FrameReplaceTest extends AutomatedTestBase {
     @Override
     public void setUp() {
         TestUtils.clearAssertionInformation();
-        addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME));
+        addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[] {"S.scalar"}));
     }
 
     @Test
@@ -47,6 +50,7 @@ public class FrameReplaceTest extends AutomatedTestBase {
     }
 
     @Test
+    @Ignore
     public void testParforFrameIntermediatesSpark() {
         runReplaceTest(ExecType.SPARK);
     }
@@ -71,13 +75,12 @@ public class FrameReplaceTest extends AutomatedTestBase {
             getAndLoadTestConfiguration(TEST_NAME);
             String HOME = SCRIPT_DIR + TEST_DIR;
             fullDMLScriptName = HOME + TEST_NAME + ".dml";
-            programArgs = new String[] {};
+            programArgs = new String[] {"-nvargs", "out_S=" + output("S")};
 
             // run test
-            String out = runTest(null).toString();
-
-            assertTrue(out.contains("south"));
-            assertTrue(!out.contains("north"));
+            runTest(null);
+            HashMap<MatrixValue.CellIndex, Double> val = readDMLScalarFromOutputDir("S");
+            assertEquals(1.0, val.get(new MatrixValue.CellIndex(1, 1)), 0.0);
 
         }
         catch(Exception ex) {

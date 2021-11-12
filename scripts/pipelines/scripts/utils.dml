@@ -63,7 +63,7 @@ doSample = function(Matrix[Double] eX, Matrix[Double] eY, Double ratio, Boolean 
   sampledX = eX
   sampledY = eY
   
-  if(sampled > MIN_SAMPLE)
+  if(sampled > MIN_SAMPLE & ratio != 1.0)
   {
     dist = max(eY) # num classes (one-hot encoded eY) 
     
@@ -149,20 +149,31 @@ return(Boolean validForResources)
 ######################################
 stringProcessing = function(Frame[Unknown] data, Matrix[Double] mask, 
   Frame[String] schema, Boolean CorrectTypos, List[Unknown] ctx = list(prefix="--"))
-return(Frame[Unknown] processedData)
-{
+return(Frame[Unknown] processedData, Matrix[Double] M)
+{ 
+  M = mask
   prefix = as.scalar(ctx["prefix"]);
-
-  # step 1 drop invalid types
+  # step 1 fix swap values
+  print(prefix+" value swap fixing");
+  data = valueSwap(data, schema)
+  
+  # step 2 fix invalid lengths
+  print(prefix+" fixing invalid lengths between 5th and 95th quantile");
+  q0 = 0.05
+  q1 = 0.95
+  [data, M] = fixInvalidLengths(data, q0, q1)
+  
+  # step 3 drop invalid types
   print(prefix+" drop values with type mismatch");
   data = dropInvalidType(data, schema)
   
-  # step 2 do the case transformations
+  # step 4 do the case transformations
   print(prefix+" convert strings to lower case");
   for(i in 1:ncol(mask))
     if(as.scalar(schema[1,i]) == "STRING")
       data[, i] = map(data[, i], "x -> x.toLowerCase()")
-    
+  
+  # step 5 typo correction
   if(CorrectTypos)
   {
     # recode data to get null mask
@@ -182,7 +193,7 @@ return(Frame[Unknown] processedData)
       if(as.scalar(schema[1,i]) == "STRING")
         data[, i] = correctTypos(data[, i], nullMask[, i], 0.2, 0.9, FALSE, TRUE, FALSE);
   }
-  
+  # step 6 porter stemming on all features
   print(prefix+" porter-stemming on all features");
   data = map(data, "x -> PorterStemmer.stem(x)")
   
@@ -325,7 +336,7 @@ topk_gridSearch = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] Xt
         cvbeta += lbeta;
         cvloss += as.matrix(accuracy);
       }
-      Rbeta[i,] = cvbeta / k;
+      # Rbeta[i,] = cvbeta / k;
       Rloss[i,] = cvloss / k;
     }
   }
@@ -338,7 +349,7 @@ topk_gridSearch = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] Xt
         ltrainArgs[as.scalar(params[j])] = as.scalar(HP[i,j]);
       # b) core training/scoring and write-back
       lbeta = t(eval(train, ltrainArgs))
-      Rbeta[i,1:ncol(lbeta)] = lbeta;
+      # Rbeta[i,1:ncol(lbeta)] = lbeta;
       Rloss[i,] = eval(predict, append(predictArgs,t(lbeta)));
     }
   }

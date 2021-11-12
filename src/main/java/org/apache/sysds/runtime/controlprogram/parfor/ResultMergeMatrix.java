@@ -19,12 +19,11 @@
 
 package org.apache.sysds.runtime.controlprogram.parfor;
 
+import java.util.List;
+
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
-
-import java.io.Serializable;
-import java.util.List;
 
 /**
  * Due to independence of all iterations, any result has the following properties:
@@ -32,7 +31,7 @@ import java.util.List;
  * These properties allow us to realize result merging in parallel without any synchronization. 
  * 
  */
-public abstract class ResultMergeMatrix extends ResultMerge<MatrixObject> implements Serializable
+public abstract class ResultMergeMatrix extends ResultMerge<MatrixObject>
 {
 	private static final long serialVersionUID = 5319002218804570071L;
 	

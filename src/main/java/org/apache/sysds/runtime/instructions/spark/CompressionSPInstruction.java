@@ -32,7 +32,6 @@ import org.apache.sysds.runtime.compress.CompressionSettingsBuilder;
 import org.apache.sysds.runtime.compress.SingletonLookupHashMap;
 import org.apache.sysds.runtime.compress.cost.CostEstimatorBuilder;
 import org.apache.sysds.runtime.compress.cost.CostEstimatorFactory.CostType;
-import org.apache.sysds.runtime.compress.cost.ICostEstimate;
 import org.apache.sysds.runtime.compress.workload.WTreeRoot;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
@@ -139,9 +138,8 @@ public class CompressionSPInstruction extends UnarySPInstruction {
 
 		@Override
 		public MatrixBlock call(MatrixBlock arg0) throws Exception {
-			ICostEstimate ce = costBuilder.create(arg0.getNumRows(), arg0.getNumColumns());
 			CompressionSettingsBuilder csb = new CompressionSettingsBuilder().setIsInSparkInstruction();
-			return CompressedMatrixBlockFactory.compress(arg0, InfrastructureAnalyzer.getLocalParallelism(), csb, ce)
+			return CompressedMatrixBlockFactory.compress(arg0, InfrastructureAnalyzer.getLocalParallelism(), csb, costBuilder)
 				.getLeft();
 		}
 	}

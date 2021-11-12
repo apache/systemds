@@ -39,7 +39,7 @@ exclude:
   - updateAPI.sh
 
 # These allow the documentation to be updated with newer releases
-SYSTEMDS_VERSION: 2.2.0-SNAPSHOT
+SYSTEMDS_VERSION: 2.3.0-SNAPSHOT
 
 # if 'analytics_on' is true, analytics section will be rendered on the HTML pages
 analytics_on: true

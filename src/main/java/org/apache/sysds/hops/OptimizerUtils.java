@@ -191,6 +191,14 @@ public class OptimizerUtils
 	public static boolean ALLOW_LOOP_UPDATE_IN_PLACE = true;
 	
 	/**
+	 * Enables the update-in-place for all unary operators with a single
+	 * consumer. In this case we do not allocate the output, but directly
+	 * write the output values back to the input block.
+	 */
+	//TODO enabling it by default requires modifications in lineage-based reuse
+	public static boolean ALLOW_UNARY_UPDATE_IN_PLACE = false;
+	
+	/**
 	 * Replace eval second-order function calls with normal function call
 	 * if the function name is a known string (after constant propagation).
 	 */
@@ -1009,10 +1017,11 @@ public class OptimizerUtils
 		return ret;
 	}
 
-	public static int getTransformNumThreads(int maxNumThreads)
+	public static int getTransformNumThreads()
 	{
 		//by default max local parallelism (vcores) 
 		int ret = InfrastructureAnalyzer.getLocalParallelism();
+		int maxNumThreads = ConfigurationManager.getNumThreads();
 		
 		//apply external max constraint (e.g., set by parfor or other rewrites)
 		if( maxNumThreads > 0 ) {

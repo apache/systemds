@@ -22,13 +22,11 @@ package org.apache.sysds.runtime.compress.colgroup.offset;
 import java.io.DataInput;
 import java.io.IOException;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
 
-public class OffsetFactory {
+public interface OffsetFactory {
 
-	protected static final Log LOG = LogFactory.getLog(OffsetFactory.class.getName());
+	// static final Log LOG = LogFactory.getLog(OffsetFactory.class.getName());
 
 	public enum OFF_TYPE {
 		BYTE, CHAR
@@ -38,26 +36,32 @@ public class OffsetFactory {
 	 * Main factory pattern creator for Offsets.
 	 * 
 	 * @param indexes List of indexes, that is assumed to be sorted and have no duplicates
-	 * @param nRows   The number of rows that should be possible in the encoding.
 	 * @return AOffset object containing offsets to the next value.
 	 */
-	public static AOffset create(int[] indexes, int nRows) {
-		if(nRows < 0)
-			throw new DMLCompressionException("Invalid sizes given");
-		else if((float) nRows / indexes.length < 256)
-			return new OffsetByte(indexes);
-		else
-			return new OffsetChar(indexes);
+	public static AOffset create(int[] indexes) {
+		return create(indexes, 0, indexes.length);
 	}
 
-
-	public static AOffset create(int[] indexes, int nRows, int apos, int alen){
+	/**
+	 * Create a Offset based on a subset of the indexes given.
+	 * 
+	 * This is useful if the input is created from a CSR matrix, since it allows us to not reallocate the indexes[] but
+	 * use the shared indexes from the entire CSR representation.
+	 * 
+	 * @param indexes The indexes from which to take the offsets.
+	 * @param apos    The position to start looking from in the indexes.
+	 * @param alen    The position to end looking at in the indexes.
+	 * @return A new Offset.
+	 */
+	public static AOffset create(int[] indexes, int apos, int alen) {
+		final int maxValue = indexes[alen - 1];
+		if(maxValue < 0)
+			throw new DMLCompressionException("Invalid sizes given");
 		final int endLength = alen - apos;
-		final float avgDist = (float) nRows / endLength;
-
+		final float avgDist = (float) maxValue / endLength;
 		if(avgDist < 256)
 			return new OffsetByte(indexes, apos, alen);
-		else 
+		else
 			return new OffsetChar(indexes, apos, alen);
 	}
 
@@ -74,9 +78,8 @@ public class OffsetFactory {
 			case BYTE:
 				return OffsetByte.readFields(in);
 			case CHAR:
-				return OffsetChar.readFields(in);
 			default:
-				throw new DMLCompressionException("Unknown input");
+				return OffsetChar.readFields(in);
 		}
 	}
 

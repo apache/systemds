@@ -27,7 +27,6 @@ import org.apache.sysds.runtime.compress.estim.CompressedSizeEstimator;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeEstimatorFactory;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
-import org.apache.sysds.runtime.util.DataConverter;
 import org.apache.sysds.test.TestUtils;
 import org.junit.Assert;
 import org.junit.Test;
@@ -42,12 +41,10 @@ public class JoinCompressionInfoTest {
 
 	public JoinCompressionInfoTest() {
 		// matrix block 2 columns
-		MatrixBlock tmp = DataConverter
-			.convertToMatrixBlock(TestUtils.round(TestUtils.generateTestMatrix(2, 500000, 1, 10, 1.0, seed + 1)));
-		tmp = tmp.append(
-			DataConverter
-				.convertToMatrixBlock(TestUtils.round(TestUtils.generateTestMatrix(1, 500000, 1, 2, 1.0, seed + 1))),
+		MatrixBlock tmp = TestUtils.round(TestUtils.generateTestMatrixBlock(2, 500000, 1, 10, 1.0, seed + 1));
+		tmp = tmp.append(TestUtils.round(TestUtils.generateTestMatrixBlock(1, 500000, 1, 2, 1.0, seed + 1)),
 			new MatrixBlock(), false);
+		tmp.setNonZeros(tmp.getNumRows() * tmp.getNumColumns());
 		mbt = tmp;
 	}
 

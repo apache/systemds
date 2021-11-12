@@ -20,6 +20,7 @@
 package org.apache.sysds.runtime.util;
 
 import org.apache.commons.lang.ArrayUtils;
+import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.commons.math3.random.RandomDataGenerator;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
@@ -487,6 +488,12 @@ public class UtilFunctions {
 		}
 	}
 
+	public static double objectToDoubleSafe(ValueType vt, Object in) {
+		if(vt == ValueType.STRING && !NumberUtils.isCreatable((String) in)) {
+			return 1.0;
+		} else return objectToDouble(vt, in);
+	}
+
 	public static double objectToDouble(ValueType vt, Object in) {
 		if( in == null )  return Double.NaN;
 		switch( vt ) {
@@ -588,6 +595,10 @@ public class UtilFunctions {
 				return iv1.compareTo(iv2);
 		}		
 		return 0; //equal 
+	}
+
+	public static boolean isBoolean(String str) {
+		return String.valueOf(true).equalsIgnoreCase(str) || String.valueOf(false).equalsIgnoreCase(str);
 	}
 	
 	public static boolean isIntegerNumber( String str ) {

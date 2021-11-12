@@ -34,7 +34,6 @@ import java.io.IOException;
 import java.util.Arrays;
 
 public class TensorReaderBinaryBlock extends TensorReader {
-	@SuppressWarnings("resource")
 	@Override
 	public TensorBlock readTensorFromHDFS(String fname, long[] dims,
 			int blen, ValueType[] schema) throws IOException, DMLRuntimeException {

@@ -19,10 +19,10 @@
 
 package org.apache.sysds.runtime.instructions.fed;
 
+import java.util.Arrays;
 import java.util.Objects;
 import java.util.concurrent.Future;
 
-import com.sun.tools.javac.util.List;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
@@ -34,6 +34,7 @@ import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
 import org.apache.sysds.runtime.matrix.operators.TernaryOperator;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
+
 
 public class TernaryFEDInstruction extends ComputationFEDInstruction {
 
@@ -61,7 +62,8 @@ public class TernaryFEDInstruction extends ComputationFEDInstruction {
 		MatrixObject mo2 = input2.isMatrix() ? ec.getMatrixObject(input2.getName()) : null;
 		MatrixObject mo3 = input3 != null && input3.isMatrix() ? ec.getMatrixObject(input3.getName()) : null;
 
-		long matrixInputsCount = List.of(mo1, mo2, mo3).stream().filter(Objects::nonNull).count();
+		long matrixInputsCount = Arrays.asList(mo1, mo2, mo3)
+			.stream().filter(Objects::nonNull).count();
 
 		if(matrixInputsCount == 3)
 			processMatrixInput(ec, mo1, mo2, mo3);

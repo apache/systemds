@@ -25,18 +25,19 @@ public class MergeSort extends AInsertionSorter {
 
 	private int currentFill = 0;
 
+	public MergeSort(int endLength, int numRows, IntArrayList[] offsets) {
+		super(endLength, numRows, offsets);
+		insert();
+	}
+
 	public MergeSort(int endLength, int numRows, IntArrayList[] offsets, int negativeIndex) {
 		super(endLength, numRows, offsets, negativeIndex);
-		if(_negativeIndex == -1)
-			insert();
-		else
-			insertWithNegative();
+		insertWithNegative();
 	}
 
 	private void insert() {
-		for(int i = 0; i < _offsets.length; i++) {
+		for(int i = 0; i < _offsets.length; i++)
 			insert(_offsets[i], i);
-		}
 	}
 
 	private void insertWithNegative() {
@@ -50,7 +51,6 @@ public class MergeSort extends AInsertionSorter {
 	}
 
 	protected void insert(IntArrayList array, int label) {
-
 		if(currentFill == 0) {
 			currentFill = array.size();
 			for(int i = 0; i < currentFill; i++)
@@ -58,7 +58,6 @@ public class MergeSort extends AInsertionSorter {
 		}
 		else
 			merge(array, label);
-
 	}
 
 	private void merge(IntArrayList a, int label) {
@@ -83,7 +82,6 @@ public class MergeSort extends AInsertionSorter {
 		}
 		while(pA >= 0)
 			set(pN--, a.get(pA--), label);
-
 	}
 
 	protected void negativeInsert(IntArrayList a) {
@@ -109,7 +107,7 @@ public class MergeSort extends AInsertionSorter {
 			vM--;
 		}
 
-		// if there is no mor indexes to ignore
+		// If there is no more indexes to ignore
 		if(pA < 0) {
 			// add all remaining indexes from other arrays
 			while(pP >= 0 && pN >= 0) {
@@ -129,16 +127,12 @@ public class MergeSort extends AInsertionSorter {
 					set(pN--, vM, label);
 				else
 					pA--;
-
 				vM--;
-
 			}
 		}
 
 		// Fill the rest with the default value.
 		while(pN >= 0 && vM >= 0)
 			set(pN--, vM--, label);
-
 	}
-
 }

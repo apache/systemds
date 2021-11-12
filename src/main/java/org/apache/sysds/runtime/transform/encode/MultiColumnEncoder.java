@@ -40,7 +40,9 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types;
+import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.controlprogram.caching.CacheBlock;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.data.SparseBlockMCSR;
 import org.apache.sysds.runtime.data.SparseRowVector;
@@ -55,9 +57,8 @@ import org.apache.sysds.utils.Statistics;
 public class MultiColumnEncoder implements Encoder {
 
 	protected static final Log LOG = LogFactory.getLog(MultiColumnEncoder.class.getName());
-	private static final boolean MULTI_THREADED = true;
 	// If true build and apply separately by placing a synchronization barrier
-	public static boolean MULTI_THREADED_STAGES = false;  
+	public static boolean MULTI_THREADED_STAGES = ConfigurationManager.isStagedParallelTransform();
 
 	// Only affects if  MULTI_THREADED_STAGES is true
 	// if true apply tasks for each column will complete
@@ -79,14 +80,14 @@ public class MultiColumnEncoder implements Encoder {
 		_columnEncoders = new ArrayList<>();
 	}
 
-	public MatrixBlock encode(FrameBlock in) {
+	public MatrixBlock encode(CacheBlock in) {
 		return encode(in, 1);
 	}
 
-	public MatrixBlock encode(FrameBlock in, int k) {
+	public MatrixBlock encode(CacheBlock in, int k) {
 		MatrixBlock out;
 		try {
-			if(MULTI_THREADED && k > 1 && !MULTI_THREADED_STAGES && !hasLegacyEncoder()) {
+			if(k > 1 && !MULTI_THREADED_STAGES && !hasLegacyEncoder()) {
 				out = new MatrixBlock();
 				DependencyThreadPool pool = new DependencyThreadPool(k);
 				LOG.debug("Encoding with full DAG on " + k + " Threads");
@@ -122,7 +123,7 @@ public class MultiColumnEncoder implements Encoder {
 		return out;
 	}
 
-	private List<DependencyTask<?>> getEncodeTasks(FrameBlock in, MatrixBlock out, DependencyThreadPool pool) {
+	private List<DependencyTask<?>> getEncodeTasks(CacheBlock in, MatrixBlock out, DependencyThreadPool pool) {
 		List<DependencyTask<?>> tasks = new ArrayList<>();
 		List<DependencyTask<?>> applyTAgg = null;
 		Map<Integer[], Integer[]> depMap = new HashMap<>();
@@ -179,12 +180,14 @@ public class MultiColumnEncoder implements Encoder {
 		return DependencyThreadPool.createDependencyTasks(tasks, deps);
 	}
 
-	public void build(FrameBlock in) {
+	public void build(CacheBlock in) {
 		build(in, 1);
 	}
 
-	public void build(FrameBlock in, int k) {
-		if(MULTI_THREADED && k > 1) {
+	public void build(CacheBlock in, int k) {
+		if(hasLegacyEncoder() && !(in instanceof FrameBlock))
+			throw new DMLRuntimeException("LegacyEncoders do not support non FrameBlock Inputs");
+		if(k > 1) {
 			buildMT(in, k);
 		}
 		else {
@@ -193,10 +196,11 @@ public class MultiColumnEncoder implements Encoder {
 				columnEncoder.updateAllDCEncoders();
 			}
 		}
-		legacyBuild(in);
+		if(hasLegacyEncoder())
+			legacyBuild((FrameBlock) in);
 	}
 
-	private List<DependencyTask<?>> getBuildTasks(FrameBlock in) {
+	private List<DependencyTask<?>> getBuildTasks(CacheBlock in) {
 		List<DependencyTask<?>> tasks = new ArrayList<>();
 		for(ColumnEncoderComposite columnEncoder : _columnEncoders) {
 			tasks.addAll(columnEncoder.getBuildTasks(in));
@@ -204,7 +208,7 @@ public class MultiColumnEncoder implements Encoder {
 		return tasks;
 	}
 
-	private void buildMT(FrameBlock in, int k) {
+	private void buildMT(CacheBlock in, int k) {
 		DependencyThreadPool pool = new DependencyThreadPool(k);
 		try {
 			pool.submitAllAndWait(getBuildTasks(in));
@@ -223,11 +227,12 @@ public class MultiColumnEncoder implements Encoder {
 			_legacyMVImpute.build(in);
 	}
 
-	public MatrixBlock apply(FrameBlock in) {
+
+	public MatrixBlock apply(CacheBlock in) {
 		return apply(in, 1);
 	}
 
-	public MatrixBlock apply(FrameBlock in, int k) {
+	public MatrixBlock apply(CacheBlock in, int k) {
 		int numCols = in.getNumColumns() + getNumExtraCols();
 		long estNNz = (long) in.getNumColumns() * (long) in.getNumRows();
 		boolean sparse = MatrixBlock.evalSparseFormatInMemory(in.getNumRows(), numCols, estNNz);
@@ -235,20 +240,22 @@ public class MultiColumnEncoder implements Encoder {
 		return apply(in, out, 0, k);
 	}
 
-	public MatrixBlock apply(FrameBlock in, MatrixBlock out, int outputCol) {
+	public MatrixBlock apply(CacheBlock in, MatrixBlock out, int outputCol) {
 		return apply(in, out, outputCol, 1);
 	}
 
-	public MatrixBlock apply(FrameBlock in, MatrixBlock out, int outputCol, int k) {
+	public MatrixBlock apply(CacheBlock in, MatrixBlock out, int outputCol, int k) {
 		// There should be a encoder for every column
+		if(hasLegacyEncoder() && !(in instanceof FrameBlock))
+			throw new DMLRuntimeException("LegacyEncoders do not support non FrameBlock Inputs");
 		int numEncoders = getFromAll(ColumnEncoderComposite.class, ColumnEncoder::getColID).size();
 		if(in.getNumColumns() != numEncoders)
 			throw new DMLRuntimeException("Not every column in has a CompositeEncoder. Please make sure every column "
 				+ "has a encoder or slice the input accordingly");
 		// TODO smart checks
-		if(MULTI_THREADED && k > 1) {
-			// Block allocation for MT access
-			outputMatrixPreProcessing(out, in);
+		// Block allocation for MT access
+		outputMatrixPreProcessing(out, in);
+		if(k > 1) {
 			applyMT(in, out, outputCol, k);
 		}
 		else {
@@ -263,14 +270,14 @@ public class MultiColumnEncoder implements Encoder {
 		// TODO set NNZ explicit count them in the encoders
 		outputMatrixPostProcessing(out);
 		if(_legacyOmit != null)
-			out = _legacyOmit.apply(in, out);
+			out = _legacyOmit.apply((FrameBlock) in, out);
 		if(_legacyMVImpute != null)
-			out = _legacyMVImpute.apply(in, out);
+			out = _legacyMVImpute.apply((FrameBlock) in, out);
 
 		return out;
 	}
 
-	private List<DependencyTask<?>> getApplyTasks(FrameBlock in, MatrixBlock out, int outputCol) {
+	private List<DependencyTask<?>> getApplyTasks(CacheBlock in, MatrixBlock out, int outputCol) {
 		List<DependencyTask<?>> tasks = new ArrayList<>();
 		int offset = outputCol;
 		for(ColumnEncoderComposite e : _columnEncoders) {
@@ -281,7 +288,7 @@ public class MultiColumnEncoder implements Encoder {
 		return tasks;
 	}
 
-	private void applyMT(FrameBlock in, MatrixBlock out, int outputCol, int k) {
+	private void applyMT(CacheBlock in, MatrixBlock out, int outputCol, int k) {
 		DependencyThreadPool pool = new DependencyThreadPool(k);
 		try {
 			if(APPLY_ENCODER_SEPARATE_STAGES){
@@ -302,7 +309,7 @@ public class MultiColumnEncoder implements Encoder {
 		pool.shutdown();
 	}
 
-	private static void outputMatrixPreProcessing(MatrixBlock output, FrameBlock input) {
+	private static void outputMatrixPreProcessing(MatrixBlock output, CacheBlock input) {
 		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
 		output.allocateBlock();
 		if(output.isInSparseFormat()) {
@@ -326,8 +333,8 @@ public class MultiColumnEncoder implements Encoder {
 
 	private void outputMatrixPostProcessing(MatrixBlock output){
 		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
-		Set<Integer> indexSet = getColumnEncoders(ColumnEncoderPassThrough.class).stream()
-				.map(ColumnEncoderPassThrough::getSparseRowsWZeros).flatMap(l -> {
+		Set<Integer> indexSet = _columnEncoders.stream()
+				.map(ColumnEncoderComposite::getSparseRowsWZeros).flatMap(l -> {
 					if(l == null)
 						return null;
 					return l.stream();
@@ -740,10 +747,10 @@ public class MultiColumnEncoder implements Encoder {
 
 	private static class InitOutputMatrixTask implements Callable<Object> {
 		private final MultiColumnEncoder _encoder;
-		private final FrameBlock _input;
+		private final CacheBlock _input;
 		private final MatrixBlock _output;
 
-		private InitOutputMatrixTask(MultiColumnEncoder encoder, FrameBlock input, MatrixBlock output) {
+		private InitOutputMatrixTask(MultiColumnEncoder encoder, CacheBlock input, MatrixBlock output) {
 			_encoder = encoder;
 			_input = input;
 			_output = output;
@@ -769,12 +776,12 @@ public class MultiColumnEncoder implements Encoder {
 	private static class ApplyTasksWrapperTask extends DependencyWrapperTask<Object> {
 		private final ColumnEncoder _encoder;
 		private final MatrixBlock _out;
-		private final FrameBlock _in;
+		private final CacheBlock _in;
 		private int _offset = -1; // offset dude to dummycoding in
 									// previous columns needs to be updated by external task!
 
-		private ApplyTasksWrapperTask(ColumnEncoder encoder, FrameBlock in, MatrixBlock out,
-			DependencyThreadPool pool) {
+		private ApplyTasksWrapperTask(ColumnEncoder encoder, CacheBlock in, 
+				MatrixBlock out, DependencyThreadPool pool) {
 			super(pool);
 			_encoder = encoder;
 			_out = out;

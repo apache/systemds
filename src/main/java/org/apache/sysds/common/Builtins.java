@@ -266,6 +266,7 @@ public enum Builtins {
 	TRANS("t", false),
 	TSNE("tSNE", true),
 	TYPEOF("typeof", false),
+	UNIQUE("unique", true),
 	UNIVAR("univar", true),
 	UNION("union", true),
 	VAR("var", false),

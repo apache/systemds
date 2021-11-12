@@ -1,6 +1,48 @@
-unique = function(matrix[double] v)
-    return (matrix[double] r) {
-    v_sorted = order(target=v, by=1, decreasing=FALSE, index.return=FALSE);
-    mask = rbind(matrix("1", rows = 1, cols = 1), v_sorted[1:nrow(v_sorted)-1,] != v_sorted[2:nrow(v_sorted),]);
-    r = removeEmpty(target = v_sorted, margin = "rows", select = mask);
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+# Builtin function that implements unique operation on vectors
+
+# INPUT PARAMETERS:
+# ---------------------------------------------------------------------------------------------
+# NAME            TYPE    DEFAULT     MEANING
+# ---------------------------------------------------------------------------------------------
+# X               Matrix  ---         input vector
+# ---------------------------------------------------------------------------------------------
+
+# Output(s)
+# ---------------------------------------------------------------------------------------------
+# NAME            TYPE    DEFAULT      MEANING
+# ---------------------------------------------------------------------------------------------
+# R               Matrix  ---         matrix with only unique rows
+
+unique = function(matrix[double] X)
+    return (matrix[double] R) {
+    if(nrow(X) > 1) {
+        X_sorted = order(target=X, by=1, decreasing=FALSE, index.return=FALSE);
+        temp = X_sorted[1:nrow(X_sorted)-1,] != X_sorted[2:nrow(X_sorted),];
+        mask = rbind(matrix(1, rows = 1, cols = 1), rowSums(temp));
+        R = removeEmpty(target = X_sorted, margin = "rows", select = mask);
+    }
+    else {
+        R = X
+    }
 }

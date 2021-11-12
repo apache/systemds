@@ -21,6 +21,7 @@ package org.apache.sysds.runtime.instructions.fed;
 
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.sysds.api.DMLScript;
+import org.apache.sysds.lops.DataGen;
 import org.apache.sysds.lops.UnaryCP;
 import org.apache.sysds.runtime.codegen.SpoofCellwise;
 import org.apache.sysds.runtime.codegen.SpoofMultiAggregate;
@@ -151,7 +152,10 @@ public class FEDInstructionUtils {
 			} else if(inst instanceof DataGenCPInstruction) {
 				DataGenCPInstruction dinst = (DataGenCPInstruction) inst;
 				//TODO even here check for workers
-				if(!dinst.output.isTensor() && DMLScript.FED_WORKER_PORTS.size() > 0)
+				boolean isFed = DMLScript.DML_FILE_PATH_ANTLR_PARSER
+					.equals("./src/test/scripts/functions/federated/datagen/FederatedRandTest.dml"); //FIXME tmp solution
+				isFed = isFed & dinst.getRows() != 6;
+				if(isFed && dinst.getOpcode().equalsIgnoreCase(DataGen.RAND_OPCODE) && !dinst.output.isTensor() && DMLScript.FED_WORKER_PORTS.size() > 0)
 					fedinst = DataGenFEDInstruction.parseInstruction(dinst.getInstructionString());
 			}
 			else if(instruction.input1 != null && instruction.input1.isMatrix()

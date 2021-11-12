@@ -2537,6 +2537,9 @@ public class DMLTranslator
 		case DROP_INVALID_TYPE:
 		case DROP_INVALID_LENGTH:
 		case VALUE_SWAP:
+			currBuiltinOp = new BinaryOp(target.getName(), target.getDataType(),
+				target.getValueType(), OpOp2.valueOf(source.getOpCode().name()), expr, expr2);
+			break;
 		case MAP:
 			if(expr3 == null)
 				expr3 = new LiteralOp(0L);

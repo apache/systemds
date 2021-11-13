@@ -36,11 +36,11 @@ import org.junit.runners.Parameterized;
 
 @RunWith(value = Parameterized.class)
 @net.jcip.annotations.NotThreadSafe
-public class FederatedNotAlignedTest extends AutomatedTestBase {
-	private final static String TEST_NAME1 = "FederatedNotAlignedMMTest";
+public class FederatedMisAlignedTest extends AutomatedTestBase {
+	private final static String TEST_NAME1 = "FederatedMisAlignedTest";
 
-	private final static String TEST_DIR = "functions/federated/notaligned/";
-	private static final String TEST_CLASS_DIR = TEST_DIR + FederatedRowAggregateTest.class.getSimpleName() + "/";
+	private final static String TEST_DIR = "functions/federated/";
+	private static final String TEST_CLASS_DIR = TEST_DIR + FederatedMisAlignedTest.class.getSimpleName() + "/";
 
 	private final static int blocksize = 1024;
 	@Parameterized.Parameter()
@@ -60,7 +60,13 @@ public class FederatedNotAlignedTest extends AutomatedTestBase {
 	}
 
 	private enum OpType {
-		MM
+		MM,
+		EW_MULT,
+	}
+
+	private enum MisAlignmentType {
+		HOST,
+		RANGE
 	}
 
 	@Override
@@ -70,28 +76,53 @@ public class FederatedNotAlignedTest extends AutomatedTestBase {
 	}
 
 	@Test
-	public void testMMDenseMatrixCP() {
-		runAggregateOperationTest(OpType.MM, ExecMode.SINGLE_NODE);
+	public void testMMMisAlignedHostCP() {
+		runMisAlignedTest(OpType.MM, ExecMode.SINGLE_NODE, MisAlignmentType.HOST);
 	}
 
 	@Test
-	public void testMMDenseMatrixSP() {
-		runAggregateOperationTest(OpType.MM, ExecMode.SPARK);
+	public void testMMMisAlignedHostSP() {
+		runMisAlignedTest(OpType.MM, ExecMode.SPARK, MisAlignmentType.HOST);
 	}
 
-	private void runAggregateOperationTest(OpType type, ExecMode execMode) {
+	@Test
+	public void testMMMisAlignedRangeCP() {
+		runMisAlignedTest(OpType.MM, ExecMode.SINGLE_NODE, MisAlignmentType.RANGE);
+	}
+
+	@Test
+	public void testMMMisAlignedRangeSP() {
+		runMisAlignedTest(OpType.MM, ExecMode.SPARK, MisAlignmentType.RANGE);
+	}
+
+	@Test
+	public void testEWMultMisAlignedHostCP() {
+		runMisAlignedTest(OpType.EW_MULT, ExecMode.SINGLE_NODE, MisAlignmentType.HOST);
+	}
+
+	@Test
+	public void testEWMultMisAlignedHostSP() {
+		runMisAlignedTest(OpType.EW_MULT, ExecMode.SPARK, MisAlignmentType.HOST);
+	}
+
+	@Test
+	public void testEWMultMisAlignedRangeCP() {
+		runMisAlignedTest(OpType.EW_MULT, ExecMode.SINGLE_NODE, MisAlignmentType.RANGE);
+	}
+
+	@Test
+	public void testEWMultMisAlignedRangeSP() {
+		runMisAlignedTest(OpType.EW_MULT, ExecMode.SPARK, MisAlignmentType.RANGE);
+	}
+
+	private void runMisAlignedTest(OpType type, ExecMode execMode, MisAlignmentType maType) {
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
 		ExecMode platformOld = rtplatform;
 
 		if(rtplatform == ExecMode.SPARK)
 			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 
-		String TEST_NAME = null;
-		switch(type) {
-			case MM:
-				TEST_NAME = TEST_NAME1;
-				break;
-		}
+		String TEST_NAME = TEST_NAME1;
 
 		getAndLoadTestConfiguration(TEST_NAME);
 		String HOME = SCRIPT_DIR + TEST_DIR;
@@ -135,8 +166,10 @@ public class FederatedNotAlignedTest extends AutomatedTestBase {
 
 		// Run reference dml script with normal matrix
 		fullDMLScriptName = HOME + TEST_NAME + "Reference.dml";
-		programArgs = new String[] {"-stats", "100", "-args", input("X1"), input("X2"), input("X3"), input("X4"),
-			expected("S"), Boolean.toString(rowPartitioned).toUpperCase()};
+		programArgs = new String[] {"-stats", "100", "-nvargs",
+			"in_X1=" + input("X1"), "in_X2=" + input("X2"), "in_X3=" + input("X3"), "in_X4=" + input("X4"),
+			"testnum=" + Integer.toString(type.ordinal()), "misaligntype=" + Integer.toString(maType.ordinal()),
+			"rP=" + Boolean.toString(rowPartitioned).toUpperCase(), "out_S=" + expected("S")};
 		runTest(true, false, null, -1);
 		
 		// Run actual dml script with federated matrix
@@ -147,6 +180,7 @@ public class FederatedNotAlignedTest extends AutomatedTestBase {
 			"in_X2=" + TestUtils.federatedAddress(port2, input("X2")),
 			"in_X3=" + TestUtils.federatedAddress(port3, input("X3")),
 			"in_X4=" + TestUtils.federatedAddress(port4, input("X4")), "rows=" + rows, "cols=" + cols,
+			"testnum=" + Integer.toString(type.ordinal()), "misaligntype=" + Integer.toString(maType.ordinal()),
 			"rP=" + Boolean.toString(rowPartitioned).toUpperCase(), "out_S=" + output("S")};
 
 		runTest(true, false, null, -1);
@@ -157,6 +191,9 @@ public class FederatedNotAlignedTest extends AutomatedTestBase {
 		switch(type) {
 			case MM:
 				Assert.assertTrue(heavyHittersContainsString(rtplatform == ExecMode.SPARK ? "fed_mapmm" : "fed_ba+*"));
+				break;
+			case EW_MULT:
+				Assert.assertTrue(heavyHittersContainsString("fed_*"));
 				break;
 		}
 

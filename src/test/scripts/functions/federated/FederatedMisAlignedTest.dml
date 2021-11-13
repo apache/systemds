@@ -19,25 +19,58 @@
 #
 #-------------------------------------------------------------
 
-if ($rP) {
+testnum = $testnum;
+misaligntype = $misaligntype;
+
+if(misaligntype == 0) { # misaligned hosts
+  if ($rP) {
     X = federated(addresses=list($in_X1, $in_X2, $in_X3, $in_X4),
-        ranges=list(list(0, 0), list($rows/4, $cols), list($rows/4, 0), list(2*$rows/4, $cols),
-    		list(2*$rows/4, 0), list(3*$rows/4, $cols), list(3*$rows/4, 0), list($rows, $cols)));
+      ranges=list(list(0, 0), list($rows/4, $cols), list($rows/4, 0), list(2*$rows/4, $cols),
+    	 list(2*$rows/4, 0), list(3*$rows/4, $cols), list(3*$rows/4, 0), list($rows, $cols)));
     Y = federated(addresses=list($in_X1, $in_X2, $in_X4, $in_X3), # switched partition 3 and 4
-        ranges=list(list(0, 0), list($rows/4, $cols), list($rows/4, 0), list(2*$rows/4, $cols),
-    		list(2*$rows/4, 0), list(3*$rows/4, $cols), list(3*$rows/4, 0), list($rows, $cols)));
-    X = t(X); # col partitioned federated X
-} else {
+      ranges=list(list(0, 0), list($rows/4, $cols), list($rows/4, 0), list(2*$rows/4, $cols),
+  		  list(2*$rows/4, 0), list(3*$rows/4, $cols), list(3*$rows/4, 0), list($rows, $cols)));
+  } else {
     X = federated(addresses=list($in_X1, $in_X2, $in_X3, $in_X4),
-            ranges=list(list(0, 0), list($rows, $cols/4), list(0,$cols/4), list($rows, $cols/2),
-            	list(0,$cols/2), list($rows, 3*($cols/4)), list(0, 3*($cols/4)), list($rows, $cols)));
+      ranges=list(list(0, 0), list($rows, $cols/4), list(0,$cols/4), list($rows, $cols/2),
+      	list(0,$cols/2), list($rows, 3*($cols/4)), list(0, 3*($cols/4)), list($rows, $cols)));
     Y = federated(addresses=list($in_X1, $in_X2, $in_X4, $in_X3), # switched partition 3 and 4
-            ranges=list(list(0, 0), list($rows, $cols/4), list(0,$cols/4), list($rows, $cols/2),
-            	list(0,$cols/2), list($rows, 3*($cols/4)), list(0, 3*($cols/4)), list($rows, $cols)));
-    Y = t(Y); # row partitioned federated Y
+      ranges=list(list(0, 0), list($rows, $cols/4), list(0,$cols/4), list($rows, $cols/2),
+      	list(0,$cols/2), list($rows, 3*($cols/4)), list(0, 3*($cols/4)), list($rows, $cols)));
+  }
 }
+else if(misaligntype == 1) { # misaligned ranges
+  if ($rP) {
+    X = federated(addresses=list($in_X1, $in_X2, $in_X3, $in_X4),
+        ranges=list(list(0, 0), list($rows/4, $cols), list($rows/4, 0), list(2*$rows/4, $cols),
+    		list(2*$rows/4, 0), list(3*$rows/4, $cols), list(3*$rows/4, 0), list($rows, $cols)));
+    Y = X[2:nrow(X), ];
+    X = X[1:(nrow(X)-1), ];
+  } else {
+    X = federated(addresses=list($in_X1, $in_X2, $in_X3, $in_X4),
+            ranges=list(list(0, 0), list($rows, $cols/4), list(0,$cols/4), list($rows, $cols/2),
+            	list(0,$cols/2), list($rows, 3*($cols/4)), list(0, 3*($cols/4)), list($rows, $cols)));
+    Y = X[ , 2:ncol(X)];
+    X = X[ , 1:(ncol(X)-1)];
+  }
+}
+
 
 while(FALSE) { }
 
-S = X %*% Y;
+if(testnum == 0) { # MM
+  if($rP) {
+    X = t(X); # col partitioned federated X
+  }
+  else {
+    Y = t(Y); # row partitioned federated Y
+  }
+  while(FALSE) { }
+
+  S = X %*% Y;
+}
+else if(testnum == 1) { # EW_MULT
+  S = X * Y;
+}
+
 write(S, $out_S);

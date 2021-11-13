@@ -58,7 +58,7 @@ public class BuiltinUnionTest  extends AutomatedTestBase {
     }
 
     @Test
-    public void testUnion2CP() {
+    public void testUnion2CP() { //R gives {{1},{2},{3},{4}} are matrizen a valid input?
         double[][] X = {{2, 3, 4}};
         double[][] Y = {{1, 2, 3},{2, 3, 4}};
 
@@ -73,6 +73,24 @@ public class BuiltinUnionTest  extends AutomatedTestBase {
 
         double[][] expected = {{1, 2, 3},{2, 3, 4}};
         runUnionTests(X, Y,expected, Types.ExecType.SPARK);
+    }
+
+    @Test
+    public void testUnion3CP() {
+        double[][] X = {{1, 2, 3}, {2, 3, 4}, {1, 2, 3}};
+        double[][] Y = {{1, 2, 3},{5}};
+
+        double[][] expected =  {{1, 2, 3}, {2, 3, 4},{5}};
+        runUnionTests(X, Y, expected, Types.ExecType.CP);
+    }
+
+    @Test
+    public void testUnion3SP() { //This fails?
+        double[][] X = {{1, 2, 3}, {2, 3, 4}, {1, 2, 3}};
+        double[][] Y = {{1, 2, 3},{5}};
+
+        double[][] expected =  {{1, 2, 3}, {2, 3, 4},{5}};
+        runUnionTests(X, Y, expected, Types.ExecType.SPARK);
     }
 
 
@@ -99,7 +117,6 @@ public class BuiltinUnionTest  extends AutomatedTestBase {
 
             TestUtils.compareMatrices(dmlfile, R, 1e-10, "dml", "expected");
 
-            //TODO union.R does not work. why?
             runRScript(true);
             HashMap<MatrixValue.CellIndex, Double> rfile  = readRMatrixFromExpectedDir("R");
 

@@ -51,6 +51,8 @@ public class BinaryMatrixMatrixFEDInstruction extends BinaryFEDInstruction
 			mo2 = ec.getMatrixObject(input1);
 		}
 
+		MatrixObject fedMo; // store the matrix object where the fed requests are executed
+
 		//execute federated operation on mo1 or mo2
 		FederatedRequest fr2 = null;
 		if( mo2.isFederatedExcept(FType.BROADCAST) ) {
@@ -59,19 +61,16 @@ public class BinaryMatrixMatrixFEDInstruction extends BinaryFEDInstruction
 				fr2 = FederationUtils.callInstruction(instString, output,
 					new CPOperand[]{input1, input2},
 					new long[]{mo1.getFedMapping().getID(), mo2.getFedMapping().getID()}, true);
-				mo1.getFedMapping().execute(getTID(), true, fr2);
+				mo2.getFedMapping().execute(getTID(), true, fr2);
 			}
-			else if ( !mo1.isFederated() ) {
+			else {
 				FederatedRequest[] fr1 = mo2.getFedMapping().broadcastSliced(mo1, false);
 				fr2 = FederationUtils.callInstruction(instString, output,
 					new CPOperand[]{input1, input2},
 					new long[]{fr1[0].getID(), mo2.getFedMapping().getID()}, true);
 				mo2.getFedMapping().execute(getTID(), true, fr1, fr2);
 			}
-			else {
-				throw new DMLRuntimeException("Matrix-matrix binary operations with a "
-					+ "federated right input are only supported for special cases yet.");
-			}
+			fedMo = mo2; // for setting the output federated mapping afterwards
 		}
 		else { // matrix-matrix binary operations -> lhs fed input -> fed output
 			if(mo1.isFederated(FType.FULL) ) {
@@ -112,14 +111,13 @@ public class BinaryMatrixMatrixFEDInstruction extends BinaryFEDInstruction
 			else {
 				throw new DMLRuntimeException("Matrix-matrix binary operations are only supported with a row partitioned or column partitioned federated input yet.");
 			}
+			fedMo = mo1; // for setting the output federated mapping afterwards
 		}
 
 		if ( mo1.isFederated(FType.PART) && !mo2.isFederated() )
 			setOutputFedMappingPart(mo1, mo2, fr2.getID(), ec);
-		else if ( mo1.isFederated() )
-			setOutputFedMapping(mo1, fr2.getID(), ec);
-		else if ( mo2.isFederated() )
-			setOutputFedMapping(mo2, fr2.getID(), ec);
+		else if ( fedMo.isFederated() )
+			setOutputFedMapping(fedMo, fr2.getID(), ec);
 		else throw new DMLRuntimeException("Input is not federated, so the output FedMapping cannot be set!");
 	}
 

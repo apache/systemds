@@ -24,15 +24,48 @@ public class BuiltinDifferenceTest extends AutomatedTestBase {
     public void testDifference1CP() {
         double[][] X = {{1}, {2}, {3}};
         double[][] Y = {{2}, {3}, {4}};
-
-        double[][] expected = {{1}};
-        runUnionTests(X, Y,expected, Types.ExecType.CP);
+        runUnionTests(X, Y, Types.ExecType.CP);
     }
 
+    @Test
+    public void testDifference1SP() {
+        double[][] X = {{1}, {2}, {3}};
+        double[][] Y = {{2}, {3}, {4}};
 
+        runUnionTests(X, Y, Types.ExecType.SPARK);
+    }
 
+    @Test
+    public void testDifference2CP() {
+        double[][] X = {{9}, {2}, {3}};
+        double[][] Y = {{2}, {3}, {4}};
 
-    private void runUnionTests(double[][] X, double[][]Y, double[][] expected, Types.ExecType instType) {
+        runUnionTests(X, Y, Types.ExecType.CP);
+    }
+
+    @Test
+    public void testDifference2SP() {
+        double[][] X = {{9}, {2}, {3}};
+        double[][] Y = {{2}, {3}, {4}};
+
+        runUnionTests(X, Y, Types.ExecType.SPARK);
+    }
+
+    @Test
+    public void testDifference3CP() {
+        double[][] X =  {{12},{22},{13},{4},{6},{7},{8},{9},{12},{12}};
+        double[][] Y = {{1},{2},{11},{12},{13},{18},{20},{21},{12}};
+        runUnionTests(X, Y, Types.ExecType.CP);
+    }
+
+    @Test
+    public void testDifference3Spark() {
+        double[][] X = {{12},{22},{13},{4},{6},{7},{8},{9},{12},{12}};
+        double[][] Y = {{1},{2},{11},{12},{13},{18},{20},{21},{12}};
+        runUnionTests(X, Y, Types.ExecType.SPARK);
+    }
+
+    private void runUnionTests(double[][] X, double[][]Y, Types.ExecType instType) {
         Types.ExecMode platformOld = setExecMode(instType);
         try {
             loadTestConfiguration(getTestConfiguration(TEST_NAME));
@@ -46,16 +79,9 @@ public class BuiltinDifferenceTest extends AutomatedTestBase {
             writeInputMatrixWithMTD("Y", Y, true);
 
             runTest(true, false, null, -1);
-            HashMap<MatrixValue.CellIndex, Double> dmlfile = readDMLMatrixFromOutputDir("R");
-
-            HashMap<MatrixValue.CellIndex, Double> R = new HashMap<>();
-            for(int r=0; r< expected.length; r++)
-                for(int c=0; c< expected[r].length; c++)
-                    R.put(new MatrixValue.CellIndex(r+1,c+1), expected[r][c]);
-
-            TestUtils.compareMatrices(dmlfile, R, 1e-10, "dml", "expected");
-
             runRScript(true);
+
+            HashMap<MatrixValue.CellIndex, Double> dmlfile = readDMLMatrixFromOutputDir("R");
             HashMap<MatrixValue.CellIndex, Double> rfile  = readRMatrixFromExpectedDir("R");
 
             TestUtils.compareMatrices(dmlfile, rfile, 1e-10, "dml", "expected");

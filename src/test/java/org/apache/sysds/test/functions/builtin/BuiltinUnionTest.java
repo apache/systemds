@@ -87,7 +87,7 @@ public class BuiltinUnionTest  extends AutomatedTestBase {
         double[][] Y = {{1},{2},{11},{12},{13},{18},{20},{21},{12}};
         runUnionTests(X, Y, Types.ExecType.SPARK);
     }
-    
+
     private void runUnionTests(double[][] X, double[][]Y, Types.ExecType instType) {
         Types.ExecMode platformOld = setExecMode(instType);
         try {

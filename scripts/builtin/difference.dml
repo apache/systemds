@@ -50,11 +50,31 @@ difference = function(Matrix[Double] X, Matrix[Double] Y)
     }
     else
     {
-        X = (table(X, 1) != 0)
-        Y = (table(Y, 1) != 0)
-        n = min(nrow(X), nrow(Y))
-        I = X[1:n,] - Y[1:n,]
+        X_t = (table(X, 1) != 0)
+        Y_t = (table(Y, 1) != 0)
 
-        R = removeEmpty(target=seq(1,n), margin="rows", select=I)
+        rows_X = nrow(X_t);
+        rows_Y = nrow(Y_t);
+
+        if(rows_X < rows_Y)
+        {
+            A = X_t[1:rows_X,] - Y_t[1:rows_X,]
+            R = removeEmpty(target=seq(1,rows_X), margin="rows", select=A)
+        }
+        else
+        {
+            #General idea.
+            #Combine all
+            combined = union(X,Y)
+
+            #create a table with all entries
+            c_t = (table(combined, 1) != 0)
+
+            #remove all values present in y
+            #TODO this step does not work because of syntax.. how to do it?
+            #c_t = c_t - y_T  // or c_t = c_t[1:nrow(c_t),] - Y_t[1:rows_Y,];
+
+            #R = removeEmpty(target=seq(1,rows_X), margin="rows", select=c_t)
+        }
     }
 }

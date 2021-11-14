@@ -19,6 +19,8 @@
 
 package org.apache.sysds.runtime.instructions.fed;
 
+import java.util.stream.IntStream;
+
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
@@ -117,7 +119,8 @@ public class BinaryMatrixMatrixFEDInstruction extends BinaryFEDInstruction
 		if ( mo1.isFederated(FType.PART) && !mo2.isFederated() )
 			setOutputFedMappingPart(mo1, mo2, fr2.getID(), ec);
 		else if ( fedMo.isFederated() )
-			setOutputFedMapping(fedMo, fr2.getID(), ec);
+			setOutputFedMapping(fedMo, Math.max(mo1.getNumRows(), mo2.getNumRows()),
+				Math.max(mo1.getNumColumns(), mo2.getNumColumns()), fr2.getID(), ec);
 		else throw new DMLRuntimeException("Input is not federated, so the output FedMapping cannot be set!");
 	}
 
@@ -142,9 +145,33 @@ public class BinaryMatrixMatrixFEDInstruction extends BinaryFEDInstruction
 	 * @param outputFedmappingID ID for the fed mapping of output
 	 * @param ec execution context
 	 */
-	private void setOutputFedMapping(MatrixObject moFederated, long outputFedmappingID, ExecutionContext ec){
+	private void setOutputFedMapping(MatrixObject moFederated, long rowNum, long colNum,
+		long outputFedmappingID, ExecutionContext ec){
 		MatrixObject out = ec.getMatrixObject(output);
-		out.getDataCharacteristics().set(moFederated.getDataCharacteristics());
-		out.setFedMapping(moFederated.getFedMapping().copyWithNewID(outputFedmappingID));
+		FederationMap fedMap = moFederated.getFedMapping().copyWithNewID(outputFedmappingID);
+		if(moFederated.getNumRows() != rowNum || moFederated.getNumColumns() != colNum) {
+			int dim = moFederated.isFederated(FType.COL) ? 0 : 1;
+			fedMap = modifyFedRanges(fedMap, (dim == 0) ? rowNum : colNum, dim);
+		}
+		out.getDataCharacteristics().set(moFederated.getDataCharacteristics())
+			.setRows(rowNum).setCols(colNum);
+		out.setFedMapping(fedMap);
+	}
+
+	/**
+	 * Take the federated mapping and sets one dimension of all federated ranges
+	 * to the specified value.
+	 *
+	 * @param fedMap     the original federated mapping
+	 * @param value      long value for setting the dimension
+	 * @param dim        indicates if the row (0) or column (1) dimension should be set to value
+	 * @return FederationMap with the modified federated ranges
+	 */
+	private static FederationMap modifyFedRanges(FederationMap fedMap, long value, int dim) {
+		IntStream.range(0, fedMap.getFederatedRanges().length).forEach(i -> {
+			fedMap.getFederatedRanges()[i].setBeginDim(dim, 0);
+			fedMap.getFederatedRanges()[i].setEndDim(dim, value);
+		});
+		return fedMap;
 	}
 }

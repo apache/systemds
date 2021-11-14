@@ -58,5 +58,11 @@ if(testnum == 0) { # MM
 else if(testnum == 1) { # EW_MULT
   S = X * Y;
 }
+else if(testnum == 2) { # EW_PLUS
+  S = X + Y;
+}
+else if(testnum == 3) { # EW_GREATER
+  S = X > Y;
+}
 
 write(S, $out_S);

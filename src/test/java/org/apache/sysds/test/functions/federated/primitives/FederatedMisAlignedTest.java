@@ -62,6 +62,8 @@ public class FederatedMisAlignedTest extends AutomatedTestBase {
 	private enum OpType {
 		MM,
 		EW_MULT,
+		EW_PLUS,
+		EW_GREATER,
 	}
 
 	private enum MisAlignmentType {
@@ -113,6 +115,46 @@ public class FederatedMisAlignedTest extends AutomatedTestBase {
 	@Test
 	public void testEWMultMisAlignedRangeSP() {
 		runMisAlignedTest(OpType.EW_MULT, ExecMode.SPARK, MisAlignmentType.RANGE);
+	}
+
+	@Test
+	public void testEWPlusMisAlignedHostCP() {
+		runMisAlignedTest(OpType.EW_PLUS, ExecMode.SINGLE_NODE, MisAlignmentType.HOST);
+	}
+
+	@Test
+	public void testEWPlusMisAlignedHostSP() {
+		runMisAlignedTest(OpType.EW_PLUS, ExecMode.SPARK, MisAlignmentType.HOST);
+	}
+
+	@Test
+	public void testEWPlusMisAlignedRangeCP() {
+		runMisAlignedTest(OpType.EW_PLUS, ExecMode.SINGLE_NODE, MisAlignmentType.RANGE);
+	}
+
+	@Test
+	public void testEWPlusMisAlignedRangeSP() {
+		runMisAlignedTest(OpType.EW_PLUS, ExecMode.SPARK, MisAlignmentType.RANGE);
+	}
+
+	@Test
+	public void testEWGreaterMisAlignedHostCP() {
+		runMisAlignedTest(OpType.EW_GREATER, ExecMode.SINGLE_NODE, MisAlignmentType.HOST);
+	}
+
+	@Test
+	public void testEWGreaterMisAlignedHostSP() {
+		runMisAlignedTest(OpType.EW_GREATER, ExecMode.SPARK, MisAlignmentType.HOST);
+	}
+
+	@Test
+	public void testEWGreaterMisAlignedRangeCP() {
+		runMisAlignedTest(OpType.EW_GREATER, ExecMode.SINGLE_NODE, MisAlignmentType.RANGE);
+	}
+
+	@Test
+	public void testEWGreaterMisAlignedRangeSP() {
+		runMisAlignedTest(OpType.EW_GREATER, ExecMode.SPARK, MisAlignmentType.RANGE);
 	}
 
 	private void runMisAlignedTest(OpType type, ExecMode execMode, MisAlignmentType maType) {
@@ -194,6 +236,12 @@ public class FederatedMisAlignedTest extends AutomatedTestBase {
 				break;
 			case EW_MULT:
 				Assert.assertTrue(heavyHittersContainsString("fed_*"));
+				break;
+			case EW_PLUS:
+				Assert.assertTrue(heavyHittersContainsString("fed_+"));
+				break;
+			case EW_GREATER:
+				Assert.assertTrue(heavyHittersContainsString("fed_>"));
 				break;
 		}
 

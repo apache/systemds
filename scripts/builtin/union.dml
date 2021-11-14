@@ -40,11 +40,6 @@
 union = function(Matrix[Double] X, Matrix[Double] Y)
     return (matrix[double] R)
 {
-
-    x_sorted = order(target=X, by=1, decreasing=FALSE, index.return=FALSE);
-    y_sorted = order(target=Y, by=1, decreasing=FALSE, index.return=FALSE);
-
-    combined = rbind(x_sorted, y_sorted);
+    combined = rbind(X,Y);
     R = unique(combined);
-
 }

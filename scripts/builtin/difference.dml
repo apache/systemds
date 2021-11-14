@@ -34,7 +34,7 @@
 # ---------------------------------------------------------------------------------------------
 # NAME            TYPE    DEFAULT      MEANING
 # ---------------------------------------------------------------------------------------------
-# R               Matrix  ---         vector with all columns that are present in X but not in Y
+# R               Matrix  ---         vector with all elements that are present in X but not in Y
 
 
 difference = function(Matrix[Double] X, Matrix[Double] Y)
@@ -50,13 +50,11 @@ difference = function(Matrix[Double] X, Matrix[Double] Y)
     }
     else
     {
-      # compute indicator vector of intersection output
-      X = (table(X, 1) != 0)
-      Y = (table(Y, 1) != 0)
-      n = min(nrow(X), nrow(Y))
-      I = X[1:n,] * Y[1:n,]
+        X = (table(X, 1) != 0)
+        Y = (table(Y, 1) != 0)
+        n = min(nrow(X), nrow(Y))
+        I = X[1:n,] - Y[1:n,]
 
-      # reconstruct integer values and create output
-      R = removeEmpty(target=seq(1,n), margin="rows", select=I)
+        R = removeEmpty(target=seq(1,n), margin="rows", select=I)
     }
 }

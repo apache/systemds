@@ -63,18 +63,17 @@ difference = function(Matrix[Double] X, Matrix[Double] Y)
         }
         else
         {
-            #General idea.
-            #Combine all
-            combined = union(X,Y)
+            #Fucking hack bro.
+            #füge einen wert in Y ein der größer ist als der größte wert in x
+            max_x_val = max(X);
+            print("Max = " + max_x_val);
 
-            #create a table with all entries
-            c_t = (table(combined, 1) != 0)
+            Y_new = rbind(Y, matrix(max_x_val + 1, rows=1,cols=1));
+            Y_new_t = (table(Y_new, 1) != 0)
 
-            #remove all values present in y
-            #TODO this step does not work because of syntax.. how to do it?
-            #c_t = c_t - y_T  // or c_t = c_t[1:nrow(c_t),] - Y_t[1:rows_Y,];
-
-            #R = removeEmpty(target=seq(1,rows_X), margin="rows", select=c_t)
+            A = X_t[1:rows_X,] - Y_new_t[1:rows_X,]
+            B = X_t[1:rows_X,] * A[1:rows_X,];
+            R = removeEmpty(target=seq(1,nrow(B)), margin="rows", select=B)
         }
     }
 }

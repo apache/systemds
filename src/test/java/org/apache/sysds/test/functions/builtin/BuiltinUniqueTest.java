@@ -43,52 +43,52 @@ public class BuiltinUniqueTest extends AutomatedTestBase {
 	@Test
 	public void testUnique1CP() {
 		double[][] X = {{1},{1},{6},{9},{4},{2},{0},{9},{0},{0},{4},{4}};
-		runUniqueTest(X, true, ExecType.CP);
+		runUniqueTest(X, ExecType.CP);
 	}
 
 	@Test
 	public void testUnique1SP() {
 		double[][] X = {{1},{1},{6},{9},{4},{2},{0},{9},{0},{0},{4},{4}};
-		runUniqueTest(X,true, ExecType.SPARK);
+		runUniqueTest(X,ExecType.SPARK);
 	}
 
 	@Test
 	public void testUnique2CP() {
 		double[][] X = {{0}};
-		runUniqueTest(X, true, ExecType.CP);
+		runUniqueTest(X, ExecType.CP);
 	}
 
 	@Test
 	public void testUnique2SP() {
 		double[][] X = {{0}};
-		runUniqueTest(X, true, ExecType.SPARK);
+		runUniqueTest(X, ExecType.SPARK);
 	}
 
 	@Test
 	public void testUnique3CP() {
 		double[][] X = {{1, 2, 3}, {2, 3, 4}, {1, 2, 3}};
-		runUniqueTest(X, true, ExecType.CP);
+		runUniqueTest(X, ExecType.CP);
 	}
 
 	@Test
 	public void testUnique3SP() { //This fails?
 		double[][] X = {{1, 2, 3}, {2, 3, 4}, {1, 2, 3}};
-		runUniqueTest(X, true, ExecType.SPARK);
+		runUniqueTest(X, ExecType.SPARK);
 	}
 
 	@Test
 	public void testUnique4CP() {
 		double[][] X = {{1.5, 2}, {7, 3}, {1, 3}, {1.5, 2}, {-1, -2.32}, {-1, 0.1}, {1, 3}, {-1, 0.1}};
-		runUniqueTest(X, true, ExecType.CP);
+		runUniqueTest(X, ExecType.CP);
 	}
 
 	@Test
 	public void testUnique4SP() { //This fails?
 		double[][] X = {{1.5, 2}, {7, 3}, {1, 3}, {1.5, 2}, {-1, -2.32}, {-1, 0.1}, {1, 3}, {-1, 0.1}};
-		runUniqueTest(X, true, ExecType.SPARK);
+		runUniqueTest(X, ExecType.SPARK);
 	}
 
-	private void runUniqueTest(double[][] X, boolean defaultProb, ExecType instType) {
+	private void runUniqueTest(double[][] X, ExecType instType) {
 		Types.ExecMode platformOld = setExecMode(instType);
 		try {
 			loadTestConfiguration(getTestConfiguration(TEST_NAME));

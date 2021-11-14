@@ -52,7 +52,7 @@ public class BuiltinDifferenceTest extends AutomatedTestBase {
     }
 
     @Test
-    public void testDifference3CP() {
+    public void testDifference3CP() { //fails because element order in R is wrong
         double[][] X =  {{12},{22},{13},{4},{6},{7},{8},{9},{12},{12}};
         double[][] Y = {{1},{2},{11},{12},{13},{18},{20},{21},{12}};
         runUnionTests(X, Y, Types.ExecType.CP);

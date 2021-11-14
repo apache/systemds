@@ -43,9 +43,7 @@ public class BuiltinUnionTest  extends AutomatedTestBase {
     public void testUnion1CP() {
         double[][] X = {{1}, {2}, {3}};
         double[][] Y = {{2}, {3}, {4}};
-
-        double[][] expected = {{1}, {2}, {3}, {4}};
-        runUnionTests(X, Y,expected, Types.ExecType.CP);
+        runUnionTests(X, Y, Types.ExecType.CP);
     }
 
     @Test
@@ -53,48 +51,44 @@ public class BuiltinUnionTest  extends AutomatedTestBase {
         double[][] X = {{1}, {2}, {3}};
         double[][] Y = {{2}, {3}, {4}};
 
-        double[][] expected = {{1}, {2}, {3}, {4}};
-        runUnionTests(X, Y,expected, Types.ExecType.SPARK);
+        runUnionTests(X, Y, Types.ExecType.SPARK);
     }
 
-    @Test
-    public void testUnion2CP() { //R gives {{1},{2},{3},{4}} are matrizen a valid input?
-        double[][] X = {{2, 3, 4}};
-        double[][] Y = {{1, 2, 3},{2, 3, 4}};
+    //TODO
+    //Fails because R produces different order for union and unique.
+    //Therefore do not use unique internally. /:
 
-        double[][] expected = {{1, 2, 3},{2, 3, 4}};
-        runUnionTests(X, Y,expected, Types.ExecType.CP);
+    @Test
+    public void testUnion2CP() {
+        double[][] X = {{9}, {2}, {3}};
+        double[][] Y = {{2}, {3}, {4}};
+
+        runUnionTests(X, Y, Types.ExecType.CP);
     }
 
     @Test
     public void testUnion2SP() {
-        double[][] X = {{2, 3, 4}}; //Spark can't handle column vectors?
-        double[][] Y = {{1, 2, 3},{2, 3, 4}};
+        double[][] X = {{9}, {2}, {3}};
+        double[][] Y = {{2}, {3}, {4}};
 
-        double[][] expected = {{1, 2, 3},{2, 3, 4}};
-        runUnionTests(X, Y,expected, Types.ExecType.SPARK);
+        runUnionTests(X, Y, Types.ExecType.SPARK);
     }
 
     @Test
     public void testUnion3CP() {
-        double[][] X = {{1, 2, 3}, {2, 3, 4}, {1, 2, 3}};
-        double[][] Y = {{1, 2, 3},{5}};
-
-        double[][] expected =  {{1, 2, 3}, {2, 3, 4},{5}};
-        runUnionTests(X, Y, expected, Types.ExecType.CP);
+        double[][] X =  {{12},{22},{13},{4},{6},{7},{8},{9},{12},{12}};
+        double[][] Y = {{1},{2},{11},{12},{13},{18},{20},{21},{12}};
+        runUnionTests(X, Y, Types.ExecType.CP);
     }
 
     @Test
-    public void testUnion3SP() { //This fails?
-        double[][] X = {{1, 2, 3}, {2, 3, 4}, {1, 2, 3}};
-        double[][] Y = {{1, 2, 3},{5}};
-
-        double[][] expected =  {{1, 2, 3}, {2, 3, 4},{5}};
-        runUnionTests(X, Y, expected, Types.ExecType.SPARK);
+    public void testUnion3Spark() {
+        double[][] X = {{12},{22},{13},{4},{6},{7},{8},{9},{12},{12}};
+        double[][] Y = {{1},{2},{11},{12},{13},{18},{20},{21},{12}};
+        runUnionTests(X, Y, Types.ExecType.SPARK);
     }
-
-
-    private void runUnionTests(double[][] X, double[][]Y, double[][] expected, Types.ExecType instType) {
+    
+    private void runUnionTests(double[][] X, double[][]Y, Types.ExecType instType) {
         Types.ExecMode platformOld = setExecMode(instType);
         try {
             loadTestConfiguration(getTestConfiguration(TEST_NAME));
@@ -108,18 +102,10 @@ public class BuiltinUnionTest  extends AutomatedTestBase {
             writeInputMatrixWithMTD("Y", Y, true);
 
             runTest(true, false, null, -1);
-            HashMap<MatrixValue.CellIndex, Double> dmlfile = readDMLMatrixFromOutputDir("R");
-
-            HashMap<MatrixValue.CellIndex, Double> R = new HashMap<>();
-            for(int r=0; r< expected.length; r++)
-                for(int c=0; c< expected[r].length; c++)
-                    R.put(new MatrixValue.CellIndex(r+1,c+1), expected[r][c]);
-
-            TestUtils.compareMatrices(dmlfile, R, 1e-10, "dml", "expected");
-
             runRScript(true);
-            HashMap<MatrixValue.CellIndex, Double> rfile  = readRMatrixFromExpectedDir("R");
 
+            HashMap<MatrixValue.CellIndex, Double> dmlfile = readDMLMatrixFromOutputDir("R");
+            HashMap<MatrixValue.CellIndex, Double> rfile  = readRMatrixFromExpectedDir("R");
             TestUtils.compareMatrices(dmlfile, rfile, 1e-10, "dml", "expected");
         }
         finally {

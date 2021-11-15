@@ -47,6 +47,12 @@ public interface Encoder extends Externalizable {
 	 * @return output matrix block
 	 */
 	MatrixBlock apply(CacheBlock in, MatrixBlock out, int outputCol);
+	
+	/** 
+	 * Pre-allocate a FrameBlock for metadata collection.
+	 * @param meta      frame block
+	 */
+	void allocateMetaData(FrameBlock meta);
 
 	/**
 	 * Construct a frame block out of the transform meta data.

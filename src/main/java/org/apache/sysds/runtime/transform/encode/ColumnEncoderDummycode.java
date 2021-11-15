@@ -189,6 +189,11 @@ public class ColumnEncoderDummycode extends ColumnEncoder {
 	}
 
 	@Override
+	public void allocateMetaData(FrameBlock meta) {
+		return;
+	}
+
+	@Override
 	public FrameBlock getMetaData(FrameBlock meta) {
 		return meta;
 	}

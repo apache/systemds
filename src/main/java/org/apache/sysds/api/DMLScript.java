@@ -356,7 +356,7 @@ public class DMLScript
 	// (core compilation and execute)
 	////////
 
-	private static void loadConfiguration(String fnameOptConfig) throws IOException {
+	public static void loadConfiguration(String fnameOptConfig) throws IOException {
 		DMLConfig dmlconf = DMLConfig.readConfigurationFile(fnameOptConfig);
 		ConfigurationManager.setGlobalConfig(dmlconf);
 		CompilerConfig cconf = OptimizerUtils.constructCompilerConfig(dmlconf);

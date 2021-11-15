@@ -269,6 +269,14 @@ public class ColumnEncoderComposite extends ColumnEncoder {
 	}
 
 	@Override
+	public void allocateMetaData(FrameBlock meta) {
+		if(_meta != null)
+			return;
+		for(ColumnEncoder columnEncoder : _columnEncoders)
+			columnEncoder.allocateMetaData(meta);
+	}
+
+	@Override
 	public FrameBlock getMetaData(FrameBlock out) {
 		if(_meta != null)
 			return _meta;

@@ -205,6 +205,11 @@ public class ColumnEncoderBin extends ColumnEncoder {
 	}
 
 	@Override
+	public void allocateMetaData(FrameBlock meta) {
+		meta.ensureAllocatedColumns(_binMaxs.length);
+	}
+
+	@Override
 	public FrameBlock getMetaData(FrameBlock meta) {
 		// allocate frame if necessary
 		meta.ensureAllocatedColumns(_binMaxs.length);

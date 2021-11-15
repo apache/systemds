@@ -99,6 +99,12 @@ public class ColumnEncoderFeatureHash extends ColumnEncoder {
 	}
 
 	@Override
+	public void allocateMetaData(FrameBlock meta) {
+		if (isApplicable())
+			meta.ensureAllocatedColumns(1);
+	}
+
+	@Override
 	public FrameBlock getMetaData(FrameBlock meta) {
 		if(!isApplicable())
 			return meta;

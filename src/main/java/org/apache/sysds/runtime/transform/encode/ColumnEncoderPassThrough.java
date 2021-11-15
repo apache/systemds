@@ -100,6 +100,12 @@ public class ColumnEncoderPassThrough extends ColumnEncoder {
 	}
 
 	@Override
+	public void allocateMetaData(FrameBlock meta) {
+		// do nothing
+		return;
+	}
+
+	@Override
 	public FrameBlock getMetaData(FrameBlock meta) {
 		// do nothing
 		return meta;

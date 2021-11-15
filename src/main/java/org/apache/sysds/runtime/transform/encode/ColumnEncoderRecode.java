@@ -178,6 +178,20 @@ public class ColumnEncoderRecode extends ColumnEncoder {
 		long code = lookupRCDMap(key);
 		return (code < 0) ? Double.NaN : code;
 	}
+	
+	protected double[] getCodeCol(CacheBlock in) {
+		Object[] coldata = (Object[]) ((FrameBlock)in).getColumnData(_colID-1);
+		double codes[] = new double[in.getNumRows()];
+		for (int i=0; i<coldata.length; i++) {
+			Object okey = coldata[i]; 
+			String key = (okey != null) ? okey.toString() : null;
+			if(key == null || key.isEmpty())
+				codes[i] = Double.NaN;
+			long code = lookupRCDMap(key);
+			codes[i] = code;
+		}
+		return codes;
+	}
 
 	@Override
 	public void prepareBuildPartial() {
@@ -230,6 +244,12 @@ public class ColumnEncoderRecode extends ColumnEncoder {
 
 	public int getNumDistinctValues() {
 		return _rcdMap.size();
+	}
+	
+	@Override
+	public void allocateMetaData(FrameBlock meta) {
+		// allocate output rows
+		meta.ensureAllocatedColumns(getNumDistinctValues());
 	}
 
 	@Override

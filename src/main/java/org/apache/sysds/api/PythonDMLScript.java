@@ -26,40 +26,29 @@ import org.apache.sysds.conf.CompilerConfig;
 
 import py4j.GatewayServer;
 import py4j.GatewayServerListener;
+import py4j.Py4JNetworkException;
 import py4j.Py4JServerConnection;
 
 public class PythonDMLScript {
-	private static final Log LOG = LogFactory.getLog(PythonDMLScript.class.getName());
+
 	private Connection _connection;
 
 	/**
 	 * Entry point for Python API.
 	 * 
-	 * The system returns with exit code 1, if the startup process fails, and 0 if the startup was successful.
-	 * 
 	 * @param args Command line arguments.
+	 * @throws Exception Throws exceptions if there is issues in startup or while running.
 	 */
-	public static void main(String[] args) {
-		if(args.length != 1) {
-			throw new IllegalArgumentException("Python DML Script should be initialized with a singe number argument");
-		}
-		else {
-			int port = Integer.parseInt(args[0]);
-			start(port);
-		}
+	public static void main(String[] args) throws Exception {
+		final DMLOptions dmlOptions = DMLOptions.parseCLArguments(args);
+		DMLScript.loadConfiguration(dmlOptions.configFile);
+		start(dmlOptions.pythonPort);
 	}
 
-	private static void start(int port) {
-		try {
-			// TODO Add argument parsing here.
-			GatewayServer GwS = new GatewayServer(new PythonDMLScript(), port);
-			GwS.addListener(new DMLGateWayListener());
-			GwS.start();
-		}
-		catch(py4j.Py4JNetworkException ex) {
-			LOG.error("Py4JNetworkException while executing the GateWay. Is a server instance already running?");
-			System.exit(-1);
-		}
+	private static void start(int port) throws Py4JNetworkException {
+		GatewayServer GwS = new GatewayServer(new PythonDMLScript(), port);
+		GwS.addListener(new DMLGateWayListener());
+		GwS.start();
 	}
 
 	private PythonDMLScript() {
@@ -79,50 +68,53 @@ public class PythonDMLScript {
 	public Connection getConnection() {
 		return _connection;
 	}
+	
+	protected static class DMLGateWayListener implements GatewayServerListener {
+		private static final Log LOG = LogFactory.getLog(DMLGateWayListener.class.getName());
+	
+		@Override
+		public void connectionError(Exception e) {
+			LOG.warn("Connection error: " + e.getMessage());
+			System.exit(1);
+		}
+	
+		@Override
+		public void connectionStarted(Py4JServerConnection gatewayConnection) {
+			LOG.debug("Connection Started: " + gatewayConnection.toString());
+		}
+	
+		@Override
+		public void connectionStopped(Py4JServerConnection gatewayConnection) {
+			LOG.debug("Connection stopped: " + gatewayConnection.toString());
+		}
+	
+		@Override
+		public void serverError(Exception e) {
+			LOG.error("Server Error " + e.getMessage());
+		}
+	
+		@Override
+		public void serverPostShutdown() {
+			LOG.info("Shutdown done");
+			System.exit(0);
+		}
+	
+		@Override
+		public void serverPreShutdown() {
+			LOG.info("Starting JVM shutdown");
+		}
+	
+		@Override
+		public void serverStarted() {
+			// message the python interface that the JVM is ready.
+			System.out.println("GatewayServer Started");
+		}
+	
+		@Override
+		public void serverStopped() {
+			System.out.println("GatewayServer Stopped");
+			System.exit(0);
+		}
+	}
 }
 
-class DMLGateWayListener implements GatewayServerListener {
-	private static final Log LOG = LogFactory.getLog(DMLGateWayListener.class.getName());
-
-	@Override
-	public void connectionError(Exception e) {
-		LOG.warn("Connection error: " + e.getMessage());
-	}
-
-	@Override
-	public void connectionStarted(Py4JServerConnection gatewayConnection) {
-		LOG.debug("Connection Started: " + gatewayConnection.toString());
-	}
-
-	@Override
-	public void connectionStopped(Py4JServerConnection gatewayConnection) {
-		LOG.debug("Connection stopped: " + gatewayConnection.toString());
-	}
-
-	@Override
-	public void serverError(Exception e) {
-		LOG.error("Server Error " + e.getMessage());
-	}
-
-	@Override
-	public void serverPostShutdown() {
-		LOG.info("Shutdown done");
-		System.exit(0);
-	}
-
-	@Override
-	public void serverPreShutdown() {
-		LOG.info("Starting JVM shutdown");
-	}
-
-	@Override
-	public void serverStarted() {
-		// message the python interface that the JVM is ready.
-		System.out.println("GatewayServer Started");
-	}
-
-	@Override
-	public void serverStopped() {
-		System.out.println("GatewayServer Stopped");
-	}
-}

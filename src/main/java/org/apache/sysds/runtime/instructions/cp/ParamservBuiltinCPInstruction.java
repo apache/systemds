@@ -19,6 +19,28 @@
 
 package org.apache.sysds.runtime.instructions.cp;
 
+import static org.apache.sysds.parser.Statement.PS_AGGREGATION_FUN;
+import static org.apache.sysds.parser.Statement.PS_BATCH_SIZE;
+import static org.apache.sysds.parser.Statement.PS_EPOCHS;
+import static org.apache.sysds.parser.Statement.PS_FEATURES;
+import static org.apache.sysds.parser.Statement.PS_FED_RUNTIME_BALANCING;
+import static org.apache.sysds.parser.Statement.PS_FED_WEIGHTING;
+import static org.apache.sysds.parser.Statement.PS_FREQUENCY;
+import static org.apache.sysds.parser.Statement.PS_HYPER_PARAMS;
+import static org.apache.sysds.parser.Statement.PS_LABELS;
+import static org.apache.sysds.parser.Statement.PS_MODE;
+import static org.apache.sysds.parser.Statement.PS_MODEL;
+import static org.apache.sysds.parser.Statement.PS_MODELAVG;
+import static org.apache.sysds.parser.Statement.PS_NBATCHES;
+import static org.apache.sysds.parser.Statement.PS_PARALLELISM;
+import static org.apache.sysds.parser.Statement.PS_SCHEME;
+import static org.apache.sysds.parser.Statement.PS_SEED;
+import static org.apache.sysds.parser.Statement.PS_UPDATE_FUN;
+import static org.apache.sysds.parser.Statement.PS_UPDATE_TYPE;
+import static org.apache.sysds.parser.Statement.PS_VAL_FEATURES;
+import static org.apache.sysds.parser.Statement.PS_VAL_FUN;
+import static org.apache.sysds.parser.Statement.PS_VAL_LABELS;
+
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -30,28 +52,6 @@ import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import static org.apache.sysds.parser.Statement.PS_AGGREGATION_FUN;
-import static org.apache.sysds.parser.Statement.PS_BATCH_SIZE;
-import static org.apache.sysds.parser.Statement.PS_EPOCHS;
-import static org.apache.sysds.parser.Statement.PS_FEATURES;
-import static org.apache.sysds.parser.Statement.PS_FREQUENCY;
-import static org.apache.sysds.parser.Statement.PS_HYPER_PARAMS;
-import static org.apache.sysds.parser.Statement.PS_LABELS;
-import static org.apache.sysds.parser.Statement.PS_MODE;
-import static org.apache.sysds.parser.Statement.PS_MODEL;
-import static org.apache.sysds.parser.Statement.PS_NBATCHES;
-import static org.apache.sysds.parser.Statement.PS_MODELAVG;
-import static org.apache.sysds.parser.Statement.PS_PARALLELISM;
-import static org.apache.sysds.parser.Statement.PS_SCHEME;
-import static org.apache.sysds.parser.Statement.PS_UPDATE_FUN;
-import static org.apache.sysds.parser.Statement.PS_UPDATE_TYPE;
-import static org.apache.sysds.parser.Statement.PS_FED_RUNTIME_BALANCING;
-import static org.apache.sysds.parser.Statement.PS_FED_WEIGHTING;
-import static org.apache.sysds.parser.Statement.PS_SEED;
-import static org.apache.sysds.parser.Statement.PS_VAL_FEATURES;
-import static org.apache.sysds.parser.Statement.PS_VAL_LABELS;
-import static org.apache.sysds.parser.Statement.PS_VAL_FUN;
-
 import org.apache.commons.lang3.concurrent.BasicThreadFactory;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -60,12 +60,12 @@ import org.apache.spark.util.LongAccumulator;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.hops.recompile.Recompiler;
+import org.apache.sysds.parser.Statement.FederatedPSScheme;
 import org.apache.sysds.parser.Statement.PSFrequency;
 import org.apache.sysds.parser.Statement.PSModeType;
-import org.apache.sysds.parser.Statement.PSScheme;
-import org.apache.sysds.parser.Statement.FederatedPSScheme;
-import org.apache.sysds.parser.Statement.PSUpdateType;
 import org.apache.sysds.parser.Statement.PSRuntimeBalancing;
+import org.apache.sysds.parser.Statement.PSScheme;
+import org.apache.sysds.parser.Statement.PSUpdateType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.LocalVariableMap;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
@@ -78,6 +78,7 @@ import org.apache.sysds.runtime.controlprogram.paramserv.ParamServer;
 import org.apache.sysds.runtime.controlprogram.paramserv.ParamservUtils;
 import org.apache.sysds.runtime.controlprogram.paramserv.SparkPSBody;
 import org.apache.sysds.runtime.controlprogram.paramserv.SparkPSWorker;
+import org.apache.sysds.runtime.controlprogram.paramserv.SparkParamservUtils;
 import org.apache.sysds.runtime.controlprogram.paramserv.dp.DataPartitionFederatedScheme;
 import org.apache.sysds.runtime.controlprogram.paramserv.dp.DataPartitionLocalScheme;
 import org.apache.sysds.runtime.controlprogram.paramserv.dp.FederatedDataPartitioner;
@@ -279,7 +280,7 @@ public class ParamservBuiltinCPInstruction extends ParameterizedBuiltinCPInstruc
 		MatrixObject features = sec.getMatrixObject(getParam(PS_FEATURES));
 		MatrixObject labels = sec.getMatrixObject(getParam(PS_LABELS));
 		try {
-			ParamservUtils.doPartitionOnSpark(sec, features, labels, getScheme(), workerNum) // Do data partitioning
+			SparkParamservUtils.doPartitionOnSpark(sec, features, labels, getScheme(), workerNum) // Do data partitioning
 				.foreach(worker); // Run remote workers
 		} catch (Exception e) {
 			throw new DMLRuntimeException("Paramserv function failed: ", e);

@@ -27,7 +27,7 @@ on:
       - 'docs/**'
       - '*.md'
       - '*.html'
-      - 'src/main/python/docs/**'
+      - 'src/main/python/**'
       - 'dev/**'
     branches:
       - main
@@ -36,7 +36,7 @@ on:
       - 'docs/**'
       - '*.md'
       - '*.html'
-      - 'src/main/python/docs/**'
+      - 'src/main/python/**'
       - 'dev/**'
     branches:
       - main

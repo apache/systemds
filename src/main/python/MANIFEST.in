@@ -21,4 +21,14 @@
 
 include LICENSE
 include NOTICE
-recursive-include systemds/systemds-java *
+
+exclude setup.py
+exclude pre_setup.py
+exclude MANIFEST.in
+exclude README.md
+
+recursive-include systemds *
+
+recursive-exclude **/__pycache__/** *
+recursive-exclude systemds/examples/tutorials/adult *
+recursive-exclude systemds/examples/tutorials/mnist *

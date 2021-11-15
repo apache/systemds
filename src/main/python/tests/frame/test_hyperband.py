@@ -54,32 +54,29 @@ class TestHyperband(unittest.TestCase):
         pass
 
     def test_hyperband(self):
-        if "SYSTEMDS_ROOT" in os.environ:
-            x_train = self.sds.from_numpy(self.X_train)
-            y_train = self.sds.from_numpy(self.y_train)
-            x_val = self.sds.from_numpy(self.X_val)
-            y_val = self.sds.from_numpy(self.y_val)
-            paramRanges = self.sds.from_numpy(self.param_ranges)
-            params = self.params
-            [best_weights_mat, opt_hyper_params_df] = hyperband(
-                X_train=x_train,
-                y_train=y_train,
-                X_val=x_val,
-                y_val=y_val,
-                params=params,
-                paramRanges=paramRanges,
-            ).compute()
-            self.assertTrue(isinstance(best_weights_mat, np.ndarray))
-            self.assertTrue(best_weights_mat.shape[0] == self.X_train.shape[1])
-            self.assertTrue(best_weights_mat.shape[1] == self.y_train.shape[1])
+        x_train = self.sds.from_numpy(self.X_train)
+        y_train = self.sds.from_numpy(self.y_train)
+        x_val = self.sds.from_numpy(self.X_val)
+        y_val = self.sds.from_numpy(self.y_val)
+        paramRanges = self.sds.from_numpy(self.param_ranges)
+        params = self.params
+        [best_weights_mat, opt_hyper_params_df] = hyperband(
+            X_train=x_train,
+            y_train=y_train,
+            X_val=x_val,
+            y_val=y_val,
+            params=params,
+            paramRanges=paramRanges,
+        ).compute()
+        self.assertTrue(isinstance(best_weights_mat, np.ndarray))
+        self.assertTrue(best_weights_mat.shape[0] == self.X_train.shape[1])
+        self.assertTrue(best_weights_mat.shape[1] == self.y_train.shape[1])
 
-            self.assertTrue(isinstance(opt_hyper_params_df, pd.DataFrame))
-            self.assertTrue(opt_hyper_params_df.shape[1] == 1)
-            for i, hyper_param in enumerate(opt_hyper_params_df.values.flatten().tolist()):
-                self.assertTrue(
-                    self.min_max_params[i][0] <= hyper_param <= self.min_max_params[i][1])
-        else:
-            print("to enable hyperband tests, set SYSTEMDS_ROOT")
+        self.assertTrue(isinstance(opt_hyper_params_df, pd.DataFrame))
+        self.assertTrue(opt_hyper_params_df.shape[1] == 1)
+        for i, hyper_param in enumerate(opt_hyper_params_df.values.flatten().tolist()):
+            self.assertTrue(
+                self.min_max_params[i][0] <= hyper_param <= self.min_max_params[i][1])
 
 
 if __name__ == "__main__":

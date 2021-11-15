@@ -30,6 +30,7 @@ A = np.random.rand(shape, shape)
 # set A = MM^T and A is a positive definite matrix
 A = np.matmul(A, A.transpose())
 
+
 class TestCholesky(unittest.TestCase):
 
     sds: SystemDSContext = None
@@ -43,7 +44,7 @@ class TestCholesky(unittest.TestCase):
         cls.sds.close()
 
 
-class TestCholesky_0(TestCholesky):
+class TestCholeskyValid(TestCholesky):
 
     def test_basic1(self):
         L = self.sds.from_numpy(A).cholesky().compute()
@@ -54,24 +55,27 @@ class TestCholesky_0(TestCholesky):
         # L * L.H = A
         self.assertTrue(np.allclose(A, np.dot(L, L.T.conj())))
 
-class TestCholesky_1(TestCholesky):
+
+class TestCholeskyInvalid_1(TestCholesky):
     def test_pos_def(self):
         m1 = -np.random.rand(shape, shape)
-        with self.assertRaises(RuntimeError) as context:
+        with self.assertRaises(Exception):
             self.sds.from_numpy(m1).cholesky().compute()
-            
-class TestCholesky_2(TestCholesky):
+
+
+class TestCholeskyInvalid_2(TestCholesky):
 
     def test_symmetric_matrix(self):
         m2 = np.asarray([[4, 9], [1, 4]])
         np.linalg.cholesky(m2)
-        with self.assertRaises(RuntimeError) as context:
+        with self.assertRaises(Exception):
             self.sds.from_numpy(m2).cholesky().compute()
 
-class TestCholesky_3(TestCholesky):
+
+class TestCholeskyInvalid_3(TestCholesky):
     def test_asymetric_dim(self):
         m3 = np.random.rand(shape, shape + 1)
-        with self.assertRaises(RuntimeError) as context:
+        with self.assertRaises(Exception):
             self.sds.from_numpy(m3).cholesky().compute()
 
 

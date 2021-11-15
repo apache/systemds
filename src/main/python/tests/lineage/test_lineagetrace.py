@@ -21,11 +21,9 @@
 
 import os
 import shutil
-import sys
 import unittest
 
 from systemds.context import SystemDSContext
-from systemds.utils.helpers import get_module_dir
 
 os.environ['SYSDS_QUIET'] = "1"
 
@@ -48,29 +46,27 @@ class TestLineageTrace(unittest.TestCase):
     def tearDown(self):
         shutil.rmtree(temp_dir, ignore_errors=True)
 
+    @unittest.skipIf("SYSTEMDS_ROOT" not in os.environ, "The test is skipped if SYSTEMDS_ROOT is not set, this is required for this tests since it use the bin/systemds file to execute a reference")
     def test_compare_trace1(self):  # test getLineageTrace() on an intermediate
-        if "SYSTEMDS_ROOT" in os.environ:
-            m = self.sds.full((10, 10), 1)
-            m_res = m + m
+        m = self.sds.full((10, 10), 1)
+        m_res = m + m
 
-            python_trace = [x.strip().split("°")
-                            for x in m_res.get_lineage_trace().split("\n")]
+        python_trace = [x.strip().split("°")
+                        for x in m_res.get_lineage_trace().split("\n")]
 
-            dml_script = (
-                "x = matrix(1, rows=10, cols=10);\n"
-                "y = x + x;\n"
-                "print(lineage(y));\n"
-            )
+        dml_script = (
+            "x = matrix(1, rows=10, cols=10);\n"
+            "y = x + x;\n"
+            "print(lineage(y));\n"
+        )
 
-            sysds_trace = create_execute_and_trace_dml(dml_script, "trace1")
+        sysds_trace = create_execute_and_trace_dml(dml_script, "trace1")
 
-            # It is not garantied, that the two lists 100% align to be the same.
-            # Therefore for now, we only compare if the command is the same, in same order.
-            python_trace_commands = [x[:1] for x in python_trace]
-            dml_script_commands = [x[:1] for x in sysds_trace]
-            self.assertEqual(python_trace_commands[0], dml_script_commands[0])
-        else:
-            print("to enable lineage tests, set SYSTEMDS_ROOT")
+        # It is not garantied, that the two lists 100% align to be the same.
+        # Therefore for now, we only compare if the command is the same, in same order.
+        python_trace_commands = [x[:1] for x in python_trace]
+        dml_script_commands = [x[:1] for x in sysds_trace]
+        self.assertEqual(python_trace_commands[0], dml_script_commands[0])
 
 # TODO add more tests cases.
 

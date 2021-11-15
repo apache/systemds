@@ -80,7 +80,7 @@ class List(OperationNode):
             unnamed_input_vars, named_input_vars)
         return f'{var_name}={self.operation}({inputs_comma_sep});'
 
-    def compute(self, verbose: bool = False, lineage: bool = False) -> Union[np.array]:
+    def compute(self, verbose: bool = False, lineage: bool = False) -> np.array:
         return super().compute(verbose, lineage)
 
     def __str__(self):

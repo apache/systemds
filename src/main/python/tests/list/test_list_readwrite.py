@@ -19,36 +19,45 @@
 #
 # -------------------------------------------------------------
 
+import shutil
 import unittest
 
 import numpy as np
-from time import sleep
 from systemds.context import SystemDSContext
 
 
-class TestPrint(unittest.TestCase):
+class TestListOperations(unittest.TestCase):
 
     sds: SystemDSContext = None
+    temp_dir: str = "tests/list/tmp/readwrite/"
 
     @classmethod
     def setUpClass(cls):
         cls.sds = SystemDSContext()
-        sleep(1.0)
-        # Clear stdout ...
-        cls.sds.get_stdout()
-        cls.sds.get_stdout()
 
     @classmethod
     def tearDownClass(cls):
         cls.sds.close()
+        shutil.rmtree(cls.temp_dir)
 
-    def test_print_01(self):
-        self.sds.from_numpy(np.array([1])).to_string().print().compute()
-        self.assertEqual(1,float(self.sds.get_stdout()[0]))
+    def test_write_followed_by_read(self):
+        ''' Test write and read of lists variables in python.
+        Since we do not support serializing a list (from java to python) yet we
+        read and compute each list element when reading again
+        '''
+        m1 = np.array([[1., 2., 3.]])
+        m1p = self.sds.from_numpy(m1)
+        m2 = np.array([[4., 5., 6.]])
+        m2p = self.sds.from_numpy(m2)
+        list_obj = self.sds.array(m1p, m2p)
 
-    def test_print_02(self):
-        self.sds.scalar(1).print().compute()
-        self.assertEqual(1,float(self.sds.get_stdout()[0]))
+        path = self.temp_dir + "01"
+        list_obj.write(path).compute()
+        ret_m1 = self.sds.read(path)[1].as_matrix().compute()
+        ret_m2 = self.sds.read(path)[2].as_matrix().compute()
+        self.assertTrue(np.allclose(m1, ret_m1))
+        self.assertTrue(np.allclose(m2, ret_m2))
+
 
 if __name__ == "__main__":
     unittest.main(exit=False)

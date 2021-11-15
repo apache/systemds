@@ -19,9 +19,7 @@
 #
 # -------------------------------------------------------------
 
-import os
 import shutil
-import sys
 import unittest
 
 import pandas as pd
@@ -63,7 +61,8 @@ class TestWriteRead(unittest.TestCase):
     def test_write_read_csv(self):
         frame = self.sds.from_pandas(self.df)
         frame.write(self.temp_dir + "02", header=True, format="csv").compute()
-        NX = self.sds.read(self.temp_dir + "02", data_type="frame", format="csv")
+        NX = self.sds.read(self.temp_dir + "02",
+                           data_type="frame", format="csv")
         result_df = NX.compute()
         self.assertTrue(isinstance(result_df, pd.DataFrame))
         self.assertTrue(self.df.equals(result_df))

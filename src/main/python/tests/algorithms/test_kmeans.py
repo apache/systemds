@@ -82,7 +82,7 @@ class TestKMeans(unittest.TestCase):
         self.assertTrue(len(corners) == 4)
 
 
-    def generate_matrices_for_k_means(self, dims: (int, int), seed: int = 1234):
+    def generate_matrices_for_k_means(self, dims, seed: int = 1234):
         np.random.seed(seed)
         mu, sigma = 0, 0.1
         s = np.random.normal(mu, sigma,  dims[0] * dims[1])

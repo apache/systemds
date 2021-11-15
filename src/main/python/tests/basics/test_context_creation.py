@@ -21,34 +21,31 @@
 
 import unittest
 
-import numpy as np
-from time import sleep
 from systemds.context import SystemDSContext
 
 
-class TestPrint(unittest.TestCase):
+class TestContextCreation(unittest.TestCase):
 
-    sds: SystemDSContext = None
+    def test_same_port(self):
+        # Same port should graciously change port
+        sds1 = SystemDSContext(port=9415)
+        sds2 = SystemDSContext(port=9415)
+        sds1.close()
+        sds2.close()
 
-    @classmethod
-    def setUpClass(cls):
-        cls.sds = SystemDSContext()
-        sleep(1.0)
-        # Clear stdout ...
-        cls.sds.get_stdout()
-        cls.sds.get_stdout()
+    def test_create_10_contexts(self):
+        # Creating multiple contexts and closing them should be no problem.
+        for _ in range(0, 10):
+            SystemDSContext().close()
 
-    @classmethod
-    def tearDownClass(cls):
-        cls.sds.close()
+    def test_create_multiple_context(self):
+        # Creating multiple contexts in sequence but open at the same time is okay.
+        a = SystemDSContext()
+        b = SystemDSContext()
+        c = SystemDSContext()
+        d = SystemDSContext()
 
-    def test_print_01(self):
-        self.sds.from_numpy(np.array([1])).to_string().print().compute()
-        self.assertEqual(1,float(self.sds.get_stdout()[0]))
-
-    def test_print_02(self):
-        self.sds.scalar(1).print().compute()
-        self.assertEqual(1,float(self.sds.get_stdout()[0]))
-
-if __name__ == "__main__":
-    unittest.main(exit=False)
+        a.close()
+        b.close()
+        c.close()
+        d.close()

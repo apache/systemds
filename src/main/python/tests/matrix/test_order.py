@@ -19,8 +19,8 @@
 #
 # -------------------------------------------------------------
 
-import unittest
 import random
+import unittest
 
 import numpy as np
 from systemds.context import SystemDSContext
@@ -33,7 +33,8 @@ mx = np.random.rand(1, shape[1])
 my = np.random.rand(shape[0], 1)
 by = random.randrange(1, np.size(m, 1)+1)
 
-class TestOrder(unittest.TestCase):
+
+class TestOrderBase(unittest.TestCase):
 
     sds: SystemDSContext = None
 
@@ -45,26 +46,35 @@ class TestOrder(unittest.TestCase):
     def tearDownClass(cls):
         cls.sds.close()
 
+
+class TestOrderValid(TestOrderBase):
+
     def test_basic(self):
-        o = self.sds.from_numpy(m).order(by=by, decreasing=False, index_return=False).compute()
+        o = self.sds.from_numpy(m).order(
+            by=by, decreasing=False, index_return=False).compute()
         s = m[np.argsort(m[:, by-1])]
         self.assertTrue(np.allclose(o, s))
 
     def test_index(self):
-        o = self.sds.from_numpy(m).order(by=by, decreasing=False, index_return=True).compute()
+        o = self.sds.from_numpy(m).order(
+            by=by, decreasing=False, index_return=True).compute()
         s = np.argsort(m[:, by - 1]) + 1
         self.assertTrue(np.allclose(np.transpose(o), s))
 
     def test_decreasing(self):
-        o = self.sds.from_numpy(m).order(by=by, decreasing=True, index_return=True).compute()
+        o = self.sds.from_numpy(m).order(
+            by=by, decreasing=True, index_return=True).compute()
         s = np.argsort(-m[:, by - 1]) + 1
         self.assertTrue(np.allclose(np.transpose(o), s))
 
-class TestOrder_1(TestOrder):
+
+class TestOrderInvalid(TestOrderBase):
+
     def test_out_of_bounds(self):
         by_max = np.size(m, 1) + 2
-        with self.assertRaises(RuntimeError) as context:
+        with self.assertRaises(Exception):
             self.sds.from_numpy(m).order(by=by_max).compute()
+
 
 if __name__ == "__main__":
     unittest.main(exit=False)

@@ -93,7 +93,7 @@ public class IOUtilFunctions
 		try{
 			return FileSystem.get(conf);
 		} catch(NoClassDefFoundError err) {
-			throw new IOException(err.getMessage());
+			throw new IOException(err.getMessage(), err);
 		}
 	}
 	
@@ -101,7 +101,7 @@ public class IOUtilFunctions
 		try {
 			return FileSystem.get(fname.toUri(), conf);
 		} catch(NoClassDefFoundError err) {
-			throw new IOException(err.getMessage());
+			throw new IOException(err.getMessage(), err);
 		}
 	}
 	

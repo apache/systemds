@@ -50,6 +50,13 @@ difference = function(Matrix[Double] X, Matrix[Double] Y)
     }
     else
     {
+        min_value = min(min(X), min(Y)) - 1;
+        if(min_value < 0)
+        {
+                X = X - min_value;
+                Y = Y - min_value;
+        }
+
         X_t = (table(X, 1) != 0)
         Y_t = (table(Y, 1) != 0)
 
@@ -64,6 +71,10 @@ difference = function(Matrix[Double] X, Matrix[Double] Y)
 
         A = X_t[1:rows_X,] - Y_new_t[1:rows_X,]
         B = X_t[1:rows_X,] * A[1:rows_X,];
-        R = removeEmpty(target=seq(1,nrow(B)), margin="rows", select=B)
+        R = removeEmpty(target=seq(1,nrow(B)), margin="rows", select=B);
+        if(min_value < 0)
+        {
+            R = R + min_value;
+        }
     }
 }

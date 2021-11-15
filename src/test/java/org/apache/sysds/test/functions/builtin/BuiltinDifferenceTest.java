@@ -65,6 +65,20 @@ public class BuiltinDifferenceTest extends AutomatedTestBase {
         runUnionTests(X, Y, Types.ExecType.SPARK);
     }
 
+    @Test
+    public void testDifference4CP() { //fails because element order in R is wrong
+        double[][] X =  {{1.4}, {-1.3}, {10}, {4}};
+        double[][] Y = {{1.3},{-1.4},{10},{9}};
+        runUnionTests(X, Y, Types.ExecType.CP);
+    }
+
+    @Test
+    public void testDifference4Spark() {
+        double[][] X =  {{1.4}, {-1.3}, {10}, {4}};
+        double[][] Y = {{1.3},{-1.4},{10},{9}};
+        runUnionTests(X, Y, Types.ExecType.SPARK);
+    }
+
     private void runUnionTests(double[][] X, double[][]Y, Types.ExecType instType) {
         Types.ExecMode platformOld = setExecMode(instType);
         try {

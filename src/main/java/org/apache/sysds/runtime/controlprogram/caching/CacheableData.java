@@ -355,6 +355,10 @@ public abstract class CacheableData<T extends CacheBlock> extends Data
 		return _metaData.getDataCharacteristics();
 	}
 
+	public long getDim(int dim) {
+		return getDataCharacteristics().getDim(dim);
+	}
+
 	public long getNumRows() {
 		return getDataCharacteristics().getRows();
 	}

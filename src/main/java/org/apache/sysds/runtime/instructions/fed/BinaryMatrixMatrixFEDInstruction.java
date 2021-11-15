@@ -19,8 +19,6 @@
 
 package org.apache.sysds.runtime.instructions.fed;
 
-import java.util.stream.IntStream;
-
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
@@ -151,27 +149,10 @@ public class BinaryMatrixMatrixFEDInstruction extends BinaryFEDInstruction
 		FederationMap fedMap = moFederated.getFedMapping().copyWithNewID(outputFedmappingID);
 		if(moFederated.getNumRows() != rowNum || moFederated.getNumColumns() != colNum) {
 			int dim = moFederated.isFederated(FType.COL) ? 0 : 1;
-			fedMap = modifyFedRanges(fedMap, (dim == 0) ? rowNum : colNum, dim);
+			fedMap.modifyFedRanges((dim == 0) ? rowNum : colNum, dim);
 		}
 		out.getDataCharacteristics().set(moFederated.getDataCharacteristics())
 			.setRows(rowNum).setCols(colNum);
 		out.setFedMapping(fedMap);
-	}
-
-	/**
-	 * Take the federated mapping and sets one dimension of all federated ranges
-	 * to the specified value.
-	 *
-	 * @param fedMap     the original federated mapping
-	 * @param value      long value for setting the dimension
-	 * @param dim        indicates if the row (0) or column (1) dimension should be set to value
-	 * @return FederationMap with the modified federated ranges
-	 */
-	private static FederationMap modifyFedRanges(FederationMap fedMap, long value, int dim) {
-		IntStream.range(0, fedMap.getFederatedRanges().length).forEach(i -> {
-			fedMap.getFederatedRanges()[i].setBeginDim(dim, 0);
-			fedMap.getFederatedRanges()[i].setEndDim(dim, value);
-		});
-		return fedMap;
 	}
 }

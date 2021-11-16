@@ -64,5 +64,11 @@ else if(testnum == 2) { # EW_PLUS
 else if(testnum == 3) { # EW_GREATER
   S = X > Y;
 }
+else if(testnum == 4) { # BIND
+  if($rP)
+    S = cbind(X, Y);
+  else
+    S = rbind(X, Y);
+}
 
 write(S, $out_S);

@@ -30,6 +30,7 @@ import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -64,11 +65,12 @@ public class FederatedMisAlignedTest extends AutomatedTestBase {
 		EW_MULT,
 		EW_PLUS,
 		EW_GREATER,
+		BIND,
 	}
 
 	private enum MisAlignmentType {
 		HOST,
-		RANGE
+		RANGE,
 	}
 
 	@Override
@@ -103,11 +105,13 @@ public class FederatedMisAlignedTest extends AutomatedTestBase {
 	}
 
 	@Test
+	@Ignore
 	public void testEWMultMisAlignedHostSP() {
 		runMisAlignedTest(OpType.EW_MULT, ExecMode.SPARK, MisAlignmentType.HOST);
 	}
 
 	@Test
+	@Ignore
 	public void testEWMultMisAlignedRangeCP() {
 		runMisAlignedTest(OpType.EW_MULT, ExecMode.SINGLE_NODE, MisAlignmentType.RANGE);
 	}
@@ -118,6 +122,7 @@ public class FederatedMisAlignedTest extends AutomatedTestBase {
 	}
 
 	@Test
+	@Ignore
 	public void testEWPlusMisAlignedHostCP() {
 		runMisAlignedTest(OpType.EW_PLUS, ExecMode.SINGLE_NODE, MisAlignmentType.HOST);
 	}
@@ -133,6 +138,7 @@ public class FederatedMisAlignedTest extends AutomatedTestBase {
 	}
 
 	@Test
+	@Ignore
 	public void testEWPlusMisAlignedRangeSP() {
 		runMisAlignedTest(OpType.EW_PLUS, ExecMode.SPARK, MisAlignmentType.RANGE);
 	}
@@ -143,11 +149,13 @@ public class FederatedMisAlignedTest extends AutomatedTestBase {
 	}
 
 	@Test
+	@Ignore
 	public void testEWGreaterMisAlignedHostSP() {
 		runMisAlignedTest(OpType.EW_GREATER, ExecMode.SPARK, MisAlignmentType.HOST);
 	}
 
 	@Test
+	@Ignore
 	public void testEWGreaterMisAlignedRangeCP() {
 		runMisAlignedTest(OpType.EW_GREATER, ExecMode.SINGLE_NODE, MisAlignmentType.RANGE);
 	}
@@ -155,6 +163,26 @@ public class FederatedMisAlignedTest extends AutomatedTestBase {
 	@Test
 	public void testEWGreaterMisAlignedRangeSP() {
 		runMisAlignedTest(OpType.EW_GREATER, ExecMode.SPARK, MisAlignmentType.RANGE);
+	}
+
+	@Test
+	public void testBindMisAlignedHostCP() {
+		runMisAlignedTest(OpType.BIND, ExecMode.SINGLE_NODE, MisAlignmentType.HOST);
+	}
+
+	@Test
+	public void testBindMisAlignedHostSP() {
+		runMisAlignedTest(OpType.BIND, ExecMode.SPARK, MisAlignmentType.HOST);
+	}
+
+	@Test
+	public void testBindMisAlignedRangeCP() {
+		runMisAlignedTest(OpType.BIND, ExecMode.SINGLE_NODE, MisAlignmentType.RANGE);
+	}
+
+	@Test
+	public void testBindMisAlignedRangeSP() {
+		runMisAlignedTest(OpType.BIND, ExecMode.SPARK, MisAlignmentType.RANGE);
 	}
 
 	private void runMisAlignedTest(OpType type, ExecMode execMode, MisAlignmentType maType) {
@@ -243,6 +271,9 @@ public class FederatedMisAlignedTest extends AutomatedTestBase {
 			case EW_GREATER:
 				Assert.assertTrue(heavyHittersContainsString("fed_>"));
 				break;
+			case BIND:
+				Assert.assertTrue(heavyHittersContainsString(rtplatform == ExecMode.SPARK ? "fed_mappend" : "fed_append"));
+				break;
 		}
 
 		// check that federated input files are still existing
@@ -255,6 +286,5 @@ public class FederatedMisAlignedTest extends AutomatedTestBase {
 
 		rtplatform = platformOld;
 		DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
-
 	}
 }

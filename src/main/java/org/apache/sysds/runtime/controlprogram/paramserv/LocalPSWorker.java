@@ -31,8 +31,10 @@ import org.apache.sysds.parser.Statement;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
+import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysds.runtime.controlprogram.parfor.stat.Timing;
 import org.apache.sysds.runtime.instructions.cp.ListObject;
+import org.apache.sysds.runtime.util.CommonThreadPool;
 import org.apache.sysds.utils.Statistics;
 
 public class LocalPSWorker extends PSWorker implements Callable<Void> {
@@ -88,6 +90,8 @@ public class LocalPSWorker extends PSWorker implements Callable<Void> {
 			// Pull the global parameters from ps
 			ListObject params = pullModel();
 			Future<ListObject> accGradients = ConcurrentUtils.constantFuture(null);
+			if(_tpool == null)
+				_tpool = CommonThreadPool.get(InfrastructureAnalyzer.getLocalParallelism());
 
 			try {
 				for (int j = 0; j < batchIter; j++) {
@@ -98,9 +102,13 @@ public class LocalPSWorker extends PSWorker implements Callable<Void> {
 					// Accumulate the intermediate gradients (async for overlap w/ model updates
 					// and gradient computation, sequential over gradient matrices to avoid deadlocks)
 					ListObject accGradientsPrev = accGradients.get();
-					accGradients = _modelAvg ? ConcurrentUtils.constantFuture(null) :
-						_tpool.submit(() -> ParamservUtils.accrueGradients(
+					if(_modelAvg){
+						accGradients = ConcurrentUtils.constantFuture(null);
+					}
+					else{
+						accGradients = _tpool.submit(() -> ParamservUtils.accrueGradients(
 							accGradientsPrev, gradients, false, !localUpdate));
+					}
 					
 					// Update the local model with gradients
 					if(localUpdate | _modelAvg)

@@ -22,16 +22,17 @@ package org.apache.sysds.test.functions.paramserv;
 import java.util.Map;
 import java.util.stream.IntStream;
 
-import org.junit.Assert;
-import org.junit.Test;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.parser.Statement;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContextFactory;
 import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysds.runtime.controlprogram.paramserv.ParamservUtils;
+import org.apache.sysds.runtime.controlprogram.paramserv.SparkParamservUtils;
 import org.apache.sysds.runtime.controlprogram.paramserv.dp.DataPartitionLocalScheme;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.junit.Assert;
+import org.junit.Test;
 
 import scala.Tuple2;
 
@@ -48,7 +49,7 @@ public class SparkDataPartitionerTest extends BaseDataPartitionerTest {
 
 	private Map<Integer, Tuple2<MatrixBlock, MatrixBlock>> doPartitioning(Statement.PSScheme scheme) {
 		MatrixBlock[] mbs = generateData();
-		return ParamservUtils.doPartitionOnSpark(_sec, ParamservUtils.newMatrixObject(mbs[0]), ParamservUtils.newMatrixObject(mbs[1]), scheme, WORKER_NUM).collectAsMap();
+		return SparkParamservUtils.doPartitionOnSpark(_sec, ParamservUtils.newMatrixObject(mbs[0]), ParamservUtils.newMatrixObject(mbs[1]), scheme, WORKER_NUM).collectAsMap();
 	}
 
 	@Test

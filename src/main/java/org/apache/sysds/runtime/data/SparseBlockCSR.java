@@ -864,20 +864,24 @@ public class SparseBlockCSR extends SparseBlock
 		sb.append(", nnz=");
 		sb.append(size());
 		sb.append("\n");
-		for( int i=0; i<numRows(); i++ ) {
-			sb.append("row +");
-			sb.append(i);
-			sb.append(": ");
-			//append row
-			int pos = pos(i);
-			int len = size(i);
-			for(int j=pos; j<pos+len; j++) {
-				sb.append(_indexes[j]);
+		for(int i = 0; i < numRows(); i++) {
+			// append row
+			final int pos = pos(i);
+			final int len = size(i);
+			if(pos < pos + len) {
+
+				sb.append("row +");
+				sb.append(i);
 				sb.append(": ");
-				sb.append(_values[j]);
-				sb.append("\t");
+
+				for(int j = pos; j < pos + len; j++) {
+					sb.append(_indexes[j]);
+					sb.append(": ");
+					sb.append(_values[j]);
+					sb.append("\t");
+				}
+				sb.append("\n");
 			}
-			sb.append("\n");
 		}
 		
 		return sb.toString();

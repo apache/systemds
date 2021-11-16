@@ -420,6 +420,8 @@ public class SparseBlockMCSR extends SparseBlock
 		sb.append(size());
 		sb.append("\n");
 		for( int i=0; i<numRows(); i++ ) {
+			if(isEmpty(i))
+				continue;
 			sb.append("row +");
 			sb.append(i);
 			sb.append(": ");

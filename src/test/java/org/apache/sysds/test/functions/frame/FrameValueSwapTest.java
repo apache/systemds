@@ -21,7 +21,6 @@ package org.apache.sysds.test.functions.frame;
 
 import org.apache.sysds.common.Types;
 import org.apache.sysds.common.Types.ExecType;
-import org.apache.sysds.runtime.util.HDFSTool;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
@@ -51,7 +50,6 @@ public class FrameValueSwapTest extends AutomatedTestBase
 		TestUtils.clearAssertionInformation();
 		addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[] {"B"}));
 	}
-	//
 
 	@Test
 	public void testSwapValueTestCP() {

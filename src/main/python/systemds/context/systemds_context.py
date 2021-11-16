@@ -21,14 +21,12 @@
 
 __all__ = ["SystemDSContext"]
 
-import copy
 import json
 import os
 import socket
-import threading
-import time
+import sys
 from glob import glob
-from queue import Empty, Queue
+from queue import Queue
 from subprocess import PIPE, Popen
 from threading import Thread
 from time import sleep
@@ -37,7 +35,6 @@ from typing import Dict, Iterable, Sequence, Tuple, Union
 import numpy as np
 import pandas as pd
 from py4j.java_gateway import GatewayParameters, JavaGateway
-from py4j.protocol import Py4JNetworkError
 from systemds.operator import (Frame, List, Matrix, OperationNode, Scalar,
                                Source)
 from systemds.script_building import OutputType
@@ -62,26 +59,13 @@ class SystemDSContext(object):
         Standard out and standard error form the JVM is also handled in this class, filling up Queues,
         that can be read from to get the printed statements from the JVM.
         """
-        command = self.__build_startup_command()
-        process, port = self.__try_startup(command, port)
-
-        # Handle Std out from the subprocess.
-        self.__stdout = Queue()
-        self.__stderr = Queue()
-
-        self.__stdout_thread = Thread(target=self.__enqueue_output, args=(
-            process.stdout, self.__stdout), daemon=True)
-
-        self.__stderr_thread = Thread(target=self.__enqueue_output, args=(
-            process.stderr, self.__stderr), daemon=True)
-
-        self.__stdout_thread.start()
-        self.__stderr_thread.start()
-
-        # Py4j connect to the started process.
-        gwp = GatewayParameters(port=port, eager_load=True)
-        self.java_gateway = JavaGateway(
-            gateway_parameters=gwp, java_process=process)
+        actual_port = self.__start(port)
+        process = self.__process
+        if process.poll() is None:
+            self.__start_gateway(actual_port)
+        else:
+            self.exception_and_close(
+                "Java process stopped before gateway could connect")
 
     def get_stdout(self, lines: int = -1):
         """Getter for the stdout of the java subprocess
@@ -105,111 +89,177 @@ class SystemDSContext(object):
         else:
             return [self.__stderr.get() for x in range(lines)]
 
-    def exception_and_close(self, e: Exception):
+    def exception_and_close(self, exception_str: str, trace_back_limit: int = None):
         """
         Method for printing exception, printing stdout and error, while also closing the context correctly.
 
         :param e: the exception thrown
         """
 
-        # e = sys.exc_info()[0]
-        message = "Exception Encountered! closing JVM\n"
-        message += "standard out    :\n" + "\n".join(self.get_stdout())
-        message += "standard error  :\n" + "\n".join(self.get_stdout())
-        message += "Exception       : " + str(e)
+        message = ""
+        stdOut = self.get_stdout()
+        if stdOut:
+            message += "standard out    :\n" + "\n".join(stdOut)
+        stdErr = self.get_stderr()
+        if stdErr:
+            message += "standard error  :\n" + "\n".join(stdErr)
+        message += "\n\n"
+        message += exception_str
+        sys.tracebacklimit = trace_back_limit
         self.close()
         raise RuntimeError(message)
 
-    def __try_startup(self, command, port, rep=0):
-        """ Try to perform startup of system.
+    def __try_startup(self, command) -> bool:
 
-        :param command: The command to execute for starting JMLC content
-        :param port: The port to try to connect to to.
-        :param rep: The number of repeated tries to startup the jvm.
-        """
-        if port == -1:
-            assignedPort = self.__get_open_port()
-        elif rep == 0:
-            assignedPort = port
+        self.__process = Popen(command, stdout=PIPE, stdin=PIPE, stderr=PIPE)
+
+        # Handle Std out from the subprocess.
+        self.__stdout = Queue()
+        self.__stderr = Queue()
+
+        self.__stdout_thread = Thread(target=self.__enqueue_output, args=(
+            self.__process.stdout, self.__stdout), daemon=True)
+
+        self.__stderr_thread = Thread(target=self.__enqueue_output, args=(
+            self.__process.stderr, self.__stderr), daemon=True)
+
+        self.__stdout_thread.start()
+        self.__stderr_thread.start()
+
+        return self.__verify_startup(command)
+
+    def __verify_startup(self, command) -> bool:
+        first_stdout = self.get_stdout()
+        if(not "GatewayServer Started" in first_stdout):
+            return self.__verify_startup_retry(command)
         else:
-            assignedPort = self.__get_open_port()
-        fullCommand = []
-        fullCommand.extend(command)
-        fullCommand.append(str(assignedPort))
-        process = Popen(fullCommand, stdout=PIPE, stdin=PIPE, stderr=PIPE)
+            return True
 
-        try:
-            self.__verify_startup(process)
+    def __verify_startup_retry(self, command,  retry: int = 1) -> bool:
+        sleep(0.8 * retry)
+        stdout = self.get_stdout()
+        if "GatewayServer Started" in stdout:
+            return True, ""
+        elif retry < 3:  # retry 3 times
+            return self.__verify_startup_retry(command, retry + 1)
+        else:
+            error_message = "Error in startup of systemDS gateway process:"
+            error_message += "\n" + " ".join(command)
+            stderr = self.get_stderr()
+            if len(stderr) > 0:
+                error_message += "\n" + "\n".join(stderr)
+            if len(stdout) > 0:
+                error_message += "\n\n" + "\n".join(stdout)
+            self.__error_message = error_message
+            return False
 
-            return process, assignedPort
-        except Exception as e:
-            self.close()
-            if rep > 3:
-                raise Exception(
-                    "Failed to start SystemDS context with " + str(rep) + " repeated tries")
-            else:
-                rep += 1
-                print("Failed to startup JVM process, retrying: " + str(rep))
-                sleep(0.5)
-                return self.__try_startup(command, port, rep)
-
-    def __verify_startup(self, process):
-        first_stdout = process.stdout.readline()
-        if(not b"GatewayServer Started" in first_stdout):
-            stderr = process.stderr.readline().decode("utf-8")
-            if(len(stderr) > 1):
-                raise Exception(
-                    "Exception in startup of GatewayServer: " + stderr)
-            outputs = []
-            outputs.append(first_stdout.decode("utf-8"))
-            max_tries = 10
-            for i in range(max_tries):
-                next_line = process.stdout.readline()
-                if(b"GatewayServer Started" in next_line):
-                    print("WARNING: Stdout corrupted by prints: " + str(outputs))
-                    print("Startup success")
-                    break
-                else:
-                    outputs.append(next_line)
-
-                if (i == max_tries-1):
-                    raise Exception("Error in startup of systemDS gateway process: \n gateway StdOut: " + str(
-                        outputs) + " \n gateway StdErr" + process.stderr.readline().decode("utf-8"))
-
-    def __build_startup_command(self):
+    def __build_startup_command(self, port: int):
 
         command = ["java", "-cp"]
         root = os.environ.get("SYSTEMDS_ROOT")
         if root == None:
             # If there is no systemds install default to use the PIP packaged java files.
-            root = os.path.join(get_module_dir(), "systemds-java")
+            root = os.path.join(get_module_dir())
 
         # nt means its Windows
         cp_separator = ";" if os.name == "nt" else ":"
 
         if os.environ.get("SYSTEMDS_ROOT") != None:
-            lib_cp = os.path.join(root, "target", "lib", "*")
-            systemds_cp = os.path.join(root, "target", "SystemDS.jar")
-            classpath = cp_separator.join([lib_cp, systemds_cp])
-
-            command.append(classpath)
-            files = glob(os.path.join(root, "conf", "log4j*.properties"))
-            if len(files) > 1:
-                print(
-                    "WARNING: Multiple logging files found selecting: " + files[0])
-            if len(files) == 0:
-                print("WARNING: No log4j file found at: "
-                      + os.path.join(root, "conf")
-                      + " therefore using default settings")
+            lib_release = os.path.join(root, "lib")
+            lib_cp = os.path.join(root, "target", "lib")
+            if os.path.exists(lib_release):
+                classpath = cp_separator.join([os.path.join(lib_release, '*')])
+            elif os.path.exists(lib_cp):
+                systemds_cp = os.path.join(root, "target", "SystemDS.jar")
+                classpath = cp_separator.join(
+                    [os.path.join(lib_cp, '*'), systemds_cp])
             else:
-                command.append("-Dlog4j.configuration=file:" + files[0])
+                raise ValueError(
+                    "Invalid setup at SYSTEMDS_ROOT env variable path")
         else:
-            lib_cp = os.path.join(root, "lib", "*")
-            command.append(lib_cp)
+            lib1 = os.path.join(root, "lib", "*")
+            lib2 = os.path.join(root, "lib")
+            classpath = cp_separator.join([lib1, lib2])
+
+        command.append(classpath)
+
+        files = glob(os.path.join(root, "conf", "log4j*.properties"))
+        if len(files) > 1:
+            print(
+                "WARNING: Multiple logging files found selecting: " + files[0])
+        if len(files) == 0:
+            print("WARNING: No log4j file found at: "
+                  + os.path.join(root, "conf")
+                  + " therefore using default settings")
+        else:
+            command.append("-Dlog4j.configuration=file:" + files[0])
 
         command.append("org.apache.sysds.api.PythonDMLScript")
 
-        return command
+        files = glob(os.path.join(root, "conf", "SystemDS*.xml"))
+        if len(files) > 1:
+            print(
+                "WARNING: Multiple config files found selecting: " + files[0])
+        if len(files) == 0:
+            print("WARNING: No log4j file found at: "
+                  + os.path.join(root, "conf")
+                  + " therefore using default settings")
+        else:
+            command.append("-config")
+            command.append(files[0])
+
+        if port == -1:
+            actual_port = self.__get_open_port()
+        else:
+            actual_port = port
+
+        command.append("--python")
+        command.append(str(actual_port))
+
+        return command, actual_port
+
+    def __start(self, port: int):
+        command, actual_port = self.__build_startup_command(port)
+        success = self.__try_startup(command)
+
+        if not success:
+            retry = 1
+            while not success and retry < 3:
+                self.__kill_Popen(self.__process)
+                # retry after waiting a bit.
+                sleep(3 * retry)
+                self.close()
+                self.__error_message = None
+                success, command, actual_port = self.__retry_start(retry)
+                retry = retry + 1
+            if not success:
+                self.exception_and_close(self.__error_message)
+        return actual_port
+
+    def __retry_start(self, ret):
+        command, actual_port = self.__build_startup_command(-1)
+        success = self.__try_startup(command)
+        return success, command, actual_port
+
+    def __start_gateway(self, actual_port: int):
+        process = self.__process
+        gwp = GatewayParameters(port=actual_port, eager_load=True)
+        self.__retry_start_gateway(process, gwp)
+
+    def __retry_start_gateway(self, process: Popen, gwp: GatewayParameters, retry: int = 0):
+        try:
+            self.java_gateway = JavaGateway(
+                gateway_parameters=gwp, java_process=process)
+            self.__process = None  # On success clear process variable
+            return
+        except:
+            sleep(3 * retry)
+            if retry < 3:
+                self.__retry_start_gateway(process, gwp, retry + 1)
+                return
+            else:
+                e = "Error in startup of Java Gateway"
+        self.exception_and_close(e)
 
     def __enter__(self):
         return self
@@ -221,26 +271,28 @@ class SystemDSContext(object):
 
     def close(self):
         """Close the connection to the java process and do necessary cleanup."""
-        if(self.__stdout_thread.is_alive()):
+        if hasattr(self, 'java_gateway'):
+            self.__kill_Popen(self.java_gateway.java_process)
+            self.java_gateway.shutdown()
+        if hasattr(self, '__process'):
+            print("Has process variable")
+            self.__kill_Popen(self.__process)
+        if hasattr(self, '__stdout_thread') and self.__stdout_thread.is_alive():
             self.__stdout_thread.join(0)
-        if(self.__stdout_thread.is_alive()):
+        if hasattr(self, '__stderr_thread') and self.__stderr_thread.is_alive():
             self.__stderr_thread.join(0)
 
-        pid = self.java_gateway.java_process.pid
-        if self.java_gateway.java_gateway_server is not None:
-            try:
-                self.java_gateway.shutdown(True)
-            except Py4JNetworkError as e:
-                if "Gateway is not connected" not in str(e):
-                    self.java_gateway.java_process.kill()
-        os.kill(pid, 14)
+    def __kill_Popen(self, process: Popen):
+        process.kill()
+        process.__exit__(None, None, None)
 
     def __enqueue_output(self, out, queue):
         """Method for handling the output from java.
         It is locating the string handeling inside a different thread, since the 'out.readline' is a blocking command.
         """
         for line in iter(out.readline, b""):
-            queue.put(line.decode("utf-8").strip())
+            line_string = line.decode("utf-8")
+            queue.put(line_string.strip())
 
     def __get_open_port(self):
         """Get a random available port.
@@ -288,7 +340,7 @@ class SystemDSContext(object):
     def rand(self, rows: int, cols: int,
              min: Union[float, int] = None, max: Union[float, int] = None, pdf: str = "uniform",
              sparsity: Union[float, int] = None, seed: Union[float, int] = None,
-             lambd: Union[float, int] = 1) -> 'Matrix':
+             lamb: Union[float, int] = 1) -> 'Matrix':
         """Generates a matrix filled with random values
 
         :param sds_context: SystemDS context
@@ -296,26 +348,26 @@ class SystemDSContext(object):
         :param cols: number of cols
         :param min: min value for cells
         :param max: max value for cells
-        :param pdf: "uniform"/"normal"/"poison" distribution
+        :param pdf: probability distribution function: "uniform"/"normal"/"poison" distribution
         :param sparsity: fraction of non-zero cells
         :param seed: random seed
-        :param lambd: lamda value for "poison" distribution
+        :param lamb: lambda value for "poison" distribution
         :return:
         """
-        available_pdfs = ["uniform", "normal", "poisson"]
+        available_pdf = ["uniform", "normal", "poisson"]
         if rows < 0:
             raise ValueError("In rand statement, can only assign rows a long (integer) value >= 0 "
                              "-- attempted to assign value: {r}".format(r=rows))
         if cols < 0:
             raise ValueError("In rand statement, can only assign cols a long (integer) value >= 0 "
                              "-- attempted to assign value: {c}".format(c=cols))
-        if pdf not in available_pdfs:
+        if pdf not in available_pdf:
             raise ValueError("The pdf passed is invalid! given: {g}, expected: {e}".format(
-                g=pdf, e=available_pdfs))
+                g=pdf, e=available_pdf))
 
         pdf = '\"' + pdf + '\"'
         named_input_nodes = {
-            'rows': rows, 'cols': cols, 'pdf': pdf, 'lambda': lambd}
+            'rows': rows, 'cols': cols, 'pdf': pdf, 'lambda': lamb}
         if min is not None:
             named_input_nodes['min'] = min
         if max is not None:
@@ -354,7 +406,11 @@ class SystemDSContext(object):
             output_type = OutputType.from_str(kwargs.get("value_type", None))
             kwargs["value_type"] = f'"{output_type.name}"'
             return Scalar(self, "read", [f'"{path}"'], named_input_nodes=kwargs, output_type=output_type)
+        elif data_type == "list":
+            # Reading a list have no extra arguments.
+            return List(self, "read", [f'"{path}"'])
 
+        kwargs["data_type"] = None
         print("WARNING: Unknown type read please add a mtd file, or specify in arguments")
         return OperationNode(self, "read", [f'"{path}"'], named_input_nodes=kwargs)
 

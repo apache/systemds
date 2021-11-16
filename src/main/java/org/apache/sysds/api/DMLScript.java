@@ -356,7 +356,7 @@ public class DMLScript
 	// (core compilation and execute)
 	////////
 
-	private static void loadConfiguration(String fnameOptConfig) throws IOException {
+	public static void loadConfiguration(String fnameOptConfig) throws IOException {
 		DMLConfig dmlconf = DMLConfig.readConfigurationFile(fnameOptConfig);
 		ConfigurationManager.setGlobalConfig(dmlconf);
 		CompilerConfig cconf = OptimizerUtils.constructCompilerConfig(dmlconf);
@@ -595,7 +595,7 @@ public class DMLScript
 		final String ANSI_RESET = "\u001B[0m";
 		StringBuilder sb = new StringBuilder();
 		sb.append(ANSI_RED + "\n");
-		sb.append("An Error Occured : ");
+		sb.append("An Error Occurred : ");
 		sb.append("\n" );
 		sb.append(StringUtils.leftPad(e.getClass().getSimpleName(),25));
 		sb.append(" -- ");

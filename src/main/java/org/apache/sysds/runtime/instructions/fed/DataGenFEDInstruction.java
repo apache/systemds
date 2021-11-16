@@ -27,29 +27,20 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 import java.util.stream.IntStream;
-import java.util.stream.LongStream;
 
-import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.spark.sql.execution.CachedData;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.OpOpDG;
 import org.apache.sysds.common.Types.ValueType;
-import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.hops.DataGenOp;
-import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.lops.DataGen;
 import org.apache.sysds.lops.Lop;
-import org.apache.sysds.parser.DataExpression;
 import org.apache.sysds.runtime.DMLRuntimeException;
-import org.apache.sysds.runtime.compress.CompressedMatrixBlockFactory;
-import org.apache.sysds.runtime.controlprogram.caching.CacheBlock;
-import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedData;
@@ -57,24 +48,11 @@ import org.apache.sysds.runtime.controlprogram.federated.FederatedRange;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest;
 import org.apache.sysds.runtime.controlprogram.federated.FederationMap;
 import org.apache.sysds.runtime.controlprogram.federated.FederationUtils;
-import org.apache.sysds.runtime.data.TensorBlock;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
-import org.apache.sysds.runtime.instructions.cp.IntObject;
-import org.apache.sysds.runtime.instructions.cp.ScalarObject;
-import org.apache.sysds.runtime.instructions.cp.UnaryCPInstruction;
-import org.apache.sysds.runtime.lineage.LineageItem;
-import org.apache.sysds.runtime.matrix.data.FrameBlock;
-import org.apache.sysds.runtime.matrix.data.LibMatrixDatagen;
-import org.apache.sysds.runtime.matrix.data.MatrixBlock;
-import org.apache.sysds.runtime.matrix.data.RandomMatrixGenerator;
 import org.apache.sysds.runtime.matrix.operators.Operator;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
-import org.apache.sysds.runtime.meta.MetaData;
-import org.apache.sysds.runtime.meta.MetaDataAll;
-import org.apache.sysds.runtime.util.DataConverter;
 import org.apache.sysds.runtime.util.UtilFunctions;
-import scala.collection.immutable.Stream;
 
 public class DataGenFEDInstruction extends UnaryFEDInstruction {
 	private static final Log LOG = LogFactory.getLog(DataGenFEDInstruction.class.getName());
@@ -332,7 +310,7 @@ public class DataGenFEDInstruction extends UnaryFEDInstruction {
 
 		long id = FederationUtils.getNextFedDataID();
 
-		FederatedRequest[] fr1 = FederationUtils.callInstruction(instStrings, output, id, new CPOperand[] {}, new long[] {}, null);
+		FederatedRequest[] fr1 = FederationUtils.callInstruction(instStrings, output, id, Types.ExecType.CP);
 		fedMap.execute(getTID(), true, fr1);
 
 		MatrixObject out = ec.getMatrixObject(output);
@@ -380,43 +358,6 @@ public class DataGenFEDInstruction extends UnaryFEDInstruction {
 		if(rows > Integer.MAX_VALUE || cols > Integer.MAX_VALUE)
 			throw new DMLRuntimeException("DataGenFEDInstruction does not "
 				+ "support dimensions larger than integer: rows=" + rows + ", cols=" + cols + ".");
-	}
-
-	@Override
-	public Pair<String, LineageItem> getLineageItem(ExecutionContext ec) {
-		String tmpInstStr = instString;
-
-		if(method == OpOpDG.RAND) {
-			if(getSeed() == DataGenOp.UNSPECIFIED_SEED) {
-				// generate pseudo-random seed (because not specified)
-				if(runtimeSeed == null)
-					runtimeSeed = (minValue == maxValue && sparsity == 1) ? DataGenOp.UNSPECIFIED_SEED : DataGenOp
-						.generateRandomSeed();
-				int position = (method == OpOpDG.RAND) ? SEED_POSITION_RAND : (method == OpOpDG.SAMPLE) ? SEED_POSITION_SAMPLE : 0;
-				tmpInstStr = position != 0 ? InstructionUtils
-					.replaceOperand(tmpInstStr, position, String.valueOf(runtimeSeed)) : tmpInstStr;
-			}
-			// replace output variable name with a placeholder
-			tmpInstStr = InstructionUtils.replaceOperandName(tmpInstStr);
-			tmpInstStr = method.name().equalsIgnoreCase("rand") ? replaceNonLiteral(tmpInstStr,
-				rows,
-				2,
-				ec) : replaceNonLiteral(tmpInstStr, rows, 3, ec);
-			tmpInstStr = method.name().equalsIgnoreCase("rand") ? replaceNonLiteral(tmpInstStr,
-				cols,
-				3,
-				ec) : tmpInstStr;
-		}
-		else {
-			throw new DMLRuntimeException("Unsupported datagen op: " + method);
-		}
-		return Pair.of(output.getName(), new LineageItem(tmpInstStr, getOpcode()));
-	}
-
-	private static String replaceNonLiteral(String inst, CPOperand op, int pos, ExecutionContext ec) {
-		if(!op.isLiteral())
-			inst = InstructionUtils.replaceOperand(inst, pos, new CPOperand(ec.getScalarInput(op)).getLineageLiteral());
-		return inst;
 	}
 
 }

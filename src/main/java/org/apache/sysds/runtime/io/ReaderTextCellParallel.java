@@ -264,9 +264,12 @@ public class ReaderTextCellParallel extends ReaderTextCell
 					if( value.toString().charAt(0) == '%' )
 						continue;
 					st.reset( value.toString() );
-					_rNnz[(int)st.nextLong()-1] ++;
-					if( _isSymmetric )
-						_rNnz[(int)st.nextLong()-1] ++;
+					int nv = (int)st.nextLong()-1;
+					if(nv >= 0){
+						_rNnz[nv] ++;
+						if( _isSymmetric )
+							_rNnz[(int)st.nextLong()-1] ++;
+					}
 				}
 			}
 			finally {

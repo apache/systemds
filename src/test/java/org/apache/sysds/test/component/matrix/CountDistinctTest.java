@@ -19,6 +19,9 @@
 
 package org.apache.sysds.test.component.matrix;
 
+import static org.junit.Assert.assertThrows;
+import static org.junit.Assert.fail;
+
 import java.util.ArrayList;
 import java.util.Collection;
 
@@ -31,10 +34,7 @@ import org.apache.sysds.runtime.matrix.operators.CountDistinctOperator.CountDist
 import org.apache.sysds.runtime.util.DataConverter;
 import org.apache.sysds.test.TestUtils;
 import org.apache.sysds.utils.Hash.HashType;
-import org.junit.Assert;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
@@ -91,11 +91,11 @@ public class CountDistinctTest {
 				if((ht == HashType.ExpHash && et == CountDistinctTypes.KMV) ||
 					(ht == HashType.StandardJava && et == CountDistinctTypes.KMV)) {
 					String errorMessage = "Invalid hashing configuration using " + ht + " and " + et;
-					tests.add(new Object[] {et, inputs.get(0), actualUnique.get(0), ht, DMLException.class,
+					tests.add(new Object[] {et, inputs.get(0), actualUnique.get(0), ht, new DMLException(),
 						errorMessage, 0.0});
 				}
 				else if(et == CountDistinctTypes.HLL) {
-					tests.add(new Object[] {et, inputs.get(0), actualUnique.get(0), ht, NotImplementedException.class,
+					tests.add(new Object[] {et, inputs.get(0), actualUnique.get(0), ht, new NotImplementedException(),
 						"HyperLogLog not implemented", 0.0});
 				}
 				else if(et != CountDistinctTypes.COUNT) {
@@ -125,12 +125,9 @@ public class CountDistinctTest {
 
 	// Exception handling
 	@Parameterized.Parameter(4)
-	public Class<? extends Exception> expectedException;
+	public Exception expectedException;
 	@Parameterized.Parameter(5)
 	public String expectedExceptionMsg;
-
-	@Rule
-	public ExpectedException thrown = ExpectedException.none();
 
 	// allowing the estimate to be within 20% of target.
 	@Parameterized.Parameter(6)
@@ -139,16 +136,15 @@ public class CountDistinctTest {
 	@Test
 	public void testEstimation() {
 
-		// setup expected exception
-		if(expectedException != null) {
-			thrown.expect(expectedException);
-			thrown.expectMessage(expectedExceptionMsg);
-		}
-
 		Integer out = 0;
 		CountDistinctOperator op = new CountDistinctOperator(et, ht);
 		try {
-			out = LibMatrixCountDistinct.estimateDistinctValues(in, op);
+			if(expectedException != null){
+				assertThrows(expectedException.getClass(),  () -> {LibMatrixCountDistinct.estimateDistinctValues(in, op);});
+				return;
+			}
+			else
+				out = LibMatrixCountDistinct.estimateDistinctValues(in, op);
 		}
 		catch(DMLException e) {
 			throw e;
@@ -158,15 +154,17 @@ public class CountDistinctTest {
 		}
 		catch(Exception e) {
 			e.printStackTrace();
-			Assert.assertTrue(this.toString(), false);
+			fail(this.toString());
 		}
 
 		int count = out;
 		boolean success = Math.abs(nrUnique - count) <= nrUnique * epsilon;
-		StringBuilder sb = new StringBuilder();
-		sb.append(this.toString());
-		sb.append("\n" + count + " unique values, actual:" + nrUnique + " with eps of " + epsilon);
-		Assert.assertTrue(sb.toString(), success);
+		if(!success){
+			StringBuilder sb = new StringBuilder();
+			sb.append(this.toString());
+			sb.append("\n" + count + " unique values, actual:" + nrUnique + " with eps of " + epsilon);
+			fail(sb.toString());
+		}
 	}
 
 	@Override

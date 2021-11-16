@@ -26,12 +26,10 @@ import fnmatch
 from zipfile import ZipFile
 
 this_path = os.path.dirname(os.path.realpath(__file__))
-python_dir = 'systemds'
-java_dir = 'systemds-java'
-java_dir_full_path = os.path.join(this_path, python_dir, java_dir)
-if os.path.exists(java_dir_full_path):
-    shutil.rmtree(java_dir_full_path, True)
-root_dir = os.path.dirname(os.path.dirname(os.path.dirname(this_path)))
+PYTHON_DIR = 'systemds'
+
+# Go three directories out this is the root dir of systemds repository
+SYSTEMDS_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(this_path))) 
 
 # temporary directory for unzipping of bin zip
 TMP_DIR = os.path.join(this_path, 'tmp')
@@ -39,30 +37,51 @@ if os.path.exists(TMP_DIR):
     shutil.rmtree(TMP_DIR, True)
 os.mkdir(TMP_DIR)
 
-SYSTEMDS_BIN = 'systemds-*-SNAPSHOT-bin.zip'
-for file in os.listdir(os.path.join(root_dir, 'target')):
+
+# Copy jar files from release artifact.
+LIB_DIR = os.path.join(this_path, PYTHON_DIR, 'lib')
+if os.path.exists(LIB_DIR):
+    shutil.rmtree(LIB_DIR, True)
+SYSTEMDS_BIN = 'systemds-*-bin.zip'
+for file in os.listdir(os.path.join(SYSTEMDS_ROOT, 'target')):
+    # Take jar files from bin release file
     if fnmatch.fnmatch(file, SYSTEMDS_BIN):
-        new_path = os.path.join(TMP_DIR, file)
-        shutil.copyfile(os.path.join(root_dir, 'target', file), new_path)
+        systemds_bin_zip = os.path.join(SYSTEMDS_ROOT, 'target', file)
         extract_dir = os.path.join(TMP_DIR)
-        with ZipFile(new_path, 'r') as zip:
+
+        with ZipFile(systemds_bin_zip, 'r') as zip:
             for f in zip.namelist():
                 split_path = os.path.split(os.path.dirname(f))
                 if split_path[1] == 'lib':
                     zip.extract(f, TMP_DIR)
         unzipped_dir_name = file.rsplit('.', 1)[0]
-        shutil.copytree(os.path.join(TMP_DIR, unzipped_dir_name), java_dir_full_path)
-        if os.path.exists(TMP_DIR):
-            shutil.rmtree(TMP_DIR, True)
+        shutil.copytree(os.path.join(TMP_DIR, unzipped_dir_name, 'lib'), LIB_DIR)
 
-root_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.getcwd())))
-shutil.copyfile(os.path.join(root_dir, 'LICENSE'), 'LICENSE')
-shutil.copyfile(os.path.join(root_dir, 'NOTICE'), 'NOTICE')
+# Take hadoop binaries.
+HADOOP_DIR_SRC = os.path.join(SYSTEMDS_ROOT, 'target', 'lib', 'hadoop')
+if os.path.exists(HADOOP_DIR_SRC):
+    shutil.copytree(HADOOP_DIR_SRC, os.path.join(LIB_DIR,"hadoop"))
 
-# delete old build and dist path
+# Take conf files.
+CONF_DIR = os.path.join(this_path, PYTHON_DIR, 'conf')
+if not os.path.exists(CONF_DIR):
+    os.mkdir(CONF_DIR)
+shutil.copy(os.path.join(SYSTEMDS_ROOT,'conf', 'log4j.properties'), os.path.join(this_path, PYTHON_DIR, 'conf', 'log4j.properties'))
+shutil.copy(os.path.join(SYSTEMDS_ROOT,'conf', 'SystemDS-config-defaults.xml'), os.path.join(this_path, PYTHON_DIR, 'conf', 'SystemDS-config-defaults.xml'))
+
+SYSTEMDS_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.getcwd())))
+shutil.copyfile(os.path.join(SYSTEMDS_ROOT, 'LICENSE'), 'LICENSE')
+shutil.copyfile(os.path.join(SYSTEMDS_ROOT, 'NOTICE'), 'NOTICE')
+
+# Remove old build and dist path
+if os.path.exists(TMP_DIR):
+    shutil.rmtree(TMP_DIR, True)
 build_path = os.path.join(this_path, 'build')
 if os.path.exists(build_path):
     shutil.rmtree(build_path, True)
 dist_path = os.path.join(this_path, 'dist')
 if os.path.exists(dist_path):
     shutil.rmtree(dist_path, True)
+egg_path = os.path.join(this_path, 'systemds.egg-info')
+if os.path.exists(egg_path):
+    shutil.rmtree(egg_path, True)

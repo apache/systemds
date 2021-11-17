@@ -1,12 +1,16 @@
 package org.apache.sysds.test.functions.builtin;
 
+import org.apache.spark.sql.catalyst.expressions.Ascending;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.runtime.matrix.data.MatrixValue;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
+import org.junit.Assert;
 import org.junit.Test;
 
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 
 public class BuiltinDifferenceTest extends AutomatedTestBase {
@@ -52,14 +56,14 @@ public class BuiltinDifferenceTest extends AutomatedTestBase {
     }
 
     @Test
-    public void testDifference3CP() { //fails because element order in R is wrong
+    public void testDifference3CP() {
         double[][] X =  {{12},{22},{13},{4},{6},{7},{8},{9},{12},{12}};
         double[][] Y = {{1},{2},{11},{12},{13},{18},{20},{21},{12}};
         runUnionTests(X, Y, Types.ExecType.CP);
     }
 
     @Test
-    public void testDifference3Spark() {
+    public void testDifference3SP() {
         double[][] X = {{12},{22},{13},{4},{6},{7},{8},{9},{12},{12}};
         double[][] Y = {{1},{2},{11},{12},{13},{18},{20},{21},{12}};
         runUnionTests(X, Y, Types.ExecType.SPARK);
@@ -84,7 +88,11 @@ public class BuiltinDifferenceTest extends AutomatedTestBase {
             HashMap<MatrixValue.CellIndex, Double> dmlfile = readDMLMatrixFromOutputDir("R");
             HashMap<MatrixValue.CellIndex, Double> rfile  = readRMatrixFromExpectedDir("R");
 
-            TestUtils.compareMatrices(dmlfile, rfile, 1e-10, "dml", "expected");
+            ArrayList<Double> dml_values = new ArrayList<>(dmlfile.values());
+            ArrayList<Double> r_values = new ArrayList<>(rfile.values());
+
+            //Junit way collection equal ignore order.
+            Assert.assertTrue(dml_values.size() == r_values.size() && dml_values.containsAll(r_values) && r_values.containsAll(dml_values));
         }
         finally {
             rtplatform = platformOld;

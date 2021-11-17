@@ -63,8 +63,6 @@ difference = function(Matrix[Double] X, Matrix[Double] Y)
         rows_X = nrow(X_t);
         rows_Y = nrow(Y_t);
 
-        #Fucking hack bro. (only necessary if rows_X > rows_Y)
-        #füge einen wert in Y ein der größer ist als der größte wert in x
         max_x_val = max(X);
         Y_new = rbind(Y, matrix(max_x_val + 1, rows=1,cols=1));
         Y_new_t = (table(Y_new, 1) != 0)

@@ -215,7 +215,7 @@ get_release_info() {
 
   # Git configuration info
   # The ASF ID is obtained from
-  # https://people.apache.org/phonebook.html?unix=systemds
+  # https://people.apache.org/committers-by-project.html#systemds
   if [[ -z "$ASF_USERNAME" ]]; then
     export ASF_USERNAME=$(read_config "ASF ID" "$LOGNAME")
   fi

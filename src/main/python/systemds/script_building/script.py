@@ -200,15 +200,13 @@ class DMLScript:
         # for each node do the dfs operation and save the variable names in `input_var_names`
         # get variable names of unnamed parameters
 
-        unnamed_input_vars = [self._dfs_dag_nodes(
-            input_node) for input_node in dag_node.unnamed_input_nodes]
+        unnamed_input_vars = []
+        for un_node in dag_node.unnamed_input_nodes:
+            unnamed_input_vars.append(self._dfs_dag_nodes(un_node))
 
         named_input_vars = {}
         for name, input_node in dag_node.named_input_nodes.items():
             named_input_vars[name] = self._dfs_dag_nodes(input_node)
-            if isinstance(input_node, DAGNode) and input_node._output_type == OutputType.LIST:
-                dag_node.dml_name = named_input_vars[name] + name
-                return dag_node.dml_name
 
         # check if the node gets a name after multireturns
         # If it has, great, return that name
@@ -222,6 +220,7 @@ class DMLScript:
 
         code_line = dag_node.code_line(
             dag_node.dml_name, unnamed_input_vars, named_input_vars)
+
         self.add_code(code_line)
         return dag_node.dml_name
 

@@ -64,8 +64,7 @@ class SystemDSContext(object):
         if process.poll() is None:
             self.__start_gateway(actual_port)
         else:
-            self.exception_and_close(
-                "Java process stopped before gateway could connect")
+            self.exception_and_close("Java process stopped before gateway could connect")
 
     def get_stdout(self, lines: int = -1):
         """Getter for the stdout of the java subprocess
@@ -89,7 +88,7 @@ class SystemDSContext(object):
         else:
             return [self.__stderr.get() for x in range(lines)]
 
-    def exception_and_close(self, exception_str: str, trace_back_limit: int = None):
+    def exception_and_close(self, exception, trace_back_limit: int = None):
         """
         Method for printing exception, printing stdout and error, while also closing the context correctly.
 
@@ -104,7 +103,7 @@ class SystemDSContext(object):
         if stdErr:
             message += "standard error  :\n" + "\n".join(stdErr)
         message += "\n\n"
-        message += exception_str
+        message += str(exception)
         sys.tracebacklimit = trace_back_limit
         self.close()
         raise RuntimeError(message)

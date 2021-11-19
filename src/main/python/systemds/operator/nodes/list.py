@@ -76,11 +76,10 @@ class List(OperationNode):
 
     def code_line(self, var_name: str, unnamed_input_vars: Sequence[str],
                   named_input_vars: Dict[str, str]) -> str:
-        inputs_comma_sep = create_params_string(
-            unnamed_input_vars, named_input_vars)
-        return f'{var_name}={self.operation}({inputs_comma_sep});'
+        code_line = super().code_line(var_name, unnamed_input_vars, named_input_vars)
+        return code_line
 
-    def compute(self, verbose: bool = False, lineage: bool = False) -> Union[np.array]:
+    def compute(self, verbose: bool = False, lineage: bool = False) -> np.array:
         return super().compute(verbose, lineage)
 
     def __str__(self):

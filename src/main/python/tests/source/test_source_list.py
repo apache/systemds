@@ -22,32 +22,42 @@
 import unittest
 
 import numpy as np
-from time import sleep
 from systemds.context import SystemDSContext
+from systemds.operator.algorithm.builtin.scale import scale
 
 
-class TestPrint(unittest.TestCase):
+class TestSource_01(unittest.TestCase):
 
     sds: SystemDSContext = None
+    source_path: str = "./tests/source/source_with_list_input.dml"
 
     @classmethod
     def setUpClass(cls):
         cls.sds = SystemDSContext()
-        sleep(1.0)
-        cls.sds.get_stdout()
-        cls.sds.get_stdout()
 
     @classmethod
     def tearDownClass(cls):
         cls.sds.close()
 
-    def test_print_01(self):
-        self.sds.from_numpy(np.array([1])).to_string().print().compute()
-        self.assertEqual(1,float(self.sds.get_stdout()[0]))
+    def test_single_return(self):
+        arr = self.sds.array(self.sds.full((10, 10), 4))
+        c = self.sds.source(self.source_path, "test").func(arr)
+        res = c.sum().compute()
+        self.assertTrue(res == 10*10*4)
 
-    def test_print_02(self):
-        self.sds.scalar(1).print().compute()
-        self.assertEqual(1,float(self.sds.get_stdout()[0]))
+    def test_input_multireturn(self):
+        m = self.sds.full((10, 10), 2)
+        [a, b, c] = scale(m, True, True)
+        arr = self.sds.array(a, b, c)
+        c = self.sds.source(self.source_path, "test").func(arr)
+        res = c.sum().compute()
+        self.assertTrue(res == 0)
 
-if __name__ == "__main__":
-    unittest.main(exit=False)
+    # [SYSTEMDS-3224] https://issues.apache.org/jira/browse/SYSTEMDS-3224
+    # def test_multi_return(self):
+    #     arr = self.sds.array(
+    #         self.sds.full((10, 10), 4),
+    #         self.sds.full((3, 3), 5))
+    #     [b, c] = self.sds.source(self.source_path, "test", True).func2(arr)
+    #     res = c.sum().compute()
+    #     self.assertTrue(res == 10*10*4)

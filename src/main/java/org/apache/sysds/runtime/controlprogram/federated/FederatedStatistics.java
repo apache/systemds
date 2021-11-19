@@ -53,10 +53,6 @@ public class FederatedStatistics {
 		_fedWorkerAddresses.add(new ImmutablePair<>(host, Integer.valueOf(port)));
 	}
 
-	public static Set<Pair<String, Integer>> getFedWorkerAddresses() {
-		return _fedWorkerAddresses;
-	}
-
 	public static String displayFedWorkers() {
 		StringBuilder sb = new StringBuilder();
 		sb.append("Federated Worker Addresses:\n");

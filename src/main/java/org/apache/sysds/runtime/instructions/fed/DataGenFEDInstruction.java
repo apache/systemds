@@ -283,7 +283,7 @@ public class DataGenFEDInstruction extends UnaryFEDInstruction {
 		catch(UnknownHostException e) {
 			e.printStackTrace();
 		}
-		String host = addr.getHostAddress();
+		String host = addr.getHostName();
 
 		int rangeBegin = 0;
 		List<Pair<FederatedRange, FederatedData>> d = new ArrayList<>();
@@ -311,7 +311,10 @@ public class DataGenFEDInstruction extends UnaryFEDInstruction {
 		long id = FederationUtils.getNextFedDataID();
 
 		FederatedRequest[] fr1 = FederationUtils.callInstruction(instStrings, output, id, Types.ExecType.CP);
-		fedMap.execute(getTID(), true, fr1);
+		boolean currFlagStatus = FEDInstructionUtils.fedDataGen;
+		FEDInstructionUtils.fedDataGen = false;
+		fedMap.execute(getTID(), true, fr1, new FederatedRequest[0]);
+		FEDInstructionUtils.fedDataGen = currFlagStatus;
 
 		MatrixObject out = ec.getMatrixObject(output);
 		out.getDataCharacteristics().set(new MatrixCharacteristics(lrows, lcols, blocksize, lrows * lcols));

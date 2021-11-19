@@ -27,6 +27,7 @@ import java.util.HashMap;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.hops.OptimizerUtils;
+import org.apache.sysds.runtime.instructions.fed.FEDInstructionUtils;
 import org.apache.sysds.runtime.matrix.data.MatrixValue;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.test.AutomatedTestBase;
@@ -107,6 +108,8 @@ public class FederatedRandTest extends AutomatedTestBase {
 		fullDMLScriptName = HOME + TEST_NAME + "Reference.dml";
 		programArgs = new String[] {"-nvargs", input("X1"), input("X2"), expected("Z")};
 		runTest(null);
+
+//		FEDInstructionUtils.fedDataGen = true;
 
 		// Run actual dml script with federated matrix
 		OptimizerUtils.FEDERATED_COMPILATION = true;

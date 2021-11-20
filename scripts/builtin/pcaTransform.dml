@@ -19,7 +19,7 @@
 #
 #-------------------------------------------------------------
 
-# Principal Component Analysis (PCA) for dimensionality reduction prediciton
+# Principal Component Analysis (PCA) for dimensionality reduction prediction
 # This method is used to transpose data, which the PCA model was not trained on. To validate how good
 # The PCA is, and to apply in production. 
 #

@@ -1823,8 +1823,43 @@ public class TestUtils
 		return matrix;
 	}
 
+	/**
+	 *
+	 * Generates a test matrix with the specified parameters as a MatrixBlock.
+	 *
+	 * @param rows number of rows
+	 * @param cols number of columns
+	 * @param min minimum value
+	 * @param max maximum value
+	 * @param sparsity sparsity
+	 * @param seed seed
+	 * @return random MatrixBlock
+	 */
 	public static MatrixBlock generateTestMatrixBlock(int rows, int cols, double min, double max, double sparsity, long seed){
 		return MatrixBlock.randOperations(rows, cols, sparsity, min, max, "Uniform", seed);
+	}
+
+	/**
+	 *
+	 * Generates a symmetric test matrix with the specified parameters as a MatrixBlock.
+	 * TODO: generate the values without using the randOperation
+	 *
+	 * @param rows number of rows
+	 * @param cols number of columns
+	 * @param min minimum value
+	 * @param max maximum value
+	 * @param sparsity sparsity
+	 * @param seed seed
+	 * @return random symmetric MatrixBlock
+	 */
+	public static MatrixBlock generateTestMatrixBlockSym(int rows, int cols, double min, double max, double sparsity, long seed){
+		MatrixBlock m = MatrixBlock.randOperations(rows, cols, sparsity, min, max, "Uniform", seed);
+		for(int i = 0; i < rows; i++) {
+			for(int j = i+1; j < cols; j++) {
+				m.setValue(i,j, m.getValue(j,i));
+			}
+		}
+		return m;
 	}
 
 	/**

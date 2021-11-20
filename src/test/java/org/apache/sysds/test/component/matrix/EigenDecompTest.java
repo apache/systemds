@@ -31,13 +31,24 @@ public class EigenDecompTest {
 		MatrixBlock in = TestUtils.generateTestMatrixBlock(10, 10, 0, 10, 1.0, 1);
 		MatrixBlock[] m1 = LibCommonsMath.multiReturnOperations(in, "eigen");
 		MatrixBlock[] m2 = LibCommonsMath.multiReturnOperations(in, "eigenours");
-		if(m1 != null && m1.length == 2 &&
-		   m2 != null && m2.length == 2) {
+		if(m1 != null && m1.length == 2 && m1[0] != null && m1[1] != null &&
+		   m2 != null && m2.length == 2 && m2[0] != null && m2[1] != null) {
 			TestUtils.compareMatrices(m1[0], m2[0], 0.01, "Result of eigenvalues of new eigendecomp function wrong");
 			TestUtils.compareMatrices(m1[1], m2[1], 0.01, "Result of eigenvectors of new eigendecomp function wrong");
 		}
 		else {
-			Assert.fail("Wrong number of matrices returned from eigendecomp");
+			Assert.fail("Wrong number of matrices returned from eigendecomp (or null)");
 		}
+	}
+
+	@Test
+	public void testTred2() {
+		MatrixBlock in = new MatrixBlock(4, 4, false);
+		double[] a = { 4, 1, -2,  2,
+					   1, 2,  0,  1,
+		              -2, 0,  3, -2,
+				       2, 1, -2, -1};
+		in.init(a, 4, 4);
+		MatrixBlock[] m = LibCommonsMath.multiReturnOperations(in, "eigenours");
 	}
 }

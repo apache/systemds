@@ -112,7 +112,7 @@ public enum Builtins {
 	DIAG("diag", false),
 	DISCOVER_FD("discoverFD", true),
 	DISCOVER_MD("mdedup", true),
-	DIFFERENCE("difference", true),
+	SETDIFF("setdiff", true),
 	DIST("dist", true),
 	DMV("dmv", true),
 	DROP_INVALID_TYPE("dropInvalidType", false),

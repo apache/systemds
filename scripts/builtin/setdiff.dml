@@ -37,7 +37,7 @@
 # R               Matrix  ---         vector with all elements that are present in X but not in Y
 
 
-difference = function(Matrix[Double] X, Matrix[Double] Y)
+setdiff = function(Matrix[double] X, Matrix[double] Y)
     return (matrix[double] R)
 {
     if(nrow(X) == 0)
@@ -50,29 +50,16 @@ difference = function(Matrix[Double] X, Matrix[Double] Y)
     }
     else
     {
-        min_value = min(min(X), min(Y)) - 1;
-        if(min_value < 0)
-        {
-                X = X - min_value;
-                Y = Y - min_value;
-        }
+        common = intersect(X, Y);
+        X = unique(X);
+        combined = rbind(X, common);
+        combined = order(target=combined, by=1, decreasing=FALSE, index.return=FALSE);
 
-        X_t = (table(X, 1) != 0)
-        Y_t = (table(Y, 1) != 0)
+        temp = combined[1:nrow(combined)-1,] != combined[2:nrow(combined),];
+        mask1 = rbind(rowSums(temp), matrix(1, rows=1, cols=1));
+        mask2 = rbind(matrix(1, rows = 1, cols = 1), rowSums(temp));
 
-        rows_X = nrow(X_t);
-        rows_Y = nrow(Y_t);
-
-        max_x_val = max(X);
-        Y_new = rbind(Y, matrix(max_x_val + 1, rows=1,cols=1));
-        Y_new_t = (table(Y_new, 1) != 0)
-
-        A = X_t[1:rows_X,] - Y_new_t[1:rows_X,]
-        B = X_t[1:rows_X,] * A[1:rows_X,];
-        R = removeEmpty(target=seq(1,nrow(B)), margin="rows", select=B);
-        if(min_value < 0)
-        {
-            R = R + min_value;
-        }
+        mask = mask1 & mask2;
+        R = removeEmpty(target = combined, margin = "rows", select = mask);
     }
 }

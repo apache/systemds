@@ -39,12 +39,14 @@
 m_intersect = function(Matrix[Double] X, Matrix[Double] Y)
   return(Matrix[Double] R)
 {
-  # compute indicator vector of intersection output
-  X = (table(X, 1) != 0) 
-  Y = (table(Y, 1) != 0)
-  n = min(nrow(X), nrow(Y))
-  I = X[1:n,] * Y[1:n,]
+    X = unique(X);
+    Y = unique(Y);
 
-  # reconstruct integer values and create output
-  R = removeEmpty(target=seq(1,n), margin="rows", select=I)
+    combined = rbind(X, Y);
+
+    combined = order(target=combined, by=1, decreasing=FALSE, index.return=FALSE);
+    temp = combined[1:nrow(combined)-1,] != combined[2:nrow(combined),];
+    mask = rbind(matrix(1, rows = 1, cols = 1), rowSums(temp));
+
+    R = removeEmpty(target = combined, margin = "rows", select = !mask);
 }

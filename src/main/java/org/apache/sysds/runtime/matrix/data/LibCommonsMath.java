@@ -33,6 +33,20 @@ import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.linear.SingularValueDecomposition;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.data.DenseBlock;
+import org.apache.sysds.runtime.functionobjects.Multiply;
+import org.apache.sysds.runtime.functionobjects.Divide;
+import org.apache.sysds.runtime.functionobjects.SwapIndex;
+import org.apache.sysds.runtime.functionobjects.MinusMultiply;
+import org.apache.sysds.runtime.functionobjects.Builtin;
+import org.apache.sysds.runtime.instructions.InstructionUtils;
+import org.apache.sysds.runtime.matrix.operators.RightScalarOperator;
+import org.apache.sysds.runtime.matrix.operators.LeftScalarOperator;
+import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
+import org.apache.sysds.runtime.matrix.operators.UnaryOperator;
+import org.apache.sysds.runtime.matrix.operators.TernaryOperator;
+import org.apache.sysds.runtime.matrix.operators.ReorgOperator;
+import org.apache.sysds.runtime.matrix.operators.AggregateBinaryOperator;
+import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysds.runtime.util.DataConverter;
 
 /**
@@ -72,15 +86,32 @@ public class LibCommonsMath
 			return computeCholesky(matrixInput);
 		return null;
 	}
-	
+
 	public static MatrixBlock[] multiReturnOperations(MatrixBlock in, String opcode) {
+		return multiReturnOperations(in, opcode, 1, 1);
+	}
+
+	public static MatrixBlock[] multiReturnOperations(MatrixBlock in, String opcode, int threads, int num_iterations, double tol) {
+		if(opcode.equals("eigen_qr"))
+			return computeEigenQR(in, num_iterations, tol, threads);
+		else
+			return multiReturnOperations(in, opcode, threads, 1);
+	}
+
+	public static MatrixBlock[] multiReturnOperations(MatrixBlock in, String opcode, int threads, long seed) {
 		if(opcode.equals("qr"))
 			return computeQR(in);
+		else if (opcode.equals("qr2"))
+			return computeQR2(in, threads);
 		else if (opcode.equals("lu"))
 			return computeLU(in);
 		else if (opcode.equals("eigen"))
 			return computeEigen(in);
-		else if ( opcode.equals("svd"))
+		else if (opcode.equals("eigen_lanczos"))
+			return computeEigenLanczos(in, threads, seed);
+		else if (opcode.equals("eigen_qr"))
+			return computeEigenQR(in, threads);
+		else if (opcode.equals("svd"))
 			return computeSvd(in);
 		return null;
 	}
@@ -148,8 +179,10 @@ public class LibCommonsMath
 	 * @return array of matrix blocks
 	 */
 	private static MatrixBlock[] computeLU(MatrixBlock in) {
-		if ( in.getNumRows() != in.getNumColumns() ) {
-			throw new DMLRuntimeException("LU Decomposition can only be done on a square matrix. Input matrix is rectangular (rows=" + in.getNumRows() + ", cols="+ in.getNumColumns() +")");
+		if(in.getNumRows() != in.getNumColumns()) {
+			throw new DMLRuntimeException(
+				"LU Decomposition can only be done on a square matrix. Input matrix is rectangular (rows="
+					+ in.getNumRows() + ", cols=" + in.getNumColumns() + ")");
 		}
 		
 		Array2DRowRealMatrix matrixInput = DataConverter.convertToArray2DRowRealMatrix(in);
@@ -194,35 +227,10 @@ public class LibCommonsMath
 		RealMatrix eVectorsMatrix = eigendecompose.getV();
 		double[][] eVectors = eVectorsMatrix.getData();
 		double[] eValues = eigendecompose.getRealEigenvalues();
-		
-		//Sort the eigen values (and vectors) in increasing order (to be compatible w/ LAPACK.DSYEVR())
-		int n = eValues.length;
-		for (int i = 0; i < n; i++) {
-			int k = i;
-			double p = eValues[i];
-			for (int j = i + 1; j < n; j++) {
-				if (eValues[j] < p) {
-					k = j;
-					p = eValues[j];
-				}
-			}
-			if (k != i) {
-				eValues[k] = eValues[i];
-				eValues[i] = p;
-				for (int j = 0; j < n; j++) {
-					p = eVectors[j][i];
-					eVectors[j][i] = eVectors[j][k];
-					eVectors[j][k] = p;
-				}
-			}
-		}
 
-		MatrixBlock mbValues = DataConverter.convertToMatrixBlock(eValues, true);
-		MatrixBlock mbVectors = DataConverter.convertToMatrixBlock(eVectors);
-
-		return new MatrixBlock[] { mbValues, mbVectors };
+		return sortEVs(eValues, eVectors);
 	}
-	
+
 	private static EigenDecomposition computeEigenRegularized(MatrixBlock in) {
 		if( in == null || in.isEmptyBlock(false) )
 			throw new DMLRuntimeException("Invalid empty block");
@@ -243,7 +251,6 @@ public class LibCommonsMath
 		return new EigenDecomposition(
 			DataConverter.convertToArray2DRowRealMatrix(in2));
 	}
-
 
 	/**
 	 * Performs Singular Value Decomposition. Calls Apache Commons Math SVD.
@@ -277,9 +284,10 @@ public class LibCommonsMath
 	 * @return matrix block
 	 */
 	private static MatrixBlock computeMatrixInverse(Array2DRowRealMatrix in) {
-		if ( !in.isSquare() )
-			throw new DMLRuntimeException("Input to inv() must be square matrix -- given: a " + in.getRowDimension() + "x" + in.getColumnDimension() + " matrix.");
-		
+		if(!in.isSquare())
+			throw new DMLRuntimeException("Input to inv() must be square matrix -- given: a " + in.getRowDimension()
+				+ "x" + in.getColumnDimension() + " matrix.");
+
 		QRDecomposition qrdecompose = new QRDecomposition(in);
 		DecompositionSolver solver = qrdecompose.getSolver();
 		RealMatrix inverseMatrix = solver.getInverse();
@@ -295,11 +303,308 @@ public class LibCommonsMath
 	 * @return matrix block
 	 */
 	private static MatrixBlock computeCholesky(Array2DRowRealMatrix in) {
-		if ( !in.isSquare() )
-			throw new DMLRuntimeException("Input to cholesky() must be square matrix -- given: a " + in.getRowDimension() + "x" + in.getColumnDimension() + " matrix.");
+		if(!in.isSquare())
+			throw new DMLRuntimeException("Input to cholesky() must be square matrix -- given: a "
+				+ in.getRowDimension() + "x" + in.getColumnDimension() + " matrix.");
 		CholeskyDecomposition cholesky = new CholeskyDecomposition(in, RELATIVE_SYMMETRY_THRESHOLD,
 			CholeskyDecomposition.DEFAULT_ABSOLUTE_POSITIVITY_THRESHOLD);
 		RealMatrix rmL = cholesky.getL();
 		return DataConverter.convertToMatrixBlock(rmL.getData());
+	}
+
+	/**
+	 * Creates a random normalized vector with dim elements.
+	 *
+	 * @param dim dimension of the created vector
+	 * @param threads number of threads
+	 * @param seed seed for the random MatrixBlock generation
+	 * @return random normalized vector
+	 */
+	private static MatrixBlock randNormalizedVect(int dim, int threads, long seed) {
+		MatrixBlock v1 = MatrixBlock.randOperations(dim, 1, 1.0, 0.0, 1.0, "UNIFORM", seed);
+
+		double v1_sum = v1.sum();
+		ScalarOperator op_div_scalar = new RightScalarOperator(Divide.getDivideFnObject(), v1_sum, threads);
+		v1 = v1.scalarOperations(op_div_scalar, new MatrixBlock());
+		UnaryOperator op_sqrt = new UnaryOperator(Builtin.getBuiltinFnObject(Builtin.BuiltinCode.SQRT), threads, true);
+		v1 = v1.unaryOperations(op_sqrt, new MatrixBlock());
+
+		if(Math.abs(v1.sumSq() - 1.0) >= 1e-7)
+			throw new DMLRuntimeException("v1 not correctly normalized (maybe try changing the seed)");
+
+		return v1;
+	}
+
+	/**
+	 * Function to perform the Lanczos algorithm and then computes the Eigendecomposition.
+	 * Caution: Lanczos is not numerically stable (see https://en.wikipedia.org/wiki/Lanczos_algorithm)
+	 * Input must be a symmetric (and square) matrix.
+	 *
+	 * @param in matrix object
+	 * @param threads number of threads
+	 * @param seed seed for the random MatrixBlock generation
+	 * @return array of matrix blocks
+	 */
+	private static MatrixBlock[] computeEigenLanczos(MatrixBlock in, int threads, long seed) {
+		if(in.getNumRows() != in.getNumColumns()) {
+			throw new DMLRuntimeException(
+				"Lanczos algorithm and Eigen Decomposition can only be done on a square matrix. "
+					+ "Input matrix is rectangular (rows=" + in.getNumRows() + ", cols=" + in.getNumColumns() + ")");
+		}
+
+		int m = in.getNumRows();
+		MatrixBlock v0 = new MatrixBlock(m, 1, 0.0);
+		MatrixBlock v1 = randNormalizedVect(m, threads, seed);
+
+		MatrixBlock T = new MatrixBlock(m, m, 0.0);
+		MatrixBlock TV = new MatrixBlock(m, m, 0.0);
+		MatrixBlock w1;
+
+		ReorgOperator op_t = new ReorgOperator(SwapIndex.getSwapIndexFnObject(), threads);
+		TernaryOperator op_minus_mul = new TernaryOperator(MinusMultiply.getFnObject(), threads);
+		AggregateBinaryOperator op_mul_agg = InstructionUtils.getMatMultOperator(threads);
+		ScalarOperator op_div_scalar = new RightScalarOperator(Divide.getDivideFnObject(), 1, threads);
+
+		MatrixBlock beta = new MatrixBlock(1, 1, 0.0);
+		for(int i = 0; i < m; i++) {
+			v1.putInto(TV, 0, i, false);
+			w1 = in.aggregateBinaryOperations(in, v1, op_mul_agg);
+			MatrixBlock alpha = w1.aggregateBinaryOperations(v1.reorgOperations(op_t, new MatrixBlock(), 0, 0, m), w1, op_mul_agg);
+			if(i < m - 1) {
+				w1 = w1.ternaryOperations(op_minus_mul, v1, alpha, new MatrixBlock());
+				w1 = w1.ternaryOperations(op_minus_mul, v0, beta, new MatrixBlock());
+				beta.setValue(0, 0, Math.sqrt(w1.sumSq()));
+				v0.copy(v1);
+				op_div_scalar = op_div_scalar.setConstant(beta.getDouble(0, 0));
+				w1.scalarOperations(op_div_scalar, v1);
+
+				T.setValue(i + 1, i, beta.getValue(0, 0));
+				T.setValue(i, i + 1, beta.getValue(0, 0));
+			}
+			T.setValue(i, i, alpha.getValue(0, 0));
+		}
+
+		MatrixBlock[] e = multiReturnOperations(T, "eigen");
+		TV.setNonZeros((long) m*m);
+		e[1] = TV.aggregateBinaryOperations(TV, e[1], op_mul_agg);
+		return e;
+	}
+
+	/**
+	 * Function to perform the QR decomposition.
+	 * Input must be a square matrix.
+	 * TODO: use Householder transformation and implicit shifts to further speed up QR decompositions
+	 *
+	 * @param in matrix object
+	 * @param threads number of threads
+	 * @return array of matrix blocks [Q, R]
+	 */
+	private static MatrixBlock[] computeQR2(MatrixBlock in, int threads) {
+		if(in.getNumRows() != in.getNumColumns()) {
+			throw new DMLRuntimeException("QR2 Decomposition can only be done on a square matrix. "
+				+ "Input matrix is rectangular (rows=" + in.getNumRows() + ", cols=" + in.getNumColumns() + ")");
+		}
+
+		int m = in.rlen;
+
+		MatrixBlock A_n = new MatrixBlock(m, m, 0.0);
+		A_n.copy(in);
+
+		MatrixBlock Q_n = new MatrixBlock(m, m, 0.0);
+		for(int i = 0; i < m; i++) {
+			Q_n.setValue(i, i, 1.0);
+		}
+
+		ReorgOperator op_t = new ReorgOperator(SwapIndex.getSwapIndexFnObject(), threads);
+		AggregateBinaryOperator op_mul_agg = InstructionUtils.getMatMultOperator(threads);
+		BinaryOperator op_sub = InstructionUtils.parseExtendedBinaryOperator("-");
+		ScalarOperator op_div_scalar = new RightScalarOperator(Divide.getDivideFnObject(), 1, threads);
+		ScalarOperator op_mult_2 = new LeftScalarOperator(Multiply.getMultiplyFnObject(), 2, threads);
+
+		for(int k = 0; k < m; k++) {
+			MatrixBlock z = A_n.slice(k, m - 1, k, k);
+			MatrixBlock uk = new MatrixBlock(m - k, 1, 0.0);
+			uk.copy(z);
+			uk.setValue(0, 0, uk.getValue(0, 0) + Math.signum(z.getValue(0, 0)) * Math.sqrt(z.sumSq()));
+			op_div_scalar = op_div_scalar.setConstant(Math.sqrt(uk.sumSq()));
+			uk = uk.scalarOperations(op_div_scalar, new MatrixBlock());
+
+			MatrixBlock vk = new MatrixBlock(m, 1, 0.0);
+			vk.copy(k, m - 1, 0, 0, uk, true);
+
+			MatrixBlock vkt = vk.reorgOperations(op_t, new MatrixBlock(), 0, 0, m);
+			MatrixBlock vkt2 = vkt.scalarOperations(op_mult_2, new MatrixBlock());
+			MatrixBlock vkvkt2 = vk.aggregateBinaryOperations(vk, vkt2, op_mul_agg);
+
+			A_n = A_n.binaryOperations(op_sub, A_n.aggregateBinaryOperations(vkvkt2, A_n, op_mul_agg));
+			Q_n = Q_n.binaryOperations(op_sub, Q_n.aggregateBinaryOperations(Q_n, vkvkt2, op_mul_agg));
+		}
+		// QR decomp: Q: Q_n; R: A_n
+		return new MatrixBlock[] {Q_n, A_n};
+	}
+
+	/**
+	 * Function that computes the Eigen Decomposition using the QR algorithm.
+	 * Caution: check if the QR algorithm is converged, if not increase iterations
+	 * Caution: if the input matrix has complex eigenvalues results will be incorrect
+	 *
+	 * @param in Input matrix
+	 * @param threads number of threads
+	 * @return array of matrix blocks
+	 */
+	private static MatrixBlock[] computeEigenQR(MatrixBlock in, int threads) {
+		return computeEigenQR(in, 500, 1e-10, threads);
+	}
+
+	private static MatrixBlock[] computeEigenQR(MatrixBlock in, int num_iterations, double tol, int threads) {
+		if(in.getNumRows() != in.getNumColumns()) {
+			throw new DMLRuntimeException("Eigen Decomposition (QR) can only be done on a square matrix. "
+				+ "Input matrix is rectangular (rows=" + in.getNumRows() + ", cols=" + in.getNumColumns() + ")");
+		}
+
+		int m = in.rlen;
+		AggregateBinaryOperator op_mul_agg = InstructionUtils.getMatMultOperator(threads);
+
+		MatrixBlock Q_prod = new MatrixBlock(m, m, 0.0);
+		for(int i = 0; i < m; i++) {
+			Q_prod.setValue(i, i, 1.0);
+		}
+
+		for(int i = 0; i < num_iterations; i++) {
+			MatrixBlock[] QR = computeQR2(in, threads);
+			Q_prod = Q_prod.aggregateBinaryOperations(Q_prod, QR[0], op_mul_agg);
+			in = in.aggregateBinaryOperations(QR[1], QR[0], op_mul_agg);
+		}
+
+		double[] check = in.getDenseBlockValues();
+		for(int i = 0; i < m; i++) {
+			for(int j = 0; j < m; j++) {
+				if(i != j) {
+					if(Math.abs(check[i*m+j]) > tol)
+						throw new DMLRuntimeException("QR Eigen Decomposition not converged or contains complex EVs"
+							+ " (position i = " + i + ", j = " + j + ")");
+				}
+			}
+		}
+
+		// If complex evals then A is in real Schur-form
+		// 2x2 blocks on diagonal of A correspond to a matrix that has the same complex evals
+		double[] eval = new double[m];
+		for(int i = 0; i < m; i++) {
+			eval[i] = check[i*m+i];
+		}
+
+		double[] evec = Q_prod.getDenseBlockValues();
+		return sortEVs(eval, evec);
+	}
+
+	/**
+	 * Function to compute the Householder transformation of a Matrix.
+	 *
+	 * @param in Input Matrix
+	 * @param threads number of threads
+	 * @return transformed matrix
+	 */
+	private static MatrixBlock computeHouseholder(MatrixBlock in, int threads) {
+		int m = in.rlen;
+
+		MatrixBlock A_n = new MatrixBlock(m, m, 0.0);
+		A_n.copy(in);
+
+		for(int k = 0; k < m - 2; k++) {
+			MatrixBlock ajk = A_n.slice(0, m - 1, k, k);
+			for(int i = 0; i <= k; i++) {
+				ajk.setValue(i, 0, 0.0);
+			}
+			double alpha = Math.sqrt(ajk.sumSq());
+			double ak1k = A_n.getDouble(k + 1, k);
+			if(ak1k > 0.0)
+				alpha *= -1;
+			double r = Math.sqrt(0.5 * (alpha * alpha - ak1k * alpha));
+			MatrixBlock v = new MatrixBlock(m, 1, 0.0);
+			v.copy(ajk);
+			v.setValue(k + 1, 0, ak1k - alpha);
+			ScalarOperator op_div_scalar = new RightScalarOperator(Divide.getDivideFnObject(), 2 * r, threads);
+			v = v.scalarOperations(op_div_scalar, new MatrixBlock());
+
+			MatrixBlock P = new MatrixBlock(m, m, 0.0);
+			for(int i = 0; i < m; i++) {
+				P.setValue(i, i, 1.0);
+			}
+
+			ReorgOperator op_t = new ReorgOperator(SwapIndex.getSwapIndexFnObject(), threads);
+			AggregateBinaryOperator op_mul_agg = InstructionUtils.getMatMultOperator(threads);
+			BinaryOperator op_add = InstructionUtils.parseExtendedBinaryOperator("+");
+			BinaryOperator op_sub = InstructionUtils.parseExtendedBinaryOperator("-");
+
+			MatrixBlock v_t = v.reorgOperations(op_t, new MatrixBlock(), 0, 0, m);
+			v_t = v_t.binaryOperations(op_add, v_t);
+			MatrixBlock v_v_t_2 = A_n.aggregateBinaryOperations(v, v_t, op_mul_agg);
+			P = P.binaryOperations(op_sub, v_v_t_2);
+			A_n = A_n.aggregateBinaryOperations(P, A_n.aggregateBinaryOperations(A_n, P, op_mul_agg), op_mul_agg);
+		}
+		return A_n;
+	}
+
+	/**
+	 * Sort the eigen values (and vectors) in increasing order (to be compatible w/ LAPACK.DSYEVR())
+	 *
+	 * @param eValues  Eigenvalues
+	 * @param eVectors Eigenvectors
+	 * @return array of matrix blocks
+	 */
+	private static MatrixBlock[] sortEVs(double[] eValues, double[][] eVectors) {
+		int n = eValues.length;
+		for(int i = 0; i < n; i++) {
+			int k = i;
+			double p = eValues[i];
+			for(int j = i + 1; j < n; j++) {
+				if(eValues[j] < p) {
+					k = j;
+					p = eValues[j];
+				}
+			}
+			if(k != i) {
+				eValues[k] = eValues[i];
+				eValues[i] = p;
+				for(int j = 0; j < n; j++) {
+					p = eVectors[j][i];
+					eVectors[j][i] = eVectors[j][k];
+					eVectors[j][k] = p;
+				}
+			}
+		}
+
+		MatrixBlock eval = DataConverter.convertToMatrixBlock(eValues, true);
+		MatrixBlock evec = DataConverter.convertToMatrixBlock(eVectors);
+		return new MatrixBlock[] {eval, evec};
+	}
+
+	private static MatrixBlock[] sortEVs(double[] eValues, double[] eVectors) {
+		int n = eValues.length;
+		for(int i = 0; i < n; i++) {
+			int k = i;
+			double p = eValues[i];
+			for(int j = i + 1; j < n; j++) {
+				if(eValues[j] < p) {
+					k = j;
+					p = eValues[j];
+				}
+			}
+			if(k != i) {
+				eValues[k] = eValues[i];
+				eValues[i] = p;
+				for(int j = 0; j < n; j++) {
+					p = eVectors[j*n+i];
+					eVectors[j*n+i] = eVectors[j*n+k];
+					eVectors[j*n+k] = p;
+				}
+			}
+		}
+
+		MatrixBlock eval = DataConverter.convertToMatrixBlock(eValues, true);
+		MatrixBlock evec = new MatrixBlock(n, n, false);
+		evec.init(eVectors, n, n);
+		return new MatrixBlock[] {eval, evec};
 	}
 }

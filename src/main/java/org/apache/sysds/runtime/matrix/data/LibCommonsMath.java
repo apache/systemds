@@ -80,6 +80,8 @@ public class LibCommonsMath
 			return computeLU(in);
 		else if (opcode.equals("eigen"))
 			return computeEigen(in);
+		else if (opcode.equals("eigenours"))
+			return computeEigenOurs(in);
 		else if ( opcode.equals("svd"))
 			return computeSvd(in);
 		return null;
@@ -223,6 +225,70 @@ public class LibCommonsMath
 		return new MatrixBlock[] { mbValues, mbVectors };
 	}
 	
+
+	private static MatrixBlock[] computeEigenOurs(MatrixBlock in) {
+		if ( in.getNumRows() != in.getNumColumns() ) {
+			throw new DMLRuntimeException("Eigen Decomposition can only be done on a square matrix. "
+				+ "Input matrix is rectangular (rows=" + in.getNumRows() + ", cols="+ in.getNumColumns() +")");
+		}
+
+//		EigenDecomposition eigendecompose = null;
+//		try {
+//			Array2DRowRealMatrix matrixInput = DataConverter.convertToArray2DRowRealMatrix(in);
+//			eigendecompose = new EigenDecomposition(matrixInput);
+//		}
+//		catch(MaxCountExceededException ex) {
+//			LOG.warn("Eigen: "+ ex.getMessage()+". Falling back to regularized eigen factorization.");
+//			eigendecompose = computeEigenRegularized(in);
+//		}
+//
+//		RealMatrix eVectorsMatrix = eigendecompose.getV();
+//		double[][] eVectors = eVectorsMatrix.getData();
+//		double[] eValues = eigendecompose.getRealEigenvalues();
+
+		// TODO: EigenDecompostition entirely in SystemDS matrix-operators
+		//		 (find out what the computeEigenRegularized function does and when it is needed)
+
+		// NOTES: what does org.apache.commons.math3.linear.EigenDecomposition use?
+		//			- only for real matrices (symmetric and non-symmetric)
+		//			- This implementation is based on the paper "The Implicit QL Algorithm" (1971)
+		//			- similar to JAMA implementation
+		//	      Apache common source
+	//				- https://gitbox.apache.org/repos/asf?p=commons-math.git
+		//
+		double[][] eVectors = {};
+		double[] eValues = {};
+		
+		//Sort the eigen values (and vectors) in increasing order (to be compatible w/ LAPACK.DSYEVR())
+		int n = eValues.length;
+		for (int i = 0; i < n; i++) {
+			int k = i;
+			double p = eValues[i];
+			for (int j = i + 1; j < n; j++) {
+				if (eValues[j] < p) {
+					k = j;
+					p = eValues[j];
+				}
+			}
+			if (k != i) {
+				eValues[k] = eValues[i];
+				eValues[i] = p;
+				for (int j = 0; j < n; j++) {
+					p = eVectors[j][i];
+					eVectors[j][i] = eVectors[j][k];
+					eVectors[j][k] = p;
+				}
+			}
+		}
+		for (int i = 0; i < n; i++) {
+			eValues[i] = 0;
+		}
+		MatrixBlock mbValues = DataConverter.convertToMatrixBlock(eValues, true);
+		MatrixBlock mbVectors = DataConverter.convertToMatrixBlock(eVectors);
+
+		return new MatrixBlock[] { mbValues, mbVectors };
+	}
+
 	private static EigenDecomposition computeEigenRegularized(MatrixBlock in) {
 		if( in == null || in.isEmptyBlock(false) )
 			throw new DMLRuntimeException("Invalid empty block");

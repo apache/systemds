@@ -147,7 +147,7 @@ public class ColGroupFactory {
 		if(cols.length != values.length)
 			throw new DMLCompressionException("Invalid size of values compared to columns");
 		ADictionary dict = new Dictionary(values);
-		return new ColGroupConst(cols, dict);
+		return ColGroupConst.create(cols, dict);
 	}
 
 	/**
@@ -162,7 +162,7 @@ public class ColGroupFactory {
 			throw new DMLCompressionException(
 				"Invalid construction of const column group with different number of columns in arguments");
 		final int[] colIndices = Util.genColsIndices(numCols);
-		return new ColGroupConst(colIndices, dict);
+		return ColGroupConst.create(colIndices, dict);
 	}
 
 	private static List<AColGroup> genEmpty(MatrixBlock in, CompressionSettings compSettings) {
@@ -194,7 +194,7 @@ public class ColGroupFactory {
 				if(!tg.isEmpty())
 					tasks.add(new CompressTask(in, tg, compSettings, Math.max(1, k / 2)));
 
-			List<AColGroup> ret = new ArrayList<>(csi.getNumberColGroups());
+			List<AColGroup> ret = new ArrayList<>();
 			for(Future<Collection<AColGroup>> t : pool.invokeAll(tasks))
 				ret.addAll(t.get());
 			pool.shutdown();
@@ -234,11 +234,17 @@ public class ColGroupFactory {
 
 		@Override
 		public Collection<AColGroup> call() {
-			ArrayList<AColGroup> res = new ArrayList<>();
-			Tmp tmpMap = new Tmp();
-			for(CompressedSizeInfoColGroup g : _groups)
-				res.addAll(compressColGroup(_in, _compSettings, tmpMap, g, _k));
-			return res;
+			try{
+				ArrayList<AColGroup> res = new ArrayList<>();
+				Tmp tmpMap = new Tmp();
+				for(CompressedSizeInfoColGroup g : _groups)
+					res.addAll(compressColGroup(_in, _compSettings, tmpMap, g, _k));
+				return res;
+			}
+			catch(Exception e){
+				e.printStackTrace();
+				throw e;
+			}
 		}
 	}
 
@@ -347,7 +353,7 @@ public class ColGroupFactory {
 
 		final IntArrayList[] of = ubm.getOffsetList();
 		if(of.length == 1 && of[0].size() == rlen) // If this always constant
-			return new ColGroupConst(colIndexes, DictionaryFactory.create(ubm));
+			return ColGroupConst.create(colIndexes, DictionaryFactory.create(ubm));
 
 		switch(compType) {
 			case DDC:
@@ -490,7 +496,7 @@ public class ColGroupFactory {
 		ADictionary dict = DictionaryFactory.create(ubm, tupleSparsity);
 		if(ubm.getNumValues() == 1) {
 			if(numZeros >= largestOffset) {
-				final AOffset off = OffsetFactory.create(ubm.getOffsetList()[0].extractValues(true));
+				final AOffset off = OffsetFactory.createOffset(ubm.getOffsetList()[0].extractValues(true));
 				return new ColGroupSDCSingleZeros(colIndexes, rlen, dict, off, null);
 			}
 			else {
@@ -510,7 +516,7 @@ public class ColGroupFactory {
 		CompressionSettings cs) {
 		IntArrayList[] offsets = ubm.getOffsetList();
 		AInsertionSorter s = InsertionSorterFactory.create(rlen, offsets, cs.sdcSortType);
-		AOffset indexes = OffsetFactory.create(s.getIndexes());
+		AOffset indexes = OffsetFactory.createOffset(s.getIndexes());
 		AMapToData data = s.getData();
 		int[] counts = new int[offsets.length + 1];
 		int sum = 0;
@@ -519,18 +525,17 @@ public class ColGroupFactory {
 			sum += counts[i];
 		}
 		counts[offsets.length] = rlen - sum;
-		AColGroupValue ret = new ColGroupSDCZeros(colIndexes, rlen, dict, indexes, data, counts);
-		return ret;
+		return ColGroupSDCZeros.create(colIndexes, rlen, dict, indexes, data, counts);
 	}
 
 	private static AColGroup setupMultiValueColGroup(int[] colIndexes, int numZeros, int rlen, ABitmap ubm,
 		int largestIndex, ADictionary dict, CompressionSettings cs) {
 		IntArrayList[] offsets = ubm.getOffsetList();
 		AInsertionSorter s = InsertionSorterFactory.createNegative(rlen, offsets, largestIndex, cs.sdcSortType);
-		AOffset indexes = OffsetFactory.create(s.getIndexes());
+		AOffset indexes = OffsetFactory.createOffset(s.getIndexes());
 		AMapToData _data = s.getData();
-		AColGroupValue ret = new ColGroupSDC(colIndexes, rlen, dict, indexes, _data, null);
-		return ret;
+		_data = MapToFactory.resize(_data, _data.getUnique() -1);
+		return ColGroupSDC.create(colIndexes, rlen, dict, indexes, _data, null);
 	}
 
 	private static AColGroup setupSingleValueSDCColGroup(int[] colIndexes, int rlen, ABitmap ubm, ADictionary dict) {
@@ -548,7 +553,7 @@ public class ColGroupFactory {
 
 		while(v < rlen)
 			indexes[p++] = v++;
-		AOffset off = OffsetFactory.create(indexes);
+		AOffset off = OffsetFactory.createOffset(indexes);
 
 		return new ColGroupSDCSingle(colIndexes, rlen, dict, off, null);
 	}
@@ -635,14 +640,14 @@ public class ColGroupFactory {
 			}
 
 			counts[entries.size()] = rlen - sum;
-			final AOffset offsets = OffsetFactory.create(sb.indexes(sbRow), apos, alen);
+			final AOffset offsets = OffsetFactory.createOffset(sb.indexes(sbRow), apos, alen);
 			if(entries.size() <= 1)
 				return new ColGroupSDCSingleZeros(cols, rlen, new Dictionary(dict), offsets, counts);
 			else {
 				final AMapToData mapToData = MapToFactory.create((alen - apos), entries.size());
 				for(int j = apos; j < alen; j++)
 					mapToData.set(j - apos, map.get(vals[j]));
-				return new ColGroupSDCZeros(cols, rlen, new Dictionary(dict), offsets, mapToData, counts);
+				return ColGroupSDCZeros.create(cols, rlen, new Dictionary(dict), offsets, mapToData, counts);
 			}
 		}
 		else {

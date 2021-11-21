@@ -298,8 +298,8 @@ public class ColGroupUncompressed extends AColGroup {
 
 	@Override
 	public AColGroup binaryRowOpLeft(BinaryOperator op, double[] v, boolean isRowSafe) {
-		MatrixBlock rowVector = Util.extractValues(v, _colIndexes);
-		return new ColGroupUncompressed(_colIndexes, rowVector.binaryOperations(op, _data, null));
+		throw new NotImplementedException("Binary row op left is not supported for Uncompressed Matrix, "
+			+ "Implement support for VMr in MatrixBLock Binary Cell operations");
 	}
 
 	@Override
@@ -451,9 +451,9 @@ public class ColGroupUncompressed extends AColGroup {
 
 	@Override
 	public void leftMultByAColGroup(AColGroup lhs, MatrixBlock result) {
-		if(lhs instanceof ColGroupEmpty)
+		if(lhs instanceof ColGroupEmpty || getData().isEmpty())
 			return;
-		if(lhs instanceof ColGroupUncompressed) {
+		else if(lhs instanceof ColGroupUncompressed) {
 			ColGroupUncompressed lhsUC = (ColGroupUncompressed) lhs;
 			MatrixBlock tmpRet = new MatrixBlock(lhs.getNumCols(), _colIndexes.length, 0);
 
@@ -499,42 +499,45 @@ public class ColGroupUncompressed extends AColGroup {
 				}
 			}
 		}
-		else {
+		else if(lhs instanceof APreAgg) {
+			// throw new NotImplementedException();
 			LOG.warn("\nInefficient transpose of uncompressed to fit to"
 				+ " t(AColGroup) %*% UncompressedColGroup mult by colGroup uncompressed column"
 				+ "\nCurrently solved by t(t(Uncompressed) %*% AColGroup)");
-			MatrixBlock ucCG = getData();
-			// make a function that allows the result of the mult to be directly output to a temporary matrix.
-			MatrixBlock tmpTransposedResult = new MatrixBlock(ucCG.getNumColumns(), result.getNumColumns(), false);
-			tmpTransposedResult.allocateDenseBlock();
 
-			MatrixBlock tmp = LibMatrixReorg.transpose(ucCG, InfrastructureAnalyzer.getLocalParallelism());
-			lhs.leftMultByMatrix(tmp, tmpTransposedResult, 0, tmp.getNumRows());
-			tmpTransposedResult.setNonZeros(ucCG.getNumColumns() * result.getNumColumns());
+			final MatrixBlock ucCGT = LibMatrixReorg.transpose(getData(), InfrastructureAnalyzer.getLocalParallelism());
+			
+			final APreAgg paCG = (APreAgg) lhs;
+			final MatrixBlock preAgg = new MatrixBlock(1, lhs.getNumValues(), false);
+			final MatrixBlock tmpRes = new MatrixBlock(1, this.getNumCols(), false);
+			final MatrixBlock dictM =  paCG._dict.getMBDict(paCG.getNumCols()).getMatrixBlock();
+			preAgg.allocateDenseBlock();
+			tmpRes.allocateDenseBlock();
+			final int nRows = ucCGT.getNumRows();
+			final int nCols = lhs.getNumCols();
+			final double[] retV = result.getDenseBlockValues();
+			final double[] tmpV = tmpRes.getDenseBlockValues();
+			final int retCols = result.getNumColumns();
+			for(int i = 0; i < nRows; i++) {
+				if(ucCGT.isInSparseFormat() && ucCGT.getSparseBlock().isEmpty(i))
+					continue;
+				paCG.preAggregate(ucCGT, preAgg, i, i + 1);
+				preAgg.recomputeNonZeros();
+				LibMatrixMult.matrixMult(preAgg, dictM, tmpRes, true);
 
-			final double[] resV = result.getDenseBlockValues();
-			final int[] lhsC = lhs._colIndexes;
-			final int[] rhsC = _colIndexes;
-
-			// allocate the resulting matrix into the correct result indexes.
-			// Note that the intermediate matrix is transposed, therefore the indexes are different than a normal
-			// allocation.
-
-			if(tmpTransposedResult.isEmpty())
-				return;
-			else if(tmpTransposedResult.isInSparseFormat())
-				throw new NotImplementedException();
-			else {
-				final double[] tmpV = tmpTransposedResult.getDenseBlockValues();
-				final int nCol = result.getNumColumns();
-
-				for(int row = 0; row < rhsC.length; row++) {
-					final int offR = rhsC[row];
-					final int offT = row * nCol;
-					for(int col = 0; col < lhsC.length; col++)
-						resV[offR + lhsC[col] * nCol] += tmpV[offT + lhsC[col]];
+				final int rowOut = _colIndexes[i];
+				for(int j = 0; j < nCols; j++) {
+					final int colOut = lhs._colIndexes[j] * retCols;
+					retV[rowOut + colOut] += tmpV[j];
+				}
+				if(i < nRows - 1) {
+					preAgg.reset(1, lhs.getNumValues());
+					tmpRes.reset(1, this.getNumCols());
 				}
 			}
+		}
+		else {
+			throw new NotImplementedException();
 		}
 	}
 

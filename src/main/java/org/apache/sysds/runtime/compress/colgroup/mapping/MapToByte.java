@@ -24,7 +24,11 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.util.Arrays;
 
+import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory.MAP_TYPE;
+import org.apache.sysds.runtime.compress.colgroup.offset.AOffset;
+import org.apache.sysds.runtime.data.DenseBlock;
+import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.utils.MemoryEstimates;
 
@@ -35,7 +39,7 @@ public class MapToByte extends AMapToData {
 	private final byte[] _data;
 
 	public MapToByte(int unique, int size) {
-		super(unique);
+		super(Math.min(unique, 256));
 		_data = new byte[size];
 	}
 
@@ -59,7 +63,7 @@ public class MapToByte extends AMapToData {
 		return getInMemorySize(_data.length);
 	}
 
-	public static long getInMemorySize(int dataLength) {
+	protected static long getInMemorySize(int dataLength) {
 		long size = 16 + 8; // object header + object reference
 		size += MemoryEstimates.byteArrayCost(dataLength);
 		return size;
@@ -89,17 +93,13 @@ public class MapToByte extends AMapToData {
 			out.writeByte(_data[i]);
 	}
 
-	public static MapToByte readFields(DataInput in) throws IOException {
+	protected static MapToByte readFields(DataInput in) throws IOException {
 		int unique = in.readInt();
 		final int length = in.readInt();
 		final byte[] data = new byte[length];
 		for(int i = 0; i < length; i++)
 			data[i] = in.readByte();
 		return new MapToByte(unique, data);
-	}
-
-	public byte[] getBytes() {
-		return _data;
 	}
 
 	@Override
@@ -124,23 +124,101 @@ public class MapToByte extends AMapToData {
 		}
 	}
 
+	private final void preAggregateDenseToRowNoFlip(double[] mV, int off, double[] preAV, int cl, int cu) {
+		off += cl;
+		for(int rc = cl; rc < cu; rc++, off++)
+			preAV[_data[rc]] += mV[off];
+	}
+
+	private final void preAggregateDenseToRowWithFlip(double[] mV, int off, double[] preAV, int cl, int cu) {
+		off += cl;
+		for(int rc = cl; rc < cu; rc++, off++)
+			preAV[_data[rc] & 0xFF] += mV[off];
+	}
+
+	private static final void preAggregateDenseToRowBy8WithFlip(final double[] mV, int off, final double[] preAV,
+		final int cl, final int cu, final byte[] data) {
+		final int h = (cu - cl) % 8;
+		off += cl;
+		for(int rc = cl; rc < cl + h; rc++, off++)
+			preAV[data[rc] & 0xFF] += mV[off];
+		for(int rc = cl + h; rc < cu; rc += 8, off += 8) {
+			int id1 = data[rc] & 0xFF, id2 = data[rc + 1] & 0xFF, id3 = data[rc + 2] & 0xFF, id4 = data[rc + 3] & 0xFF,
+				id5 = data[rc + 4] & 0xFF, id6 = data[rc + 5] & 0xFF, id7 = data[rc + 6] & 0xFF, id8 = data[rc + 7] & 0xFF;
+			preAV[id1] += mV[off];
+			preAV[id2] += mV[off + 1];
+			preAV[id3] += mV[off + 2];
+			preAV[id4] += mV[off + 3];
+			preAV[id5] += mV[off + 4];
+			preAV[id6] += mV[off + 5];
+			preAV[id7] += mV[off + 6];
+			preAV[id8] += mV[off + 7];
+		}
+	}
+
+	private static final void preAggregateDenseToRowBy8NoFlip(final double[] mV, int off, final double[] preAV,
+		final int cl, final int cu, final byte[] data) {
+		final int h = (cu - cl) % 8;
+		off += cl;
+		for(int rc = cl; rc < cl + h; rc++, off++)
+			preAV[data[rc]] += mV[off];
+		for(int rc = cl + h; rc < cu; rc += 8, off += 8) {
+			int id1 = data[rc], id2 = data[rc + 1], id3 = data[rc + 2], id4 = data[rc + 3], id5 = data[rc + 4],
+				id6 = data[rc + 5], id7 = data[rc + 6], id8 = data[rc + 7];
+			preAV[id1] += mV[off];
+			preAV[id2] += mV[off + 1];
+			preAV[id3] += mV[off + 2];
+			preAV[id4] += mV[off + 3];
+			preAV[id5] += mV[off + 4];
+			preAV[id6] += mV[off + 5];
+			preAV[id7] += mV[off + 6];
+			preAV[id8] += mV[off + 7];
+		}
+	}
+
 	@Override
-	public void preAggregateDense(MatrixBlock m, MatrixBlock pre, int rl, int ru, int cl, int cu) {
-		final int nRow = m.getNumColumns();
-		final int nVal = pre.getNumColumns();
-		final double[] preAV = pre.getDenseBlockValues();
-		final double[] mV = m.getDenseBlockValues();
-		final int blockSize = 4000;
-		for(int block = cl; block < cu; block += blockSize) {
-			final int blockEnd = Math.min(block + blockSize, nRow);
-			for(int rowLeft = rl, offOut = 0; rowLeft < ru; rowLeft++, offOut += nVal) {
-				final int offLeft = rowLeft * nRow;
-				for(int rc = block; rc < blockEnd; rc++) {
-					final int idx = _data[rc] & 0xFF;
-					preAV[offOut + idx] += mV[offLeft + rc];
+	protected void preAggregateDenseToRow(double[] mV, int off, double[] preAV, int cl, int cu) {
+		if(getUnique() < 127) {
+			if(cu - cl > 64)
+				preAggregateDenseToRowBy8NoFlip(mV, off, preAV, cl, cu, _data);
+			else
+				preAggregateDenseToRowNoFlip(mV, off, preAV, cl, cu);
+		}
+		else if(cu - cl > 64)
+			// Have tried with 4 and 16, but 8 is empirically best
+			preAggregateDenseToRowBy8WithFlip(mV, off, preAV, cl, cu, _data);
+		else
+			preAggregateDenseToRowWithFlip(mV, off, preAV, cl, cu);
+	}
+
+	@Override
+	protected void preAggregateDenseRows(MatrixBlock m, double[] preAV, int rl, int ru, int cl, int cu) {
+		final int nVal = getUnique();
+		final DenseBlock db = m.getDenseBlock();
+		if(db.isContiguous()) {
+			final double[] mV = m.getDenseBlockValues();
+			final int nCol = m.getNumColumns();
+			for(int c = cl; c < cu; c++) {
+				final int idx = getIndex(c);
+				final int start = c + nCol * rl;
+				final int end = c + nCol * ru;
+				for(int offOut = idx, off = start; off < end; offOut += nVal, off += nCol) {
+					preAV[offOut] += mV[off];
 				}
 			}
 		}
+		else
+			throw new NotImplementedException();
+	}
+
+	@Override
+	public final void preAggregateDense(MatrixBlock m, double[] preAV, int rl, int ru, int cl, int cu, AOffset indexes) {
+		indexes.preAggregateDenseMap(m, preAV, rl, ru, cl, cu, getUnique(), _data);
+	}
+
+	@Override
+	public void preAggregateSparse(SparseBlock sb, double[] preAV, int rl, int ru, AOffset indexes) {
+		indexes.preAggregateSparseMap(sb, preAV, rl, ru, getUnique(), _data);
 	}
 
 	@Override

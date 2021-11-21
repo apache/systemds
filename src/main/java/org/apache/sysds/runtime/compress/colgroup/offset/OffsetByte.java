@@ -21,18 +21,20 @@ package org.apache.sysds.runtime.compress.colgroup.offset;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
-import java.util.Arrays;
+import java.util.BitSet;
 
-import org.apache.sysds.runtime.compress.DMLCompressionException;
+import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.utils.MemoryEstimates;
 
 public class OffsetByte extends AOffset {
 
 	private static final long serialVersionUID = -4716104973912491790L;
+	private static final int maxV = 255;
 
-	private final static int maxV = 255;
 	private final byte[] offsets;
 	private final int offsetToFirst;
+	private final int offsetToLast;
+	private final boolean noOverHalf;
 
 	public OffsetByte(int[] indexes) {
 		this(indexes, 0, indexes.length);
@@ -41,21 +43,22 @@ public class OffsetByte extends AOffset {
 	public OffsetByte(int[] indexes, int apos, int alen) {
 		int endSize = 0;
 		offsetToFirst = indexes[apos];
+		offsetToLast = indexes[alen - 1];
 		int ov = offsetToFirst;
+		// find the size of the array
 		for(int i = apos + 1; i < alen; i++) {
 			final int nv = indexes[i];
-			endSize += 1 + (nv - ov) / maxV;
+			endSize += 1 + (nv - ov - 1) / maxV;
 			ov = nv;
 		}
 		offsets = new byte[endSize];
 		ov = offsetToFirst;
 		int p = 0;
 
+		// populate the array
 		for(int i = apos + 1; i < alen; i++) {
 			final int nv = indexes[i];
 			final int offsetSize = nv - ov;
-			if(offsetSize == 0)
-				throw new DMLCompressionException("Invalid difference between cells :\n" + Arrays.toString(indexes));
 			final int div = offsetSize / maxV;
 			final int mod = offsetSize % maxV;
 			if(mod == 0) {
@@ -69,11 +72,30 @@ public class OffsetByte extends AOffset {
 
 			ov = nv;
 		}
+		boolean noOverHalf = true;
+		for(byte b : offsets)
+			if(b < 0) {
+				noOverHalf = false;
+				break;
+			}
+		this.noOverHalf = noOverHalf;
 	}
 
-	private OffsetByte(byte[] offsets, int offsetToFirst) {
+	protected OffsetByte(byte[] offsets, int offsetToFirst, int offsetToLast) {
 		this.offsets = offsets;
 		this.offsetToFirst = offsetToFirst;
+		this.offsetToLast = offsetToLast;
+		this.noOverHalf = getNoOverHalf();
+	}
+
+	private boolean getNoOverHalf() {
+		boolean noOverHalf = true;
+		for(byte b : offsets)
+			if(b < 0) {
+				noOverHalf = false;
+				break;
+			}
+		return noOverHalf;
 	}
 
 	@Override
@@ -92,7 +114,9 @@ public class OffsetByte extends AOffset {
 
 	@Override
 	public long getInMemorySize() {
-		return getInMemorySize(offsets.length);
+		long size = 16 + 4 + 4 + 8; // object header plus ints plus reference
+		size += MemoryEstimates.byteArrayCost(offsets.length);
+		return size;
 	}
 
 	@Override
@@ -103,27 +127,469 @@ public class OffsetByte extends AOffset {
 	@Override
 	public int getSize() {
 		int size = 1;
-		for(byte b : offsets) {
+		for(byte b : offsets)
 			if(b != 0)
 				size++;
-		}
+
 		return size;
 	}
 
-	public static long getInMemorySize(int length) {
-		long size = 16 + 4 + 8; // object header plus int plus reference
-		size += MemoryEstimates.byteArrayCost(length);
+	@Override
+	public int getOffsetToFirst() {
+		return offsetToFirst;
+	}
+
+	@Override
+	public int getOffsetToLast() {
+		return offsetToLast;
+	}
+
+	@Override
+	public int getOffsetsLength() {
+		return offsets.length;
+	}
+
+	public static long estimateInMemorySize(int nOffs, int nRows) {
+		long size = 16 + 4 + 4 + 8; // object header plus int plus reference
+		size += MemoryEstimates.byteArrayCost(Math.max(nOffs, nRows / maxV));
 		return size;
 	}
 
 	public static OffsetByte readFields(DataInput in) throws IOException {
-		int offsetToFirst = in.readInt();
-		int offsetsLength = in.readInt();
-		byte[] offsets = new byte[offsetsLength];
+		final int offsetToFirst = in.readInt();
+		final int offsetsLength = in.readInt();
+
+		final byte[] offsets = new byte[offsetsLength];
+		int offsetToLast = offsetToFirst;
 		for(int i = 0; i < offsetsLength; i++) {
 			offsets[i] = in.readByte();
+			offsetToLast += offsets[i] & 0xFF;
 		}
-		return new OffsetByte(offsets, offsetToFirst);
+		return new OffsetByte(offsets, offsetToFirst, offsetToLast);
+	}
+
+	@Override
+	protected final void preAggregateDenseMapRowByte(double[] mV, int off, double[] preAV, int cu, int nVal, byte[] data,
+		AIterator it) {
+		IterateByteOffset itb = (IterateByteOffset) it;
+		final boolean noZero = offsets.length == data.length - 1;
+		if(cu < offsetToLast + 1) {
+			final boolean nvalHalf = nVal < 127;
+			if(noOverHalf && noZero && nvalHalf)
+				preAggregateDenseByteMapRowBelowEndAndNoZeroNoOverHalfAlsoData(mV, off, preAV, cu, data, itb);
+			else if(noOverHalf && noZero)
+				preAggregateDenseByteMapRowBelowEndAndNoZeroNoOverHalf(mV, off, preAV, cu, data, itb);
+			else if(noZero)
+				preAggregateDenseByteMapRowBelowEndAndNoZero(mV, off, preAV, cu, data, itb);
+			else if(nvalHalf)
+				preAggregateDenseByteMapRowBelowEndDataHalf(mV, off, preAV, cu, data, itb);
+			else if(noOverHalf)
+				preAggregateDenseByteMapRowBelowEndNoOverHalf(mV, off, preAV, cu, data, itb);
+			else
+				preAggregateDenseByteMapRowBelowEnd(mV, off, preAV, cu, data, itb);
+			cacheIterator(itb, cu);
+		}
+		else if(noZero)
+			preAggregateDenseByteMapRowNoZero(mV, off, preAV, data, itb);
+		else
+			preAggregateDenseByteMapRow(mV, off, preAV, data, itb);
+
+	}
+
+	private final void preAggregateDenseByteMapRow(double[] mV, int off, double[] preAV, byte[] data,
+		IterateByteOffset it) {
+		final int maxId = data.length - 1;
+
+		int offset = it.offset + off;
+		int index = it.index;
+		int dataIndex = it.dataIndex;
+
+		preAV[data[dataIndex] & 0xFF] += mV[offset];
+		while(dataIndex < maxId) {
+			byte v = offsets[index];
+			while(v == 0) {
+				offset += maxV;
+				index++;
+				v = offsets[index];
+			}
+			offset += v & 0xFF;
+			index++;
+			dataIndex++;
+			preAV[data[dataIndex] & 0xFF] += mV[offset];
+		}
+	}
+
+	private final void preAggregateDenseByteMapRowNoZero(double[] mV, int off, double[] preAV, byte[] data,
+		IterateByteOffset it) {
+
+		int offset = it.offset + off;
+		int index = it.index;
+
+		while(index < offsets.length) {
+			preAV[data[index] & 0xFF] += mV[offset];
+			offset += offsets[index++] & 0xFF;
+		}
+		// process straggler index.
+		preAV[data[index] & 0xFF] += mV[offset];
+	}
+
+	private void preAggregateDenseByteMapRowBelowEndNoOverHalf(double[] mV, int off, double[] preAV, int cu, byte[] data,
+		IterateByteOffset it) {
+
+		cu += off;
+		it.offset += off;
+		while(it.offset < cu) {
+			preAV[data[it.dataIndex] & 0xFF] += mV[it.offset];
+			byte v = offsets[it.index];
+			while(v == 0) {
+				it.offset += maxV;
+				it.index++;
+				v = offsets[it.index];
+			}
+			it.offset += v;
+			it.index++;
+			it.dataIndex++;
+		}
+		it.offset -= off;
+	}
+
+	private void preAggregateDenseByteMapRowBelowEndDataHalf(double[] mV, int off, double[] preAV, int cu, byte[] data,
+		IterateByteOffset it) {
+
+		cu += off;
+		it.offset += off;
+		while(it.offset < cu) {
+			preAV[data[it.dataIndex]] += mV[it.offset];
+			byte v = offsets[it.index];
+			while(v == 0) {
+				it.offset += maxV;
+				it.index++;
+				v = offsets[it.index];
+			}
+			it.offset += v & 0xFF;
+			it.index++;
+			it.dataIndex++;
+		}
+		it.offset -= off;
+	}
+
+	private void preAggregateDenseByteMapRowBelowEnd(double[] mV, int off, double[] preAV, int cu, byte[] data,
+		IterateByteOffset it) {
+
+		cu += off;
+		it.offset += off;
+		while(it.offset < cu) {
+			preAV[data[it.dataIndex] & 0xFF] += mV[it.offset];
+			byte v = offsets[it.index];
+			while(v == 0) {
+				it.offset += maxV;
+				it.index++;
+				v = offsets[it.index];
+			}
+			it.offset += v & 0xFF;
+			it.index++;
+			it.dataIndex++;
+		}
+		it.offset -= off;
+	}
+
+	private void preAggregateDenseByteMapRowBelowEndAndNoZero(double[] mV, int off, double[] preAV, int cu, byte[] data,
+		IterateByteOffset it) {
+
+		int offset = it.offset + off;
+		int index = it.index;
+
+		cu += off;
+
+		while(offset < cu) {
+			preAV[data[index] & 0xFF] += mV[offset];
+			offset += offsets[index++] & 0xFF;
+		}
+
+		it.offset = offset - off;
+		it.dataIndex = index;
+		it.index = index;
+	}
+
+	private final void preAggregateDenseByteMapRowBelowEndAndNoZeroNoOverHalf(double[] mV, int off, double[] preAV,
+		int cu, byte[] data, IterateByteOffset it) {
+		int offset = it.offset + off;
+		int index = it.index;
+
+		cu += off;
+
+		while(offset < cu) {
+			preAV[data[index] & 0xFF] += mV[offset];
+			offset += offsets[index++];
+		}
+
+		it.offset = offset - off;
+		it.dataIndex = index;
+		it.index = index;
+	}
+
+	private final void preAggregateDenseByteMapRowBelowEndAndNoZeroNoOverHalfAlsoData(double[] mV, int off,
+		double[] preAV, int cu, byte[] data, IterateByteOffset it) {
+		int offset = it.offset + off;
+		int index = it.index;
+
+		cu += off;
+
+		while(offset < cu) {
+			preAV[data[index]] += mV[offset];
+			offset += offsets[index++];
+		}
+
+		it.offset = offset - off;
+		it.dataIndex = index;
+		it.index = index;
+	}
+
+	@Override
+	protected final void preAggregateDenseMapRowChar(double[] mV, int off, double[] preAV, int cu, int nVal, char[] data,
+		AIterator it) {
+		IterateByteOffset itb = (IterateByteOffset) it;
+		final boolean noZero = offsets.length == data.length - 1;
+		if(cu < offsetToLast + 1) {
+			if(noOverHalf && noZero)
+				preAggregateDenseCharMapRowBelowEndAndNoZeroNoOverHalf(mV, off, preAV, cu, data, itb);
+			else if(noZero)
+				preAggregateDenseCharMapRowBelowEndAndNoZero(mV, off, preAV, cu, data, itb);
+			else
+				preAggregateDenseCharMapRowBelowEnd(mV, off, preAV, cu, data, itb);
+			cacheIterator(itb, cu);
+		}
+		else if(noZero)
+			preAggregateDenseCharMapRowNoZero(mV, off, preAV, data, itb);
+		else
+			preAggregateDenseCharMapRow(mV, off, preAV, data, itb);
+	}
+
+	private void preAggregateDenseCharMapRow(double[] mV, int off, double[] preAV, char[] data, IterateByteOffset it) {
+		final int maxId = data.length - 1;
+		int offset = it.offset + off;
+		int index = it.index;
+		int dataIndex = it.dataIndex;
+
+		preAV[data[dataIndex]] += mV[offset];
+		while(dataIndex < maxId) {
+			byte v = offsets[index];
+			while(v == 0) {
+				offset += maxV;
+				index++;
+				v = offsets[index];
+			}
+			offset += v & 0xff;
+			index++;
+			dataIndex++;
+			preAV[data[dataIndex]] += mV[offset];
+		}
+	}
+
+	private void preAggregateDenseCharMapRowNoZero(double[] mV, int off, double[] preAV, char[] data,
+		IterateByteOffset it) {
+
+		int offset = it.offset + off;
+		int index = it.index;
+		while(index < offsets.length) {
+			preAV[data[index]] += mV[offset];
+			offset += offsets[index++] & 0xFF;
+		}
+		preAV[data[index]] += mV[offset];
+	}
+
+	private void preAggregateDenseCharMapRowBelowEnd(double[] mV, int off, double[] preAV, int cu, char[] data,
+		IterateByteOffset it) {
+
+		cu += off;
+		it.offset += off;
+		while(it.offset < cu) {
+			preAV[data[it.dataIndex]] += mV[it.offset];
+			byte v = offsets[it.index];
+			while(v == 0) {
+				it.offset += maxV;
+				it.index++;
+				v = offsets[it.index];
+			}
+			it.offset += v & 0xFF;
+			it.index++;
+			it.dataIndex++;
+		}
+		it.offset -= off;
+	}
+
+	private void preAggregateDenseCharMapRowBelowEndAndNoZero(double[] mV, int off, double[] preAV, int cu, char[] data,
+		IterateByteOffset it) {
+		int offset = it.offset + off;
+		int index = it.index;
+
+		cu += off;
+
+		while(offset < cu) {
+			preAV[data[index]] += mV[offset];
+			offset += offsets[index++] & 0xFF;
+		}
+
+		it.offset = offset - off;
+		it.dataIndex = index;
+		it.index = index;
+	}
+
+	private final void preAggregateDenseCharMapRowBelowEndAndNoZeroNoOverHalf(double[] mV, int off, double[] preAV,
+		int cu, char[] data, IterateByteOffset it) {
+		int offset = it.offset + off;
+		int index = it.index;
+
+		cu += off;
+
+		while(offset < cu) {
+			preAV[data[index]] += mV[offset];
+			offset += offsets[index++];
+		}
+
+		it.offset = offset - off;
+		it.dataIndex = index;
+		it.index = index;
+	}
+
+	@Override
+	protected final void preAggregateDenseMapRowBit(double[] mV, int off, double[] preAV, int cu, int nVal, BitSet data,
+		AIterator it) {
+		int offset = it.offset + off;
+		int index = it.index;
+		int dataIndex = it.dataIndex;
+
+		if(cu > offsetToLast) {
+			final int last = offsetToLast + off;
+
+			while(offset < last) {
+				preAV[data.get(dataIndex) ? 1 : 0] += mV[offset];
+				byte v = offsets[index];
+				while(v == 0) {
+					offset += maxV;
+					index++;
+					v = offsets[index];
+				}
+				offset += v & 0xFF;
+				index++;
+				dataIndex++;
+			}
+			preAV[data.get(dataIndex) ? 1 : 0] += mV[offset];
+		}
+		else {
+			final int last = cu + off;
+			while(offset < last) {
+				preAV[data.get(dataIndex) ? 1 : 0] += mV[offset];
+				byte v = offsets[index];
+				while(v == 0) {
+					offset += maxV;
+					index++;
+					v = offsets[index];
+				}
+				offset += v & 0xFF;
+				index++;
+				dataIndex++;
+			}
+
+		}
+		it.offset = offset - off;
+		it.dataIndex = index;
+		it.index = index;
+		cacheIterator(it, cu);
+	}
+
+	@Override
+	protected void preAggregateDenseMapRowsByte(DenseBlock db, double[] preAV, int rl, int ru, int cl, int cu, int nVal,
+		byte[] data, AIterator it) {
+		IterateByteOffset itb = (IterateByteOffset) it;
+		if(cu < getOffsetToLast() + 1)
+			preAggregateDenseMapRowsByteBelowEnd(db, preAV, rl, ru, cl, cu, nVal, data, itb);
+		else
+			preAggregateDenseMapRowsByteEnd(db, preAV, rl, ru, cl, cu, nVal, data, itb);
+	}
+
+	private void preAggregateDenseMapRowsByteBelowEnd(DenseBlock db, final double[] preAV, final int rl, final int ru,
+		final int cl, final int cu, final int nVal, byte[] data, IterateByteOffset it) {
+
+		final double[] vals = db.values(rl);
+		final int nCol = db.getCumODims(0);
+		while(it.offset < cu) {
+			final int dataOffset = data[it.dataIndex] & 0xFF;
+			final int start = it.offset + nCol * rl;
+			final int end = it.offset + nCol * ru;
+			for(int offOut = dataOffset, off = start; off < end; offOut += nVal, off += nCol)
+				preAV[offOut] += vals[off];
+			it.next();
+		}
+
+		cacheIterator(it, cu);
+	}
+
+	private void preAggregateDenseMapRowsByteEnd(DenseBlock db, double[] preAV, int rl, int ru, int cl, int cu, int nVal,
+		byte[] data, IterateByteOffset it) {
+		final int maxId = data.length - 1;
+		final int offsetStart = it.offset;
+		final int indexStart = it.index;
+		final int dataIndexStart = it.dataIndex;
+		// all the way to the end of offsets.
+		for(int r = rl; r < ru; r++) {
+			final int offOut = (r - rl) * nVal;
+			final int off = db.pos(r);
+			final double[] vals = db.values(r);
+			it.offset = offsetStart + off;
+			it.index = indexStart;
+			it.dataIndex = dataIndexStart;
+			preAV[offOut + data[it.dataIndex] & 0xFF] += vals[it.offset];
+			while(it.dataIndex < maxId) {
+				it.next();
+				preAV[offOut + data[it.dataIndex] & 0xFF] += vals[it.offset];
+			}
+		}
+	}
+
+	@Override
+	protected void preAggregateDenseMapRowsChar(DenseBlock db, double[] preAV, int rl, int ru, int cl, int cu, int nVal,
+		char[] data, AIterator it) {
+		IterateByteOffset itb = (IterateByteOffset) it;
+		if(cu < getOffsetToLast() + 1)
+			preAggregateDenseMapRowsCharBelowEnd(db, preAV, rl, ru, cl, cu, nVal, data, itb);
+		else
+			preAggregateDenseMapRowsCharEnd(db, preAV, rl, ru, cl, cu, nVal, data, itb);
+
+	}
+
+	private void preAggregateDenseMapRowsCharBelowEnd(DenseBlock db, double[] preAV, int rl, int ru, int cl, int cu,
+		int nVal, char[] data, IterateByteOffset it) {
+		final double[] vals = db.values(rl);
+		while(it.offset < cu) {
+			final int dataOffset = data[it.dataIndex];
+			for(int r = rl, offOut = dataOffset; r < ru; r++, offOut += nVal)
+				preAV[offOut] += vals[it.offset + db.pos(r)];
+			it.next();
+		}
+		cacheIterator(it, cu);
+	}
+
+	private void preAggregateDenseMapRowsCharEnd(DenseBlock db, double[] preAV, int rl, int ru, int cl, int cu, int nVal,
+		char[] data, IterateByteOffset it) {
+		final int maxId = data.length - 1;
+		// all the way to the end.
+		final int offsetStart = it.offset;
+		final int indexStart = it.index;
+		final int dataIndexStart = it.dataIndex;
+		for(int r = rl; r < ru; r++) {
+			final int offOut = (r - rl) * nVal;
+			final int off = db.pos(r);
+			final double[] vals = db.values(r);
+			it.offset = offsetStart + off;
+			it.index = indexStart;
+			it.dataIndex = dataIndexStart;
+			preAV[offOut + data[it.dataIndex]] += vals[it.offset];
+			while(it.dataIndex < maxId) {
+				it.next();
+				preAV[offOut + data[it.dataIndex]] += vals[it.offset];
+			}
+		}
 	}
 
 	private class IterateByteOffset extends AIterator {
@@ -138,26 +604,22 @@ public class OffsetByte extends AOffset {
 
 		@Override
 		public void next() {
-			if(index >= offsets.length) {
-				index++;
-				dataIndex++;
-				return;
-			}
-
-			final byte v = offsets[index++];
-			if(v == 0) {
+			byte v = offsets[index];
+			while(v == 0) {
 				offset += maxV;
-				next();
+				index++;
+				v = offsets[index];
 			}
-			else {
-				dataIndex++;
-				offset += v & 0xFF;
-			}
+			offset += v & 0xFF;
+			index++;
+			dataIndex++;
 		}
 
 		@Override
-		public boolean hasNext() {
-			return index <= offsets.length;
+		public int skipTo(int idx) {
+			while(offset < idx && index < offsets.length)
+				next();
+			return offset;
 		}
 
 		@Override
@@ -165,4 +627,5 @@ public class OffsetByte extends AOffset {
 			return new IterateByteOffset(index, dataIndex, offset);
 		}
 	}
+
 }

@@ -171,6 +171,8 @@ public class DictionaryFactory {
 			else if(mb.isInSparseFormat()) {
 				MatrixBlockDictionary mbdn = moveToLastDictionaryEntrySparse(mb.getSparseBlock(), largestIndex, zeros, nCol,
 					largestIndexSize);
+				if(mbdn == null)
+					return null;
 				MatrixBlock mbn = mbdn.getMatrixBlock();
 				mbn.setNonZeros(mb.getNonZeros());
 				if(mbn.getNonZeros() == 0)
@@ -196,6 +198,8 @@ public class DictionaryFactory {
 			for(int i = indexToMove + 1; i < sb.numRows(); i++)
 				sb.set(i - 1, sb.get(i), false);
 			sb.set(sb.numRows() - 1, swap, false);
+			if(ret.isEmpty())
+				return null;
 			return new MatrixBlockDictionary(ret);
 		}
 
@@ -214,6 +218,8 @@ public class DictionaryFactory {
 			for(int i = indexToMove + 1; i < sb.numRows(); i++)
 				retB.set(i - 1, sb.get(i), false);
 		}
+		if(ret.isEmpty())
+			return null;
 		return new MatrixBlockDictionary(ret);
 	}
 

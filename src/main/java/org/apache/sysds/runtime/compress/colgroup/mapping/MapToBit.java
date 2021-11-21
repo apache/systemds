@@ -24,7 +24,11 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.util.BitSet;
 
+import org.apache.commons.lang.NotImplementedException;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory.MAP_TYPE;
+import org.apache.sysds.runtime.compress.colgroup.offset.AOffset;
+import org.apache.sysds.runtime.data.DenseBlock;
+import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.utils.MemoryEstimates;
 
@@ -36,7 +40,7 @@ public class MapToBit extends AMapToData {
 	private final int _size;
 
 	public MapToBit(int unique, int size) {
-		super(unique);
+		super(Math.min(unique, 2));
 		_data = new BitSet(size);
 		_size = size;
 	}
@@ -62,7 +66,7 @@ public class MapToBit extends AMapToData {
 		return getInMemorySize(_data.size());
 	}
 
-	public static long getInMemorySize(int dataLength) {
+	protected static long getInMemorySize(int dataLength) {
 		long size = 16 + 8 + 4; // object header + object reference + int size
 		size += MemoryEstimates.bitSetCost(dataLength);
 		return size;
@@ -107,7 +111,7 @@ public class MapToBit extends AMapToData {
 			out.writeLong(internals[i]);
 	}
 
-	public static MapToBit readFields(DataInput in) throws IOException {
+	protected static MapToBit readFields(DataInput in) throws IOException {
 		int unique = in.readInt();
 		int size = in.readInt();
 		long[] internalLong = new long[in.readInt()];
@@ -118,24 +122,45 @@ public class MapToBit extends AMapToData {
 	}
 
 	@Override
-	public void preAggregateDense(MatrixBlock m, MatrixBlock pre, int rl, int ru, int cl, int cu) {
-		final int nRow = m.getNumColumns();
-		final int nVal = pre.getNumColumns();
-		final double[] preAV = pre.getDenseBlockValues();
-		final double[] mV = m.getDenseBlockValues();
-		final int blockSize = 4000;
-		for(int block = cl; block < cu; block += blockSize) {
-			final int blockEnd = Math.min(block + blockSize, nRow);
-			for(int rowLeft = rl, offOut = 0; rowLeft < ru; rowLeft++, offOut += nVal) {
-				final int offLeft = rowLeft * nRow;
-				for(int rc = block; rc < blockEnd; rc++)
-					preAV[_data.get(rc) ? offOut + 1 : offOut] += mV[offLeft + rc];
+	protected void preAggregateDenseToRow(double[] mV, int off, double[] preAV, int cl, int cu) {
+		off += cl;
+		for(int rc = cl; rc < cu; rc++, off++)
+			preAV[_data.get(rc) ? 1 : 0] += mV[off];
+	}
+
+	@Override
+	protected void preAggregateDenseRows(MatrixBlock m, double[] preAV, int rl, int ru, int cl, int cu) {
+		final int nVal = getUnique();
+		final DenseBlock db = m.getDenseBlock();
+		if(db.isContiguous()) {
+			final double[] mV = m.getDenseBlockValues();
+			final int nCol = m.getNumColumns();
+			for(int c = cl; c < cu; c++) {
+				final int idx = getIndex(c);
+				final int start = c + nCol * rl;
+				final int end = c + nCol * ru;
+				for(int offOut = idx, off = start; off < end; offOut += nVal, off += nCol) {
+					preAV[offOut] += mV[off];
+				}
 			}
 		}
+		else
+			throw new NotImplementedException();
+	}
+
+	@Override
+	public void preAggregateDense(MatrixBlock m, double[] preAV, int rl, int ru, int cl, int cu, AOffset indexes) {
+		indexes.preAggregateDenseMap(m, preAV, rl, ru, cl, cu, getUnique(), _data);
+	}
+
+	@Override
+	public void preAggregateSparse(SparseBlock sb, double[] preAV, int rl, int ru, AOffset indexes) {
+		indexes.preAggregateSparseMap(sb, preAV, rl, ru, getUnique(), _data);
 	}
 
 	@Override
 	public int getUpperBoundValue() {
 		return 1;
 	}
+
 }

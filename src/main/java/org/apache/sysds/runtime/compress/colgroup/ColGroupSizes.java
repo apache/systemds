@@ -81,7 +81,7 @@ public final class ColGroupSizes {
 
 	public static long estimateInMemorySizeSDC(int nrColumns, int nrValues, int nrRows, int largestOff,
 		boolean largestOffIsZero, boolean containNoZeroValues, double tupleSparsity, boolean lossy) {
-		final int nVals = nrValues + (largestOffIsZero || containNoZeroValues ? 0 : 1);
+		final int nVals = nrValues ;
 		long size = estimateInMemorySizeGroupValue(nrColumns, nVals, tupleSparsity, lossy);
 		size += OffsetFactory.estimateInMemorySize(nrRows - largestOff, nrRows);
 		if(nrValues > 1)
@@ -91,7 +91,7 @@ public final class ColGroupSizes {
 
 	public static long estimateInMemorySizeSDCSingle(int nrColumns, int nrValues, int nrRows, int largestOff,
 		boolean largestOffIsZero, boolean containNoZeroValues, double tupleSparsity, boolean lossy) {
-		final int nVals = nrValues + (largestOffIsZero || containNoZeroValues ? 0 : 1);
+		final int nVals = nrValues ;
 		long size = estimateInMemorySizeGroupValue(nrColumns, nVals, tupleSparsity, lossy);
 		size += OffsetFactory.estimateInMemorySize(nrRows - largestOff, nrRows);
 		return size;

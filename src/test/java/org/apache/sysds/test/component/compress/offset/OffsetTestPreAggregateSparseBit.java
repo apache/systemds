@@ -19,16 +19,32 @@
 
 package org.apache.sysds.test.component.compress.offset;
 
-import static org.junit.Assert.assertTrue;
+import java.util.BitSet;
 
-import org.apache.sysds.runtime.compress.colgroup.offset.OffsetFactory;
-import org.junit.Test;
+import org.apache.sysds.runtime.compress.colgroup.offset.OffsetFactory.OFF_TYPE;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
-public class OffsetSingleTests {
+@RunWith(value = Parameterized.class)
+public class OffsetTestPreAggregateSparseBit extends OffsetTestPreAggregateSparse {
 
-	@Test
-	public void testEmptyEstimateMemory() {
-		assertTrue(OffsetFactory.estimateInMemorySize(0, 10000) < 10);
+	public OffsetTestPreAggregateSparseBit(int[] data, OFF_TYPE type) {
+		super(data, type);
+	}
+
+	protected void preAggMapRow(int row) {
+		double[] preAV = new double[1];
+		BitSet m = new BitSet(data.length);
+		a.preAggregateSparseMap(this.leftM.getSparseBlock(), preAV, row, 1 + row, 0, m);
+		verifyPreAggMapRow(preAV, row);
+	}
+
+	@Override
+	public void preAggMapAllRows() {
+		double[] preAV = new double[4];
+		BitSet m = new BitSet(data.length);
+		a.preAggregateSparseMap(this.leftM.getSparseBlock(), preAV, 0, 2, 0, m);
+		verifyPreAggMapAllRow(preAV);
 	}
 
 }

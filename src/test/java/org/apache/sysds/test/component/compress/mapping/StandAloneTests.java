@@ -23,6 +23,8 @@ import static org.junit.Assert.assertEquals;
 
 import java.util.Arrays;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory;
@@ -30,6 +32,9 @@ import org.apache.sysds.runtime.compress.utils.IntArrayList;
 import org.junit.Test;
 
 public class StandAloneTests {
+
+	protected static final Log LOG = LogFactory.getLog(StandAloneTests.class.getName());
+
 	@Test
 	public void testJoin_01() {
 		AMapToData a = MapToFactory.create(10, true, new IntArrayList[] {gen(new int[] {1, 2, 3, 4})});

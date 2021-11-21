@@ -114,6 +114,7 @@ public class CompressedMatrixTest extends AbstractCompressedUnaryTests {
 			Random r = new Random();
 			final int min = r.nextInt(rows);
 			final int max = Math.min(r.nextInt(rows - min) + min, min + 1000);
+			
 			for(int i = min; i < max; i++)
 				for(int j = 0; j < cols; j++) {
 					final double ulaVal = mb.quickGetValue(i, j);
@@ -169,6 +170,17 @@ public class CompressedMatrixTest extends AbstractCompressedUnaryTests {
 	public void testUnaryOperators(AggType aggType, boolean inCP) {
 		AggregateUnaryOperator auop = super.getUnaryOperator(aggType, 1);
 		testUnaryOperators(aggType, auop, inCP);
+	}
+
+	@Test
+	public void testNonZeros() {
+		if(!(cmb instanceof CompressedMatrixBlock))
+			return; // Input was not compressed then just pass test
+		if(!(cmb.getNonZeros() >= mb.getNonZeros())) {
+			fail(bufferedToString + "\nIncorrect number of non Zeros should guarantee greater than or equals but are "
+				+ cmb.getNonZeros() + " and should be: " + mb.getNonZeros());
+		}
+
 	}
 
 	@Test

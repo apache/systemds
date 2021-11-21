@@ -22,12 +22,11 @@ package org.apache.sysds.runtime.compress.colgroup.offset;
 import java.io.DataInput;
 import java.io.IOException;
 
-import org.apache.sysds.runtime.compress.DMLCompressionException;
-
 public interface OffsetFactory {
 
 	// static final Log LOG = LogFactory.getLog(OffsetFactory.class.getName());
 
+	/** The specific underlying types of offsets. */
 	public enum OFF_TYPE {
 		BYTE, CHAR
 	}
@@ -35,11 +34,14 @@ public interface OffsetFactory {
 	/**
 	 * Main factory pattern creator for Offsets.
 	 * 
+	 * Note this creator is unsafe in the sense it is assumed that the input index list only contain a sequential non
+	 * duplicate incrementing values.
+	 * 
 	 * @param indexes List of indexes, that is assumed to be sorted and have no duplicates
 	 * @return AOffset object containing offsets to the next value.
 	 */
-	public static AOffset create(int[] indexes) {
-		return create(indexes, 0, indexes.length);
+	public static AOffset createOffset(int[] indexes) {
+		return createOffset(indexes, 0, indexes.length);
 	}
 
 	/**
@@ -48,18 +50,22 @@ public interface OffsetFactory {
 	 * This is useful if the input is created from a CSR matrix, since it allows us to not reallocate the indexes[] but
 	 * use the shared indexes from the entire CSR representation.
 	 * 
+	 * Note this creator is unsafe in the sense it is assumed that the input indexes in the range from apos to alen only
+	 * contain a sequential non duplicate incrementing values.
+	 * 
 	 * @param indexes The indexes from which to take the offsets.
 	 * @param apos    The position to start looking from in the indexes.
 	 * @param alen    The position to end looking at in the indexes.
 	 * @return A new Offset.
 	 */
-	public static AOffset create(int[] indexes, int apos, int alen) {
+	public static AOffset createOffset(int[] indexes, int apos, int alen) {
+		final int minValue = indexes[apos];
 		final int maxValue = indexes[alen - 1];
-		if(maxValue < 0)
-			throw new DMLCompressionException("Invalid sizes given");
+		final int range = maxValue - minValue;
 		final int endLength = alen - apos;
-		final float avgDist = (float) maxValue / endLength;
-		if(avgDist < 256)
+		final long byteSize = OffsetByte.estimateInMemorySize(endLength, range);
+		final long charSize = OffsetChar.estimateInMemorySize(endLength, range);
+		if(byteSize < charSize)
 			return new OffsetByte(indexes, apos, alen);
 		else
 			return new OffsetChar(indexes, apos, alen);
@@ -96,16 +102,14 @@ public interface OffsetFactory {
 	 * @return The estimated size of an offset given the number of offsets and rows.
 	 */
 	public static long estimateInMemorySize(int size, int nRows) {
-		if(size < 0 || nRows < 0)
-			throw new DMLCompressionException("Invalid sizes given: " + size + "  " + nRows);
-		else if(size == 0)
+		if(size == 0)
 			return 8; // If this is the case, then the compression results in constant col groups
 		else {
 			final int avgDiff = nRows / size;
 			if(avgDiff < 256)
-				return OffsetByte.getInMemorySize(size - 1);
+				return OffsetByte.estimateInMemorySize(size - 1, nRows);
 			else
-				return OffsetChar.getInMemorySize(size - 1);
+				return OffsetChar.estimateInMemorySize(size - 1, nRows);
 		}
 	}
 }

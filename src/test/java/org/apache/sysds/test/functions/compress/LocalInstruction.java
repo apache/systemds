@@ -33,12 +33,12 @@ import org.junit.Assert;
 
 public abstract class LocalInstruction extends AutomatedTestBase {
 
-	private static final Log LOG = LogFactory.getLog(LocalInstruction.class.getName());
+	protected static final Log LOG = LogFactory.getLog(LocalInstruction.class.getName());
 
 	private final MatrixBlock X;
 
 	public LocalInstruction() {
-		X = TestUtils.round(TestUtils.generateTestMatrixBlock(10000, 1000, 0, 5, 1.0, 7));
+		X = TestUtils.round(TestUtils.generateTestMatrixBlock(1000, 10, 0, 5, 1.0, 7));
 	}
 
 	protected abstract String getTestDir();
@@ -64,7 +64,6 @@ public abstract class LocalInstruction extends AutomatedTestBase {
 			writeInputMatrixWithMTD("X", X, false);
 
 			String ret = runTest(null).toString();
-			LOG.error(ret);
 			long actualCompressionCount = Statistics.getCPHeavyHitterCount("sp_compress");
 			long actualCollectCount = Statistics.getSparkCollectCount();
 			Assert.assertEquals(ret + "Compression count is incorrect", compressionCount, actualCompressionCount);

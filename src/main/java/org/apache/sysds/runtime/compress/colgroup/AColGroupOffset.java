@@ -177,13 +177,14 @@ public abstract class AColGroupOffset extends AColGroupValue {
 	}
 
 	protected abstract boolean[] computeZeroIndicatorVector();
+
 	public abstract void countNonZerosPerRow(int[] rnnz, int rl, int ru);
 
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
 		sb.append(super.toString());
-		sb.append(String.format("\n%15s%5d ", "Pointers:", this._ptr.length));
+		sb.append(String.format("\n%15s%5d", "Pointers:", this._ptr.length));
 		sb.append(Arrays.toString(this._ptr));
 		return sb.toString();
 	}

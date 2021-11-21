@@ -92,9 +92,9 @@ public class CLALibRightMultBy {
 		final List<AColGroup> retCg = new ArrayList<>();
 		final CompressedMatrixBlock ret = new CompressedMatrixBlock(rl, cr);
 
-		final boolean containsSDC = CLALibUtils.containsSDCOrConst(colGroups);
+		final boolean shouldFilter = CLALibUtils.shouldPreFilter(colGroups);
 
-		double[] constV = containsSDC ? new double[rr] : null;
+		double[] constV = shouldFilter ? new double[rr] : null;
 		final List<AColGroup> filteredGroups = CLALibUtils.filterGroups(colGroups, constV);
 		if(colGroups == filteredGroups)
 			constV = null;

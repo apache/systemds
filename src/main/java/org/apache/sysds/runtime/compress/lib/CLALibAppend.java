@@ -70,6 +70,7 @@ public class CLALibAppend {
 
 		ret = appendColGroups(ret, left.getColGroups(), right.getColGroups(), left.getNumColumns());
 
+		ret.setOverlapping(left.isOverlapping() || right.isOverlapping());
 		double compressedSize = ret.getInMemorySize();
 		double uncompressedSize = MatrixBlock.estimateSizeInMemory(m, n, ret.getSparsity());
 
@@ -85,24 +86,20 @@ public class CLALibAppend {
 	}
 
 	private static MatrixBlock appendRightEmpty(CompressedMatrixBlock left, MatrixBlock right, int m, int n) {
-
 		CompressedMatrixBlock ret = new CompressedMatrixBlock(m, n);
-
 		List<AColGroup> newGroup = new ArrayList<>(1);
 		newGroup.add(ColGroupEmpty.generate(right.getNumColumns()));
 		ret = appendColGroups(ret, left.getColGroups(), newGroup, left.getNumColumns());
-
+		ret.setOverlapping(left.isOverlapping());
 		return ret;
 	}
 
 	private static MatrixBlock appendLeftEmpty(MatrixBlock left, CompressedMatrixBlock right, int m, int n) {
-
 		CompressedMatrixBlock ret = new CompressedMatrixBlock(m, n);
-
 		List<AColGroup> newGroup = new ArrayList<>(1);
 		newGroup.add(ColGroupEmpty.generate(left.getNumColumns()));
 		ret = appendColGroups(ret, newGroup, right.getColGroups(), left.getNumColumns());
-
+		ret.setOverlapping(right.isOverlapping());
 		return ret;
 	}
 

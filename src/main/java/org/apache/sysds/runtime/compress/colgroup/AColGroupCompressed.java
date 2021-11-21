@@ -55,11 +55,15 @@ public abstract class AColGroupCompressed extends AColGroup {
 
 	protected abstract void computeColMxx(double[] c, Builtin builtin);
 
-	protected abstract void computeSum(double[] c, int nRows, boolean square);
+	protected abstract void computeSum(double[] c, int nRows);
 
-	protected abstract void computeRowSums(double[] c, boolean square, int rl, int ru);
+	protected abstract void computeRowSums(double[] c, int rl, int ru);
 
-	protected abstract void computeColSums(double[] c, int nRows, boolean square);
+	protected abstract void computeSumSq(double[] c, int nRows);
+
+	protected abstract void computeRowSumsSq(double[] c, int rl, int ru);
+
+	protected abstract void computeColSumsSq(double[] c, int nRows);
 
 	protected abstract void computeRowMxx(double[] c, Builtin builtin, int rl, int ru);
 
@@ -80,21 +84,26 @@ public abstract class AColGroupCompressed extends AColGroup {
 	}
 
 	@Override
-	public void computeColSums(double[] c, int nRows) {
-		computeColSums(c, nRows, false);
-	}
-
-	@Override
 	public final void unaryAggregateOperations(AggregateUnaryOperator op, double[] c, int nRows, int rl, int ru) {
 		final ValueFunction fn = op.aggOp.increOp.fn;
 		if(fn instanceof Plus || fn instanceof KahanPlus || fn instanceof KahanPlusSq) {
 			boolean square = fn instanceof KahanPlusSq;
-			if(op.indexFn instanceof ReduceAll)
-				computeSum(c, nRows, square);
-			else if(op.indexFn instanceof ReduceCol)
-				computeRowSums(c, square, rl, ru);
-			else if(op.indexFn instanceof ReduceRow)
-				computeColSums(c, nRows, square);
+			if(square){
+				if(op.indexFn instanceof ReduceAll)
+					computeSumSq(c, nRows);
+				else if(op.indexFn instanceof ReduceCol)
+					computeRowSumsSq(c, rl, ru);
+				else if(op.indexFn instanceof ReduceRow)
+					computeColSumsSq(c, nRows);
+			}
+			else{
+				if(op.indexFn instanceof ReduceAll)
+					computeSum(c, nRows);
+				else if(op.indexFn instanceof ReduceCol)
+					computeRowSums(c, rl, ru);
+				else if(op.indexFn instanceof ReduceRow)
+					computeColSums(c, nRows);
+			}
 		}
 		else if(fn instanceof Multiply) {
 			if(op.indexFn instanceof ReduceAll)

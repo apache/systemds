@@ -48,7 +48,7 @@ public abstract class AColGroup implements Serializable {
 
 	/** Public super types of compression ColGroups supported */
 	public enum CompressionType {
-		UNCOMPRESSED, RLE, OLE, DDC, CONST, EMPTY, SDC
+		UNCOMPRESSED, RLE, OLE, DDC, CONST, EMPTY, SDC, PFOR,
 	}
 
 	/**
@@ -57,7 +57,7 @@ public abstract class AColGroup implements Serializable {
 	 * Protected such that outside the ColGroup package it should be unknown which specific subtype is used.
 	 */
 	protected enum ColGroupType {
-		UNCOMPRESSED, RLE, OLE, DDC, CONST, EMPTY, SDC, SDCSingle, SDCSingleZeros, SDCZeros;
+		UNCOMPRESSED, RLE, OLE, DDC, CONST, EMPTY, SDC, SDCSingle, SDCSingleZeros, SDCZeros, PFOR;
 	}
 
 	/** The ColGroup Indexes contained in the ColGroup */
@@ -132,14 +132,27 @@ public abstract class AColGroup implements Serializable {
 	}
 
 	/**
-	 * Decompress the contents of the column group into the target matrix,.
+	 * Decompress a range of rows into a sparse block
 	 * 
-	 * @param target A matrix block where the columns covered by this column group have not yet been filled in.
-	 * @param rl     Row to start decompression from
-	 * @param ru     Row to end decompression at (not inclusive)
+	 * Note that this is using append, so the sparse column indexes need to be sorted afterwards.
+	 * 
+	 * @param sb Sparse Target block
+	 * @param rl Row to start at
+	 * @param ru Row to end at
 	 */
-	public final void decompressToBlock(MatrixBlock target, int rl, int ru) {
-		decompressToBlock(target, rl, ru, 0, 0);
+	public final void decompressToSparseBlock(SparseBlock sb, int rl, int ru) {
+		decompressToSparseBlock(sb, rl, ru, 0, 0);
+	}
+
+	/**
+	 * Decompress a range of rows into a dense block
+	 * 
+	 * @param db Sparse Target block
+	 * @param rl Row to start at
+	 * @param ru Row to end at
+	 */
+	public final void decompressToDenseBlock(DenseBlock db, int rl, int ru) {
+		decompressToDenseBlock(db, rl, ru, 0, 0);
 	}
 
 	/**
@@ -326,33 +339,29 @@ public abstract class AColGroup implements Serializable {
 	protected abstract ColGroupType getColGroupType();
 
 	/**
-	 * Decompress the contents of the column group without counting non zeros
+	 * Decompress into the DenseBlock. (no NNZ handling)
 	 * 
-	 * The offsets helps us decompress into specific target areas of the output matrix.
-	 * 
-	 * If OffR and OffC is 0, then decompression output starts at row offset equal to rl,
-	 * 
-	 * If for instance a MiniBatch of rows 10 to 15, then target would be 5 rows high and arguments would look like:
-	 *
-	 * cg.decompressToBlock(target, 10, 15, -10, 0)
-	 * 
-	 * @param target a matrix block where the columns covered by this column group have not yet been filled in.
-	 * @param rl     Row to start decompression at.
-	 * @param ru     Row to end decompression at (not inclusive).
-	 * @param offR   RowOffset into target to assign from.
-	 * @param offC   ColumnOffset into the target matrix to assign from.
+	 * @param db   Target DenseBlock
+	 * @param rl   Row to start decompression from
+	 * @param ru   Row to end decompression at
+	 * @param offR Row offset into the target to decompress
+	 * @param offC Column offset into the target to decompress
 	 */
-	public final void decompressToBlock(MatrixBlock target, int rl, int ru, int offR, int offC){
-		if(target.isInSparseFormat())
-			decompressToSparseBlock(target.getSparseBlock(), rl, ru, offR, offC);
-		else
-			decompressToDenseBlock(target.getDenseBlock(), rl, ru, offR, offC);
-	}
+	public abstract void decompressToDenseBlock(DenseBlock db, int rl, int ru, int offR, int offC);
 
-
-	protected abstract void decompressToDenseBlock(DenseBlock db, int rl, int ru,int offR, int offC);
-
-	protected abstract void decompressToSparseBlock(SparseBlock sb, int rl, int ru, int offR, int offC);
+	/**
+	 * Decompress into the SparseBlock. (no NNZ handling)
+	 * 
+	 * Note this method is allowing to calls to append since it is assumed that the sparse column indexes are sorted
+	 * afterwards
+	 * 
+	 * @param sb   Target SparseBlock
+	 * @param rl   Row to start decompression from
+	 * @param ru   Row to end decompression at
+	 * @param offR Row offset into the target to decompress
+	 * @param offC Column offset into the target to decompress
+	 */
+	public abstract void decompressToSparseBlock(SparseBlock sb, int rl, int ru, int offR, int offC);
 
 	/**
 	 * Right matrix multiplication with this column group.
@@ -536,9 +545,9 @@ public abstract class AColGroup implements Serializable {
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
-		sb.append(" ColGroupType: ");
+		sb.append(String.format("\n\n%15s", "ColGroupType: "));
 		sb.append(this.getClass().getSimpleName());
-		sb.append(String.format("\n%15s%5d ", "Columns:", _colIndexes.length));
+		sb.append(String.format("\n%15s", "Columns: "));
 		sb.append(Arrays.toString(_colIndexes));
 
 		return sb.toString();

@@ -35,6 +35,7 @@ import org.apache.sysds.runtime.compress.CompressionSettings;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup;
 import org.apache.sysds.runtime.compress.colgroup.AColGroupOffset;
+import org.apache.sysds.runtime.compress.colgroup.ColGroupFactory;
 import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.functionobjects.Builtin.BuiltinCode;
@@ -407,14 +408,25 @@ public class CLALibCompAgg {
 	private static List<Future<MatrixBlock>> generateUnaryAggregateOverlappingFutures(CompressedMatrixBlock m1,
 		MatrixBlock ret, AggregateUnaryOperator op) throws InterruptedException {
 
-		ExecutorService pool = CommonThreadPool.get(op.getNumThreads());
-		ArrayList<UnaryAggregateOverlappingTask> tasks = new ArrayList<>();
-
-		final int blklen = CompressionSettings.BITMAP_BLOCK_SZ / m1.getNumColumns() * 5;
-
-		for(int i = 0; i * blklen < m1.getNumRows(); i++)
-			tasks.add(
-				new UnaryAggregateOverlappingTask(m1, ret, i * blklen, Math.min((i + 1) * blklen, m1.getNumRows()), op));
+		final ExecutorService pool = CommonThreadPool.get(op.getNumThreads());
+		final ArrayList<UAOverlappingTask> tasks = new ArrayList<>();
+		final int nCol = m1.getNumColumns();
+		final int nRow = m1.getNumRows();
+		final int blklen = CompressionSettings.BITMAP_BLOCK_SZ / nCol * 5;
+		final List<AColGroup> groups = m1.getColGroups();
+		final boolean shouldFilter = CLALibUtils.shouldPreFilter(groups);
+		if(shouldFilter) {
+			final double[] constV = new double[nCol];
+			final List<AColGroup> filteredGroups = CLALibUtils.filterGroups(groups, constV);
+			final AColGroup cRet = ColGroupFactory.genColGroupConst(constV);
+			filteredGroups.add(cRet);
+			for(int i = 0; i < nRow; i += blklen)
+				tasks.add(new UAOverlappingTask(filteredGroups, ret, i, Math.min(i + blklen, nRow), op, nCol));
+		}
+		else {
+			for(int i = 0; i < nRow; i += blklen)
+				tasks.add(new UAOverlappingTask(groups, ret, i, Math.min(i + blklen, nRow), op, nCol));
+		}
 
 		List<Future<MatrixBlock>> futures = pool.invokeAll(tasks);
 		pool.shutdown();
@@ -532,38 +544,42 @@ public class CLALibCompAgg {
 		}
 	}
 
-	private static class UnaryAggregateOverlappingTask implements Callable<MatrixBlock> {
-		private final CompressedMatrixBlock _m1;
+	private static class UAOverlappingTask implements Callable<MatrixBlock> {
+		private final List<AColGroup> _groups;
 		private final int _rl;
 		private final int _ru;
 		private final MatrixBlock _ret;
 		private final AggregateUnaryOperator _op;
+		private final int _nCol;
 
-		protected UnaryAggregateOverlappingTask(CompressedMatrixBlock m1, MatrixBlock ret, int rl, int ru,
-			AggregateUnaryOperator op) {
-			_m1 = m1;
+		protected UAOverlappingTask(List<AColGroup> filteredGroups, MatrixBlock ret, int rl, int ru,
+			AggregateUnaryOperator op, int nCol) {
+			_groups = filteredGroups;
 			_op = op;
 			_rl = rl;
 			_ru = ru;
 			_ret = ret;
+			_nCol = nCol;
 		}
 
 		private MatrixBlock getTmp() {
 			MatrixBlock tmp = memPool.get();
 			if(tmp == null) {
-				memPool.set(new MatrixBlock(_ru - _rl, _m1.getNumColumns(), false, -1).allocateBlock());
+				memPool.set(new MatrixBlock(_ru - _rl, _nCol, false, -1).allocateBlock());
 				tmp = memPool.get();
 			}
 			else
-				tmp.reset(_ru - _rl, _m1.getNumColumns(), false, -1);
+				tmp.reset(_ru - _rl, _nCol, false, -1);
 
 			return tmp;
 		}
 
 		private MatrixBlock decompressToTemp() {
 			MatrixBlock tmp = getTmp();
-			for(AColGroup g : _m1.getColGroups())
-				g.decompressToBlock(tmp, _rl, _ru, -_rl, 0);
+
+			for(AColGroup g : _groups)
+				g.decompressToDenseBlock(tmp.getDenseBlock(), _rl, _ru, -_rl, 0);
+
 			tmp.setNonZeros(_rl + _ru);
 			return tmp;
 		}

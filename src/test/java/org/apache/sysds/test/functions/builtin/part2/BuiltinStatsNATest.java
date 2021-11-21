@@ -17,23 +17,22 @@
  * under the License.
  */
 
-package org.apache.sysds.test.functions.updateinplace;
-
-import java.util.HashMap;
+package org.apache.sysds.test.functions.builtin.part2;
 
 import org.apache.sysds.common.Types;
-import org.apache.sysds.hops.OptimizerUtils;
+import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.runtime.matrix.data.MatrixValue;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
 import org.junit.Test;
 
+import java.util.HashMap;
 
-public class UnaryUpdateInPlaceTest extends AutomatedTestBase{
-	private final static String TEST_NAME = "UnaryUpdateInplace";
-	private final static String TEST_DIR = "functions/updateinplace/";
-	private final static String TEST_CLASS_DIR = TEST_DIR + UnaryUpdateInPlaceTest.class.getSimpleName() + "/";
+public class BuiltinStatsNATest extends AutomatedTestBase {
+	private final static String TEST_NAME = "statsNATest";
+	private final static String TEST_DIR = "functions/builtin/";
+	private final static String TEST_CLASS_DIR = TEST_DIR + BuiltinStatsNATest.class.getSimpleName() + "/";
 	private final static double eps = 1e-3;
 
 	@Override
@@ -43,37 +42,52 @@ public class UnaryUpdateInPlaceTest extends AutomatedTestBase{
 	}
 
 	@Test
-	public void testInPlace() {
-		runInPlaceTest(Types.ExecType.CP);
+	public void testStatsNA1() {
+		runStatsNA(1, 100, ExecType.CP);
+	}
+
+	@Test
+	public void testStatsNA2() {
+		runStatsNA(4, 100, ExecType.CP);
+	}
+
+	@Test
+	public void testStatsNA3() {
+		runStatsNA(100, 1000, ExecType.CP);
+	}
+
+	@Test
+	public void testStatsNA4() {
+		runStatsNA(100, 10000, ExecType.CP);
 	}
 
 
-	private void runInPlaceTest(Types.ExecType instType) {
+	private void runStatsNA(int bins, int size, ExecType instType) {
 		Types.ExecMode platformOld = setExecMode(instType);
-		boolean oldFlag = OptimizerUtils.ALLOW_UNARY_UPDATE_IN_PLACE;
-		
 		try {
 			loadTestConfiguration(getTestConfiguration(TEST_NAME));
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[]{"-explain","-nvargs","Out=" + output("Out") };
+			programArgs = new String[]{ "-nvargs", "X=" + input("A"), "bins=" + bins, "Out=" + output("Out")};
 
-			OptimizerUtils.ALLOW_UNARY_UPDATE_IN_PLACE = true;
-			runTest(true, false, null, -1);
-			HashMap<MatrixValue.CellIndex, Double> dmlfileOut1 = readDMLMatrixFromOutputDir("Out");
-			OptimizerUtils.ALLOW_UNARY_UPDATE_IN_PLACE = false;
-			runTest(true, false, null, -1);
-			HashMap<MatrixValue.CellIndex, Double> dmlfileOut2 = readDMLMatrixFromOutputDir("Out");
+			double[][] A = getRandomMatrix(size, 1, -10, 10, 0.6, 7);
+			writeInputMatrixWithMTD("A", A, true);
 
+			fullRScriptName = HOME + TEST_NAME + ".R";
+			rCmd = getRCmd(inputDir(), Integer.toString(bins), expectedDir());
+
+			runTest(true, false, null, -1);
+			runRScript(true);
 			//compare matrices
-			TestUtils.compareMatrices(dmlfileOut1,dmlfileOut2,eps,"Stat-DML1","Stat-DML2");
+			HashMap<MatrixValue.CellIndex, Double> dmlfileOut1 = readDMLMatrixFromOutputDir("Out");
+			HashMap<MatrixValue.CellIndex, Double> rfileOut1 = readRMatrixFromExpectedDir("Out");
+			TestUtils.compareMatrices(dmlfileOut1, rfileOut1, eps, "Stat-DML", "Stat-R");
 		}
 		catch(Exception e) {
 			e.printStackTrace();
 		}
 		finally {
 			rtplatform = platformOld;
-			OptimizerUtils.ALLOW_UNARY_UPDATE_IN_PLACE = oldFlag;
 		}
 	}
 }

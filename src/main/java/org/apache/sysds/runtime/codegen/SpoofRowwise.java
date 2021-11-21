@@ -28,6 +28,7 @@ import java.util.concurrent.Future;
 import java.util.stream.IntStream;
 
 import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.DenseBlockFactory;
@@ -175,6 +176,9 @@ public abstract class SpoofRowwise extends SpoofOperator
 		
 		//core sequential execute
 		MatrixBlock a = inputs.get(0);
+		if(a instanceof CompressedMatrixBlock)
+			a = CompressedMatrixBlock.getUncompressed(a);
+
 		if( !a.isInSparseFormat() )
 			executeDense(a.getDenseBlock(), b, scalars, c, n, 0, m, rix);
 		else

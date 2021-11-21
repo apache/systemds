@@ -27,6 +27,7 @@ import java.util.concurrent.Future;
 
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.codegen.SpoofCellwise.AggOp;
+import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.functionobjects.Builtin;
@@ -101,16 +102,20 @@ public abstract class SpoofMultiAggregate extends SpoofOperator
 		//input preparation
 		SideInput[] b = prepInputMatrices(inputs);
 		double[] scalars = prepInputScalars(scalarObjects);
-		final int m = inputs.get(0).getNumRows();
-		final int n = inputs.get(0).getNumColumns();
+		MatrixBlock a = inputs.get(0);
+		final int m = a.getNumRows();
+		final int n = a.getNumColumns();
 		boolean sparseSafe = isSparseSafe();
-		
+
+		if(a instanceof CompressedMatrixBlock)
+			a = CompressedMatrixBlock.getUncompressed(a);
+					
 		if( k <= 1 ) //SINGLE-THREADED
 		{
-			if( !inputs.get(0).isInSparseFormat() )
-				executeDense(inputs.get(0).getDenseBlock(), b, scalars, c, m, n, sparseSafe, 0, m, rix);
+			if( !a.isInSparseFormat() )
+				executeDense(a.getDenseBlock(), b, scalars, c, m, n, sparseSafe, 0, m, rix);
 			else
-				executeSparse(inputs.get(0).getSparseBlock(), b, scalars, c, m, n, sparseSafe, 0, m, rix);
+				executeSparse(a.getSparseBlock(), b, scalars, c, m, n, sparseSafe, 0, m, rix);
 		}
 		else  //MULTI-THREADED
 		{
@@ -120,7 +125,7 @@ public abstract class SpoofMultiAggregate extends SpoofOperator
 				int nk = UtilFunctions.roundToNext(Math.min(8*k,m/32), k);
 				int blklen = (int)(Math.ceil((double)m/nk));
 				for( int i=0; i<nk & i*blklen<m; i++ )
-					tasks.add(new ParAggTask(inputs.get(0), b, scalars,
+					tasks.add(new ParAggTask(a, b, scalars,
 						m, n, sparseSafe, i*blklen, Math.min((i+1)*blklen, m))); 
 				//execute tasks
 				List<Future<double[]>> taskret = pool.invokeAll(tasks);	

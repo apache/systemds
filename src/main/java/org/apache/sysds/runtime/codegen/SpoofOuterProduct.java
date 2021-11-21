@@ -28,6 +28,7 @@ import java.util.concurrent.Future;
 
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.instructions.cp.DoubleObject;
@@ -95,6 +96,9 @@ public abstract class SpoofOuterProduct extends SpoofOperator
 		MatrixBlock a = inputs.get(0);
 		MatrixBlock out = new MatrixBlock(1, 1, false);
 		out.allocateDenseBlock();
+
+		if(a instanceof CompressedMatrixBlock)
+			a = CompressedMatrixBlock.getUncompressed(a);
 		
 		if( !a.isInSparseFormat() )
 			executeCellwiseDense(a.getDenseBlock(), ab[0], ab[1], b, scalars, out.getDenseBlock(), m, n, k, _outerProductType, 0, m, 0, n);
@@ -474,7 +478,7 @@ public abstract class SpoofOuterProduct extends SpoofOperator
 		//NOTE: we don't create sparse side inputs w/ row-major cursors because 
 		//cache blocking would lead to non-sequential access
 		
-		final int blocksizeIJ = (int) (8L*m*n/nnz);
+		final int blocksizeIJ = (int) (8L*m*n/Math.max(nnz,1));
 		int[] curk = new int[Math.min(blocksizeIJ, ru-rl)];
 		
 		if( !out.isInSparseFormat() ) //DENSE

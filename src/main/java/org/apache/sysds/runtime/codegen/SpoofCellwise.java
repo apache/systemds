@@ -28,6 +28,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
 import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.functionobjects.Builtin;
@@ -44,8 +45,8 @@ import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.CommonThreadPool;
 import org.apache.sysds.runtime.util.UtilFunctions;
 
-public abstract class SpoofCellwise extends SpoofOperator
-{
+public abstract class SpoofCellwise extends SpoofOperator {
+
 	private static final long serialVersionUID = 3442528770573293590L;
 	
 	// these values need to match with their native counterparts (spoof cuda ops)
@@ -146,6 +147,9 @@ public abstract class SpoofCellwise extends SpoofOperator
 		
 		//input preparation
 		MatrixBlock a = inputs.get(0);
+		if(a instanceof CompressedMatrixBlock)
+			a = CompressedMatrixBlock.getUncompressed(a);
+
 		SideInput[] b = prepInputMatrices(inputs);
 		double[] scalars = prepInputScalars(scalarObjects);
 		final int m = a.getNumRows();
@@ -160,11 +164,11 @@ public abstract class SpoofCellwise extends SpoofOperator
 		if( inputSize < PAR_NUMCELL_THRESHOLD ) {
 			k = 1; //serial execution
 		}
-		
+
 		double ret = 0;
 		if( k <= 1 ) //SINGLE-THREADED
 		{
-			if( !inputs.get(0).isInSparseFormat() )
+			if( !a.isInSparseFormat() )
 				ret = executeDenseAndAgg(a.getDenseBlock(), b, scalars, m, n, sparseSafe, 0, m, rix);
 			else
 				ret = executeSparseAndAgg(a.getSparseBlock(), b, scalars, m, n, sparseSafe, 0, m, rix);
@@ -226,6 +230,8 @@ public abstract class SpoofCellwise extends SpoofOperator
 		
 		//input preparation
 		MatrixBlock a = inputs.get(0);
+		if(a instanceof CompressedMatrixBlock)
+			a = CompressedMatrixBlock.getUncompressed(a);
 		SideInput[] b = prepInputMatrices(inputs);
 		double[] scalars = prepInputScalars(scalarObjects);
 		final int m = a.getNumRows();
@@ -855,7 +861,7 @@ public abstract class SpoofCellwise extends SpoofOperator
 	{
 		KahanFunction kplus = (KahanFunction) getAggFunction();
 		KahanObject kbuff = new KahanObject(0, 0);
-		
+
 		//note: sequential scan algorithm for both sparse-safe and -unsafe 
 		//in order to avoid binary search for sparse-unsafe 
 		for(int i=rl; i<ru; i++) {

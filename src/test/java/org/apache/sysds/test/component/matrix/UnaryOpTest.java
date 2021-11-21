@@ -33,7 +33,8 @@ public class UnaryOpTest {
 	protected static final Log LOG = LogFactory.getLog(UnaryOpTest.class.getName());
 	static final MatrixBlock m = new MatrixBlock(100, 100, false);
 	static final UnaryOperator op = new UnaryOperator(Builtin.getBuiltinFnObject(BuiltinCode.ROUND));
-	static{
+	
+	static {
 		m.setValue(3, 3, 4.2);
 	}
 
@@ -42,28 +43,26 @@ public class UnaryOpTest {
 		assertTrue(m.getValue(3, 3) == 4.2);
 	}
 
-	@Test 
-	public void testDirectUnaryOp(){
+	@Test
+	public void testDirectUnaryOp() {
 		MatrixBlock mr = m.unaryOperations(op, null);
-		assertTrue(mr.getValue(3,3) == 4);
+		assertTrue(mr.getValue(3, 3) == 4);
 	}
 
 	@Test
-	public void testFromSparseCSRUnaryOp(){
-		MatrixBlock sb = new MatrixBlock(1,1,false);
+	public void testFromSparseCSRUnaryOp() {
+		MatrixBlock sb = new MatrixBlock(1, 1, false);
 		sb.copy(m);
 		sb.setSparseBlock(new SparseBlockCSR(sb.getSparseBlock()));
 		MatrixBlock mr = sb.unaryOperations(op, null);
-		assertTrue(mr.getValue(3,3) == 4);
+		assertTrue(mr.getValue(3, 3) == 4);
 	}
 
 	@Test
-	public void testFromSparseMCSRUnaryOp(){
-		MatrixBlock sb = new MatrixBlock(1,1,false);
+	public void testFromSparseMCSRUnaryOp() {
+		MatrixBlock sb = new MatrixBlock(1, 1, false);
 		sb.copy(m);
 		MatrixBlock mr = sb.unaryOperations(op, null);
-		assertTrue(mr.getValue(3,3) == 4);
+		assertTrue(mr.getValue(3, 3) == 4);
 	}
-
-
 }

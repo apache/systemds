@@ -50,7 +50,8 @@ jobs:
       matrix:
         tests: [
           "**.functions.a**.**,**.functions.binary.frame.**,**.functions.binary.matrix.**,**.functions.binary.scalar.**,**.functions.binary.tensor.**",
-          "**.functions.blocks.**,**.functions.compress.**,**.functions.countDistinct.**,**.functions.data.misc.**,**.functions.data.rand.**,**.functions.data.tensor.**,**.functions.codegenalg.parttwo.**,**.functions.codegen.**,**.functions.caching.**",
+          "**.functions.blocks.**,**.functions.data.rand.**,**.functions.countDistinct.**,**.functions.data.misc.**",
+          "**.functions.compress.**,,**.functions.data.tensor.**,**.functions.codegenalg.parttwo.**,**.functions.codegen.**,**.functions.caching.**",
           "**.functions.binary.matrix_full_cellwise.**,**.functions.binary.matrix_full_other.**",
           "**.functions.federated.algorithms.**",
           "**.functions.federated.io.**,**.functions.federated.paramserv.**,**.functions.federated.primitives.**,**.functions.federated.transform.**",
@@ -61,7 +62,8 @@ jobs:
           "**.functions.dnn.**,**.functions.paramserv.**",
           "**.functions.misc.**,**.functions.mlcontext.**",
           "**.functions.nary.**,**.functions.quaternary.**",
-          "**.functions.parfor.**,**.functions.pipelines.**,**.functions.privacy.**,**.functions.unary.scalar.**,**.functions.updateinplace.**,**.functions.vect.**",
+          "**.functions.parfor.**,**.functions.pipelines.**,**.functions.privacy.**",
+          "**.functions.unary.scalar.**,**.functions.updateinplace.**,**.functions.vect.**",
           "**.functions.reorg.**,**.functions.rewrite.**,**.functions.ternary.**,**.functions.transform.**",
           "**.functions.unary.matrix.**"
           ]

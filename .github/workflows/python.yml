@@ -31,7 +31,7 @@ on:
       - 'src/assembly/**'
       - 'dev/**'
     branches:
-      - main
+      - branch-2.2.0
   pull_request:
     paths-ignore:
       - 'docs/**'
@@ -40,7 +40,7 @@ on:
       - 'src/test/**'
       - 'dev/**'
     branches:
-      - main
+      - branch-2.2.0
 
 jobs:
   test:
@@ -50,20 +50,22 @@ jobs:
       matrix:
         python-version: [3.8]
         os: [ubuntu-latest]
-        java: ['11']
-        javadist: ['adopt-openj9']
-
-    name: ${{ matrix.os }} Java ${{ matrix.java }} ${{ matrix.javadist }} Python ${{ matrix.python-version }}
+        java: [ 1.8 ]
+    name:  Python Test
     steps:
     - name: Checkout Repository
       uses: actions/checkout@v2
 
-    - name: Setup Java ${{ matrix.java }} ${{ matrix.javadist }}
-      uses: actions/setup-java@v2
+    - name: Setup Java
+      uses: actions/setup-java@v1
       with:
-        distribution: ${{ matrix.javadist }}
         java-version: ${{ matrix.java }}
-        cache: 'maven'
+
+    - name: Cache Maven Dependencies
+      uses: actions/cache@v1
+      with:
+        path: ~/.m2/repository
+        key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
     
     - name: Cache Pip Dependencies
       uses: actions/cache@v2

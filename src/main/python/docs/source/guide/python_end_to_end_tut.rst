@@ -177,7 +177,7 @@ adding column names at the top of the files such that the first line looks like:
 
     age,workclass,fnlwgt,education,education-num,marital-status,occupation,relationship,race,sex,capital-gain,capital-loss,hours-per-week,native-country,income
 
-We also delete the line holding the string value |1x3 Cross validator inside the test dataset.
+We also delete the line holding the string value Cross validator inside the test dataset.
 
 After these modifications, we have to define a mtd file for each file we want to read. This mtd file has to be in the same directory as the dataset.
 In this particular example, the dataset is split into two files "train_data.csv" and "test_data.csv". We want to read both, which means that we will define a mtd file for

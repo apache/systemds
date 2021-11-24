@@ -33,7 +33,7 @@ else
     rm -r api/java
     ## JAVA Docs
     cd ..
-    mvn javadoc:javadoc -P distribution
+    mvn clean javadoc:javadoc -P distribution
     mkdir -p docs/api/java
     cp -r target/site/apidocs/* docs/api/java
     cd docs

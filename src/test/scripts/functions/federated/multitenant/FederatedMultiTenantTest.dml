@@ -1,0 +1,63 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+if ($rP) {
+    X = federated(addresses=list($in_X1, $in_X2, $in_X3, $in_X4),
+        ranges=list(list(0, 0), list($rows/4, $cols), list($rows/4, 0), list(2*$rows/4, $cols),
+    		list(2*$rows/4, 0), list(3*$rows/4, $cols), list(3*$rows/4, 0), list($rows, $cols)));
+} else {
+    X = federated(addresses=list($in_X1, $in_X2, $in_X3, $in_X4),
+            ranges=list(list(0, 0), list($rows, $cols/4), list(0,$cols/4), list($rows, $cols/2),
+            	list(0,$cols/2), list($rows, 3*($cols/4)), list(0, 3*($cols/4)), list($rows, $cols)));
+}
+
+testnum = $testnum;
+
+if(testnum == 0) { # SUM
+  S = as.matrix(sum(X));
+}
+else if(testnum == 1) { # PARFOR_SUM
+  numiter = 5;
+  Z = matrix(0, rows=numiter, cols=1);
+  parfor( i in 1:numiter ) {
+    while(FALSE) { }
+    Y = X + i;
+    while(FALSE) { }
+    Z[i, 1] = sum(Y);
+  }
+  S = as.matrix(0);
+  for( i in 1:numiter ) {
+    while(FALSE) { }
+    S = S + Z[i, 1];
+  }
+}
+else if(testnum == 2) { # WSIGMOID
+  N = nrow(X);
+  M = ncol(X);
+
+  U = rand(rows=N, cols=15, seed=123);
+  V = rand(rows=M, cols=15, seed=456);
+
+  UV = U %*% t(V);
+  S = X * log(1 / (1 + exp(-UV)));
+}
+
+write(S, $out_S);

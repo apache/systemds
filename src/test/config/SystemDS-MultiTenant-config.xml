@@ -18,6 +18,6 @@
 -->
 
 <root>
-  <!-- sets the federated initialization timeout to 30 seconds -->
-  <sysds.federated.initialization.timeout>30</sysds.federated.initialization.timeout>
+   <!-- The timeout of the federated tests to initialize the federated matrixes -->
+   <sysds.federated.initialization.timeout>30</sysds.federated.initialization.timeout>
 </root>

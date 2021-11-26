@@ -140,7 +140,7 @@ public abstract class AutomatedTestBase {
 	private static final String DEBUG_TEMP_DIR = "./tmp/";
 
 	/** Directory under which config files shared across tests are located. */
-	private static final String CONFIG_DIR = "./src/test/config/";
+	protected static final String CONFIG_DIR = "./src/test/config/";
 
 	/**
 	 * Location of the SystemDS config file that we use as a template when generating the configs for each test case.

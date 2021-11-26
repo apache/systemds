@@ -342,14 +342,14 @@ public class FederatedMultiTenantTest extends AutomatedTestBase {
 
 		ProcessBuilder processBuilder = new ProcessBuilder(ArrayUtils.addAll(new String[]{
 			path, "-cp", classpath, DMLScript.class.getName()}, argsList.toArray(new String[0])));
-		
+
 		Process process = null;
 		try {
 			process = processBuilder.start();
 		} catch(IOException ioe) {
 			ioe.printStackTrace();
 		}
-		
+
 		return process;
 	}
 
@@ -357,7 +357,7 @@ public class FederatedMultiTenantTest extends AutomatedTestBase {
 		// join the coordinator processes
 		for(int counter = 0; counter < coordinatorProcesses.size(); counter++) {
 			Process coord = coordinatorProcesses.get(counter);
-			
+
 			//wait for process, but obtain logs before to avoid blocking
 			String outputLog = null, errorLog = null;
 			try {
@@ -369,7 +369,7 @@ public class FederatedMultiTenantTest extends AutomatedTestBase {
 			catch(Exception ex) {
 				ex.printStackTrace();
 			}
-			
+
 			// get and print the output
 			System.out.println("Output of coordinator #" + Integer.toString(counter + 1) + ":\n");
 			System.out.println(outputLog);

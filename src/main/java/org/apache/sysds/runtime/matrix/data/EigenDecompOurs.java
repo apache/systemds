@@ -72,7 +72,7 @@ public class EigenDecompOurs {
         assert v1.sumSq() == 1.0 : "v1 not correctly normalized";
 
         MatrixBlock T = new MatrixBlock(m, m, 0.0);
-        MatrixBlock TV = new MatrixBlock(m, m, 0.0);
+        MatrixBlock TV = new MatrixBlock(m, 1, 0.0);
         MatrixBlock w1;
 
         BinaryOperator op_mul = new BinaryOperator(Multiply.getMultiplyFnObject(), num_Threads);
@@ -89,8 +89,8 @@ public class EigenDecompOurs {
                 w1 = w1.ternaryOperations(op_minus_mul, v1, alpha, new MatrixBlock());
                 w1 = w1.ternaryOperations(op_minus_mul, v0, beta, new MatrixBlock());
                 beta.setValue(0, 0, Math.sqrt(w1.sumSq()));
-                v0 = v1;
-                op_div_scalar.setConstant(beta.getDouble(0, 0));
+                v0.copy(v1);
+                op_div_scalar = (RightScalarOperator)op_div_scalar.setConstant(beta.getDouble(0, 0));
                 v1 = w1.scalarOperations(op_div_scalar, new MatrixBlock());
 
                 T.setValue(i+1, i, beta.getValue(0, 0));
@@ -98,15 +98,17 @@ public class EigenDecompOurs {
             }
             T.setValue(i, i, alpha.getValue(0, 0));
 
-            // TODO: TV[,i] = v1; with Matrixblock operation
-            for(int j = 0; j < m; j++) {
-                TV.setValue(j,i, v1.getValue(j,0));
-            }
+            if (i == 0)
+                TV.copy(v1);
+            else
+                TV = TV.append(v1, new MatrixBlock(), true);
         }
 
         // TEST
         MatrixBlock[] a = LibCommonsMath.multiReturnOperations(A, "eigen");
         MatrixBlock[] b = LibCommonsMath.multiReturnOperations(T, "eigen");
+
+        MatrixBlock evec = TV.aggregateBinaryOperations(TV, b[1], op_mul_agg);
     }
 
     public MatrixBlock getV() {

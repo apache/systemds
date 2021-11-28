@@ -82,6 +82,11 @@ public class EigenDecompOurs {
 
         MatrixBlock beta = new MatrixBlock(1, 1, 0.0);
         for(int i = 0; i < m; i++) {
+            if (i == 0)
+                TV.copy(v1);
+            else
+                TV = TV.append(v1, new MatrixBlock(), true);
+
             w1 = A.aggregateBinaryOperations(A, v1, op_mul_agg);
             MatrixBlock w1_t = w1.reorgOperations(op_t,new MatrixBlock(), 0, 0, m);
             MatrixBlock alpha = w1_t.aggregateBinaryOperations(w1_t, v1, op_mul_agg);
@@ -97,11 +102,6 @@ public class EigenDecompOurs {
                 T.setValue(i, i+1, beta.getValue(0, 0));
             }
             T.setValue(i, i, alpha.getValue(0, 0));
-
-            if (i == 0)
-                TV.copy(v1);
-            else
-                TV = TV.append(v1, new MatrixBlock(), true);
         }
 
         // TEST

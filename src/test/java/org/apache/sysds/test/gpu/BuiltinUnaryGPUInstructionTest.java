@@ -20,7 +20,7 @@
 package org.apache.sysds.test.gpu;
 
 import org.apache.sysds.test.AutomatedTestBase;
-import org.apache.sysds.test.functions.builtin.BuiltinSigmoidTest;
+import org.apache.sysds.test.functions.builtin.part2.BuiltinSigmoidTest;
 import org.apache.sysds.test.functions.unary.matrix.ACosTest;
 import org.apache.sysds.test.functions.unary.matrix.ASinTest;
 import org.apache.sysds.test.functions.unary.matrix.ATanTest;
@@ -308,7 +308,7 @@ public class BuiltinUnaryGPUInstructionTest extends AutomatedTestBase {
 	}
 
 	@Test public void SigmoidTest() {
-		BuiltinSigmoidTest dmlTestCase = new org.apache.sysds.test.functions.builtin.BuiltinSigmoidTest();
+		BuiltinSigmoidTest dmlTestCase = new BuiltinSigmoidTest();
 		dmlTestCase.setUpBase();
 		dmlTestCase.setUp();
 		dmlTestCase.testSigmoidMatrixDenseCP();

@@ -30,15 +30,16 @@ import org.apache.sysds.runtime.util.DataConverter;
 //        scripts/staging/lanczos
 
 public class EigenDecompOurs {
-    private double[][] m;
+    private MatrixBlock eval;
+    private MatrixBlock evec;
 
     public EigenDecompOurs(MatrixBlock in) {
         if ( in.getNumRows() != in.getNumColumns() ) {
             throw new DMLRuntimeException("Eigen Decomposition can only be done on a square matrix. "
                     + "Input matrix is rectangular (rows=" + in.getNumRows() + ", cols="+ in.getNumColumns() +")");
         }
-        this.m= DataConverter.convertToArray2DRowRealMatrix(in).getData();
-        if(isSym(this.m)) {
+        double[][] m = DataConverter.convertToArray2DRowRealMatrix(in).getData();
+        if(isSym(m)) {
             Lanczos(in);
         }
 
@@ -75,7 +76,6 @@ public class EigenDecompOurs {
         MatrixBlock TV = new MatrixBlock(m, 1, 0.0);
         MatrixBlock w1;
 
-        BinaryOperator op_mul = new BinaryOperator(Multiply.getMultiplyFnObject(), num_Threads);
         ReorgOperator op_t = new ReorgOperator(SwapIndex.getSwapIndexFnObject(), num_Threads);
         TernaryOperator op_minus_mul = new TernaryOperator(MinusMultiply.getFnObject(), num_Threads);
         AggregateBinaryOperator op_mul_agg = InstructionUtils.getMatMultOperator(num_Threads);
@@ -104,19 +104,19 @@ public class EigenDecompOurs {
             T.setValue(i, i, alpha.getValue(0, 0));
         }
 
-        // TEST
-        MatrixBlock[] a = LibCommonsMath.multiReturnOperations(A, "eigen");
-        MatrixBlock[] b = LibCommonsMath.multiReturnOperations(T, "eigen");
+        MatrixBlock[] e = LibCommonsMath.multiReturnOperations(T, "eigen");
 
-        MatrixBlock evec = TV.aggregateBinaryOperations(TV, b[1], op_mul_agg);
+        this.eval = new MatrixBlock(m, 1, 0.0);
+        this.eval.copy(e[0]);
+        this.evec = TV.aggregateBinaryOperations(TV, e[1], op_mul_agg);
     }
 
     public MatrixBlock getV() {
-        return null;
+        return this.evec;
     }
 
     public MatrixBlock getRealEigenvalues() {
-        return null;
+        return this.eval;
     }
 }
 

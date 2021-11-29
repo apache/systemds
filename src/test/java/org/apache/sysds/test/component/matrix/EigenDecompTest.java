@@ -21,6 +21,7 @@ package org.apache.sysds.test.component.matrix;
 
 import org.apache.sysds.runtime.matrix.data.LibCommonsMath;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
+import org.apache.sysds.runtime.util.DataConverter;
 import org.apache.sysds.test.TestUtils;
 import org.junit.Test;
 import org.junit.Assert;
@@ -42,13 +43,33 @@ public class EigenDecompTest {
 	}
 
 	@Test
-	public void testTred2() {
+	public void testLanczosSimple() {
+		double tol = 1e-4;
+
 		MatrixBlock in = new MatrixBlock(4, 4, false);
 		double[] a = { 4, 1, -2,  2,
 					   1, 2,  0,  1,
 		              -2, 0,  3, -2,
 				       2, 1, -2, -1};
 		in.init(a, 4, 4);
-		MatrixBlock[] m = LibCommonsMath.multiReturnOperations(in, "eigenours");
+		MatrixBlock[] m1 = LibCommonsMath.multiReturnOperations(in, "eigen");
+		MatrixBlock[] m2 = LibCommonsMath.multiReturnOperations(in, "eigenours");
+
+		TestUtils.compareMatrices(m1[0], m2[0], tol, "Result of eigenvalues of new eigendecomp function wrong");
+		testEvecValues(m1[1], m2[1], tol);
+	}
+
+	private void testEvecValues(MatrixBlock a, MatrixBlock b, double tol) {
+		double[][] m1 = DataConverter.convertToArray2DRowRealMatrix(a).getData();
+		double[][] m2 = DataConverter.convertToArray2DRowRealMatrix(b).getData();
+
+		for(int i = 0; i < m1.length; i++) {
+			for(int j = 0; j < m1[0].length; j++) {
+				if (!(TestUtils.compareCellValue(m1[i][j], m2[i][j], tol, false) ||
+					  TestUtils.compareCellValue(m1[i][j], -1 * m2[i][j], tol, false))) {
+					Assert.fail("Result of eigenvectors of new eigendecomp function wrong");
+				}
+			}
+		}
 	}
 }

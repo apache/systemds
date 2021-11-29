@@ -83,7 +83,7 @@ sudo add-apt-repository 'deb https://cloud.r-project.org/bin/linux/ubuntu focal-
 sudo apt install r-base
 ```
 
-Additionally, you need to install the R depedencies for integration tests, like this:
+Optionally, you need to install the R depedencies for integration tests, like this:
 (use `sudo` mode if the script couldn't write to local R library)
 
 ```bash
@@ -134,7 +134,7 @@ export JAVA_HOME=`/usr/libexec/java_home -v 1.8`
 
 For running all tests [r-base](https://cran.r-project.org/bin/macosx/) has to be installed as well since this is used as a secondary system to verify the correctness of our code, but it is not a requirement to enable building the project.
 
-Additionally, you need to install the R depedencies for integration tests, like this:
+Optionally, you need to install the R depedencies for integration tests, like this:
 (use `sudo` mode if the script couldn't write to local R library)
 
 ```bash

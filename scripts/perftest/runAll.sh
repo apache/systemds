@@ -29,21 +29,16 @@ export LOG4JPROP='conf/log4j-off.properties'
 export SYSDS_QUIET=1
 
 # Command to be executed
-#CMD="systemds"
-CMD="./sparkDML.sh"
+CMD="systemds" # TODO change back to spark
+#CMD="./sparkDML.sh"
 
 # Possible lines to initialize Intel MKL, depending on version and install location
 #    . ~/intel/bin/compilervars.sh intel64
 #    . ~/intel/oneapi/setvars.sh intel64
 #    . /opt/intel/bin/compilervars.sh intel64
 
-### Micro Benchmarks:
-#./MatrixMult.sh
-#./MatrixTranspose.sh
-
 # init time measurement
 if [ ! -d logs ]; then mkdir -p logs ; fi
-if [ ! -d results ]; then mkdir -p results ; fi
 if [ ! -d results ]; then mkdir -p results ; fi
 date >> results/times.txt
 
@@ -52,6 +47,10 @@ echo "-- Generating binomial data: " >> results/times.txt;
 ./genBinomialData.sh ${CMD} ${TEMPFOLDER} &>> logs/genBinomialData.out
 echo "-- Generating multinomial data." >> results/times.txt;
 ./genMultinomialData.sh ${CMD} ${TEMPFOLDER} &>> logs/genMultinomialData.out
+
+### Micro Benchmarks:
+#./MatrixMult.sh
+#./MatrixTranspose.sh
 
 ### Algorithms Benchmarks:
 ./runAllBinomial.sh $CMD $TEMPFOLDER

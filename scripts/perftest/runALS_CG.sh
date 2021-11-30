@@ -19,8 +19,20 @@
 # under the License.
 #
 #-------------------------------------------------------------
+set -e
 
-if [ "$1" == "" -o "$2" == "" ]; then  echo "Usage: $0 <hdfsDataDir> <MR | SPARK | ECHO>   e.g. $0 perftest SPARK" ; exit 1 ; fi
+if [ "$(basename $PWD)" != "perftest" ];
+then
+  echo "Please execute scripts from directory 'perftest'"
+  exit 1;
+fi
+
+X=$1
+MAXITER=${2:-100}
+DATADIR=${3:-"temp"}
+CMD=${4:-"systemds"}
+THRESHOLD=${5:-0.0001}
+VERBOSE=${6:-FALSE}
 
 FILENAME=$0
 err_report() {
@@ -28,20 +40,26 @@ err_report() {
 }
 trap 'err_report $LINENO' ERR
 
-BASE=$1/dimensionreduction
+BASEPATH=$(dirname "$0")
 
-echo $2" RUN DIMENSION REDUCTION EXPERIMENTS: " $(date) >> times.txt;
+tstart=$(date +%s.%N)
 
-if [ ! -d logs ]; then mkdir logs ; fi
+${CMD} -f ${BASEPATH}/scripts/alsCG.dml \
+  --config ${BASEPATH}/conf/SystemDS-config.xml \
+  --stats \
+  --nvargs X=$X rank=15 reg="L2" lambda=0.000001 maxiter=$MAXITER thr=$THRESHOLD verbose=$VERBOSE modelU=${DATADIR}/U modelV=${DATADIR}/V fmt="csv"
 
-# data generation
-echo "-- Using Dimension Reduction data." >> times.txt;
-./genDimensionReductionData.sh $1 $2 &>> logs/genDimensionReductionData.out
+ttrain=$(echo "$(date +%s.%N) - $tstart - .4" | bc)
+echo "ALS-CG algorithm on "$X": "$ttrain >> results/times.txt
 
-# run all dimension reduction algorithms on all datasets
-for d in "5k_2k_dense" #"50k_2k_dense" "500k_2k_dense" "5M_2k_dense" "50M_2k_dense"
-do 
-   echo "-- Running Dimension Reduction on "$d >> times.txt;
-   ./runPCA.sh pcaData${d} ${BASE} $2 &> logs/runPCA_${d}.out;
 
-done
+tstart=$(date +%s.%N)
+
+${CMD} -f ./scripts/als-predict.dml \
+  --config ${BASEPATH}/conf/SystemDS-config.xml \
+  --stats \
+  --nvargs X=$X Y=${DATADIR}/Y L=${DATADIR}/U R=${DATADIR}/V fmt="csv"
+
+tpredict=$(echo "$(date +%s.%N) - $tstart - .4" | bc)
+echo "ALS-CG predict ict="$i" on "$1": "$tpredict >> results/times.txt
+

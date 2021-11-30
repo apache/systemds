@@ -22,9 +22,8 @@
 
 COMMAND=${1:-"systemds"}
 TEMPFOLDER=${2:-"temp"}
-
+MAXMEM=$3
 DATADIR=${TEMPFOLDER}/fed
-
 NUMFED=5
 
 FILENAME=$0
@@ -32,6 +31,8 @@ err_report() {
   echo "Error in $FILENAME on line $1"
 }
 trap 'err_report $LINENO' ERR
+
+if [ ! -d logs ]; then mkdir -p logs ; fi
 
 BASEPATH=$(dirname "$0")
 
@@ -43,5 +44,5 @@ if [ ! -d results ]; then mkdir -p results ; fi
 
 echo "RUN FEDERATED EXPERIMENTS: "$(date) >> results/times.txt
 
-${BASEPATH}/runALSFed.sh systemds $DATADIR $NUMFED
+${BASEPATH}/runALSFed.sh $COMMAND $DATADIR $MAXMEM $NUMFED
 

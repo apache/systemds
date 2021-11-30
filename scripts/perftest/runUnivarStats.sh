@@ -21,14 +21,23 @@
 #-------------------------------------------------------------
 set -e
 
-if [ "$3" == "SPARK" ]; then CMD="./sparkDML.sh "; DASH="-"; elif [ "$3" == "MR" ]; then CMD="hadoop jar SystemDS.jar " ; else CMD="echo " ; fi
+if [ "$(basename $PWD)" != "perftest" ];
+then
+  echo "Please execute scripts from directory 'perftest'"
+  exit 1;
+fi
 
-BASE=$2
+CMD=$4
+BASE=$3
 
-export HADOOP_CLIENT_OPTS="-Xmx2048m -Xms2048m -Xmn256m"
+echo "running Univar-Stats"
+tstart=$(date +%s.%N)
 
-tstart=$SECONDS
-${CMD} -f ../algorithms/PCA.dml $DASH-explain $DASH-stats $DASH-nvargs INPUT=$1 SCALE=1 PROJDATA=1 OUTPUT=${BASE}/output 
-ttrain=$(($SECONDS - $tstart - 3))
-echo "PCA on "$1": "$ttrain >> times.txt
+# ${CMD} -f ../algorithms/Univar-Stats.dml \
+${CMD} -f ./scripts/Univar-Stats.dml \
+  --config conf/SystemDS-config.xml \
+  --stats \
+  --nvargs X=$1 TYPES=$2 STATS=${BASE}/stats/u
 
+ttrain=$(echo "$(date +%s.%N) - $tstart - .4" | bc)
+echo "UnivariateStatistics on "$1": "$ttrain >> results/times.txt

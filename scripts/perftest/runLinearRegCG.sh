@@ -21,6 +21,12 @@
 #-------------------------------------------------------------
 set -e
 
+if [ "$(basename $PWD)" != "perftest" ];
+then
+  echo "Please execute scripts from directory 'perftest'"
+  exit 1;
+fi
+
 CMD=$5
 BASE=$3
 
@@ -31,7 +37,6 @@ do
    
    #training
    tstart=$(date +%s.%N)
-   #${CMD} -f ./algorithms/LinearRegCG.dml \
    ${CMD} -f scripts/LinearRegCG.dml \
       --config conf/SystemDS-config.xml \
       --stats \

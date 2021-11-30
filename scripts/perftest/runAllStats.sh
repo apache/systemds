@@ -29,8 +29,8 @@ COMMAND=$1
 TEMPFOLDER=$2
 MAXMEM=$3
 
-BASE=${TEMPFOLDER}/binomial
-MAXITR=20
+BASE2=${TEMPFOLDER}/bivar
+BASE3=${TEMPFOLDER}/stratstats
 
 FILENAME=$0
 err_report() {
@@ -39,21 +39,23 @@ err_report() {
 trap 'err_report $LINENO' ERR
 
 DATA=()
-if [ $MAXMEM -ge 80 ]; then DATA+=("10k_1k_dense" "10k_1k_sparse"); fi
-if [ $MAXMEM -ge 800 ]; then DATA+=("100k_1k_dense" "100k_1k_sparse"); fi
-if [ $MAXMEM -ge 8000 ]; then DATA+=("1M_1k_dense" "1M_1k_sparse"); fi
-if [ $MAXMEM -ge 80000 ]; then DATA+=("10M_1k_dense" "10M_1k_sparse"); fi
-if [ $MAXMEM -ge 800000 ]; then DATA+=("100M_1k_dense" "100M_1k_sparse"); fi
+if [ $MAXMEM -ge 80 ]; then DATA+=("A_10k"); fi
+if [ $MAXMEM -ge 800 ]; then DATA+=("A_100k"); fi
+if [ $MAXMEM -ge 8000 ]; then DATA+=("A_1M"); fi
+if [ $MAXMEM -ge 80000 ]; then DATA+=("A_10M"); fi
 
-echo "RUN BINOMIAL EXPERIMENTS: "$(date) >> results/times.txt;
+echo "RUN DESCRIPTIVE STATISTICS EXPERIMENTS: " $(date) >> results/times.txt;
 
-# run all classifiers with binomial labels on all datasets
-# see genBinomialData
-for d in ${DATA[@]} #"_KDD"
-do
-   for f in "runMultiLogReg" "runL2SVM" "runMSVM"
-   do
-      echo "-- Running "$f" on "$d" (all configs): " >> results/times.txt;
-      ./${f}.sh ${BASE}/X${d} ${BASE}/y${d} 2 ${BASE} ${MAXITR} ${COMMAND} &> logs/${f}_${d}.out;
-   done 
+# run all descriptive statistics on all datasets
+for d in ${DATA[@]} #"census"
+do 
+   echo "-- Running runUnivarStats on "$d >> results/times.txt;
+   ./runUnivarStats.sh ${BASE2}/${d}/data ${BASE2}/${d}/types ${BASE2} ${COMMAND} &> logs/runUnivar-Stats_${d}.out;
+
+   echo "-- Running runBivarStats on "$d >> results/times.txt;
+   ./runBivarStats.sh ${BASE2}/${d}/data ${BASE2}/${d}/set1.indices ${BASE2}/${d}/set2.indices ${BASE2}/${d}/set1.types ${BASE2}/${d}/set2.types ${BASE2} ${COMMAND} &> logs/runBivar-stats_${d}.out;
+    
+   echo "-- Running runStratStats on "$d >> results/times.txt;
+   ./runStratStats.sh ${BASE3}/${d}/data ${BASE3}/${d}/Xcid ${BASE3}/${d}/Ycid ${BASE3} ${COMMAND} &> logs/runStrats-stats_${d}.out;
 done
+

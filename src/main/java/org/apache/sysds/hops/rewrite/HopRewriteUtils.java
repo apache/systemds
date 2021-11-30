@@ -56,6 +56,7 @@ import org.apache.sysds.hops.ParameterizedBuiltinOp;
 import org.apache.sysds.hops.ReorgOp;
 import org.apache.sysds.hops.TernaryOp;
 import org.apache.sysds.hops.UnaryOp;
+import org.apache.sysds.parser.DMLProgram;
 import org.apache.sysds.parser.DataExpression;
 import org.apache.sysds.parser.DataIdentifier;
 import org.apache.sysds.parser.ForStatement;
@@ -1622,6 +1623,23 @@ public class HopRewriteUtils
 			&& pop.getParameterHop("agg") instanceof LiteralOp
 			&& (pop.getParameterHop("val") == null 
 			 || pop.getParameterHop("val") instanceof LiteralOp);
+	}
+	
+	public static boolean knownParamservFunctions(Hop hop, DMLProgram prog) {
+		if( !knownParamservFunctions(hop) )
+			return false;
+		try {
+			ParameterizedBuiltinOp pop = (ParameterizedBuiltinOp) hop;
+			String supd = ((LiteralOp)pop.getParameterHop("upd")).getStringValue();
+			String sagg = ((LiteralOp)pop.getParameterHop("agg")).getStringValue();
+			//if functions not existing, let runtime handle it consistently
+			return prog.getFunctionStatementBlock(supd) != null
+				&& prog.getFunctionStatementBlock(sagg) != null;
+		}
+		catch(Exception ex) {
+			//robustness invalid function keys
+			return false;
+		}
 	}
 
 	public static void setUnoptimizedFunctionCalls(StatementBlock sb) {

@@ -19,18 +19,22 @@
 
 package org.apache.sysds.test.functions.paramserv;
 
-import org.junit.Ignore;
 import org.junit.Test;
+
+import java.util.Arrays;
+
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 
-@Ignore
 public class ParamservRuntimeNegativeTest extends AutomatedTestBase {
 
-	private static final String TEST_NAME1 = "paramserv-worker-failed";
-	private static final String TEST_NAME2 = "paramserv-agg-service-failed";
-	private static final String TEST_NAME3 = "paramserv-wrong-aggregate-func";
+	private static final String[] TEST_NAMES = {
+		//"paramserv-worker-failed",
+		//"paramserv-agg-service-failed",
+		//"paramserv-wrong-aggregate-func-params",
+		"paramserv-invalid-function",
+	};
 
 	private static final String TEST_DIR = "functions/paramserv/";
 	private static final String TEST_CLASS_DIR = TEST_DIR + ParamservRuntimeNegativeTest.class.getSimpleName() + "/";
@@ -39,30 +43,19 @@ public class ParamservRuntimeNegativeTest extends AutomatedTestBase {
 
 	@Override
 	public void setUp() {
-		addTestConfiguration(TEST_NAME1, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] {}));
-		addTestConfiguration(TEST_NAME2, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2, new String[] {}));
-		addTestConfiguration(TEST_NAME3, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME3, new String[] {}));
+		Arrays.stream(TEST_NAMES)
+			.forEach(s -> addTestConfiguration(s, new TestConfiguration(TEST_CLASS_DIR, s, new String[]{})));
 	}
-
+	
 	@Test
-	public void testParamservWorkerFailed() {
-		runDMLTest(TEST_NAME1, "Invalid indexing by name in unnamed list: worker_err.");
-	}
-
-	@Test
-	public void testParamservAggServiceFailed() {
-		runDMLTest(TEST_NAME2, "Invalid indexing by name in unnamed list: agg_service_err");
-	}
-
-	@Test
-	public void testParamservWrongAggregateFunc() {
-		runDMLTest(TEST_NAME3, "The 'gradients' function should provide an input of 'MATRIX' type named 'labels'.");
+	public void testParamservMissingAggregateFunc() {
+		runDMLTest(TEST_NAMES[0], "namespace XXX is undefined");
 	}
 
 	private void runDMLTest(String testname, String errmsg) {
 		TestConfiguration config = getTestConfiguration(testname);
 		loadTestConfiguration(config);
-		programArgs = new String[] { };
+		programArgs = new String[] {"-explain"};
 		fullDMLScriptName = HOME + testname + ".dml";
 		runTest(true, true, DMLRuntimeException.class, errmsg, -1);
 	}

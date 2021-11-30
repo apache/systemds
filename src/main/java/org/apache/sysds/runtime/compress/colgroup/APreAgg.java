@@ -36,6 +36,8 @@ import org.apache.sysds.runtime.matrix.data.MatrixBlock;
  */
 public abstract class APreAgg extends AColGroupValue {
 
+	private static final long serialVersionUID = 3250955207277128281L;
+
 	private static ThreadLocal<double[]> tmpLeftMultDoubleArray = new ThreadLocal<double[]>() {
 		@Override
 		protected double[] initialValue() {

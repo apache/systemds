@@ -20,7 +20,12 @@
 #
 #-------------------------------------------------------------
 
-if [ "$1" == "" -o "$2" == "" ]; then  echo "Usage: $0 <hdfsDataDir> <MR | SPARK | ECHO>   e.g. $0 perftest SPARK" ; exit 1 ; fi
+X=$1
+MAXITER=${2:-100}
+DATADIR=${3:-"temp"}
+CMD=${4:-"systemds"}
+THRESHOLD=${5:-0.0001}
+VERBOSE=${6:-FALSE}
 
 FILENAME=$0
 err_report() {
@@ -28,22 +33,15 @@ err_report() {
 }
 trap 'err_report $LINENO' ERR
 
-BASE=$1/trees
+BASEPATH=$(dirname "$0")
 
-echo $2" RUN TREE EXPERIMENTS: "$(date) >> times.txt;
+tstart=$(date +%s.%N)
 
-if [ ! -d logs ]; then mkdir logs ; fi
+${CMD} -f ${BASEPATH}/../scripts/alsCG.dml \
+  --config ${BASEPATH}/conf/SystemDS-config.xml \
+  --stats \
+  --nvargs X=$X rank=15 reg="L2" lambda=0.000001 maxiter=$MAXITER thr=$THRESHOLD verbose=$VERBOSE modelU=${DATADIR}/U modelV=${DATADIR}/V fmt="csv"
 
-# data generation
-echo $2"-- Generating Tree data: " >> times.txt;
-./genTreeData.sh $1 $2 &> logs/genTreeData.out
+ttrain=$(echo "$(date +%s.%N) - $tstart - .4" | bc)
+echo "ALS-CG algorithm on "$X": "$ttrain >> results/times.txt
 
-# run all trees with on all datasets
-for d in "10k_1k_dense" "10k_1k_sparse" # "100k_1k_dense" "100k_1k_sparse" "1M_1k_dense" "1M_1k_sparse" "10M_1k_dense" "10M_1k_sparse" #"_KDD" "100M_1k_dense" "100M_1k_sparse" 
-do 
-   for f in "runDecTree" "runRandTree"
-   do
-      echo "-- Running "$f" on "$d" (all configs): " >> times.txt;
-      ./${f}.sh ${BASE}/X${d} ${BASE}/y${d} ${BASE} $2 &> logs/${f}_${d}.out;       
-   done 
-done

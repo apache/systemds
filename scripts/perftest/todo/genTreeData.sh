@@ -21,25 +21,24 @@
 #-------------------------------------------------------------
 
 if [ "$1" == "" -o "$2" == "" ]; then echo "Usage: $0 <hdfsDataDir> <MR | SPARK | ECHO>   e.g. $0 perftest SPARK" ; exit 1 ; fi
-if [ "$2" == "SPARK" ]; then CMD="./sparkDML.sh "; DASH="-"; elif [ "$2" == "MR" ]; then CMD="hadoop jar SystemDS.jar " ; else CMD="echo " ; fi
-
+CMD=systemds
 
 BASE=$1/trees
 
-FORMAT="binary" 
+FORMAT="text"
 DENSE_SP=0.9
 SPARSE_SP=0.01
 
 export HADOOP_CLIENT_OPTS="-Xmx2048m -Xms2048m -Xmn256m"
 
-echo "NOT DONE YET. WAITING FOR DML SCRIPT FROM FARAZ" ; exit 1
+# echo "NOT DONE YET. WAITING FOR DML SCRIPT FROM FARAZ" ; exit 1
 
 
 #generate XS scenarios (80MB)
-${CMD} -f ../datagen/genRandData4LogisticRegression.dml $DASH-args 10000 1000 5 5 $BASE/w10k_1k_dense $BASE/X10k_1k_dense $BASE/y10k_1k_dense 1 0 $DENSE_SP $FORMAT
-${CMD} -f ../datagen/genRandData4LogisticRegression.dml $DASH-args 10000 1000 5 5 $BASE/w10k_1k_sparse $BASE/X10k_1k_sparse $BASE/y10k_1k_sparse 1 0 $SPARSE_SP $FORMAT
-${CMD} -f extractTestData.dml $DASH-args $BASE/X10k_1k_dense $BASE/y10k_1k_dense $BASE/X10k_1k_dense_test $BASE/y10k_1k_dense_test $FORMAT
-${CMD} -f extractTestData.dml $DASH-args $BASE/X10k_1k_sparse $BASE/y10k_1k_sparse $BASE/X10k_1k_sparse_test $BASE/y10k_1k_sparse_test $FORMAT
+${CMD} -f ../../datagen/genRandData4LogisticRegression.dml $DASH-args 10000 1000 5 5 $BASE/w10k_1k_dense $BASE/X10k_1k_dense $BASE/y10k_1k_dense 1 0 $DENSE_SP $FORMAT 0
+${CMD} -f ../../datagen/genRandData4LogisticRegression.dml $DASH-args 10000 1000 5 5 $BASE/w10k_1k_sparse $BASE/X10k_1k_sparse $BASE/y10k_1k_sparse 1 0 $SPARSE_SP $FORMAT 0
+${CMD} -f ../scripts/extractTestData.dml $DASH-args $BASE/X10k_1k_dense $BASE/y10k_1k_dense $BASE/X10k_1k_dense_test $BASE/y10k_1k_dense_test $FORMAT
+${CMD} -f ../scripts/extractTestData.dml $DASH-args $BASE/X10k_1k_sparse $BASE/y10k_1k_sparse $BASE/X10k_1k_sparse_test $BASE/y10k_1k_sparse_test $FORMAT
 
 ##generate S scenarios (800MB)
 #${CMD} -f ../datagen/genRandData4LogisticRegression.dml $DASH-args 100000 1000 5 5 $BASE/w100k_1k_dense $BASE/X100k_1k_dense $BASE/y100k_1k_dense 1 0 $DENSE_SP $FORMAT

@@ -19,29 +19,41 @@
 # under the License.
 #
 #-------------------------------------------------------------
+if [ "$(basename $PWD)" != "perftest" ];
+then
+  echo "Please execute scripts from directory 'perftest'"
+  exit 1;
+fi
 
-if [ "$1" == "" -o "$2" == "" ]; then echo "Usage: $0 <hdfsDataDir> <MR | SPARK | ECHO>   e.g. $0 perftest SPARK" ; exit 1 ; fi
-if [ "$2" == "SPARK" ]; then CMD="./sparkDML.sh "; DASH="-"; elif [ "$2" == "MR" ]; then CMD="hadoop jar SystemDS.jar " ; else CMD="echo " ; fi
+CMD=$1
+BASE=$2/dimensionreduction
+MAXMEM=$3
 
-
-FORMAT="binary" 
-BASE=$1/dimensionreduction
-
-export HADOOP_CLIENT_OPTS="-Xmx2048m -Xms2048m -Xmn256m"
-
+FORMAT="binary"
 
 #generate XS scenarios (80MB)
-${CMD} -f ../datagen/genRandData4PCA.dml $DASH-nvargs 5000 2000 $BASE/pcaData5k_2k_dense $FORMAT
+if [ $MAXMEM -ge 80 ]; then
+  ${CMD} -f ../datagen/genRandData4PCA.dml --nvargs R=5000 C=2000 OUT=$BASE/pcaData5k_2k_dense FMT=$FORMAT &
+fi
 
 #generate S scenarios (800MB)
-#${CMD} -f ../datagen/genRandData4PCA.dml $DASH-nvargs 50000 2000 $BASE/pcaData50k_2k_dense $FORMAT
+if [ $MAXMEM -ge 800 ]; then
+  ${CMD} -f ../datagen/genRandData4PCA.dml --nvargs R=50000 C=2000 OUT=$BASE/pcaData50k_2k_dense FMT=$FORMAT &
+fi
 
 #generate M scenarios (8GB)
-#${CMD} -f ../datagen/genRandData4PCA.dml $DASH-nvargs 500000 2000 $BASE/pcaData500k_2k_dense $FORMAT
+if [ $MAXMEM -ge 8000 ]; then
+  ${CMD} -f ../datagen/genRandData4PCA.dml --nvargs R=500000 C=2000 OUT=$BASE/pcaData500k_2k_dense FMT=$FORMAT &
+fi
 
 #generate L scenarios (80GB)
-#${CMD} -f ../datagen/genRandData4PCA.dml $DASH-nvargs 5000000 2000 $BASE/pcaData5M_2k_dense $FORMAT
+if [ $MAXMEM -ge 80000 ]; then
+  ${CMD} -f ../datagen/genRandData4PCA.dml --nvargs R=5000000 C=2000 OUT=$BASE/pcaData5M_2k_dense FMT=$FORMAT
+fi
 
 #generate XL scenarios (800GB)
-#${CMD} -f ../datagen/genRandData4PCA.dml $DASH-nvargs 50000000 2000 $BASE/pcaData50M_2k_dense $FORMAT
+if [ $MAXMEM -ge 800000 ]; then
+  ${CMD} -f ${EXTRADOT}./datagen/genRandData4PCA.dml --nvargs R=50000000 C=2000 OUT=$BASE/pcaData50M_2k_dense FMT=$FORMAT
+fi
 
+wait

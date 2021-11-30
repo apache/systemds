@@ -27,30 +27,17 @@ then
   exit 1;
 fi
 
-CMD=$5
-BASE=$3
+CMD=$3
+BASE=$2
 
-# run all intercepts
-for i in 0 1 2; do
-   echo "running GLM gamma log on ict="$i
-   
-   #training
-   tstart=$(date +%s.%N)
-   ${CMD} -f scripts/GLM.dml \
-      --config conf/SystemDS-config.xml \
-      --stats \
-      --nvargs X=$1 Y=$2 B=${BASE}/b icpt=${i} fmt="csv" moi=$4 mii=5 dfam=1 vpow=2.0 link=1 lpow=0.0 tol=0.0001 reg=0.01
+tstart=$(date +%s.%N)
 
-   ttrain=$(echo "$(date +%s.%N) - $tstart - .4" | bc)
-   echo "GLM_gamma_log train ict="$i" on "$1": "$ttrain >> results/times.txt
+# ${CMD} -f ../algorithms/PCA.dml \
+${CMD} -f ./scripts/PCA.dml \
+  --config conf/SystemDS-config.xml \
+  --stats \
+  --nvargs INPUT=$1 SCALE=1 PROJDATA=1 OUTPUT=${BASE}/output
 
-   #predict
-   tstart=$(date +%s.%N)
-   ${CMD} -f scripts/GLM-predict.dml \
-      --config conf/SystemDS-config.xml \
-      --stats \
-      --nvargs dfam=1 vpow=2.0 link=1 lpow=0.0 fmt=csv X=$1_test B=${BASE}/b Y=$2_test M=${BASE}/m O=${BASE}/out.csv
+ttrain=$(echo "$(date +%s.%N) - $tstart - .4" | bc)
+echo "PCA on "$1": "$ttrain >> results/times.txt
 
-   tpredict=$(echo "$(date +%s.%N) - $tstart - .4" | bc)
-   echo "GLM_gamma_log predict ict="$i" on "$1": "$tpredict >> results/times.txt
-done

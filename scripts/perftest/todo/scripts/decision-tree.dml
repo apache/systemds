@@ -1,0 +1,85 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+#  
+# THIS SCRIPT IMPLEMENTS CLASSIFICATION TREES WITH BOTH SCALE AND CATEGORICAL FEATURES
+#
+# INPUT         PARAMETERS:
+# ---------------------------------------------------------------------------------------------
+# NAME          TYPE     DEFAULT      MEANING
+# ---------------------------------------------------------------------------------------------
+# X             String   ---          Location to read feature matrix X; note that X needs to be both recoded and dummy coded 
+# Y 			String   ---		  Location to read label matrix Y; note that Y needs to be both recoded and dummy coded
+# R   	  		String   " "	      Location to read the matrix R which for each feature in X contains the following information 
+#										- R[,1]: column ids
+#										- R[,2]: start indices 
+#										- R[,3]: end indices
+#									  If R is not provided by default all variables are assumed to be scale
+# bins          Int 	 20			  Number of equiheight bins per scale feature to choose thresholds
+# depth         Int 	 25			  Maximum depth of the learned tree
+# num_leaf      Int      10           Number of samples when splitting stops and a leaf node is added
+# num_samples   Int 	 3000		  Number of samples at which point we switch to in-memory subtree building
+# impurity      String   "Gini"    	  Impurity measure: entropy or Gini (the default)
+# M             String 	 ---	   	  Location to write matrix M containing the learned tree
+# O     		String   " "          Location to write the training accuracy; by default is standard output
+# S_map			String   " "		  Location to write the mappings from scale feature ids to global feature ids
+# C_map			String   " "		  Location to write the mappings from categorical feature ids to global feature ids
+# fmt     	    String   "text"       The output format of the model (matrix M), such as "text" or "csv"
+# ---------------------------------------------------------------------------------------------
+# OUTPUT: 
+# Matrix M where each column corresponds to a node in the learned tree and each row contains the following information:
+#	 M[1,j]: id of node j (in a complete binary tree)
+#	 M[2,j]: Offset (no. of columns) to left child of j if j is an internal node, otherwise 0
+#	 M[3,j]: Feature index of the feature (scale feature id if the feature is scale or categorical feature id if the feature is categorical) 
+#			 that node j looks at if j is an internal node, otherwise 0
+#	 M[4,j]: Type of the feature that node j looks at if j is an internal node: 1 for scale and 2 for categorical features, 
+#		     otherwise the label that leaf node j is supposed to predict
+#	 M[5,j]: If j is an internal node: 1 if the feature chosen for j is scale, otherwise the size of the subset of values 
+#			 stored in rows 6,7,... if j is categorical 
+#			 If j is a leaf node: number of misclassified samples reaching at node j 
+#	 M[6:,j]: If j is an internal node: Threshold the example's feature value is compared to is stored at M[6,j] if the feature chosen for j is scale,
+#			  otherwise if the feature chosen for j is categorical rows 6,7,... depict the value subset chosen for j
+#	          If j is a leaf node 1 if j is impure and the number of samples at j > threshold, otherwise 0  
+# -------------------------------------------------------------------------------------------
+# HOW TO INVOKE THIS SCRIPT - EXAMPLE:
+# hadoop jar SystemDS.jar -f decision-tree.dml -nvargs X=INPUT_DIR/X Y=INPUT_DIR/Y R=INPUT_DIR/R M=OUTPUT_DIR/model
+#     				                 				   bins=20 depth=25 num_leaf=10 num_samples=3000 impurity=Gini fmt=csv
+	
+# Default values of some parameters
+fileR = ifdef ($R, " ");
+fileO = ifdef ($O, " ");
+fileS_map = ifdef ($S_map, " ");
+fileC_map = ifdef ($C_map, " ");
+fileM = $M;
+num_bins = ifdef($bins, 20);  
+depth = ifdef($depth, 25); 
+num_leaf = ifdef($num_leaf, 10); 
+threshold = ifdef ($num_samples, 3000);  
+imp = ifdef($impurity, "Gini");
+fmtO = ifdef($fmt, "text");
+
+X = read($X);
+Y_bin = read($Y);
+R = matrix(1, rows=1, cols=ncol(X));
+
+M = decisionTree(X = X, Y = Y_bin, R = R, bins = num_bins, depth = depth);
+
+write (M, fileM, format = fmtO);

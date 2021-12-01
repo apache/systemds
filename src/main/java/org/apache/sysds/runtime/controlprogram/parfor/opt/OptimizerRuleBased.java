@@ -1227,7 +1227,7 @@ public class OptimizerRuleBased extends Optimizer {
 		//note: we compute max K for both w/o and w/ shared reads and take the max, because
 		//the latter might reduce the degree of parallelism if shared reads don't dominate
 		int k1 = (int)Math.floor(memBudget / M);
-		int k2 = (int)Math.floor(memBudget-memShared / memNonShared);
+		int k2 = (int)Math.floor((memBudget-memShared) / memNonShared);
 		return Math.max(k1, k2);
 	}
 

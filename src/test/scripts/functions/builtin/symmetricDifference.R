@@ -25,6 +25,8 @@ library("Matrix")
 
 X = as.matrix(readMM(paste(args[1], "X.mtx", sep="")));
 Y = as.matrix(readMM(paste(args[1], "Y.mtx", sep="")));
-#R = union(X[order(X[,1]),], Y[order(Y[,1]),]);
-R = union(X, Y);
+
+#both are possible
+#R = setdiff(union(X,Y), intersect(X,Y))
+R = unique(c(setdiff(X,Y), setdiff(Y,X)));
 writeMM(as(R, "CsparseMatrix"), paste(args[2], "R", sep=""));

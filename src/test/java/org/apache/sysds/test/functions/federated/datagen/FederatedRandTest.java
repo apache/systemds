@@ -33,7 +33,6 @@ import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -43,7 +42,9 @@ import org.junit.runners.Parameterized;
 public class FederatedRandTest extends AutomatedTestBase {
 
 	private final static String TEST_DIR = "functions/federated/datagen/";
-	private final static String TEST_NAME = "FederatedRandTest";
+	private final static String TEST_NAME1 = "FederatedRandTest1";
+	private final static String TEST_NAME2 = "FederatedRandTest2";
+	private final static String TEST_NAME3 = "FederatedRandTest3";
 	private final static String TEST_CLASS_DIR = TEST_DIR + FederatedRandTest.class.getSimpleName() + "/";
 
 	private final static int blocksize = 1024;
@@ -51,32 +52,47 @@ public class FederatedRandTest extends AutomatedTestBase {
 	public int rows;
 	@Parameterized.Parameter(1)
 	public int cols;
+	@Parameterized.Parameter(2)
+	public double min;
+	@Parameterized.Parameter(3)
+	public double max;
+	@Parameterized.Parameter(4)
+	public double sparsity;
+	@Parameterized.Parameter(5)
+	public int seed;
 
 	@Override
 	public void setUp() {
 		TestUtils.clearAssertionInformation();
-		addTestConfiguration(TEST_NAME, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[] {"Z"}));
+		addTestConfiguration(TEST_NAME1, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME1, new String[] {"Z"}));
+		addTestConfiguration(TEST_NAME2, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME2, new String[] {"Z"}));
+		addTestConfiguration(TEST_NAME3, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME3, new String[] {"Z"}));
 	}
 
 	@Parameterized.Parameters
 	public static Collection<Object[]> data() {
 		return Arrays.asList(new Object[][] {
-			{12, 10}
+			{12, 10, 0, 1, 0.7, 123},
+			{1200, 10, -10, 10, 0.9, 123}
 		});
 	}
 
 	@Test
-	public void federatedRandCP() {
-		federatedRand(Types.ExecMode.SINGLE_NODE);
+	public void federatedRand1CP() {
+		federatedRand(TEST_NAME1, Types.ExecMode.SINGLE_NODE);
 	}
 
 	@Test
-	@Ignore
-	public void federatedRandSP() {
-		federatedRand(Types.ExecMode.SPARK);
+	public void federatedRand2CP() {
+		federatedRand(TEST_NAME2, Types.ExecMode.SINGLE_NODE);
 	}
 
-	public void federatedRand(Types.ExecMode execMode) {
+	@Test
+	public void federatedRand3CP() {
+		federatedRand(TEST_NAME3, Types.ExecMode.SINGLE_NODE);
+	}
+
+	public void federatedRand(String TEST_NAME, Types.ExecMode execMode) {
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
 		Types.ExecMode platformOld = rtplatform;
 		rtplatform = execMode;
@@ -109,25 +125,28 @@ public class FederatedRandTest extends AutomatedTestBase {
 		programArgs = new String[] {"-nvargs", input("X1"), input("X2"), expected("Z")};
 		runTest(null);
 
-//		FEDInstructionUtils.fedDataGen = true;
+		FEDInstructionUtils.fedDataGen = true;
 
 		// Run actual dml script with federated matrix
 		OptimizerUtils.FEDERATED_COMPILATION = true;
 		fullDMLScriptName = HOME + TEST_NAME + ".dml";
+
 		programArgs = new String[] {"-nvargs", "X1=" + TestUtils.federatedAddress(port1, input("X1")),
 			"X2=" + TestUtils.federatedAddress(port2, input("X2")),
-			"r=" + rows, "c=" + cols, "Z=" + output("Z")};
+			"r=" + rows, "c=" + cols, "min=" + min, "max=" + max, "sp=" + sparsity, "seed=" + seed, "Z=" + output("Z")};
 		runTest(null);
 
 		HashMap<MatrixValue.CellIndex, Double> output = TestUtils.readDMLMatrixFromHDFS(outputDirectories[0]);
 		int rowOut = output.keySet().stream().max(Comparator.comparingInt(e -> e.row)).get().row;
 		int colOut = output.keySet().stream().max(Comparator.comparingInt(e -> e.column)).get().column;
-		double min = output.values().stream().min(Comparator.comparingDouble(Double::doubleValue)).get();
-		double max = output.values().stream().max(Comparator.comparingDouble(Double::doubleValue)).get();
+		double minOut = output.values().stream().min(Comparator.comparingDouble(Double::doubleValue)).get();
+		double maxOut = output.values().stream().max(Comparator.comparingDouble(Double::doubleValue)).get();
 
 		// compare via files
-		checkResults(rows, cols, min, max);
-
+		switch(TEST_NAME) {
+			case TEST_NAME2: checkResults(rows, cols, minOut, maxOut); break;
+			default: checkResults(rows, cols, min, max); break;
+		}
 		TestUtils.shutdownThreads(t1, t2);
 
 		rtplatform = platformOld;

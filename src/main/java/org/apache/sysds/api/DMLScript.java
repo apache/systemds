@@ -280,6 +280,7 @@ public class DMLScript
 			//reset runtime platform and visualize flag
 			setGlobalExecMode(oldrtplatform);
 			EXPLAIN = oldexplain;
+			DMLScript.FED_WORKER_PORTS.clear();
 		}
 		
 		return true;

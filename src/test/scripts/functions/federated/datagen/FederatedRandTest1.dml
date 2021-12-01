@@ -19,13 +19,6 @@
 #
 #-------------------------------------------------------------
 
-X = federated(addresses=list($X1, $X2),
-    ranges=list(list(0, 0), list($r / 2, $c), list($r / 2, 0), list($r, $c)))
-
-Z = rand(rows=$r, cols=$c, pdf="uniform", min=0, max=1)
-
-#Z = rand(rows=10, cols=20, min=0, max=1, pdf="normal", sparsity=0.2)
-
-#Z = rand(rows=$r, cols=$c, pdf="normal")
+Z = rand(rows=$r, cols=$c, pdf="uniform", min=$min, max=$max, sparsity=$sp)
 print(toString(Z))
 write(Z, $Z)

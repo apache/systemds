@@ -345,7 +345,7 @@ public class DataGenFEDInstruction extends UnaryFEDInstruction {
 		seeds[0] = curSeed;
 
 		IntStream.range(1, n).forEach(i -> {
-			if(curSeed == runtimeSeed) {
+			if(runtimeSeed != null && curSeed == runtimeSeed) {
 				runtimeSeed = null;
 				seeds[i] = generateSeed();
 			} else {

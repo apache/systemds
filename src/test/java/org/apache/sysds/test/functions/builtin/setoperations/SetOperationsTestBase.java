@@ -55,63 +55,63 @@ public abstract class SetOperationsTestBase extends AutomatedTestBase {
         double[][] X = {{9}, {2}, {3}};
         double[][] Y = {{2}, {3}, {4}};
 
-        runUnitTest(X, Y, Types.ExecType.CP);
+        runUnitTest(X, Y, execType);
     }
 
     @Test
     public void testComplexPosNumbers() {
         double[][] X =  {{12},{22},{13},{4},{6},{7},{8},{9},{12},{12}};
         double[][] Y = {{1},{2},{11},{12},{13},{18},{20},{21},{12}};
-        runUnitTest(X, Y, Types.ExecType.CP);
+        runUnitTest(X, Y, execType);
     }
 
     @Test
     public void testNegNumbers() {
         double[][] X = {{-10},{-5},{2}};
         double[][] Y = {{2},{-3}};
-        runUnitTest(X, Y, Types.ExecType.CP);
+        runUnitTest(X, Y, execType);
     }
 
     @Test
     public void testFloatingPNumbers() {
         double[][] X = {{2},{2.5},{4}};
         double[][] Y = {{2.4},{2}};
-        runUnitTest(X, Y, Types.ExecType.CP);
+        runUnitTest(X, Y, execType);
     }
 
     @Test
     public void testNegAndFloating() {
         double[][] X =  {{1.4}, {-1.3}, {10}, {4}};
         double[][] Y = {{1.3},{-1.4},{10},{9}};
-        runUnitTest(X, Y, Types.ExecType.CP);
+        runUnitTest(X, Y, execType);
     }
 
     @Test
     public void testMinValue() {
         double[][] X =  {{Double.MIN_VALUE}, {2},{4}};
         double[][] Y = {{2},{15}};
-        runUnitTest(X, Y, Types.ExecType.CP);
+        runUnitTest(X, Y, execType);
     }
 
     @Test
     public void testCombined() {
         double[][] X =  {{Double.MIN_VALUE}, {4}, {-1.3}, {10}, {4}};
         double[][] Y = {{Double.MIN_VALUE},{15},{-1.2},{-25.3}};
-        runUnitTest(X, Y, Types.ExecType.CP);
+        runUnitTest(X, Y, execType);
     }
 
     @Test
     public void testYSuperSetOfX() {
         double[][] X = TestUtils.seq(2, 200, 4);
         double[][] Y = TestUtils.seq(2, 200, 2);
-        runUnitTest(X, Y, Types.ExecType.CP);
+        runUnitTest(X, Y, execType);
     }
 
     @Test
     public void testXSuperSetOfY() {
         double[][] X = TestUtils.seq(2, 200, 2);
         double[][] Y = TestUtils.seq(2, 200, 4);
-        runUnitTest(X, Y, Types.ExecType.CP);
+        runUnitTest(X, Y, execType);
     }
 
     private void runUnitTest(double[][] X, double[][]Y, Types.ExecType instType) {

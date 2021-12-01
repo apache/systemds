@@ -73,7 +73,7 @@ public abstract class SetOperationsTestBase extends AutomatedTestBase {
     }
 
     @Test
-    public void testFloatingPNumbers() { //floating point numbers do not work with table()...
+    public void testFloatingPNumbers() {
         double[][] X = {{2},{2.5},{4}};
         double[][] Y = {{2.4},{2}};
         runUnitTest(X, Y, Types.ExecType.CP);
@@ -86,13 +86,6 @@ public abstract class SetOperationsTestBase extends AutomatedTestBase {
         runUnitTest(X, Y, Types.ExecType.CP);
     }
 
-//    @Test  //TODO max value tests do not work with R since R and java have a different max value.
-//    public void testMaxValue() {
-//        double[][] X =  {{Double.MAX_VALUE}, {2},{4}};
-//        double[][] Y = {{2},{15}};
-//        runUnitTest(X, Y, Types.ExecType.CP);
-//    }
-
     @Test
     public void testMinValue() {
         double[][] X =  {{Double.MIN_VALUE}, {2},{4}};
@@ -104,6 +97,20 @@ public abstract class SetOperationsTestBase extends AutomatedTestBase {
     public void testCombined() {
         double[][] X =  {{Double.MIN_VALUE}, {4}, {-1.3}, {10}, {4}};
         double[][] Y = {{Double.MIN_VALUE},{15},{-1.2},{-25.3}};
+        runUnitTest(X, Y, Types.ExecType.CP);
+    }
+
+    @Test
+    public void testYSuperSetOfX() {
+        double[][] X = TestUtils.seq(2, 200, 4);
+        double[][] Y = TestUtils.seq(2, 200, 2);
+        runUnitTest(X, Y, Types.ExecType.CP);
+    }
+
+    @Test
+    public void testXSuperSetOfY() {
+        double[][] X = TestUtils.seq(2, 200, 2);
+        double[][] Y = TestUtils.seq(2, 200, 4);
         runUnitTest(X, Y, Types.ExecType.CP);
     }
 

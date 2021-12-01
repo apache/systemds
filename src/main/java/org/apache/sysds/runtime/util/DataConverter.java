@@ -67,6 +67,7 @@ import org.apache.sysds.runtime.io.TensorWriterFactory;
 import org.apache.sysds.runtime.matrix.data.CTableMap;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.IJV;
+import org.apache.sysds.runtime.matrix.data.LibMatrixAgg;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
@@ -307,32 +308,41 @@ public class DataConverter {
 		return ret;
 	}
 
-	public static List<Integer> convertVectorToIndicesList(MatrixBlock mb)
+	public static int[] convertVectorToIndicesList(MatrixBlock mb)
 	{
 		int rows = mb.getNumRows();
 		int cols = mb.getNumColumns();
-		ArrayList<Integer> indices = new ArrayList<>();
 
-		if( mb.getNonZeros() > 0 )
-		{
-			if( mb.isInSparseFormat() )
-			{
+		if( mb.isEmpty() )
+			return null;
+
+		if( mb.isInSparseFormat() ) {
+			if(rows == 1) {
+				// row vector
+				SparseBlock sb = mb.getSparseBlock();
+				return sb.indexes(0);
+			} else {
+				// column vector
+				int index = 0;
+				int[] indices = new int[(int) mb.getNonZeros()];
 				Iterator<IJV> iter = mb.getSparseBlockIterator();
-				while( iter.hasNext() ) {
+				while(iter.hasNext()) {
 					IJV cell = iter.next();
-					if( cell.getV() != 0.0)
-						indices.add(cell.getI()*cols+cell.getJ());
+					if(cell.getV() != 0.0)
+						indices[index++] = cell.getI() * cols + cell.getJ();
 				}
-			}
-			else {
-				for( int i=0, cix=0; i<rows; i++ )
-					for( int j=0; j<cols; j++, cix++)
-						if( mb.getValueDenseUnsafe(i, j) != 0.0 )
-							indices.add(cix);
+				return indices;
 			}
 		}
-
-		return indices;
+		else {
+			int index = 0;
+			int[] indices = new int[(int) mb.getNonZeros()];
+			for(int i = 0, cix = 0; i < rows; i++)
+				for(int j = 0; j < cols; j++, cix++)
+					if(mb.getValueDenseUnsafe(i, j) != 0.0)
+						indices[index++] = cix;
+			return indices;
+		}
 	}
 
 	public static int[] convertToIntVector( MatrixBlock mb) {

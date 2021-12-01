@@ -2536,16 +2536,19 @@ public class FrameBlock implements CacheBlock, Externalizable {
 			for(int i = 0; i < _numRows; i++) {
 				boolean isEmpty = true;
 				Object[] row = new Object[getNumColumns()];
-				for(int j = 0; j < getNumColumns() && isEmpty; j++) {
+				for(int j = 0; j < getNumColumns(); j++) {
 					row[j] = _coldata[j].get(i);
-					isEmpty = isEmpty && (ArrayUtils.contains(new double[]{0.0, Double.NaN}, UtilFunctions.objectToDoubleSafe(_schema[j], _coldata[j].get(i))));
+					isEmpty = isEmpty && ArrayUtils.contains(new double[]{0.0, Double.NaN}, UtilFunctions.objectToDoubleSafe(_schema[j], _coldata[j].get(i)));
 				}
 
 				if(!isEmpty)
 					ret.appendRow(row);
 			}
 		} else {
-			List<Integer> indices = DataConverter.convertVectorToIndicesList(select);
+			if(select.getNonZeros() == getNumRows())
+				return new FrameBlock(this);
+
+			int[] indices = DataConverter.convertVectorToIndicesList(select);
 
 			for(int i : indices) {
 				Object[] row = new Object[getNumColumns()];
@@ -2587,7 +2590,10 @@ public class FrameBlock implements CacheBlock, Externalizable {
 				}
 			}
 		} else {
-			List<Integer> indices = DataConverter.convertVectorToIndicesList(select);
+			if(select.getNonZeros() == getNumColumns())
+				return new FrameBlock(this);
+
+			int[] indices = DataConverter.convertVectorToIndicesList(select);
 			int k = 0;
 			for(int i : indices) {
 				ret.appendColumn(_schema[i], _coldata[i].clone());

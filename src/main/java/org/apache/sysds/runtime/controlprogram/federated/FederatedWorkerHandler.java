@@ -232,62 +232,77 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 		return readData(filename, dt, request.getID(), request.getTID(), ecm);
 	}
 
-	private FederatedResponse readData(String filename, Types.DataType dataType,
+	private FederatedResponse readData(String filename, DataType dataType,
 		long id, long tid, ExecutionContextMap ecm) {
 		MatrixCharacteristics mc = new MatrixCharacteristics();
 		mc.setBlocksize(ConfigurationManager.getBlocksize());
-		CacheableData<?> cd;
-		switch(dataType) {
-			case MATRIX:
-				cd = new MatrixObject(Types.ValueType.FP64, filename);
-				break;
-			case FRAME:
-				cd = new FrameObject(filename);
-				break;
-			default:
-				throw new FederatedWorkerHandlerException("Could not recognize datatype");
-		}
 
-		FileFormat fmt = null;
-		boolean header = false;
-		String delim = null;
-		FileSystem fs = null;
-		MetaDataAll mtd;
+		if(dataType != DataType.MATRIX && dataType != DataType.FRAME)
+			// early throwing of exception to avoid infinitely waiting threads for data
+			throw new FederatedWorkerHandlerException("Could not recognize datatype");
 
-		try {
-			final String mtdName = DataExpression.getMTDFileName(filename);
-			Path path = new Path(mtdName);
-			fs = IOUtilFunctions.getFileSystem(mtdName);
-			try(BufferedReader br = new BufferedReader(new InputStreamReader(fs.open(path)))) {
-				mtd = new MetaDataAll(br);
-				if(!mtd.mtdExists())
-					throw new FederatedWorkerHandlerException("Could not parse metadata file");
-				mc.setRows(mtd.getDim1());
-				mc.setCols(mtd.getDim2());
-				mc.setNonZeros(mtd.getNnz());
-				header = mtd.getHasHeader();
-				cd = mtd.parseAndSetPrivacyConstraint(cd);
-				fmt = mtd.getFileFormat();
-				delim = mtd.getDelim();
+		CacheableData<?> cd = FederatedReadCache.get(filename);
+		if(cd == null) {
+			try {
+				switch(dataType) {
+					case MATRIX:
+						cd = new MatrixObject(Types.ValueType.FP64, filename);
+						break;
+					case FRAME:
+						cd = new FrameObject(filename);
+						break;
+					default:
+						throw new FederatedWorkerHandlerException("Could not recognize datatype");
+				}
+
+				FileFormat fmt = null;
+				boolean header = false;
+				String delim = null;
+				FileSystem fs = null;
+				MetaDataAll mtd;
+
+				try {
+					final String mtdName = DataExpression.getMTDFileName(filename);
+					Path path = new Path(mtdName);
+					fs = IOUtilFunctions.getFileSystem(mtdName);
+					try(BufferedReader br = new BufferedReader(new InputStreamReader(fs.open(path)))) {
+						mtd = new MetaDataAll(br);
+						if(!mtd.mtdExists())
+							throw new FederatedWorkerHandlerException("Could not parse metadata file");
+						mc.setRows(mtd.getDim1());
+						mc.setCols(mtd.getDim2());
+						mc.setNonZeros(mtd.getNnz());
+						header = mtd.getHasHeader();
+						cd = mtd.parseAndSetPrivacyConstraint(cd);
+						fmt = mtd.getFileFormat();
+						delim = mtd.getDelim();
+					}
+				}
+				catch(DMLPrivacyException | FederatedWorkerHandlerException ex) {
+					throw ex;
+				}
+				catch(Exception ex) {
+					String msg = "Exception of type " + ex.getClass() + " thrown when processing READ request";
+					LOG.error(msg, ex);
+					throw new DMLRuntimeException(msg);
+				}
+				finally {
+					IOUtilFunctions.closeSilently(fs);
+				}
+
+				// put meta data object in symbol table, read on first operation
+				cd.setMetaData(new MetaDataFormat(mc, fmt));
+				if(fmt == FileFormat.CSV)
+					cd.setFileFormatProperties(new FileFormatPropertiesCSV(header, delim, DataExpression.DEFAULT_DELIM_SPARSE));
+				cd.enableCleanup(false); // guard against deletion
+
+				FederatedReadCache.setData(filename, cd);
+			} catch(Exception ex) {
+				FederatedReadCache.setInvalid(filename);
+				throw ex;
 			}
 		}
-		catch(DMLPrivacyException | FederatedWorkerHandlerException ex) {
-			throw ex;
-		}
-		catch(Exception ex) {
-			String msg = "Exception of type " + ex.getClass() + " thrown when processing READ request";
-			LOG.error(msg, ex);
-			throw new DMLRuntimeException(msg);
-		}
-		finally {
-			IOUtilFunctions.closeSilently(fs);
-		}
 
-		// put meta data object in symbol table, read on first operation
-		cd.setMetaData(new MetaDataFormat(mc, fmt));
-		if(fmt == FileFormat.CSV)
-			cd.setFileFormatProperties(new FileFormatPropertiesCSV(header, delim, DataExpression.DEFAULT_DELIM_SPARSE));
-		cd.enableCleanup(false); // guard against deletion
 		ecm.get(tid).setVariable(String.valueOf(id), cd);
 
 		if(DMLScript.LINEAGE)

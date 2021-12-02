@@ -42,6 +42,9 @@ public class EigenDecompOurs {
         if(isSym(m)) {
             Lanczos(in);
         }
+        else {
+            MatrixBlock tridiag = Housholder_transform(in);
+        }
 
     }
 
@@ -109,6 +112,54 @@ public class EigenDecompOurs {
         this.eval = new MatrixBlock(m, 1, 0.0);
         this.eval.copy(e[0]);
         this.evec = TV.aggregateBinaryOperations(TV, e[1], op_mul_agg);
+    }
+
+    MatrixBlock Housholder_transform(MatrixBlock A) {
+        int num_Threads = 1;
+        int m = A.rlen;
+
+        MatrixBlock A_n = new MatrixBlock(m, m, 0.0);
+        A_n.copy(A);
+
+        for(int k = 0; k < m-2; k++) {
+            MatrixBlock ajk = A_n.slice(0, m - 1, k, k);
+            for (int i = 0; i <= k; i++) {
+                ajk.setValue(i, 0, 0.0);
+            }
+            double alpha = Math.sqrt(ajk.sumSq());
+            double ak1k = A_n.getDouble(k+1, k);
+            if (ak1k > 0.0)
+                alpha *= -1;
+            double r = Math.sqrt(0.5 * (alpha * alpha - ak1k * alpha));
+            MatrixBlock v = new MatrixBlock(ajk.rlen, 1, 0.0);
+            v.copy(ajk);
+            v.setValue(k+1, 0, ak1k - alpha);
+            RightScalarOperator op_div_scalar = new RightScalarOperator(Divide.getDivideFnObject(), 2 * r, num_Threads);
+            v = v.scalarOperations(op_div_scalar, new MatrixBlock());
+
+            MatrixBlock P = new MatrixBlock(m, m, 0.0);
+            for (int i = 0; i < m; i++) {
+                P.setValue(i, i, 1.0);
+            }
+
+            ReorgOperator op_t = new ReorgOperator(SwapIndex.getSwapIndexFnObject(), num_Threads);
+            AggregateBinaryOperator op_mul_agg = InstructionUtils.getMatMultOperator(num_Threads);
+            BinaryOperator op_add = InstructionUtils.parseExtendedBinaryOperator("+");
+            BinaryOperator op_sub = InstructionUtils.parseExtendedBinaryOperator("-");
+
+            MatrixBlock v_t = v.reorgOperations(op_t, new MatrixBlock(), 0, 0, m);
+            v_t = v_t.binaryOperations(op_add, v_t);
+            MatrixBlock v_v_t_2 = A_n.aggregateBinaryOperations(v, v_t, op_mul_agg);
+            P = P.binaryOperations(op_sub, v_v_t_2);
+            A_n = A_n.aggregateBinaryOperations(P, A_n.aggregateBinaryOperations(A_n, P, op_mul_agg), op_mul_agg);
+        }
+        MatrixBlock[] e = LibCommonsMath.multiReturnOperations(A_n, "eigen");
+
+        this.eval = new MatrixBlock(m, 1, 0.0);
+        this.eval.copy(e[0]);
+        this.evec = new MatrixBlock(m, m, 0.0);
+        this.evec.copy(e[1]);
+        return A_n;
     }
 
     public MatrixBlock getV() {

@@ -44,6 +44,7 @@ public class EigenDecompOurs {
         }
         else {
             MatrixBlock[] QR = QR_decomp(in);
+            EVsQR(in);
         }
     }
 
@@ -115,7 +116,7 @@ public class EigenDecompOurs {
         this.evec = TV.aggregateBinaryOperations(TV, e[1], op_mul_agg);
     }
 
-    MatrixBlock Housholder_transform(MatrixBlock A) {
+    private MatrixBlock Housholder_transform(MatrixBlock A) {
         int num_Threads = 1;
         int m = A.rlen;
 
@@ -163,7 +164,7 @@ public class EigenDecompOurs {
         return A_n;
     }
 
-    MatrixBlock[] QR_decomp(MatrixBlock A) {
+    private MatrixBlock[] QR_decomp(MatrixBlock A) {
         int num_Threads = 1;
         int m = A.rlen;
 
@@ -195,7 +196,6 @@ public class EigenDecompOurs {
                 P.setValue(i, i, 1.0);
             }
 
-
             MatrixBlock vt = v.reorgOperations(op_t, new MatrixBlock(), 0, 0, m);
             MatrixBlock vvt = v.aggregateBinaryOperations(v, vt, op_mul_agg);
             double vtv = vt.aggregateBinaryOperations(vt, v, op_mul_agg).getValue(0,0);
@@ -220,6 +220,60 @@ public class EigenDecompOurs {
         // A_n_full = R
         // Q_prod = Q
         return new MatrixBlock[] {Q_prod, A_n_full};
+    }
+
+    private void EVsQR(MatrixBlock A) {
+        int m = A.rlen;
+        int num_Threads = 1;
+
+        AggregateBinaryOperator op_mul_agg = InstructionUtils.getMatMultOperator(num_Threads);
+
+        MatrixBlock Q_prod = new MatrixBlock(m, m, 0.0);
+        for (int i = 0; i < m; i++) {
+            Q_prod.setValue(i, i, 1.0);
+        }
+
+        for (int i = 0; i < 30; i++) {
+            MatrixBlock[] QR = QR_decomp(A);
+            Q_prod = Q_prod.aggregateBinaryOperations(Q_prod, QR[0], op_mul_agg);
+            A = A.aggregateBinaryOperations(QR[1], QR[0], op_mul_agg);
+        }
+
+        MatrixBlock eval = new MatrixBlock(m, 1, 0.0);
+        for(int i = 0; i < m; i++) {
+            eval.setValue(i, 0, A.getValue(i, i));
+        }
+        MatrixBlock evec = Q_prod;
+        sortEVs(eval, evec);
+    }
+
+    private void sortEVs(MatrixBlock eval, MatrixBlock evec) {
+        double[][] eVectors = DataConverter.convertToArray2DRowRealMatrix(evec).getData();
+        double[] eValues = DataConverter.convertToDoubleVector(eval);
+
+        int n = eValues.length;
+        for (int i = 0; i < n; i++) {
+            int k = i;
+            double p = eValues[i];
+            for (int j = i + 1; j < n; j++) {
+                if (eValues[j] < p) {
+                    k = j;
+                    p = eValues[j];
+                }
+            }
+            if (k != i) {
+                eValues[k] = eValues[i];
+                eValues[i] = p;
+                for (int j = 0; j < n; j++) {
+                    p = eVectors[j][i];
+                    eVectors[j][i] = eVectors[j][k];
+                    eVectors[j][k] = p;
+                }
+            }
+        }
+
+        this.eval = DataConverter.convertToMatrixBlock(eValues, true);
+        this.evec = DataConverter.convertToMatrixBlock(eVectors);
     }
 
     public MatrixBlock getV() {

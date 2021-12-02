@@ -79,12 +79,24 @@ public class EigenDecompTest {
 	public void testQR() {
 		double tol = 1e-4;
 
-		MatrixBlock in = new MatrixBlock(3, 3, false);
-		double[] a = { 2, -2, 18,
-				2, 1, 0,
-				1, 2, 0};
-		in.init(a, 3, 3);
+//		MatrixBlock in = new MatrixBlock(3, 3, false);
+//		double[] a = { 2, -2, 18,
+//				       2,  1,  0,
+//				       1,  2,  0};
+//		in.init(a, 3, 3);
+
+		MatrixBlock in = new MatrixBlock(4, 4, false);
+		double[] a = { 52, 30, 49, 28,
+				       30, 50,  8, 44,
+				       49,  8, 46, 16,
+					   28, 44, 16, 22};
+		in.init(a, 4, 4);
+
+		MatrixBlock[] m1 = LibCommonsMath.multiReturnOperations(in, "eigen");
 		MatrixBlock[] m2 = LibCommonsMath.multiReturnOperations(in, "eigenours");
+
+		TestUtils.compareMatrices(m1[0], m2[0], tol, "Result of eigenvalues of new eigendecomp function wrong");
+		testEvecValues(m1[1], m2[1], tol);
 	}
 
 	private void testEvecValues(MatrixBlock a, MatrixBlock b, double tol) {

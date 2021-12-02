@@ -75,6 +75,18 @@ public class EigenDecompTest {
 		testEvecValues(m1[1], m2[1], tol);
 	}
 
+	@Test
+	public void testQR() {
+		double tol = 1e-4;
+
+		MatrixBlock in = new MatrixBlock(3, 3, false);
+		double[] a = { 2, -2, 18,
+				2, 1, 0,
+				1, 2, 0};
+		in.init(a, 3, 3);
+		MatrixBlock[] m2 = LibCommonsMath.multiReturnOperations(in, "eigenours");
+	}
+
 	private void testEvecValues(MatrixBlock a, MatrixBlock b, double tol) {
 		double[][] m1 = DataConverter.convertToArray2DRowRealMatrix(a).getData();
 		double[][] m2 = DataConverter.convertToArray2DRowRealMatrix(b).getData();

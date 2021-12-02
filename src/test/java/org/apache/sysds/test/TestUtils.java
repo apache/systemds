@@ -1699,6 +1699,16 @@ public class TestUtils
 		return MatrixBlock.randOperations(rows, cols, sparsity, min, max, "Uniform", seed);
 	}
 
+	public static MatrixBlock generateTestMatrixBlockSym(int rows, int cols, double min, double max, double sparsity, long seed){
+		MatrixBlock m = MatrixBlock.randOperations(rows, cols, sparsity, min, max, "Uniform", seed);
+		for(int i = 0; i < rows; i++) {
+			for(int j = i+1; j < cols; j++) {
+				m.setValue(i,j, m.getValue(j,i));
+			}
+		}
+		return m;
+	}
+
 	/**
 	 * Generates a test matrix with the specified parameters as a two
 	 * dimensional array.

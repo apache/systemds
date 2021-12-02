@@ -59,6 +59,22 @@ public class EigenDecompTest {
 		testEvecValues(m1[1], m2[1], tol);
 	}
 
+	@Test
+	public void testLanczosRandom() {
+		double tol = 1e-4;
+
+		MatrixBlock in = TestUtils.generateTestMatrixBlockSym(10, 10, 0.0, 1.0, 1.0, 1);
+		long t1 = System.nanoTime();
+		MatrixBlock[] m1 = LibCommonsMath.multiReturnOperations(in, "eigen");
+		long t2 = System.nanoTime();
+		MatrixBlock[] m2 = LibCommonsMath.multiReturnOperations(in, "eigenours");
+		long t3 = System.nanoTime();
+
+		System.out.println("time eigen: "+ (t2-t1) + " time Lanczos: " + (t3-t2) + " Lanczos speedup: " + ((double)(t2-t1)/(t3-t2)));
+		TestUtils.compareMatrices(m1[0], m2[0], tol, "Result of eigenvalues of new eigendecomp function wrong");
+		testEvecValues(m1[1], m2[1], tol);
+	}
+
 	private void testEvecValues(MatrixBlock a, MatrixBlock b, double tol) {
 		double[][] m1 = DataConverter.convertToArray2DRowRealMatrix(a).getData();
 		double[][] m2 = DataConverter.convertToArray2DRowRealMatrix(b).getData();

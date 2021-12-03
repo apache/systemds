@@ -42,14 +42,16 @@ if [ ! -d logs ]; then mkdir -p logs ; fi
 if [ ! -d results ]; then mkdir -p results ; fi
 date >> results/times.txt
 
-### Data Generation
-echo "-- Generating binomial data..." >> results/times.txt;
-./genBinomialData.sh ${CMD} ${TEMPFOLDER} &>> logs/genBinomialData.out
-echo "-- Generating multinomial data..." >> results/times.txt;
-./genMultinomialData.sh ${CMD} ${TEMPFOLDER} &>> logs/genMultinomialData.out
-echo "-- Generating stats data..." >> results/times.txt;
-./genDescriptiveStatisticsData.sh ${CMD} ${TEMPFOLDER} &>> logs/genStatsData.out
-./genStratStatisticsData.sh ${CMD} ${TEMPFOLDER} &>> logs/genStratStatsData.out
+### Data Generation # TODO comment in
+#echo "-- Generating binomial data..." >> results/times.txt;
+#./genBinomialData.sh ${CMD} ${TEMPFOLDER} &>> logs/genBinomialData.out
+#echo "-- Generating multinomial data..." >> results/times.txt;
+#./genMultinomialData.sh ${CMD} ${TEMPFOLDER} &>> logs/genMultinomialData.out
+#echo "-- Generating stats data..." >> results/times.txt;
+#./genDescriptiveStatisticsData.sh ${CMD} ${TEMPFOLDER} &>> logs/genStatsData.out
+#./genStratStatisticsData.sh ${CMD} ${TEMPFOLDER} &>> logs/genStratStatsData.out
+#echo "-- Generating clustering data..." >> results/times.txt;
+#./genClusteringData.sh ${CMD} ${TEMPFOLDER} &>> logs/genClusteringData.out
 
 ### Micro Benchmarks:
 #./MatrixMult.sh
@@ -63,10 +65,9 @@ echo "-- Generating stats data..." >> results/times.txt;
 #./runAllMultinomial.sh $CMD $TEMPFOLDER
 #./runAllRegression.sh $CMD $TEMPFOLDER
 #./runAllStats.sh $CMD $TEMPFOLDER
+./runAllClustering.sh $CMD $TEMPFOLDER
 
 # TODO The following commented benchmarks have yet to be cleaned up and ported from perftestDeprecated to perftest
-#./runAllClustering.sh $CMD $TEMPFOLDER
-
 # add stepwise Linear 
 # add stepwise GLM
 #./runAllTrees $CMD $TEMPFOLDER

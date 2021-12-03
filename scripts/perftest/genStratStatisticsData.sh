@@ -30,10 +30,10 @@ if [ "${CMD}" == "systemds" ]; then EXTRADOT="." ; fi
 #XS data 10K rows
 ${CMD} -f ${EXTRADOT}./datagen/genRandData4StratStats.dml --explain --stats --nvargs nr=10000 nf=100 D=${BASE}/A_10k/data Xcid=${BASE}/A_10k/Xcid Ycid=${BASE}/A_10k/Ycid A=${BASE}/A_10k/A fmt=$FORMAT
 
-#S data 100K rows
+#S data 100K rows # TODO uncomment
 #${CMD} -f ${EXTRADOT}./datagen/genRandData4StratStats.dml --explain --stats --nvargs nr=100000 nf=100 D=${BASE}/A_100k/data Xcid=${BASE}/A_100k/Xcid Ycid=${BASE}/A_100k/Ycid A=${BASE}/A_100k/A fmt=$FORMAT
 
-#M data 1M rows
+#M data 1M rows # TODO uncomment
 #${CMD} -f ${EXTRADOT}./datagen/genRandData4StratStats.dml --explain --stats --nvargs nr=1000000 nf=100 D=${BASE}/A_1M/data Xcid=${BASE}/A_1M/Xcid Ycid=${BASE}/A_1M/Ycid A=${BASE}/A_1M/A fmt=$FORMAT
 
 #L data 10M rows

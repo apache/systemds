@@ -35,7 +35,7 @@ ${CMD} -f ${EXTRADOT}./datagen/genRandData4LogisticRegression.dml --args 10000 1
 ${CMD} -f scripts/extractTestData.dml --args ${BASE}/X10k_1k_dense ${BASE}/y10k_1k_dense ${BASE}/X10k_1k_dense_test ${BASE}/y10k_1k_dense_test $FORMAT
 ${CMD} -f scripts/extractTestData.dml --args ${BASE}/X10k_1k_sparse ${BASE}/y10k_1k_sparse ${BASE}/X10k_1k_sparse_test ${BASE}/y10k_1k_sparse_test $FORMAT
 
-##generate S scenarios (800MB)
+##generate S scenarios (800MB) # TODO uncomment
 ${CMD} -f ${EXTRADOT}./datagen/genRandData4LogisticRegression.dml --args 100000 1000 5 5 ${BASE}/w100k_1k_dense ${BASE}/X100k_1k_dense ${BASE}/y100k_1k_dense 1 0 $DENSE_SP $FORMAT 1
 ${CMD} -f ${EXTRADOT}./datagen/genRandData4LogisticRegression.dml --args 100000 1000 5 5 ${BASE}/w100k_1k_sparse ${BASE}/X100k_1k_sparse ${BASE}/y100k_1k_sparse 1 0 $SPARSE_SP $FORMAT 1
 ${CMD} -f scripts/extractTestData.dml --args ${BASE}/X100k_1k_dense ${BASE}/y100k_1k_dense ${BASE}/X100k_1k_dense_test ${BASE}/y100k_1k_dense_test $FORMAT

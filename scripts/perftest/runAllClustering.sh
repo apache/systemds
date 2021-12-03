@@ -19,12 +19,11 @@
 # under the License.
 #
 #-------------------------------------------------------------
-
 COMMAND=$1
 TEMPFOLDER=$2
 
-BASE2=${TEMPFOLDER}/bivar
-BASE3=${TEMPFOLDER}/stratstats
+BASE=${TEMPFOLDER}/clustering
+MAXITR=20
 
 FILENAME=$0
 err_report() {
@@ -32,21 +31,11 @@ err_report() {
 }
 trap 'err_report $LINENO' ERR
 
-# stratstats needs a large heap
-if [ "${COMMAND}" == "systemds" ]; then export SYSTEMDS_STANDALONE_OPTS="-Xmx10g -Xms10g -Xmn2000m" ; fi
+echo "RUN CLUSTERING EXPERIMENTS: " $(date) >> results/times.txt;
 
-echo " RUN DESCRIPTIVE STATISTICS EXPERIMENTS: " $(date) >> results/times.txt;
-
-# run all descriptive statistics on all datasets
-for d in "A_10k" # "A_100k" "A_1M" "A_10M" #"census" # TODO comment in
+# run all clustering algorithms on all datasets
+for d in "10k_1k_dense" #"100k_1k_dense" "1M_1k_dense" #"10M_1k_dense" #"100M_1k_dense" # TODO Comment in
 do 
-   echo "-- Running runUnivarStats on "$d"" >> results/times.txt;
-   ./runUnivarStats.sh ${BASE2}/${d}/data ${BASE2}/${d}/types ${BASE2} ${COMMAND} &>> logs/runUnivar-Stats_${d}.out;
-
-   echo "-- Running runBivarStats on "$d"" >> results/times.txt;
-   ./runBivarStats.sh ${BASE2}/${d}/data ${BASE2}/${d}/set1.indices ${BASE2}/${d}/set2.indices ${BASE2}/${d}/set1.types ${BASE2}/${d}/set2.types ${BASE2} ${COMMAND} &>> logs/runBivar-stats_${d}.out;
-    
-   echo "-- Running runStratStats on "$d"" >> results/times.txt;
-   ./runStratStats.sh ${BASE3}/${d}/data ${BASE3}/${d}/Xcid ${BASE3}/${d}/Ycid ${BASE3} ${COMMAND} &> logs/runStrats-stats_${d}.out;
+   echo "-- Running Kmeans on "$d >> results/times.txt;
+   ./runKmeans.sh ${BASE}/X${d} ${MAXITR} ${BASE} ${COMMAND} &> logs/runKmeans_${d}.out;
 done
-

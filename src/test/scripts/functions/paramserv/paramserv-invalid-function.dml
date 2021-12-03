@@ -19,25 +19,25 @@
 #
 #-------------------------------------------------------------
 
-# Documentation https://jekyllrb.com/docs/configuration/options/#build-command-options
+gradients = function (matrix[double] input) return (matrix[double] output) {
+	output = input + 1;
+}
 
-baseurl: "/docs/latest" # the subpath of your site, e.g. /blog
-url: "http://systemds.apache.org" # the base hostname & protocol for your site
+aggregation = function (matrix[double] input) return (matrix[double] output) {
+  output = input + 1;
+}
 
-highlighter: rouge
-markdown: kramdown
+model = list(e1="element1")
+X = matrix(1, 2, 3)
+Y = matrix(2, 2, 3)
+X_val = matrix(3, 2, 3)
+Y_val = matrix(4, 2, 3)
+hps = list(e2="element2")
 
-kramdown:
-  entity_output: numeric
+# Use paramserv function
+supd = ".defaultNS::gradients";
+sagg = "XXX::aggregation";
+model = paramserv(model=model, features=X, labels=Y, val_features=X_val, val_labels=Y_val,
+  upd=supd, agg=sagg, mode="LOCAL", utype="BSP", freq="EPOCH", epochs=10, hyperparams=hps)
 
-include:
-  - img
-  - api/python/
-
-exclude:
-  - README.md
-  - updateAPI.sh
-
-# These allow the documentation to be updated with newer releases
-SYSTEMDS_VERSION: 2.3.0-SNAPSHOT
-
+print(toString(model))

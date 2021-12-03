@@ -120,7 +120,7 @@ public class FunctionDictionary<T extends FunctionBlock> {
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder("Function Dictionary:");
-		sb.append("----------------------------------------");
+		sb.append("----------------------------------------\n");
 		int pos = 0;
 		for( Entry<String, T> e : _funs.entrySet() ) {
 			sb.append("-- [");

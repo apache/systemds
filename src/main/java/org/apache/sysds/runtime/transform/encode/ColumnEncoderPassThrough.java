@@ -65,6 +65,15 @@ public class ColumnEncoderPassThrough extends ColumnEncoder {
 		return in.getDoubleNaN(row, _colID - 1);
 	}
 
+	@Override
+	protected double[] getCodeCol(CacheBlock in, int startInd, int blkSize) {
+		int endInd = getEndIndex(in.getNumRows(), startInd, blkSize);
+		double codes[] = new double[endInd-startInd];
+		for (int i=startInd; i<endInd; i++) {
+			codes[i-startInd] = in.getDoubleNaN(i, _colID-1);
+		}
+		return codes;
+	}
 
 	protected void applySparse(CacheBlock in, MatrixBlock out, int outputCol, int rowStart, int blk){
 		Set<Integer> sparseRowsWZeros = null;

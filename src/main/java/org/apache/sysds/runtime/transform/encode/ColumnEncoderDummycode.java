@@ -75,6 +75,11 @@ public class ColumnEncoderDummycode extends ColumnEncoder {
 		throw new DMLRuntimeException("DummyCoder does not have a code");
 	}
 
+	@Override
+	protected double[] getCodeCol(CacheBlock in, int startInd, int blkSize) {
+		throw new DMLRuntimeException("DummyCoder does not have a code");
+	}
+
 	protected void applySparse(CacheBlock in, MatrixBlock out, int outputCol, int rowStart, int blk){
 		if (!(in instanceof MatrixBlock)){
 			throw new DMLRuntimeException("ColumnEncoderDummycode called with: " + in.getClass().getSimpleName() +

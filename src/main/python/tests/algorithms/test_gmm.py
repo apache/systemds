@@ -21,15 +21,10 @@
 
 import unittest
 
-import numpy as np
-from sklearn.linear_model import LinearRegression
 from systemds.context import SystemDSContext
 from systemds.operator.algorithm import gmm, gmmPredict
 
-np.random.seed(7)
-
-
-class TestLm(unittest.TestCase):
+class TestGMM(unittest.TestCase):
 
     sds: SystemDSContext = None
 

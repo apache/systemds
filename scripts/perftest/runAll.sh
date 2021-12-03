@@ -43,23 +43,28 @@ if [ ! -d results ]; then mkdir -p results ; fi
 date >> results/times.txt
 
 ### Data Generation
-echo "-- Generating binomial data: " >> results/times.txt;
+echo "-- Generating binomial data..." >> results/times.txt;
 ./genBinomialData.sh ${CMD} ${TEMPFOLDER} &>> logs/genBinomialData.out
-echo "-- Generating multinomial data." >> results/times.txt;
+echo "-- Generating multinomial data..." >> results/times.txt;
 ./genMultinomialData.sh ${CMD} ${TEMPFOLDER} &>> logs/genMultinomialData.out
+echo "-- Generating stats data..." >> results/times.txt;
+./genDescriptiveStatisticsData.sh ${CMD} ${TEMPFOLDER} &>> logs/genStatsData.out
+./genStratStatisticsData.sh ${CMD} ${TEMPFOLDER} &>> logs/genStratStatsData.out
 
 ### Micro Benchmarks:
 #./MatrixMult.sh
 #./MatrixTranspose.sh
 
-### Algorithms Benchmarks:
-./runAllBinomial.sh $CMD $TEMPFOLDER
-./runAllMultinomial.sh $CMD $TEMPFOLDER
-./runAllRegression.sh $CMD $TEMPFOLDER
-./fed/runAllFed.sh $CMD $TEMPFOLDER
+# Federate benchmark
+#./fed/runAllFed.sh $CMD $TEMPFOLDER
+
+### Algorithms Benchmarks: # TODO comment in
+#./runAllBinomial.sh $CMD $TEMPFOLDER
+#./runAllMultinomial.sh $CMD $TEMPFOLDER
+#./runAllRegression.sh $CMD $TEMPFOLDER
+#./runAllStats.sh $CMD $TEMPFOLDER
 
 # TODO The following commented benchmarks have yet to be cleaned up and ported from perftestDeprecated to perftest
-#./runAllStats.sh $CMD $TEMPFOLDER
 #./runAllClustering.sh $CMD $TEMPFOLDER
 
 # add stepwise Linear 

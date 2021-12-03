@@ -21,13 +21,17 @@
 #-------------------------------------------------------------
 set -e
 
-if [ "$5" == "SPARK" ]; then CMD="./sparkDML.sh "; DASH="-"; elif [ "$5" == "MR" ]; then CMD="hadoop jar SystemDS.jar " ; else CMD="echo " ; fi
+CMD=$4
+BASE=$3
 
-BASE=$4
-export HADOOP_CLIENT_OPTS="-Xmx2048m -Xms2048m -Xmn256m"
+echo "running Univar-Stats"
+tstart=$(date +%s.%N)
 
-echo "running stratstats"
-tstart=$SECONDS
-${CMD} -f ../algorithms/stratstats.dml $DASH-explain $DASH-stats $DASH-nvargs X=$1 Xcid=$2 Ycid=$3 O=${BASE}/STATS/s fmt=csv
-ttrain=$(($SECONDS - $tstart - 3))
-echo "StatifiedStatistics on "$1": "$ttrain >> times.txt
+# ${CMD} -f ../algorithms/Univar-Stats.dml \
+${CMD} -f ./scripts/Univar-Stats.dml \
+--config conf/SystemDS-config.xml \
+--stats \
+--nvargs X=$1 TYPES=$2 STATS=${BASE}/stats/u
+
+ttrain=$(echo "$(date +%s.%N) - $tstart - .4" | bc)
+echo "UnivariateStatistics on "$1": "$ttrain >> results/times.txt

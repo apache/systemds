@@ -114,7 +114,7 @@ return (Matrix[Double] weight, Matrix[Double] mean, Matrix[Double] sigma, Matrix
   resp = matrix(0, nrow(X), n_components)
   if(init_params == "kmeans") {
     [C, Y] = kmeans(X=X, k=n_components, runs=10,
-      eps=tol, is_verbose=FALSE, avg_sample_size_per_centroid=100)
+      eps=tol, is_verbose=FALSE, avg_sample_size_per_centroid=100, seed=seed)
     resp = ((resp + t(seq(1, n_components))) == Y)
   }
   else if(init_params == "random") {

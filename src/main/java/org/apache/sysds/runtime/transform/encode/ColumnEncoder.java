@@ -116,6 +116,8 @@ public abstract class ColumnEncoder implements Encoder, Comparable<ColumnEncoder
 
 	protected abstract double getCode(CacheBlock in, int row);
 
+	protected abstract double[] getCodeCol(CacheBlock in, int startInd, int blkSize);
+
 
 	protected void applySparse(CacheBlock in, MatrixBlock out, int outputCol, int rowStart, int blk){
 		int index = _colID - 1;
@@ -126,9 +128,21 @@ public abstract class ColumnEncoder implements Encoder, Comparable<ColumnEncoder
 		}
 	}
 
-	protected void applyDense(CacheBlock in, MatrixBlock out, int outputCol, int rowStart, int blk){
+	/*protected void applyDense(CacheBlock in, MatrixBlock out, int outputCol, int rowStart, int blk){
 		for(int i = rowStart; i < getEndIndex(in.getNumRows(), rowStart, blk); i++) {
 			out.quickSetValue(i, outputCol, getCode(in, i));
+		}
+	}*/
+	
+	protected void applyDense(CacheBlock in, MatrixBlock out, int outputCol, int rowStart, int blk){
+		// Apply loop tiling to exploit CPU caches
+		double[] codes = getCodeCol(in, rowStart, blk);
+		int rowEnd = getEndIndex(in.getNumRows(), rowStart, blk);
+		int B = 32; //tile size
+		for(int i = rowStart; i < rowEnd; i+=B) {
+			int lim = Math.min(i+B, rowEnd);
+			for (int ii=i; ii<lim; ii++)
+				out.quickSetValue(ii, outputCol, codes[ii-rowStart]);
 		}
 	}
 

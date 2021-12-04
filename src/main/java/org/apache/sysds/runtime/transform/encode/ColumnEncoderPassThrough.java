@@ -78,16 +78,23 @@ public class ColumnEncoderPassThrough extends ColumnEncoder {
 	protected void applySparse(CacheBlock in, MatrixBlock out, int outputCol, int rowStart, int blk){
 		Set<Integer> sparseRowsWZeros = null;
 		int index = _colID - 1;
-		for(int r = rowStart; r < getEndIndex(in.getNumRows(), rowStart, blk); r++) {
-			double v = getCode(in, r);
-			SparseRowVector row = (SparseRowVector) out.getSparseBlock().get(r);
-			if(v == 0) {
-				if(sparseRowsWZeros == null)
-					sparseRowsWZeros = new HashSet<>();
-				sparseRowsWZeros.add(r);
+		// Apply loop tiling to exploit CPU caches
+		double[] codes = getCodeCol(in, rowStart, blk);
+		int rowEnd = getEndIndex(in.getNumRows(), rowStart, blk);
+		int B = 32; //tile size
+		for(int i = rowStart; i < rowEnd; i+=B) {
+			int lim = Math.min(i+B, rowEnd);
+			for (int ii=i; ii<lim; ii++) {
+				double v = codes[ii-rowStart];
+				SparseRowVector row = (SparseRowVector) out.getSparseBlock().get(ii);
+				if(v == 0) {
+					if(sparseRowsWZeros == null)
+						sparseRowsWZeros = new HashSet<>();
+					sparseRowsWZeros.add(ii);
+				}
+				row.values()[index] = v;
+				row.indexes()[index] = outputCol;
 			}
-			row.values()[index] = v;
-			row.indexes()[index] = outputCol;
 		}
 		if(sparseRowsWZeros != null){
 			addSparseRowsWZeros(sparseRowsWZeros);

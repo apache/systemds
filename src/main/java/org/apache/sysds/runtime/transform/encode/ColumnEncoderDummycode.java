@@ -125,19 +125,28 @@ public class ColumnEncoderDummycode extends ColumnEncoder {
 			throw new DMLRuntimeException("ColumnEncoderDummycode called with: " + in.getClass().getSimpleName() +
 					" and not MatrixBlock");
 		}
-		for(int i = rowStart; i < getEndIndex(in.getNumRows(), rowStart, blk); i++) {
-			// Using outputCol here as index since we have a MatrixBlock as input where dummycoding could have been
-			// applied in a previous encoder
-			double val = in.getDouble(i, outputCol);
-			if(Double.isNaN(val)){
-				// 0 if NaN
-				out.quickSetValue(i, outputCol, 0);
-				continue;
+		int rowEnd = getEndIndex(in.getNumRows(), rowStart, blk);
+		double vals[] = new double[rowEnd -rowStart];
+		for (int i=rowStart; i<rowEnd; i++)
+			vals[i-rowStart] = in.getDouble(i, outputCol);
+
+		// Using outputCol here as index since we have a MatrixBlock as input where 
+		// dummycoding might have been applied in a previous encoder
+		int B = 32;
+		for(int i=rowStart; i<rowEnd; i+=B) {
+			// Apply loop tiling to exploit CPU caches
+			int lim = Math.min(i+B, rowEnd);
+			for (int ii=i; ii<lim; ii++) {
+				double val = vals[ii-rowStart];
+				if(Double.isNaN(val)) {
+					out.quickSetValue(ii, outputCol, 0); //0 if NaN
+					continue;
+				}
+				int nCol = outputCol + (int) val - 1;
+				if(nCol != outputCol)
+					out.quickSetValue(ii, outputCol, 0);
+				out.quickSetValue(ii, nCol, 1);
 			}
-			int nCol = outputCol + (int) val - 1;
-			if(nCol != outputCol)
-				out.quickSetValue(i, outputCol, 0);
-			out.quickSetValue(i, nCol, 1);
 		}
 	}
 

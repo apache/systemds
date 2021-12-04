@@ -94,6 +94,13 @@ public abstract class SetOperationsTestBase extends AutomatedTestBase {
 //    }
 
     @Test
+    public void test() {
+        double[][] X = {{1}};
+        double[][] Y = {{1}};
+        runUnitTest(X, Y, Types.ExecType.CP);
+    }
+
+    @Test
     public void testMinValue() {
         double[][] X =  {{Double.MIN_VALUE}, {2},{4}};
         double[][] Y = {{2},{15}};

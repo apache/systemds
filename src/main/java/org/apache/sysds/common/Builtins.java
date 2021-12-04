@@ -238,6 +238,7 @@ public enum Builtins {
 	SD("sd", false),
 	SELVARTHRESH("selectByVarThresh", true),
 	SEQ("seq", false),
+	SYMMETRICDIFFERENCE("symmetricDifference", true),
 	SHERLOCK("sherlock", true),
 	SHERLOCKPREDICT("sherlockPredict", true),
 	SHORTESTPATH("shortestPath", true),

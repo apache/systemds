@@ -28,7 +28,7 @@ SystemDS's distinguishing characteristics are:
   2. **Multiple execution modes**, including Spark MLContext, Spark Batch, Standalone, and JMLC.
   3. **Automatic optimization** based on data and cluster characteristics to ensure both efficiency and scalability.
 
-This version of SystemDS supports: Java 8+,  Python 3.5+, Hadoop 2.6+ (Not 3.X), and Spark 2.1+ (Not 3.X) Nvidia CUDA 10.2
+This version of SystemDS supports: Java 8+,  Python 3.5+, Hadoop 3.x, and Spark 3.x, Nvidia CUDA 10.2
  (CuDNN 7.x) Intel MKL (<=2019.x).
 
 ## Links

@@ -189,7 +189,7 @@ public class EigenDecompOurs {
             MatrixBlock ak = A_n.slice(0, m_k - 1, 0, 0);
             MatrixBlock v = new MatrixBlock(m, 1, 0.0);
             v.copy(ak);
-            v.setValue(0, 0, v.getValue(0,0) + Math.sqrt(ak.sumSq()));
+            v.setValue(0, 0, v.getValue(0,0) + Math.signum(ak.getValue(0,0)) * Math.sqrt(ak.sumSq()));
 
             MatrixBlock P = new MatrixBlock(m_k, m_k, 0.0);
             for (int i = 0; i < m_k; i++) {
@@ -212,7 +212,7 @@ public class EigenDecompOurs {
             Hk = helper;
 
             Q_prod = Q_prod.aggregateBinaryOperations(Q_prod, Hk, op_mul_agg);
-            A_n_full = A_n.aggregateBinaryOperations(Hk, A_n_full, op_mul_agg);
+            A_n_full = A_n_full.aggregateBinaryOperations(Hk, A_n_full, op_mul_agg);
             m_k -= 1;
             if (k < m-1)
                 A_n = A_n_full.slice(k+1, m-1, k+1, m-1);

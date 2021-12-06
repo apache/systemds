@@ -76,7 +76,7 @@ public class EigenDecompTest {
 	}
 
 	@Test
-	public void testQR() {
+	public void testQRSimple() {
 		double tol = 1e-4;
 
 //		MatrixBlock in = new MatrixBlock(3, 3, false);
@@ -95,6 +95,22 @@ public class EigenDecompTest {
 		MatrixBlock[] m1 = LibCommonsMath.multiReturnOperations(in, "eigen");
 		MatrixBlock[] m2 = LibCommonsMath.multiReturnOperations(in, "eigenours");
 
+		TestUtils.compareMatrices(m1[0], m2[0], tol, "Result of eigenvalues of new eigendecomp function wrong");
+		testEvecValues(m1[1], m2[1], tol);
+	}
+
+	@Test
+	public void testQRRandom() {
+		double tol = 1e-4;
+
+		MatrixBlock in = TestUtils.generateTestMatrixBlock(3, 3, 0.0, 1.0, 1.0, 1);
+		long t1 = System.nanoTime();
+		MatrixBlock[] m1 = LibCommonsMath.multiReturnOperations(in, "eigen");
+		long t2 = System.nanoTime();
+		MatrixBlock[] m2 = LibCommonsMath.multiReturnOperations(in, "eigenours");
+		long t3 = System.nanoTime();
+
+		System.out.println("time eigen: "+ (t2-t1) + " time QR: " + (t3-t2) + " QR speedup: " + ((double)(t2-t1)/(t3-t2)));
 		TestUtils.compareMatrices(m1[0], m2[0], tol, "Result of eigenvalues of new eigendecomp function wrong");
 		testEvecValues(m1[1], m2[1], tol);
 	}

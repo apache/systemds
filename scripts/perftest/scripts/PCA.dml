@@ -19,16 +19,23 @@
 #
 #-------------------------------------------------------------
 
-X = read($X);       # input data set
-S1 = read($index1); # attribute set 1
-S2 = read($index2); # attribute set 2
-T1 = read($types1); # kind for attributes in S1
-T2 = read($types2); # kind for attributes in S2
+X = read($INPUT);
+K = ifdef($K, ncol(X));
+ofmt = ifdef($OFMT, "CSV");
+projectData = ifdef($PROJDATA,0);
+center = ifdef($CENTER,0);
+scale = ifdef($SCALE,0);
+output = ifdef($OUTPUT,"/");
 
-[basestats_scale_scale, basestats_nominal_scale, basestats_nominal_nominal, basestats_ordinal_ordinal] =
-bivar(X = X, S1 = S1, S2 = S2, T1 = T1, T2 = T2, verbose=FALSE)
+[Xout, Mout, Centering, ScaleFactor] = pca(X = X, K = K, center = center, scale = scale)
 
-write(basestats_scale_scale, $OUTDIR + "/bivar.scale.scale.stats");
-write(basestats_nominal_scale, $OUTDIR + "/bivar.nominal.scale.stats");
-write(basestats_nominal_nominal, $OUTDIR + "/bivar.nominal.nominal.stats");
-write(basestats_ordinal_ordinal, $OUTDIR + "/bivar.ordinal.ordinal.stats");
+# These files can not be created, as the built-in PCA function does not return the eigenvalues.
+# write(eval_stdev_dominant, output+"/dominant.eigen.standard.deviations", format=ofmt);
+# write(eval_dominant, output+"/dominant.eigen.values", format=ofmt);
+
+write(Mout, output+"/dominant.eigen.vectors", format=ofmt);
+
+if (projectData == 1){
+	# Construct new data set by treating computed dominant eigenvectors as the basis vectors
+	write(Xout, output+"/projected.data", format=ofmt);
+}

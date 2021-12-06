@@ -30,6 +30,7 @@ tstart=$(date +%s.%N)
 
 # ${CMD} -f ../algorithms/Kmeans.dml \
 ${CMD} -f ./scripts/Kmeans.dml \
+--config conf/SystemDS-config.xml \
 --stats \
 --nvargs X=$1 k=5 C=${BASE}/centroids.mtx maxi=$2 tol=0.0001 prY=${BASE}/prY_implicit.mtx
 

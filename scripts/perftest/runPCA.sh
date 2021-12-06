@@ -19,29 +19,19 @@
 # under the License.
 #
 #-------------------------------------------------------------
+set -e
 
-if [ "$1" == "" -o "$2" == "" ]; then  echo "Usage: $0 <hdfsDataDir> <MR | SPARK | ECHO>   e.g. $0 perftest SPARK" ; exit 1 ; fi
+CMD=$3
+BASE=$2
 
-FILENAME=$0
-err_report() {
-  echo "Error in $FILENAME on line $1"
-}
-trap 'err_report $LINENO' ERR
+tstart=$(date +%s.%N)
 
-BASE=$1/dimensionreduction
+# ${CMD} -f ../algorithms/PCA.dml \
+${CMD} -f ./scripts/PCA.dml \
+--config conf/SystemDS-config.xml \
+--stats \
+--nvargs INPUT=$1 SCALE=1 PROJDATA=1 OUTPUT=${BASE}/output
 
-echo $2" RUN DIMENSION REDUCTION EXPERIMENTS: " $(date) >> times.txt;
+ttrain=$(echo "$(date +%s.%N) - $tstart - .4" | bc)
+echo "PCA on "$1": "$ttrain >> results/times.txt
 
-if [ ! -d logs ]; then mkdir logs ; fi
-
-# data generation
-echo "-- Using Dimension Reduction data." >> times.txt;
-./genDimensionReductionData.sh $1 $2 &>> logs/genDimensionReductionData.out
-
-# run all dimension reduction algorithms on all datasets
-for d in "5k_2k_dense" #"50k_2k_dense" "500k_2k_dense" "5M_2k_dense" "50M_2k_dense"
-do 
-   echo "-- Running Dimension Reduction on "$d >> times.txt;
-   ./runPCA.sh pcaData${d} ${BASE} $2 &> logs/runPCA_${d}.out;
-
-done

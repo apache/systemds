@@ -19,16 +19,21 @@
 # under the License.
 #
 #-------------------------------------------------------------
-set -e
+COMMAND=$1
+BASE=$2/dimensionreduction
 
-if [ "$3" == "SPARK" ]; then CMD="./sparkDML.sh "; DASH="-"; elif [ "$3" == "MR" ]; then CMD="hadoop jar SystemDS.jar " ; else CMD="echo " ; fi
+FILENAME=$0
+err_report() {
+  echo "Error in $FILENAME on line $1"
+}
+trap 'err_report $LINENO' ERR
 
-BASE=$2
+echo "RUN DIMENSION REDUCTION EXPERIMENTS: " $(date) >> results/times.txt;
 
-export HADOOP_CLIENT_OPTS="-Xmx2048m -Xms2048m -Xmn256m"
+# run all dimension reduction algorithms on all datasets
+for d in "5k_2k_dense" #"50k_2k_dense" "500k_2k_dense" "5M_2k_dense" "50M_2k_dense"
+do 
+   echo "-- Running Dimension Reduction on "$d >> results/times.txt;
+   ./runPCA.sh ${BASE}/pcaData${d} ${BASE} ${COMMAND} &> logs/runPCA_${d}.out;
 
-tstart=$SECONDS
-${CMD} -f ../algorithms/PCA.dml $DASH-explain $DASH-stats $DASH-nvargs INPUT=$1 SCALE=1 PROJDATA=1 OUTPUT=${BASE}/output 
-ttrain=$(($SECONDS - $tstart - 3))
-echo "PCA on "$1": "$ttrain >> times.txt
-
+done

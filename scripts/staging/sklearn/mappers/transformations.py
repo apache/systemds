@@ -61,7 +61,9 @@ class SimpleImputerMapper(Mapper):
         else:
             self.name = 'imputeByMean'
 
-        self.mapped_params = []
+        self.mapped_params = [
+            'matrix(1, 1, ncol(X))'
+        ]
 
 
 class PCAMapper(Mapper):

@@ -103,7 +103,7 @@ public class EigenDecompTest {
 	public void testQRRandom() {
 		double tol = 1e-4;
 
-		MatrixBlock in = TestUtils.generateTestMatrixBlock(3, 3, 0.0, 1.0, 1.0, 1);
+		MatrixBlock in = TestUtils.generateTestMatrixBlock(5, 5, 0.0, 1.0, 1.0, 1);
 		long t1 = System.nanoTime();
 		MatrixBlock[] m1 = LibCommonsMath.multiReturnOperations(in, "eigen");
 		long t2 = System.nanoTime();

@@ -170,56 +170,39 @@ public class EigenDecompOurs {
 
         MatrixBlock A_n = new MatrixBlock(m, m, 0.0);
         A_n.copy(A);
-        MatrixBlock A_n_full = new MatrixBlock(m, m, 0.0);
-        A_n_full.copy(A);
 
-        MatrixBlock Q_prod = new MatrixBlock(m, m, 0.0);
+        MatrixBlock Q_n = new MatrixBlock(m, m, 0.0);
         for (int i = 0; i < m; i++) {
-            Q_prod.setValue(i, i, 1.0);
+            Q_n.setValue(i, i, 1.0);
         }
 
         ReorgOperator op_t = new ReorgOperator(SwapIndex.getSwapIndexFnObject(), num_Threads);
         AggregateBinaryOperator op_mul_agg = InstructionUtils.getMatMultOperator(num_Threads);
         BinaryOperator op_sub = InstructionUtils.parseExtendedBinaryOperator("-");
         RightScalarOperator op_div_scalar = new RightScalarOperator(Divide.getDivideFnObject(), 1, num_Threads);
-
-        int m_k = m;
+        LeftScalarOperator op_mult_2 = new LeftScalarOperator(Multiply.getMultiplyFnObject(), 2, num_Threads);
 
         for(int k = 0; k < m; k++) {
-            MatrixBlock ak = A_n.slice(0, m_k - 1, 0, 0);
-            MatrixBlock v = new MatrixBlock(m, 1, 0.0);
-            v.copy(ak);
-            v.setValue(0, 0, v.getValue(0,0) + Math.signum(ak.getValue(0,0)) * Math.sqrt(ak.sumSq()));
+            MatrixBlock z = A_n.slice(k, m-1, k, k);
+            MatrixBlock uk = new MatrixBlock(m-k, 1, 0.0);
+            uk.copy(z);
+            uk.setValue(0, 0, uk.getValue(0,0) + Math.signum(z.getValue(0,0)) * Math.sqrt(z.sumSq()));
+            op_div_scalar = (RightScalarOperator) op_div_scalar.setConstant(Math.sqrt(uk.sumSq()));
+            uk = uk.scalarOperations(op_div_scalar, new MatrixBlock());
 
-            MatrixBlock P = new MatrixBlock(m_k, m_k, 0.0);
-            for (int i = 0; i < m_k; i++) {
-                P.setValue(i, i, 1.0);
-            }
+            MatrixBlock vk = new MatrixBlock(m, 1, 0.0);
+            vk.copy(k, m-1, 0, 0 , uk , true);
 
-            MatrixBlock vt = v.reorgOperations(op_t, new MatrixBlock(), 0, 0, m);
-            MatrixBlock vvt = v.aggregateBinaryOperations(v, vt, op_mul_agg);
-            double vtv = vt.aggregateBinaryOperations(vt, v, op_mul_agg).getValue(0,0);
+            MatrixBlock vkt = vk.reorgOperations(op_t, new MatrixBlock(), 0, 0, m);
+            MatrixBlock vkvkt = vk.aggregateBinaryOperations(vk, vkt, op_mul_agg);
+            MatrixBlock vkvkt2 = vkvkt.scalarOperations(op_mult_2, new MatrixBlock());
 
-            op_div_scalar = (RightScalarOperator) op_div_scalar.setConstant(0.5 * vtv);
-            MatrixBlock K = vvt.scalarOperations(op_div_scalar, new MatrixBlock());
-
-            MatrixBlock Hk = P.binaryOperations(op_sub, K, new MatrixBlock());
-            MatrixBlock helper = new MatrixBlock(m, m, 0.0);
-            for(int i = 0; i <m; i++) {
-                helper.setValue(i, i, 1.0);
-            }
-            helper.copy(k, m-1, k, m-1, Hk, true);
-            Hk = helper;
-
-            Q_prod = Q_prod.aggregateBinaryOperations(Q_prod, Hk, op_mul_agg);
-            A_n_full = A_n_full.aggregateBinaryOperations(Hk, A_n_full, op_mul_agg);
-            m_k -= 1;
-            if (k < m-1)
-                A_n = A_n_full.slice(k+1, m-1, k+1, m-1);
+            A_n = A_n.binaryOperations(op_sub, A_n.aggregateBinaryOperations(vkvkt2, A_n, op_mul_agg));
+            Q_n = Q_n.binaryOperations(op_sub, Q_n.aggregateBinaryOperations(Q_n, vkvkt2, op_mul_agg));
         }
-        // A_n_full = R
-        // Q_prod = Q
-        return new MatrixBlock[] {Q_prod, A_n_full};
+        // Q_n= Q
+        // A_n = R
+        return new MatrixBlock[] {Q_n, A_n};
     }
 
     private void EVsQR(MatrixBlock A) {

@@ -71,16 +71,14 @@ if __name__ == '__main__':
         make_pipeline(Normalizer(), TweedieRegressor()),
         make_pipeline(StandardScaler(), LogisticRegression()),
         make_pipeline(Normalizer(), LogisticRegression()),
-        #TODO: Tests which use PCA or DBSCAN, trigger a NullPointerException during parsing for some reason
         make_pipeline(StandardScaler(), DBSCAN()),
         make_pipeline(Normalizer(), DBSCAN()),
-        # make_pipeline(SimpleImputer(strategy='mean'), DBSCAN()),
-        # make_pipeline(SimpleImputer(strategy='median'), DBSCAN()),
+        make_pipeline(SimpleImputer(strategy='mean'), DBSCAN()),
+        make_pipeline(SimpleImputer(strategy='median'), DBSCAN()),
         make_pipeline(PCA(), KMeans()),
         make_pipeline(PCA(), DBSCAN()),
-        # TODO: GaussianMixtureModel results in LanguageException -- ERROR: [line 0:0] -- Function get_sample_maps() is undefined.
-        # make_pipeline(StandardScaler(), GaussianMixture()),
-        # make_pipeline(Normalizer(), GaussianMixture())
+        make_pipeline(StandardScaler(), GaussianMixture()),
+        make_pipeline(Normalizer(), GaussianMixture())
     ]
 
     valid_results = []

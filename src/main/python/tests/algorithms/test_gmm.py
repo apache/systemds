@@ -48,11 +48,11 @@ class TestGMM(unittest.TestCase):
 
         n_gaussian = 4
 
-        [_, _, _, _, mu, precision_cholesky, wight] = gmm(
+        [_, _, _, _, mu, precision_cholesky, weight] = gmm(
             features, False, n_components=n_gaussian, seed=10)
 
         [_, pp] = gmmPredict(
-            test, wight, mu, precision_cholesky, model=self.sds.scalar("VVV"))
+            test, weight, mu, precision_cholesky, model=self.sds.scalar("VVV"))
 
         outliers = pp.max(axis=1) < 0.99
         ret = outliers.compute()

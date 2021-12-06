@@ -24,6 +24,7 @@ import unittest
 from systemds.context import SystemDSContext
 from systemds.operator.algorithm import gmm, gmmPredict
 
+
 class TestGMM(unittest.TestCase):
 
     sds: SystemDSContext = None
@@ -37,14 +38,13 @@ class TestGMM(unittest.TestCase):
         cls.sds.close()
 
     def test_lm_simple(self):
-        a = self.sds.rand(100, 10, -1, 1, pdf="normal", seed=10)
-        b = self.sds.rand(100, 10, -50, -49, pdf="normal", seed=10)
-        features = a.rbind(b) # training data all not outliers
+        a = self.sds.rand(500, 10, -100, 100, pdf="normal", seed=10)
+        features = a  # training data all not outliers
 
         notOutliers = self.sds.rand(10, 10, -1, 1,  seed=10)  # inside a
-        outliers = self.sds.rand(10, 10, 1000, 1200, seed=10)  # outliers
+        outliers = self.sds.rand(10, 10, 1150, 1200, seed=10)  # outliers
 
-        test = outliers.rbind(notOutliers) # testing data half outliers
+        test = outliers.rbind(notOutliers)  # testing data half outliers
 
         n_gaussian = 4
 
@@ -55,8 +55,9 @@ class TestGMM(unittest.TestCase):
             test, wight, mu, precision_cholesky, model=self.sds.scalar("VVV"))
 
         outliers = pp.max(axis=1) < 0.99
-        ret = outliers.sum().compute()
-        self.assertTrue(ret >= 8)
+        ret = outliers.compute()
+
+        self.assertTrue(ret.sum() == 10)
 
 
 if __name__ == "__main__":

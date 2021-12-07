@@ -19,6 +19,8 @@
 
 package org.apache.sysds.runtime.instructions.fed;
 
+import java.util.concurrent.Future;
+
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.sysds.common.Types;
 import org.apache.sysds.lops.SortKeys;
@@ -75,9 +77,28 @@ public class QuantileSortFEDInstruction extends UnaryFEDInstruction{
 			throw new DMLRuntimeException("Unknown opcode while parsing a QuantileSortFEDInstruction: " + str);
 		}
 	}
-
 	@Override
 	public void processInstruction(ExecutionContext ec) {
+		if(ec.getMatrixObject(input1).isFederated(FederationMap.FType.ROW))
+			processRowQSort(ec);
+		else
+			processColumnQSort(ec);
+	}
+
+	public void processRowQSort(ExecutionContext ec) {
+		MatrixObject in = ec.getMatrixObject(input1);
+
+		// TODO weights
+		// TODO make sure that qsort result is used by qpick only where the main operation happens
+
+		// skip and create a copy
+		long id = FederationUtils.getNextFedDataID();
+		MatrixObject out = ec.getMatrixObject(output);
+		out.getDataCharacteristics().set(in.getDataCharacteristics());
+		out.setFedMapping(in.getFedMapping().identCopy(getTID(), id));
+	}
+
+	public void processColumnQSort(ExecutionContext ec) {
 		MatrixObject in = ec.getMatrixObject(input1);
 		FederationMap fedMapping = in.getFedMapping();
 

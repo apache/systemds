@@ -142,6 +142,8 @@ public abstract class GenerateReaderFrameTest extends AutomatedTestBase {
 
 			Random rn = new Random();
 			int rnt = rn.nextInt(types.length);
+			if(i == 0|| i==ncols-1)
+				rnt = 3;
 			schema[i] = types[rnt];
 
 			if(types[rnt] == Types.ValueType.STRING)

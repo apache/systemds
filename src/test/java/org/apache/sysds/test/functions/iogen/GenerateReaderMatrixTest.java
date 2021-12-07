@@ -31,6 +31,7 @@ import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
 
 import java.io.BufferedWriter;
+import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 
@@ -81,6 +82,10 @@ public abstract class GenerateReaderMatrixTest extends AutomatedTestBase {
 			MatrixBlock sampleMB = DataConverter.convertToMatrixBlock(sampleMatrix);
 
 			String HOME = SCRIPT_DIR + TEST_DIR;
+			File directory = new File(HOME);
+			if (! directory.exists()){
+				directory.mkdir();
+			}
 			String dataPath = HOME + "matrix_data.raw";
 			int clen = sampleMatrix[0].length;
 			writeRawString(sampleRaw, dataPath);

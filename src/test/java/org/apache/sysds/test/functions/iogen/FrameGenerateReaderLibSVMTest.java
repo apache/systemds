@@ -85,7 +85,7 @@ public class FrameGenerateReaderLibSVMTest extends GenerateReaderFrameTest {
 		String[] naStrings = {"NULL", "inf", "NaN"};
 		String separator = ",";
 		String indexSeparator = ":";
-		generateRandomData(5, 10, -100, 100, 1, naStrings);
+		generateRandomData(10, 10, -100, 100, 1, naStrings);
 		extractSampleRawLibSVM(0,separator, indexSeparator);
 		runGenerateReaderTest();
 	}
@@ -115,7 +115,7 @@ public class FrameGenerateReaderLibSVMTest extends GenerateReaderFrameTest {
 		String[] naStrings = {"NULL", "inf", "NaN"};
 		String separator = ",,,,,,";
 		String indexSeparator = ":";
-		generateRandomData(10, 10, -10, 10, 0.5, naStrings);
+		generateRandomData(20, 20, -100, 100, 0.6, naStrings);
 		extractSampleRawLibSVM(0,separator, indexSeparator);
 		runGenerateReaderTest();
 	}
@@ -125,7 +125,7 @@ public class FrameGenerateReaderLibSVMTest extends GenerateReaderFrameTest {
 		String[] naStrings = {"NULL", "inf", "NaN"};
 		String separator = ",,,,,";
 		String indexSeparator = ":";
-		generateRandomData(100, 10, -100, 100, 0.7, naStrings);
+		generateRandomData(100, 50, -100, 100, 0.5, naStrings);
 		extractSampleRawLibSVM(0,separator, indexSeparator);
 		runGenerateReaderTest();
 	}
@@ -135,7 +135,7 @@ public class FrameGenerateReaderLibSVMTest extends GenerateReaderFrameTest {
 		String[] naStrings = {"NULL", "inf", "NaN"};
 		String separator = ",,,,,";
 		String indexSeparator = ":";
-		generateRandomData(10, 1000, -100, 100, 0.5, naStrings);
+		generateRandomData(10, 1000, -100, 100, 0.7, naStrings);
 		extractSampleRawLibSVM(1,separator, indexSeparator);
 		runGenerateReaderTest();
 	}

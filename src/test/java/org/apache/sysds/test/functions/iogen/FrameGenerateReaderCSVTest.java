@@ -86,7 +86,7 @@ public class FrameGenerateReaderCSVTest extends GenerateReaderFrameTest {
 	public void test5() {
 		String[] naStrings = {"NULL", "inf", "NaN"};
 		String separator = ",,,,";
-		generateRandomData(10, 10, -10, 10, 0.2, naStrings);
+		generateRandomData(10, 10, -10, 10, 0.5, naStrings);
 		extractSampleRawCSV(separator);
 		runGenerateReaderTest();
 	}
@@ -95,7 +95,7 @@ public class FrameGenerateReaderCSVTest extends GenerateReaderFrameTest {
 	public void test6() {
 		String[] naStrings = {"NULL", "inf", "NaN"};
 		String separator = "**";
-		generateRandomData(1000, 100, -10, 10, 0.2, naStrings);
+		generateRandomData(1000, 100, -10, 10, 0.4, naStrings);
 		extractSampleRawCSV(separator);
 		runGenerateReaderTest();
 	}
@@ -113,7 +113,7 @@ public class FrameGenerateReaderCSVTest extends GenerateReaderFrameTest {
 	public void test8() {
 		String[] naStrings = {"NULL", "inf", "NaN"};
 		String separator = "**";
-		generateRandomData(100000, 100, -10, 10, 0.5, naStrings);
+		generateRandomData(10000, 100, -10, 10, 0.5, naStrings);
 		extractSampleRawCSV(separator);
 		runGenerateReaderTest();
 	}

@@ -116,7 +116,7 @@ public class MatrixGenerateReaderLibSVMTest extends GenerateReaderMatrixTest {
 
 	@Test
 	public void test0_6() {
-		sampleRaw = "+1 2.0:3.0 4:5. 6.:7\n" + "-1 8.0:9.0E0 10.0:11e0";
+		sampleRaw = "+1 2:3.0 4:5. 6:7\n" + "-1 8:9.0E0 10:11e0";
 		sampleMatrix = new double[][] {{0, 0, 3, 0, 5, 0, 7, 0, 0, 0, 0, +1}, {0, 0, 0, 0, 0, 0, 0, 0, 9, 0, 11, -1}};
 		runGenerateReaderTest();
 	}

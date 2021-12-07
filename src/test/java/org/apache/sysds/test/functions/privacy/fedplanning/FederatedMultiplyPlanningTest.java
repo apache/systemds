@@ -47,6 +47,7 @@ public class FederatedMultiplyPlanningTest extends AutomatedTestBase {
 	private final static String TEST_NAME_4 = "FederatedMultiplyPlanningTest4";
 	private final static String TEST_NAME_5 = "FederatedMultiplyPlanningTest5";
 	private final static String TEST_NAME_6 = "FederatedMultiplyPlanningTest6";
+	private final static String TEST_NAME_7 = "FederatedMultiplyPlanningTest7";
 	private final static String TEST_CLASS_DIR = TEST_DIR + FederatedMultiplyPlanningTest.class.getSimpleName() + "/";
 
 	private final static int blocksize = 1024;
@@ -64,6 +65,7 @@ public class FederatedMultiplyPlanningTest extends AutomatedTestBase {
 		addTestConfiguration(TEST_NAME_4, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME_4, new String[] {"Z"}));
 		addTestConfiguration(TEST_NAME_5, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME_5, new String[] {"Z"}));
 		addTestConfiguration(TEST_NAME_6, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME_6, new String[] {"Z"}));
+		addTestConfiguration(TEST_NAME_7, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME_7, new String[] {"Z"}));
 	}
 
 	@Parameterized.Parameters
@@ -110,6 +112,12 @@ public class FederatedMultiplyPlanningTest extends AutomatedTestBase {
 	public void federatedAggregateBinarySequence2(){
 		String[] expectedHeavyHitters = new String[]{"fed_ba+*","fed_fedinit"};
 		federatedTwoMatricesSingleNodeTest(TEST_NAME_6, expectedHeavyHitters);
+	}
+
+	@Test
+	public void federatedMultiplyDoubleHop() {
+		String[] expectedHeavyHitters = new String[]{"fed_*", "fed_fedinit", "fed_r'", "fed_ba+*"};
+		federatedTwoMatricesSingleNodeTest(TEST_NAME_7, expectedHeavyHitters);
 	}
 
 	private void writeStandardMatrix(String matrixName, long seed){

@@ -93,6 +93,13 @@ public abstract class Hop implements ParseInfo {
 	 */
 	protected FederatedOutput _federatedOutput = FederatedOutput.NONE;
 	protected FederatedCost _federatedCost = new FederatedCost();
+	/**
+	 * Field defining if prefetch should be activated for operation.
+	 * When prefetch is activated, the output will be transferred from
+	 * remote federated sites to local before one of the subsequent
+	 * local operations.
+	 */
+	protected boolean activatePrefetch;
 	
 	// Estimated size for the output produced from this Hop in bytes
 	protected double _outputMemEstimate = OptimizerUtils.INVALID_SIZE;
@@ -186,6 +193,13 @@ public abstract class Hop implements ParseInfo {
 
 	public void setFederatedOutput(FederatedOutput federatedOutput){
 		_federatedOutput = federatedOutput;
+	}
+
+	/**
+	 * Activate prefetch of HOP.
+	 */
+	public void activatePrefetch(){
+		activatePrefetch = true;
 	}
 	
 	public void resetExecType()

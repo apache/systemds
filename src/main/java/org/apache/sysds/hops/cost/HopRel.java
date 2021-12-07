@@ -149,7 +149,7 @@ public class HopRel {
 			} else {
 				inputDependency.addAll(
 					hopRef.getInput().stream()
-						.map(input -> hopRelMemo.getMinCostAlternative(input) )
+						.map(hopRelMemo::getMinCostAlternative)
 						.collect(Collectors.toList()));
 			}
 		}

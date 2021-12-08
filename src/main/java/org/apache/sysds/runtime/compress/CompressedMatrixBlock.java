@@ -51,8 +51,8 @@ import org.apache.sysds.runtime.compress.lib.CLALibCompAgg;
 import org.apache.sysds.runtime.compress.lib.CLALibDecompress;
 import org.apache.sysds.runtime.compress.lib.CLALibLeftMultBy;
 import org.apache.sysds.runtime.compress.lib.CLALibMMChain;
+import org.apache.sysds.runtime.compress.lib.CLALibMatrixMult;
 import org.apache.sysds.runtime.compress.lib.CLALibReExpand;
-import org.apache.sysds.runtime.compress.lib.CLALibRightMultBy;
 import org.apache.sysds.runtime.compress.lib.CLALibScalar;
 import org.apache.sysds.runtime.compress.lib.CLALibSlice;
 import org.apache.sysds.runtime.compress.lib.CLALibSquash;
@@ -61,13 +61,11 @@ import org.apache.sysds.runtime.compress.lib.CLALibUtils;
 import org.apache.sysds.runtime.controlprogram.caching.CacheBlock;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject.UpdateType;
 import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
-import org.apache.sysds.runtime.controlprogram.parfor.stat.Timing;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.data.SparseRow;
 import org.apache.sysds.runtime.functionobjects.MinusMultiply;
 import org.apache.sysds.runtime.functionobjects.PlusMultiply;
-import org.apache.sysds.runtime.functionobjects.SwapIndex;
 import org.apache.sysds.runtime.functionobjects.TernaryValueFunction.ValueFunctionWithConstant;
 import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.CM_COV_Object;
@@ -76,7 +74,6 @@ import org.apache.sysds.runtime.instructions.spark.data.IndexedMatrixValue;
 import org.apache.sysds.runtime.matrix.data.CTableMap;
 import org.apache.sysds.runtime.matrix.data.IJV;
 import org.apache.sysds.runtime.matrix.data.LibMatrixDatagen;
-import org.apache.sysds.runtime.matrix.data.LibMatrixReorg;
 import org.apache.sysds.runtime.matrix.data.LibMatrixTercell;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
@@ -471,105 +468,15 @@ public class CompressedMatrixBlock extends MatrixBlock {
 	}
 
 	@Override
-	public MatrixBlock aggregateBinaryOperations(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret,
-		AggregateBinaryOperator op) {
-		// create output matrix block
-		return aggregateBinaryOperations(m1, m2, ret, op, false, false);
+	public MatrixBlock aggregateBinaryOperations(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret, AggregateBinaryOperator op) {
+		checkAggregateBinaryOperations(m1, m2, op);
+		return CLALibMatrixMult.matrixMultiply(m1, m2, ret, op.getNumThreads(), false, false);
 	}
 
 	public MatrixBlock aggregateBinaryOperations(MatrixBlock m1, MatrixBlock m2, MatrixBlock ret,
 		AggregateBinaryOperator op, boolean transposeLeft, boolean transposeRight) {
-		validateMatrixMult(m1, m2);
-		final int k = op.getNumThreads();
-		final Timing time = LOG.isTraceEnabled() ? new Timing(true) : null;
-
-		if(m1 instanceof CompressedMatrixBlock && m2 instanceof CompressedMatrixBlock) {
-			return doubleCompressedAggregateBinaryOperations((CompressedMatrixBlock) m1, (CompressedMatrixBlock) m2, ret,
-				op, transposeLeft, transposeRight);
-		}
-		boolean transposeOutput = false;
-		if(transposeLeft || transposeRight) {
-
-			if((m1 instanceof CompressedMatrixBlock && transposeLeft) ||
-				(m2 instanceof CompressedMatrixBlock && transposeRight)) {
-				// change operation from m1 %*% m2 -> t( t(m2) %*% t(m1) )
-				transposeOutput = true;
-				MatrixBlock tmp = m1;
-				m1 = m2;
-				m2 = tmp;
-				boolean tmpLeft = transposeLeft;
-				transposeLeft = !transposeRight;
-				transposeRight = !tmpLeft;
-
-			}
-
-			if(!(m1 instanceof CompressedMatrixBlock) && transposeLeft) {
-				m1 = LibMatrixReorg.transpose(m1, k);
-				transposeLeft = false;
-			}
-			else if(!(m2 instanceof CompressedMatrixBlock) && transposeRight) {
-				m2 = LibMatrixReorg.transpose(m2, k);
-				transposeRight = false;
-			}
-		}
-
-		final boolean right = (m1 == this);
-		final MatrixBlock that = right ? m2 : m1;
-
-		// create output matrix block
-		if(right)
-			ret = CLALibRightMultBy.rightMultByMatrix(this, that, ret, op.getNumThreads());
-		else
-			ret = CLALibLeftMultBy.leftMultByMatrix(this, that, ret, op.getNumThreads());
-
-		if(LOG.isTraceEnabled())
-			LOG.trace("MM: Time block w/ sharedDim: " + m1.getNumColumns() + " rowLeft: " + m1.getNumRows() + " colRight:"
-				+ m2.getNumColumns() + " in " + time.stop() + "ms.");
-
-		if(transposeOutput) {
-			if(ret instanceof CompressedMatrixBlock) {
-				LOG.warn("Transposing decompression");
-				ret = ((CompressedMatrixBlock) ret).decompress(k);
-			}
-			ret = LibMatrixReorg.transpose(ret, k);
-		}
-
-		return ret;
-	}
-
-	private void validateMatrixMult(MatrixBlock m1, MatrixBlock m2) {
-		if(!(m1 == this || m2 == this))
-			throw new DMLRuntimeException("Invalid aggregateBinaryOperation One of either input should be this");
-	}
-
-	private MatrixBlock doubleCompressedAggregateBinaryOperations(CompressedMatrixBlock m1, CompressedMatrixBlock m2,
-		MatrixBlock ret, AggregateBinaryOperator op, boolean transposeLeft, boolean transposeRight) {
-		if(!transposeLeft && !transposeRight) {
-			// If both are not transposed, decompress the right hand side. to enable
-			// compressed overlapping output.
-			LOG.warn("Matrix decompression from multiplying two compressed matrices.");
-			return aggregateBinaryOperations(m1, getUncompressed(m2), ret, op, transposeLeft, transposeRight);
-		}
-		else if(transposeLeft && !transposeRight) {
-			if(m1.getNumColumns() > m2.getNumColumns()) {
-				ret = CLALibLeftMultBy.leftMultByMatrixTransposed(m1, m2, ret, op.getNumThreads());
-				ReorgOperator r_op = new ReorgOperator(SwapIndex.getSwapIndexFnObject(), op.getNumThreads());
-				return ret.reorgOperations(r_op, new MatrixBlock(), 0, 0, 0);
-			}
-			else
-				return CLALibLeftMultBy.leftMultByMatrixTransposed(m2, m1, ret, op.getNumThreads());
-
-		}
-		else if(!transposeLeft && transposeRight) {
-			throw new DMLCompressionException("Not Implemented compressed Matrix Mult, to produce larger matrix");
-			// worst situation since it blows up the result matrix in number of rows in
-			// either compressed matrix.
-		}
-		else {
-			ret = aggregateBinaryOperations(m2, m1, ret, op);
-			ReorgOperator r_op = new ReorgOperator(SwapIndex.getSwapIndexFnObject(), op.getNumThreads());
-			return ret.reorgOperations(r_op, new MatrixBlock(), 0, 0, 0);
-		}
+		checkAggregateBinaryOperations(m1, m2, op, transposeLeft, transposeRight);
+		return CLALibMatrixMult.matrixMultiply(m1, m2, ret, op.getNumThreads(), transposeLeft, transposeRight);
 	}
 
 	@Override

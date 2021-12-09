@@ -21,15 +21,13 @@
 
 import unittest
 
-import numpy as np
 from systemds.context import SystemDSContext
-from systemds.operator.algorithm.builtin.scale import scale
+from systemds.operator.algorithm import gmm, gmmPredict
 
 
-class TestSource_01(unittest.TestCase):
+class TestGMM(unittest.TestCase):
 
     sds: SystemDSContext = None
-    source_path: str = "./tests/source/source_with_list_input.dml"
 
     @classmethod
     def setUpClass(cls):
@@ -39,25 +37,28 @@ class TestSource_01(unittest.TestCase):
     def tearDownClass(cls):
         cls.sds.close()
 
-    def test_single_return(self):
-        arr = self.sds.array(self.sds.full((10, 10), 4))
-        c = self.sds.source(self.source_path, "test").func(arr)
-        res = c.sum().compute()
-        self.assertTrue(res == 10*10*4)
+    def test_lm_simple(self):
+        a = self.sds.rand(500, 10, -100, 100, pdf="normal", seed=10)
+        features = a  # training data all not outliers
 
-    def test_input_multireturn(self):
-        m = self.sds.full((10, 10), 2)
-        [a, b, c] = scale(m, True, True)
-        arr = self.sds.array(a, b, c)
-        c = self.sds.source(self.source_path, "test").func(arr)
-        res = c.sum().compute()
-        self.assertTrue(res == 0)
+        notOutliers = self.sds.rand(10, 10, -1, 1,  seed=10)  # inside a
+        outliers = self.sds.rand(10, 10, 1150, 1200, seed=10)  # outliers
 
-    # [SYSTEMDS-3224] https://issues.apache.org/jira/browse/SYSTEMDS-3224
-    # def test_multi_return(self):
-    #     arr = self.sds.array(
-    #         self.sds.full((10, 10), 4),
-    #         self.sds.full((3, 3), 5))
-    #     [b, c] = self.sds.source(self.source_path, "test", True).func2(arr)
-    #     res = c.sum().compute()
-    #     self.assertTrue(res == 10*10*4)
+        test = outliers.rbind(notOutliers)  # testing data half outliers
+
+        n_gaussian = 4
+
+        [_, _, _, _, mu, precision_cholesky, weight] = gmm(
+            features, False, n_components=n_gaussian, seed=10)
+
+        [_, pp] = gmmPredict(
+            test, weight, mu, precision_cholesky, model=self.sds.scalar("VVV"))
+
+        outliers = pp.max(axis=1) < 0.99
+        ret = outliers.compute()
+
+        self.assertTrue(ret.sum() == 10)
+
+
+if __name__ == "__main__":
+    unittest.main(exit=False)

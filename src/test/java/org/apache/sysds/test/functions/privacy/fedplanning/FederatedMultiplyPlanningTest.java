@@ -48,6 +48,7 @@ public class FederatedMultiplyPlanningTest extends AutomatedTestBase {
 	private final static String TEST_NAME_5 = "FederatedMultiplyPlanningTest5";
 	private final static String TEST_NAME_6 = "FederatedMultiplyPlanningTest6";
 	private final static String TEST_NAME_7 = "FederatedMultiplyPlanningTest7";
+	private final static String TEST_NAME_8 = "FederatedMultiplyPlanningTest8";
 	private final static String TEST_CLASS_DIR = TEST_DIR + FederatedMultiplyPlanningTest.class.getSimpleName() + "/";
 
 	private final static int blocksize = 1024;
@@ -66,6 +67,7 @@ public class FederatedMultiplyPlanningTest extends AutomatedTestBase {
 		addTestConfiguration(TEST_NAME_5, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME_5, new String[] {"Z"}));
 		addTestConfiguration(TEST_NAME_6, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME_6, new String[] {"Z"}));
 		addTestConfiguration(TEST_NAME_7, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME_7, new String[] {"Z"}));
+		addTestConfiguration(TEST_NAME_8, new TestConfiguration(TEST_CLASS_DIR, TEST_NAME_8, new String[] {"Z.scalar"}));
 	}
 
 	@Parameterized.Parameters
@@ -120,6 +122,12 @@ public class FederatedMultiplyPlanningTest extends AutomatedTestBase {
 		federatedTwoMatricesSingleNodeTest(TEST_NAME_7, expectedHeavyHitters);
 	}
 
+	@Test
+	public void federatedMultiplyDoubleHop2() {
+		String[] expectedHeavyHitters = new String[]{"fed_fedinit", "fed_ba+*"};
+		federatedTwoMatricesSingleNodeTest(TEST_NAME_8, expectedHeavyHitters);
+	}
+
 	private void writeStandardMatrix(String matrixName, long seed){
 		writeStandardMatrix(matrixName, seed, new PrivacyConstraint(PrivacyConstraint.PrivacyLevel.PrivateAggregation));
 	}
@@ -154,7 +162,7 @@ public class FederatedMultiplyPlanningTest extends AutomatedTestBase {
 	}
 
 	private void writeInputMatrices(String testName){
-		if ( testName.equals(TEST_NAME_5) ){
+		if ( testName.equals(TEST_NAME_5) || testName.equals(TEST_NAME_8) ){
 			writeColStandardMatrix("X1", 42);
 			writeColStandardMatrix("X2", 1340);
 			writeColStandardMatrix("Y1", 44, null);
@@ -209,7 +217,7 @@ public class FederatedMultiplyPlanningTest extends AutomatedTestBase {
 			"X2=" + TestUtils.federatedAddress(port2, input("X2")),
 			"Y1=" + TestUtils.federatedAddress(port1, input("Y1")),
 			"Y2=" + TestUtils.federatedAddress(port2, input("Y2")), "r=" + rows, "c=" + cols, "Z=" + output("Z")};
-		if ( testName.equals(TEST_NAME_4) || testName.equals(TEST_NAME_5) ){
+		if ( testName.equals(TEST_NAME_4) || testName.equals(TEST_NAME_5) || testName.equals(TEST_NAME_8) ){
 			programArgs = new String[] {"-stats","-explain", "-nvargs", "X1=" + TestUtils.federatedAddress(port1, input("X1")),
 				"X2=" + TestUtils.federatedAddress(port2, input("X2")),
 				"Y1=" + input("Y1"),

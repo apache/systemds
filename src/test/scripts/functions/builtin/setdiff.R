@@ -19,8 +19,6 @@
 #
 #-------------------------------------------------------------
 
-#TODO Does not work yet..
-
 args<-commandArgs(TRUE)
 options(digits=22)
 library("Matrix")

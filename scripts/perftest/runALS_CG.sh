@@ -43,7 +43,7 @@ ${CMD} -f ${BASEPATH}/scripts/alsCG.dml \
   --nvargs X=$X rank=15 reg="L2" lambda=0.000001 maxiter=$MAXITER thr=$THRESHOLD verbose=$VERBOSE modelU=${DATADIR}/U modelV=${DATADIR}/V fmt="csv"
 
 ttrain=$(echo "$(date +%s.%N) - $tstart - .4" | bc)
-echo "ALS-CG algorithm on "$X": "ttrain >> results/times.txt
+echo "ALS-CG algorithm on "$X": "$ttrain >> results/times.txt
 
 
 tstart=$(date +%s.%N)
@@ -55,5 +55,5 @@ ${CMD} -f ./scripts/als-predict.dml \
   --nvargs X=$X Y=${DATADIR}/Y L=${DATADIR}/U R=${DATADIR}/V fmt="csv"
 
 tpredict=$(echo "$(date +%s.%N) - $tstart - .4" | bc)
-echo "ALS-CG  predict ict="$i" on "$1": "$tpredict >> results/times.txt
+echo "ALS-CG predict ict="$i" on "$1": "$tpredict >> results/times.txt
 

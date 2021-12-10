@@ -43,7 +43,7 @@ ${CMD} -f ${BASEPATH}/scripts/alsDS.dml \
   --nvargs X=$X rank=15 lambda=0.000001 maxiter=$MAXITER thr=$THRESHOLD verbose=$VERBOSE modelU=${DATADIR}/U modelV=${DATADIR}/V fmt="csv"
 
 ttrain=$(echo "$(date +%s.%N) - $tstart - .4" | bc)
-echo "ALS-DS algorithm on "$X": "ttrain >> results/times.txt
+echo "ALS-DS algorithm on "$X": "$ttrain >> results/times.txt
 
 
 tstart=$(date +%s.%N)

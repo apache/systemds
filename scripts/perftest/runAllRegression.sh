@@ -37,7 +37,7 @@ echo "RUN REGRESSION EXPERIMENTS" $(date) >> results/times.txt;
 
 # run all regression algorithms with binomial labels on all datasets
 # see genBinomialData
-for d in "10k_1k_dense" "10k_1k_sparse" # TODO comment in  "100k_1k_dense" "100k_1k_sparse" "1M_1k_dense" "1M_1k_sparse" "10M_1k_dense" "10M_1k_sparse" #"_KDD" "100M_1k_dense" "100M_1k_sparse"
+for d in "10k_1k_dense" "10k_1k_sparse" "100k_1k_dense" "100k_1k_sparse" "1M_1k_dense" "1M_1k_sparse" "10M_1k_dense" "10M_1k_sparse" #"_KDD" "100M_1k_dense" "100M_1k_sparse"
 do
 
    # -------------------------------------------------------------------------------------------------------------------

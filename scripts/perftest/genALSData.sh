@@ -34,18 +34,18 @@ if [ "${CMD}" == "systemds" ]; then EXTRADOT="." ; fi
 ${CMD} -f ${EXTRADOT}./datagen/genRandData4ALS.dml --nvargs X=${DATADIR}/X10k_1k_dense rows=10000 cols=1000 rank=10 nnz=`echo "scale=0; 10000 * 1000 * $DENSE_SP" | bc` sigma=0.01 fmt=$FORMAT
 ${CMD} -f ${EXTRADOT}./datagen/genRandData4ALS.dml --nvargs X=${DATADIR}/X10k_1k_sparse rows=10000 cols=1000 rank=10 nnz=`echo "scale=0; 10000 * 1000 * $SPARSE_SP" | bc` sigma=0.01 fmt=$FORMAT
 
-# #generate S scenarios (800MB) # TODO comment in
-# ${CMD} -f ${EXTRADOT}./datagen/genRandData4ALS.dml --nvargs X=${DATADIR}/X100k_1k_dense rows=100000 cols=1000 rank=10 nnz=`echo "scale=0; 100000 * 1000 * $DENSE_SP" | bc` sigma=0.01 fmt=$FORMAT
-# ${CMD} -f ${EXTRADOT}./datagen/genRandData4ALS.dml --nvargs X=${DATADIR}/X100k_1k_sparse rows=100000 cols=1000 rank=10 nnz=`echo "scale=0; 100000 * 1000 * $SPARSE_SP" | bc` sigma=0.01 fmt=$FORMAT
-#
-# #generate M scenarios (8GB) # TODO comment in
-# ${CMD} -f ${EXTRADOT}./datagen/genRandData4ALS.dml --nvargs X=${DATADIR}/X1M_1k_dense rows=1000000 cols=1000 rank=10 nnz=`echo "scale=0; 1000000 * 1000 * $DENSE_SP" | bc` sigma=0.01 fmt=$FORMAT
-# ${CMD} -f ${EXTRADOT}./datagen/genRandData4ALS.dml --nvargs X=${DATADIR}/X1M_1k_sparse rows=1000000 cols=1000 rank=10 nnz=`echo "scale=0; 1000000 * 1000 * $SPARSE_SP" | bc` sigma=0.01 fmt=$FORMAT
-#
-# #generate L scenarios (80GB) # TODO comment in
-# ${CMD} -f ${EXTRADOT}./datagen/genRandData4ALS.dml --nvargs X=${DATADIR}/X10M_1k_dense rows=10000000 cols=1000 rank=10 nnz=`echo "scale=0; 10000000 * 1000 * $DENSE_SP" | bc` sigma=0.01 fmt=$FORMAT
-# ${CMD} -f ${EXTRADOT}./datagen/genRandData4ALS.dml --nvargs X=${DATADIR}/X10M_1k_sparse rows=10000000 cols=1000 rank=10 nnz=`echo "scale=0; 10000000 * 1000 * $SPARSE_SP" | bc` sigma=0.01 fmt=$FORMAT
-#
+#generate S scenarios (800MB)
+${CMD} -f ${EXTRADOT}./datagen/genRandData4ALS.dml --nvargs X=${DATADIR}/X100k_1k_dense rows=100000 cols=1000 rank=10 nnz=`echo "scale=0; 100000 * 1000 * $DENSE_SP" | bc` sigma=0.01 fmt=$FORMAT
+${CMD} -f ${EXTRADOT}./datagen/genRandData4ALS.dml --nvargs X=${DATADIR}/X100k_1k_sparse rows=100000 cols=1000 rank=10 nnz=`echo "scale=0; 100000 * 1000 * $SPARSE_SP" | bc` sigma=0.01 fmt=$FORMAT
+
+#generate M scenarios (8GB)
+${CMD} -f ${EXTRADOT}./datagen/genRandData4ALS.dml --nvargs X=${DATADIR}/X1M_1k_dense rows=1000000 cols=1000 rank=10 nnz=`echo "scale=0; 1000000 * 1000 * $DENSE_SP" | bc` sigma=0.01 fmt=$FORMAT
+${CMD} -f ${EXTRADOT}./datagen/genRandData4ALS.dml --nvargs X=${DATADIR}/X1M_1k_sparse rows=1000000 cols=1000 rank=10 nnz=`echo "scale=0; 1000000 * 1000 * $SPARSE_SP" | bc` sigma=0.01 fmt=$FORMAT
+
+#generate L scenarios (80GB)
+${CMD} -f ${EXTRADOT}./datagen/genRandData4ALS.dml --nvargs X=${DATADIR}/X10M_1k_dense rows=10000000 cols=1000 rank=10 nnz=`echo "scale=0; 10000000 * 1000 * $DENSE_SP" | bc` sigma=0.01 fmt=$FORMAT
+${CMD} -f ${EXTRADOT}./datagen/genRandData4ALS.dml --nvargs X=${DATADIR}/X10M_1k_sparse rows=10000000 cols=1000 rank=10 nnz=`echo "scale=0; 10000000 * 1000 * $SPARSE_SP" | bc` sigma=0.01 fmt=$FORMAT
+
 # #generate XL scenarios (800GB)
 # ${CMD} -f ${EXTRADOT}./datagen/genRandData4ALS.dml --nvargs X=${DATADIR}/X100M_1k_dense rows=100000000 cols=1000 rank=10 nnz=`echo "scale=0; 100000000 * 1000 * $DENSE_SP" | bc` sigma=0.01 fmt=$FORMAT
 # ${CMD} -f ${EXTRADOT}./datagen/genRandData4ALS.dml --nvargs X=${DATADIR}/X100M_1k_sparse rows=100000000 cols=1000 rank=10 nnz=`echo "scale=0; 100000000 * 1000 * $SPARSE_SP" | bc` sigma=0.01 fmt=$FORMAT

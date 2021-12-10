@@ -29,8 +29,8 @@ export LOG4JPROP='conf/log4j-off.properties'
 export SYSDS_QUIET=1
 
 # Command to be executed
-CMD="systemds" # TODO change back to spark
-#CMD="./sparkDML.sh"
+#CMD="systemds"
+CMD="./sparkDML.sh"
 
 # Possible lines to initialize Intel MKL, depending on version and install location
 #    . ~/intel/bin/compilervars.sh intel64
@@ -42,20 +42,20 @@ if [ ! -d logs ]; then mkdir -p logs ; fi
 if [ ! -d results ]; then mkdir -p results ; fi
 date >> results/times.txt
 
-### Data Generation # TODO comment in
-#echo "-- Generating binomial data..." >> results/times.txt;
-#./genBinomialData.sh ${CMD} ${TEMPFOLDER} &>> logs/genBinomialData.out
-#echo "-- Generating multinomial data..." >> results/times.txt;
-#./genMultinomialData.sh ${CMD} ${TEMPFOLDER} &>> logs/genMultinomialData.out
-#echo "-- Generating stats data..." >> results/times.txt;
-#./genDescriptiveStatisticsData.sh ${CMD} ${TEMPFOLDER} &>> logs/genStatsData.out
-#./genStratStatisticsData.sh ${CMD} ${TEMPFOLDER} &>> logs/genStratStatsData.out
-#echo "-- Generating clustering data..." >> results/times.txt;
-#./genClusteringData.sh ${CMD} ${TEMPFOLDER} &>> logs/genClusteringData.out
-#echo "-- Generating Dimension Reduction data." >> results/times.txt;
-#./genDimensionReductionData.sh ${CMD} ${TEMPFOLDER} &>> logs/genDimensionReductionData.out
-#echo "-- Generating ALS data." >> results/times.txt;
-#./genALSData.sh ${CMD} ${TEMPFOLDER} &>> logs/genALSData.out # generate the data
+### Data Generation
+echo "-- Generating binomial data..." >> results/times.txt;
+./genBinomialData.sh ${CMD} ${TEMPFOLDER} &>> logs/genBinomialData.out
+echo "-- Generating multinomial data..." >> results/times.txt;
+./genMultinomialData.sh ${CMD} ${TEMPFOLDER} &>> logs/genMultinomialData.out
+echo "-- Generating stats data..." >> results/times.txt;
+./genDescriptiveStatisticsData.sh ${CMD} ${TEMPFOLDER} &>> logs/genStatsData.out
+./genStratStatisticsData.sh ${CMD} ${TEMPFOLDER} &>> logs/genStratStatsData.out
+echo "-- Generating clustering data..." >> results/times.txt;
+./genClusteringData.sh ${CMD} ${TEMPFOLDER} &>> logs/genClusteringData.out
+echo "-- Using Dimension Reduction data." >> results/times.txt;
+./genDimensionReductionData.sh ${CMD} ${TEMPFOLDER} &>> logs/genDimensionReductionData.out
+echo "-- Generating ALS data." >> results/times.txt;
+./genALSData.sh ${CMD} ${TEMPFOLDER} &>> logs/genALSData.out # generate the data
 
 ### Micro Benchmarks:
 #./MatrixMult.sh
@@ -64,16 +64,16 @@ date >> results/times.txt
 # Federate benchmark
 #./fed/runAllFed.sh $CMD $TEMPFOLDER
 
-### Algorithms Benchmarks: # TODO comment in
-#./runAllBinomial.sh $CMD $TEMPFOLDER
-#./runAllMultinomial.sh $CMD $TEMPFOLDER
-#./runAllRegression.sh $CMD $TEMPFOLDER
-#./runAllStats.sh $CMD $TEMPFOLDER
-#./runAllClustering.sh $CMD $TEMPFOLDER
-#./runAllDimensionReduction.sh $CMD $TEMPFOLDER
+### Algorithms Benchmarks:
+./runAllBinomial.sh $CMD $TEMPFOLDER
+./runAllMultinomial.sh $CMD $TEMPFOLDER
+./runAllRegression.sh $CMD $TEMPFOLDER
+./runAllStats.sh $CMD $TEMPFOLDER
+./runAllClustering.sh $CMD $TEMPFOLDER
+./runAllDimensionReduction.sh $CMD $TEMPFOLDER
 ./runAllALS.sh $CMD $TEMPFOLDER
 
-# TODO The following commented benchmarks have yet to be cleaned up and ported from perftestDeprecated to perftest
+# TODO The following benchmarks have yet to be written. The decision tree algorithms additionally need to be fixed.
 # add stepwise Linear 
 # add stepwise GLM
 #./runAllTrees.sh $CMD $TEMPFOLDER

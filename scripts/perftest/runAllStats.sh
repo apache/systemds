@@ -38,7 +38,7 @@ if [ "${COMMAND}" == "systemds" ]; then export SYSTEMDS_STANDALONE_OPTS="-Xmx10g
 echo " RUN DESCRIPTIVE STATISTICS EXPERIMENTS: " $(date) >> results/times.txt;
 
 # run all descriptive statistics on all datasets
-for d in "A_10k" # "A_100k" "A_1M" "A_10M" #"census" # TODO comment in
+for d in "A_10k" "A_100k" "A_1M" # "A_10M" #"census"
 do 
    echo "-- Running runUnivarStats on "$d"" >> results/times.txt;
    ./runUnivarStats.sh ${BASE2}/${d}/data ${BASE2}/${d}/types ${BASE2} ${COMMAND} &>> logs/runUnivar-Stats_${d}.out;

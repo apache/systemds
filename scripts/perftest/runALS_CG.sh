@@ -22,7 +22,7 @@
 
 X=$1
 MAXITER=${2:-100}
-DATADIR=${3:-"temp"}/als
+DATADIR=${3:-"temp"}
 CMD=${4:-"systemds"}
 THRESHOLD=${5:-0.0001}
 VERBOSE=${6:-FALSE}
@@ -33,16 +33,27 @@ err_report() {
 }
 trap 'err_report $LINENO' ERR
 
-tstart=$(date +%s.%N)
-
 BASEPATH=$(dirname "$0")
 
 tstart=$(date +%s.%N)
 
 ${CMD} -f ${BASEPATH}/scripts/alsCG.dml \
   --config ${BASEPATH}/conf/SystemDS-config.xml \
-  --nvargs X=$X rank=15 reg="L2" lambda=0.000001 maxiter=$MAXITER thr=$THRESHOLD verbose=$VERBOSE modelB=${DATADIR}/B modelM=${DATADIR}/M fmt="csv"
+  --stats \
+  --nvargs X=$X rank=15 reg="L2" lambda=0.000001 maxiter=$MAXITER thr=$THRESHOLD verbose=$VERBOSE modelU=${DATADIR}/U modelV=${DATADIR}/V fmt="csv"
 
-tend=$(echo "$(date +%s.%N) - $tstart - .4" | bc)
-echo "ALS-CG algorithm on "$X": "$tend >> results/times.txt
+ttrain=$(echo "$(date +%s.%N) - $tstart - .4" | bc)
+echo "ALS-CG algorithm on "$X": "ttrain >> results/times.txt
+
+
+tstart=$(date +%s.%N)
+
+# ${CMD} -f ../algorithms/ALS_predict.dml \ # Does not work
+${CMD} -f ./scripts/als-predict.dml \
+  --config conf/SystemDS-config.xml \
+  --stats \
+  --nvargs X=$X Y=${DATADIR}/Y L=${DATADIR}/U R=${DATADIR}/V fmt="csv"
+
+tpredict=$(echo "$(date +%s.%N) - $tstart - .4" | bc)
+echo "ALS-CG  predict ict="$i" on "$1": "$tpredict >> results/times.txt
 

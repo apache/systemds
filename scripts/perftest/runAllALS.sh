@@ -1,3 +1,4 @@
+#!/bin/bash
 #-------------------------------------------------------------
 #
 # Licensed to the Apache Software Foundation (ASF) under one
@@ -19,20 +20,22 @@
 #
 #-------------------------------------------------------------
 
-rank = ifdef($rank, 10);
-reg = ifdef($reg, "L2");
-lambda = ifdef($lambda, 0.000001);
-maxiter = ifdef($maxiter, 50);
-thr = ifdef($thr, 0.0001);
-verbose = ifdef($verbose, TRUE);
-modelU = ifdef($modelU, "U");
-modelV = ifdef($modelV, "V");
-fmt = ifdef($fmt, "text");
-check = ifdef($check, TRUE);
+CMD=${1:-"systemds"}
+DATADIR=${2:-"temp"}/als
 
-X = read($X);
+MAXITR=${4:-100}
 
-[U, V] = alsCG(X=X, rank=rank, reg=reg, lambda=lambda, maxi=maxiter, check=check, thr=thr, verbose=verbose);
+FILENAME=$0
+err_report() {
+  echo "Error in $FILENAME on line $1"
+}
+trap 'err_report $LINENO' ERR
 
-write(U, $modelU, format=fmt);
-write(V, $modelV, format=fmt);
+for d in "10k_1k_dense" "10k_1k_sparse" # "100k_1k_dense" "100k_1k_sparse" "1M_1k_dense" "1M_1k_sparse" "10M_1k_dense" "10M_1k_sparse" "100M_1k_dense" "100M_1k_sparse"
+do
+  for f in "runALS_CG" "runALS_DS"
+   do
+      echo "-- Running "$f" on "$d" (all configs)" >> results/times.txt;
+      ./${f}.sh ${DATADIR}/X${d} $MAXITR $DATADIR ${CMD} 0.001 FALSE &> logs/${f}_${d}.out;
+   done
+done

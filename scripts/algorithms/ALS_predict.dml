@@ -43,13 +43,25 @@ fileX = $X;
 fileY = $Y;
 fileL = $L;
 fileR = $R;
-Vrows = $Vrows;
-Vcols = $Vcols;
+Vrows = ifdef ($Vrows, -1);
+Vcols = ifdef ($Vcols, -1);
 fmtO  = ifdef ($fmt, "text");
 
 X = read (fileX);
 L = read (fileL);
 R = read (fileR);
+
+if(Vrows == -1){
+    Vrows = nrow(X);
+}
+
+if(Vcols == -1){
+    Vcols = ncol(X);
+}
+
+X[,1] = seq(1, Vrows)
+X[,2] = seq(1, Vcols)
+print(length(X))
 
 # we assume that the number of columns in X is equal to 2: user-id and item-id
 n = nrow (X);

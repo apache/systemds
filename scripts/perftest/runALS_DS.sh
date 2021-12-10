@@ -20,10 +20,12 @@
 #
 #-------------------------------------------------------------
 
-COMMAND=${1:-"systemds"}
-TEMPFOLDER=${2:-"temp"}
-DATADIR=${TEMPFOLDER}/fed
-NUMFED=5
+X=$1
+MAXITER=${2:-100}
+DATADIR=${3:-"temp"}
+CMD=${4:-"systemds"}
+THRESHOLD=${5:-0.0001}
+VERBOSE=${6:-FALSE}
 
 FILENAME=$0
 err_report() {
@@ -31,17 +33,27 @@ err_report() {
 }
 trap 'err_report $LINENO' ERR
 
-if [ ! -d logs ]; then mkdir -p logs ; fi
-
 BASEPATH=$(dirname "$0")
 
-# Set properties
-export LOG4JPROP=${BASEPATH}'/../conf/log4j-off.properties'
-export SYSDS_QUIET=1
+tstart=$(date +%s.%N)
 
-if [ ! -d results ]; then mkdir -p results ; fi
+${CMD} -f ${BASEPATH}/scripts/alsDS.dml \
+  --config ${BASEPATH}/conf/SystemDS-config.xml \
+  --stats \
+  --nvargs X=$X rank=15 lambda=0.000001 maxiter=$MAXITER thr=$THRESHOLD verbose=$VERBOSE modelU=${DATADIR}/U modelV=${DATADIR}/V fmt="csv"
 
-echo "RUN FEDERATED EXPERIMENTS: "$(date) >> results/times.txt
+ttrain=$(echo "$(date +%s.%N) - $tstart - .4" | bc)
+echo "ALS-DS algorithm on "$X": "ttrain >> results/times.txt
 
-${BASEPATH}/runALSFed.sh systemds $DATADIR $NUMFED
+
+tstart=$(date +%s.%N)
+
+# ${CMD} -f ../algorithms/ALS_predict.dml \ # Does not work
+${CMD} -f ./scripts/als-predict.dml \
+  --config conf/SystemDS-config.xml \
+  --stats \
+  --nvargs X=$X Y=${DATADIR}/Y L=${DATADIR}/U R=${DATADIR}/V fmt="csv"
+
+tpredict=$(echo "$(date +%s.%N) - $tstart - .4" | bc)
+echo "ALS-DS predict ict="$i" on "$1": "$tpredict >> results/times.txt
 

@@ -52,8 +52,10 @@ date >> results/times.txt
 #./genStratStatisticsData.sh ${CMD} ${TEMPFOLDER} &>> logs/genStratStatsData.out
 #echo "-- Generating clustering data..." >> results/times.txt;
 #./genClusteringData.sh ${CMD} ${TEMPFOLDER} &>> logs/genClusteringData.out
-echo "-- Using Dimension Reduction data." >> results/times.txt;
-./genDimensionReductionData.sh ${CMD} ${TEMPFOLDER} &>> logs/genDimensionReductionData.out
+#echo "-- Generating Dimension Reduction data." >> results/times.txt;
+#./genDimensionReductionData.sh ${CMD} ${TEMPFOLDER} &>> logs/genDimensionReductionData.out
+#echo "-- Generating ALS data." >> results/times.txt;
+#./genALSData.sh ${CMD} ${TEMPFOLDER} &>> logs/genALSData.out # generate the data
 
 ### Micro Benchmarks:
 #./MatrixMult.sh
@@ -68,8 +70,8 @@ echo "-- Using Dimension Reduction data." >> results/times.txt;
 #./runAllRegression.sh $CMD $TEMPFOLDER
 #./runAllStats.sh $CMD $TEMPFOLDER
 #./runAllClustering.sh $CMD $TEMPFOLDER
-
-./runAllDimensionReduction.sh $CMD $TEMPFOLDER
+#./runAllDimensionReduction.sh $CMD $TEMPFOLDER
+./runAllALS.sh $CMD $TEMPFOLDER
 
 # TODO The following commented benchmarks have yet to be cleaned up and ported from perftestDeprecated to perftest
 # add stepwise Linear 
@@ -77,7 +79,6 @@ echo "-- Using Dimension Reduction data." >> results/times.txt;
 #./runAllTrees.sh $CMD $TEMPFOLDER
 # add randomForest
 #./runAllMatrixFactorization.sh $CMD $TEMPFOLDER
-#ALS
 #./runAllSurvival.sh $CMD $TEMPFOLDER
 #KaplanMeier
 #Cox

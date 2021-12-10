@@ -19,20 +19,23 @@
 #
 #-------------------------------------------------------------
 
-rank = ifdef($rank, 10);
-reg = ifdef($reg, "L2");
-lambda = ifdef($lambda, 0.000001);
-maxiter = ifdef($maxiter, 50);
-thr = ifdef($thr, 0.0001);
-verbose = ifdef($verbose, TRUE);
-modelU = ifdef($modelU, "U");
-modelV = ifdef($modelV, "V");
-fmt = ifdef($fmt, "text");
-check = ifdef($check, TRUE);
-
 X = read($X);
+fileY = $Y;
+L = read($L);
+R = read($R);
 
-[U, V] = alsCG(X=X, rank=rank, reg=reg, lambda=lambda, maxi=maxiter, check=check, thr=thr, verbose=verbose);
+userIDs = seq(1, nrow(X));
+write(userIDs, "temp/als/userIDs", format = $fmt);
 
-write(U, $modelU, format=fmt);
-write(V, $modelV, format=fmt);
+I = matrix (0, rows=nrow(X), cols=ncol(X))
+parfor(i in 1:nrow(X)){
+    parfor(j in 1:ncol(X)){
+        if(as.integer(as.scalar(X[i,j])) != 0){
+            I[i,j] = 1;
+        }
+    }
+}
+write(I, "temp/als/I", format = $fmt);
+
+Y = alsPredict(userIDs = userIDs, I = I, L = L, R = R);
+write(Y, fileY, format = $fmt);

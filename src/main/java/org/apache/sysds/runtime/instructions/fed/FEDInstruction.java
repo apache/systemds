@@ -49,6 +49,7 @@ public abstract class FEDInstruction extends Instruction {
 		Quaternary,
 		QSort,
 		QPick,
+		Rand,
 		Reblock,
 		Reorg,
 		Reshape,

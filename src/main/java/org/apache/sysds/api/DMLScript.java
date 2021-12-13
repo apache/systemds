@@ -28,7 +28,9 @@ import java.io.InputStreamReader;
 import java.security.cert.CertificateException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
 
@@ -90,6 +92,7 @@ public class DMLScript
 	public static int         STATISTICS_MAX_WRAP_LEN = 30;                                      // statistics maximum wrap length
 	public static boolean     FED_STATISTICS        = DMLOptions.defaultOptions.fedStats;        // whether to print federated statistics
 	public static int         FED_STATISTICS_COUNT  = DMLOptions.defaultOptions.fedStatsCount;   // federated statistics maximum heavy hitter count
+	public static List<Integer> FED_WORKER_PORTS = new ArrayList<>();
 	public static ExplainType EXPLAIN             = DMLOptions.defaultOptions.explainType;       // explain type
 	public static String      DML_FILE_PATH_ANTLR_PARSER = DMLOptions.defaultOptions.filePath;   // filename of dml/pydml script
 	public static String      FLOATING_POINT_PRECISION = "double";                               // data type to use internally
@@ -277,6 +280,7 @@ public class DMLScript
 			//reset runtime platform and visualize flag
 			setGlobalExecMode(oldrtplatform);
 			EXPLAIN = oldexplain;
+			DMLScript.FED_WORKER_PORTS.clear();
 		}
 		
 		return true;

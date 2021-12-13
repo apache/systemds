@@ -139,6 +139,19 @@ public class FederationUtils {
 		return fr;
 	}
 
+	public static FederatedRequest[] callInstruction(String[] inst, CPOperand varOldOut, long outputId, ExecType type) {
+		FederatedRequest[] fr = new FederatedRequest[inst.length];
+		for(int j=0; j<inst.length; j++) {
+
+			inst[j] = InstructionUtils.replaceOperand(inst[j], 0, type == null ? InstructionUtils.getExecType(inst[j]).name() : type.name());
+			inst[j] = inst[j].replace(
+				Lop.OPERAND_DELIMITOR + varOldOut.getName() + Lop.DATATYPE_PREFIX,
+				Lop.OPERAND_DELIMITOR + String.valueOf(outputId) + Lop.DATATYPE_PREFIX);
+			fr[j] = new FederatedRequest(RequestType.EXEC_INST, outputId, (Object) inst[j]);
+		}
+		return fr;
+	}
+
 	public static FederatedRequest callInstruction(String inst, CPOperand varOldOut, long outputId, CPOperand[] varOldIn, long[] varNewIn, ExecType type, boolean rmFedOutputFlag) {
 		String linst = InstructionUtils.replaceOperand(inst, 0, type.name());
 		linst = linst.replace(Lop.OPERAND_DELIMITOR+varOldOut.getName()+Lop.DATATYPE_PREFIX, Lop.OPERAND_DELIMITOR+outputId+Lop.DATATYPE_PREFIX);

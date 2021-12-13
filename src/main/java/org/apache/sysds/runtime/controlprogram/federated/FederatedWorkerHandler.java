@@ -75,10 +75,10 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 
 	/**
 	 * Create a Federated Worker Handler.
-	 * 
+	 *
 	 * Note: federated worker handler created for every command; and concurrent parfor threads at coordinator need
 	 * separate execution contexts at the federated sites too
-	 * 
+	 *
 	 * @param ecm A execution context, used to map variables and execution.
 	 */
 	public FederatedWorkerHandler(ExecutionContextMap ecm) {
@@ -164,7 +164,7 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 	private static void logRequests(FederatedRequest request, int nrRequest, int totalRequests) {
 		if(LOG.isDebugEnabled()) {
 			LOG.debug("Executing command " + (nrRequest + 1) + "/" + totalRequests + ": " + request.getType().name());
-			if(LOG.isTraceEnabled()) 
+			if(LOG.isTraceEnabled())
 				LOG.trace("full command: " + request.toString());
 		}
 	}

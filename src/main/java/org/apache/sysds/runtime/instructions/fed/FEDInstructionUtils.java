@@ -20,6 +20,8 @@
 package org.apache.sysds.runtime.instructions.fed;
 
 import org.apache.commons.lang3.ArrayUtils;
+import org.apache.sysds.api.DMLScript;
+import org.apache.sysds.lops.DataGen;
 import org.apache.sysds.lops.UnaryCP;
 import org.apache.sysds.runtime.codegen.SpoofCellwise;
 import org.apache.sysds.runtime.codegen.SpoofMultiAggregate;
@@ -40,6 +42,7 @@ import org.apache.sysds.runtime.instructions.cp.BinaryCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.BinaryFrameScalarCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.CtableCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.Data;
+import org.apache.sysds.runtime.instructions.cp.DataGenCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.IndexingCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.MMChainCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.MMTSJCPInstruction;
@@ -87,11 +90,13 @@ import org.apache.sysds.runtime.instructions.spark.TernarySPInstruction;
 import org.apache.sysds.runtime.instructions.spark.UnaryMatrixSPInstruction;
 import org.apache.sysds.runtime.instructions.spark.UnarySPInstruction;
 import org.apache.sysds.runtime.instructions.spark.WriteSPInstruction;
+import org.apache.sysds.utils.Statistics;
 
 public class FEDInstructionUtils {
 	
 	private static String[] PARAM_BUILTINS = new String[]{
 		"replace", "rmempty", "lowertri", "uppertri", "transformdecode", "transformapply", "tokenize"};
+	public static boolean fedDataGen = false; // flag for the DataGenCPInstruction, set to true only on demand
 	
 	// private static final Log LOG = LogFactory.getLog(FEDInstructionUtils.class.getName());
 
@@ -145,6 +150,11 @@ public class FEDInstructionUtils {
 					&& mo.isFederatedExcept(FType.BROADCAST) )
 					fedinst = ReorgFEDInstruction.parseInstruction(
 						InstructionUtils.concatOperands(rinst.getInstructionString(),FederatedOutput.NONE.name()));
+			} else if(inst instanceof DataGenCPInstruction) {
+				DataGenCPInstruction dinst = (DataGenCPInstruction) inst;
+
+				if( fedDataGen && DMLScript.FED_WORKER_PORTS.size() > 0 && dinst.getOpcode().equalsIgnoreCase(DataGen.RAND_OPCODE) && !dinst.output.isTensor() )
+					fedinst = DataGenFEDInstruction.parseInstruction(dinst.getInstructionString());
 			}
 			else if(instruction.input1 != null && instruction.input1.isMatrix()
 				&& ec.containsVariable(instruction.input1)) {

@@ -41,9 +41,7 @@ import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
  */
 public class ColGroupSDCSingle extends AMorphingMMColGroup {
 	private static final long serialVersionUID = 3883228464052204200L;
-	/**
-	 * Sparse row indexes for the data
-	 */
+	/** Sparse row indexes for the data */
 	protected transient AOffset _indexes;
 
 	/**
@@ -70,77 +68,6 @@ public class ColGroupSDCSingle extends AMorphingMMColGroup {
 	public ColGroupType getColGroupType() {
 		return ColGroupType.SDCSingle;
 	}
-
-	// @Override
-	// protected void decompressToDenseBlockDenseDictionary(DenseBlock db, int rl, int ru, int offR, int offC,
-	// double[] values) {
-	// final int nCol = _colIndexes.length;
-	// final int offsetToDefault = values.length - nCol;
-	// final AIterator it = _indexes.getIterator(rl);
-
-	// int offT = rl + offR;
-	// int i = rl;
-	// for(; i < ru && it.hasNext(); i++, offT++) {
-	// final double[] c = db.values(offT);
-	// final int off = db.pos(offT) + offC;
-	// if(it.value() == i) {
-	// for(int j = 0; j < nCol; j++)
-	// c[off + _colIndexes[j]] += values[j];
-	// it.next();
-	// }
-	// else
-	// for(int j = 0; j < nCol; j++)
-	// c[off + _colIndexes[j]] += values[offsetToDefault + j];
-	// }
-
-	// for(; i < ru; i++, offT++) {
-	// final double[] c = db.values(offT);
-	// final int off = db.pos(offT) + offC;
-	// for(int j = 0; j < nCol; j++)
-	// c[off + _colIndexes[j]] += values[offsetToDefault + j];
-	// }
-
-	// _indexes.cacheIterator(it, ru);
-	// }
-
-	// @Override
-	// protected void decompressToDenseBlockSparseDictionary(DenseBlock db, int rl, int ru, int offR, int offC,
-	// SparseBlock values) {
-	// throw new NotImplementedException();
-	// }
-
-	// @Override
-	// protected void decompressToSparseBlockSparseDictionary(SparseBlock ret, int rl, int ru, int offR, int offC,
-	// SparseBlock sb) {
-	// throw new NotImplementedException();
-	// }
-
-	// @Override
-	// protected void decompressToSparseBlockDenseDictionary(SparseBlock ret, int rl, int ru, int offR, int offC,
-	// double[] values) {
-	// final int nCol = _colIndexes.length;
-	// final int offsetToDefault = values.length - nCol;
-	// final AIterator it = _indexes.getIterator(rl);
-
-	// int offT = rl + offR;
-	// int i = rl;
-	// for(; i < ru && it.hasNext(); i++, offT++) {
-	// if(it.value() == i) {
-	// for(int j = 0; j < nCol; j++)
-	// ret.append(offT, _colIndexes[j] + offC, values[j]);
-	// it.next();
-	// }
-	// else
-	// for(int j = 0; j < nCol; j++)
-	// ret.append(offT, _colIndexes[j] + offC, values[offsetToDefault + j]);
-	// }
-
-	// for(; i < ru; i++, offT++)
-	// for(int j = 0; j < nCol; j++)
-	// ret.append(offT, _colIndexes[j] + offC, values[offsetToDefault + j]);
-
-	// _indexes.cacheIterator(it, ru);
-	// }
 
 	@Override
 	public double getIdx(int r, int colIdx) {

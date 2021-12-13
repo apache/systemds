@@ -46,6 +46,7 @@ import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
  */
 public class ColGroupSDCSingleZeros extends APreAgg {
 	private static final long serialVersionUID = 8033235615964315078L;
+	
 	/** Sparse row indexes for the data */
 	protected transient AOffset _indexes;
 

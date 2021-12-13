@@ -326,7 +326,6 @@ public abstract class AOffset implements Serializable {
 	}
 
 	private void preAggregateSparseMapRow(SparseBlock sb, double[] preAV, int r, int nVal, char[] data, AIterator it) {
-		// throw new NotImplementedException();
 		final int apos = sb.pos(r);
 		final int alen = sb.size(r) + apos;
 		final int[] aix = sb.indexes(r);

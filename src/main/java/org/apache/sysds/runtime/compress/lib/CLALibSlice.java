@@ -46,11 +46,11 @@ public class CLALibSlice {
 	}
 
 	private static MatrixBlock sliceInternal(CompressedMatrixBlock cmb, int rl, int ru, int cl, int cu) {
-		// In the case where an internal matrix is sliced out, then first slice out the
-		// columns to an compressed intermediate.
-		// Then call slice recursively, to do the row slice.
-		// Since we do not copy the index structure but simply maintain a pointer to the
-		// original this is fine.
+		/**
+		 * In the case where an internal matrix is sliced out, then first slice out the columns to an compressed
+		 * intermediate. Then call slice recursively, to do the row slice. Since we do not copy the index structure but
+		 * simply maintain a pointer to the original this is fine.
+		 */
 		return sliceRows(sliceColumns(cmb, cl, cu), rl, ru);
 	}
 
@@ -101,5 +101,4 @@ public class CLALibSlice {
 		ret.setOverlapping(cmb.isOverlapping());
 		return ret;
 	}
-
 }

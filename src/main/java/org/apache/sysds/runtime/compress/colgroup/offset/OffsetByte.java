@@ -510,7 +510,6 @@ public class OffsetByte extends AOffset {
 
 	private void preAggregateDenseMapRowsByteBelowEnd(DenseBlock db, final double[] preAV, final int rl, final int ru,
 		final int cl, final int cu, final int nVal, byte[] data, IterateByteOffset it) {
-
 		final double[] vals = db.values(rl);
 		final int nCol = db.getCumODims(0);
 		while(it.offset < cu) {

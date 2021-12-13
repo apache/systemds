@@ -50,14 +50,10 @@ import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
 public class ColGroupSDCZeros extends APreAgg {
 	private static final long serialVersionUID = -3703199743391937991L;
 
-	/**
-	 * Sparse row indexes for the data
-	 */
+	/** Sparse row indexes for the data */
 	protected transient AOffset _indexes;
 
-	/**
-	 * Pointers to row indexes in the dictionary. Note the dictionary has one extra entry.
-	 */
+	/** Pointers to row indexes in the dictionary. Note the dictionary has one extra entry. */
 	protected transient AMapToData _data;
 
 	/**

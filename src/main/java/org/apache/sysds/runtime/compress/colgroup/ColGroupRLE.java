@@ -64,7 +64,8 @@ public class ColGroupRLE extends AColGroupOffset {
 	}
 
 	@Override
-	protected void decompressToDenseBlockDenseDictionary(DenseBlock target, int rl, int ru, int offR, int offC, double[] values) {
+	protected void decompressToDenseBlockDenseDictionary(DenseBlock target, int rl, int ru, int offR, int offC,
+		double[] values) {
 		throw new NotImplementedException();
 		// final int blksz = CompressionSettings.BITMAP_BLOCK_SZ;
 		// final int numCols = getNumCols();
@@ -77,35 +78,35 @@ public class ColGroupRLE extends AColGroupOffset {
 		// double[] c = target.getDenseBlockValues();
 		// // cache conscious append via horizontal scans
 		// for(int bi = rl; bi < ru; bi += blksz) {
-		// 	int bimax = Math.min(bi + blksz, ru);
-		// 	for(int k = 0, off = 0; k < numVals; k++, off += numCols) {
-		// 		int boff = _ptr[k];
-		// 		int blen = len(k);
-		// 		int bix = apos[k];
-		// 		int start = astart[k];
-		// 		for(; bix < blen & start < bimax; bix += 2) {
-		// 			start += _data[boff + bix];
-		// 			int len = _data[boff + bix + 1];
-		// 			for(int i = Math.max(rl, start) - (rl - offT); i < Math.min(start + len, ru) - (rl - offT); i++) {
+		// int bimax = Math.min(bi + blksz, ru);
+		// for(int k = 0, off = 0; k < numVals; k++, off += numCols) {
+		// int boff = _ptr[k];
+		// int blen = len(k);
+		// int bix = apos[k];
+		// int start = astart[k];
+		// for(; bix < blen & start < bimax; bix += 2) {
+		// start += _data[boff + bix];
+		// int len = _data[boff + bix + 1];
+		// for(int i = Math.max(rl, start) - (rl - offT); i < Math.min(start + len, ru) - (rl - offT); i++) {
 
-		// 				int rc = i * target.getNumColumns();
-		// 				for(int j = 0; j < numCols; j++)
-		// 					c[rc + _colIndexes[j]] += values[off + j];
+		// int rc = i * target.getNumColumns();
+		// for(int j = 0; j < numCols; j++)
+		// c[rc + _colIndexes[j]] += values[off + j];
 
-		// 			}
-		// 			start += len;
-		// 		}
-		// 		apos[k] = bix;
-		// 		astart[k] = start;
-		// 	}
+		// }
+		// start += len;
+		// }
+		// apos[k] = bix;
+		// astart[k] = start;
+		// }
 		// }
 	}
 
 	@Override
-	protected void decompressToDenseBlockSparseDictionary(DenseBlock target, int rl, int ru, int offR, int offC, SparseBlock values) {
+	protected void decompressToDenseBlockSparseDictionary(DenseBlock target, int rl, int ru, int offR, int offC,
+		SparseBlock values) {
 		throw new NotImplementedException();
 	}
-
 
 	@Override
 	protected void decompressToSparseBlockSparseDictionary(SparseBlock ret, int rl, int ru, int offR, int offC,
@@ -221,67 +222,67 @@ public class ColGroupRLE extends AColGroupOffset {
 		// final int numVals = getNumValues();
 
 		// if(numVals > 1 && _numRows > CompressionSettings.BITMAP_BLOCK_SZ) {
-		// 	final int blksz = CompressionSettings.BITMAP_BLOCK_SZ;
+		// final int blksz = CompressionSettings.BITMAP_BLOCK_SZ;
 
-		// 	// step 1: prepare position and value arrays
+		// // step 1: prepare position and value arrays
 
-		// 	// current pos / values per RLE list
-		// 	int[] astart = new int[numVals];
-		// 	int[] apos = skipScan(numVals, rl, astart);
-		// 	double[] aval = _dict.sumAllRowsToDouble(square, _colIndexes.length);
+		// // current pos / values per RLE list
+		// int[] astart = new int[numVals];
+		// int[] apos = skipScan(numVals, rl, astart);
+		// double[] aval = _dict.sumAllRowsToDouble(square, _colIndexes.length);
 
-		// 	// step 2: cache conscious matrix-vector via horizontal scans
-		// 	for(int bi = rl; bi < ru; bi += blksz) {
-		// 		int bimax = Math.min(bi + blksz, ru);
+		// // step 2: cache conscious matrix-vector via horizontal scans
+		// for(int bi = rl; bi < ru; bi += blksz) {
+		// int bimax = Math.min(bi + blksz, ru);
 
-		// 		// horizontal segment scan, incl pos maintenance
-		// 		for(int k = 0; k < numVals; k++) {
-		// 			int boff = _ptr[k];
-		// 			int blen = len(k);
-		// 			double val = aval[k];
-		// 			int bix = apos[k];
-		// 			int start = astart[k];
+		// // horizontal segment scan, incl pos maintenance
+		// for(int k = 0; k < numVals; k++) {
+		// int boff = _ptr[k];
+		// int blen = len(k);
+		// double val = aval[k];
+		// int bix = apos[k];
+		// int start = astart[k];
 
-		// 			// compute partial results, not aligned
-		// 			while(bix < blen) {
-		// 				int lstart = _data[boff + bix];
-		// 				int llen = _data[boff + bix + 1];
-		// 				int from = Math.max(bi, start + lstart);
-		// 				int to = Math.min(start + lstart + llen, bimax);
-		// 				for(int rix = from; rix < to; rix++)
-		// 					c[rix] += val;
+		// // compute partial results, not aligned
+		// while(bix < blen) {
+		// int lstart = _data[boff + bix];
+		// int llen = _data[boff + bix + 1];
+		// int from = Math.max(bi, start + lstart);
+		// int to = Math.min(start + lstart + llen, bimax);
+		// for(int rix = from; rix < to; rix++)
+		// c[rix] += val;
 
-		// 				if(start + lstart + llen >= bimax)
-		// 					break;
-		// 				start += lstart + llen;
-		// 				bix += 2;
-		// 			}
+		// if(start + lstart + llen >= bimax)
+		// break;
+		// start += lstart + llen;
+		// bix += 2;
+		// }
 
-		// 			apos[k] = bix;
-		// 			astart[k] = start;
-		// 		}
-		// 	}
+		// apos[k] = bix;
+		// astart[k] = start;
+		// }
+		// }
 		// }
 		// else {
-		// 	for(int k = 0; k < numVals; k++) {
-		// 		int boff = _ptr[k];
-		// 		int blen = len(k);
-		// 		double val = _dict.sumRow(k, square, _colIndexes.length);
+		// for(int k = 0; k < numVals; k++) {
+		// int boff = _ptr[k];
+		// int blen = len(k);
+		// double val = _dict.sumRow(k, square, _colIndexes.length);
 
-		// 		if(val != 0.0) {
-		// 			Pair<Integer, Integer> tmp = skipScanVal(k, rl);
-		// 			int bix = tmp.getKey();
-		// 			int curRunStartOff = tmp.getValue();
-		// 			int curRunEnd = tmp.getValue();
-		// 			for(; bix < blen && curRunEnd < ru; bix += 2) {
-		// 				curRunStartOff = curRunEnd + _data[boff + bix];
-		// 				curRunEnd = curRunStartOff + _data[boff + bix + 1];
-		// 				for(int rix = curRunStartOff; rix < curRunEnd && rix < ru; rix++)
-		// 					c[rix] += val;
+		// if(val != 0.0) {
+		// Pair<Integer, Integer> tmp = skipScanVal(k, rl);
+		// int bix = tmp.getKey();
+		// int curRunStartOff = tmp.getValue();
+		// int curRunEnd = tmp.getValue();
+		// for(; bix < blen && curRunEnd < ru; bix += 2) {
+		// curRunStartOff = curRunEnd + _data[boff + bix];
+		// curRunEnd = curRunStartOff + _data[boff + bix + 1];
+		// for(int rix = curRunStartOff; rix < curRunEnd && rix < ru; rix++)
+		// c[rix] += val;
 
-		// 			}
-		// 		}
-		// 	}
+		// }
+		// }
+		// }
 		// }
 	}
 
@@ -291,67 +292,67 @@ public class ColGroupRLE extends AColGroupOffset {
 		// final int numVals = getNumValues();
 
 		// if(numVals > 1 && _numRows > CompressionSettings.BITMAP_BLOCK_SZ) {
-		// 	final int blksz = CompressionSettings.BITMAP_BLOCK_SZ;
+		// final int blksz = CompressionSettings.BITMAP_BLOCK_SZ;
 
-		// 	// step 1: prepare position and value arrays
+		// // step 1: prepare position and value arrays
 
-		// 	// current pos / values per RLE list
-		// 	int[] astart = new int[numVals];
-		// 	int[] apos = skipScan(numVals, rl, astart);
-		// 	double[] aval = _dict.sumAllRowsToDouble(square, _colIndexes.length);
+		// // current pos / values per RLE list
+		// int[] astart = new int[numVals];
+		// int[] apos = skipScan(numVals, rl, astart);
+		// double[] aval = _dict.sumAllRowsToDouble(square, _colIndexes.length);
 
-		// 	// step 2: cache conscious matrix-vector via horizontal scans
-		// 	for(int bi = rl; bi < ru; bi += blksz) {
-		// 		int bimax = Math.min(bi + blksz, ru);
+		// // step 2: cache conscious matrix-vector via horizontal scans
+		// for(int bi = rl; bi < ru; bi += blksz) {
+		// int bimax = Math.min(bi + blksz, ru);
 
-		// 		// horizontal segment scan, incl pos maintenance
-		// 		for(int k = 0; k < numVals; k++) {
-		// 			int boff = _ptr[k];
-		// 			int blen = len(k);
-		// 			double val = aval[k];
-		// 			int bix = apos[k];
-		// 			int start = astart[k];
+		// // horizontal segment scan, incl pos maintenance
+		// for(int k = 0; k < numVals; k++) {
+		// int boff = _ptr[k];
+		// int blen = len(k);
+		// double val = aval[k];
+		// int bix = apos[k];
+		// int start = astart[k];
 
-		// 			// compute partial results, not aligned
-		// 			while(bix < blen) {
-		// 				int lstart = _data[boff + bix];
-		// 				int llen = _data[boff + bix + 1];
-		// 				int from = Math.max(bi, start + lstart);
-		// 				int to = Math.min(start + lstart + llen, bimax);
-		// 				for(int rix = from; rix < to; rix++)
-		// 					c[rix] += val;
+		// // compute partial results, not aligned
+		// while(bix < blen) {
+		// int lstart = _data[boff + bix];
+		// int llen = _data[boff + bix + 1];
+		// int from = Math.max(bi, start + lstart);
+		// int to = Math.min(start + lstart + llen, bimax);
+		// for(int rix = from; rix < to; rix++)
+		// c[rix] += val;
 
-		// 				if(start + lstart + llen >= bimax)
-		// 					break;
-		// 				start += lstart + llen;
-		// 				bix += 2;
-		// 			}
+		// if(start + lstart + llen >= bimax)
+		// break;
+		// start += lstart + llen;
+		// bix += 2;
+		// }
 
-		// 			apos[k] = bix;
-		// 			astart[k] = start;
-		// 		}
-		// 	}
+		// apos[k] = bix;
+		// astart[k] = start;
+		// }
+		// }
 		// }
 		// else {
-		// 	for(int k = 0; k < numVals; k++) {
-		// 		int boff = _ptr[k];
-		// 		int blen = len(k);
-		// 		double val = _dict.sumRow(k, square, _colIndexes.length);
+		// for(int k = 0; k < numVals; k++) {
+		// int boff = _ptr[k];
+		// int blen = len(k);
+		// double val = _dict.sumRow(k, square, _colIndexes.length);
 
-		// 		if(val != 0.0) {
-		// 			Pair<Integer, Integer> tmp = skipScanVal(k, rl);
-		// 			int bix = tmp.getKey();
-		// 			int curRunStartOff = tmp.getValue();
-		// 			int curRunEnd = tmp.getValue();
-		// 			for(; bix < blen && curRunEnd < ru; bix += 2) {
-		// 				curRunStartOff = curRunEnd + _data[boff + bix];
-		// 				curRunEnd = curRunStartOff + _data[boff + bix + 1];
-		// 				for(int rix = curRunStartOff; rix < curRunEnd && rix < ru; rix++)
-		// 					c[rix] += val;
+		// if(val != 0.0) {
+		// Pair<Integer, Integer> tmp = skipScanVal(k, rl);
+		// int bix = tmp.getKey();
+		// int curRunStartOff = tmp.getValue();
+		// int curRunEnd = tmp.getValue();
+		// for(; bix < blen && curRunEnd < ru; bix += 2) {
+		// curRunStartOff = curRunEnd + _data[boff + bix];
+		// curRunEnd = curRunStartOff + _data[boff + bix + 1];
+		// for(int rix = curRunStartOff; rix < curRunEnd && rix < ru; rix++)
+		// c[rix] += val;
 
-		// 			}
-		// 		}
-		// 	}
+		// }
+		// }
+		// }
 		// }
 	}
 

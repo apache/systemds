@@ -43,13 +43,10 @@ import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
  */
 public class ColGroupSDC extends AMorphingMMColGroup {
 	private static final long serialVersionUID = 769993538831949086L;
-	/**
-	 * Sparse row indexes for the data
-	 */
+	
+	/** Sparse row indexes for the data */
 	protected transient AOffset _indexes;
-	/**
-	 * Pointers to row indexes in the dictionary. Note the dictionary has one extra entry.
-	 */
+	/** Pointers to row indexes in the dictionary. Note the dictionary has one extra entry. */
 	protected transient AMapToData _data;
 
 	/**
@@ -90,7 +87,7 @@ public class ColGroupSDC extends AMorphingMMColGroup {
 	@Override
 	public double getIdx(int r, int colIdx) {
 		final AIterator it = _indexes.getIterator(r);
-		final int rowOff = it == null || it.value() != r ? getNumValues() -1 : _data.getIndex(it.getDataIndex());
+		final int rowOff = it == null || it.value() != r ? getNumValues() - 1 : _data.getIndex(it.getDataIndex());
 		final int nCol = _colIndexes.length;
 		return _dict.getValue(rowOff * nCol + colIdx);
 	}

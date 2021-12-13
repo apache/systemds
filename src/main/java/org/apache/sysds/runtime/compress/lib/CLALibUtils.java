@@ -37,6 +37,41 @@ public final class CLALibUtils {
 	protected static final Log LOG = LogFactory.getLog(CLALibUtils.class.getName());
 
 	/**
+	 * Combine all column groups that are constant types, this include empty and const.
+	 * 
+	 * @param in A Compressed matrix.
+	 */
+	public static void combineConstColumns(CompressedMatrixBlock in) {
+		// Combine Constant type column groups, both empty and const.
+		List<AColGroup> e = new ArrayList<>();
+		List<AColGroup> c = new ArrayList<>();
+		List<AColGroup> o = new ArrayList<>();
+		for(AColGroup g : in.getColGroups()) {
+			if(g instanceof ColGroupEmpty)
+				e.add(g);
+			else if(g instanceof ColGroupConst)
+				c.add(g);
+			else
+				o.add(g);
+		}
+
+		if(e.size() < 1 && c.size() < 1)
+			return;
+
+		if(e.size() == 1)
+			o.add(e.get(0));
+		else if(e.size() > 1)
+			o.add(combineEmpty(e));
+
+		if(c.size() == 1)
+			o.add(c.get(0));
+		else if(c.size() > 1)
+			o.add(combineConst(c));
+
+		in.allocateColGroupList(o);
+	}
+
+	/**
 	 * Helper method to determine if the column groups contains SDC or Constant groups.
 	 * 
 	 * @param groups The ColumnGroups to analyze
@@ -79,38 +114,7 @@ public final class CLALibUtils {
 		for(double v : constV)
 			if(!Double.isFinite(v))
 				throw new NotImplementedException("Not handling if the values are not finite: " + Arrays.toString(constV));
-				// return groups;
 		return filteredGroups;
-	}
-
-	public static void combineConstColumns(CompressedMatrixBlock in) {
-		// Combine Constant type column groups, both empty and const.
-		List<AColGroup> e = new ArrayList<>();
-		List<AColGroup> c = new ArrayList<>();
-		List<AColGroup> o = new ArrayList<>();
-		for(AColGroup g : in.getColGroups()) {
-			if(g instanceof ColGroupEmpty)
-				e.add(g);
-			else if(g instanceof ColGroupConst)
-				c.add(g);
-			else
-				o.add(g);
-		}
-
-		if(e.size() < 1 && c.size() < 1)
-			return;
-
-		if(e.size() == 1)
-			o.add(e.get(0));
-		else if(e.size() > 1)
-			o.add(combineEmpty(e));
-
-		if(c.size() == 1)
-			o.add(c.get(0));
-		else if(c.size() > 1)
-			o.add(combineConst(c));
-
-		in.allocateColGroupList(o);
 	}
 
 	private static AColGroup combineEmpty(List<AColGroup> e) {

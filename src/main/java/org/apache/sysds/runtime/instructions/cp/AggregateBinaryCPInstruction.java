@@ -108,7 +108,8 @@ public class AggregateBinaryCPInstruction extends BinaryCPInstruction {
 		// compute matrix multiplication
 		AggregateBinaryOperator ab_op = (AggregateBinaryOperator) _optr;
 		MatrixBlock ret;
-		
+
+		// TODO: Use rewrite rule here t(x) %*% y -> t(t(y) %*% x)
 		if(transposeLeft) {
 			matBlock1 = LibMatrixReorg.transpose(matBlock1, ab_op.getNumThreads());
 			ec.releaseMatrixInput(input1.getName());

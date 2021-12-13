@@ -81,11 +81,11 @@ public abstract class AColGroupCompressed extends AColGroup {
 
 	public double[] preAggRows(AggregateUnaryOperator op) {
 		final ValueFunction fn = op.aggOp.increOp.fn;
-		if(fn instanceof KahanPlusSq) 
+		if(fn instanceof KahanPlusSq)
 			return preAggSumSqRows();
-		else if(fn instanceof Plus || fn instanceof KahanPlus) 
+		else if(fn instanceof Plus || fn instanceof KahanPlus)
 			return preAggSumRows();
-		else if(fn instanceof Multiply) 
+		else if(fn instanceof Multiply)
 			return preAggProductRows();
 		else if(fn instanceof Builtin) {
 			Builtin bop = (Builtin) fn;
@@ -126,7 +126,6 @@ public abstract class AColGroupCompressed extends AColGroup {
 				computeColSumsSq(c, nRows);
 		}
 		else if(fn instanceof Plus || fn instanceof KahanPlus) {
-
 			if(op.indexFn instanceof ReduceAll)
 				computeSum(c, nRows);
 			else if(op.indexFn instanceof ReduceCol)
@@ -158,7 +157,6 @@ public abstract class AColGroupCompressed extends AColGroup {
 		}
 		else
 			throw new DMLScriptException("Unknown UnaryAggregate operator on CompressedMatrixBlock");
-
 	}
 
 	@Override

@@ -176,20 +176,6 @@ public class ColGroupConst extends AColGroupCompressed {
 		_dict.colSumSq(c, new int[] {nRows}, _colIndexes);
 	}
 
-	// @Override
-	// protected void computeRowSums(double[] c, int rl, int ru) {
-	// double vals = _dict.sumAllRowsToDouble(_colIndexes.length)[0];
-	// for(int rix = rl; rix < ru; rix++)
-	// c[rix] += vals;
-	// }
-
-	// @Override
-	// protected void computeRowSumsSq(double[] c, int rl, int ru) {
-	// double vals = _dict.sumAllRowsToDoubleSq(_colIndexes.length)[0];
-	// for(int rix = rl; rix < ru; rix++)
-	// c[rix] += vals;
-	// }
-
 	@Override
 	protected void computeRowSums(double[] c, int rl, int ru, double[] preAgg) {
 		double vals = preAgg[0];

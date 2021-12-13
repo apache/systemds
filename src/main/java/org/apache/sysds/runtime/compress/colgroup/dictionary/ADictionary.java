@@ -291,7 +291,7 @@ public abstract class ADictionary implements Serializable {
 	/**
 	 * Method used as a pre-aggregate of each tuple in the dictionary, to single double values with a reference.
 	 * 
-	 * @param referenceThe reference values to add to each cell.
+	 * @param reference The reference values to add to each cell.
 	 * @return a double array containing the row sums from this dictionary.
 	 */
 	public abstract double[] sumAllRowsToDouble(double[] reference);

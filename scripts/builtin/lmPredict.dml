@@ -20,7 +20,7 @@
 #-------------------------------------------------------------
 
 m_lmPredict = function(Matrix[Double] X, Matrix[Double] B, 
-  Matrix[Double] ytest, Integer icpt = 0, Boolean verbose = FALSE) 
+  Matrix[Double] ytest = matrix(0,1,1), Integer icpt = 0, Boolean verbose = FALSE) 
   return (Matrix[Double] yhat)
 {
   intercept = ifelse(icpt>0 | ncol(X)+1==nrow(B), as.scalar(B[nrow(B),]), 0);

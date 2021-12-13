@@ -121,17 +121,6 @@ public class ColGroupPFOR extends AMorphingMMColGroup {
 		return _data.getCounts(counts, _numRows);
 	}
 
-	@Override
-	protected void computeRowSums(double[] c, int rl, int ru) {
-		// Add reference value sum.
-		final double refSum = refSum();
-		for(int rix = rl; rix < ru; rix++)
-			c[rix] += refSum;
-
-		final double[] vals = _dict.sumAllRowsToDouble(_colIndexes.length);
-		ColGroupSDCZeros.computeRowSums(c, rl, ru, vals, _data, _indexes, _numRows);
-	}
-
 	private final double refSum() {
 		double ret = 0;
 		for(double d : _reference)
@@ -140,15 +129,13 @@ public class ColGroupPFOR extends AMorphingMMColGroup {
 	}
 
 	@Override
-	protected void computeRowSumsSq(double[] c, int rl, int ru) {
-		final double[] vals = _dict.sumAllRowsToDoubleSq(_reference);
-		ColGroupSDC.computeRowSumsSq(c, rl, ru, vals, _data, _indexes, _numRows);
+	protected void computeRowSums(double[] c, int rl, int ru, double[] preAgg) {
+		ColGroupSDC.computeRowSums(c, rl, ru, preAgg, _data, _indexes, _numRows);
 	}
 
 	@Override
-	protected void computeRowMxx(double[] c, Builtin builtin, int rl, int ru) {
-		final double[] vals = _dict.aggregateRows(builtin, _reference);
-		ColGroupSDC.computeRowMxx(c, builtin, rl, ru, vals, _data, _indexes, _numRows, vals[vals.length - 1]);
+	protected void computeRowMxx(double[] c, Builtin builtin, int rl, int ru, double[] preAgg) {
+		ColGroupSDC.computeRowMxx(c, builtin, rl, ru, preAgg, _data, _indexes, _numRows, preAgg[preAgg.length - 1]);
 	}
 
 	@Override
@@ -310,12 +297,32 @@ public class ColGroupPFOR extends AMorphingMMColGroup {
 	}
 
 	@Override
+	protected double[] preAggSumRows() {
+		return _dict.sumAllRowsToDouble(_reference);
+	}
+
+	@Override
+	protected double[] preAggSumSqRows() {
+		return _dict.sumAllRowsToDoubleSq(_reference);
+	}
+
+	@Override
+	protected double[] preAggProductRows() {
+		throw new NotImplementedException();
+	}
+
+	@Override
+	protected double[] preAggBuiltinRows(Builtin builtin) {
+		return _dict.aggregateRows(builtin, _reference);
+	}
+
+	@Override
 	protected void computeProduct(double[] c, int nRows) {
 		throw new NotImplementedException("Not Implemented PFOR");
 	}
 
 	@Override
-	protected void computeRowProduct(double[] c, int rl, int ru) {
+	protected void computeRowProduct(double[] c, int rl, int ru, double[] preAgg) {
 		throw new NotImplementedException("Not Implemented PFOR");
 	}
 

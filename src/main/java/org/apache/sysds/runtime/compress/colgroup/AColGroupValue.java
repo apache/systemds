@@ -350,8 +350,28 @@ public abstract class AColGroupValue extends AColGroupCompressed implements Clon
 	}
 
 	@Override
-	protected void computeRowProduct(double[] c, int rl, int ru) {
+	protected void computeRowProduct(double[] c, int rl, int ru, double[] preAgg) {
 		throw new NotImplementedException();
+	}
+
+	@Override
+	protected double[] preAggSumRows(){
+		return _dict.sumAllRowsToDouble(_colIndexes.length);
+	}
+
+	@Override
+	protected double[] preAggSumSqRows(){
+		return _dict.sumAllRowsToDoubleSq(_colIndexes.length);
+	}
+
+	@Override
+	protected double[] preAggProductRows(){
+		throw new NotImplementedException();
+	}
+
+	@Override
+	protected double[] preAggBuiltinRows(Builtin builtin){
+		return _dict.aggregateRows(builtin, _colIndexes.length);
 	}
 
 	@Override

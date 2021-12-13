@@ -29,7 +29,6 @@ import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
-import org.apache.sysds.runtime.matrix.data.Pair;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
 
@@ -217,7 +216,7 @@ public class ColGroupRLE extends AColGroupOffset {
 	// }
 
 	@Override
-	protected void computeRowSums(double[] c, int rl, int ru) {
+	protected void computeRowSums(double[] c, int rl, int ru, double[] preAgg) {
 		throw new NotImplementedException();
 		// final int numVals = getNumValues();
 
@@ -286,99 +285,100 @@ public class ColGroupRLE extends AColGroupOffset {
 		// }
 	}
 
+	// @Override
+	// protected void computeRowSumsSq(double[] c, int rl, int ru, double[] preAgg) {
+	// throw new NotImplementedException();
+	// // final int numVals = getNumValues();
+
+	// // if(numVals > 1 && _numRows > CompressionSettings.BITMAP_BLOCK_SZ) {
+	// // final int blksz = CompressionSettings.BITMAP_BLOCK_SZ;
+
+	// // // step 1: prepare position and value arrays
+
+	// // // current pos / values per RLE list
+	// // int[] astart = new int[numVals];
+	// // int[] apos = skipScan(numVals, rl, astart);
+	// // double[] aval = _dict.sumAllRowsToDouble(square, _colIndexes.length);
+
+	// // // step 2: cache conscious matrix-vector via horizontal scans
+	// // for(int bi = rl; bi < ru; bi += blksz) {
+	// // int bimax = Math.min(bi + blksz, ru);
+
+	// // // horizontal segment scan, incl pos maintenance
+	// // for(int k = 0; k < numVals; k++) {
+	// // int boff = _ptr[k];
+	// // int blen = len(k);
+	// // double val = aval[k];
+	// // int bix = apos[k];
+	// // int start = astart[k];
+
+	// // // compute partial results, not aligned
+	// // while(bix < blen) {
+	// // int lstart = _data[boff + bix];
+	// // int llen = _data[boff + bix + 1];
+	// // int from = Math.max(bi, start + lstart);
+	// // int to = Math.min(start + lstart + llen, bimax);
+	// // for(int rix = from; rix < to; rix++)
+	// // c[rix] += val;
+
+	// // if(start + lstart + llen >= bimax)
+	// // break;
+	// // start += lstart + llen;
+	// // bix += 2;
+	// // }
+
+	// // apos[k] = bix;
+	// // astart[k] = start;
+	// // }
+	// // }
+	// // }
+	// // else {
+	// // for(int k = 0; k < numVals; k++) {
+	// // int boff = _ptr[k];
+	// // int blen = len(k);
+	// // double val = _dict.sumRow(k, square, _colIndexes.length);
+
+	// // if(val != 0.0) {
+	// // Pair<Integer, Integer> tmp = skipScanVal(k, rl);
+	// // int bix = tmp.getKey();
+	// // int curRunStartOff = tmp.getValue();
+	// // int curRunEnd = tmp.getValue();
+	// // for(; bix < blen && curRunEnd < ru; bix += 2) {
+	// // curRunStartOff = curRunEnd + _data[boff + bix];
+	// // curRunEnd = curRunStartOff + _data[boff + bix + 1];
+	// // for(int rix = curRunStartOff; rix < curRunEnd && rix < ru; rix++)
+	// // c[rix] += val;
+
+	// // }
+	// // }
+	// // }
+	// // }
+	// }
+
 	@Override
-	protected void computeRowSumsSq(double[] c, int rl, int ru) {
+	protected final void computeRowMxx(double[] c, Builtin builtin, int rl, int ru, double[] preAgg) {
 		throw new NotImplementedException();
-		// final int numVals = getNumValues();
-
-		// if(numVals > 1 && _numRows > CompressionSettings.BITMAP_BLOCK_SZ) {
-		// final int blksz = CompressionSettings.BITMAP_BLOCK_SZ;
-
-		// // step 1: prepare position and value arrays
-
-		// // current pos / values per RLE list
-		// int[] astart = new int[numVals];
-		// int[] apos = skipScan(numVals, rl, astart);
-		// double[] aval = _dict.sumAllRowsToDouble(square, _colIndexes.length);
-
-		// // step 2: cache conscious matrix-vector via horizontal scans
-		// for(int bi = rl; bi < ru; bi += blksz) {
-		// int bimax = Math.min(bi + blksz, ru);
-
-		// // horizontal segment scan, incl pos maintenance
-		// for(int k = 0; k < numVals; k++) {
-		// int boff = _ptr[k];
-		// int blen = len(k);
-		// double val = aval[k];
-		// int bix = apos[k];
-		// int start = astart[k];
-
-		// // compute partial results, not aligned
-		// while(bix < blen) {
-		// int lstart = _data[boff + bix];
-		// int llen = _data[boff + bix + 1];
-		// int from = Math.max(bi, start + lstart);
-		// int to = Math.min(start + lstart + llen, bimax);
-		// for(int rix = from; rix < to; rix++)
-		// c[rix] += val;
-
-		// if(start + lstart + llen >= bimax)
-		// break;
-		// start += lstart + llen;
-		// bix += 2;
-		// }
-
-		// apos[k] = bix;
-		// astart[k] = start;
-		// }
-		// }
-		// }
-		// else {
-		// for(int k = 0; k < numVals; k++) {
-		// int boff = _ptr[k];
-		// int blen = len(k);
-		// double val = _dict.sumRow(k, square, _colIndexes.length);
-
-		// if(val != 0.0) {
-		// Pair<Integer, Integer> tmp = skipScanVal(k, rl);
-		// int bix = tmp.getKey();
-		// int curRunStartOff = tmp.getValue();
-		// int curRunEnd = tmp.getValue();
-		// for(; bix < blen && curRunEnd < ru; bix += 2) {
-		// curRunStartOff = curRunEnd + _data[boff + bix];
-		// curRunEnd = curRunStartOff + _data[boff + bix + 1];
-		// for(int rix = curRunStartOff; rix < curRunEnd && rix < ru; rix++)
-		// c[rix] += val;
-
-		// }
-		// }
-		// }
-		// }
-	}
-
-	@Override
-	protected final void computeRowMxx(double[] c, Builtin builtin, int rl, int ru) {
 		// NOTE: zeros handled once for all column groups outside
-		final int numVals = getNumValues();
-		// double[] c = result.getDenseBlockValues();
-		final double[] values = _dict.getValues();
+		// final int numVals = getNumValues();
+		// // double[] c = result.getDenseBlockValues();
+		// final double[] values = _dict.getValues();
 
-		for(int k = 0; k < numVals; k++) {
-			int boff = _ptr[k];
-			int blen = len(k);
-			double val = mxxValues(k, builtin, values);
+		// for(int k = 0; k < numVals; k++) {
+		// int boff = _ptr[k];
+		// int blen = len(k);
+		// double val = mxxValues(k, builtin, values);
 
-			Pair<Integer, Integer> tmp = skipScanVal(k, rl);
-			int bix = tmp.getKey();
-			int curRunStartOff = tmp.getValue();
-			int curRunEnd = tmp.getValue();
-			for(; bix < blen && curRunEnd < ru; bix += 2) {
-				curRunStartOff = curRunEnd + _data[boff + bix];
-				curRunEnd = curRunStartOff + _data[boff + bix + 1];
-				for(int rix = curRunStartOff; rix < curRunEnd && rix < ru; rix++)
-					c[rix] = builtin.execute(c[rix], val);
-			}
-		}
+		// Pair<Integer, Integer> tmp = skipScanVal(k, rl);
+		// int bix = tmp.getKey();
+		// int curRunStartOff = tmp.getValue();
+		// int curRunEnd = tmp.getValue();
+		// for(; bix < blen && curRunEnd < ru; bix += 2) {
+		// curRunStartOff = curRunEnd + _data[boff + bix];
+		// curRunEnd = curRunStartOff + _data[boff + bix + 1];
+		// for(int rix = curRunStartOff; rix < curRunEnd && rix < ru; rix++)
+		// c[rix] = builtin.execute(c[rix], val);
+		// }
+		// }
 	}
 
 	@Override
@@ -489,28 +489,28 @@ public class ColGroupRLE extends AColGroupOffset {
 		return apos;
 	}
 
-	private Pair<Integer, Integer> skipScanVal(int k, int rl) {
-		int apos = 0;
-		int astart = 0;
+	// private Pair<Integer, Integer> skipScanVal(int k, int rl) {
+	// int apos = 0;
+	// int astart = 0;
 
-		if(rl > 0) { // rl aligned with blksz
-			int boff = _ptr[k];
-			int blen = len(k);
-			int bix = 0;
-			int start = 0;
-			while(bix < blen) {
-				int lstart = _data[boff + bix]; // start
-				int llen = _data[boff + bix + 1]; // len
-				if(start + lstart + llen >= rl)
-					break;
-				start += lstart + llen;
-				bix += 2;
-			}
-			apos = bix;
-			astart = start;
-		}
-		return new Pair<>(apos, astart);
-	}
+	// if(rl > 0) { // rl aligned with blksz
+	// int boff = _ptr[k];
+	// int blen = len(k);
+	// int bix = 0;
+	// int start = 0;
+	// while(bix < blen) {
+	// int lstart = _data[boff + bix]; // start
+	// int llen = _data[boff + bix + 1]; // len
+	// if(start + lstart + llen >= rl)
+	// break;
+	// start += lstart + llen;
+	// bix += 2;
+	// }
+	// apos = bix;
+	// astart = start;
+	// }
+	// return new Pair<>(apos, astart);
+	// }
 
 	@Override
 	public void leftMultByMatrix(MatrixBlock matrix, MatrixBlock result, int rl, int ru) {

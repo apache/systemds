@@ -525,4 +525,9 @@ public class QDictionary extends ADictionary {
 		double[] newReference) {
 		throw new NotImplementedException();
 	}
+
+	@Override
+	public double[] sumAllRowsToDouble(double[] reference) {
+		throw new NotImplementedException();
+	}
 }

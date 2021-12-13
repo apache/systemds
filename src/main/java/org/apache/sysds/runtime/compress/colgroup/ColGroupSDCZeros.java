@@ -295,22 +295,11 @@ public class ColGroupSDCZeros extends APreAgg {
 	}
 
 	@Override
-	protected void computeRowSums(double[] c, int rl, int ru) {
-		final double[] vals = _dict.sumAllRowsToDouble(_colIndexes.length);
-		computeRowSums(c, rl, ru, vals);
+	protected void computeRowSums(double[] c, int rl, int ru, double[] preAgg) {
+		computeRowSums(c, rl, ru, preAgg, _data, _indexes, _numRows);
 	}
 
-	@Override
-	protected void computeRowSumsSq(double[] c, int rl, int ru) {
-		final double[] vals = _dict.sumAllRowsToDoubleSq(_colIndexes.length);
-		computeRowSums(c, rl, ru, vals);
-	}
-
-	protected void computeRowSums(double[] c, int rl, int ru, double[] vals) {
-		computeRowSums(c, rl, ru, vals, _data, _indexes, _numRows);
-	}
-
-	protected static final void computeRowSums(double[] c, int rl, int ru, double[] vals, AMapToData data,
+	protected static final void computeRowSums(double[] c, int rl, int ru, double[] preAgg, AMapToData data,
 		AOffset indexes, int nRows) {
 		final AIterator it = indexes.getIterator(rl);
 		if(it == null)
@@ -319,15 +308,15 @@ public class ColGroupSDCZeros extends APreAgg {
 			indexes.cacheIterator(it, ru);
 		else if(ru >= indexes.getOffsetToLast()) {
 			final int maxId = data.size() - 1;
-			c[it.value()] += vals[data.getIndex(it.getDataIndex())];
+			c[it.value()] += preAgg[data.getIndex(it.getDataIndex())];
 			while(it.getDataIndex() < maxId) {
 				it.next();
-				c[it.value()] += vals[data.getIndex(it.getDataIndex())];
+				c[it.value()] += preAgg[data.getIndex(it.getDataIndex())];
 			}
 		}
 		else {
 			while(it.isNotOver(ru)) {
-				c[it.value()] += vals[data.getIndex(it.getDataIndex())];
+				c[it.value()] += preAgg[data.getIndex(it.getDataIndex())];
 				it.next();
 			}
 			indexes.cacheIterator(it, ru);
@@ -335,9 +324,8 @@ public class ColGroupSDCZeros extends APreAgg {
 	}
 
 	@Override
-	protected void computeRowMxx(double[] c, Builtin builtin, int rl, int ru) {
-		final double[] vals = _dict.aggregateRows(builtin, _colIndexes.length);
-		ColGroupSDC.computeRowMxx(c, builtin, rl, ru, vals, _data, _indexes, _numRows, 0);
+	protected void computeRowMxx(double[] c, Builtin builtin, int rl, int ru, double[] preAgg) {
+		ColGroupSDC.computeRowMxx(c, builtin, rl, ru, preAgg, _data, _indexes, _numRows, 0);
 	}
 
 	@Override

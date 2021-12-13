@@ -105,25 +105,15 @@ public class ColGroupDDC extends APreAgg {
 	}
 
 	@Override
-	protected void computeRowSums(double[] c, int rl, int ru) {
-		double[] vals = _dict.sumAllRowsToDouble(_colIndexes.length);
+	protected void computeRowSums(double[] c, int rl, int ru, double[] preAgg) {
 		for(int rix = rl; rix < ru; rix++)
-			c[rix] += vals[_data.getIndex(rix)];
+			c[rix] += preAgg[_data.getIndex(rix)];
 	}
 
 	@Override
-	protected void computeRowSumsSq(double[] c, int rl, int ru) {
-		double[] vals = _dict.sumAllRowsToDoubleSq(_colIndexes.length);
-		for(int rix = rl; rix < ru; rix++)
-			c[rix] += vals[_data.getIndex(rix)];
-	}
-
-	@Override
-	protected void computeRowMxx(double[] c, Builtin builtin, int rl, int ru) {
-		final int nCol = getNumCols();
-		double[] preAggregatedRows = _dict.aggregateRows(builtin, nCol);
+	protected void computeRowMxx(double[] c, Builtin builtin, int rl, int ru, double[] preAgg) {
 		for(int i = rl; i < ru; i++)
-			c[i] = builtin.execute(c[i], preAggregatedRows[_data.getIndex(i)]);
+			c[i] = builtin.execute(c[i], preAgg[_data.getIndex(i)]);
 	}
 
 	@Override

@@ -217,7 +217,7 @@ public class ColGroupOLE extends AColGroupOffset {
 	// }
 
 	@Override
-	protected void computeRowSums(double[] c, int rl, int ru) {
+	protected void computeRowSums(double[] c, int rl, int ru, double[] preAgg) {
 		throw new NotImplementedException();
 		// final int blksz = CompressionSettings.BITMAP_BLOCK_SZ;
 		// final int numVals = getNumValues();
@@ -283,12 +283,7 @@ public class ColGroupOLE extends AColGroupOffset {
 	}
 
 	@Override
-	protected void computeRowSumsSq(double[] c, int rl, int ru) {
-		throw new NotImplementedException();
-	}
-
-	@Override
-	protected final void computeRowMxx(double[] c, Builtin builtin, int rl, int ru) {
+	protected final void computeRowMxx(double[] c, Builtin builtin, int rl, int ru, double[] preAgg) {
 		// NOTE: zeros handled once for all column groups outside
 		final int blksz = CompressionSettings.BITMAP_BLOCK_SZ;
 		final int numVals = getNumValues();

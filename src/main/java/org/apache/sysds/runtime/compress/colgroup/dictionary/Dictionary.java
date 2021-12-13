@@ -306,6 +306,18 @@ public class Dictionary extends ADictionary {
 	}
 
 	@Override
+	public double[] sumAllRowsToDouble(double[] reference){
+		final int nCol = reference.length;
+		final int numVals = getNumberOfValues(nCol);
+		double[] ret = new double[numVals + 1];
+		for(int k = 0; k < numVals; k++)
+			ret[k] = sumRow(k, nCol, reference);
+		for(int i = 0; i < nCol; i++)
+			ret[numVals] += reference[i];
+		return ret;
+	}
+
+	@Override
 	public double[] sumAllRowsToDoubleSq(int nrColumns) {
 		// pre-aggregate value tuple
 		final int numVals = getNumberOfValues(nrColumns);
@@ -334,6 +346,14 @@ public class Dictionary extends ADictionary {
 		double res = 0.0;
 		for(int i = 0; i < nrColumns; i++)
 			res += _values[valOff + i];
+		return res;
+	}
+
+	public double sumRow(int k, int nrColumns, double[] reference) {
+		final int valOff = k * nrColumns;
+		double res = 0.0;
+		for(int i = 0; i < nrColumns; i++)
+			res += _values[valOff + i] + reference[i];
 		return res;
 	}
 

@@ -213,15 +213,8 @@ public class ColGroupSDCSingleZeros extends APreAgg {
 	}
 
 	@Override
-	protected void computeRowSums(double[] c, int rl, int ru) {
-		final double def = _dict.sumAllRowsToDouble(_colIndexes.length)[0];
-		computeRowSum(c, rl, ru, def);
-	}
-
-	@Override
-	protected void computeRowSumsSq(double[] c, int rl, int ru) {
-		final double def = _dict.sumAllRowsToDoubleSq(_colIndexes.length)[0];
-		computeRowSum(c, rl, ru, def);
+	protected void computeRowSums(double[] c, int rl, int ru, double[] preAgg) {
+		computeRowSum(c, rl, ru, preAgg[0]);
 	}
 
 	protected void computeRowSum(double[] c, int rl, int ru, double def) {
@@ -249,9 +242,8 @@ public class ColGroupSDCSingleZeros extends APreAgg {
 	}
 
 	@Override
-	protected void computeRowMxx(double[] c, Builtin builtin, int rl, int ru) {
-		final double[] vals = _dict.aggregateRows(builtin, _colIndexes.length);
-		ColGroupSDCSingle.computeRowMxx(c, builtin, rl, ru, _indexes, _numRows, 0, vals[0]);
+	protected void computeRowMxx(double[] c, Builtin builtin, int rl, int ru, double[] preAgg) {
+		ColGroupSDCSingle.computeRowMxx(c, builtin, rl, ru, _indexes, _numRows, 0, preAgg[0]);
 	}
 
 	@Override

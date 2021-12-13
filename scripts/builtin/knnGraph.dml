@@ -1,0 +1,63 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+
+
+
+knnGraph = function(Matrix[double] input, integer k) return (Matrix[double] graph) {
+    distances = matrix(0, rows = nrow(input), cols = nrow(input));
+    for (i in 1:nrow(input) - 1) {
+        distances[i, i] = 0;
+        for (j in i + 1:nrow(input)) {
+            distances[i, j] = sum((input[i,] - input[j,])^2)^0.5;
+            distances[j, i] = distances[i, j];
+        }
+    }
+
+    graph = matrix(0, rows=nrow(distances), cols=ncol(distances));
+    for (row in 1:nrow(distances)) {
+        for(k_i in 1:k) {
+            nearest_dist = as.integer(2^64);
+            index_i = 0;
+            index_j = 0;
+            for (col in 1:ncol(distances)) {
+                    if ((nearest_dist > as.scalar(distances[row, col])) & (as.scalar(graph[row, col]) == 0) &
+                    (row != col)) {
+                        nearest_dist = as.scalar(distances[row, col]);
+                        index_i = row;
+                        index_j = col;
+                    }
+            }
+            graph[index_i, index_j] = 1;
+        }
+    }
+}
+
+
+A = matrix(0, rows=10, cols=8);
+
+for(i in 1:nrow(A)) {
+    A[i,] = A[i,] + i;
+}
+
+M = knnGraph(A, 2);
+print(toString(A));
+print(toString(M));

@@ -27,6 +27,8 @@ import java.util.Set;
 
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.runtime.controlprogram.caching.CacheBlock;
+import org.apache.sysds.runtime.data.SparseBlock;
+import org.apache.sysds.runtime.data.SparseBlockCSR;
 import org.apache.sysds.runtime.data.SparseRowVector;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
@@ -77,6 +79,7 @@ public class ColumnEncoderPassThrough extends ColumnEncoder {
 
 	protected void applySparse(CacheBlock in, MatrixBlock out, int outputCol, int rowStart, int blk){
 		Set<Integer> sparseRowsWZeros = null;
+		boolean mcsr = MatrixBlock.DEFAULT_SPARSEBLOCK == SparseBlock.Type.MCSR;
 		int index = _colID - 1;
 		// Apply loop tiling to exploit CPU caches
 		double[] codes = getCodeCol(in, rowStart, blk);
@@ -86,14 +89,28 @@ public class ColumnEncoderPassThrough extends ColumnEncoder {
 			int lim = Math.min(i+B, rowEnd);
 			for (int ii=i; ii<lim; ii++) {
 				double v = codes[ii-rowStart];
-				SparseRowVector row = (SparseRowVector) out.getSparseBlock().get(ii);
 				if(v == 0) {
 					if(sparseRowsWZeros == null)
 						sparseRowsWZeros = new HashSet<>();
 					sparseRowsWZeros.add(ii);
 				}
-				row.values()[index] = v;
-				row.indexes()[index] = outputCol;
+				if (mcsr) {
+					SparseRowVector row = (SparseRowVector) out.getSparseBlock().get(ii);
+					row.values()[index] = v;
+					row.indexes()[index] = outputCol;
+				}
+				else { //csr
+					if(v == 0) {
+						if(sparseRowsWZeros == null)
+							sparseRowsWZeros = new HashSet<>();
+						sparseRowsWZeros.add(ii);
+					}
+					// Manually fill the column-indexes and values array
+					SparseBlockCSR csrblock = (SparseBlockCSR)out.getSparseBlock();
+					int rptr[] = csrblock.rowPointers();
+					csrblock.indexes()[rptr[ii]+index] = outputCol;
+					csrblock.values()[rptr[ii]+index] = codes[ii-rowStart];
+				}
 			}
 		}
 		if(sparseRowsWZeros != null){

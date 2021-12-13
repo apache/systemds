@@ -48,7 +48,7 @@ import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.CacheBlock;
 import org.apache.sysds.runtime.data.SparseBlock;
-import org.apache.sysds.runtime.data.SparseBlockMCSR;
+import org.apache.sysds.runtime.data.SparseBlockCSR;
 import org.apache.sysds.runtime.data.SparseRowVector;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
@@ -325,33 +325,51 @@ public class MultiColumnEncoder implements Encoder {
 
 	private static void outputMatrixPreProcessing(MatrixBlock output, CacheBlock input, boolean hasDC) {
 		long t0 = DMLScript.STATISTICS ? System.nanoTime() : 0;
-		output.allocateBlock();
 		if(output.isInSparseFormat()) {
-			SparseBlock block = output.getSparseBlock();
-			if(!(block instanceof SparseBlockMCSR))
-				throw new RuntimeException(
-					"Transform apply currently only supported for MCSR sparse and dense output Matrices");
-			if (hasDC && OptimizerUtils.getTransformNumThreads()>1) {
-				// DC forces a single threaded allocation after the build phase and
-				// before the apply starts. Below code parallelizes sparse allocation.
-				IntStream.range(0, output.getNumRows())
-				.parallel().forEach(r -> {
-					block.allocate(r, input.getNumColumns());
-					((SparseRowVector)block.get(r)).setSize(input.getNumColumns());
-				});
-			}
-			else {
-				for(int r = 0; r < output.getNumRows(); r++) {
-					// allocate all sparse rows so MT sync can be done.
-					// should be rare that rows have only 0
-					block.allocate(r, input.getNumColumns());
-					// Setting the size here makes it possible to run all sparse apply tasks without any sync
-					// could become problematic if the input is very sparse since we allocate the same size as the input
-					// should be fine in theory ;)
-					((SparseRowVector)block.get(r)).setSize(input.getNumColumns());
+			if (MatrixBlock.DEFAULT_SPARSEBLOCK != SparseBlock.Type.CSR
+					&& MatrixBlock.DEFAULT_SPARSEBLOCK != SparseBlock.Type.MCSR)
+				throw new RuntimeException("Transformapply is only supported for MCSR and CSR output matrix");
+			boolean mcsr = MatrixBlock.DEFAULT_SPARSEBLOCK == SparseBlock.Type.MCSR;
+			if (mcsr) {
+				output.allocateBlock();
+				SparseBlock block = output.getSparseBlock();
+				if (hasDC && OptimizerUtils.getTransformNumThreads()>1) {
+					// DC forces a single threaded allocation after the build phase and
+					// before the apply starts. Below code parallelizes sparse allocation.
+					IntStream.range(0, output.getNumRows())
+					.parallel().forEach(r -> {
+						block.allocate(r, input.getNumColumns());
+						((SparseRowVector)block.get(r)).setSize(input.getNumColumns());
+					});
+				}
+				else {
+					for(int r = 0; r < output.getNumRows(); r++) {
+						// allocate all sparse rows so MT sync can be done.
+						// should be rare that rows have only 0
+						block.allocate(r, input.getNumColumns());
+						// Setting the size here makes it possible to run all sparse apply tasks without any sync
+						// could become problematic if the input is very sparse since we allocate the same size as the input
+						// should be fine in theory ;)
+						((SparseRowVector)block.get(r)).setSize(input.getNumColumns());
+					}
 				}
 			}
+			else { //csr
+				int size = output.getNumRows() * input.getNumColumns();
+				SparseBlock csrblock = new SparseBlockCSR(output.getNumRows(), size, size);
+				// Manually fill the row pointers based on nnzs/row (= #cols in the input)
+				// Not using the set() methods to 1) avoid binary search and shifting, 
+				// 2) reduce thread contentions on the arrays
+				int[] rptr = ((SparseBlockCSR)csrblock).rowPointers();
+				for (int i=0; i<rptr.length-1; i++) { //TODO: parallelize
+					rptr[i+1] = rptr[i] + input.getNumColumns();
+				}
+				output.setSparseBlock(csrblock);
+			}
 		}
+		else //dense
+			output.allocateBlock();
+
 		if(DMLScript.STATISTICS) {
 			LOG.debug("Elapsed time for allocation: "+ ((double) System.nanoTime() - t0) / 1000000 + " ms");
 			Statistics.incTransformOutMatrixPreProcessingTime(System.nanoTime()-t0);

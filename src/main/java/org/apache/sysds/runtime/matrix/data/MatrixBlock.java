@@ -48,7 +48,6 @@ import org.apache.sysds.lops.MapMultChain.ChainType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
-import org.apache.sysds.runtime.compress.lib.CLALibBinaryCellOp;
 import org.apache.sysds.runtime.controlprogram.caching.CacheBlock;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject.UpdateType;
 import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
@@ -3805,10 +3804,10 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		for( MatrixBlock in : inputs ) {
 			if( in.isEmptyBlock(false) )
 				continue;
-			if(in instanceof CompressedMatrixBlock){
-				in = CLALibBinaryCellOp.binaryMVRow((CompressedMatrixBlock) in,c, null, new BinaryOperator(Plus.getPlusFnObject()), false);
-			}
-			else if( in.isInSparseFormat() ) {
+			if(in instanceof CompressedMatrixBlock)
+				in = CompressedMatrixBlock.getUncompressed(in, "ProcessAddRow");
+			
+			if( in.isInSparseFormat() ) {
 				SparseBlock a = in.getSparseBlock();
 				if( a.isEmpty(i) ) continue;
 				LibMatrixMult.vectAdd(a.values(i), c, a.indexes(i), a.pos(i), cix, a.size(i));

@@ -43,7 +43,7 @@ import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
  */
 public class ColGroupSDC extends AMorphingMMColGroup {
 	private static final long serialVersionUID = 769993538831949086L;
-	
+
 	/** Sparse row indexes for the data */
 	protected transient AOffset _indexes;
 	/** Pointers to row indexes in the dictionary. Note the dictionary has one extra entry. */
@@ -93,67 +93,22 @@ public class ColGroupSDC extends AMorphingMMColGroup {
 	}
 
 	@Override
-	protected void computeRowSums(double[] c, int rl, int ru) {
-
-		final AIterator it = _indexes.getIterator(rl);
-		final int numVals = getNumValues();
-		int r = rl;
-		final double[] vals = _dict.sumAllRowsToDouble(_colIndexes.length);
-		final double def = vals[numVals - 1];
-		if(it != null && it.value() > ru)
-			_indexes.cacheIterator(it, ru);
-		else if(it != null && ru >= _indexes.getOffsetToLast()) {
-			final int maxId = _data.size() - 1;
-			while(true) {
-				if(it.value() == r) {
-					c[r] += vals[_data.getIndex(it.getDataIndex())];
-					if(it.getDataIndex() < maxId)
-						it.next();
-					else {
-						r++;
-						break;
-					}
-				}
-				else
-					c[r] += def;
-				r++;
-			}
-		}
-		else if(it != null) {
-			while(it.isNotOver(ru)) {
-				if(it.value() == r)
-					c[r] += vals[_data.getIndex(it.getDataIndexAndIncrement())];
-				else
-					c[r] += def;
-				r++;
-			}
-			_indexes.cacheIterator(it, ru);
-		}
-
-		while(r < ru) {
-			c[r] += def;
-			r++;
-		}
+	protected void computeRowSums(double[] c, int rl, int ru, double[] preAgg) {
+		computeRowSums(c, rl, ru, preAgg, _data, _indexes, _numRows);
 	}
 
-	@Override
-	protected void computeRowSumsSq(double[] c, int rl, int ru) {
-		final double[] vals = _dict.sumAllRowsToDoubleSq(_colIndexes.length);
-		computeRowSumsSq(c, rl, ru, vals, _data, _indexes, _numRows);
-	}
-
-	protected static final void computeRowSumsSq(double[] c, int rl, int ru, double[] vals, AMapToData data,
+	protected static final void computeRowSums(double[] c, int rl, int ru, double[] preAgg, AMapToData data,
 		AOffset indexes, int nRows) {
 		int r = rl;
 		final AIterator it = indexes.getIterator(rl);
-		final double def = vals[vals.length - 1];
+		final double def = preAgg[preAgg.length - 1];
 		if(it != null && it.value() > ru)
 			indexes.cacheIterator(it, ru);
 		else if(it != null && ru >= indexes.getOffsetToLast()) {
 			final int maxId = data.size() - 1;
 			while(true) {
 				if(it.value() == r) {
-					c[r] += vals[data.getIndex(it.getDataIndex())];
+					c[r] += preAgg[data.getIndex(it.getDataIndex())];
 					if(it.getDataIndex() < maxId)
 						it.next();
 					else {
@@ -169,7 +124,7 @@ public class ColGroupSDC extends AMorphingMMColGroup {
 		else if(it != null) {
 			while(r < ru) {
 				if(it.value() == r)
-					c[r] += vals[data.getIndex(it.getDataIndexAndIncrement())];
+					c[r] += preAgg[data.getIndex(it.getDataIndexAndIncrement())];
 				else
 					c[r] += def;
 				r++;
@@ -184,9 +139,8 @@ public class ColGroupSDC extends AMorphingMMColGroup {
 	}
 
 	@Override
-	protected void computeRowMxx(double[] c, Builtin builtin, int rl, int ru) {
-		final double[] vals = _dict.aggregateRows(builtin, _colIndexes.length);
-		computeRowMxx(c, builtin, rl, ru, vals, _data, _indexes, _numRows, vals[vals.length - 1]);
+	protected void computeRowMxx(double[] c, Builtin builtin, int rl, int ru, double[] preAgg) {
+		computeRowMxx(c, builtin, rl, ru, preAgg, _data, _indexes, _numRows, preAgg[preAgg.length - 1]);
 	}
 
 	protected static final void computeRowMxx(double[] c, Builtin builtin, int rl, int ru, double[] vals,

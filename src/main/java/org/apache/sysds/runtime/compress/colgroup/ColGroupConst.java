@@ -75,10 +75,10 @@ public class ColGroupConst extends AColGroupCompressed {
 	}
 
 	@Override
-	protected void computeRowMxx(double[] c, Builtin builtin, int rl, int ru) {
-		double value = _dict.aggregateRows(builtin, _colIndexes.length)[0];
+	protected void computeRowMxx(double[] c, Builtin builtin, int rl, int ru, double[] preAgg) {
+		double v = preAgg[0];
 		for(int i = rl; i < ru; i++)
-			c[i] = builtin.execute(c[i], value);
+			c[i] = builtin.execute(c[i], v);
 	}
 
 	@Override
@@ -176,16 +176,23 @@ public class ColGroupConst extends AColGroupCompressed {
 		_dict.colSumSq(c, new int[] {nRows}, _colIndexes);
 	}
 
-	@Override
-	protected void computeRowSums(double[] c, int rl, int ru) {
-		double vals = _dict.sumAllRowsToDouble(_colIndexes.length)[0];
-		for(int rix = rl; rix < ru; rix++)
-			c[rix] += vals;
-	}
+	// @Override
+	// protected void computeRowSums(double[] c, int rl, int ru) {
+	// double vals = _dict.sumAllRowsToDouble(_colIndexes.length)[0];
+	// for(int rix = rl; rix < ru; rix++)
+	// c[rix] += vals;
+	// }
+
+	// @Override
+	// protected void computeRowSumsSq(double[] c, int rl, int ru) {
+	// double vals = _dict.sumAllRowsToDoubleSq(_colIndexes.length)[0];
+	// for(int rix = rl; rix < ru; rix++)
+	// c[rix] += vals;
+	// }
 
 	@Override
-	protected void computeRowSumsSq(double[] c, int rl, int ru) {
-		double vals = _dict.sumAllRowsToDoubleSq(_colIndexes.length)[0];
+	protected void computeRowSums(double[] c, int rl, int ru, double[] preAgg) {
+		double vals = preAgg[0];
 		for(int rix = rl; rix < ru; rix++)
 			c[rix] += vals;
 	}
@@ -323,7 +330,7 @@ public class ColGroupConst extends AColGroupCompressed {
 	}
 
 	@Override
-	protected void computeRowProduct(double[] c, int rl, int ru) {
+	protected void computeRowProduct(double[] c, int rl, int ru, double[] preAgg) {
 		throw new NotImplementedException();
 	}
 
@@ -331,5 +338,26 @@ public class ColGroupConst extends AColGroupCompressed {
 	protected void computeColProduct(double[] c, int nRows) {
 		throw new NotImplementedException();
 
+	}
+
+	@Override
+	protected double[] preAggSumRows() {
+		return _dict.sumAllRowsToDouble(_colIndexes.length);
+	}
+
+	@Override
+	protected double[] preAggSumSqRows() {
+		return _dict.sumAllRowsToDoubleSq(_colIndexes.length);
+
+	}
+
+	@Override
+	protected double[] preAggProductRows() {
+		throw new NotImplementedException();
+	}
+
+	@Override
+	protected double[] preAggBuiltinRows(Builtin builtin) {
+		return _dict.aggregateRows(builtin, _colIndexes.length);
 	}
 }

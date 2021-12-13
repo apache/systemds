@@ -78,17 +78,6 @@ public class ColGroupSDCSingle extends AMorphingMMColGroup {
 	}
 
 	@Override
-	protected void computeRowSums(double[] c, int rl, int ru) {
-		final double[] vals = _dict.sumAllRowsToDouble(_colIndexes.length);
-		computeRowSums(c, rl, ru, vals);
-	}
-
-	@Override
-	protected void computeRowSumsSq(double[] c, int rl, int ru) {
-		final double[] vals = _dict.sumAllRowsToDoubleSq(_colIndexes.length);
-		computeRowSums(c, rl, ru, vals);
-	}
-
 	protected void computeRowSums(double[] c, int rl, int ru, double[] vals) {
 		int r = rl;
 		final AIterator it = _indexes.getIterator(rl);
@@ -131,9 +120,8 @@ public class ColGroupSDCSingle extends AMorphingMMColGroup {
 	}
 
 	@Override
-	protected void computeRowMxx(double[] c, Builtin builtin, int rl, int ru) {
-		final double[] vals = _dict.aggregateRows(builtin, _colIndexes.length);
-		computeRowMxx(c, builtin, rl, ru, _indexes, _numRows, vals[1], vals[0]);
+	protected void computeRowMxx(double[] c, Builtin builtin, int rl, int ru, double[] preAgg) {
+		computeRowMxx(c, builtin, rl, ru, _indexes, _numRows, preAgg[1], preAgg[0]);
 	}
 
 	protected static final void computeRowMxx(double[] c, Builtin builtin, int rl, int ru, AOffset indexes, int nRows,

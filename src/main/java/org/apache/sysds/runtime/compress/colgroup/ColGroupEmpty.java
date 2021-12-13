@@ -206,7 +206,7 @@ public class ColGroupEmpty extends AColGroupCompressed {
 	}
 
 	@Override
-	protected void computeRowSums(double[] c, int rl, int ru) {
+	protected void computeRowSums(double[] c, int rl, int ru, double[] preAgg) {
 		// do nothing
 	}
 
@@ -221,17 +221,12 @@ public class ColGroupEmpty extends AColGroupCompressed {
 	}
 
 	@Override
-	protected void computeRowSumsSq(double[] c, int rl, int ru) {
-		// do nothing
-	}
-
-	@Override
 	protected void computeColSumsSq(double[] c, int nRows) {
 		// do nothing
 	}
 
 	@Override
-	protected void computeRowMxx(double[] c, Builtin builtin, int rl, int ru) {
+	protected void computeRowMxx(double[] c, Builtin builtin, int rl, int ru, double[] preAgg) {
 		for(int r = rl; r < ru; r++)
 			c[r] = builtin.execute(c[r], 0);
 	}
@@ -247,12 +242,32 @@ public class ColGroupEmpty extends AColGroupCompressed {
 	}
 
 	@Override
-	protected void computeRowProduct(double[] c, int rl, int ru) {
+	protected void computeRowProduct(double[] c, int rl, int ru, double[] preAgg) {
 		// do nothing
 	}
 
 	@Override
 	protected void computeColProduct(double[] c, int nRows) {
 		// do nothing
+	}
+
+	@Override
+	protected double[] preAggSumRows() {
+		return null;
+	}
+
+	@Override
+	protected double[] preAggSumSqRows() {
+		return null;
+	}
+
+	@Override
+	protected double[] preAggProductRows() {
+		return null;
+	}
+
+	@Override
+	protected double[] preAggBuiltinRows(Builtin builtin) {
+		return null;
 	}
 }

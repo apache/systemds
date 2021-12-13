@@ -24,6 +24,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 
 import org.apache.commons.lang.NotImplementedException;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.bitmap.ABitmap;
 import org.apache.sysds.runtime.compress.bitmap.Bitmap;
@@ -35,8 +37,7 @@ import org.apache.sysds.runtime.data.SparseRow;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
 public class DictionaryFactory {
-
-	// protected static final Log LOG = LogFactory.getLog(DictionaryFactory.class.getName());
+	protected static final Log LOG = LogFactory.getLog(DictionaryFactory.class.getName());
 
 	public enum Type {
 		FP64_DICT, MATRIX_BLOCK_DICT, INT8_DICT
@@ -74,7 +75,6 @@ public class DictionaryFactory {
 			final DArrCounts dac = vals.get(i);
 			System.arraycopy(dac.key.getData(), 0, resValues, dac.id * nCols, nCols);
 		}
-
 		return new Dictionary(resValues);
 	}
 

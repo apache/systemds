@@ -128,10 +128,8 @@ public class ColGroupDDC extends APreAgg {
 
 	@Override
 	public int[] getCounts(int[] counts) {
-		for(int i = 0; i < _numRows; i++) {
-			int index = _data.getIndex(i);
-			counts[index]++;
-		}
+		for(int i = 0; i < _numRows; i++)
+			counts[_data.getIndex(i)]++;
 		return counts;
 	}
 

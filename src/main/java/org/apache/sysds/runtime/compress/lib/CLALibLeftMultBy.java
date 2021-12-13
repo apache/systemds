@@ -281,7 +281,7 @@ public class CLALibLeftMultBy {
 			final ExecutorService pool = CommonThreadPool.get(k);
 			final ArrayList<Callable<MatrixBlock>> tasks = new ArrayList<>();
 			final int rl = that.getNumRows();
-			final int numberSplits = Math.max(( filteredGroups.size() / k), 1);
+			final int numberSplits = Math.max((filteredGroups.size() / k), 1);
 			final int rowBlockThreads = Math.max(k / numberSplits, 1);
 			final int rowBlockSize = rl <= rowBlockThreads ? 1 : Math.min(Math.max(rl / rowBlockThreads, 1), 16);
 
@@ -457,8 +457,10 @@ public class CLALibLeftMultBy {
 			for(int gl = 0; gl < nColGroups; gl += colGroupBlocking) {
 				final int gu = Math.min(gl + colGroupBlocking, nColGroups);
 				// For each column group in the current block allocate the preaggregate array.
-				for(int j = gl; j < gu; j++)
-					preAgg[j % colGroupBlocking].reset(rut - rlt, preAggCGs.get(j).getPreAggregateSize(), false);
+				for(int j = gl; j < gu; j++) {
+					final int preAggNCol = preAggCGs.get(j).getPreAggregateSize();
+					preAgg[j % colGroupBlocking].reset(rut - rlt, preAggNCol, false);
+				}
 
 				// PreAggregate current block of column groups
 				for(int cl = 0; cl < lc; cl += colBZ) {

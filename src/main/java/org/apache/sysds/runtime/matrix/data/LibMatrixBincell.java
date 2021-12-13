@@ -78,11 +78,15 @@ public class LibMatrixBincell {
 		MATRIX_MATRIX,
 		MATRIX_COL_VECTOR,
 		MATRIX_ROW_VECTOR,
+		COL_VECTOR_MATRIX,
+		ROW_VECTOR_MATRIX,
 		OUTER_VECTOR_VECTOR,
 		INVALID;
 		public boolean isMatrixVector() {
 			return this == MATRIX_COL_VECTOR
-				|| this == MATRIX_ROW_VECTOR;
+				|| this == MATRIX_ROW_VECTOR
+				|| this == COL_VECTOR_MATRIX
+				|| this == ROW_VECTOR_MATRIX;
 		}
 	}
 	
@@ -357,6 +361,32 @@ public class LibMatrixBincell {
 			return BinaryAccessType.INVALID;
 	}
 
+	public static BinaryAccessType getBinaryAccessTypeExtended(MatrixBlock m1, MatrixBlock m2) {
+		final int rlen1 = m1.rlen;
+		final int rlen2 = m2.rlen;
+		final int clen1 = m1.clen;
+		final int clen2 = m2.clen;
+
+		if(rlen1 == rlen2) {
+			if(clen1 == clen2)
+				return BinaryAccessType.MATRIX_MATRIX;
+			else if(clen1 < clen2)
+				return BinaryAccessType.COL_VECTOR_MATRIX;
+			else
+				return BinaryAccessType.MATRIX_COL_VECTOR;
+		}
+		else if(clen1 == clen2) {
+			if(rlen1 < rlen2)
+				return BinaryAccessType.ROW_VECTOR_MATRIX;
+			else
+				return BinaryAccessType.MATRIX_ROW_VECTOR;
+		}
+		else if(clen1 == 1 && rlen2 == 1)
+			return BinaryAccessType.OUTER_VECTOR_VECTOR;
+		else
+			return BinaryAccessType.INVALID;
+	}
+
 	public static void isValidDimensionsBinary(MatrixBlock m1, MatrixBlock m2)
 	{
 		final int rlen1 = m1.rlen;
@@ -369,7 +399,7 @@ public class LibMatrixBincell {
 		//2) MV operations w/ V either being a right-hand-side column or row vector 
 		//  (where one dimension needs to match and the other dimension is 1)
 		//3) VV outer vector operations w/ a common dimension of 1 
-		boolean isValid = (   (rlen1 == rlen2 && clen1==clen2)            //MM 
+		boolean isValid = (   (rlen1 == rlen2 && clen1==clen2)        //MM 
 							|| (rlen1 == rlen2 && clen1 > 1 && clen2 == 1) //MVc
 							|| (clen1 == clen2 && rlen1 > 1 && rlen2 == 1) //MVr
 							|| (clen1 == 1 && rlen2 == 1 ) );              //VV
@@ -377,6 +407,27 @@ public class LibMatrixBincell {
 		if( !isValid ) {
 			throw new RuntimeException("Block sizes are not matched for binary " +
 					"cell operations: " + rlen1 + "x" + clen1 + " vs " + rlen2 + "x" + clen2);
+		}
+	}
+
+	public static void isValidDimensionsBinaryExtended(MatrixBlock m1, MatrixBlock m2) {
+		final int rlen1 = m1.rlen;
+		final int clen1 = m1.clen;
+		final int rlen2 = m2.rlen;
+		final int clen2 = m2.clen;
+
+		// Added extra 2 options
+		// 2a) VM operations with V either being a left-hand-side column or row vector.
+		boolean isValid = ((rlen1 == rlen2 && clen1 == clen2) // MM
+			|| (rlen1 == rlen2 && clen1 > 1 && clen2 == 1) // MVc
+			|| (rlen1 == rlen2 && clen1 == 1 && clen2 > 1) // VMc
+			|| (clen1 == clen2 && rlen1 > 1 && rlen2 == 1) // MVr
+			|| (clen1 == clen2 && rlen1 == 1 && rlen2 > 1) // VMr
+			|| (clen1 == 1 && rlen2 == 1)); // VV
+
+		if(!isValid) {
+			throw new RuntimeException("Block sizes are not matched for binary " + "cell operations: " + rlen1 + "x"
+				+ clen1 + " vs " + rlen2 + "x" + clen2);
 		}
 	}
 

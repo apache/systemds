@@ -119,12 +119,12 @@ public abstract class SetOperationsTestBase extends AutomatedTestBase {
         runUnitTest(X, Y, execType);
     }
 
-//    @Test
-//    public void testYSuperSetOfX() {
-//        double[][] X = TestUtils.seq(2, 200, 4);
-//        double[][] Y = TestUtils.seq(2, 200, 2);
-//        runUnitTest(X, Y, execType);
-//    }
+    @Test
+    public void testYSuperSetOfX() {
+        double[][] X = TestUtils.seq(2, 200, 4);
+        double[][] Y = TestUtils.seq(2, 200, 2);
+        runUnitTest(X, Y, execType);
+    }
 
     @Test
     public void testXSuperSetOfY() {

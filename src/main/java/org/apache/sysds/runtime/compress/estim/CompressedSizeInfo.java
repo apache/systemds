@@ -56,24 +56,6 @@ public class CompressedSizeInfo {
 		compressionInfo = info;
 	}
 
-	public void joinEmpty(int nRows) {
-		List<CompressedSizeInfoColGroup> ng = new ArrayList<>();
-		List<Integer> empty = new ArrayList<>();
-		for(CompressedSizeInfoColGroup g : compressionInfo) {
-			if(g.isEmpty())
-				empty.add(g.getColumns()[0]);
-			else
-				ng.add(g);
-		}
-		int[] emptyColumns = new int[empty.size()];
-		for(int i = 0; i < empty.size(); i++)
-			emptyColumns[i] = empty.get(i);
-		if(empty.size() > 0) {
-			ng.add(new CompressedSizeInfoColGroup(emptyColumns, nRows));
-			compressionInfo = ng;
-		}
-	}
-
 	/**
 	 * Method for returning the calculated memory usage from this specific compression plan.
 	 * 

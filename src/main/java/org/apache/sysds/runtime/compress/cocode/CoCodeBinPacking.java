@@ -22,9 +22,7 @@ package org.apache.sysds.runtime.compress.cocode;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import org.apache.sysds.runtime.compress.CompressionSettings;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup.CompressionType;
@@ -56,7 +54,7 @@ public class CoCodeBinPacking extends AColumnCoCoder {
 	protected CoCodeBinPacking(CompressedSizeEstimator sizeEstimator, ICostEstimate costEstimator,
 		CompressionSettings cs) {
 		super(sizeEstimator, costEstimator, cs);
-		mem = new Memorizer();
+		mem = new Memorizer(sizeEstimator);
 	}
 
 	@Override
@@ -141,7 +139,7 @@ public class CoCodeBinPacking extends AColumnCoCoder {
 			for(int j = 0; j < bins.size(); j++) {
 				double newBinWeight = binWeights[j] - c.getCardinalityRatio();
 				if(newBinWeight >= 0 && bins.get(j).getColumns().length < MAX_COL_PER_GROUP - 1) {
-					bins.set(j, joinWithoutAnalysis(Util.join(bins.get(j).getColumns(), c.getColumns()),bins.get(j), c));
+					bins.set(j, joinWithoutAnalysis(Util.join(bins.get(j).getColumns(), c.getColumns()), bins.get(j), c));
 					binWeights[j] = newBinWeight;
 					assigned = true;
 					break;
@@ -190,20 +188,20 @@ public class CoCodeBinPacking extends AColumnCoCoder {
 
 	private List<CompressedSizeInfoColGroup> coCodeBruteForce(CompressedSizeInfoColGroup bin) {
 
-		List<int[]> workset = new ArrayList<>(bin.getColumns().length);
+		List<ColIndexes> workSet = new ArrayList<>(bin.getColumns().length);
 
-		for(int i = 0; i < bin.getColumns().length; i++)
-			workset.add(new int[] {bin.getColumns()[i]});
+		for(int b : bin.getColumns())
+			workSet.add(new ColIndexes(new int[] {b}));
 
 		// process merging iterations until no more change
-		while(workset.size() > 1) {
+		while(workSet.size() > 1) {
 			long changeInSize = 0;
 			CompressedSizeInfoColGroup tmp = null;
-			int[] selected1 = null, selected2 = null;
-			for(int i = 0; i < workset.size(); i++) {
-				for(int j = i + 1; j < workset.size(); j++) {
-					final int[] c1 = workset.get(i);
-					final int[] c2 = workset.get(j);
+			ColIndexes selected1 = null, selected2 = null;
+			for(int i = 0; i < workSet.size(); i++) {
+				for(int j = i + 1; j < workSet.size(); j++) {
+					final ColIndexes c1 = workSet.get(i);
+					final ColIndexes c2 = workSet.get(j);
 					final long sizeC1 = mem.get(c1).getMinSize();
 					final long sizeC2 = mem.get(c2).getMinSize();
 
@@ -222,8 +220,8 @@ public class CoCodeBinPacking extends AColumnCoCoder {
 					long newSizeChangeIfSelected = sizeC1C2 - sizeC1 - sizeC2;
 					// Select the best join of either the currently selected
 					// or keep the old one.
-					if((tmp == null && newSizeChangeIfSelected < changeInSize) || tmp != null &&
-						(newSizeChangeIfSelected < changeInSize || newSizeChangeIfSelected == changeInSize &&
+					if((tmp == null && newSizeChangeIfSelected < changeInSize) ||
+						tmp != null && (newSizeChangeIfSelected < changeInSize || newSizeChangeIfSelected == changeInSize &&
 							c1c2Inf.getColumns().length < tmp.getColumns().length)) {
 						changeInSize = newSizeChangeIfSelected;
 						tmp = c1c2Inf;
@@ -234,111 +232,23 @@ public class CoCodeBinPacking extends AColumnCoCoder {
 			}
 
 			if(tmp != null) {
-				workset.remove(selected1);
-				workset.remove(selected2);
-				workset.add(tmp.getColumns());
+				workSet.remove(selected1);
+				workSet.remove(selected2);
+				workSet.add(new ColIndexes(tmp.getColumns()));
 			}
 			else
 				break;
 		}
 
-		LOG.debug(mem.stats());
+		if(LOG.isDebugEnabled())
+			LOG.debug("Memorizer stats:" + mem.stats());
 		mem.resetStats();
 
-		List<CompressedSizeInfoColGroup> ret = new ArrayList<>(workset.size());
+		List<CompressedSizeInfoColGroup> ret = new ArrayList<>(workSet.size());
 
-		for(int[] w : workset)
+		for(ColIndexes w : workSet)
 			ret.add(mem.get(w));
 
 		return ret;
-	}
-
-	protected class Memorizer {
-		private final Map<ColIndexes, CompressedSizeInfoColGroup> mem;
-		private int st1 = 0, st2 = 0, st3 = 0, st4 = 0;
-
-		public Memorizer() {
-			mem = new HashMap<>();
-		}
-
-		public void put(CompressedSizeInfoColGroup g) {
-			mem.put(new ColIndexes(g.getColumns()), g);
-		}
-
-		public CompressedSizeInfoColGroup get(CompressedSizeInfoColGroup g) {
-			return mem.get(new ColIndexes(g.getColumns()));
-		}
-
-		public CompressedSizeInfoColGroup get(int[] c) {
-			return mem.get(new ColIndexes(c));
-		}
-
-		public CompressedSizeInfoColGroup getOrCreate(int[] c1, int[] c2) {
-			final int[] c = Util.join(c1, c2);
-			final ColIndexes cI = new ColIndexes(Util.join(c1, c2));
-			CompressedSizeInfoColGroup g = mem.get(cI);
-			st2++;
-			if(g == null) {
-				final CompressedSizeInfoColGroup left = mem.get(new ColIndexes(c1));
-				final CompressedSizeInfoColGroup right = mem.get(new ColIndexes(c2));
-				final boolean leftConst = left.getBestCompressionType(_cs) == CompressionType.CONST &&
-					left.getNumOffs() == 0;
-				final boolean rightConst = right.getBestCompressionType(_cs) == CompressionType.CONST &&
-					right.getNumOffs() == 0;
-				if(leftConst)
-					g = CompressedSizeInfoColGroup.addConstGroup(c, right, _cs.validCompressions);
-				else if(rightConst)
-					g = CompressedSizeInfoColGroup.addConstGroup(c, left, _cs.validCompressions);
-				else {
-					st3++;
-					g = _sest.estimateJoinCompressedSize(c, left, right);
-				}
-
-				if(leftConst || rightConst)
-					st4++;
-
-				mem.put(cI, g);
-			}
-			return g;
-		}
-
-		public void incst1() {
-			st1++;
-		}
-
-		public String stats() {
-			return st1 + " " + st2 + " " + st3 + " " + st4;
-		}
-
-		public void resetStats() {
-			st1 = 0;
-			st2 = 0;
-			st3 = 0;
-			st4 = 0;
-		}
-
-		@Override
-		public String toString() {
-			return mem.toString();
-		}
-	}
-
-	private static class ColIndexes {
-		final int[] _indexes;
-
-		public ColIndexes(int[] indexes) {
-			_indexes = indexes;
-		}
-
-		@Override
-		public int hashCode() {
-			return Arrays.hashCode(_indexes);
-		}
-
-		@Override
-		public boolean equals(Object that) {
-			ColIndexes thatGrp = (ColIndexes) that;
-			return Arrays.equals(_indexes, thatGrp._indexes);
-		}
 	}
 }

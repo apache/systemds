@@ -49,10 +49,14 @@ public class MatrixBlockDictionary extends ADictionary {
 			throw new DMLCompressionException("Invalid construction of empty dictionary");
 	}
 
-	public MatrixBlockDictionary(MatrixBlock data) {
+	public MatrixBlockDictionary(MatrixBlock data, int nCol) {
+
 		_data = data;
 		if(_data.isEmpty())
 			throw new DMLCompressionException("Invalid construction of empty dictionary");
+
+		if(_data.getNumColumns() != nCol)
+			throw new DMLCompressionException("Invalid construction expected nCol: "+ nCol + " but matrix block contains: " + _data.getNumColumns());
 	}
 
 	public MatrixBlock getMatrixBlock() {
@@ -79,10 +83,12 @@ public class MatrixBlockDictionary extends ADictionary {
 
 	@Override
 	public long getInMemorySize() {
+		// object reference to a matrix block + matrix block size.
 		return 8 + _data.estimateSizeInMemory();
 	}
 
 	public static long getInMemorySize(int numberValues, int numberColumns, double sparsity) {
+		// object reference to a matrix block + matrix block size.
 		return 8 + MatrixBlock.estimateSizeInMemory(numberValues, numberColumns, sparsity);
 	}
 
@@ -303,7 +309,7 @@ public class MatrixBlockDictionary extends ADictionary {
 		if(res.isEmpty())
 			return null;
 		else
-			return new MatrixBlockDictionary(res);
+			return new MatrixBlockDictionary(res, _data.getNumColumns());
 	}
 
 	@Override
@@ -350,7 +356,7 @@ public class MatrixBlockDictionary extends ADictionary {
 		if(ret.isEmpty())
 			return null;
 		else
-			return new MatrixBlockDictionary(ret);
+			return new MatrixBlockDictionary(ret, nCol);
 
 	}
 
@@ -373,7 +379,7 @@ public class MatrixBlockDictionary extends ADictionary {
 		if(res2.isEmpty())
 			return null;
 		else
-			return new MatrixBlockDictionary(res2);
+			return new MatrixBlockDictionary(res2, _data.getNumColumns());
 	}
 
 	@Override
@@ -394,13 +400,13 @@ public class MatrixBlockDictionary extends ADictionary {
 	public ADictionary applyBinaryRowOpLeftAppendNewEntry(BinaryOperator op, double[] v, int[] colIndexes) {
 		MatrixBlock rowVector = Util.extractValues(v, colIndexes);
 		MatrixBlock tmp = _data.append(new MatrixBlock(1, _data.getNumColumns(), 0), null, false);
-		return new MatrixBlockDictionary(rowVector.binaryOperations(op, tmp, null));
+		return new MatrixBlockDictionary(rowVector.binaryOperations(op, tmp, null), _data.getNumColumns());
 	}
 
 	@Override
 	public ADictionary binOpRight(BinaryOperator op, double[] v, int[] colIndexes) {
 		MatrixBlock rowVector = Util.extractValues(v, colIndexes);
-		return new MatrixBlockDictionary(_data.binaryOperations(op, rowVector, null));
+		return new MatrixBlockDictionary(_data.binaryOperations(op, rowVector, null), _data.getNumColumns());
 	}
 
 	@Override
@@ -413,14 +419,14 @@ public class MatrixBlockDictionary extends ADictionary {
 	public ADictionary applyBinaryRowOpRightAppendNewEntry(BinaryOperator op, double[] v, int[] colIndexes) {
 		MatrixBlock rowVector = Util.extractValues(v, colIndexes);
 		MatrixBlock tmp = _data.append(new MatrixBlock(1, _data.getNumColumns(), 0), null, false);
-		return new MatrixBlockDictionary(tmp.binaryOperations(op, rowVector, null));
+		return new MatrixBlockDictionary(tmp.binaryOperations(op, rowVector, null), _data.getNumColumns());
 	}
 
 	@Override
 	public ADictionary clone() {
 		MatrixBlock ret = new MatrixBlock();
 		ret.copy(_data);
-		return new MatrixBlockDictionary(ret);
+		return new MatrixBlockDictionary(ret, _data.getNumColumns());
 	}
 
 	@Override
@@ -875,7 +881,7 @@ public class MatrixBlockDictionary extends ADictionary {
 	@Override
 	public ADictionary sliceOutColumnRange(int idxStart, int idxEnd, int previousNumberOfColumns) {
 		MatrixBlock retBlock = _data.slice(0, _data.getNumRows() - 1, idxStart, idxEnd - 1);
-		return new MatrixBlockDictionary(retBlock);
+		return new MatrixBlockDictionary(retBlock, idxEnd  - idxStart );
 	}
 
 	@Override
@@ -1088,7 +1094,7 @@ public class MatrixBlockDictionary extends ADictionary {
 			final int nRow = _data.getNumRows() - 1;
 			final int nCol = _data.getNumColumns();
 			double[] values = _data.getDenseBlockValues();
-			MatrixBlock res = new MatrixBlock(nCol, nRow, false);
+			MatrixBlock res = new MatrixBlock(nRow, nCol, false);
 			res.allocateBlock();
 			double[] resVals = res.getDenseBlockValues();
 			for(int i = 0, off = 0; i < nRow; i++)
@@ -1098,7 +1104,7 @@ public class MatrixBlockDictionary extends ADictionary {
 			res.examSparsity();
 			if(res.isEmpty())
 				return null;
-			return new MatrixBlockDictionary(res);
+			return new MatrixBlockDictionary(res, nCol);
 		}
 	}
 
@@ -1147,7 +1153,7 @@ public class MatrixBlockDictionary extends ADictionary {
 				}
 			}
 			retBlock.setNonZeros(_data.getNonZeros());
-			return new MatrixBlockDictionary(retBlock);
+			return new MatrixBlockDictionary(retBlock, _data.getNumColumns());
 		}
 		else {
 			final double[] _values = _data.getDenseBlockValues();
@@ -1163,7 +1169,7 @@ public class MatrixBlockDictionary extends ADictionary {
 			DenseBlockFP64 db = new DenseBlockFP64(new int[] {_data.getNumRows(), _data.getNumColumns()}, scaledValues);
 			MatrixBlock retBlock = new MatrixBlock(_data.getNumRows(), _data.getNumColumns(), db);
 			retBlock.setNonZeros(_data.getNonZeros());
-			return new MatrixBlockDictionary(retBlock);
+			return new MatrixBlockDictionary(retBlock, _data.getNumColumns());
 		}
 	}
 
@@ -1176,7 +1182,7 @@ public class MatrixBlockDictionary extends ADictionary {
 	public static MatrixBlockDictionary read(DataInput in) throws IOException {
 		MatrixBlock ret = new MatrixBlock();
 		ret.readFields(in);
-		return new MatrixBlockDictionary(ret);
+		return new MatrixBlockDictionary(ret, ret.getNumColumns());
 	}
 
 	@Override
@@ -1228,7 +1234,7 @@ public class MatrixBlockDictionary extends ADictionary {
 		MatrixBlock dictM = new MatrixBlock(numVals, aggregateColumns.length, dictV);
 		dictM.recomputeNonZeros();
 		dictM.examSparsity();
-		return new MatrixBlockDictionary(dictM);
+		return new MatrixBlockDictionary(dictM, aggregateColumns.length);
 
 	}
 
@@ -1237,7 +1243,7 @@ public class MatrixBlockDictionary extends ADictionary {
 		final MatrixBlock ret = _data.replaceOperations(new MatrixBlock(), pattern, replace);
 		if(ret.isEmpty())
 			return null;
-		return new MatrixBlockDictionary(ret);
+		return new MatrixBlockDictionary(ret, _data.getNumColumns());
 	}
 
 	@Override
@@ -1284,7 +1290,7 @@ public class MatrixBlockDictionary extends ADictionary {
 		if(ret.isEmpty())
 			return null;
 		else
-			return new MatrixBlockDictionary(ret);
+			return new MatrixBlockDictionary(ret, _data.getNumColumns());
 
 	}
 
@@ -1329,7 +1335,7 @@ public class MatrixBlockDictionary extends ADictionary {
 			for(int h = nRows * nCols; h < nonZerosOut; h++)
 				retValues[h] = replace;
 		}
-		return new MatrixBlockDictionary(ret);
+		return new MatrixBlockDictionary(ret, _data.getNumColumns());
 	}
 
 	@Override

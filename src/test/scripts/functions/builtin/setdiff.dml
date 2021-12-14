@@ -22,4 +22,14 @@
 A = read($1);
 B = read($2);
 R = setdiff(X = A, Y = B);
+
+# ** Workaround
+# In R script,
+# 0 will be cast as numeric(0)
+# which is a zero length vector
+if((length(R) == 1) & (min(R) == 0)) {
+  R[1] = 0.1
+}
+# **
+
 write(R, $3);

@@ -26,4 +26,15 @@ library("Matrix")
 X = as.matrix(readMM(paste(args[1], "X.mtx", sep="")));
 Y = as.matrix(readMM(paste(args[1], "Y.mtx", sep="")));
 R = setdiff(X, Y);
+
+# ** Workaround for numeric(0)
+# 0 will be cast as numeric(0)
+# which is a zero length vector
+# so, we make 0.1 in both dml and
+# R script
+if (length(R) == 0) {
+  R = (0.1)
+}
+# **
+
 writeMM(as(R, "CsparseMatrix"), paste(args[2], "R", sep=""));

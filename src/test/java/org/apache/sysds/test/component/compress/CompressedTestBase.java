@@ -43,18 +43,15 @@ import org.apache.sysds.runtime.compress.CompressedMatrixBlockFactory;
 import org.apache.sysds.runtime.compress.CompressionSettings;
 import org.apache.sysds.runtime.compress.CompressionSettingsBuilder;
 import org.apache.sysds.runtime.compress.CompressionStatistics;
-import org.apache.sysds.runtime.compress.bitmap.ABitmap;
-import org.apache.sysds.runtime.compress.bitmap.BitmapEncoder;
 import org.apache.sysds.runtime.compress.cocode.CoCoderFactory.PartitionerType;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup;
 import org.apache.sysds.runtime.compress.colgroup.AColGroup.CompressionType;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupFactory;
 import org.apache.sysds.runtime.compress.colgroup.ColGroupUncompressed;
 import org.apache.sysds.runtime.compress.cost.CostEstimatorFactory.CostType;
-import org.apache.sysds.runtime.compress.estim.CompressedSizeEstimator;
+import org.apache.sysds.runtime.compress.estim.CompressedSizeEstimatorFactory;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfo;
 import org.apache.sysds.runtime.compress.estim.CompressedSizeInfoColGroup;
-import org.apache.sysds.runtime.compress.estim.EstimationFactors;
 import org.apache.sysds.runtime.compress.lib.CLALibAppend;
 import org.apache.sysds.runtime.functionobjects.Builtin;
 import org.apache.sysds.runtime.functionobjects.Builtin.BuiltinCode;
@@ -170,10 +167,8 @@ public abstract class CompressedTestBase extends TestBase {
 						colIndexes[x] = y;
 					}
 
-					ABitmap ubm = BitmapEncoder.extractBitmap(colIndexes, mb, false, 8, true);
-					EstimationFactors ef = CompressedSizeEstimator.estimateCompressedColGroupSize(ubm, colIndexes,
-						mb.getNumRows(), cs);
-					CompressedSizeInfoColGroup cgi = new CompressedSizeInfoColGroup(colIndexes, ef, c);
+					CompressedSizeInfoColGroup cgi = CompressedSizeEstimatorFactory.getSizeEstimator(mb, cs, _k)
+						.estimateCompressedColGroupSize(colIndexes);
 					CompressedSizeInfo csi = new CompressedSizeInfo(cgi);
 					for(AColGroup cg : ColGroupFactory.compressColGroups(mb, csi, cs, 1))
 						colGroups.add(cg);
@@ -452,6 +447,13 @@ public abstract class CompressedTestBase extends TestBase {
 	@Test
 	public void testLeftMatrixMatrixMultSmall() {
 		MatrixBlock matrix = TestUtils.generateTestMatrixBlock(3, rows, 0.9, 1.5, 1.0, 3);
+		testLeftMatrixMatrix(matrix);
+	}
+
+
+	@Test
+	public void testLeftMatrixMatrixMultConst() {
+		MatrixBlock matrix = TestUtils.generateTestMatrixBlock(3, rows, 1.0, 1.0, 1.0, 3);
 		testLeftMatrixMatrix(matrix);
 	}
 
@@ -881,14 +883,14 @@ public abstract class CompressedTestBase extends TestBase {
 			compareResultMatrices(ucRet, ret2, 2);
 		}
 		catch(NotImplementedException e) {
-			if(! printedErrorForNotImplementedTestBinaryVMPlus.get()){
+			if(!printedErrorForNotImplementedTestBinaryVMPlus.get()) {
 				LOG.error("Failed Binary VM Plus: " + e.getMessage());
 				printedErrorForNotImplementedTestBinaryVMPlus.set(true);
 			}
 		}
 		catch(Exception e) {
 			if(e.getCause() instanceof ExecutionException && e.getCause().getCause() instanceof NotImplementedException) {
-				if(! printedErrorForNotImplementedTestBinaryVMPlus.get()){
+				if(!printedErrorForNotImplementedTestBinaryVMPlus.get()) {
 					LOG.error("Failed Binary VM Plus: " + e.getMessage());
 					printedErrorForNotImplementedTestBinaryVMPlus.set(true);
 				}
@@ -899,7 +901,6 @@ public abstract class CompressedTestBase extends TestBase {
 			}
 		}
 	}
-
 
 	public void testBinaryMV(ValueFunction vf, MatrixBlock matrix) {
 		testBinaryMV(vf, matrix, true);

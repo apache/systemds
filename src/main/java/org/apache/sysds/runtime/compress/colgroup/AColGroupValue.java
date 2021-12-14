@@ -355,22 +355,22 @@ public abstract class AColGroupValue extends AColGroupCompressed implements Clon
 	}
 
 	@Override
-	protected double[] preAggSumRows(){
+	protected double[] preAggSumRows() {
 		return _dict.sumAllRowsToDouble(_colIndexes.length);
 	}
 
 	@Override
-	protected double[] preAggSumSqRows(){
+	protected double[] preAggSumSqRows() {
 		return _dict.sumAllRowsToDoubleSq(_colIndexes.length);
 	}
 
 	@Override
-	protected double[] preAggProductRows(){
+	protected double[] preAggProductRows() {
 		throw new NotImplementedException();
 	}
 
 	@Override
-	protected double[] preAggBuiltinRows(Builtin builtin){
+	protected double[] preAggBuiltinRows(Builtin builtin) {
 		return _dict.aggregateRows(builtin, _colIndexes.length);
 	}
 
@@ -488,13 +488,13 @@ public abstract class AColGroupValue extends AColGroupCompressed implements Clon
 	@Override
 	public long estimateInMemorySize() {
 		long size = super.estimateInMemorySize();
-		size += 8; // Dictionary Reference.
 		size += 8; // Counts reference
 		size += 4; // Int nRows
 		size += 1; // _zeros boolean reference
 		size += 1; // _lossy boolean reference
 		size += 2; // padding
 		size += _dict.getInMemorySize();
+		size += 8; // dict reference
 		return size;
 	}
 
@@ -508,7 +508,7 @@ public abstract class AColGroupValue extends AColGroupCompressed implements Clon
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
 		sb.append(super.toString());
-		sb.append(String.format("\n%15s%s", "Values: " , _dict.getClass().getSimpleName()));
+		sb.append(String.format("\n%15s%s", "Values: ", _dict.getClass().getSimpleName()));
 		sb.append(_dict.getString(_colIndexes.length));
 		return sb.toString();
 	}

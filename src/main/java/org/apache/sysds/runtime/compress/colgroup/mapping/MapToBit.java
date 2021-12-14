@@ -66,7 +66,7 @@ public class MapToBit extends AMapToData {
 		return getInMemorySize(_data.size());
 	}
 
-	protected static long getInMemorySize(int dataLength) {
+	public static long getInMemorySize(int dataLength) {
 		long size = 16 + 8 + 4; // object header + object reference + int size
 		size += MemoryEstimates.bitSetCost(dataLength);
 		return size;

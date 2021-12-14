@@ -208,20 +208,22 @@ public class OffsetTests {
 		try {
 			final long inMemorySize = o.getInMemorySize();
 			long estimatedSize;
+
 			switch(type) {
 				case BYTE:
-					estimatedSize = OffsetByte.estimateInMemorySize(data.length, data[data.length - 1] - data[0]);
+					final int correctionByte = OffsetFactory.correctionByte(data[data.length - 1] - data[0], data.length);
+					estimatedSize = OffsetByte.estimateInMemorySize(data.length + correctionByte);
 					break;
 				case CHAR:
-					estimatedSize = OffsetChar.estimateInMemorySize(data.length, data[data.length - 1] - data[0]);
+					final int correctionChar = OffsetFactory.correctionChar(data[data.length - 1] - data[0], data.length);
+					estimatedSize = OffsetChar.estimateInMemorySize(data.length + correctionChar);
 					break;
 				default:
 					throw new DMLCompressionException("Unknown input");
 			}
 			if(!(inMemorySize <= estimatedSize + sizeTolerance)) {
-
 				fail("in memory size: " + inMemorySize + " is not smaller than estimate: " + estimatedSize
-					+ " with tolerance " + sizeTolerance);
+					+ " with tolerance " + sizeTolerance + "\nEncoded:" + o + "\nData:" + Arrays.toString(data));
 			}
 		}
 		catch(Exception e) {

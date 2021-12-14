@@ -306,7 +306,7 @@ public class Dictionary extends ADictionary {
 	}
 
 	@Override
-	public double[] sumAllRowsToDouble(double[] reference){
+	public double[] sumAllRowsToDouble(double[] reference) {
 		final int nCol = reference.length;
 		final int numVals = getNumberOfValues(nCol);
 		double[] ret = new double[numVals + 1];
@@ -646,9 +646,9 @@ public class Dictionary extends ADictionary {
 	@Override
 	public ADictionary subtractTuple(double[] tuple) {
 		double[] newValues = new double[_values.length - tuple.length];
-		for(int i = 0; i < _values.length- tuple.length; i++)
+		for(int i = 0; i < _values.length - tuple.length; i++)
 			newValues[i] = _values[i] - tuple[i % tuple.length];
-		
+
 		return new Dictionary(newValues);
 	}
 

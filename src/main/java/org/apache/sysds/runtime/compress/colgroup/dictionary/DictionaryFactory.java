@@ -33,7 +33,6 @@ import org.apache.sysds.runtime.compress.bitmap.MultiColBitmap;
 import org.apache.sysds.runtime.compress.utils.DArrCounts;
 import org.apache.sysds.runtime.compress.utils.DblArrayCountHashMap;
 import org.apache.sysds.runtime.data.SparseBlock;
-import org.apache.sysds.runtime.data.SparseRow;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
 public class DictionaryFactory {
@@ -104,7 +103,7 @@ public class DictionaryFactory {
 					sb.append(i, col, tuple[col]);
 			}
 			m.recomputeNonZeros();
-			return new MatrixBlockDictionary(m);
+			return new MatrixBlockDictionary(m, nCols);
 		}
 		else if(ubm instanceof MultiColBitmap) {
 			MultiColBitmap mcbm = (MultiColBitmap) ubm;
@@ -143,7 +142,7 @@ public class DictionaryFactory {
 					sb.append(i, col, tuple[col]);
 			}
 			m.recomputeNonZeros();
-			return new MatrixBlockDictionary(m);
+			return new MatrixBlockDictionary(m, nCols);
 		}
 
 		final double[] resValues = new double[nRows * nCols];
@@ -156,28 +155,17 @@ public class DictionaryFactory {
 
 	public static ADictionary moveFrequentToLastDictionaryEntry(ADictionary dict, ABitmap ubm, int nRow,
 		int largestIndex) {
+		LOG.warn("Inefficient moving of tuples.");
 		final int zeros = nRow - (int) ubm.getNumOffsets();
 		final int nCol = ubm.getNumColumns();
 		final int largestIndexSize = ubm.getOffsetsList(largestIndex).size();
 		if(dict instanceof MatrixBlockDictionary) {
 			MatrixBlockDictionary mbd = (MatrixBlockDictionary) dict;
 			MatrixBlock mb = mbd.getMatrixBlock();
-			if(mb.isEmpty()) {
-				if(zeros == 0)
-					return dict;
-				else
-					return new MatrixBlockDictionary(new MatrixBlock(mb.getNumRows() + 1, mb.getNumColumns(), true));
-			}
+			if(mb.isEmpty()) 
+				throw new DMLCompressionException("Should not construct or use a empty dictionary ever.");
 			else if(mb.isInSparseFormat()) {
-				MatrixBlockDictionary mbdn = moveToLastDictionaryEntrySparse(mb.getSparseBlock(), largestIndex, zeros, nCol,
-					largestIndexSize);
-				if(mbdn == null)
-					return null;
-				MatrixBlock mbn = mbdn.getMatrixBlock();
-				mbn.setNonZeros(mb.getNonZeros());
-				if(mbn.getNonZeros() == 0)
-					mbn.recomputeNonZeros();
-				return mbdn;
+				throw new NotImplementedException(); // and should not be
 			}
 			else
 				return moveToLastDictionaryEntryDense(mb.getDenseBlockValues(), largestIndex, zeros, nCol,
@@ -186,41 +174,6 @@ public class DictionaryFactory {
 		else
 			return moveToLastDictionaryEntryDense(dict.getValues(), largestIndex, zeros, nCol, largestIndexSize);
 
-	}
-
-	private static MatrixBlockDictionary moveToLastDictionaryEntrySparse(SparseBlock sb, int indexToMove, int zeros,
-		int nCol, int largestIndexSize) {
-
-		if(zeros == 0) {
-			MatrixBlock ret = new MatrixBlock(sb.numRows(), nCol, true);
-			ret.setSparseBlock(sb);
-			final SparseRow swap = sb.get(indexToMove);
-			for(int i = indexToMove + 1; i < sb.numRows(); i++)
-				sb.set(i - 1, sb.get(i), false);
-			sb.set(sb.numRows() - 1, swap, false);
-			if(ret.isEmpty())
-				return null;
-			return new MatrixBlockDictionary(ret);
-		}
-
-		MatrixBlock ret = new MatrixBlock(sb.numRows() + 1, nCol, true);
-		ret.allocateSparseRowsBlock();
-		final SparseBlock retB = ret.getSparseBlock();
-		if(zeros > largestIndexSize) {
-			for(int i = 0; i < sb.numRows(); i++)
-				retB.set(i, sb.get(i), false);
-		}
-		else {
-			for(int i = 0; i < indexToMove; i++)
-				retB.set(i, sb.get(i), false);
-
-			retB.set(sb.numRows(), sb.get(indexToMove), false);
-			for(int i = indexToMove + 1; i < sb.numRows(); i++)
-				retB.set(i - 1, sb.get(i), false);
-		}
-		if(ret.isEmpty())
-			return null;
-		return new MatrixBlockDictionary(ret);
 	}
 
 	private static ADictionary moveToLastDictionaryEntryDense(double[] values, int indexToMove, int zeros, int nCol,

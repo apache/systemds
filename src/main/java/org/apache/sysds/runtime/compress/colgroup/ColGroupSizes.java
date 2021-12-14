@@ -39,13 +39,13 @@ public final class ColGroupSizes {
 
 	public static long estimateInMemorySizeGroupValue(int nrColumns, int nrValues, double tupleSparsity, boolean lossy) {
 		long size = estimateInMemorySizeGroup(nrColumns);
-		size += 8; // Dictionary Reference.
 		size += 8; // Counts reference
+		size += 4; // Int nRows
 		size += 1; // _zeros boolean reference
 		size += 1; // _lossy boolean reference
 		size += 2; // padding
-		size += 4; // num Rows
 		size += DictionaryFactory.getInMemorySize(nrValues, nrColumns, tupleSparsity, lossy);
+		size += 8; // Reference to Dict.
 		return size;
 	}
 
@@ -80,26 +80,18 @@ public final class ColGroupSizes {
 	}
 
 	public static long estimateInMemorySizeSDC(int nrColumns, int nrValues, int nrRows, int largestOff,
-		boolean largestOffIsZero, boolean containNoZeroValues, double tupleSparsity, boolean lossy) {
-		final int nVals = nrValues ;
-		long size = estimateInMemorySizeGroupValue(nrColumns, nVals, tupleSparsity, lossy);
+		double tupleSparsity, boolean largestOffZero, boolean lossy) {
+		long size = estimateInMemorySizeGroupValue(nrColumns, nrValues, tupleSparsity, lossy);
 		size += OffsetFactory.estimateInMemorySize(nrRows - largestOff, nrRows);
-		if(nrValues > 1)
+		if(nrValues > 1 + (largestOffZero ? 0 : 1))
 			size += MapToFactory.estimateInMemorySize(nrRows - largestOff, nrValues);
 		return size;
 	}
 
-	public static long estimateInMemorySizeSDCSingle(int nrColumns, int nrValues, int nrRows, int largestOff,
-		boolean largestOffIsZero, boolean containNoZeroValues, double tupleSparsity, boolean lossy) {
-		final int nVals = nrValues ;
-		long size = estimateInMemorySizeGroupValue(nrColumns, nVals, tupleSparsity, lossy);
-		size += OffsetFactory.estimateInMemorySize(nrRows - largestOff, nrRows);
-		return size;
-	}
-
-	public static long estimateInMemorySizeCONST(int nrColumns, int nrValues, double tupleSparsity, boolean lossy) {
+	public static long estimateInMemorySizeCONST(int nrColumns, double tupleSparsity, boolean lossy) {
 		long size = estimateInMemorySizeGroup(nrColumns);
-		size += DictionaryFactory.getInMemorySize(nrValues, nrColumns, tupleSparsity, lossy);
+		size += DictionaryFactory.getInMemorySize(1, nrColumns, tupleSparsity, lossy);
+		size += 8; // reference to dictionary.
 		return size;
 	}
 

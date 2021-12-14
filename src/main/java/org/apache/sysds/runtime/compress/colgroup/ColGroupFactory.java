@@ -255,8 +255,8 @@ public class ColGroupFactory {
 			Timing time = new Timing(true);
 			time.start();
 			Collection<AColGroup> ret = compressColGroupExecute(in, compSettings, tmpMap, cg, k);
-			LOG.debug(String.format("time[ms]: %10.2f %25s %s cols:%s", time.stop(), getColumnTypesString(ret),
-				getEstimateVsActualSize(ret, cg), Arrays.toString(cg.getColumns())));
+			LOG.debug(String.format("time[ms]: %10.2f %50s %s cols:%s wanted:%s", time.stop(), getColumnTypesString(ret),
+				getEstimateVsActualSize(ret, cg), Arrays.toString(cg.getColumns()), cg.getBestCompressionType()));
 			return ret;
 		}
 		return compressColGroupExecute(in, compSettings, tmpMap, cg, k);
@@ -355,6 +355,8 @@ public class ColGroupFactory {
 		if(of.length == 1 && of[0].size() == rlen) // If this always constant
 			return ColGroupConst.create(colIndexes, DictionaryFactory.create(ubm));
 
+		// only consider sparse dictionaries if cocoded more than 4 columns.
+		tupleSparsity = colIndexes.length > 4 ? tupleSparsity : 1.0;
 		switch(compType) {
 			case DDC:
 				return compressDDC(colIndexes, rlen, ubm, cs, tupleSparsity);
@@ -364,8 +366,6 @@ public class ColGroupFactory {
 				return compressOLE(colIndexes, rlen, ubm, cs, tupleSparsity);
 			case SDC:
 				return compressSDC(colIndexes, rlen, ubm, cs, tupleSparsity);
-			// CONST and EMPTY are handled above switch statement.
-			// UNCOMPRESSED is handled before extraction of ubm
 			default:
 				throw new DMLCompressionException("Not implemented compression of " + compType + "in factory.");
 		}
@@ -506,21 +506,32 @@ public class ColGroupFactory {
 			}
 		}
 
-		ADictionary dict = DictionaryFactory.create(ubm, tupleSparsity);
+		// Currently not effecient allocation of the dictionary.
 		if(ubm.getNumValues() == 1) {
 			if(numZeros >= largestOffset) {
+				ADictionary dict = DictionaryFactory.create(ubm, tupleSparsity);
 				final AOffset off = OffsetFactory.createOffset(ubm.getOffsetList()[0].extractValues(true));
 				return new ColGroupSDCSingleZeros(colIndexes, rlen, dict, off, null);
 			}
 			else {
+				LOG.warn("fix three dictionary allocations");
+				ADictionary dict = DictionaryFactory.create(ubm, 1.0);
 				dict = DictionaryFactory.moveFrequentToLastDictionaryEntry(dict, ubm, rlen, largestIndex);
+				if(tupleSparsity < 0.4)
+					dict = dict.getMBDict(colIndexes.length);
 				return setupSingleValueSDCColGroup(colIndexes, rlen, ubm, dict);
 			}
 		}
-		else if(numZeros >= largestOffset)
+		else if(numZeros >= largestOffset) {
+			ADictionary dict = DictionaryFactory.create(ubm, tupleSparsity);
 			return setupMultiValueZeroColGroup(colIndexes, rlen, ubm, dict, cs);
+		}
 		else {
+			LOG.warn("fix three dictionary allocations");
+			ADictionary dict = DictionaryFactory.create(ubm, 1.0);
 			dict = DictionaryFactory.moveFrequentToLastDictionaryEntry(dict, ubm, rlen, largestIndex);
+			if(tupleSparsity < 0.4 && colIndexes.length > 4)
+				dict = dict.getMBDict(colIndexes.length);
 			return setupMultiValueColGroup(colIndexes, numZeros, rlen, ubm, largestIndex, dict, cs);
 		}
 	}
@@ -636,35 +647,35 @@ public class ColGroupFactory {
 		for(int j = apos; j < alen; j++)
 			map.increment(vals[j]);
 
-		List<DCounts> entries = map.extractValues();
-		Collections.sort(entries, Comparator.comparing(x -> -x.count));
+		DCounts[] entries = map.extractValues();
+		Arrays.sort(entries, Comparator.comparing(x -> -x.count));
 
-		if(entries.get(0).count < rlen - sb.size(sbRow)) {
+		if(entries[0].count < rlen - sb.size(sbRow)) {
 			// If the zero is the default value.
-			final int[] counts = new int[entries.size() + 1];
-			final double[] dict = new double[entries.size()];
+			final int[] counts = new int[entries.length + 1];
+			final double[] dict = new double[entries.length];
 			int sum = 0;
-			for(int i = 0; i < entries.size(); i++) {
-				final DCounts x = entries.get(i);
+			for(int i = 0; i < entries.length; i++) {
+				final DCounts x = entries[i];
 				counts[i] = x.count;
 				sum += x.count;
 				dict[i] = x.key;
 				x.count = i;
 			}
 
-			counts[entries.size()] = rlen - sum;
+			counts[entries.length] = rlen - sum;
 			final AOffset offsets = OffsetFactory.createOffset(sb.indexes(sbRow), apos, alen);
-			if(entries.size() <= 1)
+			if(entries.length <= 1)
 				return new ColGroupSDCSingleZeros(cols, rlen, new Dictionary(dict), offsets, counts);
 			else {
-				final AMapToData mapToData = MapToFactory.create((alen - apos), entries.size());
+				final AMapToData mapToData = MapToFactory.create((alen - apos), entries.length);
 				for(int j = apos; j < alen; j++)
 					mapToData.set(j - apos, map.get(vals[j]));
 				return ColGroupSDCZeros.create(cols, rlen, new Dictionary(dict), offsets, mapToData, counts);
 			}
 		}
 		else {
-			final ABitmap ubm = BitmapEncoder.extractBitmap(cols, mb, true, entries.size(), true);
+			final ABitmap ubm = BitmapEncoder.extractBitmap(cols, mb, true, entries.length, true);
 			// zero is not the default value fall back to the standard compression path.
 			return compressSDC(cols, rlen, ubm, cs, 1.0);
 		}

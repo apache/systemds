@@ -93,11 +93,15 @@ public class OffsetChar extends AOffset {
 
 	@Override
 	public long getInMemorySize() {
-		long size = 16 + 4 + 8; // object header plus int plus reference
-		size += MemoryEstimates.charArrayCost(offsets.length);
+		return estimateInMemorySize(offsets.length);
+	}
+	
+	public static long estimateInMemorySize(int nOffs) {
+		long size = 16 + 4 + 4 + 8; // object header plus int plus reference
+		size += MemoryEstimates.charArrayCost(nOffs);
 		return size;
 	}
-
+	
 	@Override
 	public long getExactSizeOnDisk() {
 		return 1 + 4 + 4 + offsets.length * 2;
@@ -140,11 +144,6 @@ public class OffsetChar extends AOffset {
 		return new OffsetChar(offsets, offsetToFirst, offsetToLast);
 	}
 
-	public static long estimateInMemorySize(int nOffs, int nRows) {
-		long size = 16 + 4 + 8; // object header plus int plus reference
-		size += MemoryEstimates.charArrayCost(Math.max(nOffs, nRows / maxV));
-		return size;
-	}
 
 	@Override
 	protected final void preAggregateDenseMapRowByte(double[] mV, int off, double[] preAV, int cu, int nVal, byte[] data,

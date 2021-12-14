@@ -30,6 +30,8 @@ public class ComputationCostEstimator implements ICostEstimate {
 	private static final double commonValueImpact = 0.75;
 	/** The threshold before the commonValueImpact is tarting. */
 	private static final double cvThreshold = 0.2;
+	/** The uncertainty per column in group */
+	private static final double uncertaintyPerCol = 0.001;
 
 	/** A factor for when the number of distinct tuples start scaling the cost. */
 	private static final int scalingStart = 1000;
@@ -91,19 +93,19 @@ public class ComputationCostEstimator implements ICostEstimate {
 	public double getCostOfColumnGroup(CompressedSizeInfoColGroup g) {
 		if(g == null)
 			return Double.POSITIVE_INFINITY;
+		final double scalingFactor = getScalingFactor(g.getNumVals());
+
 		double cost = 0;
+		final int rowsCols = 16;
 		cost += _scans * scanCost(g);
 		cost += _decompressions * decompressionCost(g);
 		cost += _overlappingDecompressions * overlappingDecompressionCost(g);
-
-		final int rowsCols = 16;
-
-		final double scalingFactor = getScalingFactor(g.getNumVals());
 		cost += _leftMultiplications * leftMultCost(g) * rowsCols;
 		cost += _rightMultiplications * rightMultCost(g) * rowsCols;
 		cost += _dictionaryOps * dictionaryOpsCost(g);
 		cost += _compressedMultiplication * _compressedMultCost(g) * rowsCols;
-
+		for(int i = 0; i < g.getColumns().length; i++)
+			cost += cost * uncertaintyPerCol;
 		return cost * scalingFactor;
 	}
 
@@ -117,7 +119,9 @@ public class ComputationCostEstimator implements ICostEstimate {
 	}
 
 	private double scanCost(CompressedSizeInfoColGroup g) {
-		return _nRows;
+		final int nColsInGroup = g.getColumns().length;
+		final double numberTuples = g.getNumVals();
+		return _nRows + nColsInGroup * numberTuples * 10;
 	}
 
 	private double leftMultCost(CompressedSizeInfoColGroup g) {

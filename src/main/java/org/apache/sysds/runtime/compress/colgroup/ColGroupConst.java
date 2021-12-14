@@ -208,7 +208,7 @@ public class ColGroupConst extends AColGroupCompressed {
 			LibMatrixMult.matrixMult(left, right, ret);
 			if(ret.isEmpty())
 				return null;
-			ADictionary d = new MatrixBlockDictionary(ret);
+			ADictionary d = new MatrixBlockDictionary(ret, cr);
 			return ColGroupFactory.genColGroupConst(cr, d);
 		}
 		else {
@@ -345,5 +345,13 @@ public class ColGroupConst extends AColGroupCompressed {
 	@Override
 	protected double[] preAggBuiltinRows(Builtin builtin) {
 		return _dict.aggregateRows(builtin, _colIndexes.length);
+	}
+
+	@Override
+	public long estimateInMemorySize() {
+		long size = super.estimateInMemorySize();
+		size += _dict.getInMemorySize();
+		size += 8; // dict reference
+		return size;
 	}
 }

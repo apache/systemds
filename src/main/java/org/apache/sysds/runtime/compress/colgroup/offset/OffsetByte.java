@@ -126,13 +126,6 @@ public class OffsetByte extends AOffset {
 	}
 
 	@Override
-	public long getInMemorySize() {
-		long size = 16 + 4 + 4 + 8; // object header plus ints plus reference
-		size += MemoryEstimates.byteArrayCost(offsets.length);
-		return size;
-	}
-
-	@Override
 	public long getExactSizeOnDisk() {
 		return 1 + 4 + 4 + offsets.length;
 	}
@@ -162,9 +155,14 @@ public class OffsetByte extends AOffset {
 		return offsets.length;
 	}
 
-	public static long estimateInMemorySize(int nOffs, int nRows) {
+	@Override
+	public long getInMemorySize() {
+		return estimateInMemorySize(offsets.length);
+	}
+
+	public static long estimateInMemorySize(int nOffs) {
 		long size = 16 + 4 + 4 + 8; // object header plus int plus reference
-		size += MemoryEstimates.byteArrayCost(Math.max(nOffs, nRows / maxV));
+		size += MemoryEstimates.byteArrayCost(nOffs);
 		return size;
 	}
 
@@ -540,23 +538,27 @@ public class OffsetByte extends AOffset {
 	private void preAggregateDenseMapRowsByteEnd(DenseBlock db, double[] preAV, int rl, int ru, int cl, int cu, int nVal,
 		byte[] data, IterateByteOffset it) {
 		final int maxId = data.length - 1;
-		final int offsetStart = it.offset;
-		final int indexStart = it.getOffsetsIndex();
-		final int dataIndexStart = it.getDataIndex();
-		// all the way to the end of offsets.
-		for(int r = rl; r < ru; r++) {
-			final int offOut = (r - rl) * nVal;
-			final int off = db.pos(r);
-			final double[] vals = db.values(r);
-			it.offset = offsetStart + off;
-			it.index = indexStart;
-			it.dataIndex = dataIndexStart;
-			preAV[offOut + data[it.getDataIndex()] & 0xFF] += vals[it.offset];
-			while(it.getDataIndex() < maxId) {
-				it.next();
-				preAV[offOut + data[it.getDataIndex()] & 0xFF] += vals[it.offset];
+		final int nCol = db.getCumODims(0);
+
+		int dataOffset = data[it.getDataIndex()] & 0xFF;
+		int start = it.offset + nCol * rl;
+		int end = it.offset + nCol * ru;
+		double[] vals = db.values(rl);
+		for(int offOut = dataOffset, off = start; off < end; offOut += nVal, off += nCol) {
+			preAV[offOut] += vals[off];
+		}
+
+		while(it.getDataIndex() < maxId) {
+			it.next();
+			dataOffset = data[it.getDataIndex()] & 0xFF;
+			start = it.offset + nCol * rl;
+			end = it.offset + nCol * ru;
+			vals = db.values(rl);
+			for(int offOut = dataOffset, off = start; off < end; offOut += nVal, off += nCol) {
+				preAV[offOut] += vals[off];
 			}
 		}
+
 	}
 
 	@Override

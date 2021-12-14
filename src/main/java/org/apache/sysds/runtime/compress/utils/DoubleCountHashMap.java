@@ -19,7 +19,6 @@
 
 package org.apache.sysds.runtime.compress.utils;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 
 import org.apache.commons.logging.Log;
@@ -66,7 +65,7 @@ public class DoubleCountHashMap {
 		int hash = hash(key);
 		int ix = indexFor(hash, _data.length);
 		Bucket l = _data[ix];
-		while(l != null && !(l.v.key == key)){
+		while(l != null && !(l.v.key == key)) {
 			hashMissCount++;
 			l = l.n;
 		}
@@ -100,17 +99,71 @@ public class DoubleCountHashMap {
 		return l.v.count;
 	}
 
-	public ArrayList<DCounts> extractValues() {
-		ArrayList<DCounts> ret = new ArrayList<>(_size);
-		for(Bucket e : _data){
+	public int getOrDefault(double key, int def){
+		int hash = hash(key);
+		int ix = indexFor(hash, _data.length);
+		Bucket l = _data[ix];
+		while(l != null && !(l.v.key == key))
+			l = l.n;
+		if (l == null)
+			return def;
+		return l.v.count;
+	}
+
+	public DCounts[] extractValues() {
+		DCounts[] ret = new DCounts[_size];
+		int i = 0;
+		for(Bucket e : _data) {
 			while(e != null) {
-				ret.add(e.v);
+				ret[i++] = e.v;
 				e = e.n;
 			}
 		}
 
 		return ret;
 	}
+
+	public int[] getUnorderedCountsAndReplaceWithUIDs() {
+		final int[] counts = new int[_size];
+		int i = 0;
+		for(Bucket e : _data)
+			while(e != null) {
+				counts[i] = e.v.count;
+				e.v.count = i++;
+				e = e.n;
+			}
+
+		return counts;
+	}
+
+	public int[] getUnorderedCountsAndReplaceWithUIDsWithout0(){
+		final int[] counts = new int[_size - 1];
+		int i = 0;
+		for(Bucket e : _data){
+			while(e != null) {
+				if(e.v.key != 0){
+					counts[i] = e.v.count;
+					e.v.count = i++;
+				}
+				e = e.n;
+			}
+		}
+
+		return counts;
+	}
+
+	// public int[] getUnorderedCountsAndReplaceWithUIDsWithExtraCell() {
+	// 	final int[] counts = new int[_size + 1];
+	// 	int i = 0;
+	// 	for(Bucket e : _data)
+	// 		while(e != null) {
+	// 			counts[i] = e.v.count;
+	// 			e.v.count = i++;
+	// 			e = e.n;
+	// 		}
+
+	// 	return counts;
+	// }
 
 	private void resize() {
 		// check for integer overflow on resize
@@ -177,7 +230,7 @@ public class DoubleCountHashMap {
 		return sb.toString();
 	}
 
-	public void reset(int size){
+	public void reset(int size) {
 		int p2 = Util.getPow2(size);
 		if(_data.length > 2 * p2)
 			_data = new Bucket[p2];

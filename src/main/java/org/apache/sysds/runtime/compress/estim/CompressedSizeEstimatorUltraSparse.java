@@ -104,4 +104,9 @@ public class CompressedSizeEstimatorUltraSparse extends CompressedSizeEstimator 
 	protected int worstCaseUpperBound(int[] columns) {
 		return getNumRows();
 	}
+
+	@Override
+	public final int getSampleSize() {
+		return getNumRows();
+	}
 }

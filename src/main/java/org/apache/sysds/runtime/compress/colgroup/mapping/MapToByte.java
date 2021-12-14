@@ -63,7 +63,7 @@ public class MapToByte extends AMapToData {
 		return getInMemorySize(_data.length);
 	}
 
-	protected static long getInMemorySize(int dataLength) {
+	public static long getInMemorySize(int dataLength) {
 		long size = 16 + 8; // object header + object reference
 		size += MemoryEstimates.byteArrayCost(dataLength);
 		return size;

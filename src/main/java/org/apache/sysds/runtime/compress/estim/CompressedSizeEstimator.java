@@ -31,8 +31,6 @@ import java.util.concurrent.Future;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.CompressionSettings;
-import org.apache.sysds.runtime.compress.bitmap.ABitmap;
-import org.apache.sysds.runtime.compress.colgroup.AColGroup.CompressionType;
 import org.apache.sysds.runtime.compress.utils.Util;
 import org.apache.sysds.runtime.controlprogram.parfor.stat.Timing;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
@@ -223,27 +221,10 @@ public abstract class CompressedSizeEstimator {
 
 	protected abstract int worstCaseUpperBound(int[] columns);
 
+	public abstract int getSampleSize();
+
 	protected abstract CompressedSizeInfoColGroup estimateJoinCompressedSize(int[] joinedcols,
 		CompressedSizeInfoColGroup g1, CompressedSizeInfoColGroup g2, int joinedMaxDistinct);
-
-	/**
-	 * Method used to extract the CompressedSizeEstimationFactors from an constructed UncompressedBitmap. Note this
-	 * method works both for the sample based estimator and the exact estimator, since the bitmap, can be extracted from
-	 * a sample or from the entire dataset.
-	 * 
-	 * @param ubm        The UncompressedBitmap, either extracted from a sample or from the entire dataset
-	 * @param colIndexes The columns that is compressed together.
-	 * @return The size factors estimated from the Bit Map.
-	 */
-	public EstimationFactors estimateCompressedColGroupSize(ABitmap ubm, int[] colIndexes) {
-		return estimateCompressedColGroupSize(ubm, colIndexes, getNumRows(), _cs);
-	}
-
-	public static EstimationFactors estimateCompressedColGroupSize(ABitmap ubm, int[] colIndexes, int nrRows,
-		CompressionSettings cs) {
-		return EstimationFactors.computeSizeEstimationFactors(ubm, nrRows,
-			cs.validCompressions.contains(CompressionType.RLE), colIndexes);
-	}
 
 	protected CompressedSizeInfoColGroup[] CompressedSizeInfoColGroup(int clen) {
 		CompressedSizeInfoColGroup[] ret = new CompressedSizeInfoColGroup[clen];

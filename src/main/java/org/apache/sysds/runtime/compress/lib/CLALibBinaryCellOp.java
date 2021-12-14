@@ -299,7 +299,7 @@ public class CLALibBinaryCellOp {
 		// apply overlap
 		if(smallestSize == Integer.MAX_VALUE) {
 			// if there was no smallest colgroup
-			ADictionary newDict = new MatrixBlockDictionary(m2);
+			ADictionary newDict = new MatrixBlockDictionary(m2, nCol);
 			newColGroups.add(ColGroupFactory.genColGroupConst(nCol, newDict));
 		}
 		else {

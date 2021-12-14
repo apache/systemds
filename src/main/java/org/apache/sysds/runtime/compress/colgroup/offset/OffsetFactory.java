@@ -22,9 +22,13 @@ package org.apache.sysds.runtime.compress.colgroup.offset;
 import java.io.DataInput;
 import java.io.IOException;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.apache.sysds.runtime.compress.utils.IntArrayList;
+
 public interface OffsetFactory {
 
-	// static final Log LOG = LogFactory.getLog(OffsetFactory.class.getName());
+	static final Log LOG = LogFactory.getLog(OffsetFactory.class.getName());
 
 	/** The specific underlying types of offsets. */
 	public enum OFF_TYPE {
@@ -34,8 +38,8 @@ public interface OffsetFactory {
 	/**
 	 * Main factory pattern creator for Offsets.
 	 * 
-	 * Note this creator is unsafe in the sense it is assumed that the input index list only contain a sequential non
-	 * duplicate incrementing values.
+	 * Note this creator is unsafe it is assumed that the input index list only contain sequential non duplicate
+	 * incrementing values.
 	 * 
 	 * @param indexes List of indexes, that is assumed to be sorted and have no duplicates
 	 * @return AOffset object containing offsets to the next value.
@@ -45,13 +49,26 @@ public interface OffsetFactory {
 	}
 
 	/**
+	 * Create the offsets based on our primitive IntArrayList.
+	 * 
+	 * Note this creator is unsafe it is assumed that the input index list only contain sequential non duplicate
+	 * incrementing values.
+	 * 
+	 * @param indexes The List of indexes, that is assumed to be sorted and have no duplicates
+	 * @return AOffset object containing offsets to the next value.
+	 */
+	public static AOffset createOffset(IntArrayList indexes) {
+		return createOffset(indexes.extractValues(), 0, indexes.size());
+	}
+
+	/**
 	 * Create a Offset based on a subset of the indexes given.
 	 * 
 	 * This is useful if the input is created from a CSR matrix, since it allows us to not reallocate the indexes[] but
 	 * use the shared indexes from the entire CSR representation.
 	 * 
-	 * Note this creator is unsafe in the sense it is assumed that the input indexes in the range from apos to alen only
-	 * contain a sequential non duplicate incrementing values.
+	 * Note this creator is unsafe it is assumed that the input index list only contain sequential non duplicate
+	 * incrementing values.
 	 * 
 	 * @param indexes The indexes from which to take the offsets.
 	 * @param apos    The position to start looking from in the indexes.
@@ -62,9 +79,15 @@ public interface OffsetFactory {
 		final int minValue = indexes[apos];
 		final int maxValue = indexes[alen - 1];
 		final int range = maxValue - minValue;
-		final int endLength = alen - apos;
-		final long byteSize = OffsetByte.estimateInMemorySize(endLength, range);
-		final long charSize = OffsetChar.estimateInMemorySize(endLength, range);
+		final int endLength = alen - apos - 1;
+		// -1 because one index is skipped using a first idex allocated as a int.
+
+		final int correctionByte = correctionByte(range, endLength);
+		final int correctionChar = correctionChar(range, endLength);
+	
+		final long byteSize = OffsetByte.estimateInMemorySize(endLength + correctionByte);
+		final long charSize = OffsetChar.estimateInMemorySize(endLength + correctionChar);
+
 		if(byteSize < charSize)
 			return new OffsetByte(indexes, apos, alen);
 		else
@@ -106,10 +129,22 @@ public interface OffsetFactory {
 			return 8; // If this is the case, then the compression results in constant col groups
 		else {
 			final int avgDiff = nRows / size;
-			if(avgDiff < 256)
-				return OffsetByte.estimateInMemorySize(size - 1, nRows);
-			else
-				return OffsetChar.estimateInMemorySize(size - 1, nRows);
+			if(avgDiff < 256) {
+				final int correctionByte = correctionByte(nRows, size);
+				return OffsetByte.estimateInMemorySize(size - 1 + correctionByte);
+			}
+			else {
+				final int correctionChar = correctionChar(nRows, size);
+				return OffsetChar.estimateInMemorySize(size - 1 + correctionChar);
+			}
 		}
+	}
+
+	public static int correctionByte(int nRows, int size) {
+		return Math.max((nRows - size * 256), 0) / 256;
+	}
+
+	public static int correctionChar(int nRows, int size) {
+		return Math.max((nRows - size * Character.MAX_VALUE), 0) / Character.MAX_VALUE;
 	}
 }

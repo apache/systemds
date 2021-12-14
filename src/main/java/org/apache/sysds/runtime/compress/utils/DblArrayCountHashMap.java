@@ -125,6 +125,31 @@ public class DblArrayCountHashMap {
 		return ret;
 	}
 
+	public int[] getUnorderedCountsAndReplaceWithUIDs() {
+		final int[] counts = new int[_size];
+		int i = 0;
+		for(Bucket e : _data)
+			while(e != null) {
+				counts[i] = e.v.count;
+				e.v.count = i++;
+				e = e.n;
+			}
+
+		return counts;
+	}
+
+	public int[] getUnorderedCountsAndReplaceWithUIDsWithExtraCell() {
+		final int[] counts = new int[_size + 1];
+		int i = 0;
+		for(Bucket e : _data)
+			while(e != null) {
+				counts[i] = e.v.count;
+				e.v.count = i++;
+				e = e.n;
+			}
+		return counts;
+	}
+
 	private void resize() {
 		// check for integer overflow on resize
 		if(_data.length > Integer.MAX_VALUE / RESIZE_FACTOR)

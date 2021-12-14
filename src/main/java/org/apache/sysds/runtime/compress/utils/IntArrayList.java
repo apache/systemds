@@ -21,25 +21,21 @@ package org.apache.sysds.runtime.compress.utils;
 
 import java.util.Arrays;
 
-/**
- * This class provides a memory-efficient replacement for {@code ArrayList<Integer>} for restricted use cases.
- */
 public class IntArrayList {
 	private static final int INIT_CAPACITY = 4;
 	private static final int RESIZE_FACTOR = 2;
 
 	private int[] _data = null;
 	private int _size;
-	private int _val0;
 
 	public IntArrayList() {
 		_data = null;
 		_size = 0;
 	}
 
-	public IntArrayList(int value) {
-		this();
-		appendValue(value);
+	public IntArrayList(int initialSize) {
+		_data = new int[initialSize];
+		_size = 0;
 	}
 
 	public IntArrayList(int[] values) {
@@ -52,17 +48,9 @@ public class IntArrayList {
 	}
 
 	public void appendValue(int value) {
-		// embedded value (no array allocation)
-		if(_size == 0) {
-			_val0 = value;
-			_size = 1;
-			return;
-		}
-
 		// allocate or resize array if necessary
 		if(_data == null) {
 			_data = new int[INIT_CAPACITY];
-			_data[0] = _val0;
 		}
 		else if(_size + 1 >= _data.length)
 			resize();
@@ -79,17 +67,12 @@ public class IntArrayList {
 	 * @return integer array of offsets, the physical array length may be larger than the length of the offset list
 	 */
 	public int[] extractValues() {
-		if(_size == 1)
-			return new int[] {_val0};
-		else
-			return _data;
+		return _data;
 	}
 
 	public int get(int index) {
 		if(_data != null)
 			return _data[index];
-		else if(index == 0)
-			return _val0;
 		else
 			throw new RuntimeException("invalid index to get");
 	}
@@ -112,16 +95,13 @@ public class IntArrayList {
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
 
-		if(_size == 1)
-			sb.append(_val0);
-		else {
-			sb.append("[");
-			int i = 0;
-			for(; i < _size - 1; i++)
-				sb.append(_data[i] + ",");
+		sb.append("[");
+		int i = 0;
+		for(; i < _size - 1; i++)
+			sb.append(_data[i] + ",");
 
-			sb.append(_data[i] + "]");
-		}
+		sb.append(_data[i] + "]");
+
 		return sb.toString();
 	}
 }

@@ -20,11 +20,7 @@
 package org.apache.sysds.runtime.compress.estim;
 
 import org.apache.sysds.runtime.compress.CompressionSettings;
-import org.apache.sysds.runtime.compress.bitmap.ABitmap;
-import org.apache.sysds.runtime.compress.bitmap.BitmapEncoder;
-import org.apache.sysds.runtime.compress.colgroup.AColGroup.CompressionType;
-import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
-import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory;
+import org.apache.sysds.runtime.compress.estim.encoding.IEncode;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 
 /**
@@ -32,42 +28,41 @@ import org.apache.sysds.runtime.matrix.data.MatrixBlock;
  */
 public class CompressedSizeEstimatorExact extends CompressedSizeEstimator {
 
-	protected CompressedSizeEstimatorExact(MatrixBlock data, CompressionSettings compSettings) {
+	public CompressedSizeEstimatorExact(MatrixBlock data, CompressionSettings compSettings) {
 		super(data, compSettings);
 	}
 
 	@Override
 	public CompressedSizeInfoColGroup estimateCompressedColGroupSize(int[] colIndexes, int estimate,
 		int nrUniqueUpperBound) {
-		// exact estimator can ignore upper bound since it returns the accurate values.
-		final ABitmap entireBitMap = BitmapEncoder.extractBitmap(colIndexes, _data, _cs.transposed, estimate, false);
-		EstimationFactors em = null;
-		if(entireBitMap != null)
-			em = estimateCompressedColGroupSize(entireBitMap, colIndexes);
-		if(em == null)
-			em = EstimationFactors.emptyFactors(colIndexes.length, getNumRows());
-
-		return new CompressedSizeInfoColGroup(colIndexes, em, _cs.validCompressions, entireBitMap, getNumRows());
+		final int _numRows = getNumRows();
+		final IEncode map = IEncode.createFromMatrixBlock(_data, _cs.transposed, colIndexes);
+		final EstimationFactors em = map.computeSizeEstimation(colIndexes, _numRows, _data.getSparsity(),
+			_data.getSparsity());
+		return new CompressedSizeInfoColGroup(colIndexes, em, _cs.validCompressions, map);
 	}
 
 	@Override
 	protected CompressedSizeInfoColGroup estimateJoinCompressedSize(int[] joined, CompressedSizeInfoColGroup g1,
 		CompressedSizeInfoColGroup g2, int joinedMaxDistinct) {
 		final int _numRows = getNumRows();
-		AMapToData map = MapToFactory.join(g1.getMap(), g2.getMap());
+		final IEncode map = g1.getMap().join(g2.getMap());
 		EstimationFactors em = null;
 		if(map != null)
-			em = EstimationFactors.computeSizeEstimation(joined, map, _cs.validCompressions.contains(CompressionType.RLE),
-				_numRows, false);
-
+			em = map.computeSizeEstimation(joined, _numRows, _data.getSparsity(), _data.getSparsity());
 		if(em == null)
-			em = EstimationFactors.emptyFactors(joined.length, getNumRows());
+			em = EstimationFactors.emptyFactors(joined.length, _numRows);
 
 		return new CompressedSizeInfoColGroup(joined, em, _cs.validCompressions, map);
 	}
 
 	@Override
 	protected int worstCaseUpperBound(int[] columns) {
+		return getNumRows();
+	}
+
+	@Override
+	public final int getSampleSize() {
 		return getNumRows();
 	}
 }

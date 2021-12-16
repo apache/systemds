@@ -53,7 +53,7 @@ return (Matrix[Double] Y) {
     k = 1
   }
   if(ncol(mask) != ncol(X))
-    stop("column mismatch: no. of columns in mask vector should be equal to no. of columns in data matrix")
+    stop("smote: column mismatch, no. of columns in mask vector should be equal to no. of columns in data matrix")
   
   # matrix to keep the index of KNN for each minority sample
   knn_index = matrix(0,k,nrow(X))

@@ -155,7 +155,7 @@ public class FEDInstructionUtils {
 						fedinst = CentralMomentFEDInstruction.parseInstruction(inst.getInstructionString());
 					else if(inst.getOpcode().equalsIgnoreCase("qsort")) {
 						//FIXME only scalar quantiles and median now
-						if((mo1.isFederated(FType.ROW) && ((UnaryCPInstruction) inst).input2 == null) || mo1.getFedMapping().getFederatedRanges().length == 1 && mo1.isFederated(FType.COL))
+						if(mo1.isFederated(FType.ROW) || mo1.getFedMapping().getFederatedRanges().length == 1 && mo1.isFederated(FType.COL))
 							fedinst = QuantileSortFEDInstruction.parseInstruction(inst.getInstructionString());
 					}
 					else if(inst.getOpcode().equalsIgnoreCase("rshape"))

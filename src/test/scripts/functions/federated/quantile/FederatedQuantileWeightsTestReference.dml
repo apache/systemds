@@ -19,7 +19,11 @@
 #
 #-------------------------------------------------------------
 
-A = read($1);
 W = read($4);
-s = quantile (A, W, $3);
+if($3) {
+	A = rbind(read($5), read($6), read($7), read($8));
+}
+else { A = read($5); }
+
+s = quantile (A, W, $1);
 write(s, $2);

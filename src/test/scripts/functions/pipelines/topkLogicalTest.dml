@@ -107,7 +107,7 @@ write(result , $O)
 # UDF for evaluation  
 # choice of parameters provided by API, X, Y, clone_X, evalFunHp (hyper-param), trainML (boolean for optimizing hp internally or passed by externally )
 evalML = function(Matrix[Double] X, Matrix[Double] Y, Matrix[Double] Xtest, Matrix[Double] Ytest, Matrix[Double] Xorig=as.matrix(0),
-  Matrix[Double] evalFunHp, Boolean trainML = FALSE)
+  Matrix[Double] evalFunHp)
   
 return(Matrix[Double] accuracy)
 {

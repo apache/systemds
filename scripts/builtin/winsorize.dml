@@ -19,13 +19,18 @@
 #
 #-------------------------------------------------------------
 
-m_winsorize = function(Matrix[Double] X, Double ql = 0.05, Double qu = 0.95, Boolean verbose) 
+m_winsorize = function(Matrix[Double] X, Matrix[Double] include = as.matrix(1), Double ql = 0.05, Double qu = 0.95, Boolean verbose) 
 return (Matrix[Double] Y) {
 
+  if(nrow(include) == 1 & ncol(include) == 1)
+    D = X
+  else 
+    D = removeEmpty(target=X, margin="rows", select = include)
+    
   Y = matrix(0, nrow(X), ncol(X))
   parfor(i in 1:ncol(X), check=0) {
-    q1 = quantile(X[,i], ql)
-    q2 = quantile(X[,i], qu)
+    q1 = quantile(D[,i], ql)
+    q2 = quantile(D[,i], qu)
     Y[, i] = fixOutliersWinsorize(X[,i], q1, q2)
   }
 }

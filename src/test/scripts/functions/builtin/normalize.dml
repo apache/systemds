@@ -20,5 +20,6 @@
 #-------------------------------------------------------------
 
 X = read($1);
-Y = normalize(X);
+include = matrix(1, rows=nrow(X), cols=1)
+Y = normalize(X, include);
 write(Y, $2);

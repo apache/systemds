@@ -23,7 +23,7 @@
 F = read($X, data_type="frame", format="csv");
 # the mask for identifying categorical columns
 Mask = read($Mask)
-
+include = matrix(1, rows=nrow(F), cols=1)
 # Test cases
 # case 1: if all columns are categorical
 if(sum(Mask) == ncol(F))
@@ -36,7 +36,7 @@ if(sum(Mask) == ncol(F))
   jspecR = "{ids:true, recode:["+s+"]}";
   [X, M] = transformencode(target=F, spec=jspecR);
   # call mice
-  dataset = mice(X=X,cMask=Mask, iter=$iteration, threshold=0.8, verbose = FALSE )
+  dataset = mice(X=X, include = include, cMask=Mask, iter=$iteration, threshold=0.8, verbose = FALSE )
   # decode data back to original format
   output = as.matrix(transformdecode(target=dataset, spec=jspecR, meta=M));
   # cherry picking columns to compare with R results
@@ -48,7 +48,7 @@ else if(sum(Mask) == 0){
   # no transformation is required, cast the frame into matrix and call mice
   # as.matrix() will convert the null values into zeros, so explicitly replace zeros with NaN
   X = replace(target = as.matrix(F), pattern = 0, replacement = NaN)
-  output = mice(X=X, cMask=Mask, iter=$iteration, verbose = FALSE )
+  output = mice(X=X, include = include, cMask=Mask, iter=$iteration, verbose = FALSE )
   write(output, $dataN)
 }
 # case 3: if the data is combination of numeric and categorical columns
@@ -64,7 +64,7 @@ else
   jspecR = "{ids:true, recode:["+s+"]}";
   [X, M] = transformencode(target=F, spec=jspecR);
   # call mice
-  dataset = mice(X=X,cMask=Mask, iter=$iteration, verbose = FALSE )
+  dataset = mice(X=X, include = include, cMask=Mask, iter=$iteration, verbose = FALSE )
   # decode data into original format
   output = as.matrix(transformdecode(target=dataset, spec=jspecR, meta=M));
   # below lines are only for testing purpose  

@@ -21,5 +21,6 @@
 
 
 X = read($1);
-Y = outlierByIQR(X, $2, $3, $4, FALSE);
+include = matrix(1, rows=nrow(X), cols=1)
+Y = outlierByIQR(X, include, $2, $3, $4, FALSE);
 write(Y, $5)

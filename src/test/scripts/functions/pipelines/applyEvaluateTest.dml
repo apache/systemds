@@ -60,7 +60,7 @@ trainData = F[1:split,]
 testData = F[split+1:nrow(F),]
 
 
-result = applyAndEvaluate(trainData, testData, metaInfo, lg, pip[1,], hp[1,], "evalML", matrix("1 1e-3 1e-9 100", rows=1, cols=4), TRUE, FALSE)
+result = applyAndEvaluate(trainData, testData, metaInfo, lg, pip[1,], hp[1,], "evalML", evalHp, TRUE, FALSE)
 
 header = frame(["dirty acc", "train acc", "test acc"], rows=1, cols=3)
 result = as.frame(result)

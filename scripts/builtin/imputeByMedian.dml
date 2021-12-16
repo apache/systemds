@@ -40,22 +40,29 @@
 
 
 
-m_imputeByMedian = function(Matrix[Double] X, Matrix[Double] mask)
+m_imputeByMedian = function(Matrix[Double] X, Matrix[Double] include = as.matrix(1), Matrix[Double] mask)
 return(Matrix[Double] X)
 {
 
   nX = removeEmpty(target=X, margin="cols", select=(mask==0))
   cX = removeEmpty(target=X, margin="cols", select=mask)
   Mask_n = is.na(nX);  
+
+  if(nrow(include) == 1 & ncol(include) == 1)
+    tnX = nX
+  else 
+    tnX = removeEmpty(target=nX, margin="rows", select = include)
+    
   nX = replace(target=nX, pattern=NaN, replacement=0);
+  tnX = replace(target=tnX, pattern=NaN, replacement=0);
   cols = ncol(nX)
   #  median imputation
   colMedian = matrix(0, 1, cols)
   parfor(i in 1:cols, check=0)
-    colMedian[1, i] = median(X[,i])
+    colMedian[1, i] = median(tnX[,i])
   X_n = nX + (Mask_n * colMedian)
   # mode imputation
-  X_c = imputeByMode(cX)
+  X_c = imputeByMode(cX, include)
 
   p = table(seq(1, ncol(nX)), removeEmpty(target=seq(1, ncol(mask)), margin="rows", 
     select=t(mask==0)), ncol(nX), ncol(X))

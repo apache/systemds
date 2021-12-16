@@ -41,18 +41,24 @@
 
 
 
-m_imputeByMean = function(Matrix[Double] X, Matrix[Double] mask)
+m_imputeByMean = function(Matrix[Double] X, Matrix[Double] include = as.matrix(1), Matrix[Double] mask)
 return(Matrix[Double] X)
 {
-  # print("mean in \n"+toString(X))
+
   nX = removeEmpty(target=X, margin="cols", select=(mask==0))
   cX = removeEmpty(target=X, margin="cols", select=mask)
+  if(nrow(include) == 1 & ncol(include) == 1)
+    tnX = nX
+  else 
+    tnX = removeEmpty(target=nX, margin="rows", select = include)
+
   Mask_n = is.na(nX);  
   nX = replace(target=nX, pattern=NaN, replacement=0);
+  tnX = replace(target=tnX, pattern=NaN, replacement=0);
   #  mean imputation
-  X_n = nX+(Mask_n*colMeans(nX))
+  X_n = nX+(Mask_n*colMeans(tnX))
   # mode imputation
-  X_c = imputeByMode(cX)
+  X_c = imputeByMode(cX, include)
   p = table(seq(1, ncol(nX)), removeEmpty(target=seq(1, ncol(mask)), margin="rows", 
     select=t(mask==0)), ncol(nX), ncol(X))
   q = table(seq(1, ncol(cX)), removeEmpty(target=seq(1, ncol(mask)), margin="rows", 

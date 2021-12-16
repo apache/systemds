@@ -19,7 +19,13 @@
 #
 #-------------------------------------------------------------
 
-m_normalize = function(Matrix[Double] X) return (Matrix[Double] Y) {
+m_normalize = function(Matrix[Double] X,  Matrix[Double] include = as.matrix(1)) return (Matrix[Double] Y) {
   # normalize features to range [0,1]
-  Y = (X - colMins(X)) / (colMaxs(X) - colMins(X));
+  if(nrow(include) == 1 & ncol(include) == 1)
+    D = X
+  else 
+    D = removeEmpty(target=X, margin="rows", select = include)
+  
+  D = replace(target=D, pattern=NaN, replacement=0)
+  Y = (X - colMins(D)) / (colMaxs(D) - colMins(D));
 }

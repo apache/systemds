@@ -80,14 +80,14 @@ s_topk_cleaning = function(Frame[Unknown] dataTrain, Frame[Unknown] dataTest = a
   # # # create logical pipeline seeds
   logicalSeedCI =  frame([
                    "4", "ED", "MVI", "OTLR", "EC", "0", "0", "0", "0",
-                   "5", "ED", "MVI", "CI", "SCALE","DUMMY","0", "0", "0", 
-                   "5", "OTLR", "EC", "CI", "SCALE", "DUMMY", "0","0", "0",
+                   "5", "ED", "EC", "SCALE", "CI","DUMMY","0", "0", "0", 
+                   "5", "OTLR", "EC", "SCALE", "CI", "DUMMY", "0","0", "0",
                    "7", "MVI", "OTLR", "ED", "EC", "SCALE", "CI", "DUMMY", "0",
                    "5", "ED",  "MVI",  "SCALE", "CI", "DUMMY", "0", "0", "0",
                    "4", "MVI", "SCALE", "CI", "DUMMY", "0", "0", "0", "0", 
-                   "4", "ED", "EC", "CI", "DUMMY", "0", "0", "0", "0",
-                   "4", "MVI", "OTLR", "CI", "DUMMY", "0", "0", "0", "0",
-                   "6", "MVI", "OTLR", "EC", "CI", "SCALE", "DUMMY", "0", "0",
+                   "6", "ED", "MVI", "EC", "SCALE", "CI", "DUMMY", "0", "0",
+                   "6", "MVI", "OTLR","EC", "SCALE", "CI", "DUMMY", "0", "0",
+                   "7", "OTLR", "MVI", "OTLR", "EC", "SCALE", "CI", "DUMMY", "0",
                    "7", "ED", "MVI", "OTLR", "EC", "SCALE", "CI", "DUMMY", "0"
                    ], rows=10, cols=9)  
                    
@@ -198,8 +198,8 @@ return(Double dirtyScore, Matrix[Double] evalFunHp)
   mask = as.matrix(metaList['mask']) 
   mask = ifelse(sum(mask == dmask) < ncol(mask), matrix(1, rows=1, cols=ncol(mask)), mask)
   [eXtrain, eXtest] = recodeData(X, Xtest, mask, cv, "recode")
-  eXtrain = replace(target=eXtrain, pattern=NaN, replacement = 1)
-  eXtest = replace(target=eXtest, pattern=NaN, replacement = 1)
+  eXtrain = replace(target=eXtrain, pattern=NaN, replacement = 0)
+  eXtest = replace(target=eXtest, pattern=NaN, replacement = 0)
   dirtyScore = 100
   print(prefix+" sample from train data and dummy code");
   [eXtrain, Ytrain] =  utils::doSample(eXtrain, Y, sample, TRUE)
@@ -209,10 +209,10 @@ return(Double dirtyScore, Matrix[Double] evalFunHp)
   print(prefix+" hyper-parameter tuning");
   if(cv) {
     score = crossV(X=eXtrain, y=Ytrain, cvk=cvk, evalFunHp=evalFunHp,
-      pipList=pipList, metaList=metaList, evalFunc=evaluationFunc, trainML = 1)
+      pipList=pipList, metaList=metaList, evalFunc=evaluationFunc)
   }
   else {
-    score = eval(evaluationFunc, list(X=eXtrain, Y=Ytrain, Xtest=eXtest, Ytest=Ytest, Xorig=as.matrix(0), evalFunHp=evalFunHp, trainML = 1))
+    score = eval(evaluationFunc, list(X=eXtrain, Y=Ytrain, Xtest=eXtest, Ytest=Ytest, Xorig=as.matrix(0), evalFunHp=evalFunHp))
   }
 
   dirtyScore = as.scalar(score[1, 1])

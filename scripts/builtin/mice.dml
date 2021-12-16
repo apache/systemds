@@ -44,7 +44,7 @@
 # Assumption missing value are represented with empty string i.e ",," in CSV file  
 # variables with suffix n are storing continuos/numeric data and variables with 
 # suffix c are storing categorical data
-m_mice= function(Matrix[Double] X, Matrix[Double] cMask, Integer iter = 3, 
+m_mice= function(Matrix[Double] X, Matrix[Double] include = as.matrix(1), Matrix[Double] cMask, Integer iter = 3, 
   Double threshold = 0.8, Boolean verbose = FALSE)
   return(Matrix[Double] output)
 {
@@ -79,7 +79,7 @@ m_mice= function(Matrix[Double] X, Matrix[Double] cMask, Integer iter = 3,
     
   # store the mask of categorical missing values 
   Mask_c = is.na(cX);
-  X_c = imputeByMode(cX)
+  X_c = imputeByMode(cX, include)
   # initial mode imputation
 
   # reconstruct original matrix using sparse matrices p and q 
@@ -114,23 +114,34 @@ m_mice= function(Matrix[Double] X, Matrix[Double] cMask, Integer iter = 3,
     [dX, dM] = transformencode(target=as.frame(X1), spec=jspecDC);
     dist = colDist(X1, cMask) # number of distinct items in categorical features
     i=1; j=1; in_c=1;
-
+   # # # only train on rows indicated by include vector
+    if(nrow(include) == 1 & ncol(include) == 1)
+    {
+      tDX = dX
+      tX1 = X1
+    }
+    else {
+      tDX = removeEmpty(target=dX, margin="rows", select = include)
+      tX1 = removeEmpty(target=X1, margin="rows", select = include)
+    }
+      
     while(i < ncol(dX))
     {
       j = (i + as.scalar(dist[1,in_c])) - 1 # index value for iterating OHE columns
-      
+ 
       if(sum(Mask1[, in_c]) > 0 & as.scalar(cMask[, in_c]) == 0) # impute numeric features
       {
         # construct column selector
         selX = matrix(1,1,ncol(dX))
         selX[1,i:j] = matrix(0,1,as.scalar(dist[1,in_c]))
         selY = cbind(matrix(1,1,in_c-1), as.matrix(0), matrix(1,1,d-in_c));
+        
         # prepare train data set X and Y
-        slice1 = removeEmpty(target = dX, margin = "rows", select = inverseMask[,in_c])
-        slice1a = removeEmpty(target = X1, margin = "rows", select = inverseMask[,in_c])
+        slice1 = removeEmpty(target = tDX, margin = "rows", select = inverseMask[,in_c])
+        slice1a = removeEmpty(target = tX1, margin = "rows", select = inverseMask[,in_c])
         train_X = removeEmpty(target = slice1, margin = "cols", select = selX);
         train_Y = slice1a[,in_c]
-
+        
         # prepare score data set X and Y for imputing Y
         slice2 = removeEmpty(target = dX, margin = "rows", select = Mask1[,in_c])
         slice2a = removeEmpty(target = X1, margin = "rows", select = Mask1[,in_c])
@@ -155,8 +166,8 @@ m_mice= function(Matrix[Double] X, Matrix[Double] cMask, Integer iter = 3,
         selX[1,i:j] = matrix(0,1,as.scalar(dist[1,in_c]))
         selY = cbind(matrix(1,1,in_c-1), as.matrix(0), matrix(1,1,d-in_c));
         # prepare train data set X and Y
-        slice1 = removeEmpty(target = dX, margin = "rows", select = inverseMask[,in_c])
-        slice1a = removeEmpty(target = X1, margin = "rows", select = inverseMask[,in_c])
+        slice1 = removeEmpty(target = tDX, margin = "rows", select = inverseMask[,in_c])
+        slice1a = removeEmpty(target = tX1, margin = "rows", select = inverseMask[,in_c])
         train_X = removeEmpty(target = slice1, margin = "cols", select = selX);
         train_Y = slice1a[,in_c]
         # prepare score data set X and Y for imputing Y

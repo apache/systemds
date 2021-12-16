@@ -26,17 +26,19 @@ s_executePipeline = function(Frame[String] logical = as.frame("NULL"), Frame[Str
 {
   mask=as.matrix(metaList['mask'])
   FD = as.matrix(metaList['fd'])
-
+  includeVector = rbind(matrix(1, rows=nrow(X), cols=1), matrix(0, rows=nrow(Xtest), cols=1))
   cloneY = Y
   Xorig = X
   # # combine X and Y
   n = nrow(X)
   d = ncol(Xorig)
   X = rbind(X, Xtest)
+
   Y = rbind(Y, Ytest)
   testRow = nrow(Xtest)
   Xout = X
   t1 = time()
+
   print("PIPELINE EXECUTION START ... "+toString(pipeline))
   if(verbose) {
     print("checks   rows in X = "+nrow(X)+" rows in Y = "+nrow(Y)+" cols in X = "+ncol(X)+" col in Y = "+ncol(Y))
@@ -49,9 +51,9 @@ s_executePipeline = function(Frame[String] logical = as.frame("NULL"), Frame[Str
     op = as.scalar(pipeline[1,i])
     lgOp = as.scalar(logical[1,i])
     
-    if(test == FALSE | lgOp != "CI") {
+    if(lgOp != "CI") {
        Xclone = X 
-      [hp, dataFlag, yFlag, executeFlag] = matrixToList(X, Y, mask, FD, hyperParameters[i], flagsCount, op)
+      [hp, dataFlag, yFlag, executeFlag] = matrixToList(X, Y, includeVector, mask, FD, hyperParameters[i], flagsCount, op)
       if(executeFlag == 1) {
         X = eval(op, hp)
         Xout = X
@@ -75,7 +77,7 @@ s_executePipeline = function(Frame[String] logical = as.frame("NULL"), Frame[Str
       Ytest = Y[testStIdx:nrow(X), ]
       X = X[1:trainEndIdx, ]
       Y = Y[1:trainEndIdx, ]
-      [hp, dataFlag, yFlag, executeFlag] = matrixToList(X, Y, mask, FD, hyperParameters[i], flagsCount, op)
+      [hp, dataFlag, yFlag, executeFlag] = matrixToList(X, Y, includeVector, mask, FD, hyperParameters[i], flagsCount, op)
       if(executeFlag == 1)
       {
         X = eval(op, hp)
@@ -87,8 +89,10 @@ s_executePipeline = function(Frame[String] logical = as.frame("NULL"), Frame[Str
           X = X[, 1:ncol(X) - 1]
         }
         X = confirmMeta(X, mask)
+        includeVector = rbind(matrix(1, rows=nrow(X), cols=1), matrix(0, rows=nrow(Xtest), cols=1))
         X = rbind(X, Xtest)
         Y = rbind(Y, Ytest)
+
       }
       else {
         print("not applying "+op+" executeFlag = 0")
@@ -112,7 +116,7 @@ s_executePipeline = function(Frame[String] logical = as.frame("NULL"), Frame[Str
 }
 
 # This function will convert the matrix row-vector into list
-matrixToList = function(Matrix[Double] X,  Matrix[Double] Y, Matrix[Double] mask, Matrix[Double] FD,
+matrixToList = function(Matrix[Double] X,  Matrix[Double] Y, Matrix[Double] includeVector, Matrix[Double] mask, Matrix[Double] FD,
   Matrix[Double] p, Integer flagsCount, String op)
   return (List[Unknown] l, Integer dataFlag, Integer yFlag, Integer executeFlag)
 {
@@ -122,6 +126,7 @@ matrixToList = function(Matrix[Double] X,  Matrix[Double] Y, Matrix[Double] mask
   yFlag = as.integer(as.scalar(p[1, ncol(p) - 2]))
   fDFlag = as.integer(as.scalar(p[1, ncol(p)-3]))
   maskFlag = as.integer(as.scalar(p[1, ncol(p)-4]))
+  includeFlag = as.integer(as.scalar(p[1, ncol(p)-5]))
   
   executeFlag = 1
   ######################################################
@@ -153,6 +158,14 @@ matrixToList = function(Matrix[Double] X,  Matrix[Double] Y, Matrix[Double] mask
   if(yFlag == 1) {
     l = append(l, Y)
   }
+  
+  ######################################################
+  # CHECK FOR include APPEND FLAG
+  if(includeFlag == 1)
+  {
+    l = append(l, includeVector)
+  }
+  
   ######################################################
   # CHECK FOR FD APPEND FLAG
   if(fDFlag == 1)
@@ -166,6 +179,8 @@ matrixToList = function(Matrix[Double] X,  Matrix[Double] Y, Matrix[Double] mask
   {
     l = append(l, mask)
   }
+  
+
   #####################################################
   # POPULATE HYPER PARAM
   # get the number of hyper-parameters and loop till that
@@ -270,19 +285,26 @@ return (Matrix[Double] X)
 # Output: OHEd matrix X
 #######################################################################
 
-dummycoding = function(Matrix[Double] X,  Matrix[Double] mask)
-return (Matrix[Double] dX_train) {
+dummycoding = function(Matrix[Double] X, Matrix[Double] include = as.matrix(1), Matrix[Double] mask)
+return (Matrix[Double] output) {
+
 
   if(sum(mask) > 0)
   {
-    X = replace(target=X, pattern=NaN, replacement=1)
+    X = replace(target=X, pattern=NaN, replacement=0)
+      
+    # divide data into train and test
+    Xtrain = removeEmpty(target=X, margin="rows", select = include)
+    Xtest = removeEmpty(target=X, margin="rows", select = (include == 0))
     idx = vectorToCsv(mask)
     # specifications for one-hot encoding of categorical features
     jspecDC = "{ids:true, dummycode:["+idx+"]}";
     # OHE of categorical features
-    [dX_train, dM] = transformencode(target=as.frame(X), spec=jspecDC);
+    [dX_train, dM] = transformencode(target=as.frame(Xtrain), spec=jspecDC);
+    dX_test = transformapply(target=as.frame(Xtest), spec = jspecDC, meta=dM);
+    output = rbind(dX_train, dX_test)
   }
-  else dX_train = X
+  else output = X
 }
 
 
@@ -292,13 +314,18 @@ return (Matrix[Double] dX_train) {
 # Output: filled matrix X
 #######################################################################
 
-imputeByFd = function(Matrix[Double] X, Matrix[Double] fdMask,  Double threshold)
+imputeByFd = function(Matrix[Double] X, Matrix[Double] include = as.matrix(1), Matrix[Double] fdMask,  Double threshold)
 return (Matrix[Double] X_filled)
 {
   if(sum(fdMask) > 0)
   {
+    if(nrow(include) == 1 & ncol(include) == 1)
+    D = X
+    else 
+    D = removeEmpty(target=X, margin="rows", select = include)
+    
     fdMask = removeEmpty(target=fdMask, margin="cols")
-    FD = discoverFD(X=replace(target=X, pattern=NaN, replacement=1), Mask=fdMask, threshold=threshold)
+    FD = discoverFD(X=replace(target=D, pattern=NaN, replacement=1), Mask=fdMask, threshold=threshold)
     FD = (diag(matrix(1, rows=nrow(FD), cols=1)) ==0) * FD 
     FD = FD > 0
     if(sum(FD) > 0)
@@ -306,7 +333,7 @@ return (Matrix[Double] X_filled)
       for(i in 1: nrow(FD))
       {
         for(j in 1:ncol(FD)) {
-          if(as.scalar(FD[i, j]) > 0 & (min(X[, i]) != 0) & (min(X[, j]) != 0) & (sum(FD[, j]) != nrow(FD))
+          if(as.scalar(FD[i, j]) > 0 & (min(D[, i]) != 0) & (min(D[, j]) != 0) & (sum(FD[, j]) != nrow(FD))
             & (as.scalar(fdMask[1, j]) != 0) & (as.scalar(fdMask[1, i]) != 0))
             X = imputeByFD(X, i, j, threshold, FALSE)
         }
@@ -451,11 +478,9 @@ return(Matrix[Double] hpForPruning, Matrix[Double] changesByOp)
 ########################################################
 # The function will flip the noisy labels
 ########################################################
-flipLabels = function(Matrix[Double] X, Matrix[Double] Y, Double threshold, Boolean verbose = FALSE)
+flipLabels = function(Matrix[Double] X, Matrix[Double] Y, Double threshold, Integer maxIter =10, Boolean verbose = FALSE)
 return (Matrix[Double] XY)
 {
-
-  print("---- starting flip labels ---")
   max_y = max(Y)
   if(min(Y) != max(Y))
   {
@@ -464,7 +489,7 @@ return (Matrix[Double] XY)
     inc = ((yhat != Y) & (rowMaxs(prob) > threshold))
     Xcor = removeEmpty(target = X, margin = "rows", select = (inc==0))
     Ycor = removeEmpty(target = Y, margin = "rows", select = (inc==0))
-    while(sum(inc) > 0)
+    while(sum(inc) > 0 & maxIter > 0)
     {
       # print("inc vector "+toString(inc))
       Xinc = removeEmpty(target = X, margin = "rows", select = inc)
@@ -478,9 +503,98 @@ return (Matrix[Double] XY)
       Ycor = rbind(Ycor, YcorI)
       X = Xinc
       Y = Yinc
+      print("maxIter: "+maxIter)
+      maxIter = maxIter - 1
     }
     XY = cbind(Xcor, Ycor)
   }
   else 
     XY = cbind(X, Y)
+}
+
+#######################################################################
+# function frequency conversion
+# Inputs: The input dataset X, and  mask of the columns
+# Output: categorical columns are replaced with their frequencies
+#######################################################################
+
+frequencyEncoding = function(Matrix[Double] X, Matrix[Double] include = as.matrix(1), Matrix[Double] mask)
+return (Matrix[Double] freqX) {
+  
+  freqX = X
+  X = replace(target=X, pattern=NaN, replacement=1)
+  if(sum(mask) > 0)
+  {
+    # get the train data for frequency count
+    Xtrain = removeEmpty(target=X, margin="rows", select = include)
+
+    for(i in 1:ncol(mask))
+    {
+      if(as.scalar(mask[1, i]) == 1)
+      {
+        Y = X[, i]
+        valueCount = table(Xtrain[, i], 1)
+        resp = matrix(0, nrow(Y), max(Y))
+        resp = (resp + t(seq(1, max(Y)))) == Y
+        resp = resp * t(valueCount)
+        freqX[, i] = rowSums(resp)
+      }
+    
+    }
+  }
+}
+
+#######################################################################
+# function Weight of evidence / information gain
+# Inputs: The input dataset X, and  mask of the columns
+# Output: categorical columns are replaced with their frequencies
+#######################################################################
+
+WoE = function(Matrix[Double] X, Matrix[Double] Y, Matrix[Double] include = as.matrix(1), Matrix[Double] mask)
+return (Matrix[Double] output) {
+  
+  freqX = X
+  X = replace(target=X, pattern=NaN, replacement=1)
+  if(sum(mask) > 0)
+  {
+    # get the train data for frequency count
+    Xtrain = removeEmpty(target=X, margin="rows", select = include)
+    Ytrain = removeEmpty(target=Y, margin="rows", select = include)
+
+    for(i in 1:ncol(mask))
+    {
+      if(as.scalar(mask[1, i]) == 1)
+      {
+        L = X[, i]
+        entropy = getEntropy(Xtrain[, i], Ytrain)
+        resp = matrix(0, nrow(L), max(L))
+        resp = (resp + t(seq(1, max(L)))) == L
+        resp = resp * entropy[, 1:ncol(resp)]
+        freqX[, i] = rowSums(resp)
+      }
+    
+    }
+  }
+  output = cbind(freqX, Y)
+}
+
+
+getEntropy = function(Matrix[Double] eX, Matrix[Double] eY)
+return(Matrix[Double] entropyMatrix)
+{
+
+  tab = table(eX, eY)
+  # print("tab \n"+toString(tab))
+  entropyMatrix = matrix(0, rows=1, cols=nrow(tab))
+  catTotal = rowSums(tab)
+  for(i in 1:nrow(tab))
+  {
+    # print("catProb: " +catProb)
+    entropy =  (tab[i,]/catTotal[i])
+    # print("entropy: "+toString(entropy))
+    catEntropy = sum(-entropy * log(entropy, 2))
+    catEntropy = ifelse(is.na(catEntropy), 0, catEntropy)
+    # print("cat entropy: "+catEntropy)
+    entropyMatrix[1, i] = catEntropy
+  }  
 }

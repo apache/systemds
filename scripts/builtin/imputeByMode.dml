@@ -38,15 +38,21 @@
 # X               Double   ---        imputed dataset
 
 
-m_imputeByMode = function(Matrix[Double] X)
+m_imputeByMode = function(Matrix[Double] X, Matrix[Double] include = as.matrix(1))
 return(Matrix[Double] X)
 {
 
   Mask = is.na(X)
   X = replace(target=X, pattern=NaN, replacement=0)
+  
+  if(nrow(include) == 1 & ncol(include) == 1)
+    tcX = X
+  else 
+    tcX = removeEmpty(target=X, margin="rows", select = include)
+  
   colMode = matrix(0, 1, ncol(X))
   for(i in 1: ncol(X)) {
-    X_c = removeEmpty(target=X[, i], margin = "rows", select=(X[, i] < 1)==0)
+    X_c = removeEmpty(target=tcX[, i], margin = "rows", select=(tcX[, i] < 1)==0)
     if(sum(X_c) == 0)
       colMode[1, i] = 1
     else {

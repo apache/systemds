@@ -32,11 +32,17 @@
 # ScaleFactor  Matrix    ---      The Scaling of the values, to make each dimension have similar value ranges
 # ---------------------------------------------------------------------------------------------
 
-m_scale = function(Matrix[Double] X, Boolean center, Boolean scale) 
+m_scale = function(Matrix[Double] X, Matrix[Double] include = as.matrix(1), Boolean center, Boolean scale) 
   return (Matrix[Double] Y, Matrix[Double] ColMean, Matrix[Double] ScaleFactor) 
 {
+
+  if(nrow(include) == 1 & ncol(include) == 1)
+    D = X
+  else 
+    D = removeEmpty(target=X, margin="rows", select = include)
+    
   if(center){
-    ColMean = colMeans(X)
+    ColMean = colMeans(D)
     X =  X - ColMean
   }
   else {
@@ -46,9 +52,13 @@ m_scale = function(Matrix[Double] X, Boolean center, Boolean scale)
   }
 
   if (scale) {
-    N = nrow(X)
+    if(nrow(include) == 1 & ncol(include) == 1)
+      D = X
+    else 
+      D = removeEmpty(target=X, margin="rows", select = include)
 
-    ScaleFactor = sqrt(colSums(X^2)/(N-1))
+    N = nrow(D)
+    ScaleFactor = sqrt(colSums(D^2)/(N-1))
 
     # Replace entries in the scale factor that are 0 and NaN with 1.
     # To avoid division by 0 or NaN, introducing NaN to the ouput.

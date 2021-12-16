@@ -41,7 +41,7 @@
 # ---------------------------------------------------------------------------------------------
 # Y               Double   ---     Matrix X with no outliers
 
-m_outlierBySd = function(Matrix[Double] X, Double k = 3, Integer repairMethod = 1, 
+m_outlierBySd = function(Matrix[Double] X, Matrix[Double] include = as.matrix(1), Double k = 3, Integer repairMethod = 1, 
   Integer max_iterations, Boolean verbose = TRUE) return(Matrix[Double] Y) 
 {
 
@@ -56,8 +56,12 @@ m_outlierBySd = function(Matrix[Double] X, Double k = 3, Integer repairMethod = 
 
   while( max_iterations == 0 | counter < max_iterations )
   {
-    colSD = getColSd(X)
-    colMean = getColMean(X)
+    if(nrow(include) == 1 & ncol(include) == 1)
+      D = X
+    else 
+      D = removeEmpty(target=X, margin="rows", select = include)
+    colSD = getColSd(D)
+    colMean = getColMean(D)
 
     upperBound = colMean + k * colSD
     lowerBound = colMean - k * colSD
@@ -68,7 +72,7 @@ m_outlierBySd = function(Matrix[Double] X, Double k = 3, Integer repairMethod = 
       #TODO why is the check with sumPrevious and sumNext necessary
       temp = replace(target=X, pattern = NaN, replacement = 0)
       sumPrevious = sum(temp)
-      X = fix_outliers_sd(X, outlierFilter, repairMethod)
+      [X, include] = fix_outliers_sd(X, include, outlierFilter, repairMethod)
       temp = replace(target=X, pattern = NaN, replacement = 0)
       sumNext = sum(temp)
     }
@@ -90,14 +94,15 @@ m_outlierBySd = function(Matrix[Double] X, Double k = 3, Integer repairMethod = 
   }
 }
 
-fix_outliers_sd = function(Matrix[Double] X, Matrix[Double] outlierFilter, Integer repairMethod = 2)
-  return(Matrix[Double] fixed_X)
+fix_outliers_sd = function(Matrix[Double] X, Matrix[Double] include, Matrix[Double] outlierFilter, Integer repairMethod = 2)
+  return(Matrix[Double] fixed_X, Matrix[Double] include)
 {
   rows = nrow(X)
   cols = ncol(X)
   if(repairMethod == 0) {
     sel = (rowMaxs(outlierFilter) == 0)
     X = removeEmpty(target = X, margin = "rows", select = sel)
+    include = removeEmpty(target = include, margin = "rows", select = sel)
   }
   else if(repairMethod == 1)
     X = (outlierFilter == 0) * X

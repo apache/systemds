@@ -26,7 +26,7 @@ s_applyAndEvaluate = function(Frame[Unknown] trainData, Frame[Unknown] testData,
   Boolean isLastLabel = TRUE, Boolean correctTypos=FALSE)
 return (Matrix[Double] result)
 {
-  no_of_flag_vars = 5
+  no_of_flag_vars = 6
   schema = metaData[1, 1:ncol(metaData) - 1]
   mask = as.matrix(metaData[2, 1:ncol(metaData) - 1])
   fdMask = as.matrix(metaData[3, 1:ncol(metaData) - 1])
@@ -144,8 +144,8 @@ return(Double dirtyScore)
   mask = as.matrix(metaList['mask']) 
   mask = ifelse(sum(mask == dmask) < ncol(mask), matrix(1, rows=1, cols=ncol(mask)), mask)
   [eXtrain, eXtest] = recodeData(X, Xtest, mask, FALSE, "recode")
-  eXtrain = replace(target=eXtrain, pattern=NaN, replacement=1)
-  eXtest = replace(target=eXtest, pattern=NaN, replacement=1)
+  eXtrain = replace(target=eXtrain, pattern=NaN, replacement=0)
+  eXtest = replace(target=eXtest, pattern=NaN, replacement=0)
   [eXtrain, eXtest] = recodeData(as.frame(eXtrain), as.frame(eXtest), mask, FALSE, "dummycode")
   score = eval(evaluationFunc, list(X=eXtrain, Y=Y, Xtest=eXtest, Ytest=Ytest, Xorig=as.matrix(0), evalFunHp=evalFunHp, trainML = FALSE))
   dirtyScore = as.scalar(score[1, 1])

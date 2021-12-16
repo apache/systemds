@@ -484,7 +484,7 @@ public class ColGroupFactory {
 
 		@Override
 		public Boolean call() {
-			return new Boolean(readToMapDDC(_colIndexes, _raw, _map, _cs, _data, _rl, _ru, _fill));
+			return Boolean.valueOf(readToMapDDC(_colIndexes, _raw, _map, _cs, _data, _rl, _ru, _fill));
 		}
 	}
 

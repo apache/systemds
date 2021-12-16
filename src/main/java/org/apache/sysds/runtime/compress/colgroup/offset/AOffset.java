@@ -40,6 +40,7 @@ import org.apache.sysds.runtime.matrix.data.MatrixBlock;
  * represented size.
  */
 public abstract class AOffset implements Serializable {
+	private static final long serialVersionUID = 6910025321078561338L;
 
 	protected static final Log LOG = LogFactory.getLog(AOffset.class.getName());
 

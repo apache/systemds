@@ -20,20 +20,13 @@
 package org.apache.sysds.test.functions.builtin.setoperations;
 
 import org.apache.sysds.common.Types;
-import org.apache.sysds.runtime.matrix.data.MatrixValue;
-import org.apache.sysds.test.AutomatedTestBase;
-import org.apache.sysds.test.TestConfiguration;
-import org.apache.sysds.test.TestUtils;
-import org.junit.Test;
-
-import java.util.HashMap;
 
 public class BuiltinUnionTest  extends SetOperationsTestBase {
-    private final static String TEST_NAME = "union";
-    private final static String TEST_DIR = "functions/builtin/";
-    private static final String TEST_CLASS_DIR = TEST_DIR + BuiltinUnionTest.class.getSimpleName() + "/";
+	private final static String TEST_NAME = "union";
+	private final static String TEST_DIR = "functions/builtin/";
+	private static final String TEST_CLASS_DIR = TEST_DIR + BuiltinUnionTest.class.getSimpleName() + "/";
 
-    public BuiltinUnionTest(Types.ExecType execType) {
-        super(TEST_NAME, TEST_DIR, TEST_CLASS_DIR, execType);
-    }
+	public BuiltinUnionTest(Types.ExecType execType) {
+		super(TEST_NAME, TEST_DIR, TEST_CLASS_DIR, execType);
+	}
 }

@@ -19,15 +19,7 @@
 
 package org.apache.sysds.test.functions.builtin.setoperations;
 
-import org.junit.Test;
 import org.apache.sysds.common.Types;
-import org.apache.sysds.common.Types.ExecType;
-import org.apache.sysds.runtime.matrix.data.MatrixValue.CellIndex;
-import org.apache.sysds.test.AutomatedTestBase;
-import org.apache.sysds.test.TestConfiguration;
-import org.apache.sysds.test.TestUtils;
-
-import java.util.HashMap;
 
 public class BuiltinIntersectionTest extends SetOperationsTestBase
 {

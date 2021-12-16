@@ -40,7 +40,7 @@ import org.apache.sysds.runtime.matrix.data.MatrixBlock;
  * - SDC use this in collaboration with the offsets to only point to dictionary entries for non default values.
  */
 public abstract class AMapToData implements Serializable {
-
+	private static final long serialVersionUID = 1208906071822976041L;
 	protected static final Log LOG = LogFactory.getLog(AMapToData.class.getName());
 
 	/** Number of unique values inside this map. */

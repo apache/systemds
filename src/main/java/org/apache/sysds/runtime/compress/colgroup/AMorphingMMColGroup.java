@@ -30,6 +30,7 @@ import org.apache.sysds.runtime.matrix.data.MatrixBlock;
  * reasons but instead transforms into another type of column group type to perform that operation.
  */
 public abstract class AMorphingMMColGroup extends AColGroupValue {
+	private static final long serialVersionUID = -4265713396790607199L;
 
 	/**
 	 * Constructor for serialization

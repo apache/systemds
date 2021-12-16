@@ -320,6 +320,7 @@ public class MappingPreAggregateTests {
 	}
 
 	private static class OneOffset extends OffsetByte {
+		private static final long serialVersionUID = 1910028460503867232L;
 
 		private OneOffset(byte[] offsets, int offsetToFirst, int offsetToLast) {
 			super(offsets, offsetToFirst, offsetToLast);

@@ -43,9 +43,11 @@ import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
 import org.apache.sysds.runtime.controlprogram.caching.FrameObject;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
+import org.apache.sysds.runtime.controlprogram.context.SparkExecutionContext;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest.RequestType;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse.ResponseType;
 import org.apache.sysds.runtime.instructions.Instruction;
+import org.apache.sysds.runtime.instructions.Instruction.IType;
 import org.apache.sysds.runtime.instructions.InstructionParser;
 import org.apache.sysds.runtime.instructions.cp.Data;
 import org.apache.sysds.runtime.instructions.cp.ListObject;
@@ -336,9 +338,17 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 
 	private FederatedResponse execInstruction(FederatedRequest request) throws Exception {
 		ExecutionContext ec = _ecm.get(request.getTID());
+		
+		//handle missing spark execution context
+		//TODO handling of spark instructions should be under control of federated site not coordinator
+		Instruction receivedInstruction = InstructionParser.parseSingleInstruction((String) request.getParam(0));
+		if(receivedInstruction.getType() == IType.SPARK
+			&& !(ec instanceof SparkExecutionContext) ) {
+			_ecm.convertToSparkCtx();
+			ec = _ecm.get(request.getTID());
+		}
 		BasicProgramBlock pb = new BasicProgramBlock(null);
 		pb.getInstructions().clear();
-		Instruction receivedInstruction = InstructionParser.parseSingleInstruction((String) request.getParam(0));
 		pb.getInstructions().add(receivedInstruction);
 
 		if(DMLScript.LINEAGE)

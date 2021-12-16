@@ -37,7 +37,7 @@ s_executePipeline = function(Frame[String] logical = as.frame("NULL"), Frame[Str
   testRow = nrow(Xtest)
   Xout = X
   t1 = time()
-  #print("PIPELINE EXECUTION START ... "+toString(pipeline))
+  print("PIPELINE EXECUTION START ... "+toString(pipeline))
   if(verbose) {
     print("checks   rows in X = "+nrow(X)+" rows in Y = "+nrow(Y)+" cols in X = "+ncol(X)+" col in Y = "+ncol(Y))
     print("pipeline in execution "+toString(pipeline))
@@ -335,44 +335,46 @@ SMOTE  = function(Matrix[Double] X, Matrix[Double] Y, Matrix[Double] mask, Integ
 return (Matrix[Double] XY)
 {
   # get the class count 
-  classes = table(Y[, 1], 1)
-  minClass = min(classes)
-  maxClass = max(classes)
-  diff = (maxClass - minClass)/sum(classes)
-  if(diff > 0.5)
-  {
-    #print("initiating oversampling")
-    XY = order(target = cbind(Y, X),  by = 1, decreasing=FALSE, index.return=FALSE)
-    synthesized = matrix(0,0,0) # initialize variable
-    start_class = 1
-    end_class = 0
-    k = table(XY[, 1], 1)
-    getMax = max(k)
-    maxKIndex = as.scalar(rowIndexMax(t(k)))
-    outSet = matrix(0, 0, ncol(XY))
-    remainingRatio = ifelse((remainingRatio%%100) >= 50, remainingRatio+(100 - (remainingRatio%%100)),
-    remainingRatio-(remainingRatio%%100))
-    #print("remaining ratio: "+remainingRatio)
-    for(i in 1: nrow(k), check=0) {
-      end_class = end_class + as.scalar(classes[i])
-      class_t = XY[start_class:end_class, ]
-      if((i != maxKIndex)) {
-        synthesized = smote(class_t[, 2:ncol(XY)], mask, remainingRatio, 1, FALSE)
-        synthesized = cbind(matrix(as.scalar(class_t[2,1]), nrow(synthesized), 1), synthesized)
-        outSet = rbind(outSet, synthesized)
-      }
-      start_class = end_class + 1
-    }
-  
-    XY = rbind(XY, synthesized)
-    Y = XY[, 1]
-    X = XY[, 2:ncol(XY)]
-    XY = cbind(X,Y)
+  for(k in 1:max(Y)) {
     classes = table(Y, 1)
-  }
-  else { 
-    #print("smote not applicable")
-    XY = cbind(X, Y)
+    minClass = min(classes)
+    maxClass = max(classes)
+    diff = (maxClass - minClass)/sum(classes)
+    if(diff > 0.3)
+    {
+      #print("initiating oversampling")
+      XY = order(target = cbind(Y, X),  by = 1, decreasing=FALSE, index.return=FALSE)
+      synthesized = matrix(0,0,0) # initialize variable
+      start_class = 1
+      end_class = 0
+      k = table(XY[, 1], 1)
+      getMax = max(k)
+      maxKIndex = as.scalar(rowIndexMax(t(k)))
+      outSet = matrix(0, 0, ncol(XY))
+      remainingRatio = ifelse((remainingRatio%%100) >= 50, remainingRatio+(100 - (remainingRatio%%100)),
+      remainingRatio-(remainingRatio%%100))
+      #print("remaining ratio: "+remainingRatio)
+      for(i in 1: nrow(k), check=0) {
+        end_class = end_class + as.scalar(classes[i])
+        class_t = XY[start_class:end_class, ]
+        if((i != maxKIndex)) {
+          synthesized = smote(class_t[, 2:ncol(XY)], mask, remainingRatio, 1, FALSE)
+          synthesized = cbind(matrix(as.scalar(class_t[2,1]), nrow(synthesized), 1), synthesized)
+          outSet = rbind(outSet, synthesized)
+        }
+        start_class = end_class + 1
+      }
+  
+      XY = rbind(XY, synthesized)
+      Y = XY[, 1]
+      X = XY[, 2:ncol(XY)]
+      XY = cbind(X,Y)
+      classes = table(Y, 1)
+    }
+    else { 
+      print("smote not applicable")
+      XY = cbind(X, Y)
+    }
   }
 }
 
@@ -446,3 +448,39 @@ return(Matrix[Double] hpForPruning, Matrix[Double] changesByOp)
   }
 }
 
+########################################################
+# The function will flip the noisy labels
+########################################################
+flipLabels = function(Matrix[Double] X, Matrix[Double] Y, Double threshold, Boolean verbose = FALSE)
+return (Matrix[Double] XY)
+{
+
+  print("---- starting flip labels ---")
+  max_y = max(Y)
+  if(min(Y) != max(Y))
+  {
+    betas = multiLogReg(X=X, Y=Y, icpt=1, reg=1e-4, maxi=100, maxii=0, verbose=FALSE)
+    [prob, yhat, accuracy] = multiLogRegPredict(X, betas, Y, FALSE)
+    inc = ((yhat != Y) & (rowMaxs(prob) > threshold))
+    Xcor = removeEmpty(target = X, margin = "rows", select = (inc==0))
+    Ycor = removeEmpty(target = Y, margin = "rows", select = (inc==0))
+    while(sum(inc) > 0)
+    {
+      # print("inc vector "+toString(inc))
+      Xinc = removeEmpty(target = X, margin = "rows", select = inc)
+      Yinc = removeEmpty(target = Y, margin = "rows", select = inc)
+      Yinc = matrix((max_y + 1), rows=nrow(Yinc), cols=1) - Yinc
+      [prob, yhat, accuracy] = multiLogRegPredict(Xinc, betas, Yinc, FALSE)
+      inc = ((yhat != Yinc) & (rowMaxs(prob) > threshold))
+      XcorI = removeEmpty(target = Xinc, margin = "rows", select = (inc==0))
+      YcorI = removeEmpty(target = Yinc, margin = "rows", select = (inc==0))
+      Xcor = rbind(Xcor, XcorI)
+      Ycor = rbind(Ycor, YcorI)
+      X = Xinc
+      Y = Yinc
+    }
+    XY = cbind(Xcor, Ycor)
+  }
+  else 
+    XY = cbind(X, Y)
+}

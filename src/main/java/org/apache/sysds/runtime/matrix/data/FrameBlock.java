@@ -2397,7 +2397,9 @@ public class FrameBlock implements CacheBlock, Externalizable {
 							}
 
 							// compute distance between sample and invalid value
-							double simScore = StringUtils.getLevenshteinDistance(dataValue, dataValue2);
+							double simScore = 0;
+							if(!(dataValue == null) && !(dataValue2 == null))
+								simScore = StringUtils.getLevenshteinDistance(dataValue, dataValue2);
 							if(simScore < minSimScore) {
 								minSimScore = simScore;
 								bestIdx = w;

@@ -23,7 +23,7 @@ source("scripts/pipelines/scripts/utils.dml") as utils;
 
 # read the inputs
 F = read($dirtyData, data_type="frame", format="csv", header=TRUE, 
-  naStrings= ["NA", "null","  ","NaN", "nan", "", "?", "99999"]);
+  naStrings= ["NA", "null","  ","NaN", "nan", "", " ", "_nan_", "inf", "?", "NAN", "99999"]);
 F = F[,2:ncol(F)]
 primitives = read($primitives, data_type = "frame", format="csv", header= TRUE)
 param = read($parameters, data_type = "frame", format="csv", header= TRUE)
@@ -59,10 +59,10 @@ write(result, $O)
 # UDF for evaluation  
 # choice of parameters provided by API, X, Y, clone_X, evalFunHp (hyper-param), trainML (boolean for optimizing hp internally or passed by externally )
 evalRegression = function(Matrix[Double] X, Matrix[Double] Y, Matrix[Double] Xtest, Matrix[Double] Ytest, Matrix[Double] Xorig=as.matrix(0),
-  Matrix[Double] evalFunHp, Boolean trainML = FALSE)
+  Matrix[Double] evalFunHp)
 return(Matrix[Double] output)
 {
-  if(trainML == 1)
+  if(is.na(as.scalar(evalFunHp[1,1])))
   {
     # do the gridsearch for hyper-parameters
     params = list("icpt","reg", "tol", "maxi");
@@ -82,5 +82,5 @@ wmape = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] B, Integer i
   # loss = as.matrix(sum((y - X%*%B)^2));
   pred = lmPredict(X=X, B=B, ytest=y, icpt=icpt);
   WMAPE = sum(abs(y - pred))/sum(abs(y)) #this will give the lose into range of [0,1]
-  loss = as.matrix(WMAPE) 
+  loss = ifelse(is.na(as.matrix(WMAPE)), as.matrix(0), as.matrix(WMAPE))  
 }

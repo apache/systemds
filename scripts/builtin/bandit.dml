@@ -300,16 +300,17 @@ run_with_hyperparam = function(Frame[Unknown] lp, Frame[Unknown] ph_pip, Integer
         {
           pipList = list(lp = lp, ph = ph_pip[i], hp = hp_matrix, flags = no_of_flag_vars)
           [evalFunOutput, hpForPruning, changesByOp] = crossV(X=X, y=Y, cvk=cvk, evalFunHp=evalFunHp, pipList=pipList, metaList=metaList, hpForPruning=hpForPruning, 
-          changesByOp=changesByOp, evalFunc=evaluationFunc, trainML = 0)
+          changesByOp=changesByOp, evalFunc=evaluationFunc)
         }
         else 
         {
-          [eXtrain, eYtrain, eXtest, eYtest, Tr, hpForPruning, changesByOp] = executePipeline(logical=lp, pipeline=ph_pip[i], X=X, Y=Y, Xtest=Xtest, Ytest=Ytest, metaList=metaList,
-            hyperParameters=hp_matrix, hpForPruning=hpForPruning, changesByOp=changesByOp, flagsCount=no_of_flag_vars, test=TRUE, verbose=FALSE)
+          [eXtrain, eYtrain, eXtest, eYtest, Tr, hpForPruning, changesByOp] = executePipeline(logical=lp, pipeline=ph_pip[i], 
+            X=X, Y=Y, Xtest=Xtest, Ytest=Ytest, metaList=metaList,  hyperParameters=hp_matrix, hpForPruning=hpForPruning,
+            changesByOp=changesByOp, flagsCount=no_of_flag_vars, test=TRUE, verbose=FALSE)
           if(max(eYtrain) == min(eYtrain)) 
             print("Y contains only one class")
           else 
-            evalFunOutput = eval(evaluationFunc, list(X=eXtrain, Y=eYtrain, Xtest=eXtest, Ytest=eYtest, Xorig=as.matrix(0), evalFunHp=evalFunHp, trainML = 0))
+            evalFunOutput = eval(evaluationFunc, list(X=eXtrain, Y=eYtrain, Xtest=eXtest, Ytest=eYtest, Xorig=as.matrix(0), evalFunHp=evalFunHp))
         }
 
         # evalFunOutput = eval(evaluationFunc, argList)  
@@ -564,9 +565,8 @@ return (Matrix[Double] features)
   # OHE features 
   OHE = sum(colMaxs(X) * mask)
   features[1, 10] = OHE
-  tab = table(Y, 1)
-  distVal = nrow(tab)
-  if(nrow(Y) > 1 &  distVal <= 10)
+
+  if(nrow(Y) > 1 &  min(Y) >= 1)
   {
     ctab = table(Y, 1)
     features[1, 11] = nrow(ctab) # number of classes
@@ -630,7 +630,7 @@ return (String s)
 }
 
 crossV = function(Matrix[double] X, Matrix[double] y, Integer cvk, Matrix[Double] evalFunHp, List[Unknown] pipList, List[Unknown] metaList,
-  Matrix[Double] hpForPruning = as.matrix(0), Matrix[Double] changesByOp = as.matrix(0), String evalFunc, Integer trainML = 0) 
+  Matrix[Double] hpForPruning = as.matrix(0), Matrix[Double] changesByOp = as.matrix(0), String evalFunc) 
 return (Matrix[Double] output, Matrix[Double] hpForPruning, Matrix[Double] changesByOp)
 {
   accuracyMatrix = matrix(0, cvk, 1)
@@ -679,7 +679,7 @@ return (Matrix[Double] output, Matrix[Double] hpForPruning, Matrix[Double] chang
         changesByOp=changesByOp, flagsCount=as.scalar(pipList['flags']), test=TRUE, verbose=FALSE)
     }
     # print("test out: "+nrow(testy))
-    res = eval(evalFunc, list(X=trainX, Y=trainy, Xtest=testX, Ytest=testy, Xorig=as.matrix(0), evalFunHp=evalFunHp, trainML = trainML))
+    res = eval(evalFunc, list(X=trainX, Y=trainy, Xtest=testX, Ytest=testy, Xorig=as.matrix(0), evalFunHp=evalFunHp))
     accuracyMatrix[i] = res[1, 1]
     evalFunHp = res[, 2:ncol(res)]
   }

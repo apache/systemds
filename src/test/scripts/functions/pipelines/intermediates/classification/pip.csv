@@ -1,3 +1,3 @@
-imputeByFd,imputeByMean,imputeByFd,scale,flipLabels,dummycoding
-imputeByFd,imputeByMean,imputeByFd,scale,flipLabels,dummycoding
-imputeByFd,imputeByMean,outlierBySd,scale,abstain,dummycoding
+imputeByMean,imputeByMean,winsorize,imputeByMedian,scale,abstain,dummycoding
+imputeByMean,imputeByMean,winsorize,imputeByMedian,scale,abstain,dummycoding
+imputeByMean,imputeByMean,winsorize,imputeByMedian,scale,abstain,dummycoding

@@ -1,0 +1,44 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+#
+# Implements the outlier detection/prediction algorithm using a DBScan model
+#
+# INPUT PARAMETERS:
+# ----------------------------------------------------------------------------
+# NAME              TYPE             DEFAULT    MEANING
+# ----------------------------------------------------------------------------
+# Xtest             Matrix[Double]   ---        The input Matrix to do outlierDetection on.
+# model             Matrix[Double]   ---        Model of cluster to predict outliers against
+#
+
+m_outlierByDB = function (Matrix[Double] Xtest, Matrix[Double] model)
+    return (Matrix[double] outlierPoints)
+{
+    # TODO: check if points outside of cluster, need more information than borderPoints me thinks
+    # Whole model needed otherwise I have no indication what the borderPoints span
+    # Save the clusters per cluster in the model, if part of a cluster, return the cluster association
+    print("Border points: ")
+    print(toString(model))
+    print("==============================================================")
+    print("X: ")
+    print(toString(Xtest))
+    outlierPoints = Xtest
+}

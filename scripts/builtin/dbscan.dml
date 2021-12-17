@@ -30,8 +30,11 @@
 # minPts    Int              5          Number of points in a neighborhood for a point to be considered as a core point (includes the point itself).
 #
 
+# TODO: extend by returning border points return (Matrix[Double] clusterMembers, Matrix[Double] borderPoints) / Multiple returns possible
+# Matrix[Double] the right datatype? 
+
 m_dbscan = function (Matrix[Double] X, Double eps = 0.5, Integer minPts = 5)
-    return (Matrix[Double] clusterMembers)
+    return (Matrix[Double] clusterMembers, Matrix[Double] model)
 {
     #check input parameter assertions
     if(minPts < 0) { stop("DBSCAN: Stopping due to invalid inputs: minPts should be greater than 0"); }
@@ -68,5 +71,9 @@ m_dbscan = function (Matrix[Double] X, Double eps = 0.5, Integer minPts = 5)
         clusterMembers = components(G=adjacency, verbose=FALSE);
         # noise to 0
         clusterMembers = clusterMembers * (rowSums(adjacency) > 0);
+        
+        # TODO: create matrix model
+        # model = clusterMembers * X
+        model = xor(clusterMembers, X)
     }
 }

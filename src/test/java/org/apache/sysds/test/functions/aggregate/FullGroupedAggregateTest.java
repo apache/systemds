@@ -64,6 +64,7 @@ public class FullGroupedAggregateTest extends AutomatedTestBase
 		VARIANCE,
 		MOMENT3,
 		MOMENT4,
+		MIN
 	}
 	
 	
@@ -389,7 +390,13 @@ public class FullGroupedAggregateTest extends AutomatedTestBase
 	{
 		runGroupedAggregateOperationTest(OpType.MOMENT4, true, false, false, ExecType.CP);
 	}
-	
+
+	@Test
+	public void testGroupedMinSparse()
+	{
+		runGroupedAggregateOperationTest(OpType.MIN, true, false, false, ExecType.CP);
+	}
+
 	/* TODO weighted central moment in R
 	@Test
 	public void testGroupedAggMoment4DenseWeightsCP() 

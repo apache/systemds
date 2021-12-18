@@ -36,6 +36,7 @@ public class CMOperator extends Operator
 		CM2,
 		CM3,
 		CM4,
+		MIN,
 		VARIANCE,
 		INVALID
 	}
@@ -94,6 +95,8 @@ public class CMOperator extends Operator
 				return AggregateOperationTypes.CM4;
 			else
 				return AggregateOperationTypes.INVALID;
+		} else if (fn.equalsIgnoreCase("min")) {
+			return AggregateOperationTypes.MIN;
 		}
 		return AggregateOperationTypes.INVALID;
 	}

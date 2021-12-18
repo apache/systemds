@@ -692,7 +692,8 @@ public class ParameterizedBuiltinFunctionExpression extends DataIdentifier
 			else if (fnameStr.equals(Statement.GAGG_FN_COUNT) 
 					|| fnameStr.equals(Statement.GAGG_FN_SUM) 
 					|| fnameStr.equals(Statement.GAGG_FN_MEAN)
-					|| fnameStr.equals(Statement.GAGG_FN_VARIANCE)){}
+					|| fnameStr.equals(Statement.GAGG_FN_VARIANCE)
+					|| fnameStr.equals(Statement.GAGG_FN_MIN)){}
 			else { 
 				raiseValidateError("fname is " + fnameStr + " but must be either centeralmoment, count, sum, mean, variance", conditional);
 			}

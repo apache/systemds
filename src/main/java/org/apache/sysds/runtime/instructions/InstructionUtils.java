@@ -1006,6 +1006,8 @@ public class InstructionUtils
 		case COUNT:
 		case MEAN:
 		case VARIANCE:
+		case MIN:
+			return new AggregateOperator(Double.MAX_VALUE, Builtin.getBuiltinFnObject(BuiltinCode.MIN));
 		case CM2:
 		case CM3:
 		case CM4:

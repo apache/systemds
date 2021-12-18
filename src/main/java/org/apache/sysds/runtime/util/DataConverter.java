@@ -307,6 +307,45 @@ public class DataConverter {
 		return ret;
 	}
 
+	public static int[] convertVectorToIndexList(MatrixBlock mb)
+	{
+		int rows = mb.getNumRows();
+		int cols = mb.getNumColumns();
+
+		if( mb.isEmpty() )
+			return null;
+
+		if( mb.isInSparseFormat() ) {
+			if(rows == 1) {
+				// row vector
+				SparseBlock sb = mb.getSparseBlock();
+				int[] tmp = sb.indexes(0);
+				return (tmp.length == sb.size(0)) ? tmp :
+					Arrays.copyOfRange(tmp, 0, sb.size(0));
+			}
+			else {
+				// column vector
+				int index = 0;
+				int[] indices = new int[(int) mb.getNonZeros()];
+				Iterator<IJV> iter = mb.getSparseBlockIterator();
+				while(iter.hasNext()) {
+					IJV cell = iter.next();
+					if(cell.getV() != 0.0)
+						indices[index++] = cell.getI() * cols + cell.getJ();
+				}
+				return indices;
+			}
+		}
+		else {
+			int[] indices = new int[(int) mb.getNonZeros()];
+			for(int i = 0, aix=0, cix=0; i < rows; i++)
+				for(int j = 0; j < cols; j++, aix++)
+					if(mb.getValueDenseUnsafe(i, j) != 0.0)
+						indices[cix++] = aix;
+			return indices;
+		}
+	}
+
 	public static int[] convertToIntVector( MatrixBlock mb) {
 		int rows = mb.getNumRows();
 		int cols = mb.getNumColumns();

@@ -22,5 +22,5 @@
 
 A = read($1, naStrings= ["NA", "null","  ","NaN", "nan", "", "?", "99999"])
 V = as.frame(A)
-Vp = removeEmpty(target=V, margin=$3)
+Vp = removeEmpty(target=V, margin=$3, select=read($2))
 write(Vp, $4);

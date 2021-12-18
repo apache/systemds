@@ -23,7 +23,7 @@ import java.util.Arrays;
 import java.util.Collection;
 
 import org.apache.sysds.api.DMLScript;
-import org.apache.sysds.common.Types;
+import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
@@ -75,17 +75,17 @@ public class FederatedRCBindTest extends AutomatedTestBase {
 
 	@Test
 	public void federatedRCBindCP() {
-		federatedRCBind(Types.ExecMode.SINGLE_NODE);
+		federatedRCBind(ExecMode.SINGLE_NODE);
 	}
 
 	@Test
 	public void federatedRCBindSP() {
-		federatedRCBind(Types.ExecMode.SPARK);
+		federatedRCBind(ExecMode.SPARK);
 	}
 
-	public void federatedRCBind(Types.ExecMode execMode) {
+	public void federatedRCBind(ExecMode execMode) {
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
-		Types.ExecMode platformOld = rtplatform;
+		ExecMode platformOld = rtplatform;
 
 		getAndLoadTestConfiguration(TEST_NAME);
 		String HOME = SCRIPT_DIR + TEST_DIR;
@@ -115,7 +115,7 @@ public class FederatedRCBindTest extends AutomatedTestBase {
 		Thread t4 = startLocalFedWorkerThread(port4);
 
 		// we need the reference file to not be written to hdfs, so we get the correct format
-		rtplatform = Types.ExecMode.SINGLE_NODE;
+		rtplatform = ExecMode.SINGLE_NODE;
 		// Run reference dml script with normal matrix for Row/Col sum
 		fullDMLScriptName = HOME + TEST_NAME + "Reference.dml";
 		programArgs = new String[] {"-nvargs", "in_A1=" + input("A1"), "in_A2=" + input("A2"),
@@ -128,7 +128,7 @@ public class FederatedRCBindTest extends AutomatedTestBase {
 
 		// reference file should not be written to hdfs, so we set platform here
 		rtplatform = execMode;
-		if(rtplatform == Types.ExecMode.SPARK) {
+		if(rtplatform == ExecMode.SPARK) {
 			DMLScript.USE_LOCAL_SPARK_CONFIG = true;
 		}
 		TestConfiguration config = availableTestConfigurations.get(TEST_NAME);

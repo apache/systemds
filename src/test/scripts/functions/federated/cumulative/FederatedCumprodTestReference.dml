@@ -22,5 +22,6 @@
 if($6) { A = rbind(read($1), read($2), read($3), read($4)); }
 else { A = cbind(read($1), read($2), read($3), read($4)); }
 
-s = cumprod(A);
-write(s, $5);
+S = cumprod(A);
+sS = as.matrix(sum(S));
+write(sS, $5);

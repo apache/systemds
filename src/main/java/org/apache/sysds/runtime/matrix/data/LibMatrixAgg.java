@@ -81,7 +81,8 @@ import org.apache.sysds.runtime.util.UtilFunctions;
  * ak+, uak+, uark+, uack+, uasqk+, uarsqk+, uacsqk+,
  * uamin, uarmin, uacmin, uamax, uarmax, uacmax,
  * ua*, uamean, uarmean, uacmean, uavar, uarvar, uacvar,
- * uarimax, uaktrace, cumk+, cummin, cummax, cum*, tak+.
+ * uarimax, uaktrace, cumk+, cummin, cummax, cum*, tak+,
+ * cm, cov
  * 
  * TODO next opcode extensions: a+, colindexmax
  */
@@ -418,6 +419,44 @@ public class LibMatrixAgg
 		return out;
 	}
 
+	public static CM_COV_Object aggregateCmCov(MatrixBlock in1, MatrixBlock in2, MatrixBlock in3, ValueFunction fn) {
+		CM_COV_Object cmobj = new CM_COV_Object();
+		
+		// empty block handling (important for result corretness, otherwise
+		// we get a NaN due to 0/0 on reading out the required result)
+		if( in1.isEmptyBlock(false) && fn instanceof CM ) {
+			fn.execute(cmobj, 0.0, in1.getNumRows());
+			return cmobj;
+		}
+		
+		return aggregateCmCov(in1, in2, in3, fn, 0, in1.getNumRows());
+	}
+	
+	public static CM_COV_Object aggregateCmCov(MatrixBlock in1, MatrixBlock in2, MatrixBlock in3, ValueFunction fn, int k) {
+		if( in1.isEmptyBlock(false) || !satisfiesMultiThreadingConstraints(in1, k) )
+			return aggregateCmCov(in1, in2, in3, fn);
+		
+		CM_COV_Object ret = new CM_COV_Object();
+		
+		try {
+			ExecutorService pool = CommonThreadPool.get(k);
+			ArrayList<AggCmCovTask> tasks = new ArrayList<>();
+			ArrayList<Integer> blklens = UtilFunctions.getBalancedBlockSizesDefault(in1.rlen, k, false);
+			for( int i=0, lb=0; i<blklens.size(); lb+=blklens.get(i), i++ )
+				tasks.add(new AggCmCovTask(in1, in2, in3, fn, lb, lb+blklens.get(i)));
+			List<Future<CM_COV_Object>> rtasks = pool.invokeAll(tasks);
+			pool.shutdown();
+			//aggregate partial results and error handling
+			for( int i=1; i<rtasks.size(); i++ )
+				fn.execute(ret, rtasks.get(i).get());
+		}
+		catch(Exception ex) {
+			throw new DMLRuntimeException(ex);
+		}
+		
+		return ret;
+	}
+	
 	public static MatrixBlock aggregateTernary(MatrixBlock in1, MatrixBlock in2, MatrixBlock in3, MatrixBlock ret, AggregateTernaryOperator op) {
 		//early abort if any block is empty
 		if( in1.isEmptyBlock(false) || in2.isEmptyBlock(false) || in3!=null&&in3.isEmptyBlock(false) ) {
@@ -571,6 +610,12 @@ public class LibMatrixAgg
 			&& in.nonZeros > (sharedTP ? PAR_NUMCELL_THRESHOLD2 : PAR_NUMCELL_THRESHOLD1);
 	}
 	
+	public static boolean satisfiesMultiThreadingConstraints(MatrixBlock in,int k) {
+		boolean sharedTP = (InfrastructureAnalyzer.getLocalParallelism() == k);
+		return k > 1 && in.rlen > (sharedTP ? k/8 : k/2)
+			&& in.nonZeros > (sharedTP ? PAR_NUMCELL_THRESHOLD2 : PAR_NUMCELL_THRESHOLD1);
+	}
+	
 	/**
 	 * Recompute outputs (e.g., maxindex or minindex) according to block indexes from MR.
 	 * TODO: this should not be part of block operations but of the MR instruction.
@@ -680,6 +725,94 @@ public class LibMatrixAgg
 			out.incrementalAggregate(laop, partout);
 		else
 			out.binaryOperationsInPlace(laop.increOp, partout);
+	}
+	
+	private static CM_COV_Object aggregateCmCov(MatrixBlock in1, MatrixBlock in2, MatrixBlock in3, ValueFunction fn, int rl, int ru) {
+		CM_COV_Object ret = new CM_COV_Object();
+		
+		if( in2 == null && in3 == null ) { //CM
+			int nzcount = 0;
+			if(in1.sparse && in1.sparseBlock!=null) { //SPARSE
+				int ru2 = Math.min(ru, in1.sparseBlock.numRows());
+				for(int r = rl; r < ru2; r++) {
+					SparseBlock a = in1.sparseBlock;
+					if(a.isEmpty(r)) 
+						continue;
+					int apos = a.pos(r);
+					int alen = a.size(r);
+					double[] avals = a.values(r);
+					for(int i=apos; i<apos+alen; i++) {
+						fn.execute(ret, avals[i]);
+						nzcount++;
+					}
+				}
+				// account for zeros in the vector
+				fn.execute(ret, 0.0, ru2-rl-nzcount);
+			}
+			else if(in1.denseBlock!=null) { //DENSE
+				//always vector (see check above)
+				double[] a = in1.getDenseBlockValues();
+				for(int i=rl; i<ru; i++)
+					fn.execute(ret, a[i]);
+			}
+		}
+		else if( in3 == null ) { //CM w/ weights, COV
+			if (in1.sparse && in1.sparseBlock!=null) { //SPARSE
+				for(int i = rl; i < ru; i++) { 
+					fn.execute(ret,
+						in1.quickGetValue(i,0),
+						in2.quickGetValue(i,0));
+				}
+			}
+			else if(in1.denseBlock!=null) //DENSE
+			{
+				//always vectors (see check above)
+				double[] a = in1.getDenseBlockValues();
+				if( !in2.sparse ) {
+					if(in2.denseBlock!=null) {
+						double[] w = in2.getDenseBlockValues();
+						for( int i = rl; i < ru; i++ )
+							fn.execute(ret, a[i], w[i]);
+					}
+				}
+				else {
+					for(int i = rl; i < ru; i++) 
+						fn.execute(ret, a[i], in2.quickGetValue(i,0) );
+				}
+			}
+		}
+		else { // COV w/ weights
+			if(in1.sparse && in1.sparseBlock!=null) { //SPARSE
+				for(int i = rl; i < ru; i++ ) {
+					fn.execute(ret,
+						in1.quickGetValue(i,0),
+						in2.quickGetValue(i,0),
+						in3.quickGetValue(i,0));
+				}
+			}
+			else if(in1.denseBlock!=null) { //DENSE
+				//always vectors (see check above)
+				double[] a = in1.getDenseBlockValues();
+				
+				if( !in2.sparse && !in3.sparse ) {
+					double[] w = in3.getDenseBlockValues();
+					if(in2.denseBlock!=null) {
+						double[] b = in2.getDenseBlockValues();
+						for( int i=rl; i<ru; i++ )
+							fn.execute(ret, a[i], b[i], w[i]);
+					}
+				}
+				else {
+					for(int i = rl; i < ru; i++) {
+						fn.execute(ret, a[i],
+							in2.quickGetValue(i,0),
+							in3.quickGetValue(i,0));
+					}
+				}
+			}
+		}
+
+		return ret;
 	}
 
 	private static void aggregateTernaryDense(MatrixBlock in1, MatrixBlock in2, MatrixBlock in3, MatrixBlock ret, IndexFunction ixFn, int rl, int ru)
@@ -3442,6 +3575,30 @@ public class LibMatrixAgg
 				groupedAggregateKahanPlus(_groups, _target, _weights, _ret, _numGroups, aggop, _cl, _cu);
 			}
 			return null;
+		}
+	}
+	
+	private static class AggCmCovTask implements Callable<CM_COV_Object> {
+		private final MatrixBlock _in1, _in2, _in3;
+		private final ValueFunction _fn;
+		private final int _rl, _ru;
+
+		protected AggCmCovTask(MatrixBlock in1, MatrixBlock in2, MatrixBlock in3, ValueFunction fn, int rl, int ru) {
+			_in1 = in1;
+			_in2 = in2;
+			_in3 = in3;
+			_fn = fn;
+			_rl = rl;
+			_ru = ru;
+		}
+		
+		@Override
+		public CM_COV_Object call() {
+			//deep copy stateful CM function (has Kahan objects inside)
+			//for correctness and to avoid cache thrashing among threads
+			ValueFunction fn = (_fn instanceof CM) ? CM.getCMFnObject((CM)_fn) : _fn;
+			//execute aggregate for row partition
+			return aggregateCmCov(_in1, _in2, _in3, fn, _rl, _ru);
 		}
 	}
 }

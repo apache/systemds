@@ -4726,46 +4726,11 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	public CM_COV_Object cmOperations(CMOperator op) {
 		// dimension check for input column vectors
 		if ( this.getNumColumns() != 1) {
-			throw new DMLRuntimeException("Central Moment can not be computed on [" 
+			throw new DMLRuntimeException("Central Moment cannot be computed on [" 
 					+ this.getNumRows() + "," + this.getNumColumns() + "] matrix.");
 		}
 		
-		CM_COV_Object cmobj = new CM_COV_Object();
-		
-		// empty block handling (important for result corretness, otherwise
-		// we get a NaN due to 0/0 on reading out the required result)
-		if( isEmptyBlock(false) ) {
-			op.fn.execute(cmobj, 0.0, getNumRows());
-			return cmobj;
-		}
-		
-		int nzcount = 0;
-		if(sparse && sparseBlock!=null) //SPARSE
-		{
-			for(int r=0; r<Math.min(rlen, sparseBlock.numRows()); r++)
-			{
-				if(sparseBlock.isEmpty(r)) 
-					continue;
-				int apos = sparseBlock.pos(r);
-				int alen = sparseBlock.size(r);
-				double[] avals = sparseBlock.values(r);
-				for(int i=apos; i<apos+alen; i++) {
-					op.fn.execute(cmobj, avals[i]);
-					nzcount++;
-				}
-			}
-			// account for zeros in the vector
-			op.fn.execute(cmobj, 0.0, this.getNumRows()-nzcount);
-		}
-		else if(denseBlock!=null)  //DENSE
-		{
-			//always vector (see check above)
-			double[] a = getDenseBlockValues();
-			for(int i=0; i<rlen; i++)
-				op.fn.execute(cmobj, a[i]);
-		}
-
-		return cmobj;
+		return LibMatrixAgg.aggregateCmCov(this, null, null, op.fn, op.getNumThreads());
 	}
 		
 	public CM_COV_Object cmOperations(CMOperator op, MatrixBlock weights) {
@@ -4779,31 +4744,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 					+ weights.getNumRows() + "," + weights.getNumColumns() +"]");
 		}
 		
-		CM_COV_Object cmobj = new CM_COV_Object();
-		if (sparse && sparseBlock!=null) //SPARSE
-		{
-			for(int i=0; i < rlen; i++) 
-				op.fn.execute(cmobj, this.quickGetValue(i,0), weights.quickGetValue(i,0));
-		}
-		else if(denseBlock!=null) //DENSE
-		{
-			//always vectors (see check above)
-			double[] a = getDenseBlockValues();
-			if( !weights.sparse )
-			{
-				double[] w = weights.getDenseBlockValues();
-				if(weights.denseBlock!=null)
-					for( int i=0; i<rlen; i++ )
-						op.fn.execute(cmobj, a[i], w[i]);
-			}
-			else
-			{
-				for(int i=0; i<rlen; i++) 
-					op.fn.execute(cmobj, a[i], weights.quickGetValue(i,0) );
-			}
-		}
-		
-		return cmobj;
+		return LibMatrixAgg.aggregateCmCov(this, weights, null, op.fn, op.getNumThreads());
 	}
 	
 	public CM_COV_Object covOperations(COVOperator op, MatrixBlock that) {
@@ -4817,30 +4758,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 					+ that.getNumRows() + "," + that.getNumColumns() +"]");
 		}
 		
-		CM_COV_Object covobj = new CM_COV_Object();
-		if(sparse && sparseBlock!=null) //SPARSE
-		{
-			for(int i=0; i < rlen; i++ ) 
-				op.fn.execute(covobj, this.quickGetValue(i,0), that.quickGetValue(i,0));
-		}
-		else if(denseBlock!=null) //DENSE
-		{
-			//always vectors (see check above)
-			double[] a = getDenseBlockValues();
-			if( !that.sparse ) {
-				if(that.denseBlock!=null) {
-					double[] b = that.getDenseBlockValues();
-					for( int i=0; i<rlen; i++ )
-						op.fn.execute(covobj, a[i], b[i]);
-				}
-			}
-			else {
-				for(int i=0; i<rlen; i++)
-					op.fn.execute(covobj, a[i], that.quickGetValue(i,0));
-			}
-		}
-		
-		return covobj;
+		return LibMatrixAgg.aggregateCmCov(this, that, null, op.fn, op.getNumThreads());
 	}
 	
 	public CM_COV_Object covOperations(COVOperator op, MatrixBlock that, MatrixBlock weights) {
@@ -4859,34 +4777,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 					+ weights.getNumRows() + "," + weights.getNumColumns() +"]");
 		}
 		
-		CM_COV_Object covobj = new CM_COV_Object();
-		if(sparse && sparseBlock!=null) //SPARSE
-		{
-			for(int i=0; i < rlen; i++ ) 
-				op.fn.execute(covobj, this.quickGetValue(i,0), that.quickGetValue(i,0), weights.quickGetValue(i,0));
-		}
-		else if(denseBlock!=null) //DENSE
-		{
-			//always vectors (see check above)
-			double[] a = getDenseBlockValues();
-			
-			if( !that.sparse && !weights.sparse )
-			{
-				double[] w = weights.getDenseBlockValues();
-				if(that.denseBlock!=null) {
-					double[] b = that.getDenseBlockValues();
-					for( int i=0; i<rlen; i++ )
-						op.fn.execute(covobj, a[i], b[i], w[i]);
-				}
-			}
-			else
-			{
-				for(int i=0; i<rlen; i++)
-					op.fn.execute(covobj, a[i], that.quickGetValue(i,0), weights.quickGetValue(i,0));
-			}
-		}
-		
-		return covobj;
+		return LibMatrixAgg.aggregateCmCov(this, that, weights, op.fn, op.getNumThreads());
 	}
 
 

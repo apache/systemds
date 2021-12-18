@@ -107,7 +107,3 @@ scripts/perftest/temp
 scripts/perftest/fed/results
 scripts/perftest/fed/scratch_space
 scripts/perftest/fed/temp
-
-# Federated Tests artifacts
-scripts/fedtest/**/results
-scripts/fedtest/**/temp

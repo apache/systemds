@@ -38,6 +38,8 @@ import org.apache.sysds.runtime.instructions.cp.AggregateTernaryCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.AggregateUnaryCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.BinaryCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.BinaryFrameScalarCPInstruction;
+import org.apache.sysds.runtime.instructions.cp.CentralMomentCPInstruction;
+import org.apache.sysds.runtime.instructions.cp.CovarianceCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.CtableCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.Data;
 import org.apache.sysds.runtime.instructions.cp.IndexingCPInstruction;
@@ -181,7 +183,7 @@ public class FEDInstructionUtils {
 					fedinst = QuantilePickFEDInstruction.parseInstruction(inst.getInstructionString());
 				else if("cov".equals(instruction.getOpcode()) && (ec.getMatrixObject(instruction.input1).isFederated(FType.ROW) ||
 					ec.getMatrixObject(instruction.input2).isFederated(FType.ROW)))
-					fedinst = CovarianceFEDInstruction.parseInstruction(inst.getInstructionString());
+					fedinst = CovarianceFEDInstruction.parseInstruction((CovarianceCPInstruction)inst);
 				else
 					fedinst = BinaryFEDInstruction.parseInstruction(
 						InstructionUtils.concatOperands(inst.getInstructionString(),FederatedOutput.NONE.name()));
@@ -355,7 +357,7 @@ public class FEDInstructionUtils {
 				MatrixObject mo1 = ec.getMatrixObject(instruction.input1);
 				if(mo1.isFederatedExcept(FType.BROADCAST)) {
 					if(instruction.getOpcode().equalsIgnoreCase("cm"))
-						fedinst = CentralMomentFEDInstruction.parseInstruction(inst.getInstructionString());
+						fedinst = CentralMomentFEDInstruction.parseInstruction((CentralMomentCPInstruction)inst);
 					else if(inst.getOpcode().equalsIgnoreCase("qsort")) {
 						if(mo1.getFedMapping().getFederatedRanges().length == 1)
 							fedinst = QuantileSortFEDInstruction.parseInstruction(inst.getInstructionString());

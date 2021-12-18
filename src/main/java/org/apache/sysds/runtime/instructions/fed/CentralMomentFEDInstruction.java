@@ -24,7 +24,6 @@ import java.util.List;
 import java.util.Optional;
 
 import org.apache.commons.lang3.tuple.Pair;
-import org.apache.sysds.common.Types;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
@@ -33,74 +32,33 @@ import org.apache.sysds.runtime.controlprogram.federated.FederatedResponse;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedUDF;
 import org.apache.sysds.runtime.controlprogram.federated.FederationMap;
 import org.apache.sysds.runtime.controlprogram.federated.FederationUtils;
-import org.apache.sysds.runtime.functionobjects.CM;
-import org.apache.sysds.runtime.instructions.InstructionUtils;
 import org.apache.sysds.runtime.instructions.cp.CM_COV_Object;
 import org.apache.sysds.runtime.instructions.cp.CPOperand;
+import org.apache.sysds.runtime.instructions.cp.CentralMomentCPInstruction;
 import org.apache.sysds.runtime.instructions.cp.Data;
 import org.apache.sysds.runtime.instructions.cp.DoubleObject;
 import org.apache.sysds.runtime.instructions.cp.ScalarObject;
 import org.apache.sysds.runtime.lineage.LineageItem;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.CMOperator;
+import org.apache.sysds.runtime.matrix.operators.Operator;
 
 public class CentralMomentFEDInstruction extends AggregateUnaryFEDInstruction {
 
-	private CentralMomentFEDInstruction(CMOperator cm, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out,
-			String opcode, String str) {
+	private CentralMomentFEDInstruction(Operator cm, CPOperand in1,
+		CPOperand in2, CPOperand in3, CPOperand out, String opcode, String str)
+	{
 		super(cm, in1, in2, in3, out, opcode, str);
 	}
 
 	public static CentralMomentFEDInstruction parseInstruction(String str) {
-		CPOperand in1 = new CPOperand("", Types.ValueType.UNKNOWN, Types.DataType.UNKNOWN);
-		CPOperand in2 = null;
-		CPOperand in3 = null;
-		CPOperand out = new CPOperand("", Types.ValueType.UNKNOWN, Types.DataType.UNKNOWN);
+		return parseInstruction(CentralMomentCPInstruction.parseInstruction(str));
+	}
 
-		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
-		String opcode = parts[0];
-
-		// check supported opcode
-		if (!opcode.equalsIgnoreCase("cm")) {
-			throw new DMLRuntimeException("Unsupported opcode " + opcode);
-		}
-
-		if (parts.length == 4) {
-			// Example: CP.cm.mVar0.Var1.mVar2; (without weights)
-			in2 = new CPOperand("", Types.ValueType.UNKNOWN, Types.DataType.UNKNOWN);
-			parseUnaryInstruction(str, in1, in2, out);
-		}
-		else if (parts.length == 5) {
-			// CP.cm.mVar0.mVar1.Var2.mVar3; (with weights)
-			in2 = new CPOperand("", Types.ValueType.UNKNOWN, Types.DataType.UNKNOWN);
-			in3 = new CPOperand("", Types.ValueType.UNKNOWN, Types.DataType.UNKNOWN);
-			parseUnaryInstruction(str, in1, in2, in3, out);
-		}
-
-		/*
-		 * Exact order of the central moment MAY NOT be known at compilation time. We
-		 * first try to parse the second argument as an integer, and if we fail, we
-		 * simply pass -1 so that getCMAggOpType() picks up
-		 * AggregateOperationTypes.INVALID. It must be updated at run time in
-		 * processInstruction() method.
-		 */
-
-		int cmOrder;
-		try {
-			if (in3 == null) {
-				cmOrder = Integer.parseInt(in2.getName());
-			}
-			else {
-				cmOrder = Integer.parseInt(in3.getName());
-			}
-		}
-		catch (NumberFormatException e) {
-			cmOrder = -1; // unknown at compilation time
-		}
-
-		CMOperator.AggregateOperationTypes opType = CMOperator.getCMAggOpType(cmOrder);
-		CMOperator cm = new CMOperator(CM.getCMFnObject(opType), opType);
-		return new CentralMomentFEDInstruction(cm, in1, in2, in3, out, opcode, str);
+	public static CentralMomentFEDInstruction parseInstruction(CentralMomentCPInstruction inst) { 
+		return new CentralMomentFEDInstruction(inst.getOperator(),
+			inst.input1, inst.input2, inst.input3, inst.output,
+			inst.getOpcode(), inst.getInstructionString());
 	}
 
 	@Override

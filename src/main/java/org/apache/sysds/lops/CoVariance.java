@@ -97,8 +97,10 @@ public class CoVariance extends Lop
 		}
 		
 		sb.append( prepOutputOperand(output));
-		sb.append( OPERAND_DELIMITOR );
-		sb.append(_numThreads);
+		if( getExecType() == ExecType.CP ) {
+			sb.append( OPERAND_DELIMITOR );
+			sb.append(_numThreads);
+		}
 		
 		return sb.toString();
 	}

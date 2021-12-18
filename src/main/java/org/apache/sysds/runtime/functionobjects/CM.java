@@ -89,6 +89,7 @@ public class CM extends ValueFunction
 		if(cm1.isCMAllZeros()) {
 			cm1.w=1;
 			cm1.mean.set(in2, 0);
+			cm1.min = Double.MAX_VALUE;
 			cm1.m2.set(0,0);
 			cm1.m3.set(0,0);
 			cm1.m4.set(0,0);
@@ -108,6 +109,11 @@ public class CM extends ValueFunction
 				double d=in2-cm1.mean._sum;
 				cm1.mean=(KahanObject) _plus.execute(cm1.mean, d/w);
 				cm1.w=w;
+				break;
+			}
+			case MIN:
+			{
+				cm1.min = Math.min(cm1.min, in2);
 				break;
 			}
 			case CM2:
@@ -193,6 +199,7 @@ public class CM extends ValueFunction
 		{
 			cm1.w=w2;
 			cm1.mean.set(in2, 0);
+			cm1.min = Double.MAX_VALUE;
 			cm1.m2.set(0,0);
 			cm1.m3.set(0,0);
 			cm1.m4.set(0,0);
@@ -204,6 +211,12 @@ public class CM extends ValueFunction
 			case COUNT:
 			{
 				cm1.w = Math.round(cm1.w + w2);
+				break;
+			}
+			case MIN:
+			{
+				in2 *= w2;
+				cm1.min = Math.min(cm1.min, in2);
 				break;
 			}
 			case MEAN:
@@ -299,6 +312,7 @@ public class CM extends ValueFunction
 		{
 			cm1.w=cm2.w;
 			cm1.mean.set(cm2.mean);
+			cm1.min = cm2.min;
 			cm1.m2.set(cm2.m2);
 			cm1.m3.set(cm2.m3);
 			cm1.m4.set(cm2.m4);
@@ -312,6 +326,11 @@ public class CM extends ValueFunction
 			case COUNT:
 			{
 				cm1.w = Math.round(cm1.w + cm2.w);				
+				break;
+			}
+			case MIN:
+			{
+				cm1.min = Math.min(cm1.min, cm2.min);
 				break;
 			}
 			case MEAN:

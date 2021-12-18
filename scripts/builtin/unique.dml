@@ -35,14 +35,14 @@
 # R               Matrix  ---         matrix with only unique rows
 
 unique = function(matrix[double] X)
-    return (matrix[double] R) {
-    if(nrow(X) > 1) {
-        X_sorted = order(target=X, by=1, decreasing=FALSE, index.return=FALSE);
-        temp = X_sorted[1:nrow(X_sorted)-1,] != X_sorted[2:nrow(X_sorted),];
-        mask = rbind(matrix(1, rows = 1, cols = 1), rowSums(temp));
-        R = removeEmpty(target = X_sorted, margin = "rows", select = mask);
-    }
-    else {
-        R = X
-    }
+  return (matrix[double] R)
+{
+  R = X
+  if(nrow(X) > 1) {
+    # sort-based approach (a generic alternative would be transformencode)
+    X_sorted = order(target=X, by=1, decreasing=FALSE, index.return=FALSE);
+    temp = X_sorted[1:nrow(X_sorted)-1,] != X_sorted[2:nrow(X_sorted),];
+    mask = rbind(matrix(1, 1, 1), temp);
+    R = removeEmpty(target = X_sorted, margin = "rows", select = mask);
+  }
 }

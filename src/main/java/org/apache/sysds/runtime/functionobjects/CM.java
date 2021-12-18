@@ -74,6 +74,10 @@ public class CM extends ValueFunction
 		//execution due to state in cm object (buff2, buff3)	
 		return new CM( type ); 
 	}
+	
+	public static CM getCMFnObject(CM fn) {
+		return getCMFnObject(fn._type);
+	}
 
 	public AggregateOperationTypes getAggOpType() {
 		return _type;

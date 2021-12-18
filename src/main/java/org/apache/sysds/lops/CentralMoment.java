@@ -30,6 +30,18 @@ import org.apache.sysds.common.Types.ValueType;
  */
 public class CentralMoment extends Lop 
 {
+	private final int _numThreads;
+	
+	public CentralMoment(Lop input1, Lop input2, DataType dt, ValueType vt, int numThreads, ExecType et) {
+		this(input1, input2, null, dt, vt, numThreads, et);
+	}
+
+	public CentralMoment(Lop input1, Lop input2, Lop input3, DataType dt, ValueType vt, int numThreads, ExecType et) {
+		super(Lop.Type.CentralMoment, dt, vt);
+		init(input1, input2, input3, et);
+		_numThreads = numThreads;
+	}
+	
 	/**
 	 * Constructor to perform central moment.
 	 * input1 <- data (weighted or unweighted)
@@ -54,15 +66,6 @@ public class CentralMoment extends Lop
 		lps.setProperties(inputs, et);
 	}
 
-	public CentralMoment(Lop input1, Lop input2, DataType dt, ValueType vt, ExecType et) {
-		this(input1, input2, null, dt, vt, et);
-	}
-
-	public CentralMoment(Lop input1, Lop input2, Lop input3, DataType dt, ValueType vt, ExecType et) {
-		super(Lop.Type.CentralMoment, dt, vt);
-		init(input1, input2, input3, et);
-	}
-
 	@Override
 	public String toString() {
 		return "Operation = CentralMoment";
@@ -77,21 +80,27 @@ public class CentralMoment extends Lop
 	 */
 	@Override
 	public String getInstructions(String input1, String input2, String input3, String output) {
+		StringBuilder sb = new StringBuilder();
 		if( input3 == null ) {
-			return InstructionUtils.concatOperands(
+			sb.append(InstructionUtils.concatOperands(
 				getExecType().toString(), "cm",
 				getInputs().get(0).prepInputOperand(input1),
 				getInputs().get((input3!=null)?2:1).prepScalarInputOperand(getExecType()),
-				prepOutputOperand(output));
+				prepOutputOperand(output)));
 		}
 		else {
-			return InstructionUtils.concatOperands(
+			sb.append(InstructionUtils.concatOperands(
 				getExecType().toString(), "cm",
 				getInputs().get(0).prepInputOperand(input1),
 				getInputs().get(1).prepInputOperand(input2),
 				getInputs().get((input3!=null)?2:1).prepScalarInputOperand(getExecType()),
-				prepOutputOperand(output));
+				prepOutputOperand(output)));
 		}
+		if( getExecType() == ExecType.CP ) {
+			sb.append(OPERAND_DELIMITOR);
+			sb.append(String.valueOf(_numThreads));
+		}
+		return sb.toString();
 	}
 	
 	/**

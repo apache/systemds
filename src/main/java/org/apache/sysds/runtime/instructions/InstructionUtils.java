@@ -1063,8 +1063,7 @@ public class InstructionUtils
 	 * @return the instruction string with the given inputs concatenated
 	 */
 	public static String concatOperands(String... inputs) {
-		concatBaseOperandsWithDelim(Lop.OPERAND_DELIMITOR, inputs);
-		return _strBuilders.get().toString();
+		return concatBaseOperandsWithDelim(Lop.OPERAND_DELIMITOR, inputs);
 	}
 
 	/**
@@ -1073,11 +1072,10 @@ public class InstructionUtils
 	 * @return concatenated input parts
 	 */
 	public static String concatOperandParts(String... inputs) {
-		concatBaseOperandsWithDelim(Instruction.VALUETYPE_PREFIX, inputs);
-		return _strBuilders.get().toString();
+		return concatBaseOperandsWithDelim(Instruction.VALUETYPE_PREFIX, inputs);
 	}
 
-	private static void concatBaseOperandsWithDelim(String delim, String... inputs){
+	private static String concatBaseOperandsWithDelim(String delim, String... inputs){
 		StringBuilder sb = _strBuilders.get();
 		sb.setLength(0); //reuse allocated space
 		for( int i=0; i<inputs.length-1; i++ ) {
@@ -1085,6 +1083,7 @@ public class InstructionUtils
 			sb.append(delim);
 		}
 		sb.append(inputs[inputs.length-1]);
+		return sb.toString();
 	}
 	
 	public static String concatStrings(String... inputs) {

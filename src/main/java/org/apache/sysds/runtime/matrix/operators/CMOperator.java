@@ -25,7 +25,6 @@ import org.apache.sysds.runtime.functionobjects.ValueFunction;
 
 public class CMOperator extends Operator 
 {
-	
 	private static final long serialVersionUID = 4126894676505115420L;
 	
 	// supported aggregates
@@ -40,23 +39,33 @@ public class CMOperator extends Operator
 		INVALID
 	}
 
-	public ValueFunction fn;
-	public AggregateOperationTypes aggOpType;
+	public final ValueFunction fn;
+	public final AggregateOperationTypes aggOpType;
+	public final int k;
 
 	public CMOperator(ValueFunction op, AggregateOperationTypes agg) {
+		this(op, agg, 1);
+	}
+	
+	public CMOperator(ValueFunction op, AggregateOperationTypes agg, int numThreads) {
 		super(true);
 		fn = op;
 		aggOpType = agg;
+		k = numThreads;
 	}
 
 	public AggregateOperationTypes getAggOpType() {
 		return aggOpType;
 	}
 	
+	public int getNumThreads() {
+		return k;
+	}
+	
 	public CMOperator setCMAggOp(int order) {
 		AggregateOperationTypes agg = getCMAggOpType(order);
 		ValueFunction fn = CM.getCMFnObject(aggOpType);
-		return new CMOperator(fn, agg);
+		return new CMOperator(fn, agg, k);
 	}
 	
 	public static AggregateOperationTypes getCMAggOpType ( int order ) {

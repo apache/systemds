@@ -203,18 +203,17 @@ public class TernaryOp extends MultiThreadedHop
 	/**
 	 * Method to construct LOPs when op = CENTRAILMOMENT.
 	 */
-	private void constructLopsCentralMoment()
-	{	
+	private void constructLopsCentralMoment() {
 		if ( _op != OpOp3.MOMENT )
 			throw new HopsException("Unexpected operation: " + _op + ", expecting " + OpOp3.MOMENT );
 		
 		ExecType et = optFindExecType();
-		
+		int k = OptimizerUtils.getConstrainedNumThreads(_maxNumThreads);
 		CentralMoment cm = new CentralMoment(
-				getInput().get(0).constructLops(),
-				getInput().get(1).constructLops(),
-				getInput().get(2).constructLops(),
-				getDataType(), getValueType(), et);
+			getInput().get(0).constructLops(),
+			getInput().get(1).constructLops(),
+			getInput().get(2).constructLops(),
+			getDataType(), getValueType(), k, et);
 		cm.getOutputParameters().setDimensions(0, 0, 0, -1);
 		setLineNumbers(cm);
 		setLops(cm);
@@ -228,13 +227,12 @@ public class TernaryOp extends MultiThreadedHop
 			throw new HopsException("Unexpected operation: " + _op + ", expecting " + OpOp3.COV );
 		
 		ExecType et = optFindExecType();
-		
-		
+		int k = OptimizerUtils.getConstrainedNumThreads(_maxNumThreads);
 		CoVariance cov = new CoVariance(
-				getInput().get(0).constructLops(), 
-				getInput().get(1).constructLops(), 
-				getInput().get(2).constructLops(), 
-				getDataType(), getValueType(), et);
+			getInput().get(0).constructLops(),
+			getInput().get(1).constructLops(),
+			getInput().get(2).constructLops(),
+			getDataType(), getValueType(), k, et);
 		cov.getOutputParameters().setDimensions(0, 0, 0, -1);
 		setLineNumbers(cov);
 		setLops(cov);

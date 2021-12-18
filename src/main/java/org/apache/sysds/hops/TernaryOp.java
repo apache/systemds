@@ -422,9 +422,9 @@ public class TernaryOp extends MultiThreadedHop
 		{
 			case MAP:
 				long ldim1 = (mc[0].rowsKnown()) ? mc[0].getRows() :
-					(mc[1].getRows()>=0) ? mc[1].getRows() : -1;
+					(mc[1].getRows()>=1) ? mc[1].getRows() : -1;
 				long ldim2 = (mc[0].colsKnown()) ? mc[0].getCols() :
-					(mc[1].getCols()>=0) ? mc[1].getCols() : -1;
+					(mc[1].getCols()>=1) ? mc[1].getCols() : -1;
 				if( ldim1>=0 && ldim2>=0 )
 					ret = new MatrixCharacteristics(ldim1, ldim2, -1, (long) (ldim1 * ldim2 * 1.0));
 				return ret;
@@ -539,8 +539,8 @@ public class TernaryOp extends MultiThreadedHop
 			{
 				case MAP:
 					long ldim1, ldim2, lnnz1 = -1;
-					ldim1 = (input1.rowsKnown()) ? input1.getDim1() : ((input2.getDim1()>=0)?input2.getDim1():-1);
-					ldim2 = (input1.colsKnown()) ? input1.getDim2() : ((input2.getDim2()>=0)?input2.getDim2():-1);
+					ldim1 = (input1.rowsKnown()) ? input1.getDim1() : ((input2.getDim1()>=1)?input2.getDim1():-1);
+					ldim2 = (input1.colsKnown()) ? input1.getDim2() : ((input2.getDim2()>=1)?input2.getDim2():-1);
 					lnnz1 = input1.getNnz();
 
 					setDim1( ldim1 );

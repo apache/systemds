@@ -24,6 +24,7 @@ U = read($in_U)
 V = read($in_V)
 eps = $in_W
 
-Z = (X / (U %*% t(V) + eps)) %*% V;
+tmp = (X / (U %*% t(V) + eps)) %*% V;
+Z = as.matrix(sum(tmp));
 
 write(Z, $out_Z)

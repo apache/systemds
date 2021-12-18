@@ -114,7 +114,7 @@ public class FederatedCtableTest extends AutomatedTestBase {
 			runFedCtable(HOME, TEST_NAME, matrixInput, port1, port2, port3, port4);
 		else
 			runNonFedCtable(HOME, TEST_NAME, matrixInput, port1, port2, port3, port4);
-		checkResults();
+		checkResults(fedOutput);
 
 		TestUtils.shutdownThreads(t1, t2, t3, t4);
 		resetExecMode(platformOld);
@@ -195,12 +195,14 @@ public class FederatedCtableTest extends AutomatedTestBase {
 		runTest(true, false, null, -1);
 	}
 
-	void checkResults() {
+	void checkResults(boolean fedOutput) {
 		// compare via files
-		compareResults(1e-9);
+		compareResults(0);
 
 		// check for federated operations
 		Assert.assertTrue(heavyHittersContainsString("fed_ctable"));
+		if(fedOutput) // verify output is federated
+			Assert.assertTrue(heavyHittersContainsString("fed_uak+"));
 
 		// check that federated input files are still existing
 		Assert.assertTrue(HDFSTool.existsFileOnHDFS(input("X1")));

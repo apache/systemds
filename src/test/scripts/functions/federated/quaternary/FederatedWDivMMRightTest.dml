@@ -25,6 +25,12 @@ X = federated(addresses=list($in_X1, $in_X2),
 U = read($in_U)
 V = read($in_V)
 
-Z = (X / (U %*% t(V))) %*% V;
+tmp = (X / (U %*% t(V))) %*% V;
+
+while(FALSE) { }
+# verify output is federated (creating fed_uak+ heavy hitter)
+sZ = sum(tmp);
+while(FALSE) { }
+Z = as.matrix(sZ);
 
 write(Z, $out_Z)

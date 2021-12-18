@@ -28,5 +28,9 @@ if ($rP) {
             ranges=list(list(0, 0), list($rows, $cols/4), list(0,$cols/4), list($rows, $cols/2),
             	list(0,$cols/2), list($rows, 3*($cols/4)), list(0, 3*($cols/4)), list($rows, $cols)));
 }
-s = cumsumprod(A[,1:2]);
-write(s, $out_S);
+S = cumsumprod(A[,1:2]);
+
+while(FALSE) { }
+sS = as.matrix(sum(S));
+
+write(sS, $out_S);

@@ -23,6 +23,7 @@ X = rbind(read($in_X1), read($in_X2))
 U = read($in_U)
 V = read($in_V)
 
-Z = (X / (U %*% t(V))) %*% V;
+tmp = (X / (U %*% t(V))) %*% V;
+Z = as.matrix(sum(tmp));
 
 write(Z, $out_Z)

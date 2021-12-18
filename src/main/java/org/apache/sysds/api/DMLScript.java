@@ -450,10 +450,10 @@ public class DMLScript
 	public static void setGlobalFlags(DMLConfig dmlconf) {
 		// Sets the GPUs to use for this process (a range, all GPUs, comma separated list or a specific GPU)
 		GPUContextPool.AVAILABLE_GPUS = dmlconf.getTextValue(DMLConfig.AVAILABLE_GPUS);
-		
+
 		DMLScript.STATISTICS_MAX_WRAP_LEN = dmlconf.getIntValue(DMLConfig.STATS_MAX_WRAP_LEN);
 		NativeHelper.initialize(dmlconf.getTextValue(DMLConfig.NATIVE_BLAS_DIR), dmlconf.getTextValue(DMLConfig.NATIVE_BLAS).trim());
-		
+
 		DMLScript.SYNCHRONIZE_GPU = dmlconf.getBooleanValue(DMLConfig.SYNCHRONIZE_GPU);
 		DMLScript.EAGER_CUDA_FREE = dmlconf.getBooleanValue(DMLConfig.EAGER_CUDA_FREE);
 		DMLScript.PRINT_GPU_MEMORY_INFO = dmlconf.getBooleanValue(DMLConfig.PRINT_GPU_MEMORY_INFO);
@@ -462,7 +462,9 @@ public class DMLScript
 		if(DMLScript.GPU_MEMORY_UTILIZATION_FACTOR < 0) {
 			throw new RuntimeException("Incorrect value (" + DMLScript.GPU_MEMORY_UTILIZATION_FACTOR + ") for the configuration:" + DMLConfig.GPU_MEMORY_UTILIZATION_FACTOR);
 		}
-		
+
+		DMLScript.USE_LOCAL_SPARK_CONFIG |= dmlconf.getBooleanValue(DMLConfig.USE_LOCAL_SPARK_CONFIG);
+
 		DMLScript.FLOATING_POINT_PRECISION = dmlconf.getTextValue(DMLConfig.FLOATING_POINT_PRECISION);
 		org.apache.sysds.runtime.matrix.data.LibMatrixCUDA.resetFloatingPointPrecision();
 		if(DMLScript.FLOATING_POINT_PRECISION.equals("double")) {

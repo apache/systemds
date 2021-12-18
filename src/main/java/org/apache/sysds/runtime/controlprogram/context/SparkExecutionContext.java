@@ -221,10 +221,7 @@ public class SparkExecutionContext extends ExecutionContext
 		else
 		{
 			final SparkConf conf = createSystemDSSparkConf();
-			final DMLConfig dmlConfig= ConfigurationManager.getDMLConfig();
-			// Use Spark local config, if already set to True ... keep true, otherwise look up if it should be local.
-			DMLScript.USE_LOCAL_SPARK_CONFIG = DMLScript.USE_LOCAL_SPARK_CONFIG ? true : dmlConfig.getBooleanValue(DMLConfig.USE_LOCAL_SPARK_CONFIG);
-			
+
 			if(DMLScript.USE_LOCAL_SPARK_CONFIG)
 				setLocalConfSettings(conf);
 			
@@ -1059,7 +1056,7 @@ public class SparkExecutionContext extends ExecutionContext
 		final Boolean singleBlock = rlen <= blen && clen <= blen ;
 		final MatrixBlock out = singleBlock ? toMatrixBlockSingleBlock(rdd, rlen, clen) : toMatrixBlockMultiBlock(rdd, rlen, clen, blen, nnz);
 
-		if (DMLScript.STATISTICS) 
+		if (DMLScript.STATISTICS)
 			SparkStatistics.accCollectTime(System.nanoTime() - t0);
 
 		return out;
@@ -1243,10 +1240,8 @@ public class SparkExecutionContext extends ExecutionContext
 		out.recomputeNonZeros();
 		out.examSparsity();
 
-		if (DMLScript.STATISTICS) {
+		if (DMLScript.STATISTICS)
 			SparkStatistics.accCollectTime(System.nanoTime() - t0);
-			SparkStatistics.incCollectCount(1);
-		}
 
 		return out;
 	}
@@ -1290,10 +1285,9 @@ public class SparkExecutionContext extends ExecutionContext
 
 		// TODO post-processing output tensor (nnz, sparsity)
 
-		if (DMLScript.STATISTICS) {
+		if (DMLScript.STATISTICS)
 			SparkStatistics.accCollectTime(System.nanoTime() - t0);
-			SparkStatistics.incCollectCount(1);
-		}
+
 		return out;
 	}
 
@@ -1312,10 +1306,8 @@ public class SparkExecutionContext extends ExecutionContext
 			out.setBlock((int)ix.getRowIndex(), (int)ix.getColumnIndex(), block);
 		}
 
-		if (DMLScript.STATISTICS) {
+		if (DMLScript.STATISTICS)
 			SparkStatistics.accCollectTime(System.nanoTime() - t0);
-			SparkStatistics.incCollectCount(1);
-		}
 
 		return out;
 	}
@@ -1353,10 +1345,8 @@ public class SparkExecutionContext extends ExecutionContext
 			}
 		}
 
-		if (DMLScript.STATISTICS) {
+		if (DMLScript.STATISTICS)
 			SparkStatistics.accCollectTime(System.nanoTime() - t0);
-			SparkStatistics.incCollectCount(1);
-		}
 
 		return out;
 	}

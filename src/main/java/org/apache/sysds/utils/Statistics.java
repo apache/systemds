@@ -250,6 +250,8 @@ public class Statistics
 		GPUStatistics.reset();
 		NativeStatistics.reset();
 		DMLCompressionStatistics.reset();
+
+		FederatedStatistics.reset();
 	}
 
 	public static void resetJITCompileTime(){

@@ -55,6 +55,8 @@ public abstract class LocalInstruction extends AutomatedTestBase {
 		OptimizerUtils.ALLOW_SCRIPT_LEVEL_COMPRESS_COMMAND = true;
 		OptimizerUtils.ALLOW_SCRIPT_LEVEL_LOCAL_COMMAND = true;
 
+		setOutputBuffering(true);
+
 		try {
 			loadTestConfiguration(getTestConfiguration(testName));
 

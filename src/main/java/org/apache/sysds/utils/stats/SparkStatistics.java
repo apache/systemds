@@ -53,9 +53,10 @@ public class SparkStatistics {
 
 	public static void accCollectTime(long t) {
 		collectTime.add(t);
+		incCollectCount(1);
 	}
 
-	public static void incCollectCount(long c) {
+	private static void incCollectCount(long c) {
 		collectCount.add(c);
 	}
 

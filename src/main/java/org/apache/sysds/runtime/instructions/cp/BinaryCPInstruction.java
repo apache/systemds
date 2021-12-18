@@ -57,8 +57,6 @@ public abstract class BinaryCPInstruction extends ComputationCPInstruction {
 			return new BinaryFrameFrameCPInstruction(operator, in1, in2, out, opcode, str);
 		else if (in1.getDataType() == DataType.FRAME && in2.getDataType() == DataType.MATRIX)
 			return new BinaryFrameMatrixCPInstruction(operator, in1, in2, out, opcode, str);
-		else if (in1.getDataType() == DataType.FRAME && in2.getDataType() == DataType.SCALAR)
-			return new BinaryFrameScalarCPInstruction(operator, in1, in2, out, opcode, str);
 		else
 			return new BinaryMatrixScalarCPInstruction(operator, in1, in2, out, opcode, str);
 	}

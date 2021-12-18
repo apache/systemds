@@ -34,7 +34,7 @@ import scala.Tuple2;
 import java.io.Serializable;
 
 public class TernarySPInstruction extends ComputationSPInstruction {
-	private TernarySPInstruction(TernaryOperator op, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out, String opcode, String str) {
+	protected TernarySPInstruction(TernaryOperator op, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out, String opcode, String str) {
 		super(SPType.Ternary, op, in1, in2, in3, out, opcode, str);
 	}
 
@@ -46,7 +46,10 @@ public class TernarySPInstruction extends ComputationSPInstruction {
 		CPOperand operand3 = new CPOperand(parts[3]);
 		CPOperand outOperand = new CPOperand(parts[4]);
 		TernaryOperator op = InstructionUtils.parseTernaryOperator(opcode);
-		return new TernarySPInstruction(op,operand1, operand2, operand3, outOperand, opcode,str);
+		if(operand1.isFrame() && operand2.isScalar() && opcode.contains("map"))
+			return  new TernaryFrameScalarSPInstruction(op, operand1, operand2, operand3, outOperand, opcode, str);
+		else
+		 return new TernarySPInstruction(op, operand1, operand2, operand3, outOperand, opcode,str);
 	}
 	
 	@Override

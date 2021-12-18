@@ -19,20 +19,6 @@
 
 package org.apache.sysds.runtime.util;
 
-import org.apache.commons.lang.ArrayUtils;
-import org.apache.commons.lang3.math.NumberUtils;
-import org.apache.commons.math3.random.RandomDataGenerator;
-import org.apache.sysds.common.Types.ValueType;
-import org.apache.sysds.runtime.DMLRuntimeException;
-import org.apache.sysds.runtime.data.SparseBlock;
-import org.apache.sysds.runtime.data.TensorIndexes;
-import org.apache.sysds.runtime.instructions.spark.data.IndexedMatrixValue;
-import org.apache.sysds.runtime.matrix.data.FrameBlock;
-import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
-import org.apache.sysds.runtime.matrix.data.Pair;
-import org.apache.sysds.runtime.meta.TensorCharacteristics;
-import org.apache.sysds.runtime.transform.encode.ColumnEncoderRecode;
-
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -46,6 +32,20 @@ import java.util.Random;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import org.apache.commons.lang.ArrayUtils;
+import org.apache.commons.lang3.math.NumberUtils;
+import org.apache.commons.math3.random.RandomDataGenerator;
+import org.apache.sysds.common.Types.ValueType;
+import org.apache.sysds.runtime.DMLRuntimeException;
+import org.apache.sysds.runtime.data.SparseBlock;
+import org.apache.sysds.runtime.data.TensorIndexes;
+import org.apache.sysds.runtime.instructions.spark.data.IndexedMatrixValue;
+import org.apache.sysds.runtime.matrix.data.FrameBlock;
+import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
+import org.apache.sysds.runtime.matrix.data.Pair;
+import org.apache.sysds.runtime.meta.TensorCharacteristics;
+import org.apache.sysds.runtime.transform.encode.ColumnEncoderRecode;
 
 public class UtilFunctions {
 	// private static final Log LOG = LogFactory.getLog(UtilFunctions.class.getName());
@@ -863,6 +863,12 @@ public class UtilFunctions {
 		return value ;
 	}
 
+	public static String[] copyAsStringToArray(String[] input, Object value) {
+		String[] output = new String[input.length];
+		Arrays.fill(output, String.valueOf(value));
+		return output;
+	}
+
 	private static String getDateFormat (String dateString) {
 		return DATE_FORMATS.keySet().parallelStream().filter(e -> dateString.toLowerCase().matches(e)).findFirst()
 			.map(DATE_FORMATS::get).orElseThrow(() -> new NullPointerException("Unknown date format."));
@@ -1012,5 +1018,27 @@ public class UtilFunctions {
 	public static String[] splitRecodeEntry(String s) {
 		//forward to column encoder, as UtilFunctions available in map context
 		return ColumnEncoderRecode.splitRecodeMapEntry(s);
+	}
+
+	public static String[] toStringArray(Object[] original) {
+		String[] result = new String[original.length];
+		for (int i = 0; i < result.length; i++)
+			result[i] = String.valueOf(original[i]);
+		return result;
+	}
+
+	public static double[] convertStringToDoubleArray(String[] original) {
+//		double[] ret = new double[original.length];
+//		for (int i = 0; i < original.length; i++) {
+//			try {
+//				ret[i] = NumberFormat.getInstance().parse(original[i]).doubleValue();
+//			}
+//			catch(Exception e) {
+//				e.printStackTrace();
+//			}
+//		}
+//		return ret;
+
+		return Arrays.stream(original).mapToDouble(Double::parseDouble).toArray();
 	}
 }

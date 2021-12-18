@@ -19,16 +19,14 @@
 #
 #-------------------------------------------------------------
 
-# input: 1) frame, 2) lamba expression to execute for each non-null cell
-# output: frame of string columns
+# input: 1) frame, 2) lamba expression to execute for each non-null cell, row or col
+# output: frame
 
-# Examples:
-#   map(X, "x -> x.split(\"r\")[1]")
-#   map(X, "x -> x.charAt(2)")
-#   map(X, "y -> UtilFunctions.toMillis(y)")
+# Example (convert strings to doubles, compute sum and opy to every cell):
+#   map(X, "x -> UtilFunctions.copyAsStringToArray(x, Arrays.stream(UtilFunctions.convertStringToDoubleArray(x)).sum())", 1)
 
 X = read($1, data_type = "frame", format = "csv", header = FALSE)
-# column vector and string operation
-Y = map(X, $2)
-write(Y, $3,  format="csv")
-write(X, $4,  format="csv")
+
+X1 = map(X, "x -> x.replace(\"Str\", \"\")", 0)
+Y = map(X1, $2, $3)
+write(Y, $4,  format="csv")

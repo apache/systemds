@@ -21,22 +21,23 @@ package org.apache.sysds.runtime.instructions.cp;
 
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
-import org.apache.sysds.runtime.matrix.operators.Operator;
+import org.apache.sysds.runtime.matrix.operators.TernaryOperator;
 
-public class BinaryFrameScalarCPInstruction extends BinaryCPInstruction
+public class TernaryFrameScalarCPInstruction extends TernaryCPInstruction
 {
-	protected BinaryFrameScalarCPInstruction(Operator op, CPOperand in1,
-			CPOperand in2, CPOperand out, String opcode, String istr) {
-		super(CPType.Binary, op, in1, in2, out, opcode, istr);
+	protected TernaryFrameScalarCPInstruction(TernaryOperator op, CPOperand in1,
+			CPOperand in2, CPOperand in3, CPOperand out, String opcode, String istr) {
+		super(op, in1, in2, in3, out, opcode, istr);
 	}
 
 	@Override
 	public void processInstruction(ExecutionContext ec)  {
 		// get input frames
 		FrameBlock inBlock = ec.getFrameInput(input1.getName());
+		ScalarObject margin = ec.getScalarInput(input3);
 		String stringExpression = ec.getScalarInput(input2).getStringValue();
 		//compute results
-		FrameBlock outBlock = inBlock.map(stringExpression);
+		FrameBlock outBlock = inBlock.map(stringExpression, margin.getLongValue());
 		// Attach result frame with FrameBlock associated with output_name
 		ec.setFrameOutput(output.getName(), outBlock);
 		// Release the memory occupied by input frames

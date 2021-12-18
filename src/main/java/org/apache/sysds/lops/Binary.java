@@ -80,10 +80,7 @@ public class Binary extends Lop
 			return null;
 
 		ArrayList<Lop> inputs = getInputs();
-		if (operation == OpOp2.MAP && inputs.get(0).getDataType() == DataType.MATRIX 
-				&& inputs.get(1).getDataType() == DataType.MATRIX)
-			return inputs.get(1);
-		else if (inputs.get(0).getDataType() == DataType.FRAME && inputs.get(1).getDataType() == DataType.MATRIX)
+		if (inputs.get(0).getDataType() == DataType.FRAME && inputs.get(1).getDataType() == DataType.MATRIX)
 			return inputs.get(1);
 		else
 			return null;

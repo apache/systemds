@@ -174,8 +174,8 @@ return(Frame[Unknown] processedData, Matrix[Double] M)
   for(i in 1:ncol(mask))
     if(as.scalar(schema[1,i]) == "STRING")
       data[, i] = map(data[, i], "x -> x.toLowerCase()")
-  
-  # step 5 typo correction
+
+  # step 5 typo correction  
   if(CorrectTypos)
   {
     # recode data to get null mask
@@ -197,7 +197,7 @@ return(Frame[Unknown] processedData, Matrix[Double] M)
   }
   # step 6 porter stemming on all features
   print(prefix+" porter-stemming on all features");
-  data = map(data, "x -> PorterStemmer.stem(x)")
+  data = map(data, "x -> PorterStemmer.stem(x)", 0)
   
   # TODO add deduplication
   print(prefix+" deduplication via entity resolution");

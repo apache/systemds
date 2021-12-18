@@ -111,9 +111,8 @@ public abstract class BinarySPInstruction extends ComputationSPInstruction {
 		else if( dt1 == DataType.FRAME || dt2 == DataType.FRAME ) {
 			if(dt1 == DataType.FRAME && dt2 == DataType.FRAME)
 				return new BinaryFrameFrameSPInstruction(operator, in1, in2, out, opcode, str);
-			if(dt1 == DataType.FRAME && dt2 == DataType.SCALAR)
-				return  new BinaryFrameScalarSPInstruction(operator, in1, in2, out, opcode, str);
-
+			else if(dt1 == DataType.FRAME && dt2 == DataType.SCALAR && opcode.equalsIgnoreCase("+"))
+				return new BinaryMatrixScalarSPInstruction(operator, in1, in2, out, opcode, str);
 		}
 
 		return null;

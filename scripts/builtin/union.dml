@@ -38,8 +38,7 @@
 
 
 union = function(Matrix[Double] X, Matrix[Double] Y)
-    return (matrix[double] R)
+  return (matrix[double] R)
 {
-    combined = rbind(X,Y);
-    R = unique(combined);
+  R = unique(rbind(X, Y));
 }

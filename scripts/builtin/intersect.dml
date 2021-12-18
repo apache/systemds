@@ -19,7 +19,7 @@
 #
 #-------------------------------------------------------------
 
-# Implements set intersection for numeric data  
+# Implements set intersection for numeric data
 
 
 # INPUT PARAMETERS:
@@ -39,14 +39,13 @@
 m_intersect = function(Matrix[Double] X, Matrix[Double] Y)
   return(Matrix[Double] R)
 {
-    X = unique(X);
-    Y = unique(Y);
+  X = unique(X);
+  Y = unique(Y);
+  combined = rbind(X, Y);
 
-    combined = rbind(X, Y);
+  combined = order(target=combined, by=1, decreasing=FALSE, index.return=FALSE);
+  temp = combined[1:nrow(combined)-1,] == combined[2:nrow(combined),];
+  mask = rbind(matrix(0,1,1), temp);
 
-    combined = order(target=combined, by=1, decreasing=FALSE, index.return=FALSE);
-    temp = combined[1:nrow(combined)-1,] != combined[2:nrow(combined),];
-    mask = rbind(matrix(1, rows = 1, cols = 1), rowSums(temp));
-
-    R = removeEmpty(target = combined, margin = "rows", select = !mask);
+  R = removeEmpty(target = combined, margin = "rows", select = mask);
 }

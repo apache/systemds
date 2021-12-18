@@ -30,7 +30,14 @@ import java.lang.ref.SoftReference;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -48,7 +55,6 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.io.Writable;
 import org.apache.sysds.api.DMLException;
-import org.apache.sysds.common.Types;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.codegen.CodegenUtils;
@@ -66,6 +72,7 @@ import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 import org.apache.sysds.runtime.transform.encode.ColumnEncoderRecode;
 import org.apache.sysds.runtime.util.CommonThreadPool;
 import org.apache.sysds.runtime.util.DMVUtils;
+import org.apache.sysds.runtime.util.DataConverter;
 import org.apache.sysds.runtime.util.EMAUtils;
 import org.apache.sysds.runtime.util.IndexRange;
 import org.apache.sysds.runtime.util.UtilFunctions;
@@ -2549,25 +2556,39 @@ public class FrameBlock implements CacheBlock, Externalizable {
 	}
 
 	private FrameBlock removeEmptyRows(MatrixBlock select, boolean emptyReturn) {
+		if(select != null && (select.getNumRows() != getNumRows() && select.getNumColumns() != getNumRows()))
+			throw new DMLRuntimeException("Frame rmempty: Incorrect select vector dimensions.");
+
 		FrameBlock ret = new FrameBlock(_schema, _colnames);
 
-		for(int i = 0; i < _numRows; i++) {
-			boolean isEmpty = true;
+		if (select == null) {
 			Object[] row = new Object[getNumColumns()];
-
-			for(int j = 0; j < getNumColumns(); j++) {
-				Array colData = _coldata[j].clone();
-				row[j] = colData.get(i);
-				ValueType type = _schema[j];
-				isEmpty = isEmpty && (ArrayUtils.contains(new double[]{0.0, Double.NaN}, UtilFunctions.objectToDoubleSafe(type, colData.get(i))));
+			for(int i = 0; i < _numRows; i++) {
+				boolean isEmpty = true;
+				for(int j = 0; j < getNumColumns(); j++) {
+					row[j] = _coldata[j].get(i);
+					isEmpty &= ArrayUtils.contains(new double[]{0.0, Double.NaN},
+						UtilFunctions.objectToDoubleSafe(_schema[j], row[j]));
+				}
+				if(!isEmpty)
+					ret.appendRow(row);
 			}
+		}
+		else {
+			if(select.getNonZeros() == getNumRows())
+				return this;
 
-			if((!isEmpty && select == null) || (select != null && select.getValue(i, 0) == 1)) {
+			int[] indices = DataConverter.convertVectorToIndexList(select);
+			
+			Object[] row = new Object[getNumColumns()];
+			for(int i : indices) {
+				for(int j = 0; j < getNumColumns(); j++)
+					row[j] = _coldata[j].get(i);
 				ret.appendRow(row);
 			}
 		}
 
-		if(ret.getNumRows() == 0 && emptyReturn) {
+		if (ret.getNumRows() == 0 && emptyReturn) {
 			String[][] arr = new String[1][getNumColumns()];
 			Arrays.fill(arr, new String[]{null});
 			ValueType[] schema = new ValueType[getNumColumns()];
@@ -2579,23 +2600,37 @@ public class FrameBlock implements CacheBlock, Externalizable {
 	}
 
 	private FrameBlock removeEmptyColumns(MatrixBlock select, boolean emptyReturn) {
+		if(select != null && (select.getNumRows() != getNumColumns() && select.getNumColumns() != getNumColumns())) {
+			throw new DMLRuntimeException("Frame rmempty: Incorrect select vector dimensions.");
+		}
+
 		FrameBlock ret = new FrameBlock();
 		List<ColumnMetadata> columnMetadata = new ArrayList<>();
 
-		for(int i = 0; i < getNumColumns(); i++) {
-			Array colData = _coldata[i];
-
-			boolean isEmpty = false;
-			if(select == null) {
+		if (select == null) {
+			for(int i = 0; i < getNumColumns(); i++) {
+				Array colData = _coldata[i];
 				ValueType type = _schema[i];
-				isEmpty = IntStream.range(0, colData._size).mapToObj((IntFunction<Object>) colData::get)
+				boolean isEmpty = IntStream.range(0, colData._size)
+					.mapToObj((IntFunction<Object>) colData::get)
 					.allMatch(e -> ArrayUtils.contains(new double[]{0.0, Double.NaN}, UtilFunctions.objectToDoubleSafe(type, e)));
-			}
 
-			if((select != null && select.getValue(0, i) == 1) || (!isEmpty && select == null)) {
-				Types.ValueType vt = _schema[i];
-				ret.appendColumn(vt, _coldata[i].clone());
+				if(!isEmpty) {
+					ret.appendColumn(_schema[i], _coldata[i]);
+					columnMetadata.add(new ColumnMetadata(_colmeta[i]));
+				}
+			}
+		} else {
+			if(select.getNonZeros() == getNumColumns())
+				return new FrameBlock(this);
+
+			int[] indices = DataConverter.convertVectorToIndexList(select);
+			int k = 0;
+			for(int i : indices) {
+				ret.appendColumn(_schema[i], _coldata[i]);
 				columnMetadata.add(new ColumnMetadata(_colmeta[i]));
+				if(_colnames != null)
+					ret._colnames[k++] = _colnames[i];
 			}
 		}
 

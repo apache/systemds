@@ -68,4 +68,14 @@ if( fn==5 )
    D = aggregate(as.vector(A*C), by=list(as.vector(B)), FUN=moment, order=4, central=TRUE)[,2]
 }
 
+if( fn==6 )
+{
+   D = aggregate(as.vector(A*C), by=list(as.vector(B)), FUN=min)[,2]
+}
+
+if( fn==7 )
+{
+   D = aggregate(as.vector(A*C), by=list(as.vector(B)), FUN=max)[,2]
+}
+
 writeMM(as(D, "CsparseMatrix"), paste(args[3], "D", sep="")); 

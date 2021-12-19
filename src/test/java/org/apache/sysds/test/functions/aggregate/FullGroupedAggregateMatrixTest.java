@@ -66,6 +66,8 @@ public class FullGroupedAggregateMatrixTest extends AutomatedTestBase
 		VARIANCE,
 		MOMENT3,
 		MOMENT4,
+		MIN,
+		MAX
 	}
 	
 	
@@ -158,6 +160,26 @@ public class FullGroupedAggregateMatrixTest extends AutomatedTestBase
 	}
 
 	@Test
+	public void testGroupedAggMinDenseCP() {
+		runGroupedAggregateOperationTest(TEST_NAME1, OpType.MIN, false, ExecType.CP);
+	}
+
+	@Test
+	public void testGroupedAggMinSparseCP() {
+		runGroupedAggregateOperationTest(TEST_NAME1, OpType.MIN, true, ExecType.CP);
+	}
+
+	@Test
+	public void testGroupedAggMaxDenseCP() {
+		runGroupedAggregateOperationTest(TEST_NAME1, OpType.MAX, false, ExecType.CP);
+	}
+
+	@Test
+	public void testGroupedAggMaxSparseCP() {
+		runGroupedAggregateOperationTest(TEST_NAME1, OpType.MAX, true, ExecType.CP);
+	}
+
+	@Test
 	public void testGroupedAggSumDenseWideCP() {
 		runGroupedAggregateOperationTest(TEST_NAME1, OpType.SUM, false, ExecType.CP, cols2);
 	}
@@ -235,6 +257,26 @@ public class FullGroupedAggregateMatrixTest extends AutomatedTestBase
 	@Test
 	public void testGroupedAggMoment4SparseSP() {
 		runGroupedAggregateOperationTest(TEST_NAME1, OpType.MOMENT4, true, ExecType.SPARK);
+	}
+
+	@Test
+	public void testGroupedAggMinDenseSP() {
+		runGroupedAggregateOperationTest(TEST_NAME1, OpType.MIN, false, ExecType.SPARK);
+	}
+
+	@Test
+	public void testGroupedAggMinSparseSP() {
+		runGroupedAggregateOperationTest(TEST_NAME1, OpType.MIN, true, ExecType.SPARK);
+	}
+
+	@Test
+	public void testGroupedAggMaxDenseSP() {
+		runGroupedAggregateOperationTest(TEST_NAME1, OpType.MAX, false, ExecType.SPARK);
+	}
+
+	@Test
+	public void testGroupedAggMaxSparseSP() {
+		runGroupedAggregateOperationTest(TEST_NAME1, OpType.MAX, true, ExecType.SPARK);
 	}
 
 	@Test

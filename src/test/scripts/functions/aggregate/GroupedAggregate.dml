@@ -51,5 +51,9 @@ else if( fn==6 )
 {
    C = aggregate(target=A, groups=B, fn="min");
 }
+else if( fn==7 )
+{
+   C = aggregate(target=A, groups=B, fn="max");
+}
 
 write(C, $4, format="text");

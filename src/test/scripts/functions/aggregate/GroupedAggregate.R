@@ -63,4 +63,9 @@ if ( fn==6 )
    C = aggregate(as.vector(A), by=list(as.vector(B)), FUN=min)[,2]
 }
 
+if ( fn==7 )
+{
+   C = aggregate(as.vector(A), by=list(as.vector(B)), FUN=max)[,2]
+}
+
 writeMM(as(C, "CsparseMatrix"), paste(args[3], "C", sep="")); 

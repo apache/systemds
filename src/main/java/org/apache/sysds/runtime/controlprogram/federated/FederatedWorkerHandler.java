@@ -332,7 +332,8 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 
 		// set variable and construct empty response
 		ec.setVariable(varName, data);
-		if(DMLScript.LINEAGE)
+		if(DMLScript.LINEAGE && request.getNumParams()==1)
+			// don't trace if the data contains only metadata
 			ec.getLineage().set(varName, new LineageItem(String.valueOf(request.getChecksum(0))));
 
 		return new FederatedResponse(ResponseType.SUCCESS_EMPTY);

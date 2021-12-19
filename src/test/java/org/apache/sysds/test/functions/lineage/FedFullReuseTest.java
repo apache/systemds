@@ -31,7 +31,6 @@ import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
 import org.apache.sysds.utils.Statistics;
 import org.junit.Assert;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -70,7 +69,6 @@ public class FedFullReuseTest extends AutomatedTestBase {
 	}
 
 	@Test
-	@Ignore
 	public void federatedOutputReuse() {
 		//don't cache federated outputs in the coordinator
 		//reuse inside federated workers
@@ -78,7 +76,6 @@ public class FedFullReuseTest extends AutomatedTestBase {
 	}
 
 	@Test
-	@Ignore
 	public void nonfederatedOutputReuse() {
 		//cache non-federated outputs in the coordinator
 		federatedReuse(TEST_NAME2);

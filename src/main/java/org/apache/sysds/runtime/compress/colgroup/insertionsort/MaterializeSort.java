@@ -24,7 +24,7 @@ import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory;
 import org.apache.sysds.runtime.compress.utils.IntArrayList;
 
 public class MaterializeSort extends AInsertionSorter {
-	public static int CACHE_BLOCK = 1000;
+	public static int CACHE_BLOCK = 50000;
 
 	/** a dense mapToData, that have a value for each row in the input. */
 	private final AMapToData md;
@@ -34,9 +34,8 @@ public class MaterializeSort extends AInsertionSorter {
 	protected MaterializeSort(int endLength, int numRows, IntArrayList[] offsets) {
 		super(endLength, numRows, offsets);
 
-		md = MapToFactory.create(Math.min(_numRows, CACHE_BLOCK), _numLabels);
+		md = MapToFactory.create(Math.min(_numRows, CACHE_BLOCK), Math.max(_numLabels, 3));
 		skip = new int[offsets.length];
-
 		for(int block = 0; block < _numRows; block += CACHE_BLOCK) {
 			md.fill(_numLabels);
 			insert(block, Math.min(block + CACHE_BLOCK, _numRows));
@@ -46,7 +45,7 @@ public class MaterializeSort extends AInsertionSorter {
 	protected MaterializeSort(int endLength, int numRows, IntArrayList[] offsets, int negativeIndex) {
 		super(endLength, numRows, offsets, negativeIndex);
 
-		md = MapToFactory.create(Math.min(_numRows, CACHE_BLOCK), _numLabels);
+		md = MapToFactory.create(Math.min(_numRows, CACHE_BLOCK), Math.max(_numLabels, 3));
 		skip = new int[offsets.length];
 
 		for(int block = 0; block < _numRows; block += CACHE_BLOCK) {

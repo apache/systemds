@@ -35,11 +35,9 @@ import org.apache.commons.lang.NotImplementedException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.commons.math3.random.Well1024a;
-import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.CorrectionLocationType;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.conf.DMLConfig;
-import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.lops.MMTSJ.MMTSJType;
 import org.apache.sysds.lops.MapMultChain.ChainType;
 import org.apache.sysds.runtime.DMLRuntimeException;
@@ -57,8 +55,10 @@ import org.apache.sysds.runtime.compress.lib.CLALibLeftMultBy;
 import org.apache.sysds.runtime.compress.lib.CLALibReExpand;
 import org.apache.sysds.runtime.compress.lib.CLALibRightMultBy;
 import org.apache.sysds.runtime.compress.lib.CLALibScalar;
+import org.apache.sysds.runtime.compress.lib.CLALibSlice;
 import org.apache.sysds.runtime.compress.lib.CLALibSquash;
 import org.apache.sysds.runtime.compress.lib.CLALibUnary;
+import org.apache.sysds.runtime.compress.lib.CLALibUtils;
 import org.apache.sysds.runtime.controlprogram.caching.CacheBlock;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject.UpdateType;
 import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
@@ -224,7 +224,6 @@ public class CompressedMatrixBlock extends MatrixBlock {
 	 * @return a new uncompressed matrix block containing the contents of this block
 	 */
 	public MatrixBlock decompress(int k) {
-		Timing time = new Timing(true);
 		// Early out if empty.
 		if(isEmpty())
 			return new MatrixBlock(rlen, clen, true, 0);
@@ -239,14 +238,12 @@ public class CompressedMatrixBlock extends MatrixBlock {
 		// Set soft reference to the decompressed version
 		decompressedVersion = new SoftReference<>(ret);
 
-		if(DMLScript.STATISTICS) {
-			final double t = time.stop();
-			DMLCompressionStatistics.addDecompressTime(t, k);
-			if(LOG.isTraceEnabled())
-				LOG.trace("decompressed block w/ k=" + k + " in " + t + "ms.");
-		}
-
 		return ret;
+	}
+
+	@Override
+	public void putInto(MatrixBlock target, int rowOffset, int colOffset, boolean sparseCopyShallow) {
+		CLALibDecompress.decompressTo(this, target, rowOffset, colOffset, 1);
 	}
 
 	/**
@@ -663,13 +660,6 @@ public class CompressedMatrixBlock extends MatrixBlock {
 		return tmp.reorgOperations(op, ret, startRow, startColumn, length);
 	}
 
-	public ColGroupUncompressed getUncompressedColGroup() {
-		for(AColGroup grp : _colGroups)
-			if(grp instanceof ColGroupUncompressed)
-				return (ColGroupUncompressed) grp;
-		return null;
-	}
-
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
@@ -696,61 +686,14 @@ public class CompressedMatrixBlock extends MatrixBlock {
 	@Override
 	public MatrixBlock slice(int rl, int ru, int cl, int cu, boolean deep, CacheBlock ret) {
 		validateSliceArgument(rl, ru, cl, cu);
-		MatrixBlock tmp;
-		if(rl == ru && cl == cu) {
-			// get a single index, and return in a matrixBlock
-			tmp = new MatrixBlock(1, 1, 0);
-			tmp.appendValue(0, 0, getValue(rl, cl));
-			return tmp;
-		}
-		else if(rl == 0 && ru == getNumRows() - 1) {
-			tmp = sliceColumns(cl, cu);
-			tmp.recomputeNonZeros();
-			return tmp;
-		}
-		else if(cl == 0 && cu == getNumColumns() - 1) {
-			// Row Slice. Potential optimization if the slice contains enough rows.
-			// +1 since the implementation arguments for slice is inclusive values for ru
-			// and cu. It is not inclusive in decompression, and construction of MatrixBlock.
-			tmp = new MatrixBlock(ru + 1 - rl, getNumColumns(), false).allocateDenseBlock();
-			for(AColGroup g : getColGroups())
-				g.decompressToBlock(tmp, rl, ru + 1, 0);
-			tmp.recomputeNonZeros();
-			tmp.examSparsity();
-			return tmp;
-		}
-		else {
-			// In the case where an internal matrix is sliced out, then first slice out the
-			// columns to an compressed intermediate.
-			tmp = sliceColumns(cl, cu);
-			// Then call slice recursively, to do the row slice.
-			// Since we do not copy the index structure but simply maintain a pointer to the
-			// original this is fine.
-			tmp = tmp.slice(rl, ru, 0, tmp.getNumColumns() - 1, ret);
-			return tmp;
-		}
-	}
-
-	private CompressedMatrixBlock sliceColumns(int cl, int cu) {
-		CompressedMatrixBlock ret = new CompressedMatrixBlock(this.getNumRows(), cu + 1 - cl);
-		List<AColGroup> newColGroups = new ArrayList<>();
-		for(AColGroup grp : getColGroups()) {
-			AColGroup slice = grp.sliceColumns(cl, cu + 1);
-			if(slice != null)
-				newColGroups.add(slice);
-		}
-		ret.allocateColGroupList(newColGroups);
-		ret.recomputeNonZeros();
-		ret.overlappingColGroups = this.isOverlapping();
-		return ret;
+		return CLALibSlice.slice(this, rl, ru, cl, cu, deep);
 	}
 
 	@Override
 	public void slice(ArrayList<IndexedMatrixValue> outlist, IndexRange range, int rowCut, int colCut, int blen,
 		int boundaryRlen, int boundaryClen) {
-		printDecompressWarning(
+		MatrixBlock tmp = getUncompressed(
 			"slice for distribution to spark. (Could be implemented such that it does not decompress)");
-		MatrixBlock tmp = getUncompressed();
 		tmp.slice(outlist, range, rowCut, colCut, blen, boundaryRlen, boundaryClen);
 	}
 
@@ -795,6 +738,7 @@ public class CompressedMatrixBlock extends MatrixBlock {
 		res.allocateDenseBlock();
 		double[] resV = res.getDenseBlockValues();
 		AColGroup.colSum(_colGroups, resV, getNumRows());
+		res.recomputeNonZeros();
 		return res;
 	}
 
@@ -1148,7 +1092,7 @@ public class CompressedMatrixBlock extends MatrixBlock {
 			return d_compressed;
 		if(isEmpty())
 			return new MatrixBlock(getNumRows(), getNumColumns(), true);
-		return this.decompress(OptimizerUtils.getConstrainedNumThreads(-1));
+		return this.decompress(InfrastructureAnalyzer.getLocalParallelism());
 	}
 
 	public MatrixBlock getUncompressed(String operation) {
@@ -1297,11 +1241,6 @@ public class CompressedMatrixBlock extends MatrixBlock {
 	}
 
 	@Override
-	public void appendToSparse(MatrixBlock that, int rowoffset, int coloffset, boolean deep) {
-		throw new DMLCompressionException("Can't append to compressed Matrix");
-	}
-
-	@Override
 	public void appendRowToSparse(SparseBlock dest, MatrixBlock src, int i, int rowoffset, int coloffset, boolean deep) {
 		throw new DMLCompressionException("Can't append row to compressed Matrix");
 	}
@@ -1368,7 +1307,12 @@ public class CompressedMatrixBlock extends MatrixBlock {
 
 	@Override
 	public void compactEmptyBlock() {
-		// do nothing
+		if(isEmptyBlock(false)) {
+			cleanupBlock(true, true);
+			CLALibUtils.combineConstColumns(this);
+			overlappingColGroups = false;
+			decompressedVersion = null;
+		}
 	}
 
 	@Override

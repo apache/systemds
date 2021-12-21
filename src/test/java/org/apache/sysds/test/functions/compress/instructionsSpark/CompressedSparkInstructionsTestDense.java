@@ -25,6 +25,4 @@ public class CompressedSparkInstructionsTestDense extends CompressedSparkInstruc
 	public double getDensity() {
 		return 1.0;
 	}
-
-
 }

@@ -51,12 +51,34 @@ Jobs can be submitted via a Cloud Dataproc API
 
 Submit an example job using `gcloud` tool from the Cloud Shell command line
 
+Test that the cluster is setup properly:
+
 ```sh
-gcloud dataproc jobs submit spark --cluster ${CLUSTER_NAME} \
+gcloud dataproc jobs submit spark --cluster ${CLUSTERNAME} \
   --class org.apache.spark.examples.SparkPi \
   --jars file:///usr/lib/spark/examples/jars/spark-examples.jar -- 1000
 ```
 
+### Add SystemDS library to the cluster
+
+SSH into the cluster, download the artifacts from https://dlcdn.apache.org/systemds/
+and copy jar file in the `lib` folder.
+
+```sh
+gcloud compute ssh ${CLUSTERNAME}-m --zone=us-central1-c
+wget https://dlcdn.apache.org/systemds/2.2.0/systemds-2.2.0-bin.zip
+unzip -q systemds-2.2.0-bin.zip
+mkdir /usr/lib/systemds
+cp systemds-2.2.0-bin/systemds-2.2.0.jar /usr/lib/systemds
+```
+
+### Run SystemDS as a Spark job
+
+```sh
+gcloud dataproc jobs submit spark --cluster ${CLUSTERNAME} \
+  --class org.apache.sysds.api.DMLScript \
+  --jars file:///usr/lib/systemds/systemds-2.2.0.jar -- 1000
+```
 
 ### Job info and connect
 
@@ -113,6 +135,12 @@ to exit the cluster primary instance
 
 ```sh
 logout
+```
+
+### Deleting the cluster
+
+```
+gcloud dataproc clusters delete ${CLUSTERNAME}
 ```
 
 ### Tags

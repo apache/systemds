@@ -22,7 +22,7 @@
 # input: 1) frame, 2) lamba expression to execute for each non-null cell
 # output: frame of string columns
 
-# Examples: 
+# Examples:
 #   map(X, "x -> x.split(\"r\")[1]")
 #   map(X, "x -> x.charAt(2)")
 #   map(X, "y -> UtilFunctions.toMillis(y)")

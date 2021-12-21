@@ -61,8 +61,8 @@ printf "Is this RC voted and approved by PMC? [Yes/No]: \n"
 # Docs: https://www.gnu.org/software/bash/manual/bash.html#index-case
 select yn in "Yes" "No"; do
   case $yn in
-      Yes ) sed -i "s/$RELEASE_VERSION-SNAPSHOT/$RELEASE_VERSION/" systemds/project_info.py; break ;;
-      No ) sed -i "s/$RELEASE_VERSION-SNAPSHOT/$RELEASE_TAG/" systemds/project_info.py; break ;;
+      Yes ) sed -i "s/$RELEASE_VERSION-dev/$RELEASE_VERSION/" systemds/project_info.py; break ;;
+      No ) sed -i "s/$RELEASE_VERSION-dev/$RELEASE_TAG/" systemds/project_info.py; break ;;
       * ) echo "Yes or No response is required.";;
   esac
 done
@@ -79,15 +79,14 @@ python3 -m twine check dist/*
 #              use Edit->paste to paste the API token (https://pypi.org/help/#invalid-auth)
 #            else, use `right click` for paste in the terminal.
 
-# Dev:
-# Test upload to test.pypi.org
-# Credentials are
-# username: __token__ 
-# password: pypi-DU5y...
-
 if [[ $dry_run_flag != 1 ]]; then
   python -m twine upload dist/*
 else
+  # Development test:
+  # Test upload to test.pypi.org
+  # Credentials are
+  # username: __token__ 
+  # password: pypi-DU5y...
   python -m twine upload --repository testpypi dist/*
 fi
 

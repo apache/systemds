@@ -46,7 +46,7 @@ public class Compression extends Lop {
 
 	@Override
 	public String toString() {
-		return "Compress";
+		return OPCODE;
 	}
 
 	@Override

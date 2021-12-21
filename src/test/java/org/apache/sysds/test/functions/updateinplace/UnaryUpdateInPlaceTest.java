@@ -19,22 +19,21 @@
 
 package org.apache.sysds.test.functions.updateinplace;
 
+import java.util.HashMap;
+
 import org.apache.sysds.common.Types;
 import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.runtime.matrix.data.MatrixValue;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
-import org.apache.sysds.test.functions.builtin.BuiltinSplitTest;
 import org.junit.Test;
-
-import java.util.HashMap;
 
 
 public class UnaryUpdateInPlaceTest extends AutomatedTestBase{
 	private final static String TEST_NAME = "UnaryUpdateInplace";
 	private final static String TEST_DIR = "functions/updateinplace/";
-	private final static String TEST_CLASS_DIR = TEST_DIR + BuiltinSplitTest.class.getSimpleName() + "/";
+	private final static String TEST_CLASS_DIR = TEST_DIR + UnaryUpdateInPlaceTest.class.getSimpleName() + "/";
 	private final static double eps = 1e-3;
 
 	@Override

@@ -118,6 +118,8 @@ public class ColGroupIO {
 				return new ColGroupSDCSingleZeros(nRows);
 			case SDCZeros:
 				return new ColGroupSDCZeros(nRows);
+			case PFOR:
+				return new ColGroupPFOR(nRows);
 			default:
 				throw new DMLRuntimeException("Unsupported ColGroup Type used:  " + ctype);
 		}

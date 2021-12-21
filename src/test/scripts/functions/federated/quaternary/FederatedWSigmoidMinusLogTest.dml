@@ -39,8 +39,13 @@ while(FALSE) { }
 
 UV = -(V %*% t(U));
 Z3 = X * log(1 / (1 + exp(-UV)));
-while(FALSE) { }
 
-Z = Z1 + Z2 + mean(Z3);
+while(FALSE) { }
+# verify output is federated (creating fed_uak+ heavy hitter)
+sZ1 = sum(Z1);
+sZ2 = sum(Z2);
+sZ3 = sum(Z3);
+while(FALSE) { }
+Z = as.matrix(sZ1 - sZ2 + sZ3);
 
 write(Z, $out_Z);

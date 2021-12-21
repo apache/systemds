@@ -48,10 +48,9 @@ import org.apache.sysds.lops.MapMultChain.ChainType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.compress.CompressedMatrixBlock;
 import org.apache.sysds.runtime.compress.DMLCompressionException;
-import org.apache.sysds.runtime.compress.lib.CLALibBinaryCellOp;
 import org.apache.sysds.runtime.controlprogram.caching.CacheBlock;
-import org.apache.sysds.runtime.controlprogram.caching.LazyWriteBuffer;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject.UpdateType;
+import org.apache.sysds.runtime.controlprogram.parfor.stat.InfrastructureAnalyzer;
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.DenseBlockFactory;
 import org.apache.sysds.runtime.data.SparseBlock;
@@ -106,6 +105,7 @@ import org.apache.sysds.runtime.matrix.operators.TernaryOperator;
 import org.apache.sysds.runtime.matrix.operators.UnaryOperator;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
+import org.apache.sysds.runtime.util.CommonThreadPool;
 import org.apache.sysds.runtime.util.DataConverter;
 import org.apache.sysds.runtime.util.FastBufferedDataInputStream;
 import org.apache.sysds.runtime.util.FastBufferedDataOutputStream;
@@ -361,7 +361,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	}
 	
 	public Future<MatrixBlock> allocateBlockAsync() {
-		ExecutorService pool = LazyWriteBuffer.getUtilThreadPool();
+		ExecutorService pool = CommonThreadPool.get(InfrastructureAnalyzer.getLocalParallelism());
 		return (pool != null) ? pool.submit(() -> allocateBlock()) : //async
 			ConcurrentUtils.constantFuture(allocateBlock()); //fallback sync
 	}
@@ -788,7 +788,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		appendToSparse(that, rowoffset, coloffset, true);
 	}
 	
-	public void appendToSparse( MatrixBlock that, int rowoffset, int coloffset, boolean deep ) 
+	private void appendToSparse( MatrixBlock that, int rowoffset, int coloffset, boolean deep ) 
 	{
 		if( that==null || that.isEmptyBlock(false) )
 			return; //nothing to append
@@ -1522,7 +1522,35 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		}
 	}
 	
-	
+	/**
+	 * Method for copying this matrix into a target matrix.
+	 * 
+	 * Note that this method does not maintain number of non zero values.
+	 * 
+	 * The method should output into the allocated block type of the target, therefore before any calls an appropriate
+	 * block must be allocated.
+	 * 
+	 * CSR sparse format is not supported.
+	 * 
+	 * If allocating into a sparse matrix MCSR block the rows have to be sorted afterwards with a call to
+	 * 
+	 * target.sortSparseRows()
+	 * 
+	 * @param target            Target MatrixBlock, that can be allocated dense or sparse
+	 * @param rowOffset         The Row offset to allocate into.
+	 * @param colOffset         The column offset to allocate into.
+	 * @param sparseCopyShallow If the output is sparse, and shallow copy of rows is allowed from this block
+	 */
+	public void putInto(MatrixBlock target, int rowOffset, int colOffset, boolean sparseCopyShallow) {
+		if(target.isInSparseFormat())
+			// append block to sparse target in order to avoid shifting, where
+			// we use a shallow row copy in case of MCSR and single column blocks
+			// note: this append requires, for multiple column blocks, a final sort
+			target.appendToSparse(this, rowOffset, colOffset, !sparseCopyShallow);
+		else
+			target.copy(rowOffset, rowOffset + rlen - 1, colOffset, colOffset + clen - 1, this, false);
+	}
+
 	/**
 	 * In-place copy of matrix src into the index range of the existing current matrix.
 	 * Note that removal of existing nnz in the index range and nnz maintenance is 
@@ -3776,10 +3804,10 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 		for( MatrixBlock in : inputs ) {
 			if( in.isEmptyBlock(false) )
 				continue;
-			if(in instanceof CompressedMatrixBlock){
-				in = CLALibBinaryCellOp.binaryMVRow((CompressedMatrixBlock) in,c, null, new BinaryOperator(Plus.getPlusFnObject()), false);
-			}
-			else if( in.isInSparseFormat() ) {
+			if(in instanceof CompressedMatrixBlock)
+				in = CompressedMatrixBlock.getUncompressed(in, "ProcessAddRow");
+			
+			if( in.isInSparseFormat() ) {
 				SparseBlock a = in.getSparseBlock();
 				if( a.isEmpty(i) ) continue;
 				LibMatrixMult.vectAdd(a.values(i), c, a.indexes(i), a.pos(i), cix, a.size(i));
@@ -4698,46 +4726,11 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 	public CM_COV_Object cmOperations(CMOperator op) {
 		// dimension check for input column vectors
 		if ( this.getNumColumns() != 1) {
-			throw new DMLRuntimeException("Central Moment can not be computed on [" 
+			throw new DMLRuntimeException("Central Moment cannot be computed on [" 
 					+ this.getNumRows() + "," + this.getNumColumns() + "] matrix.");
 		}
 		
-		CM_COV_Object cmobj = new CM_COV_Object();
-		
-		// empty block handling (important for result corretness, otherwise
-		// we get a NaN due to 0/0 on reading out the required result)
-		if( isEmptyBlock(false) ) {
-			op.fn.execute(cmobj, 0.0, getNumRows());
-			return cmobj;
-		}
-		
-		int nzcount = 0;
-		if(sparse && sparseBlock!=null) //SPARSE
-		{
-			for(int r=0; r<Math.min(rlen, sparseBlock.numRows()); r++)
-			{
-				if(sparseBlock.isEmpty(r)) 
-					continue;
-				int apos = sparseBlock.pos(r);
-				int alen = sparseBlock.size(r);
-				double[] avals = sparseBlock.values(r);
-				for(int i=apos; i<apos+alen; i++) {
-					op.fn.execute(cmobj, avals[i]);
-					nzcount++;
-				}
-			}
-			// account for zeros in the vector
-			op.fn.execute(cmobj, 0.0, this.getNumRows()-nzcount);
-		}
-		else if(denseBlock!=null)  //DENSE
-		{
-			//always vector (see check above)
-			double[] a = getDenseBlockValues();
-			for(int i=0; i<rlen; i++)
-				op.fn.execute(cmobj, a[i]);
-		}
-
-		return cmobj;
+		return LibMatrixAgg.aggregateCmCov(this, null, null, op.fn, op.getNumThreads());
 	}
 		
 	public CM_COV_Object cmOperations(CMOperator op, MatrixBlock weights) {
@@ -4751,31 +4744,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 					+ weights.getNumRows() + "," + weights.getNumColumns() +"]");
 		}
 		
-		CM_COV_Object cmobj = new CM_COV_Object();
-		if (sparse && sparseBlock!=null) //SPARSE
-		{
-			for(int i=0; i < rlen; i++) 
-				op.fn.execute(cmobj, this.quickGetValue(i,0), weights.quickGetValue(i,0));
-		}
-		else if(denseBlock!=null) //DENSE
-		{
-			//always vectors (see check above)
-			double[] a = getDenseBlockValues();
-			if( !weights.sparse )
-			{
-				double[] w = weights.getDenseBlockValues();
-				if(weights.denseBlock!=null)
-					for( int i=0; i<rlen; i++ )
-						op.fn.execute(cmobj, a[i], w[i]);
-			}
-			else
-			{
-				for(int i=0; i<rlen; i++) 
-					op.fn.execute(cmobj, a[i], weights.quickGetValue(i,0) );
-			}
-		}
-		
-		return cmobj;
+		return LibMatrixAgg.aggregateCmCov(this, weights, null, op.fn, op.getNumThreads());
 	}
 	
 	public CM_COV_Object covOperations(COVOperator op, MatrixBlock that) {
@@ -4789,30 +4758,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 					+ that.getNumRows() + "," + that.getNumColumns() +"]");
 		}
 		
-		CM_COV_Object covobj = new CM_COV_Object();
-		if(sparse && sparseBlock!=null) //SPARSE
-		{
-			for(int i=0; i < rlen; i++ ) 
-				op.fn.execute(covobj, this.quickGetValue(i,0), that.quickGetValue(i,0));
-		}
-		else if(denseBlock!=null) //DENSE
-		{
-			//always vectors (see check above)
-			double[] a = getDenseBlockValues();
-			if( !that.sparse ) {
-				if(that.denseBlock!=null) {
-					double[] b = that.getDenseBlockValues();
-					for( int i=0; i<rlen; i++ )
-						op.fn.execute(covobj, a[i], b[i]);
-				}
-			}
-			else {
-				for(int i=0; i<rlen; i++)
-					op.fn.execute(covobj, a[i], that.quickGetValue(i,0));
-			}
-		}
-		
-		return covobj;
+		return LibMatrixAgg.aggregateCmCov(this, that, null, op.fn, op.getNumThreads());
 	}
 	
 	public CM_COV_Object covOperations(COVOperator op, MatrixBlock that, MatrixBlock weights) {
@@ -4831,34 +4777,7 @@ public class MatrixBlock extends MatrixValue implements CacheBlock, Externalizab
 					+ weights.getNumRows() + "," + weights.getNumColumns() +"]");
 		}
 		
-		CM_COV_Object covobj = new CM_COV_Object();
-		if(sparse && sparseBlock!=null) //SPARSE
-		{
-			for(int i=0; i < rlen; i++ ) 
-				op.fn.execute(covobj, this.quickGetValue(i,0), that.quickGetValue(i,0), weights.quickGetValue(i,0));
-		}
-		else if(denseBlock!=null) //DENSE
-		{
-			//always vectors (see check above)
-			double[] a = getDenseBlockValues();
-			
-			if( !that.sparse && !weights.sparse )
-			{
-				double[] w = weights.getDenseBlockValues();
-				if(that.denseBlock!=null) {
-					double[] b = that.getDenseBlockValues();
-					for( int i=0; i<rlen; i++ )
-						op.fn.execute(covobj, a[i], b[i], w[i]);
-				}
-			}
-			else
-			{
-				for(int i=0; i<rlen; i++)
-					op.fn.execute(covobj, a[i], that.quickGetValue(i,0), weights.quickGetValue(i,0));
-			}
-		}
-		
-		return covobj;
+		return LibMatrixAgg.aggregateCmCov(this, that, weights, op.fn, op.getNumThreads());
 	}
 
 

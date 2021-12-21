@@ -114,6 +114,7 @@ public class CompressedMatrixTest extends AbstractCompressedUnaryTests {
 			Random r = new Random();
 			final int min = r.nextInt(rows);
 			final int max = Math.min(r.nextInt(rows - min) + min, min + 1000);
+			
 			for(int i = min; i < max; i++)
 				for(int j = 0; j < cols; j++) {
 					final double ulaVal = mb.quickGetValue(i, j);
@@ -169,6 +170,17 @@ public class CompressedMatrixTest extends AbstractCompressedUnaryTests {
 	public void testUnaryOperators(AggType aggType, boolean inCP) {
 		AggregateUnaryOperator auop = super.getUnaryOperator(aggType, 1);
 		testUnaryOperators(aggType, auop, inCP);
+	}
+
+	@Test
+	public void testNonZeros() {
+		if(!(cmb instanceof CompressedMatrixBlock))
+			return; // Input was not compressed then just pass test
+		if(!(cmb.getNonZeros() >= mb.getNonZeros())) {
+			fail(bufferedToString + "\nIncorrect number of non Zeros should guarantee greater than or equals but are "
+				+ cmb.getNonZeros() + " and should be: " + mb.getNonZeros());
+		}
+
 	}
 
 	@Test
@@ -597,12 +609,101 @@ public class CompressedMatrixTest extends AbstractCompressedUnaryTests {
 			MatrixBlock m2 = new MatrixBlock(1, cmb.getNumColumns(), 0);
 			MatrixBlock ret1 = cmb.binaryOperations(op, m2, new MatrixBlock());
 			ucRet = mb.binaryOperations(op, m2, ucRet);
-
 			compareResultMatrices(ucRet, ret1, 1);
 		}
 		catch(Exception e) {
 			e.printStackTrace();
-			throw new DMLRuntimeException(e);
+			throw e;
+		}
+	}
+
+	@Test
+	public void testDecompressToNoOffsets() {
+		testDecompressToMatrixWithOffsets(0, 0, rows + 1, cols + 1);
+	}
+
+	@Test
+	public void testDecompressToOffset1Row() {
+		testDecompressToMatrixWithOffsets(1, 0, rows + 1, cols + 1);
+	}
+
+	@Test
+	public void testDecompressToOffset1Col() {
+		testDecompressToMatrixWithOffsets(0, 1, rows + 1, cols + 1);
+	}
+
+	@Test
+	public void testDecompressToOffsetBoth1() {
+		testDecompressToMatrixWithOffsets(1, 1, rows + 1, cols + 1);
+	}
+
+	@Test
+	public void testDecompressToMiddleOfMatrix() {
+		testDecompressToMatrixWithOffsets(10, 10, rows + 20, cols + 20);
+	}
+
+	public void testDecompressToMatrixWithOffsets(int rowOff, int colOff, int outRows, int outCols) {
+		try {
+			if(!(cmb instanceof CompressedMatrixBlock))
+				return;
+
+			MatrixBlock ret1 = new MatrixBlock(outRows, outCols, false);
+			ret1.allocateDenseBlock();
+			MatrixBlock ret2 = new MatrixBlock(outRows, outCols, false);
+			ret2.allocateDenseBlock();
+
+			cmb.putInto(ret1, rowOff, colOff, false);
+			ret1.setNonZeros(cmb.getNonZeros());
+
+			mb.putInto(ret2, rowOff, colOff, false);
+			ret2.setNonZeros(mb.getNonZeros());
+
+			compareResultMatrices(ret2, ret1, 1);
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			throw e;
+		}
+	}
+
+	@Test
+	public void testDecompressToOffsetSparseExtraColumns() {
+		if(cmb instanceof CompressedMatrixBlock && !((CompressedMatrixBlock) cmb).isOverlapping())
+			testsDecompressToSparseMatrixWithOffsets(10, 10, rows + 100, cols + 1000);
+	}
+
+	@Test
+	public void testDecompressToOffsetSparseExtraRows() {
+		if(cmb instanceof CompressedMatrixBlock && !((CompressedMatrixBlock) cmb).isOverlapping())
+			testsDecompressToSparseMatrixWithOffsets(10, 10, rows + 10000, cols + 10);
+	}
+
+	public void testsDecompressToSparseMatrixWithOffsets(int rowOff, int colOff, int outRows, int outCols) {
+		try {
+			if(!(cmb instanceof CompressedMatrixBlock))
+				return;
+
+			MatrixBlock ret1 = new MatrixBlock(outRows, outCols, true);
+			ret1.allocateSparseRowsBlock();
+			MatrixBlock ret2 = new MatrixBlock(outRows, outCols, true);
+			ret2.allocateSparseRowsBlock();
+
+			cmb.putInto(ret1, rowOff, colOff, false);
+			ret1.setNonZeros(cmb.getNonZeros());
+			if(ret1.isInSparseFormat())
+				ret1.sortSparseRows();
+
+			mb.putInto(ret2, rowOff, colOff, false);
+			ret2.setNonZeros(mb.getNonZeros());
+			if(ret2.isInSparseFormat())
+				ret2.sortSparseRows();
+
+			compareResultMatrices(ret2, ret1, 1);
+
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			throw e;
 		}
 	}
 

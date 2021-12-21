@@ -142,7 +142,7 @@ return(Double dirtyScore)
     if(as.scalar(dschema[1, i]) == "STRING" | as.scalar(dschema[1, i]) == "BOOLEAN")
       dmask[1, i] = 1
   mask = as.matrix(metaList['mask']) 
-  mask = ifelse(sum(mask == dmask) < ncol(mask), dmask, mask)
+  mask = ifelse(sum(mask == dmask) < ncol(mask), matrix(1, rows=1, cols=ncol(mask)), mask)
   [eXtrain, eXtest] = recodeData(X, Xtest, mask, FALSE, "recode")
   eXtrain = replace(target=eXtrain, pattern=NaN, replacement=1)
   eXtest = replace(target=eXtest, pattern=NaN, replacement=1)

@@ -198,13 +198,13 @@ public class MatrixGenerateReaderMatrixMarketTest extends GenerateReaderMatrixTe
 
 	@Test
 	public void SymmetricTest1_3() {
-		generateRandomSymmetricMM(1, 100, -5, 5, 1, ",", false, false);
+		generateRandomSymmetricMM(1, 50, -5, 5, 1, ",", false, false);
 		runGenerateReaderTest();
 	}
 
 	@Test
 	public void SymmetricTest1_4() {
-		generateRandomSymmetricMM(1, 200, -100, 100, 1, "  ", false, false);
+		generateRandomSymmetricMM(1, 70, -100, 100, 1, "  ", false, false);
 		runGenerateReaderTest();
 	}
 

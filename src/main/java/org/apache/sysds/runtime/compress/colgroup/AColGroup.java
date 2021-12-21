@@ -28,6 +28,8 @@ import java.util.List;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.sysds.runtime.data.DenseBlock;
+import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.AggregateUnaryOperator;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
@@ -46,7 +48,7 @@ public abstract class AColGroup implements Serializable {
 
 	/** Public super types of compression ColGroups supported */
 	public enum CompressionType {
-		UNCOMPRESSED, RLE, OLE, DDC, CONST, EMPTY, SDC
+		UNCOMPRESSED, RLE, OLE, DDC, CONST, EMPTY, SDC, PFOR,
 	}
 
 	/**
@@ -55,7 +57,7 @@ public abstract class AColGroup implements Serializable {
 	 * Protected such that outside the ColGroup package it should be unknown which specific subtype is used.
 	 */
 	protected enum ColGroupType {
-		UNCOMPRESSED, RLE, OLE, DDC, CONST, EMPTY, SDC, SDCSingle, SDCSingleZeros, SDCZeros;
+		UNCOMPRESSED, RLE, OLE, DDC, CONST, EMPTY, SDC, SDCSingle, SDCSingleZeros, SDCZeros, PFOR;
 	}
 
 	/** The ColGroup Indexes contained in the ColGroup */
@@ -130,14 +132,27 @@ public abstract class AColGroup implements Serializable {
 	}
 
 	/**
-	 * Decompress the contents of the column group without modifying nonZeroCount.
+	 * Decompress a range of rows into a sparse block
 	 * 
-	 * @param target a matrix block where the columns covered by this column group have not yet been filled in.
-	 * @param rl     row lower
-	 * @param ru     row upper
+	 * Note that this is using append, so the sparse column indexes need to be sorted afterwards.
+	 * 
+	 * @param sb Sparse Target block
+	 * @param rl Row to start at
+	 * @param ru Row to end at
 	 */
-	public final void decompressToBlock(MatrixBlock target, int rl, int ru) {
-		decompressToBlock(target, rl, ru, rl);
+	public final void decompressToSparseBlock(SparseBlock sb, int rl, int ru) {
+		decompressToSparseBlock(sb, rl, ru, 0, 0);
+	}
+
+	/**
+	 * Decompress a range of rows into a dense block
+	 * 
+	 * @param db Sparse Target block
+	 * @param rl Row to start at
+	 * @param ru Row to end at
+	 */
+	public final void decompressToDenseBlock(DenseBlock db, int rl, int ru) {
+		decompressToDenseBlock(db, rl, ru, 0, 0);
 	}
 
 	/**
@@ -324,14 +339,29 @@ public abstract class AColGroup implements Serializable {
 	protected abstract ColGroupType getColGroupType();
 
 	/**
-	 * Decompress the contents of the column group without counting non zeros
+	 * Decompress into the DenseBlock. (no NNZ handling)
 	 * 
-	 * @param target a matrix block where the columns covered by this column group have not yet been filled in.
-	 * @param rl     row lower
-	 * @param ru     row upper
-	 * @param offT   Offset into target to assign from, this allows us to decompress into smaller matrices.
+	 * @param db   Target DenseBlock
+	 * @param rl   Row to start decompression from
+	 * @param ru   Row to end decompression at
+	 * @param offR Row offset into the target to decompress
+	 * @param offC Column offset into the target to decompress
 	 */
-	public abstract void decompressToBlock(MatrixBlock target, int rl, int ru, int offT);
+	public abstract void decompressToDenseBlock(DenseBlock db, int rl, int ru, int offR, int offC);
+
+	/**
+	 * Decompress into the SparseBlock. (no NNZ handling)
+	 * 
+	 * Note this method is allowing to calls to append since it is assumed that the sparse column indexes are sorted
+	 * afterwards
+	 * 
+	 * @param sb   Target SparseBlock
+	 * @param rl   Row to start decompression from
+	 * @param ru   Row to end decompression at
+	 * @param offR Row offset into the target to decompress
+	 * @param offC Column offset into the target to decompress
+	 */
+	public abstract void decompressToSparseBlock(SparseBlock sb, int rl, int ru, int offR, int offC);
 
 	/**
 	 * Right matrix multiplication with this column group.
@@ -405,8 +435,8 @@ public abstract class AColGroup implements Serializable {
 	/**
 	 * Perform a binary row operation.
 	 * 
-	 * @param op The operation to execute
-	 * @param v  The vector of values to apply, should be same length as dictionary length.
+	 * @param op        The operation to execute
+	 * @param v         The vector of values to apply, should be same length as dictionary length.
 	 * @param isRowSafe True if the binary op is applied to an entire zero row and all results are zero
 	 * @return A updated column group with the new values.
 	 */
@@ -515,9 +545,9 @@ public abstract class AColGroup implements Serializable {
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
-		sb.append(" ColGroupType: ");
+		sb.append(String.format("\n\n%15s", "ColGroupType: "));
 		sb.append(this.getClass().getSimpleName());
-		sb.append(String.format("\n%15s%5d ", "Columns:", _colIndexes.length));
+		sb.append(String.format("\n%15s", "Columns: "));
 		sb.append(Arrays.toString(_colIndexes));
 
 		return sb.toString();

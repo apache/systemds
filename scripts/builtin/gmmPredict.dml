@@ -44,7 +44,7 @@
 # compute posterior probabilities for new instances given the variance and mean of fitted data
 
 m_gmmPredict = function(Matrix[Double] X, Matrix[Double] weight,
-  Matrix[Double] mu, Matrix[Double] precisions_cholesky, String model)
+  Matrix[Double] mu, Matrix[Double] precisions_cholesky, String model = "VVV")
   return(Matrix[Double] predict, Matrix[Double] posterior_prob)
 {
   # compute the posterior probabilities for new instances

@@ -69,17 +69,25 @@ class TestFederatedAggFn(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.sds.from_pandas(df)[[-1]]
 
-    # https://issues.apache.org/jira/browse/SYSTEMDS-3203
     # def test_slice_first_third_col(self):
     #     sm = self.sds.from_pandas(df)[:, [0, 2]]
     #     sr = sm.compute()
-    #     e = df.loc[:, [0, 2]]
+    #     e = pd.DataFrame(
+    #         {
+    #             "col1": ["col1_hello_3", "col1_world_3", "col1_hello_3"],
+    #             "col3": [0.6, 0.7, 0.8],
+    #         }
+    #      )
     #     self.assertTrue((e.values == sr.values).all())
 
     # def test_slice_single_col(self):
     #     sm = self.sds.from_pandas(df)[:, [1]]
     #     sr = sm.compute()
-    #     e = df.loc[:, [1]]
+    #     e = pd.DataFrame(
+    #         {
+    #             "col2": [6, 7, 8]
+    #         }
+    #     )
     #     self.assertTrue((e.values == sr.values).all())
 
     def test_slice_row_col_both(self):

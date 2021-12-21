@@ -25,6 +25,7 @@ import java.io.File;
 
 import org.apache.sysds.common.Types;
 import org.apache.sysds.common.Types.ExecMode;
+import org.apache.sysds.hops.OptimizerUtils;
 import org.apache.sysds.test.AutomatedTestBase;
 import org.apache.sysds.test.TestConfiguration;
 import org.apache.sysds.test.TestUtils;
@@ -88,6 +89,7 @@ public class CompressRewriteSpark extends AutomatedTestBase {
 
 	public void compressTest(ExecMode instType, String name, String data) {
 
+		OptimizerUtils.ALLOW_SCRIPT_LEVEL_COMPRESS_COMMAND =true;
 		Types.ExecMode platformOld = setExecMode(instType);
 		try {
 

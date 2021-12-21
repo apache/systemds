@@ -241,7 +241,8 @@ public class Types
 		SIGMOID, //sigmoid function: 1 / (1 + exp(-X))
 		LOG_NZ, //sparse-safe log; ppred(X,0,"!=")*log(X)
 		
-		COMPRESS, DECOMPRESS, 
+		COMPRESS, DECOMPRESS,
+		LOCAL, // instruction to pull data back from spark forcefully and return a CP matrix.
 
 		//low-level operators //TODO used?
 		MULT2, MINUS1_MULT, MINUS_RIGHT, 
@@ -309,7 +310,7 @@ public class Types
 		BITWXOR(true), CBIND(false), CONCAT(false), COV(false), DIV(true),
 		DROP_INVALID_TYPE(false), DROP_INVALID_LENGTH(false), EQUAL(true), GREATER(true),
 		GREATEREQUAL(true), INTDIV(true), INTERQUANTILE(false), IQM(false), LESS(true),
-		LESSEQUAL(true), LOG(true), MAP(false), MAX(true), MEDIAN(false), MIN(true), 
+		LESSEQUAL(true), LOG(true), MAX(true), MEDIAN(false), MIN(true),
 		MINUS(true), MODULUS(true), MOMENT(false), MULT(true), NOTEQUAL(true), OR(true),
 		PLUS(true), POW(true), PRINT(false), QUANTILE(false), SOLVE(false),
 		RBIND(false), VALUE_SWAP(false), XOR(true),
@@ -358,7 +359,6 @@ public class Types
 				case DROP_INVALID_TYPE: return "dropInvalidType";
 				case DROP_INVALID_LENGTH: return "dropInvalidLength";
 				case VALUE_SWAP: return "valueSwap";
-				case MAP:          return "_map";
 				default:           return name().toLowerCase();
 			}
 		}
@@ -392,8 +392,7 @@ public class Types
 				case "bitwShiftR":  return BITWSHIFTR;
 				case "dropInvalidType": return DROP_INVALID_TYPE;
 				case "dropInvalidLength": return DROP_INVALID_LENGTH;
-				case "valueSwap": return VALUE_SWAP;
-				case "map":         return MAP;
+				case "valueSwap":   return VALUE_SWAP;
 				default:            return valueOf(opcode.toUpperCase());
 			}
 		}
@@ -401,7 +400,7 @@ public class Types
 	
 	// Operations that require 3 operands
 	public enum OpOp3 {
-		QUANTILE, INTERQUANTILE, CTABLE, MOMENT, COV, PLUS_MULT, MINUS_MULT, IFELSE;
+		QUANTILE, INTERQUANTILE, CTABLE, MOMENT, COV, PLUS_MULT, MINUS_MULT, IFELSE, MAP;
 		
 		@Override
 		public String toString() {
@@ -409,6 +408,7 @@ public class Types
 				case MOMENT:     return "cm";
 				case PLUS_MULT:  return "+*";
 				case MINUS_MULT: return "-*";
+				case MAP:          return "_map";
 				default:         return name().toLowerCase();
 			}
 		}
@@ -418,6 +418,7 @@ public class Types
 				case "cm": return MOMENT;
 				case "+*": return PLUS_MULT;
 				case "-*": return MINUS_MULT;
+				case "map": return MAP;
 				default:   return valueOf(opcode.toUpperCase());
 			}
 		}

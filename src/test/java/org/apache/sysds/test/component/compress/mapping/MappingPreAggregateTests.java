@@ -19,16 +19,21 @@
 
 package org.apache.sysds.test.component.compress.mapping;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Random;
 
+import org.apache.commons.lang.NotImplementedException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.runtime.compress.colgroup.mapping.AMapToData;
-import org.apache.sysds.runtime.compress.colgroup.mapping.MapToByte;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory;
 import org.apache.sysds.runtime.compress.colgroup.mapping.MapToFactory.MAP_TYPE;
+import org.apache.sysds.runtime.compress.colgroup.offset.AOffset;
+import org.apache.sysds.runtime.compress.colgroup.offset.OffsetByte;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.test.TestUtils;
 import org.junit.Test;
@@ -44,61 +49,290 @@ public class MappingPreAggregateTests {
 	public final int seed;
 	public final MAP_TYPE type;
 	public final int size;
-	private AMapToData m;
-	private MapToByte ref;
+	private final AMapToData m;
+	private final AOffset o;
+	private final MatrixBlock mb; // matrix block to preAggregate from.
+	private final MatrixBlock sb; // Sparse block to preAggregate from.
+	private final double[] preRef;
 
 	@Parameters
 	public static Collection<Object[]> data() {
 		ArrayList<Object[]> tests = new ArrayList<>();
 		for(MAP_TYPE t : MAP_TYPE.values()) {
-			tests.add(new Object[] {1, t, 13});
-			tests.add(new Object[] {3, t, 13});
-			tests.add(new Object[] {3, t, 63});
-			tests.add(new Object[] {3, t, 64});
-			tests.add(new Object[] {3, t, 65});
-			tests.add(new Object[] {5, t, 1234});
-			tests.add(new Object[] {5, t, 13});
+			tests.add(new Object[] {1, 2, t, 13});
+			tests.add(new Object[] {3, 2, t, 13});
+			tests.add(new Object[] {3, 2, t, 63});
+			tests.add(new Object[] {3, 2, t, 64});
+			tests.add(new Object[] {3, 2, t, 65});
+			tests.add(new Object[] {5, 2, t, 1234});
+			tests.add(new Object[] {5, 2, t, 13});
+			tests.add(new Object[] {51, 2, t, 3241});
+		}
+
+		for(MAP_TYPE t : new MAP_TYPE[] {MAP_TYPE.BYTE, MAP_TYPE.CHAR, MAP_TYPE.INT}) {
+			tests.add(new Object[] {1, 10, t, 13});
+			tests.add(new Object[] {3, 10, t, 13});
+			tests.add(new Object[] {3, 10, t, 63});
+			tests.add(new Object[] {3, 10, t, 64});
+			tests.add(new Object[] {3, 10, t, 65});
+			tests.add(new Object[] {5, 10, t, 1234});
+			tests.add(new Object[] {5, 10, t, 13});
+			tests.add(new Object[] {51, 10, t, 3241});
+		}
+
+		for(MAP_TYPE t : new MAP_TYPE[] {MAP_TYPE.CHAR, MAP_TYPE.INT}) {
+			tests.add(new Object[] {5, 300, t, 400});
+			tests.add(new Object[] {5, 300, t, 1234});
+			tests.add(new Object[] {51, 300, t, 3241});
 		}
 		return tests;
 	}
 
-	public MappingPreAggregateTests(int seed, MAP_TYPE type, int size) {
+	public MappingPreAggregateTests(int seed, int nUnique, MAP_TYPE type, int size) {
 		this.seed = seed;
 		this.type = type;
 		this.size = size;
-		genBitMap(seed);
+		m = genBitMap(seed, nUnique, size, type);
+		mb = TestUtils.generateTestMatrixBlock(5, size, 0, 100, 1.0, seed);
+		sb = TestUtils.generateTestMatrixBlock(5, size, 0, 100, 0.2, seed);
+		o = OneOffset.create(size);
+
+		int nVal = m.getUnique();
+		preRef = new double[nVal * mb.getNumRows()];
+		m.preAggregateDense(mb, preRef, 0, mb.getNumRows(), 0, size);
 	}
 
-	protected AMapToData genBitMap(int seed) {
+	protected static AMapToData genBitMap(int seed, int nUnique, int size, MAP_TYPE type) {
 		final Random r = new Random(seed);
-		m = MapToFactory.create(size, 2);
-		ref = (MapToByte) MapToFactory.create(size, 255);
+		AMapToData m = MapToFactory.create(size, nUnique);
 
-		for(int i = 0; i < size; i++) {
-			int v = r.nextInt(2);
+		for(int i = 0; i < nUnique; i++) {
+			m.set(i, i);
+		}
+		for(int i = nUnique; i < size; i++) {
+			int v = r.nextInt(nUnique);
 			m.set(i, v);
-			ref.set(i, v);
 		}
 		m = MapToFactory.resizeForce(m, type);
 		return m;
 	}
 
 	@Test
-	public void testPreAggregateDense() {
-		int nUnique = m.getUnique();
-		int size = m.size();
+	public void testPreAggRowZero() {
+		testPreAggregateDenseSingleRow(0);
+	}
 
-		MatrixBlock mb = TestUtils.generateTestMatrixBlock(1, size, 0, 100, 1.0, seed);
-		MatrixBlock pre = new MatrixBlock(1, nUnique, false);
-		pre.allocateDenseBlock();
+	@Test
+	public void testPreAggRowOne() {
+		testPreAggregateDenseSingleRow(1);
+	}
 
-		m.preAggregateDense(mb, pre, 0, 1, 0, 100);
+	@Test
+	public void testPreAggRowTwo() {
+		testPreAggregateDenseSingleRow(2);
+	}
 
-		MatrixBlock preRef = new MatrixBlock(1, nUnique, false);
-		preRef.allocateDenseBlock();
-		
-		ref.preAggregateDense(mb, preRef, 0, 1,0,100);
+	public void testPreAggregateDenseSingleRow(int row) {
+		try {
+			final int size = m.size();
+			double[] pre = new double[m.getUnique()];
+			m.preAggregateDense(mb, pre, row, row + 1, 0, size);
+			compareRes(preRef, pre, row);
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			fail(e.toString());
+		}
+	}
 
-		TestUtils.compareMatrices(preRef, pre, 0, "preaggregate not same with different maps");
+	@Test
+	public void testPreAggSubPartOfRow01() {
+		testPreAggSubSectionsRow(0, 3, size - 2);
+	}
+
+	@Test
+	public void testPreAggSubPartOfRow02() {
+		testPreAggSubSectionsRow(1, size / 2, size - 2);
+	}
+
+	@Test
+	public void testPreAggSubPartOfRow03() {
+		testPreAggSubSectionsRow(3, 1, size / 2);
+	}
+
+	public void testPreAggSubSectionsRow(int row, int cl, int cu) {
+		try {
+			final int size = m.size();
+			double[] pre = new double[m.getUnique()];
+			m.preAggregateDense(mb, pre, row, row + 1, 0, cl);
+			m.preAggregateDense(mb, pre, row, row + 1, cl, cu);
+			m.preAggregateDense(mb, pre, row, row + 1, cu, size);
+			compareRes(preRef, pre, row);
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			fail(e.toString());
+		}
+	}
+
+	@Test
+	public void testPreAggRowsZeroAndOne() {
+		testPreAggRowsRange(0, 2);
+	}
+
+	@Test
+	public void testPreAggRowsOneAndTwo() {
+		testPreAggRowsRange(1, 3);
+	}
+
+	@Test
+	public void testPreAggRowsOneToFour() {
+		testPreAggRowsRange(1, 4);
+	}
+
+	@Test
+	public void testPreAggRowsThreeToFive() {
+		testPreAggRowsRange(3, 5);
+	}
+
+	public void testPreAggRowsRange(int rl, int ru) {
+		try {
+			int nVal = m.getUnique();
+			double[] pre = new double[nVal * (ru - rl)];
+			m.preAggregateDense(mb, pre, rl, ru, 0, size);
+			compareRes(preRef, pre, rl, ru);
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			fail(e.toString());
+		}
+	}
+
+	@Test
+	public void testPreAggRowsZeroAndOneCols() {
+		testPreAggRowsColsRange(0, 2, 1, size - 1);
+	}
+
+	@Test
+	public void testPreAggRowsOneAndTwoCols() {
+		testPreAggRowsColsRange(1, 3, size / 2, size - 3);
+	}
+
+	@Test
+	public void testPreAggRowsOneToFourCols() {
+		testPreAggRowsColsRange(1, 4, 2, size / 2);
+	}
+
+	@Test
+	public void testPreAggRowsThreeToFiveCols() {
+		testPreAggRowsColsRange(3, 5, size - 2, size - 1);
+	}
+
+	public void testPreAggRowsColsRange(int rl, int ru, int cl, int cu) {
+		try {
+			int nVal = m.getUnique();
+			double[] pre = new double[nVal * (ru - rl)];
+			m.preAggregateDense(mb, pre, rl, ru, 0, cl);
+			m.preAggregateDense(mb, pre, rl, ru, cl, cu);
+			m.preAggregateDense(mb, pre, rl, ru, cu, size);
+			compareRes(preRef, pre, rl, ru);
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			fail(e.toString());
+		}
+	}
+
+	@Test
+	public void testPreAggregateDenseSingleRowWithIndexes() {
+		switch(type) {
+			case BIT:
+			case INT:
+				return;
+			default:
+				try {
+					final int size = m.size();
+					double[] pre = new double[m.getUnique()];
+					m.preAggregateDense(mb, pre, 0, 1, 0, size, o);
+					compareRes(preRef, pre, 0);
+				}
+				catch(Exception e) {
+					e.printStackTrace();
+					fail(e.toString());
+				}
+		}
+	}
+
+	@Test
+	public void testPreAggregateSparseSingleRowWithIndexes() {
+		switch(type) {
+			case INT:
+				return;
+			default:
+				try {
+					if(!sb.isInSparseFormat())
+						return;
+
+					double[] pre = new double[m.getUnique()];
+					m.preAggregateSparse(sb.getSparseBlock(), pre, 0, 1, o);
+					// compareRes(preRef, pre, 0);
+				}
+				catch(Exception e) {
+					e.printStackTrace();
+					fail(e.toString());
+				}
+		}
+	}
+
+	@Test(expected = NotImplementedException.class)
+	public void testPreAggregateDenseSingleRowWithIndexesExceptionExpected() {
+		switch(type) {
+			case INT:
+				m.preAggregateDense(mb, null, 0, 1, 0, size, o);
+			default:
+				throw new NotImplementedException();
+		}
+	}
+
+	@Test(expected = NotImplementedException.class)
+	public void testPreAggregateSparseSingleRowWithIndexesExceptionExpected() {
+		switch(type) {
+			case INT:
+				m.preAggregateSparse(null, null, 0, 1, o);
+			default:
+				throw new NotImplementedException();
+		}
+	}
+
+	private void compareRes(double[] expectedFull, double[] actual, int row) {
+		String error = "\nNot equal elements with " + type + "  " + m.getUnique();
+		int nVal = m.getUnique();
+		for(int offE = row * nVal, offA = 0; offA < nVal; offE++, offA++)
+			assertEquals(error, expectedFull[offE], actual[offA], 0.0001);
+
+	}
+
+	private void compareRes(double[] expectedFull, double[] actual, int rl, int ru) {
+		int nVal = m.getUnique();
+		for(int i = rl, offA = 0; i < ru; i++)
+			for(int offE = i * nVal; offE < nVal * (i + 1); offE++, offA++)
+				assertEquals(expectedFull[offE], actual[offA], 0.0001);
+	}
+
+	private static class OneOffset extends OffsetByte {
+		private static final long serialVersionUID = 1910028460503867232L;
+
+		private OneOffset(byte[] offsets, int offsetToFirst, int offsetToLast) {
+			super(offsets, offsetToFirst, offsetToLast);
+		}
+
+		protected static OneOffset create(int length) {
+			int offsetToFirst = 0;
+			int offsetToLast = length - 1;
+			byte[] offsets = new byte[length - 1];
+			for(int i = 0; i < offsets.length; i++)
+				offsets[i] = 1;
+			return new OneOffset(offsets, offsetToFirst, offsetToLast);
+		}
 	}
 }

@@ -1565,21 +1565,32 @@ public class BuiltinFunctionExpression extends DataIdentifier
 			break;
 
 		case MAP:
-			checkNumParameters(2);
+			checkNumParameters(getThirdExpr() != null ? 3 : 2);
 			checkMatrixFrameParam(getFirstExpr());
 			checkScalarParam(getSecondExpr());
+			if(getThirdExpr() != null)
+				checkScalarParam(getThirdExpr()); // margin
 			output.setDataType(DataType.FRAME);
 			if(_args[1].getText().contains("jaccardSim")) {
 				output.setDimensions(id.getDim1(), id.getDim1());
 				output.setValueType(ValueType.FP64);
 			}
 			else {
-				output.setDimensions(id.getDim1(), 1);
+				output.setDimensions(id.getDim1(), id.getDim2());
 				output.setValueType(ValueType.STRING);
 			}
-			output.setBlocksize (id.getBlocksize());
-
 			break;
+		case LOCAL:
+			if(OptimizerUtils.ALLOW_SCRIPT_LEVEL_LOCAL_COMMAND){
+				checkNumParameters(1);
+				checkMatrixParam(getFirstExpr());
+				output.setDataType(DataType.MATRIX);
+				output.setDimensions(id.getDim1(), id.getDim2());
+				output.setBlocksize (id.getBlocksize());
+				output.setValueType(id.getValueType());
+			}
+			else 
+				raiseValidateError("Local instruction not allowed in dml script");
 		case COMPRESS:
 		case DECOMPRESS:
 			if(OptimizerUtils.ALLOW_SCRIPT_LEVEL_COMPRESS_COMMAND){
@@ -1591,8 +1602,7 @@ public class BuiltinFunctionExpression extends DataIdentifier
 				output.setValueType(id.getValueType());
 			}
 			else
-				raiseValidateError("Compress instruction not allowed in dml script");
-			
+				raiseValidateError("Compress/DeCompress instruction not allowed in dml script");
 			break;
 		default:
 			if( isMathFunction() ) {

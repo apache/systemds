@@ -20,6 +20,8 @@
 package org.apache.sysds.hops.rewrite;
 
 import org.apache.commons.lang.ArrayUtils;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.ExecMode;
@@ -56,6 +58,7 @@ import org.apache.sysds.hops.ParameterizedBuiltinOp;
 import org.apache.sysds.hops.ReorgOp;
 import org.apache.sysds.hops.TernaryOp;
 import org.apache.sysds.hops.UnaryOp;
+import org.apache.sysds.parser.DMLProgram;
 import org.apache.sysds.parser.DataExpression;
 import org.apache.sysds.parser.DataIdentifier;
 import org.apache.sysds.parser.ForStatement;
@@ -86,8 +89,8 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 
-public class HopRewriteUtils 
-{
+public class HopRewriteUtils {
+	private static final Log LOG = LogFactory.getLog(HopRewriteUtils.class.getName());
 
 	public static boolean isValueTypeCast( OpOp1 op ) {
 		return op == OpOp1.CAST_AS_BOOLEAN
@@ -1622,6 +1625,26 @@ public class HopRewriteUtils
 			&& pop.getParameterHop("agg") instanceof LiteralOp
 			&& (pop.getParameterHop("val") == null 
 			 || pop.getParameterHop("val") instanceof LiteralOp);
+	}
+	
+	public static boolean knownParamservFunctions(Hop hop, DMLProgram prog) {
+		if( !knownParamservFunctions(hop) )
+			return false;
+		try {
+			ParameterizedBuiltinOp pop = (ParameterizedBuiltinOp) hop;
+			String supd = ((LiteralOp)pop.getParameterHop("upd")).getStringValue();
+			String sagg = ((LiteralOp)pop.getParameterHop("agg")).getStringValue();
+			//if functions not existing, let runtime handle it consistently
+			return prog.getFunctionStatementBlock(supd) != null
+				&& prog.getFunctionStatementBlock(sagg) != null;
+		}
+		catch(Exception ex) {
+			// If the function keys are incorrect this exception is caught for robustness in error messages for users.
+			// Intensionally only catching the exception!
+			// For debugging if for some reason the error we encountered was something else we LOG the error.
+			LOG.error(ex);
+			return false;
+		}
 	}
 
 	public static void setUnoptimizedFunctionCalls(StatementBlock sb) {

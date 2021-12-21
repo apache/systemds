@@ -80,7 +80,19 @@ public class Dictionary extends ADictionary {
 	}
 
 	@Override
-	public double[] aggregateTuples(Builtin fn, final int nCol) {
+	public double aggregate(double init, Builtin fn, double[] reference) {
+		final int nCol = reference.length;
+		double ret = init;
+		for(int i = 0; i < _values.length; i++)
+			ret = fn.execute(ret, _values[i] + reference[i % nCol]);
+
+		for(int i = 0; i < nCol; i++)
+			ret = fn.execute(ret, reference[i]);
+		return ret;
+	}
+
+	@Override
+	public double[] aggregateRows(Builtin fn, int nCol) {
 		if(nCol == 1)
 			return _values;
 		final int nRows = _values.length / nCol;
@@ -95,8 +107,47 @@ public class Dictionary extends ADictionary {
 	}
 
 	@Override
+	public double[] aggregateRows(Builtin fn, double[] reference) {
+		final int nCol = reference.length;
+		final int nRows = _values.length / nCol;
+		double[] res = new double[nRows + 1];
+		int off = 0;
+		for(int i = 0; i < nRows; i++) {
+			res[i] = _values[off++] + reference[0];
+			for(int j = 1; j < nCol; j++)
+				res[i] = fn.execute(res[i], _values[off++] + reference[j]);
+		}
+		res[nRows] = reference[0];
+		for(int i = 0; i < nCol; i++)
+			res[nRows] = fn.execute(res[nRows], reference[i]);
+		return res;
+	}
+
+	@Override
+	public Dictionary applyScalarOp(ScalarOperator op) {
+		final double[] retV = new double[_values.length];
+		for(int i = 0; i < _values.length; i++)
+			retV[i] = op.executeScalar(_values[i]);
+		return new Dictionary(retV);
+	}
+
+	@Override
+	public Dictionary applyScalarOp(ScalarOperator op, double[] reference, double[] newReference) {
+		final double[] retV = new double[_values.length];
+		final int nCol = reference.length;
+		final int nRow = _values.length / nCol;
+		int off = 0;
+		for(int i = 0; i < nRow; i++) {
+			for(int j = 0; j < nCol; j++) {
+				retV[off] = op.executeScalar(_values[off] + reference[j]) - newReference[j];
+				off++;
+			}
+		}
+		return new Dictionary(retV);
+	}
+
+	@Override
 	public Dictionary inplaceScalarOp(ScalarOperator op) {
-		// in-place modification of the dictionary
 		int len = size();
 		for(int i = 0; i < len; i++)
 			_values[i] = op.executeScalar(_values[i]);
@@ -126,6 +177,23 @@ public class Dictionary extends ADictionary {
 	}
 
 	@Override
+	public Dictionary binOpRight(BinaryOperator op, double[] v, int[] colIndexes, double[] reference,
+		double[] newReference) {
+		final ValueFunction fn = op.fn;
+		final double[] retV = new double[_values.length];
+		final int nCol = reference.length;
+		final int nRow = _values.length / nCol;
+		int off = 0;
+		for(int i = 0; i < nRow; i++) {
+			for(int j = 0; j < nCol; j++) {
+				retV[off] = fn.execute(_values[off] + reference[j], v[colIndexes[j]]) - newReference[j];
+				off++;
+			}
+		}
+		return new Dictionary(retV);
+	}
+
+	@Override
 	public final Dictionary binOpLeft(BinaryOperator op, double[] v, int[] colIndexes) {
 		final ValueFunction fn = op.fn;
 		final double[] retVals = new double[_values.length];
@@ -137,8 +205,25 @@ public class Dictionary extends ADictionary {
 	}
 
 	@Override
+	public Dictionary binOpLeft(BinaryOperator op, double[] v, int[] colIndexes, double[] reference,
+		double[] newReference) {
+		final ValueFunction fn = op.fn;
+		final double[] retV = new double[_values.length];
+		final int nCol = reference.length;
+		final int nRow = _values.length / nCol;
+		int off = 0;
+		for(int i = 0; i < nRow; i++) {
+			for(int j = 0; j < nCol; j++) {
+				retV[off] = fn.execute(v[colIndexes[j]], _values[off] + reference[j]) - newReference[j];
+				off++;
+			}
+		}
+		return new Dictionary(retV);
+	}
+
+	@Override
 	public Dictionary applyBinaryRowOpRightAppendNewEntry(BinaryOperator op, double[] v, int[] colIndexes) {
-		ValueFunction fn = op.fn;
+		final ValueFunction fn = op.fn;
 		final int len = size();
 		final int lenV = colIndexes.length;
 		final double[] values = new double[len + lenV];
@@ -152,7 +237,7 @@ public class Dictionary extends ADictionary {
 
 	@Override
 	public final Dictionary applyBinaryRowOpLeftAppendNewEntry(BinaryOperator op, double[] v, int[] colIndexes) {
-		ValueFunction fn = op.fn;
+		final ValueFunction fn = op.fn;
 		final int len = size();
 		final int lenV = colIndexes.length;
 		final double[] values = new double[len + lenV];
@@ -207,34 +292,87 @@ public class Dictionary extends ADictionary {
 	}
 
 	@Override
-	public double[] sumAllRowsToDouble(boolean square, int nrColumns) {
-		if(nrColumns == 1 && !square)
+	public double[] sumAllRowsToDouble(int nrColumns) {
+		if(nrColumns == 1)
 			return getValues(); // shallow copy of values
 
 		// pre-aggregate value tuple
 		final int numVals = getNumberOfValues(nrColumns);
 		double[] ret = new double[numVals];
-		for(int k = 0; k < numVals; k++) {
-			ret[k] = sumRow(k, square, nrColumns);
-		}
+		for(int k = 0; k < numVals; k++)
+			ret[k] = sumRow(k, nrColumns);
 
 		return ret;
 	}
 
 	@Override
-	public double sumRow(int k, boolean square, int nrColumns) {
+	public double[] sumAllRowsToDouble(double[] reference){
+		final int nCol = reference.length;
+		final int numVals = getNumberOfValues(nCol);
+		double[] ret = new double[numVals + 1];
+		for(int k = 0; k < numVals; k++)
+			ret[k] = sumRow(k, nCol, reference);
+		for(int i = 0; i < nCol; i++)
+			ret[numVals] += reference[i];
+		return ret;
+	}
 
-		int valOff = k * nrColumns;
+	@Override
+	public double[] sumAllRowsToDoubleSq(int nrColumns) {
+		// pre-aggregate value tuple
+		final int numVals = getNumberOfValues(nrColumns);
+		double[] ret = new double[numVals];
+		for(int k = 0; k < numVals; k++)
+			ret[k] = sumRowSq(k, nrColumns);
+
+		return ret;
+	}
+
+	@Override
+	public double[] sumAllRowsToDoubleSq(double[] reference) {
+		final int nCol = reference.length;
+		final int numVals = getNumberOfValues(nCol);
+		double[] ret = new double[numVals + 1];
+		for(int k = 0; k < numVals; k++)
+			ret[k] = sumRowSq(k, nCol, reference);
+		for(int i = 0; i < nCol; i++)
+			ret[numVals] += reference[i] * reference[i];
+		return ret;
+	}
+
+	@Override
+	public double sumRow(int k, int nrColumns) {
+		final int valOff = k * nrColumns;
 		double res = 0.0;
-		if(!square) {
-			for(int i = 0; i < nrColumns; i++) {
-				res += _values[valOff + i];
-			}
-		}
-		else {
-			// kSquare
-			for(int i = 0; i < nrColumns; i++)
-				res += _values[valOff + i] * _values[valOff + i];
+		for(int i = 0; i < nrColumns; i++)
+			res += _values[valOff + i];
+		return res;
+	}
+
+	public double sumRow(int k, int nrColumns, double[] reference) {
+		final int valOff = k * nrColumns;
+		double res = 0.0;
+		for(int i = 0; i < nrColumns; i++)
+			res += _values[valOff + i] + reference[i];
+		return res;
+	}
+
+	@Override
+	public double sumRowSq(int k, int nrColumns) {
+		final int valOff = k * nrColumns;
+		double res = 0.0;
+		for(int i = 0; i < nrColumns; i++)
+			res += _values[valOff + i] * _values[valOff + i];
+		return res;
+	}
+
+	@Override
+	public double sumRowSq(int k, int nrColumns, double[] reference) {
+		final int valOff = k * nrColumns;
+		double res = 0.0;
+		for(int i = 0; i < nrColumns; i++) {
+			final double v = _values[valOff + i] + reference[i];
+			res += v * v;
 		}
 		return res;
 	}
@@ -252,41 +390,67 @@ public class Dictionary extends ADictionary {
 	}
 
 	@Override
-	public void colSum(double[] c, int[] counts, int[] colIndexes, boolean square) {
-		for(int k = 0; k < _values.length / colIndexes.length; k++) {
+	public void colSum(double[] c, int[] counts, int[] colIndexes) {
+		final int nCol = colIndexes.length;
+		for(int k = 0; k < _values.length / nCol; k++) {
 			final int cntk = counts[k];
-			for(int j = 0; j < colIndexes.length; j++) {
-				double v = _values[k * colIndexes.length + j];
-				if(square)
-					c[colIndexes[j]] += v * v * cntk;
-				else
-					c[colIndexes[j]] += v * cntk;
-			}
+			final int off = k * nCol;
+			for(int j = 0; j < nCol; j++)
+				c[colIndexes[j]] += _values[off + j] * cntk;
 		}
-
 	}
 
 	@Override
-	public double sum(int[] counts, int ncol) {
+	public void colSumSq(double[] c, int[] counts, int[] colIndexes) {
+		final int nCol = colIndexes.length;
+		final int nRow = _values.length / nCol;
+		int off = 0;
+		for(int k = 0; k < nRow; k++) {
+			final int cntk = counts[k];
+			for(int j = 0; j < nCol; j++) {
+				final double v = _values[off++];
+				c[colIndexes[j]] += v * v * cntk;
+			}
+		}
+	}
+
+	@Override
+	public void colSumSq(double[] c, int[] counts, int[] colIndexes, double[] reference) {
+		final int nCol = colIndexes.length;
+		final int nRow = _values.length / nCol;
+		int off = 0;
+		for(int k = 0; k < nRow; k++) {
+			final int cntk = counts[k];
+			for(int j = 0; j < nCol; j++) {
+				final double v = _values[off++] + reference[j];
+				c[colIndexes[j]] += v * v * cntk;
+			}
+		}
+		for(int i = 0; i < nCol; i++)
+			c[colIndexes[i]] += reference[i] * reference[i] * counts[nRow];
+	}
+
+	@Override
+	public double sum(int[] counts, int nCol) {
 		double out = 0;
 		int valOff = 0;
-		for(int k = 0; k < _values.length / ncol; k++) {
+		for(int k = 0; k < _values.length / nCol; k++) {
 			int countK = counts[k];
-			for(int j = 0; j < ncol; j++) {
-				out += getValue(valOff++) * countK;
+			for(int j = 0; j < nCol; j++) {
+				out += _values[valOff++] * countK;
 			}
 		}
 		return out;
 	}
 
 	@Override
-	public double sumsq(int[] counts, int ncol) {
+	public double sumSq(int[] counts, int nCol) {
 		double out = 0;
 		int valOff = 0;
-		for(int k = 0; k < _values.length / ncol; k++) {
-			int countK = counts[k];
-			for(int j = 0; j < ncol; j++) {
-				double val = getValue(valOff++);
+		for(int k = 0; k < _values.length / nCol; k++) {
+			final int countK = counts[k];
+			for(int j = 0; j < nCol; j++) {
+				final double val = _values[valOff++];
 				out += val * val * countK;
 			}
 		}
@@ -294,10 +458,29 @@ public class Dictionary extends ADictionary {
 	}
 
 	@Override
+	public double sumSq(int[] counts, double[] reference) {
+		final int nCol = reference.length;
+		final int nRow = _values.length / nCol;
+		double out = 0;
+		int valOff = 0;
+		for(int k = 0; k < nRow; k++) {
+			final int countK = counts[k];
+			for(int j = 0; j < nCol; j++) {
+				final double val = _values[valOff++] + reference[j];
+				out += val * val * countK;
+			}
+		}
+		for(int i = 0; i < nCol; i++)
+			out += reference[i] * reference[i] * counts[nRow];
+
+		return out;
+	}
+
+	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
 
-		sb.append("Dictionary:");
+		sb.append("Dictionary : ");
 		sb.append(Arrays.toString(_values));
 		return sb.toString();
 	}
@@ -384,6 +567,15 @@ public class Dictionary extends ADictionary {
 	}
 
 	@Override
+	public boolean containsValue(double pattern, double[] reference) {
+		final int nCol = reference.length;
+		for(int i = 0; i < _values.length; i++)
+			if(_values[i] + reference[i % nCol] == pattern)
+				return true;
+		return false;
+	}
+
+	@Override
 	public long getNumberNonZeros(int[] counts, int nCol) {
 		long nnz = 0;
 		final int nRow = _values.length / nCol;
@@ -396,6 +588,27 @@ public class Dictionary extends ADictionary {
 			}
 			nnz += rowCount * counts[i];
 		}
+		return nnz;
+	}
+
+	@Override
+	public long getNumberNonZeros(int[] counts, double[] reference, int nRows) {
+		long nnz = 0;
+		final int nCol = reference.length;
+		final int nRow = _values.length / nCol;
+		for(int i = 0; i < nRow; i++) {
+			long rowCount = 0;
+			final int off = i * nCol;
+			for(int j = off, jj = 0; j < off + nCol; j++, jj++) {
+				if(_values[j] + reference[jj] != 0)
+					rowCount++;
+			}
+			nnz += rowCount * counts[i];
+		}
+		for(int i = 0; i < nCol; i++)
+			if(reference[i] != 0)
+				nnz += counts[nRow];
+
 		return nnz;
 	}
 
@@ -432,10 +645,10 @@ public class Dictionary extends ADictionary {
 
 	@Override
 	public ADictionary subtractTuple(double[] tuple) {
-		double[] newValues = new double[_values.length];
-		for(int i = 0; i < _values.length; i++) {
+		double[] newValues = new double[_values.length - tuple.length];
+		for(int i = 0; i < _values.length- tuple.length; i++)
 			newValues[i] = _values[i] - tuple[i % tuple.length];
-		}
+		
 		return new Dictionary(newValues);
 	}
 
@@ -446,12 +659,22 @@ public class Dictionary extends ADictionary {
 
 	@Override
 	public void aggregateCols(double[] c, Builtin fn, int[] colIndexes) {
-		int ncol = colIndexes.length;
-		int vlen = size() / ncol;
-		for(int k = 0; k < vlen; k++)
-			for(int j = 0, valOff = k * ncol; j < ncol; j++)
-				c[colIndexes[j]] = fn.execute(c[colIndexes[j]], getValue(valOff + j));
+		final int nCol = colIndexes.length;
+		final int rlen = _values.length / nCol;
+		for(int k = 0; k < rlen; k++)
+			for(int j = 0, valOff = k * nCol; j < nCol; j++)
+				c[colIndexes[j]] = fn.execute(c[colIndexes[j]], _values[valOff + j]);
+	}
 
+	@Override
+	public void aggregateCols(double[] c, Builtin fn, int[] colIndexes, double[] reference) {
+		final int nCol = reference.length;
+		final int rlen = _values.length / nCol;
+		for(int k = 0; k < rlen; k++)
+			for(int j = 0, valOff = k * nCol; j < nCol; j++)
+				c[colIndexes[j]] = fn.execute(c[colIndexes[j]], _values[valOff + j] + reference[j]);
+		for(int i = 0; i < nCol; i++)
+			c[colIndexes[i]] = fn.execute(c[colIndexes[i]], reference[i]);
 	}
 
 	@Override
@@ -488,10 +711,23 @@ public class Dictionary extends ADictionary {
 		double[] retV = new double[_values.length];
 		for(int i = 0; i < _values.length; i++) {
 			final double v = _values[i];
-			if(v == pattern)
-				retV[i] = replace;
-			else
-				retV[i] = v;
+			retV[i] = v == pattern ? replace : v;
+		}
+		return new Dictionary(retV);
+	}
+
+	@Override
+	public ADictionary replace(double pattern, double replace, double[] reference) {
+		final double[] retV = new double[_values.length];
+		final int nCol = reference.length;
+		final int nRow = _values.length / nCol;
+		int off = 0;
+		for(int i = 0; i < nRow; i++) {
+			for(int j = 0; j < nCol; j++) {
+				final double v = _values[off];
+				retV[off++] = v + reference[j] == pattern ? replace - reference[j] : v;
+
+			}
 		}
 		return new Dictionary(retV);
 	}

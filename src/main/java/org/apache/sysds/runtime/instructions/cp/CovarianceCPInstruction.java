@@ -19,8 +19,6 @@
 
 package org.apache.sysds.runtime.instructions.cp;
 
-import org.apache.sysds.common.Types.DataType;
-import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.functionobjects.COV;
@@ -30,45 +28,30 @@ import org.apache.sysds.runtime.matrix.operators.COVOperator;
 import org.apache.sysds.runtime.matrix.operators.Operator;
 
 public class CovarianceCPInstruction extends BinaryCPInstruction {
-
-	private CovarianceCPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand out, String opcode,
-			String istr) {
-		super(CPType.AggregateBinary, op, in1, in2, out, opcode, istr);
-	}
-
-	private CovarianceCPInstruction(Operator op, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out,
-			String opcode, String istr) {
+	
+	private CovarianceCPInstruction(Operator op, CPOperand in1,
+		CPOperand in2, CPOperand in3, CPOperand out, String opcode, String istr)
+	{
 		super(CPType.AggregateBinary, op, in1, in2, in3, out, opcode, istr);
 	}
 
 	public static CovarianceCPInstruction parseInstruction( String str )
 	{
-		CPOperand in1 = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
-		CPOperand in2 = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
-		CPOperand in3 = null;
-		CPOperand out = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
-
 		String[] parts = InstructionUtils.getInstructionPartsWithValueType(str);
 		String opcode = parts[0];
 
-		if( !opcode.equalsIgnoreCase("cov") ) {
+		if( !opcode.equalsIgnoreCase("cov") )
 			throw new DMLRuntimeException("CovarianceCPInstruction.parseInstruction():: Unknown opcode " + opcode);
-		}
 		
-		COVOperator cov = new COVOperator(COV.getCOMFnObject());
-		if ( parts.length == 4 ) {
-			// CP.cov.mVar0.mVar1.mVar2
-			parseBinaryInstruction(str, in1, in2, out);
-			return new CovarianceCPInstruction(cov, in1, in2, out, opcode, str);
-		} else if ( parts.length == 5 ) {
-			// CP.cov.mVar0.mVar1.mVar2.mVar3
-			in3 = new CPOperand("", ValueType.UNKNOWN, DataType.UNKNOWN);
-			parseBinaryInstruction(str, in1, in2, in3, out);
-			return new CovarianceCPInstruction(cov, in1, in2, in3, out, opcode, str);
-		}
-		else {
-			throw new DMLRuntimeException("Invalid number of arguments in Instruction: " + str);
-		}
+		InstructionUtils.checkNumFields(parts, 4, 5); //w/o opcode
+		CPOperand in1 = new CPOperand(parts[1]);
+		CPOperand in2 = new CPOperand(parts[2]);
+		CPOperand in3 = (parts.length==5) ? null : new CPOperand(parts[3]);
+		CPOperand out = new CPOperand(parts[parts.length-2]);
+		int numThreads = Integer.parseInt(parts[parts.length-1]);
+		
+		COVOperator cov = new COVOperator(COV.getCOMFnObject(), numThreads);
+		return new CovarianceCPInstruction(cov, in1, in2, in3, out, opcode, str);
 	}
 	
 	@Override
@@ -78,7 +61,7 @@ public class CovarianceCPInstruction extends BinaryCPInstruction {
 		MatrixBlock matBlock2 = ec.getMatrixInput(input2.getName());
 		String output_name = output.getName(); 
 		COVOperator cov_op = (COVOperator)_optr;
-		CM_COV_Object covobj = new CM_COV_Object();
+		CM_COV_Object covobj = null;
 		
 		if ( input3 == null ) {
 			// Unweighted: cov.mvar0.mvar1.out

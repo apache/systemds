@@ -20,6 +20,7 @@
 package org.apache.sysds.lops;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.ValueType;
@@ -115,6 +116,10 @@ public abstract class Lop
 	 * Privacy Constraint
 	 */
 	protected PrivacyConstraint privacyConstraint;
+
+	protected List<Lop> prefetchLops;
+
+	protected boolean activatePrefetch;
 
 	/**
 	 * Enum defining if the output of the operation should be forced federated, forced local or neither.
@@ -316,8 +321,24 @@ public abstract class Lop
 		return privacyConstraint;
 	}
 
+	public void setPrefetchLops(List<Lop> prefetchLops){
+		this.prefetchLops = prefetchLops;
+	}
+
+	public void activatePrefetch(){
+		activatePrefetch = true;
+	}
+
+	public boolean prefetchActivated(){
+		return activatePrefetch;
+	}
+
 	public void setFederatedOutput(FederatedOutput fedOutput){
 		_fedOutput = fedOutput;
+	}
+
+	public FederatedOutput getFederatedOutput(){
+		return _fedOutput;
 	}
 	
 	public void setConsumerCount(int cc) {

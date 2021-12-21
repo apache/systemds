@@ -162,7 +162,7 @@ public class FederatedMultiplyPlanningTest extends AutomatedTestBase {
 	}
 
 	private void writeInputMatrices(String testName){
-		if ( testName.equals(TEST_NAME_5) || testName.equals(TEST_NAME_8) ){
+		if ( testName.equals(TEST_NAME_5) ){
 			writeColStandardMatrix("X1", 42);
 			writeColStandardMatrix("X2", 1340);
 			writeColStandardMatrix("Y1", 44, null);
@@ -173,6 +173,14 @@ public class FederatedMultiplyPlanningTest extends AutomatedTestBase {
 			writeColStandardMatrix("X2", 1340);
 			writeRowFederatedVector("Y1", 44);
 			writeRowFederatedVector("Y2", 21);
+		}
+		else if ( testName.equals(TEST_NAME_8) ){
+			writeColStandardMatrix("X1", 42, null);
+			writeColStandardMatrix("X2", 1340, null);
+			writeColStandardMatrix("Y1", 44, null);
+			writeColStandardMatrix("Y2", 21, null);
+			writeColStandardMatrix("W1", 76, null);
+			writeColStandardMatrix("W2", 11, null);
 		}
 		else {
 			writeStandardMatrix("X1", 42);
@@ -217,12 +225,7 @@ public class FederatedMultiplyPlanningTest extends AutomatedTestBase {
 			"X2=" + TestUtils.federatedAddress(port2, input("X2")),
 			"Y1=" + TestUtils.federatedAddress(port1, input("Y1")),
 			"Y2=" + TestUtils.federatedAddress(port2, input("Y2")), "r=" + rows, "c=" + cols, "Z=" + output("Z")};
-		if ( testName.equals(TEST_NAME_4) || testName.equals(TEST_NAME_5) || testName.equals(TEST_NAME_8) ){
-			programArgs = new String[] {"-stats","-explain", "-nvargs", "X1=" + TestUtils.federatedAddress(port1, input("X1")),
-				"X2=" + TestUtils.federatedAddress(port2, input("X2")),
-				"Y1=" + input("Y1"),
-				"Y2=" + input("Y2"), "r=" + rows, "c=" + cols, "Z=" + output("Z")};
-		}
+		rewriteRealProgramArgs(testName, port1, port2);
 		runTest(true, false, null, -1);
 
 		OptimizerUtils.FEDERATED_COMPILATION = false;
@@ -231,6 +234,7 @@ public class FederatedMultiplyPlanningTest extends AutomatedTestBase {
 		fullDMLScriptName = HOME + testName + "Reference.dml";
 		programArgs = new String[] {"-nvargs", "X1=" + input("X1"), "X2=" + input("X2"), "Y1=" + input("Y1"),
 			"Y2=" + input("Y2"), "Z=" + expected("Z")};
+		rewriteReferenceProgramArgs(testName);
 		runTest(true, false, null, -1);
 
 		// compare via files
@@ -243,6 +247,30 @@ public class FederatedMultiplyPlanningTest extends AutomatedTestBase {
 
 		rtplatform = platformOld;
 		DMLScript.USE_LOCAL_SPARK_CONFIG = sparkConfigOld;
+	}
+
+	private void rewriteRealProgramArgs(String testName, int port1, int port2){
+		if ( testName.equals(TEST_NAME_4) || testName.equals(TEST_NAME_5) ){
+			programArgs = new String[] {"-stats","-explain", "-nvargs", "X1=" + TestUtils.federatedAddress(port1, input("X1")),
+				"X2=" + TestUtils.federatedAddress(port2, input("X2")),
+				"Y1=" + input("Y1"),
+				"Y2=" + input("Y2"), "r=" + rows, "c=" + cols, "Z=" + output("Z")};
+		} else if ( testName.equals(TEST_NAME_8) ){
+			programArgs = new String[] {"-stats","-explain", "-nvargs", "X1=" + TestUtils.federatedAddress(port1, input("X1")),
+				"X2=" + TestUtils.federatedAddress(port2, input("X2")),
+				"Y1=" + TestUtils.federatedAddress(port1, input("Y1")),
+				"Y2=" + TestUtils.federatedAddress(port2, input("Y2")),
+				"W1=" + input("W1"),
+				"W2=" + input("W2"),
+				"r=" + rows, "c=" + cols, "Z=" + output("Z")};
+		}
+	}
+
+	private void rewriteReferenceProgramArgs(String testName){
+		if ( testName.equals(TEST_NAME_8) ){
+			programArgs = new String[] {"-nvargs", "X1=" + input("X1"), "X2=" + input("X2"), "Y1=" + input("Y1"),
+				"Y2=" + input("Y2"), "W1=" + input("W1"), "W2=" + input("W2"), "Z=" + expected("Z")};
+		}
 	}
 }
 

@@ -23,6 +23,8 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
+import java.util.stream.Collectors;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -201,6 +203,10 @@ public abstract class Hop implements ParseInfo {
 	public void activatePrefetch(){
 		activatePrefetch = true;
 	}
+
+	public boolean prefetchActivated(){
+		return activatePrefetch;
+	}
 	
 	public void resetExecType()
 	{
@@ -366,6 +372,8 @@ public abstract class Hop implements ParseInfo {
 		//propagate federated output configuration to lops
 		if( isFederated() )
 			getLops().setFederatedOutput(_federatedOutput);
+		if ( prefetchActivated() )
+			getLops().activatePrefetch();
 		
 		//Step 1: construct reblock lop if required (output of hop)
 		constructAndSetReblockLopIfRequired();
@@ -884,8 +892,28 @@ public abstract class Hop implements ParseInfo {
 	 * Federated compilation is activated in OptimizerUtils.
 	 */
 	protected void updateETFed(){
-		if ( someInputFederated() || isFederatedDataOp() )
+		if ( (someInputFederated() && !(hasLocalOutput() && someInputPrefetch()) ) || isFederatedDataOp() )
 			_etype = ExecType.FED;
+	}
+
+	private boolean someInputPrefetch(){
+		return getInput().stream().anyMatch(Hop::prefetchActivated);
+	}
+
+	/**
+	 * Check if any input needs to be prefetched.
+	 * @return true if any input needs to be prefetched.
+	 */
+	public boolean needsPrefetch(){
+		return !isFederated() && someInputFederated();
+	}
+
+	/**
+	 * Get list of input which needs to be prefetched.
+	 * @return list of input which needs to be prefetched.
+	 */
+	public List<Hop> getPrefetchInput(){
+		return getInput().stream().filter(Hop::hasFederatedOutput).collect(Collectors.toList());
 	}
 
 	/**
@@ -1211,6 +1239,8 @@ public abstract class Hop implements ParseInfo {
 
 	public void setLops(Lop lops) {
 		_lops = lops;
+		if ( needsPrefetch() )
+			_lops.setPrefetchLops(getPrefetchInput().stream().map(Hop::getLops).collect(Collectors.toList()));
 	}
 
 	public boolean isVisited() {

@@ -63,6 +63,7 @@ import org.apache.sysds.runtime.instructions.SPInstructionParser;
 import org.apache.sysds.runtime.instructions.cp.CPInstruction;
 import org.apache.sysds.runtime.instructions.cp.CPInstruction.CPType;
 import org.apache.sysds.runtime.instructions.cp.VariableCPInstruction;
+import org.apache.sysds.runtime.instructions.fed.FEDInstruction;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 
 import java.util.ArrayList;
@@ -203,13 +204,35 @@ public class Dag<N extends Lop>
 		List<Lop> node_pf = OptimizerUtils.ASYNC_TRIGGER_RDD_OPERATIONS ? addPrefetchLop(node_v) : node_v;
 		List<Lop> node_bc = OptimizerUtils.ASYNC_TRIGGER_RDD_OPERATIONS ? addBroadcastLop(node_pf) : node_pf;
 		// TODO: Merge via a single traversal of the nodes
-		
+
+		prefetchFederated(node_bc);
+
 		// do greedy grouping of operations
 		ArrayList<Instruction> inst =
 			doPlainInstructionGen(sb, node_bc);
 		
 		// cleanup instruction (e.g., create packed rmvar instructions)
 		return cleanupInstructions(inst);
+	}
+
+	private boolean inputNeedsPrefetch(Lop input, Lop lop){
+		return input.prefetchActivated() && lop.getExecType() != ExecType.FED && input.getFederatedOutput() == FEDInstruction.FederatedOutput.FOUT;
+	}
+
+	private void addFedPrefetchLop(Lop input, Lop lop){
+		UnaryCP prefetch = new UnaryCP(input, OpOp1.PREFETCH, input.getDataType(), input.getValueType(), ExecType.CP);
+		prefetch.addOutput(lop);
+		lop.replaceInput(input, prefetch);
+		input.removeOutput(lop);
+	}
+
+	private void prefetchFederated(List<Lop> lops){
+		for ( Lop lop : lops ){
+			for ( Lop input : lop.getInputs() ){
+				if ( inputNeedsPrefetch(input, lop) )
+					addFedPrefetchLop(input, lop);
+			}
+		}
 	}
 	
 	private static List<Lop> doTopologicalSortTwoLevelOrder(List<Lop> v) {
@@ -251,7 +274,7 @@ public class Dag<N extends Lop>
 		}
 		return nodesWithPrefetch;
 	}
-	
+
 	private static List<Lop> addBroadcastLop(List<Lop> nodes) {
 		List<Lop> nodesWithBroadcast = new ArrayList<>();
 		

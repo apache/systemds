@@ -21,8 +21,11 @@
 
 X = federated(addresses=list($X1, $X2),
               ranges=list(list(0, 0), list($r, $c / 2), list(0, $c / 2), list($r, $c)))
-Y = cbind(read($Y1), read($Y2))
-Z1 = sum(Y)
-Z2 = Y %*% t(X)
-Z3 = Z1 * sum(Z2)
-write(Z3, $Z)
+Y = federated(addresses=list($Y1, $Y2),
+              ranges=list(list(0, 0), list($r, $c / 2), list(0, $c / 2), list($r, $c)))
+W = cbind(read($W1), read($W2))
+Z1 = Y
+Z2 = Z1 %*% t(X)
+Z3 = Z1 %*% t(W)
+Z4 = sum(Z3) * sum(Z2)
+write(Z4, $Z)

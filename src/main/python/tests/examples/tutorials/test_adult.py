@@ -27,7 +27,7 @@ from systemds.examples.tutorials.adult import DataManager
 from systemds.operator import Frame, Matrix, OperationNode
 from systemds.operator.algorithm import (confusionMatrix, kmeans, l2svm,
                                          multiLogReg, multiLogRegPredict,
-                                          scaleApply, split, winsorize)
+                                          scaleApply, split)
 from systemds.script_building import DMLScript
 
 

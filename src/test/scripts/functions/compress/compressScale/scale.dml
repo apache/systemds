@@ -24,7 +24,7 @@ A = round(A)
 for(i in 1:10)
     A = A * i
 
-[A,c,s] = scale(A,$center, $scale)
+[A,c,s] = scale(A, as.matrix(1), $center, $scale)
 print(sum(A))
 
 

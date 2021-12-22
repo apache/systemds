@@ -23,7 +23,7 @@ x = read($1)
 
 y = compress(x)
 
-z = scale(y,TRUE,TRUE)
+z = scale(y, as.matrix(1), TRUE,TRUE)
 
 print(sum(z))
 

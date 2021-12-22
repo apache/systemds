@@ -26,5 +26,5 @@ X = rand(rows=10, cols=10, seed=1)
 Z = f1::foo(X)
 print(toString(Z))
 
-Y = imputeByMean(X, matrix(1, 1, ncol(X)))
+Y = imputeByMean(X, as.matrix(1), matrix(1, 1, ncol(X)))
 print(toString(Y))

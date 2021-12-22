@@ -23,8 +23,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
-import java.util.stream.Collectors;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -95,6 +93,7 @@ public abstract class Hop implements ParseInfo {
 	 */
 	protected FederatedOutput _federatedOutput = FederatedOutput.NONE;
 	protected FederatedCost _federatedCost = new FederatedCost();
+
 	/**
 	 * Field defining if prefetch should be activated for operation.
 	 * When prefetch is activated, the output will be transferred from
@@ -204,6 +203,10 @@ public abstract class Hop implements ParseInfo {
 		activatePrefetch = true;
 	}
 
+	/**
+	 * Checks if prefetch is activated for this hop.
+	 * @return true if prefetch is activated
+	 */
 	public boolean prefetchActivated(){
 		return activatePrefetch;
 	}
@@ -896,24 +899,12 @@ public abstract class Hop implements ParseInfo {
 			_etype = ExecType.FED;
 	}
 
+	/**
+	 * Checks if some input to this hop has prefetch activated.
+	 * @return true if some input has prefetch activated
+	 */
 	private boolean someInputPrefetch(){
 		return getInput().stream().anyMatch(Hop::prefetchActivated);
-	}
-
-	/**
-	 * Check if any input needs to be prefetched.
-	 * @return true if any input needs to be prefetched.
-	 */
-	public boolean needsPrefetch(){
-		return !isFederated() && someInputFederated();
-	}
-
-	/**
-	 * Get list of input which needs to be prefetched.
-	 * @return list of input which needs to be prefetched.
-	 */
-	public List<Hop> getPrefetchInput(){
-		return getInput().stream().filter(Hop::hasFederatedOutput).collect(Collectors.toList());
 	}
 
 	/**
@@ -1239,8 +1230,6 @@ public abstract class Hop implements ParseInfo {
 
 	public void setLops(Lop lops) {
 		_lops = lops;
-		if ( needsPrefetch() )
-			_lops.setPrefetchLops(getPrefetchInput().stream().map(Hop::getLops).collect(Collectors.toList()));
 	}
 
 	public boolean isVisited() {

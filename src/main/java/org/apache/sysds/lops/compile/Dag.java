@@ -63,7 +63,6 @@ import org.apache.sysds.runtime.instructions.SPInstructionParser;
 import org.apache.sysds.runtime.instructions.cp.CPInstruction;
 import org.apache.sysds.runtime.instructions.cp.CPInstruction.CPType;
 import org.apache.sysds.runtime.instructions.cp.VariableCPInstruction;
-import org.apache.sysds.runtime.instructions.fed.FEDInstruction;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 
 import java.util.ArrayList;
@@ -215,10 +214,22 @@ public class Dag<N extends Lop>
 		return cleanupInstructions(inst);
 	}
 
+	/**
+	 * Checks if the given input needs to be prefetched before executing given lop.
+	 * @param input to check for prefetch
+	 * @param lop which possibly needs the input prefetched
+	 * @return true if given input needs to be prefetched before lop
+	 */
 	private boolean inputNeedsPrefetch(Lop input, Lop lop){
-		return input.prefetchActivated() && lop.getExecType() != ExecType.FED && input.getFederatedOutput() == FEDInstruction.FederatedOutput.FOUT;
+		return input.prefetchActivated() && lop.getExecType() != ExecType.FED
+			&& input.getFederatedOutput().isForcedFederated();
 	}
 
+	/**
+	 * Add prefetch lop between input and lop.
+	 * @param input to be prefetched
+	 * @param lop for which the given input needs to be prefetched
+	 */
 	private void addFedPrefetchLop(Lop input, Lop lop){
 		UnaryCP prefetch = new UnaryCP(input, OpOp1.PREFETCH, input.getDataType(), input.getValueType(), ExecType.CP);
 		prefetch.addOutput(lop);
@@ -226,6 +237,10 @@ public class Dag<N extends Lop>
 		input.removeOutput(lop);
 	}
 
+	/**
+	 * Add prefetch lops where needed.
+	 * @param lops for which prefetch lops could be added.
+	 */
 	private void prefetchFederated(List<Lop> lops){
 		for ( Lop lop : lops ){
 			for ( Lop input : lop.getInputs() ){

@@ -20,7 +20,6 @@
 package org.apache.sysds.lops;
 
 import java.util.ArrayList;
-import java.util.List;
 
 import org.apache.sysds.common.Types.DataType;
 import org.apache.sysds.common.Types.ValueType;
@@ -117,8 +116,12 @@ public abstract class Lop
 	 */
 	protected PrivacyConstraint privacyConstraint;
 
-	protected List<Lop> prefetchLops;
-
+	/**
+	 * Field defining if prefetch should be activated for operation.
+	 * When prefetch is activated, the output will be transferred from
+	 * remote federated sites to local before one of the subsequent
+	 * local operations.
+	 */
 	protected boolean activatePrefetch;
 
 	/**
@@ -319,10 +322,6 @@ public abstract class Lop
 
 	public PrivacyConstraint getPrivacyConstraint(){
 		return privacyConstraint;
-	}
-
-	public void setPrefetchLops(List<Lop> prefetchLops){
-		this.prefetchLops = prefetchLops;
 	}
 
 	public void activatePrefetch(){

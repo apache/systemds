@@ -39,7 +39,7 @@ PCA = function(Matrix[Double] A, Integer K = ncol(A), Integer center = 1, Intege
   D = ncol(A);
 
   # perform z-scoring (centering and scaling)
-  A = scale(A, center==1, scale==1);
+  A = scale(A, as.matrix(1), center==1, scale==1);
 
   # co-variance matrix
   mu = colSums(A)/N;

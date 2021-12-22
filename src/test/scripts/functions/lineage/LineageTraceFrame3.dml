@@ -24,7 +24,7 @@ X = as.matrix(F);
 num = matrix(0, 1, 5);
 for (i in 1:5) {
   k = i*.5;
-  o = outlierByIQR(X, k, 0, 100, FALSE);
+  o = outlierByIQR(X, as.matrix(1), k, 0, 100, FALSE);
   num[1,i] = nrow(X) - nrow(o);
 }
 

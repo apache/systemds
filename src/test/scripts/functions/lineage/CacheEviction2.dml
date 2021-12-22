@@ -35,7 +35,7 @@ while (iter < maxiter) {
   X = D[beg:end,]
 
   #reusable OP across epochs
-  X = scale(X, TRUE, TRUE);
+  X = scale(X, as.matrix(1), TRUE, TRUE);
   #pollute cache with not reusable OPs
   X = ((X + X) * i - X) / (i+1)
   X = ((X + X) * i - X) / (i+1)

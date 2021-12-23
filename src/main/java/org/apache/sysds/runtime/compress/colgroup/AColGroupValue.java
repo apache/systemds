@@ -36,9 +36,7 @@ import org.apache.sysds.runtime.compress.colgroup.dictionary.MatrixBlockDictiona
 import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.functionobjects.Builtin;
-import org.apache.sysds.runtime.matrix.data.LibMatrixMult;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
-import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
 
 /**
  * Base class for column groups encoded with value dictionary. This include column groups such as DDC OLE and RLE.
@@ -171,7 +169,7 @@ public abstract class AColGroupValue extends AColGroupCompressed implements Clon
 		double[] values);
 
 	@Override
-	public final int getNumValues() {
+	public int getNumValues() {
 		return _dict.getNumberOfValues(_colIndexes.length);
 	}
 
@@ -286,54 +284,19 @@ public abstract class AColGroupValue extends AColGroupCompressed implements Clon
 	}
 
 	@Override
-	protected final double computeMxx(double c, Builtin builtin) {
+	protected double computeMxx(double c, Builtin builtin) {
 		if(_zeros)
 			c = builtin.execute(c, 0);
 		return _dict.aggregate(c, builtin);
-
 	}
 
 	@Override
-	protected final void computeColMxx(double[] c, Builtin builtin) {
+	protected void computeColMxx(double[] c, Builtin builtin) {
 		if(_zeros)
 			for(int x = 0; x < _colIndexes.length; x++)
 				c[_colIndexes[x]] = builtin.execute(c[_colIndexes[x]], 0);
 
 		_dict.aggregateCols(c, builtin, _colIndexes);
-	}
-
-	/**
-	 * Method for use by subclasses. Applies a scalar operation to the value metadata stored in the dictionary.
-	 * 
-	 * @param op scalar operation to perform
-	 * @return transformed copy of value metadata for this column group
-	 */
-	protected final ADictionary applyScalarOp(ScalarOperator op) {
-		return _dict.clone().inplaceScalarOp(op);
-	}
-
-	/**
-	 * Method for use by subclasses. Applies a scalar operation to the value metadata stored in the dictionary. This
-	 * specific method is used in cases where an new entry is to be added in the dictionary.
-	 * 
-	 * Method should only be called if the newVal is not 0! Also the newVal should already have the operator applied.
-	 * 
-	 * @param op      The Operator to apply to the underlying data.
-	 * @param newVal  The new Value to append to the underlying data.
-	 * @param numCols The number of columns in the ColGroup, to specify how many copies of the newVal should be appended.
-	 * @return The new Dictionary containing the values.
-	 */
-	protected final ADictionary applyScalarOp(ScalarOperator op, double newVal, int numCols) {
-		return _dict.applyScalarOp(op, newVal, numCols);
-	}
-
-	protected static double[] allocDVector(int len, boolean reset) {
-		return new double[len];
-	}
-
-	protected static int[] allocIVector(int len, boolean reset) {
-		LOG.error("deprecated allocIVector");
-		return new int[len + 1];
 	}
 
 	@Override
@@ -362,16 +325,23 @@ public abstract class AColGroupValue extends AColGroupCompressed implements Clon
 	public abstract int[] getCounts(int[] out);
 
 	@Override
-	protected final void computeSum(double[] c, int nRows, boolean square) {
-		if(square)
-			c[0] += _dict.sumsq(getCounts(), _colIndexes.length);
-		else
-			c[0] += _dict.sum(getCounts(), _colIndexes.length);
+	protected void computeSum(double[] c, int nRows) {
+		c[0] += _dict.sum(getCounts(), _colIndexes.length);
 	}
 
 	@Override
-	protected final void computeColSums(double[] c, int nRows, boolean square) {
-		_dict.colSum(c, getCounts(), _colIndexes, square);
+	public void computeColSums(double[] c, int nRows) {
+		_dict.colSum(c, getCounts(), _colIndexes);
+	}
+
+	@Override
+	protected void computeSumSq(double[] c, int nRows) {
+		c[0] += _dict.sumSq(getCounts(), _colIndexes.length);
+	}
+
+	@Override
+	protected void computeColSumsSq(double[] c, int nRows) {
+		_dict.colSumSq(c, getCounts(), _colIndexes);
 	}
 
 	@Override
@@ -380,8 +350,28 @@ public abstract class AColGroupValue extends AColGroupCompressed implements Clon
 	}
 
 	@Override
-	protected void computeRowProduct(double[] c, int rl, int ru) {
+	protected void computeRowProduct(double[] c, int rl, int ru, double[] preAgg) {
 		throw new NotImplementedException();
+	}
+
+	@Override
+	protected double[] preAggSumRows(){
+		return _dict.sumAllRowsToDouble(_colIndexes.length);
+	}
+
+	@Override
+	protected double[] preAggSumSqRows(){
+		return _dict.sumAllRowsToDoubleSq(_colIndexes.length);
+	}
+
+	@Override
+	protected double[] preAggProductRows(){
+		throw new NotImplementedException();
+	}
+
+	@Override
+	protected double[] preAggBuiltinRows(Builtin builtin){
+		return _dict.aggregateRows(builtin, _colIndexes.length);
 	}
 
 	@Override
@@ -425,7 +415,7 @@ public abstract class AColGroupValue extends AColGroupCompressed implements Clon
 	}
 
 	@Override
-	protected final AColGroup sliceSingleColumn(int idx) {
+	protected AColGroup sliceSingleColumn(int idx) {
 		final AColGroupValue ret = (AColGroupValue) copy();
 		ret._colIndexes = new int[] {0};
 		if(_colIndexes.length == 1)
@@ -437,7 +427,7 @@ public abstract class AColGroupValue extends AColGroupCompressed implements Clon
 	}
 
 	@Override
-	protected final AColGroup sliceMultiColumns(int idStart, int idEnd, int[] outputCols) {
+	protected AColGroup sliceMultiColumns(int idStart, int idEnd, int[] outputCols) {
 		final AColGroupValue ret = (AColGroupValue) copy();
 		ret._dict = ret._dict.sliceOutColumnRange(idStart, idEnd, _colIndexes.length);
 		ret._colIndexes = outputCols;
@@ -445,63 +435,27 @@ public abstract class AColGroupValue extends AColGroupCompressed implements Clon
 	}
 
 	@Override
-	protected final void tsmm(double[] result, int numColumns, int nRows) {
+	protected void tsmm(double[] result, int numColumns, int nRows) {
 		final int[] counts = getCounts();
 		tsmm(result, numColumns, counts, _dict, _colIndexes);
 	}
 
 	@Override
-	public final boolean containsValue(double pattern) {
+	public boolean containsValue(double pattern) {
 		if(pattern == 0 && _zeros)
 			return true;
 		return _dict.containsValue(pattern);
 	}
 
 	@Override
-	public final long getNumberNonZeros(int nRows) {
+	public long getNumberNonZeros(int nRows) {
 		int[] counts = getCounts();
 		return _dict.getNumberNonZeros(counts, _colIndexes.length);
 	}
 
-	public final MatrixBlock leftMultByPreAggregateMatrix(MatrixBlock preAgg, MatrixBlock tmpRes) {
-		// Get dictionary.
-		MatrixBlock dictM = forceMatrixBlockDictionary().getMatrixBlock();
-		LibMatrixMult.matrixMult(preAgg, dictM, tmpRes);
-		return tmpRes;
-	}
-
-	private MatrixBlockDictionary forceMatrixBlockDictionary() {
+	public synchronized void forceMatrixBlockDictionary() {
 		if(!(_dict instanceof MatrixBlockDictionary))
 			_dict = _dict.getMBDict(_colIndexes.length);
-		return((MatrixBlockDictionary) _dict);
-	}
-
-	public final void addMatrixToResult(MatrixBlock tmp, MatrixBlock result, int rl, int ru) {
-		if(tmp.isEmpty())
-			return;
-		final double[] retV = result.getDenseBlockValues();
-		final int nColRet = result.getNumColumns();
-		if(tmp.isInSparseFormat()) {
-			final SparseBlock sb = tmp.getSparseBlock();
-			for(int row = rl, offT = 0; row < ru; row++, offT++) {
-				final int apos = sb.pos(offT);
-				final int alen = sb.size(offT);
-				final int[] aix = sb.indexes(offT);
-				final double[] avals = sb.values(offT);
-				final int offR = row * nColRet;
-				for(int i = apos; i < apos + alen; i++)
-					retV[offR + _colIndexes[aix[i]]] += avals[i];
-			}
-		}
-		else {
-			final double[] tmpV = tmp.getDenseBlockValues();
-			final int nCol = _colIndexes.length;
-			for(int row = rl, offT = 0; row < ru; row++, offT += nCol) {
-				final int offR = row * nColRet;
-				for(int col = 0; col < nCol; col++)
-					retV[offR + _colIndexes[col]] += tmpV[offT + col];
-			}
-		}
 	}
 
 	@Override
@@ -553,9 +507,8 @@ public abstract class AColGroupValue extends AColGroupCompressed implements Clon
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
-		sb.append(" Is Lossy: " + _dict.isLossy() + " num Rows: " + _numRows + " contain zero row:" + _zeros);
 		sb.append(super.toString());
-		sb.append(String.format("\n%15s ", "Values: " + _dict.getClass().getSimpleName()));
+		sb.append(String.format("\n%15s%s", "Values: " , _dict.getClass().getSimpleName()));
 		sb.append(_dict.getString(_colIndexes.length));
 		return sb.toString();
 	}

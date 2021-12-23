@@ -38,7 +38,7 @@ import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 
 public class TernaryFEDInstruction extends ComputationFEDInstruction {
 
-	private TernaryFEDInstruction(TernaryOperator op, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out,
+	protected TernaryFEDInstruction(TernaryOperator op, CPOperand in1, CPOperand in2, CPOperand in3, CPOperand out,
 		String opcode, String str, FederatedOutput fedOut) {
 		super(FEDInstruction.FEDType.Ternary, op, in1, in2, in3, out, opcode, str, fedOut);
 	}
@@ -50,9 +50,11 @@ public class TernaryFEDInstruction extends ComputationFEDInstruction {
 		CPOperand operand2 = new CPOperand(parts[2]);
 		CPOperand operand3 = new CPOperand(parts[3]);
 		CPOperand outOperand = new CPOperand(parts[4]);
-		int numThreads = parts.length>5 ? Integer.parseInt(parts[5]) : 1;
-		FederatedOutput fedOut = parts.length>7 ? FederatedOutput.valueOf(parts[6]) : FederatedOutput.NONE;
+		int numThreads = parts.length>5 & !opcode.contains("map") ? Integer.parseInt(parts[5]) : 1;
+		FederatedOutput fedOut = parts.length>7 && !opcode.contains("map") ? FederatedOutput.valueOf(parts[6]) : FederatedOutput.NONE;
 		TernaryOperator op = InstructionUtils.parseTernaryOperator(opcode, numThreads);
+		if( operand1.isFrame() && operand2.isScalar() || operand2.isFrame() && operand1.isScalar() )
+			return new TernaryFrameScalarFEDInstruction(op, operand1, operand2, operand3, outOperand, opcode, InstructionUtils.removeFEDOutputFlag(str), fedOut);
 		return new TernaryFEDInstruction(op, operand1, operand2, operand3, outOperand, opcode, str, fedOut);
 	}
 

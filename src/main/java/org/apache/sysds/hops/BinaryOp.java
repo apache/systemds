@@ -59,7 +59,7 @@ import org.apache.sysds.runtime.meta.MatrixCharacteristics;
  * 		Semantic: align indices (sort), then perform operation
  */
 
-public class BinaryOp extends MultiThreadedHop{
+public class BinaryOp extends MultiThreadedHop {
 	// private static final Log LOG =  LogFactory.getLog(BinaryOp.class.getName());
 
 	//we use the full remote memory budget (but reduced by sort buffer), 
@@ -179,7 +179,9 @@ public class BinaryOp extends MultiThreadedHop{
 	
 	@Override
 	public boolean isMultiThreadedOpType() {
-		return !getDataType().isScalar();
+		return !getDataType().isScalar()
+			|| getOp() == OpOp2.COV
+			|| getOp() == OpOp2.MOMENT;
 	}
 	
 	@Override
@@ -279,26 +281,26 @@ public class BinaryOp extends MultiThreadedHop{
 		setLops(pick);
 	}
 	
-	private void constructLopsCentralMoment(ExecType et) 
-	{
+	private void constructLopsCentralMoment(ExecType et) {
 		// The output data type is a SCALAR if central moment 
 		// gets computed in CP/SPARK, and it will be MATRIX otherwise.
 		DataType dt = DataType.SCALAR;
+		int k = OptimizerUtils.getConstrainedNumThreads(_maxNumThreads);
 		CentralMoment cm = new CentralMoment(
-				getInput().get(0).constructLops(), 
-				getInput().get(1).constructLops(),
-				dt, getValueType(), et);
-
+			getInput().get(0).constructLops(), 
+			getInput().get(1).constructLops(),
+			dt, getValueType(), k, et);
 		setLineNumbers(cm);
 		cm.getOutputParameters().setDimensions(0, 0, 0, -1);
 		setLops(cm);
 	}
 
 	private void constructLopsCovariance(ExecType et) {
+		int k = OptimizerUtils.getConstrainedNumThreads(_maxNumThreads);
 		CoVariance cov = new CoVariance(
-				getInput().get(0).constructLops(), 
-				getInput().get(1).constructLops(), 
-				getDataType(), getValueType(), et);
+			getInput().get(0).constructLops(), 
+			getInput().get(1).constructLops(), 
+			getDataType(), getValueType(), k, et);
 		cov.getOutputParameters().setDimensions(0, 0, 0, -1);
 		setLineNumbers(cov);
 		setLops(cov);
@@ -1073,9 +1075,6 @@ public class BinaryOp extends MultiThreadedHop{
 	{
 		if( !(that instanceof BinaryOp) )
 			return false;
-
-		if(op == OpOp2.MAP)
-			return false; // custom UDFs
 
 		BinaryOp that2 = (BinaryOp)that;
 		return (   op == that2.op

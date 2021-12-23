@@ -918,7 +918,7 @@ public class TestUtils
 				continue;
 			
 			if(sba.size(i) != sbe.size(i))
-				fail(message+"\nNumber of values are not equal in row: " + i);
+				fail(message+"\nNumber of values are not equal in row: " + i +"\nactual:"+ sba.get(i) +"\nexpected:"+ sbe.get(i));
 
 			final double[] e = sbe.values(i);
 			final double[] a = sba.values(i);

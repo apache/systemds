@@ -36,6 +36,6 @@ MX = t(MX);
 
 Z3 = (X * (V %*% t(U) - MX)) %*% U;
 
-Z = Z1 + Z2 + sum(Z3);
+Z = as.matrix(sum(Z1) - sum(Z2) + sum(Z3));
 
 write(Z, $out_Z);

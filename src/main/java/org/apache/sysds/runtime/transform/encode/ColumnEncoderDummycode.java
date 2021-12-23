@@ -32,6 +32,8 @@ import java.util.Set;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.controlprogram.caching.CacheBlock;
+import org.apache.sysds.runtime.data.SparseBlock;
+import org.apache.sysds.runtime.data.SparseBlockCSR;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.util.DependencyTask;
@@ -85,6 +87,7 @@ public class ColumnEncoderDummycode extends ColumnEncoder {
 			throw new DMLRuntimeException("ColumnEncoderDummycode called with: " + in.getClass().getSimpleName() +
 					" and not MatrixBlock");
 		}
+		boolean mcsr = MatrixBlock.DEFAULT_SPARSEBLOCK == SparseBlock.Type.MCSR;
 		Set<Integer> sparseRowsWZeros = null;
 		int index = _colID - 1;
 		for(int r = rowStart; r < getEndIndex(in.getNumRows(), rowStart, blk); r++) {
@@ -103,17 +106,35 @@ public class ColumnEncoderDummycode extends ColumnEncoder {
 			//
 			// indexes = [0,2] ===> indexes = [0,3]
 			// values = [1,2] values = [1,1]
-			double val = out.getSparseBlock().get(r).values()[index];
-			if(Double.isNaN(val)){
-				if(sparseRowsWZeros == null)
-					sparseRowsWZeros = new HashSet<>();
-				sparseRowsWZeros.add(r);
-				out.getSparseBlock().get(r).values()[index] = 0;
-				continue;
+			if (mcsr) {
+				double val = out.getSparseBlock().get(r).values()[index];
+				if(Double.isNaN(val)){
+					if(sparseRowsWZeros == null)
+						sparseRowsWZeros = new HashSet<>();
+					sparseRowsWZeros.add(r);
+					out.getSparseBlock().get(r).values()[index] = 0;
+					continue;
+				}
+				int nCol = outputCol + (int) val - 1;
+				out.getSparseBlock().get(r).indexes()[index] = nCol;
+				out.getSparseBlock().get(r).values()[index] = 1;
 			}
-			int nCol = outputCol + (int) val - 1;
-			out.getSparseBlock().get(r).indexes()[index] = nCol;
-			out.getSparseBlock().get(r).values()[index] = 1;
+			else { //csr
+				SparseBlockCSR csrblock = (SparseBlockCSR)out.getSparseBlock();
+				int rptr[] = csrblock.rowPointers();
+				double val = csrblock.values()[rptr[r]+index];
+				if(Double.isNaN(val)){
+					if(sparseRowsWZeros == null)
+						sparseRowsWZeros = new HashSet<>();
+					sparseRowsWZeros.add(r);
+					csrblock.values()[rptr[r]+index] = 0; //test
+					continue;
+				}
+				// Manually fill the column-indexes and values array
+				int nCol = outputCol + (int) val - 1;
+				csrblock.indexes()[rptr[r]+index] = nCol;
+				csrblock.values()[rptr[r]+index] = 1;
+			}
 		}
 		if(sparseRowsWZeros != null){
 			addSparseRowsWZeros(sparseRowsWZeros);

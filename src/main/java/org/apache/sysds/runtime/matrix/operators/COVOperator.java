@@ -27,9 +27,19 @@ public class COVOperator extends Operator
 	private static final long serialVersionUID = -8404264552880694469L;
 
 	public final COV fn;
+	public final int k;
 	
 	public COVOperator(COV op) {
+		this(op, 1);
+	}
+	
+	public COVOperator(COV op, int numThreads) {
 		super(true);
 		fn = op;
+		k = numThreads;
+	}
+	
+	public int getNumThreads() {
+		return k;
 	}
 }

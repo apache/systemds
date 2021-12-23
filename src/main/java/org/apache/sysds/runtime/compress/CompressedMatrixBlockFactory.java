@@ -250,10 +250,6 @@ public class CompressedMatrixBlockFactory {
 		if(res == null)
 			return abortCompression();
 
-		if(compSettings.isInSparkInstruction) {
-			// clear soft reference to uncompressed block in case of spark.
-			res.clearSoftReferenceToDecompressed();
-		}
 		return new ImmutablePair<>(res, _stats);
 	}
 

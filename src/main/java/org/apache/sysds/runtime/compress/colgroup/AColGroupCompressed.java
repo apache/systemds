@@ -55,19 +55,49 @@ public abstract class AColGroupCompressed extends AColGroup {
 
 	protected abstract void computeColMxx(double[] c, Builtin builtin);
 
-	protected abstract void computeSum(double[] c, int nRows, boolean square);
+	protected abstract void computeSum(double[] c, int nRows);
 
-	protected abstract void computeRowSums(double[] c, boolean square, int rl, int ru);
+	protected abstract void computeSumSq(double[] c, int nRows);
 
-	protected abstract void computeColSums(double[] c, int nRows, boolean square);
+	protected abstract void computeColSumsSq(double[] c, int nRows);
 
-	protected abstract void computeRowMxx(double[] c, Builtin builtin, int rl, int ru);
+	protected abstract void computeRowSums(double[] c, int rl, int ru, double[] preAgg);
+
+	protected abstract void computeRowMxx(double[] c, Builtin builtin, int rl, int ru, double[] preAgg);
 
 	protected abstract void computeProduct(double[] c, int nRows);
 
-	protected abstract void computeRowProduct(double[] c, int rl, int ru);
+	protected abstract void computeRowProduct(double[] c, int rl, int ru, double[] preAgg);
 
 	protected abstract void computeColProduct(double[] c, int nRows);
+
+	protected abstract double[] preAggSumRows();
+
+	protected abstract double[] preAggSumSqRows();
+
+	protected abstract double[] preAggProductRows();
+
+	protected abstract double[] preAggBuiltinRows(Builtin builtin);
+
+	public double[] preAggRows(AggregateUnaryOperator op) {
+		final ValueFunction fn = op.aggOp.increOp.fn;
+		if(fn instanceof KahanPlusSq)
+			return preAggSumSqRows();
+		else if(fn instanceof Plus || fn instanceof KahanPlus)
+			return preAggSumRows();
+		else if(fn instanceof Multiply)
+			return preAggProductRows();
+		else if(fn instanceof Builtin) {
+			Builtin bop = (Builtin) fn;
+			BuiltinCode bopC = bop.getBuiltinCode();
+			if(bopC == BuiltinCode.MAX || bopC == BuiltinCode.MIN)
+				return preAggBuiltinRows(bop);
+			else
+				throw new DMLScriptException("unsupported builtin type: " + bop);
+		}
+		else
+			throw new DMLScriptException("Unknown UnaryAggregate operator on CompressedMatrixBlock " + op);
+	}
 
 	@Override
 	public double getMin() {
@@ -80,27 +110,34 @@ public abstract class AColGroupCompressed extends AColGroup {
 	}
 
 	@Override
-	public void computeColSums(double[] c, int nRows) {
-		computeColSums(c, nRows, false);
+	public final void unaryAggregateOperations(AggregateUnaryOperator op, double[] c, int nRows, int rl, int ru) {
+		unaryAggregateOperations(op, c, nRows, rl, ru, null);
 	}
 
-	@Override
-	public final void unaryAggregateOperations(AggregateUnaryOperator op, double[] c, int nRows, int rl, int ru) {
+	public final void unaryAggregateOperations(AggregateUnaryOperator op, double[] c, int nRows, int rl, int ru,
+		double[] preAgg) {
 		final ValueFunction fn = op.aggOp.increOp.fn;
-		if(fn instanceof Plus || fn instanceof KahanPlus || fn instanceof KahanPlusSq) {
-			boolean square = fn instanceof KahanPlusSq;
+		if(fn instanceof KahanPlusSq) {
 			if(op.indexFn instanceof ReduceAll)
-				computeSum(c, nRows, square);
+				computeSumSq(c, nRows);
 			else if(op.indexFn instanceof ReduceCol)
-				computeRowSums(c, square, rl, ru);
+				computeRowSums(c, rl, ru, preAgg);
 			else if(op.indexFn instanceof ReduceRow)
-				computeColSums(c, nRows, square);
+				computeColSumsSq(c, nRows);
+		}
+		else if(fn instanceof Plus || fn instanceof KahanPlus) {
+			if(op.indexFn instanceof ReduceAll)
+				computeSum(c, nRows);
+			else if(op.indexFn instanceof ReduceCol)
+				computeRowSums(c, rl, ru, preAgg);
+			else if(op.indexFn instanceof ReduceRow)
+				computeColSums(c, nRows);
 		}
 		else if(fn instanceof Multiply) {
 			if(op.indexFn instanceof ReduceAll)
 				computeProduct(c, nRows);
 			else if(op.indexFn instanceof ReduceCol)
-				computeRowProduct(c, rl, ru);
+				computeRowProduct(c, rl, ru, preAgg);
 			else if(op.indexFn instanceof ReduceRow)
 				computeColProduct(c, nRows);
 		}
@@ -111,17 +148,15 @@ public abstract class AColGroupCompressed extends AColGroup {
 				if(op.indexFn instanceof ReduceAll)
 					c[0] = computeMxx(c[0], bop);
 				else if(op.indexFn instanceof ReduceCol)
-					computeRowMxx(c, bop, rl, ru);
+					computeRowMxx(c, bop, rl, ru, preAgg);
 				else if(op.indexFn instanceof ReduceRow)
 					computeColMxx(c, bop);
 			}
-			else {
+			else
 				throw new DMLScriptException("unsupported builtin type: " + bop);
-			}
 		}
-		else {
+		else
 			throw new DMLScriptException("Unknown UnaryAggregate operator on CompressedMatrixBlock");
-		}
 	}
 
 	@Override

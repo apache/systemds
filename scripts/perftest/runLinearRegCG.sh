@@ -31,7 +31,6 @@ do
    
    #training
    tstart=$(date +%s.%N)
-   #${CMD} -f ./algorithms/LinearRegCG.dml \
    ${CMD} -f scripts/LinearRegCG.dml \
       --config conf/SystemDS-config.xml \
       --stats \

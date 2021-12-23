@@ -22,6 +22,7 @@
 
 COMMAND=${1:-"systemds"}
 TEMPFOLDER=${2:-"temp"}
+MAXMEM=$3
 DATADIR=${TEMPFOLDER}/fed
 NUMFED=5
 
@@ -43,5 +44,5 @@ if [ ! -d results ]; then mkdir -p results ; fi
 
 echo "RUN FEDERATED EXPERIMENTS: "$(date) >> results/times.txt
 
-${BASEPATH}/runALSFed.sh systemds $DATADIR $NUMFED
+${BASEPATH}/runALSFed.sh $COMMAND $DATADIR $MAXMEM $NUMFED
 

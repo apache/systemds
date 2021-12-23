@@ -1,0 +1,5 @@
+export LOG4JPROP='conf/log4j-off.properties'
+export SYSDS_QUIET=1
+
+# stratstats needs a large heap
+export SYSTEMDS_STANDALONE_OPTS="-Xmx8g -Xms8g -Xmn2000m"

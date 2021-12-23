@@ -24,27 +24,22 @@ set -e
 CMD=$4
 BASE=$3
 
-
 #training
 tstart=$(date +%s.%N)
-
-# ${CMD} -f ../algorithms/Kmeans.dml \
 ${CMD} -f ./scripts/Kmeans.dml \
---config conf/SystemDS-config.xml \
---stats \
---nvargs X=$1 k=5 C=${BASE}/centroids.mtx maxi=$2 tol=0.0001 prY=${BASE}/prY_implicit.mtx
+  --config conf/SystemDS-config.xml \
+  --stats \
+  --nvargs X=$1 k=5 C=${BASE}/centroids.mtx maxi=$2 tol=0.0001 prY=${BASE}/prY_implicit.mtx
 
 ttrain=$(echo "$(date +%s.%N) - $tstart - .4" | bc)
 echo "Kmeans train on "$1": "$ttrain >> results/times.txt
 
 #predict
 tstart=$(date +%s.%N)
-
-
-# ${CMD} -f ../algorithms/Kmeans-predict.dml \
 ${CMD} -f ./scripts/Kmeans-predict.dml \
---stats \
---nvargs X=$1 C=${BASE}/centroids.mtx prY=${BASE}/prY.mtx
+  --config conf/SystemDS-config.xml \
+  --stats \
+  --nvargs X=$1 C=${BASE}/centroids.mtx prY=${BASE}/prY.mtx
 
 tpredict=$(echo "$(date +%s.%N) - $tstart - .4" | bc)
 echo "Kmeans predict on "$1": "$tpredict >> results/times.txt

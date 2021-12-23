@@ -30,7 +30,6 @@ for i in 0 1 2; do
 
    #training
    tstart=$(date +%s.%N)
-   # ${CMD} -f ./algorithms/GLM.dml \
    ${CMD} -f scripts/GLM.dml \
       --config conf/SystemDS-config.xml \
       --stats \

@@ -29,9 +29,9 @@ tstart=$(date +%s.%N)
 
 #${CMD} -f ../algorithms/stratstats.dml \
 ${CMD} -f ./scripts/stratstats.dml \
---config conf/SystemDS-config.xml \
---stats \
---nvargs X=$1 Xcid=$2 Ycid=$3 O=${BASE}/STATS/s fmt=csv
+  --config conf/SystemDS-config.xml \
+  --stats \
+  --nvargs X=$1 Xcid=$2 Ycid=$3 O=${BASE}/STATS/s fmt=csv
 
 ttrain=$(echo "$(date +%s.%N) - $tstart - .4" | bc)
 echo "StratifiedStatistics on "$1": "$ttrain >> results/times.txt

@@ -24,13 +24,16 @@
 TEMPFOLDER=$1
 if [ "$TEMPFOLDER" == "" ]; then TEMPFOLDER=temp ; fi
 
-# Set properties
-export LOG4JPROP='conf/log4j-off.properties'
-export SYSDS_QUIET=1
-
 # Command to be executed
-#CMD="systemds"
+# CMD="systemds"
 CMD="./sparkDML.sh"
+
+# Max memory of data to be benchmarked
+MAXMEM=80000 # Possible values: 80/80MB, 800/800MB, 8000/8000MB/8GB, 80000/80000MB/80GB, 800000/800000MB/800GB
+MAXMEM=${MAXMEM%"MB"}; MAXMEM=${MAXMEM/GB/"000"}
+
+# Set properties
+source ./conf/env-variables
 
 # Possible lines to initialize Intel MKL, depending on version and install location
 #    . ~/intel/bin/compilervars.sh intel64
@@ -44,34 +47,34 @@ date >> results/times.txt
 
 ### Data Generation
 echo "-- Generating binomial data..." >> results/times.txt;
-./genBinomialData.sh ${CMD} ${TEMPFOLDER} &>> logs/genBinomialData.out
+./genBinomialData.sh ${CMD} ${TEMPFOLDER} ${MAXMEM} &> logs/genBinomialData.out
 echo "-- Generating multinomial data..." >> results/times.txt;
-./genMultinomialData.sh ${CMD} ${TEMPFOLDER} &>> logs/genMultinomialData.out
+./genMultinomialData.sh ${CMD} ${TEMPFOLDER} ${MAXMEM} &> logs/genMultinomialData.out
 echo "-- Generating stats data..." >> results/times.txt;
-./genDescriptiveStatisticsData.sh ${CMD} ${TEMPFOLDER} &>> logs/genStatsData.out
-./genStratStatisticsData.sh ${CMD} ${TEMPFOLDER} &>> logs/genStratStatsData.out
+./genDescriptiveStatisticsData.sh ${CMD} ${TEMPFOLDER} ${MAXMEM} &> logs/genStatsData.out
+./genStratStatisticsData.sh ${CMD} ${TEMPFOLDER} ${MAXMEM} &> logs/genStratStatsData.out
 echo "-- Generating clustering data..." >> results/times.txt;
-./genClusteringData.sh ${CMD} ${TEMPFOLDER} &>> logs/genClusteringData.out
-echo "-- Using Dimension Reduction data." >> results/times.txt;
-./genDimensionReductionData.sh ${CMD} ${TEMPFOLDER} &>> logs/genDimensionReductionData.out
+./genClusteringData.sh ${CMD} ${TEMPFOLDER} ${MAXMEM} &> logs/genClusteringData.out
+echo "-- Generating Dimension Reduction data." >> results/times.txt;
+./genDimensionReductionData.sh ${CMD} ${TEMPFOLDER} ${MAXMEM} &> logs/genDimensionReductionData.out
 echo "-- Generating ALS data." >> results/times.txt;
-./genALSData.sh ${CMD} ${TEMPFOLDER} &>> logs/genALSData.out # generate the data
+./genALSData.sh ${CMD} ${TEMPFOLDER} ${MAXMEM} &> logs/genALSData.out
 
 ### Micro Benchmarks:
 #./MatrixMult.sh
 #./MatrixTranspose.sh
 
 # Federate benchmark
-#./fed/runAllFed.sh $CMD $TEMPFOLDER
+#./fed/runAllFed.sh ${CMD} ${TEMPFOLDER} ${MAXMEM}
 
 ### Algorithms Benchmarks:
-./runAllBinomial.sh $CMD $TEMPFOLDER
-./runAllMultinomial.sh $CMD $TEMPFOLDER
-./runAllRegression.sh $CMD $TEMPFOLDER
-./runAllStats.sh $CMD $TEMPFOLDER
-./runAllClustering.sh $CMD $TEMPFOLDER
-./runAllDimensionReduction.sh $CMD $TEMPFOLDER
-./runAllALS.sh $CMD $TEMPFOLDER
+./runAllBinomial.sh ${CMD} ${TEMPFOLDER} ${MAXMEM}
+./runAllMultinomial.sh ${CMD} ${TEMPFOLDER} ${MAXMEM}
+./runAllRegression.sh ${CMD} ${TEMPFOLDER} ${MAXMEM}
+./runAllStats.sh ${CMD} ${TEMPFOLDER} ${MAXMEM}
+./runAllClustering.sh ${CMD} ${TEMPFOLDER} ${MAXMEM}
+./runAllDimensionReduction.sh ${CMD} ${TEMPFOLDER} ${MAXMEM}
+./runAllALS.sh ${CMD} ${TEMPFOLDER} ${MAXMEM}
 
 # TODO The following benchmarks have yet to be written. The decision tree algorithms additionally need to be fixed.
 # add stepwise Linear 

@@ -48,7 +48,6 @@ echo "ALS-DS algorithm on "$X": "$ttrain >> results/times.txt
 
 tstart=$(date +%s.%N)
 
-# ${CMD} -f ../algorithms/ALS_predict.dml \ # Does not work
 ${CMD} -f ./scripts/als-predict.dml \
   --config conf/SystemDS-config.xml \
   --stats \

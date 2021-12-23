@@ -26,7 +26,6 @@ BASE=$4
 
 #training
 tstart=$(date +%s.%N)
-#${CMD} -f ./algorithms/naive-bayes.dml \
 ${CMD} -f scripts/naive-bayes.dml \
    --config conf/SystemDS-config.xml \
    --stats \
@@ -37,7 +36,6 @@ echo "NaiveBayes train on "$1": "$ttrain >> results/times.txt
 
 #predict
 tstart=$(date +%s.%N)
-#${CMD} -f ./algorithms/naive-bayes-predict.dml \
 ${CMD} -f scripts/naive-bayes-predict.dml \
    --config conf/SystemDS-config.xml \
    --stats \

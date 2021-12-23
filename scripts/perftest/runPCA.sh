@@ -28,9 +28,9 @@ tstart=$(date +%s.%N)
 
 # ${CMD} -f ../algorithms/PCA.dml \
 ${CMD} -f ./scripts/PCA.dml \
---config conf/SystemDS-config.xml \
---stats \
---nvargs INPUT=$1 SCALE=1 PROJDATA=1 OUTPUT=${BASE}/output
+  --config conf/SystemDS-config.xml \
+  --stats \
+  --nvargs INPUT=$1 SCALE=1 PROJDATA=1 OUTPUT=${BASE}/output
 
 ttrain=$(echo "$(date +%s.%N) - $tstart - .4" | bc)
 echo "PCA on "$1": "$ttrain >> results/times.txt

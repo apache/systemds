@@ -29,9 +29,9 @@ tstart=$(date +%s.%N)
 
 # ${CMD} -f ../algorithms/Univar-Stats.dml \
 ${CMD} -f ./scripts/Univar-Stats.dml \
---config conf/SystemDS-config.xml \
---stats \
---nvargs X=$1 TYPES=$2 STATS=${BASE}/stats/u
+  --config conf/SystemDS-config.xml \
+  --stats \
+  --nvargs X=$1 TYPES=$2 STATS=${BASE}/stats/u
 
 ttrain=$(echo "$(date +%s.%N) - $tstart - .4" | bc)
 echo "UnivariateStatistics on "$1": "$ttrain >> results/times.txt

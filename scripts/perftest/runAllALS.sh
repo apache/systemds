@@ -22,7 +22,7 @@
 
 CMD=${1:-"systemds"}
 DATADIR=${2:-"temp"}/als
-
+MAXMEM=$3
 MAXITR=${4:-100}
 
 FILENAME=$0
@@ -31,7 +31,16 @@ err_report() {
 }
 trap 'err_report $LINENO' ERR
 
-for d in "10k_1k_dense" "10k_1k_sparse" "100k_1k_dense" "100k_1k_sparse" "1M_1k_dense" "1M_1k_sparse" "10M_1k_dense" "10M_1k_sparse" # "100M_1k_dense" "100M_1k_sparse"
+DATA=()
+if [ $MAXMEM -ge 80 ]; then DATA+=("10k_1k_dense" "10k_1k_sparse"); fi
+if [ $MAXMEM -ge 800 ]; then DATA+=("100k_1k_dense" "100k_1k_sparse"); fi
+if [ $MAXMEM -ge 8000 ]; then DATA+=("1M_1k_dense" "1M_1k_sparse"); fi
+if [ $MAXMEM -ge 80000 ]; then DATA+=("10M_1k_dense" "10M_1k_sparse"); fi
+if [ $MAXMEM -ge 800000 ]; then DATA+=("100M_1k_dense" "100M_1k_sparse"); fi
+
+echo "RUN ALS EXPERIMENTS: " $(date) >> results/times.txt;
+
+for d in ${DATA[@]}
 do
   for f in "runALS_CG" "runALS_DS"
    do

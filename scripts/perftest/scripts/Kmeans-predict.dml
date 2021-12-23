@@ -25,4 +25,3 @@ C = read($C);
 Y = kmeansPredict(X = X, C = C)
 
 write(Y, $prY, "text")
-

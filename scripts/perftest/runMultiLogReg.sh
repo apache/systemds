@@ -31,7 +31,6 @@ if [ $3 -gt 2 ]; then DFAM=3; fi
 for i in 0 1 2; do
    #training
    tstart=$(date +%s.%N)
-   # ${CMD} -f ./algorithms/MultiLogReg.dml \
    ${CMD} -f scripts/MultiLogReg.dml \
       --config conf/SystemDS-config.xml \
       --stats \

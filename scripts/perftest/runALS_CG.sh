@@ -48,9 +48,8 @@ echo "ALS-CG algorithm on "$X": "$ttrain >> results/times.txt
 
 tstart=$(date +%s.%N)
 
-# ${CMD} -f ../algorithms/ALS_predict.dml \ # Does not work
 ${CMD} -f ./scripts/als-predict.dml \
-  --config conf/SystemDS-config.xml \
+  --config ${BASEPATH}/conf/SystemDS-config.xml \
   --stats \
   --nvargs X=$X Y=${DATADIR}/Y L=${DATADIR}/U R=${DATADIR}/V fmt="csv"
 

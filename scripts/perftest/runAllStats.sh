@@ -22,6 +22,7 @@
 
 COMMAND=$1
 TEMPFOLDER=$2
+MAXMEM=$3
 
 BASE2=${TEMPFOLDER}/bivar
 BASE3=${TEMPFOLDER}/stratstats
@@ -32,21 +33,24 @@ err_report() {
 }
 trap 'err_report $LINENO' ERR
 
-# stratstats needs a large heap
-if [ "${COMMAND}" == "systemds" ]; then export SYSTEMDS_STANDALONE_OPTS="-Xmx10g -Xms10g -Xmn2000m" ; fi
+DATA=()
+if [ $MAXMEM -ge 80 ]; then DATA+=("A_10k"); fi
+if [ $MAXMEM -ge 800 ]; then DATA+=("A_100k"); fi
+if [ $MAXMEM -ge 8000 ]; then DATA+=("A_1M"); fi
+if [ $MAXMEM -ge 80000 ]; then DATA+=("A_10M"); fi
 
-echo " RUN DESCRIPTIVE STATISTICS EXPERIMENTS: " $(date) >> results/times.txt;
+echo "RUN DESCRIPTIVE STATISTICS EXPERIMENTS: " $(date) >> results/times.txt;
 
 # run all descriptive statistics on all datasets
-for d in "A_10k" "A_100k" "A_1M" # "A_10M" #"census"
+for d in ${DATA[@]} #"census"
 do 
-   echo "-- Running runUnivarStats on "$d"" >> results/times.txt;
-   ./runUnivarStats.sh ${BASE2}/${d}/data ${BASE2}/${d}/types ${BASE2} ${COMMAND} &>> logs/runUnivar-Stats_${d}.out;
+   echo "-- Running runUnivarStats on "$d >> results/times.txt;
+   ./runUnivarStats.sh ${BASE2}/${d}/data ${BASE2}/${d}/types ${BASE2} ${COMMAND} &> logs/runUnivar-Stats_${d}.out;
 
-   echo "-- Running runBivarStats on "$d"" >> results/times.txt;
-   ./runBivarStats.sh ${BASE2}/${d}/data ${BASE2}/${d}/set1.indices ${BASE2}/${d}/set2.indices ${BASE2}/${d}/set1.types ${BASE2}/${d}/set2.types ${BASE2} ${COMMAND} &>> logs/runBivar-stats_${d}.out;
+   echo "-- Running runBivarStats on "$d >> results/times.txt;
+   ./runBivarStats.sh ${BASE2}/${d}/data ${BASE2}/${d}/set1.indices ${BASE2}/${d}/set2.indices ${BASE2}/${d}/set1.types ${BASE2}/${d}/set2.types ${BASE2} ${COMMAND} &> logs/runBivar-stats_${d}.out;
     
-   echo "-- Running runStratStats on "$d"" >> results/times.txt;
+   echo "-- Running runStratStats on "$d >> results/times.txt;
    ./runStratStats.sh ${BASE3}/${d}/data ${BASE3}/${d}/Xcid ${BASE3}/${d}/Ycid ${BASE3} ${COMMAND} &> logs/runStrats-stats_${d}.out;
 done
 

@@ -27,11 +27,10 @@ BASE=$6
 echo "running Bivar-Stats"
 tstart=$(date +%s.%N)
 
-#${CMD} -f ../algorithms/bivar-stats.dml \
 ${CMD} -f ./scripts/bivar-stats.dml \
---config conf/SystemDS-config.xml \
---stats \
---nvargs X=$1 index1=$2 index2=$3 types1=$4 types2=$5 OUTDIR=${BASE}/stats/b
+  --config conf/SystemDS-config.xml \
+  --stats \
+  --nvargs X=$1 index1=$2 index2=$3 types1=$4 types2=$5 OUTDIR=${BASE}/stats/b
 
 ttrain=$(echo "$(date +%s.%N) - $tstart - .4" | bc)
 echo "BivariateStatistics on "$1": "$ttrain >> results/times.txt

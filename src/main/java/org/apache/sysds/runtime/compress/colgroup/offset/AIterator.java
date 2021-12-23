@@ -50,13 +50,6 @@ public abstract class AIterator {
 	public abstract void next();
 
 	/**
-	 * Get a boolean specifying if the iterator is done
-	 * 
-	 * @return A boolean that is true if there are more values contained in the Iterator.
-	 */
-	public abstract boolean hasNext();
-
-	/**
 	 * Get the current index value, note this correspond to a row index in the original matrix.
 	 * 
 	 * @return The current value pointed at.
@@ -66,23 +59,36 @@ public abstract class AIterator {
 	}
 
 	/**
-	 * Get the current index value and increment the pointers
+	 * find out if the current offset is not exceeding the index.
 	 * 
-	 * @return The current value pointed at.
+	 * @param ub The offset to not exceed
+	 * @return boolean if it is exceeded.
 	 */
-	public int valueAndIncrement() {
-		int x = offset;
-		next();
-		return x;
+	public boolean isNotOver(int ub) {
+		return offset < ub;
 	}
 
 	/**
 	 * Get the current data index associated with the index returned from value.
 	 * 
-	 * @return The data Index.
+	 * This index points to a position int the mapToData object, that then inturn can be used to lookup the dictionary
+	 * entry in ADictionary.
+	 * 
+	 * @return The Data Index.
 	 */
 	public int getDataIndex() {
 		return dataIndex;
+	}
+
+	/**
+	 * Get the current offsets index, that points to the underlying offsets list.
+	 * 
+	 * This is available for debugging purposes, not to be used for the calling classes.
+	 * 
+	 * @return The Offsets Index.
+	 */
+	public int getOffsetsIndex() {
+		return index;
 	}
 
 	/**
@@ -99,17 +105,23 @@ public abstract class AIterator {
 	/**
 	 * Skip values until index is achieved.
 	 * 
-	 * @param index The index to skip to.
+	 * @param idx The index to skip to.
 	 * @return the index that follows or are equal to the skip to index.
 	 */
-	public int skipTo(int index) {
-		while(hasNext() && offset < index)
-			next();
-		return offset;
-	}
+	public abstract int skipTo(int idx);
 
 	/**
 	 * Copy the iterator with the current values.
 	 */
 	public abstract AIterator clone();
+
+	/**
+	 * Unsafe version of equals, note that it should only compare iterators stemming from the same Offset Object.
+	 * 
+	 * @param o The Iterator to compare
+	 * @return The result
+	 */
+	public boolean equals(AIterator o) {
+		return o.index == this.index;
+	}
 }

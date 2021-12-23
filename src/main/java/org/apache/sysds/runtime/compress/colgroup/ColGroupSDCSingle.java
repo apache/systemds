@@ -23,16 +23,11 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
-import org.apache.commons.lang.NotImplementedException;
-import org.apache.sysds.runtime.compress.DMLCompressionException;
 import org.apache.sysds.runtime.compress.colgroup.dictionary.ADictionary;
 import org.apache.sysds.runtime.compress.colgroup.offset.AIterator;
 import org.apache.sysds.runtime.compress.colgroup.offset.AOffset;
 import org.apache.sysds.runtime.compress.colgroup.offset.OffsetFactory;
-import org.apache.sysds.runtime.data.DenseBlock;
-import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.functionobjects.Builtin;
-import org.apache.sysds.runtime.matrix.data.MatrixBlock;
 import org.apache.sysds.runtime.matrix.operators.BinaryOperator;
 import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
 
@@ -44,11 +39,9 @@ import org.apache.sysds.runtime.matrix.operators.ScalarOperator;
  * This column group is handy in cases where sparse unsafe operations is executed on very sparse columns. Then the zeros
  * would be materialized in the group without any overhead.
  */
-public class ColGroupSDCSingle extends AColGroupValue {
+public class ColGroupSDCSingle extends AMorphingMMColGroup {
 	private static final long serialVersionUID = 3883228464052204200L;
-	/**
-	 * Sparse row indexes for the data
-	 */
+	/** Sparse row indexes for the data */
 	protected transient AOffset _indexes;
 
 	/**
@@ -77,125 +70,100 @@ public class ColGroupSDCSingle extends AColGroupValue {
 	}
 
 	@Override
-	protected void decompressToDenseBlockDenseDictionary(DenseBlock db, int rl, int ru, int offR, int offC,
-		double[] values) {
-		final int nCol = _colIndexes.length;
-		final int offsetToDefault = values.length - nCol;
-		final AIterator it = _indexes.getIterator(rl);
-
-		int offT = rl + offR;
-		int i = rl;
-		for(; i < ru && it.hasNext(); i++, offT++) {
-			final double[] c = db.values(offT);
-			final int off = db.pos(offT) + offC;
-			if(it.value() == i) {
-				for(int j = 0; j < nCol; j++)
-					c[off + _colIndexes[j]] += values[j];
-				it.next();
-			}
-			else
-				for(int j = 0; j < nCol; j++)
-					c[off + _colIndexes[j]] += values[offsetToDefault + j];
-		}
-
-		for(; i < ru; i++, offT++) {
-			final double[] c = db.values(offT);
-			final int off = db.pos(offT) + offC;
-			for(int j = 0; j < nCol; j++)
-				c[off + _colIndexes[j]] += values[offsetToDefault + j];
-		}
-
-		_indexes.cacheIterator(it, ru);
-	}
-
-	@Override
-	protected void decompressToDenseBlockSparseDictionary(DenseBlock db, int rl, int ru, int offR, int offC,
-		SparseBlock values) {
-		throw new NotImplementedException();
-	}
-
-	@Override
-	protected void decompressToSparseBlockSparseDictionary(SparseBlock ret, int rl, int ru, int offR, int offC,
-		SparseBlock sb) {
-		throw new NotImplementedException();
-	}
-
-	@Override
-	protected void decompressToSparseBlockDenseDictionary(SparseBlock ret, int rl, int ru, int offR, int offC,
-		double[] values) {
-		final int nCol = _colIndexes.length;
-		final int offsetToDefault = values.length - nCol;
-		final AIterator it = _indexes.getIterator(rl);
-
-		int offT = rl + offR;
-		int i = rl;
-		for(; i < ru && it.hasNext(); i++, offT++) {
-			if(it.value() == i) {
-				for(int j = 0; j < nCol; j++)
-					ret.append(offT, _colIndexes[j] + offC, values[j]);
-				it.next();
-			}
-			else
-				for(int j = 0; j < nCol; j++)
-					ret.append(offT, _colIndexes[j] + offC, values[offsetToDefault + j]);
-		}
-
-		for(; i < ru; i++, offT++)
-			for(int j = 0; j < nCol; j++)
-				ret.append(offT, _colIndexes[j] + offC, values[offsetToDefault + j]);
-
-		_indexes.cacheIterator(it, ru);
-	}
-
-	@Override
 	public double getIdx(int r, int colIdx) {
-		AIterator it = _indexes.getIterator(r);
-		if(it.value() == r)
-			return _dict.getValue(colIdx);
-		else
+		final AIterator it = _indexes.getIterator(r);
+		if(it == null || it.value() != r)
 			return _dict.getValue(_colIndexes.length + colIdx);
+		return _dict.getValue(colIdx);
 	}
 
 	@Override
-	protected void computeRowSums(double[] c, boolean square, int rl, int ru) {
-
-		// // pre-aggregate nnz per value tuple
-		final double[] vals = _dict.sumAllRowsToDouble(square, _colIndexes.length);
-		final AIterator it = _indexes.getIterator();
-
-		int rix = rl;
-		it.skipTo(rl);
-		for(; rix < ru && it.hasNext(); rix++) {
-			if(it.value() != rix)
-				c[rix] += vals[1];
-			else {
-				c[rix] += vals[0];
-				it.next();
-			}
-		}
-		for(; rix < ru; rix++) {
-			c[rix] += vals[1];
-		}
-	}
-
-	@Override
-	protected void computeRowMxx(double[] c, Builtin builtin, int rl, int ru) {
-		final double[] vals = _dict.aggregateTuples(builtin, _colIndexes.length);
+	protected void computeRowSums(double[] c, int rl, int ru, double[] vals) {
+		int r = rl;
 		final AIterator it = _indexes.getIterator(rl);
-		int rix = rl;
-
-		for(; rix < ru && it.hasNext(); rix++) {
-			if(it.value() != rix)
-				c[rix] = builtin.execute(c[rix], vals[1]);
-			else {
-				c[rix] = builtin.execute(c[rix], vals[0]);
-				it.next();
+		final double def = vals[1];
+		final double norm = vals[0];
+		if(it != null && it.value() > ru)
+			_indexes.cacheIterator(it, ru);
+		else if(it != null && ru >= _indexes.getOffsetToLast()) {
+			final int maxOff = _indexes.getOffsetToLast();
+			while(true) {
+				if(it.value() == r) {
+					c[r] += norm;
+					if(it.value() < maxOff)
+						it.next();
+					else {
+						r++;
+						break;
+					}
+				}
+				else
+					c[r] += def;
+				r++;
 			}
 		}
+		else if(it != null) {
+			while(r < ru) {
+				if(it.value() == r)
+					c[r] += norm;
+				else
+					c[r] += def;
+				r++;
+			}
+			_indexes.cacheIterator(it, ru);
+		}
 
-		// cover remaining rows with default value
-		for(; rix < ru; rix++)
-			c[rix] = builtin.execute(c[rix], vals[1]);
+		while(r < ru) {
+			c[r] += def;
+			r++;
+		}
+	}
+
+	@Override
+	protected void computeRowMxx(double[] c, Builtin builtin, int rl, int ru, double[] preAgg) {
+		computeRowMxx(c, builtin, rl, ru, _indexes, _numRows, preAgg[1], preAgg[0]);
+	}
+
+	protected static final void computeRowMxx(double[] c, Builtin builtin, int rl, int ru, AOffset indexes, int nRows,
+		double def, double norm) {
+		int r = rl;
+		final AIterator it = indexes.getIterator(rl);
+		if(it != null && it.value() > ru)
+			indexes.cacheIterator(it, ru);
+		else if(it != null && ru >= indexes.getOffsetToLast()) {
+			final int maxOff = indexes.getOffsetToLast();
+			while(true) {
+				if(it.value() == r) {
+					c[r] = builtin.execute(c[r], norm);
+					if(it.value() < maxOff)
+						it.next();
+					else {
+						r++;
+						break;
+					}
+				}
+				else
+					c[r] = builtin.execute(c[r], def);
+				r++;
+			}
+		}
+		else if(it != null) {
+			while(r < ru) {
+				if(it.value() == r) {
+					c[r] = builtin.execute(c[r], norm);
+					it.next();
+				}
+				else
+					c[r] = builtin.execute(c[r], def);
+				r++;
+			}
+			indexes.cacheIterator(it, ru);
+		}
+
+		while(r < ru) {
+			c[r] = builtin.execute(c[r], def);
+			r++;
+		}
 	}
 
 	@Override
@@ -214,7 +182,7 @@ public class ColGroupSDCSingle extends AColGroupValue {
 
 	@Override
 	public AColGroup scalarOperation(ScalarOperator op) {
-		return new ColGroupSDCSingle(_colIndexes, _numRows, applyScalarOp(op), _indexes, getCachedCounts());
+		return new ColGroupSDCSingle(_colIndexes, _numRows, _dict.applyScalarOp(op), _indexes, getCachedCounts());
 	}
 
 	@Override
@@ -248,6 +216,7 @@ public class ColGroupSDCSingle extends AColGroupValue {
 		return ret;
 	}
 
+	@Override
 	public ColGroupSDCSingleZeros extractCommon(double[] constV) {
 		double[] commonV = _dict.getTuple(getNumValues() - 1, _colIndexes.length);
 
@@ -262,34 +231,10 @@ public class ColGroupSDCSingle extends AColGroupValue {
 	}
 
 	@Override
-	public void leftMultByMatrix(MatrixBlock matrix, MatrixBlock result, int rl, int ru) {
-		// This method should not be called since if there is a matrix multiplication
-		// the default value is transformed to be zero, and this column group would be allocated as a
-		// SDC Zeros version
-		throw new DMLCompressionException("This method should never be called");
-	}
-
-	@Override
-	public void leftMultByAColGroup(AColGroup lhs, MatrixBlock result) {
-		// This method should not be called since if there is a matrix multiplication
-		// the default value is transformed to be zero, and this column group would be allocated as a
-		// SDC Zeros version
-		throw new DMLCompressionException("This method should never be called");
-	}
-
-	@Override
-	public void tsmmAColGroup(AColGroup other, MatrixBlock result) {
-		// This method should not be called since if there is a matrix multiplication
-		// the default value is transformed to be zero, and this column group would be allocated as a
-		// SDC Zeros version
-		throw new DMLCompressionException("This method should never be called");
-	}
-
-	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
 		sb.append(super.toString());
-		sb.append(String.format("\n%15s ", "Indexes: "));
+		sb.append(String.format("\n%15s", "Indexes: "));
 		sb.append(_indexes.toString());
 		return sb.toString();
 	}

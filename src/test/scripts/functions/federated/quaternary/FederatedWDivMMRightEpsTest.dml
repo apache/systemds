@@ -26,6 +26,12 @@ U = read($in_U)
 V = read($in_V)
 eps = $in_W
 
-Z = (X / (U %*% t(V) + eps)) %*% V;
+tmp = (X / (U %*% t(V) + eps)) %*% V;
+
+while(FALSE) { }
+# verify output is federated (creating fed_uak+ heavy hitter)
+sZ = sum(tmp);
+while(FALSE) { }
+Z = as.matrix(sZ);
 
 write(Z, $out_Z)

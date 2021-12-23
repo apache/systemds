@@ -59,6 +59,7 @@ public class COV extends ValueFunction
 	 * @param w2 ?
 	 * @return result
 	 */
+	@Override
 	public Data execute(Data in1, double u, double v, double w2) 
 	{
 		CM_COV_Object cov1=(CM_COV_Object) in1;

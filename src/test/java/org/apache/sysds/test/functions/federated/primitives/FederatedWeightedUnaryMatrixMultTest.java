@@ -49,7 +49,7 @@ public class FederatedWeightedUnaryMatrixMultTest extends AutomatedTestBase
 
 	private final static String OUTPUT_NAME = "Z";
 
-	private final static double TOLERANCE = 1e-14;
+	private final static double TOLERANCE = 1e-9;
 
 	private final static int BLOCKSIZE = 1024;
 
@@ -188,6 +188,8 @@ public class FederatedWeightedUnaryMatrixMultTest extends AutomatedTestBase
 
 			// check for federated operations
 			Assert.assertTrue(heavyHittersContainsString("fed_wumm", 1, exec_mode == ExecMode.SPARK ? 2 : 3));
+			// verify output is federated
+			Assert.assertTrue(heavyHittersContainsString("fed_uak+", 1, 3));
 
 			// check that federated input files are still existing
 			Assert.assertTrue(HDFSTool.existsFileOnHDFS(input("X1")));

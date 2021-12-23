@@ -21,6 +21,7 @@ package org.apache.sysds.test.component.compress.colgroup;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.sysds.runtime.compress.colgroup.AColGroup.CompressionType;
 import org.apache.sysds.runtime.matrix.data.MatrixBlock;
@@ -153,14 +154,14 @@ public class JolEstimateRLETest extends JolEstimateTest {
 		super(mb);
 	}
 
-	private static boolean haveWarned = false;
+	private static AtomicBoolean haveWarned = new AtomicBoolean(false);
 
 	@Override
 	public void compressedSizeInfoEstimatorSample(double ratio, double tolerance) {
 		// Skipping tests
-		if(!haveWarned) {
+		if(!haveWarned.get()) {
 			LOG.error("Skipping sample based test for RLE");
-			haveWarned = true;
+			haveWarned.set(true);
 		}
 	}
 

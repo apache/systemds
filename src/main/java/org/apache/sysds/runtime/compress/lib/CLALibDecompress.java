@@ -147,11 +147,8 @@ public class CLALibDecompress {
 				ret.allocateDenseBlock();
 		}
 
-		// final int block = (int) Math.ceil((double) (CompressionSettings.BITMAP_BLOCK_SZ) / nCols);
-		// final int blklen = Math.max(block, 64);
-		final int blklen = 32;
-
-		// final int blklen = block > 1000 ? block + 1000 - block % 1000 : Math.max(64, block);
+		// final int blklen = Math.max(nRows / (k * 2), 512);
+		final int blklen = Math.max(nRows / k , 512);
 
 		// check if we are using filtered groups, and if we are not force constV to null
 		if(groups == filteredGroups)
@@ -317,13 +314,19 @@ public class CLALibDecompress {
 
 		@Override
 		public Long call() {
-			for(AColGroup grp : _colGroups)
-				grp.decompressToDenseBlock(_ret.getDenseBlock(), _rl, _ru);
+			final int blk = 1024;
+			long nnz = 0;
+			for(int b = _rl; b < _ru; b+= blk){
+				int e = Math.min(b + blk , _ru);
+				for(AColGroup grp : _colGroups)
+					grp.decompressToDenseBlock(_ret.getDenseBlock(), b, e);
 
-			if(_constV != null)
-				addVector(_ret, _constV, _eps, _rl, _ru);
+				if(_constV != null)
+					addVector(_ret, _constV, _eps, b, e);
+				nnz += _overlapping ? 0 : _ret.recomputeNonZeros(b, e - 1);
+			}
 
-			return _overlapping ? 0 : _ret.recomputeNonZeros(_rl, _ru - 1);
+			return nnz;
 		}
 	}
 

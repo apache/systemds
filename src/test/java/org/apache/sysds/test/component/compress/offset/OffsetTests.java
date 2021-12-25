@@ -330,7 +330,7 @@ public class OffsetTests {
 	}
 
 	@Test
-	public void testAskForLastElementP1IsNull(){
+	public void testAskForLastElementP1IsNull() {
 		if(data.length == 2)
 			assertTrue(o.getIterator(data[1] + 1) == null);
 	}
@@ -383,7 +383,8 @@ public class OffsetTests {
 	}
 
 	public void testGetDataAfterNextCombN(AIterator it) {
-		int d = it.getDataIndexAndIncrement();
+		int d = it.getDataIndex();
+		it.next();
 		assertEquals(d + 1, it.getDataIndex());
 	}
 

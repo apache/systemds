@@ -35,6 +35,7 @@ public class OffsetByte extends AOffset {
 	private final int offsetToFirst;
 	private final int offsetToLast;
 	private final boolean noOverHalf;
+	private final boolean noZero;
 
 	public OffsetByte(int[] indexes) {
 		this(indexes, 0, indexes.length);
@@ -72,13 +73,9 @@ public class OffsetByte extends AOffset {
 
 			ov = nv;
 		}
-		boolean noOverHalf = true;
-		for(byte b : offsets)
-			if(b < 0) {
-				noOverHalf = false;
-				break;
-			}
-		this.noOverHalf = noOverHalf;
+
+		this.noOverHalf = getNoOverHalf();
+		this.noZero = getNoZero();
 	}
 
 	protected OffsetByte(byte[] offsets, int offsetToFirst, int offsetToLast) {
@@ -86,16 +83,27 @@ public class OffsetByte extends AOffset {
 		this.offsetToFirst = offsetToFirst;
 		this.offsetToLast = offsetToLast;
 		this.noOverHalf = getNoOverHalf();
+		this.noZero = getNoZero();
 	}
 
 	private boolean getNoOverHalf() {
 		boolean noOverHalf = true;
 		for(byte b : offsets)
-			if(b < 0) {
+			if(b < 1) {
 				noOverHalf = false;
 				break;
 			}
 		return noOverHalf;
+	}
+
+	private boolean getNoZero() {
+		boolean noZero = true;
+		for(byte b : offsets)
+			if(b == 0) {
+				noZero = false;
+				break;
+			}
+		return noZero;
 	}
 
 	@Override
@@ -172,7 +180,6 @@ public class OffsetByte extends AOffset {
 	protected final void preAggregateDenseMapRowByte(double[] mV, int off, double[] preAV, int cu, int nVal, byte[] data,
 		AIterator it) {
 		IterateByteOffset itb = (IterateByteOffset) it;
-		final boolean noZero = offsets.length == data.length - 1;
 		if(cu < offsetToLast + 1) {
 			final boolean nvalHalf = nVal < 127;
 			if(noOverHalf && noZero && nvalHalf)
@@ -616,8 +623,20 @@ public class OffsetByte extends AOffset {
 
 		@Override
 		public int skipTo(int idx) {
-			while(offset < idx && index < offsets.length)
-				next();
+			if(noOverHalf) {
+				while(offset < idx && index < offsets.length) {
+					byte v = offsets[index];
+					offset += v;
+					index++;
+				}
+				dataIndex = index;
+			}
+			else if(idx < offsetToLast)
+				while(offset < idx)
+					next();
+			else
+				while(offset < idx && index < offsets.length)
+					next();
 			return offset;
 		}
 

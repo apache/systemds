@@ -123,8 +123,10 @@ public class ColGroupSDC extends AMorphingMMColGroup {
 		}
 		else if(it != null) {
 			while(r < ru) {
-				if(it.value() == r)
-					c[r] += preAgg[data.getIndex(it.getDataIndexAndIncrement())];
+				if(it.value() == r){
+					c[r] += preAgg[data.getIndex(it.getDataIndex())];
+					it.next();
+				}
 				else
 					c[r] += def;
 				r++;
@@ -168,8 +170,10 @@ public class ColGroupSDC extends AMorphingMMColGroup {
 		}
 		else if(it != null) {
 			while(r < ru) {
-				if(it.value() == r)
-					c[r] = builtin.execute(c[r], vals[data.getIndex(it.getDataIndexAndIncrement())]);
+				if(it.value() == r){
+					c[r] = builtin.execute(c[r], vals[data.getIndex(it.getDataIndex())]);
+					it.next();
+				}
 				else
 					c[r] = builtin.execute(c[r], def);
 				r++;

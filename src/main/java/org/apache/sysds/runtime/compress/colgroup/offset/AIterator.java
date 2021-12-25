@@ -92,17 +92,6 @@ public abstract class AIterator {
 	}
 
 	/**
-	 * Get the current data index and increment the pointers using the next operator.
-	 * 
-	 * @return The current data index.
-	 */
-	public int getDataIndexAndIncrement() {
-		int x = dataIndex;
-		next();
-		return x;
-	}
-
-	/**
 	 * Skip values until index is achieved.
 	 * 
 	 * @param idx The index to skip to.

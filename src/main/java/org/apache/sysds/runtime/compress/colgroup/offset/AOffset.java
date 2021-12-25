@@ -22,6 +22,8 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.BitSet;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.apache.commons.lang.NotImplementedException;
 import org.apache.commons.logging.Log;
@@ -44,12 +46,16 @@ public abstract class AOffset implements Serializable {
 
 	protected static final Log LOG = LogFactory.getLog(AOffset.class.getName());
 
+	/** Thread local cache for a single recently used Iterator, this is used for cache blocking */
 	private ThreadLocal<OffsetCache> cacheRow = new ThreadLocal<OffsetCache>() {
 		@Override
 		protected OffsetCache initialValue() {
 			return null;
 		}
 	};
+
+	/** Memorizer for the row indexes mostly used for when we parallelize across rows */
+	private Map<Integer, AIterator> memorizer = null;
 
 	/**
 	 * Get an iterator of the offsets.
@@ -73,19 +79,25 @@ public abstract class AOffset implements Serializable {
 		// try the cache first.
 		OffsetCache c = cacheRow.get();
 		if(c == null) {
+			if(memorizer != null && memorizer.containsKey(row))
+				return memorizer.get(row).clone();
 			AIterator it = getIterator();
 			it.skipTo(row);
 			cacheIterator(it.clone(), row);
+			memorizeIterator(it.clone(), row);
 			return it;
 		}
 		else if(c.row == row)
 			return c.it.clone();
 		else {
+			if(memorizer != null && memorizer.containsKey(row))
+				return memorizer.get(row).clone();
 			// Use the cached iterator if it is closer to the queried row.
 			AIterator it = c.row < row ? c.it.clone() : getIterator();
 			it.skipTo(row);
 			// cache this new iterator.
 			cacheIterator(it.clone(), row);
+			memorizeIterator(it.clone(), row);
 			return it;
 		}
 
@@ -101,6 +113,14 @@ public abstract class AOffset implements Serializable {
 		if(it == null)
 			return;
 		cacheRow.set(new OffsetCache(it, row));
+	}
+
+	private void memorizeIterator(AIterator it, int row) {
+		if(it == null)
+			return;
+		else if(memorizer == null)
+			memorizer = new HashMap<>();
+		memorizer.put(row, it);
 	}
 
 	/**

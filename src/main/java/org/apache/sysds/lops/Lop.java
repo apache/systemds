@@ -117,6 +117,14 @@ public abstract class Lop
 	protected PrivacyConstraint privacyConstraint;
 
 	/**
+	 * Field defining if prefetch should be activated for operation.
+	 * When prefetch is activated, the output will be transferred from
+	 * remote federated sites to local before one of the subsequent
+	 * local operations.
+	 */
+	protected boolean activatePrefetch;
+
+	/**
 	 * Enum defining if the output of the operation should be forced federated, forced local or neither.
 	 * If it is FOUT, the output should be kept at federated sites.
 	 * If it is LOUT, the output should be retrieved by the coordinator.
@@ -316,8 +324,20 @@ public abstract class Lop
 		return privacyConstraint;
 	}
 
+	public void activatePrefetch(){
+		activatePrefetch = true;
+	}
+
+	public boolean prefetchActivated(){
+		return activatePrefetch;
+	}
+
 	public void setFederatedOutput(FederatedOutput fedOutput){
 		_fedOutput = fedOutput;
+	}
+
+	public FederatedOutput getFederatedOutput(){
+		return _fedOutput;
 	}
 	
 	public void setConsumerCount(int cc) {

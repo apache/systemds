@@ -93,6 +93,14 @@ public abstract class Hop implements ParseInfo {
 	 */
 	protected FederatedOutput _federatedOutput = FederatedOutput.NONE;
 	protected FederatedCost _federatedCost = new FederatedCost();
+
+	/**
+	 * Field defining if prefetch should be activated for operation.
+	 * When prefetch is activated, the output will be transferred from
+	 * remote federated sites to local before one of the subsequent
+	 * local operations.
+	 */
+	protected boolean activatePrefetch;
 	
 	// Estimated size for the output produced from this Hop in bytes
 	protected double _outputMemEstimate = OptimizerUtils.INVALID_SIZE;
@@ -186,6 +194,21 @@ public abstract class Hop implements ParseInfo {
 
 	public void setFederatedOutput(FederatedOutput federatedOutput){
 		_federatedOutput = federatedOutput;
+	}
+
+	/**
+	 * Activate prefetch of HOP.
+	 */
+	public void activatePrefetch(){
+		activatePrefetch = true;
+	}
+
+	/**
+	 * Checks if prefetch is activated for this hop.
+	 * @return true if prefetch is activated
+	 */
+	public boolean prefetchActivated(){
+		return activatePrefetch;
 	}
 	
 	public void resetExecType()
@@ -352,6 +375,8 @@ public abstract class Hop implements ParseInfo {
 		//propagate federated output configuration to lops
 		if( isFederated() )
 			getLops().setFederatedOutput(_federatedOutput);
+		if ( prefetchActivated() )
+			getLops().activatePrefetch();
 		
 		//Step 1: construct reblock lop if required (output of hop)
 		constructAndSetReblockLopIfRequired();
@@ -869,8 +894,11 @@ public abstract class Hop implements ParseInfo {
 	 * This method only has an effect if FEDERATED_COMPILATION is activated.
 	 * Federated compilation is activated in OptimizerUtils.
 	 */
-	protected void updateETFed(){
-		if ( someInputFederated() || isFederatedDataOp() )
+	protected void updateETFed() {
+		boolean localOut = hasLocalOutput();
+		boolean fedIn = getInput().stream().anyMatch(
+			in -> in.hasFederatedOutput() && !(in.prefetchActivated() && localOut));
+		if( isFederatedDataOp() || fedIn )
 			_etype = ExecType.FED;
 	}
 

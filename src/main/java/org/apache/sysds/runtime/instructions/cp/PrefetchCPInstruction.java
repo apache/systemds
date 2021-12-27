@@ -49,8 +49,8 @@ public class PrefetchCPInstruction extends UnaryCPInstruction {
 		// If the next instruction which takes this output as an input comes before
 		// the prefetch thread triggers, that instruction will start the operations.
 		// In that case this Prefetch instruction will act like a NOOP. 
-		if (CommonThreadPool.triggerRDDPool == null)
-			CommonThreadPool.triggerRDDPool = Executors.newCachedThreadPool();
-		CommonThreadPool.triggerRDDPool.submit(new TriggerRDDOperationsTask(ec.getMatrixObject(output)));
+		if (CommonThreadPool.triggerRemoteOPsPool == null)
+			CommonThreadPool.triggerRemoteOPsPool = Executors.newCachedThreadPool();
+		CommonThreadPool.triggerRemoteOPsPool.submit(new TriggerRemoteOperationsTask(ec.getMatrixObject(output)));
 	}
 }

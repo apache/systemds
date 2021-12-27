@@ -177,6 +177,7 @@ public class Statistics
 	private static final LongAdder federatedGetCount = new LongAdder();
 	private static final LongAdder federatedExecuteInstructionCount = new LongAdder();
 	private static final LongAdder federatedExecuteUDFCount = new LongAdder();
+	private static final LongAdder fedAsyncPrefetchCount = new LongAdder();
 
 	private static LongAdder numNativeFailures = new LongAdder();
 	public static LongAdder numNativeLibMatrixMultCalls = new LongAdder();
@@ -443,6 +444,10 @@ public class Statistics
 		}
 	}
 
+	public static void incFedAsyncPrefetchCount(long c) {
+		fedAsyncPrefetchCount.add(c);
+	}
+
 	public static void startCompileTimer() {
 		if( DMLScript.STATISTICS )
 			compileStartTime = System.nanoTime();
@@ -550,6 +555,7 @@ public class Statistics
 		federatedGetCount.reset();
 		federatedExecuteInstructionCount.reset();
 		federatedExecuteUDFCount.reset();
+		fedAsyncPrefetchCount.reset();
 
 		DMLCompressionStatistics.reset();
 	}
@@ -1220,6 +1226,8 @@ public class Statistics
 				sb.append("Federated Execute (Inst, UDF):\t" +
 					federatedExecuteInstructionCount.longValue() + "/" +
 					federatedExecuteUDFCount.longValue() + ".\n");
+				sb.append("Federated prefetch count:\t" +
+					fedAsyncPrefetchCount.longValue() + ".\n");
 			}
 			if( transformEncoderCount.longValue() > 0) {
 				//TODO: Cleanup and condense

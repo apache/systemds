@@ -314,7 +314,8 @@ public class CLALibDecompress {
 
 		@Override
 		public Long call() {
-			final int blk = 1024;
+			// final int blk = 1024;
+			final int blk = 10000;
 			long nnz = 0;
 			for(int b = _rl; b < _ru; b+= blk){
 				int e = Math.min(b + blk , _ru);

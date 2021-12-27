@@ -66,8 +66,10 @@ public class CLALibRightMultBy {
 			ret = rightMultByMatrixOverlapping(m1, m2, k);
 
 			if(ret instanceof CompressedMatrixBlock) {
-				if(!allowOverlap)
-					ret = ((CompressedMatrixBlock) ret).getUncompressed("Overlapping not allowed");
+				if(!allowOverlap){
+					LOG.trace("Overlapping output not allowed in call to Right MM");
+					ret = ((CompressedMatrixBlock) ret).getUncompressed();
+				}
 				else {
 					final double compressedSize = ret.getInMemorySize();
 					final double uncompressedSize = MatrixBlock.estimateSizeDenseInMemory(ret.getNumRows(),

@@ -72,8 +72,14 @@ public class ColGroupDDC extends APreAgg {
 	@Override
 	protected void decompressToDenseBlockDenseDictionary(DenseBlock db, int rl, int ru, int offR, int offC,
 		double[] values) {
-		if(db.isContiguous() && _colIndexes.length == 1)
-			decompressToDenseBlockDenseDictSingleColContiguous(db, rl, ru, offR, offC, values);
+		if(db.isContiguous() && _colIndexes.length == 1) {
+
+			if(db.getDim(1) == 1)
+				decompressToDenseBlockDenseDictSingleColOutContiguous(db, rl, ru, offR, offC, values);
+			else
+				decompressToDenseBlockDenseDictSingleColContiguous(db, rl, ru, offR, offC, values);
+
+		}
 		else {
 			// generic
 			final int nCol = _colIndexes.length;
@@ -95,6 +101,13 @@ public class ColGroupDDC extends APreAgg {
 		for(int i = rl, offT = (rl + offR) * nCols + colOff; i < ru; i++, offT += nCols)
 			c[offT] += values[_data.getIndex(i)];
 
+	}
+
+	private void decompressToDenseBlockDenseDictSingleColOutContiguous(DenseBlock db, int rl, int ru, int offR, int offC,
+		double[] values) {
+		final double[] c = db.values(0);
+		for(int i = rl, offT = rl + offR + _colIndexes[0] + offC; i < ru; i++, offT++)
+			c[offT] += values[_data.getIndex(i)];
 	}
 
 	@Override

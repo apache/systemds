@@ -263,7 +263,7 @@ public abstract class AOffset implements Serializable {
 		final double[] vals = db.values(rl);
 		final int nCol = db.getCumODims(0);
 		while(it.offset < cu) {
-			final int dataOffset = data.get(it.dataIndex) ? 1 : 0;
+			final int dataOffset = data.get(it.getDataIndex()) ? 1 : 0;
 			final int start = it.offset + nCol * rl;
 			final int end = it.offset + nCol * ru;
 			for(int offOut = dataOffset, off = start; off < end; offOut += nVal, off += nCol)
@@ -279,14 +279,14 @@ public abstract class AOffset implements Serializable {
 		final double[] vals = db.values(rl);
 		final int nCol = db.getCumODims(0);
 		final int last = getOffsetToLast();
-		int dataOffset = data.get(it.dataIndex) ? 1 : 0;
+		int dataOffset = data.get(it.getDataIndex()) ? 1 : 0;
 		int start = it.offset + nCol * rl;
 		int end = it.offset + nCol * ru;
 		for(int offOut = dataOffset, off = start; off < end; offOut += nVal, off += nCol)
 			preAV[offOut] += vals[off];
 		while(it.offset < last) {
 			it.next();
-			dataOffset = data.get(it.dataIndex) ? 1 : 0;
+			dataOffset = data.get(it.getDataIndex()) ? 1 : 0;
 			start = it.offset + nCol * rl;
 			end = it.offset + nCol * ru;
 			for(int offOut = dataOffset, off = start; off < end; offOut += nVal, off += nCol)
@@ -329,8 +329,8 @@ public abstract class AOffset implements Serializable {
 		int j = apos;
 		while(j < alen) {
 			if(aix[j] == it.offset) {
-				preAV[data[it.dataIndex] & 0xFF] += avals[j++];
-				if(it.dataIndex >= maxId)
+				preAV[data[it.getDataIndex()] & 0xFF] += avals[j++];
+				if(it.getDataIndex() >= maxId)
 					break;
 				it.next();
 			}
@@ -338,7 +338,7 @@ public abstract class AOffset implements Serializable {
 				j++;
 			}
 			else {
-				if(it.dataIndex >= maxId)
+				if(it.getDataIndex() >= maxId)
 					break;
 				it.next();
 			}
@@ -355,8 +355,8 @@ public abstract class AOffset implements Serializable {
 		int j = apos;
 		while(j < alen) {
 			if(aix[j] == it.offset) {
-				preAV[data[it.dataIndex]] += avals[j++];
-				if(it.dataIndex >= maxId)
+				preAV[data[it.getDataIndex()]] += avals[j++];
+				if(it.getDataIndex() >= maxId)
 					break;
 				it.next();
 			}
@@ -364,7 +364,7 @@ public abstract class AOffset implements Serializable {
 				j++;
 			}
 			else {
-				if(it.dataIndex >= maxId)
+				if(it.getDataIndex() >= maxId)
 					break;
 				it.next();
 			}
@@ -381,7 +381,7 @@ public abstract class AOffset implements Serializable {
 		int j = apos;
 		while(it.offset < last && j < alen) {
 			if(aix[j] == it.offset) {
-				preAV[data.get(it.dataIndex) ? 1 : 0] += avals[j++];
+				preAV[data.get(it.getDataIndex()) ? 1 : 0] += avals[j++];
 				it.next();
 			}
 			if(j < alen)
@@ -393,7 +393,7 @@ public abstract class AOffset implements Serializable {
 		while(j < alen && aix[j] < it.offset)
 			j++;
 		if(j != alen && aix[j] == it.offset)
-			preAV[data.get(it.dataIndex) ? 1 : 0] += avals[j];
+			preAV[data.get(it.getDataIndex()) ? 1 : 0] += avals[j];
 
 	}
 

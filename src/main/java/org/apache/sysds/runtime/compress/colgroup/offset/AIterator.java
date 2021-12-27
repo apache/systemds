@@ -25,22 +25,16 @@ import org.apache.commons.logging.LogFactory;
  * Iterator interface, that returns a iterator of the indexes (not offsets)
  */
 public abstract class AIterator {
-	protected static final Log LOG = LogFactory.getLog(AIterator.class.getName());
+	public static final Log LOG = LogFactory.getLog(AIterator.class.getName());
 
-	protected int index;
-	protected int dataIndex;
 	protected int offset;
 
 	/**
 	 * Main Constructor
 	 * 
-	 * @param index     The current index that correspond to an actual value in the dictionary.
-	 * @param dataIndex The current index int the offset.
-	 * @param offset    The current index in the uncompressed representation.
+	 * @param offset The current offset into in the uncompressed representation.
 	 */
-	protected AIterator(int index, int dataIndex, int offset) {
-		this.index = index;
-		this.dataIndex = dataIndex;
+	protected AIterator(int offset) {
 		this.offset = offset;
 	}
 
@@ -56,6 +50,10 @@ public abstract class AIterator {
 	 */
 	public int value() {
 		return offset;
+	}
+
+	public void setOff(int off){
+		offset = off;
 	}
 
 	/**
@@ -76,9 +74,10 @@ public abstract class AIterator {
 	 * 
 	 * @return The Data Index.
 	 */
-	public int getDataIndex() {
-		return dataIndex;
-	}
+	public abstract int getDataIndex();
+	// {
+	// return dataIndex;
+	// }
 
 	/**
 	 * Get the current offsets index, that points to the underlying offsets list.
@@ -87,9 +86,10 @@ public abstract class AIterator {
 	 * 
 	 * @return The Offsets Index.
 	 */
-	public int getOffsetsIndex() {
-		return index;
-	}
+	public abstract int getOffsetsIndex();
+	// {
+	// return index;
+	// }
 
 	/**
 	 * Skip values until index is achieved.
@@ -111,6 +111,6 @@ public abstract class AIterator {
 	 * @return The result
 	 */
 	public boolean equals(AIterator o) {
-		return o.index == this.index;
+		return o.getOffsetsIndex() == getOffsetsIndex();
 	}
 }

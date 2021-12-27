@@ -205,6 +205,7 @@ public enum Builtins {
 	NAIVEBAYESPREDICT("naiveBayesPredict", true, false),
 	NCOL("ncol", false),
 	NORMALIZE("normalize", true),
+	NORMALIZEAPPLY("normalizeApply", true),
 	NROW("nrow", false),
 	OUTER("outer", false),
 	OUTLIER("outlier", true, false), //TODO parameterize opposite

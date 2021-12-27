@@ -20,6 +20,7 @@
 package org.apache.sysds.hops.cost;
 
 import org.apache.sysds.hops.Hop;
+import org.apache.sysds.hops.ipa.MemoTable;
 import org.apache.sysds.parser.DMLProgram;
 import org.apache.sysds.parser.ForStatement;
 import org.apache.sysds.parser.ForStatementBlock;
@@ -33,8 +34,6 @@ import org.apache.sysds.parser.WhileStatement;
 import org.apache.sysds.parser.WhileStatementBlock;
 
 import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
 
 /**
  * Cost estimator for federated executions with methods and constants for going through DML programs to estimate costs.
@@ -200,10 +199,9 @@ public class FederatedCostEstimator {
 	 * @param hopRelMemo memo table of HopRels for calculating input costs
 	 * @return cost estimation of Hop DAG starting from given root HopRel
 	 */
-	public FederatedCost costEstimate(HopRel root, Map<Long, List<HopRel>> hopRelMemo){
+	public FederatedCost costEstimate(HopRel root, MemoTable hopRelMemo){
 		// Check if root is in memo table.
-		if ( hopRelMemo.containsKey(root.hopRef.getHopID())
-			&& hopRelMemo.get(root.hopRef.getHopID()).stream().anyMatch(h -> h.fedOut == root.fedOut) ){
+		if ( hopRelMemo.containsHopRel(root) ){
 			return root.getCostObject();
 		}
 		else {

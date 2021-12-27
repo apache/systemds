@@ -49,7 +49,7 @@ public class CommonThreadPool implements ExecutorService
 	private static final int size = InfrastructureAnalyzer.getLocalParallelism();
 	private static final ExecutorService shared = ForkJoinPool.commonPool();
 	private final ExecutorService _pool;
-	public static ExecutorService triggerRDDPool = null;
+	public static ExecutorService triggerRemoteOPsPool = null;
 
 	public CommonThreadPool(ExecutorService pool) {
 		_pool = pool;
@@ -80,10 +80,10 @@ public class CommonThreadPool implements ExecutorService
 	}
 
 	public static void shutdownAsyncRDDPool() {
-		if (triggerRDDPool != null) {
+		if (triggerRemoteOPsPool != null) {
 			//shutdown prefetch/broadcast thread pool
-			triggerRDDPool.shutdown();
-			triggerRDDPool = null;
+			triggerRemoteOPsPool.shutdown();
+			triggerRemoteOPsPool = null;
 		}
 	}
 

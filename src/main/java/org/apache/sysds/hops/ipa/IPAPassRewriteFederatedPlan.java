@@ -19,7 +19,6 @@
 
 package org.apache.sysds.hops.ipa;
 
-import org.apache.sysds.api.DMLException;
 import org.apache.sysds.hops.AggBinaryOp;
 import org.apache.sysds.hops.AggUnaryOp;
 import org.apache.sysds.hops.BinaryOp;
@@ -45,10 +44,9 @@ import org.apache.sysds.runtime.instructions.fed.FEDInstruction;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
+import java.util.Set;
 
 /**
  * This rewrite generates a federated execution plan by estimating and setting costs and the FederatedOutput values of
@@ -57,7 +55,8 @@ import java.util.Map;
  */
 public class IPAPassRewriteFederatedPlan extends IPAPass {
 
-	private final static Map<Long, List<HopRel>> hopRelMemo = new HashMap<>();
+	private final static MemoTable hopRelMemo = new MemoTable();
+	private final static Set<Long> hopRelUpdatedFinal = new HashSet<>();
 
 	/**
 	 * Indicates if an IPA pass is applicable for the current configuration.
@@ -66,7 +65,8 @@ public class IPAPassRewriteFederatedPlan extends IPAPass {
 	 * @param fgraph function call graph
 	 * @return true if federated compilation is activated.
 	 */
-	@Override public boolean isApplicable(FunctionCallGraph fgraph) {
+	@Override
+	public boolean isApplicable(FunctionCallGraph fgraph) {
 		return OptimizerUtils.FEDERATED_COMPILATION;
 	}
 
@@ -79,7 +79,8 @@ public class IPAPassRewriteFederatedPlan extends IPAPass {
 	 * @param fcallSizes function call size infos
 	 * @return false since the function call graph never has to be rebuilt
 	 */
-	@Override public boolean rewriteProgram(DMLProgram prog, FunctionCallGraph fgraph,
+	@Override
+	public boolean rewriteProgram(DMLProgram prog, FunctionCallGraph fgraph,
 		FunctionCallSizeInfo fcallSizes) {
 		rewriteStatementBlocks(prog, prog.getStatementBlocks());
 		return false;
@@ -189,9 +190,7 @@ public class IPAPassRewriteFederatedPlan extends IPAPass {
 	 * @param root hop for which FederatedOutput needs to be set
 	 */
 	private void setFinalFedout(Hop root) {
-		HopRel optimalRootHopRel = hopRelMemo.get(root.getHopID()).stream()
-			.min(Comparator.comparingDouble(HopRel::getCost))
-			.orElseThrow(() -> new DMLException("Hop root " + root + " has no feasible federated output alternatives"));
+		HopRel optimalRootHopRel = hopRelMemo.getMinCostAlternative(root);
 		setFinalFedout(root, optimalRootHopRel);
 	}
 
@@ -202,8 +201,21 @@ public class IPAPassRewriteFederatedPlan extends IPAPass {
 	 * @param rootHopRel from which FederatedOutput value and cost is retrieved
 	 */
 	private void setFinalFedout(Hop root, HopRel rootHopRel) {
-		updateFederatedOutput(root, rootHopRel);
-		visitInputDependency(rootHopRel);
+		if ( hopRelUpdatedFinal.contains(root.getHopID()) ){
+			if((rootHopRel.hasLocalOutput() ^ root.hasLocalOutput()) && hopRelMemo.hasFederatedOutputAlternative(root)){
+				// Update with FOUT alternative without visiting inputs
+				updateFederatedOutput(root, hopRelMemo.getFederatedOutputAlternative(root));
+				root.activatePrefetch();
+			}
+			else {
+				// Update without visiting inputs
+				updateFederatedOutput(root, rootHopRel);
+			}
+		}
+		else {
+			updateFederatedOutput(root, rootHopRel);
+			visitInputDependency(rootHopRel);
+		}
 	}
 
 	/**
@@ -226,6 +238,7 @@ public class IPAPassRewriteFederatedPlan extends IPAPass {
 	private void updateFederatedOutput(Hop root, HopRel updateHopRel) {
 		root.setFederatedOutput(updateHopRel.getFederatedOutput());
 		root.setFederatedCost(updateHopRel.getCostObject());
+		hopRelUpdatedFinal.add(root.getHopID());
 	}
 
 	/**
@@ -257,7 +270,7 @@ public class IPAPassRewriteFederatedPlan extends IPAPass {
 	 */
 	private void visitFedPlanHop(Hop currentHop) {
 		// If the currentHop is in the hopRelMemo table, it means that it has been visited
-		if(hopRelMemo.containsKey(currentHop.getHopID()))
+		if(hopRelMemo.containsHop(currentHop))
 			return;
 		// If the currentHop has input, then the input should be visited depth-first
 		if(currentHop.getInput() != null && currentHop.getInput().size() > 0) {
@@ -273,7 +286,7 @@ public class IPAPassRewriteFederatedPlan extends IPAPass {
 		}
 		if(hopRels.isEmpty())
 			hopRels.add(new HopRel(currentHop, FEDInstruction.FederatedOutput.NONE, hopRelMemo));
-		hopRelMemo.put(currentHop.getHopID(), hopRels);
+		hopRelMemo.put(currentHop, hopRels);
 	}
 
 	/**
@@ -319,8 +332,8 @@ public class IPAPassRewriteFederatedPlan extends IPAPass {
 		if(associatedHop instanceof AggUnaryOp && associatedHop.isScalar())
 			return false;
 		// It can only be FOUT if at least one of the inputs are FOUT, except if it is a federated DataOp
-		if(associatedHop.getInput().stream().noneMatch(input -> hopRelMemo.get(input.getHopID()).stream()
-			.anyMatch(HopRel::hasFederatedOutput)) && !associatedHop.isFederatedDataOp())
+		if(associatedHop.getInput().stream().noneMatch(hopRelMemo::hasFederatedOutputAlternative)
+			&& !associatedHop.isFederatedDataOp())
 			return false;
 		return true;
 	}

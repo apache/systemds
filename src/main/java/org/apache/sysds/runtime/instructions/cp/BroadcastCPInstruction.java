@@ -44,8 +44,8 @@ public class BroadcastCPInstruction extends UnaryCPInstruction {
 	public void processInstruction(ExecutionContext ec) {
 		ec.setVariable(output.getName(), ec.getMatrixObject(input1));
 
-		if (CommonThreadPool.triggerRDDPool == null)
-			CommonThreadPool.triggerRDDPool = Executors.newCachedThreadPool();
-		CommonThreadPool.triggerRDDPool.submit(new TriggerBroadcastTask(ec, ec.getMatrixObject(output)));
+		if (CommonThreadPool.triggerRemoteOPsPool == null)
+			CommonThreadPool.triggerRemoteOPsPool = Executors.newCachedThreadPool();
+		CommonThreadPool.triggerRemoteOPsPool.submit(new TriggerBroadcastTask(ec, ec.getMatrixObject(output)));
 	}
 }

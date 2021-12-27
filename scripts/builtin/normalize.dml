@@ -39,6 +39,6 @@ m_normalize = function(Matrix[Double] X)
   # compute feature ranges for transformations
   cmin = colMins(X);
   cmax = colMaxs(X);
-	# normalize features to range [0,1]
+  # normalize features to range [0,1]
   Y = normalizeApply(X, cmin, cmax);
 }

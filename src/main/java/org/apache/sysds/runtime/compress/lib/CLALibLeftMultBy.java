@@ -64,7 +64,8 @@ public class CLALibLeftMultBy {
 		int k) {
 		if(left.isEmpty() || right.isEmpty())
 			return prepareEmptyReturnMatrix(right, left, ret, true);
-		LOG.warn("Transposing matrix block for transposed left matrix multiplication");
+		if(left.getNumColumns() > 1)
+			LOG.warn("Transposing matrix block for transposed left matrix multiplication");
 		MatrixBlock transposed = new MatrixBlock(left.getNumColumns(), left.getNumRows(), false);
 		LibMatrixReorg.transpose(left, transposed, k);
 		ret = leftMultByMatrix(right, transposed, ret, k);
@@ -276,12 +277,11 @@ public class CLALibLeftMultBy {
 
 	private static void LMMParallel(List<AColGroup> filteredGroups, MatrixBlock that, MatrixBlock ret, double[] rowSums,
 		boolean overlapping, int k) {
-		LOG.debug("Parallel left matrix multiplication thatRows: " + that.getNumRows());
 		try {
 			final ExecutorService pool = CommonThreadPool.get(k);
 			final ArrayList<Callable<MatrixBlock>> tasks = new ArrayList<>();
 			final int rl = that.getNumRows();
-			final int numberSplits = Math.max((filteredGroups.size() / k), 1);
+			final int numberSplits = Math.min(filteredGroups.size(), k);
 			final int rowBlockThreads = Math.max(k / numberSplits, 1);
 			final int rowBlockSize = rl <= rowBlockThreads ? 1 : Math.min(Math.max(rl / rowBlockThreads, 1), 16);
 

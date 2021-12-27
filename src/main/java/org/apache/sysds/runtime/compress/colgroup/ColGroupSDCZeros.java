@@ -100,37 +100,100 @@ public class ColGroupSDCZeros extends APreAgg {
 			return;
 		if(it.value() >= ru)
 			_indexes.cacheIterator(it, ru);
-		else if(ru > _indexes.getOffsetToLast()) {
-			final int lastOff = _indexes.getOffsetToLast();
-			final int nCol = _colIndexes.length;
-			while(true) {
-				final int idx = offR + it.value();
-				final double[] c = db.values(idx);
-				final int off = db.pos(idx) + offC;
-				final int offDict = _data.getIndex(it.getDataIndex()) * nCol;
-				for(int j = 0; j < nCol; j++)
-					c[off + _colIndexes[j]] += values[offDict + j];
-				if(it.value() == lastOff)
-					return;
-				it.next();
+		else if(db.isContiguous() && _colIndexes.length == 1) {
+			if(ru > _indexes.getOffsetToLast())
+				decompressToDenseBlockDenseDictionaryPostSingleColContiguous(db, rl, ru, offR, offC, values, it);
+			else {
+				if(db.getDim(1) == 1)
+					decompressToDenseBlockDenseDictionaryPreSingleColOutContiguous(db, ru, offR, offC, values, it, _data);
+				else
+					decompressToDenseBlockDenseDictionaryPreSingleColContiguous(db, rl, ru, offR, offC, values, it);
+				_indexes.cacheIterator(it, ru);
 			}
 		}
+		else if(ru > _indexes.getOffsetToLast())
+			decompressToDenseBlockDenseDictionaryPostGeneric(db, rl, ru, offR, offC, values, it);
 		else {
-
-			final int nCol = _colIndexes.length;
-			while(it.isNotOver(ru)) {
-				final int idx = offR + it.value();
-				final double[] c = db.values(idx);
-				final int off = db.pos(idx) + offC;
-				final int offDict = _data.getIndex(it.getDataIndex()) * nCol;
-				for(int j = 0; j < nCol; j++)
-					c[off + _colIndexes[j]] += values[offDict + j];
-
-				it.next();
-			}
+			decompressToDenseBlockDenseDictionaryPreGeneric(db, rl, ru, offR, offC, values, it);
 			_indexes.cacheIterator(it, ru);
 		}
+	}
 
+	private void decompressToDenseBlockDenseDictionaryPostSingleColContiguous(DenseBlock db, int rl, int ru, int offR,
+		int offC, double[] values, AIterator it) {
+		final int lastOff = _indexes.getOffsetToLast() + offR;
+		final int nCol = db.getDim(1);
+		final double[] c = db.values(0);
+		it.setOff(it.value() + offR);
+		offC += _colIndexes[0];
+		while(it.value() < lastOff) {
+			final int off = it.value() * nCol + offC;
+			c[off] += values[_data.getIndex(it.getDataIndex())];
+			it.next();
+		}
+		final int off = it.value() * nCol + offC;
+		c[off] += values[_data.getIndex(it.getDataIndex())];
+		it.setOff(it.value() - offR);
+	}
+
+	private void decompressToDenseBlockDenseDictionaryPostGeneric(DenseBlock db, int rl, int ru, int offR, int offC,
+		double[] values, AIterator it) {
+		final int lastOff = _indexes.getOffsetToLast();
+		final int nCol = _colIndexes.length;
+		while(true) {
+			final int idx = offR + it.value();
+			final double[] c = db.values(idx);
+			final int off = db.pos(idx) + offC;
+			final int offDict = _data.getIndex(it.getDataIndex()) * nCol;
+			for(int j = 0; j < nCol; j++)
+				c[off + _colIndexes[j]] += values[offDict + j];
+			if(it.value() == lastOff)
+				return;
+			it.next();
+		}
+	}
+
+	private static void decompressToDenseBlockDenseDictionaryPreSingleColOutContiguous(DenseBlock db, int ru, int offR,
+		int offC, double[] values, AIterator it, AMapToData m) {
+		final double[] c = db.values(0);
+		final int of = offR + offC;
+		final int last = ru + of;
+		it.setOff(it.value() + of);
+		while(it.isNotOver(last)) {
+			c[it.value()] += values[m.getIndex(it.getDataIndex())];
+			it.next();
+		}
+		it.setOff(it.value() - of);
+	}
+
+	private void decompressToDenseBlockDenseDictionaryPreSingleColContiguous(DenseBlock db, int rl, int ru, int offR,
+		int offC, double[] values, AIterator it) {
+		final int last = ru + offR;
+		final int nCol = db.getDim(1);
+		final double[] c = db.values(0);
+		it.setOff(it.value() + offR);
+		offC += _colIndexes[0];
+		while(it.isNotOver(last)) {
+			final int off = it.value() * nCol + offC;
+			c[off] += values[_data.getIndex(it.getDataIndex())];
+			it.next();
+		}
+		it.setOff(it.value() - offR);
+	}
+
+	private void decompressToDenseBlockDenseDictionaryPreGeneric(DenseBlock db, int rl, int ru, int offR, int offC,
+		double[] values, AIterator it) {
+		final int nCol = _colIndexes.length;
+		while(it.isNotOver(ru)) {
+			final int idx = offR + it.value();
+			final double[] c = db.values(idx);
+			final int off = db.pos(idx) + offC;
+			final int offDict = _data.getIndex(it.getDataIndex()) * nCol;
+			for(int j = 0; j < nCol; j++)
+				c[off + _colIndexes[j]] += values[offDict + j];
+
+			it.next();
+		}
 	}
 
 	@Override

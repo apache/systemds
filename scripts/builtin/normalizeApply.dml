@@ -19,26 +19,25 @@
 #
 #-------------------------------------------------------------
 
-# Min-max normalization (a.k.a. min-max scaling) to range [0,1]. For matrices 
-# of positive values, this normalization preserves the input sparsity.
+# Min-max normalization (a.k.a. min-max scaling) to range [0,1], given 
+# existing min-max ranges. For matrices of positive values, this normalization 
+# preserves the input sparsity. The validity of the provided min-max range
+# and post-processing is under control of the caller. 
 #
 # ------------------------------------------------------------------------------
 # NAME     TYPE     DEFAULT   MEANING
 # ------------------------------------------------------------------------------
 # X        Matrix    ---      Input feature matrix of shape n-by-m
-# ------------------------------------------------------------------------------
-# Y        Matrix    ---      Modified output feature matrix of shape n-by-m
 # cmin     Matrix    ---      Colunm minima of shape 1-by-m
 # cmax     Matrix    ---      Column maxima of shape 1-by-m
 # ------------------------------------------------------------------------------
+# Y        Matrix    ---      Modified output feature matrix of shape n-by-m
+# ------------------------------------------------------------------------------
 
 
-m_normalize = function(Matrix[Double] X)
-  return (Matrix[Double] Y, Matrix[Double] cmin, Matrix[Double] cmax)
+m_normalizeApply = function(Matrix[Double] X, Matrix[Double] cmin, Matrix[Double] cmax)
+  return (Matrix[Double] Y)
 {
-  # compute feature ranges for transformations
-  cmin = colMins(X);
-  cmax = colMaxs(X);
-	# normalize features to range [0,1]
-  Y = normalizeApply(X, cmin, cmax);
+  # normalize features to given range ([0,1] if indeed min/max)
+  Y = (X - cmin) / (cmax - cmin);
 }

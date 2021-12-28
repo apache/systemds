@@ -210,7 +210,6 @@ m_kmeans = function(Matrix[Double] X, Integer k = 10, Integer runs = 10, Integer
              + ";  Avg WCSS = " + avg_wcss + ";  Worst WCSS = " + worst_wcss);
 
     C = All_Centroids [(num_centroids * (best_index - 1) + 1) : (num_centroids * best_index), ];
-    while(FALSE){} # workaround to make ncol t(C) known
     D =  -2 * (X %*% t(C)) + t(rowSums (C ^ 2));
     P = (D <= rowMins (D));
     aggr_P = t(cumsum (t(P)));

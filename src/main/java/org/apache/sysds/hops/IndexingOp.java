@@ -262,36 +262,35 @@ public class IndexingOp extends Hop
 	{
 		boolean ret = false;
 		LiteralOp constant = null;
-		DataOp var = null;
+		Hop var = null;
 
 		//handle lower bound
 		if( lbound instanceof BinaryOp && ((BinaryOp)lbound).getOp()==OpOp2.PLUS
-			&& lbound.getInput().get(1) instanceof LiteralOp 
-			&& HopRewriteUtils.getDoubleValueSafe((LiteralOp)lbound.getInput().get(1))==1
-			&& lbound.getInput().get(0) instanceof BinaryOp)
+			&& lbound.getInput(1) instanceof LiteralOp 
+			&& HopRewriteUtils.getDoubleValueSafe((LiteralOp)lbound.getInput(1))==1
+			&& lbound.getInput(0) instanceof BinaryOp)
 		{
-			BinaryOp lmult = (BinaryOp)lbound.getInput().get(0);
-			if( lmult.getOp()==OpOp2.MULT && lmult.getInput().get(0) instanceof LiteralOp
-				&& lmult.getInput().get(1) instanceof BinaryOp )
+			BinaryOp lmult = (BinaryOp)lbound.getInput(0);
+			if( lmult.getOp()==OpOp2.MULT && lmult.getInput(0) instanceof LiteralOp
+				&& lmult.getInput(1) instanceof BinaryOp )
 			{
-				BinaryOp lminus = (BinaryOp)lmult.getInput().get(1);
-				if( lminus.getOp()==OpOp2.MINUS && lminus.getInput().get(1) instanceof LiteralOp
-					&& HopRewriteUtils.getDoubleValueSafe((LiteralOp)lminus.getInput().get(1))==1 
-					&& lminus.getInput().get(0) instanceof DataOp )
+				BinaryOp lminus = (BinaryOp)lmult.getInput(1);
+				if( lminus.getOp()==OpOp2.MINUS && lminus.getInput(1) instanceof LiteralOp
+					&& HopRewriteUtils.getDoubleValueSafe((LiteralOp)lminus.getInput(1))==1 )
 				{
-					constant = (LiteralOp)lmult.getInput().get(0);
-					var = (DataOp) lminus.getInput().get(0);
+					constant = (LiteralOp)lmult.getInput(0);
+					var = lminus.getInput(0); //any DataOp or intermediate hop
 				}
 			}
 		}
 		
-		//handle upper bound
+		//handle upper bound (general check for var depends on CSE)
 		if( var != null && constant != null && ubound instanceof BinaryOp 
-			&& ubound.getInput().get(0) instanceof LiteralOp
-			&& ubound.getInput().get(1) instanceof DataOp 
-			&& ubound.getInput().get(1).getName().equals(var.getName()) ) 
+			&& ((ubound.getInput(0) instanceof LiteralOp && ubound.getInput(1) == var)
+			  ||(ubound.getInput(1) instanceof LiteralOp && ubound.getInput(0) == var)) )
 		{
-			LiteralOp constant2 = (LiteralOp)ubound.getInput().get(0);
+			int constIndex = (ubound.getInput(1) == var) ? 0 : 1;
+			LiteralOp constant2 = (LiteralOp)ubound.getInput(constIndex);
 			ret = ( HopRewriteUtils.getDoubleValueSafe(constant) == 
 					HopRewriteUtils.getDoubleValueSafe(constant2) );
 		}

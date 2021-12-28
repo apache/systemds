@@ -19,10 +19,19 @@
 
 package org.apache.sysds.lops.compile;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.stream.Collectors;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.DataType;
+import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.common.Types.FileFormat;
 import org.apache.sysds.common.Types.OpOp1;
 import org.apache.sysds.common.Types.OpOpData;
@@ -39,7 +48,6 @@ import org.apache.sysds.lops.GroupedAggregate;
 import org.apache.sysds.lops.GroupedAggregateM;
 import org.apache.sysds.lops.Lop;
 import org.apache.sysds.lops.Lop.Type;
-import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.lops.LopsException;
 import org.apache.sysds.lops.MMTSJ;
 import org.apache.sysds.lops.MMZip;
@@ -51,6 +59,7 @@ import org.apache.sysds.lops.ReBlock;
 import org.apache.sysds.lops.SpoofFused;
 import org.apache.sysds.lops.UAggOuterChain;
 import org.apache.sysds.lops.UnaryCP;
+import org.apache.sysds.lops.compile.linearization.ILinearize;
 import org.apache.sysds.parser.DataExpression;
 import org.apache.sysds.parser.StatementBlock;
 import org.apache.sysds.runtime.DMLRuntimeException;
@@ -64,16 +73,6 @@ import org.apache.sysds.runtime.instructions.cp.CPInstruction;
 import org.apache.sysds.runtime.instructions.cp.CPInstruction.CPType;
 import org.apache.sysds.runtime.instructions.cp.VariableCPInstruction;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
-
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 
 /**
@@ -192,12 +191,8 @@ public class Dag<N extends Lop>
 		if (config != null) {
 			scratch = config.getTextValue(DMLConfig.SCRATCH_SPACE) + "/";
 		}
-		
-		// create ordering of lops (for MR, we sort by level, while for all
-		// other exec types we use a two-level sorting of )
-		List<Lop> node_v = 
-			//doTopologicalSortStrictOrder(nodes) :
-			doTopologicalSortTwoLevelOrder(nodes);
+
+		List<Lop> node_v = ILinearize.linearize(nodes);
 		
 		// add Prefetch and broadcast lops, if necessary
 		List<Lop> node_pf = OptimizerUtils.ASYNC_TRIGGER_RDD_OPERATIONS ? addPrefetchLop(node_v) : node_v;
@@ -207,8 +202,7 @@ public class Dag<N extends Lop>
 		prefetchFederated(node_bc);
 
 		// do greedy grouping of operations
-		ArrayList<Instruction> inst =
-			doPlainInstructionGen(sb, node_bc);
+		ArrayList<Instruction> inst = doPlainInstructionGen(sb, node_bc);
 		
 		// cleanup instruction (e.g., create packed rmvar instructions)
 		return cleanupInstructions(inst);
@@ -248,20 +242,6 @@ public class Dag<N extends Lop>
 					addFedPrefetchLop(input, lop);
 			}
 		}
-	}
-	
-	private static List<Lop> doTopologicalSortTwoLevelOrder(List<Lop> v) {
-		//partition nodes into leaf/inner nodes and dag root nodes,
-		//+ sort leaf/inner nodes by ID to force depth-first scheduling
-		//+ append root nodes in order of their original definition 
-		//  (which also preserves the original order of prints)
-		List<Lop> nodes = Stream.concat(
-			v.stream().filter(l -> !l.getOutputs().isEmpty()).sorted(Comparator.comparing(l -> l.getID())),
-			v.stream().filter(l -> l.getOutputs().isEmpty())).collect(Collectors.toList());
-
-		//NOTE: in contrast to hadoop execution modes, we avoid computing the transitive
-		//closure here to ensure linear time complexity because its unnecessary for CP and Spark
-		return nodes;
 	}
 	
 	private static List<Lop> addPrefetchLop(List<Lop> nodes) {

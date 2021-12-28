@@ -65,7 +65,7 @@ jobs:
           "**.functions.parfor.**,**.functions.pipelines.**,**.functions.privacy.**",
           "**.functions.unary.scalar.**,**.functions.updateinplace.**,**.functions.vect.**",
           "**.functions.reorg.**,**.functions.rewrite.**,**.functions.ternary.**,**.functions.transform.**",
-          "**.functions.unary.matrix.**"
+          "**.functions.unary.matrix.**,**.functions.linearization.**"
           ]
         os: [ubuntu-latest]
     name: ${{ matrix.tests }}

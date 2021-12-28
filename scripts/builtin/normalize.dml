@@ -22,16 +22,21 @@
 # Min-max normalization (a.k.a. min-max scaling) to range [0,1]. For matrices 
 # of positive values, this normalization preserves the input sparsity.
 #
-# ------------------------------------------------------------------------------
-# NAME     TYPE     DEFAULT   MEANING
-# ------------------------------------------------------------------------------
-# X        Matrix    ---      Input feature matrix of shape n-by-m
-# ------------------------------------------------------------------------------
-# Y        Matrix    ---      Modified output feature matrix of shape n-by-m
-# cmin     Matrix    ---      Colunm minima of shape 1-by-m
-# cmax     Matrix    ---      Column maxima of shape 1-by-m
-# ------------------------------------------------------------------------------
-
+# INPUT PARAMETERS:
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME      TYPE             DEFAULT   MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# X         Matrix[Double]   ---       Input feature matrix of shape n-by-m
+# ----------------------------------------------------------------------------------------------------------------------
+#
+# OUTPUT:
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME      TYPE                       MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# Y         Matrix[Double]             Modified output feature matrix of shape n-by-m
+# cmin      Matrix[Double]             Colunm minima of shape 1-by-m
+# cmax      Matrix[Double]             Column maxima of shape 1-by-m
+# ----------------------------------------------------------------------------------------------------------------------
 
 m_normalize = function(Matrix[Double] X)
   return (Matrix[Double] Y, Matrix[Double] cmin, Matrix[Double] cmax)

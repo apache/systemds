@@ -18,17 +18,25 @@
 # under the License.
 #
 #-------------------------------------------------------------
-#
+
 # Implements the DBSCAN clustering algorithm using Euclidian distance matrix
 #
 # INPUT PARAMETERS:
-# ----------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------
 # NAME      TYPE             DEFAULT    MEANING
 # ----------------------------------------------------------------------------
 # X         Matrix[Double]   ---        The input Matrix to do DBSCAN on.
 # eps       Double           0.5        Maximum distance between two points for one to be considered reachable for the other.
-# minPts    Int              5          Number of points in a neighborhood for a point to be considered as a core point (includes the point itself).
+# minPts    Int              5          Number of points in a neighborhood for a point to be considered as a core point
+#                                       (includes the point itself).
+# ----------------------------------------------------------------------------------------------------------------------
 #
+# OUTPUT:
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME            TYPE                  MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# clusterMembers  Matrix[Double]        clustering Matrix
+# ----------------------------------------------------------------------------------------------------------------------
 
 m_dbscan = function (Matrix[Double] X, Double eps = 0.5, Integer minPts = 5)
     return (Matrix[Double] clusterMembers)

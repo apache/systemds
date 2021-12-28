@@ -19,31 +19,39 @@
 #
 #-------------------------------------------------------------
 
+# Accepts a vector for prediction and a one-hot-encoded matrix
+# Then it computes the max value of each vector and compare them
+# After which, it calculates and returns the sum of classifications
+# and the average of each true class.
+#
 # INPUT PARAMETERS:
-# ---------------------------------------------------------------------------------------------
-# NAME            TYPE    DEFAULT     MEANING
-# ---------------------------------------------------------------------------------------------
-# P               Double  ---         vector of Predictions
-# Y               Double  ---         vector of Golden standard One Hot Encoded; the one hot encoded vector of actual labels
-# ---------------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME            TYPE            DEFAULT     MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# P               Matrix[Double]  ---         vector of Predictions
+# Y               Matrix[Double]  ---         vector of Golden standard One Hot Encoded; the one hot
+#                                             encoded vector of actual labels
+# ----------------------------------------------------------------------------------------------------------------------
+#
 # OUTPUT:
-# ---------------------------------------------------------------------------------------------
-# NAME            TYPE    DEFAULT     MEANING
-# ---------------------------------------------------------------------------------------------
-# ConfusionSum    Double  ---         The Confusion Matrix Sums of classifications
-# ConfusionAvg    Double  ---         The Confusion Matrix averages of each true class
-
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME            TYPE                 MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# confusionSum    Matrix[Double]       The Confusion Matrix Sums of classifications
+# confusionAvg    Matrix[Double]       The Confusion Matrix averages of each true class
+# ----------------------------------------------------------------------------------------------------------------------
 # Output is like:
 #                   True Labels
 #                     1    2
 #                 1   TP | FP
 #   Predictions      ----+----
 #                 2   FN | TN
-# 
+#
 # TP = True Positives
 # FP = False Positives
 # FN = False Negatives
 # TN = True Negatives
+# ----------------------------------------------------------------------------------------------------------------------
 
 m_confusionMatrix = function(Matrix[Double] P, Matrix[Double] Y)
   return(Matrix[Double] confusionSum, Matrix[Double] confusionAvg)

@@ -19,27 +19,24 @@
 #
 #-------------------------------------------------------------
 
-# ------------------------------------------
-# Built-in LOGSUMEXP 
-# ------------------------------------------
-
-
+# Built-in LOGSUMEXP
+#
 # INPUT PARAMETERS:
-# ---------------------------------------------------------------------------------------------
-# NAME        TYPE    DEFAULT     MEANING
-# ---------------------------------------------------------------------------------------------
-# X           Double  ---         matrix M 
-# margin      String  none        if the logsumexp of rows is required set margin = "row"
-#                                 if the logsumexp of columns is required set margin = "col"
-#                                 if set to "none" then a single scalar is returned computing logsumexp of matrix
-# ---------------------------------------------------------------------------------------------
-
-
-#Output(s)
-# ---------------------------------------------------------------------------------------------
-# NAME        TYPE    DEFAULT     MEANING
-# ---------------------------------------------------------------------------------------------
-# output      Double  ---         A 1*1 matrix, row vector or column vector depends on margin value
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME       TYPE             DEFAULT     MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# X          Matrix[Double]   ---         matrix M
+# margin     String           none        if the logsumexp of rows is required set margin = "row"
+#                                         if the logsumexp of columns is required set margin = "col"
+#                                         if set to "none" then a single scalar is returned computing logsumexp of matrix
+# ----------------------------------------------------------------------------------------------------------------------
+#
+# OUTPUT
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME       TYPE                        MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# output     Matrix[Double]              a 1*1 matrix, row vector or column vector depends on margin value
+# ----------------------------------------------------------------------------------------------------------------------
 
 m_logSumExp = function(Matrix[Double] M, String margin = "none")
 return(Matrix[Double] output)

@@ -19,28 +19,31 @@
 #
 #-------------------------------------------------------------
 
-# Image Translate
-# Translates the image.
+# The Image Translate function translates the image.
 # Optionally resizes the image (without scaling).
 # Uses nearest neighbor sampling.
 #
 # INPUT PARAMETERS:
-# ---------------------------------------------------------------------------------------------
-# NAME       TYPE   DEFAULT MEANING
-# ---------------------------------------------------------------------------------------------
-# img_in     Matrix ---     Input image as 2D matrix with top left corner at [1, 1]
-# offset_x   Double ---     The distance to move the image in x direction
-# offset_y   Double ---     The distance to move the image in y direction
-# out_w      Int    ---     Width of the output image
-# out_h      Int    ---     Height of the output image
-# fill_value Double ---     The background of the image
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME       TYPE             DEFAULT MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# img_in     Matrix[Double]   ---     Input image as 2D matrix with top left corner at [1, 1]
+# offset_x   Double           ---     The distance to move the image in x direction
+# offset_y   Double           ---     The distance to move the image in y direction
+# out_w      Int              ---     Width of the output image
+# out_h      Int              ---     Height of the output image
+# fill_value Double           ---     The background of the image
+# ----------------------------------------------------------------------------------------------------------------------
+#
+# OUTPUT:
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME       TYPE                    MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# img_out    Matrix[Double]          Output image as 2D matrix with top left corner at [1, 1]
+# ----------------------------------------------------------------------------------------------------------------------
 
-# RETURN VALUES
-# ---------------------------------------------------------------------------------------------
-# img_out    Matrix ---     Output image as 2D matrix with top left corner at [1, 1]
-# ---------------------------------------------------------------------------------------------
-
-m_img_translate = function(Matrix[Double] img_in, Double offset_x, Double offset_y, Integer out_w, Integer out_h, Double fill_value) return (Matrix[Double] img_out) {
+m_img_translate = function(Matrix[Double] img_in, Double offset_x, Double offset_y, Integer out_w, Integer out_h, Double fill_value)
+ return (Matrix[Double] img_out) {
   w = ncol(img_in)
   h = nrow(img_in)
 

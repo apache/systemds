@@ -21,30 +21,29 @@
 
 # This function performs dimensionality reduction using tSNE algorithm based on
 # the paper: Visualizing Data using t-SNE, Maaten et. al.
-
+#
 # INPUT PARAMETERS:
-# ----------------------------------------------------------------------------
-# NAME           TYPE      DEFAULT  MEANING
-# ----------------------------------------------------------------------------
-# X              Double    ---      Data Matrix of shape
-#                                   (number of data points, input dimensionality)
-# reduced_dims   Integer   2        Output dimensionality
-# perplexity     Integer   30       Perplexity Parameter
-# lr             Double    300.     Learning rate
-# momentum       Double    0.9      Momentum Parameter
-# max_iter       Integer   1000     Number of iterations
-# seed           Integer   -1       The seed used for initial values.
-#                                   If set to -1 random seeds are selected.
-# is_verbose     Boolean   FALSE    Print debug information
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME           TYPE              DEFAULT  MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# X              Matrix[Double]    ---      Data Matrix of shape
+#                                           (number of data points, input dimensionality)
+# reduced_dims   Integer           2        Output dimensionality
+# perplexity     Integer           30       Perplexity Parameter
+# lr             Double            300.     Learning rate
+# momentum       Double            0.9      Momentum Parameter
+# max_iter       Integer           1000     Number of iterations
+# seed           Integer           -1       The seed used for initial values.
+#                                           If set to -1 random seeds are selected.
+# is_verbose     Boolean           FALSE    Print debug information
+# ----------------------------------------------------------------------------------------------------------------------
 #
-#
-# RETURN VALUES
-# ----------------------------------------------------------------------------
-# NAME     TYPE      DEFAULT  MEANING
-# ----------------------------------------------------------------------------
-# Y        Matrix    ---      Data Matrix of shape (number of data points, reduced_dims)
-# ----------------------------------------------------------------------------
-
+# OUTPUT:
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME           TYPE               MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# Y              Matrix[Double]      Data Matrix of shape (number of data points, reduced_dims)
+# ----------------------------------------------------------------------------------------------------------------------
 
 m_tSNE = function(Matrix[Double] X, Integer reduced_dims = 2, Integer perplexity = 30,
   Double lr = 300., Double momentum = 0.9, Integer max_iter = 1000, Integer seed = -1, Boolean is_verbose = FALSE)

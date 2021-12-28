@@ -19,48 +19,44 @@
 #
 #-------------------------------------------------------------
 
-
-#
-# THIS SCRIPT CHOOSES A LINEAR MODEL IN A STEPWISE ALGIRITHM USING AIC
-# EACH LINEAR REGRESSION USES A DIRECT SOLVER FOR (X^T X) beta = X^T y
-#
-# INPUT PARAMETERS:
-# --------------------------------------------------------------------------------------------
-# NAME        TYPE    DEFAULT    MEANING
-# --------------------------------------------------------------------------------------------
-# X           String     ---   Location (on HDFS) to read the matrix X of feature vectors
-# Y           String     ---   Location (on HDFS) to read the 1-column matrix Y of response values
-# B           String     ---   Location to store estimated regression parameters (the betas)
-# S           String     ---   Location to write the selected features ordered as computed by the algorithm
-# O           String     " "   Location to write the printed statistics; by default is standard output
-# icpt        Int        0     Intercept presence, shifting and rescaling the columns of X:
-#                              0 = no intercept, no shifting, no rescaling;
-#                              1 = add intercept, but neither shift nor rescale X;
-#                              2 = add intercept, shift & rescale X columns to mean = 0, variance = 1
-# thr         Double    0.01   Threshold to stop the algorithm: if the decrease in the value of AIC falls below thr
-#                              no further features are being checked and the algorithm stops
-# fmt         String   "text"  Matrix output format for B (the betas) only, usually "text" or "csv"
-# write_beta  Boolean   TRUE   Should the beta's be returned?
-#                              0 = no
-#                              1 = yes
-# --------------------------------------------------------------------------------------------
+# The steplm-function (stepwise linear regression) implements a classical forward feature selection method.
+# This method iteratively runs what-if scenarios and greedily selects the next best feature
+# until the Akaike information criterion (AIC) does not improve anymore. Each configuration trains a regression model
+# via lm, which in turn calls either the closed form lmDS or iterative lmGC.
 # OUTPUT: Matrix of regression parameters (the betas) and its size depend on icpt input value:
 #         OUTPUT SIZE:   OUTPUT CONTENTS:                HOW TO PREDICT Y FROM X AND B:
 # icpt=0: ncol(X)   x 1  Betas for X only                Y ~ X %*% B[1:ncol(X), 1], or just X %*% B
 # icpt=1: ncol(X)+1 x 1  Betas for X and intercept       Y ~ X %*% B[1:ncol(X), 1] + B[ncol(X)+1, 1]
 # icpt=2: ncol(X)+1 x 2  Col.1: betas for X & intercept  Y ~ X %*% B[1:ncol(X), 1] + B[ncol(X)+1, 1]
 #                        Col.2: betas for shifted/rescaled X and intercept
-#
 # In addition, in the last run of linear regression some statistics are provided in CSV format, one comma-separated
 # name-value pair per each line, as follows:
 #
-# NAME                  MEANING
-# -------------------------------------------------------------------------------------
-# AVG_TOT_Y             Average of the response value Y
-# STDEV_TOT_Y           Standard Deviation of the response value Y
-# AVG_RES_Y             Average of the residual Y - pred(Y|X), i.e. residual bias
+# INPUT PARAMETERS:
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME        TYPE            DEFAULT  MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# X           Matrix[Double]  ---      Location (on HDFS) to read the matrix X of feature vectors
+# Y           Matrix[Double]  ---      Location (on HDFS) to read the 1-column matrix Y of response values
+# icpt        Integer         0        Intercept presence, shifting and rescaling the columns of X:
+#                                      0 = no intercept, no shifting, no rescaling;
+#                                      1 = add intercept, but neither shift nor rescale X;
+#                                      2 = add intercept, shift & rescale X columns to mean = 0, variance = 1
+# reg         Double          1e-7     learning rate
+# tol         Double          1e-7     Tolerance threashold to train until achieved
+# maxi        Integer         0        maximum iterations 0 means until tolerange is reached
+# verbose     Boolean         TRUE     If the algorithm should be verbose
+# ----------------------------------------------------------------------------------------------------------------------
+#
+# OUTPUT:
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME       TYPE              MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# B          Matrix[Double]    Matrix of regression parameters (the betas) and its size depend on icpt input value.
+# S          Matrix[Double]    Matrix of selected features ordered as computed by the algorithm.
+# ----------------------------------------------------------------------------------------------------------------------
 
-m_steplm = function(Matrix[Double] X, Matrix[Double] y, Integer icpt = 0, 
+m_steplm = function(Matrix[Double] X, Matrix[Double] y, Integer icpt = 0,
   Double reg = 1e-7, Double tol = 1e-7, Integer maxi = 0, Boolean verbose = TRUE)
   return(Matrix[Double] B, Matrix[Double] S)
 {

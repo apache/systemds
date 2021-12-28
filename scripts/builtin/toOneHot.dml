@@ -19,24 +19,25 @@
 #
 #-------------------------------------------------------------
 
-# One-hot encodes a vector
-
+# The toOneHot-function encodes unordered categorical vector to multiple binarized vectors.
+#
 # INPUT PARAMETERS:
-# --------------------------------------------------------------------------------------------
-# NAME          TYPE    DEFAULT   MEANING
-# --------------------------------------------------------------------------------------------
-# X             matrix  ---       vector with N integer entries between 1 and numClasses
-# numclasses    int     ---       number of columns, must be >= largest value in X
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME          TYPE            DEFAULT   MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# X             Matrix[Double]  ---       Vector with N integer entries between 1 and numClasses
+# numclasses    int             ---       Number of columns, must be be greater than or equal to largest value in X
+# ----------------------------------------------------------------------------------------------------------------------
+#
+# OUTPUT:
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME         TYPE                       MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# Y            Matrix[Double]             One-hot-encoded matrix with shape (N, numClasses)
+# ----------------------------------------------------------------------------------------------------------------------
 
-# Output: 
-# --------------------------------------------------------------------------------------------
-# NAME          TYPE     MEANING
-# -------------------------------------------------------------------------------------------
-# Y             matrix   one-hot-encoded matrix with shape (N, numClasses)
-# -------------------------------------------------------------------------------------------
-
-m_toOneHot = function(matrix[double] X, integer numClasses)
-        return (matrix[double] Y) {
+m_toOneHot = function(Matrix[Double] X, integer numClasses)
+        return (Matrix[Double] Y) {
     if(numClasses < max(X))
       stop("numClasses must be >= largest value in X to prevent cropping");
     Y = table(seq(1, nrow(X)), X, nrow(X), numClasses);

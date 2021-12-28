@@ -19,31 +19,27 @@
 #
 #-------------------------------------------------------------
 
-# Related to [SYSTEMDS-2662] dependency function for cleaning pipelines
-
 # impute the data by median value and if the feature is categorical then by mode value
-
+# Related to [SYSTEMDS-2662] dependency function for cleaning pipelines
+#
 # INPUT PARAMETERS:
-# ---------------------------------------------------------------------------------------------
-# NAME            TYPE    DEFAULT     MEANING
-# ---------------------------------------------------------------------------------------------
-# X               Double    ---        Data Matrix (Recoded Matrix for categorical features)
-# mask           Double    ---        A 0/1 row vector for identifying numeric (0) and categorical features (1)
-# ---------------------------------------------------------------------------------------------
- 
-
-#Output(s)
-# ---------------------------------------------------------------------------------------------
-# NAME                  TYPE    DEFAULT     MEANING
-# ---------------------------------------------------------------------------------------------
-# X               Double   ---        imputed dataset
-
-
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME       TYPE              DEFAULT     MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# X          Matrix[Double]    ---         Data Matrix (Recoded Matrix for categorical features)
+# mask       Matrix[Double]    ---         A 0/1 row vector for identifying numeric (0) and categorical features (1)
+# ----------------------------------------------------------------------------------------------------------------------
+#
+# OUTPUT:
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME       TYPE                          MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# X          Matrix[Double]                imputed dataset
+# ----------------------------------------------------------------------------------------------------------------------
 
 m_imputeByMedian = function(Matrix[Double] X, Matrix[Double] mask)
 return(Matrix[Double] X)
 {
-
   nX = removeEmpty(target=X, margin="cols", select=(mask==0))
   cX = removeEmpty(target=X, margin="cols", select=mask)
   Mask_n = is.na(nX);  

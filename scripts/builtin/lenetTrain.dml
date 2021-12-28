@@ -19,18 +19,17 @@
 #
 #-------------------------------------------------------------
 
-#
 # This builtin function trains LeNet CNN. The architecture of the
-# networks is:conv1 -> relu1 -> pool1 -> conv2 -> relu2 -> pool2 -> 
+# networks is:conv1 -> relu1 -> pool1 -> conv2 -> relu2 -> pool2 ->
 # affine3 -> relu3 -> affine4 -> softmax
-#
+
 # INPUT PARAMETERS:
 # --------------------------------------------------------------------------------------------
-# NAME              TYPE            DEFAULT     MEANING
+# NAME              TYPE              DEFAULT   MEANING
 # --------------------------------------------------------------------------------------------
-# X                 Matrix[double]    ---       Input data matrix, of shape (N, C*Hin*Win)
+# X                 Matrix[Double]    ---       Input data matrix, of shape (N, C*Hin*Win)
 # Y                 Matrix[Double]    ---       Target matrix, of shape (N, K)
-# X_val             Matrix[double]    ---       Validation data matrix, of shape (N, C*Hin*Win)
+# X_val             Matrix[Double]    ---       Validation data matrix, of shape (N, C*Hin*Win)
 # Y_val             Matrix[Double]    ---       Validation target matrix, of shape (N, K)
 # C                 Integer           ---       Number of input channels (dimensionality of input depth)
 # Hin               Integer           ---       Input width
@@ -43,10 +42,14 @@
 # lambda            Double            5e-04     Regularization strength
 # seed              Integer           -1        Seed for model initialization
 # verbose           Boolean           FALSE     Flag indicates if function should print to stdout
-# --------------------------------------------------------------------------------------------
-# OUTPUT: 
-# model           List[unknown]     ---       Trained model which can be used in lenetPredict
+# ----------------------------------------------------------------------------------------------------------------------
 #
+# OUTPUT:
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME              TYPE                        MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# model             List[unknown]               Trained model which can be used in lenetPredict
+# ----------------------------------------------------------------------------------------------------------------------
 
 source("nn/layers/affine.dml") as affine
 source("nn/layers/conv2d_builtin.dml") as conv2d

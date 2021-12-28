@@ -19,6 +19,25 @@
 #
 #-------------------------------------------------------------
 
+# The naiveBaysePredict-function predicts the scoring with a naive Bayes model.
+#
+# INPUT PARAMETERS:
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME      TYPE             DEFAULT   MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# X         Matrix[Double]   ---       Matrix of test data with N rows.
+# P         Matrix[Double]   ---       Class priors, One dimensional column matrix with N rows.
+# C         Matrix[Double]   ---       Class conditional probabilities, matrix with N rows
+# ----------------------------------------------------------------------------------------------------------------------
+#
+# OUTPUT:
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME      TYPE                       MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# Y         Matrix[Double]             A matrix containing the top-K item-ids with highest predicted ratings.
+# YRaw      Matrix[Double]             A matrix containing predicted ratings.
+# ----------------------------------------------------------------------------------------------------------------------
+
 m_naiveBayesPredict = function(Matrix[Double] X, Matrix[Double] P, Matrix[Double] C)
  return (Matrix[Double] YRaw, Matrix[Double] Y)
 {

@@ -22,21 +22,22 @@
 # Implements builtin for finding functional dependencies
 # 
 # INPUT PARAMETERS:
-# ---------------------------------------------------------------------------------------------
-# NAME            TYPE    DEFAULT     MEANING
-# ---------------------------------------------------------------------------------------------
-# X               Double    --       Input Matrix X, encoded Matrix if data is categorical
-# Mask            Double    --       A row vector for interested features i.e. Mask =[1, 0, 1]
-                                     # will exclude the second column from processing
-# threshold       Double    --       threshold value in interval [0, 1] for robust FDs 
-# ---------------------------------------------------------------------------------------------
-
-
-#Output(s)
-# ---------------------------------------------------------------------------------------------
-# NAME            TYPE    DEFAULT     MEANING
-# ---------------------------------------------------------------------------------------------
-# FD              Double   ---        matrix of functional dependencies 
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME            TYPE              DEFAULT  MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# X               Matrix[Double]    --       Input Matrix X, encoded Matrix if data is categorical
+# Mask            Matrix[Double]    --       A row vector for interested features i.e. Mask =[1, 0, 1]
+#                                             will exclude the second column from processing
+# threshold       Matrix[Double]    --       threshold value in interval [0, 1] for robust FDs 
+#
+# ----------------------------------------------------------------------------------------------------------------------
+#
+# OUTPUT:
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME            TYPE             MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# FD              Matrix[Double]   matrix of functional dependencies
+# ----------------------------------------------------------------------------------------------------------------------
 
 m_discoverFD = function(Matrix[Double] X, Matrix[Double] Mask, Double threshold)
   return(Matrix[Double] FD)

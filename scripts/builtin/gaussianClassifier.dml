@@ -18,7 +18,7 @@
 # under the License.
 #
 #-------------------------------------------------------------
-#
+
 # Computes the parameters needed for Gaussian Classification.
 # Thus it computes the following per class: the prior probability,
 # the inverse covariance matrix, the mean per feature and the determinant
@@ -26,27 +26,25 @@
 # adds some small smoothing value along the variances, to prevent
 # numerical errors / instabilities.
 #
-#
 # INPUT PARAMETERS:
-# -------------------------------------------------------------------------------------------------
-# NAME           TYPE               DEFAULT  MEANING
-# -------------------------------------------------------------------------------------------------
-# D              Matrix[Double]     ---      Input matrix (training set)
-# C              Matrix[Double]     ---      Target vector
-# varSmoothing   Double             1e-9     Smoothing factor for variances
-# verbose        Boolean            TRUE     Print accuracy of the training set
-# ---------------------------------------------------------------------------------------------
-# OUTPUT:
-# ---------------------------------------------------------------------------------------------
-# NAME                  TYPE             DEFAULT  MEANING
-# ---------------------------------------------------------------------------------------------
-# classPriors           Matrix[Double]   ---      Vector storing the class prior probabilities
-# classMeans            Matrix[Double]   ---      Matrix storing the means of the classes
-# classInvCovariances   List[Unknown]    ---      List of inverse covariance matrices
-# determinants          Matrix[Double]   ---      Vector storing the determinants of the classes
-# ---------------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME                  TYPE               DEFAULT  MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# D                     Matrix[Double]     ---      Input matrix (training set)
+# C                     Matrix[Double]     ---      Target vector
+# varSmoothing          Double             1e-9     Smoothing factor for variances
+# verbose               Boolean            TRUE     Print accuracy of the training set
+# ----------------------------------------------------------------------------------------------------------------------
 #
-
+# OUTPUT:
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME                  TYPE                        MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# classPriors           Matrix[Double]              Vector storing the class prior probabilities
+# classMeans            Matrix[Double]              Matrix storing the means of the classes
+# classInvCovariances   List[Unknown]               List of inverse covariance matrices
+# determinants          Matrix[Double]              Vector storing the determinants of the classes
+# ----------------------------------------------------------------------------------------------------------------------
 
 m_gaussianClassifier = function(Matrix[Double] D, Matrix[Double] C, Double varSmoothing=1e-9, Boolean verbose = TRUE)
   return (Matrix[Double] classPriors, Matrix[Double] classMeans,

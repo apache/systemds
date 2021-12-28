@@ -21,27 +21,28 @@
 
 # Implements builtin multiclass SVM with squared slack variables, 
 # learns one-against-the-rest binary-class classifiers by making a function call to l2SVM
-
+#
 # INPUT PARAMETERS:
-# ---------------------------------------------------------------------------------------------
-# NAME            TYPE    DEFAULT     MEANING
-# ---------------------------------------------------------------------------------------------
-# X               Double  ---         matrix X of feature vectors
-# Y               Double  ---         matrix Y of class labels
-# intercept       Boolean False       No Intercept ( If set to TRUE then a constant bias column is added to X)
-# num_classes     integer 10          Number of classes
-# epsilon         Double  0.001       Procedure terminates early if the reduction in objective function 
-#                                     value is less than epsilon (tolerance) times the initial objective function value.
-# lambda          Double  1.0         Regularization parameter (lambda) for L2 regularization
-# maxIterations   Int     100         Maximum number of conjugate gradient iterations
-# verbose         Boolean False       Set to true to print while training.
-# ---------------------------------------------------------------------------------------------
- 
-#Output(s)
-# ---------------------------------------------------------------------------------------------
-# NAME            TYPE    DEFAULT     MEANING
-# ---------------------------------------------------------------------------------------------
-# model           Double   ---        model matrix
+#-----------------------------------------------------------------------------------------------------------------------
+# NAME            TYPE            DEFAULT     MEANING
+#-----------------------------------------------------------------------------------------------------------------------
+# X               Matrix[Double]  ---         matrix X of feature vectors
+# Y               Matrix[Double]  ---         matrix Y of class labels
+# intercept       Boolean         False       No Intercept ( If set to TRUE then a constant bias column is added to X)
+# num_classes     integer         10          Number of classes
+# epsilon         Double          0.001       Procedure terminates early if the reduction in objective function
+#                                             value is less than epsilon (tolerance) times the initial objective function value.
+# lambda          Double          1.0         Regularization parameter (lambda) for L2 regularization
+# maxIterations   Int             100         Maximum number of conjugate gradient iterations
+# verbose         Boolean         False       Set to true to print while training.
+# ----------------------------------------------------------------------------------------------------------------------
+#
+# OUTPUT:
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME            TYPE                       MEANING
+#-----------------------------------------------------------------------------------------------------------------------
+# model           Matrix[Double]             model matrix
+#-----------------------------------------------------------------------------------------------------------------------
 
 m_msvm = function(Matrix[Double] X, Matrix[Double] Y, Boolean intercept = FALSE,
     Double epsilon = 0.001, Double lambda = 1.0, Integer maxIterations = 100,

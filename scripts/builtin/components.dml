@@ -23,6 +23,29 @@
 # vector indicating the assignment of vertices to components,
 # where each component is identified by the maximum vertex ID
 # (i.e., row/column position of the input graph) 
+#
+# INPUT PARAMETERS:
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME      TYPE        DEFAULT   MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# X         Matrix      ---       Location to read the matrix of feature vectors
+# Y         Matrix      ---       Location to read the matrix with category labels
+# icpt      Integer     0         Intercept presence, shifting and rescaling X columns: 0 = no intercept,
+#                                 no shifting, no rescaling; 1 = add intercept, but neither shift nor rescale X;
+#                                 2 = add intercept, shift & rescale X columns to mean = 0, variance = 1
+# tol       Double      0.000001  tolerance ("epsilon")
+# reg       Double      0.0       regularization parameter (lambda = 1/C); intercept is not regularized
+# maxi      Integer     100       max. number of outer (Newton) iterations
+# maxii     Integer     0         max. number of inner (conjugate gradient) iterations, 0 = no max
+# verbose   Boolean     FALSE     flag specifying if logging information should be printed
+# ----------------------------------------------------------------------------------------------------------------------
+#
+# OUTPUT:
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME     TYPE            MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# betas    Matrix[Double]  regression betas as output for prediction
+# ----------------------------------------------------------------------------------------------------------------------
 
 m_components = function(Matrix[Double] G, Integer maxi = 0, Boolean verbose = TRUE) 
   return (Matrix[Double] C) 

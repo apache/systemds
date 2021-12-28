@@ -7,9 +7,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -26,46 +26,44 @@
 # Also, it randomly reshuffles rows before training.
 # Currently, tanh is set to be the activation function. 
 # By re-implementing 'func' DML-bodied function, one can change the activation.
-
+#
 # INPUT PARAMETERS:
-# ---------------------------------------------------------------------------------------------
-# NAME   	TYPE     DEFAULT  MEANING
-# ---------------------------------------------------------------------------------------------
-# X         String   ---      Filename where the input is stored
-# H1        Int      ---      Number of neurons in the 1st hidden layer
-# H2        Int      ---      Number of neurons in the 2nd hidden layer
-# EPOCH     Int      ---      Number of epochs to train for
-# OBJ       Boolean  FALSE    If TRUE, Computes objective function value (squared-loss)
-#                             at the end of each epoch. Note that, computing the full 
-#                             objective can take a lot of time. 
-# BATCH     Int      256      Mini-batch size (training parameter)
-# STEP      Double   1e-5     Initial step size (training parameter)
-# DECAY     Double   0.95     Decays step size after each epoch (training parameter)
-# MOMENTUM  Double   0.9      Momentum parameter (training parameter)
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME         TYPE             DEFAULT  MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# X            Matrix[Double]   ---      Filename where the input is stored
+# num_hidden1  Integer          ---      Number of neurons in the 1st hidden layer
+# num_hidden2  Integer          ---      Number of neurons in the 2nd hidden layer
+# max_epochs   Integer          ---      Number of epochs to train for
+# full_obj     Boolean          FALSE    If TRUE, Computes objective function value (squared-loss)
+#                                        at the end of each epoch. Note that, computing the full 
+#                                        objective can take a lot of time. 
+# batch_size   Integer          256      Mini-batch size (training parameter)
+# step         Double           1e-5     Initial step size (training parameter)
+# decay        Double           0.95     Decays step size after each epoch (training parameter)
+# mu           Double           0.9      Momentum parameter (training parameter)
+# W1_rand      Matrix[Double]   Empty    Weights might be initialized via input matrices
+# W2_rand      Matrix[Double]   Empty    
+# W3_rand      Matrix[Double]   Empty    
+# W4_rand      Matrix[Double]   Empty
+# ----------------------------------------------------------------------------------------------------------------------
 #
-# W1_rand   Int      Rand     Weights might be initialized via input matrices
-# W2_rand   Int      Rand     
-# W3_rand   Int      Rand     
-# W4_rand   Int      Rand      
-# ---------------------------------------------------------------------------------------------
 # OUTPUT:
-# ---------------------------------------------------------------------------------------------
-# NAME     TYPE             DEFAULT  MEANING
-# ---------------------------------------------------------------------------------------------
-# W1_out   Matrix[Double]   ---      Matrix storing weights between input layer and 1st hidden layer
-# b1_out   Matrix[Double]   ---      Matrix storing bias between input layer and 1st hidden layer
-# W2_out   Matrix[Double]   ---      Matrix storing weights between 1st hidden layer and 2nd hidden layer
-# b2_out   Matrix[Double]   ---      Matrix storing bias between 1st hidden layer and 2nd hidden layer
-# W3_out   Matrix[Double]   ---      Matrix storing weights between 2nd hidden layer and 3rd hidden layer
-# b3_out   Matrix[Double]   ---      Matrix storing bias between 2nd hidden layer and 3rd hidden layer
-# W4_out   Matrix[Double]   ---      Matrix storing weights between 3rd hidden layer and output layer
-# b4_out   Matrix[Double]   ---      Matrix storing bias between 3rd hidden layer and output layer
-# HIDDEN   Matrix[Double]   ---      Matrix storing the hidden (2nd) layer representation if needed
-# ---------------------------------------------------------------------------------------------
-#
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME      TYPE             MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# W1_out   Matrix[Double]    Matrix storing weights between input layer and 1st hidden layer
+# b1_out   Matrix[Double]    Matrix storing bias between input layer and 1st hidden layer
+# W2_out   Matrix[Double]    Matrix storing weights between 1st hidden layer and 2nd hidden layer
+# b2_out   Matrix[Double]    Matrix storing bias between 1st hidden layer and 2nd hidden layer
+# W3_out   Matrix[Double]    Matrix storing weights between 2nd hidden layer and 3rd hidden layer
+# b3_out   Matrix[Double]    Matrix storing bias between 2nd hidden layer and 3rd hidden layer
+# W4_out   Matrix[Double]    Matrix storing weights between 3rd hidden layer and output layer
+# b4_out   Matrix[Double]    Matrix storing bias between 3rd hidden layer and output layer
+# HIDDEN   Matrix[Double]    Matrix storing the hidden (2nd) layer representation if needed
+# ----------------------------------------------------------------------------------------------------------------------
 
-
-m_autoencoder_2layer = function(Matrix[Double] X, Integer num_hidden1, Integer num_hidden2, Integer max_epochs, 
+m_autoencoder_2layer = function(Matrix[Double] X, Integer num_hidden1, Integer num_hidden2, Integer max_epochs,
   Boolean full_obj = FALSE, Integer batch_size = 256, Double step = 1e-5, Double decay = 0.95, Double mu = 0.9,
   Matrix[Double] W1_rand = matrix(0, rows=0, cols=0), Matrix[Double] W2_rand = matrix(0, rows=0, cols=0), 
   Matrix[Double] W3_rand = matrix(0, rows=0, cols=0), Matrix[Double] W4_rand = matrix(0, rows=0, cols=0), 

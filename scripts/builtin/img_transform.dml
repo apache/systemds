@@ -19,27 +19,30 @@
 #
 #-------------------------------------------------------------
 
-# Image Transform
-# Applies an affine transformation to an image.
+# The Image Transform function applies an affine transformation to an image.
 # Optionally resizes the image (without scaling).
 # Uses nearest neighbor sampling.
 #
 # INPUT PARAMETERS:
-# ---------------------------------------------------------------------------------------------
-# NAME       TYPE   DEFAULT MEANING
-# ---------------------------------------------------------------------------------------------
-# img_in     Matrix ---     Input image as 2D matrix with top left corner at [1, 1]
-# out_w      Int    ---     Width of the output image
-# out_h      Int    ---     Height of the output image
-# abcdef     Int    ---     The first two rows of the affine matrix in row-major order
-# fill_value Double ---     The background of the image
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME            TYPE            DEFAULT MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# img_in          Matrix[Double]  ---     Input image as 2D matrix with top left corner at [1, 1]
+# out_w           Integer         ---     Width of the output image
+# out_h           Integer         ---     Height of the output image
+# a,b,c,d,e,f     Double          ---     The first two rows of the affine matrix in row-major order
+# fill_value      Double          ---     The background of the image
+# ----------------------------------------------------------------------------------------------------------------------
+#
+# OUTPUT:
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME       TYPE                         MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# img_out    Matrix                       Output image as 2D matrix with top left corner at [1, 1]
+# ----------------------------------------------------------------------------------------------------------------------
 
-# RETURN VALUES
-# ---------------------------------------------------------------------------------------------
-# img_out    Matrix ---     Output image as 2D matrix with top left corner at [1, 1]
-# ---------------------------------------------------------------------------------------------
-
-m_img_transform = function(Matrix[Double] img_in, Integer out_w, Integer out_h, Double a, Double b, Double c, Double d, Double e, Double f, Double fill_value) return (Matrix[Double] img_out) {
+m_img_transform = function(Matrix[Double] img_in, Integer out_w, Integer out_h, Double a, Double b, Double c, Double d,
+ Double e, Double f, Double fill_value) return (Matrix[Double] img_out) {
   divisor = a * e - b * d
   if(divisor == 0) {
     print("Inverse matrix does not exist! Returning input.")

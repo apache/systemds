@@ -20,21 +20,21 @@
 #-------------------------------------------------------------
 
 # Builtin function that implements difference operation on vectors
-
+#
 # INPUT PARAMETERS:
 # ---------------------------------------------------------------------------------------------
-# NAME            TYPE    DEFAULT     MEANING
+# NAME            TYPE            DEFAULT     MEANING
 # ---------------------------------------------------------------------------------------------
-# X               Matrix  ---         input vector
+# X               Matrix[Double]  ---         input vector
+# Y               Matrix[Double]  ---         input vector
 # ---------------------------------------------------------------------------------------------
-# Y               Matrix  ---         input vector
+#
+# OUTPUT:
 # ---------------------------------------------------------------------------------------------
-
-# Output(s)
+# NAME            TYPE              MEANING
 # ---------------------------------------------------------------------------------------------
-# NAME            TYPE    DEFAULT      MEANING
+# R               Matrix[Double]    vector with all elements that are present in X but not in Y
 # ---------------------------------------------------------------------------------------------
-# R               Matrix  ---         vector with all elements that are present in X but not in Y
 
 setdiff = function(Matrix[double] X, Matrix[double] Y)
   return (matrix[double] R)

@@ -38,7 +38,7 @@
     
     <!-- enables compressed linear algebra, experimental feature -->
     <sysds.compressed.linalg>false</sysds.compressed.linalg>
-    
+
     <!-- enables operator fusion via code generation, experimental feature -->
     <sysds.codegen.enabled>false</sysds.codegen.enabled>
 

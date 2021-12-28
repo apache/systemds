@@ -20,19 +20,25 @@
 #-------------------------------------------------------------
 
 # Principal Component Analysis (PCA) for dimensionality reduction prediciton
-#
 # This method is used to transpose data, which the PCA model was not trained on. To validate how good
 # The PCA is, and to apply in production. 
 #
-# ---------------------------------------------------------------------------------------------
-# NAME          TYPE    DEFAULT       MEANING
-# ---------------------------------------------------------------------------------------------
-# X             Matrix  ---           Input feature matrix
-# Centering     Matrix  empty matrix  The column means of the PCA model, subtracted to construct the PCA
-# ScaleFactor   Matrix  empty matrix  The scaling of each dimension in the PCA model
-# ---------------------------------------------------------------------------------------------
-# Y             Matrix  ---           Output feature matrix dimensionally reduced by PCA
-# ---------------------------------------------------------------------------------------------
+# INPUT PARAMETERS:
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME          TYPE             DEFAULT         MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# X             Matrix[Double]    ---            Input feature matrix
+# Clusters      Matrix[Double]    ---            The previously computed principal components
+# Centering     Matrix[Double]    empty matrix   The column means of the PCA model, subtracted to construct the PCA
+# ScaleFactor   Matrix[Double]    empty matrix   The scaling of each dimension in the PCA model
+# ----------------------------------------------------------------------------------------------------------------------
+#
+# OUTPUT:
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME          TYPE              MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# Y             Matrix[Double]    Output feature matrix dimensionally reduced by PCA
+# ----------------------------------------------------------------------------------------------------------------------
 
 m_pcaTransform = function(Matrix[Double] X, Matrix[Double] Clusters,
   Matrix[Double] Centering = matrix(0, rows= 0, cols=0), 

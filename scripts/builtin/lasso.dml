@@ -23,19 +23,24 @@
 # (SpaRSA .. Sparse Reconstruction by Separable Approximation)
 #
 # INPUTS:
-# ---------------------------------------------------------------------------------------------
-# NAME            TYPE     DEFAULT     MEANING
-# ---------------------------------------------------------------------------------------------
-# X               Double   ---         input feature matrix
-# y               Double   ---         matrix Y columns of the design matrix
-# tol             Double   1e-15       target convergence tolerance
-# M               Integer  5           history length
-# tau             Double   1           regularization component
-# maxi            Integer  100         maximum number of iterations until convergence
-# ---------------------------------------------------------------------------------------------
-# OUTPUTS
-# w               Double   ---        model matrix
-
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME            TYPE            DEFAULT     MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# X               Matrix[Double]   ---         input feature matrix
+# y               Matrix[Double]   ---         matrix Y columns of the design matrix
+# tol             Double           1e-15       target convergence tolerance
+# M               Integer          5           history length
+# tau             Double           1           regularization component
+# maxi            Integer          100         maximum number of iterations until convergence
+# verbose         Boolean          True        if the builtin should be verbose
+# ----------------------------------------------------------------------------------------------------------------------
+#
+# OUTPUT:
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME            TYPE                        MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# w               Matrix[Double]              model matrix
+# ----------------------------------------------------------------------------------------------------------------------
 
 m_lasso = function(Matrix[Double] X, Matrix[Double] y, Double tol = 1e-15, 
   Integer M = 5, Double tau = 1, Integer maxi = 100, Boolean verbose = TRUE)

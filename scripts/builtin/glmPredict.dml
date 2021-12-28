@@ -20,34 +20,36 @@
 #-------------------------------------------------------------
 
 # THIS SCRIPT APPLIES THE ESTIMATED PARAMETERS OF A GLM-TYPE REGRESSION TO A NEW (TEST) DATASET
-
+#
 # INPUTS PARAMETERS:
 # ---------------------------------------------------------------------------------------------
-# NAME  TYPE    DEFAULT  MEANING
+# NAME      TYPE            DEFAULT  MEANING
 # ---------------------------------------------------------------------------------------------
-# X     Matrix  ---      Matrix X of records (feature vectors)
-# B     Matrix  ---      GLM regression parameters (the betas), with dimensions
-#                           ncol(X)   x k: do not add intercept
-#                           ncol(X)+1 x k: add intercept as given by the last B-row
-#                           if k > 1, use only B[, 1] unless it is Multinomial Logit (dfam=3)
-# ytest Matrix  " "      Response matrix Y, with the following dimensions:
-#                           nrow(X) x 1  : for all distributions (dfam=1 or 2 or 3)
-#                           nrow(X) x 2  : for Binomial (dfam=2) given by (#pos, #neg) counts
-#                           nrow(X) x k+1: for Multinomial (dfam=3) given by category counts
-# dfam  Int     1        GLM distribution family: 1 = Power, 2 = Binomial, 3 = Multinomial Logit
-# vpow  Double  0.0      Power for Variance defined as (mean)^power (ignored if dfam != 1):
-#                        0.0 = Gaussian, 1.0 = Poisson, 2.0 = Gamma, 3.0 = Inverse Gaussian
-# link  Int     0        Link function code: 0 = canonical (depends on distribution), 1 = Power,
-#                        2 = Logit, 3 = Probit, 4 = Cloglog, 5 = Cauchit; ignored if Multinomial
-# lpow  Double  1.0      Power for Link function defined as (mean)^power (ignored if link != 1):
-#                        -2.0 = 1/mu^2, -1.0 = reciprocal, 0.0 = log, 0.5 = sqrt, 1.0 = identity
-# disp  Double  1.0      Dispersion value, when available
-# verbose Boolean TRUE   Print statistics to stdout
+# X         Matrix[Double]  ---      Matrix X of records (feature vectors)
+# B         Matrix[Double]  ---      GLM regression parameters (the betas), with dimensions
+#                                    ncol(X)   x k: do not add intercept
+#                                    ncol(X)+1 x k: add intercept as given by the last B-row
+#                                    if k > 1, use only B[, 1] unless it is Multinomial Logit (dfam=3)
+# ytest     Matrix[Double]  " "      Response matrix Y, with the following dimensions:
+#                                    nrow(X) x 1  : for all distributions (dfam=1 or 2 or 3)
+#                                    nrow(X) x 2  : for Binomial (dfam=2) given by (#pos, #neg) counts
+#                                    nrow(X) x k+1: for Multinomial (dfam=3) given by category counts
+# dfam      Int             1        GLM distribution family: 1 = Power, 2 = Binomial, 3 = Multinomial Logit
+# vpow      Double          0.0      Power for Variance defined as (mean)^power (ignored if dfam != 1):
+#                                    0.0 = Gaussian, 1.0 = Poisson, 2.0 = Gamma, 3.0 = Inverse Gaussian
+# link      Int             0        Link function code: 0 = canonical (depends on distribution), 1 = Power,
+#                                    2 = Logit, 3 = Probit, 4 = Cloglog, 5 = Cauchit; ignored if Multinomial
+# lpow      Double          1.0      Power for Link function defined as (mean)^power (ignored if link != 1):
+#                                    -2.0 = 1/mu^2, -1.0 = reciprocal, 0.0 = log, 0.5 = sqrt, 1.0 = identity
+# disp      Double          1.0      Dispersion value, when available
+# verbose   Boolean         TRUE     Print statistics to stdout
 # ---------------------------------------------------------------------------------------------
 
 # OUTPUTS:
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME  TYPE                MEANING
 # ---------------------------------------------------------------------------------------------
-# M     Matrix  " "      Matrix M of predicted means/probabilities:
+# M     Matrix[Double]      Matrix M of predicted means/probabilities:
 #                           nrow(X) x 1  : for Power-type distributions (dfam=1)
 #                           nrow(X) x 2  : for Binomial distribution (dfam=2), column 2 is "No"
 #                           nrow(X) x k+1: for Multinomial Logit (dfam=3), col# k+1 is baseline

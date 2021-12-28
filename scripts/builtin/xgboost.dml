@@ -7,9 +7,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -19,14 +19,16 @@
 #
 #-------------------------------------------------------------
 
-
-# INPUT         PARAMETERS:
-# ---------------------------------------------------------------------------------------------
-# NAME          TYPE             DEFAULT      MEANING
-# ---------------------------------------------------------------------------------------------
+# XGBoost is a decision-tree-based ensemble Machine Learning algorithm that uses a gradient boosting. This xgboost
+# implementation supports classification and regression and is capable of working with categorical and scalar features.
+#
+# INPUT PARAMETERS:
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME          TYPE              DEFAULT     MEANING
+# ----------------------------------------------------------------------------------------------------------------------
 # X             Matrix[Double]    ---         Feature matrix X; note that X needs to be both recoded and dummy coded
 # Y             Matrix[Double]    ---         Label matrix Y; note that Y needs to be both recoded and dummy coded
-# R             Matrix[Double]    1, 1xn      Matrix R; 1xn vector which for each feature in X contains the following information
+# R             Matrix[Double]    Matrix      Matrix R; 1xn vector which for each feature in X contains the following information
 #                                             - R[,1]: 1 (scalar feature)
 #                                             - R[,2]: 2 (categorical feature)
 #                                             Feature 1 is a scalar feature and features 2 is a categorical feature
@@ -36,21 +38,30 @@
 # learning_rate Double            0.3         Alias: eta. After each boosting step the learning rate controls the weights of the new predictions
 # max_depth     Integer           6           Maximum depth of a tree. Increasing this value will make the model more complex and more likely to overfit
 # lambda        Double            0.0         L2 regularization term on weights. Increasing this value will make model more conservative and reduce amount of leaves of a tree
-# ---------------------------------------------------------------------------------------------
-
-# ---------------------------------------------------------------------------------------------
+#
+# ----------------------------------------------------------------------------------------------------------------------
+#
 # OUTPUT:
-# Matrix M where each column corresponds to a node in the learned tree (the first node is the init prediction) and each row contains the following information:
-#  M[1,j]: id of node j (in a complete binary tree)
-#  M[2,j]: tree id to which node j belongs
-#  M[3,j]: Offset (no. of columns) to left child of j if j is an internal node, otherwise 0
-#  M[4,j]: Feature index of the feature (scale feature id if the feature is scale or categorical feature id if the feature is categorical)
-#    that node j looks at if j is an internal node, otherwise 0
-#  M[5,j]: Type of the feature that node j looks at if j is an internal node. if leaf = 0, if scalar = 1, if categorical = 2
-#  M[6:,j]: If j is an internal node: Threshold the example's feature value is compared to is stored at M[6,j] if the feature chosen for j is scale,
-#     otherwise if the feature chosen for j is categorical rows 6,7,... depict the value subset chosen for j
-#     If j is a leaf node 1 if j is impure and the number of samples at j > threshold, otherwise 0
-# -------------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME           TYPE                      MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# M              Matrix[Double]            Matrix M where each column corresponds to a node in the learned tree
+#                                          (the first node is the init prediction) and each row contains
+#                                          the following information:
+#                                          M[1,j]: id of node j (in a complete binary tree)
+#                                          M[2,j]: tree id to which node j belongs
+#                                          M[3,j]: Offset (no. of columns) to left child of j if j is an internal node, otherwise 0
+#                                          M[4,j]: Feature index of the feature (scale feature id if the feature is
+#                                          scale or categorical feature id if the feature is categorical)
+#                                          that node j looks at if j is an internal node, otherwise 0
+#                                          M[5,j]: Type of the feature that node j looks at if j is an internal node.
+#                                          if leaf = 0, if scalar = 1, if categorical = 2
+#                                          M[6:,j]: If j is an internal node: Threshold the example's feature value is
+#                                          compared to is stored at M[6,j] if the feature chosen for j is scale,
+#                                          otherwise if the feature chosen for j is categorical rows 6,7,... depict
+#                                          the value subset chosen for j
+#                                          If j is a leaf node 1 if j is impure and the number of samples at j > threshold, otherwise 0
+# ----------------------------------------------------------------------------------------------------------------------
 
 m_xgboost = function(Matrix[Double] X, Matrix[Double] y, 
   Matrix[Double] R = matrix(1,rows=1,cols=nrow(X)), Integer sml_type = 1, Integer num_trees = 7, 

@@ -20,22 +20,23 @@
 #-------------------------------------------------------------
 
 # Builtin function for imputing missing values using forward fill and backward fill techniques
-
+#
 # INPUT PARAMETERS:
-# ---------------------------------------------------------------------------------------------
-# NAME            TYPE      DEFAULT   MEANING
-# ---------------------------------------------------------------------------------------------
-# X               Double    ---       Matrix X
-# option          String    "locf"    String "locf" (last observation moved forward) to do forward fill 
-#                                     String "nocb" (next observation carried backward) to do backward fill
-# verbose         Boolean   FALSE     to print output on screen
-# ---------------------------------------------------------------------------------------------
-
-#Output(s)
-# ---------------------------------------------------------------------------------------------
-# NAME            TYPE    DEFAULT     MEANING
-# ---------------------------------------------------------------------------------------------
-# output          Double  ---         Matrix with no missing values
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME            TYPE              DEFAULT    MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# X               Matrix[Double]    ---        Matrix X
+# option          String            "locf"     String "locf" (last observation moved forward) to do forward fill
+#                                   String     "nocb" (next observation carried backward) to do backward fill
+# verbose         Boolean           FALSE      to print output on screen
+# ----------------------------------------------------------------------------------------------------------------------
+#
+# OUTPUT:
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME            TYPE                         MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# output          Matrix[Double]               Matrix with no missing values
+# ----------------------------------------------------------------------------------------------------------------------
 
 m_na_locf = function(Matrix[Double] X, String option = "locf", Boolean verbose = FALSE)
   return(Matrix[Double] output)

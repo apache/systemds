@@ -19,21 +19,28 @@
 #
 #-------------------------------------------------------------
 
-# Split input data X and Y into contiguous or samples train/test sets
-# ------------------------------------------------------------------------------
-# NAME   TYPE    DEFAULT  MEANING
-# ------------------------------------------------------------------------------
-# X      Matrix  ---      Input feature matrix
-# Y      Matrix  ---      Input Labels
-# f      Double  0.7      Train set fraction [0,1]
-# cont   Boolean TRUE     contiuous splits, otherwise sampled
-# seed   Integer -1       The seed to reandomly select rows in sampled mode
-# ------------------------------------------------------------------------------
-# Xtrain Matrix  ---      Train split of feature matrix
-# Xtest  Matrix  ---      Test split of feature matrix
-# ytrain Matrix  ---      Train split of label matrix
-# ytest  Matrix  ---      Test split of label matrix
-# ------------------------------------------------------------------------------
+# This function split input data X and Y into contiguous or samples train/test sets
+#
+# INPUT PARAMETERS:
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME   TYPE              DEFAULT  MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# X       Matrix[Double]   ---      Input feature matrix
+# Y       Matrix[Double]   ---      Input Labels
+# f       Double           0.7      Train set fraction [0,1]
+# cont    Boolean          TRUE     contiuous splits, otherwise sampled
+# seed    Integer          -1       The seed to reandomly select rows in sampled mode
+# ----------------------------------------------------------------------------------------------------------------------
+#
+# OUTPUT:
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME    TYPE                      MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# Xtrain  Matrix[Double]            Train split of feature matrix
+# Xtest   Matrix[Double]            Test split of feature matrix
+# ytrain  Matrix[Double]            Train split of label matrix
+# ytest   Matrix[Double]            Test split of label matrix
+# ----------------------------------------------------------------------------------------------------------------------
 
 m_split = function(Matrix[Double] X, Matrix[Double] Y, Double f=0.7, Boolean cont=TRUE, Integer seed=-1)
   return (Matrix[Double] Xtrain, Matrix[Double] Xtest, Matrix[Double] Ytrain, Matrix[Double] Ytest) 

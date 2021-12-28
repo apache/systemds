@@ -19,24 +19,30 @@
 #
 #-------------------------------------------------------------
 
+# This functions split input data X and Y into contiguous balanced ratio
 # Related to [SYSTEMDS-2902] dependency function for cleaning pipelines
+#
+# INPUT PARAMETERS:
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME    TYPE              DEFAULT  MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# X       Matrix[Double]    ---      Input feature matrix
+# Y       Matrix[Double]    ---      Input Labels
+# f       Double            0.7      Train set fraction [0,1]
+# verbose Boolean           FALSE    print available
+# ----------------------------------------------------------------------------------------------------------------------
+#
+# OUTPUT:
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME      TYPE                    MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# X_train   Matrix[Double]          Train split of feature matrix
+# X_test    Matrix[Double]          Test split of feature matrix
+# y_train   Matrix[Double]          Train split of label matrix
+# y_test    Matrix[Double]          Test split of label matrix
+# ----------------------------------------------------------------------------------------------------------------------
 
-# Split input data X and Y into contiguous balanced ratio  
-# ------------------------------------------------------------------------------
-# NAME   TYPE    DEFAULT  MEANING
-# ------------------------------------------------------------------------------
-# X       Matrix  ---      Input feature matrix
-# Y       Matrix  ---      Input Labels
-# f       Double  0.7      Train set fraction [0,1]
-# verbose Boolean FALSE    print available 
-# ------------------------------------------------------------------------------
-# X_train Matrix  ---      Train split of feature matrix
-# X_test  Matrix  ---      Test split of feature matrix
-# y_train Matrix  ---      Train split of label matrix
-# y_test  Matrix  ---      Test split of label matrix
-# ------------------------------------------------------------------------------
-
-m_splitBalanced = function(Matrix[Double] X, Matrix[Double] Y, Double splitRatio, Boolean verbose)
+m_splitBalanced = function(Matrix[Double] X, Matrix[Double] Y, Double splitRatio = 0.7, Boolean verbose = FALSE)
 return (Matrix[Double] X_train, Matrix[Double] y_train, Matrix[Double] X_test, 
         Matrix[Double] y_test) 
 {

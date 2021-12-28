@@ -19,22 +19,24 @@
 #
 #-------------------------------------------------------------
 
-# Image Sample Pairing
-# Blends two images together
+# The image sample pairing function blends two images together.
 #
 # INPUT PARAMETERS:
-# ---------------------------------------------------------------------------------------------
-# NAME       TYPE   DEFAULT MEANING
-# ---------------------------------------------------------------------------------------------
-# img_in1    Matrix ---     First input image
-# img_in2    Matrix ---     Second input image
-# weight     Double ---     The weight given to the second image.
-#                           0 means only img_in1, 1 means only img_in2 will be visible
-
-# RETURN VALUES
-# ---------------------------------------------------------------------------------------------
-# img_out    Matrix ---     Output image
-# ---------------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME       TYPE             DEFAULT MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# img_in1    Matrix[Double]   ---     First input image
+# img_in2    Matrix[Double]   ---     Second input image
+# weight     Double           ---     The weight given to the second image.
+#                                     0 means only img_in1, 1 means only img_in2 will be visible
+# ----------------------------------------------------------------------------------------------------------------------
+#
+# OUTPUT:
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME       TYPE                    MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# img_out    Matrix[Double]          Output image
+# ----------------------------------------------------------------------------------------------------------------------
 
 m_img_sample_pairing = function(Matrix[Double] img_in1, Matrix[Double] img_in2, Double weight) return (Matrix[Double] img_out) {
   if (weight < 0 | 1 < weight) {

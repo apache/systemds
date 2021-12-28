@@ -19,6 +19,25 @@
 #
 #-------------------------------------------------------------
 
+# This outlier-function takes a matrix data set as input from where it determines
+# which point(s) have the largest difference from mean.
+#
+# INPUT PARAMETERS:
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME      TYPE              DEFAULT   MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# X         Matrix[Double]    ---       Matrix of Recoded dataset for outlier evaluation
+# opposite  Boolean           ---       (1)TRUE for evaluating outlier from upper quartile range,
+#                                       (0)FALSE for evaluating outlier from lower quartile range
+# ----------------------------------------------------------------------------------------------------------------------
+#
+# OUTPUT:
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME      TYPE                       MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# Y         Matrix[Double]             matrix indicating outlier values
+# ----------------------------------------------------------------------------------------------------------------------
+
 m_outlier = function(Matrix[Double] X, Boolean opposite) return (Matrix[Double] Y) {
   # determine if largest value has largest diff from mean
 	I = (colMaxs(X)-colMeans(X)) > (colMeans(X)-colMins(X));

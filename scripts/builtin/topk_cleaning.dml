@@ -18,6 +18,39 @@
 # under the License.
 #
 #-------------------------------------------------------------
+
+# This function cleans top-K item (where K is given as input)for a given list of users.
+# metaData[3, ncol(X)] : metaData[1] stores mask, metaData[2] stores schema, metaData[3] stores FD mask
+#
+# INPUT PARAMETERS:
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME            TYPE               DEFAULT    MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# dataTrain       Frame[Unknown]     ---
+# dataTest        Frame[Unknown]     NULL
+# metaData        Frame[Unknown]     NULL
+# primitives      Frame[Unknown]     ---
+# parameters      Frame[Unknown]     ---
+# cmr             Matrix[Double]     Matrix
+# evaluationFunc  String             ---
+# evalFunHp       Matrix[Double]     ---
+# topK            Integer            5
+# resource_val    Integer            20
+# sample          Double             0.1
+# cv              Boolean            TRUE
+# cvk             Integer            2
+# isLastLabel     Boolean            TRUE
+# correctTypos    Boolean            FALSE
+# output          String             ---
+# ----------------------------------------------------------------------------------------------------------------------
+#
+# OUTPUT:
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME            TYPE              MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# perf            Boolean
+# ----------------------------------------------------------------------------------------------------------------------
+
 # metaData[3, ncol(X)] : metaData[1] stores mask, metaData[2] stores schema, metaData[3] stores FD mask
 source("scripts/pipelines/scripts/utils.dml") as utils;
 source("scripts/pipelines/scripts/enumerateLogical.dml") as lg;

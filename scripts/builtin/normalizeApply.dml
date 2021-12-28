@@ -24,14 +24,20 @@
 # preserves the input sparsity. The validity of the provided min-max range
 # and post-processing is under control of the caller. 
 #
+# INPUT PARAMETERS:
 # ------------------------------------------------------------------------------
 # NAME     TYPE     DEFAULT   MEANING
 # ------------------------------------------------------------------------------
-# X        Matrix    ---      Input feature matrix of shape n-by-m
-# cmin     Matrix    ---      Colunm minima of shape 1-by-m
-# cmax     Matrix    ---      Column maxima of shape 1-by-m
+# X        Matrix[Double]    ---      Input feature matrix of shape n-by-m
+# cmin     Matrix[Double]    ---      Colunm minima of shape 1-by-m
+# cmax     Matrix[Double]    ---      Column maxima of shape 1-by-m
 # ------------------------------------------------------------------------------
-# Y        Matrix    ---      Modified output feature matrix of shape n-by-m
+#
+# OUTPUT:
+# ------------------------------------------------------------------------------
+# NAME     TYPE                       MEANING
+# ------------------------------------------------------------------------------
+# Y        Matrix[Double]             Modified output feature matrix of shape n-by-m
 # ------------------------------------------------------------------------------
 
 

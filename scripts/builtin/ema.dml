@@ -17,7 +17,30 @@
 # specific language governing permissions and limitations
 # under the License.
 #
-#------------------------------------------------------------
+#-------------------------------------------------------------
+
+# This function imputes values with exponential moving average (single, double or triple).
+#
+# INPUT PARAMETERS:
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME        TYPE           DEFAULT  MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# X           Frame[Double]  ---      Frame that contains timeseries data that needs to be imputed
+#                                     search_iterations	Integer	--	Budget iterations for parameter optimisation,
+#                                     used if parameters weren't set
+# mode        String         ---      Type of EMA method. Either "single", "double" or "triple"
+# freq        Double         ---      Seasonality when using triple EMA.
+# alpha       Double         ---      alpha- value for EMA
+# beta        Double         ---      beta- value for EMA
+# gamma       Double         ---      gamma- value for EMA
+# ----------------------------------------------------------------------------------------------------------------------
+#
+# OUTPUT:
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME       TYPE              MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# M          Frame[Double]     Frame with EMA results
+# ----------------------------------------------------------------------------------------------------------------------
 
 # TODO: convert to DML builtin using cumsumprod(data, alpha) 
 

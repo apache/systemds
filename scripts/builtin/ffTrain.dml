@@ -18,31 +18,36 @@
 # under the License.
 #
 #-------------------------------------------------------------
-#
+
 # This builtin function trains simple feed-forward neural network. The architecture of the
 # networks is: affine1 -> relu -> dropout -> affine2 -> configurable output activation function.
+# Hidden layer has 128 neurons. Dropout rate is 0.35. Input and ouptut sizes are inferred from X and Y.
 #
 # INPUT PARAMETERS:
-# --------------------------------------------------------------------------------------------
-# NAME              TYPE            DEFAULT     MEANING
-# --------------------------------------------------------------------------------------------
-# X                 Matrix[double]    ---       Training data
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME              TYPE              DEFAULT   MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# X                 Matrix[Double]    ---       Training data
 # Y                 Matrix[Double]    ---       Labels/Target values
 # batch_size        Integer           64        Batch size
 # epochs            Integer           20        Number of epochs
 # learning_rate     Double            0.003     Learning rate
 # out_activation    String            ---       User specified ouptut activation function. Possible values:
-# "sigmoid", "relu", "lrelu", "tanh", "softmax", "logits" (no activation).
+#                                               "sigmoid", "relu", "lrelu", "tanh", "softmax", "logits" (no activation).
 # loss_fcn          String            ---       User specified loss function. Possible values:
-# "l1", "l2", "log_loss", "logcosh_loss", "cel" (cross-entropy loss).
+#                                               "l1", "l2", "log_loss", "logcosh_loss", "cel" (cross-entropy loss).
 # shuffle           Boolean           FALSE     Flag which indicates if dataset should be shuffled or not
 # validation_split  Double            0.0       Fraction of training set used as validation set
 # seed              Integer           -1        Seed for model initialization
 # verbose           Boolean           FALSE     Flag which indicates if function should print to stdout
-# --------------------------------------------------------------------------------------------
-# OUTPUT: 
-# model           List[unknown]     ---       Trained model which can be used in ffPredict
+# ----------------------------------------------------------------------------------------------------------------------
 #
+# OUTPUT:
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME              TYPE                        MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# model             List[unknown]               Trained model which can be used in ffPredict
+# ----------------------------------------------------------------------------------------------------------------------
 
 source("nn/layers/affine.dml") as affine
 source("nn/layers/dropout.dml") as dropout

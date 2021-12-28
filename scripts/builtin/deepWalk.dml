@@ -20,23 +20,26 @@
 #-------------------------------------------------------------
 
 # This script performs DeepWalk on a given graph (https://arxiv.org/pdf/1403.6652.pdf)
+#
 # INPUT PARAMETERS:
-# ---------------------------------------------------------------------------------------------
-# NAME      TYPE        DEFAULT     MEANING
-# ---------------------------------------------------------------------------------------------
-# Graph     Matrix      ---         adjacency matrix of a graph (n x n)
-# w         Integer     ---         window size
-# d         Integer     ---         embedding size
-# gamma     Integer     ---         walks per vertex
-# t         Integer     ---         walk length
-# alpha     Double      0.025       learning rate
-# beta      Double      0.9         factor for decreasing learning rate
-# ---------------------------------------------------------------------------------------------
-# OUTPUT PARAMETERS:
-# ---------------------------------------------------------------------------------------------
-# NAME      TYPE        DEFAULT     MEANING
-# ---------------------------------------------------------------------------------------------
-# Phi       Matrix      ---         matrix of vertex/word representation (n x d)
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME      TYPE                DEFAULT     MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# Graph     Matrix[Double]      ---         adjacency matrix of a graph (n x n)
+# w         Integer             ---         window size
+# d         Integer             ---         embedding size
+# gamma     Integer             ---         walks per vertex
+# t         Integer             ---         walk length
+# alpha     Double              0.025       learning rate
+# beta      Double              0.9         factor for decreasing learning rate
+# ----------------------------------------------------------------------------------------------------------------------
+#
+# OUTPUT:
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME    TYPE                      MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# Phi     Matrix[Double]            matrix of vertex/word representation (n x d)
+# ----------------------------------------------------------------------------------------------------------------------
 
 source("scripts/staging/entity-resolution/primitives/postprocessing.dml") as post;
 

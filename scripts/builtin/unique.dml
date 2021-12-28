@@ -20,19 +20,20 @@
 #-------------------------------------------------------------
 
 # Builtin function that implements unique operation on vectors
-
+#
 # INPUT PARAMETERS:
 # ---------------------------------------------------------------------------------------------
-# NAME            TYPE    DEFAULT     MEANING
+# NAME            TYPE            DEFAULT     MEANING
 # ---------------------------------------------------------------------------------------------
-# X               Matrix  ---         input vector
+# X               Matrix[Double]  ---         input vector
 # ---------------------------------------------------------------------------------------------
-
-# Output(s)
+#
+# OUTPUT:
 # ---------------------------------------------------------------------------------------------
-# NAME            TYPE    DEFAULT      MEANING
+# NAME            TYPE            MEANING
 # ---------------------------------------------------------------------------------------------
-# R               Matrix  ---         matrix with only unique rows
+# R               Matrix[Double]  matrix with only unique rows
+# ---------------------------------------------------------------------------------------------
 
 unique = function(matrix[double] X)
   return (matrix[double] R)

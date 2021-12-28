@@ -19,39 +19,41 @@
 #
 #-------------------------------------------------------------
 
-# THIS SCRIPT IMPLEMENTS KNN( K Nearest Neighbor ) ALGORITHM
-#
-# INPUT   PARAMETERS:
-# ---------------------------------------------------------------------------------------------
-# NAME    TYPE     DEFAULT     OPTIONAL     MEANING
-# ---------------------------------------------------------------------------------------------
-# Train                 Matrix   ---    N   The input matrix as features
-# Test                  Matrix   ---    N   The input matrix for nearest neighbor search
-# CL                    Matrix   ---    Y   The input matrix as target
-# CL_T                  Integer  0      Y   The target type of matrix CL whether
-#                                           columns in CL are continuous ( =1 ) or
-#                                           categorical ( =2 ) or
-#                                           not specified ( =0 )
-# trans_continuous      Boolean  FALSE  Y   Option flag for continuous feature transformed to [-1,1]:
-#                                           FALSE = do not transform continuous variable;
-#                                           TRUE = transform continuous variable;
-# k_value               int      5      Y   k value for KNN, ignore if select_k enable
-# select_k              Boolean  FALSE  Y   Use k selection algorithm to estimate k
-#                                           ( TRUE means yes )
-# k_min                 int      1      Y   Min k value(  available if select_k = 1 )
-# k_max                 int      100    Y   Max k value(  available if select_k = 1 )
-# select_feature        Boolean  FALSE  Y   Use feature selection algorithm to select feature
-#                                           ( TRUE means yes )
-# feature_max           int      10     Y   Max feature selection
-# interval              int      1000   Y   Interval value for K selecting (  available if select_k = 1 )
-# feature_importance    Boolean  FALSE      Y   Use feature importance algorithm to estimate each feature
-#                                           ( TRUE means yes )
-# predict_con_tg        int      0      Y   Continuous  target predict function: mean(=0) or
-#                                           median(=1)
-# START_SELECTED        Matrix   ---    Y   feature selection initinal value
-# ---------------------------------------------------------------------------------------------
-# OUTPUT: Matrix NNR, Matrix PR, Matrix FEATURE_IMPORTANCE_VALUE
-#
+# This script implements KNN (K Nearest Neighbor) algorithm.
+
+# INPUT PARAMETERS:
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME                  TYPE             DEFAULT     OPTIONAL     MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# Train                 Matrix[Double]   ---         N           The input matrix as features
+# Test                  Matrix[Double]   ---         N           The input matrix for nearest neighbor search
+# CL                    Matrix[Double]   ---         Y           The input matrix as target
+# CL_T                  Integer          0           Y           The target type of matrix CL whether
+#                                                                columns in CL are continuous ( =1 ) or
+#                                                                categorical ( =2 ) or not specified ( =0 )
+# trans_continuous      Boolean          FALSE       Y           Option flag for continuous feature transformed to [-1,1]:
+#                                                                FALSE = do not transform continuous variable;
+#                                                                TRUE = transform continuous variable;
+# k_value               int              5           Y           k value for KNN, ignore if select_k enable
+# select_k              Boolean          FALSE       Y           Use k selection algorithm to estimate k (TRUE means yes)
+# k_min                 int              1           Y           Min k value(  available if select_k = 1 )
+# k_max                 int              100         Y           Max k value(  available if select_k = 1 )
+# select_feature        Boolean          FALSE       Y           Use feature selection algorithm to select feature (TRUE means yes)
+# feature_max           int              10          Y           Max feature selection
+# interval              int              1000        Y           Interval value for K selecting (  available if select_k = 1 )
+# feature_importance    Boolean          FALSE       Y           Use feature importance algorithm to estimate each feature
+#                                                                (TRUE means yes)
+# predict_con_tg        int              0           Y           Continuous  target predict function: mean(=0) or median(=1)
+# START_SELECTED        Matrix[Double]   Empty       Y           feature selection initinal value
+# ----------------------------------------------------------------------------------------------------------------------
+# OUTPUT:
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME                    TYPE                    MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# NNR_matrix              Matrix[Double]         ---
+# CL_matrix               Matrix[Double]         ---
+# m_feature_importance    Matrix[Double]         Feature importance value
+# ----------------------------------------------------------------------------------------------------------------------
 
 m_knn = function(
     Matrix[Double] Train,

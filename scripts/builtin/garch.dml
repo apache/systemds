@@ -19,42 +19,42 @@
 #
 #-------------------------------------------------------------
 
-# Builtin function that implements GARCH(1,1)
+# This is a builtin function that implements GARCH(1,1), a statistical model used in analyzing time-series data where the variance
+# error is believed to be serially autocorrelated
 #
 # INPUT PARAMETERS:
-# ----------------------------------------------------------------------------
-# NAME              TYPE      DEFAULT   MEANING
-# ----------------------------------------------------------------------------
-# X                 Double    ---       The input Matrix to apply Arima on.
-# kmax              Integer   ---       Number of iterations
-# momentum          Double    ---       Momentum for momentum-gradient descent (set to 0 to deactivate)
-# start_stepsize    Double    ---       Initial gradient-descent stepsize
-# end_stepsize      Double    ---       gradient-descent stepsize at end (linear descent)
-# start_vicinity    Double    ---       proportion of randomness of restart-location for gradient descent at beginning
-# end_vicinity      Double    ---       same at end (linear decay)
-# sim_seed          Integer   ---       seed for simulation of process on fitted coefficients
-# verbose           Boolean   ---       verbosity, comments during fitting
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME              TYPE              DEFAULT   MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# X                 Matrix[Double]    ---       The input Matrix to apply Arima on.
+# kmax              Integer           ---       Number of iterations
+# momentum          Double            ---       Momentum for momentum-gradient descent (set to 0 to deactivate)
+# start_stepsize    Double            ---       Initial gradient-descent stepsize
+# end_stepsize      Double            ---       gradient-descent stepsize at end (linear descent)
+# start_vicinity    Double            ---       proportion of randomness of restart-location for gradient descent at beginning
+# end_vicinity      Double            ---       same at end (linear decay)
+# sim_seed          Integer           ---       seed for simulation of process on fitted coefficients
+# verbose           Boolean           ---       verbosity, comments during fitting
+# ----------------------------------------------------------------------------------------------------------------------
 #
-# RETURN VALUES
-# ----------------------------------------------------------------------------
-# NAME         TYPE   DEFAULT  MEANING
-# ----------------------------------------------------------------------------
-# fitted_X          Double  ---     simulated garch(1,1) process on fitted coefficients
-# fitted_var_hist   Double  ---     variances of simulated fitted process
-# best_a0           Double  ---     constant term of fitted process
-# best_arch_coef    Double  ---     1-st arch-coefficient of fitted process
-# best_var_coef     Double  ---     1-st garch-coefficient of fitted process
-# ----------------------------------------------------------------------------
+# OUTPUT:
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME              TYPE               MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# fitted_X          Matrix[Double]     simulated garch(1,1) process on fitted coefficients
+# fitted_var_hist   Matrix[Double]     variances of simulated fitted process
+# best_a0           Double             onstant term of fitted process
+# best_arch_coef    Double             1-st arch-coefficient of fitted process
+# best_var_coef     Double             1-st garch-coefficient of fitted process
+# ----------------------------------------------------------------------------------------------------------------------
 #
 # COMMENTS
 # This has some drawbacks: slow convergence of optimization (sort of simulated annealing/gradient descent)
 # TODO: use BFGS or BHHH if it is available (this are go to methods)
 # TODO: (only then) extend to garch(p,q); otherwise the search space is way too big for the current method
 
-
-# ------- MAIN FUNCTION
-
-m_garch = function(Matrix[Double] X, Integer kmax, Double momentum, Double start_stepsize, Double end_stepsize, Double start_vicinity, Double end_vicinity, Integer sim_seed, Boolean verbose)
+m_garch = function(Matrix[Double] X, Integer kmax, Double momentum, Double start_stepsize, Double end_stepsize, Double start_vicinity,
+  Double end_vicinity, Integer sim_seed, Boolean verbose)
 return (Matrix[Double] fitted_X, Matrix[Double] fitted_var_hist, Double best_a0, Double best_arch_coef, Double best_var_coef) {
 
   [a0, arch_coef, var_coef] = sample_feasible_params() # initialize startpoint

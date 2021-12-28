@@ -19,28 +19,35 @@
 #
 #-------------------------------------------------------------
 
-# Print summary stats about the distribution of missing values in a univariate time series.
-# ------------------------------------------------------------------------------
-# NAME    TYPE        DEFAULT     MEANING
-# ------------------------------------------------------------------------------
-# X       Matrix      ---         Numeric Vector ('vector') object containing NAs
-# bins    Integer     4           Split number for bin stats. Number of bins the time series gets 
-#                                 divided into. For each bin information about amount/percentage of
-#                                 missing values is printed. 
-# verbose Boolean     TRUE        Print detailed information. 
-#                                 For print_only = TRUE, the missing value stats are printed with
-#                                 more information ("Stats for Bins" and "overview NA series").
-# ------------------------------------------------------------------------------
-# stats   Matrix      Double      Column vector where each row correspond to following, 
-#                                 1. Length of time series (including NAs)
-#                                 2. Number of Missing Values (NAs)
-#                                 3. Percentage of Missing Values (#2/#1)
-#                                 4. Number of Gaps (consisting of one or more consecutive NAs)
-#                                 5. Average Gap Size - Average size of consecutive NAs for the NA gaps
-#                                 6. Longest NA gap - Longest series of consecutive missing values
-#                                 7. Most frequent gap size - Most frequently occurring gap size
-#                                 8. Gap size accounting for most NAs
-# ------------------------------------------------------------------------------
+# The statsNA-function Print summary stats about the distribution of missing values in a univariate time series.
+#
+# INPUT PARAMETERS:
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME    TYPE               DEFAULT      MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# X       Matrix[Double]     ---          Numeric Vector ('vector') object containing NAs
+# bins    Integer            4            Split number for bin stats. Number of bins the time series gets
+#                                         divided into. For each bin information about amount/percentage of
+#                                         missing values is printed.
+# verbose Boolean            TRUE         Print detailed information.
+#                                         For print_only = TRUE, the missing value stats are printed with
+#                                         more information ("Stats for Bins" and "overview NA series").
+# ----------------------------------------------------------------------------------------------------------------------
+#
+# OUTPUT:
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME    TYPE              MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# stats   Matrix[Double]    Column vector where each row correspond to following,
+#                           1. Length of time series (including NAs)
+#                           2. Number of Missing Values (NAs)
+#                           3. Percentage of Missing Values (#2/#1)
+#                           4. Number of Gaps (consisting of one or more consecutive NAs)
+#                           5. Average Gap Size - Average size of consecutive NAs for the NA gaps
+#                           6. Longest NA gap - Longest series of consecutive missing values
+#                           7. Most frequent gap size - Most frequently occurring gap size
+#                           8. Gap size accounting for most NAs
+# ----------------------------------------------------------------------------------------------------------------------
 
 m_statsNA = function(Matrix[Double] X, Integer bins = 4, Boolean verbose = TRUE)
   return(Matrix[Double] stats) 

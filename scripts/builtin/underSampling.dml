@@ -18,7 +18,24 @@
 # under the License.
 #
 #-------------------------------------------------------------
-# # # following built-in performs random under sampling on data
+
+# Builtin to perform random under sampling on data.
+#
+# INPUT PARAMETERS:
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME    TYPE            DEFAULT   MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# X       Matrix[Double]  ---       X data to sample from
+# Y       Matrix[Double]  ---       Y data to sample from it will sample the same rows from x.
+# ratio   Double          ---       The ratio to sample
+# ----------------------------------------------------------------------------------------------------------------------
+#
+# OUTPUT:
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME         TYPE                       MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# data         Matrix[Double]             The cbinded data of X and Y
+# ----------------------------------------------------------------------------------------------------------------------
 
 m_underSampling = function(Matrix[Double] X, Matrix[Double] Y, Double ratio)
 return(Matrix[Double] data)

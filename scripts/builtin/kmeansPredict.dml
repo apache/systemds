@@ -17,24 +17,24 @@
 # specific language governing permissions and limitations
 # under the License.
 #
-#-----------------------------------------------------------------------------
+#-------------------------------------------------------------
 
 # Builtin function that does predictions based on a set of centroids provided.
 #
 # INPUT PARAMETERS:
-# ----------------------------------------------------------------------------
-# NAME     TYPE      DEFAULT  MEANING
-# ----------------------------------------------------------------------------
-# X        Matrix    ---      The input Matrix to do KMeans on.
-# C        Matrix    ---      The input Centroids to map X onto.
+# -----------------------------------------------------------------------------
+# NAME     TYPE              DEFAULT  MEANING
+# -----------------------------------------------------------------------------
+# X        Matrix[Double]    ---      The input Matrix to do KMeans on.
+# C        Matrix[Double]    ---      The input Centroids to map X onto.
+# -----------------------------------------------------------------------------
 #
-# RETURN VALUES
-# ----------------------------------------------------------------------------
-# NAME     TYPE      DEFAULT  MEANING
-# ----------------------------------------------------------------------------
-# Y        String    "Y.mtx"  The mapping of records to centroids
-# ----------------------------------------------------------------------------
-
+# OUTPUT:
+# -----------------------------------------------------------------------------
+# NAME     TYPE                MEANING
+# -----------------------------------------------------------------------------
+# Y        Matrix[Double]      The mapping of records to centroids
+# -----------------------------------------------------------------------------
 
 m_kmeansPredict = function(Matrix[Double] X, Matrix[Double] C)
   return (Matrix[Double] Y)

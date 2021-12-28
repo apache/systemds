@@ -16,24 +16,30 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
+#
 #-------------------------------------------------------------
 
 # This builtin function makes prediction given data and trained LeNet model
 #
 # INPUT PARAMETERS:
-# --------------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------
 # NAME        TYPE           DEFAULT   MEANING
-# --------------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------
 # model       List[unknown]   ---      Trained LeNet model
 # X           Matrix[Double]  ---      Input data matrix, of shape (N, C*Hin*Win)
 # C           Integer         ---      Number of input channels
 # Hin         Integer         ---      Input height
 # Win         Integer         ---      Input width
 # batch_size  Integer         ---      Batch size
-# --------------------------------------------------------------------------------------------
-# OUTPUT: 
-# pred      Matrix[Double]  ---      Predicted values
+# ----------------------------------------------------------------------------------------------------------------------
 #
+# OUTPUT:
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME        TYPE                     MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# probs       Matrix[Double]           Predicted values
+# ----------------------------------------------------------------------------------------------------------------------
+
 source("nn/layers/lenetForwardPass.dml") as lenet_fw
 
 s_lenetPredict = function(list[unknown] model, Matrix[Double] X, Integer C,

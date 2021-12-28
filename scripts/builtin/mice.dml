@@ -19,31 +19,32 @@
 #
 #-------------------------------------------------------------
 
-# Built-in function Implements Multiple Imputation using Chained Equations (MICE) 
+# This Builtin function implements multiple imputation using Chained Equations (MICE)
 #
 # INPUT PARAMETERS:
-# ---------------------------------------------------------------------------------------------
-# NAME            TYPE    DEFAULT     MEANING
-# ---------------------------------------------------------------------------------------------
-# X               Double    ---        Data Matrix (Recoded Matrix for categorical features)
-# cMask           Double    ---        A 0/1 row vector for identifying numeric (0) and categorical features (1)
-# iter            Integer    3         Number of iteration for multiple imputations 
-# threshold       Double     0.8      confidence value [0, 1] for robust imputation, values will only be imputed
-#                                      if the predicted value has probability greater than threshold, 
-#                                      only applicable for categorical data
-# ---------------------------------------------------------------------------------------------
- 
-
-#Output(s)
-# ---------------------------------------------------------------------------------------------
-# NAME                  TYPE    DEFAULT     MEANING
-# ---------------------------------------------------------------------------------------------
-# output               Double   ---        imputed dataset
-
-
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME            TYPE              DEFAULT    MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# X               Matrix[Double]    ---        Data Matrix (Recoded Matrix for categorical features)
+# cMask           Matrix[Double]    ---        A 0/1 row vector for identifying numeric (0) and categorical features (1)
+# iter            Integer           3          Number of iteration for multiple imputations
+# threshold       Double            0.8        confidence value [0, 1] for robust imputation, values will only be imputed
+#                                              if the predicted value has probability greater than threshold,
+#                                              only applicable for categorical data
+# verbose         Boolean           FALSE      Boolean value.
+# ----------------------------------------------------------------------------------------------------------------------
+#
+# OUTPUT:
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME            TYPE                         MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# output          Matrix[Double]               imputed dataset
+# ----------------------------------------------------------------------------------------------------------------------
+#
 # Assumption missing value are represented with empty string i.e ",," in CSV file  
 # variables with suffix n are storing continuos/numeric data and variables with 
 # suffix c are storing categorical data
+
 m_mice= function(Matrix[Double] X, Matrix[Double] cMask, Integer iter = 3, 
   Double threshold = 0.8, Boolean verbose = FALSE)
   return(Matrix[Double] output)

@@ -19,13 +19,34 @@
 #
 #-------------------------------------------------------------
 
-# Implements Gaussian Nonnegative Matrix Factorization (GNMF)
+# The gnmf-function does Gaussian Non-Negative Matrix Factorization. In this, a matrix X is factorized into two
+# matrices W and H, such that all three matrices have no negative elements. This non-negativity makes the resulting
+# matrices easier to inspect.
 #
+# References:
 # [Chao Liu, Hung-chih Yang, Jinliang Fan, Li-Wei He, Yi-Min Wang:
-# Distributed nonnegative matrix factorization for web-scale dyadic 
+# Distributed nonnegative matrix factorization for web-scale dyadic
 # data analysis on mapreduce. WWW 2010: 681-690]
+#
+# INPUT PARAMETERS:
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME      TYPE               DEFAULT   MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# X         Matrix[Double]     ---       Matrix of feature vectors.
+# rnk       Integer            ---       Number of components into which matrix X is to be factored
+# eps       Double             1e-8      Tolerance
+# maxi      Integer            10        Maximum number of conjugate gradient iterations
+# ----------------------------------------------------------------------------------------------------------------------
+#
+# OUTPUT:
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME     TYPE                         MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# W        Matrix[Double]               List of pattern matrices, one for each repetition
+# H        Matrix[Double]               List of amplitude matrices, one for each repetition
+# ----------------------------------------------------------------------------------------------------------------------
 
-m_gnmf = function(Matrix[Double] X, Integer rnk, Double eps = 1e-8, Integer maxi = 10) 
+m_gnmf = function(Matrix[Double] X, Integer rnk, Double eps = 1e-8, Integer maxi = 10)
   return (Matrix[Double] W, Matrix[Double] H) 
 {
   #initialize W and H

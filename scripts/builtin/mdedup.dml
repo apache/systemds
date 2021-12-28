@@ -17,29 +17,30 @@
 # specific language governing permissions and limitations
 # under the License.
 #
-#------------------------------------------------------------------------------------------------------------------
+#-------------------------------------------------------------
 
 # Implements builtin for deduplication using matching dependencies (e.g. Street 0.95, City 0.90 -> ZIP 1.0)
 # and Jaccard distance.
 # 
 # INPUT PARAMETERS:
-# -----------------------------------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------
 # NAME            TYPE              DEFAULT     MEANING
-# -----------------------------------------------------------------------------------------------------------------
-# X               Frame               --       Input Frame X
-# LHSfeatures     Matrix[Integer]     --       A matrix 1xd with numbers of columns for MDs
-#                                              (e.g. Street 0.95, City 0.90 -> ZIP 1.0)
-# LHSthreshold    Matrix[Double]      --       A matrix 1xd with threshold values in interval [0, 1] for MDs
-# RHSfeatures     Matrix[Integer]     --       A matrix 1xd with numbers of columns for MDs
-# RHSthreshold    Matrix[Double]      --       A matrix 1xd with threshold values in interval [0, 1] for MDs
-# verbose         Boolean             --       To print the output
-# -----------------------------------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------
+# X               Frame             ---         Input Frame X
+# LHSfeatures     Matrix[Integer]   ---         A matrix 1xd with numbers of columns for MDs
+#                                               (e.g. Street 0.95, City 0.90 -> ZIP 1.0)
+# LHSthreshold    Matrix[Double]    ---         A matrix 1xd with threshold values in interval [0, 1] for MDs
+# RHSfeatures     Matrix[Integer]   ---         A matrix 1xd with numbers of columns for MDs
+# RHSthreshold    Matrix[Double]    ---         A matrix 1xd with threshold values in interval [0, 1] for MDs
+# verbose         Boolean           ---         To print the output
+# ----------------------------------------------------------------------------------------------------------------------
 #
-# Output(s)
-# -----------------------------------------------------------------------------------------------------------------
-# NAME                 TYPE         DEFAULT     MEANING
-# -----------------------------------------------------------------------------------------------------------------
-# MD              Matrix[Double]      ---       Matrix nx1 of duplicates
+# Output:
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME            TYPE                         MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# MD              Matrix[Double]               Matrix nx1 of duplicates
+# ----------------------------------------------------------------------------------------------------------------------
 
 s_mdedup = function(Frame[String] X, Matrix[Double] LHSfeatures, Matrix[Double] LHSthreshold,
     Matrix[Double] RHSfeatures, Matrix[Double] RHSthreshold, Boolean verbose)

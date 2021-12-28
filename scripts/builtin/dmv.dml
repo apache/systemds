@@ -17,10 +17,29 @@
 # specific language governing permissions and limitations
 # under the License.
 #
-#------------------------------------------------------------
+#-------------------------------------------------------------
+
+# The dmv-function is used to find disguised missing values utilising syntactical pattern recognition.
+#
+# INPUT PARAMETERS:
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME        TYPE           DEFAULT  MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# X           Frame[String]   ---     Input Frame
+# threshold   Double          0.8     Threshold value in interval [0, 1] for dominant pattern per column (e.g., 0.8 means
+#                                     that 80% of the entries per column must adhere this pattern to be dominant)
+# replace     String          "NA"    The string disguised missing values are replaced with
+#
+# ----------------------------------------------------------------------------------------------------------------------
+#
+# OUTPUT:
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME      TYPE             MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# Y         Frame[String]    Frame X including detected disguised missing values
+# ----------------------------------------------------------------------------------------------------------------------
 
 s_dmv = function(Frame[String] X, Double threshold=0.8, String replace="NA") return (Frame[String] Y) {
-
   if( threshold < 0 | threshold > 1 )
     stop("Stopping due to invalid input, threshold required in interval [0, 1] found " + threshold)
 

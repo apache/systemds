@@ -18,50 +18,58 @@
 # under the License.
 #
 #-------------------------------------------------------------
-source("scripts/builtin/sherlockNet.dml") as sherlockNet
 
-# Implements training phase of Sherlock: A Deep Learning Approach to Semantic Data Type Detection
+# This function implements training phase of Sherlock: A Deep Learning Approach to Semantic Data Type Detection
 #
 # [Hulsebos, Madelon, et al. "Sherlock: A deep learning approach to semantic data type detection."
 # Proceedings of the 25th ACM SIGKDD International Conference on Knowledge Discovery & Data Mining.
 # 2019.]
-
+#
 # Split feature matrix into four different feature categories and train neural networks on the
 # respective single features. Then combine all trained features to train final neural network.
-# ---------------------------------------------------------------------------------------------
-# NAME         TYPE      DEFAULT  MEANING
-# ---------------------------------------------------------------------------------------------
-# X_train      Matrix    ---      maxtrix of feature vectors
-# y_train      Matrix    ---      matrix Y of class labels of semantic data type
-# ---------------------------------------------------------------------------------------------
-# cW           Matrix    ---      weights (parameters) matrices for character distribtions
-# cb           Matrix    ---      biases vectors for character distribtions
-# wW           Matrix    ---      weights (parameters) matrices for word embeddings
-# wb           Matrix    ---      biases vectors for word embeddings
-# pW           Matrix    ---      weights (parameters) matrices for paragraph vectors
-# pb           Matrix    ---      biases vectors for paragraph vectors
-# sW           Matrix    ---      weights (parameters) matrices for global statistics
-# sb           Matrix    ---      biases vectors for global statistics
-# fW           Matrix    ---      weights (parameters) matrices for  combining all trained features (final)
-# fb           Matrix    ---      biases vectors for combining all trained features (final)
-# ---------------------------------------------------------------------------------------------
+#
+# INPUT PARAMETERS:
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME         TYPE            DEFAULT   MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# X_train      Matrix[Double]  ---       maxtrix of feature vectors
+# y_train      Matrix[Double]  ---       matrix Y of class labels of semantic data type
+# ----------------------------------------------------------------------------------------------------------------------
+#
+# OUTPUT:
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME         TYPE                       MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# cW           Matrix[Double]             weights (parameters) matrices for character distribtions
+# cb           Matrix[Double]             biases vectors for character distribtions
+# wW           Matrix[Double]             weights (parameters) matrices for word embeddings
+# wb           Matrix[Double]             biases vectors for word embeddings
+# pW           Matrix[Double]             weights (parameters) matrices for paragraph vectors
+# pb           Matrix[Double]             biases vectors for paragraph vectors
+# sW           Matrix[Double]             weights (parameters) matrices for global statistics
+# sb           Matrix[Double]             biases vectors for global statistics
+# fW           Matrix[Double]             weights (parameters) matrices for  combining all trained features (final)
+# fb           Matrix[Double]             biases vectors for combining all trained features (final)
+# ----------------------------------------------------------------------------------------------------------------------
 
-m_sherlock = function(matrix[double] X_train, matrix[double] y_train)
-      return (matrix[double] cW1, matrix[double] cb1,
-            matrix[double] cW2, matrix[double] cb2,
-            matrix[double] cW3, matrix[double] cb3,
-            matrix[double] wW1, matrix[double] wb1,
-            matrix[double] wW2, matrix[double] wb2,
-            matrix[double] wW3, matrix[double] wb3,
-            matrix[double] pW1, matrix[double] pb1,
-            matrix[double] pW2, matrix[double] pb2,
-            matrix[double] pW3, matrix[double] pb3,
-            matrix[double] sW1, matrix[double] sb1,
-            matrix[double] sW2, matrix[double] sb2,
-            matrix[double] sW3, matrix[double] sb3,
-            matrix[double] fW1, matrix[double] fb1,
-            matrix[double] fW2, matrix[double] fb2,
-            matrix[double] fW3, matrix[double] fb3) {
+source("scripts/builtin/sherlockNet.dml") as sherlockNet
+
+m_sherlock = function(Matrix[Double] X_train, Matrix[Double] y_train)
+      return (Matrix[Double] cW1, Matrix[Double] cb1,
+            Matrix[Double] cW2, Matrix[Double] cb2,
+            Matrix[Double] cW3, Matrix[Double] cb3,
+            Matrix[Double] wW1, Matrix[Double] wb1,
+            Matrix[Double] wW2, Matrix[Double] wb2,
+            Matrix[Double] wW3, Matrix[Double] wb3,
+            Matrix[Double] pW1, Matrix[Double] pb1,
+            Matrix[Double] pW2, Matrix[Double] pb2,
+            Matrix[Double] pW3, Matrix[Double] pb3,
+            Matrix[Double] sW1, Matrix[Double] sb1,
+            Matrix[Double] sW2, Matrix[Double] sb2,
+            Matrix[Double] sW3, Matrix[Double] sb3,
+            Matrix[Double] fW1, Matrix[Double] fb1,
+            Matrix[Double] fW2, Matrix[Double] fb2,
+            Matrix[Double] fW3, Matrix[Double] fb3) {
   train_cols = ncol(X_train)
   train_rows = nrow(X_train)
   [cW1, cb1, cW2, cb2, cW3, cb3] = sherlockNet::train(X_train[1:train_rows, 224:1183], y_train, 300)
@@ -93,7 +101,7 @@ m_sherlock = function(matrix[double] X_train, matrix[double] y_train)
 # ---------------------------------------------------------------------------------------------
 # m_data       Matrix    ---      transformed matrix containing X values
 
-transform_values = function(frame[string] data) return (matrix[double] m_data) {
+transform_values = function(frame[string] data) return (Matrix[Double] m_data) {
 
   rows = nrow(data)
   cols = ncol(data)
@@ -119,7 +127,7 @@ transform_values = function(frame[string] data) return (matrix[double] m_data) {
 # ground_truth    Matrix    ---      matrix containing ground truth in numerical representation
 # meta_data       String    ---      String contaning meta data of transformation encoding
 
-transform_encode_labels = function(frame[string] data, string transform_spec) return (matrix[double] ground_truth , frame[string] meta_data) {
+transform_encode_labels = function(frame[string] data, string transform_spec) return (Matrix[Double] ground_truth , frame[string] meta_data) {
 
   rows = nrow(data)
   cols = ncol(data)
@@ -148,7 +156,7 @@ transform_encode_labels = function(frame[string] data, string transform_spec) re
 # ---------------------------------------------------------------------------------------------
 # ground_truth    Matrix    ---      matrix containing ground truth in numerical representation
 
-transform_apply_labels = function(frame[string] data, frame[string] meta_data, string transform_spec) return (matrix[double] ground_truth) {
+transform_apply_labels = function(frame[string] data, frame[string] meta_data, string transform_spec) return (Matrix[Double] ground_truth) {
   #remove index row
   rows = nrow(data)
   cols = ncol(data)
@@ -174,8 +182,8 @@ transform_apply_labels = function(frame[string] data, frame[string] meta_data, s
 # ---------------------------------------------------------------------------------------------
 # ground_truth Matrix    ---      matrix containing ground truth in numerical representation
 
-transform_labels_to_ground_truth = function(matrix[double] data)
-  return(matrix[double] ground_truth) {
+transform_labels_to_ground_truth = function(Matrix[Double] data)
+  return(Matrix[Double] ground_truth) {
 
   rows = nrow(data)
   ground_truth = matrix(0, rows=rows, cols=78)

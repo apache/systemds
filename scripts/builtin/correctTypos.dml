@@ -19,37 +19,37 @@
 #
 #-------------------------------------------------------------
 
-# ----------------------------------------------------------------------------
+# Corrects corrupted frames of strings
+# This algorithm operates on the assumption that most strings are correct
+# and simply swaps strings that do not occur often with similar strings that 
+# occur more often
+#
 # References:
 # Fred J. Damerau. 1964. 
 #   A technique for computer detection and correction of spelling errors. 
 #   Commun. ACM 7, 3 (March 1964), 171–176. 
 #   DOI:https://doi.org/10.1145/363958.363994
-# ----------------------------------------------------------------------------
-
-# Builtin function that corrects corrupted frames of strings
-# This algorithm operates on the assumption that most strings are correct
-# and simply swaps strings that do not occur often with similar strings that 
-# occur more often
 #
 # INPUT PARAMETERS:
-# ----------------------------------------------------------------------------
-# NAME                              TYPE      DEFAULT  MEANING
-# ----------------------------------------------------------------------------
-# strings                           String    ---      The nx1 input frame of corrupted strings
-# frequency_threshold               Double    0.05     Strings that occur above this frequency level will not be corrected
-# distance_threshold                integer   2        Max distance at which strings are considered similar
-# decapitalize                      Boolean   TRUE     Decapitalize all strings before correction
-# correct                           Boolean   TRUE     Correct strings or only report potential errors
-# is_verbose                        Boolean   FALSE    Print debug information
+# ------------------------------------------------------------------------------------------------------------------------
+# NAME                       TYPE             DEFAULT  MEANING
+# ------------------------------------------------------------------------------------------------------------------------
+# strings                    Frame[String]    ---      The nx1 input frame of corrupted strings
+# nullMask                   Matrix[Double]   ---      ---
+# frequency_threshold        Double           0.05     Strings that occur above this frequency level will not be corrected
+# distance_threshold         integer          2        Max distance at which strings are considered similar
+# decapitalize               Boolean          TRUE     Decapitalize all strings before correction
+# correct                    Boolean          TRUE     Correct strings or only report potential errors
+# is_verbose                 Boolean          FALSE    Print debug information
 #
+# ------------------------------------------------------------------------------------------------------------------------
 #
-# RETURN VALUES
-# ----------------------------------------------------------------------------
-# NAME     TYPE      DEFAULT  MEANING
-# ----------------------------------------------------------------------------
-# Y        Frame        -     Corrected nx1 output frame
-# ----------------------------------------------------------------------------
+# OUTPUT:
+# ------------------------------------------------------------------------------------------------------------------------
+# NAME     TYPE                    MEANING
+# ------------------------------------------------------------------------------------------------------------------------
+# Y        Frame[String]           Corrected nx1 output frame
+# ------------------------------------------------------------------------------------------------------------------------
 
 # TODO: future: add parameter for list of words that are sure to be correct
 

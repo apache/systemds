@@ -18,13 +18,16 @@
 # under the License.
 #
 #-------------------------------------------------------------
+
+# Solves Cubic Spline Interpolation
 #
-# THIS SCRIPT SOLVES CUBIC SPLINE INTERPOLATION
+# Algorithms: implement https://en.wikipedia.org/wiki/Spline_interpolation#Algorithm_to_find_the_interpolating_cubic_spline
+# It use natural spline with q1''(x0) == qn''(xn) == 0.0
 #
 # INPUT PARAMETERS:
-# --------------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------
 # NAME  TYPE           DEFAULT   MEANING
-# --------------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------
 # X      Matrix[Double]  ---       1-column matrix of x values knots. It is assumed that x values are
 #                                  monotonically increasing and there is no duplicates points in X
 # Y      Matrix[Double]  ---       1-column matrix of corresponding y values knots
@@ -33,15 +36,15 @@
 # tol    Double          -1.0      Tolerance (epsilon); conjugate graduent procedure terminates early if
 #                                  L2 norm of the beta-residual is less than tolerance * its initial norm
 # maxi   Integer         -1        Maximum number of conjugate gradient iterations, 0 = no maximum
-# --------------------------------------------------------------------------------------------
-# OUTPUT: 
-# pred_Y Matrix[Double] ---      Predicted value
-# K      Matrix[Double] ---      Matrix of k parameters
+# ----------------------------------------------------------------------------------------------------------------------
 #
-
-#Algorithms: It implement the https://en.wikipedia.org/wiki/Spline_interpolation#Algorithm_to_find_the_interpolating_cubic_spline
-#it usages natural spline with q1''(x0) == qn''(xn) == 0.0
-
+# OUTPUT:
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME      TYPE             MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# pred_Y Matrix[Double]      Predicted value
+# K      Matrix[Double]      Matrix of k parameters
+# ----------------------------------------------------------------------------------------------------------------------
 
 m_cspline = function(Matrix[Double] X, Matrix[Double] Y, Double inp_x, 
 String mode = "DS", Double tol = -1.0, Integer maxi = -1)

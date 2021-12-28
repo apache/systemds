@@ -19,51 +19,55 @@
 #
 #-------------------------------------------------------------
 
+# This script implement classification random forest with both scale and categorical features.
 #
-# THIS SCRIPT IMPLEMENTS CLASSIFICATION RANDOM FOREST WITH BOTH SCALE AND CATEGORICAL FEATURES
+# INPUT PARAMETERS:
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME            TYPE             DEFAULT      MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# X               Matrix[Double]   ---          Feature matrix X; note that X needs to be both recoded and dummy coded
+# Y               Matrix[Double]   ---          Label matrix Y; note that Y needs to be both recoded and dummy coded
+# R               Matrix[Double]   " "          Matrix which for each feature in X contains the following information
+#                                               - R[,1]: column ids       TODO pass recorded and binned
+#                                               - R[,2]: start indices
+#                                               - R[,3]: end indices
+#                                               If R is not provided by default all variables are assumed to be scale
+# bins            Int              20           Number of equiheight bins per scale feature to choose thresholds
+# depth           Int              25           Maximum depth of the learned tree
+# num_leaf        Int              10           Number of samples when splitting stops and a leaf node is added
+# num_samples     Int              3000         Number of samples at which point we switch to in-memory subtree building
+# num_trees       Int              10           Number of trees to be learned in the random forest model
+# subsamp_rate    Double           1.0          Parameter controlling the size of each tree in the forest; samples are selected from a
+#                                               Poisson distribution with parameter subsamp_rate (the default value is 1.0)
+# feature_subset  Double           0.5          Parameter that controls the number of feature used as candidates for splitting at each tree node
+#                                               as a power of number of features in the dataset;
+#                                               by default square root of features (i.e., feature_subset = 0.5) are used at each tree node
+# impurity        String           "Gini"       Impurity measure: entropy or Gini (the default)
+# ----------------------------------------------------------------------------------------------------------------------
 #
-# INPUT           PARAMETERS:
-# ---------------------------------------------------------------------------------------------
-# NAME            TYPE     DEFAULT      MEANING
-# ---------------------------------------------------------------------------------------------
-# X               Matrix   ---          Feature matrix X; note that X needs to be both recoded and dummy coded
-# Y               Matrix   ---          Label matrix Y; note that Y needs to be both recoded and dummy coded
-# R               Matrix   " "          Matrix which for each feature in X contains the following information
-#                                       - R[,1]: column ids       TODO pass recorded and binned
-#                                       - R[,2]: start indices
-#                                       - R[,3]: end indices
-#                                       If R is not provided by default all variables are assumed to be scale
-# bins            Int      20           Number of equiheight bins per scale feature to choose thresholds
-# depth           Int      25           Maximum depth of the learned tree
-# num_leaf        Int      10           Number of samples when splitting stops and a leaf node is added
-# num_samples     Int      3000         Number of samples at which point we switch to in-memory subtree building
-# num_trees       Int      10           Number of trees to be learned in the random forest model
-# subsamp_rate    Double   1.0          Parameter controlling the size of each tree in the forest; samples are selected from a
-#                                       Poisson distribution with parameter subsamp_rate (the default value is 1.0)
-# feature_subset  Double   0.5          Parameter that controls the number of feature used as candidates for splitting at each tree node
-#                                       as a power of number of features in the dataset;
-#                                       by default square root of features (i.e., feature_subset = 0.5) are used at each tree node
-# impurity        String   "Gini"       Impurity measure: entropy or Gini (the default)
-# ---------------------------------------------------------------------------------------------
-
-# Output          TYPE     MEANING:
-# ---------------------------------------------------------------------------------------------
-# M               Matrix   Matrix M containing the learned tree, where each column corresponds to a node 
-#                          in the learned tree and each row contains the following information:
-#                            M[1,j]: id of node j (in a complete binary tree)
-#                            M[2,j]: tree id to which node j belongs
-#                            M[3,j]: Offset (no. of columns) to left child of j
-#                            M[4,j]: Feature index of the feature that node j looks at if j is an internal node, otherwise 0
-#                            M[5,j]: Type of the feature that node j looks at if j is an internal node: 1 for scale and 2 for categorical features,
+# OUTPUT:
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME            TYPE             MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# M               Matrix[Double]   Matrix M containing the learned tree, where each column corresponds to a node
+#                                  in the learned tree and each row contains the following information:
+#                                    M[1,j]: id of node j (in a complete binary tree)
+#                                    M[2,j]: tree id to which node j belongs
+#                                    M[3,j]: Offset (no. of columns) to left child of j
+#                                    M[4,j]: Feature index of the feature that node j looks at if j is an internal node, otherwise 0
+#                                    M[5,j]: Type of the feature that node j looks at if j is an internal node: 1 for scale and 2
+#                                    for categorical features,
 #                                    otherwise the label that leaf node j is supposed to predict
-#                            M[6,j]: 1 if j is an internal node and the feature chosen for j is scale, otherwise the size of the subset of values
+#                                    M[6,j]: 1 if j is an internal node and the feature chosen for j is scale, otherwise the
+#                                    size of the subset of values
 #                                    stored in rows 7,8,... if j is categorical
-#                            M[7:,j]: Only applicable for internal nodes. Threshold the example's feature value is compared to is stored at M[7,j] if the feature chosen for j is scale;
-#                                     If the feature chosen for j is categorical rows 7,8,... depict the value subset chosen for j
-# C               Matrix   Matrix C containing the number of times samples are chosen in each tree of the random forest
-# S_map           Matrix   Mappings from scale feature ids to global feature ids
-# C_map           Matrix   Mappings from categorical feature ids to global feature ids
-# -------------------------------------------------------------------------------------------
+#                                    M[7:,j]: Only applicable for internal nodes. Threshold the example's feature value is
+#                                    compared to is stored at M[7,j] if the feature chosen for j is scale;
+#                                    If the feature chosen for j is categorical rows 7,8,... depict the value subset chosen for j
+# C               Matrix[Double]   Matrix C containing the number of times samples are chosen in each tree of the random forest
+# S_map           Matrix[Double]   Mappings from scale feature ids to global feature ids
+# C_map           Matrix[Double]   Mappings from categorical feature ids to global feature ids
+# ----------------------------------------------------------------------------------------------------------------------
 
 m_randomForest = function(Matrix[Double] X, Matrix[Double] Y, Matrix[Double] R, 
     Integer bins = 20, Integer depth = 25, Integer num_leaf = 10, Integer num_samples = 3000, 

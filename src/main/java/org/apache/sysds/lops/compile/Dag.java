@@ -65,13 +65,7 @@ import org.apache.sysds.runtime.instructions.cp.CPInstruction.CPType;
 import org.apache.sysds.runtime.instructions.cp.VariableCPInstruction;
 import org.apache.sysds.runtime.meta.MatrixCharacteristics;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -197,7 +191,9 @@ public class Dag<N extends Lop>
 		// other exec types we use a two-level sorting of )
 		List<Lop> node_v = 
 			//doTopologicalSortStrictOrder(nodes) :
-			doTopologicalSortTwoLevelOrder(nodes);
+			//doTopologicalSortTwoLevelOrder(nodes);
+			//doBreadthFirstSort(nodes);
+			doMinIntermediateSort(nodes);
 		
 		// add Prefetch and broadcast lops, if necessary
 		List<Lop> node_pf = OptimizerUtils.ASYNC_TRIGGER_RDD_OPERATIONS ? addPrefetchLop(node_v) : node_v;
@@ -262,6 +258,66 @@ public class Dag<N extends Lop>
 		//NOTE: in contrast to hadoop execution modes, we avoid computing the transitive
 		//closure here to ensure linear time complexity because its unnecessary for CP and Spark
 		return nodes;
+	}
+
+	private static List<Lop> doBreadthFirstSort(List<Lop> v) {
+		List<Lop> nodes = v.stream().sorted(Comparator.comparing(Lop::getLevel)).collect(Collectors.toList());
+
+		printStats(nodes);
+
+		return nodes;
+	}
+
+	private static void printStats(List<Lop> v) {
+		for (Lop l : v) {
+			long memEst = OptimizerUtils.estimateSizeExactSparsity(l.getOutputParameters().getNumRows(),
+				l.getOutputParameters().getNumCols(), l.getOutputParameters().getNnz());
+
+			System.out.println("ID: " + l.getID());
+			System.out.println("Level: " + l.getLevel());
+			System.out.println("Memory estimate: " + memEst);
+			System.out.println("Output params: " + l.getOutputParameters());
+			System.out.println("Class: " + l.getClass());
+			System.out.println("Type: " + l.getDataType() + ", data exec location: " + l.isDataExecLocation() +
+				", variable: " + l.isVariable() + ", exec type: " + l.getExecType());
+			System.out.println("Inputs: " + l.getInputs());
+			System.out.println("Outputs: " + l.getOutputs());
+			System.out.println("Str: " + l.toString());
+			System.out.println("=============================");
+		}
+	}
+
+	private static List<Lop> doMinIntermediateSort(List<Lop> v) {
+		List<Lop> nodes = new ArrayList<>(v.size());
+		List<Lop> lowestLevel = v.stream().filter(l -> l.getOutputs().isEmpty())
+			.sorted(Comparator.comparing(Lop::getID)).collect(Collectors.toList());
+
+		// Traverse the tree bottom up, choose nodes with higher memory requirements, then reverse list
+		sortRecursive(nodes, lowestLevel);
+		Collections.reverse(nodes);
+
+		printStats(nodes);
+
+		return nodes;
+	}
+
+	private static void sortRecursive(List<Lop> result, List<Lop> input) {
+		// TODO: Improve memory estimate?
+		// Sort primarily by memory estimate, if memory estimate is the same, sort by ID
+		// This preserves print order
+		List<Map.Entry<Lop, Long>> memEst = input.stream().map(l -> new AbstractMap.SimpleEntry<>(l,
+			OptimizerUtils.estimateSizeExactSparsity(l.getOutputParameters().getNumRows(),
+				l.getOutputParameters().getNumCols(), l.getOutputParameters().getNnz())))
+			.sorted(Comparator.comparing(e -> ((Map.Entry<Lop, Long>) e).getValue())
+				.thenComparing(e -> ((Map.Entry<Lop, Long>) e).getKey().getID()).reversed())
+			.collect(Collectors.toList());
+
+		for (Map.Entry<Lop, Long> e : memEst) {
+			// TODO: This may cause order that isn't optimal
+			if (!result.containsAll(e.getKey().getOutputs())) continue;
+			result.add(e.getKey());
+			sortRecursive(result, e.getKey().getInputs());
+		}
 	}
 	
 	private static List<Lop> addPrefetchLop(List<Lop> nodes) {

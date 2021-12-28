@@ -20,7 +20,7 @@
 #-------------------------------------------------------------
 
 # This function drops feature with <= thresh variance (by default drop constants).
-
+#
 # INPUT PARAMETERS:
 # ----------------------------------------------------------------------------------------------------------------------
 # NAME          TYPE            DEFAULT   MEANING

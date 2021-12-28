@@ -76,7 +76,7 @@
 #                                              Acceptor 2 has matched with proposer 2 (since [2,2] is non-zero) at a
 #                                              preference level of 3.0.
 #                                              Acceptor 3 has matched with proposer 1 (since [3,1] is non-zero) at a
- #                                             preference level of 1.0.
+#                                              preference level of 1.0.
 # ----------------------------------------------------------------------------------------------------------------------
 
 m_stableMarriage = function(Matrix[Double] P, Matrix[Double] A, Boolean ordered = TRUE, Boolean verbose = FALSE)

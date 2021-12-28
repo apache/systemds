@@ -20,19 +20,25 @@
 #-------------------------------------------------------------
 
 # Principal Component Analysis (PCA) for reconstruction of approximation of the original data.
-# 
 # This methods allows to reconstruct an approximation of the original matrix, and is usefull for
 # calculating how much information is lost in the PCA.
 #
-# ---------------------------------------------------------------------------------------------
-# NAME          TYPE    DEFAULT       MEANING
-# ---------------------------------------------------------------------------------------------
-# X             Matrix  ---           Input features that have PCA applied to them
-# Centering     Matrix  empty matrix  The column means of the PCA model, subtracted to construct the PCA
-# ScaleFactor   Matrix  empty matrix  The scaling of each dimension in the PCA model
-# ---------------------------------------------------------------------------------------------
-# Y             Matrix  ---           Output feature matrix reconstructing and approximation of the original matrix
-# ---------------------------------------------------------------------------------------------
+# INPUT PARAMETERS:
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME          TYPE             DEFAULT       MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# Y             Matrix[Double]   ---           Input features that have PCA applied to them
+# Clusters      Matrix[Double]   ---           The previous PCA components computed
+# Centering     Matrix[Double]   empty matrix  The column means of the PCA model, subtracted to construct the PCA
+# ScaleFactor   Matrix[Double]   empty matrix  The scaling of each dimension in the PCA model
+# ----------------------------------------------------------------------------------------------------------------------
+#
+# OUTPUT:
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME          TYPE                      MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# X             Matrix[Double]            Output feature matrix reconstructing and approximation of the original matrix
+----------------------------------------------------------------------------------------------------------------------
 
 m_pcaInverse = function(Matrix[Double] Y, Matrix[Double] Clusters, 
   Matrix[Double] Centering = matrix(0, rows= 0, cols=0), 

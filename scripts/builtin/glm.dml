@@ -19,47 +19,49 @@
 #
 #-------------------------------------------------------------
 
-# 
-# THIS BUILTIN SOLVES GLM REGRESSION USING NEWTON/FISHER SCORING WITH TRUST REGIONS
+# This script solves GLM regression using NEWTON/FISHER scoring with trust regions. The glm-function is a flexible
+# generalization of ordinary linear regression that allows for response variables that have error distribution models.
 #
 # INPUT PARAMETERS:
-# ---------------------------------------------------------------------------------------------
-# NAME  TYPE   DEFAULT  MEANING
-# ---------------------------------------------------------------------------------------------
-# X     Double  ---     matrix X of feature vectors
-# Y     Double  ---     matrix Y with either 1 or 2 columns:
-#                       if dfam = 2, Y is 1-column Bernoulli or 2-column Binomial (#pos, #neg)
-# dfam  Int     1       Distribution family code: 1 = Power, 2 = Binomial
-# vpow  Double  0.0     Power for Variance defined as (mean)^power (ignored if dfam != 1):
-#                       0.0 = Gaussian, 1.0 = Poisson, 2.0 = Gamma, 3.0 = Inverse Gaussian
-# link  Int     0       Link function code: 0 = canonical (depends on distribution),
-#                       1 = Power, 2 = Logit, 3 = Probit, 4 = Cloglog, 5 = Cauchit
-# lpow  Double  1.0     Power for Link function defined as (mean)^power (ignored if link != 1):
-#                       -2.0 = 1/mu^2, -1.0 = reciprocal, 0.0 = log, 0.5 = sqrt, 1.0 = identity
-# yneg  Double  0.0     Response value for Bernoulli "No" label, usually 0.0 or -1.0
-# icpt  Int     0       Intercept presence, X columns shifting and rescaling:
-#                       0 = no intercept, no shifting, no rescaling;
-#                       1 = add intercept, but neither shift nor rescale X;
-#                       2 = add intercept, shift & rescale X columns to mean = 0, variance = 1
-# reg   Double  0.0     Regularization parameter (lambda) for L2 regularization
-# tol   Double 0.000001 Tolerance (epsilon)
-# disp  Double  0.0     (Over-)dispersion value, or 0.0 to estimate it from data
-# moi   Int     200     Maximum number of outer (Newton / Fisher Scoring) iterations
-# mii   Int     0       Maximum number of inner (Conjugate Gradient) iterations, 0 = no maximum
-# ---------------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME  TYPE             DEFAULT     MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# X     Matrix[Double]    ---        matrix X of feature vectors
+# Y     Matrix[Double]    ---        matrix Y with either 1 or 2 columns:
+#                                    if dfam = 2, Y is 1-column Bernoulli or 2-column Binomial (#pos, #neg)
+# dfam  Int               1          Distribution family code: 1 = Power, 2 = Binomial
+# vpow  Double            0.0        Power for Variance defined as (mean)^power (ignored if dfam != 1):
+#                                    0.0 = Gaussian, 1.0 = Poisson, 2.0 = Gamma, 3.0 = Inverse Gaussian
+# link  Int               0          Link function code: 0 = canonical (depends on distribution),
+#                                    1 = Power, 2 = Logit, 3 = Probit, 4 = Cloglog, 5 = Cauchit
+# lpow  Double            1.0        Power for Link function defined as (mean)^power (ignored if link != 1):
+#                                    -2.0 = 1/mu^2, -1.0 = reciprocal, 0.0 = log, 0.5 = sqrt, 1.0 = identity
+# yneg  Double            0.0        Response value for Bernoulli "No" label, usually 0.0 or -1.0
+# icpt  Int               0          Intercept presence, X columns shifting and rescaling:
+#                                    0 = no intercept, no shifting, no rescaling;
+#                                    1 = add intercept, but neither shift nor rescale X;
+#                                    2 = add intercept, shift & rescale X columns to mean = 0, variance = 1
+# reg   Double            0.0        Regularization parameter (lambda) for L2 regularization
+# tol   Double            0.000001   Tolerance (epsilon)
+# disp  Double            0.0        (Over-)dispersion value, or 0.0 to estimate it from data
+# moi   Int               200        Maximum number of outer (Newton / Fisher Scoring) iterations
+# mii   Int               0          Maximum number of inner (Conjugate Gradient) iterations, 0 = no maximum
+#
+# ----------------------------------------------------------------------------------------------------------------------
 # 
-# OTUPUT:
-# ---------------------------------------------------------------------------------------------
-# NAME   TYPE     MEANING
-# ---------------------------------------------------------------------------------------------
-# beta   Double   Matrix beta, whose size depends on icpt:
-#                 icpt=0: ncol(X) x 1;  icpt=1: (ncol(X) + 1) x 1;  icpt=2: (ncol(X) + 1) x 2
-#----------------------------------------------------------------------------------------------
-# In addition, some GLM statistics are provided as console output by setting verbose = TRUE, one comma-separated name-value
+# OUTPUT:
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME   TYPE                     MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# beta   Matrix[Double]           Matrix beta, whose size depends on icpt:
+#                                 icpt=0: ncol(X) x 1;  icpt=1: (ncol(X) + 1) x 1;  icpt=2: (ncol(X) + 1) x 2
+#-----------------------------------------------------------------------------------------------------------------------
+#
+# In addition, some GLM statistics are provided as console output by setting verbose=TRUE, one comma-separated name-value
 # pair per each line, as follows:
 #
 # NAME                  MEANING
-# -------------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------
 # TERMINATION_CODE      A positive integer indicating success/failure as follows:
 #                       1 = Converged successfully; 2 = Maximum number of iterations reached; 
 #                       3 = Input (X, Y) out of range; 4 = Distribution/link is not supported
@@ -73,13 +75,13 @@
 # DISPERSION_EST        Dispersion estimated from the dataset
 # DEVIANCE_UNSCALED     Deviance from the saturated model, assuming dispersion == 1.0
 # DEVIANCE_SCALED       Deviance from the saturated model, scaled by the DISPERSION value
-# -------------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------
 #
 # The Log file, when requested, contains the following per-iteration variables in CSV format,
 # each line containing triple (NAME, ITERATION, VALUE) with ITERATION = 0 for initial values:
 #
 # NAME                  MEANING
-# -------------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------
 # NUM_CG_ITERS          Number of inner (Conj.Gradient) iterations in this outer iteration
 # IS_TRUST_REACHED      1 = trust region boundary was reached, 0 = otherwise
 # POINT_STEP_NORM       L2-norm of iteration step from old point (i.e. "beta") to new point
@@ -92,15 +94,14 @@
 # LINEAR_TERM_MAX       The maximum value of X %*% beta, used to check for overflows
 # IS_POINT_UPDATED      1 = new point accepted; 0 = new point rejected, old point restored
 # TRUST_DELTA           Updated trust region size, the "delta"
-# -------------------------------------------------------------------------------------------
-# 
+# ----------------------------------------------------------------------------------------------------------------------
 #
 # SOME OF THE SUPPORTED GLM DISTRIBUTION FAMILIES
 # AND LINK FUNCTIONS:
-# -----------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------
 # INPUT PARAMETERS:    MEANING:            Cano-
 # dfam vpow link lpow  Distribution.link   nical?
-# -----------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------
 #  1   0.0   1  -1.0   Gaussian.inverse
 #  1   0.0   1   0.0   Gaussian.log
 #  1   0.0   1   1.0   Gaussian.id          Yes
@@ -115,14 +116,14 @@
 #  1   3.0   1   0.0   InvGaussian.log
 #  1   3.0   1   1.0   InvGaussian.id
 #  1    *    1    *    AnyVariance.AnyLink
-# -----------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------
 #  2    *    1   0.0   Binomial.log
 #  2    *    1   0.5   Binomial.sqrt
 #  2    *    2    *    Binomial.logit       Yes
 #  2    *    3    *    Binomial.probit
 #  2    *    4    *    Binomial.cloglog
 #  2    *    5    *    Binomial.cauchit
-# -----------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------
 
 m_glm = function(Matrix[Double] X, Matrix[Double] Y, Integer dfam=1, 
   Double vpow=0.0, Integer link=0, Double lpow=1.0, Double yneg=0.0,

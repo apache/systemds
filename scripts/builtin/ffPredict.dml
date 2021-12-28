@@ -22,21 +22,26 @@
 # This builtin function makes prediction given data and trained feedforward neural network model
 #
 # INPUT PARAMETERS:
-# --------------------------------------------------------------------------------------------
-# NAME        TYPE           DEFAULT   MEANING
-# --------------------------------------------------------------------------------------------
-# Model       List[unknown]   ---      Trained ff neural network model
-# X           Matrix[Double]  ---      Data used for making predictions
-# batch_size  Integer         128      Batch size
-# --------------------------------------------------------------------------------------------
-# OUTPUT: 
-# pred      Matrix[Double]  ---      Predicted value
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME        TYPE            DEFAULT   MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# Model       List[unknown]    ---      Trained ff neural network model
+# X           Matrix[Double]   ---      Data used for making predictions
+# batch_size  Integer          128      Batch size
 #
+# ----------------------------------------------------------------------------------------------------------------------
+#
+# OUTPUT:
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME        TYPE                      MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# pred        Double                    Predicted value
+# ----------------------------------------------------------------------------------------------------------------------
 
 source("nn/layers/feedForward.dml") as ff_pass
 
-s_ffPredict = function(List[unknown] model, Matrix[double] X, Integer batch_size = 128) 
-  return (Matrix[double] pred) {
+s_ffPredict = function(List[unknown] model, Matrix[Double] X, Integer batch_size = 128) 
+  return (Matrix[Double] pred) {
   
   rows = nrow(X)
   out = as.matrix(model["W2"])

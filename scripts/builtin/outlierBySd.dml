@@ -19,32 +19,30 @@
 #
 #-------------------------------------------------------------
 
-
-# Builtin function for detecting and repairing outliers using standard deviation 
+# Builtin function for detecting and repairing outliers using standard deviation
 #
 # INPUT PARAMETERS:
-# ---------------------------------------------------------------------------------------------
-# NAME            TYPE      DEFAULT     MEANING
-# ---------------------------------------------------------------------------------------------
-# X               Double    ---       Matrix X  
-# k               Double    3         threshold values 1, 2, 3 for 68%, 95%, 99.7% respectively (3-sigma rule)
-# repairMethod    Integer   1         values: 0 = delete rows having outliers, 1 = replace outliers as  zeros 
-#                                             2 = replace outliers as missing values 
-# max_iterations  Integer   0         values: 0 = arbitrary number of iteration until all outliers are removed, 
-#                                     n = any constant defined by user
-# ---------------------------------------------------------------------------------------------
- 
-
-#Output(s)
-# ---------------------------------------------------------------------------------------------
-# NAME            TYPE    DEFAULT     MEANING
-# ---------------------------------------------------------------------------------------------
-# Y               Double   ---     Matrix X with no outliers
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME            TYPE              DEFAULT     MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# X               Matrix[Double]    ---         Matrix X
+# k               Double            3           threshold values 1, 2, 3 for 68%, 95%, 99.7% respectively (3-sigma rule)
+# repairMethod    Integer           1           values: 0 = delete rows having outliers, 1 = replace outliers as  zeros
+#                                               2 = replace outliers as missing values
+# max_iterations  Integer           0           values: 0 = arbitrary number of iteration until all outliers are removed,
+#                                               n = any constant defined by user
+# ----------------------------------------------------------------------------------------------------------------------
+#
+# OUTPUT:
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME           TYPE                          MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# Y              Matrix[Double]                Matrix X with no outliers
+# ----------------------------------------------------------------------------------------------------------------------
 
 m_outlierBySd = function(Matrix[Double] X, Double k = 3, Integer repairMethod = 1, 
   Integer max_iterations, Boolean verbose = TRUE) return(Matrix[Double] Y) 
 {
-
   # variable initialization 
   sumPrevious = as.double(0)
   sumNext = as.double(1)

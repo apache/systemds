@@ -20,6 +20,12 @@
 #
 #-------------------------------------------------------------
 
+if [ "$(basename $PWD)" != "perftest" ];
+then
+  echo "Please execute scripts from directory 'perftest'"
+  exit 1;
+fi
+
 # Optional argument that can be a folder name for where generated data is stored
 TEMPFOLDER=$1
 if [ "$TEMPFOLDER" == "" ]; then TEMPFOLDER=temp ; fi
@@ -43,6 +49,7 @@ source ./conf/env-variables
 # init time measurement
 if [ ! -d logs ]; then mkdir -p logs ; fi
 if [ ! -d results ]; then mkdir -p results ; fi
+if [ ! -d temp ]; then mkdir -p temp ; fi
 date >> results/times.txt
 
 ### Data Generation
@@ -61,8 +68,8 @@ echo "-- Generating ALS data." >> results/times.txt;
 ./genALSData.sh ${CMD} ${TEMPFOLDER} ${MAXMEM} &> logs/genALSData.out
 
 ### Micro Benchmarks:
-#./MatrixMult.sh
-#./MatrixTranspose.sh
+./MatrixMult.sh ${CMD}
+./MatrixTranspose.sh ${CMD}
 
 # Federate benchmark
 #./fed/runAllFed.sh ${CMD} ${TEMPFOLDER} ${MAXMEM}

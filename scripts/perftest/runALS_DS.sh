@@ -19,6 +19,13 @@
 # under the License.
 #
 #-------------------------------------------------------------
+set -e
+
+if [ "$(basename $PWD)" != "perftest" ];
+then
+  echo "Please execute scripts from directory 'perftest'"
+  exit 1;
+fi
 
 X=$1
 MAXITER=${2:-100}

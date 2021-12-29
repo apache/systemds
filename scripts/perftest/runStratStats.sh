@@ -21,6 +21,12 @@
 #-------------------------------------------------------------
 set -e
 
+if [ "$(basename $PWD)" != "perftest" ];
+then
+  echo "Please execute scripts from directory 'perftest'"
+  exit 1;
+fi
+
 CMD=$5
 BASE=$4
 

@@ -22,5 +22,5 @@
 export LOG4JPROP='conf/log4j-off.properties'
 export SYSDS_QUIET=1
 
-# stratstats needs a large heap
-# export SYSTEMDS_STANDALONE_OPTS="-Xmx8g -Xms8g -Xmn2000m"
+# stratstats needs a large heap for datasize of 800MB
+# export SYSTEMDS_STANDALONE_OPTS="-Xmx10g -Xms10g -Xmn2000m"

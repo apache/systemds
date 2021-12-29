@@ -19,6 +19,11 @@
 # under the License.
 #
 #-------------------------------------------------------------
+if [ "$(basename $PWD)" != "perftest" ];
+then
+  echo "Please execute scripts from directory 'perftest'"
+  exit 1;
+fi
 
 COMMAND=$1
 TEMPFOLDER=$2

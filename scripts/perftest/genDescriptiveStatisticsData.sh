@@ -19,6 +19,12 @@
 # under the License.
 #
 #-------------------------------------------------------------
+if [ "$(basename $PWD)" != "perftest" ];
+then
+  echo "Please execute scripts from directory 'perftest'"
+  exit 1;
+fi
+
 CMD=$1
 BASE=$2/bivar
 MAXMEM=$3

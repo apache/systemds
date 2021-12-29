@@ -28,6 +28,7 @@ import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.FileUtil;
+import org.apache.hadoop.fs.LocalFileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.permission.FsPermission;
 import org.apache.hadoop.io.IOUtils;
@@ -336,6 +337,29 @@ public class HDFSTool
 		FileSystem fs = IOUtilFunctions.getFileSystem(path);
 		BufferedWriter br=new BufferedWriter(new OutputStreamWriter(fs.create(path,true)));
 		return br;
+	}
+	
+	/**
+	 * Helper function to write scalars to HDFS,
+	 * including writing its meta data and removing CRC files in local file system
+	 *
+	 * @param scalar scalar data object
+	 * @param fname file name
+	 */
+	public static void writeScalarToHDFS(ScalarObject scalar, String fname) {
+		try {
+			writeObjectToHDFS(scalar.getValue(), fname);
+			writeScalarMetaDataFile(fname +".mtd", scalar.getValueType(), scalar.getPrivacyConstraint());
+
+			FileSystem fs = IOUtilFunctions.getFileSystem(fname);
+			if (fs instanceof LocalFileSystem) {
+				Path path = new Path(fname);
+				IOUtilFunctions.deleteCrcFilesFromLocalFileSystem(fs, path);
+			}
+		}
+		catch ( IOException e ) {
+			throw new DMLRuntimeException(e);
+		}
 	}
 	
 	public static void writeDoubleToHDFS ( double d, String filename ) throws IOException {

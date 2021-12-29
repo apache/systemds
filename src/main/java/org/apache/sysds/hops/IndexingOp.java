@@ -26,7 +26,6 @@ import org.apache.sysds.common.Types.OpOp2;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.hops.AggBinaryOp.SparkAggType;
 import org.apache.sysds.hops.rewrite.HopRewriteUtils;
-import org.apache.sysds.lops.Data;
 import org.apache.sysds.lops.Lop;
 import org.apache.sysds.common.Types.ExecType;
 import org.apache.sysds.lops.RightIndex;
@@ -140,10 +139,8 @@ public class IndexingOp extends Hop
 					SparkAggType aggtype = (method==IndexingMethod.MR_VRIX || isBlockAligned()) ? 
 						SparkAggType.NONE : SparkAggType.MULTI_BLOCK;
 					
-					Lop dummy = Data.createLiteralLop(ValueType.INT64, Integer.toString(-1));
-					RightIndex reindex = new RightIndex(
-						input.constructLops(), getInput().get(1).constructLops(), getInput().get(2).constructLops(),
-						getInput().get(3).constructLops(), getInput().get(4).constructLops(), dummy, dummy,
+					RightIndex reindex = new RightIndex(input.constructLops(), getInput(1).constructLops(),
+						getInput(2).constructLops(), getInput(3).constructLops(), getInput(4).constructLops(),
 						getDataType(), getValueType(), aggtype, et);
 				
 					setOutputDimensions(reindex);
@@ -152,11 +149,9 @@ public class IndexingOp extends Hop
 				}
 				else //CP or GPU
 				{
-					Lop dummy = Data.createLiteralLop(ValueType.INT64, Integer.toString(-1));
-					RightIndex reindex = new RightIndex(
-							input.constructLops(), getInput().get(1).constructLops(), getInput().get(2).constructLops(),
-							getInput().get(3).constructLops(), getInput().get(4).constructLops(), dummy, dummy,
-							getDataType(), getValueType(), et);
+					RightIndex reindex = new RightIndex(input.constructLops(), getInput(1).constructLops(),
+						getInput(2).constructLops(), getInput(3).constructLops(), getInput(4).constructLops(),
+						getDataType(), getValueType(), et);
 					
 					setOutputDimensions(reindex);
 					setLineNumbers(reindex);

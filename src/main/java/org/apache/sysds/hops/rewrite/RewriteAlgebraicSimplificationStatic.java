@@ -165,6 +165,7 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 				hi = fuseBinarySubDAGToUnaryOperation(hop, hi, i);   //e.g., X*(1-X)-> sprop(X) || 1/(1+exp(-X)) -> sigmoid(X) || X*(X>0) -> selp(X)
 			hi = simplifyTraceMatrixMult(hop, hi, i);            //e.g., trace(X%*%Y)->sum(X*t(Y));  
 			hi = simplifySlicedMatrixMult(hop, hi, i);           //e.g., (X%*%Y)[1,1] -> X[1,] %*% Y[,1];
+			hi = simplifyListIndexing(hi);                       //e.g., L[i:i, 1:ncol(L)] -> L[i:i, 1:1]
 			hi = simplifyConstantSort(hop, hi, i);               //e.g., order(matrix())->matrix/seq; 
 			hi = simplifyOrderedSort(hop, hi, i);                //e.g., order(matrix())->seq; 
 			hi = fuseOrderOperationChain(hi);                    //e.g., order(order(X,2),1) -> order(X,(12))
@@ -1390,10 +1391,21 @@ public class RewriteAlgebraicSimplificationStatic extends HopRewriteRule
 			mm.refreshSizeInformation();
 			
 			hi = mm;
-				
-			LOG.debug("Applied simplifySlicedMatrixMult");	
+			
+			LOG.debug("Applied simplifySlicedMatrixMult");
 		}
 		
+		return hi;
+	}
+	
+	private static Hop simplifyListIndexing(Hop hi) {
+		//e.g., L[i:i, 1:ncol(L)] -> L[i:i, 1:1]
+		if( hi instanceof IndexingOp && hi.getDataType().isList()
+			&& !(hi.getInput(4) instanceof LiteralOp) )
+		{
+			HopRewriteUtils.replaceChildReference(hi, hi.getInput(4), new LiteralOp(1));
+			LOG.debug("Applied simplifyListIndexing (line "+hi.getBeginLine()+").");
+		}
 		return hi;
 	}
 

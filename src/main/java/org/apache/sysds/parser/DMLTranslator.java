@@ -2244,6 +2244,7 @@ public class DMLTranslator
 		switch (source.getOpCode()) {
 
 		case EVAL:
+		case EVALLIST:
 			currBuiltinOp = new NaryOp(target.getName(), target.getDataType(), target.getValueType(),
 				OpOpN.EVAL, processAllExpressions(source.getAllExpr(), hops));
 			break;

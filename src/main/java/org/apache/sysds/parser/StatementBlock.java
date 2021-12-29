@@ -994,19 +994,21 @@ public class StatementBlock extends LiveVariableAnalysis implements ParseInfo
 			
 			// validate that size of LHS index ranges is being assigned:
 			//	(a) a matrix value of same size as LHS
-			//	(b) singleton value (semantics: initialize enitre submatrix with this value)
+			//	(b) singleton value (semantics: initialize entire submatrix with this value)
 			IndexPair targetSize = ((IndexedIdentifier)target).calculateIndexedDimensions(ids.getVariables(), currConstVars, conditional);
 			
-			if (targetSize._row >= 1 && source.getOutput().getDim1() > 1 && targetSize._row != source.getOutput().getDim1()){
-				target.raiseValidateError("Dimension mismatch. Indexed expression " + target.toString() + " can only be assigned matrix with dimensions "
-						+ targetSize._row + " rows and " + targetSize._col + " cols. Attempted to assign matrix with dimensions "
-						+ source.getOutput().getDim1() + " rows and " + source.getOutput().getDim2() + " cols ", conditional);
-			}
-			
-			if (targetSize._col >= 1 && source.getOutput().getDim2() > 1 && targetSize._col != source.getOutput().getDim2()){
-				target.raiseValidateError("Dimension mismatch. Indexed expression " + target.toString() + " can only be assigned matrix with dimensions "
-						+ targetSize._row + " rows and " + targetSize._col + " cols. Attempted to assign matrix with dimensions "
-						+ source.getOutput().getDim1() + " rows and " + source.getOutput().getDim2() + " cols ", conditional);
+			if( target.getDataType().isMatrixOrFrame() ) {
+				if (targetSize._row >= 1 && source.getOutput().getDim1() > 1 && targetSize._row != source.getOutput().getDim1()){
+					target.raiseValidateError("Dimension mismatch. Indexed expression " + target.toString() + " can only be assigned matrix with dimensions "
+							+ targetSize._row + " rows and " + targetSize._col + " cols. Attempted to assign matrix with dimensions "
+							+ source.getOutput().getDim1() + " rows and " + source.getOutput().getDim2() + " cols ", conditional);
+				}
+				
+				if (targetSize._col >= 1 && source.getOutput().getDim2() > 1 && targetSize._col != source.getOutput().getDim2()){
+					target.raiseValidateError("Dimension mismatch. Indexed expression " + target.toString() + " can only be assigned matrix with dimensions "
+							+ targetSize._row + " rows and " + targetSize._col + " cols. Attempted to assign matrix with dimensions "
+							+ source.getOutput().getDim1() + " rows and " + source.getOutput().getDim2() + " cols ", conditional);
+				}
 			}
 			((IndexedIdentifier)target).setDimensions(targetSize._row, targetSize._col);
 		}

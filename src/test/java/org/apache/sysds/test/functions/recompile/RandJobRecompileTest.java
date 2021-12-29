@@ -42,23 +42,19 @@ public class RandJobRecompileTest extends AutomatedTestBase
 	
 	
 	@Override
-	public void setUp() 
-	{
+	public void setUp() {
 		TestUtils.clearAssertionInformation();
 		addTestConfiguration(TEST_NAME, 
 			new TestConfiguration(TEST_CLASS_DIR, TEST_NAME, new String[] { "Z" }) );
 	}
 	
-	
 	@Test
-	public void testRandRecompileNoEstSizeEval() 
-	{
+	public void testRandRecompileNoEstSizeEval() {
 		runRandJobRecompileTest(false);
 	}
 	
 	@Test
-	public void testRandRecompilEstSizeEval() 
-	{
+	public void testRandRecompileEstSizeEval() {
 		runRandJobRecompileTest(true);
 	}
 	
@@ -74,7 +70,7 @@ public class RandJobRecompileTest extends AutomatedTestBase
 			/* This is for running the junit test the new way, i.e., construct the arguments directly */
 			String HOME = SCRIPT_DIR + TEST_DIR;
 			fullDMLScriptName = HOME + TEST_NAME + ".dml";
-			programArgs = new String[]{"-args", input("X"), Integer.toString(rows), output("Z") };
+			programArgs = new String[]{"-explain","-args", input("X"), Integer.toString(rows), output("Z") };
 			
 			fullRScriptName = HOME + TEST_NAME + ".R";
 			rCmd = "Rscript" + " " + fullRScriptName + " " + inputDir() + " " + expectedDir();
@@ -94,7 +90,7 @@ public class RandJobRecompileTest extends AutomatedTestBase
 			
 			//check expected number of compiled and executed Spark jobs
 			int expectedNumCompiled = (estSizeEval?1:3); //rbl, rand, write
-			int expectedNumExecuted = (estSizeEval?0:1); //write
+			int expectedNumExecuted = 0;
 			
 			checkNumCompiledSparkInst(expectedNumCompiled);
 			checkNumExecutedSparkInst(expectedNumExecuted);

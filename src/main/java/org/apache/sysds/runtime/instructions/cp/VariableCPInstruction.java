@@ -736,7 +736,7 @@ public class VariableCPInstruction extends CPInstruction implements LineageTrace
 
 			if ( srcData == null ) {
 				throw new DMLRuntimeException("Unexpected error: could not find a data object "
-					+ "for variable name:" + getInput1().getName() + ", while processing instruction ");
+					+ "for variable name: " + getInput1().getName() + ", while processing instruction ");
 			}
 
 			// remove existing variable bound to target name and

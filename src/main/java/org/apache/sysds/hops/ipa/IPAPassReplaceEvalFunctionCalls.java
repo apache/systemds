@@ -150,6 +150,11 @@ public class IPAPassReplaceEvalFunctionCalls extends IPAPass
 						+ "applicable for replacement, but list inputs not yet supported.");
 					continue;
 				}
+				if( eval.getDataType().isList() ) {
+					LOG.warn("IPA: eval("+fnamespace+"::"+fname+") "
+						+ "applicable for replacement, but list output not yet supported.");
+					continue;
+				}
 				if( fstmt.getOutputParams().size() != 1 || !fstmt.getOutputParams().get(0).getDataType().isMatrix() ) {
 					LOG.warn("IPA: eval("+fnamespace+"::"+fname+") "
 						+ "applicable for replacement, but function output is not a matrix.");

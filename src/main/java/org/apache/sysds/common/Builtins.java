@@ -123,6 +123,7 @@ public enum Builtins {
 	EXECUTE_PIPELINE("executePipeline", true),
 	EXP("exp", false),
 	EVAL("eval", false),
+	EVALLIST("evalList", false),
 	FIX_INVALID_LENGTHS("fixInvalidLengths", true),
 	FF_TRAIN("ffTrain", true),
 	FF_PREDICT("ffPredict", true),

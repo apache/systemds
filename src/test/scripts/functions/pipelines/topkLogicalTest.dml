@@ -69,9 +69,9 @@ getSchema = getSchema[, 1:ncol(getSchema) - 1] # strip the mask of class label
 metaList = list(mask=getMask, schema=getSchema, fd=as.matrix(0))
 
 logical =  frame([
-                 "7", "MVI", "OTLR", "ED", "EC", "CI", "DUMMY", "DIM", 
-                 "5", "ED",  "MVI",  "CI", "DUMMY", "DIM", "0", "0"
-                 ], rows=2, cols=8) 
+                 "6", "MVI", "OTLR", "ED", "EC", "CI", "DUMMY", 
+                 "4", "ED",  "MVI",  "CI", "DUMMY", "0", "0"
+                 ], rows=2, cols=7) 
 
 
 

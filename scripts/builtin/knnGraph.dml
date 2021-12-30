@@ -19,10 +19,10 @@
 #
 #-------------------------------------------------------------
 
+# Builtin for k nearest neighbor graph construction
 
 
-
-knnGraph = function(Matrix[double] input, integer k) return (Matrix[double] graph) {
+m_knnGraph = function(Matrix[double] input, integer k) return (Matrix[double] graph) {
     distances = matrix(0, rows = nrow(input), cols = nrow(input));
     for (i in 1:nrow(input) - 1) {
         distances[i, i] = 0;
@@ -50,14 +50,3 @@ knnGraph = function(Matrix[double] input, integer k) return (Matrix[double] grap
         }
     }
 }
-
-
-A = matrix(0, rows=10, cols=8);
-
-for(i in 1:nrow(A)) {
-    A[i,] = A[i,] + i;
-}
-
-M = knnGraph(A, 2);
-print(toString(A));
-print(toString(M));

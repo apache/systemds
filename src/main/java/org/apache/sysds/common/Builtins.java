@@ -37,7 +37,7 @@ import org.apache.sysds.common.Types.ReturnType;
  * building SystemDS, these scripts are packaged into the jar as well.
  */
 public enum Builtins {
-	//builtin functions
+	// builtin functions
 	ABSTAIN("abstain", true),
 	ABS("abs", false),
 	ACOS("acos", false),
@@ -91,8 +91,8 @@ public enum Builtins {
 	CORRECTTYPOS("correctTypos", true),
 	COS("cos", false),
 	COSH("cosh", false),
-	COUNT_DISTINCT("countDistinct",false),
-	COUNT_DISTINCT_APPROX("countDistinctApprox",false),
+	COUNT_DISTINCT("countDistinct", false),
+	COUNT_DISTINCT_APPROX("countDistinctApprox", false),
 	COV("cov", false),
 	COX("cox", true),
 	CSPLINE("cspline", true),
@@ -166,6 +166,7 @@ public enum Builtins {
 	KMEANS("kmeans", true),
 	KMEANSPREDICT("kmeansPredict", true),
 	KNNBF("knnbf", true),
+	KNNGraph("knnGraph", true),
 	KNN("knn", true),
 	L2SVM("l2svm", true),
 	L2SVMPREDICT("l2svmPredict", true),
@@ -174,7 +175,7 @@ public enum Builtins {
 	LENET_PREDICT("lenetPredict", true),
 	LENGTH("length", false),
 	LINEAGE("lineage", false),
-	LIST("list", false),  //note: builtin and parbuiltin
+	LIST("list", false), // note: builtin and parbuiltin
 	LM("lm", true),
 	LMCG("lmCG", true),
 	LMDS("lmDS", true),
@@ -206,8 +207,8 @@ public enum Builtins {
 	NORMALIZE("normalize", true),
 	NROW("nrow", false),
 	OUTER("outer", false),
-	OUTLIER("outlier", true, false), //TODO parameterize opposite
-	OUTLIER_ARIMA("outlierByArima",true),
+	OUTLIER("outlier", true, false), // TODO parameterize opposite
+	OUTLIER_ARIMA("outlierByArima", true),
 	OUTLIER_IQR("outlierByIQR", true),
 	OUTLIER_SD("outlierBySd", true),
 	PCA("pca", true),
@@ -241,7 +242,7 @@ public enum Builtins {
 	SHERLOCK("sherlock", true),
 	SHERLOCKPREDICT("sherlockPredict", true),
 	SHORTESTPATH("shortestPath", true),
-	SIGMOID("sigmoid", true),   // 1 / (1 + exp(-X))
+	SIGMOID("sigmoid", true), // 1 / (1 + exp(-X))
 	SIGN("sign", false),
 	SIN("sin", false),
 	SINH("sinh", false),
@@ -254,7 +255,7 @@ public enum Builtins {
 	STABLE_MARRIAGE("stableMarriage", true),
 	STATSNA("statsNA", true),
 	STRATSTATS("stratstats", true),
-	STEPLM("steplm",true, ReturnType.MULTI_RETURN),
+	STEPLM("steplm", true, ReturnType.MULTI_RETURN),
 	SQRT("sqrt", false),
 	SUM("sum", false),
 	SVD("svd", false, ReturnType.MULTI_RETURN),
@@ -271,20 +272,20 @@ public enum Builtins {
 	VAR("var", false),
 	VALUE_SWAP("valueSwap", false),
 	VECTOR_TO_CSV("vectorToCsv", true),
-	WINSORIZE("winsorize", true, false), //TODO parameterize w/ prob, min/max val
+	WINSORIZE("winsorize", true, false), // TODO parameterize w/ prob, min/max val
 	XGBOOST("xgboost", true),
 	XGBOOSTPREDICT("xgboostPredict", true),
 	XGBOOSTPREDICT_REG("xgboostPredictRegression", true),
 	XGBOOSTPREDICT_CLASS("xgboostPredictClassification", true),
 	XOR("xor", false),
 
-	//parameterized builtin functions
+	// parameterized builtin functions
 	AUTODIFF("autoDiff", false, true),
 	CDF("cdf", false, true),
 	CVLM("cvlm", true, false),
 	GROUPEDAGG("aggregate", "groupedAggregate", false, true),
 	INVCDF("icdf", false, true),
-	LISTNV("list", false, true), //note: builtin and parbuiltin
+	LISTNV("list", false, true), // note: builtin and parbuiltin
 	LOWER_TRI("lower.tri", false, true),
 	ORDER("order", false, true),
 	PARAMSERV("paramserv", false, true),
@@ -312,8 +313,8 @@ public enum Builtins {
 	TRANSFORMMETA("transformmeta", false, true),
 	UNDER_SAMPLING("underSampling", true),
 	UPPER_TRI("upper.tri", false, true),
-	XDUMMY1("xdummy1", true), //error handling test
-	XDUMMY2("xdummy2", true); //error handling test
+	XDUMMY1("xdummy1", true), // error handling test
+	XDUMMY2("xdummy2", true); // error handling test
 
 	Builtins(String name, boolean script) {
 		this(name, null, script, false, ReturnType.SINGLE_RETURN);
@@ -347,10 +348,10 @@ public enum Builtins {
 	private final static HashMap<String, Builtins> _map = new HashMap<>();
 
 	static {
-		//materialize lookup map for all builtin names
-		for( Builtins b : EnumSet.allOf(Builtins.class) ) {
+		// materialize lookup map for all builtin names
+		for (Builtins b : EnumSet.allOf(Builtins.class)) {
 			_map.put(b.getName(), b);
-			if( b.getAlias() != null )
+			if (b.getAlias() != null)
 				_map.put(b.getAlias(), b);
 		}
 	}
@@ -388,13 +389,13 @@ public enum Builtins {
 	}
 
 	public static Builtins get(String name) {
-		if( name.equals("list") )
-			return LIST; //unparameterized
+		if (name.equals("list"))
+			return LIST; // unparameterized
 		return _map.get(name);
 	}
 
 	public static Builtins get(String name, boolean params) {
-		if( name.equals("list") )
+		if (name.equals("list"))
 			return params ? LISTNV : LIST;
 		Builtins tmp = get(name);
 		return tmp != null && (params == tmp.isParameterized()) ? tmp : null;
@@ -410,6 +411,6 @@ public enum Builtins {
 
 	public static String getInternalFName(String name, DataType dt) {
 		return !contains(name, true, false) ? name : // private builtin
-				(dt.isMatrix() ? "m_" : "s_") + name;    // public builtin
+				(dt.isMatrix() ? "m_" : "s_") + name; // public builtin
 	}
 }

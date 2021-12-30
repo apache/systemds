@@ -56,7 +56,7 @@ import org.apache.sysds.utils.Statistics;
 public abstract class ColumnEncoder implements Encoder, Comparable<ColumnEncoder> {
 	protected static final Log LOG = LogFactory.getLog(ColumnEncoder.class.getName());
 	protected static final int APPLY_ROW_BLOCKS_PER_COLUMN = 1;
-	public static int BUILD_ROW_BLOCKS_PER_COLUMN = 1;
+	public static int BUILD_ROW_BLOCKS_PER_COLUMN = -1;
 	private static final long serialVersionUID = 2299156350718979064L;
 	protected int _colID;
 	protected Set<Integer> _sparseRowsWZeros = null;
@@ -370,7 +370,10 @@ public abstract class ColumnEncoder implements Encoder, Comparable<ColumnEncoder
 	}
 
 	protected int getNumBuildRowPartitions(){
-		return ConfigurationManager.getParallelBuildBlocks();
+		if (BUILD_ROW_BLOCKS_PER_COLUMN == -1)
+			return ConfigurationManager.getParallelBuildBlocks();
+		else
+			return BUILD_ROW_BLOCKS_PER_COLUMN; //for testing
 	}
 
 	public enum EncoderType {

@@ -54,6 +54,12 @@ public class TfUtils implements Serializable
 		}
 	}
 	
+	//binning methods
+	public enum BinningMethod {
+		EQUIWIDTH, 
+		EQUIHEIGHT
+	}
+	
 	//transform meta data constants (frame-based transform)
 	public static final String TXMTD_MVPREFIX = "#Meta"+Lop.DATATYPE_PREFIX+"MV";
 	public static final String TXMTD_NDPREFIX = "#Meta"+Lop.DATATYPE_PREFIX+"ND";

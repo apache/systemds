@@ -61,6 +61,7 @@ import org.apache.sysds.runtime.matrix.data.MatrixIndexes;
 import org.apache.sysds.runtime.matrix.operators.Operator;
 import org.apache.sysds.runtime.meta.DataCharacteristics;
 import org.apache.sysds.runtime.transform.TfUtils;
+import org.apache.sysds.runtime.transform.TfUtils.BinningMethod;
 import org.apache.sysds.runtime.transform.encode.*;
 import org.apache.sysds.runtime.transform.encode.EncoderMVImpute.MVMethod;
 import org.apache.sysds.runtime.transform.meta.TfMetaUtils;
@@ -315,16 +316,23 @@ public class MultiReturnParameterizedBuiltinSPInstruction extends ComputationSPI
 			}
 			// handle bin boundaries
 			else if(_encoder.containsEncoderForID(colID, ColumnEncoderBin.class)) {
-				double min = Double.MAX_VALUE;
-				double max = -Double.MAX_VALUE;
-				while(iter.hasNext()) {
-					double value = Double.parseDouble(iter.next().toString());
-					min = Math.min(min, value);
-					max = Math.max(max, value);
-				}
 				ColumnEncoderBin baEncoder = _encoder.getColumnEncoder(colID, ColumnEncoderBin.class);
-				assert baEncoder != null;
-				baEncoder.computeBins(min, max);
+				if (baEncoder.getMethod() == BinningMethod.EQUIWIDTH) {
+					double min = Double.MAX_VALUE;
+					double max = -Double.MAX_VALUE;
+					while(iter.hasNext()) {
+						double value = Double.parseDouble(iter.next().toString());
+						min = Math.min(min, value);
+						max = Math.max(max, value);
+					}
+					//ColumnEncoderBin baEncoder = _encoder.getColumnEncoder(colID, ColumnEncoderBin.class);
+					assert baEncoder != null;
+					baEncoder.computeBins(min, max);
+				}
+				else {
+					throw new DMLRuntimeException("Binning method "+baEncoder.getMethod().toString()+" is not support for Spark");
+					//TODO: support equi-height
+				}
 				double[] binMins = baEncoder.getBinMins();
 				double[] binMaxs = baEncoder.getBinMaxs();
 				for(int i = 0; i < binMins.length; i++) {

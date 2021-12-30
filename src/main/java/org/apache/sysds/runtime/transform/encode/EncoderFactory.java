@@ -24,6 +24,7 @@ import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.common.Types.ValueType;
 import org.apache.sysds.runtime.DMLRuntimeException;
 import org.apache.sysds.runtime.matrix.data.FrameBlock;
+import org.apache.sysds.runtime.transform.TfUtils.BinningMethod;
 import org.apache.sysds.runtime.transform.TfUtils.TfMethod;
 import org.apache.sysds.runtime.transform.encode.ColumnEncoder.EncoderType;
 import org.apache.sysds.runtime.transform.meta.TfMetaUtils;
@@ -114,10 +115,16 @@ public class EncoderFactory {
 				for(Object o : (JSONArray) jSpec.get(TfMethod.BIN.toString())) {
 					JSONObject colspec = (JSONObject) o;
 					int numBins = colspec.containsKey("numbins") ? colspec.getInt("numbins") : 1;
+					BinningMethod method = BinningMethod.EQUIWIDTH; //default method
+					String specMethod = colspec.containsKey("method") ? colspec.getString("method") : null;
+					if (specMethod != null && specMethod.equalsIgnoreCase("equi-height"))
+						method = BinningMethod.EQUIHEIGHT;
+					if (specMethod != null && !specMethod.equalsIgnoreCase("equi-height") && !specMethod.equalsIgnoreCase("equi-width"))
+						throw new DMLRuntimeException("Unsupported Binning method: " + specMethod);
 					int id = TfMetaUtils.parseJsonObjectID(colspec, colnames, minCol, maxCol, ids);
 					if(id <= 0)
 						continue;
-					ColumnEncoderBin bin = new ColumnEncoderBin(id, numBins);
+					ColumnEncoderBin bin = new ColumnEncoderBin(id, numBins, method);
 					addEncoderToMap(bin, colEncoders);
 				}
 			if(!dcIDs.isEmpty())

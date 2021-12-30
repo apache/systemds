@@ -991,7 +991,7 @@ public class TestUtils
 		final int ar = actualMatrix.getNumRows();
 		final int ac = actualMatrix.getNumColumns();
 		if(er != ar || ec != ac)
-			fail("The number of rows and columns does not match in matrices");
+			fail("The number of rows and columns does not match in matrices expected: " + er + " " + ec + " actual: " + ar + " "+ ac);
 	}
 
 	public static void assertEqualColsAndRows(MatrixBlock expectedMatrix, MatrixBlock actualMatrix, String message) {

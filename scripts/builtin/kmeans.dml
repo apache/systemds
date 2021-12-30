@@ -22,27 +22,27 @@
 # Builtin function that implements the k-Means clustering algorithm
 #
 # INPUT PARAMETERS:
-# ----------------------------------------------------------------------------
-# NAME                              TYPE      DEFAULT  MEANING
-# ----------------------------------------------------------------------------
-# X                                 Matrix    ---      The input Matrix to do KMeans on.
-# k                                 Int       10      Number of centroids
-# runs                              Int       10       Number of runs (with different initial centroids)
-# max_iter                          Int       1000     Maximum number of iterations per run
-# eps                               Double    0.000001 Tolerance (epsilon) for WCSS change ratio
-# is_verbose                        Boolean   FALSE    do not print per-iteration stats
-# avg_sample_size_per_centroid      Int       50       Average number of records per centroid in data samples
-# seed                              Int       -1       The seed used for initial sampling. If set to -1 random seeds are selected. 
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME                              TYPE              DEFAULT  MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# X                                 Matrix[Double]    ---      The input Matrix to do KMeans on.
+# k                                 Int               10       Number of centroids
+# runs                              Int               10       Number of runs (with different initial centroids)
+# max_iter                          Int               1000     Maximum number of iterations per run
+# eps                               Double            0.000001 Tolerance (epsilon) for WCSS change ratio
+# is_verbose                        Boolean           FALSE    do not print per-iteration stats
+# avg_sample_size_per_centroid      Int               50       Average number of records per centroid in data samples
+# seed                              Int               -1       The seed used for initial sampling. If set to -1
+#                                                              random seeds are selected.
+# ----------------------------------------------------------------------------------------------------------------------
 #
-#
-# RETURN VALUES
-# ----------------------------------------------------------------------------
-# NAME     TYPE      DEFAULT  MEANING
-# ----------------------------------------------------------------------------
-# Y        String    "Y.mtx"  The mapping of records to centroids
-# C        String    "C.mtx"  The output matrix with the centroids
-# ----------------------------------------------------------------------------
-
+# OUTPUT:
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME                              TYPE                       MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# Y                                 Matrix[Double]             The mapping of records to centroids
+# C                                 Matrix[Double]             The output matrix with the centroids
+# ----------------------------------------------------------------------------------------------------------------------
 
 m_kmeans = function(Matrix[Double] X, Integer k = 10, Integer runs = 10, Integer max_iter = 1000,
     Double eps = 0.000001, Boolean is_verbose = FALSE, Integer avg_sample_size_per_centroid = 50,
@@ -210,7 +210,6 @@ m_kmeans = function(Matrix[Double] X, Integer k = 10, Integer runs = 10, Integer
              + ";  Avg WCSS = " + avg_wcss + ";  Worst WCSS = " + worst_wcss);
 
     C = All_Centroids [(num_centroids * (best_index - 1) + 1) : (num_centroids * best_index), ];
-    while(FALSE){} # workaround to make ncol t(C) known
     D =  -2 * (X %*% t(C)) + t(rowSums (C ^ 2));
     P = (D <= rowMins (D));
     aggr_P = t(cumsum (t(P)));

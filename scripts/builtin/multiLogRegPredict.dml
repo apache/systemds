@@ -19,27 +19,27 @@
 #
 #-------------------------------------------------------------
 
-
 # THIS SCRIPT APPLIES THE ESTIMATED PARAMETERS OF MULTINOMIAL LOGISTIC REGRESSION TO A NEW (TEST) DATASET
 # Matrix M of predicted means/probabilities, some statistics in CSV format (see below)
 #
 # INPUT PARAMETERS:
-# ---------------------------------------------------------------------------------------------
-# NAME          TYPE        DEFAULT  MEANING
-# ---------------------------------------------------------------------------------------------
-# X             Matrix      ---     Data Matrix X
-# B             Matrix      ---     Regression parameters betas
-# Y             Matrix      ---     Response vector Y
-# verbose       Boolean     FALSE   /
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME          TYPE                 DEFAULT  MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# X             Matrix[Double]       ---      Data Matrix X
+# B             Matrix[Double]       ---      Regression parameters betas
+# Y             Matrix[Double]       ---      Response vector Y
+# verbose       Boolean              FALSE    flag specifying if logging information should be printed
+# ----------------------------------------------------------------------------------------------------------------------
 #
-# RETURN VALUES
-# ---------------------------------------------------------------------------------------------
-# NAME               TYPE   DEFAULT  MEANING
-# ---------------------------------------------------------------------------------------------
-# M                  Double  ---     Matrix M of predicted means/probabilities
-# predicted_Y        Double  ---     Predicted response vector
-# accuracy           Double  ---     scalar value of accuracy
-# ---------------------------------------------------------------------------------------------
+# OUTPUT:
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME           TYPE                        MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# M              Matrix[Double]              Matrix M of predicted means/probabilities
+# predicted_Y    Matrix[Double]              Predicted response vector
+# accuracy       Double                      scalar value of accuracy
+# ----------------------------------------------------------------------------------------------------------------------
 
 m_multiLogRegPredict = function(Matrix[Double] X, Matrix[Double] B, Matrix[Double] Y, Boolean verbose = FALSE)
   return(Matrix[Double] M, Matrix[Double] predicted_Y, Double accuracy)

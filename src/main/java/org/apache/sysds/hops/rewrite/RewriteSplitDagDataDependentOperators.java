@@ -230,7 +230,7 @@ public class RewriteSplitDagDataDependentOperators extends StatementBlockRewrite
 			return;
 		
 		//prevent unnecessary dag split (dims known or no consumer operations)
-		boolean noSplitRequired = (HopRewriteUtils.hasOnlyWriteParents(hop, true, true)
+		boolean noSplitRequired = (HopRewriteUtils.hasOnlyWriteParents(hop, true, false)
 			|| hop.dimsKnown() || DMLScript.getGlobalExecMode() == ExecMode.SINGLE_NODE);
 		boolean investigateChilds = true;
 		

@@ -19,6 +19,34 @@
 #
 #-------------------------------------------------------------
 
+# This script will read the dirty and clean data, then it will apply the best pipeline on dirty data
+# and then will classify both cleaned dataset and check if the cleaned dataset is performing same as original dataset
+# in terms of classification accuracy
+
+# INPUT PARAMETERS:
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME              TYPE               DEFAULT            MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# trainData         Frame[Unknown]      ---
+# testData          Frame[Unknown]      ---
+# metaData          Frame[Unknown]      as.frame("NULL")
+# lp                Frame[Unknown]      ---
+# pip               Frame[Unknown]      ---
+# hp                Frame[Unknown]      ---
+# evaluationFunc    String              ---
+# evalFunHp         Matrix[Double]      ---
+# isLastLabel       Boolean             TRUE
+# correctTypos      Boolean             FALSE
+#
+# ----------------------------------------------------------------------------------------------------------------------
+#
+# OUTPUT:
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME           TYPE             MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# result         Matrix[Double]   ---
+# ----------------------------------------------------------------------------------------------------------------------
+
 source("scripts/pipelines/scripts/utils.dml") as utils;
 source("scripts/builtin/bandit.dml") as bandit;
 s_applyAndEvaluate = function(Frame[Unknown] trainData, Frame[Unknown] testData, Frame[Unknown] metaData = as.frame("NULL"),

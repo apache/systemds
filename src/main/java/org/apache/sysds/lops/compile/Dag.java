@@ -203,13 +203,51 @@ public class Dag<N extends Lop>
 		List<Lop> node_pf = OptimizerUtils.ASYNC_TRIGGER_RDD_OPERATIONS ? addPrefetchLop(node_v) : node_v;
 		List<Lop> node_bc = OptimizerUtils.ASYNC_TRIGGER_RDD_OPERATIONS ? addBroadcastLop(node_pf) : node_pf;
 		// TODO: Merge via a single traversal of the nodes
-		
+
+		prefetchFederated(node_bc);
+
 		// do greedy grouping of operations
 		ArrayList<Instruction> inst =
 			doPlainInstructionGen(sb, node_bc);
 		
 		// cleanup instruction (e.g., create packed rmvar instructions)
 		return cleanupInstructions(inst);
+	}
+
+	/**
+	 * Checks if the given input needs to be prefetched before executing given lop.
+	 * @param input to check for prefetch
+	 * @param lop which possibly needs the input prefetched
+	 * @return true if given input needs to be prefetched before lop
+	 */
+	private boolean inputNeedsPrefetch(Lop input, Lop lop){
+		return input.prefetchActivated() && lop.getExecType() != ExecType.FED
+			&& input.getFederatedOutput().isForcedFederated();
+	}
+
+	/**
+	 * Add prefetch lop between input and lop.
+	 * @param input to be prefetched
+	 * @param lop for which the given input needs to be prefetched
+	 */
+	private void addFedPrefetchLop(Lop input, Lop lop){
+		UnaryCP prefetch = new UnaryCP(input, OpOp1.PREFETCH, input.getDataType(), input.getValueType(), ExecType.CP);
+		prefetch.addOutput(lop);
+		lop.replaceInput(input, prefetch);
+		input.removeOutput(lop);
+	}
+
+	/**
+	 * Add prefetch lops where needed.
+	 * @param lops for which prefetch lops could be added.
+	 */
+	private void prefetchFederated(List<Lop> lops){
+		for ( Lop lop : lops ){
+			for ( Lop input : lop.getInputs() ){
+				if ( inputNeedsPrefetch(input, lop) )
+					addFedPrefetchLop(input, lop);
+			}
+		}
 	}
 	
 	private static List<Lop> doTopologicalSortTwoLevelOrder(List<Lop> v) {
@@ -251,7 +289,7 @@ public class Dag<N extends Lop>
 		}
 		return nodesWithPrefetch;
 	}
-	
+
 	private static List<Lop> addBroadcastLop(List<Lop> nodes) {
 		List<Lop> nodesWithBroadcast = new ArrayList<>();
 		

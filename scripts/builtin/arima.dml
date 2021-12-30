@@ -7,9 +7,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -22,27 +22,28 @@
 # Builtin function that implements ARIMA
 #
 # INPUT PARAMETERS:
-# ----------------------------------------------------------------------------
-# NAME              TYPE      DEFAULT   MEANING
-# ----------------------------------------------------------------------------
-# X                 Double    ---       The input Matrix to apply Arima on.
-# max_func_invoc    Int       1000      ?
-# p                 Int       0         non-seasonal AR order
-# d                 Int       0         non-seasonal differencing order
-# q                 Int       0         non-seasonal MA order
-# P                 Int       0         seasonal AR order
-# D                 Int       0         seasonal differencing order
-# Q                 Int       0         seasonal MA order
-# s                 Int       1         period in terms of number of time-steps
-# include_mean      Boolean   FALSE     center to mean 0, and include in result
-# solver            String    jacobi    solver, is either "cg" or "jacobi"
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME              TYPE              DEFAULT   MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# X                 Matrix[Double]    ---       The input Matrix to apply Arima on.
+# max_func_invoc    Int               1000
+# p                 Int               0         non-seasonal AR order
+# d                 Int               0         non-seasonal differencing order
+# q                 Int               0         non-seasonal MA order
+# P                 Int               0         seasonal AR order
+# D                 Int               0         seasonal differencing order
+# Q                 Int               0         seasonal MA order
+# s                 Int               1         period in terms of number of time-steps
+# include_mean      Boolean           FALSE     center to mean 0, and include in result
+# solver            String            jacobi    solver, is either "cg" or "jacobi"
+# ----------------------------------------------------------------------------------------------------------------------
 #
-# RETURN VALUES
-# ----------------------------------------------------------------------------
-# NAME         TYPE   DEFAULT  MEANING
-# ----------------------------------------------------------------------------
-# best_point  String    ---    The calculated coefficients
-# ----------------------------------------------------------------------------
+# OUTPUT:
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME              TYPE                     MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# best_point        Matrix[Double]           The calculated coefficients
+# ----------------------------------------------------------------------------------------------------------------------
 
 m_arima = function(Matrix[Double] X, Integer max_func_invoc=1000, Integer p=0,
   Integer d=0, Integer q=0, Integer P=0, Integer D=0, Integer Q=0, Integer s=1,

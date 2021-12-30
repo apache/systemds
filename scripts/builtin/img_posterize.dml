@@ -19,22 +19,24 @@
 #
 #-------------------------------------------------------------
 
-# Image Posterize
-# Limit pixel values to 2^bits different values in the range [0, 255].
+# The Image Posterize function limits pixel values to 2^bits different values in the range [0, 255].
 # Assumes the input image can attain values in the range [0, 255].
 #
 # INPUT PARAMETERS:
-# ---------------------------------------------------------------------------------------------
-# NAME       TYPE   DEFAULT MEANING
-# ---------------------------------------------------------------------------------------------
-# img_in     Matrix ---     Input image
-# bits       Int    ---     The number of bits keep for the values.
-#                           1 means black and white, 8 means every integer between 0 and 255.
-
-# RETURN VALUES
-# ---------------------------------------------------------------------------------------------
-# img_out    Matrix ---     Output image
-# ---------------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME       TYPE           DEFAULT  MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# img_in     Matrix[Double] ---      Input image
+# bits       Int            ---      The number of bits keep for the values.
+#                                    1 means black and white, 8 means every integer between 0 and 255.
+# ----------------------------------------------------------------------------------------------------------------------
+#
+# OUTPUT:
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME       TYPE                   MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# img_out    Matrix[Double]         Output image
+# ----------------------------------------------------------------------------------------------------------------------
 
 m_img_posterize = function(Matrix[Double] img_in, Integer bits) return (Matrix[Double] img_out) {
   img_out = (img_in %/% 2^(8 - bits)) * (2^(8 - bits))

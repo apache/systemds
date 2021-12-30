@@ -116,12 +116,24 @@ public abstract class OffsetTestPreAggregate {
 
 	@Test
 	public void preAggByteMapFirstRow() {
-		preAggMapRow(0);
+		try {
+			preAggMapRow(0);
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			fail(e.getMessage());
+		}
 	}
 
 	@Test
 	public void preAggByteMapSecondRow() {
-		preAggMapRow(1);
+		try {
+			preAggMapRow(1);
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			fail(e.getMessage());
+		}
 	}
 
 	protected abstract void preAggMapRow(int row);
@@ -295,11 +307,11 @@ public abstract class OffsetTestPreAggregate {
 		}
 	}
 
-	protected double[] multiRowPreAggRangeSafe(int rl, int ru){
-		try{
+	protected double[] multiRowPreAggRangeSafe(int rl, int ru) {
+		try {
 			return multiRowPreAggRange(rl, ru);
 		}
-		catch(Exception e){
+		catch(Exception e) {
 			e.printStackTrace();
 			fail(e.toString());
 			return null;
@@ -321,33 +333,57 @@ public abstract class OffsetTestPreAggregate {
 
 	@Test
 	public void multiRowPreAggRangeBeforeLast01() {
-		if(data.length > 2) {
-			double[] agg = multiRowPreAggRangeBeforeLast(1, 3);
-			compareMultiRowAggBeforeLast(agg, 1, 3);
+		try {
+			if(data.length > 2) {
+				double[] agg = multiRowPreAggRangeBeforeLast(1, 3);
+				compareMultiRowAggBeforeLast(agg, 1, 3);
+			}
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			fail(e.getMessage());
 		}
 	}
 
 	@Test
 	public void multiRowPreAggRangeBeforeLast02() {
-		if(data.length > 2) {
-			double[] agg = multiRowPreAggRangeBeforeLast(2, 4);
-			compareMultiRowAggBeforeLast(agg, 2, 4);
+		try {
+			if(data.length > 2) {
+				double[] agg = multiRowPreAggRangeBeforeLast(2, 4);
+				compareMultiRowAggBeforeLast(agg, 2, 4);
+			}
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			fail(e.getMessage());
 		}
 	}
 
 	@Test
 	public void multiRowPreAggRangeBeforeLast03() {
-		if(data.length > 2) {
-			double[] agg = multiRowPreAggRangeBeforeLast(0, 4);
-			compareMultiRowAggBeforeLast(agg, 0, 4);
+		try {
+			if(data.length > 2) {
+				double[] agg = multiRowPreAggRangeBeforeLast(0, 4);
+				compareMultiRowAggBeforeLast(agg, 0, 4);
+			}
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			fail(e.getMessage());
 		}
 	}
 
 	@Test
 	public void multiRowPreAggRangeBeforeLast04() {
-		if(data.length > 2) {
-			double[] agg = multiRowPreAggRangeBeforeLast(0, 3);
-			compareMultiRowAggBeforeLast(agg, 0, 3);
+		try {
+			if(data.length > 2) {
+				double[] agg = multiRowPreAggRangeBeforeLast(0, 3);
+				compareMultiRowAggBeforeLast(agg, 0, 3);
+			}
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			fail(e.getMessage());
 		}
 	}
 
@@ -360,7 +396,7 @@ public abstract class OffsetTestPreAggregate {
 			if(agg[of * 2 + 1] != v)
 				fail("\naggregate to wrong index");
 			if(!Precision.equals(agg[of * 2], s[r] - v - v2, eps))
-				fail("\naggregate result is not sum minus value:" + agg[of * 2] + " vs " + (s[r] - v- v2));
+				fail("\naggregate result is not sum minus value:" + agg[of * 2] + " vs " + (s[r] - v - v2));
 		}
 	}
 

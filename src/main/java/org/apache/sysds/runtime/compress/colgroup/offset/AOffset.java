@@ -22,6 +22,8 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.BitSet;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.apache.commons.lang.NotImplementedException;
 import org.apache.commons.logging.Log;
@@ -44,12 +46,16 @@ public abstract class AOffset implements Serializable {
 
 	protected static final Log LOG = LogFactory.getLog(AOffset.class.getName());
 
+	/** Thread local cache for a single recently used Iterator, this is used for cache blocking */
 	private ThreadLocal<OffsetCache> cacheRow = new ThreadLocal<OffsetCache>() {
 		@Override
 		protected OffsetCache initialValue() {
 			return null;
 		}
 	};
+
+	/** Memorizer for the row indexes mostly used for when we parallelize across rows */
+	private Map<Integer, AIterator> memorizer = null;
 
 	/**
 	 * Get an iterator of the offsets.
@@ -70,22 +76,20 @@ public abstract class AOffset implements Serializable {
 		else if(row > getOffsetToLast())
 			return null;
 
-		// try the cache first.
+		// Try the cache first.
 		OffsetCache c = cacheRow.get();
-		if(c == null) {
-			AIterator it = getIterator();
-			it.skipTo(row);
-			cacheIterator(it.clone(), row);
-			return it;
-		}
-		else if(c.row == row)
+
+		if(c != null && c.row == row)
 			return c.it.clone();
 		else {
+			if(memorizer != null && memorizer.containsKey(row))
+				return memorizer.get(row).clone();
 			// Use the cached iterator if it is closer to the queried row.
-			AIterator it = c.row < row ? c.it.clone() : getIterator();
+			AIterator it = c != null && c.row < row ? c.it.clone() : getIterator();
 			it.skipTo(row);
 			// cache this new iterator.
 			cacheIterator(it.clone(), row);
+			memorizeIterator(it.clone(), row);
 			return it;
 		}
 
@@ -101,6 +105,14 @@ public abstract class AOffset implements Serializable {
 		if(it == null)
 			return;
 		cacheRow.set(new OffsetCache(it, row));
+	}
+
+	private void memorizeIterator(AIterator it, int row) {
+		if(it == null)
+			return;
+		else if(memorizer == null)
+			memorizer = new HashMap<>();
+		memorizer.put(row, it);
 	}
 
 	/**
@@ -244,7 +256,7 @@ public abstract class AOffset implements Serializable {
 		final double[] vals = db.values(rl);
 		final int nCol = db.getCumODims(0);
 		while(it.offset < cu) {
-			final int dataOffset = data.get(it.dataIndex) ? 1 : 0;
+			final int dataOffset = data.get(it.getDataIndex()) ? 1 : 0;
 			final int start = it.offset + nCol * rl;
 			final int end = it.offset + nCol * ru;
 			for(int offOut = dataOffset, off = start; off < end; offOut += nVal, off += nCol)
@@ -260,14 +272,14 @@ public abstract class AOffset implements Serializable {
 		final double[] vals = db.values(rl);
 		final int nCol = db.getCumODims(0);
 		final int last = getOffsetToLast();
-		int dataOffset = data.get(it.dataIndex) ? 1 : 0;
+		int dataOffset = data.get(it.getDataIndex()) ? 1 : 0;
 		int start = it.offset + nCol * rl;
 		int end = it.offset + nCol * ru;
 		for(int offOut = dataOffset, off = start; off < end; offOut += nVal, off += nCol)
 			preAV[offOut] += vals[off];
 		while(it.offset < last) {
 			it.next();
-			dataOffset = data.get(it.dataIndex) ? 1 : 0;
+			dataOffset = data.get(it.getDataIndex()) ? 1 : 0;
 			start = it.offset + nCol * rl;
 			end = it.offset + nCol * ru;
 			for(int offOut = dataOffset, off = start; off < end; offOut += nVal, off += nCol)
@@ -310,8 +322,8 @@ public abstract class AOffset implements Serializable {
 		int j = apos;
 		while(j < alen) {
 			if(aix[j] == it.offset) {
-				preAV[data[it.dataIndex] & 0xFF] += avals[j++];
-				if(it.dataIndex >= maxId)
+				preAV[data[it.getDataIndex()] & 0xFF] += avals[j++];
+				if(it.getDataIndex() >= maxId)
 					break;
 				it.next();
 			}
@@ -319,7 +331,7 @@ public abstract class AOffset implements Serializable {
 				j++;
 			}
 			else {
-				if(it.dataIndex >= maxId)
+				if(it.getDataIndex() >= maxId)
 					break;
 				it.next();
 			}
@@ -336,8 +348,8 @@ public abstract class AOffset implements Serializable {
 		int j = apos;
 		while(j < alen) {
 			if(aix[j] == it.offset) {
-				preAV[data[it.dataIndex]] += avals[j++];
-				if(it.dataIndex >= maxId)
+				preAV[data[it.getDataIndex()]] += avals[j++];
+				if(it.getDataIndex() >= maxId)
 					break;
 				it.next();
 			}
@@ -345,7 +357,7 @@ public abstract class AOffset implements Serializable {
 				j++;
 			}
 			else {
-				if(it.dataIndex >= maxId)
+				if(it.getDataIndex() >= maxId)
 					break;
 				it.next();
 			}
@@ -362,7 +374,7 @@ public abstract class AOffset implements Serializable {
 		int j = apos;
 		while(it.offset < last && j < alen) {
 			if(aix[j] == it.offset) {
-				preAV[data.get(it.dataIndex) ? 1 : 0] += avals[j++];
+				preAV[data.get(it.getDataIndex()) ? 1 : 0] += avals[j++];
 				it.next();
 			}
 			if(j < alen)
@@ -374,7 +386,7 @@ public abstract class AOffset implements Serializable {
 		while(j < alen && aix[j] < it.offset)
 			j++;
 		if(j != alen && aix[j] == it.offset)
-			preAV[data.get(it.dataIndex) ? 1 : 0] += avals[j];
+			preAV[data.get(it.getDataIndex()) ? 1 : 0] += avals[j];
 
 	}
 

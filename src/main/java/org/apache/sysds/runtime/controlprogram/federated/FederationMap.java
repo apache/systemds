@@ -591,17 +591,16 @@ public class FederationMap {
 		}
 		// derive output type
 		switch(_type) {
-			case FULL:
-				_type = FType.FULL;
-				break;
 			case ROW:
 				_type = FType.COL;
 				break;
 			case COL:
 				_type = FType.ROW;
 				break;
+			case FULL:
 			case PART:
-				_type = FType.PART;
+				// FULL and PART are not changed
+				break;
 			default:
 				_type = FType.OTHER;
 		}

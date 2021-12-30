@@ -22,7 +22,9 @@ package org.apache.sysds.test.functions.io;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.io.File;
 import java.io.IOException;
+import java.util.Arrays;
 
 import org.apache.sysds.common.Types.ExecMode;
 import org.apache.sysds.common.Types.FileFormat;
@@ -104,14 +106,16 @@ public class ReadWriteListTest extends AutomatedTestBase
 			fullDMLScriptName = HOME + TEST_NAME1 + ".dml";
 			programArgs = new String[]{"-args", String.valueOf(rows),
 				String.valueOf(cols), output("R1"), output("L"), format.toString(), String.valueOf(named)};
-			
 			runTest(true, false, null, -1);
 			double val1 = HDFSTool.readDoubleFromHDFSFile(output("R1"));
+			
+			//check no crc files
+			File[] files = new File(output("L")).listFiles();
+			Assert.assertFalse(Arrays.stream(files).anyMatch(f -> f.getName().endsWith(".crc")));
 			
 			//run read
 			fullDMLScriptName = HOME + TEST_NAME2 + ".dml";
 			programArgs = new String[]{"-args", output("L"), output("R2")};
-			
 			runTest(true, false, null, -1);
 			double val2 = HDFSTool.readDoubleFromHDFSFile(output("R2"));
 			

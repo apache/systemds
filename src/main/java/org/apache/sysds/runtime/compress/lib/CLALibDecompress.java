@@ -147,11 +147,7 @@ public class CLALibDecompress {
 				ret.allocateDenseBlock();
 		}
 
-		// final int block = (int) Math.ceil((double) (CompressionSettings.BITMAP_BLOCK_SZ) / nCols);
-		// final int blklen = Math.max(block, 64);
-		final int blklen = 32;
-
-		// final int blklen = block > 1000 ? block + 1000 - block % 1000 : Math.max(64, block);
+		final int blklen = Math.max(nRows / k, 512);
 
 		// check if we are using filtered groups, and if we are not force constV to null
 		if(groups == filteredGroups)
@@ -174,7 +170,7 @@ public class CLALibDecompress {
 			ret.setNonZeros(nonZeros);
 		}
 		else
-			decompressDenseMultiThread(ret, filteredGroups, nRows, blklen, constV, eps, overlapping, k);
+			decompressDenseMultiThread(ret, filteredGroups, nRows, blklen, constV, eps, k);
 
 		ret.examSparsity();
 		return ret;
@@ -235,14 +231,27 @@ public class CLALibDecompress {
 		}
 	}
 
+	protected static void decompressDenseMultiThread(MatrixBlock ret, List<AColGroup> groups, double[] constV, int k) {
+		final int nRows = ret.getNumRows();
+		final double eps = getEps(constV);
+		final int blklen = Math.max(nRows / k, 512);
+		decompressDenseMultiThread(ret, groups, nRows, blklen, constV, eps, k);
+	}
+
+	protected static void decompressDenseMultiThread(MatrixBlock ret, List<AColGroup> groups, double[] constV,
+		double eps, int k) {
+		final int nRows = ret.getNumRows();
+		final int blklen = Math.max(nRows / k, 512);
+		decompressDenseMultiThread(ret, groups, nRows, blklen, constV, eps, k);
+	}
+
 	private static void decompressDenseMultiThread(MatrixBlock ret, List<AColGroup> filteredGroups, int rlen, int blklen,
-		double[] constV, double eps, boolean overlapping, int k) {
+		double[] constV, double eps, int k) {
 		try {
 			final ExecutorService pool = CommonThreadPool.get(k);
 			final ArrayList<DecompressDenseTask> tasks = new ArrayList<>();
 			for(int i = 0; i < rlen; i += blklen)
-				tasks.add(
-					new DecompressDenseTask(filteredGroups, ret, eps, i, Math.min(i + blklen, rlen), overlapping, constV));
+				tasks.add(new DecompressDenseTask(filteredGroups, ret, eps, i, Math.min(i + blklen, rlen), constV));
 
 			long nnz = 0;
 			for(Future<Long> rt : pool.invokeAll(tasks))
@@ -302,28 +311,32 @@ public class CLALibDecompress {
 		private final int _rl;
 		private final int _ru;
 		private final double[] _constV;
-		private final boolean _overlapping;
 
 		protected DecompressDenseTask(List<AColGroup> colGroups, MatrixBlock ret, double eps, int rl, int ru,
-			boolean overlapping, double[] constV) {
+			double[] constV) {
 			_colGroups = colGroups;
 			_ret = ret;
 			_eps = eps;
 			_rl = rl;
 			_ru = ru;
-			_overlapping = overlapping;
 			_constV = constV;
 		}
 
 		@Override
 		public Long call() {
-			for(AColGroup grp : _colGroups)
-				grp.decompressToDenseBlock(_ret.getDenseBlock(), _rl, _ru);
+			final int blk = 1024;
+			long nnz = 0;
+			for(int b = _rl; b < _ru; b += blk) {
+				int e = Math.min(b + blk, _ru);
+				for(AColGroup grp : _colGroups)
+					grp.decompressToDenseBlock(_ret.getDenseBlock(), b, e);
 
-			if(_constV != null)
-				addVector(_ret, _constV, _eps, _rl, _ru);
+				if(_constV != null)
+					addVector(_ret, _constV, _eps, b, e);
+				nnz += _ret.recomputeNonZeros(b, e - 1);
+			}
 
-			return _overlapping ? 0 : _ret.recomputeNonZeros(_rl, _ru - 1);
+			return nnz;
 		}
 	}
 
@@ -366,24 +379,83 @@ public class CLALibDecompress {
 		final int ru) {
 		final int nCols = ret.getNumColumns();
 		final DenseBlock db = ret.getDenseBlock();
-		if(eps == 0) {
-			for(int row = rl; row < ru; row++) {
-				final double[] _retV = db.values(row);
-				final int off = db.pos(row);
-				for(int col = 0; col < nCols; col++)
-					_retV[off + col] += rowV[col];
+
+		if(nCols == 1) {
+			if(eps == 0)
+				addValue(db.values(0), rowV[0], rl, ru);
+			else
+				addValueEps(db.values(0), rowV[0], eps, rl, ru);
+		}
+		else if(db.isContiguous()) {
+			if(eps == 0)
+				addVectorContiguousNoEps(db.values(0), rowV, nCols, rl, ru);
+			else
+				addVectorContiguousEps(db.values(0), rowV, nCols, eps, rl, ru);
+		}
+		else if(eps == 0)
+			addVectorNoEps(db, rowV, nCols, rl, ru);
+		else
+			addVectorEps(db, rowV, nCols, eps, rl, ru);
+
+	}
+
+	private static void addValue(final double[] retV, final double v, final int rl, final int ru) {
+		for(int off = rl; off < ru; off++)
+			retV[off] += v;
+	}
+
+	private static void addValueEps(final double[] retV, final double v, final double eps, final int rl, final int ru) {
+		for(int off = rl; off < ru; off++) {
+			final double e = retV[off] + v;
+			if(Math.abs(e) <= eps)
+				retV[off] = 0;
+			else
+				retV[off] = e;
+		}
+	}
+
+	private static void addVectorContiguousNoEps(final double[] retV, final double[] rowV, final int nCols, final int rl,
+		final int ru) {
+		for(int off = rl * nCols; off < ru * nCols; off += nCols) {
+			for(int col = 0; col < nCols; col++) {
+				final int out = off + col;
+				retV[out] += rowV[col];
 			}
 		}
-		else {
-			for(int row = rl; row < ru; row++) {
-				final double[] _retV = db.values(row);
-				final int off = db.pos(row);
-				for(int col = 0; col < nCols; col++) {
-					final int out = off + col;
-					_retV[out] += rowV[col];
-					if(Math.abs(_retV[out]) <= eps)
-						_retV[out] = 0;
-				}
+	}
+
+	private static void addVectorContiguousEps(final double[] retV, final double[] rowV, final int nCols,
+		final double eps, final int rl, final int ru) {
+		for(int off = rl * nCols; off < ru * nCols; off += nCols) {
+			for(int col = 0; col < nCols; col++) {
+				final int out = off + col;
+				retV[out] += rowV[col];
+				if(Math.abs(retV[out]) <= eps)
+					retV[out] = 0;
+			}
+		}
+	}
+
+	private static void addVectorNoEps(final DenseBlock db, final double[] rowV, final int nCols, final int rl,
+		final int ru) {
+		for(int row = rl; row < ru; row++) {
+			final double[] _retV = db.values(row);
+			final int off = db.pos(row);
+			for(int col = 0; col < nCols; col++)
+				_retV[off + col] += rowV[col];
+		}
+	}
+
+	private static void addVectorEps(final DenseBlock db, final double[] rowV, final int nCols, final double eps,
+		final int rl, final int ru) {
+		for(int row = rl; row < ru; row++) {
+			final double[] _retV = db.values(row);
+			final int off = db.pos(row);
+			for(int col = 0; col < nCols; col++) {
+				final int out = off + col;
+				_retV[out] += rowV[col];
+				if(Math.abs(_retV[out]) <= eps)
+					_retV[out] = 0;
 			}
 		}
 	}

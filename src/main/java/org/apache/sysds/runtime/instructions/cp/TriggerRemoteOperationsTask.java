@@ -23,10 +23,10 @@ import org.apache.sysds.api.DMLScript;
 import org.apache.sysds.runtime.controlprogram.caching.MatrixObject;
 import org.apache.sysds.utils.Statistics;
 
-public class TriggerRDDOperationsTask implements Runnable {
+public class TriggerRemoteOperationsTask implements Runnable {
 	MatrixObject _prefetchMO;
 
-	public TriggerRDDOperationsTask(MatrixObject mo) {
+	public TriggerRemoteOperationsTask(MatrixObject mo) {
 		_prefetchMO = mo;
 	}
 
@@ -36,14 +36,19 @@ public class TriggerRDDOperationsTask implements Runnable {
 		synchronized (_prefetchMO) {
 			// Having this check if operations are pending inside the 
 			// critical section safeguards against concurrent rmVar.
-			if (_prefetchMO.isPendingRDDOps()) {
+			if (_prefetchMO.isPendingRDDOps() || _prefetchMO.isFederated()) {
+				// TODO: Add robust runtime constraints for federated prefetch
 				// Execute and bring the result to local
 				_prefetchMO.acquireReadAndRelease();
 				prefetched = true;
 			}
 		}
-		if (DMLScript.STATISTICS && prefetched)
-			Statistics.incSparkAsyncPrefetchCount(1);
+		if (DMLScript.STATISTICS && prefetched) {
+			if (_prefetchMO.isFederated())
+				Statistics.incFedAsyncPrefetchCount(1);
+			else
+				Statistics.incSparkAsyncPrefetchCount(1);
+		}
 	}
 
 }

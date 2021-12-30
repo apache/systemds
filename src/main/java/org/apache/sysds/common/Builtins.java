@@ -123,6 +123,7 @@ public enum Builtins {
 	EXECUTE_PIPELINE("executePipeline", true),
 	EXP("exp", false),
 	EVAL("eval", false),
+	EVALLIST("evalList", false),
 	FIX_INVALID_LENGTHS("fixInvalidLengths", true),
 	FF_TRAIN("ffTrain", true),
 	FF_PREDICT("ffPredict", true),
@@ -205,6 +206,7 @@ public enum Builtins {
 	NAIVEBAYESPREDICT("naiveBayesPredict", true, false),
 	NCOL("ncol", false),
 	NORMALIZE("normalize", true),
+	NORMALIZEAPPLY("normalizeApply", true),
 	NROW("nrow", false),
 	OUTER("outer", false),
 	OUTLIER("outlier", true, false), //TODO parameterize opposite

@@ -25,22 +25,16 @@ import org.apache.commons.logging.LogFactory;
  * Iterator interface, that returns a iterator of the indexes (not offsets)
  */
 public abstract class AIterator {
-	protected static final Log LOG = LogFactory.getLog(AIterator.class.getName());
+	public static final Log LOG = LogFactory.getLog(AIterator.class.getName());
 
-	protected int index;
-	protected int dataIndex;
 	protected int offset;
 
 	/**
 	 * Main Constructor
 	 * 
-	 * @param index     The current index that correspond to an actual value in the dictionary.
-	 * @param dataIndex The current index int the offset.
-	 * @param offset    The current index in the uncompressed representation.
+	 * @param offset The current offset into in the uncompressed representation.
 	 */
-	protected AIterator(int index, int dataIndex, int offset) {
-		this.index = index;
-		this.dataIndex = dataIndex;
+	protected AIterator(int offset) {
 		this.offset = offset;
 	}
 
@@ -58,8 +52,12 @@ public abstract class AIterator {
 		return offset;
 	}
 
+	public void setOff(int off){
+		offset = off;
+	}
+
 	/**
-	 * find out if the current offset is not exceeding the index.
+	 * Find out if the current offset is not exceeding the index given.
 	 * 
 	 * @param ub The offset to not exceed
 	 * @return boolean if it is exceeded.
@@ -76,9 +74,7 @@ public abstract class AIterator {
 	 * 
 	 * @return The Data Index.
 	 */
-	public int getDataIndex() {
-		return dataIndex;
-	}
+	public abstract int getDataIndex();
 
 	/**
 	 * Get the current offsets index, that points to the underlying offsets list.
@@ -87,20 +83,7 @@ public abstract class AIterator {
 	 * 
 	 * @return The Offsets Index.
 	 */
-	public int getOffsetsIndex() {
-		return index;
-	}
-
-	/**
-	 * Get the current data index and increment the pointers using the next operator.
-	 * 
-	 * @return The current data index.
-	 */
-	public int getDataIndexAndIncrement() {
-		int x = dataIndex;
-		next();
-		return x;
-	}
+	public abstract int getOffsetsIndex();
 
 	/**
 	 * Skip values until index is achieved.
@@ -122,6 +105,6 @@ public abstract class AIterator {
 	 * @return The result
 	 */
 	public boolean equals(AIterator o) {
-		return o.index == this.index;
+		return o.getOffsetsIndex() == getOffsetsIndex();
 	}
 }

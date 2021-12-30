@@ -19,23 +19,25 @@
 #
 #-------------------------------------------------------------
 
-# Image Shear
-# Applies a shearing transformation to an image.
+# This function applies a shearing transformation to an image.
 # Uses nearest neighbor sampling.
 #
 # INPUT PARAMETERS:
-# ---------------------------------------------------------------------------------------------
-# NAME       TYPE   DEFAULT MEANING
-# ---------------------------------------------------------------------------------------------
-# img_in     Matrix ---     Input image as 2D matrix with top left corner at [1, 1]
-# shear_x    Int    ---     Shearing factor for horizontal shearing
-# shear_y    Int    ---     Shearing factor for vertical shearing
-# fill_value Double ---     The background color revealed by the shearing
-
-# RETURN VALUES
-# ---------------------------------------------------------------------------------------------
-# img_out    Matrix ---     Output image as 2D matrix with top left corner at [1, 1]
-# ---------------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME       TYPE             DEFAULT  MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# img_in     Matrix[Double]   ---      Input image as 2D matrix with top left corner at [1, 1]
+# shear_x    Double           ---      Shearing factor for horizontal shearing
+# shear_y    Double           ---      Shearing factor for vertical shearing
+# fill_value Double           ---      The background color revealed by the shearing
+# ----------------------------------------------------------------------------------------------------------------------
+#
+# OUTPUT:
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME       TYPE                      MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# img_out    Matrix[Double]            Output image as 2D matrix with top left corner at [1, 1]
+# ----------------------------------------------------------------------------------------------------------------------
 
 m_img_shear = function(Matrix[Double] img_in, Double shear_x, Double shear_y, Double fill_value) return (Matrix[Double] img_out) {
   img_out = img_transform(img_in, ncol(img_in), nrow(img_in), 1, shear_x, 0, shear_y, 1, 0, fill_value)

@@ -550,11 +550,13 @@ public class BuiltinFunctionExpression extends DataIdentifier
 		
 		switch (getOpCode()) {
 		case EVAL:
+		case EVALLIST:
 			if (_args.length == 0)
 				raiseValidateError("Function eval should provide at least one argument, i.e., the function name.", false);
 			checkValueTypeParam(_args[0], ValueType.STRING);
-			output.setDataType(DataType.MATRIX);
-			output.setValueType(ValueType.FP64);
+			boolean listReturn = (getOpCode()==Builtins.EVALLIST);
+			output.setDataType(listReturn ? DataType.LIST : DataType.MATRIX);
+			output.setValueType(listReturn ? ValueType.UNKNOWN : ValueType.FP64);
 			output.setDimensions(-1, -1);
 			output.setBlocksize(ConfigurationManager.getBlocksize());
 			break;

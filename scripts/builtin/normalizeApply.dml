@@ -1,0 +1,49 @@
+#-------------------------------------------------------------
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#-------------------------------------------------------------
+
+# Min-max normalization (a.k.a. min-max scaling) to range [0,1], given 
+# existing min-max ranges. For matrices of positive values, this normalization 
+# preserves the input sparsity. The validity of the provided min-max range
+# and post-processing is under control of the caller. 
+#
+# INPUT PARAMETERS:
+# ------------------------------------------------------------------------------
+# NAME     TYPE     DEFAULT   MEANING
+# ------------------------------------------------------------------------------
+# X        Matrix[Double]    ---      Input feature matrix of shape n-by-m
+# cmin     Matrix[Double]    ---      Colunm minima of shape 1-by-m
+# cmax     Matrix[Double]    ---      Column maxima of shape 1-by-m
+# ------------------------------------------------------------------------------
+#
+# OUTPUT:
+# ------------------------------------------------------------------------------
+# NAME     TYPE                       MEANING
+# ------------------------------------------------------------------------------
+# Y        Matrix[Double]             Modified output feature matrix of shape n-by-m
+# ------------------------------------------------------------------------------
+
+
+m_normalizeApply = function(Matrix[Double] X, Matrix[Double] cmin, Matrix[Double] cmax)
+  return (Matrix[Double] Y)
+{
+  # normalize features to given range ([0,1] if indeed min/max)
+  Y = (X - cmin) / (cmax - cmin);
+}

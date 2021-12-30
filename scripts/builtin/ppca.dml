@@ -22,25 +22,27 @@
 # This script performs Probabilistic Principal Component Analysis (PCA) on the given input data.
 # It is based on paper: sPCA: Scalable Principal Component Analysis for Big Data on Distributed
 # Platforms. Tarek Elgamal et.al.
-
+#
 # INPUT PARAMETERS:
-# ---------------------------------------------------------------------------------------------
-# NAME      TYPE    DEFAULT  MEANING
-# ---------------------------------------------------------------------------------------------
-# X         Matrix  ---      n x m input feature matrix
-# k         Integer ---      indicates dimension of the new vector space constructed from eigen vectors
-# maxi      Integer ---      maximum number of iterations until convergence
-# tolobj    Double  0.00001  objective function tolerance value to stop ppca algorithm
-# tolrecerr Double  0.02     reconstruction error tolerance value to stop the algorithm
-# verbose   Boolen  TRUE     verbose debug output
-# ---------------------------------------------------------------------------------------------
-# OUTPUT PARAMETERS:
-# ---------------------------------------------------------------------------------------------
-# NAME   TYPE   DEFAULT  MEANING
-# ---------------------------------------------------------------------------------------------
-# Xout   Matrix  ---      Output feature matrix with K columns
-# Mout   Matrix  ---      Output dominant eigen vectors (can be used for projections)
-
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME      TYPE            DEFAULT  MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# X         Matrix[Double]  ---      n x m input feature matrix
+# k         Integer         ---      indicates dimension of the new vector space constructed from eigen vectors
+# maxi      Integer         ---      maximum number of iterations until convergence
+# tolobj    Double          0.00001  objective function tolerance value to stop ppca algorithm
+# tolrecerr Double          0.02     reconstruction error tolerance value to stop the algorithm
+# verbose   Boolen          TRUE     verbose debug output
+#
+# ----------------------------------------------------------------------------------------------------------------------
+#
+# OUTPUT:
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME     TYPE              MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# Xout     Matrix[Double]    Output feature matrix with K columns
+# Mout     Matrix[Double]    Output dominant eigen vectors (can be used for projections)
+# ----------------------------------------------------------------------------------------------------------------------
 
 m_ppca = function(Matrix[Double] X, Integer K=2, Integer maxi = 10, 
   Double tolobj = 0.00001, Double tolrecerr = 0.02, Boolean verbose = TRUE)

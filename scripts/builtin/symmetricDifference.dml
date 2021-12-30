@@ -20,22 +20,21 @@
 #-------------------------------------------------------------
 
 # Builtin function that implements symmetric difference set-operation on vectors
-
+#
 # INPUT PARAMETERS:
 # ---------------------------------------------------------------------------------------------
-# NAME            TYPE    DEFAULT     MEANING
+# NAME            TYPE            DEFAULT     MEANING
 # ---------------------------------------------------------------------------------------------
-# X               Matrix  ---         input vector
+# X               Matrix[Double]  ---         input vector
+# Y               Matrix[Double]  ---         input vector
 # ---------------------------------------------------------------------------------------------
-# Y               Matrix  ---         input vector
+#
+# OUTPUT:
 # ---------------------------------------------------------------------------------------------
-
-# Output(s)
+# NAME            TYPE                MEANING
 # ---------------------------------------------------------------------------------------------
-# NAME            TYPE    DEFAULT      MEANING
+# R               Matrix[Double]      vector with all elements in X and Y but not in both
 # ---------------------------------------------------------------------------------------------
-# R               Matrix  ---         vector with all elements in X and Y but not in both
-
 
 symmetricDifference = function(Matrix[Double] X, Matrix[Double] Y)
     return (matrix[double] R)

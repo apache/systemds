@@ -36,8 +36,6 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.commons.math3.random.Well1024a;
 import org.apache.sysds.common.Types.CorrectionLocationType;
-import org.apache.sysds.conf.ConfigurationManager;
-import org.apache.sysds.conf.DMLConfig;
 import org.apache.sysds.lops.MMTSJ.MMTSJType;
 import org.apache.sysds.lops.MapMultChain.ChainType;
 import org.apache.sysds.runtime.DMLRuntimeException;
@@ -52,6 +50,7 @@ import org.apache.sysds.runtime.compress.lib.CLALibBinaryCellOp;
 import org.apache.sysds.runtime.compress.lib.CLALibCompAgg;
 import org.apache.sysds.runtime.compress.lib.CLALibDecompress;
 import org.apache.sysds.runtime.compress.lib.CLALibLeftMultBy;
+import org.apache.sysds.runtime.compress.lib.CLALibMMChain;
 import org.apache.sysds.runtime.compress.lib.CLALibReExpand;
 import org.apache.sysds.runtime.compress.lib.CLALibRightMultBy;
 import org.apache.sysds.runtime.compress.lib.CLALibScalar;
@@ -67,7 +66,6 @@ import org.apache.sysds.runtime.data.DenseBlock;
 import org.apache.sysds.runtime.data.SparseBlock;
 import org.apache.sysds.runtime.data.SparseRow;
 import org.apache.sysds.runtime.functionobjects.MinusMultiply;
-import org.apache.sysds.runtime.functionobjects.Multiply;
 import org.apache.sysds.runtime.functionobjects.PlusMultiply;
 import org.apache.sysds.runtime.functionobjects.SwapIndex;
 import org.apache.sysds.runtime.functionobjects.TernaryValueFunction.ValueFunctionWithConstant;
@@ -77,7 +75,6 @@ import org.apache.sysds.runtime.instructions.cp.ScalarObject;
 import org.apache.sysds.runtime.instructions.spark.data.IndexedMatrixValue;
 import org.apache.sysds.runtime.matrix.data.CTableMap;
 import org.apache.sysds.runtime.matrix.data.IJV;
-import org.apache.sysds.runtime.matrix.data.LibMatrixBincell;
 import org.apache.sysds.runtime.matrix.data.LibMatrixDatagen;
 import org.apache.sysds.runtime.matrix.data.LibMatrixReorg;
 import org.apache.sysds.runtime.matrix.data.LibMatrixTercell;
@@ -470,38 +467,7 @@ public class CompressedMatrixBlock extends MatrixBlock {
 			_colGroups.get(0).getCompType() == CompressionType.UNCOMPRESSED)
 			return ((ColGroupUncompressed) _colGroups.get(0)).getData().chainMatrixMultOperations(v, w, out, ctype, k);
 
-		// prepare result
-		if(out != null)
-			out.reset(clen, 1, false);
-		else
-			out = new MatrixBlock(clen, 1, false);
-
-		// empty block handling
-		if(isEmpty())
-			return out;
-
-		BinaryOperator bop = new BinaryOperator(Multiply.getMultiplyFnObject(), k);
-		boolean allowOverlap = ConfigurationManager.getDMLConfig().getBooleanValue(DMLConfig.COMPRESSED_OVERLAPPING) &&
-			v.getNumColumns() > 1;
-		MatrixBlock tmp = CLALibRightMultBy.rightMultByMatrix(this, v, null, k, allowOverlap);
-
-		if(ctype == ChainType.XtwXv) {
-			if(tmp instanceof CompressedMatrixBlock)
-				tmp = CLALibBinaryCellOp.binaryOperationsRight(bop, (CompressedMatrixBlock) tmp, w, null);
-			else
-				LibMatrixBincell.bincellOpInPlace(tmp, w, bop);
-		}
-
-		if(tmp instanceof CompressedMatrixBlock)
-			CLALibLeftMultBy.leftMultByMatrixTransposed(this, (CompressedMatrixBlock) tmp, out, k);
-		else
-			CLALibLeftMultBy.leftMultByMatrixTransposed(this, tmp, out, k);
-
-		if(out.getNumColumns() != 1)
-			out = LibMatrixReorg.transposeInPlace(out, k);
-
-		out.recomputeNonZeros();
-		return out;
+		return CLALibMMChain.mmChain(this, v, w, out, ctype, k);
 	}
 
 	@Override

@@ -19,30 +19,41 @@
 #
 #-------------------------------------------------------------
 
-
-#-------------------------------------------------------------------------------
-# X            Input feature matrix
-# y            Input label vector (or matrix)
-# train        Name ft of the train function to call via ft(trainArgs)
-# predict      Name fp of the loss function to call via fp((predictArgs,B))
-# numB         Maximum number of parameters in model B (pass the maximum 
-#              because the size of B may vary with parameters like icpt
-# params       List of varied hyper-parameter names
-# paramValues  List of matrices providing the parameter values as 
-#              columnvectors for position-aligned hyper-parameters in 'params' 
-# trainArgs    named List of arguments to pass to the 'train' function, where 
-#              gridSearch replaces enumerated hyper-parameter by name, if 
-#              not provided or an empty list, the lm parameters are used
-# predictArgs  List of arguments to pass to the 'predict' function, where 
-#              gridSearch appends the trained models at the end, if 
-#              not provided or an empty list, list(X, y) is used instead
-# cv           flag enabling k-fold cross validation, otherwise training loss
-# cvk          if cv=TRUE, specifies the the number of folds, otherwise ignored
-# verbose      flag for verbose debug output 
-#-------------------------------------------------------------------------------
-# B            the trained model with minimal loss (by the 'predict' function) 
-# opt          one-row frame w/ optimal hyperparameters (by 'params' position)
-#-------------------------------------------------------------------------------
+# The gridSearch-function is used to find the optimal hyper-parameters of a model which results in the most
+# accurate predictions. This function takes train and eval functions by name.
+#
+# INPUT PARAMETERS:
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME         TYPE               DEFAULT    MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# X            Matrix[Double]     ---        Input feature matrix
+# y            Matrix[Double]     ---        Input Matrix of vectors.
+# train        String             ---        Name ft of the train function to call via ft(trainArgs)
+# predict      String             ---        Name fp of the loss function to call via fp((predictArgs,B))
+# numB         Integer            ---        Maximum number of parameters in model B (pass the maximum because the
+#                                            size of B may vary with parameters like icpt
+# params       List[String]       ---        List of varied hyper-parameter names
+# paramValues  List[Unknown]      ---        List of matrices providing the parameter values as
+#                                            columnvectors for position-aligned hyper-parameters in 'params'
+# trainArgs    List[Unknown]      ---        named List of arguments to pass to the 'train' function, where
+#                                            gridSearch replaces enumerated hyper-parameter by name, if
+#                                            not provided or an empty list, the lm parameters are used
+# predictArgs  List[Unknown]      ---        List of arguments to pass to the 'predict' function, where
+#                                            gridSearch appends the trained models at the end, if
+#                                            not provided or an empty list, list(X, y) is used instead
+# cv           Boolean            FALSE      flag enabling k-fold cross validation, otherwise training loss
+# cvk          Integet            5          if cv=TRUE, specifies the the number of folds, otherwise ignored
+# verbose      Boolean            TRUE       flag for verbose debug output
+#
+# ----------------------------------------------------------------------------------------------------------------------
+#
+# OUTPUT:
+# ----------------------------------------------------------------------------------------------------------------------
+# NAME         TYPE                         MEANING
+# ----------------------------------------------------------------------------------------------------------------------
+# B            Matrix[Double]               Matrix[Double]the trained model with minimal loss (by the 'predict' function)
+# opt          Matrix[Double]               one-row frame w/ optimal hyperparameters (by 'params' position)
+#-----------------------------------------------------------------------------------------------------------------------
 
 m_gridSearch = function(Matrix[Double] X, Matrix[Double] y, String train, String predict,
     Integer numB=ncol(X), List[String] params, List[Unknown] paramValues,

@@ -26,6 +26,7 @@ accuracy = function(Matrix[Double] X, Matrix[Double] y, Matrix[Double] B) return
 
 X = read($1);
 y = round(read($2));
+nc = max(y);
 
 N = 200;
 Xtrain = X[1:N,];
@@ -36,10 +37,11 @@ ytest = y[(N+1):nrow(X),];
 params = list("icpt", "reg", "maxii");
 paramRanges = list(seq(0,2),10^seq(1,-6), 10^seq(1,3));
 trainArgs = list(X=Xtrain, Y=ytrain, icpt=-1, reg=-1, tol=1e-9, maxi=100, maxii=-1, verbose=FALSE);
-[B1,opt] = gridSearch(X=Xtrain, y=ytrain, train="multiLogReg", predict="accuracy", numB=ncol(X)+1,
+[B1,opt] = gridSearch(X=Xtrain, y=ytrain, train="multiLogReg", predict="accuracy", numB=(ncol(X)+1)*(nc-1),
   params=params, paramValues=paramRanges, trainArgs=trainArgs, verbose=TRUE);
 B2 = multiLogReg(X=Xtrain, Y=ytrain, verbose=TRUE);
 
+B1 = matrix(B1, nrow(B1)/(nc-1), (nc-1), FALSE)
 l1 = accuracy(Xtest, ytest, B1);
 l2 = accuracy(Xtest, ytest, B2);
 R = as.scalar(l1 < l2);

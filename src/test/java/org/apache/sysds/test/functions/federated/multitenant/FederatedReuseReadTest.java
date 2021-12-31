@@ -40,11 +40,11 @@ import org.junit.runners.Parameterized;
 
 @RunWith(value = Parameterized.class)
 @net.jcip.annotations.NotThreadSafe
-public class FederatedReadCacheTest extends MultiTenantTestBase {
-	private final static String TEST_NAME = "FederatedReadCacheTest";
+public class FederatedReuseReadTest extends MultiTenantTestBase {
+	private final static String TEST_NAME = "FederatedReuseReadTest";
 
 	private final static String TEST_DIR = "functions/federated/multitenant/";
-	private static final String TEST_CLASS_DIR = TEST_DIR + FederatedReadCacheTest.class.getSimpleName() + "/";
+	private static final String TEST_CLASS_DIR = TEST_DIR + FederatedReuseReadTest.class.getSimpleName() + "/";
 
 	private final static double TOLERANCE = 0;
 
@@ -82,28 +82,28 @@ public class FederatedReadCacheTest extends MultiTenantTestBase {
 
 	@Test
 	public void testPlusScalarCP() {
-		runReadCacheTest(OpType.PLUS_SCALAR, 3, ExecMode.SINGLE_NODE);
+		runReuseReadTest(OpType.PLUS_SCALAR, 3, ExecMode.SINGLE_NODE);
 	}
 
 	@Test
 	@Ignore
 	public void testPlusScalarSP() {
-		runReadCacheTest(OpType.PLUS_SCALAR, 3, ExecMode.SPARK);
+		runReuseReadTest(OpType.PLUS_SCALAR, 3, ExecMode.SPARK);
 	}
 
 	@Test
 	public void testModifiedValCP() {
 		//TODO with 4 runs sporadically into non-terminating state
-		runReadCacheTest(OpType.MODIFIED_VAL, 3, ExecMode.SINGLE_NODE);
+		runReuseReadTest(OpType.MODIFIED_VAL, 3, ExecMode.SINGLE_NODE);
 	}
 
 	@Test
 	@Ignore
 	public void testModifiedValSP() {
-		runReadCacheTest(OpType.MODIFIED_VAL, 4, ExecMode.SPARK);
+		runReuseReadTest(OpType.MODIFIED_VAL, 4, ExecMode.SPARK);
 	}
 
-	private void runReadCacheTest(OpType opType, int numCoordinators, ExecMode execMode) {
+	private void runReuseReadTest(OpType opType, int numCoordinators, ExecMode execMode) {
 		boolean sparkConfigOld = DMLScript.USE_LOCAL_SPARK_CONFIG;
 		ExecMode platformOld = rtplatform;
 
@@ -135,7 +135,7 @@ public class FederatedReadCacheTest extends MultiTenantTestBase {
 		// empty script name because we don't execute any script, just start the worker
 		fullDMLScriptName = "";
 
-		int[] workerPorts = startFedWorkers(4);
+		int[] workerPorts = startFedWorkers(4, new String[]{"-lineage", "reuse"});
 
 		rtplatform = execMode;
 		if(rtplatform == ExecMode.SPARK) {
@@ -146,7 +146,8 @@ public class FederatedReadCacheTest extends MultiTenantTestBase {
 
 		// start the coordinator processes
 		String scriptName = HOME + TEST_NAME + ".dml";
-		programArgs = new String[] {"-stats", "100", "-fedStats", "100", "-nvargs",
+		programArgs = new String[] {"-config", CONFIG_DIR + "SystemDS-MultiTenant-config.xml",
+			"-stats", "100", "-fedStats", "100", "-nvargs",
 			"in_X1=" + TestUtils.federatedAddress(workerPorts[0], ""),
 			"in_X2=" + TestUtils.federatedAddress(workerPorts[1], ""),
 			"in_X3=" + TestUtils.federatedAddress(workerPorts[2], ""),
@@ -178,7 +179,7 @@ public class FederatedReadCacheTest extends MultiTenantTestBase {
 	private void verifyResults(OpType opType, String outputLog, ExecMode execMode) {
 		Assert.assertTrue(checkForHeavyHitter(opType, outputLog, execMode));
 		// verify that the matrix object has been taken from cache
-		Assert.assertTrue(outputLog.contains("Fed ReadCache (Hits, Bytes):\t"
+		Assert.assertTrue(outputLog.contains("Fed ReuseRead (Hits, Bytes):\t"
 			+ Integer.toString((coordinatorProcesses.size()-1) * workerProcesses.size()) + "/"));
 
 		// compare the results via files

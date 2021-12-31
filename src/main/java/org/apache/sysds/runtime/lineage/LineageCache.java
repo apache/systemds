@@ -220,8 +220,8 @@ public class LineageCache
 			ec.setMatrixOutput(outName, e.getMBValue());
 
 			if (DMLScript.STATISTICS) { //increment saved time
-				FederatedStatistics.incFedReadCacheHitCount();
-				FederatedStatistics.incFedReadCacheBytesCount(mb);
+				FederatedStatistics.incFedReuseReadHitCount();
+				FederatedStatistics.incFedReuseReadBytesCount(mb);
 				LineageCacheStatistics.incrementSavedComputeTime(e._computeTime);
 			}
 

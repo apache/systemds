@@ -37,8 +37,9 @@ import javax.net.ssl.SSLException;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.sysds.api.DMLScript;
-import org.apache.sysds.runtime.controlprogram.caching.CacheStatistics;
 import org.apache.sysds.runtime.controlprogram.caching.CacheableData;
+import org.apache.sysds.runtime.controlprogram.caching.CacheBlock;
+import org.apache.sysds.runtime.controlprogram.caching.CacheStatistics;
 import org.apache.sysds.runtime.controlprogram.context.ExecutionContext;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedRequest.RequestType;
 import org.apache.sysds.runtime.controlprogram.federated.FederatedStatistics.FedStatsCollection.CacheStatsCollection;
@@ -366,6 +367,10 @@ public class FederatedStatistics {
 
 	public static void incFedReadCacheBytesCount(CacheableData<?> data) {
 		fedReadCacheBytesCount.add(data.getDataSize());
+	}
+
+	public static void incFedReadCacheBytesCount(CacheBlock cb) {
+		fedReadCacheBytesCount.add(cb.getInMemorySize());
 	}
 
 	public static String displayFedLookupTableStats() {

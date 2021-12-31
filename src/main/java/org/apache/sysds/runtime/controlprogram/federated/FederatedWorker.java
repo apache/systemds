@@ -40,23 +40,27 @@ import io.netty.handler.codec.serialization.ObjectEncoder;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslContextBuilder;
 import io.netty.handler.ssl.util.SelfSignedCertificate;
+import org.apache.sysds.api.DMLScript;
 import org.apache.log4j.Logger;
 import org.apache.sysds.conf.ConfigurationManager;
 import org.apache.sysds.conf.DMLConfig;
+import org.apache.sysds.runtime.lineage.LineageCacheConfig;
 
 public class FederatedWorker {
 	protected static Logger log = Logger.getLogger(FederatedWorker.class);
 
 	private final int _port;
 	private final FederatedLookupTable _flt;
-	private final FederatedReadCache _frc;
 	private final boolean _debug;
 
 	public FederatedWorker(int port, boolean debug) {
 		_flt = new FederatedLookupTable();
-		_frc = new FederatedReadCache();
 		_port = (port == -1) ? DMLConfig.DEFAULT_FEDERATED_PORT : port;
 		_debug = debug;
+
+		LineageCacheConfig.setConfig(DMLScript.LINEAGE_REUSE);
+		LineageCacheConfig.setCachePolicy(DMLScript.LINEAGE_POLICY);
+		LineageCacheConfig.setEstimator(DMLScript.LINEAGE_ESTIMATE);
 	}
 
 	public void run() throws CertificateException, SSLException {
@@ -86,7 +90,7 @@ public class FederatedWorker {
 							new ObjectDecoder(Integer.MAX_VALUE,
 								ClassResolvers.weakCachingResolver(ClassLoader.getSystemClassLoader())));
 						cp.addLast("ObjectEncoder", new ObjectEncoder());
-						cp.addLast("FederatedWorkerHandler", new FederatedWorkerHandler(_flt, _frc));
+						cp.addLast("FederatedWorkerHandler", new FederatedWorkerHandler(_flt));
 					}
 				}).option(ChannelOption.SO_BACKLOG, 128).childOption(ChannelOption.SO_KEEPALIVE, true);
 			log.info("Starting Federated Worker server at port: " + _port);

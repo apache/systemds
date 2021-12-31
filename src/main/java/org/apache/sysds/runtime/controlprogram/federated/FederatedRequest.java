@@ -150,6 +150,9 @@ public class FederatedRequest implements Serializable {
 	}
 
 	public long getChecksum(int i) {
+		if(_checksums == null)
+			setChecksum();
+
 		return _checksums.get(i);
 	}
 

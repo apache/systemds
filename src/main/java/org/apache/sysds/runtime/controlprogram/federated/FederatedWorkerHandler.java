@@ -76,7 +76,6 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 	private static final Logger LOG = Logger.getLogger(FederatedWorkerHandler.class);
 
 	private final FederatedLookupTable _flt;
-	private final FederatedReadCache _frc;
 
 	/**
 	 * Create a Federated Worker Handler.
@@ -85,11 +84,9 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 	 * separate execution contexts at the federated sites too
 	 * 
 	 * @param flt The Federated Lookup Table of the current Federated Worker.
-	 * @param frc read cache shared by all worker handlers
 	 */
-	public FederatedWorkerHandler(FederatedLookupTable flt, FederatedReadCache frc) {
+	public FederatedWorkerHandler(FederatedLookupTable flt) {
 		_flt = flt;
-		_frc = frc;
 	}
 
 	@Override
@@ -246,8 +243,12 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 			// early throwing of exception to avoid infinitely waiting threads for data
 			throw new FederatedWorkerHandlerException("Could not recognize datatype");
 
-		CacheableData<?> cd = _frc.get(filename);
-		if(cd == null) {
+		ExecutionContext ec = ecm.get(tid);
+		LineageItem tmpLI = new LineageItem(filename);
+
+		CacheableData<?> cd = null;
+		if(!LineageCache.reuseRead(Long.toString(id), dataType, tmpLI, ec)) {
+			long t0 = !ReuseCacheType.isNone() ? System.nanoTime() : 0;
 			try {
 				switch(dataType) {
 					case MATRIX:
@@ -301,26 +302,34 @@ public class FederatedWorkerHandler extends ChannelInboundHandlerAdapter {
 					cd.setFileFormatProperties(new FileFormatPropertiesCSV(header, delim,
 						DataExpression.DEFAULT_DELIM_SPARSE));
 				cd.enableCleanup(false); // guard against deletion
-
-				_frc.setData(filename, cd);
 			} catch(Exception ex) {
-				_frc.setInvalid(filename);
+				if(!ReuseCacheType.isNone() && dataType == DataType.MATRIX)
+					LineageCache.putReadObject(null, tmpLI, ec, 0); // removing the placeholder
 				throw ex;
 			}
-		}
+			long t1 = !ReuseCacheType.isNone() ? System.nanoTime() : 0;
 
-		ecm.get(tid).setVariable(String.valueOf(id), cd);
+			ec.setVariable(String.valueOf(id), cd);
+
+			if(!ReuseCacheType.isNone() && dataType == DataType.MATRIX)
+				LineageCache.putReadObject(cd, tmpLI, ec, t1 - t0);
+		}
 
 		if(DMLScript.LINEAGE)
 			// create a literal type lineage item with the file name
-			ecm.get(tid).getLineage().set(String.valueOf(id), new LineageItem(filename));
+			ec.getLineage().set(String.valueOf(id), tmpLI);
 
 		if(dataType == Types.DataType.FRAME) {
-			FrameObject frameObject = (FrameObject) cd;
-			frameObject.acquireRead();
-			frameObject.refreshMetaData(); // get block schema
-			frameObject.release();
-			return new FederatedResponse(ResponseType.SUCCESS, new Object[] {id, frameObject.getSchema(), mc});
+			try {
+				FrameObject frameObject = (FrameObject) cd;
+				frameObject.acquireRead();
+				frameObject.refreshMetaData(); // get block schema
+				frameObject.release();
+				return new FederatedResponse(ResponseType.SUCCESS, new Object[] {id, frameObject.getSchema(), mc});
+			} catch(NullPointerException npe) {
+				throw new FederatedWorkerHandlerException("Data should never be null at this point. "
+					+ "Either set by lineage or read from fs", npe);
+			}
 		}
 		return new FederatedResponse(ResponseType.SUCCESS, new Object[] {id, mc});
 	}

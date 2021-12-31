@@ -30,8 +30,7 @@ public class FederatedLocalData extends FederatedData {
 	protected final static Logger log = Logger.getLogger(FederatedWorkerHandler.class);
 
 	private static final FederatedLookupTable _flt = new FederatedLookupTable();
-	private static final FederatedReadCache _frc = new FederatedReadCache();
-	private static final FederatedWorkerHandler _fwh = new FederatedWorkerHandler(_flt, _frc);
+	private static final FederatedWorkerHandler _fwh = new FederatedWorkerHandler(_flt);
 
 	private final CacheableData<?> _data;
 
